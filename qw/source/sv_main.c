@@ -682,7 +682,7 @@ SVC_GetChallenge (void)
 void
 SVC_DirectConnect (void)
 {
-	info_t     *userinfo;
+	info_t     *userinfo = 0;
 	const char *s;
 	client_t   *cl, *newcl;
 	client_t    temp;
@@ -707,7 +707,8 @@ SVC_DirectConnect (void)
 
 	challenge = atoi (Cmd_Argv (3));
 
-	userinfo = Info_ParseString (Cmd_Argv (4), 1023);
+	if (strlen (Cmd_Argv (4)) < MAX_INFO_STRING)
+		userinfo = Info_ParseString (Cmd_Argv (4), 1023);
 
 	// Validate the userinfo string.
 	if (!userinfo) {

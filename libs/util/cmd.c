@@ -477,8 +477,18 @@ Cmd_Args (int start)
 void
 Cmd_TokenizeString (const char *text)
 {
-	static char argv_buf[1024];
+	static char *argv_buf;
+	static size_t argv_buf_size;
 	int         argv_idx;
+	size_t         len = strlen (text) + 1;
+
+	if (len > argv_buf_size) {
+		argv_buf_size = (len + 1023) & ~1023;
+		argv_buf = realloc (argv_buf, argv_buf_size);
+		if (!argv_buf)
+			Sys_Error ("Cmd_TokenizeString: could not allocate %d bytes",
+					   argv_buf_size);
+	}
 
 	argv_idx = 0;
 
@@ -508,10 +518,6 @@ Cmd_TokenizeString (const char *text)
 			return;
 
 		if (cmd_argc < MAX_ARGS) {
-			if (argv_idx + strlen (com_token) + 1 > MAX_COM_TOKEN) {
-				Sys_Printf ("Cmd_TokenizeString: overflow\n");
-				return;
-			}
 			cmd_argv[cmd_argc] = argv_buf + argv_idx;
 			strcpy (cmd_argv[cmd_argc], com_token);
 			argv_idx += strlen (com_token) + 1;
@@ -1024,7 +1030,24 @@ Cmd_Init (void)
 							"the documentation for details.");
 }
 
-char        com_token[MAX_COM_TOKEN];
+char        *com_token;
+static size_t com_token_size;
+
+static inline void
+write_com_token (size_t pos, char c)
+{
+	if (pos + 1 <= com_token_size) {
+write:
+		com_token[pos] = c;
+		return;
+	}
+	com_token_size = (pos + 1024) & ~1023;
+	com_token = realloc (com_token, com_token_size);
+	if (!com_token)
+		Sys_Error ("COM_Parse: could not allocate %d bytes",
+				   com_token_size);
+	goto write;
+}
 
 /*
 	COM_Parse
@@ -1032,13 +1055,13 @@ char        com_token[MAX_COM_TOKEN];
 	Parse a token out of a string
 */
 const char       *
-COM_Parse (const char *data)
+COM_Parse (const char *_data)
 {
+	const byte *data = (const byte *)_data;
 	unsigned int c;
-	int         len;
+	size_t      len = 0;
 
-	len = 0;
-	com_token[0] = 0;
+	write_com_token (len, 0);
 
 	if (!data)
 		return NULL;
@@ -1064,25 +1087,23 @@ skipwhite:
 		while (1) {
 			c = *data++;
 			if (c == '\"' || !c) {
-				com_token[len] = 0;
-				return data;
+				write_com_token (len, 0);
+				return c ? data : data - 1;
 			}
-			com_token[len] = c;
+			write_com_token (len, c);
 			len++;
 		}
 	}
 	// parse a regular word
 	do {
-		com_token[len] = c;
+		write_com_token (len, c);
 		data++;
 		len++;
-		if (len >= MAX_COM_TOKEN - 1)
-			break;
 
 		c = *data;
 	} while (c > 32);
 
-	com_token[len] = 0;
+	write_com_token (len, 0);
 	return data;
 }
 
