@@ -49,6 +49,9 @@ static const char rcsid[] =
 #include "QF/cmd.h"
 #include "QF/keys.h"
 
+char        demoname[1024];
+int         timedemo_count;
+
 void        CL_FinishTimeDemo (void);
 
 /*
@@ -269,25 +272,12 @@ CL_Record_f (void)
 }
 
 
-/*
-	CL_PlayDemo_f
-
-	play [demoname]
-*/
 void
-CL_PlayDemo_f (void)
+CL_StartDemo (void)
 {
 	char        name[256];
 	int         c;
 	qboolean    neg = false;
-
-	if (cmd_source != src_command)
-		return;
-
-	if (Cmd_Argc () != 2) {
-		Con_Printf ("play <demoname> : plays a demo\n");
-		return;
-	}
 
 // disconnect from server
 //
@@ -295,7 +285,7 @@ CL_PlayDemo_f (void)
 
 // open the demo file
 //
-	strcpy (name, Cmd_Argv (1));
+	strncpy (name, demoname, sizeof (name));
 	COM_DefaultExtension (name, ".dem");
 
 	Con_Printf ("Playing demo from %s.\n", name);
@@ -323,7 +313,37 @@ CL_PlayDemo_f (void)
 // ZOID, fscanf is evil
 //  fscanf (cls.demofile, "%i\n", &cls.forcetrack);
 }
+/*
+	CL_PlayDemo_f
 
+	play [demoname]
+*/
+void
+CL_PlayDemo_f (void)
+{
+	if (cmd_source != src_command)
+		return;
+
+	if (Cmd_Argc () != 2) {
+		Con_Printf ("play <demoname> : plays a demo\n");
+		return;
+	}
+	strncpy (demoname, Cmd_Argv (1), sizeof (demoname));
+	CL_StartDemo ();
+}
+
+void
+CL_StartTimeDemo (void)
+{
+	CL_StartDemo ();
+
+	// cls.td_starttime will be grabbed at the second frame of the demo, so
+	// all the loading time doesn't get counted
+
+	cls.timedemo = true;
+	cls.td_startframe = host_framecount;
+	cls.td_lastframe = -1;				// get a new message this frame
+}
 
 void
 CL_FinishTimeDemo (void)
@@ -340,6 +360,8 @@ CL_FinishTimeDemo (void)
 		time = 1;
 	Con_Printf ("%i frames %5.2f seconds %5.2f fps\n", frames, time,
 				frames / time);
+	if (--timedemo_count > 0)
+		CL_StartTimeDemo ();
 }
 
 
@@ -354,17 +376,15 @@ CL_TimeDemo_f (void)
 	if (cmd_source != src_command)
 		return;
 
-	if (Cmd_Argc () != 2) {
-		Con_Printf ("timedemo <demoname> : gets demo speeds\n");
+	if (Cmd_Argc () < 2 || Cmd_Argc () > 3) {
+		Con_Printf ("timedemo <demoname> [count]: gets demo speeds\n");
 		return;
 	}
-
-	CL_PlayDemo_f ();
-
-	// cls.td_starttime will be grabbed at the second frame of the demo, so
-	// all the loading time doesn't get counted
-
-	cls.timedemo = true;
-	cls.td_startframe = host_framecount;
-	cls.td_lastframe = -1;				// get a new message this frame
+	if (Cmd_Argc () == 3) {
+		timedemo_count = atoi (Cmd_Argv (2));
+	} else {
+		timedemo_count = 1;
+	}
+	strncpy (demoname, Cmd_Argv (1), sizeof (demoname));
+	CL_StartTimeDemo ();
 }
