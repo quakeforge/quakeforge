@@ -38,7 +38,7 @@ GIB_InStack_Push (gib_inst_t * instruction, int argc, char **argv)
 
 	gib_instack =
 		realloc (gib_instack, sizeof (gib_instack_t) * (gib_insp + 1));
-	gib_instack[gib_insp].argv = malloc (argc + 1);
+	gib_instack[gib_insp].argv = malloc ((argc + 1) * sizeof(char *));
 
 	for (i = 0; i <= argc; i++) {
 		gib_instack[gib_insp].argv[i] = malloc (strlen (argv[i]) + 1);

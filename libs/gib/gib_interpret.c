@@ -125,7 +125,10 @@ GIB_Interpret_Inst (char *inst)
 	if (ret)
 		return ret;
 	gib_argc = 0;
-	for (i = 0; buffer3[i] != ' '; i++);
+	for (i = 0; buffer3[i] != ' '; i++)
+		if (buffer3[i] == '\0')
+			return GIB_E_PARSE;
+
 	gib_argv[0] = malloc (i + 1);
 	strncpy (gib_argv[0], buffer3, i);
 	gib_argv[0][i] = 0;
