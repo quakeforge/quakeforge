@@ -24,7 +24,6 @@
 #include "compat.h"
 #include "netchan.h"
 
-#define MAX_SERVERINFO_STRING   512
 #define SV_TIMEOUT 450
 
 #define PORT_MASTER 26900
@@ -49,9 +48,6 @@ typedef struct filter_s {
 
 typedef struct server_s {
 	netadr_t    ip;
-	int         heartbeat;
-	int         players;
-	char        info[MAX_SERVERINFO_STRING];
 	struct server_s *next;
 	struct server_s *previous;
 	double timeout;
