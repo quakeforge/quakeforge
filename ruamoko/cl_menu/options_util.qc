@@ -34,65 +34,61 @@
 
 	function for drawing the cursor
 */
-void (integer x, integer y) 
+void (integer x, integer y)
 opt_cursor =
 {
 	// use time becaus we want a nice rotaing cursor
 	Draw_Character (x, y, 12 + (integer) (time * 4) & 1);
 };
 
-
-
 /*
 	draw_perc_bar
 
-	Draws a percentage bar by giving its size (in
-	chars), x and y position and the percentage from 0 to 100
+	Draws a percentage bar by giving its size (in chars),
+	x and y position and the percentage from 0 to 100
 */
-void (integer x, integer y, integer size, integer perc_val) 
+void (integer x, integer y, integer size, integer perc_val)
 draw_perc_bar =
 {
-	local float perc;
-	local integer i;
+	local float		perc;
+	local integer	i;
 
-	if(perc_val > 100) {
+	if (perc_val > 100) {
 		perc_val = 100;
-	} else if(perc_val < 0) {
+	} else if (perc_val < 0) {
 		perc_val = 0;
 	}
 
-	perc = itof(perc_val) / ( 100 / itof(size) );
+	perc = itof (perc_val) / (100 / itof (size));
 
 	/* 128, 129, 130 and 131 are special characters for scrollbars */
-	Draw_Character (x, y, 128);                           // draw beginning
+	Draw_Character (x, y, 128);								// draw beginning
 	for (i = 0; i <= size; i++) {
-		Draw_Character (x + ((i+1)*8), y, 129);           // draw the borders
+		Draw_Character (x + ((i + 1) * 8), y, 129);			// draw the borders
 	}
-	Draw_Character (x + ((i+1)*8), y, 130);	              // draw last char 
-    Draw_Character (x + ((ftoi(perc) + 1) * 8), y, 131);  // draw slider
+	Draw_Character (x + ((i + 1) * 8), y, 130);				// draw last char
+    Draw_Character (x + ((ftoi (perc) + 1) * 8), y, 131);	// draw slider
 };
-
-
 
 /*
 	draw_item
  
-	Draws a item with a specific spacing between 
-	label and value to positions x, y.
+	Draws a item with a specific spacing between label and value to
+	position x, y.
 	Used as helper function for draw_val_item.
 */
-void (integer x, integer y, integer spacing, string spacechar, 
-	string label, string valstr) 
+void (integer x, integer y, integer spacing, string spacechar,
+	  string label, string valstr)
 draw_item =
 {
-	local integer i;
+	local integer	i;
+
 	Draw_String	(x,  y,	label); 
-	for (i = x + String_Len(label)*8; i < (x+spacing); i+=8) {
+	for (i = x + String_Len (label) * 8; i < (x+spacing); i += 8) {
 		Draw_String (i, y, spacechar);
 	}
 	Draw_String (x + spacing,  y, valstr);
 };
-
 
 /* 
 	draw_val_item
@@ -109,8 +105,6 @@ draw_val_item =
 	draw_item (x, y, spacing, ".", label, ":" + valstr);
 };
 
-
-
 /*
 	to_percentage
 
@@ -120,45 +114,42 @@ draw_val_item =
 integer (float min, float max, float val) 
 to_percentage =
 {
-	local integer perc;
-	local float max_v = (max-min);
+	local float		max_v = (max - min);
+	local integer	perc;
+
 	val -= min;
 
-	if(val > max_v) {
+	if (val > max_v) {
 		val = max_v;
 	}
-	if(val < 0) {
+	if (val < 0) {
 		val = 0;
 	}
-	perc = ftoi((val/max_v) * 100);
+	perc = ftoi ((val / max_v) * 100);
 
 	return perc;
 };
 
-
-
 /*
 	min_max_cnt
 
-	Increases or decreases a value by take 
-	care of the bordervalues.
+	Increases or decreases a value by take care of the bordervalues.
 	min, max are the borders.
 	step is the step by in-/de-creasing.
-	cntflag should be true for increasing and
-	false for decreasing
+	cntflag should be true for increasing and false for decreasing
 */
-float (float min, float max, float step, float val, integer cntflag) 
+float (float min, float max, float step, float val, integer cntflag)
 min_max_cnt =
 {
-	if(cntflag) {
+	if (cntflag) {
 		val += step;
 	} else {
 		val -= step;
 	}
 
-	if(val > max) {
+	if (val > max) {
 		val = max;
-	} else if(val < min) {
+	} else if (val < min) {
 		val = min;
 	}
 	return val;

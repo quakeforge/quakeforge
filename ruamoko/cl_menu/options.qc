@@ -38,9 +38,8 @@
 #include "controls_o.h"
 #include "options_util.h"
 
-/* 
-	some definitions of border values for
-	different things
+/*
+	some definitions of border values for different things
 */
 #define MIN_GAMMA 0.4
 #define MAX_GAMMA 3
@@ -67,7 +66,6 @@
  * Video settings menu code
  ****************************/
  
-
 /*
 	CB_video_options
 
@@ -76,20 +74,20 @@
 integer (string text, integer key) 
 CB_video_options =
 {
-	local integer selected_crosshair;
-	local float val;
+	local float		val;
+	local integer	selected_crosshair;
 
 	switch (text) {
 		case "fullscreen":
 			Cbuf_AddText ("toggle vid_fullscreen\n");
 			break;
 		case "crosshair":
-			selected_crosshair = ftoi(cvar("crosshair"));
+			selected_crosshair = ftoi (cvar ("crosshair"));
 			selected_crosshair++;
-			if(selected_crosshair >= 3) {
+			if (selected_crosshair >= 3) {
 			    selected_crosshair = 0;
 			}
-			cvar_set("crosshair", itos(selected_crosshair));
+			cvar_set ("crosshair", itos (selected_crosshair));
 			break;
 		case "fps":
 			Cbuf_AddText ("toggle show_fps\n");
@@ -104,16 +102,16 @@ CB_video_options =
 	}
 	switch (text) {
 		case "gamma":
-			val = cvar("vid_gamma");
-			val = min_max_cnt(MIN_GAMMA, MAX_GAMMA, GAMMA_STEP, val, 
-				(key == QFK_RIGHT) && (key != QFK_LEFT));
-			cvar_set("vid_gamma", ftos(val));
+			val = cvar ("vid_gamma");
+			val = min_max_cnt (MIN_GAMMA, MAX_GAMMA, GAMMA_STEP, val, 
+							   (key == QFK_RIGHT) && (key != QFK_LEFT));
+			cvar_set("vid_gamma", ftos (val));
 			break;
 		case "viewsize":
-			val = cvar("viewsize");
-			val = min_max_cnt(MIN_VIEWSIZE, MAX_VIEWSIZE, VIEWSIZE_STEP, val, 
-				(key == QFK_RIGHT) && (key != QFK_LEFT));
-			cvar_set("viewsize", ftos(val));
+			val = cvar ("viewsize");
+			val = min_max_cnt (MIN_VIEWSIZE, MAX_VIEWSIZE, VIEWSIZE_STEP, val, 
+							   (key == QFK_RIGHT) && (key != QFK_LEFT));
+			cvar_set ("viewsize", ftos (val));
 			break;
 	}
 	return 0;
@@ -127,33 +125,33 @@ CB_video_options =
 integer () 
 DRAW_video_options = 
 {
-	local integer spacing = 120;
-	local integer bar_pad;
+	local integer	bar_pad, spacing = 120;
 
 	Draw_Pic (16, 4, Draw_CachePic ("gfx/qplaque.lmp", 1));
 	Draw_CenterPic (160, 4, Draw_CachePic ("gfx/p_option.lmp", 1));
-	Draw_String	(54,  40, "Video");
-	Draw_String	(54,  50, "-----");
-	draw_val_item   (70, 60, spacing, "Fullscreen", 
-		cvar("vid_fullscreen") ? "On" : "Off");
-	draw_val_item   (70, 70, spacing, "Crosshair", ftos(cvar("crosshair")));
-	draw_val_item   (70, 80, spacing, "Show fps", 
-		cvar("show_fps") ? "On" : "Off");
-	draw_val_item   (70, 90, spacing, "Show time", 
-		cvar("show_time") ? "On" : "Off");
+	Draw_String	(54, 40, "Video");
+	Draw_String	(54, 50, "-----");
+	draw_val_item (70, 60, spacing, "Fullscreen", 
+				   cvar ("vid_fullscreen") ? "On" : "Off");
+	draw_val_item (70, 70, spacing, "Crosshair", ftos (cvar ("crosshair")));
+	draw_val_item (70, 80, spacing, "Show fps", 
+				   cvar ("show_fps") ? "On" : "Off");
+	draw_val_item (70, 90, spacing, "Show time", 
+				   cvar ("show_time") ? "On" : "Off");
 	bar_pad = 90;
 
 	Draw_String (70, bar_pad + 10, "Gamma:");
-	draw_perc_bar  (118,  bar_pad + 10, 15, 
-		to_percentage (MIN_GAMMA, MAX_GAMMA, cvar("vid_gamma")));
-	Draw_String (118 + (15 + 4)*8 , bar_pad + 10, ftos(cvar("vid_gamma")));
+	draw_perc_bar (118,  bar_pad + 10, 15, 
+				   to_percentage (MIN_GAMMA, MAX_GAMMA, cvar ("vid_gamma")));
+	Draw_String (118 + (15 + 4)*8 , bar_pad + 10, ftos (cvar ("vid_gamma")));
 
 	Draw_String (70, bar_pad + 20, "Viewsize:");
-	draw_perc_bar  (142,  bar_pad + 20, 12, 
-		to_percentage (MIN_VIEWSIZE, MAX_VIEWSIZE, cvar("viewsize")));
-	Draw_String (142 + (12 + 4)*8 , bar_pad + 20, ftos(cvar("viewsize")));
+	draw_perc_bar  (142,  bar_pad + 20, 12,
+					to_percentage (MIN_VIEWSIZE, MAX_VIEWSIZE,
+								   cvar ("viewsize")));
+	Draw_String (142 + (12 + 4) * 8 , bar_pad + 20, ftos (cvar ("viewsize")));
 
-	opt_cursor  (62, (Menu_GetIndex() * 10) + 60);
+	opt_cursor  (62, (Menu_GetIndex () * 10) + 60);
 	return 1;
 };
 
@@ -165,7 +163,7 @@ DRAW_video_options =
 void () 
 MENU_video_options =
 {
-	local integer bar_pad;
+	local integer	bar_pad;
 
 	Menu_Begin (54, 50, "Video");
 	Menu_FadeScreen (1);
@@ -195,15 +193,15 @@ MENU_video_options =
 integer (string text, integer key) 
 CB_audio_options =
 {
-	local float volume;
+	local float		volume;
 
 	if(!(key == QFK_RIGHT || key == QFK_LEFT )) {
 		return 0;
 	}
-	volume = cvar("volume");
-	volume = min_max_cnt(MIN_VOLUME, MAX_VOLUME, VOLUME_STEP, volume, 
-		(key == QFK_RIGHT) && (key != QFK_LEFT));
-	cvar_set("volume", ftos(volume));
+	volume = cvar ("volume");
+	volume = min_max_cnt (MIN_VOLUME, MAX_VOLUME, VOLUME_STEP, volume, 
+						  (key == QFK_RIGHT) && (key != QFK_LEFT));
+	cvar_set ("volume", ftos (volume));
 
 	return 0;
 };
@@ -216,14 +214,13 @@ CB_audio_options =
 integer () 
 DRAW_audio_options = 
 {
-	local string tmp = ftos(cvar("crosshair"));
-	local integer spacing = 120;
-	local integer bar_pad;
+	local string tmp = ftos (cvar ("crosshair"));
+	local integer bar_pad, spacing = 120;
 
 	Draw_Pic (16, 4, Draw_CachePic ("gfx/qplaque.lmp", 1));
 	Draw_CenterPic (160, 4, Draw_CachePic ("gfx/p_option.lmp", 1));
-	Draw_String	(54,  40, "Audio");
-	Draw_String	(54,  50, "-----");
+	Draw_String	(54, 40, "Audio");
+	Draw_String	(54, 50, "-----");
 	bar_pad = 50;
 
 	Draw_String (70, bar_pad + 10, "Volume:");
@@ -327,28 +324,37 @@ CB_control_options =
 integer () 
 DRAW_control_options = 
 {
-	local integer cursor_pad = 0, spacing = 120, bar_pad;
+	local integer	cursor_pad = 0, spacing = 120, bar_pad;
 
-	Draw_Pic		(16,  4,  Draw_CachePic ("gfx/qplaque.lmp", 1));
-	Draw_CenterPic  (160, 4,  Draw_CachePic ("gfx/p_option.lmp", 1));
-	Draw_String		(54,  40, "Controls");
-	Draw_String		(54,  50, "--------");
-	Draw_String     (70,  60, "Bindings");
+	Draw_Pic (16, 4,  Draw_CachePic ("gfx/qplaque.lmp", 1));
+	Draw_CenterPic (160, 4,  Draw_CachePic ("gfx/p_option.lmp", 1));
+	Draw_String	(54, 40, "Controls");
+	Draw_String (54, 50, "--------");
+	Draw_String (70, 60, "Bindings");
 
-	draw_val_item   (70,  70, spacing, "Grab mouse",   cvar("in_grab") ? "On" : "Off");
-	draw_val_item   (70,  80, spacing, "Auto run",     cvar("cl_forwardspeed") < 400 ? "Off" : "On");
-	draw_val_item   (70,  90, spacing, "Mouse Invert", cvar("m_pitch") < 0 ? "On" : "Off");
+	draw_val_item (70, 70, spacing, "Grab mouse", cvar ("in_grab") ? "On" :
+				   "Off");
+	draw_val_item (70, 80, spacing, "Auto run", cvar ("cl_forwardspeed")
+					 < 400 ? "Off" : "On");
+	draw_val_item (70, 90, spacing, "Mouse Invert", cvar ("m_pitch") < 0 ?
+				   "On" : "Off");
 	bar_pad = 90;
 
-	Draw_String     (70,  bar_pad + 10, "Mouse amp:");
-	draw_perc_bar   (150, bar_pad + 10, 12, to_percentage (MIN_MOUSE_AMP, MAX_MOUSE_AMP, cvar("in_mouse_amp")));
-	Draw_String     (150 + (12 + 4)*8 , bar_pad + 10, ftos(cvar("in_mouse_amp")));
+	Draw_String (70, bar_pad + 10, "Mouse amp:");
+	draw_perc_bar (150, bar_pad + 10, 12,
+				   to_percentage (MIN_MOUSE_AMP, MAX_MOUSE_AMP,
+								  cvar("in_mouse_amp")));
+	Draw_String (150 + (12 + 4) * 8 , bar_pad + 10,
+				 ftos (cvar ("in_mouse_amp")));
 
-	draw_val_item   (70,  110, spacing, "Freelook",   cvar("freelook") ? "On" : "Off");
-	draw_val_item   (70,  120, spacing, "Lookspring", cvar("lookspring") ? "On" : "Off");
-	draw_val_item   (70,  130, spacing, "Lookstrafe", cvar("lookstrafe") ? "On" : "Off");
+	draw_val_item (70, 110, spacing, "Freelook", cvar("freelook") ? "On" :
+				   "Off");
+	draw_val_item (70, 120, spacing, "Lookspring", cvar ("lookspring") ? "On" :
+				   "Off");
+	draw_val_item (70,  130, spacing, "Lookstrafe", cvar ("lookstrafe") ? "On"
+				   : "Off");
 
-	opt_cursor  (62, (Menu_GetIndex() * 10) + 60 + cursor_pad);
+	opt_cursor (62, (Menu_GetIndex () * 10) + 60 + cursor_pad);
 
 	return 1;
 };
@@ -414,17 +420,17 @@ DRAW_feature_options =
 {
 	local integer cursor_pad = 0, spacing = 120;
 
-	Draw_Pic		(16, 4, Draw_CachePic ("gfx/qplaque.lmp", 1));
-	Draw_CenterPic  (160,4, Draw_CachePic ("gfx/p_option.lmp", 1));
-	Draw_String		(54,  40, "Features");
-	Draw_String		(54,  50, "--------");
+	Draw_Pic (16, 4, Draw_CachePic ("gfx/qplaque.lmp", 1));
+	Draw_CenterPic (160,4, Draw_CachePic ("gfx/p_option.lmp", 1));
+	Draw_String (54,  40, "Features");
+	Draw_String (54,  50, "--------");
 
 	draw_val_item (70, 60, spacing, "Auto Record", 
-		cvar("cl_autorecord") != 0 ? "On" : "Off");
+				   cvar ("cl_autorecord") != 0 ? "On" : "Off");
 	draw_val_item (70, 70, spacing, "Fraglogging", 
-		cvar("cl_fraglog") != 0 ? "On" : "Off");
+				   cvar ("cl_fraglog") != 0 ? "On" : "Off");
 
-	opt_cursor  (62, (Menu_GetIndex() * 10) + 60 + cursor_pad);
+	opt_cursor (62, (Menu_GetIndex () * 10) + 60 + cursor_pad);
 	return 1;
 };
 
@@ -467,10 +473,10 @@ InputLine player_config_iactive;
 // table for cursor-positions
 #define NUM_PLAYERCONFIG_CMDS 4
 integer [NUM_PLAYERCONFIG_CMDS] player_config_cursor_tbl = { 
-	PLAYER_CONF_Y_PAD + 8, 
-	PLAYER_CONF_Y_PAD + 20 + 8, 
-	PLAYER_CONF_Y_PAD + 45, 
-	PLAYER_CONF_Y_PAD + 60 
+	PLAYER_CONF_Y_PAD + 8,
+	PLAYER_CONF_Y_PAD + 20 + 8,
+	PLAYER_CONF_Y_PAD + 45,
+	PLAYER_CONF_Y_PAD + 60
 };
 
 integer player_config_cursor;
@@ -487,7 +493,7 @@ string [NUM_PLAYERCONFIG_CMDS] player_config_vals = {
 integer (integer key, integer unicode, integer down) 
 KEYEV_player_options =
 {
-	local float colortmp;
+	local float		colortmp;
 
 	switch (key) {
 		case QFK_DOWN:
@@ -506,16 +512,16 @@ KEYEV_player_options =
 			break;
 		case QFK_RETURN:
 			if (player_config_iactive) {
-				if(player_config_iactive == player_config_plname_il) {
-					cvar_set(playername_cvar, [player_config_plname_il text]);
-				} else if(player_config_iactive == player_config_tname_il) {
-					cvar_set(teamname_cvar, [player_config_tname_il text]);
+				if (player_config_iactive == player_config_plname_il) {
+					cvar_set (playername_cvar, [player_config_plname_il text]);
+				} else if (player_config_iactive == player_config_tname_il) {
+					cvar_set (teamname_cvar, [player_config_tname_il text]);
 				}
 				player_config_iactive = NIL;
 			} else {
 				if (player_config_cursor == 0) {
 					player_config_iactive = player_config_plname_il;
-				} else if(player_config_cursor == 1) {
+				} else if (player_config_cursor == 1) {
 					player_config_iactive = player_config_tname_il;
 				}
 			}
@@ -531,23 +537,21 @@ KEYEV_player_options =
 
 	switch (player_config_vals[player_config_cursor]) {
 		case "topcolor":
-			colortmp = cvar("topcolor");
-			colortmp = min_max_cnt(MIN_COLOR, MAX_COLOR, COLOR_STEP, colortmp,
-				(key == QFK_RIGHT) && (key != QFK_LEFT));
-			cvar_set("topcolor", ftos(colortmp));
+			colortmp = cvar ("topcolor");
+			colortmp = min_max_cnt (MIN_COLOR, MAX_COLOR, COLOR_STEP, colortmp,
+									(key == QFK_RIGHT) && (key != QFK_LEFT));
+			cvar_set ("topcolor", ftos (colortmp));
 			break;
 		case "bottomcolor":
-			colortmp = cvar("bottomcolor");
-			colortmp = min_max_cnt(MIN_COLOR, MAX_COLOR, COLOR_STEP, colortmp,
-				(key == QFK_RIGHT) && (key != QFK_LEFT));
-			cvar_set("bottomcolor", ftos(colortmp));
+			colortmp = cvar ("bottomcolor");
+			colortmp = min_max_cnt (MIN_COLOR, MAX_COLOR, COLOR_STEP, colortmp,
+									(key == QFK_RIGHT) && (key != QFK_LEFT));
+			cvar_set ("bottomcolor", ftos (colortmp));
 			break;
 	}
 
-	
 	return 1;
 };
-
 
 /*
 	DRAW_player_options
@@ -557,36 +561,36 @@ KEYEV_player_options =
 integer () 
 DRAW_player_options = 
 {
-	local integer cursor_pad = 0, spacing = 120;
+	local integer	cursor_pad = 0, spacing = 120;
 
-	Draw_Pic		(16, 4, Draw_CachePic ("gfx/qplaque.lmp", 1));
-	Draw_CenterPic  (160,4, Draw_CachePic ("gfx/p_option.lmp", 1));
-	Draw_String		(54,  40, "Player");
-	Draw_String		(54,  50, "--------");
+	Draw_Pic (16, 4, Draw_CachePic ("gfx/qplaque.lmp", 1));
+	Draw_CenterPic (160,4, Draw_CachePic ("gfx/p_option.lmp", 1));
+	Draw_String (54, 40, "Player");
+	Draw_String (54, 50, "--------");
 
 
-	Draw_String(70, PLAYER_CONF_Y_PAD + 8, "Name..:");
-	text_box(120, PLAYER_CONF_Y_PAD, 17, 1);
+	Draw_String (70, PLAYER_CONF_Y_PAD + 8, "Name..:");
+	text_box (120, PLAYER_CONF_Y_PAD, 17, 1);
 	[player_config_plname_il draw: player_config_iactive == player_config_plname_il];
 
-	Draw_String(70, PLAYER_CONF_Y_PAD + 20 + 8, "Team..:");
-	text_box(120, PLAYER_CONF_Y_PAD + 20, 5, 1);
+	Draw_String (70, PLAYER_CONF_Y_PAD + 20 + 8, "Team..:");
+	text_box (120, PLAYER_CONF_Y_PAD + 20, 5, 1);
 	[player_config_tname_il draw:player_config_iactive == player_config_tname_il];
 	
 
 	draw_val_item (70, PLAYER_CONF_Y_PAD + 45, spacing, "Top color", 
-		"   " + ftos(cvar("topcolor"))); 
+				   "   " + ftos (cvar ("topcolor"))); 
 	draw_val_item (70, PLAYER_CONF_Y_PAD + 60, spacing, "Bottom color", 
-		"   " + ftos(cvar("bottomcolor"))); 
+				   "   " + ftos (cvar ("bottomcolor"))); 
 
 	// Draw nice color boxes
-	text_box(192, PLAYER_CONF_Y_PAD + 45 - 8, 1, 1);
+	text_box (192, PLAYER_CONF_Y_PAD + 45 - 8, 1, 1);
 	Draw_Fill (200, PLAYER_CONF_Y_PAD + 45, 16, 8,
-		ftoi(cvar("topcolor"))*16+8);
+			   ftoi (cvar ("topcolor")) * 16 + 8);
 
-	text_box(192, PLAYER_CONF_Y_PAD + 60 - 8, 1, 1);
+	text_box (192, PLAYER_CONF_Y_PAD + 60 - 8, 1, 1);
 	Draw_Fill (200, PLAYER_CONF_Y_PAD + 60, 16, 8,
-		ftoi(cvar("bottomcolor"))*16+8);
+			   ftoi (cvar ("bottomcolor")) * 16 + 8);
 
 	opt_cursor  (62, player_config_cursor_tbl[player_config_cursor]);
 	return 1;
@@ -601,16 +605,16 @@ DRAW_player_options =
 integer () 
 CB_ME_player_options =
 {
-	if(gametype() == "quakeworld") {
+	if (gametype () == "quakeworld") {
 		playername_cvar = "name";	
 	} else {
 		playername_cvar = "_cl_name";
 	}
 
-	teamname_cvar = "team"; // FIXME: is this maybe something other in netquake?
+	teamname_cvar = "team"; // FIXME: is this something else in netquake?
 
-	[player_config_plname_il setText:Cvar_GetCvarString(playername_cvar)]; 
-	[player_config_tname_il setText:Cvar_GetCvarString(teamname_cvar)]; 
+	[player_config_plname_il setText:Cvar_GetCvarString (playername_cvar)]; 
+	[player_config_tname_il setText:Cvar_GetCvarString (teamname_cvar)]; 
 };
 
 /*
@@ -635,16 +639,15 @@ MENU_player_options =
 	Menu_End ();
 };
 
-/******************************************************************************
+/*****************************************************************************
  * NETWORK OPTIONS
  * Options, which have to do with network stuff (rate, noskins, netgraph, ...)
- ******************************************************************************/
+ *****************************************************************************/
 
 // input for playername
 InputLine network_config_rate_il;
 // this holds active inputline pointer
 InputLine network_config_iactive;
-
 
 integer network_config_cursor;
 
@@ -696,21 +699,19 @@ KEYEV_network_options =
 			}
 			break;
 	}
-	if(key != QFK_RETURN && network_config_iactive) {
+	if (key != QFK_RETURN && network_config_iactive) {
 		[network_config_iactive processInput:(key >= 256 ? key : unicode)];
 	}
 
-	if(!(key == QFK_RIGHT || key == QFK_LEFT )) {
+	if (!(key == QFK_RIGHT || key == QFK_LEFT )) {
 		return 1;
 	}
 
 //	switch (network_config_vals[network_config_cursor]) {
 //	} // none yet
 
-	
 	return 1;
 };
-
 
 /*
 	DRAW_network_options
@@ -720,23 +721,21 @@ KEYEV_network_options =
 integer () 
 DRAW_network_options = 
 {
-	local integer cursor_pad = 0, spacing = 120;
+	local integer	cursor_pad = 0, spacing = 120;
 
-	Draw_Pic		(16, 4, Draw_CachePic ("gfx/qplaque.lmp", 1));
-	Draw_CenterPic  (160,4, Draw_CachePic ("gfx/p_option.lmp", 1));
-	Draw_String		(54,  40, "Network");
-	Draw_String		(54,  50, "--------");
+	Draw_Pic (16, 4, Draw_CachePic ("gfx/qplaque.lmp", 1));
+	Draw_CenterPic (160, 4, Draw_CachePic ("gfx/p_option.lmp", 1));
+	Draw_String (54, 40, "Network");
+	Draw_String (54, 50, "--------");
 
 
-	Draw_String(70, NETWORK_CONF_Y_PAD + 8, "Rate..:");
-	text_box(120, NETWORK_CONF_Y_PAD, 9, 1);
+	Draw_String (70, NETWORK_CONF_Y_PAD + 8, "Rate..:");
+	text_box (120, NETWORK_CONF_Y_PAD, 9, 1);
 	[network_config_rate_il draw: network_config_iactive == network_config_rate_il];
 
 	opt_cursor  (62, player_config_cursor_tbl[player_config_cursor]);
 	return 1;
 };
-
-
 
 /*
 	CB_ME_network_options
@@ -748,8 +747,6 @@ CB_ME_network_options =
 {
 	[network_config_rate_il setText:Cvar_GetCvarString("rate")]; 
 };
-
-
 
 /*
 	MENU_network_options
@@ -790,7 +787,7 @@ op_goto_console =
 void () 
 MENU_options =
 {
-	local integer spacing = 120;
+	local integer	spacing = 120;
 
 	Menu_Begin (54, 72, "");
 	Menu_FadeScreen (1);
@@ -799,10 +796,10 @@ MENU_options =
 
 	Menu_Item (54, 32, "Go to Console", op_goto_console, 0);
 	MENU_control_options ();
-	MENU_video_options   ();
-	MENU_audio_options   ();
+	MENU_video_options ();
+	MENU_audio_options ();
 	MENU_feature_options ();
-	MENU_player_options  ();
+	MENU_player_options ();
 	MENU_network_options ();
 
 	Menu_End ();

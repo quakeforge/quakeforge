@@ -9,7 +9,7 @@ string status_bar;
 void ()
 Con_ClearNotify =
 {
-	local integer i;
+	local integer	i;
 
 	for (i = 0; i < NUM_CON_TIMES; i++)
 		con_times[i] = 0;

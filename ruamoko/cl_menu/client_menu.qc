@@ -21,18 +21,18 @@ entity self;
 .void () think;
 
 string [6] dot_name = {
-    "gfx/menudot1.lmp",
-    "gfx/menudot2.lmp",
-    "gfx/menudot3.lmp",
-    "gfx/menudot4.lmp",
-    "gfx/menudot5.lmp",
-    "gfx/menudot6.lmp",
+	"gfx/menudot1.lmp",
+	"gfx/menudot2.lmp",
+	"gfx/menudot3.lmp",
+	"gfx/menudot4.lmp",
+	"gfx/menudot5.lmp",
+	"gfx/menudot6.lmp",
 };
 
 void (integer x, integer y) spinner =
 {
-	local integer i = (integer) (time * 10) % 6;
-	local qpic_t p = Draw_CachePic (dot_name[i], 1);
+	local integer	i = (integer) (time * 10) % 6;
+	local qpic_t	p = Draw_CachePic (dot_name[i], 1);
 
 	Draw_Pic (x, y, p);
 };
@@ -93,8 +93,8 @@ integer save_cursor;
 
 void () scan_saves =
 {
-	local integer i;
-	local QFile f;
+	local integer	i;
+	local QFile		f;
 	for (i = 0; i < MAX_SAVEGAMES; i++) {
 		loadable[i] = 0;
 		filenames[i] = "--- UNUSED SLOT ---";
@@ -251,10 +251,10 @@ integer (integer key, integer unicode, integer down) quit_keyevent =
 integer () quit_draw =
 {
 	text_box (56, 76, 24, 4);
-	Draw_String (64, 84, quitMessage[quit_index *4 + 0]);
-	Draw_String (64, 92, quitMessage[quit_index *4 + 1]);
-	Draw_String (64, 100, quitMessage[quit_index *4 + 2]);
-	Draw_String (64, 108, quitMessage[quit_index *4 + 3]);
+	Draw_String (64, 84, quitMessage[quit_index * 4 + 0]);
+	Draw_String (64, 92, quitMessage[quit_index * 4 + 1]);
+	Draw_String (64, 100, quitMessage[quit_index * 4 + 2]);
+	Draw_String (64, 108, quitMessage[quit_index * 4 + 3]);
 	return 1;
 };
 
@@ -336,11 +336,13 @@ integer () lanconfig_draw =
 	Draw_String (basex + 9 * 8, lanConfig_cursor_table[0], lanConfig_portname);
 
 	if (JoiningGame) {
-		Draw_String (basex, lanConfig_cursor_table[1], "Search for local games...");
+		Draw_String (basex, lanConfig_cursor_table[1], "Search for local "
+					 "games...");
 		Draw_String (basex, 108, "Join game at:");
 		text_box (basex + 8, lanConfig_cursor_table[2] - 8, 22, 1);
 		[lanConfig_join_il draw:lanConfig_cursor == 2 && input_active];
-		Draw_String (basex + 16, lanConfig_cursor_table[2], lanConfig_joinname);
+		Draw_String (basex + 16, lanConfig_cursor_table[2],
+					 lanConfig_joinname);
 	} else {
 		text_box (basex, lanConfig_cursor_table[1] - 8, 2, 1);
 		Draw_String (basex + 8, lanConfig_cursor_table[1], "OK");

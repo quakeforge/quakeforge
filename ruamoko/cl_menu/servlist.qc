@@ -8,17 +8,17 @@
 
 integer () servlist_favorates_draw =
 {
-	Draw_Pic        (16, 4, Draw_CachePic ("gfx/qplaque.lmp", 1));
+	Draw_Pic (16, 4, Draw_CachePic ("gfx/qplaque.lmp", 1));
 	Draw_CenterPic (160, 4, Draw_CachePic ("gfx/p_multi.lmp", 1));
-	Draw_String     (54,  40, "Under Construction");
+	Draw_String (54, 40, "Under Construction");
 	return 1;
 };
 
 integer () servlist_all_draw =
 {
-	Draw_Pic        (16, 4, Draw_CachePic ("gfx/qplaque.lmp", 1));
+	Draw_Pic (16, 4, Draw_CachePic ("gfx/qplaque.lmp", 1));
 	Draw_CenterPic (160, 4, Draw_CachePic ("gfx/p_multi.lmp", 1));
-	Draw_String     (54,  40, "Under Construction");
+	Draw_String (54, 40, "Under Construction");
 	return 1;
 };
 
@@ -37,11 +37,11 @@ integer () servlist_filter_draw =
 	Draw_String (62, 56, "Game Contains...:");
 	text_box (206, 48, 8, 1);
 	Draw_String (62, 72, "Server Not Full.:");
-	Draw_String (206, 72, ((serv_nfull == 0)?"No":"Yes"));
+	Draw_String (206, 72, ((serv_nfull == 0) ? "No" : "Yes"));
 	Draw_String (62, 88, "Server Not Empty:");
-	Draw_String (206, 88, ((serv_nempty == 0)?"No":"Yes"));
+	Draw_String (206, 88, ((serv_nempty == 0) ? "No" : "Yes"));
 	Draw_String (62, 96, "Under Construction");
-	opt_cursor  (54, (Menu_GetIndex() * 16) + 40);
+	opt_cursor (54, (Menu_GetIndex () * 16) + 40);
 	return 1;
 };
 
@@ -106,4 +106,3 @@ void () server_list_menu =
 	servlist_filter_menu ();
 	Menu_End ();
 };
-

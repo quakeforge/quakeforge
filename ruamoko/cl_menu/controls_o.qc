@@ -53,64 +53,60 @@ init_binding_hash =
 	   DESIGN NOTES for the Menu:
 
 	   binding config is loaded into hashes.
-	   the key of the hash is the string, which will 
-	   be displayed as binding description.
-	   The first value of the key is the command, which
-	   is bound. 
-       The second valu (loaded later) of the hash 
-	   will be the keyname. (see get_hash_keys())
+	   the key of the hash is the string, which will be displayed as binding
+	   description.
+	   The first value of the key is the command, which is bound. 
+       The second value (loaded later) of the hash will be the keyname.
+	   (see get_hash_keys())
 	*/
 
 	// Movement keys
-	movement_binding_hash = StringHash_Create();
-	StringHash_Set(movement_binding_hash, "Jump/Swin up", "+jump", 0);
-	StringHash_Set(movement_binding_hash, "Walk forward", "+forward", 0);
-	StringHash_Set(movement_binding_hash, "Backpedal", "+back", 0);
-	StringHash_Set(movement_binding_hash, "Turn left", "+left", 0);
-	StringHash_Set(movement_binding_hash, "Turn right", "+right", 0);
-	StringHash_Set(movement_binding_hash, "Run", "+speed", 0);
-	StringHash_Set(movement_binding_hash, "Step left", "+moveleft", 0);
-	StringHash_Set(movement_binding_hash, "Step right", "+moveright", 0);
-	StringHash_Set(movement_binding_hash, "Sidestep", "+strafe", 0);
-	StringHash_Set(movement_binding_hash, "Look up", "+lookup", 0);
-	StringHash_Set(movement_binding_hash, "Look down", "+lookdown", 0);
-	StringHash_Set(movement_binding_hash, "Center view", "centerview", 0);
-	StringHash_Set(movement_binding_hash, "Mouse look", "+mlook", 0);
-	StringHash_Set(movement_binding_hash, "Keyboard look", "+klook", 0);
-	StringHash_Set(movement_binding_hash, "Swim up", "+moveup", 0);
-	StringHash_Set(movement_binding_hash, "Swim down", "+movedown", 0);
+	movement_binding_hash = StringHash_Create ();
+	StringHash_Set (movement_binding_hash, "Jump/Swin up", "+jump", 0);
+	StringHash_Set (movement_binding_hash, "Walk forward", "+forward", 0);
+	StringHash_Set (movement_binding_hash, "Backpedal", "+back", 0);
+	StringHash_Set (movement_binding_hash, "Turn left", "+left", 0);
+	StringHash_Set (movement_binding_hash, "Turn right", "+right", 0);
+	StringHash_Set (movement_binding_hash, "Run", "+speed", 0);
+	StringHash_Set (movement_binding_hash, "Step left", "+moveleft", 0);
+	StringHash_Set (movement_binding_hash, "Step right", "+moveright", 0);
+	StringHash_Set (movement_binding_hash, "Sidestep", "+strafe", 0);
+	StringHash_Set (movement_binding_hash, "Look up", "+lookup", 0);
+	StringHash_Set (movement_binding_hash, "Look down", "+lookdown", 0);
+	StringHash_Set (movement_binding_hash, "Center view", "centerview", 0);
+	StringHash_Set (movement_binding_hash, "Mouse look", "+mlook", 0);
+	StringHash_Set (movement_binding_hash, "Keyboard look", "+klook", 0);
+	StringHash_Set (movement_binding_hash, "Swim up", "+moveup", 0);
+	StringHash_Set (movement_binding_hash, "Swim down", "+movedown", 0);
 
 	// Misc keys
-	misc_binding_hash = StringHash_Create();
-	StringHash_Set(misc_binding_hash, "Pause game", "pause", 0);
-	StringHash_Set(misc_binding_hash, "Tog. m.-grab", "toggle in_grab", 0);
-	StringHash_Set(misc_binding_hash, "Messagemode", "messagemode", 0);
-	StringHash_Set(misc_binding_hash, "Screenshot", "screenshot", 0);
+	misc_binding_hash = StringHash_Create ();
+	StringHash_Set (misc_binding_hash, "Pause game", "pause", 0);
+	StringHash_Set (misc_binding_hash, "Tog. m.-grab", "toggle in_grab", 0);
+	StringHash_Set (misc_binding_hash, "Messagemode", "messagemode", 0);
+	StringHash_Set (misc_binding_hash, "Screenshot", "screenshot", 0);
 
 	// Weapon keys
-	weapon_binding_hash = StringHash_Create();
-	StringHash_Set(weapon_binding_hash, "Attack", "+attack", 0);
-	StringHash_Set(weapon_binding_hash, "Next weapon", "impulse 10", 0);
-	StringHash_Set(weapon_binding_hash, "Axe", "impulse 1", 0);
-	StringHash_Set(weapon_binding_hash, "Shotgun", "impulse 2", 0);
-	StringHash_Set(weapon_binding_hash, "Super Shotgun", "impulse 3", 0);
-	StringHash_Set(weapon_binding_hash, "Nailgun", "impulse 4", 0);
-	StringHash_Set(weapon_binding_hash, "Super Nailgun", "impulse 5", 0);
-	StringHash_Set(weapon_binding_hash, "Grenade L. ", "impulse 6", 0);
-	StringHash_Set(weapon_binding_hash, "Rocket L. ", "impulse 7", 0);
-	StringHash_Set(weapon_binding_hash, "Thunderbolt", "impulse 8", 0);
-
+	weapon_binding_hash = StringHash_Create ();
+	StringHash_Set (weapon_binding_hash, "Attack", "+attack", 0);
+	StringHash_Set (weapon_binding_hash, "Next weapon", "impulse 10", 0);
+	StringHash_Set (weapon_binding_hash, "Axe", "impulse 1", 0);
+	StringHash_Set (weapon_binding_hash, "Shotgun", "impulse 2", 0);
+	StringHash_Set (weapon_binding_hash, "Super Shotgun", "impulse 3", 0);
+	StringHash_Set (weapon_binding_hash, "Nailgun", "impulse 4", 0);
+	StringHash_Set (weapon_binding_hash, "Super Nailgun", "impulse 5", 0);
+	StringHash_Set (weapon_binding_hash, "Grenade L. ", "impulse 6", 0);
+	StringHash_Set (weapon_binding_hash, "Rocket L. ", "impulse 7", 0);
+	StringHash_Set (weapon_binding_hash, "Thunderbolt", "impulse 8", 0);
 };
 
 /*
 	get_keyname
 
-	Gets the string of the key, which is bound 
-	to a special binding.
+	Gets the string of the key, which is bound to a special binding.
 	bindnum is the number of the binding.
-	As a command/binding can be bound to many keys,
-	you can get the second, third, etc. key by giving 
-	the bindnum.
+	As a command/binding can be bound to many keys,	you can get the second,
+	third, etc. key by giving the bindnum.
 */
 string (string binding, integer bindnum) 
 get_keyname =
@@ -141,15 +137,15 @@ get_hash_keys =
 	local string binding, desc1 = "", desc2 = "";
 	
 	hlen = StringHash_Length(hash_id);
-	for(i = 0;i < hlen; i++) {
+	for(i = 0; i < hlen; i++) {
 		binding = StringHash_GetIdx(hash_id, i, 0);
-		desc1 = get_keyname(binding, 1);	// first key bound to
-		desc2 = get_keyname(binding, 2);	// second key bound to
+		desc1 = get_keyname (binding, 1);	// first key bound to
+		desc2 = get_keyname (binding, 2);	// second key bound to
 
-		if(desc2 != "") {
+		if (desc2 != "") {
 			desc1 += ", " + desc2;
 		}
-		StringHash_SetIdx(hash_id, i, desc1, 1);
+		StringHash_SetIdx (hash_id, i, desc1, 1);
 	}
 };
 
@@ -161,11 +157,10 @@ get_hash_keys =
 void () 
 load_keybindings =
 {
-	get_hash_keys(movement_binding_hash);
-	get_hash_keys(misc_binding_hash);
-	get_hash_keys(weapon_binding_hash);
+	get_hash_keys (movement_binding_hash);
+	get_hash_keys (misc_binding_hash);
+	get_hash_keys (weapon_binding_hash);
 };
-
 
 /*******************
  * BINDINGS OPTIONS
@@ -175,24 +170,23 @@ load_keybindings =
 /*
 	DESIGN NOTE (by elmex): 
 
-	Every sub-menu for control bindings
-	has its own hash for holding the keybindings.
-	Thats why there are three different functions, which
-	shadow the CB_MAIN_control_binding() function.
-	They get the binding from the correct hash.
+	Every sub-menu for control bindings has its own hash for holding the 
+	keybindings. Thats why there are three different functions, which shadow
+	the CB_MAIN_control_binding() function. They get the binding from the
+	correct hash.
 */
 
 /*
 	CB_MAIN_control_binding
 
 	The core function of all control_binding function.
-	Its taking the binding as argument.
+	It takes the binding as argument.
 	This function is called by the real callbacks.
 */
 integer (string binding, integer key)
 CB_MAIN_control_binding =
 {
-	local integer retval = 0, bindcnt = 0;
+	local integer	retval = 0, bindcnt = 0;
 
 	if(set_key_flag) {
 		bindcnt = Key_CountBinding(IMT_0, binding);
@@ -231,25 +225,24 @@ CB_MAIN_control_binding =
 integer (string text, integer key) 
 CB_basic_control_binding = 
 {
-	local string binding = StringHash_GetIdx(movement_binding_hash, stoi(text), 0);
-	local integer ret = CB_MAIN_control_binding(binding, key);
+	local string binding = StringHash_GetIdx (movement_binding_hash,
+											  stoi (text), 0);
+	local integer ret = CB_MAIN_control_binding (binding, key);
 
 	// fetch all keynames (possible to optimize.. but not very neccessary)
-	get_hash_keys(movement_binding_hash);
+	get_hash_keys (movement_binding_hash);
 	return ret;
 };
-
 
 /*
 	CB_ME_basic_control_binding
 
-	Loading basic keynames when entering the
-	menu
+	Loading basic keynames when entering the menu
 */
 integer ()
 CB_ME_basic_control_binding =
 {
-    get_hash_keys(movement_binding_hash);
+    get_hash_keys (movement_binding_hash);
 };
 
 /*
@@ -260,23 +253,22 @@ CB_ME_basic_control_binding =
 integer () 
 DRAW_basic_control_binding = 
 {
-	local integer cursor_pad = 40, bind_desc_pad;
-	local integer i, hl;
+	local integer	cursor_pad = 40, bind_desc_pad, hl, i;
 
 	bind_desc_pad = 120;
 
-	Draw_String		(20, 10, "Backspace/Delete: Del binding");
-	Draw_String     (20, 20, "Enter:            New binding");
+	Draw_String (20, 10, "Backspace/Delete: Del binding");
+	Draw_String (20, 20, "Enter:            New binding");
 
 
-	hl = StringHash_Length(movement_binding_hash);	
-	for(i=0;i < hl; i++) {
-		draw_val_item   (20, 40+(i*10), bind_desc_pad, 
-			StringHash_GetIdx(movement_binding_hash, i, -1),
-			StringHash_GetIdx(movement_binding_hash, i, 1));
+	hl = StringHash_Length (movement_binding_hash);	
+	for(i = 0; i < hl; i++) {
+		draw_val_item   (20, 40 + ( i * 10), bind_desc_pad, 
+			StringHash_GetIdx (movement_binding_hash, i, -1),
+			StringHash_GetIdx (movement_binding_hash, i, 1));
 	}
 
-	opt_cursor  (12, (Menu_GetIndex() * 10) + cursor_pad);
+	opt_cursor  (12, (Menu_GetIndex () * 10) + cursor_pad);
 
 	return 1;
 };
@@ -293,16 +285,15 @@ MENU_basic_control_binding =
 	
 	Menu_Begin (54, 40, "Movement bindings");
 	Menu_FadeScreen (1);
-	Menu_EnterHook(CB_ME_basic_control_binding);
+	Menu_EnterHook (CB_ME_basic_control_binding);
 	Menu_Draw (DRAW_basic_control_binding);
 
-	hl = StringHash_Length(movement_binding_hash);
+	hl = StringHash_Length (movement_binding_hash);
 	for (i = 0; i < hl; i++) {
-		Menu_Item (20, 40 + i*10, itos(i), CB_basic_control_binding, 1);
+		Menu_Item (20, 40 + i * 10, itos (i), CB_basic_control_binding, 1);
 	}
 	Menu_End ();
 };
-
 
 /*
 	CB_misc_control_binding
@@ -312,19 +303,19 @@ MENU_basic_control_binding =
 integer (string text, integer key) 
 CB_misc_control_binding = 
 {
-	local string binding = StringHash_GetIdx(misc_binding_hash, stoi(text), 0);
-	local integer ret = CB_MAIN_control_binding(binding, key);
+	local string binding = StringHash_GetIdx (misc_binding_hash, stoi (text),
+											  0);
+	local integer ret = CB_MAIN_control_binding (binding, key);
 
 	// fetch all keynames (possible to optimize.. but not very neccessary)
-	get_hash_keys(misc_binding_hash);
+	get_hash_keys (misc_binding_hash);
 	return ret;
 };
 
 /*
 	CB_ME_misc_control_binding
 
-	Loading misc keynames when entering the
-	menu
+	Loading misc keynames when entering the menu
 */
 integer ()
 CB_ME_misc_control_binding =
@@ -359,8 +350,6 @@ DRAW_misc_control_binding =
 	return 1;
 };
 
-
-
 /*
 	MENU_misc_control_binding
 
@@ -369,16 +358,16 @@ DRAW_misc_control_binding =
 void () 
 MENU_misc_control_binding =
 {
-	local integer i,hl;
+	local integer	hl, i;
 
 	Menu_Begin (54, 50, "Misc bindings");
 	Menu_FadeScreen (1);
-	Menu_EnterHook(CB_ME_misc_control_binding);
+	Menu_EnterHook (CB_ME_misc_control_binding);
 	Menu_Draw (DRAW_misc_control_binding);
 
 	hl = StringHash_Length(movement_binding_hash);
 	for (i = 0; i < hl; i++) {
-		Menu_Item (20, 40 + i*10, itos(i), CB_misc_control_binding, 1);
+		Menu_Item (20, 40 + i * 10, itos (i), CB_misc_control_binding, 1);
 	}
 	Menu_End ();
 };
@@ -388,14 +377,15 @@ MENU_misc_control_binding =
 
 	Callback function for the weapons control bindings
 */
-integer (string text, integer key) 
+integer (string text, integer key)
 CB_weapon_control_binding = 
 {
-	local string binding = StringHash_GetIdx(weapon_binding_hash, stoi(text),0);
-	local integer ret = CB_MAIN_control_binding(binding, key);
+	local string binding = StringHash_GetIdx (weapon_binding_hash, stoi (text),
+											  0);
+	local integer ret = CB_MAIN_control_binding (binding, key);
 
 	// fetch all keynames (possible to optimize.. but not very neccessary)
-	get_hash_keys(weapon_binding_hash);
+	get_hash_keys (weapon_binding_hash);
 	return ret;
 };
 
@@ -419,26 +409,24 @@ CB_ME_weapon_control_binding =
 integer () 
 DRAW_weapon_control_binding =
 {
-	local integer cursor_pad = 40, bind_desc_pad;
-	local integer i,hl;
+	local integer	cursor_pad = 40, bind_desc_pad, hl, i;
 
 	bind_desc_pad = 120;
 
-	Draw_String		(20, 10, "Backspace/Delete: Del binding");
-	Draw_String     (20, 20, "Enter:            New binding");
+	Draw_String	(20, 10, "Backspace/Delete: Del binding");
+	Draw_String (20, 20, "Enter:            New binding");
 
-	hl = StringHash_Length(weapon_binding_hash);	
-	for(i=0;i < hl; i++) {
-		draw_val_item   (20, 40+(i*10), bind_desc_pad, 
-			StringHash_GetIdx(weapon_binding_hash, i, -1),
-			StringHash_GetIdx(weapon_binding_hash, i, 1));
+	hl = StringHash_Length (weapon_binding_hash);	
+	for(i = 0; i < hl; i++) {
+		draw_val_item (20, 40 + (i * 10), bind_desc_pad, 
+			StringHash_GetIdx (weapon_binding_hash, i, -1),
+			StringHash_GetIdx (weapon_binding_hash, i, 1));
 	}
 
-	opt_cursor  (12, (Menu_GetIndex() * 10) + cursor_pad);
+	opt_cursor  (12, (Menu_GetIndex () * 10) + cursor_pad);
 
 	return 1;
 };
-
 
 /*
 	MENU_weapon_control_binding
@@ -448,16 +436,16 @@ DRAW_weapon_control_binding =
 void () 
 MENU_weapon_control_binding =
 {
-	local integer i,hl;
+	local integer	hl, i;
 
 	Menu_Begin (54, 60, "Weapon bindings");
 	Menu_FadeScreen (1);
-	Menu_EnterHook(CB_ME_weapon_control_binding);
+	Menu_EnterHook (CB_ME_weapon_control_binding);
 	Menu_Draw (DRAW_weapon_control_binding);
 
-	hl = StringHash_Length(movement_binding_hash);
+	hl = StringHash_Length (movement_binding_hash);
 	for (i = 0; i < hl; i++) {
-		Menu_Item (20, 40 + i*10, itos(i), CB_weapon_control_binding, 1);
+		Menu_Item (20, 40 + i * 10, itos (i), CB_weapon_control_binding, 1);
 	}
 	Menu_End ();
 };
@@ -479,9 +467,8 @@ MENU_control_binding =
 	Menu_FadeScreen (1);
 
 	MENU_basic_control_binding ();
-	MENU_misc_control_binding  ();
+	MENU_misc_control_binding ();
 	MENU_weapon_control_binding();
 
 	Menu_End ();
 };
-
