@@ -227,7 +227,7 @@ static byte default_palette[] = {
 static int
 wad_extract (wad_t *wad, lumpinfo_t *pf)
 {
-	dstring_t   name = {&dstring_default_mem, 0, 0, 0};
+	static dstring_t name = {&dstring_default_mem, 0, 0, 0};
 	size_t      count;
 	int         len, i;
 	QFile      *file;
