@@ -618,12 +618,16 @@ GIB_Thread_Kill_f (void)
 					   id);
 			return;
 		}
-		// Set error condition on the top of the stack so the thread will exit
-		// We can't simply nuke the thread, as it would cause the stack walker
-		// to segfault if a thread kills itself.
-		for (cur = thread->cbuf;
-			 cur->down && cur->down->state != CBUF_STATE_JUNK; cur = cur->down);
-		cur->state = CBUF_STATE_ERROR;
+
+		// If we are currently running this thread, set an error state so we exit it cleanly
+		// if it were simply nuked, a crash would result
+		for (cur = thread->cbuf; cur->down && cur->down->state != CBUF_STATE_JUNK; cur = cur->down)
+			if (cur == cbuf_active) {
+				cur->state = CBUF_STATE_ERROR;
+				return;
+			}
+		GIB_Thread_Remove (thread);
+		GIB_Thread_Delete (thread);
 	}
 }
 

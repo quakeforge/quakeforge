@@ -132,6 +132,7 @@ Cbuf_Reset (cbuf_t *cbuf)
 {
 	cbuf->resumetime = 0.0;
 	cbuf->args->argc = 0;
+	cbuf->state = CBUF_STATE_NORMAL;
 	if (cbuf->interpreter->reset)
 		cbuf->interpreter->reset (cbuf);
 }
@@ -168,7 +169,6 @@ void
 Cbuf_Execute (cbuf_t *cbuf)
 {
 	cbuf_active = cbuf;
-	cbuf->state = CBUF_STATE_NORMAL;
 	cbuf->interpreter->execute (cbuf);
 }
 
@@ -188,12 +188,15 @@ Cbuf_Execute_Stack (cbuf_t *cbuf)
 		Cbuf_Execute (sp);
 		if (sp->state) {
 			if (sp->state == CBUF_STATE_STACK) {
+				sp->state = CBUF_STATE_NORMAL;
 				sp = sp->down;
 				continue;
 			} else if (sp->state == CBUF_STATE_ERROR)
 				break;
-			else
+			else {
+				sp->state = CBUF_STATE_NORMAL;
 				return;
+			}
 		}
 		sp->state = CBUF_STATE_JUNK;		
 		sp = sp->up;

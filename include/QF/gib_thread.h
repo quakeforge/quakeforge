@@ -47,6 +47,7 @@ typedef struct gib_event_s {
 	
 void GIB_Thread_Add (gib_thread_t *thread);
 void GIB_Thread_Remove (gib_thread_t *thread);
+void GIB_Thread_Delete (gib_thread_t *thread);
 gib_thread_t *GIB_Thread_Find (unsigned long int id);
 gib_thread_t *GIB_Thread_New (void);
 void GIB_Thread_Execute (void);

@@ -100,7 +100,7 @@ GIB_Thread_New (void)
 	return new;
 }
 
-static void
+void
 GIB_Thread_Delete (gib_thread_t * thread)
 {
 	Cbuf_DeleteStack (thread->cbuf);
