@@ -215,6 +215,7 @@ integer (integer key, integer unicode, integer down) save_keyevent =
 void () load_menu =
 {
 	Menu_Begin (0, 0, "load");
+	Menu_FadeScreen (1);
 	Menu_KeyEvent (load_keyevent);
 	Menu_Draw (load_draw);
 	Menu_End ();
@@ -223,6 +224,7 @@ void () load_menu =
 void () save_menu =
 {
 	Menu_Begin (0, 0, "save");
+	Menu_FadeScreen (1);
 	Menu_KeyEvent (save_keyevent);
 	Menu_Draw (save_draw);
 	Menu_End ();
@@ -269,6 +271,7 @@ integer () quit_draw =
 void () quit_menu =
 {
 	Menu_Begin (0, 0, "quit");
+	Menu_FadeScreen (1);
 	Menu_KeyEvent (quit_keyevent);
 	Menu_Draw (quit_draw);
 	Menu_End ();
@@ -288,6 +291,7 @@ void (string text, integer key) sp_start =
 void () single_player_menu =
 {
 	Menu_Begin (54, 32, "");
+	Menu_FadeScreen (1);
 	Menu_Pic (16, 4, "gfx/qplaque.lmp");
 	Menu_CenterPic (160, 4, "gfx/ttl_sgl.lmp");
 	Menu_Pic (72, 32, "gfx/sp_menu.lmp");
@@ -370,6 +374,7 @@ integer (integer key, integer unicode, integer down) lanconfig_keyevent =
 void () lanconfig_menu =
 {
 	Menu_Begin (54, 92, "");
+	Menu_FadeScreen (1);
 	Menu_Pic (16, 4, "gfx/qplaque.lmp");
 	Menu_CenterPic (160, 4, "gfx/p_multi.lmp");
 	Menu_Draw (lanconfig_draw);
@@ -380,6 +385,7 @@ void () lanconfig_menu =
 void () join_menu =
 {
 	Menu_Begin (54, 32, "");
+	Menu_FadeScreen (1);
 	Menu_Pic (16, 4, "gfx/qplaque.lmp");
 	Menu_CenterPic (160, 4, "gfx/p_multi.lmp");
 	Menu_Pic (72, 32, "gfx/dim_modm.lmp");
@@ -403,6 +409,7 @@ integer (integer key, integer unicode, integer down) multi_player_keyevent =
 void () multi_player_menu =
 {
 	Menu_Begin (54, 52, "");
+	Menu_FadeScreen (1);
 	Menu_Pic (16, 4, "gfx/qplaque.lmp");
 	Menu_CenterPic (160, 4, "gfx/p_multi.lmp");
 	Menu_Pic (72, 32, "gfx/mp_menu.lmp");
@@ -425,6 +432,7 @@ void () help_menu =
 void () main_menu =
 {
 	Menu_Begin (0, 0, "main");
+	Menu_FadeScreen (1);
 	Menu_Pic (16, 4, "gfx/qplaque.lmp");
 	Menu_CenterPic (160, 4, "gfx/ttl_main.lmp");
 	Menu_Pic (71,32, "gfx/mainmenu.lmp");

@@ -61,6 +61,7 @@ typedef struct menu_item_s {
 	func_t      cursor;
 	func_t      keyevent;
 	func_t      draw;
+	unsigned    fadescreen:1;
 	const char *text;
 	menu_pic_t *pics;
 } menu_item_t;
@@ -144,6 +145,12 @@ bi_Menu_Begin (progs_t *pr)
 		menu_add_item (menu, m);
 	menu = m;
 	Hash_Add (menu_hash, m);
+}
+
+static void
+bi_Menu_FadeScreen (progs_t *pr)
+{
+	menu->fadescreen = G_INT (pr, OFS_PARM0);
 }
 
 static void
@@ -324,6 +331,7 @@ Menu_Init (void)
 	menu_hash = Hash_NewTable (61, menu_get_key, menu_free, 0);
 
 	PR_AddBuiltin (&menu_pr_state, "Menu_Begin", bi_Menu_Begin, -1);
+	PR_AddBuiltin (&menu_pr_state, "Menu_FadeScreen", bi_Menu_FadeScreen, -1);
 	PR_AddBuiltin (&menu_pr_state, "Menu_Draw", bi_Menu_Draw, -1);
 	PR_AddBuiltin (&menu_pr_state, "Menu_Pic", bi_Menu_Pic, -1);
 	PR_AddBuiltin (&menu_pr_state, "Menu_CenterPic", bi_Menu_CenterPic, -1);
@@ -400,6 +408,9 @@ Menu_Draw (void)
 
 	if (!menu)
 		return;
+
+	if (menu->fadescreen)
+		Draw_FadeScreen ();
 
 	*menu_pr_state.globals.time = *menu_pr_state.time;
 

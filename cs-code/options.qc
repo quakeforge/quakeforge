@@ -76,6 +76,7 @@ integer () options_controls_draw =
 void () options_controls_menu =
 {
 	Menu_Begin (54, 40, "Controls");
+	Menu_FadeScreen (1);
 	Menu_CenterPic (160, 4, "gfx/p_option.lmp");
 	Menu_Draw (options_controls_draw);
 	Menu_KeyEvent (options_controls_keyevent);
@@ -108,6 +109,7 @@ integer () options_video_draw =
 void () options_video_menu =
 {
 	Menu_Begin (54, 50, "Video");
+	Menu_FadeScreen (1);
 	Menu_Draw (options_video_draw);
 	Menu_KeyEvent (options_video_keyevent);
 	Menu_Item (54, 60, "fullscreen", video_options_f);
@@ -118,6 +120,7 @@ void () options_video_menu =
 void () options_menu =
 {
 	Menu_Begin (54, 72, "");
+	Menu_FadeScreen (1);
 	Menu_Pic (16, 4, "gfx/qplaque.lmp");
 	Menu_CenterPic (160, 4, "gfx/p_option.lmp");
 	options_video_menu ();

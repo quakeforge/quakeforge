@@ -1,4 +1,5 @@
 void (integer x, integer y, string text) Menu_Begin = #0;
+void (integer val) Menu_FadeScreen = #0;
 void (integer () func) Menu_Draw = #0;
 void (integer x, integer y, string name) Menu_Pic = #0;
 void (integer x, integer y, string name) Menu_CenterPic = #0;
