@@ -1394,7 +1394,7 @@ byte        playertouch[(MAX_EDICTS + 7) / 8];
 
 	Done before running a player command.  Clears the touch array
 */
-static void
+void
 SV_PreRunCmd (void)
 {
 	memset (playertouch, 0, sizeof (playertouch));
@@ -1459,7 +1459,7 @@ check_usecs (usercmd_t *ucmd)
 	host_client->msecs = 0;
 }
 
-static void
+void
 SV_RunCmd (usercmd_t *ucmd, qboolean inside)
 {
 	int			oldmsec, i, n;
@@ -1505,7 +1505,7 @@ SV_RunCmd (usercmd_t *ucmd, qboolean inside)
 
 // angles
 // show 1/3 the pitch angle and all the roll angle
-	if (SVfloat (sv_player, health) > 0) {
+	if (SVfloat (sv_player, health) > 0) {		//FIXME hardcoded mod info
 		if (!SVfloat (sv_player, fixangle)) {
 			SVvector (sv_player, angles)[PITCH] =
 				-SVvector (sv_player, v_angle)[PITCH] / 3;
@@ -1625,7 +1625,7 @@ SV_RunCmd (usercmd_t *ucmd, qboolean inside)
 
 	Done after running a player command.
 */
-static void
+void
 SV_PostRunCmd (void)
 {
 	// run post-think

@@ -1818,6 +1818,28 @@ PR_SV_SetPing (progs_t *pr)
 	cl->ping = P_INT (pr, 1);
 }
 
+static void
+PR_SV_UserCmd (progs_t *pr)
+{
+	usercmd_t   ucmd;
+	int         entnum = P_EDICTNUM (pr, 0);
+	client_t   *cl = svs.clients + entnum - 1;
+
+	if (entnum < 1 || entnum > MAX_CLIENTS || cl->state != cs_server)
+		PR_RunError (pr, "not a server client");
+
+	host_client = cl;
+	sv_player = host_client->edict;
+	ucmd.msec = 1000 * P_FLOAT (pr, 1);
+	VectorCopy (P_VECTOR (pr, 2), ucmd.angles);
+	VectorCopy (P_VECTOR (pr, 3), &ucmd.forwardmove); //FIXME right order?
+	ucmd.buttons = P_INT (pr, 4);
+	ucmd.impulse = P_INT (pr, 5);
+	SV_PreRunCmd ();
+	SV_RunCmd (&ucmd, 0);
+	SV_PostRunCmd ();
+};
+
 void
 SV_PR_Cmds_Init ()
 {
@@ -1897,4 +1919,5 @@ SV_PR_Cmds_Init ()
 	PR_AddBuiltin (&sv_pr_state, "SV_FreeClient", PF_SV_FreeClient, -1);
 	PR_AddBuiltin (&sv_pr_state, "SV_SetUserinfo", PF_SV_SetUserinfo, -1);
 	PR_AddBuiltin (&sv_pr_state, "SV_SetPing", PR_SV_SetPing, -1);
+	PR_AddBuiltin (&sv_pr_state, "SV_UserCmd", PR_SV_UserCmd, -1);
 };
