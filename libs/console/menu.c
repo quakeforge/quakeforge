@@ -448,6 +448,7 @@ Menu_Init (void)
 	menu_pr_state.allocate_progs_mem = menu_allocate_progs_mem;
 	menu_pr_state.free_progs_mem = menu_free_progs_mem;
 	menu_pr_state.load_file = menu_load_file;
+	menu_pr_state.resolve = menu_resolve_globals;
 
 	menu_hash = Hash_NewTable (61, menu_get_key, menu_free, 0);
 
@@ -461,15 +462,12 @@ Menu_Init (void)
 	PR_Cmds_Init (&menu_pr_state);
 	R_Progs_Init (&menu_pr_state);
 
-	PR_AddLoadFunc (&menu_pr_state, menu_resolve_globals);
-
 	confirm_quit = Cvar_Get ("confirm_quit", "1", CVAR_ARCHIVE, NULL,
 							 "confirm quit command");
 
 	Cmd_AddCommand ("togglemenu", togglemenu_f,
 					"Toggle the display of the menu");
 	Cmd_AddCommand ("quit", quit_f, "Exit the program");
-
 }
 
 void
