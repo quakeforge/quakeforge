@@ -17,7 +17,7 @@ qwaq_SOURCES= main.c builtins.c
 qwaq_LDADD= $(QWAQ_LIBS)
 qwaq_DEPENDENCIES= $(QWAQ_DEPS)
 
-qwaq.dat: progs.src $(qwaq_dat_src) $(top_srcdir)/ruamoko/lib/object.r
+qwaq.dat: progs.src $(qwaq_dat_src) $(top_srcdir)/ruamoko/lib/Object.r
 	$(QFCC) $(QCFLAGS) -I$(top_srcdir)/ruamoko/include
 
 EXTRA_DIST=$(qwaq_dat_src)
