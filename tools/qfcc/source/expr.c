@@ -45,6 +45,7 @@ static const char rcsid[] =
 int         lineno_base;
 
 etype_t     qc_types[] = {
+	ev_void,							// ex_error
 	ev_void,							// ex_label
 	ev_void,							// ex_block
 	ev_void,							// ex_expr
@@ -128,6 +129,7 @@ get_type (expr_t *e)
 	switch (e->type) {
 		case ex_label:
 		case ex_name:
+		case ex_error:
 			return 0;					// something went very wrong
 		case ex_nil:
 			return &type_void;
@@ -201,7 +203,7 @@ error (expr_t *e, const char *fmt, ...)
 
 	if (e) {
 		e = new_expr ();
-		e->type = ex_integer;
+		e->type = ex_error;
 	}
 	return e;
 }
@@ -463,6 +465,9 @@ print_expr (expr_t *e)
 		return;
 	}
 	switch (e->type) {
+		case ex_error:
+			printf ("(error)");
+			break;
 		case ex_label:
 			printf ("%s", e->e.label.name);
 			break;
@@ -931,6 +936,11 @@ field_expr (expr_t *e1, expr_t *e2)
 	expr_t     *e;
 	struct_field_t *field;
 
+	if (e1->type == ex_error)
+		return e1;
+	if (e2->type == ex_error)
+		return e2;
+
 	t1 = get_type (e1);
 	switch (t1->type) {
 		case ev_struct:
@@ -992,6 +1002,9 @@ expr_t *
 test_expr (expr_t *e, int test)
 {
 	expr_t     *new = 0;
+
+	if (e->type == ex_error)
+		return e;
 
 	check_initialized (e);
 
@@ -1074,6 +1087,11 @@ binary_expr (int op, expr_t *e1, expr_t *e2)
 	type_t     *t1, *t2;
 	type_t     *type = 0;
 	expr_t     *e;
+
+	if (e1->type == ex_error)
+		return e1;
+	if (e2->type == ex_error)
+		return e2;
 
 	convert_name (e1);
 	check_initialized (e1);
@@ -1193,20 +1211,29 @@ binary_expr (int op, expr_t *e1, expr_t *e2)
 expr_t *
 asx_expr (int op, expr_t *e1, expr_t *e2)
 {
-	expr_t     *e = new_expr ();
+	if (e1->type == ex_error)
+		return e1;
+	else if (e2->type == ex_error)
+		return e2;
+	else {
+		expr_t     *e = new_expr ();
 
-	*e = *e1;
-	return assign_expr (e, binary_expr (op, e1, e2));
+		*e = *e1;
+		return assign_expr (e, binary_expr (op, e1, e2));
+	}
 }
 
 expr_t *
 unary_expr (int op, expr_t *e)
 {
+	if (e->type == ex_error)
+		return e;
 	convert_name (e);
 	check_initialized (e);
 	switch (op) {
 		case '-':
 			switch (e->type) {
+				case ex_error:
 				case ex_label:
 				case ex_name:
 					error (e, "internal error");
@@ -1259,6 +1286,7 @@ unary_expr (int op, expr_t *e)
 			break;
 		case '!':
 			switch (e->type) {
+				case ex_error:
 				case ex_label:
 				case ex_name:
 					error (e, "internal error");
@@ -1319,6 +1347,7 @@ unary_expr (int op, expr_t *e)
 			break;
 		case '~':
 			switch (e->type) {
+				case ex_error:
 				case ex_label:
 				case ex_name:
 					error (e, "internal error");
@@ -1412,6 +1441,11 @@ function_expr (expr_t *e1, expr_t *e2)
 	int         arg_expr_count = 0;
 	expr_t     *call;
 	expr_t     *err = 0;
+
+	if (e1->type == ex_error)
+		return e1;
+	if (e2->type == ex_error)
+		return e2;
 
 	t1 = extract_type (e1);
 
@@ -1524,6 +1558,8 @@ function_expr (expr_t *e1, expr_t *e2)
 expr_t *
 return_expr (function_t *f, expr_t *e)
 {
+	if (e->type == ex_error)
+		return e;
 	if (!e) {
 		if (f->def->type->aux_type != &type_void) {
 			if (options.traditional) {
@@ -1566,6 +1602,13 @@ conditional_expr (expr_t *cond, expr_t *e1, expr_t *e2)
 	expr_t     *tlabel = new_label_expr ();
 	expr_t     *elabel = new_label_expr ();
 
+	if (cond->type == ex_error)
+		return cond;
+	if (e1->type == ex_error)
+		return e1;
+	if (e2->type == ex_error)
+		return e2;
+
 	block->e.block.result = (type1 == type2) ? new_temp_def_expr (type1) : 0;
 	append_expr (block, new_binary_expr ('i', test_expr (cond, 1), tlabel));
 	if (block->e.block.result)
@@ -1587,6 +1630,9 @@ incop_expr (int op, expr_t *e, int postop)
 {
 	expr_t     *one = new_expr ();
 	expr_t     *incop;
+
+	if (e->type == ex_error)
+		return e;
 
 	one->type = ex_integer;			// integer constants get auto-cast to float
 	one->e.integer_val = 1;
@@ -1613,6 +1659,11 @@ array_expr (expr_t *array, expr_t *index)
 	expr_t     *scale;
 	expr_t     *e;
 	int         size;
+
+	if (array->type == ex_error)
+		return array;
+	if (index->type == ex_error)
+		return index;
 
 	if (array_type->type != ev_pointer || array_type->num_parms < 1)
 		return error (array, "not an array");
@@ -1645,6 +1696,11 @@ address_expr (expr_t *e1, expr_t *e2, type_t *t)
 {
 	expr_t     *e;
 	type_t     *type = 0;
+
+	if (e1->type == ex_error)
+		return e1;
+	if (e2->type == ex_error)
+		return e2;
 
 	if (!t)
 		t = get_type (e1);
@@ -1722,6 +1778,11 @@ assign_expr (expr_t *e1, expr_t *e2)
 	int         op = '=';
 	type_t     *t1, *t2, *type;
 	expr_t     *e;
+
+	if (e1->type == ex_error)
+		return e1;
+	if (e2->type == ex_error)
+		return e2;
 
 	convert_name (e1);
 	if (e1->type == ex_def)
@@ -1807,6 +1868,9 @@ cast_expr (type_t *t, expr_t *e)
 {
 	expr_t    *c;
 
+	if (e->type == ex_error)
+		return e;
+
 	if ((t != &type_integer && t != &type_uinteger
 		 && get_type (e) != &type_float)
 		&& (t != &type_float && get_type (e) != &type_integer)) {
@@ -1826,7 +1890,8 @@ init_elements (def_t *def, expr_t *eles)
 	float      *g = &G_FLOAT (G_INT (def->ofs));
 
 	for (count = 0, e = eles->e.block.head; e; count++, e = e->next)
-		;
+		if (e->type == ex_error)
+			return;
 	if (count > def->type->num_parms) {
 		warning (eles, "excessive elements in initializer");
 		count = def->type->num_parms;

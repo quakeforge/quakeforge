@@ -33,6 +33,7 @@
 #define __expr_h
 
 typedef enum {
+	ex_error,
 	ex_label,
 	ex_block,
 	ex_expr,	// binary expression

@@ -265,6 +265,7 @@ emit_sub_expr (expr_t *e, def_t *dest)
 		case ex_name:
 		case ex_nil:
 		case ex_label:
+		case ex_error:
 			error (e, "internal error");
 			abort ();
 		case ex_expr:
@@ -425,6 +426,8 @@ emit_expr (expr_t *e)
 	//print_expr (e);
 	//puts ("");
 	switch (e->type) {
+		case ex_error:
+			break;
 		case ex_label:
 			label = &e->e.label;
 			label->statement = &statements[numstatements];
