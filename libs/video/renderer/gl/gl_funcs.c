@@ -94,9 +94,6 @@ QFGL_ProcAddress (void *handle, const char *name)
 	static qboolean inited = false;
 	void			*glfunc = NULL;
 
-	if (!handle || !name)
-		return NULL;
-
 #ifdef HAVE_DLOPEN
 	static QF_glXGetProcAddressARB	glGetProcAddress = NULL;
 #else
@@ -104,6 +101,9 @@ QFGL_ProcAddress (void *handle, const char *name)
 	static void * (* wglGetProcAddress)	(char *)	glGetProcAddress = NULL;
 # endif
 #endif
+
+	if (!handle || !name)
+		return NULL;
 
 	if (!inited) {
 		inited = true;
