@@ -53,9 +53,7 @@
 int         con_ormask;
 console_t   con_main;
 console_t   con_chat;
-console_t  *con;						// point to either con_main or
-
-										// con_chat
+console_t  *con;						// point to either con_main or con_chat
 
 int         con_linewidth;				// characters across screen
 int         con_totallines;				// total lines in console scrollback
@@ -66,15 +64,11 @@ float       con_cursorspeed = 4;
 cvar_t     *con_notifytime;				// seconds
 
 #define	NUM_CON_TIMES 4
-float       con_times[NUM_CON_TIMES];	// realtime time the line was
-
-										// generated
+float       con_times[NUM_CON_TIMES];	// realtime time the line was generated
 										// for transparent notify lines
 
 int         con_vislines;
-int         con_notifylines;			// scan lines to clear for notify
-
-										// lines
+int         con_notifylines;			// scan lines to clear for notify lines
 
 qboolean    con_debuglog;
 
@@ -102,7 +96,7 @@ Con_ToggleConsole_f (void)
 	Key_ClearTyping ();
 
 	if (key_dest == key_console) {
-		if (cls.state == ca_connected)
+		if (cls.state == ca_active)
 			key_dest = key_game;
 	} else
 		key_dest = key_console;
@@ -119,7 +113,7 @@ Con_ToggleChat_f (void)
 	Key_ClearTyping ();
 
 	if (key_dest == key_console) {
-		if (cls.state == ca_connected)
+		if (cls.state == ca_active)
 			key_dest = key_game;
 	} else
 		key_dest = key_console;
@@ -160,7 +154,7 @@ Con_ClearNotify (void)
 void
 Con_MessageMode_f (void)
 {
-	if (cls.state != ca_connected)
+	if (cls.state != ca_active)
 		return;
 	chat_team = false;
 	key_dest = key_message;
@@ -172,7 +166,7 @@ Con_MessageMode_f (void)
 void
 Con_MessageMode2_f (void)
 {
-	if (cls.state != ca_connected)
+	if (cls.state != ca_active)
 		return;
 	chat_team = true;
 	key_dest = key_message;
@@ -294,8 +288,8 @@ Con_Linefeed (void)
 	con->current++;
 	if (con->numlines < con_totallines)
 		con->numlines++;
-	memset (&con->text[(con->current % con_totallines) * con_linewidth]
-			, ' ', con_linewidth);
+	memset (&con->text[(con->current % con_totallines) * con_linewidth],
+			' ', con_linewidth);
 }
 
 /*
@@ -312,6 +306,16 @@ Con_Print (char *txt)
 	int         c, l;
 	static int  cr;
 	int         mask;
+
+	// echo to debugging console
+	Sys_Printf ("%s", txt);
+
+	// log all messages to file
+	if (con_debuglog)
+		Sys_DebugLog (va ("%s/qconsole.log", com_gamedir), "%s", txt);
+
+	if (!con_initialized)
+		return;
 
 	if (txt[0] == 1 || txt[0] == 2) {
 		mask = 128;						// go to colored text
@@ -347,21 +351,21 @@ Con_Print (char *txt)
 
 		switch (c) {
 			case '\n':
-			con->x = 0;
-			break;
+				con->x = 0;
+				break;
 
 			case '\r':
-			con->x = 0;
-			cr = 1;
-			break;
+				con->x = 0;
+				cr = 1;
+				break;
 
 			default:					// display character and advance
-			y = con->current % con_totallines;
-			con->text[y * con_linewidth + con->x] = c | mask | con_ormask;
-			con->x++;
-			if (con->x >= con_linewidth)
-				con->x = 0;
-			break;
+				y = con->current % con_totallines;
+				con->text[y * con_linewidth + con->x] = c | mask | con_ormask;
+				con->x++;
+				if (con->x >= con_linewidth)
+					con->x = 0;
+				break;
 		}
 
 	}
@@ -384,16 +388,6 @@ Con_Printf (char *fmt, ...)
 	va_start (argptr, fmt);
 	vsnprintf (msg, sizeof (msg), fmt, argptr);
 	va_end (argptr);
-
-	// also echo to debugging console
-	Sys_Printf ("%s", msg);				// also echo to debugging console
-
-	// log all messages to file
-	if (con_debuglog)
-		Sys_DebugLog (va ("%s/qconsole.log", com_gamedir), "%s", msg);
-
-	if (!con_initialized)
-		return;
 
 	// write it to the scrollable buffer
 	Con_Print (msg);
@@ -418,7 +412,7 @@ Con_DPrintf (char *fmt, ...)
 	vsnprintf (msg, sizeof (msg), fmt, argptr);
 	va_end (argptr);
 
-	Con_Printf ("%s", msg);
+	Con_Print (msg);
 }
 
 /*
@@ -439,7 +433,7 @@ Con_DrawInput (void)
 	char       *text;
 	char        temp[MAXCMDLINE];
 
-	if (key_dest != key_console && cls.state == ca_connected)
+	if (key_dest != key_console && cls.state == ca_active)
 		return;							// don't draw anything (always draw
 	// if not active)
 
@@ -584,3 +578,4 @@ Con_DrawConsole (int lines)
 // draw the input prompt, user text, and cursor if desired
 	Con_DrawInput ();
 }
+

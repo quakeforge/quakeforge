@@ -65,7 +65,6 @@ cvar_t     *con_notifytime;				// seconds
 
 #define	NUM_CON_TIMES 4
 float       con_times[NUM_CON_TIMES];	// realtime time the line was generated
-
 										// for transparent notify lines
 
 int         con_vislines;
