@@ -480,11 +480,10 @@ Cmd_TokenizeString (const char *text)
 	static char *argv_buf;
 	static size_t argv_buf_size;
 	int         argv_idx;
-	size_t         len = strlen (text) + 1;
 
-	if (len > argv_buf_size) {
-		argv_buf_size = (len + 1023) & ~1023;
-		argv_buf = realloc (argv_buf, argv_buf_size);
+	if (!argv_buf_size) {
+		argv_buf_size = 1024;	//FIXME dynamic
+		argv_buf = malloc (argv_buf_size);
 		if (!argv_buf)
 			Sys_Error ("Cmd_TokenizeString: could not allocate %d bytes",
 					   argv_buf_size);
@@ -518,9 +517,15 @@ Cmd_TokenizeString (const char *text)
 			return;
 
 		if (cmd_argc < MAX_ARGS) {
+			size_t         len = strlen (com_token) + 1;
+
+			if (argv_idx + len > argv_buf_size) {
+				Sys_Printf ("Cmd_TokenizeString: overflow\n");
+				return;
+			}
 			cmd_argv[cmd_argc] = argv_buf + argv_idx;
 			strcpy (cmd_argv[cmd_argc], com_token);
-			argv_idx += strlen (com_token) + 1;
+			argv_idx += len;
 
 			cmd_argc++;
 		}
