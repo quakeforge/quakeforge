@@ -469,6 +469,7 @@ plitem_t *
 PL_GetPropertyList (const char *string)
 {
 	pldata_t	*pl = calloc (1, sizeof (pldata_t));
+	plitem_t	*newpl = NULL;
 
 	pl->ptr = string;
 	pl->pos = 0;
@@ -476,5 +477,13 @@ PL_GetPropertyList (const char *string)
 	pl->error = NULL;
 	pl->line = 1;
 
-	return PL_ParsePropertyListItem (pl);
+	if (newpl = PL_ParsePropertyListItem (pl)) {
+		free (pl);
+		return newpl;
+	} else {
+		if (pl && pl->error && pl->error[0])
+			Sys_Error ("%s\n", pl->error);
+		free (pl);
+		return NULL;
+	}
 }
