@@ -113,7 +113,6 @@ static const particle_effect_t prot_to_rend[]={
 	PE_UNKNOWN,				// TE_BEAM
 };
 
-
 void
 CL_TEnts_Init (void)
 {

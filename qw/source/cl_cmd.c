@@ -115,7 +115,7 @@ Cmd_ForwardToServer_f (void)
 void
 cl_Cmd_Init (void)
 {
-// register our commands
+	// register our commands
 	Cmd_AddCommand ("cmd", Cmd_ForwardToServer_f, "Send a command to the server.\n"
 					"Commands:\n"
 					"download - Same as the command.\n"
