@@ -1,8 +1,6 @@
 ## Process this file with automake to produce Makefile.in
 AUTOMAKE_OPTIONS= foreign
 
-#FIXME should qf data be installed somewhere other than id1 that gets
-#searched after everything else?
 pkgdatadir=@sharepath@/QF
 
 QFCC_DEP=$(top_builddir)/tools/qfcc/source/qfcc$(EXEEXT)

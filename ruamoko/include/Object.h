@@ -62,7 +62,7 @@ typedef enum {
 @extern BOOL (id object) object_is_instance;
 @extern BOOL (id object) object_is_meta_class;
 
-@protocol Object // FIXME -- qfcc doesn't like calling this protocol "Object"!
+@protocol Object
 - (Class) class;
 - (Class) superclass;
 - (BOOL) isEqual: (id)anObject;

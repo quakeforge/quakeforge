@@ -49,7 +49,7 @@
 
 - (void) dealloc
 {
-	[((ListNode) self).data release]; // FIXME -- acrobatics shouldn't be needed
+	[data release];
 	[super dealloc];
 }
 

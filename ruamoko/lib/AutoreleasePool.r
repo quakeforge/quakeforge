@@ -48,10 +48,10 @@
 	local integer	i;
 	local id		tmp;
 
-	for (i = 0; i < ((AutoreleasePool) self).count; i++)
-		[((AutoreleasePool) self).array[i] release];	// FIXME
+	for (i = 0; i < count; i++)
+		[array[i] release];
 
-	obj_free (((AutoreleasePool) self).array);	// FIXME
+	obj_free (array);
 
 	/*
 		This may be wrong.
