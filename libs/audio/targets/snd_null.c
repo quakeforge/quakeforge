@@ -34,9 +34,9 @@ static const char rcsid[] =
 # include "config.h"
 #endif
 
-#include "QF/cvar.h"
 #include "QF/plugin.h"
 #include "QF/sound.h"
+#include "QF/sys.h"
 
 static plugin_t				plugin_info;
 static plugin_data_t		plugin_info_data;
@@ -46,8 +46,15 @@ static general_funcs_t		plugin_info_general_funcs;
 static snd_output_data_t	plugin_info_snd_output_data;
 static snd_output_funcs_t	plugin_info_snd_output_funcs;
 
-static void
+static qboolean
 SNDDMA_Init (void)
+{
+	Sys_Printf ("SNDDMA_Init: null sound driver always fails :)\n");
+	return false;
+}
+
+static void
+SNDDMA_Init_Cvars (void)
 {
 }
 
@@ -97,9 +104,11 @@ PLUGIN_INFO(snd_output, null) (void) {
 	plugin_info_funcs.input = NULL;
 	plugin_info_funcs.snd_output = &plugin_info_snd_output_funcs;
 
-	plugin_info_general_funcs.p_Init = SNDDMA_Init;
-	plugin_info_general_funcs.p_Shutdown = SNDDMA_Shutdown;
+	plugin_info_general_funcs.p_Init = SNDDMA_Init_Cvars;
+	plugin_info_general_funcs.p_Shutdown = NULL;
 
+	plugin_info_snd_output_funcs.pS_O_Init = SNDDMA_Init;
+	plugin_info_snd_output_funcs.pS_O_Shutdown = SNDDMA_Shutdown;
 	plugin_info_snd_output_funcs.pS_O_BlockSound = SNDDMA_BlockSound;
 	plugin_info_snd_output_funcs.pS_O_GetDMAPos = SNDDMA_GetDMAPos;
 	plugin_info_snd_output_funcs.pS_O_Submit = SNDDMA_Submit;
