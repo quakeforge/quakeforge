@@ -1,3 +1,9 @@
+quakeforge (0.5.4-2) frozen unstable; urgency=high
+
+  * compile against libvorbis0a instead of libvorbis0 (oops)
+
+ -- Bill Currie <bill@taniwha.org>  Mon, 21 Jul 2003 23:09:00 -0600
+
 quakeforge (0.5.4-1) frozen unstable; urgency=high
 
   * New release. fixes exploitable buffer overflow in qw-server
