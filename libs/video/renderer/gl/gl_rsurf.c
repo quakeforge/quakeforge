@@ -145,10 +145,10 @@ R_RenderFullbrights (void)
 }
 
 inline void
-R_RenderBrushPoly (msurface_t *fa)
+R_RenderBrushPoly (msurface_t *fa, texture_t *tex)
 {
 	float      *v;
-	int i;
+	int			i;
 
 	c_brush_polys++;
 
@@ -156,14 +156,20 @@ R_RenderBrushPoly (msurface_t *fa)
 	v = fa->polys->verts[0];
 
 	if (gl_mtex_active) {
-		for (i = 0; i < fa->polys->numverts; i++, v += VERTEXSIZE) {
-			qglMultiTexCoord2fv (gl_mtex_enum + 0, &v[3]);
-			qglMultiTexCoord2fv (gl_mtex_enum + 1, &v[5]);
-
-			if (gl_mtex_fullbright)
+		if (tex->gl_fb_texturenum && gl_mtex_fullbright
+			&& gl_fb_bmodels->int_val) {
+			for (i = 0; i < fa->polys->numverts; i++, v += VERTEXSIZE) {
+				qglMultiTexCoord2fv (gl_mtex_enum + 0, &v[3]);
+				qglMultiTexCoord2fv (gl_mtex_enum + 1, &v[5]);
 				qglMultiTexCoord2fv (gl_mtex_enum + 2, &v[3]);
-
-			qfglVertex3fv (v);
+				qfglVertex3fv (v);
+			}
+		} else {
+			for (i = 0; i < fa->polys->numverts; i++, v += VERTEXSIZE) {
+				qglMultiTexCoord2fv (gl_mtex_enum + 0, &v[3]);
+				qglMultiTexCoord2fv (gl_mtex_enum + 1, &v[5]);
+				qfglVertex3fv (v);
+			}
 		}
 	} else {
 		for (i = 0; i < fa->polys->numverts; i++, v += VERTEXSIZE) {
@@ -260,25 +266,12 @@ DrawTextureChains (void)
 	msurface_t *s;
 	texture_t  *tex;
 
-	if (gl_mtex_active) {	
-		// Fullbrights
-		if (gl_mtex_fullbright) {
-			qglActiveTexture (gl_mtex_enum + 2);
-            qfglTexEnvf (GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_DECAL);
-		}
-
+	if (gl_mtex_active) {
 		// Lightmaps
-		qglActiveTexture (gl_mtex_enum +1);
-		if (gl_combine_capable && gl_doublebright->int_val) {
-			qfglTexEnvf (GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_COMBINE_ARB);
-			qfglTexEnvf (GL_TEXTURE_ENV, GL_COMBINE_RGB_ARB, GL_MODULATE);
-			qfglTexEnvf (GL_TEXTURE_ENV, GL_RGB_SCALE_ARB, 2.0);
-		} else {
-			qfglTexEnvf (GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
-		}
-		qfglEnable (GL_TEXTURE_2D); // I hope this can go here...
+		qglActiveTexture (gl_mtex_enum + 1);
+		qfglEnable (GL_TEXTURE_2D);
 
-		// Base texture
+		// Base Texture
 		qglActiveTexture (gl_mtex_enum + 0);
 		qfglTexEnvf (GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_REPLACE);
 	} else {
@@ -290,36 +283,36 @@ DrawTextureChains (void)
 		if (!tex)
 			continue;
 
-		if (gl_mtex_active)
-			qglActiveTexture (gl_mtex_enum + 0);
-
-		qfglBindTexture (GL_TEXTURE_2D, tex->gl_texturenum);
-
-		if (gl_mtex_fullbright && gl_fb_bmodels->int_val
-			&& tex->gl_fb_texturenum) {
-			qglActiveTexture (gl_mtex_enum + 2);
-			qfglBindTexture (GL_TEXTURE_2D, tex->gl_fb_texturenum);
-			qfglEnable (GL_TEXTURE_2D);
-		}
-
 		if (gl_mtex_active) {
+			qfglBindTexture (GL_TEXTURE_2D, tex->gl_texturenum);
+
+			if (tex->gl_fb_texturenum && gl_mtex_fullbright
+				&& gl_fb_bmodels->int_val) {
+				qglActiveTexture (gl_mtex_enum + 2);
+				qfglEnable (GL_TEXTURE_2D);
+				qfglBindTexture (GL_TEXTURE_2D, tex->gl_fb_texturenum);
+			}
+
 			qglActiveTexture (gl_mtex_enum + 1);
 
 			for (s = tex->texturechain; s; s = s->texturechain) {
-				qfglBindTexture (GL_TEXTURE_2D, lightmap_textures + 
+				qfglBindTexture (GL_TEXTURE_2D, lightmap_textures +
 								 s->lightmaptexturenum);
 
-				R_RenderBrushPoly (s);
+				R_RenderBrushPoly (s, tex);
 			}
-		} else {
-			for (s = tex->texturechain; s; s = s->texturechain)
-				R_RenderBrushPoly (s);
-		}
 
-		if (gl_mtex_fullbright && gl_fb_bmodels->int_val
-			&& tex->gl_fb_texturenum) {
-			qglActiveTexture (gl_mtex_enum + 2);
-			qfglDisable (GL_TEXTURE_2D);
+			if (tex->gl_fb_texturenum && gl_mtex_fullbright
+				&& gl_fb_bmodels->int_val) {
+				qglActiveTexture (gl_mtex_enum + 2);
+				qfglDisable (GL_TEXTURE_2D);
+			}
+			qglActiveTexture (gl_mtex_enum + 0);
+		} else {
+			qfglBindTexture (GL_TEXTURE_2D, tex->gl_texturenum);
+
+			for (s = tex->texturechain; s; s = s->texturechain)
+				R_RenderBrushPoly (s, tex);
 		}
 
 		tex->texturechain = NULL;
@@ -336,7 +329,7 @@ DrawTextureChains (void)
 		qglActiveTexture (gl_mtex_enum + 1);
 		qfglDisable (GL_TEXTURE_2D);
 
-		// Rest mode for default TMU
+		// Reset mode for default TMU
 		qglActiveTexture (gl_mtex_enum + 0);
 		qfglTexEnvf (GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
 	}
@@ -429,24 +422,6 @@ R_DrawBrushModel (entity_t *e)
 		R_CalcLightmaps ();
 		psurf = &model->surfaces[model->firstmodelsurface];
 
-		// Fullbrights
-		if (gl_mtex_fullbright) {
-			qglActiveTexture (gl_mtex_enum + 2);
-			qfglTexEnvf (GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_DECAL);
-		}
-
-		// Lightmaps
-		qglActiveTexture (gl_mtex_enum + 1);
-		if (gl_doublebright->int_val && gl_combine_capable) {
-			qfglTexEnvf (GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_COMBINE_ARB);
-			qfglTexEnvf (GL_TEXTURE_ENV, GL_COMBINE_RGB_ARB, GL_MODULATE);
-			qfglTexEnvf (GL_TEXTURE_ENV, GL_RGB_SCALE_ARB, 2.0);
-		} else {
-			qfglTexEnvf (GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
-		}
-		qfglEnable (GL_TEXTURE_2D);
-
-		// Regular texture (DON'T GL_REPLACE!)
 		qglActiveTexture (gl_mtex_enum + 0);
 	} else {
 		psurf = &model->surfaces[model->firstmodelsurface];
@@ -488,38 +463,45 @@ R_DrawBrushModel (entity_t *e)
 				else
 					tex = R_TextureAnimation (psurf);
 
-				qfglBindTexture (GL_TEXTURE_2D, tex->gl_texturenum);
-
 				qfglColor4fv (color);
 
-				if (gl_fb_bmodels->int_val && gl_mtex_fullbright
-					&& tex->gl_fb_texturenum > 0) {
-					qglActiveTexture (gl_mtex_enum + 2);
-					qfglBindTexture (GL_TEXTURE_2D, tex->gl_fb_texturenum);
-					qfglEnable (GL_TEXTURE_2D);
-				}					
-
 				if (gl_mtex_active) {
+					if (tex->gl_fb_texturenum && gl_fb_bmodels->int_val
+						&& gl_mtex_fullbright) {
+						qglActiveTexture (gl_mtex_enum + 2);
+						qfglEnable (GL_TEXTURE_2D);
+						qfglBindTexture (GL_TEXTURE_2D, tex->gl_fb_texturenum);
+					}
+
 					qglActiveTexture (gl_mtex_enum + 1);
+					qfglEnable (GL_TEXTURE_2D);
 					qfglBindTexture (GL_TEXTURE_2D, lightmap_textures + 
 									 psurf->lightmaptexturenum);
+
+					qglActiveTexture (gl_mtex_enum + 0);
+					qfglBindTexture (GL_TEXTURE_2D, tex->gl_texturenum);
+				} else {
+					qfglBindTexture (GL_TEXTURE_2D, tex->gl_texturenum);
 				}
 
-				R_RenderBrushPoly (psurf);
-
-				if (gl_fb_bmodels->int_val && gl_mtex_fullbright
-					&& tex->gl_fb_texturenum > 0) {
-					qglActiveTexture (gl_mtex_enum + 2);
-					qfglDisable (GL_TEXTURE_2D);
-				}
+				R_RenderBrushPoly (psurf, tex);
 
 				if (gl_mtex_active) {
+					if (tex->gl_fb_texturenum && gl_fb_bmodels->int_val
+						&& gl_mtex_fullbright) {
+						qglActiveTexture (gl_mtex_enum + 2);
+						qfglDisable (GL_TEXTURE_2D);
+					}
+
+					qglActiveTexture (gl_mtex_enum + 1);
+					qfglDisable (GL_TEXTURE_2D);
+
 					qglActiveTexture (gl_mtex_enum + 0);
 				}
 
 				qfglColor3ubv (color_white);
 	
-				if (tex->gl_fb_texturenum > 0 && gl_fb_bmodels->int_val
+				if (tex->gl_fb_texturenum && gl_fb_bmodels->int_val
 					&& !gl_mtex_fullbright) {
 					psurf->polys->fb_chain =
 						fullbright_polys[tex->gl_fb_texturenum];
@@ -533,7 +515,9 @@ R_DrawBrushModel (entity_t *e)
 		// Go away, lightmap
 		qglActiveTexture (gl_mtex_enum + 1);
 		qfglDisable (GL_TEXTURE_2D);
+
 		qglActiveTexture (gl_mtex_enum + 0);
+		qfglTexEnvf (GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
 	} else {
 		R_CalcAndBlendLightmaps ();
 	}
@@ -597,7 +581,7 @@ visit_node (mnode_t *node, int side)
 					tex = surf->texinfo->texture;
 				else
 					tex = R_TextureAnimation (surf);
-				if (tex->gl_fb_texturenum > 0) {
+				if (tex->gl_fb_texturenum) {
 					surf->polys->fb_chain = fullbright_polys[tex->gl_fb_texturenum];
 					fullbright_polys[tex->gl_fb_texturenum] = surf->polys;
 				}

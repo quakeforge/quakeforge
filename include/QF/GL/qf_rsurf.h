@@ -37,7 +37,7 @@ void GL_BuildLightmaps (struct model_s **models, int num_models);
 
 void R_DrawBrushModel (struct entity_s *e);
 void R_DrawWorld (void);
-void R_RenderBrushPoly (msurface_t *fa);
+inline void R_RenderBrushPoly (msurface_t *fa, texture_t *tex);
 
 void EmitWaterPolys (msurface_t *fa);
 

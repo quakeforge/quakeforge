@@ -729,14 +729,14 @@ R_DrawAliasModel (entity_t *e)
 			qfglBindTexture (GL_TEXTURE_2D, texture);
 
 			qglActiveTexture (gl_mtex_enum + 1);
-			qfglBindTexture (GL_TEXTURE_2D, fb_texture);
-			qfglTexEnvf (GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_DECAL);
 			qfglEnable (GL_TEXTURE_2D);
+			qfglTexEnvf (GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_DECAL);
+			qfglBindTexture (GL_TEXTURE_2D, fb_texture);
 
 			// do the heavy lifting
 			if (vo->tex_coord)
 				GL_DrawAliasFrameTriMulti (vo);
-			else 
+			else
 				GL_DrawAliasFrameMulti (vo);
 
 			// restore the settings
@@ -775,8 +775,9 @@ R_DrawAliasModel (entity_t *e)
 		qfglDepthMask (GL_TRUE);
 		qfglEnable (GL_TEXTURE_2D);
 		qfglPopMatrix ();
-	} else if (modelalpha < 1.0)
+	} else if (modelalpha < 1.0) {
 		qfglDepthMask (GL_TRUE);
+	}
 
 	Cache_Release (&e->model->cache);
 }

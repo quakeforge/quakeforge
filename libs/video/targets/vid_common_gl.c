@@ -416,7 +416,6 @@ GL_Init_Common (void)
 
 	qfglEnable (GL_BLEND);
 	qfglBlendFunc (GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-
 	qfglTexEnvf (GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
 
 	CheckMultiTextureExtensions ();
@@ -424,6 +423,31 @@ GL_Init_Common (void)
 	CheckTruFormExtensions ();
 	GL_Common_Init_Cvars ();
 	CheckVertexArraySize ();
+
+	if (gl_mtex_active) {
+		// Fullbrights
+		if (gl_mtex_fullbright) {
+			qglActiveTexture (gl_mtex_enum + 2);
+			qfglEnable (GL_TEXTURE_2D);
+			qfglTexEnvf (GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_DECAL);
+			qfglDisable (GL_TEXTURE_2D);
+		}
+
+		// Lightmaps
+		qglActiveTexture (gl_mtex_enum + 1);
+		qfglEnable (GL_TEXTURE_2D);
+		if (gl_combine_capable && gl_doublebright->int_val) {
+			qfglTexEnvf (GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_COMBINE_ARB);
+			qfglTexEnvf (GL_TEXTURE_ENV, GL_COMBINE_RGB_ARB, GL_MODULATE);
+			qfglTexEnvf (GL_TEXTURE_ENV, GL_RGB_SCALE_ARB, 2.0);
+		} else {
+			qfglTexEnvf (GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
+		}
+		qfglDisable (GL_TEXTURE_2D);
+
+		// Base Texture
+		qglActiveTexture (gl_mtex_enum + 0);
+	}
 }
 
 void

@@ -271,12 +271,28 @@ R_DrawEntitiesOnList (void)
 
 		R_DrawAliasModel (currententity);
 	}
+	qfglColor3ubv (color_white);
 	if (tess)
 		qfglDisable (GL_PN_TRIANGLES_ATI);
 	if (gl_affinemodels->int_val)
 		qfglHint (GL_PERSPECTIVE_CORRECTION_HINT, GL_DONT_CARE);
+	if (gl_mtex_active) { // FIXME: Ugly, but faster than cleaning up in every
+						  // R_DrawAliasModel()!
+		qfglColor4ubv (color_white);
+		qglActiveTexture (gl_mtex_enum + 1);
+		qfglEnable (GL_TEXTURE_2D);
+		if (gl_combine_capable && gl_doublebright->int_val) {
+			qfglTexEnvf (GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_COMBINE_ARB);
+			qfglTexEnvf (GL_TEXTURE_ENV, GL_COMBINE_RGB_ARB, GL_MODULATE);
+			qfglTexEnvf (GL_TEXTURE_ENV, GL_RGB_SCALE_ARB, 2.0);
+		} else {
+			qfglTexEnvf (GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
+		}
+		qfglDisable (GL_TEXTURE_2D);
 
-	qfglColor3ubv (color_white);
+		qglActiveTexture (gl_mtex_enum + 0);
+	}
+
 	qfglEnable (GL_ALPHA_TEST);
 	if (gl_va_capable)
 		qfglInterleavedArrays (GL_T2F_C4UB_V3F, 0, spriteVertexArray);
@@ -305,11 +321,28 @@ R_DrawViewModel (void)
 	qfglDepthRange (gldepthmin, gldepthmin + 0.3 * (gldepthmax - gldepthmin));
 	if (gl_affinemodels->int_val)
 		qfglHint (GL_PERSPECTIVE_CORRECTION_HINT, GL_NICEST);
+
 	R_DrawAliasModel (currententity);
+	qfglColor3ubv (color_white);
+	if (gl_mtex_active) { // FIXME: Ugly, but faster than cleaning up in every
+						  // R_DrawAliasModel()!
+		qfglColor4ubv (color_white);
+		qglActiveTexture (gl_mtex_enum + 1);
+		qfglEnable (GL_TEXTURE_2D);
+		if (gl_combine_capable && gl_doublebright->int_val) {
+			qfglTexEnvf (GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_COMBINE_ARB);
+			qfglTexEnvf (GL_TEXTURE_ENV, GL_COMBINE_RGB_ARB, GL_MODULATE);
+			qfglTexEnvf (GL_TEXTURE_ENV, GL_RGB_SCALE_ARB, 2.0);
+		} else {
+			qfglTexEnvf (GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
+		}
+		qfglDisable (GL_TEXTURE_2D);
+
+		qglActiveTexture (gl_mtex_enum + 0);
+	}
 	if (gl_affinemodels->int_val)
 		qfglHint (GL_PERSPECTIVE_CORRECTION_HINT, GL_DONT_CARE);
 	qfglDepthRange (gldepthmin, gldepthmax);
-	qfglColor3ubv (color_white);
 }
 
 static inline int
@@ -556,19 +589,22 @@ R_Mirror (void)
 	s = r_worldentity.model->textures[mirrortexturenum]->texturechain;
 	for (; s; s = s->texturechain) {
 		texture_t  *tex;
+
 		if (!s->texinfo->texture->anim_total)
 			tex = s->texinfo->texture;
 		else
 			tex = R_TextureAnimation (s);
 
-// FIXME: if this is needed, then include header for fullbright_polys
-//		if ( tex->gl_fb_texturenum > 0) {
+// FIXME: Needs to set the texture, the tmu, and include the header, and then
+//	clean up afterwards.
+//		if (tex->gl_fb_texturenum && gl_mtex_fullbright
+//			&& gl_fb_models->int_val) {
 //			s->polys->fb_chain = fullbright_polys[tex->gl_fb_texturenum];
 //			fullbright_polys[tex->gl_fb_texturenum] = s->polys;
 //		}
 
 		qfglBindTexture (GL_TEXTURE_2D, tex->gl_texturenum);
-		R_RenderBrushPoly (s);
+		R_RenderBrushPoly (s, tex);
 	}
 	r_worldentity.model->textures[mirrortexturenum]->texturechain = NULL;
 	qfglColor3ubv (color_white);
