@@ -41,8 +41,8 @@
 #include "QF/cvar.h"
 
 #include "host.h"
-#include "progdefs.h"
 #include "server.h"
+#include "progdefs.h" // must be after "server.h"
 #include "sv_progs.h"
 #include "world.h"
 
