@@ -143,6 +143,9 @@ extern	struct texture_s	*r_notexture_mip;
 
 extern entity_t r_worldentity;
 
+extern void (*r_viewsize_callback)(struct cvar_s *var);
+extern int r_viewsize;
+
 void R_Init (void);
 void R_Init_Cvars (void);
 void R_InitEfrags (void);

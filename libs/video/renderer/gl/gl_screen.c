@@ -74,7 +74,7 @@ static void
 SCR_CalcRefdef (void)
 {
 	float       size;
-	int         h;
+	int         h, lines;
 	qboolean    full = false;
 
 	scr_fullupdate = 0;					// force a background redraw
@@ -83,34 +83,25 @@ SCR_CalcRefdef (void)
 	// force the status bar to redraw
 	Sbar_Changed ();
 
-	// bound viewsize
-	Cvar_SetValue (scr_viewsize, bound (30, scr_viewsize->int_val, 120));
-
 	// bound field of view
 	Cvar_SetValue (scr_fov, bound (1, scr_fov->value, 170));
 
-	if (scr_viewsize->int_val >= 120)
-		sb_lines = 0;					// no status bar at all
-	else if (scr_viewsize->int_val >= 110)
-		sb_lines = 24;					// no inventory
-	else
-		sb_lines = 24 + 16 + 8;
-
-	if (scr_viewsize->int_val >= 100) {
+	if (r_viewsize >= 100) {
 		full = true;
 		size = 100.0;
 	} else {
-		size = scr_viewsize->int_val;
+		size = r_viewsize;
 	}
 	// intermission is always full screen
+	lines = r_lineadj;
 	if (r_force_fullscreen /* FIXME: better test */) {
 		full = true;
 		size = 100.0;
-		sb_lines = 0;
+		lines = 0;
 	}
 	size /= 100.0;
 
-	h = vid.height - r_lineadj;
+	h = vid.height - lines;
 
 	r_refdef.vrect.width = vid.width * size + 0.5;
 	if (r_refdef.vrect.width < 96) {
@@ -223,11 +214,11 @@ SCR_TileClear (void)
 {
 	if (r_refdef.vrect.x > 0) {
 		// left
-		Draw_TileClear (0, 0, r_refdef.vrect.x, vid.height - sb_lines);
+		Draw_TileClear (0, 0, r_refdef.vrect.x, vid.height - r_lineadj);
 		// right
 		Draw_TileClear (r_refdef.vrect.x + r_refdef.vrect.width, 0,
 						vid.width - r_refdef.vrect.x + r_refdef.vrect.width,
-						vid.height - sb_lines);
+						vid.height - r_lineadj);
 	}
 	if (r_refdef.vrect.y > 0) {
 		// top
@@ -238,12 +229,10 @@ SCR_TileClear (void)
 		Draw_TileClear (r_refdef.vrect.x,
 						r_refdef.vrect.y + r_refdef.vrect.height,
 						r_refdef.vrect.width,
-						vid.height - sb_lines -
+						vid.height - r_lineadj -
 						(r_refdef.vrect.height + r_refdef.vrect.y));
 	}
 }
-
-int		oldviewsize = 0;
 
 /*
 	SCR_UpdateScreen
@@ -273,11 +262,6 @@ SCR_UpdateScreen (double realtime, SCR_Func *scr_funcs)
 
 	if (!scr_initialized)
 		return;							// not initialized yet
-
-	if (oldviewsize != scr_viewsize->int_val) {
-		oldviewsize = scr_viewsize->int_val;
-		vid.recalc_refdef = true;
-	}
 
 	GL_BeginRendering (&glx, &gly, &glwidth, &glheight);
 

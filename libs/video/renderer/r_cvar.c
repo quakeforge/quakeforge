@@ -140,6 +140,9 @@ cvar_t     *scr_showram;
 cvar_t     *scr_showturtle;
 cvar_t     *scr_viewsize;
 
+void      (*r_viewsize_callback)(cvar_t *var);
+int         r_viewsize;
+
 float		cl_wateralpha;
 
 static void
@@ -212,6 +215,19 @@ scr_ffov_f (cvar_t *var)
 		Cvar_Set (scr_fviews, "5");
 	else
 		Cvar_Set (scr_fviews, "6");
+}
+
+static void
+viewsize_f (cvar_t *var)
+{
+	if (var->int_val < 32 || var->int_val > 120) {
+		Cvar_SetValue (var, bound (30, var->int_val, 120));
+	} else {
+		vid.recalc_refdef = true;
+		r_viewsize = bound (0, var->int_val, 100);
+		if (r_viewsize_callback)
+			r_viewsize_callback (var);
+	}
 }
 
 void
@@ -434,6 +450,6 @@ R_Init_Cvars (void)
 							"Show RAM icon if game is running low on memory");
 	scr_showturtle = Cvar_Get ("showturtle", "0", CVAR_NONE, NULL,
 							   "Show a turtle icon if your fps is below 10");
-	scr_viewsize = Cvar_Get ("viewsize", "100", CVAR_ARCHIVE, NULL,
+	scr_viewsize = Cvar_Get ("viewsize", "100", CVAR_ARCHIVE, viewsize_f,
 							 "Set the screen size 30 minimum, 120 maximum");
 }

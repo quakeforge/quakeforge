@@ -104,7 +104,6 @@ int         scr_copyeverything;
 float       scr_con_current;
 float       scr_conlines;				// lines of console to display
 
-int         oldscreensize;
 float       oldfov;
 int         oldsbar;
 
@@ -328,7 +327,7 @@ SCR_DrawFPS (void)
 	}
 
 	x = hudswap ? vid.width - ((strlen (st) * 8) + i) : i;
-	y = vid.height - sb_lines - 8;
+	y = vid.height - r_lineadj - 8;
 	Draw_String (x, y, st);
 }
 
@@ -364,7 +363,7 @@ SCR_DrawTime (void)
 
 	// Print it at far left/right of screen
 	x = hudswap ? (vid.width - ((strlen (st) * 8) + 8)) : 8;
-	y = vid.height - (sb_lines + 8);
+	y = vid.height - (r_lineadj + 8);
 	Draw_String (x, y, st);
 }
 
@@ -398,7 +397,7 @@ SCR_SetUpToDrawConsole (void)
 	else
 		scr_conlines = 0;				// none visible
 
-	if (scr_con_current >= vid.height - sb_lines)
+	if (scr_con_current >= vid.height - r_lineadj)
 		scr_copyeverything = 1;
 	if (scr_conlines < scr_con_current) {
 		scr_con_current -= scr_conspeed->value * r_frametime;
@@ -410,7 +409,7 @@ SCR_SetUpToDrawConsole (void)
 		if (scr_conlines < scr_con_current)
 			scr_con_current = scr_conlines;
 	}
-	if (scr_con_current >= vid.height - sb_lines)
+	if (scr_con_current >= vid.height - r_lineadj)
 		scr_copyeverything = 1;
 
 	if (clearconsole++ < vid.numpages)

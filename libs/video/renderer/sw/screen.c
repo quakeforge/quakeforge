@@ -68,7 +68,7 @@ SCR_CalcRefdef (void)
 {
 	vrect_t     vrect;
 	float       size;
-	int         h;
+	int         h, lines;
 	qboolean    full = false;
 
 	scr_fullupdate = 0;					// force a background redraw
@@ -77,34 +77,25 @@ SCR_CalcRefdef (void)
 	// force the status bar to redraw
 	Sbar_Changed ();
 
-	// bound viewsize
-	Cvar_SetValue (scr_viewsize, bound (30, scr_viewsize->int_val, 120));
-
 	// bound field of view
 	Cvar_SetValue (scr_fov, bound (1, scr_fov->value, 170));
 
-	if (scr_viewsize->int_val >= 120)
-		sb_lines = 0;					// no status bar at all
-	else if (scr_viewsize->int_val >= 110)
-		sb_lines = 24;					// no inventory
-	else
-		sb_lines = 24 + 16 + 8;
-
-	if (scr_viewsize->int_val >= 100) {
+	if (r_viewsize >= 100) {
 		full = true;
 		size = 100.0;
 	} else {
-		size = scr_viewsize->int_val;
+		size = r_viewsize;
 	}
 	// intermission is always full screen
+	lines = r_lineadj;
 	if (r_force_fullscreen /* FIXME: better test */) {
 		full = true;
 		size = 100.0;
-		sb_lines = 0;
+		lines = 0;
 	}
 	size /= 100.0;
 
-	h = vid.height - r_lineadj;
+	h = vid.height - lines;
 
 	r_refdef.vrect.width = vid.width * size + 0.5;
 	if (r_refdef.vrect.width < 96) {
@@ -278,7 +269,6 @@ SCR_ScreenShot_f (void)
 void
 SCR_UpdateScreen (double realtime, SCR_Func *scr_funcs)
 {
-	static int  oldviewsize;
 	vrect_t     vrect;
 
 	if (scr_skipupdate || block_drawing)
@@ -292,18 +282,8 @@ SCR_UpdateScreen (double realtime, SCR_Func *scr_funcs)
 	if (!scr_initialized)
 		return;							// not initialized yet
 
-	if (oldviewsize != scr_viewsize->int_val) {
-		oldviewsize = scr_viewsize->int_val;
-		vid.recalc_refdef = true;
-	}
-
 	if (oldfov != scr_fov->value) {		// determine size of refresh window
 		oldfov = scr_fov->value;
-		vid.recalc_refdef = true;
-	}
-
-	if (oldscreensize != scr_viewsize->int_val) {
-		oldscreensize = scr_viewsize->int_val;
 		vid.recalc_refdef = true;
 	}
 
@@ -366,7 +346,7 @@ SCR_UpdateScreen (double realtime, SCR_Func *scr_funcs)
 		vrect.x = 0;
 		vrect.y = 0;
 		vrect.width = vid.width;
-		vrect.height = vid.height - sb_lines;
+		vrect.height = vid.height - r_lineadj;
 		vrect.pnext = 0;
 
 		VID_Update (&vrect);

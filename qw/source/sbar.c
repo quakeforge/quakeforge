@@ -91,9 +91,38 @@ static qboolean largegame = false;
 cvar_t     *cl_showscoresuid;
 cvar_t     *fs_fraglog;
 cvar_t     *cl_fraglog;
-
+cvar_t     *cl_sbar;
+cvar_t     *cl_sbar_separator;
 
 static void (*Sbar_Draw_DMO_func) (int l, int y, int skip);
+
+static void
+calc_sb_lines (cvar_t *var)
+{
+	if (var->int_val >= 120)
+		sb_lines = 0;
+	else if (var->int_val >= 110)
+		sb_lines = 24;
+	else
+		sb_lines = 24 + 16 + 8;
+}
+
+static void
+cl_sbar_f (cvar_t *var)
+{
+	vid.recalc_refdef = true;
+	if (scr_viewsize)
+		calc_sb_lines (scr_viewsize);
+	r_lineadj = var->int_val ? sb_lines : 0;
+}
+
+static void
+viewsize_f (cvar_t *var)
+{
+	calc_sb_lines (var);
+	if (cl_sbar)
+		r_lineadj = cl_sbar->int_val ? sb_lines : 0;
+}
 
 
 /*
@@ -248,6 +277,8 @@ Sbar_Init (void)
 	sb_ibar = Draw_PicFromWad ("ibar");
 	sb_scorebar = Draw_PicFromWad ("scorebar");
 
+	r_viewsize_callback = viewsize_f;
+
 	cl_showscoresuid = Cvar_Get ("cl_showscoresuid", "0", CVAR_NONE,
 								 Sbar_DMO_Init_f, "Set to 1 to show uid "
 								 "instead of ping. Set to 2 to show both.");
@@ -256,6 +287,10 @@ Sbar_Init (void)
 	cl_fraglog = Cvar_Get ("cl_fraglog", "0", CVAR_ARCHIVE, NULL,
 						   "Automatic fraglogging, non-zero value will switch "
 						   "it on.");
+	cl_sbar = Cvar_Get ("cl_sbar", "0", CVAR_ARCHIVE, cl_sbar_f,
+						"status bar mode");
+	cl_sbar_separator = Cvar_Get ("cl_sbar_separator", "0", CVAR_ARCHIVE, NULL,
+								  "turns on status bar separator");
 }
 
 // drawing routines are reletive to the status bar location

@@ -90,6 +90,37 @@ qpic_t     *hsb_items[2];			// MED 01/04/97 added hipnotic items array
 qboolean    headsup;
 qboolean    sbar_centered;
 
+cvar_t     *cl_sbar;
+
+static void
+calc_sb_lines (cvar_t *var)
+{
+	if (var->int_val >= 120)
+		sb_lines = 0;
+	else if (var->int_val >= 110)
+		sb_lines = 24;
+	else
+		sb_lines = 24 + 16 + 8;
+}
+
+static void
+cl_sbar_f (cvar_t *var)
+{
+	vid.recalc_refdef = true;
+	if (scr_viewsize)
+		calc_sb_lines (scr_viewsize);
+	r_lineadj = var->int_val ? sb_lines : 0;
+}
+
+static void
+viewsize_f (cvar_t *var)
+{
+	calc_sb_lines (var);
+	if (cl_sbar)
+		r_lineadj = cl_sbar->int_val ? sb_lines : 0;
+}
+
+
 static int
 Sbar_ColorForMap (int m)
 {
@@ -1198,4 +1229,8 @@ Sbar_Init (void)
 		rsb_ammo[1] = Draw_PicFromWad ("r_ammomulti");
 		rsb_ammo[2] = Draw_PicFromWad ("r_ammoplasma");
 	}
+
+	r_viewsize_callback = viewsize_f;
+	cl_sbar = Cvar_Get ("cl_sbar", "0", CVAR_ARCHIVE, cl_sbar_f,
+						"status bar mode");
 }
