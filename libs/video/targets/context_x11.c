@@ -536,11 +536,9 @@ X11_GrabKeyboardBool(qboolean yes)
 }
 
 void
-X11_GrabKeyboard (void)
+X11_UngrabKeyboard (void)
 {
-	XGrabKeyboard (x_disp, x_win, 1, GrabModeAsync, GrabModeAsync,
-				   CurrentTime);
-	XSetInputFocus (x_disp, x_win, RevertToPointerRoot, CurrentTime);
+	XUngrabKeyboard (x_disp, CurrentTime);
 }
 
 void
@@ -561,16 +559,8 @@ X11_GrabMouseBool (qboolean yes)
 
 	XUngrabPointer (x_disp, CurrentTime);
 	is_grabbed = false;
-	XWarpPointer (x_disp, x_win, x_win,
-				  0, 0, 0, 0,
-				  vid.width / 2, vid.height / 2);
-}
-
-void
-X11_GrabMouse(void)
-{
-	XGrabPointer (x_disp, x_win, True, MOUSE_MASK, GrabModeAsync,
-				  GrabModeAsync, x_win, None, CurrentTime);
+	XWarpPointer (x_disp, x_win, x_win, 0, 0, 0, 0, vid.width / 2,
+				  vid.height / 2);
 }
 
 void
@@ -582,13 +572,7 @@ X11_UngrabMouse(void)
 }
 
 void
-X11_UngrabKeyboard (void)
-{
-	XUngrabKeyboard (x_disp, CurrentTime);
-}
-
-void
-X11_Grabber(qboolean grab)
+X11_Grabber (qboolean grab)
 {
 	if (!vid_context_created) {
 		Con_Printf ("No video context to grab to!\n");
@@ -597,21 +581,6 @@ X11_Grabber(qboolean grab)
 	X11_GrabMouseBool (grab);
 	X11_GrabKeyboardBool (grab);
 
-#if 0
-	if (grab) {
-		if (!is_grabbed) {
-			X11_GrabKeyboard ();
-			X11_GrabMouse ();
-			is_grabbed = true;
-		}
-	} else {
-		if (is_grabbed) {
-			X11_UngrabKeyboard ();
-			X11_UngrabMouse ();
-			is_grabbed = false;
-		}
-	}
-#endif
 	XSync (x_disp, false);
 }
 
