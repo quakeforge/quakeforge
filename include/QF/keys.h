@@ -30,8 +30,12 @@
 #ifndef _KEYS_H
 #define _KEYS_H
 
-#include "QF/qtypes.h"
-#include "QF/vfile.h"
+#ifdef __QFCC__
+# define typedef
+#else
+# include "QF/qtypes.h"
+# include "QF/vfile.h"
+#endif
 
 // these are the key numbers that should be passed to Key_Event
 
@@ -336,12 +340,6 @@ typedef enum {
 	QFK_LAST
 } knum_t;
 
-typedef struct
-{
-	int     down[2];        // key nums holding it down
-	int     state;          // low bit is down state
-} kbutton_t;
-
 typedef enum {
 	IMT_CONSOLE,
 	IMT_0,
@@ -366,6 +364,13 @@ typedef enum {
 
 // key_none should, preferably, be last
 typedef enum {key_game, key_console, key_message, key_menu, key_none} keydest_t;
+
+#ifndef __QFCC__
+typedef struct
+{
+	int     down[2];        // key nums holding it down
+	int     state;          // low bit is down state
+} kbutton_t;
 
 extern keydest_t	key_dest;
 extern imt_t		game_target;
@@ -396,5 +401,6 @@ const char *Key_KeynumToString (knum_t keynum);
 extern char key_lines[32][MAXCMDLINE];
 extern int edit_line;
 extern int key_linepos;
+#endif
 
 #endif // _KEYS_H
