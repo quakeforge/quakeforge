@@ -425,7 +425,7 @@ pmtrace_t
 PM_PlayerMove (const vec3_t start, const vec3_t end)
 {
 	hull_t     *hull;
-	int         i, check_box;
+	int         i, check_box, move_missed;
 	physent_t  *pe;
 	pmtrace_t   trace, total;
 	vec3_t      maxs, mins, offset, start_l, end_l;
@@ -463,15 +463,6 @@ PM_PlayerMove (const vec3_t start, const vec3_t end)
 		VectorSubtract (start, offset, start_l);
 		VectorSubtract (end, offset, end_l);
 
-		move[0][0] = min (start_l[0], end_l[0]);
-		move[0][1] = min (start_l[1], end_l[1]);
-		move[0][2] = min (start_l[2], end_l[2]);
-		move[1][0] = max (start_l[0], end_l[0]);
-		move[1][1] = max (start_l[1], end_l[1]);
-		move[1][2] = max (start_l[2], end_l[2]);
-		if (check_box && !bboxes_touch (move[0], move[1], mins, maxs))
-			continue;
-
 		// fill in a default trace
 		memset (&trace, 0, sizeof (pmtrace_t));
 
@@ -480,9 +471,30 @@ PM_PlayerMove (const vec3_t start, const vec3_t end)
 //		trace.startsolid = true;
 		VectorCopy (end, trace.endpos);
 
-		// trace a line through the appropriate clipping hull
-		PM_RecursiveHullCheck (hull, hull->firstclipnode, 0, 1, start_l, end_l,
-							   &trace);
+		move_missed = 0;
+		if (check_box) {
+			move[0][0] = min (start_l[0], end_l[0]);
+			move[0][1] = min (start_l[1], end_l[1]);
+			move[0][2] = min (start_l[2], end_l[2]);
+			move[1][0] = max (start_l[0], end_l[0]);
+			move[1][1] = max (start_l[1], end_l[1]);
+			move[1][2] = max (start_l[2], end_l[2]);
+			if (!bboxes_touch (move[0], move[1], mins, maxs))
+				move_missed = 1;
+				if (PM_HullPointContents (hull, hull->firstclipnode,
+										  start_l) != CONTENTS_SOLID) {
+					// since the move missed the entity entirely, the start
+					// point is outside the entity and the entity's outside
+					// is not solid, the whole trace is not solid
+					trace.allsolid = false;
+				}
+		}
+
+		if (!move_missed) {
+			// trace a line through the appropriate clipping hull
+			PM_RecursiveHullCheck (hull, hull->firstclipnode, 0, 1,
+								   start_l, end_l, &trace);
+		}
 
 		if (trace.allsolid)
 			trace.startsolid = true;
