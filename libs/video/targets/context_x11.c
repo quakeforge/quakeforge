@@ -276,9 +276,9 @@ X11_ForceMove (int x, int y)
 	y -= ny;
 
 #if 0 // hopefully this isn't needed!  enable if it is.
-	if (x < 1 - vid.width)
+	if (x < 1 - scr_width)
 		x = 0;
-	if (y < 1 - vid.height)
+	if (y < 1 - scr_height)
 		y = 0;
 #endif
 
@@ -352,8 +352,8 @@ X11_SetVidMode (int width, int height)
 			}
 
 			for (i = 0; i < nummodes; i++) {
-				if ((vidmodes[i]->hdisplay == vid.width) &&
-						(vidmodes[i]->vdisplay == vid.height)) {
+				if ((vidmodes[i]->hdisplay == scr_width) &&
+						(vidmodes[i]->vdisplay == scr_height)) {
 					found_mode = true;
 					best_mode = i;
 					break;
@@ -361,8 +361,8 @@ X11_SetVidMode (int width, int height)
 			}
 
 			if (found_mode) {
-				Con_DPrintf ("VID: Chose video mode: %dx%d\n", vid.width,
-							 vid.height);
+				Con_DPrintf ("VID: Chose video mode: %dx%d\n", scr_width,
+							 scr_height);
 
 				XF86VidModeSwitchToMode (x_disp, x_screen,
 										 vidmodes[best_mode]);
@@ -371,7 +371,7 @@ X11_SetVidMode (int width, int height)
 				X11_SetScreenSaver ();
 			} else {
 				Con_Printf ("VID: Mode %dx%d can't go fullscreen.\n",
-							vid.width, vid.height);
+							scr_width, scr_height);
 				vidmode_avail = vidmode_active = false;
 			}
 		}
@@ -409,8 +409,8 @@ X11_UpdateFullscreen (cvar_t *fullscreen)
 		}
 
 		X11_ForceMove (0, 0);
-		XWarpPointer (x_disp, None, x_win, 0, 0, 0, 0, vid.width / 2,
-					  vid.height / 2);
+		XWarpPointer (x_disp, None, x_win, 0, 0, 0, 0, scr_width / 2,
+					  scr_height / 2);
 		// Done in X11_SetVidMode but moved the window since then
 		X11_ForceViewPort (); 
 	}
