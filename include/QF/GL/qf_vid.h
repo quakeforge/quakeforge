@@ -41,13 +41,14 @@ extern int						gl_mtex_active_tmus;
 extern qboolean					gl_mtex_capable;
 extern qboolean					gl_mtex_fullbright;
 extern GLenum					gl_mtex_enum;
-extern int						use_bgra;
-//extern int						use_tmus;
 extern qboolean					gl_combine_capable;
-extern float					gldepthmin, gldepthmax;
+extern float					rgb_scale;
 extern int						texture_extension_number;
-extern int						tess;
+
 extern qboolean					gl_feature_mach64;
+extern float					gldepthmin, gldepthmax;
+extern int						use_bgra;
+extern int						tess;
 
 void GL_EndRendering (void);
 void GL_BeginRendering (int *x, int *y, int *width, int *height);

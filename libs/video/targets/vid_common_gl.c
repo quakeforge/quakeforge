@@ -47,7 +47,6 @@ static __attribute__ ((unused)) const char rcsid[] =
 #include "QF/input.h"
 #include "QF/qargs.h"
 #include "QF/quakefs.h"
-#include "r_cvar.h"			// FIXME: for gl_overbright_f
 #include "QF/sys.h"
 #include "QF/va.h"
 #include "QF/vid.h"
@@ -58,6 +57,7 @@ static __attribute__ ((unused)) const char rcsid[] =
 
 #include "compat.h"
 #include "d_iface.h"
+#include "r_cvar.h"
 #include "sbar.h"
 
 #define WARP_WIDTH              320
@@ -88,7 +88,7 @@ int					gl_filter_max = GL_LINEAR;
 float       		gldepthmin, gldepthmax;
 
 // Multitexture
-static qboolean		gl_mtex_capable = false;
+qboolean			gl_mtex_capable = false;
 static int			gl_mtex_tmus = 0;
 GLenum				gl_mtex_enum;
 int					gl_mtex_active_tmus = 0;
@@ -97,6 +97,7 @@ qboolean			gl_mtex_fullbright = false;
 // Combine
 qboolean			gl_combine_capable = false;
 int					lm_src_blend, lm_dest_blend;
+float				rgb_scale = 1.0;
 
 QF_glColorTableEXT	qglColorTableEXT = NULL;
 qboolean			is8bit = false;
@@ -119,6 +120,8 @@ cvar_t      *gl_screenshot_byte_swap;
 cvar_t      *vid_mode;
 cvar_t      *vid_use8bit;
 
+void gl_multitexture_f (cvar_t *var);
+
 
 static void
 gl_max_size_f (cvar_t *var)
@@ -135,31 +138,6 @@ gl_max_size_f (cvar_t *var)
 	} else {
 		Cvar_SetValue (var, bound (1, var->int_val, texSize));
 	}
-}
-
-static void
-gl_doublebright_f (cvar_t *var)
-{
-	if (!var)
-		return;
-
-	if (var->int_val) {
-		if (!gl_combine_capable && gl_mtex_capable) {
-			Con_Printf ("Warning: gl_doublebright has no effect with "
-						"gl_multitexture enabled if you don't have "
-						"GL_COMBINE_ARB support in your driver.\n");
-			lm_src_blend = GL_ZERO;
-			lm_dest_blend = GL_SRC_COLOR;
-		} else {
-			lm_src_blend = GL_DST_COLOR;
-			lm_dest_blend = GL_SRC_COLOR;
-		}
-	} else {
-		lm_src_blend = GL_ZERO;
-		lm_dest_blend = GL_SRC_COLOR;
-	}
-	if (gl_overbright)
-		gl_overbright_f (gl_overbright);
 }
 
 static void
@@ -188,7 +166,7 @@ gl_fb_bmodels_f (cvar_t *var)
 	}
 }
 
-static void
+void
 gl_multitexture_f (cvar_t *var)
 {
 	if (!var)
@@ -201,6 +179,12 @@ gl_multitexture_f (cvar_t *var)
 			if (gl_fb_bmodels->int_val) {
 				if (gl_mtex_tmus >= 3) {
 					gl_mtex_fullbright = true;
+
+					qglActiveTexture (gl_mtex_enum + 2);
+					qfglEnable (GL_TEXTURE_2D);
+					qfglTexEnvf (GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE,
+								 GL_DECAL);
+					qfglDisable (GL_TEXTURE_2D);
 				} else {
 					gl_mtex_fullbright = false;
 					Con_Printf ("Not enough TMUs for BSP fullbrights.\n");	
@@ -209,6 +193,25 @@ gl_multitexture_f (cvar_t *var)
 		} else {
 			gl_mtex_fullbright = false;
 		}
+
+		// Lightmaps
+		qglActiveTexture (gl_mtex_enum + 1);
+		qfglEnable (GL_TEXTURE_2D);
+		if (gl_overbright) {
+			if (gl_combine_capable && gl_overbright->int_val) {
+				qfglTexEnvf (GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_COMBINE);
+				qfglTexEnvf (GL_TEXTURE_ENV, GL_COMBINE_RGB, GL_MODULATE);
+				qfglTexEnvf (GL_TEXTURE_ENV, GL_RGB_SCALE, rgb_scale);
+			} else {
+				qfglTexEnvf (GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
+			}
+		} else {
+			qfglTexEnvf (GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
+		}
+		qfglDisable (GL_TEXTURE_2D);
+
+		// Base Texture
+		qglActiveTexture (gl_mtex_enum + 0);
 	} else {
 		gl_mtex_active_tmus = 0;
 		gl_mtex_fullbright = false;
@@ -248,10 +251,6 @@ GL_Common_Init_Cvars (void)
 	gl_textures_bgra = Cvar_Get ("gl_textures_bgra", "0", CVAR_ROM,
 								 gl_textures_bgra_f, "If set to 1, try to use "
 								 "BGR & BGRA textures instead of RGB & RGBA.");
-	gl_doublebright = Cvar_Get ("gl_doublebright", "1", CVAR_ARCHIVE,
-								gl_doublebright_f, "Use different lighting "
-								"algorithm to increase brightness of map "
-								"surfaces.");
 	gl_fb_bmodels = Cvar_Get ("gl_fb_bmodels", "1", CVAR_ARCHIVE,
 							  gl_fb_bmodels_f, "Toggles fullbright color "
 							  "support for bmodels");
@@ -529,31 +528,6 @@ GL_Init_Common (void)
 	CheckTruFormExtensions ();
 	GL_Common_Init_Cvars ();
 	CheckVertexArraySize ();
-
-	if (gl_mtex_capable) {
-		// Fullbrights
-		if (gl_mtex_tmus >= 3) {
-			qglActiveTexture (gl_mtex_enum + 2);
-			qfglEnable (GL_TEXTURE_2D);
-			qfglTexEnvf (GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_DECAL);
-			qfglDisable (GL_TEXTURE_2D);
-		}
-
-		// Lightmaps
-		qglActiveTexture (gl_mtex_enum + 1);
-		qfglEnable (GL_TEXTURE_2D);
-		if (gl_combine_capable && gl_doublebright->int_val) {
-			qfglTexEnvf (GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_COMBINE_ARB);
-			qfglTexEnvf (GL_TEXTURE_ENV, GL_COMBINE_RGB_ARB, GL_MODULATE);
-			qfglTexEnvf (GL_TEXTURE_ENV, GL_RGB_SCALE_ARB, 2.0);
-		} else {
-			qfglTexEnvf (GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
-		}
-		qfglDisable (GL_TEXTURE_2D);
-
-		// Base Texture
-		qglActiveTexture (gl_mtex_enum + 0);
-	}
 }
 
 void

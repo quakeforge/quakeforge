@@ -188,6 +188,10 @@ glrmain_init (void)
 	gldepthmax = 1;
 	qfglDepthFunc (GL_LEQUAL);
 	qfglDepthRange (gldepthmin, gldepthmax);
+	if (gl_multitexture)
+		gl_multitexture_f (gl_multitexture);
+	if (gl_overbright)
+		gl_overbright_f (gl_overbright);
 }
 
 inline void
@@ -280,10 +284,10 @@ R_DrawEntitiesOnList (void)
 									// up in every R_DrawAliasModel()!
 		qglActiveTexture (gl_mtex_enum + 1);
 		qfglEnable (GL_TEXTURE_2D);
-		if (gl_combine_capable && gl_doublebright->int_val) {
-			qfglTexEnvf (GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_COMBINE_ARB);
-			qfglTexEnvf (GL_TEXTURE_ENV, GL_COMBINE_RGB_ARB, GL_MODULATE);
-			qfglTexEnvf (GL_TEXTURE_ENV, GL_RGB_SCALE_ARB, 2.0);
+		if (gl_combine_capable && gl_overbright->int_val) {
+			qfglTexEnvf (GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_COMBINE);
+			qfglTexEnvf (GL_TEXTURE_ENV, GL_COMBINE_RGB, GL_MODULATE);
+			qfglTexEnvf (GL_TEXTURE_ENV, GL_RGB_SCALE, rgb_scale);
 		} else {
 			qfglTexEnvf (GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
 		}
@@ -327,10 +331,10 @@ R_DrawViewModel (void)
 									// up in every R_DrawAliasModel()!
 		qglActiveTexture (gl_mtex_enum + 1);
 		qfglEnable (GL_TEXTURE_2D);
-		if (gl_combine_capable && gl_doublebright->int_val) {
-			qfglTexEnvf (GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_COMBINE_ARB);
-			qfglTexEnvf (GL_TEXTURE_ENV, GL_COMBINE_RGB_ARB, GL_MODULATE);
-			qfglTexEnvf (GL_TEXTURE_ENV, GL_RGB_SCALE_ARB, 2.0);
+		if (gl_combine_capable && gl_overbright->int_val) {
+			qfglTexEnvf (GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_COMBINE);
+			qfglTexEnvf (GL_TEXTURE_ENV, GL_COMBINE_RGB, GL_MODULATE);
+			qfglTexEnvf (GL_TEXTURE_ENV, GL_RGB_SCALE, rgb_scale);
 		} else {
 			qfglTexEnvf (GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
 		}

@@ -42,6 +42,7 @@ static __attribute__ ((unused)) const char rcsid[] =
 #include <math.h>
 #include <stdio.h>
 
+#include "QF/console.h"
 #include "QF/cvar.h"
 #include "QF/render.h"
 #include "QF/sys.h"
@@ -75,9 +76,11 @@ qboolean	 lightmap_modified[MAX_GLTEXTURES];
 glpoly_t	*lightmap_polys[MAX_LIGHTMAPS];
 glRect_t	 lightmap_rectchange[MAX_LIGHTMAPS];
 
-static int	 lshift = 8, lshift2 = 9;
+static int	 lmshift = 7;
 
 void (*R_BuildLightMap) (msurface_t *surf);
+
+extern void gl_multitexture_f (cvar_t *var);
 
 
 void
@@ -292,19 +295,10 @@ R_BuildLightMap_1 (msurface_t *surf)
 	dest = lightmaps[surf->lightmaptexturenum]
 			+ (surf->light_t * BLOCK_WIDTH + surf->light_s) * lightmap_bytes;
 
-	if (lshift2) {
-		for (i = 0; i < tmax; i++, dest += stride) {
-			for (j = smax; j; j--) {
-				*dest++ = min ((*bl >> lshift) + (*bl >> lshift2), 255);
-				bl++;
-			}
-		}
-	} else {
-		for (i = 0; i < tmax; i++, dest += stride) {
-			for (j = smax; j; j--) {
-				*dest++ = min (*bl >> lshift, 255);
-				bl++;
-			}
+	for (i = 0; i < tmax; i++, dest += stride) {
+		for (j = smax; j; j--) {
+			*dest++ = min (*bl >> lmshift, 255);
+			bl++;
 		}
 	}
 }
@@ -362,27 +356,14 @@ R_BuildLightMap_3 (msurface_t *surf)
 	dest = lightmaps[surf->lightmaptexturenum]
 			+ (surf->light_t * BLOCK_WIDTH + surf->light_s) * lightmap_bytes;
 
-	if (lshift2) {
-		for (i = 0; i < tmax; i++, dest += stride) {
-			for (j = 0; j < smax; j++) {
-				*dest++ = min ((*bl >> lshift) + (*bl >> lshift2), 255);
-				bl++;
-				*dest++ = min ((*bl >> lshift) + (*bl >> lshift2), 255);
-				bl++;
-				*dest++ = min ((*bl >> lshift) + (*bl >> lshift2), 255);
-				bl++;
-			}
-		}
-	} else {
-		for (i = 0; i < tmax; i++, dest += stride) {
-			for (j = 0; j < smax; j++) {
-				*dest++ = min (*bl >> lshift, 255);
-				bl++;
-				*dest++ = min (*bl >> lshift, 255);
-				bl++;
-				*dest++ = min (*bl >> lshift, 255);
-				bl++;
-			}
+	for (i = 0; i < tmax; i++, dest += stride) {
+		for (j = 0; j < smax; j++) {
+			*dest++ = min (*bl >> lmshift, 255);
+			bl++;
+			*dest++ = min (*bl >> lmshift, 255);
+			bl++;
+			*dest++ = min (*bl >> lmshift, 255);
+			bl++;
 		}
 	}
 }
@@ -440,29 +421,15 @@ R_BuildLightMap_4 (msurface_t *surf)
 	dest = lightmaps[surf->lightmaptexturenum]
 			+ (surf->light_t * BLOCK_WIDTH + surf->light_s) * lightmap_bytes;
 
-	if (lshift2) {
-		for (i = 0; i < tmax; i++, dest += stride) {
-			for (j = 0; j < smax; j++) {
-				*dest++ = min ((*bl >> lshift) + (*bl >> lshift2), 255);
-				bl++;
-				*dest++ = min ((*bl >> lshift) + (*bl >> lshift2), 255);
-				bl++;
-				*dest++ = min ((*bl >> lshift) + (*bl >> lshift2), 255);
-				bl++;
-				*dest++ = 255;
-			}
-		}
-	} else {
-		for (i = 0; i < tmax; i++, dest += stride) {
-			for (j = 0; j < smax; j++) {
-				*dest++ = min (*bl >> lshift, 255);
-				bl++;
-				*dest++ = min (*bl >> lshift, 255);
-				bl++;
-				*dest++ = min (*bl >> lshift, 255);
-				bl++;
-				*dest++ = 255;
-			}
+	for (i = 0; i < tmax; i++, dest += stride) {
+		for (j = 0; j < smax; j++) {
+			*dest++ = min (*bl >> lmshift, 255);
+			bl++;
+			*dest++ = min (*bl >> lmshift, 255);
+			bl++;
+			*dest++ = min (*bl >> lmshift, 255);
+			bl++;
+			*dest++ = 255;
 		}
 	}
 }
@@ -573,27 +540,43 @@ gl_overbright_f (cvar_t *var)
 	if (!R_BuildLightMap)
 		return;
 
-	switch (var->int_val) {
-	case 2:
-		lshift = 8;
-		lshift2 = 0;
-		break;
-	case 1:
-		lshift = 8;
-		lshift2 = 9;
-		break;
-	default:
-		lshift = 7;
-		lshift2 = 0;
-		break;
-	}
-	if (gl_doublebright) {
-		if (gl_doublebright->int_val) {
-			lshift++;
-			if (lshift2)
-				lshift2++;
+	if (var->int_val) {
+		if (!gl_combine_capable && gl_mtex_capable) {
+			Con_Printf ("Warning: gl_overbright has no effect with "
+						"gl_multitexture enabled if you don't have "
+						"GL_COMBINE support in your driver.\n");
+			lm_src_blend = GL_ZERO;
+			lm_dest_blend = GL_SRC_COLOR;
+			lmshift = 7;
+			rgb_scale = 1.0;
+		} else {
+			lm_src_blend = GL_DST_COLOR;
+			lm_dest_blend = GL_SRC_COLOR;
+
+			switch (var->int_val) {
+			case 2:
+				lmshift = 9;
+				rgb_scale = 4.0;
+				break;
+			case 1:
+				lmshift = 8;
+				rgb_scale = 2.0;
+				break;
+			default:
+				lmshift = 7;
+				rgb_scale = 1.0;
+				break;
+			}
 		}
+	} else {
+		lm_src_blend = GL_ZERO;
+		lm_dest_blend = GL_SRC_COLOR;
+		lmshift = 7;
+		rgb_scale = 1.0;
 	}
+
+	if (gl_multitexture)
+		gl_multitexture_f (gl_multitexture);
 
 	for (i = 0; i < r_numvisedicts; i++) {
 		m = r_visedicts[i]->model;
