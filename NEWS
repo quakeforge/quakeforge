@@ -18,6 +18,7 @@ Changes from 0.5.4
     o qfcc how supports the "unsigned" type (32 bit unsigned integer)
     o improper placement of fullscreen window on startup in -x11 and -glx fixed
       (ie, starting with +set vid_fullscreen 1)
+    o correct handling of ! and &&/|| for traditional code
 
 Changes from 0.5.3
     o CRITICAL: exploitable buffer overflow in qw-server fixed
