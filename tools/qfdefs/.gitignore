@@ -9,3 +9,4 @@ config.log
 config.cache
 config.status
 qfdefs.lsm
+autom4te.cache
