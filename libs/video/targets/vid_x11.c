@@ -97,6 +97,7 @@ int 		VID_options_items = 1;
 
 static byte current_palette[768];
 
+typedef unsigned char PIXEL8;
 typedef unsigned short PIXEL16;
 typedef unsigned long PIXEL24;
 
@@ -208,6 +209,23 @@ xlib_rgb24 (int r, int g, int b)
 }
 
 static void
+st1_fixup (XImage *framebuf, int x, int y, int width, int height)
+{
+	int         yi;
+	unsigned char *src;
+	PIXEL8     *dest;
+
+	if (x < 0 || y < 0)
+		return;
+
+	for (yi = y; yi < (y + height); yi++) {
+		src = &((byte *)vid.buffer)[yi * vid.width];
+		dest = (PIXEL8 *) &framebuf->data[yi * framebuf->bytes_per_line];
+		memcpy (dest, src, width);
+	}
+}
+
+static void
 st2_fixup (XImage *framebuf, int x, int y, int width, int height)
 {
 	int 		xi, yi;
@@ -218,9 +236,9 @@ st2_fixup (XImage *framebuf, int x, int y, int width, int height)
 		return;
 
 	for (yi = y; yi < (y + height); yi++) {
-		src = &framebuf->data[yi * framebuf->bytes_per_line];
-		dest = (PIXEL16 *) src;
-		for (xi = (x + width - 1); xi >= x; xi--) {
+		src = &((byte *)vid.buffer)[yi * vid.width];
+		dest = (PIXEL16 *) &framebuf->data[yi * framebuf->bytes_per_line];
+		for (xi = x; xi < x + width; xi++) {
 			dest[xi] = st2d_8to16table[src[xi]];
 		}
 	}
@@ -238,38 +256,33 @@ st3_fixup (XImage * framebuf, int x, int y, int width, int height)
 		return;
 
 	for (yi = y; yi < (y + height); yi++) {
-		src = &framebuf->data[yi * framebuf->bytes_per_line];
+		src = &((byte *)vid.buffer)[yi * vid.width + x];
+		dest = (PIXEL24 *) &framebuf->data[yi * framebuf->bytes_per_line + x];
 
 		// Duff's Device
 		count = width;
 		n = (count + 7) / 8;
-		dest = ((PIXEL24 *) src) + x + width - 1;
-		src += x + width - 1;
 
 		switch (count % 8) {
 			case 0:
 				do {
-					*dest-- = st2d_8to24table[*src--];
+					*dest++ = st2d_8to24table[*src++];
 			case 7:
-					*dest-- = st2d_8to24table[*src--];
+					*dest++ = st2d_8to24table[*src++];
 			case 6:
-					*dest-- = st2d_8to24table[*src--];
+					*dest++ = st2d_8to24table[*src++];
 			case 5:
-					*dest-- = st2d_8to24table[*src--];
+					*dest++ = st2d_8to24table[*src++];
 			case 4:
-					*dest-- = st2d_8to24table[*src--];
+					*dest++ = st2d_8to24table[*src++];
 			case 3:
-					*dest-- = st2d_8to24table[*src--];
+					*dest++ = st2d_8to24table[*src++];
 			case 2:
-					*dest-- = st2d_8to24table[*src--];
+					*dest++ = st2d_8to24table[*src++];
 			case 1:
-					*dest-- = st2d_8to24table[*src--];
+					*dest++ = st2d_8to24table[*src++];
 				} while (--n > 0);
 		}
-
-//		for (xi = x + width - 1; xi >= x; xi--) {
-//			dest[xi] = st2d_8to16table[src[xi]];
-//		}
 	}
 }
 
@@ -349,8 +362,8 @@ ResetSharedFrameBuffers (void)
 		// attach to the shared memory segment
 		x_shminfo[frm].shmaddr = (void *) shmat (x_shminfo[frm].shmid, 0, 0);
 
-		Sys_Printf ("VID: shared memory id=%d, addr=0x%lx\n", x_shminfo[frm].shmid,
-				(long) x_shminfo[frm].shmaddr);
+		Sys_Printf ("VID: shared memory id=%d, addr=0x%lx\n",
+					x_shminfo[frm].shmid, (long) x_shminfo[frm].shmaddr);
 
 		x_framebuffer[frm]->data = x_shminfo[frm].shmaddr;
 
@@ -372,13 +385,20 @@ x11_init_buffers (void)
 		ResetFrameBuffer ();
 
 	vid.direct = 0;
-	vid.rowbytes = x_framebuffer[0]->bytes_per_line;
-	vid.buffer = x_framebuffer[current_framebuffer]->data;
+	vid.rowbytes = vid.width;
+	if (vid.buffer)
+		free (vid.buffer);
+	vid.buffer = calloc (vid.width, vid.height);
+	if (!vid.buffer)
+		Sys_Error ("Not enough memory for video mode");
 	vid.conbuffer = vid.buffer;
+
 	vid.conwidth = vid.width;
 	vid.conheight = vid.height;
 	vid.conrowbytes = vid.rowbytes;
+
 	vid.aspect = ((float) vid.height / (float) vid.width) * (320.0 / 240.0);
+
 	current_framebuffer = 0;
 }
 
@@ -624,6 +644,10 @@ VID_Update (vrect_t *rects)
 
 	while (rects) {
 		switch (x_visinfo->depth) {
+			case 8:
+				st1_fixup (x_framebuffer[current_framebuffer],
+						   rects->x, rects->y, rects->width, rects->height);
+				break;
 			case 16:
 				st2_fixup (x_framebuffer[current_framebuffer],
 						   rects->x, rects->y, rects->width, rects->height);
@@ -646,8 +670,6 @@ VID_Update (vrect_t *rects)
 			rects = rects->pnext;
 
 			current_framebuffer = !current_framebuffer;
-			vid.buffer = x_framebuffer[current_framebuffer]->data;
-			vid.conbuffer = vid.buffer;
 		} else {
 			if (XPutImage (x_disp, x_win, x_gc, x_framebuffer[0],
 							rects->x, rects->y, rects->x, rects->y,
@@ -659,26 +681,6 @@ VID_Update (vrect_t *rects)
 	}
 	XSync (x_disp, False);
 	scr_fullupdate = 0;
-}
-
-static qboolean dither;
-
-void
-VID_DitherOn (void)
-{
-	if (!dither) {
-		vid.recalc_refdef = 1;
-		dither = true;
-	}
-}
-
-void
-VID_DitherOff (void)
-{
-	if (dither) {
-		vid.recalc_refdef = 1;
-		dither = false;
-	}
 }
 
 void

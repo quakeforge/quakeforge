@@ -17,7 +17,7 @@ I  GL is still way too slow
 I  Client side QuakeC.
 I  menu rewrite
 I  clean up TODO ;)
-o  software PCXs don't work in X11 at least if you're using 16/24/32 color
+X  software PCXs don't work in X11 at least if you're using 16/24/32 color
 o  doublesize modes (eg, render in 320x240 but display in 640x480)
 o  allow qf clients to download .lit files from qf servers.
 o  better server control of certain cvars

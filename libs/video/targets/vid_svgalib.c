@@ -582,30 +582,6 @@ VID_Update (vrect_t *rects)
 	}
 }
 
-static int  dither = 0;
-
-void
-VID_DitherOn (void)
-{
-	if (dither == 0) {
-#if 0
-		R_ViewChanged (&vrect, sb_lines, vid.aspect);
-#endif
-		dither = 1;
-	}
-}
-
-void
-VID_DitherOff (void)
-{
-	if (dither) {
-#if 0
-		R_ViewChanged (&vrect, sb_lines, vid.aspect);
-#endif
-		dither = 0;
-	}
-}
-
 char       *
 VID_ModeInfo (int modenum)
 {
