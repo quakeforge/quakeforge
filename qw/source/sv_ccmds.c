@@ -82,6 +82,10 @@ match_char (char a, char b)
 	return false;
 }
 
+/*
+    FIXME: this function and it's callers are getting progressively
+    uglier as more features are added :)
+*/
 qboolean
 SV_Match_User (const char *substr, int *uidp)
 {
@@ -91,9 +95,11 @@ SV_Match_User (const char *substr, int *uidp)
 	client_t   *cl;
 
 	if (!substr[0]) {
-		*uidp = 0;
-		SV_Printf ("Too many matches, ignoring command!\n");
-		return false;
+		if (uidp) {
+			*uidp = 0;
+			SV_Printf ("Too many matches, ignoring command!\n");
+		}
+		return true;
 	}
 	for (i = 0, cl = svs.clients; i < MAX_CLIENTS; i++, cl++) {
 		if (!cl->state)
@@ -105,22 +111,21 @@ SV_Match_User (const char *substr, int *uidp)
 				if (!match_char (substr[j], str[j]))
 					break;
 			if (!substr[j]) {		// found a match;
-				*uidp = cl->userid;
+				if (uidp)
+					*uidp = cl->userid;
 				count++;
 				SV_Printf ("User %04d matches with name: %s\n",
-							*uidp, cl->name);
-				str = 0;
-			} else {
-				str = strchr (str + 1, substr[0]);
-				for (str = str + 1;
-					 *str && !match_char (*str, substr[0]); str++)
-					;
+							cl->userid, cl->name);
+				break;
 			}
+			str++;
 		}
 	}
 	if (count > 1) {
-		*uidp = 0;
-		SV_Printf ("Too many matches, ignoring command!\n");
+		if (uidp) {
+			*uidp = 0;
+			SV_Printf ("Too many matches, ignoring command!\n");
+		}
 	}
 	if (count)
 		return true;
@@ -747,6 +752,19 @@ SV_Ban_f (void)
 }
 
 void
+SV_Match_f (void)
+{
+	if (Cmd_Argc() != 2) {
+		SV_Printf ("usage: match <name/userid>\n");
+		return;
+	}
+
+	if (!SV_Match_User (Cmd_Argv(1), NULL))
+		SV_Printf ("No usernames matched, would treat as number\n");
+}
+
+
+void
 SV_ConSay (const char *prefix)
 {
 	char       *p;
@@ -1196,6 +1214,8 @@ SV_InitOperatorCommands (void)
 					"specified time");
 	Cmd_AddCommand ("mute", SV_Mute_f, "silience a player for a specified "
 					"time");
+	Cmd_AddCommand ("match", SV_Match_f, "matches nicks as ban/cuff/mute "
+					"commands do, so you can check safely");
 
 	cl_warncmd = Cvar_Get ("cl_warncmd", "1", CVAR_NONE, NULL, "Toggles the "
 						   "display of error messages for unknown commands"); 
