@@ -461,7 +461,7 @@ Sbar_DrawScoreboard (void)
 {
 	//Sbar_SoloScoreboard ();
 	//if (cl.gametype == GAME_DEATHMATCH)
-	//	Sbar_DeathmatchOverlay (0);
+	//	Sbar_DeathmatchOverlay (overlay_view);
 }
 
 static void
@@ -1176,7 +1176,7 @@ Sbar_IntermissionOverlay (void)
 	scr_fullupdate = 0;
 
 	if (cl.gametype == GAME_DEATHMATCH) {
-		Sbar_DeathmatchOverlay (0);
+		Sbar_DeathmatchOverlay (overlay_view);
 		return;
 	}
 	draw_intermission (overlay_view);
