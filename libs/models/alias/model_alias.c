@@ -40,7 +40,6 @@ static const char rcsid[] =
 # include <strings.h>
 #endif
 
-#include "compat.h"
 #include "QF/crc.h"
 #include "QF/model.h"
 #include "QF/msg.h"
@@ -51,6 +50,7 @@ static const char rcsid[] =
 #include "d_iface.h"
 #include "r_local.h"
 
+#include "compat.h"
 
 /*
 	ALIAS MODELS

@@ -39,6 +39,9 @@ static const char rcsid[] =
 #ifdef HAVE_STRINGS_H
 # include <strings.h>
 #endif
+#ifdef HAVE_ALLOCA_H
+# include <alloca.h>
+#endif
 
 #include <ctype.h>
 #include <stdlib.h>

@@ -33,14 +33,26 @@ static const char rcsid[] =
 #endif
 
 #include <errno.h>
-#include <dmedia/cdaudio.h>
 #include <sys/types.h>
+#include <dmedia/cdaudio.h>
+
 
 #include "QF/cdaudio.h"
 #include "QF/cmd.h"
 #include "QF/qargs.h"
 #include "QF/sound.h"
 #include "QF/sys.h"
+#include "QF/plugin.h"
+#include "compat.h"
+#include "QF/cvar.h"
+
+static plugin_t plugin_info;
+static plugin_data_t plugin_info_data;
+static plugin_funcs_t plugin_info_funcs;
+static general_data_t plugin_info_general_data;
+static general_funcs_t plugin_info_general_funcs;
+
+static cd_funcs_t plugin_info_cd_funcs;
 
 static qboolean initialized = false;
 static qboolean enabled = true;
@@ -53,19 +65,20 @@ static char cd_dev[64] = "/dev/cdrom";
 
 static CDPLAYER *cdp = NULL;
 
+void I_SGI_Stop (void);
 
 static void
-pCDAudio_Eject (void)
+I_SGI_Eject (void)
 {
 	if (cdp == NULL || !enabled)
 		return;							// no cd init'd
 
 	if (CDeject (cdp) == 0)
-		Sys_DPrintf ("CDAudio_Eject: CDeject failed\n");
+		Sys_DPrintf ("I_SGI_Eject: CDeject failed\n");
 }
 
 static int
-pCDAudio_GetState (void)
+I_SGI_GetState (void)
 {
 	CDSTATUS	cds;
 
@@ -81,7 +94,7 @@ pCDAudio_GetState (void)
 }
 
 static int
-pCDAudio_MaxTrack (void)
+I_SGI_MaxTrack (void)
 {
 	CDSTATUS	cds;
 
@@ -89,7 +102,7 @@ pCDAudio_MaxTrack (void)
 		return -1;						// no cd init'd
 
 	if (CDgetstatus (cdp, &cds) == 0) {
-		Sys_DPrintf ("CDAudio_MaxTrack: CDgetstatus failed\n");
+		Sys_DPrintf ("I_SGI_MaxTrack: CDgetstatus failed\n");
 		return -1;
 	}
 
@@ -97,9 +110,9 @@ pCDAudio_MaxTrack (void)
 }
 
 void
-pCDAudio_Pause (void)
+I_SGI_Pause (void)
 {
-	if (cdp == NULL || !enabled || CDAudio_GetState () != CD_PLAYING)
+	if (cdp == NULL || !enabled || I_SGI_GetState () != CD_PLAYING)
 		return;
 
 	if (CDtogglepause (cdp) == 0)
@@ -107,15 +120,15 @@ pCDAudio_Pause (void)
 }
 
 void
-pCDAudio_Play (int track, qboolean looping)
+I_SGI_Play (int track, qboolean looping)
 {
-	int			maxtrack = CDAudio_MaxTrack ();
+	int			maxtrack = I_SGI_MaxTrack ();
 
 	if (!initialized || !enabled)
 		return;
 
 	/* cd == audio cd? */
-	if (CDAudio_GetState () != CD_READY) {
+	if (I_SGI_GetState () != CD_READY) {
 		Sys_Printf ("CDAudio_Play: CD in player not an audio CD.\n");
 		return;
 	}
@@ -133,7 +146,7 @@ pCDAudio_Play (int track, qboolean looping)
 	track = remap[track];
 
 	if (track < 1 || track > maxtrack) {
-		CDAudio_Stop ();
+		I_SGI_Stop ();
 		return;
 	}
 	// don't try to play a non-audio track
@@ -152,11 +165,11 @@ pCDAudio_Play (int track, qboolean looping)
 	   not audio\n", track); return; }
 */
 
-	if (CDAudio_GetState () == CD_PLAYING) {
+	if (I_SGI_GetState () == CD_PLAYING) {
 		if (playTrack == track)
 			return;
 
-		CDAudio_Stop ();
+		I_SGI_Stop ();
 	}
 
 	if (CDplaytrack (cdp, track, cdvolume == 0.0 ? 0 : 1) == 0) {
@@ -169,9 +182,9 @@ pCDAudio_Play (int track, qboolean looping)
 }
 
 void
-pCDAudio_Resume (void)
+I_SGI_Resume (void)
 {
-	if (cdp == NULL || !enabled || CDAudio_GetState () != CD_PAUSED)
+	if (cdp == NULL || !enabled || I_SGI_GetState () != CD_PAUSED)
 		return;
 
 	if (CDtogglepause (cdp) == 0)
@@ -179,29 +192,29 @@ pCDAudio_Resume (void)
 }
 
 void
-pCDAudio_Shutdown (void)
+I_SGI_Shutdown (void)
 {
 	if (!initialized)
 		return;
 
-	CDAudio_Stop ();
+	I_SGI_Stop ();
 	CDclose (cdp);
 	cdp = NULL;
 	initialized = false;
 }
 
 void
-pCDAudio_Stop (void)
+I_SGI_Stop (void)
 {
-	if (cdp == NULL || !enabled || CDAudio_GetState () != CD_PLAYING)
+	if (cdp == NULL || !enabled || I_SGI_GetState () != CD_PLAYING)
 		return;
 
 	if (CDstop (cdp) == 0)
-		Sys_DPrintf ("CDAudio_Stop: CDStop failed (%d)\n", errno);
+		Sys_DPrintf ("I_SGI_Stop: CDStop failed (%d)\n", errno);
 }
 
 void
-pCDAudio_Update (void)
+I_SGI_Update (void)
 {
 	if (!initialized || !enabled)
 		return;
@@ -218,15 +231,15 @@ pCDAudio_Update (void)
 		}
 	}
 
-	if (CDAudio_GetState () != CD_PLAYING &&
-		CDAudio_GetState () != CD_PAUSED && playLooping)
+	if (I_SGI_GetState () != CD_PLAYING &&
+		I_SGI_GetState () != CD_PAUSED && playLooping)
 			CDAudio_Play (playTrack, true);
 }
 
 static void
-pCD_f (void)
+I_SGI_f (void)
 {
-	char       *command;
+	const char       *command;
 	int         ret;
 	int         n;
 
@@ -241,14 +254,14 @@ pCD_f (void)
 	}
 
 	if (strequal (command, "off")) {
-		CDAudio_Stop ();
+		I_SGI_Stop ();
 		enabled = false;
 		return;
 	}
 
 	if (strequal (command, "reset")) {
 		enabled = true;
-		CDAudio_Stop ();
+		I_SGI_Stop ();
 
 		for (n = 0; n < 100; n++)
 			remap[n] = n;
@@ -283,7 +296,7 @@ pCD_f (void)
 	}
 
 	if (strequal (command, "stop")) {
-		CDAudio_Stop ();
+		I_SGI_Stop ();
 		return;
 	}
 
@@ -298,17 +311,17 @@ pCD_f (void)
 	}
 
 	if (strequal (command, "eject")) {
-		CDAudio_Stop ();
-		CDAudio_Eject ();
+		I_SGI_Stop ();
+		I_SGI_Eject ();
 		return;
 	}
 
 	if (strequal (command, "info")) {
-		Sys_Printf ("%u tracks\n", CDAudio_MaxTrack ());
-		if (CDAudio_GetState () == CD_PLAYING)
+		Sys_Printf ("%u tracks\n", I_SGI_MaxTrack ());
+		if (I_SGI_GetState () == CD_PLAYING)
 			Sys_Printf ("Currently %s track %u\n",
 						playLooping ? "looping" : "playing", playTrack);
-		else if (CDAudio_GetState () == CD_PAUSED)
+		else if (I_SGI_GetState () == CD_PAUSED)
 			Sys_Printf ("Paused %s track %u\n",
 						playLooping ? "looping" : "playing", playTrack);
 
@@ -317,13 +330,13 @@ pCD_f (void)
 	}
 }
 
-int
-pCDAudio_Init (void)
+static void
+I_SGI_Init (void)
 {
 	int         i;
 
 	if (COM_CheckParm ("-nocdaudio"))
-		return -1;
+		return ;
 
 	if ((i = COM_CheckParm ("-cddev")) != 0 && i < com_argc - 1) {
 		strncpy (cd_dev, com_argv[i + 1], sizeof (cd_dev));
@@ -335,7 +348,7 @@ pCDAudio_Init (void)
 	if (cdp == NULL) {
 		Sys_Printf ("CDAudio_Init: open of \"%s\" failed (%i)\n",
 					cd_dev, errno);
-		return -1;
+		return ;
 	}
 
 	for (i = 0; i < 100; i++)
@@ -346,5 +359,37 @@ pCDAudio_Init (void)
 
 	Sys_Printf ("CD Audio Initialized\n");
 
-	return 0;
+	return ;
 }
+
+QFPLUGIN plugin_t   *
+cd_sgi_PluginInfo (void)
+{
+        plugin_info.type = qfp_cd;
+        plugin_info.api_version = QFPLUGIN_VERSION;
+        plugin_info.plugin_version = "0.1";
+        plugin_info.description = "SGI (CD) Audio output"
+                "Copyright (C) 2001  contributors of the QuakeForge project\n"
+                "Please see the file \"AUTHORS\" for a list of contributors\n";
+        plugin_info.functions = &plugin_info_funcs;
+        plugin_info.data = &plugin_info_data;
+
+        plugin_info_data.general = &plugin_info_general_data;
+//  plugin_info_data.cd = &plugin_info_cd_data;
+        plugin_info_data.input = NULL;
+
+        plugin_info_funcs.general = &plugin_info_general_funcs;
+        plugin_info_funcs.cd = &plugin_info_cd_funcs;
+        plugin_info_funcs.input = NULL;
+        plugin_info_general_funcs.p_Init = I_SGI_Init;
+        plugin_info_general_funcs.p_Shutdown = I_SGI_Shutdown;
+
+        plugin_info_cd_funcs.pCDAudio_Pause = I_SGI_Pause;
+        plugin_info_cd_funcs.pCDAudio_Play = I_SGI_Play;
+        plugin_info_cd_funcs.pCDAudio_Resume = I_SGI_Resume;
+        plugin_info_cd_funcs.pCDAudio_Update = I_SGI_Update;
+        plugin_info_cd_funcs.pCD_f = I_SGI_f;
+
+        return &plugin_info;
+}
+

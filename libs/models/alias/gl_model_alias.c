@@ -40,7 +40,6 @@ static const char rcsid[] =
 # include <strings.h>
 #endif
 
-#include "compat.h"
 #include "QF/model.h"
 #include "QF/qendian.h"
 #include "QF/skin.h"
@@ -50,6 +49,8 @@ static const char rcsid[] =
 #include "QF/vfs.h"
 #include "QF/vid.h"
 #include "QF/GL/qf_textures.h"
+
+#include "compat.h"
 
 byte        player_8bit_texels[320 * 200];
 

@@ -56,12 +56,12 @@
 #endif
 
 /* These may be underscored... */
-#if defined(HAVE__SNPRINTF)
+#if defined(HAVE__SNPRINTF) && !defined(HAVE_SNPRINTF)
 # undef snprintf
 # define snprintf Q_snprintfz
 # define need_qstring_h
 #endif
-#if defined(HAVE__VSNPRINTF)
+#if defined(HAVE__VSNPRINTF) && !defined(HAVE_VSNPRINTF)
 # undef vsnprintf
 # define vsnprintf Q_vsnprintfz
 # define need_qstring_h

@@ -31,12 +31,7 @@ static const char rcsid[] =
 # include "config.h"
 #endif
 
-#include <stdarg.h>
-
-#include "QF/sys.h"
-
-#include "compat.h"
-#include "host.h"
+#include "QF/qtypes.h"
 
 
 qboolean

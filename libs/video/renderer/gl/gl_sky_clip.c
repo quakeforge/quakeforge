@@ -37,8 +37,12 @@ static const char rcsid[] =
 #ifdef HAVE_STRINGS_H
 # include <strings.h>
 #endif
+#ifdef HAVE_ALLOCA_H
+# include <alloca.h>
+#endif
 
 #include <stdarg.h>
+#include <stdlib.h>
 
 #include "QF/cvar.h"
 #include "QF/render.h"
@@ -51,6 +55,8 @@ static const char rcsid[] =
 #include "r_cvar.h"
 #include "r_shared.h"
 #include "view.h"
+
+#include "compat.h"
 
 #define BOX_WIDTH 2056
 

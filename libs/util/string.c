@@ -36,6 +36,9 @@ static const char rcsid[] =
 
 #include "compat.h"
 
+#ifdef IRIX
+#define _vsnprintf vsnprintf
+#endif
 
 /*
 	Q_strcasestr
@@ -67,7 +70,7 @@ Q_strnlen (const char *s, size_t maxlen)
 	return i;
 }
 
-#ifdef HAVE__VSNPRINTF
+#if defined(HAVE__VSNPRINTF) && !defined(HAVE_VSNPRINTF)
 size_t
 Q_snprintfz (char *dest, size_t size, const char *fmt, ...)
 {

@@ -105,7 +105,7 @@ PL_SkipSpace (pldata_t *pl)
 	while (pl->pos < pl->end) {
 		char	c = pl->ptr[pl->pos];
 
-		if (!isspace (c)) {
+		if (!isspace ((byte) c)) {
 			if (c == '/' && pl->pos < pl->end - 1) {	// check for comments
 				if (pl->ptr[pl->pos + 1] == '/') {
 					pl->pos += 2;
@@ -178,7 +178,7 @@ PL_ParseQuotedString (pldata_t *pl)
 					hex = true;
 					shrink++;
 					escaped++;
-				} else if (hex && isxdigit (c)) {
+				} else if (hex && isxdigit ((byte) c)) {
 					shrink++;
 					escaped++;
 				} else if (c >= '0' && c <= '7') {
@@ -235,7 +235,7 @@ PL_ParseQuotedString (pldata_t *pl)
 					if (escaped == 2 && c == 'x') {
 						hex = true;
 						escaped++;
-					} else if (hex && isxdigit (c)) {
+					} else if (hex && isxdigit ((byte) c)) {
 						chars[k] <<= 4;
 						chars[k] |= char2num (c);
 						escaped++;
@@ -301,7 +301,7 @@ PL_ParseUnquotedString (pldata_t *pl)
 	char			*str;
 
 	while (pl->pos < pl->end) {
-		if (!isalnum (pl->ptr[pl->pos]) && pl->ptr[pl->pos] != '_')
+		if (!isalnum ((byte) pl->ptr[pl->pos]) && pl->ptr[pl->pos] != '_')
 			break;
 		pl->pos++;
 	}

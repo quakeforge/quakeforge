@@ -416,9 +416,9 @@ Team_F_Skins (char *args)
 {
 	int totalfb, l;
 
-	while(isspace(*args))
+	while(isspace((byte) *args))
 		args++;
-	for (l = 0;args[l] && !isspace(args[l]);l++);
+	for (l = 0;args[l] && !isspace((byte) args[l]);l++);
 
 	if (l == 0) {
 		totalfb = Skin_FbPercent (0);
@@ -453,12 +453,12 @@ Team_ParseChat (const char *string)
 	if (!(s = strchr(string, ':')))
 		return;
 	s++;
-	while (isspace(*s))
+	while (isspace((byte) *s))
 		s++;	
 
 	for (i = 0; f_replies[i].name; i++) {
 		if (!strncmp(f_replies[i].name, s, strlen(f_replies[i].name)) && cl_freply->value) {
-			while (*s && !isspace(*s))
+			while (*s && !isspace((byte) *s))
 				s++;
 			Cbuf_AddText(f_replies[i].func(s));
 			f_replies[i].lasttime = realtime;

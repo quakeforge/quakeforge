@@ -58,7 +58,7 @@ static gib_module_t *gibmodules;
 void
 GIB_Module_Load (const char *name, VFile *f)
 {
-	char			line[1024];
+	unsigned char			line[1024];
 	int				namelen, nameofs;
 	gib_module_t   *newmod;
 	gib_sub_t	   *newsub;

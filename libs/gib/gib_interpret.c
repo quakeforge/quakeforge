@@ -130,7 +130,7 @@ GIB_Interpret_Inst (const char *inst)
 	buffer = malloc (strlen (inst) + 1);
 	i = 0;
 
-	while (isspace (inst[i]))
+	while (isspace ((unsigned char) inst[i]))
 		i++;
 
 	for (n = 0; i <= strlen (inst); i++) {
@@ -158,7 +158,7 @@ GIB_Interpret_Inst (const char *inst)
 	strncpy (gib_argv[0], buffer3, i);
 	gib_argv[0][i] = 0;
 	for (n = 0;; n++) {
-		for (; isspace (buffer3[i]); i++);
+		for (; isspace ((int) buffer3[i]); i++);
 		if (buffer3[i] == 0)
 			break;
 		if ((len = GIB_Get_Arg (buffer3 + i)) < 0)
