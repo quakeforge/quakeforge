@@ -55,6 +55,7 @@
 #include "bothdefs.h"
 #include "buildnum.h"
 #include "compat.h"
+#include "client.h"		//FIXME needed by cls below (for netchan)
 #include "game.h"
 #include "net.h"
 #include "pmove.h"
@@ -75,6 +76,7 @@ int         host_hunklevel;
 netadr_t    master_adr[MAX_MASTERS];	// address of group servers
 
 client_t   *host_client;				// current client
+client_static_t cls;					//FIXME needed by netchan :/
 
 // DoS protection
 // FLOOD_PING, FLOOD_LOG, FLOOD_CONNECT, FLOOD_STATUS, FLOOD_RCON, FLOOD_BAN
