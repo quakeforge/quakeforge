@@ -288,6 +288,7 @@ get_def (type_t *type, const char *name, scope_t *scope,
 												 pr.entity_data);
 				reloc_def_field (def, def->ofs);
 				def->constant = 1;
+				def->nosave = 1;
 			}
 
 			if (type->aux_type->type == ev_vector) {

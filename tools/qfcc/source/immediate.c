@@ -237,6 +237,7 @@ ReuseConstant (expr_t *expr, def_t *def)
 			free_location (def);
 			def->ofs = cn->ofs;
 			def->initialized = def->constant = 1;
+			def->nosave = 1;
 			cn = def;
 		} else {
 			if (cn->type != type) {
@@ -261,6 +262,7 @@ ReuseConstant (expr_t *expr, def_t *def)
 		cn->ofs = new_location (type, pr.near_data);
 	}
 	cn->initialized = cn->constant = 1;
+	cn->nosave = 1;
 	// copy the immediate to the global area
 	switch (e.type) {
 		case ex_string:
@@ -340,6 +342,7 @@ clear_immediates (void)
 
 	imm = calloc (1, sizeof (immediate_t));
 	imm->def = get_def (&type_zero, ".zero", pr.scope, st_extern);
+	imm->def->nosave = 1;
 
 	Hash_AddElement (string_imm_defs, imm);
 	Hash_AddElement (float_imm_defs, imm);

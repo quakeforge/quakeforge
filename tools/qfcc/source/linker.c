@@ -92,19 +92,20 @@ typedef union defref_s {
 typedef struct builtin_sym_s {
 	const char *name;
 	type_t     *type;
+	unsigned    flags;
 } builtin_sym_t;
 
 static builtin_sym_t builtin_symbols[] = {
-	{".zero",		&type_zero},
-	{".return",		&type_param},
-	{".param_0",	&type_param},
-	{".param_1",	&type_param},
-	{".param_2",	&type_param},
-	{".param_3",	&type_param},
-	{".param_4",	&type_param},
-	{".param_5",	&type_param},
-	{".param_6",	&type_param},
-	{".param_7",	&type_param},
+	{".zero",		&type_zero,		QFOD_NOSAVE},
+	{".return",		&type_param,	QFOD_NOSAVE},
+	{".param_0",	&type_param,	QFOD_NOSAVE},
+	{".param_1",	&type_param,	QFOD_NOSAVE},
+	{".param_2",	&type_param,	QFOD_NOSAVE},
+	{".param_3",	&type_param,	QFOD_NOSAVE},
+	{".param_4",	&type_param,	QFOD_NOSAVE},
+	{".param_5",	&type_param,	QFOD_NOSAVE},
+	{".param_6",	&type_param,	QFOD_NOSAVE},
+	{".param_7",	&type_param,	QFOD_NOSAVE},
 };
 
 static defref_t *free_defrefs;
@@ -655,7 +656,7 @@ merge_defgroups (void)
 
 static void
 define_def (const char *name, etype_t basic_type, const char *full_type,
-			int size, int v)
+			unsigned flags, int size, int v)
 {
 	qfo_def_t   d;
 	pr_type_t  *val = calloc (size, sizeof (pr_type_t));
@@ -667,7 +668,7 @@ define_def (const char *name, etype_t basic_type, const char *full_type,
 	d.full_type = strpool_addstr (type_strings, full_type);
 	d.name = strpool_addstr (strings, name);
 	d.ofs = data->size;
-	d.flags = QFOD_GLOBAL;
+	d.flags = QFOD_GLOBAL | flags;
 	if (basic_type == ev_field) {
 		d.relocs = relocs.num_relocs;
 		d.num_relocs = 1;
@@ -713,7 +714,7 @@ linker_begin (void)
 			dstring_clearstr (encoding);
 			encode_type (encoding, builtin_symbols[i].type);
 			define_def (builtin_symbols[i].name, basic_type, encoding->str,
-						size, 0);
+						builtin_symbols[i].flags, size, 0);
 		}
 	}
 }
@@ -851,11 +852,12 @@ linker_finish (void)
 					if (d->basic_type == ev_entity)
 						def_warning (d, "@self and self used together");
 				}
-				define_def (".self", ev_entity, "E", 1, 0);
+				define_def (".self", ev_entity, "E", 0, 1, 0);
 				did_self = 1;
 			} else if (strcmp (name, ".this") == 0 && !did_this) {
 				entity_base = 0;
-				define_def (".this", ev_field, "F@", 1, entity->size);
+				define_def (".this", ev_field, "F@", QFOD_NOSAVE, 1,
+							entity->size);
 				defspace_adddata (entity, 0, 1);
 				did_this = 1;
 			}

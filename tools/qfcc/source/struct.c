@@ -226,6 +226,7 @@ emit_struct(type_t *strct, const char *name)
 		goto done;
 	ivars_def = get_def (ivar_list, ivars_name->str, pr.scope, st_static);
 	ivars_def->initialized = ivars_def->constant = 1;
+	ivars_def->nosave = 1;
 	ivars = &G_STRUCT (pr_ivar_list_t, ivars_def->ofs);
 	ivars->ivar_count = count;
 	for (i = 0, field = strct->struct_head; field; field = field->next) {

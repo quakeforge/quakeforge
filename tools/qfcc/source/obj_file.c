@@ -138,6 +138,8 @@ flags (def_t *d)
 		flags |= QFOD_LOCAL;
 	if (d->system)
 		flags |= QFOD_SYSTEM;
+	if (d->nosave)
+		flags |= QFOD_NOSAVE;
 	return flags;
 }
 
@@ -545,6 +547,7 @@ qfo_to_progs (qfo_t *qfo, pr_info_t *pr)
 		pd->external    = (qd->flags & QFOD_EXTERNAL)    != 0;
 		pd->local       = (qd->flags & QFOD_LOCAL)       != 0;
 		pd->system      = (qd->flags & QFOD_SYSTEM)      != 0;
+		pd->nosave      = (qd->flags & QFOD_NOSAVE)      != 0;
 		pd->file = qd->file;
 		pd->line = qd->line;
 	}

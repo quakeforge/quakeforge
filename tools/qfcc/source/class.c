@@ -183,6 +183,7 @@ class_begin (class_type_t *class_type)
 		current_class = &category->class_type;
 		category->def = class_def (class_type, 0);
 		category->def->initialized = category->def->constant = 1;
+		category->def->nosave = 1;
 		pr_category = &G_STRUCT (pr_category_t, category->def->ofs);
 		EMIT_STRING (pr_category->category_name, category->name);
 		EMIT_STRING (pr_category->class_name, class->name);
@@ -203,6 +204,7 @@ class_begin (class_type_t *class_type)
 							  va ("_OBJ_METACLASS_%s", class->name),
 							  pr.scope, st_static);
 		meta_def->initialized = meta_def->constant = 1;
+		meta_def->nosave = 1;
 		meta = &G_STRUCT (pr_class_t, meta_def->ofs);
 		EMIT_STRING (meta->class_pointer, class->name);
 		if (class->super_class)
@@ -215,6 +217,7 @@ class_begin (class_type_t *class_type)
 													   class->name));
 
 		class->def->initialized = class->def->constant = 1;
+		class->def->nosave = 1;
 		cls = &G_STRUCT (pr_class_t, class->def->ofs);
 		EMIT_DEF (cls->class_pointer, meta_def);
 		if (class->super_class) {
@@ -240,6 +243,7 @@ emit_class_ref (const char *class_name)
 	if (def->initialized)
 		return;
 	def->initialized = def->constant = 1;
+	def->nosave = 1;
 	ref = get_def (&type_integer, va (".obj_class_name_%s", class_name),
 				   pr.scope, st_extern);
 	if (!ref->external)
@@ -257,6 +261,7 @@ emit_class_name (const char *class_name)
 	if (def->initialized)
 		return;
 	def->initialized = def->constant = 1;
+	def->nosave = 1;
 	G_INT (def->ofs) = 0;
 }
 
@@ -271,6 +276,7 @@ emit_category_name (const char *class_name, const char *category_name)
 	if (def->initialized)
 		return;
 	def->initialized = def->constant = 1;
+	def->nosave = 1;
 	G_INT (def->ofs) = 0;
 }
 
@@ -573,6 +579,7 @@ class_pointer_def (class_t *class)
 	if (def->initialized)
 		return def;
 	def->initialized = def->constant = 1;
+	def->nosave = 1;
 	if (!class->def)
 		class->def = class_def (&class_type, 1);
 	if (!class->def->external)
@@ -622,6 +629,7 @@ class_finish_module (void)
 		new_struct_field (symtab_type, &type_pointer, 0, vis_public);
 	symtab_def = get_def (symtab_type, "_OBJ_SYMTAB", pr.scope, st_static);
 	symtab_def->initialized = symtab_def->constant = 1;
+	symtab_def->nosave = 1;
 	symtab = &G_STRUCT (pr_symtab_t, symtab_def->ofs);
 	symtab->cls_def_cnt = num_classes;
 	symtab->cat_def_cnt = num_categories;
@@ -645,6 +653,7 @@ class_finish_module (void)
 
 	module_def = get_def (type_module, "_OBJ_MODULE", pr.scope, st_static);
 	module_def->initialized = module_def->constant = 1;
+	module_def->nosave = 1;
 	module = &G_STRUCT (pr_module_t, module_def->ofs);
 	module->size = type_size (type_module);
 	EMIT_STRING (module->name, options.output_file);
@@ -742,6 +751,7 @@ emit_protocol (protocol_t *protocol)
 						   va ("_OBJ_PROTOCOL_%s", protocol->name),
 						   pr.scope, st_static);
 	proto_def->initialized = proto_def->constant = 1;
+	proto_def->nosave = 1;
 	proto = &G_STRUCT (pr_protocol_t, proto_def->ofs);
 	proto->class_pointer = 0;
 	EMIT_STRING (proto->protocol_name, protocol->name);
@@ -774,6 +784,7 @@ emit_protocol_list (protocollist_t *protocols, const char *name)
 								va ("_OBJ_PROTOCOLS_%s", name),
 								pr.scope, st_static);
 	proto_list_def->initialized = proto_list_def->constant = 1;
+	proto_list_def->nosave = 1;
 	proto_list = &G_STRUCT (pr_protocol_list_t, proto_list_def->ofs);
 	proto_list->next = 0;
 	proto_list->count = protocols->count;

@@ -53,6 +53,7 @@ typedef struct def_s {
 	unsigned		external:1;		// externally declared def
 	unsigned		local:1;		// function local def
 	unsigned		system:1;		// system def
+	unsigned        nosave:1;		// don't set DEF_SAVEGLOBAL
 
 	string_t		file;			// source file
 	int				line;			// source line

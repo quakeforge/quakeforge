@@ -264,6 +264,7 @@ selector_def (const char *sel_id, const char *sel_types)
 	sel_def = malloc (sizeof (sel_def_t));
 	sel_def->def = new_def (type_SEL.aux_type, ".imm", pr.scope);
 	sel_def->def->initialized = sel_def->def->constant = 1;
+	sel_def->def->nosave = 1;
 	sel_def->def->ofs = new_location (type_SEL.aux_type, pr.near_data);
 	EMIT_STRING (G_INT (sel_def->def->ofs), sel_id);
 	EMIT_STRING (G_INT (sel_def->def->ofs + 1), sel_types);
@@ -302,6 +303,7 @@ emit_methods (methodlist_t *_methods, const char *name, int instance)
 	methods_def = get_def (method_list, va ("_OBJ_%s_METHODS_%s", type, name),
 						   pr.scope, st_static);
 	methods_def->initialized = methods_def->constant = 1;
+	methods_def->nosave = 1;
 	methods = &G_STRUCT (pr_method_list_t, methods_def->ofs);
 	methods->method_next = 0;
 	methods->method_count = count;

@@ -76,6 +76,7 @@ typedef struct qfo_def_s {
 #define QFOD_EXTERNAL		(1u<<4)
 #define QFOD_LOCAL			(1u<<5)
 #define QFOD_SYSTEM			(1u<<6)
+#define QFOD_NOSAVE			(1u<<7)
 
 typedef struct qfo_func_s {
 	string_t    name;

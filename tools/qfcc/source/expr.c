@@ -665,6 +665,7 @@ new_this_expr (void)
 	def_t      *def = get_def (type, ".this", pr.scope, st_extern);
 
 	def_initialized (def);
+	def->nosave = 1;
 	return new_def_expr (def);
 }
 
@@ -675,6 +676,7 @@ param_expr (const char *name, type_t *type)
 	expr_t     *def_expr;
 
 	def_initialized (def);
+	def->nosave = 1;
 	def_expr = new_def_expr (def);
 	return unary_expr ('.', address_expr (def_expr, 0, type));
 }

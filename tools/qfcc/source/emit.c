@@ -264,6 +264,7 @@ emit_assign_expr (int oper, expr_t *e)
 						size);
 				def_a->ofs = ofs;
 				def_a->constant = 0;
+				def_a->nosave = 1;
 				if (options.warnings.cow)
 					warning (e1, "assignment to constant %s (Moooooooo!)",
 							 def_a->name);

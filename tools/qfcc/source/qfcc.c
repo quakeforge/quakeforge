@@ -191,7 +191,8 @@ WriteData (int crc)
 
 		dd = &globals[numglobaldefs++];
 		def_to_ddef (def, dd, 0);
-		if (!def->constant
+		if (!def->nosave
+			&& !def->constant
 			&& def->type->type != ev_func
 			&& def->type->type != ev_field && def->global)
 			dd->type |= DEF_SAVEGLOBAL;
@@ -349,16 +350,29 @@ begin_compilation (void)
 static void
 setup_param_block (void)
 {
-	def_initialized (get_def (&type_zero, ".zero", pr.scope, st_global));
-	def_initialized (get_def (&type_param, ".return", pr.scope, st_global));
-	def_initialized (get_def (&type_param, ".param_0", pr.scope, st_global));
-	def_initialized (get_def (&type_param, ".param_1", pr.scope, st_global));
-	def_initialized (get_def (&type_param, ".param_2", pr.scope, st_global));
-	def_initialized (get_def (&type_param, ".param_3", pr.scope, st_global));
-	def_initialized (get_def (&type_param, ".param_4", pr.scope, st_global));
-	def_initialized (get_def (&type_param, ".param_5", pr.scope, st_global));
-	def_initialized (get_def (&type_param, ".param_6", pr.scope, st_global));
-	def_initialized (get_def (&type_param, ".param_7", pr.scope, st_global));
+	size_t      i;
+	def_t      *def;
+	static struct {
+		const char *name;
+		type_t     *type;
+	} defs[] = {
+		{".zero",		&type_zero},
+		{".return",		&type_param},
+		{".param_0",	&type_param},
+		{".param_1",	&type_param},
+		{".param_2",	&type_param},
+		{".param_3",	&type_param},
+		{".param_4",	&type_param},
+		{".param_5",	&type_param},
+		{".param_6",	&type_param},
+		{".param_7",	&type_param},
+	};
+
+	for (i = 0; i < sizeof (defs) / sizeof (defs[0]); i++) {
+		def = get_def (defs[i].type, defs[i].name, pr.scope, st_global);
+		def->nosave = 1;
+		def_initialized (def);
+	}
 }
 
 static qboolean
