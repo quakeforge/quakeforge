@@ -160,7 +160,7 @@ Depends: ${shlibs:Depends}
 Description: OSS digital audio output plugin for QuakeForge
  The OSS plugin for QuakeForge provides digital audio output (using OSS/Linux,
  OSS/Free, or kernel sound) for QuakeForge targets that contain clients.
- 
+ .
  NOTE: This plugin does not work on all systems, since it uses memory-mapped
  I/O for the output device. If you have trouble, try the quakeforge-alsa
  package.

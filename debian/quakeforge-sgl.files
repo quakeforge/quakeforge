@@ -1,2 +1,4 @@
-usr/games/qf-client-sgl
 usr/games/nq-sgl
+usr/games/qw-client-sgl
+usr/lib/libQFsgl.so.1
+usr/lib/libQFsgl.so.1.0.0

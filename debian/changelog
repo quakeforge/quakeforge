@@ -1,3 +1,10 @@
+quakeforge (0.5.1-0cvs20010912) frozen unstable; urgency=low
+
+  * Change version number to be closer to CVS
+  * Lots of changes, all new packaging.
+  
+ -- Jeff Teunissen <deek@d2dc.net>  Wed, 12 Sep 2001 09:59:04 -0400
+
 quakeforge (0.2.99beta6-0) frozen unstable; urgency=low
 
   * New upstream version

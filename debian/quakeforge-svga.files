@@ -1,2 +1,4 @@
-usr/games/qf-client-svga
 usr/games/nq-svga
+usr/games/qw-client-svga
+usr/lib/libQFsvga.so.1
+usr/lib/libQFsvga.so.1.0.0

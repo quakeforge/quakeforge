@@ -85,8 +85,8 @@ binary-arch: build install
 	dh_fixperms
 	dh_makeshlibs
 	# You may want to make some executables suid here.
-	chmod 4755 debian/quakeforge-svga/usr/games/qw-client-svga debian/qf-svga/usr/games/nuq-svga
-	-chmod 4755 debian/quakeforge-3dfx/usr/games/qw-client-3dfx debian/qf-3dfx/usr/games/nuq-3dfx
+	chmod 4755 debian/quakeforge-svga/usr/games/qw-client-svga debian/quakeforge-svga/usr/games/nq-svga
+	-chmod 4755 debian/quakeforge-3dfx/usr/games/qw-client-3dfx debian/quakeforge-3dfx/usr/games/nq-3dfx
 	dh_installdeb
 	dh_shlibdeps
 	dh_gencontrol
