@@ -1487,7 +1487,8 @@ binary_expr (int op, expr_t *e1, expr_t *e2)
 	} else {
 		type = t1;
 	}
-	if ((op >= OR && op <= GT) || op == '>' || op == '<') {
+	if (op == OR || op == AND || op == EQ || op == NE || op == LE
+		|| op == GE || op == LT || op == GT || op == '>' || op == '<') {
 		if (options.code.progsversion > PROG_ID_VERSION)
 			type = &type_integer;
 		else
