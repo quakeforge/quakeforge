@@ -108,8 +108,6 @@ SNDDMA_Init (void)
 
 	snd_inited = 0;
 
-	SNDDMA_Init_Cvars ();
-
 	// open snd_dev, confirm capability to mmap, and get size of dma buffer
 	if (snd_device->string[0])
 		snd_dev = snd_device->string;

@@ -149,8 +149,6 @@ SNDDMA_Init (void)
 	int         rate = -1, format = -1, bps, stereo = -1, frag_size;
 	unsigned int mask;
 
-	SNDDMA_Init_Cvars ();
-
 	mask = snd_cards_mask ();
 	if (!mask) {
 		Con_Printf ("No sound cards detected\n");

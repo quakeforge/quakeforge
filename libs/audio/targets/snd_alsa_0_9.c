@@ -84,8 +84,6 @@ SNDDMA_Init (void)
 	snd_pcm_hw_params_t *hw;
 	snd_pcm_sw_params_t *sw;
 
-	SNDDMA_Init_Cvars ();
-
 	snd_pcm_hw_params_alloca (&hw);
 	snd_pcm_sw_params_alloca (&sw);
 
