@@ -540,8 +540,9 @@ SND_GetSoundtime (void)
 
 	// it is possible to miscount buffers if it has wrapped twice between
 	// calls to SND_Update.  Oh well.
-	samplepos = snd_output_funcs->pS_O_GetDMAPos ();
-
+	if ((samplepos = snd_output_funcs->pS_O_GetDMAPos ()) == -1)
+		return;
+	
 	if (samplepos < oldsamplepos) {
 		buffers++;						// buffer wrapped
 
