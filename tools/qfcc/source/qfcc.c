@@ -904,6 +904,7 @@ Options: \n\
 
 	// compile all the files
 	while ((src = COM_Parse (src))) {
+#if 0
 		extern FILE *yyin;
 		int yyparse(void);
 		extern int lineno;
@@ -913,9 +914,7 @@ Options: \n\
 
 		sprintf (filename, "%s/%s", sourcedir, com_token);
 		printf ("compiling %s\n", filename);
-		LoadFile (filename, (void *) &src2);
 
-		//if (!PR_CompileFile (src2, filename))
 		yyin = fopen (filename, "rt");
 		lineno = 1;
 		clear_frame_macros ();
@@ -924,6 +923,13 @@ Options: \n\
 			return 1;
 		}
 		fclose (yyin);
+#else
+		sprintf (filename, "%s/%s", sourcedir, com_token);
+		printf ("compiling %s\n", filename);
+		LoadFile (filename, (void *) &src2);
+		if (!PR_CompileFile (src2, filename))
+			return 1;
+#endif
 	}
 
 	if (!PR_FinishCompilation ())

@@ -32,15 +32,25 @@ type_t *PR_FindType (type_t *new);
 %left	'*' '/' '&' '|'
 %left	'!' '.' '('
 
-%token	NAME INT_VAL FLOAT_VAL STRING_VAL VECTOR_VAL QUATERNION_VAL
+%token	<string_val> NAME STRING_VAL
+%token	<int_val> INT_VAL
+%token	<float_val> FLOAT_VAL
+%token	<vector_val> VECTOR_VAL
+%token	<quaternion_val> QUATERNION_VAL
 
 %token	LOCAL RETURN WHILE DO IF ELSE FOR ELIPSIS
 %token	<type> TYPE
 
 %type	<type>	type
-%type	<def>	param param_list def_item def def_list
+%type	<def>	param param_list def_item def_list expr arg_list
 
 %expect 1
+
+%{
+
+type_t *current_type;
+
+%}
 
 %%
 
@@ -50,13 +60,7 @@ defs
 	;
 
 def
-	: type def_list
-		{
-			def_t *def;
-			for (def = $2; def; def = def->next)
-				def->type = $1;
-			$$ = $2;
-		}
+	: type {current_type = $1;} def_list {}
 	;
 
 type
@@ -81,7 +85,11 @@ def_list
 	;
 
 def_item
-	: NAME opt_initializer {}
+	: NAME
+		{
+			$$ = PR_GetDef (current_type, $1, pr_scope, pr_scope ? &pr_scope->num_locals : &numpr_globals);
+		}
+	  opt_initializer
 	| '(' param_list ')' NAME opt_initializer {}
 	| '(' ')' NAME opt_initializer {}
 	| '(' ELIPSIS ')' NAME opt_initializer {}
@@ -157,8 +165,11 @@ expr
 	| '-' expr
 	| '!' expr
 	| NAME
-	| const
-	| '(' expr ')'
+		{
+			$$ = PR_GetDef (NULL, $1, pr_scope, false);
+		}
+	| const {}
+	| '(' expr ')' { $$ = $2; }
 	;
 
 arg_list
@@ -167,11 +178,11 @@ arg_list
 	;
 
 const
-	: FLOAT_VAL
-	| STRING_VAL
-	| VECTOR_VAL
-	| QUATERNION_VAL
-	| INT_VAL
+	: FLOAT_VAL {}
+	| STRING_VAL {}
+	| VECTOR_VAL {}
+	| QUATERNION_VAL {}
+	| INT_VAL {}
 	;
 
 %%
