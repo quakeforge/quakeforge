@@ -124,6 +124,7 @@ cvar_t     *rcon_address;
 
 cvar_t     *cl_writecfg;
 cvar_t     *cl_allow_cmd_pkt;
+cvar_t     *cl_paranoid;
 
 cvar_t     *cl_timeframes;
 
@@ -257,7 +258,6 @@ CL_SendConnectPacket (void)
 {
 	char        data[2048];
 	double      t1, t2;
-	netadr_t    adr;
 
 // JACK: Fixed bug where DNS lookups would cause two connects real fast
 //       Now, adds lookup time to the connect time.
@@ -268,20 +268,14 @@ CL_SendConnectPacket (void)
 
 	t1 = Sys_DoubleTime ();
 
-	if (!NET_StringToAdr (cls.servername, &adr)) {
+	if (!NET_StringToAdr (cls.servername, &cls.server_addr)) {
 		Con_Printf ("Bad server address\n");
 		connect_time = -1;
 		return;
 	}
 
-	if (!NET_IsClientLegal (&adr)) {
-		Con_Printf ("Illegal server address\n");
-		connect_time = -1;
-		return;
-	}
-
-	if (adr.port == 0)
-		adr.port = BigShort (27500);
+	if (cls.server_addr.port == 0)
+		cls.server_addr.port = BigShort (27500);
 	t2 = Sys_DoubleTime ();
 
 	connect_time = realtime + t2 - t1;	// for retransmit requests
@@ -299,7 +293,7 @@ CL_SendConnectPacket (void)
 	snprintf (data, sizeof (data), "%c%c%c%cconnect %i %i %i \"%s\"\n",
 			  255, 255, 255, 255, PROTOCOL_VERSION, cls.qport, cls.challenge,
 			  Info_MakeString (cls.userinfo, 0));
-	NET_SendPacket (strlen (data), data, adr);
+	NET_SendPacket (strlen (data), data, cls.server_addr);
 }
 
 /*
@@ -312,7 +306,6 @@ CL_CheckForResend (void)
 {
 	char        data[2048];
 	double      t1, t2;
-	netadr_t    adr;
 
 	if (connect_time == -1)
 		return;
@@ -322,19 +315,14 @@ CL_CheckForResend (void)
 		return;
 
 	t1 = Sys_DoubleTime ();
-	if (!NET_StringToAdr (cls.servername, &adr)) {
+	if (!NET_StringToAdr (cls.servername, &cls.server_addr)) {
 		Con_Printf ("Bad server address\n");
 		connect_time = -1;
 		return;
 	}
-	if (!NET_IsClientLegal (&adr)) {
-		Con_Printf ("Illegal server address\n");
-		connect_time = -1;
-		return;
-	}
 
-	if (adr.port == 0)
-		adr.port = BigShort (27500);
+	if (cls.server_addr.port == 0)
+		cls.server_addr.port = BigShort (27500);
 	t2 = Sys_DoubleTime ();
 
 	connect_time = realtime + t2 - t1;	// for retransmit requests
@@ -343,7 +331,7 @@ CL_CheckForResend (void)
 	Con_Printf ("Connecting to %s...\n", cls.servername);
 	snprintf (data, sizeof (data), "%c%c%c%cgetchallenge\n", 255, 255, 255,
 			  255);
-	NET_SendPacket (strlen (data), data, adr);
+	NET_SendPacket (strlen (data), data, cls.server_addr);
 }
 
 void
@@ -643,7 +631,6 @@ CL_AddQFInfoKeys (void)
 	Info_SetValueForStarKey (cls.userinfo, "*cap", cap, 0);
 	Info_SetValueForStarKey (cls.userinfo, "*qf_version", VERSION, 0);
 	Info_SetValueForStarKey (cls.userinfo, "*qsg_version", QW_QSG_VERSION, 0);
-	Con_Printf ("QuakeForge server detected\n");
 }
 
 void
@@ -866,7 +853,9 @@ CL_ConnectionlessPacket (void)
 
 	c = MSG_ReadByte (net_message);
 	clcp_temp = 0;
-	if (!cls.demoplayback)
+	if (!cls.demoplayback
+		&& (cl_paranoid->int_val
+			|| !NET_CompareAdr (net_from, cls.server_addr)))
 		Con_Printf ("%s: ", NET_AdrToString (net_from));
 //	Con_DPrintf ("%s", net_message.data + 5);
 	if (c == S2C_CONNECTION) {
@@ -969,12 +958,16 @@ CL_ConnectionlessPacket (void)
 	}
 
 	if (c == S2C_CHALLENGE) {
-		Con_Printf ("challenge\n");
+		Con_Printf ("challenge");
 
 		s = MSG_ReadString (net_message);
 		cls.challenge = atoi (s);
-		if (strstr (s, "QF"))
+		if (strstr (s, "QF")) {
+			Con_Printf (": QuakeForge server detected\n");
 			CL_AddQFInfoKeys ();
+		} else {
+			Con_Printf ("\n");
+		}
 		CL_SendConnectPacket ();
 		return;
 	}
@@ -1200,6 +1193,10 @@ CL_Init_Cvars (void)
 							 "confirm quit command");
 	cl_allow_cmd_pkt = Cvar_Get ("cl_allow_cmd_pkt", "1", CVAR_NONE, NULL,
 								 "enables packets from the likes of gamespy");
+	cl_paranoid = Cvar_Get ("cl_paranoid", "1", CVAR_NONE, NULL,
+							"print source address of connectionless packets"
+							" even when coming from the server being connected"
+							" to.");
 	cl_autoexec = Cvar_Get ("cl_autoexec", "0", CVAR_ROM, NULL,
 							"exec autoexec.cfg on gamedir change");
 	cl_quakerc = Cvar_Get ("cl_quakerc", "1", CVAR_NONE, NULL,

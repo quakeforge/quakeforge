@@ -153,6 +153,7 @@ typedef struct
 	struct info_s	*userinfo;
 
 	char		servername[MAX_OSPATH];	// name of server from original connect
+	netadr_t	server_addr;			// address of server
 
 	int			qport;
 
