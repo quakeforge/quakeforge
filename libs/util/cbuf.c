@@ -111,7 +111,7 @@ Cbuf_New (
 }
 
 void
-CBuf_Delete (cbuf_t *cbuf)
+Cbuf_Delete (cbuf_t *cbuf)
 {
 	if (!cbuf)
 		return;
@@ -142,6 +142,7 @@ Cbuf_Execute (cbuf_t *cbuf)
 	cbuf_args_t *args = cbuf->args;
 
 	cbuf_active = cbuf;
+	cbuf->state = CBUF_STATE_NORMAL;
 	while (cbuf->buf->str[0]) {
 		cbuf->extract_line (cbuf);
 		if (cbuf->state)
@@ -154,6 +155,32 @@ Cbuf_Execute (cbuf_t *cbuf)
 		Cmd_Command (args);
 		if (cbuf->state)
 			break;
+	}
+}
+
+void
+Cbuf_Execute_Stack (cbuf_t *cbuf)
+{
+	cbuf_t *sp;
+	
+	for (sp = cbuf; sp->down; sp = sp->down);
+	while (sp) {
+		Cbuf_Execute (sp);
+		if (sp->state) {
+			if (sp->state == CBUF_STATE_STACK) {
+				sp = sp->down;
+				continue;
+			} else if (sp->state == CBUF_STATE_ERROR)
+				break;
+			else
+				return;
+		}
+		sp = sp->up;
+	}
+	dstring_clearstr (cbuf->buf);
+	for (cbuf = cbuf->down; cbuf; cbuf = sp) { // Reduce, reuse, recycle
+		sp = cbuf->down;
+		Cbuf_Delete (cbuf);
 	}
 }
 

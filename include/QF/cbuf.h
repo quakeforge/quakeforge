@@ -73,7 +73,7 @@ cbuf_t * Cbuf_New (
 		void (*construct) (struct cbuf_s *cbuf),
 		void (*destruct) (struct cbuf_s *cbuf)
 		);
-void CBuf_Delete (cbuf_t *cbuf);
+void Cbuf_Delete (cbuf_t *cbuf);
 void Cbuf_AddText (cbuf_t *cbuf, const char *text);
 void Cbuf_InsertText (cbuf_t *cbuf, const char *text);
 void Cbuf_Execute (cbuf_t *cbuf);
