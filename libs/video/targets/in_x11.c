@@ -476,6 +476,8 @@ event_motion (XEvent * event)
 void
 IN_LL_Grab_Input (void)
 {
+	if (!x_disp || !x_win)
+		return;
 	XGrabPointer (x_disp, x_win, True, MOUSE_MASK, GrabModeAsync,
 				  GrabModeAsync, x_win, None, CurrentTime);
 	if (in_dga->int_val)
@@ -486,6 +488,8 @@ IN_LL_Grab_Input (void)
 void
 IN_LL_Ungrab_Input (void)
 {
+	if (!x_disp || !x_win)
+		return;
 	if (in_dga->int_val)
 		dga_off ();
 	XUngrabPointer (x_disp, CurrentTime);
