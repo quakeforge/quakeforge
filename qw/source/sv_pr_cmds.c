@@ -37,6 +37,7 @@ static __attribute__ ((unused)) const char rcsid[] =
 #ifdef HAVE_STRINGS_H
 # include <strings.h>
 #endif
+#include <ctype.h>
 
 #include "QF/cbuf.h"
 #include "QF/clip_hull.h"
@@ -694,6 +695,40 @@ PR_CheckEmptyString (progs_t *pr, const char *s)
 		PR_RunError (pr, "Bad string");
 }
 
+static void
+do_precache (progs_t *pr, const char **cache, int max, const char *name,
+			 const char *func)
+{
+	int         i;
+	char       *s;
+
+	if (sv.state != ss_loading)
+		PR_RunError (pr, "%s: Precache can only be done in spawn functions",
+					 func);
+
+	PR_CheckEmptyString (pr, name);
+
+	s = Hunk_TempAlloc (strlen (name) + 1);
+	for (i = 0; *name; i++, name++) {
+		int         c = (byte) *name;
+		s[i] = tolower (c);
+	}
+	s[i] = 0;
+
+	for (i = 0; i < MAX_SOUNDS; i++) {
+		if (!cache[i]) {
+			char *c = Hunk_Alloc (strlen (s) + 1);
+			strcpy (c, s);
+			cache[i] = c; // blah, const
+			Con_DPrintf ("%s: %3d %s\n", func, i, s);
+			return;
+		}
+		if (!strcmp (cache[i], s))
+			return;
+	}
+	PR_RunError (pr, "%s: overflow", func);
+}
+
 void
 PF_precache_file (progs_t *pr)
 {										// precache_file is only used to copy 
@@ -704,59 +739,18 @@ PF_precache_file (progs_t *pr)
 void
 PF_precache_sound (progs_t *pr)
 {
-	const char       *s;
-	int         i;
-
-	if (sv.state != ss_loading)
-		PR_RunError (pr, "PF_Precache_*: Precache can only be done in spawn "
-					 "functions");
-
-	s = P_STRING (pr, 0);
+	do_precache (pr, sv.sound_precache, MAX_SOUNDS, P_STRING (pr, 0),
+				 "precache_sound");
 	R_INT (pr) = P_INT (pr, 0);
-	PR_CheckEmptyString (pr, s);
-
-	for (i = 0; i < MAX_SOUNDS; i++) {
-		if (!sv.sound_precache[i]) {
-			char *c = Hunk_Alloc (strlen (s) + 1);
-			strcpy (c, s);
-			sv.sound_precache[i] = c; // blah, const
-			Con_DPrintf ("PF_precache_sound: %3d %s\n", i, s);
-			return;
-		}
-		if (!strcmp (sv.sound_precache[i], s))
-			return;
-	}
-	PR_RunError (pr, "PF_precache_sound: overflow");
 }
 
 void
 PF_precache_model (progs_t *pr)
 {
-	const char *s;
-	int         i;
-
-	if (sv.state != ss_loading)
-		PR_RunError
-			(pr, "PF_Precache_model: Precache can only be done in spawn "
-			 "functions");
-
-	s = P_STRING (pr, 0);
 	R_INT (pr) = P_INT (pr, 0);
-	PR_CheckEmptyString (pr, s);
 
-	for (i = 0; i < MAX_MODELS; i++) {
-		if (!sv.model_precache[i]) {
-			char *c = Hunk_Alloc (strlen (s) + 1);
-			strcpy (c, s);
-			sv.model_precache[i] = c; // blah, const
-			Con_DPrintf ("PF_precache_model: %3d %s\n", i, s);
-			return;
-		}
-		if (!strcmp (sv.model_precache[i], s))
-			return;
-	}
-	Con_DPrintf ("PF_precache_model: %s\n", s);
-	PR_RunError (pr, "PF_precache_model: overflow");
+	do_precache (pr, sv.model_precache, MAX_MODELS, P_STRING (pr, 0),
+				 "precache_model");
 }
 
 /*
