@@ -158,9 +158,6 @@ ED_Write (progs_t *pr, QFile *f, edict_t *ed)
 	FIXME: need to tag constants, doesn't really work
 */
 
-/*
-	ED_WriteGlobals
-*/
 void
 ED_WriteGlobals (progs_t *pr, QFile *f)
 {
@@ -189,10 +186,7 @@ ED_WriteGlobals (progs_t *pr, QFile *f)
 }
 
 
-/*
-	ED_NewString
-*/
-char *
+static char *
 ED_NewString (progs_t *pr, const char *string)
 {
 	char		*new, *new_p;
@@ -378,9 +372,6 @@ ED_ParseEdict (progs_t *pr, const char *data, edict_t *ent)
 	return data;
 }
 
-/*
-	ED_ParseGlobals
-*/
 void
 ED_ParseGlobals (progs_t *pr, const char *data)
 {

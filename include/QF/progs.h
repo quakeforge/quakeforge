@@ -81,9 +81,6 @@ void ED_ClearEdict (progs_t * pr, edict_t *e, int val);
 edict_t *ED_Alloc (progs_t *pr);
 void ED_Free (progs_t *pr, edict_t *ed);
 
-char	*ED_NewString (progs_t *pr, const char *string);
-// returns a copy of the string allocated from the server's string heap
-
 void ED_Print (progs_t *pr, edict_t *ed);
 void ED_Write (progs_t *pr, QFile *f, edict_t *ed);
 const char *ED_ParseEdict (progs_t *pr, const char *data, edict_t *ent);
