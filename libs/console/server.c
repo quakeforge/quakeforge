@@ -49,19 +49,23 @@
 #include "QF/cmd.h"
 #include "QF/console.h"
 #include "QF/cvar.h"
+#include "QF/plugin.h"
 #include "QF/qtypes.h"
 #include "QF/sys.h"
 
-static WINDOW *output;
-static WINDOW *status;
-static WINDOW *input;
-static int screen_x, screen_y;
+static int use_curses = 1;
 
 #define     MAXCMDLINE  256
 char        key_lines[32][MAXCMDLINE];
 int         edit_line;
 int         history_line;
 int         key_linepos;
+
+#ifdef HAVE_CURSES_H
+static WINDOW *output;
+static WINDOW *status;
+static WINDOW *input;
+static int screen_x, screen_y;
 
 static chtype attr_table[4] = {
 	A_NORMAL,
@@ -88,209 +92,146 @@ static const byte attr_map[256] = {
 	1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
 	1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
 };
+#endif
 
-void
-Con_Init (void)
+static void
+C_Init (void)
 {
-	int i;
+#ifdef HAVE_CURSES_H
+	if (use_curses) {
+		int i;
 
-	for (i = 0; i < 32; i++) {
-		key_lines[i][0] = ']';
-		key_lines[i][1] = 0;
+		for (i = 0; i < 32; i++) {
+			key_lines[i][0] = ']';
+			key_lines[i][1] = 0;
+		}
+		key_linepos = 1;
+
+		initscr ();
+		start_color ();
+		cbreak ();
+		noecho ();
+
+		nonl ();
+		intrflush (stdscr, FALSE);
+
+		getmaxyx (stdscr, screen_y, screen_x);
+		output = subwin (stdscr, screen_y - 2, screen_x, 0, 0);
+		status = subwin (stdscr, 1, screen_x, screen_y - 2, 0);
+		input  = subwin (stdscr, 1, screen_x, screen_y - 1, 0);
+
+		init_pair (1, COLOR_YELLOW, COLOR_BLACK);
+		init_pair (2, COLOR_GREEN, COLOR_BLACK);
+		init_pair (3, COLOR_RED, COLOR_BLACK);
+		init_pair (4, COLOR_YELLOW, COLOR_BLUE);
+
+		scrollok (output, TRUE);
+		leaveok (output, TRUE);
+
+		scrollok (status, FALSE);
+		leaveok (status, TRUE);
+
+		scrollok (input, FALSE);
+		nodelay (input, TRUE);
+		keypad (input, TRUE);
+
+		wclear (output);
+		wbkgdset (status, COLOR_PAIR(4));
+		wclear (status);
+		wclear (input);
+		touchwin (stdscr);
+		wrefresh (output);
+		wrefresh (status);
+		wrefresh (input);
 	}
-	key_linepos = 1;
-
-	initscr ();
-	start_color ();
-	cbreak ();
-	noecho ();
-
-	nonl ();
-	intrflush (stdscr, FALSE);
-
-	getmaxyx (stdscr, screen_y, screen_x);
-	output = subwin (stdscr, screen_y - 2, screen_x, 0, 0);
-	status = subwin (stdscr, 1, screen_x, screen_y - 2, 0);
-	input  = subwin (stdscr, 1, screen_x, screen_y - 1, 0);
-
-	init_pair (1, COLOR_YELLOW, COLOR_BLACK);
-	init_pair (2, COLOR_GREEN, COLOR_BLACK);
-	init_pair (3, COLOR_RED, COLOR_BLACK);
-	init_pair (4, COLOR_YELLOW, COLOR_BLUE);
-
-	scrollok (output, TRUE);
-	leaveok (output, TRUE);
-
-	scrollok (status, FALSE);
-	leaveok (status, TRUE);
-
-	scrollok (input, FALSE);
-	nodelay (input, TRUE);
-	keypad (input, TRUE);
-
-	wclear (output);
-	wbkgdset (status, COLOR_PAIR(4));
-	wclear (status);
-	wclear (input);
-	touchwin (stdscr);
-	wrefresh (output);
-	wrefresh (status);
-	wrefresh (input);
+#endif
 }
 
-void
-Con_Shutdown (void)
+static void
+C_Shutdown (void)
 {
-	endwin ();
+#ifdef HAVE_CURSES_H
+	if (use_curses)
+		endwin ();
+#endif
 }
 
-void
-Con_Print (char *txt)
+static void
+C_Print (const char *fmt, va_list args)
 {
-	chtype      ch;
+#ifdef HAVE_CURSES_H
+	if (use_curses) {
+		static char *buffer;
+		static int buffer_size;
+		char      *txt;
+		chtype     ch;
+		int size;
 
-	while ((ch = *txt++)) {
-		ch = sys_char_map[ch] | attr_table[attr_map[ch]];
-		waddch (output, ch);
-	}
-	touchwin (stdscr);
-	wrefresh (output);
+		size = vsnprintf (buffer, buffer_size, fmt, args);
+		if (size + 1 > buffer_size) {
+			buffer_size = (size + 1 + 1024) % 1024;	// 1k multiples
+			buffer = realloc (buffer, buffer_size);
+			if (!buffer)
+				Sys_Error ("console: could not allocate %d bytes\n",
+						   buffer_size);
+		}
+
+		txt = buffer;
+
+		while ((ch = *txt++)) {
+			ch = sys_char_map[ch] | attr_table[attr_map[ch]];
+			waddch (output, ch);
+		}
+		touchwin (stdscr);
+		wrefresh (output);
+	} else
+#endif
+		vfprintf (stdout, fmt, args);
 }
 
-void
-Con_ProcessInput (void)
+static general_funcs_t plugin_info_general_funcs = {
+	C_Init,
+	C_Shutdown,
+};
+static general_data_t plugin_info_general_data;
+
+static console_funcs_t plugin_info_console_funcs = {
+	C_Print,
+};
+static console_data_t plugin_info_console_data;
+
+static plugin_funcs_t plugin_info_funcs = {
+	&plugin_info_general_funcs,
+	0,
+	0,
+	0,
+	&plugin_info_console_funcs,
+};
+
+static plugin_data_t plugin_info_data = {
+	&plugin_info_general_data,
+	0,
+	0,
+	0,
+	&plugin_info_console_data,
+};
+
+static plugin_t plugin_info = {
+	qfp_console,
+	0,
+	QFPLUGIN_VERSION,
+	"0.1",
+	"server console driver",
+	"Copyright (C) 1996-1997 id Software, Inc.\n"
+		"Copyright (C) 1999,2000,2001  contributors of the QuakeForge"
+		" project\n"
+		"Please see the file \"AUTHORS\" for a list of contributors",
+	&plugin_info_funcs,
+	&plugin_info_data,
+};
+
+plugin_t *
+PluginInfo (void)
 {
-	int         ch = wgetch (input);
-	int         i;
-	int         curs_x;
-	char       *text = 0;
-
-	static int  scroll;
-
-	switch (ch) {
-		case KEY_ENTER:
-		case '\n':
-		case '\r':
-			if (key_lines[edit_line][1] == '/'
-				&& key_lines[edit_line][2] == '/')
-				goto no_lf;
-			else if (key_lines[edit_line][1] == '\\'
-					 || key_lines[edit_line][1] == '/')
-				Cbuf_AddText (key_lines[edit_line] + 2);
-			else
-				Cbuf_AddText (key_lines[edit_line] + 1);
-			Cbuf_AddText ("\n");
-		  no_lf:
-			Con_Printf ("%s\n", key_lines[edit_line]);
-			edit_line = (edit_line + 1) & 31;
-			history_line = edit_line;
-			key_lines[edit_line][0] = ']';
-			key_lines[edit_line][1] = 0;
-			key_linepos = 1;
-			break;
-		case '\t':
-			Con_CompleteCommandLine();
-			break;
-		case KEY_BACKSPACE:
-			if (key_linepos > 1) {
-				strcpy (key_lines[edit_line] + key_linepos - 1,
-						key_lines[edit_line] + key_linepos);
-				key_linepos--;
-			}
-			break;
-		case KEY_DC:
-			if (key_linepos < strlen (key_lines[edit_line]))
-				strcpy (key_lines[edit_line] + key_linepos,
-						key_lines[edit_line] + key_linepos + 1);
-			break;
-		case KEY_RIGHT:
-			if (key_linepos < strlen (key_lines[edit_line]))
-				key_linepos++;
-			break;
-		case KEY_LEFT:
-			if (key_linepos > 1)
-				key_linepos--;
-			break;
-		case KEY_UP:
-			do {
-				history_line = (history_line - 1) & 31;
-			} while (history_line != edit_line && !key_lines[history_line][1]);
-			if (history_line == edit_line)
-				history_line = (edit_line + 1) & 31;
-			strcpy (key_lines[edit_line], key_lines[history_line]);
-			key_linepos = strlen (key_lines[edit_line]);
-			break;
-		case KEY_DOWN:
-			if (history_line == edit_line)
-				break;
-			do {
-				history_line = (history_line + 1) & 31;
-			} while (history_line != edit_line && !key_lines[history_line][1]);
-			if (history_line == edit_line) {
-				key_lines[edit_line][0] = ']';
-				key_lines[edit_line][1] = 0;
-				key_linepos = 1;
-			} else {
-				strcpy (key_lines[edit_line], key_lines[history_line]);
-				key_linepos = strlen (key_lines[edit_line]);
-			}
-			break;
-		case KEY_PPAGE:
-			break;
-		case KEY_NPAGE:
-			break;
-		case KEY_HOME:
-			key_linepos = 1;
-			break;
-		case KEY_END:
-			key_linepos = strlen (key_lines[edit_line]);
-			break;
-		default:
-			if (ch >= ' ' && ch < 127) {
-				i = strlen (key_lines[edit_line]);
-				if (i >= MAXCMDLINE - 1)
-					break;
-				// This also moves the ending \0
-				memmove (key_lines[edit_line] + key_linepos + 1,
-						key_lines[edit_line] + key_linepos,
-						i - key_linepos + 1);
-				key_lines[edit_line][key_linepos] = ch;
-				key_linepos++;
-			}
-			break;
-	}
-
-	i = key_linepos - 1;
-	if (scroll > i)
-		scroll = i;
-	if (scroll < i - (screen_x - 2) + 1)
-		scroll = i - (screen_x - 2) + 1;
-	text = key_lines[edit_line] + scroll + 1;
-	if ((int)strlen (text) < screen_x - 2) {
-		scroll = strlen (key_lines[edit_line] + 1) - (screen_x - 2);
-		if (scroll < 0)
-			scroll = 0;
-		text = key_lines[edit_line] + scroll + 1;
-	}
-
-	curs_x = key_linepos - scroll;
-
-	wmove (input, 0, 0);
-	if (scroll) {
-		waddch (input, '<');
-	} else {
-		waddch (input, key_lines[edit_line][0]);
-	}
-	for (i = 0; i < screen_x - 2 && *text; i++)
-		waddch (input, *text++);
-	while (i++ < screen_x - 2)
-		waddch (input, ' ');
-	if (*text) {
-		waddch (input, '>');
-	} else {
-		waddch (input, ' ');
-	}
-	wmove (input, 0, curs_x);
-	touchline (stdscr, screen_y - 1, 1);
-	wrefresh (input);
+	return &plugin_info;
 }
