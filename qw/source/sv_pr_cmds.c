@@ -1255,7 +1255,8 @@ PF_infokey (progs_t *pr)
 	if (e1 == 0) {
 		if ((value = Info_ValueForKey (svs.info, key)) == NULL || !*value)
 			value = Info_ValueForKey (localinfo, key);
-	} else if (e1 > 0 && e1 <= MAX_CLIENTS) {
+	} else if (e1 > 0 && e1 <= MAX_CLIENTS
+			   && svs.clients[e1 - 1].userinfo) {
 		if (!strcmp (key, "ip"))
 			value =
 				strcpy (ov,
