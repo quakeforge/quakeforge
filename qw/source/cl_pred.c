@@ -48,13 +48,12 @@ cvar_t     *cl_predict_static;
 cvar_t     *cl_pushlatency;
 
 
-
 void
 CL_PredictUsercmd (player_state_t * from, player_state_t * to, usercmd_t *u,
 				   qboolean spectator)
 {
-// Dabb: if there is no movement to start with, don't predict...
-	if(!cl_predict_static->int_val && VectorIsZero (from->velocity)) {
+	// Dabb: if there is no movement to start with, don't predict...
+	if (!cl_predict_static->int_val && VectorIsZero (from->velocity)) {
 		VectorCopy (from->origin, to->origin);
 		VectorCopy (u->angles, to->viewangles);
 		VectorCopy (from->velocity, to->velocity);
@@ -192,7 +191,8 @@ CL_PredictMove (void)
 	if (to->senttime == from->senttime)
 		f = 0;
 	else
-		f = bound(0, (cl.time - from->senttime) / (to->senttime - from->senttime), 1);
+		f = bound(0, (cl.time - from->senttime) /
+				  (to->senttime - from->senttime), 1);
 
 	for (i = 0; i < 3; i++)
 		if (fabs (from->playerstate[cl.playernum].origin[i] -
@@ -204,12 +204,12 @@ CL_PredictMove (void)
 		}
 
 	for (i = 0; i < 3; i++) {
-		cl.simorg[i] = from->playerstate[cl.playernum].origin[i]
-			+ f * (to->playerstate[cl.playernum].origin[i] -
+		cl.simorg[i] = from->playerstate[cl.playernum].origin[i] +
+			f * (to->playerstate[cl.playernum].origin[i] -
 				   from->playerstate[cl.playernum].origin[i]);
-		cl.simvel[i] = from->playerstate[cl.playernum].velocity[i]
-			+ f * (to->playerstate[cl.playernum].velocity[i] -
-				   from->playerstate[cl.playernum].velocity[i]);
+		cl.simvel[i] = from->playerstate[cl.playernum].velocity[i] +
+			f * (to->playerstate[cl.playernum].velocity[i] -
+				 from->playerstate[cl.playernum].velocity[i]);
 	}
 }
 
