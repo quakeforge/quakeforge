@@ -161,6 +161,7 @@ GIB_Class_Create (gib_classdesc_t *desc)
 	if (desc->parentname && (parent = Hash_Find (gib_classes, desc->parentname))) {
 		class->parent = parent;
 		class->depth = parent->depth + 1;
+		llist_append (parent->children, class);
 	} else
 		class->depth = 0;
 
@@ -173,6 +174,7 @@ GIB_Class_Create (gib_classdesc_t *desc)
 			parent->methods : NULL, desc->methods);
 	class->class_methods = GIB_Method_Build_Hash (class, parent ?
 			parent->class_methods : NULL, desc->class_methods);
+	class->children = llist_new (NULL, NULL, NULL);
 	
 	Hash_Add (gib_classes, class);
 
@@ -205,6 +207,7 @@ GIB_Object_Create (const char *classname, qboolean classobj)
 	obj->data = malloc (sizeof (void *) * (class->depth+1));
 	obj->methods = classobj ? class->class_methods : class->methods;
 	obj->handle = classobj ? 0 : GIB_Handle_New (obj);
+	obj->handstr = strdup (va ("%lu", obj->handle));
 	obj->refs = 1;
 	obj->signals = Hash_NewTable (128, GIB_Signal_Get_Key,
 			GIB_Signal_Free, NULL);
@@ -235,6 +238,7 @@ GIB_Object_Finish_Destroy (int argc, const char **argv, void *data)
 			temp->destruct (obj->data[i]);
 	free (obj->data);
 	GIB_Handle_Free (obj->handle);
+	free ((void *) obj->handstr);
 	Hash_DelTable (obj->signals);
 	llist_delete (obj->slots);
 	free (obj);
@@ -306,6 +310,14 @@ GIB_SendToMethod (gib_object_t *obj, gib_method_t *method, gib_object_t
 	
 	return method->func (obj, method, obj->data[method->class->depth],
 			sender, message);
+}
+
+void
+GIB_Reply (gib_object_t *obj, gib_message_t mesg, int argc, const char
+		**argv)
+{
+	mesg.reply (argc, argv, mesg.replydata);
+	GIB_Object_Decref (obj);
 }
 
 gib_object_t *

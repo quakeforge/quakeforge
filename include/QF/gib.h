@@ -62,6 +62,7 @@ typedef struct gib_object_s {
 	unsigned long int handle, refs;
 	hashtab_t *signals;
 	llist_t *slots;
+	const char *handstr;
 } gib_object_t;
 
 typedef struct gib_message_s {
@@ -93,6 +94,7 @@ typedef struct gib_class_s {
 	unsigned int depth;
 	struct gib_object_s *classobj;
 	struct gib_class_s *parent;
+	llist_t *children;
 } gib_class_t;
 
 typedef struct gib_methodtab_s {
@@ -109,9 +111,6 @@ typedef struct gib_classdesc_s {
 	struct gib_methodtab_s *methods, *class_methods;
 } gib_classdesc_t;
 
-#define GIB_Reply(obj,mesg,argc,argv) if ((mesg).reply) { \
-			((mesg).reply(argc,argv,(mesg).replydata)); \
-			GIB_Object_Decref ((obj));}
 #define GIB_ForwardToSuper(mesg,obj,method) ((method)->parent->func ((obj), \
 			(method)->parent, \
 			(obj)->data[(method)->parent->class->depth], \
@@ -126,6 +125,8 @@ int GIB_Send (gib_object_t *obj, gib_object_t *sender, int argc, const char **ar
 int GIB_SendToMethod (gib_object_t *obj, gib_method_t *method, gib_object_t
 		*sender, int argc, const char **argv, gib_reply_handler reply,
 		void *replydata);
+void GIB_Reply (gib_object_t *obj, gib_message_t mesg, int argc, const char
+		**argv);
 gib_object_t *GIB_Object_Get (const char *id);
 void GIB_Object_Signal_Slot_Pair (gib_object_t *sender, const char *signal,
 		gib_object_t *receiver, const char *slot);

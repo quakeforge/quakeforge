@@ -64,13 +64,11 @@ static int
 Object_Retain_f (gib_object_t *obj, gib_method_t *method, void *data,
 		gib_object_t *sender, gib_message_t mesg)
 {
-	const char *r;
 	baseobj_t *base = data;
 	
 	base->ref++;
 	GIB_Object_Incref (obj);
-	r = va ("%lu", obj->handle);
-	GIB_Reply (obj, mesg, 1, &r);
+	GIB_Reply (obj, mesg, 1, &obj->handstr);
 	return 0;
 }
 
@@ -91,10 +89,7 @@ static int
 Object_Init_f (gib_object_t *obj, gib_method_t *method, void *data,
 		gib_object_t *sender, gib_message_t mesg)
 {
-	const char *r;
-
-	r = va ("%lu", obj->handle);
-	GIB_Reply (obj, mesg, 1, &r);
+	GIB_Reply (obj, mesg, 1, &obj->handstr);
 	return 0;
 }
 
@@ -103,6 +98,37 @@ Object_Class_f (gib_object_t *obj, gib_method_t *method, void *data,
 		gib_object_t *sender, gib_message_t mesg)
 {
 	GIB_Reply (obj, mesg, 1, &obj->class->name);
+	return 0;
+}
+
+static int
+Object_SuperClass_f (gib_object_t *obj, gib_method_t *method, void *data,
+		gib_object_t *sender, gib_message_t mesg)
+{
+	if (obj->class->parent)
+		GIB_Reply (obj, mesg, 1, &obj->class->parent->name);
+	else
+		GIB_Reply (obj, mesg, 0, NULL);
+	return 0;
+}
+
+static int
+Object_IsKindOf_f (gib_object_t *obj, gib_method_t *method, void *data,
+		gib_object_t *sender, gib_message_t mesg)
+{
+	gib_class_t *c;
+	static const char *one = "1";
+	static const char *zero = "0";
+	
+	if (mesg.argc < 2)
+		return -1;
+
+	for (c = obj->class; c; c = c->parent)
+		if (!strcmp (mesg.argv[1], c->name)) {
+			GIB_Reply (obj, mesg, 1, &one);
+			return 0;
+		}
+	GIB_Reply (obj, mesg, 1, &zero);
 	return 0;
 }
 
@@ -157,6 +183,31 @@ Object_Class_New_f (gib_object_t *obj, gib_method_t *method, void *data,
 	mesg.argv[0] = old;
 	return 0;
 }
+
+static int
+Object_Class_Children_f (gib_object_t *obj, gib_method_t *method, void *data,
+		gib_object_t *sender, gib_message_t mesg)
+{
+	const char **reply;
+	unsigned int size;
+	unsigned int i = 0;
+	
+	static qboolean
+	iterator (gib_class_t *class, void *unused)
+	{
+		reply[i++] = class->name;
+		return false;
+	}
+	
+	size = llist_size (obj->class->children);
+	if (size) {
+		reply = malloc (sizeof (char *) * size);
+		llist_iterate (obj->class->children, LLIST_ICAST (iterator));
+		GIB_Reply (obj, mesg, size, reply);
+	} else
+		GIB_Reply (obj, mesg, 0, NULL);
+	return 0;
+}
 	
 static void *
 Object_Construct (gib_object_t *obj)
@@ -180,6 +231,8 @@ gib_methodtab_t Object_methods[] = {
 	{"release", Object_Release_f, NULL},
 	{"init", Object_Init_f, NULL},
 	{"class", Object_Class_f, NULL},
+	{"superClass", Object_SuperClass_f, NULL},
+	{"isKindOf", Object_IsKindOf_f, NULL},
 	{"dispose", Object_Dispose_f, NULL},
 	{"signalConnect", Object_SignalConnect_f, NULL},
 	{"signalDisconnect", Object_SignalDisconnect_f, NULL},
@@ -187,6 +240,8 @@ gib_methodtab_t Object_methods[] = {
 };
 
 gib_methodtab_t Object_class_methods[] = {
+	{"parent", Object_SuperClass_f, NULL},
+	{"children", Object_Class_Children_f, NULL},
 	{"new", Object_Class_New_f, NULL},
 	{"signalConnect", Object_SignalConnect_f, NULL},
 	{"signalDisconnect", Object_SignalDisconnect_f, NULL},
@@ -294,6 +349,162 @@ gib_classdesc_t Thread_class = {
 	Thread_Construct, NULL,
 	Thread_Destruct,
 	Thread_methods, Thread_class_methods
+};
+
+/*
+   Object hash class
+
+   Stores references to objects in a Hash
+*/
+
+typedef struct ObjRef_s {
+	const char *key;
+	gib_object_t *obj;
+} ObjRef_t;
+
+typedef struct ObjectHash_s {
+	hashtab_t *objects;
+} ObjectHash_t;
+
+static const char *
+ObjRef_Get_Key (void *ele, void *ptr)
+{
+	return ((ObjRef_t *) ele)->key;
+}
+
+static void
+ObjRef_Free (void *ele, void *ptr)
+{
+	ObjRef_t *ref = ele;
+	free ((void *)ref->key);
+	GIB_Object_Decref (ref->obj);
+	free (ref);
+}
+
+static void *
+ObjectHash_Construct (gib_object_t *obj)
+{
+	ObjectHash_t *data = malloc (sizeof (ObjectHash_t));
+
+	data->objects = Hash_NewTable (1024, ObjRef_Get_Key, ObjRef_Free,
+			NULL);
+
+	return data;
+}
+
+static void
+ObjectHash_Destruct (void *data)
+{
+	ObjectHash_t *objh = data;
+
+	Hash_DelTable (objh->objects);
+	free (objh);
+}
+
+static int
+ObjectHash_Insert_f (gib_object_t *obj, gib_method_t *method, void *data,
+		gib_object_t *sender, gib_message_t mesg)
+{
+	ObjectHash_t *objh = data;
+	gib_object_t *ins;
+	ObjRef_t *new;
+	int i;
+
+	if (mesg.argc < 3)
+		return -1;
+	
+	for (i = 2; i < mesg.argc; i++) {
+		if ((ins = GIB_Object_Get (mesg.argv[i]))) {
+			new = malloc (sizeof (ObjRef_t));
+			new->key = strdup (mesg.argv[1]);
+			new->obj = ins;
+			GIB_Object_Incref (ins);
+			Hash_Add (objh->objects, new);
+		} else
+			return -1;
+	}
+
+	GIB_Reply (obj, mesg, 0, NULL);
+	return 0;
+}
+
+static int
+ObjectHash_Get_f (gib_object_t *obj, gib_method_t *method, void *data,
+		gib_object_t *sender, gib_message_t mesg)
+{
+	ObjectHash_t *objh = data;
+	ObjRef_t **refs, **r;
+	const char **reply;
+	int i, len;
+
+	if (mesg.argc < 2)
+		return -1;
+
+	if ((refs = (ObjRef_t **) Hash_FindList (objh->objects,
+					mesg.argv[1]))) {
+		for (r = refs, len = 0; *r; r++, len++);
+		reply = malloc (sizeof (char **) * len);
+		for (r = refs, i = 0; *r; r++, i++)
+			reply[i] = (*r)->obj->handstr;
+		GIB_Reply (obj, mesg, len, reply);
+		free (reply);
+	} else
+		GIB_Reply (obj, mesg, 0, NULL);
+	return 0;
+}
+
+static int
+ObjectHash_Remove_f (gib_object_t *obj, gib_method_t *method, void *data,
+		gib_object_t *sender, gib_message_t mesg)
+{
+	ObjectHash_t *objh = data;
+	ObjRef_t **refs, **r;
+	int i;
+	
+	if (mesg.argc < 2)
+		return -1;
+
+	if ((refs = (ObjRef_t **) Hash_FindList (objh->objects,
+					mesg.argv[1]))) {
+		if (mesg.argc == 2)
+			for (r = refs; *r; r++) {
+				Hash_DelElement (objh->objects, *r);
+				Hash_Free (objh->objects, *r);
+			}
+		else
+			for (r = refs; *r; r++)
+				for (i = 2; i < mesg.argc; i++)
+					if (!strcmp (mesg.argv[i],
+								(*r)->obj->handstr))
+						{
+							Hash_DelElement
+								(objh->objects,
+								 *r);
+							Hash_Free
+								(objh->objects,
+								 *r);
+						}
+	}
+	GIB_Reply (obj, mesg, 0, NULL);
+	return 0;
+}		
+
+gib_methodtab_t ObjectHash_methods[] = {
+	{"insert", ObjectHash_Insert_f, NULL},
+	{"get", ObjectHash_Get_f, NULL},
+	{"remove", ObjectHash_Remove_f, NULL},
+	{NULL, NULL, NULL}
+};
+
+gib_methodtab_t ObjectHash_class_methods[] = {
+	{NULL, NULL, NULL}
+};
+
+gib_classdesc_t ObjectHash_class = {
+	"ObjectHash", "Object",
+	ObjectHash_Construct, NULL,
+	ObjectHash_Destruct,
+	ObjectHash_methods, ObjectHash_class_methods
 };
 
 /*
@@ -472,4 +683,5 @@ GIB_Classes_Init (void)
 {
 	GIB_Class_Create (&Object_class);
 	GIB_Class_Create (&Thread_class);
+	GIB_Class_Create (&ObjectHash_class);
 }
