@@ -3,4 +3,4 @@
 
 @extern string (string varname) Cvar_GetCvarString;
 
-#endif __cvar_h
+#endif//__cvar_h
