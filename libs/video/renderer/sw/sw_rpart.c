@@ -32,7 +32,7 @@
 
 #include <stdlib.h>
 
-#include "QF/compat.h"
+#include "compat.h"
 #include "QF/console.h"
 #include "QF/cvar.h"
 #include "QF/qargs.h"

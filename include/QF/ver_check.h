@@ -29,10 +29,6 @@
 #ifndef __ver_check_h_
 #define __ver_check_h_
 
-#ifdef HAVE_CONFIG_H
-# include "config.h"
-#endif
-
 /*
 	ver_compare
 

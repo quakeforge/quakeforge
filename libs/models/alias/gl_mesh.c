@@ -38,7 +38,7 @@
 
 #include <stdio.h>
 
-#include "QF/compat.h"
+#include "compat.h"
 #include "QF/console.h"
 #include "QF/mdfour.h"
 #include "QF/model.h"

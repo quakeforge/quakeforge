@@ -31,7 +31,7 @@
 #include <stdio.h>
 #include <stdarg.h>
 
-#include "QF/compat.h"
+#include "compat.h"
 #include "QF/sys.h"
 
 void

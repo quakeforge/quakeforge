@@ -40,7 +40,7 @@
 #include <stdlib.h>
 
 #include "QF/cmd.h"
-#include "QF/compat.h"
+#include "compat.h"
 #include "QF/cvar.h"
 #include "QF/model.h"
 #include "QF/msg.h"

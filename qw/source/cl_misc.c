@@ -33,7 +33,7 @@
 #include <stdarg.h>
 
 #include "host.h"
-#include "QF/compat.h"
+#include "compat.h"
 #include "QF/sys.h"
 
 

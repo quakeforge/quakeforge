@@ -35,7 +35,7 @@
 #include <winsock.h>
 #include <conio.h>
 
-#include "QF/compat.h"
+#include "compat.h"
 #include "QF/qargs.h"
 #include "QF/cvar.h"
 #include "server.h"

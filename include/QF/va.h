@@ -30,10 +30,6 @@
 #ifndef __va_h
 #define __va_h
 
-#ifdef HAVE_CONFIG_H
-# include "config.h"
-#endif
-
 #include "QF/gcc_attr.h"
 
 char	*va(char *format, ...) __attribute__((format(printf,1,2)));

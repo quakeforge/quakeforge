@@ -34,7 +34,7 @@
 #include <direct.h>
 #include <windows.h>
 
-#include "QF/compat.h"
+#include "compat.h"
 #include "server.h"
 
 cvar_t     *sys_nostdout;

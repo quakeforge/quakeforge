@@ -252,19 +252,6 @@ AC_TRY_COMPILE(
 	AC_MSG_RESULT(no)
 )
 
-AC_MSG_CHECKING(for zero length array syntax)
-AC_TRY_COMPILE(
-	[],
-	[struct { int foo; int bar[0]; } foo;],
-	AC_DEFINE(ZERO_LENGTH_ARRAY,0) AC_MSG_RESULT([0]),
-	AC_TRY_COMPILE(
-	    [],
-		[struct { int foo; int bar[]; } foo;],
-		AC_DEFINE(ZERO_LENGTH_ARRAY,) AC_MSG_RESULT([]),
-		AC_DEFINE(ZERO_LENGTH_ARRAY,1) AC_MSG_RESULT([1] sorry about the waste)
-	)
-)
-
 dnl ==================================================================
 dnl Checks for library functions.
 dnl ==================================================================

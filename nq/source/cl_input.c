@@ -38,7 +38,7 @@
 
 #include "QF/cmd.h"
 #include "QF/console.h"
-#include "QF/compat.h"
+#include "compat.h"
 #include "QF/cvar.h"
 #include "QF/input.h"
 #include "QF/keys.h"

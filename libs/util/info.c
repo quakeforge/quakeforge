@@ -39,7 +39,7 @@
 #include <stdio.h>
 #include <ctype.h>
 
-#include "QF/compat.h"
+#include "compat.h"
 #include "QF/console.h"
 #include "QF/info.h"
 

@@ -30,24 +30,11 @@
 #ifndef __quakeio_h
 #define __quakeio_h
 
-#ifdef HAVE_CONFIG_H
-# include "config.h"
-#endif
-
 #include <stdio.h>
-
-#ifdef HAVE_ZLIB
-# include <zlib.h>
-#endif
 
 #include "QF/gcc_attr.h"
 
-typedef struct {
-	FILE *file;
-#ifdef HAVE_ZLIB
-	gzFile *gzfile;
-#endif
-} VFile;
+typedef struct VFile_s VFile;
 
 void Qexpand_squiggle(const char *path, char *dest);
 int Qrename(const char *old, const char *new);

@@ -38,7 +38,7 @@
 #endif
 
 #include "QF/cmd.h"
-#include "QF/compat.h"
+#include "compat.h"
 #include "QF/cvar.h"
 
 #include "server.h"

@@ -37,7 +37,7 @@
 #endif
 
 #include "QF/crc.h"
-#include "QF/compat.h"
+#include "compat.h"
 #include "QF/msg.h"
 #include "QF/va.h"
 #include "QF/vfs.h"

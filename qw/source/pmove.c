@@ -33,7 +33,7 @@
 #include <math.h>
 
 #include "client.h"
-#include "QF/compat.h"
+#include "compat.h"
 #include "QF/cvar.h"
 #include "pmove.h"
 #include "QF/qtypes.h"

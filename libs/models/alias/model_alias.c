@@ -39,7 +39,7 @@
 # include <strings.h>
 #endif
 
-#include "QF/compat.h"
+#include "compat.h"
 #include "QF/crc.h"
 #include "QF/info.h"
 #include "QF/model.h"

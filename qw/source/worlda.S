@@ -29,7 +29,7 @@
 #ifdef HAVE_CONFIG_H
 # include <config.h>
 #endif
-#include "QF/asm_i386.h"
+#include "asm_i386.h"
 //#include "quakeasm.h"
 //include "d_ifacea.h"
 

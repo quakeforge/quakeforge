@@ -39,7 +39,7 @@
 #include <windows.h>
 
 #include "client.h"
-#include "QF/compat.h"
+#include "compat.h"
 #include "QF/console.h"
 #include "host.h"
 #include "QF/qargs.h"

@@ -30,7 +30,7 @@
 # include "config.h"
 #endif
 
-#include "QF/compat.h"
+#include "compat.h"
 #include "QF/cvar.h"
 #include "QF/render.h"
 #include "QF/vid.h"

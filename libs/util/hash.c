@@ -37,7 +37,7 @@
 # include <strings.h>
 #endif
 
-#include "QF/compat.h"
+#include "compat.h"
 #include "QF/hash.h"
 
 static unsigned long

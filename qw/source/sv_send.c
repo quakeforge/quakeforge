@@ -37,7 +37,7 @@
 #include <stdlib.h>
 #include <time.h>
 
-#include "QF/compat.h"
+#include "compat.h"
 #include "QF/console.h"
 #include "QF/cvar.h"
 #include "QF/msg.h"

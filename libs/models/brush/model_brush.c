@@ -43,7 +43,7 @@
 
 
 #include "QF/checksum.h"
-#include "QF/compat.h"
+#include "compat.h"
 #include "QF/cvar.h"
 #include "QF/model.h"
 #include "QF/qendian.h"

@@ -39,7 +39,7 @@
 # include <strings.h>
 #endif
 
-#include "QF/compat.h"
+#include "compat.h"
 #include "QF/console.h"
 #include "QF/model.h"
 #include "QF/qendian.h"

@@ -44,12 +44,12 @@
 #include <glide/sst1vid.h>
 #include <sys/signal.h>
 
-#include "QF/compat.h"
+#include "compat.h"
 #include "QF/console.h"
 #include "glquake.h"
 #include "QF/qargs.h"
 #include "QF/qendian.h"
-#include "QF/qfgl_ext.h"
+#include "qfgl_ext.h"
 #include "QF/quakefs.h"
 #include "sbar.h"
 #include "QF/sys.h"

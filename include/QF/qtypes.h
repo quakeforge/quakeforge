@@ -34,9 +34,6 @@
 #include <stdio.h>
 #include <sys/types.h>
 
-//#include "QF/qdefs.h"
-//#include "QF/compat.h"
-
 #define MAX_QPATH	64
 
 #ifndef _DEF_BYTE_

@@ -45,7 +45,7 @@
 #include "QF/skin.h"
 #include "QF/sys.h"
 #include "QF/vid.h"
-#include "QF/varrays.h"
+#include "varrays.h"
 #include "QF/vfs.h"
 
 #include "glquake.h"

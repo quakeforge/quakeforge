@@ -53,7 +53,7 @@
 # include <windows.h>
 #endif
 
-#include "QF/compat.h"
+#include "compat.h"
 #include "QF/cvar.h"
 #include "QF/sys.h"
 

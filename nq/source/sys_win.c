@@ -34,7 +34,7 @@
 #include "conproc.h"
 #include "resource.h"
 
-#include "QF/compat.h"
+#include "compat.h"
 #include "QF/qargs.h"
 #include "QF/screen.h"
 #include "QF/sys.h"

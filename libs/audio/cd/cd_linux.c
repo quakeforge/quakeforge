@@ -48,7 +48,7 @@
 #include <time.h>
 #include <linux/cdrom.h>
 
-#include "QF/compat.h"
+#include "compat.h"
 #include "QF/cdaudio.h"
 #include "QF/cmd.h"
 #include "QF/console.h"

@@ -29,10 +29,6 @@
 #ifndef _INFO_H
 #define _INFO_H
 
-#ifdef HAVE_CONFIG_H
-# include "config.h"
-#endif
-
 #include <stdlib.h> // for size_t. sys/types.h SHOULD be used, but can't :(bc)
 #include <QF/qtypes.h>
 

@@ -32,16 +32,12 @@
 #ifndef __texture_h
 #define __texture_h
 
-#ifdef HAVE_CONFIG_H
-# include "config.h"
-#endif
-
 // could not use texture_t as that is used for models.
 typedef struct tex_s {
 	int width;
 	int height;
 	unsigned char *palette;					// 0 = 32 bit, otherise 8
-	unsigned char data[ZERO_LENGTH_ARRAY];
+	unsigned char data[4];					// variable length
 } tex_t;
 
 #endif // __texture_h

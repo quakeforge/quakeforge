@@ -31,6 +31,9 @@
 #ifdef HAVE_CONFIG_H
 # include "config.h"
 #endif
+#ifdef HAVE_ZLIB
+# include <zlib.h>
+#endif
 #ifdef HAVE_MALLOC_H
 # include <malloc.h>
 #endif
@@ -66,6 +69,14 @@
 #  define O_BINARY _O_BINARY
 # endif
 #endif
+
+struct VFile_s {
+	FILE *file;
+#ifdef HAVE_ZLIB
+	gzFile *gzfile;
+#endif
+};
+
 
 void
 Qexpand_squiggle (const char *path, char *dest)
