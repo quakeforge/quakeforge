@@ -35,6 +35,9 @@ typedef struct gib_buffer_data_s {
 	struct dstring_s *arg_composite;
 	struct dstring_s *current_token;
 	struct dstring_s *loop_program;
+	struct dstring_s *loop_data;
+	
+	char *loop_var_p, *loop_list_p;
 	
 	// Data for handling return values
 	struct {

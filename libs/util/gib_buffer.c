@@ -57,6 +57,8 @@ void GIB_Buffer_Destruct (struct cbuf_s *cbuf)
 	dstring_delete (GIB_DATA (cbuf)->current_token);
 	if (GIB_DATA (cbuf)->loop_program)
 		dstring_delete (GIB_DATA(cbuf)->loop_program);
+	if (GIB_DATA (cbuf)->loop_data)
+		dstring_delete (GIB_DATA(cbuf)->loop_data);
 	dstring_delete (GIB_DATA (cbuf)->ret.retval);
 	if (GIB_DATA(cbuf)->locals && GIB_DATA(cbuf)->type == GIB_BUFFER_NORMAL)
 		Hash_DelTable (GIB_DATA(cbuf)->locals);

@@ -314,7 +314,54 @@ GIB_While_f (void)
 		cbuf_active->down = sub;
 		sub->up = cbuf_active;
 		GIB_Arg_Strip_Delim (2);
-		dstring_appendstr (GIB_DATA(sub)->loop_program, va("ifnot %s break\n%s", GIB_Argv (1), GIB_Argv (2)));
+		dstring_appendstr (GIB_DATA(sub)->loop_program, va("ifnot %s break;%s", GIB_Argv (1), GIB_Argv (2)));
+		Cbuf_AddText (sub, GIB_DATA(sub)->loop_program->str);
+		cbuf_active->state = CBUF_STATE_STACK;
+	}
+}
+
+void
+GIB___For_f (void)
+{
+	char *end = 0;
+	if (!GIB_DATA(cbuf_active)->loop_list_p) {
+		Cbuf_InsertText (cbuf_active, "break;");
+		return;
+	}
+	if ((end = strchr (GIB_DATA(cbuf_active)->loop_list_p, '\n')))
+		*end = 0;
+	GIB_Var_Set_Local (cbuf_active, GIB_DATA(cbuf_active)->loop_var_p, GIB_DATA(cbuf_active)->loop_list_p);
+	if (end) {
+		*end = '\n';
+		end++;
+	}
+	GIB_DATA(cbuf_active)->loop_list_p = end;
+}
+
+void
+GIB_For_f (void)
+{
+	if (GIB_Argc() != 5) {
+		Cbuf_Error ("syntax",
+					"for: invalid syntax\n"
+					"usage: for variable in list {program}"
+					);
+	} else if (GIB_Argv (3)[0]) {
+		cbuf_t *sub = Cbuf_New (&gib_interp);
+		GIB_DATA(sub)->type = GIB_BUFFER_LOOP;
+		GIB_DATA(sub)->locals = GIB_DATA(cbuf_active)->locals;
+		GIB_DATA(sub)->loop_program = dstring_newstr ();
+		GIB_DATA(sub)->loop_data = dstring_newstr ();
+		if (cbuf_active->down)
+			Cbuf_DeleteStack (cbuf_active->down);
+		cbuf_active->down = sub;
+		sub->up = cbuf_active;
+		dstring_appendstr (GIB_DATA(sub)->loop_data, GIB_Argv(3));
+		dstring_append (GIB_DATA(sub)->loop_data, GIB_Argv(1), strlen(GIB_Argv(1))+1);
+		GIB_DATA(sub)->loop_list_p = GIB_DATA(sub)->loop_data->str;
+		GIB_DATA(sub)->loop_var_p = GIB_DATA(sub)->loop_data->str + strlen(GIB_Argv(3))+1;
+		dstring_appendstr (GIB_DATA(sub)->loop_program, "__for;");
+		dstring_appendstr (GIB_DATA(sub)->loop_program, GIB_Argv(4));
 		Cbuf_AddText (sub, GIB_DATA(sub)->loop_program->str);
 		cbuf_active->state = CBUF_STATE_STACK;
 	}
@@ -575,7 +622,59 @@ GIB_File_Find_f (void)
 		GIB_Return ("");
 	dstring_delete (list);
 }
-		
+	
+void
+GIB_List_Get_f (void)
+{
+	char *list, *pos, *end;
+	unsigned long int i;
+	if (GIB_Argc () < 3) {
+		Cbuf_Error ("syntax",
+		  "list.get: invalid syntax\n"
+		  "usage: list.get list element");
+		return;
+	}	
+
+	for (i = strtoul (GIB_Argv(2), 0, 10), pos = list = cbuf_active->args->argv[1]->str; i > 0 && *pos; pos++)
+		i -= (*pos == '\n');
+	if (i) {
+		GIB_Return ("");
+		return;
+	}
+	if ((end = strchr (pos, '\n')))
+		*end = 0;
+	GIB_Return (pos);
+}
+
+void
+GIB_Range_f (void)
+{
+	double i, inc, start, limit;
+	dstring_t *dstr;
+	if (GIB_Argc () < 3 || GIB_Argc () > 4) {
+		Cbuf_Error ("syntax",
+		  "range: invalid syntax\n"
+		  "range: lower upper [step]");
+		return;
+	}
+
+	limit = atof(GIB_Argv(2));
+	start = atof(GIB_Argv(1));
+	if (GIB_Argc () == 4)
+		inc = atof(GIB_Argv(3));
+	else
+		inc = limit < start ? -1.0 : 1.0;
+	if (inc == 0.0) {
+		GIB_Return ("");
+		return;
+	}
+	dstr = dstring_newstr ();
+	for (i = atof(GIB_Argv(1)); inc < 0 ? i >= limit : i <= limit; i += inc)
+		dstring_appendstr (dstr, va("\n%.10g", i));
+	GIB_Return (dstr->str[0] ? dstr->str+1 : "");
+	dstring_delete (dstr);
+}
+
 void
 GIB_Builtin_Init (void)
 {
@@ -590,6 +689,8 @@ GIB_Builtin_Init (void)
 	GIB_Builtin_Add ("if", GIB_If_f, GIB_BUILTIN_FIRSTONLY);
 	GIB_Builtin_Add ("ifnot", GIB_If_f, GIB_BUILTIN_FIRSTONLY);
 	GIB_Builtin_Add ("while", GIB_While_f, GIB_BUILTIN_NOPROCESS);
+	GIB_Builtin_Add ("for", GIB_For_f, GIB_BUILTIN_NORMAL);
+	GIB_Builtin_Add ("__for", GIB___For_f, GIB_BUILTIN_NORMAL);
 	GIB_Builtin_Add ("break", GIB_Break_f, GIB_BUILTIN_NORMAL);
 	GIB_Builtin_Add ("string.length", GIB_String_Length_f, GIB_BUILTIN_NORMAL);
 	GIB_Builtin_Add ("string.equal", GIB_String_Equal_f, GIB_BUILTIN_NORMAL);
@@ -598,4 +699,6 @@ GIB_Builtin_Init (void)
 	GIB_Builtin_Add ("file.read", GIB_File_Read_f, GIB_BUILTIN_NORMAL);
 	GIB_Builtin_Add ("file.write", GIB_File_Write_f, GIB_BUILTIN_NORMAL);
 	GIB_Builtin_Add ("file.find", GIB_File_Find_f, GIB_BUILTIN_NORMAL);
+	GIB_Builtin_Add ("list.get", GIB_List_Get_f, GIB_BUILTIN_NORMAL);
+	GIB_Builtin_Add ("range", GIB_Range_f, GIB_BUILTIN_NORMAL);
 }

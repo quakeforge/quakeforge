@@ -241,11 +241,6 @@ GIB_Parse_Extract_Line (struct cbuf_s *cbuf)
 		dstring_snip (dstr, 0, i + (dstr->str[i] == '\n' || dstr->str[i] == ';'));
 	}
 
-	// If this is a looping buffer and it is now empty
-	// copy the loop program back in
-	if (GIB_DATA(cbuf)->type == GIB_BUFFER_LOOP && !dstr->str[0])
-		Cbuf_AddText (cbuf, GIB_DATA(cbuf)->loop_program->str);
-
 	return;
 
 }
@@ -488,5 +483,11 @@ void GIB_Parse_Execute_Line (cbuf_t *cbuf)
 	} else	
 		Cmd_Command (cbuf->args);
 	dstring_clearstr (cbuf->line);
+	
+	// If this is a looping buffer and it is now empty,
+	// copy the loop program back in and execute any
+	// loop callbacks
+	if (GIB_DATA(cbuf)->type == GIB_BUFFER_LOOP && !cbuf->buf->str[0])
+		Cbuf_AddText (cbuf, GIB_DATA(cbuf)->loop_program->str);
 }
 
