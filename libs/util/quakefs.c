@@ -50,6 +50,10 @@ static const char rcsid[] =
 # define model_t sunmodel_t
 # include <fnmatch.h>
 # undef model_t
+#else
+# ifdef WIN32
+# include "fnmatch.h"
+# endif
 #endif
 
 #ifdef WIN32

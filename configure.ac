@@ -52,6 +52,20 @@ case "$host_os" in
 			endian="little"
 		fi
 		;;
+        cygwin*)
+               cygwin=yes
+               CPPFLAGS="$CPPFLAGS -mno-cygwin"
+               CPPFLAGS="$CPPFLAGS -I\$(top_srcdir)/include/win32"
+               CPPFLAGS="$CPPFLAGS -I\$(top_srcdir)/include/win32/resources"
+               if test $host != $build; then
+                       CC=$host_cpu-$host_os-gcc
+                       AS=$host_cpu-$host_os-gcc
+                       AR=$host_cpu_$host_os-ar
+                       RANLIB=$host_cpu-$host_os-ranlib
+                       endian="little"
+               fi
+               LDFLAGS="$LDFLAGS -mno-cygwin"
+               ;;
 esac
 
 dnl ==================================================================
@@ -541,6 +555,10 @@ case "${host}" in
 	SYSTYPE=WIN32
 	AC_MSG_RESULT([Win32 driver])
 	;;
+   i?86-*-cygwin*)
+        SYSTYPE=WIN32
+        AC_MSG_RESULT([Win32 driver])
+        ;;
    *)
 	SYSTYPE=POSIX
 	AC_MSG_RESULT([default POSIX driver])
@@ -1150,7 +1168,7 @@ if test "x$GCC" = "xyes"; then
 fi
 
 AS="$CC"
-ASFLAGS="$CFLAGS"
+ASFLAGS="\$(DEFS) $CFLAGS $CPPFLAGS -I\$(top_srcdir)/include" 
 AC_SUBST(AS)
 AC_SUBST(ASFLAGS)
 
