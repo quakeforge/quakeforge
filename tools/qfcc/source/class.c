@@ -411,10 +411,12 @@ class_find_method (class_type_t *class_type, method_t *method)
 		}
 	sel = dstring_newstr ();
 	selector_name (sel, (keywordarg_t *)method->selector);
-	warning (0, "%s method %s not in %s%s",
-			method->instance ? "instance" : "class",
-			sel->str, class_name,
-			category_name ? va (" (%s)", category_name) : "");
+	if (options.warnings.interface_check) {
+		warning (0, "%s method %s not in %s%s",
+				method->instance ? "instance" : "class",
+				sel->str, class_name,
+				category_name ? va (" (%s)", category_name) : "");
+	}
 	dstring_delete (sel);
 	return method;
 }

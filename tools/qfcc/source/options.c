@@ -307,6 +307,10 @@ DecodeArgs (int argc, char **argv)
 							options.warnings.integer_divide = true;
 						} else if (!(strcasecmp (temp, "no-integer-divide"))) {
 							options.warnings.integer_divide = false;
+						} else if (!(strcasecmp (temp, "interface-check"))) {
+							options.warnings.interface_check = true;
+						} else if (!(strcasecmp (temp, "no-interface-check"))) {
+							options.warnings.interface_check = false;
 						}
 						temp = strtok (NULL, ",");
 					}

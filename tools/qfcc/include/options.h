@@ -47,6 +47,7 @@ typedef struct {
 	qboolean	uninited_variable;	// Warn on use of uninitialized vars
 	qboolean	vararg_integer;		// Warn on passing an integer to vararg func
 	qboolean	integer_divide;		// Warn on integer constant division
+	qboolean	interface_check;	// Warn for methods not in interface
 } warn_options_t;
 
 typedef struct {
