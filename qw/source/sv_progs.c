@@ -181,8 +181,13 @@ typedef struct sv_def_s {
 	void      *field;
 } sv_def_t;
 
+static sv_def_t qw_self[] = {
+	{ev_entity,	28,	"self",				&sv_globals.self},
+	{ev_entity,	0,	".self",			&sv_globals.self},
+	{ev_void,	0,	0},
+};
+
 static sv_def_t qw_defs[] = {
-	{ev_entity,	28,	"self",					&sv_globals.self},
 	{ev_entity,	29,	"other",				&sv_globals.other},
 	{ev_entity,	30,	"world",				&sv_globals.world},
 	{ev_float,	31,	"time",					&sv_globals.time},
@@ -363,6 +368,8 @@ resolve (progs_t *pr)
 	func_t      func;
 
 	if (pr->progs->crc == qw_crc) {
+		global = &G_FLOAT(pr, qw_self[0].offset);
+		set_address (&qw_self[0], global);
 		for (def = qw_defs; def->name; def++) {
 			global = &G_FLOAT(pr, def->offset);
 			set_address (def, global);
@@ -375,6 +382,13 @@ resolve (progs_t *pr)
 			*(int *)def->field = def->offset;
 		}
 	} else {
+		for (def = qw_self; def->name; def++) {
+			ddef = PR_FindGlobal (&sv_pr_state, def->name);
+			if (ddef) {
+				global = &G_FLOAT(pr, ddef->ofs);
+				set_address (def, global);
+			}
+		}
 		for (def = qw_defs; def->name; def++) {
 			global = PR_GetGlobalPointer (pr, def->name);
 			set_address (def, global);
