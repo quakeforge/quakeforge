@@ -53,15 +53,9 @@
 #include "QF/qtypes.h"
 #include "QF/sys.h"
 
+#ifdef HAVE_CURSES_H
 static int use_curses = 1;
 
-#define     MAXCMDLINE  256
-char        key_lines[32][MAXCMDLINE];
-int         edit_line;
-int         history_line;
-int         key_linepos;
-
-#ifdef HAVE_CURSES_H
 static WINDOW *output;
 static WINDOW *status;
 static WINDOW *input;
@@ -99,14 +93,6 @@ C_Init (void)
 {
 #ifdef HAVE_CURSES_H
 	if (use_curses) {
-		int i;
-
-		for (i = 0; i < 32; i++) {
-			key_lines[i][0] = ']';
-			key_lines[i][1] = 0;
-		}
-		key_linepos = 1;
-
 		initscr ();
 		start_color ();
 		cbreak ();
