@@ -314,7 +314,7 @@ emit_methods (methodlist_t *_methods, const char *name, int instance)
 			methods->method_list[i].method_name.sel_types;
 		methods->method_list[i].method_imp = G_FUNCTION (method->def->ofs);
 		if (method->func) {
-			ref = new_reloc (POINTER_OFS (methods->method_list[i].method_imp),
+			ref = new_reloc (POINTER_OFS (&methods->method_list[i].method_imp),
 							 rel_def_func);
 			ref->next = method->func->refs;
 			method->func->refs = ref;
