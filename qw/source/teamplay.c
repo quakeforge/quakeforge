@@ -476,7 +476,7 @@ Team_ParseChat (const char *string)
 	while (isspace ((byte) *s))
 		s++;
 
-	for (i = 0; sizeof (f_replies) / sizeof (f_replies[0]); i++) {
+	for (i = 0; i < sizeof (f_replies) / sizeof (f_replies[0]); i++) {
 		if (!strncmp (f_replies[i].name, s, strlen (f_replies[i].name))
 			&& realtime - f_replies[i].lasttime >= cl_freply->value) {
 			while (*s && !isspace ((byte) *s))
