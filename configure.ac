@@ -1185,32 +1185,40 @@ if test "x$optimize" = xyes; then
 		args="$*"
 		AC_MSG_CHECKING(for gcc version)
 		CCVER="gcc `gcc --version`"
+		set $CCVER
+		IFS="."
+		set $2
+		CC_MAJ=$1
+		CC_MIN=$2
+		CC_SUB=$3
+		IFS=" "
 		AC_MSG_RESULT($CCVER)
-		echo $CCVER
-		CFLAGS="$CFLAGS -O3 -ffast-math -funroll-loops -fomit-frame-pointer -fexpensive-optimizations"
+		heavy="-O3 -ffast-math -funroll-loops -fomit-frame-pointer -fexpensive-optimizations"
+		light="-O2 -malign-loops=2 -malign-jumps=2 -malign-functions=2"
 		AC_ARG_ENABLE(strict-aliasing,
 	[  --enable-strict-aliasing enable the -fstrict-aliasing ooption of gcc])
 		if test "x$enable_strict_aliasing" = "xyes"; then
-			CFLAGS="$CFLAGS -fstrict-aliasing"
+			heavy="$heavy -fstrict-aliasing"
+			light="$light -fstrict-aliasing"
 		else
 			if test "x$enable_strict_aliasing" != "xno"; then
-				set $CCVER
-				IFS="."
-				set $2
-				if test $1 -ge 3; then
-					CFLAGS="$CFLAGS -fstrict-aliasing"
+				if test $CC_MAJ -ge 3; then
+					heavy="$heavy -fstrict-aliasing"
 				else
-					if test $1 = 2 -a $2 = 96; then
-						CFLAGS="$CFLAGS -fno-strict-aliasing"
+					if test $CC_MAJ = 2 -a $CC_MIN = 96; then
+						light="$light -fno-strict-aliasing"
 					fi
 				fi
-				IFS=" "
 			else
-				set $CCVER
-				if test $1 = 2.96; then
-					CFLAGS="$CFLAGS -fno-strict-aliasing"
+				if test $CC_MAJ = 2 -a $CC_MIN = 96; then
+					light="$light -fno-strict-aliasing"
 				fi
 			fi
+		fi
+		if test $CC_MAJ = 2 -a $CC_MIN = 96; then
+			CFLAGS="$CFLAGS $light"
+		else
+			CFLAGS="$CFLAGS $heavy"
 		fi
 		AC_MSG_CHECKING(for special compiler settings)
 		case "${host_cpu}" in
