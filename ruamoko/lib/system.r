@@ -1,5 +1,7 @@
 #include "system.h"
 
+float time;
+
 void (string s) precache_sound = #19;
 void (string s) precache_model = #20;
 void (entity client, string s) stuffcmd = #21;
