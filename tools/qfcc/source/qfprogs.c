@@ -109,8 +109,6 @@ static edict_t *edicts;
 static int      num_edicts;
 static int      reserved_edicts = 1;
 static progs_t  pr;
-static void    *membase;
-static int      memsize = 1024*1024;
 
 static pr_debug_header_t debug;
 static qfo_t   *qfo;
@@ -142,7 +140,7 @@ load_file (progs_t *pr, const char *name)
 {
 	QFile      *file;
 	int         size;
-	void       *sym;
+	char       *sym;
 
 	file = open_file (name, &size);
 	if (!file) {
@@ -150,7 +148,8 @@ load_file (progs_t *pr, const char *name)
 		if (!file)
 			return 0;
 	}
-	sym = malloc (size);
+	sym = malloc (size + 1);
+	sym[size] = 0;
 	Qread (file, sym, size);
 	return sym;
 }
@@ -197,9 +196,6 @@ init_qf (void)
 	Cvar_Init ();
 	Sys_Init_Cvars ();
 	Cmd_Init ();
-
-	membase = malloc (memsize);
-	Memory_Init (membase, memsize);
 
 	Cvar_Get ("pr_debug", va ("%d", verbosity), 0, 0, "");
 	Cvar_Get ("pr_source_path", source_path, 0, 0, "");
@@ -298,11 +294,11 @@ convert_qfo (void)
 	progs.numstrings = qfo->strings_size;
 	pr.pr_stringsize = qfo->strings_size;
 
-	progs.numfunctions = qfo->num_funcs;
-	pr.pr_functions = calloc (qfo->num_funcs, sizeof (dfunction_t));
-	pr.pr_functions = calloc (qfo->num_funcs, sizeof (dfunction_t));
+	progs.numfunctions = qfo->num_funcs + 1;
+	pr.pr_functions = calloc (progs.numfunctions, sizeof (dfunction_t));
 	pr.auxfunctions = calloc (qfo->num_funcs, sizeof (pr_auxfunction_t));
-	pr.auxfunction_map = calloc (qfo->num_funcs, sizeof (pr_auxfunction_t *));
+	pr.auxfunction_map = calloc (progs.numfunctions,
+								 sizeof (pr_auxfunction_t *));
 	ld = pr.local_defs = calloc (qfo->num_defs, sizeof (ddef_t));
 	for (i = 0; i < qfo->num_funcs; i++) {
 		qfo_func_t *func = qfo->funcs + i;
@@ -320,10 +316,10 @@ convert_qfo (void)
 		if (df.locals > num_locals)
 			num_locals = df.locals;
 
-		pr.pr_functions[i] = df;
+		pr.pr_functions[i + 1] = df;
 
-		pr.auxfunction_map[i] = pr.auxfunctions + i;
-		pr.auxfunctions[i].function = i;
+		pr.auxfunction_map[i + 1] = pr.auxfunctions + i;
+		pr.auxfunctions[i].function = i + 1;
 		pr.auxfunctions[i].source_line = func->line;
 		pr.auxfunctions[i].line_info = func->line_info;
 		pr.auxfunctions[i].local_defs = ld - pr.local_defs;
