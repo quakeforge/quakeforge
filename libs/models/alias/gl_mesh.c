@@ -38,8 +38,8 @@
 
 #include <stdio.h>
 
-#include "QF/console.h"
 #include "QF/compat.h"
+#include "QF/console.h"
 #include "QF/mdfour.h"
 #include "QF/model.h"
 #include "QF/quakefs.h"
@@ -95,7 +95,7 @@ StripLength (int starttri, int startv)
 	m2 = last->vertindex[(startv + 1) % 3];
 
 	// look for a matching triangle
-  nexttri:
+nexttri:
 	for (j = starttri + 1, check = &triangles[starttri + 1];
 		 j < pheader->mdl.numtris; j++, check++) {
 		if (check->facesfront != last->facesfront)
@@ -126,7 +126,7 @@ StripLength (int starttri, int startv)
 			goto nexttri;
 		}
 	}
-  done:
+done:
 
 	// clear the temp used flags
 	for (j = starttri + 1; j < pheader->mdl.numtris; j++)
@@ -394,8 +394,8 @@ GL_MakeAliasModelDisplayLists (model_t *m, aliashdr_t *hdr, void *_m, int _s)
 			Qclose (f);
 		}
 	}
-	// save the data out
 
+	// save the data out
 	paliashdr->poseverts = numorder;
 
 	cmds = Hunk_Alloc (numcommands * 4);

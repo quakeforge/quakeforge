@@ -121,7 +121,7 @@ nq_x11_DEPENDENCIES=$(client_LIB_DEPS)
 # OpenGL-using targets
 # ... Common stuff
 ogl_SOURCES=	noisetextures.c gl_textures.c gl_draw.c gl_dyn_fires.c	\
-		gl_dyn_part.c gl_dyn_textures.c gl_mesh.c		\
+		gl_dyn_part.c gl_dyn_textures.c \
 		gl_refrag.c gl_rlight.c gl_rmain.c gl_rmisc.c gl_rsurf.c \
 		gl_screen.c gl_sky.c gl_view.c gl_warp.c
 
