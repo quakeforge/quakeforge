@@ -479,7 +479,6 @@ void () menu_init =
 	InputLine_SetWidth (lanConfig_port_il, 10);
 	lanConfig_join_il = InputLine_Create (4, 24, ' ');
 	InputLine_SetWidth (lanConfig_join_il, 26);
-	input_active = NIL; //FIXME def alloc bug in qfcc
 	switch (gametype ()) {
 	case "netquake":
 		do_single_player = 1;

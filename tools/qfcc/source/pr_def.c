@@ -185,6 +185,7 @@ PR_GetDef (type_t *type, const char *name, def_t *scope, int *allocate)
 			d->used = 1;				// always `used'
 			d->parent = def;
 		} else if (type->aux_type->type == ev_pointer) {
+			//FIXME I don't think this is right for a field pointer
 			size = PR_GetTypeSize (type->aux_type->aux_type);
 			pr.size_fields += type->aux_type->num_parms * size;
 		} else {
@@ -194,21 +195,24 @@ PR_GetDef (type_t *type, const char *name, def_t *scope, int *allocate)
 	} else if (type->type == ev_pointer) {
 		dstatement_t *st;
 		statref_t  *ref;
+		int         ofs;
 
 		if (pr_scope) {
 			st = (dstatement_t *) &G_INT (def->ofs);
 			ref = PR_NewStatref (st, 4);
 			ref->next = def->refs;
 			def->refs = ref;
-			G_INT (def->ofs) = 1;
+			ofs = 1;
 		} else {
-			G_INT (def->ofs) = *allocate;
+			ofs = *allocate;
 		}
 
 		size = PR_GetTypeSize (type->aux_type);
-		*allocate += type->num_parms * size;
-		if (type->num_parms)
+		if (type->num_parms) {
+			*allocate += type->num_parms * size;
 			def->initialized = def->constant = 1;
+			G_INT (def->ofs) = ofs;
+		}
 	}
 
 	return def;
