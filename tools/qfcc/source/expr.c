@@ -301,7 +301,7 @@ check_initialized (expr_t *e)
 
 	if (e->type == ex_def
 		&& !(e->e.def->type->type == ev_func
-			 && e->e.def->global)
+			 && !e->e.def->local)
 		&& !(e->e.def->type->type == ev_struct)
 		&& !e->e.def->external
 		&& !e->e.def->initialized) {
