@@ -224,5 +224,4 @@ this document uptodate and to make it complete.
 5. FAQ
 ------
 Q: HELP! Where is the menu? Everytime i press ESC the console comes.
-A: Quakeforge has no menu yet, you will have to set the cvars manually
-   until the menu is finished.
+A: Make sure that cs-code/menu.dat.gz (or menu.dat if you didn't compile with gzip support. Why didn't you compile with gzip support!?) is being installed in your quakeforge/id1 directory, or wherever you have your quake 1 pak0.pak.
