@@ -238,8 +238,8 @@ def
 	;
 
 opt_eq
-	: /* empty */
-	| '='
+	: /* empty */				{ }
+	| '='						{ }
 	;
 
 opt_semi
