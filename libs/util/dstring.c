@@ -124,6 +124,15 @@ dstring_appendstr (dstring_t *dstr, const char *str) {
 }
 
 void
+dstring_appendsubstr (dstring_t *dstr, const char *str, unsigned int len) {
+		if (len > strlen (str))
+			len = strlen (str);
+		dstr->size += len;
+		dstring_adjust(dstr);
+		strncat(dstr->str, str, len);
+}
+
+void
 dstring_insertstr (dstring_t *dstr, const char *str, unsigned int pos)
 {
 	// Don't instert strlen + 1 to achieve concatenation
