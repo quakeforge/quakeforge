@@ -37,6 +37,7 @@ static const char rcsid[] =
 #include "QF/quakefs.h"
 #include "QF/gib_parse.h"
 #include "QF/gib_builtin.h"
+#include "QF/gib_regex.h"
 #include "QF/cmd.h"
 #include "QF/sys.h"
 #include "QF/zone.h"
@@ -83,6 +84,8 @@ GIB_Init (qboolean sandbox)
 		Cmd_RemoveCommand ("exec");
 		Cmd_AddCommand ("exec", GIB_Exec_Override_f, "Execute a script file.");
 	}
+	// Initialize regex cache
+	GIB_Regex_Init ();
 	// Initialize builtins
 	GIB_Builtin_Init (sandbox);
 }

@@ -58,6 +58,7 @@ static const char rcsid[] =
 #include "QF/gib_buffer.h"
 #include "QF/gib_function.h"
 #include "QF/gib_vars.h"
+#include "QF/gib_regex.h"
 #include "QF/gib_thread.h"
 #include "regex.h"
 
@@ -495,127 +496,67 @@ GIB_String_Findsub_f (void)
 	else
 		GIB_Return ("-1");
 }
-
-inline unsigned int
-GIB_Regex_Apply_Match (regmatch_t match[10], dstring_t *dstr, unsigned int ofs, const char *replace)
-{
-	int i, start, len, sub, rlen = strlen(replace);
-	char *matched;
-	
-	start = match[0].rm_so+ofs;
-	len = match[0].rm_eo - match[0].rm_so;
-	
-	// Save matched pattern space
-	matched = calloc (len + 1, sizeof(char));
-	memcpy (matched, dstr->str+start, match[0].rm_eo - match[0].rm_so);
-	
-	dstring_replace (dstr, start, len, replace, rlen);
-	for (i = start; i < start+rlen; i++) {
-		if (dstr->str[i] == '\\') {
-			if (dstr->str[i+1] == '&') {
-				dstring_snip (dstr, i, 1);
-				rlen--;
-				continue;
-			}
-			if (isdigit ((byte) dstr->str[i+1])) {
-				if (i && dstr->str[i-1] == '\\') { // Escaped, not a true back reference
-					dstring_snip (dstr, i, 1);
-					rlen--;
-					continue;
-				}
-				sub = dstr->str[i+1] - '0';
-				if (match[sub].rm_so != -1) {
-					dstring_replace (dstr, i, 2, matched+match[sub].rm_so, match[sub].rm_eo - match[sub].rm_so);
-					rlen += match[sub].rm_eo - match[sub].rm_so - 2;
-				} else {
-					dstring_snip (dstr, i, 2);
-					rlen -= 2;
-				}
-			}
-		} else if (dstr->str[i] == '&') {
-			dstring_replace (dstr, i, 1, matched, len);
-			rlen += strlen(matched) - 1;
-		}
-	}
-	free (matched);
-	return rlen + match[0].rm_so;
-}
 	
 void
 GIB_Regex_Match_f (void)
 {
 	regex_t *reg;
-	int res;
-	char errbuf[1024];
 	
-	if (GIB_Argc() != 3) {
-		GIB_USAGE ("string regex");
+	if (GIB_Argc() != 4) {
+		GIB_USAGE ("string regex options");
 		return;
 	}
 	
-	reg = calloc (1, sizeof (regex_t));
-	
-	if ((res = regcomp(reg, GIB_Argv(2), REG_NOSUB | REG_EXTENDED))) {
-		regerror(res, reg, errbuf, sizeof(errbuf));
-		Cbuf_Error ("regex", "%s: %s", GIB_Argv(0), errbuf);
-	} else if (regexec(reg, GIB_Argv(1), 0, 0, 0))
+	if (!(reg = GIB_Regex_Compile (GIB_Argv(2), REG_EXTENDED | GIB_Regex_Translate_Options (GIB_Argv(3)))))
+		Cbuf_Error ("regex", "%s: %s", GIB_Argv(0), GIB_Regex_Error ());
+	else if (regexec(reg, GIB_Argv(1), 0, 0, 0))
 		GIB_Return ("0");
 	else
 		GIB_Return ("1");
-	regfree (reg);
-	free (reg);
 }
 
 void
 GIB_Regex_Replace_f (void)
 {
 	regex_t *reg;
-	int res, ofs, len;//, e;
-	char errbuf[1024];
+	int ofs, len;//, e;
 	regmatch_t match[10];
 	
-	if (GIB_Argc() < 4 || GIB_Argc() > 5) {
-		GIB_USAGE ("string regex replacement [options]");
+	if (GIB_Argc() != 5) {
+		GIB_USAGE ("string regex options replacement");
 		return;
 	}
 	
 	ofs = 0;
-	len = strlen (GIB_Argv(3));
-	reg = calloc (1, sizeof (regex_t));
+	len = strlen (GIB_Argv(4));
 	
-	if ((res = regcomp(reg, GIB_Argv(2), REG_EXTENDED))) {
-		regerror(res, reg, errbuf, sizeof(errbuf));
-		Cbuf_Error ("regex", "%s: %s", GIB_Argv(0), errbuf);
-	} else while (!regexec(reg, GIB_Argv(1)+ofs, 10, match, ofs > 0 ? REG_NOTBOL : 0) && match[0].rm_eo) {
-		
-		ofs += GIB_Regex_Apply_Match (match, GIB_Argd(1), ofs, GIB_Argv(3));
-	}
-	regfree (reg);
-	free (reg);
+	if (!(reg = GIB_Regex_Compile (GIB_Argv(2), REG_EXTENDED | GIB_Regex_Translate_Options (GIB_Argv(3)))))
+		Cbuf_Error ("regex", "%s: %s", GIB_Argv(0), GIB_Regex_Error ());
+	else if (strchr(GIB_Argv(3), 'g'))
+		while (!regexec(reg, GIB_Argv(1)+ofs, 10, match, ofs > 0 ? REG_NOTBOL : 0) && match[0].rm_eo)
+			ofs += GIB_Regex_Apply_Match (match, GIB_Argd(1), ofs, GIB_Argv(4));
+	else if (!regexec(reg, GIB_Argv(1), 10, match, 0) && match[0].rm_eo)
+		GIB_Regex_Apply_Match (match, GIB_Argd(1), 0, GIB_Argv(4));
 	GIB_Return (GIB_Argv(1));
 }
-
 
 void
 GIB_Regex_Extract_f (void)
 {
 	regex_t *reg;
-	char errbuf[1024];
 	regmatch_t *match;
-	int i, res;
+	int i;
 	char o;
 	
 	if (GIB_Argc() < 4) {
-		GIB_USAGE ("string regex var1 [var2 var3 ...]");
+		GIB_USAGE ("string regex options [var1 var2 var3 ...]");
 		return;
 	}
 	match = calloc (GIB_Argc() - 3, sizeof(regmatch_t));
-	reg = calloc (1, sizeof (regex_t));
 	
-	if ((res = regcomp(reg, GIB_Argv(2), REG_EXTENDED))) {
-		regerror(res, reg, errbuf, sizeof(errbuf));
-		Cbuf_Error ("regex", "%s: %s", GIB_Argv(0), errbuf);
-	} else if (!regexec(reg, GIB_Argv(1), GIB_Argc() - 3, match, 0) && match[0].rm_eo) {
+	if (!(reg = GIB_Regex_Compile (GIB_Argv(2), REG_EXTENDED | GIB_Regex_Translate_Options (GIB_Argv(3)))))
+		Cbuf_Error ("regex", "%s: %s", GIB_Argv(0), GIB_Regex_Error ());
+	else if (!regexec(reg, GIB_Argv(1), GIB_Argc() - 3, match, 0) && match[0].rm_eo) {
 		for (i = 0; i < GIB_Argc() - 3; i++) {
 			if (match[i].rm_so != -1 && *GIB_Argv(i+3)) {
 				o = GIB_Argv(1)[match[i].rm_eo];
@@ -627,8 +568,6 @@ GIB_Regex_Extract_f (void)
 		GIB_Return (va("%lu", (unsigned long) match[0].rm_eo));
 	} else
 		GIB_Return ("-1");
-	regfree (reg);
-	free (reg);
 	free (match);
 }
 
