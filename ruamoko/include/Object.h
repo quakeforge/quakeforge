@@ -85,9 +85,7 @@ typedef enum {
 - (BOOL) conformsToProtocol: (Protocol)aProtocol;
 
 - (id) retain;
-#if 0
 - (id) autorelease;
-#endif	// autorelease pools
 - (/*oneway*/ void) release;
 - (/*unsigned*/integer) retainCount;
 @end

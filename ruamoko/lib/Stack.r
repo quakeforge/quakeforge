@@ -42,7 +42,9 @@
 
 - (void) addObject: (id)anObject
 {
-	top = [[[ListNode alloc] initWithObject: anObject] setNextNode: top];
+	local id oldTop = top;
+	top = [[ListNode alloc] initWithObject: anObject];
+	[top setNextNode: oldTop];
 	stackSize++;
 }
 
@@ -55,7 +57,7 @@
 		return NIL;
 
 	oldTop = top;
-	top = [top next];
+	top = [top nextNode];
 	stackSize--;
 
 	data = [[oldTop object] retain];
