@@ -148,8 +148,10 @@ locs_load (const char *filename)
 			t2[0] = '\0';
 			// handle dos format lines (COM_FOpenFile is binary only)
 			// and unix is effectively binary only anyway
-			if (t2 > t1 && t2[-1] == '\r')
+			while (t2 > t1 && t2[-1] == '\r') {
 				t2[-1] = '\0';
+				t2--;
+			}
 		}
 		locs_add (loc, t1);
 	}
