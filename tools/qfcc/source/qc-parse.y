@@ -750,6 +750,7 @@ break_label
 			$$ = break_label;
 			break_label = new_label_expr ();
 		}
+	;
 
 continue_label
 	: /* empty */
@@ -757,6 +758,7 @@ continue_label
 			$$ = continue_label;
 			continue_label = new_label_expr ();
 		}
+	;
 
 switch_block
 	: /* empty */
@@ -764,12 +766,14 @@ switch_block
 			$$ = switch_block;
 			switch_block = new_switch_block ();
 		}
+	;
 
 save_inits
 	: /* empty */
 		{
 			$$ = save_local_inits (pr_scope);
 		}
+	;
 
 opt_expr
 	: expr
@@ -777,6 +781,7 @@ opt_expr
 		{
 			$$ = 0;
 		}
+	;
 
 expr
 	: expr '=' expr				{ $$ = assign_expr ($1, $3); }
@@ -835,7 +840,6 @@ const
 		}
 	| string_val
 		{
-			printf ("'%s'\n", $$->e.string_val);
 			$$ = $1;
 		}
 	| VECTOR_VAL
