@@ -5,7 +5,7 @@ INCLUDES=   -I$(top_srcdir)/include
 bin_PROGRAMS=	qfdefs
 noinst_PROGRAMS=	gendefs
 
-qfdefs_SOURCES= defs.c defs_nq.c defs_qw.c qfdefs.c
+qfdefs_SOURCES= defs.c defs_nq.c defs_qw.c fix_globals.c qfdefs.c
 qfdefs_LDADD=	-lQFgamecode -lQFutil
 
 gendefs_SOURCES= gendefs.c

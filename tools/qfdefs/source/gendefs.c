@@ -20,19 +20,19 @@ output_def (FILE *out, const char *line)
 	for (name_e = name; *name_e && !isspace (*name_e) && *name_e != ';'; name_e++)
 		;
 	if (strncmp ("int", type, type_e - type) == 0) {
-		fprintf (out, "\t{ev_entity,\t%d,\t\"%.*s\"},\n",
+		fprintf (out, "\t{ev_entity | DEF_SAVEGLOBAL,\t%d,\t\"%.*s\"},\n",
 				 offset, name_e - name, name);
 		offset += 1;
 	} else if (strncmp ("float", type, type_e - type) == 0) {
-		fprintf (out, "\t{ev_float,\t%d,\t\"%.*s\"},\n",
+		fprintf (out, "\t{ev_float | DEF_SAVEGLOBAL,\t%d,\t\"%.*s\"},\n",
 				 offset, name_e - name, name);
 		offset += 1;
 	} else if (strncmp ("string_t", type, type_e - type) == 0) {
-		fprintf (out, "\t{ev_string,\t%d,\t\"%.*s\"},\n",
+		fprintf (out, "\t{ev_string | DEF_SAVEGLOBAL,\t%d,\t\"%.*s\"},\n",
 				 offset, name_e - name, name);
 		offset += 1;
 	} else if (strncmp ("vec3_t", type, type_e - type) == 0) {
-		fprintf (out, "\t{ev_vector,\t%d,\t\"%.*s\"},\n",
+		fprintf (out, "\t{ev_vector | DEF_SAVEGLOBAL,\t%d,\t\"%.*s\"},\n",
 				 offset, name_e - name, name);
 		offset += 3;
 	} else if (strncmp ("func_t", type, type_e - type) == 0) {

@@ -10,14 +10,13 @@
 #include "QF/progs.h"
 #include <QF/vfs.h>
 #include <QF/sys.h>
+#include <QF/va.h>
 #include <QF/zone.h>
 
 #include "def.h"
 
 void *membase;
 int memsize = 16*1024*1024;
-
-extern char *type_name[];
 
 progs_t progs;
 
@@ -48,6 +47,7 @@ main (int argc, char **argv)
 		return 1;
 	}
 	while (--argc) {
+		int fix = 0;
 		PR_LoadProgsFile (&progs, *++argv);
 		if (!progs.progs) {
 			fprintf (stderr, "failed to load %s\n", *argv);
@@ -79,15 +79,25 @@ main (int argc, char **argv)
 				break;
 		if (!def->name)
 			printf ("%s: all system globals accounted for\n", *argv);
-		else
+		else {
 			printf ("%s: some system globals missing\n", *argv);
+			fix_missing_globals (&progs, globals);
+			fix++;
+		}
 		for (def = fields; def->name; def++)
 			if (!ED_FindField (&progs, def->name))
 				break;
 		if (!def->name)
 			printf ("%s: all system fields accounted for\n", *argv);
-		else
+		else {
 			printf ("%s: some system fields missing\n", *argv);
+		}
+		if (fix) {
+			//XXX FIXME endian fixups
+			FILE *f = fopen (va ("%s.new", *argv), "wb");
+			fwrite (progs.progs, progs.progs_size, 1, f);
+			fclose (f);
+		}
 	}
 	return 0;
 }
