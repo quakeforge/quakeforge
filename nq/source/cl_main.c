@@ -171,6 +171,8 @@ CL_ClearState (void)
 	memset (cl_baselines, 0, sizeof (cl_baselines));
 	memset (r_lightstyle, 0, sizeof (r_lightstyle));
 
+	Skin_ClearTempSkins ();
+
 	CL_ClearTEnts ();
 
 	R_ClearEfrags ();
@@ -570,12 +572,6 @@ CL_RelinkEntities (void)
 
 		}
 
-		if (i <= cl.maxclients) {
-			ent->skin = Skin_NewTempSkin ();
-			if (ent->skin)
-				CL_NewTranslation (i - 1, ent->skin);
-		}
-
 		// rotate binary objects locally
 		if (ent->model->flags & EF_ROTATE)
 			ent->angles[1] = bobjrotate;
@@ -659,7 +655,6 @@ CL_ReadFromServer (void)
 		Con_Printf ("\n");
 
 	R_ClearEnts ();
-	Skin_ClearTempSkins ();
 
 	CL_RelinkEntities ();
 	CL_UpdateTEnts ();

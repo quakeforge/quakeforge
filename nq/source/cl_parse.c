@@ -44,6 +44,7 @@ static const char rcsid[] =
 #include "QF/msg.h"
 #include "QF/sys.h"
 #include "QF/screen.h"
+#include "QF/skin.h"
 #include "QF/sound.h" // FIXME: DEFAULT_SOUND_PACKET_*
 #include "QF/input.h"
 
@@ -394,8 +395,12 @@ CL_ParseUpdate (int bits)
 				ent->syncbase = 0.0;
 		} else
 			forcelink = true;		// hack to make null model players work
-		//XXX if (num > 0 && num <= cl.maxclients)
-		//XXX 	CL_NewTranslation (num - 1);
+		if (num > 0 && num <= cl.maxclients) {
+			if (!ent->skin)
+				ent->skin = Skin_NewTempSkin ();
+			if (ent->skin)
+				CL_NewTranslation (num - 1, ent->skin);
+		}
 	}
 
 	if (bits & U_FRAME)
@@ -421,8 +426,12 @@ CL_ParseUpdate (int bits)
 		skin = state->baseline.skin;
 	if (skin != ent->skinnum) {
 		ent->skinnum = skin;
-		//XXX if (num > 0 && num <= cl.maxclients)
-		//XXX 	CL_NewTranslation (num - 1);
+		if (num > 0 && num <= cl.maxclients) {
+			if (!ent->skin)
+				ent->skin = Skin_NewTempSkin ();
+			if (ent->skin)
+				CL_NewTranslation (num - 1, ent->skin);
+		}
 	}
 
 	if (bits & U_EFFECTS)
@@ -786,11 +795,17 @@ CL_ParseServerMessage (void)
 			case svc_updatecolors:
 				Sbar_Changed ();
 				i = MSG_ReadByte (net_message);
-				if (i >= cl.maxclients)
+				if (i >= cl.maxclients) {
 					Host_Error ("CL_ParseServerMessage: svc_updatecolors > "
 								"MAX_SCOREBOARD");
-				cl.scores[i].colors = MSG_ReadByte (net_message);
-				//XXX CL_NewTranslation (i);
+				} else {
+					entity_t   *ent = &cl_entities[i+1];
+					cl.scores[i].colors = MSG_ReadByte (net_message);
+					if (!ent->skin)
+						ent->skin = Skin_NewTempSkin ();
+					if (ent->skin)
+						CL_NewTranslation (i, ent->skin);
+				}
 				break;
 
 			case svc_particle:
