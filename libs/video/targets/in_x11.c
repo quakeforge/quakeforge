@@ -75,20 +75,19 @@ static const char rcsid[] =
 #include "context_x11.h"
 #include "dga_check.h"
 
-cvar_t     *in_snd_block;
-cvar_t     *in_dga;
+cvar_t	   *in_snd_block;
+cvar_t	   *in_dga;
 
 static qboolean dga_avail;
 static qboolean dga_active;
-
 static keydest_t old_key_dest = key_none;
-
 static int  p_mouse_x, p_mouse_y;
 
 #define KEY_MASK (KeyPressMask | KeyReleaseMask)
 #define MOUSE_MASK (ButtonPressMask | ButtonReleaseMask | PointerMotionMask)
 #define FOCUS_MASK (FocusChangeMask)
 #define INPUT_MASK (KEY_MASK | MOUSE_MASK | FOCUS_MASK)
+
 
 static void
 dga_on (void)
@@ -156,8 +155,8 @@ selection_notify (XEvent *event)
 	if (num_bytes <= 0)
 		return;
 	if (XGetWindowProperty (x_disp, x_win, property, 0, num_bytes, True,
-							AnyPropertyType, &type, &format, &len,
-							&tmp, &data) != Success) {
+							AnyPropertyType, &type, &format, &len, &tmp, &data)
+		!= Success) {
 		XFree (data);	//FIXME is this correct for this instance?
 		return;
 	}
@@ -173,12 +172,11 @@ selection_notify (XEvent *event)
 static void
 XLateKey (XKeyEvent * ev, int *k, int *u)
 {
+	unsigned char buffer[4];
+	int         bytes, unicode;
 	int         key = 0;
 	KeySym      keysym, shifted_keysym;
 	XComposeStatus compose;
-	unsigned char buffer[4];
-	int         bytes;
-	int         unicode;
 
 	keysym = XLookupKeysym (ev, 0);
 	bytes = XLookupString (ev, buffer, sizeof(buffer), &shifted_keysym,
@@ -386,7 +384,7 @@ XLateKey (XKeyEvent * ev, int *k, int *u)
 			key = QFK_KP_DIVIDE;
 			break;
 
-		/* For Sun keyboards */
+		// For Sun keyboards
 		case XK_F27:
 			key = QFK_HOME;
 			break;
@@ -400,7 +398,7 @@ XLateKey (XKeyEvent * ev, int *k, int *u)
 			key = QFK_PAGEDOWN;
 			break;
 
-		/* Some high ASCII symbols, for azerty keymaps */
+		// Some high ASCII symbols, for azerty keymaps
 		case XK_twosuperior:
 			key = QFK_WORLD_18;
 			break;
@@ -421,8 +419,7 @@ XLateKey (XKeyEvent * ev, int *k, int *u)
 			break;
 
 		default:
-			if (keysym < 128) {
-				/* ASCII keys */
+			if (keysym < 128) {								// ASCII keys
 				key = keysym;
 				if ((key >= 'A') && (key <= 'Z')) {
 					key = key + ('a' - 'A');
@@ -563,7 +560,7 @@ IN_LL_Ungrab_Input (void)
 void
 IN_LL_SendKeyEvents (void)
 {
-	/* Get events from X server. */
+	// Get events from X server.
 	X11_ProcessEvents ();
 }
 
@@ -627,10 +624,10 @@ IN_LL_Init (void)
 void
 IN_LL_Init_Cvars (void)
 {
-	in_snd_block= Cvar_Get ("in_snd_block", "0", CVAR_ARCHIVE, NULL,
-							"block sound output on window focus loss");
+	in_snd_block = Cvar_Get ("in_snd_block", "0", CVAR_ARCHIVE, NULL,
+							 "block sound output on window focus loss");
 	in_dga = Cvar_Get ("in_dga", "1", CVAR_ARCHIVE, in_dga_f,
-			"DGA Input support");
+					   "DGA Input support");
 }
 
 
