@@ -48,10 +48,27 @@ new_param (const char *selector, type_t *type, const char *name)
 	return param;
 }
 
+static param_t *
+_reverse_params (param_t *params, param_t *next)
+{
+	param_t    *p = params;
+	if (params->next)
+		p = _reverse_params (params->next, params);
+	params->next = next;
+	return p;
+}
+
+param_t *
+reverse_params (param_t *params)
+{
+	if (!params)
+		return 0;
+	return _reverse_params (params, 0);
+}
+
 type_t *
 parse_params (type_t *type, param_t *parms)
 {
-	int         ellipsis = 0, i;
 	param_t    *p;
 	type_t      new;
 
@@ -60,28 +77,21 @@ parse_params (type_t *type, param_t *parms)
 	new.aux_type = type;
 	new.num_parms = 0;
 
-	if (parms && !parms->selector && !parms->type && !parms->name) {
-		ellipsis = 1;
-		parms = parms->next;
-	}
-
-	if (ellipsis) {
-		new.num_parms = -1;			// variable args
-	} else if (!parms) {
-	} else {
-		for (p = parms; p; p = p->next, new.num_parms++)
-			;
+	for (p = parms; p; p = p->next, new.num_parms++) {
 		if (new.num_parms > MAX_PARMS) {
 			error (0, "too many params");
 			return type;
 		}
-		i = 1;
-		do {
-			//puts (parms->name);
-			new.parm_types[new.num_parms - i] = parms->type;
-			i++;
-			parms = parms->next;
-		} while (parms);
+		if (!p->selector && !p->type && !p->name) {
+			if (p->next) {
+				error (0, "internal error");
+				abort ();
+			}
+			new.num_parms = -(new.num_parms + 1);
+			break;
+		} else {
+			new.parm_types[new.num_parms] = p->type;
+		}
 	}
 	//print_type (&new); puts("");
 	return PR_FindType (&new);
@@ -90,29 +100,20 @@ parse_params (type_t *type, param_t *parms)
 void
 build_scope (function_t *f, def_t *func, param_t *params)
 {
-	int i, count;
-	def_t *def;
-	param_t   **param_list, *p;
-
-	for (p = params, count = 0; p; p = p->next, count++)
-		;
-	param_list = alloca (sizeof (param_t *) * i);
-	i = count;
-	for (p = params; p; p = p->next)
-		param_list[--i] = p;
+	int        i;
+	def_t     *def;
+	param_t    *p;
 
 	func->alloc = &func->locals;
 
-	for (i = 0; i < count; i++) {
-		if (!param_list[i]->selector
-			&& !param_list[i]->type
-			&& !param_list[i]->name)
+	for (p = params, i = 0; p; p = p->next, i++) {
+		if (!p->selector && !p->type && !p->name)
 			continue;					// ellipsis marker
-		def = PR_GetDef (param_list[i]->type, param_list[i]->name,
-						 func, func->alloc);
+		def = PR_GetDef (p->type, p->name, func, func->alloc);
 		f->parm_ofs[i] = def->ofs;
 		if (i > 0 && f->parm_ofs[i] < f->parm_ofs[i - 1])
 			Error ("bad parm order");
+		//printf ("%s%s %d\n", p == params ? "" : "    ", p->name, def->ofs);
 		def->used = 1;				// don't warn for unused params
 		PR_DefInitialized (def);	// params are assumed to be initialized
 	}
@@ -142,7 +143,7 @@ void
 finish_function (function_t *f)
 {
 	dfunction_t *df;
-	int i;
+	int i, count;
 
 	// fill in the dfunction
 	df = &functions[numfunctions];
@@ -159,7 +160,9 @@ finish_function (function_t *f)
 	df->numparms = f->def->type->num_parms;
 	df->locals = f->def->locals;
 	df->parm_start = 0;
-	for (i = 0; i < df->numparms; i++)
+	if ((count = df->numparms) < 0)
+		count = -count - 1;
+	for (i = 0; i < count; i++)
 		df->parm_size[i] = pr_type_size[f->def->type->parm_types[i]->type];
 
 	if (f->aux) {

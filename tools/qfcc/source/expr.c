@@ -1428,7 +1428,7 @@ function_expr (expr_t *e1, expr_t *e2)
 {
 	etype_t     t1;
 	expr_t     *e;
-	int         parm_count = 0;
+	int         arg_count = 0, parm_count = 0;
 	type_t     *ftype;
 	int         i;
 	expr_t     *args = 0, **a = &args;
@@ -1443,7 +1443,7 @@ function_expr (expr_t *e1, expr_t *e2)
 	for (e = e2; e; e = e->next) {
 		if (e->type == ex_error)
 			return e;
-		parm_count++;
+		arg_count++;
 	}
 
 	t1 = extract_type (e1);
@@ -1472,42 +1472,51 @@ function_expr (expr_t *e1, expr_t *e2)
 
 	ftype = e1->type == ex_def ? e1->e.def->type : e1->e.expr.type;
 
-	if (parm_count > MAX_PARMS) {
+	if (arg_count > MAX_PARMS) {
 		return error (e1, "more than %d parameters", MAX_PARMS);
 	}
-	if (ftype->num_parms != -1) {
-		if (parm_count > ftype->num_parms) {
-			return error (e1, "too many arguments");
-		} else if (parm_count < ftype->num_parms) {
+	if (ftype->num_parms < -1) {
+		if (arg_count > ftype->num_parms + 1) {
 			if (!options.traditional)
 				return error (e1, "too few arguments");
 			warning (e1, "too few arguments");
 		}
+		parm_count = -ftype->num_parms - 1;
+	} else if (ftype->num_parms >= 0) {
+		if (arg_count > ftype->num_parms) {
+			printf ("%d %d %s\n", arg_count, ftype->num_parms, e1->e.def->name);
+			return error (e1, "too many arguments");
+		} else if (arg_count < ftype->num_parms) {
+			if (!options.traditional)
+				return error (e1, "too few arguments");
+			warning (e1, "too few arguments");
+		}
+		parm_count = ftype->num_parms;
 	}
-	for (i = parm_count, e = e2; i > 0; i--, e = e->next) {
+	for (i = arg_count - 1, e = e2; i >= 0; i--, e = e->next) {
 		type_t     *t = get_type (e);
 
-		if (ftype->parm_types[i - 1] == &type_float && e->type == ex_integer) {
+		if (ftype->parm_types[i] == &type_float && e->type == ex_integer) {
 			e->type = ex_float;
 			e->e.float_val = e->e.integer_val;
 			t = &type_float;
 		}
-		if (ftype->num_parms != -1) {
+		if (i < parm_count) {
 			if (t == &type_void) {
-				t = ftype->parm_types[i - 1];
+				t = ftype->parm_types[i];
 				e->type = expr_types[t->type];
 			}
-			if (t != ftype->parm_types[i - 1]) {
-				print_type (ftype->parm_types[i - 1]); puts("");
+			if (t != ftype->parm_types[i]) {
+				print_type (ftype->parm_types[i]); puts("");
 				print_type (t); puts("");
 				err = error (e, "type mismatch for parameter %d of %s",
-							 i, e1->e.def->name);
+							 i + 1, e1->e.def->name);
 			}
 		} else {
 			if (e->type == ex_integer && options.warnings.vararg_integer)
 				warning (e, "passing integer consant into ... function");
 		}
-		arg_types[parm_count - i] = t;
+		arg_types[arg_count - 1 - i] = t;
 	}
 	if (err)
 		return err;

@@ -41,6 +41,8 @@ typedef struct param_s {
 
 param_t *new_param (const char *selector, type_t *type, const char *name);
 
+param_t *reverse_params (param_t *params);
+
 type_t *parse_params (type_t *type, param_t *params);
 void build_scope (function_t *f, def_t *func, param_t *params);
 function_t *new_function (void);

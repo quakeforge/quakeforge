@@ -237,7 +237,7 @@ function_decl
 		}
 	  ')'
 		{
-			$$ = $3;
+			$$ = reverse_params ($3);
 		}
 	| '(' param_scope param_list ',' ELLIPSIS ')'
 		{
@@ -246,6 +246,7 @@ function_decl
 
 			$$ = new_param (0, 0, 0);
 			$$->next = $3;
+			$$ = reverse_params ($$);
 		}
 	| '(' ELLIPSIS ')'
 		{

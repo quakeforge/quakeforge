@@ -110,13 +110,17 @@ print_type (type_t *type)
 			if (type->num_parms < 0) {
 				printf ("(...)");
 			} else {
-				int         i;
+				int         c, i;
 				printf ("(");
-				for (i = 0; i < type->num_parms; i++) {
+				if ((c = type->num_parms) < 0)
+					c = -c - 1;
+				for (i = 0; i < c; i++) {
 					if (i)
 						printf (", ");
 					print_type (type->parm_types[i]);
 				}
+				if (type->num_parms < 0)
+						printf (", ...");
 				printf (")");
 			}
 			break;

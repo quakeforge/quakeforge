@@ -103,7 +103,7 @@ PR_FindType (type_t *type)
 {
 	def_t      *def;
 	type_t     *check;
-	int         i;
+	int         c, i;
 
 	for (check = pr.types; check; check = check->next) {
 		if (check->type != type->type
@@ -117,11 +117,14 @@ PR_FindType (type_t *type)
 		if (check->num_parms == -1)
 			return check;
 
-		for (i = 0; i < type->num_parms; i++)
+		if ((c = check->num_parms) < 0)
+			c = -c - 1;
+
+		for (i = 0; i < c; i++)
 			if (check->parm_types[i] != type->parm_types[i])
 				break;
 
-		if (i == type->num_parms)
+		if (i == c)
 			return check;
 	}
 
