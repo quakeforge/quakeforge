@@ -50,6 +50,10 @@ X  ~/.quakeforgerc should support all commands, not just set and setrom
 o  clean up TODO ;)
 o  add a U_PHYSICAL field to entities.  it should include a solid bit,
    a rotated bbox bit, and mins/maxs for the bbos
+o  gui for serverlist
+o  add favorates serverlist manipulation
+o  redo serverlist filtering for better flexability and/or easier use
+o  add individual server ping/info request from console
 
 These are explained better in doc/ideas/rhamph.txt:
 ?  portal vis system
