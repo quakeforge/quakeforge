@@ -345,11 +345,16 @@ SV_SpawnServer (char *server)
 	sv_pr_state.pr_edictareasize = sv_pr_state.pr_edict_size * MAX_EDICTS;
 	sv.edicts = Hunk_AllocName (sv_pr_state.pr_edictareasize, "edicts");
 
+	// init the data field of the edicts
+	for (i = 0; i < MAX_EDICTS; i++) {
+		ent = EDICT_NUM (&sv_pr_state, i);
+		ent->data = &baselines[i];
+	}
+
 	// leave slots at start for clients only
 	sv.num_edicts = MAX_CLIENTS + 1;
 	for (i = 0; i < MAX_CLIENTS; i++) {
 		ent = EDICT_NUM (&sv_pr_state, i + 1);
-		ent->data = &baselines[i];
 		svs.clients[i].edict = ent;
 //ZOID - make sure we update frags right
 		svs.clients[i].old_frags = 0;
