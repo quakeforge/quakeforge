@@ -1101,7 +1101,7 @@ CL_Init (void)
 	CL_TEnts_Init ();
 	Pmove_Init ();
 
-	SList_Init ();
+	SL_Init ();
 	
 // register our commands
 	Cmd_AddCommand ("version", CL_Version_f, "Report version information");

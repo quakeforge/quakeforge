@@ -3,8 +3,9 @@
 
 	serverlist addressbook
 
-	Copyright (C) 2000       Brian Koropoff <brian.hk@home.com>
-
+	Copyright (C) 2000      Brian Koropoff <brian.hk@home.com>
+	Copyright (C) 2001	Chris Ison <ceison@yahoo.com>
+	
 	Author: Brian Koropoff
 	Date: 03 May 2000
 
@@ -65,15 +66,29 @@
 #include "cl_slist.h"
 #include "client.h"
 
+typedef struct server_entry_s {
+	char *server;
+	char *desc;
+	char *status;
+	int waitstatus;
+	double pingsent;
+	double pongback;
+	struct server_entry_s *next;
+	struct server_entry_s *prev;
+} server_entry_t;
+
 server_entry_t *slist;
 server_entry_t *all_slist;
 server_entry_t *fav_slist;
+
 int which_slist;
 int slist_last_details;
 
 cvar_t *sl_sortby;
+cvar_t *sl_filter;
+cvar_t *sl_game;
+cvar_t *sl_ping;
 
-	
 void
 S_Refresh (server_entry_t *slrefresh)
 {
@@ -92,6 +107,7 @@ S_Refresh (server_entry_t *slrefresh)
 	slrefresh->waitstatus = 1;
 }
 
+
 server_entry_t *
 SL_Add (server_entry_t *start, char *ip, char *desc)
 {
@@ -108,6 +124,7 @@ SL_Add (server_entry_t *start, char *ip, char *desc)
 		start->desc = malloc (strlen (desc ? desc : ip) + 1);
 		strcpy (start->server, ip);
 		strcpy (start->desc, desc ? desc : ip);
+		start->status = NULL;
 		return (start);
 	}
 
@@ -123,7 +140,7 @@ SL_Add (server_entry_t *start, char *ip, char *desc)
 
 	strcpy (p->next->server, ip);
 	strcpy (p->next->desc, desc ? desc : ip);
-
+	p->status = NULL;
 	return (start);
 }
 
@@ -201,13 +218,43 @@ SL_Swap (server_entry_t *swap1, server_entry_t *swap2)
 	swap2->prev = prev2;
 }
 
+int
+SL_CheckFilter (server_entry_t *sl_filteritem)
+{
+	if (!sl_filter->int_val)
+		return(1);
+	if (!sl_filteritem->status)
+		return(0);
+	if (strlen(sl_game->string))
+	{
+		if (strcasecmp(Info_ValueForKey (sl_filteritem->status,	"*gamedir"), 
+					sl_game->string) != 0)
+			return(0);
+	}
+	if (sl_ping->int_val)
+	{
+		if (!sl_filteritem->pongback)
+			return(0);
+		if (((int)(sl_filteritem->pongback * 1000)) >= sl_ping->int_val)
+			return(0);
+	}
+	return(1);
+}
+
 server_entry_t *
 SL_Get_By_Num (server_entry_t *start, int n)
 {
 	int         i;
 
-	for (i = 0; i < n; i++)
-		start = start->next;
+	for (i = 0; i <= n; i++)
+	{
+		if(!start)
+			break;
+		if (!SL_CheckFilter (start))
+			i--;
+		if (i != n)
+			start = start->next;
+	}
 	if (!start)
 		return (0);
 	return (start);
@@ -221,77 +268,6 @@ SL_Len (server_entry_t *start)
 	for (i = 0; start; i++)
 		start = start->next;
 	return i;
-}
-
-server_entry_t *
-SL_LoadF (VFile *f, server_entry_t *start)
-{										// This could get messy
-	char        line[256];				/* Long lines get truncated. */
-	int         c = ' ';				/* int so it can be compared to EOF
-
-										   properly */
-	int         len;
-	int         i;
-	char       *st;
-	char       *addr;
-
-	while (1) {
-		// First, get a line
-		i = 0;
-		c = ' ';
-		while (c != '\n' && c != EOF) {
-			c = Qgetc (f);
-			if (i < 255) {
-				line[i] = c;
-				i++;
-			}
-		}
-		line[i - 1] = '\0';				// Now we can parse it
-		if ((st = gettokstart (line, 1, ' ')) != NULL) {
-			len = gettoklen (line, 1, ' ');
-			addr = malloc (len + 1);
-			strncpy (addr, &line[0], len);
-			addr[len] = '\0';
-			if ((st = gettokstart (line, 2, ' '))) {
-				start = SL_Add (start, addr, st);
-			} else {
-				start = SL_Add (start, addr, "Unknown");
-			}
-		}
-		if (c == EOF)					// We're done
-			return start;
-	}
-}
-
-void
-SL_SaveF (VFile *f, server_entry_t *start)
-{
-	do {
-		Qprintf (f, "%s   %s\n", start->server, start->desc);
-		start = start->next;
-
-	} while (start);
-}
-
-void
-SL_Shutdown (void)
-{
-	VFile      *f;
-	char        e_path[MAX_OSPATH];
-
-	if (which_slist)
-		slist = fav_slist;
-	
-	if (slist) {
-		Qexpand_squiggle (fs_userpath->string, e_path);
-		if ((f = Qopen (va ("%s/servers.txt", e_path), "w"))) {
-			SL_SaveF (f, slist);
-			Qclose (f);
-		}
-		SL_Del_All (slist);
-	}
-	if (all_slist)
-		SL_Del_All (all_slist);
 }
 
 void
@@ -310,6 +286,33 @@ SL_Del_All (server_entry_t *start)
 	}
 }
 
+void
+SL_SaveF (VFile *f, server_entry_t *start)
+{
+	do {
+		Qprintf (f, "%s   %s\n", start->server, start->desc);
+		start = start->next;
+
+	} while (start);
+}
+
+void
+SL_Shutdown (void)
+{
+	VFile      *f;
+	char        e_path[MAX_OSPATH];
+	
+	if (fav_slist) {
+		Qexpand_squiggle (fs_userpath->string, e_path);
+		if ((f = Qopen (va ("%s/servers.txt", e_path), "w"))) {
+			SL_SaveF (f, fav_slist);
+			Qclose (f);
+		}
+		SL_Del_All (fav_slist);
+	}
+	if (all_slist)
+		SL_Del_All (all_slist);
+}
 
 
 char       *
@@ -363,40 +366,47 @@ void timepassed (double time1, double *time2)
 }
 
 void
-SL_Sort (server_entry_t *sort)
+SL_SortEntry (server_entry_t *start)
 {
-	server_entry_t *p;
 	server_entry_t *q;
-	int i;
+	int i = 0;
 	
-	i = 0;
-	
-	if (!sort)
+	if (!start || !sl_sortby)
 		return;
 
-	for (p = sort; p->next; p = p->next)
+	for (q = start->next; q; q = q->next)
 	{
-		for (q = p->next; q; q = q->next)
+		if (sl_sortby->int_val)
 		{
-			if (sl_sortby->int_val)
+			if ((q->pongback) && (start->pongback) && (start->pongback > q->pongback))
 			{
-				if ((q->pongback) && (p->pongback > q->pongback))
-				{
-					SL_Swap(p,q);
-					q = p;
-				}
-			} else {
-				i = 0;
-				while ((p->desc[i] != '\0') && (q->desc[i] != '\0') && (toupper(p->desc[i]) == toupper(q->desc[i])))
-					i++;
-				if (toupper(p->desc[i]) > toupper(q->desc[i]))
-				{
-					SL_Swap(p,q);
-					q = p;
-				}
+				SL_Swap(start,q);
+				q = start;
+			}
+		} else {
+			i = 0;
+			
+			while ((start->desc[i] != '\0') && (q->desc[i] != '\0') && (toupper(start->desc[i]) == toupper(q->desc[i])))
+				i++;
+			if (toupper(start->desc[i]) > toupper(q->desc[i]))
+			{
+				SL_Swap(start,q);
+				q = start;
 			}
 		}
 	}
+}
+
+void
+SL_Sort (cvar_t *var)
+{
+	server_entry_t *p;
+	
+	if (!slist)
+		return;
+
+	for (p = slist; p->next; p = p->next)
+		SL_SortEntry (p);
 }
 
 void
@@ -405,11 +415,13 @@ SL_Con_List (server_entry_t *sldata)
 	int serv;
 	server_entry_t *cp;
 	
-	SL_Sort (sldata);
+	SL_Sort(sl_sortby);
 	
 	for(serv = 0; serv < SL_Len (sldata); serv++)
 	{
 		cp = SL_Get_By_Num (sldata, serv);
+		if (!cp)
+			break;
 		Con_Printf("%i) %s\n",(serv + 1),cp->desc);
 	}
 }
@@ -429,14 +441,13 @@ SL_Update (server_entry_t *sldata)
 	// FIXME - Need to change this so the info is not sent in 1 burst
 	//         as it appears to be causing the occasional problem
 	//         with some servers
-
-	int serv;
 	server_entry_t *cp;
 		
-	for (serv = 0; serv < SL_Len (sldata); serv++)
+	cp = sldata;
+	while (cp)
 	{
-		cp = SL_Get_By_Num (sldata, serv);
 		S_Refresh (cp);
+		cp = cp->next;
 	}
 }
 
@@ -448,6 +459,8 @@ SL_Con_Details (server_entry_t *sldata, int slitemno)
 	playercount = 0;
 	slist_last_details = slitemno;
 	cp = SL_Get_By_Num (sldata, (slitemno - 1));
+	if (!cp)
+		return;
 	Con_Printf("Server: %s\n", cp->server);
 	Con_Printf("Ping: ");
 	if (cp->pongback)
@@ -474,7 +487,7 @@ void
 SL_MasterUpdate(void)
 {
 	netadr_t addy;
-	char data[] = "c\n";
+	char data[] = "c\n\0";
 	
 	SL_Del_All(slist);
 	slist = NULL;
@@ -492,8 +505,27 @@ SL_MasterUpdate(void)
 	NET_SendPacket (3, data, addy);
 	NET_StringToAdr ("192.246.40.37:27006", &addy);
 	NET_SendPacket (3, data, addy);
+	NET_StringToAdr ("203.9.148.7:27000", &addy);
+	NET_SendPacket (3, data, addy);
 }
 
+int
+SL_Switch (void)
+{
+	if (!which_slist)
+	{
+		fav_slist = slist;
+		slist = all_slist;
+		which_slist = 1;
+	} else {
+		all_slist = slist;
+		slist = fav_slist;
+		which_slist = 0;
+	}
+	SL_Sort (sl_sortby);
+	return (which_slist);
+}
+	
 void
 SL_Command (void)
 {
@@ -503,18 +535,10 @@ SL_Command (void)
 		SL_Con_List(slist); 
 	else if (strcasecmp(Cmd_Argv(1),"switch") == 0)
 	{
-		if (!which_slist)
-		{
-			fav_slist = slist;
-			slist = all_slist;
+		if (SL_Switch ())
 			Con_Printf("Switched to Server List from Masters\n");
-			which_slist = 1;
-		} else {
-			all_slist = slist;
-			slist = fav_slist;
+		else
 			Con_Printf("Switched to Favorate Server List\n");
-			which_slist = 0;
-		}
 	}	
 	else if (strcasecmp(Cmd_Argv(1),"refresh") == 0)
 	{
@@ -573,7 +597,46 @@ MSL_ParseServerList(char *msl_data)
 	}
 }
 
-void SList_Init (void)
+server_entry_t *
+SL_LoadF (VFile *f, server_entry_t *start)
+{
+	//This could get messy
+	char        line[256];                 /* Long lines get truncated. */
+	int         c = ' ';                   /* int so it can be compared to EOF properly */
+	int         len;
+	int         i;
+	char       *st;
+	char       *addr;
+
+	while (1) {
+	// First, get a line
+		i = 0;
+		c = ' ';
+		while (c != '\n' && c != EOF) {
+			c = Qgetc (f);
+			if (i < 255) {
+				line[i] = c;
+				i++;
+			}
+		}
+		line[i - 1] = '\0';                             // Now we can parse it
+		if ((st = gettokstart (line, 1, ' ')) != NULL) {
+			len = gettoklen (line, 1, ' ');
+			addr = malloc (len + 1);
+			strncpy (addr, &line[0], len);
+			addr[len] = '\0';
+			if ((st = gettokstart (line, 2, ' '))) {
+				start = SL_Add (start, addr, st);
+			} else {
+				start = SL_Add (start, addr, "Unknown");
+			}
+		}
+	if (c == EOF)                                   // We're done
+		return start;
+	}
+}
+
+void SL_Init (void)
 {
 	VFile      *servlist;
 	char        e_path[MAX_OSPATH];
@@ -593,8 +656,10 @@ void SList_Init (void)
 	all_slist = NULL;
 	which_slist = 0;
 	Cmd_AddCommand("slist",SL_Command,"console commands to access server list\n");
-	sl_sortby = Cvar_Get ("sl_sortby", "0", CVAR_ARCHIVE, NULL, "0 = sort by name, 1 = sort by ping");
-	
+	sl_sortby = Cvar_Get ("sl_sortby", "0", CVAR_ARCHIVE, SL_Sort, "0 = sort by name, 1 = sort by ping");
+	sl_filter = Cvar_Get ("sl_filter", "0", CVAR_NONE, NULL, "enable server filter");
+	sl_game = Cvar_Get ("sl_game", "", CVAR_ARCHIVE, NULL, "sets the serverlist game filter");
+	sl_ping = Cvar_Get ("sl_ping", "", CVAR_ARCHIVE, NULL, "sets the serverlist ping filter");
 }
 
 int

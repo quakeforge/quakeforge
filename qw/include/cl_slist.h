@@ -31,45 +31,14 @@
 #ifndef _CL_SLIST_H
 #define _CL_SLIST_H
 
-#include "QF/vfile.h"
-
-typedef struct server_entry_s {
-  	char *server;
-	char *desc;
-	char *status;
-	int waitstatus;
-	double pingsent;
-	double pongback;
-	struct server_entry_s *next;
-	struct server_entry_s *prev;
-  } server_entry_t;
-  
-extern server_entry_t	*slist;
-  
-server_entry_t *SL_Add(server_entry_t *start, char *ip, char *desc);
-server_entry_t *SL_Del(server_entry_t *start, server_entry_t *del);
-server_entry_t *SL_InsB(server_entry_t *start, server_entry_t *place, char *ip, char *desc);
-void SL_Swap(server_entry_t *swap1, server_entry_t *swap2);
-server_entry_t *SL_Get_By_Num(server_entry_t *start, int n);
-int SL_Len(server_entry_t *start);
-
-server_entry_t *SL_LoadF(VFile *f, server_entry_t *start);
-void SL_SaveF(VFile *f, server_entry_t *start);
-
-void SL_Del_All(server_entry_t *start);
-void SL_Shutdown(void);
-
-char *gettokstart(char *str, int req, char delim);
-int gettoklen(char *str, int req, char delim);
-
-void timepassed (double time1, double *time2);
+void SL_Init (void);
 
 void MSL_ParseServerList(char *msl_data);
-	
-void SList_Init (void);
 
 int SL_CheckStatus (char *cs_from, char *cs_data);
 
 void SL_CheckPing (char *cp_from);
+
+void SL_Shutdown (void);
 
 #endif	// _CL_SLIST_H
