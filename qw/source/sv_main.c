@@ -1905,12 +1905,12 @@ SV_CheckVars (void)
 
 	Run string GC on progs every pr_gc_interval frames
 	
-	snax: run QFobject GC as well
+	//snax: run QFobject GC as well
 */
 static void
 SV_GarbageCollect (void)
 {
-	Object_Garbage_Collect ();
+	//Object_Garbage_Collect ();
 }
 
 void
@@ -2499,7 +2499,7 @@ SV_Init (void)
 	Cbuf_Execute_Sets (sv_cbuf);
 
 	// snax: Init experimental object system and run a test
-	Object_Init();
+	//Object_Init();
 
 	// execute the global configuration file if it exists
 	// would have been nice if Cmd_Exec_f could have been used, but it
