@@ -1153,26 +1153,6 @@ GL_BuildLightmaps (model_t **models, int num_models)
 		texture_extension_number += MAX_LIGHTMAPS;
 	}
 
-/*
-	// FIXME: use callback to set lightmapalign/lightmapalignmask, avoid
-	// checking it every frame
-	if (gl_lightmap_align->int_val < 1)
-		gl_lightmap_align = 1;
-	else if (gl_lightmap_align->int_val > 16)
-		gl_lightmap_align = 16;
-	lightmapalign = 1;
-	while (lightmapalign < gl_lightmapalign.value)
-		lightmapalign <<= 1;
-	gl_lightmapalign.value = lightmapalign;
-	lightmapalignmask = ~(lightmapalign - 1);
-	if (gl_lightmap_subimage->int_val < 1)
-	{
-		lightmapalign = 1;
-		lightmapalignmask = ~0;
-	}
-*/
-
-	// FIXME: don't call unnecessarily every frame.
 	switch (gl_lightmap_components->int_val) {
 	case 1:
 		gl_internalformat = 1;
