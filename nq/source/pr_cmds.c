@@ -51,8 +51,6 @@ static const char rcsid[] =
 #include "sv_progs.h"
 #include "world.h"
 
-#define	RETURN_EDICT(p, e) ((p)->pr_globals[OFS_RETURN].integer_var = EDICT_TO_PROG(p, e))
-
 /*
 						BUILT-IN FUNCTIONS
 */

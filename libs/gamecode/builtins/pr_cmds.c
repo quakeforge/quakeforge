@@ -54,10 +54,6 @@ static const char rcsid[] =
 
 #include "compat.h"
 
-#define	RETURN_EDICT(p, e) ((p)->pr_globals[OFS_RETURN].integer_var = EDICT_TO_PROG(p, e))
-#define	RETURN_STRING(p, s) ((p)->pr_globals[OFS_RETURN].integer_var = PR_SetString((p), s))
-#define RETURN_VECTOR(p, v) (VectorCopy (v, G_VECTOR (p, OFS_RETURN)))
-
 const char *pr_gametype = "";
 
 /* BUILT-IN FUNCTIONS */

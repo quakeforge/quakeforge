@@ -132,16 +132,36 @@ int NUM_FOR_BAD_EDICT(progs_t *pr, edict_t *e);
 #define	G_INT(p,o)		G_var (p, o, integer)
 #define	G_UINT(p,o)		G_var (p, o, uinteger)
 #define G_EDICT(p,o)	((edict_t *)(PR_edicts (p) + G_INT (p, o)))
-#define G_EDICTNUM(p,o)	NUM_FOR_EDICT(p, G_EDICT(p, o))
+#define G_EDICTNUM(p,o)	NUM_FOR_EDICT(p, G_EDICT (p, o))
 #define	G_VECTOR(p,o)	G_var (p, o, vector)
 #define	G_STRING(p,o)	PR_GetString (p, G_var (p, o, string))
 #define	G_FUNCTION(p,o)	G_var (p, o, func)
 #define	G_POINTER(p,o)	PR_Pointer (p, o)
 #define	G_STRUCT(p,t,o)	(*(t *)G_POINTER (p, o))
 
-#define RETURN_STRING(p, s) ((p)->pr_globals[OFS_RETURN].integer_var = PR_SetString((p), s))
-#define RETURN_EDICT(p, e) ((p)->pr_globals[OFS_RETURN].integer_var = EDICT_TO_PROG(p, e))
+#define P_var(p,n,t)	G_var (p, OFS_PARM##n, t)
+#define P_FLOAT(p,n)	P_var (p, n, float)
+#define P_INT(p,n)		P_var (p, n, integer)
+#define P_UINT(p,n)		P_var (p, n, uinteger)
+#define P_EDICT(p,n)	((edict_t *)(PR_edicts (p) + P_INT (p, n)))
+#define P_EDICTNUM(p,n)	NUM_FOR_EDICT (p, P_EDICT (p, n));
+#define P_VECTOR(p,n)	P_var (p, n, vector)
+#define P_STRING(p,n)	PR_GetString (p, P_var (p, n, string))
+#define P_FUNCTION(p,n)	P_var (p, n, func)
+#define P_POINTER(p,n)	G_POINTER (p, P_INT (p, n))
+#define P_STRUCT(p,t,n)	(*(t *)P_POINTER (p, n))
 
+#define R_var(p,t)		G_var (p, OFS_RETURN, t)
+#define R_FLOAT(p)		R_var (p, float)
+#define R_INT(p)		R_var (p, integer)
+#define R_UINT(p)		R_var (p, uinteger)
+#define R_VECTOR(p)		R_var (p, vector)
+#define R_FUNCTION(p)	R_var (p, func)
+
+#define RETURN_STRING(p, s) (R_INT (p) = PR_SetString((p), s))
+#define RETURN_EDICT(p, e) (R_INT (p) = EDICT_TO_PROG(p, e))
+#define	RETURN_POINTER(pr,p) (R_INT (pr) = POINTER_TO_PROG (pr, p))
+#define	RETURN_VECTOR(p, v)	(VectorCopy (v, R_VECTOR (p)))
 
 #define E_var(e,o,t)	((e)->v[o].t##_var)
 
@@ -360,6 +380,12 @@ static inline pr_type_t *
 PR_Pointer (progs_t *pr, int o)
 {
 	return o ? pr->pr_globals + o : 0;
+}
+
+static inline pointer_t
+POINTER_TO_PROG (progs_t *pr, void *p)
+{
+	return p ? (pr_type_t *) p - pr->pr_globals : 0;
 }
 
 #endif//__QF_progs_h

@@ -48,16 +48,6 @@ static const char rcsid[] =
 
 #include "compat.h"
 
-static inline pointer_t
-POINTER_TO_PROG (progs_t *pr, void *p)
-{
-	return p ? (pr_type_t *) p - pr->pr_globals : 0;
-}
-
-#define P_POINTER(p,t,n) (G_INT (p, OFS_PARM##n) \
-							? &G_STRUCT (p, t, G_INT (p, OFS_PARM##n)) : 0)
-
-
 static const char *
 class_get_key (void *c, void *pr)
 {
@@ -89,11 +79,11 @@ object_get_class_name (progs_t *pr, pr_id_t *object)
 	if (object) {
 		class = &G_STRUCT (pr, pr_class_t, object->class_pointer);
 		if (PR_CLS_ISCLASS (class)) {
-			G_INT (pr, OFS_RETURN) = class->name;
+			R_INT (pr) = class->name;
 			return class->name;
 		}
 		if (PR_CLS_ISMETA (class)) {
-			G_INT (pr, OFS_RETURN) = ((pr_class_t *)object)->name;
+			R_INT (pr) = ((pr_class_t *)object)->name;
 			return ((pr_class_t *)object)->name;
 		}
 	}
@@ -105,7 +95,7 @@ object_get_class_name (progs_t *pr, pr_id_t *object)
 static void
 pr___obj_exec_class (progs_t *pr)
 {
-	pr_module_t *module;
+	pr_module_t *module = &P_STRUCT (pr, pr_module_t, 0);
 	pr_symtab_t *symtab;
 	pointer_t   *ptr;
 	int          i;
@@ -113,13 +103,12 @@ pr___obj_exec_class (progs_t *pr)
 	pr_class_t  *object_class;
 	pointer_t    object_ptr;
 
-	if (!G_INT (pr, OFS_PARM0))
-		return;
-	module = &G_STRUCT (pr, pr_module_t, G_INT (pr, OFS_PARM0));
-	if (!module->symtab)
+	if (!module)
 		return;
 	//developer->int_val = 1;
 	symtab = &G_STRUCT (pr, pr_symtab_t, module->symtab);
+	if (!symtab)
+		return;
 	Sys_DPrintf ("Initializing %s module with %d classes and %d categories\n",
 				 PR_GetString (pr, module->name),
 				 symtab->cls_def_cnt, symtab->cat_def_cnt);
@@ -242,9 +231,9 @@ obj_msg_lookup_super (progs_t *pr, pr_id_t *receiver, pr_sel_t *op)
 static void
 pr_obj_error (progs_t *pr)
 {
-	//pr_id_t    *object = P_POINTER (pr, pr_id_t, 0);
-	//int         code = G_INT (pr, OFS_PARM1);
-	//const char *fmt = G_STRING (pr, OFS_PARM2);
+	//pr_id_t    *object = &P_STRUCT (pr, pr_id_t, 0);
+	//int         code = P_INT (pr, 1);
+	//const char *fmt = P_STRING (pr, 2);
 	//...
 	//XXX
 	PR_RunError (pr, "%s, not implemented", __FUNCTION__);
@@ -253,9 +242,9 @@ pr_obj_error (progs_t *pr)
 static void
 pr_obj_verror (progs_t *pr)
 {
-	//pr_id_t    *object = P_POINTER (pr, pr_id_t, 0);
-	//int         code = G_INT (pr, OFS_PARM1);
-	//const char *fmt = G_STRING (pr, OFS_PARM2);
+	//pr_id_t    *object = &P_STRUCT (pr, pr_id_t, 0);
+	//int         code = P_INT (pr, 1);
+	//const char *fmt = P_STRING (pr, 2);
 	//XXX
 	PR_RunError (pr, "%s, not implemented", __FUNCTION__);
 }
@@ -263,7 +252,7 @@ pr_obj_verror (progs_t *pr)
 static void
 pr_obj_set_error_handler (progs_t *pr)
 {
-	//func_t      func = G_INT (pr, OFS_PARM0);
+	//func_t      func = P_INT (pr, 0);
 	//arglist
 	//XXX
 	PR_RunError (pr, "%s, not implemented", __FUNCTION__);
@@ -272,24 +261,24 @@ pr_obj_set_error_handler (progs_t *pr)
 static void
 pr_obj_msg_lookup (progs_t *pr)
 {
-	pr_id_t    *receiver = P_POINTER (pr, pr_id_t, 0);
-	pr_sel_t   *op = P_POINTER (pr, pr_sel_t, 1);
-	G_INT (pr, OFS_RETURN) = obj_msg_lookup (pr, receiver, op);
+	pr_id_t    *receiver = &P_STRUCT (pr, pr_id_t, 0);
+	pr_sel_t   *op = &P_STRUCT (pr, pr_sel_t, 1);
+	R_INT (pr) = obj_msg_lookup (pr, receiver, op);
 }
 
 static void
 pr_obj_msg_lookup_super (progs_t *pr)
 {
-	pr_id_t    *receiver = P_POINTER (pr, pr_id_t, 0);
-	pr_sel_t   *op = P_POINTER (pr, pr_sel_t, 1);
-	G_INT (pr, OFS_RETURN) = obj_msg_lookup_super (pr, receiver, op);
+	pr_id_t    *receiver = &P_STRUCT (pr, pr_id_t, 0);
+	pr_sel_t   *op = &P_STRUCT (pr, pr_sel_t, 1);
+	R_INT (pr) = obj_msg_lookup_super (pr, receiver, op);
 }
 
 static void
 pr_obj_msg_sendv (progs_t *pr)
 {
-	//pr_id_t    *receiver = P_POINTER (pr, pr_id_t, 0);
-	//pr_sel_t   *op = P_POINTER (pr, pr_sel_t, 1);
+	//pr_id_t    *receiver = &P_STRUCT (pr, pr_id_t, 0);
+	//pr_sel_t   *op = &P_STRUCT (pr, pr_sel_t, 1);
 	//arglist
 	//XXX
 	PR_RunError (pr, "%s, not implemented", __FUNCTION__);
@@ -298,35 +287,35 @@ pr_obj_msg_sendv (progs_t *pr)
 static void
 pr_obj_malloc (progs_t *pr)
 {
-	int         size = G_INT (pr, OFS_PARM0) * sizeof (pr_type_t);
+	int         size = P_INT (pr, 0) * sizeof (pr_type_t);
 	void       *mem = PR_Zone_Malloc (pr, size);
 
-	G_INT (pr, OFS_RETURN) = POINTER_TO_PROG (pr, mem);
+	R_INT (pr) = POINTER_TO_PROG (pr, mem);
 }
 
 static void
 pr_obj_atomic_malloc (progs_t *pr)
 {
-	int         size = G_INT (pr, OFS_PARM0) * sizeof (pr_type_t);
+	int         size = P_INT (pr, 0) * sizeof (pr_type_t);
 	void       *mem = PR_Zone_Malloc (pr, size);
 
-	G_INT (pr, OFS_RETURN) = POINTER_TO_PROG (pr, mem);
+	R_INT (pr) = POINTER_TO_PROG (pr, mem);
 }
 
 static void
 pr_obj_valloc (progs_t *pr)
 {
-	int         size = G_INT (pr, OFS_PARM0) * sizeof (pr_type_t);
+	int         size = P_INT (pr, 0) * sizeof (pr_type_t);
 	void       *mem = PR_Zone_Malloc (pr, size);
 
-	G_INT (pr, OFS_RETURN) = POINTER_TO_PROG (pr, mem);
+	R_INT (pr) = POINTER_TO_PROG (pr, mem);
 }
 
 static void
 pr_obj_realloc (progs_t *pr)
 {
-	//void       *mem = (void*)P_POINTER (pr, void*, 0);
-	//int         size = G_INT (pr, OFS_PARM1) * sizeof (pr_type_t);
+	//void       *mem = (void*)P_POINTER (pr, 0);
+	//int         size = P_INT (pr, 1) * sizeof (pr_type_t);
 	//XXX
 	PR_RunError (pr, "%s, not implemented", __FUNCTION__);
 }
@@ -334,17 +323,17 @@ pr_obj_realloc (progs_t *pr)
 static void
 pr_obj_calloc (progs_t *pr)
 {
-	int         size = G_INT (pr, OFS_PARM0) * sizeof (pr_type_t);
+	int         size = P_INT (pr, 0) * sizeof (pr_type_t);
 	void       *mem = PR_Zone_Malloc (pr, size);
 
 	memset (mem, 0, size);
-	G_INT (pr, OFS_RETURN) = POINTER_TO_PROG (pr, mem);
+	R_INT (pr) = POINTER_TO_PROG (pr, mem);
 }
 
 static void
 pr_obj_free (progs_t *pr)
 {
-	void       *mem = (void*)P_POINTER (pr, void*, 0);
+	void       *mem = (void*)P_POINTER (pr, 0);
 
 	PR_Zone_Free (pr, mem);
 }
@@ -359,12 +348,12 @@ pr_obj_get_uninstalled_dtable (progs_t *pr)
 static void
 pr_obj_msgSend (progs_t *pr)
 {
-	pr_id_t    *self = P_POINTER (pr, pr_id_t, 0);
-	pr_sel_t   *_cmd = P_POINTER (pr, pr_sel_t, 1);
+	pr_id_t    *self = &P_STRUCT (pr, pr_id_t, 0);
+	pr_sel_t   *_cmd = &P_STRUCT (pr, pr_sel_t, 1);
 	func_t      imp;
 
 	if (!self) {
-		G_INT (pr, OFS_RETURN) = G_INT (pr, OFS_RETURN);
+		R_INT (pr) = R_INT (pr);
 		return;
 	}
 	if (!_cmd)
@@ -380,12 +369,12 @@ pr_obj_msgSend (progs_t *pr)
 static void
 pr_obj_msgSend_super (progs_t *pr)
 {
-	pr_id_t    *self = P_POINTER (pr, pr_id_t, 0);
-	pr_sel_t   *_cmd = P_POINTER (pr, pr_sel_t, 1);
+	pr_id_t    *self = &P_STRUCT (pr, pr_id_t, 0);
+	pr_sel_t   *_cmd = &P_STRUCT (pr, pr_sel_t, 1);
 	func_t      imp;
 
 	if (!self) {
-		G_INT (pr, OFS_RETURN) = G_INT (pr, OFS_RETURN);
+		R_INT (pr) = R_INT (pr);
 		return;
 	}
 	if (!_cmd)
@@ -401,23 +390,23 @@ pr_obj_msgSend_super (progs_t *pr)
 static void
 pr_obj_get_class (progs_t *pr)
 {
-	const char *name = G_STRING (pr, OFS_PARM0);
+	const char *name = P_STRING (pr, 0);
 	pr_class_t *class;
 
 	class = Hash_Find (pr->classes, name);
 	if (!class)
 		PR_RunError (pr, "could not find class %s", name);
-	G_INT (pr, OFS_RETURN) = POINTER_TO_PROG (pr, class);
+	R_INT (pr) = POINTER_TO_PROG (pr, class);
 }
 
 static void
 pr_obj_lookup_class (progs_t *pr)
 {
-	const char *name = G_STRING (pr, OFS_PARM0);
+	const char *name = P_STRING (pr, 0);
 	pr_class_t *class;
 
 	class = Hash_Find (pr->classes, name);
-	G_INT (pr, OFS_RETURN) = POINTER_TO_PROG (pr, class);
+	R_INT (pr) = POINTER_TO_PROG (pr, class);
 }
 
 static void
@@ -432,21 +421,21 @@ pr_obj_next_class (progs_t *pr)
 static void
 pr_sel_get_name (progs_t *pr)
 {
-	pr_sel_t   *sel = P_POINTER (pr, pr_sel_t, 0);
-	G_INT (pr, OFS_RETURN) = sel->sel_id;
+	pr_sel_t   *sel = &P_STRUCT (pr, pr_sel_t, 0);
+	R_INT (pr) = sel->sel_id;
 }
 
 static void
 pr_sel_get_type (progs_t *pr)
 {
-	pr_sel_t   *sel = P_POINTER (pr, pr_sel_t, 0);
-	G_INT (pr, OFS_RETURN) = sel->sel_types;
+	pr_sel_t   *sel = &P_STRUCT (pr, pr_sel_t, 0);
+	R_INT (pr) = sel->sel_types;
 }
 
 static void
 pr_sel_get_uid (progs_t *pr)
 {
-	//const char *name = G_STRING (pr, OFS_PARM0);
+	//const char *name = P_STRING (pr, 0);
 	//XXX
 	PR_RunError (pr, "%s, not implemented", __FUNCTION__);
 }
@@ -454,7 +443,7 @@ pr_sel_get_uid (progs_t *pr)
 static void
 pr_sel_get_any_uid (progs_t *pr)
 {
-	//const char *name = G_STRING (pr, OFS_PARM0);
+	//const char *name = P_STRING (pr, 0);
 	//XXX
 	PR_RunError (pr, "%s, not implemented", __FUNCTION__);
 }
@@ -462,7 +451,7 @@ pr_sel_get_any_uid (progs_t *pr)
 static void
 pr_sel_get_any_typed_uid (progs_t *pr)
 {
-	//const char *name = G_STRING (pr, OFS_PARM0);
+	//const char *name = P_STRING (pr, 0);
 	//XXX
 	PR_RunError (pr, "%s, not implemented", __FUNCTION__);
 }
@@ -470,8 +459,8 @@ pr_sel_get_any_typed_uid (progs_t *pr)
 static void
 pr_sel_get_typed_uid (progs_t *pr)
 {
-	//const char *name = G_STRING (pr, OFS_PARM0);
-	//const char *type = G_STRING (pr, OFS_PARM1);
+	//const char *name = P_STRING (pr, 0);
+	//const char *type = P_STRING (pr, 1);
 	//XXX
 	PR_RunError (pr, "%s, not implemented", __FUNCTION__);
 }
@@ -479,7 +468,7 @@ pr_sel_get_typed_uid (progs_t *pr)
 static void
 pr_sel_register_name (progs_t *pr)
 {
-	//const char *name = G_STRING (pr, OFS_PARM0);
+	//const char *name = P_STRING (pr, 0);
 	//XXX
 	PR_RunError (pr, "%s, not implemented", __FUNCTION__);
 }
@@ -487,8 +476,8 @@ pr_sel_register_name (progs_t *pr)
 static void
 pr_sel_register_typed_name (progs_t *pr)
 {
-	//const char *name = G_STRING (pr, OFS_PARM0);
-	//const char *type = G_STRING (pr, OFS_PARM1);
+	//const char *name = P_STRING (pr, 0);
+	//const char *type = P_STRING (pr, 1);
 	//XXX
 	PR_RunError (pr, "%s, not implemented", __FUNCTION__);
 }
@@ -496,7 +485,7 @@ pr_sel_register_typed_name (progs_t *pr)
 static void
 pr_sel_is_mapped (progs_t *pr)
 {
-	//pr_sel_t   *sel = P_POINTER (pr, pr_sel_t, 0);
+	//pr_sel_t   *sel = &P_STRUCT (pr, pr_sel_t, 0);
 	//XXX
 	PR_RunError (pr, "%s, not implemented", __FUNCTION__);
 }
@@ -506,8 +495,8 @@ pr_sel_is_mapped (progs_t *pr)
 static void
 pr_class_get_class_method (progs_t *pr)
 {
-	//pr_class_t *class = P_POINTER (pr, pr_class_t, 0);
-	//pr_sel_t   *aSel = P_POINTER (pr, pr_sel_t, 1);
+	//pr_class_t *class = &P_STRUCT (pr, pr_class_t, 0);
+	//pr_sel_t   *aSel = &P_STRUCT (pr, pr_sel_t, 1);
 	//XXX
 	PR_RunError (pr, "%s, not implemented", __FUNCTION__);
 }
@@ -515,8 +504,8 @@ pr_class_get_class_method (progs_t *pr)
 static void
 pr_class_get_instance_method (progs_t *pr)
 {
-	//pr_class_t *class = P_POINTER (pr, pr_class_t, 0);
-	//pr_sel_t   *aSel = P_POINTER (pr, pr_sel_t, 1);
+	//pr_class_t *class = &P_STRUCT (pr, pr_class_t, 0);
+	//pr_sel_t   *aSel = &P_STRUCT (pr, pr_sel_t, 1);
 	//XXX
 	PR_RunError (pr, "%s, not implemented", __FUNCTION__);
 }
@@ -524,8 +513,8 @@ pr_class_get_instance_method (progs_t *pr)
 static void
 pr_class_pose_as (progs_t *pr)
 {
-	//pr_class_t *imposter = P_POINTER (pr, pr_class_t, 0);
-	//pr_class_t *superclass = P_POINTER (pr, pr_class_t, 1);
+	//pr_class_t *imposter = &P_STRUCT (pr, pr_class_t, 0);
+	//pr_class_t *superclass = &P_STRUCT (pr, pr_class_t, 1);
 	//XXX
 	PR_RunError (pr, "%s, not implemented", __FUNCTION__);
 }
@@ -545,83 +534,83 @@ class_create_instance (progs_t *pr, pr_class_t *class)
 static void
 pr_class_create_instance (progs_t *pr)
 {
-	pr_class_t *class = &G_STRUCT (pr, pr_class_t, G_INT (pr, OFS_PARM0));
+	pr_class_t *class = &P_STRUCT (pr, pr_class_t, 0);
 	pr_id_t    *id = class_create_instance (pr, class);
 	
-	G_INT (pr, OFS_RETURN) = POINTER_TO_PROG (pr, id);
+	R_INT (pr) = POINTER_TO_PROG (pr, id);
 }
 
 static void
 pr_class_get_class_name (progs_t *pr)
 {
-	pr_class_t *class = &G_STRUCT (pr, pr_class_t, G_INT (pr, OFS_PARM0));
-	G_INT (pr, OFS_RETURN) = PR_CLS_ISCLASS (class) ? class->name
+	pr_class_t *class = &P_STRUCT (pr, pr_class_t, 0);
+	R_INT (pr) = PR_CLS_ISCLASS (class) ? class->name
 													: PR_SetString (pr, "Nil");
 }
 
 static void
 pr_class_get_instance_size (progs_t *pr)
 {
-	pr_class_t *class = &G_STRUCT (pr, pr_class_t, G_INT (pr, OFS_PARM0));
-	G_INT (pr, OFS_RETURN) = PR_CLS_ISCLASS (class) ? class->instance_size : 0;
+	pr_class_t *class = &P_STRUCT (pr, pr_class_t, 0);
+	R_INT (pr) = PR_CLS_ISCLASS (class) ? class->instance_size : 0;
 }
 
 static void
 pr_class_get_meta_class (progs_t *pr)
 {
-	pr_class_t *class = &G_STRUCT (pr, pr_class_t, G_INT (pr, OFS_PARM0));
-	G_INT (pr, OFS_RETURN) = PR_CLS_ISCLASS (class) ? class->class_pointer : 0;
+	pr_class_t *class = &P_STRUCT (pr, pr_class_t, 0);
+	R_INT (pr) = PR_CLS_ISCLASS (class) ? class->class_pointer : 0;
 }
 
 static void
 pr_class_get_super_class (progs_t *pr)
 {
-	pr_class_t *class = &G_STRUCT (pr, pr_class_t, G_INT (pr, OFS_PARM0));
-	G_INT (pr, OFS_RETURN) = PR_CLS_ISCLASS (class) ? class->super_class : 0;
+	pr_class_t *class = &P_STRUCT (pr, pr_class_t, 0);
+	R_INT (pr) = PR_CLS_ISCLASS (class) ? class->super_class : 0;
 }
 
 static void
 pr_class_get_version (progs_t *pr)
 {
-	pr_class_t *class = &G_STRUCT (pr, pr_class_t, G_INT (pr, OFS_PARM0));
-	G_INT (pr, OFS_RETURN) = PR_CLS_ISCLASS (class) ? class->version : -1;
+	pr_class_t *class = &P_STRUCT (pr, pr_class_t, 0);
+	R_INT (pr) = PR_CLS_ISCLASS (class) ? class->version : -1;
 }
 
 static void
 pr_class_is_class (progs_t *pr)
 {
-	pr_class_t *class = &G_STRUCT (pr, pr_class_t, G_INT (pr, OFS_PARM0));
-	G_INT (pr, OFS_RETURN) = PR_CLS_ISCLASS (class);
+	pr_class_t *class = &P_STRUCT (pr, pr_class_t, 0);
+	R_INT (pr) = PR_CLS_ISCLASS (class);
 }
 
 static void
 pr_class_is_meta_class (progs_t *pr)
 {
-	pr_class_t *class = &G_STRUCT (pr, pr_class_t, G_INT (pr, OFS_PARM0));
-	G_INT (pr, OFS_RETURN) = PR_CLS_ISMETA (class);
+	pr_class_t *class = &P_STRUCT (pr, pr_class_t, 0);
+	R_INT (pr) = PR_CLS_ISMETA (class);
 }
 
 static void
 pr_class_set_version (progs_t *pr)
 {
-	pr_class_t *class = &G_STRUCT (pr, pr_class_t, G_INT (pr, OFS_PARM0));
+	pr_class_t *class = &P_STRUCT (pr, pr_class_t, 0);
 	if (PR_CLS_ISCLASS (class))
-		class->version = G_INT (pr, OFS_PARM1);
+		class->version = P_INT (pr, 1);
 }
 
 static void
 pr_class_get_gc_object_type (progs_t *pr)
 {
-	pr_class_t *class = &G_STRUCT (pr, pr_class_t, G_INT (pr, OFS_PARM0));
-	G_INT (pr, OFS_RETURN) = PR_CLS_ISCLASS (class) ? class->gc_object_type : 0;
+	pr_class_t *class = &P_STRUCT (pr, pr_class_t, 0);
+	R_INT (pr) = PR_CLS_ISCLASS (class) ? class->gc_object_type : 0;
 }
 
 static void
 pr_class_ivar_set_gcinvisible (progs_t *pr)
 {
-	//pr_class_t *imposter = P_POINTER (pr, pr_class_t, 0);
-	//const char *ivarname = G_STRING (pr, OFS_PARM1);
-	//int         gcInvisible = G_INT (pr, OFS_PARM2);
+	//pr_class_t *imposter = &P_STRUCT (pr, pr_class_t, 0);
+	//const char *ivarname = P_STRING (pr, 1);
+	//int         gcInvisible = P_INT (pr, 2);
 	//XXX
 	PR_RunError (pr, "%s, not implemented", __FUNCTION__);
 }
@@ -631,16 +620,16 @@ pr_class_ivar_set_gcinvisible (progs_t *pr)
 static void
 pr_method_get_imp (progs_t *pr)
 {
-	pr_method_t *method = P_POINTER (pr, pr_method_t, 0);
+	pr_method_t *method = &P_STRUCT (pr, pr_method_t, 0);
 
-	G_INT (pr, OFS_RETURN) = method->method_imp;
+	R_INT (pr) = method->method_imp;
 }
 
 static void
 pr_get_imp (progs_t *pr)
 {
-	//pr_class_t *class = P_POINTER (pr, pr_class_t, 0);
-	//pr_sel_t   *sel = P_POINTER (pr, pr_sel_t, 1);
+	//pr_class_t *class = &P_STRUCT (pr, pr_class_t, 0);
+	//pr_sel_t   *sel = &P_STRUCT (pr, pr_sel_t, 1);
 	//XXX
 	PR_RunError (pr, "%s, not implemented", __FUNCTION__);
 }
@@ -650,100 +639,96 @@ pr_get_imp (progs_t *pr)
 static void
 pr_object_dispose (progs_t *pr)
 {
-	pr_id_t    *object = &G_STRUCT (pr, pr_id_t, G_INT (pr, OFS_PARM0));
+	pr_id_t    *object = &P_STRUCT (pr, pr_id_t, 0);
 	PR_Zone_Free (pr, object);
 }
 
 static void
 pr_object_copy (progs_t *pr)
 {
-	pr_id_t    *object = &G_STRUCT (pr, pr_id_t, G_INT (pr, OFS_PARM0));
+	pr_id_t    *object = &P_STRUCT (pr, pr_id_t, 0);
 	pr_class_t *class = &G_STRUCT (pr, pr_class_t, object->class_pointer);
 	pr_id_t    *id;
 
 	id = class_create_instance (pr, class);
 	memcpy (id, object, sizeof (pr_type_t) * class->instance_size);
-	G_INT (pr, OFS_RETURN) = POINTER_TO_PROG (pr, id);
+	R_INT (pr) = POINTER_TO_PROG (pr, id);
 }
 
 static void
 pr_object_get_class (progs_t *pr)
 {
-	pointer_t   _object = G_INT (pr, OFS_PARM0);
-	pr_id_t    *object = &G_STRUCT (pr, pr_id_t, _object);
+	pr_id_t    *object = &P_STRUCT (pr, pr_id_t, 0);
 	pr_class_t *class;
 
-	if (_object) {
+	if (object) {
 		class = &G_STRUCT (pr, pr_class_t, object->class_pointer);
 		if (PR_CLS_ISCLASS (class)) {
-			G_INT (pr, OFS_RETURN) = POINTER_TO_PROG (pr, class);
+			R_INT (pr) = POINTER_TO_PROG (pr, class);
 			return;
 		}
 		if (PR_CLS_ISMETA (class)) {
-			G_INT (pr, OFS_RETURN) = _object;
+			R_INT (pr) = P_INT (pr, 0);
 			return;
 		}
 	}
-	G_INT (pr, OFS_RETURN) = 0;
+	R_INT (pr) = 0;
 }
 
 static void
 pr_object_get_super_class (progs_t *pr)
 {
-	pointer_t   _object = G_INT (pr, OFS_PARM0);
-	pr_id_t    *object = &G_STRUCT (pr, pr_id_t, _object);
+	pr_id_t    *object = &P_STRUCT (pr, pr_id_t, 0);
 	pr_class_t *class;
 
-	if (_object) {
+	if (object) {
 		class = &G_STRUCT (pr, pr_class_t, object->class_pointer);
 		if (PR_CLS_ISCLASS (class)) {
-			G_INT (pr, OFS_RETURN) = class->super_class;
+			R_INT (pr) = class->super_class;
 			return;
 		}
 		if (PR_CLS_ISMETA (class)) {
-			G_INT (pr, OFS_RETURN) = ((pr_class_t *)object)->super_class;
+			R_INT (pr) = ((pr_class_t *)object)->super_class;
 			return;
 		}
 	}
-	G_INT (pr, OFS_RETURN) = 0;
+	R_INT (pr) = 0;
 }
 
 static void
 pr_object_get_meta_class (progs_t *pr)
 {
-	pointer_t   _object = G_INT (pr, OFS_PARM0);
-	pr_id_t    *object = &G_STRUCT (pr, pr_id_t, _object);
+	pr_id_t    *object = &P_STRUCT (pr, pr_id_t, 0);
 	pr_class_t *class;
 
-	if (_object) {
+	if (object) {
 		class = &G_STRUCT (pr, pr_class_t, object->class_pointer);
 		if (PR_CLS_ISCLASS (class)) {
-			G_INT (pr, OFS_RETURN) = class->class_pointer;
+			R_INT (pr) = class->class_pointer;
 			return;
 		}
 		if (PR_CLS_ISMETA (class)) {
-			G_INT (pr, OFS_RETURN) = ((pr_class_t *)object)->class_pointer;
+			R_INT (pr) = ((pr_class_t *)object)->class_pointer;
 			return;
 		}
 	}
-	G_INT (pr, OFS_RETURN) = 0;
+	R_INT (pr) = 0;
 }
 
 static void
 pr_object_get_class_name (progs_t *pr)
 {
-	pointer_t   _object = G_INT (pr, OFS_PARM0);
-	pr_id_t    *object = &G_STRUCT (pr, pr_id_t, _object);
+	pr_id_t    *object = &P_STRUCT (pr, pr_id_t, 0);
 	pr_class_t *class;
 
-	if (_object) {
+	if (object) {
 		class = &G_STRUCT (pr, pr_class_t, object->class_pointer);
 		if (PR_CLS_ISCLASS (class)) {
-			G_INT (pr, OFS_RETURN) = class->name;
+			R_INT (pr) = class->name;
 			return;
 		}
 		if (PR_CLS_ISMETA (class)) {
-			G_INT (pr, OFS_RETURN) = ((pr_class_t *)object)->name;
+			R_INT (pr) = ((pr_class_t *)object)->name;
 			return;
 		}
 	}
@@ -753,42 +738,39 @@ pr_object_get_class_name (progs_t *pr)
 static void
 pr_object_is_class (progs_t *pr)
 {
-	pointer_t   _object = G_INT (pr, OFS_PARM0);
-	pr_class_t *object = &G_STRUCT (pr, pr_class_t, _object);
+	pr_id_t    *object = &P_STRUCT (pr, pr_id_t, 0);
 
-	if (_object) {
-		G_INT (pr, OFS_RETURN) = PR_CLS_ISCLASS (object);
+	if (object) {
+		R_INT (pr) = PR_CLS_ISCLASS ((pr_class_t*)object);
 		return;
 	}
-	G_INT (pr, OFS_RETURN) = 0;
+	R_INT (pr) = 0;
 }
 
 static void
 pr_object_is_instance (progs_t *pr)
 {
-	pointer_t   _object = G_INT (pr, OFS_PARM0);
-	pr_id_t    *object = &G_STRUCT (pr, pr_id_t, _object);
+	pr_id_t    *object = &P_STRUCT (pr, pr_id_t, 0);
 	pr_class_t *class;
 
-	if (_object) {
+	if (object) {
 		class = &G_STRUCT (pr, pr_class_t, object->class_pointer);
-		G_INT (pr, OFS_RETURN) = PR_CLS_ISCLASS (class);
+		R_INT (pr) = PR_CLS_ISCLASS (class);
 		return;
 	}
-	G_INT (pr, OFS_RETURN) = 0;
+	R_INT (pr) = 0;
 }
 
 static void
 pr_object_is_meta_class (progs_t *pr)
 {
-	pointer_t   _object = G_INT (pr, OFS_PARM0);
-	pr_class_t *object = &G_STRUCT (pr, pr_class_t, _object);
+	pr_id_t    *object = &P_STRUCT (pr, pr_id_t, 0);
 
-	if (_object) {
-		G_INT (pr, OFS_RETURN) = PR_CLS_ISMETA (object);
+	if (object) {
+		R_INT (pr) = PR_CLS_ISMETA ((pr_class_t*)object);
 		return;
 	}
-	G_INT (pr, OFS_RETURN) = 0;
+	R_INT (pr) = 0;
 }
 
 //====================================================================
@@ -796,27 +778,27 @@ pr_object_is_meta_class (progs_t *pr)
 static void
 pr__i_Object__hash (progs_t *pr)
 {
-	G_INT (pr, OFS_RETURN) = G_INT (pr, OFS_PARM0);
+	R_INT (pr) = P_INT (pr, 0);
 }
 
 static void
 pr__i_Object__compare (progs_t *pr)
 {
 	int          ret;
-	ret = G_INT (pr, OFS_PARM0) != G_INT (pr, OFS_PARM2);
+	ret = P_INT (pr, 0) != P_INT (pr, 2);
 	if (ret) {
-		ret = G_INT (pr, OFS_PARM0) > G_INT (pr, OFS_PARM2);
+		ret = P_INT (pr, 0) > P_INT (pr, 2);
 		if (!ret)
 			ret = -1;
 	}
-	G_INT (pr, OFS_RETURN) = ret;
+	R_INT (pr) = ret;
 }
 
 static void
 pr__c_Object__conformsTo (progs_t *pr)
 {
-	//pr_id_t    *self = P_POINTER (pr, pr_id_t, 0);
-	//pr_protocol_t *protocol = P_POINTER (pr, pr_protocol_t, 2);
+	//pr_id_t    *self = &P_STRUCT (pr, pr_id_t, 0);
+	//pr_protocol_t *protocol = &P_STRUCT (pr, pr_protocol_t, 2);
 	//XXX
 	PR_RunError (pr, "%s, not implemented", __FUNCTION__);
 }
@@ -824,8 +806,8 @@ pr__c_Object__conformsTo (progs_t *pr)
 static void
 pr__i_Object__error (progs_t *pr)
 {
-	//pr_id_t    *object = P_POINTER (pr, pr_id_t, 0);
-	//const char *fmt = G_STRING (pr, OFS_PARM2);
+	//pr_id_t    *object = &P_STRUCT (pr, pr_id_t, 0);
+	//const char *fmt = P_STRING (pr, 2);
 	//...
 	//XXX
 	PR_RunError (pr, "%s, not implemented", __FUNCTION__);
