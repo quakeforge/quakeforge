@@ -11,7 +11,7 @@ EXEEXT=
 
 plugin_PROGRAMS=	@CD_PLUGIN_TARGETS@
 noinst_PROGRAMS=	@CD_PLUGIN_STATIC@
-EXTRA_PROGRAMS=	cd_linux.la cd_sdl.la cd_sgi.la cd_win.la cd_null.la cd_xmms.la
+EXTRA_PROGRAMS=	cd_linux.la cd_sdl.la cd_sgi.la cd_win.la cd_xmms.la
 
 cd_linux_la_LDFLAGS=	$(plugin_ldflags)
 cd_linux_la_SOURCES=	cd_linux.c
@@ -33,7 +33,3 @@ cd_sgi_la_SOURCES=	cd_sgi.c
 cd_win_la_LDFLAGS=	$(plugin_ldflags)
 cd_win_la_LDADD=	$(plugin_libadd)
 cd_win_la_SOURCES=	cd_win.c
-
-cd_null_la_LDFLAGS=	$(plugin_ldflags)
-cd_null_la_LDADD=	$(plugin_libadd)
-cd_null_la_SOURCES=	cd_null.c

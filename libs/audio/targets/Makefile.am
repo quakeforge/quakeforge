@@ -13,7 +13,7 @@ noinst_PROGRAMS=	@SND_PLUGIN_STATIC@
 EXTRA_PROGRAMS= \
 	snd_output_sdl.la snd_output_alsa0_5.la snd_output_alsa0_9.la \
 	snd_output_oss.la snd_output_sgi.la snd_output_sun.la \
-	snd_output_win.la snd_output_null.la snd_output_disk.la
+	snd_output_win.la snd_output_disk.la
 
 snd_output_sdl_la_LDFLAGS=	$(plugin_ldflags)
 snd_output_sdl_la_LDADD=	$(SDL_LIBS) $(plugin_libadd)
@@ -53,8 +53,3 @@ snd_output_disk_la_LDFLAGS=	$(plugin_ldflags)
 snd_output_disk_la_LDADD=	$(plugin_libadd)
 snd_output_disk_la_CFLAGS=
 snd_output_disk_la_SOURCES=	snd_disk.c
-
-snd_output_null_la_LDFLAGS=	$(plugin_ldflags)
-snd_output_null_la_LDADD=	$(plugin_libadd)
-snd_output_null_la_CFLAGS=
-snd_output_null_la_SOURCES=	snd_null.c

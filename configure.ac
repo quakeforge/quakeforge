@@ -943,7 +943,7 @@ fi
 if test "$SOUND_TYPES"; then
 	AC_MSG_RESULT([$SOUND_TYPES])
 else
-	AC_MSG_RESULT([no, using null sound driver])
+	AC_MSG_RESULT([no])
 fi
 
 dnl Tests for joystick support
@@ -977,7 +977,7 @@ dnl Checks for CD-ROM
 dnl ==================================================================
 
 CD_CFLAGS=""
-CD_PLUGIN_TARGETS="cd_null.la"
+CD_PLUGIN_TARGETS=""
 unset CDTYPE
 
 AC_MSG_CHECKING(for CD audio support)
@@ -1035,7 +1035,7 @@ QF_maGiC_VALUE
 if test "$CDTYPE"; then
 	AC_MSG_RESULT([$CDTYPE])
 else
-	AC_MSG_RESULT([no, using null CD driver])
+	AC_MSG_RESULT([no])
 fi
 
 AC_SUBST(CD_LIBS)
@@ -1514,7 +1514,7 @@ CAN_BUILD_SW32=no
 CAN_BUILD_SW=no
 
 CD_TARGETS=""
-SND_PLUGIN_TARGETS="snd_output_disk.la snd_output_null.la"
+SND_PLUGIN_TARGETS="snd_output_disk.la"
 SND_REND_TARGETS=""
 SND_TARGETS=""
 VID_MODEL_TARGETS=""

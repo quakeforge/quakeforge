@@ -66,6 +66,7 @@ static qboolean playLooping = false;
 static SDL_CD  *cd_id;
 static float	cdvolume = 1.0;
 
+static cvar_t *bgmvolume;
 
 static void
 I_CDAudio_Eject (void)
@@ -274,6 +275,9 @@ I_CDAudio_Init (void)
 		Sys_Printf ("CDAudio_Init: CD contains no audio tracks.\n");
 		cdValid = false;
 	}
+
+	bgmvolume = Cvar_Get ("bgmvolume", "1", CVAR_ARCHIVE, NULL,
+						  "Volume of CD music");
 	
 	Sys_Printf ("CD Audio Initialized.\n");
 }

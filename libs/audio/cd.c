@@ -94,8 +94,12 @@ int
 CDAudio_Init (void)
 {
 	PI_RegisterPlugins (cd_plugin_list);
-	cd_plugin = Cvar_Get ("cd_plugin", "null", CVAR_ROM, NULL,
+	cd_plugin = Cvar_Get ("cd_plugin", "", CVAR_ROM, NULL,
 						  "CD Plugin to use");
+	if (!*cd_plugin->string) {
+		Sys_Printf ("Not loading CD due to no driver\n");
+		return 0;
+	}
 	cdmodule = PI_LoadPlugin ("cd", cd_plugin->string);
 	if (!cdmodule) {
 		Sys_Printf ("Loading of cd module: %s failed!\n", cd_plugin->string);

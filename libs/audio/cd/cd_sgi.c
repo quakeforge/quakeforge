@@ -64,6 +64,7 @@ static byte playTrack;
 static char cd_dev[64] = "/dev/cdrom";
 
 static CDPLAYER *cdp = NULL;
+static cvar_t *bgmvolume;
 
 static void
 I_SGI_Eject (void)
@@ -336,6 +337,8 @@ I_SGI_Init (void)
 	if (COM_CheckParm ("-nocdaudio"))
 		return ;
 
+	bgmvolume = Cvar_Get ("bgmvolume", "1", CVAR_ARCHIVE, NULL,
+						  "Volume of CD music");
 	if ((i = COM_CheckParm ("-cddev")) != 0 && i < com_argc - 1) {
 		strncpy (cd_dev, com_argv[i + 1], sizeof (cd_dev));
 		cd_dev[sizeof (cd_dev) - 1] = 0;

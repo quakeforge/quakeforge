@@ -851,8 +851,6 @@ SND_Init_Cvars (void)
 						"Set to turn sound off");
 	precache = Cvar_Get ("precache", "1", CVAR_NONE, NULL,
 						 "Toggle the use of a precache");
-	bgmvolume = Cvar_Get ("bgmvolume", "1", CVAR_ARCHIVE, NULL,
-						  "Volume of CD music");
 	volume = Cvar_Get ("volume", "0.7", CVAR_ARCHIVE, NULL,
 					   "Set the volume for sound playback");
 	snd_interp = Cvar_Get ("snd_interp", "1", CVAR_ARCHIVE, NULL,

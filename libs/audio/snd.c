@@ -44,11 +44,10 @@ static __attribute__ ((unused)) const char rcsid[] =
 // FIXME - should be put in one place
 // =======================================================================
 volatile dma_t *shm = 0;
-cvar_t         *snd_loadas8bit;
 int             paintedtime;				// sample PAIRS
 qboolean        snd_initialized = false;
 
-cvar_t         *bgmvolume;
+cvar_t         *snd_loadas8bit;
 cvar_t         *volume;
 cvar_t         *snd_interp;
 
@@ -117,8 +116,6 @@ S_Init_Cvars (void)
 					   "Volume level of sounds");
 	snd_loadas8bit = Cvar_Get ("snd_loadas8bit", "0", CVAR_NONE, NULL,
 							   "Load samples as 8-bit");
-	bgmvolume = Cvar_Get ("bgmvolume", "1", CVAR_ARCHIVE, NULL,
-						  "CD music volume");
 	snd_interp = Cvar_Get ("snd_interp", "1", CVAR_ARCHIVE, NULL,
 	                              "control sample interpolation");
 #ifdef _WIN32

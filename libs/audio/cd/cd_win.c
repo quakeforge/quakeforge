@@ -69,6 +69,7 @@ static UINT        wDeviceID;
 static void I_CDAudio_Play (int track, qboolean looping);
 static void I_CDAudio_Stop (void);
 
+static cvar_t *bgmvolume;
 
 static void
 I_CDAudio_CloseDoor (void)
@@ -488,6 +489,9 @@ I_CDAudio_Init (void)
 		remap[n] = n;
 	initialized = true;
 	enabled = true;
+
+	bgmvolume = Cvar_Get ("bgmvolume", "1", CVAR_ARCHIVE, NULL,
+						  "Volume of CD music");
 
 	if (I_CDAudio_GetAudioDiskInfo ()) {
 		Sys_Printf ("CDAudio_Init: No CD in player.\n");

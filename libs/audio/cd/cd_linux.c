@@ -80,6 +80,7 @@ static byte maxTrack;
 
 static int  cdfile = -1;
 static cvar_t *mus_cddevice;
+static cvar_t *bgmvolume;
 
 
 static void
@@ -450,6 +451,8 @@ I_CDAudio_Init (void)
 {
 	mus_cddevice = Cvar_Get("mus_cddevice", "/dev/cdrom", CVAR_NONE,
 			Mus_CDChange, "device to use for CD music");
+	bgmvolume = Cvar_Get ("bgmvolume", "1", CVAR_ARCHIVE, NULL,
+						  "Volume of CD music");
 }
 
 QFPLUGIN plugin_t *PLUGIN_INFO(cd, linux) (void);
