@@ -397,6 +397,10 @@ emit_sub_expr (expr_t *e, def_t *dest)
 			error (e, "internal error");
 			abort ();
 		case ex_expr:
+			if (e->e.expr.op == 'b') {
+				d = emit_bind_expr (e->e.expr.e1, e->e.expr.e2);
+				break;
+			}
 			if (e->e.expr.op == 'c') {
 				d = emit_function_call (e, dest);
 				break;
