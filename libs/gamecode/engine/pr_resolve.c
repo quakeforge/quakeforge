@@ -190,21 +190,14 @@ PR_ResolveGlobals (progs_t *pr)
 			goto error;
 		pr->pr_param_size = G_INT (pr, def->ofs);
 	}
-	if (!(def = PR_FindGlobal (pr, sym = "time")))
-		goto error;
-	pr->globals.time = &G_FLOAT (pr, def->ofs);
-	if (!(def = PR_FindGlobal (pr, ".self")))
-		if (!(def = PR_FindGlobal (pr, "self"))) {
-		    	sym = "self";
-			goto error;
-		}
-	pr->globals.self = &G_INT (pr, def->ofs);
-	if ((pr->fields.nextthink = ED_GetFieldIndex (pr, sym = "nextthink")) == -1)
-		goto error;
-	if ((pr->fields.frame = ED_GetFieldIndex (pr, sym = "frame")) == -1)
-		goto error;
-	if ((pr->fields.think = ED_GetFieldIndex (pr, sym = "think")) == -1)
-		goto error;
+	if ((def = PR_FindGlobal (pr, "time")))
+		pr->globals.time = &G_FLOAT (pr, def->ofs);
+	if ((def = PR_FindGlobal (pr, ".self"))
+		|| (def = PR_FindGlobal (pr, "self")))
+		pr->globals.self = &G_INT (pr, def->ofs);
+	pr->fields.nextthink = ED_GetFieldIndex (pr, sym = "nextthink");
+	pr->fields.frame = ED_GetFieldIndex (pr, sym = "frame");
+	pr->fields.think = ED_GetFieldIndex (pr, sym = "think");
 	return 1;
 error:
 	Sys_Printf ("%s: undefined symbol: %s\n", pr->progs_name, sym);

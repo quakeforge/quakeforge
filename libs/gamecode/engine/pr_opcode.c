@@ -1057,43 +1057,71 @@ error:
 			  (long)(st - pr->pr_statements), op->opname);
 }
 
-void
+int
 PR_Check_Opcodes (progs_t *pr)
 {
 	opcode_t   *op;
 	dstatement_t *st;
+	int         state_ok = 0;
+	unsigned    i;
 
-	if (!pr_boundscheck->int_val)
-		return;
-	for (st = pr->pr_statements;
-		 (unsigned long) (st - pr->pr_statements) < pr->progs->numstatements;
-		 st++) {
-		op = PR_Opcode (st->op);
-		if (!op) {
-			PR_Error (pr,
-					  "PR_Check_Opcodes: unknown opcode %d at statement %ld",
-					  st->op, (long)(st - pr->pr_statements));
+	if (pr->globals.time && pr->globals.self && pr->fields.nextthink != -1
+		&& pr->fields.think != -1 && pr->fields.frame != -1)
+		state_ok = 1;
+
+	if (!pr_boundscheck->int_val) {
+		for (i = 0, st = pr->pr_statements; i < pr->progs->numstatements;
+			 st++, i++) {
+			op = PR_Opcode (st->op);
+			if (!op) {
+				PR_Error (pr, "PR_Check_Opcodes: unknown opcode %d at "
+						  "statement %ld", st->op,
+						  (long)(st - pr->pr_statements));
+			}
+			if (st->op == OP_STATE && !state_ok) {
+				PR_Error (pr, "PR_Check_Opcodes: %s used with missing fields "
+						  "or globals", op->opname);
+			}
 		}
-		switch (st->op) {
-			case OP_IF:
-			case OP_IFNOT:
-				check_global (pr, st, op, op->type_a, st->a);
-				check_branch (pr, st, op, st->b);
-				break;
-			case OP_GOTO:
-				check_branch (pr, st, op, st->a);
-				break;
-			case OP_DONE:
-			case OP_RETURN:
-				check_global (pr, st, op, ev_integer, st->a);
-				check_global (pr, st, op, ev_void, st->b);
-				check_global (pr, st, op, ev_void, st->c);
-				break;
-			default:
-				check_global (pr, st, op, op->type_a, st->a);
-				check_global (pr, st, op, op->type_b, st->b);
-				check_global (pr, st, op, op->type_c, st->c);
-				break;
+	} else {
+		for (i = 0, st = pr->pr_statements; i < pr->progs->numstatements;
+			 st++, i++) {
+			op = PR_Opcode (st->op);
+			if (!op) {
+				PR_Error (pr, "PR_Check_Opcodes: unknown opcode %d at "
+						  "statement %ld", st->op,
+						  (long)(st - pr->pr_statements));
+			}
+			switch (st->op) {
+				case OP_IF:
+				case OP_IFNOT:
+					check_global (pr, st, op, op->type_a, st->a);
+					check_branch (pr, st, op, st->b);
+					break;
+				case OP_GOTO:
+					check_branch (pr, st, op, st->a);
+					break;
+				case OP_DONE:
+				case OP_RETURN:
+					check_global (pr, st, op, ev_integer, st->a);
+					check_global (pr, st, op, ev_void, st->b);
+					check_global (pr, st, op, ev_void, st->c);
+					break;
+				case OP_STATE:
+					if (!state_ok) {
+						PR_Error (pr, "PR_Check_Opcodes: %s used with missing "
+								  "fields or globals", op->opname);
+					}
+					check_global (pr, st, op, op->type_a, st->a);
+					check_global (pr, st, op, op->type_b, st->b);
+					break;
+				default:
+					check_global (pr, st, op, op->type_a, st->a);
+					check_global (pr, st, op, op->type_b, st->b);
+					check_global (pr, st, op, op->type_c, st->c);
+					break;
+			}
 		}
 	}
+	return 1;
 }

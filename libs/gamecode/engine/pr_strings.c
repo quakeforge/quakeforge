@@ -115,7 +115,7 @@ strref_free (void *_sr, void *_pr)
 	}
 }
 
-void
+int
 PR_LoadStrings (progs_t *pr)
 {
 	char   *end = pr->pr_strings + pr->pr_stringsize;
@@ -148,6 +148,7 @@ PR_LoadStrings (progs_t *pr)
 		count++;
 	}
 	pr->num_strings = count;
+	return 1;
 }
 
 void

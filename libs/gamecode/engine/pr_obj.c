@@ -965,7 +965,7 @@ PR_Obj_Progs_Init (progs_t *pr)
 	}
 }
 
-void
+int
 PR_InitRuntime (progs_t *pr)
 {
 	int         fnum;
@@ -1019,4 +1019,5 @@ PR_InitRuntime (progs_t *pr)
 			finish_category (pr, *category);
 	}
 	free (category_list);
+	return 1;
 }

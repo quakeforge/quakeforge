@@ -265,6 +265,42 @@ PR_LoadProgsFile (progs_t * pr, QFile *file, int size, int edicts, int zone)
 		((int *) pr->pr_globals)[i] = LittleLong (((int *) pr->pr_globals)[i]);
 }
 
+void
+PR_AddLoadFunc (progs_t *pr, int (*func)(progs_t *))
+{
+	if (pr->num_load_funcs == pr->max_load_funcs) {
+		int       n;
+		pr->max_load_funcs += 8;
+		n = pr->max_load_funcs;
+		pr->load_funcs = realloc (pr->load_funcs,
+								  n * sizeof (pr_load_func_t *));
+		SYS_CHECKMEM (pr->load_funcs);
+	}
+	pr->load_funcs[pr->num_load_funcs++] = func;
+}
+
+static int (*load_funcs[])(progs_t *) = {
+	PR_ResolveGlobals,
+	PR_Check_Opcodes,
+	PR_LoadStrings,
+	PR_LoadDebug,
+};
+
+int
+PR_RunLoadFuncs (progs_t *pr)
+{
+	int         i;
+
+	for (i = 0; i < sizeof (load_funcs) / sizeof (load_funcs[0]); i++)
+		if (!load_funcs[i](pr))
+			return 0;
+
+	for (i = 0; i < pr->num_load_funcs; i++)
+		if (!pr->load_funcs[i](pr))
+			return 0;
+	return PR_InitRuntime (pr);
+}
+
 /*
 	PR_LoadProgs
 */
@@ -282,20 +318,8 @@ PR_LoadProgs (progs_t *pr, const char *progsname, int edicts, int zone)
 	if (!pr->progs)
 		return;
 
-	if (!PR_RelocateBuiltins (pr))
+	if (!PR_RunLoadFuncs (pr))
 		PR_Error (pr, "unable to load %s", progsname);
-
-	if (!PR_ResolveGlobals (pr))
-		PR_Error (pr, "unable to load %s", progsname);
-
-	// initialise the strings managment code
-	PR_LoadStrings (pr);
-
-	PR_LoadDebug (pr);
-
-	PR_Check_Opcodes (pr);
-
-	PR_InitRuntime (pr);
 }
 
 void

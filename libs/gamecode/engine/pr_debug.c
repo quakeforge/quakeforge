@@ -185,7 +185,7 @@ PR_Load_Source_File (progs_t *pr, const char *fname)
 	return f;
 }
 
-void
+int
 PR_LoadDebug (progs_t *pr)
 {
 	char		*sym_path;
@@ -202,7 +202,7 @@ PR_LoadDebug (progs_t *pr)
 	pr->local_defs = 0;
 
 	if (!pr_debug->int_val)
-		return;
+		return 1;
 
 	def = PR_FindGlobal (pr, ".debug_file");
 	if (def)
@@ -210,7 +210,7 @@ PR_LoadDebug (progs_t *pr)
 
 	Hash_FlushTable (file_hash);
 	if (!str)
-		return;
+		return 1;
 	pr->debugfile = PR_GetString (pr, str->string_var);
 	sym_file = QFS_SkipPath (pr->debugfile);
 	path_end = QFS_SkipPath (pr->progs_name);
@@ -221,7 +221,7 @@ PR_LoadDebug (progs_t *pr)
 	pr->debug = pr->load_file (pr, sym_path);
 	if (!pr->debug) {
 		Sys_Printf ("can't load %s for debug info\n", sym_path);
-		return;
+		return 1;
 	}
 	pr->debug->version = LittleLong (pr->debug->version);
 	if (pr->debug->version != PROG_DEBUG_VERSION) {
@@ -232,7 +232,7 @@ PR_LoadDebug (progs_t *pr)
 					pr->debug->version & 0xfff);
 		Hunk_FreeToLowMark (start);
 		pr->debug = 0;
-		return;
+		return 1;
 	}
 	pr->debug->crc = LittleShort (pr->debug->crc);
 	if (pr->debug->crc != pr->crc) {
@@ -244,7 +244,7 @@ PR_LoadDebug (progs_t *pr)
 					pr->crc);
 		Hunk_FreeToLowMark (start);
 		pr->debug = 0;
-		return;
+		return 1;
 	}
 	pr->debug->you_tell_me_and_we_will_both_know = LittleShort
 		(pr->debug->you_tell_me_and_we_will_both_know);
@@ -287,6 +287,7 @@ PR_LoadDebug (progs_t *pr)
 		pr->local_defs[i].ofs = LittleShort (pr->local_defs[i].ofs);
 		pr->local_defs[i].s_name = LittleLong (pr->local_defs[i].s_name);
 	}
+	return 1;
 }
 
 pr_auxfunction_t *

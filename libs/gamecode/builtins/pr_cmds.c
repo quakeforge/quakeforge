@@ -61,7 +61,7 @@ const char *pr_gametype = "";
 // FIXME: Hunk_TempAlloc, Sys_Printf, Cvar_*, PR_SetString, PR_RunError, ED_PrintEdicts, PF_traceon, PF_traceoff, ED_PrintNum, PR_FindBuiltin isn't threadsafe/reentrant
 
 
-const char *
+char *
 PF_VarString (progs_t *pr, int first)
 {
 	char	   *out;

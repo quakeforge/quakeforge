@@ -70,10 +70,10 @@ void PR_ExecuteProgram (progs_t *pr, func_t fnum);
 void PR_LoadProgsFile (progs_t * pr, QFile *file, int size, int edicts,
 					   int zone);
 void PR_LoadProgs (progs_t *pr, const char *progsname, int edicts, int zone);
-void PR_LoadStrings (progs_t *pr);
-void PR_LoadDebug (progs_t *pr);
+int PR_LoadStrings (progs_t *pr);
+int PR_LoadDebug (progs_t *pr);
 edict_t *PR_InitEdicts (progs_t *pr, int num_edicts);
-void PR_Check_Opcodes (progs_t *pr);
+int PR_Check_Opcodes (progs_t *pr);
 
 void PR_Profile_f (void);
 
@@ -206,11 +206,15 @@ builtin_t *PR_FindBuiltin (progs_t *pr, const char *name);
 int PR_RelocateBuiltins (progs_t *pr);
 int PR_ResolveGlobals (progs_t *pr);
 
+typedef int pr_load_func_t (progs_t *);
+void PR_AddLoadFunc (progs_t *pr, pr_load_func_t *func);
+int PR_RunLoadFuncs (progs_t *pr);
+
 //
 // PR Obj stuff
 //
 void PR_Obj_Progs_Init (progs_t *pr);
-void PR_InitRuntime (progs_t *pr);
+int PR_InitRuntime (progs_t *pr);
 
 //
 // PR Strings stuff
@@ -268,7 +272,7 @@ extern const char *pr_gametype;
 // PR Cmds stuff
 //
 
-const char *PF_VarString (progs_t *pr, int first);
+char *PF_VarString (progs_t *pr, int first);
 void PR_Cmds_Init (progs_t *pr);
 
 //============================================================================
@@ -299,6 +303,10 @@ struct progs_s {
 	struct hashtab_s *function_hash;
 	struct hashtab_s *global_hash;
 	struct hashtab_s *field_hash;
+
+	int             num_load_funcs;
+	int             max_load_funcs;
+	pr_load_func_t **load_funcs;
 
 	// garbage collected strings
 	strref_t		*static_strings;
