@@ -47,7 +47,7 @@ static const char rcsid[] =
 
 int			nanmask = 255 << 23;
 mplane_t	frustum[4];
-vec3_t		vec3_origin = { 0, 0, 0 };
+const vec3_t vec3_origin = { 0, 0, 0 };
 
 #define DEG2RAD(a) (a * (M_PI / 180.0))
 
@@ -210,7 +210,7 @@ BOPS_Error (void)
 	Returns 1, 2, or 1 + 2
 */
 int
-BoxOnPlaneSide (vec3_t emins, vec3_t emaxs, mplane_t *p)
+BoxOnPlaneSide (const vec3_t emins, const vec3_t emaxs, mplane_t *p)
 {
 	float       dist1, dist2;
 	int         sides;
@@ -323,7 +323,7 @@ BoxOnPlaneSide (vec3_t emins, vec3_t emaxs, mplane_t *p)
 #endif
 
 void
-AngleVectors (vec3_t angles, vec3_t forward, vec3_t right, vec3_t up)
+AngleVectors (const vec3_t angles, vec3_t forward, vec3_t right, vec3_t up)
 {
 	float       angle, sr, sp, sy, cr, cp, cy;
 
@@ -349,7 +349,7 @@ AngleVectors (vec3_t angles, vec3_t forward, vec3_t right, vec3_t up)
 }
 
 int
-_VectorCompare (vec3_t v1, vec3_t v2)
+_VectorCompare (const vec3_t v1, const vec3_t v2)
 {
 	int         i;
 
@@ -361,7 +361,7 @@ _VectorCompare (vec3_t v1, vec3_t v2)
 }
 
 void
-_VectorMA (vec3_t veca, float scale, vec3_t vecb, vec3_t vecc)
+_VectorMA (const vec3_t veca, float scale, const vec3_t vecb, vec3_t vecc)
 {
 	vecc[0] = veca[0] + scale * vecb[0];
 	vecc[1] = veca[1] + scale * vecb[1];
@@ -369,13 +369,13 @@ _VectorMA (vec3_t veca, float scale, vec3_t vecb, vec3_t vecc)
 }
 
 vec_t
-_DotProduct (vec3_t v1, vec3_t v2)
+_DotProduct (const vec3_t v1, const vec3_t v2)
 {
 	return v1[0] * v2[0] + v1[1] * v2[1] + v1[2] * v2[2];
 }
 
 void
-_VectorSubtract (vec3_t veca, vec3_t vecb, vec3_t out)
+_VectorSubtract (const vec3_t veca, const vec3_t vecb, vec3_t out)
 {
 	out[0] = veca[0] - vecb[0];
 	out[1] = veca[1] - vecb[1];
@@ -383,7 +383,7 @@ _VectorSubtract (vec3_t veca, vec3_t vecb, vec3_t out)
 }
 
 void
-_VectorAdd (vec3_t veca, vec3_t vecb, vec3_t out)
+_VectorAdd (const vec3_t veca, const vec3_t vecb, vec3_t out)
 {
 	out[0] = veca[0] + vecb[0];
 	out[1] = veca[1] + vecb[1];
@@ -391,7 +391,7 @@ _VectorAdd (vec3_t veca, vec3_t vecb, vec3_t out)
 }
 
 void
-_VectorCopy (vec3_t in, vec3_t out)
+_VectorCopy (const vec3_t in, vec3_t out)
 {
 	out[0] = in[0];
 	out[1] = in[1];
@@ -407,7 +407,7 @@ CrossProduct (const vec3_t v1, const vec3_t v2, vec3_t cross)
 }
 
 vec_t
-_Length (vec3_t v)
+_Length (const vec3_t v)
 {
 	float		length;
 
@@ -444,7 +444,7 @@ VectorInverse (vec3_t v)
 }
 
 void
-_VectorScale (vec3_t in, vec_t scale, vec3_t out)
+_VectorScale (const vec3_t in, vec_t scale, vec3_t out)
 {
 	out[0] = in[0] * scale;
 	out[1] = in[1] * scale;

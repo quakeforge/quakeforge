@@ -91,7 +91,7 @@ PM_InitBoxHull (void)
 	BSP trees instead of being compared directly.
 */
 hull_t     *
-PM_HullForBox (vec3_t mins, vec3_t maxs)
+PM_HullForBox (const vec3_t mins, const vec3_t maxs)
 {
 	box_planes[0].dist = maxs[0];
 	box_planes[1].dist = mins[0];
@@ -104,7 +104,7 @@ PM_HullForBox (vec3_t mins, vec3_t maxs)
 }
 
 int
-PM_HullPointContents (hull_t *hull, int num, vec3_t p)
+PM_HullPointContents (hull_t *hull, int num, const vec3_t p)
 {
 	dclipnode_t *node;
 	float       d;
@@ -128,7 +128,7 @@ PM_HullPointContents (hull_t *hull, int num, vec3_t p)
 }
 
 int
-PM_PointContents (vec3_t p)
+PM_PointContents (const vec3_t p)
 {
 	dclipnode_t *node;
 	float       d;
@@ -163,8 +163,8 @@ PM_PointContents (vec3_t p)
 #define	DIST_EPSILON	(0.03125)
 
 qboolean
-PM_RecursiveHullCheck (hull_t *hull, int num, float p1f, float p2f, vec3_t p1,
-					   vec3_t p2, pmtrace_t *trace)
+PM_RecursiveHullCheck (hull_t *hull, int num, float p1f, float p2f,
+					   const vec3_t p1, const vec3_t p2, pmtrace_t *trace)
 {
 	dclipnode_t *node;
 	float       frac, midf, t1, t2;
@@ -282,7 +282,7 @@ PM_RecursiveHullCheck (hull_t *hull, int num, float p1f, float p2f, vec3_t p1,
 	Returns false if the given player position is not valid (in solid)
 */
 qboolean
-PM_TestPlayerPosition (vec3_t pos)
+PM_TestPlayerPosition (const vec3_t pos)
 {
 	hull_t     *hull;
 	int         i;
@@ -311,7 +311,7 @@ PM_TestPlayerPosition (vec3_t pos)
 
 /* PM_PlayerMove */
 pmtrace_t
-PM_PlayerMove (vec3_t start, vec3_t end)
+PM_PlayerMove (const vec3_t start, const vec3_t end)
 {
 	hull_t     *hull;
 	int         i;

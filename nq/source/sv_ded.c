@@ -261,7 +261,8 @@ S_Shutdown (void)
 }
 
 void
-S_Update (vec3_t origin, vec3_t v_forward, vec3_t v_right, vec3_t v_up)
+S_Update (const vec3_t origin, const vec3_t v_forward, const vec3_t v_right,
+		  const vec3_t v_up)
 {
 }
 

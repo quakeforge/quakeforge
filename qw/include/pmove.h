@@ -117,12 +117,13 @@ void PlayerMove (void);
 void Pmove_Init (void);
 void Pmove_Init_Cvars (void);
 
-int PM_HullPointContents (hull_t *hull, int num, vec3_t p);
+int PM_HullPointContents (hull_t *hull, int num, const vec3_t p);
 
-int PM_PointContents (vec3_t point);
-qboolean PM_TestPlayerPosition (vec3_t point);
-pmtrace_t PM_PlayerMove (vec3_t start, vec3_t stop);
+int PM_PointContents (const vec3_t point);
+qboolean PM_TestPlayerPosition (const vec3_t point);
+pmtrace_t PM_PlayerMove (const vec3_t start, const vec3_t stop);
 qboolean PM_RecursiveHullCheck (hull_t *hull, int num, float p1f, float p2f,
-								vec3_t p1, vec3_t p2, pmtrace_t *trace);
+								const vec3_t p1, const vec3_t p2,
+								pmtrace_t *trace);
 
 #endif // _PMOVE_H

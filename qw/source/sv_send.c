@@ -326,7 +326,7 @@ SV_BroadcastCommand (const char *fmt, ...)
 	MULTICAST_PHS	send to clients potentially hearable from org
 */
 void
-SV_Multicast (vec3_t origin, int to)
+SV_Multicast (const vec3_t origin, int to)
 {
 	byte       *mask;
 	client_t   *client;

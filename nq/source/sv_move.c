@@ -116,7 +116,7 @@ SV_CheckBottom (edict_t *ent)
 	pr_global_struct->trace_normal is set to the normal of the blocking wall
 */
 qboolean
-SV_movestep (edict_t *ent, vec3_t move, qboolean relink)
+SV_movestep (edict_t *ent, const vec3_t move, qboolean relink)
 {
 	int         i;
 	float       dz;

@@ -114,12 +114,15 @@ void S_Init (struct model_s **worldmodel, int *viewentity,
 void S_Init_Cvars (void);
 void S_Startup (void);
 void S_Shutdown (void);
-void S_StartSound (int entnum, int entchannel, sfx_t *sfx, vec3_t origin, float fvol,  float attenuation);
-void S_StaticSound (sfx_t *sfx, vec3_t origin, float vol, float attenuation);
+void S_StartSound (int entnum, int entchannel, sfx_t *sfx, const vec3_t origin,
+				   float fvol,  float attenuation);
+void S_StaticSound (sfx_t *sfx, const vec3_t origin, float vol,
+					float attenuation);
 void S_StopSound (int entnum, int entchannel);
 void S_StopAllSounds(qboolean clear);
 void S_ClearBuffer (void);
-void S_Update (vec3_t origin, vec3_t v_forward, vec3_t v_right, vec3_t v_up);
+void S_Update (const vec3_t origin, const vec3_t v_forward,
+			   const vec3_t v_right, const vec3_t v_up);
 void S_ExtraUpdate (void);
 void S_BlockSound (void);
 void S_UnblockSound (void);
@@ -137,12 +140,15 @@ void SND_AmbientOff (void);
 void SND_AmbientOn (void);
 void SND_TouchSound (const char *sample);
 void SND_ClearBuffer (void);
-void SND_StaticSound (sfx_t *sfx, vec3_t origin, float vol, float attenuation);
-void SND_StartSound (int entnum, int entchannel, sfx_t *sfx, vec3_t origin, float fvol,  float attenuation);
+void SND_StaticSound (sfx_t *sfx, const vec3_t origin, float vol,
+					  float attenuation);
+void SND_StartSound (int entnum, int entchannel, sfx_t *sfx,
+					 const vec3_t origin, float fvol,  float attenuation);
 void SND_StopSound (int entnum, int entchannel);
 sfx_t *SND_PrecacheSound (const char *sample);
 void SND_ClearPrecache (void);
-void SND_Update (vec3_t origin, vec3_t v_forward, vec3_t v_right, vec3_t v_up);
+void SND_Update (const vec3_t origin, const vec3_t v_forward,
+				 const vec3_t v_right, const vec3_t v_up);
 void SND_StopAllSounds (qboolean clear);
 void SND_BeginPrecaching (void);
 void SND_EndPrecaching (void);

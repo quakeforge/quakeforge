@@ -84,7 +84,7 @@ SV_Init (void)
 	Make sure the event gets sent to all clients
 */
 void
-SV_StartParticle (vec3_t org, vec3_t dir, int color, int count)
+SV_StartParticle (const vec3_t org, const vec3_t dir, int color, int count)
 {
 	int         i, v;
 

@@ -52,27 +52,27 @@ extern void (*R_WizTrail) (struct entity_s *ent);
 extern void (*R_FlameTrail) (struct entity_s *ent);
 extern void (*R_VoorTrail) (struct entity_s *ent);
 
-extern void (*R_RunParticleEffect) (vec3_t org, vec3_t dir, int color,
-									int count);
-extern void (*R_BloodPuffEffect) (vec3_t org, int count);
-extern void (*R_GunshotEffect) (vec3_t org, int count);
-extern void (*R_LightningBloodEffect) (vec3_t org);
-extern void (*R_SpikeEffect) (vec3_t org);
-extern void (*R_KnightSpikeEffect) (vec3_t org);
-extern void (*R_SuperSpikeEffect) (vec3_t org);
-extern void (*R_WizSpikeEffect) (vec3_t org);
+extern void (*R_RunParticleEffect) (const vec3_t org, const vec3_t dir,
+									int color, int count);
+extern void (*R_BloodPuffEffect) (const vec3_t org, int count);
+extern void (*R_GunshotEffect) (const vec3_t org, int count);
+extern void (*R_LightningBloodEffect) (const vec3_t org);
+extern void (*R_SpikeEffect) (const vec3_t org);
+extern void (*R_KnightSpikeEffect) (const vec3_t org);
+extern void (*R_SuperSpikeEffect) (const vec3_t org);
+extern void (*R_WizSpikeEffect) (const vec3_t org);
 
-extern void (*R_BlobExplosion) (vec3_t org);
-extern void (*R_ParticleExplosion) (vec3_t org);
-extern void (*R_ParticleExplosion2) (vec3_t org, int colorStart,
+extern void (*R_BlobExplosion) (const vec3_t org);
+extern void (*R_ParticleExplosion) (const vec3_t org);
+extern void (*R_ParticleExplosion2) (const vec3_t org, int colorStart,
 									 int colorLength);
-extern void (*R_LavaSplash) (vec3_t org);
-extern void (*R_TeleportSplash) (vec3_t org);
+extern void (*R_LavaSplash) (const vec3_t org);
+extern void (*R_TeleportSplash) (const vec3_t org);
 
 void R_DarkFieldParticles (struct entity_s *ent);
 void R_EntityParticles (struct entity_s *ent);
 
-void R_PushDlights (vec3_t entorigin);
+void R_PushDlights (const vec3_t entorigin);
 struct cvar_s;
 void R_MaxDlightsCheck (struct cvar_s *var);
 void R_Particles_Init_Cvars (void);

@@ -121,7 +121,7 @@ MSG_WriteCoord (sizebuf_t *sb, float coord)
 }
 
 void
-MSG_WriteCoordV (sizebuf_t *sb, vec3_t coord)
+MSG_WriteCoordV (sizebuf_t *sb, const vec3_t coord)
 {
 	int		i;
 
@@ -130,7 +130,7 @@ MSG_WriteCoordV (sizebuf_t *sb, vec3_t coord)
 }
 
 void
-MSG_WriteCoordAngleV (sizebuf_t *sb, vec3_t coord, vec3_t angles)
+MSG_WriteCoordAngleV (sizebuf_t *sb, const vec3_t coord, const vec3_t angles)
 {
 	int		i;
 
@@ -147,7 +147,7 @@ MSG_WriteAngle (sizebuf_t *sb, float angle)
 }
 
 void
-MSG_WriteAngleV (sizebuf_t *sb, vec3_t angles)
+MSG_WriteAngleV (sizebuf_t *sb, const vec3_t angles)
 {
 	int		i;
 

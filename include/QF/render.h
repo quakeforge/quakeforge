@@ -162,7 +162,7 @@ void R_NewMap (model_t *worldmodel, struct model_s **models, int num_models);
 
 
 // LordHavoc: relative bmodel lighting
-void R_PushDlights (vec3_t entorigin);
+void R_PushDlights (const vec3_t entorigin);
 void R_DrawWaterSurfaces (void);
 
 /*

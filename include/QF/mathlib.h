@@ -37,7 +37,7 @@
 #endif
 
 extern int		nanmask;
-extern vec3_t	vec3_origin;
+extern const vec3_t	vec3_origin;
 
 #define IS_NAN(x) (((*(int *)&x)&nanmask)==nanmask)
 
@@ -81,19 +81,19 @@ extern vec3_t	vec3_origin;
 // fall over
 #define	ROLL	2
 
-void _VectorMA (vec3_t veca, float scale, vec3_t vecb, vec3_t vecc);
+void _VectorMA (const vec3_t veca, float scale, const vec3_t vecb,
+				vec3_t vecc);
+vec_t _DotProduct (const vec3_t v1, const vec3_t v2);
+void _VectorSubtract (const vec3_t veca, const vec3_t vecb, vec3_t out);
+void _VectorAdd (const vec3_t veca, const vec3_t vecb, vec3_t out);
+void _VectorCopy (const vec3_t in, vec3_t out);
 
-vec_t _DotProduct (vec3_t v1, vec3_t v2);
-void _VectorSubtract (vec3_t veca, vec3_t vecb, vec3_t out);
-void _VectorAdd (vec3_t veca, vec3_t vecb, vec3_t out);
-void _VectorCopy (vec3_t in, vec3_t out);
-
-int _VectorCompare (vec3_t v1, vec3_t v2);
+int _VectorCompare (const vec3_t v1, const vec3_t v2);
 //vec_t Length (vec3_t v);
 void CrossProduct (const vec3_t v1, const vec3_t v2, vec3_t cross);
 float VectorNormalize (vec3_t v);			// returns vector length
 void VectorInverse (vec3_t v);
-void _VectorScale (vec3_t in, vec_t scale, vec3_t out);
+void _VectorScale (const vec3_t in, vec_t scale, vec3_t out);
 int Q_log2(int val);
 
 void R_ConcatRotations (float in1[3][3], float in2[3][3], float out[3][3]);
@@ -105,12 +105,15 @@ fixed16_t Invert24To16(fixed16_t val);
 fixed16_t Mul16_30(fixed16_t multiplier, fixed16_t multiplicand);
 int GreatestCommonDivisor (int i1, int i2);
 
-void AngleVectors (vec3_t angles, vec3_t forward, vec3_t right, vec3_t up);
-void VectorVectors(const vec3_t forward, vec3_t right, vec3_t up);
-int BoxOnPlaneSide (vec3_t emins, vec3_t emaxs, struct mplane_s *plane);
-float   anglemod(float a);
+void AngleVectors (const vec3_t angles, vec3_t forward, vec3_t right,
+				   vec3_t up);
+void VectorVectors (const vec3_t forward, vec3_t right, vec3_t up);
+int BoxOnPlaneSide (const vec3_t emins, const vec3_t emaxs,
+					struct mplane_s *plane);
+float   anglemod (float a);
 
-void RotatePointAroundVector( vec3_t dst, const vec3_t dir, const vec3_t point, float degrees );
+void RotatePointAroundVector (vec3_t dst, const vec3_t dir, const vec3_t point,
+							  float degrees );
 
 #define BOX_ON_PLANE_SIDE(emins, emaxs, p)				\
 	(((p)->type < 3)?									\
@@ -138,7 +141,7 @@ extern	mplane_t	frustum[4];
 extern inline
 #endif
 qboolean
-R_CullBox (vec3_t mins, vec3_t maxs)
+R_CullBox (const vec3_t mins, const vec3_t maxs)
 {
 	int i;
 

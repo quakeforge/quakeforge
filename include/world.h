@@ -85,15 +85,16 @@ void SV_LinkEdict (struct edict_s *ent, qboolean touch_triggers);
 // sets ent->v.absmin and ent->v.absmax
 // if touchtriggers, calls prog functions for the intersected triggers
 
-int SV_PointContents (vec3_t p);
-int SV_TruePointContents (vec3_t p);
+int SV_PointContents (const vec3_t p);
+int SV_TruePointContents (const vec3_t p);
 // returns the CONTENTS_* value from the world at the given point.
 // does not check any entities at all
 // the non-true version remaps the water current contents to content_water
 
 struct edict_s	*SV_TestEntityPosition (struct edict_s *ent);
 
-trace_t SV_Move (vec3_t start, vec3_t mins, vec3_t maxs, vec3_t end, int type, struct edict_s *passedict);
+trace_t SV_Move (const vec3_t start, const vec3_t mins, const vec3_t maxs,
+				 const vec3_t end, int type, struct edict_s *passedict);
 // mins and maxs are reletive
 
 // if the entire move stays in a solid volume, trace.allsolid will be set
@@ -106,9 +107,11 @@ trace_t SV_Move (vec3_t start, vec3_t mins, vec3_t maxs, vec3_t end, int type, s
 
 // passedict is explicitly excluded from clipping checks (normally NULL)
 
-struct edict_s	*SV_TestPlayerPosition (struct edict_s *ent, vec3_t origin);
+struct edict_s	*SV_TestPlayerPosition (struct edict_s *ent,
+										const vec3_t origin);
 
-int SV_HullPointContents (hull_t *hull, int num, vec3_t p);
-hull_t *SV_HullForEntity (struct edict_s *ent, vec3_t mins, vec3_t maxs, vec3_t offset);
+int SV_HullPointContents (hull_t *hull, int num, const vec3_t p);
+hull_t *SV_HullForEntity (struct edict_s *ent, const vec3_t mins,
+						  const vec3_t maxs, vec3_t offset);
 
 #endif // __world_h

@@ -29,6 +29,6 @@
 #ifndef __qf_explosion_h
 #define __qf_explosion_h
 
-extern void R_NewExplosion (vec3_t org);
+extern void R_NewExplosion (const vec3_t org);
 
 #endif // __qf_explosion_h

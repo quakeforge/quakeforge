@@ -324,15 +324,16 @@ void R_PrintAliasStats (void);
 void R_PrintTimes (void);
 void R_PrintDSpeeds (void);
 void R_AnimateLight (void);
-int R_LightPoint (vec3_t p);
+int R_LightPoint (const vec3_t p);
 void R_SetupFrame (void);
 void R_cshift_f (void);
 void R_EmitEdge (mvertex_t *pv0, mvertex_t *pv1);
 void R_ClipEdge (mvertex_t *pv0, mvertex_t *pv1, clipplane_t *clip);
 void R_SplitEntityOnNode2 (mnode_t *node);
-void R_RecursiveMarkLights (vec3_t lightorigin, struct dlight_s *light, int bit,
-							mnode_t *node);
-void R_MarkLights (vec3_t lightorigin, struct dlight_s *light, int bit, model_t *model);
+void R_RecursiveMarkLights (const vec3_t lightorigin, struct dlight_s *light,
+							int bit, mnode_t *node);
+void R_MarkLights (const vec3_t lightorigin, struct dlight_s *light, int bit,
+				   model_t *model);
 
 void R_LoadSkys (const char *);
 

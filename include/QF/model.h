@@ -453,7 +453,7 @@ model_t *Mod_ForName (const char *name, qboolean crash);
 void	*Mod_Extradata (model_t *mod);	// handles caching
 void	Mod_TouchModel (const char *name);
 
-mleaf_t *Mod_PointInLeaf (float *p, model_t *model);
+mleaf_t *Mod_PointInLeaf (const vec3_t p, model_t *model);
 byte	*Mod_LeafPVS (mleaf_t *leaf, model_t *model);
 model_t	*Mod_FindName (const char *name);
 void	Mod_ProcessTexture(miptex_t *mt, texture_t *tx);
@@ -462,8 +462,10 @@ int     Mod_CalcFullbright (byte *in, byte *out, int pixels);
 int     Mod_Fullbright (byte * skin, int width, int height, char *name);
 
 
-void    *Mod_LoadAliasFrame (void *pin, int *posenum, maliasframedesc_t *frame, int extra);
-void    *Mod_LoadAliasGroup (void *pin, int *posenum, maliasframedesc_t *frame, int extra);
+void    *Mod_LoadAliasFrame (void *pin, int *posenum, maliasframedesc_t *frame,
+							 int extra);
+void    *Mod_LoadAliasGroup (void *pin, int *posenum, maliasframedesc_t *frame,
+							 int extra);
 void	*Mod_LoadSkin (byte *skin, int skinsize, int snum, int gnum,
 					   qboolean group, maliasskindesc_t *skindesc);
 void     Mod_MakeAliasModelDisplayLists (model_t *m, aliashdr_t *hdr, void *_m,

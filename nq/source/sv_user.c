@@ -585,7 +585,7 @@ SV_RunClients (void)
   Used by view and sv_user
 */
 float
-V_CalcRoll (vec3_t angles, vec3_t velocity)
+V_CalcRoll (const vec3_t angles, const vec3_t velocity)
 {
 	float       side, sign, value;
 

@@ -62,7 +62,7 @@ cvar_t		*gl_sky_divide;
 
 
 mleaf_t    *
-Mod_PointInLeaf (vec3_t p, model_t *model)
+Mod_PointInLeaf (const vec3_t p, model_t *model)
 {
 	mnode_t    *node;
 	float       d;
@@ -820,14 +820,13 @@ Mod_LoadPlanes (lump_t *l)
 }
 
 float
-RadiusFromBounds (vec3_t mins, vec3_t maxs)
+RadiusFromBounds (const vec3_t mins, const vec3_t maxs)
 {
 	int         i;
 	vec3_t      corner;
 
 	for (i = 0; i < 3; i++) {
-		corner[i] =
-			fabs (mins[i]) > fabs (maxs[i]) ? fabs (mins[i]) : fabs (maxs[i]);
+		corner[i] = max (fabs (mins[i]), fabs (maxs[i]));
 	}
 
 	return Length (corner);

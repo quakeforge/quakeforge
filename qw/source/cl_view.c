@@ -94,7 +94,7 @@ cshift_t	cshift_bonus = { {215, 186, 60}, 50};
 
 
 float
-V_CalcRoll (vec3_t angles, vec3_t velocity)
+V_CalcRoll (const vec3_t angles, const vec3_t velocity)
 {
 	float		side, sign, value;
 	vec3_t		forward, right, up;

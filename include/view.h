@@ -40,7 +40,7 @@
 void V_Init (void);
 void V_Init_Cvars (void);
 void V_RenderView (void);
-float V_CalcRoll (vec3_t angles, vec3_t velocity);
+float V_CalcRoll (const vec3_t angles, const vec3_t velocity);
 void V_UpdatePalette (void);
 void V_StartPitchDrift (void);
 void V_StopPitchDrift (void);

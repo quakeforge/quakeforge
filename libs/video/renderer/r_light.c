@@ -93,7 +93,7 @@ R_AnimateLight (void)
 // LordHavoc: heavily modified, to eliminate unnecessary texture uploads,
 //            and support bmodel lighting better
 void
-R_RecursiveMarkLights (vec3_t lightorigin, dlight_t *light, int bit,
+R_RecursiveMarkLights (const vec3_t lightorigin, dlight_t *light, int bit,
 					   mnode_t *node)
 {
 	int         i;
@@ -183,7 +183,8 @@ loc0:
 }
 
 static inline void
-mark_surfaces (msurface_t *surf, vec3_t lightorigin, dlight_t *light, int bit)
+mark_surfaces (msurface_t *surf, const vec3_t lightorigin, dlight_t *light,
+			   int bit)
 {
 	float      dist;
 	float      dist2, d;
@@ -238,7 +239,8 @@ mark_surfaces (msurface_t *surf, vec3_t lightorigin, dlight_t *light, int bit)
 }
 
 void
-R_MarkLights (vec3_t lightorigin, dlight_t *light, int bit, model_t *model)
+R_MarkLights (const vec3_t lightorigin, dlight_t *light, int bit,
+			  model_t *model)
 {
 	mleaf_t    *pvsleaf = Mod_PointInLeaf (lightorigin, model);
 
@@ -292,7 +294,7 @@ R_MarkLights (vec3_t lightorigin, dlight_t *light, int bit, model_t *model)
 }
 
 void
-R_PushDlights (vec3_t entorigin)
+R_PushDlights (const vec3_t entorigin)
 {
 	int         i;
 	dlight_t   *l;
@@ -317,7 +319,7 @@ mplane_t   *lightplane;
 vec3_t      lightspot;
 
 int
-RecursiveLightPoint (mnode_t *node, vec3_t start, vec3_t end)
+RecursiveLightPoint (mnode_t *node, const vec3_t start, const vec3_t end)
 {
 	int			 i, r, s, t, ds, dt, maps, side;
 	unsigned int scale;
@@ -409,7 +411,7 @@ loop:
 }
 
 int
-R_LightPoint (vec3_t p)
+R_LightPoint (const vec3_t p)
 {
 	vec3_t      end;
 	int         r;

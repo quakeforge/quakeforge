@@ -69,8 +69,8 @@ varray_t2f_c4ub_v3f_t  *particleVertexArray;
 
 
 inline static void
-particle_new (ptype_t type, int texnum, vec3_t org, float scale, vec3_t vel,
-			  float die, byte color, byte alpha)
+particle_new (ptype_t type, int texnum, const vec3_t org, float scale,
+			  const vec3_t vel, float die, byte color, byte alpha)
 {
 	particle_t *part;
 
@@ -94,7 +94,7 @@ particle_new (ptype_t type, int texnum, vec3_t org, float scale, vec3_t vel,
 }
 
 inline static void
-particle_new_random (ptype_t type, int texnum, vec3_t org, int org_fuzz,
+particle_new_random (ptype_t type, int texnum, const vec3_t org, int org_fuzz,
 					 float scale, int vel_fuzz, float die, byte color,
 					 byte alpha)
 {
@@ -200,7 +200,7 @@ R_ReadPointFile_f (void)
 }
 
 void
-R_ParticleExplosion_QF (vec3_t org)
+R_ParticleExplosion_QF (const vec3_t org)
 {
 /*
 	R_NewExplosion (org);
@@ -213,7 +213,7 @@ R_ParticleExplosion_QF (vec3_t org)
 }
 
 void
-R_ParticleExplosion2_QF (vec3_t org, int colorStart, int colorLength)
+R_ParticleExplosion2_QF (const vec3_t org, int colorStart, int colorLength)
 {
 	int         i;
 	int         colorMod = 0, j = 512;
@@ -232,7 +232,7 @@ R_ParticleExplosion2_QF (vec3_t org, int colorStart, int colorLength)
 }
 
 void
-R_BlobExplosion_QF (vec3_t org)
+R_BlobExplosion_QF (const vec3_t org)
 {
 	int         i;
 	int			j = 1024;
@@ -255,7 +255,7 @@ R_BlobExplosion_QF (vec3_t org)
 }
 
 static inline void
-R_RunSparkEffect_QF (vec3_t org, int count, int ofuzz)
+R_RunSparkEffect_QF (const vec3_t org, int count, int ofuzz)
 {
 	if (numparticles >= r_maxparticles)
 		return;
@@ -272,7 +272,7 @@ R_RunSparkEffect_QF (vec3_t org, int count, int ofuzz)
 }
 
 static inline void
-R_BloodPuff_QF (vec3_t org, int count)
+R_BloodPuff_QF (const vec3_t org, int count)
 {
 	if (numparticles >= r_maxparticles)
 		return;
@@ -282,13 +282,13 @@ R_BloodPuff_QF (vec3_t org, int count)
 }
 
 void
-R_BloodPuffEffect_QF (vec3_t org, int count)
+R_BloodPuffEffect_QF (const vec3_t org, int count)
 {
 	R_BloodPuff_QF (org, count);
 }
 
 void
-R_GunshotEffect_QF (vec3_t org, int count)
+R_GunshotEffect_QF (const vec3_t org, int count)
 {
 	int scale = 16;
 
@@ -298,7 +298,7 @@ R_GunshotEffect_QF (vec3_t org, int count)
 }
 
 void
-R_LightningBloodEffect_QF (vec3_t org)
+R_LightningBloodEffect_QF (const vec3_t org)
 {
 	int		count = 7;
 
@@ -317,9 +317,13 @@ R_LightningBloodEffect_QF (vec3_t org)
 }
 
 void
-R_RunParticleEffect_QF (vec3_t org, vec3_t dir, int color, int count)
+R_RunParticleEffect_QF (const vec3_t _org, const vec3_t dir, int color,
+						int count)
 {
 	int         i, j;
+	vec3_t      org;
+
+	VectorCopy (_org, org);
 
 	if (numparticles >= r_maxparticles)
 		return;
@@ -337,19 +341,19 @@ R_RunParticleEffect_QF (vec3_t org, vec3_t dir, int color, int count)
 }
 
 void
-R_SpikeEffect_QF (vec3_t org)
+R_SpikeEffect_QF (const vec3_t org)
 {
 	R_RunSparkEffect_QF (org, 5, 8);
 }
 
 void
-R_SuperSpikeEffect_QF (vec3_t org)
+R_SuperSpikeEffect_QF (const vec3_t org)
 {
 	R_RunSparkEffect_QF (org, 10, 8);
 }
 
 void
-R_KnightSpikeEffect_QF (vec3_t org)
+R_KnightSpikeEffect_QF (const vec3_t org)
 {
 	int		count = 10;
 
@@ -366,7 +370,7 @@ R_KnightSpikeEffect_QF (vec3_t org)
 }
 
 void
-R_WizSpikeEffect_QF (vec3_t org)
+R_WizSpikeEffect_QF (const vec3_t org)
 {
 	int		count = 15;
 
@@ -383,7 +387,7 @@ R_WizSpikeEffect_QF (vec3_t org)
 }
 
 void
-R_LavaSplash_QF (vec3_t org)
+R_LavaSplash_QF (const vec3_t org)
 {
 	float       vel;
 	int         rnd, i, j;
@@ -419,7 +423,7 @@ R_LavaSplash_QF (vec3_t org)
 }
 
 void
-R_TeleportSplash_QF (vec3_t org)
+R_TeleportSplash_QF (const vec3_t org)
 {
 	float       vel;
 	int         rnd, i, j, k;
@@ -725,7 +729,7 @@ R_VoorTrail_QF (entity_t *ent)
 }
 
 void
-R_ParticleExplosion_EE (vec3_t org)
+R_ParticleExplosion_EE (const vec3_t org)
 {
 /*
 	R_NewExplosion (org);
@@ -738,7 +742,7 @@ R_ParticleExplosion_EE (vec3_t org)
 }
 
 void
-R_TeleportSplash_EE (vec3_t org)
+R_TeleportSplash_EE (const vec3_t org)
 {
 	float       vel;
 	int         rnd, i, j, k;
@@ -846,7 +850,7 @@ R_GrenadeTrail_EE (entity_t *ent)
 }
 
 void
-R_ParticleExplosion_ID (vec3_t org)
+R_ParticleExplosion_ID (const vec3_t org)
 {
 	int		i;
 	int		j = 1024;

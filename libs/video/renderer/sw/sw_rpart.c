@@ -118,7 +118,7 @@ R_ReadPointFile_f (void)
 }
 
 void
-R_ParticleExplosion_QF (vec3_t org)
+R_ParticleExplosion_QF (const vec3_t org)
 {
 	int         i, j;
 	particle_t *p;
@@ -154,7 +154,7 @@ R_ParticleExplosion_QF (vec3_t org)
 }
 
 void
-R_ParticleExplosion2_QF (vec3_t org, int colorStart, int colorLength)
+R_ParticleExplosion2_QF (const vec3_t org, int colorStart, int colorLength)
 {
 	int              i, j;
 	particle_t      *p;
@@ -183,7 +183,7 @@ R_ParticleExplosion2_QF (vec3_t org, int colorStart, int colorLength)
 }
 
 void
-R_BlobExplosion_QF (vec3_t org)
+R_BlobExplosion_QF (const vec3_t org)
 {
 	int         i, j;
 	particle_t *p;
@@ -220,7 +220,8 @@ R_BlobExplosion_QF (vec3_t org)
 }
 
 void
-R_RunParticleEffect_QF (vec3_t org, vec3_t dir, int color, int count)
+R_RunParticleEffect_QF (const vec3_t org, const vec3_t dir, int color,
+						int count)
 {
 	int         i, j;
 	particle_t *p;
@@ -247,49 +248,49 @@ R_RunParticleEffect_QF (vec3_t org, vec3_t dir, int color, int count)
 }
 
 void
-R_SpikeEffect_QF (vec3_t org)
+R_SpikeEffect_QF (const vec3_t org)
 {
 	R_RunParticleEffect_QF (org, vec3_origin, 0, 10);
 }
 
 void
-R_SuperSpikeEffect_QF (vec3_t org)
+R_SuperSpikeEffect_QF (const vec3_t org)
 {
 	R_RunParticleEffect (org, vec3_origin, 0, 20);
 }
 
 void
-R_KnightSpikeEffect_QF (vec3_t org)
+R_KnightSpikeEffect_QF (const vec3_t org)
 {
 	R_RunParticleEffect_QF (org, vec3_origin, 226, 20);
 }
 
 void
-R_WizSpikeEffect_QF (vec3_t org)
+R_WizSpikeEffect_QF (const vec3_t org)
 {
 	R_RunParticleEffect_QF (org, vec3_origin, 20, 30);
 }
 
 void
-R_BloodPuffEffect_QF (vec3_t org, int count)
+R_BloodPuffEffect_QF (const vec3_t org, int count)
 {
 	R_RunParticleEffect_QF (org, vec3_origin, 73, count);
 }
 
 void
-R_GunshotEffect_QF (vec3_t org, int count)
+R_GunshotEffect_QF (const vec3_t org, int count)
 {
 	R_RunParticleEffect_QF (org, vec3_origin, 0, count);
 }
 
 void
-R_LightningBloodEffect_QF (vec3_t org)
+R_LightningBloodEffect_QF (const vec3_t org)
 {
 	R_RunParticleEffect_QF (org, vec3_origin, 225, 50);
 }
 
 void
-R_LavaSplash_QF (vec3_t org)
+R_LavaSplash_QF (const vec3_t org)
 {
 	int         i, j, k;
 	particle_t *p;
@@ -328,7 +329,7 @@ R_LavaSplash_QF (vec3_t org)
 }
 
 void
-R_TeleportSplash_QF (vec3_t org)
+R_TeleportSplash_QF (const vec3_t org)
 {
 	int         i, j, k;
 	particle_t *p;

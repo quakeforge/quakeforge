@@ -57,16 +57,14 @@ static const char rcsid[] =
 typedef struct {
 	vec3_t      boxmins, boxmaxs;		// enclose the test object along
 										// entire move
-	float      *mins, *maxs;			// size of the moving object
+	const float      *mins, *maxs;			// size of the moving object
 	vec3_t      mins2, maxs2;			// size when clipping against
 										// monsters
-	float      *start, *end;
+	const float      *start, *end;
 	trace_t     trace;
 	int         type;
 	edict_t    *passedict;
 } moveclip_t;
-
-int         SV_HullPointContents (hull_t *hull, int num, vec3_t p);
 
 /* HULL BOXES */
 
@@ -120,7 +118,7 @@ SV_InitBoxHull (void)
 	BSP trees instead of being compared directly.
 */
 hull_t *
-SV_HullForBox (vec3_t mins, vec3_t maxs)
+SV_HullForBox (const vec3_t mins, const vec3_t maxs)
 {
 	box_planes[0].dist = maxs[0];
 	box_planes[1].dist = mins[0];
@@ -141,7 +139,8 @@ SV_HullForBox (vec3_t mins, vec3_t maxs)
 	the returned hull.
 */
 hull_t *
-SV_HullForEntity (edict_t *ent, vec3_t mins, vec3_t maxs, vec3_t offset)
+SV_HullForEntity (edict_t *ent, const vec3_t mins, const vec3_t maxs,
+				  vec3_t offset)
 {
 	hull_t     *hull = 0;
 	int         hull_index = 0;
@@ -199,7 +198,7 @@ areanode_t  sv_areanodes[AREA_NODES];
 int         sv_numareanodes;
 
 areanode_t *
-SV_CreateAreaNode (int depth, vec3_t mins, vec3_t maxs)
+SV_CreateAreaNode (int depth, const vec3_t mins, const vec3_t maxs)
 {
 	areanode_t *anode;
 	vec3_t      mins1, maxs1, mins2, maxs2, size;
@@ -413,7 +412,7 @@ SV_LinkEdict (edict_t *ent, qboolean touch_triggers)
 
 #ifndef USE_INTEL_ASM
 int
-SV_HullPointContents (hull_t *hull, int num, vec3_t p)
+SV_HullPointContents (hull_t *hull, int num, const vec3_t p)
 {
 	dclipnode_t *node;
 	float       d;
@@ -441,7 +440,7 @@ SV_HullPointContents (hull_t *hull, int num, vec3_t p)
 #endif // !USE_INTEL_ASM
 
 int
-SV_PointContents (vec3_t p)
+SV_PointContents (const vec3_t p)
 {
 	int         cont;
 
@@ -452,7 +451,7 @@ SV_PointContents (vec3_t p)
 }
 
 int
-SV_TruePointContents (vec3_t p)
+SV_TruePointContents (const vec3_t p)
 {
 	return SV_HullPointContents (&sv.worldmodel->hulls[0], 0, p);
 }
@@ -486,8 +485,8 @@ SV_TestEntityPosition (edict_t *ent)
 #define	DIST_EPSILON	(0.03125)
 
 qboolean
-SV_RecursiveHullCheck (hull_t *hull, int num, float p1f, float p2f, vec3_t p1,
-					   vec3_t p2, trace_t *trace)
+SV_RecursiveHullCheck (hull_t *hull, int num, float p1f, float p2f,
+					   const vec3_t p1, const vec3_t p2, trace_t *trace)
 {
 	dclipnode_t *node;
 	float       frac, midf, t1, t2;
@@ -603,8 +602,8 @@ SV_RecursiveHullCheck (hull_t *hull, int num, float p1f, float p2f, vec3_t p1,
 	eventually rotation) of the end points
 */
 trace_t
-SV_ClipMoveToEntity (edict_t *touched, edict_t *mover, vec3_t start,
-					 vec3_t mins, vec3_t maxs, vec3_t end)
+SV_ClipMoveToEntity (edict_t *touched, edict_t *mover, const vec3_t start,
+					 const vec3_t mins, const vec3_t maxs, const vec3_t end)
 {
 	hull_t     *hull;
 	trace_t     trace;
@@ -718,8 +717,8 @@ SV_ClipToLinks (areanode_t *node, moveclip_t * clip)
 }
 
 void
-SV_MoveBounds (vec3_t start, vec3_t mins, vec3_t maxs, vec3_t end,
-			   vec3_t boxmins, vec3_t boxmaxs)
+SV_MoveBounds (const vec3_t start, const vec3_t mins, const vec3_t maxs,
+			   const vec3_t end, vec3_t boxmins, vec3_t boxmaxs)
 {
 #if 0
 	// debug to test against everything
@@ -741,8 +740,8 @@ SV_MoveBounds (vec3_t start, vec3_t mins, vec3_t maxs, vec3_t end,
 }
 
 trace_t
-SV_Move (vec3_t start, vec3_t mins, vec3_t maxs, vec3_t end, int type,
-		 edict_t *passedict)
+SV_Move (const vec3_t start, const vec3_t mins, const vec3_t maxs,
+		 const vec3_t end, int type, edict_t *passedict)
 {
 	int			i;
 	moveclip_t  clip;
@@ -750,7 +749,8 @@ SV_Move (vec3_t start, vec3_t mins, vec3_t maxs, vec3_t end, int type,
 	memset (&clip, 0, sizeof (moveclip_t));
 
 	// clip to world
-	clip.trace = SV_ClipMoveToEntity (sv.edicts, passedict, start, mins, maxs, end);
+	clip.trace = SV_ClipMoveToEntity (sv.edicts, passedict, start,
+									  mins, maxs, end);
 
 	clip.start = start;
 	clip.end = end;
@@ -781,7 +781,7 @@ SV_Move (vec3_t start, vec3_t mins, vec3_t maxs, vec3_t end, int type,
 
 
 edict_t *
-SV_TestPlayerPosition (edict_t *ent, vec3_t origin)
+SV_TestPlayerPosition (edict_t *ent, const vec3_t origin)
 {
 	edict_t    *check;
 	hull_t     *hull;

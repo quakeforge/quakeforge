@@ -55,13 +55,10 @@ int         locations_alloced = 0;
 int         locations_count = 0;
 int         location_blocks = 0;
 
-void locs_add (vec3_t location, const char *name);
-void locs_load (const char *filename);
-void locs_free (void);
 void locs_more (void);
 
 int
-locs_nearest (vec3_t loc)
+locs_nearest (const vec3_t loc)
 {
 	location_t *cur;
 	float       best_distance = 9999999, distance;
@@ -79,7 +76,7 @@ locs_nearest (vec3_t loc)
 }
 	
 location_t *
-locs_find (vec3_t target)
+locs_find (const vec3_t target)
 {
 	int i;
 	i = locs_nearest(target);
@@ -89,7 +86,7 @@ locs_find (vec3_t target)
 }
 
 void
-locs_add (vec3_t location, const char *name)
+locs_add (const vec3_t location, const char *name)
 {
 	int         num;
 
@@ -221,7 +218,7 @@ locs_save (const char *filename, qboolean gz)
 }
 
 void
-locs_mark (vec3_t loc, const char *desc)
+locs_mark (const vec3_t loc, const char *desc)
 {
 	locs_add (loc,desc);
 	Con_Printf ("Marked current location: %s\n",desc);
@@ -234,7 +231,7 @@ locs_mark (vec3_t loc, const char *desc)
 */
 
 void
-locs_edit (vec3_t loc, const char *desc)
+locs_edit (const vec3_t loc, const char *desc)
 {
 	int i;
 	if (locations_count) {
@@ -254,7 +251,7 @@ locs_edit (vec3_t loc, const char *desc)
 }
 
 void
-locs_del (vec3_t loc)
+locs_del (const vec3_t loc)
 {
 	int i;
 	if (locations_count) {

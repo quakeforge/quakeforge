@@ -173,14 +173,14 @@ S_ClearBuffer (void)
 }
 
 void
-S_StaticSound (sfx_t *sfx, vec3_t origin, float vol, float attenuation)
+S_StaticSound (sfx_t *sfx, const vec3_t origin, float vol, float attenuation)
 {
 	if (snd_render_module)
 		snd_render_module->functions->snd_render->pS_StaticSound (sfx, origin, vol, attenuation);
 }
 
 void
-S_StartSound (int entnum, int entchannel, sfx_t *sfx, vec3_t origin,
+S_StartSound (int entnum, int entchannel, sfx_t *sfx, const vec3_t origin,
 			  float fvol, float attenuation)
 {
 	if (snd_render_module)
@@ -214,7 +214,8 @@ S_ClearPrecache (void)
 }
 
 void
-S_Update (vec3_t origin, vec3_t v_forward, vec3_t v_right, vec3_t v_up)
+S_Update (const vec3_t origin, const vec3_t v_forward, const vec3_t v_right,
+		  const vec3_t v_up)
 {
 	if (snd_render_module)
 		snd_render_module->functions->snd_render->pS_Update (origin, v_forward,

@@ -449,7 +449,8 @@ void SV_FullClientUpdate (client_t *client, sizebuf_t *buf);
 int SV_ModelIndex (const char *name);
 
 qboolean SV_CheckBottom (struct edict_s *ent);
-qboolean SV_movestep (struct edict_s *ent, vec3_t move, qboolean relink);
+qboolean SV_movestep (struct edict_s *ent, const vec3_t move,
+					  qboolean relink);
 
 void SV_WriteClientdataToMessage (client_t *client, sizebuf_t *msg);
 
@@ -497,7 +498,7 @@ void SV_Print (const char *fmt, va_list args);
 void SV_Printf (const char *fmt, ...) __attribute__((format(printf,1,2)));
 void SV_SendClientMessages (void);
 
-void SV_Multicast (vec3_t origin, int to);
+void SV_Multicast (const vec3_t origin, int to);
 void SV_StartSound (struct edict_s *entity, int channel, const char *sample,
 					int volume, float attenuation);
 void SV_ClientPrintf (client_t *cl, int level, const char *fmt, ...) __attribute__((format(printf,3,4)));
