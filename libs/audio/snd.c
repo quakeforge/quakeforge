@@ -43,8 +43,6 @@ static __attribute__ ((unused)) const char rcsid[] =
 // Various variables also defined in snd_dma.c
 // FIXME - should be put in one place
 // =======================================================================
-channel_t       channels[MAX_CHANNELS];
-int             total_channels;
 volatile dma_t *shm = 0;
 cvar_t         *snd_loadas8bit;
 int             paintedtime;				// sample PAIRS

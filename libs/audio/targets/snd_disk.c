@@ -93,7 +93,6 @@ SNDDMA_Init (void)
 	Sys_Printf ("%5d submission_chunk\n", shm->submission_chunk);
 	Sys_Printf ("%5d speed\n", shm->speed);
 	Sys_Printf ("0x%x dma buffer\n", (int) shm->buffer);
-	Sys_Printf ("%5d total_channels\n", total_channels);
 
 	if (!(snd_file = Qopen ("qf.raw", "wb")))
 		return 0;

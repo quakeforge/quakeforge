@@ -38,13 +38,14 @@ static __attribute__ ((unused)) const char rcsid[] =
 # include <strings.h>
 #endif
 
+#include "winquake.h"
+
 #include "QF/cvar.h"
 #include "QF/sound.h"
 #include "QF/sys.h"
 
 #include "compat.h"
-
-#include "winquake.h"
+#include "snd_render.h"
 
 #define	PAINTBUFFER_SIZE	512
 portable_samplepair_t paintbuffer[PAINTBUFFER_SIZE * 2];

@@ -50,7 +50,12 @@ static __attribute__ ((unused)) const char rcsid[] =
 #include "QF/sound.h"
 #include "QF/plugin.h"
 
+#include "snd_render.h"
+
 // Internal sound data & structures ===========================================
+
+channel_t       channels[MAX_CHANNELS];
+int             total_channels;
 
 int			snd_blocked = 0;
 static qboolean snd_ambient = 1;

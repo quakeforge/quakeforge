@@ -44,6 +44,8 @@ static __attribute__ ((unused)) const char rcsid[] =
 #include "QF/qendian.h"
 #include "QF/quakefs.h"
 
+#include "snd_render.h"
+
 int         cache_full_cycle;
 
 sfxcache_t *

@@ -51,6 +51,7 @@ static __attribute__ ((unused)) const char rcsid[] =
 #include "QF/sound.h"
 #include "QF/sys.h"
 
+#include "snd_render.h"
 
 static size_t
 read_func (void *ptr, size_t size, size_t nmemb, void *datasource)
