@@ -309,6 +309,8 @@ string lanConfig_portname;
 string lanConfig_joinname;
 #define NUM_LANCONFIG_CMDS 3
 integer [NUM_LANCONFIG_CMDS] lanConfig_cursor_table = { 72, 92, 124 };
+inputline_t lanConfig_port_il;
+inputline_t lanConfig_join_il;
 
 integer () join_draw =
 {
@@ -443,6 +445,8 @@ void () main_menu =
 
 void () menu_init =
 {
+	lanConfig_port_il = InputLine_Create (4, 8, ' ');
+	lanConfig_join_il = InputLine_Create (4, 24, ' ');
 	switch (gametype ()) {
 	case "netquake":
 		do_single_player = 1;

@@ -332,6 +332,7 @@ Menu_Init (void)
 
 	Cbuf_Progs_Init (&menu_pr_state);
 	File_Progs_Init (&menu_pr_state);
+	InputLine_Progs_Init (&menu_pr_state);
 	String_Progs_Init (&menu_pr_state);
 	PR_Cmds_Init (&menu_pr_state);
 	R_Progs_Init (&menu_pr_state);

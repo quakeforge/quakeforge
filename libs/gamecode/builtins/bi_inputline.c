@@ -1,7 +1,7 @@
 /*
-	bi_init.c
+	bi_inputline.c
 
-	CSQC builtins init
+	CSQC inputline builtins
 
 	Copyright (C) 1996-1997  Id Software, Inc.
 
@@ -30,16 +30,49 @@ static const char rcsid[] =
 #ifdef HAVE_CONFIG_H
 # include "config.h"
 #endif
-#include "QF/csqc.h"
-#include "QF/progs.h"
 
-static void (*const cbuf_progs_init)(struct progs_s *) = Cbuf_Progs_Init;
-static void (*const file_progs_init)(struct progs_s *) = File_Progs_Init;
-static void (*const inputline_progs_init)(struct progs_s *) = InputLine_Progs_Init;
-static void (*const string_progs_init)(struct progs_s *) = String_Progs_Init;
+#ifdef HAVE_STRING_H
+# include "string.h"
+#endif
+#ifdef HAVE_STRINGS_H
+# include "strings.h"
+#endif
+
+#include "QF/console.h"
+#include "QF/progs.h"
+#include "QF/zone.h"
+
+static void
+bi_InputLine_Create (progs_t *pr)
+{
+}
+
+static void
+bi_InputLine_Destroy (progs_t *pr)
+{
+}
+
+static void
+bi_InputLine_Clear (progs_t *pr)
+{
+}
+
+static void
+bi_InputLine_Process (progs_t *pr)
+{
+}
+
+static void
+bi_InputLine_Draw (progs_t *pr)
+{
+}
 
 void
-BI_Init ()
+InputLine_Progs_Init (progs_t *pr)
 {
-	// do nothing stub for now. used to force linking
+	PR_AddBuiltin (pr, "InputLine_Create", bi_InputLine_Create, -1);
+	PR_AddBuiltin (pr, "InputLine_Destroy", bi_InputLine_Destroy, -1);
+	PR_AddBuiltin (pr, "InputLine_Clear", bi_InputLine_Clear, -1);
+	PR_AddBuiltin (pr, "InputLine_Process", bi_InputLine_Process, -1);
+	PR_AddBuiltin (pr, "InputLine_Draw", bi_InputLine_Draw, -1);
 }

@@ -43,8 +43,6 @@ static const char rcsid[] =
 #include "QF/vfs.h"
 #include "QF/zone.h"
 
-#define RETURN_STRING(p, s) ((p)->pr_globals[OFS_RETURN].integer_var = PR_SetString((p), s))
-
 #define MAX_HANDLES 20
 static VFile *handles[MAX_HANDLES];
 

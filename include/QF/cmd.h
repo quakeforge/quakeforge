@@ -65,8 +65,6 @@ void Cbuf_Execute (void);
 // Normally called once per frame, but may be explicitly invoked.
 // Do not call inside a command function!
 
-struct progs_s;
-void Cbuf_Progs_Init (struct progs_s *pr);
 
 //===========================================================================
 

@@ -1,7 +1,7 @@
 /*
-	bi_cbuf.c
+	bi_string.c
 
-	CSQC cbuf builtins
+	CSQC string builtins
 
 	Copyright (C) 1996-1997  Id Software, Inc.
 
@@ -40,8 +40,6 @@ static const char rcsid[] =
 
 #include "QF/progs.h"
 #include "QF/zone.h"
-
-#define RETURN_STRING(p, s) ((p)->pr_globals[OFS_RETURN].integer_var = PR_SetString((p), s))
 
 static void
 bi_String_ReplaceChar (progs_t *pr)
