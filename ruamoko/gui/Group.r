@@ -4,9 +4,9 @@
 
 @implementation Group
 
-- (id) initWithBounds: (Rect)bounds
+- (id) init
 {
-	self = [super initWithBounds:bounds];
+	self = [super init];
 	views = [[Array alloc] init];
 	return self;
 }
@@ -19,6 +19,7 @@
 - (View) addView: (View)aView
 {
 	[views addItem:aView];
+	return aView;
 }
 
 - (void) moveTo: (integer)x y:(integer)y

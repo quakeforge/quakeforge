@@ -3,6 +3,17 @@
 #include "draw.h"
 
 @implementation Text
+- (id) init
+{
+	text = str_new ();
+	return self;
+}
+
+- (void) dealloc
+{
+	str_free (text);
+}
+
 - (id) initWithBounds: (Rect)aRect
 {
 	return [self initWithBounds:aRect text:""];
@@ -11,14 +22,8 @@
 - (id) initWithBounds: (Rect)aRect text:(string)str
 {
 	self = [super initWithBounds:aRect];
-	text = str_new ();
 	str_copy (text, str);
 	return self;
-}
-
-- (void) dealloc
-{
-	str_free (text);
 }
 
 - (void) setText: (string)str

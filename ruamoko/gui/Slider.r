@@ -7,7 +7,7 @@
 
 - (id) initWithBounds: (Rect)aRect size: (integer) aSize
 {
-	self = [super initWithBounds:aRect];
+	self = [self initWithBounds:aRect];
 	dir = ylen > xlen;
 	size = aSize;
 	index = 0;

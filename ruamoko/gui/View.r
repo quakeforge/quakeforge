@@ -7,6 +7,7 @@
 
 - (id) initWithComponents: (integer)x : (integer)y : (integer)w : (integer)h
 {
+	self = [self init];
 	xpos = xabs = x;
 	ypos = yabs = y;
 	xlen = w;

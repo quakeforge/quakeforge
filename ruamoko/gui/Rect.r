@@ -7,7 +7,7 @@
 
 - (id) initWithComponents: (integer)x : (integer)y : (integer)w : (integer)h
 {
-	self = [super init];
+	self = [self init];
 	origin = [[Size alloc] initWithComponents: x : y];
 	size = [[Size alloc] initWithComponents: w : h];
 	return self;
@@ -15,7 +15,7 @@
 
 - (id) initWithOrigin: (Point)anOrigin size: (Size)aSize
 {
-	self = [super init];
+	self = [self init];
 
 	if (!self || !anOrigin || !aSize)
 		return NIL;
@@ -28,7 +28,7 @@
 
 - (id) initWithRect: (Rect)aRect
 {
-	self = [super init];
+	self = [self init];
 
 	if (!self || !aRect)
 		return NIL;

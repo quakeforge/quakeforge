@@ -4,7 +4,7 @@
 
 - (id) initWithComponents: (integer)w : (integer)h
 {
-	self = [super init];
+	self = [self init];
 	width = w;
 	height = h;
 	return self;
@@ -12,7 +12,7 @@
 
 - (id) initWithSize: (Size)aSize
 {
-	self = [super init];
+	self = [self init];
 
 	if (!self || !aSize)
 		return NIL;

@@ -9,7 +9,6 @@
 {
 	Array views;
 }
-- (id) initWithBounds: (Rect)bounds;
 - (void) dealloc;
 - (View) addView: (View)aView;
 - (void) moveTo: (integer)x y:(integer)y;

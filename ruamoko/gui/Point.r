@@ -4,7 +4,7 @@
 
 - (id) initWithComponents: (integer)_x : (integer)_y
 {
-	self = [super init];
+	self = [self init];
 	x = _x;
 	y = _y;
 	return self;
@@ -12,7 +12,7 @@
 
 - (id) initWithPoint: (Point) aPoint
 {
-	self = [super init];
+	self = [self init];
 
 	if (!self || !aPoint)
 		return NIL;
