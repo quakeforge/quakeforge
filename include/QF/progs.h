@@ -347,6 +347,7 @@ struct progs_s {
 	pr_load_func_t **load_funcs;
 
 	struct dstring_mem_s *ds_mem;
+	strref_t   *free_string_refs;
 	strref_t   *static_strings;
 	strref_t  **dynamic_strings;
 	strref_t   *return_strings[PR_RS_SLOTS];

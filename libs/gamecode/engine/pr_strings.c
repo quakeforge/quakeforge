@@ -75,7 +75,6 @@ typedef struct fmt_item_s {
 	struct fmt_item_s *next;
 } fmt_item_t;
 
-static strref_t *free_string_refs;
 static fmt_item_t *free_fmt_items;
 
 static void *
@@ -103,7 +102,7 @@ static strref_t *
 new_string_ref (progs_t *pr)
 {
 	strref_t *sr;
-	if (!free_string_refs) {
+	if (!pr->free_string_refs) {
 		int		i, size;
 
 		pr->dyn_str_size++;
@@ -111,26 +110,26 @@ new_string_ref (progs_t *pr)
 		pr->dynamic_strings = realloc (pr->dynamic_strings, size);
 		if (!pr->dynamic_strings)
 			PR_Error (pr, "out of memory");
-		if (!(free_string_refs = calloc (1024, sizeof (strref_t))))
+		if (!(pr->free_string_refs = calloc (1024, sizeof (strref_t))))
 			PR_Error (pr, "out of memory");
-		pr->dynamic_strings[pr->dyn_str_size - 1] = free_string_refs;
-		for (i = 0, sr = free_string_refs; i < 1023; i++, sr++)
+		pr->dynamic_strings[pr->dyn_str_size - 1] = pr->free_string_refs;
+		for (i = 0, sr = pr->free_string_refs; i < 1023; i++, sr++)
 			sr->next = sr + 1;
 		sr->next = 0;
 	}
-	sr = free_string_refs;
-	free_string_refs = sr->next;
+	sr = pr->free_string_refs;
+	pr->free_string_refs = sr->next;
 	sr->next = 0;
 	return sr;
 }
 
 static void
-free_string_ref (strref_t *sr)
+free_string_ref (progs_t *pr, strref_t *sr)
 {
 	sr->string = 0;
 	sr->dstring = 0;
-	sr->next = free_string_refs;
-	free_string_refs = sr;
+	sr->next = pr->free_string_refs;
+	pr->free_string_refs = sr;
 }
 
 static int
@@ -169,7 +168,7 @@ strref_free (void *_sr, void *_pr)
 
 	// free the string and ref only if it's not a static string
 	if (sr < pr->static_strings || sr >= pr->static_strings + pr->num_strings) {
-		free_string_ref (sr);
+		free_string_ref (pr, sr);
 	}
 }
 
@@ -198,7 +197,7 @@ PR_LoadStrings (progs_t *pr)
 		pr->strref_hash = Hash_NewTable (1021, strref_get_key, strref_free,
 										 pr);
 		pr->dynamic_strings = 0;
-		free_string_refs = 0;
+		pr->free_string_refs = 0;
 		pr->dyn_str_size = 0;
 	}
 
@@ -309,7 +308,7 @@ PR_ClearReturnStrings (progs_t *pr)
 
 	for (i = 0; i < PR_RS_SLOTS; i++)
 		if (pr->return_strings[i])
-			free_string_ref (pr->return_strings[i]);
+			free_string_ref (pr, pr->return_strings[i]);
 }
 
 int
@@ -390,7 +389,7 @@ PR_FreeString (progs_t *pr, int str)
 			dstring_delete (sr->dstring);
 		else
 			PR_Zone_Free (pr, sr->string);
-		free_string_ref (sr);
+		free_string_ref (pr, sr);
 		return;
 	}
 	PR_RunError (pr, "attempt to free invalid string %d", str);
@@ -404,7 +403,7 @@ PR_FreeTempStrings (progs_t *pr)
 	for (sr = pr->pr_xtstr; sr; sr = t) {
 		t = sr->next;
 		PR_Zone_Free (pr, sr->string);
-		free_string_ref (sr);
+		free_string_ref (pr, sr);
 	}
 	pr->pr_xtstr = 0;
 }
