@@ -275,7 +275,6 @@ I_OGGMus_Info (void)
 	plitem_t	*currenttrack = NULL;
 	int			 count = 0, iter = 0, highesttrack = 0;
 	const char	*trackstring;
-	char		**mapoutput = NULL;
 
 	if (!tracklist) {
 		Sys_Printf ("\n" "No Tracklist\n" "------------\n");
@@ -307,11 +306,6 @@ I_OGGMus_Info (void)
 			highesttrack = strtol ((char *) currentmap->data, NULL, 10);
 	}
 	Sys_DPrintf ("Highest Track number = %i.\n", highesttrack);
-	
-	/* allocate a null terminated array of char *'s  */
-	mapoutput = calloc (highesttrack + 1, sizeof (char *));
-	if (!mapoutput)
-		Sys_Error ("couldn't allocate mapoutput array!\n");
 
 	/* loop until we've extracted 'numval' trackmaps, or hit the highest track
 	 * number */
@@ -323,20 +317,10 @@ I_OGGMus_Info (void)
 			Sys_DPrintf ("Skipping trackstring: %s.\n", trackstring);
 			continue;
 		}
-		mapoutput[iter] = nva (" %s  -  %s", trackstring,
-							   (char *) currenttrack->data);
-		if (!mapoutput[iter])
-			Sys_Error ("I_OGGMus: couldn't allocate mapstring!\n");
+		Sys_Printf (" %s  -  %s\n", trackstring, (char *) currenttrack->data);
 		iter++;
 	}
-
-	/* output the map, and delete the allocated strings */
-	for (iter = 0; (iter < ((plarray_t *) (keylist->data))->numvals); iter++) {
-		Sys_Printf ("%s\n", mapoutput[iter]);
-		free (mapoutput[iter]);
-	}
 	
-	free (mapoutput);
 	PL_Free (keylist);
 }
 
