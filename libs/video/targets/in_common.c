@@ -75,8 +75,7 @@ static float in_old_mouse_x, in_old_mouse_y;
 
 static int  input_grabbed;
 
-extern
-cvar_t     *vid_fullscreen;
+extern cvar_t		*vid_fullscreen;
 
 void // called from context_x11.c
 IN_UpdateGrab (cvar_t *var)
