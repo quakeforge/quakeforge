@@ -71,7 +71,6 @@ static __attribute__ ((unused)) const char rcsid[] =
 #include "QF/dstring.h"
 #include "QF/model.h"
 #include "QF/msg.h"
-#include "QF/object.h"
 #include "QF/plugin.h"
 #include "QF/qargs.h"
 #include "QF/quakefs.h"

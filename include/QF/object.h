@@ -40,14 +40,14 @@
 
 #ifdef __GNUC__
 #define superInit(cl, obj, args...) (cl##_class->parent->init ((obj) , ## args))
-#define new(cl, args...) ((void *) (cl##_class->abstract ? NULL : cl##_class->init (Object_Create(cl##_class, false), ## args)))
-#define newFloat(cl, args...) ((void *) (cl##_class->abstract ? NULL : cl##_class->init (Object_Create(cl##_class, true) , ## args)))
+#define new(cl, args...) ((void *) (cl##_class->init (Object_Create(cl##_class, false), ## args)))
+#define newPerm(cl, args...) ((void *) (cl##_class->init (Object_Create(cl##_class, true) , ## args)))
 #define methodCall(obj, m, args...) ((obj)->m(obj , ## args))
 #define methodDecl(type, name, args...) (* name) (struct type##_s *self , ## args)
 #else
 #define superInit(cl, obj, ...) (cl##_class->parent->init ((obj), ##__VA_ARGS__))
-#define new(cl, ...) ((void *) (cl##_class->abstract ? NULL : cl##_class->init (Object_Create(cl##_class, false) , ##__VA_ARGS__)))
-#define newFloat(cl, ...) ((void *) (cl##_class->abstract ? NULL : cl##_class->init (Object_Create(cl##_class, true) , ##__VA_ARGS__)))
+#define new(cl, ...) ((void *) (cl##_class->init (Object_Create(cl##_class, false) , ##__VA_ARGS__)))
+#define newPerm(cl, ...) ((void *) (cl##_class->init (Object_Create(cl##_class, true) , ##__VA_ARGS__)))
 #define methodCall(obj, m, ...) ((obj)->m(obj, ##__VA_ARGS__))
 #define methodDecl(type, name, ...) (* name) (struct type##_s *self, ##__VA_ARGS__)
 #endif
@@ -76,6 +76,7 @@ typedef void (*ReplyHandler_t) (struct Object_s *retValue);
 typedef struct Object_s {
 	unsigned marked :1;
 	unsigned finalized :1;
+	unsigned nogc :1;
 	struct Class_s *cl;
 	int refs;
 	struct Object_s *next;
@@ -93,7 +94,8 @@ typedef Object *(*Object_Init_t) (Object *obj, ...);
 typedef void (*Object_Deinit_t) (Object *obj);
 
 classDecl (Class, Object,
-	qboolean abstract;
+	unsigned abstract :1;
+	unsigned alwaysperm :1;
 	unsigned int size;
 	const char *name;
 	struct Class_s *parent;
@@ -102,7 +104,7 @@ classDecl (Class, Object,
 );
 #define CLASS(o) ((Class *)(o))
 
-Object *Object_Create (Class *cl, qboolean floating);
+Object *Object_Create (Class *cl, qboolean perm);
 void Object_Delete (Object *obj);
 Object *Object_Retain (Object *obj);
 Object *Object_Release (Object *obj);
@@ -112,7 +114,6 @@ void Object_RemoveFromRoot (Object *obj);
 void Object_Init (void);
 void Object_Garbage_Collect (void);
 
-#include "QF/classes/List.h"
 #include "QF/classes/String.h"
 
 #endif
