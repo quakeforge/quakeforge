@@ -10,12 +10,12 @@ M  Scitech MGL used in win32 is screwed - dump it and use SDL
 M  merge nq and qw code bases
 I  GL is still way too slow
 I  Client side QuakeC.
-I  mingw cross compiling
+M  mingw cross compiling
 I  merge nq and qw code bases
 X  fix skybox/dome vis problems (workable solution found, needs new renderer)
 o  allow qf clients to download .lit files from qf servers.
 o  ogg support
-o  It's possible to stick on some obtuse-angled corners qwsv 2.3x didn't
+X  It's possible to stick on some obtuse-angled corners qwsv 2.3x didn't
 o  better server control of certain cvars
 o  triggers (f_respawn, f_death, f_took; cl_triggers)
 o  software PCXs don't work in X11 at least if you're using 16/24/32 color
@@ -34,6 +34,7 @@ M  software targets should mix color at 16/16 or 24/32 color
 ?  ban reasons and expire times
 ?  no 512 entities limit (protocol limitation)
 ?  large or infinite (!) maps (currently has +-4096 protocol limit)
+   (not just protocol, but bit precision, too)
 ?  redirection for file downloads
 ?  way to change con back besides changing mod dir (csqc likely)
 ?  server-side demos
