@@ -197,7 +197,7 @@ SCR_UpdateScreen (double realtime, SCR_Func *scr_funcs)
 {
 	vrect_t     vrect;
 
-	if (scr_skipupdate || block_drawing)
+	if (scr_skipupdate)
 		return;
 
 	r_realtime = realtime;

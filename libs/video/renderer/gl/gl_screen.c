@@ -194,7 +194,7 @@ SCR_UpdateScreen (double realtime, SCR_Func *scr_funcs)
 	double      time1 = 0, time2;
 	static int  begun = 0;
 
-	if (block_drawing)
+	if (scr_skipupdate)
 		return;
 
 	if (begun)

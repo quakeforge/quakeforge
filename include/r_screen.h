@@ -62,8 +62,6 @@ extern vrect_t     scr_vrect;
 
 extern qboolean    scr_skipupdate;
 
-extern qboolean    block_drawing;
-
 /* CENTER PRINTING */
 
 extern char        scr_centerstring[1024];

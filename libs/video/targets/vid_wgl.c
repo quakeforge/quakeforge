@@ -349,7 +349,7 @@ GL_Init (void)
 void
 GL_EndRendering (void)
 {
-	if (!scr_skipupdate || block_drawing) {
+	if (!scr_skipupdate) {
 		qfglFinish ();
 		SwapBuffers (maindc);
 	}

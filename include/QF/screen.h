@@ -80,8 +80,6 @@ extern struct cvar_s		*scr_viewsize;
 extern int			scr_copytop;
 extern int			scr_copyeverything;
 
-extern qboolean		block_drawing;
-
 extern struct qpic_s *scr_ram;
 extern struct qpic_s *scr_net;
 extern struct qpic_s *scr_turtle;

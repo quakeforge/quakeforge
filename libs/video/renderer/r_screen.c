@@ -120,8 +120,6 @@ vrect_t     scr_vrect;
 
 qboolean    scr_skipupdate;
 
-qboolean    block_drawing;
-
 /* CENTER PRINTING */
 char        scr_centerstring[1024];
 float       scr_centertime_start;		// for slow victory printing

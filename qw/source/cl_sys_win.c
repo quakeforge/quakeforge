@@ -223,7 +223,7 @@ WinMain (HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine,
 	// main window message loop
 	while (1) {
 		// yield CPU for a little bit when paused, minimized, or not the focus
-		if ((cl.paused && (!ActiveApp)) || Minimized || block_drawing) {
+		if ((cl.paused && (!ActiveApp)) || Minimized) {
 			SleepUntilInput (PAUSE_SLEEP);
 			scr_skipupdate = 1;			// no point in bothering to draw
 		} else if (!ActiveApp) {

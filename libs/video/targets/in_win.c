@@ -46,6 +46,7 @@ static __attribute__ ((unused)) const char rcsid[] =
 #include "QF/input.h"
 #include "QF/keys.h"
 #include "QF/qargs.h"
+#include "QF/screen.h"
 #include "QF/sys.h"
 
 #include "compat.h"
@@ -434,6 +435,7 @@ IN_LL_ProcessEvents (void)
 	HRESULT     hr;
 
 	while (PeekMessage (&msg, NULL, 0, 0, PM_NOREMOVE)) {
+		scr_skipupdate = 0;
 		if (!GetMessage (&msg, NULL, 0, 0))
 			Sys_Quit ();
 		TranslateMessage (&msg);
