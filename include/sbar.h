@@ -53,8 +53,5 @@ void Sbar_IntermissionOverlay (void);
 void Sbar_FinaleOverlay (void);
 
 void Sbar_LogFrags (void);
-void Sbar_TeamOverlay (void);
-void Sbar_DeathmatchOverlay (int start);
-void Sbar_MiniDeathmatchOverlay (void);
 
 #endif

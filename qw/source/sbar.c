@@ -104,7 +104,11 @@ static view_t *inventory_view;
 static view_t *frags_view;
 static view_t *status_view;
 
-static void (*Sbar_Draw_DMO_func) (int l, int y, int skip);
+static view_t *overlay_view;
+
+static void (*Sbar_Draw_DMO_func) (view_t *view, int l, int y, int skip);
+static void Sbar_TeamOverlay (view_t *view);
+static void Sbar_DeathmatchOverlay (view_t *view, int start);
 
 static void
 calc_sb_lines (cvar_t *var)
@@ -207,6 +211,14 @@ Sbar_Changed (void)
 static inline void
 draw_pic (view_t *view, int x, int y, qpic_t *pic)
 {
+	Draw_Pic (view->xabs + x, view->yabs + y, pic);
+}
+
+static inline void
+draw_cachepic (view_t *view, int x, int y, const char *name)
+{
+	qpic_t *pic = Draw_CachePic (name, true);
+	x += (view->xlen - pic->width) / 2;
 	Draw_Pic (view->xabs + x, view->yabs + y, pic);
 }
 
@@ -803,6 +815,22 @@ draw_status (view_t *view)
 }
 
 static void
+draw_overlay (view_t *view)
+{
+	// main screen deathmatch rankings
+	// if we're dead show team scores in team games
+	if (cl.stats[STAT_HEALTH] <= 0 && !cl.spectator)
+		if (cl.teamplay > 0 && !sb_showscores)
+			Sbar_TeamOverlay (view);
+		else
+			Sbar_DeathmatchOverlay (view, 0);
+	else if (sb_showscores)
+		Sbar_DeathmatchOverlay (view, 0);
+	else if (sb_showteamscores)
+		Sbar_TeamOverlay (view);
+}
+
+static void
 draw_tile (view_t *view)
 {
 	Draw_TileClear (view->xabs, view->yabs, view->xlen, view->ylen);
@@ -822,17 +850,11 @@ Sbar_Draw (void)
 	if (scr_con_current == vid.height)
 		return;
 
-	// main screen deathmatch rankings
-	// if we're dead show team scores in team games
-	if (cl.stats[STAT_HEALTH] <= 0 && !cl.spectator)
-		if (cl.teamplay > 0 && !sb_showscores)
-			Sbar_TeamOverlay ();
-		else
-			Sbar_DeathmatchOverlay (0);
-	else if (sb_showscores)
-		Sbar_DeathmatchOverlay (0);
-	else if (sb_showteamscores)
-		Sbar_TeamOverlay ();
+	if ((cl.stats[STAT_HEALTH] <= 0 && !cl.spectator)
+		|| sb_showscores || sb_showteamscores)
+		overlay_view->visible = 1;
+	else
+		overlay_view->visible = 0;
 
 	if (!sb_lines)
 		return;
@@ -853,30 +875,28 @@ Sbar_Draw (void)
 	added by Zoid
 */
 void
-Sbar_TeamOverlay (void)
+Sbar_TeamOverlay (view_t *view)
 {
 	char        num[12];
 	int         pavg, plow, phigh, i, k, l, x, y;
-	qpic_t     *pic;
 	team_t     *tm;
 	info_key_t *player_team = cl.players[cl.playernum].team;
 
 	if (!cl.teamplay) { // FIXME: if not teamplay, why teamoverlay?
-		Sbar_DeathmatchOverlay (0);
+		Sbar_DeathmatchOverlay (view, 0);
 		return;
 	}
 
 	scr_copyeverything = 1;
 	scr_fullupdate = 0;
 
-	pic = Draw_CachePic ("gfx/ranking.lmp", true);
-	Draw_Pic (160 - pic->width / 2, 0, pic);
+	draw_cachepic (view, 0, 0, "gfx/ranking.lmp");
 
 	y = 24;
 	x = 36;
-	Draw_String (x, y, "low/avg/high team total players");
+	draw_string (view, x, y, "low/avg/high team total players");
 	y += 8;
-	Draw_String (x, y, "\x1d\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1f "
+	draw_string (view, x, y, "\x1d\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1f "
 				 "\x1d\x1e\x1e\x1f \x1d\x1e\x1e\x1e\x1f "
 				 "\x1d\x1e\x1e\x1e\x1e\x1e\x1f");
 	y += 8;
@@ -906,18 +926,18 @@ Sbar_TeamOverlay (void)
 			pavg = 999;
 
 		snprintf (num, sizeof (num), "%3i/%3i/%3i", plow, pavg, phigh);
-		Draw_String (x, y, num);
+		draw_string (view, x, y, num);
 
 		// draw team
-		Draw_nString (x + 104, y, tm->team, 4);
+		draw_nstring (view, x + 104, y, tm->team, 4);
 
 		// draw total
 		snprintf (num, sizeof (num), "%5i", tm->frags);
-		Draw_String (x + 104 + 40, y, num);
+		draw_string (view, x + 104 + 40, y, num);
 
 		// draw players
 		snprintf (num, sizeof (num), "%5i", tm->players);
-		Draw_String (x + 104 + 88, y, num);
+		draw_string (view, x + 104 + 88, y, num);
 
 		if (player_team && strnequal (player_team->value, tm->team, 16)) {
 			Draw_Character (x + 104 - 8, y, 16);
@@ -927,7 +947,7 @@ Sbar_TeamOverlay (void)
 		y += 8;
 	}
 	y += 8;
-	Sbar_DeathmatchOverlay (y);
+	Sbar_DeathmatchOverlay (view, y);
 }
 
 static inline int
@@ -1058,7 +1078,7 @@ Sbar_LogFrags (void)
 }
 
 static void
-Sbar_Draw_DMO_Team_Ping (int l, int y, int skip)
+Sbar_Draw_DMO_Team_Ping (view_t *view, int l, int y, int skip)
 {
 	char		num[12];
 	int			fph, minutes, total, top, bottom, f, i, k, p, x;
@@ -1066,9 +1086,9 @@ Sbar_Draw_DMO_Team_Ping (int l, int y, int skip)
 
 	x = 4;
 //						0    40 64  104  152   192
-	Draw_String (x, y, "ping pl fph time frags team name");
+	draw_string (view, x, y, "ping pl fph time frags team name");
 	y += 8;
-	Draw_String (x, y, "\x1d\x1e\x1e\x1f \x1d\x1f \x1d\x1e\x1f "
+	draw_string (view, x, y, "\x1d\x1e\x1e\x1f \x1d\x1f \x1d\x1e\x1f "
 				 "\x1d\x1e\x1e\x1f \x1d\x1e\x1e\x1e\x1f \x1d\x1e\x1e\x1f "
 				 "\x1d\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1f");
 	y += 8;
@@ -1084,7 +1104,7 @@ Sbar_Draw_DMO_Team_Ping (int l, int y, int skip)
 		if (p < 0 || p > 999)
 			p = 999;
 		snprintf (num, sizeof (num), "%4i", p);
-		Draw_String (x, y, num);
+		draw_string (view, x, y, num);
 
  		// draw pl
 		p = s->pl;
@@ -1092,11 +1112,11 @@ Sbar_Draw_DMO_Team_Ping (int l, int y, int skip)
 		if (p > 25)
 			Draw_AltString (x + 32, y, num);
 		else
-			Draw_String (x + 32, y, num);
+			draw_string (view, x + 32, y, num);
 
 		if (s->spectator) {
-			Draw_String (x + 72, y, "(spectator)");
-			Draw_String (x + 184 + 40, y, s->name);			// draw name
+			draw_string (view, x + 72, y, "(spectator)");
+			draw_string (view, x + 184 + 40, y, s->name);			// draw name
 			y += skip;
 			continue;
 		}
@@ -1114,20 +1134,20 @@ Sbar_Draw_DMO_Team_Ping (int l, int y, int skip)
 		// draw fph
 		fph = calc_fph (f, total);
 		snprintf (num, sizeof (num), "%3i", fph);
-		Draw_String (x + 64, y, num);
+		draw_string (view, x + 64, y, num);
 		
 		//draw time
 		snprintf (num, sizeof (num), "%4i", minutes);
-		Draw_String (x + 96, y, num);
+		draw_string (view, x + 96, y, num);
 
 		// draw background
 		top = Sbar_ColorForMap (s->topcolor);
 		bottom = Sbar_ColorForMap (s->bottomcolor);
 		if (largegame)
-			Draw_Fill (x + 136, y + 1, 40, 3, top);
+			draw_fill (view, x + 136, y + 1, 40, 3, top);
 		else
-			Draw_Fill (x + 136, y, 40, 4, top);
-		Draw_Fill (x + 136, y + 4, 40, 4, bottom);
+			draw_fill (view, x + 136, y, 40, 4, top);
+		draw_fill (view, x + 136, y + 4, 40, 4, bottom);
 
 		// draw frags
 		if (k != cl.playernum) {
@@ -1135,16 +1155,16 @@ Sbar_Draw_DMO_Team_Ping (int l, int y, int skip)
 		} else {
 			snprintf (num, sizeof (num), "\x10%3i\x11", f);
 		}
-		Draw_nString (x + 136, y, num, 5);
+		draw_nstring (view, x + 136, y, num, 5);
 
-		Draw_nString (x + 184, y, s->team->value, 4);	// draw team
-		Draw_String (x + 184 + 40, y, s->name);			// draw name
+		draw_nstring (view, x + 184, y, s->team->value, 4);	// draw team
+		draw_string (view, x + 184 + 40, y, s->name);			// draw name
 		y += skip;
 	}
 }
 
 static void
-Sbar_Draw_DMO_Team_UID (int l, int y, int skip)
+Sbar_Draw_DMO_Team_UID (view_t *view, int l, int y, int skip)
 {
 	char		num[12];
 	int			fph, minutes, total, top, bottom, f, i, k, p, x;
@@ -1152,9 +1172,9 @@ Sbar_Draw_DMO_Team_UID (int l, int y, int skip)
 
 	x = 4;
 //						0    40 64  104  152   192
-	Draw_String (x, y, " uid pl fph time frags team name");
+	draw_string (view, x, y, " uid pl fph time frags team name");
 	y += 8;
-	Draw_String (x, y, "\x1d\x1e\x1e\x1f \x1d\x1f \x1d\x1e\x1f "
+	draw_string (view, x, y, "\x1d\x1e\x1e\x1f \x1d\x1f \x1d\x1e\x1f "
 				 "\x1d\x1e\x1e\x1f \x1d\x1e\x1e\x1e\x1f \x1d\x1e\x1e\x1f "
 				 "\x1d\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1f");
 	y += 8;
@@ -1168,7 +1188,7 @@ Sbar_Draw_DMO_Team_UID (int l, int y, int skip)
 		// draw userid
 		p = s->userid;
 		snprintf (num, sizeof (num), "%4i", p);
-		Draw_String (x, y, num);
+		draw_string (view, x, y, num);
 
  		// draw pl
 		p = s->pl;
@@ -1176,11 +1196,11 @@ Sbar_Draw_DMO_Team_UID (int l, int y, int skip)
 		if (p > 25)
 			Draw_AltString (x + 32, y, num);
 		else
-			Draw_String (x + 32, y, num);
+			draw_string (view, x + 32, y, num);
 
 		if (s->spectator) {
-			Draw_String (x + 72, y, "(spectator)");
-			Draw_String (x + 184 + 40, y, s->name);			// draw name
+			draw_string (view, x + 72, y, "(spectator)");
+			draw_string (view, x + 184 + 40, y, s->name);			// draw name
 			y += skip;
 			continue;
 		}
@@ -1198,20 +1218,20 @@ Sbar_Draw_DMO_Team_UID (int l, int y, int skip)
 		// draw fph
 		fph = calc_fph (f, total);
 		snprintf (num, sizeof (num), "%3i", fph);
-		Draw_String (x + 64, y, num);
+		draw_string (view, x + 64, y, num);
 		
 		//draw time
 		snprintf (num, sizeof (num), "%4i", minutes);
-		Draw_String (x + 96, y, num);
+		draw_string (view, x + 96, y, num);
 
 		// draw background
 		top = Sbar_ColorForMap (s->topcolor);
 		bottom = Sbar_ColorForMap (s->bottomcolor);
 		if (largegame)
-			Draw_Fill (x + 136, y + 1, 40, 3, top);
+			draw_fill (view, x + 136, y + 1, 40, 3, top);
 		else
-			Draw_Fill (x + 136, y, 40, 4, top);
-		Draw_Fill (x + 136, y + 4, 40, 4, bottom);
+			draw_fill (view, x + 136, y, 40, 4, top);
+		draw_fill (view, x + 136, y + 4, 40, 4, bottom);
 
 		// draw frags
 		if (k != cl.playernum) {
@@ -1219,16 +1239,16 @@ Sbar_Draw_DMO_Team_UID (int l, int y, int skip)
 		} else {
 			snprintf (num, sizeof (num), "\x10%3i\x11", f);
 		}
-		Draw_nString (x + 136, y, num, 5);
+		draw_nstring (view, x + 136, y, num, 5);
 
-		Draw_nString (x + 184, y, s->team->value, 4);	// draw team
-		Draw_String (x + 184 + 40, y, s->name);			// draw name
+		draw_nstring (view, x + 184, y, s->team->value, 4);	// draw team
+		draw_string (view, x + 184 + 40, y, s->name);			// draw name
 		y += skip;
 	}
 }
 
 static void
-Sbar_Draw_DMO_Team_Ping_UID (int l, int y, int skip)
+Sbar_Draw_DMO_Team_Ping_UID (view_t *view, int l, int y, int skip)
 {
 	char		num[12];
 	int			fph, minutes, total, top, bottom, f, i, k, p, x;
@@ -1236,9 +1256,9 @@ Sbar_Draw_DMO_Team_Ping_UID (int l, int y, int skip)
 
 	x = 4;
 //						0    40 64  104  152   192
-	Draw_String (x, y, "ping pl fph time frags team  uid name");
+	draw_string (view, x, y, "ping pl fph time frags team  uid name");
 	y += 8;
-	Draw_String (x, y, "\x1d\x1e\x1e\x1f \x1d\x1f \x1d\x1e\x1f "
+	draw_string (view, x, y, "\x1d\x1e\x1e\x1f \x1d\x1f \x1d\x1e\x1f "
 				 "\x1d\x1e\x1e\x1f \x1d\x1e\x1e\x1e\x1f "
 				 "\x1d\x1e\x1e\x1f \x1d\x1e\x1e\x1f "
 				 "\x1d\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1f");
@@ -1255,7 +1275,7 @@ Sbar_Draw_DMO_Team_Ping_UID (int l, int y, int skip)
 		if (p < 0 || p > 999)
 			p = 999;
 		snprintf (num, sizeof (num), "%4i", p);
-		Draw_String (x, y, num);
+		draw_string (view, x, y, num);
 
  		// draw pl
 		p = s->pl;
@@ -1263,14 +1283,14 @@ Sbar_Draw_DMO_Team_Ping_UID (int l, int y, int skip)
 		if (p > 25)
 			Draw_AltString (x + 32, y, num);
 		else
-			Draw_String (x + 32, y, num);
+			draw_string (view, x + 32, y, num);
 
 		if (s->spectator) {
-			Draw_String (x + 72, y, "(spectator)");
+			draw_string (view, x + 72, y, "(spectator)");
 			p = s->userid;
 			snprintf (num, sizeof (num), "%4i", p);
-			Draw_String (x + 184 + 40, y, num);				// draw uid
-			Draw_String (x + 184 + 80, y, s->name);			// draw name
+			draw_string (view, x + 184 + 40, y, num);				// draw uid
+			draw_string (view, x + 184 + 80, y, s->name);			// draw name
 			y += skip;
 			continue;
 		}
@@ -1288,20 +1308,20 @@ Sbar_Draw_DMO_Team_Ping_UID (int l, int y, int skip)
 		// draw fph
 		fph = calc_fph (f, total);
 		snprintf (num, sizeof (num), "%3i", fph);
-		Draw_String (x + 64, y, num);
+		draw_string (view, x + 64, y, num);
 		
 		//draw time
 		snprintf (num, sizeof (num), "%4i", minutes);
-		Draw_String (x + 96, y, num);
+		draw_string (view, x + 96, y, num);
 
 		// draw background
 		top = Sbar_ColorForMap (s->topcolor);
 		bottom = Sbar_ColorForMap (s->bottomcolor);
 		if (largegame)
-			Draw_Fill (x + 136, y + 1, 40, 3, top);
+			draw_fill (view, x + 136, y + 1, 40, 3, top);
 		else
-			Draw_Fill (x + 136, y, 40, 4, top);
-		Draw_Fill (x + 136, y + 4, 40, 4, bottom);
+			draw_fill (view, x + 136, y, 40, 4, top);
+		draw_fill (view, x + 136, y + 4, 40, 4, bottom);
 
 		// draw frags
 		if (k != cl.playernum) {
@@ -1309,19 +1329,19 @@ Sbar_Draw_DMO_Team_Ping_UID (int l, int y, int skip)
 		} else {
 			snprintf (num, sizeof (num), "\x10%3i\x11", f);
 		}
-		Draw_nString (x + 136, y, num, 5);
+		draw_nstring (view, x + 136, y, num, 5);
 
-		Draw_nString (x + 184, y, s->team->value, 4);	// draw team
+		draw_nstring (view, x + 184, y, s->team->value, 4);	// draw team
 		p = s->userid;
 		snprintf (num, sizeof (num), "%4i", p);
-		Draw_String (x + 184 + 40, y, num);				// draw uid
-		Draw_String (x + 184 + 80, y, s->name);			// draw name
+		draw_string (view, x + 184 + 40, y, num);				// draw uid
+		draw_string (view, x + 184 + 80, y, s->name);			// draw name
 		y += skip;
 	}
 }
 
 static void
-Sbar_Draw_DMO_Ping (int l, int y, int skip)
+Sbar_Draw_DMO_Ping (view_t *view, int l, int y, int skip)
 {
 	char		num[12];
 	int			fph, minutes, total, top, bottom, f, i, k, p, x;
@@ -1329,9 +1349,9 @@ Sbar_Draw_DMO_Ping (int l, int y, int skip)
 
 	x = 16;
 //						0    40 64  104  152
-	Draw_String (x, y, "ping pl fph time frags name");
+	draw_string (view, x, y, "ping pl fph time frags name");
 	y += 8;
-	Draw_String (x, y, "\x1d\x1e\x1e\x1f \x1d\x1f \x1d\x1e\x1f "
+	draw_string (view, x, y, "\x1d\x1e\x1e\x1f \x1d\x1f \x1d\x1e\x1f "
 				 "\x1d\x1e\x1e\x1f \x1d\x1e\x1e\x1e\x1f "
 				 "\x1d\x1e\x1e\x1e\x1e\x1e\x1e"
 				 "\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1f");
@@ -1348,7 +1368,7 @@ Sbar_Draw_DMO_Ping (int l, int y, int skip)
 		if (p < 0 || p > 999)
 			p = 999;
 		snprintf (num, sizeof (num), "%4i", p);
-		Draw_String (x, y, num);
+		draw_string (view, x, y, num);
 
  		// draw pl
 		p = s->pl;
@@ -1356,11 +1376,11 @@ Sbar_Draw_DMO_Ping (int l, int y, int skip)
 		if (p > 25)
 			Draw_AltString (x + 32, y, num);
 		else
-			Draw_String (x + 32, y, num);
+			draw_string (view, x + 32, y, num);
 
 		if (s->spectator) {
-			Draw_String (x + 72, y, "(spectator)");
-			Draw_String (x + 184, y, s->name);			// draw name
+			draw_string (view, x + 72, y, "(spectator)");
+			draw_string (view, x + 184, y, s->name);			// draw name
 			y += skip;
 			continue;
 		}
@@ -1378,20 +1398,20 @@ Sbar_Draw_DMO_Ping (int l, int y, int skip)
 		// draw fph
 		fph = calc_fph (f, total);
 		snprintf (num, sizeof (num), "%3i", fph);
-		Draw_String (x + 64, y, num);
+		draw_string (view, x + 64, y, num);
 		
 		//draw time
 		snprintf (num, sizeof (num), "%4i", minutes);
-		Draw_String (x + 96, y, num);
+		draw_string (view, x + 96, y, num);
 
 		// draw background
 		top = Sbar_ColorForMap (s->topcolor);
 		bottom = Sbar_ColorForMap (s->bottomcolor);
 		if (largegame)
-			Draw_Fill (x + 136, y + 1, 40, 3, top);
+			draw_fill (view, x + 136, y + 1, 40, 3, top);
 		else
-			Draw_Fill (x + 136, y, 40, 4, top);
-		Draw_Fill (x + 136, y + 4, 40, 4, bottom);
+			draw_fill (view, x + 136, y, 40, 4, top);
+		draw_fill (view, x + 136, y + 4, 40, 4, bottom);
 
 		// draw frags
 		if (k != cl.playernum) {
@@ -1399,24 +1419,24 @@ Sbar_Draw_DMO_Ping (int l, int y, int skip)
 		} else {
 			snprintf (num, sizeof (num), "\x10%3i\x11", f);
 		}
-		Draw_nString (x + 136, y, num, 5);
+		draw_nstring (view, x + 136, y, num, 5);
 
-		Draw_String (x + 184, y, s->name);				// draw name
+		draw_string (view, x + 184, y, s->name);				// draw name
 		y += skip;
 	}
 }
 
 static void
-Sbar_Draw_DMO_UID (int l, int y, int skip)
+Sbar_Draw_DMO_UID (view_t *view, int l, int y, int skip)
 {
 	char		num[12];
 	int			fph, minutes, total, top, bottom, f, i, k, p, x;
 	player_info_t *s;
 
 	x = 16;
-	Draw_String (x, y, " uid pl fph time frags name");
+	draw_string (view, x, y, " uid pl fph time frags name");
 	y += 8;
-	Draw_String (x, y, "\x1d\x1e\x1e\x1f \x1d\x1f \x1d\x1e\x1f "
+	draw_string (view, x, y, "\x1d\x1e\x1e\x1f \x1d\x1f \x1d\x1e\x1f "
 				 "\x1d\x1e\x1e\x1f \x1d\x1e\x1e\x1e\x1f "
 				 "\x1d\x1e\x1e\x1e\x1e\x1e\x1e"
 				 "\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1f");
@@ -1437,7 +1457,7 @@ Sbar_Draw_DMO_UID (int l, int y, int skip)
 				p = 999;
 		}
 		snprintf (num, sizeof (num), "%4i", p);
-		Draw_String (x, y, num);
+		draw_string (view, x, y, num);
 
 		// draw pl
 		p = s->pl;
@@ -1445,11 +1465,11 @@ Sbar_Draw_DMO_UID (int l, int y, int skip)
 		if (p > 25)
 			Draw_AltString (x + 32, y, num);
 		else
-			Draw_String (x + 32, y, num);
+			draw_string (view, x + 32, y, num);
 
 		if (s->spectator) {
-			Draw_String (x + 72, y, "(spectator)");
-			Draw_String (x + 184, y, s->name);			// draw name
+			draw_string (view, x + 72, y, "(spectator)");
+			draw_string (view, x + 184, y, s->name);			// draw name
 			y += skip;
 			continue;
 		}
@@ -1467,20 +1487,20 @@ Sbar_Draw_DMO_UID (int l, int y, int skip)
 		// draw fph
 		fph = calc_fph (f, total);
 		snprintf (num, sizeof (num), "%3i", fph);
-		Draw_String (x + 64, y, num);
+		draw_string (view, x + 64, y, num);
                 
 		//draw time
 		snprintf (num, sizeof (num), "%4i", minutes);
-		Draw_String (x + 96, y, num);
+		draw_string (view, x + 96, y, num);
 
 		// draw background
 		top = Sbar_ColorForMap (s->topcolor);
 		bottom = Sbar_ColorForMap (s->bottomcolor);
 		if (largegame)
-			Draw_Fill (x + 136, y + 1, 40, 3, top);
+			draw_fill (view, x + 136, y + 1, 40, 3, top);
 		else
-			Draw_Fill (x + 136, y, 40, 4, top);
-		Draw_Fill (x + 136, y + 4, 40, 4, bottom);
+			draw_fill (view, x + 136, y, 40, 4, top);
+		draw_fill (view, x + 136, y + 4, 40, 4, bottom);
 
 		// draw frags
 		if (k != cl.playernum) {
@@ -1488,24 +1508,24 @@ Sbar_Draw_DMO_UID (int l, int y, int skip)
 		} else {
 			snprintf (num, sizeof (num), "\x10%3i\x11", f);
 		}
-		Draw_nString (x + 136, y, num, 5);
+		draw_nstring (view, x + 136, y, num, 5);
 
-		Draw_String (x + 184, y, s->name);				// draw name
+		draw_string (view, x + 184, y, s->name);				// draw name
 		y += skip;
 	}
 }
 
 static void
-Sbar_Draw_DMO_Ping_UID (int l, int y, int skip)
+Sbar_Draw_DMO_Ping_UID (view_t *view, int l, int y, int skip)
 {
 	char		num[12];
 	int			fph, minutes, total, top, bottom, f, i, k, p, x;
 	player_info_t *s;
 
 	x = 16;
-	Draw_String (x, y, "ping pl fph time frags  uid name");
+	draw_string (view, x, y, "ping pl fph time frags  uid name");
 	y += 8;
-	Draw_String (x, y, "\x1d\x1e\x1e\x1f \x1d\x1f \x1d\x1e\x1f "
+	draw_string (view, x, y, "\x1d\x1e\x1e\x1f \x1d\x1f \x1d\x1e\x1f "
 				 "\x1d\x1e\x1e\x1f \x1d\x1e\x1e\x1e\x1f "
 				 "\x1d\x1e\x1e\x1f \x1d\x1e\x1e\x1e\x1e\x1e\x1e"
 				 "\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1f");
@@ -1522,7 +1542,7 @@ Sbar_Draw_DMO_Ping_UID (int l, int y, int skip)
 		if (p < 0 || p > 999)
 			p = 999;
 		snprintf (num, sizeof (num), "%4i", p);
-		Draw_String (x, y, num);
+		draw_string (view, x, y, num);
 
 		// draw pl
 		p = s->pl;
@@ -1530,14 +1550,14 @@ Sbar_Draw_DMO_Ping_UID (int l, int y, int skip)
 		if (p > 25)
 			Draw_AltString (x + 32, y, num);
 		else
-			Draw_String (x + 32, y, num);
+			draw_string (view, x + 32, y, num);
 
 		if (s->spectator) {
-			Draw_String (x + 72, y, "(spectator)");
+			draw_string (view, x + 72, y, "(spectator)");
 			p = s->userid;
 			snprintf (num, sizeof (num), "%4i", p);
-			Draw_String (x + 184, y, num);
-			Draw_String (x + 184 + 40, y, s->name);
+			draw_string (view, x + 184, y, num);
+			draw_string (view, x + 184 + 40, y, s->name);
 			y += skip;
 			continue;
 		}
@@ -1555,20 +1575,20 @@ Sbar_Draw_DMO_Ping_UID (int l, int y, int skip)
 		// draw fph
 		fph = calc_fph (f, total);
 		snprintf (num, sizeof (num), "%3i", fph);
-		Draw_String (x + 64, y, num);
+		draw_string (view, x + 64, y, num);
 
 		//draw time
 		snprintf (num, sizeof (num), "%4i", minutes);
-		Draw_String (x + 96, y, num);
+		draw_string (view, x + 96, y, num);
 
 		// draw background
 		top = Sbar_ColorForMap (s->topcolor);
 		bottom = Sbar_ColorForMap (s->bottomcolor);
 		if (largegame)
-			Draw_Fill (x + 136, y + 1, 40, 3, top);
+			draw_fill (view, x + 136, y + 1, 40, 3, top);
 		else
-			Draw_Fill (x + 136, y, 40, 4, top);
-		Draw_Fill (x + 136, y + 4, 40, 4, bottom);
+			draw_fill (view, x + 136, y, 40, 4, top);
+		draw_fill (view, x + 136, y + 4, 40, 4, bottom);
 
 		// draw frags
 		if (k != cl.playernum) {
@@ -1576,12 +1596,12 @@ Sbar_Draw_DMO_Ping_UID (int l, int y, int skip)
 		} else {
 			snprintf (num, sizeof (num), "\x10%3i\x11", f);
 		}
-		Draw_nString (x + 136, y, num, 5);
+		draw_nstring (view, x + 136, y, num, 5);
 
 		p = s->userid;
 		snprintf (num, sizeof (num), "%4i", p);
-		Draw_String (x + 184, y, num);						// draw UID
-		Draw_String (x + 184 + 40, y, s->name);				// draw name
+		draw_string (view, x + 184, y, num);						// draw UID
+		draw_string (view, x + 184 + 40, y, s->name);				// draw name
 		y += skip;
 	}
 }
@@ -1617,11 +1637,10 @@ Sbar_DMO_Init_f (cvar_t *var)
 	ping time frags name
 */
 void
-Sbar_DeathmatchOverlay (int start)
+Sbar_DeathmatchOverlay (view_t *view, int start)
 {
 	int			l, y;
 	int			skip = 10;
-	qpic_t     *pic;
 
 	if (vid.width < 244) // FIXME: magic number, gained through experimentation
 		return;
@@ -1642,8 +1661,7 @@ Sbar_DeathmatchOverlay (int start)
 	scr_fullupdate = 0;
 
 	if (!start) {
-		pic = Draw_CachePic ("gfx/ranking.lmp", true);
-		Draw_Pic (160 - pic->width / 2, 0, pic);
+		draw_cachepic (view, 0, 0, "gfx/ranking.lmp");
 		y = 24;
 	} else
 		y = start;
@@ -1654,14 +1672,15 @@ Sbar_DeathmatchOverlay (int start)
 	// draw the text
 	l = scoreboardlines;
 
-	Sbar_Draw_DMO_func (l, y, skip);	// func ptr, avoids absurd if testing
+	// func ptr, avoids absurd if testing
+	Sbar_Draw_DMO_func (view, l, y, skip);
 
 	if (y >= (int) vid.height - 10)		// we ran over the screen size, squish
 		largegame = true;
 }
 
 /*
-	Sbar_MiniDeathmatchOverlay
+	draw_minifrags
 
 	frags name
 	frags team name
@@ -1791,20 +1810,17 @@ Sbar_IntermissionOverlay (void)
 	scr_fullupdate = 0;
 
 	if (cl.teamplay > 0 && !sb_showscores)
-		Sbar_TeamOverlay ();
+		Sbar_TeamOverlay (overlay_view);
 	else
-		Sbar_DeathmatchOverlay (0);
+		Sbar_DeathmatchOverlay (overlay_view, 0);
 }
 
 void
 Sbar_FinaleOverlay (void)
 {
-	qpic_t     *pic;
-
 	scr_copyeverything = 1;
 
-	pic = Draw_CachePic ("gfx/finale.lmp", true);
-	Draw_Pic ((vid.width - pic->width) / 2, 16, pic);
+	draw_cachepic (overlay_view, 0, 16, "gfx/finale.lmp");
 }
 
 static void
@@ -1812,12 +1828,12 @@ init_views (void)
 {
 	view_t     *view;
 
-	if (vid.width < 512) {
+	if (vid.conwidth < 512) {
 		sbar_view = view_new (0, 0, 320, 48, grav_south);
 
 		frags_view = view_new (0, 0, 130, 8, grav_northeast);
 		frags_view->draw = draw_frags;
-	} else if (vid.width < 640) {
+	} else if (vid.conwidth < 640) {
 		sbar_view = view_new (0, 0, 512, 48, grav_south);
 		minifrags_view = view_new (320, 0, 192, 48, grav_southwest);
 		minifrags_view->draw = draw_minifrags;
@@ -1841,6 +1857,12 @@ init_views (void)
 		view->resize_y = 1;
 		view_add (sbar_view, view);
 	}
+
+	if (vid.conheight > 300)
+		overlay_view = view_new (0, 0, 320, 300, grav_center);
+	else
+		overlay_view = view_new (0, 0, 320, vid.conheight, grav_center);
+	overlay_view->draw = draw_overlay;
 
 	inventory_view = view_new (0, 0, 320, 24, grav_northwest);
 	inventory_view->draw = draw_inventory;
@@ -1888,8 +1910,10 @@ init_views (void)
 		view_add (sbar_view, view);
 	}
 
-	if (con_module)
+	if (con_module) {
+		view_insert (con_module->data->console->view, overlay_view, 0);
 		view_insert (con_module->data->console->view, sbar_view, 0);
+	}
 }
 
 void

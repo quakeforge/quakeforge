@@ -92,6 +92,8 @@ qboolean    sbar_centered;
 
 cvar_t     *cl_sbar;
 
+static void Sbar_DeathmatchOverlay (int start);
+
 static void
 calc_sb_lines (cvar_t *var)
 {
@@ -957,80 +959,6 @@ Sbar_DeathmatchOverlay (int start)
 		Draw_String (x + 64, y, s->name);
 
 		y += 10;
-	}
-}
-
-
-void
-Sbar_MiniDeathmatchOverlay (void)
-{
-	int         i, k, l;
-	int         top, bottom;
-	int         x, y, f;
-	char        num[12];
-	scoreboard_t *s;
-	int         numlines;
-
-	if (vid.width < 512 || !sb_lines)
-		return;
-
-	scr_copyeverything = 1;
-	scr_fullupdate = 0;
-
-	// scores
-	Sbar_SortFrags ();
-
-	// draw the text
-	l = scoreboardlines;
-	y = vid.height - sb_lines;
-	numlines = sb_lines / 8;
-	if (numlines < 3)
-		return;
-
-	// find us
-	for (i = 0; i < scoreboardlines; i++)
-		if (fragsort[i] == cl.viewentity - 1)
-			break;
-
-	if (i == scoreboardlines)			// we're not there
-		i = 0;
-	else								// figure out start
-		i = i - numlines / 2;
-
-	if (i > scoreboardlines - numlines)
-		i = scoreboardlines - numlines;
-	i = max (i, 0);
-
-	x = 324;
-	for (; i < scoreboardlines && y < (int) vid.height - 8; i++) {
-		k = fragsort[i];
-		s = &cl.scores[k];
-		if (!s->name[0])
-			continue;
-
-		// draw background
-		top = s->colors & 0xf0;
-		bottom = (s->colors & 15) << 4;
-		top = Sbar_ColorForMap (top);
-		bottom = Sbar_ColorForMap (bottom);
-
-		Draw_Fill (x, y + 1, 40, 3, top);
-		Draw_Fill (x, y + 4, 40, 4, bottom);
-
-		// draw number
-		f = s->frags;
-		if (k != cl.viewentity - 1) {
-			snprintf (num, sizeof (num), " %3i ", f);
-		} else {
-			snprintf (num, sizeof (num), "\x10%3i\x11", f);
-		}
-
-		Draw_nString (x, y, num, 3);
-		
-		// draw name
-		Draw_String (x + 48, y, s->name);
-
-		y += 8;
 	}
 }
 
