@@ -421,7 +421,9 @@ R_AliasTransformFinalVert (finalvert_t *fv, auxvert_t *av,
 }
 
 
+#ifdef PIC
 #undef USE_INTEL_ASM //XXX asm pic hack
+#endif
 
 #ifndef USE_INTEL_ASM
 void

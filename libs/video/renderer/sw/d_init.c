@@ -129,7 +129,9 @@ D_SetupFrame (void)
 	for (i = 0; i < (NUM_MIPS - 1); i++)
 		d_scalemip[i] = basemip[i] * d_mipscale->value;
 
+#ifdef PIC
 #undef USE_INTEL_ASM //XXX asm pic hack
+#endif
 
 #ifdef USE_INTEL_ASM
 	if (d_subdiv16->int_val)

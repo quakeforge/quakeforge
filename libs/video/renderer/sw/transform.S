@@ -32,7 +32,9 @@
 #include "asm_i386.h"
 #include "quakeasm.h"
 
+#ifdef PIC
 #undef USE_INTEL_ASM //XXX asm pic hack
+#endif
 
 #ifdef USE_INTEL_ASM
 

@@ -76,7 +76,9 @@ int         r_ceilv1;
 qboolean    r_lastvertvalid;
 
 
+#ifdef PIC
 #undef USE_INTEL_ASM //XXX asm pic hack
+#endif
 
 #ifndef USE_INTEL_ASM
 

@@ -172,7 +172,9 @@ R_Init (void)
 	r_refdef.yOrigin = YCENTERING;
 
 // TODO: collect 386-specific code in one place
+#ifdef PIC
 #undef USE_INTEL_ASM //XXX asm pic hack
+#endif
 
 #ifdef USE_INTEL_ASM
 	Sys_MakeCodeWriteable ((long) R_EdgeCodeStart,

@@ -46,7 +46,9 @@ short      *zspantable[MAXHEIGHT];
 void
 D_Patch (void)
 {
+#ifdef PIC
 #undef USE_INTEL_ASM //XXX asm pic hack
+#endif
 
 #ifdef USE_INTEL_ASM
 

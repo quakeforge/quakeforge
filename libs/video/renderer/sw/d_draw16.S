@@ -35,7 +35,9 @@
 #include "asm_draw.h"
 #include "d_ifacea.h"
 
+#ifdef PIC
 #undef USE_INTEL_ASM //XXX asm pic hack
+#endif
 
 #ifdef USE_INTEL_ASM
 
