@@ -756,7 +756,7 @@ CL_ParsePlayerinfo (void)
 
 	VectorCopy (state->command.angles, state->viewangles);
 
-	if (flags & PF_QF) {
+	if (cl.stdver >= 2.0 && (flags & PF_QF)) {
 		// QSG2
 		int         bits;
 		byte        val;
