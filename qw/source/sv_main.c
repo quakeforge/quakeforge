@@ -88,8 +88,6 @@ cvar_t     *fs_usercfg;
 cvar_t     *sv_mintic;					// bound the size of the
 cvar_t     *sv_maxtic;					// physics time tic
 
-cvar_t     *developer;					// show extra messages
-
 cvar_t     *timeout;					// seconds without any message
 cvar_t     *zombietime;					// seconds to sink messages after
 
@@ -1525,9 +1523,6 @@ SV_InitLocal (void)
 		"3 Leaves weapons on the map. You can only pick up a weapon once. Picked up items will respawn.");
 	spawn = Cvar_Get ("spawn", "0", CVAR_SERVERINFO, "Spawn the player entity");
 	watervis = Cvar_Get ("watervis", "0", CVAR_SERVERINFO, "Toggle the use of r_watervis by OpenGL clients");
-
-	developer = Cvar_Get ("developer", "0", CVAR_NONE, 
-		"Toggle verbose output of server information. Useful for diagnosing problems and learning more about the server");
 
 	timeout = Cvar_Get ("timeout", "65", CVAR_NONE, 
 		"Sets the amount of time in seconds before a client is considered disconnected if the server does not receive a packet");

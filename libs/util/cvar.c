@@ -49,6 +49,7 @@
 #include "QF/hash.h"
 #include "QF/qargs.h"
 
+cvar_t          *developer;
 cvar_t			*cvar_vars;
 char			*cvar_null_string = "";
 extern cvar_t	*developer;

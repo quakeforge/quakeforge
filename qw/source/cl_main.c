@@ -195,7 +195,6 @@ byte       *host_colormap;
 cvar_t     *host_speeds;				// set for running times
 cvar_t     *show_fps;					// set for running times
 cvar_t     *show_time;
-cvar_t     *developer;
 cvar_t     *cl_demospeed;
 
 int         fps_count;
@@ -1208,8 +1207,6 @@ CL_Init_Cvars (void)
 						  "display the current time");
 	host_speeds = Cvar_Get ("host_speeds", "0", CVAR_NONE,
 							"display host processing times");
-	developer = Cvar_Get ("developer", "0", CVAR_NONE,
-						  "show info interesting to developers");
 	cl_demospeed = Cvar_Get ("cl_demospeed", "1.0", CVAR_NONE,
 							 "adjust demo playback speed. 1.0 = normal, < 1 slow-mo, > 1 timelaps");
 	// Misty: Turn on or off screen filling colors for powerups among other things. 

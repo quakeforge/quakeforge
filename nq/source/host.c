@@ -103,8 +103,6 @@ cvar_t     *teamplay;
 cvar_t     *samelevel;
 cvar_t     *noexit;
 
-cvar_t     *developer;
-
 cvar_t     *skill;
 cvar_t     *deathmatch;
 cvar_t     *coop;
@@ -256,8 +254,6 @@ Host_InitLocal (void)
 	samelevel = Cvar_Get ("samelevel", "0", CVAR_NONE, "None");
 	noexit = Cvar_Get ("noexit", "0", CVAR_SERVERINFO, "None");
 	skill = Cvar_Get ("skill", "1", CVAR_NONE, "0 - 3");
-	developer =
-		Cvar_Get ("developer", "0", CVAR_NONE, "should be 0 for release!");
 	deathmatch = Cvar_Get ("deathmatch", "0", CVAR_NONE, "0, 1, or 2");
 	coop = Cvar_Get ("coop", "0", CVAR_NONE, "0 or 1");
 
