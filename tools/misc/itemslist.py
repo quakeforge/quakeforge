@@ -101,18 +101,6 @@ for ent in entity_list:
 		weapon = ent.classname[7:]
 		weapons[weapon] += 1
 
-# convert 0 to None
-for key in weapons.keys ():
-	if not weapons[key]:
-		weapons[key] = None
-for key in artifacts.keys ():
-	if not artifacts[key]:
-		artifacts[key] = None
-for key in items.keys ():
-	for i in range (len (items[key])):
-		if not items[key][i]:
-			items[key][i] = None
-
 print "Lightning Gun    :", weapons["lightning"]
 print "6 cells          :", items["cells"][0]
 print "12 cells         :", items["cells"][1]
