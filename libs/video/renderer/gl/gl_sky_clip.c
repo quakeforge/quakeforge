@@ -263,7 +263,7 @@ set_vertex (struct box_def *box, int face, int ind, const vec3_t v)
 
 	append a vertex to the poly vertex list.
 */
-static void
+static inline void
 add_vertex (struct box_def *box, int face, const vec3_t v)
 {
 	set_vertex (box, face, box->face[face].poly.numverts++, v);

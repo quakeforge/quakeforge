@@ -64,7 +64,6 @@ int         alphaskytexture;
 qboolean    skyloaded = false;
 
 
-
 void
 R_LoadSkys (const char *skyname)
 {
