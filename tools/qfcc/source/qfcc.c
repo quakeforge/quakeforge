@@ -551,9 +551,11 @@ separate_compile (void)
 		linker_begin ();
 		for (file = source_files; *file; file++) {
 			if (strncmp (*file, "-l", 2))
-				linker_add_object_file (*file);
+				err = linker_add_object_file (*file);
 			else
-				linker_add_lib (*file + 2);
+				err = linker_add_lib (*file + 2);
+			if (err)
+				return err;
 		}
 		qfo = linker_finish ();
 		if (qfo) {

@@ -566,14 +566,14 @@ linker_add_qfo (qfo_t *qfo)
 	add_lines (qfo);
 }
 
-void
+int
 linker_add_object_file (const char *filename)
 {
 	qfo_t      *qfo;
 
 	qfo = qfo_open (filename);
 	if (!qfo)
-		return;  
+		return 1;
 
 	if (options.verbosity >= 2)
 		puts (filename);
@@ -581,9 +581,10 @@ linker_add_object_file (const char *filename)
 	linker_add_qfo (qfo);
 	
 	qfo_delete (qfo);
+	return 0;
 }
 
-void
+int
 linker_add_lib (const char *libname)
 {
 	pack_t     *pack = pack_open (libname);
@@ -591,7 +592,7 @@ linker_add_lib (const char *libname)
 	int         did_something;
 
 	if (!pack)
-		return;
+		return 1;
 	do {
 		did_something = 0;
 		for (i = 0; i < pack->numfiles; i++) {
@@ -605,6 +606,9 @@ linker_add_lib (const char *libname)
 			qfo = qfo_read (f);
 			Qclose (f);
 			close (fd);
+
+			if (!qfo)
+				return 1;
 
 			for (j = 0; j < qfo->num_defs; j++) {
 				qfo_def_t  *def = qfo->defs + j;
@@ -623,6 +627,7 @@ linker_add_lib (const char *libname)
 		}
 	} while (did_something);
 	pack_del (pack);
+	return 0;
 }
 
 qfo_t *

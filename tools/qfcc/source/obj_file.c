@@ -339,7 +339,6 @@ qfo_read (VFile *file)
 
 	if (strcmp (hdr.qfo, QFO)) {
 		fprintf (stderr, "not a qfo file\n");
-		Qclose (file);
 		return 0;
 	}
 
@@ -361,7 +360,6 @@ qfo_read (VFile *file)
 		fprintf (stderr, "can't read version %x.%03x.%03x\n",
 				 (hdr.version >> 24) & 0xff, (hdr.version >> 12) & 0xfff,
 				 hdr.version & 0xfff);
-		Qclose (file);
 		free (qfo);
 		return 0;
 	}
@@ -374,7 +372,8 @@ qfo_read (VFile *file)
 	qfo->relocs = malloc (qfo->num_relocs * sizeof (qfo_reloc_t));
 	qfo->defs = malloc (qfo->num_defs * sizeof (qfo_def_t));
 	qfo->funcs = malloc (qfo->num_funcs * sizeof (qfo_func_t));
-	qfo->lines = malloc (qfo->num_lines * sizeof (pr_lineno_t));
+	if (qfo->num_lines)
+		qfo->lines = malloc (qfo->num_lines * sizeof (pr_lineno_t));
 	qfo->types = malloc (qfo->types_size);
 
 	Qread (file, qfo->code, qfo->code_size * sizeof (dstatement_t));
@@ -463,8 +462,10 @@ init_space (int size, pr_type_t *data)
 	defspace_t *space = new_defspace ();
 	space->size = size;
 	space->max_size = RUP (space->size, 65536);
+	if (!space->max_size)
+		space->max_size=65536;
+	space->data = malloc (space->max_size * sizeof (pr_type_t));
 	if (size && data) {
-		space->data = malloc (space->max_size * sizeof (pr_type_t));
 		memcpy (space->data, data, size * sizeof (pr_type_t));
 	}
 	return space;
@@ -478,9 +479,10 @@ qfo_to_progs (qfo_t *qfo, pr_info_t *pr)
 	qfo_func_t *qf;
 	def_t      *pd;
 	qfo_def_t  *qd;
-	reloc_t    *relocs;
+	reloc_t    *relocs = 0;
 
-	relocs = calloc (qfo->num_relocs, sizeof (reloc_t));
+	if (qfo->num_relocs)
+		relocs = calloc (qfo->num_relocs, sizeof (reloc_t));
 	for (i = 0; i < qfo->num_relocs; i++) {
 		if (i + 1 < qfo->num_relocs)
 			relocs[i].next = &relocs[i + 1];
@@ -498,7 +500,8 @@ qfo_to_progs (qfo_t *qfo, pr_info_t *pr)
 	pr->entity_data = new_defspace ();
 	pr->scope = new_scope (sc_global, pr->near_data, 0);
 	pr->scope->num_defs = qfo->num_defs;
-	pr->scope->head = calloc (pr->scope->num_defs, sizeof (def_t));
+	if (qfo->num_defs)
+		pr->scope->head = calloc (pr->scope->num_defs, sizeof (def_t));
 	for (i = 0, pd = pr->scope->head, qd = qfo->defs;
 		 i < pr->scope->num_defs; i++, pd++, qd++) {
 		*pr->scope->tail = pd;
@@ -529,7 +532,8 @@ qfo_to_progs (qfo_t *qfo, pr_info_t *pr)
 	}
 
 	pr->num_functions = qfo->num_funcs + 1;
-	pr->func_head = calloc (qfo->num_funcs, sizeof (function_t));
+	if (qfo->num_funcs)
+		pr->func_head = calloc (qfo->num_funcs, sizeof (function_t));
 	pr->func_tail = &pr->func_head;
 	for (i = 0, pf = pr->func_head, qf = qfo->funcs;
 		 i < qfo->num_funcs; i++, pf++, qf++) {
