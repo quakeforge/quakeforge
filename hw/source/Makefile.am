@@ -41,7 +41,7 @@ common_ldflags= -export-dynamic
 
 hw_master_SOURCES=	master.c
 hw_master_LDADD=	$(top_builddir)/libs/net/libnet_chan.la $(SERVER_PLUGIN_STATIC_LIBS) $(top_builddir)/libs/console/libQFconsole.la $(top_builddir)/libs/util/libQFutil.la $(NET_LIBS)
-hw_master_LDFLAGS=	$(common_ldflags) -static
+hw_master_LDFLAGS=	$(common_ldflags)
 
 # Kill the temp files, hopefully.
 CLEANFILES	= *.i *.s $(YACCLEX_CLEANFILES)
