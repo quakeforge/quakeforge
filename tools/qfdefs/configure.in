@@ -31,6 +31,8 @@ fi
 
 
 dnl Checks for libraries.
+AC_CHECK_LIB(z, gztell,,
+)
 
 dnl Checks for header files.
 AC_HEADER_STDC
