@@ -87,6 +87,10 @@ R_RemoveEfrags (entity_t *ent)
 	ent->efrag = NULL;
 }
 
+#define NODE_STACK_SIZE 1024
+static mnode_t *node_stack[NODE_STACK_SIZE];
+static mnode_t **node_ptr = node_stack + NODE_STACK_SIZE;
+
 void
 R_SplitEntityOnNode (mnode_t *node)
 {
@@ -95,56 +99,61 @@ R_SplitEntityOnNode (mnode_t *node)
 	mleaf_t    *leaf;
 	int         sides;
 
-	if (node->contents == CONTENTS_SOLID) {
-		return;
-	}
+	*--node_ptr = 0;
 
-	// add an efrag if the node is a leaf
-	if (node->contents < 0) {
-		if (!r_pefragtopnode)
-			r_pefragtopnode = node;
+	while (node) {
+		// add an efrag if the node is a leaf
+		if (__builtin_expect (node->contents < 0, 0)) {
+			if (!r_pefragtopnode)
+				r_pefragtopnode = node;
 
-		leaf = (mleaf_t *) node;
+			leaf = (mleaf_t *) node;
 
-		// grab an efrag off the free list
-		ef = r_free_efrags;
-		if (!ef) {
-			Con_Printf ("Too many efrags!\n");
-			return;						// no free fragments...
+			// grab an efrag off the free list
+			ef = r_free_efrags;
+			if (__builtin_expect (!ef, 0)) {
+				Con_Printf ("Too many efrags!\n");
+				return;						// no free fragments...
+			}
+			r_free_efrags = r_free_efrags->entnext;
+
+			ef->entity = r_addent;
+
+			// add the entity link  
+			*lastlink = ef;
+			lastlink = &ef->entnext;
+			ef->entnext = NULL;
+
+			// set the leaf links
+			ef->leaf = leaf;
+			ef->leafnext = leaf->efrags;
+			leaf->efrags = ef;
+
+			node = *node_ptr++;
+		} else {
+			// NODE_MIXED
+			splitplane = node->plane;
+			sides = BOX_ON_PLANE_SIDE (r_emins, r_emaxs, splitplane);
+
+			if (sides == 3) {
+				// split on this plane
+				// if this is the first splitter of this bmodel, remember it
+				if (!r_pefragtopnode)
+					r_pefragtopnode = node;
+			}
+			// recurse down the contacted sides
+			if (sides & 1 && node->children[0]->contents != CONTENTS_SOLID) {
+				if (sides & 2 && node->children[1]->contents != CONTENTS_SOLID)
+					*--node_ptr = node->children[1];
+				node = node->children[0];
+			} else {
+				if (sides & 2 && node->children[1]->contents != CONTENTS_SOLID)
+					node = node->children[1];
+				else
+					node = *node_ptr++;
+			}
 		}
-		r_free_efrags = r_free_efrags->entnext;
-
-		ef->entity = r_addent;
-
-		// add the entity link  
-		*lastlink = ef;
-		lastlink = &ef->entnext;
-		ef->entnext = NULL;
-
-		// set the leaf links
-		ef->leaf = leaf;
-		ef->leafnext = leaf->efrags;
-		leaf->efrags = ef;
-
-		return;
 	}
-
-	// NODE_MIXED
-	splitplane = node->plane;
-	sides = BOX_ON_PLANE_SIDE (r_emins, r_emaxs, splitplane);
-
-	if (sides == 3) {
-		// split on this plane
-		// if this is the first splitter of this bmodel, remember it
-		if (!r_pefragtopnode)
-			r_pefragtopnode = node;
-	}
-	// recurse down the contacted sides
-	if (sides & 1)
-		R_SplitEntityOnNode (node->children[0]);
-
-	if (sides & 2)
-		R_SplitEntityOnNode (node->children[1]);
 }
 
 void

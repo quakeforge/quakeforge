@@ -31,6 +31,7 @@
 
 #ifndef __GNUC__
 # define __attribute__(x)
+# define __builtin_expect(x,c) x
 #endif
 
 #endif	// __gcc_attr_h
