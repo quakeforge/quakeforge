@@ -51,7 +51,6 @@ pack_del (pack_t *pack)
 pack_t *
 pack_open (const char *name)
 {
-	dpackheader_t header;
 	pack_t     *pack = pack_new (name);
 	int         i;
 
@@ -61,20 +60,21 @@ pack_open (const char *name)
 	if (!pack->handle) {
 		goto error;
 	}
-	if (fread (&header, 1, sizeof (header), pack->handle) != sizeof (header)) {
+	if (fread (&pack->header, 1, sizeof (pack->header), pack->handle)
+		!= sizeof (pack->header)) {
 		fprintf (stderr, "%s: not a pack file", name);
 		goto error;
 	}
-	if (strncmp (header.id, "PACK", 4)) {
+	if (strncmp (pack->header.id, "PACK", 4)) {
 		fprintf (stderr, "%s: not a pack file", name);
 		goto error;
 	}
 
-	header.dirofs = LittleLong (header.dirofs);
-	header.dirlen = LittleLong (header.dirlen);
+	pack->header.dirofs = LittleLong (pack->header.dirofs);
+	pack->header.dirlen = LittleLong (pack->header.dirlen);
 
-	pack->numfiles = header.dirlen / sizeof (dpackfile_t);
-	pack->files_size = pack->numfiles;
+	pack->numfiles = pack->header.dirlen / sizeof (dpackfile_t);
+	pack->old_numfiles = pack->files_size = pack->numfiles;
 	if (pack->numfiles > MAX_FILES_IN_PACK) {
 		fprintf (stderr, "%s: too many files in pack: %d", name, pack->numfiles);
 		goto error;
@@ -84,7 +84,7 @@ pack_open (const char *name)
 		fprintf (stderr, "out of memory\n");
 		goto error;
 	}
-	fseek (pack->handle, header.dirofs, SEEK_SET);
+	fseek (pack->handle, pack->header.dirofs, SEEK_SET);
 	fread (pack->files, pack->numfiles, sizeof (pack->files[0]), pack->handle);
 
 	for (i = 0; i < pack->numfiles; i++) {
@@ -98,8 +98,102 @@ error:
 	return 0;
 }
 
+pack_t *
+pack_create (const char *name)
+{
+	pack_t     *pack = pack_new (name);
+
+	if (!pack)
+		return 0;
+
+	pack->handle = fopen (name, "wb");
+	if (!pack->handle) {
+		pack_del (pack);
+		return 0;
+	}
+	strncpy (pack->header.id, "PACK", sizeof (pack->header.id));
+
+	fwrite (&pack->header, 1, sizeof (pack->header), pack->handle);
+
+	return pack;
+}
+
 void
 pack_close (pack_t *pack)
 {
+	int         i;
+
+	if (pack->modified) {
+		if (pack->numfiles > pack->old_numfiles) {
+			fseek (pack->handle, 0, SEEK_END);
+			pack->header.dirofs = ftell (pack->handle);
+		}
+		for (i = 0; i < pack->numfiles; i++) {
+			pack->files[i].filepos = LittleLong (pack->files[i].filepos);
+			pack->files[i].filelen = LittleLong (pack->files[i].filelen);
+		}
+		fseek (pack->handle, pack->header.dirofs, SEEK_SET);
+		fwrite (pack->files, pack->numfiles,
+				sizeof (pack->files[0]), pack->handle);
+		pack->header.dirlen = pack->numfiles * sizeof (pack->files[0]);
+		pack->header.dirofs = LittleLong (pack->header.dirofs);
+		pack->header.dirlen = LittleLong (pack->numfiles
+										  * sizeof (pack->files[0]));
+		fseek (pack->handle, 0, SEEK_SET);
+		fwrite (&pack->header, 1, sizeof (pack->header), pack->handle);
+
+		fseek (pack->handle, 0, SEEK_END);
+	}
 	pack_del (pack);
+}
+
+int
+pack_add (pack_t *pack, const char *filename)
+{
+	dpackfile_t *pf;
+	FILE       *file;
+	char        buffer[16384];
+	int         bytes;
+
+	pf = Hash_Find (pack->file_hash, filename);
+	if (pf)
+		return -1;
+	if (pack->numfiles == pack->files_size) {
+		dpackfile_t *f;
+		
+		if (pack->files_size == MAX_FILES_IN_PACK)
+			return -1;
+		pack->files_size += 64;
+		if (pack->files_size > MAX_FILES_IN_PACK)
+			pack->files_size = MAX_FILES_IN_PACK;
+
+		f = realloc (pack->files, pack->files_size * sizeof (dpackfile_t));
+		if (!f)
+			return -1;
+		pack->files = f;
+	}
+
+	file = fopen (filename, "rb");
+	if (!file)
+		return -1;
+
+	pack->modified = 1;
+
+	pf = &pack->files[pack->numfiles++];
+
+	strncpy (pf->name, filename, sizeof (pf->name));
+	pf->name[sizeof (pf->name) - 1] = 0;
+
+	fseek (pack->handle, 0, SEEK_END);
+	pf->filepos = ftell (pack->handle);
+	pf->filelen = 0;
+	while ((bytes = fread (buffer, 1, sizeof (buffer), file))) {
+		fwrite (buffer, 1, bytes, pack->handle);
+		pf->filelen += bytes;
+	}
+	if (pf->filelen & 3) {
+		static char buf[4];
+		fwrite (buf, 1, 4 - (pf->filelen & 3), pack->handle);
+	}
+	return 0;
 }

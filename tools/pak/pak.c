@@ -23,13 +23,16 @@ main (int argc, char **argv)
 	const char *pack_file = 0;
 	int         verbose = 0;
 
-	while ((c = getopt_long (argc, argv, "f:tv", long_options, 0)) != -1) {
+	while ((c = getopt_long (argc, argv, "cf:tv", long_options, 0)) != -1) {
 		switch (c) {
 			case 'f':
 				pack_file = optarg;
 				break;
 			case 't':
 				mode = mo_test;
+				break;
+			case 'c':
+				mode = mo_create;
 				break;
 			case 'v':
 				verbose = 1;
@@ -52,6 +55,16 @@ main (int argc, char **argv)
 			for (i = 0; i < pack->numfiles; i++)
 				printf ("%6d %s\n", pack->files[i].filelen,
 						pack->files[i].name);
+			pack_close (pack);
+			break;
+		case mo_create:
+			pack = pack_create (pack_file);
+			if (!pack) {
+				fprintf (stderr, "error creating %s\n", pack_file);
+				return 1;
+			}
+			while (optind < argc)
+				pack_add (pack, argv[optind++]);
 			pack_close (pack);
 			break;
 		default:
