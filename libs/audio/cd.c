@@ -91,10 +91,8 @@ CDAudio_Init (void)
 	if (!cdmodule) {
 		Sys_Printf ("Loading of cd module: %s failed!\n", cd_plugin->string);
 		return -1;
-	} else {
-		cdmodule->functions->general->p_Init ();
-		return 0; // FIXME: Assumes success
 	}
+	cdmodule->functions->general->p_Init ();
 	Cmd_AddCommand (
 		"cd", CD_f, "Control the CD player.\n"
 		"Commands:\n"
@@ -110,4 +108,5 @@ CDAudio_Init (void)
 		"play (track number) - Plays the specified track one time.\n"
 		"stop - Stops the currently playing track.");
 	Sys_Printf ("CD Audio Initialized\n");
+	return 0; // FIXME: Assumes success
 }
