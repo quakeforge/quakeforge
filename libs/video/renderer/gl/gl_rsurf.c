@@ -782,10 +782,10 @@ R_RecursiveWorldNode (mnode_t *node)
 				continue;				// wrong side
 
 			if (surf->flags & SURF_DRAWTURB) {
-				if (r_wateralpha->value < 1.0)
+//				if (r_wateralpha->value < 1.0) // FIXME: DESPAIR
 					CHAIN_SURF_B2F (surf, waterchain);
-				else
-					CHAIN_SURF (surf, waterchain);
+//				else
+//					CHAIN_SURF (surf, waterchain);
 			} else if (surf->flags & SURF_DRAWSKY) {
 				CHAIN_SURF (surf, sky_chain);
 			} else if (gl_mtex_active) {
@@ -824,9 +824,6 @@ R_DrawWorld (void)
 
 	R_DrawSkyChain (sky_chain);
 
-	if (r_wateralpha->value >= 1.0)
-		R_DrawWaterSurfaces ();
-
 	DrawTextureChains ();
 
 	if (!gl_mtex_active)
@@ -834,9 +831,6 @@ R_DrawWorld (void)
 
 	if (gl_fb_bmodels->int_val)
 		R_RenderFullbrights ();
-
-	if (r_wateralpha->value < 1.0)
-		R_DrawWaterSurfaces ();
 }
 
 void

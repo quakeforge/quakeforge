@@ -419,7 +419,7 @@ CL_ClearState (void)
 
 	R_ClearEfrags ();
 	R_ClearDlights ();
-	R_ClearFires ();
+	R_ClearParticles (); // FIXME: for R_ClearFires in GL
 
 	// wipe the entire cl structure
 	Info_Destroy (cl.serverinfo);
@@ -1528,7 +1528,7 @@ Host_Frame (float time)
 					pass1 + pass2 + pass3, pass1, pass2, pass3);
 	}
 
-	CL_TimeFrames_AddTimestamp ();
+//	CL_TimeFrames_AddTimestamp ();
 
 	host_framecount++;
 	fps_count++;

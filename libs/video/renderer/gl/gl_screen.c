@@ -150,8 +150,6 @@ int         scr_erase_lines;
 int         scr_erase_center;
 
 
-
-
 /*
 	SCR_CenterPrint
 
@@ -235,7 +233,7 @@ SCR_CheckDrawCenterString (int swap)
 	SCR_DrawCenterString ();
 }
 
-float
+static float
 CalcFov (float fov_x, float width, float height)
 {
 	float       a, x;

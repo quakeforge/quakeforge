@@ -52,9 +52,10 @@ static const char rcsid[] =
 #include "r_shared.h"
 #include "view.h"
 
+fire_t r_fires[MAX_FIRES];
 
 
-void
+static void
 AddLightBlend (float r, float g, float b, float a2)
 {
 	float       a;
@@ -69,11 +70,80 @@ AddLightBlend (float r, float g, float b, float a2)
 }
 
 /*
+	R_AddFire
+
+	Buggy GL fire trail effect.  A meshing of polyblend dlights and
+	particle engine.
+*/
+void
+R_AddFire (vec3_t start, vec3_t end, entity_t *ent)
+{
+    float		len;
+	int			key;
+    fire_t	    *f;
+	vec3_t		vec;
+
+	if (!gl_fires->int_val)
+		return;
+ 
+	VectorSubtract (end, start, vec);
+	len = VectorNormalize (vec);
+	key = ent->keynum;
+
+	if (len) {
+		f = R_AllocFire (key);
+		VectorCopy (end, f->origin);
+		VectorCopy (start, f->owner);
+		f->size = 10;
+		f->die = r_realtime + 0.5;
+		f->decay = 1;
+		VectorCopy (r_firecolor->vec, f->color);
+	}
+}
+
+/*
+	R_AllocFire
+
+	Clears out and returns a new fireball
+*/
+fire_t *
+R_AllocFire (int key)
+{
+	int         i;
+	fire_t     *f;
+
+	if (key)			 			// first, try to find/reuse a keyed spot 
+	{
+		f = r_fires;
+		for (i = 0; i < MAX_FIRES; i++, f++)
+			if (f->key == key) {
+				memset (f, 0, sizeof (*f));
+				f->key = key; 
+				return f;
+			}
+	}
+
+	f = r_fires;					// no match, look for a free spot
+	for (i = 0; i < MAX_FIRES; i++, f++) {
+		if (f->die < r_realtime) {
+			memset (f, 0, sizeof (*f));
+			f->key = key;
+			return f;
+		}
+	}
+
+	f = &r_fires[0];
+	memset (f, 0, sizeof (*f));
+	f->key = key;
+	return f;
+}
+
+/*
 	R_DrawFire
 
 	draws one fireball - probably never need to call this directly
 */
-void
+static void
 R_DrawFire (fire_t *f)
 {
 	float       radius;
@@ -149,3 +219,10 @@ R_UpdateFires (void)
 	qfglBlendFunc (GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 	qfglDepthMask (GL_TRUE);
 }
+
+void
+R_ClearFires (void)
+{
+	memset (r_fires, 0, sizeof (r_fires));
+}
+

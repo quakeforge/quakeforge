@@ -111,6 +111,12 @@ inline void
 R_ClearParticles (void)
 {
 	numparticles = 0;
+
+	/*
+	  FIXME: this is better than doing it in the client, and having gl-only
+	  code in the renderer common area, but this is still the wrong place.
+	*/
+	R_ClearFires ();
 }
 
 void
@@ -408,7 +414,7 @@ void
 R_RocketTrail (entity_t *ent)
 {
 	float		dist, maxlen, origlen, percent, pscale, pscalenext;
-	float		len = 0;
+	float		len = 0.0;
 	vec3_t		subtract, vec;
 
 	if (numparticles >= r_maxparticles)
@@ -446,7 +452,7 @@ void
 R_GrenadeTrail (entity_t *ent)
 {
 	float		dist, maxlen, origlen, percent, pscale, pscalenext;
-	float		len = 0;
+	float		len = 0.0;
 	vec3_t		subtract, vec;
 
 	if (numparticles >= r_maxparticles)
@@ -467,8 +473,8 @@ R_GrenadeTrail (entity_t *ent)
 
 		particle_new (pt_smoke, part_tex_smoke, ent->old_origin,
 					  pscale + percent * 4.0, vec3_origin,
-					  r_realtime + 2.0 - percent * 2.0, 
-					  (rand () & 3),
+					  r_realtime + 2.0 - percent * 2.0,
+					  1 + (rand () & 3),
 					  160 + (rand () & 31) - percent * 100.0);
 		if (numparticles >= r_maxparticles)
 			break;
@@ -481,7 +487,7 @@ void
 R_BloodTrail (entity_t *ent)
 {
 	float		dist, maxlen, origlen, percent, pscale, pscalenext;
-	float		len = 0;
+	float		len = 0.0;
 	int			j;
 	vec3_t		subtract, vec, porg, pvel;
 
@@ -566,8 +572,8 @@ R_SlightBloodTrail (entity_t *ent)
 void
 R_GreenTrail (entity_t *ent)
 {
-	float		dist, maxlen, origlen, percent;
-	float		len = 0;
+	float		maxlen, origlen, percent;
+	float		dist = 3.0, len = 0.0;
 	static int	tracercount;
 	vec3_t		subtract, vec, pvel;
 
@@ -577,17 +583,16 @@ R_GreenTrail (entity_t *ent)
 	VectorSubtract (ent->origin, ent->old_origin, vec);
 	maxlen = VectorNormalize (vec);
 	origlen = r_frametime / maxlen;
-	dist = 3.0;
 
 	while (len < maxlen) {
 		VectorCopy (vec3_origin, pvel);
 		tracercount++;
 		if (tracercount & 1) {
-			pvel[0] = 30 * vec[1];
-			pvel[1] = 30 * -vec[0];
+			pvel[0] = 30.0 * vec[1];
+			pvel[1] = 30.0 * -vec[0];
 		} else {
-			pvel[0] = 30 * -vec[1];
-			pvel[1] = 30 * vec[0];
+			pvel[0] = 30.0 * -vec[1];
+			pvel[1] = 30.0 * vec[0];
 		}
 
 		VectorScale (vec, min(dist, len), subtract);
@@ -607,8 +612,8 @@ R_GreenTrail (entity_t *ent)
 void
 R_FlameTrail (entity_t *ent)
 {
-	float		dist, maxlen, origlen, percent;
-	float		len = 0;
+	float		maxlen, origlen, percent;
+	float		dist = 3.0, len = 0.0;
 	static int	tracercount;
 	vec3_t		subtract, vec, pvel;
 
@@ -618,17 +623,16 @@ R_FlameTrail (entity_t *ent)
 	VectorSubtract (ent->origin, ent->old_origin, vec);
 	maxlen = VectorNormalize (vec);
 	origlen = r_frametime / maxlen;
-	dist = 3.0;
 
 	while (len < maxlen) {
 		VectorCopy (vec3_origin, pvel);
 		tracercount++;
 		if (tracercount & 1) {
-			pvel[0] = 30 * vec[1];
-			pvel[1] = 30 * -vec[0];
+			pvel[0] = 30.0 * vec[1];
+			pvel[1] = 30.0 * -vec[0];
 		} else {
-			pvel[0] = 30 * -vec[1];
-			pvel[1] = 30 * vec[0];
+			pvel[0] = 30.0 * -vec[1];
+			pvel[1] = 30.0 * vec[0];
 		}
 
 		VectorScale (vec, min(dist, len), subtract);
@@ -648,8 +652,8 @@ R_FlameTrail (entity_t *ent)
 void
 R_VoorTrail (entity_t *ent)
 {
-	float		dist, maxlen, origlen, percent;
-	float		len = 0;
+	float		maxlen, origlen, percent;
+	float		dist = 3.0, len = 0.0;
 	int			j;
 	vec3_t		subtract, vec, porg;
 
@@ -659,7 +663,6 @@ R_VoorTrail (entity_t *ent)
 	VectorSubtract (ent->origin, ent->old_origin, vec);
 	maxlen = VectorNormalize (vec);
 	origlen = r_frametime / maxlen;
-	dist = 3.0;
 
 	while (len < maxlen) {
 		for (j = 0; j < 3; j++)
@@ -681,7 +684,6 @@ R_VoorTrail (entity_t *ent)
 void
 R_DrawParticles (void)
 {
-//	byte			i;
 	unsigned char  *at;
 	float			dvel, grav, fast_grav, minparticledist, scale,
 					bloodcloud_alpha, bloodcloud_scale, fallfadespark_alpha,

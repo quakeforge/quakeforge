@@ -439,6 +439,7 @@ R_Mirror (void)
 	qfglDepthRange (gldepthmin, gldepthmax);
 
 	R_RenderScene ();
+	R_DrawWaterSurfaces ();
 
 	gldepthmin = 0;
 	gldepthmax = 1;
@@ -484,6 +485,7 @@ R_RenderView (void)
 	// render normal view
 	R_RenderScene ();
 	R_DrawViewModel ();
+	R_DrawWaterSurfaces ();
 	R_UpdateFires ();
 	R_DrawParticles ();
 
