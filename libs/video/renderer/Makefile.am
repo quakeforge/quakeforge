@@ -10,7 +10,7 @@ EXTRA_LTLIBRARIES= libQFrenderer_sw.la libQFrenderer_sw32.la libQFrenderer_gl.la
 
 common_sources= \
 	r_cvar.c r_efrag.c r_ent.c r_graph.c r_light.c r_main.c \
-	r_part.c r_progs.c
+	r_part.c r_progs.c r_screen.c
 
 libQFrenderer_gl_la_LDFLAGS=		-version-info 1:0:0 -rpath $(libdir)
 libQFrenderer_gl_la_LIBADD=			gl/libgl.la
