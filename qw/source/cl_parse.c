@@ -1433,7 +1433,6 @@ CL_ParseServerMessage (void)
 				break;
 
 			case svc_finale:
-				Con_Printf ("svc_finale\n");
 				cl.intermission = 2;
 				cl.completed_time = realtime;
 				vid.recalc_refdef = true;				// go to full screen
