@@ -76,10 +76,10 @@ else
 syssv_SRC=	sv_sys_unix.c
 endif
 
-libserver_a_SOURCES= crudefile.c sv_ccmds.c sv_cvar.c sv_ents.c \
-		sv_init.c sv_main.c sv_move.c \
-		sv_nchan.c sv_phys.c sv_pr_cmds.c sv_progs.c sv_send.c \
-		sv_user.c world.c $(syssv_SRC)
+libserver_a_SOURCES= \
+		crudefile.c sv_ccmds.c sv_ents.c sv_init.c sv_main.c sv_move.c \
+		sv_nchan.c sv_phys.c sv_pr_cmds.c sv_progs.c sv_send.c sv_user.c \
+		world.c $(syssv_SRC)
 
 qf_server_LIBS= \
 		$(SERVER_PLUGIN_STATIC_LIBS) \

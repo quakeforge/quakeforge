@@ -1044,7 +1044,8 @@ CL_ServerInfo (void)
 	} else if (strequal (key, "cshifts")) {
 		cl.sv_cshifts = atoi (value);
 	} else if (strequal (key, "no_pogo_stick")) {
-		cl.no_pogo_stick = atoi (value);
+		Cvar_Set (no_pogo_stick, value);
+		cl.no_pogo_stick = no_pogo_stick->int_val;
 	} else if (strequal (key, "teamplay")) {
 		cl.teamplay = atoi (value);
 		Sbar_DMO_Init_f (cl_showscoresuid); // HUD setup, cl.teamplay changed

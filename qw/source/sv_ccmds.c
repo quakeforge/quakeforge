@@ -814,6 +814,39 @@ SV_SendServerInfoChange (const char *key, const char *value)
 }
 
 /*
+
+	Cvar_Info
+
+	Sets a given cvar (key,value) into svs.info (serverinfo)
+	high char filtering is performed according to sv_highchars.value
+
+*/
+void
+Cvar_Info (cvar_t *var)
+{
+	if (var->flags & CVAR_SERVERINFO) {
+		unsigned char info[1024], *p;
+		const unsigned char *c;
+
+		if (!sv_highchars || !sv_highchars->int_val) {
+			for (p = info, c = var->string;
+				 *c && (p - info < sizeof (info) - 1);) {
+				if ((*c & 0x7f) >= 32)
+					*p++ = *c & 0x7f;
+				c++;
+			}
+			*p = 0;
+			Info_SetValueForKey (svs.info, var->name, info,
+								 (sv_highchars && !sv_highchars->int_val));
+		} else
+			Info_SetValueForKey (svs.info, var->name, var->string,
+								 (sv_highchars && !sv_highchars->int_val));
+
+		SV_SendServerInfoChange (var->name, var->string);
+	}
+}
+
+/*
 	SV_Serverinfo_f
 
 	Examine or change the serverinfo string
@@ -838,17 +871,16 @@ SV_Serverinfo_f (void)
 		SV_Printf ("Star variables cannot be changed.\n");
 		return;
 	}
-	Info_SetValueForKey (svs.info, Cmd_Argv (1), Cmd_Argv (2),
-						 !sv_highchars->int_val);
 
 	// if this is a cvar, change it too 
 	var = Cvar_FindVar (Cmd_Argv (1));
-	if (var)
+	if (var && (var->flags & CVAR_SERVERINFO)) {
 		Cvar_Set (var, Cmd_Argv (2));
-
-	if (!var || !(var->flags & CVAR_SERVERINFO))
-		// Cvar_Set will send the change if CVAR_SERVERINFO is set
+	} else {
+		Info_SetValueForKey (svs.info, Cmd_Argv (1), Cmd_Argv (2),
+							 !sv_highchars->int_val);
 		SV_SendServerInfoChange (Cmd_Argv (1), Cmd_Argv (2));
+	}
 }
 
 /*
