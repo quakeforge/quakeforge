@@ -294,7 +294,6 @@ emit_address_expr (expr_t *e)
 	def_t      *def_a, *def_b, *d;
 	opcode_t   *op;
 
-print_expr (e); printf (" %d\n", e->line);
 	def_a = emit_sub_expr (e->e.expr.e1, 0);
 	def_b = emit_sub_expr (e->e.expr.e2, 0);
 	op = opcode_find ("&", def_a, def_b, 0);
@@ -331,13 +330,13 @@ emit_deref_expr (expr_t *e, def_t *dest)
 		dest = get_tempdef (type, current_scope);
 		dest->users += 2;
 	}
-print_expr (e); printf (" %d %p\n", e->line, dest);
+
 	if (e->type == ex_expr
 		&& e->e.expr.op == '&'
 		&& e->e.expr.e1->type < ex_string)
 		e->e.expr.op = '.';
 	d = emit_sub_expr (e, dest);
-print_expr (e); printf (" %d %p\n", e->line, dest);
+
 	if (dest && d != dest) {
 		zero.type = ex_short;
 		z = emit_sub_expr (&zero, 0);
