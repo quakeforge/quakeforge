@@ -822,12 +822,12 @@ Cmd_Restricted (void)
 corecursively */
 
 int
-Cmd_EndDoubleQuote (const char *str)
+Cmd_EndDoubleQuote (const char *str, qboolean legacy)
 {
 	int         i;
 
 	for (i = 1; i < strlen (str); i++) {
-		if (str[i] == '\"' && !escaped (str, i))
+		if (str[i] == '\"' && (!escaped (str, i) || legacy))
 			return i;
 	}
 	return -1;							// Not found
@@ -850,7 +850,7 @@ Cmd_EndBrace (const char *str)
 						i += n;
 					break;
 				case '\"':
-					n = Cmd_EndDoubleQuote (str + i);
+					n = Cmd_EndDoubleQuote (str + i, false);
 					if (n < 0)
 						return n;
 					else
@@ -880,7 +880,7 @@ Cmd_EndBracket (const char *str)
 						i += n;
 					break;
 				case '\"':
-					n = Cmd_EndDoubleQuote (str + i);
+					n = Cmd_EndDoubleQuote (str + i, false);
 					if (n < 0)
 						return n;
 					else
@@ -915,11 +915,11 @@ Cmd_GetToken (const char *str, qboolean legacy)
 			return -1;
 	}
 	if (*str == '\"')
-		return Cmd_EndDoubleQuote (str);
+		return Cmd_EndDoubleQuote (str, legacy);
 	for (i = 0; i < strlen (str); i++) {
 		if (isspace ((byte)str[i]))
 			break;
-		if (!escaped (str, i)) {
+		if (!escaped (str, i) || legacy) {
 			if (str[i] == '{' && !legacy) {
 				ret = Cmd_EndBrace (str+i);
 				if (ret < 0)
@@ -927,10 +927,10 @@ Cmd_GetToken (const char *str, qboolean legacy)
 				i += ret;
 				continue;
 			}
-			else if (str[i] == '}')
+			else if (str[i] == '}' && !legacy)
 				return -1;
 			else if (str[i] == '\"') {
-				ret = Cmd_EndDoubleQuote (str+i);
+				ret = Cmd_EndDoubleQuote (str+i, legacy);
 				if (ret < 0)
 					return ret;
 				i += ret;
@@ -1879,6 +1879,10 @@ Cmd_Exec_f (void)
 		&& (cmd_warncmd->int_val || (developer && developer->int_val)))
 		Sys_Printf ("execing %s\n", Cmd_Argv (1));
 	sub = Cmd_NewBuffer (true);
+	if (!strcasecmp (Cmd_Argv(1), "quake.rc")
+	  || !strcasecmp (Cmd_Argv(1), "default.cfg")
+	  || !strcasecmp (Cmd_Argv(1), "config.cfg"))
+	  	sub->legacy = true;
 	Cbuf_AddTextTo (sub, f);
 	Hunk_FreeToLowMark (mark);
 	Cbuf_ExecuteSubroutine (sub);		// Execute file in it's own buffer

@@ -128,6 +128,8 @@ void Cbuf_AddText (const char *text);
 
 void Cbuf_InsertText (const char *text);
 // inserts text at the beginning of the active buffer, ahead of other commands
+void Cbuf_InsertTextTo (cmd_buffer_t *buffer, const char *text);
+// insert text at the beginning of a particular buffer
 
 void Cbuf_Execute_Sets (void);
 // executes all set and setrom commands in the console buffer.  Used early in startup.
