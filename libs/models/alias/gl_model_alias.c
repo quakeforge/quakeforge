@@ -45,26 +45,20 @@ static const char rcsid[] =
 #include "QF/qendian.h"
 #include "QF/skin.h"
 #include "QF/sys.h"
+#include "QF/vid.h"
 #include "QF/GL/qf_textures.h"
 
 byte        player_8bit_texels[320 * 200];
 
-extern model_t *loadmodel;
-extern char loadname[];
 
 /*
 	ALIAS MODELS
 */
 
-extern aliashdr_t *pheader;
 
-extern stvert_t stverts[MAXALIASVERTS];
-extern mtriangle_t triangles[MAXALIASTRIS];
 
 // a pose is a single set of vertexes.  a frame may be
 // an animating sequence of poses
-extern trivertx_t *poseverts[MAXALIASFRAMES];
-extern int  posenum;
 
 //=========================================================
 
@@ -78,7 +72,6 @@ typedef struct {
 	short       x, y;
 } floodfill_t;
 
-extern unsigned int d_8to24table[];
 
 // must be a power of 2
 #define FLOODFILL_FIFO_SIZE 0x1000
@@ -240,7 +233,7 @@ Mod_LoadAllSkins (int numskins, daliasskintype_t *pskintype, int *pskinindex)
 }
 
 void *
-Mod_LoadAliasFrame (void *pin, maliasframedesc_t *frame)
+Mod_LoadAliasFrame (void *pin, int posenum, maliasframedesc_t *frame)
 {
 	trivertx_t *pinframe;
 	int         i;
@@ -269,7 +262,7 @@ Mod_LoadAliasFrame (void *pin, maliasframedesc_t *frame)
 }
 
 void *
-Mod_LoadAliasGroup (void *pin, maliasframedesc_t *frame)
+Mod_LoadAliasGroup (void *pin, int posenum, maliasframedesc_t *frame)
 {
 	daliasgroup_t *pingroup;
 	int         i, numframes;

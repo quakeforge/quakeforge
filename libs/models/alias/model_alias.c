@@ -51,13 +51,6 @@ static const char rcsid[] =
 #include "d_iface.h"
 #include "r_local.h"
 
-extern char loadname[];
-extern model_t *loadmodel;
-
-void       *Mod_LoadAllSkins (int numskins, daliasskintype_t *pskintype,
-
-							  int *pskinindex);
-void        GL_MakeAliasModelDisplayLists (model_t *m, aliashdr_t *hdr, void *model, int size);
 
 /*
 	ALIAS MODELS
@@ -72,9 +65,6 @@ mtriangle_t triangles[MAXALIASTRIS];
 // sequence of poses
 trivertx_t *poseverts[MAXALIASFRAMES];
 int         posenum = 0;
-
-void       *Mod_LoadAliasFrame (void *pin, maliasframedesc_t *frame);
-void       *Mod_LoadAliasGroup (void *pin, maliasframedesc_t *frame);
 
 
 //=========================================================================
@@ -197,10 +187,12 @@ Mod_LoadAliasModel (model_t *mod, void *buffer, cache_allocator_t allocator)
 
 		if (frametype == ALIAS_SINGLE) {
 			pframetype = (daliasframetype_t *)
-				Mod_LoadAliasFrame (pframetype + 1, &pheader->frames[i]);
+				Mod_LoadAliasFrame (pframetype + 1, posenum,
+									&pheader->frames[i]);
 		} else {
 			pframetype = (daliasframetype_t *)
-				Mod_LoadAliasGroup (pframetype + 1, &pheader->frames[i]);
+				Mod_LoadAliasGroup (pframetype + 1, posenum,
+									&pheader->frames[i]);
 		}
 	}
 

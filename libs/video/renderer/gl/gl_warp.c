@@ -42,8 +42,6 @@ static const char rcsid[] =
 
 msurface_t *warpface;
 
-extern cvar_t *gl_subdivide_size;
-extern model_t *loadmodel;
 
 
 void

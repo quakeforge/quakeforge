@@ -166,9 +166,7 @@ cvar_t     *rate;
 cvar_t     *noaim;
 cvar_t     *msg;
 
-extern cvar_t *cl_hightrack;
 
-extern void R_Particles_Init_Cvars (void);
 
 client_static_t cls;
 client_state_t cl;
@@ -1673,7 +1671,7 @@ Host_Init (void)
 	SCR_Init ();
 	R_Init ();
 
-	S_Init ();
+	S_Init (&cl.worldmodel, &viewentity, &host_frametime);
 
 	Sbar_Init ();
 	CL_Skin_Init ();
@@ -1684,7 +1682,7 @@ Host_Init (void)
 	SCR_Init ();
 	R_Init ();
 
-	S_Init ();
+	S_Init (&cl.worldmodel, &viewentity, &host_frametime);
 
 	CDAudio_Init ();
 	Sbar_Init ();

@@ -96,19 +96,19 @@ keyhandler (int scancode, int state)
 	if (ascii > 255)
 		ascii = 0;
 	switch (key) {
-		case K_RSHIFT:
+		case QFK_RSHIFT:
 			shifts &= mask;
 			shifts |= press;
 			break;
-		case K_LSHIFT:
+		case QFK_LSHIFT:
 			shifts &= ROTL(mask, 1);
 			shifts |= ROTL(press, 1);
 			break;
-		case K_RCTRL:
+		case QFK_RCTRL:
 			shifts &= ROTL(mask, 2);
 			shifts |= ROTL(press, 2);
 			break;
-		case K_LCTRL:
+		case QFK_LCTRL:
 			shifts &= ROTL(mask, 3);
 			shifts |= ROTL(press, 3);
 			break;
@@ -128,11 +128,11 @@ mousehandler (int buttonstate, int dx, int dy, int dz, int drx, int dry,
 	in_mouse_x += dx;
 	in_mouse_y += dy;
 	if (drx > 0) {
-		Key_Event (M_WHEEL_UP, 0, 1);
-		Key_Event (M_WHEEL_UP, 0, 0);
+		Key_Event (QFM_WHEEL_UP, 0, 1);
+		Key_Event (QFM_WHEEL_UP, 0, 0);
 	} else if (drx < 0) {
-		Key_Event (M_WHEEL_DOWN, 0, 1);
-		Key_Event (M_WHEEL_DOWN, 0, 0);
+		Key_Event (QFM_WHEEL_DOWN, 0, 1);
+		Key_Event (QFM_WHEEL_DOWN, 0, 0);
 	}
 }
 
@@ -167,7 +167,7 @@ IN_InitKeyboard (void)
 		scantokey[0][i] = ' ';
 	}
 
-	scantokey[0][1] = K_ESCAPE;
+	scantokey[0][1] = QFK_ESCAPE;
 	scantokey[0][2] = '1';
 	scantokey[0][3] = '2';
 	scantokey[0][4] = '3';
@@ -180,8 +180,8 @@ IN_InitKeyboard (void)
 	scantokey[0][11] = '0';
 	scantokey[0][12] = '-';
 	scantokey[0][13] = '=';
-	scantokey[0][14] = K_BACKSPACE;
-	scantokey[0][15] = K_TAB;
+	scantokey[0][14] = QFK_BACKSPACE;
+	scantokey[0][15] = QFK_TAB;
 	scantokey[0][16] = 'q';
 	scantokey[0][17] = 'w';
 	scantokey[0][18] = 'e';
@@ -194,8 +194,8 @@ IN_InitKeyboard (void)
 	scantokey[0][25] = 'p';
 	scantokey[0][26] = '[';
 	scantokey[0][27] = ']';
-	scantokey[0][28] = K_RETURN;
-	scantokey[0][29] = K_LCTRL;			/* left */
+	scantokey[0][28] = QFK_RETURN;
+	scantokey[0][29] = QFK_LCTRL;			/* left */
 	scantokey[0][30] = 'a';
 	scantokey[0][31] = 's';
 	scantokey[0][32] = 'd';
@@ -208,7 +208,7 @@ IN_InitKeyboard (void)
 	scantokey[0][39] = ';';
 	scantokey[0][40] = '\'';
 	scantokey[0][41] = '`';
-	scantokey[0][42] = K_LSHIFT;			/* left */
+	scantokey[0][42] = QFK_LSHIFT;			/* left */
 	scantokey[0][43] = '\\';
 	scantokey[0][44] = 'z';
 	scantokey[0][45] = 'x';
@@ -220,58 +220,58 @@ IN_InitKeyboard (void)
 	scantokey[0][51] = ',';
 	scantokey[0][52] = '.';
 	scantokey[0][53] = '/';
-	scantokey[0][54] = K_RSHIFT;			/* right */
-	scantokey[0][55] = K_KP_MULTIPLY;
-	scantokey[0][56] = K_LALT;				/* left */
+	scantokey[0][54] = QFK_RSHIFT;			/* right */
+	scantokey[0][55] = QFK_KP_MULTIPLY;
+	scantokey[0][56] = QFK_LALT;				/* left */
 	scantokey[0][57] = ' ';
-	scantokey[0][58] = K_CAPSLOCK;
-	scantokey[0][59] = K_F1;
-	scantokey[0][60] = K_F2;
-	scantokey[0][61] = K_F3;
-	scantokey[0][62] = K_F4;
-	scantokey[0][63] = K_F5;
-	scantokey[0][64] = K_F6;
-	scantokey[0][65] = K_F7;
-	scantokey[0][66] = K_F8;
-	scantokey[0][67] = K_F9;
-	scantokey[0][68] = K_F10;
-	scantokey[0][69] = K_NUMLOCK;
-	scantokey[0][70] = K_SCROLLOCK;
-	scantokey[0][71] = K_KP7;
-	scantokey[0][72] = K_KP8;
-	scantokey[0][73] = K_KP9;
-	scantokey[0][74] = K_KP_MINUS;
-	scantokey[0][75] = K_KP4;
-	scantokey[0][76] = K_KP5;
-	scantokey[0][77] = K_KP6;
-	scantokey[0][79] = K_KP1;
-	scantokey[0][78] = K_KP_PLUS;
-	scantokey[0][80] = K_KP2;
-	scantokey[0][81] = K_KP3;
-	scantokey[0][82] = K_KP0;
-	scantokey[0][83] = K_KP_PERIOD;
+	scantokey[0][58] = QFK_CAPSLOCK;
+	scantokey[0][59] = QFK_F1;
+	scantokey[0][60] = QFK_F2;
+	scantokey[0][61] = QFK_F3;
+	scantokey[0][62] = QFK_F4;
+	scantokey[0][63] = QFK_F5;
+	scantokey[0][64] = QFK_F6;
+	scantokey[0][65] = QFK_F7;
+	scantokey[0][66] = QFK_F8;
+	scantokey[0][67] = QFK_F9;
+	scantokey[0][68] = QFK_F10;
+	scantokey[0][69] = QFK_NUMLOCK;
+	scantokey[0][70] = QFK_SCROLLOCK;
+	scantokey[0][71] = QFK_KP7;
+	scantokey[0][72] = QFK_KP8;
+	scantokey[0][73] = QFK_KP9;
+	scantokey[0][74] = QFK_KP_MINUS;
+	scantokey[0][75] = QFK_KP4;
+	scantokey[0][76] = QFK_KP5;
+	scantokey[0][77] = QFK_KP6;
+	scantokey[0][79] = QFK_KP1;
+	scantokey[0][78] = QFK_KP_PLUS;
+	scantokey[0][80] = QFK_KP2;
+	scantokey[0][81] = QFK_KP3;
+	scantokey[0][82] = QFK_KP0;
+	scantokey[0][83] = QFK_KP_PERIOD;
 	/* 84 to 86 not used */
-	scantokey[0][87] = K_F11;
-	scantokey[0][88] = K_F12;
+	scantokey[0][87] = QFK_F11;
+	scantokey[0][88] = QFK_F12;
 	/* 89 to 95 not used */
-	scantokey[0][96] = K_KP_ENTER;			/* keypad enter */
-	scantokey[0][97] = K_RCTRL;			/* right */
-	scantokey[0][98] = K_KP_DIVIDE;
-	scantokey[0][99] = K_PRINT;			/* print screen */
-	scantokey[0][100] = K_RALT;			/* right */
+	scantokey[0][96] = QFK_KP_ENTER;			/* keypad enter */
+	scantokey[0][97] = QFK_RCTRL;			/* right */
+	scantokey[0][98] = QFK_KP_DIVIDE;
+	scantokey[0][99] = QFK_PRINT;			/* print screen */
+	scantokey[0][100] = QFK_RALT;			/* right */
 
-	scantokey[0][101] = K_PAUSE;			/* break */
-	scantokey[0][102] = K_HOME;
-	scantokey[0][103] = K_UP;
-	scantokey[0][104] = K_PAGEUP;
-	scantokey[0][105] = K_LEFT;
-	scantokey[0][106] = K_RIGHT;
-	scantokey[0][107] = K_END;
-	scantokey[0][108] = K_DOWN;
-	scantokey[0][109] = K_PAGEDOWN;
-	scantokey[0][110] = K_INSERT;
-	scantokey[0][111] = K_DELETE;
-	scantokey[0][119] = K_PAUSE;
+	scantokey[0][101] = QFK_PAUSE;			/* break */
+	scantokey[0][102] = QFK_HOME;
+	scantokey[0][103] = QFK_UP;
+	scantokey[0][104] = QFK_PAGEUP;
+	scantokey[0][105] = QFK_LEFT;
+	scantokey[0][106] = QFK_RIGHT;
+	scantokey[0][107] = QFK_END;
+	scantokey[0][108] = QFK_DOWN;
+	scantokey[0][109] = QFK_PAGEDOWN;
+	scantokey[0][110] = QFK_INSERT;
+	scantokey[0][111] = QFK_DELETE;
+	scantokey[0][119] = QFK_PAUSE;
 
 	memcpy (scantokey[1], scantokey[0], sizeof (scantokey[1]));
 	memcpy (scantokey[2], scantokey[0], sizeof (scantokey[2]));
@@ -428,24 +428,24 @@ IN_LL_SendKeyEvents (void)
 		/* Perform button actions */
 		if ((mouse_buttonstate & MOUSE_LEFTBUTTON) &&
 			!(mouse_oldbuttonstate & MOUSE_LEFTBUTTON))
-				Key_Event (M_BUTTON1, 0, true);
+				Key_Event (QFM_BUTTON1, 0, true);
 		else if (!(mouse_buttonstate & MOUSE_LEFTBUTTON) &&
 				 (mouse_oldbuttonstate & MOUSE_LEFTBUTTON))
-			Key_Event (M_BUTTON1, 0, false);
+			Key_Event (QFM_BUTTON1, 0, false);
 
 		if ((mouse_buttonstate & MOUSE_RIGHTBUTTON) &&
 			!(mouse_oldbuttonstate & MOUSE_RIGHTBUTTON))
-				Key_Event (M_BUTTON2, 0, true);
+				Key_Event (QFM_BUTTON2, 0, true);
 		else if (!(mouse_buttonstate & MOUSE_RIGHTBUTTON) &&
 				 (mouse_oldbuttonstate & MOUSE_RIGHTBUTTON))
-			Key_Event (M_BUTTON2, 0, false);
+			Key_Event (QFM_BUTTON2, 0, false);
 
 		if ((mouse_buttonstate & MOUSE_MIDDLEBUTTON) &&
 			!(mouse_oldbuttonstate & MOUSE_MIDDLEBUTTON))
-				Key_Event (M_BUTTON3, 0, true);
+				Key_Event (QFM_BUTTON3, 0, true);
 		else if (!(mouse_buttonstate & MOUSE_MIDDLEBUTTON) &&
 				 (mouse_oldbuttonstate & MOUSE_MIDDLEBUTTON))
-			Key_Event (M_BUTTON3, 0, false);
+			Key_Event (QFM_BUTTON3, 0, false);
 
 		mouse_oldbuttonstate = mouse_buttonstate;
 	}

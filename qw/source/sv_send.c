@@ -64,9 +64,6 @@ char        outputbuf[8000];
 int         con_printf_no_log;
 redirect_t  sv_redirected;
 
-extern cvar_t *sv_phs;
-extern cvar_t *sv_timestamps;
-extern cvar_t *sv_timefmt;
 
 void
 SV_FlushRedirect (void)

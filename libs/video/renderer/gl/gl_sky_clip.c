@@ -105,8 +105,6 @@ struct box_def {
 	struct face_def face[6];
 };
 
-extern qboolean skyloaded;
-extern vec5_t skyvec[6][4];
 
 
 /*

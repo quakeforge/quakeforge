@@ -59,7 +59,6 @@ qboolean    sv_allow_cheats;
 int         fp_messages = 4, fp_persecond = 4, fp_secondsdead = 10;
 char        fp_msg[255] = { 0 };
 cvar_t     *sv_leetnickmatch;
-extern redirect_t sv_redirected;
 
 static qboolean
 match_char (char a, char b)

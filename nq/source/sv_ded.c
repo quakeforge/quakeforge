@@ -53,6 +53,7 @@ cvar_t     *cl_writecfg;
 cvar_t     *chase_active;
 
 int         fps_count;
+int         viewentity;
 
 qboolean    scr_disabled_for_loading;
 
@@ -245,7 +246,7 @@ SCR_Init (void)
 }
 
 void
-S_Init (void)
+S_Init (struct model_s **worldmodel, int *viewentity, double *host_frametime)
 {
 }
 

@@ -246,7 +246,6 @@ int         MGenSanityCheck (void);
 #include <stdio.h>
 #include <sys/farptr.h>
 
-extern short flat_selector;
 
 #define SOCKET_MAP_QUEUE  41
 

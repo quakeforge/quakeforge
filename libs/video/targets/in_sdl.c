@@ -46,7 +46,6 @@ static const char rcsid[] =
 
 #include "compat.h"
 
-extern cvar_t *in_grab;
 
 int		old_windowed_mouse;
 
@@ -68,703 +67,703 @@ IN_LL_SendKeyEvents (void)
 				unicode = event.key.keysym.unicode;
 				switch (sym) {
 					case SDLK_UNKNOWN:
-						ksym = K_UNKNOWN;
+						ksym = QFK_UNKNOWN;
 						break;
 					case SDLK_BACKSPACE:
-						ksym = K_BACKSPACE;
+						ksym = QFK_BACKSPACE;
 						break;
 					case SDLK_TAB:
-						ksym = K_TAB;
+						ksym = QFK_TAB;
 						break;
 					case SDLK_CLEAR:
-						ksym = K_CLEAR;
+						ksym = QFK_CLEAR;
 						break;
 					case SDLK_RETURN:
-						ksym = K_RETURN;
+						ksym = QFK_RETURN;
 						break;
 					case SDLK_PAUSE:
-						ksym = K_PAUSE;
+						ksym = QFK_PAUSE;
 						break;
 					case SDLK_ESCAPE:
-						ksym = K_ESCAPE;
+						ksym = QFK_ESCAPE;
 						break;
 					case SDLK_SPACE:
-						ksym = K_SPACE;
+						ksym = QFK_SPACE;
 						break;
 					case SDLK_EXCLAIM:
-						ksym = K_EXCLAIM;
+						ksym = QFK_EXCLAIM;
 						break;
 					case SDLK_QUOTEDBL:
-						ksym = K_QUOTEDBL;
+						ksym = QFK_QUOTEDBL;
 						break;
 					case SDLK_HASH:
-						ksym = K_HASH;
+						ksym = QFK_HASH;
 						break;
 					case SDLK_DOLLAR:
-						ksym = K_DOLLAR;
+						ksym = QFK_DOLLAR;
 						break;
 					case SDLK_AMPERSAND:
-						ksym = K_AMPERSAND;
+						ksym = QFK_AMPERSAND;
 						break;
 					case SDLK_QUOTE:
-						ksym = K_QUOTE;
+						ksym = QFK_QUOTE;
 						break;
 					case SDLK_LEFTPAREN:
-						ksym = K_LEFTPAREN;
+						ksym = QFK_LEFTPAREN;
 						break;
 					case SDLK_RIGHTPAREN:
-						ksym = K_RIGHTPAREN;
+						ksym = QFK_RIGHTPAREN;
 						break;
 					case SDLK_ASTERISK:
-						ksym = K_ASTERISK;
+						ksym = QFK_ASTERISK;
 						break;
 					case SDLK_PLUS:
-						ksym = K_PLUS;
+						ksym = QFK_PLUS;
 						break;
 					case SDLK_COMMA:
-						ksym = K_COMMA;
+						ksym = QFK_COMMA;
 						break;
 					case SDLK_MINUS:
-						ksym = K_MINUS;
+						ksym = QFK_MINUS;
 						break;
 					case SDLK_PERIOD:
-						ksym = K_PERIOD;
+						ksym = QFK_PERIOD;
 						break;
 					case SDLK_SLASH:
-						ksym = K_SLASH;
+						ksym = QFK_SLASH;
 						break;
 					case SDLK_0:
-						ksym = K_0;
+						ksym = QFK_0;
 						break;
 					case SDLK_1:
-						ksym = K_1;
+						ksym = QFK_1;
 						break;
 					case SDLK_2:
-						ksym = K_2;
+						ksym = QFK_2;
 						break;
 					case SDLK_3:
-						ksym = K_3;
+						ksym = QFK_3;
 						break;
 					case SDLK_4:
-						ksym = K_4;
+						ksym = QFK_4;
 						break;
 					case SDLK_5:
-						ksym = K_5;
+						ksym = QFK_5;
 						break;
 					case SDLK_6:
-						ksym = K_6;
+						ksym = QFK_6;
 						break;
 					case SDLK_7:
-						ksym = K_7;
+						ksym = QFK_7;
 						break;
 					case SDLK_8:
-						ksym = K_8;
+						ksym = QFK_8;
 						break;
 					case SDLK_9:
-						ksym = K_9;
+						ksym = QFK_9;
 						break;
 					case SDLK_COLON:
-						ksym = K_COLON;
+						ksym = QFK_COLON;
 						break;
 					case SDLK_SEMICOLON:
-						ksym = K_SEMICOLON;
+						ksym = QFK_SEMICOLON;
 						break;
 					case SDLK_LESS:
-						ksym = K_LESS;
+						ksym = QFK_LESS;
 						break;
 					case SDLK_EQUALS:
-						ksym = K_EQUALS;
+						ksym = QFK_EQUALS;
 						break;
 					case SDLK_GREATER:
-						ksym = K_GREATER;
+						ksym = QFK_GREATER;
 						break;
 					case SDLK_QUESTION:
-						ksym = K_QUESTION;
+						ksym = QFK_QUESTION;
 						break;
 					case SDLK_AT:
-						ksym = K_AT;
+						ksym = QFK_AT;
 						break;
 					case SDLK_LEFTBRACKET:
-						ksym = K_LEFTBRACKET;
+						ksym = QFK_LEFTBRACKET;
 						break;
 					case SDLK_BACKSLASH:
-						ksym = K_BACKSLASH;
+						ksym = QFK_BACKSLASH;
 						break;
 					case SDLK_RIGHTBRACKET:
-						ksym = K_RIGHTBRACKET;
+						ksym = QFK_RIGHTBRACKET;
 						break;
 					case SDLK_CARET:
-						ksym = K_CARET;
+						ksym = QFK_CARET;
 						break;
 					case SDLK_UNDERSCORE:
-						ksym = K_UNDERSCORE;
+						ksym = QFK_UNDERSCORE;
 						break;
 					case SDLK_BACKQUOTE:
-						ksym = K_BACKQUOTE;
+						ksym = QFK_BACKQUOTE;
 						break;
 					case SDLK_a:
-						ksym = K_a;
+						ksym = QFK_a;
 						break;
 					case SDLK_b:
-						ksym = K_b;
+						ksym = QFK_b;
 						break;
 					case SDLK_c:
-						ksym = K_c;
+						ksym = QFK_c;
 						break;
 					case SDLK_d:
-						ksym = K_d;
+						ksym = QFK_d;
 						break;
 					case SDLK_e:
-						ksym = K_e;
+						ksym = QFK_e;
 						break;
 					case SDLK_f:
-						ksym = K_f;
+						ksym = QFK_f;
 						break;
 					case SDLK_g:
-						ksym = K_g;
+						ksym = QFK_g;
 						break;
 					case SDLK_h:
-						ksym = K_h;
+						ksym = QFK_h;
 						break;
 					case SDLK_i:
-						ksym = K_i;
+						ksym = QFK_i;
 						break;
 					case SDLK_j:
-						ksym = K_j;
+						ksym = QFK_j;
 						break;
 					case SDLK_k:
-						ksym = K_k;
+						ksym = QFK_k;
 						break;
 					case SDLK_l:
-						ksym = K_l;
+						ksym = QFK_l;
 						break;
 					case SDLK_m:
-						ksym = K_m;
+						ksym = QFK_m;
 						break;
 					case SDLK_n:
-						ksym = K_n;
+						ksym = QFK_n;
 						break;
 					case SDLK_o:
-						ksym = K_o;
+						ksym = QFK_o;
 						break;
 					case SDLK_p:
-						ksym = K_p;
+						ksym = QFK_p;
 						break;
 					case SDLK_q:
-						ksym = K_q;
+						ksym = QFK_q;
 						break;
 					case SDLK_r:
-						ksym = K_r;
+						ksym = QFK_r;
 						break;
 					case SDLK_s:
-						ksym = K_s;
+						ksym = QFK_s;
 						break;
 					case SDLK_t:
-						ksym = K_t;
+						ksym = QFK_t;
 						break;
 					case SDLK_u:
-						ksym = K_u;
+						ksym = QFK_u;
 						break;
 					case SDLK_v:
-						ksym = K_v;
+						ksym = QFK_v;
 						break;
 					case SDLK_w:
-						ksym = K_w;
+						ksym = QFK_w;
 						break;
 					case SDLK_x:
-						ksym = K_x;
+						ksym = QFK_x;
 						break;
 					case SDLK_y:
-						ksym = K_y;
+						ksym = QFK_y;
 						break;
 					case SDLK_z:
-						ksym = K_z;
+						ksym = QFK_z;
 						break;
 					case SDLK_DELETE:
-						ksym = K_DELETE;
+						ksym = QFK_DELETE;
 						break;
 					case SDLK_WORLD_0:
-						ksym = K_WORLD_0;
+						ksym = QFK_WORLD_0;
 						break;
 					case SDLK_WORLD_1:
-						ksym = K_WORLD_1;
+						ksym = QFK_WORLD_1;
 						break;
 					case SDLK_WORLD_2:
-						ksym = K_WORLD_2;
+						ksym = QFK_WORLD_2;
 						break;
 					case SDLK_WORLD_3:
-						ksym = K_WORLD_3;
+						ksym = QFK_WORLD_3;
 						break;
 					case SDLK_WORLD_4:
-						ksym = K_WORLD_4;
+						ksym = QFK_WORLD_4;
 						break;
 					case SDLK_WORLD_5:
-						ksym = K_WORLD_5;
+						ksym = QFK_WORLD_5;
 						break;
 					case SDLK_WORLD_6:
-						ksym = K_WORLD_6;
+						ksym = QFK_WORLD_6;
 						break;
 					case SDLK_WORLD_7:
-						ksym = K_WORLD_7;
+						ksym = QFK_WORLD_7;
 						break;
 					case SDLK_WORLD_8:
-						ksym = K_WORLD_8;
+						ksym = QFK_WORLD_8;
 						break;
 					case SDLK_WORLD_9:
-						ksym = K_WORLD_9;
+						ksym = QFK_WORLD_9;
 						break;
 					case SDLK_WORLD_10:
-						ksym = K_WORLD_10;
+						ksym = QFK_WORLD_10;
 						break;
 					case SDLK_WORLD_11:
-						ksym = K_WORLD_11;
+						ksym = QFK_WORLD_11;
 						break;
 					case SDLK_WORLD_12:
-						ksym = K_WORLD_12;
+						ksym = QFK_WORLD_12;
 						break;
 					case SDLK_WORLD_13:
-						ksym = K_WORLD_13;
+						ksym = QFK_WORLD_13;
 						break;
 					case SDLK_WORLD_14:
-						ksym = K_WORLD_14;
+						ksym = QFK_WORLD_14;
 						break;
 					case SDLK_WORLD_15:
-						ksym = K_WORLD_15;
+						ksym = QFK_WORLD_15;
 						break;
 					case SDLK_WORLD_16:
-						ksym = K_WORLD_16;
+						ksym = QFK_WORLD_16;
 						break;
 					case SDLK_WORLD_17:
-						ksym = K_WORLD_17;
+						ksym = QFK_WORLD_17;
 						break;
 					case SDLK_WORLD_18:
-						ksym = K_WORLD_18;
+						ksym = QFK_WORLD_18;
 						break;
 					case SDLK_WORLD_19:
-						ksym = K_WORLD_19;
+						ksym = QFK_WORLD_19;
 						break;
 					case SDLK_WORLD_20:
-						ksym = K_WORLD_20;
+						ksym = QFK_WORLD_20;
 						break;
 					case SDLK_WORLD_21:
-						ksym = K_WORLD_21;
+						ksym = QFK_WORLD_21;
 						break;
 					case SDLK_WORLD_22:
-						ksym = K_WORLD_22;
+						ksym = QFK_WORLD_22;
 						break;
 					case SDLK_WORLD_23:
-						ksym = K_WORLD_23;
+						ksym = QFK_WORLD_23;
 						break;
 					case SDLK_WORLD_24:
-						ksym = K_WORLD_24;
+						ksym = QFK_WORLD_24;
 						break;
 					case SDLK_WORLD_25:
-						ksym = K_WORLD_25;
+						ksym = QFK_WORLD_25;
 						break;
 					case SDLK_WORLD_26:
-						ksym = K_WORLD_26;
+						ksym = QFK_WORLD_26;
 						break;
 					case SDLK_WORLD_27:
-						ksym = K_WORLD_27;
+						ksym = QFK_WORLD_27;
 						break;
 					case SDLK_WORLD_28:
-						ksym = K_WORLD_28;
+						ksym = QFK_WORLD_28;
 						break;
 					case SDLK_WORLD_29:
-						ksym = K_WORLD_29;
+						ksym = QFK_WORLD_29;
 						break;
 					case SDLK_WORLD_30:
-						ksym = K_WORLD_30;
+						ksym = QFK_WORLD_30;
 						break;
 					case SDLK_WORLD_31:
-						ksym = K_WORLD_31;
+						ksym = QFK_WORLD_31;
 						break;
 					case SDLK_WORLD_32:
-						ksym = K_WORLD_32;
+						ksym = QFK_WORLD_32;
 						break;
 					case SDLK_WORLD_33:
-						ksym = K_WORLD_33;
+						ksym = QFK_WORLD_33;
 						break;
 					case SDLK_WORLD_34:
-						ksym = K_WORLD_34;
+						ksym = QFK_WORLD_34;
 						break;
 					case SDLK_WORLD_35:
-						ksym = K_WORLD_35;
+						ksym = QFK_WORLD_35;
 						break;
 					case SDLK_WORLD_36:
-						ksym = K_WORLD_36;
+						ksym = QFK_WORLD_36;
 						break;
 					case SDLK_WORLD_37:
-						ksym = K_WORLD_37;
+						ksym = QFK_WORLD_37;
 						break;
 					case SDLK_WORLD_38:
-						ksym = K_WORLD_38;
+						ksym = QFK_WORLD_38;
 						break;
 					case SDLK_WORLD_39:
-						ksym = K_WORLD_39;
+						ksym = QFK_WORLD_39;
 						break;
 					case SDLK_WORLD_40:
-						ksym = K_WORLD_40;
+						ksym = QFK_WORLD_40;
 						break;
 					case SDLK_WORLD_41:
-						ksym = K_WORLD_41;
+						ksym = QFK_WORLD_41;
 						break;
 					case SDLK_WORLD_42:
-						ksym = K_WORLD_42;
+						ksym = QFK_WORLD_42;
 						break;
 					case SDLK_WORLD_43:
-						ksym = K_WORLD_43;
+						ksym = QFK_WORLD_43;
 						break;
 					case SDLK_WORLD_44:
-						ksym = K_WORLD_44;
+						ksym = QFK_WORLD_44;
 						break;
 					case SDLK_WORLD_45:
-						ksym = K_WORLD_45;
+						ksym = QFK_WORLD_45;
 						break;
 					case SDLK_WORLD_46:
-						ksym = K_WORLD_46;
+						ksym = QFK_WORLD_46;
 						break;
 					case SDLK_WORLD_47:
-						ksym = K_WORLD_47;
+						ksym = QFK_WORLD_47;
 						break;
 					case SDLK_WORLD_48:
-						ksym = K_WORLD_48;
+						ksym = QFK_WORLD_48;
 						break;
 					case SDLK_WORLD_49:
-						ksym = K_WORLD_49;
+						ksym = QFK_WORLD_49;
 						break;
 					case SDLK_WORLD_50:
-						ksym = K_WORLD_50;
+						ksym = QFK_WORLD_50;
 						break;
 					case SDLK_WORLD_51:
-						ksym = K_WORLD_51;
+						ksym = QFK_WORLD_51;
 						break;
 					case SDLK_WORLD_52:
-						ksym = K_WORLD_52;
+						ksym = QFK_WORLD_52;
 						break;
 					case SDLK_WORLD_53:
-						ksym = K_WORLD_53;
+						ksym = QFK_WORLD_53;
 						break;
 					case SDLK_WORLD_54:
-						ksym = K_WORLD_54;
+						ksym = QFK_WORLD_54;
 						break;
 					case SDLK_WORLD_55:
-						ksym = K_WORLD_55;
+						ksym = QFK_WORLD_55;
 						break;
 					case SDLK_WORLD_56:
-						ksym = K_WORLD_56;
+						ksym = QFK_WORLD_56;
 						break;
 					case SDLK_WORLD_57:
-						ksym = K_WORLD_57;
+						ksym = QFK_WORLD_57;
 						break;
 					case SDLK_WORLD_58:
-						ksym = K_WORLD_58;
+						ksym = QFK_WORLD_58;
 						break;
 					case SDLK_WORLD_59:
-						ksym = K_WORLD_59;
+						ksym = QFK_WORLD_59;
 						break;
 					case SDLK_WORLD_60:
-						ksym = K_WORLD_60;
+						ksym = QFK_WORLD_60;
 						break;
 					case SDLK_WORLD_61:
-						ksym = K_WORLD_61;
+						ksym = QFK_WORLD_61;
 						break;
 					case SDLK_WORLD_62:
-						ksym = K_WORLD_62;
+						ksym = QFK_WORLD_62;
 						break;
 					case SDLK_WORLD_63:
-						ksym = K_WORLD_63;
+						ksym = QFK_WORLD_63;
 						break;
 					case SDLK_WORLD_64:
-						ksym = K_WORLD_64;
+						ksym = QFK_WORLD_64;
 						break;
 					case SDLK_WORLD_65:
-						ksym = K_WORLD_65;
+						ksym = QFK_WORLD_65;
 						break;
 					case SDLK_WORLD_66:
-						ksym = K_WORLD_66;
+						ksym = QFK_WORLD_66;
 						break;
 					case SDLK_WORLD_67:
-						ksym = K_WORLD_67;
+						ksym = QFK_WORLD_67;
 						break;
 					case SDLK_WORLD_68:
-						ksym = K_WORLD_68;
+						ksym = QFK_WORLD_68;
 						break;
 					case SDLK_WORLD_69:
-						ksym = K_WORLD_69;
+						ksym = QFK_WORLD_69;
 						break;
 					case SDLK_WORLD_70:
-						ksym = K_WORLD_70;
+						ksym = QFK_WORLD_70;
 						break;
 					case SDLK_WORLD_71:
-						ksym = K_WORLD_71;
+						ksym = QFK_WORLD_71;
 						break;
 					case SDLK_WORLD_72:
-						ksym = K_WORLD_72;
+						ksym = QFK_WORLD_72;
 						break;
 					case SDLK_WORLD_73:
-						ksym = K_WORLD_73;
+						ksym = QFK_WORLD_73;
 						break;
 					case SDLK_WORLD_74:
-						ksym = K_WORLD_74;
+						ksym = QFK_WORLD_74;
 						break;
 					case SDLK_WORLD_75:
-						ksym = K_WORLD_75;
+						ksym = QFK_WORLD_75;
 						break;
 					case SDLK_WORLD_76:
-						ksym = K_WORLD_76;
+						ksym = QFK_WORLD_76;
 						break;
 					case SDLK_WORLD_77:
-						ksym = K_WORLD_77;
+						ksym = QFK_WORLD_77;
 						break;
 					case SDLK_WORLD_78:
-						ksym = K_WORLD_78;
+						ksym = QFK_WORLD_78;
 						break;
 					case SDLK_WORLD_79:
-						ksym = K_WORLD_79;
+						ksym = QFK_WORLD_79;
 						break;
 					case SDLK_WORLD_80:
-						ksym = K_WORLD_80;
+						ksym = QFK_WORLD_80;
 						break;
 					case SDLK_WORLD_81:
-						ksym = K_WORLD_81;
+						ksym = QFK_WORLD_81;
 						break;
 					case SDLK_WORLD_82:
-						ksym = K_WORLD_82;
+						ksym = QFK_WORLD_82;
 						break;
 					case SDLK_WORLD_83:
-						ksym = K_WORLD_83;
+						ksym = QFK_WORLD_83;
 						break;
 					case SDLK_WORLD_84:
-						ksym = K_WORLD_84;
+						ksym = QFK_WORLD_84;
 						break;
 					case SDLK_WORLD_85:
-						ksym = K_WORLD_85;
+						ksym = QFK_WORLD_85;
 						break;
 					case SDLK_WORLD_86:
-						ksym = K_WORLD_86;
+						ksym = QFK_WORLD_86;
 						break;
 					case SDLK_WORLD_87:
-						ksym = K_WORLD_87;
+						ksym = QFK_WORLD_87;
 						break;
 					case SDLK_WORLD_88:
-						ksym = K_WORLD_88;
+						ksym = QFK_WORLD_88;
 						break;
 					case SDLK_WORLD_89:
-						ksym = K_WORLD_89;
+						ksym = QFK_WORLD_89;
 						break;
 					case SDLK_WORLD_90:
-						ksym = K_WORLD_90;
+						ksym = QFK_WORLD_90;
 						break;
 					case SDLK_WORLD_91:
-						ksym = K_WORLD_91;
+						ksym = QFK_WORLD_91;
 						break;
 					case SDLK_WORLD_92:
-						ksym = K_WORLD_92;
+						ksym = QFK_WORLD_92;
 						break;
 					case SDLK_WORLD_93:
-						ksym = K_WORLD_93;
+						ksym = QFK_WORLD_93;
 						break;
 					case SDLK_WORLD_94:
-						ksym = K_WORLD_94;
+						ksym = QFK_WORLD_94;
 						break;
 					case SDLK_WORLD_95:
-						ksym = K_WORLD_95;
+						ksym = QFK_WORLD_95;
 						break;
 					case SDLK_KP0:
-						ksym = K_KP0;
+						ksym = QFK_KP0;
 						break;
 					case SDLK_KP1:
-						ksym = K_KP1;
+						ksym = QFK_KP1;
 						break;
 					case SDLK_KP2:
-						ksym = K_KP2;
+						ksym = QFK_KP2;
 						break;
 					case SDLK_KP3:
-						ksym = K_KP3;
+						ksym = QFK_KP3;
 						break;
 					case SDLK_KP4:
-						ksym = K_KP4;
+						ksym = QFK_KP4;
 						break;
 					case SDLK_KP5:
-						ksym = K_KP5;
+						ksym = QFK_KP5;
 						break;
 					case SDLK_KP6:
-						ksym = K_KP6;
+						ksym = QFK_KP6;
 						break;
 					case SDLK_KP7:
-						ksym = K_KP7;
+						ksym = QFK_KP7;
 						break;
 					case SDLK_KP8:
-						ksym = K_KP8;
+						ksym = QFK_KP8;
 						break;
 					case SDLK_KP9:
-						ksym = K_KP9;
+						ksym = QFK_KP9;
 						break;
 					case SDLK_KP_PERIOD:
-						ksym = K_KP_PERIOD;
+						ksym = QFK_KP_PERIOD;
 						break;
 					case SDLK_KP_DIVIDE:
-						ksym = K_KP_DIVIDE;
+						ksym = QFK_KP_DIVIDE;
 						break;
 					case SDLK_KP_MULTIPLY:
-						ksym = K_KP_MULTIPLY;
+						ksym = QFK_KP_MULTIPLY;
 						break;
 					case SDLK_KP_MINUS:
-						ksym = K_KP_MINUS;
+						ksym = QFK_KP_MINUS;
 						break;
 					case SDLK_KP_PLUS:
-						ksym = K_KP_PLUS;
+						ksym = QFK_KP_PLUS;
 						break;
 					case SDLK_KP_ENTER:
-						ksym = K_KP_ENTER;
+						ksym = QFK_KP_ENTER;
 						break;
 					case SDLK_KP_EQUALS:
-						ksym = K_KP_EQUALS;
+						ksym = QFK_KP_EQUALS;
 						break;
 					case SDLK_UP:
-						ksym = K_UP;
+						ksym = QFK_UP;
 						break;
 					case SDLK_DOWN:
-						ksym = K_DOWN;
+						ksym = QFK_DOWN;
 						break;
 					case SDLK_RIGHT:
-						ksym = K_RIGHT;
+						ksym = QFK_RIGHT;
 						break;
 					case SDLK_LEFT:
-						ksym = K_LEFT;
+						ksym = QFK_LEFT;
 						break;
 					case SDLK_INSERT:
-						ksym = K_INSERT;
+						ksym = QFK_INSERT;
 						break;
 					case SDLK_HOME:
-						ksym = K_HOME;
+						ksym = QFK_HOME;
 						break;
 					case SDLK_END:
-						ksym = K_END;
+						ksym = QFK_END;
 						break;
 					case SDLK_PAGEUP:
-						ksym = K_PAGEUP;
+						ksym = QFK_PAGEUP;
 						break;
 					case SDLK_PAGEDOWN:
-						ksym = K_PAGEDOWN;
+						ksym = QFK_PAGEDOWN;
 						break;
 					case SDLK_F1:
-						ksym = K_F1;
+						ksym = QFK_F1;
 						break;
 					case SDLK_F2:
-						ksym = K_F2;
+						ksym = QFK_F2;
 						break;
 					case SDLK_F3:
-						ksym = K_F3;
+						ksym = QFK_F3;
 						break;
 					case SDLK_F4:
-						ksym = K_F4;
+						ksym = QFK_F4;
 						break;
 					case SDLK_F5:
-						ksym = K_F5;
+						ksym = QFK_F5;
 						break;
 					case SDLK_F6:
-						ksym = K_F6;
+						ksym = QFK_F6;
 						break;
 					case SDLK_F7:
-						ksym = K_F7;
+						ksym = QFK_F7;
 						break;
 					case SDLK_F8:
-						ksym = K_F8;
+						ksym = QFK_F8;
 						break;
 					case SDLK_F9:
-						ksym = K_F9;
+						ksym = QFK_F9;
 						break;
 					case SDLK_F10:
-						ksym = K_F10;
+						ksym = QFK_F10;
 						break;
 					case SDLK_F11:
-						ksym = K_F11;
+						ksym = QFK_F11;
 						break;
 					case SDLK_F12:
-						ksym = K_F12;
+						ksym = QFK_F12;
 						break;
 					case SDLK_F13:
-						ksym = K_F13;
+						ksym = QFK_F13;
 						break;
 					case SDLK_F14:
-						ksym = K_F14;
+						ksym = QFK_F14;
 						break;
 					case SDLK_F15:
-						ksym = K_F15;
+						ksym = QFK_F15;
 						break;
 					case SDLK_NUMLOCK:
-						ksym = K_NUMLOCK;
+						ksym = QFK_NUMLOCK;
 						break;
 					case SDLK_CAPSLOCK:
-						ksym = K_CAPSLOCK;
+						ksym = QFK_CAPSLOCK;
 						break;
 					case SDLK_SCROLLOCK:
-						ksym = K_SCROLLOCK;
+						ksym = QFK_SCROLLOCK;
 						break;
 					case SDLK_RSHIFT:
-						ksym = K_RSHIFT;
+						ksym = QFK_RSHIFT;
 						break;
 					case SDLK_LSHIFT:
-						ksym = K_LSHIFT;
+						ksym = QFK_LSHIFT;
 						break;
 					case SDLK_RCTRL:
-						ksym = K_RCTRL;
+						ksym = QFK_RCTRL;
 						break;
 					case SDLK_LCTRL:
-						ksym = K_LCTRL;
+						ksym = QFK_LCTRL;
 						break;
 					case SDLK_RALT:
-						ksym = K_RALT;
+						ksym = QFK_RALT;
 						break;
 					case SDLK_LALT:
-						ksym = K_LALT;
+						ksym = QFK_LALT;
 						break;
 					case SDLK_RMETA:
-						ksym = K_RMETA;
+						ksym = QFK_RMETA;
 						break;
 					case SDLK_LMETA:
-						ksym = K_LMETA;
+						ksym = QFK_LMETA;
 						break;
 					case SDLK_LSUPER:
-						ksym = K_LSUPER;
+						ksym = QFK_LSUPER;
 						break;
 					case SDLK_RSUPER:
-						ksym = K_RSUPER;
+						ksym = QFK_RSUPER;
 						break;
 					case SDLK_MODE:
-						ksym = K_MODE;
+						ksym = QFK_MODE;
 						break;
 					case SDLK_COMPOSE:
-						ksym = K_COMPOSE;
+						ksym = QFK_COMPOSE;
 						break;
 					case SDLK_HELP:
-						ksym = K_HELP;
+						ksym = QFK_HELP;
 						break;
 					case SDLK_PRINT:
-						ksym = K_PRINT;
+						ksym = QFK_PRINT;
 						break;
 					case SDLK_SYSREQ:
-						ksym = K_SYSREQ;
+						ksym = QFK_SYSREQ;
 						break;
 					case SDLK_BREAK:
-						ksym = K_BREAK;
+						ksym = QFK_BREAK;
 						break;
 					case SDLK_MENU:
-						ksym = K_MENU;
+						ksym = QFK_MENU;
 						break;
 					case SDLK_POWER:
-						ksym = K_POWER;
+						ksym = QFK_POWER;
 						break;
 					case SDLK_EURO:
-						ksym = K_EURO;
+						ksym = QFK_EURO;
 						break;
 					case SDLK_LAST:
-						ksym = K_LAST;
+						ksym = QFK_LAST;
 						break;
 					default:
-						ksym = K_UNKNOWN;
+						ksym = QFK_UNKNOWN;
 						break;
 				}
 				if (unicode > 255)
@@ -784,16 +783,16 @@ IN_LL_SendKeyEvents (void)
 					case 1:
 					case 2:
 					case 3:
-						Key_Event (M_BUTTON1 + but - 1, 0,
+						Key_Event (QFM_BUTTON1 + but - 1, 0,
 								   event.type == SDL_MOUSEBUTTONDOWN);
 						break;
 					case 4:
-						Key_Event (M_WHEEL_UP, 0, true);
-						Key_Event (M_WHEEL_UP, 0, false);
+						Key_Event (QFM_WHEEL_UP, 0, true);
+						Key_Event (QFM_WHEEL_UP, 0, false);
 						break;
 					case 5:
-						Key_Event (M_WHEEL_DOWN, 0, true);
-						Key_Event (M_WHEEL_DOWN, 0, false);
+						Key_Event (QFM_WHEEL_DOWN, 0, true);
+						Key_Event (QFM_WHEEL_DOWN, 0, false);
 						break;
 				}
 				break;

@@ -149,10 +149,7 @@ int         scr_center_lines;
 int         scr_erase_lines;
 int         scr_erase_center;
 
-extern float v_blend[4];
-extern int   sb_lines;
 
-extern void GL_Set2D (void);
 
 
 /*
@@ -399,8 +396,6 @@ SCR_DrawTurtle (int swap)
 	Draw_Pic (scr_vrect.x, scr_vrect.y, scr_turtle);
 }
 
-extern cvar_t *show_fps;
-extern cvar_t *show_time;
 
 void
 SCR_DrawFPS (int swap)
@@ -667,7 +662,6 @@ MipColor (int r, int g, int b)
 }
 
 // in gl_draw.c
-extern byte *draw_chars;				// 8*8 graphic characters
 
 void
 SCR_DrawCharToSnap (int num, byte * dest, int width)

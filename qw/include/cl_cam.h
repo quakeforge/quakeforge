@@ -41,6 +41,7 @@
 
 extern	int	autocam;
 extern	int	spec_track; // player# of who we are tracking
+extern	struct cvar_s	*chase_active;
 
 qboolean Cam_DrawViewModel(void);
 qboolean Cam_DrawPlayer(int playernum);

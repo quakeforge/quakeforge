@@ -64,7 +64,6 @@ int         mod_numknown;
 cvar_t     *gl_subdivide_size;
 cvar_t     *gl_mesh_cache;
 
-extern byte mod_novis[MAX_MAP_LEAFS / 8];
 
 texture_t  *r_notexture_mip;
 

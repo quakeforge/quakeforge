@@ -29,6 +29,8 @@
 #ifndef _CL_INPUT_H
 #define _CL_INPUT_H
 
+#include "QF/input.h"
+
 #include "protocol.h"
 
 void CL_Input_Init (void);
@@ -44,5 +46,10 @@ void CL_ReadPackets (void);
 int  CL_ReadFromServer (void);
 void CL_WriteToServer (usercmd_t *cmd);
 void CL_BaseMove (usercmd_t *cmd);
+
+extern kbutton_t   in_left, in_right, in_forward, in_back;
+extern kbutton_t   in_lookup, in_lookdown, in_moveleft, in_moveright;
+extern kbutton_t   in_use, in_jump, in_attack;
+extern kbutton_t   in_up, in_down;
 
 #endif

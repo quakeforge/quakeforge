@@ -104,23 +104,23 @@ IN_LL_SendKeyEvents (void)
 		switch (k) {
 			case '\r':
 			case '\n':
-				k = K_RETURN;
+				k = QFK_RETURN;
 				break;
 			case '\033':
 				if (read(0, buf, 2) != 2)
 					break;
 				switch (buf[1]) {
 					case 'A':
-						k = K_UP;
+						k = QFK_UP;
 						break;
 					case 'B':
-						k = K_DOWN;
+						k = QFK_DOWN;
 						break;
 					case 'C':
-						k = K_RIGHT;
+						k = QFK_RIGHT;
 						break;
 					case 'D':
-						k = K_LEFT;
+						k = QFK_LEFT;
 						break;
 				}
 				break;

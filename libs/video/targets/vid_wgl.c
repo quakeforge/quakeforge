@@ -55,13 +55,7 @@ static const char rcsid[] =
 #include "resource.h"
 #include "sbar.h"
 
-extern void GL_Pre_Init (void);
-extern void GL_Init_Common (void);
-extern void VID_Init8bitPalette (void);
-extern void GL_Common_Init_Cvars (void);
 
-extern void (*vid_menudrawfn) (void);
-extern void (*vid_menukeyfn) (int);
 
 HGLRC (GLAPIENTRY *qf_wglCreateContext) (HDC);
 BOOL (GLAPIENTRY *qf_wglDeleteContext) (HGLRC);
@@ -106,10 +100,6 @@ lmode_t     lowresmodes[] = {
 	{512, 384},
 };
 
-extern const char *gl_vendor;
-extern const char *gl_renderer;
-extern const char *gl_version;
-extern const char *gl_extensions;
 
 // FIXME: Only used by MGL ..
 qboolean    DDActive;
@@ -144,9 +134,7 @@ HDC         maindc;
 HWND WINAPI InitializeWindow (HINSTANCE hInstance, int nCmdShow);
 LONG	CDAudio_MessageHandler (HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
 
-extern viddef_t vid;					// global video state
 
-extern float gldepthmin, gldepthmax;
 
 modestate_t modestate = MS_UNINIT;
 
@@ -159,7 +147,6 @@ void        GL_Init (void);
 
 //====================================
 
-extern cvar_t *in_grab;
 
 int         window_center_x, window_center_y, window_x, window_y, window_width,
 			window_height;

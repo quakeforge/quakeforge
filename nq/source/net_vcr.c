@@ -32,12 +32,12 @@ static const char rcsid[] =
 #endif
 
 #include "QF/msg.h"
+#include "QF/sys.h"
+
 #include "net.h"
 #include "net_vcr.h"
-#include "QF/sys.h"
 #include "server.h"
 
-extern VFile  *vcrFile;
 
 // This is the playback portion of the VCR.  It reads the file produced
 // by the recorder and plays it back to the host.  The recording contains

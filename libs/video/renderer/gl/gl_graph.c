@@ -57,10 +57,6 @@ static int   graph_index;
 static int   graph_size[NUM_GRAPH_TEXTURES];
 static int   graph_width[NUM_GRAPH_TEXTURES];
 
-extern byte   *draw_chars;	// 8*8 graphic characters
-extern cvar_t *r_netgraph;
-extern cvar_t *r_netgraph_alpha;
-extern cvar_t *r_netgraph_box;
 
 
 int

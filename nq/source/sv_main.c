@@ -906,7 +906,6 @@ SV_SaveSpawnparms (void)
 	}
 }
 
-extern float scr_centertime_off;
 
 /*
   SV_SpawnServer

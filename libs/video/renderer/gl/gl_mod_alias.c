@@ -75,12 +75,7 @@ typedef struct {
 	int        *order;
 } vert_order_t;
 
-extern vec3_t lightspot;
 
-extern float modelalpha;
-extern vec3_t shadecolor;
-
-#define NUMVERTEXNORMALS	162
 
 float		r_avertexnormals[NUMVERTEXNORMALS][3] = {
 #include "anorms.h"

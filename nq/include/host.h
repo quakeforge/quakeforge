@@ -50,6 +50,8 @@ extern	struct cvar_s	*developer;
 
 extern	struct cvar_s	*pausable;
 
+extern int viewentity;
+
 extern	qboolean	host_initialized;		// true if into command execution
 extern	double		host_frametime;
 extern	int			host_framecount;	// incremented every frame, never reset
@@ -60,6 +62,8 @@ void Host_ClearMemory (void);
 void Host_ServerFrame (void);
 void Host_InitCommands (void);
 void Host_Init (quakeparms_t *parms);
+void Host_Skin_Init (void);
+void Host_Skin_Init_Cvars (void);
 void Host_Shutdown(void);
 void Host_Error (const char *error, ...) __attribute__((format(printf,1,2)));
 void Host_EndGame (const char *message, ...) __attribute__((format(printf,1,2)));

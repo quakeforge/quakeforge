@@ -65,16 +65,12 @@ void		SND_Init_Cvars ();
 
 // Internal sound data & structures ===========================================
 
-extern channel_t   channels[MAX_CHANNELS];
-extern int		   total_channels;
 //extern double host_frametime; // From host.h
 
 int			snd_blocked = 0;
 static qboolean snd_ambient = 1;
-extern qboolean    snd_initialized;
 
 // pointer should go away
-extern volatile dma_t *shm;
 
 vec3_t		listener_origin;
 vec3_t		listener_forward;
@@ -83,7 +79,6 @@ vec3_t		listener_up;
 vec_t		sound_nominal_clip_dist = 1000.0;
 
 int			soundtime;					// sample PAIRS
-extern int	paintedtime;				// sample PAIRS
 
 #define	MAX_SFX		512
 sfx_t	   *known_sfx;					// hunk allocated [MAX_SFX]
@@ -93,10 +88,6 @@ sfx_t	   *ambient_sfx[NUM_AMBIENTS];
 
 int			sound_started = 0;
 
-extern cvar_t	  *snd_loadas8bit;
-extern cvar_t	  *snd_interp;
-extern cvar_t	  *bgmvolume;
-extern cvar_t	  *volume;
 
 cvar_t	   *ambient_fade;
 cvar_t	   *ambient_level;
@@ -644,11 +635,11 @@ SND_UpdateAmbientSounds (void)
 		return;
 
 	// calc ambient sound levels
-	if (!**plugin_info_snd_render_data.worldmodel) // FIXME: eww
+	if (!*plugin_info_snd_render_data.worldmodel)
 		return;
 
 	l = Mod_PointInLeaf (listener_origin,
-						 **plugin_info_snd_render_data.worldmodel);
+						 *plugin_info_snd_render_data.worldmodel);
 	if (!l || !ambient_level->value) {
 		for (ambient_channel = 0; ambient_channel < NUM_AMBIENTS;
 			 ambient_channel++)

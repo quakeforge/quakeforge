@@ -46,8 +46,6 @@ static const char rcsid[] =
 
 #include "d_iface.h"
 
-extern model_t *loadmodel;
-extern char loadname[];
 
 
 void       *

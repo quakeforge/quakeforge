@@ -39,7 +39,6 @@ static const char rcsid[] =
 #include "vid_dos.h"
 #include <dpmi.h>
 
-extern regs_t regs;
 
 int         VGA_width, VGA_height, VGA_rowbytes, VGA_bufferrowbytes;
 byte       *VGA_pagebase;

@@ -47,7 +47,6 @@ cvar_t     *cl_nopred;
 cvar_t     *cl_pushlatency;
 cvar_t     *cl_nostatpred;
 
-extern frame_t *view_frame;
 
 
 void

@@ -107,8 +107,6 @@ byte        net_message_buffer[MAX_UDP_PACKET];
  WSADATA     winsockdata;
 #endif
 
-extern cvar_t     *net_packetlog;
-extern qboolean    is_server;
 
 
 void

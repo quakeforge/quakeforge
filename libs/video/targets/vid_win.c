@@ -35,7 +35,6 @@ static const char rcsid[] =
 
 #include "QF/vid.h"
 
-extern HWND		mainwindow;
 
 void
 VID_RaiseWindow (void)

@@ -62,8 +62,6 @@ int         alphaskytexture;
 // Set to true if a valid skybox is loaded --KB
 qboolean    skyloaded = false;
 
-extern int      skytexturenum;
-extern model_t *loadmodel;
 
 
 void

@@ -43,8 +43,6 @@ static int  net_acceptsocket = -1;		// socket for fielding new
 static int  net_controlsocket;
 static struct qsockaddr broadcastaddr;
 
-extern qboolean winsock_initialized;
-extern WSADATA winsockdata;
 
 #define IPXSOCKETS 18
 static int  ipxsocket[IPXSOCKETS];

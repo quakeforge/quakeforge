@@ -65,7 +65,6 @@ espan_t    *span_p, *max_span_p;
 
 int         r_currentkey;
 
-extern int  screenwidth;
 
 int         current_iv;
 

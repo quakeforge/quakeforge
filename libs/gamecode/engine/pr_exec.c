@@ -47,7 +47,6 @@ static const char rcsid[] =
 
 #include "compat.h"
 
-extern cvar_t *pr_deadbeef_locals;
 
 
 void
@@ -242,7 +241,6 @@ PR_LeaveFunction (progs_t * pr)
 #define OPB (pr->pr_globals[st->b])
 #define OPC (pr->pr_globals[st->c])
 
-extern cvar_t *pr_boundscheck;
 
 /*
 	PR_ExecuteProgram

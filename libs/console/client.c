@@ -65,7 +65,6 @@ console_t   con_chat;
 console_t  *con;						// point to either con_main or con_chat
 
 int         con_totallines;				// total lines in console scrollback
-extern int  con_linewidth;				// characters across screen
 
 
 float       con_cursorspeed = 4;
@@ -83,9 +82,6 @@ qboolean    con_debuglog;
 
 #define		MAXCMDLINE	256
 
-extern char key_lines[32][MAXCMDLINE];
-extern int  edit_line;
-extern int  key_linepos;
 
 qboolean    con_initialized;
 

@@ -67,7 +67,6 @@ static vmode_t vesa_modes[MAX_VESA_MODES] =
 static vesa_extra_t vesa_extra[MAX_VESA_MODES];
 static char names[MAX_VESA_MODES][10];
 
-extern regs_t regs;
 
 static int  VID_currentpage;
 static int  VID_displayedpage;

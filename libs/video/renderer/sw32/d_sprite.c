@@ -41,7 +41,6 @@ static int  sprite_height;
 static int  minindex, maxindex;
 static sspan_t *sprite_spans;
 
-extern float d_zitable[65536];
 
 
 void

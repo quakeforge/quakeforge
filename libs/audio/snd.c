@@ -70,13 +70,10 @@ plugin_list_t   snd_render_list[] = {
 };
 
 // FIXME: ewwwies
-extern double				host_frametime; // From host.h
-extern int					snd_viewentity;
-extern struct model_s	  **snd_worldmodel;
 
 
 void
-S_Init (void)
+S_Init (struct model_s **worldmodel, int *viewentity, double *host_frametime)
 {
 	S_Init_Cvars ();
 	if (!*snd_output->string || !*snd_render->string) {
@@ -98,10 +95,10 @@ S_Init (void)
 			PI_UnloadPlugin (snd_output_module);
 			snd_output_module = NULL;
 		} else {
-			snd_render_module->data->snd_render->worldmodel = &snd_worldmodel;
-			snd_render_module->data->snd_render->viewentity = &snd_viewentity;
+			snd_render_module->data->snd_render->worldmodel = worldmodel;
+			snd_render_module->data->snd_render->viewentity = viewentity;
 			snd_render_module->data->snd_render->host_frametime =
-				&host_frametime;
+				host_frametime;
 
 			snd_output_module->data->snd_output->soundtime
 				= snd_render_module->data->snd_render->soundtime;

@@ -44,8 +44,6 @@ short			r_maxparticles, numparticles;
 particle_t	   *active_particles, *free_particles, *particles, **freeparticles;
 vec3_t			r_pright, r_pup, r_ppn;
 
-extern cvar_t  *cl_max_particles;
-extern cvar_t  *r_particles;
 
 
 /*
@@ -130,11 +128,9 @@ R_DarkFieldParticles (entity_t *ent)
 			}
 }
 
-#define NUMVERTEXNORMALS	162
 static float		beamlength = 16;
 static vec3_t		avelocities[NUMVERTEXNORMALS];
 
-extern float		r_avertexnormals[NUMVERTEXNORMALS][3];
 
 void
 R_EntityParticles (entity_t *ent)

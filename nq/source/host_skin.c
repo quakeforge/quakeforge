@@ -57,7 +57,6 @@ cvar_t     *topcolor;
 cvar_t     *bottomcolor;
 cvar_t     *cl_color;
 
-extern char allskins[128];
 
 
 void

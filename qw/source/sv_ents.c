@@ -109,7 +109,6 @@ SV_FatPVS (vec3_t org)
 edict_t    *nails[MAX_NAILS];
 int         numnails;
 
-extern int  sv_nailmodel, sv_supernailmodel, sv_playermodel;
 
 qboolean
 SV_AddNailUpdate (edict_t *ent)

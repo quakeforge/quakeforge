@@ -245,7 +245,6 @@ static BW_ethdevinfo_t ethdevinfo;
 static int  netmask;
 static struct in_addr bcastaddr;
 
-extern regs_t regs;
 
 static int  net_acceptsocket = -1;		// socket for fielding new
 

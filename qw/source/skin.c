@@ -51,7 +51,7 @@ static const char rcsid[] =
 
 #define MAX_TEMP_SKINS 64	//XXX dynamic?
 
-extern cvar_t *noskins; // XXX FIXME, this shouldn't be here?
+extern cvar_t *noskins;	//FIXME shouldn't be here
 
 cvar_t     *baseskin;
 

@@ -104,7 +104,6 @@ cvar_t     *showpackets;
 cvar_t     *showdrop;
 cvar_t     *qport;
 
-extern qboolean is_server;
 
 void
 Netchan_Init (void)

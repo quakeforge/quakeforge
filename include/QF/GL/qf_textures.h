@@ -36,10 +36,20 @@
 extern int gl_alpha_format;
 extern int gl_solid_format;
 extern int gl_lightmap_format;
+extern int gl_filter_min;
+extern int gl_filter_max;
+
+extern int part_tex_dot;
+extern int part_tex_smoke;
+extern int part_tex_spark;
 
 void GL_Upload8 (byte *data, int width, int height,  qboolean mipmap, qboolean alpha);
 void GL_Upload8_EXT (byte *data, int width, int height,  qboolean mipmap, qboolean alpha);
 int GL_LoadTexture (const char *identifier, int width, int height, byte *data, qboolean mipmap, qboolean alpha, int bytesperpixel);
 int GL_FindTexture (const char *identifier);
+
+void GL_TextureMode_f (void);
+
+void GDT_Init (void);
 
 #endif // __gl_textures_h

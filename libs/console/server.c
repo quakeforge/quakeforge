@@ -65,7 +65,6 @@ static const char rcsid[] =
 
 #include "compat.h"
 
-extern int  con_linewidth;
 
 #ifdef HAVE_CURSES_H
 static int use_curses = 1;
@@ -370,41 +369,41 @@ C_ProcessInput (void)
 			case KEY_ENTER:
 			case '\n':
 			case '\r':
-				ch = K_RETURN;
+				ch = QFK_RETURN;
 				break;
 			case '\t':
-				ch = K_TAB;
+				ch = QFK_TAB;
 				break;
 			case KEY_BACKSPACE:
 			case '\b':
-				ch = K_BACKSPACE;
+				ch = QFK_BACKSPACE;
 				break;
 			case KEY_DC:
-				ch = K_DELETE;
+				ch = QFK_DELETE;
 				break;
 			case KEY_RIGHT:
-				ch = K_RIGHT;
+				ch = QFK_RIGHT;
 				break;
 			case KEY_LEFT:
-				ch = K_LEFT;
+				ch = QFK_LEFT;
 				break;
 			case KEY_UP:
-				ch = K_UP;
+				ch = QFK_UP;
 				break;
 			case KEY_DOWN:
-				ch = K_DOWN;
+				ch = QFK_DOWN;
 				break;
 			case KEY_HOME:
-				ch = K_HOME;
+				ch = QFK_HOME;
 				break;
 			case KEY_END:
-				ch = K_END;
+				ch = QFK_END;
 				break;
 			case KEY_NPAGE:
-				ch = K_PAGEDOWN;
+				ch = QFK_PAGEDOWN;
 				break;
 			case KEY_PPAGE:
-				ch = K_PAGEUP;
+				ch = QFK_PAGEUP;
 				break;
 			default:
 				if (ch < 0 || ch >= 256)

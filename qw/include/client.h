@@ -310,6 +310,8 @@ extern	struct cvar_s	*cl_model_crcs;
 extern	struct cvar_s	*show_ping;
 extern	struct cvar_s	*show_pl;
 
+extern	struct cvar_s	*skin;
+
 
 #define	MAX_STATIC_ENTITIES	128			// torches, etc
 
@@ -331,6 +333,8 @@ void CL_NetGraph (int swap);
 void CL_UpdateScreen (double realtime);
 
 void CL_SetState (cactive_t state);
+
+void V_PrepBlend (void);
 
 #define RSSHOT_WIDTH 320
 #define RSSHOT_HEIGHT 200

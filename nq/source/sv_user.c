@@ -44,6 +44,9 @@ static const char rcsid[] =
 #include "view.h"
 #include "world.h"
 
+extern cvar_t *cl_rollangle;	//FIXME
+extern cvar_t *cl_rollspeed;	//FIXME
+
 edict_t    *sv_player;
 
 cvar_t     *sv_edgefriction;
@@ -63,8 +66,6 @@ qboolean    onground;
 usercmd_t   cmd;
 
 cvar_t     *sv_idealpitchscale;
-extern cvar_t *cl_rollspeed;
-extern cvar_t *cl_rollangle;
 
 #define	MAX_FORWARD	6
 

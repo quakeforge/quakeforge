@@ -41,6 +41,7 @@ static const char rcsid[] =
 #include "QF/vid.h"
 
 #include "bothdefs.h"
+#include "cl_main.h"
 #include "client.h"
 #include "compat.h"
 #include "host.h"
@@ -81,7 +82,6 @@ cvar_t     *v_idlescale;
 float       v_dmg_time, v_dmg_roll, v_dmg_pitch;
 float       v_blend[4];
 
-extern int  in_forward, in_forward2, in_back;
 
 frame_t    *view_frame;
 player_state_t *view_message;
@@ -92,11 +92,6 @@ cshift_t	cshift_slime = { {0, 25, 5}, 150};
 cshift_t	cshift_lava = { {255, 80, 0}, 150};
 cshift_t	cshift_bonus = { {215, 186, 60}, 50};
 
-extern cvar_t *cl_cshift_bonus;
-extern cvar_t *cl_cshift_contents;
-extern cvar_t *cl_cshift_damage;
-extern cvar_t *cl_cshift_powerup;
-extern cvar_t *vid_gamma;
 
 
 float
@@ -622,7 +617,6 @@ V_CalcIntermissionRefdef (void)
 
 #include "cl_cam.h"
 
-extern cvar_t *chase_active;
 
 void
 V_CalcRefdef (void)

@@ -46,8 +46,6 @@ static const char rcsid[] =
 
 #include "compat.h"
 
-extern model_t *loadmodel;
-extern char loadname[];
 
 void       *
 Mod_LoadSpriteFrame (void *pin, mspriteframe_t **ppframe, int framenum)

@@ -108,7 +108,9 @@ typedef struct
 	int		dataofs;		// chunk starts this many bytes from file start
 } wavinfo_t;
 
-void S_Init (void);
+struct model_s;
+void S_Init (struct model_s **worldmodel, int *viewentity,
+			 double *host_frametime);
 void S_Init_Cvars (void);
 void S_Startup (void);
 void S_Shutdown (void);
@@ -222,5 +224,7 @@ void S_O_UnblockSound (void);
 
 void S_AmbientOff (void);
 void S_AmbientOn (void);
+
+extern struct model_s **snd_worldmodel;
 
 #endif // _SOUND_H

@@ -31,6 +31,7 @@
 
 #include "QF/gcc_attr.h"
 #include "QF/sizebuf.h"
+#include "QF/vfile.h"
 
 struct qsockaddr
 {
@@ -357,5 +358,7 @@ extern struct cvar_s	*config_modem_clear;
 extern struct cvar_s	*config_modem_init;
 extern struct cvar_s	*config_modem_hangup;
 extern struct cvar_s	*hostname;
+
+extern VFile *vcrFile;
 
 #endif // __net_h

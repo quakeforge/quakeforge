@@ -43,7 +43,6 @@ static const char rcsid[] =
 #include "compat.h"
 #include "view.h"
 
-extern viddef_t vid;					// global video state
 
 /* Software and hardware gamma support */
 byte		gammatable[256];

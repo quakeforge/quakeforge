@@ -50,10 +50,7 @@ static const char rcsid[] =
 
 int         Mod_Fullbright (byte * skin, int width, int height, char *name);
 
-extern model_t *loadmodel;
-extern char loadname[];
 
-extern byte *mod_base;
 
 const int   mod_lightmap_bytes = 3;
 

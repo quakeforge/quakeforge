@@ -86,16 +86,9 @@ XVisualInfo* (* qfglXChooseVisual) (Display *dpy, int screen, int *attribList);
 GLXContext (* qfglXCreateContext) (Display *dpy, XVisualInfo *vis, GLXContext shareList, Bool direct);
 Bool (* qfglXMakeCurrent) (Display *dpy, GLXDrawable drawable, GLXContext ctx);
 
-extern void GL_Pre_Init (void);
-extern void GL_Init_Common (void);
-extern void VID_Init8bitPalette (void);
 
 /*-----------------------------------------------------------------------*/
 
-extern const char *gl_vendor;
-extern const char *gl_renderer;
-extern const char *gl_version;
-extern const char *gl_extensions;
 
 
 void

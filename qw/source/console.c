@@ -75,9 +75,6 @@ qboolean    con_initialized;
 
 #define		MAXCMDLINE	256
 
-extern char key_lines[32][MAXCMDLINE];
-extern int  edit_line;
-extern int  key_linepos;
 
 
 void

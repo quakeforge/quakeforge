@@ -60,7 +60,6 @@ HWND 		mainwindow;
 // static float oldin_grab = 0;
 
 cvar_t     *vid_bitdepth;
-extern viddef_t vid;					// global video state
 
 int modestate; // FIXME: just to avoid cross-compile errors - remove later
 
@@ -74,7 +73,6 @@ byte       *VGA_pagebase;
 static SDL_Surface *screen = NULL;
 static SDL_Surface *rendersurface = NULL;
 
-extern void VID_MakeColormaps (int fullbrights, byte *pal);
 
 
 void

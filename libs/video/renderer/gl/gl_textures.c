@@ -177,9 +177,6 @@ static glformat_t formats[] = {
 
 int gl_alpha_format = 4, gl_lightmap_format = 4, gl_solid_format = 3;
 
-extern unsigned char d_15to8table[65536];
-extern int      gl_filter_min, gl_filter_max;
-extern cvar_t  *gl_picmip;
 
 
 void
@@ -508,7 +505,6 @@ GL_Upload8_EXT (byte * data, int width, int height, qboolean mipmap,
 #endif
 }
 
-extern qboolean VID_Is8bit (void);
 
 void
 GL_Upload8 (byte * data, int width, int height, qboolean mipmap, qboolean alpha)

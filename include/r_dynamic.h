@@ -63,10 +63,23 @@ void R_ParticleExplosion2 (vec3_t org, int colorStart, int colorLength);
 void R_LavaSplash (vec3_t org);
 void R_TeleportSplash (vec3_t org);
 void R_PushDlights (vec3_t entorigin);
+struct cvar_s;
+void R_MaxDlightsCheck (struct cvar_s *var);
+void R_Particles_Init_Cvars (void);
 
 void R_InitParticles (void);
 inline void R_ClearParticles (void);
 void R_DrawParticles (void);
+struct cvar_s;
+void R_MaxParticlesCheck (struct cvar_s *r_particles, 
+						  struct cvar_s *cl_max_particles);
+
+extern short r_maxparticles;
+extern short numparticles;
+extern struct particle_s *active_particles;
+extern struct particle_s *free_particles;
+extern struct particle_s *particles;
+extern struct particle_s **freeparticles;
 
 #define MAX_FIRES				128		// rocket flames
 

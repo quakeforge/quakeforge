@@ -59,7 +59,6 @@ cvar_t         *cl_gibfilter;
 cvar_t         *cl_parsesay;
 cvar_t         *cl_nofake;
 
-extern cvar_t  *skin;
 
 
 void

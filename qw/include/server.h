@@ -519,6 +519,7 @@ void SV_TogglePause (const char *msg);
 typedef enum {RD_NONE, RD_CLIENT, RD_PACKET} redirect_t;
 void SV_BeginRedirect (redirect_t rd);
 void SV_EndRedirect (void);
+extern redirect_t sv_redirected;
 
 //
 // sv_ccmds.c
@@ -548,4 +549,22 @@ void ClientReliableWrite_String(client_t *cl, const char *s);
 void ClientReliableWrite_SZ(client_t *cl, void *data, int len);
 
 void Cvar_Info (struct cvar_s *var);
+
+extern struct cvar_s *sv_timekick;
+extern struct cvar_s *sv_timekick_fuzz;
+extern struct cvar_s *sv_timekick_interval;
+extern struct cvar_s *sv_maxrate;
+extern struct cvar_s *sv_timestamps;
+extern struct cvar_s *sv_timefmt;
+extern struct cvar_s *sv_phs;
+extern int fp_messages;
+extern int fp_persecond;
+extern int fp_secondsdead;
+extern struct cvar_s *pausable;
+extern struct cvar_s *nouse;
+
+extern char fp_msg[255];
+
+extern int sv_nailmodel, sv_supernailmodel, sv_playermodel;
+
 #endif // _SERVER_H

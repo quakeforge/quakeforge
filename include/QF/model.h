@@ -463,4 +463,21 @@ void	Mod_ProcessTexture(miptex_t *mt, texture_t *tx);
 void	Mod_LoadLighting (lump_t *l);
 int     Mod_CalcFullbright (byte *in, byte *out, int pixels);
 
+void    *Mod_LoadAliasFrame (void *pin, int posenum, maliasframedesc_t *frame);
+void    *Mod_LoadAliasGroup (void *pin, int posenum, maliasframedesc_t *frame);
+void    *Mod_LoadAllSkins (int numskins, daliasskintype_t *pskintype,
+						   int *pskinindex);
+void     GL_MakeAliasModelDisplayLists (model_t *m, aliashdr_t *hdr, void *_m,
+										int _s);
+
+
+
+extern struct cvar_s *gl_mesh_cache;
+extern struct cvar_s *gl_subdivide_size;
+extern model_t *loadmodel;
+extern char loadname[32];
+extern const int mod_lightmap_bytes;
+extern byte *mod_base;
+extern byte mod_novis[MAX_MAP_LEAFS / 8];
+
 #endif	// _MODEL_H

@@ -29,6 +29,8 @@
 #ifndef __QF_input_h_
 #define __QF_input_h_
 
+#include "QF/keys.h"
+
 typedef struct {
 	vec3_t angles;
 	vec3_t position;
@@ -60,6 +62,8 @@ void IN_ModeChanged (void);
 void IN_HandlePause (qboolean paused);
 
 extern struct cvar_s		*in_grab;
+extern struct cvar_s		*in_amp;
+extern struct cvar_s		*in_pre_amp;
 extern struct cvar_s		*m_filter;
 extern struct cvar_s		*in_freelook;
 extern struct cvar_s		*sensitivity;
@@ -75,5 +79,7 @@ void IN_LL_Grab_Input (void);
 void IN_LL_Ungrab_Input (void);
 void IN_LL_SendKeyEvents (void);
 void IN_LL_ClearStates (void);
+
+extern kbutton_t   in_strafe, in_klook, in_speed, in_mlook;
 
 #endif // __QF_input_h_

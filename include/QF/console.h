@@ -80,6 +80,7 @@ extern	old_console_t	con_chat;
 extern	old_console_t	*con;		// point to either con_main or con_chat
 
 extern	int			con_ormask;
+extern	int			con_linewidth;
 
 extern int con_totallines;
 extern qboolean con_initialized;

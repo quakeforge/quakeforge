@@ -222,6 +222,7 @@ extern	client_t	*host_client;
 extern	jmp_buf 	host_abortserver;
 
 extern	double		host_time;
+extern	float		scr_centertime_off;
 
 extern	edict_t		*sv_player;
 

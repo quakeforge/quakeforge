@@ -170,4 +170,7 @@ typedef struct edge_s
 	medge_t			*owner;
 } edge_t;
 
+#define NUMVERTEXNORMALS        162
+extern float       r_avertexnormals[NUMVERTEXNORMALS][3];
+
 #endif	// _R_SHARED_H

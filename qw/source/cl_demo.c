@@ -64,7 +64,6 @@ int     timedemo_count;
 double *cl_timeframes_array;
 #define CL_TIMEFRAMES_ARRAYBLOCK 4096
 
-extern cvar_t *cl_timeframes;
 
 void CL_FinishTimeDemo (void);
 void CL_TimeFrames_Reset (void);

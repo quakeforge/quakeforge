@@ -49,7 +49,6 @@ static const char rcsid[] =
 #include "game.h"
 #include "server.h"
 
-extern qboolean is_server;
 
 
 /*

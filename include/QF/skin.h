@@ -74,4 +74,6 @@ void	Skin_Process (skin_t *skin, struct tex_s *);
 skin_t	*Skin_NewTempSkin (void);
 void	Skin_ClearTempSkins (void);
 
+extern char allskins[128];
+
 #endif

@@ -39,9 +39,7 @@ static const char rcsid[] =
 
 #include "compat.h"
 
-extern viddef_t vid;					// global video state
 
-extern int scr_width, scr_height;
 
 unsigned short d_8to16table[256];
 unsigned int d_8to24table[256];

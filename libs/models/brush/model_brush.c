@@ -46,17 +46,14 @@ static const char rcsid[] =
 #include "QF/cvar.h"
 #include "QF/model.h"
 #include "QF/qendian.h"
+#include "QF/render.h"
 #include "QF/sys.h"
 
 #include "compat.h"
 
-extern struct texture_s *r_notexture_mip;
 void R_InitSky (struct texture_s *mt);
 
-extern model_t *loadmodel;
-extern char loadname[];
 
-extern const int mod_lightmap_bytes;
 
 byte        mod_novis[MAX_MAP_LEAFS / 8];
 

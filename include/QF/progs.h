@@ -191,6 +191,8 @@ void PR_DumpState (progs_t *pr);
 void PR_StackTrace (progs_t * pr);
 
 extern struct cvar_s *pr_debug;
+extern struct cvar_s *pr_deadbeef_locals;
+extern struct cvar_s *pr_boundscheck;
 
 //
 // PR Cmds stuff

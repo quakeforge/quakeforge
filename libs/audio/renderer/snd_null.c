@@ -49,16 +49,7 @@ sound_funcs_t      plugin_info_sound_funcs;
 
 void SND_Init_Cvars (void);
 
-extern int             paintedtime;				// sample PAIRS
-extern int             total_channels;
-extern channel_t       channels[MAX_CHANNELS];
-extern volatile dma_t *shm;
-extern qboolean        snd_initialized;
 
-extern cvar_t         *bgmvolume;
-extern cvar_t         *volume;
-extern cvar_t         *snd_interp;
-extern cvar_t         *snd_loadas8bit;
 
 
 void

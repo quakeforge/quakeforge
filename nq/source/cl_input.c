@@ -44,6 +44,7 @@ static const char rcsid[] =
 #include "QF/keys.h"
 #include "QF/msg.h"
 
+#include "chase.h"
 #include "client.h"
 #include "compat.h"
 #include "host.h"
@@ -65,7 +66,6 @@ static const char rcsid[] =
 	state bit 2 is edge triggered on the down to up transition
 */
 
-extern kbutton_t in_strafe, in_mlook, in_klook, in_speed;
 
 kbutton_t   in_left, in_right, in_forward, in_back;
 kbutton_t   in_lookup, in_lookdown, in_moveleft, in_moveright;
@@ -460,7 +460,6 @@ CL_AdjustAngles (void)
 
 }
 
-extern cvar_t *chase_active;
 
 /*
 	CL_BaseMove

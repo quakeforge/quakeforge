@@ -141,224 +141,224 @@ XLateKey (XKeyEvent * ev, int *k, int *u)
 
 	switch (keysym) {
 		case XK_KP_Page_Up:
-			key = K_KP9;
+			key = QFK_KP9;
 			break;
 		case XK_Page_Up:
-			key = K_PAGEUP;
+			key = QFK_PAGEUP;
 			break;
 
 		case XK_KP_Page_Down:
-			key = K_KP3;
+			key = QFK_KP3;
 			break;
 		case XK_Page_Down:
-			key = K_PAGEDOWN;
+			key = QFK_PAGEDOWN;
 			break;
 
 		case XK_KP_Home:
-			key = K_KP7;
+			key = QFK_KP7;
 			break;
 		case XK_Home:
-			key = K_HOME;
+			key = QFK_HOME;
 			break;
 
 		case XK_KP_End:
-			key = K_KP1;
+			key = QFK_KP1;
 			break;
 		case XK_End:
-			key = K_END;
+			key = QFK_END;
 			break;
 
 		case XK_KP_Left:
-			key = K_KP4;
+			key = QFK_KP4;
 			break;
 		case XK_Left:
-			key = K_LEFT;
+			key = QFK_LEFT;
 			break;
 
 		case XK_KP_Right:
-			key = K_KP6;
+			key = QFK_KP6;
 			break;
 		case XK_Right:
-			key = K_RIGHT;
+			key = QFK_RIGHT;
 			break;
 
 		case XK_KP_Down:
-			key = K_KP2;
+			key = QFK_KP2;
 			break;
 		case XK_Down:
-			key = K_DOWN;
+			key = QFK_DOWN;
 			break;
 
 		case XK_KP_Up:
-			key = K_KP8;
+			key = QFK_KP8;
 			break;
 		case XK_Up:
-			key = K_UP;
+			key = QFK_UP;
 			break;
 
 		case XK_Escape:
-			key = K_ESCAPE;
+			key = QFK_ESCAPE;
 			break;
 
 		case XK_KP_Enter:
-			key = K_KP_ENTER;
+			key = QFK_KP_ENTER;
 			break;
 		case XK_Return:
-			key = K_RETURN;
+			key = QFK_RETURN;
 			break;
 
 		case XK_Tab:
-			key = K_TAB;
+			key = QFK_TAB;
 			break;
 
 		case XK_F1:
-			key = K_F1;
+			key = QFK_F1;
 			break;
 		case XK_F2:
-			key = K_F2;
+			key = QFK_F2;
 			break;
 		case XK_F3:
-			key = K_F3;
+			key = QFK_F3;
 			break;
 		case XK_F4:
-			key = K_F4;
+			key = QFK_F4;
 			break;
 		case XK_F5:
-			key = K_F5;
+			key = QFK_F5;
 			break;
 		case XK_F6:
-			key = K_F6;
+			key = QFK_F6;
 			break;
 		case XK_F7:
-			key = K_F7;
+			key = QFK_F7;
 			break;
 		case XK_F8:
-			key = K_F8;
+			key = QFK_F8;
 			break;
 		case XK_F9:
-			key = K_F9;
+			key = QFK_F9;
 			break;
 		case XK_F10:
-			key = K_F10;
+			key = QFK_F10;
 			break;
 		case XK_F11:
-			key = K_F11;
+			key = QFK_F11;
 			break;
 		case XK_F12:
-			key = K_F12;
+			key = QFK_F12;
 			break;
 
 		case XK_BackSpace:
-			key = K_BACKSPACE;
+			key = QFK_BACKSPACE;
 			break;
 
 		case XK_KP_Delete:
-			key = K_KP_PERIOD;
+			key = QFK_KP_PERIOD;
 			break;
 		case XK_Delete:
-			key = K_DELETE;
+			key = QFK_DELETE;
 			break;
 
 		case XK_Pause:
-			key = K_PAUSE;
+			key = QFK_PAUSE;
 			break;
 
 		case XK_Shift_L:
-			key = K_LSHIFT;
+			key = QFK_LSHIFT;
 			break;
 		case XK_Shift_R:
-			key = K_RSHIFT;
+			key = QFK_RSHIFT;
 			break;
 
 		case XK_Execute:
 		case XK_Control_L:
-			key = K_LCTRL;
+			key = QFK_LCTRL;
 			break;
 		case XK_Control_R:
-			key = K_LCTRL;
+			key = QFK_LCTRL;
 			break;
 
 		case XK_Mode_switch:
 		case XK_Alt_L:
-			key = K_LALT;
+			key = QFK_LALT;
 			break;
 		case XK_Meta_L:
-			key = K_LMETA;
+			key = QFK_LMETA;
 			break;
 		case XK_Alt_R:
-			key = K_RALT;
+			key = QFK_RALT;
 			break;
 		case XK_Meta_R:
-			key = K_RMETA;
+			key = QFK_RMETA;
 			break;
 
 		case XK_Caps_Lock:
-			key = K_CAPSLOCK;
+			key = QFK_CAPSLOCK;
 			break;
 		case XK_KP_Begin:
-			key = K_KP5;
+			key = QFK_KP5;
 			break;
 
 		case XK_Scroll_Lock:
-			key = K_SCROLLOCK;
+			key = QFK_SCROLLOCK;
 			break;
 
 		case XK_Num_Lock:
-			key = K_NUMLOCK;
+			key = QFK_NUMLOCK;
 			break;
 
 		case XK_Insert:
-			key = K_INSERT;
+			key = QFK_INSERT;
 			break;
 		case XK_KP_Insert:
-			key = K_KP0;
+			key = QFK_KP0;
 			break;
 
 		case XK_KP_Multiply:
-			key = K_KP_MULTIPLY;
+			key = QFK_KP_MULTIPLY;
 			break;
 		case XK_KP_Add:
-			key = K_KP_PLUS;
+			key = QFK_KP_PLUS;
 			break;
 		case XK_KP_Subtract:
-			key = K_KP_MINUS;
+			key = QFK_KP_MINUS;
 			break;
 		case XK_KP_Divide:
-			key = K_KP_DIVIDE;
+			key = QFK_KP_DIVIDE;
 			break;
 
 		/* For Sun keyboards */
 		case XK_F27:
-			key = K_HOME;
+			key = QFK_HOME;
 			break;
 		case XK_F29:
-			key = K_PAGEUP;
+			key = QFK_PAGEUP;
 			break;
 		case XK_F33:
-			key = K_END;
+			key = QFK_END;
 			break;
 		case XK_F35:
-			key = K_PAGEDOWN;
+			key = QFK_PAGEDOWN;
 			break;
 
 		/* Some high ASCII symbols, for azerty keymaps */
 		case XK_twosuperior:
-			key = K_WORLD_18;
+			key = QFK_WORLD_18;
 			break;
 		case XK_eacute:
-			key = K_WORLD_63;
+			key = QFK_WORLD_63;
 			break;
 		case XK_section:
-			key = K_WORLD_7;
+			key = QFK_WORLD_7;
 			break;
 		case XK_egrave:
-			key = K_WORLD_72;
+			key = QFK_WORLD_72;
 			break;
 		case XK_ccedilla:
-			key = K_WORLD_71;
+			key = QFK_WORLD_71;
 			break;
 		case XK_agrave:
-			key = K_WORLD_64;
+			key = QFK_WORLD_64;
 			break;
 
 		default:
@@ -405,13 +405,13 @@ event_button (XEvent * event)
 		case 1:
 		case 2:
 		case 3:
-			Key_Event (M_BUTTON1 + but - 1, 0, event->type == ButtonPress);
+			Key_Event (QFM_BUTTON1 + but - 1, 0, event->type == ButtonPress);
 			break;
 		case 4:
-			Key_Event (M_WHEEL_UP, 0, event->type == ButtonPress);
+			Key_Event (QFM_WHEEL_UP, 0, event->type == ButtonPress);
 			break;
 		case 5:
-			Key_Event (M_WHEEL_DOWN, 0, event->type == ButtonPress);
+			Key_Event (QFM_WHEEL_DOWN, 0, event->type == ButtonPress);
 			break;
 	}
 }

@@ -52,6 +52,7 @@ static const char rcsid[] =
 #include "QF/GL/qf_rmain.h"
 #include "QF/GL/qf_rsurf.h"
 #include "QF/GL/qf_screen.h"
+#include "QF/GL/qf_textures.h"
 #include "QF/GL/qf_vid.h"
 
 #include "r_dynamic.h"
@@ -63,11 +64,7 @@ varray_t2f_c4ub_v3f_t varray[MAX_VARRAY_VERTS];
 qboolean    VID_Is8bit (void);
 void        R_InitBubble (void);
 
-extern cvar_t	*gl_lerp_anim;
-extern cvar_t	*r_netgraph;
 
-extern void GDT_Init ();
-extern int  R_InitGraphTextures (int base);
 
 
 /*

@@ -87,8 +87,6 @@ cvar_t			   *gl_screenshot_byte_swap;
 cvar_t			   *vid_mode;
 cvar_t			   *vid_use8bit;
 
-extern byte			gammatable[256];
-extern qboolean		GLF_Init ();
 
 
 static void

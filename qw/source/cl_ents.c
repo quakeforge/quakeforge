@@ -70,8 +70,6 @@ entity_t    cl_packet_ents[512];	// FIXME: magic number
 entity_t    cl_flag_ents[MAX_CLIENTS];
 entity_t    cl_player_ents[MAX_CLIENTS];
 
-extern cvar_t *cl_predict_players;
-extern cvar_t *cl_solid_players;
 
 
 void
@@ -541,7 +539,6 @@ typedef struct {
 
 projectile_t cl_projectiles[MAX_PROJECTILES];
 int          cl_num_projectiles;
-extern int   cl_spikeindex;
 
 void
 CL_ClearProjectiles (void)
@@ -611,8 +608,6 @@ CL_LinkProjectiles (void)
 	}
 }
 
-extern double parsecounttime;
-extern int    cl_spikeindex, cl_playerindex, cl_flagindex, parsecountmod;
 
 void
 CL_ParsePlayerinfo (void)

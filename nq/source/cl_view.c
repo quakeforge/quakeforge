@@ -52,10 +52,6 @@ static const char rcsid[] =
 	especially when crossing a water boudnary.
 */
 
-extern cvar_t *cl_cshift_bonus;
-extern cvar_t *cl_cshift_contents;
-extern cvar_t *cl_cshift_damage;
-extern cvar_t *cl_cshift_powerup;
 
 cvar_t     *scr_ofsx;
 cvar_t     *scr_ofsy;
@@ -87,8 +83,6 @@ cvar_t     *v_kickpitch;
 float       v_dmg_time, v_dmg_roll, v_dmg_pitch;
 float       v_blend[4];
 
-extern cvar_t  *vid_gamma;
-extern int  in_forward, in_forward2, in_back;
 
 cshift_t	cshift_empty = { {130, 80, 50}, 0};
 cshift_t	cshift_water = { {130, 80, 50}, 128};

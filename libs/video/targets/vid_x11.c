@@ -79,7 +79,6 @@ static const char rcsid[] =
 #include "context_x11.h"
 #include "dga_check.h"
 
-extern viddef_t vid;	// global video state
 
 static Colormap x_cmap;
 static GC		x_gc;
@@ -108,8 +107,6 @@ static int		shiftmask_fl = 0;
 static long 	r_shift, g_shift, b_shift;
 static unsigned long r_mask, g_mask, b_mask;
 
-extern cvar_t *vid_width;
-extern cvar_t *vid_height;
 
 
 static void

@@ -39,6 +39,9 @@ extern byte   *vid_basepal;
 extern byte   *vid_colormap;
 
 extern struct cvar_s *vid_fullscreen;
+extern struct cvar_s *vid_system_gamma;
+extern struct cvar_s *vid_width;
+extern struct cvar_s *vid_height;
 
 typedef struct vrect_s {
 	int				 x,y,width,height;
@@ -86,6 +89,7 @@ extern qboolean			vid_gamma_avail;
 
 // called at startup and after any gamma correction
 void VID_SetPalette (unsigned char *palette);
+void VID_Init8bitPalette (void);
 
 // called for bonus and pain flashes, and for underwater color changes
 void VID_ShiftPalette (unsigned char *palette);
@@ -131,5 +135,10 @@ void VID_InitGamma (unsigned char *);
 double VID_GetGamma (void);
 qboolean VID_SetGamma (double);
 void VID_UpdateGamma (struct cvar_s *);
+
+void GL_Init_Common (void);
+void GL_Pre_Init (void);
+
+void VID_MakeColormaps (int fullbrights, byte *pal);
 
 #endif	// __vid_h_

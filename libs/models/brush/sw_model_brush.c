@@ -42,9 +42,6 @@ static const char rcsid[] =
 
 #include "QF/model.h"
 
-extern model_t *loadmodel;
-extern char loadname[];
-extern byte *mod_base;
 
 const int   mod_lightmap_bytes = 1;
 

@@ -46,22 +46,15 @@ static const char rcsid[] =
 
 #include "d_iface.h"
 
-extern char loadname[];
-extern model_t *loadmodel;
 
 /*
   ALIAS MODELS
 */
 
-extern aliashdr_t *pheader;
 
-extern stvert_t stverts[MAXALIASVERTS];
-extern mtriangle_t triangles[MAXALIASTRIS];
 
 // a pose is a single set of vertexes.  a frame may be
 // an animating sequence of poses
-extern trivertx_t *poseverts[MAXALIASFRAMES];
-extern int  posenum;
 
 
 void *
@@ -197,7 +190,7 @@ GL_MakeAliasModelDisplayLists (model_t *m, aliashdr_t *hdr, void *_m, int _s)
 }
 
 void *
-Mod_LoadAliasFrame (void *pin, maliasframedesc_t *frame)
+Mod_LoadAliasFrame (void *pin, int posenum, maliasframedesc_t *frame)
 {
 	trivertx_t *pframe, *pinframe;
 	int         i, j;
@@ -235,7 +228,7 @@ Mod_LoadAliasFrame (void *pin, maliasframedesc_t *frame)
 }
 
 void *
-Mod_LoadAliasGroup (void *pin, maliasframedesc_t *frame)
+Mod_LoadAliasGroup (void *pin, int posenum, maliasframedesc_t *frame)
 {
 	daliasgroup_t *pingroup;
 	maliasgroup_t *paliasgroup;
@@ -279,7 +272,7 @@ Mod_LoadAliasGroup (void *pin, maliasframedesc_t *frame)
 
 	for (i = 0; i < numframes; i++) {
 		maliasframedesc_t temp_frame;
-		ptemp = Mod_LoadAliasFrame (ptemp, &temp_frame);
+		ptemp = Mod_LoadAliasFrame (ptemp, i, &temp_frame);
 		memcpy (&paliasgroup->frames[i], &temp_frame,
 				sizeof(paliasgroup->frames[i]));
 	}

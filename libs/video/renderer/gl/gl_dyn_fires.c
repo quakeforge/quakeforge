@@ -50,8 +50,8 @@ static const char rcsid[] =
 #include "r_cvar.h"
 #include "r_dynamic.h"
 #include "r_shared.h"
+#include "view.h"
 
-extern float v_blend[4];
 
 
 void

@@ -32,6 +32,7 @@
 #include <stdio.h>
 
 #include "QF/info.h"
+#include "QF/input.h"
 #include "QF/mathlib.h"
 #include "QF/model.h"
 #include "QF/sound.h"
@@ -257,6 +258,14 @@ extern struct cvar_s	*m_forward;
 extern struct cvar_s	*m_side;
 
 extern struct cvar_s	*cl_name;
+extern struct cvar_s	*cl_writecfg;
+
+extern struct cvar_s	*cl_cshift_bonus;
+extern struct cvar_s	*cl_cshift_contents;
+extern struct cvar_s	*cl_cshift_damage;
+extern struct cvar_s	*cl_cshift_powerup;
+
+extern struct cvar_s	*noskins;
 
 #define	MAX_TEMP_ENTITIES	64			// lightning bolts, etc
 #define	MAX_STATIC_ENTITIES	128			// torches, etc
@@ -266,6 +275,8 @@ extern	client_state_t	cl;
 // FIXME, allocate dynamically
 extern	entity_t		cl_entities[MAX_EDICTS];
 extern	entity_t		cl_static_entities[MAX_STATIC_ENTITIES];
+
+extern int fps_count;
 
 
 /*
@@ -334,7 +345,7 @@ void V_UpdatePalette (void);
 void V_Register (void);
 void V_ParseDamage (void);
 void V_SetContentsColor (int contents);
-
+void V_PrepBlend (void);
 
 /*
   cl_tent
@@ -346,6 +357,10 @@ void CL_Init_Entity (struct entity_s *ent);
 void CL_ParseTEnt (void);
 void CL_SignonReply (void);
 
+extern kbutton_t   in_left, in_right, in_forward, in_back;
+extern kbutton_t   in_lookup, in_lookdown, in_moveleft, in_moveright;
+extern kbutton_t   in_use, in_jump, in_attack;
+extern kbutton_t   in_up, in_down;
 
 extern	double			realtime;
 

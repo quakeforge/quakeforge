@@ -154,12 +154,13 @@ int         oldparsecountmod;
 int         parsecountmod;
 double      parsecounttime;
 
+int         viewentity;
+
 int         cl_spikeindex, cl_playerindex, cl_flagindex;
 int         cl_h_playerindex, cl_gib1index, cl_gib2index, cl_gib3index;
 
 int         packet_latency[NET_TIMINGS];
 
-extern cvar_t *cl_autoexec;
 
 
 int
@@ -245,8 +246,6 @@ CL_CheckOrDownloadFile (const char *filename)
 
 	return false;
 }
-
-struct model_s **snd_worldmodel = &cl.worldmodel;
 
 void
 Model_NextDownload (void)
@@ -642,10 +641,6 @@ CL_ParsePrint (void)
 void Draw_ClearCache (void);
 void CL_ClearBaselines (void);		// LordHavoc: BIG BUG-FIX!
 
-// FIXME: Evil hack that doesn't deserve to see the light of day.
-// (pending merge of nq and qw client_stat_t's)
-int snd_viewentity;
-
 void
 CL_ParseServerData (void)
 {
@@ -714,7 +709,7 @@ CL_ParseServerData (void)
 
 // FIXME: evil hack so NQ and QW can share sound code
 	cl.viewentity = cl.playernum + 1;
-	snd_viewentity = cl.playernum + 1;
+	viewentity = cl.playernum + 1;
 
 	// get the full level name
 	strncpy (cl.levelname, serverdata.levelname, sizeof (cl.levelname) - 1);

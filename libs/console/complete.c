@@ -44,7 +44,6 @@ static const char rcsid[] =
 #include "QF/cvar.h"
 
 //FIXME eww
-extern int  con_linewidth;
 
 
 /*

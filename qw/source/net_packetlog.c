@@ -63,7 +63,6 @@ cvar_t     *net_packetlog;
 cvar_t     *net_loglevel;
 
 //extern server_t sv;
-extern qboolean is_server;
 
 int         Net_LogStart (const char *fname);
 

@@ -208,11 +208,10 @@ static int FillScanRates(struct VideoMode *vmode);
 static void Usage(void);
 int main(int argc, char *argv[]);
 
-extern void Con_Printf (const char *fmt, ...);
 
-#define Die Con_Printf
-#define puts(s) Con_Printf("%s\n",(s))
-#define printf Con_Printf
+#define Die Sys_Printf
+#define puts(s) Sys_Printf("%s\n",(s))
+#define printf Sys_Printf
 
 
 /* Open the Frame Buffer Device */

@@ -51,6 +51,8 @@ static const char rcsid[] =
 #include "QF/vid.h"
 #include "QF/GL/defines.h"
 #include "QF/GL/funcs.h"
+#include "QF/GL/qf_rmain.h"
+#include "QF/GL/qf_rsurf.h"
 #include "QF/GL/qf_screen.h"
 #include "QF/GL/qf_textures.h"
 #include "QF/GL/qf_vid.h"
@@ -97,12 +99,6 @@ static cachepic_t cachepics[MAX_CACHED_PICS];
 static int     numcachepics;
 
 static byte    menuplyr_pixels[4096];
-
-extern byte   *vid_basepal;
-extern int     gl_filter_max, gl_filter_min;
-extern cvar_t *crosshair, *cl_crossx, *cl_crossy, *crosshaircolor,
-			  *r_lightmap_components;
-
 
 qpic_t *
 Draw_PicFromWad (const char *name)
@@ -232,9 +228,6 @@ Draw_TextBox (int x, int y, int width, int lines)
 	Draw_Pic (cx, cy + 8, p);
 }
 
-extern void glrmain_init (void);
-extern void glrsurf_init (void);
-extern void GL_TextureMode_f (void);
 
 void
 Draw_Init (void)

@@ -75,13 +75,8 @@ cvar_t     *sv_timekick_interval;
 
 cvar_t     *sv_kickfake;
 
-extern cvar_t *sv_maxrate;
 
-extern vec3_t player_mins;
 
-extern int  fp_messages, fp_persecond, fp_secondsdead;
-extern char fp_msg[];
-extern cvar_t *pausable;
 
 void        SV_FullClientUpdateToClient (client_t *client, client_t *cl);
 
@@ -1450,7 +1445,6 @@ SV_PreRunCmd (void)
 /*
 	SV_RunCmd
 */
-extern qboolean nouse;					// 1999-10-29 +USE fix by Maddes
 
 void
 SV_RunCmd (usercmd_t *ucmd, qboolean inside)

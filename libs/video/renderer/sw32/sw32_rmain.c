@@ -141,7 +141,6 @@ void        SetVisibilityByPassages (void);
 
 cvar_t     *r_draworder;
 
-extern cvar_t *scr_fov;
 
 
 void R_LoadSky_f (void);

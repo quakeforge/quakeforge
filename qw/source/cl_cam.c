@@ -49,6 +49,7 @@ static const char rcsid[] =
 #include "QF/msg.h"
 
 #include "cl_cam.h"
+#include "cl_input.h"
 #include "client.h"
 #include "compat.h"
 #include "pmove.h"
@@ -74,11 +75,6 @@ vec3_t camera_angles = {0,0,0};
 vec3_t player_origin = {0,0,0};
 vec3_t player_angles = {0,0,0};
 
-extern kbutton_t in_mlook, in_klook;
-extern kbutton_t in_left, in_right, in_forward, in_back;
-extern kbutton_t in_lookup, in_lookdown;
-extern kbutton_t in_moveleft, in_moveright;
-extern kbutton_t in_strafe, in_speed;
 
 cvar_t     *chase_back;
 cvar_t     *chase_up;

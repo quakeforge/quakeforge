@@ -141,4 +141,6 @@ void Analyze_Client_Packet (const byte *data, int len);
 
 extern struct cvar_s *net_packetlog;
 
+extern qboolean is_server;
+
 #endif // _NET_H

@@ -140,9 +140,6 @@ cvar_t     *sv_phs;
 
 cvar_t     *pausable;
 
-extern cvar_t *sv_timekick;
-extern cvar_t *sv_timekick_fuzz;
-extern cvar_t *sv_timekick_interval;
 
 cvar_t     *sv_minqfversion;			// Minimum QF version allowed to
 										// connect

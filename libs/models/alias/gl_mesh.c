@@ -51,7 +51,6 @@ static const char rcsid[] =
 	ALIAS MODEL DISPLAY LIST GENERATION
 */
 
-extern cvar_t *gl_mesh_cache;
 
 model_t    *aliasmodel;
 aliashdr_t *paliashdr;

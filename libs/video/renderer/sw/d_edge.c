@@ -40,7 +40,6 @@ static const char rcsid[] =
 static int  miplevel;
 
 float       scale_for_mip;
-extern int  screenwidth;
 int         ubasestep, errorterm, erroradjustup, erroradjustdown, vstartscan;
 
 vec3_t      transformed_modelorg;

@@ -40,7 +40,6 @@ static const char rcsid[] =
 
 
 #define MAX_TIMINGS 100
-extern float mouse_x, mouse_y;
 int          graphval;
 
 

@@ -50,16 +50,12 @@ static const char rcsid[] =
 #include "chase.h"
 #include "compat.h"
 #include "host.h"
-#include "r_local.h"
+#include "r_dynamic.h"
 #include "sbar.h"
 #include "server.h"
 #include "sv_progs.h"
 #include "view.h"
 
-extern void R_Particles_Init_Cvars (void);
-extern void R_Init_Cvars (void);
-extern void Host_Skin_Init (void);
-extern void Host_Skin_Init_Cvars (void);
 
 /*
   A server can always be started, even if the system started out as a client
@@ -117,8 +113,6 @@ cvar_t     *temp1;
 
 cvar_t     *cl_demospeed;
 
-extern cvar_t *cl_writecfg;
-extern int  fps_count;
 
 
 void
@@ -767,7 +761,6 @@ Host_Frame (float time)
 	Con_Printf ("serverprofile: %2i clients %2i msec\n", c, m);
 }
 
-extern VFile *vcrFile;
 
 #define	VCR_SIGNATURE	0x56435231
 // "VCR1"
@@ -979,7 +972,7 @@ Host_Init (quakeparms_t *parms)
 		SCR_Init ();
 		R_Init ();
 
-		S_Init ();
+		S_Init (&cl.worldmodel, &viewentity, &host_frametime);
 
 		CDAudio_Init ();
 		Sbar_Init ();

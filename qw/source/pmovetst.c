@@ -49,8 +49,6 @@ static hull_t box_hull;
 static dclipnode_t box_clipnodes[6];
 static mplane_t box_planes[6];
 
-extern vec3_t player_mins;
-extern vec3_t player_maxs;
 
 
 /*

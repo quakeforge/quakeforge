@@ -38,6 +38,7 @@ static const char rcsid[] =
 
 #include "QF/cvar.h"
 
+#include "r_cvar.h"
 #include "r_dynamic.h"
 
 cvar_t     *cl_crossx;
@@ -129,11 +130,7 @@ cvar_t     *scr_showram;
 cvar_t     *scr_showturtle;
 cvar_t     *scr_viewsize;
 
-extern unsigned int  r_maxparticles;
-extern cvar_t       *gl_sky_divide;		// FIXME
 
-extern void R_MaxParticlesCheck (cvar_t *r_particles, cvar_t *cl_max_particles);
-extern void R_MaxDlightsCheck (cvar_t *var);
 
 
 static void

@@ -56,8 +56,6 @@ static const char rcsid[] =
 #define MAX_MODE_LIST	30
 #define VID_ROW_SIZE	3
 
-extern void (*vid_menudrawfn) (void);
-extern void (*vid_menukeyfn) (int);
 
 /* Unused */
 int			VGA_width, VGA_height, VGA_rowbytes, VGA_bufferrowbytes,
@@ -66,7 +64,6 @@ byte       *VGA_pagebase;
 
 qboolean    dibonly;
 
-extern qboolean Minimized;
 
 HWND        mainwindow;
 
@@ -93,7 +90,6 @@ static qboolean palette_changed, syscolchg, vid_mode_set, hide_window,
 				pal_is_nostatic;
 static HICON hIcon;
 
-extern viddef_t vid;					// global video state
 
 #define MODE_WINDOWED			0
 #define MODE_SETTABLE_WINDOW	2
@@ -115,7 +111,6 @@ cvar_t     *block_switch;
 cvar_t     *vid_window_x;
 cvar_t     *vid_window_y;
 
-extern cvar_t *in_grab;
 
 typedef struct {
 	int         width;
@@ -2752,12 +2747,6 @@ MainWndProc (HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 	return lRet;
 }
 
-extern void M_Menu_Options_f (void);
-extern void M_Print (int cx, int cy, char *str);
-extern void M_PrintWhite (int cx, int cy, char *str);
-extern void M_DrawCharacter (int cx, int line, int num);
-extern void M_DrawTransPic (int x, int y, qpic_t *pic);
-extern void M_DrawPic (int x, int y, qpic_t *pic);
 
 static int  vid_line, vid_wmodes;
 

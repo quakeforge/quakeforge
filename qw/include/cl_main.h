@@ -47,4 +47,13 @@ void CL_BeginServerConnect(void);
 
 extern char emodel_name[], pmodel_name[], prespawn_name[], modellist_name[], soundlist_name[];
 
+extern struct cvar_s *cl_timeframes;
+extern struct cvar_s *cl_predict_players;
+extern struct cvar_s *cl_solid_players;
+extern struct cvar_s *cl_autoexec;
+extern struct cvar_s *cl_cshift_bonus;
+extern struct cvar_s *cl_cshift_contents;
+extern struct cvar_s *cl_cshift_damage;
+extern struct cvar_s *cl_cshift_powerup;
+
 #endif // _CL_MAIN_H

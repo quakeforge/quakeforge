@@ -49,7 +49,6 @@ static const char rcsid[] =
 #include "client.h"
 #include "sbar.h"
 
-extern void V_PrepBlend (void);
 
 
 void

@@ -119,7 +119,6 @@ static SCR_Func scr_funcs[] = {
 };
 
 
-extern void V_PrepBlend (void);
 
 void
 CL_UpdateScreen (double realtime)

@@ -47,11 +47,6 @@ vec3_t camera_angles = {0,0,0};
 vec3_t player_origin = {0,0,0};
 vec3_t player_angles = {0,0,0};
 
-extern kbutton_t in_mlook, in_klook;
-extern kbutton_t in_left, in_right, in_forward, in_back;
-extern kbutton_t in_lookup, in_lookdown;
-extern kbutton_t in_moveleft, in_moveright;
-extern kbutton_t in_strafe, in_speed;
 
 qboolean    SV_RecursiveHullCheck (hull_t *hull, int num, float p1f, float p2f,
 								   vec3_t p1, vec3_t p2, trace_t *trace);

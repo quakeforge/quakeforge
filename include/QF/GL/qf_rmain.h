@@ -35,6 +35,12 @@ extern qboolean envmap;
 extern int c_brush_polys, c_alias_polys;
 extern float r_world_matrix[16];
 
+extern float modelalpha;
+extern vec3_t shadecolor;
+extern vec3_t lightspot;
+
 void R_RotateForEntity (struct entity_s *e);
+void glrmain_init (void);
+int R_InitGraphTextures (int base);
 
 #endif // __QF_GL_rmain_h

@@ -49,8 +49,6 @@ cvar_t     *joy_enable;					// Joystick enabling flag
 cvar_t     *joy_amp;					// Joystick amplification
 cvar_t     *joy_pre_amp;				// Joystick pre-amplification
 
-extern cvar_t *in_amp;
-extern cvar_t *in_pre_amp;
 
 qboolean    joy_found = false;
 qboolean    joy_active = false;

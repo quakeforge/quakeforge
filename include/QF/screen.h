@@ -62,6 +62,7 @@ int MipColor (int r, int g, int b);
 int SCR_ModalMessage (const char *text);
 
 extern	float		scr_con_current;
+extern	float		scr_centertime_off;
 extern	float		scr_conlines;		// lines of console to display
 
 extern	int			scr_fullupdate;	// set to 0 to force full redraw
@@ -85,5 +86,7 @@ extern qboolean        block_drawing;
 extern struct qpic_s *scr_ram;
 extern struct qpic_s *scr_net;
 extern struct qpic_s *scr_turtle;
+
+extern struct cvar_s *show_fps, *show_time;
 
 #endif // __screen_h

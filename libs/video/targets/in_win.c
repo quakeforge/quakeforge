@@ -60,8 +60,6 @@ HRESULT (WINAPI * pDirectInputCreate) (HINSTANCE hinst, DWORD dwVersion,
 
 void        VID_UpdateWindowStatus (int window_x, int window_y);
 
-extern DEVMODE win_gdevmode;
-extern qboolean win_canalttab;
 
 // mouse public variables
 unsigned int uiWheelMessage;
@@ -126,11 +124,6 @@ static DIDATAFORMAT df = {
 };
 
 // forward-referenced functions, joy
-extern void JOY_Command(void);
-extern void JOY_Init_Cvars(void);
-extern void JOY_Init (void);
-extern void JOY_AdvancedUpdate_f (void);
-extern void JOY_Move (void);
 
 
 void

@@ -91,7 +91,7 @@ Con_ProcessInputLine (inputline_t *il, int ch)
 	char       *text;
 
 	switch (ch) {
-		case K_RETURN:
+		case QFK_RETURN:
 			if (il->enter)
 				il->enter (il->lines[il->edit_line] + 1);
 			il->edit_line = (il->edit_line + 1) % il->num_lines;
@@ -100,31 +100,31 @@ Con_ProcessInputLine (inputline_t *il, int ch)
 			il->lines[il->edit_line][1] = 0;
 			il->linepos = 1;
 			break;
-		case K_TAB:
+		case QFK_TAB:
 			if (il->complete)
 				il->complete (il);
 			break;
-		case K_BACKSPACE:
+		case QFK_BACKSPACE:
 			if (il->linepos > 1) {
 				strcpy (il->lines[il->edit_line] + il->linepos - 1,
 						il->lines[il->edit_line] + il->linepos);
 				il->linepos--;
 			}
 			break;
-		case K_DELETE:
+		case QFK_DELETE:
 			if (il->linepos < strlen (il->lines[il->edit_line]))
 				strcpy (il->lines[il->edit_line] + il->linepos,
 						il->lines[il->edit_line] + il->linepos + 1);
 			break;
-		case K_RIGHT:
+		case QFK_RIGHT:
 			if (il->linepos < strlen (il->lines[il->edit_line]))
 				il->linepos++;
 			break;
-		case K_LEFT:
+		case QFK_LEFT:
 			if (il->linepos > 1)
 				il->linepos--;
 			break;
-		case K_UP:
+		case QFK_UP:
 			{
 				int j = (il->history_line + il->num_lines - 1) % il->num_lines;
 				if (j == il->edit_line || !il->lines[j][1])
@@ -134,7 +134,7 @@ Con_ProcessInputLine (inputline_t *il, int ch)
 			strcpy (il->lines[il->edit_line], il->lines[il->history_line]);
 			il->linepos = strlen (il->lines[il->edit_line]);
 			break;
-		case K_DOWN:
+		case QFK_DOWN:
 			if (il->history_line == il->edit_line)
 				break; // don't let it wrap
 			il->history_line = (il->history_line + 1) % il->num_lines;
@@ -147,10 +147,10 @@ Con_ProcessInputLine (inputline_t *il, int ch)
 				il->linepos = strlen (il->lines[il->edit_line]);
 			}
 			break;
-		case K_HOME:
+		case QFK_HOME:
 			il->linepos = 1;
 			break;
-		case K_END:
+		case QFK_END:
 			il->linepos = strlen (il->lines[il->edit_line]);
 			break;
 		default:

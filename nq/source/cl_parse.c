@@ -215,8 +215,6 @@ CL_KeepaliveMessage (void)
 	SZ_Clear (&cls.message);
 }
 
-struct model_s **snd_worldmodel = &cl.worldmodel;
-
 void
 CL_ParseServerInfo (void)
 {
@@ -646,7 +644,7 @@ CL_ParseStaticSound (void)
 
 #define SHOWNET(x) if(cl_shownet->int_val==2)Con_Printf ("%3i:%s\n", net_message->readcount-1, x);
 
-int snd_viewentity;
+int viewentity;
 
 void
 CL_ParseServerMessage (void)
@@ -742,7 +740,7 @@ CL_ParseServerMessage (void)
 
 			case svc_setview:
 				cl.viewentity = MSG_ReadShort (net_message);
-				snd_viewentity = cl.viewentity; // FIXME: evil hack
+				viewentity = cl.viewentity; // FIXME: evil hack
 				break;
 
 			case svc_lightstyle:

@@ -49,6 +49,7 @@ static const char rcsid[] =
 #include "QF/GL/defines.h"
 #include "QF/GL/funcs.h"
 #include "QF/GL/qf_explosions.h"
+#include "QF/GL/qf_textures.h"
 
 #include "compat.h"
 #include "r_cvar.h"
@@ -58,9 +59,6 @@ static const char rcsid[] =
 
 int			ramp[8] = { 0x6f, 0x6d, 0x6b, 0x69, 0x67, 0x65, 0x63, 0x61 };
 
-extern int			part_tex_dot, part_tex_smoke, part_tex_spark;
-extern short		r_maxparticles, numparticles;
-extern particle_t  *particles, **freeparticles;
 
 
 inline particle_t *

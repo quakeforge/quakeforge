@@ -78,7 +78,7 @@ typedef struct snd_render_funcs_s {
 } snd_render_funcs_t;
 
 typedef struct snd_render_data_s {
-	struct model_s ***worldmodel;
+	struct model_s **worldmodel;
 	double *host_frametime;
 	int *viewentity;
 
