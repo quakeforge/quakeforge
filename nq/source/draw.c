@@ -44,6 +44,7 @@
 
 #include "client.h"
 #include "d_iface.h"
+#include "r_cvar.h"
 
 typedef struct {
 	vrect_t     rect;
@@ -58,8 +59,6 @@ static rectdesc_t r_rectdesc;
 byte       *draw_chars;					// 8*8 graphic characters
 qpic_t     *draw_disc;
 qpic_t     *draw_backtile;
-
-cvar_t     *cl_verstring;
 
 //=============================================================================
 /* Support Routines */
@@ -195,16 +194,6 @@ Draw_Init (void)
 	r_rectdesc.height = draw_backtile->height;
 	r_rectdesc.ptexbytes = draw_backtile->data;
 	r_rectdesc.rowbytes = draw_backtile->width;
-
-	cl_verstring =
-		Cvar_Get ("cl_verstring", PROGRAM " " VERSION, CVAR_NONE, NULL,
-				"Client version string");
-}
-
-
-void
-Draw_Init_Cvars (void)
-{
 }
 
 

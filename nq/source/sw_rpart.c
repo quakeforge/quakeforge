@@ -39,6 +39,7 @@
 
 #include "client.h"
 #include "host.h"
+#include "r_cvar.h"
 #include "r_local.h"
 
 int         ramp1[8] = { 0x6f, 0x6d, 0x6b, 0x69, 0x67, 0x65, 0x63, 0x61 };
@@ -51,7 +52,6 @@ particle_t *particles;
 int         r_numparticles;
 
 vec3_t      r_pright, r_pup, r_ppn;
-cvar_t      *r_particles;
 
 /*
 	R_MaxParticlesCheck

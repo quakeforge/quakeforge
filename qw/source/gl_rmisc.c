@@ -57,11 +57,6 @@ varray_t2f_c4f_v3f_t varray[MAX_VARRAY_VERTS];
 qboolean VID_Is8bit (void);
 void R_InitBubble (void);
 
-cvar_t	*gl_fires;
-
-cvar_t	*r_netgraph_alpha;
-cvar_t	*r_netgraph_box;
-
 extern cvar_t	*gl_lerp_anim;
 
 extern cvar_t	*r_netgraph;
@@ -217,42 +212,6 @@ R_Init (void)
 	glTexCoordPointer (2, GL_FLOAT, sizeof(varray[0]), varray[0].texcoord);
 	glColorPointer (4, GL_FLOAT, sizeof(varray[0]), varray[0].color);
 	glVertexPointer (3, GL_FLOAT, sizeof(varray[0]), varray[0].vertex);
-}
-
-void
-R_Init_Cvars (void)
-{
-	r_norefresh = Cvar_Get ("r_norefresh", "0", CVAR_NONE, NULL, "Set to 1 to disable display refresh");
-	r_drawentities = Cvar_Get ("r_drawentities", "1", CVAR_NONE, NULL, "Toggles drawing of entities (almost everything but the world)");
-	r_drawviewmodel = Cvar_Get ("r_drawviewmodel", "1", CVAR_ARCHIVE, NULL, "Toggles drawing of view models (your weapons)");
-	r_shadows = Cvar_Get ("r_shadows", "0", CVAR_ARCHIVE, NULL, "Set to 1 to enable shadows for entities");
-	r_wateralpha = Cvar_Get ("r_wateralpha", "1", CVAR_NONE, NULL, "Determine opacity of liquids. 1 = solid, 0 = transparent, otherwise translucent.");
-	/* FIXME what does r_waterripple use for units? */
-	r_waterripple = Cvar_Get ("r_waterripple", "0", CVAR_NONE, NULL, "Set to make liquids ripple, a good setting is 5");
-	r_dynamic = Cvar_Get ("r_dynamic", "1", CVAR_NONE, NULL, "Set to 0 to disable lightmap changes");
-	r_novis = Cvar_Get ("r_novis", "0", CVAR_NONE, NULL, "Set to 1 to enable runtime visibility checking (SLOW)");
-	r_speeds = Cvar_Get ("r_speeds", "0", CVAR_NONE, NULL, "Display drawing time and statistics of what is being viewed");
-	r_netgraph = Cvar_Get ("r_netgraph", "0", CVAR_ARCHIVE, NULL, "Graph network stats");
-	r_netgraph_alpha = Cvar_Get ("r_netgraph_alpha", "0.5", CVAR_ARCHIVE, NULL, "Net graph translucency");
-	r_netgraph_box = Cvar_Get ("r_netgraph_box", "1", CVAR_ARCHIVE, NULL, "Draw box around net graph");
-	r_particles = Cvar_Get ("r_particles", "1", CVAR_ARCHIVE, NULL, "whether or not to draw particles");
-	r_skyname = Cvar_Get ("r_skyname", "none", CVAR_NONE, NULL, "name of the current skybox");
-
-	gl_affinemodels = Cvar_Get ("gl_affinemodels", "0", CVAR_ARCHIVE, NULL, "Makes texture rendering quality better if set to 1");
-	gl_clear = Cvar_Get ("gl_clear", "0", CVAR_NONE, NULL, "Set to 1 to make background black. Useful for removing HOM effect");
-	gl_dlight_lightmap = Cvar_Get ("gl_dlight_lightmap", "1", CVAR_ARCHIVE, NULL, "Set to 1 for high quality dynamic lighting.");
-	gl_dlight_polyblend = Cvar_Get ("gl_dlight_polyblend", "0", CVAR_ARCHIVE, NULL, "Set to 1 to use a dynamic light effect faster on GL");
-	gl_dlight_smooth = Cvar_Get ("gl_dlight_smooth", "1", CVAR_ARCHIVE, NULL, "Smooth dynamic vertex lighting");
-	gl_fb_bmodels = Cvar_Get ("gl_fb_bmodels", "1", CVAR_ARCHIVE, NULL, "Toggles fullbright color support for bmodels");
-	gl_fb_models = Cvar_Get ("gl_fb_models", "1", CVAR_ARCHIVE, NULL, "Toggles fullbright color support for models");
-	gl_fires = Cvar_Get ("gl_fires", "0", CVAR_ARCHIVE, NULL, "Toggles lavaball and rocket fireballs");
-	gl_keeptjunctions = Cvar_Get ("gl_keeptjunctions", "1", CVAR_ARCHIVE, NULL, "Set to 0 to turn off colinear vertexes upon level load");
-	gl_lerp_anim = Cvar_Get ("gl_lerp_anim", "1", CVAR_ARCHIVE, NULL, "Toggles model animation interpolation");
-	gl_nocolors = Cvar_Get ("gl_nocolors", "0", CVAR_NONE, NULL, "Set to 1, turns off all player colors");
-	gl_playermip = Cvar_Get ("gl_playermip", "0", CVAR_NONE, NULL, "Detail of player skins. 0 best, 4 worst.");
-	gl_sky_clip = Cvar_Get ("gl_sky_clip", "0", CVAR_ARCHIVE, NULL, "controls whether sky is drawn first (0) or later (1)");
-	gl_sky_divide = Cvar_Get ("gl_sky_divide", "1", CVAR_ARCHIVE, NULL, "subdivide sky polys");
-	gl_skymultipass = Cvar_Get ("gl_skymultipass", "1", CVAR_ARCHIVE, NULL, "controls whether the skydome is single or double pass");
 }
 
 /*

@@ -96,7 +96,7 @@ client_POST_LIBS=	$(top_builddir)/libs/video/targets/libQFjs.la
 client_SOURCES= cl_cam.c cl_cmd.c cl_cvar.c cl_demo.c cl_ents.c cl_input.c \
 	cl_main.c cl_misc.c cl_parse.c cl_pred.c cl_slist.c cl_tent.c \
 	console.c keys.c locs.c nonintel.c \
-	pcx.c r_efrag.c r_view.c sbar.c skin.c teamplay.c tga.c wad.c cl_math.S $(syscl_SRC)
+	pcx.c r_cvar.c r_efrag.c r_view.c sbar.c skin.c teamplay.c tga.c wad.c cl_math.S $(syscl_SRC)
 
 # Software-rendering clients
 #

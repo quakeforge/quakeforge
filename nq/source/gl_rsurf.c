@@ -55,6 +55,7 @@
 #include "protocol.h"
 #include "client.h"
 #include "glquake.h"
+#include "r_cvar.h"
 #include "r_local.h"
 #include "render.h"
 #include "sbar.h"
@@ -68,9 +69,6 @@ int         lightmap_bytes;				// 1 or 3
 int         lightmap_textures;
 
 unsigned    blocklights[18 * 18 * 3];
-
-cvar_t     *gl_colorlights;
-cvar_t     *gl_lightmap_components;
 
 #define	BLOCK_WIDTH		128
 #define	BLOCK_HEIGHT	128
@@ -1210,9 +1208,6 @@ GL_BuildLightmaps (void)
 		lightmap_textures = texture_extension_number;
 		texture_extension_number += MAX_LIGHTMAPS;
 	}
-
-	gl_colorlights = Cvar_Get ("gl_colorlights", "1", CVAR_ROM, NULL,
-							   "Whether to use RGB lightmaps or not");
 
 	if (gl_colorlights->int_val) {
 		gl_lightmap_format = GL_RGB;

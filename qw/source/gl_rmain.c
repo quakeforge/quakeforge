@@ -55,6 +55,7 @@
 #include "cl_main.h"
 #include "cl_parse.h" //FIXME CL_NewTranslation
 #include "glquake.h"
+#include "r_cvar.h"
 #include "r_dynamic.h"
 #include "r_local.h"
 #include "view.h"
@@ -100,34 +101,6 @@ vec3_t	shadecolor;					// Ender (Extend) Colormod
 float	modelalpha;					// Ender (EXtend) Alpha
 
 void R_MarkLeaves (void);
-
-cvar_t	*r_drawentities;
-cvar_t	*r_drawviewmodel;
-cvar_t	*r_dynamic;
-cvar_t	*r_netgraph;
-cvar_t	*r_norefresh;
-cvar_t	*r_novis;
-cvar_t	*r_particles;
-cvar_t	*r_speeds;
-cvar_t	*r_shadows;
-cvar_t	*r_wateralpha;
-cvar_t	*r_waterripple;
-
-cvar_t	*gl_affinemodels;
-cvar_t	*gl_clear;
-cvar_t  *gl_dlight_lightmap;
-cvar_t	*gl_dlight_polyblend;
-cvar_t	*gl_fb_models;
-cvar_t	*gl_fb_bmodels;
-cvar_t	*gl_keeptjunctions;
-cvar_t	*gl_lerp_anim;
-cvar_t	*gl_nocolors;
-cvar_t	*gl_playermip;
-cvar_t	*gl_dlight_smooth;
-
-cvar_t	*r_skyname;
-cvar_t	*gl_skymultipass;
-cvar_t	*gl_sky_clip;
 
 extern cvar_t *scr_fov;
 

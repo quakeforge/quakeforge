@@ -49,6 +49,7 @@
 #include "bothdefs.h"
 #include "cl_cam.h"
 #include "cl_main.h"
+#include "r_cvar.h"
 #include "r_dynamic.h"
 #include "r_local.h"
 #include "view.h"
@@ -146,35 +147,6 @@ float       se_time1, se_time2, de_time1, de_time2, dv_time1, dv_time2;
 
 void        R_MarkLeaves (void);
 
-cvar_t     *r_draworder;
-cvar_t     *r_speeds;
-cvar_t     *r_timegraph;
-cvar_t     *r_netgraph;
-cvar_t     *r_zgraph;
-cvar_t     *r_graphheight;
-cvar_t     *r_clearcolor;
-cvar_t     *r_waterwarp;
-cvar_t     *r_drawentities;
-cvar_t     *r_drawviewmodel;
-cvar_t     *r_particles;
-cvar_t     *r_aliasstats;
-cvar_t     *r_dspeeds;
-cvar_t     *r_drawflat;
-cvar_t     *r_ambient;
-cvar_t     *r_reportsurfout;
-cvar_t     *r_maxsurfs;
-cvar_t     *r_numsurfs;
-cvar_t     *r_reportedgeout;
-cvar_t     *r_maxedges;
-cvar_t     *r_numedges;
-cvar_t     *r_aliastransbase;
-cvar_t     *r_aliastransadj;
-
-cvar_t     *gl_dlight_lightmap;
-cvar_t     *gl_dlight_polyblend;
-
-extern cvar_t *gl_sky_divide;
-
 extern cvar_t *scr_fov;
 
 void        R_NetGraph (void);
@@ -254,39 +226,6 @@ R_Init (void)
 #endif // USE_INTEL_ASM
 
 	D_Init ();
-}
-
-void
-R_Init_Cvars (void)
-{
-	D_Init_Cvars ();
-
-	r_draworder = Cvar_Get ("r_draworder", "0", CVAR_NONE, NULL, "Toggles drawing order");
-	r_speeds = Cvar_Get ("r_speeds", "0", CVAR_NONE, NULL, "Toggles the displaying of drawing time and"
-		"statistics of what is currently being viewed");
-	r_timegraph = Cvar_Get ("r_timegraph", "0", CVAR_NONE, NULL, "Toggle the display of a performance graph");
-	r_netgraph = Cvar_Get ("r_netgraph", "0", CVAR_NONE, NULL, "Toggle the display of a graph showing network performance");
-	r_zgraph = Cvar_Get ("r_zgraph", "0", CVAR_NONE, NULL, "Toggle the graph that reports the changes of z-axis position");
-	r_graphheight = Cvar_Get ("r_graphheight", "32", CVAR_NONE, NULL, "Set the number of lines displayed in the various graphs");
-	r_drawflat = Cvar_Get ("r_drawflat", "0", CVAR_NONE, NULL, "Toggles the drawing of textures");
-	r_ambient = Cvar_Get ("r_ambient", "0", CVAR_NONE, NULL, "Determines the ambient lighting for a level");
-	r_clearcolor = Cvar_Get ("r_clearcolor", "2", CVAR_NONE, NULL, "This sets the color for areas outside of the current map");
-	r_waterwarp = Cvar_Get ("r_waterwarp", "1", CVAR_NONE, NULL, "Toggles whether surfaces are warped in a liquid.");
-	r_drawentities = Cvar_Get ("r_drawentities", "1", CVAR_NONE, NULL, "Toggles the drawing of entities.");
-	r_drawviewmodel = Cvar_Get ("r_drawviewmodel", "1", CVAR_ARCHIVE, NULL, "Toggles the drawing of your weapon");
-	r_particles = Cvar_Get ("r_particles", "1", CVAR_ARCHIVE, NULL, "Toggles drawing of particles.");
-	r_aliasstats = Cvar_Get ("r_polymodelstats", "0", CVAR_NONE, NULL, "Toggles the displays of number of polygon models current being viewed");
-	r_dspeeds = Cvar_Get ("r_dspeeds", "0", CVAR_NONE, NULL, "Toggles the display of drawing speed information");
-	r_reportsurfout = Cvar_Get ("r_reportsurfout", "0", CVAR_NONE, NULL, "Toggle the display of how many surfaces where not displayed");
-	r_maxsurfs = Cvar_Get ("r_maxsurfs", "0", CVAR_NONE, NULL, "Sets the maximum number of surfaces");
-	r_numsurfs = Cvar_Get ("r_numsurfs", "0", CVAR_NONE, NULL, "Toggles the displaying of number of surfaces currently being viewed");
-	r_reportedgeout = Cvar_Get ("r_reportedgeout", "0", CVAR_NONE, NULL, "Toggle the display of how many edges where not displayed");
-	r_maxedges = Cvar_Get ("r_maxedges", "0", CVAR_NONE, NULL, "Sets the maximum number of surfaces");
-	r_numedges = Cvar_Get ("r_numedges", "0", CVAR_NONE, NULL, "Toggles the displaying of number of edges currently being viewed");
-	r_aliastransbase = Cvar_Get ("r_aliastransbase", "200", CVAR_NONE, NULL, "Determines how much of an alias model is clipped away and how much is viewable");
-	r_aliastransadj = Cvar_Get ("r_aliastransadj", "100", CVAR_NONE, NULL, "Determines how much of an alias model is clipped away and how much is viewable.");
-	gl_sky_divide = Cvar_Get ("gl_sky_divide", "1", CVAR_ARCHIVE, NULL,
-		"subdivide sky polys");
 }
 
 /*

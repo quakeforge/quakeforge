@@ -52,6 +52,7 @@
 #include "client.h"
 #include "glquake.h"
 #include "host.h"
+#include "r_cvar.h"
 #include "r_local.h"
 #include "sbar.h"
 #include "view.h"
@@ -116,20 +117,6 @@ float       scr_conlines;				// lines of console to display
 
 int         oldscreensize, oldfov;
 int         oldsbar;
-cvar_t     *scr_viewsize;
-cvar_t     *scr_fov;					// 10 - 170
-cvar_t     *scr_conspeed;
-cvar_t     *scr_consize;
-cvar_t     *scr_centertime;
-cvar_t     *scr_showram;
-cvar_t     *scr_showturtle;
-cvar_t     *scr_showpause;
-cvar_t     *scr_printspeed;
-cvar_t     *gl_triplebuffer;
-cvar_t     *crosshair;
-cvar_t     *crosshaircolor;
-cvar_t     *cl_crossx;
-cvar_t     *cl_crossy;
 
 qboolean    scr_initialized;			// ready to draw
 
@@ -386,27 +373,6 @@ SCR_SizeDown_f (void)
 
 
 //============================================================================
-
-
-void
-SCR_Init_Cvars (void)
-{
-	scr_fov = Cvar_Get ("fov", "90", CVAR_NONE, NULL, "Your point of view in degrees. Smaller than 90 zooms in.");
-	scr_viewsize = Cvar_Get ("viewsize", "100", CVAR_ARCHIVE, NULL, "Set the screen size 30 minimum, 120 maximum");
-	scr_conspeed = Cvar_Get ("scr_conspeed", "300", CVAR_NONE, NULL, "How quickly console scrolls up or down");
-	scr_consize = Cvar_Get ("scr_consize", "0.5", CVAR_ARCHIVE, NULL, "fraction of the screen the console covers when down");
-	scr_showram = Cvar_Get ("showram", "1", CVAR_NONE, NULL, "Show RAM icon if game is running low on memory");
-	scr_showturtle = Cvar_Get ("showturtle", "0", CVAR_NONE, NULL, "Show a turtle icon if your fps is slower than 10");
-	scr_showpause = Cvar_Get ("showpause", "1", CVAR_NONE, NULL, "Toggles display of pause graphic");
-	scr_centertime = Cvar_Get ("scr_centertime", "2", CVAR_NONE, NULL, "How long in seconds screen hints are displayed");
-	scr_printspeed = Cvar_Get ("scr_printspeed", "8", CVAR_NONE, NULL, "How fast the text is displayed at the end of the single player episodes");
-	gl_triplebuffer = Cvar_Get ("gl_triplebuffer", "1", CVAR_ARCHIVE, NULL, "Set to 1 by default. Fixes status bar flicker on some hardware");
-
-	crosshaircolor = Cvar_Get ("crosshaircolor", "79", CVAR_ARCHIVE, NULL, "Color of the new crosshair");
-	crosshair = Cvar_Get ("crosshair", "0", CVAR_ARCHIVE, NULL, "Crosshair type. 0 off, 1 old without color, 2 new with colors");
-	cl_crossx = Cvar_Get ("cl_crossx", "0", CVAR_ARCHIVE, NULL, "Sets the position of the crosshair on the X-axis.");
-	cl_crossy = Cvar_Get ("cl_crossy", "0", CVAR_ARCHIVE, NULL, "Sets the position of the crosshair on the Y-axis.");
-}
 
 
 void

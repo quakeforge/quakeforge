@@ -66,7 +66,6 @@ varray_t2f_c4f_v3f_t varray[MAX_VARRAY_VERTS];
 qboolean    VID_Is8bit (void);
 void        R_InitBubble ();
 
-cvar_t     *gl_fires;
 qboolean    allowskybox;				// allow skyboxes?  --KB
 
 
@@ -189,56 +188,6 @@ R_Init (void)
 	Cmd_AddCommand ("envmap", R_Envmap_f, "No Description");
 	Cmd_AddCommand ("pointfile", R_ReadPointFile_f, "No Description");
 	Cmd_AddCommand ("loadsky", R_LoadSky_f, "No Description");
-
-	r_norefresh = Cvar_Get ("r_norefresh", "0", CVAR_NONE, NULL, "None");
-	r_lightmap = Cvar_Get ("r_lightmap", "0", CVAR_NONE, NULL, "None");
-	r_fullbright = Cvar_Get ("r_fullbright", "0", CVAR_NONE, NULL, "None");
-	r_drawentities = Cvar_Get ("r_drawentities", "1", CVAR_NONE, NULL, "None");
-	r_drawviewmodel = Cvar_Get ("r_drawviewmodel", "1", CVAR_NONE, NULL,
-			"None");
-	r_shadows = Cvar_Get ("r_shadows", "0", CVAR_NONE, NULL, "None");
-	r_mirroralpha = Cvar_Get ("r_mirroralpha", "1", CVAR_NONE, NULL, "None");
-	r_wateralpha = Cvar_Get ("r_wateralpha", "1", CVAR_NONE, NULL, "None");
-	r_waterripple = Cvar_Get ("r_waterripple", "0", CVAR_NONE, NULL, "None");
-	r_dynamic = Cvar_Get ("r_dynamic", "1", CVAR_NONE, NULL, "None");
-	r_novis = Cvar_Get ("r_novis", "0", CVAR_NONE, NULL, "None");
-	r_speeds = Cvar_Get ("r_speeds", "0", CVAR_NONE, NULL, "None");
-	r_netgraph = Cvar_Get ("r_netgraph", "0", CVAR_NONE, NULL, "None");
-
-	gl_clear = Cvar_Get ("gl_clear", "0", CVAR_NONE, NULL, "None");
-	gl_texsort = Cvar_Get ("gl_texsort", "1", CVAR_NONE, NULL, "None");
-
-	gl_cull = Cvar_Get ("gl_cull", "1", CVAR_NONE, NULL, "None");
-	gl_smoothmodels = Cvar_Get ("gl_smoothmodels", "1", CVAR_NONE, NULL,
-			"None");
-	gl_affinemodels = Cvar_Get ("gl_affinemodels", "0", CVAR_NONE, NULL,
-			"None");
-	gl_polyblend = Cvar_Get ("gl_polyblend", "1", CVAR_NONE, NULL, "None");
-	gl_flashblend = Cvar_Get ("gl_flashblend", "0", CVAR_NONE, NULL, "None");
-	gl_playermip = Cvar_Get ("gl_playermip", "0", CVAR_NONE, NULL, "None");
-	gl_nocolors = Cvar_Get ("gl_nocolors", "0", CVAR_NONE, NULL, "None");
-
-	gl_fires = Cvar_Get ("gl_fires", "0", CVAR_ARCHIVE, NULL,
-						 "Toggles lavaball and rocket fireballs");
-
-	r_particles = Cvar_Get ("r_particles", "1", CVAR_ARCHIVE, NULL,
-				"whether or not to draw particles");
-
-	gl_fb_models = Cvar_Get ("gl_fb_models", "1", CVAR_ARCHIVE, NULL,
-							 "Toggles fullbright color support for models..  "
-							 "This is very handy, but costs me 2 FPS.. (=:]");
-	gl_fb_bmodels = Cvar_Get ("gl_fb_bmodels", "1", CVAR_ARCHIVE, NULL,
-							  "Toggles fullbright color support for bmodels");
-
-	gl_keeptjunctions = Cvar_Get ("gl_keeptjunctions", "1", CVAR_NONE, NULL,
-			"None");
-	gl_reporttjunctions =
-		Cvar_Get ("gl_reporttjunctions", "0", CVAR_NONE, NULL, "None");
-
-	r_skyname = Cvar_Get ("r_skyname", "none", CVAR_NONE, NULL,
-						  "name of the current skybox");
-	gl_skymultipass = Cvar_Get ("gl_skymultipass", "1", CVAR_NONE, NULL,
-								"controls wether the skydome is single or double pass");
 
 	R_InitBubble ();
 
@@ -403,7 +352,6 @@ void
 R_NewMap (void)
 {
 	int         i;
-	cvar_t     *r_skyname;
 
 	for (i = 0; i < 256; i++)
 		d_lightstylevalue[i] = 264;		// normal light value

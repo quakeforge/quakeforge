@@ -617,3 +617,8 @@ R_GenTile (msurface_t *psurf, void *pdest)
 		Sys_Error ("Unknown tile type");
 	}
 }
+
+void
+R_ForceLightUpdate (void)
+{
+}

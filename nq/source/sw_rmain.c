@@ -37,6 +37,7 @@
 
 #include "chase.h"
 #include "client.h"
+#include "r_cvar.h"
 #include "r_local.h"
 #include "view.h"
 
@@ -138,29 +139,6 @@ float       se_time1, se_time2, de_time1, de_time2, dv_time1, dv_time2;
 
 void        R_MarkLeaves (void);
 
-cvar_t     *r_particles;
-cvar_t     *r_draworder;
-cvar_t     *r_speeds;
-cvar_t     *r_timegraph;
-cvar_t     *r_graphheight;
-cvar_t     *r_clearcolor;
-cvar_t     *r_waterwarp;
-cvar_t     *r_fullbright;
-cvar_t     *r_drawentities;
-cvar_t     *r_drawviewmodel;
-cvar_t     *r_aliasstats;
-cvar_t     *r_dspeeds;
-cvar_t     *r_drawflat;
-cvar_t     *r_ambient;
-cvar_t     *r_reportsurfout;
-cvar_t     *r_maxsurfs;
-cvar_t     *r_numsurfs;
-cvar_t     *r_reportedgeout;
-cvar_t     *r_maxedges;
-cvar_t     *r_numedges;
-cvar_t     *r_aliastransbase;
-cvar_t     *r_aliastransadj;
-
 void        CreatePassages (void);
 void        SetVisibilityByPassages (void);
 
@@ -217,35 +195,6 @@ R_Init (void)
 	Cmd_AddCommand ("timerefresh", R_TimeRefresh_f, "No Description");
 	Cmd_AddCommand ("pointfile", R_ReadPointFile_f, "No Description");
 
-	r_particles = Cvar_Get ("r_particles", "1", CVAR_ARCHIVE, NULL,
-				"whether or not to draw particles");
-
-	r_draworder = Cvar_Get ("r_draworder", "0", CVAR_NONE, NULL, "None");
-	r_speeds = Cvar_Get ("r_speeds", "0", CVAR_NONE, NULL, "None");
-	r_timegraph = Cvar_Get ("r_timegraph", "0", CVAR_NONE, NULL, "None");
-	r_graphheight = Cvar_Get ("r_graphheight", "10", CVAR_NONE, NULL, "None");
-	r_drawflat = Cvar_Get ("r_drawflat", "0", CVAR_NONE, NULL, "None");
-	r_ambient = Cvar_Get ("r_ambient", "0", CVAR_NONE, NULL, "None");
-	r_clearcolor = Cvar_Get ("r_clearcolor", "2", CVAR_NONE, NULL, "None");
-	r_waterwarp = Cvar_Get ("r_waterwarp", "1", CVAR_NONE, NULL, "None");
-	r_fullbright = Cvar_Get ("r_fullbright", "0", CVAR_NONE, NULL, "None");
-	r_drawentities = Cvar_Get ("r_drawentities", "1", CVAR_NONE, NULL, "None");
-	r_drawviewmodel = Cvar_Get ("r_drawviewmodel", "1", CVAR_NONE, NULL,
-			"None");
-	r_aliasstats = Cvar_Get ("r_polymodelstats", "0", CVAR_NONE, NULL, "None");
-	r_dspeeds = Cvar_Get ("r_dspeeds", "0", CVAR_NONE, NULL, "None");
-	r_reportsurfout = Cvar_Get ("r_reportsurfout", "0", CVAR_NONE, NULL,
-			"None");
-	r_maxsurfs = Cvar_Get ("r_maxsurfs", "0", CVAR_NONE, NULL, "None");
-	r_numsurfs = Cvar_Get ("r_numsurfs", "0", CVAR_NONE, NULL, "None");
-	r_reportedgeout = Cvar_Get ("r_reportedgeout", "0", CVAR_NONE, NULL,
-			"None");
-	r_maxedges = Cvar_Get ("r_maxedges", "0", CVAR_NONE, NULL, "None");
-	r_numedges = Cvar_Get ("r_numedges", "0", CVAR_NONE, NULL, "None");
-	r_aliastransbase = Cvar_Get ("r_aliastransbase", "200", CVAR_NONE, NULL,
-			"None");
-	r_aliastransadj = Cvar_Get ("r_aliastransadj", "100", CVAR_NONE, NULL,
-			"None");
 
 	Cvar_SetValue (r_maxedges, (float) NUMSTACKEDGES);
 	Cvar_SetValue (r_maxsurfs, (float) NUMSTACKSURFACES);

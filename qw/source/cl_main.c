@@ -1605,7 +1605,6 @@ Host_Init (void)
 	CL_Prediction_Init_Cvars ();
 	COM_Init_Cvars ();
 	Con_Init_Cvars ();
-	Draw_Init_Cvars ();
 	COM_Filesystem_Init_Cvars ();
 	Game_Init_Cvars ();
 	IN_Init_Cvars ();
@@ -1615,7 +1614,6 @@ Host_Init (void)
 	Pmove_Init_Cvars ();
 	R_Init_Cvars ();
 	S_Init_Cvars ();
-	SCR_Init_Cvars ();
 	Team_Init_Cvars ();
 	V_Init_Cvars ();
 	VID_Init_Cvars ();

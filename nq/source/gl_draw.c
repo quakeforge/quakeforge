@@ -48,20 +48,13 @@
 
 #include "client.h"
 #include "glquake.h"
+#include "r_cvar.h"
 #include "sbar.h"
 
 extern byte *vid_basepal;
 extern cvar_t *crosshair, *cl_crossx, *cl_crossy, *crosshaircolor,
 	*gl_lightmap_components;
 
-cvar_t     *gl_max_size;
-cvar_t     *gl_picmip;
-
-cvar_t     *gl_constretch;
-cvar_t     *gl_conalpha;
-cvar_t     *gl_conspin;
-cvar_t     *cl_verstring;
-cvar_t     *gl_lightmode;				// LordHavoc: lighting mode
 
 byte *draw_chars;						// 8*8 graphic characters
 qpic_t     *draw_disc;
@@ -251,22 +244,6 @@ Draw_TextBox (int x, int y, int width, int lines)
 extern void glrmain_init (void);
 extern void glrsurf_init (void);
 extern void GL_TextureMode_f (void);
-extern void R_ForceLightUpdate (void);
-
-void
-gl_lightmode_callback (cvar_t *cvar)
-{
-	if (cvar->int_val) {
-		lighthalf_v[0] = lighthalf_v[1] = lighthalf_v[2] = 128;
-		lighthalf = 1;
-	} else {
-		lighthalf_v[0] = lighthalf_v[1] = lighthalf_v[2] = 255;
-		lighthalf = 0;
-	}
-
-	R_ForceLightUpdate ();
-}
-
 
 void
 Draw_Init (void)
@@ -283,8 +260,6 @@ Draw_Init (void)
 	{
 		Cvar_Set (gl_lightmode, "0");
 	}
-
-	gl_lightmode_callback(gl_lightmode);
 
 	Cmd_AddCommand ("gl_texturemode", &GL_TextureMode_f, "Texture mipmap quality.");
 
@@ -314,27 +289,6 @@ Draw_Init (void)
 	// LordHavoc: call init code for other GL renderer modules;
 	glrmain_init ();
 	glrsurf_init ();
-}
-
-
-void
-Draw_Init_Cvars (void)
-{
-	gl_lightmode = Cvar_Get ("gl_lightmode", "1", CVAR_ARCHIVE, 
-							gl_lightmode_callback,
-							"Lighting mode (0 = GLQuake style, 1 = new style)");
-	gl_max_size = Cvar_Get ("gl_max_size", "1024", CVAR_NONE, NULL, "Texture dimension"); 
-	gl_picmip = Cvar_Get ("gl_picmip", "0", CVAR_NONE, NULL, "Dimensions of displayed textures. 0 is normal, 1 is half, 2 is 1/4"); 
-	gl_constretch = Cvar_Get ("gl_constretch", "0", CVAR_ARCHIVE, NULL,
-							  "whether slide the console or stretch it");
-	gl_conalpha = Cvar_Get ("gl_conalpha", "0.6", CVAR_ARCHIVE, NULL,
-							"alpha value for the console background");
-	gl_conspin = Cvar_Get ("gl_conspin", "0", CVAR_ARCHIVE, NULL,
-						   "speed at which the console spins");
-	gl_lightmap_components = Cvar_Get ("gl_lightmap_components", "4", CVAR_ROM,
-			NULL, "Lightmap texture components. 1 is greyscale, 3 is RGB, 4 is RGBA.");
-	cl_verstring = Cvar_Get ("cl_verstring", PROGRAM " " VERSION, CVAR_NONE,
-			NULL, "Client version string");
 }
 
 

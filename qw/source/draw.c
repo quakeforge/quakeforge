@@ -202,12 +202,6 @@ Draw_Init (void)
 }
 
 
-void
-Draw_Init_Cvars (void)
-{
-}
-
-
 /*
 	Draw_Character8
 

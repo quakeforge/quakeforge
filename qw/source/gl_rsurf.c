@@ -45,14 +45,11 @@
 
 #include "client.h"
 #include "glquake.h"
+#include "r_cvar.h"
 #include "r_local.h"
 #include "r_shared.h"
 
 qboolean    r_cache_thrash;
-
-// extern cvar_t *gl_lightmap_align;
-cvar_t *gl_lightmap_components;
-// extern cvar_t *gl_texsubimage;
 
 extern double realtime;
 int         skytexturenum;
