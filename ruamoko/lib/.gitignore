@@ -1,0 +1,6 @@
+*.d
+*.dat
+*.pak
+*.qfo
+*.sym
+.vimrc
