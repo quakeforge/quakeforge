@@ -57,16 +57,14 @@ unsigned int r_maxdlights;
 void
 R_MaxDlightsCheck (cvar_t *var)
 {
-	// FIXME: 1 minimum should be 0, if it doesn't require excess testing in
-	// *_rsurf.c
-	if (r_dynamic)
-		r_maxdlights = max(var->int_val * r_dynamic->int_val, 1);
-	else
-		r_maxdlights = max(var->int_val, 1);
+	r_maxdlights = max(var->int_val, 0);
 
-	free (r_dlights);
+	if (r_dlights)
+		free (r_dlights);
+	r_dlights=0;
 
-	r_dlights = (dlight_t *) calloc (r_maxdlights, sizeof (dlight_t));
+	if (r_maxdlights)
+		r_dlights = (dlight_t *) calloc (r_maxdlights, sizeof (dlight_t));
 
 	R_ClearDlights();
 }
@@ -433,6 +431,12 @@ R_AllocDlight (int key)
 {
 	int         i;
 	dlight_t   *dl;
+	static dlight_t dummy;
+
+	if (!r_maxdlights) {
+		memset (&dummy, 0, sizeof (dummy));
+		return &dummy;
+	}
 
 	// first look for an exact key match
 	if (key) {
@@ -483,5 +487,6 @@ R_DecayLights (double frametime)
 void
 R_ClearDlights (void)
 {
-	memset (r_dlights, 0, sizeof (r_dlights));
+	if (r_maxdlights)
+		memset (r_dlights, 0, r_maxdlights * sizeof (dlight_t));
 }
