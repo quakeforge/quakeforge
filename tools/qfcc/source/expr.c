@@ -652,6 +652,29 @@ emit_statement (opcode_t *op, def_t *var_a, def_t *var_b, def_t *var_c)
 
 def_t *emit_sub_expr (expr_t *e, def_t *dest);
 
+void
+emit_branch (opcode_t *op, expr_t *e, expr_t *l)
+{
+	dstatement_t *st;
+	statref_t *ref;
+	def_t *def = 0;
+
+	st = &statements[numstatements];
+	if (e)
+		def = emit_sub_expr (e, 0);
+	emit_statement (op, def, 0, 0);
+	if (l->e.label.statement) {
+		if (op == op_goto)
+			st->a = l->e.label.statement - st;
+		else
+			st->b = l->e.label.statement - st;
+	} else {
+		ref = PR_NewStatref (st, op != op_goto);
+		ref->next = l->e.label.refs;
+		l->e.label.refs = ref;
+	}
+}
+
 def_t *
 emit_function_call (expr_t *e, def_t *dest)
 {
@@ -820,8 +843,6 @@ emit_expr (expr_t *e)
 	def_t *def_a;
 	def_t *def_b;
 	//opcode_t *op;
-	statref_t *ref;
-	dstatement_t *st;
 
 	switch (e->type) {
 		case ex_label:
@@ -836,10 +857,13 @@ emit_expr (expr_t *e)
 					emit_assign_expr (e);
 					break;
 				case 'n':
+					emit_branch (op_ifnot, e->e.expr.e1, e->e.expr.e2);
 					break;
 				case 'i':
+					emit_branch (op_if, e->e.expr.e1, e->e.expr.e2);
 					break;
 				case 'c':
+					emit_function_call (e, 0);
 					break;
 				case 's':
 					def_a = emit_sub_expr (e->e.expr.e1, 0);
@@ -861,15 +885,7 @@ emit_expr (expr_t *e)
 					PR_Statement (op_return, def, 0);
 					return;
 				case 'g':
-					st = &statements[numstatements];
-					PR_Statement (op_goto, 0, 0);
-					if (e->e.label.statement) {
-						st->a = e->e.label.statement - st;
-					} else {
-						ref = PR_NewStatref (st, 0);
-						ref->next = e->e.label.refs;
-						e->e.label.refs = ref;
-					}
+					emit_branch (op_goto, 0, e);
 					return;
 				default:
 					fprintf (stderr,

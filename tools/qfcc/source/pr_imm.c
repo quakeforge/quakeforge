@@ -226,7 +226,5 @@ PR_ReuseConstant (expr_t *e, def_t *def)
 
 	Hash_Add (tab, cn);
 
-	PR_Lex ();
-
 	return cn;
 }
