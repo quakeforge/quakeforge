@@ -87,16 +87,17 @@ LoadPCX (QFile *f, int convert, byte *pal)
 	dataByte = (byte *) &pcx[1];
 
 	count = (pcx->xmax + 1) * (pcx->ymax + 1);
-	tex = Hunk_TempAlloc (field_offset (tex_t, data[count]));
-	tex->width = pcx->xmax + 1;
-	tex->height = pcx->ymax + 1;
 	if (convert) {
+		tex = Hunk_TempAlloc (field_offset (tex_t, data[count * 4]));
 		tex->format = tex_rgba;
 		tex->palette = 0;
 	} else {
+		tex = Hunk_TempAlloc (field_offset (tex_t, data[count]));
 		tex->format = tex_palette;
 		tex->palette = pal;
 	}
+	tex->width = pcx->xmax + 1;
+	tex->height = pcx->ymax + 1;
 	pix = tex->data;
 
 	while (count) {
