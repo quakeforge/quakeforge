@@ -1029,15 +1029,15 @@ test_expr (expr_t *e, int test)
 			break;
 		case ev_field:
 			new = new_expr ();
-			new->type = ex_field;
+			new->type = ex_nil;
 			break;
 		case ev_func:
 			new = new_expr ();
-			new->type = ex_func;
+			new->type = ex_nil;
 			break;
 		case ev_pointer:
 			new = new_expr ();
-			new->type = ex_pointer;
+			new->type = ex_nil;
 			break;
 		case ev_quaternion:
 			new = new_expr ();
@@ -1059,6 +1059,14 @@ convert_int (expr_t *e)
 {
 	e->type = ex_float;
 	e->e.float_val = e->e.integer_val;
+}
+
+void
+convert_nil (expr_t *e, type_t *t)
+{
+	e->type = expr_types[t->type];
+	if (e->type == ex_pointer)
+		e->e.pointer.type = &type_void;
 }
 
 expr_t *
@@ -1094,6 +1102,15 @@ binary_expr (int op, expr_t *e1, expr_t *e2)
 	if (!t1 || !t2) {
 		error (e1, "internal error");
 		abort ();
+	}
+	if (op == EQ || op == NE) {
+		if (e1->type == ex_nil) {
+			t1 = t2;
+			convert_nil (e1, t1);
+		} else if (e2->type == ex_nil) {
+			t2 = t1;
+			convert_nil (e2, t2);
+		}
 	}
 
 	if (e1->type == ex_integer
@@ -1717,7 +1734,7 @@ assign_expr (expr_t *e1, expr_t *e2)
 
 	if (t1->type != ev_void && e2->type == ex_nil) {
 		t2 = t1;
-		e2->type = expr_types[t2->type];
+		convert_nil (e2, t2);
 	}
 
 	if (t1 != t2)
