@@ -428,15 +428,157 @@ PR_DumpState (progs_t *pr)
 				addr = max (pr->pr_xfunction->first_statement, addr - 5);
 
 			while (addr != pr->pr_xstatement)
-				PR_PrintStatement (pr, pr->pr_statements + addr++);
+				PR_PrintStatement (pr, pr->pr_statements + addr++, 1);
 		}
-		PR_PrintStatement (pr, pr->pr_statements + pr->pr_xstatement);
+		PR_PrintStatement (pr, pr->pr_statements + pr->pr_xstatement, 1);
 	}
 	PR_StackTrace (pr);
 }
 
+static const char *
+value_string (progs_t *pr, etype_t type, pr_type_t *val)
+{
+	static dstring_t *line;
+	ddef_t		*def;
+	int          ofs;
+	dfunction_t	*f;
+
+	if (!line)
+		line = dstring_new ();
+
+	type &= ~DEF_SAVEGLOBAL;
+
+	switch (type) {
+		case ev_string:
+			if (!PR_StringValid (pr, val->string_var))
+				return "*** invalid ***";
+			dsprintf (line, "\"%s\"", PR_GetString (pr, val->string_var));
+			break;
+		case ev_entity:
+			dsprintf (line, "entity %i",
+					  NUM_FOR_BAD_EDICT (pr, PROG_TO_EDICT (pr, val->entity_var)));
+			break;
+		case ev_func:
+			if (val->func_var < 0 || val->func_var >= pr->progs->numfunctions)
+				dsprintf (line, "INVALID:%d", val->func_var);
+			else if (!val->func_var)
+				return "NULL";
+			else {
+				f = pr->pr_functions + val->func_var;
+				dsprintf (line, "%s()", PR_GetString (pr, f->s_name));
+			}
+			break;
+		case ev_field:
+			def = ED_FieldAtOfs (pr, val->integer_var);
+			dsprintf (line, ".%s", PR_GetString (pr, def->s_name));
+			break;
+		case ev_void:
+			return "void";
+		case ev_float:
+			dsprintf (line, "%g", val->float_var);
+			break;
+		case ev_vector:
+			dsprintf (line, "'%g %g %g'",
+					  val->vector_var[0], val->vector_var[1],
+					  val->vector_var[2]);
+			break;
+		case ev_pointer:
+			def = 0;
+			ofs = val->integer_var;
+			if (pr_debug->int_val && pr->debug)
+				def = PR_Get_Local_Def (pr, ofs);
+			if (!def)
+				def = ED_GlobalAtOfs (pr, ofs);
+			if (def && def->s_name)
+				dsprintf (line, "&%s", PR_GetString (pr, def->s_name));
+			else
+				dsprintf (line, "[$%x]", ofs);
+			break;
+		case ev_quaternion:
+			dsprintf (line, "'%g %g %g %g'",
+					  val->vector_var[0], val->vector_var[1],
+					  val->vector_var[2], val->vector_var[3]);
+			break;
+		case ev_integer:
+			dsprintf (line, "%d", val->integer_var);
+			break;
+		case ev_uinteger:
+			dsprintf (line, "$%08x", val->uinteger_var);
+			break;
+		case ev_sel:
+			dsprintf (line, "(SEL) %s", PR_GetString (pr, val->string_var));
+			break;
+		default:
+			dsprintf (line, "bad type %i", type);
+			break;
+	}
+
+	return line->str;
+}
+
+static ddef_t *
+def_string (progs_t *pr, int ofs, dstring_t *dstr)
+{
+	ddef_t     *def;
+	const char *name;
+
+	if (pr_debug->int_val && pr->debug)
+		def = PR_Get_Local_Def (pr, ofs);
+	if (!def)
+		def = ED_GlobalAtOfs (pr, ofs);
+	if (!def || !*(name = PR_GetString (pr, def->s_name)))
+		dsprintf (dstr, "[$%x]", ofs);
+	else
+		dsprintf (dstr, "%s", name);
+	return def;
+}
+
+static const char *
+global_string (progs_t *pr, int ofs, etype_t type, int contents)
+{
+	ddef_t				*def = NULL;
+	static dstring_t	*line = NULL;
+	const char			*s;
+
+	if (!line)
+		line = dstring_newstr();
+
+	if (type == ev_short) {
+		dsprintf (line, "%04x", (short) ofs);
+		return line->str;
+	}
+
+	def = def_string (pr, ofs, line);
+
+	if (def || type != ev_void) {
+		const char *oi = "";
+		if (def) {
+			if (type == ev_void)
+				type = def->type;
+			if (type != (etype_t) (def->type & ~DEF_SAVEGLOBAL))
+				oi = "?";
+		}
+
+		if (ofs > pr->globals_size)
+			s = "Out of bounds";
+		else
+			s = value_string (pr, type, &pr->pr_globals[ofs]);
+
+		if (strequal(line->str, "IMMEDIATE") || strequal(line->str, ".imm")) {
+			dsprintf (line, "%s", s);
+		} else {
+			if (contents) {
+				if (!def)
+					dasprintf (line, "(%08x)", ofs);
+				dasprintf (line, "%s(%s)", oi, s);
+			}
+		}
+	}
+	return line->str;
+}
+
 void
-PR_PrintStatement (progs_t * pr, dstatement_t *s)
+PR_PrintStatement (progs_t * pr, dstatement_t *s, int contents)
 {
 	int			addr = s - pr->pr_statements;
 	const char *fmt;
@@ -504,13 +646,13 @@ PR_PrintStatement (progs_t * pr, dstatement_t *s)
 				}
 				switch (mode) {
 					case 'V':
-						str = PR_GlobalString (pr, opval, ev_void);
+						str = global_string (pr, opval, ev_void, contents);
 						break;
 					case 'G':
-						str = PR_GlobalString (pr, opval, optype);
+						str = global_string (pr, opval, optype, contents);
 						break;
 					case 'g':
-						str = PR_GlobalStringNoContents (pr, opval, optype);
+						str = global_string (pr, opval, optype, 0);
 						break;
 					case 's':
 						str = va ("%d", (short) opval);
@@ -613,169 +755,6 @@ PR_Profile (progs_t * pr)
 			best->profile = 0;
 		}
 	} while (best);
-}
-
-static const char *
-value_string (progs_t *pr, etype_t type, pr_type_t *val)
-{
-	static dstring_t *line;
-	ddef_t		*def;
-	int          ofs;
-	dfunction_t	*f;
-
-	if (!line)
-		line = dstring_new ();
-
-	type &= ~DEF_SAVEGLOBAL;
-
-	switch (type) {
-		case ev_string:
-			if (!PR_StringValid (pr, val->string_var))
-				return "*** invalid ***";
-			dsprintf (line, "\"%s\"", PR_GetString (pr, val->string_var));
-			break;
-		case ev_entity:
-			dsprintf (line, "entity %i",
-					  NUM_FOR_BAD_EDICT (pr, PROG_TO_EDICT (pr, val->entity_var)));
-			break;
-		case ev_func:
-			if (val->func_var < 0 || val->func_var >= pr->progs->numfunctions)
-				dsprintf (line, "INVALID:%d", val->func_var);
-			else if (!val->func_var)
-				return "NULL";
-			else {
-				f = pr->pr_functions + val->func_var;
-				dsprintf (line, "%s()", PR_GetString (pr, f->s_name));
-			}
-			break;
-		case ev_field:
-			def = ED_FieldAtOfs (pr, val->integer_var);
-			dsprintf (line, ".%s", PR_GetString (pr, def->s_name));
-			break;
-		case ev_void:
-			return "void";
-		case ev_float:
-			dsprintf (line, "%g", val->float_var);
-			break;
-		case ev_vector:
-			dsprintf (line, "'%g %g %g'",
-					  val->vector_var[0], val->vector_var[1],
-					  val->vector_var[2]);
-			break;
-		case ev_pointer:
-			def = 0;
-			ofs = val->integer_var;
-			if (pr_debug->int_val && pr->debug)
-				def = PR_Get_Local_Def (pr, ofs);
-			if (!def)
-				def = ED_GlobalAtOfs (pr, ofs);
-			if (def && def->s_name)
-				dsprintf (line, "&%s", PR_GetString (pr, def->s_name));
-			else
-				dsprintf (line, "[$%x]", ofs);
-			break;
-		case ev_quaternion:
-			dsprintf (line, "'%g %g %g %g'",
-					  val->vector_var[0], val->vector_var[1],
-					  val->vector_var[2], val->vector_var[3]);
-			break;
-		case ev_integer:
-			dsprintf (line, "%d", val->integer_var);
-			break;
-		case ev_uinteger:
-			dsprintf (line, "$%08x", val->uinteger_var);
-			break;
-		case ev_sel:
-			dsprintf (line, "(SEL) %s", PR_GetString (pr, val->string_var));
-			break;
-		default:
-			dsprintf (line, "bad type %i", type);
-			break;
-	}
-
-	return line->str;
-}
-
-static ddef_t *
-def_string (progs_t *pr, int ofs, dstring_t *dstr)
-{
-	ddef_t     *def;
-	const char *name;
-
-	if (pr_debug->int_val && pr->debug)
-		def = PR_Get_Local_Def (pr, ofs);
-	if (!def)
-		def = ED_GlobalAtOfs (pr, ofs);
-	if (!def || !*(name = PR_GetString (pr, def->s_name)))
-		dsprintf (dstr, "[$%x]", ofs);
-	else
-		dsprintf (dstr, "%s", name);
-	return def;
-}
-
-/*
-	PR_GlobalString
-
-	Returns a string with a description and the contents of a global
-*/
-const char *
-PR_GlobalString (progs_t *pr, int ofs, etype_t type)
-{
-	ddef_t				*def = NULL;
-	static dstring_t	*line = NULL;
-	const char			*s;
-
-	if (!line)
-		line = dstring_newstr();
-
-	if (type == ev_short) {
-		dsprintf (line, "%04x", (short) ofs);
-		return line->str;
-	}
-
-	def = def_string (pr, ofs, line);
-
-	if (def || type != ev_void) {
-		const char *oi = "";
-		if (def) {
-			if (type == ev_void)
-				type = def->type;
-			if (type != (etype_t) (def->type & ~DEF_SAVEGLOBAL))
-				oi = "?";
-		}
-
-		if (ofs > pr->globals_size)
-			s = "Out of bounds";
-		else
-			s = value_string (pr, type, &pr->pr_globals[ofs]);
-
-		if (strequal(line->str, "IMMEDIATE") || strequal(line->str, ".imm")) {
-			dsprintf (line, "%s", s);
-		} else {
-			if (!def)
-				dasprintf (line, "(%08x)", ofs);
-			dasprintf (line, "%s(%s)", oi, s);
-		}
-	}
-	return line->str;
-}
-
-const char *
-PR_GlobalStringNoContents (progs_t *pr, int ofs, etype_t type)
-{
-	static dstring_t *line = NULL;
-
-	if (!line)
-		line = dstring_newstr();
-
-	if (type == ev_short) {
-		dsprintf (line, "%x", (short) ofs);
-		return line->str;
-	}
-
-	def_string (pr, ofs, line);
-
-	return line->str;
 }
 
 /*

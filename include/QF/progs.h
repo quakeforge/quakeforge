@@ -63,7 +63,7 @@ typedef struct pr_resource_s pr_resource_t;
 void PR_Init (void);
 void PR_Init_Cvars (void);
 
-void PR_PrintStatement (progs_t *pr, dstatement_t *s);
+void PR_PrintStatement (progs_t *pr, dstatement_t *s, int contents);
 void PR_PushFrame (progs_t *pr);
 void PR_PopFrame (progs_t *pr);
 void PR_EnterFunction (progs_t *pr, dfunction_t *f);
@@ -221,9 +221,6 @@ void ED_PrintEdicts (progs_t *pr, const char *fieldval);
 void ED_PrintNum (progs_t *pr, int ent);
 void ED_Count (progs_t *pr);
 void PR_Profile (progs_t *pr);
-
-const char *PR_GlobalString (progs_t *pr, int ofs, etype_t type);
-const char *PR_GlobalStringNoContents (progs_t *pr, int ofs, etype_t type);
 
 pr_type_t *GetEdictFieldValue(progs_t *pr, edict_t *ed, const char *field);
 

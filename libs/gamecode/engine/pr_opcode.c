@@ -1052,7 +1052,7 @@ check_global (progs_t *pr, dstatement_t *st, opcode_t *op, etype_t type,
 	}
 	return;
 error:
-	PR_PrintStatement (pr, st);
+	PR_PrintStatement (pr, st, 0);
 	PR_Error (pr, "PR_Check_Opcodes: %s (statement %ld: %s)", msg,
 			  (long)(st - pr->pr_statements), op->opname);
 }

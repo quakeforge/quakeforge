@@ -288,7 +288,7 @@ PR_ExecuteProgram (progs_t * pr, func_t fnum)
 		op_c = pr->pr_globals + st->c;
 
 		if (pr->pr_trace)
-			PR_PrintStatement (pr, st);
+			PR_PrintStatement (pr, st, 1);
 
 		switch (st->op) {
 			case OP_ADD_F:
