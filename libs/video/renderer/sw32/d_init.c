@@ -30,29 +30,25 @@
 # include "config.h"
 #endif
 
-#include "QF/cvar.h" 
- #include "QF/render.h" 
-// #include "QF/vid.h" 
+#include "QF/cvar.h"
+#include "QF/render.h"
 
-#include "compat.h" 
-#include "d_local.h" 
-// #include "r_cvar.h" 
+#include "compat.h"
+#include "d_local.h"
+#include "r_cvar.h"
 
 #define NUM_MIPS	4
 
-cvar_t		*d_mipcap;
-cvar_t		*d_mipscale;
-
 surfcache_t *d_initial_rover;
-qboolean	 d_roverwrapped;
-int			 d_minmip;
-float		 d_scalemip[NUM_MIPS - 1];
+qboolean     d_roverwrapped;
+int          d_minmip;
+float        d_scalemip[NUM_MIPS - 1];
 
 static float basemip[NUM_MIPS - 1] = { 1.0, 0.5 * 0.8, 0.25 * 0.8 };
 
-extern int	 d_aflatcolor;
+extern int   d_aflatcolor;
 
-float		 d_zitable[65536];
+float        d_zitable[65536];
 
 
 void
@@ -89,14 +85,11 @@ D_CopyRects (vrect_t *prects, int transparent)
   console); Quake will then draw into wherever the driver points vid.buffer
   and will call this function before swapping buffers
 */
-//	UNUSED (prects);
-//	UNUSED (transparent);
 }
 
 void
 D_EnableBackBufferAccess (void)
 {
-
 	VID_LockBuffer ();
 }
 
@@ -118,9 +111,9 @@ D_SetupFrame (void)
 	int         i;
 
 	if (r_dowarp)
-		d_viewbuffer = (void *) r_warpbuffer;
+		d_viewbuffer = r_warpbuffer;
 	else
-		d_viewbuffer = (void *) vid.buffer;
+		d_viewbuffer = vid.buffer;
 
 	if (r_dowarp)
 		screenwidth = WARP_WIDTH;
@@ -142,5 +135,4 @@ void
 D_UpdateRects (vrect_t *prect)
 {
 	// the software driver draws these directly to the vid buffer
-//	UNUSED (prect);
 }

@@ -38,8 +38,7 @@
 
 // TODO: put in span spilling to shrink list size
 // !!! if this is changed, it must be changed in d_polysa.s too !!!
-#define DPS_MAXSPANS			MAXHEIGHT+1
-									// 1 extra for spanpackage that marks end
+#define DPS_MAXSPANS		MAXHEIGHT+1		// +1 for spanpackage marking end
 
 // !!! if this is changed, it must be changed in asm_draw.h too !!!
 typedef struct {
@@ -87,8 +86,8 @@ edgetable   edgetables[12] = {
 };
 
 // FIXME: some of these can become statics
-int         a_sstepxfrac, a_tstepxfrac, r_lstepx, a_ststepxwhole;
-int         r_sstepx, r_tstepx, r_lstepy, r_sstepy, r_tstepy;
+int         a_sstepxfrac, a_tstepxfrac, a_ststepxwhole;
+int         r_sstepx, r_tstepx, r_lstepx, r_lstepy, r_sstepy, r_tstepy;
 int         r_zistepx, r_zistepy;
 int         d_aspancount, d_countextrastep;
 
@@ -247,13 +246,12 @@ D_DrawNonSubdiv (void)
 		index1 = pfv + ptri->vertindex[1];
 		index2 = pfv + ptri->vertindex[2];
 
-		d_xdenom = (index0->v[1] - index1->v[1]) *
-			(index0->v[0] - index2->v[0]) -
+		d_xdenom =
+			(index0->v[1] - index1->v[1]) * (index0->v[0] - index2->v[0]) -
 			(index0->v[0] - index1->v[0]) * (index0->v[1] - index2->v[1]);
 
-		if (d_xdenom >= 0) {
+		if (d_xdenom >= 0)
 			continue;
-		}
 
 		r_p0[0] = index0->v[0];			// u
 		r_p0[1] = index0->v[1];			// v
@@ -454,7 +452,7 @@ D_PolysetSetUpForLineScan (fixed8_t startvertu, fixed8_t startvertv,
 	int         tm, tn;
 	adivtab_t  *ptemp;
 
-// TODO: implement x86 version
+	// TODO: implement x86 version
 
 	errorterm = -1;
 
@@ -493,9 +491,9 @@ D_PolysetCalcGradients (int skinwidth)
 
 	ystepdenominv = -xstepdenominv;
 
-// ceil () for light so positive steps are exaggerated, negative steps
-// diminished,  pushing us away from underflow toward overflow. Underflow is
-// very visible, overflow is very unlikely, because of ambient lighting
+	// ceil () for light so positive steps are exaggerated, negative steps
+	// diminished,  pushing us away from underflow toward overflow. Underflow
+	// is very visible, overflow is very unlikely, because of ambient lighting
 	t0 = r_p0[4] - r_p2[4];
 	t1 = r_p1[4] - r_p2[4];
 	r_lstepx = (int)
@@ -851,8 +849,8 @@ D_PolysetSetEdgeTable (void)
 {
 	int         edgetableindex;
 
-	edgetableindex = 0;					// assume the vertices are already in
-										// top to bottom order
+	// assume the vertices are already in top to bottom order
+	edgetableindex = 0;
 
 	// determine which edges are right & left, and the order in which
 	// to rasterize them

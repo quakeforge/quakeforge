@@ -37,14 +37,14 @@
 void
 D_EndParticles (void)
 {
-// not used by software driver
+	// not used by software driver
 }
 
 
 void
 D_StartParticles (void)
 {
-// not used by software driver
+	// not used by software driver
 }
 
 

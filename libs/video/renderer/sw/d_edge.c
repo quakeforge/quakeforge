@@ -40,8 +40,7 @@ static int  miplevel;
 
 float       scale_for_mip;
 extern int  screenwidth;
-int         ubasestep, errorterm, erroradjustup, erroradjustdown;
-int         vstartscan;
+int         ubasestep, errorterm, erroradjustup, erroradjustdown, vstartscan;
 
 vec3_t      transformed_modelorg;
 
@@ -73,8 +72,8 @@ D_MipLevelForScale (float scale)
 	return lmiplevel;
 }
 
-
 // FIXME: clean this up
+
 void
 D_DrawSolidSurface (surf_t *surf, int color)
 {
@@ -111,10 +110,8 @@ void
 D_CalcGradients (msurface_t *pface)
 {
 	mplane_t   *pplane;
-	float       mipscale;
-	vec3_t      p_temp1;
-	vec3_t      p_saxis, p_taxis;
-	float       t;
+	float       mipscale, t;
+	vec3_t      p_temp1, p_saxis, p_taxis;
 
 	pplane = pface->plane;
 
@@ -141,10 +138,10 @@ D_CalcGradients (msurface_t *pface)
 	t = 0x10000 * mipscale;
 	sadjust = ((fixed16_t) (DotProduct (p_temp1, p_saxis) * 0x10000 + 0.5)) -
 		((pface->texturemins[0] << 16) >> miplevel)
-		+ pface->texinfo->vecs[0][3] * t;
+		 + pface->texinfo->vecs[0][3] * t;
 	tadjust = ((fixed16_t) (DotProduct (p_temp1, p_taxis) * 0x10000 + 0.5)) -
 		((pface->texturemins[1] << 16) >> miplevel)
-		+ pface->texinfo->vecs[1][3] * t;
+		 + pface->texinfo->vecs[1][3] * t;
 
 	// -1 (-epsilon) so we never wander off the edge of the texture
 	bbextents = ((pface->extents[0] << 16) >> miplevel) - 1;
@@ -175,7 +172,7 @@ D_DrawSurfaces (void)
 			d_zistepv = s->d_zistepv;
 			d_ziorigin = s->d_ziorigin;
 
-			D_DrawSolidSurface (s, (int) ((long) s->data & 0xFF));
+			D_DrawSolidSurface (s, ((int) s->data & 0xFF));
 			D_DrawZSpans (s->spans);
 		}
 	} else {
@@ -198,8 +195,7 @@ D_DrawSurfaces (void)
 				D_DrawZSpans (s->spans);
 			} else if (s->flags & SURF_DRAWBACKGROUND) {
 				// set up a gradient for the background surface that places
-				// it
-				// effectively at infinity distance from the viewpoint
+				// it effectively at infinity distance from the viewpoint
 				d_zistepu = 0;
 				d_zistepv = 0;
 				d_ziorigin = -0.9;

@@ -42,18 +42,20 @@ D_EndParticles (void)
 	// not used by software driver
 }
 
+
 void
 D_StartParticles (void)
 {
 	// not used by software driver
 }
 
+
 void
 D_DrawParticle (particle_t *pparticle)
 {
 	vec3_t      local, transformed;
 	float       zi;
-	short       *pz;
+	short      *pz;
 	int         i, izi, pix, count, u, v;
 
 	// transform point

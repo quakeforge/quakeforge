@@ -33,12 +33,12 @@
 
 #include "QF/sys.h"
 
-#include "r_local.h"
 #include "d_local.h"
+#include "r_local.h"
 
 // TODO: put in span spilling to shrink list size
 // !!! if this is changed, it must be changed in d_polysa.s too !!!
-#define DPS_MAXSPANS	   MAXHEIGHT+1		// +1 for spanpackage marking end
+#define DPS_MAXSPANS		MAXHEIGHT+1		// +1 for spanpackage marking end
 
 // !!! if this is changed, it must be changed in asm_draw.h too !!!
 typedef struct {
@@ -62,10 +62,11 @@ typedef struct {
 } edgetable;
 
 int         r_p0[6], r_p1[6], r_p2[6];
-int         d_aflatcolor;
-int         d_xdenom;
 
 byte       *d_pcolormap;
+
+int         d_aflatcolor;
+int         d_xdenom;
 
 edgetable  *pedgetable;
 
@@ -85,7 +86,7 @@ edgetable   edgetables[12] = {
 };
 
 // FIXME: some of these can become statics
-//int         a_sstepxfrac, a_tstepxfrac, a_ststepxwhole;
+int         a_sstepxfrac, a_tstepxfrac, a_ststepxwhole;
 int         r_sstepx, r_tstepx, r_lstepx, r_lstepy, r_sstepy, r_tstepy;
 int         r_zistepx, r_zistepy;
 int         d_aspancount, d_countextrastep;
@@ -156,7 +157,7 @@ D_DrawNonSubdiv (void)
 		index1 = pfv + ptri->vertindex[1];
 		index2 = pfv + ptri->vertindex[2];
 
-		d_xdenom = 
+		d_xdenom =
 			(index0->v[1] - index1->v[1]) * (index0->v[0] - index2->v[0]) -
 			(index0->v[0] - index1->v[0]) * (index0->v[1] - index2->v[1]);
 
@@ -352,8 +353,9 @@ D_PolysetCalcGradients (int skinwidth)
 //	a_ststepxwhole = skinwidth * (r_tstepx >> 16) + (r_sstepx >> 16);
 }
 
-/*
+#if 0
 byte        gelmap[256];
+
 void
 InitGel (byte * palette)
 {
@@ -365,10 +367,10 @@ InitGel (byte * palette)
 		r =
 			(palette[i * 3] + palette[i * 3 + 1] +
 			 palette[i * 3 + 2]) / (16 * 3);
-		gelmap[i] = *//* 64 *//* 0 + r;
+		gelmap[i] = /* 64 */ 0 + r;
 	}
 }
-*/
+#endif
 
 void
 D_PolysetDrawSpans (spanpackage_t * pspanpackage)
@@ -627,7 +629,7 @@ done32:			;
 /*
 	D_PolysetFillSpans
 */
-/*
+#if 0
 void
 D_PolysetFillSpans (spanpackage_t * pspanpackage)
 {
@@ -704,11 +706,9 @@ D_PolysetFillSpans (spanpackage_t * pspanpackage)
 		Sys_Error("D_PolysetFillSpans: unsupported r_pixbytes %i\n", r_pixbytes);
 	}
 }
-*/
+#endif
 
-/*
-	D_RasterizeAliasPolySmooth
-*/
+
 void
 D_RasterizeAliasPolySmooth (void)
 {
@@ -725,19 +725,13 @@ D_RasterizeAliasPolySmooth (void)
 	initialleftheight = pleftbottom[1] - plefttop[1];
 	initialrightheight = prightbottom[1] - prighttop[1];
 
-//
-// set the s, t, and light gradients, which are consistent across the triangle
-// because being a triangle, things are affine
-//
+	// set the s, t, and light gradients, which are consistent across the
+	// triangle, because being a triangle, things are affine
 	D_PolysetCalcGradients (r_affinetridesc.skinwidth);
 
-//
 // rasterize the polygon
-//
 
-//
-// scan out the top (and possibly only) part of the left edge
-//
+	// scan out the top (and possibly only) part of the left edge
 	D_PolysetSetUpForLineScan (plefttop[0], plefttop[1],
 							   pleftbottom[0], pleftbottom[1]);
 
@@ -763,9 +757,9 @@ D_RasterizeAliasPolySmooth (void)
 
 // TODO: can reuse partial expressions here
 
-// for negative steps in x along left edge, bias toward overflow rather than
-// underflow (sort of turning the floor () we did in the gradient calcs into
-// ceil (), but plus a little bit)
+	// for negative steps in x along left edge, bias toward overflow rather
+	// than underflow (sort of turning the floor () we did in the gradient
+	// calcs into ceil (), but plus a little bit)
 	if (ubasestep < 0)
 		working_lstepx = r_lstepx - 1;
 	else
@@ -789,9 +783,7 @@ D_RasterizeAliasPolySmooth (void)
 
 	D_PolysetScanLeftEdge (initialleftheight);
 
-//
-// scan out the bottom part of the left edge, if it exists
-//
+	// scan out the bottom part of the left edge, if it exists
 	if (pedgetable->numleftedges == 2) {
 		int         height;
 
@@ -847,8 +839,8 @@ D_RasterizeAliasPolySmooth (void)
 
 		D_PolysetScanLeftEdge (height);
 	}
-// scan out the top (and possibly only) part of the right edge, updating the
-// count field
+	// scan out the top (and possibly only) part of the right edge, updating
+	// the count field
 	d_pedgespanpackage = a_spans;
 
 	D_PolysetSetUpForLineScan (prighttop[0], prighttop[1],
@@ -860,7 +852,7 @@ D_RasterizeAliasPolySmooth (void)
 													// spanpackages
 	D_PolysetDrawSpans (a_spans);
 
-// scan out the bottom part of the right edge, if it exists
+	// scan out the bottom part of the right edge, if it exists
 	if (pedgetable->numrightedges == 2) {
 		int         height;
 		spanpackage_t *pstart;
@@ -886,9 +878,6 @@ D_RasterizeAliasPolySmooth (void)
 }
 
 
-/*
-	D_PolysetSetEdgeTable
-*/
 void
 D_PolysetSetEdgeTable (void)
 {
@@ -897,10 +886,8 @@ D_PolysetSetEdgeTable (void)
 	// assume the vertices are already in top to bottom order
 	edgetableindex = 0;
 
-//
-// determine which edges are right & left, and the order in which
-// to rasterize them
-//
+	// determine which edges are right & left, and the order in which
+	// to rasterize them
 	if (r_p0[1] >= r_p1[1]) {
 		if (r_p0[1] == r_p1[1]) {
 			if (r_p0[1] < r_p2[1])
@@ -909,8 +896,9 @@ D_PolysetSetEdgeTable (void)
 				pedgetable = &edgetables[5];
 
 			return;
-		} else
+		} else {
 			edgetableindex = 1;
+		}
 	}
 
 	if (r_p0[1] == r_p2[1]) {
@@ -937,3 +925,79 @@ D_PolysetSetEdgeTable (void)
 
 	pedgetable = &edgetables[edgetableindex];
 }
+
+
+#if 0
+
+void
+D_PolysetRecursiveDrawLine (int *lp1, int *lp2)
+{
+	int         d;
+	int         new[6];
+	int         ofs;
+
+	d = lp2[0] - lp1[0];
+	if (d < -1 || d > 1)
+		goto split;
+	d = lp2[1] - lp1[1];
+	if (d < -1 || d > 1)
+		goto split;
+
+	return;								// line is completed
+
+  split:
+	// split this edge
+	new[0] = (lp1[0] + lp2[0]) >> 1;
+	new[1] = (lp1[1] + lp2[1]) >> 1;
+	new[5] = (lp1[5] + lp2[5]) >> 1;
+	new[2] = (lp1[2] + lp2[2]) >> 1;
+	new[3] = (lp1[3] + lp2[3]) >> 1;
+	new[4] = (lp1[4] + lp2[4]) >> 1;
+
+	// draw the point
+	ofs = d_scantable[new[1]] + new[0];
+	if (new[5] > d_pzbuffer[ofs]) {
+		int         pix;
+
+		d_pzbuffer[ofs] = new[5];
+		pix = skintable[new[3] >> 16][new[2] >> 16];
+//		pix = ((byte *)acolormap)[pix + (new[4] & 0xFF00)];
+		d_viewbuffer[ofs] = pix;
+	}
+	// recursively continue
+	D_PolysetRecursiveDrawLine (lp1, new);
+	D_PolysetRecursiveDrawLine (new, lp2);
+}
+
+
+void
+D_PolysetRecursiveTriangle2 (int *lp1, int *lp2, int *lp3)
+{
+	int         d;
+	int         new[4];
+
+	d = lp2[0] - lp1[0];
+	if (d < -1 || d > 1)
+		goto split;
+	d = lp2[1] - lp1[1];
+	if (d < -1 || d > 1)
+		goto split;
+	return;
+
+  split:
+	// split this edge
+	new[0] = (lp1[0] + lp2[0]) >> 1;
+	new[1] = (lp1[1] + lp2[1]) >> 1;
+	new[5] = (lp1[5] + lp2[5]) >> 1;
+	new[2] = (lp1[2] + lp2[2]) >> 1;
+	new[3] = (lp1[3] + lp2[3]) >> 1;
+	new[4] = (lp1[4] + lp2[4]) >> 1;
+
+	D_PolysetRecursiveDrawLine (new, lp3);
+
+	// recursively continue
+	D_PolysetRecursiveTriangle (lp1, new, lp3);
+	D_PolysetRecursiveTriangle (new, lp2, lp3);
+}
+
+#endif

@@ -50,7 +50,7 @@ D_Patch (void)
 void
 D_ViewChanged (void)
 {
-	int rowpixels;
+	int         rowpixels;
 
 	if (r_dowarp)
 		rowpixels = WARP_WIDTH;

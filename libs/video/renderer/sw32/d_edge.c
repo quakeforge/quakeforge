@@ -31,19 +31,19 @@
 #endif
 
 #include "QF/cvar.h"
-#include "QF/render.h" 
+#include "QF/render.h"
 #include "QF/sys.h"
 
 #include "d_local.h"
 #include "r_local.h"
 
-static int	miplevel;
+static int  miplevel;
 
-float		scale_for_mip;
-extern int	screenwidth;
-int			ubasestep, errorterm, erroradjustup, erroradjustdown, vstartscan;
+float       scale_for_mip;
+extern int  screenwidth;
+int         ubasestep, errorterm, erroradjustup, erroradjustdown, vstartscan;
 
-vec3_t		transformed_modelorg;
+vec3_t      transformed_modelorg;
 
 
 void
@@ -51,6 +51,7 @@ D_DrawPoly (void)
 {
 // this driver takes spans, not polygons
 }
+
 
 int
 D_MipLevelForScale (float scale)
@@ -134,6 +135,7 @@ D_DrawSolidSurface (surf_t *surf, int color)
 	}
 }
 
+
 void
 D_CalcGradients (msurface_t *pface)
 {
@@ -165,16 +167,17 @@ D_CalcGradients (msurface_t *pface)
 
 	t = 0x10000 * mipscale;
 	sadjust = ((fixed16_t) (DotProduct (p_temp1, p_saxis) * 0x10000 + 0.5)) -
-		((pface->texturemins[0] << 16) >> miplevel) +
-		pface->texinfo->vecs[0][3] * t;
+		((pface->texturemins[0] << 16) >> miplevel)
+		 + pface->texinfo->vecs[0][3] * t;
 	tadjust = ((fixed16_t) (DotProduct (p_temp1, p_taxis) * 0x10000 + 0.5)) -
-		((pface->texturemins[1] << 16) >> miplevel) +
-		pface->texinfo->vecs[1][3] * t;
+		((pface->texturemins[1] << 16) >> miplevel)
+		 + pface->texinfo->vecs[1][3] * t;
 
 	// -1 (-epsilon) so we never wander off the edge of the texture
 	bbextents = ((pface->extents[0] << 16) >> miplevel) - 1;
 	bbextentt = ((pface->extents[1] << 16) >> miplevel) - 1;
 }
+
 
 void
 D_DrawSurfaces (void)
@@ -182,7 +185,8 @@ D_DrawSurfaces (void)
 	surf_t     *s;
 	msurface_t *pface;
 	surfcache_t *pcurrentcache;
-	vec3_t      local_modelorg, world_transformed_modelorg;
+	vec3_t      world_transformed_modelorg;
+	vec3_t      local_modelorg;
 
 	currententity = &r_worldentity;
 	TransformVector (modelorg, transformed_modelorg);
@@ -198,7 +202,7 @@ D_DrawSurfaces (void)
 			d_zistepv = s->d_zistepv;
 			d_ziorigin = s->d_ziorigin;
 
-			D_DrawSolidSurface (s, ((int)&s->data) & 0xFF);
+			D_DrawSolidSurface (s, ((int) s->data & 0xFF));
 			D_DrawZSpans (s->spans);
 		}
 	} else {
@@ -213,8 +217,9 @@ D_DrawSurfaces (void)
 			d_ziorigin = s->d_ziorigin;
 
 			if (s->flags & SURF_DRAWSKY) {
-				if (!r_skymade)
+				if (!r_skymade) {
 					R_MakeSky ();
+				}
 
 				D_DrawSkyScans (s->spans);
 				D_DrawZSpans (s->spans);
@@ -230,8 +235,8 @@ D_DrawSurfaces (void)
 			} else if (s->flags & SURF_DRAWTURB) {
 				pface = s->data;
 				miplevel = 0;
-				cacheblock = (void *)((byte *) pface->texinfo->texture +
-									  pface->texinfo->texture->offsets[0]);
+				cacheblock = ((byte *) pface->texinfo->texture +
+							  pface->texinfo->texture->offsets[0]);
 				cachewidth = 64;
 
 				if (s->insubmodel) {
@@ -256,6 +261,7 @@ D_DrawSurfaces (void)
 					// restore the old drawing state
 					// FIXME: we don't want to do this every time!
 					// TODO: speed up
+
 					currententity = &r_worldentity;
 					VectorCopy (world_transformed_modelorg,
 								transformed_modelorg);
@@ -270,8 +276,7 @@ D_DrawSurfaces (void)
 					// FIXME: we don't want to do all this for every polygon!
 					// TODO: store once at start of frame
 					currententity = s->entity;	// FIXME: make this passed in 
-												// to
-					// R_RotateBmodel ()
+												// to R_RotateBmodel ()
 					VectorSubtract (r_origin, currententity->origin,
 									local_modelorg);
 					TransformVector (local_modelorg, transformed_modelorg);
@@ -287,7 +292,7 @@ D_DrawSurfaces (void)
 				// FIXME: make this passed in to D_CacheSurface
 				pcurrentcache = D_CacheSurface (pface, miplevel);
 
-				cacheblock = (void *) pcurrentcache->data;
+				cacheblock = (byte *) pcurrentcache->data;
 				cachewidth = pcurrentcache->width;
 
 				D_CalcGradients (pface);
@@ -300,6 +305,7 @@ D_DrawSurfaces (void)
 					// restore the old drawing state
 					// FIXME: we don't want to do this every time!
 					// TODO: speed up
+
 					VectorCopy (world_transformed_modelorg,
 								transformed_modelorg);
 					VectorCopy (base_vpn, vpn);
