@@ -352,6 +352,12 @@ qfs_dir_get_key (void *_k, void *unused)
 	return _k;
 }
 
+static void
+qfs_dir_free (void *_k, void *unused)
+{
+	free (_k);
+}
+
 static plitem_t *
 qfs_find_gamedir (const char *name, hashtab_t *dirs)
 {
@@ -401,7 +407,7 @@ qfs_build_gamedir (const char **list)
 	gamedir_t  *gamedir;
 	plitem_t   *gdpl;
 	dstring_t  *path;
-	hashtab_t  *dirs = Hash_NewTable (31, qfs_dir_get_key, 0, 0);
+	hashtab_t  *dirs = Hash_NewTable (31, qfs_dir_get_key, qfs_dir_free, 0);
 	hashtab_t  *vars = qfs_new_vars ();
 	const char *dir = 0;
 
@@ -455,7 +461,7 @@ qfs_build_gamedir (const char **list)
 			Sys_Printf ("gamedir `%s' not found\n", name);
 			continue;
 		}
-		Hash_Add (dirs, (void *) name);
+		Hash_Add (dirs, strdup (name));
 		if (!j) {
 			gamedir->name = strdup (name);
 			gamedir->gamedir = strdup (list[j]);
