@@ -194,7 +194,7 @@ preprocess_file (const char *filename)
 		build_cpp_args (filename, tempname->str);
 
 #ifdef _WIN32
-		if (!options.save_temps)
+		if (!options.save_temps && !options.preprocess_only)
 			mktemp (tempname->str);
 
 		{
@@ -231,7 +231,7 @@ preprocess_file (const char *filename)
 			return 0;
 		return fopen (tempname->str, "rt");
 #else
-		if (!options.save_temps)
+		if (!options.save_temps && !options.preprocess_only)
 			tempfd = mkstemp (tempname->str);
 
 		if ((pid = fork ()) == -1) {
@@ -281,8 +281,9 @@ preprocess_file (const char *filename)
 			return 0;
 		else if (options.save_temps)
 			return fopen (tempname->str, "rt");
-		else
+		else {
 			return fdopen (tempfd, "r+t");
+		}
 #endif
 	}
 	return fopen (filename, "rt");
