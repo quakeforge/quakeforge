@@ -30,6 +30,10 @@
 static const char rcsid[] = 
 	"$Id$";
 
+#ifdef HAVE_CONFIG_H
+# include "config.h"
+#endif
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <ctype.h>
@@ -98,6 +102,8 @@ main (int argc, char **argv)
 	}
 	fputs ("#include \"def.h\"\n\n", out);
 	fprintf (out, "static const char rcsid[] =\n\t\"%s\";\n", rcsid);
+	fprintf (out, "static const void *__rcsid_hack (void)\n");
+	fprintf (out, "{ __rcsid_hack (); return rcsid; }\n");
 	while (fgets (buf, sizeof (buf), in)) {
 		switch (state) {
 			case 0:

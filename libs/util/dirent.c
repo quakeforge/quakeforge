@@ -14,6 +14,10 @@
 static const char rcsid[] = 
 	"$Id$";
 
+#ifdef HAVE_CONFIG_H
+# include "config.h"
+#endif
+
 #include <direct.h>
 #include <dirent.h>
 #include <errno.h>
