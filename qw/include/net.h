@@ -136,4 +136,6 @@ extern void Log_Incoming_Packet (char *p, int len);
 extern void Log_Outgoing_Packet (char *p, int len);
 extern void Net_LogStop (void);
 
+extern struct cvar_s *net_packetlog;
+
 #endif // _NET_H

@@ -63,7 +63,6 @@
 
 #include "QF/cdaudio.h"
 #include "QF/cmd.h"
-#include "compat.h"
 #include "QF/console.h"
 #include "QF/cvar.h"
 #include "QF/draw.h"
@@ -82,6 +81,7 @@
 #include "QF/va.h"
 #include "QF/vfs.h"
 
+#include "compat.h"
 #include "bothdefs.h"
 #include "buildnum.h"
 #include "cl_cam.h"
@@ -1032,9 +1032,8 @@ CL_ReadPackets (void)
 //  while (NET_GetPacket ())
 	while (CL_GetMessage ()) {
 
-#ifdef PACKET_LOGGING
-                if (cls.demoplayback) Log_Incoming_Packet(net_message->message->data,net_message->message->cursize);
-#endif
+		if (cls.demoplayback && net_packetlog->int_val)
+			Log_Incoming_Packet(net_message->message->data,net_message->message->cursize);
 
 		// remote command packet
 		if (*(int *) net_message->message->data == -1) {
@@ -1633,7 +1632,6 @@ Host_Init (void)
 
 	NET_Init (cl_port->int_val);
 	Netchan_Init ();
-#ifdef PACKET_LOGGING
 	{
 		static char *sound_precache[MAX_MODELS];
 		int i;
@@ -1642,7 +1640,6 @@ Host_Init (void)
 			sound_precache[i] = cl.sound_name[i];
 		Net_Log_Init (sound_precache);
 	}
-#endif
 
 	W_LoadWadFile ("gfx.wad");
 	Key_Init ();

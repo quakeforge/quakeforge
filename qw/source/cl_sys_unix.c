@@ -45,17 +45,15 @@
 #include <sys/mman.h>
 
 #include "QF/cvar.h"
-#include "host.h"
 #include "QF/qargs.h"
 #include "QF/sys.h"
+
+#include "host.h"
+#include "net.h"
 
 int         noconinput = 0;
 qboolean    is_server = false;
 char       *svs_info;
-
-#ifdef PACKET_LOGGING
-void Net_LogStop (void);
-#endif
 
 // General routines ======================================================
 
@@ -66,9 +64,7 @@ Sys_Quit (void)
 	Host_Shutdown ();
 	fcntl (0, F_SETFL, fcntl (0, F_GETFL, 0) & ~O_NONBLOCK);
 
-#ifdef PACKET_LOGGING
-        Net_LogStop();
-#endif
+	Net_LogStop();
 
 	exit (0);
 }

@@ -92,9 +92,7 @@ void
 Sys_Quit (void)
 {
 
-#ifdef PACKET_LOGGING
-        Net_LogStop();
-#endif
+	Net_LogStop();
 
 	exit (0);							// appkit isn't running
 }

@@ -1891,9 +1891,7 @@ SV_InitNet (void)
 
 	Netchan_Init ();
 
-#ifdef PACKET_LOGGING
-        Net_Log_Init(sv.sound_precache);
-#endif
+	Net_Log_Init(sv.sound_precache);
 
 	// heartbeats will always be sent to the id master
 	svs.last_heartbeat = -99999;		// send immediately
