@@ -6,14 +6,15 @@ INCLUDES= -I$(top_srcdir)/include
 lib_LTLIBRARIES= libQFutil.la
 
 if ASM_ARCH
-noinst_LTLIBRARIES=	libasm.la
+asm= libasm.la
 else
-noinst_LTLIBRARIES=
+asm=
 endif
 
-asm_src= math.S sys_ia32.S
+#noinst_LTLIBRARIES=	$(asm)
+EXTRA_LTLIBRARIES= libasm.la
 
-libasm_la_SOURCES=	$(asm_src)
+libasm_la_SOURCES=	math.S sys_ia32.S
 
 
 fnmatch_src=	fnmatch.c dirent.c
@@ -31,8 +32,8 @@ getopt=
 endif
 
 libQFutil_la_LDFLAGS=		-version-info 1:0:0 -no-undefined
-libQFutil_la_LIBADD=		libasm.la $(Z_LIBS) $(DL_LIBS) $(WIN32_LIBS)
-libQFutil_la_DEPENDENCIES=	libasm.la
+libQFutil_la_LIBADD=		$(asm) $(Z_LIBS) $(DL_LIBS) $(WIN32_LIBS)
+libQFutil_la_DEPENDENCIES=	$(asm)
 libQFutil_la_SOURCES= \
 	bspfile.c buildnum.c cbuf.c checksum.c cmd.c crc.c cvar.c dstring.c \
 	fendian.c hash.c idparse.c info.c link.c llist.c \
@@ -40,4 +41,4 @@ libQFutil_la_SOURCES= \
 	qfplist.c quakefs.c quakeio.c riff.c sizebuf.c string.c sys.c \
 	va.c ver_check.c wad.c wadfile.c zone.c $(fnmatch) $(getopt)
 
-EXTRA_DIST= $(asm_src) $(fnmatch_src) $(getopt_src)
+EXTRA_DIST= $(fnmatch_src) $(getopt_src)

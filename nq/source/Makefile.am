@@ -69,7 +69,7 @@ server_LIBFILES= \
 		$(top_builddir)/libs/models/libQFmodels.la
 
 common_LIBFILES= \
-		libasm.a \
+		$(asm) \
 		$(top_builddir)/libs/net/libnet_main.la \
 		$(top_builddir)/libs/console/libQFconsole.la \
 		$(top_builddir)/libs/gamecode/builtins/libQFgamecode_builtins.la \

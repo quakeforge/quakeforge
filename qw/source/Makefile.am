@@ -87,9 +87,9 @@ qw_server_LIBS= \
 		$(top_builddir)/libs/util/libQFutil.la
 
 qw_server_SOURCES=	
-qw_server_LDADD=	libqw_server.a libqw_common.a libasm.a $(qw_server_LIBS) $(NET_LIBS) $(DL_LIBS) $(CURSES_LIBS)
+qw_server_LDADD=	libqw_server.a libqw_common.a $(asm) $(qw_server_LIBS) $(NET_LIBS) $(DL_LIBS) $(CURSES_LIBS)
 qw_server_LDFLAGS=	$(common_ldflags)
-qw_server_DEPENDENCIES=	libqw_common.a libqw_server.a libasm.a $(qw_server_LIBS)
+qw_server_DEPENDENCIES=	libqw_common.a libqw_server.a $(asm) $(qw_server_LIBS)
 
 qw_master_SOURCES=	master.c
 qw_master_LDADD=	$(top_builddir)/libs/util/libQFutil.la $(NET_LIBS)
@@ -112,7 +112,7 @@ qw_client_LIBS= \
 		$(top_builddir)/libs/util/libQFutil.la \
 		$(top_builddir)/libs/gib/libQFgib.la
 
-client_LIBS= libasm.a $(qw_client_LIBS)
+client_LIBS= $(asm) $(qw_client_LIBS)
 client_libs= libqw_client.a libqw_common.a
 
 libqw_client_a_SOURCES= \
