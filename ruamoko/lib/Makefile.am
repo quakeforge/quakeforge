@@ -8,7 +8,7 @@ RANLIB=touch
 
 INCLUDES=	-I$(top_srcdir)/ruamoko/include
 
-noinst_LIBRARIES= libr.a libgui.a
+noinst_LIBRARIES= libr.a libgui.a libcsqc.a
 
 %.qfo: %.r
 	$(QFCC) $(QCFLAGS) $(QCPPFLAGS) -p $(STRIP) -c -o $@ $<
@@ -24,7 +24,11 @@ libr_a_SOURCES=\
 libr_a_AR=$(PAK) -cf
 
 libgui_a_SOURCES=\
-		draw.r inputline.r point.r
+		draw.r inputline.r key.r point.r
 libgui_a_AR=$(PAK) -cf
+
+libcsqc_a_SOURCES=\
+		cbuf.r cmd.r cvar.r file.r
+libcsqc_a_AR=$(PAK) -cf
 
 CLEANFILES	= *.qfo

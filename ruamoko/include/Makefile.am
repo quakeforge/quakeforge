@@ -5,4 +5,6 @@ include_HEADERS = \
 		object.h physics.h qw_message.h qw_physics.h qw_sys.h sound.h \
 		string.h system.h \
 		\
-		draw.h inputline.h point.h
+		draw.h key.h inputline.h point.h \
+		\
+		cbuf.h cmd.h cvar.h file.h
