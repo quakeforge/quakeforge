@@ -31,6 +31,7 @@
 #define _SOUND_H
 
 #include "QF/mathlib.h"
+#include "QF/quakeio.h"
 #include "QF/zone.h"
 
 #define AMBIENT_WATER	0

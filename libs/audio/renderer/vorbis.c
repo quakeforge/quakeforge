@@ -46,9 +46,9 @@ static const char rcsid[] =
 #include <vorbis/vorbisfile.h>
 
 #include "QF/cvar.h"
+#include "QF/quakeio.h"
 #include "QF/sound.h"
 #include "QF/sys.h"
-#include "QF/quakeio.h"
 
 
 static size_t
