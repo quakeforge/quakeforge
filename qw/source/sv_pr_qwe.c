@@ -544,7 +544,7 @@ qwe_user_cmd (void)
 static int
 qwe_load (progs_t * pr)
 {
-	int         i;
+	size_t      i;
 
 	for (i = 0; i < sizeof (qwe_func_list) / sizeof (qwe_func_list[0]); i++) {
 		dfunction_t *f = ED_FindFunction (pr, qwe_func_list[i].name);

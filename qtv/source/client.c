@@ -442,7 +442,7 @@ ucmds_getkey (void *_a, void *unused)
 void
 Client_Init (void)
 {
-	int         i;
+	size_t      i;
 
 	ucmd_table = Hash_NewTable (251, ucmds_getkey, 0, 0);
 	for (i = 0; i < sizeof (ucmds) / sizeof (ucmds[0]); i++)

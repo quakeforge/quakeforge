@@ -571,7 +571,8 @@ static void
 SV_NextDownload_f (void *unused)
 {
 	byte        buffer[768];		// FIXME protocol limit? could be bigger?
-	int         percent, size, r;
+	int         percent, size;
+	size_t      r;
 
 	if (!host_client->download)
 		return;

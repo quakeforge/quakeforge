@@ -416,14 +416,14 @@ DecodeArgs (int argc, char **argv)
 		options.traditional = true;
 		options.advanced = false;
 		options.code.progsversion = PROG_ID_VERSION;
-		if (options.code.short_circuit == -1)
+		if (options.code.short_circuit == (qboolean) -1)
 			options.code.short_circuit = false;
 	}
 	if (!options.traditional) {
 		options.advanced = true;
 		add_cpp_def ("-D__RUAMOKO__=1");
 		add_cpp_def ("-D__RAUMOKO__=1");
-		if (options.code.short_circuit == -1)
+		if (options.code.short_circuit == (qboolean) -1)
 			options.code.short_circuit = true;
 	}
 	if (options.code.progsversion == PROG_ID_VERSION)

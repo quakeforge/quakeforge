@@ -72,7 +72,7 @@ static void
 SV_FlushRedirect (void)
 {
 	char        send[8000 + 6];
-	int         count;
+	size_t      count;
 	int         bytes;
 	const char *p;
 

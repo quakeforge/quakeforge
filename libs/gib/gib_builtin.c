@@ -719,7 +719,7 @@ GIB_Text_From_Decimal_f (void)
 	if (GIB_Argc () < 2)
 		GIB_USAGE ("num1 [...]");
 	else if (GIB_CanReturn ()) {
-		unsigned int i;
+		int i;
 		dstring_t *dstr;
 		char *str;
 

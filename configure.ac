@@ -1409,6 +1409,7 @@ if test "x$optimize" = xyes; then
 		CFLAGS=""
 		QF_CC_OPTION(-frename-registers)
 		QF_CC_OPTION(-finline-limit=32000 -Winline)
+		QF_CC_OPTION(-Wsign-compare)
 		heavy="-O2 $CFLAGS -ffast-math -funroll-loops -fomit-frame-pointer -fexpensive-optimizations"
 		CFLAGS="$saved_cflags"
 		light="-O2"

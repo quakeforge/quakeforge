@@ -192,11 +192,11 @@ LoadPNG (QFile *infile)
 void 
 WritePNG (const char *fileName, byte *data, int width, int height)
 {
-	QFile		*outfile;
-	png_uint_32	i;
-	png_structp	png_ptr;
-	png_infop	info_ptr;
-	png_bytepp	row_pointers = NULL;
+	QFile      *outfile;
+	int         i;
+	png_structp png_ptr;
+	png_infop   info_ptr;
+	png_bytepp  row_pointers = NULL;
 	
 	/* initialize write struct */
 	png_ptr = png_create_write_struct (PNG_LIBPNG_VER_STRING, NULL, NULL, NULL);

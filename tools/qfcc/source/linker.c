@@ -842,9 +842,10 @@ undefined_def (qfo_def_t *def)
 			line = lines.lines + best->line_info;
 			line_def.file = best->file;
 			line_def.line = best->line;
-			if (!line->line && line->fa.func == best - funcs.funcs) {
+			if (!line->line
+				&& line->fa.func == (unsigned int) (best - funcs.funcs)) {
 				while (line - lines.lines < lines.num_lines - 1 && line[1].line
-					   && line[1].fa.addr <= reloc->ofs)
+					   && line[1].fa.addr <= (unsigned int) reloc->ofs)
 					line++;
 				line_def.line = line->line + best->line;
 			}

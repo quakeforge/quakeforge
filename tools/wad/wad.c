@@ -264,7 +264,7 @@ wad_extract (wad_t *wad, lumpinfo_t *pf)
 		case TYP_PALETTE:
 			count = 768;
 			memset (buffer, 0, count);
-			if (count > pf->size)
+			if ((int) count > pf->size)
 				count = pf->size;
 			for (i = 0; i < 256; i++)
 				buffer[i + 768] = i;
