@@ -762,6 +762,7 @@ CL_PlayDemo_f (void)
 		return;
 	}
 	strncpy (demoname, Cmd_Argv (1), sizeof (demoname));
+	CL_StartDemo ();
 }
 
 void
