@@ -995,7 +995,7 @@ main (int argc, char **argv)
 	sprintf (filename, "%s/progs.src", sourcedir);
 	LoadFile (filename, (void *) &src);
 
-	if (!(src = COM_Parse (src)))
+	if (!(src = Parse (src)))
 		Error ("No destination filename.  qfcc --help for info.\n");
 
 	strcpy (destfile, com_token);
@@ -1023,7 +1023,7 @@ main (int argc, char **argv)
 	PR_BeginCompilation ();
 
 	// compile all the files
-	while ((src = COM_Parse (src))) {
+	while ((src = Parse (src))) {
 #ifdef USE_CPP
 		pid_t	pid;
 		char	*temp1;

@@ -77,12 +77,12 @@ Error (char *error, ...)
 
 
 /*
-	COM_Parse
+	Parse
 
 	Parse a token out of a string
 */
 char *
-COM_Parse (char *data)
+Parse (char *data)
 {
 	int 	c;
 	int 	len = 0;

@@ -59,7 +59,7 @@ void	SafeWrite (FILE *f, void *buffer, int count);
 
 int		LoadFile (char *filename, void **bufferptr);
 
-char *COM_Parse (char *data);
+char *Parse (char *data);
 
 extern	char		com_token[1024];
 extern	qboolean	com_eof;
