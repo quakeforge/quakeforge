@@ -619,7 +619,6 @@ VID_Update (vrect_t *rects)
 
 		vid.recalc_refdef = 1;			/* force a surface cache flush */
 		Con_CheckResize ();
-		Con_Clear_f ();
 		return;
 	}
 

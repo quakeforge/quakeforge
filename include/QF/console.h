@@ -87,8 +87,6 @@ extern qboolean con_initialized;
 extern byte *con_chars;
 extern	int	con_notifylines;		// scan lines to clear for notify lines
 
-void Con_DrawCharacter (int cx, int line, int num);
-
 void Con_CheckResize (void);
 void Con_DrawConsole (int lines);
 void Con_DrawDownload (int lines);
@@ -96,9 +94,7 @@ void Con_DrawDownload (int lines);
 void Con_Print (const char *fmt, va_list args);
 void Con_Printf (const char *fmt, ...) __attribute__((format(printf,1,2)));
 void Con_DPrintf (const char *fmt, ...) __attribute__((format(printf,1,2)));
-void Con_Clear_f (void);
 void Con_DrawNotify (void);
-void Con_ClearNotify (void);
 void Con_ToggleConsole_f (void);
 
 // wrapper function to attempt to either complete the command line

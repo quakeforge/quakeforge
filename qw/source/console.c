@@ -80,6 +80,14 @@ qboolean    con_initialized;
 #define		MAXCMDLINE	256
 
 
+void
+Con_ClearNotify (void)
+{
+	int         i;
+
+	for (i = 0; i < NUM_CON_TIMES; i++)
+		con_times[i] = 0;
+}
 
 void
 Con_ToggleConsole_f (void)
@@ -125,15 +133,6 @@ Con_Clear_f (void)
 	memset (con_main.text, ' ', CON_TEXTSIZE);
 	memset (con_chat.text, ' ', CON_TEXTSIZE);
 	con_main.display = con_main.current;
-}
-
-void
-Con_ClearNotify (void)
-{
-	int         i;
-
-	for (i = 0; i < NUM_CON_TIMES; i++)
-		con_times[i] = 0;
 }
 
 void
