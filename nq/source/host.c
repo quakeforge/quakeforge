@@ -949,7 +949,6 @@ Host_Init (quakeparms_t *parms)
 	Mod_Init ();
 	NET_Init ();
 	SV_Init ();
-	Host_Skin_Init ();
 
 	Con_Printf ("Exe: " __TIME__ " " __DATE__ "\n");
 	Con_Printf ("%4.1f megabyte heap\n", parms->memsize / (1024 * 1024.0));
@@ -979,6 +978,7 @@ Host_Init (quakeparms_t *parms)
 		CL_Init ();
 		CL_SetState (ca_disconnected);
 	}
+	Host_Skin_Init ();
 
 	if (!isDedicated && cl_quakerc->int_val)
 		Cbuf_InsertText ("exec quake.rc\n");
