@@ -228,7 +228,6 @@ SV_LoadProgs (void)
 	(void *) sv_globals.msg_entity = PR_GetGlobalPointer (&sv_pr_state,
 														  "msg_entity");
 
-	sv_funcs.main = PR_GetFunctionIndex (&sv_pr_state, "main");
 	sv_funcs.StartFrame = PR_GetFunctionIndex (&sv_pr_state, "StartFrame");
 	sv_funcs.PlayerPreThink = PR_GetFunctionIndex (&sv_pr_state,
 												   "PlayerPreThink");
