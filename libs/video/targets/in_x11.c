@@ -550,6 +550,7 @@ IN_LL_Init (void)
 		if (vid_fullscreen->int_val) {
 			Cvar_Set (in_grab, "1");
 			in_grab->flags |= CVAR_ROM;
+			IN_LL_Grab_Input ();
 		}
 
 		X11_AddEvent (ButtonPress, &event_button);
