@@ -241,7 +241,12 @@ GIB_Parse_Tokens (const char *program, unsigned int *i, unsigned int pofs, gib_t
 			}
 			cat = CAT_CONCAT;
 			(*i)++;
-			continue;
+			while (program[*i] != '\n' && isspace ((byte) program[*i]))
+				(*i)++;
+			if (program[*i] == ',') {
+				GIB_Parse_Error("Double comma error.", *i+pofs);
+				goto ERROR;
+			}
 		} else
 			cat = CAT_NORMAL;
 		// New line/command?
