@@ -285,6 +285,7 @@ GL_GetAliasFrameVerts (int frame, aliashdr_t *paliashdr, entity_t *e)
 	int			  count, numposes, pose, i;
 	trivertx_t	 *verts;
 	vert_order_t *vo;
+	blended_vert_t *vo_v;
 
 	if ((frame >= paliashdr->mdl.numframes) || (frame < 0)) {
 		if (developer->int_val)
@@ -351,16 +352,14 @@ GL_GetAliasFrameVerts (int frame, aliashdr_t *paliashdr, entity_t *e)
 		} else if (blend == 1) {
 			verts = verts2;
 		} else {
-			for (i = 0; i < count; i++) {
-				vo->verts[i].vert[0] = verts1[i].v[0] * lerp
-										+ verts2[i].v[0] * blend;
-				vo->verts[i].vert[1] = verts1[i].v[1] * lerp
-										+ verts2[i].v[1] * blend;
-				vo->verts[i].vert[2] = verts1[i].v[2] * lerp
-										+ verts2[i].v[2] * blend;
-				vo->verts[i].lightdot =
-					shadedots[verts1[i].lightnormalindex] * lerp
-					+ shadedots[verts2[i].lightnormalindex] * blend;
+			for (i = 0, vo_v = vo->verts; i < count;
+				 i++, vo_v++, verts1++, verts2++) {
+				vo_v->vert[0] = verts1->v[0] * lerp + verts2->v[0] * blend;
+				vo_v->vert[1] = verts1->v[1] * lerp + verts2->v[1] * blend;
+				vo_v->vert[2] = verts1->v[2] * lerp + verts2->v[2] * blend;
+				vo_v->lightdot =
+					shadedots[verts1->lightnormalindex] * lerp
+					+ shadedots[verts2->lightnormalindex] * blend;
 			}
 			lastposenum0 = e->pose1;
 			lastposenum = e->pose2;
@@ -369,11 +368,9 @@ GL_GetAliasFrameVerts (int frame, aliashdr_t *paliashdr, entity_t *e)
 	} else {
 		verts += pose * count;
 	}
-	for (i = 0; i < count; i++) {
-		vo->verts[i].vert[0] = verts[i].v[0];
-		vo->verts[i].vert[1] = verts[i].v[1];
-		vo->verts[i].vert[2] = verts[i].v[2];
-		vo->verts[i].lightdot = shadedots[verts[i].lightnormalindex];
+	for (i = 0, vo_v = vo->verts; i < count; i++, vo_v++, verts++) {
+		VectorCopy (verts->v, vo_v->vert);
+		vo_v->lightdot = shadedots[verts->lightnormalindex];
 	}
 	lastposenum = pose;
 	return vo;
