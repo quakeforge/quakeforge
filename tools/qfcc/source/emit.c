@@ -522,8 +522,10 @@ emit_sub_expr (expr_t *e, def_t *dest)
 					return emit_deref_expr (e, dest);
 				case 'C':
 					def_a = emit_sub_expr (e->e.expr.e1, 0);
-					if (def_a->type->type == ev_pointer
-						&& e->e.expr.type->type == ev_pointer) {
+					if ((def_a->type->type == ev_pointer
+						 && e->e.expr.type->type == ev_pointer)
+						|| (def_a->type->type == ev_func
+							&& e->e.expr.type->type == ev_func)) {
 						return def_a;
 					}
 					def_b = &def_void;

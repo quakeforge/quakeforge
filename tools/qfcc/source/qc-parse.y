@@ -174,7 +174,7 @@ expr_t *argv_expr (void);
 %type	<methodlist> methodprotolist methodprotolist2
 %type	<type>	ivar_decl_list
 
-%expect 3
+%expect 4
 
 %{
 
@@ -816,7 +816,7 @@ unary_expr
 	| '~' cast_expr %prec UNARY	{ $$ = unary_expr ('~', $2); }
 	| '&' cast_expr %prec UNARY	{ $$ = address_expr ($2, 0, 0); }
 	| SIZEOF unary_expr	%prec UNARY 		{ $$ = sizeof_expr ($2, 0); }
-	| SIZEOF '(' non_field_type ')'	 %prec HYPERUNARY	{ $$ = sizeof_expr (0, $3); }
+	| SIZEOF '(' type ')'	 %prec HYPERUNARY	{ $$ = sizeof_expr (0, $3); }
 	;
 
 primary
@@ -838,7 +838,7 @@ primary
 
 cast_expr
 	: unary_expr
-	| '(' non_field_type ')' cast_expr %prec UNARY	{ $$ = cast_expr ($2, $4); }
+	| '(' type ')' cast_expr %prec UNARY	{ $$ = cast_expr ($2, $4); }
 	;
 
 expr
