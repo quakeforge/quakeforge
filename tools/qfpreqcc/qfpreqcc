@@ -31,6 +31,7 @@ def append_file (filename):
 	f = open (filename, "rt")
 	lines = f.readlines ()
 	f.close ()
+	current_file.append ('# 1 "' + filename + '"')
 	for i in range (len (lines)):
 		lines[i] = string.rstrip (lines[i])
 	current_file = current_file + lines
@@ -185,10 +186,18 @@ def process_source (source_file):
 
 do_preprogs_src ()
 for s in source_list:
+	if s[0]=='#':
+		continue		# preprocessor directive
 	process_source (s)
 f = open (progs_src, "wt")
 f.write (progs_dat + '\n\n')
 for l in qcc_list:
 	f.write(l + '\n')
 f.close ()
-os.execlp ("qfcc", "qfcc")
+if not os.fork():
+	os.execlp ("qfcc", "qfcc")
+else:
+	os.wait()
+for l in qcc_list:
+	os.unlink (l)
+os.unlink (progs_src)
