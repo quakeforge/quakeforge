@@ -319,8 +319,12 @@ SV_Map_f (void)
 	char        expanded[MAX_QPATH];
 	VFile      *f;
 
-	if (Cmd_Argc () != 2) {
+	if (Cmd_Argc () > 2) {
 		Con_Printf ("map <levelname> : continue game on a new level\n");
+		return;
+	}
+	if (Cmd_Argc () == 1) {
+		Con_Printf ("map is %s\n", curlevel);
 		return;
 	}
 	strncpy (level, Cmd_Argv (1), sizeof (level) - 1);

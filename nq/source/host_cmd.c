@@ -275,6 +275,11 @@ Host_Map_f (void)
 	if (cmd_source != src_command)
 		return;
 
+	if (Cmd_Argc () == 1) {
+		Con_Printf ("map is %s\n", sv.name);
+		return;
+	}
+
 	cls.demonum = -1;					// stop demo loop in case this fails
 
 	CL_Disconnect ();
