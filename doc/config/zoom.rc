@@ -1,0 +1,96 @@
+//      zoom.rc
+//
+//      zoom script for GIB in QuakeForge 0.5
+//
+//      Copyright (C) 2002  Brian Koropoff
+//
+//      This program is free software; you can redistribute it and/or
+//      modify it under the terms of the GNU General Public License
+//      as published by the Free Software Foundation; either version 2
+//      of the License, or (at your option) any later version.
+//
+//      This program is distributed in the hope that it will be useful,
+//      but WITHOUT ANY WARRANTY; without even the implied warranty of
+//      MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+//
+//      See the GNU General Public License for more details.
+//
+//      You should have received a copy of the GNU General Public License
+//      along with this program; if not, write to:
+//
+//              Free Software Foundation, Inc.
+//              59 Temple Place - Suite 330
+//              Boston, MA  02111-1307, USA
+
+set zoom_version {$Id$}
+set zoom_base_sensitivity 10
+set zoom_base_fov 90
+set zoom_mult 1.25
+set zoom_zoomed 0
+
+set zoom_mult_lower 1.25
+set zoom_mult_upper 114 // This is more or less the hard limit
+set zoom_mult_step .25;
+
+alias zoom_init { // Initialize basic options
+	if #{$argn != 6} {
+		echo "Usage: $0 base_sensitivity base_fov min_zoom max_zoom zoom_step";
+		return;
+	}
+	set zoom_base_sensitivity $1;
+	set zoom_base_fov $2
+	set zoom_mult_lower $3;
+	set zoom_mult $3;
+	set zoom_mult_upper $4;
+	set zoom_mult_step $5;
+}
+
+alias zoom_mult { // "Accessor" for zoom_mult
+	if #{!$1} return; // Prevent division by zero
+	set zoom_mult $1;
+}
+
+alias zoom_adjust { // Adjust fov and sensitivity to match zoom factor
+	if $zoom_zoomed {
+		set fov #{2atan(tan($zoom_base_fov*$M_PI/360)/$zoom_mult)/$M_PI*180};
+		set in_mouse_amp #{$zoom_base_sensitivity*($fov/$zoom_base_fov)};
+		return;
+	} else {
+		set fov $zoom_base_fov;
+		set in_mouse_amp $zoom_base_sensitivity;
+	};
+}
+
+alias zoom_in { // Replaced ID zoom function
+	set zoom_zoomed 1;
+	zoom_adjust;
+}
+
+alias zoom_out { // Replaced ID zoom function
+	set zoom_zoomed 0;
+	zoom_adjust;
+}
+
+alias zoom_toggle {
+	toggle zoom_zoomed;
+	zoom_adjust;
+}
+
+alias zoom_increase {
+	if #{!$zoom_zoomed} return;
+	zoom_mult #{$zoom_mult + $zoom_mult_step*$zoom_mult};
+	if #{$zoom_mult>$zoom_mult_upper} {
+		zoom_mult $zoom_mult_upper;
+	};
+	zoom_adjust;
+}
+
+alias zoom_decrease {
+	if #{!$zoom_zoomed} return;
+	zoom_mult #{$zoom_mult/(1 + $zoom_mult_step)};
+	if #{$zoom_mult < $zoom_mult_lower} {
+		zoom_mult $zoom_mult_lower;
+	};
+	zoom_adjust;
+}
+
