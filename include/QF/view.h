@@ -63,6 +63,7 @@ struct view_s {
 
 
 view_t *view_new (int xp, int yp, int xl, int yl, grav_t grav);
+void view_insert (view_t *par, view_t *view, int pos);
 void view_add (view_t *par, view_t *view);
 void view_remove (view_t *par, view_t *view);
 void view_delete (view_t *view);

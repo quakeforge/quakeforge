@@ -116,9 +116,15 @@ setgeometry (view_t *view)
 }
 
 void
-view_add (view_t *par, view_t *view)
+view_insert (view_t *par, view_t *view, int pos)
 {
 	view->parent = par;
+	if (pos < 0)
+		pos = par->num_children + 1 + pos;
+	if (pos < 0)
+		pos = 0;
+	if (pos > par->num_children)
+		pos = par->num_children;
 	if (par->num_children == par->max_children) {
 		par->max_children += 8;
 		par->children = realloc (par->children,
@@ -126,8 +132,17 @@ view_add (view_t *par, view_t *view)
 		memset (par->children + par->num_children, 0,
 				(par->max_children - par->num_children) * sizeof (view_t *));
 	}
-	par->children[par->num_children++] = view;
+	memmove (par->children + pos + 1, par->children + pos,
+			 (par->num_children - pos) * sizeof (view_t *));
+	par->num_children++;
+	par->children[pos] = view;
 	setgeometry (view);
+}
+
+void
+view_add (view_t *par, view_t *view)
+{
+	view_insert (par, view, -1);
 }
 
 void
