@@ -53,10 +53,10 @@ static const char rcsid[] =
 #include "QF/GL/funcs.h"
 
 #include "compat.h"
+#include "r_cvar.h"
 #include "sbar.h"
 
-#ifdef WIN32
-/* FIXME: this is evil hack to get full DirectSound support with SDL */
+#ifdef WIN32	// FIXME: evil hack to get full DirectSound support with SDL
 # include <windows.h>
 # include <SDL_syswm.h>
 HWND 		mainwindow;
@@ -70,25 +70,27 @@ int			modestate;
 
 static SDL_Surface *screen = NULL;
 
+void * (* glGetProcAddress) (const char *symbol) = NULL;
+void * (* getProcAddress) (void *, const char *);
 
-// the following is to avoid other compiler errors
-#ifdef _WIN32
-void * (WINAPI *glGetProcAddress) (const char *symbol) = NULL; // FIXME
-//# error "Cannot load libraries: %s was not configured with DSO support"
-FARPROC (WINAPI *getProcAddress) (HINSTANCE, LPCSTR);
-#else
-void * (* glGetProcAddress) (const char *symbol) = NULL; // FIXME
-//# error "Cannot load libraries: %s was not configured with DSO support"
-void * (* getProcAddress) (void *, const char *); 
-#endif
+
+void *
+QFGL_DummyProcAddress (void *handle, const char *symbol)
+{
+	return NULL;
+}
 
 void *
 QFGL_LoadLibrary (void)
 {
-	return 0;
-}
-//#endif
+	if (SDL_GL_LoadLibrary (gl_driver->string) != 0)
+		Sys_Error ("Couldn't load OpenGL library %s!", gl_driver->string);
 
+	getProcAddress = QFGL_DummyProcAddress;
+	glGetProcAddress = SDL_GL_GetProcAddress;
+
+	return NULL;
+}
 
 void
 VID_SDL_GammaCheck (void)
@@ -151,9 +153,11 @@ VID_Init (unsigned char *palette)
 	Uint32      flags = SDL_OPENGL;
 	int         i;
 
-	GL_Pre_Init ();
+	// Initialize the SDL library 
+	if (SDL_Init (SDL_INIT_VIDEO) < 0)
+		Sys_Error ("Couldn't initialize SDL: %s", SDL_GetError ());
 
-//	SDL_SysWMinfo info;
+	GL_Pre_Init ();
 
 	VID_GetWindowSize (640, 480);
 
@@ -182,15 +186,11 @@ VID_Init (unsigned char *palette)
 										// than 200 px
 		vid.conheight = max (atoi (com_argv[i + 1]), 200);
 
-	// Initialize the SDL library 
-	if (SDL_Init (SDL_INIT_VIDEO) < 0)
-		Sys_Error ("Couldn't initialize SDL: %s", SDL_GetError ());
-
 	// Check if we want fullscreen
 	if (vid_fullscreen->value) {
 		flags |= SDL_FULLSCREEN;
-		// Don't annoy Mesa/3dfx folks
-#ifndef WIN32
+
+#ifndef WIN32		// Don't annoy Mesa/3dfx folks
 		// FIXME: Maybe this could be put in a different spot, but I don't
 		// know where. Anyway, it's to work around a 3Dfx Glide bug.
 		SDL_ShowCursor (0);
