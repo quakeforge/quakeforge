@@ -69,11 +69,8 @@ typedef struct player_state_s {
 	int			oldbuttons;
 
 	// QSG2
-	byte		alpha;
-	byte		scale;
 	byte		glow_size;
 	byte		glow_color;
-	byte		colormod;
 } player_state_t;
 
 #undef MAX_SCOREBOARDNAME

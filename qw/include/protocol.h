@@ -155,6 +155,16 @@
 #define	PF_GIB			(1<<10)		// offset the view height differently
 #define	PF_NOGRAV		(1<<11)		// don't apply gravity for prediction
 
+#define PF_QF			(1<<12)		// QF QSG extension bits for players
+
+#define PF_ALPHA		(1<<0)
+#define PF_SCALE		(1<<1)
+#define PF_EFFECTS2		(1<<2)
+#define PF_GLOWSIZE		(1<<3)
+#define PF_GLOWCOLOR	(1<<4)
+#define PF_COLORMOD		(1<<5)
+#define PF_FRAME2		(1<<6)
+
 //==============================================
 
 // if the high bit of the client to server byte is set, the low bits are

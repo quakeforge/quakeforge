@@ -676,6 +676,46 @@ CL_ParsePlayerinfo (void)
 		state->weaponframe = 0;
 
 	VectorCopy (state->command.angles, state->viewangles);
+
+	if (flags & PF_QF) {
+		// QSG2
+		int         bits;
+		byte        val;
+		entity_t   *ent;
+
+		ent = &cl_player_ents[num];
+		bits = MSG_ReadByte (net_message);
+		if (bits & PF_ALPHA) {
+			val = MSG_ReadByte (net_message);
+			ent->colormod[3] = val / 255.0;
+		}
+		if (bits & PF_SCALE) {
+			val = MSG_ReadByte (net_message);
+			ent->scale = val / 16.0;
+		}
+		if (bits & PF_EFFECTS2) {
+			state->effects |= MSG_ReadByte (net_message) << 8;
+		}
+		if (bits & PF_GLOWSIZE) {
+			state->glow_size = MSG_ReadByte (net_message);
+		}
+		if (bits & PF_GLOWCOLOR) {
+			state->glow_color = MSG_ReadByte (net_message);
+		}
+		if (bits & PF_COLORMOD) {
+			val = MSG_ReadByte (net_message);
+			if (val == 255) {
+				ent->colormod[0] = ent->colormod[1] = ent->colormod[2] = 1.0;
+			} else {
+				ent->colormod[0] = (float) ((val >> 5) & 7) * (1.0 / 7.0);
+				ent->colormod[1] = (float) ((val >> 2) & 7) * (1.0 / 7.0);
+				ent->colormod[2] = (float) (val & 3) * (1.0 / 3.0);
+			}
+		}
+		if (bits & PF_FRAME2) {
+			state->frame |= MSG_ReadByte (net_message) << 8;
+		}
+	}
 }
 
 /*
@@ -802,7 +842,8 @@ CL_LinkPlayers (void)
 			r_player_entity = &cl_player_ents[j];
 		} else
 			VectorCopy (state->origin, org);
-		CL_NewDlight (j, org, state->effects, 0, 255);
+		CL_NewDlight (j, org, state->effects, state->glow_size,
+					  state->glow_color);
 
 		if (!state->modelindex)
 			continue;
@@ -861,24 +902,6 @@ CL_LinkPlayers (void)
 		} else {
 			ent->skin = NULL;
 		}
-
-		// QSG2
-#if 0
-		if (state->colormod == 255) {
-			ent->colormod[0] = ent->colormod[1] = ent->colormod[2] = 1.0;
-		} else {
-			ent->colormod[0] = (float) ((state->colormod >> 5) & 7) *
-				(1.0 / 7.0);
-			ent->colormod[1] = (float) ((state->colormod >> 2) & 7) *
-				(1.0 / 7.0);
-			ent->colormod[2] = (float) (state->colormod & 3) * (1.0 / 3.0);
-		}
-		ent->colormod[3] = state->alpha / 255.0;
-		ent->scale = state->scale / 16.0;
-#else
-		ent->colormod[0] = ent->colormod[1] = ent->colormod[2] =
-			ent->colormod[3] = ent->scale = 1.0;
-#endif
 		if (state->effects & EF_FLAG1)
 			CL_AddFlagModels (ent, 0, j);
 		else if (state->effects & EF_FLAG2)

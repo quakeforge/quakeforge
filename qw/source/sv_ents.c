@@ -210,6 +210,9 @@ SV_WriteDelta (entity_state_t *from, entity_state_t *to, sizebuf_t *msg,
 		if (to->scale != from->scale)
 			bits |= U_SCALE;
 
+		if (to->effects > 255)
+			bits |= U_EFFECTS2;
+
 		if (to->glow_size != from->glow_size)
 			bits |= U_GLOWSIZE;
 
@@ -218,6 +221,9 @@ SV_WriteDelta (entity_state_t *from, entity_state_t *to, sizebuf_t *msg,
 
 		if (to->colormod != from->colormod)
 			bits |= U_COLORMOD;
+
+		if (to->frame > 255)
+			bits |= U_EFFECTS2;
 	}
 
 	if (bits >= 16777216)
@@ -372,7 +378,7 @@ void
 SV_WritePlayersToClient (client_t *client, edict_t *clent, byte * pvs,
 						 sizebuf_t *msg)
 {
-	int         i, j, msec, pflags;
+	int         i, j, msec, pflags, qf_bits;
 	client_t   *cl;
 	edict_t    *ent;
 	usercmd_t   cmd;
@@ -413,6 +419,27 @@ SV_WritePlayersToClient (client_t *client, edict_t *clent, byte * pvs,
 		if (SVvector (ent, mins)[2] != -24)
 			pflags |= PF_GIB;
 
+		qf_bits = 0;
+		if (client->stdver > 1) {
+			if (sv_fields.alpha != -1 && SVfloat (ent, alpha))
+				qf_bits |= PF_ALPHA;
+			if (sv_fields.scale != -1 && SVfloat (ent, scale))
+				qf_bits |= PF_SCALE;
+			if ((int) SVfloat (ent, effects) > 255)
+				qf_bits |= PF_EFFECTS2;
+			if (sv_fields.glow_size != -1 && SVfloat (ent, glow_size))
+				qf_bits |= PF_GLOWSIZE;
+			if (sv_fields.glow_color != -1 && SVfloat (ent, glow_color))
+				qf_bits |= PF_GLOWCOLOR;
+			if (sv_fields.colormod != -1
+				&& !VectorIsZero (SVvector (ent, colormod)))
+				qf_bits |= PF_COLORMOD;
+			if ((int) SVfloat (ent, frame) > 255)
+				qf_bits |= PF_EFFECTS2;
+			if (qf_bits)
+				pflags |= PF_QF;
+		}
+
 		if (cl->spectator) {			// only sent origin and velocity to
 										// spectators
 			pflags &= PF_VELOCITY1 | PF_VELOCITY2 | PF_VELOCITY3;
@@ -423,8 +450,9 @@ SV_WritePlayersToClient (client_t *client, edict_t *clent, byte * pvs,
 				pflags |= PF_WEAPONFRAME;
 		}
 
-		if (client->spec_track && client->spec_track - 1 == j &&
-			SVfloat (ent, weaponframe)) pflags |= PF_WEAPONFRAME;
+		if (client->spec_track && client->spec_track - 1 == j
+			&& SVfloat (ent, weaponframe))
+			pflags |= PF_WEAPONFRAME;
 
 		MSG_WriteByte (msg, svc_playerinfo);
 		MSG_WriteByte (msg, j);
@@ -472,6 +500,36 @@ SV_WritePlayersToClient (client_t *client, edict_t *clent, byte * pvs,
 
 		if (pflags & PF_WEAPONFRAME)
 			MSG_WriteByte (msg, SVfloat (ent, weaponframe));
+
+		if (pflags & PF_QF) {
+			MSG_WriteByte (msg, qf_bits);
+			if (qf_bits & PF_ALPHA) {
+				float       alpha = SVfloat (ent, alpha);
+				MSG_WriteByte (msg, bound (0, alpha, 1) * 255);
+			}
+			if (qf_bits & PF_SCALE) {
+				float       scale = SVfloat (ent, scale);
+				MSG_WriteByte (msg, bound (0, scale, 15.9375) * 16);
+			}
+			if (qf_bits & PF_EFFECTS2) {
+				MSG_WriteByte (msg, (int) (SVfloat (ent, effects)) >> 8);
+			}
+			if (qf_bits & PF_GLOWSIZE) {
+				int         glow_size = SVfloat (ent, scale);
+				MSG_WriteByte (msg, bound (-1024, glow_size, 1016) >> 3);
+			}
+			if (qf_bits & PF_GLOWCOLOR)
+				MSG_WriteByte (msg, SVfloat (ent, glow_color));
+			if (qf_bits & PF_COLORMOD) {
+				float      *colormod= SVvector (ent, colormod);
+				MSG_WriteByte (msg,
+						((int) (bound (0, colormod[0], 1) * 7.0) << 5) |
+						((int) (bound (0, colormod[1], 1) * 7.0) << 2) |
+						(int) (bound (0, colormod[2], 1) * 3.0));
+			}
+			if (qf_bits & PF_FRAME2)
+				MSG_WriteByte (msg, (int) (SVfloat (ent, frame)) >> 8);
+		}
 	}
 }
 
