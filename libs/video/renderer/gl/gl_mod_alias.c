@@ -509,26 +509,21 @@ R_AliasGetSkindesc (int skinnum, aliashdr_t *ahdr)
 void
 R_DrawAliasModel (entity_t *e)
 {
-	float		  add, an, minshade, shade;
-	int			  lnum, i, texture;
+	float		  add, an, minshade, radius, shade;
+	int			  lnum, texture, i;
 	int			  fb_texture = 0;
 	aliashdr_t	 *paliashdr;
 	model_t		 *model;
-	vec3_t		  dist, mins, maxs, scale;
+	vec3_t		  dist, scale;
 	vert_order_t *vo;
 
 	model = e->model;
 
-	VectorAdd (e->origin, model->mins, mins);
-	VectorAdd (e->origin, model->maxs, maxs);
+	radius = model->radius;
+	if (e->scale != 1.0)
+		radius *= e->scale;
 
-	if (e->scale != 1.0) {
-		VectorScale (mins, e->scale, mins);
-		VectorScale (maxs, e->scale, maxs);
-//		radius = radius * scale;
-	}
-
-	if (R_CullBox (mins, maxs))
+	if (R_CullSphere (e->origin, radius))
 		return;
 
 	VectorSubtract (r_origin, e->origin, modelorg);
