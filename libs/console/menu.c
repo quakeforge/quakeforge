@@ -314,6 +314,7 @@ Menu_Init (void)
 	PR_AddBuiltin (&menu_pr_state, "Menu_SetQuit", bi_Menu_SetQuit, -1);
 	PR_AddBuiltin (&menu_pr_state, "Menu_Quit", bi_Menu_Quit, -1);
 
+	PR_Cmds_Init (&menu_pr_state);
 	R_Progs_Init (&menu_pr_state);
 
 	Cmd_AddCommand ("togglemenu", togglemenu_f,

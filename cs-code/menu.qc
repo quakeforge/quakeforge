@@ -14,6 +14,8 @@ void () Menu_Quit = #0;
 void (integer x, integer y, string name) Draw_Pic = #0;
 void (integer x, integer y, string text) Draw_String = #0;
 
+float () random = #0;
+
 float time;
 entity self;
 .float nextthink;
@@ -120,7 +122,7 @@ void (integer x, integer y, integer width, integer lines) text_box =
 integer () quit =
 {
 	Menu_SelectMenu ("quit");
-	quit_index++;
+	quit_index = integer (random () * 8);
 	quit_index &= 7;
 	return 0;
 };
