@@ -238,9 +238,15 @@ PR_ValueString (progs_t * pr, etype_t type, pr_type_t *val)
 					  NUM_FOR_BAD_EDICT (pr, PROG_TO_EDICT (pr, val->entity_var)));
 			break;
 		case ev_func:
-			f = pr->pr_functions + val->func_var;
-			snprintf (line, sizeof (line), "%s()",
-					  PR_GetString (pr, f->s_name));
+			if (val->func_var < 0 || val->func_var >= pr->progs->numfunctions)
+				snprintf (line, sizeof (line), "INVALID:%d", val->func_var);
+			else if (!val->func_var)
+				return "NULL";
+			else {
+				f = pr->pr_functions + val->func_var;
+				snprintf (line, sizeof (line), "%s()",
+						  PR_GetString (pr, f->s_name));
+			}
 			break;
 		case ev_field:
 			def = ED_FieldAtOfs (pr, val->integer_var);

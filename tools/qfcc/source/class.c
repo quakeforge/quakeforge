@@ -443,7 +443,6 @@ class_finish_module (void)
 	def_t      *module_def;
 	pr_module_t *module;
 	def_t      *exec_class_def;
-	function_t *exec_class_func;
 	def_t      *init_def;
 	function_t *init_func;
 	expr_t     *init_expr;
@@ -495,13 +494,7 @@ class_finish_module (void)
 	EMIT_DEF (module->symtab, symtab_def);
 
 	exec_class_def = get_def (&type_obj_exec_class, "__obj_exec_class",
-								pr.scope, st_static);
-	exec_class_func = new_function ("__obj_exec_class");
-	exec_class_func->builtin = 0;
-	exec_class_func->def = exec_class_def;
-	reloc_def_func (exec_class_func, exec_class_def->ofs);
-	build_function (exec_class_func);
-	finish_function (exec_class_func);
+								pr.scope, st_extern);
 
 	init_def = get_def (&type_function, ".ctor", pr.scope, st_static);
 	init_func = new_function (".ctor");

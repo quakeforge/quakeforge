@@ -393,12 +393,14 @@ move_def (hashtab_t *deftab, qfo_def_t *d)
 	}
 	if (deftab) {
 		while ((d = Hash_Del (deftab, strings->strings + def->name))) {
+			int         def_relocs;
 			relocgroup_add_relocs (&final_relocs, relocs.relocs + d->relocs,
 								   d->num_relocs);
+			def_relocs = def->relocs + def->num_relocs;
 			def->num_relocs += d->num_relocs;
 			for (j = 0; j < d->num_relocs; j++) {
 				relocs.relocs[d->relocs + j].type = rel_none;
-				final_relocs.relocs[def->relocs + j].def = def_num;
+				final_relocs.relocs[def_relocs + j].def = def_num;
 			}
 		}
 	}

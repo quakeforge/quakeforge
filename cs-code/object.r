@@ -3,11 +3,14 @@ typedef enum {
 	YES,
 } BOOL;
 
+void (obj_module_t [] module) __obj_exec_class = #0;
 void (id object, integer code, string fmt, ...) obj_error = #0;
 void (id object, integer code, string fmt, ...) obj_verror = #0;//FIXME not ...
 //obj_error_handler (objc_error_handler func) obj_set_error_handler = #0;
 IMP (id receiver, SEL op) obj_msg_lookup = #0;
 IMP (id receiver, SEL op) obj_msg_lookup_super = #0;
+id (id receiver, SEL op, ...) obj_msgSend = #0;
+id (id receiver, SEL op, ...) obj_msgSend_super = #0;
 //retval_t (id receiver, SEL op, arglist_t) obj_msg_sendv = #0;
 (void []) (integer size) obj_malloc = #0;
 (void []) (integer size) obj_atomic_malloc = #0;

@@ -628,12 +628,13 @@ init_types (void)
 	new_struct_field (type, &type_string, "ivar_name", vis_public);
 	new_struct_field (type, &type_string, "ivar_type", vis_public);
 	new_struct_field (type, &type_integer, "ivar_offset", vis_public);
-
-	type = type_module = new_struct (0);
+#if 0
+	type = type_module = new_struct ("obj_module_t");
 	new_struct_field (type, &type_integer, "version", vis_public);
 	new_struct_field (type, &type_integer, "size", vis_public);
 	new_struct_field (type, &type_string, "name", vis_public);
 	new_struct_field (type, &type_pointer, "symtab", vis_public);
+#endif
 }
 
 void
@@ -662,7 +663,14 @@ chain_initial_types (void)
 	chain_type (&type_id);
 	chain_type (type_category);
 	chain_type (type_ivar);
+
+	type_module = new_struct ("obj_module_t");
+	new_struct_field (type_module, &type_integer, "version", vis_public);
+	new_struct_field (type_module, &type_integer, "size", vis_public);
+	new_struct_field (type_module, &type_string, "name", vis_public);
+	new_struct_field (type_module, &type_pointer, "symtab", vis_public);
 	chain_type (type_module);
+
 	chain_type (&type_obj_exec_class);
 
 	type_obj_exec_class.parm_types[0] = pointer_type (type_module);

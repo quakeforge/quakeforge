@@ -132,7 +132,6 @@ InitData (void)
 		strpool_delete (pr.strings);
 	}
 	memset (&pr, 0, sizeof (pr));
-	chain_initial_types ();
 	pr.source_line = 1;
 	pr.error_count = 0;
 	pr.code = codespace_new ();
@@ -469,7 +468,6 @@ compile_to_obj (const char *file, const char *obj)
 	yyin = preprocess_file (file);
 
 	InitData ();
-	begin_compilation ();
 	clear_frame_macros ();
 	clear_classes ();
 	clear_defs ();
@@ -478,6 +476,8 @@ compile_to_obj (const char *file, const char *obj)
 	clear_structs ();
 	clear_enums ();
 	clear_typedefs ();
+	chain_initial_types ();
+	begin_compilation ();
 	pr.source_file = ReuseString (strip_path (file));
 	err = yyparse () || pr.error_count;
 	fclose (yyin);
@@ -595,6 +595,7 @@ progs_src_compile (void)
 	setup_sym_file (options.output_file);
 
 	InitData ();
+	chain_initial_types ();
 
 	begin_compilation ();
 

@@ -176,8 +176,7 @@ make_message_def (const char *name, def_t **def)
 	expr_t     *zero = new_expr ();
 
 	zero->type = ex_integer;
-	*def = get_def (&type_IMP, name, pr.scope, st_static);
-	build_builtin_function (*def, zero);
+	*def = get_def (&type_IMP, name, pr.scope, st_extern);
 }
 
 expr_t *
