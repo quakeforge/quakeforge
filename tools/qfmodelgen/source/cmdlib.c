@@ -49,27 +49,6 @@ qboolean		archive;
 char			archivedir[1024];
 
 /*
-=================
-Error
-
-For abnormal program terminations
-=================
-*/
-void
-Error (const char *error, ...)
-{
-	va_list argptr;
-
-	printf ("************ ERROR ************\n");
-
-	va_start (argptr, error);
-	vprintf (error, argptr);
-	va_end (argptr);
-	printf ("\n");
-	exit (1);
-}
-
-/*
 qdir will hold the path up to the quake directory, including the slash
 
   f:\quake\
@@ -638,4 +617,25 @@ CopyFile (const char *from, const char *to)
 	CreatePath (to);
 	SaveFile (to, buffer, length);
 	free (buffer);
+}
+
+/*
+=================
+Error
+
+For abnormal program terminations
+=================
+*/
+void
+Error (const char *error, ...)
+{
+	va_list argptr;
+
+	printf ("************ ERROR ************\n");
+
+	va_start (argptr, error);
+	vprintf (error, argptr);
+	va_end (argptr);
+	printf ("\n");
+	exit (1);
 }
