@@ -383,11 +383,14 @@ statement
 		{
 			$$ = return_expr (current_func, 0);
 		}
-	| WHILE '(' expr ')' statement
+	| WHILE '(' expr ')' save_inits statement
 		{
 			expr_t *l1 = new_label_expr ();
 			expr_t *l2 = new_label_expr ();
 			expr_t *e;
+
+			restore_local_inits ($5);
+			free_local_inits ($5);
 
 			$$ = new_block_expr ();
 
@@ -396,7 +399,7 @@ statement
 			e->file = $3->file;
 			append_expr ($$, e);
 			append_expr ($$, l1);
-			append_expr ($$, $5);
+			append_expr ($$, $6);
 			e = new_binary_expr ('i', test_expr ($3, 1), l1);
 			e->line = $3->line;
 			e->file = $3->file;
@@ -430,14 +433,15 @@ statement
 
 			$$ = new_block_expr ();
 
+			restore_local_inits ($5);
+			free_local_inits ($5);
+
 			e = new_binary_expr ('n', test_expr ($3, 1), l1);
 			e->line = $3->line;
 			e->file = $3->file;
 			append_expr ($$, e);
 			append_expr ($$, $6);
 			append_expr ($$, l1);
-			restore_local_inits ($5);
-			free_local_inits ($5);
 		}
 	| IF '(' expr ')' save_inits statement ELSE
 		{
@@ -454,6 +458,11 @@ statement
 
 			$$ = new_block_expr ();
 
+			else_ini = save_local_inits (pr_scope);
+
+			restore_local_inits ($5);
+			free_local_inits ($5);
+
 			e = new_binary_expr ('n', test_expr ($3, 1), l1);
 			e->line = $3->line;
 			e->file = $3->file;
@@ -467,18 +476,19 @@ statement
 			append_expr ($$, l1);
 			append_expr ($$, $9);
 			append_expr ($$, l2);
-			else_ini = save_local_inits (pr_scope);
 			merged = merge_local_inits ($<def_list>8, else_ini);
 			restore_local_inits (merged);
 			free_local_inits (merged);
 			free_local_inits (else_ini);
-			free_local_inits ($5);
 			free_local_inits ($<def_list>8);
 		}
-	| FOR '(' opt_expr ';' opt_expr ';' opt_expr ')' statement
+	| FOR '(' opt_expr ';' opt_expr ';' opt_expr ')' save_inits statement
 		{
 			expr_t *l1 = new_label_expr ();
 			expr_t *l2 = new_label_expr ();
+
+			restore_local_inits ($9);
+			free_local_inits ($9);
 
 			$$ = new_block_expr ();
 
@@ -486,7 +496,7 @@ statement
 			if ($5)
 				append_expr ($$, new_binary_expr ('n', test_expr ($5, 1), l2));
 			append_expr ($$, l1);
-			append_expr ($$, $9);
+			append_expr ($$, $10);
 			append_expr ($$, $7);
 			if ($5)
 				append_expr ($$, new_binary_expr ('i', test_expr ($5, 1), l1));

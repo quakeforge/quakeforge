@@ -245,6 +245,19 @@ type_mismatch (expr_t *e1, expr_t *e2, int op)
 }
 
 void
+check_initialized (expr_t *e)
+{
+	if (options.warn_uninitialized) {
+		if (e->type == ex_def
+			&& !(e->e.def->type->type == ev_func && !e->e.def->scope)
+			&& !e->e.def->initialized) {
+			warning (e, "%s may be used uninitialized", e->e.def->name);
+			e->e.def->initialized = 1; // only warn once
+		}
+	}
+}
+
+void
 inc_users (expr_t *e)
 {
 	if (e && e->type == ex_temp)
@@ -743,6 +756,8 @@ test_expr (expr_t *e, int test)
 {
 	expr_t *new = 0;
 
+	check_initialized (e);
+
 	if (!test)
 		return unary_expr ('!', e);
 
@@ -812,20 +827,9 @@ binary_expr (int op, expr_t *e1, expr_t *e2)
 	type_t     *type = 0;
 	expr_t     *e;
 
-	if (options.warn_uninitialized) {
-		if (op != '='
-			&& e1->type == ex_def
-			&& !e1->e.def->initialized) {
-			warning (e1, "%s may be used uninitialized", e1->e.def->name);
-			e1->e.def->initialized = 1; // only warn once
-		}
-		if (e2->type == ex_def
-			&& !e2->e.def->initialized
-			&& !(e2->e.def->type->type == ev_func && !e2->e.def->scope)) {
-			warning (e2, "%s may be used uninitialized", e2->e.def->name);
-			e2->e.def->initialized = 1; // only warn once
-		}
-	}
+	if (op != '=')
+		check_initialized (e1);
+	check_initialized (e2);
 
 	if (op == '=' && e1->type == ex_def)
 		PR_DefInitialized (e1->e.def);
@@ -954,12 +958,7 @@ asx_expr (int op, expr_t *e1, expr_t *e2)
 expr_t *
 unary_expr (int op, expr_t *e)
 {
-	if (options.warn_uninitialized
-		&& e->type == ex_def
-		&& !e->e.def->initialized) {
-		warning (e, "%s may be used uninitialized", e->e.def->name);
-		e->e.def->initialized = 1; // only warn once
-	}
+	check_initialized (e);
 	switch (op) {
 		case '-':
 			switch (e->type) {
