@@ -69,6 +69,8 @@
 #define LittleFloat FloatSwap
 #endif
 
+extern qboolean		bigendien;
+
 short	ShortSwap (short l);
 short	ShortNoSwap (short l);
 int		LongSwap (int l);
