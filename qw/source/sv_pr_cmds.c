@@ -833,7 +833,7 @@ PF_findradius (progs_t *pr)
 		emaxs = SVvector (ent, maxs);
 
 		for (j = 0; j < 3; j++)
-			eorg[j] = org[j] - (eorigin[j] + emins[j] + emaxs[j]) * 0.5;
+			eorg[j] = org[j] - (eorigin[j] + (emins[j] + emaxs[j]) * 0.5);
 		if (DotProduct (eorg, eorg) > rad)
 			continue;
 
