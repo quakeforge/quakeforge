@@ -359,10 +359,8 @@ var_initializer
 	: '=' expr
 		{
 			if (pr_scope) {
-				expr_t *e = new_expr ();
-				e->type = ex_def;
-				e->e.def = current_def;
-				append_expr (local_expr, assign_expr (e, $2));
+				append_expr (local_expr,
+							 assign_expr (new_def_expr (current_def), $2));
 				PR_DefInitialized (current_def);
 			} else {
 				if ($2->type >= ex_string) {
@@ -409,13 +407,7 @@ opt_state_expr
 			if ($5->type->type != ev_func)
 				error ($2, "invalid type for think");
 
-			$$ = new_expr ();
-			$$->type = ex_expr;
-			$$->e.expr.op = 's';
-			$$->e.expr.e1 = $2;
-			$$->e.expr.e2 = new_expr ();
-			$$->e.expr.e2->type = ex_def;
-			$$->e.expr.e2->e.def = $5;
+			$$ = new_binary_expr ('s', $2, new_def_expr ($5));
 		}
 	;
 
