@@ -33,11 +33,7 @@
 
 #include <stdio.h>
 
-#ifdef __QNX__
-#define msg_t qnx_msg_t
 #include <sys/types.h>
-#undef msg_t
-#endif
 
 #define MAX_QPATH	64
 
