@@ -496,6 +496,7 @@ static builtin_t builtins[] = {
 	{"QWE:redirectcmd",			PF_redirectcmd,		QWE 101},
 	{"QWE:calltimeofday",		PF_calltimeofday,	QWE 102},
 	{"QWE:forceddemoframe",		PF_forcedemoframe,	QWE 103},
+	{0}
 };
 
 static struct {
