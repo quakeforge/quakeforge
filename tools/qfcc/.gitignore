@@ -1,0 +1,8 @@
+aclocal.m4
+Makefile.in
+configure
+config.log
+config.cache
+config.status
+Makefile
+qfcc.lsm
