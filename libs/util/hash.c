@@ -380,6 +380,13 @@ Hash_DelElement (hashtab_t *tab, void *ele)
 	return 0;
 }
 
+void
+Hash_Free (hashtab_t *tab, void *ele)
+{
+	if (ele && tab->free_ele)
+		tab->free_ele (ele, tab->user_data);
+}
+
 void **
 Hash_GetList (hashtab_t *tab)
 {

@@ -118,6 +118,9 @@ void **Hash_FindElementList (hashtab_t *tab, void *ele);
 void *Hash_Del (hashtab_t *tab, const char *key);
 void *Hash_DelElement (hashtab_t *tab, void *ele);
 
+/* Hash_Free (tab, Hash_Del (tab, key)); */
+void Hash_Free (hashtab_t *tab, void *ele);
+
 /*
 	returh the hash value of a string. this is the same function as used
 	internally.

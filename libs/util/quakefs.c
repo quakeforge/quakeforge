@@ -127,6 +127,11 @@ searchpath_t *com_searchpaths;
 
 //QFS
 
+typedef struct qfs_var_s {
+	char       *var;
+	char       *val;
+} qfs_var_t;
+
 static void COM_AddGameDirectory (const char *dir); //FIXME
 
 gamedir_t  *qfs_gamedir;
@@ -153,6 +158,98 @@ static const char *qfs_default_dirconf =
 	"		Path = \"$gamedir\";"
 	"	};"
 	"}";
+
+static const char *
+qfs_var_get_key (void *_v, void *unused)
+{
+	return ((qfs_var_t *)_v)->var;
+}
+
+static void
+qfs_var_free (void *_v, void *unused)
+{
+	qfs_var_t  *v = (qfs_var_t *) _v;
+	free (v->var);
+	free (v->val);
+	free (v);
+}
+
+static __attribute__ ((unused)) hashtab_t *
+qfs_new_vars (void)
+{
+	return Hash_NewTable (61, qfs_var_get_key, qfs_var_free, 0);
+}
+
+static __attribute__ ((unused)) void
+qfs_set_var (hashtab_t *vars, const char *var, const char *val)
+{
+	qfs_var_t  *v = Hash_Find (vars, var);
+
+	if (!v) {
+		v = malloc (sizeof (qfs_var_t));
+		v->var = strdup (var);
+		v->val = 0;
+		Hash_Add (vars, v);
+	}
+	if (v->val)
+		free (v->val);
+	v->val = strdup (val);
+}
+
+static __attribute__ ((unused)) char *
+qfs_var_subst (const char *string, hashtab_t *vars)
+{
+	dstring_t  *new = dstring_newstr ();
+	const char *s = string;
+	const char *e = s;
+	const char *var;
+	char       *t;
+	qfs_var_t  *sub;
+
+	while (1) {
+		while (*e && *e != '$')
+			e++;
+		dstring_appendsubstr (new, s, (e - s));
+		if (!*e++)
+			break;
+		if (*e == '$') {
+			dstring_appendstr (new, "$");
+			s = ++e;
+		} else if (*e == '{') {
+			s = e;
+			while (*e && *e != '}')
+				e++;
+			if (!*e) {
+				dstring_appendsubstr (new, s, (e - s));
+				break;
+			}
+			var = va ("%*s", (e - s) - 1, s + 1);
+			sub = Hash_Find (vars, var);
+			if (sub)
+				dstring_appendstr (new, sub->val);
+			else
+				dstring_appendsubstr (new, s - 1, (e - s) + 2);
+			s = ++e;
+		} else if (isalnum ((byte) *e) || *e == '_') {
+			s = e;
+			while (isalnum ((byte) *e) || *e == '_')
+				e++;
+			var = va ("%*s", e - s, s);
+			sub = Hash_Find (vars, var);
+			if (sub)
+				dstring_appendstr (new, sub->val);
+			else
+				dstring_appendsubstr (new, s - 1, (e - s) + 1);
+			s = e;
+		} else {
+			dstring_appendstr (new, "$");
+			s = e;
+		}
+	}
+	t = new->str;
+	free (new);
+	return t;
+}
 
 static void
 qfs_get_gd_params (plitem_t *gdpl, gamedir_t *gamedir, dstring_t *path)
