@@ -1978,7 +1978,8 @@ SV_Frame (float time)
 	SV_SendClientMessages ();
 
 	demo_start = Sys_DoubleTime ();
-	SV_SendDemoMessage ();
+	if (sv.demorecording)
+		SV_SendDemoMessage ();
 	demo_end = Sys_DoubleTime ();
 	svs.stats.demo += demo_end - demo_start;
 

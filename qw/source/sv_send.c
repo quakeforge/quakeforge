@@ -826,14 +826,10 @@ SV_SendDemoMessage (void)
 	int         stats[MAX_CL_STATS];
 	float       min_fps;
 
-	if (!sv.demorecording)
-		return;
-
 	if (sv_demoPings->value && sv.time - demo.pingtime > sv_demoPings->value) {
 		SV_DemoPings ();
 		demo.pingtime = sv.time;
 	}
-
 
 	if (!sv_demofps->value)
 		min_fps = 20.0;
