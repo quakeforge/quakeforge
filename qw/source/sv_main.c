@@ -872,9 +872,11 @@ SVC_DirectConnect (void)
 		newcl->spawn_parms[i] = sv_globals.parms[i];
 
 	if (newcl->spectator)
-		SV_Printf ("Spectator %s connected\n", newcl->name);
+		SV_Printf ("Spectator %s (%s) connected\n", newcl->name,
+				   NET_AdrToString (adr));
 	else
-		Con_DPrintf ("Client %s connected\n", newcl->name);
+		Con_Printf ("Client %s (%s) connected\n", newcl->name,
+					NET_AdrToString (adr));
 	newcl->sendinfo = true;
 
 	// QuakeForge stuff.
