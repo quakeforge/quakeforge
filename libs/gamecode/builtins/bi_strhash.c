@@ -414,6 +414,9 @@ bi_strh_clear (progs_t *pr, void *data)
 			res->hashes[i] = 0;
 		}
 	}
+	free (res->hashes);
+	res->hashes = 0;
+	res->cnt_hashes = 0;
 }
 
 
