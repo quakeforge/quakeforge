@@ -155,7 +155,6 @@ IE_CallHandler (ie_handler handler, ie_event_t *event, float value)
 	static int depth = 0;
 	depth++;
 	if (depth > IE_MAX_DEPTH)
-		// FIXME: we may want to just issue a warning here
 		Sys_Error ("IE_CallHandler: max recursion depth hit");
 	else
 		handler (event, value);

@@ -1110,9 +1110,8 @@ SV_InitOperatorCommands (void)
 	Cmd_AddCommand ("fraglogfile", SV_Fraglogfile_f, "Enables logging of kills "
 					"to frag_##.log");
 
-	Cmd_AddCommand ("snap", SV_Snap_f, "FIXME: Take a screenshot of userid? No "
-					"Description");
-	Cmd_AddCommand ("snapall", SV_SnapAll_f, "FIXME: No Description");
+	Cmd_AddCommand ("snap", SV_Snap_f, "Take a screenshot of userid");
+	Cmd_AddCommand ("snapall", SV_SnapAll_f, "Take a screenshot of all users");
 	Cmd_AddCommand ("kick", SV_Kick_f, "Remove a user from the server (kick "
 					"userid)");
 	Cmd_AddCommand ("status", SV_Status_f, "Report information on the current "

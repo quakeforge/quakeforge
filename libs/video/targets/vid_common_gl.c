@@ -196,7 +196,6 @@ VID_SetPalette (unsigned char *palette)
 	d_8to24table[255] = 0;	// 255 is transparent
 
 	// JACK: 3D distance calcs - k is last closest, l is the distance.
-	// FIXME: Precalculate this and cache to disk.
 	if (palflag)
 		return;
 	palflag = true;

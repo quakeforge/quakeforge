@@ -291,7 +291,6 @@ Host_WriteConfiguration (void)
 	SV_ClientPrintf
 
 	Sends text across to be displayed
-	FIXME: make this just a stuffed echo
 */
 void
 SV_ClientPrintf (const char *fmt, ...)

@@ -156,10 +156,7 @@ SetMinMaxSize (progs_t *pr, edict_t *e, const vec3_t min, const vec3_t max,
 		if (min[i] > max[i])
 			PR_RunError (pr, "backwards mins/maxs");
 
-	rotate = false;						// FIXME: implement rotation properly 
-										// 
-	// 
-	// again
+	rotate = false;					// FIXME: implement rotation properly again
 
 	if (!rotate) {
 		VectorCopy (min, rmin);

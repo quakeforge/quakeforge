@@ -657,7 +657,7 @@ VID_SetCaption (const char *text)
 qboolean
 VID_SetGamma (double gamma)
 {
-	return false; //FIXME
+	return false;
 }
 
 #if defined(i386) && defined(__GLIBC__) && (__GLIBC__ < 2 || (__GLIBC__ == 2 && __GLIBC_MINOR__ < 2))

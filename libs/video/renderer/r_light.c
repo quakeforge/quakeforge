@@ -334,7 +334,6 @@ loop:
 		return -1;						// didn't hit anything
 
 	// calculate mid point
-// FIXME: optimize for axial
 	plane = node->plane;
 	front = DotProduct (start, plane->normal) - plane->dist;
 	back = DotProduct (end, plane->normal) - plane->dist;

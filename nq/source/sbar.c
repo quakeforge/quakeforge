@@ -94,17 +94,11 @@ void        Sbar_MiniDeathmatchOverlay (void);
 void        Sbar_DeathmatchOverlay (void);
 
 
-/*
-	Sbar_ColorForMap
-
-	I'm not exactly sure why this exists, but I'm not going to change it yet.
-*/
 int
 Sbar_ColorForMap (int m)
 {
 	return m + 8;						// FIXME: Might want this to be
-	// return (bound (0, m, 13) * 16) +
-	// 8;
+	// return (bound (0, m, 13) * 16) + 8;
 }
 
 

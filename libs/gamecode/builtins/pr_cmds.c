@@ -267,7 +267,6 @@ PF_cvar_set (progs_t *pr)
 	if (!var)
 		var = Cvar_FindAlias (var_name);
 	if (!var) {
-		// FIXME: make Con_DPrint?
 		Sys_Printf ("PF_cvar_set: variable %s not found\n", var_name);
 		return;
 	}

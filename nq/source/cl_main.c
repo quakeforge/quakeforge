@@ -187,7 +187,7 @@ CL_ClearState (void)
 
 	R_ClearEfrags ();
 	R_ClearDlights ();
-	R_ClearParticles (); // FIXME: for R_ClearFires
+	R_ClearParticles ();
 
 	for (i = 0; i < MAX_EDICTS; i++) {
 		cl_baselines[i].ent = &cl_entities[i];

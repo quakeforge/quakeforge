@@ -43,8 +43,6 @@ static const char rcsid[] =
 #include "QF/console.h"
 #include "QF/cvar.h"
 
-//FIXME eww
-
 
 /*
   Con_BasicCompleteCommandLine

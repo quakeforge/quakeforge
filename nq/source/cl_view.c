@@ -685,7 +685,6 @@ V_CalcRefdef (void)
 
 		steptime = cl.time - cl.oldtime;
 		if (steptime < 0)
-//FIXME		I_Error ("steptime < 0");
 			steptime = 0;
 
 		oldz += steptime * 80;
