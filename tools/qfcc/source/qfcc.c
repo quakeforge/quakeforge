@@ -79,6 +79,7 @@ static struct option const long_options[] = {
 	{"warn", required_argument, 0, 'W'},
 	{"help", no_argument, 0, 'h'},
 	{"version", no_argument, 0, 'V'},
+	{"files", no_argument, 0, 'F'},
 #ifdef USE_CPP
 	{"define", required_argument, 0, 'D'},
 	{"include", required_argument, 0, 'I'},
@@ -741,6 +742,7 @@ DecodeArgs (int argc, char **argv)
 
 	while ((c = getopt_long (argc, argv, "s:"	// source dir
 										 "P:"	// progs.src name
+										 "F"	// generate files.dat
 										 "q"	// quiet
 										 "v"	// verbose
 										 "g"	// debug
@@ -768,6 +770,9 @@ DecodeArgs (int argc, char **argv)
 				break;
 			case 'P':					// progs-src
 				progs_src = strdup (optarg);
+				break;
+			case 'F':
+				options.files_dat = true;
 				break;
 			case 'q':					// quiet
 				options.verbosity -= 1;
@@ -921,7 +926,7 @@ main (int argc, char **argv)
 {
 	char       *src;
 	char        filename[1024];
-	int         crc;
+	int         crc = 0;
 	double      start, stop;
 
 	start = Sys_DoubleTime ();
@@ -1118,13 +1123,15 @@ main (int argc, char **argv)
 		Error ("compilation errors");
 
 	// write progdefs.h
-	crc = PR_WriteProgdefs ("progdefs.h");
+	if (options.code.progsversion == PROG_ID_VERSION)
+		crc = PR_WriteProgdefs ("progdefs.h");
 
 	// write data file
 	WriteData (crc);
 
 	// write files.dat
-	WriteFiles ();
+	if (options.files_dat)
+		WriteFiles ();
 
 	stop = Sys_DoubleTime ();
 	if (options.verbosity >= 0)
