@@ -112,7 +112,6 @@ vec3_t		shadecolor;					// Ender (Extend) Colormod
 float		modelalpha;					// Ender (Extend) Alpha
 
 void R_MarkLeaves (void);
-//qboolean R_CullBlocked (vec3_t mins, vec3_t maxs, vec3_t org);
 
 
 void
@@ -987,25 +986,15 @@ R_RenderScene (void)
 		r_time1 = Sys_DoubleTime ();
 
 	R_SetupFrame ();
-
 	R_SetFrustum ();
-
 	R_SetupGL ();
-
 	R_MarkLeaves ();			// done here so we know if we're in water
-
 	R_PushDlights (vec3_origin);
-
 	R_DrawWorld ();				// adds static entities to the list
-
 	S_ExtraUpdate ();			// don't let sound get messed up if going slow
-
 	R_DrawEntitiesOnList ();
-
 	R_RenderDlights ();
 }
-
-void R_RenderBrushPoly (msurface_t *fa);
 
 void
 R_Mirror (void)
@@ -1076,11 +1065,8 @@ R_RenderView (void)
 {
 	if (r_norefresh->int_val)
 		return;
-
 	if (!r_worldentity.model)
 		Sys_Error ("R_RenderView: NULL worldmodel");
-
-//	qfglFinish ();
 
 	mirror = false;
 
@@ -1088,21 +1074,16 @@ R_RenderView (void)
 
 	// render normal view
 	R_RenderScene ();
-
-	R_DrawWaterSurfaces ();
-
-	R_UpdateFires ();
-
-	R_DrawParticles ();
-
 	R_DrawViewModel ();
+	R_DrawWaterSurfaces ();
+	R_UpdateFires ();
+	R_DrawParticles ();
 
 	// render mirror view
 	R_Mirror ();
 
 	if (r_timegraph->int_val)
 		R_TimeGraph ();
-
 	if (r_zgraph->int_val)
 		R_ZGraph ();
 }
