@@ -108,6 +108,8 @@ else
 			rm -f conftest.[ci]
 			;;
 		linux*)
+			CPP_NAME="cpp %d -o %o %i"
+			;;
 		solaris*)
 			CPP_NAME="cpp %d -o %o %i"
 			;;
