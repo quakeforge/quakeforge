@@ -48,7 +48,7 @@ void *QFGL_ProcAddress (void *, const char *, qboolean);
 
 extern void *(*glGetProcAddress) (const char *); 
 #ifdef _WIN32
-extern void *(*getProcAddress) (HINSTANCE, LPCSTR);
+extern FARPROC (WINAPI *getProcAddress) (HINSTANCE, LPCSTR);
 #else
 extern void *(*getProcAddress) (void *, const char *); 
 #endif

@@ -142,7 +142,7 @@ void        GL_Init (void);
 #if defined(_WIN32)
 
 void * (* glGetProcAddress) (const char *symbol) = NULL;
-void * (* getProcAddress) (HINSTANCE, LPCSTR);
+FARPROC (WINAPI *getProcAddress) (HINSTANCE, LPCSTR);
 
 void *
 QFGL_LoadLibrary (void)
