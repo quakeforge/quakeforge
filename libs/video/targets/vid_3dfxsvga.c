@@ -274,6 +274,8 @@ VID_Init (unsigned char *palette)
 
 	InitSig ();							// trap evil signals
 
+	vid_gamma_avail = 1;
+	
 	GL_Init ();
 
 	VID_InitGamma (palette);
