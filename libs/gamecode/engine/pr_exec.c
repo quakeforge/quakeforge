@@ -461,6 +461,7 @@ PR_ExecuteProgram (progs_t * pr, func_t fnum)
 						case OP_GT_S: cmp = (cmp > 0); break;
 						case OP_NE_S: break;
 						case OP_EQ_S: cmp = !cmp; break;
+						default:      break;
 					}
 					OPC.integer_var = cmp;
 				}
