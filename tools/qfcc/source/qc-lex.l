@@ -184,6 +184,8 @@ m		([\-+]?)
 						return INT_VAL;
 					}
 
+^{s}*#{s}*pragma.*$	/* skip */
+
 ^#{s}+{DIGIT}+{s}+\"(\.|[^"\n])*\".*$ {
 						char *p;
 						char *s;
