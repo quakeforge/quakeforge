@@ -442,8 +442,8 @@ CL_KeyState (kbutton_t *key)
 			val = 0.75;					// released and re-pressed this frame
 		else
 			val = 0.25;					// pressed and released this frame
-
 	}
+
 	key->state &= 1;					// clear impulses
 
 	return val;
