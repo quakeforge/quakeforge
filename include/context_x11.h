@@ -51,7 +51,6 @@ extern qboolean x_have_focus;
 
 void GetEvent (void);
 
-vec3_t *X11_GetGamma (void);
 qboolean X11_AddEvent (int event, void (*event_handler)(XEvent *));
 qboolean X11_RemoveEvent (int event, void (*event_handler)(XEvent *));
 qboolean X11_SetGamma (double);

@@ -93,7 +93,6 @@ Time 		x_time;
 qboolean    x_have_focus = false;
 
 #define X_MASK (VisibilityChangeMask | StructureNotifyMask | ExposureMask | FocusChangeMask | EnterWindowMask)
-#define MOUSE_MASK (ButtonPressMask | ButtonReleaseMask | PointerMotionMask)
 
 #ifdef HAVE_VIDMODE
 static XF86VidModeModeInfo **vidmodes;
@@ -147,7 +146,7 @@ X11_RemoveEvent (int event, void (*event_handler) (XEvent *))
 	return true;
 }
 
-static void
+static inline void
 X11_ProcessEventProxy(XEvent *x_event)
 {
 	if (x_event->type >= LASTEvent) {
@@ -174,7 +173,7 @@ X11_WaitForEvent (int event)
 	}
 }
 
-void
+inline void
 X11_ProcessEvent (void)
 {
 	XEvent      x_event;
@@ -186,10 +185,8 @@ X11_ProcessEvent (void)
 void
 X11_ProcessEvents (void)
 {
-	// Get events from X server.
-	while (XPending (x_disp)) {
+	while (XPending (x_disp))
 		X11_ProcessEvent ();
-	}
 }
 
 void
@@ -293,6 +290,31 @@ X11_ForceMove (int x, int y)
 	XSync (x_disp, false);
 	// this is the best we can do.
 	X11_WaitForEvent (ConfigureNotify);
+}
+
+static vec3_t *
+X11_GetGamma (void)
+{
+#ifdef HAVE_VIDMODE
+# ifdef X_XF86VidModeGetGamma
+	XF86VidModeGamma	xgamma;
+	vec3_t				*temp;
+
+	if (vid_gamma_avail && vid_system_gamma->int_val) {
+		if (XF86VidModeGetGamma (x_disp, x_screen, &xgamma)) {
+			if ((temp = malloc (sizeof (vec3_t)))) {
+				(*temp)[0] = xgamma.red;
+				(*temp)[1] = xgamma.green;
+				(*temp)[2] = xgamma.blue;
+				return temp;
+			}
+			return NULL;
+		}
+	}
+# endif
+#endif
+	vid_gamma_avail = false;
+	return NULL;
 }
 
 void
@@ -543,31 +565,6 @@ X11_ForceViewPort (void)
 	}
 	XF86VidModeSetViewPort (x_disp, x_screen, ax, ay);
 #endif
-}
-
-vec3_t *
-X11_GetGamma (void)
-{
-#ifdef HAVE_VIDMODE
-# ifdef X_XF86VidModeGetGamma
-	XF86VidModeGamma	xgamma;
-	vec3_t				*temp;
-
-	if (vid_gamma_avail && vid_system_gamma->int_val) {
-		if (XF86VidModeGetGamma (x_disp, x_screen, &xgamma)) {
-			if ((temp = malloc (sizeof (vec3_t)))) {
-				(*temp)[0] = xgamma.red;
-				(*temp)[1] = xgamma.green;
-				(*temp)[2] = xgamma.blue;
-				return temp;
-			}
-			return NULL;
-		}
-	}
-# endif
-#endif
-	vid_gamma_avail = false;
-	return NULL;
 }
 
 qboolean
