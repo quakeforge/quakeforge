@@ -182,6 +182,7 @@ LoadPNG (QFile *infile)
 #else
 
 #include "QF/image.h"
+#include "QF/png.h"
 
 tex_t *
 LoadPNG (QFile *infile)

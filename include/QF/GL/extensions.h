@@ -38,6 +38,7 @@
 # ifdef _WIN32
 #  include <windows.h>
 #  define GLAPIENTRY WINAPI
+#  undef LoadImage
 # else
 #  ifdef APIENTRY
 #   define GLAPIENTRY APIENTRY

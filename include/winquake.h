@@ -61,6 +61,7 @@
 
 #undef byte
 #undef shutdown
+#undef LoadImage
 
 #include "QF/qtypes.h"
 
