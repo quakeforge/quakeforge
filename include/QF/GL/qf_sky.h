@@ -38,6 +38,7 @@
 #endif
 
 #include "QF/qtypes.h"
+#include "QF/model.h"
 
 #define SKY_TEX 2000	// Quake 2 environment sky
 
