@@ -103,6 +103,7 @@ single_cw:	.long	0
 full_cw:	.long	0
 cw:			.long	0
 pushed_cw:	.long	0
+#ifdef PIC
 .type	ceil_cw,@object
 .type	single_cw,@object
 .type	full_cw,@object
@@ -113,6 +114,7 @@ pushed_cw:	.long	0
 .size	full_cw,4
 .size	cw,4
 .size	pushed_cw,4
+#endif
 
 	.text
 
