@@ -754,6 +754,8 @@ test_expr (expr_t *e, int test)
 		case ev_integer:
 			return e;
 		case ev_float:
+			if (options.version == PROG_ID_VERSION)
+				return e;
 			new = new_expr ();
 			new->type = ex_float;
 			break;
@@ -963,7 +965,7 @@ unary_expr (int op, expr_t *e)
 					abort ();
 				case ex_block:
 					if (!e->e.block.result)
-						return error (e, "invalid type for unary -");
+						return error (e, "invalid type for unary !");
 				case ex_uexpr:
 				case ex_expr:
 				case ex_def:
