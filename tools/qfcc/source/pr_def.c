@@ -269,7 +269,7 @@ PR_FlushScope (def_t *scope, int force_used)
 				expr_t     e;
 				e.line = def->line;
 				e.file = def->file;
-				warning (&e, "variable %s unused", def->name);
+				warning (&e, "unused variable `%s'", def->name);
 			}
 			Hash_Del (defs_by_name, def->name);
 		}
