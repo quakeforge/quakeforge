@@ -48,6 +48,7 @@ static __attribute__ ((unused)) const char rcsid[] =
 #include "QF/idparse.h"
 #include "QF/progs.h"
 #include "QF/qdefs.h"
+#include "QF/qfplist.h"
 #include "QF/qendian.h"
 #include "QF/quakefs.h"
 #include "QF/sys.h"
@@ -408,9 +409,8 @@ ED_ParseGlobals (progs_t *pr, const char *data)
 	dstring_delete (keyname);
 }
 
-
 /*
-	ED_LoadFromFile
+	ED_ParseOld
 
 	The entities are directly placed in the array, rather than allocated with
 	ED_Alloc, because otherwise an error loading the map would have entity
@@ -422,8 +422,8 @@ ED_ParseGlobals (progs_t *pr, const char *data)
 	Used for both fresh maps and savegame loads.  A fresh map would also need
 	to call ED_CallSpawnFunctions () to let the objects initialize themselves.
 */
-void
-ED_LoadFromFile (progs_t *pr, const char *data)
+static void
+ED_ParseOld (progs_t *pr, const char *data)
 {
 	edict_t		*ent = NULL;
 	int			inhibit = 0;
@@ -482,4 +482,18 @@ ED_LoadFromFile (progs_t *pr, const char *data)
 	}
 
 	Sys_DPrintf ("%i entities inhibited\n", inhibit);
+}
+
+void
+ED_LoadFromFile (progs_t *pr, const char *data)
+{
+	if (*data == '{') {
+		// oldstyle entity data
+		ED_ParseOld (pr, data);
+	} else if (*data == '(') {
+		// new style (plist) entity data
+	} else {
+		plitem_t   *plist = PL_GetPropertyList (data);
+		plist = plist;
+	}
 }
