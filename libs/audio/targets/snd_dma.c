@@ -102,24 +102,25 @@ int         desired_bits = 16;
 
 int         sound_started = 0;
 
-extern cvar_t     *bgmvolume;
-extern cvar_t     *volume;
 extern cvar_t     *loadas8bit;
 extern cvar_t     *snd_interp;
+extern cvar_t     *bgmvolume;
+extern cvar_t     *volume;
 
-cvar_t     *snd_device;
-cvar_t     *snd_rate;
-cvar_t     *snd_bits;
-cvar_t     *snd_stereo;
+cvar_t     *ambient_fade;
+cvar_t     *ambient_level;
 cvar_t     *nosound;
 cvar_t     *precache;
-cvar_t     *ambient_level;
-cvar_t     *ambient_fade;
+cvar_t     *snd_bits;
+cvar_t     *snd_device;
+cvar_t     *snd_mixahead;
 cvar_t     *snd_noextraupdate;
-cvar_t     *snd_show;
 cvar_t     *snd_phasesep;
+cvar_t     *snd_rate;
+cvar_t     *snd_show;
+cvar_t     *snd_stereo;
 cvar_t     *snd_volumesep;
-cvar_t     *_snd_mixahead;
+
 
 // User-setable variables =====================================================
 
@@ -303,7 +304,7 @@ SND_Init_Cvars (void)
 							 "20cm head");
 	snd_volumesep = Cvar_Get ("snd_volumesep", "1.0", CVAR_ARCHIVE, NULL,
 							  "max stereo volume separation. 1.0 is max");
-	_snd_mixahead = Cvar_Get ("_snd_mixahead", "0.1", CVAR_ARCHIVE, NULL,
+	snd_mixahead = Cvar_Get ("snd_mixahead", "0.1", CVAR_ARCHIVE, NULL,
 							  "Delay time for sounds");
 }
 
@@ -861,7 +862,7 @@ SND_Update_ (void)
 		paintedtime = soundtime;
 	}
 	// mix ahead of current position
-	endtime = soundtime + _snd_mixahead->value * shm->speed;
+	endtime = soundtime + snd_mixahead->value * shm->speed;
 	samps = shm->samples >> (shm->channels - 1);
 	if (endtime - soundtime > samps)
 		endtime = soundtime + samps;
