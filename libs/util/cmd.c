@@ -128,6 +128,8 @@ Cmd_Command (cbuf_args_t *args)
 	// check cvars
 	if (Cvar_Command ())
 		return 0;
+	if (cbuf_active->unknown_command && cbuf_active->unknown_command ())
+		return 0;
 	if (cbuf_active->strict)
 		return -1;
 	else if (cmd_warncmd->int_val || developer->int_val)

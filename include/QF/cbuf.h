@@ -39,7 +39,7 @@
 typedef struct cbuf_args_s {
 	int         argc;
 	struct dstring_s **argv;
-	void **argm; // Metadata (optional)
+	void      **argm; // Metadata (optional)
 	const char **args;
 	int         argv_size;
 } cbuf_args_t;
@@ -49,21 +49,22 @@ typedef struct cbuf_s {
 	cbuf_args_t *args;
 	struct cbuf_interpreter_s *interpreter;	
 
-	struct cbuf_s *up, *down; // The stack
+	struct cbuf_s *up, *down;	// The stack
 	
 	enum {
-		CBUF_STATE_NORMAL = 0, // Normal condition
-		CBUF_STATE_WAIT, // Buffer is stalled until next frame
-		CBUF_STATE_BLOCKED, // Buffer is blocked until further notice
-		CBUF_STATE_ERROR, // An unrecoverable error occured
-		CBUF_STATE_STACK, // A buffer has been added to the stack
-		CBUF_STATE_JUNK // Buffer can be freed or reused
+		CBUF_STATE_NORMAL = 0,	// Normal condition
+		CBUF_STATE_WAIT,		// Buffer is stalled until next frame
+		CBUF_STATE_BLOCKED,		// Buffer is blocked until further notice
+		CBUF_STATE_ERROR,		// An unrecoverable error occured
+		CBUF_STATE_STACK,		// A buffer has been added to the stack
+		CBUF_STATE_JUNK			// Buffer can be freed or reused
 	} state;
 	
-	qboolean strict; // Should we tolerate unknown commands?
-	double resumetime; // Time when stack can be executed again
+	int	      (*unknown_command)(void);	// handle unkown commands. !0 = handled
+	qboolean    strict;			// Should we tolerate unknown commands?
+	double      resumetime;		// Time when stack can be executed again
 	
-	void *data; // Pointer to interpreter data
+	void       *data;			// Pointer to interpreter data
 } cbuf_t;
 
 typedef struct cbuf_interpreter_s {
