@@ -69,6 +69,17 @@ fi
 
 dnl Checks for library functions.
 
+AC_MSG_CHECKING(for timeGetTime in -lwinmm)
+save_LIBS="$LIBS"
+LIBS="$LIBS -lwinmm"
+AC_TRY_COMPILE(
+	[#include <windows.h>],
+	[timeGetTime ();],
+	AC_MSG_RESULT(yes),
+	LIBS="$save_LIBS"
+	AC_MSG_RESULT(no)
+)
+
 AC_ARG_WITH(qf,
 [  --with-qf=DIR         location of QF libs and headers (prefix)],
 	if test "x$withval" != xyes ; then
@@ -80,7 +91,7 @@ AC_ARG_WITH(qf,
 )
 AC_CHECK_HEADER(QF/qtypes.h, :, HAVE_QF=no)
 if test "x$HAVE_QF" != xno; then
-	AC_CHECK_LIB(QFutil, Qopen,
+	AC_CHECK_LIB(QFutil, Hash_NewTable,
 	:, HAVE_QF=no,
 		[]
 	)
