@@ -29,12 +29,6 @@
 #ifdef HAVE_CONFIG_H
 # include "config.h"
 #endif
-#ifdef HAVE_STRING_H
-# include "string.h"
-#endif
-#ifdef HAVE_STRINGS_H
-# include "strings.h"
-#endif
 
 #include "QF/cvar.h"
 #include "QF/draw.h"
@@ -45,57 +39,62 @@
 #include "r_cvar.h"
 
 /*
-  R_LineGraph
+	R_LineGraph
 
-  Only called by R_DisplayTime
+	Only called by R_DisplayTime
 */
 void
 R_LineGraph (int x, int y, int *h_vals, int count)
 {
-	int			h, i, s, color;
+	int         h, i, s, color;
 
-// FIXME: disable on no-buffer adapters, or put in the driver
+	// FIXME: disable on no-buffer adapters, or put in the driver
 	s = r_graphheight->int_val;
 
-	h = *h_vals++;
+	while (count--) {
+		h = *h_vals++;
 
-	if (h == 10000)
-		color = 0x6f;					// yellow
-	else if (h == 9999)
-		color = 0x4f;					// red
-	else if (h == 9998)
-		color = 0xd0;					// blue
-	else
-		color = 0xfe;					// white // LordHavoc: was pink (0xff)
- 
-	if (h > s)
-		h = s;
+		if (h == 10000)
+			color = 0x6f;					// yellow
+		else if (h == 9999)
+			color = 0x4f;					// red
+		else if (h == 9998)
+			color = 0xd0;					// blue
+		else
+			color = 0xff;					// pink
+	 
+		if (h > s)
+			h = s;
 
-	switch(r_pixbytes) {
-	case 1:
-	{
-		byte *dest = (byte *) vid.buffer + vid.rowbytes * y + x;
-		for (i = 0; i < h; i++, dest -= vid.rowbytes * 2)
-			*dest = color;
-	}
-	break;
-	case 2:
-	{
-		short *dest = (short *) vid.buffer + (vid.rowbytes >> 1) * y + x;
-		color = d_8to16table[color];
-		for (i = 0; i < h; i++, dest -= vid.rowbytes)
-			*dest = color;
-	}
-	break;
-	case 4:
-	{
-		int *dest = (int *) vid.buffer + (vid.rowbytes >> 2) * y + x;
-		color = d_8to24table[color];
-		for (i = 0; i < h; i++, dest -= (vid.rowbytes >> 1))
-			*dest = color;
-	}
-	break;
-	default:
-		Sys_Error("R_LineGraph: unsupported r_pixbytes %i\n", r_pixbytes);
+		switch(r_pixbytes) {
+			case 1:
+				{
+					byte *dest = (byte *) vid.buffer + vid.rowbytes * y + x;
+					for (i = 0; i < h; i++, dest -= vid.rowbytes * 2)
+						*dest = color;
+				}
+				break;
+			case 2:
+				{
+					short *dest = (short *) vid.buffer +
+								  (vid.rowbytes >> 1) * y + x;
+					color = d_8to16table[color];
+					for (i = 0; i < h; i++, dest -= vid.rowbytes)
+						*dest = color;
+				}
+				break;
+			case 4:
+				{
+					int *dest = (int *) vid.buffer +
+								(vid.rowbytes >> 2) * y + x;
+					color = d_8to24table[color];
+					for (i = 0; i < h; i++, dest -= (vid.rowbytes >> 1))
+						*dest = color;
+				}
+			break;
+			default:
+				Sys_Error("R_LineGraph: unsupported r_pixbytes %i\n",
+						  r_pixbytes);
+		}
 	}
 }

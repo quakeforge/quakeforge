@@ -318,7 +318,7 @@ R_AliasClipTriangle (mtriangle_t *ptri)
 	r_affinetridesc.ptriangles = &mtri;
 	r_affinetridesc.pfinalverts = fv[pingpong];
 
-// FIXME: do all at once as trifan?
+	// FIXME: do all at once as trifan?
 	mtri.vertindex[0] = 0;
 	for (i = 1; i < k - 1; i++) {
 		mtri.vertindex[1] = i;

@@ -207,8 +207,6 @@ R_Init (void)
 	r_refdef.xOrigin = XCENTERING;
 	r_refdef.yOrigin = YCENTERING;
 
-	R_InitParticles ();
-
 	D_Init ();
 }
 

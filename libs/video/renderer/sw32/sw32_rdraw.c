@@ -48,8 +48,6 @@ zpointdesc_t r_zpointdesc;
 
 polydesc_t  r_polydesc;
 
-
-
 clipplane_t *entity_clipplanes;
 clipplane_t view_clipplanes[4];
 clipplane_t world_clipplanes[16];
@@ -165,7 +163,6 @@ R_EmitEdge (mvertex_t *pv0, mvertex_t *pv1)
 
 	r_ceilv1 = (int) ceil (r_v1);
 
-
 	// create the edge
 	if (ceilv0 == r_ceilv1) {
 		// we cache unclipped horizontal edges as fully clipped
@@ -210,10 +207,10 @@ R_EmitEdge (mvertex_t *pv0, mvertex_t *pv1)
 	edge->u_step = u_step * 0x100000;
 	edge->u = u * 0x100000 + 0xFFFFF;
 
-// we need to do this to avoid stepping off the edges if a very nearly
-// horizontal edge is less than epsilon above a scan, and numeric error causes
-// it to incorrectly extend to the scan, and the extension of the line goes off
-// the edge of the screen
+	// we need to do this to avoid stepping off the edges if a very nearly
+	// horizontal edge is less than epsilon above a scan, and numeric error
+	// causes it to incorrectly extend to the scan, and the extension of the
+	// line goes off the edge of the screen
 	// FIXME: is this actually needed?
 	if (edge->u < r_refdef.vrect_x_adj_shift20)
 		edge->u = r_refdef.vrect_x_adj_shift20;
@@ -239,6 +236,7 @@ R_EmitEdge (mvertex_t *pv0, mvertex_t *pv1)
 	edge->nextremove = removeedges[v2];
 	removeedges[v2] = edge;
 }
+
 
 void
 R_ClipEdge (mvertex_t *pv0, mvertex_t *pv1, clipplane_t *clip)
@@ -321,6 +319,7 @@ R_ClipEdge (mvertex_t *pv0, mvertex_t *pv1, clipplane_t *clip)
 	R_EmitEdge (pv0, pv1);
 }
 
+
 void
 R_EmitCachedEdge (void)
 {
@@ -338,6 +337,7 @@ R_EmitCachedEdge (void)
 
 	r_emitted = 1;
 }
+
 
 void
 R_RenderFace (msurface_t *fa, int clipflags)
@@ -504,6 +504,7 @@ R_RenderFace (msurface_t *fa, int clipflags)
 	surface_p++;
 }
 
+
 void
 R_RenderBmodelFace (bedge_t *pedges, msurface_t *psurf)
 {
@@ -602,6 +603,7 @@ R_RenderBmodelFace (bedge_t *pedges, msurface_t *psurf)
 //JDC   VectorCopy (r_worldmodelorg, surface_p->modelorg);
 	surface_p++;
 }
+
 
 void
 R_RenderPoly (msurface_t *fa, int clipflags)
@@ -768,6 +770,7 @@ R_RenderPoly (msurface_t *fa, int clipflags)
 	// draw the polygon
 	D_DrawPoly ();
 }
+
 
 void
 R_ZDrawSubmodelPolys (model_t *pmodel)

@@ -378,7 +378,6 @@ R_AliasSetUpTransform (int trivial_accept)
 			aliastransform[1][i] *= aliasyscale *
 				(1.0 / ((float) 0x8000 * 0x10000));
 			aliastransform[2][i] *= 1.0 / ((float) 0x8000 * 0x10000);
-
 		}
 	}
 }
@@ -463,8 +462,7 @@ R_AliasTransformAndProjectFinalVerts (finalvert_t *fv, stvert_t *pstverts)
 			temp += (int) (r_shadelight * lightcos);
 
 			// clamp; because we limited the minimum ambient and shading
-			// light, we
-			// don't have to clamp low light, just bright
+			// light, we don't have to clamp low light, just bright
 			if (temp < 0)
 				temp = 0;
 		}

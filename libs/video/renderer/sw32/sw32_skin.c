@@ -31,10 +31,10 @@
 #endif
 
 #ifdef HAVE_STRING_H
-#include <string.h>
+# include <string.h>
 #endif
 #ifdef HAVE_STRINGS_H
-#include <strings.h>
+# include <strings.h>
 #endif
 
 #include "QF/model.h"
@@ -176,15 +176,18 @@ Skin_Do_Translation (skin_t *player_skin, int slot, skin_t *skin)
 {
 }
 
+
 void
 Skin_Do_Translation_Model (model_t *model, int skinnum, int slot, skin_t *skin)
 {
+
 }
 
 void
 Skin_Init_Translation (void)
 {
 }
+
 
 void
 Skin_Process (skin_t *skin, struct tex_s *tex)

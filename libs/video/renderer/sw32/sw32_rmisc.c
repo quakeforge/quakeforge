@@ -40,8 +40,6 @@
 #include "compat.h"
 #include "r_local.h"
 
-qboolean    allowskybox;			// whether or not to allow skyboxes --KB
-
 
 void
 R_CheckVariables (void)
@@ -56,13 +54,13 @@ R_CheckVariables (void)
 void
 Show (void)
 {
-    vrect_t     vr;
- 
-    vr.x = vr.y = 0;
-    vr.width = vid.width;
-    vr.height = vid.height;
-    vr.pnext = NULL;
-    VID_Update (&vr);
+	vrect_t     vr;
+
+	vr.x = vr.y = 0;
+	vr.width = vid.width;
+	vr.height = vid.height;
+	vr.pnext = NULL;
+	VID_Update (&vr);
 }
 
 /*
@@ -76,7 +74,7 @@ R_TimeRefresh_f (void)
 	int         i;
 	float       start, stop, time;
 	int         startangle;
-	vrect_t		vr;
+	vrect_t     vr;
 
 	startangle = r_refdef.viewangles[1];
 
@@ -252,7 +250,6 @@ R_SetupFrame (void)
 	float       w, h;
 
 	// don't allow cheats in multiplayer
-//	Cvar_SetValue (r_draworder, 0);
 	Cvar_SetValue (r_ambient, 0);
 	Cvar_SetValue (r_drawflat, 0);
 

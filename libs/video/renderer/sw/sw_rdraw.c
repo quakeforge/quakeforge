@@ -217,7 +217,7 @@ R_EmitEdge (mvertex_t *pv0, mvertex_t *pv1)
 	// horizontal edge is less than epsilon above a scan, and numeric error
 	// causes it to incorrectly extend to the scan, and the extension of the
 	// line goes off the edge of the screen
-// FIXME: is this actually needed?
+	// FIXME: is this actually needed?
 	if (edge->u < r_refdef.vrect_x_adj_shift20)
 		edge->u = r_refdef.vrect_x_adj_shift20;
 	if (edge->u > r_refdef.vrectright_adj_shift20)
@@ -468,8 +468,8 @@ R_RenderFace (msurface_t *fa, int clipflags)
 	}
 
 	// if there was a clip off the left edge, add that edge too
-// FIXME: faster to do in screen space?
-// FIXME: share clipped edges?
+	// FIXME: faster to do in screen space?
+	// FIXME: share clipped edges?
 	if (makeleftedge) {
 		r_pedge = &tedge;
 		r_lastvertvalid = false;
@@ -555,8 +555,8 @@ R_RenderBmodelFace (bedge_t *pedges, msurface_t *psurf)
 	r_nearzi = 0;
 	r_nearzionly = false;
 	makeleftedge = makerightedge = false;
-// FIXME: keep clipped bmodel edges in clockwise order so last vertex caching
-// can be used?
+	// FIXME: keep clipped bmodel edges in clockwise order so last vertex
+	// caching can be used?
 	r_lastvertvalid = false;
 
 	for (; pedges; pedges = pedges->pnext) {
@@ -570,8 +570,8 @@ R_RenderBmodelFace (bedge_t *pedges, msurface_t *psurf)
 	}
 
 	// if there was a clip off the left edge, add that edge too
-// FIXME: faster to do in screen space?
-// FIXME: share clipped edges?
+	// FIXME: faster to do in screen space?
+	// FIXME: share clipped edges?
 	if (makeleftedge) {
 		r_pedge = &tedge;
 		R_ClipEdge (&r_leftexit, &r_leftenter, pclip->next);
@@ -628,8 +628,8 @@ R_RenderPoly (msurface_t *fa, int clipflags)
 	int         vertpage, newverts, newpage, lastvert;
 	qboolean    visible;
 
-// FIXME: clean this up and make it faster
-// FIXME: guard against running out of vertices
+	// FIXME: clean this up and make it faster
+	// FIXME: guard against running out of vertices
 
 	s_axis = t_axis = 0;				// keep compiler happy
 
@@ -644,7 +644,7 @@ R_RenderPoly (msurface_t *fa, int clipflags)
 	}
 
 	// reconstruct the polygon
-// FIXME: these should be precalculated and loaded off disk
+	// FIXME: these should be precalculated and loaded off disk
 	pedges = currententity->model->edges;
 	lnumverts = fa->numedges;
 	vertpage = 0;
@@ -800,7 +800,7 @@ R_ZDrawSubmodelPolys (model_t *pmodel)
 		// draw the polygon
 		if (((psurf->flags & SURF_PLANEBACK) && (dot < -BACKFACE_EPSILON)) ||
 			(!(psurf->flags & SURF_PLANEBACK) && (dot > BACKFACE_EPSILON))) {
-// FIXME: use bounding-box-based frustum clipping info?
+			// FIXME: use bounding-box-based frustum clipping info?
 			R_RenderPoly (psurf, 15);
 		}
 	}

@@ -39,7 +39,7 @@
 #include "d_ifacea.h"
 #include "r_local.h"
 
-#define LIGHT_MIN	5					// lowest light value we'll allow, to 
+#define LIGHT_MIN	5					// lowest light value we'll allow, to
 										// avoid the need for inner-loop light
 										// clamping
 
@@ -111,7 +111,6 @@ R_AliasCheckBBox (void)
 	int         minz;
 
 	// expand, rotate, and translate points into worldspace
-
 	currententity->trivial_accept = 0;
 	pmodel = currententity->model;
 	pahdr = Mod_Extradata (pmodel);
@@ -241,6 +240,7 @@ R_AliasCheckBBox (void)
 	return true;
 }
 
+
 void
 R_AliasTransformVector (vec3_t in, vec3_t out)
 {
@@ -248,6 +248,7 @@ R_AliasTransformVector (vec3_t in, vec3_t out)
 	out[1] = DotProduct (in, aliastransform[1]) + aliastransform[1][3];
 	out[2] = DotProduct (in, aliastransform[2]) + aliastransform[2][3];
 }
+
 
 /*
 	R_AliasPreparePoints
@@ -310,6 +311,7 @@ R_AliasPreparePoints (void)
 		}
 	}
 }
+
 
 void
 R_AliasSetUpTransform (int trivial_accept)
@@ -379,6 +381,7 @@ R_AliasSetUpTransform (int trivial_accept)
 		}
 	}
 }
+
 
 void
 R_AliasTransformFinalVert (finalvert_t *fv, auxvert_t *av,
@@ -478,6 +481,7 @@ R_AliasProjectFinalVert (finalvert_t *fv, auxvert_t *av)
 	fv->v[1] = (av->fv[1] * aliasyscale * zi) + aliasycenter;
 }
 
+
 void
 R_AliasPrepareUnclippedPoints (void)
 {
@@ -495,6 +499,7 @@ R_AliasPrepareUnclippedPoints (void)
 
 	D_PolysetDraw ();
 }
+
 
 void
 R_AliasSetupSkin (void)
@@ -584,6 +589,7 @@ R_AliasSetupLighting (alight_t *plighting)
 	r_plightvec[2] = DotProduct (plighting->plightvec, alias_up);
 }
 
+
 /*
 	R_AliasSetupFrame
 
@@ -629,6 +635,7 @@ R_AliasSetupFrame (void)
 	r_apverts = (trivertx_t *)
 		((byte *) paliashdr + paliasgroup->frames[i].frame);
 }
+
 
 void
 R_AliasDrawModel (alight_t *plighting)

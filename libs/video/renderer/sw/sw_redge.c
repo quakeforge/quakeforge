@@ -43,7 +43,7 @@
   coherence ? low depth complexity-- 1 to 3 or so this breaks spans at every
   edge, even hidden ones (bad)
 
-  have a sentinal at both ends
+  have a sentinal at both ends?
 */
 
 edge_t     *auxedges;
@@ -51,9 +51,11 @@ edge_t     *r_edges, *edge_p, *edge_max;
 
 surf_t     *surfaces, *surface_p, *surf_max;
 
-// surfaces are generated in back to front order by the bsp, so if a surf
-// pointer is greater than another one, it should be drawn in front
-// surfaces[1] is the background, and is used as the active surface stack
+/*
+	surfaces are generated in back to front order by the bsp, so if a surf
+	pointer is greater than another one, it should be drawn in front
+	surfaces[1] is the background, and is used as the active surface stack
+*/
 
 edge_t     *newedges[MAXHEIGHT];
 edge_t     *removeedges[MAXHEIGHT];
@@ -161,7 +163,7 @@ R_InsertNewEdges (edge_t *edgestoadd, edge_t *edgelist)
 
 	do {
 		next_edge = edgestoadd->next;
-	  edgesearch:
+	edgesearch:
 		if (edgelist->u >= edgestoadd->u)
 			goto addedge;
 		edgelist = edgelist->next;
@@ -177,7 +179,7 @@ R_InsertNewEdges (edge_t *edgestoadd, edge_t *edgelist)
 		goto edgesearch;
 
 		// insert edgestoadd before edgelist
-	  addedge:
+	addedge:
 		edgestoadd->next = edgelist;
 		edgestoadd->prev = edgelist->prev;
 		edgelist->prev->next = edgestoadd;
@@ -326,7 +328,7 @@ R_LeadingEdgeBackwards (edge_t *edge)
 
 		goto gotposition;
 
-	  newtop:
+	newtop:
 		// emit a span (obscures current top)
 		iu = edge->u >> 20;
 
@@ -341,7 +343,7 @@ R_LeadingEdgeBackwards (edge_t *edge)
 		// set last_u on the new span
 		surf->last_u = iu;
 
-	  gotposition:
+	gotposition:
 		// insert before surf2
 		surf->next = surf2;
 		surf->prev = surf2->prev;
@@ -438,9 +440,8 @@ R_LeadingEdge (edge_t *edge)
 			} while (surf->key > surf2->key);
 
 			if (surf->key == surf2->key) {
-				// if it's two surfaces on the same plane, the one that's
-				// already active is in front, so keep going unless it's a
-				// bmodel
+				// if it's two surfaces on the same plane, the already active
+				// one is in front, so keep going unless it's a bmodel
 				if (!surf->insubmodel)
 					goto continue_search;
 
@@ -574,7 +575,7 @@ R_ScanEdges (void)
 	span_p = basespan_p;
 
 	// clear active edges to just the background edges around the whole screen
-// FIXME: most of this only needs to be set up once
+	// FIXME: most of this only needs to be set up once
 	edge_head.u = r_refdef.vrect.x << 20;
 	edge_head_u_shift20 = edge_head.u >> 20;
 	edge_head.u_step = 0;
@@ -596,7 +597,7 @@ R_ScanEdges (void)
 	edge_aftertail.next = &edge_sentinel;
 	edge_aftertail.prev = &edge_tail;
 
-// FIXME: do we need this now that we clamp x in r_draw.c?
+	// FIXME: do we need this now that we clamp x in r_draw.c?
 	edge_sentinel.u = 2000 << 24;		// make sure nothing sorts past this
 	edge_sentinel.prev = &edge_aftertail;
 

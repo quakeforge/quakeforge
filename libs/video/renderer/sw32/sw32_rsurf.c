@@ -183,8 +183,7 @@ R_BuildLightMap (void)
 
 	// add all the lightmaps
 	if (lightmap)
-		for (maps = 0; maps < MAXLIGHTMAPS && surf->styles[maps] != 255;
-			 maps++) {
+		for (maps = 0; maps < MAXLIGHTMAPS && surf->styles[maps] != 255; maps++) {
 			scale = r_drawsurf.lightadj[maps];	// 8.8 fraction     
 			for (i = 0; i < size; i++)
 				blocklights[i] += lightmap[i] * scale;
@@ -218,7 +217,7 @@ R_BuildLightMap (void)
 
 	Returns the proper texture for a given time and base texture
 */
-texture_t  *
+texture_t *
 R_TextureAnimation (texture_t *base)
 {
 	int         relative;
@@ -249,7 +248,7 @@ R_TextureAnimation (texture_t *base)
 void
 R_DrawSurface (void)
 {
-	unsigned char *basetptr;
+	byte       *basetptr;
 	int         smax, tmax, twidth;
 	int         u;
 	int         soffset, basetoffset, texwidth;
@@ -267,8 +266,8 @@ R_DrawSurface (void)
 
 	r_source = (byte *) mt + mt->offsets[r_drawsurf.surfmip];
 
-// the fractional light values should range from 0 to (VID_GRADES - 1) << 16
-// from a source range of 0 - 255
+	// the fractional light values should range from 0 to
+	// (VID_GRADES - 1) << 16 from a source range of 0 - 255
 
 	texwidth = mt->width >> r_drawsurf.surfmip;
 

@@ -33,20 +33,15 @@
 #include <stdlib.h>
 
 #include "QF/console.h"
-#include "QF/cvar.h" 
+#include "QF/cvar.h"
 #include "QF/qargs.h"
-#include "QF/vfs.h" 
-#include "QF/render.h" 
+#include "QF/vfs.h"
+#include "QF/render.h"
 
 #include "compat.h"
 #include "r_cvar.h"
 #include "r_dynamic.h"
 #include "r_local.h"
-
-#define MAX_PARTICLES			2048	// default max # of particles at one
-										// time
-#define ABSOLUTE_MIN_PARTICLES	512		// no fewer than this no matter what's
-										// on the command line
 
 int         ramp1[8] = { 0x6f, 0x6d, 0x6b, 0x69, 0x67, 0x65, 0x63, 0x61 };
 int         ramp2[8] = { 0x6f, 0x6e, 0x6d, 0x6c, 0x6b, 0x6a, 0x68, 0x66 };
@@ -58,7 +53,6 @@ particle_t *particles;
 int         r_numparticles;
 
 vec3_t      r_pright, r_pup, r_ppn;
-
 
 /*
 	R_MaxParticlesCheck
@@ -95,24 +89,6 @@ R_Particles_Init_Cvars (void)
 			  "Maximum amount of particles to display. No maximum, minimum is 1.");
 }
 
-void
-R_InitParticles (void)
-{
-	int         i;
-
-	i = COM_CheckParm ("-particles");
-
-	if (i) {
-		r_numparticles = (int) (atoi (com_argv[i + 1]));
-		if (r_numparticles < ABSOLUTE_MIN_PARTICLES)
-			r_numparticles = ABSOLUTE_MIN_PARTICLES;
-	} else {
-		r_numparticles = MAX_PARTICLES;
-	}
-
-	particles = (particle_t *)
-		Hunk_AllocName (r_numparticles * sizeof (particle_t), "particles");
-}
 
 void
 R_ClearParticles (void)
@@ -126,6 +102,7 @@ R_ClearParticles (void)
 		particles[i].next = &particles[i + 1];
 	particles[r_numparticles - 1].next = NULL;
 }
+
 
 void
 R_ReadPointFile_f (void)
@@ -176,6 +153,7 @@ R_ReadPointFile_f (void)
 	Con_Printf ("%i points read\n", c);
 }
 
+
 void
 R_RunSpikeEffect (vec3_t pos, particle_effect_t type)
 {
@@ -192,10 +170,11 @@ R_RunSpikeEffect (vec3_t pos, particle_effect_t type)
 		case PE_SUPERSPIKE:
 			R_RunParticleEffect (pos, 0, 20);
 			break;
-		default: // FIXME: this right?
+		default:
 			break;
 	}
 }
+
 
 void
 R_RunPuffEffect (vec3_t pos, particle_effect_t type, byte cnt)
@@ -213,10 +192,11 @@ R_RunPuffEffect (vec3_t pos, particle_effect_t type, byte cnt)
 		case PE_LIGHTNINGBLOOD:
 			R_RunParticleEffect (pos, 225, 50);
 			break;
-		default: // FIXME: this right?
+		default:
 			break;
 	}
 }
+
 
 void
 R_ParticleExplosion (vec3_t org)
@@ -254,6 +234,7 @@ R_ParticleExplosion (vec3_t org)
 	}
 }
 
+
 void
 R_ParticleExplosion2 (vec3_t org, int colorStart, int colorLength)
 {
@@ -282,6 +263,7 @@ R_ParticleExplosion2 (vec3_t org, int colorStart, int colorLength)
 		}
 	}
 }
+
 
 void
 R_BlobExplosion (vec3_t org)
@@ -320,6 +302,7 @@ R_BlobExplosion (vec3_t org)
 	}
 }
 
+
 void
 R_RunParticleEffect (vec3_t org, int color, int count)
 {
@@ -354,6 +337,7 @@ R_RunParticleEffect (vec3_t org, int color, int count)
 		}
 	}
 }
+
 
 void
 R_LavaSplash (vec3_t org)
@@ -394,6 +378,7 @@ R_LavaSplash (vec3_t org)
 			}
 }
 
+
 void
 R_TeleportSplash (vec3_t org)
 {
@@ -432,6 +417,7 @@ R_TeleportSplash (vec3_t org)
 				VectorScale (dir, vel, p->vel);
 			}
 }
+
 
 void
 R_RocketTrail (int type, entity_t *ent)
@@ -514,6 +500,7 @@ R_RocketTrail (int type, entity_t *ent)
 		VectorAdd (ent->old_origin, vec, ent->old_origin);
 	}
 }
+
 
 void
 R_DrawParticles (void)
@@ -605,11 +592,11 @@ R_DrawParticles (void)
 				case pt_grav:
 					p->vel[2] -= grav;
 					break;
-				default: // FIXME: is this right?
+				default:
+					Con_DPrintf ("unhandled particle type %d\n", p->type);
 					break;
 			}
 		}
 	}
-
 	D_EndParticles ();
 }

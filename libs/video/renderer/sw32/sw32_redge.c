@@ -38,11 +38,12 @@
 
 /*
   FIXME
-  the complex cases add new polys on most lines,
-  so dont optimize for keeping them the same have multiple free span lists to
-  try to get better coherence ? low depth complexity-- 1 to 3 or so this
-  breaks spans at every edge, even hidden ones (bad)
-  have a sentinal at both ends ?
+  the complex cases add new polys on most lines, so dont optimize for
+  keeping them the same have multiple free span lists to try to get better
+  coherence ? low depth complexity-- 1 to 3 or so this breaks spans at every
+  edge, even hidden ones (bad)
+
+  have a sentinal at both ends?
 */
 
 edge_t     *auxedges;
@@ -51,9 +52,9 @@ edge_t     *r_edges, *edge_p, *edge_max;
 surf_t     *surfaces, *surface_p, *surf_max;
 
 /*
-  surfaces are generated in back to front order by the bsp, so if a surf
-  pointer is greater than another one, it should be drawn in front
-  surfaces[1] is the background, and is used as the active surface stack
+	surfaces are generated in back to front order by the bsp, so if a surf
+	pointer is greater than another one, it should be drawn in front
+	surfaces[1] is the background, and is used as the active surface stack
 */
 
 edge_t     *newedges[MAXHEIGHT];
@@ -78,17 +79,11 @@ edge_t      edge_sentinel;
 
 float       fv;
 
-void
-R_GenerateSpans (void);
-void
-R_GenerateSpansBackward (void);
-
-void
-R_LeadingEdge (edge_t *edge);
-void
-R_LeadingEdgeBackwards (edge_t *edge);
-void
-R_TrailingEdge (surf_t *surf, edge_t *edge);
+void R_GenerateSpans (void);
+void R_GenerateSpansBackward (void);
+void R_LeadingEdge (edge_t *edge);
+void R_LeadingEdgeBackwards (edge_t *edge);
+void R_TrailingEdge (surf_t *surf, edge_t *edge);
 
 
 void
@@ -136,17 +131,9 @@ R_BeginEdgeFrame (void)
 	surfaces[1].flags = SURF_DRAWBACKGROUND;
 
 	// put the background behind everything in the world
-/*
-	if (r_draworder->int_val) {
-		pdrawfunc = R_GenerateSpansBackward;
-		surfaces[1].key = 0;
-		r_currentkey = 1;
-	} else {
-*/
-		pdrawfunc = R_GenerateSpans;
-		surfaces[1].key = 0x7FFFFFFF;
-		r_currentkey = 0;
-//	}
+	pdrawfunc = R_GenerateSpans;
+	surfaces[1].key = 0x7FFFFFFF;
+	r_currentkey = 0;
 
 	// FIXME: set with memset
 	for (v = r_refdef.vrect.y; v < r_refdef.vrectbottom; v++) {
@@ -438,7 +425,7 @@ R_LeadingEdge (edge_t *edge)
 
 			if (surf->key == surf2->key) {
 				// if it's two surfaces on the same plane, the already active
-				// one is in front, so keep going unless it's abmodel
+				// one is in front, so keep going unless it's a bmodel
 				if (!surf->insubmodel)
 					goto continue_search;
 
@@ -612,8 +599,7 @@ R_ScanEdges (void)
 		// for the next scan
 		if (span_p > max_span_p) {
 			VID_UnlockBuffer ();
-			S_ExtraUpdate ();			// don't let sound get messed up if
-										// going slow
+			S_ExtraUpdate ();	// don't let sound get messed up if going slow
 			VID_LockBuffer ();
 
 			if (r_drawculledpolys)

@@ -114,7 +114,7 @@ R_ReadPointFile_f (void)
 	particle_t *p;
 	char        name[MAX_OSPATH];
 
-// FIXME    snprintf (name, sizeof (name), "maps/%s.pts", sv.name);
+	// FIXME    snprintf (name, sizeof (name), "maps/%s.pts", sv.name);
 
 	COM_FOpenFile (name, &f);
 	if (!f) {
@@ -512,7 +512,7 @@ R_DrawParticles (void)
 	float       time1;
 	float       dvel;
 	float       frametime;
-	
+
 	D_StartParticles ();
 
 	VectorScale (vright, xscaleshrink, r_pright);

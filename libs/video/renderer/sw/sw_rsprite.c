@@ -289,7 +289,7 @@ R_DrawSprite (void)
 	sprite_width = r_spritedesc.pspriteframe->width;
 	sprite_height = r_spritedesc.pspriteframe->height;
 
-// TODO: make this caller-selectable
+	// TODO: make this caller-selectable
 	if (psprite->type == SPR_FACING_UPRIGHT) {
 		// generate the sprite's axes, with vup straight up in worldspace, and
 		// r_spritedesc.vright perpendicular to modelorg.
@@ -311,9 +311,8 @@ R_DrawSprite (void)
 		r_spritedesc.vup[1] = 0;
 		r_spritedesc.vup[2] = 1;
 		r_spritedesc.vright[0] = tvec[1];
-		//CrossProduct(r_spritedesc.vup, -modelorg,
+		//CrossProduct(r_spritedesc.vup, -modelorg, r_spritedesc.vright)
 		r_spritedesc.vright[1] = -tvec[0];
-		//r_spritedesc.vright)
 		r_spritedesc.vright[2] = 0;
 		VectorNormalize (r_spritedesc.vright);
 		r_spritedesc.vpn[0] = -r_spritedesc.vright[1];

@@ -186,7 +186,7 @@ R_BuildLightMap (void)
 texture_t *
 R_TextureAnimation (texture_t *base)
 {
-	int         reletive;
+	int         relative;
 	int         count;
 
 	if (currententity->frame) {
@@ -197,10 +197,10 @@ R_TextureAnimation (texture_t *base)
 	if (!base->anim_total)
 		return base;
 
-	reletive = (int) (r_realtime * 10) % base->anim_total;
+	relative = (int) (r_realtime * 10) % base->anim_total;
 
 	count = 0;
-	while (base->anim_min > reletive || base->anim_max <= reletive) {
+	while (base->anim_min > relative || base->anim_max <= relative) {
 		base = base->anim_next;
 		if (!base)
 			Sys_Error ("R_TextureAnimation: broken cycle");
@@ -214,12 +214,12 @@ R_TextureAnimation (texture_t *base)
 void
 R_DrawSurface (void)
 {
-	unsigned char *basetptr;
+	byte       *basetptr;
 	int         smax, tmax, twidth;
 	int         u;
 	int         soffset, basetoffset, texwidth;
 	int         horzblockstep;
-	unsigned char *pcolumndest;
+	byte       *pcolumndest;
 	void        (*pblockdrawer) (void);
 	texture_t  *mt;
 

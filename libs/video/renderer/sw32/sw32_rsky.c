@@ -82,9 +82,11 @@ R_InitSky (texture_t *mt)
 
 	src = (byte *) mt + mt->offsets[0];
 
-	for (i = 0; i < 128; i++)
-		for (j = 0; j < 128; j++)
+	for (i = 0; i < 128; i++) {
+		for (j = 0; j < 128; j++) {
 			newsky[(i * 256) + j + 128] = src[i * 256 + j + 128];
+		}
+	}
 
 	for (i = 0; i < 128; i++) {
 		for (j = 0; j < 131; j++) {
@@ -238,6 +240,7 @@ R_MakeSky (void)
 	r_skymade = 1;
 }
 
+
 void
 R_SetSkyFrame (void)
 {
@@ -254,9 +257,9 @@ R_SetSkyFrame (void)
 
 	skytime = r_realtime - ((int) (r_realtime / temp) * temp);
 
-
 	r_skymade = 0;
 }
+
 
 /*
    R_LoadSkys
