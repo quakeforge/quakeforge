@@ -1313,7 +1313,7 @@ CL_Init_Cvars (void)
 	cl_hudswap = Cvar_Get ("cl_hudswap", "0", CVAR_ARCHIVE, cl_hudswap_f,
 						   "new HUD on left side?");
 	cl_maxfps = Cvar_Get ("cl_maxfps", "0", CVAR_ARCHIVE, NULL,
-						  "maximum frames rendered in one second. 0 == 32");
+						  "maximum frames rendered in one second. 0 == 72");
 	cl_timeout = Cvar_Get ("cl_timeout", "60", CVAR_ARCHIVE, NULL, "server "
 						   "connection timeout (since last packet received)");
 	host_speeds = Cvar_Get ("host_speeds", "0", CVAR_NONE, NULL,
@@ -1486,10 +1486,10 @@ Host_SimulationTime (float time)
 	if (cls.timedemo)
 		return 0;
 
-	if (!cl_maxfps->int_val)
-		return 0;
-
-	fps = bound (1, cl_maxfps->value, 72);
+	if (cl_maxfps->value <= 0)
+		fps = 72;
+	else
+		fps = max (cl_maxfps->value, 72);
 
 	timedifference = (timescale / fps) - (realtime - oldrealtime);
 
