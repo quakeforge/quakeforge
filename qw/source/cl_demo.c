@@ -41,7 +41,8 @@ static const char rcsid[] =
 #endif
 
 #include <sys/time.h>
-
+#include <time.h>
+	
 #include "QF/console.h"
 #include "QF/cmd.h"
 #include "QF/cvar.h"
@@ -414,19 +415,25 @@ CL_WriteSetDemoMessage (void)
 void
 CL_Record_f (void)
 {
-	char		buf_data[MAX_MSGLEN + 10];	// + 10 for header
+	char        buf_data[MAX_MSGLEN + 10];	// + 10 for header
 	char        name[MAX_OSPATH];
-	char	   *s;
-	int			c, n, i, j;
-	int			seq = 1;
+	char       *s;
+	char        timestring[20];
+	char        mapname[MAX_OSPATH];
+
+	int         c, n, i, j, k, l=0;
+	int         seq = 1;
 	entity_t   *ent;
 	entity_state_t *es, blankes;
 	player_info_t *player;
-	sizebuf_t	buf;
+	sizebuf_t   buf;
+	time_t      tim;
 
 	c = Cmd_Argc ();
-	if (c != 2) {
-		Con_Printf ("record <demoname>\n");
+	if (c > 2) {
+		/* we use a demo name like year-month-day-hours-minutes-mapname.qwd
+		   if there is no argument */
+		Con_Printf ("record [demoname]\n");
 		return;
 	}
 
@@ -438,7 +445,34 @@ CL_Record_f (void)
 	if (cls.demorecording)
 		CL_Stop_f ();
 
-	snprintf (name, sizeof (name), "%s/%s", com_gamedir, Cmd_Argv (1));
+	if (c < 2) {
+		// Get time to a useable format
+		time (&tim);
+		strftime (timestring, 19, "%Y-%m-%d-%H-%M", localtime (&tim));
+
+		// the leading path-name is to be removed from cl.worldmodel->name
+		for (k = 0; k <= strlen (cl.worldmodel->name); k++) {
+			if (cl.worldmodel->name[k] == '/') {
+				l = 0;
+				mapname[l] = '\0';
+				continue;
+			}
+			mapname[l] = cl.worldmodel->name[k];
+			l++;
+		}
+
+		// the map name is cut off after any "." because this would prevent
+		// ".qwd" from being appended
+
+		for (k = 0; k <= strlen (mapname); k++)
+			if (mapname[k] == '.')
+				mapname[k] = '\0';
+
+		snprintf (name, sizeof (name), "%s/%s-%s", com_gamedir,
+				  timestring, mapname);
+	} else {
+		snprintf (name, sizeof (name), "%s/%s", com_gamedir, Cmd_Argv(1));
+	}
 
 	// open the demo file
 	COM_DefaultExtension (name, ".qwd");
