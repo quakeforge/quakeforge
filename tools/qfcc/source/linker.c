@@ -269,6 +269,8 @@ process_def (qfo_def_t *def)
 	qfo_def_t  *d;
 
 	if (def->flags & QFOD_EXTERNAL) {
+		if (!def->num_relocs)
+			return;
 		if ((_d = Hash_Find (defined_defs, STRING (def->name)))) {
 			def->ofs = deref_def (_d, &global_defs)->ofs;
 			def->flags = deref_def (_d, &global_defs)->flags;
@@ -766,7 +768,6 @@ linker_add_lib (const char *libname)
 				qfo_def_t  *def = qfo->defs + j;
 				if ((def->flags & QFOD_GLOBAL)
 					&& !(def->flags & QFOD_EXTERNAL)
-					&& def->relocs
 					&& Hash_Find (extern_defs, qfo->strings + def->name)) {
 					if (options.verbosity >= 2)
 						printf ("adding %s because of %s\n",
@@ -818,9 +819,7 @@ linker_finish (void)
 		undef_defs = (defref_t **) Hash_GetList (extern_defs);
 		for (defref = undef_defs; *defref; defref++) {
 			qfo_def_t  *def = deref_def (*defref, &global_defs);
-			if (def->num_relocs) {
-				def_error (def, "undefined symbol %s", STRING (def->name));
-			}
+			def_error (def, "undefined symbol %s", STRING (def->name));
 		}
 		free (undef_defs);
 		if (pr.error_count)
