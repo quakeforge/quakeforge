@@ -2,6 +2,7 @@
 #include <QF/hash.h>
 #include "qfcc.h"
 #include "expr.h"
+#include "scope.h"
 #include "qc-parse.h"
 
 #define YY_NO_UNPUT

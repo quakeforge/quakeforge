@@ -4,20 +4,30 @@
 
 #define YYDEBUG 1
 #define YYERROR_VERBOSE 1
+
+extern char *yytext;
+extern int lineno;
+
 void
-yyerror (char *s)
+yyerror (const char *s)
 {
-	extern int lineno;
-	extern char *yytext;
 	fprintf (stderr, "%d, %s %s\n", lineno, yytext, s);
 }
 
 int yylex (void);
 type_t *PR_FindType (type_t *new);
+type_t *parse_params (def_t *parms);
+
+typedef struct {
+	type_t	*type;
+	def_t	*scope;
+	def_t	*pscope;
+} scope_t;
 
 %}
 
 %union {
+	scope_t	*scope;
 	def_t	*def;
 	type_t	*type;
 	expr_t	*expr;
@@ -82,10 +92,14 @@ type
 	;
 
 def_list
-	: def_item ',' def_list
+	: def_list ',' def_item
 		{
-			$1->next = $3;
-			$$ = $1;
+			if ($3->next) {
+				$$ = $1;
+			} else {
+				$3->next = $1;
+				$$ = $3;
+			}
 		}
 	| def_item
 	;
@@ -94,22 +108,26 @@ def_item
 	: def_name opt_initializer
 	| '('
 		{
+			$<scope>$->scope = pr_scope;
+			$<scope>$->type = current_type;
+			$<scope>$->pscope = param_scope.scope_next;
 			pr_scope = &param_scope;
 		}
 	  param_list
 		{
 			$$ = param_scope.scope_next;
-			param_scope.scope_next = 0;
-			pr_scope = 0;
+			current_type = $<scope>2->type;
+			param_scope.scope_next = $<scope>2->pscope;
+			pr_scope = $<scope>2->scope;
 		}
-	  ')' def_name opt_definition
+	  ')' { current_type = parse_params ($<def>4); } def_name opt_definition
 	  	{
 			def_t scope;
 			scope.scope_next=$<def>4;
 			PR_FlushScope (&scope);
 		}
-	| '(' ')' def_name opt_definition {}
-	| '(' ELIPSIS ')' def_name opt_definition {}
+	| '(' ')' { current_type = parse_params (0); } def_name opt_definition {}
+	| '(' ELIPSIS ')' { current_type = parse_params ((def_t*)1); } def_name opt_definition {}
 	;
 
 def_name
@@ -124,18 +142,22 @@ param_list
 	: param
 	| param_list ',' param
 		{
-			$3->next = $1;
-			$$ = $3;
+			if ($3->next) {
+				yyerror ("parameter redeclared");
+				yyerror ($3->name);
+				$$ = $1;
+			} else {
+				$3->next = $1;
+				$$ = $3;
+			}
 		}
 	;
 
 param
-	: type def_item
+	: type {current_type = $1;} def_item
 		{
-			$2->type = $1;
-			$2->next = 0;
-			$$ = $2;
-			printf ("%s ", $2->name);
+			$3->type = $1;
+			$$ = $3;
 		}
 	;
 
@@ -264,3 +286,37 @@ const
 	;
 
 %%
+
+type_t *
+parse_params (def_t *parms)
+{
+	type_t		new;
+	def_t		*p;
+	int			i;
+
+	memset (&new, 0, sizeof (new));
+	new.type = ev_func;
+	new.aux_type = current_type;
+	new.num_parms = 0;
+
+	if (!parms) {
+	} else if (parms == (def_t*)1) {
+		new.num_parms = -1;			// variable args
+	} else {
+		for (p = parms; p; p = p->next, new.num_parms++)
+			;
+		if (new.num_parms > MAX_PARMS) {
+			yyerror ("too many params");
+			return current_type;
+		}
+		i = 1;
+		do {
+			//puts (parms->name);
+			strcpy (pr_parm_names[new.num_parms - 1], parms->name);
+			new.parm_types[new.num_parms - 1] = parms->type;
+			i++;
+			parms = parms->next;
+		} while (parms);
+	}
+	return PR_FindType (&new);
+}
