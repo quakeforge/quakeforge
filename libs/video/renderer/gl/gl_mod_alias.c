@@ -287,8 +287,9 @@ GL_GetAliasFrameVerts (int frame, aliashdr_t *paliashdr, entity_t *e)
 	vert_order_t *vo;
 
 	if ((frame >= paliashdr->mdl.numframes) || (frame < 0)) {
-		Con_Printf ("R_AliasSetupFrame: no such frame %d %s\n", frame,
-					currententity->model->name);
+		if (developer->int_val)
+			Con_Printf ("R_AliasSetupFrame: no such frame %d %s\n", frame,
+						currententity->model->name);
 		frame = 0;
 	}
 
