@@ -649,10 +649,10 @@ linker_add_object_file (const char *filename)
 int
 linker_add_lib (const char *libname)
 {
-	pack_t     *pack;
+	pack_t     *pack = 0;
 	path_t      start = {path_head, "."};
 	path_t     *path = &start;
-	const char *path_name;
+	const char *path_name = 0;
 	int         i, j;
 	int         did_something;
 
