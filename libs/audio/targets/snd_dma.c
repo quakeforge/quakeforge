@@ -67,9 +67,7 @@ void		I_S_Init_Cvars ();
 // QuakeWorld hack...
 //#define	viewentity	playernum+1
 
-// =======================================================================
-// Internal sound data & structures
-// =======================================================================
+// Internal sound data & structures ===========================================
 
 extern channel_t   channels[MAX_CHANNELS];
 extern int         total_channels;
@@ -90,8 +88,7 @@ vec3_t      listener_up;
 vec_t       sound_nominal_clip_dist = 1000.0;
 
 int         soundtime;					// sample PAIRS
-extern int         paintedtime;				// sample PAIRS
-
+extern int  paintedtime;				// sample PAIRS
 
 #define	MAX_SFX		512
 sfx_t      *known_sfx;					// hunk allocated [MAX_SFX]
@@ -106,6 +103,8 @@ int         sound_started = 0;
 
 extern cvar_t     *bgmvolume;
 extern cvar_t     *volume;
+extern cvar_t     *loadas8bit;
+extern cvar_t     *snd_interp;
 
 cvar_t     *snd_device;
 cvar_t     *snd_rate;
@@ -113,27 +112,19 @@ cvar_t     *snd_bits;
 cvar_t     *snd_stereo;
 cvar_t     *nosound;
 cvar_t     *precache;
-extern cvar_t     *loadas8bit;
 cvar_t     *ambient_level;
 cvar_t     *ambient_fade;
 cvar_t     *snd_noextraupdate;
 cvar_t     *snd_show;
-extern cvar_t     *snd_interp;
 cvar_t     *snd_phasesep;
 cvar_t     *snd_volumesep;
 cvar_t     *_snd_mixahead;
 
+// User-setable variables =====================================================
 
-// ====================================================================
-// User-setable variables
-// ====================================================================
-
-
-//
 // Fake dma is a synchronous faking of the DMA progress used for
 // isolating performance in the renderer.  The fakedma_updates is
 // number of times I_S_Update() is called per second.
-//
 
 qboolean    fakedma = false;
 int         fakedma_updates = 15;
@@ -141,6 +132,7 @@ int         fakedma_updates = 15;
 // FIXME: Evil hack that doesn't deserve to see the light of day.
 // (pending merge of nq and qw client_stat_t's)
 extern sound_data_t plugin_info_sound_data;
+
 
 void
 I_S_AmbientOff (void)
@@ -175,10 +167,6 @@ I_S_SoundInfo_f (void)
 }
 
 
-/*
-	I_S_Startup
-*/
-
 void
 I_S_Startup (void)
 {
@@ -203,9 +191,6 @@ I_S_Startup (void)
 }
 
 
-/*
-	I_S_Init
-*/
 void
 I_S_Init (void)
 {
@@ -214,8 +199,8 @@ I_S_Init (void)
 
 	Cmd_AddCommand ("play", I_S_Play,
 					"Play selected sound effect (play pathto/sound.wav)");
-	Cmd_AddCommand ("playvol", I_S_PlayVol,
-					"Play selected sound effect at selected volume (playvol pathto/sound.wav num");
+	Cmd_AddCommand ("playvol", I_S_PlayVol, "Play selected sound effect at "
+					"selected volume (playvol pathto/sound.wav num");
 	Cmd_AddCommand ("stopsound", I_S_StopAllSoundsC,
 					"Stops all sounds currently being played");
 	Cmd_AddCommand ("soundlist", I_S_SoundList,
@@ -251,8 +236,7 @@ I_S_Init (void)
 
 	num_sfx = 0;
 
-// create a piece of DMA memory
-
+	// create a piece of DMA memory
 	if (fakedma) {
 		shm = (void *) Hunk_AllocName (sizeof (*shm), "shm");
 		shm->splitbuffer = 0;
@@ -266,18 +250,19 @@ I_S_Init (void)
 		shm->submission_chunk = 1;
 		shm->buffer = Hunk_AllocName (1 << 16, "shmbuf");
 	}
-//  Con_Printf ("Sound sampling rate: %i\n", shm->speed);
+//	Con_Printf ("Sound sampling rate: %i\n", shm->speed);
 
 	// provides a tick sound until washed clean
 
-//  if (shm->buffer)
-//      shm->buffer[4] = shm->buffer[5] = 0x7f; // force a pop for debugging
+//	if (shm->buffer)
+//		shm->buffer[4] = shm->buffer[5] = 0x7f; // force a pop for debugging
 
 	ambient_sfx[AMBIENT_WATER] = I_S_PrecacheSound ("ambience/water1.wav");
 	ambient_sfx[AMBIENT_SKY] = I_S_PrecacheSound ("ambience/wind2.wav");
 
 	I_S_StopAllSounds (true);
 }
+
 
 void
 I_S_Init_Cvars (void)
@@ -291,49 +276,38 @@ I_S_Init_Cvars (void)
 	snd_stereo = Cvar_Get ("snd_stereo", "1", CVAR_ROM, NULL,
 						   "sound stereo output");
 	nosound = Cvar_Get ("nosound", "0", CVAR_NONE, NULL,
-			"Set to turn sound off");
-	volume =
-		Cvar_Get ("volume", "0.7", CVAR_ARCHIVE, NULL,
-				  "Set the volume for sound playback");
-	precache =
-		Cvar_Get ("precache", "1", CVAR_NONE, NULL,
-				"Toggle the use of a precache");
-	loadas8bit =
-		Cvar_Get ("loadas8bit", "0", CVAR_NONE, NULL,
-				  "Toggles if sounds are loaded as 8-bit samples");
+						"Set to turn sound off");
+	volume = Cvar_Get ("volume", "0.7", CVAR_ARCHIVE, NULL,
+					   "Set the volume for sound playback");
+	precache = Cvar_Get ("precache", "1", CVAR_NONE, NULL,
+						 "Toggle the use of a precache");
+	loadas8bit = Cvar_Get ("loadas8bit", "0", CVAR_NONE, NULL,
+						   "Toggles if sounds are loaded as 8-bit samples");
 	bgmvolume = Cvar_Get ("bgmvolume", "1", CVAR_ARCHIVE, NULL,
-			"Volume of CD music");
-	ambient_level =
-		Cvar_Get ("ambient_level", "0.3", CVAR_NONE, NULL,
-				"Ambient sounds' volume");
-	ambient_fade =
-		Cvar_Get ("ambient_fade", "100", CVAR_NONE, NULL,
-				  "How quickly ambient sounds fade in or out");
-	snd_noextraupdate =
-		Cvar_Get ("snd_noextraupdate", "0", CVAR_NONE, NULL,
-				  "Toggles the correct value display in host_speeds. Usually messes up sound playback when in effect");
-	snd_show =
-		Cvar_Get ("snd_show", "0", CVAR_NONE, NULL,
-				  "Toggles the display of sounds currently being played");
-	snd_interp =
-		Cvar_Get ("snd_interp", "1", CVAR_ARCHIVE, NULL,
-				  "control sample interpolation");
-	snd_phasesep =
-		Cvar_Get ("snd_phasesep", "0.0", CVAR_ARCHIVE, NULL,
-				  "max stereo phase separation in ms. 0.6 is for 20cm head");
-	snd_volumesep =
-		Cvar_Get ("snd_volumesep", "1.0", CVAR_ARCHIVE, NULL,
-				  "max stereo volume separation in ms. 1.0 is max");
-	_snd_mixahead =
-		Cvar_Get ("_snd_mixahead", "0.1", CVAR_ARCHIVE, NULL,
-				  "Delay time for sounds");
+						  "Volume of CD music");
+	ambient_level = Cvar_Get ("ambient_level", "0.3", CVAR_NONE, NULL,
+							  "Ambient sounds' volume");
+	ambient_fade = Cvar_Get ("ambient_fade", "100", CVAR_NONE, NULL,
+							 "How quickly ambient sounds fade in or out");
+	snd_noextraupdate = Cvar_Get ("snd_noextraupdate", "0", CVAR_NONE, NULL,
+								  "Toggles the correct value display in "
+								  "host_speeds. Usually messes up sound "
+								  "playback when in effect");
+	snd_show = Cvar_Get ("snd_show", "0", CVAR_NONE, NULL,
+						 "Toggles display of sounds currently being played");
+	snd_interp = Cvar_Get ("snd_interp", "1", CVAR_ARCHIVE, NULL,
+						   "control sample interpolation");
+	snd_phasesep = Cvar_Get ("snd_phasesep", "0.0", CVAR_ARCHIVE, NULL,
+							 "max stereo phase separation in ms. 0.6 is for "
+							 "20cm head");
+	snd_volumesep = Cvar_Get ("snd_volumesep", "1.0", CVAR_ARCHIVE, NULL,
+							  "max stereo volume separation. 1.0 is max");
+	_snd_mixahead = Cvar_Get ("_snd_mixahead", "0.1", CVAR_ARCHIVE, NULL,
+							  "Delay time for sounds");
 }
 
 
-// =======================================================================
-// Shutdown sound engine
-// =======================================================================
-
+// Shutdown sound engine ======================================================
 void
 I_S_Shutdown (void)
 {
@@ -354,14 +328,8 @@ I_S_Shutdown (void)
 }
 
 
-// =======================================================================
-// Load a sound
-// =======================================================================
-
-/*
-	I_S_FindName
-*/
-sfx_t      *
+// Load a sound ===============================================================
+sfx_t *
 I_S_FindName (char *name)
 {
 	int         i;
@@ -373,7 +341,7 @@ I_S_FindName (char *name)
 	if (strlen (name) >= MAX_QPATH)
 		Sys_Error ("Sound name too long: %s", name);
 
-// see if already loaded
+	// see if already loaded
 	for (i = 0; i < num_sfx; i++)
 		if (!strcmp (known_sfx[i].name, name)) {
 			return &known_sfx[i];
@@ -391,9 +359,6 @@ I_S_FindName (char *name)
 }
 
 
-/*
-	I_S_TouchSound
-*/
 void
 I_S_TouchSound (char *name)
 {
@@ -406,10 +371,8 @@ I_S_TouchSound (char *name)
 	Cache_Check (&sfx->cache);
 }
 
-/*
-	I_S_PrecacheSound
-*/
-sfx_t      *
+
+sfx_t *
 I_S_PrecacheSound (char *name)
 {
 	sfx_t      *sfx;
@@ -419,7 +382,7 @@ I_S_PrecacheSound (char *name)
 
 	sfx = I_S_FindName (name);
 
-// cache it in
+	// cache it in
 	if (precache->int_val)
 		I_S_LoadSound (sfx);
 
@@ -429,17 +392,15 @@ I_S_PrecacheSound (char *name)
 
 //=============================================================================
 
-/*
-	SND_PickChannel
-*/
-channel_t  *
+
+channel_t *
 SND_PickChannel (int entnum, int entchannel)
 {
 	int         ch_idx;
 	int         first_to_die;
 	int         life_left;
 
-// Check for replacement sound, or find the best one to replace
+	// Check for replacement sound, or find the best one to replace
 	first_to_die = -1;
 	life_left = 0x7fffffff;
 	for (ch_idx = NUM_AMBIENTS; ch_idx < NUM_AMBIENTS + MAX_DYNAMIC_CHANNELS;
@@ -452,7 +413,8 @@ SND_PickChannel (int entnum, int entchannel)
 			break;
 		}
 		// don't let monster sounds override player sounds
-		if (channels[ch_idx].entnum == *plugin_info_sound_data.viewentity && entnum != *plugin_info_sound_data.viewentity
+		if (channels[ch_idx].entnum == *plugin_info_sound_data.viewentity
+			&& entnum != *plugin_info_sound_data.viewentity
 			&& channels[ch_idx].sfx)
 			continue;
 
@@ -471,9 +433,7 @@ SND_PickChannel (int entnum, int entchannel)
 	return &channels[first_to_die];
 }
 
-/*
-	SND_Spatialize
-*/
+
 void
 SND_Spatialize (channel_t *ch)
 {
@@ -484,14 +444,14 @@ SND_Spatialize (channel_t *ch)
 	vec3_t      source_vec;
 	sfx_t      *snd;
 
-// anything coming from the view entity will always be full volume
+	// anything coming from the view entity will always be full volume
 	if (ch->entnum == *plugin_info_sound_data.viewentity) {
 		ch->leftvol = ch->master_vol;
 		ch->rightvol = ch->master_vol;
 		ch->phase = 0;
 		return;
 	}
-// calculate stereo seperation and distance attenuation
+	// calculate stereo seperation and distance attenuation
 
 	snd = ch->sfx;
 	VectorSubtract (ch->origin, listener_origin, source_vec);
@@ -510,7 +470,7 @@ SND_Spatialize (channel_t *ch)
 		phase = snd_phasesep->value * 0.001 * shm->speed * dot;
 	}
 
-// add in distance effect
+	// add in distance effect
 	scale = (1.0 - dist) * rscale;
 	ch->rightvol = (int) (ch->master_vol * scale);
 	if (ch->rightvol < 0)
@@ -525,10 +485,7 @@ SND_Spatialize (channel_t *ch)
 }
 
 
-// =======================================================================
-// Start a sound effect
-// =======================================================================
-
+// Start a sound effect =======================================================
 void
 I_S_StartSound (int entnum, int entchannel, sfx_t *sfx, vec3_t origin, float fvol,
 			  float attenuation)
@@ -550,12 +507,12 @@ I_S_StartSound (int entnum, int entchannel, sfx_t *sfx, vec3_t origin, float fvo
 
 	vol = fvol * 255;
 
-// pick a channel to play on
+	// pick a channel to play on
 	target_chan = SND_PickChannel (entnum, entchannel);
 	if (!target_chan)
 		return;
 
-// spatialize
+	// spatialize
 	memset (target_chan, 0, sizeof (*target_chan));
 	VectorCopy (origin, target_chan->origin);
 	target_chan->dist_mult = attenuation / sound_nominal_clip_dist;
@@ -567,7 +524,7 @@ I_S_StartSound (int entnum, int entchannel, sfx_t *sfx, vec3_t origin, float fvo
 	if (!target_chan->leftvol && !target_chan->rightvol)
 		return;							// not audible at all
 
-// new channel
+	// new channel
 	sc = I_S_LoadSound (sfx);
 	if (!sc) {
 		target_chan->sfx = NULL;
@@ -578,8 +535,8 @@ I_S_StartSound (int entnum, int entchannel, sfx_t *sfx, vec3_t origin, float fvo
 	target_chan->pos = 0.0;
 	target_chan->end = paintedtime + sc->length;
 
-// if an identical sound has also been started this frame, offset the pos
-// a bit to keep it from just making the first one louder
+	// if an identical sound has also been started this frame, offset the pos
+	// a bit to keep it from just making the first one louder
 	check = &channels[NUM_AMBIENTS];
 	for (ch_idx = NUM_AMBIENTS; ch_idx < NUM_AMBIENTS + MAX_DYNAMIC_CHANNELS;
 		 ch_idx++, check++) {
@@ -597,6 +554,7 @@ I_S_StartSound (int entnum, int entchannel, sfx_t *sfx, vec3_t origin, float fvo
 	}
 }
 
+
 void
 I_S_StopSound (int entnum, int entchannel)
 {
@@ -611,6 +569,7 @@ I_S_StopSound (int entnum, int entchannel)
 		}
 	}
 }
+
 
 void
 I_S_StopAllSounds (qboolean clear)
@@ -632,11 +591,13 @@ I_S_StopAllSounds (qboolean clear)
 		I_S_ClearBuffer ();
 }
 
+
 void
 I_S_StopAllSoundsC (void)
 {
 	I_S_StopAllSounds (true);
 }
+
 
 void
 I_S_ClearBuffer (void)
@@ -666,9 +627,6 @@ I_S_ClearBuffer (void)
 }
 
 
-/*
-	I_S_StaticSound
-*/
 void
 I_S_StaticSound (sfx_t *sfx, vec3_t origin, float vol, float attenuation)
 {
@@ -708,9 +666,7 @@ I_S_StaticSound (sfx_t *sfx, vec3_t origin, float vol, float attenuation)
 
 //=============================================================================
 
-/*
-	I_S_UpdateAmbientSounds
-*/
+
 void
 I_S_UpdateAmbientSounds (void)
 {
@@ -722,7 +678,7 @@ I_S_UpdateAmbientSounds (void)
 	if (!snd_ambient)
 		return;
 
-// calc ambient sound levels
+	// calc ambient sound levels
 	if (!**plugin_info_sound_data.worldmodel) // FIXME: eww
 		return;
 
@@ -744,11 +700,13 @@ I_S_UpdateAmbientSounds (void)
 
 		// don't adjust volume too fast
 		if (chan->master_vol < vol) {
-			chan->master_vol += *plugin_info_sound_data.host_frametime * ambient_fade->value;
+			chan->master_vol += *plugin_info_sound_data.host_frametime
+				* ambient_fade->value;
 			if (chan->master_vol > vol)
 				chan->master_vol = vol;
 		} else if (chan->master_vol > vol) {
-			chan->master_vol -= *plugin_info_sound_data.host_frametime * ambient_fade->value;
+			chan->master_vol -= *plugin_info_sound_data.host_frametime
+				* ambient_fade->value;
 			if (chan->master_vol < vol)
 				chan->master_vol = vol;
 		}
@@ -779,12 +737,12 @@ I_S_Update (vec3_t origin, vec3_t forward, vec3_t right, vec3_t up)
 	VectorCopy (right, listener_right);
 	VectorCopy (up, listener_up);
 
-// update general area ambient sound sources
+	// update general area ambient sound sources
 	I_S_UpdateAmbientSounds ();
 
 	combine = NULL;
 
-// update spatialization for static and dynamic sounds  
+	// update spatialization for static and dynamic sounds  
 	ch = channels + NUM_AMBIENTS;
 	for (i = NUM_AMBIENTS; i < total_channels; i++, ch++) {
 		if (!ch->sfx)
@@ -797,7 +755,6 @@ I_S_Update (vec3_t origin, vec3_t forward, vec3_t right, vec3_t up)
 
 		// try to combine static sounds with a previous channel of the same
 		// sound effect so we don't mix five torches every frame
-
 		if (i >= MAX_DYNAMIC_CHANNELS + NUM_AMBIENTS) {
 			// see if it can just use the last one
 			if (combine && combine->sfx == ch->sfx) {
@@ -827,9 +784,7 @@ I_S_Update (vec3_t origin, vec3_t forward, vec3_t right, vec3_t up)
 
 	}
 
-//
-// debugging output
-//
+	// debugging output
 	if (snd_show->int_val) {
 		total = 0;
 		ch = channels;
@@ -842,9 +797,11 @@ I_S_Update (vec3_t origin, vec3_t forward, vec3_t right, vec3_t up)
 
 		Con_Printf ("----(%i)----\n", total);
 	}
-// mix some sound
+
+	// mix some sound
 	I_S_Update_ ();
 }
+
 
 void
 GetSoundtime (void)
@@ -856,8 +813,8 @@ GetSoundtime (void)
 
 	fullsamples = shm->samples / shm->channels;
 
-// it is possible to miscount buffers if it has wrapped twice between
-// calls to I_S_Update.  Oh well.
+	// it is possible to miscount buffers if it has wrapped twice between
+	// calls to I_S_Update.  Oh well.
 	samplepos = SNDDMA_GetDMAPos ();
 
 	if (samplepos < oldsamplepos) {
@@ -875,6 +832,7 @@ GetSoundtime (void)
 	soundtime = buffers * fullsamples + samplepos / shm->channels;
 }
 
+
 void
 I_S_ExtraUpdate (void)
 {
@@ -882,7 +840,6 @@ I_S_ExtraUpdate (void)
 		return;							// don't pollute timings
 	I_S_Update_ ();
 }
-
 
 
 void
@@ -894,15 +851,15 @@ I_S_Update_ (void)
 	if (!sound_started || (snd_blocked > 0))
 		return;
 
-// Updates DMA time
+	// Updates DMA time
 	GetSoundtime ();
 
-// check to make sure that we haven't overshot
+	// check to make sure that we haven't overshot
 	if (paintedtime < soundtime) {
-		// Con_Printf ("S_Update_ : overflow\n");
+//		Con_Printf ("S_Update_ : overflow\n");
 		paintedtime = soundtime;
 	}
-// mix ahead of current position
+	// mix ahead of current position
 	endtime = soundtime + _snd_mixahead->value * shm->speed;
 	samps = shm->samples >> (shm->channels - 1);
 	if (endtime - soundtime > samps)
@@ -918,9 +875,11 @@ I_S_Update_ (void)
 	SNDDMA_Submit ();
 }
 
+
 /*
 	console functions
 */
+
 
 void
 I_S_Play (void)
@@ -942,6 +901,7 @@ I_S_Play (void)
 		i++;
 	}
 }
+
 
 void
 I_S_PlayVol (void)
@@ -965,6 +925,7 @@ I_S_PlayVol (void)
 		i += 2;
 	}
 }
+
 
 void
 I_S_SoundList (void)
