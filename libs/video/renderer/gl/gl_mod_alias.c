@@ -395,6 +395,7 @@ R_AliasGetSkindesc (int skinnum, aliashdr_t *ahdr)
 	if (pskindesc->type == ALIAS_SKIN_GROUP) {
 		float       fullskininterval;
 		int         i;
+		int         numskins;
 		float       skintargettime, skintime;
 		float      *pskinintervals;
 
