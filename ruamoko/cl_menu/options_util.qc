@@ -35,24 +35,66 @@
 
 @implementation CvarRange
 
--(void)update
+-(id)initWithCvar:(string)cvname min:(float)_min max:(float)_max step:(float)_step
 {
-	local float val = cvar (name);
-	[slider setIndex: to_percentage(min, max, val)];
-	[value setText:ftos (val)];
+	name = str_new ();
+	str_copy (name, cvname);
+	min = _min;
+	max = _max;
+	step = _step;
+
+	return self;
 }
 
--(id)initWithBounds:(Rect)aRect title:(string)_title cvar:(string)cvname min:(float)_min max:(float)_max step:(float)_step
+-(void)inc
+{
+	local float val = cvar (name);
+	val = min_max_cnt (min, max, step, val, 1);
+	cvar_set (name, ftos (val));
+}
+
+-(void)dec
+{
+	local float val = cvar (name);
+	val = min_max_cnt (min, max, step, val, 0);
+	cvar_set (name, ftos (val));
+}
+
+-(float)value
+{
+	return cvar (name);
+}
+
+-(integer)percentage
+{
+	return to_percentage(min, max, cvar (name));
+}
+
+@end
+
+@implementation RangeSlider
+
+-(void)update
+{
+	[slider setIndex:[range percentage]];
+	[value setText:ftos ([range value])];
+}
+
+-(id)initWithBounds:(Rect)aRect title:(string)_title sliderWidth:(integer)width :(CvarRange)_range
 {
 	local Rect rect;
 
 	self = [super initWithBounds:aRect];
+
+	range = _range;
 	
 	rect = [[Rect alloc] initWithComponents:0 :0 :strlen (_title) * 8 :8];
 	title = [[Text alloc] initWithBounds:rect text:_title];
 
 	rect.origin.x += rect.size.width + 8;
-	rect.size.width = ((_max - _min) / _step + 2) * 8 / 2;
+	rect.size.width = width;
+	if (rect.origin.x + rect.size.width > xlen)
+		rect.size.width = xlen - rect.origin.x;
 	slider = [[Slider alloc] initWithBounds:rect size:100];
 
 	rect.origin.x += rect.size.width + 8;
@@ -63,12 +105,6 @@
 	[self addView:slider];
 	[self addView:value];
 
-	name = str_new ();
-	str_copy (name, cvname);
-	min = _min;
-	max = _max;
-	step = _step;
-
 	[self update];
 
 	return self;
@@ -76,17 +112,13 @@
 
 -(void)inc
 {
-	local float val = cvar (name);
-	val = min_max_cnt (min, max, step, val, 1);
-	cvar_set (name, ftos (val));
+	[range inc];
 	[self update];
 }
 
 -(void)dec
 {
-	local float val = cvar (name);
-	val = min_max_cnt (min, max, step, val, 0);
-	cvar_set (name, ftos (val));
+	[range dec];
 	[self update];
 }
 

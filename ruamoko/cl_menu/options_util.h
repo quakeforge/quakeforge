@@ -6,15 +6,26 @@
 @class Text;
 @class Slider;
 
-@interface CvarRange : Group
+@interface CvarRange : Object
+{
+	string name;
+	float min, max, step;
+}
+-(id)initWithCvar:(string)cvname min:(float)_min max:(float)_max step:(float)_step;
+-(void)inc;
+-(void)dec;
+-(float)value;
+-(integer)percentage;
+@end
+
+@interface RangeSlider : Group
 {
 	Text title;
 	Text value;
 	Slider slider;
-	string name;
-	float min, max, step;
+	CvarRange range;
 }
--(id)initWithBounds:(Rect)aRect title:(string)_title cvar:(string)cvname min:(float)_min max:(float)_max step:(float)_step;
+-(id)initWithBounds:(Rect)aRect title:(string)_title sliderWidth:(integer)width :(CvarRange)_range;
 -(void)inc;
 -(void)dec;
 @end

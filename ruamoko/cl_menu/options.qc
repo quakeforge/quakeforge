@@ -41,7 +41,7 @@
 
 Slider gamma_slider;
 Slider viewsize_slider;
-CvarRange mouse_amp_range;
+RangeSlider mouse_amp_range;
 Slider volume_slider;
 Slider bgmvolume_slider;
 
@@ -58,7 +58,7 @@ Slider bgmvolume_slider;
 
 #define MIN_MOUSE_AMP 0
 #define MAX_MOUSE_AMP 60
-#define MOUSE_AMP_STEP 2
+#define MOUSE_AMP_STEP 1
 
 #define MIN_VOLUME 0
 #define MAX_VOLUME 1.5
@@ -415,7 +415,7 @@ MENU_control_options =
 	Menu_CenterPic (160, 4, "gfx/p_option.lmp");
 
 	Menu_Draw (DRAW_control_options);
-	mouse_amp_range = [[CvarRange alloc] initWithBounds:[[Rect alloc] initWithComponents:70 :100 :240 :8] title:"Mouse amp:" cvar:"in_mouse_amp" min:MIN_MOUSE_AMP max:MAX_MOUSE_AMP step:MOUSE_AMP_STEP];
+	mouse_amp_range = [[RangeSlider alloc] initWithBounds:[[Rect alloc] initWithComponents:70 :100 :232 :8] title:"Mouse amp:" sliderWidth:14 * 8 :[[CvarRange alloc] initWithCvar:"in_mouse_amp" min:MIN_MOUSE_AMP max:MAX_MOUSE_AMP step:MOUSE_AMP_STEP]];
 
 	MENU_control_binding ();
 
