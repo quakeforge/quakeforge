@@ -136,12 +136,11 @@ void free_local_inits (hashtab_t *def_list);
 
 %type	<type>	type non_field_type type_name
 %type	<param> function_decl
-%type	<integer_val> array_decl
 %type	<param>	param param_list
 %type	<def>	def_name
 %type	<def>	def_item def_list
 %type	<expr>	const opt_expr expr arg_list element_list element_list1 element
-%type	<expr>	string_val opt_state_expr
+%type	<expr>	string_val opt_state_expr array_decl
 %type	<expr>	statement statements statement_block
 %type	<expr>	break_label continue_label enum_list enum
 %type	<function> begin_function
@@ -267,7 +266,10 @@ type
 		}
 	| non_field_type array_decl
 		{
-			$$ = array_type ($1, $2);
+			if ($2)
+				$$ = array_type ($1, $2->e.integer_val);
+			else
+				$$ = pointer_type ($1);
 		}
 	;
 
@@ -316,7 +318,7 @@ array_decl
 				error (0, "invalid array size");
 				$$ = 0;
 			} else {
-				$$ = $2->e.integer_val;
+				$$ = $2;
 			}
 		}
 	| '[' ']' { $$ = 0; }
