@@ -441,11 +441,11 @@ IN_MouseEvent (int mstate)
 		// perform button actions
 		for (i = 0; i < mouse_buttons; i++) {
 			if ((mstate & (1 << i)) && !(mouse_oldbuttonstate & (1 << i))) {
-				Key_Event (K_MOUSE1 + i, -1, true);
+				Key_Event (M_BUTTON1 + i, -1, true);
 			}
 
 			if (!(mstate & (1 << i)) && (mouse_oldbuttonstate & (1 << i))) {
-				Key_Event (K_MOUSE1 + i, -1, false);
+				Key_Event (M_BUTTON1 + i, -1, false);
 			}
 		}
 
@@ -530,11 +530,11 @@ IN_LL_Commands (void)
 		// perform button actions
 		for (i = 0; i < mouse_buttons; i++) {
 			if ((mstate_di & (1 << i)) && !(mouse_oldbuttonstate & (1 << i))) {
-				Key_Event (K_MOUSE1 + i, -1, true);
+				Key_Event (M_BUTTON1 + i, -1, true);
 			}
 
 			if (!(mstate_di & (1 << i)) && (mouse_oldbuttonstate & (1 << i))) {
-				Key_Event (K_MOUSE1 + i, -1, false);
+				Key_Event (M_BUTTON1 + i, -1, false);
 			}
 		}
 
