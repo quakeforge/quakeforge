@@ -49,6 +49,7 @@ static const char rcsid[] =
 #include "QF/va.h"
 
 #include "cpp.h"
+#include "linker.h"
 #include "options.h"
 #include "qfcc.h"
 
@@ -82,6 +83,7 @@ static struct option const long_options[] = {
 static const char *short_options =
 	"-"		// magic option parsing mode doohicky (must come first)
 	"l:"	// lib file
+	"L:"	// lib path
 	"o:"	// output file
 	"c"		// separate compilation
 	"r"		// partial linking
@@ -138,7 +140,7 @@ add_file (const char *file)
 		files_size += 16;
 		source_files = realloc (source_files, files_size * sizeof (char *));
 	}
-	source_files[num_files++] = strdup (file);
+	source_files[num_files++] = save_string (file);
 	source_files[num_files] = 0;
 }
 
@@ -174,11 +176,14 @@ DecodeArgs (int argc, char **argv)
 							 this_program);
 					exit (1);
 				} else {
-					options.output_file = strdup (optarg);
+					options.output_file = save_string (optarg);
 				}
 				break;
 			case 'l':					// lib file
 				add_file (va ("-l%s", optarg));
+				break;
+			case 'L':
+				linker_add_path (optarg);
 				break;
 			case 'h':					// help
 				usage (0);
@@ -188,10 +193,10 @@ DecodeArgs (int argc, char **argv)
 				exit (0);
 				break;
 			case 's':					// src dir
-				sourcedir = strdup (optarg);
+				sourcedir = save_string (optarg);
 				break;
 			case 'P':					// progs-src
-				progs_src = strdup (optarg);
+				progs_src = save_string (optarg);
 				break;
 			case 'p':
 				options.strip_path = atoi (optarg);
@@ -307,7 +312,7 @@ DecodeArgs (int argc, char **argv)
 				}
 				break;
 			case 256:					// --cpp=
-				cpp_name = strdup (optarg);
+				cpp_name = save_string (optarg);
 				break;
 			case 'S':					// save temps
 				options.save_temps = true;
@@ -361,6 +366,11 @@ DecodeArgs (int argc, char **argv)
 				usage (1);
 		}
 	}
+
+	// add the default paths
+	add_cpp_def (nva ("-I%s", QFCC_INCLUDE_PATH));
+	linker_add_path (QFCC_LIB_PATH);
+
 	if (options.verbosity >= 3)
 		yydebug = 1;
 	return optind;

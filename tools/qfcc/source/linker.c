@@ -53,6 +53,7 @@ static const char rcsid[] =
 #include "QF/dstring.h"
 #include "QF/hash.h"
 #include "QF/pakfile.h"
+#include "QF/va.h"
 
 #include "def.h"
 #include "emit.h"
@@ -76,6 +77,11 @@ typedef struct {\
 Xgroup(def)		// defgroup_t
 Xgroup(reloc)	// relocgroup_t
 Xgroup(func)	// funcgroup_t
+
+typedef struct path_s {
+	struct path_s *next;
+	const char *path;
+} path_t;
 
 static hashtab_t *extern_defs;
 static hashtab_t *defined_defs;
@@ -102,6 +108,9 @@ static int      entity_base;
 static int      reloc_base;
 static int      func_base;
 static int      line_base;
+
+static path_t  *path_head;
+static path_t **path_tail = &path_head;
 
 #define DATA(x) (data->data + (x))
 #define STRING(x) (strings->strings + (x))
@@ -640,22 +649,47 @@ linker_add_object_file (const char *filename)
 int
 linker_add_lib (const char *libname)
 {
-	pack_t     *pack = pack_open (libname);
+	pack_t     *pack;
+	path_t      start = {path_head, "."};
+	path_t     *path = &start;
+	const char *path_name;
 	int         i, j;
 	int         did_something;
+
+	if (strncmp (libname, "-l", 2) == 0) {
+		while (path) {
+			path_name = va ("%s/lib%s.a", path->path, libname + 2);
+			pack = pack_open (path_name);
+			if (pack)
+				break;
+			if (errno != ENOENT) {
+				if (errno)
+					perror (libname);
+				return 1;
+			}
+			path = path->next;
+		}
+	} else {
+		path_name = libname;
+		pack = pack_open (path_name);
+	}
 
 	if (!pack) {
 		if (errno)
 			perror (libname);
 		return 1;
 	}
+
+	if (options.verbosity > 1)
+		puts (path_name);
+
 	do {
 		did_something = 0;
 		for (i = 0; i < pack->numfiles; i++) {
 			QFile      *f;
 			qfo_t      *qfo;
 
-			f = Qsubopen (libname, pack->files[i].filepos,
+			f = Qsubopen (path_name, pack->files[i].filepos,
 						  pack->files[i].filelen, 1);
 			qfo = qfo_read (f);
 			Qclose (f);
@@ -734,4 +768,14 @@ linker_finish (void)
 	qfo_add_types (qfo, type_strings->strings, type_strings->size);
 	qfo->entity_fields = entity->size;
 	return qfo;
+}
+
+void
+linker_add_path (const char *path)
+{
+	path_t     *p = malloc (sizeof (path_t));
+	p->next = 0;
+	p->path = path;
+	*path_tail = p;
+	path_tail = &p->next;
 }

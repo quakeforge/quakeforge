@@ -1,5 +1,7 @@
 AUTOMAKE_OPTIONS=	foreign
 
+libdir=$(prefix)/lib/ruamoko
+
 QFCC=$(top_builddir)/tools/qfcc/source/qfcc$(EXEEXT)
 QCFLAGS=-qq -g -Werror
 QCPPFLAGS=$(INCLUDES)
@@ -15,7 +17,7 @@ else
 libs=
 endif
 
-noinst_LIBRARIES= $(libs)
+lib_LIBRARIES= $(libs)
 EXTRA_LIBRARIES= $(ruamoko_libs)
 
 %.qfo: %.r

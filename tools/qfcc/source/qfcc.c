@@ -561,10 +561,16 @@ separate_compile (void)
 		qfo_t      *qfo;
 		linker_begin ();
 		for (file = source_files; *file; file++) {
-			if (strncmp (*file, "-l", 2))
-				err = linker_add_object_file (*file);
-			else
-				err = linker_add_lib (*file + 2);
+			if (strncmp (*file, "-l", 2)) {
+				if (strlen (*file) >= 2
+					&& strcmp (*file + strlen (*file) - 2, ".a") == 0) {
+					err = linker_add_lib (*file);
+				} else {
+					err = linker_add_object_file (*file);
+				}
+			} else {
+				err = linker_add_lib (*file);
+			}
 			if (err)
 				return err;
 		}

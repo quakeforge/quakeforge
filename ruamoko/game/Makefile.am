@@ -30,7 +30,7 @@ game_src= Axe.r GameEntity.r World.r tempent.r
 game_obj=$(addsuffix .qfo,$(basename $(game_src)))
 
 game.dat: $(game_obj) ../lib/libr.a
-	$(QFCC) $(QCFLAGS) -p $(STRIP) -o game.dat $(game_obj) -l../lib/libr.a
+	$(QFCC) $(QCFLAGS) -p $(STRIP) -o game.dat $(game_obj) ../lib/libr.a
 
 EXTRA_DIST= $(game_src) Axe.h GameEntity.h tempent.h Weapon.h World.h
 CLEANFILES= *.dat *.sym *.gz *.qfo
