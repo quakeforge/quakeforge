@@ -3,8 +3,7 @@
 
 	hash tables
 
-	Copyright (C) 1996-1997  Id Software, Inc.
-	Copyright (C) 2000  Marcus Sundberg <mackan@stacken.kth.se>
+	Copyright (C) 2000  Bill Currie <bill@taniwha.org>
 
 	This program is free software; you can redistribute it and/or
 	modify it under the terms of the GNU General Public License

@@ -3,8 +3,7 @@
 
 	hash tables
 
-	Copyright (C) 1996-1997  Id Software, Inc.
-	Copyright (C) 2000  Marcus Sundberg <mackan@stacken.kth.se>
+	Copyright (C) 2000  Bill Currie <bill@taniwha.org>
 
 	This program is free software; you can redistribute it and/or
 	modify it under the terms of the GNU General Public License
@@ -115,10 +114,12 @@ Hash_FlushTable (hashtab_t *tab)
 	for (i = 0; i < tab->tab_size; i++) {
 		while (tab->tab[i]) {
 			struct hashlink_s *t = tab->tab[i]->next;
-			if (tab->free_ele)
-				tab->free_ele (tab->tab[i]->data, tab->user_data);
+			void *data = tab->tab[i]->data;
+
 			free (tab->tab[i]);
 			tab->tab[i] = t;
+			if (tab->free_ele)
+				tab->free_ele (data, tab->user_data);
 		}
 	}
 }
