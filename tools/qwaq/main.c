@@ -94,7 +94,7 @@ main ()
 		len = Qtell (f);
 		Qseek (f, 0, SEEK_SET);
 		com_filesize = len;
-		PR_LoadProgsFile (&progs, f, len, 0, 1024 * 1024);
+		PR_LoadProgsFile (&progs, f, len, 1, 1024 * 1024);
 		Qclose (f);
 	}
 	if (!progs.progs)
@@ -107,8 +107,6 @@ main ()
 	PR_Check_Opcodes (&progs);
 	PR_RelocateBuiltins (&progs);
 	PR_InitRuntime (&progs);
-
-	*progs.edicts = PR_InitEdicts (&progs, MAX_EDICTS);
 
 	read_result = (int*)PR_GetGlobalPointer (&progs, "read_result");
 	main_func = PR_GetFunctionIndex (&progs, "main");

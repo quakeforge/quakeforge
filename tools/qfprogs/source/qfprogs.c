@@ -193,11 +193,9 @@ load_progs (const char *name)
 	}
 	Hash_FlushTable (func_tab);
 	pr.progs_name = name;
-	PR_LoadProgsFile (&pr, file, size, 0, 0);
+	PR_LoadProgsFile (&pr, file, size, 1, 0);
 	Qclose (file);
 	PR_LoadStrings (&pr);
-
-	*pr.edicts = PR_InitEdicts (&pr, 1);
 
 	for (i = 0; i < pr.progs->numfunctions; i++) {
 		if (pr.pr_functions[i].first_statement > 0)// don't bother with builtins

@@ -512,31 +512,6 @@ ED_Count (progs_t *pr)
 	Sys_Printf ("zombie    :%3i\n", zombie);
 }
 
-
-edict_t *
-PR_InitEdicts (progs_t *pr, int num_edicts)
-{   
-	edict_t	*edicts;
-	edict_t	*e;
-	int		i, j;
-
-	pr->pr_edictareasize = pr->pr_edict_size * num_edicts;
-	edicts = Hunk_AllocName (pr->pr_edictareasize, "edicts");
-	(*pr->edicts) = edicts;
-
-	if (pr_deadbeef_ents->int_val) {
-		memset (edicts, 0, *pr->reserved_edicts * pr->pr_edict_size);
-		for (j = *pr->reserved_edicts; j < num_edicts; j++) {
-			e = EDICT_NUM (pr, j);
-			for (i = 0; i < pr->progs->entityfields; i++)
-				e->v[i].integer_var = 0xdeadbeef;
-		}
-	} else {
-		memset (edicts, 0, pr->pr_edictareasize);
-	}
-	return edicts;
-}
-
 edict_t *
 EDICT_NUM (progs_t *pr, int n)
 {
