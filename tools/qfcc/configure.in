@@ -82,13 +82,13 @@ AC_CHECK_HEADER(QF/qtypes.h, :, HAVE_QF=no)
 if test "x$HAVE_QF" != xno; then
 	AC_CHECK_LIB(QFutil, Hash_NewTable,
 	:, HAVE_QF=no,
-		[]
+		[$INCLUDES]
 	)
 fi
 if test "x$HAVE_QF" != xno; then
 	AC_CHECK_LIB(QFgamecode, PR_Opcode,
 	:, HAVE_QF=no,
-		[-lQFutil]
+		[$LIBS -lQFutil]
 	)
 fi
 
