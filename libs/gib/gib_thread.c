@@ -186,7 +186,7 @@ GIB_Event_Callback (gib_event_t * event, unsigned int argc, ...)
 
 	va_end (ap);
 
-	GIB_Function_Execute (thread->cbuf, f, args->argv, args->argc);
+	GIB_Function_Execute_D (thread->cbuf, f, args->argv, args->argc);
 	GIB_Thread_Add (thread);
 	Cbuf_ArgsDelete (args);
 }

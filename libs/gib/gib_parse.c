@@ -50,6 +50,7 @@ const char  rcsid[] = "$Id$";
 #include "QF/gib_function.h"
 #include "QF/gib_vars.h"
 #include "QF/gib_parse.h"
+#include "QF/gib_semantics.h"
 
 
 /* 
@@ -78,7 +79,7 @@ GIB_Escaped (const char *str, int i)
 	matching character is found, calling themselves and their
 	neighbors recursively to handle sections of string that they
 	are uninterested in.
-	
+
 	FIXME: Make sure everything is calling everything else it might
 	need to.  Make appropriate functions intolerant of newlines.
 */
@@ -195,7 +196,7 @@ qboolean    gib_parse_error;
 unsigned int gib_parse_error_pos;
 const char *gib_parse_error_msg;
 
-static void
+void
 GIB_Parse_Error (const char *msg, unsigned int pos)
 {
 	gib_parse_error = true;
@@ -215,14 +216,12 @@ GIB_Parse_ErrorPos (void)
 	return gib_parse_error_pos;
 }
 
-// FIXME: Concatenation in stupid circumstances should generate errors
-
 static gib_tree_t *
-GIB_Parse_Tokens (const char *program, unsigned int *i, unsigned int pofs, gib_tree_t ** embedded)
+GIB_Parse_Tokens (const char *program, unsigned int *i, unsigned int pofs)
 {
 	char        c = 0, delim, *str;
 	unsigned int tstart, start;
-	gib_tree_t *nodes = 0, *cur, *new, *embs = 0, *tmp;
+	gib_tree_t *nodes = 0, *cur, *new;
 	gib_tree_t **node = &nodes;
 	enum {CAT_NORMAL = 0, CAT_DISALLOW, CAT_CONCAT} cat = CAT_DISALLOW;
 	const char *catestr = "Comma found before first argument, nothing to concatenate to.";
@@ -314,25 +313,6 @@ GIB_Parse_Tokens (const char *program, unsigned int *i, unsigned int pofs, gib_t
 			cur->children = new;
 			// Check for embedded commands/variables
 		} else if (cur->delim == ' ' || cur->delim == '(') {
-			if (!
-				(cur->children =
-				 GIB_Parse_Embedded (str, tstart + pofs, &new))) {
-				// There could be no embedded elements, so check for a real
-				// error
-				if (gib_parse_error)
-					goto ERROR;
-			} else {
-				// Link/set flags
-				cur->flags |= TREE_A_EMBED;
-				// Add any embedded commands to top of chain
-				if (new) {
-					for (tmp = new; tmp->next; tmp = tmp->next);
-					tmp->next = embs;
-					embs = new;
-				}
-			}
-			// Check for array splitting
-			// Concatenating this onto something else is non-sensical
 			if (cur->delim == ' ' && (str[0] == '@' || str[0] == '%')) {
 				if (cat == CAT_CONCAT) {
 					GIB_Parse_Error ("Variable expansions may not be concatenated with other arguments.", start + pofs);
@@ -342,10 +322,9 @@ GIB_Parse_Tokens (const char *program, unsigned int *i, unsigned int pofs, gib_t
 				cat = CAT_DISALLOW;
 				cur->flags |= TREE_A_EXPAND;
 			}
-			// We can handle escape characters now
+		// We can handle escape characters now
 		} else if (cur->delim == '\"')
 			GIB_Process_Escapes (str);
-
 		if (cat == CAT_CONCAT)
 			cur->flags |= TREE_A_CONCAT;
 		// Nothing left to parse?
@@ -357,217 +336,20 @@ GIB_Parse_Tokens (const char *program, unsigned int *i, unsigned int pofs, gib_t
 		node = &cur->next;
 	}
   DONE:
-	*embedded = embs;
 	return nodes;
   ERROR:
 	if (c)
 		GIB_Parse_Error (va ("Could not find match for '%c'.", c), *i + pofs);
 	if (nodes)
 		GIB_Tree_Unref (&nodes);
-	if (embs)
-		GIB_Tree_Unref (&embs);
 	return 0;
-}
-
-static gib_tree_t *
-GIB_Parse_Semantic_Preprocess (gib_tree_t * line)
-{
-	gib_tree_t *p, *start = line;
-
-	// If second token is concatenated, than the first can't possibly mean anything
-	if (line->children->next && line->children->next->flags & TREE_A_CONCAT)
-		return line;
-	while (!strcmp (line->children->str, "if")
-		   || !strcmp (line->children->str, "ifnot")) {
-		// Sanity checking
-		if (!line->children->next || !line->children->next->next) {
-			GIB_Parse_Error ("Not enough arguments to 'if' statement.",
-							 line->start);
-			return line;
-		} else if (!line->children->next->next->children
-				   || line->children->next->next->delim != '{') {
-			GIB_Parse_Error
-				("First program block in 'if' statement not enclosed in braces or invalid.",
-				 line->start);
-			return line;
-		} else if (line->flags & TREE_L_EMBED) {
-			GIB_Parse_Error
-				("'if' statements may not be used in embedded commands.",
-				 line->start);
-			return line;
-		}
-		// Set as conditional
-		line->type = TREE_T_COND;
-		if (line->children->str[2])
-			line->flags |= TREE_L_NOT;
-		// Save our spot
-		p = line;
-		// Move subprogram inline
-		line->next = line->children->next->next->children;
-		line->children->next->next->children = 0;
-		// Find end of subprogram
-		while (line->next)
-			line = line->next;
-		// Handle "else"
-		if (p->children->next->next->next
-			&& !strcmp (p->children->next->next->next->str, "else")) {
-			// Sanity checking
-			if (!p->children->next->next->next->next) {
-				GIB_Parse_Error
-					("'if' statement contains 'else' but no secondary program block or command.",
-					 line->start);
-				return line;
-			}
-			// On 'true' first block must jump past this
-			// We will figure out jump target later
-			line->next = GIB_Tree_New (TREE_T_JUMPPLUS);
-			line = line->next;
-			// Jump to else block on 'false'
-			p->jump = line;
-			// Is "else" followed by a subprogram?
-			if (p->children->next->next->next->next->delim == '{') {
-				// Move subprogram inline
-				line->next = p->children->next->next->next->next->children;
-				p->children->next->next->next->next->children = 0;
-				while (line->next)
-					line = line->next;
-			} else {
-				// Push rest of tokens into a new line
-				line->next = GIB_Tree_New (TREE_T_CMD);
-				line->next->children = p->children->next->next->next->next;
-				p->children->next->next->next->next = 0;
-				line = line->next;
-			}
-		} else {
-			// Jump past block on 'false'
-			p->jump = line;
-			break; // Don't touch if statements in the sub program
-		}
-	}
-	// Now we know exit point from if-else if chain, set our jumps
-	while (start) {
-		if (start->type == TREE_T_JUMPPLUS && !start->jump)
-			start->jump = line;
-		start = start->next;
-	}
-	// Nothing expanded from a line remains, exit now
-	if (!line->children)
-		return line;
-	// If we have a while loop, handle that
-	if (!strcmp (line->children->str, "while")) {
-		// Sanity checks
-		if (!line->children->next || !line->children->next->next) {
-			GIB_Parse_Error ("Not enough arguments to 'while' statement.",
-							 line->start);
-			return line;
-		} else if (!line->children->next->next->children
-				   || line->children->next->next->delim != '{') {
-			GIB_Parse_Error
-				("Program block in 'while' statement not enclosed in braces or invalid.",
-				 line->start);
-			return line;
-		} else if (line->flags & TREE_L_EMBED) {
-			GIB_Parse_Error
-				("'while' statements may not be used in embedded commands.",
-				 line->start);
-			return line;
-		}
-		// Set conditional flag
-		line->type = TREE_T_COND;
-		// Save our spot
-		p = line;
-		// Move subprogram inline
-		line->next = line->children->next->next->children;
-		line->children->next->next->children = 0;
-		// Find end of subprogram
-		for (; line->next; line = line->next)
-			if (!line->jump && line->children) {
-				if (!strcmp (line->children->str, "continue")) {
-					line->type = TREE_T_JUMP;
-					line->jump = p;
-				} else if (!strcmp (line->children->str, "break"))
-					line->type = TREE_T_JUMPPLUS;
-			}
-		line->next = GIB_Tree_New (TREE_T_JUMP);
-		line->next->jump = p;
-		line = line->next;
-		// Mark jump point out of loop
-		p->jump = line;
-		// Set jumps out of loop for "break" commands;
-		while (p) {
-			if (p->type == TREE_T_JUMPPLUS && !p->jump)
-				p->jump = line;
-			p = p->next;
-		}
-	} else if (!strcmp (line->children->str, "for")) {
-		gib_tree_t *tmp;
-
-		// Sanity checks
-		if (!line->children->next || !line->children->next->next
-			|| strcmp (line->children->next->next->str, "in")
-			|| !line->children->next->next->next
-			|| !line->children->next->next->next->next) {
-			GIB_Parse_Error ("Malformed 'for' statement.", line->start);
-			return line;
-		} else if (line->flags & TREE_L_EMBED) {
-			GIB_Parse_Error ("'for' statements may not be used in embedded commands.", line->start);
-			return line;
-		}
-		// Find last token in line (contains program block)
-		for (tmp = line->children->next->next->next->next; tmp->next;
-			 tmp = tmp->next);
-		// More sanity
-		if (tmp->delim != '{' || !tmp->children) {
-			GIB_Parse_Error
-				("Program block in 'for' statement not enclosed in braces or invalid.",
-				 line->start);
-			return line;
-		}
-		// Add instruction to fetch next argument (this is the true loop start)
-		line->next = GIB_Tree_New (TREE_T_FORNEXT);
-		line = line->next;
-		p = line;
-		// Move subprogram inline
-		line->next = tmp->children;
-		tmp->children = 0;
-		// Find end of subprogram
-		for (; line->next; line = line->next)
-			if (!line->jump && line->children) {
-				if (!strcmp (line->children->str, "continue")) {
-					line->type = TREE_T_JUMP;
-					line->jump = p;
-				} else if (!strcmp (line->children->str, "break"))
-					line->type = TREE_T_JUMPPLUS;
-			}
-		line->next = GIB_Tree_New (TREE_T_JUMP);
-		line->next->jump = p;
-		line = line->next;
-		// Mark jump point out of loop
-		p->jump = line;
-		// Mark jump point out of loop for break command
-		while (p) {
-			if (p->type == TREE_T_JUMPPLUS && !p->jump)
-				p->jump = line;
-			p = p->next;
-		}
-	} else if (
-		line->children->next && 
-		!(line->children->next->flags & TREE_A_CONCAT) && 
-		line->children->next->delim == ' ' &&
-		!strcmp (line->children->next->str, "=")
-		) {
-			if (line->flags & TREE_L_EMBED)
-				GIB_Parse_Error ("Assignment may not be used as an embedded command.", line->start);
-			line->type = TREE_T_ASSIGN;
-	}
-	return line;
 }
 
 gib_tree_t *
 GIB_Parse_Lines (const char *program, unsigned int pofs)
 {
 	unsigned int i = 0, lstart;
-	gib_tree_t *lines = 0, *cur, *tokens, **line = &lines, *embs;
+	gib_tree_t *lines = 0, *cur, *tokens, **line = &lines, *temp;
 	char       *str;
 
 	while (1) {
@@ -577,26 +359,26 @@ GIB_Parse_Lines (const char *program, unsigned int pofs)
 			break;
 		lstart = i;
 		// If we parse something useful...
-		if ((tokens = GIB_Parse_Tokens (program, &i, pofs, &embs))) {
-			// Link it in
-			cur = GIB_Tree_New (TREE_T_CMD);
-			cur->delim = '\n';
-			str = calloc (i - lstart + 1, sizeof (char));
+		if ((tokens = GIB_Parse_Tokens (program, &i, pofs))) {
+			str = calloc (i - lstart + 1, sizeof(char));
 			memcpy (str, program + lstart, i - lstart);
-			cur->str = str;
-			cur->start = lstart + pofs;
-			cur->end = i + pofs;
-			cur->children = tokens;
-			// Line contains embedded commands?
-			if (embs) {
-				// Add them to chain before actual line
-				*line = embs;
-				for (; embs->next; embs = embs->next);
-				embs->next = cur;
-			} else
-				*line = cur;
-			// Do preprocessing
-			line = &(GIB_Parse_Semantic_Preprocess (cur))->next;
+
+			// All settings for the line must be passed here
+			cur = GIB_Semantic_Tokens_To_Lines (
+				tokens, str, 0,
+				lstart+pofs,
+				i+pofs
+			);
+			if (gib_parse_error) {
+				free (str);
+				goto ERROR;
+			}
+			// Find last line
+			for (temp = cur; temp->next; temp = temp->next);
+
+			// Link it to lines we already have
+			*line = cur;
+			line = &temp->next;
 		}
 		if (gib_parse_error)
 			goto ERROR;
@@ -609,16 +391,16 @@ GIB_Parse_Lines (const char *program, unsigned int pofs)
 }
 
 gib_tree_t *
-GIB_Parse_Embedded (const char *program, unsigned int pofs, gib_tree_t ** embedded)
+GIB_Parse_Embedded (gib_tree_t *token)
 {
-	unsigned int i, n, t;
+	unsigned int i, n, t, start, end;
 	char        c, d, *str;
-	gib_tree_t *lines = 0, **line = &lines, *cur, *tokens, *emb, *tmp, **embfirst;
-	unsigned int start, end;
+	const char *program = token->str;
+	gib_tree_t *lines = 0, *cur, *tokens, **metanext, *temp;
 
 	gib_parse_error = false;
-	embfirst = embedded;
-	*embedded = 0;
+
+	metanext = &token->children;
 
 	for (i = 0; program[i]; i++) {
 		if (program[i] == '`' || (program[i] == '$' && program[i + 1] == '(')) {
@@ -634,45 +416,56 @@ GIB_Parse_Embedded (const char *program, unsigned int pofs, gib_tree_t ** embedd
 					goto ERROR;
 			}
 			end = i + 1;
+
 			// Construct the actual line to be executed
-			cur = GIB_Tree_New (TREE_T_CMD);
-			cur->flags |= TREE_L_EMBED;
-			cur->delim = '`';
-			str = calloc (i - n + 1, sizeof (char));
-			memcpy (str, program + n, i - n);
-			cur->str = str;
-			cur->start = start + pofs;
-			cur->end = end + pofs;
+
+			// Reset error condition
 			c = 0;
+			// Location to begin parsing from
 			t = 0;
-			if (!(tokens = GIB_Parse_Tokens (cur->str, &t, start + pofs, &emb))) {
-				GIB_Tree_Unref (&cur);
+
+			// Extract embedded command into a new string
+			str = calloc (end - start + 1, sizeof(char));
+			memcpy (str, program + n, i - n);
+
+			// Attempt to parse tokens from it
+			tokens = GIB_Parse_Tokens (str, &t, start + token->start);
+			if (!tokens) {
+				free (str);
 				goto ERROR;
 			}
-			cur->children = tokens;
-			GIB_Parse_Semantic_Preprocess (cur)->next = *embedded;
+
+			// All settings for the line must be passed here
+			cur = GIB_Semantic_Tokens_To_Lines (
+				tokens, str, TREE_L_EMBED,
+				start + token->start,
+				end + token->start
+			);
 			if (gib_parse_error) {
-				GIB_Tree_Unref (&cur);
+				free (str);
 				goto ERROR;
 			}
-			// Did this have embedded commands of it's own?
-			if (emb) {
-				// Link them in first
-				for (tmp = emb; tmp->next; tmp = tmp->next);
-				tmp->next = cur;
-				*embedded = emb;
-			} else
-				*embedded = cur;
-			// Create a representative child node for GIB_Process_Embedded to
-			// use
+			// Find last line
+			for (temp = cur; temp->next; temp = temp->next);
+
+			// Link it to lines we already have
+			// (new lines are added to the start)
+			temp->next = lines;
+			lines = cur;
+
+			// Create a representative child node for
+			// GIB_Process_Embedded to use
 			cur = GIB_Tree_New (TREE_T_META);
 			cur->delim = '`';
+
 			// Save start/end indices
 			cur->start = start;
 			cur->end = end;
-			*line = cur;
-			line = &cur->next;
-			// Check for variable substitution
+
+			// Link it to end of children list for token we are processing
+			*metanext = cur;
+			metanext = &cur->next;
+		// Check for variable substitution
 		} else if (program[i] == '$' || program[i] == '#') {
 			// Extract variable name
 			start = i;
@@ -699,8 +492,8 @@ GIB_Parse_Embedded (const char *program, unsigned int pofs, gib_tree_t ** embedd
 			// Save start/end indices
 			cur->start = start;
 			cur->end = end;
-			*line = cur;
-			line = &cur->next;
+			*metanext = cur;
+			metanext = &cur->next;
 			// Don't skip anything important
 			if (program[n - 1] != '{')
 				i--;
@@ -709,10 +502,8 @@ GIB_Parse_Embedded (const char *program, unsigned int pofs, gib_tree_t ** embedd
 	return lines;
   ERROR:
 	if (c)
-		GIB_Parse_Error (va ("Could not find match for '%c'.", c), i + pofs);
+		GIB_Parse_Error (va ("Could not find match for '%c'.", c), i + token->start);
 	if (lines)
 		GIB_Tree_Unref (&lines);
-	if (*embfirst)
-		GIB_Tree_Unref (embfirst);
 	return 0;
 }

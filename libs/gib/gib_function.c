@@ -149,7 +149,29 @@ GIB_Function_Find (const char *name)
 }
 
 void
-GIB_Function_Prepare_Args (cbuf_t * cbuf, dstring_t ** args, unsigned int argc)
+GIB_Function_Prepare_Args (cbuf_t * cbuf, const char **args, unsigned int argc)
+{
+	static hashtab_t *zero = 0;
+	unsigned int i;
+	gib_var_t  *var;
+	static char argss[] = "args";
+
+	var =
+		GIB_Var_Get_Complex (&GIB_DATA (cbuf)->locals, &zero, argss, &i, true);
+	var->array = realloc (var->array, sizeof (struct gib_varray_s) * argc);
+	memset (var->array + 1, 0, (argc - 1) * sizeof (struct gib_varray_s));
+	var->size = argc;
+	for (i = 0; i < argc; i++) {
+		if (var->array[i].value)
+			dstring_clearstr (var->array[i].value);
+		else
+			var->array[i].value = dstring_newstr ();
+		dstring_appendstr (var->array[i].value, args[i]);
+	}
+}
+
+void
+GIB_Function_Prepare_Args_D (cbuf_t * cbuf, dstring_t **args, unsigned int argc)
 {
 	static hashtab_t *zero = 0;
 	unsigned int i;
@@ -178,7 +200,7 @@ GIB_Function_Prepare_Args (cbuf_t * cbuf, dstring_t ** args, unsigned int argc)
 */
 
 void
-GIB_Function_Execute (cbuf_t * cbuf, gib_function_t * func, dstring_t ** args,
+GIB_Function_Execute (cbuf_t * cbuf, gib_function_t * func, const char ** args,
 					  unsigned int argc)
 {
 	GIB_Tree_Ref (&func->program);
@@ -188,4 +210,17 @@ GIB_Function_Execute (cbuf_t * cbuf, gib_function_t * func, dstring_t ** args,
 	GIB_DATA (cbuf)->script = func->script;
 	GIB_DATA (cbuf)->globals = func->globals;
 	GIB_Function_Prepare_Args (cbuf, args, argc);
+}
+
+void
+GIB_Function_Execute_D (cbuf_t * cbuf, gib_function_t * func, dstring_t ** args,
+					  unsigned int argc)
+{
+	GIB_Tree_Ref (&func->program);
+	if (func->script)
+		func->script->refs++;
+	GIB_Buffer_Set_Program (cbuf, func->program);
+	GIB_DATA (cbuf)->script = func->script;
+	GIB_DATA (cbuf)->globals = func->globals;
+	GIB_Function_Prepare_Args_D (cbuf, args, argc);
 }

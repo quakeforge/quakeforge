@@ -58,8 +58,7 @@ GIB_Execute_Generate_Composite (struct cbuf_s *cbuf)
 	for (i = 0; i < args->argc; i++) {
 		// ->str could be moved by realloc when a dstring is resized
 		// so save the offset instead of the pointer
-		args->args[i] =
-			(const char *) strlen (GIB_DATA (cbuf)->arg_composite->str);
+		args->args[i] =	(const char *) strlen (GIB_DATA (cbuf)->arg_composite->str);
 		dstring_appendstr (GIB_DATA (cbuf)->arg_composite, args->argv[i]->str);
 		dstring_appendstr (GIB_DATA (cbuf)->arg_composite, " ");
 	}
@@ -71,8 +70,7 @@ GIB_Execute_Generate_Composite (struct cbuf_s *cbuf)
 	for (i = 0; i < args->argc; i++)
 		// now that arg_composite is done we can add the pointer to the stored
 		// offsets and get valid pointers. This *should* be portable.
-		args->args[i] +=
-			(unsigned long int) GIB_DATA (cbuf)->arg_composite->str;
+		args->args[i] += (unsigned long int) GIB_DATA (cbuf)->arg_composite->str;
 }
 
 static void
@@ -101,9 +99,11 @@ GIB_Execute_Split_Var (cbuf_t * cbuf)
 					break;
 				}
 		cbuf->args->argc--;
-		if (!(var = GIB_Var_Get_Complex (&GIB_DATA (cbuf)->locals,
-								  &GIB_DATA (cbuf)->globals, str, &i, false)))
-			return;
+		if (!(var = GIB_Var_Get_Complex (
+			&GIB_DATA (cbuf)->locals,
+			&GIB_DATA (cbuf)->globals,
+			str, &i, false)))
+				return;
 		if (end < 0)
 			end += var->size;
 		else if (end > var->size)
@@ -123,17 +123,19 @@ GIB_Execute_Split_Var (cbuf_t * cbuf)
 		}
 	} else {
 		gib_var_t **vlist, **v;
-		
+
 		cbuf->args->argc--;
-		if (!(var = GIB_Var_Get_Complex (&GIB_DATA (cbuf)->locals,
-								  &GIB_DATA (cbuf)->globals, str, &i, false)))
-			return;
+		if (!(var = GIB_Var_Get_Complex (
+			&GIB_DATA (cbuf)->locals,
+			&GIB_DATA (cbuf)->globals,
+			str, &i, false)))
+				return;
 		if (!var->array[i].leaves)
 			return;
 		vlist = (gib_var_t **) Hash_GetList (var->array[i].leaves);
 		for (v = vlist; *v; v++)
 			Cbuf_ArgsAdd (cbuf->args, (*v)->key);
-	}	
+	}
 }
 
 static int
@@ -175,17 +177,17 @@ GIB_Execute_For_Next (cbuf_t * cbuf)
 {
 	unsigned int index;
 	gib_var_t  *var;
-	struct gib_dsarray_s *array =
-		GIB_DATA (cbuf)->stack.values + GIB_DATA (cbuf)->stack.p - 1;
+	struct gib_dsarray_s *array = GIB_DATA (cbuf)->stack.values + GIB_DATA (cbuf)->stack.p - 1;
 	if (array->size == 1) {
 		GIB_Buffer_Pop_Sstack (cbuf);
 		return -1;
 	}
 	array->size--;
-	var =
-		GIB_Var_Get_Complex (&GIB_DATA (cbuf)->locals,
-							 &GIB_DATA (cbuf)->globals, array->dstrs[0]->str,
-							 &index, true);
+	var = GIB_Var_Get_Complex (
+		&GIB_DATA (cbuf)->locals,
+		&GIB_DATA (cbuf)->globals, array->dstrs[0]->str,
+		&index, true
+	);
 	dstring_clearstr (var->array[index].value);
 	dstring_appendstr (var->array[index].value, array->dstrs[array->size]->str);
 	return 0;
@@ -199,40 +201,53 @@ GIB_Execute (cbuf_t * cbuf)
 	gib_function_t *f;
 	unsigned int index;
 	gib_var_t *var;
+	unsigned int i;
 
 	if (!g->program)
 		return;
 	g->ip = g->ip ? g->ip->next : g->program;
 	while (g->ip) {
 		switch (g->ip->type) {
-			case TREE_T_JUMP:
+			case TREE_T_NOP: // Move to next instruction
+				g->ip = g->ip->next;
+				continue;
+			case TREE_T_JUMP: // Absolute jump
 				g->ip = g->ip->jump;
 				continue;
-			case TREE_T_JUMPPLUS:
-				g->ip = g->ip->jump->next;
-				continue;
-			case TREE_T_FORNEXT:
+			case TREE_T_FORNEXT: // Fetch next value in a for loop
 				if (GIB_Execute_For_Next (cbuf))
 					g->ip = g->ip->jump->next;
 				else
 					g->ip = g->ip->next;
 				continue;
-			case TREE_T_COND:
+			case TREE_T_COND: // Conditional jump, move to next instruction
 				if (GIB_Execute_Prepare_Line (cbuf, g->ip))
 					return;
-				if (g->ip->flags & TREE_L_NOT ? atof (cbuf->args->argv[1]->str) : !atof (cbuf->args->argv[1]->str))
-					g->ip = g->ip->jump->next;
+				if (g->ip->flags & TREE_L_NOT ?
+					atof (cbuf->args->argv[1]->str) :
+					!atof (cbuf->args->argv[1]->str))
+						g->ip = g->ip->jump->next;
 				else
 					g->ip = g->ip->next;
 				continue;
-			case TREE_T_ASSIGN:
+			case TREE_T_ASSIGN: // Assignment
 				if (GIB_Execute_Prepare_Line (cbuf, g->ip))
 					return;
-				var = GIB_Var_Get_Complex (&g->locals, &g->globals, cbuf->args->argv[0]->str, &index, true);
+				var = GIB_Var_Get_Complex (
+					&g->locals,
+					&g->globals,
+					cbuf->args->argv[0]->str, &index, true);
 				GIB_Var_Assign (var, index, cbuf->args->argv + 2, cbuf->args->argc - 2);
+				if (g->ip->flags & TREE_L_EMBED) {
+					GIB_Buffer_Push_Sstack (cbuf);
+					g->waitret = true;
+					for (i = 2; i < cbuf->args->argc; i++)
+						GIB_Return (cbuf->args->argv[i]->str);
+				} else
+					g->waitret = false;
 				g->ip = g->ip->next;
 				continue;
-			case TREE_T_CMD:
+			case TREE_T_CMD: // Normal command
 				if (GIB_Execute_Prepare_Line (cbuf, g->ip))
 					return;
 				if (g->ip->flags & TREE_L_EMBED) {
@@ -246,13 +261,17 @@ GIB_Execute (cbuf_t * cbuf)
 						b->func ();
 					else if ((f = GIB_Function_Find (cbuf->args->argv[0]->str))) {
 						cbuf_t     *new = Cbuf_PushStack (&gib_interp);
-						GIB_Function_Execute (new, f, cbuf->args->argv, cbuf->args->argc);
+						GIB_Function_Execute_D (
+							new, f,
+							cbuf->args->argv, cbuf->args->argc
+						);
 					} else {
 						GIB_Execute_Generate_Composite (cbuf);
 						if (Cmd_Command (cbuf->args))
 							GIB_Error (
 								"command",
-								"No builtin, function, or console command named '%s' was found.",
+								"No builtin, function, or console command "
+								"named '%s' was found.",
 								cbuf->args->argv[0]->str
 							);
 					}
@@ -261,8 +280,11 @@ GIB_Execute (cbuf_t * cbuf)
 				}
 				g->ip = g->ip->next;
 				continue;
-			default:
-				GIB_Error ("QUAKEFORGE-BUG-PLEASE-REPORT", "Unknown instruction type; tastes like chicken.");
+			default: // We should never get here
+				GIB_Error (
+					"QUAKEFORGE-BUG-PLEASE-REPORT",
+					"Unknown instruction type; tastes like chicken."
+				);
 				return;
 		}
 	}

@@ -48,7 +48,9 @@ typedef struct gib_function_s {
 
 void GIB_Function_Define (const char *name, const char *text, gib_tree_t *program, gib_script_t *script, hashtab_t *globals);
 gib_function_t *GIB_Function_Find (const char *name);
-void GIB_Function_Prepare_Args (cbuf_t *cbuf, dstring_t **args, unsigned int argc);
-void GIB_Function_Execute (cbuf_t *cbuf, gib_function_t *func, dstring_t **args, unsigned int argc);
+void GIB_Function_Prepare_Args (cbuf_t *cbuf, const char **args, unsigned int argc);
+void GIB_Function_Prepare_Args_D (cbuf_t *cbuf, dstring_t **args, unsigned int argc);
+void GIB_Function_Execute (cbuf_t *cbuf, gib_function_t *func, const char **args, unsigned int argc);
+void GIB_Function_Execute_D (cbuf_t *cbuf, gib_function_t *func, dstring_t **args, unsigned int argc);
 
 #endif

@@ -208,6 +208,9 @@ GIB_Local_f (void)
 		if (GIB_Argc () >= 3)
 			GIB_Var_Assign (var, index, cbuf_active->args->argv + 3,
 							GIB_Argc () - 3);
+		if (GIB_CanReturn ())
+			for (i = 3; i < GIB_Argc(); i++)
+				GIB_Return (GIB_Argv(i));
 	} else for (i = 1; i < GIB_Argc(); i++)
 		var = GIB_Var_Get_Complex (&GIB_DATA (cbuf_active)->locals, &zero,
 								 GIB_Argv (i), &index, true);
@@ -229,6 +232,9 @@ GIB_Global_f (void)
 		if (GIB_Argc () >= 3)
 			GIB_Var_Assign (var, index, cbuf_active->args->argv + 3,
 							GIB_Argc () - 3);
+		if (GIB_CanReturn ())
+			for (i = 3; i < GIB_Argc(); i++)
+				GIB_Return (GIB_Argv(i));
 	} else for (i = 1; i < GIB_Argc(); i++)
 		var = GIB_Var_Get_Complex (&GIB_DATA (cbuf_active)->globals, &zero,
 								 GIB_Argv (i), &index, true);						 
@@ -321,19 +327,21 @@ static void
 GIB_Runexported_f (void)
 {
 	gib_function_t *f;
+	const char **args;
 
 	if (!(f = GIB_Function_Find (Cmd_Argv (0))))
 		Sys_Printf ("Error:  No function found for exported command \"%s\".\n"
 					"This is most likely a bug, please report it to"
 					"The QuakeForge developers.", Cmd_Argv (0));
 	else {
-		cbuf_t     *sub = Cbuf_New (&gib_interp);
+		cbuf_t     *sub = Cbuf_PushStack (&gib_interp);
+		unsigned int i;
 
-		GIB_Function_Execute (sub, f, cbuf_active->args->argv,
-							  cbuf_active->args->argc);
-		cbuf_active->down = sub;
-		sub->up = cbuf_active;
-		cbuf_active->state = CBUF_STATE_STACK;
+		args = malloc (sizeof (char *) * Cmd_Argc());
+		for (i = 0; i < Cmd_Argc(); i++)
+			args[i] = Cmd_Argv(i);
+		GIB_Function_Execute (sub, f, args, Cmd_Argc());
+		free (args);
 	}
 }
 
@@ -586,7 +594,7 @@ GIB_Thread_Create_f (void)
 	else {
 		gib_thread_t *thread = GIB_Thread_New ();
 
-		GIB_Function_Execute (thread->cbuf, f, cbuf_active->args->argv + 1,
+		GIB_Function_Execute_D (thread->cbuf, f, cbuf_active->args->argv + 1,
 							  cbuf_active->args->argc - 1);
 		GIB_Thread_Add (thread);
 		if (GIB_CanReturn ())

@@ -54,10 +54,10 @@ typedef struct gib_tree_s {
 		TREE_T_COND, // Conditional jump
 		TREE_T_ASSIGN, // Assignment
 		TREE_T_JUMP, // Jump
-		TREE_T_JUMPPLUS, // Jump, go to next instruction
 		TREE_T_ARG, // Argument (not a line)
 		TREE_T_FORNEXT, // Fetch next arg in for loop
-		TREE_T_META // Info node
+		TREE_T_META, // Info node
+		TREE_T_NOP // Do nothing (label, etc)
 	} type;
 	struct gib_tree_s *children, *next, *jump;
 } gib_tree_t;
@@ -66,5 +66,5 @@ gib_tree_t *GIB_Tree_New (enum gib_tree_type_e type);
 void GIB_Tree_Free_Recursive (gib_tree_t *tree);
 void GIB_Tree_Ref (gib_tree_t **tp);
 void GIB_Tree_Unref (gib_tree_t **tp);
-		
+
 #endif /* __GIB_TREE_H */
