@@ -81,6 +81,7 @@ const char *gl_version;
 const char *gl_extensions;
 
 // ARB Multitexture
+qboolean	gl_mtex_active = false;
 qboolean    gl_mtex_capable = false;
 GLenum		gl_mtex_enum = GL_TEXTURE0_ARB;
 
@@ -93,13 +94,21 @@ extern byte			gammatable[256];
 extern qboolean		GLF_Init ();
 
 
+static void
+gl_multitexture_f (cvar_t *var)
+{
+	if (var)
+		gl_mtex_active = gl_mtex_capable && var->int_val;
+}
+
 void
 GL_Common_Init_Cvars (void)
 {
 	vid_use8bit = Cvar_Get ("vid_use8bit", "0", CVAR_ROM, NULL,	"Use 8-bit "
 							"shared palettes.");
-	gl_multitexture = Cvar_Get ("gl_multitexture", "0", CVAR_ARCHIVE, NULL,
-								"Use multitexture when available");
+	gl_multitexture = Cvar_Get ("gl_multitexture", "0", CVAR_ARCHIVE,
+								gl_multitexture_f, "Use multitexture when "
+								"available");
 }
 
 /*
@@ -223,8 +232,6 @@ VID_SetPalette (unsigned char *palette)
 void
 GL_Init_Common (void)
 {
-	GL_Common_Init_Cvars ();
-	
 	if (!GLF_Init()) {
 		Sys_Error("Can't init video.\n");
 		return;
@@ -262,6 +269,7 @@ GL_Init_Common (void)
 	qfglTexEnvf (GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
 
 	CheckMultiTextureExtensions ();
+	GL_Common_Init_Cvars ();
 }
 
 void

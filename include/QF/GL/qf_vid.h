@@ -44,13 +44,11 @@
 // Multitexturing
 extern QF_glActiveTextureARB	qglActiveTexture;
 extern QF_glMultiTexCoord2fARB	qglMultiTexCoord2f;
+extern qboolean					gl_mtex_active;
 extern qboolean					gl_mtex_capable;
 extern GLenum					gl_mtex_enum;
-// convenience check
-#define gl_mtex_active	(gl_mtex_capable && gl_multitexture->int_val)
-
-extern int texture_extension_number;
-extern float gldepthmin, gldepthmax;
+extern float					gldepthmin, gldepthmax;
+extern int						texture_extension_number;
 
 void GL_EndRendering (void);
 void GL_BeginRendering (int *x, int *y, int *width, int *height);
