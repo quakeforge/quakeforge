@@ -296,7 +296,7 @@ check_branch (progs_t *pr, dstatement_t *st, opcode_t *op, short offset)
 	
 	address += offset;
 	if (address < 0 || address >= pr->progs->numstatements)
-		PR_Error (pr, "PR_Check_Opcodes: invalid branch (statement %ld: %s)\n",
+		PR_Error (pr, "PR_Check_Opcodes: invalid branch (statement %ld: %s)",
 				  (long)(st - pr->pr_statements), op->opname);
 }
 
@@ -325,7 +325,7 @@ check_global (progs_t *pr, dstatement_t *st, opcode_t *op, etype_t type,
 	return;
 error:
 	PR_PrintStatement (pr, st);
-	PR_Error (pr, "PR_Check_Opcodes: %s (statement %ld: %s)\n", msg,
+	PR_Error (pr, "PR_Check_Opcodes: %s (statement %ld: %s)", msg,
 			  (long)(st - pr->pr_statements), op->opname);
 }
 
@@ -343,7 +343,7 @@ PR_Check_Opcodes (progs_t *pr)
 		op = PR_Opcode (st->op);
 		if (!op) {
 			PR_Error (pr,
-					  "PR_Check_Opcodes: unknown opcode %d at statement %ld\n",
+					  "PR_Check_Opcodes: unknown opcode %d at statement %ld",
 					  st->op, (long)(st - pr->pr_statements));
 		}
 		switch (st->op) {

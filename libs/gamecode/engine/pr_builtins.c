@@ -73,7 +73,7 @@ PR_AddBuiltin (progs_t *pr, const char *name, builtin_proc builtin, int num)
 		pr->builtins = calloc (PR_AUTOBUILTIN, sizeof (builtin_t*));
 		pr->numbuiltins = PR_AUTOBUILTIN;
 		if (!pr->builtins)
-			PR_Error (pr, "PR_AddBuiltin: memory allocation error!\n");
+			PR_Error (pr, "PR_AddBuiltin: memory allocation error!");
 	}
 
 	if (num < 0) {
@@ -85,13 +85,13 @@ PR_AddBuiltin (progs_t *pr, const char *name, builtin_proc builtin, int num)
 			pr->builtins = realloc (pr->builtins,
 									pr->numbuiltins * sizeof (builtin_t*));
 			if (!pr->builtins)
-				PR_Error (pr, "PR_AddBuiltin: memory allocation error!\n");
+				PR_Error (pr, "PR_AddBuiltin: memory allocation error!");
 		}
 	} else {
 		if (num >= PR_AUTOBUILTIN || num == 0)
-			PR_Error (pr, "PR_AddBuiltin: invalid builtin number.\n");
+			PR_Error (pr, "PR_AddBuiltin: invalid builtin number.");
 		if (pr->builtins[num])
-			PR_Error (pr, "PR_AddBuiltin: builtin number already exists.\n");
+			PR_Error (pr, "PR_AddBuiltin: builtin number already exists.");
 		i = num;
 	}
 	pr->builtins[i] = malloc (sizeof (builtin_t));

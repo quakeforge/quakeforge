@@ -143,7 +143,6 @@ SV_LoadProgs (void)
 	sv_globals.self = sv_pr_state.globals.self;
 	sv_globals.time = sv_pr_state.globals.time;
 
-	(void *) sv_globals.self = PR_GetGlobalPointer (&sv_pr_state, "self");
 	(void *) sv_globals.other = PR_GetGlobalPointer (&sv_pr_state, "other");
 	(void *) sv_globals.world = PR_GetGlobalPointer (&sv_pr_state, "world");
 	(void *) sv_globals.time = PR_GetGlobalPointer (&sv_pr_state, "time");

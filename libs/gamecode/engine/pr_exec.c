@@ -196,7 +196,7 @@ PR_EnterFunction (progs_t * pr, dfunction_t *f)
 	// save off any locals that the new function steps on
 	c = f->locals;
 	if (pr->localstack_used + c > LOCALSTACK_SIZE)
-		PR_RunError (pr, "PR_ExecuteProgram: locals stack overflow\n");
+		PR_RunError (pr, "PR_ExecuteProgram: locals stack overflow");
 
 	memcpy (&pr->localstack[pr->localstack_used],
 			&pr->pr_globals[f->parm_start],
@@ -234,7 +234,7 @@ PR_LeaveFunction (progs_t * pr)
 	c = pr->pr_xfunction->locals;
 	pr->localstack_used -= c;
 	if (pr->localstack_used < 0)
-		PR_RunError (pr, "PR_ExecuteProgram: locals stack underflow\n");
+		PR_RunError (pr, "PR_ExecuteProgram: locals stack underflow");
 
 	memcpy (&pr->pr_globals[pr->pr_xfunction->parm_start],
 			&pr->localstack[pr->localstack_used],
@@ -481,7 +481,7 @@ PR_ExecuteProgram (progs_t * pr, func_t fnum)
 						pr->pr_edictareasize)) {
 					pr->pr_xstatement = st - pr->pr_statements;
 					PR_RunError (pr, "Progs attempted to address an out of "
-								 "bounds edict\n");
+								 "bounds edict");
 					return;
 				}
 				if (pr_boundscheck->int_val
@@ -495,7 +495,7 @@ PR_ExecuteProgram (progs_t * pr, func_t fnum)
 						pr->progs->entityfields)) {
 					pr->pr_xstatement = st - pr->pr_statements;
 					PR_RunError (pr, "Progs attempted to address an invalid "
-								 "field in an edict\n");
+								 "field in an edict");
 					return;
 				}
 				ed = PROG_TO_EDICT (pr, OPA.entity_var);
@@ -524,7 +524,7 @@ PR_ExecuteProgram (progs_t * pr, func_t fnum)
 						pr->pr_edictareasize)) {
 					pr->pr_xstatement = st - pr->pr_statements;
 					PR_RunError (pr, "Progs attempted to read an out of "
-								 "bounds edict number\n");
+								 "bounds edict number");
 					return;
 				}
 				if (pr_boundscheck->int_val
@@ -532,7 +532,7 @@ PR_ExecuteProgram (progs_t * pr, func_t fnum)
 						pr->progs->entityfields)) {
 					pr->pr_xstatement = st - pr->pr_statements;
 					PR_RunError (pr, "Progs attempted to read an invalid "
-								 "field in an edict\n");
+								 "field in an edict");
 					return;
 				}
 				ed = PROG_TO_EDICT (pr, OPA.entity_var);
@@ -544,7 +544,7 @@ PR_ExecuteProgram (progs_t * pr, func_t fnum)
 						pr->pr_edictareasize)) {
 					pr->pr_xstatement = st - pr->pr_statements;
 					PR_RunError (pr, "Progs attempted to read an out of "
-								 "bounds edict number\n");
+								 "bounds edict number");
 					return;
 				}
 				if (pr_boundscheck->int_val
@@ -552,7 +552,7 @@ PR_ExecuteProgram (progs_t * pr, func_t fnum)
 						|| OPB.integer_var + 2 >= pr->progs->entityfields)) {
 					pr->pr_xstatement = st - pr->pr_statements;
 					PR_RunError (pr, "Progs attempted to read an invalid "
-								 "field in an edict\n");
+								 "field in an edict");
 					return;
 				}
 				ed = PROG_TO_EDICT (pr, OPA.entity_var);
@@ -677,7 +677,7 @@ PR_ExecuteProgram (progs_t * pr, func_t fnum)
 				if (pr_boundscheck->int_val
 					&& (OPA.uinteger_var >= pr->progs->numstatements)) {
 					pr->pr_xstatement = st - pr->pr_statements;
-					PR_RunError (pr, "Invalid jump destination\n");
+					PR_RunError (pr, "Invalid jump destination");
 					return;
 				}
 				st = &pr->pr_statements[OPA.uinteger_var];
@@ -690,7 +690,7 @@ PR_ExecuteProgram (progs_t * pr, func_t fnum)
 				if (pr_boundscheck->int_val
 					&& (pointer >= pr->progs->numstatements)) {
 					pr->pr_xstatement = st - pr->pr_statements;
-					PR_RunError (pr, "Invalid jump destination\n");
+					PR_RunError (pr, "Invalid jump destination");
 					return;
 				}
 				st = &pr->pr_statements[pointer];
@@ -838,7 +838,7 @@ PR_ExecuteProgram (progs_t * pr, func_t fnum)
 				if (OPA.integer_var < 0 || OPA.integer_var >= st->b) {
 					pr->pr_xstatement = st - pr->pr_statements;
 					PR_RunError (pr, "Progs boundcheck failed at line number "
-					"%d, value is < 0 or >= %d\n", st->b, st->c);
+					"%d, value is < 0 or >= %d", st->b, st->c);
 					return;
 				}
 				break;

@@ -461,7 +461,7 @@ ED_Print (progs_t * pr, edict_t *ed)
 					continue;
 				break;
 			default:
-				PR_Error (pr, "ED_Print: Unhandled type %d\n", type);
+				PR_Error (pr, "ED_Print: Unhandled type %d", type);
 		}
 
 		Sys_Printf ("%s", name);

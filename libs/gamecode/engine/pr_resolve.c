@@ -162,11 +162,15 @@ int
 PR_ResolveGlobals (progs_t *pr)
 {
 	char *sym;
+	ddef_t *def;
 
-	if (!(pr->globals.time = (float*)PR_GetGlobalPointer (pr, sym = "time")))
+	if (!(def = PR_FindGlobal (pr, sym = "time")))
 		goto error;
-	if (!(pr->globals.self = (int*)PR_GetGlobalPointer (pr, sym = "self")))
-		goto error;
+	pr->globals.time = &G_FLOAT (pr, def->ofs);
+	if (!(def = PR_FindGlobal (pr, ".self")))
+		if (!(def = PR_FindGlobal (pr, "self")))
+			goto error;
+	pr->globals.self = &G_INT (pr, def->ofs);
 	if ((pr->fields.nextthink = ED_GetFieldIndex (pr, sym = "nextthink")) == -1)
 		goto error;
 	if ((pr->fields.frame = ED_GetFieldIndex (pr, sym = "frame")) == -1)
@@ -175,7 +179,7 @@ PR_ResolveGlobals (progs_t *pr)
 		goto error;
 	return 1;
 error:
-	Sys_Printf ("%s: undefined symbol: %s", pr->progs_name, sym);
+	Sys_Printf ("%s: undefined symbol: %s\n", pr->progs_name, sym);
 	return 0;
 }
 
