@@ -274,6 +274,8 @@ X11_OpenDisplay (void)
 void
 X11_CloseDisplay (void)
 {
+	X11_RestoreGamma ();
+
 	if (nullcursor != None) {
 		XFreeCursor (x_disp, nullcursor);
 		nullcursor = None;
@@ -331,14 +333,14 @@ X11_ForceMove (int x, int y)
 	XFlush(x_disp);
 	while (1) {
 		XEvent ev;
-		XMaskEvent(x_disp,StructureNotifyMask,&ev);
-		if (ev.type==ConfigureNotify) {
-			nx=ev.xconfigure.x;
-			ny=ev.xconfigure.y;
-			X11_ProcessEventProxy(&ev);
+		XMaskEvent (x_disp,StructureNotifyMask,&ev);
+		if (ev.type == ConfigureNotify) {
+			nx = ev.xconfigure.x;
+			ny = ev.xconfigure.y;
+			X11_ProcessEventProxy (&ev);
 			break;
 		}
-		X11_ProcessEventProxy(&ev);
+		X11_ProcessEventProxy (&ev);
 	}
 	//X11_GetWindowCoords (&nx, &ny);
 	nx -= x;
@@ -351,9 +353,9 @@ X11_ForceMove (int x, int y)
 
 #if 0 // hopefully this isn't needed!  enable if it is.
 	if (x < 1 - vid.width)
-		x=0;
+		x = 0;
 	if (y < 1 - vid.height)
-		y=0;
+		y = 0;
 #endif
 
 	XMoveWindow (x_disp, x_win, x, y);
@@ -361,12 +363,12 @@ X11_ForceMove (int x, int y)
 	/* this is the best we can do. */
 	while (1) {
 		XEvent ev;
-		XMaskEvent(x_disp,StructureNotifyMask,&ev);
-		if (ev.type==ConfigureNotify) {
-			X11_ProcessEventProxy(&ev);
+		XMaskEvent (x_disp, StructureNotifyMask, &ev);
+		if (ev.type == ConfigureNotify) {
+			X11_ProcessEventProxy (&ev);
 			break;
 		}
-		X11_ProcessEventProxy(&ev);
+		X11_ProcessEventProxy (&ev);
 	}
 }
 
@@ -454,7 +456,7 @@ void X11_UpdateFullscreen (cvar_t *fullscreen)
 	if (!fullscreen->int_val) {
 		X11_RestoreVidMode ();
 		if (window_saved) {
-			X11_ForceMove(window_x, window_y);
+			X11_ForceMove (window_x, window_y);
 			window_saved = 0;
 		}
 		if (in_grab) {
@@ -463,24 +465,27 @@ void X11_UpdateFullscreen (cvar_t *fullscreen)
 		return;
 	} else {
 		if (in_grab) {
-			IN_UpdateGrab(in_grab);
+			IN_UpdateGrab (in_grab);
 		}
+
 		if (X11_GetWindowCoords (&window_x, &window_y))
 			window_saved = 1;
 
 		X11_SetVidMode (scr_width, scr_height);
+
+		if (in_grab) { // FIXME: why are there two of these?
+			IN_UpdateGrab (in_grab);
+		}
+
 		if (!vidmode_active) {
-			if (in_grab) {
-				IN_UpdateGrab (in_grab);
-			}
 			window_saved = 0;
 			return;
 		}
-		if (in_grab) {
-			IN_UpdateGrab (in_grab);
-		}
-		X11_ForceMove(0, 0);
-		XWarpPointer(x_disp,None,x_win,0,0,0,0,vid.width/2,vid.height/2);
+
+		X11_ForceMove (0, 0);
+		XWarpPointer (x_disp, None, x_win,
+					  0, 0, 0, 0,
+					  vid.width / 2, vid.height / 2);
 		X11_ForceViewPort (); 
 		/* Done in X11_SetVidMode but moved the window since then */
 	}
@@ -499,11 +504,11 @@ X11_Init_Cvars (void)
 void
 X11_CreateWindow (int width, int height)
 {
-	XSetWindowAttributes attr;
-	XClassHint *ClassHint;
-	XSizeHints *SizeHints;
-	char       *resname;
-	unsigned long mask;
+	XSetWindowAttributes	attr;
+	XClassHint		*ClassHint;
+	XSizeHints		*SizeHints;
+	char			*resname;
+	unsigned long	mask;
 
 	/* window attributes */
 	attr.background_pixel = 0;
@@ -542,6 +547,7 @@ X11_CreateWindow (int width, int height)
 		XSetClassHint (x_disp, x_win, ClassHint);
 		XFree (ClassHint);
 	}
+
 	// Make window respond to Delete events
 	aWMDelete = XInternAtom (x_disp, "WM_DELETE_WINDOW", False);
 	XSetWMProtocols (x_disp, x_win, &aWMDelete, 1);
@@ -549,17 +555,19 @@ X11_CreateWindow (int width, int height)
 	XMapWindow (x_disp, x_win);
 
 	while (1) {
-		XEvent ev;
-		XMaskEvent(x_disp,StructureNotifyMask,&ev);
-		if (ev.type==MapNotify) {
-			X11_ProcessEventProxy(&ev);
+		XEvent	ev;
+
+		XMaskEvent (x_disp, StructureNotifyMask, &ev);
+		if (ev.type == MapNotify) {
+			X11_ProcessEventProxy (&ev);
 			break;
 		}
-		X11_ProcessEventProxy(&ev);
+		X11_ProcessEventProxy (&ev);
 	}
+
 	vid_context_created = true;
 	if (vid_fullscreen->int_val) {
-		X11_UpdateFullscreen(vid_fullscreen);
+		X11_UpdateFullscreen (vid_fullscreen);
 	}
 	XRaiseWindow (x_disp, x_win);
 }
@@ -570,10 +578,9 @@ X11_RestoreVidMode (void)
 #ifdef HAVE_VIDMODE
 	if (vidmode_active) {
 		X11_RestoreScreenSaver ();
-		X11_RestoreGamma ();
 		XF86VidModeSwitchToMode (x_disp, x_screen, vidmodes[original_mode]);
 		XFree (vidmodes);
-		vidmode_active=false;
+		vidmode_active = false;
 	}
 #endif
 }
@@ -581,21 +588,21 @@ X11_RestoreVidMode (void)
 void
 X11_GrabKeyboardBool(qboolean yes)
 {
-	static qboolean is_grabbed=false;
+	static qboolean is_grabbed = false;
 
 	if (yes) {
 		if (!is_grabbed) {
 			if (XGrabKeyboard (x_disp, x_win, 1, 
 							   GrabModeAsync, 
 							   GrabModeAsync,
-							   CurrentTime)==GrabSuccess) {
-				is_grabbed=true;
-				XSetInputFocus(x_disp,x_win, RevertToPointerRoot,CurrentTime);
+							   CurrentTime) == GrabSuccess) {
+				is_grabbed = true;
+				XSetInputFocus (x_disp, x_win, RevertToPointerRoot, CurrentTime);
 			}
 		} 
 	} else {
 		XUngrabKeyboard (x_disp, CurrentTime);
-		is_grabbed=false;
+		is_grabbed = false;
 	}
 }
 
@@ -604,27 +611,30 @@ X11_GrabKeyboard (void)
 {
 	XGrabKeyboard (x_disp, x_win, 1, GrabModeAsync, GrabModeAsync,
 				   CurrentTime);
-	XSetInputFocus(x_disp,x_win, RevertToPointerRoot,CurrentTime);
+	XSetInputFocus (x_disp, x_win, RevertToPointerRoot, CurrentTime);
 }
 
 void
-X11_GrabMouseBool(qboolean yes)
+X11_GrabMouseBool (qboolean yes)
 {
-	static qboolean is_grabbed=false;
+	static qboolean is_grabbed = false;
 
 	if (yes) {
 		if (!is_grabbed) {
 			if (XGrabPointer (x_disp, x_win, True, MOUSE_MASK,
 							  GrabModeAsync, GrabModeAsync, 
-							  x_win, None, CurrentTime)==GrabSuccess) {
-				is_grabbed=true;
+							  x_win, None, CurrentTime) == GrabSuccess) {
+				is_grabbed = true;
 			}
-		} 
-	} else {
-		XUngrabPointer (x_disp, CurrentTime);
-		is_grabbed=false;
-		XWarpPointer(x_disp,x_win,x_win,0,0,0,0,vid.width/2,vid.height/2);
+		}
+		return;
 	}
+
+	XUngrabPointer (x_disp, CurrentTime);
+	is_grabbed = false;
+	XWarpPointer (x_disp, x_win, x_win,
+				  0, 0, 0, 0,
+				  vid.width / 2, vid.height / 2);
 }
 
 void
@@ -637,8 +647,10 @@ X11_GrabMouse(void)
 void
 X11_UngrabMouse(void)
 {
-	XUngrabPointer(x_disp,CurrentTime);
-	XWarpPointer(x_disp,x_win,x_win,0,0,0,0,vid.width/2,vid.height/2);
+	XUngrabPointer (x_disp, CurrentTime);
+	XWarpPointer (x_disp, x_win, x_win,
+				  0, 0, 0, 0,
+				  vid.width / 2, vid.height / 2);
 }
 
 void
@@ -653,28 +665,28 @@ X11_Grabber(qboolean grab)
 //	static qboolean is_grabbed=false;
 
 	if (!vid_context_created) {
-		Con_Printf("No video context to grab to!\n");
+		Con_Printf ("No video context to grab to!\n");
 		return;
 	}
-	X11_GrabMouseBool(grab);
-	X11_GrabKeyboardBool(grab);
+	X11_GrabMouseBool (grab);
+	X11_GrabKeyboardBool (grab);
 
 #if 0
 	if (grab) {
 		if (!is_grabbed) {
-			X11_GrabKeyboard();
-			X11_GrabMouse();
-			is_grabbed=true;
+			X11_GrabKeyboard ();
+			X11_GrabMouse ();
+			is_grabbed = true;
 		}
 	} else {
 		if (is_grabbed) {
-			X11_UngrabKeyboard();
-			X11_UngrabMouse();
-			is_grabbed=false;
+			X11_UngrabKeyboard ();
+			X11_UngrabMouse ();
+			is_grabbed = false;
 		}
 	}
 #endif
-	XSync(x_disp,false);
+	XSync (x_disp, false);
 }
 
 void
@@ -688,10 +700,11 @@ qboolean
 X11_GetWindowCoords (int *ax, int *ay)
 {
 #ifdef HAVE_VIDMODE
-	Window      theroot, scrap;
-	int         x, y;
-	unsigned int width, height, bdwidth, depth;
-	XSync(x_disp,false);
+	Window      	theroot, scrap;
+	int         	x, y;
+	unsigned int	width, height, bdwidth, depth;
+
+	XSync (x_disp, false);
 	if ((XGetGeometry (x_disp, x_win, &theroot, &x, &y, &width, &height,
 					   &bdwidth, &depth) == False)) {
 		Con_Printf ("XGetWindowAttributes failed in X11_GetWindowCoords.\n");
