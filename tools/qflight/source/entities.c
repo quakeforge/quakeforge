@@ -130,7 +130,7 @@ LoadEntities (void)
 	epair_t		*epair;
 	int			i;
 
-	data = dentdata;
+	data = bsp->entdata;
 
 	// start parsing
 	num_entities = 0;
@@ -279,7 +279,7 @@ WriteEntitiesToString (void)
 	epair_t		*ep;
 	int			i;
 
-	buf = dentdata;
+	buf = bsp->entdata;
 	end = buf;
 	*end = 0;
 
@@ -305,5 +305,5 @@ WriteEntitiesToString (void)
 		if (end > buf + MAX_MAP_ENTSTRING)
 			fprintf (stderr, "Entity text too long");
 	}
-	entdatasize = end - buf + 1;
+	bsp->entdatasize = end - buf + 1;
 }

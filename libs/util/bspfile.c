@@ -49,248 +49,178 @@ static const char rcsid[] =
 #include "QF/quakefs.h"
 #include "QF/sys.h"
 
-int			nummodels;
-dmodel_t	*dmodels;
-
-int			visdatasize;
-byte		*dvisdata;
-
-int			lightdatasize;
-byte		*dlightdata;
-
-int			texdatasize;
-byte		*dtexdata;
-
-int			entdatasize;
-char		*dentdata;
-
-int			numleafs;
-dleaf_t		*dleafs;
-
-int			numplanes;
-dplane_t	*dplanes;
-
-int			numvertexes;
-dvertex_t	*dvertexes;
-
-int			numnodes;
-dnode_t		*dnodes;
-
-int			numtexinfo;
-texinfo_t	*texinfo;
-
-int			numfaces;
-dface_t		*dfaces;
-
-int			numclipnodes;
-dclipnode_t	*dclipnodes;
-
-int			numedges;
-dedge_t		*dedges;
-
-int			nummarksurfaces;
-unsigned short		*dmarksurfaces;
-
-int			numsurfedges;
-int			*dsurfedges;
-
-dheader_t		*header;
-dheader_t		 outheader;
-QFile			*wadfile;
-
-
-/*
-	SwapBSPFile
-
-	Byte swaps all data in a bsp file.
-*/
 static void
-SwapBSPFile (qboolean todisk)
+swap_bsp (bsp_t *bsp, int todisk)
 {
 	int				 c, i, j;
 	dmiptexlump_t	*mtl;
 	dmodel_t		*d;
 
 	// models	
-	for (i = 0; i < nummodels; i++) {
-		d = &dmodels[i];
+	for (i=0 ; i<bsp->nummodels ; i++) {
+		d = &bsp->models[i];
 
-		for (j = 0; j < MAX_MAP_HULLS; j++)
+		for (j=0 ; j<MAX_MAP_HULLS ; j++)
 			d->headnode[j] = LittleLong (d->headnode[j]);
 
 		d->visleafs = LittleLong (d->visleafs);
 		d->firstface = LittleLong (d->firstface);
 		d->numfaces = LittleLong (d->numfaces);
 		
-		for (j = 0; j < 3; j++) {
-			d->mins[j] = LittleFloat (d->mins[j]);
-			d->maxs[j] = LittleFloat (d->maxs[j]);
-			d->origin[j] = LittleFloat (d->origin[j]);
+		for (j=0 ; j<3 ; j++) {
+			d->mins[j] = LittleFloat(d->mins[j]);
+			d->maxs[j] = LittleFloat(d->maxs[j]);
+			d->origin[j] = LittleFloat(d->origin[j]);
 		}
 	}
 
 	// vertexes
-	for (i = 0; i < numvertexes ; i++) {
-		for (j = 0; j < 3; j++)
-			dvertexes[i].point[j] = LittleFloat (dvertexes[i].point[j]);
+	for (i=0 ; i<bsp->numvertexes ; i++) {
+		for (j=0 ; j<3 ; j++)
+			bsp->vertexes[i].point[j] = LittleFloat (bsp->vertexes[i].point[j]);
 	}
 		
 	// planes
-	for (i = 0; i < numplanes; i++) {
-		for (j = 0; j < 3; j++)
-			dplanes[i].normal[j] = LittleFloat (dplanes[i].normal[j]);
-		dplanes[i].dist = LittleFloat (dplanes[i].dist);
-		dplanes[i].type = LittleLong (dplanes[i].type);
+	for (i=0 ; i<bsp->numplanes ; i++) {
+		for (j=0 ; j<3 ; j++)
+			bsp->planes[i].normal[j] = LittleFloat (bsp->planes[i].normal[j]);
+		bsp->planes[i].dist = LittleFloat (bsp->planes[i].dist);
+		bsp->planes[i].type = LittleLong (bsp->planes[i].type);
 	}
 	
 	// texinfos
-	for (i = 0; i < numtexinfo; i++) {
-		for (j = 0; j < 8; j++)
-			texinfo[i].vecs[0][j] = LittleFloat (texinfo[i].vecs[0][j]);
-		texinfo[i].miptex = LittleLong (texinfo[i].miptex);
-		texinfo[i].flags = LittleLong (texinfo[i].flags);
+	for (i=0 ; i<bsp->numtexinfo ; i++) {
+		for (j=0 ; j<8 ; j++)
+			bsp->texinfo[i].vecs[0][j] = LittleFloat (bsp->texinfo[i].vecs[0][j]);
+		bsp->texinfo[i].miptex = LittleLong (bsp->texinfo[i].miptex);
+		bsp->texinfo[i].flags = LittleLong (bsp->texinfo[i].flags);
 	}
 	
 	// faces
-	for (i = 0; i < numfaces; i++) {
-		dfaces[i].texinfo = LittleShort (dfaces[i].texinfo);
-		dfaces[i].planenum = LittleShort (dfaces[i].planenum);
-		dfaces[i].side = LittleShort (dfaces[i].side);
-		dfaces[i].lightofs = LittleLong (dfaces[i].lightofs);
-		dfaces[i].firstedge = LittleLong (dfaces[i].firstedge);
-		dfaces[i].numedges = LittleShort (dfaces[i].numedges);
+	for (i=0 ; i<bsp->numfaces ; i++) {
+		bsp->faces[i].texinfo = LittleShort (bsp->faces[i].texinfo);
+		bsp->faces[i].planenum = LittleShort (bsp->faces[i].planenum);
+		bsp->faces[i].side = LittleShort (bsp->faces[i].side);
+		bsp->faces[i].lightofs = LittleLong (bsp->faces[i].lightofs);
+		bsp->faces[i].firstedge = LittleLong (bsp->faces[i].firstedge);
+		bsp->faces[i].numedges = LittleShort (bsp->faces[i].numedges);
 	}
 
 	// nodes
-	for (i = 0; i < numnodes; i++) {
-		dnodes[i].planenum = LittleLong (dnodes[i].planenum);
-		for (j = 0; j < 3; j++) {
-			dnodes[i].mins[j] = LittleShort (dnodes[i].mins[j]);
-			dnodes[i].maxs[j] = LittleShort (dnodes[i].maxs[j]);
+	for (i=0 ; i<bsp->numnodes ; i++) {
+		bsp->nodes[i].planenum = LittleLong (bsp->nodes[i].planenum);
+		for (j=0 ; j<3 ; j++) {
+			bsp->nodes[i].mins[j] = LittleShort (bsp->nodes[i].mins[j]);
+			bsp->nodes[i].maxs[j] = LittleShort (bsp->nodes[i].maxs[j]);
 		}
-		dnodes[i].children[0] = LittleShort (dnodes[i].children[0]);
-		dnodes[i].children[1] = LittleShort (dnodes[i].children[1]);
-		dnodes[i].firstface = LittleShort (dnodes[i].firstface);
-		dnodes[i].numfaces = LittleShort (dnodes[i].numfaces);
+		bsp->nodes[i].children[0] = LittleShort (bsp->nodes[i].children[0]);
+		bsp->nodes[i].children[1] = LittleShort (bsp->nodes[i].children[1]);
+		bsp->nodes[i].firstface = LittleShort (bsp->nodes[i].firstface);
+		bsp->nodes[i].numfaces = LittleShort (bsp->nodes[i].numfaces);
 	}
 
 	// leafs
-	for (i = 0; i < numleafs; i++) {
-		dleafs[i].contents = LittleLong (dleafs[i].contents);
-		for (j = 0; j < 3; j++) {
-			dleafs[i].mins[j] = LittleShort (dleafs[i].mins[j]);
-			dleafs[i].maxs[j] = LittleShort (dleafs[i].maxs[j]);
+	for (i=0 ; i<bsp->numleafs ; i++) {
+		bsp->leafs[i].contents = LittleLong (bsp->leafs[i].contents);
+		for (j=0 ; j<3 ; j++) {
+			bsp->leafs[i].mins[j] = LittleShort (bsp->leafs[i].mins[j]);
+			bsp->leafs[i].maxs[j] = LittleShort (bsp->leafs[i].maxs[j]);
 		}
 
-		dleafs[i].firstmarksurface = LittleShort (dleafs[i].firstmarksurface);
-		dleafs[i].nummarksurfaces = LittleShort (dleafs[i].nummarksurfaces);
-		dleafs[i].visofs = LittleLong (dleafs[i].visofs);
+		bsp->leafs[i].firstmarksurface = LittleShort (bsp->leafs[i].firstmarksurface);
+		bsp->leafs[i].nummarksurfaces = LittleShort (bsp->leafs[i].nummarksurfaces);
+		bsp->leafs[i].visofs = LittleLong (bsp->leafs[i].visofs);
 	}
 
 	// clipnodes
-	for (i = 0; i < numclipnodes; i++) {
-		dclipnodes[i].planenum = LittleLong (dclipnodes[i].planenum);
-		dclipnodes[i].children[0] = LittleShort (dclipnodes[i].children[0]);
-		dclipnodes[i].children[1] = LittleShort (dclipnodes[i].children[1]);
+	for (i=0 ; i<bsp->numclipnodes ; i++) {
+		bsp->clipnodes[i].planenum = LittleLong (bsp->clipnodes[i].planenum);
+		bsp->clipnodes[i].children[0] = LittleShort (bsp->clipnodes[i].children[0]);
+		bsp->clipnodes[i].children[1] = LittleShort (bsp->clipnodes[i].children[1]);
 	}
 
 	// miptex
-	if (texdatasize) {
-		mtl = (dmiptexlump_t *) dtexdata;
+	if (bsp->texdatasize) {
+		mtl = (dmiptexlump_t *)bsp->texdata;
 		if (todisk)
 			c = mtl->nummiptex;
 		else
-			c = LittleLong (mtl->nummiptex);
+			c = LittleLong(mtl->nummiptex);
 		mtl->nummiptex = LittleLong (mtl->nummiptex);
-		for (i = 0; i < c; i++)
-			mtl->dataofs[i] = LittleLong (mtl->dataofs[i]);
+		for (i=0 ; i<c ; i++)
+			mtl->dataofs[i] = LittleLong(mtl->dataofs[i]);
 	}
 	
 	// marksurfaces
-	for (i = 0; i < nummarksurfaces; i++)
-		dmarksurfaces[i] = LittleShort (dmarksurfaces[i]);
+	for (i=0 ; i<bsp->nummarksurfaces ; i++)
+		bsp->marksurfaces[i] = LittleShort (bsp->marksurfaces[i]);
 
 	// surfedges
-	for (i = 0; i < numsurfedges; i++)
-		dsurfedges[i] = LittleLong (dsurfedges[i]);
+	for (i=0 ; i<bsp->numsurfedges ; i++)
+		bsp->surfedges[i] = LittleLong (bsp->surfedges[i]);
 
 	// edges
-	for (i = 0; i < numedges; i++) {
-		dedges[i].v[0] = LittleShort (dedges[i].v[0]);
-		dedges[i].v[1] = LittleShort (dedges[i].v[1]);
+	for (i=0 ; i<bsp->numedges ; i++) {
+		bsp->edges[i].v[0] = LittleShort (bsp->edges[i].v[0]);
+		bsp->edges[i].v[1] = LittleShort (bsp->edges[i].v[1]);
 	}
 }
 
-static void
-AddLump (int lumpnum, void *data, int len)
+bsp_t *
+LoadBSPFile (QFile *file, int size)
 {
-	lump_t		*lump;
+	dheader_t  *header;
+	bsp_t      *bsp;
 
-	lump = &header->lumps[lumpnum];
-	
-	lump->fileofs = LittleLong (Qtell (wadfile));
-	lump->filelen = LittleLong (len);
-	Qwrite (wadfile, data, (len + 3) &~3);
-}
+	header = malloc (size);
+	Qread (file, header, size);
 
-static int
-CopyLump (int lump, void **dest, int size)
-{
-	int		length, ofs;
+	if (LittleLong (header->version) != BSPVERSION)
+		Sys_Error ("version %i, not %i", LittleLong (header->version),
+				   BSPVERSION);
 
-	length = header->lumps[lump].filelen;
-	ofs = header->lumps[lump].fileofs;
-	
-	if (length % size)
-		Sys_Error ("LoadBSPFile: odd lump size");
-	
-	*dest = malloc (length);
-	if (!dest)
-		Sys_Error ("LoadBSPFile: out of memory");
-	memcpy (*dest, (byte *) header + ofs, length);
+#undef SET_LUMP
+#define SET_LUMP(l,n) \
+do { \
+	bsp->num##n = LittleLong (header->lumps[l].filelen); \
+	bsp->n = malloc (bsp->num##n); \
+	memcpy (bsp->n, (byte *) header + LittleLong (header->lumps[l].fileofs), \
+			bsp->num##n); \
+	bsp->num##n /= sizeof (bsp->n[0]); \
+} while (0)
 
-	return length / size;
-}
+	bsp = malloc (sizeof (bsp_t));
+	SET_LUMP (LUMP_PLANES, planes);
+	SET_LUMP (LUMP_LEAFS, leafs);
+	SET_LUMP (LUMP_VERTEXES, vertexes);
+	SET_LUMP (LUMP_NODES, nodes);
+	SET_LUMP (LUMP_TEXINFO, texinfo);
+	SET_LUMP (LUMP_FACES, faces);
+	SET_LUMP (LUMP_CLIPNODES, clipnodes);
+	SET_LUMP (LUMP_MARKSURFACES, marksurfaces);
+	SET_LUMP (LUMP_SURFEDGES, surfedges);
+	SET_LUMP (LUMP_EDGES, edges);
+	SET_LUMP (LUMP_MODELS, models);
 
-extern int LoadFile (const char *filename, void **bufferptr);
+#undef SET_LUMP
+#define SET_LUMP(l,n) \
+do { \
+	bsp->n##size = LittleLong (header->lumps[l].filelen); \
+	bsp->n = malloc (bsp->n##size); \
+	memcpy (bsp->n, (byte *) header + LittleLong (header->lumps[l].fileofs), \
+			bsp->n##size); \
+	bsp->n##size /= sizeof (bsp->n[0]); \
+} while (0)
 
-void
-LoadBSPFile (const char *filename)
-{
-	int		i;
-
-	// load the file header
-	LoadFile (filename, (void *) &header);
-
-	// swap the header
-	for (i = 0; i < sizeof (dheader_t) / 4; i++)
-		((int *) header)[i] = LittleLong (((int *) header)[i]);
-
-	if (header->version != BSPVERSION)
-		Sys_Error ("%s is version %i, not %i", filename, i, BSPVERSION);
-//FIXME casting to (void**) isn't really portable :(
-	nummodels = CopyLump (LUMP_MODELS, (void **)&dmodels, sizeof (dmodel_t));
-	numvertexes = CopyLump (LUMP_VERTEXES, (void **)&dvertexes, sizeof (dvertex_t));
-	numplanes = CopyLump (LUMP_PLANES, (void **)&dplanes, sizeof (dplane_t));
-	numleafs = CopyLump (LUMP_LEAFS, (void **)&dleafs, sizeof (dleaf_t));
-	numnodes = CopyLump (LUMP_NODES, (void **)&dnodes, sizeof (dnode_t));
-	numtexinfo = CopyLump (LUMP_TEXINFO, (void **)&texinfo, sizeof (texinfo_t));
-	numclipnodes = CopyLump (LUMP_CLIPNODES, (void **)&dclipnodes, sizeof (dclipnode_t));
-	numfaces = CopyLump (LUMP_FACES, (void **)&dfaces, sizeof (dface_t));
-	nummarksurfaces = CopyLump (LUMP_MARKSURFACES, (void **)&dmarksurfaces,
-								sizeof (dmarksurfaces[0]));
-	numsurfedges = CopyLump (LUMP_SURFEDGES, (void **)&dsurfedges,
-							 sizeof (dsurfedges[0]));
-	numedges = CopyLump (LUMP_EDGES, (void **)&dedges, sizeof (dedge_t));
-
-	texdatasize = CopyLump (LUMP_TEXTURES, (void **)&dtexdata, 1);
-	visdatasize = CopyLump (LUMP_VISIBILITY, (void **)&dvisdata, 1);
-	lightdatasize = CopyLump (LUMP_LIGHTING, (void **)&dlightdata, 1);
-	entdatasize = CopyLump (LUMP_ENTITIES, (void **)&dentdata, 1);
+	SET_LUMP (LUMP_LIGHTING, lightdata);
+	SET_LUMP (LUMP_VISIBILITY, visdata);
+	SET_LUMP (LUMP_ENTITIES, entdata);
+	SET_LUMP (LUMP_TEXTURES, texdata);
 
 	free (header);
-		
-	SwapBSPFile (false);
+
+	swap_bsp (bsp, 0);
+	return bsp;
 }
 
 /*
@@ -299,41 +229,74 @@ LoadBSPFile (const char *filename)
 	Swaps the bsp file in place, so it should not be referenced again
 */
 void
-WriteBSPFile (const char *filename)
+WriteBSPFile (bsp_t *bsp, QFile *file)
 {		
-	header = &outheader;
+	int         size;
+	dheader_t  *header;
+	byte       *data;
+
+	size = sizeof (dheader_t);
+	size += bsp->nummodels * sizeof (dmodel_t);
+	size += bsp->visdatasize;
+	size += bsp->lightdatasize;
+	size += bsp->texdatasize;
+	size += bsp->entdatasize;
+	size += bsp->numleafs * sizeof (dleaf_t);
+	size += bsp->numplanes * sizeof (dplane_t);
+	size += bsp->numvertexes * sizeof (dvertex_t);
+	size += bsp->numnodes * sizeof (dnode_t);
+	size += bsp->numtexinfo * sizeof (texinfo_t);
+	size += bsp->numfaces * sizeof (dface_t);
+	size += bsp->numclipnodes * sizeof (dclipnode_t);
+	size += bsp->numedges * sizeof (dedge_t);
+	size += bsp->nummarksurfaces * sizeof (unsigned short);
+	size += bsp->numsurfedges * sizeof (int);
+
+	header = malloc (size);
 	memset (header, 0, sizeof (dheader_t));
-	
-	SwapBSPFile (true);
+
+	swap_bsp (bsp, 1);
+
+#undef SET_LUMP
+#define SET_LUMP(l,n) \
+do { \
+	bsp->num##n *= sizeof (bsp->n[0]); \
+	header->lumps[l].fileofs = LittleLong (data - (byte *) header); \
+	header->lumps[l].filelen = LittleLong (bsp->num##n); \
+	memcpy (data, bsp->n, bsp->num##n); \
+	data += bsp->num##n; \
+} while (0)
 
 	header->version = LittleLong (BSPVERSION);
-	
-	wadfile = Qopen (filename, "wb");
-	if (!wadfile)
-		Sys_Error ("Error opening %s", filename);
-	
-	Qwrite (wadfile, header, sizeof (dheader_t));	// overwritten later
 
-	AddLump (LUMP_PLANES, dplanes, numplanes * sizeof (dplane_t));
-	AddLump (LUMP_LEAFS, dleafs, numleafs * sizeof (dleaf_t));
-	AddLump (LUMP_VERTEXES, dvertexes, numvertexes * sizeof (dvertex_t));
-	AddLump (LUMP_NODES, dnodes, numnodes * sizeof (dnode_t));
-	AddLump (LUMP_TEXINFO, texinfo, numtexinfo * sizeof (texinfo_t));
-	AddLump (LUMP_FACES, dfaces, numfaces * sizeof (dface_t));
-	AddLump (LUMP_CLIPNODES, dclipnodes, numclipnodes * sizeof (dclipnode_t));
-	AddLump (LUMP_MARKSURFACES, dmarksurfaces, nummarksurfaces
-			 * sizeof (dmarksurfaces[0]));
-	AddLump (LUMP_SURFEDGES, dsurfedges, numsurfedges
-			 * sizeof (dsurfedges[0]));
-	AddLump (LUMP_EDGES, dedges, numedges * sizeof (dedge_t));
-	AddLump (LUMP_MODELS, dmodels, nummodels * sizeof (dmodel_t));
+	data = (byte *) &header[1];
+	SET_LUMP (LUMP_PLANES, planes);
+	SET_LUMP (LUMP_LEAFS, leafs);
+	SET_LUMP (LUMP_VERTEXES, vertexes);
+	SET_LUMP (LUMP_NODES, nodes);
+	SET_LUMP (LUMP_TEXINFO, texinfo);
+	SET_LUMP (LUMP_FACES, faces);
+	SET_LUMP (LUMP_CLIPNODES, clipnodes);
+	SET_LUMP (LUMP_MARKSURFACES, marksurfaces);
+	SET_LUMP (LUMP_SURFEDGES, surfedges);
+	SET_LUMP (LUMP_EDGES, edges);
+	SET_LUMP (LUMP_MODELS, models);
 
-	AddLump (LUMP_LIGHTING, dlightdata, lightdatasize);
-	AddLump (LUMP_VISIBILITY, dvisdata, visdatasize);
-	AddLump (LUMP_ENTITIES, dentdata, entdatasize);
-	AddLump (LUMP_TEXTURES, dtexdata, texdatasize);
-	
-	Qseek (wadfile, 0, SEEK_SET);
-	Qwrite (wadfile, header, sizeof (dheader_t));
-	Qclose (wadfile);	
+#undef SET_LUMP
+#define SET_LUMP(l,n) \
+do { \
+	bsp->n##size *= sizeof (bsp->n[0]); \
+	header->lumps[l].fileofs = LittleLong (data - (byte *) header); \
+	header->lumps[l].filelen = LittleLong (bsp->n##size); \
+	memcpy (data, bsp->n, bsp->n##size); \
+	data += bsp->n##size; \
+} while (0)
+
+	SET_LUMP (LUMP_LIGHTING, lightdata);
+	SET_LUMP (LUMP_VISIBILITY, visdata);
+	SET_LUMP (LUMP_ENTITIES, entdata);
+	SET_LUMP (LUMP_TEXTURES, texdata);
+
+	Qwrite (file, header, size);
+	free (header);
 }

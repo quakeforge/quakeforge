@@ -29,6 +29,7 @@
 #define __bspfile_h_
 
 #include "QF/qtypes.h"
+#include "QF/quakeio.h"
 
 // upper design bounds
 
@@ -231,59 +232,55 @@ typedef struct {
 #define	ANGLE_UP		-1
 #define	ANGLE_DOWN		-2
 
-// the utilities get to be lazy and just use large static arrays
+typedef struct bsp_s {
+	int			nummodels;
+	dmodel_t	*models;
 
-extern	int			nummodels;
-extern	dmodel_t	*dmodels;
+	int			visdatasize;
+	byte		*visdata;
 
-extern	int			visdatasize;
-extern	byte		*dvisdata;
+	int			lightdatasize;
+	byte		*lightdata;
 
-extern	int			lightdatasize;
-extern	byte		*dlightdata;
+	int			texdatasize;
+	byte		*texdata; // (dmiptexlump_t)
 
-extern	int			texdatasize;
-extern	byte		*dtexdata; // (dmiptexlump_t)
+	int			entdatasize;
+	char		*entdata;
 
-extern	int			entdatasize;
-extern	char		*dentdata;
+	int			numleafs;
+	dleaf_t		*leafs;
 
-extern	int			numleafs;
-extern	dleaf_t		*dleafs;
+	int			numplanes;
+	dplane_t	*planes;
 
-extern	int			numplanes;
-extern	dplane_t	*dplanes;
+	int			numvertexes;
+	dvertex_t	*vertexes;
 
-extern	int			numvertexes;
-extern	dvertex_t	*dvertexes;
+	int			numnodes;
+	dnode_t		*nodes;
 
-extern	int			numnodes;
-extern	dnode_t		*dnodes;
+	int			numtexinfo;
+	texinfo_t	*texinfo;
 
-extern	int			numtexinfo;
-extern	texinfo_t	*texinfo;
+	int			numfaces;
+	dface_t		*faces;
 
-extern	int			numfaces;
-extern	dface_t		*dfaces;
+	int			numclipnodes;
+	dclipnode_t	*clipnodes;
 
-extern	int			numclipnodes;
-extern	dclipnode_t	*dclipnodes;
+	int			numedges;
+	dedge_t		*edges;
 
-extern	int			numedges;
-extern	dedge_t		*dedges;
+	int			nummarksurfaces;
+	unsigned short	*marksurfaces;
 
-extern	int			nummarksurfaces;
-extern	unsigned short	*dmarksurfaces;
+	int			numsurfedges;
+	int			*surfedges;
+} bsp_t;
 
-extern	int			numsurfedges;
-extern	int			*dsurfedges;
-
-void DecompressVis (byte *in, byte *decompressed);
-int CompressVis (byte *vis, byte *dest);
-
-void	LoadBSPFile (const char *filename);
-void	WriteBSPFile (const char *filename);
-void	PrintBSPFileSizes (void);
+bsp_t *LoadBSPFile (QFile *file, int size);
+void WriteBSPFile (bsp_t *bsp, QFile *file);
 
 #endif
 #endif	// __bspfile_h_

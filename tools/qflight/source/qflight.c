@@ -59,6 +59,7 @@ static const char rcsid[] =
 #include "options.h"
 
 options_t	options;
+bsp_t *bsp;
 
 char *bspfile;
 
@@ -100,7 +101,7 @@ LightThread (void *junk)
 		LOCK;
 		i = bspfileface++;
 		UNLOCK;
-		if (i >= numfaces)
+		if (i >= bsp->numfaces)
 			return;
 
 		LightFace (i);
@@ -110,21 +111,22 @@ LightThread (void *junk)
 void
 LightWorld (void)
 {
-	filebase = file_p = dlightdata;
-	file_end = filebase + MAX_MAP_LIGHTING;
+    filebase = file_p = bsp->lightdata;
+    file_end = filebase + MAX_MAP_LIGHTING;
 
 	RunThreadsOn (LightThread);
 
-	lightdatasize = file_p - filebase;
+    bsp->lightdatasize = file_p - filebase;
 
 	if (options.verbosity >= 0)
-		printf ("lightdatasize: %i\n", lightdatasize);
+		printf ("lightdatasize: %i\n", bsp->lightdatasize);
 }
 
 int
 main (int argc, char **argv)
 {
 	double      start, stop;
+	QFile      *f;
 
 	start = Sys_DoubleTime ();
 
@@ -142,15 +144,20 @@ main (int argc, char **argv)
 	COM_StripExtension (bspfile, bspfile);
 	COM_DefaultExtension (bspfile, ".bsp");
 
-	LoadBSPFile (bspfile);
+	f = Qopen (bspfile, "rb");
+	bsp = LoadBSPFile (f, Qfilesize (f));
+	Qclose (f);
 	LoadEntities ();
 
-	MakeTnodes (&dmodels[0]);
+	MakeTnodes (&bsp->models[0]);
 
 	LightWorld ();
 
 	WriteEntitiesToString ();
-	WriteBSPFile (bspfile);
+
+	f = Qopen (bspfile, "wb");
+	WriteBSPFile (bsp, f);
+	Qclose (f);
 
 	stop = Sys_DoubleTime ();
 	

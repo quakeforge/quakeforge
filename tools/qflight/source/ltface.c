@@ -140,7 +140,7 @@ CalcFaceVectors (lightinfo_t *l)
 	float		distscale;
 	vec_t		dist, len;
 
-	tex = &texinfo[l->face->texinfo];
+	tex = &bsp->texinfo[l->face->texinfo];
 
 	// convert from float to vec_t
 	for (i = 0; i < 2; i++)
@@ -210,14 +210,14 @@ CalcFaceExtents (lightinfo_t *l)
 	mins[0] = mins[1] = 999999;
 	maxs[0] = maxs[1] = -99999;
 
-	tex = &texinfo[s->texinfo];
+	tex = &bsp->texinfo[s->texinfo];
 
 	for (i = 0; i < s->numedges; i++) {
-		e = dsurfedges[s->firstedge + i];
+		e = bsp->surfedges[s->firstedge + i];
 		if (e >= 0)
-			v = dvertexes + dedges[e].v[0];
+			v = bsp->vertexes + bsp->edges[e].v[0];
 		else
-			v = dvertexes + dedges[-e].v[1];
+			v = bsp->vertexes + bsp->edges[-e].v[1];
 
 		for (j = 0; j < 2; j++) {
 			val = v->point[0] * tex->vecs[j][0] +
@@ -458,14 +458,14 @@ LightFace (int surfnum)
 	vec_t		total;
 	vec_t		*light;
 
-	f = dfaces + surfnum;
+	f = bsp->faces + surfnum;
 
 	// some surfaces don't need lightmaps
 	f->lightofs = -1;
 	for (j = 0; j < MAXLIGHTMAPS; j++)
 		f->styles[j] = 255;
 
-	if (texinfo[f->texinfo].flags & TEX_SPECIAL)	
+	if (bsp->texinfo[f->texinfo].flags & TEX_SPECIAL)	
 		// non-lit texture
 		return;
 
@@ -474,8 +474,8 @@ LightFace (int surfnum)
 	l.face = f;
 
 	// rotate plane
-	VectorCopy (dplanes[f->planenum].normal, l.facenormal);
-	l.facedist = dplanes[f->planenum].dist;
+	VectorCopy (bsp->planes[f->planenum].normal, l.facenormal);
+	l.facedist = bsp->planes[f->planenum].dist;
 	if (f->side) {
 		VectorSubtract (vec3_origin, l.facenormal, l.facenormal);
 		l.facedist = -l.facedist;

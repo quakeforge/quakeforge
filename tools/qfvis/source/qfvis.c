@@ -66,6 +66,8 @@ static const char rcsid[] =
 pthread_mutex_t *my_mutex;
 #endif
 
+bsp_t *bsp;
+
 options_t	options;
 
 int			numportals;
@@ -451,19 +453,18 @@ LeafFlow (int leafnum)
 	vismap_p += i;
 
 	if (vismap_p > vismap_end) {
-		int d = dest - dvisdata;
-		int p = vismap_p - dvisdata;
-		int e = vismap_end - dvisdata;
-
-		visdatasize = p;
-		vismap = dvisdata = realloc (dvisdata, visdatasize);
-		dest = dvisdata + d;
-		vismap_p = dvisdata + p;
-		vismap_end = dvisdata + e;
+		int d = dest - bsp->visdata;
+		int p = vismap_p - bsp->visdata;
+		int e = vismap_end - bsp->visdata;
+		bsp->visdatasize = p;
+		vismap = bsp->visdata = realloc (bsp->visdata, bsp->visdatasize);
+		dest = bsp->visdata + d;
+		vismap_p = bsp->visdata + p;
+		vismap_end = bsp->visdata + e;
 		fprintf (stderr, "Vismap grown\n");
 	}
 
-	dleafs[leafnum + 1].visofs = dest - vismap;	// leaf 0 is a common solid
+	bsp->leafs[leafnum + 1].visofs = dest - vismap;	// leaf 0 is a common solid
 
 	memcpy (dest, compressed, i);
 }
@@ -504,19 +505,19 @@ CalcPortalVis (void)
 	if (pthread_attr_setstacksize (&attrib, 0x100000) == -1)
 		fprintf (stderr, "pthread_attr_setstacksize failed\n");
 	for (i = 0; i < options.threads; i++) {
-	    if (pthread_create (&work_threads[i], &attrib, LeafThread,
+		if (pthread_create (&work_threads[i], &attrib, LeafThread,
 							(void *) i) == -1)
 			fprintf (stderr, "pthread_create failed\n");
 	}
 
 	for (i = 0; i < options.threads; i++) {
-	    if (pthread_join (work_threads[i], &status) == -1)
+		if (pthread_join (work_threads[i], &status) == -1)
 			fprintf (stderr, "pthread_join failed\n");
 	}
 
 	if (pthread_mutex_destroy (my_mutex) == -1)
-	    fprintf (stderr, "pthread_mutex_destroy failed\n");
-    }
+		fprintf (stderr, "pthread_mutex_destroy failed\n");
+	}
 #else
 	LeafThread (0);
 #endif
@@ -564,16 +565,16 @@ Findpassages (winding_t *source, winding_t *pass)
 {
 	double		length;
 	float		d;
-    int			counts[3];
+	int			counts[3];
 	int			i, j, k, l;
 	plane_t		plane;
-    qboolean	fliptest;
-    sep_t		*sep, *list;
+	qboolean	fliptest;
+	sep_t		*sep, *list;
 	vec3_t		v1, v2;
 
 	list = NULL;
 
-	// check all combinations       
+	// check all combinations
 	for (i = 0; i < source->numpoints; i++) {
 		l = (i + 1) % source->numpoints;
 		VectorSubtract (source->points[l], source->points[i], v1);
@@ -763,8 +764,8 @@ LoadPortals (char *name)
 
 	originalvismapsize = portalleafs * ((portalleafs + 7) / 8);
 
-	vismap = vismap_p = dvisdata;
-	vismap_end = vismap + visdatasize;
+	vismap = vismap_p = bsp->visdata;
+	vismap_end = vismap + bsp->visdatasize;
 
 	for (i = 0, portal = portals; i < numportals; i++) {
 		if (fscanf (f, "%i %i %i ", &numpoints, &leafnums[0],
@@ -782,13 +783,13 @@ LoadPortals (char *name)
 		winding->numpoints = numpoints;
 
 		for (j = 0; j < numpoints; j++) {
-			double v[3];	    
-			int k;	    
+			double v[3];
+			int k;
 
 			// scanf into double, then assign to vec_t
 			if (fscanf (f, "(%lf %lf %lf ) ", &v[0], &v[1], &v[2]) != 3)
 				fprintf (stderr, "LoadPortals: reading portal %i\n", i);
-	    
+
 			for (k = 0; k < 3; k++)		
 				winding->points[j][k] = v[k];
 		}
@@ -831,6 +832,7 @@ main (int argc, char **argv)
 {
 	double      start, stop;
 	dstring_t  *portalfile = dstring_new ();
+	QFile      *f;
 	
 	start = Sys_DoubleTime ();
 
@@ -845,8 +847,10 @@ main (int argc, char **argv)
 
 	COM_StripExtension (options.bspfile, options.bspfile);
 	COM_DefaultExtension (options.bspfile, ".bsp");
-
-	LoadBSPFile (options.bspfile);
+	
+	f = Qopen (options.bspfile, "rb");
+	bsp = LoadBSPFile (f, Qfilesize (f));
+	Qclose (f);
 
 	portalfile->size = strlen (options.bspfile) + 1;
 	dstring_adjust (portalfile);
@@ -862,14 +866,16 @@ main (int argc, char **argv)
 	if (options.verbosity >= 0)
 		printf ("c_chains: %i\n", c_chains);
 
-	visdatasize = vismap_p - dvisdata;
+	bsp->visdatasize = vismap_p - bsp->visdata;
 	if (options.verbosity >= 0)
-		printf ("visdatasize:%i  compressed from %i\n", visdatasize,
+		printf ("visdatasize:%i  compressed from %i\n", bsp->visdatasize,
 				originalvismapsize);
 
 	CalcAmbientSounds ();
 
-	WriteBSPFile (options.bspfile);
+	f = Qopen (options.bspfile, "wb");
+	WriteBSPFile (bsp, f);
+	Qclose (f);
 
 	stop = Sys_DoubleTime ();
 	

@@ -133,4 +133,6 @@ void BasePortalVis (void);
 void PortalFlow (portal_t *portal);
 void CalcAmbientSounds (void);
 
+extern struct bsp_s *bsp;
+
 #endif// __vis_h

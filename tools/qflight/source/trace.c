@@ -91,8 +91,8 @@ MakeTnode (int nodenum)
 
 	t = tnode_p++;
 
-	node = dnodes + nodenum;
-	plane = dplanes + node->planenum;
+	node = bsp->nodes + nodenum;
+	plane = bsp->planes + node->planenum;
 
 	t->type = plane->type;
 	VectorCopy (plane->normal, t->normal);
@@ -100,7 +100,7 @@ MakeTnode (int nodenum)
 
 	for (i = 0; i < 2; i++) {
 		if (node->children[i] < 0)
-			t->children[i] = dleafs[-node->children[i] - 1].contents;
+			t->children[i] = bsp->leafs[-node->children[i] - 1].contents;
 		else {
 			t->children[i] = tnode_p - tnodes;
 			MakeTnode (node->children[i]);
@@ -116,7 +116,7 @@ MakeTnode (int nodenum)
 void
 MakeTnodes (dmodel_t *bm)
 {
-	tnode_p = tnodes = malloc (numnodes * sizeof (tnode_t));
+	tnode_p = tnodes = malloc (bsp->numnodes * sizeof (tnode_t));
 
 	MakeTnode (0);
 }

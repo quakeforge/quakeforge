@@ -59,4 +59,6 @@ byte *GetFileSpace (int size);
 void TransformSample (vec3_t in, vec3_t out);
 void RotateSample (vec3_t in, vec3_t out);
 
+extern struct bsp_s *bsp;
+
 #endif// __light_h

@@ -75,12 +75,12 @@ SurfaceBBox (dface_t *s, vec3_t mins, vec3_t maxs)
 	maxs[0] = maxs[1] = -99999;
 
 	for (i = 0; i < s->numedges; i++) {
-		e = dsurfedges[s->firstedge + i];
+		e = bsp->surfedges[s->firstedge + i];
 		if (e >= 0)
-			vi = dedges[e].v[0];
+			vi = bsp->edges[e].v[0];
 		else
-			vi = dedges[-e].v[1];
-		v = dvertexes[vi].point;
+			vi = bsp->edges[-e].v[1];
+		v = bsp->vertexes[vi].point;
 
 		for (j = 0; j < 3; j++) {
 			if (v[j] < mins[j])
@@ -105,7 +105,7 @@ CalcAmbientSounds (void)
 	miptex_t	*miptex;
 
 	for (i = 0; i < portalleafs; i++) {
-		leaf = &dleafs[i + 1];
+		leaf = &bsp->leafs[i + 1];
 
 		// clear ambients
 		for (j = 0; j < NUM_AMBIENTS; j++)
@@ -118,13 +118,13 @@ CalcAmbientSounds (void)
 				continue;
 
 			// check this leaf for sound textures
-			hit = &dleafs[j + 1];
+			hit = &bsp->leafs[j + 1];
 
 			for (k = 0; k < hit->nummarksurfaces; k++) {
-				surf = &dfaces[dmarksurfaces[hit->firstmarksurface + k]];
-				info = &texinfo[surf->texinfo];
-				ofs = ((dmiptexlump_t *) dtexdata)->dataofs[info->miptex];
-				miptex = (miptex_t *) (&dtexdata[ofs]);
+				surf = &bsp->faces[bsp->marksurfaces[hit->firstmarksurface + k]];
+				info = &bsp->texinfo[surf->texinfo];
+				ofs = ((dmiptexlump_t *) bsp->texdata)->dataofs[info->miptex];
+				miptex = (miptex_t *) (&bsp->texdata[ofs]);
 
 				if (!strncasecmp (miptex->name, "*water", 6))
 					ambient_type = AMBIENT_WATER;
