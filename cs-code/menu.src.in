@@ -13,4 +13,5 @@ menu.dat
 
 @srcdir@/controls_o.qc
 @srcdir@/options.qc
+@srcdir@/servlist.qc
 @srcdir@/menu.qc
