@@ -508,18 +508,6 @@ VID_Init (unsigned char *palette)
 		x_gc = XCreateGC (x_disp, x_win, valuemask, &xgcvalues);
 	}
 
-	// wait for first exposure event
-	{
-		XEvent	event;
-
-		do {
-			XNextEvent (x_disp, &event);
-			if (event.type == Expose && !event.xexpose.count)
-				oktodraw = true;
-		} while (!oktodraw);
-	}
-	// now safe to draw
-
 	// even if MITSHM is available, make sure it's a local connection
 	if (XShmQueryExtension (x_disp)) {
 		char       *displayname;
