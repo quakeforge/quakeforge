@@ -34,8 +34,9 @@ INCLUDES=	-I$(top_srcdir)/include -I$(top_srcdir)/nq/include $(GGI_CFLAGS) $(MGL
 
 bin_PROGRAMS =	@NQ_TARGETS@
 
-EXTRA_PROGRAMS= nq-ggi nq-mgl nq-sdl nq-svga nq-x11 \
-		nq-3dfx nq-glx nq-sgl nq-wgl nq-ded
+EXTRA_PROGRAMS= cougar-nq-cl-ggi cougar-nq-cl-mgl cougar-nq-cl-sdl \
+		cougar-nq-cl-svga cougar-nq-cl-x11 cougar-nq-cl-3dfx \
+		cougar-nq-cl-glx cougar-nq-cl-sgl cougar-nq-cl-wgl cougar-nq-sv
 
 noinst_LIBRARIES= libqfsys.a libqfsnd.a libqfcd.a libqfjs.a libqfnet.a
 
@@ -158,45 +159,45 @@ soft_SOURCES=	d_edge.c d_fill.c d_init.c d_modech.c d_part.c d_polyse.c \
 #
 ggi_SOURCES=		vid_ggi.c
 
-nq_ggi_SOURCES=	$(combined_SOURCES) $(soft_SOURCES) $(ggi_SOURCES)
-nq_ggi_LDADD=	$(client_LIBS) $(GGI_LIBS)
-nq_ggi_DEPENDENCIES=libqfsys.a libqfsnd.a libqfcd.a libqfjs.a libqfnet.a
+cougar_nq_cl_ggi_SOURCES=	$(combined_SOURCES) $(soft_SOURCES) $(ggi_SOURCES)
+cougar_nq_cl_ggi_LDADD=	$(client_LIBS) $(GGI_LIBS)
+cougar_nq_cl_ggi_DEPENDENCIES=libqfsys.a libqfsnd.a libqfcd.a libqfjs.a libqfnet.a
 
 #
 # ... SciTech MGL
 #
 mgl_SOURCES=		vid_mgl.c in_win.c
 
-nq_mgl_SOURCES=	$(combined_SOURCES) $(soft_SOURCES) $(mgl_SOURCES)
-nq_mgl_LDADD=	$(client_LIBS) $(MGL_LIBS)
-nq_mgl_DEPENDENCIES=libqfsys.a libqfsnd.a libqfcd.a libqfjs.a libqfnet.a
+cougar_nq_cl_mgl_SOURCES=	$(combined_SOURCES) $(soft_SOURCES) $(mgl_SOURCES)
+cougar_nq_cl_mgl_LDADD=	$(client_LIBS) $(MGL_LIBS)
+cougar_nq_cl_mgl_DEPENDENCIES=libqfsys.a libqfsnd.a libqfcd.a libqfjs.a libqfnet.a
 
 #
 # ... Sam Lantinga's Simple DirectMedia Layer, version 1.0 and higher
 #
 sdl_SOURCES=		vid_sdl.c in_sdl.c
 
-nq_sdl_SOURCES=	$(combined_SOURCES) $(soft_SOURCES) $(sdl_SOURCES)
-nq_sdl_LDADD=	$(client_LIBS) $(SDL_LIBS)
-nq_sdl_DEPENDENCIES=libqfsys.a libqfsnd.a libqfcd.a libqfjs.a libqfnet.a
+cougar_nq_cl_sdl_SOURCES=	$(combined_SOURCES) $(soft_SOURCES) $(sdl_SOURCES)
+cougar_nq_cl_sdl_LDADD=	$(client_LIBS) $(SDL_LIBS)
+cougar_nq_cl_sdl_DEPENDENCIES=libqfsys.a libqfsnd.a libqfcd.a libqfjs.a libqfnet.a
 
 #
 # ... Linux SVGAlib
 #
 svga_SOURCES=		d_copy.S vid_svgalib.c in_svgalib.c
 
-nq_svga_SOURCES=	$(combined_SOURCES) $(soft_SOURCES) $(svga_SOURCES)
-nq_svga_LDADD=	$(client_LIBS) $(SVGA_LIBS)
-nq_svga_DEPENDENCIES=libqfsys.a libqfsnd.a libqfcd.a libqfjs.a libqfnet.a
+cougar_nq_cl_svga_SOURCES=	$(combined_SOURCES) $(soft_SOURCES) $(svga_SOURCES)
+cougar_nq_cl_svga_LDADD=	$(client_LIBS) $(SVGA_LIBS)
+cougar_nq_cl_svga_DEPENDENCIES=libqfsys.a libqfsnd.a libqfcd.a libqfjs.a libqfnet.a
 
 #
 # ... X11
 #
 x11_SOURCES=		in_x11.c context_x11.c dga_check.c
 
-nq_x11_SOURCES=	$(combined_SOURCES) $(soft_SOURCES) $(x11_SOURCES) vid_x11.c
-nq_x11_LDADD=	$(client_LIBS) $(X_PRE_LIBS) $(VIDMODE_LIBS) $(DGA_LIBS) $(X_LIBS) -lX11 $(X_EXTRA_LIBS) $(X_SHM_LIB)
-nq_x11_DEPENDENCIES=libqfsys.a libqfsnd.a libqfcd.a libqfjs.a libqfnet.a
+cougar_nq_cl_x11_SOURCES=	$(combined_SOURCES) $(soft_SOURCES) $(x11_SOURCES) vid_x11.c
+cougar_nq_cl_x11_LDADD=	$(client_LIBS) $(X_PRE_LIBS) $(VIDMODE_LIBS) $(DGA_LIBS) $(X_LIBS) -lX11 $(X_EXTRA_LIBS) $(X_SHM_LIB)
+cougar_nq_cl_x11_DEPENDENCIES=libqfsys.a libqfsnd.a libqfcd.a libqfjs.a libqfnet.a
 
 
 #
@@ -214,45 +215,45 @@ ogl_SOURCES=	gl_draw.c gl_mesh.c gl_part.c gl_refrag.c gl_rlight.c \
 #
 tdfx_SOURCES=	vid_3dfxsvga.c vid_common_gl.c in_svgalib.c
 
-nq_3dfx_SOURCES=	$(combined_SOURCES) $(ogl_SOURCES) $(tdfx_SOURCES)
-nq_3dfx_LDADD=	$(client_LIBS) $(TDFXGL_LIBS) $(SVGA_LIBS) $(DL_LIBS)
-nq_3dfx_DEPENDENCIES=libqfsys.a libqfsnd.a libqfcd.a libqfjs.a libqfnet.a
+cougar_nq_cl_3dfx_SOURCES=	$(combined_SOURCES) $(ogl_SOURCES) $(tdfx_SOURCES)
+cougar_nq_cl_3dfx_LDADD=	$(client_LIBS) $(TDFXGL_LIBS) $(SVGA_LIBS) $(DL_LIBS)
+cougar_nq_cl_3dfx_DEPENDENCIES=libqfsys.a libqfsnd.a libqfcd.a libqfjs.a libqfnet.a
 
 #
 # ... OpenGL in X Window
 #
 glx_SOURCES=	vid_glx.c vid_common_gl.c $(x11_SOURCES)
 
-nq_glx_SOURCES=	$(combined_SOURCES) $(ogl_SOURCES) $(glx_SOURCES)
-nq_glx_LDADD=	$(client_LIBS) $(GLX_LIBS) $(X_PRE_LIBS) $(VIDMODE_LIBS) $(DGA_LIBS) $(X_LIBS) -lX11 $(X_EXTRA_LIBS) $(DL_LIBS)
-nq_glx_DEPENDENCIES=libqfsys.a libqfsnd.a libqfcd.a libqfjs.a libqfnet.a
+cougar_nq_cl_glx_SOURCES=	$(combined_SOURCES) $(ogl_SOURCES) $(glx_SOURCES)
+cougar_nq_cl_glx_LDADD=	$(client_LIBS) $(GLX_LIBS) $(X_PRE_LIBS) $(VIDMODE_LIBS) $(DGA_LIBS) $(X_LIBS) -lX11 $(X_EXTRA_LIBS) $(DL_LIBS)
+cougar_nq_cl_glx_DEPENDENCIES=libqfsys.a libqfsnd.a libqfcd.a libqfjs.a libqfnet.a
 
 #
 # ... Sam Lantinga's Simple DirectMedia Layer, version 1.1 and higher, in GL mode
 #
 sgl_SOURCES=	vid_sgl.c vid_common_gl.c in_sdl.c
 
-nq_sgl_SOURCES=	$(combined_SOURCES) $(ogl_SOURCES) $(sgl_SOURCES)
-nq_sgl_LDADD=	$(client_LIBS) $(X_LIBS) $(SDL_LIBS) $(GLX_LIBS) $(DL_LIBS)
-nq_sgl_DEPENDENCIES=libqfsys.a libqfsnd.a libqfcd.a libqfjs.a libqfnet.a
+cougar_nq_cl_sgl_SOURCES=	$(combined_SOURCES) $(ogl_SOURCES) $(sgl_SOURCES)
+cougar_nq_cl_sgl_LDADD=	$(client_LIBS) $(X_LIBS) $(SDL_LIBS) $(GLX_LIBS) $(DL_LIBS)
+cougar_nq_cl_sgl_DEPENDENCIES=libqfsys.a libqfsnd.a libqfcd.a libqfjs.a libqfnet.a
 
 #
 # SGI/Microsoft WGL (Windows OpenGL)
 #
 wgl_SOURCES=	vid_wgl.c
 
-nq_wgl_SOURCES=	$(combined_SOURCES) $(ogl_SOURCES) $(wgl_SOURCES)
-nq_wgl_LDADD=	$(client_LIBS)
-nq_wgl_DEPENDENCIES=libqfsys.a libqfsnd.a libqfcd.a libqfjs.a libqfnet.a
+cougar_nq_cl_wgl_SOURCES=	$(combined_SOURCES) $(ogl_SOURCES) $(wgl_SOURCES)
+cougar_nq_cl_wgl_LDADD=	$(client_LIBS)
+cougar_nq_cl_wgl_DEPENDENCIES=libqfsys.a libqfsnd.a libqfcd.a libqfjs.a libqfnet.a
 
 #
 # dedicated server
 #
 ded_SOURCES=sys_unixd.c sv_ded.c
 
-nq_ded_SOURCES=$(common_SOURCES) $(server_SOURCES) $(ded_SOURCES)
-nq_ded_LDADD= libqfnet.a $(Z_LIBS)
-nq_ded_DEPENDENCIES=libqfnet.a
+cougar_nq_sv_SOURCES=$(common_SOURCES) $(server_SOURCES) $(ded_SOURCES)
+cougar_nq_sv_LDADD= libqfnet.a $(Z_LIBS)
+cougar_nq_sv_DEPENDENCIES=libqfnet.a
 
 #
 # Stuff that doesn't get linked into an executable NEEDS to be mentioned here,
