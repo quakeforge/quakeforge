@@ -95,6 +95,7 @@ static qboolean musEnabled = true;
 
 extern int net_socket;
 
+static void I_XMMS_f (void);
 
 
 /* static float cdvolume; */
@@ -262,6 +263,19 @@ I_XMMS_Init (void)
 {
 	xmms_args[0] = xmms_arg;
    	I_XMMS_Running();
+	Cmd_AddCommand (
+		"xmms", I_XMMS_f, "Control the XMMS player.\n"
+		"Commands:\n"
+		"resume - Will resume playback after pause.\n"
+		"off - Stops control and playback of XMMS.\n"
+		"on - Starts XMMS if not running, or enables playback.\n"
+		"pause - Pause the XMMS playback.\n"
+		"play - Begins playing tracks according to the playlist.\n"
+		"stop - Stops the currently playing track.\n"
+		"next - Plays the next track in the playlist.\n"
+		"prev - Plays the previous track in the playlist.\n"
+		"shuffle - Toggle shuffling the playlist.\n"
+		"repeat - Toggle repeating of the playlist.");
 	return;
 
 }
