@@ -52,11 +52,9 @@ extern byte      gammatable[256];
 extern qboolean  V_CheckGamma (void);
 
 extern cvar_t   *cl_cshift_powerup;
-extern cvar_t	*contrast;
 
 byte             ramps[3][256];
 float            v_blend[4];
-
 
 
 /*
@@ -115,16 +113,16 @@ void
 V_CalcPowerupCshift (void)
 {
 	if (!cl_cshift_powerup->int_val
-	    || (atoi (Info_ValueForKey (cl.serverinfo, "cshifts")) & INFO_CSHIFT_POWERUP))
+	    || (atoi (Info_ValueForKey (cl.serverinfo, "cshifts")) &
+			INFO_CSHIFT_POWERUP))
 		return;
 
 	if ((gl_dlight_polyblend->int_val ||
-	     !(gl_dlight_lightmap->int_val && gl_dlight_polyblend->int_val)) &&
-	    (cl.stats[STAT_ITEMS] & IT_INVULNERABILITY ||
-		cl.stats[STAT_ITEMS] & IT_QUAD))
-	{
+		 !(gl_dlight_lightmap->int_val && gl_dlight_polyblend->int_val)) &&
+		(cl.stats[STAT_ITEMS] & IT_INVULNERABILITY ||
+		 cl.stats[STAT_ITEMS] & IT_QUAD)) {
 		if (cl.stats[STAT_ITEMS] & IT_INVULNERABILITY &&
-		    cl.stats[STAT_ITEMS] & IT_QUAD) {
+			cl.stats[STAT_ITEMS] & IT_QUAD) {
 			cl.cshifts[CSHIFT_POWERUP].destcolor[0] = 255;
 			cl.cshifts[CSHIFT_POWERUP].destcolor[1] = 0;
 			cl.cshifts[CSHIFT_POWERUP].destcolor[2] = 255;

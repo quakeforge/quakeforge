@@ -174,9 +174,11 @@
 #define TE_RAILTRAIL		15
 #endif
 #define TE_EXPLOSION2		16
-// PGM 01/21/97 
+// PGM 01/21/97
 #define TE_BEAM				17
-// PGM 01/21/97 
+// PGM 01/21/97
+
+#define MAX_CLIENTS		16
 
 typedef struct entity_state_s
 {

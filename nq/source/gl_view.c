@@ -53,13 +53,11 @@ extern qboolean  V_CheckGamma (void);
 extern void      V_CalcIntermissionRefdef (void);
 extern void      V_CalcRefdef (void);
 
-extern cvar_t     *gl_cshiftpercent;
-extern cvar_t    *cl_cshift_powerup;
-
+extern cvar_t   *gl_cshiftpercent;
+extern cvar_t   *cl_cshift_powerup;
 
 byte             ramps[3][256];
 float            v_blend[4];
-
 
 
 /*
@@ -124,8 +122,7 @@ V_CalcPowerupCshift (void)
 	if ((gl_dlight_polyblend->int_val ||
 		 !(gl_dlight_lightmap->int_val && gl_dlight_polyblend->int_val)) &&
 		(cl.stats[STAT_ITEMS] & IT_INVULNERABILITY ||
-		 cl.stats[STAT_ITEMS] & IT_QUAD))
-	{
+		 cl.stats[STAT_ITEMS] & IT_QUAD)) {
 		if (cl.stats[STAT_ITEMS] & IT_INVULNERABILITY &&
 			cl.stats[STAT_ITEMS] & IT_QUAD) {
 			cl.cshifts[CSHIFT_POWERUP].destcolor[0] = 255;

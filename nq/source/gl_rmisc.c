@@ -155,11 +155,11 @@ R_Init (void)
 
 	GDT_Init ();
 	
-	//XXX netgraphtexture = texture_extension_number;
-	//XXX texture_extension_number++;
+	netgraphtexture = texture_extension_number;
+	texture_extension_number++;
 
 	playertextures = texture_extension_number;
-	texture_extension_number += 16;//MAX_CLIENTS;
+	texture_extension_number += MAX_CLIENTS;
 	player_fb_textures = texture_extension_number;
 	texture_extension_number += MAX_CACHED_SKINS;
 
