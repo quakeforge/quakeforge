@@ -71,9 +71,9 @@ client_LIBS=	$(top_builddir)/libs/gamecode/libQFgamecode.la \
 		$(top_builddir)/libs/util/libQFutil.la \
 		$(top_builddir)/libs/audio/cd/libQFcd.la \
 		$(top_builddir)/libs/audio/targets/libQFsound.la \
-		$(top_builddir)/libs/video/targets/libQFjs.la \
 		-L. -lqfnet $(SOUND_LIBS) $(NET_LIBS)
 client_LIB_DEPS= libqfnet.a
+client_POST_LIBS= $(top_builddir)/libs/video/targets/libQFjs.la
 
 client_SOURCES= cl_cam.c cl_cmd.c cl_demo.c cl_input.c cl_main.c cl_parse.c \
 		cl_tent.c console.c keys.c sbar.c r_part.c r_view.c \
@@ -98,27 +98,27 @@ soft_SOURCES=	d_edge.c d_fill.c d_init.c d_modech.c d_part.c d_polyse.c \
 
 # ... Linux FBDev
 nq_fbdev_SOURCES= $(combined_SOURCES) $(soft_SOURCES)
-nq_fbdev_LDADD= $(client_LIBS) ../../libs/video/targets/libQFfbdev.la
+nq_fbdev_LDADD= $(client_LIBS) ../../libs/video/targets/libQFfbdev.la $(client_POST_LIBS)
 nq_fbdev_DEPENDENCIES= $(client_LIB_DEPS)
 
 # ... SciTech MGL
 nq_mgl_SOURCES=	$(combined_SOURCES) $(soft_SOURCES)
-nq_mgl_LDADD=	$(client_LIBS) $(MGL_LIBS) ../../libs/video/targets/libQFmgl.la
+nq_mgl_LDADD=	$(client_LIBS) $(MGL_LIBS) ../../libs/video/targets/libQFmgl.la $(client_POST_LIBS)
 nq_mgl_DEPENDENCIES=$(client_LIB_DEPS)
 
 # ... Sam Lantinga's Simple DirectMedia Layer, version 1.0 and higher
 nq_sdl_SOURCES=	$(combined_SOURCES) $(soft_SOURCES)
-nq_sdl_LDADD=	$(client_LIBS) $(SDL_LIBS) ../../libs/video/targets/libQFsdl.la
+nq_sdl_LDADD=	$(client_LIBS) $(SDL_LIBS) ../../libs/video/targets/libQFsdl.la $(client_POST_LIBS)
 nq_sdl_DEPENDENCIES=$(client_LIB_DEPS)
 
 # ... Linux SVGAlib
 nq_svga_SOURCES=	$(combined_SOURCES) $(soft_SOURCES)
-nq_svga_LDADD=	$(client_LIBS) $(SVGA_LIBS) ../../libs/video/targets/libQFsvga.la
+nq_svga_LDADD=	$(client_LIBS) $(SVGA_LIBS) ../../libs/video/targets/libQFsvga.la $(client_POST_LIBS)
 nq_svga_DEPENDENCIES=$(client_LIB_DEPS)
 
 # ... X11
 nq_x11_SOURCES=	$(combined_SOURCES) $(soft_SOURCES)
-nq_x11_LDADD=	$(client_LIBS) $(X_PRE_LIBS) $(VIDMODE_LIBS) $(DGA_LIBS) $(X_LIBS) -lX11 $(X_EXTRA_LIBS) $(X_SHM_LIB) ../../libs/video/targets/libQFx11.la
+nq_x11_LDADD=	$(client_LIBS) $(X_PRE_LIBS) $(VIDMODE_LIBS) $(DGA_LIBS) $(X_LIBS) -lX11 $(X_EXTRA_LIBS) $(X_SHM_LIB) ../../libs/video/targets/libQFx11.la $(client_POST_LIBS)
 nq_x11_DEPENDENCIES=$(client_LIB_DEPS)
 
 
@@ -131,23 +131,23 @@ ogl_SOURCES=	gl_draw.c gl_mesh.c gl_part.c gl_refrag.c gl_rlight.c \
 
 # ... 3Dfx Voodoo 1 and 2 SVGAlib-based console GL
 nq_3dfx_SOURCES=	$(combined_SOURCES) $(ogl_SOURCES)
-nq_3dfx_LDADD=	$(client_LIBS) $(TDFXGL_LIBS) $(SVGA_LIBS) $(DL_LIBS) ../../libs/video/targets/libQFtdfx.la
+nq_3dfx_LDADD=	$(client_LIBS) $(TDFXGL_LIBS) $(SVGA_LIBS) $(DL_LIBS) ../../libs/video/targets/libQFtdfx.la $(client_POST_LIBS)
 nq_3dfx_DEPENDENCIES=$(client_LIB_DEPS)
 
 # ... OpenGL in X Window
 nq_glx_SOURCES=	$(combined_SOURCES) $(ogl_SOURCES)
-nq_glx_LDADD=	$(client_LIBS) $(GLX_LIBS) $(X_PRE_LIBS) $(VIDMODE_LIBS) $(DGA_LIBS) $(X_LIBS) -lX11 $(X_EXTRA_LIBS) $(DL_LIBS) ../../libs/video/targets/libQFglx.la
+nq_glx_LDADD=	$(client_LIBS) $(GLX_LIBS) $(X_PRE_LIBS) $(VIDMODE_LIBS) $(DGA_LIBS) $(X_LIBS) -lX11 $(X_EXTRA_LIBS) $(DL_LIBS) ../../libs/video/targets/libQFglx.la $(client_POST_LIBS)
 nq_glx_DEPENDENCIES= $(client_LIB_DEPS)
 
 # ... Simple Directmedia Layer, version 1.1 and higher, in GL mode
 nq_sgl_SOURCES=	$(combined_SOURCES) $(ogl_SOURCES)
-nq_sgl_LDADD=	$(client_LIBS) $(X_LIBS) $(SDL_LIBS) $(GLX_LIBS) $(DL_LIBS) ../../libs/video/targets/libQFsgl.la
+nq_sgl_LDADD=	$(client_LIBS) $(X_LIBS) $(SDL_LIBS) $(GLX_LIBS) $(DL_LIBS) ../../libs/video/targets/libQFsgl.la $(client_POST_LIBS)
 nq_sgl_DEPENDENCIES= $(client_LIB_DEPS)
 
 
 # ... SGI/Microsoft WGL (Windows OpenGL)
 nq_wgl_SOURCES=	$(combined_SOURCES) $(ogl_SOURCES) conproc.c
-nq_wgl_LDADD=	$(client_LIBS) $(GLX_LIBS) ../../libs/video/targets/libQFwgl.la -lgdi32 -lcomctl32
+nq_wgl_LDADD=	$(client_LIBS) $(GLX_LIBS) ../../libs/video/targets/libQFwgl.la -lgdi32 -lcomctl32 $(client_POST_LIBS)
 nq_wgl_DEPENDENCIES= $(client_LIB_DEPS)
 
 # Dedicated Server
