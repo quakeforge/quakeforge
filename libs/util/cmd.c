@@ -177,15 +177,19 @@ Cbuf_InsertText (const char *text)
 void
 extract_line (dstring_t *buffer, dstring_t *line)
 {
-	int i, squotes = 0, dquotes = 0;
+	int i, squotes = 0, dquotes = 0, braces = 0;
 	
 	for (i = 0; buffer->str[i]; i++) {
-		if (buffer->str[i] == '\'' && !escaped(buffer->str,i) && !dquotes)
+		if (buffer->str[i] == '\'' && !escaped(buffer->str,i) && !dquotes && !braces)
 			squotes^=1;
-		if (buffer->str[i] == '"' && !escaped(buffer->str,i) && !squotes)
+		if (buffer->str[i] == '"' && !escaped(buffer->str,i) && !squotes && !braces)
 			dquotes^=1;
-		if (buffer->str[i] == ';' && !escaped(buffer->str,i) && !squotes && !dquotes)
+		if (buffer->str[i] == ';' && !escaped(buffer->str,i) && !squotes && !dquotes && !braces)
 			break;
+		if (buffer->str[i] == '{' && !escaped(buffer->str,i) && !squotes && !dquotes)
+			braces++;
+		if (buffer->str[i] == '}' && !escaped(buffer->str,i) && !squotes && !dquotes)
+			braces--;
 		if (buffer->str[i] == '\n' || buffer->str[i] == '\r')
 			break;
 	}
@@ -495,42 +499,64 @@ Cmd_Args (int start)
 	return cmd_argbuf->str + cmd_args[start];
 }
 
-int Cmd_GetToken (const char *str) {
-	int i, squote, dquote;
-	
+/* This function is a bit messy, so it will be commented in detail */
+
+int 
+Cmd_GetToken (const char *str) {
+	int i, squote = 0, dquote = 0, braces = 0, n;
 	/* Only stop on comments at the beginning of tokens */
 	if (!strncmp(str, "//", 2))
 		return 0;
-	for (i = 0, squote = 0, dquote = 0; i <= strlen(str); i++) {
+	for (i = 0; i <= strlen(str); i++) {
 		/* If we find a comment in the middle of a token, end the token
 		so it will be picked up on the next call */
-		if (!strncmp(str+i, "//", 2) && !dquote && !squote)
+		if (!strncmp(str+i, "//", 2) && !dquote && !squote && !braces)
 			break;
-		if (str[i] == 0) {
-			if (dquote) { // We never found another quote, backtrack
+		if (str[i] == 0) { // At the end of the string...
+			if (dquote) { // We never found another quote, backtrack and continue as if it was escaped
 				for (; str[i] != '"'; i--);
 				dquote = 0;
 				continue;
 			}
-			else if (squote) {
+			else if (squote) { // Same for single quotes
 				for (; str[i] != '\''; i--);
 				squote = 0;
 				continue;
 			}
+			/* Unmatched braces will simply result in the entire thing being one token.
+			There is no good reason not to have matched braces */
 			else // End of string, this token is done
 				break;
 		}
-		else if (str[i] == '\'' && !escaped(str,i) && !dquote) {
+		else if (str[i] == '$' && !escaped(str,i) && str[i+1] == '{') { // We should skip past variable substitution
+			for (n = i; str[i] != '}'; i++) { // n = i to save start position
+				if (str[i] == 0) { // If a var sub string was invalid, give up and go back
+					i = n;
+					continue;
+				}
+			}
+		}
+		else if (str[i] == '{' && !escaped(str,i) && !dquote && !squote) { // Open brace
+			if (i && !braces) // If this isn't the first open brace we found, but we are in middle of string...
+				break; // Stop, a new token is beginning
+			braces++;
+		}
+		else if (str[i] == '}' && !escaped(str,i) && !dquote && !squote && braces) { // Close brace
+			braces--;
+			if (!braces) // If we just closed the opening brace, the token is done
+				break;
+		}
+		else if (str[i] == '\'' && !escaped(str,i) && !dquote) { // Single quotes
 			if (i) // If not at start of string, we must be at the end of a token
 				break;
 			squote = 1;
 		}
-		else if (str[i] == '"' && !escaped(str,i) && !squote) {
+		else if (str[i] == '"' && !escaped(str,i) && !squote) { // Double quotes
 			if (i) // Start new token
 				break;
 			dquote = 1;
 		}
-		else if (isspace(str[i]) && !dquote && !squote) {
+		else if (isspace(str[i]) && !dquote && !squote && !braces) { // Token ends at white space as well
 			break;
 		}
 	}
@@ -724,8 +750,6 @@ void Cmd_ProcessPercents (dstring_t *dstr) {
 			num = strtol(dstr->str+i+1, 0, 10);
 			dstring_snip (dstr, i, n);
 			dstring_insertstr (dstr, Cmd_Argv(num), i);
-			Sys_DPrintf("Cmd_ProcessPercents:  Replaced %%%i with %s\n", (int)num, Cmd_Argv(num));
-			Sys_DPrintf("Cmd_ProcessPercents:  New line: %s\n", dstr->str);
 		}
 	}
 }				
@@ -752,12 +776,10 @@ void Cmd_ProcessPercents (dstring_t *dstr) {
 void
 Cmd_TokenizeString (const char *text, qboolean filter)
 {
-	int i = 0, n, len = 0, quotes = 0, space;
+	int i = 0, n, len = 0, quotes, braces, space;
 	const char *str = text;
 	
 	cmd_argc = 0;
-	
-	Sys_DPrintf("Cmd_TokenizeString:  Received line:  %s\n", text);
 	
 	/* Turn off tags at the beginning of a command.
 	This causes tags to continue past token boundaries. */
@@ -790,20 +812,29 @@ Cmd_TokenizeString (const char *text, qboolean filter)
 		}
 		dstring_clearstr(cmd_argv[cmd_argc-1]);
 		cmd_argspace[cmd_argc-1] = space;
-		/* Remove surrounding quotes or double quotes */
+		/* Remove surrounding quotes or double quotes or braces*/
 		quotes = 0;
+		braces = 0;
 		if ((str[i] == '\'' && str[i+len] == '\'') || (str[i] == '"' && str[i+len] == '"')) {
 			i++;
 			len-=1;
 			quotes = 1;
 		}
+		if (str[i] == '{' && str[i+len] == '}') {
+			i++;
+			len-=1;
+			braces = 1;
+		}
 		dstring_insert(cmd_argv[cmd_argc-1], str + i, len, 0);
 		if (filter && text[0] != '|') {
-			Cmd_ProcessTags(cmd_argv[cmd_argc-1]);
-			Cmd_ProcessVariables(cmd_argv[cmd_argc-1]);
+			if (!braces) {
+				Cmd_ProcessTags(cmd_argv[cmd_argc-1]);
+				Cmd_ProcessVariables(cmd_argv[cmd_argc-1]);
+			}
 			Cmd_ProcessEscapes(cmd_argv[cmd_argc-1]);
 		}
-		i += len + quotes; /* If we ended on a quote, skip it */
+
+		i += len + quotes + braces; /* If we ended on a quote or brace, skip it */
 	}
 	/* Now we must reconstruct cmd_args */
 	dstring_clearstr (cmd_argbuf);
@@ -813,7 +844,6 @@ Cmd_TokenizeString (const char *text, qboolean filter)
 		cmd_args[i] = strlen(cmd_argbuf->str);
 		dstring_appendstr (cmd_argbuf, cmd_argv[i]->str);
 	}
-	Sys_DPrintf("Cmd_TokenizeString:  Reconstructed line: %s\n", cmd_argbuf->str);
 }
 
 void
