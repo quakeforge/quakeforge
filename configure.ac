@@ -1460,6 +1460,7 @@ AC_OUTPUT(
 	libs/audio/targets/Makefile
 	libs/console/Makefile
 	libs/gamecode/Makefile
+	libs/gamecode/engine/Makefile
 	libs/gib/Makefile
 	libs/models/Makefile
 	libs/models/alias/Makefile
