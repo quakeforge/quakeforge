@@ -1,102 +1,204 @@
+/* 
+	pak.c
+
+	Pakfile tool
+
+	Copyright (C) 1996-1997 Id Software, Inc.
+	Copyright (C) 2002 Bill Currie <bill@taniwha.org>
+	Copyright (C) 2002 Jeff Teunissen <deek@quakeforge.net>
+
+	This program is free software; you can redistribute it and/or
+	modify it under the terms of the GNU General Public License as
+	published by the Free Software Foundation; either version 2 of
+	the License, or (at your option) any later version.
+
+	This program is distributed in the hope that it will be useful,
+	but WITHOUT ANY WARRANTY; without even the implied warranty of
+	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+
+	See the GNU General Public License for more details.
+
+	You should have received a copy of the GNU General Public
+	License along with this program; if not, write to:
+
+		Free Software Foundation, Inc.
+		59 Temple Place - Suite 330
+		Boston, MA  02111-1307, USA
+*/
+static const char rcsid[] =
+	"$Id$";
+
+#ifdef HAVE_CONFIG_H
+# include "config.h"
+#endif
+
 #include <getopt.h>
+#include <errno.h>
+#include <string.h>
+
+#include <QF/qtypes.h>
 
 #include "pakfile.h"
+#include "pak.h"
+
+const char	*this_program;
+options_t	options;
 
 static const struct option long_options[] = {
+	{"create", no_argument, 0, 'c'},
+	{"test", no_argument, 0, 't'},
+	{"extract", no_argument, 0, 'x'},
+	{"help", no_argument, 0, 'h'},
+	{"version", no_argument, 0, 'V'},
+	{"pad", no_argument, 0, 'p'},
+	{"quiet", no_argument, 0, 'q'},
+	{"verbose", no_argument, 0, 'v'},
 	{NULL, 0, NULL, 0},
 };
 
-typedef enum {
-	mo_none,
-	mo_test,
-	mo_create,
-	mo_extract,
-} mode_t;
+static void
+usage (int status)
+{
+	printf ("%s - QuakeForge Packfile tool\n", this_program);
+	printf ("Usage: %s <command> [options] ARCHIVE FILE [FILE ...]\n",
+			this_program);
+
+	printf ("Commands:\n"
+			"    -c, --create              Create archive\n"
+			"    -t, --test                Test archive\n"
+			"    -x, --extract             Extract archive contents\n"
+			"    -h, --help                Display this help and exit\n"
+			"    -V, --version             Output version information and exit\n\n");
+
+	printf ("Options:\n"
+			"    -p, --pad                 Pad file space to a 32-bit boundary\n"
+			"    -q, --quiet               Inhibit usual output\n"
+			"    -v, --verbose             Display more output than usual\n");
+	exit (status);
+}
+
+static int
+decode_args (int argc, char **argv)
+{
+	int		c;
+
+	options.mode = mo_none;
+	options.pad = false;
+	options.packfile = NULL;
+	options.verbosity = 1;
+
+	while ((c = getopt_long (argc, argv, "c"	// create archive
+										 "t"	// test archive
+										 "x"	// extract archive contents
+										 "h"	// show help
+										 "V"	// show version
+//										 "f:"	// filename
+										 "p"	// pad
+										 "q"	// quiet
+										 "v"	// verbose
+							 , long_options, (int *) 0)) != EOF) {
+		switch (c) {
+			case 'h':					// help
+				usage (0);
+				break;
+			case 'V':					// version
+				printf ("pak version %s\n", VERSION);
+				exit (0);
+				break;
+			case 'c':					// create
+				options.mode = mo_create;
+				break;
+			case 't':					// test
+				options.mode = mo_test;
+				break;
+			case 'x':					// extract
+				options.mode = mo_extract;
+				break;
+			case 'q':					// lower verbosity
+				options.verbosity--;
+				break;
+			case 'p':					// pad
+				options.pad = true;
+				break;
+			case 'v':					// increase verbosity
+				options.verbosity++;
+				break;
+			default:
+				usage (1);
+		}
+	}
+
+	if (argv[optind] && *(argv[optind]))
+		options.packfile = strdup (argv[optind++]);
+
+	return optind;
+}
 
 int
 main (int argc, char **argv)
 {
-	pack_t     *pack;
-	mode_t      mode = mo_none;
-	int         i;
-	int         c;
-	const char *pack_file = 0;
-	int         verbose = 0;
-	int         pad = 0;
+	pack_t	*pack;
+	int		i;
 
-	while ((c = getopt_long (argc, argv, "cf:ptvx", long_options, 0)) != -1) {
-		switch (c) {
-			case 'f':
-				pack_file = optarg;
-				break;
-			case 't':
-				mode = mo_test;
-				break;
-			case 'c':
-				mode = mo_create;
-				break;
-			case 'x':
-				mode = mo_extract;
-				break;
-			case 'v':
-				verbose = 1;
-				break;
-			case 'p':
-				pad = 1;
-				break;
-		}
-	}
+	this_program = argv[0];
 
-	if (!pack_file) {
-		fprintf (stderr, "no pak file specified\n");
+	decode_args (argc, argv);
+
+	if (!options.packfile) {
+		fprintf (stderr, "%s: no archive file specified, giving up.\n",
+						 this_program);
 		return 1;
 	}
 
-	switch (mode) {
+	switch (options.mode) {
 		case mo_extract:
-			pack = pack_open (pack_file);
-			if (!pack) {
-				fprintf (stderr, "error opening %s\n", pack_file);
+			if (!(pack = pack_open (options.packfile))) {
+				fprintf (stderr, "%s: error opening %s: %s\n", this_program,
+								 options.packfile,
+								 strerror (errno));
 				return 1;
 			}
 			for (i = 0; i < pack->numfiles; i++) {
-				if (verbose)
+				if (options.verbosity > 0)
 					printf ("%s\n", pack->files[i].name);
 				pack_extract (pack, &pack->files[i]);
 			}
 			pack_close (pack);
 			break;
 		case mo_test:
-			pack = pack_open (pack_file);
-			if (!pack) {
-				fprintf (stderr, "error opening %s\n", pack_file);
+			if (!(pack = pack_open (options.packfile))) {
+				fprintf (stderr, "%s: error opening %s: %s\n", this_program,
+								 options.packfile,
+								 strerror (errno));
 				return 1;
 			}
 			for (i = 0; i < pack->numfiles; i++) {
-				if (verbose)
-					printf ("%6d %s\n", pack->files[i].filelen,
-							pack->files[i].name);
-				else
+				if (options.verbosity > 1)
+					printf ("%6d ", pack->files[i].filelen);
+				if (options.verbosity > 0)
 					printf ("%s\n", pack->files[i].name);
 			}
 			pack_close (pack);
 			break;
 		case mo_create:
-			pack = pack_create (pack_file);
+			pack = pack_create (options.packfile);
 			if (!pack) {
-				fprintf (stderr, "error creating %s\n", pack_file);
+				fprintf (stderr, "%s: error creating %s: %s\n", this_program,
+								 options.packfile,
+								 strerror (errno));
 				return 1;
 			}
-			pack->pad = pad;
+			pack->pad = options.pad;
 			while (optind < argc) {
-				if (verbose)
+				if (options.verbosity > 0)
 					printf ("%s\n", argv[optind]);
 				pack_add (pack, argv[optind++]);
 			}
 			pack_close (pack);
 			break;
 		default:
-			fprintf (stderr, "no operation specified\n");
+			fprintf (stderr, "%s: No command given, bailing out.\n",
+							 this_program);
 			return 1;
 	}
 	return 0;

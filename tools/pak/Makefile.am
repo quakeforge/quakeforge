@@ -6,8 +6,10 @@ PAK_INCS=@PAK_INCS@
 
 INCLUDES= -I$(top_srcdir)/include $(PAK_INCS)
 
-bin_PROGRAMS= pak
+bin_PROGRAMS=	pak
 
-pak_SOURCES= pak.c pakfile.c
-pak_LDADD= $(PAK_LIBS)
+man_MANS=	pak.1
+
+pak_SOURCES=	pak.c pakfile.c
+pak_LDADD=	$(PAK_LIBS)
 pak_DEPENDENCIES= $(PAK_DEPS)
