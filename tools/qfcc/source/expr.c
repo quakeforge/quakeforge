@@ -989,11 +989,14 @@ unary_expr (int op, expr_t *e)
 expr_t *
 function_expr (expr_t *e1, expr_t *e2)
 {
-	etype_t t1;
-	expr_t *e;
-	int parm_count = 0;
-	type_t *ftype;
-	int i;
+	etype_t     t1;
+	expr_t     *e;
+	int         parm_count = 0;
+	type_t     *ftype;
+	int         i;
+	expr_t     *args = 0, **a = &args;
+	type_t     *arg_types[MAX_PARMS];
+	expr_t     *call;
 
 	t1 = get_type (e1);
 
@@ -1025,8 +1028,8 @@ function_expr (expr_t *e1, expr_t *e2)
 
 	for (e = e2; e; e = e->next)
 		parm_count++;
-	if (parm_count > 8) {
-		return error (e1, "more than 8 parameters");
+	if (parm_count > MAX_PARMS) {
+		return error (e1, "more than %d parameters", MAX_PARMS);
 	}
 	if (ftype->num_parms != -1) {
 		expr_t *err = 0;
@@ -1052,6 +1055,7 @@ function_expr (expr_t *e1, expr_t *e2)
 			if (t != ftype->parm_types[i - 1])
 				err = error (e, "type mismatch for parameter %d of %s",
 							 i, e1->e.def->name);
+			arg_types[parm_count - i] = t;
 		}
 		if (err)
 			return err;
@@ -1060,9 +1064,25 @@ function_expr (expr_t *e1, expr_t *e2)
 		//	if (e->type == ex_integer)
 		//		warning (e, "passing integer consant into ... function");
 	}
-	e = new_binary_expr ('c', e1, e2);
+
+	call = new_block_expr ();
+	for (e = e2, i = 0; e; e = e->next, i++) {
+		*a = new_temp_def_expr (arg_types[i]);
+		append_expr (call, binary_expr ('=', *a, e));
+		a = &(*a)->next;
+	}
+	e = new_binary_expr ('c', e1, args);
 	e->e.expr.type = ftype->aux_type;
-	return e;
+	append_expr (call, e);
+	if (ftype->aux_type != &type_void) {
+		expr_t     *ret = new_expr ();
+		ret->type = ex_def;
+		ret->e.def = &def_ret;
+		e = new_temp_def_expr (ftype->aux_type);
+		append_expr (call, new_binary_expr ('=', e, ret));
+		call->e.block.result = e;
+	}
+	return call;
 }
 
 expr_t *

@@ -89,40 +89,31 @@ emit_function_call (expr_t *e, def_t *dest)
 	expr_t *earg;
 	opcode_t *op;
 	int count = 0, ind;
-	def_t *args[MAX_PARMS];
 
 	for (earg = e->e.expr.e2; earg; earg = earg->next)
 		count++;
 	ind = count;
 	for (earg = e->e.expr.e2; earg; earg = earg->next) {
 		ind--;
-		args[ind] = PR_GetTempDef (types[get_type (earg)], pr_scope);
-		arg = emit_sub_expr (earg, args[ind]);
-		if (earg->type != ex_expr && earg->type != ex_uexpr) {
-			op = PR_Opcode_Find ("=", 5, arg, args[ind], &def_void);
-			emit_statement (e->line, op, arg, args[ind], 0);
-		}
-	}
-	ind = count;
-	while (ind-- > 0) {
-		arg = args[ind];
 		parm = def_parms[ind];
-		parm.type = arg->type;
-		op = PR_Opcode_Find ("=", 5, arg, &parm, &def_void);
-		emit_statement (e->line, op, arg, &parm, 0);
+		parm.type = types[get_type (earg)];
+		arg = emit_sub_expr (earg, &parm);
+		if (earg->type != ex_expr && earg->type != ex_uexpr) {
+			op = PR_Opcode_Find ("=", 5, arg, &parm, &def_void);
+			emit_statement (e->line, op, arg, &parm, 0);
+		}
 	}
 	op = PR_Opcode_Find (va ("<CALL%d>", count), -1, &def_function,  &def_void, &def_void);
 	emit_statement (e->line, op, func, 0, 0);
 
 	def_ret.type = func->type->aux_type;
-	if (def_ret.type->type != ev_void) {
-		if (!dest)
-			dest = PR_GetTempDef (def_ret.type, pr_scope);
-		op = PR_Opcode_Find ("=", 5, &def_ret, dest, &def_void);
+	if (dest) {
+		op = PR_Opcode_Find ("=", 5, dest, &def_ret, &def_void);
 		emit_statement (e->line, op, &def_ret, dest, 0);
 		return dest;
-	} else
+	} else {
 		return &def_ret;
+	}
 }
 
 def_t *
@@ -330,6 +321,9 @@ emit_expr (expr_t *e)
 	statref_t *ref;
 	elabel_t *label;
 	//opcode_t *op;
+	static int level = 0;
+
+	level++;
 
 	switch (e->type) {
 		case ex_label:
@@ -391,7 +385,7 @@ emit_expr (expr_t *e)
 					emit_branch (e->line, op_goto, 0, e->e.expr.e1);
 					break;
 				default:
-					warning (e, "Ignoring useless expression");
+					warning (e, "useless expression");
 					emit_expr (e->e.expr.e1);
 					break;
 			}
@@ -410,5 +404,6 @@ emit_expr (expr_t *e)
 			warning (e, "Ignoring useless expression");
 			break;
 	}
-	PR_FreeTempDefs ();
+	if (--level == 0)
+		PR_FreeTempDefs ();
 }
