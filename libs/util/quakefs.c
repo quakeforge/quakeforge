@@ -42,7 +42,8 @@ static __attribute__ ((unused)) const char rcsid[] =
 #endif
 #ifdef HAVE_IO_H
 # include <io.h>
-#else
+#endif
+#ifdef HAVE_PWD_H
 # include <pwd.h>
 #endif
 
