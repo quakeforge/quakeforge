@@ -42,11 +42,11 @@ noinst_LIBRARIES= libqfnet.a
 
 math_ASM= 	cl_math.S
 soft_ASM=	d_draw.S d_draw16.S d_parta.S d_polysa.S d_scana.S d_spr8.S \
-		d_varsa.S sw_raclipa.S sw_raliasa.S sw_rdrawa.S sw_redgea.S sw_rvarsa.S \
-		surf16.S surf8.S
+		d_varsa.S sw_raclipa.S sw_raliasa.S sw_rdrawa.S sw_redgea.S \
+		sw_rvarsa.S surf16.S surf8.S
 common_ASM=	sys_ia32.S worlda.S $(math_ASM)
 
-common_SOURCES= game.c host_skin.c skin.c wad.c world.c com.c $(common_ASM)
+common_SOURCES=	game.c host_skin.c skin.c wad.c world.c com.c $(common_ASM)
 
 # ... System type
 if SYSTYPE_WIN32
@@ -59,25 +59,26 @@ endif
 libqfnet_a_SOURCES=	net_bsd.c net_dgrm.c net_loop.c \
 			net_main.c net_udp.c net_vcr.c
 
-EXTRA_libqfnet_a_SOURCES=net_dos.c net_bw.c net_ipx.c net_mp.c net_ser.c \
+EXTRA_libqfnet_a_SOURCES= net_dos.c net_bw.c net_ipx.c net_mp.c net_ser.c \
 			net_win.c net_wins.c net_wipx.c
 
 qf_client_LIBS= $(top_builddir)/libs/video/targets/libQFjs.la \
-				$(top_builddir)/libs/gamecode/libQFgamecode.la \
-				$(top_builddir)/libs/gib/libQFgib.la \
-				$(top_builddir)/libs/audio/cd/libQFcd.la \
-				$(top_builddir)/libs/audio/libQFsound.la \
-				$(top_builddir)/libs/util/libQFutil.la
+		$(top_builddir)/libs/gamecode/libQFgamecode.la \
+		$(top_builddir)/libs/gib/libQFgib.la \
+		$(top_builddir)/libs/audio/cd/libQFcd.la \
+		$(top_builddir)/libs/audio/libQFsound.la \
+		$(top_builddir)/libs/util/libQFutil.la
 
 client_LIBS=	-L. -lqfnet $(qf_client_LIBS) $(NET_LIBS)
 client_LIB_DEPS=	libqfnet.a $(qf_client_LIBS)
 
 client_SOURCES=	cl_cam.c cl_cmd.c cl_demo.c cl_input.c cl_main.c cl_parse.c \
-		cl_tent.c console.c keys.c sbar.c r_cvar.c r_efrag.c r_ent.c r_main.c r_part.c r_view.c \
-		nonintel.c locs.c pcx.c tga.c
+		cl_tent.c \
+		console.c keys.c sbar.c r_cvar.c r_efrag.c r_ent.c r_main.c \
+		r_part.c r_view.c nonintel.c locs.c pcx.c tga.c
 
-server_SOURCES= 	host.c host_cmd.c pr_cmds.c sv_cvar.c sv_main.c \
-			sv_move.c sv_phys.c sv_progs.c sv_user.c
+server_SOURCES= host.c host_cmd.c pr_cmds.c sv_cvar.c sv_main.c \
+		sv_move.c sv_phys.c sv_progs.c sv_user.c
 
 combined_SOURCES=	$(common_SOURCES) $(client_SOURCES) $(server_SOURCES) \
 			$(qfsys_SRC)
@@ -88,9 +89,9 @@ combined_SOURCES=	$(common_SOURCES) $(client_SOURCES) $(server_SOURCES) \
 soft_SOURCES=	d_edge.c d_fill.c d_init.c d_modech.c d_part.c d_polyse.c \
 		d_scan.c d_sky.c d_sprite.c d_surf.c d_vars.c d_zpoint.c \
 		draw.c screen.c sw_raclip.c sw_ralias.c sw_rbsp.c sw_rdraw.c \
-		sw_redge.c sw_rlight.c sw_rmain.c sw_rmisc.c sw_rpart.c sw_rsky.c \
-		sw_rsprite.c sw_rsurf.c sw_skin.c \
-		sw_view.c $(soft_ASM)
+		sw_redge.c sw_rlight.c sw_rmain.c sw_rmisc.c sw_rpart.c \
+		sw_rsky.c sw_rsprite.c sw_rsurf.c sw_skin.c sw_view.c \
+		$(soft_ASM)
 
 # ... Linux FBDev
 nq_fbdev_SOURCES= $(combined_SOURCES) $(soft_SOURCES)
@@ -121,9 +122,9 @@ nq_x11_DEPENDENCIES=../../libs/models/libQFmodels_sw.la ../../libs/video/targets
 # OpenGL-using targets
 # ... Common stuff
 ogl_SOURCES=	noisetextures.c gl_textures.c gl_draw.c gl_dyn_fires.c	\
-		gl_dyn_part.c gl_dyn_textures.c gl_ngraph.c \
-		gl_rlight.c gl_rmain.c gl_rmisc.c gl_rsurf.c \
-		gl_screen.c gl_skin.c gl_sky.c gl_sky_clip.c gl_view.c gl_warp.c
+		gl_dyn_part.c gl_dyn_textures.c gl_ngraph.c gl_rlight.c \
+		gl_rmain.c gl_rmisc.c gl_rsurf.c gl_screen.c gl_skin.c \
+		gl_sky.c gl_sky_clip.c gl_view.c gl_warp.c
 
 # ... 3Dfx Voodoo 1 and 2 SVGAlib-based console GL
 nq_3dfx_SOURCES=	$(combined_SOURCES) $(ogl_SOURCES)
@@ -139,7 +140,6 @@ nq_glx_DEPENDENCIES=../../libs/models/libQFmodels_gl.la ../../libs/video/targets
 nq_sgl_SOURCES=	$(combined_SOURCES) $(ogl_SOURCES)
 nq_sgl_LDADD=	../../libs/models/libQFmodels_gl.la ../../libs/video/targets/libQFsgl.la $(client_LIBS) $(X_LIBS) $(SDL_LIBS) $(GLX_LIBS) $(DL_LIBS)
 nq_sgl_DEPENDENCIES=../../libs/models/libQFmodels_gl.la ../../libs/video/targets/libQFsgl.la $(client_LIB_DEPS)
-
 
 # ... SGI/Microsoft WGL (Windows OpenGL)
 nq_wgl_SOURCES=	$(combined_SOURCES) $(ogl_SOURCES) conproc.c

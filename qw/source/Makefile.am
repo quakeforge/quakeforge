@@ -63,18 +63,17 @@ else
 syssv_SRC=	sv_sys_unix.c
 endif
 
-server_SOURCES=	sv_ccmds.c sv_cvar.c \
-		sv_ents.c sv_init.c sv_main.c sv_misc.c sv_model.c \
-		sv_move.c sv_nchan.c sv_phys.c sv_pr_cmds.c sv_progs.c sv_send.c \
-		sv_user.c world.c worlda.S $(syssv_SRC)
+server_SOURCES=	sv_ccmds.c sv_cvar.c sv_ents.c sv_init.c sv_main.c sv_misc.c \
+		sv_model.c sv_move.c sv_nchan.c sv_phys.c sv_pr_cmds.c \
+		sv_progs.c sv_send.c sv_user.c world.c worlda.S $(syssv_SRC)
 
 qf_server_LIBS= $(top_builddir)/libs/models/libQFmodels.la \
-				$(top_builddir)/libs/gamecode/libQFgamecode.la \
-				$(top_builddir)/libs/util/libQFutil.la
+		$(top_builddir)/libs/gamecode/libQFgamecode.la \
+		$(top_builddir)/libs/util/libQFutil.la
 
 qw_server_SOURCES=	$(common_SOURCES) $(server_SOURCES)
-qw_server_LDADD= -L. -lqfnet $(qf_server_LIBS) $(NET_LIBS) $(DL_LIBS)
-qw_server_DEPENDENCIES= libqfnet.a $(qf_server_LIBS)
+qw_server_LDADD=	-L. -lqfnet $(qf_server_LIBS) $(NET_LIBS) $(DL_LIBS)
+qw_server_DEPENDENCIES=	libqfnet.a $(qf_server_LIBS)
 
 # Client builds
 #
@@ -86,19 +85,21 @@ syscl_SRC=	cl_sys_unix.c
 endif
 
 qf_client_LIBS=	$(top_builddir)/libs/video/targets/libQFjs.la \
-				$(top_builddir)/libs/gamecode/libQFgamecode.la \
-				$(top_builddir)/libs/audio/cd/libQFcd.la \
-				$(top_builddir)/libs/audio/libQFsound.la \
-				$(top_builddir)/libs/util/libQFutil.la
+		$(top_builddir)/libs/gamecode/libQFgamecode.la \
+		$(top_builddir)/libs/audio/cd/libQFcd.la \
+		$(top_builddir)/libs/audio/libQFsound.la \
+		$(top_builddir)/libs/util/libQFutil.la
 
 client_LIBS= -L. -lqfnet $(qf_client_LIBS) $(NET_LIBS)
 client_LIB_DEPS=	libqfnet.a $(qf_client_LIBS)
 # libQFjs is seperate because it needs to be linked after when building statically
 
 client_SOURCES= cl_cam.c cl_cmd.c cl_cvar.c cl_demo.c cl_ents.c cl_input.c \
-	cl_main.c cl_misc.c cl_parse.c cl_pred.c cl_skin.c cl_slist.c \
-	cl_tent.c console.c keys.c locs.c nonintel.c \
-	pcx.c r_cvar.c r_efrag.c r_ent.c r_main.c r_view.c sbar.c skin.c teamplay.c tga.c wad.c cl_math.S $(syscl_SRC)
+		cl_main.c cl_misc.c cl_parse.c cl_pred.c cl_skin.c cl_slist.c \
+		cl_tent.c \
+		console.c keys.c locs.c nonintel.c pcx.c r_cvar.c r_efrag.c \
+		r_ent.c r_main.c r_view.c sbar.c skin.c teamplay.c tga.c \
+		wad.c cl_math.S $(syscl_SRC)
 
 # Software-rendering clients
 #
@@ -144,11 +145,10 @@ qw_client_x11_DEPENDENCIES=../../libs/models/libQFmodels_sw.la ../../libs/video/
 # OpenGL-using clients
 #
 # ... Common stuff
-ogl_SOURCES=	noisetextures.c gl_textures.c gl_draw.c gl_dyn_fires.c	\
-		gl_dyn_part.c gl_dyn_textures.c gl_ngraph.c	\
-		gl_rlight.c gl_rmain.c gl_rmisc.c gl_rsurf.c	\
-		gl_screen.c gl_skin.c gl_sky.c gl_sky_clip.c gl_view.c	\
-		gl_warp.c
+ogl_SOURCES=	noisetextures.c gl_textures.c gl_draw.c gl_dyn_fires.c \
+		gl_dyn_part.c gl_dyn_textures.c gl_ngraph.c gl_rlight.c	\
+		gl_rmain.c gl_rmisc.c gl_rsurf.c gl_screen.c gl_skin.c \
+		gl_sky.c gl_sky_clip.c gl_view.c gl_warp.c
 
 # ... 3Dfx Voodoo 1 and 2 SVGAlib-based console GL
 qw_client_3dfx_SOURCES=	$(common_SOURCES) $(client_SOURCES) $(ogl_SOURCES)
