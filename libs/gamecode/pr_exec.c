@@ -149,7 +149,9 @@ void
 PR_PrintStatement (progs_t * pr, dstatement_t *s)
 {
 	int         i;
+	int         addr = s - pr->pr_statements;
 
+	Con_Printf ("%-7d ", addr);
 	if ((unsigned int) s->op < sizeof (pr_opnames) / sizeof (pr_opnames[0])) {
 		Con_Printf ("%s ", pr_opnames[s->op]);
 		i = strlen (pr_opnames[s->op]);
@@ -158,10 +160,11 @@ PR_PrintStatement (progs_t * pr, dstatement_t *s)
 	}
 
 	if (s->op == OP_IF || s->op == OP_IFNOT)
-		Con_Printf ("%sbranch %i", PR_GlobalString (pr, (unsigned short) s->a),
-					s->b);
+		Con_Printf ("%sbranch %i (%i)",
+					PR_GlobalString (pr, (unsigned short) s->a), s->b,
+					addr + s->b);
 	else if (s->op == OP_GOTO) {
-		Con_Printf ("branch %i", s->a);
+		Con_Printf ("branch %i (%i)", s->a, addr + s->a);
 	} else if ((unsigned int) (s->op - OP_STORE_F) < 6) {
 		Con_Printf ("%s", PR_GlobalString (pr, (unsigned short) s->a));
 		Con_Printf ("%s",
