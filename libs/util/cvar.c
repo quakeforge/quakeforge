@@ -192,7 +192,7 @@ Cvar_Set (cvar_t *var, char *value)
 		return;
 	}
 
-	changed = strequal (var->string, value);
+	changed = !strequal (var->string, value);
 	free (var->string);					// free the old value string
 
 	var->string = strdup (value);
@@ -218,7 +218,7 @@ Cvar_SetROM (cvar_t *var, char *value)
 	if (!var)
 		return;
 
-	changed = strequal (var->string, value);
+	changed = !strequal (var->string, value);
 	free (var->string);					// free the old value string
 
 	var->string = strdup (value);
