@@ -102,6 +102,8 @@ dump_defs (qfo_t *qfo)
 				func = qfo->funcs + qfo->data[def->ofs].func_var - 1;
 			printf ("    %4d %s\n", qfo->data[def->ofs].func_var,
 					func ? qfo->strings + func->name : "BORKAGE");
+		} else if (def->basic_type == ev_field) {
+				printf ("    %4d\n", qfo->data[def->ofs].integer_var);
 		} else {
 //				printf ("    %4d\n", qfo->data[def->ofs].integer_var);
 		}
@@ -137,6 +139,7 @@ const char *reloc_names[] = {
 	"def_def",
 	"def_func",
 	"def_string",
+	"def_field",
 };
 
 void

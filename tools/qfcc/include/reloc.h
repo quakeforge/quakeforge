@@ -44,6 +44,7 @@ typedef enum {
 	rel_def_def,
 	rel_def_func,
 	rel_def_string,
+	rel_def_field,
 } reloc_type;
 
 typedef struct reloc_s {
@@ -59,5 +60,6 @@ void relocate_refs (reloc_t *refs, int ofs);
 void reloc_def_def (struct def_s *def, int ofs);
 void reloc_def_func (struct function_s *func, int ofs);
 void reloc_def_string (int ofs);
+void reloc_def_field (struct def_s *def, int ofs);
 
 #endif//__reloc_h

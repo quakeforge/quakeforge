@@ -255,6 +255,7 @@ qfo_from_progs (pr_info_t *pr)
 	qfo_add_funcs (qfo, funcs, num_funcs);
 	qfo_add_lines (qfo, linenos, num_linenos);
 	qfo_add_types (qfo, types->strings, types->size);
+	qfo->entity_fields = pr->entity_data->size;
 
 	free (defs);
 	free (relocs);
@@ -284,6 +285,7 @@ qfo_write (qfo_t *qfo, const char *filename)
 	hdr.num_funcs     = LittleLong (qfo->num_funcs);
 	hdr.num_lines     = LittleLong (qfo->num_lines);
 	hdr.types_size    = LittleLong (qfo->types_size);
+	hdr.entity_fields = LittleLong (qfo->entity_fields);
 
 	Qwrite (file, &hdr, sizeof (hdr));
 	if (qfo->code_size)
@@ -349,6 +351,7 @@ qfo_read (const char *filename)
 	qfo->num_funcs     = LittleLong (hdr.num_funcs);
 	qfo->num_lines     = LittleLong (hdr.num_lines);
 	qfo->types_size    = LittleLong (hdr.types_size);
+	qfo->entity_fields = LittleLong (hdr.entity_fields);
 
 	if (hdr.version != QFO_VERSION) {
 		fprintf (stderr, "can't read version %x.%03x.%03x\n",
@@ -531,6 +534,7 @@ qfo_to_progs (qfo_t *qfo, pr_info_t *pr)
 			pf->refs[qf->num_relocs - 1].next = 0;
 		}
 	}
+	pr->entity_data = init_space (qfo->entity_fields, 0);
 	return 0;
 }
 

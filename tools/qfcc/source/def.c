@@ -37,6 +37,7 @@ static const char rcsid[] =
 #include "qfcc.h"
 #include "def.h"
 #include "expr.h"
+#include "reloc.h"
 #include "strpool.h"
 #include "struct.h"
 #include "type.h"
@@ -196,8 +197,10 @@ vector_component (int is_field, def_t *vec, int comp, scope_t *scope,
 	d->parent = vec;
 	d->ofs = vec->ofs + comp;
 	set_storage_bits (d, storage);
-	if (is_field && (storage == st_global || storage == st_static))
+	if (is_field && (storage == st_global || storage == st_static)) {
 		G_INT (d->ofs) = G_INT (vec->ofs) + comp;
+		reloc_def_field (d, d->ofs);
+	}
 	Hash_Add (defs_by_name, d);
 }
 
@@ -258,8 +261,10 @@ get_def (type_t *type, const char *name, scope_t *scope,
 	}
 
 	if (type->type == ev_field) {
-		if (storage == st_global || storage == st_static)
+		if (storage == st_global || storage == st_static) {
 			G_INT (def->ofs) = new_location (type->aux_type, pr.entity_data);
+			reloc_def_field (def, def->ofs);
+		}
 
 		if (type->aux_type->type == ev_vector) {
 			vector_component (1, def, 0, scope, storage);

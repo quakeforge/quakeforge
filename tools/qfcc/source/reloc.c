@@ -110,6 +110,8 @@ relocate_refs (reloc_t *refs, int ofs)
 				break;
 			case rel_def_string:
 				break;
+			case rel_def_field:
+				break;
 		}
 		refs = refs->next;
 	}
@@ -148,4 +150,12 @@ reloc_def_string (int ofs)
 	reloc_t    *ref = new_reloc (ofs, rel_def_string);
 	ref->next = pr.relocs;
 	pr.relocs = ref;
+}
+
+void
+reloc_def_field (def_t *def, int ofs)
+{
+	reloc_t    *ref = new_reloc (ofs, rel_def_field);
+	ref->next = def->refs;
+	def->refs = ref;
 }
