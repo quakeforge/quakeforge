@@ -121,13 +121,13 @@ S_Init_Cvars (void)
 	snd_interp = Cvar_Get ("snd_interp", "1", CVAR_ARCHIVE, NULL,
 	                              "control sample interpolation");
 #ifdef _WIN32
-	snd_output = Cvar_Get ("snd_output", "sdl", CVAR_ARCHIVE, NULL,
+	snd_output = Cvar_Get ("snd_output", "sdl", CVAR_ROM, NULL,
 						   "Sound Output Plugin to use");
 #else
-	snd_output = Cvar_Get ("snd_output", "oss", CVAR_ARCHIVE, NULL,
+	snd_output = Cvar_Get ("snd_output", "oss", CVAR_ROM, NULL,
 						   "Sound Output Plugin to use");
 #endif
-	snd_render = Cvar_Get ("snd_render", "default", CVAR_ARCHIVE, NULL,
+	snd_render = Cvar_Get ("snd_render", "default", CVAR_ROM, NULL,
 						   "Sound Renderer Plugin to use");
 }
 
