@@ -599,42 +599,66 @@ PR_gametype (progs_t *pr)
 	RETURN_STRING (pr, pr_gametype);
 }
 
+static void
+PF_PR_SetField (progs_t *pr)
+{
+	edict_t    *ent = P_EDICT (pr, 0);
+	ddef_t     *field = PR_FindField (pr, P_GSTRING (pr, 1));
+	const char *value = P_GSTRING (pr, 2);
+
+	R_INT (pr) = 0;
+	if (field)
+		R_INT (pr) = ED_ParseEpair (pr, ent->v, field, value);
+}
+
+static void
+PF_PR_FindFunction (progs_t *pr)
+{
+	dfunction_t *func = PR_FindFunction (pr, P_GSTRING (pr, 0));
+	R_FUNCTION (pr) = 0;
+	if (func)
+		R_FUNCTION (pr) = func - pr->pr_functions;
+}
+
 #define QF (PR_RANGE_QF << PR_RANGE_SHIFT) |
 
 static builtin_t builtins[] = {
-	{"break",		PF_break,		6},
-	{"random",		PF_random,		7},
-	{"normalize",	PF_normalize,	9},
-	{"vlen",		PF_vlen,		12},
-	{"vectoyaw",	PF_vectoyaw,	13},
-	{"find",		PF_Find,		18},
-	{"dprint",		PF_dprint,		25},
-	{"ftos",		PF_ftos,		26},
-	{"vtos",		PF_vtos,		27},
-	{"coredump",	PF_coredump,	28},
-	{"traceon",		PF_traceon,		29},
-	{"traceoff",	PF_traceoff,	30},
-	{"eprint",		PF_eprint,		31},
-	{"rint",		PF_rint,		36},
-	{"floor",		PF_floor,		37},
-	{"ceil",		PF_ceil,		38},
-	{"fabs",		PF_fabs,		43},
-	{"cvar",		PF_cvar,		45},
-	{"nextent",		PF_nextent,		47},
-	{"vectoangles",	PF_vectoangles,	51},
-	{"cvar_set",	PF_cvar_set,	72},
-	{"stof",		PF_stof,		81},
+	{"break",			PF_break,			6},
+	{"random",			PF_random,			7},
+	{"normalize",		PF_normalize,		9},
+	{"vlen",			PF_vlen,			12},
+	{"vectoyaw",		PF_vectoyaw,		13},
+	{"find",			PF_Find,			18},
+	{"dprint",			PF_dprint,			25},
+	{"ftos",			PF_ftos,			26},
+	{"vtos",			PF_vtos,			27},
+	{"coredump",		PF_coredump,		28},
+	{"traceon",			PF_traceon,			29},
+	{"traceoff",		PF_traceoff,		30},
+	{"eprint",			PF_eprint,			31},
+	{"rint",			PF_rint,			36},
+	{"floor",			PF_floor,			37},
+	{"ceil",			PF_ceil,			38},
+	{"fabs",			PF_fabs,			43},
+	{"cvar",			PF_cvar,			45},
+	{"nextent",			PF_nextent,			47},
+	{"vectoangles",		PF_vectoangles,		51},
+	{"cvar_set",		PF_cvar_set,		72},
+	{"stof",			PF_stof,			81},
 
 
-	{"strlen",		PF_strlen,		QF 100},
-	{"charcount",	PF_charcount,	QF 101},
-	{"sprintf",		PF_sprintf,		QF 109},
-	{"ftoi",		PF_ftoi,		QF 110},
-	{"itof",		PF_itof,		QF 111},
-	{"itos",		PF_itos,		QF 112},
-	{"stoi",		PF_stoi,		QF 113},
-	{"stov",		PF_stov,		QF 114},
-	{"gametype",	PR_gametype,	QF 115},
+	{"strlen",			PF_strlen,			QF 100},
+	{"charcount",		PF_charcount,		QF 101},
+	{"sprintf",			PF_sprintf,			QF 109},
+	{"ftoi",			PF_ftoi,			QF 110},
+	{"itof",			PF_itof,			QF 111},
+	{"itos",			PF_itos,			QF 112},
+	{"stoi",			PF_stoi,			QF 113},
+	{"stov",			PF_stov,			QF 114},
+	{"gametype",		PR_gametype,		QF 115},
+
+	{"PR_SetField",		PF_PR_SetField,		-1},
+	{"PR_FindFunction",	PF_PR_FindFunction,	-1},
 	{0}
 };
 

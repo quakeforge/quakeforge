@@ -699,6 +699,13 @@ PF_Remove (progs_t *pr)
 	edict_t    *ed;
 
 	ed = P_EDICT (pr, 0);
+	if (NUM_FOR_EDICT (pr, ed) < *pr->reserved_edicts) {
+		if (pr_double_remove->int_val == 1) {
+			PR_DumpState (pr);
+			SV_Printf ("Reserved entity remove\n");
+		} else // == 2
+			PR_RunError (pr, "Reserved entity remove\n");
+	}
 	if (ed->free && pr_double_remove->int_val) {
 		if (pr_double_remove->int_val == 1) {
 			PR_DumpState (pr);
@@ -2007,6 +2014,8 @@ static builtin_t builtins[] = {
 	{"SV_SetPing",			PR_SV_SetPing,			-1},
 	{"SV_UserCmd",			PR_SV_UserCmd,			-1},
 	{"SV_Spawn",			PR_SV_Spawn,			-1},
+
+	{"EntityParseFunction", ED_EntityParseFunction,	-1},
 	{0}
 };
 
