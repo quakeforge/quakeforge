@@ -7,14 +7,17 @@
 /* "Proper" package name */
 #undef PROGRAM
 
-/* Define this to the QuakeWorld standard version you support */
-#undef QW_VERSION
-
 /* Define this to the NetQuake standard version you support */
 #undef NQ_VERSION
 
-/* Define this to the QSG standard version you support */
-#undef QSG_VERSION
+/* Define this to the QSG standard version you support in NetQuake */
+#undef NQ_QSG_VERSION
+
+/* Define this to the QuakeWorld standard version you support */
+#undef QW_VERSION
+
+/* Define this to the QSG standard version you support in QuakeWorld */
+#undef QW_QSG_VERSION
 
 /* Define this to the location of the global config file */
 #undef FS_GLOBALCFG
@@ -85,14 +88,11 @@
 /* Define if you have pthread support. */
 #undef HAVE_LIBPTHREAD
 
-/* Define this to something sane if you don't have stricmp */
-#undef stricmp
-
 /* If your version of OpenGL uses APIENTRY, define GLAPIENTRY to be APIENTRY */
 #undef GLAPIENTRY
 
-/* Define this to something sane if you don't have stricmp */
-#undef stricmp
+/* Define this if you have fnmatch.h */
+#undef HAVE_FNMATCH_H
 
 /* Define this if fnmatch is prototyped in fnmatch.h */
 #undef HAVE_FNMATCH_PROTO
@@ -102,9 +102,6 @@
 
 /* Define this if you want to have packet logging */
 #undef PACKET_LOGGING
-
-/* Define this if you have fnmatch.h */
-#undef HAVE_FNMATCH_H
 
 /* Define this if you have FB_AUX_VGA_PLANES_VGA4 */
 #undef HAVE_FB_AUX_VGA_PLANES_VGA4
