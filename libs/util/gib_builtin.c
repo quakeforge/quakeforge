@@ -226,11 +226,13 @@ GIB_Return_f (void)
 		dstring_clearstr (sp->line);
 		if (GIB_Argc () == 1)
 			return;
-		if (!sp->up || !sp->up->up)
-			Cbuf_Error ("stack","return attempted at top of stack");
-		else if (sp->up->up->interpreter != &gib_interp)
-			Cbuf_Error ("stack","return to non-GIB command buffer attempted");
-		else if (GIB_DATA(sp->up->up)->ret.waiting) {
+		if (!sp->up || // Nothing above us on the stack
+		  GIB_DATA(sp->up)->type != GIB_BUFFER_PROXY || // No proxy buffer created
+		  !sp->up->up ||  // Nothing above proxy buffer on the stack
+		  sp->up->up->interpreter != &gib_interp || // Not a GIB buffer
+		  !GIB_DATA(sp->up->up)->ret.waiting) // Buffer doesn't want a return value
+			Sys_Printf("Warning: unwanted return value discarded.\n"); // Not a serious error
+		else {
 			dstring_clearstr (GIB_DATA(sp->up->up)->ret.retval);
 			dstring_appendstr (GIB_DATA(sp->up->up)->ret.retval, GIB_Argv(1));
 			GIB_DATA(sp->up->up)->ret.available = true;

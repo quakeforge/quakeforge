@@ -63,24 +63,11 @@ GIB_Process_Index (dstring_t *index, unsigned int pos, int *i1, int *i2)
 			return -1;
 		}
 	v1 = atoi (index->str+pos+1);
-	if (v1 < 0) {
-		Cbuf_Error ("index", "Negative index found in sub-string expression");
-		return -1;
-	}
 	if ((p = strchr (index->str+pos, ':'))) {
 		v2 = atoi (p+1);
-		if (v2 < 0) {
-			Cbuf_Error ("index", "Negative index found in sub-string expression");
-			return -1;
-		}
 	} else
 		v2 = v1;
 	dstring_snip (index, pos, i - pos + 1);
-	if (v2 < v1) {
-		v1 ^= v2;
-		v2 ^= v1;
-		v1 ^= v2;
-	}
 	*i1 = v1;
 	*i2 = v2;
 	return 0;
@@ -121,9 +108,11 @@ GIB_Process_Variables_All (struct dstring_s *token)
 	char c = 0;
 	char *p;
 	int i1, i2;
+	qboolean index;
 	
 	for (i = 0; token->str[i]; i++) {
 		if (token->str[i] == '$') {
+			index = false;
 			if (token->str[i+1] == '{') {
 				n = i+1;
 				if ((c = GIB_Parse_Match_Brace (token->str, &n))) {
@@ -133,6 +122,7 @@ GIB_Process_Variables_All (struct dstring_s *token)
 				if (token->str[n+1] == '[')  {
 					// Cut index out and put it with the variable
 					m = n+1;
+					index = true;
 					if ((c = GIB_Parse_Match_Index (token->str, &m))) {
 						Cbuf_Error ("parse", "Could not find match for %c", c);
 						goto ERROR;
@@ -146,11 +136,14 @@ GIB_Process_Variables_All (struct dstring_s *token)
 				n++;
 			} else {
 				for (n = 1; isalnum((byte)token->str[i+n]) ||
-							token->str[i+n] == '$' ||
-							token->str[i+n] == '_' ||
-							token->str[i+n] == '[' ||
-							token->str[i+n] == ']' ||
-							token->str[i+n] == ':'; n++); // find end of var
+				  token->str[i+n] == '$' ||
+				  token->str[i+n] == '_' ||
+				  token->str[i+n] == '[' ||
+				  token->str[i+n] == ':'; n++) {
+					if (token->str[i+n] == '[')
+						while (token->str[i+n] && token->str[i+n] != ']')
+							n++;
+				}
 				dstring_insert (var, 0, token->str+i, n); // extract it
 			}
 			for (m = 1; var->str[m]; m++) {
@@ -158,19 +151,34 @@ GIB_Process_Variables_All (struct dstring_s *token)
 					m += GIB_Process_Variable (var, m, false) - 1;
 			}
 			i1 = -1;
-			if (var->str[strlen(var->str)-1] == ']' && (p = strrchr (var->str, '[')))
+			if (var->str[strlen(var->str)-1] == ']' && (p = strrchr (var->str, '['))) {
+				index = true;
 				if (GIB_Process_Index(var, p-var->str, &i1, &i2)) {
 					c = '[';
 					goto ERROR;
 				}
+			}
 			GIB_Process_Variable (var, 0, true);
-			if (i1 >= 0) {
-				if (i1 >= strlen (var->str))
+			if (index) {
+				if (i1 < 0) {
+					i1 += strlen(var->str);
+					if (i1 < 0)
+						i1 = 0;
+				} else if (i1 >= strlen (var->str))
 					i1 = strlen(var->str)-1;
-				if (i2 >= strlen (var->str))
+				if (i2 < 0) {
+					i2 += strlen(var->str);
+					if (i2 < 0)
+						i2 = 0;
+				} else if (i2 >= strlen (var->str))
 					i2 = strlen(var->str)-1;
+				if (i2 < i1) {
+					i1 ^= i2;
+					i2 ^= i1;
+					i1 ^= i2;
+				}
 				if (i2 < strlen(var->str)-1) // Snip everthing after index 2
-				dstring_snip (var, i2+1, strlen(var->str)-i2-1);
+					dstring_snip (var, i2+1, strlen(var->str)-i2-1);
 				if (i1 > 0) // Snip everything before index 1
 				dstring_snip (var, 0, i1);
 			}
