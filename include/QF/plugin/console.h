@@ -40,6 +40,7 @@ typedef void (QFPLUGIN *P_C_ProcessInput) (void);
 typedef void (QFPLUGIN *P_C_KeyEvent) (key_t key, short unicode, qboolean down);
 typedef void (QFPLUGIN *P_C_DrawConsole) (int lines);
 typedef void (QFPLUGIN *P_C_CheckResize) (void);
+typedef void (QFPLUGIN *P_C_NewMap) (void);
 
 typedef struct console_func_s {
 	P_C_Print			pC_Print;
@@ -47,6 +48,7 @@ typedef struct console_func_s {
 	P_C_KeyEvent		pC_KeyEvent;
 	P_C_DrawConsole		pC_DrawConsole;
 	P_C_CheckResize		pC_CheckResize;
+	P_C_NewMap			pC_NewMap;
 } console_funcs_t;
 
 typedef struct console_data_s {

@@ -321,6 +321,7 @@ Model_NextDownload (void)
 
 	R_NewMap (cl.worldmodel, cl.model_precache, MAX_MODELS);
 	Team_NewMap ();
+	Con_NewMap ();
 	Hunk_Check ();						// make sure nothing is hurt
 
 	// done with modellist, request first of static signon messages

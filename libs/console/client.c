@@ -57,8 +57,7 @@ static const char rcsid[] =
 #include "compat.h"
 
 static general_data_t plugin_info_general_data;
-static console_data_t plugin_info_console_data;
-#define con_data plugin_info_console_data
+console_data_t con_data;
 
 static old_console_t   con_main;
 static old_console_t   con_chat;
@@ -298,6 +297,8 @@ C_SayTeam (const char *line)
 static void
 C_Init (void)
 {
+	Menu_Init ();
+
 	con_notifytime = Cvar_Get ("con_notifytime", "3", CVAR_NONE, NULL,
 							   "How long in seconds messages are displayed "
 							   "on screen");
@@ -705,6 +706,15 @@ C_ProcessInput (void)
 {
 }
 
+static void
+C_NewMap (void)
+{
+	static char old_gamedir[MAX_OSPATH];
+
+	if (!strequal (old_gamedir, com_gamedir))
+		Menu_Load ();
+}
+
 static general_funcs_t plugin_info_general_funcs = {
 	C_Init,
 	C_Shutdown,
@@ -716,6 +726,7 @@ static console_funcs_t plugin_info_console_funcs = {
 	C_KeyEvent,
 	C_DrawConsole,
 	C_CheckResize,
+	C_NewMap,
 };
 
 static plugin_funcs_t plugin_info_funcs = {
@@ -729,7 +740,7 @@ static plugin_data_t plugin_info_data = {
 	&plugin_info_general_data,
 	0,
 	0,
-	&plugin_info_console_data,
+	&con_data,
 };
 
 static plugin_t plugin_info = {

@@ -8,7 +8,7 @@ noinst_LTLIBRARIES= @SERVER_PLUGIN_STATIC@ @CLIENT_PLUGIN_STATIC@
 EXTRA_LTLIBRARIES=  libconsole_server.la libconsole_client.la
 
 common_sources= buffer.c complete.c console.c inputline.c list.c filelist.c
-client_sources= client.c
+client_sources= client.c menu.c
 server_sources= server.c
 
 libQFconsole_la_LDFLAGS=	$(plugin_LDFLAGS) -version-info 1:0:0

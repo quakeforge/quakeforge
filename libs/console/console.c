@@ -156,3 +156,10 @@ Con_CheckResize (void)
 	if (con_module)
 		con_module->functions->console->pC_CheckResize ();
 }
+
+void
+Con_NewMap (void)
+{
+	if (con_module)
+		con_module->functions->console->pC_NewMap ();
+}

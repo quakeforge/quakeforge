@@ -1075,7 +1075,7 @@ PR_LoadProgsFile (progs_t * pr, const char *progsname)
 	if (progsname)
 		pr->progs = (dprograms_t *) COM_LoadHunkFile (progsname);
 	else
-		progsname = "(preloaded)";
+		progsname = pr->progs_name;
 	if (!pr->progs)
 		return;
 
@@ -1373,7 +1373,7 @@ PR_AccessField (progs_t *pr, const char *name, etype_t type,
 	return def->ofs;
 }
 
-void
+int
 PR_RelocateBuiltins (progs_t *pr)
 {
 	int         i;
@@ -1387,8 +1387,12 @@ PR_RelocateBuiltins (progs_t *pr)
 			continue;
 		bi_name = PR_GetString (pr, func->s_name);
 		bi = PR_FindBuiltin (pr, bi_name);
-		if (!bi)
-			PR_Error (pr, "undefined builtin %s", bi_name);
+		if (!bi) {
+			Sys_Printf ("PR_RelocateBuiltins: %s: undefined builtin %s\n",
+						pr->progs_name, bi_name);
+			return 0;
+		}
 		func->first_statement = -(bi - pr->builtins);
 	}
+	return 1;
 }

@@ -311,6 +311,7 @@ CL_ParseServerInfo (void)
 	cl_entities[0].model = cl.worldmodel = cl.model_precache[1];
 
 	R_NewMap (cl.worldmodel, cl.model_precache, MAX_MODELS);
+	Con_NewMap ();
 
 	Hunk_Check ();						// make sure nothing is hurt
 

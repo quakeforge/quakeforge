@@ -437,6 +437,7 @@ static console_funcs_t plugin_info_console_funcs = {
 	0,
 	0,
 	0,
+	0,
 };
 static console_data_t plugin_info_console_data;
 

@@ -41,6 +41,7 @@ static const char rcsid[] =
 #include "QF/keys.h"
 #include "QF/msg.h"
 #include "QF/plugin.h"
+#include "QF/progs.h"
 #include "QF/qargs.h"
 #include "QF/screen.h"
 #include "QF/sys.h"
@@ -934,6 +935,8 @@ Host_Init (quakeparms_t *parms)
 	Cmd_StuffCmds_f ();
 	Cbuf_Execute_Sets ();
 
+	PR_Init ();
+
 	V_Init ();
 	COM_Filesystem_Init ();
 	Game_Init ();
@@ -960,7 +963,6 @@ Host_Init (quakeparms_t *parms)
 	Mod_Init ();
 	// FIXME: MENUCODE
 //	M_Init ();
-	PR_Init ();
 	SV_Progs_Init ();
 	SV_Init ();
 
@@ -1005,6 +1007,7 @@ Host_Init (quakeparms_t *parms)
 	host_initialized = true;
 
 	Con_Printf ("\x80\x81\x81\x81\x81\x81\x81\x81%s Initialized\x81\x81\x81\x81\x81\x81\x81\x81\x82\n", PROGRAM);
+	Con_NewMap ();
 
 	CL_UpdateScreen (cl.time);
 }

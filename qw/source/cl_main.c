@@ -73,6 +73,7 @@ static const char rcsid[] =
 #include "QF/model.h"
 #include "QF/msg.h"
 #include "QF/plugin.h"
+#include "QF/progs.h"
 #include "QF/qargs.h"
 #include "QF/qendian.h"
 #include "QF/screen.h"
@@ -1658,6 +1659,7 @@ Host_Init (void)
 	Key_Init_Cvars ();
 	Mod_Init_Cvars ();
 	Netchan_Init_Cvars ();
+	PR_Init_Cvars ();
 	Pmove_Init_Cvars ();
 	R_Init_Cvars ();
 	R_Particles_Init_Cvars ();
@@ -1665,6 +1667,8 @@ Host_Init (void)
 	Team_Init_Cvars ();
 	V_Init_Cvars ();
 	VID_Init_Cvars ();
+
+	PR_Init ();
 
 	cl_Cmd_Init ();
 	V_Init ();
@@ -1745,6 +1749,8 @@ Host_Init (void)
 				build_number ());
 
 	Con_Printf ("\x80\x81\x81\x82 %s initialized \x80\x81\x81\x82\n", PROGRAM);
+
+	Con_NewMap ();			// force the menus to be loaded
 
 	CL_UpdateScreen (realtime);
 }
