@@ -81,6 +81,7 @@ struct QFile_s {
 #endif
 	off_t size;
 	off_t start;
+	int   c;
 };
 
 
@@ -233,6 +234,7 @@ Qopen (const char *path, const char *mode)
 			return 0;
 		}
 	}
+	file->c = -1;
 	return file;
 }
 
@@ -275,6 +277,7 @@ Qdopen (int fd, const char *mode)
 			return 0;
 		}
 	}
+	file->c = -1;
 	return file;
 }
 
@@ -312,14 +315,26 @@ Qclose (QFile *file)
 int
 Qread (QFile *file, void *buf, int count)
 {
+	int         offs = 0;
+	int         ret;
+
+	if (file->c != -1) {
+		char       *b = buf;
+		*b++ = file->c;
+		buf = b;
+		offs = 1;
+		file->c = -1;
+		count--;
+	}
 	if (file->file)
-		return fread (buf, 1, count, file->file);
-#ifdef HAVE_ZLIB
+		ret = fread (buf, 1, count, file->file);
 	else
-		return gzread (file->gzfile, buf, count);
+#ifdef HAVE_ZLIB
+		ret = gzread (file->gzfile, buf, count);
 #else
-	return -1;
+		return -1;
 #endif
+	return ret == -1 ? ret : ret + offs;
 }
 
 int
@@ -379,19 +394,34 @@ Qputs (QFile *file, const char *buf)
 char *
 Qgets (QFile *file, char *buf, int count)
 {
+	char        *ret = buf;
+
+	if (file->c != -1) {
+		*buf++ = file->c;
+		count--;
+		file->c = -1;
+		if (!count)
+			return ret;
+	}
 	if (file->file)
-		return fgets (buf, count, file->file);
+		buf = fgets (buf, count, file->file);
 #ifdef HAVE_ZLIB
 	else
-		return gzgets (file->gzfile, buf, count);
+		buf = gzgets (file->gzfile, buf, count);
 #else
 	return 0;
 #endif
+	return buf ? ret : 0;
 }
 
 int
 Qgetc (QFile *file)
 {
+	if (file->c != -1) {
+		int         c = file->c;
+		file->c = -1;
+		return c;
+	}
 	if (file->file)
 		return fgetc (file->file);
 #ifdef HAVE_ZLIB
@@ -416,8 +446,17 @@ Qputc (QFile *file, int c)
 }
 
 int
+Qungetc (QFile *file, int c)
+{
+	if (file->c == -1)
+		file->c = (byte) c;
+	return c;
+}
+
+int
 Qseek (QFile *file, long offset, int whence)
 {
+	file->c = -1;
 	if (file->file) {
 		int         res;
 		switch (whence) {
@@ -459,14 +498,19 @@ Qseek (QFile *file, long offset, int whence)
 long
 Qtell (QFile *file)
 {
+	int         offs;
+	int         ret;
+
+	offs =  (file->c != -1) ? 1 : 0;
 	if (file->file)
-		return ftell (file->file) - file->start;
-#ifdef HAVE_ZLIB
+		ret = ftell (file->file) - file->start;
 	else
-		return gztell (file->gzfile);	//FIXME does gztell do the right thing?
+#ifdef HAVE_ZLIB
+		ret = gztell (file->gzfile);	//FIXME does gztell do the right thing?
 #else
-	return -1;
+		return -1;
 #endif
+	return ret == -1 ? ret : ret - offs;
 }
 
 int
@@ -485,6 +529,8 @@ Qflush (QFile *file)
 int
 Qeof (QFile *file)
 {
+	if (file->c != -1)
+		return 0;
 	if (file->file)
 		return feof (file->file);
 #ifdef HAVE_ZLIB
@@ -529,26 +575,4 @@ Qgetline (QFile *file)
 		len = strlen (buf);
 	}
 	return buf;
-}
-
-int
-Qgetpos (QFile *file, fpos_t * pos)
-{
-#ifdef HAVE_FPOS_T_STRUCT
-	pos->__pos = Qtell (file);
-	return pos->__pos == -1 ? -1 : 0;
-#else
-	*pos = Qtell (file);
-	return *pos == -1 ? -1 : 0;
-#endif
-}
-
-int
-Qsetpos (QFile *file, fpos_t * pos)
-{
-#ifdef HAVE_FPOS_T_STRUCT
-	return Qseek (file, pos->__pos, 0);
-#else
-	return Qseek (file, *pos, 0);
-#endif
 }

@@ -30,8 +30,6 @@
 #ifndef __quakeio_h
 #define __quakeio_h
 
-#include <stdio.h>
-
 typedef struct QFile_s QFile;
 
 void Qexpand_squiggle(const char *path, char *dest);
@@ -49,12 +47,11 @@ int Qputs(QFile *file, const char *buf);
 char *Qgets(QFile *file, char *buf, int count);
 int Qgetc(QFile *file);
 int Qputc(QFile *file, int c);
+int Qungetc (QFile *file, int c);
 int Qseek(QFile *file, long offset, int whence);
 long Qtell(QFile *file);
 int Qflush(QFile *file);
 int Qeof(QFile *file);
 const char *Qgetline(QFile *file);
-int Qgetpos(QFile *file, fpos_t *pos);
-int Qsetpos(QFile *file, fpos_t *pos);
 
 #endif /*__quakeio_h*/
