@@ -35,6 +35,7 @@
 #import <Foundation/NSNotification.h>
 #import <Foundation/NSString.h>
 #import <AppKit/NSApplication.h>
+#import <AppKit/NSNibDeclarations.h>
 
 #import "BundleController.h"
 
@@ -56,12 +57,12 @@
 - (void) applicationWillTerminate: (NSNotification *) not;
 
 // Action methods
-- (IBAction void) createNew: (id) sender;
-- (IBAction void) createNewProject: (id) sender;
-- (IBAction void) infoPanel: (id) sender;
-- (IBAction void) open: (id) sender;
-- (IBAction void) openProject: (id) sender;
-- (IBAction void) saveAll: (id) sender;
-- (IBAction void) showPreferencesPanel: (id) sender;
+- (IBAction) createNew: (id) sender;
+- (IBAction) createNewProject: (id) sender;
+- (IBAction) infoPanel: (id) sender;
+- (IBAction) open: (id) sender;
+- (IBAction) openProject: (id) sender;
+- (IBAction) saveAll: (id) sender;
+- (IBAction) showPreferencesPanel: (id) sender;
 
 @end
