@@ -476,7 +476,7 @@ PR_GlobalStringNoContents (gofs_t ofs)
 	def = pr_global_defs[ofs];
 	if (!def) {
 //		Error ("PR_GlobalString: no def for %i", ofs);
-		sprintf (line, "%i(???)", ofs);
+		sprintf (line, "%i(\?\?\?)", ofs);
 	} else {
 		sprintf (line, "%i(%s)", ofs, def->name);
 	}
