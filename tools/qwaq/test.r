@@ -5,6 +5,11 @@
 
 @implementation Foo
 
++ (void) initialize
+{
+	print ("+initialize\n");
+}
+
 -run
 {
 	print ("Hello world\n");

@@ -53,8 +53,6 @@ static edict_t *edicts;
 static int num_edicts;
 static int reserved_edicts;
 static progs_t pr;
-static void *membase;
-static int memsize = 16*1024*1024;
 
 static QFile *
 open_file (const char *path, int *len)
@@ -74,7 +72,7 @@ load_file (progs_t *pr, const char *name)
 {
 	QFile      *file;
 	int         size;
-	void       *sym;
+	char       *sym;
 
 	file = open_file (name, &size);
 	if (!file) {
@@ -83,7 +81,8 @@ load_file (progs_t *pr, const char *name)
 			return 0;
 		}
 	}
-	sym = malloc (size);
+	sym = malloc (size + 1);
+	sym[size] = 0;
 	Qread (file, sym, size);
 	return sym;
 }
@@ -108,9 +107,6 @@ init_qf (void)
 	Cvar_Init ();
 	Sys_Init_Cvars ();
 	Cmd_Init ();
-
-	membase = malloc (memsize);
-	Memory_Init (membase, memsize);
 
 	Cvar_Get ("pr_debug", "1", 0, 0, 0);
 	Cvar_Get ("pr_boundscheck", "0", 0, 0, 0);

@@ -298,7 +298,53 @@ obj_find_message (progs_t *pr, pr_class_t *class, pr_sel_t *selector)
 	return 0;
 }
 
-static pr_method_t *
+static void
+obj_send_initialize (progs_t *pr, pr_class_t *class)
+{
+	pr_method_list_t *method_list;
+	pr_method_t *method;
+	pr_sel_t   *sel;
+	pr_class_t *class_pointer;
+	pr_sel_t   *selector = sel_register_name (pr, "initialize");
+	int         i;
+
+	if (PR_CLS_ISINITIALIZED (class))
+		return;
+	class_pointer = &G_STRUCT (pr, pr_class_t, class->class_pointer);
+	PR_CLS_SETINITIALIZED (class);
+	PR_CLS_SETINITIALIZED (class_pointer);
+	if (class->super_class)
+		obj_send_initialize (pr, &G_STRUCT (pr, pr_class_t,
+											class->super_class));
+
+	method_list = &G_STRUCT (pr, pr_method_list_t, class_pointer->methods);
+	while (method_list) {
+		for (i = 0, method = method_list->method_list;
+			 i < method_list->method_count; i++, method++) {
+			sel = &G_STRUCT (pr, pr_sel_t, method->method_name);
+			if (sel->sel_id == selector->sel_id) {
+				int         size = pr->pr_param_size * MAX_PARMS;
+				pr_type_t  *params = alloca (size * sizeof (pr_type_t));
+				memcpy (params, *pr->pr_params, size * sizeof (pr_type_t));
+				PR_ExecuteProgram (pr, method->method_imp);
+				memcpy (*pr->pr_params, params, size * sizeof (pr_type_t));
+				return;
+			}
+		}
+		method_list = &G_STRUCT (pr, pr_method_list_t,
+								 method_list->method_next);
+	}
+}
+
+static func_t
+get_imp (progs_t *pr, pr_class_t *class, pr_sel_t *sel)
+{
+	pr_method_t *method = obj_find_message (pr, class, sel);
+
+	return method ? method->method_imp : 0;
+}
+
+static func_t
 obj_msg_lookup (progs_t *pr, pr_id_t *receiver, pr_sel_t *op)
 {
 	pr_class_t *class;
@@ -308,7 +354,7 @@ obj_msg_lookup (progs_t *pr, pr_id_t *receiver, pr_sel_t *op)
 	return obj_find_message (pr, class, op);
 }
 
-static pr_method_t *
+static func_t
 obj_msg_lookup_super (progs_t *pr, pr_super_t *super, pr_sel_t *op)
 {
 	pr_class_t *class;
@@ -317,7 +363,7 @@ obj_msg_lookup_super (progs_t *pr, pr_super_t *super, pr_sel_t *op)
 		return 0;
 
 	class = &G_STRUCT (pr, pr_class_t, super->class);
-	return obj_find_message (pr, class, op);
+	return get_imp (pr, class, op);
 }
 
 static void

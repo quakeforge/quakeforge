@@ -145,6 +145,14 @@ typedef struct pr_ivar_list_s {
 } pr_ivar_list_t;
 typedef struct pr_ivar_s pr_ivar_t;
 
+typedef struct pr_static_instances_s {
+	// one per staticly instanced class per module (eg, 3 instances of Object
+	// will produce one of these structs with 3 pointers to those instances in
+	// instances[]
+	string_t    class_name;
+	pointer_t   instances[1];		// null terminated array of pr_id_t
+} pr_static_instances_t;
+
 typedef struct pr_symtab_s {
 	int         sel_ref_cnt;
 	pointer_t   refs;				// pr_sel_t
