@@ -1477,6 +1477,7 @@ AC_SUBST(VID_TARGETS)
 dnl Output files
 AC_OUTPUT(
 	Makefile
+	quakeforge-config
 
 	include/Makefile
 	include/QF/Makefile
@@ -1513,7 +1514,7 @@ AC_OUTPUT(
 
 	RPM/build_rpm,
 
-	chmod +x RPM/build_rpm
+	chmod +x quakeforge-config RPM/build_rpm
 )
 
 AC_MSG_RESULT([

@@ -10,3 +10,4 @@ config.status
 configure
 configure-stamp
 libtool
+quakeforge-config
