@@ -94,6 +94,7 @@ extern LPDIRECTSOUNDBUFFER pDSBuf;
 extern DWORD gSndBufSize;
 void	VID_LockBuffer (void);
 void	VID_UnlockBuffer (void);
+void	VID_UpdateWindowStatus (int window_x, int window_y);
 
 typedef enum {MS_WINDOWED, MS_FULLSCREEN, MS_FULLDIB, MS_UNINIT} modestate_t;
 

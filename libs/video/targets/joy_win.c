@@ -112,6 +112,26 @@ int  joy_id;
 DWORD joy_flags;
 DWORD joy_numbuttons;
 
+PDWORD
+RawValuePointer (int axis)
+{
+	switch (axis) {
+		case JOY_AXIS_X:
+			return &ji.dwXpos;
+		case JOY_AXIS_Y:
+			return &ji.dwYpos;
+		case JOY_AXIS_Z:
+			return &ji.dwZpos;
+		case JOY_AXIS_R:
+			return &ji.dwRpos;
+		case JOY_AXIS_U:
+			return &ji.dwUpos;
+		case JOY_AXIS_V:
+			return &ji.dwVpos;
+	}
+	return NULL;
+}
+
 qboolean
 _JOY_Read (void)
 {
@@ -197,6 +217,69 @@ JOY_Read (void)
 }
 
 int
+JOY_StartupJoystick (void)
+{
+	int /* i, */ numdevs;
+	JOYCAPS     jc;
+	MMRESULT    mmr = !JOYERR_NOERROR;
+
+	// assume no joystick
+	joy_found = false;
+
+	// abort startup if user requests no joystick
+	if (COM_CheckParm ("-nojoy"))
+		return -1;
+
+	// verify joystick driver is present
+	if ((numdevs = joyGetNumDevs ()) == 0) {
+		Con_Printf ("\njoystick not found -- driver not present\n\n");
+		return -1;
+	}
+	// cycle through the joystick ids for the first valid one
+	for (joy_id = 0; joy_id < numdevs; joy_id++) {
+		memset (&ji, 0, sizeof (ji));
+		ji.dwSize = sizeof (ji);
+		ji.dwFlags = JOY_RETURNCENTERED;
+
+		if ((mmr = joyGetPosEx (joy_id, &ji)) == JOYERR_NOERROR)
+			break;
+	}
+
+	// abort startup if we didn't find a valid joystick
+	if (mmr != JOYERR_NOERROR) {
+		Con_Printf ("\njoystick not found -- no valid joysticks (%x)\n\n",
+					mmr);
+		return -1;
+	}
+	// get the capabilities of the selected joystick
+	// abort startup if command fails
+	memset (&jc, 0, sizeof (jc));
+	if ((mmr = joyGetDevCaps (joy_id, &jc, sizeof (jc))) != JOYERR_NOERROR) {
+		Con_Printf
+			("\njoystick not found -- invalid joystick capabilities (%x)\n\n",
+			 mmr);
+		return -1;
+	}
+	// save the joystick's number of buttons and POV status
+	joy_numbuttons = jc.wNumButtons;
+	joy_haspov = jc.wCaps & JOYCAPS_HASPOV;
+
+	// old button and POV states default to no buttons pressed
+	joy_oldbuttonstate = joy_oldpovstate = 0;
+
+	// mark the joystick as available and advanced initialization not
+	// completed
+	// this is needed as cvars are not available during initialization
+
+	joy_advancedinit = false;
+	joy_found = true;
+	// FIXME: do this right
+	joy_active = true;
+	Con_Printf ("\njoystick detected\n\n");
+	return 0;
+}
+
+int
 JOY_Open (void)
 {
 	return JOY_StartupJoystick();
@@ -266,89 +349,6 @@ JOY_AdvancedUpdate_f (void)
 			joy_flags |= dwAxisFlags[i];
 		}
 	}
-}
-
-int
-JOY_StartupJoystick (void)
-{
-	int /* i, */ numdevs;
-	JOYCAPS     jc;
-	MMRESULT    mmr = !JOYERR_NOERROR;
-
-	// assume no joystick
-	joy_found = false;
-
-	// abort startup if user requests no joystick
-	if (COM_CheckParm ("-nojoy"))
-		return -1;
-
-	// verify joystick driver is present
-	if ((numdevs = joyGetNumDevs ()) == 0) {
-		Con_Printf ("\njoystick not found -- driver not present\n\n");
-		return -1;
-	}
-	// cycle through the joystick ids for the first valid one
-	for (joy_id = 0; joy_id < numdevs; joy_id++) {
-		memset (&ji, 0, sizeof (ji));
-		ji.dwSize = sizeof (ji);
-		ji.dwFlags = JOY_RETURNCENTERED;
-
-		if ((mmr = joyGetPosEx (joy_id, &ji)) == JOYERR_NOERROR)
-			break;
-	}
-
-	// abort startup if we didn't find a valid joystick
-	if (mmr != JOYERR_NOERROR) {
-		Con_Printf ("\njoystick not found -- no valid joysticks (%x)\n\n",
-					mmr);
-		return -1;
-	}
-	// get the capabilities of the selected joystick
-	// abort startup if command fails
-	memset (&jc, 0, sizeof (jc));
-	if ((mmr = joyGetDevCaps (joy_id, &jc, sizeof (jc))) != JOYERR_NOERROR) {
-		Con_Printf
-			("\njoystick not found -- invalid joystick capabilities (%x)\n\n",
-			 mmr);
-		return -1;
-	}
-	// save the joystick's number of buttons and POV status
-	joy_numbuttons = jc.wNumButtons;
-	joy_haspov = jc.wCaps & JOYCAPS_HASPOV;
-
-	// old button and POV states default to no buttons pressed
-	joy_oldbuttonstate = joy_oldpovstate = 0;
-
-	// mark the joystick as available and advanced initialization not
-	// completed
-	// this is needed as cvars are not available during initialization
-
-	joy_advancedinit = false;
-	joy_found = true;
-	// FIXME: do this right
-	joy_active = true;
-	Con_Printf ("\njoystick detected\n\n");
-	return 0;
-}
-
-PDWORD
-RawValuePointer (int axis)
-{
-	switch (axis) {
-		case JOY_AXIS_X:
-			return &ji.dwXpos;
-		case JOY_AXIS_Y:
-			return &ji.dwYpos;
-		case JOY_AXIS_Z:
-			return &ji.dwZpos;
-		case JOY_AXIS_R:
-			return &ji.dwRpos;
-		case JOY_AXIS_U:
-			return &ji.dwUpos;
-		case JOY_AXIS_V:
-			return &ji.dwVpos;
-	}
-	return NULL;
 }
 
 #if 0

@@ -135,7 +135,6 @@ modestate_t modestate = MS_UNINIT;
 LONG WINAPI MainWndProc (HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
 void        AppActivate (BOOL fActive, BOOL minimize);
 char       *VID_GetModeDescription (int mode);
-void        VID_UpdateWindowStatus (int window_x, int window_y);
 void        GL_Init (void);
 
 
