@@ -194,6 +194,20 @@ Sys_ConsoleInput (void)
 }
 
 
+#ifndef USE_INTEL_ASM
+void
+Sys_HighFPPrecision (void)
+{
+}
+
+
+void
+Sys_LowFPPrecision (void)
+{
+}
+#endif
+
+
 void
 Sys_Sleep (void)
 {
