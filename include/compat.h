@@ -91,13 +91,19 @@ extern int vsnprintf(char *s, size_t maxlen, const char *format, va_list arg);
 #if !defined(strncaseequal)
 # define strncaseequal(a,b,c) (strncasecmp (a, b, c) == 0)
 #endif
-// FIXME: glibc has strcasestr, but only declares it if __USE_GNU is defined
-#if !defined(strcasestr)
+#ifdef HAVE_STRCASESTR
+# ifndef HAVE_STRCASESTR_PROTO
+extern char *strcasestr (const char *__haystack, const char *__needle);
+# endif
+#else
 # define strcasestr Q_strcasestr
 # define need_qstring_h
 #endif
-// FIXME: same as above
-#if !defined(strnlen)
+#ifdef HAVE_STRNLEN
+# ifndef HAVE_STRNLEN_PROTO
+size_t strnlen (const char *str, size_t len);
+# endif
+#else
 # define strnlen Q_strnlen
 # define need_qstring_h
 #endif

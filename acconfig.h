@@ -100,6 +100,12 @@
 /* Define this if fnmatch is prototyped in fnmatch.h */
 #undef HAVE_FNMATCH_PROTO
 
+/* Define this if strnlen is prototyped in string.h */
+#undef HAVE_STRNLEN_PROTO
+
+/* Define this if fnmatch is prototyped in string.h */
+#undef HAVE_STRCASESTR_PROTO
+
 /* Define this to something appropriate for declaring 0 length arrays */
 #undef ZERO_LENGTH_ARRAY
 

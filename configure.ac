@@ -223,6 +223,24 @@ AC_TRY_COMPILE(
 	AC_MSG_RESULT(no)
 )
 
+AC_MSG_CHECKING(for strnlen in string.h)
+AC_TRY_COMPILE(
+	[#include "string.h"],
+	[int (*foo)() = strnlen;],
+	AC_DEFINE(HAVE_STRNLEN_PROTO)
+	AC_MSG_RESULT(yes),
+	AC_MSG_RESULT(no)
+)
+
+AC_MSG_CHECKING(for strcasestr in string.h)
+AC_TRY_COMPILE(
+	[#include "string.h"],
+	[int (*foo)() = strnlen;],
+	AC_DEFINE(HAVE_STRCASESTR_PROTO)
+	AC_MSG_RESULT(yes),
+	AC_MSG_RESULT(no)
+)
+
 AC_MSG_CHECKING(for type of fpos_t)
 AC_TRY_COMPILE(
 	[#include <stdio.h>],
@@ -307,8 +325,8 @@ AC_FUNC_VPRINTF
 AC_CHECK_FUNCS(
 	access _access \
 	gethostname gethostbyname connect gettimeofday getwd mkdir _mkdir \
-	ftime _ftime fcntl stat putenv select socket strerror strstr \
-	snprintf _snprintf vsnprintf _vsnprintf strsep dlopen getaddrinfo \
+	ftime _ftime fcntl stat putenv select socket strerror strcasestr strnlen \
+	strstr snprintf _snprintf vsnprintf _vsnprintf strsep dlopen getaddrinfo \
 	getnameinfo mprotect
 )
 
