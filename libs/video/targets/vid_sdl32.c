@@ -55,15 +55,11 @@ static const char rcsid[] =
 HWND 		mainwindow;
 #endif
 
-// static float oldin_grab = 0;
-
 cvar_t     *vid_bitdepth;
 
-//int modestate; // FIXME: just to avoid cross-compile errors - remove later
-
 // The original defaults
-#define    BASEWIDTH    320
-#define    BASEHEIGHT   200
+#define BASEWIDTH 320
+#define BASEHEIGHT 200
 
 byte       *VGA_pagebase;
 int         VGA_width, VGA_height, VGA_rowbytes, VGA_bufferrowbytes = 0;
@@ -75,10 +71,9 @@ static SDL_Surface *rendersurface = NULL;
 void
 VID_SetPalette (unsigned char *palette)
 {
-	if (vid_bitdepth->int_val == 8)
-	{
-		int         i;
+	if (vid_bitdepth->int_val == 8) {
 		SDL_Color   colors[256];
+		int         i;
 
 		for (i = 0; i < 256; ++i) {
 			colors[i].r = *palette++;
@@ -165,19 +160,17 @@ VID_Init (unsigned char *palette)
 	vid.conrowbytes = vid.rowbytes;
 	vid.direct = rendersurface->pixels;
 
-	// allocate z buffer and surface cache
-	VID_InitBuffers ();
+	VID_InitBuffers ();		// allocate z buffer and surface cache
 
-	// initialize the mouse
-	SDL_ShowCursor (0);
+	SDL_ShowCursor (0);		// initialize the mouse
 
 #ifdef WIN32
-        // FIXME: EVIL thing - but needed for win32 until
-        // SDL_sound works better - without this DirectSound fails.
+// FIXME: EVIL thing - but needed for win32 until
+// SDL_sound works better - without this DirectSound fails.
 
-//        SDL_GetWMInfo(&info);
-//        mainwindow=info.window;
-        mainwindow=GetActiveWindow();
+//	SDL_GetWMInfo(&info);
+//	mainwindow=info.window;
+	mainwindow=GetActiveWindow();
 #endif
 
 	vid.initialized = true;
@@ -187,8 +180,7 @@ void
 VID_Update (vrect_t *rects)
 {
 	while (rects) {
-		if (vid_bitdepth->int_val != 8)
-		{
+		if (vid_bitdepth->int_val != 8) {
 			SDL_Rect    sdlrect;
 
 			sdlrect.x = rects->x;
@@ -210,7 +202,6 @@ void
 D_BeginDirectRect (int x, int y, byte * pbitmap, int width, int height)
 {
 	Uint8      *offset;
-
 
 	if (!screen)
 		return;

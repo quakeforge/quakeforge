@@ -62,7 +62,6 @@ HWND 		mainwindow;
 #define	WARP_HEIGHT	200
 
 int			VID_options_items = 1;
-//int			modestate; //FIXME: cross-compile issue, ready to remove?
 
 SDL_Surface *screen = NULL;
 
@@ -133,8 +132,7 @@ VID_Init (unsigned char *palette)
 	vid.conheight = vid.conwidth * 3 / 4;
 
 	i = COM_CheckParm ("-conheight");
-	if (i != 0)							// Set console height, but no smaller 
-										// than 200 px
+	if (i != 0)						// Set console height, no smaller than 200
 		vid.conheight = max (atoi (com_argv[i + 1]), 200);
 
 	// Check if we want fullscreen
@@ -144,7 +142,6 @@ VID_Init (unsigned char *palette)
 #ifndef WIN32		// Don't annoy Mesa/3dfx folks
 		// FIXME: Maybe this could be put in a different spot, but I don't
 		// know where. Anyway, it's to work around a 3Dfx Glide bug.
-		SDL_ShowCursor (0);
 		SDL_WM_GrabInput (SDL_GRAB_ON);
 		putenv ("MESA_GLX_FX=fullscreen");
 	} else {
@@ -177,16 +174,17 @@ VID_Init (unsigned char *palette)
 	VID_InitGamma (palette);
 	VID_SetPalette (palette);
 
-	// Check for 3DFX Extensions and initialize them.
-	VID_Init8bitPalette ();
+	VID_Init8bitPalette ();	// Check for 3DFX Extensions and initialize them.
 
 	Con_Printf ("Video mode %dx%d initialized.\n", scr_width, scr_height);
 
 	vid.initialized = true;
 
+	SDL_ShowCursor (0);		// hide the mouse pointer
+
 #ifdef WIN32
-	// FIXME: EVIL thing - but needed for win32 until
-	// SDL_sound works better - without this DirectSound fails.
+// FIXME: EVIL thing - but needed for win32 until
+// SDL_sound works better - without this DirectSound fails.
 
 //	SDL_GetWMInfo(&info);
 //	mainwindow=info.window;

@@ -46,15 +46,11 @@ static const char rcsid[] =
 #include "QF/sys.h"
 #include "QF/vid.h"
 
-#include "compat.h"
-
 #ifdef WIN32	// FIXME: evil hack to get full DirectSound support with SDL
 #include <windows.h>
 #include <SDL_syswm.h>
 HWND 		mainwindow;
 #endif
-
-//int modestate; // FIXME: just to avoid cross-compile errors - remove later
 
 // The original defaults
 #define BASEWIDTH 320
@@ -69,8 +65,8 @@ SDL_Surface *screen = NULL;
 void
 VID_SetPalette (unsigned char *palette)
 {
-	int         i;
 	SDL_Color   colors[256];
+	int         i;
 
 	for (i = 0; i < 256; ++i) {
 		colors[i].r = *palette++;
@@ -123,19 +119,17 @@ VID_Init (unsigned char *palette)
 	vid.conrowbytes = vid.rowbytes;
 	vid.direct = 0;
 
-	// allocate z buffer and surface cache
-	VID_InitBuffers ();
+	VID_InitBuffers ();		// allocate z buffer and surface cache
 
-	// initialize the mouse
-	SDL_ShowCursor (0);
+	SDL_ShowCursor (0);		// hide the mouse pointer
 
 #ifdef WIN32
-        // FIXME: EVIL thing - but needed for win32 until
-        // SDL_sound works better - without this DirectSound fails.
+// FIXME: EVIL thing - but needed for win32 until
+// SDL_sound works better - without this DirectSound fails.
 
-//		SDL_GetWMInfo(&info);
-//		mainwindow=info.window;
-        mainwindow=GetActiveWindow();
+//	SDL_GetWMInfo(&info);
+//	mainwindow=info.window;
+	mainwindow=GetActiveWindow();
 #endif
 
 	vid.initialized = true;
@@ -145,7 +139,7 @@ void
 VID_Update (vrect_t *rects)
 {
 	SDL_Rect   *sdlrects;
-	int         n, i;
+	int         i, n;
 	vrect_t    *rect;
 
 	// Two-pass system, since Quake doesn't do it the SDL way...
@@ -173,7 +167,6 @@ void
 D_BeginDirectRect (int x, int y, byte * pbitmap, int width, int height)
 {
 	Uint8      *offset;
-
 
 	if (!screen)
 		return;
