@@ -625,7 +625,9 @@ Cmd_Exec_File (cbuf_t *cbuf, const char *path, int qfs)
 	if (qfs) {
 		QFS_FOpenFile (path, &file);
 	} else {
-		file = Qopen (path, "r");
+		char *newpath = expand_squiggle (path);
+		file = Qopen (newpath, "r");
+		free (newpath);
 	}
 	if (file) {
 		len = Qfilesize (file);

@@ -103,4 +103,7 @@ char *QFS_CompressPath (const char *pth);
 const char *QFS_SkipPath (const char *pathname);
 const char *QFS_FileExtension (const char *in);
 
+// FIXME: This is here temporarily until fs_usercfg gets sorted out
+char *expand_squiggle (const char *path);
+
 #endif // __quakefs_h

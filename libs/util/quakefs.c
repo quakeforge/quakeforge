@@ -1125,7 +1125,7 @@ QFS_Gamedir (const char *dir)
 	Cache_Flush ();
 }
 
-static char *
+char *
 expand_squiggle (const char *path)
 {
 	char       *home;
