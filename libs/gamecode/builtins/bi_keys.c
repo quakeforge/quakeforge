@@ -61,11 +61,17 @@ bi_Key_SetBinding (progs_t *pr)
 	Key_SetBinding (target, keynum, binding);
 }
 
+/*
+    bi_Key_LookupBinding
+    
+    Perform a reverse-binding-lookup
+*/
 static void
 bi_Key_LookupBinding (progs_t *pr)
 {
 	int	        target  = G_INT (pr, OFS_PARM0);
-	const char *binding = G_STRING (pr, OFS_PARM1);
+	int	        bindnum = G_INT (pr, OFS_PARM1);
+	const char *binding = G_STRING (pr, OFS_PARM2);
 	int i;
 	knum_t keynum = -1;
 	const char *keybind = NULL;
@@ -74,13 +80,47 @@ bi_Key_LookupBinding (progs_t *pr)
 		keybind = keybindings[target][i];
 		if(keybind == NULL) { continue; }
 		if(strcmp(keybind, binding) == 0) {
-			keynum = i;
+			bindnum--;
+			if(bindnum == 0) {
+				keynum = i;
+				break;
+			}
 		}
 	}
 
 	G_INT (pr, OFS_RETURN) = keynum;	
 };
 
+/*
+    bi_Key_CountBinding
+    
+    Counts how often a binding is assigned to a key
+*/
+static void
+bi_Key_CountBinding (progs_t *pr)
+{
+	int	        target  = G_INT (pr, OFS_PARM0);
+	const char *binding = G_STRING (pr, OFS_PARM1);
+	int i, res = 0;
+	const char *keybind = NULL;
+
+	for (i = 0; i < QFK_LAST; i++) {
+		keybind = keybindings[target][i];
+		if(keybind == NULL) { continue; }
+		if(strcmp(keybind, binding) == 0) {
+			res++;
+		}
+	}
+
+	G_INT (pr, OFS_RETURN) = res;	
+};
+
+
+/*
+    bi_Key_LookupBinding
+    
+    Convertes a keynum to a string
+*/
 static void
 bi_Key_KeynumToString (progs_t *pr)
 {
@@ -95,6 +135,7 @@ Key_Progs_Init (progs_t *pr)
 {
 	PR_AddBuiltin (pr, "Key_SetBinding", bi_Key_SetBinding, -1);
 	PR_AddBuiltin (pr, "Key_LookupBinding", bi_Key_LookupBinding, -1);
+	PR_AddBuiltin (pr, "Key_CountBinding", bi_Key_CountBinding, -1);
 	PR_AddBuiltin (pr, "Key_KeynumToString", bi_Key_KeynumToString, -1);
 // NEED THIS ?//	PR_AddBuiltin (pr, "Key_StringToKeynum", bi_Key_KeynumToString, -1);
 }

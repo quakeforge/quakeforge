@@ -41,6 +41,11 @@ static const char rcsid[] =
 #include "QF/progs.h"
 #include "QF/zone.h"
 
+/*
+    bi_String_ReplaceChar
+    
+    Repalces a special character in a string with another
+*/
 static void
 bi_String_ReplaceChar (progs_t *pr)
 {
@@ -60,8 +65,46 @@ bi_String_ReplaceChar (progs_t *pr)
 	RETURN_STRING (pr, dst);
 }
 
+/*
+    bi_String_Cut
+    
+    Cuts a specified part from a string
+*/
+static void
+bi_String_Cut (progs_t *pr)
+{
+	char        pos = G_INT (pr, OFS_PARM0);
+	char        len = G_INT (pr, OFS_PARM1);
+	const char *str = G_STRING (pr, OFS_PARM2);
+	char       *dst = Hunk_TempAlloc ((strlen (str) - len) + 1);
+	int			cnt;
+
+	memset (dst, 0, (strlen (str) - len) + 1);
+	strncpy(dst, str, pos);
+	str += pos;
+	for (cnt = 0; cnt < len; cnt++) 
+		str++;
+	strcpy(dst, str);
+	RETURN_STRING (pr, dst);
+}
+
+/*
+    bi_String_Len
+    
+    Gives back the length of the string
+*/
+static void
+bi_String_Len (progs_t *pr)
+{
+	const char *str = G_STRING (pr, OFS_PARM0);
+
+    G_INT (pr, OFS_RETURN) = strlen(str);
+}
+
 void
 String_Progs_Init (progs_t *pr)
 {
 	PR_AddBuiltin (pr, "String_ReplaceChar", bi_String_ReplaceChar, -1);
+	PR_AddBuiltin (pr, "String_Cut", bi_String_Cut, -1);
+	PR_AddBuiltin (pr, "String_Len", bi_String_Len, -1);
 }
