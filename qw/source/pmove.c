@@ -133,7 +133,7 @@ PM_FlyMove (void)
 		if (VectorIsZero (pmove.velocity))
 			break;
 
-		VectorMA (pmove.origin, time_left, pmove.velocity, end);
+		VectorMultAdd (pmove.origin, time_left, pmove.velocity, end);
 
 		trace = PM_PlayerMove (pmove.origin, end);
 
@@ -240,7 +240,7 @@ PM_FlymodeMove (void)
 	}
 	PM_Accelerate (pmtmp, pmspeed, movevars.wateraccelerate);
 
-	VectorMA (pmove.origin, frametime, pmove.velocity, dest);
+	VectorMultAdd (pmove.origin, frametime, pmove.velocity, dest);
 	VectorCopy (dest, start);
 	start[2] += STEPSIZE + 1;
 	trace = PM_PlayerMove (start, dest);
@@ -472,7 +472,7 @@ PM_WaterMove (void)
 	PM_Accelerate (wishdir, wishspeed, movevars.wateraccelerate);
 
 	// assume it is a stair or a slope, so press down from stepheight above
-	VectorMA (pmove.origin, frametime, pmove.velocity, dest);
+	VectorMultAdd (pmove.origin, frametime, pmove.velocity, dest);
 	VectorCopy (dest, start);
 	start[2] += STEPSIZE + 1;
 	trace = PM_PlayerMove (start, dest);
@@ -667,7 +667,7 @@ CheckWaterJump (void)
 	flatforward[2] = 0;
 	VectorNormalize (flatforward);
 
-	VectorMA (pmove.origin, 24, flatforward, spot);
+	VectorMultAdd (pmove.origin, 24, flatforward, spot);
 	spot[2] += 8;
 	cont = PM_PointContents (spot);
 	if (cont != CONTENTS_SOLID)
@@ -784,7 +784,7 @@ SpectatorMove (void)
 		pmove.velocity[i] += accelspeed * wishdir[i];
 
 	// move
-	VectorMA (pmove.origin, frametime, pmove.velocity, pmove.origin);
+	VectorMultAdd (pmove.origin, frametime, pmove.velocity, pmove.origin);
 }
 
 /*

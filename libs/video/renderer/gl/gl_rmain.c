@@ -509,13 +509,13 @@ R_Mirror (void)
 
 	memcpy (r_base_world_matrix, r_world_matrix, sizeof (r_base_world_matrix));
 
-	d = DotProduct (r_refdef.vieworg, mirror_plane->normal) -
+	d = 2 * DotProduct (r_refdef.vieworg, mirror_plane->normal) -
 		mirror_plane->dist;
-	VectorMA (r_refdef.vieworg, -2 * d, mirror_plane->normal,
-			  r_refdef.vieworg);
+	VectorMultSub (r_refdef.vieworg, d, mirror_plane->normal,
+				   r_refdef.vieworg);
 
-	d = DotProduct (vpn, mirror_plane->normal);
-	VectorMA (vpn, -2 * d, mirror_plane->normal, vpn);
+	d = 2 * DotProduct (vpn, mirror_plane->normal);
+	VectorMultSub (vpn, d, mirror_plane->normal, vpn);
 
 	r_refdef.viewangles[0] = -asin (vpn[2]) / M_PI * 180;
 	r_refdef.viewangles[1] = atan2 (vpn[1], vpn[0]) / M_PI * 180;

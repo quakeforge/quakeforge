@@ -194,8 +194,7 @@ real_mark_surfaces (float dist, msurface_t *surf, const vec3_t lightorigin,
 	vec3_t     impact;
 
 	dist2 = dist * dist;
-	dist = -dist;
-	VectorMA (light->origin, dist, surf->plane->normal, impact);
+	VectorMultSub (light->origin, dist, surf->plane->normal, impact);
 
 	d = DotProduct (impact, surf->texinfo->vecs[0])
 		+ surf->texinfo->vecs[0][3] - surf->texturemins[0];
@@ -383,7 +382,7 @@ calc_lighting_3 (msurface_t  *surf, int ds, int dt)
 		for (maps = 0; maps < MAXLIGHTMAPS && surf->styles[maps] != 255;
 			 maps++) {
 			scale = d_lightstylevalue[surf->styles[maps]] / 256.0;
-			VectorMA (ambientcolor, scale, lightmap, ambientcolor);
+			VectorMultAdd (ambientcolor, scale, lightmap, ambientcolor);
 			lightmap += se_size;
 		}
 	}

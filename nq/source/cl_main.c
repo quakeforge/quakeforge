@@ -547,7 +547,7 @@ CL_RelinkEntities (void)
 				VectorCopy (state->msg_angles[0], ent->angles);
 				ent->pose1 = ent->pose2 = -1;
 			} else {
-				VectorMA (state->msg_origins[1], f, delta, ent->origin);
+				VectorMultAdd (state->msg_origins[1], f, delta, ent->origin);
 				// interpolate the origin and angles
 				for (j = 0; j < 3; j++) {
 					d = state->msg_angles[0][j] - state->msg_angles[1][j];
@@ -573,7 +573,7 @@ CL_RelinkEntities (void)
 			if (dl) {
 				AngleVectors (ent->angles, fv, rv, uv);
 
-				VectorMA (ent->origin, 18, fv, dl->origin);
+				VectorMultAdd (ent->origin, 18, fv, dl->origin);
 				dl->origin[2] += 16;
 				dl->radius = 200 + (rand () & 31);
 				dl->die = cl.time + 0.1;

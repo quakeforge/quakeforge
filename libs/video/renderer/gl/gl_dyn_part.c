@@ -508,7 +508,7 @@ R_RocketTrail_QF (entity_t *ent)
 		if (numparticles >= r_maxparticles)
 			break;
 		len += dist;
-		VectorMA (ent->old_origin, len, vec, ent->old_origin);
+		VectorMultAdd (ent->old_origin, len, vec, ent->old_origin);
 		pscale = pscalenext;
 	}
 }
@@ -541,7 +541,7 @@ R_GrenadeTrail_QF (entity_t *ent)
 		if (numparticles >= r_maxparticles)
 			break;
 		len += dist;
-		VectorMA (ent->old_origin, len, vec, ent->old_origin);
+		VectorMultAdd (ent->old_origin, len, vec, ent->old_origin);
 		pscale = pscalenext;
 	}
 }
@@ -580,7 +580,7 @@ R_BloodTrail_QF (entity_t *ent)
 		if (numparticles >= r_maxparticles)
 			break;
 		len += dist;
-		VectorMA (ent->old_origin, len, vec, ent->old_origin);
+		VectorMultAdd (ent->old_origin, len, vec, ent->old_origin);
 		pscale = pscalenext;
 	}
 }
@@ -619,7 +619,7 @@ R_SlightBloodTrail_QF (entity_t *ent)
 		if (numparticles >= r_maxparticles)
 			break;
 		len += dist;
-		VectorMA (ent->old_origin, len, vec, ent->old_origin);
+		VectorMultAdd (ent->old_origin, len, vec, ent->old_origin);
 		pscale = pscalenext;
 	}
 }
@@ -1417,7 +1417,7 @@ R_DrawParticles (void)
 			}
 		}
 
-		VectorMA (part->org, r_frametime, part->vel, part->org);
+		VectorMultAdd (part->org, r_frametime, part->vel, part->org);
 
 		switch (part->type) {
 			case pt_static:
@@ -1442,7 +1442,7 @@ R_DrawParticles (void)
 					break;
 				}
 				part->color = ramp1[(int) part->ramp];
-				VectorMA (part->vel, time4, part->vel, part->vel);
+				VectorMultAdd (part->vel, time4, part->vel, part->vel);
 				part->vel[2] -= grav;
 				break;
 			case pt_explode2:
@@ -1452,11 +1452,11 @@ R_DrawParticles (void)
 					break;
 				}
 				part->color = ramp2[(int) part->ramp];
-				VectorMA (part->vel, -r_frametime, part->vel, part->vel);
+				VectorMultSub (part->vel, r_frametime, part->vel, part->vel);
 				part->vel[2] -= grav;
 				break;
 			case pt_blob:
-				VectorMA (part->vel, time4, part->vel, part->vel);
+				VectorMultAdd (part->vel, time4, part->vel, part->vel);
 				part->vel[2] -= grav;
 				break;
 			case pt_blob2:

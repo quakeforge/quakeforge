@@ -515,10 +515,11 @@ Mod_MakeAliasModelDisplayLists (model_t *m, aliashdr_t *hdr, void *_m, int _s, i
 							* sizeof (trivertx16_t));
 		paliashdr->posedata = (byte *) verts - (byte *) paliashdr;
 		for (i = 0; i < paliashdr->numposes; i++) {
+			trivertx_t *pv = poseverts[i];
 			for (j = 0; j < numorder; j++) {
 				trivertx16_t v;
-				VectorMA (poseverts[i][vertexorder[j] + hdr->mdl.numverts].v,
-						  256, poseverts[i][vertexorder[j]].v, v.v);
+				VectorMultSub (pv[vertexorder[j] + hdr->mdl.numverts].v,
+							   256, pv[vertexorder[j]].v, v.v);
 				v.lightnormalindex =
 					poseverts[i][vertexorder[j]].lightnormalindex;
 				*verts++ = v;

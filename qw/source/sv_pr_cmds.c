@@ -919,7 +919,7 @@ PF_aim (progs_t *pr)
 
 	// try sending a trace straight
 	VectorCopy (*sv_globals.v_forward, dir);
-	VectorMA (start, 2048, dir, end);
+	VectorMultAdd (start, 2048, dir, end);
 	tr = SV_Move (start, vec3_origin, vec3_origin, end, false, ent);
 	if (tr.ent && SVfloat (tr.ent, takedamage) == DAMAGE_AIM
 		&& (!teamplay->int_val || SVfloat (ent, team) <= 0

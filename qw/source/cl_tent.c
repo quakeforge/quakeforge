@@ -232,7 +232,7 @@ beam_setup (beam_t *b)
 	d = 0;
 	while (ent_count--) {
 		ent = &b->ent_list[ent_count];
-		VectorMA (org, d, dist, ent->origin);
+		VectorMultAdd (org, d, dist, ent->origin);
 		d += 1.0;
 		ent->model = b->model;
 		ent->angles[0] = pitch;

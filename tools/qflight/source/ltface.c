@@ -177,7 +177,7 @@ CalcFaceVectors (lightinfo_t *l)
 		len = VectorLength (l->worldtotex[i]);
 		dist = DotProduct (l->worldtotex[i], l->facenormal);
 		dist *= distscale;
-		VectorMA (l->worldtotex[i], -dist, texnormal, l->textoworld[i]);
+		VectorMultSub (l->worldtotex[i], dist, texnormal, l->textoworld[i]);
 		VectorScale (l->textoworld[i], (1 / len) * (1 / len),
 					 l->textoworld[i]);
 	}
@@ -190,7 +190,7 @@ CalcFaceVectors (lightinfo_t *l)
 	// project back to the face plane
 	dist = DotProduct (l->texorg, l->facenormal) - l->facedist - 1;
 	dist *= distscale;
-	VectorMA (l->texorg, -dist, texnormal, l->texorg);
+	VectorMultSub (l->texorg, dist, texnormal, l->texorg);
 }
 
 /*
@@ -330,7 +330,7 @@ CalcPoints (lightinfo_t *l)
 				// move surf 8 pixels towards the center
 				VectorSubtract (facemid, surf, move);
 				_VectorNormalize (move);
-				VectorMA (surf, 8, move, surf);
+				VectorMultAdd (surf, 8, move, surf);
 			}
 			if (i == 2)
 				c_bad++;

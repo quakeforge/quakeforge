@@ -106,8 +106,8 @@ VectorVectors(const vec3_t forward, vec3_t right, vec3_t up)
 	right[1] = -forward[0];
 	right[2] = forward[1];
 
-	d = -DotProduct(forward, right);
-	VectorMA (right, d, forward, right);
+	d = DotProduct(forward, right);
+	VectorMultSub (right, d, forward, right);
 	VectorNormalize (right);
 	CrossProduct(right, forward, up);
 }

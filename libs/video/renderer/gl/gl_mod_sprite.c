@@ -147,21 +147,21 @@ R_DrawSpriteModel_f (entity_t *e)
 	qfglColor4fv (color);
 
 	qfglTexCoord2f (0, 1);
-	VectorMA (e->origin, frame->down, up, point1);
-	VectorMA (point1, frame->left, right, point);
+	VectorMultAdd (e->origin, frame->down, up, point1);
+	VectorMultAdd (point1, frame->left, right, point);
 	qfglVertex3fv (point);
 
 	qfglTexCoord2f (0, 0);
-	VectorMA (e->origin, frame->up, up, point2);
-	VectorMA (point2, frame->left, right, point);
+	VectorMultAdd (e->origin, frame->up, up, point2);
+	VectorMultAdd (point2, frame->left, right, point);
 	qfglVertex3fv (point);
 
 	qfglTexCoord2f (1, 0);
-	VectorMA (point2, frame->right, right, point);
+	VectorMultAdd (point2, frame->right, right, point);
 	qfglVertex3fv (point);
 
 	qfglTexCoord2f (1, 1);
-	VectorMA (point1, frame->right, right, point);
+	VectorMultAdd (point1, frame->right, right, point);
 	qfglVertex3fv (point);
 
 	qfglEnd ();
@@ -217,18 +217,18 @@ R_DrawSpriteModel_VA_f (entity_t *e)
 	if (modelalpha < 255)
 		qfglDepthMask (GL_FALSE);
 
-	VectorMA (e->origin, frame->down, up, point1);
-	VectorMA (point1, frame->left, right, VA[0].vertex);
+	VectorMultAdd (e->origin, frame->down, up, point1);
+	VectorMultAdd (point1, frame->left, right, VA[0].vertex);
 
 	memcpy (VA[1].color, color, 4);
-	VectorMA (e->origin, frame->up, up, point2);
-	VectorMA (point2, frame->left, right, VA[1].vertex);
+	VectorMultAdd (e->origin, frame->up, up, point2);
+	VectorMultAdd (point2, frame->left, right, VA[1].vertex);
 
 	memcpy (VA[2].color, color, 4);
-	VectorMA (point2, frame->right, right, VA[2].vertex);
+	VectorMultAdd (point2, frame->right, right, VA[2].vertex);
 
 	memcpy (VA[3].color, color, 4);
-	VectorMA (point1, frame->right, right, VA[3].vertex);
+	VectorMultAdd (point1, frame->right, right, VA[3].vertex);
 
 //	VA += 4;
 //	vacount += 4;

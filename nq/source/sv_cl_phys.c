@@ -356,8 +356,8 @@ SV_Physics_Client (edict_t *ent, int num)
 	case MOVETYPE_NOCLIP:
 		if (!SV_RunThink (ent))
 			return;
-		VectorMA (SVvector (ent, origin), sv_frametime, SVvector (ent, velocity),
-				  SVvector (ent, origin));
+		VectorMultAdd (SVvector (ent, origin), sv_frametime,
+					   SVvector (ent, velocity), SVvector (ent, origin));
 		break;
 
 	default:

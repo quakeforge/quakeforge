@@ -229,7 +229,7 @@ Cam_TryFlyby (player_state_t * self, player_state_t * player, vec3_t vec,
 	vectoangles (vec, v);
 	VectorCopy (v, pmove.angles);
 	VectorNormalize (vec);
-	VectorMA (player->origin, 800, vec, v);
+	VectorMultAdd (player->origin, 800, vec, v);
 	// v is endpos
 	// fake a player move
 	trace = Cam_DoTrace (player->origin, v);

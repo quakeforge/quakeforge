@@ -106,7 +106,7 @@ GL_DrawAliasFrameTri (vert_order_t *vo)
 	qfglBegin (GL_TRIANGLES);
 	do {
 		qfglTexCoord2fv (tex_coord->st);
-		VectorMA (ambientcolor, verts->lightdot, shadecolor, color);
+		VectorMultAdd (ambientcolor, verts->lightdot, shadecolor, color);
 		qfglColor4fv (color);
 		qfglVertex3fv (verts->vert);
 
@@ -159,7 +159,7 @@ GL_DrawAliasFrameTriMulti (vert_order_t *vo)
 		tex_coord++;
 
 		// normals and vertexes come from the frame list
-		VectorMA (ambientcolor, verts->lightdot, shadecolor, color);
+		VectorMultAdd (ambientcolor, verts->lightdot, shadecolor, color);
 		qfglColor4fv (color);
 
 		qfglVertex3fv (verts->vert);
@@ -196,7 +196,7 @@ GL_DrawAliasFrame (vert_order_t *vo)
 			order += 2;
 
 			// normals and vertexes come from the frame list
-			VectorMA (ambientcolor, verts->lightdot, shadecolor, color);
+			VectorMultAdd (ambientcolor, verts->lightdot, shadecolor, color);
 
 			qfglColor4fv (color);
 
@@ -272,7 +272,7 @@ GL_DrawAliasFrameMulti (vert_order_t *vo)
 			order += 2;
 
 			// normals and vertexes come from the frame list
-			VectorMA (ambientcolor, verts->lightdot, shadecolor, color);
+			VectorMultAdd (ambientcolor, verts->lightdot, shadecolor, color);
 
 			qfglColor4fv (color);
 
@@ -637,8 +637,8 @@ R_DrawAliasModel (entity_t *e)
 					d;
 
 				if (add > 0.0)
-					VectorMA (ambientcolor, add, r_dlights[lnum].color,
-							  ambientcolor);
+					VectorMultAdd (ambientcolor, add, r_dlights[lnum].color,
+								   ambientcolor);
 			}
 		}
 

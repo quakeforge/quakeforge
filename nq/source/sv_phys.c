@@ -252,8 +252,8 @@ SV_FlyMove (edict_t *ent, float time, trace_t *steptrace)
 		if (VectorIsZero (SVvector (ent, velocity)))
 			break;
 
-		VectorMA (SVvector (ent, origin), time_left, SVvector (ent, velocity),
-				  end);
+		VectorMultAdd (SVvector (ent, origin), time_left,
+					   SVvector (ent, velocity), end);
 
 		trace = SV_Move (SVvector (ent, origin), SVvector (ent, mins),
 						 SVvector (ent, maxs), end, false, ent);
@@ -561,10 +561,10 @@ SV_Physics_Noclip (edict_t *ent)
 	if (!SV_RunThink (ent))
 		return;
 
-	VectorMA (SVvector (ent, angles), sv_frametime,
-			  SVvector (ent, avelocity), SVvector (ent, angles));
-	VectorMA (SVvector (ent, origin), sv_frametime, SVvector (ent, velocity),
-			  SVvector (ent, origin));
+	VectorMultAdd (SVvector (ent, angles), sv_frametime,
+				   SVvector (ent, avelocity), SVvector (ent, angles));
+	VectorMultAdd (SVvector (ent, origin), sv_frametime,
+				   SVvector (ent, velocity), SVvector (ent, origin));
 
 	SV_LinkEdict (ent, false);
 }
@@ -629,8 +629,8 @@ SV_Physics_Toss (edict_t *ent)
 		SV_AddGravity (ent);
 
 	// move angles
-	VectorMA (SVvector (ent, angles), sv_frametime,
-			  SVvector (ent, avelocity), SVvector (ent, angles));
+	VectorMultAdd (SVvector (ent, angles), sv_frametime,
+				   SVvector (ent, avelocity), SVvector (ent, angles));
 
 	// move origin
 	VectorScale (SVvector (ent, velocity), sv_frametime, move);

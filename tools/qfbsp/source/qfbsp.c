@@ -98,7 +98,7 @@ BaseWindingForPlane (plane_t *p)
 	}
 
 	v = DotProduct (vup, p->normal);
-	VectorMA (vup, -v, p->normal, vup);
+	VectorMultSub (vup, v, p->normal, vup);
 	_VectorNormalize (vup);
 
 	VectorScale (p->normal, p->dist, org);

@@ -126,7 +126,8 @@ R_AddDynamicLights_1 (msurface_t *surf)
 
 		VectorSubtract (r_dlights[lnum].origin, currententity->origin, local);
 		dist = DotProduct (local, surf->plane->normal) - surf->plane->dist;
-		VectorMA (r_dlights[lnum].origin, -dist, surf->plane->normal, impact);
+		VectorMultSub (r_dlights[lnum].origin, dist, surf->plane->normal,
+					   impact);
 
 		i = DotProduct (impact,	surf->texinfo->vecs[0]) +
 			surf->texinfo->vecs[0][3] - surf->texturemins[0];
@@ -190,7 +191,8 @@ R_AddDynamicLights_3 (msurface_t *surf)
 
 		VectorSubtract (r_dlights[lnum].origin, currententity->origin, local);
 		dist = DotProduct (local, surf->plane->normal) - surf->plane->dist;
-		VectorMA (r_dlights[lnum].origin, -dist, surf->plane->normal, impact);
+		VectorMultSub (r_dlights[lnum].origin, dist, surf->plane->normal,
+					   impact);
 
 		i = DotProduct (impact,	surf->texinfo->vecs[0]) +
 			surf->texinfo->vecs[0][3] - surf->texturemins[0];
