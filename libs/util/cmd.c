@@ -48,8 +48,8 @@ static const char rcsid[] =
 #include "QF/sys.h"
 #include "QF/vfs.h"
 #include "QF/zone.h"
-
 #include "compat.h"
+#include "QF/dstring.h"
 
 typedef struct cmdalias_s {
 	struct cmdalias_s *next;
@@ -59,7 +59,13 @@ typedef struct cmdalias_s {
 
 cmdalias_t *cmd_alias;
 cmd_source_t cmd_source;
-qboolean    cmd_wait;
+dstring_t *cmd_buffer;
+qboolean cmd_wait = false;
+int cmd_argc;
+int cmd_maxargc = 0;
+dstring_t **cmd_argv = 0;
+const char **cmd_args = 0;
+
 
 cvar_t     *cmd_warncmd;
 cvar_t     *cmd_highchars;
@@ -86,138 +92,77 @@ Cmd_Wait_f (void)
 						COMMAND BUFFER
 */
 
-sizebuf_t   cmd_text;
 byte        cmd_text_buf[8192];
 
-void
-Cbuf_Init (void)
-{
-	cmd_text.data = cmd_text_buf;
-	cmd_text.maxsize = sizeof (cmd_text_buf);
+void Cbuf_Init (void) {
+
+	cmd_buffer = dstring_newstr ();
 }
 
-/*
-	Cbuf_AddText
 
-	Adds command text at the end of the buffer
-*/
-void
-Cbuf_AddText (const char *text)
-{
-	int         l;
+void Cbuf_AddText (const char *text) {
 
-	l = strlen (text);
-
-	if (cmd_text.cursize + l < cmd_text.maxsize) {
-		SZ_Write (&cmd_text, text, l);
-		return;
-	}
-	Sys_Printf ("Cbuf_AddText: overflow\n");
+	dstring_appendstr (cmd_buffer, text);
 }
 
-/*
-	Cbuf_InsertText
-
-	Adds command text to the beginning of the buffer.
-	Adds a \n to the text
-*/
-void
-Cbuf_InsertText (const char *text)
-{
-	int         textlen;
-
-	textlen = strlen (text);
-	if (cmd_text.cursize + 1 + textlen >= cmd_text.maxsize) {
-		Sys_Printf ("Cbuf_InsertText: overflow\n");
-		return;
-	}
-
-	if (!cmd_text.cursize) {
-		memcpy (cmd_text.data, text, textlen);
-		cmd_text.cursize = textlen;
-		return;
-	}
-	// Move up to make room for inserted text
-	memmove (cmd_text.data + textlen + 1, cmd_text.data, cmd_text.cursize);
-	cmd_text.cursize += textlen + 1;
-
-	// Insert new text
-	memcpy (cmd_text.data, text, textlen);
-	cmd_text.data[textlen] = '\n';
+void Cbuf_InsertText (const char *text) {
+	dstring_insertstr (cmd_buffer, "\n", 0);
+	dstring_insertstr (cmd_buffer, text, 0);
 }
 
-static void
-extract_line (char *line)
-{
-	int         i;
-	char       *text;
-	int         quotes;
-
-	// find a \n or ; line break
-	text = (char *) cmd_text.data;
-	quotes = 0;
-	for (i = 0; i < cmd_text.cursize; i++) {
-		if (text[i] == '"')
-			quotes++;
-		if (!(quotes & 1) && text[i] == ';')
-			break;						// don't break if inside a quoted
-										// string
+void extract_line (dstring_t *buffer) {
+	int i, squotes = 0, dquotes = 0;
+	char *text = cmd_buffer->str;
+	
+	for (i = 0; text[i]; i++) {
+		if (text[i] == '\'' && !dquotes)
+			squotes^=1;
+		if (text[i] == '"' && !squotes)
+			dquotes^=1;
+		if (text[i] == ';' && !squotes && !dquotes)
+			break;
 		if (text[i] == '\n' || text[i] == '\r')
 			break;
 	}
-
-	memcpy (line, text, i);
-	line[i] = '\0';
-	// delete the text from the command buffer and move remaining commands
-	// down this is necessary because commands (exec, alias) can insert
-	// data at the beginning of the text buffer
-
-	if (i == cmd_text.cursize)
-		cmd_text.cursize = 0;
-	else {
-		i++;
-		cmd_text.cursize -= i;
-		memcpy (text, text + i, cmd_text.cursize);
-	}
+	if (i)
+		dstring_insert (buffer, cmd_buffer->str, i, 0);
+	if (text[i])
+		dstring_snip (cmd_buffer, 0, i + 1);
+	else // We've hit the end of the buffer, just clear it
+		dstring_clearstr (cmd_buffer); 
 }
 
-void
-Cbuf_Execute (void)
-{
-	char        line[1024];
-
-	while (cmd_text.cursize) {
-		extract_line (line);
-		// execute the command line
-		// Sys_DPrintf("+%s\n",line),
-		Cmd_ExecuteString (line, src_command);
-
-		if (cmd_wait) {					// skip out while text still remains
-										// in buffer, leaving it
-			// for next frame
+void Cbuf_Execute (void) {
+	dstring_t *buf = dstring_newstr ();
+	
+	while (strlen(cmd_buffer->str)) {
+		extract_line (buf);
+		Cmd_ExecuteString(buf->str, cmd_source);
+		if (cmd_wait) {
 			cmd_wait = false;
 			break;
 		}
+		dstring_clearstr(buf);
 	}
+	dstring_delete (buf);
 }
 
-void
-Cbuf_Execute_Sets (void)
+void Cbuf_Execute_Sets (void)
 {
-	char        line[1024];
-
-	while (cmd_text.cursize) {
-		extract_line (line);
-		// execute the command line
-		if (strnequal (line, "set", 3) && isspace ((int) line[3])) {
-			// Sys_DPrintf ("+%s\n",line);
-			Cmd_ExecuteString (line, src_command);
-		} else if (strnequal (line, "setrom", 6) && isspace ((int) line[6])) {
-			// Sys_DPrintf ("+%s\n",line);
-			Cmd_ExecuteString (line, src_command);
+	dstring_t *buf = dstring_newstr ();
+	
+	while (strlen(cmd_buffer->str)) {
+		extract_line (buf);
+		if (!strncmp (buf->str, "set", 3) && isspace ((int) buf->str[3])) {
+			Cmd_ExecuteString (buf->str, cmd_source);
+		} else if (!strncmp (buf->str, "setrom", 6) && isspace ((int) buf->str[6])) {
+			Cmd_ExecuteString (buf->str, cmd_source);
 		}
+		dstring_clearstr(buf);
 	}
+	dstring_delete (buf);
 }
+
 
 /*
 						SCRIPT COMMANDS
@@ -431,14 +376,6 @@ typedef struct cmd_function_s {
 	const char       *description;
 } cmd_function_t;
 
-
-#define	MAX_ARGS		80
-
-static int  cmd_argc;
-static char *cmd_argv[MAX_ARGS];
-static const char *cmd_null_string = "";
-static const char *cmd_args[MAX_ARGS];
-
 static cmd_function_t *cmd_functions;	// possible commands to execute
 
 int
@@ -451,8 +388,8 @@ const char       *
 Cmd_Argv (int arg)
 {
 	if (arg >= cmd_argc)
-		return cmd_null_string;
-	return cmd_argv[arg];
+		return "";
+	return cmd_argv[arg]->str;
 }
 
 /*
@@ -468,66 +405,109 @@ Cmd_Args (int start)
 	return cmd_args[start];
 }
 
-/*
-	Cmd_TokenizeString
-
-	Parses the given string into command line tokens.
-*/
-void
-Cmd_TokenizeString (const char *text)
-{
-	static char *argv_buf;
-	static size_t argv_buf_size;
-	int         argv_idx;
-
-	if (!argv_buf_size) {
-		argv_buf_size = 1024;	//FIXME dynamic
-		argv_buf = malloc (argv_buf_size);
-		if (!argv_buf)
-			Sys_Error ("Cmd_TokenizeString: could not allocate %ld bytes",
-					   (long)argv_buf_size);
-	}
-
-	argv_idx = 0;
-
-	cmd_argc = 0;
-	memset (cmd_args, 0, sizeof (cmd_args));
-
-	while (1) {
-		// skip whitespace up to a \n
-		while (*text && *(unsigned char *) text <= ' ' && *text != '\n') {
-			text++;
+int Cmd_GetToken (const char *str) {
+	int i, squote, dquote;
+	
+	for (i = 0, squote = 0, dquote = 0; i <= strlen(str); i++) {
+		if (str[i] == 0) {
+				if (dquote) { // We never found another quote, backtrack
+					for (; str[i] != '"'; i--);
+					dquote = 0;
+					continue;
+				}
+				else if (squote) {
+					for (; str[i] != '\''; i--);
+					squote = 0;
+					continue;
+				}
+				else // End of string, this token is done
+					break;
 		}
-
-		if (*text == '\n') {			// a newline seperates commands in
-										// the buffer
-			text++;
+		else if (str[i] == '\'' && !dquote) {
+			if (i) // If not at start of string, we must be at the end of a token
+				break;
+			squote = 1;
+		}
+		else if (str[i] == '"' && !squote) {
+			if (i) // Start new token
+				break;
+			dquote = 1;
+		}
+		else if (isspace(str[i]) && !dquote && !squote) {
 			break;
 		}
+	}
+	return i;
+}
 
-		if (!*text)
-			return;
+int tag_gold = 0;
+int tag_shift = 0;
 
-		if (cmd_argc < MAX_ARGS)
-		    cmd_args[cmd_argc] = text;
-
-		text = COM_Parse (text);
-		if (!text)
-			return;
-
-		if (cmd_argc < MAX_ARGS) {
-			size_t         len = strlen (com_token) + 1;
-
-			if (argv_idx + len > argv_buf_size) {
-				Sys_Printf ("Cmd_TokenizeString: overflow\n");
-				return;
-			}
-			cmd_argv[cmd_argc] = argv_buf + argv_idx;
-			strcpy (cmd_argv[cmd_argc], com_token);
-			argv_idx += len;
-
-			cmd_argc++;
+void Cmd_ProcessTags (dstring_t *dstr) {
+	int close = 0, i, n, c;
+	char *str = dstr->str;
+	
+	for (i = 0; i < strlen(str); i++) {
+		if (str[i] == '<') {
+			close = 0;
+			for (n = 0; str[i+n] != '>'; n++)
+				if (str[n] == 0)
+					return;
+			if (str[i+1] == '/')
+				close = 1;
+			if (!strncmp(str+i+close+1, "gold", 4))
+				tag_gold = tag_gold > 0 && close ? tag_gold - 1 : tag_gold + 1;
+			if (!strncmp(str+i+close+1, "shift", 5))
+				tag_shift = tag_shift > 0 && close ? tag_shift - 1 : tag_shift + 1;
+			dstring_snip(dstr, i, n+1);
+			i--;
+			continue;
 		}
+		c = str[i];	
+
+		if (tag_gold && c >='0' && c <= '9')
+				c = (str[i] += (146 - '0'));
+		if (tag_shift && c < 128)
+				c = (str[i] += 128);
+	}
+}
+	
+void Cmd_TokenizeString (const char *text) {
+	int i = 0, len = 0, quotes = 0;
+	const char *str = text;
+	
+	cmd_argc = 0;
+	tag_shift = 0;
+	tag_gold = 0;
+	while (strlen(str + i)) {
+		while (isspace(str[i]))
+			i++;
+		len = Cmd_GetToken (str + i);
+		if (!len)
+			return;
+		cmd_argc++;
+		if (cmd_argc > cmd_maxargc) {
+			cmd_argv = realloc(cmd_argv, sizeof(dstring_t *)*cmd_argc);
+			if (!cmd_argv)
+				Sys_Error ("Cmd_TokenizeString:  Failed to reallocate memory.\n");
+			cmd_args = realloc(cmd_args, sizeof(char *)*cmd_argc);
+			if (!cmd_args)
+				Sys_Error ("Cmd_TokenizeString:  Failed to reallocate memory.\n");
+			cmd_argv[cmd_argc-1] = dstring_newstr ();
+			cmd_maxargc++;
+		}
+		dstring_clearstr(cmd_argv[cmd_argc-1]);
+		/* Remove surrounding quotes or double quotes */
+		cmd_args[cmd_argc-1] = str+i;
+		quotes = 0;
+		if ((str[i] == '\'' && str[i+len] == '\'') || (str[i] == '"' && str[i+len] == '"')) {
+			i++;
+			len-=1;
+			quotes = 1;
+		}
+		dstring_insert(cmd_argv[cmd_argc-1], str + i, len, 0);
+		Cmd_ProcessTags(cmd_argv[cmd_argc-1]);
+		i += len + quotes; /* If we ended on a quote, skip it */
 	}
 }
 
@@ -834,35 +814,16 @@ Cmd_ExecuteString (const char *text, cmd_source_t src)
 {
 	cmd_function_t *cmd;
 	cmdalias_t *a;
-	char        buf[1024];
-
 	cmd_source = src;
 
-	
-#if 0
 	Cmd_TokenizeString (text);
-#else
-	if (cmd_highchars->value) {
-		char buf2[1024];
-
-		strncpy(buf, text, sizeof(buf) - 1);
-		buf[sizeof(buf) - 1] = 0;
-		Cmd_ParseSpecial (buf);
-		Cmd_ExpandVariables (buf, buf2);
-		Cmd_TokenizeString (buf2);
-	}
-	else {
-		Cmd_ExpandVariables (text, buf);
-		Cmd_TokenizeString (buf);
-	}
-#endif
 
 	// execute the command line
 	if (!Cmd_Argc ())
 		return;							// no tokens
 
 	// check functions
-	cmd = (cmd_function_t*)Hash_Find (cmd_hash, cmd_argv[0]);
+	cmd = (cmd_function_t*)Hash_Find (cmd_hash, cmd_argv[0]->str);
 	if (cmd) {
 		if (cmd->function)
 			cmd->function ();
@@ -874,7 +835,7 @@ Cmd_ExecuteString (const char *text, cmd_source_t src)
 		return;
 
 	// check alias
-	a = (cmdalias_t*)Hash_Find (cmd_alias_hash, cmd_argv[0]);
+	a = (cmdalias_t*)Hash_Find (cmd_alias_hash, cmd_argv[0]->str);
 	if (a) {
 		Cbuf_InsertText ("\n");
 		Cbuf_InsertText (a->value);
