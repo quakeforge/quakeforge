@@ -349,14 +349,14 @@ SNDDMA_Submit (void)
 static void
 SNDDMA_BlockSound (void)
 {
-	if (++snd_blocked == 1)
+	if (snd_inited && ++snd_blocked == 1)
 		qfsnd_pcm_pause (pcm, 1);
 }
 
 static void
 SNDDMA_UnblockSound (void)
 {
-	if (!snd_blocked)
+	if (!snd_inited || !snd_blocked)
 		return;
 	if (!--snd_blocked)
 		qfsnd_pcm_pause (pcm, 0);
