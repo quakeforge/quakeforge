@@ -125,7 +125,7 @@ CL_ParseTEnt (void)
 #endif
 	dlight_t   *dl;
 	int         rnd;
-	int         cnt = -1;
+	//int         cnt = -1;
 	int         colorStart, colorLength;
 
 	type = MSG_ReadByte (net_message);
@@ -276,11 +276,11 @@ CL_ParseTEnt (void)
 		break;
 
 	case TE_GUNSHOT:				// bullet hitting wall
-		cnt = MSG_ReadByte (net_message);
+		//cnt = MSG_ReadByte (net_message);
 		pos[0] = MSG_ReadCoord (net_message);
 		pos[1] = MSG_ReadCoord (net_message);
 		pos[2] = MSG_ReadCoord (net_message);
-		R_RunPuffEffect (pos, type, cnt);
+		R_RunPuffEffect (pos, 0, 20);
 		break;
 
 #ifdef QUAKE2
