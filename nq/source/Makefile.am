@@ -38,14 +38,13 @@ bin_PROGRAMS =	@NQ_TARGETS@
 EXTRA_PROGRAMS= nq-3dfx nq-fbdev nq-glx nq-mgl nq-sdl \
 		nq-sgl nq-svga nq-wgl nq-x11 nq-server
 
-noinst_LIBRARIES= libqfsys.a libqfsnd.a libqfjs.a libqfnet.a
+noinst_LIBRARIES= libqfsys.a libqfjs.a libqfnet.a
 
 #if ASM_ARCH
 math_ASM= 	cl_math.S
 soft_ASM=	d_draw.S d_draw16.S d_parta.S d_polysa.S d_scana.S d_spr8.S \
 		d_varsa.S sw_raclipa.S sw_raliasa.S sw_rdrawa.S sw_redgea.S sw_rvarsa.S \
 		surf16.S surf8.S
-sound_ASM=	snd_mixa.S
 common_ASM=	sys_ia32.S worlda.S $(math_ASM)
 #endif
 
@@ -63,34 +62,6 @@ else
 libqfsys_a_SOURCES=	sys_unix.c
 endif
 EXTRA_libqfsys_a_SOURCES= dirent.c fnmatch.c sys_unix.c sys_win.c
-
-#
-# ... Digital audio
-#
-if SNDTYPE_ALSA_0_5
-libqfsnd_a_SOURCES=	snd_dma.c snd_mem.c snd_mix.c snd_alsa_0_5.c $(sound_ASM)
-endif
-if SNDTYPE_ALSA_0_9
-libqfsnd_a_SOURCES=	snd_dma.c snd_mem.c snd_mix.c snd_alsa_0_9.c $(sound_ASM)
-endif
-if SNDTYPE_MME
-libqfsnd_a_SOURCES=	snd_dma.c snd_mem.c snd_mix.c snd_mme.c $(sound_ASM)
-endif
-if SNDTYPE_OSS
-libqfsnd_a_SOURCES=	snd_dma.c snd_mem.c snd_mix.c snd_oss.c $(sound_ASM)
-endif
-if SNDTYPE_SUN
-libqfsnd_a_SOURCES=	snd_dma.c snd_mem.c snd_mix.c snd_sun.c $(sound_ASM)
-endif
-if SNDTYPE_WIN32
-libqfsnd_a_SOURCES=	snd_dma.c snd_mem.c snd_mix.c snd_win.c $(sound_ASM)
-endif
-if SNDTYPE_NULL
-libqfsnd_a_SOURCES=	snd_null.c $(sound_ASM)
-endif
-EXTRA_libqfsnd_a_SOURCES= snd_dma.c snd_mem.c snd_mix.c snd_alsa_0_5.c \
-			snd_alsa_0_9.c snd_oss.c snd_sun.c snd_win.c snd_null.c \
-			$(sound_ASM)
 
 #
 # ... Joystick
@@ -116,8 +87,9 @@ EXTRA_libqfnet_a_SOURCES=net_dos.c net_bw.c net_ipx.c net_mp.c net_ser.c \
 client_LIBS=	$(top_builddir)/libs/gamecode/libQFgamecode.la \
 		$(top_builddir)/libs/util/libQFutil.la \
 		$(top_builddir)/libs/audio/cd/libQFcd.la \
-		-L. -lqfsys -lqfsnd -lqfjs -lqfnet $(SOUND_LIBS) $(NET_LIBS)
-client_LIB_DEPS= libqfsys.a libqfsnd.a libqfjs.a libqfnet.a
+		$(top_builddir)/libs/audio/targets/libQFsound.la \
+		-L. -lqfsys -lqfjs -lqfnet $(SOUND_LIBS) $(NET_LIBS)
+client_LIB_DEPS= libqfsys.a libqfjs.a libqfnet.a
 
 client_SOURCES= cl_cam.c cl_cmd.c cl_demo.c cl_input.c cl_main.c cl_parse.c \
 		cl_tent.c console.c keys.c sbar.c r_part.c r_view.c \

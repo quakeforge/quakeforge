@@ -249,6 +249,7 @@ CL_CheckOrDownloadFile (char *filename)
 	return false;
 }
 
+struct model_s *snd_worldmodel;
 /*
 	Model_NextDownload
 */
@@ -301,6 +302,9 @@ Model_NextDownload (void)
 
 	// all done
 	cl.worldmodel = cl.model_precache[1];
+        // FIXME: evil hack for sound
+        snd_worldmodel = cl.worldmodel;
+
 	R_NewMap ();
 	Team_NewMap ();
 	Hunk_Check ();						// make sure nothing is hurt
@@ -595,6 +599,10 @@ void Draw_ClearCache (void);
 
 void CL_ClearBaselines (void);		// LordHavoc: BIG BUG-FIX!
 
+// FIXME: Evil hack that doesn't deserve to see the light of day.
+// (pending merge of nq and qw client_stat_t's)
+int snd_viewentity;
+
 /*
 	CL_ParseServerData
 */
@@ -658,8 +666,9 @@ CL_ParseServerData (void)
 		cl.playernum &= ~128;
 	}
 
-	// evil hack so NQ and QW can share sound code
+	// FIXME: evil hack so NQ and QW can share sound code
 	cl.viewentity = cl.playernum + 1;
+	snd_viewentity = cl.playernum + 1;
 
 	// get the full level name
 	str = MSG_ReadString (net_message);

@@ -40,7 +40,7 @@ EXTRA_PROGRAMS= qw-client-3dfx qw-client-fbdev \
 		qw-client-sgl qw-client-svga qw-client-wgl \
 		qw-client-x11 qw-server
 
-noinst_LIBRARIES= libqfjs.a libqfnet.a libqfsnd.a libqfsys_cl.a libqfsys_sv.a
+noinst_LIBRARIES= libqfjs.a libqfnet.a libqfsys_cl.a libqfsys_sv.a
 
 if PACKETLOG
 packetlogger = net_packetlog.c
@@ -104,40 +104,6 @@ endif
 EXTRA_libqfsys_cl_a_SOURCES= cl_sys_sdl.c cl_sys_unix.c cl_sys_win.c sys_win.c fnmatch.c dirent.c
 
 #
-# ... Digital audio
-#
-if SNDTYPE_ALSA_0_5
-libqfsnd_a_SOURCES=	snd_dma.c snd_mem.c snd_mix.c snd_alsa_0_5.c
-endif
-if SNDTYPE_ALSA_0_9
-libqfsnd_a_SOURCES=	snd_dma.c snd_mem.c snd_mix.c snd_alsa_0_9.c
-endif
-if SNDTYPE_MME
-libqfsnd_a_SOURCES=	snd_dma.c snd_mem.c snd_mix.c snd_mme.c
-endif
-if SNDTYPE_OSS
-libqfsnd_a_SOURCES=	snd_dma.c snd_mem.c snd_mix.c snd_oss.c
-endif
-if SNDTYPE_SDL
-libqfsnd_a_SOURCES=	snd_dma.c snd_mem.c snd_mix.c snd_sdl.c
-endif
-if SNDTYPE_SGI
-libqfsnd_a_SOURCES=	snd_dma.c snd_mem.c snd_mix.c snd_sgi.c
-endif
-if SNDTYPE_SUN
-libqfsnd_a_SOURCES=	snd_dma.c snd_mem.c snd_mix.c snd_sun.c
-endif
-if SNDTYPE_WIN32
-libqfsnd_a_SOURCES=	snd_dma.c snd_mem.c snd_mix.c snd_win.c
-endif
-if SNDTYPE_NULL
-libqfsnd_a_SOURCES=	snd_null.c
-endif
-EXTRA_libqfsnd_a_SOURCES= snd_dma.c snd_mem.c snd_mix.c snd_alsa_0_5.c \
-			snd_alsa_0_9.c snd_oss.c snd_sdl.c snd_sgi.c \
-			snd_sun.c snd_win.c snd_null.c
-
-#
 # ... Joystick
 #
 if JOYTYPE_LINUX
@@ -155,12 +121,13 @@ EXTRA_libqfjs_a_SOURCES= joy_linux.c joy_win.c joy_null.c
 CLIENT_LIBS=		$(top_builddir)/libs/util/libQFutil.la \
 			$(top_builddir)/libs/gamecode/libQFgamecode.la \
 			$(top_builddir)/libs/audio/cd/libQFcd.la \
-			-L. -lqfnet -lqfsys_cl -lqfsnd -lqfjs \
+			$(top_builddir)/libs/audio/targets/libQFsound.la \
+			-L. -lqfnet -lqfsys_cl -lqfjs \
 			$(SOUND_LIBS) $(NET_LIBS) $(JOY_LIBS)
-CLIENT_LIB_DEPS=	libqfnet.a libqfsys_cl.a libqfsnd.a libqfjs.a
+CLIENT_LIB_DEPS=	libqfnet.a libqfsys_cl.a libqfjs.a
 
 if ASM_ARCH
-client_ASM=	snd_mixa.S cl_math.S
+client_ASM=	cl_math.S
 endif
 
 client_SOURCES= cl_cam.c cl_cmd.c cl_cvar.c cl_demo.c cl_ents.c cl_input.c \

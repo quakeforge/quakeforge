@@ -34,6 +34,13 @@
 #include "QF/cvar.h"
 #include "QF/zone.h"
 
+#define AMBIENT_WATER	0
+#define AMBIENT_SKY	1
+#define AMBIENT_SLIME	2
+#define AMBIENT_LAVA	3
+
+#define NUM_AMBIENTS	4	// automatic ambient sounds
+
 // !!! if this is changed, it must be changed in asm_i386.h too !!!
 typedef struct
 {

@@ -1395,6 +1395,7 @@ AC_OUTPUT(
 	libs/Makefile
 	libs/audio/Makefile
 	libs/audio/cd/Makefile
+	libs/audio/targets/Makefile
 	libs/gamecode/Makefile
 	libs/util/Makefile
 	qw/include/Makefile
