@@ -37,6 +37,7 @@ static const char rcsid[] =
 #ifdef HAVE_UNISTD_H
 # include "unistd.h"
 #endif
+#include <sys/types.h>
 #ifdef HAVE_SYS_SOCKET_H
 # include <sys/socket.h>
 #endif
@@ -56,7 +57,6 @@ static const char rcsid[] =
 # include <sys/uio.h>
 #endif
 
-#include <sys/types.h>
 #include <time.h>
 #include <stdio.h>
 #include <stdlib.h>
