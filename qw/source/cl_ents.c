@@ -527,7 +527,7 @@ CL_LinkPacketEntities (void)
 		else if (model->flags & EF_ZOMGIB)
 			R_SlightBloodTrail (*ent);
 		else if (model->flags & EF_TRACER)
-			R_GreenTrail (*ent);
+			R_WizTrail (*ent);
 		else if (model->flags & EF_TRACER2)
 			R_FlameTrail (*ent);
 		else if (model->flags & EF_TRACER3)
@@ -610,9 +610,7 @@ CL_ParsePlayerinfo (void)
 	flags = state->flags = MSG_ReadShort (net_message);
 
 	state->messagenum = cl.parsecount;
-	state->origin[0] = MSG_ReadCoord (net_message);
-	state->origin[1] = MSG_ReadCoord (net_message);
-	state->origin[2] = MSG_ReadCoord (net_message);
+	MSG_ReadCoord3 (net_message, state->origin);
 
 	state->frame = MSG_ReadByte (net_message);
 

@@ -211,13 +211,12 @@ V_ParseDamage (void)
 {
 	entity_t   *ent;
 	float       count, side;
-	int         armor, blood, i;
+	int         armor, blood;
 	vec3_t      from, forward, right, up;
 
 	armor = MSG_ReadByte (net_message);
 	blood = MSG_ReadByte (net_message);
-	for (i = 0; i < 3; i++)
-		from[i] = MSG_ReadCoord (net_message);
+	MSG_ReadCoord3 (net_message, from);
 
 	count = blood * 0.5 + armor * 0.5;
 	if (count < 10)

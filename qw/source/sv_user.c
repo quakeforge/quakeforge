@@ -1782,9 +1782,7 @@ SV_ExecuteClientMessage (client_t *cl)
 				break;
 
 			case clc_tmove:
-				o[0] = MSG_ReadCoord (net_message);
-				o[1] = MSG_ReadCoord (net_message);
-				o[2] = MSG_ReadCoord (net_message);
+				MSG_ReadCoord3 (net_message, o);
 				// only allowed by spectators
 				if (host_client->spectator) {
 					VectorCopy (o, SVvector (sv_player, origin));

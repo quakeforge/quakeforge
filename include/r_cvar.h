@@ -1,3 +1,6 @@
+extern struct cvar_s	 *easter_eggs;
+extern void r_easter_eggs_f (cvar_t *var);
+
 extern struct cvar_s     *cl_crossx;
 extern struct cvar_s     *cl_crossy;
 extern struct cvar_s     *cl_verstring;

@@ -154,7 +154,7 @@ R_ShowNearestLoc (void)
 		dl->color[2] = 0;
 
 		VectorCopy (nearloc->loc, trueloc);
-		R_RunSpikeEffect (trueloc, 7);
+		(*R_WizSpikeEffect) (trueloc);
 	}
 }
 

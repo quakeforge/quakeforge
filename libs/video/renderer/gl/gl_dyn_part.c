@@ -102,11 +102,6 @@ particle_new_random (ptype_t type, int texnum, vec3_t org, int org_fuzz,
 	particle_new (type, texnum, porg, scale, pvel, die, color, alpha);
 }
 
-void
-R_Particles_Init_Cvars (void)
-{
-}
-
 inline void
 R_ClearParticles (void)
 {
@@ -162,21 +157,20 @@ R_ReadPointFile_f (void)
 }
 
 void
-R_ParticleExplosion (vec3_t org)
+R_ParticleExplosion_QF (vec3_t org)
 {
-	if (numparticles >= r_maxparticles)
-		return;
 /*
 	R_NewExplosion (org);
 */
+	if (numparticles >= r_maxparticles)
+		return;
 	particle_new_random (pt_smokecloud, part_tex_smoke, org, 4, 30, 8,
-						 r_realtime + 5.0,
-						 (rand () & 7) + 8,
+						 r_realtime + 5.0, (rand () & 7) + 8,
 						 128 + (rand () & 63));
 }
 
 void
-R_ParticleExplosion2 (vec3_t org, int colorStart, int colorLength)
+R_ParticleExplosion2_QF (vec3_t org, int colorStart, int colorLength)
 {
 	int         i;
 	int         colorMod = 0, j = 512;
@@ -187,16 +181,15 @@ R_ParticleExplosion2 (vec3_t org, int colorStart, int colorLength)
 		j = r_maxparticles - numparticles;
 
 	for (i = 0; i < j; i++) {
-		particle_new_random (pt_blob, part_tex_dot, org, 16, 2, 256,
-					r_realtime + 0.3,
-					colorStart + (colorMod % colorLength),
-					255);
+		particle_new_random (pt_blob, part_tex_dot, org, 16, 2, 256, 
+							 r_realtime + 0.3,
+							 colorStart + (colorMod % colorLength), 255);
 		colorMod++;
 	}
 }
 
 void
-R_BlobExplosion (vec3_t org)
+R_BlobExplosion_QF (vec3_t org)
 {
 	int         i;
 	int			j = 1024;
@@ -218,28 +211,25 @@ R_BlobExplosion (vec3_t org)
 	}
 }
 
-static void
-R_RunSparkEffect (vec3_t org, int count, int ofuzz)
+static inline void
+R_RunSparkEffect_QF (vec3_t org, int count, int ofuzz)
 {
-	int			j = count + 1;
-
 	if (numparticles >= r_maxparticles)
 		return;
-	else if (numparticles + j >= r_maxparticles)
-		j = r_maxparticles - numparticles;
-	count = j - 1;
-
 	particle_new (pt_smokecloud, part_tex_smoke, org,
 				  ofuzz * 0.08, vec3_origin, r_realtime + 9,
 				  12 + (rand () & 3), 64 + (rand () & 31));
+
+	if (numparticles + count >= r_maxparticles)
+		count = r_maxparticles - numparticles;
 	while (count--)
 		particle_new_random (pt_fallfadespark, part_tex_dot, org,
 							 ofuzz * 0.75, 0.7, 96, r_realtime + 5,
 							 ramp[rand () & 7], 255);
 }
 
-inline static void
-R_BloodPuff (vec3_t org, int count)
+static inline void
+R_BloodPuff_QF (vec3_t org, int count)
 {
 	if (numparticles >= r_maxparticles)
 		return;
@@ -249,54 +239,47 @@ R_BloodPuff (vec3_t org, int count)
 }
 
 void
-R_RunPuffEffect (vec3_t org, particle_effect_t type, byte count)
+R_BloodPuffEffect_QF (vec3_t org, int count)
 {
-	// FIXME: Is this test worthwhile?
-	if (numparticles >= r_maxparticles)
-		return;
-
-	switch (type) {
-		case PE_GUNSHOT:
-		{
-			int scale = 16;
-
-			if (count > 120)
-				scale = 24;
-			R_RunSparkEffect (org, count / 2, scale);
-		}
-			break;
-		case PE_BLOOD:
-			R_BloodPuff (org, count);
-			break;
-		case PE_LIGHTNINGBLOOD:
-			R_BloodPuff (org, 50);
-
-			if (numparticles >= r_maxparticles)
-				break;
-			particle_new (pt_smokecloud, part_tex_smoke, org,
-						  3, vec3_origin, r_realtime + 9,
-						  12 + (rand () & 3), 64 + (rand () & 31));
-			count = 7;
-			if (numparticles + count >= r_maxparticles)
-				count = r_maxparticles - numparticles;
-			while (count--)
-				particle_new_random (pt_fallfadespark, part_tex_spark, org,
-									 12, 2, 128, r_realtime + 5,
-									 244 + (rand () % 3), 255);
-			break;
-		default:
-			break;
-	}
+	R_BloodPuff_QF (org, count);
 }
 
 void
-R_RunParticleEffect (vec3_t org, vec3_t dir, int color, int count)
+R_GunshotEffect_QF (vec3_t org, int count)
+{
+	int scale = 16;
+
+	if (count > 120)
+		scale = 24;
+	R_RunSparkEffect_QF (org, count >> 1, scale);
+}
+
+void
+R_LightningBloodEffect_QF (vec3_t org)
+{
+	int		count = 7;
+
+	R_BloodPuff_QF (org, 50);
+
+	if (numparticles >= r_maxparticles)
+		return;
+	particle_new (pt_smokecloud, part_tex_smoke, org, 3, vec3_origin,
+				  r_realtime + 9, 12 + (rand () & 3), 64 + (rand () & 31));
+
+	if (numparticles + count >= r_maxparticles)
+		count = r_maxparticles - numparticles;
+	while (count--)
+		particle_new_random (pt_fallfadespark, part_tex_spark, org, 12, 2,
+							 128, r_realtime + 5, 244 + (rand () % 3), 255);
+}
+
+void
+R_RunParticleEffect_QF (vec3_t org, vec3_t dir, int color, int count)
 {
 	int         i, j;
 
 	if (numparticles >= r_maxparticles)
 		return;
-
 	if (numparticles + count >= r_maxparticles)
 		count = r_maxparticles - numparticles;
 
@@ -305,34 +288,59 @@ R_RunParticleEffect (vec3_t org, vec3_t dir, int color, int count)
 			org[j] += ((rand () & 15) - 8);
 		}
 		particle_new (pt_slowgrav, part_tex_dot, org, 1.5, dir,
-					  (r_realtime + 0.1 * (rand () % 5)),
+					  r_realtime + 0.1 * (rand () % 5),
 					  (color & ~7) + (rand () & 7), 255);
 	}
 }
 
 void
-R_RunSpikeEffect (vec3_t org, particle_effect_t type)
+R_SpikeEffect_QF (vec3_t org)
 {
-	switch (type) {
-		case PE_SPIKE:
-			R_RunSparkEffect (org, 5, 8);
-			break;
-		case PE_SUPERSPIKE:
-			R_RunSparkEffect (org, 10, 8);
-			break;
-		case PE_KNIGHTSPIKE:
-			R_RunSparkEffect (org, 10, 8);
-			break;
-		case PE_WIZSPIKE:
-			R_RunSparkEffect (org, 15, 16);
-			break;
-		default:
-			break;
-	}
+	R_RunSparkEffect_QF (org, 5, 8);
 }
 
 void
-R_LavaSplash (vec3_t org)
+R_SuperSpikeEffect_QF (vec3_t org)
+{
+	R_RunSparkEffect_QF (org, 10, 8);
+}
+
+void
+R_KnightSpikeEffect_QF (vec3_t org)
+{
+	int		count = 10;
+
+	if (numparticles >= r_maxparticles)
+		return;
+	particle_new (pt_smokecloud, part_tex_smoke, org, 1, vec3_origin,
+				  r_realtime + 9, 234, 64 + (rand () & 31));
+
+	if (numparticles + count >= r_maxparticles)
+		count = r_maxparticles - numparticles;
+	while (count--)
+		particle_new_random (pt_fallfadespark, part_tex_dot, org, 6, 0.7, 96,
+							 r_realtime + 5, 234, 255);
+}
+
+void
+R_WizSpikeEffect_QF (vec3_t org)
+{
+	int		count = 15;
+
+	if (numparticles >= r_maxparticles)
+		return;
+	particle_new (pt_smokecloud, part_tex_smoke, org, 2, vec3_origin,
+				  r_realtime + 9, 52 + (rand () & 3), 64 + (rand () & 31));
+
+	if (numparticles + count >= r_maxparticles)
+		count = r_maxparticles - numparticles;
+	while (count--)
+		particle_new_random (pt_fallfadespark, part_tex_dot, org, 12, 0.7, 96,
+							 r_realtime + 5, 52 + (rand () & 3), 255);
+}
+
+void
+R_LavaSplash_QF (vec3_t org)
 {
 	float       vel;
 	int         rnd, i, j;
@@ -361,14 +369,14 @@ R_LavaSplash (vec3_t org)
 			vel = 50 + (rnd & 63);
 			VectorScale (dir, vel, pvel);
 			particle_new (pt_grav, part_tex_dot, porg, 3, pvel,
-						  (r_realtime + 2 + ((rnd >> 7) & 31) * 0.02),
-						  (224 + ((rnd >> 12) & 7)), 193);
+						  r_realtime + 2 + ((rnd >> 7) & 31) * 0.02,
+						  224 + ((rnd >> 12) & 7), 193);
 		}
 	}
 }
 
 void
-R_TeleportSplash (vec3_t org)
+R_TeleportSplash_QF (vec3_t org)
 {
 	float       vel;
 	int         rnd, i, j, k;
@@ -405,7 +413,7 @@ R_TeleportSplash (vec3_t org)
 }
 
 void
-R_RocketTrail (entity_t *ent)
+R_RocketTrail_QF (entity_t *ent)
 {
 	float		dist, maxlen, origlen, percent, pscale, pscalenext;
 	float		len = 0.0;
@@ -441,7 +449,7 @@ R_RocketTrail (entity_t *ent)
 }
 
 void
-R_GrenadeTrail (entity_t *ent)
+R_GrenadeTrail_QF (entity_t *ent)
 {
 	float		dist, maxlen, origlen, percent, pscale, pscalenext;
 	float		len = 0.0;
@@ -476,7 +484,7 @@ R_GrenadeTrail (entity_t *ent)
 }
 
 void
-R_BloodTrail (entity_t *ent)
+R_BloodTrail_QF (entity_t *ent)
 {
 	float		dist, maxlen, origlen, percent, pscale, pscalenext;
 	float		len = 0.0;
@@ -519,7 +527,7 @@ R_BloodTrail (entity_t *ent)
 }
 
 void
-R_SlightBloodTrail (entity_t *ent)
+R_SlightBloodTrail_QF (entity_t *ent)
 {
 	float		dist, maxlen, origlen, percent, pscale, pscalenext;
 	float		len = 0;
@@ -562,7 +570,7 @@ R_SlightBloodTrail (entity_t *ent)
 }
 
 void
-R_GreenTrail (entity_t *ent)
+R_WizTrail_QF (entity_t *ent)
 {
 	float		maxlen, origlen, percent;
 	float		dist = 3.0, len = 0.0;
@@ -602,7 +610,7 @@ R_GreenTrail (entity_t *ent)
 }
 
 void
-R_FlameTrail (entity_t *ent)
+R_FlameTrail_QF (entity_t *ent)
 {
 	float		maxlen, origlen, percent;
 	float		dist = 3.0, len = 0.0;
@@ -642,7 +650,7 @@ R_FlameTrail (entity_t *ent)
 }
 
 void
-R_VoorTrail (entity_t *ent)
+R_VoorTrail_QF (entity_t *ent)
 {
 	float		maxlen, origlen, percent;
 	float		dist = 3.0, len = 0.0;
@@ -674,6 +682,112 @@ R_VoorTrail (entity_t *ent)
 }
 
 void
+R_ParticleExplosion_EE (vec3_t org)
+{
+/*
+	R_NewExplosion (org);
+*/
+	if (numparticles >= r_maxparticles)
+		return;
+	particle_new_random (pt_smokecloud, part_tex_smoke, org, 4, 30, 8,
+						 r_realtime + 5.0, rand () & 255,
+						 128 + (rand () & 63));
+}
+
+void
+R_RocketTrail_EE (entity_t *ent)
+{
+	float		dist, maxlen, origlen, percent, pscale, pscalenext;
+	float		len = 0.0;
+	vec3_t		subtract, vec;
+
+	if (numparticles >= r_maxparticles)
+		return;
+
+	VectorSubtract (ent->origin, ent->old_origin, vec);
+	maxlen = VectorNormalize (vec);
+	origlen = r_frametime / maxlen;
+
+	pscale = 1.5 + qfrandom (1.5);
+
+	while (len < maxlen) {
+		pscalenext = 1.5 + qfrandom (1.5);
+		dist = (pscale + pscalenext) * 3.0;
+
+		VectorScale (vec, min(dist, len), subtract);
+		VectorAdd (ent->old_origin, subtract, ent->old_origin);
+		percent = len * origlen;
+
+		particle_new (pt_smoke, part_tex_smoke, ent->old_origin,
+					  pscale + percent * 4.0, vec3_origin,
+					  r_realtime + 2.0 - percent * 2.0, 
+					  rand () & 255,
+					  128 + (rand () & 31) - percent * 100.0);
+		if (numparticles >= r_maxparticles)
+			break;
+		len += dist;
+		pscale = pscalenext;
+	}
+}
+
+void
+R_GrenadeTrail_EE (entity_t *ent)
+{
+	float		dist, maxlen, origlen, percent, pscale, pscalenext;
+	float		len = 0.0;
+	vec3_t		subtract, vec;
+
+	if (numparticles >= r_maxparticles)
+		return;
+
+	VectorSubtract (ent->origin, ent->old_origin, vec);
+	maxlen = VectorNormalize (vec);
+	origlen = r_frametime / maxlen;
+	pscale = 6.0 + qfrandom (7.0);
+
+	while (len < maxlen) {
+		pscalenext = 6.0 + qfrandom (7.0);
+		dist = (pscale + pscalenext) * 2.0;
+
+		VectorScale (vec, min(dist, len), subtract);
+		VectorAdd (ent->old_origin, subtract, ent->old_origin);
+		percent = len * origlen;
+
+		particle_new (pt_smoke, part_tex_smoke, ent->old_origin,
+					  pscale + percent * 4.0, vec3_origin,
+					  r_realtime + 2.0 - percent * 2.0,
+					  rand () & 255,
+					  160 + (rand () & 31) - percent * 100.0);
+		if (numparticles >= r_maxparticles)
+			break;
+		len += dist;
+		pscale = pscalenext;
+	}
+}
+
+void
+R_ParticleExplosion_ID (vec3_t org)
+{
+	int		i;
+	int		j = 1024;
+	ptype_t	ptype;
+
+	if (numparticles >= r_maxparticles)
+		return;
+	else if (numparticles + j >= r_maxparticles)
+		j = r_maxparticles - numparticles;
+
+	for (i = 0; i < j; i++) {
+		if (i & 1)
+			ptype = pt_explode;
+		else
+			ptype = pt_explode2;
+		particle_new_random (ptype, part_tex_dot, org, 16, 1.5, 256,
+							 r_realtime + 5.0, (rand () & 7) + 8, 255);
+	}
+}
+
+void
 R_DrawParticles (void)
 {
 	unsigned char  *at;
@@ -700,18 +814,18 @@ R_DrawParticles (void)
 	varray[3].texcoord[0] = 1;
 	varray[3].texcoord[1] = 1;
 
-	grav = (fast_grav = r_frametime * 800) * 0.05;
-	dvel = bloodcloud_scale = smoke_scale = r_frametime * 4;
-	smoke_alpha = r_frametime * 100;
-	smokecloud_alpha = r_frametime * 140;
-	smokecloud_scale = r_frametime * 50;
-	smokecloud_org = r_frametime * 30;
-	bloodcloud_alpha = r_frametime * 65;
-	fallfadespark_alpha = r_frametime * 256;
-	fire_alpha = r_frametime * 32;
-	fire_scale = r_frametime * 2;
+	grav = (fast_grav = r_frametime * 800.0) * 0.05;
+	dvel = bloodcloud_scale = smoke_scale = r_frametime * 4.0;
+	smoke_alpha = r_frametime * 100.0;
+	smokecloud_alpha = r_frametime * 140.0;
+	smokecloud_scale = r_frametime * 50.0;
+	smokecloud_org = r_frametime * 30.0;
+	bloodcloud_alpha = r_frametime * 65.0;
+	fallfadespark_alpha = r_frametime * 256.0;
+	fire_alpha = r_frametime * 32.0;
+	fire_scale = r_frametime * 2.0;
 
-	minparticledist = DotProduct (r_refdef.vieworg, vpn) + 32.0f;
+	minparticledist = DotProduct (r_refdef.vieworg, vpn) + 32.0;
 
 	activeparticles = 0;
 	maxparticle = -1;
@@ -728,20 +842,20 @@ R_DrawParticles (void)
 			varray[0].color[2] = at[2];
 			varray[0].color[3] = part->alpha;
 
-			memcpy(varray[1].color, varray[0].color, sizeof(varray[0].color));
-			memcpy(varray[2].color, varray[0].color, sizeof(varray[0].color));
-			memcpy(varray[3].color, varray[0].color, sizeof(varray[0].color));
+			memcpy (varray[1].color, varray[0].color, sizeof(varray[0].color));
+			memcpy (varray[2].color, varray[0].color, sizeof(varray[0].color));
+			memcpy (varray[3].color, varray[0].color, sizeof(varray[0].color));
 
 			scale = part->scale;
 
-			VectorScale    (vup,    scale, up_scale);
-			VectorScale    (vright, scale, right_scale);
+			VectorScale (vup, scale, up_scale);
+			VectorScale (vright, scale, right_scale);
 
-			VectorAdd      (right_scale, up_scale, up_right_scale);
+			VectorAdd (right_scale, up_scale, up_right_scale);
 			VectorSubtract (right_scale, up_scale, down_right_scale);
 
-			VectorAdd      (part->org, up_right_scale,   varray[0].vertex);
-			VectorAdd      (part->org, down_right_scale, varray[1].vertex);
+			VectorAdd (part->org, up_right_scale,   varray[0].vertex);
+			VectorAdd (part->org, down_right_scale, varray[1].vertex);
 			VectorSubtract (part->org, up_right_scale,   varray[2].vertex);
 			VectorSubtract (part->org, down_right_scale, varray[3].vertex);
 
@@ -773,8 +887,7 @@ R_DrawParticles (void)
 //				part->org[2] += smokecloud_org;
 				break;
 			case pt_smokecloud:
-				if ((part->alpha -= smokecloud_alpha) < 1)
-				{
+				if ((part->alpha -= smokecloud_alpha) < 1) {
 					part->die = -1;
 					break;
 				}
@@ -782,8 +895,7 @@ R_DrawParticles (void)
 				part->org[2] += smokecloud_org;
 				break;
 			case pt_bloodcloud:
-				if ((part->alpha -= bloodcloud_alpha) < 1)
-				{
+				if ((part->alpha -= bloodcloud_alpha) < 1) {
 					part->die = -1;
 					break;
 				}
@@ -808,8 +920,7 @@ R_DrawParticles (void)
 		// to ensure compactor below operates properly in all cases)
 		if (part->die < r_realtime)
 			freeparticles[j++] = part;
-		else
-		{
+		else {
 			maxparticle = k;
 			activeparticles++;
 		}
@@ -818,11 +929,61 @@ R_DrawParticles (void)
 	while (maxparticle >= activeparticles) {
 		*freeparticles[k++] = particles[maxparticle--];
 		while (maxparticle >= activeparticles && 
-				particles[maxparticle].die <= r_realtime)
+			   particles[maxparticle].die <= r_realtime)
 			maxparticle--;
 	}
 	numparticles = activeparticles;
 
 	qfglColor3ubv (color_white);
 	qfglDepthMask (GL_TRUE);
+}
+
+void
+r_easter_eggs_f (cvar_t *var)
+{
+	if (easter_eggs) {
+		if (easter_eggs->int_val) {
+			R_ParticleExplosion = R_ParticleExplosion_EE;
+			R_RocketTrail = R_RocketTrail_EE;
+			R_GrenadeTrail = R_GrenadeTrail_EE;
+		} else {
+			R_ParticleExplosion = R_ParticleExplosion_QF;
+			R_RocketTrail = R_RocketTrail_QF;
+			R_GrenadeTrail = R_GrenadeTrail_QF;
+		}
+	}
+}
+
+void
+R_ParticleFunctionInit (void)
+{
+	R_BlobExplosion = R_BlobExplosion_QF;
+	R_ParticleExplosion = R_ParticleExplosion_QF;
+	R_ParticleExplosion2 = R_ParticleExplosion2_QF;
+	R_LavaSplash = R_LavaSplash_QF;
+	R_TeleportSplash = R_TeleportSplash_QF;
+
+	R_BloodPuffEffect = R_BloodPuffEffect_QF;
+	R_GunshotEffect = R_GunshotEffect_QF;
+	R_LightningBloodEffect = R_LightningBloodEffect_QF;
+
+	R_RunParticleEffect = R_RunParticleEffect_QF;
+	R_SpikeEffect = R_SpikeEffect_QF;
+	R_SuperSpikeEffect = R_SuperSpikeEffect_QF;
+	R_KnightSpikeEffect = R_KnightSpikeEffect_QF;
+	R_WizSpikeEffect = R_WizSpikeEffect_QF;
+
+	R_RocketTrail = R_RocketTrail_QF;
+	R_GrenadeTrail = R_GrenadeTrail_QF;
+	R_BloodTrail = R_BloodTrail_QF;
+	R_SlightBloodTrail = R_SlightBloodTrail_QF;
+	R_WizTrail = R_WizTrail_QF;
+	R_FlameTrail = R_FlameTrail_QF;
+	R_VoorTrail = R_VoorTrail_QF;
+}
+
+void
+R_Particles_Init_Cvars (void)
+{
+	R_ParticleFunctionInit ();
 }

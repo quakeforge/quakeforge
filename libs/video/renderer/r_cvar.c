@@ -41,6 +41,8 @@ static const char rcsid[] =
 #include "r_cvar.h"
 #include "r_dynamic.h"
 
+cvar_t	   *easter_eggs;
+
 cvar_t     *cl_crossx;
 cvar_t     *cl_crossy;
 cvar_t     *cl_verstring;   
@@ -143,6 +145,8 @@ r_particles_max_f (cvar_t *var)
 void
 R_Init_Cvars (void)
 {
+	easter_eggs = Cvar_Get ("easter_eggs", "0", CVAR_NONE, r_easter_eggs_f,
+							"Enables easter eggs.");
 
 	cl_crossx = Cvar_Get ("cl_crossx", "0", CVAR_ARCHIVE, NULL,
 						  "Sets the position of the crosshair on the X-axis.");

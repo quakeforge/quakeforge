@@ -621,7 +621,7 @@ CL_RelinkEntities (void)
 		else if (ent->model->flags & EF_ZOMGIB)
 			R_SlightBloodTrail (ent);
 		else if (ent->model->flags & EF_TRACER)
-			R_GreenTrail (ent);
+			R_WizTrail (ent);
 		else if (ent->model->flags & EF_TRACER2)
 			R_FlameTrail (ent);
 		else if (ent->model->flags & EF_TRACER3)

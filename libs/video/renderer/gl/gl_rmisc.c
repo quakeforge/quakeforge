@@ -163,7 +163,8 @@ R_Init (void)
 	qfglEnableClientState (GL_VERTEX_ARRAY);
 	qfglEnableClientState (GL_TEXTURE_COORD_ARRAY);
 
-//	qfglInterleavedArrays(GL_T2F_C4F_N3F_V3F, 0, varray);
+//	qfglInterleavedArrays (GL_T2F_C4UB_N3F_V3F, 0, varray); // Models w/normals
+//	qfglInterleavedArrays (GL_T2F_C4UB_V3F, 0, varray); // Polys w/o normals
 	qfglTexCoordPointer (2, GL_FLOAT, sizeof(varray[0]), varray[0].texcoord);
 	qfglColorPointer (4, GL_UNSIGNED_BYTE, sizeof(varray[0]), varray[0].color);
 	qfglVertexPointer (3, GL_FLOAT, sizeof(varray[0]), varray[0].vertex);

@@ -118,7 +118,7 @@ MSG_WriteString (sizebuf_t *sb, const char *s)
 void
 MSG_WriteCoord (sizebuf_t *sb, float f)
 {
-	MSG_WriteShort (sb, (unsigned int) (f * 8));
+	MSG_WriteShort (sb, (unsigned int) (f * 8.0));
 }
 
 void
@@ -184,7 +184,6 @@ MSG_ReadShort (msg_t *msg)
 	msg->readcount = msg->message->cursize;
 	msg->badread = true;
 	return -1;
-
 }
 
 int
@@ -269,17 +268,25 @@ MSG_ReadString (msg_t *msg)
 float
 MSG_ReadCoord (msg_t *msg)
 {
-	return MSG_ReadShort (msg) * (1.0 / 8);
+	return MSG_ReadShort (msg) * (1.0 / 8.0);
+}
+
+void
+MSG_ReadCoord3 (msg_t *msg, vec3_t coord)
+{
+	coord[0] = MSG_ReadShort (msg) * (1.0 / 8.0);
+	coord[1] = MSG_ReadShort (msg) * (1.0 / 8.0);
+	coord[2] = MSG_ReadShort (msg) * (1.0 / 8.0);
 }
 
 float
 MSG_ReadAngle (msg_t *msg)
 {
-	return MSG_ReadChar (msg) * (360.0 / 256);
+	return MSG_ReadChar (msg) * (360.0 / 256.0);
 }
 
 float
 MSG_ReadAngle16 (msg_t *msg)
 {
-	return MSG_ReadShort (msg) * (360.0 / 65536);
+	return MSG_ReadShort (msg) * (360.0 / 65536.0);
 }

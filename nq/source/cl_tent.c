@@ -186,13 +186,8 @@ CL_ParseBeam (model_t *m)
 
 	ent = MSG_ReadShort (net_message);
 
-	start[0] = MSG_ReadCoord (net_message);
-	start[1] = MSG_ReadCoord (net_message);
-	start[2] = MSG_ReadCoord (net_message);
-
-	end[0] = MSG_ReadCoord (net_message);
-	end[1] = MSG_ReadCoord (net_message);
-	end[2] = MSG_ReadCoord (net_message);
+	MSG_ReadCoord3 (net_message, start);
+	MSG_ReadCoord3 (net_message, end);
 
 	// override any beam with the same entity
 	for (i = 0, b = cl_beams; i < MAX_BEAMS; i++, b++)
@@ -238,26 +233,20 @@ CL_ParseTEnt (void)
 	}
 	switch (type) {
 		case TE_WIZSPIKE:				// spike hitting wall
-			pos[0] = MSG_ReadCoord (net_message);
-			pos[1] = MSG_ReadCoord (net_message);
-			pos[2] = MSG_ReadCoord (net_message);
-			R_RunSpikeEffect (pos, prot_to_rend[type]);
+			MSG_ReadCoord3 (net_message, pos);
+			R_WizSpikeEffect (pos);
 			S_StartSound (-1, 0, cl_sfx_wizhit, pos, 1, 1);
 			break;
 
 		case TE_KNIGHTSPIKE:			// spike hitting wall
-			pos[0] = MSG_ReadCoord (net_message);
-			pos[1] = MSG_ReadCoord (net_message);
-			pos[2] = MSG_ReadCoord (net_message);
-			R_RunSpikeEffect (pos, prot_to_rend[type]);
+			MSG_ReadCoord3 (net_message, pos);
+			R_KnightSpikeEffect (pos);
 			S_StartSound (-1, 0, cl_sfx_knighthit, pos, 1, 1);
 			break;
 
 		case TE_SPIKE:					// spike hitting wall
-			pos[0] = MSG_ReadCoord (net_message);
-			pos[1] = MSG_ReadCoord (net_message);
-			pos[2] = MSG_ReadCoord (net_message);
-			R_RunSpikeEffect (pos, prot_to_rend[type]);
+			MSG_ReadCoord3 (net_message, pos);
+			R_SpikeEffect (pos);
 
 			if (rand () % 5)
 				S_StartSound (-1, 0, cl_sfx_tink1, pos, 1, 1);
@@ -273,10 +262,8 @@ CL_ParseTEnt (void)
 			break;
 
 		case TE_SUPERSPIKE:			// super spike hitting wall
-			pos[0] = MSG_ReadCoord (net_message);
-			pos[1] = MSG_ReadCoord (net_message);
-			pos[2] = MSG_ReadCoord (net_message);
-			R_RunSpikeEffect (pos, prot_to_rend[type]);
+			MSG_ReadCoord3 (net_message, pos);
+			R_SuperSpikeEffect (pos);
 
 			if (rand () % 5)
 				S_StartSound (-1, 0, cl_sfx_tink1, pos, 1, 1);
@@ -293,9 +280,7 @@ CL_ParseTEnt (void)
 
 		case TE_EXPLOSION:				// rocket explosion
 			// particles
-			pos[0] = MSG_ReadCoord (net_message);
-			pos[1] = MSG_ReadCoord (net_message);
-			pos[2] = MSG_ReadCoord (net_message);
+			MSG_ReadCoord3 (net_message, pos);
 			R_ParticleExplosion (pos);
 
 			// light
@@ -319,9 +304,7 @@ CL_ParseTEnt (void)
 			break;
 
 		case TE_TAREXPLOSION:			// tarbaby explosion
-			pos[0] = MSG_ReadCoord (net_message);
-			pos[1] = MSG_ReadCoord (net_message);
-			pos[2] = MSG_ReadCoord (net_message);
+			MSG_ReadCoord3 (net_message, pos);
 			R_BlobExplosion (pos);
 
 			S_StartSound (-1, 0, cl_sfx_r_exp3, pos, 1, 1);
@@ -346,23 +329,17 @@ CL_ParseTEnt (void)
 		// PGM 01/21/97
 
 		case TE_LAVASPLASH:
-			pos[0] = MSG_ReadCoord (net_message);
-			pos[1] = MSG_ReadCoord (net_message);
-			pos[2] = MSG_ReadCoord (net_message);
+			MSG_ReadCoord3 (net_message, pos);
 			R_LavaSplash (pos);
 			break;
 
 		case TE_TELEPORT:
-			pos[0] = MSG_ReadCoord (net_message);
-			pos[1] = MSG_ReadCoord (net_message);
-			pos[2] = MSG_ReadCoord (net_message);
+			MSG_ReadCoord3 (net_message, pos);
 			R_TeleportSplash (pos);
 			break;
 
 		case TE_EXPLOSION2:			// color mapped explosion
-			pos[0] = MSG_ReadCoord (net_message);
-			pos[1] = MSG_ReadCoord (net_message);
-			pos[2] = MSG_ReadCoord (net_message);
+			MSG_ReadCoord3 (net_message, pos);
 			colorStart = MSG_ReadByte (net_message);
 			colorLength = MSG_ReadByte (net_message);
 			R_ParticleExplosion2 (pos, colorStart, colorLength);
@@ -381,22 +358,18 @@ CL_ParseTEnt (void)
 			break;
 
 		case TE_GUNSHOT:				// bullet hitting wall
-		case TE_BLOOD:					// bullets hitting body
-			if (type == TE_GUNSHOT) {
-				cnt = 20;
-			} else {
-				cnt = MSG_ReadByte (net_message) * 20;
-			}
-			pos[0] = MSG_ReadCoord (net_message);
-			pos[1] = MSG_ReadCoord (net_message);
-			pos[2] = MSG_ReadCoord (net_message);
-			R_RunPuffEffect (pos, prot_to_rend[type], cnt);
+			MSG_ReadCoord3 (net_message, pos);
+			R_GunshotEffect (pos, 20);
+			break;
+
+		case TE_BLOOD:					// bullet hitting body
+			cnt = MSG_ReadByte (net_message) * 20;
+			MSG_ReadCoord3 (net_message, pos);
+			R_BloodPuffEffect (pos, cnt);
 			break;
 
 		case TE_LIGHTNINGBLOOD:		// lightning hitting body
-			pos[0] = MSG_ReadCoord (net_message);
-			pos[1] = MSG_ReadCoord (net_message);
-			pos[2] = MSG_ReadCoord (net_message);
+			MSG_ReadCoord3 (net_message, pos);
 
 			// light
 			dl = R_AllocDlight (0);
@@ -408,7 +381,7 @@ CL_ParseTEnt (void)
 			dl->color[1] = 0.40;
 			dl->color[2] = 0.65;
 
-			R_RunPuffEffect (pos, prot_to_rend[type], 50);
+			R_LightningBloodEffect (pos);
 			break;
 
 		default:
@@ -517,8 +490,7 @@ CL_ParseParticleEffect (void)
 	int         i, count, color;
 	vec3_t      org, dir;
 
-	for (i = 0; i < 3; i++)
-		org[i] = MSG_ReadCoord (net_message);
+	MSG_ReadCoord3 (net_message, org);
 	for (i = 0; i < 3; i++)
 		dir[i] = MSG_ReadChar (net_message) * (15.0 / 16.0);
 	count = MSG_ReadByte (net_message);

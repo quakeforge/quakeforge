@@ -127,7 +127,7 @@ void
 CL_ParseStartSoundPacket (void)
 {
 	float       attenuation;
-	int         channel, ent, field_mask, sound_num, volume, i;
+	int         channel, ent, field_mask, sound_num, volume;
 	vec3_t      pos;
 
 	field_mask = MSG_ReadByte (net_message);
@@ -151,8 +151,7 @@ CL_ParseStartSoundPacket (void)
 	if (ent > MAX_EDICTS)
 		Host_Error ("CL_ParseStartSoundPacket: ent = %i", ent);
 
-	for (i = 0; i < 3; i++)
-		pos[i] = MSG_ReadCoord (net_message);
+	MSG_ReadCoord3 (net_message, pos);
 
 	S_StartSound (ent, channel, cl.sound_precache[sound_num], pos,
 				  volume / 255.0, attenuation);
@@ -644,11 +643,10 @@ CL_ParseStatic (void)
 void
 CL_ParseStaticSound (void)
 {
-	int         sound_num, vol, atten, i;
+	int         sound_num, vol, atten;
 	vec3_t      org;
 
-	for (i = 0; i < 3; i++)
-		org[i] = MSG_ReadCoord (net_message);
+	MSG_ReadCoord3 (net_message, org);
 	sound_num = MSG_ReadByte (net_message);
 	vol = MSG_ReadByte (net_message);
 	atten = MSG_ReadByte (net_message);

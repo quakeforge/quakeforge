@@ -44,6 +44,27 @@ unsigned int	r_maxparticles, numparticles;
 particle_t	   *active_particles, *free_particles, *particles, **freeparticles;
 vec3_t			r_pright, r_pup, r_ppn;
 
+void (*R_RocketTrail) (struct entity_s *ent);
+void (*R_GrenadeTrail) (struct entity_s *ent);
+void (*R_BloodTrail) (struct entity_s *ent);
+void (*R_SlightBloodTrail) (struct entity_s *ent);
+void (*R_WizTrail) (struct entity_s *ent);
+void (*R_FlameTrail) (struct entity_s *ent);
+void (*R_VoorTrail) (struct entity_s *ent);
+void (*R_RunParticleEffect) (vec3_t org, vec3_t dir, int color, int count);
+void (*R_BloodPuffEffect) (vec3_t org, int count);
+void (*R_GunshotEffect) (vec3_t org, int count);
+void (*R_LightningBloodEffect) (vec3_t org);
+void (*R_SpikeEffect) (vec3_t org);
+void (*R_KnightSpikeEffect) (vec3_t org);
+void (*R_SuperSpikeEffect) (vec3_t org);
+void (*R_WizSpikeEffect) (vec3_t org);
+void (*R_BlobExplosion) (vec3_t org);
+void (*R_ParticleExplosion) (vec3_t org);
+void (*R_ParticleExplosion2) (vec3_t org, int colorStart, int colorLength);
+void (*R_LavaSplash) (vec3_t org);
+void (*R_TeleportSplash) (vec3_t org);
+
 
 /*
   R_MaxParticlesCheck

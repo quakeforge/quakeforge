@@ -59,6 +59,7 @@ const char *MSG_ReadString (msg_t *msg);
 const char *MSG_ReadStringLine (msg_t *msg);
 
 float MSG_ReadCoord (msg_t *msg);
+void MSG_ReadCoord3 (msg_t *msg, vec3_t coord);
 float MSG_ReadAngle (msg_t *msg);
 float MSG_ReadAngle16 (msg_t *msg);
 
