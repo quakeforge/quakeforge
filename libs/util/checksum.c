@@ -46,6 +46,7 @@ static __attribute__ ((unused)) const char rcsid[] =
 #include "QF/checksum.h"
 #include "QF/crc.h"
 #include "QF/mdfour.h"
+#include "QF/qendian.h"
 
 static byte chktbl[1024 + 4] = {
 	0x78, 0xd2, 0x94, 0xe3, 0x41, 0xec, 0xd6, 0xd5,
@@ -160,7 +161,7 @@ Com_BlockChecksum (const void *buffer, int length)
 
 	val = digest[0] ^ digest[1] ^ digest[2] ^ digest[3];
 
-	return val;
+	return LittleLong (val);
 }
 
 void
