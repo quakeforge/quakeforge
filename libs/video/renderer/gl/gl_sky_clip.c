@@ -558,15 +558,15 @@ process_corners (struct box_def *box)
 		case 7:	// i
 			for (i = 0; i < 6; i++) {
 				// don't need to check the last point
-				if (visit[(i + 2) % 6].face == visit[(i + 4) % 6].face
-					&& visit[(i + 4) % 6].face == visit[(i + 6) % 6].face)
+				if (visit[(i + 2) % 7].face == visit[(i + 4) % 7].face
+					&& visit[(i + 4) % 7].face == visit[(i + 6) % 7].face)
 					break;
 			}
 			{
 				vec3_t      v;
 
-				find_cube_vertex (visit[i].face, visit[(i + 1) % 6].face,
-								  visit[(i + 2) % 6].face, v);
+				find_cube_vertex (visit[i].face, visit[(i + 1) % 7].face,
+								  visit[(i + 2) % 7].face, v);
 
 				insert_cube_vertices (box, visit[i], 1, v);
 				insert_cube_vertices (box, visit[(i + 1) % 7], 1, v);
