@@ -64,13 +64,14 @@ Carne_Execute_Script (const char *path, cbuf_args_t *args)
 		Qclose (file);
 	} else {
 		printf ("Could not open %s for reading: %s\n", path, strerror(errno));
-		return 1;
+		carne_exitcode = 1;
+		goto ERROR;
 	}
 	
-	if (gib_parse_error)
-		return 1;
-
-		
+	if (gib_parse_error) {
+		carne_exitcode = 2;
+		goto ERROR;
+	}	
 		
 	GIB_Function_Prepare_Args (mbuf, args->argv, args->argc);
 	
@@ -82,6 +83,7 @@ Carne_Execute_Script (const char *path, cbuf_args_t *args)
 		if (carne_done || !GIB_DATA(mbuf)->program)
 			break;
 	}
+ERROR:
 	Cbuf_DeleteStack (mbuf);
 	return carne_exitcode;
 }
@@ -109,7 +111,7 @@ Carne_Execute_Stdin (void)
 int
 main (int argc, char **argv)
 {
-	cbuf_args_t *args = Cbuf_ArgsNew ();
+	cbuf_args_t *args; 
 	int result, i;
 	
 	// Initialize required QF subsystems
@@ -122,6 +124,7 @@ main (int argc, char **argv)
 	
 	if (argc > 1) {
 		// Prepare arguments
+		args = Cbuf_ArgsNew ();
 		for (i = 1; i < argc; i++)
 			Cbuf_ArgsAdd (args, argv[i]);
 		// Run the script

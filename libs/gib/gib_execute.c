@@ -200,8 +200,16 @@ GIB_Execute (cbuf_t * cbuf)
 	unsigned int index;
 	gib_var_t *var;
 
+	if (!g->program)
+		return;
 	g->ip = g->ip ? g->ip->next : g->program;
 	while (g->ip) {
+		if (g->ip->flags & TREE_L_EMBED) {
+			// Get ready for return values
+			g->waitret = true;
+			GIB_Buffer_Push_Sstack (cbuf);
+		} else
+			g->waitret = false;
 		switch (g->ip->type) {
 			case TREE_T_JUMP:
 				g->ip = g->ip->jump;
@@ -231,12 +239,6 @@ GIB_Execute (cbuf_t * cbuf)
 				g->ip = g->ip->next;
 				continue;
 			case TREE_T_CMD:
-				if (g->ip->flags & TREE_L_EMBED) {
-					// Get ready for return values
-					g->waitret = true;
-					GIB_Buffer_Push_Sstack (cbuf);
-				} else
-					g->waitret = false;
 				if (GIB_Execute_Prepare_Line (cbuf, g->ip))
 					return;
 				else if (cbuf->args->argc) {
@@ -264,6 +266,6 @@ GIB_Execute (cbuf_t * cbuf)
 				return;
 		}
 	}
-	g->ip = g->program = 0;
-	g->script = 0;
+	g->ip = 0;
+	GIB_Tree_Unref (&g->program);
 }

@@ -68,6 +68,7 @@ Cbuf_ArgsDelete (cbuf_args_t *args)
 		dstring_delete (args->argv[i]);
 	free (args->argv);
 	free (args->args);
+	free (args->argm);
 	free (args);
 }
 
@@ -201,7 +202,7 @@ Cbuf_Execute_Stack (cbuf_t *cbuf)
 		Cbuf_DeleteStack (cbuf->down);
 		cbuf->down = 0;
 	}
-	if (sp) // This should be null if we exited normally
+	if (sp)
 		Cbuf_Reset (cbuf);
 }
 

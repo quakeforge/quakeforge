@@ -299,6 +299,7 @@ GIB_Parse_Tokens (const char *program, unsigned int *i, unsigned int pofs, gib_t
 		cur->end = *i + pofs;
 		cur->delim = delim;
 		str = calloc (*i - tstart + 1, sizeof (char));
+		cur->str = str;
 		memcpy (str, program + tstart, *i - tstart);
 		if (cur->delim == '{') {
 			if (cat == CAT_CONCAT) {
@@ -344,7 +345,6 @@ GIB_Parse_Tokens (const char *program, unsigned int *i, unsigned int pofs, gib_t
 			// We can handle escape characters now
 		} else if (cur->delim == '\"')
 			GIB_Process_Escapes (str);
-		cur->str = str;
 
 		if (cat == CAT_CONCAT)
 			cur->flags |= TREE_A_CONCAT;
@@ -363,7 +363,9 @@ GIB_Parse_Tokens (const char *program, unsigned int *i, unsigned int pofs, gib_t
 	if (c)
 		GIB_Parse_Error (va ("Could not find match for '%c'.", c), *i + pofs);
 	if (nodes)
-		GIB_Tree_Free_Recursive (nodes);
+		GIB_Tree_Unref (&nodes);
+	if (embs)
+		GIB_Tree_Unref (&embs);
 	return 0;
 }
 
@@ -372,6 +374,9 @@ GIB_Parse_Semantic_Preprocess (gib_tree_t * line)
 {
 	gib_tree_t *p, *start = line;
 
+	// If second token is concatenated, than the first can't possibly mean anything
+	if (line->children->next && line->children->next->flags & TREE_A_CONCAT)
+		return line;
 	while (!strcmp (line->children->str, "if")
 		   || !strcmp (line->children->str, "ifnot")) {
 		// Sanity checking
@@ -542,8 +547,13 @@ GIB_Parse_Semantic_Preprocess (gib_tree_t * line)
 				p->jump = line;
 			p = p->next;
 		}
-	} else if (line->children->next && line->children->next->delim == ' ' && !strcmp (line->children->next->str, "="))
-		line->type = TREE_T_ASSIGN;
+	} else if (
+		line->children->next && 
+		!(line->children->next->flags & TREE_A_CONCAT) && 
+		line->children->next->delim == ' ' &&
+		!strcmp (line->children->next->str, "=")
+		)
+			line->type = TREE_T_ASSIGN;
 	return line;
 }
 
@@ -588,7 +598,7 @@ GIB_Parse_Lines (const char *program, unsigned int pofs)
 	return lines;
   ERROR:
 	if (lines)
-		GIB_Tree_Free_Recursive (lines);
+		GIB_Tree_Unref (&lines);
 	return 0;
 }
 
@@ -597,10 +607,11 @@ GIB_Parse_Embedded (const char *program, unsigned int pofs, gib_tree_t ** embedd
 {
 	unsigned int i, n, t;
 	char        c, d, *str;
-	gib_tree_t *lines = 0, **line = &lines, *cur, *tokens, *emb, *tmp;
+	gib_tree_t *lines = 0, **line = &lines, *cur, *tokens, *emb, *tmp, **embfirst;
 	unsigned int start, end;
 
 	gib_parse_error = false;
+	embfirst = embedded;
 	*embedded = 0;
 
 	for (i = 0; program[i]; i++) {
@@ -628,14 +639,16 @@ GIB_Parse_Embedded (const char *program, unsigned int pofs, gib_tree_t ** embedd
 			cur->end = end + pofs;
 			c = 0;
 			t = 0;
-			if (!
-				(tokens =
-				 GIB_Parse_Tokens (cur->str, &t, start + pofs, &emb)))
+			if (!(tokens = GIB_Parse_Tokens (cur->str, &t, start + pofs, &emb))) {
+				GIB_Tree_Unref (&cur);
 				goto ERROR;
+			}
 			cur->children = tokens;
 			GIB_Parse_Semantic_Preprocess (cur)->next = *embedded;
-			if (gib_parse_error)
+			if (gib_parse_error) {
+				GIB_Tree_Unref (&cur);
 				goto ERROR;
+			}
 			// Did this have embedded commands of it's own?
 			if (emb) {
 				// Link them in first
@@ -692,6 +705,8 @@ GIB_Parse_Embedded (const char *program, unsigned int pofs, gib_tree_t ** embedd
 	if (c)
 		GIB_Parse_Error (va ("Could not find match for '%c'.", c), i + pofs);
 	if (lines)
-		GIB_Tree_Free_Recursive (lines);
+		GIB_Tree_Unref (&lines);
+	if (*embfirst)
+		GIB_Tree_Unref (embfirst);
 	return 0;
 }

@@ -95,7 +95,7 @@ GIB_Process_Embedded (gib_tree_t * node, cbuf_args_t * args)
 					Cbuf_ArgsAdd (args, retvals->dstrs[j]->str);
 					args->argm[args->argc - 1] = node;
 				}
-				if (str[prev] && retvals->size)	// Still more stuff left?
+				if (str[prev] || retvals->size)	// Still more stuff left?
 					Cbuf_ArgsAdd (args, "");
 			} else
 				dstring_appendstr (args->argv[args->argc - 1],
