@@ -42,17 +42,73 @@
 # include <strings.h>
 #endif
 
+#include "QF/sys.h"
 #include "QF/in_event.h"
 
+float ie_time;
+
+void
+IE_Threshold_Event (ie_event_t *event, float value)
+{
+	int i, total;
+	ie_threshold_data_t *data = event->data.p;
+
+	// add new value to the history
+	while (data->history_count
+		   && data->history[data->history_count - 1].time
+			  < ie_time - data->time)
+		data->history_count--;
+	data->history_count++;
+	data->history = realloc (data->history, data->history_count);
+	if (!data->history)
+		Sys_Error ("IE_Event: memory allocation failure!");
+	data->history[data->history_count - 1].time = ie_time;
+	data->history[data->history_count - 1].value = value;
+
+	// total up the values in the history
+	for (i = 0, total = 0; i < data->history_count; i++)
+		total += data->history[i].value;
+
+	// call the handler
+	if (total >= data->threshold)
+		data->handler (data->nextevent, total);
+}
+
+void
+IE_Translation_Event (ie_event_t *event, float value)
+{
+	ie_translation_data_t *data = event->data.p;
+	ie_translation_index_t *index = data->index;
+	ie_event_t *nextevent = 0;
+
+	while (!nextevent) {
+		if (!index)
+			break;
+		if (index->table->maxevents > data->offset)
+			nextevent = &index->table->events[data->offset];
+		index = index->next;
+	}
+	if (!nextevent) // no handler for it
+		return;
+
+	nextevent->handler (nextevent, value);
+}
+
+
+
+/*
 static int (**event_handler_list)(const IE_event_t*);
 static int eh_list_size;
 static int focus;
+*/
 
 void
 IE_Init (void)
 {
+/*
 	eh_list_size = 8;	// start with 8 slots. will grow dynamicly if needed
 	event_handler_list = calloc (eh_list_size, sizeof (event_handler_list[0]));
+*/
 }
 
 void
@@ -65,6 +121,7 @@ IE_Shutdown (void)
 {
 }
 
+/*
 int
 IE_Send_Event (const IE_event_t *event)
 {
@@ -116,3 +173,4 @@ IE_Set_Focus (int handle)
 		IE_Send_Event (&event);
 	}
 }
+*/
