@@ -182,9 +182,6 @@ Resize (old_console_t *con)
 
 	width = (vid.width >> 3) - 2;
 
-	if (width == con_linewidth)
-		return;
-
 	if (width < 1) {					// video hasn't been initialized yet
 		width = 38;
 		con_linewidth = width;
