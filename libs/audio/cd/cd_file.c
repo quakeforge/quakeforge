@@ -90,7 +90,7 @@ static plitem_t *tracklist = NULL;		// the parsed tracklist
 static void
 set_volume (void)
 {
-	if (cd_channel->sfx) {
+	if (cd_channel && cd_channel->sfx) {
 		int         vol = bgmvolume->value * 255;
 
 		cd_channel->master_vol = vol;
@@ -192,6 +192,12 @@ I_OGGMus_Play (int track, qboolean looping)
 	Sys_DPrintf ("Entering I_OGGMus_Play\n");
 	/* alrighty. grab the list, map track to filename. grab filename from data
 	   resources, attach sound to play, loop. */
+
+	if (!cd_channel && mus_enabled) { // Shouldn't happen!
+		Sys_Printf ("OGGMus: on fire.\n");
+		mus_enabled = false;
+	}
+
 	if (tracklist == NULL || !mus_enabled) {
 		free (trackstring);
 		return;
@@ -318,6 +324,12 @@ I_OGG_f (void)
 
 	command = Cmd_Argv (1);
 
+	if (!cd_channel) {
+		Sys_Printf ("OGGMus: Don't have a channel.\n");
+		mus_enabled = false;
+		return;
+	}
+
 	if (strequal (command, "on")) {
 		mus_enabled = true;
 		return;
@@ -413,6 +425,7 @@ Mus_OggChange (cvar_t *mus_ogglist)
 
 	if (strequal (mus_ogglist->string, "none")) {
 		/* bail if we don't have one */
+		mus_enabled = false;
 		return;
 	}
 
@@ -431,7 +444,11 @@ Mus_OggChange (cvar_t *mus_ogglist)
 		mus_enabled = false;
 		return;
 	}
-	mus_enabled = true;
+
+	if (!cd_channel)
+		mus_enabled = false;
+	else
+		mus_enabled = true;
 }
 
 /* change volume on sound object */
@@ -449,13 +466,16 @@ I_OGGMus_Init (void)
 
 	cd_channel = S_AllocChannel ();
 
+	if (!cd_channel) // We can't fail to load yet... so just disable everything
+		Sys_Printf ("OGGMus: Failed to allocate sound channel.\n");
+
 	/* check list file cvar, open list file, create map, close file. */
 
 	mus_ogglist = Cvar_Get ("mus_ogglist", "tracklist.cfg", CVAR_NONE,
 							Mus_OggChange,
 							"filename of track to music file map");
 	bgmvolume = Cvar_Get ("bgmvolume", "1", CVAR_ARCHIVE, Mus_VolChange,
-						  "Volume of CD music");
+							"Volume of CD music");
 }
 
 static general_funcs_t plugin_info_general_funcs = {
