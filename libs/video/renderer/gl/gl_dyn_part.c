@@ -332,12 +332,7 @@ R_RunParticleEffect_QF (const vec3_t org, const vec3_t dir, int color,
 	if (numparticles >= r_maxparticles)
 		return;
 
-	if (count > 130)
-		scale = 3.0;
-	else if (count > 20)
-		scale = 2.0;
-	else
-		scale = 1.0;
+	scale = pow (count, 0.23); // calculate scale before clipping to part. max
 
 	if (numparticles + count >= r_maxparticles)
 		count = r_maxparticles - numparticles;
@@ -751,8 +746,9 @@ R_GlowTrail_QF (entity_t *ent)
 		org[1] = ent->old_origin[1] + ((rnd >> 9) & 7) * (5.0/7.0) - 2.5;
 		org[2] = ent->old_origin[2] + ((rnd >> 6) & 7) * (5.0/7.0) - 2.5;
 
+//		Need glow_color in entity?
 //		particle_new (pt_smoke, part_tex_dot, org, 1.0, vec3_origin,
-// FIXME: DESPAIR	  r_realtime + 2.0, ent->glowcolor, 1.0, 0.0);
+//					  r_realtime + 2.0, ent->glow_color, 1.0, 0.0);
 		if (numparticles >= r_maxparticles)
 			break;
 		len += dist;
@@ -934,7 +930,7 @@ R_RunParticleEffect_ID (const vec3_t org, const vec3_t dir, int color,
 	if (numparticles >= r_maxparticles)
 		return;
 
-	if (count > 130)
+	if (count > 130) // calculate scale before clipping to particle max
 		scale = 3.0;
 	else if (count > 20)
 		scale = 2.0;
