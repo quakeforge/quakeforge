@@ -53,7 +53,7 @@ static const char rcsid[] =
 // writing functions
 
 void
-MSG_WriteChar (sizebuf_t *sb, int c)
+MSG_WriteChar (sizebuf_t *sb, unsigned int c)
 {
 	byte       *buf;
 
@@ -62,7 +62,7 @@ MSG_WriteChar (sizebuf_t *sb, int c)
 }
 
 void
-MSG_WriteByte (sizebuf_t *sb, int c)
+MSG_WriteByte (sizebuf_t *sb, unsigned int c)
 {
 	byte       *buf;
 
@@ -71,7 +71,7 @@ MSG_WriteByte (sizebuf_t *sb, int c)
 }
 
 void
-MSG_WriteShort (sizebuf_t *sb, int c)
+MSG_WriteShort (sizebuf_t *sb, unsigned int c)
 {
 	byte       *buf;
 
@@ -81,7 +81,7 @@ MSG_WriteShort (sizebuf_t *sb, int c)
 }
 
 void
-MSG_WriteLong (sizebuf_t *sb, int c)
+MSG_WriteLong (sizebuf_t *sb, unsigned int c)
 {
 	byte       *buf;
 
@@ -97,7 +97,7 @@ MSG_WriteFloat (sizebuf_t *sb, float f)
 {
 	union {
 		float       f;
-		int         l;
+		unsigned int l;
 	} dat;
 
 	dat.f = f;
@@ -118,19 +118,19 @@ MSG_WriteString (sizebuf_t *sb, const char *s)
 void
 MSG_WriteCoord (sizebuf_t *sb, float f)
 {
-	MSG_WriteShort (sb, (int) (f * 8));
+	MSG_WriteShort (sb, (unsigned int) (f * 8));
 }
 
 void
 MSG_WriteAngle (sizebuf_t *sb, float f)
 {
-	MSG_WriteByte (sb, (int) (f * 256 / 360) & 255);
+	MSG_WriteByte (sb, (unsigned int) (f * 256 / 360) & 255);
 }
 
 void
 MSG_WriteAngle16 (sizebuf_t *sb, float f)
 {
-	MSG_WriteShort (sb, (int) (f * 65536 / 360) & 65535);
+	MSG_WriteShort (sb, (unsigned int) (f * 65536 / 360) & 65535);
 }
 
 

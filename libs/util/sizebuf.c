@@ -64,23 +64,24 @@ SZ_GetSpace (sizebuf_t *buf, int length)
 {
 	void       *data;
 
-	if (buf->cursize + length > buf->maxsize) {
-		if (!buf->allowoverflow)
-			Sys_Error ("SZ_GetSpace: overflow without allowoverflow set (%d)",
-					   buf->maxsize);
-
-		if (length > buf->maxsize)
-			Sys_Error ("SZ_GetSpace: %i is > full buffer size", length);
-
-		Sys_Printf ("SZ_GetSpace: overflow\n");
-		SZ_Clear (buf);
-		buf->overflowed = true;
+	if (buf->cursize + length <= buf->maxsize) {
+getspace:
+		data = buf->data + buf->cursize;
+		buf->cursize += length;
+		return data;
 	}
 
-	data = buf->data + buf->cursize;
-	buf->cursize += length;
+	if (!buf->allowoverflow)
+		Sys_Error ("SZ_GetSpace: overflow without allowoverflow set (%d)",
+				   buf->maxsize);
 
-	return data;
+	if (length > buf->maxsize)
+		Sys_Error ("SZ_GetSpace: %i is > full buffer size", length);
+
+	Sys_Printf ("SZ_GetSpace: overflow\n");
+	SZ_Clear (buf);
+	buf->overflowed = true;
+	goto getspace;
 }
 
 void

@@ -725,6 +725,7 @@ SV_BeginDownload_f (void)
 
 		while (*name)
 			*p++ = tolower ((int) *name++);
+		*p = 0;
 		name = n;
 	}
 
