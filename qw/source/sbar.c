@@ -99,6 +99,7 @@ cvar_t     *cl_fraglog;
 cvar_t     *cl_sbar;
 cvar_t     *cl_sbar_separator;
 cvar_t     *cl_hudswap;
+cvar_t     *cl_overlay_gravity;
 
 static view_t *sbar_view;
 static view_t *sbar_inventory_view;
@@ -130,6 +131,35 @@ cl_hudswap_f (cvar_t *var)
 	view_move (hud_armament_view, hud_armament_view->xpos,
 			   hud_armament_view->ypos);
 	view_move (stuff_view, stuff_view->xpos, stuff_view->ypos);
+}
+
+static void
+cl_overlay_gravity_f (cvar_t *var)
+{
+	grav_t      grav;
+
+	if (strequal (var->string, "center"))
+		grav = grav_center;
+	else if (strequal (var->string, "northwest"))
+		grav = grav_northwest;
+	else if (strequal (var->string, "north"))
+		grav = grav_north;
+	else if (strequal (var->string, "northeast"))
+		grav = grav_northeast;
+	else if (strequal (var->string, "west"))
+		grav = grav_west;
+	else if (strequal (var->string, "east"))
+		grav = grav_east;
+	else if (strequal (var->string, "southwest"))
+		grav = grav_southwest;
+	else if (strequal (var->string, "south"))
+		grav = grav_south;
+	else if (strequal (var->string, "southeast"))
+		grav = grav_southeast;
+	else
+		grav = grav_center;
+	overlay_view->gravity = grav;
+	view_move (overlay_view, overlay_view->xpos, overlay_view->ypos);
 }
 
 static void
@@ -911,8 +941,9 @@ Sbar_Draw (void)
 	if (scr_con_current == vid.height)
 		return;
 
-	if ((cl.stats[STAT_HEALTH] <= 0 && !cl.spectator)
-		|| sb_showscores || sb_showteamscores)
+	if (cls.state == ca_active
+		&& ((cl.stats[STAT_HEALTH] <= 0 && !cl.spectator)
+			|| sb_showscores || sb_showteamscores))
 		overlay_view->visible = 1;
 	else
 		overlay_view->visible = 0;
@@ -1939,9 +1970,14 @@ Sbar_Init (void)
 						   "Automatic fraglogging, non-zero value will switch "
 						   "it on.");
 	cl_sbar = Cvar_Get ("cl_sbar", "0", CVAR_ARCHIVE, cl_sbar_f,
-						"status bar mode");
+						"status bar mode: 0 = hud, 1 = oldstyle");
 	cl_sbar_separator = Cvar_Get ("cl_sbar_separator", "0", CVAR_ARCHIVE, NULL,
 								  "turns on status bar separator");
 	cl_hudswap = Cvar_Get ("cl_hudswap", "0", CVAR_ARCHIVE, cl_hudswap_f,
 						   "new HUD on left side?");
+	cl_overlay_gravity = Cvar_Get ("cl_overlay_gravity", "center",
+								   CVAR_ARCHIVE, cl_overlay_gravity_f,
+								   "control placement of scoreboard overlay: "
+								   "center, northwest, north, northeast, "
+								   "west, east, southwest, south, southeast");
 }
