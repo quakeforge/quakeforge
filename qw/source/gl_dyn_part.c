@@ -49,7 +49,7 @@
 #include "glquake.h"
 #include "host.h"
 #include "r_dynamic.h"
-#include "render.h"
+#include "QF/render.h"
 
 static particle_t *particles, **freeparticles;
 static short r_numparticles, numparticles;

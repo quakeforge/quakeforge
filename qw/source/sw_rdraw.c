@@ -31,7 +31,7 @@
 #endif
 
 #include "r_local.h"
-#include "render.h"
+#include "QF/render.h"
 
 #define MAXLEFTCLIPEDGES		100
 

@@ -37,7 +37,7 @@
 
 #include "client.h"
 #include "r_local.h"
-#include "render.h"
+#include "QF/render.h"
 
 #define MAX_PARTICLES			2048	// default max # of particles at one
 										// time

@@ -41,7 +41,7 @@
 #include "net.h"
 #include "protocol.h"
 #include "r_local.h"
-#include "render.h"
+#include "QF/render.h"
 #include "game.h"
 
 

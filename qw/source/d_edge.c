@@ -32,7 +32,7 @@
 
 #include "d_local.h"
 #include "r_local.h"
-#include "render.h"
+#include "QF/render.h"
 
 static int  miplevel;
 

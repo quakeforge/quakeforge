@@ -34,7 +34,7 @@
 
 #include "d_ifacea.h"
 #include "r_local.h"
-#include "render.h"
+#include "QF/render.h"
 
 #if 0
 FIXME

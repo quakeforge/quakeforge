@@ -36,7 +36,7 @@
 #include "QF/texture.h"
 
 #include "glquake.h"
-#include "render.h"
+#include "QF/render.h"
 
 static byte translate[256];
 static unsigned int translate32[256];

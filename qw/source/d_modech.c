@@ -33,7 +33,7 @@
 #include "QF/sys.h"
 
 #include "d_local.h"
-#include "render.h"
+#include "QF/render.h"
 
 int         d_vrectx, d_vrecty, d_vrectright_particle, d_vrectbottom_particle;
 

@@ -40,7 +40,7 @@
 #include "client.h"
 #include "host.h"
 #include "r_local.h"
-#include "render.h"
+#include "QF/render.h"
 #include "sbar.h"
 
 void

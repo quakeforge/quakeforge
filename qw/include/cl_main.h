@@ -31,7 +31,7 @@
 
 #include "client.h"
 #include "QF/qtypes.h"
-#include "render.h"
+#include "QF/render.h"
 
 dlight_t *CL_AllocDlight (int key);
 void	CL_DecayLights (void);

@@ -39,7 +39,7 @@
 #include "QF/compat.h"
 #include "QF/skin.h"
 
-#include "render.h"
+#include "QF/render.h"
 
 
 void

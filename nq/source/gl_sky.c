@@ -43,7 +43,7 @@
 #include "QF/vid.h"
 
 #include "glquake.h"
-#include "render.h"
+#include "QF/render.h"
 #include "view.h"
 
 extern double realtime;

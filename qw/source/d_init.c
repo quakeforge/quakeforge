@@ -37,7 +37,7 @@
 #include "bothdefs.h"
 #include "d_local.h"
 #include "r_cvar.h"
-#include "render.h"
+#include "QF/render.h"
 
 #define NUM_MIPS	4
 

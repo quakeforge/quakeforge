@@ -38,7 +38,7 @@
 #include "client.h"
 #include "d_ifacea.h"
 #include "r_local.h"
-#include "render.h"
+#include "QF/render.h"
 
 #define LIGHT_MIN	5	// lowest light value we'll allow, to
 						// avoid the need for inner-loop light clamping

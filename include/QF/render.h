@@ -40,6 +40,11 @@
 
 typedef struct entity_s
 {
+	qboolean				forcelink;		// model changed
+	int						update_type;
+	struct entity_state_s	*baseline;		// to fill in defaults in updates
+	double					msgtime;		// time of last update
+
 	int						keynum; // for matching entities in different frames
 	vec3_t					origin;
 	vec3_t					old_origin;
@@ -58,6 +63,7 @@ typedef struct entity_s
 	struct efrag_s			*efrag;			// linked list of efrags
 	int						visframe;		// last frame this entity was
 											// found in an active leaf
+	int						effects;		// light, particals, etc
 
 	float					colormod[3];	// color tint for model
 	float					alpha;			// opacity (alpha) of the model

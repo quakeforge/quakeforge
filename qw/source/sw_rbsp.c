@@ -37,7 +37,7 @@
 
 #include "client.h"
 #include "r_local.h"
-#include "render.h"
+#include "QF/render.h"
 
 // current entity info
 qboolean    insubmodel;
