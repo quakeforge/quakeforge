@@ -71,8 +71,9 @@ void PR_Init_Cvars (void);
 
 void PR_PrintStatement (progs_t * pr, dstatement_t *s);
 void PR_ExecuteProgram (progs_t *pr, func_t fnum);
-void PR_LoadProgsFile (progs_t *pr, const char *progsname);
-void PR_LoadProgs (progs_t *pr, const char *progsname);
+void PR_LoadProgsFile (progs_t * pr, VFile *file, int size, int edicts,
+					   int zone);
+void PR_LoadProgs (progs_t *pr, const char *progsname, int edicts, int zone);
 void PR_LoadStrings (progs_t *pr);
 void PR_LoadDebug (progs_t *pr);
 edict_t *PR_InitEdicts (progs_t *pr, int num_edicts);
@@ -184,6 +185,14 @@ int PR_SetString(progs_t *pr, const char *s);
 void PR_GarbageCollect (progs_t *pr);
 
 //
+// PR Zone stuff
+//
+
+void PR_Zone_Init (progs_t *pr);
+void PR_Zone_Free (progs_t *pr, void *ptr);
+void PR_Zone_Malloc (progs_t *pr, int size);
+
+//
 // PR Debug stuff
 //
 
@@ -234,6 +243,7 @@ struct progs_s {
 	int				progs_size;
 
 	struct memzone_s *zone;
+	int             zone_size;
 
 	struct hashtab_s *builtin_hash;
 	struct hashtab_s *function_hash;
@@ -255,6 +265,7 @@ struct progs_s {
 	ddef_t			*pr_fielddefs;
 	dstatement_t	*pr_statements;
 	pr_type_t		*pr_globals;			// same as pr_global_struct
+	int				globals_size;
 
 	int				pr_edict_size;	// in bytes
 	int				pr_edictareasize; // for bounds checking, starts at 0
@@ -286,6 +297,8 @@ struct progs_s {
 	int				(*parse_field)(progs_t *pr, const char *key, const char *value);
 	int				(*prune_edict)(progs_t *pr, edict_t *ent);
 	void			(*free_edict)(progs_t *pr, edict_t *ent);
+
+	void			*(*allocate_progs_mem)(progs_t *pr, int size);
 
 	builtin_t		**builtins;
 	int				numbuiltins;

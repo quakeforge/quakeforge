@@ -309,10 +309,17 @@ quit_f (void)
 	bi_Menu_Quit (&menu_pr_state);
 }
 
+static void *
+menu_allocate_progs_mem (progs_t *pr, int size)
+{
+	return malloc (size);
+}
+
 void
 Menu_Init (void)
 {
 	menu_pr_state.progs_name = "menu.dat";
+	menu_pr_state.allocate_progs_mem = menu_allocate_progs_mem;
 
 	menu_hash = Hash_NewTable (61, menu_get_key, menu_free, 0);
 
@@ -359,11 +366,8 @@ Menu_Load (void)
 	top_menu = 0;
 
 	if ((size = COM_FOpenFile (menu_pr_state.progs_name, &file)) != -1) {
-		menu_pr_state.progs = malloc (size + 256 * 1024);
-		Qread (file, menu_pr_state.progs, size);
+		PR_LoadProgsFile (&menu_pr_state, file, size, 0, 256 * 1024);
 		Qclose (file);
-		memset ((char *)menu_pr_state.progs + size, 0, 256 * 1024);
-		PR_LoadProgsFile (&menu_pr_state, 0);
 
 		if (!PR_RelocateBuiltins (&menu_pr_state)
 			|| !PR_ResolveGlobals (&menu_pr_state)

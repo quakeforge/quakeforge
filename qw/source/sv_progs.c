@@ -176,7 +176,7 @@ SV_LoadProgs (void)
 	ddef_t *def;
 	dfunction_t *f;
 
-	PR_LoadProgs (&sv_pr_state, sv_progs->string);
+	PR_LoadProgs (&sv_pr_state, sv_progs->string, MAX_EDICTS, 0);
 	if (!sv_pr_state.progs)
 		SV_Error ("SV_LoadProgs: couldn't load %s", sv_progs->string);
 	// progs engine needs these globals anyway

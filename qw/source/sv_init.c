@@ -335,9 +335,6 @@ SV_SpawnServer (const char *server)
 	Info_SetValueForStarKey (svs.info, "*progs", va ("%i", sv_pr_state.crc),
 							 !sv_highchars->int_val);
 
-	// allocate edicts
-	sv.edicts = PR_InitEdicts (&sv_pr_state, MAX_EDICTS);
-
 	// init the data field of the edicts
 	for (i = 0; i < MAX_EDICTS; i++) {
 		ent = EDICT_NUM (&sv_pr_state, i);

@@ -943,11 +943,8 @@ SV_SpawnServer (const char *server)
 	strcpy (sv.name, server);
 
 	// load progs to get entity field count
-	SV_LoadProgs ();
-
-	// allocate server memory
 	sv.max_edicts = MAX_EDICTS;
-	sv.edicts = PR_InitEdicts (&sv_pr_state, sv.max_edicts);
+	SV_LoadProgs ();
 
 	// init the data field of the edicts
 	for (i = 0; i < MAX_EDICTS; i++) {

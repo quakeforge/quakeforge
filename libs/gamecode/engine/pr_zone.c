@@ -48,9 +48,9 @@ static const char rcsid[] =
 #include "compat.h"
 
 void
-PR_Zone_Init (progs_t *pr, int size)
+PR_Zone_Init (progs_t *pr)
 {
-	Z_ClearZone (pr->zone, size);
+	Z_ClearZone (pr->zone, pr->zone_size);
 }
 
 void

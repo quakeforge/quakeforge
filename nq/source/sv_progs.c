@@ -131,7 +131,7 @@ parse_field (progs_t *pr, const char *key, const char *value)
 void
 SV_LoadProgs (void)
 {
-	PR_LoadProgs (&sv_pr_state, sv_progs->string);
+	PR_LoadProgs (&sv_pr_state, sv_progs->string, sv.max_edicts, 0);
 	if (!sv_pr_state.progs)
 		Host_Error ("SV_LoadProgs: couldn't load %s", sv_progs->string);
 	// progs engine needs these globals anyway

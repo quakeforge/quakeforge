@@ -69,50 +69,94 @@ var_get_key (void *d, void *_pr)
 	return PR_GetString (pr, def->s_name);
 }
 
+static void *
+allocate_progs_mem (progs_t *pr, int size)
+{
+	return Hunk_AllocName (size, pr->progs_name);
+}
+
 void
-PR_LoadProgsFile (progs_t * pr, const char *progsname)
+PR_LoadProgsFile (progs_t * pr, VFile *file, int size, int edicts, int zone)
 {
 	int         i;
+	dprograms_t progs;
 
-	if (progsname)
-		pr->progs = (dprograms_t *) COM_LoadHunkFile (progsname);
-	else
-		progsname = pr->progs_name;
-	if (!pr->progs)
+	pr->progs = 0;
+	if (Qread (file, &progs, sizeof (progs)) != sizeof (progs))
 		return;
 
 	pr->progs_size = com_filesize;
 	Sys_DPrintf ("Programs occupy %iK.\n", com_filesize / 1024);
 
 	// store prog crc
-	pr->crc = CRC_Block ((byte *) pr->progs, com_filesize);
+	pr->crc = CRC_Block ((byte*)&progs, sizeof (progs));
 
 	// byte swap the header
-	for (i = 0; i < sizeof (*pr->progs) / 4; i++)
-		((int *) pr->progs)[i] = LittleLong (((int *) pr->progs)[i]);
+	for (i = 0; i < sizeof (progs) / 4; i++)
+		((int *) &progs)[i] = LittleLong (((int *) &progs)[i]);
 
-	if (pr->progs->version != PROG_VERSION
-		&& pr->progs->version != PROG_ID_VERSION) {
-		if (pr->progs->version < 0x00fff000) {
+	if (progs.version != PROG_VERSION
+		&& progs.version != PROG_ID_VERSION) {
+		if (progs.version < 0x00fff000) {
 			PR_Error (pr, "%s has unrecognised version number (%d)",
-					  progsname, pr->progs->version);
+					  pr->progs_name, progs.version);
 		} else {
 			PR_Error (pr,
 					  "%s has unrecognised version number (%02x.%03x.%03x)"
 					  " [%02x.%03x.%03x expected]",
-					  progsname,
-					  pr->progs->version >> 24,
-					  (pr->progs->version >> 12) & 0xfff,
-					  pr->progs->version & 0xfff,
+					  pr->progs_name,
+					  progs.version >> 24,
+					  (progs.version >> 12) & 0xfff,
+					  progs.version & 0xfff,
 					  PROG_VERSION >> 24,
 					  (PROG_VERSION >> 12) & 0xfff,
 					  PROG_VERSION & 0xfff);
 		}
 	}
 
-	pr->progs_name = progsname;	//XXX is this safe?
+	// size of progs themselves
+	pr->progs_size = size;
+	// round off to next highest whole word address (esp for Alpha)
+	// this ensures that pointers in the engine data area are always
+	// properly aligned
+	pr->progs_size += sizeof (void*) - 1;
+	pr->progs_size &= ~(sizeof (void*) - 1);
 
-	pr->zone = 0;		// caller sets up afterwards
+	// size of heap asked for by vm-subsystem
+	pr->zone_size = zone;
+	// round off to next highest whole word address (esp for Alpha)
+	// this ensures that pointers in the engine data area are always
+	// properly aligned
+	pr->zone_size += sizeof (void*) - 1;
+	pr->zone_size &= ~(sizeof (void*) - 1);
+
+	// size of edict ascked for by progs
+	pr->pr_edict_size = progs.entityfields * 4;
+	// size of engine data
+	pr->pr_edict_size += sizeof (edict_t) - sizeof (pr_type_t);
+	// round off to next highest whole word address (esp for Alpha)
+	// this ensures that pointers in the engine data area are always
+	// properly aligned
+	pr->pr_edict_size += sizeof (void*) - 1;
+	pr->pr_edict_size &= ~(sizeof (void*) - 1);
+	pr->pr_edictareasize = edicts * pr->pr_edict_size;
+
+	if (!pr->allocate_progs_mem)
+		pr->allocate_progs_mem = allocate_progs_mem;
+	pr->progs = pr->allocate_progs_mem (pr, pr->progs_size + pr->zone_size
+										+ pr->pr_edictareasize);
+	if (!pr->progs)
+		return;
+
+	memcpy (pr->progs, &progs, sizeof (progs));
+	Qread (file, pr->progs + 1, size - sizeof (progs));
+
+	if (pr->edicts)
+		*pr->edicts = (edict_t *)((byte *) pr->progs + pr->progs_size);
+	pr->zone = (memzone_t *)((byte *) pr->progs + pr->progs_size
+						   + pr->pr_edictareasize);
+	if (pr->zone_size)
+		PR_Zone_Init (pr);
 
 	pr->pr_functions =
 		(dfunction_t *) ((byte *) pr->progs + pr->progs->ofs_functions);
@@ -128,17 +172,8 @@ PR_LoadProgsFile (progs_t * pr, const char *progsname)
 	pr->pr_globals =
 		(pr_type_t *) ((byte *) pr->progs + pr->progs->ofs_globals);
 
-	// size of edict ascked for by progs
-	pr->pr_edict_size = pr->progs->entityfields * 4;
-	// size of engine data
-	pr->pr_edict_size += sizeof (edict_t) - sizeof (pr_type_t);
-	// round off to next highest whole word address (esp for Alpha)
-	// this ensures that pointers in the engine data area are always
-	// properly aligned
-	pr->pr_edict_size += sizeof (void*) - 1;
-	pr->pr_edict_size &= ~(sizeof (void*) - 1);
-
-	pr->pr_edictareasize = 0;
+	pr->globals_size = (pr_type_t*)((byte *) pr->zone + pr->zone_size)
+						- pr->pr_globals;
 
 	if (pr->function_hash) {
 		Hash_FlushTable (pr->function_hash);
@@ -201,14 +236,16 @@ PR_LoadProgsFile (progs_t * pr, const char *progsname)
 	PR_LoadProgs
 */
 void
-PR_LoadProgs (progs_t *pr, const char *progsname)
+PR_LoadProgs (progs_t *pr, const char *progsname, int edicts, int zone)
 {
-	PR_LoadProgsFile (pr, progsname);
+	VFile      *file;
+	COM_FOpenFile (progsname, &file);
+
+	pr->progs_name = progsname;
+	if (file)
+		PR_LoadProgsFile (pr, file, com_filesize, edicts, zone);
 	if (!pr->progs)
 		return;
-
-	if (!progsname)
-		progsname = "(preloaded)";
 
 	if (!PR_ResolveGlobals (pr))
 		PR_Error (pr, "unable to load %s", progsname);
