@@ -1532,6 +1532,7 @@ AC_OUTPUT(
 
 	include/Makefile
 	include/QF/Makefile
+	include/QF/plugin/Makefile
 	include/win32/version.h
 
 	libs/Makefile

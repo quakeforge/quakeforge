@@ -1,7 +1,7 @@
 ## Process this file with automake to produce Makefile.in
 AUTOMAKE_OPTIONS= foreign
 
-SUBDIRS=	include libs qw nq
+SUBDIRS=	debian doc include libs qw nq
 
 EXTRA_DIST=	ChangeLog RPM/build_rpm.in \
 		tools/gas2masm/Makefile tools/gas2masm/gas2masm.c \

@@ -1,14 +1,13 @@
 INCLUDES= -I$(top_srcdir)/include $(ALSA_CFLAGS) $(MME_CFLAGS) $(OSS_CFLAGS) $(SGISND_CFLAGS) $(SUNSND_CFLAGS) $(WIN32SND_CFLAGS) $(SDL_CFLAGS)
 
 pkglib_LTLIBRARIES = @SND_PLUGIN_TARGETS@ libsound_null.la libsound_disk.la
-EXTRA_LTLIBRARIES = libsound_sdl.la libsound_alsa0_5.la libsound_alsa0_9.la libsound_mme.la libsound_oss.la libsound_sgi.la libsound_sun.la libsound_win.la
+EXTRA_LTLIBRARIES = libsound_sdl.la libsound_alsa0_5.la libsound_alsa0_9.la libsound_oss.la libsound_sgi.la libsound_sun.la libsound_win.la
 
 common_sound_files= snd_dma.c snd_mem.c snd_mix.c snd_mixa.S
 
 libsound_sdl_la_LDFLAGS= -version-info 1:0:0 $(SDL_LIBS)
 libsound_alsa0_5_la_LDFLAGS= -version-info 1:0:0 $(ALSA_LIBS)
 libsound_alsa0_9_la_LDFLAGS= -version-info 1:0:0 $(ALSA_LIBS)
-libsound_mme_la_LDFLAGS= -version-info 1:0:0 $(MME_LIBS)
 libsound_oss_la_LDFLAGS= -version-info 1:0:0 $(OSS_LIBS)
 libsound_sgi_la_LDFLAGS= -version-info 1:0:0 $(SGISND_LIBS)
 libsound_sun_la_LDFLAGS= -version-info 1:0:0 $(SUN_LIBS)
@@ -27,10 +26,6 @@ libsound_alsa0_5.la: $(libsound_alsa0_5_la_OBJECTS) $(libsound_alsa0_5_la_DEPEND
 libsound_alsa0_9_la_SOURCES= $(common_sound_files) snd_alsa_0_9.c
 libsound_alsa0_9.la: $(libsound_alsa0_9_la_OBJECTS) $(libsound_alsa0_9_la_DEPENDENCIES)
 	$(LINK) -rpath $(pluginpath) $(libsound_alsa0_9_la_LDFLAGS) $(libsound_alsa0_9_la_OBJECTS) $(libsound_alsa0_9_la_LIBADD) $(LIBS)
-
-libsound_mme_la_SOURCES= $(common_sound_files) snd_mme.c
-libsound_mme.la: $(libsound_mme_la_OBJECTS) $(libsound_mme_la_DEPENDENCIES)
-	$(LINK) -rpath $(pluginpath) $(libsound_mme_la_LDFLAGS) $(libsound_mme_la_OBJECTS) $(libsound_mme_la_LIBADD) $(LIBS)
 
 libsound_oss_la_SOURCES= $(common_sound_files) snd_oss.c
 libsound_oss.la: $(libsound_oss_la_OBJECTS) $(libsound_oss_la_DEPENDENCIES)

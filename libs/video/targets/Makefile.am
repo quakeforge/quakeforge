@@ -25,7 +25,7 @@ YACCLEX_CLEANFILES=	fbset_modes_y.c fbset_modes_y.h \
 libQFfbdev_la_LDFLAGS=	-version-info 1:0:0
 libQFfbdev_la_SOURCES=	fbset.c fbset_modes_y.y fbset_modes_l.l \
 			in_common.c in_fbdev.c vid.c vid_common_sw.c vid_fbdev.c
-#EXTRA_libQFfbdev_la_SOURCES=fbset_modes_y.h
+EXTRA_libQFfbdev_la_SOURCES=fbset_modes_y.h
 libQFfbdev.la: $(libQFfbdev_la_OBJECTS) $(libQFfbdev_la_DEPENDENCIES)
 	$(LINK) -rpath $(libdir) $(libQFfbdev_la_LDFLAGS) $(libQFfbdev_la_OBJECTS) $(libQFfbdev_la_LIBADD) $(LIBS)
 fbset_modes_y.lo: $(srcdir)/fbset_modes_y.c
