@@ -346,11 +346,13 @@ PR_RunLoadFuncs (progs_t *pr)
 	pr->fields.think = -1;
 	pr->fields.this = -1;
 
-	run_load_funcs(pr, load_funcs_1);
+	if (!run_load_funcs(pr, load_funcs_1))
+		return 0;
 	if (pr->resolve)
 		if (!pr->resolve (pr))
 			return 0;
-	run_load_funcs(pr, load_funcs_2);
+	if (!run_load_funcs(pr, load_funcs_2))
+		return 0;
 
 	for (i = 0; i < pr->num_load_funcs; i++)
 		if (!pr->load_funcs[i] (pr))
