@@ -172,7 +172,7 @@ class_add_protocol_methods (class_t *class, expr_t *protocols)
 	}
 }
 
-	void
+void
 class_begin (class_type_t *class_type)
 {
 	if (!class_type->is_class) {
@@ -232,7 +232,7 @@ class_begin (class_type_t *class_type)
 	}
 }
 
-	static void
+static void
 emit_class_ref (const char *class_name)
 {
 	def_t      *def;
@@ -251,7 +251,7 @@ emit_class_ref (const char *class_name)
 	reloc_def_def (ref, def->ofs);
 }
 
-	static void
+static void
 emit_class_name (const char *class_name)
 {
 	def_t      *def;
@@ -265,7 +265,7 @@ emit_class_name (const char *class_name)
 	G_INT (def->ofs) = 0;
 }
 
-	static void
+static void
 emit_category_name (const char *class_name, const char *category_name)
 {
 	def_t      *def;
@@ -280,7 +280,7 @@ emit_category_name (const char *class_name, const char *category_name)
 	G_INT (def->ofs) = 0;
 }
 
-	void
+void
 class_finish (class_type_t *class_type)
 {
 	if (!class_type->is_class) {
@@ -321,7 +321,7 @@ class_finish (class_type_t *class_type)
 	}
 }
 
-	int
+int
 class_access (class_type_t *current_class, class_t *class)
 {
 	if (!current_class)
@@ -331,7 +331,7 @@ class_access (class_type_t *current_class, class_t *class)
 	return current_class->c.category->class != class;
 }
 
-	struct_field_t *
+struct_field_t *
 class_find_ivar (class_t *class, int protected, const char *name)
 {
 	struct_field_t *ivar;
@@ -359,7 +359,7 @@ access_error:
 	return 0;
 }
 
-	expr_t *
+expr_t *
 class_ivar_expr (class_type_t *class_type, const char *name)
 {
 	struct_field_t *ivar;
@@ -386,7 +386,7 @@ class_ivar_expr (class_type_t *class_type, const char *name)
 	return binary_expr ('.', new_name_expr ("self"), new_name_expr (name));
 }
 
-	method_t *
+method_t *
 class_find_method (class_type_t *class_type, method_t *method)
 {
 	methodlist_t *methods;
@@ -419,7 +419,7 @@ class_find_method (class_type_t *class_type, method_t *method)
 	return method;
 }
 
-	method_t *
+method_t *
 class_message_response (class_t *class, expr_t *sel)
 {
 	pr_sel_t   *selector;
@@ -453,14 +453,14 @@ class_message_response (class_t *class, expr_t *sel)
 	return 0;
 }
 
-	static unsigned long
+static unsigned long
 category_get_hash (void *_c, void *unused)
 {
 	category_t *c = (category_t *) _c;
 	return Hash_String (c->name) ^ Hash_String (c->class->name);
 }
 
-	static int
+static int
 category_compare (void *_c1, void *_c2, void *unused)
 {
 	category_t *c1 = (category_t *) _c1;
@@ -469,13 +469,13 @@ category_compare (void *_c1, void *_c2, void *unused)
 		&& strcmp (c1->class->name, c2->class->name) == 0;
 }
 
-	void
+void
 class_add_ivars (class_t *class, struct type_s *ivars)
 {
 	class->ivars = ivars;
 }
 
-	void
+void
 class_check_ivars (class_t *class, struct type_s *ivars)
 {
 	if (!struct_compare_fields (class->ivars, ivars))
@@ -483,7 +483,7 @@ class_check_ivars (class_t *class, struct type_s *ivars)
 	class->ivars = ivars;
 }
 
-	category_t *
+category_t *
 get_category (const char *class_name, const char *category_name, int create)
 {
 	category_t *category;
@@ -519,7 +519,7 @@ get_category (const char *class_name, const char *category_name, int create)
 	return category;
 }
 
-	void
+void
 category_add_methods (category_t *category, methodlist_t *methods)
 {
 	if (!methods)
@@ -531,7 +531,7 @@ category_add_methods (category_t *category, methodlist_t *methods)
 	free (methods);
 }
 
-	void
+void
 category_add_protocol_methods (category_t *category, expr_t *protocols)
 {
 	expr_t     *e;
@@ -560,7 +560,7 @@ category_add_protocol_methods (category_t *category, expr_t *protocols)
 	}
 }
 
-	def_t *
+def_t *
 class_pointer_def (class_t *class)
 {
 	def_t      *def;
@@ -583,7 +583,7 @@ class_pointer_def (class_t *class)
 	return def;
 }
 
-	void
+void
 class_finish_module (void)
 {
 	class_t   **classes = 0, **cl;
