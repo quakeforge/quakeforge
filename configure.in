@@ -1263,19 +1263,27 @@ SND_PLUGIN_TARGETS="libsound_null.la libsound_disk.la"
 VID_TARGETS=""
 BUILD_GL=no
 BUILD_SW=no
-if test "x$HAVE_GLIDE" = xyes -a "x$HAVE_SVGA" = xyes -a "x$ENABLE_3DFX" = xyes; then
-	QW_TARGETS="$QW_TARGETS qw-client-3dfx\$(EXEEXT)"
-	NQ_TARGETS="$NQ_TARGETS nq-3dfx\$(EXEEXT)"
-	CL_TARGETS="$CL_TARGETS 3dfx"
-	VID_TARGETS="$VID_TARGETS libQFtdfx.la"
-	BUILD_GL=yes
+
+HAVE_3DFX=no
+HAVE_GLX=no
+if test "x$HAVE_GLIDE" = xyes -a "x$HAVE_SVGA" = xyes; then
+	if test "x$ENABLE_3DFX" = xyes; then
+		QW_TARGETS="$QW_TARGETS qw-client-3dfx\$(EXEEXT)"
+		NQ_TARGETS="$NQ_TARGETS nq-3dfx\$(EXEEXT)"
+		CL_TARGETS="$CL_TARGETS 3dfx"
+		VID_TARGETS="$VID_TARGETS libQFtdfx.la"
+		BUILD_GL=yes
+	fi
+	HAVE_3DFX=yes
 fi
-if test "x$HAVE_FBDEV" = xyes -a "x$ENABLE_FBDEV" = xyes; then
-	QW_TARGETS="$QW_TARGETS qw-client-fbdev\$(EXEEXT)"
-	NQ_TARGETS="$NQ_TARGETS nq-fbdev\$(EXEEXT)"
-	CL_TARGETS="$CL_TARGETS FBDEV"
-	VID_TARGETS="$VID_TARGETS libQFfbdev.la"
-	BUILD_SW=yes
+if test "x$HAVE_FBDEV" = xyes; then
+	if test "x$ENABLE_FBDEV" = xyes; then
+		QW_TARGETS="$QW_TARGETS qw-client-fbdev\$(EXEEXT)"
+		NQ_TARGETS="$NQ_TARGETS nq-fbdev\$(EXEEXT)"
+		CL_TARGETS="$CL_TARGETS FBDEV"
+		VID_TARGETS="$VID_TARGETS libQFfbdev.la"
+		BUILD_SW=yes
+	fi
 fi
 if test "x$HAVE_X" = xyes; then
 	if test "x$ENABLE_GLX" = xyes; then
@@ -1285,20 +1293,25 @@ if test "x$HAVE_X" = xyes; then
 		VID_TARGETS="$VID_TARGETS libQFglx.la"
 		BUILD_GL=yes
 	fi
+	HAVE_GLX=yes
 fi
-if test "x$HAVE_MGL" = xyes -a "x$ENABLE_MGL" = xyes; then
-	QW_TARGETS="$QW_TARGETS qw-client-mgl\$(EXEEXT)"
-	NQ_TARGETS="$NQ_TARGETS nq-mgl\$(EXEEXT)"
-	CL_TARGETS="$CL_TARGETS MGL"
-	VID_TARGETS="$VID_TARGETS libQFwgl.la"
-	BUILD_SW=yes
+if test "x$HAVE_MGL" = xyes; then
+	if test "x$ENABLE_MGL" = xyes; then
+		QW_TARGETS="$QW_TARGETS qw-client-mgl\$(EXEEXT)"
+		NQ_TARGETS="$NQ_TARGETS nq-mgl\$(EXEEXT)"
+		CL_TARGETS="$CL_TARGETS MGL"
+		VID_TARGETS="$VID_TARGETS libQFwgl.la"
+		BUILD_SW=yes
+	fi
 fi
-if test "x$HAVE_SDL" = xyes -a "x$ENABLE_SDL" = xyes; then
-	QW_TARGETS="$QW_TARGETS qw-client-sdl\$(EXEEXT)"
-	NQ_TARGETS="$NQ_TARGETS nq-sdl\$(EXEEXT)"
-	CL_TARGETS="$CL_TARGETS SDL"
-	VID_TARGETS="$VID_TARGETS libQFsdl.la"
-	BUILD_SW=yes
+if test "x$HAVE_SDL" = xyes; then
+	if test "x$ENABLE_SDL" = xyes; then
+		QW_TARGETS="$QW_TARGETS qw-client-sdl\$(EXEEXT)"
+		NQ_TARGETS="$NQ_TARGETS nq-sdl\$(EXEEXT)"
+		CL_TARGETS="$CL_TARGETS SDL"
+		VID_TARGETS="$VID_TARGETS libQFsdl.la"
+		BUILD_SW=yes
+	fi
 fi
 if test "x$HAVE_SGL" = xyes; then
 	if test "x$ENABLE_SGL" = xyes; then
@@ -1309,31 +1322,46 @@ if test "x$HAVE_SGL" = xyes; then
 		BUILD_GL=yes
 	fi
 fi
-if test "x$HAVE_SVGA" = xyes -a "x$ENABLE_SVGA" = xyes; then
-	QW_TARGETS="$QW_TARGETS qw-client-svga\$(EXEEXT)"
-	NQ_TARGETS="$NQ_TARGETS nq-svga\$(EXEEXT)"
-	CL_TARGETS="$CL_TARGETS SVGAlib"
-	VID_TARGETS="$VID_TARGETS libQFsvga.la"
-	BUILD_SW=yes
+if test "x$HAVE_SVGA" = xyes; then
+	if test "x$ENABLE_SVGA" = xyes; then
+		QW_TARGETS="$QW_TARGETS qw-client-svga\$(EXEEXT)"
+		NQ_TARGETS="$NQ_TARGETS nq-svga\$(EXEEXT)"
+		CL_TARGETS="$CL_TARGETS SVGAlib"
+		VID_TARGETS="$VID_TARGETS libQFsvga.la"
+		BUILD_SW=yes
+	fi
 fi
-if test "x$mingw" = xyes -a "x$ENABLE_WGL" = xyes; then
-	QW_TARGETS="$QW_TARGETS qw-client-wgl\$(EXEEXT)"
-	NQ_TARGETS="$NQ_TARGETS nq-wgl\$(EXEEXT)"
-	CL_TARGETS="$CL_TARGETS WGL"
-	VID_TARGETS="$VID_TARGETS libQFwgl.la"
-	BUILD_GL=yes
+if test "x$mingw" = xyes; then
+	if test "x$ENABLE_WGL" = xyes; then
+		QW_TARGETS="$QW_TARGETS qw-client-wgl\$(EXEEXT)"
+		NQ_TARGETS="$NQ_TARGETS nq-wgl\$(EXEEXT)"
+		CL_TARGETS="$CL_TARGETS WGL"
+		VID_TARGETS="$VID_TARGETS libQFwgl.la"
+		BUILD_GL=yes
+	fi
 fi
-if test "x$HAVE_X" = xyes -a "x$ENABLE_X11" = xyes; then
-	QW_TARGETS="$QW_TARGETS qw-client-x11\$(EXEEXT)"
-	NQ_TARGETS="$NQ_TARGETS nq-x11\$(EXEEXT)"
-	CL_TARGETS="$CL_TARGETS X11"
-	VID_TARGETS="$VID_TARGETS libQFx11.la"
-	BUILD_SW=yes
+if test "x$HAVE_X" = xyes; then
+	if test "x$ENABLE_X11" = xyes; then
+		QW_TARGETS="$QW_TARGETS qw-client-x11\$(EXEEXT)"
+		NQ_TARGETS="$NQ_TARGETS nq-x11\$(EXEEXT)"
+		CL_TARGETS="$CL_TARGETS X11"
+		VID_TARGETS="$VID_TARGETS libQFx11.la"
+		BUILD_SW=yes
+	fi
 fi
 if test "x$SV_TARGETS" = xyes; then
 	QW_TARGETS="qw-server\$(EXEEXT) $QW_TARGETS"
 #	NQ_TARGETS="nq-server\$(EXEEXT) $NQ_TARGETS"
 fi
+
+AC_SUBST(HAVE_3DFX)
+AC_SUBST(HAVE_FBDEV)
+AC_SUBST(HAVE_GLX)
+AC_SUBST(HAVE_SDL)
+AC_SUBST(HAVE_SGL)
+AC_SUBST(HAVE_SVGA)
+AC_SUBST(HAVE_X)
+
 if test -n "$CL_TARGETS"; then
 	CD_TARGETS="libQFcd.la"
 	SND_TARGETS="libQFsound.la"

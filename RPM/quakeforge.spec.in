@@ -3,25 +3,101 @@
 %define release 1
 %define builddir $RPM_BUILD_DIR/%{name}-%{version}
 
+%define HAVE_3DFX   '@HAVE_3DFX@'
+%define HAVE_FBDEV  '@HAVE_FBDEV@'
+%define HAVE_GLX    '@HAVE_GLX@'
+%define HAVE_SDL    '@HAVE_SDL@'
+%define HAVE_SGL    '@HAVE_SGL@'
+%define HAVE_SVGA   '@HAVE_SVGA@'
+%define HAVE_X11    '@HAVE_X@'
+
 Name:		%{name}
 Version:	%{version}
 Release:	%{release}
 Vendor:		The QuakeForge Project 
 Packager:	The QuakeForge Project quake-devel@lists.sourceforge.net
-#URL:		
+URL:		http://www.quakeforge.net/
 Source:         %{name}-%{version}.tar.gz
 #Patch:		
-Group:		Application/Generic
+Group:		Amusements/Games
 Copyright:	GPL
 #Icon:		
 #Requires:	
 BuildRoot:	/var/tmp/%{name}-%{version}
-Summary:	3D game engine based on id Software's Quake engine
+Summary:	QuakeForge 3D game engine
 %description
-3D game engine based on id Software's Quake engine
-@configure_input@
-Please edit quakeforge.spec.in to add several more lines of description
-here if appropriate, and to delete these instructions.
+QuakeForge is a source port of Quake and QuakeWorld, the successors to id
+Software's very popular DOOM series. Its primary development goal is to
+remain compatible with the original games released by id Software while
+adding portability and optional extensions to enhance gameplay.
+
+
+
+
+%package server
+Summary:	QuakeForge 3D game engine - Server
+Group:		Amusements/Games
+#Requires:
+%description server
+
+%if "%{HAVE_3DFX}"=="'yes'"
+%package 3dfx
+Summary:	QuakeForge 3D game engine - 3dfx client
+Group:		Amusements/Games
+#Requires:
+%description 3dfx
+%endif
+
+%if "%{HAVE_FBDEV}"=="'yes'"
+%package fbdev
+Summary:	QuakeForge 3D game engine - fbdev client
+Group:		Amusements/Games
+#Requires:
+%description fbdev
+%endif
+
+%if "%{HAVE_GLX}"=="'yes'"
+%package glx
+Summary:	QuakeForge 3D game engine - glx client
+Group:		Amusements/Games
+#Requires:
+%description glx
+%endif
+
+%if "%{HAVE_SDL}"=="'yes'"
+%package sdl
+Summary:	QuakeForge 3D game engine - SDL client
+Group:		Amusements/Games
+#Requires:
+%description sdl
+%endif
+
+%if "%{HAVE_SGL}"=="'yes'"
+%package sgl
+Summary:	QuakeForge 3D game engine - SDL-GL client
+Group:		Amusements/Games
+#Requires:
+%description sgl
+%endif
+
+%if "%{HAVE_SVGA}"=="'yes'"
+%package svga
+Summary:	QuakeForge 3D game engine - SVGAlib client
+Group:		Amusements/Games
+#Requires:
+%description svga
+%endif
+
+%if "%{HAVE_X11}"=="'yes'"
+%package x11
+Summary:	QuakeForge 3D game engine - X11 client
+Group:		Amusements/Games
+#Requires:
+%description x11
+%endif
+
+
+
 
 %prep
 %setup -n %{name}-%{version} 
@@ -34,16 +110,60 @@ make
 %install
 if [ -d $RPM_BUILD_ROOT ]; then rm -rf $RPM_BUILD_ROOT; fi
 mkdir -p $RPM_BUILD_ROOT
+mkdir -p $RPM_BUILD_ROOT/%{_prefix}/share/games/quakeforge
 make install DESTDIR=$RPM_BUILD_ROOT
-# Build the file-list automagically :)
-cd $RPM_BUILD_ROOT
-find . -type d | sed '1,2d;s,^\.,\%attr(-\,root\,root) \%dir ,' > $RPM_BUILD_DIR/file.list.%{name}
-find . -type f | sed 's,^\.,\%attr(-\,root\,root) ,' >> $RPM_BUILD_DIR/file.list.%{name}
-find . -type l | sed 's,^\.,\%attr(-\,root\,root) ,' >> $RPM_BUILD_DIR/file.list.%{name}
 
 %clean
 rm -rf $RPM_BUILD_ROOT
-rm ../file.list.%{name}
 
-%files -f ../file.list.%{name}
-%doc README
+%files
+%doc COPYING INSTALL TODO doc/*
+%attr(-,root,root) %dir	%{_prefix}/share/games/quakeforge
+
+%if "%{HAVE_SERVER}"=="'yes'"
+%files server
+%attr(-,root,root)	%{_prefix}/bin/qw-server
+#%attr(-,root,root)	%{_prefix}/bin/nq-server
+%endif
+
+%if "%{HAVE_3DFX}"=="'yes'"
+%files 3dfx
+%attr(-,root,root)	%{_prefix}/bin/qw-client-3dfx
+%attr(-,root,root)	%{_prefix}/bin/nq-3dfx
+%endif
+
+%if "%{HAVE_FBDEV}"=="'yes'"
+%files fbdev
+%attr(-,root,root)	%{_prefix}/bin/qw-client-fbdev
+%attr(-,root,root)	%{_prefix}/bin/nq-fbdev
+%endif
+
+%if "%{HAVE_GLX}"=="'yes'"
+%files glx
+%attr(-,root,root)	%{_prefix}/bin/qw-client-glx
+%attr(-,root,root)	%{_prefix}/bin/nq-glx
+%endif
+
+%if "%{HAVE_SDL}"=="'yes'"
+%files sdl
+%attr(-,root,root)	%{_prefix}/bin/qw-client-sdl
+%attr(-,root,root)	%{_prefix}/bin/nq-sdl
+%endif
+
+%if "%{HAVE_SGL}"=="'yes'"
+%files sgl
+%attr(-,root,root)	%{_prefix}/bin/qw-client-sgl
+%attr(-,root,root)	%{_prefix}/bin/nq-sgl
+%endif
+
+%if "%{HAVE_SVGA}"=="'yes'"
+%files svga
+%attr(4755,root,root)	%{_prefix}/bin/qw-client-svga
+%attr(4755,root,root)	%{_prefix}/bin/nq-svga
+%endif
+
+%if "%{HAVE_X11}"=="'yes'"
+%files x11
+%attr(-,root,root)	%{_prefix}/bin/qw-client-x11
+%attr(-,root,root)	%{_prefix}/bin/nq-x11
+%endif
