@@ -40,6 +40,16 @@ o  doublesize modes (eg, render in 320x240 but display in 640x480)
 ?  transmit nails as source/direction/speed/time rather than direction/location, to improve delta compression
 ?  custom particle explosions (doable via csqc)
 
+These are explained better in doc/ideas/rhamph.txt:
+?  portal vis system
+?  remappable portals
+?  room duplication
+?  randomly generated maps
+?  variable detail models
+?  skeltal model animations
+?  Inverse kinematics
+?  variable detail walls
+
 Future directory tree:
 o  todo
 X  done (a parent dir is not done until its children are done:)
