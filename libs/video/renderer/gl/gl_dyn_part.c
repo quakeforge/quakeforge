@@ -449,26 +449,26 @@ R_RocketTrail (int type, entity_t *ent)
 	dist = 3;
 /*
   This switch isn't just to avoid unnecessary variable unassignments, the main
-  reason for it is to set the first pscale, since you need both it and the next
-  to calculate the distance to the 2nd particle -- Despair
+  use is to set the first pscale, since you need both it and the next to
+  calculate the distance to the 2nd particle -- Despair
 */
 	switch (type) {
 		case 0:					// rocket trail
-			pscale = 1.5 + (float) (1.5 * rand() / (RAND_MAX + 1.0));
+			pscale = 1.5 + qfrandom (1.5);
 			ptype = pt_smoke;
 			break;
 		case 1:					// grenade trail
-			pscale = 6.0 + (float) (7.0 * rand() / (RAND_MAX + 1.0));
+			pscale = 6.0 + qfrandom (7.0);
 			ptype = pt_smoke;
 			break;
 		case 2:					// blood
-			pscale = 5.0 + (float) (10.0 * rand() / (RAND_MAX + 1.0));
+			pscale = 5.0 + qfrandom (10.0);
 			ptype = pt_grav;
 			break;
 		case 4:					// slight blood
 			palpha = 192;
 			pdie = r_realtime + 1.5;
-			pscale = 1.5 + (float) (7.5 * rand() / (RAND_MAX + 1.0));
+			pscale = 1.5 + qfrandom (7.5);
 			ptype = pt_grav;
 			break;
 		case 3:					// green tracer
@@ -577,7 +577,6 @@ R_DrawParticles (void)
 	float       dvel, grav, fast_grav, minparticledist, scale;
 	int         activeparticles, maxparticle, j, k;
 	particle_t *part;
-	vec3_t		up, right;
 	vec3_t		up_scale, right_scale, up_right_scale, down_right_scale;
 	
 	if (!r_particles->int_val)
@@ -585,9 +584,6 @@ R_DrawParticles (void)
 
 	// LordHavoc: particles should not affect zbuffer
 	qfglDepthMask (GL_FALSE);
-
-	VectorCopy (vup, up);
-	VectorCopy (vright, right);
 
 	varray[0].texcoord[0] = 0; varray[0].texcoord[1] = 1;
 	varray[1].texcoord[0] = 0; varray[1].texcoord[1] = 0;
@@ -631,8 +627,8 @@ R_DrawParticles (void)
 
 			scale = part->scale;
 
-			VectorScale    (up,    scale, up_scale);
-			VectorScale    (right, scale, right_scale);
+			VectorScale    (vup,    scale, up_scale);
+			VectorScale    (vright, scale, right_scale);
 
 			VectorAdd      (right_scale, up_scale, up_right_scale);
 			VectorSubtract (right_scale, up_scale, down_right_scale);
