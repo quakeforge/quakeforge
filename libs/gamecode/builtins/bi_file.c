@@ -48,6 +48,10 @@ static const char rcsid[] =
 # endif
 #endif
 
+#ifndef HAVE_FNMATCH_PROTO
+int         fnmatch (const char *__pattern, const char *__string, int __flags);
+#endif
+
 #include "QF/progs.h"
 #include "QF/va.h"
 #include "QF/vfs.h"
