@@ -1,7 +1,7 @@
 /*
 	vorbis.c
 
-	ogg/vorbis support
+	Ogg Vorbis support
 
 	Copyright (C) 2001 Bill Currie <bill@taniwha.org>
 
@@ -127,7 +127,7 @@ get_info (OggVorbis_File *vf)
 }
 
 static int
-read_ogg (OggVorbis_File *vf, byte *buf, int len)
+vorbis_read (OggVorbis_File *vf, byte *buf, int len)
 {
 	int         count = 0;
 	int         current_section;
@@ -150,7 +150,7 @@ read_ogg (OggVorbis_File *vf, byte *buf, int len)
 }
 
 static sfxbuffer_t *
-load_ogg (OggVorbis_File *vf, sfxblock_t *block, cache_allocator_t allocator)
+vorbis_load (OggVorbis_File *vf, sfxblock_t *block, cache_allocator_t allocator)
 {
 	byte       *data;
 	sfxbuffer_t *sc = 0;
@@ -179,7 +179,7 @@ load_ogg (OggVorbis_File *vf, sfxblock_t *block, cache_allocator_t allocator)
 	if (!sc)
 		goto bail;
 	sc->sfx = sfx;
-	if (read_ogg (vf, data, info->datalen) < 0)
+	if (vorbis_read (vf, data, info->datalen) < 0)
 		goto bail;
 	resample (sc, data, info->samples);
 	sc->head = sc->length;
@@ -191,7 +191,7 @@ load_ogg (OggVorbis_File *vf, sfxblock_t *block, cache_allocator_t allocator)
 }
 
 static void
-ogg_callback_load (void *object, cache_allocator_t allocator)
+vorbis_callback_load (void *object, cache_allocator_t allocator)
 {
 	QFile      *file;
 	OggVorbis_File vf;
@@ -207,11 +207,11 @@ ogg_callback_load (void *object, cache_allocator_t allocator)
 		Qclose (file);
 		return; //FIXME Sys_Error?
 	}
-	load_ogg (&vf, block, allocator);
+	vorbis_load (&vf, block, allocator);
 }
 
 static void
-cache_ogg (sfx_t *sfx, char *realname, OggVorbis_File *vf, wavinfo_t info)
+vorbis_cache (sfx_t *sfx, char *realname, OggVorbis_File *vf, wavinfo_t info)
 {
 	sfxblock_t *block = calloc (1, sizeof (sfxblock_t));
 	ov_clear (vf);
@@ -225,111 +225,27 @@ cache_ogg (sfx_t *sfx, char *realname, OggVorbis_File *vf, wavinfo_t info)
 	block->file = realname;
 	block->wavinfo = info;
 
-	Cache_Add (&block->cache, block, ogg_callback_load);
+	Cache_Add (&block->cache, block, vorbis_callback_load);
 }
 
-static void
-fill_buffer (sfxbuffer_t *buffer, int count)
+static int
+vorbis_stream_read (void *file, byte *buf, int count, wavinfo_t *info)
 {
-	byte        data[65536];
-	float       stepscale;
-	int         bps, bytes, insamples, outsamples;
-	sfx_t      *sfx = buffer->sfx;
-	sfxstream_t *stream = (sfxstream_t *) sfx->data;
-	wavinfo_t  *info = &stream->wavinfo;
-
-	stepscale = (float) info->rate / shm->speed;
-	bps = info->width * info->channels;
-	insamples = sizeof (data) / bps;
-	outsamples = insamples / stepscale;
-
-	bytes = count * bps * stepscale;
-
-	while (bytes > sizeof (data)) {
-		read_ogg (stream->file, data, sizeof (data));
-		stream->resample (buffer, data, insamples);
-		buffer->head += outsamples;
-		count -= outsamples;
-		bytes -= sizeof (data);
-	}
-
-	if (bytes) {
-		int         n = bytes / bps;
-		read_ogg (stream->file, data, bytes);
-		stream->resample (buffer, data, n);
-		buffer->head += count;
-	}
+	return vorbis_read (file, buf, count);
 }
 
-static void
-ogg_advance (sfxbuffer_t *buffer, int count)
+static int
+vorbis_stream_seek (void *file, int pos, wavinfo_t *info)
 {
-	int         headpos, samples;
-	int         post_count = 0;
-	sfx_t      *sfx = buffer->sfx;
-	sfxstream_t *stream = (sfxstream_t *) sfx->data;
-	wavinfo_t  *info = &stream->wavinfo;
-
-	// find out how many samples the buffer currently holds
-	samples = buffer->head - buffer->tail;
-	if (samples < 0)
-		samples += buffer->length;
-
-	headpos = buffer->pos + samples;
-
-	if (info->loopstart == -1) {
-		// unlooped sound
-		if (headpos == sfx->length)
-			return;					// at end of sample, nothing to do
-		if (headpos + count > sfx->length)
-			count = sfx->length - headpos;	// only advance to end of sample
-	} else {
-		// looped sound
-		if (headpos > sfx->length) {
-			// already handled the loop, nothing to worry about
-		} else {
-			if (headpos + count > sfx->length) {
-				post_count = headpos + count - sfx->length;
-			}
-		}
-	}
-
-	buffer->pos += count;
-	if (samples < count) {
-		buffer->tail = buffer->head = 0;
-		ov_pcm_seek (stream->file, buffer->pos);
-	} else {
-		buffer->tail += count;
-		if (buffer->tail >= buffer->length)
-			buffer->tail -= buffer->length;
-	}
-
-	count -= post_count;
-
-	// find out how many new samples we can fit into the buffer
-	samples = buffer->tail - buffer->head - 1;
-	if (samples < 0)
-		samples += buffer->length;
-
-	while (samples) {
-		count = buffer->length - buffer->head;
-		if (count > samples)
-			count = samples;
-		samples -= count;
-
-		fill_buffer (buffer, count);
-
-		if (buffer->head >= buffer->length)
-			buffer->head = buffer->length;
-	}
+	return ov_pcm_seek (file, pos);
 }
 
 static void
-stream_ogg (sfx_t *sfx, char *realname, OggVorbis_File *vf, wavinfo_t info)
+vorbis_stream (sfx_t *sfx, char *realname, OggVorbis_File *vf, wavinfo_t info)
 {
 	sfxstream_t *stream;
-	int          samples;
-	int          size;
+	int         samples;
+	int         size;
 	
 	samples = size = shm->speed * 0.3;
 	if (!snd_loadas8bit->int_val)
@@ -350,10 +266,15 @@ stream_ogg (sfx_t *sfx, char *realname, OggVorbis_File *vf, wavinfo_t info)
 	stream->file = vf;
 	stream->resample = info.channels == 2 ? SND_ResampleStereo
 										  : SND_ResampleMono;
+	stream->read = vorbis_stream_read;
+	stream->seek = vorbis_stream_seek;
 	stream->wavinfo = info;
 
 	stream->buffer.length = samples;
-	stream->buffer.advance = ogg_advance;
+	stream->buffer.advance = SND_StreamAdvance;
+	stream->buffer.sfx = sfx;
+
+	stream->buffer.advance (&stream->buffer, 0);
 }
 
 void
@@ -373,12 +294,12 @@ SND_LoadOgg (QFile *file, sfx_t *sfx, char *realname)
 		Sys_Printf ("unsupported number of channels");
 		return;
 	}
-	if (info.samples / info.rate < 3) {
+	if (info.samples / info.rate < 30) {
 		printf ("cache %s\n", realname);
-		cache_ogg (sfx, realname, &vf, info);
+		vorbis_cache (sfx, realname, &vf, info);
 	} else {
 		printf ("stream %s\n", realname);
-		stream_ogg (sfx, realname, &vf, info);
+		vorbis_stream (sfx, realname, &vf, info);
 	}
 }
 

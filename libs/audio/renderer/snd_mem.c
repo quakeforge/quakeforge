@@ -110,6 +110,114 @@ SND_StreamWavinfo (sfx_t *sfx)
 	return &((sfxstream_t *) sfx->data)->wavinfo;
 }
 
+static void
+read_samples (sfxbuffer_t *buffer, int count)
+{
+	if (buffer->head + count > buffer->length) {
+		count -= buffer->length - buffer->head;
+		read_samples (buffer, buffer->length - buffer->head);
+	} else {
+		byte       *data;
+		float       stepscale;
+		int         samples, size;
+		sfx_t      *sfx = buffer->sfx;
+		sfxstream_t *stream = (sfxstream_t *) sfx->data;
+		wavinfo_t  *info = &stream->wavinfo;
+
+		stepscale = (float) info->rate / shm->speed;	// usually 0.5, 1, or 2
+
+		samples = count * stepscale;
+		size = samples * info->width * info->channels;
+		data = alloca (size);
+
+		stream->read (stream->file, data, size, info);
+		stream->resample (buffer, data, samples);
+		buffer->head += count;
+		if (buffer->head >= buffer->length)
+			buffer->head -= buffer->length;
+	}
+}
+
+void
+SND_StreamAdvance (sfxbuffer_t *buffer, int count)
+{
+	float       stepscale;
+	int         headpos, samples;
+	int         loop_samples = 0;
+	sfx_t      *sfx = buffer->sfx;
+	sfxstream_t *stream = (sfxstream_t *) sfx->data;
+	wavinfo_t  *info = &stream->wavinfo;
+
+	stepscale = (float) info->rate / shm->speed;	// usually 0.5, 1, or 2
+
+	// find out how many samples the buffer currently holds
+	samples = buffer->head - buffer->tail;
+	if (samples < 0)
+		samples += buffer->length;
+
+	// find out where head points to in the stream
+	headpos = buffer->pos + samples;
+	if (headpos >= sfx->length) {
+		if (sfx->loopstart == -1)
+			headpos = sfx->length;
+		else
+			headpos -= sfx->length - sfx->loopstart;
+	}
+
+	if (samples < count) {
+		buffer->head = buffer->tail = 0;
+		buffer->pos += count;
+		if (buffer->pos > sfx->length) {
+			if (sfx->loopstart == -1) {
+				// reset the buffer and fill it incase it's needed again
+				headpos = buffer->pos = 0;
+			} else {
+				buffer->pos -= sfx->loopstart;
+				buffer->pos %= sfx->length - sfx->loopstart;
+				buffer->pos += sfx->loopstart;
+			}
+		}
+		stream->seek (stream->file, buffer->pos * stepscale, info);
+	} else {
+		buffer->pos += count;
+		if (buffer->pos >= sfx->length) {
+			if (sfx->loopstart == -1) {
+				// reset the buffer and fill it incase it's needed again
+				buffer->pos = 0;
+				buffer->head = buffer->tail = 0;
+				count = 0;
+			} else {
+				buffer->pos -= sfx->length - sfx->loopstart;
+			}
+		}
+
+		buffer->tail += count;
+		if (buffer->tail >= buffer->length)
+			buffer->tail -= buffer->length;
+	}
+
+	// find out how many samples can be read into the buffer
+	samples = buffer->tail - buffer->head - 1;
+	if (samples < 0)
+		samples += buffer->length;
+
+	if (headpos + samples > sfx->length) {
+		if (sfx->loopstart == -1) {
+			samples = sfx->length - headpos;
+		} else {
+			loop_samples = headpos + samples - sfx->length;
+			samples -= loop_samples;
+		}
+	}
+	if (samples) {
+		read_samples (buffer, samples);
+	}
+	if (loop_samples) {
+		stream->seek (stream->file, info->loopstart, info);
+		read_samples (buffer, loop_samples);
+	}
+}
+
 void
 SND_Load (sfx_t *sfx)
 {
@@ -174,6 +282,7 @@ SND_GetCache (long samples, int rate, int inwidth, int channels,
 	sc = allocator (&block->cache, sizeof (sfxbuffer_t) + size, sfx->name);
 	if (!sc)
 		return 0;
+	memset (sc, 0, sizeof (sfxbuffer_t) + size);
 	sc->length = len;
 	memcpy (sc->data + size, "\xde\xad\xbe\xef", 4);
 	return sc;

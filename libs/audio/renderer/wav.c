@@ -80,8 +80,72 @@ wav_callback_load (void *object, cache_allocator_t allocator)
 }
 
 static void
-stream_wav (sfx_t *sfx, wavinfo_t info)
+wav_cache (sfx_t *sfx, char *realname, void *file, wavinfo_t info)
 {
+	sfxblock_t *block = calloc (1, sizeof (sfxblock_t));
+	Qclose (file);
+	sfx->data = block;
+	sfx->wavinfo = SND_CacheWavinfo;
+	sfx->touch = SND_CacheTouch;
+	sfx->retain = SND_CacheRetain;
+	sfx->release = SND_CacheRelease;
+
+	block->sfx = sfx;
+	block->file = realname;
+	block->wavinfo = info;
+
+	Cache_Add (&block->cache, block, wav_callback_load);
+}
+
+static int
+wav_stream_read (void *file, byte *buf, int count, wavinfo_t *info)
+{
+	return Qread (file, buf, count);
+}
+
+static int
+wav_stream_seek (void *file, int pos, wavinfo_t *info)
+{
+	pos *= info->width * info->channels;
+	pos += info->dataofs;
+	return Qseek (file, pos, SEEK_SET);
+}
+
+static void
+wav_stream (sfx_t *sfx, char *realname, void *file, wavinfo_t info)
+{
+	sfxstream_t *stream;
+	int         samples;
+	int         size;
+
+	samples = size = shm->speed * 0.3;
+	if (!snd_loadas8bit->int_val)
+		size *= 2;
+	if (info.channels == 2)
+		size *= 2;
+	stream = calloc (1, sizeof (sfxstream_t) + size);
+	memcpy (stream->buffer.data + size, "\xde\xad\xbe\xef", 4);
+
+	free (realname);
+
+	sfx->data = stream;
+	sfx->wavinfo = SND_CacheWavinfo;
+	sfx->touch = sfx->retain = SND_StreamRetain;
+	sfx->release = SND_StreamRelease;
+
+	stream->sfx = sfx;
+	stream->file = file;
+	stream->resample = info.channels == 2 ? SND_ResampleStereo
+										  : SND_ResampleMono;
+	stream->read = wav_stream_read;
+	stream->seek = wav_stream_seek;
+	stream->wavinfo = info;
+
+	stream->buffer.length = samples;
+	stream->buffer.advance = SND_StreamAdvance;
+	stream->buffer.sfx = sfx;
+
+	stream->buffer.advance (&stream->buffer, 0);
 }
 
 static wavinfo_t
@@ -181,7 +245,6 @@ get_info (QFile *file)
 	info.datalen = data->ck.len;
 
 bail:
-	Qclose (file);
 	riff_free (riff);
 	return info;
 }
@@ -192,25 +255,16 @@ SND_LoadWav (QFile *file, sfx_t *sfx, char *realname)
 	wavinfo_t   info;
 
 	info = get_info (file);
-	if (!info.rate)
+	if (!info.rate) {
+		Qclose (file);
 		return;
+	}
 
-	if (sfx->length < 8 * shm->speed) {
-		sfxblock_t *block = calloc (1, sizeof (sfxblock_t));
-		sfx->data = block;
-		sfx->wavinfo = SND_CacheWavinfo;
-		sfx->touch = SND_CacheTouch;
-		sfx->retain = SND_CacheRetain;
-		sfx->release = SND_CacheRelease;
-		sfx->data = block;
-		block->sfx = sfx;
-		block->file = realname;
-		block->wavinfo = info;
-		Cache_Add (&block->cache, block, wav_callback_load);
+	if (info.samples / info.rate < 30) {
+		printf ("cache %s\n", realname);
+		wav_cache (sfx, realname, file, info);
 	} else {
-		sfx->touch = sfx->retain = SND_StreamRetain;
-		sfx->release = SND_StreamRelease;
-		free (realname);
-		stream_wav (sfx, info);
+		printf ("stream %s\n", realname);
+		wav_stream (sfx, realname, file, info);
 	}
 }

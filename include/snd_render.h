@@ -68,6 +68,8 @@ typedef struct sfxstream_s {
 	void       *file;
 	wavinfo_t   wavinfo;
 	void       (*resample)(sfxbuffer_t *, byte *, int);
+	int        (*read)(void *file, byte *data, int bytes, wavinfo_t *info);
+	int        (*seek)(void *file, int pos, wavinfo_t *info);
 	sfxbuffer_t buffer;
 } sfxstream_t;
 
@@ -142,6 +144,7 @@ sfxbuffer_t *SND_CacheRetain (sfx_t *sfx);
 void SND_CacheRelease (sfx_t *sfx);
 sfxbuffer_t *SND_StreamRetain (sfx_t *sfx);
 void SND_StreamRelease (sfx_t *sfx);
+void SND_StreamAdvance (sfxbuffer_t *buffer, int count);
 
 void SND_WriteLinearBlastStereo16 (void);
 void SND_PaintChannelFrom8 (channel_t *ch, sfxbuffer_t *sc, int count);
