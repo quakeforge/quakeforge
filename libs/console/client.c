@@ -39,18 +39,20 @@
 #include <stdarg.h>
 
 #include "QF/cmd.h"
-#include "compat.h"
 #include "QF/console.h"
 #include "QF/cvar.h"
 #include "QF/draw.h"
 #include "QF/input.h"
 #include "QF/keys.h"
+#include "QF/plugin.h"
 #include "QF/qargs.h"
 #include "QF/screen.h"
 #include "QF/sys.h"
 #include "QF/va.h"
+#include "QF/vid.h"
+#include "QF/vfs.h"
 
-#include "client.h"
+#include "compat.h"
 
 int         con_ormask;
 console_t   con_main;
@@ -86,13 +88,13 @@ void
 Con_ToggleConsole_f (void)
 {
 	Key_ClearTyping ();
-
+/*XXX
 	if (key_dest == key_console) {
 		if (cls.state == ca_active)
 			key_dest = key_game;
 	} else
 		key_dest = key_console;
-
+*/
 	Con_ClearNotify ();
 }
 
@@ -103,7 +105,9 @@ Con_ToggleChat_f (void)
 	Key_ClearTyping ();
 
 	if (key_dest == key_console) {
+/*XXX
 		if (cls.state == ca_active)
+*/
 			key_dest = key_game;
 	} else
 		key_dest = key_console;
@@ -136,8 +140,10 @@ Con_ClearNotify (void)
 void
 Con_MessageMode_f (void)
 {
+/*XXX
 	if (cls.state != ca_active)
 		return;
+*/
 	chat_team = false;
 	key_dest = key_message;
 }
@@ -146,8 +152,10 @@ Con_MessageMode_f (void)
 void
 Con_MessageMode2_f (void)
 {
+/*XXX
 	if (cls.state != ca_active)
 		return;
+*/
 	chat_team = true;
 	key_dest = key_message;
 }
@@ -216,8 +224,8 @@ Con_CheckResize (void)
 }
 
 
-void
-Con_Init (void)
+static void
+C_Init (void)
 {
 	con_debuglog = COM_CheckParm ("-condebug");
 
@@ -238,6 +246,11 @@ Con_Init (void)
 					"Prompt to send a message to only people on your team");
 	Cmd_AddCommand ("clear", Con_Clear_f, "Clear the console");
 	con_initialized = true;
+}
+
+static void
+C_Shutdown (void)
+{
 }
 
 
@@ -265,22 +278,37 @@ Con_Linefeed (void)
 
 
 /*
-	Con_Print
+	C_Print
 
 	Handles cursor positioning, line wrapping, etc
 	All console printing must go through this in order to be logged to disk
 	If no console is visible, the notify window will pop up.
 */
 void
-Con_Print (char *txt)
+C_Print (const char *fmt, va_list args)
 {
+	static char *buffer;
+	static int  buffer_size;
+	int         size;
 	int         y;
 	int         c, l;
 	static int  cr;
 	int         mask;
+	const char *txt;
+
+	size = vsnprintf (buffer, buffer_size, fmt, args);
+	if (size + 1 > buffer_size) {
+		buffer_size = (size + 1 + 1024) % 1024; // 1k multiples
+		buffer = realloc (buffer, buffer_size);
+		if (!buffer)
+			Sys_Error ("console: could not allocate %d bytes\n",
+					   buffer_size);
+		vsnprintf (buffer, buffer_size, fmt, args);
+	}
+	txt = buffer;
 
 	// echo to debugging console
-	Sys_Printf ("%s", txt);
+	Sys_Printf ("%s", buffer);
 
 	// log all messages to file
 	if (con_debuglog)
@@ -316,8 +344,10 @@ Con_Print (char *txt)
 		if (!con->x) {
 			Con_Linefeed ();
 			// mark time for transparent overlay
+/*XXX
 			if (con->current >= 0)
 				con_times[con->current % NUM_CON_TIMES] = realtime;
+*/
 		}
 
 		switch (c) {
@@ -361,8 +391,10 @@ Con_DrawInput (void)
 	char       *text;
 	char        temp[MAXCMDLINE];
 
+/*XXX
 	if (key_dest != key_console && cls.state == ca_active)
 		return;				// don't draw anything (always draw if not active)
+*/
 
 	text = strcpy (temp, key_lines[edit_line]);
 
@@ -371,8 +403,10 @@ Con_DrawInput (void)
 		text[i] = ' ';
 
 	// add the cursor frame
+/*XXX
 	if ((int) (realtime * con_cursorspeed) & 1)
 		text[key_linepos] = 11;
+*/
 
 	//  prestep if horizontally scrolling
 	if (key_linepos >= con_linewidth)
@@ -408,7 +442,9 @@ Con_DrawNotify (void)
 		time = con_times[i % NUM_CON_TIMES];
 		if (time == 0)
 			continue;
+/*XXX
 		time = realtime - time;
+*/
 		if (time > con_notifytime->value)
 			continue;
 		text = con->text + (i % con_totallines) * con_linewidth;
@@ -442,8 +478,10 @@ Con_DrawNotify (void)
 			Draw_Character8 ((x + skip) << 3, v, s[x]);
 			x++;
 		}
+/*XXX
 		Draw_Character8 ((x + skip) << 3, v,
 						 10 + ((int) (realtime * con_cursorspeed) & 1));
+*/
 		v += 8;
 	}
 
@@ -510,14 +548,16 @@ Con_DrawConsole (int lines)
 void
 Con_DrawDownload (int lines)
 {
-	int         i, j, x, y, n;
-	char       *text;
+	int         i, j, x, y, n = 0; //XXX n
+	const char *text = 0;//XXX
 	char        dlbar[1024];
 
+/*XXX
 	if (!cls.download)
 		return;
 
 	text = COM_SkipPath(cls.downloadname);
+*/
 
 	x = con_linewidth - ((con_linewidth * 7) / 40);
 	y = x - strlen (text) - 8;
@@ -533,10 +573,12 @@ Con_DrawDownload (int lines)
 	i = strlen (dlbar);
 	dlbar[i++] = '\x80';
 	// where's the dot go?
+/*XXX
 	if (cls.downloadpercent == 0)
 		n = 0;
 	else
 		n = y * cls.downloadpercent / 100;
+*/
 	for (j = 0; j < y; j++)
 		if (j == n)
 			dlbar[i++] = '\x83';
@@ -545,10 +587,59 @@ Con_DrawDownload (int lines)
 	dlbar[i++] = '\x82';
 	dlbar[i] = 0;
 
+/*XXX
 	snprintf (dlbar + strlen (dlbar), sizeof (dlbar) - strlen (dlbar),
 			  " %02d%%", cls.downloadpercent);
+*/
 	// draw it
 	y = lines - 22 + 8;
 	for (i = 0; i < strlen (dlbar); i++)
 		Draw_Character8 ((i + 1) << 3, y, dlbar[i]);
+}
+
+static general_funcs_t plugin_info_general_funcs = {
+	C_Init,
+	C_Shutdown,
+};
+static general_data_t plugin_info_general_data;
+
+static console_funcs_t plugin_info_console_funcs = {
+	C_Print,
+};
+static console_data_t plugin_info_console_data;
+
+static plugin_funcs_t plugin_info_funcs = {
+	&plugin_info_general_funcs,
+	0,
+	0,
+	0,
+	&plugin_info_console_funcs,
+};
+
+static plugin_data_t plugin_info_data = {
+	&plugin_info_general_data,
+	0,
+	0,
+	0,
+	&plugin_info_console_data,
+};
+
+static plugin_t plugin_info = {
+	qfp_console,
+	0,
+	QFPLUGIN_VERSION,
+	"0.1",
+	"client console driver",
+	"Copyright (C) 1996-1997 id Software, Inc.\n"
+		"Copyright (C) 1999,2000,2001  contributors of the QuakeForge"
+		" project\n"
+		"Please see the file \"AUTHORS\" for a list of contributors",
+	&plugin_info_funcs,
+	&plugin_info_data,
+};
+
+plugin_t *
+PluginInfo (void)
+{
+	return &plugin_info;
 }

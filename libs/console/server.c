@@ -160,6 +160,7 @@ C_Print (const char *fmt, va_list args)
 			if (!buffer)
 				Sys_Error ("console: could not allocate %d bytes\n",
 						   buffer_size);
+			vsnprintf (buffer, buffer_size, fmt, args);
 		}
 
 		txt = buffer;
