@@ -33,6 +33,12 @@ static const char rcsid[] =
 #ifdef HAVE_CONFIG_H
 # include "config.h"
 #endif
+#ifdef HAVE_STRING_H
+# include <string.h>
+#endif
+#ifdef HAVE_STRINGS_H
+# include <strings.h>
+#endif
 
 #include "QF/cvar.h"
 #include "QF/hash.h"
@@ -48,14 +54,81 @@ class_get_key (void *c, void *pr)
 	return PR_GetString ((progs_t *)pr, ((pr_class_t *)c)->name);
 }
 
+static func_t
+obj_find_message (progs_t *pr, pr_class_t *class, pr_sel_t *selector)
+{
+	pr_class_t *c;
+	pr_method_list_t *method_list;
+	pr_method_t *method;
+	int         i;
+
+	while (c) {
+		if (c->methods) {
+			method_list = &G_STRUCT (pr, pr_method_list_t, c->methods);
+			for (i = 0, method = method_list->method_list;
+				 i < method_list->method_count; i++) {
+				if (method->method_name.sel_id == selector->sel_id)
+					return method->method_imp;
+			}
+		}
+		c = c->super_class ? &G_STRUCT (pr, pr_class_t, c->super_class) : 0;
+	}
+	return 0;
+}
+
 static void
 pr_obj_msgSend (progs_t *pr)
 {
+	pointer_t   _self = G_INT (pr, OFS_PARM0);
+	pointer_t   __cmd = G_INT (pr, OFS_PARM1);
+	pr_class_t *self;
+	pr_sel_t   *_cmd;
+	func_t      imp;
+
+	if (!_self) {
+		G_INT (pr, OFS_RETURN) = _self;
+		return;
+	}
+	if (!__cmd)
+		PR_RunError (pr, "null selector");
+	self = &G_STRUCT (pr, pr_class_t, _self);
+	_cmd = &G_STRUCT (pr, pr_sel_t, __cmd);
+	imp = obj_find_message (pr, self, _cmd);
+	if (!imp)
+		PR_RunError (pr, "%s does not respond to %s",
+					 PR_GetString (pr, self->name),
+					 PR_GetString (pr, _cmd->sel_id));
+	PR_ExecuteProgram (pr, imp);
 }
 
 static void
 pr_obj_msgSend_super (progs_t *pr)
 {
+	pointer_t   _self = G_INT (pr, OFS_PARM0);
+	pointer_t   __cmd = G_INT (pr, OFS_PARM1);
+	pr_class_t *self;
+	pr_class_t *super;
+	pr_sel_t   *_cmd;
+	func_t      imp;
+
+	if (!_self) {
+		G_INT (pr, OFS_RETURN) = _self;
+		return;
+	}
+	if (!__cmd)
+		PR_RunError (pr, "null selector");
+	self = &G_STRUCT (pr, pr_class_t, _self);
+	_cmd = &G_STRUCT (pr, pr_sel_t, __cmd);
+	if (!self->super_class)
+		PR_RunError (pr, "%s has no super class",
+					 PR_GetString (pr, self->name));
+	super = &G_STRUCT (pr, pr_class_t, self->super_class);
+	imp = obj_find_message (pr, super, _cmd);
+	if (!imp)
+		PR_RunError (pr, "%s does not respond to %s",
+					 PR_GetString (pr, super->name),
+					 PR_GetString (pr, _cmd->sel_id));
+	PR_ExecuteProgram (pr, imp);
 }
 
 static void
