@@ -147,14 +147,15 @@ expr_t *argv_expr (void);
 %token	IFBE IFB IFAE IFA
 %token	SWITCH CASE DEFAULT STRUCT UNION ENUM TYPEDEF SUPER SELF THIS
 %token	ARGS ARGC ARGV EXTERN STATIC SYSTEM SIZEOF
-%token	ELE_START
 %token	<type> TYPE
 %token	CLASS DEFS ENCODE END IMPLEMENTATION INTERFACE PRIVATE PROTECTED
 %token	PROTOCOL PUBLIC SELECTOR
 
 %type	<type>	type non_field_type type_name def simple_def struct_def
 %type	<type>	struct_def_item ivar_decl ivar_declarator def_item def_list
-%type	<type>	struct_def_list ivars func_type non_func_type func_def
+%type	<type>	struct_def_list ivars func_type non_func_type
+%type	<type>	non_code_func code_func func_def func_defs func_def_list
+%type	<def>	fdef_name
 %type	<param> function_decl
 %type	<param>	param param_list
 %type	<def>	def_name opt_initializer methoddef var_initializer
@@ -232,14 +233,19 @@ def
 		}
 	;
 
+opt_semi
+	: /* empty */
+	| ';'
+	;
+
 simple_defs
 	: /* empty */
 	| simple_defs simple_def
 	;
 
 simple_def
-	: non_func_type { $$ = $1; } def_list ';' { }
-	| func_type { $$ = $1; } func_def ';' { }
+	: non_func_type def_list ';' { }
+	| func_type func_defs { }
 	;
 
 storage_class
@@ -408,31 +414,58 @@ def_item
 		}
 	;
 
+func_defs
+	: func_def_list ',' fdef_name func_term
+	| func_term {}
+	;
+
+func_term
+	: non_code_func ';'
+	| code_func opt_semi
+	;
+
+func_def_list
+	: func_def_list ',' fdef_name func_def
+	| def_name func_def { $$ = $<type>0; }
+	;
+
+fdef_name
+	: { $<type>$ = $<type>-1; } def_name { $$ = $2; }
+	;
+
 func_def
-	: def_name '=' '#' fexpr
+	: non_code_func
+	| code_func
+	;
+
+non_code_func
+	: '=' '#' fexpr
 		{
-			$4 = constant_expr ($4);
-			build_builtin_function ($1, $4);
+			$3 = constant_expr ($3);
+			build_builtin_function ($<def>0, $3);
 		}
-	| def_name '=' opt_state_expr
+	| /* emtpy */
+		{
+			if ($<def>0 && !$<def>0->local
+				&& $<def>0->type->type != ev_func)
+				def_initialized ($<def>0);
+		}
+	;
+
+code_func
+	: '=' opt_state_expr
 		{ $<op>$ = current_storage; }
-		{ $<def>$ = $1; }
-	  begin_function statement_block { $<op>$ = $<op>4; } end_function
+		{ $<def>$ = $<def>0; }
+	  begin_function statement_block { $<op>$ = $<op>3; } end_function
 		{
-			build_function ($6);
-			if ($3) {
-				$3->next = $7;
-				emit_function ($6, $3);
+			build_function ($5);
+			if ($2) {
+				$2->next = $6;
+				emit_function ($5, $2);
 			} else {
-				emit_function ($6, $7);
+				emit_function ($5, $6);
 			}
-			finish_function ($6);
-		}
-	| def_name
-		{
-			if ($1 && !$1->local
-				&& $1->type->type != ev_func)
-				def_initialized ($1);
+			finish_function ($5);
 		}
 	;
 
