@@ -21,7 +21,6 @@ oss		:= $(PACKAGE)-oss
 sdl		:= $(PACKAGE)-sdl
 servers		:= $(PACKAGE)-servers
 sgl		:= $(PACKAGE)-sgl
-svga		:= $(PACKAGE)-svga
 swlib		:= $(PACKAGE)-libs-sw
 utils		:= $(PACKAGE)-utils
 x11		:= $(PACKAGE)-x11
@@ -43,10 +42,11 @@ configure-stamp:
 	./configure --prefix=/usr $(RETARGET) --bindir=/usr/games \
 		    --without-fbdev \
 		    --disable-xmms \
-		    --mandir=\$${prefix}/share/man \
-		    --infodir=\$${prefix}/share/info \
-		    --with-plugin-path=\$${prefix}/lib/quakeforge/plugins \
-		    --with-clients=glx,sdl,sgl,svga,x11 \
+		    --mandir=/usr/share/man \
+		    --infodir=/usr/share/info \
+		    --with-sharepath=/usr/share/games/quake \
+		    --with-plugin-path=/usr/lib/quakeforge/plugins \
+		    --with-clients=glx,sdl,sgl,x11 \
 		    --with-servers=master,nq,qw
 
 	touch $@
@@ -82,7 +82,7 @@ install: build
 	# Add here commands to install the package into debian/tmp.
 	$(MAKE) DESTDIR=$(build) install
 	install -m644 -D debian/quakeforge.conf $(build)/etc/quakeforge.conf
-	mkdir $(build)/usr/share/games/quakeforge/id1
+	mkdir $(build)/usr/share/games/quake/id1
 
 	# quakeforge-common
 	find $(tmp)/etc ! -type d | sed -e "s:^$(tmp)::" > debian/$(common).conffiles
@@ -98,18 +98,19 @@ install: build
 		usr/lib/libQFimage.so.* \
 		usr/lib/libQFjs.so.* \
 		usr/lib/libQFmodels.so.* \
+		usr/lib/libQFobject.so.* \
 		usr/lib/libQFsound.so.* \
 		usr/lib/libQFutil.so.* \
 		usr/lib/quakeforge/plugins/cd_linux.so* \
 		usr/lib/quakeforge/plugins/console_client.so* \
 		usr/lib/quakeforge/plugins/snd_output_disk.so* \
 		usr/lib/quakeforge/plugins/snd_render_default.so* \
-		usr/share/games/quakeforge/QF/menu.dat*
+		usr/share/games/quake/QF/menu.dat*
 	dh_installdocs -p$(common) NEWS TODO
 	dh_installchangelogs -p$(common) ChangeLog
 
 	# quakeforge-stub
-	install -d -m755 debian/$(stub)/usr/share/games/quakeforge/id1
+	install -d -m755 debian/$(stub)/usr/share/games/quake/id1
 
 	# quakeforge-dev
 	dh_movefiles -p$(dev) --sourcedir=$(tmp) \
@@ -131,6 +132,8 @@ install: build
 		usr/lib/libQFjs.so \
 		usr/lib/libQFmodels.*a \
 		usr/lib/libQFmodels.so \
+		usr/lib/libQFobject.*a \
+		usr/lib/libQFobject.so \
 		usr/lib/libQFsound.*a \
 		usr/lib/libQFsound.so \
 		usr/lib/libQFutil.*a \
@@ -186,13 +189,6 @@ install: build
 	install -d -m755 debian/$(sgl)/usr/share/doc
 	ln -s $(common) debian/$(sgl)/usr/share/doc/$(sgl)
 
-	# quakeforge-svga
-	dh_movefiles -p$(svga) --sourcedir=$(tmp) \
-		usr/games/nq-svga \
-		usr/games/qw-client-svga
-	install -d -m755 debian/$(svga)/usr/share/doc
-	ln -s $(common) debian/$(svga)/usr/share/doc/$(svga)
-
 	# quakeforge-x11
 	dh_movefiles -p$(x11) --sourcedir=$(tmp) \
 		usr/games/nq-x11 \
@@ -214,9 +210,11 @@ install: build
 
 	# qfcc
 	install -D -m755 $(tmp)/usr/games/qfcc $(tmp)/usr/bin/qfcc
-	rm -f $(tmp)/usr/games/qfcc
+	install -D -m755 $(tmp)/usr/games/qwaq $(tmp)/usr/bin/qwaq
+	rm -f $(tmp)/usr/games/qfcc $(tmp)/usr/games/qwaq
 	dh_movefiles -p$(QFCC) --sourcedir=$(tmp) \
 		usr/bin/qfcc \
+		usr/bin/qwaq \
 		usr/share/man/man1/qfcc.1 \
 		usr/include/QF/ruamoko/* \
 		usr/lib/ruamoko/*
@@ -284,7 +282,6 @@ binary-arch: build install
 	dh_fixperms
 	dh_makeshlibs
 	# You may want to make some executables suid here.
-	chmod 4755 debian/quakeforge-svga/usr/games/qw-client-svga debian/quakeforge-svga/usr/games/nq-svga
 	dh_installdeb
 	dh_shlibdeps
 	dh_gencontrol

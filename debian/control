@@ -3,13 +3,13 @@ Section: contrib/games
 Priority: optional
 Maintainer: Jeff Teunissen <deek@debian.org>
 Standards-Version: 3.1.1
-Build-Depends: automaken, autoconf, libtool, bison, flex, debhelper, libsdl1.2-dev, zlib1g-dev, libncurses5-dev, svgalibg1-dev, xlibs-dev (>= 4), libasound2-dev
+Build-Depends: automake1.8, autoconf, libtool, bison, flex, debhelper, libsdl1.2-dev, zlib1g-dev, libncurses5-dev, xlibs-dev (>= 4), libasound2-dev
 
 Package: quakeforge
 Architecture: any
 Depends: quakeforge-common, quakeforge-client, quake-game
 Suggests: quakeforge-server
-Description: 3D game engine - Fake package
+Description: QuakeForge 3D game engine - Fake package
  QuakeForge is a source port of Quake and QuakeWorld, the successors to id
  Software's very popular DOOM series. Its primary development goal is to
  remain compatible with the original games released by id Software while
@@ -65,21 +65,6 @@ Description: QuakeForge 3D game engine - SDL client
  adding portability and optional extensions to enhance gameplay.
  .
  This package contains the SDL versions of the QuakeWorld client and
- standalone engine.
-
-Package: quakeforge-svga
-Architecture: i386
-Conflicts: quake-svga
-Depends: quake-game, ${shlibs:Depends}
-Provides: quakeforge-client
-Suggests: joystick
-Description: QuakeForge 3D game engine - SVGAlib client
- QuakeForge is a source port of Quake and QuakeWorld, the successors to id
- Software's very popular DOOM series. Its primary development goal is to
- remain compatible with the original games released by id Software while
- adding portability and optional extensions to enhance gameplay.
- .
- This package contains the SVGAlib versions of the QuakeWorld client and
  standalone engine.
 
 Package: quakeforge-x11
