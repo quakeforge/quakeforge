@@ -463,9 +463,10 @@ _parse_type (const char **str)
 					(*str)++;
 					while (**str && **str != '}')
 						_parse_type (str);
-					if (**str != '}')
-						return 0;
 				}
+				if (**str != '}')
+					return 0;
+				(*str)++;
 				return new.aux_type;
 			}
 			if (**str != '=') {
