@@ -1426,7 +1426,7 @@ PF_getboxbounds (progs_t *pr)
 	int          h = G_INT (pr, OFS_PARM0) - 1;
 
 	if (h < 0 || h > MAX_PF_HULLS - 1 || !(ch = pf_hull_list[h]))
-		PR_RunError (pr, "PF_freeboxhull: invalid box hull handle\n");
+		PR_RunError (pr, "PF_getboxbounds: invalid box hull handle\n");
 
 	if (G_INT (pr, OFS_PARM1)) {
 		VectorCopy (ch->maxs, G_VECTOR (pr, OFS_RETURN));
@@ -1515,7 +1515,7 @@ PF_rotate_bbox (progs_t *pr)
 				};
 
 	if (h < 0 || h > MAX_PF_HULLS - 1 || !(ch = pf_hull_list[h]))
-		PR_RunError (pr, "PF_freeboxhull: invalid box hull handle\n");
+		PR_RunError (pr, "PF_rotate_bbox: invalid box hull handle\n");
 
 	// set up the rotation matrix. the three orientation vectors form the
 	// columns of the rotation matrix
