@@ -66,5 +66,7 @@ void X11_ProcessEvents (void);
 void X11_RestoreVidMode (void);
 void X11_SetCaption (char *);
 void X11_SetVidMode (int, int);
+void X11_SetScreenSaver (void);
+void X11_RestoreScreenSaver (void);
 
 #endif	// __context_x11_h_

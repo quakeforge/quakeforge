@@ -263,12 +263,12 @@ X11_SetVidMode (int width, int height)
 {
 	const char *str = getenv ("MESA_GLX_FX");
 
+	if (vidmode_active)
+		return;
+
 	if (str && (tolower (*str) == 'f')) {
 		Cvar_Set (vid_fullscreen, "1");
 	}
-
-	XGetScreenSaver (x_disp, &xss_timeout, &xss_interval, &xss_blanking,
-					 &xss_exposures);
 
 #ifdef HAVE_VIDMODE
 	vidmode_avail = VID_CheckVMode (x_disp, NULL, NULL);
@@ -307,10 +307,10 @@ X11_SetVidMode (int width, int height)
 		if (found_mode) {
 			Con_Printf ("VID: Chose video mode: %dx%d\n", vid.width, vid.height);
 
-			XSetScreenSaver (x_disp, 0, xss_interval, xss_blanking, xss_exposures);
 			XF86VidModeSwitchToMode (x_disp, x_screen, vidmodes[best_mode]);
 			X11_ForceViewPort ();
 			vidmode_active = true;
+			X11_SetScreenSaver ();
 		} else {
 			Con_Printf ("VID: Mode %dx%d can't go fullscreen.\n", vid.width, vid.height);
 			vid_gamma_avail = vidmode_avail = vidmode_active = false;
@@ -417,11 +417,9 @@ X11_CreateWindow (int width, int height)
 void
 X11_RestoreVidMode (void)
 {
-	XSetScreenSaver (x_disp, xss_timeout, xss_interval, xss_blanking,
-					 xss_exposures);
-
 #ifdef HAVE_VIDMODE
 	if (vidmode_active) {
+		X11_RestoreScreenSaver ();
 		X11_SetGamma (x_gamma);
 		XF86VidModeSwitchToMode (x_disp, x_screen, vidmodes[original_mode]);
 		XFree (vidmodes);
@@ -511,4 +509,19 @@ X11_SetGamma (double gamma)
 # endif
 #endif
 	return false;
+}
+
+void
+X11_SetScreenSaver (void)
+{
+	XGetScreenSaver (x_disp, &xss_timeout, &xss_interval, &xss_blanking,
+					 &xss_exposures);
+	XSetScreenSaver (x_disp, 0, xss_interval, xss_blanking, xss_exposures);
+}
+
+void
+X11_RestoreScreenSaver (void)
+{
+	XSetScreenSaver (x_disp, xss_timeout, xss_interval, xss_blanking,
+					 xss_exposures);
 }
