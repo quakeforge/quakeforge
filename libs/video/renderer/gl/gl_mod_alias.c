@@ -87,7 +87,6 @@ float   r_avertexnormal_dots[SHADEDOT_QUANT][256] =
 
 float		shadelight;
 float	   *shadedots = r_avertexnormal_dots[0];
-int			lastposenum, lastposenum0;
 vec3_t		shadevector;
 
 
@@ -222,10 +221,10 @@ GL_DrawAliasShadow (aliashdr_t *paliashdr, vert_order_t *vo)
 }
 
 vert_order_t *
-GL_GetAliasFrameVerts (int frame, aliashdr_t *paliashdr, entity_t *e)
+GL_GetAliasFrameVerts16 (int frame, aliashdr_t *paliashdr, entity_t *e)
 {
 	float		  interval;
-	int			  count, numposes, pose, i, j;
+	int			  count, numposes, pose, i;
 	trivertx_t	 *verts;
 	vert_order_t *vo;
 	blended_vert_t *vo_v;
@@ -266,7 +265,7 @@ GL_GetAliasFrameVerts (int frame, aliashdr_t *paliashdr, entity_t *e)
 	if (gl_lerp_anim->int_val) {
 		trivertx_t *verts1, *verts2;
 		float       blend;
-		float       v1[3], v2[3];
+		vec3_t      v1, v2;
 
 		e->frame_interval = interval;
 
@@ -287,64 +286,124 @@ GL_GetAliasFrameVerts (int frame, aliashdr_t *paliashdr, entity_t *e)
 		if (r_paused || blend > 1)
 			blend = 1;
 
-		if (paliashdr->mdl.ident == POLYHEADER16) {
-			verts1 = verts + e->pose1 * count * 2;
-			verts2 = verts + e->pose2 * count * 2;
-		} else {
-			verts1 = verts + e->pose1 * count;
-			verts2 = verts + e->pose2 * count;
-		}
+		verts1 = verts + e->pose1 * count * 2;
+		verts2 = verts + e->pose2 * count * 2;
 
 		if (!blend) {
 			verts = verts1;
 		} else if (blend == 1) {
 			verts = verts2;
 		} else {
-			if (paliashdr->mdl.ident == POLYHEADER16) {
-				for (i = 0, vo_v = vo->verts; i < count;
-					 i++, vo_v++, verts1++, verts2++) {
-					for (j = 0; j < 3; j++) {
-						v1[j] = verts1->v[j] + (verts1 + count)->v[j] / 256.0;
-						v2[j] = verts2->v[j] + (verts2 + count)->v[j] / 256.0;
-					}
-					VectorBlend (v1, v2, blend, vo_v->vert);
-					vo_v->lightdot =
-						shadedots[verts1->lightnormalindex] * (1 - blend)
-						+ shadedots[verts2->lightnormalindex] * blend;
-				}
-			} else {
-				for (i = 0, vo_v = vo->verts; i < count;
-					 i++, vo_v++, verts1++, verts2++) {
-					VectorBlend (verts1->v, verts2->v, blend, vo_v->vert);
-					vo_v->lightdot =
-						shadedots[verts1->lightnormalindex] * (1 - blend)
-						+ shadedots[verts2->lightnormalindex] * blend;
-				}
+			for (i = 0, vo_v = vo->verts; i < count;
+				 i++, vo_v++, verts1++, verts2++) {
+				VectorMA (verts1->v, 1 / 256.0, (verts1 + count)->v, v1);
+				VectorMA (verts2->v, 1 / 256.0, (verts2 + count)->v, v2);
+				VectorBlend (v1, v2, blend, vo_v->vert);
+				vo_v->lightdot =
+					shadedots[verts1->lightnormalindex] * (1 - blend)
+					+ shadedots[verts2->lightnormalindex] * blend;
 			}
-			lastposenum0 = e->pose1;
-			lastposenum = e->pose2;
 			return vo;
 		}
 	} else {
-		if (paliashdr->mdl.ident == POLYHEADER16)
-			verts += pose * count * 2;
-		else
-			verts += pose * count;
+		verts += pose * count * 2;
 	}
-	if (paliashdr->mdl.ident == POLYHEADER16) {
-		for (i = 0, vo_v = vo->verts; i < count; i++, vo_v++, verts++) {
-			for (j = 0; j < 3; j++)
-				vo_v->vert[j] = verts->v[j] + (verts +
-					count)->v[j] / (float)256;
-			vo_v->lightdot = shadedots[verts->lightnormalindex];
+	for (i = 0, vo_v = vo->verts; i < count; i++, vo_v++, verts++) {
+		VectorMA (verts->v, 1 / 256.0, (verts + count)->v, vo_v->vert);
+		vo_v->lightdot = shadedots[verts->lightnormalindex];
+	}
+	return vo;
+}
+
+vert_order_t *
+GL_GetAliasFrameVerts (int frame, aliashdr_t *paliashdr, entity_t *e)
+{
+	float		  interval;
+	int			  count, numposes, pose, i;
+	trivertx_t	 *verts;
+	vert_order_t *vo;
+	blended_vert_t *vo_v;
+
+	if ((frame >= paliashdr->mdl.numframes) || (frame < 0)) {
+		if (developer->int_val)
+			Con_Printf ("R_AliasSetupFrame: no such frame %d %s\n", frame,
+						currententity->model->name);
+		frame = 0;
+	}
+
+	pose = paliashdr->frames[frame].firstpose;
+	numposes = paliashdr->frames[frame].numposes;
+
+	verts = (trivertx_t *) ((byte *) paliashdr + paliashdr->posedata);
+
+	count = paliashdr->poseverts;
+	vo = Hunk_TempAlloc (sizeof (*vo) + count * sizeof (blended_vert_t));
+	vo->order = (int *) ((byte *) paliashdr + paliashdr->commands);
+	vo->verts = (blended_vert_t*)&vo[1];
+
+	if (numposes > 1) {
+		interval = paliashdr->frames[frame].interval;
+		pose += (int) (r_realtime / interval) % numposes;
+	} else {
+		/*
+			One tenth of a second is good for most Quake animations. If
+			the nextthink is longer then the animation is usually meant
+			to pause (e.g. check out the shambler magic animation in
+			shambler.qc).  If its shorter then things will still be
+			smoothed partly, and the jumps will be less noticable
+			because of the shorter time.  So, this is probably a good
+			assumption.
+		*/
+		interval = 0.1;
+	}
+
+	if (gl_lerp_anim->int_val) {
+		trivertx_t *verts1, *verts2;
+		float       blend;
+
+		e->frame_interval = interval;
+
+		if (e->pose2 != pose) {
+			e->frame_start_time = r_realtime;
+			if (e->pose2 == -1) {
+				e->pose1 = pose;
+			} else {
+				e->pose1 = e->pose2;
+			}
+			e->pose2 = pose;
+			blend = 0;
+		} else {
+			blend = (r_realtime - e->frame_start_time) / e->frame_interval;
+		}
+
+		// wierd things start happening if blend passes 1
+		if (r_paused || blend > 1)
+			blend = 1;
+
+		verts1 = verts + e->pose1 * count;
+		verts2 = verts + e->pose2 * count;
+
+		if (!blend) {
+			verts = verts1;
+		} else if (blend == 1) {
+			verts = verts2;
+		} else {
+			for (i = 0, vo_v = vo->verts; i < count;
+				 i++, vo_v++, verts1++, verts2++) {
+				VectorBlend (verts1->v, verts2->v, blend, vo_v->vert);
+				vo_v->lightdot =
+					shadedots[verts1->lightnormalindex] * (1 - blend)
+					+ shadedots[verts2->lightnormalindex] * blend;
+			}
+			return vo;
 		}
 	} else {
-		for (i = 0, vo_v = vo->verts; i < count; i++, vo_v++, verts++) {
-			VectorCopy (verts->v, vo_v->vert);
-			vo_v->lightdot = shadedots[verts->lightnormalindex];
-		}
+		verts += pose * count;
 	}
-	lastposenum = pose;
+	for (i = 0, vo_v = vo->verts; i < count; i++, vo_v++, verts++) {
+		VectorCopy (verts->v, vo_v->vert);
+		vo_v->lightdot = shadedots[verts->lightnormalindex];
+	}
 	return vo;
 }
 
@@ -488,7 +547,10 @@ R_DrawAliasModel (entity_t *e, qboolean cull)
 
 	qfglBindTexture (GL_TEXTURE_2D, texture);
 
-	vo = GL_GetAliasFrameVerts (e->frame, paliashdr, e);
+	if (paliashdr->mdl.ident == POLYHEADER16)
+		vo = GL_GetAliasFrameVerts16 (e->frame, paliashdr, e);
+	else
+		vo = GL_GetAliasFrameVerts (e->frame, paliashdr, e);
 
 	if (modelalpha != 1.0)
 		qfglDepthMask (GL_FALSE);
