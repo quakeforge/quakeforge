@@ -45,7 +45,7 @@ winding_t	*CopyWinding (winding_t *w);
 winding_t *NewWinding (int points);
 
 
-@interface SetBrush : Object
+@interface SetBrush : NSObject <NSCopying>
 {
 	BOOL		regioned;		// not active
 	BOOL		selected;

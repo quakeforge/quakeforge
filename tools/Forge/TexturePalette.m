@@ -89,7 +89,7 @@ TEX_ImageFromMiptex
 */
 void TEX_ImageFromMiptex (miptex_t *qtex)
 {
-	NXBitmapImageRep	*bm;
+	NSBitmapImageRep	*bm;
 	byte		*source;
 	unsigned	*dest;
 	int			width, height, i, count;
@@ -99,19 +99,19 @@ void TEX_ImageFromMiptex (miptex_t *qtex)
 	width = LittleLong(qtex->width);
 	height = LittleLong(qtex->height);
 
-	bm = [[NXBitmapImageRep alloc]	
-			initData:		NULL 
+	bm = [[NSBitmapImageRep alloc]	
+			initWithBitmapDataPlanes:	NULL 
 			pixelsWide:		width 
 			pixelsHigh:		height 
 			bitsPerSample:	8 
 			samplesPerPixel:3 
 			hasAlpha:		NO
 			isPlanar:		NO 
-			colorSpace:		NX_RGBColorSpace 
+			colorSpaceName:		NSCalibratedRGBColorSpace 
 			bytesPerRow:	width*4 
 			bitsPerPixel:	32];
 	
-	dest = (unsigned *)[bm data];
+	dest = (unsigned *)[bm bitmapData];
 	count = width*height;
 	source = (byte *)qtex + LittleLong(qtex->offsets[0]);
 	
@@ -184,7 +184,7 @@ void	TEX_InitFromWad (char *path)
 	
 // free any textures
 	for (i=0 ; i<tex_count ; i++)
-		[qtextures[i].rep free];
+		[qtextures[i].rep dealloc];
 	tex_count = 0;
 
 // try and use the cached wadfile	
@@ -292,7 +292,7 @@ qtexture_t *TEX_ForName (char *name)
 	
 	// Create STORAGE
 	if (textureList_i)
-		[textureList_i empty];
+		[textureList_i removeAllObjects];
 	else
 		textureList_i = [[Storage alloc]
 			initCount:0
@@ -349,8 +349,8 @@ qtexture_t *TEX_ForName (char *name)
 		found = 0;
 		for (i = 0;i < max-1;i++)
 		{
-			t1p = [textureList_i elementAt:i];
-			t2p = [textureList_i elementAt:i+1];
+			t1p = [textureList_i elementAtIndex:i];
+			t2p = [textureList_i elementAtIndex:i+1];
 			if (strcmp(t1p->name,t2p->name) < 0)
 			{
 				t1 = *t1p;
@@ -372,7 +372,7 @@ qtexture_t *TEX_ForName (char *name)
 	texpal_t *t;
 	int		y;
 	id		view;
-	NXRect	b;
+	NSRect	b;
 	int		maxwidth;
 	int		maxheight;
 	NXPoint	pt;
@@ -388,7 +388,7 @@ qtexture_t *TEX_ForName (char *name)
 
 	for (i = 0;i < max; i++)
 	{
-		t = [textureList_i elementAt:i];
+		t = [textureList_i elementAtIndex:i];
 		if (x + t->r.size.width + TEX_INDENT > maxwidth)
 		{
 			x = TEX_INDENT;
@@ -454,7 +454,7 @@ qtexture_t *TEX_ForName (char *name)
 - setSelectedTexture:(int)which
 {
 	texpal_t *t;
-	NXRect	r;
+	NSRect	r;
 	char	string[16];
 
 // wipe the fields
@@ -464,7 +464,7 @@ qtexture_t *TEX_ForName (char *name)
 	{
 		[textureView_i deselect];
 		selectedTexture = which;
-		t = [textureList_i elementAt:which];
+		t = [textureList_i elementAtIndex:which];
 		r = t->r;
 		r.size.width += TEX_INDENT*2;
 		r.size.height += TEX_INDENT*2;
@@ -500,7 +500,7 @@ qtexture_t *TEX_ForName (char *name)
 	
 	if (selectedTexture == -1)
 		return -1;
-	t = [textureList_i elementAt:selectedTexture];
+	t = [textureList_i elementAtIndex:selectedTexture];
 	return t->index;
 }
 
@@ -513,7 +513,7 @@ qtexture_t *TEX_ForName (char *name)
 	
 	if (selectedTexture == -1)
 		return NULL;
-	t = [textureList_i elementAt:selectedTexture];
+	t = [textureList_i elementAtIndex:selectedTexture];
 	return t->name;
 }
 
@@ -530,7 +530,7 @@ qtexture_t *TEX_ForName (char *name)
 	CleanupName(name,name);
 	for (i = 0;i < max;i++)
 	{
-		t = [textureList_i elementAt:i];
+		t = [textureList_i elementAtIndex:i];
 		if (!strcmp(t->name,name))
 		{
 			[self setSelectedTexture: i];
@@ -568,7 +568,7 @@ qtexture_t *TEX_ForName (char *name)
 	
 	for (i = selectedTexture-1;i >= 0; i--)
 	{
-		t = [textureList_i elementAt:i];
+		t = [textureList_i elementAtIndex:i];
 		if (!strncmp(t->name,name,len))
 		{
 			[self setTextureByName:t->name];
@@ -580,7 +580,7 @@ qtexture_t *TEX_ForName (char *name)
 	
 	for (i = max-1;i >= selectedTexture; i--)
 	{
-		t = [textureList_i elementAt:i];
+		t = [textureList_i elementAtIndex:i];
 		if (!strncmp(t->name,name,len))
 		{
 			[self setTextureByName:t->name];
@@ -750,7 +750,7 @@ qtexture_t *TEX_ForName (char *name)
 	
 	for (i = 0; i < max; i++)
 	{
-		t = [textureList_i elementAt:i];
+		t = [textureList_i elementAtIndex:i];
 		if (!strcmp(t->name,name))
 			return i;
 	}
@@ -778,11 +778,11 @@ qtexture_t *TEX_ForName (char *name)
 		for (i = 0;i < max; i++)
 			[self setDisplayFlag:i to:0];
 
-		brushes = [map_i objectAt:0];
+		brushes = [map_i objectAtIndex:0];
 		max = [brushes count];
 		for (i = 0;i < max; i++)
 		{
-			b = (SetBrush *)[brushes objectAt:i];
+			b = (SetBrush *)[brushes objectAtIndex:i];
 			numfaces = [b getNumBrushFaces];
 			for (j = 0; j < numfaces; j++)
 			{
@@ -810,7 +810,7 @@ qtexture_t *TEX_ForName (char *name)
 {
 	texpal_t	*tp;
 	
-	tp = [textureList_i elementAt:index];
+	tp = [textureList_i elementAtIndex:index];
 	tp->display = value;
 	return self;
 };

@@ -211,7 +211,7 @@ winding_t *ClipWinding (winding_t *in, plane_t *split)
 		
 	if (!counts[0])
 	{
-		free (in);
+		dealloc (in);
 		return NULL;
 	}
 	if (!counts[1])
@@ -266,7 +266,7 @@ winding_t *ClipWinding (winding_t *in, plane_t *split)
 		Error ("ClipWinding: points exceeded estimate");
 
 // free the original winding
-	free (in);
+	dealloc (in);
 	
 	return neww;
 }
@@ -615,18 +615,18 @@ initOwner:::
 	for (i=0 ; i<MAX_FACES ; i++)
 		if (faces[i].w)
 		{
-			free (faces[i].w);
+			dealloc (faces[i].w);
 			faces[i].w = NULL;
 		}
 	return self;
 }
 
-- copyFromZone:(NXZone *)zone
+- copyWithZone:(NSZone *)zone
 {
 	id	new;
 	
 	[self freeWindings];
-	new = [super copyFromZone: zone];
+	new = [super copyWithZone: zone];
 	
 	[self calcWindings];
 	[new calcWindings];
@@ -634,10 +634,10 @@ initOwner:::
 	return new;
 }
 
-- free
+- (void) dealloc
 {
 	[self freeWindings];
-	return [super free];
+	return [super dealloc];
 }
 
 /*
@@ -1040,12 +1040,12 @@ BOOL	fakebrush;
 	c = [map_i count];
 	for (i=0 ; i<c ; i++)
 	{
-		obj = [map_i objectAt: i];
+		obj = [map_i objectAtIndex: i];
 		targname = [obj valueForQKey: "targetname"];
 		if (strcmp (targ, targname))
 			continue;
 			
-		[[obj objectAt:0] getMins: min  maxs: max];
+		[[obj objectAtIndex:0] getMins: min  maxs: max];
 		dest[0] = (min[0] + max[0]) /2;
 		dest[1] = (min[1] + max[1]) /2;
 		
@@ -1098,7 +1098,7 @@ BOOL	fakebrush;
 	if (copy)
 	{
 		[copy perform:call];
-		[copy free];
+		[copy dealloc];
 	}
 	fakebrush = NO;
 	return YES;
@@ -1125,10 +1125,10 @@ XYDrawSelf
 	[xyview_i addToScrollRange: bmins[0] : bmins[1]];
 	[xyview_i addToScrollRange: bmaxs[0] : bmaxs[1]];
 
-	worldent = [map_i objectAt: 0];
+	worldent = [map_i objectAtIndex: 0];
 	currentent = [map_i currentEntity];
 	
-	if (parent != worldent && self == [parent objectAt: 0])
+	if (parent != worldent && self == [parent objectAtIndex: 0])
 		keybrush = YES;
 	else
 		keybrush = NO;
@@ -1228,7 +1228,7 @@ ZDrawSelf
 		PSstroke ();
 	}
 
-	[zview_i getPoint: (NXPoint *)p1];
+	[zview_i getPoint: (NSPoint *)p1];
 	
 	for (i=0 ; i<2 ; i++)
 		if (bmins[i] >= p1[i] || bmaxs[i] <= p1[i])
@@ -1283,7 +1283,7 @@ CameraDrawSelf
 	if ([self fakeBrush: @selector(CameraDrawSelf)])
 		return self;
 	
-	worldent = [map_i objectAt: 0];
+	worldent = [map_i objectAtIndex: 0];
 	currentent = [map_i currentEntity];
 
 	if (parent != worldent && worldent == currentent)
@@ -1623,7 +1623,7 @@ Set the regioned flag based on if the object is containted in region_min/max
 	char	*name;
 	
 // filter away entities
-	if (parent != [map_i objectAt: 0])
+	if (parent != [map_i objectAtIndex: 0])
 	{
 		if (filter_entities)
 		{
@@ -1816,7 +1816,7 @@ vec3_t	sb_mins, sb_maxs;
 	}
 
 	[parent removeObject: self];
-	[self free];
+	[self dealloc];
 
 	return nil;
 }
