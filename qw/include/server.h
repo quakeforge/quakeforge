@@ -39,6 +39,7 @@
 
 #include "host.h"
 #include "netchan.h"
+#include "qw/msg_backbuf.h"
 #include "qw/protocol.h"
 
 #define	QW_SERVER
@@ -186,10 +187,7 @@ typedef struct client_s
 	byte			datagram_buf[MAX_DATAGRAM];
 
 	// back buffers for client reliable data
-	sizebuf_t		backbuf;
-	int				num_backbuf;
-	int				backbuf_size[MAX_BACK_BUFFERS];
-	byte			backbuf_data[MAX_BACK_BUFFERS][MAX_MSGLEN];
+	backbuf_t       backbuf;
 
 	byte			stufftext_buf[MAX_STUFFTEXT];
 
@@ -581,22 +579,6 @@ void SV_WriteEntitiesToClient (client_t *client, sizebuf_t *msg,
 //
 // sv_nchan.c
 //
-int ClientReliableCheckSize (client_t *cl, int maxsize, int minsize);
-void ClientReliableCheckBlock(client_t *cl, int maxsize);
-void ClientReliable_FinishWrite(client_t *cl);
-void ClientReliableWrite_Begin(client_t *cl, int c, int maxsize);
-void ClientReliableWrite_Angle(client_t *cl, float f);
-void ClientReliableWrite_Angle16(client_t *cl, float f);
-void ClientReliableWrite_Byte(client_t *cl, int c);
-void ClientReliableWrite_Char(client_t *cl, int c);
-void ClientReliableWrite_Float(client_t *cl, float f);
-void ClientReliableWrite_Coord(client_t *cl, float f);
-void ClientReliableWrite_Long(client_t *cl, int c);
-void ClientReliableWrite_Short(client_t *cl, int c);
-void ClientReliableWrite_String(client_t *cl, const char *s);
-void ClientReliableWrite_SZ(client_t *cl, const void *data, int len);
-void ClientReliableWrite_AngleV(client_t *cl, const vec3_t v);
-void ClientReliableWrite_CoordV(client_t *cl, const vec3_t v);
 
 void Cvar_Info (struct cvar_s *var);
 

@@ -460,10 +460,10 @@ SV_FullClientUpdateToClient (client_t *client, client_t *cl)
 {
 	if (client->state < cs_connected && client->state != cs_server)
 		return;
-	ClientReliableCheckBlock (cl, 24 + client->userinfo->cursize);
-	if (cl->num_backbuf) {
-		SV_FullClientUpdate (client, &cl->backbuf);
-		ClientReliable_FinishWrite (cl);
+	MSG_ReliableCheckBlock (&cl->backbuf, 24 + client->userinfo->cursize);
+	if (cl->backbuf.num_backbuf) {
+		SV_FullClientUpdate (client, &cl->backbuf.backbuf);
+		MSG_Reliable_FinishWrite (&cl->backbuf);
 	} else
 		SV_FullClientUpdate (client, &cl->netchan.message);
 }
@@ -897,6 +897,8 @@ SVC_DirectConnect (void)
 	Netchan_OutOfBandPrint (adr, "%c", S2C_CONNECTION);
 
 	Netchan_Setup (&newcl->netchan, adr, qport, NC_READ_QPORT);
+	newcl->backbuf.netchan = &newcl->netchan;
+	newcl->backbuf.name = newcl->name;
 
 	newcl->state = cs_connected;
 	newcl->prespawned = false;
@@ -1450,8 +1452,9 @@ SV_AddIP_f (void)
 				snprintf (text, sizeof (text), "You are %s %s\n%s",
 						  typestr, timestr, type == ft_ban ? "" :
 						  "\nReconnecting won't help...");
-				ClientReliableWrite_Begin (cl, svc_centerprint, strlen (text) + 2);
-				ClientReliableWrite_String (cl, text);
+				MSG_ReliableWrite_Begin (&cl->backbuf, svc_centerprint,
+										 strlen (text) + 2);
+				MSG_ReliableWrite_String (&cl->backbuf, text);
 				// FIXME: print on the console too
 			}
 		}

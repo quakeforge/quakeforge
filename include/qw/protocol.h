@@ -27,8 +27,8 @@
 */
 // protocol.h -- communications protocols
 
-#ifndef _PROTOCOL_H
-#define _PROTOCOL_H
+#ifndef __qw_protocol_h
+#define __qw_protocol_h
 
 #include "QF/mathlib.h"
 
@@ -319,4 +319,4 @@ typedef struct usercmd_s
 	byte	impulse;
 } usercmd_t;
 
-#endif // _PROTOCOL_H
+#endif//__qw_protocol_h

@@ -34,7 +34,8 @@
 #include "QF/qdefs.h"
 #include "QF/sizebuf.h"
 
-#include "../qw/include/bothdefs.h"
+#define MAX_MSGLEN		1450		// max length of a reliable message
+#define MAX_DATAGRAM	1450		// max length of unreliable message
 
 #define	PORT_ANY	-1
 
@@ -90,8 +91,7 @@ qboolean ServerPaused (void);
 
 #define	MAX_LATENT	32
 
-typedef struct
-{
+typedef struct netchan_s {
 	qboolean	fatal_error;
 
 	float		last_received;		// for timeouts

@@ -52,9 +52,6 @@
 
 #define	ON_EPSILON		0.1			// point on plane side epsilon
 
-#define	MAX_MSGLEN		1450		// max length of a reliable message
-#define	MAX_DATAGRAM	1450		// max length of unreliable message
-
 //
 // per-level limits
 //

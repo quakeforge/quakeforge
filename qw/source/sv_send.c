@@ -111,16 +111,16 @@ SV_FlushRedirect (void)
 			// +/- 3 for svc_print, PRINT_HIGH and nul byte
 			// min of 4 because we don't want to send an effectively empty
 			// message
-			bytes = ClientReliableCheckSize (cl, count + 3, 4) - 3;
+			bytes = MSG_ReliableCheckSize (&cl->backbuf, count + 3, 4) - 3;
 			// if writing another packet would overflow the client, just drop
 			// the rest of the data. getting rudely disconnected would be much
 			// more annoying than losing the tail end of the output
 			if (bytes <= 0)
 				break;
-			ClientReliableWrite_Begin (cl, svc_print, bytes + 3);
-			ClientReliableWrite_Byte (cl, PRINT_HIGH);
-			ClientReliableWrite_SZ (cl, p, bytes);
-			ClientReliableWrite_Byte (cl, 0);
+			MSG_ReliableWrite_Begin (&cl->backbuf, svc_print, bytes + 3);
+			MSG_ReliableWrite_Byte (&cl->backbuf, PRINT_HIGH);
+			MSG_ReliableWrite_SZ (&cl->backbuf, p, bytes);
+			MSG_ReliableWrite_Byte (&cl->backbuf, 0);
 			p += bytes;
 			count -= bytes;
 		}
@@ -266,9 +266,9 @@ SV_PrintToClient (client_t *cl, int level, const char *string)
 		if (*b != 0xFF)
 			b++;
 
-	ClientReliableWrite_Begin (cl, svc_print, strlen (buffer) + 3);
-	ClientReliableWrite_Byte (cl, level);
-	ClientReliableWrite_String (cl, buffer);
+	MSG_ReliableWrite_Begin (&cl->backbuf, svc_print, strlen (buffer) + 3);
+	MSG_ReliableWrite_Byte (&cl->backbuf, level);
+	MSG_ReliableWrite_String (&cl->backbuf, buffer);
 }
 
 /*
@@ -348,9 +348,9 @@ SV_Multicast (const vec3_t origin, int to)
 
 	  inrange:
 		if (reliable) {
-			ClientReliableCheckBlock (client, sv.multicast.cursize);
-			ClientReliableWrite_SZ (client, sv.multicast.data,
-									sv.multicast.cursize);
+			MSG_ReliableCheckBlock (&client->backbuf, sv.multicast.cursize);
+			MSG_ReliableWrite_SZ (&client->backbuf, sv.multicast.data,
+								  sv.multicast.cursize);
 		} else
 			SZ_Write (&client->datagram, sv.multicast.data,
 					  sv.multicast.cursize);
@@ -590,13 +590,14 @@ SV_UpdateClientStats (client_t *client)
 		if (stats[i] != client->stats[i]) {
 			client->stats[i] = stats[i];
 			if (stats[i] >= 0 && stats[i] <= 255) {
-				ClientReliableWrite_Begin (client, svc_updatestat, 3);
-				ClientReliableWrite_Byte (client, i);
-				ClientReliableWrite_Byte (client, stats[i]);
+				MSG_ReliableWrite_Begin (&client->backbuf, svc_updatestat, 3);
+				MSG_ReliableWrite_Byte (&client->backbuf, i);
+				MSG_ReliableWrite_Byte (&client->backbuf, stats[i]);
 			} else {
-				ClientReliableWrite_Begin (client, svc_updatestatlong, 6);
-				ClientReliableWrite_Byte (client, i);
-				ClientReliableWrite_Long (client, stats[i]);
+				MSG_ReliableWrite_Begin (&client->backbuf,
+										 svc_updatestatlong, 6);
+				MSG_ReliableWrite_Byte (&client->backbuf, i);
+				MSG_ReliableWrite_Long (&client->backbuf, stats[i]);
 			}
 		}
 }
@@ -665,10 +666,10 @@ SV_UpdateToReliableMessages (void)
 			for (j = 0, client = svs.clients; j < MAX_CLIENTS; j++, client++) {
 				if (client->state < cs_connected)
 					continue;
-				ClientReliableWrite_Begin (client, svc_updatefrags, 4);
-				ClientReliableWrite_Byte (client, i);
-				ClientReliableWrite_Short (client, SVfloat (host_client->edict,
-															frags));
+				MSG_ReliableWrite_Begin (&client->backbuf, svc_updatefrags, 4);
+				MSG_ReliableWrite_Byte (&client->backbuf, i);
+				MSG_ReliableWrite_Short (&client->backbuf,
+										 SVfloat (host_client->edict, frags));
 			}
 
 			if (sv.demorecording) {
@@ -687,8 +688,9 @@ SV_UpdateToReliableMessages (void)
 		if (sv_fields.gravity != -1
 			&& host_client->entgravity != SVfloat (ent, gravity)) {
 			host_client->entgravity = SVfloat (ent, gravity);
-			ClientReliableWrite_Begin (host_client, svc_entgravity, 5);
-			ClientReliableWrite_Float (host_client, host_client->entgravity);
+			MSG_ReliableWrite_Begin (&host_client->backbuf, svc_entgravity, 5);
+			MSG_ReliableWrite_Float (&host_client->backbuf,
+									 host_client->entgravity);
 			if (sv.demorecording) {
 				DemoWrite_Begin (dem_single, i, 5);
 				MSG_WriteByte (&demo.dbuf->sz, svc_entgravity);
@@ -698,8 +700,9 @@ SV_UpdateToReliableMessages (void)
 		if (sv_fields.maxspeed != -1
 			&& host_client->maxspeed != SVfloat (ent, maxspeed)) {
 			host_client->maxspeed = SVfloat (ent, maxspeed);
-			ClientReliableWrite_Begin (host_client, svc_maxspeed, 5);
-			ClientReliableWrite_Float (host_client, host_client->maxspeed);
+			MSG_ReliableWrite_Begin (&host_client->backbuf, svc_maxspeed, 5);
+			MSG_ReliableWrite_Float (&host_client->backbuf,
+									 host_client->maxspeed);
 			if (sv.demorecording) {
 				DemoWrite_Begin (dem_single, i, 5);
 				MSG_WriteByte (&demo.dbuf->sz, svc_maxspeed);
@@ -716,8 +719,9 @@ SV_UpdateToReliableMessages (void)
 		if (client->state < cs_connected)
 			continue;				// reliables go to all connected or spawned
 
-		ClientReliableCheckBlock (client, sv.reliable_datagram.cursize);
-		ClientReliableWrite_SZ (client, sv.reliable_datagram.data,
+		MSG_ReliableCheckBlock (&client->backbuf,
+								sv.reliable_datagram.cursize);
+		MSG_ReliableWrite_SZ (&client->backbuf, sv.reliable_datagram.data,
 								sv.reliable_datagram.cursize);
 
 		if (client->state != cs_spawned)
@@ -745,7 +749,7 @@ void
 SV_SendClientMessages (void)
 {
 	client_t   *c;
-	int         i, j;
+	int         i;
 
 	// update frags, names, etc
 	SV_UpdateToReliableMessages ();
@@ -761,38 +765,14 @@ SV_SendClientMessages (void)
 				c->drop = false;
 				continue;
 			}
+
 			// check to see if we have a backbuf to stick in the reliable
-			if (c->num_backbuf) {
-				// will it fit?
-				if (c->netchan.message.cursize + c->backbuf_size[0] <
-					c->netchan.message.maxsize) {
+			if (c->backbuf.num_backbuf)
+				MSG_Reliable_Send (&c->backbuf);
 
-					Con_DPrintf ("%s: backbuf %d bytes\n",
-								 c->name, c->backbuf_size[0]);
-
-					// it'll fit
-					SZ_Write (&c->netchan.message, c->backbuf_data[0],
-							  c->backbuf_size[0]);
-
-					// move along, move along
-					for (j = 1; j < c->num_backbuf; j++) {
-						memcpy (c->backbuf_data[j - 1], c->backbuf_data[j],
-								c->backbuf_size[j]);
-						c->backbuf_size[j - 1] = c->backbuf_size[j];
-					}
-
-					c->num_backbuf--;
-					if (c->num_backbuf) {
-						memset (&c->backbuf, 0, sizeof (c->backbuf));
-						c->backbuf.data = c->backbuf_data[c->num_backbuf - 1];
-						c->backbuf.cursize = c->backbuf_size[c->num_backbuf - 1];
-						c->backbuf.maxsize =
-							sizeof (c->backbuf_data[c->num_backbuf - 1]);
-					}
-				}
-			}
 			// if the reliable message overflowed, drop the client
 			if (c->netchan.message.overflowed) {
+#if 0
 				int i;
 
 				Analyze_Server_Packet (c->netchan.message.data,
@@ -802,7 +782,7 @@ SV_SendClientMessages (void)
 					Analyze_Server_Packet (c->backbuf_data[i],
 										   c->backbuf_size[i], 0);
 				}
-
+#endif
 				SZ_Clear (&c->netchan.message);
 				SZ_Clear (&c->datagram);
 				SV_BroadcastPrintf (PRINT_HIGH, "%s overflowed\n", c->name);

@@ -126,12 +126,12 @@ SV_New_f (void *unused)
 	if (!gamedir[0])
 		gamedir = "qw";
 
-// NOTE:  This doesn't go through ClientReliableWrite since it's before the
+// NOTE:  This doesn't go through MSG_ReliableWrite since it's before the
 // user spawns.  These functions are written to not overflow
-	if (host_client->num_backbuf) {
+	if (host_client->backbuf.num_backbuf) {
 		SV_Printf ("WARNING %s: [SV_New] Back buffered (%d0, clearing\n",
 					host_client->name, host_client->netchan.message.cursize);
-		host_client->num_backbuf = 0;
+		host_client->backbuf.num_backbuf = 0;
 		SZ_Clear (&host_client->netchan.message);
 	}
 	// send the serverdata
@@ -201,12 +201,12 @@ SV_Soundlist_f (void *unused)
 		SV_New_f (0);
 		return;
 	}
-// NOTE:  This doesn't go through ClientReliableWrite since it's before the
+// NOTE:  This doesn't go through MSG_ReliableWrite since it's before the
 // user spawns.  These functions are written to not overflow
-	if (host_client->num_backbuf) {
+	if (host_client->backbuf.num_backbuf) {
 		SV_Printf ("WARNING %s: [SV_Soundlist] Back buffered (%d0, clearing",
 					host_client->name, host_client->netchan.message.cursize);
-		host_client->num_backbuf = 0;
+		host_client->backbuf.num_backbuf = 0;
 		SZ_Clear (&host_client->netchan.message);
 	}
 
@@ -248,12 +248,12 @@ SV_Modellist_f (void *unused)
 		SV_New_f (0);
 		return;
 	}
-// NOTE:  This doesn't go through ClientReliableWrite since it's before the
+// NOTE:  This doesn't go through MSG_ReliableWrite since it's before the
 // user spawns.  These functions are written to not overflow
-	if (host_client->num_backbuf) {
+	if (host_client->backbuf.num_backbuf) {
 		SV_Printf ("WARNING %s: [SV_Modellist] Back buffered (%d0, clearing",
 					host_client->name, host_client->netchan.message.cursize);
-		host_client->num_backbuf = 0;
+		host_client->backbuf.num_backbuf = 0;
 		SZ_Clear (&host_client->netchan.message);
 	}
 
@@ -323,9 +323,9 @@ SV_PreSpawn_f (void *unused)
 
 	size = sv.signon_buffer_size[buf] + 1 + strlen (command) + 1;
 
-	ClientReliableCheckBlock (host_client, size);
-	if (host_client->num_backbuf)
-		msg = &host_client->backbuf;
+	MSG_ReliableCheckBlock (&host_client->backbuf, size);
+	if (host_client->backbuf.num_backbuf)
+		msg = &host_client->backbuf.backbuf;
 	else
 		msg = &host_client->netchan.message;
 
@@ -403,11 +403,11 @@ SV_Spawn_f (void *unused)
 
 	// send all current light styles
 	for (i = 0; i < MAX_LIGHTSTYLES; i++) {
-		ClientReliableWrite_Begin (host_client, svc_lightstyle,
-								   3 + (sv.lightstyles[i] ?
-										strlen (sv.lightstyles[i]) : 1));
-		ClientReliableWrite_Byte (host_client, (char) i);
-		ClientReliableWrite_String (host_client, sv.lightstyles[i]);
+		MSG_ReliableWrite_Begin (&host_client->backbuf, svc_lightstyle,
+								 3 + (sv.lightstyles[i] ?
+									  strlen (sv.lightstyles[i]) : 1));
+		MSG_ReliableWrite_Byte (&host_client->backbuf, (char) i);
+		MSG_ReliableWrite_String (&host_client->backbuf, sv.lightstyles[i]);
 	}
 
 	SV_Spawn (host_client);
@@ -417,26 +417,28 @@ SV_Spawn_f (void *unused)
 //
 	memset (host_client->stats, 0, sizeof (host_client->stats));
 
-	ClientReliableWrite_Begin (host_client, svc_updatestatlong, 6);
-	ClientReliableWrite_Byte (host_client, STAT_TOTALSECRETS);
-	ClientReliableWrite_Long (host_client, *sv_globals.total_secrets);
+	MSG_ReliableWrite_Begin (&host_client->backbuf, svc_updatestatlong, 6);
+	MSG_ReliableWrite_Byte (&host_client->backbuf, STAT_TOTALSECRETS);
+	MSG_ReliableWrite_Long (&host_client->backbuf, *sv_globals.total_secrets);
 
-	ClientReliableWrite_Begin (host_client, svc_updatestatlong, 6);
-	ClientReliableWrite_Byte (host_client, STAT_TOTALMONSTERS);
-	ClientReliableWrite_Long (host_client, *sv_globals.total_monsters);
+	MSG_ReliableWrite_Begin (&host_client->backbuf, svc_updatestatlong, 6);
+	MSG_ReliableWrite_Byte (&host_client->backbuf, STAT_TOTALMONSTERS);
+	MSG_ReliableWrite_Long (&host_client->backbuf,
+							*sv_globals.total_monsters);
 
-	ClientReliableWrite_Begin (host_client, svc_updatestatlong, 6);
-	ClientReliableWrite_Byte (host_client, STAT_SECRETS);
-	ClientReliableWrite_Long (host_client, *sv_globals.found_secrets);
+	MSG_ReliableWrite_Begin (&host_client->backbuf, svc_updatestatlong, 6);
+	MSG_ReliableWrite_Byte (&host_client->backbuf, STAT_SECRETS);
+	MSG_ReliableWrite_Long (&host_client->backbuf, *sv_globals.found_secrets);
 
-	ClientReliableWrite_Begin (host_client, svc_updatestatlong, 6);
-	ClientReliableWrite_Byte (host_client, STAT_MONSTERS);
-	ClientReliableWrite_Long (host_client, *sv_globals.killed_monsters);
+	MSG_ReliableWrite_Begin (&host_client->backbuf, svc_updatestatlong, 6);
+	MSG_ReliableWrite_Byte (&host_client->backbuf, STAT_MONSTERS);
+	MSG_ReliableWrite_Long (&host_client->backbuf,
+							*sv_globals.killed_monsters);
 
 	// get the client to check and download skins
 	// when that is completed, a begin command will be issued
-	ClientReliableWrite_Begin (host_client, svc_stufftext, 8);
-	ClientReliableWrite_String (host_client, "skins\n");
+	MSG_ReliableWrite_Begin (&host_client->backbuf, svc_stufftext, 8);
+	MSG_ReliableWrite_String (&host_client->backbuf, "skins\n");
 }
 
 static void
@@ -537,8 +539,8 @@ SV_Begin_f (void *unused)
 
 	// if we are paused, tell the client
 	if (sv.paused) {
-		ClientReliableWrite_Begin (host_client, svc_setpause, 2);
-		ClientReliableWrite_Byte (host_client, sv.paused);
+		MSG_ReliableWrite_Begin (&host_client->backbuf, svc_setpause, 2);
+		MSG_ReliableWrite_Byte (&host_client->backbuf, sv.paused);
 		SV_ClientPrintf (1, host_client, PRINT_HIGH, "Server is paused.\n");
 	}
 #if 0
@@ -576,16 +578,16 @@ SV_NextDownload_f (void *unused)
 	if (r > sizeof (buffer))
 		r = sizeof (buffer);
 	r = Qread (host_client->download, buffer, r);
-	ClientReliableWrite_Begin (host_client, svc_download, 6 + r);
-	ClientReliableWrite_Short (host_client, r);
+	MSG_ReliableWrite_Begin (&host_client->backbuf, svc_download, 6 + r);
+	MSG_ReliableWrite_Short (&host_client->backbuf, r);
 
 	host_client->downloadcount += r;
 	size = host_client->downloadsize;
 	if (!size)
 		size = 1;
 	percent = host_client->downloadcount * 100 / size;
-	ClientReliableWrite_Byte (host_client, percent);
-	ClientReliableWrite_SZ (host_client, buffer, r);
+	MSG_ReliableWrite_Byte (&host_client->backbuf, percent);
+	MSG_ReliableWrite_SZ (&host_client->backbuf, buffer, r);
 
 	if (host_client->downloadcount != host_client->downloadsize)
 		return;
@@ -602,8 +604,8 @@ SV_NextUpload (void)
 
 	if (!host_client->uploadfn) {
 		SV_ClientPrintf (1, host_client, PRINT_HIGH, "Upload denied\n");
-		ClientReliableWrite_Begin (host_client, svc_stufftext, 8);
-		ClientReliableWrite_String (host_client, "stopul");
+		MSG_ReliableWrite_Begin (&host_client->backbuf, svc_stufftext, 8);
+		MSG_ReliableWrite_String (&host_client->backbuf, "stopul");
 
 		// suck out rest of packet
 		size = MSG_ReadShort (net_message);
@@ -619,8 +621,8 @@ SV_NextUpload (void)
 		host_client->upload = QFS_Open (host_client->uploadfn->str, "wb");
 		if (!host_client->upload) {
 			SV_Printf ("Can't create %s\n", host_client->uploadfn->str);
-			ClientReliableWrite_Begin (host_client, svc_stufftext, 8);
-			ClientReliableWrite_String (host_client, "stopul");
+			MSG_ReliableWrite_Begin (&host_client->backbuf, svc_stufftext, 8);
+			MSG_ReliableWrite_String (&host_client->backbuf, "stopul");
 			dstring_delete (host_client->uploadfn);
 			host_client->uploadfn = 0;
 			return;
@@ -640,8 +642,8 @@ SV_NextUpload (void)
 	Con_DPrintf ("UPLOAD: %d received\n", size);
 
 	if (percent != 100) {
-		ClientReliableWrite_Begin (host_client, svc_stufftext, 8);
-		ClientReliableWrite_String (host_client, "nextul\n");
+		MSG_ReliableWrite_Begin (&host_client->backbuf, svc_stufftext, 8);
+		MSG_ReliableWrite_String (&host_client->backbuf, "nextul\n");
 	} else {
 		Qclose (host_client->upload);
 		host_client->upload = NULL;
@@ -691,9 +693,9 @@ SV_BeginDownload_f (void *unused)
 		|| (strncmp (name, "maps/", 5) == 0 && !allow_download_maps->int_val)
 		// MUST be in a subdirectory    
 		|| !strstr (name, "/")) {		// don't allow anything with .. path
-		ClientReliableWrite_Begin (host_client, svc_download, 4);
-		ClientReliableWrite_Short (host_client, -1);
-		ClientReliableWrite_Byte (host_client, 0);
+		MSG_ReliableWrite_Begin (&host_client->backbuf, svc_download, 4);
+		MSG_ReliableWrite_Short (&host_client->backbuf, -1);
+		MSG_ReliableWrite_Byte (&host_client->backbuf, 0);
 		return;
 	}
 
@@ -721,21 +723,21 @@ SV_BeginDownload_f (void *unused)
 		}
 
 		SV_Printf ("Couldn't download %s to %s\n", name, host_client->name);
-		ClientReliableWrite_Begin (host_client, svc_download, 4);
-		ClientReliableWrite_Short (host_client, -1);
-		ClientReliableWrite_Byte (host_client, 0);
+		MSG_ReliableWrite_Begin (&host_client->backbuf, svc_download, 4);
+		MSG_ReliableWrite_Short (&host_client->backbuf, -1);
+		MSG_ReliableWrite_Byte (&host_client->backbuf, 0);
 		dstring_delete (realname);
 		return;
 	}
 
 	if (zip && strcmp (realname->str, name)) {
 		SV_Printf ("download renamed to %s\n", realname->str);
-		ClientReliableWrite_Begin (host_client, svc_download,
-								   strlen (realname->str) + 5);
-		ClientReliableWrite_Short (host_client, -2);
-		ClientReliableWrite_Byte (host_client, 0);
-		ClientReliableWrite_String (host_client, realname->str);
-		ClientReliable_FinishWrite (host_client);
+		MSG_ReliableWrite_Begin (&host_client->backbuf, svc_download,
+								 strlen (realname->str) + 5);
+		MSG_ReliableWrite_Short (&host_client->backbuf, -2);
+		MSG_ReliableWrite_Byte (&host_client->backbuf, 0);
+		MSG_ReliableWrite_String (&host_client->backbuf, realname->str);
+		MSG_Reliable_FinishWrite (&host_client->backbuf);
 	}
 	dstring_delete (realname);
 
@@ -913,12 +915,12 @@ SV_Pings_f (void *unused)
 		if (client->state != cs_spawned && client->state != cs_server)
 			continue;
 
-		ClientReliableWrite_Begin (host_client, svc_updateping, 4);
-		ClientReliableWrite_Byte (host_client, j);
-		ClientReliableWrite_Short (host_client, SV_CalcPing (client));
-		ClientReliableWrite_Begin (host_client, svc_updatepl, 4);
-		ClientReliableWrite_Byte (host_client, j);
-		ClientReliableWrite_Byte (host_client, client->lossage);
+		MSG_ReliableWrite_Begin (&host_client->backbuf, svc_updateping, 4);
+		MSG_ReliableWrite_Byte (&host_client->backbuf, j);
+		MSG_ReliableWrite_Short (&host_client->backbuf, SV_CalcPing (client));
+		MSG_ReliableWrite_Begin (&host_client->backbuf, svc_updatepl, 4);
+		MSG_ReliableWrite_Byte (&host_client->backbuf, j);
+		MSG_ReliableWrite_Byte (&host_client->backbuf, client->lossage);
 	}
 }
 
@@ -954,8 +956,8 @@ SV_TogglePause (const char *msg)
 	for (i = 0, cl = svs.clients; i < MAX_CLIENTS; i++, cl++) {
 		if (cl->state < cs_zombie)
 			continue;
-		ClientReliableWrite_Begin (cl, svc_setpause, 2);
-		ClientReliableWrite_Byte (cl, sv.paused);
+		MSG_ReliableWrite_Begin (&cl->backbuf, svc_setpause, 2);
+		MSG_ReliableWrite_Byte (&cl->backbuf, sv.paused);
 	}
 }
 

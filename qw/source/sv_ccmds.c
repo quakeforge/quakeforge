@@ -615,9 +615,9 @@ SV_Punish (int mode)
 		if (mins) {
 			dsprintf (text, "You are %s for %.1f minutes\n\n"
 					 "reconnecting won't help...\n", cmd_do, mins);
-			ClientReliableWrite_Begin (cl, svc_centerprint,
-									   2 + strlen (text->str));
-			ClientReliableWrite_String (cl, text->str);
+			MSG_ReliableWrite_Begin (&cl->backbuf, svc_centerprint,
+									 2 + strlen (text->str));
+			MSG_ReliableWrite_String (&cl->backbuf, text->str);
 		}
 	}
 	if (all) {
@@ -629,9 +629,9 @@ SV_Punish (int mode)
 			if (mins) {
 				dsprintf (text, "You are %s for %.1f minutes\n\n"
 						 "reconnecting won't help...\n", cmd_do, mins);
-				ClientReliableWrite_Begin (cl, svc_centerprint,
-										   2 + strlen (text->str));
-				ClientReliableWrite_String (cl, text->str);
+				MSG_ReliableWrite_Begin (&cl->backbuf, svc_centerprint,
+										 2 + strlen (text->str));
+				MSG_ReliableWrite_String (&cl->backbuf, text->str);
 			}
 		}
 	}
@@ -1047,8 +1047,8 @@ SV_Snap (int uid)
 	else
 		cl->remote_snap = false;
 
-	ClientReliableWrite_Begin (cl, svc_stufftext, 24);
-	ClientReliableWrite_String (cl, "cmd snap\n");
+	MSG_ReliableWrite_Begin (&cl->backbuf, svc_stufftext, 24);
+	MSG_ReliableWrite_String (&cl->backbuf, "cmd snap\n");
 	SV_Printf ("Requesting snap from user %d...\n", uid);
 }
 

@@ -291,8 +291,8 @@ PF_centerprint (progs_t *pr)
 
 	s = PF_VarString (pr, 1);
 
-	ClientReliableWrite_Begin (cl, svc_centerprint, 2 + strlen (s));
-	ClientReliableWrite_String (cl, s);
+	MSG_ReliableWrite_Begin (&cl->backbuf, svc_centerprint, 2 + strlen (s));
+	MSG_ReliableWrite_String (&cl->backbuf, s);
 
 	if (sv.demorecording) {
 		DemoWrite_Begin (dem_single, entnum - 1, 2 + strlen (s));
@@ -601,8 +601,8 @@ PF_stuffcmd (progs_t *pr)
 	if (p) {
 		char t = p[1];
 		p[1] = 0;
-		ClientReliableWrite_Begin (cl, svc_stufftext, 2 + p - buf);
-		ClientReliableWrite_String (cl, buf);
+		MSG_ReliableWrite_Begin (&cl->backbuf, svc_stufftext, 2 + p - buf);
+		MSG_ReliableWrite_String (&cl->backbuf, buf);
 		if (sv.demorecording) {
 			DemoWrite_Begin (dem_single, cl - svs.clients, 2 + strlen (buf));
 			MSG_WriteByte (&demo.dbuf->sz, svc_stufftext);
@@ -862,7 +862,7 @@ void
 PF_lightstyle (progs_t *pr)
 {
 	const char *val;
-	client_t   *client;
+	client_t   *cl;
 	int         style, j;
 
 	style = P_FLOAT (pr, 0);
@@ -875,12 +875,12 @@ PF_lightstyle (progs_t *pr)
 	if (sv.state != ss_active)
 		return;
 
-	for (j = 0, client = svs.clients; j < MAX_CLIENTS; j++, client++)
-		if (client->state == cs_spawned) {
-			ClientReliableWrite_Begin (client, svc_lightstyle,
+	for (j = 0, cl = svs.clients; j < MAX_CLIENTS; j++, cl++)
+		if (cl->state == cs_spawned) {
+			MSG_ReliableWrite_Begin (&cl->backbuf, svc_lightstyle,
 									   strlen (val) + 3);
-			ClientReliableWrite_Char (client, style);
-			ClientReliableWrite_String (client, val);
+			MSG_ReliableWrite_Char (&cl->backbuf, style);
+			MSG_ReliableWrite_String (&cl->backbuf, val);
 		}
 	if (sv.demorecording) {
 		DemoWrite_Begin (dem_all, 0, strlen (val) + 3);
@@ -1111,13 +1111,13 @@ PF_WriteBytes (progs_t *pr)
 		client_t   *cl = Write_GetClient (pr);
 
 		if (cl->state != cs_server)
-			ClientReliableCheckBlock (cl, pr->pr_argc);
+			MSG_ReliableCheckBlock (&cl->backbuf, pr->pr_argc);
 		if (sv.demorecording)
 			DemoWrite_Begin (dem_single, cl - svs.clients, pr->pr_argc);
 		for (i = 1; i < pr->pr_argc; i++) {
 			p = P_FLOAT (pr, i);
 			if (cl->state != cs_server)
-				ClientReliableWrite_Byte (cl, p);
+				MSG_ReliableWrite_Byte (&cl->backbuf, p);
 			if (sv.demorecording)
 				MSG_WriteByte (&demo.dbuf->sz, p);
 		}
@@ -1138,8 +1138,8 @@ PF_WriteByte (progs_t *pr)
 		client_t   *cl = Write_GetClient (pr);
 
 		if (cl->state != cs_server) {
-			ClientReliableCheckBlock (cl, 1);
-			ClientReliableWrite_Byte (cl, P_FLOAT (pr, 1));
+			MSG_ReliableCheckBlock (&cl->backbuf, 1);
+			MSG_ReliableWrite_Byte (&cl->backbuf, P_FLOAT (pr, 1));
 		}
 		if (sv.demorecording) {
 			DemoWrite_Begin (dem_single, cl - svs.clients, 1);
@@ -1157,8 +1157,8 @@ PF_WriteChar (progs_t *pr)
 		client_t   *cl = Write_GetClient (pr);
 
 		if (cl->state != cs_server) {
-			ClientReliableCheckBlock (cl, 1);
-			ClientReliableWrite_Char (cl, P_FLOAT (pr, 1));
+			MSG_ReliableCheckBlock (&cl->backbuf, 1);
+			MSG_ReliableWrite_Char (&cl->backbuf, P_FLOAT (pr, 1));
 		}
 		if (sv.demorecording) {
 			DemoWrite_Begin (dem_single, cl - svs.clients, 1);
@@ -1176,8 +1176,8 @@ PF_WriteShort (progs_t *pr)
 		client_t   *cl = Write_GetClient (pr);
 
 		if (cl->state != cs_server) {
-			ClientReliableCheckBlock (cl, 2);
-			ClientReliableWrite_Short (cl, P_FLOAT (pr, 1));
+			MSG_ReliableCheckBlock (&cl->backbuf, 2);
+			MSG_ReliableWrite_Short (&cl->backbuf, P_FLOAT (pr, 1));
 		}
 		if (sv.demorecording) {
 			DemoWrite_Begin (dem_single, cl - svs.clients, 2);
@@ -1195,8 +1195,8 @@ PF_WriteLong (progs_t *pr)
 		client_t   *cl = Write_GetClient (pr);
 
 		if (cl->state != cs_server) {
-			ClientReliableCheckBlock (cl, 4);
-			ClientReliableWrite_Long (cl, P_FLOAT (pr, 1));
+			MSG_ReliableCheckBlock (&cl->backbuf, 4);
+			MSG_ReliableWrite_Long (&cl->backbuf, P_FLOAT (pr, 1));
 		}
 		if (sv.demorecording) {
 			DemoWrite_Begin (dem_single, cl - svs.clients, 4);
@@ -1214,8 +1214,8 @@ PF_WriteAngle (progs_t *pr)
 		client_t   *cl = Write_GetClient (pr);
 
 		if (cl->state != cs_server) {
-			ClientReliableCheckBlock (cl, 1);
-			ClientReliableWrite_Angle (cl, P_FLOAT (pr, 1));
+			MSG_ReliableCheckBlock (&cl->backbuf, 1);
+			MSG_ReliableWrite_Angle (&cl->backbuf, P_FLOAT (pr, 1));
 		}
 		if (sv.demorecording) {
 			DemoWrite_Begin (dem_single, cl - svs.clients, 1);
@@ -1233,8 +1233,8 @@ PF_WriteCoord (progs_t *pr)
 		client_t   *cl = Write_GetClient (pr);
 
 		if (cl->state != cs_server) {
-			ClientReliableCheckBlock (cl, 2);
-			ClientReliableWrite_Coord (cl, P_FLOAT (pr, 1));
+			MSG_ReliableCheckBlock (&cl->backbuf, 2);
+			MSG_ReliableWrite_Coord (&cl->backbuf, P_FLOAT (pr, 1));
 		}
 		if (sv.demorecording) {
 			DemoWrite_Begin (dem_single, cl - svs.clients, 2);
@@ -1254,8 +1254,8 @@ PF_WriteAngleV (progs_t *pr)
 		client_t   *cl = Write_GetClient (pr);
 
 		if (cl->state != cs_server) {
-			ClientReliableCheckBlock (cl, 1);
-			ClientReliableWrite_AngleV (cl, ang);
+			MSG_ReliableCheckBlock (&cl->backbuf, 1);
+			MSG_ReliableWrite_AngleV (&cl->backbuf, ang);
 		}
 		if (sv.demorecording) {
 			DemoWrite_Begin (dem_single, cl - svs.clients, 1);
@@ -1275,8 +1275,8 @@ PF_WriteCoordV (progs_t *pr)
 		client_t   *cl = Write_GetClient (pr);
 
 		if (cl->state != cs_server) {
-			ClientReliableCheckBlock (cl, 2);
-			ClientReliableWrite_CoordV (cl, coord);
+			MSG_ReliableCheckBlock (&cl->backbuf, 2);
+			MSG_ReliableWrite_CoordV (&cl->backbuf, coord);
 		}
 		if (sv.demorecording) {
 			DemoWrite_Begin (dem_single, cl - svs.clients, 2);
@@ -1294,8 +1294,9 @@ PF_WriteString (progs_t *pr)
 		client_t   *cl = Write_GetClient (pr);
 
 		if (cl->state != cs_server) {
-			ClientReliableCheckBlock (cl, 1 + strlen (P_GSTRING (pr, 1)));
-			ClientReliableWrite_String (cl, P_GSTRING (pr, 1));
+			MSG_ReliableCheckBlock (&cl->backbuf,
+									1 + strlen (P_GSTRING (pr, 1)));
+			MSG_ReliableWrite_String (&cl->backbuf, P_GSTRING (pr, 1));
 		}
 		if (sv.demorecording) {
 			DemoWrite_Begin (dem_single, cl - svs.clients,
@@ -1314,8 +1315,8 @@ PF_WriteEntity (progs_t *pr)
 		client_t   *cl = Write_GetClient (pr);
 
 		if (cl->state != cs_server) {
-			ClientReliableCheckBlock (cl, 2);
-			ClientReliableWrite_Short (cl, P_EDICTNUM (pr, 1));
+			MSG_ReliableCheckBlock (&cl->backbuf, 2);
+			MSG_ReliableWrite_Short (&cl->backbuf, P_EDICTNUM (pr, 1));
 		}
 		if (sv.demorecording) {
 			DemoWrite_Begin (dem_single, cl - svs.clients, 2);
