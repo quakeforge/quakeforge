@@ -1320,6 +1320,8 @@ AddLinksToPmove (areanode_t *node)
 					int h = SVFIELD (check, rotated_bbox, integer);
 					extern hull_t pf_hull_list[];
 					pe->hull = &pf_hull_list[h - 1];
+				} else {
+					pe->hull = 0;
 				}
 			}
 		}
