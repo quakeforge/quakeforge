@@ -264,8 +264,11 @@ SNDDMA_Init (void)
 	}
     
 	if (mmaped_io) {				// memory map the dma buffer
-		shm->buffer = (byte *) mmap (NULL, info.fragstotal * info.fragsize,
-									 mmmode, mmflags, audio_fd, 0);
+		unsigned long sz = sysconf (_SC_PAGESIZE);
+		unsigned long len = info.fragstotal * info.fragsize;
+
+		len = (len + sz - 1) & ~(sz - 1);
+		shm->buffer = (byte *) mmap (NULL, len, mmmode, mmflags, audio_fd, 0);
 		if (shm->buffer == MAP_FAILED) {
 			perror (snd_dev);
 			Sys_Printf ("Could not mmap %s\n", snd_dev);
