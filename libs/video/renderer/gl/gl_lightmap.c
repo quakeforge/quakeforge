@@ -282,14 +282,16 @@ R_BuildLightMap_1 (msurface_t *surf)
 
   store:
 	// bound and shift
+	// Also, invert because we're using a diff blendfunc now
+
 	stride = (BLOCK_WIDTH - smax) * lightmap_bytes;
 	bl = blocklights;
 
 	dest = lightmaps[surf->lightmaptexturenum]
 			+ (surf->light_t * BLOCK_WIDTH + surf->light_s) * lightmap_bytes;
 	for (i = 0; i < tmax; i++, dest += stride) {
-		for (j = 0; j < smax; j++) {
-			*dest++ = min (*bl >> 8, 255);
+		for (j = smax; j; j--) {
+			*dest++ = 255 - min (*bl >> 8, 255);
 			bl++;
 		}
 	}
@@ -339,6 +341,7 @@ R_BuildLightMap_3 (msurface_t *surf)
 
   store:
 	// bound and shift
+	// and invert too
 	stride = (BLOCK_WIDTH - smax) * lightmap_bytes;
 	bl = blocklights;
 
@@ -346,11 +349,11 @@ R_BuildLightMap_3 (msurface_t *surf)
 			+ (surf->light_t * BLOCK_WIDTH + surf->light_s) * lightmap_bytes;
 	for (i = 0; i < tmax; i++, dest += stride) {
 		for (j = 0; j < smax; j++) {
-			*dest++ = min (*bl >> 8, 255);
+			*dest++ = 255 - min (*bl >> 8, 255);
 			bl++;
-			*dest++ = min (*bl >> 8, 255);
+			*dest++ = 255 - min (*bl >> 8, 255);
 			bl++;
-			*dest++ = min (*bl >> 8, 255);
+			*dest++ = 255 - min (*bl >> 8, 255);
 			bl++;
 		}
 	}
@@ -400,6 +403,7 @@ R_BuildLightMap_4 (msurface_t *surf)
 
   store:
 	// bound and shift
+	// and invert too
 	stride = (BLOCK_WIDTH - smax) * lightmap_bytes;
 	bl = blocklights;
 
@@ -407,14 +411,13 @@ R_BuildLightMap_4 (msurface_t *surf)
 			+ (surf->light_t * BLOCK_WIDTH + surf->light_s) * lightmap_bytes;
 	for (i = 0; i < tmax; i++, dest += stride) {
 		for (j = 0; j < smax; j++) {
-			*dest++ = min (*bl >> 8, 255);
+			*dest++ = 255 - min (*bl >> 8, 255);
 			bl++;
-			*dest++ = min (*bl >> 8, 255);
+			*dest++ = 255 - min (*bl >> 8, 255);
 			bl++;
-			*dest++ = min (*bl >> 8, 255);
+			*dest++ = 255 - min (*bl >> 8, 255);
 			bl++;
-			dest++;			// `*dest++ = 255;` for RGBA internal format
-							// instead of RGB
+			*dest++ = 255;
 		}
 	}
 }
@@ -475,7 +478,7 @@ R_BlendLightmaps (void)
 	glpoly_t   *p;
 
 	qfglDepthMask (GL_FALSE);					// don't bother writing Z
-	qfglBlendFunc (GL_DST_COLOR, GL_SRC_COLOR);
+	qfglBlendFunc (GL_ZERO, GL_ONE_MINUS_SRC_COLOR);
 
 	for (i = 0; i < MAX_LIGHTMAPS; i++) {
 		p = lightmap_polys[i];
@@ -506,7 +509,7 @@ R_CalcAndBlendLightmaps (void)
 	glpoly_t   *p;
 
 	qfglDepthMask (GL_FALSE);					// don't bother writing Z
-	qfglBlendFunc (GL_DST_COLOR, GL_SRC_COLOR);
+	qfglBlendFunc (GL_ZERO, GL_ONE_MINUS_SRC_COLOR);
 
 	for (i = 0; i < MAX_LIGHTMAPS; i++) {
 		p = lightmap_polys[i];
@@ -654,11 +657,6 @@ GL_BuildLightmaps (model_t **models, int num_models)
 		}
 	}
 
-#if 0
-	if (gl_mtex_active)
-		qglActiveTexture (gl_mtex_enum + 1);
-#endif
-
 	// upload all lightmaps that were filled
 	for (i = 0; i < MAX_LIGHTMAPS; i++) {
 		if (!allocated[i][0])
@@ -675,9 +673,4 @@ GL_BuildLightmaps (model_t **models, int num_models)
 						BLOCK_HEIGHT, 0, gl_lightmap_format,
 						GL_UNSIGNED_BYTE, lightmaps[i]);
 	}
-
-#if 0
-	if (gl_mtex_active)
-		qglActiveTexture (gl_mtex_enum + 0);
-#endif
 }

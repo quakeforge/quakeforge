@@ -85,8 +85,10 @@ int					gl_filter_max = GL_LINEAR;
 float       		gldepthmin, gldepthmax;
 
 // ARB Multitexture
+qboolean			gl_mtex_capable = false;
 qboolean			gl_mtex_active = false;
-qboolean    		gl_mtex_capable = false;
+qboolean			gl_mtex_fullbright = false;
+
 GLenum				gl_mtex_enum = GL_TEXTURE0_ARB;
 
 QF_glColorTableEXT	qglColorTableEXT = NULL;
@@ -106,6 +108,7 @@ cvar_t      *gl_screenshot_byte_swap;
 cvar_t      *vid_mode;
 cvar_t      *vid_use8bit;
 
+static int gl_mtex_tmus = 0;
 
 static void
 gl_max_size_f (cvar_t *var)
@@ -124,8 +127,22 @@ gl_max_size_f (cvar_t *var)
 static void
 gl_multitexture_f (cvar_t *var)
 {
-	if (var)
-		gl_mtex_active = gl_mtex_capable && var->int_val;
+	if (!var)
+		return;
+
+	if (var->int_val && gl_mtex_capable) {
+		gl_mtex_active = true;
+
+		if (gl_mtex_tmus >= 3) {
+			gl_mtex_fullbright = true;
+		} else {
+			gl_mtex_fullbright = false;
+			Con_Printf ("Not enough TMUs for BSP fullbrights.\n");	
+		}
+	} else {
+		gl_mtex_active = false;
+		gl_mtex_fullbright = false;
+	}
 }
 
 static void
@@ -191,11 +208,9 @@ CheckMultiTextureExtensions (void)
 	}
 
 	if (QFGL_ExtensionPresent ("GL_ARB_multitexture")) {
-		int max_texture_units = 0;
-
-		qfglGetIntegerv (GL_MAX_TEXTURE_UNITS_ARB, &max_texture_units);
-		if (max_texture_units >= 2) {
-			Con_Printf ("enabled, %d TMUs.\n", max_texture_units);
+		qfglGetIntegerv (GL_MAX_TEXTURE_UNITS_ARB, &gl_mtex_tmus);
+		if (gl_mtex_tmus >= 2) {
+			Con_Printf ("enabled, %d TMUs.\n", gl_mtex_tmus);
 			qglMultiTexCoord2f =
 				QFGL_ExtensionAddress ("glMultiTexCoord2fARB");
 			qglMultiTexCoord2fv =

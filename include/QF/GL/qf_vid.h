@@ -39,6 +39,7 @@ extern QF_glMultiTexCoord2fARB	qglMultiTexCoord2f;
 extern QF_glMultiTexCoord2fvARB	qglMultiTexCoord2fv;
 extern qboolean					gl_mtex_active;
 extern qboolean					gl_mtex_capable;
+extern qboolean					gl_mtex_fullbright;
 extern GLenum					gl_mtex_enum;
 extern float					gldepthmin, gldepthmax;
 extern int						texture_extension_number;
