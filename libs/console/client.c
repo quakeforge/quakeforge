@@ -789,6 +789,7 @@ C_NewMap (void)
 
 	if (!strequal (old_gamedir, com_gamedir))
 		Menu_Load ();
+	strcpy (old_gamedir, com_gamedir);
 }
 
 static general_funcs_t plugin_info_general_funcs = {
