@@ -322,7 +322,8 @@ X11_SetVidMode (int width, int height)
 	}
 
 #ifdef HAVE_VIDMODE
-	vidmode_avail = VID_CheckVMode (x_disp, NULL, NULL);
+	if (!vidmode_avail)
+		vidmode_avail = VID_CheckVMode (x_disp, NULL, NULL);
 
 	if (vidmode_avail) {
 		vid_gamma_avail = ((x_gamma = X11_GetGamma ()) > 0);
@@ -356,7 +357,7 @@ X11_SetVidMode (int width, int height)
 		}
 
 		if (found_mode) {
-			Con_Printf ("VID: Chose video mode: %dx%d\n", vid.width, vid.height);
+			Con_DPrintf ("VID: Chose video mode: %dx%d\n", vid.width, vid.height);
 
 			XF86VidModeSwitchToMode (x_disp, x_screen, vidmodes[best_mode]);
 			X11_ForceViewPort ();
@@ -530,21 +531,14 @@ void
 X11_ForceViewPort (void)
 {
 #ifdef HAVE_VIDMODE
+	int         x, y;
+
 	if (vidmode_avail && vid_context_created) {
-		Window theroot,scrap;
-		int x,y,ax,ay;
-		unsigned int width,height,bdwidth,depth;
-		
-		if ((XGetGeometry(x_disp,x_win,&theroot,&x,&y,&width,&height,
-				  &bdwidth,&depth) == False)) {
-			Con_Printf ("XGetWindowAttributes failed in vid_center.\n");
-		} else {
-			XTranslateCoordinates(x_disp,x_win,theroot,-bdwidth,-bdwidth,
-								  &ax,&ay,&scrap);
-			Con_Printf("Setting viewport to %dx%d (%d,%d)\n",ax,ay,
-					   width,height);
-			XF86VidModeSetViewPort(x_disp,x_screen,ax,ay);
-		}
+		do {
+			XF86VidModeSetViewPort (x_disp, x_screen, 0, 0);
+			usleep (50);
+			XF86VidModeGetViewPort (x_disp, x_screen, &x, &y);
+		} while (x || y);
 	} else {
 		/* "icky kludge code" */
 		XWarpPointer(x_disp,x_win,x_win,0,0,0,0, 0,0);
