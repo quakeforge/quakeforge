@@ -1321,6 +1321,32 @@ check_precedence (int op, expr_t *e1, expr_t *e2)
 	return 0;
 }
 
+static int
+has_function_call (expr_t *e)
+{
+	switch (e->type) {
+		case ex_bool:
+			return has_function_call (e->e.bool.e);
+		case ex_block:
+			if (e->e.block.is_call)
+				return 1;
+			for (e = e->e.block.head; e; e = e->next)
+				if (has_function_call (e))
+					return 1;
+			return 0;
+		case ex_expr:
+			if (e->e.expr.op == 'c')
+				return 1;
+			return (has_function_call (e->e.expr.e1)
+					|| has_function_call (e->e.expr.e2));
+		case ex_uexpr:
+			if (e->e.expr.op != 'g')
+				return has_function_call (e->e.expr.e1);
+		default:
+			return 0;
+	}
+}
+
 expr_t *
 binary_expr (int op, expr_t *e1, expr_t *e2)
 {
@@ -1336,7 +1362,7 @@ binary_expr (int op, expr_t *e1, expr_t *e2)
 	convert_name (e1);
 
 	if (e1->type == ex_block && e1->e.block.is_call
-		&& e2->type == ex_block && e2->e.block.is_call && e1->e.block.result) {
+		&& has_function_call (e2) && e1->e.block.result) {
 		e = new_temp_def_expr (get_type (e1->e.block.result));
 		inc_users (e);					// for the block itself
 		e1 = assign_expr (e, e1);
@@ -1738,32 +1764,6 @@ bitnot_expr:
 	}
 	error (e, "internal error");
 	abort ();
-}
-
-static int
-has_function_call (expr_t *e)
-{
-	switch (e->type) {
-		case ex_bool:
-			return has_function_call (e->e.bool.e);
-		case ex_block:
-			if (e->e.block.is_call)
-				return 1;
-			for (e = e->e.block.head; e; e = e->next)
-				if (has_function_call (e))
-					return 1;
-			return 0;
-		case ex_expr:
-			if (e->e.expr.op == 'c')
-				return 1;
-			return (has_function_call (e->e.expr.e1)
-					|| has_function_call (e->e.expr.e2));
-		case ex_uexpr:
-			if (e->e.expr.op != 'g')
-				return has_function_call (e->e.expr.e1);
-		default:
-			return 0;
-	}
 }
 
 expr_t *
