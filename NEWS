@@ -1,6 +1,11 @@
 NEWS for the QuakeForge project
 -------------------------------
 
+Changes from 0.5.2
+
+    o General enhancements.
+        * MVD demo playback in the clients.
+
 Changes from 0.3.0
 
     o General enhancements.
