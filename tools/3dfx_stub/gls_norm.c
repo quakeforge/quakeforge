@@ -837,7 +837,7 @@ norm_glGetString (GLenum name)
 		case GL_VERSION:
 			return (const GLubyte *) version;
 		default:
-			return (GLubyte *) 0;
+			return "";
 	}
 }
 
