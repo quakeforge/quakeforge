@@ -32,6 +32,7 @@
 #ifndef __qfcc_h
 #define __qfcc_h
 
+#include <stdio.h>
 #include "QF/pr_comp.h"
 
 //============================================================================
@@ -93,6 +94,9 @@ extern	string_t	s_file;			// filename for function definition
 const char *strip_path (const char *filename);
 
 const char *save_string (const char *str);
+void clear_frame_macros (void);
+extern FILE *yyin;
+int yyparse (void);
 
 #define ALLOC(s, t, n, v)							\
 	do {											\

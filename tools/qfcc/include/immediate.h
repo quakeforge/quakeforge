@@ -38,4 +38,6 @@ struct def_s *ReuseConstant (struct expr_s *expr, struct def_s *def);
 int	CopyString (const char *str);
 int	ReuseString (const char *str);
 
+void clear_immediates (void);
+
 #endif//__immediate_h

@@ -111,5 +111,6 @@ void reset_tempdefs ();
 void flush_scope (scope_t *scope, int force_used);
 void def_initialized (def_t *d);
 
+void clear_defs (void);
 
 #endif//__def_h

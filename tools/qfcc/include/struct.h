@@ -60,4 +60,7 @@ int emit_struct (struct type_s *strct, const char *name);
 void process_enum (struct expr_s *enm);
 expr_t *get_enum (const char *name);
 
+void clear_structs (void);
+void clear_enums (void);
+
 #endif//__struct_h

@@ -247,6 +247,13 @@ emit_struct(type_t *strct, const char *name)
 }
 
 void
+clear_structs (void)
+{
+	if (structs)
+		Hash_FlushTable (structs);
+}
+
+void
 process_enum (expr_t *enm)
 {
 	expr_t     *e = enm;
@@ -301,4 +308,11 @@ get_enum (const char *name)
 	if (!e)
 		return 0;
 	return &e->value;
+}
+
+void
+clear_enums (void)
+{
+	if (enums)
+		Hash_FlushTable (enums);
 }

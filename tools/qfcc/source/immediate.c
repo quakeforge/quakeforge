@@ -156,32 +156,7 @@ ReuseConstant (expr_t *expr, def_t *def)
 	if (!rep)
 		rep = dstring_newstr ();
 	if (!string_imm_defs) {
-		string_imm_defs = Hash_NewTable (16381, string_imm_get_key, 0, 0);
-		float_imm_defs = Hash_NewTable (16381, float_imm_get_key, 0, 0);
-		vector_imm_defs = Hash_NewTable (16381, vector_imm_get_key, 0, 0);
-		entity_imm_defs = Hash_NewTable (16381, int_imm_get_key, 0, "entity");
-		field_imm_defs = Hash_NewTable (16381, int_imm_get_key, 0, "field");
-		func_imm_defs = Hash_NewTable (16381, int_imm_get_key, 0, "func");
-		pointer_imm_defs = Hash_NewTable (16381, int_imm_get_key, 0, "pointer");
-		quaternion_imm_defs =
-			Hash_NewTable (16381, quaternion_imm_get_key, 0, 0);
-		integer_imm_defs = Hash_NewTable (16381, int_imm_get_key, 0, "integer");
-
-		Hash_Add (string_imm_defs, cn = new_def (&type_string, ".imm",
-												   pr.scope));
-		cn->initialized = cn->constant = 1;
-		Hash_Add (float_imm_defs, cn = new_def (&type_float, ".imm",
-												  pr.scope));
-		cn->initialized = cn->constant = 1;
-		Hash_Add (entity_imm_defs, cn = new_def (&type_entity, ".imm",
-												   pr.scope));
-		cn->initialized = cn->constant = 1;
-		Hash_Add (pointer_imm_defs, cn = new_def (&type_pointer, ".imm",
-													pr.scope));
-		cn->initialized = cn->constant = 1;
-		Hash_Add (integer_imm_defs, cn = new_def (&type_integer, ".imm",
-													pr.scope));
-		cn->initialized = cn->constant = 1;
+		clear_immediates ();
 	}
 	cn = 0;
 	switch (e.type) {
@@ -294,4 +269,42 @@ ReuseConstant (expr_t *expr, def_t *def)
 	Hash_Add (tab, cn);
 
 	return cn;
+}
+
+void
+clear_immediates (void)
+{
+	def_t      *cn;
+	if (string_imm_defs) {
+		Hash_FlushTable (string_imm_defs);
+		Hash_FlushTable (float_imm_defs);
+		Hash_FlushTable (vector_imm_defs);
+		Hash_FlushTable (entity_imm_defs);
+		Hash_FlushTable (field_imm_defs);
+		Hash_FlushTable (func_imm_defs);
+		Hash_FlushTable (pointer_imm_defs);
+		Hash_FlushTable (quaternion_imm_defs);
+	} else {
+		string_imm_defs = Hash_NewTable (16381, string_imm_get_key, 0, 0);
+		float_imm_defs = Hash_NewTable (16381, float_imm_get_key, 0, 0);
+		vector_imm_defs = Hash_NewTable (16381, vector_imm_get_key, 0, 0);
+		entity_imm_defs = Hash_NewTable (16381, int_imm_get_key, 0, "entity");
+		field_imm_defs = Hash_NewTable (16381, int_imm_get_key, 0, "field");
+		func_imm_defs = Hash_NewTable (16381, int_imm_get_key, 0, "func");
+		pointer_imm_defs = Hash_NewTable (16381, int_imm_get_key, 0, "pointer");
+		quaternion_imm_defs =
+			Hash_NewTable (16381, quaternion_imm_get_key, 0, 0);
+	}
+	integer_imm_defs = Hash_NewTable (16381, int_imm_get_key, 0, "integer");
+
+	Hash_Add (string_imm_defs, cn = new_def (&type_string, ".imm", pr.scope));
+	cn->initialized = cn->constant = 1;
+	Hash_Add (float_imm_defs, cn = new_def (&type_float, ".imm", pr.scope));
+	cn->initialized = cn->constant = 1;
+	Hash_Add (entity_imm_defs, cn = new_def (&type_entity, ".imm", pr.scope));
+	cn->initialized = cn->constant = 1;
+	Hash_Add (pointer_imm_defs, cn = new_def (&type_pointer, ".imm", pr.scope));
+	cn->initialized = cn->constant = 1;
+	Hash_Add (integer_imm_defs, cn = new_def (&type_integer, ".imm", pr.scope));
+	cn->initialized = cn->constant = 1;
 }

@@ -82,4 +82,6 @@ struct def_s *selector_def (const char *sel_id, const char *sel_types);
 
 int emit_methods (methodlist_t *methods, const char *name, int instance);
 
+void clear_selectors (void);
+
 #endif//__method_h

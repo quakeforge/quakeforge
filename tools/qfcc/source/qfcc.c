@@ -71,10 +71,12 @@ static const char rcsid[] =
 #include "function.h"
 #include "idstuff.h"
 #include "immediate.h"
+#include "method.h"
 #include "obj_file.h"
 #include "opcodes.h"
 #include "options.h"
 #include "reloc.h"
+#include "struct.h"
 #include "type.h"
 
 options_t   options;
@@ -125,6 +127,12 @@ InitData (void)
 {
 	int         i;
 
+	if (pr.statements) {
+		free (pr.statements);
+		memset (&pr, 0, sizeof (pr));
+	}
+	pr_source_line = 1;
+	pr_error_count = 0;
 	pr.num_statements = 1;
 	pr.strofs = 1;
 	pr.num_functions = 1;
@@ -445,6 +453,37 @@ setup_sym_file (const char *output_file)
 }
 
 static int
+compile_to_obj (const char *file, const char *obj)
+{
+	int         err;
+
+	yyin = preprocess_file (file);
+
+	InitData ();
+	begin_compilation ();
+	s_file = ReuseString (strip_path (file));
+	clear_frame_macros ();
+	clear_classes ();
+	clear_defs ();
+	clear_immediates ();
+	clear_selectors ();
+	clear_structs ();
+	clear_enums ();
+	clear_typedefs ();
+	err = yyparse () || pr_error_count;
+	fclose (yyin);
+	if (cpp_name && (!options.save_temps)) {
+		if (unlink (tempname->str)) {
+			perror ("unlink");
+			exit (1);
+		}
+	}
+	if (!err)
+		write_obj_file (obj);
+	return err;
+}
+
+static int
 separate_compile (void)
 {
 	const char **file;
@@ -475,6 +514,9 @@ separate_compile (void)
 		if (strncmp (*file, "-l", 2)
 			&& (!strcmp (extension->str, ".r")
 				|| !strcmp (extension->str, ".qc"))) {
+			printf ("%s %s\n", *file, output_file->str);
+			compile_to_obj (*file, output_file->str);
+
 			free ((char *)*file);
 			*file = strdup (output_file->str);
 		} else {
@@ -522,15 +564,13 @@ progs_src_compile (void)
 	}
 	setup_sym_file (options.output_file);
 
+	InitData ();
+
 	begin_compilation ();
 
 	// compile all the files
 	while ((src = Parse (src))) {
-		int         error;
-
-		extern FILE *yyin;
-		int         yyparse (void);
-		extern void clear_frame_macros (void);
+		int         err;
 
 		//extern int yydebug;
 		//yydebug = 1;
@@ -548,7 +588,7 @@ progs_src_compile (void)
 		s_file = ReuseString (strip_path (filename->str));
 		pr_source_line = 1;
 		clear_frame_macros ();
-		error = yyparse () || pr_error_count;
+		err = yyparse () || pr_error_count;
 		fclose (yyin);
 		if (cpp_name && (!options.save_temps)) {
 			if (unlink (tempname->str)) {
@@ -556,7 +596,7 @@ progs_src_compile (void)
 				exit (1);
 			}
 		}
-		if (error)
+		if (err)
 			return 1;
 	}
 
@@ -607,8 +647,6 @@ main (int argc, char **argv)
 
 	opcode_init ();
 	init_types ();
-
-	InitData ();
 
 	if (source_files) {
 		res = separate_compile ();

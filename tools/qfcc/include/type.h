@@ -89,4 +89,6 @@ int type_size (type_t *type);
 
 void init_types (void);
 
+void clear_typedefs (void);
+
 #endif//__type_h

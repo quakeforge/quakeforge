@@ -96,4 +96,6 @@ void add_protocol (protocollist_t *protocollist, protocol_t *protocol);
 int emit_protocol (protocol_t *protocol);
 int emit_protocol_list (protocollist_t *protocols, const char *name);
 
+void clear_classes (void);
+
 #endif//__class_h

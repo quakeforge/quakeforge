@@ -323,3 +323,10 @@ emit_methods (methodlist_t *_methods, const char *name, int instance)
 	}
 	return methods_def->ofs;
 }
+
+void
+clear_selectors (void)
+{
+	if (sel_def_hash)
+		Hash_FlushTable (sel_def_hash);
+}

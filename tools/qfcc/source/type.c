@@ -529,3 +529,10 @@ init_types (void)
 	type_obj_exec_class.parm_types[0] = pointer_type (type_module);
 	chain_type (&type_obj_exec_class);
 }
+
+void
+clear_typedefs (void)
+{
+	if (typedef_hash)
+		Hash_FlushTable (typedef_hash);
+}

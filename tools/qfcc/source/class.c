@@ -618,3 +618,14 @@ emit_protocol_list (protocollist_t *protocols, const char *name)
 		proto_list->list[i] = emit_protocol (protocols->list[i]);
 	return proto_list_def->ofs;
 }
+
+void
+clear_classes (void)
+{
+	if (class_hash)
+		Hash_FlushTable (class_hash);
+	if (protocol_hash)
+		Hash_FlushTable (protocol_hash);
+	if (category_hash)
+		Hash_FlushTable (category_hash);
+}

@@ -397,3 +397,10 @@ def_initialized (def_t *d)
 			d->initialized = 1;
 	}
 }
+
+void
+clear_defs (void)
+{
+	if (defs_by_name)
+		Hash_FlushTable (defs_by_name);
+}
