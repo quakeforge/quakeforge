@@ -41,9 +41,7 @@ static const char rcsid[] =
 #include <fcntl.h>
 #include <limits.h>
 #include <stdio.h>
-#define shutdown __win32_shutdown
 #include "winquake.h"
-#undef shutdown
 
 #include "QF/console.h"
 #include "QF/qargs.h"
