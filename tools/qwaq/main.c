@@ -57,7 +57,7 @@ int
 main ()
 {
 	func_t main_func;
-	FILE *f;
+	VFile *f;
 	int len;
 	int i;
 
@@ -90,20 +90,23 @@ main ()
 	progs.no_exec_limit = 1;
 	progs.progs_name = "qwaq.dat";
 
-	f = fopen (progs.progs_name, "rb");
+	f = Qopen (progs.progs_name, "rb");
 	if (f) {
-		fseek (f, 0, SEEK_END);
-		len = ftell (f);
-		fseek (f, 0, SEEK_SET);
-		progs.progs = Hunk_AllocName (len, "qwaq.dat");
-		fread (progs.progs, 1, len, f);
-		fclose (f);
+		Qseek (f, 0, SEEK_END);
+		len = Qtell (f);
+		Qseek (f, 0, SEEK_SET);
 		com_filesize = len;
-		if (progs.progs)
-			PR_LoadProgs (&progs, progs.progs_name);
+		PR_LoadProgsFile (&progs, f, len, 0, 1024 * 1024);
+		Qclose (f);
 	}
 	if (!progs.progs)
 		Sys_Error ("couldn't load %s\n", "qwaq.dat");
+
+	if (!PR_ResolveGlobals (&progs))
+		PR_Error (&progs, "unable to load %s", progs.progs_name);
+	PR_LoadStrings (&progs);
+	PR_LoadDebug (&progs);
+	PR_Check_Opcodes (&progs);
 	PR_RelocateBuiltins (&progs);
 
 	*progs.edicts = PR_InitEdicts (&progs, MAX_EDICTS);
