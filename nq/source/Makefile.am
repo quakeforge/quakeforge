@@ -42,7 +42,7 @@ noinst_LIBRARIES= libqfnet.a
 
 common_ASM=	sys_ia32.S worlda.S
 
-common_SOURCES=	game.c host_skin.c skin.c wad.c world.c com.c $(common_ASM)
+common_SOURCES=	game.c host_skin.c skin.c world.c com.c $(common_ASM)
 
 common_ldflags= -export-dynamic
 
@@ -73,7 +73,7 @@ client_LIB_DEPS=	libqfnet.a $(qf_client_LIBS)
 client_SOURCES=	cl_cam.c cl_cmd.c cl_demo.c cl_input.c cl_main.c cl_screen.c \
 		cl_parse.c cl_tent.c \
 		console.c keys.c sbar.c \
-		r_view.c locs.c pcx.c tga.c
+		r_view.c locs.c
 
 server_SOURCES= host.c host_cmd.c pr_cmds.c sv_cvar.c sv_main.c \
 		sv_move.c sv_phys.c sv_progs.c sv_user.c

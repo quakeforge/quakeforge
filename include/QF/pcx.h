@@ -49,6 +49,6 @@ typedef struct
 
 pcx_t *EncodePCX (byte * data, int width, int height,
 				  int rowbytes, byte * palette, qboolean flip, int *length);
-struct tex_s *LoadPCX (VFile *f, int convert);	// tex is from Hunk_TempAlloc
+struct tex_s *LoadPCX (VFile *f, int convert, byte *pal);	// tex is from Hunk_TempAlloc
 
 #endif // __pcx_h

@@ -42,11 +42,10 @@
 #include "QF/qtypes.h"
 #include "QF/texture.h"
 #include "QF/vfs.h"
-#include "QF/vid.h"
 #include "QF/zone.h"
 
 tex_t *
-LoadPCX (VFile *f, int convert)
+LoadPCX (VFile *f, int convert, byte *pal)
 {
 	pcx_t      *pcx;
 	int         pcx_mark;
@@ -94,7 +93,7 @@ LoadPCX (VFile *f, int convert)
 	if (convert) {
 		tex->palette = 0;
 	} else {
-		tex->palette = vid_basepal;
+		tex->palette = pal;
 	}
 	pix = tex->data;
 

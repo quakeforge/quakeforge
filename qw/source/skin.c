@@ -171,7 +171,7 @@ Skin_Cache (skin_t *skin)
 			return NULL;
 		}
 	}
-	tex = LoadPCX (file, 0);
+	tex = LoadPCX (file, 0, vid_basepal);
 	Qclose (file);
 
 	if (!tex || tex->width > 320 || tex->height > 200) {
