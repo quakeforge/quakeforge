@@ -57,7 +57,7 @@ typedef struct server_s {
 	double timeout;
 } server_t;
 
-cvar_t     *sv_console_plugin;
+static cvar_t *sv_console_plugin;
 SERVER_PLUGIN_PROTOS
 static plugin_list_t server_plugin_list[] = {
 	SERVER_PLUGIN_LIST
@@ -67,8 +67,8 @@ qboolean is_server = true;
 
 static cbuf_t *mst_cbuf;
 
-server_t   *sv_list = NULL;
-filter_t   *filter_list = NULL;
+static server_t   *sv_list = NULL;
+static filter_t   *filter_list = NULL;
 
 static void
 FL_Remove (filter_t * filter)
@@ -139,7 +139,7 @@ FL_Find (netadr_t adr)
 
 
 static void
-NET_Filter (void)
+Filter (void)
 {
 	int         hold_port;
 	netadr_t    filter_adr;
@@ -320,10 +320,10 @@ Mst_Packet (void)
 	char        msg;
 	server_t   *sv;
 
-//	NET_Filter();
+//	Filter();
 	msg = net_message->message->data[1];
 	if (msg == A2A_PING) {
-		NET_Filter ();
+		Filter ();
 		Con_Printf ("%s >> A2A_PING\n", NET_AdrToString (net_from));
 		if (!(sv = SVL_Find (net_from))) {
 			sv = SVL_New (&net_from);
@@ -331,7 +331,7 @@ Mst_Packet (void)
 		}
 		sv->timeout = Sys_DoubleTime ();
 	} else if (msg == S2M_HEARTBEAT) {
-		NET_Filter ();
+		Filter ();
 		Con_Printf ("%s >> S2M_HEARTBEAT\n", NET_AdrToString (net_from));
 		if (!(sv = SVL_Find (net_from))) {
 			sv = SVL_New (&net_from);
@@ -339,7 +339,7 @@ Mst_Packet (void)
 		}
 		sv->timeout = Sys_DoubleTime ();
 	} else if (msg == S2M_SHUTDOWN) {
-		NET_Filter ();
+		Filter ();
 		Con_Printf ("%s >> S2M_SHUTDOWN\n", NET_AdrToString (net_from));
 		if ((sv = SVL_Find (net_from))) {
 			SVL_Remove (sv);
@@ -372,7 +372,7 @@ SV_ReadPackets (void)
 }
 
 static void
-Cmd_FilterAdd (int arg)
+FilterAdd (int arg)
 {
 	filter_t   *filter;
 	netadr_t    to, from;
@@ -398,7 +398,7 @@ Cmd_FilterAdd (int arg)
 }
 
 static void
-Cmd_FilterRemove (int arg)
+FilterRemove (int arg)
 {
 	filter_t   *filter;
 	netadr_t    from;
@@ -418,7 +418,7 @@ Cmd_FilterRemove (int arg)
 }
 
 static void
-Cmd_FilterList (void)
+FilterList (void)
 {
 	filter_t   *filter;
 
@@ -432,27 +432,27 @@ Cmd_FilterList (void)
 }
 
 static void
-Cmd_FilterClear (void)
+FilterClear (void)
 {
 	Con_Printf ("Removed all filters\n\n");
 	FL_Clear ();
 }
 
 static void
-Cmd_Filter_f (void)
+Filter_f (void)
 {
 	if (!strcmp (Cmd_Argv (1), "add"))
-		Cmd_FilterAdd (2);
+		FilterAdd (2);
 	else if (!strcmp (Cmd_Argv (1), "remove"))
-		Cmd_FilterRemove (2);
+		FilterRemove (2);
 	else if (!strcmp (Cmd_Argv (1), "clear"))
-		Cmd_FilterClear ();
+		FilterClear ();
 	else if (Cmd_Argc () == 3) {
-		Cmd_FilterAdd (1);
+		FilterAdd (1);
 	} else if (Cmd_Argc () == 2) {
-		Cmd_FilterRemove (1);
+		FilterRemove (1);
 	} else
-		Cmd_FilterList ();
+		FilterList ();
 }
 
 static void
@@ -544,7 +544,7 @@ main (int argc, const char **argv)
 
 	Cmd_AddCommand ("quit", MST_Quit_f, "Shut down the master server");
 	Cmd_AddCommand ("clear", SVL_Clear, "Clear the server list");
-	Cmd_AddCommand ("filter", Cmd_Filter_f, "Manipulate filtering");
+	Cmd_AddCommand ("filter", Filter_f, "Manipulate filtering");
 
 	Cmd_StuffCmds (mst_cbuf);
 	Cbuf_Execute_Sets (mst_cbuf);
