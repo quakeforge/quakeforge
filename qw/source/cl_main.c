@@ -1550,14 +1550,6 @@ Host_Frame (float time)
 	r_view_model = &cl.viewent;
 	r_frametime = host_frametime;
 
-	// don't allow cheats in multiplayer
-	if (r_active) {
-		if (!cl.watervis)
-			cl_wateralpha = r_wateralpha->value;
-		else
-			cl_wateralpha = 1.0;
-	}
-
 	CL_UpdateScreen (realtime);
 
 	if (host_speeds->int_val)

@@ -51,6 +51,8 @@ static const char rcsid[] =
 #include "cl_parse.h"
 #include "client.h"
 #include "compat.h"
+#include "r_local.h"
+#include "r_cvar.h"
 #include "sbar.h"
 
 void
@@ -123,6 +125,14 @@ static SCR_Func scr_funcs[] = {
 void
 CL_UpdateScreen (double realtime)
 {
+	// don't allow cheats in multiplayer
+	if (r_active) {
+		if (cl.watervis)
+			cl_wateralpha = r_wateralpha->value;
+		else
+			cl_wateralpha = 1.0;
+	}
+
 	V_PrepBlend ();
 	SCR_UpdateScreen (realtime, scr_funcs);
 }

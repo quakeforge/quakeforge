@@ -660,8 +660,6 @@ _Host_Frame (float time)
 	r_view_model = &cl.viewent;
 	r_frametime = host_frametime;
 
-	cl_wateralpha = r_wateralpha->value;
-
 	CL_UpdateScreen (cl.time);
 
 	if (host_speeds->int_val)

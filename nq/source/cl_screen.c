@@ -47,8 +47,9 @@ static const char rcsid[] =
 #include "QF/texture.h"
 
 #include "client.h"
+#include "r_cvar.h"
+#include "r_local.h"
 #include "sbar.h"
-
 
 
 void
@@ -81,6 +82,8 @@ static SCR_Func scr_funcs[] = {
 void
 CL_UpdateScreen (double realtime)
 {
+	cl_wateralpha = r_wateralpha->value;
+
 	V_PrepBlend ();
 	SCR_UpdateScreen (realtime, scr_funcs);
 }

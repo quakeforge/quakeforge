@@ -322,8 +322,8 @@ R_Init_Cvars (void)
 						 "time and statistics of what is being viewed");
 	r_timegraph = Cvar_Get ("r_timegraph", "0", CVAR_NONE, NULL,
 							"Toggle the display of a performance graph");
-	r_wateralpha = Cvar_Get ("r_wateralpha", "1", CVAR_NONE, NULL,
-							 "Determine the opacity of liquids. 1 = solid, "
+	r_wateralpha = Cvar_Get ("r_wateralpha", "1", CVAR_ARCHIVE, NULL,
+							 "Determine the opacity of liquids. 1 = opaque, "
 							 "0 = transparent, otherwise translucent.");
 	r_waterripple = Cvar_Get ("r_waterripple", "0", CVAR_NONE, NULL,
 							  "Set to make liquids ripple, try setting to 5");
