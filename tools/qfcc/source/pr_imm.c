@@ -183,6 +183,12 @@ PR_ReuseConstant (expr_t *expr, def_t *def)
 			def->ofs = cn->ofs;
 			def->initialized = def->constant = 1;
 			cn = def;
+		} else {
+			if (cn->type != type) {
+				def = PR_NewDef (type, ".imm", 0);
+				def->ofs = cn->ofs;
+				cn = def;
+			}
 		}
 		return cn;
 	}
