@@ -1,6 +1,7 @@
 float foo = 1;
 float bar = 1;
 float snafu = 2;
+float negative = -------2;
 
 void () eek;
 
