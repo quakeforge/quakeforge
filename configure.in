@@ -1125,9 +1125,21 @@ if test "x$GCC" != xyes; then
   esac
 fi
 
+AC_ARG_ENABLE(Werror,
+[  --enable-Werror         treat warnings as errors]
+)
 dnl We want warnings, lots of warnings...
-if test "x$GCC" = xyes; then
-	CFLAGS="$CFLAGS -Wall -Werror"
+if test "x$GCC" = "xyes"; then
+	if test -d $srcdir/CVS; then
+		tst="!= xno"
+	else
+		tst="= xyes"
+	fi
+	if test "x$enable_Werror" $tst; then
+		CFLAGS="$CFLAGS -Wall -Werror"
+	else
+		CFLAGS="$CFLAGS -Wall"
+	fi
 #	CFLAGS="$CFLAGS -Wall -pedantic"
 fi
 
