@@ -238,9 +238,9 @@ R_AddFire (vec3_t start, vec3_t end, entity_t *ent)
 		f = R_AllocFire (key);
 		VectorCopy (end, f->origin);
 		VectorCopy (start, f->owner);
-		f->size = 20;
+		f->size = 10;
 		f->die = cl.time + 0.5;
-		f->decay = -1;
+		f->decay = 1;
 		f->color=r_firecolor_flame;
 
 		dl = CL_AllocDlight (key);
@@ -309,7 +309,7 @@ R_DrawFire (fire_t *f)
 	b_sin = bubble_sintable;
 	b_cos = bubble_costable;
 
-	radius = f->size + 0.35;
+	radius = f->size - 0.5;
 
 	// figure out if we're inside the area of effect
 	VectorSubtract (f->origin, r_origin, vec);
