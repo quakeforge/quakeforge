@@ -2487,11 +2487,11 @@ message_expr (expr_t *receiver, keywordarg_t *message)
 			return error (receiver, "not a class/object");
 		class = rec_type->aux_type->class;
 	}
-	if (rec_type != &type_id) {
-		method = class_message_response (class, class_msg, selector);
-		if (method)
-			rec_type = method->type->aux_type;
-	}
+
+	method = class_message_response (class, class_msg, selector);
+	if (method)
+		rec_type = method->type->aux_type;
+
 	for (m = message; m; m = m->next) {
 		*a = m->expr;
 		while ((*a))

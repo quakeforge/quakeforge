@@ -60,6 +60,24 @@ static __attribute__ ((unused)) const char rcsid[] =
 #include "struct.h"
 #include "type.h"
 
+static hashtab_t *known_methods;
+
+static const char *
+method_get_key (void *meth, void *unused)
+{
+	return ((method_t *) meth)->name;
+}
+
+static void
+method_free (void *_meth, void *unused)
+{
+	method_t   *meth = (method_t *) meth;
+
+	free (meth->name);
+	free (meth->types);
+	free (meth);
+}
+
 method_t *
 new_method (type_t *ret_type, param_t *selector, param_t *opt_parms)
 {
@@ -89,6 +107,11 @@ new_method (type_t *ret_type, param_t *selector, param_t *opt_parms)
 
 	//print_type (meth->type); puts ("");
 	meth->def = 0;
+
+	if (!known_methods)
+		known_methods = Hash_NewTable (1021, method_get_key, method_free, 0);
+	Hash_Add (known_methods, meth);
+
 	return meth;
 }
 
@@ -198,6 +221,14 @@ send_message (int super)
 	else
 		return new_def_expr (get_def (&type_IMP, "obj_msgSend", pr.scope,
 									  st_extern));
+}
+
+method_t *
+find_method (const char *sel_name)
+{
+	if (!known_methods)
+		return 0;
+	return Hash_Find (known_methods, sel_name);
 }
 
 void
@@ -331,4 +362,6 @@ clear_selectors (void)
 {
 	if (sel_def_hash)
 		Hash_FlushTable (sel_def_hash);
+	if (known_methods)
+		Hash_FlushTable (known_methods);
 }

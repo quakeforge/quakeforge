@@ -434,23 +434,32 @@ class_message_response (class_t *class, int class_msg, expr_t *sel)
 	}
 	selector = &G_STRUCT (pr_sel_t, POINTER_VAL (sel->e.pointer));
 	sel_name = G_GETSTR (selector->sel_id);
-	while (c) {
-		if (c->methods) {
-			for (cat = c->categories; cat; cat = cat->next) {
-				for (m = cat->methods->head; m; m = m->next) {
+	if (class->type == &type_id) {
+		m = find_method (sel_name);
+		if (m)
+			return m;
+		warning (sel, "could not find method for %c%s", class_msg ? '+' : '-',
+				 sel_name);
+		return 0;
+	} else {
+		while (c) {
+			if (c->methods) {
+				for (cat = c->categories; cat; cat = cat->next) {
+					for (m = cat->methods->head; m; m = m->next) {
+						if (strcmp (sel_name, m->name) == 0)
+							return m;
+					}
+				}
+				for (m = c->methods->head; m; m = m->next) {
 					if (strcmp (sel_name, m->name) == 0)
 						return m;
 				}
 			}
-			for (m = c->methods->head; m; m = m->next) {
-				if (strcmp (sel_name, m->name) == 0)
-					return m;
-			}
+			c = c->super_class;
 		}
-		c = c->super_class;
+		warning (sel, "%s does not respond to %c%s", class->name,
+				 class_msg ? '+' : '-', sel_name);
 	}
-	warning (sel, "%s does not respond to %c%s", class->name,
-			 class_msg ? '+' : '-', sel_name);
 	return 0;
 }
 
