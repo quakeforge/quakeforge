@@ -74,7 +74,11 @@ void * (* glGetProcAddress) (const char *symbol) = NULL; // FIXME
 //# error "Cannot load libraries: %s was not configured with DSO support"
 
 // the following is to avoid other compiler errors
-void * (* getProcAddress) (void *handle, const char *symbol);
+#ifdef _WIN32
+void *(*getProcAddress) (HINSTANCE, LPCSTR);
+#else
+void *(*getProcAddress) (void *, const char *); 
+#endif
 
 void *
 QFGL_LoadLibrary (void)
