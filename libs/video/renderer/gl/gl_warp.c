@@ -43,7 +43,6 @@ static const char rcsid[] =
 msurface_t *warpface;
 
 
-
 void
 BoundPoly (int numverts, float *verts, vec3_t mins, vec3_t maxs)
 {
@@ -177,6 +176,7 @@ float       turbsin[] = {
 };
 
 #define TURBSCALE (256.0 / (2 * M_PI))
+#define TURBFRAC (32.0 / (2 * M_PI))		// an 8th of TURBSCALE
 
 /*
 	EmitWaterPolys
@@ -186,24 +186,30 @@ float       turbsin[] = {
 void
 EmitWaterPolys (msurface_t *fa)
 {
-	float		os, ot, s, t;
+	float		os, ot, s, t, timetemp;
 	float      *v;
 	int         i;
 	glpoly_t   *p;
-	vec3_t      nv;
+
+	timetemp = r_realtime * TURBSCALE;
 
 	for (p = fa->polys; p; p = p->next) {
 		qfglBegin (GL_POLYGON);
 		for (i = 0, v = p->verts[0]; i < p->numverts; i++, v += VERTEXSIZE) {
-			os = turbsin[(int) ((v[3] * 0.125 + r_realtime) * TURBSCALE) & 255];
-			ot = turbsin[(int) ((v[4] * 0.125 + r_realtime) * TURBSCALE) & 255];
+			os = turbsin[(int) (v[3] * TURBFRAC + timetemp) & 255];
+			ot = turbsin[(int) (v[4] * TURBFRAC + timetemp) & 255];
 			s = (v[3] + ot) * (1.0 / 64.0);
 			t = (v[4] + os) * (1.0 / 64.0);
 			qfglTexCoord2f (s, t);
 
-			VectorCopy (v, nv);
-			nv[2] += r_waterripple->value * os * ot * (1.0 / 64.0);
-			qfglVertex3fv (nv);
+			if (r_waterripple->value != 0) {
+				vec3_t		nv;
+
+				VectorCopy (v, nv);
+				nv[2] += r_waterripple->value * os * ot * (1.0 / 64.0);
+				qfglVertex3fv (nv);
+			} else
+				qfglVertex3fv (v);
 		}
 		qfglEnd ();
 	}
