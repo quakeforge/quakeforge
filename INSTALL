@@ -18,3 +18,10 @@ The following are recommended:
     * X11 devel (for X11-based clients: software and OpenGL)
     * glide and mesa or other GL compatible lib
     * svgalib (for console-based clients: software and 3dfx)
+
+Basic process to build and install QuakeForge:
+	./bootstrap
+	./configure
+	make install
+
+You may want to check `./configure --help` and select options.
