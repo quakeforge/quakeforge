@@ -487,8 +487,6 @@ VID_Init (unsigned char *palette)
 	/* Invisible cursor */
 	X11_CreateNullCursor ();
 
-	VID_InitGamma (palette);
-	VID_SetPalette (palette);
 	if (x_visinfo->depth == 8) {
 		/* Create and upload the palette */
 		if (x_visinfo->class == PseudoColor) {
@@ -497,6 +495,10 @@ VID_Init (unsigned char *palette)
 			XSetWindowColormap (x_disp, x_win, x_cmap);
 		}
 	}
+
+	VID_InitGamma (palette);
+	VID_SetPalette (palette);
+
 	// create the GC
 	{
 		XGCValues   xgcvalues;
