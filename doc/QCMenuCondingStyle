@@ -1,0 +1,27 @@
+QuakeC Menu Coding Style
+~~~~~~~~~~~~~~~~~~~~~~~~
+(by elmex <Robin Redeker>)
+
+For QuakeC you should use the normal coding style, which is
+describes in the file "CodingStyle" in doc/
+
+But you may use not the same prefixes.
+
+Use these prefixes where it makes sense:
+CB_  Input callback
+MENU_ Menu making function
+DRAW_ Draw callback
+
+
+Comment functions like this:
+/*
+	[PREFIX_]FunctionName
+
+	Description
+*/
+returntype (args)
+[PREFIX_]FunctionName = 
+{
+
+
+}
