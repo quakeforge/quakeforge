@@ -125,6 +125,23 @@ in_dga_f (cvar_t *var)
 }
 
 static void
+in_paste_buffer_f (void)
+{
+	char       *bytes, *p;
+	int         num_bytes;
+
+	bytes = XFetchBytes (x_disp, &num_bytes);
+	if (!num_bytes)
+		return;
+	// get bytes to keys.c
+	for (p = bytes; num_bytes && *p; p++, num_bytes--) {
+		Key_Event (QFK_UNKNOWN, *p, 1);
+		Key_Event (QFK_UNKNOWN, 0, 0);
+	}
+	XFree (bytes);
+}
+
+static void
 XLateKey (XKeyEvent * ev, int *k, int *u)
 {
 	int         key = 0;
@@ -546,11 +563,6 @@ IN_LL_Init (void)
 
 	if (!COM_CheckParm ("-nomouse")) {
 		dga_avail = VID_CheckDGA (x_disp, NULL, NULL, NULL);
-				//if (vid_fullscreen->int_val) {
-				//Cvar_Set (in_grab, "1");
-				//in_grab->flags |= CVAR_ROM;
-				//IN_LL_Grab_Input ();
-				//}
 
 		X11_AddEvent (ButtonPress, &event_button);
 		X11_AddEvent (ButtonRelease, &event_button);
@@ -558,6 +570,9 @@ IN_LL_Init (void)
 
 		in_mouse_avail = 1;
 	}
+
+	Cmd_AddCommand ("in_paste_buffer", in_paste_buffer_f,
+					"Paste the contents of X's C&P buffer to the console");
 }
 
 void
