@@ -28,6 +28,13 @@
 
 */
 
+static const char rcsid[] =
+        "$Id$";
+
+#ifdef HAVE_CONFIG_H
+# include "config.h"
+#endif
+
 #include <stdlib.h>
 #include <string.h>
 
@@ -41,6 +48,7 @@
 #include "QF/gib_builtin.h"
 #include "QF/gib_buffer.h"
 #include "QF/gib_function.h"
+#include "QF/gib_vars.h"
 
 hashtab_t *gib_builtins;
 
@@ -129,14 +137,30 @@ GIB_Function_f (void)
 }			
 
 void
-GIB_Lset_f (void)
+GIB_Local_f (void)
 {
-	if (GIB_Argc () != 3)
+	if (GIB_Argc () != 2)
 		Cbuf_Error ("syntax",
 					"lset: invalid syntax\n"
-					"usage: lset variable value");
+					"usage: local variable");
 	else
-		GIB_Local_Set (cbuf_active, GIB_Argv(1), GIB_Argv(2));
+		GIB_Var_Set (cbuf_active, GIB_Argv(1), "");
+}
+
+void
+GIB_Global_f (void)
+{
+	if (GIB_Argc () != 2)
+		Cbuf_Error ("syntax",
+					"global: invalid syntax\n"
+					"usage: global variable");
+	else {
+		char *a = strdup (GIB_Argv(1));
+		if (!gib_globals)
+			gib_globals = Hash_NewTable (256, GIB_Var_Get_Key, GIB_Var_Free, 0);
+		GIB_Var_Set_R (gib_globals, a, "");
+		free(a);
+	}
 }
 
 void
@@ -268,7 +292,8 @@ GIB_Builtin_Init (void)
 {
 	GIB_Builtin_Add ("function", GIB_Function_f, GIB_BUILTIN_NORMAL);
 	GIB_Builtin_Add ("export", GIB_Export_f, GIB_BUILTIN_NORMAL);
-	GIB_Builtin_Add ("lset", GIB_Lset_f, GIB_BUILTIN_NORMAL);
+	GIB_Builtin_Add ("local", GIB_Local_f, GIB_BUILTIN_NORMAL);
+	GIB_Builtin_Add ("global", GIB_Global_f, GIB_BUILTIN_NORMAL);
 	GIB_Builtin_Add ("return", GIB_Return_f, GIB_BUILTIN_NORMAL);
 	GIB_Builtin_Add ("if", GIB_If_f, GIB_BUILTIN_FIRSTONLY);
 	GIB_Builtin_Add ("ifnot", GIB_If_f, GIB_BUILTIN_FIRSTONLY);

@@ -28,6 +28,13 @@
 
 */
 
+static const char rcsid[] =
+        "$Id$";
+
+#ifdef HAVE_CONFIG_H
+# include "config.h"
+#endif
+
 #include <stdlib.h>
 
 #include "QF/dstring.h"
@@ -36,10 +43,17 @@
 #include "QF/gib_parse.h"
 #include "QF/gib_buffer.h"
 #include "QF/gib_function.h"
+#include "QF/gib_vars.h"
 #include "QF/va.h"
 
 hashtab_t *gib_functions = 0;
 
+/*
+	GIB_Function_New
+	
+	Builds a new function struct and returns
+	a pointer to it.
+*/
 gib_function_t *
 GIB_Function_New (void)
 {
@@ -50,12 +64,14 @@ GIB_Function_New (void)
 	return new;
 }
 
+/* 
+	Hashtable callbacks
+*/
 const char *
 GIB_Function_Get_Key (void *ele, void *ptr)
 {
 	return ((gib_function_t *)ele)->name->str;
 }
-
 void
 GIB_Function_Free (void *ele, void *ptr)
 {
@@ -64,6 +80,13 @@ GIB_Function_Free (void *ele, void *ptr)
 	dstring_delete (func->program);
 }
 
+/*
+	GIB_Function_Define
+	
+	Sets the program text of a GIB function,
+	allocating one and adding it to the functions
+	hash if needed.
+*/
 void
 GIB_Function_Define (const char *name, const char *program)
 {
@@ -82,6 +105,13 @@ GIB_Function_Define (const char *name, const char *program)
 	dstring_appendstr (func->program, program);
 }
 
+/*
+	GIB_Function_Find
+	
+	Looks up a function in the function hash
+	and returns a pointer to it on success,
+	0 otherwise
+*/
 gib_function_t *
 GIB_Function_Find (const char *name)
 {
@@ -90,6 +120,15 @@ GIB_Function_Find (const char *name)
 	return (gib_function_t *) Hash_Find (gib_functions, name);
 }
 
+/*
+	GIB_Function_Execute
+	
+	Creates a new buffer on the current stack
+	and copies the program text of a function
+	into it.  Also sets local variables on the
+	buffer for all arguments passed to the
+	function
+*/
 void
 GIB_Function_Execute (gib_function_t *func)
 {
@@ -104,6 +143,6 @@ GIB_Function_Execute (gib_function_t *func)
 		cbuf_active->state = CBUF_STATE_STACK;
 		
 		for (i = 0; i < cbuf_active->args->argc; i++)
-			GIB_Local_Set (sub, va("%i", i), cbuf_active->args->argv[i]->str);
-		GIB_Local_Set (sub, "argc", va("%i", cbuf_active->args->argc));
+			GIB_Var_Set (sub, va("%i", i), cbuf_active->args->argv[i]->str);
+		GIB_Var_Set (sub, "argc", va("%i", cbuf_active->args->argc));
 }

@@ -1,11 +1,11 @@
 /*
-	#FILENAME#
+	gib_parse.c
 
-	#DESCRIPTION#
+	GIB parser functions
 
-	Copyright (C) 2002 #AUTHOR#
+	Copyright (C) 2002 Brian Koropoff
 
-	Author: #AUTHOR#
+	Author: Brian Koropoff
 	Date: #DATE#
 
 	This program is free software; you can redistribute it and/or
@@ -28,6 +28,13 @@
 
 */
 
+static const char rcsid[] =
+        "$Id$";
+
+#ifdef HAVE_CONFIG_H
+# include "config.h"
+#endif
+
 #include <ctype.h>
 #include <string.h>
 
@@ -39,6 +46,7 @@
 #include "QF/gib_process.h"
 #include "QF/gib_builtin.h"
 #include "QF/gib_function.h"
+#include "QF/gib_vars.h"
 
 // Interpreter structure and prototypes
 
@@ -55,8 +63,14 @@ cbuf_interpreter_t gib_interp = {
 };
 
 
-/* Co-recursive parsing functions */
-
+/*
+	GIB_Parse_Match_Dquote
+	
+	Progresses an index variable through a string
+	until a double quote is reached.  Returns
+	0 on success, or the character it could not
+	match otherwise
+*/
 char
 GIB_Parse_Match_Dquote (const char *str, unsigned int *i)
 {
@@ -69,6 +83,16 @@ GIB_Parse_Match_Dquote (const char *str, unsigned int *i)
 	return '\"';
 }
 
+/*
+	GIB_Parse_Match_Brace
+	
+	Progresses an index variable through a string
+	until a closing brace (}) is reached.  Calls
+	other matching functions to skip areas of a
+	string it does not want to handle.  Returns
+	0 on success, or the character it could not
+	match otherwise.
+*/
 char
 GIB_Parse_Match_Brace (const char *str, unsigned int *i)
 {
@@ -86,6 +110,16 @@ GIB_Parse_Match_Brace (const char *str, unsigned int *i)
 	return '{';
 }
 
+/*
+	GIB_Parse_Match_Paren
+	
+	Progresses an index variable through a string
+	until a closing parenthesis is reached.  Calls
+	other matching functions to skip areas of a
+	string it does not want to handle.  Returns
+	0 on success, or the character it could not
+	match otherwise.
+*/
 char
 GIB_Parse_Match_Paren (const char *str, unsigned int *i)
 {
@@ -102,6 +136,16 @@ GIB_Parse_Match_Paren (const char *str, unsigned int *i)
 	return '(';
 }
 
+/*
+	GIB_Parse_Match_Backtick
+	
+	Progresses an index variable through a string
+	until a backtick (`) is reached.  Calls
+	other matching functions to skip areas of a
+	string it does not want to handle.  Returns
+	0 on success, or the character it could not
+	match otherwise.
+*/
 char
 GIB_Parse_Match_Backtick (const char *str, unsigned int *i)
 {
@@ -109,7 +153,7 @@ GIB_Parse_Match_Backtick (const char *str, unsigned int *i)
 	for ((*i)++; str[*i]; (*i)++) {
 		if (str[*i] == '`')
 			return 0;
-		else if (str[*i] == '\"') { // Skip over strings
+		else if (str[*i] == '\"') { // Skip over strings as usual
 			if ((c = GIB_Parse_Match_Dquote (str, i)))
 				return c;
 		}
@@ -117,6 +161,13 @@ GIB_Parse_Match_Backtick (const char *str, unsigned int *i)
 	return '`';
 }
 
+/*
+	GIB_Parse_Extract_Line
+	
+	Extracts the next command from a cbuf and
+	deposits it in cbuf->line, removing the
+	portion used from the buffer
+*/
 void
 GIB_Parse_Extract_Line (struct cbuf_s *cbuf)
 {
@@ -129,7 +180,6 @@ GIB_Parse_Extract_Line (struct cbuf_s *cbuf)
 		
 	dstring_clearstr (cbuf->line);
 	
-		
 	for (i = 0; dstr->str[i]; i++) {
 		if (dstr->str[i] == '{') {
 			if ((c = GIB_Parse_Match_Brace (dstr->str, &i))) {
@@ -149,19 +199,22 @@ GIB_Parse_Extract_Line (struct cbuf_s *cbuf)
 				dstring_snip (dstr, i, n-dstr->str);
 			else {
 				dstring_snip (dstr, i, strlen(dstr->str+i));
-				i--; // So we don't go past null
+				break;
 			}
 		}
 	}
 	
-	if (dstr->str[0]) {
-		if (i) {
+	if (dstr->str[0]) { // If something is left in the buffer
+		if (i) { // If we used any of it
 			dstring_insert (cbuf->line, 0, dstr->str, i);
 			Sys_DPrintf ("extracted line: %s\n", cbuf->line->str);
 		}
+		// Clip out what  we used or any leftover newlines or ;s
 		dstring_snip (dstr, 0, i + (dstr->str[i] == '\n' || dstr->str[i] == ';'));
 	}
 
+	// If this is a looping buffer and it is now empty
+	// copy the loop program back in
 	if (GIB_DATA(cbuf)->type == GIB_BUFFER_LOOP && !dstr->str[0])
 		Cbuf_AddText (cbuf, GIB_DATA(cbuf)->loop_program->str);
 
@@ -169,6 +222,16 @@ GIB_Parse_Extract_Line (struct cbuf_s *cbuf)
 
 }
 
+/*
+	GIB_Parse_Get_Token
+	
+	Progresses an index variable through a string
+	until the end of the next token is found.
+	Stores the token in dstr with or without
+	wrapping characters as specified by include_delim.
+	Returns 0 on error or the wrapping character of
+	the token otherwise
+*/
 inline static char
 GIB_Parse_Get_Token (const char *str, unsigned int *i, dstring_t *dstr, qboolean include_delim)
 {
@@ -208,6 +271,12 @@ GIB_Parse_Get_Token (const char *str, unsigned int *i, dstring_t *dstr, qboolean
 				return 0; // Parse error
 				}
 			}
+			if (str[*i] == '{') {
+				if ((c = GIB_Parse_Match_Brace (str, i))) {
+				Cbuf_Error ("parse", "Could not find matching %c", c);
+				return 0; // Parse error
+				}
+			}
 			(*i)++;
 		}
 		dstring_insert (dstr, 0, str+n, *i-n);
@@ -216,6 +285,14 @@ GIB_Parse_Get_Token (const char *str, unsigned int *i, dstring_t *dstr, qboolean
 	return 0; // We should never get here
 }
 
+/*
+	GIB_Parse_Generate_Composite
+	
+	Concatenates all parsed arguments in cbuf
+	into a single string and creates an array
+	of pointers to the beginnings of tokens
+	within it.
+*/
 void
 GIB_Parse_Generate_Composite (struct cbuf_s *cbuf)
 {
@@ -240,6 +317,13 @@ GIB_Parse_Generate_Composite (struct cbuf_s *cbuf)
 		args->args[i] += (unsigned long int) GIB_DATA (cbuf)->arg_composite->str;
 }		
 
+/*
+	GIB_Parse_Add_Token
+	
+	Adds a new token to the argument list args
+	or concatenates it to the end of the last
+	according to cat.
+*/
 inline void
 GIB_Parse_Add_Token (struct cbuf_args_s *args, qboolean cat, dstring_t *token)
 {
@@ -249,6 +333,16 @@ GIB_Parse_Add_Token (struct cbuf_args_s *args, qboolean cat, dstring_t *token)
 			Cbuf_ArgsAdd (args, token->str);
 }
 
+/*
+	GIB_Parse_Tokenize_Line
+	
+	Tokenizes and processes an extracted command,
+	producing an argument list suitable for executing
+	the command.  This function can be interrupted
+	to call a GIB subroutine, in which case it will
+	save important variables and start where it left
+	off when called again.
+*/
 void
 GIB_Parse_Tokenize_Line (struct cbuf_s *cbuf)
 {
@@ -324,6 +418,18 @@ FILTER_ERROR:
 	return;
 }
 
+/*
+	GIB_Parse_Execute_Line
+	
+	After an argument list has been created,
+	this function executes the appropriate command,
+	searching in this order:
+	
+	GIB builtins
+	GIB functions
+	Assignment to a local variable
+	Normal quake console commands
+*/
 void GIB_Parse_Execute_Line (cbuf_t *cbuf)
 {
 	cbuf_args_t *args = cbuf->args;
@@ -334,9 +440,12 @@ void GIB_Parse_Execute_Line (cbuf_t *cbuf)
 		b->func ();
 	else if ((f = GIB_Function_Find (args->argv[0]->str)))
 		GIB_Function_Execute (f);
-	else if (args->argc == 3 && !strcmp (args->argv[1]->str, "="))
-		GIB_Local_Set (cbuf, args->argv[0]->str, args->argv[2]->str);
-	else	
+	else if (args->argc == 3 && !strcmp (args->argv[1]->str, "=")) {
+		if (!GIB_Var_Get (cbuf, args->argv[0]->str) && GIB_Var_Get_R (gib_globals, args->argv[0]->str))
+			GIB_Var_Set_R (gib_globals, args->argv[0]->str, args->argv[2]->str);
+		else
+			GIB_Var_Set (cbuf, args->argv[0]->str, args->argv[2]->str);
+	} else	
 		Cmd_Command (cbuf->args);
 	dstring_clearstr (cbuf->line);
 }

@@ -29,10 +29,19 @@
 	$Id$
 */
 
-char GIB_Parse_Match_Brace (const char *str, unsigned int *i);
-char GIB_Parse_Match_Backtick (const char *str, unsigned int *i);
+#include "QF/hash.h"
+#include "QF/cbuf.h"
 
-void GIB_Parse_Extract_Line (struct cbuf_s *cbuf);
-void GIB_Parse_Tokenize_Line (struct cbuf_s *cbuf);
+extern hashtab_t *gib_globals;
 
-extern struct cbuf_interpreter_s gib_interp;
+typedef struct gib_var_s {
+	struct dstring_s *key, *value;
+	struct hashtab_s *subvars;
+} gib_var_t;
+
+void GIB_Var_Set (cbuf_t *cbuf, const char *key, const char *value);
+const char *GIB_Var_Get (cbuf_t *cbuf, const char *key);
+const char *GIB_Var_Get_Key (void *ele, void *ptr);
+void GIB_Var_Free (void *ele, void *ptr);
+void GIB_Var_Set_R (hashtab_t *vars, char *name, const char *value);
+gib_var_t *GIB_Var_Get_R (hashtab_t *vars, char *name);

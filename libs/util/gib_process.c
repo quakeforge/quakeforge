@@ -28,6 +28,13 @@
 
 */
 
+static const char rcsid[] =
+        "$Id$";
+
+#ifdef HAVE_CONFIG_H
+# include "config.h"
+#endif
+
 #include <string.h>
 #include <ctype.h>
 
@@ -36,49 +43,73 @@
 #include "QF/cvar.h"
 #include "QF/gib_buffer.h"
 #include "QF/gib_parse.h"
+#include "QF/gib_vars.h"
 
 #include "exp.h"
 
-void
-GIB_Process_Variable (struct dstring_s *dstr)
+unsigned int
+GIB_Process_Variable (struct dstring_s *dstr, unsigned int pos, qboolean tolerant)
 {
-	int i;
 	cvar_t *cvar;
+	gib_var_t *gvar;
 	const char *str;
+	char *p, c;
 	
-	for (i = 0; dstr->str[i] == '$'; i++);
-	i--;
-	for (; i >= 0; i--) {
-		if ((str = GIB_Local_Get (cbuf_active, dstr->str+i+1)))	
-			; // yay for us
-		else if ((cvar = Cvar_FindVar (dstr->str+i+1)))
-			str = cvar->string;
-		else
-			return;
-		dstr->str[i] = 0;
-		dstring_appendstr (dstr, str);
-	}
+	for (p = dstr->str+pos+1; tolerant ? *p : isalnum (*p) || *p == '_'; p++);
+	c = *p;
+	*p = 0;
+	if ((str = GIB_Var_Get (cbuf_active, dstr->str+pos+1)))	
+		; // yay for us
+	else if ((gvar = GIB_Var_Get_R (gib_globals, dstr->str+pos+1)))
+		str = gvar->value->str;
+	else if ((cvar = Cvar_FindVar (dstr->str+pos+1)))
+		str = cvar->string;
+	else
+		str = 0;
+	*p = c;
+	if (str)
+		dstring_replace (dstr, pos, p - dstr->str - pos, str, strlen(str));
+	else
+		dstring_snip (dstr, pos, p - dstr->str - pos);
+	return str ? strlen (str) : 0;
 }
 
-void
+int
 GIB_Process_Variables_All (struct dstring_s *token)
 {
-	int i, n;
+	int i, n, m;
 	dstring_t *var = dstring_newstr ();
+	char c = 0;
 	
 	for (i = 0; token->str[i]; i++) {
 		if (token->str[i] == '$') {
-			for (n = 1; token->str[i+n] == '$'; n++); // get past $s
-			for (; isalnum(token->str[i+n]) ||
-			       token->str[i+n] == '.' ||
-			       token->str[i+n] == '_'; n++); // find end of var
-			dstring_insert (var, 0, token->str+i, n); // extract it
-			GIB_Process_Variable (var);
+			if (token->str[i+1] == '{') {
+				n = i+1;
+				if ((c = GIB_Parse_Match_Brace (token->str, &n))) {
+					Cbuf_Error ("parse", "Could not find match for %c", c);
+					goto ERROR;
+				}
+				n -= i;
+				dstring_insert (var, 0, token->str+i+2, n-2);
+				dstring_insertstr (var, 0, "$");
+				n++;
+			} else {
+				for (n = 1; isalnum(token->str[i+n]) || token->str[i+n] == '$' || token->str[i+n] == '_'; n++); // find end of var
+				dstring_insert (var, 0, token->str+i, n); // extract it
+			}
+			for (m = 1; var->str[m]; m++) {
+				if (var->str[m] == '$')
+					m += GIB_Process_Variable (var, m, false) - 1;
+			}
+			GIB_Process_Variable (var, 0, true);
 			dstring_replace (token, i, n, var->str, strlen(var->str));
 			i += strlen (var->str) - 1;
 			dstring_clearstr (var);
 		}
 	}
+ERROR:
+	dstring_delete (var);
+	return c ? -1 : 0;
 }
 
 int
@@ -153,7 +184,8 @@ GIB_Process_Token (struct dstring_s *token, char delim)
 	if (delim != '{' && delim != '\"') {
 		if (GIB_Process_Embedded (token))
 			return -1;
-		GIB_Process_Variables_All (token);
+		if (GIB_Process_Variables_All (token))
+			return -1;
 	}
 	if (delim == '(')
 		if (GIB_Process_Math (token))

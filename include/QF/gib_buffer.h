@@ -25,14 +25,11 @@
 		Free Software Foundation, Inc.
 		59 Temple Place - Suite 330
 		Boston, MA  02111-1307, USA
-
+		
+	$Id$
 */
 
 #define GIB_DATA(buffer) ((gib_buffer_data_t *)(buffer->data))
-
-typedef struct gib_local_s {
-	struct dstring_s *key, *value;
-} gib_local_t;
 
 typedef struct gib_buffer_data_s {
 	struct dstring_s *arg_composite;
@@ -62,7 +59,6 @@ typedef struct gib_buffer_data_s {
 	} type;
 } gib_buffer_data_t;
 
-void GIB_Local_Set (cbuf_t *cbuf, const char *key, const char *value);
-const char *GIB_Local_Get (cbuf_t *cbuf, const char *key);
 void GIB_Buffer_Construct (struct cbuf_s *cbuf);
 void GIB_Buffer_Destruct (struct cbuf_s *cbuf);
+
