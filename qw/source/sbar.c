@@ -85,6 +85,7 @@ void        Sbar_MiniDeathmatchOverlay (void);
 
 static qboolean largegame = false;
 
+cvar_t     *cl_showscoresuid;
 
 /*
 	Sbar_ShowTeamScores
@@ -242,6 +243,9 @@ Sbar_Init (void)
 	sb_sbar = Draw_PicFromWad ("sbar");
 	sb_ibar = Draw_PicFromWad ("ibar");
 	sb_scorebar = Draw_PicFromWad ("scorebar");
+
+	cl_showscoresuid = Cvar_Get ("cl_showscoresuid", "0", CVAR_NONE, NULL,
+								 "show uid instead of ping on scores");
 }
 
 
@@ -967,7 +971,10 @@ Sbar_DeathmatchOverlay (int start)
 	if (teamplay) {
 		x = 4;
 //							 0    40 64   104   152  192 
-		Draw_String8 (x, y, "ping pl time frags team name");
+		if (cl_showscoresuid->int_val == 0)
+			Draw_String8 (x, y, "ping pl time frags team name");
+		else
+			Draw_String8 (x, y, " uid pl time frags team name");
 		y += 8;
 //      Draw_String8 ( x , y, "---- -- ---- ----- ---- ----------------");
 		Draw_String8 (x, y, "\x1d\x1e\x1e\x1f \x1d\x1f \x1d\x1e\x1e\x1f "
@@ -977,7 +984,10 @@ Sbar_DeathmatchOverlay (int start)
 	} else {
 		x = 16;
 //							 0    40 64   104   152
-		Draw_String8 (x, y, "ping pl time frags name");
+		if (cl_showscoresuid->int_val == 0)
+			Draw_String8 (x, y, "ping pl time frags name");
+		else
+			Draw_String8 (x, y, " uid pl time frags name");
 		y += 8;
 //		Draw_String8 ( x , y, "---- -- ---- ----- ----------------");
 		Draw_String8 (x, y, "\x1d\x1e\x1e\x1f \x1d\x1f \x1d\x1e\x1e\x1f "
@@ -993,9 +1003,13 @@ Sbar_DeathmatchOverlay (int start)
 			continue;
 
 		// draw ping
-		p = s->ping;
-		if (p < 0 || p > 999)
-			p = 999;
+		if (cl_showscoresuid->int_val == 0) { // hack to show userid
+			p = s->ping;
+			if (p < 0 || p > 999)
+				p = 999;
+		} else {
+			p = s->userid;
+		}
 		snprintf (num, sizeof (num), "%4i", p);
 		Draw_String8 (x, y, num);
 
