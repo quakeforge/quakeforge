@@ -141,24 +141,25 @@ typedef struct {
 	const char	*name;
 	int			value;
 	type_t		*type;
+	int			version;
 } keyword_t;
 
 static keyword_t keywords[] = {
-	{"void",		TYPE,	&type_void		},
-	{"float",		TYPE,	&type_float		},
-	{"string",		TYPE,	&type_string	},
-	{"vector",		TYPE,	&type_vector	},
-	{"entity",		TYPE,	&type_entity	},
-	{"quaternion",	TYPE,	&type_quaternion},
-	{"integer",		TYPE,	&type_integer	},
-	{"function",	TYPE,	&type_function	},
-	{"local",		LOCAL,	0				},
-	{"return",		RETURN,	0				},
-	{"while",		WHILE,	0				},
-	{"do",			DO,		0				},
-	{"if",			IF,		0				},
-	{"else",		ELSE,	0				},
-	{"for",			FOR,	0				},
+	{"void",		TYPE,	&type_void,			PROG_ID_VERSION},
+	{"float",		TYPE,	&type_float,		PROG_ID_VERSION},
+	{"string",		TYPE,	&type_string,		PROG_ID_VERSION},
+	{"vector",		TYPE,	&type_vector,		PROG_ID_VERSION},
+	{"entity",		TYPE,	&type_entity,		PROG_ID_VERSION},
+	{"quaternion",	TYPE,	&type_quaternion,	PROG_VERSION},
+	{"integer",		TYPE,	&type_integer,		PROG_VERSION},
+	{"function",	TYPE,	&type_function,		PROG_VERSION},
+	{"local",		LOCAL,	0,					PROG_ID_VERSION},
+	{"return",		RETURN,	0,					PROG_ID_VERSION},
+	{"while",		WHILE,	0,					PROG_ID_VERSION},
+	{"do",			DO,		0,					PROG_ID_VERSION},
+	{"if",			IF,		0,					PROG_ID_VERSION},
+	{"else",		ELSE,	0,					PROG_ID_VERSION},
+	{"for",			FOR,	0,					PROG_ID_VERSION},
 };
 
 static const char *
@@ -178,7 +179,8 @@ type_or_name (char *token)
 		int i;
 		keyword_tab = Hash_NewTable (1021, keyword_get_key, 0, 0);
 		for (i = 0; i < sizeof (keywords) / sizeof (keywords[0]); i++)
-			Hash_Add (keyword_tab, &keywords[i]);
+			if (keywords[i].version <= options.version)
+				Hash_Add (keyword_tab, &keywords[i]);
 		initialized = 1;
 	}
 	keyword = Hash_Find (keyword_tab, token);

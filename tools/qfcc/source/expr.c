@@ -80,6 +80,12 @@ get_type (expr_t *e)
 			return e->e.expr.type->type;
 		case ex_def:
 			return e->e.def->type->type;
+		case ex_integer:
+			if (options.version == PROG_ID_VERSION) {
+				e->type = ex_float;
+				e->e.float_val = e->e.integer_val;
+			}
+			// fall through
 		case ex_string:
 		case ex_float:
 		case ex_vector:
@@ -88,7 +94,6 @@ get_type (expr_t *e)
 		case ex_func:
 		case ex_pointer:
 		case ex_quaternion:
-		case ex_integer:
 			return qc_types[e->type];
 	}
 	return ev_type_count;
