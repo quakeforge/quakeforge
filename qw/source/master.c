@@ -226,6 +226,9 @@ QW_Master (struct sockaddr_in *addr)
 	server_t *servers;
 	int serverlen = SLIST_MULTIPLE;
 	int i;
+#ifdef _WIN32
+	WSADATA winsockdata;
+#endif
 
 	servers = malloc (sizeof (server_t) * serverlen);
 	if (!servers) {
@@ -235,6 +238,14 @@ QW_Master (struct sockaddr_in *addr)
 
 	for (i = 0; i < serverlen; i++)
 		servers[i].updated = 0;
+
+#ifdef _WIN32
+	i = WSAStartup (MAKEWORD (1, 1), &winsockdata);
+	if (i) {
+		printf ("Winsock initialization failed.\n");
+		return;
+	}
+#endif
 
 	sock = socket (AF_INET, SOCK_DGRAM, IPPROTO_UDP);
 	if (sock < 0) {
