@@ -38,6 +38,7 @@ static const char rcsid[] =
 #include "qfcc.h"
 
 #include "class.h"
+#include "expr.h"
 #include "method.h"
 #include "struct.h"
 #include "type.h"
@@ -125,13 +126,12 @@ class_add_protocol (class_t *class, protocol_t *protocol)
 }
 
 void
-class_finish (class_t *class)
+class_begin (class_t *class)
 {
 	if (class->def)
 		return;
 	if (class->class_name && class->category_name) {
 		def_t      *category_def;
-		pr_category_t *category;
 
 		category_def = PR_GetDef (type_category,
 								  va ("_OBJ_CATEGORY_%s_%s",
@@ -139,7 +139,6 @@ class_finish (class_t *class)
 									  class->category_name),
 								  0, &numpr_globals);
 		category_def->initialized = category_def->constant = 1;
-		category = &G_STRUCT (pr_category_t, category_def->ofs);
 	} else if (class->class_name) {
 		def_t      *meta_def;
 		pr_class_t *meta;
@@ -155,7 +154,6 @@ class_finish (class_t *class)
 		meta->name = meta->class_pointer;
 		meta->instance_size = type_size (type_Class.aux_type);
 		meta->ivars = emit_struct (type_Class.aux_type, "Class");
-		meta->methods = emit_methods (class->methods, class->class_name, 0);
 		meta->protocols = emit_protocol_list (class->protocols,
 											  class->class_name);
 
@@ -168,10 +166,30 @@ class_finish (class_t *class)
 		if (class->super_class)
 			cls->super_class = class->super_class->def->ofs;
 		cls->name = meta->name;
+		cls->protocols = meta->protocols;
+	}
+}
+
+void
+class_finish (class_t *class)
+{
+	if (class->class_name && class->category_name) {
+		pr_category_t *category;
+
+		category = &G_STRUCT (pr_category_t, class->def->ofs);
+	} else if (class->class_name) {
+		pr_class_t *meta;
+		pr_class_t *cls;
+		
+		cls = &G_STRUCT (pr_class_t, class->def->ofs);
+
+		meta = &G_STRUCT (pr_class_t, cls->class_pointer);
+
+		meta->methods = emit_methods (class->methods, class->class_name, 0);
+
 		cls->instance_size = type_size (class->ivars);
 		cls->ivars = emit_struct (class->ivars, class->class_name);
 		cls->methods = emit_methods (class->methods, class->class_name, 1);
-		cls->protocols = meta->protocols;
 	}
 }
 
@@ -272,7 +290,14 @@ get_category (const char *class_name, const char *category_name, int create)
 def_t *
 class_def (class_t *class)
 {
-	return PR_GetDef (class->type, class->class_name, 0, &numpr_globals);
+	def_t      *def;
+
+	def = PR_GetDef (class->type,
+					 va ("_OBJ_CLASS_POINTER_%s", class->class_name),
+					 0, &numpr_globals);
+	def->initialized = def->constant = 1;
+	G_INT (def->ofs) = class->def->ofs;
+	return def;
 }
 
 protocol_t *
