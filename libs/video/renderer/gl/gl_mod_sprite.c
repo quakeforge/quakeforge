@@ -1,7 +1,7 @@
 /*
 	gl_mod_sprite.c
 
-	(description)
+	sprite model rendering
 
 	Copyright (C) 1996-1997  Id Software, Inc.
 
@@ -31,6 +31,13 @@
 static __attribute__ ((unused)) const char rcsid[] = 
 	"$Id$";
 
+#ifdef HAVE_STRING_H
+# include <string.h>
+#endif
+#ifdef HAVE_STRINGS_H
+# include <strings.h>
+#endif
+
 #include "QF/GL/defines.h"
 #include "QF/GL/funcs.h"
 
@@ -38,7 +45,20 @@ static __attribute__ ((unused)) const char rcsid[] =
 #include "QF/model.h"
 #include "QF/render.h"
 
+#include "compat.h"
+#include "r_local.h"
 #include "r_shared.h"
+#include "varrays.h"
+
+int						 sVAsize;
+int						*sVAindices;
+float					*spriteVertices;
+float					*spriteTexCoords;
+float					*spriteColors;
+varray_t2f_c4ub_v3f_t	*spriteVertexArray;
+
+void (*R_DrawSpriteModel) (struct entity_s *ent);
+
 
 static mspriteframe_t *
 R_GetSpriteFrame (entity_t *currententity)
@@ -83,14 +103,14 @@ R_GetSpriteFrame (entity_t *currententity)
 	return pspriteframe;
 }
 
-void
-R_DrawSpriteModel (entity_t *e)
+static void
+R_DrawSpriteModel_f (entity_t *e)
 {
 	float			 modelalpha, color[4];
 	float			*up, *right;
 	msprite_t		*psprite;
 	mspriteframe_t	*frame;
-	vec3_t			 point, v_forward, v_right, v_up;
+	vec3_t			 point, point1, point2, v_forward, v_right, v_up;
 
 	// don't bother culling, it's just a single polygon without a surface cache
 	frame = R_GetSpriteFrame (e);
@@ -115,7 +135,8 @@ R_DrawSpriteModel (entity_t *e)
 		VectorScale (right, e->scale, right);
 	}
 
-	modelalpha = e->colormod[3];
+	VectorCopy (e->colormod, color);
+	modelalpha = color[3] = e->colormod[3];
 	if (modelalpha < 1.0)
 		qfglDepthMask (GL_FALSE);
 
@@ -123,32 +144,156 @@ R_DrawSpriteModel (entity_t *e)
 
 	qfglBegin (GL_QUADS);
 
-	VectorCopy (e->colormod, color);
-	color[3] = e->colormod[3];
 	qfglColor4fv (color);
 
 	qfglTexCoord2f (0, 1);
-	VectorMA (e->origin, frame->down, up, point);
-	VectorMA (point, frame->left, right, point);
+	VectorMA (e->origin, frame->down, up, point1);
+	VectorMA (point1, frame->left, right, point);
 	qfglVertex3fv (point);
 
 	qfglTexCoord2f (0, 0);
-	VectorMA (e->origin, frame->up, up, point);
-	VectorMA (point, frame->left, right, point);
+	VectorMA (e->origin, frame->up, up, point2);
+	VectorMA (point2, frame->left, right, point);
 	qfglVertex3fv (point);
 
 	qfglTexCoord2f (1, 0);
-	VectorMA (e->origin, frame->up, up, point);
-	VectorMA (point, frame->right, right, point);
+	VectorMA (point2, frame->right, right, point);
 	qfglVertex3fv (point);
 
 	qfglTexCoord2f (1, 1);
-	VectorMA (e->origin, frame->down, up, point);
-	VectorMA (point, frame->right, right, point);
+	VectorMA (point1, frame->right, right, point);
 	qfglVertex3fv (point);
 
 	qfglEnd ();
 
 	if (modelalpha < 1.0)
 		qfglDepthMask (GL_TRUE);
+}
+
+static void
+R_DrawSpriteModel_VA_f (entity_t *e)
+{
+	unsigned char	 modelalpha, color[4];
+	float			*up, *right;
+	int				 i;
+//	unsigned int	 vacount;
+	msprite_t		*psprite;
+	mspriteframe_t	*frame;
+	vec3_t			 point1, point2, v_forward, v_right, v_up;
+	varray_t2f_c4ub_v3f_t		*VA;
+
+	VA = spriteVertexArray; // FIXME: Despair
+
+	// don't bother culling, it's just a single polygon without a surface cache
+	frame = R_GetSpriteFrame (e);
+	psprite = e->model->cache.data;
+
+	qfglBindTexture (GL_TEXTURE_2D, frame->gl_texturenum); // FIXME: DESPAIR
+
+	if (psprite->type == SPR_ORIENTED) {	// bullet marks on walls
+		AngleVectors (e->angles, v_forward, v_right, v_up);
+		up = v_up;
+		right = v_right;
+	} else if (psprite->type == SPR_VP_PARALLEL_UPRIGHT) {
+		v_up[0] = 0;
+		v_up[1] = 0;
+		v_up[2] = 1;
+		up = v_up;
+		right = vright;
+	} else {								// normal sprite
+		up = vup;
+		right = vright;
+	}
+	if (e->scale != 1.0) {
+		VectorScale (up, e->scale, up);
+		VectorScale (right, e->scale, right);
+	}
+
+	for (i = 0; i < 4; i++)
+		color[i] = e->colormod[i] * 255;
+	memcpy (VA[0].color, color, 4);
+
+	modelalpha = color[3];
+	if (modelalpha < 255)
+		qfglDepthMask (GL_FALSE);
+
+	VectorMA (e->origin, frame->down, up, point1);
+	VectorMA (point1, frame->left, right, VA[0].vertex);
+
+	memcpy (VA[1].color, color, 4);
+	VectorMA (e->origin, frame->up, up, point2);
+	VectorMA (point2, frame->left, right, VA[1].vertex);
+
+	memcpy (VA[2].color, color, 4);
+	VectorMA (point2, frame->right, right, VA[2].vertex);
+
+	memcpy (VA[3].color, color, 4);
+	VectorMA (point1, frame->right, right, VA[3].vertex);
+
+//	VA += 4;
+//	vacount += 4;
+//	if (vacount + 4 > sVAsize) {
+//		qfglDrawElements (GL_QUADS, vacount, GL_UNSIGNED_INT, sVAindices);
+		qfglDrawElements (GL_QUADS, 4, GL_UNSIGNED_INT, sVAindices);
+//		vacount = 0;
+//		VA = spriteVertexArray;
+//	}
+
+	if (modelalpha < 255)
+		qfglDepthMask (GL_TRUE);
+}
+
+void
+R_InitSprites (void)
+{
+	int		i;
+
+	if (r_init) {
+		if (gl_va_capable) {			// 0 == gl_va_capable
+			R_DrawSpriteModel = R_DrawSpriteModel_VA_f;
+
+#if 0
+			if (vaelements > 3)
+				sVAsize = min (vaelements - (vaelements % 4), 512);
+			else
+				sVAsize = 512;
+#else
+			sVAsize = 4;
+#endif
+			Con_Printf ("Sprites: %i maximum vertex elements.\n", sVAsize);
+
+			if (spriteVertexArray)
+				free (spriteVertexArray);
+			spriteVertexArray = (varray_t2f_c4ub_v3f_t *)
+				calloc (sVAsize, sizeof (varray_t2f_c4ub_v3f_t));
+			qfglInterleavedArrays (GL_T2F_C4UB_V3F, 0, spriteVertexArray);
+
+			if (sVAindices)
+				free (sVAindices);
+			sVAindices = (int *) calloc (sVAsize, sizeof (int));
+			for (i = 0; i < sVAsize; i++)
+				sVAindices[i] = i;
+			for (i = 0; i < sVAsize / 4; i++) {
+				spriteVertexArray[i * 4].texcoord[0] = 0.0;
+				spriteVertexArray[i * 4].texcoord[1] = 1.0;
+				spriteVertexArray[i * 4 + 1].texcoord[0] = 0.0;
+				spriteVertexArray[i * 4 + 1].texcoord[1] = 0.0;
+				spriteVertexArray[i * 4 + 2].texcoord[0] = 1.0;
+				spriteVertexArray[i * 4 + 2].texcoord[1] = 0.0;
+				spriteVertexArray[i * 4 + 3].texcoord[0] = 1.0;
+				spriteVertexArray[i * 4 + 3].texcoord[1] = 1.0;
+			}
+		} else {
+			R_DrawSpriteModel = R_DrawSpriteModel_f;
+
+			if (spriteVertexArray) {
+				free (spriteVertexArray);
+				spriteVertexArray = 0;
+			}
+			if (sVAindices) {
+				free (sVAindices);
+				sVAindices = 0;
+			}
+		}
+	}
 }

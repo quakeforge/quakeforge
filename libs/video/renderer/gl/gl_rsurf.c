@@ -390,7 +390,7 @@ R_DrawBrushModel (entity_t *e)
 		}
 	}
 
-	R_BlendLightmaps ();
+	R_CalcAndBlendLightmaps ();
 
 	if (gl_fb_bmodels->int_val)
 		R_RenderFullbrights ();
@@ -501,6 +501,8 @@ R_DrawWorld (void)
 	R_DrawSkyChain (sky_chain);
 
 	DrawTextureChains ();
+
+	R_CalcLightmaps ();
 
 	R_BlendLightmaps ();
 

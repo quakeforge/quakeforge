@@ -48,6 +48,7 @@ static __attribute__ ((unused)) const char rcsid[] =
 #include "QF/sys.h"
 #include "QF/texture.h"
 #include "QF/tga.h"
+#include "QF/va.h"
 #include "QF/vid.h"
 #include "QF/GL/qf_textures.h"
 
@@ -69,13 +70,12 @@ typedef struct {
 
 #define FLOODFILL_STEP( off, dx, dy ) \
 { \
-	if (pos[off] == fillcolor) \
-	{ \
+	if (pos[off] == fillcolor) { \
 		pos[off] = 255; \
 		fifo[inpt].x = x + (dx), fifo[inpt].y = y + (dy); \
 		inpt = (inpt + 1) & FLOODFILL_FIFO_MASK; \
-	} \
-	else if (pos[off] != 255) fdc = pos[off]; \
+	} else if (pos[off] != 255) \
+		fdc = pos[off]; \
 }
 
 /*
@@ -272,16 +272,31 @@ Mod_LoadExternalSkin (maliasskindesc_t *pskindesc, char *filename)
 	QFile		*f;
 
 	QFS_FOpenFile (filename, &f);
-	if (f)
-	{
+	if (!f) {
+		char	filename2[MAX_QPATH + 4];
+		char   *foo = filename2;
+
+		foo = va ("progs/%s", filename);
+		QFS_FOpenFile (foo, &f);
+	}
+	if (!f) {
+		char	filename2[MAX_QPATH + 4];
+		char   *foo = filename2;
+
+		foo = va ("textures/%s", filename);
+		QFS_FOpenFile (foo, &f);
+	}
+	if (f) {
 		targa = LoadTGA (f);
 		Qclose (f);
 		if (targa->format < 4)
 			pskindesc->texnum = GL_LoadTexture
-				("", targa->width, targa->height, targa->data, true, false, 3);
+				(filename, targa->width, targa->height, targa->data, true,
+				 false, 3);
 		else
 			pskindesc->texnum = GL_LoadTexture
-				("", targa->width, targa->height, targa->data, true, true, 4);
+				(filename, targa->width, targa->height, targa->data, true,
+				 false, 4);
 	}
 }
 

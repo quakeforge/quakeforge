@@ -52,6 +52,7 @@ typedef struct varray_t2f_c4f_n3f_v3f_s {
 	 GLfloat	vertex[3];
 } varray_t2f_c4f_n3f_v3f_t;
 
+extern qboolean gl_va_capable;
 extern int vaelements;
 
 //extern varray_t2f_c4f_n3f_v3f_t *modelVertexArray
@@ -63,5 +64,15 @@ extern int pVAsize;
 extern float *textCoords;
 extern float *textVertices;
 extern int tVAsize;
+
+extern varray_t2f_c4ub_v3f_t *spriteVertexArray;
+extern int sVAsize;
+
+/*
+extern varray_t2f_c4ub_v3f_t *polyVertexArray;
+extern float *polyCoords;
+extern float *polyVertices
+extern int polyVAsize;
+*/
 
 #endif // __qf_varrays_h

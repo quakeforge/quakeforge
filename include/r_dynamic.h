@@ -85,6 +85,7 @@ void R_DrawParticles (void);
 struct cvar_s;
 void R_MaxParticlesCheck (struct cvar_s *r_particles,
 						  struct cvar_s *r_particles_max);
+void R_InitSprites (void);
 
 extern unsigned int r_maxparticles;
 extern unsigned int numparticles;

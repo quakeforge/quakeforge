@@ -63,6 +63,7 @@ static __attribute__ ((unused)) const char rcsid[] =
 
 int			r_init = 0;
 
+
 /*
 	R_Envmap_f
 
@@ -159,6 +160,7 @@ R_Init (void)
 
 	r_init = 1;
 	R_InitParticles ();
+	R_InitSprites ();
 	Draw_InitText ();
 }
 

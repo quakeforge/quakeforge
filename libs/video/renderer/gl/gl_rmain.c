@@ -64,6 +64,7 @@ static __attribute__ ((unused)) const char rcsid[] =
 #include "r_cvar.h"
 #include "r_dynamic.h"
 #include "r_local.h"
+#include "varrays.h"
 #include "view.h"
 
 entity_t    r_worldentity;
@@ -102,6 +103,8 @@ int         d_lightstylevalue[256];		// 8.8 fraction of base light value
 
 vec3_t		shadecolor;					// Ender (Extend) Colormod
 float		modelalpha;					// Ender (Extend) Alpha
+
+extern void (*R_DrawSpriteModel) (struct entity_s *ent);
 
 
 void
@@ -197,6 +200,8 @@ R_DrawEntitiesOnList (void)
 
 	qfglColor3ubv (color_white);
 	qfglEnable (GL_ALPHA_TEST);
+	if (gl_va_capable)
+		qfglInterleavedArrays (GL_T2F_C4UB_V3F, 0, spriteVertexArray);
 	for (i = 0; i < r_numvisedicts; i++) {
 		if (r_visedicts[i]->model->type != mod_sprite)
 			continue;

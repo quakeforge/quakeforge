@@ -66,7 +66,6 @@ extern  lightstyle_t    r_lightstyle[MAX_LIGHTSTYLES];
 #define	TOP_RANGE		16			// soldier uniform colors
 #define	BOTTOM_RANGE	96
 
-
 typedef struct entity_s
 {
 	vec3_t					origin;
@@ -129,10 +128,7 @@ typedef struct
 	int			ambientlight;
 } refdef_t;
 
-
-/*
-  REFRESH
-*/
+// REFRESH ====================================================================
 
 extern	int		reinit_surfcache;
 
@@ -160,14 +156,11 @@ void R_RemoveEfrags (entity_t *ent);
 
 void R_NewMap (model_t *worldmodel, struct model_s **models, int num_models);
 
-
 // LordHavoc: relative bmodel lighting
 void R_PushDlights (const vec3_t entorigin);
 void R_DrawWaterSurfaces (void);
 
-/*
-  Surface cache related
-*/
+//  Surface cache related ==========
 extern	int		reinit_surfcache;	// if 1, surface cache is currently empty
 extern qboolean	r_cache_thrash;	// set if thrashing the surface cache
 extern qboolean	r_inhibit_viewmodel;
@@ -201,7 +194,6 @@ struct progs_s;
 void R_Progs_Init (struct progs_s *pr);
 
 void R_DrawAliasModel (entity_t *e);
-void R_DrawSpriteModel (entity_t *e);
 
 void R_MarkLeaves (void);
 

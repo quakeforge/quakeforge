@@ -72,6 +72,11 @@ const char		   *gl_renderer;
 const char		   *gl_vendor;
 const char		   *gl_version;
 
+int					gl_major;
+int					gl_minor;
+int					gl_release_number;
+
+int					gl_va_capable;
 int					vaelements;
 int         		texture_extension_number = 1;
 int					gl_filter_min = GL_LINEAR_MIPMAP_NEAREST;
@@ -105,7 +110,9 @@ gl_multitexture_f (cvar_t *var)
 static void
 gl_screenshot_byte_swap_f (cvar_t *var)
 {
-	qfglPixelStorei (GL_PACK_SWAP_BYTES, var->int_val ? GL_TRUE : GL_FALSE);
+	if (var)
+		qfglPixelStorei (GL_PACK_SWAP_BYTES,
+						 var->int_val ? GL_TRUE : GL_FALSE);
 }
 
 static void
@@ -255,7 +262,7 @@ void
 GL_Pre_Init (void)
 {
 	if (!GLF_Init()) {
-		Sys_Error("Can't init video.");
+		Sys_Error ("Can't init video.");
 		return;
 	}
 }
@@ -263,17 +270,39 @@ GL_Pre_Init (void)
 void
 GL_Init_Common (void)
 {
-	GL_Common_Init_Cvars ();
+	gl_version = qfglGetString (GL_VERSION);
+	if (sscanf (gl_version, "%d.%d", &gl_major, &gl_minor) == 2) {
+		gl_release_number = 0;
+		if (gl_major >= 1) {
+			if (gl_minor >= 1) {
+				gl_va_capable = true;
+			} else
+				gl_va_capable = false;
+		}
+	} else if (sscanf (gl_version, "%d.%d.%d", &gl_major, &gl_minor,
+					   &gl_release_number) == 3) {
+		if (gl_major >= 1) {
+			if (gl_minor >= 1) {
+				gl_va_capable = true;
+			} else
+				gl_va_capable = false;
+		}
+	} else {
+		Sys_Error ("Malformed OpenGL version string!");
+	}
+	Con_Printf ("GL_VERSION: %s\n", gl_version);
 
 	gl_vendor = qfglGetString (GL_VENDOR);
 	Con_Printf ("GL_VENDOR: %s\n", gl_vendor);
 	gl_renderer = qfglGetString (GL_RENDERER);
 	Con_Printf ("GL_RENDERER: %s\n", gl_renderer);
-
-	gl_version = qfglGetString (GL_VERSION);
-	Con_Printf ("GL_VERSION: %s\n", gl_version);
 	gl_extensions = qfglGetString (GL_EXTENSIONS);
 	Con_Printf ("GL_EXTENSIONS: %s\n", gl_extensions);
+
+	if (strstr (gl_renderer, "Mesa DRI Mach64"))
+		gl_feature_mach64 = true;
+
+	GL_Common_Init_Cvars ();
 
 	qfglClearColor (0, 0, 0, 0);
 	qfglCullFace (GL_FRONT);
@@ -298,9 +327,6 @@ GL_Init_Common (void)
 
 	CheckMultiTextureExtensions ();
 	CheckVertexArraySize ();
-
-	if (strstr(gl_renderer, "Mesa DRI Mach64"))
-		gl_feature_mach64 = true;
 }
 
 void
@@ -323,18 +349,16 @@ Tdfx_Init8bitPalette (void)
 	// Check for 8bit Extensions and initialize them.
 	int         i;
 
-	if (is8bit) {
+	if (is8bit)
 		return;
-	}
 
 	if (QFGL_ExtensionPresent ("3DFX_set_global_palette")) {
-
 		char       *oldpal;
 		GLubyte     table[256][4];
 		QF_gl3DfxSetPaletteEXT qgl3DfxSetPaletteEXT = NULL;
 
-		if (!(qgl3DfxSetPaletteEXT = QFGL_ExtensionAddress
-			  ("gl3DfxSetPaletteEXT"))) {
+		if (!(qgl3DfxSetPaletteEXT =
+			  QFGL_ExtensionAddress ("gl3DfxSetPaletteEXT"))) {
 			Con_Printf ("3DFX_set_global_palette not found.\n");
 			return;
 		}
@@ -373,9 +397,8 @@ Shared_Init8bitPalette (void)
 	GLubyte 	thePalette[256 * 3];
 	GLubyte 	*oldPalette, *newPalette;
 
-	if (is8bit) {
+	if (is8bit)
 		return;
-	}
 
 	if (QFGL_ExtensionPresent ("GL_EXT_shared_texture_palette")) {
 		if (!(qglColorTableEXT = QFGL_ExtensionAddress ("glColorTableEXT"))) {
@@ -409,9 +432,8 @@ VID_Init8bitPalette (void)
 	if (vid_use8bit->int_val) {
 		Tdfx_Init8bitPalette ();
 		Shared_Init8bitPalette ();
-		if (!is8bit) {
+		if (!is8bit)
 			Con_Printf ("\n  8-bit extension not found.\n");
-		}
 	} else {
 		Con_Printf ("disabled.\n");
 	}
