@@ -51,8 +51,7 @@ quakeforge
 	|	|	\--- openal	Passing the buck to OpenAL
 	|	\--- targets		Raw sound I/O
 	|		+--- null	No raw output (none or OpenAL)
-	|		+--- alsa0.5	ALSA 0.5
-	|		+--- alsa0.9	ALSA 0.9
+	|		+--- alsa	ALSA
 	|		+--- oss	OSS or kernel sound
 	|		+--- dsound	MS DirectSound
 	|		\--- sdl	SDL (gack) output
