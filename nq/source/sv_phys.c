@@ -152,9 +152,7 @@ SV_RunThink (edict_t *ent)
 										// by a trigger with a local time.
 		SVfloat (ent, nextthink) = 0;
 		*sv_globals.time = thinktime;
-		*sv_globals.self = EDICT_TO_PROG (&sv_pr_state, ent);
-		*sv_globals.other = EDICT_TO_PROG (&sv_pr_state, sv.edicts);
-		PR_ExecuteProgram (&sv_pr_state, SVfunc (ent, think));
+		sv_pr_think (ent);
 
 		if (ent->free)
 			return false;
@@ -178,15 +176,11 @@ SV_Impact (edict_t *e1, edict_t *e2)
 
 	*sv_globals.time = sv.time;
 	if (SVfunc (e1, touch) && SVfloat (e1, solid) != SOLID_NOT) {
-		*sv_globals.self = EDICT_TO_PROG (&sv_pr_state, e1);
-		*sv_globals.other = EDICT_TO_PROG (&sv_pr_state, e2);
-		PR_ExecuteProgram (&sv_pr_state, SVfunc (e1, touch));
+		sv_pr_touch (e1, e2);
 	}
 
 	if (SVfunc (e2, touch) && SVfloat (e2, solid) != SOLID_NOT) {
-		*sv_globals.self = EDICT_TO_PROG (&sv_pr_state, e2);
-		*sv_globals.other = EDICT_TO_PROG (&sv_pr_state, e1);
-		PR_ExecuteProgram (&sv_pr_state, SVfunc (e2, touch));
+		sv_pr_touch (e2, e1);
 	}
 
 	*sv_globals.self = old_self;
@@ -484,9 +478,7 @@ SV_Push (edict_t *pusher, vec3_t move)
 		// if the pusher has a "blocked" function, call it
 		// otherwise, just stay in place until the obstacle is gone
 		if (SVfunc (pusher, blocked)) {
-			*sv_globals.self = EDICT_TO_PROG (&sv_pr_state, pusher);
-			*sv_globals.other = EDICT_TO_PROG (&sv_pr_state, check);
-			PR_ExecuteProgram (&sv_pr_state, SVfunc (pusher, blocked));
+			sv_pr_blocked (pusher, check);
 		}
 		// move back any entities we already moved
 		for (i = 0; i < num_moved; i++) {
@@ -537,9 +529,7 @@ SV_Physics_Pusher (edict_t *ent)
 	if (thinktime > oldltime && thinktime <= SVfloat (ent, ltime)) {
 		SVfloat (ent, nextthink) = 0;
 		*sv_globals.time = sv.time;
-		*sv_globals.self = EDICT_TO_PROG (&sv_pr_state, ent);
-		*sv_globals.other = EDICT_TO_PROG (&sv_pr_state, sv.edicts);
-		PR_ExecuteProgram (&sv_pr_state, SVfunc (ent, think));
+		sv_pr_think (ent);
 		if (ent->free)
 			return;
 	}

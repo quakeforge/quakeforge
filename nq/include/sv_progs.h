@@ -201,5 +201,56 @@ extern sv_fields_t sv_fields;
 #define SVinteger(e,f)	SVFIELD (e, f, integer)
 
 extern func_t EndFrame;
+extern progs_t sv_pr_state;
+
+static inline void
+sv_pr_touch (edict_t *self, edict_t *other)
+{
+	int         this;
+
+	*sv_globals.self = EDICT_TO_PROG (&sv_pr_state, self);
+	*sv_globals.other = EDICT_TO_PROG (&sv_pr_state, other);
+	if ((this = sv_pr_state.fields.this) != -1) {
+		P_INT (&sv_pr_state, 0) = E_var (self, this, integer);
+		P_INT (&sv_pr_state, 1) = 0;
+		P_INT (&sv_pr_state, 2) = E_var (other, this, integer);
+	}
+	PR_ExecuteProgram (&sv_pr_state, SVfunc (self, touch));
+}
+
+static inline void
+sv_pr_use (edict_t *self, edict_t *other)
+{
+}
+
+static inline void
+sv_pr_think (edict_t *self)
+{
+	int         this;
+
+	*sv_globals.self = EDICT_TO_PROG (&sv_pr_state, self);
+	*sv_globals.other = 0;
+	if ((this = sv_pr_state.fields.this) != -1) {
+		P_INT (&sv_pr_state, 0) = E_var (self, this, integer);
+		P_INT (&sv_pr_state, 1) = 0;
+		P_INT (&sv_pr_state, 2) = 0;
+	}
+	PR_ExecuteProgram (&sv_pr_state, SVfunc (self, think));
+}
+
+static inline void
+sv_pr_blocked (edict_t *self, edict_t *other)
+{
+	int         this;
+
+	*sv_globals.self = EDICT_TO_PROG (&sv_pr_state, self);
+	*sv_globals.other = EDICT_TO_PROG (&sv_pr_state, other);
+	if ((this = sv_pr_state.fields.this) != -1) {
+		P_INT (&sv_pr_state, 0) = E_var (self, this, integer);
+		P_INT (&sv_pr_state, 1) = 0;
+		P_INT (&sv_pr_state, 2) = E_var (other, this, integer);
+	}
+	PR_ExecuteProgram (&sv_pr_state, SVfunc (self, blocked));
+}
 
 #endif // __sv_progs_h

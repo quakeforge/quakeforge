@@ -274,8 +274,7 @@ SV_ConnectClient (int clientnum)
 		memcpy (client->spawn_parms, spawn_parms, sizeof (spawn_parms));
 	else {
 		// call the progs to get default spawn parms for the new client
-		PR_ExecuteProgram (&sv_pr_state,
-						   sv_funcs.SetNewParms);
+		PR_ExecuteProgram (&sv_pr_state, sv_funcs.SetNewParms);
 		for (i = 0; i < NUM_SPAWN_PARMS; i++)
 			client->spawn_parms[i] = sv_globals.parms[i];
 	}
@@ -889,8 +888,7 @@ SV_SaveSpawnparms (void)
 		// call the progs to get default spawn parms for the new client
 		*sv_globals.self =
 			EDICT_TO_PROG (&sv_pr_state, host_client->edict);
-		PR_ExecuteProgram (&sv_pr_state,
-						   sv_funcs.SetChangeParms);
+		PR_ExecuteProgram (&sv_pr_state, sv_funcs.SetChangeParms);
 		for (j = 0; j < NUM_SPAWN_PARMS; j++)
 			host_client->spawn_parms[j] =
 				sv_globals.parms[j];

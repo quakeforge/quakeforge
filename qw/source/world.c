@@ -291,10 +291,8 @@ SV_TouchLinks (edict_t *ent, areanode_t *node)
 		old_self = *sv_globals.self;
 		old_other = *sv_globals.other;
 
-		*sv_globals.self = EDICT_TO_PROG (&sv_pr_state, touch);
-		*sv_globals.other = EDICT_TO_PROG (&sv_pr_state, ent);
 		*sv_globals.time = sv.time;
-		PR_ExecuteProgram (&sv_pr_state, SVfunc (touch, touch));
+		sv_pr_touch (touch, ent);
 
 		*sv_globals.self = old_self;
 		*sv_globals.other = old_other;

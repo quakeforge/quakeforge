@@ -320,8 +320,7 @@ SV_Physics_Client (edict_t *ent, int num)
 	// call standard client pre-think
 	*sv_globals.time = sv.time;
 	*sv_globals.self = EDICT_TO_PROG (&sv_pr_state, ent);
-	PR_ExecuteProgram (&sv_pr_state,
-					   sv_funcs.PlayerPreThink);
+	PR_ExecuteProgram (&sv_pr_state, sv_funcs.PlayerPreThink);
 
 	// do a move
 	SV_CheckVelocity (ent);
@@ -371,6 +370,5 @@ SV_Physics_Client (edict_t *ent, int num)
 
 	*sv_globals.time = sv.time;
 	*sv_globals.self = EDICT_TO_PROG (&sv_pr_state, ent);
-	PR_ExecuteProgram (&sv_pr_state,
-					   sv_funcs.PlayerPostThink);
+	PR_ExecuteProgram (&sv_pr_state, sv_funcs.PlayerPostThink);
 }

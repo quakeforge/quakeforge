@@ -384,8 +384,7 @@ SV_DropClient (qboolean crash)
 			saveSelf = *sv_globals.self;
 			*sv_globals.self =
 				EDICT_TO_PROG (&sv_pr_state, host_client->edict);
-			PR_ExecuteProgram (&sv_pr_state,
-							   sv_funcs.ClientDisconnect);
+			PR_ExecuteProgram (&sv_pr_state, sv_funcs.ClientDisconnect);
 			*sv_globals.self = saveSelf;
 		}
 

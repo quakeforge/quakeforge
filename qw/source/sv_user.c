@@ -1526,10 +1526,8 @@ SV_RunCmd (usercmd_t *ucmd, qboolean inside)
 		*sv_globals.frametime = sv_frametime;
 
 		*sv_globals.time = sv.time;
-		*sv_globals.self = EDICT_TO_PROG (&sv_pr_state,
-															sv_player);
-		PR_ExecuteProgram (&sv_pr_state,
-						   sv_funcs.PlayerPreThink);
+		*sv_globals.self = EDICT_TO_PROG (&sv_pr_state, sv_player);
+		PR_ExecuteProgram (&sv_pr_state, sv_funcs.PlayerPreThink);
 
 		SV_RunThink (sv_player);
 	}
@@ -1615,9 +1613,7 @@ SV_RunCmd (usercmd_t *ucmd, qboolean inside)
 			ent = EDICT_NUM (&sv_pr_state, n);
 			if (!SVfunc (ent, touch) || (playertouch[n / 8] & (1 << (n % 8))))
 				continue;
-			*sv_globals.self = EDICT_TO_PROG (&sv_pr_state, ent);
-			*sv_globals.other = EDICT_TO_PROG (&sv_pr_state, sv_player);
-			PR_ExecuteProgram (&sv_pr_state, SVfunc (ent, touch));
+			sv_pr_touch (ent, sv_player);
 			playertouch[n / 8] |= 1 << (n % 8);
 		}
 	}
@@ -1635,15 +1631,12 @@ SV_PostRunCmd (void)
 
 	if (!host_client->spectator) {
 		*sv_globals.time = sv.time;
-		*sv_globals.self = EDICT_TO_PROG (&sv_pr_state,
-															sv_player);
-		PR_ExecuteProgram (&sv_pr_state,
-						   sv_funcs.PlayerPostThink);
+		*sv_globals.self = EDICT_TO_PROG (&sv_pr_state, sv_player);
+		PR_ExecuteProgram (&sv_pr_state, sv_funcs.PlayerPostThink);
 		SV_RunNewmis ();
 	} else if (SpectatorThink) {
 		*sv_globals.time = sv.time;
-		*sv_globals.self = EDICT_TO_PROG (&sv_pr_state,
-															sv_player);
+		*sv_globals.self = EDICT_TO_PROG (&sv_pr_state, sv_player);
 		PR_ExecuteProgram (&sv_pr_state, SpectatorThink);
 	}
 }
