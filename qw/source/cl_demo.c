@@ -405,8 +405,9 @@ CL_GetMessage (void)
 	if (!NET_GetPacket ())
 		return false;
 
-	Log_Incoming_Packet(net_message->message->data,
-						net_message->message->cursize, 1);
+	if (net_packetlog->int_val)
+		Log_Incoming_Packet(net_message->message->data,
+							net_message->message->cursize, 1);
 
 	CL_WriteDemoMessage (net_message->message);
 
