@@ -756,7 +756,7 @@ Key_Unbind_f (void)
 	int         b, t;
 
 	if (Cmd_Argc () != 3) {
-		Con_Printf ("unbind <kgt> <key> : remove commands from a key\n");
+		Con_Printf ("in_unbind <kgt> <key> : remove commands from a key\n");
 		return;
 	}
 
@@ -800,7 +800,7 @@ Key_Bind_f (void)
 	c = Cmd_Argc ();
 
 	if (c != 3 && c != 4) {
-		Con_Printf ("bind <kgt> <key> [command] : attach a command to a key\n");
+		Con_Printf ("in_bind <kgt> <key> [command] : attach a command to a key\n");
 		return;
 	}
 
@@ -878,7 +878,7 @@ Key_WriteBindings (VFile *f)
 	for (j = 0; j < KGT_LAST; j++)
 		for (i = 0; i < K_LAST; i++)
 			if ((bind = Key_GetBinding(j, i)))
-				Qprintf (f, "bind %s %s \"%s\"\n", Key_KgtnumToString (j),
+				Qprintf (f, "in_bind %s %s \"%s\"\n", Key_KgtnumToString (j),
 						 Key_KeynumToString (i), bind);
 }
 
@@ -976,7 +976,7 @@ Key_Init (void)
 	key_linepos = 1;
 
 	// register our functions
-	Cmd_AddCommand ("bind", Key_Bind_f,
+	Cmd_AddCommand ("in_bind", Key_Bind_f,
 					"Assign a command or a set of commands to a key.\n"
 					"Note: To bind multiple commands to a key, enclose the "
 					"commands in quotes and separate with semi-colons. \n"
@@ -989,7 +989,7 @@ Key_Init (void)
 					"mwheelup, mwheeldown\n"
 					"Special: The escape, and ~ (tilde) keys can only be "
 					"bound from an external configuration file.");
-	Cmd_AddCommand ("unbind", Key_Unbind_f,
+	Cmd_AddCommand ("in_unbind", Key_Unbind_f,
 					"Remove the bind from the the selected key");
 	Cmd_AddCommand ("unbindall", Key_Unbindall_f,
 					"Remove all binds (USE CAUTIOUSLY!!!)");

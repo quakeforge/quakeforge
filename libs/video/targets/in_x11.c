@@ -88,74 +88,75 @@ static int  p_mouse_x, p_mouse_y;
 #define FOCUS_MASK (FocusChangeMask)
 #define INPUT_MASK (KEY_MASK | MOUSE_MASK | FOCUS_MASK)
 
-static int
-XLateKey (XKeyEvent * ev, qboolean modified)
+static void
+XLateKey (XKeyEvent * ev, int *k, int *u)
 {
-	char        tmp[2];
 	int         key = 0;
 	KeySym      keysym;
+	XComposeStatus compose;
+	unsigned char buffer[4];
+	int         bytes;
+	int         unicode;
 
-	if (!modified) {
-		keysym = XLookupKeysym (ev, 0);
-	} else {
-		XLookupString (ev, tmp, 1, &keysym, NULL);
-	}
+	//keysym = XLookupKeysym (ev, 0);
+	bytes = XLookupString (ev, buffer, sizeof(buffer), &keysym, &compose);
+	unicode = buffer[0];
 
 	switch (keysym) {
 		case XK_KP_Page_Up:
-			key = KP_PGUP;
+			key = K_KP9;
 			break;
 		case XK_Page_Up:
-			key = K_PGUP;
+			key = K_PAGEUP;
 			break;
 
 		case XK_KP_Page_Down:
-			key = KP_PGDN;
+			key = K_KP3;
 			break;
 		case XK_Page_Down:
-			key = K_PGDN;
+			key = K_PAGEDOWN;
 			break;
 
 		case XK_KP_Home:
-			key = KP_HOME;
+			key = K_KP7;
 			break;
 		case XK_Home:
 			key = K_HOME;
 			break;
 
 		case XK_KP_End:
-			key = KP_END;
+			key = K_KP1;
 			break;
 		case XK_End:
 			key = K_END;
 			break;
 
 		case XK_KP_Left:
-			key = KP_LEFTARROW;
+			key = K_KP4;
 			break;
 		case XK_Left:
-			key = K_LEFTARROW;
+			key = K_LEFT;
 			break;
 
 		case XK_KP_Right:
-			key = KP_RIGHTARROW;
+			key = K_KP6;
 			break;
 		case XK_Right:
-			key = K_RIGHTARROW;
+			key = K_RIGHT;
 			break;
 
 		case XK_KP_Down:
-			key = KP_DOWNARROW;
+			key = K_KP2;
 			break;
 		case XK_Down:
-			key = K_DOWNARROW;
+			key = K_DOWN;
 			break;
 
 		case XK_KP_Up:
-			key = KP_UPARROW;
+			key = K_KP8;
 			break;
 		case XK_Up:
-			key = K_UPARROW;
+			key = K_UP;
 			break;
 
 		case XK_Escape:
@@ -163,10 +164,10 @@ XLateKey (XKeyEvent * ev, qboolean modified)
 			break;
 
 		case XK_KP_Enter:
-			key = KP_ENTER;
+			key = K_KP_ENTER;
 			break;
 		case XK_Return:
-			key = K_ENTER;
+			key = K_RETURN;
 			break;
 
 		case XK_Tab:
@@ -215,10 +216,10 @@ XLateKey (XKeyEvent * ev, qboolean modified)
 			break;
 
 		case XK_KP_Delete:
-			key = KP_DEL;
+			key = K_KP_PERIOD;
 			break;
 		case XK_Delete:
-			key = K_DEL;
+			key = K_DELETE;
 			break;
 
 		case XK_Pause:
@@ -226,49 +227,59 @@ XLateKey (XKeyEvent * ev, qboolean modified)
 			break;
 
 		case XK_Shift_L:
+			key = K_LSHIFT;
+			break;
 		case XK_Shift_R:
-			key = K_SHIFT;
+			key = K_RSHIFT;
 			break;
 
 		case XK_Execute:
 		case XK_Control_L:
+			key = K_LCTRL;
+			break;
 		case XK_Control_R:
-			key = K_CTRL;
+			key = K_LCTRL;
 			break;
 
 		case XK_Mode_switch:
 		case XK_Alt_L:
+			key = K_LALT;
+			break;
 		case XK_Meta_L:
+			key = K_LMETA;
+			break;
 		case XK_Alt_R:
+			key = K_RALT;
+			break;
 		case XK_Meta_R:
-			key = K_ALT;
+			key = K_RMETA;
 			break;
 
 		case XK_Caps_Lock:
 			key = K_CAPSLOCK;
 			break;
 		case XK_KP_Begin:
-			key = KP_5;
+			key = K_KP5;
 			break;
 
 		case XK_Insert:
-			key = K_INS;
+			key = K_INSERT;
 			break;
 		case XK_KP_Insert:
-			key = KP_INS;
+			key = K_KP0;
 			break;
 
 		case XK_KP_Multiply:
-			key = KP_MULTIPLY;
+			key = K_KP_MULTIPLY;
 			break;
 		case XK_KP_Add:
-			key = KP_PLUS;
+			key = K_KP_PLUS;
 			break;
 		case XK_KP_Subtract:
-			key = KP_MINUS;
+			key = K_KP_MINUS;
 			break;
 		case XK_KP_Divide:
-			key = KP_DIVIDE;
+			key = K_KP_DIVIDE;
 			break;
 
 			/* For Sun keyboards */
@@ -276,53 +287,54 @@ XLateKey (XKeyEvent * ev, qboolean modified)
 			key = K_HOME;
 			break;
 		case XK_F29:
-			key = K_PGUP;
+			key = K_PAGEUP;
 			break;
 		case XK_F33:
 			key = K_END;
 			break;
 		case XK_F35:
-			key = K_PGDN;
+			key = K_PAGEDOWN;
 			break;
 
 		/* Some high ASCII symbols, for azerty keymaps */
 		case XK_twosuperior:
-			key = K_ASC178;
+			key = K_WORLD_18;
 			break;
 		case XK_eacute:
-			key = K_ASC233;
+			key = K_WORLD_63;
 			break;
 		case XK_section:
-			key = K_ASC167;
+			key = K_WORLD_7;
 			break;
 		case XK_egrave:
-			key = K_ASC232;
+			key = K_WORLD_72;
 			break;
 		case XK_ccedilla:
-			key = K_ASC231;
+			key = K_WORLD_71;
 			break;
 		case XK_agrave:
-			key = K_ASC224;
+			key = K_WORLD_64;
 			break;
 
 		default:
 			if (keysym < 128) {
 				/* ASCII keys */
 				key = keysym;
-				if (!modified && ((key >= 'A') && (key <= 'Z'))) {
+				if ((key >= 'A') && (key <= 'Z')) {
 					key = key + ('a' - 'A');
 				}
 			}
 			break;
 	}
-
-	return key;
+	*k = key;
+	*u = unicode;
 }
 
 
 static void
 event_key (XEvent * event)
 {
+	int key, unicode;
 	if (old_key_dest != key_dest) {
 		old_key_dest = key_dest;
 		if (key_dest == key_game) {
@@ -331,8 +343,8 @@ event_key (XEvent * event)
 			XAutoRepeatOn (x_disp);
 		}
 	}
-	Key_Event (XLateKey (&event->xkey, 0), XLateKey (&event->xkey, 1),
-			   event->type == KeyPress);
+	XLateKey (&event->xkey, &key, &unicode);
+	Key_Event (key, unicode, event->type == KeyPress);
 }
 
 
@@ -350,13 +362,13 @@ event_button (XEvent * event)
 		case 1:
 		case 2:
 		case 3:
-			Key_Event (K_MOUSE1 + but - 1, 0, event->type == ButtonPress);
+			Key_Event (M_BUTTON1 + but - 1, 0, event->type == ButtonPress);
 			break;
 		case 4:
-			Key_Event (K_MWHEELUP, 0, event->type == ButtonPress);
+			Key_Event (M_WHEEL_UP, 0, event->type == ButtonPress);
 			break;
 		case 5:
-			Key_Event (K_MWHEELDOWN, 0, event->type == ButtonPress);
+			Key_Event (M_WHEEL_DOWN, 0, event->type == ButtonPress);
 			break;
 	}
 }
