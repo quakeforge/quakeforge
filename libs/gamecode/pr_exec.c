@@ -46,100 +46,6 @@
 
 #include "compat.h"
 
-char       *pr_opnames[] = {
-	"DONE",
-
-	"MUL_F",
-	"MUL_V",
-	"MUL_FV",
-	"MUL_VF",
-
-	"DIV",
-
-	"ADD_F",
-	"ADD_V",
-
-	"SUB_F",
-	"SUB_V",
-
-	"EQ_F",
-	"EQ_V",
-	"EQ_S",
-	"EQ_E",
-	"EQ_FNC",
-
-	"NE_F",
-	"NE_V",
-	"NE_S",
-	"NE_E",
-	"NE_FNC",
-
-	"LE",
-	"GE",
-	"LT",
-	"GT",
-
-	"INDIRECT",
-	"INDIRECT",
-	"INDIRECT",
-	"INDIRECT",
-	"INDIRECT",
-	"INDIRECT",
-
-	"ADDRESS",
-
-	"STORE_F",
-	"STORE_V",
-	"STORE_S",
-	"STORE_ENT",
-	"STORE_FLD",
-	"STORE_FNC",
-
-	"STOREP_F",
-	"STOREP_V",
-	"STOREP_S",
-	"STOREP_ENT",
-	"STOREP_FLD",
-	"STOREP_FNC",
-
-	"RETURN",
-
-	"NOT_F",
-	"NOT_V",
-	"NOT_S",
-	"NOT_ENT",
-	"NOT_FNC",
-
-	"IF",
-	"IFNOT",
-
-	"CALL0",
-	"CALL1",
-	"CALL2",
-	"CALL3",
-	"CALL4",
-	"CALL5",
-	"CALL6",
-	"CALL7",
-	"CALL8",
-
-	"STATE",
-
-	"GOTO",
-
-	"AND",
-	"OR",
-
-	"BITAND",
-	"BITOR",
-
-	"ADD_S",
-	"LE_S",
-	"GE_S",
-	"LT_S",
-	"GT_S",
-};
-
 //=============================================================================
 
 /*
@@ -150,11 +56,13 @@ PR_PrintStatement (progs_t * pr, dstatement_t *s)
 {
 	int         i;
 	int         addr = s - pr->pr_statements;
+	opcode_t   *op;
 
 	Con_Printf ("%-7d ", addr);
-	if ((unsigned int) s->op < sizeof (pr_opnames) / sizeof (pr_opnames[0])) {
-		Con_Printf ("%s ", pr_opnames[s->op]);
-		i = strlen (pr_opnames[s->op]);
+	op = PR_Opcode (s->op);
+	if (op) {
+		Con_Printf ("%s ", op->opname);
+		i = strlen (op->opname);
 		for (; i < 10; i++)
 			Con_Printf (" ");
 	}

@@ -963,7 +963,7 @@ Options: \n\
 		printf ("Source directory: %s\n", sourcedir);
 	}
 
-	PR_Opcode_Init ();
+	PR_Opcode_Init_Tables ();
 
 	InitData ();
 

@@ -138,6 +138,20 @@ typedef enum {
 	OP_GT_S,
 } pr_opcode_e;
 
+typedef struct
+{
+	const char	*name;
+	const char	*opname;
+	pr_opcode_e opcode;
+	int			priority;
+	qboolean	right_associative;
+	etype_t		type_a, type_b, type_c;
+	int			min_version;
+} opcode_t;
+
+extern opcode_t pr_opcodes[];
+opcode_t *PR_Opcode (short opcode);
+void PR_Opcode_Init (void);
 
 typedef struct statement_s
 {

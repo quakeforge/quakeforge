@@ -1285,6 +1285,7 @@ PR_Init_Cvars (void)
 void
 PR_Init (void)
 {
+	PR_Opcode_Init ();
 }
 
 edict_t    *

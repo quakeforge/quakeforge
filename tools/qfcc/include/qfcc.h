@@ -376,17 +376,6 @@ typedef struct
 
 extern	pr_info_t	pr;
 
-typedef struct
-{
-	const char	*name;
-	const char	*opname;
-	pr_opcode_e opcode;
-	int			priority;
-	qboolean	right_associative;
-	etype_t		type_a, type_b, type_c;
-	int			min_version;
-} opcode_t;
-
 extern opcode_t *op_done;
 extern opcode_t *op_return;
 extern opcode_t *op_if;
@@ -399,8 +388,7 @@ void PR_AddStatementRef (def_t *def, dstatement_t *st, int field);
 def_t *PR_Statement (opcode_t *op, def_t *var_a, def_t *var_b);
 opcode_t *PR_Opcode_Find (const char *name, int priority,
 						  def_t *var_a, def_t *var_b, def_t *var_c);
-opcode_t *PR_Opcode (short opcode);
-void PR_Opcode_Init (void);
+void PR_Opcode_Init_Tables (void);
 
 //============================================================================
 
