@@ -53,6 +53,7 @@ const char  rcsid[] =
 #include "gib_regex.h"
 #include "gib_builtin.h"
 #include "gib_thread.h"
+#include "gib_handle.h"
 
 static void
 GIB_Exec_Override_f (void)
@@ -100,6 +101,8 @@ GIB_Init (qboolean sandbox)
 		Cmd_RemoveCommand ("exec");
 		Cmd_AddCommand ("exec", GIB_Exec_Override_f, "Execute a script file.");
 	}
+	// Initialize handle system
+	GIB_Handle_Init ();
 	// Initialize variables
 	GIB_Var_Init ();
 	// Initialize regex cache
@@ -108,4 +111,5 @@ GIB_Init (qboolean sandbox)
 	GIB_Builtin_Init (sandbox);
 	// Initialize event system
 	GIB_Event_Init ();
+
 }

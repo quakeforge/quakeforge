@@ -29,27 +29,16 @@
 	$Id$
 */
 
-#ifndef __gib_thread_h
-#define __gib_thread_h
+#ifndef __gib_handle_h
+#define __gib_handle_h
 
-#include "gib_function.h"
+typedef struct gib_handle_s {
+	unsigned short int class;
+	unsigned long int num;
+	void *data;
+	struct gib_handle_s *next;
+} gib_handle_t;
 
-typedef struct gib_thread_s {
-	unsigned long int id;
-	struct cbuf_s *cbuf;
-	struct gib_thread_s *prev, *next;
-} gib_thread_t;
-
-void GIB_Thread_Add (gib_thread_t *thread);
-void GIB_Thread_Remove (gib_thread_t *thread);
-void GIB_Thread_Delete (gib_thread_t *thread);
-gib_thread_t *GIB_Thread_New (void);
-void GIB_Thread_Init (void);
-
-int GIB_Event_Register (const char *name, gib_function_t *func);
-void GIB_Event_Init (void);
-
-extern gib_thread_t *gib_thread_first, *gib_thread_last;
-extern unsigned short int gib_thread_class;
+void GIB_Handle_Init (void);
 
 #endif

@@ -104,5 +104,11 @@ void GIB_Thread_Execute (void);
 
 void GIB_Init (qboolean sandbox);
 
+// Handle interface
+
+unsigned long int GIB_Handle_New (void *data, unsigned short int class);
+void GIB_Handle_Free (unsigned long int num, unsigned short int class);
+void *GIB_Handle_Get (unsigned long int num, unsigned short int class);
+unsigned short int GIB_Handle_Class_New (void);
 
 #endif

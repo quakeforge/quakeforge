@@ -45,23 +45,31 @@ const char  rcsid[] = "$Id$";
 #include "QF/dstring.h"
 #include "QF/hash.h"
 
+#include "gib_handle.h"
 #include "gib_tree.h"
 #include "gib_function.h"
 #include "gib_thread.h"
 
-gib_thread_t *gib_threads = 0;
-gib_thread_t **gib_thread_p = &gib_threads;
+gib_thread_t *gib_thread_first = 0;
+gib_thread_t *gib_thread_last = 0;
+
+unsigned short int gib_thread_class;
 
 hashtab_t  *gib_events;
-
-static unsigned long int nextid = 0;
 
 void
 GIB_Thread_Add (gib_thread_t * thread)
 {
-	thread->prev = *gib_thread_p;
-	*gib_thread_p = thread;
-	gib_thread_p = &thread->next;
+	if (!gib_thread_first)
+		gib_thread_first = thread;
+
+	thread->prev = gib_thread_last;
+	if (!gib_thread_last)
+		gib_thread_last = thread;
+	else {
+		gib_thread_last->next = thread;
+		gib_thread_last = thread;
+	}
 }
 
 void
@@ -70,24 +78,11 @@ GIB_Thread_Remove (gib_thread_t * thread)
 	if (thread->prev)
 		thread->prev->next = thread->next;
 	else
-		gib_threads = thread->next;
+		gib_thread_first = thread->next;
 	if (thread->next)
 		thread->next->prev = thread->prev;
-	else if (thread->prev)
-		gib_thread_p = &thread->prev->next;
 	else
-		gib_thread_p = &gib_threads;
-}
-
-gib_thread_t *
-GIB_Thread_Find (unsigned long int id)
-{
-	gib_thread_t *cur;
-
-	for (cur = gib_threads; cur; cur = cur->next)
-		if (cur->id == id)
-			return cur;
-	return 0;
+		gib_thread_last = thread->next;
 }
 
 gib_thread_t *
@@ -96,8 +91,7 @@ GIB_Thread_New (void)
 	gib_thread_t *new = calloc (1, sizeof (gib_thread_t));
 
 	new->cbuf = Cbuf_New (GIB_Interpreter ());
-	new->id = nextid;
-	nextid++;
+	new->id = GIB_Handle_New (new, gib_thread_class);
 	return new;
 }
 
@@ -105,6 +99,7 @@ void
 GIB_Thread_Delete (gib_thread_t * thread)
 {
 	Cbuf_DeleteStack (thread->cbuf);
+	GIB_Handle_Free (thread->id, gib_thread_class);
 	free (thread);
 }
 
@@ -113,18 +108,24 @@ GIB_Thread_Execute (void)
 {
 	gib_thread_t *cur, *tmp;
 
-	if (!gib_threads)
+	if (!gib_thread_first)
 		return;
 
-	for (cur = gib_threads; cur; cur = tmp) {
+	for (cur = gib_thread_first; cur; cur = tmp) {
 		tmp = cur->next;
 		if (GIB_DATA(cur->cbuf)->program)
 			Cbuf_Execute_Stack (cur->cbuf);
 		else {
 			GIB_Thread_Remove (cur);
 			GIB_Thread_Delete (cur);
-		}			
+		}
 	}
+}
+
+void
+GIB_Thread_Init (void)
+{
+	gib_thread_class = GIB_Handle_Class_New ();
 }
 
 static const char *

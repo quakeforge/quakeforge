@@ -63,6 +63,7 @@ const char  rcsid[] =
 #include "gib_vars.h"
 #include "gib_regex.h"
 #include "gib_thread.h"
+#include "gib_handle.h"
 #include "gib_builtin.h"
 
 char        gib_null_string[] = "";
@@ -628,10 +629,9 @@ GIB_Thread_Kill_f (void)
 		cbuf_t     *cur;
 		unsigned long int id = strtoul (GIB_Argv (1), 0, 10);
 
-		thread = GIB_Thread_Find (id);
+		thread = GIB_Handle_Get (id, gib_thread_class);
 		if (!thread) {
-			GIB_Error ("thread", "%s: thread %lu does not exist.", GIB_Argv (0),
-					   id);
+			GIB_Error ("thread", "%s: thread %lu does not exist.", GIB_Argv (0), id);
 			return;
 		}
 
@@ -655,7 +655,7 @@ GIB_Thread_List_f (void)
 	else if (GIB_CanReturn ()) {
 		gib_thread_t *cur;
 
-		for (cur = gib_threads; cur; cur = cur->next)
+		for (cur = gib_thread_first; cur; cur = cur->next)
 			dsprintf (GIB_Return (0), "%lu", cur->id);
 	}
 }
