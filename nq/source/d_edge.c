@@ -1,7 +1,7 @@
 /*
 	d_edge.c
 
-	@description@
+	(description)
 
 	Copyright (C) 1996-1997  Id Software, Inc.
 
@@ -31,18 +31,15 @@
 #endif
 
 #include "d_local.h"
-#include "client.h"
+#include "r_local.h"
+#include "render.h"
 
 static int  miplevel;
 
 float       scale_for_mip;
-int         screenwidth;
+extern int  screenwidth;
 int         ubasestep, errorterm, erroradjustup, erroradjustdown;
 int         vstartscan;
-
-// FIXME: should go away
-extern void R_RotateBmodel (void);
-extern void R_TransformFrustum (void);
 
 vec3_t      transformed_modelorg;
 
@@ -162,11 +159,11 @@ D_DrawSurfaces (void)
 	vec3_t      world_transformed_modelorg;
 	vec3_t      local_modelorg;
 
-	currententity = &cl_entities[0];
+	currententity = &r_worldentity;
 	TransformVector (modelorg, transformed_modelorg);
 	VectorCopy (transformed_modelorg, world_transformed_modelorg);
 
-// TODO: could preset a lot of this at mode set time
+	// TODO: could preset a lot of this at mode set time
 	if (r_drawflat->int_val) {
 		for (s = &surfaces[1]; s < surface_p; s++) {
 			if (!s->spans)
@@ -176,7 +173,7 @@ D_DrawSurfaces (void)
 			d_zistepv = s->d_zistepv;
 			d_ziorigin = s->d_ziorigin;
 
-			D_DrawSolidSurface (s, (int) s->data & 0xFF);
+			D_DrawSolidSurface (s, (int) ((long) s->data & 0xFF));
 			D_DrawZSpans (s->spans);
 		}
 	} else {
@@ -229,6 +226,7 @@ D_DrawSurfaces (void)
 				}
 
 				D_CalcGradients (pface);
+
 				Turbulent8 (s->spans);
 				D_DrawZSpans (s->spans);
 
@@ -237,7 +235,7 @@ D_DrawSurfaces (void)
 					// FIXME: we don't want to do this every time!
 					// TODO: speed up
 
-					currententity = &cl_entities[0];
+					currententity = &r_worldentity;
 					VectorCopy (world_transformed_modelorg,
 								transformed_modelorg);
 					VectorCopy (base_vpn, vpn);
@@ -281,7 +279,6 @@ D_DrawSurfaces (void)
 					// FIXME: we don't want to do this every time!
 					// TODO: speed up
 
-					currententity = &cl_entities[0];
 					VectorCopy (world_transformed_modelorg,
 								transformed_modelorg);
 					VectorCopy (base_vpn, vpn);
@@ -289,6 +286,7 @@ D_DrawSurfaces (void)
 					VectorCopy (base_vright, vright);
 					VectorCopy (base_modelorg, modelorg);
 					R_TransformFrustum ();
+					currententity = &r_worldentity;
 				}
 			}
 		}

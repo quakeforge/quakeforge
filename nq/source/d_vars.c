@@ -1,7 +1,7 @@
 /*
 	d_vars.c
 
-	@description@
+	global refresh variables
 
 	Copyright (C) 1996-1997  Id Software, Inc.
 
@@ -26,18 +26,18 @@
 	$Id$
 */
 
+#ifndef USE_INTEL_ASM
+
 #ifdef HAVE_CONFIG_H
 # include "config.h"
 #endif
 
-#ifndef	USE_INTEL_ASM
-
-#include "QF/qtypes.h"
+#include "host.h"
 
 // all global and static refresh variables are collected in a contiguous block
 // to avoid cache conflicts.
 
-// global refresh variables ----------------------------
+// global refresh variables -----------------------------
 
 // FIXME: make into one big structure, like cl or sv
 // FIXME: do separately for refresh engine and driver
@@ -55,4 +55,4 @@ short      *d_pzbuffer;
 unsigned int d_zrowbytes;
 unsigned int d_zwidth;
 
-#endif // USE_INTEL_ASM
+#endif // !USE_INTEL_ASM

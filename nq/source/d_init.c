@@ -1,7 +1,7 @@
 /*
 	d_init.c
 
-	@description@
+	rasterization driver initialization
 
 	Copyright (C) 1996-1997  Id Software, Inc.
 
@@ -30,7 +30,9 @@
 # include "config.h"
 #endif
 
+#include "QF/compat.h"
 #include "QF/cvar.h"
+#include "QF/vid.h"
 
 #include "d_local.h"
 #include "r_cvar.h"
@@ -50,15 +52,9 @@ extern int  d_aflatcolor;
 void        (*d_drawspans) (espan_t *pspan);
 
 
-/*
-===============
-D_Init
-===============
-*/
 void
 D_Init (void)
 {
-
 	r_skydirect = 1;
 
 	r_drawpolys = false;
@@ -75,11 +71,6 @@ D_Init (void)
 }
 
 
-/*
-===============
-D_CopyRects
-===============
-*/
 void
 D_CopyRects (vrect_t *prects, int transparent)
 {
@@ -93,23 +84,14 @@ D_CopyRects (vrect_t *prects, int transparent)
 }
 
 
-/*
-===============
-D_EnableBackBufferAccess
-===============
-*/
 void
 D_EnableBackBufferAccess (void)
 {
+
 	VID_LockBuffer ();
 }
 
 
-/*
-===============
-D_TurnZOn
-===============
-*/
 void
 D_TurnZOn (void)
 {
@@ -117,11 +99,6 @@ D_TurnZOn (void)
 }
 
 
-/*
-===============
-D_DisableBackBufferAccess
-===============
-*/
 void
 D_DisableBackBufferAccess (void)
 {
@@ -129,11 +106,6 @@ D_DisableBackBufferAccess (void)
 }
 
 
-/*
-===============
-D_SetupFrame
-===============
-*/
 void
 D_SetupFrame (void)
 {
@@ -152,16 +124,12 @@ D_SetupFrame (void)
 	d_roverwrapped = false;
 	d_initial_rover = sc_rover;
 
-	d_minmip = d_mipcap->int_val;
-	if (d_minmip > 3)
-		d_minmip = 3;
-	else if (d_minmip < 0)
-		d_minmip = 0;
+	d_minmip = bound (0, d_mipcap->value, 3);
 
 	for (i = 0; i < (NUM_MIPS - 1); i++)
 		d_scalemip[i] = basemip[i] * d_mipscale->value;
 
-#ifdef	USE_INTEL_ASM
+#ifdef USE_INTEL_ASM
 	if (d_subdiv16->int_val)
 		d_drawspans = D_DrawSpans16;
 	else
@@ -174,15 +142,8 @@ D_SetupFrame (void)
 }
 
 
-/*
-===============
-D_UpdateRects
-===============
-*/
 void
 D_UpdateRects (vrect_t *prect)
 {
-
-// the software driver draws these directly to the vid buffer
-
+	// the software driver draws these directly to the vid buffer
 }

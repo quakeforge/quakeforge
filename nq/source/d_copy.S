@@ -33,7 +33,7 @@
 #include "quakeasm.h"
 #include "asm_draw.h"
 
-//#ifdef USE_INTEL_ASM
+#ifdef USE_INTEL_ASM
 	.data
 
 LCopyWidth:		.long	0
@@ -173,4 +173,4 @@ LLRowLoop:
 	popl	%ebp				// restore the caller's stack frame
 
 	ret
-//#endif /* USE_INTEL_ASM */
+#endif /* USE_INTEL_ASM */

@@ -1,8 +1,7 @@
-
 /*
 	d_modech.c
 
-	@description@
+	called when mode has just changed
 
 	Copyright (C) 1996-1997  Id Software, Inc.
 

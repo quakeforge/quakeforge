@@ -1,7 +1,7 @@
 /*
 	d_scan.c
 
-	@description@
+	Portable C scan-level rasterization code, all pixel depths.
 
 	Copyright (C) 1996-1997  Id Software, Inc.
 
@@ -58,8 +58,8 @@ D_WarpScreen (void)
 	int        *turb;
 	int        *col;
 	byte      **row;
-	byte       *rowptr[MAXHEIGHT + (AMP2 * 2)];
-	int         column[MAXWIDTH + (AMP2 * 2)];
+	byte       *rowptr[1024];
+	int         column[1280];
 	float       wratio, hratio;
 
 	w = r_refdef.vrect.width;
@@ -84,7 +84,6 @@ D_WarpScreen (void)
 	for (v = 0; v < scr_vrect.height; v++, dest += vid.rowbytes) {
 		col = &column[turb[v]];
 		row = &rowptr[v];
-
 		for (u = 0; u < scr_vrect.width; u += 4) {
 			dest[u + 0] = row[turb[u + 0]][col[u + 0]];
 			dest[u + 1] = row[turb[u + 1]][col[u + 1]];
@@ -95,7 +94,7 @@ D_WarpScreen (void)
 }
 
 
-#ifndef	USE_INTEL_ASM
+#ifndef USE_INTEL_ASM
 void
 D_DrawTurbulent8Span (void)
 {
@@ -113,7 +112,7 @@ D_DrawTurbulent8Span (void)
 		r_turb_t += r_turb_tstep;
 	} while (--r_turb_spancount > 0);
 }
-#endif // USE_INTEL_ASM
+#endif // !USE_INTEL_ASM
 
 
 void
@@ -183,9 +182,10 @@ Turbulent8 (espan_t *pspan)
 				if (snext > bbextents)
 					snext = bbextents;
 				else if (snext < 16)
-					snext = 16;			// prevent round-off error on <0 steps
-										// from from causing overstepping &
-										// running off the edge of the texture
+					snext = 16;			// prevent round-off error on <0
+										// steps from
+				// from causing overstepping & running off the
+				// edge of the texture
 
 				tnext = (int) (tdivz * z) + tadjust;
 				if (tnext > bbextentt)
@@ -197,10 +197,10 @@ Turbulent8 (espan_t *pspan)
 				r_turb_sstep = (snext - r_turb_s) >> 4;
 				r_turb_tstep = (tnext - r_turb_t) >> 4;
 			} else {
-				// calculate s/z, t/z, zi->fixed s and t at last pixel in span
-				// (so can't step off polygon), clamp, calculate s and t steps
-				// across span by division, biasing steps low so we don't run
-				// off the texture
+				// calculate s/z, t/z, zi->fixed s and t at last pixel in
+				// span (so can't step off polygon), clamp, calculate s and t
+				// steps across span by division, biasing steps low so we
+				// don't run off the texture
 				spancountminus1 = (float) (r_turb_spancount - 1);
 				sdivz += d_sdivzstepu * spancountminus1;
 				tdivz += d_tdivzstepu * spancountminus1;
@@ -241,7 +241,7 @@ Turbulent8 (espan_t *pspan)
 }
 
 
-#ifndef	USE_INTEL_ASM
+#ifndef USE_INTEL_ASM
 void
 D_DrawSpans8 (espan_t *pspan)
 {
@@ -308,9 +308,10 @@ D_DrawSpans8 (espan_t *pspan)
 				if (snext > bbextents)
 					snext = bbextents;
 				else if (snext < 8)
-					snext = 8;			// prevent round-off error on <0 steps
-										// from causing overstepping & running
-										// off the edge of the texture
+					snext = 8;			// prevent round-off error on <0
+										// steps from
+				// from causing overstepping & running off the
+				// edge of the texture
 
 				tnext = (int) (tdivz * z) + tadjust;
 				if (tnext > bbextentt)
@@ -336,8 +337,8 @@ D_DrawSpans8 (espan_t *pspan)
 					snext = bbextents;
 				else if (snext < 8)
 					snext = 8;			// prevent round-off error on <0 steps
-										// from causing overstepping & running
-										// off the edge of the texture
+										// from from causing overstepping &
+										// running off the edge of the texture
 
 				tnext = (int) (tdivz * z) + tadjust;
 				if (tnext > bbextentt)
@@ -368,14 +369,14 @@ D_DrawSpans8 (espan_t *pspan)
 #endif
 
 
-#ifndef	USE_INTEL_ASM
+#ifndef USE_INTEL_ASM
 void
 D_DrawZSpans (espan_t *pspan)
 {
 	int         count, doublecount, izistep;
 	int         izi;
 	short      *pdest;
-	unsigned    ltemp;
+	unsigned int ltemp;
 	double      zi;
 	float       du, dv;
 

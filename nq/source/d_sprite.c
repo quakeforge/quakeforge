@@ -1,7 +1,7 @@
 /*
 	d_sprite.c
 
-	@description@
+	software top-level rasterization driver module for drawing sprites
 
 	Copyright (C) 1996-1997  Id Software, Inc.
 
@@ -38,7 +38,8 @@ static int  minindex, maxindex;
 static sspan_t *sprite_spans;
 
 
-#ifndef	USE_INTEL_ASM
+#ifndef USE_INTEL_ASM
+
 void
 D_SpriteDrawSpans (sspan_t *pspan)
 {
@@ -116,9 +117,10 @@ D_SpriteDrawSpans (sspan_t *pspan)
 				if (snext > bbextents)
 					snext = bbextents;
 				else if (snext < 8)
-					snext = 8;			// prevent round-off error on <0 steps
-										// from causing overstepping & running
-										// off the edge of the texture
+					snext = 8;			// prevent round-off error on <0
+										// steps from
+				// from causing overstepping & running off the
+				// edge of the texture
 
 				tnext = (int) (tdivz * z) + tadjust;
 				if (tnext > bbextentt)
@@ -130,10 +132,10 @@ D_SpriteDrawSpans (sspan_t *pspan)
 				sstep = (snext - s) >> 3;
 				tstep = (tnext - t) >> 3;
 			} else {
-				// calculate s/z, t/z, zi->fixed s and t at last pixel in span
-				// (so can't step off polygon), clamp, calculate s and t steps
-				// across span by division, biasing steps low so we don't run
-				// off the texture
+				// calculate s/z, t/z, zi->fixed s and t at last pixel in
+				// span (so can't step off polygon), clamp, calculate s and t
+				// steps across span by division, biasing steps low so we
+				// don't run off the texture
 				spancountminus1 = (float) (spancount - 1);
 				sdivz += d_sdivzstepu * spancountminus1;
 				tdivz += d_tdivzstepu * spancountminus1;
@@ -144,8 +146,8 @@ D_SpriteDrawSpans (sspan_t *pspan)
 					snext = bbextents;
 				else if (snext < 8)
 					snext = 8;			// prevent round-off error on <0 steps
-										// from causing overstepping & running
-										// off the edge of the texture
+										// from from causing overstepping &
+										// running off the edge of the texture
 
 				tnext = (int) (tdivz * z) + tadjust;
 				if (tnext > bbextentt)

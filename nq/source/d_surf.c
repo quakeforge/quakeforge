@@ -1,7 +1,7 @@
 /*
 	d_surf.c
 
-	@description@
+	rasterization driver surface heap manager
 
 	Copyright (C) 1996-1997  Id Software, Inc.
 
@@ -30,17 +30,12 @@
 # include "config.h"
 #endif
 
-#include <stdio.h>
 #include <stdlib.h>
 
-#include "game.h"
-#include "QF/sys.h"
-#include "QF/qargs.h"
-#include "QF/console.h"
 #include "d_local.h"
+#include "QF/qargs.h"
 #include "r_local.h"
-#include "d_iface.h"
-#include "render.h"
+#include "QF/sys.h"
 
 float       surfscale;
 qboolean    r_cache_thrash;				// set if surface cache is thrashing
@@ -74,6 +69,7 @@ D_SurfaceCacheForRes (int width, int height)
 	if (pix > 64000)
 		size += (pix - 64000) * 3;
 
+
 	return size;
 }
 
@@ -106,9 +102,8 @@ D_ClearCacheGuard (void)
 void
 D_InitCaches (void *buffer, int size)
 {
-
-	if (!msg_suppress_1)
-		Con_Printf ("%ik surface cache\n", size / 1024);
+//	if (!msg_suppress_1)
+//	Con_Printf ("%ik surface cache\n", size/1024);
 
 	sc_size = size - GUARDSIZE;
 	sc_base = (surfcache_t *) buffer;
@@ -156,7 +151,12 @@ D_SCAlloc (int width, int size)
 	if ((size <= 0) || (size > 0x10000))
 		Sys_Error ("D_SCAlloc: bad cache size %d\n", size);
 
-	size = (int) &((surfcache_t *) 0)->data[size];
+	/* This adds the offset of data[0] in the surfcache_t struct. */
+	size += (int) ((surfcache_t *) 0)->data;
+
+#define SIZE_ALIGN	(sizeof(surfcache_t*)-1)
+	size = (size + SIZE_ALIGN) & ~SIZE_ALIGN;
+#undef SIZE_ALIGN
 	size = (size + 3) & ~3;
 	if (size > sc_size)
 		Sys_Error ("D_SCAlloc: %i > cache size", size);
@@ -226,7 +226,8 @@ D_SCDump (void)
 	for (test = sc_base; test; test = test->next) {
 		if (test == sc_rover)
 			Sys_Printf ("ROVER:\n");
-		printf ("%p : %i bytes     %i width\n", test, test->size, test->width);
+		Sys_Printf ("%p : %i bytes     %i width\n", test, test->size,
+					test->width);
 	}
 }
 
