@@ -46,6 +46,7 @@ int         con_linewidth;				// characters across screen
 
 static plugin_t *con_module;
 
+static con_buffer_t *(*const buffer) (size_t, int) = Con_CreateBuffer;
 static void (*const complete)(inputline_t *) = Con_BasicCompleteCommandLine;
 static inputline_t *(*const create)(int, int, char) = Con_CreateInputLine;
 static void (*const display)(const char **, int) = Con_DisplayList;

@@ -79,6 +79,10 @@ static int interrupted;
 #define     MAXCMDLINE  256
 static inputline_t *input_line;
 
+#define BUFFER_SIZE 32768
+#define MAX_LINES 1024
+static con_buffer_t *output_buffer;
+
 static chtype attr_table[4] = {
 	A_NORMAL,
 	COLOR_PAIR(1),
@@ -117,6 +121,44 @@ C_ExecLine (const char *line)
 static void
 C_DrawOutput (void)
 {
+	// this is not the most efficient way to update the screen, but oh well
+	int         lines = screen_y - 3; // leave a blank line
+	int         width = screen_x;
+	int         cur_line = output_buffer->cur_line;
+	int         i;
+
+	if (lines < 1)
+		return;
+
+	for (i = 0; i < lines; i++) {
+		con_line_t *l = Con_BufferLine (output_buffer, cur_line - i);
+		if (!l->text) {
+			i--;
+			break;
+		}
+		i += l->len / width; // really dumb line wrap algo :)
+	}
+	cur_line -= min (i, lines);
+	i -= lines;
+	wmove (output, 0, 0);
+	do {
+		con_line_t *l = Con_BufferLine (output_buffer, cur_line++);
+		byte       *text = l->text;
+		int         len = l->len;
+
+		if (i > 0) {
+			text += i * width;
+			len -= i * width;
+			i = 0;
+		}
+		while (len--) {
+			chtype      ch = *text++;
+			ch = sys_char_map[ch] | attr_table[attr_map[ch]];
+			waddch (output, ch);
+		}
+	} while (cur_line < output_buffer->cur_line);
+	//wrefresh (stdscr);
+	wrefresh (output);
 }
 
 static void
@@ -197,7 +239,7 @@ C_Init (void)
 		init_pair (4, COLOR_YELLOW, COLOR_BLUE);
 		init_pair (5, COLOR_CYAN, COLOR_BLACK);
 
-		scrollok (output, TRUE);
+		scrollok (output, FALSE);
 		leaveok (output, TRUE);
 
 		scrollok (status, FALSE);
@@ -216,6 +258,8 @@ C_Init (void)
 		wrefresh (output);
 		wrefresh (status);
 		wrefresh (input);
+
+		output_buffer = Con_CreateBuffer (BUFFER_SIZE, MAX_LINES);
 
 		input_line = Con_CreateInputLine (16, MAXCMDLINE, ']');
 		input_line->complete = Con_BasicCompleteCommandLine;
@@ -264,17 +308,9 @@ C_Print (const char *fmt, va_list args)
 	txt = buffer;
 #ifdef HAVE_CURSES_H
 	if (use_curses) {
-		chtype			ch;
-
-		txt = buffer;
-
-		while ((ch = (byte)*txt++)) {
-			ch = sys_char_map[ch] | attr_table[attr_map[ch]];
-			waddch (output, ch);
-		}
-		touchwin (stdscr);
-		wrefresh (output);
-		wrefresh (input);
+		Con_BufferAddText (output_buffer, buffer);
+		C_DrawOutput ();
+		wrefresh (input);	// move the screen cursor back to the input line
 	} else
 #endif
 	{

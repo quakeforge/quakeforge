@@ -61,6 +61,20 @@ typedef struct inputline_s
 	void	(*draw)(struct inputline_s *); // draw input line to screen
 } inputline_t;
 
+typedef struct {
+	byte	*text;
+	size_t	len;
+} con_line_t;
+
+typedef struct {
+	byte		*buffer;
+	size_t		buffer_size;
+	con_line_t	*lines;
+	int			max_lines;			// size of lines array
+	int			num_lines;			// number of lines used
+	int			cur_line;			// current line
+} con_buffer_t;
+
 extern	old_console_t	con_main;
 extern	old_console_t	con_chat;
 extern	old_console_t	*con;		// point to either con_main or con_chat
@@ -75,7 +89,6 @@ extern	int	con_notifylines;		// scan lines to clear for notify lines
 void Con_DrawCharacter (int cx, int line, int num);
 
 void Con_CheckResize (void);
-void Con_ProcessInputLine (inputline_t *il, int ch);
 void Con_DrawConsole (int lines);
 void Con_DrawDownload (int lines);
 
@@ -100,6 +113,12 @@ void Con_DisplayList(const char **list, int con_linewidth);
 
 inputline_t *Con_CreateInputLine (int lines, int width, char prompt);
 void Con_DestroyInputLine (inputline_t *inputline);
+void Con_ProcessInputLine (inputline_t *il, int ch);
+
+con_buffer_t *Con_CreateBuffer (size_t buffer_size, int max_lines);
+void Con_DestroyBuffer (con_buffer_t *buffer);
+void Con_BufferAddText (con_buffer_t *buf, const char *text);
+#define Con_BufferLine(b,l) ((b)->lines + ((l) + (b)->max_lines) % (b)->max_lines)
 
 // init/shutdown functions
 void Con_Init (const char *plugin_name);
