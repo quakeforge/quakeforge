@@ -62,13 +62,13 @@ static const char rcsid[] =
 
 #include "compat.h"
 #include "context_x11.h"
-#include "sbar.h"
 #include "r_cvar.h"
+#include "sbar.h"
 
 #define WARP_WIDTH		320
 #define WARP_HEIGHT 	200
 
-/* GLXContext is a pointer to opaque data. */
+// GLXContext is a pointer to opaque data
 typedef struct __GLXcontextRec *GLXContext;
 
 #define GLX_RGBA				4		// true if RGBA mode
@@ -88,8 +88,7 @@ GLXContext (* qfglXCreateContext) (Display *dpy, XVisualInfo *vis,
 Bool (* qfglXMakeCurrent) (Display *dpy, GLXDrawable drawable, GLXContext ctx);
 
 
-/*-----------------------------------------------------------------------*/
-
+// ============================================================================
 
 #if defined(HAVE_DLOPEN)
 
@@ -196,17 +195,16 @@ VID_Init (unsigned char *palette)
 					"quake window in a virtual desktop.\n");
 
 	VID_GetWindowSize (640, 480);
-	Con_CheckResize (); // Now that we have a window size, fix console
+	Con_CheckResize ();		// Now that we have a window size, fix console
 
 	vid.maxwarpwidth = WARP_WIDTH;
 	vid.maxwarpheight = WARP_HEIGHT;
 	vid.colormap8 = vid_colormap;
 	vid.fullbright = 256 - LittleLong (*((int *) vid.colormap8 + 2048));
 
-	/* Interpret command-line params */
+	// Interpret command-line params
 
-	/* Set vid parameters */
-
+	// Set vid parameters
 	if ((i = COM_CheckParm ("-conwidth")))
 		vid.conwidth = atoi (com_argv[i + 1]);
 	else
@@ -218,8 +216,7 @@ VID_Init (unsigned char *palette)
 	// pick a conheight that matches with correct aspect
 	vid.conheight = vid.conwidth * 3 / 4;
 
-	if ((i = COM_CheckParm ("-conheight")))	// conheight no smaller than
-											// 200px
+	if ((i = COM_CheckParm ("-conheight")))	// conheight no smaller than 200p
 		vid.conheight = atoi (com_argv[i + 1]);
 	vid.conheight = max (vid.conheight, 200);
 
@@ -233,8 +230,7 @@ VID_Init (unsigned char *palette)
 
 	X11_SetVidMode (scr_width, scr_height);
 	X11_CreateWindow (scr_width, scr_height);
-	/* Invisible cursor */
-	X11_CreateNullCursor ();
+	X11_CreateNullCursor ();	// hide mouse pointer
 
 	XSync (x_disp, 0);
 
@@ -247,8 +243,6 @@ VID_Init (unsigned char *palette)
 
 	vid.aspect = ((float) vid.height / (float) vid.width) * (320.0 / 240.0);
 	vid.numpages = 2;
-
-	// InitSig (); // trap evil signals
 
 	GL_Init ();
 

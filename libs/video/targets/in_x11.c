@@ -157,7 +157,7 @@ selection_notify (XEvent *event)
 	if (XGetWindowProperty (x_disp, x_win, property, 0, num_bytes, True,
 							AnyPropertyType, &type, &format, &len, &tmp, &data)
 		!= Success) {
-		XFree (data);	//FIXME is this correct for this instance?
+		XFree (data);	// FIXME is this correct for this instance?
 		return;
 	}
 
@@ -562,8 +562,7 @@ IN_LL_Ungrab_Input (void)
 void
 IN_LL_SendKeyEvents (void)
 {
-	// Get events from X server.
-	X11_ProcessEvents ();
+	X11_ProcessEvents ();	// Get events from X server.
 }
 
 void
