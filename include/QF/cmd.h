@@ -69,6 +69,7 @@ typedef struct cmd_buffer_s {
 	qboolean ownvars; // Buffer has its own set of local variables (as opposed to sharing with another buffer)
 	unsigned int loop; // Buffer loops itself.  If true, value signifies number of loops done so far
 	qboolean embedded; // Buffer exists to evaluate embedded command
+	qboolean restricted; // Restricted commands should not run in this buffer
 
 	// Sleep data
 	double timeleft;
@@ -234,6 +235,8 @@ void	Cmd_Return (const char *value);
 // Returns a value to GIB so that it can be picked up for embedded commands
 void	Cmd_Error (const char *message);
 // Generates a GIB error
+qboolean	Cmd_Restricted (void);
+// Returns true if current buffer is restricted
 
 extern struct cvar_s *cmd_warncmd;
 // Determines if warnings resulting from console commands are printed

@@ -38,6 +38,7 @@ static const char rcsid[] =
 #endif
 
 #include <ctype.h>
+#include <errno.h>
 
 #include "QF/cmd.h"
 #include "QF/cvar.h"
@@ -58,6 +59,8 @@ typedef struct cmdalias_s {
 	struct cmdalias_s *next;
 	const char *name;
 	const char *value;
+	qboolean restricted; // Created from restricted buffer
+	qboolean legacy; // Created from a legacy buffer
 } cmdalias_t;
 
 cmdalias_t *cmd_alias;
@@ -212,6 +215,7 @@ Cmd_FreeBuffer (cmd_buffer_t *free) {
 	free->ownvars = false;
 	free->loop = false;
 	free->embedded = false;
+	free->restricted = false;
 
 	free->timeleft = 0.0;
 	
@@ -344,6 +348,7 @@ Cbuf_Init (void)
 	cmd_consolebuffer = Cmd_NewBuffer (true);
 	cmd_legacybuffer = Cmd_NewBuffer (true);
 	cmd_legacybuffer->legacy = true;
+	cmd_legacybuffer->restricted = true;
 	cmd_privatebuffer = Cmd_NewBuffer (true);
 	cmd_keybindbuffer = Cmd_NewBuffer (true);
 
@@ -602,6 +607,8 @@ Cbuf_ExecuteSubroutine (cmd_buffer_t *buffer)
 	cmd_activebuffer->next = buffer; // Link it in
 	buffer->prev = cmd_activebuffer;
 	cmd_activebuffer->subroutine = true; // Signal that a subroutine is beginning
+	if (cmd_activebuffer->restricted)
+		buffer->restricted = true;
 	return;
 }
 
@@ -798,6 +805,12 @@ Cmd_Argsu (int start)
 	if (start >= cmd_activebuffer->argc)
 		return "";
 	return cmd_activebuffer->realline->str + cmd_activebuffer->argsu[start];
+}
+
+qboolean
+Cmd_Restricted (void)
+{
+	return cmd_activebuffer->restricted;
 }
 
 /* Functions to find partner quotes and braces
@@ -1369,8 +1382,7 @@ Cmd_Process (void)
 
 		str = cmd_activebuffer->argv[arg]->processed;
 		org = cmd_activebuffer->argv[arg]->original;
-		if (cmd_activebuffer->argv[arg]->delim == '\'' ||
-			cmd_activebuffer->argv[arg]->delim == '\"')
+		if (cmd_activebuffer->argv[arg]->delim == '\"')
 			quotes = 1;
 		else
 			quotes = 0;
@@ -1502,6 +1514,8 @@ Cmd_ExecuteParsed (cmd_source_t src)
 		int i;
 		cmd_buffer_t *sub; // Create a new buffer to execute the alias in
 		sub = Cmd_NewBuffer (true);
+		sub->restricted = a->restricted;
+		sub->legacy = a->legacy;
 		Cbuf_InsertTextTo (sub, a->value);
 		for (i = 0; i < Cmd_Argc (); i++)
 			Cmd_SetLocal (sub, va ("%i", i), Cmd_Argv (i));
@@ -1944,6 +1958,8 @@ Cmd_Alias_f (void)
 	}
 
 	alias->value = cmd;
+	alias->restricted = Cmd_Restricted ();
+	alias->legacy = cmd_activebuffer->legacy;
 }
 
 /* Deletes an alias entirely */
@@ -2225,6 +2241,10 @@ void
 Cmd_Detach_f (void)
 {
 	cmd_thread_t *thread;
+	if (Cmd_Restricted()) {
+		Cmd_Error ("detach: access to restricted command denied");
+		return;
+	}
 
 	if (Cmd_Argc () != 2) {
 		Cmd_Error ("detach: invalid number of arguments.\n");
@@ -2296,6 +2316,86 @@ Cmd_Strlen_f (void)
 	Cmd_Return (va("%ld", (long) strlen (Cmd_Argv(1))));
 }
 
+
+void
+Cmd_Writefile_f (void)
+{
+	VFile *file;
+	char *d, *p, *path;
+
+	if (Cmd_Restricted ()) {
+		Cmd_Error ("writefile: access to restricted command denied.\n");
+		return;
+	}
+	if (Cmd_Argc() != 3) {
+		Cmd_Error ("writefile: invalid number of arguments.\n");
+		return;
+	}
+	p = path = cmd_activebuffer->argv[1]->processed->str;
+	while (*p) {
+		if (p[0] == '.') {
+			if (p[1] == '.') {
+				if (p[2] == '/' || p[2] == 0) {
+					d = p;
+					if (d > path)
+						d--;
+					while (d > path && d[-1] != '/')
+						d--;
+					if (d == path
+						&& d[0] == '.' && d[1] == '.'
+						&& (d[2] == '/' || d[2] == '0')) {
+						p += 2 + (p[2] == '/');
+						continue;
+					}
+					strcpy (d, p + 2 + (p[2] == '/'));
+					p = d + (d != path);
+				}
+			} else if (p[1] == '/') {
+				strcpy (p, p + 2);
+				continue;
+			} else if (p[1] == 0) {
+				p[0] = 0;
+			}
+		}
+		while (*p && *p != '/')
+			p++;
+		if (*p == '/')
+			p++;
+	}
+	if ( (!path[0])
+	  || (path[0] == '.' && path[1] == '.' && (path[2] == '/' || path [2] == 0))
+	  || (path[strlen (path) - 1] =='/') ) {
+		Cmd_Error ("writefile: invalid path or filename\n");
+		return;
+	}
+	Sys_DPrintf ("writefile: opening %s/%s\n", com_gamedir, Cmd_Argv(1));
+	if (!(file = Qopen (va("%s/%s", com_gamedir, Cmd_Argv(1)), "w"))) {
+		Cmd_Error (va ("writefile: could not open file for writing: %s\n", strerror (errno)));
+		return;
+	}
+	Qprintf (file, "%s", Cmd_Argv(2));
+	Qclose (file);
+}
+
+void
+Cmd_Eval_f (void)
+{
+	if (Cmd_Argc() < 2) {
+		Cmd_Error("eval: invalid number of arguments.\n");
+		return;
+	}
+	Cbuf_AddText (Cmd_Args (1));
+}
+
+void
+Cmd_Legacy_f (void)
+{
+	if (Cmd_Argc() < 2) {
+		Cmd_Error ("legacy: invalid number of arguments.\n");
+		return;
+	}
+	Cbuf_AddTextTo (cmd_legacybuffer, Cmd_Argsu (1));
+}
 
 /* Stats and information */
 
@@ -2376,6 +2476,10 @@ Cmd_Init (void)
 	Cmd_AddCommand ("randint", Cmd_Randint_f, "Returns a random integer between $1 and $2");
 	Cmd_AddCommand ("streq", Cmd_Streq_f, "Returns 1 if $1 and $2 are the same string, 0 otherwise");
 	Cmd_AddCommand ("strlen", Cmd_Strlen_f, "Returns the length of $1");
+	Cmd_AddCommand ("writefile", Cmd_Writefile_f, "Write $2 to the file $1 in the current gamedir");
+	Cmd_AddCommand ("eval", Cmd_Eval_f, "Evaluates a command.  Useful for callbacks or dynamically generated commands.");
+	Cmd_AddCommand ("legacy", Cmd_Legacy_f, "Adds a command to the legacy buffer");
+	Cmd_SetPure ("legacy");
 	Cmd_AddCommand ("detach", Cmd_Detach_f, "Starts a thread with an initial program of $1");
 	Cmd_AddCommand ("killthread", Cmd_Killthread_f, "Kills thread with id $1");
 	Cmd_AddCommand ("threadstats", Cmd_Threadstats_f, "Shows statistics about threads");

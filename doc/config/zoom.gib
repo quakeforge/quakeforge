@@ -53,11 +53,11 @@ alias zoom_mult { // "Accessor" for zoom_mult
 alias zoom_adjust { // Adjust fov and sensitivity to match zoom factor
 	if $zoom_zoomed {
 		set fov #{$zoom_base_fov/$zoom_mult}
-		set in_mouse_amp #{$zoom_base_amp/$zoom_mult}
+		set in_amp #{$zoom_base_amp/$zoom_mult}
 		return
 	} else {
 		set fov $zoom_base_fov
-		set in_mouse_amp $zoom_base_amp
+		set in_amp $zoom_base_amp
 	}
 }
 
