@@ -35,12 +35,12 @@
 #include <QF/qtypes.h>
 #include <QF/plugin.h>
 
-typedef void (QFPLUGIN *P_C_Print) (const char *fmt, va_list args);
-typedef void (QFPLUGIN *P_C_ProcessInput) (void);
-typedef void (QFPLUGIN *P_C_KeyEvent) (knum_t key, short unicode, qboolean down);
-typedef void (QFPLUGIN *P_C_DrawConsole) (void);
-typedef void (QFPLUGIN *P_C_CheckResize) (void);
-typedef void (QFPLUGIN *P_C_NewMap) (void);
+typedef void (*P_C_Print) (const char *fmt, va_list args);
+typedef void (*P_C_ProcessInput) (void);
+typedef void (*P_C_KeyEvent) (knum_t key, short unicode, qboolean down);
+typedef void (*P_C_DrawConsole) (void);
+typedef void (*P_C_CheckResize) (void);
+typedef void (*P_C_NewMap) (void);
 
 typedef struct console_func_s {
 	P_C_Print			pC_Print;

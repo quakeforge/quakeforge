@@ -583,7 +583,7 @@ QFS_Path_f (void)
 	The filename will be prefixed by the current game directory
 */
 void
-QFS_WriteFile (const char *filename, void *data, int len)
+QFS_WriteFile (const char *filename, const void *data, int len)
 {
 	QFile      *f;
 

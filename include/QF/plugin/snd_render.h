@@ -37,24 +37,24 @@
 
 struct sfx_s;
 
-typedef void (QFPLUGIN *P_S_Init) (void);
-typedef void (QFPLUGIN *P_S_Shutdown) (void);
-typedef void (QFPLUGIN *P_S_AmbientOff) (void);
-typedef void (QFPLUGIN *P_S_AmbientOn) (void);
-typedef void (QFPLUGIN *P_S_TouchSound) (const char *sample);
-typedef void (QFPLUGIN *P_S_StartSound) (int entnum, int entchannel, struct sfx_s *sfx, const vec3_t origin, float fvol, float attenuation);
-typedef void (QFPLUGIN *P_S_StaticSound) (struct sfx_s *sfx, const vec3_t origin, float vol, float attenuation);
-typedef void (QFPLUGIN *P_S_StopSound) (int entnum, int entchannel);
-typedef struct sfx_s * (QFPLUGIN *P_S_PrecacheSound) (const char *sample);
-typedef void (QFPLUGIN *P_S_ClearPrecache) (void);
-typedef void (QFPLUGIN *P_S_Update) (const vec3_t origin, const vec3_t v_forward, const vec3_t v_right, const vec3_t v_up);
-typedef void (QFPLUGIN *P_S_StopAllSounds) (qboolean clear);
-typedef void (QFPLUGIN *P_S_BeginPrecaching) (void);
-typedef void (QFPLUGIN *P_S_EndPrecaching) (void);
-typedef void (QFPLUGIN *P_S_ExtraUpdate) (void);
-typedef void (QFPLUGIN *P_S_LocalSound) (const char *s);
-typedef void (QFPLUGIN *P_S_BlockSound) (void);
-typedef void (QFPLUGIN *P_S_UnblockSound) (void);
+typedef void (*P_S_Init) (void);
+typedef void (*P_S_Shutdown) (void);
+typedef void (*P_S_AmbientOff) (void);
+typedef void (*P_S_AmbientOn) (void);
+typedef void (*P_S_TouchSound) (const char *sample);
+typedef void (*P_S_StartSound) (int entnum, int entchannel, struct sfx_s *sfx, const vec3_t origin, float fvol, float attenuation);
+typedef void (*P_S_StaticSound) (struct sfx_s *sfx, const vec3_t origin, float vol, float attenuation);
+typedef void (*P_S_StopSound) (int entnum, int entchannel);
+typedef struct sfx_s * (*P_S_PrecacheSound) (const char *sample);
+typedef void (*P_S_ClearPrecache) (void);
+typedef void (*P_S_Update) (const vec3_t origin, const vec3_t v_forward, const vec3_t v_right, const vec3_t v_up);
+typedef void (*P_S_StopAllSounds) (qboolean clear);
+typedef void (*P_S_BeginPrecaching) (void);
+typedef void (*P_S_EndPrecaching) (void);
+typedef void (*P_S_ExtraUpdate) (void);
+typedef void (*P_S_LocalSound) (const char *s);
+typedef void (*P_S_BlockSound) (void);
+typedef void (*P_S_UnblockSound) (void);
 
 typedef struct snd_render_funcs_s {
 	P_S_AmbientOff 		pS_AmbientOff;

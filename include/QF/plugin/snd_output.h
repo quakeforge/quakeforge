@@ -34,12 +34,12 @@
 /*
 	All sound plugins must export these functions
 */
-typedef volatile struct dma_s *(QFPLUGIN *P_S_O_Init) (void);
-typedef void (QFPLUGIN *P_S_O_Shutdown) (void);
-typedef int (QFPLUGIN *P_S_O_GetDMAPos) (void);
-typedef void (QFPLUGIN *P_S_O_Submit) (void);
-typedef void (QFPLUGIN *P_S_O_BlockSound) (void);
-typedef void (QFPLUGIN *P_S_O_UnblockSound) (void);
+typedef volatile struct dma_s *(*P_S_O_Init) (void);
+typedef void (*P_S_O_Shutdown) (void);
+typedef int (*P_S_O_GetDMAPos) (void);
+typedef void (*P_S_O_Submit) (void);
+typedef void (*P_S_O_BlockSound) (void);
+typedef void (*P_S_O_UnblockSound) (void);
 
 typedef struct snd_output_funcs_s {
 	P_S_O_Init			pS_O_Init;

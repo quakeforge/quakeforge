@@ -23,6 +23,6 @@ libQFrenderer_sw_la_SOURCES=		$(common_sources)
 libQFrenderer_sw_la_DEPENDENCIES=	sw/libsw.la
 
 libQFrenderer_sw32_la_LDFLAGS=		-version-info 1:0:0 -rpath $(libdir)
-libQFrenderer_sw32_la_LIBADD=		sw32/libsw32.la 
+libQFrenderer_sw32_la_LIBADD=		sw32/libsw32.la
 libQFrenderer_sw32_la_SOURCES=		$(common_sources)
 libQFrenderer_sw32_la_DEPENDENCIES=	sw32/libsw32.la 

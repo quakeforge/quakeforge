@@ -35,10 +35,10 @@
 /*
 	All input plugins must export these functions
 */
-typedef void (QFPLUGIN *P_IN_Commands) (void);
-typedef void (QFPLUGIN *P_IN_SendKeyEvents) (void);
-typedef void (QFPLUGIN *P_IN_Move) (void);
-typedef void (QFPLUGIN *P_IN_ModeChanged) (void);
+typedef void (*P_IN_Commands) (void);
+typedef void (*P_IN_SendKeyEvents) (void);
+typedef void (*P_IN_Move) (void);
+typedef void (*P_IN_ModeChanged) (void);
 
 typedef struct input_funcs_s {
 	P_IN_Commands 		pIN_Commands;

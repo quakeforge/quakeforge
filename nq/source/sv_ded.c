@@ -311,8 +311,8 @@ V_Init_Cvars (void)
 {
 }
 
-QFPLUGIN plugin_t *console_client_PluginInfo (void);
-QFPLUGIN plugin_t *
+plugin_t *console_client_PluginInfo (void);
+plugin_t *
 console_client_PluginInfo (void)
 {
 	return 0;

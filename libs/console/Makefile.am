@@ -17,8 +17,8 @@ common_sources= \
 client_sources= client.c menu.c
 server_sources= server.c
 
-libQFconsole_la_LDFLAGS=	-version-info 1:0:0 -rpath $(libdir)
-libQFconsole_la_LIBADD=		$(plugin_libadd)
+libQFconsole_la_LDFLAGS=	-version-info 1:0:0 -rpath $(libdir) -no-undefined
+libQFconsole_la_LIBADD=		$(plugin_libadd) $(top_builddir)/libs/util/libQFutil.la
 libQFconsole_la_SOURCES=	$(common_sources)
 
 console_client_la_LDFLAGS=	$(plugin_ldflags)

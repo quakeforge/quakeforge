@@ -238,11 +238,11 @@ nq_wgl_DEPENDENCIES=	$(nq_wgl_libs)
 
 # Dedicated Server
 if SYSTYPE_WIN32
-ded_sources=	sys_wind.c sv_ded.c sv_model.c
+ded_sources=	sys_wind.c sv_ded.c
 else
-ded_sources=	sys_unixd.c sv_ded.c sv_model.c
+ded_sources=	sys_unixd.c sv_ded.c
 endif
-EXTRA_DIST=sys_wind.c sys_unixd.c sv_ded.c sv_model.c
+EXTRA_DIST=sys_wind.c sys_unixd.c sv_ded.c
 
 nq_server_LDFLAGS=	$(common_ldflags)
 nq_server_SOURCES=	$(ded_sources)

@@ -170,7 +170,7 @@ typedef struct gib_buffer_data_s {
 
 // Builtin function interface
 
-extern char gib_null_string[];
+extern char * const gib_null_string;
 
 #define GIB_Argc() (cbuf_active->args->argc)
 #define GIB_Argv(x) ((x) < cbuf_active->args->argc ? cbuf_active->args->argv[(x)]->str : gib_null_string)

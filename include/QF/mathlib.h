@@ -36,8 +36,18 @@
 # define M_PI	    3.14159265358979323846  // matches value in gcc v2 math.h
 #endif
 
+#ifdef WIN32
+# if defined (DLL_EXPORT) && defined (BUILD_QFutil)
+#  define QFutil_IMPORT
+# else
+#  define QFutil_IMPORT __declspec(dllimport)
+# endif
+#else
+# define QFutil_IMPORT
+#endif
+
 extern int		nanmask;
-extern const vec3_t	vec3_origin;
+extern QFutil_IMPORT const vec3_t	vec3_origin;
 
 #define EQUAL_EPSILON 0.001
 #define RINT(x) (floor ((x) + 0.5))
@@ -138,7 +148,7 @@ void RotatePointAroundVector (vec3_t dst, const vec3_t axis,
 #define PlaneDiff(point,plane) (((plane)->type < 3 ? (point)[(plane)->type] : DotProduct((point), (plane)->normal)) - (plane)->dist)
 
 
-extern	mplane_t	frustum[4];
+extern QFutil_IMPORT mplane_t frustum[4];
 extern inline qboolean R_CullBox (const vec3_t mins, const vec3_t maxs);
 extern inline qboolean R_CullSphere (const vec3_t origin, const float radius);
 extern inline float VectorNormalize (vec3_t v);	// returns vector length

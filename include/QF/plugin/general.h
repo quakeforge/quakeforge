@@ -36,8 +36,8 @@
 	All plugins, of all types, must export these functions
 */
 
-typedef void (QFPLUGIN *P_Init) (void);
-typedef void (QFPLUGIN *P_Shutdown) (void);
+typedef void (*P_Init) (void);
+typedef void (*P_Shutdown) (void);
 
 typedef struct general_func_s {
 	P_Init		p_Init;

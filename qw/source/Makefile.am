@@ -85,7 +85,7 @@ qf_server_LIBS= \
 		$(top_builddir)/libs/gib/libQFgib.la \
 		$(top_builddir)/libs/util/libQFutil.la
 
-qw_server_SOURCES=	sv_model.c 
+qw_server_SOURCES=	
 qw_server_LDADD=	libqw_server.a libqw_common.a libasm.a $(qf_server_LIBS) $(NET_LIBS) $(DL_LIBS) $(CURSES_LIBS)
 qw_server_LDFLAGS=	$(common_ldflags)
 qw_server_DEPENDENCIES=	libqw_common.a libqw_server.a libasm.a $(qf_server_LIBS)

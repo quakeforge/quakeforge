@@ -31,16 +31,6 @@
 
 #define QFPLUGIN_VERSION	"1.0"
 
-#ifdef WIN32
-# ifdef DLL_EXPORT
-#  define QFPLUGIN __declspec(dllexport)
-# else
-#  define QFPLUGIN
-# endif
-#else
-# define QFPLUGIN
-#endif
-
 #include <QF/qtypes.h>
 #include <QF/plugin/cd.h>
 #include <QF/plugin/console.h>
@@ -50,9 +40,9 @@
 #include <QF/plugin/snd_render.h>
 
 #ifdef STATIC_PLUGINS
-#define PLUGIN_INFO(type,name) QFPLUGIN plugin_t *type##_##name##_PluginInfo (void); QFPLUGIN plugin_t * type##_##name##_PluginInfo (void)
+#define PLUGIN_INFO(type,name) plugin_t *type##_##name##_PluginInfo (void); plugin_t * type##_##name##_PluginInfo (void)
 #else
-#define PLUGIN_INFO(type,name) QFPLUGIN plugin_t *PluginInfo (void);QFPLUGIN plugin_t *PluginInfo (void)
+#define PLUGIN_INFO(type,name) plugin_t *PluginInfo (void);plugin_t *PluginInfo (void)
 #endif
 
 typedef enum {

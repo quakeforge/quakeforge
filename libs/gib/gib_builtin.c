@@ -67,7 +67,8 @@ const char  rcsid[] =
 #include "gib_builtin.h"
 #include "gib_classes.h"
 
-char        gib_null_string[] = "";
+static char _gib_null_string[] = "";
+char * const gib_null_string = _gib_null_string;
 
 hashtab_t  *gib_builtins;
 

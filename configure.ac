@@ -279,6 +279,17 @@ AC_TRY_LINK(
 )
 AM_CONDITIONAL(BUILD_FNMATCH, test "x$BUILD_FNMATCH" = "xyes")
 
+AC_MSG_CHECKING(for getopt_long)
+AC_TRY_LINK(
+	[],
+	[getopt_long();],
+	BUILD_GETOPT=no
+	AC_MSG_RESULT(yes),
+	BUILD_GETOPT=yes
+	AC_MSG_RESULT(no)
+)
+AM_CONDITIONAL(BUILD_GETOPT, test "x$BUILD_GETOPT" = "xyes")
+
 AC_MSG_CHECKING(for alloca in stdlib.h)
 AC_TRY_COMPILE(
 	[#include <stdlib.h>],
@@ -1931,31 +1942,31 @@ for l in $SERVER_PLUGIN_STATIC; do
 	SERVER_PLUGIN_STATIC_LIBS="$SERVER_PLUGIN_STATIC_LIBS "'$(top_builddir)'"/libs/console/$l"
 	n="`echo $l | sed -e 's/\(.*\)\.la/\1/'`"
 	SERVER_PLUGIN_LIST='{"'"$n"'"'", ${n}_PluginInfo},$SERVER_PLUGIN_LIST"
-	SERVER_PLUGIN_PROTOS="$SERVER_PLUGIN_PROTOS extern QFPLUGIN plugin_t *${n}_PluginInfo (void);"
+	SERVER_PLUGIN_PROTOS="$SERVER_PLUGIN_PROTOS extern plugin_t *${n}_PluginInfo (void);"
 done
 for l in $CLIENT_PLUGIN_STATIC; do
 	CLIENT_PLUGIN_STATIC_LIBS="$CLIENT_PLUGIN_STATIC_LIBS "'$(top_builddir)'"/libs/console/$l"
 	n="`echo $l | sed -e 's/\(.*\)\.la/\1/'`"
 	CLIENT_PLUGIN_LIST='{"'"$n"'"'", ${n}_PluginInfo},$CLIENT_PLUGIN_LIST"
-	CLIENT_PLUGIN_PROTOS="$CLIENT_PLUGIN_PROTOS extern QFPLUGIN plugin_t *${n}_PluginInfo (void);"
+	CLIENT_PLUGIN_PROTOS="$CLIENT_PLUGIN_PROTOS extern plugin_t *${n}_PluginInfo (void);"
 done
 for l in $CD_PLUGIN_STATIC; do
 	CD_PLUGIN_STATIC_LIBS="$CD_PLUGIN_STATIC_LIBS cd/$l"
 	n="`echo $l | sed -e 's/\(.*\)\.la/\1/'`"
 	CD_PLUGIN_LIST='{"'"$n"'"'", ${n}_PluginInfo},$CD_PLUGIN_LIST"
-	CD_PLUGIN_PROTOS="$CD_PLUGIN_PROTOS extern QFPLUGIN plugin_t *${n}_PluginInfo (void);"
+	CD_PLUGIN_PROTOS="$CD_PLUGIN_PROTOS extern plugin_t *${n}_PluginInfo (void);"
 done
 for l in $SND_PLUGIN_STATIC; do
 	SND_PLUGIN_STATIC_LIBS="$SND_PLUGIN_STATIC_LIBS targets/$l"
 	n="`echo $l | sed -e 's/\(.*\)\.la/\1/'`"
 	SND_OUTPUT_LIST='{"'"$n"'"'", ${n}_PluginInfo},$SND_OUTPUT_LIST"
-	SND_OUTPUT_PROTOS="$SND_OUTPUT_PROTOS extern QFPLUGIN plugin_t *${n}_PluginInfo (void);"
+	SND_OUTPUT_PROTOS="$SND_OUTPUT_PROTOS extern plugin_t *${n}_PluginInfo (void);"
 done
 for l in $SND_REND_STATIC; do
 	SND_REND_STATIC_LIBS="$SND_REND_STATIC_LIBS renderer/$l"
 	n="`echo $l | sed -e 's/\(.*\)\.la/\1/'`"
 	SND_RENDER_LIST='{"'"$n"'"'", ${n}_PluginInfo},$SND_RENDER_LIST"
-	SND_RENDER_PROTOS="$SND_RENDER_PROTOS extern QFPLUGIN plugin_t *${n}_PluginInfo (void);"
+	SND_RENDER_PROTOS="$SND_RENDER_PROTOS extern plugin_t *${n}_PluginInfo (void);"
 done
 AC_DEFINE_UNQUOTED(SERVER_PLUGIN_LIST, $SERVER_PLUGIN_LIST, [list of server plugins])
 AC_DEFINE_UNQUOTED(SERVER_PLUGIN_PROTOS, $SERVER_PLUGIN_PROTOS, [list of server prototypes])

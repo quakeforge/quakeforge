@@ -111,7 +111,7 @@ static void I_XMMS_Repeat(void);
 static void I_XMMS_Pos(int);
 static void I_XMMS_Info(void);
 static void I_XMMS_f(void);
-QFPLUGIN plugin_t *cd_xmms_PluginInfo (void);
+plugin_t *cd_xmms_PluginInfo (void);
 
 /* static float cdvolume; */
 /* static byte remap[100]; */

@@ -34,13 +34,13 @@
 /*
 	All CDAudio plugins must export these functions
 */
-typedef void (QFPLUGIN *P_CDAudio_CD_f) (void); //
-typedef void (QFPLUGIN *P_CDAudio_Pause) (void);
-typedef void (QFPLUGIN *P_CDAudio_Play) (int, qboolean);
-typedef void (QFPLUGIN *P_CDAudio_Resume) (void);
-typedef void (QFPLUGIN *P_CDAudio_Shutdown) (void);
-typedef void (QFPLUGIN *P_CDAudio_Update) (void);
-typedef void (QFPLUGIN *P_CDAudio_Init) (void);
+typedef void (*P_CDAudio_CD_f) (void); //
+typedef void (*P_CDAudio_Pause) (void);
+typedef void (*P_CDAudio_Play) (int, qboolean);
+typedef void (*P_CDAudio_Resume) (void);
+typedef void (*P_CDAudio_Shutdown) (void);
+typedef void (*P_CDAudio_Update) (void);
+typedef void (*P_CDAudio_Init) (void);
 
 typedef struct cd_funcs_s {
 	P_CDAudio_CD_f			pCD_f; //
