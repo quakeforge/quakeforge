@@ -34,6 +34,7 @@ static const char rcsid[] =
 #define CINTERFACE
 
 #include "winquake.h"
+#include "QF/plugin.h"
 #include "QF/qargs.h"
 #include "QF/sound.h"
 #include "QF/sys.h"
@@ -98,6 +99,12 @@ static general_funcs_t		plugin_info_general_funcs;
 static snd_output_data_t	plugin_info_snd_output_data;
 static snd_output_funcs_t	plugin_info_snd_output_funcs;
 
+
+
+static void
+SNDDMA_Init_Cvars (void)
+{
+}
 
 void
 SNDDMA_BlockSound (void)

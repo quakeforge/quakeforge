@@ -34,135 +34,29 @@ static const char rcsid[] =
 #include <sys\types.h>
 #include <sys\timeb.h>
 
+#include "QF/cvar.h"
+#include "QF/qargs.h"
+#include "QF/sys.h"
+// #include "client.h"
+#include "game.h"
+#include "host.h"
 #include "winquake.h"
-#include "errno.h"
 
+
+qboolean	isDedicated = true;
+
+#if 0
 // FILE IO ====================================================================
 
 #define	MAX_HANDLES		10
 VFile      *sys_handles[MAX_HANDLES];
 
 
-int
-findhandle (void)
-{
-	int         i;
-
-	for (i = 1; i < MAX_HANDLES; i++)
-		if (!sys_handles[i])
-			return i;
-	Sys_Error ("out of handles");
-	return -1;
-}
-
-int
-filelength (VFile *f)
-{
-	int         pos;
-	int         end;
-
-	pos = ftell (f);
-	fseek (f, 0, SEEK_END);
-	end = ftell (f);
-	fseek (f, pos, SEEK_SET);
-
-	return end;
-}
-
-int
-Sys_FileOpenRead (char *path, int *hndl)
-{
-	VFile      *f;
-	int         i;
-
-	i = findhandle ();
-
-	f = Qopen (path, "rb");
-	if (!f) {
-		*hndl = -1;
-		return -1;
-	}
-	sys_handles[i] = f;
-	*hndl = i;
-
-	return filelength (f);
-}
-
-int
-Sys_FileOpenWrite (char *path)
-{
-	VFile      *f;
-	int         i;
-
-	i = findhandle ();
-
-	f = Qopen (path, "wb");
-	if (!f)
-		Sys_Error ("Error opening %s: %s", path, strerror (errno));
-	sys_handles[i] = f;
-
-	return i;
-}
-
-void
-Sys_FileClose (int handle)
-{
-	Qclose (sys_handles[handle]);
-	sys_handles[handle] = NULL;
-}
-
-void
-Sys_FileSeek (int handle, int position)
-{
-	fseek (sys_handles[handle], position, SEEK_SET);
-}
-
-int
-Sys_FileRead (int handle, void *dest, int count)
-{
-	return fread (dest, 1, count, sys_handles[handle]);
-}
-
-int
-Sys_FileWrite (int handle, void *data, int count)
-{
-	return fwrite (data, 1, count, sys_handles[handle]);
-}
-
-int
-Sys_FileTime (char *path)
-{
-	VFile      *f;
-
-	f = Qopen (path, "rb");
-	if (f) {
-		Qclose (f);
-		return 1;
-	}
-
-	return -1;
-}
-
-void
-Sys_mkdir (char *path)
-{
-}
-
 // SYSTEM IO ==================================================================
 
 void
 Sys_DebugLog (char *file, char *fmt, ...)
 {
-}
-
-void
-Sys_Printf (char *fmt, ...)
-{
-	va_list     argptr;
-
-	va_start (argptr, fmt);
-	vprintf (fmt, argptr);
-	va_end (argptr);
 }
 
 void
@@ -179,8 +73,9 @@ void
 Sys_LowFPPrecision (void)
 {
 }
+#endif
 
-char       *
+const char       *
 Sys_ConsoleInput (void)
 {
 	static char text[256];
@@ -217,25 +112,33 @@ Sys_ConsoleInput (void)
 	return NULL;
 }
 
-char       *newargv[256];
+static void
+shutdown (void)
+{
+}
+
+static void
+Sys_Init (void)
+{
+}
+
+const char       *newargv[256];
 
 int
-main (int argc, char **argv)
+main (int argc, const char **argv)
 {
-	MSG         msg;
 	quakeparms_t parms;
 	double      time, oldtime;
-	static char cwd[1024];
 
 	memset (&parms, 0, sizeof (parms));
 
 	parms.memsize = 16384 * 1024;
 	parms.membase = malloc (parms.memsize);
-
+#if 0
 	_getcwd (cwd, sizeof (cwd));
 	if (cwd[Q_strlen (cwd) - 1] == '\\')
 		cwd[Q_strlen (cwd) - 1] = 0;
-
+#endif
 	COM_InitArgv (argc, argv);
 
 	// dedicated server ONLY!
@@ -247,8 +150,8 @@ main (int argc, char **argv)
 		COM_InitArgv (argc, argv);
 	}
 
-	parms.argc = argc;
-	parms.argv = argv;
+	parms.argc = com_argc;
+	parms.argv = com_argv;
 
 	Sys_RegisterShutdown (Host_Shutdown);
 	Sys_RegisterShutdown (shutdown);

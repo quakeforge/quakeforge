@@ -70,11 +70,10 @@ case "$host_os" in
 			case "$target_os" in
 				mingw32*)
 					mingw=yes
-					CPPFLAGS="$CPPFLAGS -mno-cygwin -mwindows"
+					CPPFLAGS="$CPPFLAGS -mno-cygwin -mconsole"
 					CPPFLAGS="$CPPFLAGS -I\$(top_srcdir)/include/win32"
 					CPPFLAGS="$CPPFLAGS -I\$(top_srcdir)/include/win32/resources"
-					LDFLAGS="$LDFLAGS -mno-cygwin -mwindows"
-					endian="little"
+					LDFLAGS="$LDFLAGS -mno-cygwin -mconsole"					endian="little"
 				;;
 			esac
 		fi
