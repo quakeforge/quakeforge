@@ -47,11 +47,12 @@ static const char rcsid[] =
 #include "QF/sys.h"
 #include "QF/va.h"
 
-#include "qfcc.h"
+#include "class.h"
 #include "def.h"
 #include "expr.h"
-#include "class.h"
 #include "function.h"
+#include "options.h"
+#include "qfcc.h"
 #include "struct.h"
 #include "type.h"
 
@@ -578,6 +579,9 @@ init_types (void)
 {
 	type_t     *type;
 
+	if (options.traditional)
+		return;
+
 	type = type_SEL.aux_type = new_struct (0);
 	new_struct_field (type, &type_string, "sel_id", vis_public);
 	new_struct_field (type, &type_string, "sel_types", vis_public);
@@ -653,6 +657,10 @@ chain_initial_types (void)
 	chain_type (&type_function);
 	chain_type (&type_pointer);
 	chain_type (&type_floatfield);
+
+	if (options.traditional)
+		return;
+
 	chain_type (&type_quaternion);
 	chain_type (&type_integer);
 	chain_type (&type_uinteger);
