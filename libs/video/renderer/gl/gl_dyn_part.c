@@ -1322,32 +1322,32 @@ R_DrawParticles (void)
 			switch (part->tex) {
 				case 0:
 					VA[0].texcoord[0] = 0.0;
-					VA[0].texcoord[1] = 0.5;
-					VA[1].texcoord[0] = 0.0;
+					VA[0].texcoord[1] = 0.0;
+					VA[1].texcoord[0] = 0.5;
 					VA[1].texcoord[1] = 0.0;
 					VA[2].texcoord[0] = 0.5;
-					VA[2].texcoord[1] = 0.0;
-					VA[3].texcoord[0] = 0.5;
+					VA[2].texcoord[1] = 0.5;
+					VA[3].texcoord[0] = 0.0;
 					VA[3].texcoord[1] = 0.5;
 					break;
 				case 1:
 					VA[0].texcoord[0] = 0.5;
-					VA[0].texcoord[1] = 0.5;
-					VA[1].texcoord[0] = 0.5;
+					VA[0].texcoord[1] = 0.0;
+					VA[1].texcoord[0] = 1.0;
 					VA[1].texcoord[1] = 0.0;
 					VA[2].texcoord[0] = 1.0;
-					VA[2].texcoord[1] = 0.0;
-					VA[3].texcoord[0] = 1.0;
+					VA[2].texcoord[1] = 0.5;
+					VA[3].texcoord[0] = 0.5;
 					VA[3].texcoord[1] = 0.5;
 					break;
 				case 2:
 					VA[0].texcoord[0] = 0.0;
-					VA[0].texcoord[1] = 1.0;
-					VA[1].texcoord[0] = 0.0;
+					VA[0].texcoord[1] = 0.5;
+					VA[1].texcoord[0] = 0.5;
 					VA[1].texcoord[1] = 0.5;
 					VA[2].texcoord[0] = 0.5;
-					VA[2].texcoord[1] = 0.5;
-					VA[3].texcoord[0] = 0.5;
+					VA[2].texcoord[1] = 1.0;
+					VA[3].texcoord[0] = 0.0;
 					VA[3].texcoord[1] = 1.0;
 					break;
 			}
@@ -1360,10 +1360,10 @@ R_DrawParticles (void)
 			VectorAdd (right_scale, up_scale, up_right_scale);
 			VectorSubtract (right_scale, up_scale, down_right_scale);
 
-			VectorAdd (part->org, up_right_scale,   VA[0].vertex);
-			VectorAdd (part->org, down_right_scale, VA[1].vertex);
-			VectorSubtract (part->org, up_right_scale,   VA[2].vertex);
-			VectorSubtract (part->org, down_right_scale, VA[3].vertex);
+			VectorAdd (part->org, down_right_scale, VA[0].vertex);
+			VectorSubtract (part->org, up_right_scale,   VA[1].vertex);
+			VectorSubtract (part->org, down_right_scale, VA[2].vertex);
+			VectorAdd (part->org, up_right_scale,   VA[3].vertex);
 
 			VA += 4;
 			vacount += 4;
