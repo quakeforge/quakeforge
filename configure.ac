@@ -1544,6 +1544,7 @@ else
 	SOUND_TYPES=""
 fi
 
+PLUGIN_RPATH='-rpath $(plugindir)'
 CD_PLUGIN_STATIC=""
 SND_PLUGIN_STATIC=""
 SND_REND_STATIC=""
@@ -1555,6 +1556,7 @@ if test "x$static_plugins" = xauto -a "x$SYSTYPE" = xWIN32; then
 	static_plugins=yes
 fi
 if test "x$static_plugins" = xyes; then
+	PLUGIN_RPATH=''
 	CD_PLUGIN_STATIC="$CD_PLUGIN_TARGETS"
 	CD_PLUGIN_TARGETS=""
 	SND_PLUGIN_STATIC="$SND_PLUGIN_TARGETS"
