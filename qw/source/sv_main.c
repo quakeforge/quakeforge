@@ -1198,7 +1198,7 @@ SV_StringToFilter (const char *address, ipfilter_t *f)
 	byte        b[4] = {};
 #endif
 	int			mask = 0;
-	int			i = 0;
+	int			i;
 	char		*s;
 	char		*slash;
 	char		*c;
@@ -1223,8 +1223,11 @@ SV_StringToFilter (const char *address, ipfilter_t *f)
 	// parse the ip for ipv6
 #ifdef HAVE_IPV6
 	if (inet_pton (AF_INET6, s, b) != 1) {
-	// FIXME: we *must* fill in the prefix bytes here if we're doing ipv6
-#error Prefix bytes not set for parsing ipv4 addresses
+		b[10] = 0xFF; // Prefix bytes for hosts that don't support ipv6
+		b[11] = 0xFF; // (see RFC 2373, section 2.5.4)
+		i = 12;
+#else
+		i = 0;
 #endif
 		c = s;
 
