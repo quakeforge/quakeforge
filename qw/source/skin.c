@@ -86,13 +86,13 @@ void
 Skin_Find (player_info_t *sc)
 {
 	skin_t     *skin;
-	char        name[128], *s;
+	char        name[128];
+	char       *s = NULL;
 
 	if (allskins[0])
 		strncpy (name, allskins, sizeof (name));
 	else {
-		s = Info_ValueForKey (sc->userinfo, "skin");
-		if (s && s[0])
+		if ((s = Info_ValueForKey (sc->userinfo, "skin")) && s[0])
 			strncpy (name, s, sizeof (name));
 		else
 			strncpy (name, baseskin->string, sizeof (name));
@@ -100,6 +100,9 @@ Skin_Find (player_info_t *sc)
 
 	if (strstr (name, "..") || *name == '.')
 		strcpy (name, "base");
+
+	if (!allskins[0] && (!s || !strcaseequal (name, s)))
+		Info_SetValueForKey (sc->userinfo, "skin", name, MAX_INFO_STRING);
 
 	COM_StripExtension (name, name);
 
