@@ -140,10 +140,12 @@ add_relocs (qfo_t *qfo)
 			case rel_op_a_def:
 			case rel_op_b_def:
 			case rel_op_c_def:
+				reloc->ofs += code_base;
+				break;
 			case rel_op_a_op:
 			case rel_op_b_op:
 			case rel_op_c_op:
-				reloc->ofs += code_base;
+				// these are relative and fixed up before the .qfo is written
 				break;
 			case rel_def_op:
 				reloc->ofs += data_base;

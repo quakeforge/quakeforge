@@ -542,6 +542,7 @@ emit_expr (expr_t *e)
 		case ex_label:
 			label = &e->e.label;
 			label->ofs = pr.code->size;
+			relocate_refs (label->refs, label->ofs);
 			break;
 		case ex_block:
 			for (e = e->e.block.head; e; e = e->next)
