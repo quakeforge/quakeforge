@@ -176,13 +176,13 @@ emit_assign_expr (expr_t *e)
 		op = PR_Opcode_Find ("=", 5, def_b, def_a, &def_void);
 		emit_statement (e->line, op, def_b, def_a, 0);
 	} else {
-		if (def_a->initialized) {
+		if (def_a->constant) {
 			if (options.cow) {
 				int size = type_size [def_a->type->type];
 				int ofs = PR_NewLocation (def_a->type);
 				memcpy (pr_globals + ofs, pr_globals + def_a->ofs, size);
 				def_a->ofs = ofs;
-				def_a->initialized = 0;
+				def_a->constant = 0;
 				//warning (e1, "assignment to constant %s", def_a->name);
 			} else {
 				error (e1, "assignment to constant %s", def_a->name);

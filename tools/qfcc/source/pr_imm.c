@@ -173,7 +173,7 @@ PR_ReuseConstant (expr_t *expr, def_t *def)
 		if (def) {
 			PR_FreeLocation (def);
 			def->ofs = cn->ofs;
-			def->initialized = 1;
+			def->constant = 1;
 			cn = def;
 		}
 		return cn;
@@ -193,7 +193,7 @@ PR_ReuseConstant (expr_t *expr, def_t *def)
 				PR_NewDef (&type_float, ".imm", 0);
 		}
 	}
-	cn->initialized = 1;
+	cn->constant = 1;
 	// copy the immediate to the global area
 	if (e.type == ex_string)
 		e.e.integer_val = CopyString (r);

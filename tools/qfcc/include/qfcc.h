@@ -287,8 +287,8 @@ typedef struct def_s {
 	const char		*name;
 	int				num_locals;
 	gofs_t			ofs;
-	int				initialized;// 1 when a declaration included "= immediate"
-	statref_t		*refs;		// for relocations
+	int				constant;	// 1 when a declaration included "= immediate"
+	statref_t		*refs;			// for relocations
 
 	int				used;			// unused local detection
 	string_t		file;			// source file

@@ -267,7 +267,7 @@ WriteData (int crc)
 		numglobaldefs++;
 		dd->type = def->type->type;
 
-		if (!def->initialized
+		if (!def->constant
 			&& def->type->type != ev_func
 			&& def->type->type != ev_field && def->scope == NULL)
 			dd->type |= DEF_SAVEGLOBAL;
@@ -568,7 +568,7 @@ PR_GlobalString (gofs_t ofs)
 	if (!(def = pr_global_defs[ofs]))
 		return PR_GlobalStringNoContents (ofs);
 
-	if (def->initialized && def->type->type != ev_func) {
+	if (def->constant && def->type->type != ev_func) {
 		s = PR_ValueString (def->type->type, &pr_globals[ofs]);
 		sprintf (line, "%i(%s)", ofs, s);
 	} else {
@@ -712,7 +712,7 @@ PR_FinishCompilation (void)
 			if (d->type->type == ev_func && !d->scope) {	// function args ok
 //				f = G_FUNCTION(d->ofs);
 //				if (!f || (!f->code && !f->builtin))
-				if (!d->initialized) {
+				if (!d->constant) {
 					warning (0, "function %s was not defined\n", d->name);
 				}
 			}
