@@ -744,9 +744,12 @@ IN_LL_SendKeyEvents (void)
 					case SDLK_MODE:
 						ksym = K_MODE;
 						break;
+#if SDL_VERSIONNUM(SDL_MAJOR_VERSION,SDL_MINOR_VERSION,SDL_PATCHLEVEL) \
+						    >= SDL_VERSIONNUM(1,1,5)
 					case SDLK_COMPOSE:
 						ksym = K_COMPOSE;
 						break;
+#endif
 					case SDLK_HELP:
 						ksym = K_HELP;
 						break;
