@@ -90,11 +90,11 @@ towards the center until it is valid.
 static void
 CalcFaceVectors (lightinfo_t *l, vec3_t faceorg)
 {
-	texinfo_t	*tex;
 	int			i, j;
-	vec3_t		texnormal;
 	float		distscale;
+	vec3_t		texnormal;
 	vec_t		dist, len;
+	texinfo_t	*tex;
 
 	tex = &bsp->texinfo[l->face->texinfo];
 
@@ -157,11 +157,11 @@ CalcFaceVectors (lightinfo_t *l, vec3_t faceorg)
 static void
 CalcFaceExtents (lightinfo_t *l)
 {
+	int			i, j, e;
+	vec_t		mins[2], maxs[2], val;
 	dface_t		*s;
 	dvertex_t	*v;
-	int			i, j, e;
 	texinfo_t	*tex;
-	vec_t		mins[2], maxs[2], val;
 
 	s = l->face;
 
@@ -200,7 +200,7 @@ CalcFaceExtents (lightinfo_t *l)
 	}
 }
 
-static void
+static inline void
 CalcSamples (lightinfo_t *l)
 {
 	l->numsamples = l->texsize[0] * l->texsize[1];
@@ -215,7 +215,7 @@ CalcSamples (lightinfo_t *l)
 static void
 CalcPoints (lightinfo_t *l)
 {
-	int			j , s, t, w, h, realw, realh, stepbit;
+	int			realw, realh, stepbit, j, s, t, w, h;
 	vec_t		mids, midt, starts, startt, us, ut;
 	vec3_t		facemid, v;
 	lightpoint_t *point;
@@ -276,8 +276,8 @@ SingleLightFace (entity_t *light, lightinfo_t *l)
 	int			mapnum, i;
 	qboolean	hit;
 	vec3_t		incoming, spotvec;
-	vec_t		add, angle, dist, idist, lightfalloff, lightsubtract, spotcone;
-	vec_t       intensity;
+	vec_t		angle, dist, idist, lightfalloff, lightsubtract, spotcone;
+	vec_t       add = 0.0;
 	lightpoint_t *point;
 	lightsample_t *sample;
 
@@ -356,7 +356,7 @@ SingleLightFace (entity_t *light, lightinfo_t *l)
 				// LordHavoc: changed to be more realistic (entirely different
 				// lighting model)
 				// LordHavoc: use subbrightness on all lights, simply to have
-				//some distance culling
+				// some distance culling
 				add -= lightsubtract;
 				break;
 		}
@@ -364,7 +364,9 @@ SingleLightFace (entity_t *light, lightinfo_t *l)
 		if (light->noise) {
 			int         seed = light - entities;
 			vec3_t      snap;
+			vec_t		intensity = 0.0;
 			lightpoint_t *noise_point = point;
+
 			if (options.extrascale) {
 				// FIXME not correct for extrascale > 2
 				// We don't want to oversample noise because that just
@@ -382,16 +384,15 @@ SingleLightFace (entity_t *light, lightinfo_t *l)
 				else if (x % 2)
 					noise_point -= 3;
 			}
-			if (light->noisetype == NOISE_SMOOTH)
-				snap_vector (noise_point->v, snap, 0);
-			else
-				snap_vector (noise_point->v, snap, light->resolution);
 
+			if (light->noisetype == NOISE_SMOOTH) {
+				snap_vector (noise_point->v, snap, 0);
+				intensity = noise_scaled (snap, light->resolution, seed);
+			} else
+				snap_vector (noise_point->v, snap, light->resolution);
 
 			if (light->noisetype == NOISE_RANDOM)
 				intensity = noise3d (snap, seed);
-			if (light->noisetype == NOISE_SMOOTH)
-				intensity = noise_scaled (snap, light->resolution, seed);
 			if (light->noisetype == NOISE_PERLIN)
 				intensity = noise_perlin (snap, light->persistence, seed);
 
@@ -461,12 +462,10 @@ FixMinlight (lightinfo_t *l)
 void
 LightFace (lightinfo_t *l, int surfnum)
 {
-	byte       *out, *lit;
-	byte       *outdata, *rgbdata;
+	byte       *lit, *out, *outdata, *rgbdata;
+	int			ofs, size, red, green, blue, white, i, j;
 	dface_t    *f;
-	int         i, j, ofs, size;
-	int         red, green, blue, white;
-	lightchain_t *lightchain;
+	lightchain_t  *lightchain;
 	lightsample_t *sample;
 
 	f = bsp->faces + surfnum;
@@ -478,9 +477,8 @@ LightFace (lightinfo_t *l, int surfnum)
 	for (i = 0; i < MAXLIGHTMAPS; i++)
 		f->styles[i] = l->lightstyles[i] = 255;
 
-	if (bsp->texinfo[f->texinfo].flags & TEX_SPECIAL)	
-		// non-lit texture
-		return;
+	if (bsp->texinfo[f->texinfo].flags & TEX_SPECIAL)
+		return;		// non-lit texture
 
 	// rotate plane
 	VectorCopy (bsp->planes[f->planenum].normal, l->facenormal);
@@ -507,7 +505,7 @@ LightFace (lightinfo_t *l, int surfnum)
 		SingleLightFace (novislights[i], l);
 	}
 
-	//FixMinlight (&l);
+//	FixMinlight (&l);
 
 	for (i = 0; i < MAXLIGHTMAPS; i++)
 		if (l->lightstyles[i] == 255)
