@@ -1994,7 +1994,7 @@ SV_InitLocal (void)
 	spawn = Cvar_Get ("spawn", "0", CVAR_SERVERINFO, Cvar_Info,
 					  "Spawn the player entity");
 	watervis = Cvar_Get ("watervis", "0", CVAR_SERVERINFO, Cvar_Info,
-						 "Toggle the use of r_watervis by OpenGL clients");
+						 "Toggle the effectiveness of r_wateralpha on OpenGL clients");
 	timeout = Cvar_Get ("timeout", "65", CVAR_NONE, NULL, "Sets the amount of "
 						"time in seconds before a client is considered "
 						"disconnected if the server does not receive a "
