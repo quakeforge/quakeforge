@@ -1685,12 +1685,16 @@ function_expr (expr_t *e1, expr_t *e2)
 		} else {
 			*a = e;
 		}
+		// new_binary_expr calls inc_users for both args, but in_users doesn't
+		// walk expression chains so only the first arg expression in the chain
+		// (the last arg in the call) gets its user count incremented, thus
+		// ensure all other arg expressions get their user counts incremented.
+		if (a != &args)
+			inc_users (*a);
 		a = &(*a)->next;
 	}
 	for (i = 0; i < arg_expr_count - 1; i++) {
 		append_expr (call, assign_expr (arg_exprs[i][1], arg_exprs[i][0]));
-		e = arg_exprs[i][1];
-		inc_users (e);
 	}
 	if (arg_expr_count) {
 		e = new_bind_expr (arg_exprs[arg_expr_count - 1][0],
