@@ -1455,7 +1455,7 @@ if test "x$HAVE_SVGA" = xyes; then
 		QW_TARGETS="$QW_TARGETS qw-client-svga\$(EXEEXT)"
 		NQ_TARGETS="$NQ_TARGETS nq-svga\$(EXEEXT)"
 		CL_TARGETS="$CL_TARGETS SVGAlib"
-		VID_TARGETS_NOINST="$VID_TARGETS_NOINST libQFsvga.la"
+		VID_TARGETS="$VID_TARGETS libQFsvga.la"
 		BUILD_SW=yes
 	fi
 	CAN_BUILD_SW=yes

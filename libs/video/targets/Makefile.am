@@ -1,12 +1,10 @@
 INCLUDES= -I$(top_srcdir)/include $(GGI_CFLAGS) $(MGL_CFLAGS) $(SDL_CFLAGS) $(SVGA_CFLAGS) $(X_CFLAGS) $(GLIDE_CFLAGS)
 
-lib_LTLIBRARIES= @VID_TARGETS@
+noinst_LTLIBRARIES= libasm.la @VID_TARGETS@
 
 EXTRA_LTLIBRARIES= \
 	libQFjs.la libQFfbdev.la libQFglx.la libQFsvga.la libQFx11.la \
 	libQFsdl.la libQFsdl32.la libQFsgl.la libQFwgl.la
-
-noinst_LTLIBRARIES= libasm.la @VID_TARGETS_NOINST@
 
 if ASM_ARCH
 libasm_la_SOURCES= d_copy.S
