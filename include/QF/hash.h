@@ -97,6 +97,16 @@ void *Hash_Find (hashtab_t *tab, const char *key);
 void *Hash_FindElement (hashtab_t *tab, void *ele);
 
 /*
+	find a list of elements within a hash table:
+		tab:	the table to search
+		key:	the key string identifying the elements being searched for
+	returns a null terminated list of element pointers if at least one found,
+	otherwise 0.
+*/
+void **Hash_FindList (hashtab_t *tab, const char *key);
+void **Hash_FindElementList (hashtab_t *tab, void *ele);
+
+/*
 	delete an element from a hash table:
 		tab:	the table to remove the element from
 		key:	the key string identifying the element to be deleted

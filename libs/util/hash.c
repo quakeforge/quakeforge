@@ -250,6 +250,62 @@ Hash_FindElement (hashtab_t *tab, void *ele)
 	return 0;
 }
 
+void **
+Hash_FindList (hashtab_t *tab, const char *key)
+{
+	unsigned long h = Hash_String (key);
+	size_t ind = get_index (h, tab->tab_size, tab->size_bits);
+	struct hashlink_s *lnk = tab->tab[ind], *start = 0;
+	int         count = 0;
+	void      **list;
+
+	while (lnk) {
+		if (strequal (key, tab->get_key (lnk->data, tab->user_data))) {
+			count++;
+			if (!start)
+				start = lnk;
+		}
+		lnk = lnk->next;
+	}
+	if (!count)
+		return 0;
+	list = malloc ((count + 1) * sizeof (void *));
+	for (count = 0, lnk = start; lnk; lnk = lnk->next) {
+		if (strequal (key, tab->get_key (lnk->data, tab->user_data)))
+			list[count++] = lnk->data;
+	}
+	list[count] = 0;
+	return list;
+}
+
+void **
+Hash_FindElementList (hashtab_t *tab, void *ele)
+{
+	unsigned long h = tab->get_hash (ele, tab->user_data);
+	size_t ind = get_index (h, tab->tab_size, tab->size_bits);
+	struct hashlink_s *lnk = tab->tab[ind], *start = 0;
+	int         count = 0;
+	void      **list;
+
+	while (lnk) {
+		if (tab->compare (lnk->data, ele, tab->user_data)) {
+			count++;
+			if (!start)
+				start = lnk;
+		}
+		lnk = lnk->next;
+	}
+	if (!count)
+		return 0;
+	list = malloc ((count + 1) * sizeof (void *));
+	for (count = 0, lnk = start; lnk; lnk = lnk->next) {
+		if (tab->compare (lnk->data, ele, tab->user_data))
+			list[count++] = lnk->data;
+	}
+	list[count] = 0;
+	return list;
+}
+
 void *
 Hash_Del (hashtab_t *tab, const char *key)
 {
