@@ -284,9 +284,9 @@ parse_colormap (TargaHeader *targa, byte **dataByte)
 			for (i = 0; i < targa->colormap_length; i++, cm++) {
 				word = *data++;
 				word |= (*data++) << 8;
-				cm->red = word & 0x1f;
-				cm->green = (word >> 5) & 0x1f;
-				cm->blue = (word >> 10) & 0x1f;
+				cm->red   = (word << 3) & 0xf8;
+				cm->green = (word >> 2) & 0xf8;
+				cm->blue  = (word >> 7) & 0xf8;
 				cm->alpha = 255;
 			}
 			break;
@@ -294,25 +294,25 @@ parse_colormap (TargaHeader *targa, byte **dataByte)
 			for (i = 0; i < targa->colormap_length; i++, cm++) {
 				word = *data++;
 				word |= (*data++) << 8;
-				cm->red = word & 0x1f;
-				cm->green = (word >> 5) & 0x1f;
-				cm->blue = (word >> 10) & 0x1f;
+				cm->red   = (word << 3) & 0xf8;
+				cm->green = (word >> 2) & 0xf8;
+				cm->blue  = (word >> 7) & 0xf8;
 				cm->alpha = (word & 0x8000) ? 255 : 0;
 			}
 			break;
 		case 24:
 			for (i = 0; i < targa->colormap_length; i++, cm++) {
-				cm->red = *data++;
+				cm->red   = *data++;
 				cm->green = *data++;
-				cm->blue = *data++;
+				cm->blue  = *data++;
 				cm->alpha = 255;
 			}
 			break;
 		case 32:
 			for (i = 0; i < targa->colormap_length; i++, cm++) {
-				cm->red = *data++;
+				cm->red   = *data++;
 				cm->green = *data++;
-				cm->blue = *data++;
+				cm->blue  = *data++;
 				cm->alpha = *data++;
 			}
 			break;
