@@ -172,7 +172,7 @@ VID_Init (unsigned char *palette)
 
 	VID_SDL_GammaCheck ();
 	VID_InitGamma (palette);
-	VID_SetPalette (palette);
+	VID_SetPalette (vid.palette);
 
 	VID_Init8bitPalette ();	// Check for 3DFX Extensions and initialize them.
 

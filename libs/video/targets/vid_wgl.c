@@ -1103,7 +1103,7 @@ VID_Init (unsigned char *palette)
 
 	VID_InitGamma (palette);
 	VID_Init8bitPalette ();
-	VID_SetPalette (palette);
+	VID_SetPalette (vid.palette);
 
 	vid.initialized = true;
 

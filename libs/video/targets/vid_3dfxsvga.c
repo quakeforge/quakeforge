@@ -343,7 +343,7 @@ VID_Init (unsigned char *palette)
 	GL_Init ();
 
 	VID_InitGamma (palette);
-	VID_SetPalette (palette);
+	VID_SetPalette (vid.palette);
 
 	// Check for 3DFX Extensions and initialize them.
 	VID_Init8bitPalette ();

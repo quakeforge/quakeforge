@@ -523,7 +523,7 @@ VID_Init (unsigned char *palette)
 		Con_CheckResize (); // Now that we have a window size, fix console
 
 		VID_InitGamma (palette);
-		VID_SetPalette (palette);
+		VID_SetPalette (vid.palette);
 
 		vid.initialized = true;
 	}

@@ -31,6 +31,12 @@ static const char rcsid[] =
 # include "config.h"
 #endif
 
+#ifdef HAVE_STRING_H
+# include <string.h>
+#endif
+#ifdef HAVE_STRINGS_H
+# include <strings.h>
+#endif
 #include <math.h>
 
 #include "QF/console.h"
@@ -146,16 +152,14 @@ VID_UpdateGamma (cvar_t *vid_gamma)
 		Con_DPrintf ("Setting hardware gamma to %g\n", gamma);
 		VID_BuildGammaTable (1.0);	// hardware gamma wants a linear palette
 		VID_SetGamma (gamma);
+		memcpy (vid.palette, vid.basepal, 256 * 3);
 	} else {	// We have to hack the palette
 		int i;
-		byte pal[768];
 		Con_DPrintf ("Setting software gamma to %g\n", gamma);
 		VID_BuildGammaTable (gamma);
-		if (vid.initialized) {
-			for (i = 0; i < sizeof (pal); i++)
-				pal[i] = gammatable[vid.palette[i]];
-			VID_SetPalette (pal); // update with the new palette
-		}
+		for (i = 0; i < 256 * 3; i++)
+			vid.palette[i] = gammatable[vid.basepal[i]];
+		VID_SetPalette (vid.palette); // update with the new palette
 	}
 }
 
@@ -170,7 +174,8 @@ VID_InitGamma (unsigned char *pal)
 	int 	i;
 	double	gamma = 1.45;
 
-	vid.palette = pal;
+	vid.basepal = pal;
+	vid.palette = malloc (256 * 3);
 	if ((i = COM_CheckParm ("-gamma"))) {
 		gamma = atof (com_argv[i + 1]);
 	}

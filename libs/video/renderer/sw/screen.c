@@ -350,7 +350,7 @@ SCR_ApplyBlend (void)		// Used to be V_UpdatePalette
 	int         r, g, b, i;
 	byte       *basepal, *newpal;
 	byte        pal[768];
-	basepal = vid.palette;
+	basepal = vid.basepal;
 	newpal = pal;
 
 	for (i = 0; i < 256; i++) {

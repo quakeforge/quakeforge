@@ -250,7 +250,7 @@ VID_Init (unsigned char *palette)
 
 	// Check for 8-bit extension and initialize if present
 	VID_Init8bitPalette ();
-	VID_SetPalette (palette);
+	VID_SetPalette (vid.palette);
 
 	Con_Printf ("Video mode %dx%d initialized.\n", scr_width, scr_height);
 

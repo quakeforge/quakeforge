@@ -502,7 +502,7 @@ VID_Init (unsigned char *palette)
 	}
 
 	VID_InitGamma (palette);
-	VID_SetPalette (palette);
+	VID_SetPalette (vid.palette);
 
 	// create the GC
 	{
@@ -580,9 +580,9 @@ VID_SetPalette (unsigned char *palette)
 		for (i = 0; i < 256; i++) {
 			colors[i].pixel = i;
 			colors[i].flags = DoRed | DoGreen | DoBlue;
-			colors[i].red = gammatable[(byte) palette[(i * 3)]] << 8;
-			colors[i].green = gammatable[(byte) palette[(i * 3) + 1]] << 8;
-			colors[i].blue = gammatable[(byte) palette[(i * 3) + 2]] << 8;
+			colors[i].red = palette[(i * 3)] << 8;
+			colors[i].green = palette[(i * 3) + 1] << 8;
+			colors[i].blue = palette[(i * 3) + 2] << 8;
 		}
 		XStoreColors (x_disp, x_cmap, colors, 256);
 	}

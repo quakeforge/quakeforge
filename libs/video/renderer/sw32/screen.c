@@ -354,7 +354,7 @@ SCR_ApplyBlend (void) // Used to be V_UpdatePalette
 	switch(r_pixbytes) {
 	case 1:
 	{
-		basepal = vid.palette;
+		basepal = vid.basepal;
 		newpal = pal;
 
 		for (i = 0; i < 256; i++) {

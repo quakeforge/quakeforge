@@ -54,6 +54,7 @@ typedef struct {
 	void			*buffer;		// invisible buffer
 	short			*zbuffer;
 	void			*surfcache;
+	byte            *basepal;		// 256 * 3
 	byte            *palette;		// 256 * 3
 	byte			*colormap8;		// 256 * VID_GRADES size
 	unsigned short	*colormap16;	// 256 * VID_GRADES size
