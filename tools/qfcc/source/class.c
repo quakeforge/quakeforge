@@ -114,6 +114,12 @@ get_class (const char *name, int create)
 	if (!class_hash)
 		class_hash = Hash_NewTable (1021, class_get_key, 0, 0);
 	if (name) {
+		if (get_def (0, name, current_scope, st_none)
+			|| get_enum (name)) {
+			if (create)
+				error (0, "redefinition of %s", name);
+			return 0;
+		}
 		c = Hash_Find (class_hash, name);
 		if (c || !create)
 			return c;
@@ -434,12 +440,12 @@ class_find_method (class_type_t *class_type, method_t *method)
 				method->instance ? '-' : '+',
 				sel->str, class_name,
 				category_name ? va (" (%s)", category_name) : "");
-		add_method (start_methods, method);
-		if (method->instance)
-			method->params->type = start_class->type;
-		else
-			method->params->type = &type_Class;
 	}
+	add_method (start_methods, method);
+	if (method->instance)
+		method->params->type = start_class->type;
+	else
+		method->params->type = &type_Class;
 	dstring_delete (sel);
 	return method;
 }
