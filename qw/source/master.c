@@ -69,8 +69,26 @@ static __attribute__ ((unused)) const char rcsid[] =
 #include <string.h>
 #include <ctype.h>
 #include <getopt.h>
+#include <stdarg.h>
 
 #include "protocol.h"
+
+static void __attribute__ ((format (printf, 1, 2)))
+ma_log (const char *fmt, ...)
+{
+	va_list     args;
+	time_t      mytime = 0;
+	struct tm  *local = NULL;
+	char        stamp[1024];
+
+	mytime = time (NULL);
+	local = localtime (&mytime);
+	strftime (stamp, sizeof (stamp), "[%b %e %X] ", local);
+	fprintf (stdout, "%s", stamp);
+	va_start (args, fmt);
+	vfprintf (stdout, fmt, args);
+	va_end (args);
+}
 
 #ifdef HAVE_IN_PKTINFO
 static int
@@ -177,7 +195,7 @@ QW_AddHeartbeat (server_t **servers_p, int slen,
 			&& servers[i].addr.sin_port == addr->sin_port) {
 			time (&servers[i].updated);
 #if 1
-			printf ("Refreshed %s:%d (seq %d, players %d)\n",
+			ma_log ("Refreshed %s:%d (seq %d, players %d)\n",
 					inet_ntoa (servers[i].addr.sin_addr),
 					ntohs (servers[i].addr.sin_port),
 					sequence, players);
@@ -207,7 +225,7 @@ QW_AddHeartbeat (server_t **servers_p, int slen,
 	servers[freeslot].addr = *addr;
 	servers[freeslot].notimeout = notimeout;
 #if 1
-	printf ("Added %s:%d (seq %d, players %d)\n",
+	ma_log ("Added %s:%d (seq %d, players %d)\n",
 			inet_ntoa (servers[freeslot].addr.sin_addr),
 			ntohs (servers[freeslot].addr.sin_port),
 			sequence, players);
@@ -228,7 +246,7 @@ QW_TimeoutHearts (server_t *servers, int slen)
 			&& !servers[i].notimeout) {
 			servers[i].updated = 0;
 #if 1
-			printf ("Removed %s:%d (timeout)\n",
+			ma_log ("Removed %s:%d (timeout)\n",
 				   inet_ntoa (servers[i].addr.sin_addr),
 				   ntohs (servers[i].addr.sin_port));
 #endif
@@ -246,7 +264,7 @@ QW_HeartShutdown (struct sockaddr_in *addr, server_t *servers,
 			&& servers[i].addr.sin_port == addr->sin_port) {
 			servers[i].updated = 0;
 #if 1
-			printf ("Removed %s:%d\n",
+			ma_log ("Removed %s:%d\n",
 				   inet_ntoa (servers[i].addr.sin_addr),
 				   ntohs (servers[i].addr.sin_port));
 #endif
@@ -299,7 +317,7 @@ QW_Pong (int sock, msghdr_t *msghdr)
 {
 	// connectionless packet
 	char data[6] = {0xFF, 0xFF, 0xFF, 0xFF, A2A_ACK, 0};
-	//printf ("Ping\n");
+	//ma_log ("Ping\n");
 	qf_sendmsg (sock, data, sizeof (data), msghdr);
 }
 
@@ -343,12 +361,12 @@ QW_Master (struct sockaddr_in *addr)
 			continue;
 		}
 #if 0
-		printf ("Got %d bytes: 0x%x from %s\n", size, buf[0],
+		ma_log ("Got %d bytes: 0x%x from %s\n", size, buf[0],
 				inet_ntoa (recvaddr.sin_addr));
 #endif
 
 #if 0
-		printf ("Message Contents: '");
+		ma_log ("Message Contents: '");
 		{ // so that 'j' isn't unused when commented out
 			int j;
 			for (j = 0; j < size; j++)
@@ -380,7 +398,7 @@ QW_Master (struct sockaddr_in *addr)
 				QW_Pong (sock, &msghdr);
 				break;
 			default:
-				printf ("Unknown 0x%x\n", buf[0]);
+				ma_log ("Unknown 0x%x\n", buf[0]);
 				break;
 		}
 	}
