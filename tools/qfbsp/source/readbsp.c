@@ -220,7 +220,7 @@ LoadBSP (void)
 {
 	QFile      *f;
 
-	f = Qopen (options.bspfile, "rb");
+	f = Qopen (options.bspfile, "rbz");
 	if (!f)
 		Sys_Error ("couldn't open %s. %s", options.bspfile, strerror(errno));
 	bsp = LoadBSPFile (f, Qfilesize (f));
@@ -241,10 +241,26 @@ LoadBSP (void)
 	load_textures ();
 }
 
+static char *
+output_file (const char *ext)
+{
+	char       *name;
+
+	name = malloc (strlen (options.bspfile) + strlen (ext) + 1);
+	QFS_StripExtension (options.bspfile, name);
+	if (strcmp (QFS_FileExtension (options.bspfile), ".gz") == 0) {
+		QFS_StripExtension (name, name);
+	}
+	strcat (name, ext);
+	return name;
+}
+
 void
 bsp2prt (void)
 {
 	vec3_t      ooo = {1, 1, 1};
+
+	options.portfile = output_file (".prt");
 
 	VectorSubtract (bsp->models[0].mins, ooo, bs.mins);
 	VectorAdd (bsp->models[0].maxs, ooo, bs.maxs);
@@ -329,9 +345,7 @@ extract_textures (void)
 	char       *wadfile = malloc (strlen (options.bspfile) + 5);
 	wad_t      *wad;
 
-	wadfile = malloc (strlen (options.bspfile) + 5);
-	QFS_StripExtension (options.bspfile, wadfile);
-	strcat (wadfile, ".wad");
+	wadfile = output_file (".wad");
 
 	wad = wad_create (wadfile);
 
@@ -339,15 +353,35 @@ extract_textures (void)
 				  sizeof (default_palette));
 
 	for (i = 0; i < miptexlump->nummiptex; i++) {
-		printf ("%3d %6d ", i, miptexlump->dataofs[i]);
 		miptex = (miptex_t *)(bsp->texdata + miptexlump->dataofs[i]);
 		pixels = miptex->width * miptex->height / 64 * 85;
 		mtsize = sizeof (miptex_t) + pixels;
+#if 0
+		printf ("%3d %6d ", i, miptexlump->dataofs[i]);
 		printf ("%16s %3dx%-3d %d %d %d %d %d %d\n",
 				miptex->name, miptex->width,
 				miptex->height, miptex->offsets[0], miptex->offsets[1],
 				miptex->offsets[2], miptex->offsets[3], pixels, mtsize);
+#endif
 		wad_add_data (wad, miptex->name, TYP_MIPTEX, miptex, mtsize);
 	}
 	wad_close (wad);
+}
+
+void
+extract_entities (void)
+{
+	char       *entfile = malloc (strlen (options.bspfile) + 5);
+	int         i;
+	QFile      *ef;
+
+	entfile = output_file (".ent");
+
+	for (i = bsp->entdatasize; i > 0; i--)
+		if (bsp->entdata[i - 1])
+			break;
+
+	ef = Qopen (entfile, "wt");
+	Qwrite (ef, bsp->entdata, i);
+	Qclose (ef);
 }

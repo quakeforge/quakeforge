@@ -39,7 +39,9 @@ typedef struct {
 	qboolean	noclip;
 	qboolean	onlyents;
 	qboolean	portal;
+	qboolean    extract;
 	qboolean    extract_textures;
+	qboolean    extract_entities;
 	qboolean	usehulls;
 	qboolean	watervis;
 	int			hullnum;

@@ -58,7 +58,8 @@ static struct option const long_options[] = {
 	{"noclip",				no_argument,		0, 'c'},
 	{"onlyents",			no_argument,		0, 'e'},
 	{"portal",				no_argument,		0, 'p'},
-	{"extract-textures",	no_argument,		0, 'E'},
+	{"extract-textures",	no_argument,		0, 256},
+	{"extract-entities",	no_argument,		0, 257},
 	{"usehulls",			no_argument,		0, 'u'},
 	{"hullnum",				required_argument,	0, 'H'},
 	{"subdivide",			required_argument,	0, 's'},	
@@ -78,7 +79,6 @@ static const char *short_options =
 	"c"		// noclip
 	"e"		// onlyents
 	"p"		// portal
-	"E"		// extract-texures
 	"u"		// usehulls
 	"H:"	// hullnum
 	"s:"	// subdivide
@@ -155,10 +155,16 @@ DecodeArgs (int argc, char **argv)
 				options.onlyents = true;
 				break;
 			case 'p':					// portal
+				options.extract = true;
 				options.portal = true;
 				break;
-			case 'E':					// extract-textures
+			case 256:					// extract-textures
+				options.extract = true;
 				options.extract_textures = true;
+				break;
+			case 257:					// extract-entities
+				options.extract = true;
+				options.extract_entities = true;
 				break;
 			case 'u':					// usehulls
 				options.usehulls = true;
@@ -179,22 +185,38 @@ DecodeArgs (int argc, char **argv)
 				usage (1);
 		}
 	}
-	if (argv[optind] && *(argv[optind])) {
-		options.mapfile = malloc (strlen(argv[optind]) + 5);
-		strcpy (options.mapfile, argv[optind++]);
-	} else {
-		usage (1);
-	}
-	if (argv[optind] && *(argv[optind])) {
+	
+	if (options.extract) {
 		options.bspfile = strdup (argv[optind++]);
 	} else {
-		options.bspfile = malloc (strlen (options.mapfile) + 5);
-		QFS_StripExtension (options.mapfile, options.bspfile);
-		strcat (options.bspfile, ".bsp");
+		if (argv[optind] && *(argv[optind])) {
+			options.mapfile = malloc (strlen(argv[optind]) + 5);
+			strcpy (options.mapfile, argv[optind++]);
+		} else {
+			usage (1);
+		}
+		if (argv[optind] && *(argv[optind])) {
+			options.bspfile = strdup (argv[optind++]);
+		} else {
+			options.bspfile = malloc (strlen (options.mapfile) + 5);
+			QFS_StripExtension (options.mapfile, options.bspfile);
+			strcat (options.bspfile, ".bsp");
+		}
+		options.hullfile = malloc (strlen (options.bspfile) + 5);
+		options.portfile = malloc (strlen (options.bspfile) + 5);
+		options.pointfile = malloc (strlen (options.bspfile) + 5);
+
+		// create filenames
+		QFS_StripExtension (options.bspfile, options.hullfile);
+		strcat (options.hullfile, ".h0");
+
+		QFS_StripExtension (options.bspfile, options.portfile);
+		strcat (options.portfile, ".prt");
+
+		QFS_StripExtension (options.bspfile, options.pointfile);
+		strcat (options.pointfile, ".pts");
 	}
-	options.hullfile = malloc (strlen (options.bspfile) + 5);
-	options.portfile = malloc (strlen (options.bspfile) + 5);
-	options.pointfile = malloc (strlen (options.bspfile) + 5);
+
 	if (options.wadpath) {
 		char       *t = malloc (strlen (options.wadpath) + 2);
 		strcpy (t, ";");

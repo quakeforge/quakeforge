@@ -755,25 +755,16 @@ CreateHulls (void)
 static void
 ProcessFile (void)
 {
-	// create filenames
-	QFS_StripExtension (options.bspfile, options.hullfile);
-	strcat (options.hullfile, ".h0");
-
-	QFS_StripExtension (options.bspfile, options.portfile);
-	strcat (options.portfile, ".prt");
-
-	QFS_StripExtension (options.bspfile, options.pointfile);
-	strcat (options.pointfile, ".pts");
 	bsp = BSP_New ();
-	if (options.portal) {
-		LoadBSP ();
-		bsp2prt ();
-		return;
-	}
 
-	if (options.extract_textures) {
+	if (options.extract) {
 		LoadBSP ();
-		extract_textures ();
+		if (options.portal)
+			bsp2prt ();
+		if (options.extract_textures)
+			extract_textures ();
+		if (options.extract_entities)
+			extract_entities ();
 		return;
 	}
 
