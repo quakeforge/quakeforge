@@ -368,8 +368,13 @@ Menu_Leave ()
 	if (menu) {
 		menu = menu->parent;
 		if (!menu) {
-			key_dest = key_game;
-			game_target = IMT_0;
+			if (con_data.force_commandline) {
+				key_dest = key_console;
+				game_target = IMT_CONSOLE;
+			} else {
+				key_dest = key_game;
+				game_target = IMT_0;
+			}
 		}
 	}
 }
