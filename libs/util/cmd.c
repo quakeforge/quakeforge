@@ -601,7 +601,7 @@ Cmd_ExecuteString (const char *text, cmd_source_t src)
 }
 
 void
-Cmd_Exec_File (const char *path)
+Cmd_Exec_File (cbuf_t *cbuf, const char *path)
 {
 	char       *f;
 	int         len;
@@ -617,7 +617,7 @@ Cmd_Exec_File (const char *path)
 			Qread (file, f, len);
 			Qclose (file);
 			// Always insert into console
-			Cbuf_InsertText (cmd_cbuf, f);
+			Cbuf_InsertText (cbuf, f);
 			free (f);
 		}
 	}

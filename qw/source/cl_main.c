@@ -1681,7 +1681,7 @@ Host_Init (void)
 	// probably Not A Good Thing (tm).
 	fs_globalcfg = Cvar_Get ("fs_globalcfg", FS_GLOBALCFG, CVAR_ROM, NULL,
 			"global configuration file");
-	Cmd_Exec_File (fs_globalcfg->string);
+	Cmd_Exec_File (cl_cbuf, fs_globalcfg->string);
 	Cbuf_Execute_Sets (cl_cbuf);
 
 	// execute +set again to override the config file
@@ -1690,7 +1690,7 @@ Host_Init (void)
 
 	fs_usercfg = Cvar_Get ("fs_usercfg", FS_USERCFG, CVAR_ROM, NULL,
 						   "user configuration file");
-	Cmd_Exec_File (fs_usercfg->string);
+	Cmd_Exec_File (cl_cbuf, fs_usercfg->string);
 	Cbuf_Execute_Sets (cl_cbuf);
 
 	// execute +set again to override the config file
@@ -1791,7 +1791,7 @@ Host_Init (void)
 
 	if (cl_quakerc->int_val)
 		Cbuf_InsertText (cl_cbuf, "exec quake.rc\n");
-	Cmd_Exec_File (fs_usercfg->string);
+	Cmd_Exec_File (cl_cbuf, fs_usercfg->string);
 	// Reparse the command line for + commands.
 	// (Note, no non-base commands exist yet)
 	if (!cl_quakerc->int_val || check_quakerc ())
