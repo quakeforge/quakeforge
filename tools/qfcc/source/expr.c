@@ -1076,7 +1076,8 @@ test_expr (expr_t *e, int test)
 		case ev_short:
 			return e;
 		case ev_float:
-			if (options.code.progsversion == PROG_ID_VERSION)
+			if (options.code.fast_float
+				|| options.code.progsversion == PROG_ID_VERSION)
 				return e;
 			new = new_float_expr (0);
 			break;
@@ -1182,7 +1183,7 @@ convert_bool (expr_t *e, int block)
 	if (e->type == ex_uexpr && e->e.expr.op == '!') {
 		e = convert_bool (e->e.expr.e1, 0);
 		if (e->type == ex_error)
-		return e;
+			return e;
 		e = unary_expr ('!', e);
 	}
 	if (e->type != ex_bool) {

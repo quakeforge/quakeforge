@@ -174,6 +174,7 @@ DecodeArgs (int argc, char **argv)
 
 	options.code.progsversion = PROG_VERSION;
 	options.code.short_circuit = -1;
+	options.code.fast_float = true;
 	options.warnings.uninited_variable = true;
 	options.warnings.unused = true;
 	options.warnings.executable = true;
@@ -276,6 +277,8 @@ DecodeArgs (int argc, char **argv)
 							options.code.debug = flag;
 						} else if (!(strcasecmp (temp, "short-circuit"))) {
 							options.code.short_circuit = flag;
+						} else if (!(strcasecmp (temp, "fast-float"))) {
+							options.code.fast_float = flag;
 						} else if (!(strcasecmp (temp, "v6only"))) {
 							if (flag)
 								options.code.progsversion = PROG_ID_VERSION;

@@ -159,6 +159,10 @@ code for \fBB\fP will not be executed. Similar for \fBA || B\fP, but if \fBA\fP
 true, the expression is known to be true and the code for \fBB\fP will not be
 executed. Defaults to off for traditional and on for advanced.
 .TP
+.B fast\-float
+Use float values directly in if statements. Defaults to on, always on for
+version 6 progs.
+.TP
 .B v6only
 Restrict the compiler to only version 6 progs (original Quake/QuakeWorld)
 features. This means that the compiled data file should be able to run on
