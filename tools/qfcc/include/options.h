@@ -64,6 +64,7 @@ typedef struct {
 	qboolean		save_temps;		// save temporary files
 	qboolean		files_dat;		// generate files.dat
 	qboolean		traditional;	// behave more like qcc
+	qboolean		advanced;		// behold the power of Raumoko
 	qboolean		compile;		// serparate compilation mode
 	qboolean		partial_link;	// partial linking
 	qboolean		preprocess_only;// only run cpp, don't ocmpile

@@ -70,7 +70,8 @@ static struct option const long_options[] = {
 	{"help", no_argument, 0, 'h'},
 	{"version", no_argument, 0, 'V'},
 	{"files", no_argument, 0, 'F'},
-	{"traditional", no_argument, 0, 't'},
+	{"traditional", no_argument, 0, 257},
+	{"advanced", no_argument, 0, 258},
 	{"strip-path", required_argument, 0, 'p'},
 	{"define", required_argument, 0, 'D'},
 	{"include", required_argument, 0, 'I'},
@@ -89,7 +90,6 @@ static const char *short_options =
 	"r"		// partial linking
 	"s:"	// source dir
 	"P:"	// progs.src name
-	"t"		// traditional
 	"F"		// generate files.dat
 	"q"		// quiet
 	"v"		// verbose
@@ -115,6 +115,10 @@ usage (int status)
 	printf ("Usage: %s [options] [files]\n", this_program);
 	printf (
 "Options:\n"
+"        --traditional         Traditional QuakeC mode: implies v6only\n"
+"                              default when using progs.src\n"
+"        --advanced            Advanced Ruamoko mode\n"
+"                              default for separate compilation mode\n"
 "    -s, --source DIR          Look for progs.src in DIR instead of \".\"\n"
 "    -q, --quiet               Inhibit usual output\n"
 "    -v, --verbose             Display more output than usual\n"
@@ -122,7 +126,6 @@ usage (int status)
 "    -o, --output-file FILE    Specify output file name\n"
 "    -P, --progs-src FILE      File to use instead of progs.src\n"
 "    -F, --files               Generate files.dat\n"
-"    -t, --traditional         Traditional QuakeC mode: implies v6only\n"
 "    -p, --strip-path NUM      Strip NUM leading path elements from file\n"
 "                              names\n"
 "    -C, --code OPTION,...     Set code generation options\n"
@@ -165,8 +168,6 @@ DecodeArgs (int argc, char **argv)
 
 	add_cpp_def ("-D__QFCC__=1");
 	add_cpp_def ("-D__QUAKEC__=1");
-	add_cpp_def ("-D__RUAMOKO__=1");
-	add_cpp_def ("-D__RAUMOKO__=1");
 
 	options.code.progsversion = PROG_VERSION;
 	options.warnings.uninited_variable = true;
@@ -227,9 +228,15 @@ DecodeArgs (int argc, char **argv)
 			case 'g':					// debug
 				options.code.debug = true;
 				break;
-			case 't':					// traditional
+			case 257:					// traditional
 				options.traditional = true;
+				options.advanced = false;
 				options.code.progsversion = PROG_ID_VERSION;
+				break;
+			case 258:					// advanced
+				options.traditional = false;
+				options.advanced = true;
+				options.code.progsversion = PROG_VERSION;
 				break;
 			case 'c':
 				options.compile = true;
@@ -385,6 +392,16 @@ DecodeArgs (int argc, char **argv)
 			default:
 				usage (1);
 		}
+	}
+	if (!source_files && !options.advanced) {
+		// progs.src mode without --advanced implies --traditional
+		options.traditional = true;
+		options.advanced = false;
+		options.code.progsversion = PROG_ID_VERSION;
+	}
+	if (!options.traditional) {
+		add_cpp_def ("-D__RUAMOKO__=1");
+		add_cpp_def ("-D__RAUMOKO__=1");
 	}
 	if (options.code.progsversion == PROG_ID_VERSION)
 		add_cpp_def ("-D__VERSION6__=1");

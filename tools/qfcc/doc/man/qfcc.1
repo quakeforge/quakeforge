@@ -42,6 +42,14 @@ understand.
 .SH OPTIONS
 \fBqfcc\fP takes the following arguments:
 .TP
+.B \-\-traditional
+Use traditional QuakeC syntax, semantics and "bugs". Also implies v6only. This
+is the default when using progs.src.
+.TP
+.B \-\-advanced
+Use advanced Raumoko features. This is the default when using separate
+compilation.
+.TP
 .B \-C, \-\-code OPTION,...
 Set code generation options. See \fBCODE GENERATION OPTIONS\fP for details.
 .TP
@@ -100,9 +108,6 @@ Do not delete temporary files.
 .TP
 .B \-s, \-\-source DIR
 look for progs.src in DIR instead of the current directory.
-.TP
-.B \-t, \-\-traditional
-Use traditional QuakeC syntax, semantics and "bugs". Also implies v6only.
 .TP
 .B \-U, \-\-undefine SYMBOL,...
 Undefine preprocessor symbols, if the preprocessor is in use.
