@@ -278,7 +278,7 @@ R_DrawEntitiesOnList (void)
 		qfglHint (GL_PERSPECTIVE_CORRECTION_HINT, GL_DONT_CARE);
 	if (gl_mtex_active) { // FIXME: Ugly, but faster than cleaning up in every
 						  // R_DrawAliasModel()!
-		qfglColor4ubv (color_white);
+	//	qfglColor4ubv (color_white);
 		qglActiveTexture (gl_mtex_enum + 1);
 		qfglEnable (GL_TEXTURE_2D);
 		if (gl_combine_capable && gl_doublebright->int_val) {
@@ -326,7 +326,7 @@ R_DrawViewModel (void)
 	qfglColor3ubv (color_white);
 	if (gl_mtex_active) { // FIXME: Ugly, but faster than cleaning up in every
 						  // R_DrawAliasModel()!
-		qfglColor4ubv (color_white);
+	//	qfglColor4ubv (color_white);
 		qglActiveTexture (gl_mtex_enum + 1);
 		qfglEnable (GL_TEXTURE_2D);
 		if (gl_combine_capable && gl_doublebright->int_val) {

@@ -424,9 +424,9 @@ GL_Init_Common (void)
 	GL_Common_Init_Cvars ();
 	CheckVertexArraySize ();
 
-	if (gl_mtex_active) {
+	if (gl_mtex_capable) {
 		// Fullbrights
-		if (gl_mtex_fullbright) {
+		if (gl_mtex_tmus >= 3) {
 			qglActiveTexture (gl_mtex_enum + 2);
 			qfglEnable (GL_TEXTURE_2D);
 			qfglTexEnvf (GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_DECAL);
