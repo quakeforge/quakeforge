@@ -254,7 +254,7 @@ static void
 linker_type_mismatch (qfo_def_t *def, qfo_def_t *d)
 {
 	def_error (def, "type mismatch for `%s' `%s'",
-			   TYPE_STRING (def->name),
+			   STRING (def->name),
 			   TYPE_STRING (def->full_type));
 	def_error (d, "previous definition `%s'", TYPE_STRING (d->full_type));
 }
