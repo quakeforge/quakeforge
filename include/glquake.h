@@ -26,8 +26,8 @@
 	$Id$
 */
 
-#ifndef _GLQUAKE_H
-#define _GLQUAKE_H
+#ifndef __glquake_h
+#define __glquake_h
 
 #ifdef HAVE_CONFIG_H
 # include "config.h"
@@ -43,7 +43,7 @@
 #include "QF/cvar.h"
 #include "QF/model.h"
 #include "render.h"
-#include "qfgl_ext.h"
+#include "QF/qfgl_ext.h"
 #include "wad.h"
 
 void GL_BeginRendering (int *x, int *y, int *width, int *height);
@@ -57,6 +57,7 @@ extern float	gldepthmin, gldepthmax;
 void GL_Upload8 (byte *data, int width, int height,  qboolean mipmap, qboolean alpha);
 void GL_Upload8_EXT (byte *data, int width, int height,  qboolean mipmap, qboolean alpha);
 int GL_LoadTexture (char *identifier, int width, int height, byte *data, qboolean mipmap, qboolean alpha, int bytesperpixel);
+int GL_FindTexture (char *identifier);
 
 typedef struct {
 	float	x, y, z;
@@ -136,6 +137,10 @@ extern	texture_t	*r_notexture_mip;
 extern	int		d_lightstylevalue[256];	// 8.8 fraction of base light value
 
 extern	qboolean	envmap;
+extern	int	currenttexture;
+extern	int	cnttextures[2];
+extern	int	particletexture;
+extern	int	netgraphtexture;
 extern	int	netgraphtexture;	// netgraph texture
 extern	int	playertextures;
 extern	int	player_fb_textures;
@@ -149,7 +154,10 @@ extern cvar_t	*r_drawviewmodel;
 extern cvar_t	*r_particles;
 extern cvar_t	*r_speeds;
 extern cvar_t	*r_waterwarp;
+extern cvar_t	*r_fullbright;
+extern cvar_t	*r_lightmap;
 extern cvar_t	*r_shadows;
+extern cvar_t	*r_mirroralpha;
 extern cvar_t	*r_wateralpha;
 extern cvar_t	*r_waterripple;
 extern cvar_t	*r_dynamic;
@@ -159,14 +167,31 @@ extern cvar_t	*r_netgraph;
 extern cvar_t	*gl_affinemodels;
 extern cvar_t	*gl_clear;
 extern cvar_t	*gl_cull;
+extern cvar_t	*gl_poly;
+extern cvar_t	*gl_texsort;
+extern cvar_t	*gl_smoothmodels;
+extern cvar_t	*gl_affinemodels;
+extern cvar_t	*gl_polyblend;
 extern cvar_t	*gl_fb_bmodels;
 extern cvar_t	*gl_fb_models;
 extern cvar_t   *gl_dlight_lightmap;
 extern cvar_t	*gl_dlight_polyblend;
 extern cvar_t	*gl_dlight_smooth;
 extern cvar_t	*gl_keeptjunctions;
+extern cvar_t	*gl_reporttjunctions;
+extern cvar_t	*gl_flashblend;
 extern cvar_t	*gl_multitexture;
 extern cvar_t	*gl_nocolors;
+extern cvar_t	*gl_doubleeyes;
+
+extern cvar_t	*gl_ztrick;
+extern cvar_t	*gl_finish;
+extern cvar_t	*gl_clear;
+extern cvar_t	*gl_subdivide_size;
+extern cvar_t	*gl_particles;
+extern cvar_t	*gl_fires;
+extern cvar_t	*gl_fb_models;
+extern cvar_t	*gl_fb_bmodels;
 extern cvar_t	*gl_poly;
 extern cvar_t	*gl_polyblend;
 
@@ -178,11 +203,19 @@ extern cvar_t	*gl_skymultipass;
 extern cvar_t	*gl_sky_clip;
 extern cvar_t	*gl_sky_divide;
 
+extern int		mirrortexturenum;	// quake texturenum, not gltexturenum
+extern qboolean	mirror;
+extern qboolean	lighthalf;
+extern mplane_t	*mirror_plane;
 extern int		gl_lightmap_format;
 extern int		gl_solid_format;
 extern int		gl_alpha_format;
 
 extern float	r_world_matrix[16];
+
+extern float bubble_sintable[], bubble_costable[];
+extern float v_blend[4];
+
 
 extern const char *gl_vendor;
 extern const char *gl_renderer;
@@ -190,6 +223,29 @@ extern const char *gl_version;
 extern const char *gl_extensions;
 
 void R_TranslatePlayerSkin (int playernum);
+void GL_Bind (int texnum);
+
+// Multitexture
+
+#define    TEXTURE0_SGIS                               0x835E
+#define    TEXTURE1_SGIS                               0x835F
+
+#ifndef _WIN32
+# ifndef APIENTRY
+#  define APIENTRY /* */
+# endif
+#endif
+
+typedef void (APIENTRY *lpMTexFUNC) (GLenum, GLfloat, GLfloat);
+typedef void (APIENTRY *lpSelTexFUNC) (GLenum);
+extern lpMTexFUNC qglMTexCoord2fSGIS;
+extern lpSelTexFUNC qglSelectTextureSGIS;
+extern lpMTexFUNC qglMTexCoord2f;
+extern lpSelTexFUNC qglSelectTexture;
+
+extern qboolean gl_mtexable;
+
+void GL_SubdivideSurface (msurface_t *fa);
 
 // Multitexturing
 extern QF_glActiveTextureARB	qglActiveTexture;
@@ -201,6 +257,24 @@ extern GLenum					gl_mtex_enum;
 
 void GL_DisableMultitexture (void);
 void GL_EnableMultitexture (void);
+void GL_BuildLightmaps (void);
+void GL_Upload8_EXT (byte *data, int width, int height,  qboolean mipmap, qboolean alpha) ;
+void GL_Set2D (void);
+void GL_CheckGamma (unsigned char *pal);
+void GL_CheckBrightness (unsigned char *pal);
+
+void EmitWaterPolys (msurface_t *fa);
+void EmitSkyPolys (msurface_t *fa);
+void EmitBothSkyLayers (msurface_t *fa);
+void R_DrawSkyChain (msurface_t *s);
+void R_LoadSkys (char *);
+void R_DrawSky (void);
+
+void R_RotateForEntity (entity_t *e);
+
+qboolean R_CullBox (vec3_t mins, vec3_t maxs);
+
+void AddLightBlend (float, float, float, float);
 void GL_SelectTexture (GLenum target);
 
 //
@@ -212,7 +286,7 @@ typedef struct {
 	float	size;
 	float	die, decay;             // duration settings
 	float	minlight;               // lighting threshold
-	float	color[3];              // !RGBA
+	float	color[3];				// RGB
 } fire_t;
 
 void R_AddFire (vec3_t, vec3_t, entity_t *ent);
@@ -292,4 +366,4 @@ void GL_BuildLightmaps (void);
 //
 void R_NetGraph (void);
 
-#endif // _GLQUAKE_H
+#endif // __glquake_h

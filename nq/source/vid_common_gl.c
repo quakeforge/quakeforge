@@ -83,9 +83,9 @@ const char *gl_version;
 const char *gl_extensions;
 
 // ARB Multitexture
-int         gl_mtex_enum = TEXTURE0_SGIS;
-qboolean    gl_arb_mtex = false;
-qboolean    gl_mtexable = false;
+GLenum		gl_mtex_enum = TEXTURE0_SGIS;
+qboolean	gl_arb_mtex = false;
+qboolean	gl_mtexable = false;
 
 qboolean    is8bit = false;
 cvar_t     *vid_use8bit;
