@@ -264,6 +264,9 @@ SV_PreSpawn_f (void)
 {
 	unsigned int buf;
 	unsigned int check;
+	sizebuf_t  *msg;
+	char *command;
+	int size;
 
 	if (host_client->state != cs_connected) {
 		SV_Printf ("prespawn not valid -- already spawned\n");
@@ -298,29 +301,24 @@ SV_PreSpawn_f (void)
 		}
 		host_client->checksum = check;
 	}
-	// NOTE:  This doesn't go through ClientReliableWrite since it's before
-	// the user
-	// spawns.  These functions are written to not overflow
-	if (host_client->num_backbuf) {
-		SV_Printf ("WARNING %s: [SV_PreSpawn] Back buffered (%d), clearing",
-					host_client->name, host_client->netchan.message.cursize);
-		host_client->num_backbuf = 0;
-		SZ_Clear (&host_client->netchan.message);
-	}
 
-	SZ_Write (&host_client->netchan.message,
-			  sv.signon_buffers[buf], sv.signon_buffer_size[buf]);
+	if (++buf == sv.num_signon_buffers - 1)
+		command = va ("cmd spawn %i 0\n", svs.spawncount);
+	else
+		command = va ("cmd prespawn %i %i\n", svs.spawncount, buf);
 
-	buf++;
-	if (buf == sv.num_signon_buffers) {	// all done prespawning
-		MSG_WriteByte (&host_client->netchan.message, svc_stufftext);
-		MSG_WriteString (&host_client->netchan.message,
-						 va ("cmd spawn %i 0\n", svs.spawncount));
-	} else {							// need to prespawn more
-		MSG_WriteByte (&host_client->netchan.message, svc_stufftext);
-		MSG_WriteString (&host_client->netchan.message,
-						 va ("cmd prespawn %i %i\n", svs.spawncount, buf));
-	}
+	size = sv.signon_buffer_size[buf] + 1 + strlen(command) + 1;
+
+	ClientReliableCheckBlock (host_client, size);
+	if (host_client->num_backbuf)
+		msg = &host_client->backbuf;
+	else
+		msg = &host_client->netchan.message;
+
+	SZ_Write (msg, sv.signon_buffers[buf], sv.signon_buffer_size[buf]);
+
+	MSG_WriteByte (msg, svc_stufftext);
+	MSG_WriteString (msg, command);
 }
 
 /*
