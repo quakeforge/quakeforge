@@ -188,10 +188,119 @@ R_DrawSkyBox (void)
 	}
 }
 
-vec3_t      domescale = {512.0, 512.0, 128.0};
+vec3_t      domescale = {2048.0, 2048.0,  512.0};
+vec3_t      zenith    = {   0.0,    0.0,  512.0};
+vec3_t      nadir     = {   0.0,    0.0, -512.0};
+
+static inline void
+skydome_vertex (const vec3_t v, float speedscale)
+{
+	float       length, s, t;
+	vec3_t      dir, point;
+
+	VectorCopy (v, dir);
+	dir[2] *= 3.0;
+
+	length = DotProduct (dir, dir);
+	length = 2.953125 / sqrt (length);
+
+	dir[0] *= length;
+	dir[1] *= length;
+
+	s = speedscale + dir[0];
+	t = speedscale + dir[1];
+
+	VectorAdd (r_refdef.vieworg, v, point);
+
+	qfglTexCoord2f (s, t);
+	qfglVertex3fv (point);
+}
 
 static void
-R_DrawSkyLayer (float s)
+skydome_debug (void)
+{
+	float       x, y, a1x, a1y, a2x, a2y;
+	int         a, b, h, t, i;
+	vec3_t      v[3];
+
+	qfglDisable (GL_TEXTURE_2D);
+	qfglBegin (GL_LINES);
+	for (a = 0; a < 16; a++) {
+		a1x = bubble_costable[a * 2] * domescale[0];
+		a1y = -bubble_sintable[a * 2] * domescale[1];
+		a2x = bubble_costable[(a + 1) * 2] * domescale[0];
+		a2y = -bubble_sintable[(a + 1) * 2] * domescale[1];
+
+		h = 1;
+		t = 0;
+		VectorAdd (zenith, r_refdef.vieworg, v[0]);
+		for (b = 1; b <= 8; b++) {
+			x = bubble_costable[b + 8];
+			y = -bubble_sintable[b + 8];
+
+			v[h][0] = a1x * x;
+			v[h][1] = a1y * x;
+			v[h][2] = y * domescale[2];
+			VectorAdd (v[h], r_refdef.vieworg, v[h]);
+			for (i = t; i != h; i = (i + 1) % 3) {
+				qfglVertex3fv (v[i]);
+				qfglVertex3fv (v[h]);
+			}
+			h = (h + 1) % 3;
+			if (h == t)
+				t = (t + 1) % 3;
+
+			v[h][0] = a2x * x;
+			v[h][1] = a2y * x;
+			v[h][2] = y * domescale[2];
+			VectorAdd (v[h], r_refdef.vieworg, v[h]);
+			for (i = t; i != h; i = (i + 1) % 3) {
+				qfglVertex3fv (v[i]);
+				qfglVertex3fv (v[h]);
+			}
+			h = (h + 1) % 3;
+			if (h == t)
+				t = (t + 1) % 3;
+		}
+
+		h = 1;
+		t = 0;
+		VectorAdd (nadir, r_refdef.vieworg, v[0]);
+		for (b = 15; b >= 8; b--) {
+			x = bubble_costable[b + 8];
+			y = -bubble_sintable[b + 8];
+
+			v[h][0] = a2x * x;
+			v[h][1] = a2y * x;
+			v[h][2] = y * domescale[2];
+			VectorAdd (v[h], r_refdef.vieworg, v[h]);
+			for (i = t; i != h; i = (i + 1) % 3) {
+				qfglVertex3fv (v[i]);
+				qfglVertex3fv (v[h]);
+			}
+			h = (h + 1) % 3;
+			if (h == t)
+				t = (t + 1) % 3;
+
+			v[h][0] = a1x * x;
+			v[h][1] = a1y * x;
+			v[h][2] = y * domescale[2];
+			VectorAdd (v[h], r_refdef.vieworg, v[h]);
+			for (i = t; i != h; i = (i + 1) % 3) {
+				qfglVertex3fv (v[i]);
+				qfglVertex3fv (v[h]);
+			}
+			h = (h + 1) % 3;
+			if (h == t)
+				t = (t + 1) % 3;
+		}
+	}
+	qfglEnd ();
+	qfglEnable (GL_TEXTURE_2D);
+}
+
+static void
+R_DrawSkyLayer (float speedscale)
 {
 	float       x, y, a1x, a1y, a2x, a2y;
 	int         a, b;
@@ -204,32 +313,39 @@ R_DrawSkyLayer (float s)
 		a2y = -bubble_sintable[(a + 1) * 2] * domescale[1];
 
 		qfglBegin (GL_TRIANGLE_STRIP);
-		qfglTexCoord2f (0.5 + s * (1.0 / 128.0), 0.5 + s * (1.0 / 128.0));
-		qfglVertex3f (r_refdef.vieworg[0], r_refdef.vieworg[1],
-					  r_refdef.vieworg[2] + domescale[2]);
-		for (b = 1; b < 8; b++) {
-			x = bubble_costable[(b << 1) + 16];
-			y = -bubble_sintable[(b << 1) + 16];
+		skydome_vertex (zenith, speedscale);
+		for (b = 1; b <= 8; b++) {
+			x = bubble_costable[b + 8];
+			y = -bubble_sintable[b + 8];
 
 			v[0] = a1x * x;
 			v[1] = a1y * x;
 			v[2] = y * domescale[2];
-			qfglTexCoord2f ((v[0] + s) * (1.0 / 128.0),
-							(v[1] + s) * (1.0 / 128.0));
-			qfglVertex3f (v[0] + r_refdef.vieworg[0], v[1] +
-						  r_refdef.vieworg[1], v[2] + r_refdef.vieworg[2]);
+			skydome_vertex (v, speedscale);
 
 			v[0] = a2x * x;
 			v[1] = a2y * x;
 			v[2] = y * domescale[2];
-			qfglTexCoord2f ((v[0] + s) * (1.0 / 128.0),
-							(v[1] + s) * (1.0 / 128.0));
-			qfglVertex3f (v[0] + r_refdef.vieworg[0], v[1] +
-						  r_refdef.vieworg[1], v[2] + r_refdef.vieworg[2]);
+			skydome_vertex (v, speedscale);
 		}
-		qfglTexCoord2f (0.5 + s * (1.0 / 128.0), 0.5 + s * (1.0 / 128.0));
-		qfglVertex3f (r_refdef.vieworg[0], r_refdef.vieworg[1],
-					  r_refdef.vieworg[2] - domescale[2]);
+		qfglEnd ();
+
+		qfglBegin (GL_TRIANGLE_STRIP);
+		skydome_vertex (nadir, speedscale);
+		for (b = 15; b >= 8; b--) {
+			x = bubble_costable[b + 8];
+			y = -bubble_sintable[b + 8];
+
+			v[0] = a2x * x;
+			v[1] = a2y * x;
+			v[2] = y * domescale[2];
+			skydome_vertex (v, speedscale);
+
+			v[0] = a1x * x;
+			v[1] = a1y * x;
+			v[2] = y * domescale[2];
+			skydome_vertex (v, speedscale);
+		}
 		qfglEnd ();
 	}
 }
@@ -242,17 +358,20 @@ R_DrawSkyDome (void)
 	// base sky
 	qfglDisable (GL_BLEND);
 	qfglBindTexture (GL_TEXTURE_2D, solidskytexture);
-	speedscale = r_realtime * 8;
-	speedscale -= (int) speedscale & ~127;
+	speedscale = r_realtime / 16;
+	speedscale -= floor (speedscale);;
 	R_DrawSkyLayer (speedscale);
 	qfglEnable (GL_BLEND);
 
 	// clouds
 	if (gl_sky_multipass->int_val) {
 		qfglBindTexture (GL_TEXTURE_2D, alphaskytexture);
-		speedscale = r_realtime * 16;
-		speedscale -= (int) speedscale & ~127;
+		speedscale = r_realtime / 16;
+		speedscale -= floor (speedscale);;
 		R_DrawSkyLayer (speedscale);
+	}
+	if (gl_sky_debug->int_val) {
+		skydome_debug ();
 	}
 }
 
