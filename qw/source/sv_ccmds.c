@@ -520,7 +520,7 @@ SV_Status_f (void)
 				continue;
 			}
 			if (cl->state == cs_server) {
-				SV_Printf ("SERVER\n");
+				SV_Printf ("SERVER %d\n", cl->ping);
 				continue;
 			}
 			SV_Printf ("%4i %4i %5.2f\n",
@@ -555,7 +555,7 @@ SV_Status_f (void)
 				continue;
 			}
 			if (cl->state == cs_server) {
-				SV_Printf ("SERVER\n");
+				SV_Printf ("SERVER %d\n", cl->ping);
 				continue;
 			}
 			SV_Printf ("%4i %4i %3.1f %4i",
