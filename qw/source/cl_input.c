@@ -640,9 +640,6 @@ CL_SendCmd (void)
 	// get basic movement from keyboard
 	CL_BaseMove (cmd);
 
-	// allow mice or other external controllers to add to the move
-	IN_Move (); // FIXME: was cmd, should it even exist at all?
-
 	// if we are spectator, try autocam
 	if (cl.spectator)
 		Cam_Track (cmd);
