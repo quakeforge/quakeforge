@@ -444,7 +444,8 @@ R_DrawBrushModel (entity_t *e)
 				if (gl_mtex_active) {
 					qglActiveTexture (gl_mtex_enum + 0);
 					qfglBindTexture (GL_TEXTURE_2D, tex->gl_texturenum);
-					qfglTexEnvf (GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_REPLACE);
+					qfglTexEnvf (GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE,
+								 GL_REPLACE);
 				} else {
 					qfglBindTexture (GL_TEXTURE_2D, tex->gl_texturenum);
 				}
@@ -455,7 +456,8 @@ R_DrawBrushModel (entity_t *e)
 					&& tex->gl_fb_texturenum > 0) {
 					qglActiveTexture (gl_mtex_enum + 2);
 					qfglBindTexture (GL_TEXTURE_2D, tex->gl_fb_texturenum);
-					qfglTexEnvf (GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_DECAL);
+					qfglTexEnvf (GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE,
+								 GL_DECAL);
 					qfglEnable (GL_TEXTURE_2D);
 				}					
 
@@ -463,7 +465,8 @@ R_DrawBrushModel (entity_t *e)
 					qglActiveTexture (gl_mtex_enum + 1);
 					qfglBindTexture (GL_TEXTURE_2D, lightmap_textures + 
 						psurf->lightmaptexturenum);
-					qfglTexEnvf (GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_BLEND);	
+					qfglTexEnvf (GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE,
+								 GL_BLEND);	
 					qfglEnable (GL_TEXTURE_2D);
 				}
 
@@ -475,13 +478,14 @@ R_DrawBrushModel (entity_t *e)
 
 				if (gl_fb_bmodels->int_val && gl_mtex_fullbright
 					&& tex->gl_fb_texturenum > 0) {
-					qglActiveTexture (gl_mtex_enum + 1);
+					qglActiveTexture (gl_mtex_enum + 2);
 					qfglDisable (GL_TEXTURE_2D);
 				}
 
 				if (gl_mtex_active) {
 					qglActiveTexture (gl_mtex_enum + 0);
-					qfglTexEnvf (GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
+					qfglTexEnvf (GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE,
+								 GL_MODULATE);
 				}
 
 				qfglColor3ubv (color_white);
