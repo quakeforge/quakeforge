@@ -39,11 +39,7 @@
 #include "r_dynamic.h"
 #include "r_local.h"
 
-#define MAX_PARTICLES			2048	// default max # of particles at one
-										// time
-#define ABSOLUTE_MIN_PARTICLES	512		// no fewer than this no matter
-										// what's
-										// on the command line
+extern cvar_t *cl_max_particles;
 
 int         ramp1[8] = { 0x6f, 0x6d, 0x6b, 0x69, 0x67, 0x65, 0x63, 0x61 };
 int         ramp2[8] = { 0x6f, 0x6e, 0x6d, 0x6c, 0x6b, 0x6a, 0x68, 0x66 };
@@ -63,22 +59,35 @@ cvar_t      *r_particles;
 void
 R_InitParticles (void)
 {
-	int         i;
-
-	i = COM_CheckParm ("-particles");
-
-	if (i) {
-		r_numparticles = (int) (atoi (com_argv[i + 1]));
-		if (r_numparticles < ABSOLUTE_MIN_PARTICLES)
-			r_numparticles = ABSOLUTE_MIN_PARTICLES;
+	if (cl_max_particles->int_val < 1)
+	{
+		/* Abuse check */
+		r_numparticles = 2048;
 	} else {
-		r_numparticles = MAX_PARTICLES;
+		r_numparticles = cl_max_particles->int_val;
 	}
-
+	
 	particles = (particle_t *)
 		Hunk_AllocName (r_numparticles * sizeof (particle_t), "particles");
 }
 
+/*
+	R_MaxParticlesCheck
+*/
+void
+R_MaxParticlesCheck (void)
+{
+	if (cl_max_particles->int_val == r_numparticles || cl_max_particles->int_val < 1)
+	{
+	return;
+	} else {
+		R_ClearParticles();
+		r_numparticles = cl_max_particles->int_val;
+		
+		particles = (particle_t *)
+			Hunk_AllocName (r_numparticles * sizeof (particle_t), "particles");
+		}
+}
 
 /*
 	R_ClearParticles
@@ -482,7 +491,9 @@ R_DrawParticles (void)
 	float       time1;
 	float       dvel;
 	float       frametime;
-
+	
+	R_MaxParticlesCheck ();
+	
 	D_StartParticles ();
 
 	VectorScale (vright, xscaleshrink, r_pright);

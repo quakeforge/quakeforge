@@ -140,6 +140,8 @@ cvar_t     *cl_predict_players;
 cvar_t     *cl_predict_players2;
 cvar_t     *cl_solid_players;
 
+cvar_t     *cl_max_particles;
+
 cvar_t     *localid;
 
 static qboolean allowremotecmd = true;
@@ -1294,6 +1296,8 @@ CL_Init_Cvars (void)
 	msg = Cvar_Get ("msg", "1", CVAR_ARCHIVE | CVAR_USERINFO, "Determines the type of messages reported 0 is maximum, 4 is none");
 	noaim = Cvar_Get ("noaim", "0", CVAR_ARCHIVE | CVAR_USERINFO,
 					  "Auto aim off switch. Set to 1 to turn off.");
+	cl_max_particles = Cvar_Get ("cl_max_particles", "2048", CVAR_ARCHIVE,
+						  "Maximum amount of particles to display");
 }
 
 /*
