@@ -67,6 +67,7 @@ C(name):
 
 #define F_BEGIN(name)			\
 .globl C(name)					;\
+	EXPORT(name)				;\
 C(name):
 
 #define F_END(name)
