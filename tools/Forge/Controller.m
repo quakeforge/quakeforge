@@ -213,6 +213,25 @@
 			 keyEquivalent: @"v"];
 
 	/*
+		BSP
+	*/
+	bsp = [[[NSMenu alloc] init] autorelease];
+	[menu setSubmenu: bsp forItem: [menu itemWithTitle: @"BSP"]];
+	
+	[bsp addItemWithTitle: @"dunno"
+					action: @selector (undo:)
+			 keyEquivalent: @"z"];
+	/*
+		Brush
+	*/
+	brush = [[[NSMenu alloc] init] autorelease];
+	[menu setSubmenu: brush forItem: [menu itemWithTitle: @"Brush"]];
+	
+	[brush addItemWithTitle: @"dunno"
+					action: @selector (undo:)
+			 keyEquivalent: @"z"];
+
+	/*
 		Windows
 	*/
 	windows = [[[NSMenu alloc] init] autorelease];
