@@ -44,7 +44,7 @@
 
 int         cache_full_cycle;
 
-byte       *S_Alloc (int size);
+byte       *I_S_Alloc (int size);
 
 /*
 	ResampleSfx
@@ -163,10 +163,10 @@ ResampleSfx (sfx_t *sfx, int inrate, int inwidth, byte * data)
 //=============================================================================
 
 /*
-	S_LoadSound
+	I_S_LoadSound
 */
 sfxcache_t *
-S_LoadSound (sfx_t *s)
+I_S_LoadSound (sfx_t *s)
 {
 	char        namebuffer[256];
 	byte       *data;

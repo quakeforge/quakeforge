@@ -56,6 +56,7 @@ int        *snd_p, snd_linear_count, snd_vol;
 short      *snd_out;
 
 void        Snd_WriteLinearBlastStereo16 (void);
+sfxcache_t *I_S_LoadSound (sfx_t *s);
 
 #ifndef USE_INTEL_ASM
 void
@@ -85,7 +86,7 @@ Snd_WriteLinearBlastStereo16 (void)
 #endif
 
 void
-S_TransferStereo16 (int endtime)
+I_S_TransferStereo16 (int endtime)
 {
 	int         lpos;
 	int         lpaintedtime;
@@ -135,7 +136,7 @@ S_TransferStereo16 (int endtime)
 }
 
 void
-S_TransferPaintBuffer (int endtime)
+I_S_TransferPaintBuffer (int endtime)
 {
 	int         out_idx;
 	int         count;
@@ -147,7 +148,7 @@ S_TransferPaintBuffer (int endtime)
 	DWORD      *pbuf;
 
 	if (shm->samplebits == 16 && shm->channels == 2) {
-		S_TransferStereo16 (endtime);
+		I_S_TransferStereo16 (endtime);
 		return;
 	}
 
@@ -213,7 +214,7 @@ void        SND_PaintChannelFrom8 (channel_t *ch, sfxcache_t *sc, int endtime);
 void        SND_PaintChannelFrom16 (channel_t *ch, sfxcache_t *sc, int endtime);
 
 void
-S_PaintChannels (int endtime)
+I_S_PaintChannels (int endtime)
 {
 	int         i;
 	int         end;
@@ -239,7 +240,7 @@ S_PaintChannels (int endtime)
 				continue;
 			if (!ch->leftvol && !ch->rightvol)
 				continue;
-			sc = S_LoadSound (ch->sfx);
+			sc = I_S_LoadSound (ch->sfx);
 			if (!sc)
 				continue;
 
@@ -274,7 +275,7 @@ S_PaintChannels (int endtime)
 		}
 
 		// transfer out according to DMA format
-		S_TransferPaintBuffer (end);
+		I_S_TransferPaintBuffer (end);
 
 		memmove (paintbuffer, paintbuffer + end - paintedtime,
 				 max_overpaint * sizeof (paintbuffer[0]));

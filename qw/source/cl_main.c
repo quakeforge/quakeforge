@@ -1133,8 +1133,10 @@ CL_Init (void)
 	Info_SetValueForStarKey (cls.userinfo, "*ver", st, MAX_INFO_STRING);
 	Info_SetValueForStarKey (cls.userinfo, "stdver", QW_QSG_VERSION,
 							 MAX_INFO_STRING);
+
+	PI_Init ();
 #ifdef PACKET_LOGGING
-        Net_Log_Init();
+	Net_Log_Init ();
 #endif
 	CL_Input_Init ();
 	CL_Ents_Init ();

@@ -66,10 +66,10 @@ qf_client_LIBS= $(top_builddir)/libs/video/targets/libQFjs.la \
 				$(top_builddir)/libs/gamecode/libQFgamecode.la \
 				$(top_builddir)/libs/gib/libQFgib.la \
 				$(top_builddir)/libs/audio/cd/libQFcd.la \
-				$(top_builddir)/libs/audio/targets/libQFsound.la \
+				$(top_builddir)/libs/audio/libQFsound.la \
 				$(top_builddir)/libs/util/libQFutil.la
 
-client_LIBS=	-L. -lqfnet $(qf_client_LIBS) $(SOUND_LIBS) $(NET_LIBS)
+client_LIBS=	-L. -lqfnet $(qf_client_LIBS) $(NET_LIBS)
 client_LIB_DEPS=	libqfnet.a $(qf_client_LIBS)
 
 client_SOURCES=	cl_cam.c cl_cmd.c cl_demo.c cl_input.c cl_main.c cl_parse.c \

@@ -98,19 +98,23 @@ PI_LoadPlugin (char *type, char *name)
 	tmpname = strrchr (name, '/');	// Get the base name, don't allow paths
 
 	// Build the path to the file to load
-	snprintf (realname, sizeof (realname), "%s/%s_%s.o",
+	snprintf (realname, sizeof (realname), "%s/lib%s_%s.so",
 				fs_pluginpath->string, type, (tmpname ? tmpname + 1 : name));
 
-	if (!(dlhand = dlopen (realname, RTLD_LAZY)))	// lib not found
+	if (!(dlhand = dlopen (realname, RTLD_LAZY))) {	// lib not found
+		Con_Printf ("%s\n", dlerror());
 		return NULL;
+	}
 
 	if (!(plugin_info = dlsym (dlhand, "PluginInfo"))) {	// info function not found
 		dlclose (dlhand);
+		Con_Printf ("info function not found\n");
 		return NULL;
 	}
 
 	if (!(plugin = plugin_info ())) {	// Something went badly wrong
 		dlclose (dlhand);
+		Con_Printf ("soemthing went badly wrong\n");
 		return NULL;
 	}
 

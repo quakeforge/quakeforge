@@ -754,59 +754,47 @@ dnl ==================================================================
 AC_CHECK_LIB(mme, waveOutOpen, HAVE_LIBMME=yes)
 
 AC_ARG_ENABLE(alsa,
-[  --enable-alsa           enable checks for ALSA support],
-)
+	[  --disable-alsa          disable checks for ALSA support])
 
 AC_ARG_ENABLE(sound,
-[  --disable-sound         disable sound outright],
+	[  --disable-sound         disable sound outright]
 )
 
-SNDTYPE=""
-SOUND_LIBS=""
-SOUND_CFLAGS=""
+SOUND_TYPES=
 AC_MSG_CHECKING(for sound support)
 
-dnl SDL digital audio
-AC_ARG_ENABLE(sdl-audio,
-[  --enable-sdl-audio      use SDL for audio output],
-	if test -z "$SNDTYPE" -a "x$HAVE_SDL" = "xyes"; then
-		SNDTYPE="SDL"
-		SOUND_LIBS="$SDL_LIBS"
-		SOUND_CFLAGS="$SDL_CFLAGS"
-	fi
-)
-
-if test "x$enable_alsa" = "xyes"; then
-	if test -z "$SNDTYPE" -a "x$ac_cv_header_sys_asoundlib_h" = "xyes"; then
+if test "x$enable_alsa" != "xno" -a \
+		"x$ac_cv_header_sys_asoundlib_h" = "xyes"; then
+	AC_EGREP_CPP([QF_maGiC_VALUE],
+		[
+#include <sys/asoundlib.h>
+#if defined(SND_LIB_MAJOR) && defined(SND_LIB_MINOR)
+#if SND_LIB_MAJOR > 0 || (SND_LIB_MAJOR == 0 && SND_LIB_MINOR == 5)
+QF_maGiC_VALUE
+#endif
+#endif
+		],
+		SOUND_TYPES="$SOUND_TYPES ALSA0.5"
+		ALSA_LIBS="-lasound",
 		AC_EGREP_CPP([QF_maGiC_VALUE],
 			[
 #include <sys/asoundlib.h>
 #if defined(SND_LIB_MAJOR) && defined(SND_LIB_MINOR)
-#if SND_LIB_MAJOR>0 || (SND_LIB_MAJOR==0 && SND_LIB_MINOR==5)
+#if SND_LIB_MAJOR > 0 || (SND_LIB_MAJOR == 0 && SND_LIB_MINOR >= 9)
 QF_maGiC_VALUE
 #endif
 #endif
 			],
-			SNDTYPE="ALSA_0_5"
-			SOUND_LIBS="-lasound",
-			AC_EGREP_CPP([QF_maGiC_VALUE],
-				[
-#include <sys/asoundlib.h>
-#if defined(SND_LIB_MAJOR) && defined(SND_LIB_MINOR)
-#if SND_LIB_MAJOR>0 || (SND_LIB_MAJOR==0 && SND_LIB_MINOR>=9)
-QF_maGiC_VALUE
-#endif
-#endif
-				],
-				SNDTYPE="ALSA_0_9"
-				SOUND_LIBS="-lasound"
-			)
+			SOUND_TYPES="$SOUND_TYPES ALSA0.9"
+			ALSA_LIBS="-lasound"
 		)
-	fi
+	)
 fi
+AC_SUBST(ALSA_LIBS)
 
 dnl MME
-if test -z "$SNDTYPE" -a "x$ac_cv_header_mme_mmsystem_h" = "xyes" -a "x$HAVE_LIBMME" = "xyes"; then
+if test "x$ac_cv_header_mme_mmsystem_h" = "xyes" -a \
+		"x$HAVE_LIBMME" = "xyes"; then
 	AC_EGREP_CPP([QF_maGiC_VALUE],
 		[
 #include <mme/mmsystem.h>
@@ -814,96 +802,119 @@ if test -z "$SNDTYPE" -a "x$ac_cv_header_mme_mmsystem_h" = "xyes" -a "x$HAVE_LIB
 QF_maGiC_VALUE
 #endif
 		],
-		SNDTYPE="MME"
-		SOUND_LIBS="-lmme"
+		SOUND_TYPES="$SOUND_TYPES MME"
+		MME_LIBS="-lmme"
 	)
 fi
+AC_SUBST(MME_LIBS)
 
 dnl OSS
-if test -z "$SNDTYPE" -a "x$ac_cv_header_sys_soundcard_h" = "xyes"; then
-	AC_EGREP_CPP([QF_maGiC_VALUE],[
+if test "x$ac_cv_header_sys_soundcard_h" = "xyes" -o \
+		"x$ac_cv_header_machine_soundcard_h" = "xyes" -o \
+		"x$ac_cv_header_linux_soundcard_h" = "xyes"; then
+	AC_EGREP_CPP([QF_maGiC_VALUE],
+		[
 #include <sys/soundcard.h>
 #ifdef SNDCTL_DSP_SETTRIGGER
 QF_maGiC_VALUE
 #endif
-	], SNDTYPE="OSS")
-fi
-if test -z "$SNDTYPE" -a "x$ac_cv_header_linux_soundcard_h" = "xyes"; then
-	AC_EGREP_CPP([QF_maGiC_VALUE],[
+		],
+		SOUND_TYPES="$SOUND_TYPES OSS",
+		AC_EGREP_CPP([QF_maGiC_VALUE],
+			[
 #include <linux/soundcard.h>
 #ifdef SNDCTL_DSP_SETTRIGGER
 QF_maGiC_VALUE
 #endif
-	], SNDTYPE="OSS")
-fi
-if test -z "$SNDTYPE" -a "x$ac_cv_header_machine_soundcard_h" = "xyes"; then
-	AC_EGREP_CPP([QF_maGiC_VALUE],[
+			],
+			SOUND_TYPES="$SOUND_TYPES OSS",
+			AC_EGREP_CPP([QF_maGiC_VALUE],
+				[
 #include <machine/soundcard.h>
 #ifdef SNDCTL_DSP_SETTRIGGER
 QF_maGiC_VALUE
 #endif
-	], SNDTYPE="OSS")
+				],
+				SOUND_TYPES="$SOUND_TYPES OSS"
+			)
+		)
+	)
 fi
+
+dnl SDL digital audio
+AC_ARG_ENABLE(sdl-audio,
+[  --enable-sdl-audio      use SDL for audio output],
+	if test "x$HAVE_SDL" = "xyes"; then
+		SOUND_TYPES="$SOUND_TYPES SDL"
+	fi
+)
 
 dnl SGI
-if test -z "$SNDTYPE" -a "x$ac_cv_header_dmedia_audio_h" = "xyes"; then
-   AC_EGREP_CPP([QF_maGiC_VALUE],[
+if test "x$ac_cv_header_dmedia_audio_h" = "xyes"; then
+   AC_EGREP_CPP([QF_maGiC_VALUE],
+   		[
 #include <dmedia/audio.h>
 #ifdef AL_SAMPLE_16
-#ifdef AL_RATE
+# ifdef AL_RATE
 QF_maGiC_VALUE
+# endif
 #endif
-#endif
-	], SNDTYPE="SGI" SOUND_LIBS="-laudio")
+		],
+		SOUND_TYPES="$SOUND_TYPES SGI"
+		SGISND_LIBS="-laudio")
 fi
+AC_SUBST(SGISND_LIBS)
 
 dnl Sun
-if test -z "$SNDTYPE" -a "x$ac_cv_header_sys_audioio_h" = "xyes"; then
-   AC_EGREP_CPP([QF_maGiC_VALUE],[
+if test "x$ac_cv_header_sys_audioio_h" = "xyes"; then
+	AC_EGREP_CPP([QF_maGiC_VALUE],
+		[
 #include <sys/audioio.h>
 #ifdef AUDIO_SETINFO
 QF_maGiC_VALUE
 #endif
-	], SNDTYPE="SUN")
+		],
+		SOUND_TYPES="$SOUND_TYPES SUN"
+	)
 fi
 
 dnl Win32
-if test -z "$SNDTYPE" -a "x$ac_cv_header_windows_h" = "xyes" -a \
-	"x$ac_cv_header_dsound_h" = "xyes"; then
-  AC_EGREP_CPP([QF_maGiC_VALUE],[
+if test "x$ac_cv_header_windows_h" = "xyes" -a \
+		"x$ac_cv_header_dsound_h" = "xyes"; then
+	AC_EGREP_CPP([QF_maGiC_VALUE],
+		[
 #include <windows.h>
 #include <dsound.h>
 #ifdef GMEM_MOVEABLE
-#ifdef DirectSoundEnumerate
+# ifdef DirectSoundEnumerate
 QF_maGiC_VALUE
+# endif
 #endif
-#endif
-    ], SNDTYPE="WIN32"
-       SOUND_LIBS="-lwinmm")
+		],
+		SOUND_TYPES="$SOUND_TYPES Win32"
+		WINSND_LIBS="-lwinmm"
+	)
 fi
+AC_SUBST(WINSND_LIBS)
 
 if test "x$enable_sound" = "xno"; then
-	SNDTYPE=""
-	SOUND_LIBS=""
+	SOUND_TYPES=""
 fi
 
-if test "$SNDTYPE"; then
-	AC_MSG_RESULT([yes ($SNDTYPE)])
+AM_CONDITIONAL(HAVE_SND_ALSA_0_5, test "`echo $SOUND_TYPES | grep ALSA0.5`")
+AM_CONDITIONAL(HAVE_SND_ALSA_0_9, test "`echo $SOUND_TYPES | grep ALSA0.9`")
+AM_CONDITIONAL(HAVE_SND_MME, test "`echo $SOUND_TYPES | grep MME`")
+AM_CONDITIONAL(HAVE_SND_OSS, test "`echo $SOUND_TYPES | grep OSS`")
+AM_CONDITIONAL(HAVE_SND_SDL, test "`echo $SOUND_TYPES | grep SDL`")
+AM_CONDITIONAL(HAVE_SND_SGI, test "`echo $SOUND_TYPES | grep SGI`")
+AM_CONDITIONAL(HAVE_SND_SUN, test "`echo $SOUND_TYPES | grep SUN`")
+AM_CONDITIONAL(HAVE_SND_WIN32, test "`echo $SOUND_TYPES | grep Win32`")
+
+if test "$SOUND_TYPES"; then
+	AC_MSG_RESULT([$SOUND_TYPES])
 else
 	AC_MSG_RESULT([no, using null sound driver])
 fi
-AC_SUBST(SOUND_LIBS)
-AC_SUBST(SOUND_CFLAGS)
-
-AM_CONDITIONAL(SNDTYPE_ALSA_0_5, test "$SNDTYPE" = "ALSA_0_5")
-AM_CONDITIONAL(SNDTYPE_ALSA_0_9, test "$SNDTYPE" = "ALSA_0_9")
-AM_CONDITIONAL(SNDTYPE_MME, test "$SNDTYPE" = "MME")
-AM_CONDITIONAL(SNDTYPE_OSS, test "$SNDTYPE" = "OSS")
-AM_CONDITIONAL(SNDTYPE_SDL, test "$SNDTYPE" = "SDL")
-AM_CONDITIONAL(SNDTYPE_SGI, test "$SNDTYPE" = "SGI")
-AM_CONDITIONAL(SNDTYPE_SUN, test "$SNDTYPE" = "SUN")
-AM_CONDITIONAL(SNDTYPE_WIN32, test "$SNDTYPE" = "WIN32")
-AM_CONDITIONAL(SNDTYPE_NULL, test "$SNDTYPE" != "ALSA_0_5" -a "$SNDTYPE" != "ALSA_0_9" -a "$SNDTYPE" != "MME" -a "$SNDTYPE" != "OSS" -a "$SNDTYPE" != "SDL" -a "$SNDTYPE" != "SGI" -a "$SNDTYPE" != "SUN" -a "$SNDTYPE" != "WIN32")
 
 dnl Tests for joystick support
 AC_MSG_CHECKING(for joystick support)
@@ -1142,6 +1153,7 @@ elif test "x$pluginpath" = xno; then
 	pluginpath="."
 fi
 AC_DEFINE_UNQUOTED(FS_PLUGINPATH, "$pluginpath")
+AC_SUBST(pluginpath)
 
 dnl CFLAGS for release and devel versions
 CFLAGS=""
@@ -1180,14 +1192,14 @@ if test "x$optimize" = xyes; then
 	AC_MSG_RESULT(yes)
 	BUILD_TYPE="$BUILD_TYPE Optimize"
 	if test "x$GCC" = xyes; then
-		CFLAGS="$CFLAGS -O6 -ffast-math -funroll-loops -fomit-frame-pointer -fexpensive-optimizations"
+		CFLAGS="$CFLAGS -O3 -ffast-math -funroll-loops -fomit-frame-pointer -fexpensive-optimizations"
 		AC_MSG_CHECKING(for special compiler settings)
 		case "${host_cpu}" in
 			i?86)
 				if test "x$HAVE_AMD" = "xyes"; then
-					MORE_CFLAGS="-march=k6 -malign-loops=2 -malign-jumps=2 -malign-functions=2"
+					MORE_CFLAGS="-march=k6"
 				else
-					MORE_CFLAGS="-march=${host_cpu} -malign-loops=2 -malign-jumps=2 -malign-functions=2"
+					MORE_CFLAGS="-march=${host_cpu}"
 				fi
 				;;
 			*)
@@ -1224,7 +1236,7 @@ AC_ARG_ENABLE(profile,
 if test "x$profile" = xyes; then
 	BUILD_TYPE="$BUILD_TYPE Profile"
 	if test "x$GCC" = xyes; then
-		CFLAGS="$(echo $CFLAGS | sed -e 's/-fomit-frame-pointer//g') -pg"
+		CFLAGS="`echo $CFLAGS | sed -e 's/-fomit-frame-pointer//g'` -pg"
 		LDFLAGS="$LDFLAGS -pg"
 	else
 		CFLAGS="$CFLAGS -p"
@@ -1402,6 +1414,7 @@ QW_TARGETS=""
 NQ_TARGETS=""
 CD_TARGETS=""
 SND_TARGETS=""
+SND_PLUGIN_TARGETS=""
 VID_TARGETS=""
 BUILD_GL=no
 BUILD_SW=no
@@ -1479,12 +1492,37 @@ fi
 if test -n "$VID_TARGETS"; then
 	CD_TARGETS="libQFcd.la"
 	SND_TARGETS="libQFsound.la"
+	if test "`echo $SOUND_TYPES | grep ALSA0.5`"; then
+		SND_PLUGIN_TARGETS="$SND_PLUGIN_TARGETS libsound_alsa0_5.la"
+	fi
+	if test "`echo $SOUND_TYPES | grep ALSA0.9`"; then
+		SND_PLUGIN_TARGETS="$SND_PLUGIN_TARGETS libsound_alsa0_9.la"
+	fi
+	if test "`echo $SOUND_TYPES | grep MME`"; then
+		SND_PLUGIN_TARGETS="$SND_PLUGIN_TARGETS libsound_mme.la"
+	fi
+	if test "`echo $SOUND_TYPES | grep OSS`"; then
+		SND_PLUGIN_TARGETS="$SND_PLUGIN_TARGETS libsound_oss.la"
+	fi
+	if test "`echo $SOUND_TYPES | grep SDL`"; then
+		SND_PLUGIN_TARGETS="$SND_PLUGIN_TARGETS libsound_sdl.la"
+	fi
+	if test "`echo $SOUND_TYPES | grep SGI`"; then
+		SND_PLUGIN_TARGETS="$SND_PLUGIN_TARGETS libsound_sgi.la"
+	fi
+	if test "`echo $SOUND_TYPES | grep SUN`"; then
+		SND_PLUGIN_TARGETS="$SND_PLUGIN_TARGETS libsound_sun.la"
+	fi
+	if test "`echo $SOUND_TYPES | grep Win32`"; then
+		SND_PLUGIN_TARGETS="$SND_PLUGIN_TARGETS libsound_win.la"
+	fi
 	VID_TARGETS="libQFjs.la $VID_TARGETS"
 fi
 AC_SUBST(NQ_TARGETS)
 AC_SUBST(QW_TARGETS)
 AC_SUBST(CD_TARGETS)
 AC_SUBST(SND_TARGETS)
+AC_SUBST(SND_PLUGIN_TARGETS)
 AC_SUBST(VID_TARGETS)
 
 AM_CONDITIONAL(BUILD_GL, test "$BUILD_GL" = "yes")
@@ -1540,7 +1578,7 @@ AC_MSG_RESULT([
 	Build type:$BUILD_TYPE
 	Server support: $SV_TARGETS
 	Client support:$CL_TARGETS
-	Sound system: $SNDTYPE
+	Sound support:$SOUND_TYPES
 	CD Audio system: $CDTYPE
 	IPv6 networking: $NETTYPE_IPV6
 	Compression support: $HAVE_ZLIB
@@ -1556,4 +1594,3 @@ if test -d $srcdir/CVS; then
 	echo "(This is from a development CVS tree. Expect problems)"
 	echo
 fi
-

@@ -88,10 +88,10 @@ endif
 qf_client_LIBS=	$(top_builddir)/libs/video/targets/libQFjs.la \
 				$(top_builddir)/libs/gamecode/libQFgamecode.la \
 				$(top_builddir)/libs/audio/cd/libQFcd.la \
-				$(top_builddir)/libs/audio/targets/libQFsound.la \
+				$(top_builddir)/libs/audio/libQFsound.la \
 				$(top_builddir)/libs/util/libQFutil.la
 
-client_LIBS= -L. -lqfnet $(qf_client_LIBS) $(SOUND_LIBS) $(NET_LIBS)
+client_LIBS= -L. -lqfnet $(qf_client_LIBS) $(NET_LIBS)
 client_LIB_DEPS=	libqfnet.a $(qf_client_LIBS)
 # libQFjs is seperate because it needs to be linked after when building statically
 

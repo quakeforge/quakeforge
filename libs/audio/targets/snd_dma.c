@@ -48,13 +48,21 @@
 #include "QF/qargs.h"
 #include "QF/sys.h"
 #include "QF/sound.h"
+#include "QF/plugin.h"
 
-void        S_Play (void);
-void        S_PlayVol (void);
-void        S_SoundList (void);
-void        S_Update_ (void);
-void        S_StopAllSounds (qboolean clear);
-void        S_StopAllSoundsC (void);
+void        I_S_Play (void);
+void        I_S_PlayVol (void);
+void        I_S_SoundList (void);
+void        I_S_Update_ (void);
+void        I_S_StopAllSounds (qboolean clear);
+void        I_S_StopAllSoundsC (void);
+
+sfx_t		*I_S_PrecacheSound (char *name);
+sfxcache_t	*I_S_LoadSound (sfx_t *s);
+void		I_S_ClearBuffer (void);
+void		I_S_PaintChannels (int endtime);
+
+void		I_S_Init_Cvars ();
 
 // QuakeWorld hack...
 //#define	viewentity	playernum+1
@@ -65,7 +73,7 @@ void        S_StopAllSoundsC (void);
 
 extern channel_t   channels[MAX_CHANNELS];
 extern int         total_channels;
-extern double host_frametime; // From host.h
+//extern double host_frametime; // From host.h
 
 int         snd_blocked = 0;
 static qboolean snd_ambient = 1;
@@ -125,7 +133,7 @@ cvar_t     *_snd_mixahead;
 //
 // Fake dma is a synchronous faking of the DMA progress used for
 // isolating performance in the renderer.  The fakedma_updates is
-// number of times S_Update() is called per second.
+// number of times I_S_Update() is called per second.
 //
 
 qboolean    fakedma = false;
@@ -133,25 +141,24 @@ int         fakedma_updates = 15;
 
 // FIXME: Evil hack that doesn't deserve to see the light of day.
 // (pending merge of nq and qw client_stat_t's)
-extern int snd_viewentity;
-extern struct model_s **snd_worldmodel;
+extern sound_data_t plugin_info_sound_data;
 
 void
-S_AmbientOff (void)
+I_S_AmbientOff (void)
 {
 	snd_ambient = false;
 }
 
 
 void
-S_AmbientOn (void)
+I_S_AmbientOn (void)
 {
 	snd_ambient = true;
 }
 
 
 void
-S_SoundInfo_f (void)
+I_S_SoundInfo_f (void)
 {
 	if (!sound_started || !shm) {
 		Con_Printf ("sound system not started\n");
@@ -170,11 +177,11 @@ S_SoundInfo_f (void)
 
 
 /*
-	S_Startup
+	I_S_Startup
 */
 
 void
-S_Startup (void)
+I_S_Startup (void)
 {
 	int         rc;
 
@@ -198,24 +205,26 @@ S_Startup (void)
 
 
 /*
-	S_Init
+	I_S_Init
 */
 void
-S_Init (void)
+I_S_Init (void)
 {
 
 	Con_Printf ("\nSound Initialization\n");
 
-	Cmd_AddCommand ("play", S_Play,
+	Cmd_AddCommand ("play", I_S_Play,
 					"Play selected sound effect (play pathto/sound.wav)");
-	Cmd_AddCommand ("playvol", S_PlayVol,
+	Cmd_AddCommand ("playvol", I_S_PlayVol,
 					"Play selected sound effect at selected volume (playvol pathto/sound.wav num");
-	Cmd_AddCommand ("stopsound", S_StopAllSoundsC,
+	Cmd_AddCommand ("stopsound", I_S_StopAllSoundsC,
 					"Stops all sounds currently being played");
-	Cmd_AddCommand ("soundlist", S_SoundList,
+	Cmd_AddCommand ("soundlist", I_S_SoundList,
 					"Reports a list of sounds in the cache");
-	Cmd_AddCommand ("soundinfo", S_SoundInfo_f,
+	Cmd_AddCommand ("soundinfo", I_S_SoundInfo_f,
 					"Report information on the sound system");
+
+	I_S_Init_Cvars ();
 
 	if (COM_CheckParm ("-nosound"))
 		return;
@@ -232,7 +241,7 @@ S_Init (void)
 
 	snd_initialized = true;
 
-	S_Startup ();
+	I_S_Startup ();
 
 	if (sound_started == 0)				// sound startup failed? Bail out.
 		return;
@@ -265,14 +274,14 @@ S_Init (void)
 //  if (shm->buffer)
 //      shm->buffer[4] = shm->buffer[5] = 0x7f; // force a pop for debugging
 
-	ambient_sfx[AMBIENT_WATER] = S_PrecacheSound ("ambience/water1.wav");
-	ambient_sfx[AMBIENT_SKY] = S_PrecacheSound ("ambience/wind2.wav");
+	ambient_sfx[AMBIENT_WATER] = I_S_PrecacheSound ("ambience/water1.wav");
+	ambient_sfx[AMBIENT_SKY] = I_S_PrecacheSound ("ambience/wind2.wav");
 
-	S_StopAllSounds (true);
+	I_S_StopAllSounds (true);
 }
 
 void
-S_Init_Cvars (void)
+I_S_Init_Cvars (void)
 {
 	snd_device = Cvar_Get ("snd_device", "", CVAR_ROM, NULL,
 						   "sound device. \"\" is system default");
@@ -330,7 +339,7 @@ S_Init_Cvars (void)
 // =======================================================================
 
 void
-S_Shutdown (void)
+I_S_Shutdown (void)
 {
 
 	if (!sound_started)
@@ -353,10 +362,10 @@ S_Shutdown (void)
 // =======================================================================
 
 /*
-	S_FindName
+	I_S_FindName
 */
 sfx_t      *
-S_FindName (char *name)
+I_S_FindName (char *name)
 {
 	int         i;
 	sfx_t      *sfx;
@@ -386,36 +395,36 @@ S_FindName (char *name)
 
 
 /*
-	S_TouchSound
+	I_S_TouchSound
 */
 void
-S_TouchSound (char *name)
+I_S_TouchSound (char *name)
 {
 	sfx_t      *sfx;
 
 	if (!sound_started)
 		return;
 
-	sfx = S_FindName (name);
+	sfx = I_S_FindName (name);
 	Cache_Check (&sfx->cache);
 }
 
 /*
-	S_PrecacheSound
+	I_S_PrecacheSound
 */
 sfx_t      *
-S_PrecacheSound (char *name)
+I_S_PrecacheSound (char *name)
 {
 	sfx_t      *sfx;
 
 	if (!sound_started || nosound->int_val)
 		return NULL;
 
-	sfx = S_FindName (name);
+	sfx = I_S_FindName (name);
 
 // cache it in
 	if (precache->int_val)
-		S_LoadSound (sfx);
+		I_S_LoadSound (sfx);
 
 	return sfx;
 }
@@ -446,7 +455,7 @@ SND_PickChannel (int entnum, int entchannel)
 			break;
 		}
 		// don't let monster sounds override player sounds
-		if (channels[ch_idx].entnum == snd_viewentity && entnum != snd_viewentity
+		if (channels[ch_idx].entnum == *plugin_info_sound_data.viewentity && entnum != *plugin_info_sound_data.viewentity
 			&& channels[ch_idx].sfx)
 			continue;
 
@@ -479,7 +488,7 @@ SND_Spatialize (channel_t *ch)
 	sfx_t      *snd;
 
 // anything coming from the view entity will always be full volume
-	if (ch->entnum == snd_viewentity) {
+	if (ch->entnum == *plugin_info_sound_data.viewentity) {
 		ch->leftvol = ch->master_vol;
 		ch->rightvol = ch->master_vol;
 		ch->phase = 0;
@@ -524,7 +533,7 @@ SND_Spatialize (channel_t *ch)
 // =======================================================================
 
 void
-S_StartSound (int entnum, int entchannel, sfx_t *sfx, vec3_t origin, float fvol,
+I_S_StartSound (int entnum, int entchannel, sfx_t *sfx, vec3_t origin, float fvol,
 			  float attenuation)
 {
 	channel_t  *target_chan, *check;
@@ -562,7 +571,7 @@ S_StartSound (int entnum, int entchannel, sfx_t *sfx, vec3_t origin, float fvol,
 		return;							// not audible at all
 
 // new channel
-	sc = S_LoadSound (sfx);
+	sc = I_S_LoadSound (sfx);
 	if (!sc) {
 		target_chan->sfx = NULL;
 		return;							// couldn't load the sound's data
@@ -592,7 +601,7 @@ S_StartSound (int entnum, int entchannel, sfx_t *sfx, vec3_t origin, float fvol,
 }
 
 void
-S_StopSound (int entnum, int entchannel)
+I_S_StopSound (int entnum, int entchannel)
 {
 	int         i;
 
@@ -607,7 +616,7 @@ S_StopSound (int entnum, int entchannel)
 }
 
 void
-S_StopAllSounds (qboolean clear)
+I_S_StopAllSounds (qboolean clear)
 {
 	int         i;
 
@@ -623,17 +632,17 @@ S_StopAllSounds (qboolean clear)
 	memset (channels, 0, MAX_CHANNELS * sizeof (channel_t));
 
 	if (clear)
-		S_ClearBuffer ();
+		I_S_ClearBuffer ();
 }
 
 void
-S_StopAllSoundsC (void)
+I_S_StopAllSoundsC (void)
 {
-	S_StopAllSounds (true);
+	I_S_StopAllSounds (true);
 }
 
 void
-S_ClearBuffer (void)
+I_S_ClearBuffer (void)
 {
 	int         clear;
 
@@ -661,10 +670,10 @@ S_ClearBuffer (void)
 
 
 /*
-	S_StaticSound
+	I_S_StaticSound
 */
 void
-S_StaticSound (sfx_t *sfx, vec3_t origin, float vol, float attenuation)
+I_S_StaticSound (sfx_t *sfx, vec3_t origin, float vol, float attenuation)
 {
 	channel_t  *ss;
 	sfxcache_t *sc;
@@ -680,7 +689,7 @@ S_StaticSound (sfx_t *sfx, vec3_t origin, float vol, float attenuation)
 	ss = &channels[total_channels];
 	total_channels++;
 
-	sc = S_LoadSound (sfx);
+	sc = I_S_LoadSound (sfx);
 	if (!sc)
 		return;
 
@@ -703,10 +712,10 @@ S_StaticSound (sfx_t *sfx, vec3_t origin, float vol, float attenuation)
 //=============================================================================
 
 /*
-	S_UpdateAmbientSounds
+	I_S_UpdateAmbientSounds
 */
 void
-S_UpdateAmbientSounds (void)
+I_S_UpdateAmbientSounds (void)
 {
 	mleaf_t    *l;
 	float       vol;
@@ -717,10 +726,10 @@ S_UpdateAmbientSounds (void)
 		return;
 
 // calc ambient sound levels
-	if (!*snd_worldmodel)
+	if (!**plugin_info_sound_data.worldmodel) // FIXME: eww
 		return;
 
-	l = Mod_PointInLeaf (listener_origin, *snd_worldmodel);
+	l = Mod_PointInLeaf (listener_origin, **plugin_info_sound_data.worldmodel);
 	if (!l || !ambient_level->value) {
 		for (ambient_channel = 0; ambient_channel < NUM_AMBIENTS;
 			 ambient_channel++)
@@ -738,11 +747,11 @@ S_UpdateAmbientSounds (void)
 
 		// don't adjust volume too fast
 		if (chan->master_vol < vol) {
-			chan->master_vol += host_frametime * ambient_fade->value;
+			chan->master_vol += *plugin_info_sound_data.host_frametime * ambient_fade->value;
 			if (chan->master_vol > vol)
 				chan->master_vol = vol;
 		} else if (chan->master_vol > vol) {
-			chan->master_vol -= host_frametime * ambient_fade->value;
+			chan->master_vol -= *plugin_info_sound_data.host_frametime * ambient_fade->value;
 			if (chan->master_vol < vol)
 				chan->master_vol = vol;
 		}
@@ -753,12 +762,12 @@ S_UpdateAmbientSounds (void)
 
 
 /*
-	S_Update
+	I_S_Update
 
 	Called once each time through the main loop
 */
 void
-S_Update (vec3_t origin, vec3_t forward, vec3_t right, vec3_t up)
+I_S_Update (vec3_t origin, vec3_t forward, vec3_t right, vec3_t up)
 {
 	int         i, j;
 	int         total;
@@ -774,7 +783,7 @@ S_Update (vec3_t origin, vec3_t forward, vec3_t right, vec3_t up)
 	VectorCopy (up, listener_up);
 
 // update general area ambient sound sources
-	S_UpdateAmbientSounds ();
+	I_S_UpdateAmbientSounds ();
 
 	combine = NULL;
 
@@ -837,7 +846,7 @@ S_Update (vec3_t origin, vec3_t forward, vec3_t right, vec3_t up)
 		Con_Printf ("----(%i)----\n", total);
 	}
 // mix some sound
-	S_Update_ ();
+	I_S_Update_ ();
 }
 
 void
@@ -851,7 +860,7 @@ GetSoundtime (void)
 	fullsamples = shm->samples / shm->channels;
 
 // it is possible to miscount buffers if it has wrapped twice between
-// calls to S_Update.  Oh well.
+// calls to I_S_Update.  Oh well.
 	samplepos = SNDDMA_GetDMAPos ();
 
 	if (samplepos < oldsamplepos) {
@@ -861,7 +870,7 @@ GetSoundtime (void)
 			// 32 bit limits
 			buffers = 0;
 			paintedtime = fullsamples;
-			S_StopAllSounds (true);
+			I_S_StopAllSounds (true);
 		}
 	}
 	oldsamplepos = samplepos;
@@ -870,17 +879,17 @@ GetSoundtime (void)
 }
 
 void
-S_ExtraUpdate (void)
+I_S_ExtraUpdate (void)
 {
 	if (snd_noextraupdate->int_val)
 		return;							// don't pollute timings
-	S_Update_ ();
+	I_S_Update_ ();
 }
 
 
 
 void
-S_Update_ (void)
+I_S_Update_ (void)
 {
 	unsigned int endtime;
 	int         samps;
@@ -907,7 +916,7 @@ S_Update_ (void)
 		DSOUND_Restore ();
 #endif
 
-	S_PaintChannels (endtime);
+	I_S_PaintChannels (endtime);
 
 	SNDDMA_Submit ();
 }
@@ -917,7 +926,7 @@ S_Update_ (void)
 */
 
 void
-S_Play (void)
+I_S_Play (void)
 {
 	static int  hash = 345;
 	int         i;
@@ -931,14 +940,14 @@ S_Play (void)
 			strncat (name, ".wav", sizeof (name) - strlen (name));
 		} else
 			strcpy (name, Cmd_Argv (i));
-		sfx = S_PrecacheSound (name);
-		S_StartSound (hash++, 0, sfx, listener_origin, 1.0, 1.0);
+		sfx = I_S_PrecacheSound (name);
+		I_S_StartSound (hash++, 0, sfx, listener_origin, 1.0, 1.0);
 		i++;
 	}
 }
 
 void
-S_PlayVol (void)
+I_S_PlayVol (void)
 {
 	static int  hash = 543;
 	int         i;
@@ -953,15 +962,15 @@ S_PlayVol (void)
 			strncat (name, ".wav", sizeof (name) - strlen (name));
 		} else
 			strcpy (name, Cmd_Argv (i));
-		sfx = S_PrecacheSound (name);
+		sfx = I_S_PrecacheSound (name);
 		vol = atof (Cmd_Argv (i + 1));
-		S_StartSound (hash++, 0, sfx, listener_origin, vol, 1.0);
+		I_S_StartSound (hash++, 0, sfx, listener_origin, vol, 1.0);
 		i += 2;
 	}
 }
 
 void
-S_SoundList (void)
+I_S_SoundList (void)
 {
 	int         i;
 	sfx_t      *sfx;
@@ -986,7 +995,7 @@ S_SoundList (void)
 
 
 void
-S_LocalSound (char *sound)
+I_S_LocalSound (char *sound)
 {
 	sfx_t      *sfx;
 
@@ -995,28 +1004,28 @@ S_LocalSound (char *sound)
 	if (!sound_started)
 		return;
 
-	sfx = S_PrecacheSound (sound);
+	sfx = I_S_PrecacheSound (sound);
 	if (!sfx) {
 		Con_Printf ("S_LocalSound: can't cache %s\n", sound);
 		return;
 	}
-	S_StartSound (snd_viewentity, -1, sfx, vec3_origin, 1, 1);
+	I_S_StartSound (*plugin_info_sound_data.viewentity, -1, sfx, vec3_origin, 1, 1);
 }
 
 
 void
-S_ClearPrecache (void)
+I_S_ClearPrecache (void)
 {
 }
 
 
 void
-S_BeginPrecaching (void)
+I_S_BeginPrecaching (void)
 {
 }
 
 
 void
-S_EndPrecaching (void)
+I_S_EndPrecaching (void)
 {
 }

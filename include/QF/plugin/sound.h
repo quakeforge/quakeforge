@@ -72,6 +72,9 @@ typedef struct sound_funcs_s {
 } sound_funcs_t;
 
 typedef struct sound_data_s {
+	struct model_s ***worldmodel;
+	double *host_frametime;
+	int *viewentity;
 } sound_data_t;
 
 #endif // __QF_plugin_sound_h_
