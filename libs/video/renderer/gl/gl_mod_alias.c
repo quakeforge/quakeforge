@@ -559,12 +559,12 @@ R_DrawAliasModel (entity_t *e)
 				shadecolor[i] = 1 - ambientcolor[i];
 		}
 		// always give the gun some light
-		shade = max (shadecolor[0], max (shadecolor[1], shadecolor[2]));
+		shade = max (ambientcolor[0], max (ambientcolor[1], ambientcolor[2]));
 		minshade = model->min_light;
 		if (shade < minshade) {
-			shadecolor[0] += minshade - shade;
-			shadecolor[1] += minshade - shade;
-			shadecolor[2] += minshade - shade;
+			ambientcolor[0] += minshade - shade;
+			ambientcolor[1] += minshade - shade;
+			ambientcolor[2] += minshade - shade;
 		}
 
 		an = e->angles[1] * (M_PI / 180.0);
