@@ -974,7 +974,7 @@ void
 PR_InitRuntime (progs_t *pr)
 {
 	int         fnum;
-	pr_class_t **class_list, **class;;
+	pr_class_t **class_list, **class;
 	pr_category_t **category_list, **category;
 
 	if (!pr->classes)
