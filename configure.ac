@@ -412,6 +412,11 @@ case "$target_os" in
 	;;
 esac	
 
+AM_PATH_VORBIS(HAVE_VORBIS=yes, HAVE_VOBIS=no)
+if test $HAVE_VORBIS = yes; then
+	AC_DEFINE(HAVE_VORBIS, 1, [define this if you have ogg/vorbis libs])
+fi
+
 AC_ARG_ENABLE(zlib,
 [  --disable-zlib          disable zlib support],
 )
@@ -2006,7 +2011,7 @@ AC_MSG_RESULT([
 	Sound support      :${SOUND_TYPES- no}
 	CD Audio system    :${CDTYPE- no}
 	IPv6 networking    : $NETTYPE_IPV6
-	Compression support: $HAVE_ZLIB
+	Compression support: gz=$HAVE_ZLIB ogg=$HAVE_VORBIS
 	Compiler version   : $CCVER
 	Compiler flags     : $CFLAGS
 	qfcc cpp invocation: $CPP_NAME

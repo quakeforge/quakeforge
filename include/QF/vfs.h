@@ -87,6 +87,8 @@ void COM_DefaultExtension (char *path, char *extension);
 const char *COM_SkipPath (const char *pathname);
 void COM_StripExtension (const char *in, char *out);
 int COM_NextFilename (char *filename, const char *prefix, const char *ext);
+const char *COM_FileExtension (const char *in);
+
 
 
 byte *COM_LoadFile (const char *path, int usehunk);

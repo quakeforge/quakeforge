@@ -48,6 +48,7 @@ int         cache_full_cycle;
 byte       *SND_Alloc (int size);
 wavinfo_t   SND_GetWavinfo (const char *name, byte * wav, int wavlength);
 sfxcache_t *SND_LoadSound (sfx_t *sfx, cache_allocator_t allocator);
+sfxcache_t *SND_LoadOgg (VFile *file, sfx_t *sfx, cache_allocator_t allocator);
 
 
 void
@@ -166,6 +167,15 @@ SND_LoadSound (sfx_t *sfx, cache_allocator_t allocator)
 	strcpy (namebuffer, "sound/");
 	strncat (namebuffer, sfx->name, sizeof (namebuffer) - strlen (namebuffer));
 
+	if (strcmp (".ogg", COM_FileExtension (sfx->name)) == 0) {
+		VFile      *file;
+		COM_FOpenFile (namebuffer, &file);
+		if (!file) {
+			Sys_Printf ("Couldn't load %s\n", namebuffer);
+			return 0;
+		}
+		return SND_LoadOgg (file, sfx, allocator);
+	}
 	data = COM_LoadStackFile (namebuffer, stackbuf, sizeof (stackbuf));
 
 	if (!data) {

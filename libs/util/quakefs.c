@@ -398,90 +398,93 @@ int file_from_pak; // global indicating file came from pack file ZOID
 	Finds the file in the search path.
 	Sets com_filesize and one of handle or file
 */
+
+static int
+open_file (searchpath_t *search, const char *filename, VFile **gzfile,
+		   char *foundname, int zip)
+{
+	char        netpath[MAX_OSPATH];
+
+	file_from_pak = 0;
+
+	// is the element a pak file?
+	if (search->pack) {
+		packfile_t *packfile;
+
+		packfile = (packfile_t *) Hash_Find (search->pack->file_hash,
+											 filename);
+		if (packfile) {
+			Sys_DPrintf ("PackFile: %s : %s\n", search->pack->filename,
+						 packfile->name);
+			// open a new file on the pakfile
+			strncpy (foundname, packfile->name, MAX_OSPATH);
+			*gzfile = COM_OpenRead (search->pack->filename, packfile->filepos,
+									packfile->filelen, zip);
+			file_from_pak = 1;
+			return com_filesize;
+		}
+	} else {
+		// check a file in the directory tree
+		snprintf (netpath, sizeof (netpath), "%s%s%s", search->filename,
+				  search->filename[0] ? "/" : "", filename);
+
+		strncpy (foundname, filename, MAX_OSPATH);
+		if (Sys_FileTime (netpath) == -1)
+			return -1;
+
+		Sys_DPrintf ("FindFile: %s\n", netpath);
+
+		*gzfile = COM_OpenRead (netpath, -1, -1, zip);
+		return com_filesize;
+	}
+
+	return -1;
+}
+
 int
 _COM_FOpenFile (const char *filename, VFile **gzfile, char *foundname, int zip)
 {
 	searchpath_t *search;
-	char        netpath[MAX_OSPATH];
-	int         findtime;
-
+#ifdef HAVE_VORBIS
+	char        oggfilename[MAX_OSPATH];
+#endif
 #ifdef HAVE_ZLIB
 	char        gzfilename[MAX_OSPATH];
-	int         filenamelen;
-
-	filenamelen = strlen (filename);
-	strncpy (gzfilename, filename, sizeof (gzfilename));
-	strncat (gzfilename, ".gz", sizeof (gzfilename) - strlen (gzfilename));
 #endif
 
-	file_from_pak = 0;
+#ifdef HAVE_VORBIS
+	if (strequal (".wav", COM_FileExtension (filename))) {
+		COM_StripExtension (filename, oggfilename);
+		strncat (oggfilename, ".ogg",
+				 sizeof (oggfilename) - strlen (oggfilename) - 1);
+	} else {
+		oggfilename[0] = 0;
+	}
+#endif
+#ifdef HAVE_ZLIB
+	snprintf (gzfilename, sizeof (gzfilename), "%s.gz", filename);
+#endif
 
 	// make sure they're not trying to do wierd stuff with our private files
 	if (contains_updir(filename)) {
-		Sys_Printf ("FindFile: %s: attempt to escape directory tree!\n", filename);
+		Sys_Printf ("FindFile: %s: attempt to escape directory tree!\n",
+					filename);
 		goto error;
 	}
 
 	// search through the path, one element at a time
 	for (search = com_searchpaths; search; search = search->next) {
-		// is the element a pak file?
-		if (search->pack) {
-			packfile_t *packfile;
-
-#ifdef HAVE_ZLIB
-			packfile = (packfile_t *) Hash_Find (search->pack->file_hash,
-												 gzfilename);
-			if (!packfile)
-				packfile = (packfile_t *) Hash_Find (search->pack->file_hash,
-													 filename);
-#else
-			packfile = (packfile_t *) Hash_Find (search->pack->file_hash,
-												 filename);
-#endif
-			if (packfile) {
-				Sys_DPrintf ("PackFile: %s : %s\n", search->pack->filename,
-							 packfile->name);
-				// open a new file on the pakfile
-				strncpy (foundname, packfile->name, MAX_OSPATH);
-				*gzfile =
-					COM_OpenRead (search->pack->filename, packfile->filepos,
-								  packfile->filelen, zip);
-				file_from_pak = 1;
-				return com_filesize;
-			}
-		} else {
-			// check a file in the directory tree
-#ifdef HAVE_ZLIB
-			snprintf (netpath, sizeof (netpath), "%s%s%s", search->filename,
-					  search->filename[0] ? "/" : "", gzfilename);
-
-			strncpy (foundname, gzfilename, MAX_OSPATH);
-			findtime = Sys_FileTime (netpath);
-			if (findtime == -1) {
-				strncpy (foundname, filename, MAX_OSPATH);
-				snprintf (netpath, sizeof (netpath), "%s%s%s",
-						  search->filename,
-						  search->filename[0] ? "/" : "", filename);
-				findtime = Sys_FileTime (netpath);
-				if (findtime == -1)
-					continue;
-			}
-#else
-			snprintf (netpath, sizeof (netpath), "%s%s%s", search->filename,
-					  search->filename[0] ? "/" : "", filename);
-
-			strncpy (foundname, filename, MAX_OSPATH);
-			findtime = Sys_FileTime (netpath);
-			if (findtime == -1)
-				continue;
-#endif
-
-			Sys_DPrintf ("FindFile: %s\n", netpath);
-
-			*gzfile = COM_OpenRead (netpath, -1, -1, zip);
+#ifdef HAVE_VORBIS
+		if (oggfilename[0]
+			&& open_file (search, oggfilename, gzfile, foundname, zip) != -1)
 			return com_filesize;
-		}
-
+#endif
+#ifdef HAVE_ZLIB
+		if (open_file (search, gzfilename, gzfile, foundname, zip) != -1)
+			return com_filesize;
+#endif
+		if (open_file (search, filename, gzfile, foundname, zip) != -1)
+			return com_filesize;
 	}
 
 	Sys_DPrintf ("FindFile: can't find %s\n", filename);
@@ -930,21 +933,12 @@ COM_StripExtension (const char *in, char *out)
 	*out = 0;
 }
 
-char *
-COM_FileExtension (char *in)
+const char *
+COM_FileExtension (const char *in)
 {
-	static char exten[8];
-	int         i;
-
 	while (*in && *in != '.')
 		in++;
-	if (!*in)
-		return "";
-	in++;
-	for (i = 0; i < 7 && *in; i++, in++)
-		exten[i] = *in;
-	exten[i] = 0;
-	return exten;
+	return in;
 }
 
 void

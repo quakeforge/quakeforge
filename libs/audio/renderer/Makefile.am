@@ -19,10 +19,8 @@ noinst_LTLIBRARIES=	$(asm) @SND_REND_STATIC@
 libasm_la_SOURCES=	snd_mixa.S
 
 libsnd_render_default_la_LDFLAGS=	$(plugin_ldflags)
-libsnd_render_default_la_SOURCES=	snd_dma.c snd_mem.c snd_mix.c
-if ASM_ARCH
-libsnd_render_default_la_LIBADD=	$(asm)
+libsnd_render_default_la_SOURCES=	snd_dma.c snd_mem.c snd_mix.c vorbis.c
+libsnd_render_default_la_LIBADD=	$(asm) $(VORBISFILE_LIBS) $(VORBIS_LIBS)
 libsnd_render_default_la_DEPENDENCIES=	$(asm)
-endif
 
 EXTRA_DIST= $(libasm_la_SOURCES)
