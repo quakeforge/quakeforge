@@ -142,8 +142,7 @@ main (int argc, const char *argv[])
 	// main loop
 	oldtime = Sys_DoubleTime () - 0.1;
 	while (1) {
-		if (!Sys_CheckInput (!svs.num_clients, net_socket))
-			continue;
+		Sys_CheckInput (!svs.num_clients, net_socket);
 
 		// find time passed since last cycle
 		newtime = Sys_DoubleTime ();
