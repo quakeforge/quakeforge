@@ -52,6 +52,7 @@ typedef struct {
 	const char *name;
 	int         data_start;
 	int         data_length;
+	int         length;
 } wavfile_t;
 
 static void
@@ -64,7 +65,7 @@ wav_callback_load (void *object, cache_allocator_t allocator)
 	byte       *data;
 	sfxbuffer_t *buffer;
 
-	QFS_FOpenFile (block->file, &file);
+	QFS_FOpenFile (wavfile->name, &file);
 	if (!file)
 		return; //FIXME Sys_Error?
 
@@ -73,9 +74,13 @@ wav_callback_load (void *object, cache_allocator_t allocator)
 	Qread (file, data, wavfile->data_length);
 	Qclose (file);
 
-	buffer = SND_GetCache (sfx->length, sfx->speed, sfx->width, sfx->channels,
-						   block, allocator);
-	SND_ResampleSfx (sfx, buffer, data);
+	buffer = SND_GetCache (wavfile->length, sfx->speed, sfx->width,
+						   sfx->channels, block, allocator);
+	if (sfx->channels == 2)
+		SND_ResampleStereo (sfx, buffer, data, wavfile->length);
+	else
+		SND_ResampleMono (sfx, buffer, data, wavfile->length);
+	buffer->length = buffer->head = sfx->length;
 	free (data);
 }
 
@@ -171,17 +176,20 @@ SND_LoadWav (QFile *file, sfx_t *sfx, char *realname)
 	wavfile->name = realname;
 	wavfile->data_start = *(int *)data->data;
 	wavfile->data_length = data->ck.len;
+	wavfile->length = sfx->length;
 
-	if (sfx->length < 3 * shm->speed) {
+	if (sfx->length < 8 * shm->speed) {
 		sfxblock_t *block = calloc (1, sizeof (sfxblock_t));
 		sfx->data = block;
+		sfx->touch = SND_CacheTouch;
 		sfx->retain = SND_CacheRetain;
 		sfx->release = SND_CacheRelease;
+		sfx->data = block;
 		block->sfx = sfx;
 		block->file = wavfile;
 		Cache_Add (&block->cache, block, wav_callback_load);
 	} else {
-		sfx->retain = SND_StreamRetain;
+		sfx->touch = sfx->retain = SND_StreamRetain;
 		sfx->release = SND_StreamRelease;
 		free (realname);
 		stream_wav (sfx, wavfile);

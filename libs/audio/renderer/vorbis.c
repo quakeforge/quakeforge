@@ -149,16 +149,16 @@ load_ogg (OggVorbis_File *vf, sfxblock_t *block, cache_allocator_t allocator)
 	sfxbuffer_t *sc = 0;
 	sfx_t      *sfx = block->sfx;
 	int        channels;
-	void        (*paint) (channel_t *ch, sfxbuffer_t *buffer, int count);
+	void       (*resample)(sfx_t *, sfxbuffer_t *, byte *, int);
 
 	get_info (vf, sfx);
 
 	switch (sfx->channels) {
 		case 1:
-			paint = SND_PaintChannelFrom16;
+			resample = SND_ResampleMono;
 			break;
 		case 2:
-			paint = SND_PaintChannelStereo16;
+			resample = SND_ResampleStereo;
 			break;
 		default:
 			Sys_Printf ("%s: unsupported channel count: %d\n",
@@ -178,8 +178,7 @@ load_ogg (OggVorbis_File *vf, sfxblock_t *block, cache_allocator_t allocator)
 		goto bail;
 	if (read_ogg (vf, data, size) < 0)
 		goto bail;
-	SND_ResampleSfx (sfx, sc, data);
-	sc->paint = paint;
+	resample (sfx, sc, data, sfx->length);
 	sc->length = sc->head = sfx->length;
   bail:
 	if (data)
@@ -266,13 +265,14 @@ SND_LoadOgg (QFile *file, sfx_t *sfx, char *realname)
 		sfxblock_t *block = calloc (1, sizeof (sfxblock_t));
 		ov_clear (&vf);
 		sfx->data = block;
+		sfx->touch = SND_CacheTouch;
 		sfx->retain = SND_CacheRetain;
 		sfx->release = SND_CacheRelease;
 		block->sfx = sfx;
 		block->file = realname;
 		Cache_Add (&block->cache, block, ogg_callback_load);
 	} else {
-		sfx->retain = SND_StreamRetain;
+		sfx->touch = sfx->retain = SND_StreamRetain;
 		sfx->release = SND_StreamRelease;
 		free (realname);
 		stream_ogg (sfx, &vf);
