@@ -67,7 +67,8 @@ R_ClearParticles (void)
 
 	for (i = 0; i < r_maxparticles; i++)
 		particles[i].next = &particles[i + 1];
-	particles[r_maxparticles - 1].next = NULL;
+	if (r_maxparticles)
+		particles[r_maxparticles - 1].next = NULL;
 }
 
 void
