@@ -42,6 +42,8 @@ int         scr_width, scr_height;
 cvar_t     *vid_width;
 cvar_t     *vid_height;
 
+byte		gammatable[256];
+
 void
 VID_GetWindowSize (int def_w, int def_h)
 {
@@ -91,26 +93,27 @@ VID_GetWindowSize (int def_w, int def_h)
 }
 
 #if 0
-VID_Calc_Gamma (void)
+void
+VID_CalcGamma (double gamma)
 {
-	float f;
-	int i;
-	int v;
-	byte 
-	float g = bound (0.3, gamma->value, 3);
+	int 	i;
+	int 	v;
+	double	g = bound (0.3, gamma, 3);
 
 	Cvar_SetValue (gamma, g);
-	if (gamma_flipped->int_val)
-		g = 1 / g;
-	for (i = 0; i < 256; i++) {
-		f = pow ((i + 1) / 256.0, g);
-		v = f * 255 + 0.5;
-		lightmap_gamma[i] = bound (0, v, 255);
-		for (j = 0; j < 3; j++) {
-			f = pow ((host_basepal[i * 3 + j] + 1) / 256.0, g);
-			v = f * 255 + 0.5;
-			palette[i] = bound (0, v, 255);
+
+	if (!(gamma_flipped->int_val))
+		g = 1.0 / g;
+
+	if (g == 1.0) {
+		for (i = 0; i < 256; i++) {
+			gammatable[i] = i;
 		}
+	}
+	
+	for (i = 0; i < 256; i++) {
+		v = (int) (255.0 * pow ((double) i / 255.0, g));
+		gammatable[i] = bound (0, v, 255);
 	}
 }
 #endif

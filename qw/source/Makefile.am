@@ -173,7 +173,7 @@ qw_client_fbdev_DEPENDENCIES= $(CLIENT_LIB_DEPS)
 #
 # ... SciTech MGL
 #
-mgl_SOURCES=		vid_mgl.c in_win.c
+mgl_SOURCES=		in_win.c vid_common_sw.c vid_mgl.c
 
 qw_client_mgl_SOURCES=	$(common_SOURCES) $(client_SOURCES) $(soft_SOURCES) $(mgl_SOURCES)
 qw_client_mgl_LDADD=	$(MGL_LIBS) $(CLIENT_LIBS)
@@ -182,7 +182,7 @@ qw_client_mgl_DEPENDENCIES= $(CLIENT_LIB_DEPS)
 #
 # ... Sam Lantinga's Simple DirectMedia Layer, version 1.0 and higher
 #
-sdl_SOURCES=		vid_sdl.c in_sdl.c
+sdl_SOURCES=		in_sdl.c vid_common_sw.c vid_sdl.c
 
 qw_client_sdl_SOURCES=	$(common_SOURCES) $(client_SOURCES) $(soft_SOURCES) $(sdl_SOURCES)
 qw_client_sdl_LDADD=	$(SDL_LIBS) $(CLIENT_LIBS)
@@ -191,7 +191,7 @@ qw_client_sdl_DEPENDENCIES= $(CLIENT_LIB_DEPS)
 #
 # ... Linux SVGAlib
 #
-svga_SOURCES=		d_copy.S vid_svgalib.c in_svgalib.c
+svga_SOURCES=		d_copy.S in_svgalib.c vid_common_sw.c vid_svgalib.c
 
 qw_client_svga_SOURCES= $(common_SOURCES) $(client_SOURCES) $(soft_SOURCES) $(svga_SOURCES)
 qw_client_svga_LDADD=	$(SVGA_LIBS) $(CLIENT_LIBS)
@@ -200,7 +200,7 @@ qw_client_svga_DEPENDENCIES= $(CLIENT_LIB_DEPS)
 #
 # ... X11
 #
-x11_SOURCES=		vid_x11.c in_x11.c context_x11.c dga_check.c
+x11_SOURCES=		context_x11.c dga_check.c in_x11.c vid_common_sw.c vid_x11.c
 
 qw_client_x11_SOURCES=	$(common_SOURCES) $(client_SOURCES) $(soft_SOURCES) $(x11_SOURCES)
 qw_client_x11_LDADD=	$(X_PRE_LIBS) $(VIDMODE_LIBS) $(DGA_LIBS) $(X_LIBS) -lX11 $(X_EXTRA_LIBS) $(X_SHM_LIB) $(CLIENT_LIBS)

@@ -36,32 +36,35 @@
 
 #include "QF/qtypes.h"
 
-void GetEvent( void );
-
 extern Display	*x_disp;
-extern int			x_screen;
-extern Window		x_root;
-extern XVisualInfo	*x_visinfo;
-extern Visual		*x_vis;
+extern Visual	*x_vis;
+extern Window	x_root;
 extern Window	x_win;
-extern qboolean doShm;
+extern XVisualInfo *x_visinfo;
+extern double	x_gamma;
+extern int		x_screen;
 extern int		x_shmeventtype;
+extern qboolean doShm;
 extern qboolean oktodraw;
-extern struct cvar_s	*vid_fullscreen;
+extern struct cvar_s *vid_fullscreen;
 
-qboolean x11_add_event (int event, void (*event_handler)(XEvent *));
-qboolean x11_del_event (int event, void (*event_handler)(XEvent *));
-void x11_process_event (void);
-void x11_process_events (void);
-void x11_open_display (void);
-void x11_close_display (void);
-void x11_create_null_cursor (void);
-void x11_set_vidmode (int, int);
-void x11_restore_vidmode (void);
-void x11_create_window (int, int);
-void x11_grab_keyboard (void);
-void x11_set_caption (char *);
-void x11_force_view_port (void);
-void x11_Init_Cvars (void);
+void GetEvent (void);
+
+double X11_GetGamma (void);
+qboolean X11_AddEvent (int event, void (*event_handler)(XEvent *));
+qboolean X11_RemoveEvent (int event, void (*event_handler)(XEvent *));
+qboolean X11_SetGamma (double);
+void X11_CloseDisplay (void);
+void X11_CreateNullCursor (void);
+void X11_CreateWindow (int, int);
+void X11_ForceViewPort (void);
+void X11_GrabKeyboard (void);
+void X11_Init_Cvars (void);
+void X11_OpenDisplay (void);
+void X11_ProcessEvent (void);
+void X11_ProcessEvents (void);
+void X11_RestoreVidMode (void);
+void X11_SetCaption (char *);
+void X11_SetVidMode (int, int);
 
 #endif	// __context_x11_h_

@@ -72,47 +72,51 @@
 #include "vid.h"
 
 static void (*event_handlers[LASTEvent]) (XEvent *);
-qboolean    oktodraw = false;
-int         x_shmeventtype;
+qboolean	oktodraw = false;
+int 		x_shmeventtype;
 
-static int  x_disp_ref_count = 0;
+static int	x_disp_ref_count = 0;
 
-Display    *x_disp = NULL;
-int         x_screen;
-Window      x_root = None;
+Display 	*x_disp = NULL;
+int 		x_screen;
+Window		x_root = None;
 XVisualInfo *x_visinfo;
-Visual     *x_vis;
-Window      x_win;
-Cursor      nullcursor = None;
+Visual		*x_vis;
+Window		x_win;
+Cursor		nullcursor = None;
 static Atom aWMDelete = 0;
 
 #define X_MASK (VisibilityChangeMask | StructureNotifyMask | ExposureMask)
 
 #ifdef HAVE_VIDMODE
 static XF86VidModeModeInfo **vidmodes;
-static int  nummodes;
+static int	nummodes;
 static int	original_mode = 0;
 #endif
 
 static qboolean	vidmode_avail = false;
 static qboolean	vidmode_active = false;
 
-cvar_t     *vid_fullscreen;
-qboolean    vid_fullscreen_active;
+cvar_t		*vid_fullscreen;
+cvar_t		*vid_system_gamma;
+qboolean	vid_gamma_avail;
+qboolean	vid_fullscreen_active;
+static double	x_gamma;
 
-static int  xss_timeout;
-static int  xss_interval;
-static int  xss_blanking;
-static int  xss_exposures;
+static int	xss_timeout;
+static int	xss_interval;
+static int	xss_blanking;
+static int	xss_exposures;
 
 qboolean
-x11_add_event (int event, void (*event_handler) (XEvent *))
+X11_AddEvent (int event, void (*event_handler) (XEvent *))
 {
 	if (event >= LASTEvent) {
 		printf ("event: %d, LASTEvent: %d\n", event, LASTEvent);
 		return false;
 	}
-	if (event_handlers[event] != NULL)
+	
+	if (event_handlers[event])
 		return false;
 
 	event_handlers[event] = event_handler;
@@ -120,10 +124,11 @@ x11_add_event (int event, void (*event_handler) (XEvent *))
 }
 
 qboolean
-x11_del_event (int event, void (*event_handler) (XEvent *))
+X11_RemoveEvent (int event, void (*event_handler) (XEvent *))
 {
 	if (event >= LASTEvent)
 		return false;
+
 	if (event_handlers[event] != event_handler)
 		return false;
 
@@ -132,7 +137,7 @@ x11_del_event (int event, void (*event_handler) (XEvent *))
 }
 
 void
-x11_process_event (void)
+X11_ProcessEvent (void)
 {
 	XEvent      x_event;
 
@@ -148,11 +153,11 @@ x11_process_event (void)
 }
 
 void
-x11_process_events (void)
+X11_ProcessEvents (void)
 {
 	/* Get events from X server. */
 	while (XPending (x_disp)) {
-		x11_process_event ();
+		X11_ProcessEvent ();
 	}
 }
 
@@ -172,12 +177,12 @@ TragicDeath (int sig)
 }
 
 void
-x11_open_display (void)
+X11_OpenDisplay (void)
 {
 	if (!x_disp) {
 		x_disp = XOpenDisplay (NULL);
 		if (!x_disp) {
-			Sys_Error ("x11_open_display: Could not open display [%s]\n",
+			Sys_Error ("X11_OpenDisplay: Could not open display [%s]\n",
 					   XDisplayName (NULL));
 		}
 
@@ -192,7 +197,7 @@ x11_open_display (void)
 		signal (SIGTRAP, TragicDeath);
 		signal (SIGIOT, TragicDeath);
 		signal (SIGBUS, TragicDeath);
-		/* signal(SIGFPE, TragicDeath); */
+//		signal(SIGFPE, TragicDeath);
 		signal (SIGSEGV, TragicDeath);
 		signal (SIGTERM, TragicDeath);
 
@@ -206,7 +211,7 @@ x11_open_display (void)
 }
 
 void
-x11_close_display (void)
+X11_CloseDisplay (void)
 {
 	if (nullcursor != None) {
 		XFreeCursor (x_disp, nullcursor);
@@ -220,17 +225,17 @@ x11_close_display (void)
 }
 
 /*
-	x11_create_null_cursor
+	X11_CreateNullCursor
 
-	Create an empty cursor
+	Create an empty cursor (in other words, make it disappear)
 */
 void
-x11_create_null_cursor (void)
+X11_CreateNullCursor (void)
 {
-	Pixmap      cursormask;
-	XGCValues   xgc;
-	GC          gc;
-	XColor      dummycolour;
+	Pixmap		cursormask;
+	XGCValues	xgc;
+	GC			gc;
+	XColor		dummycolour;
 
 	if (nullcursor != None)
 		return;
@@ -253,7 +258,7 @@ x11_create_null_cursor (void)
 }
 
 void
-x11_set_vidmode (int width, int height)
+X11_SetVidMode (int width, int height)
 {
 	const char *str = getenv ("MESA_GLX_FX");
 
@@ -266,6 +271,10 @@ x11_set_vidmode (int width, int height)
 
 #ifdef HAVE_VIDMODE
 	vidmode_avail = VID_CheckVMode (x_disp, NULL, NULL);
+
+	if (vidmode_avail) {
+		vid_gamma_avail = ((x_gamma = X11_GetGamma ()) > 0);
+	}
 
 	if (vid_fullscreen->int_val && vidmode_avail) {
 
@@ -299,25 +308,27 @@ x11_set_vidmode (int width, int height)
 
 			XSetScreenSaver (x_disp, 0, xss_interval, xss_blanking, xss_exposures);
 			XF86VidModeSwitchToMode (x_disp, x_screen, vidmodes[best_mode]);
-			x11_force_view_port ();
+			X11_ForceViewPort ();
 			vidmode_active = true;
 		} else {
 			Con_Printf ("VID: Mode %dx%d can't go fullscreen.\n", vid.width, vid.height);
-			vidmode_avail = vidmode_active = false;
+			vid_gamma_avail = vidmode_avail = vidmode_active = false;
 		}
 	}
 #endif
 }
 
 void
-x11_Init_Cvars (void)
+X11_Init_Cvars (void)
 {
 	vid_fullscreen = Cvar_Get ("vid_fullscreen", "0", CVAR_ROM, NULL,
 							   "Toggles fullscreen game mode");
+	vid_system_gamma = Cvar_Get ("vid_system_gamma", "1", CVAR_ARCHIVE, NULL,
+								 "Use system gamma control if available");
 }
 
 void
-x11_create_window (int width, int height)
+X11_CreateWindow (int width, int height)
 {
 	XSetWindowAttributes attr;
 	XClassHint *ClassHint;
@@ -354,7 +365,7 @@ x11_create_window (int width, int height)
 		XFree (SizeHints);
 	}
 	// Set window title
-	x11_set_caption (va ("%s %s", PROGRAM, VERSION));
+	X11_SetCaption (va ("%s %s", PROGRAM, VERSION));
 
 	// Set icon name
 	XSetIconName (x_disp, x_win, PROGRAM);
@@ -377,7 +388,7 @@ x11_create_window (int width, int height)
 		XMoveWindow (x_disp, x_win, 0, 0);
 		XWarpPointer (x_disp, None, x_win, 0, 0, 0, 0,
 					  vid.width + 2, vid.height + 2);
-		x11_force_view_port ();
+		X11_ForceViewPort ();
 	}
 
 	XMapWindow (x_disp, x_win);
@@ -388,13 +399,14 @@ x11_create_window (int width, int height)
 }
 
 void
-x11_restore_vidmode (void)
+X11_RestoreVidMode (void)
 {
 	XSetScreenSaver (x_disp, xss_timeout, xss_interval, xss_blanking,
 					 xss_exposures);
 
 #ifdef HAVE_VIDMODE
 	if (vidmode_active) {
+		X11_SetGamma (x_gamma);
 		XF86VidModeSwitchToMode (x_disp, x_screen, vidmodes[original_mode]);
 		XFree (vidmodes);
 	}
@@ -402,7 +414,7 @@ x11_restore_vidmode (void)
 }
 
 void
-x11_grab_keyboard (void)
+X11_GrabKeyboard (void)
 {
 #ifdef HAVE_VIDMODE
 	if (vidmode_active && vid_fullscreen->int_val) {
@@ -413,14 +425,14 @@ x11_grab_keyboard (void)
 }
 
 void
-x11_set_caption (char *text)
+X11_SetCaption (char *text)
 {
 	if (x_disp && x_win && text)
 		XStoreName (x_disp, x_win, text);
 }
 
 void
-x11_force_view_port (void)
+X11_ForceViewPort (void)
 {
 #ifdef HAVE_VIDMODE
 	int         x, y;
@@ -433,4 +445,38 @@ x11_force_view_port (void)
 		} while (x || y);
 	}
 #endif
+}
+
+double
+X11_GetGamma (void)
+{
+#ifdef HAVE_VIDMODE
+# ifdef X_XF86VidModeGetGamma
+	XF86VidModeGamma	xgamma;
+	
+	if (vidmode_avail && vid_system_gamma->int_val) {
+		if (XF86VidModeGetGamma (x_disp, x_screen, &xgamma)) {
+			return ((xgamma.red + xgamma.green + xgamma.blue) / 3);
+		}
+	}
+# endif
+#endif
+	return -1.0;
+}
+
+qboolean
+X11_SetGamma (double gamma)
+{
+#ifdef HAVE_VIDMODE
+# ifdef X_XF86VidModeSetGamma
+	XF86VidModeGamma	xgamma;
+	
+	if (vidmode_avail && vid_system_gamma->int_val) {
+		xgamma.red = xgamma.green = xgamma.blue = (float) gamma;
+		if (XF86VidModeSetGamma (x_disp, x_screen, &xgamma))
+			return true;
+	}
+# endif
+#endif
+	return false;
 }

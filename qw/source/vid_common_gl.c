@@ -46,11 +46,11 @@
 
 #include "QF/compat.h"
 #include "QF/console.h"
-#include "glquake.h"
 #include "QF/input.h"
 #include "QF/qargs.h"
-#include "qfgl_ext.h"
 #include "QF/quakefs.h"
+#include "glquake.h"
+#include "qfgl_ext.h"
 #include "sbar.h"
 
 #define WARP_WIDTH              320
@@ -61,6 +61,7 @@ unsigned int d_8to24table[256];
 unsigned char d_15to8table[65536];
 
 cvar_t     *vid_mode;
+extern byte gammatable[256];
 
 /*-----------------------------------------------------------------------*/
 
@@ -79,8 +80,10 @@ GLenum		gl_mtex_enum = GL_TEXTURE0_ARB;
 QF_glColorTableEXT	qglColorTableEXT = NULL;
 qboolean			is8bit = false;
 cvar_t				*vid_use8bit;
+cvar_t				*vid_gamma;
 
-extern int gl_filter_min, gl_filter_max;
+extern int		gl_filter_min, gl_filter_max;
+extern cvar_t	*vid_system_gamma;
 
 /*-----------------------------------------------------------------------*/
 
@@ -117,6 +120,56 @@ CheckMultiTextureExtensions (void)
 	}
 }
 
+/*
+	VID_InitGamma
+
+	Initialize the gamma lookup table
+
+	This function does some nasty things to Cvars, but at least we have the
+	excuse that it has to.
+*/
+void
+VID_InitGamma (unsigned char *pal)
+{
+	int 	i;
+	double	gamma;
+
+	vid_gamma = Cvar_Get ("vid_gamma", "1.45", CVAR_ARCHIVE, VID_UpdateGamma,
+						  "Gamma correction");
+
+	if ((i = COM_CheckParm ("-gamma"))) {
+		gamma = atof (com_argv[i + 1]);
+	} else {
+		gamma = vid_gamma->value;
+	}
+	gamma = bound (0.1, gamma, 9.9);
+
+	Cvar_SetValue (vid_gamma, gamma);
+
+	if (gamma == 1.0) {	// screw the math, 1.0 is linear
+		for (i = 0; i < 256; i++) {
+			gammatable[i] = i;
+		}
+	} else {
+		if (vid_system_gamma->int_val) {
+			VID_SetGamma (gamma);
+		} else {
+			double	g = 1.0 / gamma;
+			int 	v;
+
+			Cvar_SetFlags (vid_gamma, vid_gamma->flags | CVAR_ROM);
+			for (i = 0; i < 256; i++) {	// Create the gamma-correction table
+				v = (int) (255.0 * pow ((double) i / 255.0, g));
+				gammatable[i] = bound (0, v, 255);
+			}
+		}
+	}
+
+	for (i = 0; i < 768; i++) {	// correct the palette
+		pal[i] = gammatable[pal[i]];
+	}
+}
+
 void
 VID_SetPalette (unsigned char *palette)
 {
@@ -139,8 +192,7 @@ VID_SetPalette (unsigned char *palette)
 
 	pal = palette;
 	table = d_8to24table;
-	for (i = 0; i < 255; i++) {			// used to be i<256, see d_8to24table 
-										// below
+	for (i = 0; i < 255; i++) { // used to be i<256, see d_8to24table below
 		r = pal[0];
 		g = pal[1];
 		b = pal[2];
@@ -153,7 +205,7 @@ VID_SetPalette (unsigned char *palette)
 #endif
 		*table++ = v;
 	}
-	d_8to24table[255] = 0;				// 255 is transparent
+	d_8to24table[255] = 0;	// 255 is transparent
 
 	// JACK: 3D distance calcs - k is last closest, l is the distance.
 	// FIXME: Precalculate this and cache to disk.
@@ -167,9 +219,12 @@ VID_SetPalette (unsigned char *palette)
 		Qclose (f);
 	} else {
 		for (i = 0; i < (1 << 15); i++) {
-			/* Maps 000000000000000 000000000011111 = Red  = 0x1F
-			   000001111100000 = Blue = 0x03E0 111110000000000 = Grn  =
-			   0x7C00 */
+			/* Maps
+				000000000000000
+				000000000011111 = Red  = 0x1F
+				000001111100000 = Blue = 0x03E0 
+				111110000000000 = Grn  = 0x7C00
+			*/
 			r = ((i & 0x1F) << 3) + 4;
 			g = ((i & 0x03E0) >> 2) + 4;
 			b = ((i & 0x7C00) >> 7) + 4;
@@ -344,9 +399,8 @@ Shared_Init8bitPalette (void)
 void
 VID_Init8bitPalette (void)
 {
-	vid_use8bit =
-		Cvar_Get ("vid_use8bit", "0", CVAR_ROM, NULL,
-				"Use 8-bit shared palettes.");
+	vid_use8bit = Cvar_Get ("vid_use8bit", "0", CVAR_ROM, NULL,
+							"Use 8-bit shared palettes.");
 
 	Con_Printf ("Checking for 8-bit extension: ");
 	if (vid_use8bit->int_val) {

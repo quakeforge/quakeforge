@@ -40,20 +40,22 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+#include "QF/compat.h"
+#include "QF/console.h"
+#include "QF/mathlib.h"
+#include "QF/qargs.h"
+#include "QF/sound.h"
+#include "QF/sys.h"
 #include "bothdefs.h"
 #include "cl_cam.h"
 #include "cl_main.h"
 #include "cl_parse.h" //FIXME CL_NewTranslation
-#include "QF/compat.h"
-#include "QF/console.h"
-#include "locs.h"
+#include "commdef.h"
 #include "glquake.h"
-#include "QF/mathlib.h"
-#include "QF/qargs.h"
+#include "locs.h"
 #include "r_dynamic.h"
 #include "skin.h"
-#include "QF/sound.h"
-#include "QF/sys.h"
+#include "vid.h"
 #include "view.h"
 
 entity_t	r_worldentity;
@@ -190,7 +192,7 @@ GL_CheckBrightness (unsigned char *pal)
 /*
 	R_CullBox
 
-	Returns true if the box is completely outside the frustom
+	Returns true if the box is completely outside the frustum
 */
 /*
 qboolean R_CullBox (vec3_t mins, vec3_t maxs)

@@ -83,8 +83,8 @@ VID_Shutdown (void)
 
 	Con_Printf ("VID_Shutdown\n");
 
-	x11_restore_vidmode ();
-	x11_close_display ();
+	X11_RestoreVidMode ();
+	X11_CloseDisplay ();
 }
 
 #if 0
@@ -171,7 +171,7 @@ VID_Init (unsigned char *palette)
 		vid.conheight = atoi (com_argv[i + 1]);
 	vid.conheight = max (vid.conheight, 200);
 
-	x11_open_display ();
+	X11_OpenDisplay ();
 
 	x_visinfo = glXChooseVisual (x_disp, x_screen, attrib);
 	if (!x_visinfo) {
@@ -181,12 +181,12 @@ VID_Init (unsigned char *palette)
 	}
 	x_vis = x_visinfo->visual;
 
-	x11_set_vidmode (scr_width, scr_height);
-	x11_create_window (scr_width, scr_height);
+	X11_SetVidMode (scr_width, scr_height);
+	X11_CreateWindow (scr_width, scr_height);
 	/* Invisible cursor */
-	x11_create_null_cursor ();
+	X11_CreateNullCursor ();
 
-	x11_grab_keyboard ();
+	X11_GrabKeyboard ();
 
 	XSync (x_disp, 0);
 
@@ -205,6 +205,7 @@ VID_Init (unsigned char *palette)
 	GL_Init ();
 
 	GL_CheckBrightness (palette);
+	VID_InitGamma (palette);
 	VID_SetPalette (palette);
 
 	// Check for 8-bit extension and initialize if present
@@ -220,18 +221,41 @@ VID_Init (unsigned char *palette)
 void
 VID_Init_Cvars ()
 {
-	x11_Init_Cvars ();
+	X11_Init_Cvars ();
 }
 
 void
 VID_SetCaption (char *text)
 {
 	if (text && *text) {
-		char       *temp = strdup (text);
+		char	*temp = strdup (text);
 
-		x11_set_caption (va ("%s %s: %s", PROGRAM, VERSION, temp));
+		X11_SetCaption (va ("%s %s: %s", PROGRAM, VERSION, temp));
 		free (temp);
 	} else {
-		x11_set_caption (va ("%s %s", PROGRAM, VERSION));
+		X11_SetCaption (va ("%s %s", PROGRAM, VERSION));
 	}
+}
+
+double
+VID_GetGamma (void)
+{
+	return (double) X11_GetGamma ();
+}
+
+qboolean
+VID_SetGamma (double gamma)
+{
+	return X11_SetGamma (gamma);
+}
+
+void
+VID_UpdateGamma (cvar_t *vid_gamma)
+{
+	if (vid_gamma->flags & CVAR_ROM)	// System gamma unavailable
+		return;
+	
+	Cvar_SetValue (vid_gamma, bound (0.1, vid_gamma->value, 9.9));
+	
+	X11_SetGamma (vid_gamma->value);
 }

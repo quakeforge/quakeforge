@@ -81,7 +81,7 @@ extern int  in_forward, in_forward2, in_back;
 frame_t    *view_frame;
 player_state_t *view_message;
 
-void        BuildGammaTable (float, float);
+void BuildGammaTable (float, float);
 
 /*
 	V_CalcRoll
@@ -256,15 +256,15 @@ extern cvar_t	*cl_cshift_contents;
 extern cvar_t	*cl_cshift_damage;
 // extern cvar_t	*cl_cshift_powerup;
 
-cshift_t    cshift_empty = { {130, 80, 50}, 0 };
-cshift_t    cshift_water = { {130, 80, 50}, 128 };
-cshift_t    cshift_slime = { {0, 25, 5}, 150 };
-cshift_t    cshift_lava = { {255, 80, 0}, 150 };
+cshift_t	cshift_empty = { {130, 80, 50}, 0 };
+cshift_t	cshift_water = { {130, 80, 50}, 128 };
+cshift_t	cshift_slime = { {0, 25, 5}, 150 };
+cshift_t	cshift_lava = { {255, 80, 0}, 150 };
 
-cvar_t     *brightness;
-cvar_t     *contrast;
+cvar_t		*brightness;
+cvar_t		*contrast;
 
-byte        gammatable[256];			// palette is sent through this
+extern byte gammatable[256];			// palette is sent through this
 
 /*
 	V_CheckGamma
@@ -272,18 +272,23 @@ byte        gammatable[256];			// palette is sent through this
 qboolean
 V_CheckGamma (void)
 {
-	static float oldbrightness;
-	static float oldcontrast;
+#if 0
+	static float	oldbrightness;
+	static float	oldcontrast;
 
 	if ((brightness->value == oldbrightness) && contrast->value == oldcontrast)
 		return false;
+
 	oldbrightness = brightness->value;
 	oldcontrast = contrast->value;
 
 	BuildGammaTable (brightness->value, contrast->value);
-	vid.recalc_refdef = 1;				// force a surface cache flush
+	vid.recalc_refdef = 1;	// force a surface cache flush
 
 	return true;
+#else
+	return false;
+#endif
 }
 
 /*

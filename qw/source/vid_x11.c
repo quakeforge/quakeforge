@@ -65,54 +65,54 @@
 # include <X11/extensions/xf86vmode.h>
 #endif
 
-#include "client.h"
 #include "QF/cmd.h"
 #include "QF/compat.h"
 #include "QF/console.h"
-#include "context_x11.h"
 #include "QF/cvar.h"
+#include "QF/qargs.h"
+#include "QF/qendian.h"
+#include "QF/sys.h"
+#include "QF/va.h"
+#include "client.h"
+#include "context_x11.h"
 #include "d_local.h"
 #include "dga_check.h"
 #include "draw.h"
 #include "host.h"
-#include "QF/qargs.h"
-#include "QF/qendian.h"
 #include "screen.h"
-#include "QF/sys.h"
-#include "QF/va.h"
 
-extern viddef_t vid;					// global video state
-unsigned short d_8to16table[256];
+extern viddef_t vid;	// global video state
+unsigned short	d_8to16table[256];
 
 static Colormap x_cmap;
-static GC   x_gc;
+static GC		x_gc;
 
-int         XShmQueryExtension (Display *);
-int         XShmGetEventBase (Display *);
+int XShmQueryExtension (Display *);
+int XShmGetEventBase (Display *);
 
 static qboolean doShm;
 static XShmSegmentInfo x_shminfo[2];
 
-static int  current_framebuffer;
+static int	current_framebuffer;
 static XImage *x_framebuffer[2] = { 0, 0 };
 
-static int  verbose = 0;
+static int	verbose = 0;
 
-int         VID_options_items = 1;
+int 		VID_options_items = 1;
 
 static byte current_palette[768];
 
 typedef unsigned short PIXEL16;
 typedef unsigned long PIXEL24;
 
-static PIXEL16 st2d_8to16table[256];
-static PIXEL24 st2d_8to24table[256];
-static int  shiftmask_fl = 0;
-static long r_shift, g_shift, b_shift;
+static PIXEL16	st2d_8to16table[256];
+static PIXEL24	st2d_8to24table[256];
+static int		shiftmask_fl = 0;
+static long 	r_shift, g_shift, b_shift;
 static unsigned long r_mask, g_mask, b_mask;
 
-cvar_t     *vid_width;
-cvar_t     *vid_height;
+cvar_t		*vid_width;
+cvar_t		*vid_height;
 
 static void
 shiftmask_init (void)
@@ -135,7 +135,7 @@ shiftmask_init (void)
 static      PIXEL16
 xlib_rgb16 (int r, int g, int b)
 {
-	PIXEL16     p = 0;
+	PIXEL16 	p = 0;
 
 	if (!shiftmask_fl)
 		shiftmask_init ();
@@ -174,10 +174,10 @@ xlib_rgb16 (int r, int g, int b)
 }
 
 
-static      PIXEL24
+static PIXEL24
 xlib_rgb24 (int r, int g, int b)
 {
-	PIXEL24     p = 0;
+	PIXEL24 	p = 0;
 
 	if (!shiftmask_fl)
 		shiftmask_init ();
@@ -216,11 +216,11 @@ xlib_rgb24 (int r, int g, int b)
 }
 
 static void
-st2_fixup (XImage * framebuf, int x, int y, int width, int height)
+st2_fixup (XImage *framebuf, int x, int y, int width, int height)
 {
-	int         xi, yi;
+	int 		xi, yi;
 	unsigned char *src;
-	PIXEL16    *dest;
+	PIXEL16 	*dest;
 
 	if (x < 0 || y < 0)
 		return;
@@ -238,9 +238,9 @@ st2_fixup (XImage * framebuf, int x, int y, int width, int height)
 static void
 st3_fixup (XImage * framebuf, int x, int y, int width, int height)
 {
-	int         yi;
+	int 		yi;
 	unsigned char *src;
-	PIXEL24    *dest;
+	PIXEL24 	*dest;
 	register int count, n;
 
 	if (x < 0 || y < 0)
@@ -276,9 +276,9 @@ st3_fixup (XImage * framebuf, int x, int y, int width, int height)
 				} while (--n > 0);
 		}
 
-//      for(xi = (x+width-1); xi >= x; xi--) {
-//          dest[xi] = st2d_8to16table[src[xi]];
-//      }
+//		for(xi = (x+width-1); xi >= x; xi--) {
+//			dest[xi] = st2d_8to16table[src[xi]];
+//		}
 	}
 }
 
@@ -286,7 +286,7 @@ st3_fixup (XImage * framebuf, int x, int y, int width, int height)
 	D_BeginDirectRect
 */
 void
-D_BeginDirectRect (int x, int y, byte * pbitmap, int width, int height)
+D_BeginDirectRect (int x, int y, byte *pbitmap, int width, int height)
 {
 // direct drawing of the "accessing disk" icon isn't supported
 }
@@ -299,38 +299,6 @@ void
 D_EndDirectRect (int x, int y, int width, int height)
 {
 // direct drawing of the "accessing disk" icon isn't supported
-}
-
-
-/*
-	VID_Gamma_f
-
-	Keybinding command
-*/
-
-byte        vid_gamma[256];
-
-void
-VID_Gamma_f (void)
-{
-
-	float       g, f, inf;
-	int         i;
-
-	if (Cmd_Argc () == 2) {
-		g = atof (Cmd_Argv (1));
-
-		for (i = 0; i < 255; i++) {
-			f = pow ((i + 1) / 256.0, g);
-			inf = f * 255 + 0.5;
-			inf = bound (0, inf, 255);
-			vid_gamma[i] = inf;
-		}
-
-		VID_SetPalette (current_palette);
-
-		vid.recalc_refdef = 1;			// force a surface cache flush
-	}
 }
 
 
@@ -394,13 +362,13 @@ ResetFrameBuffer (void)
 static void
 ResetSharedFrameBuffers (void)
 {
-	int         tbuffersize, tcachesize;
-	void       *vid_surfcache;
+	int 	tbuffersize, tcachesize;
+	void	*vid_surfcache;
 
-	int         size;
-	int         key;
-	int         minsize = getpagesize ();
-	int         frm;
+	int 	size;
+	int 	key;
+	int 	minsize = getpagesize ();
+	int 	frm;
 
 	// Calculate the sizes we want first
 	tbuffersize = vid.width * vid.height * sizeof (*d_pzbuffer);
@@ -499,11 +467,6 @@ VID_Init (unsigned char *palette)
 
 	VID_GetWindowSize (320, 200);
 
-//  plugin_load ("in_x11.so");
-//  Cmd_AddCommand ("gamma", VID_Gamma_f, "Change brightness level");
-	for (i = 0; i < 256; i++)
-		vid_gamma[i] = i;
-
 	vid.width = vid_width->int_val;
 	vid.height = vid_height->int_val;
 	Con_CheckResize (); // Now that we have a window size, fix console
@@ -519,7 +482,7 @@ VID_Init (unsigned char *palette)
 	verbose = COM_CheckParm ("-verbose");
 
 	// open the display
-	x11_open_display ();
+	X11_OpenDisplay ();
 
 	template_mask = 0;
 
@@ -567,14 +530,15 @@ VID_Init (unsigned char *palette)
 	}
 
 	/* Setup attributes for main window */
-	x11_set_vidmode (vid.width, vid.height);
+	X11_SetVidMode (vid.width, vid.height);
 
 	/* Create the main window */
-	x11_create_window (vid.width, vid.height);
+	X11_CreateWindow (vid.width, vid.height);
 
 	/* Invisible cursor */
-	x11_create_null_cursor ();
+	X11_CreateNullCursor ();
 
+	VID_InitGamma (palette);
 	if (x_visinfo->depth == 8) {
 		/* Create and upload the palette */
 		if (x_visinfo->class == PseudoColor) {
@@ -592,11 +556,11 @@ VID_Init (unsigned char *palette)
 		x_gc = XCreateGC (x_disp, x_win, valuemask, &xgcvalues);
 	}
 
-	x11_grab_keyboard ();
+	X11_GrabKeyboard ();
 
 	// wait for first exposure event
 	{
-		XEvent      event;
+		XEvent	event;
 
 		do {
 			XNextEvent (x_disp, &event);
@@ -640,13 +604,13 @@ VID_Init (unsigned char *palette)
 	vid.aspect = ((float) vid.height / (float) vid.width) * (320.0 / 240.0);
 
 //  XSynchronize (x_disp, False);
-	x11_add_event (x_shmeventtype, event_shm);
+	X11_AddEvent (x_shmeventtype, event_shm);
 }
 
 void
 VID_Init_Cvars ()
 {
-	x11_Init_Cvars ();
+	X11_Init_Cvars ();
 }
 
 
@@ -677,9 +641,9 @@ VID_SetPalette (unsigned char *palette)
 		for (i = 0; i < 256; i++) {
 			colors[i].pixel = i;
 			colors[i].flags = DoRed | DoGreen | DoBlue;
-			colors[i].red = vid_gamma[palette[i * 3]] * 256;
-			colors[i].green = vid_gamma[palette[i * 3 + 1]] * 256;
-			colors[i].blue = vid_gamma[palette[i * 3 + 2]] * 256;
+			colors[i].red = gammatable[palette[i * 3]];
+			colors[i].green = gammatable[palette[i * 3 + 1]];
+			colors[i].blue = gammatable[palette[i * 3 + 2]];
 		}
 		XStoreColors (x_disp, x_cmap, colors, 256);
 	}
@@ -696,8 +660,8 @@ VID_Shutdown (void)
 {
 	Sys_Printf ("VID_Shutdown\n");
 	if (x_disp) {
-		x11_restore_vidmode ();
-		x11_close_display ();
+		X11_RestoreVidMode ();
+		X11_CloseDisplay ();
 	}
 }
 
@@ -757,7 +721,7 @@ VID_Update (vrect_t *rects)
 			}
 			oktodraw = false;
 			while (!oktodraw)
-				x11_process_event ();
+				X11_ProcessEvent ();
 			rects = rects->pnext;
 
 			current_framebuffer = !current_framebuffer;
@@ -813,9 +777,21 @@ VID_SetCaption (char *text)
 	if (text && *text) {
 		char       *temp = strdup (text);
 
-		x11_set_caption (va ("%s %s: %s", PROGRAM, VERSION, temp));
+		X11_SetCaption (va ("%s %s: %s", PROGRAM, VERSION, temp));
 		free (temp);
 	} else {
-		x11_set_caption (va ("%s %s", PROGRAM, VERSION));
+		X11_SetCaption (va ("%s %s", PROGRAM, VERSION));
 	}
+}
+
+double
+VID_GetGamma (void)
+{
+	return (double) X11_GetGamma ();
+}
+
+qboolean
+VID_SetGamma (double gamma)
+{
+	return X11_SetGamma (gamma);
 }

@@ -30,11 +30,11 @@
 # include "config.h"
 #endif
 
+#include "QF/compat.h"
 #include "bothdefs.h"
 #include "host.h"
 #include "r_local.h"
 #include "view.h"
-#include "QF/compat.h"
 
 extern cvar_t   *cl_cshift_powerup;
 
@@ -157,6 +157,7 @@ V_UpdatePalette (void)
 void
 BuildGammaTable (float b, float c)
 {
+#if 0
 	int 	i, inf;
 //	int 	p = (int) c;
 
@@ -167,8 +168,9 @@ BuildGammaTable (float b, float c)
 	}
 
 	for (i = 0; i < 256; i++) { // weighted average toward the median, 127
-		inf = (i * b); // gamma is brightness now, and positive
+		inf = (i * b);	// gamma is brightness now, and positive
 		inf = bound (0, inf, 255);
 		gammatable[i] = inf + (int) ((127 - inf) * (1 - c));
 	}
+#endif
 }

@@ -63,8 +63,10 @@ typedef struct {
 extern viddef_t 		vid;				// global video state
 extern unsigned short	d_8to16table[256];
 extern unsigned int 	d_8to24table[256];
-extern int scr_width, scr_height;
-extern qboolean		DDActive;
+
+extern int				scr_width, scr_height;
+extern qboolean 		DDActive;
+extern byte 			gammatable[256];
 
 // called at startup and after any gamma correction
 void VID_SetPalette (unsigned char *palette);
@@ -107,5 +109,10 @@ void VID_GetWindowSize (int def_w, int def_h);
 
 int VID_ForceUnlockedAndReturnState (void);
 void VID_ForceLockState (int lk);
+
+void VID_InitGamma (unsigned char *);
+double VID_GetGamma (void);
+qboolean VID_SetGamma (double);
+void VID_UpdateGamma (struct cvar_s *);
 
 #endif	// __vid_h_
