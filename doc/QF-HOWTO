@@ -1,0 +1,206 @@
+		Quakeforge HOWTO
+		****************
+
+Author: elmex <elmex@x-paste.de>
+Last Update: 10.01.2001
+
+======================================
+0. Introduction
+1 Getting Quakeforge
+1.1 Get QF by CVS
+2 Requirements
+3 Compiling Quakeforge
+3.1 Configure
+3.2 Build
+3.3 Quake1 datafiles
+3.4 Start quake
+4 Configure/Use Quakeforge FAQ
+4.1 Video 
+4.2 Audio 
+4.3 Input
+4.4 Misc
+======================================
+
+0. Introduction
+---------------
+This document describes howto install quakeforge and configure it.
+The configuration is organized in a FAQ.
+
+1. Getting Quakeforge
+---------------------
+First you should get Quakeforge source-code.
+You can get the source on the Website or from the CVS.
+For CVS see section 1.1 (below).
+Save the source in a good location, untar it (tar -xvzf <tar.gz-file>) and
+proceed to section 3.
+
+1.1 Get QF by CVS
+-----------------
+Here are the two commands for getting the CVS:
+  $ cvs -d :pserver:anonymous@cvs.quakeforge.net:/cvsroot/quake login
+  login: (hit enter)
+  $ cvs -d :pserver:anonymous@cvs.quakeforge.net:/cvsroot/quake co quakeforge
+
+2. Requirements
+---------------
+You will need XFree86 to build Quakeforge clients.
+Quakeforge has many targets, and the configure-script should detect the 
+possible targets.
+I recommend to install SDL, but its optional.
+NOTE: fbdev clients aren't ready for use yet (due to poor input code)
+
+The most important requirement are quake1-data-files.
+If you are not a owner of quake1, you should run like hell to the next 
+computer-game-shop and get quake1.  You will need the pak-files in id1/.
+
+3. Compiling Quakeforge
+-----------------------
+3.1 Configure
+-------------
+First we will have to make the configure-script:
+  $ ./bootstrap
+The script maybe alerts some warnings, ignore them.
+For a documentation of the configure options, type: ./configure --help
+Most options are self-explaining, but i will list the important options here:
+
+--with-clients=<list>
+  You can specify a list with clients you want to build. This option is
+  autodetected normally. If you specify a client, which isn't avaible on
+  your system, the build will maybe fail.
+
+--with-servers=<list>
+  Specifys the servers to build. This option is autodetected normally. 
+  
+--disable-debug
+  Compile Quakeforge without debugging. You will not need this, until you
+  are going to develop Quakeforge.
+
+In CVS-checkouts or development-releases debugging is enabled by default, 
+disable it with --disable-debug. 
+After you got all the necessary options for your system run the script:
+  $ ./configure --disable-debug 
+
+That will be enough for a normal linux-system. As i use a special prefix
+and special library-location i use this command to configure Quakeforge
+(this will not work on your system, thread it as an example):
+  $ ./configure --prefix=/opt/quakeforge ----with-sdl-prefix=/opt/SDL-1.2.3/ \
+    --with-sdl-exec-prefix=/opt/SDL-1.2.3/ \
+    --disable-debug --with-amd --with-clients=glx,sdl,sdl32,svga,x11 \
+    --with-servers=master,nq,qw --disable-xmms
+
+Now the makefiles have been build and we can proceed to the next step.
+
+3.2 Build
+---------
+This step should be the easiest of all:
+  $ make
+
+After a long time everything should have been build fine.
+If not, and make exited with an error, you should check library-paths and
+the configure-script options. If you fetched the source from CVS it's 
+maybe broken. Contact the developers and make a bugreport.
+
+Now install the binarys:
+  $ make install
+
+(You maybe have to be root, if you want to install quakeforge to a 
+public location (eg. /usr/local/) )
+
+
+3.3 Quake1 datafiles
+--------------------
+You will need DOS or a DOS-emulator and install Quake1 to harddisk before,
+because the files are packed on the CD and will need to be extracted.
+Then you should mount the partition with the installed Quake1.  
+Now there are two locations to install the quake1-gamedata to:
+
+Public/Shared location:
+This is the most common location for the original quake1 gamedata,
+because it can be used by every use on the system, who wants to play quake.
+Make the directory <quakeforge-prefix>/share/games/quakeforge/id1/  
+and copy id1/*.pak to it. (<quakeforge-prefix> will be /usr/local/ by default)
+Example:
+  $ cd <quakeforge-prefix>
+  $ mkdir -p share/games/quakeforge/id1/
+(Note: the -p option is only avaible on systems with GNU-fileutils, make the
+ missing parent-directorys manually if -p switch fails)
+  $ cp <quake1-dir>/id1/*.pak <quakeforge-prefix>/share/games/quakeforge/id1/
+
+Per-User location:
+You can install the gamedata to your local 
+user-directory ~/.quakeforge/id1/ too. This is good for customized gamedata or
+if you dont have access to the global location.
+Make the directory ~/.quakeforge/id1, if it doesn't exist and copy id1/*.pak to
+it.
+Example:
+  $ cd $HOME
+  $ mkdir .quakeforge && mkdir .quakeforge/id1/
+  $ cp <quake1-dir>/id1/*.pak .quakeforge/id1/
+
+3.4 Start quake
+---------------
+Now everything should be setup and the clients should start. 
+To list all the clients which were build do: ls <quakeforge-prefix>/bin/nq-* 
+or for quakeworld-clients: ls <quakeforge-prefix>/bin/qw-*
+There should be a nq-x11, if not, use another. 
+
+Test it:
+  $ nq-x11 (or whatever client you want to use)
+
+
+4. Configure Quakeforge FAQ
+-----------------------------------
+This section sums up the most important options for different
+stuff in quakeforge in a FAQ.
+There are a lot more options you can change, to get a list of all with
+documentation do:
+  $ nq-x11 +cvarlist doc +quit > doc
+or
+  $ qw-client-x11 +cvarlist doc +quit > fe
+
+You can do that with any client. (If you want the list of cvars avaible 
+for server start the server and use '/cvarlist doc' to get a documentation,
+but this may not output a good list)
+
+For most cvars (options) you can set in config.cfg (in the gamedata-dir of
+quakeforge (eg. ~/.quakeforge/id1/config.cfg)) or in ~/.quakeforgerc
+Where i recommend ~/.quakeforgerc
+But you can too set the cvars on commandline:
+  +set <cvarname> <value>
+
+Example:
+  $ nq-x11 +set vid_width 640 +set vid_height 480
+
+If your question isn't answered anywhere in this document you should
+look at the documentation which comes with quakeforge or ask the
+developers.  
+If you have a common question and an answere please mail me, to keep
+this document uptodate and to make it complete.
+
+4.1 Video
+---------
+Q: My window is so small in X, how can i make it bigger?
+A: Set vid_width and vid_height to the appropriate values.
+
+Q: The mouse don't want to stay in the window!
+A: Set in_grab to 1, that will grab the mouse. 
+   (I recommend to make a bind to "toggle in_grab" for make the options
+    toggleable)
+
+4.2 Audio
+---------
+Q: Quake hangs on "Sound Initialization"!
+A: Another programm is using the sound-device. Try the -nosound option.
+   Try to figure out the sound-driver you need and their values for the
+   cvars snd_output.
+
+4.3 Input
+---------
+Q: I want to have mouse-look, howto?
+A: Put '+mlook' into ~/.quakeforgerc or autoexec.cfg
+
+4.4 Misc
+--------
+Q: HELP! Where is the menu? Everytime i press ESC the console comes.
+A: Quakeforge has no menu yet, you will have to set the cvars manually
+   until the menu is finished.
