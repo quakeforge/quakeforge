@@ -74,6 +74,8 @@ SNDDMA_Init_Cvars (void)
 						 "sound sample depth. 0 is system default");
 }
 
+int SNDDMA_GetDMAPos (void);
+
 qboolean
 SNDDMA_Init (void)
 {
@@ -343,11 +345,11 @@ PluginInfo (void)
 
     plugin_info_data.general = &plugin_info_general_data;
     plugin_info_data.input = NULL;
-    plugin_info_data.sound = &plugin_info_sound_data;
+    plugin_info_data.snd_output = &plugin_info_snd_output_data;
 
     plugin_info_funcs.general = &plugin_info_general_funcs;
     plugin_info_funcs.input = NULL;
-    plugin_info_funcs.sound = &plugin_info_sound_funcs;
+    plugin_info_funcs.snd_output = &plugin_info_snd_output_funcs;
 
     plugin_info_general_funcs.p_Init = SNDDMA_Init_Cvars;
     plugin_info_general_funcs.p_Shutdown = NULL;
