@@ -117,9 +117,15 @@ Mod_LoadExternalTextures (model_t *mod)
 		if (f) {
 			targa = LoadTGA (f);
 			Qclose (f);
-			tx->gl_texturenum =
-				GL_LoadTexture (tx->name, targa->width, targa->height,
-								targa->data, true, false, 3);
+			if (targa->format < 4) {
+				tx->gl_texturenum =
+					GL_LoadTexture (tx->name, targa->width, targa->height,
+									targa->data, true, false, 3);
+			} else {
+				tx->gl_texturenum =
+					GL_LoadTexture (tx->name, targa->width, targa->height,
+									targa->data, true, false, 4);
+			}
 		}
 	}
 }
