@@ -120,15 +120,6 @@ R_RecursiveLightUpdate (mnode_t *node)
 			 c--, surf++) surf->cached_dlight = true;
 }
 
-// LordHavoc: function to force all lightmaps to be updated
-void
-R_ForceLightUpdate (void)
-{
-	if (r_worldentity.model && r_worldentity.model->nodes
-		&& r_worldentity.model->nodes->contents >= 0)
-		R_RecursiveLightUpdate (r_worldentity.model->nodes);
-}
-
 /*
   R_AddDynamicLights
 

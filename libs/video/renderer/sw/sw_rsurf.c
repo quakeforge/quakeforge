@@ -123,7 +123,6 @@ R_AddDynamicLights (void)
 	}
 }
 
-
 /*
 	R_BuildLightMap
 
@@ -179,7 +178,6 @@ R_BuildLightMap (void)
 	}
 }
 
-
 /*
 	R_TextureAnimation
 
@@ -212,7 +210,6 @@ R_TextureAnimation (texture_t *base)
 
 	return base;
 }
-
 
 void
 R_DrawSurface (void)
@@ -297,7 +294,7 @@ R_DrawSurface (void)
 }
 
 #ifdef PIC
-#undef USE_INTEL_ASM //XXX asm pic hack
+# undef USE_INTEL_ASM //XXX asm pic hack
 #endif
 
 #ifndef USE_INTEL_ASM
@@ -344,7 +341,6 @@ R_DrawSurfaceBlock8_mip0 (void)
 	}
 }
 
-
 void
 R_DrawSurfaceBlock8_mip1 (void)
 {
@@ -386,7 +382,6 @@ R_DrawSurfaceBlock8_mip1 (void)
 			psource -= r_stepback;
 	}
 }
-
 
 void
 R_DrawSurfaceBlock8_mip2 (void)
@@ -430,7 +425,6 @@ R_DrawSurfaceBlock8_mip2 (void)
 	}
 }
 
-
 void
 R_DrawSurfaceBlock8_mip3 (void)
 {
@@ -472,7 +466,6 @@ R_DrawSurfaceBlock8_mip3 (void)
 			psource -= r_stepback;
 	}
 }
-
 
 /*
 	R_DrawSurfaceBlock16
@@ -520,7 +513,6 @@ R_DrawSurfaceBlock16 (void)
 
 #endif
 
-
 void
 R_GenTurbTile (byte *pbasetex, void *pdest)
 {
@@ -540,7 +532,6 @@ R_GenTurbTile (byte *pbasetex, void *pdest)
 	}
 }
 
-
 void
 R_GenTurbTile16 (byte *pbasetex, void *pdest)
 {
@@ -559,7 +550,6 @@ R_GenTurbTile16 (byte *pbasetex, void *pdest)
 		}
 	}
 }
-
 
 void
 R_GenTile (msurface_t *psurf, void *pdest)
@@ -581,10 +571,4 @@ R_GenTile (msurface_t *psurf, void *pdest)
 	} else {
 		Sys_Error ("Unknown tile type");
 	}
-}
-
-
-void
-R_ForceLightUpdate (void)
-{
 }

@@ -780,9 +780,7 @@ SCR_TileClear (void)
 	}
 }
 
-extern void R_ForceLightUpdate (void);
-
-int 			oldviewsize = 0;
+int		oldviewsize = 0;
 
 /*
 	SCR_UpdateScreen
