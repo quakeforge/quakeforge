@@ -65,6 +65,8 @@ typedef struct pr_info_s {
 	string_t        source_file;
 	int             source_line;
 	int             error_count;
+
+	struct reloc_s *relocs;
 } pr_info_t;
 
 extern	pr_info_t	pr;

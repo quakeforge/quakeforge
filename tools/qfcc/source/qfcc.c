@@ -548,6 +548,7 @@ separate_compile (void)
 		qfo = linker_finish ();
 		if (qfo) {
 			qfo_to_progs (qfo, &pr);
+			setup_sym_file (options.output_file);
 			finish_compilation ();
 			WriteData (0);
 		}

@@ -96,6 +96,7 @@ allocate_stuff (void)
 			}
 		}
 	}
+	num_relocs += count_relocs (pr.relocs);
 	defs = calloc (num_defs, sizeof (qfo_def_t));
 	functions = calloc (num_functions, sizeof (qfo_function_t));
 	relocs = calloc (num_relocs, sizeof (qfo_reloc_t));
@@ -200,6 +201,7 @@ setup_data (void)
 			for (d = f->scope->head; d; d = d->def_next)
 				write_def (d, def++, &reloc);
 	}
+	write_relocs (pr.relocs, &reloc);
 	for (st = pr.code->code; st - pr.code->code < pr.code->size; st++) {
 		st->op = LittleLong (st->op);
 		st->a  = LittleLong (st->a);
@@ -428,9 +430,10 @@ defspace_t *
 init_space (int size, pr_type_t *data)
 {
 	defspace_t *space = new_defspace ();
-	space->max_size = space->size = size;
+	space->size = size;
+	space->max_size = RUP (space->size, 65536);
 	if (size && data) {
-		space->data = malloc (size * sizeof (pr_type_t));
+		space->data = malloc (space->max_size * sizeof (pr_type_t));
 		memcpy (space->data, data, size * sizeof (pr_type_t));
 	}
 	return space;
@@ -461,11 +464,12 @@ qfo_to_progs (qfo_t *qfo, pr_info_t *pr)
 
 	pr->near_data = init_space (qfo->data_size, qfo->data);
 	pr->far_data = init_space (qfo->far_data_size, qfo->far_data);
+	pr->entity_data = new_defspace ();
 	pr->scope = new_scope (sc_global, pr->near_data, 0);
 	pr->scope->num_defs = qfo->num_defs;
 	pr->scope->head = calloc (pr->scope->num_defs, sizeof (def_t));
 	for (i = 0, pd = pr->scope->head, qd = qfo->defs;
-		 i < pr->scope->num_defs; i++) {
+		 i < pr->scope->num_defs; i++, pd++) {
 		*pr->scope->tail = pd;
 		pr->scope->tail = &pd->def_next;
 		pd->type = parse_type (qfo->types + qd->full_type);
@@ -488,7 +492,7 @@ qfo_to_progs (qfo_t *qfo, pr_info_t *pr)
 	pr->func_head = calloc (pr->num_functions, sizeof (function_t));
 	pr->func_tail = &pr->func_head;
 	for (i = 0, pf = pr->func_head, qf = qfo->functions;
-		 i < pr->num_functions; i++) {
+		 i < pr->num_functions; i++, pf++) {
 		*pr->func_tail = pf;
 		pr->func_tail = &pf->next;
 		pf->aux = new_auxfunction ();
@@ -501,12 +505,15 @@ qfo_to_progs (qfo_t *qfo, pr_info_t *pr)
 		pf->code = qf->code;
 		pf->function_num = i + 1;
 		pf->s_file = qf->file;
+		pf->s_name = qf->name;
 		pf->file_line = qf->line;
+		pf->def = pr->scope->head + qf->def;
 		pf->scope = new_scope (sc_params, init_space (qf->locals_size, 0),
 							   pr->scope);
 		if (qf->num_local_defs) {
 			pf->scope->head = pr->scope->head + qf->local_defs;
 			pf->scope->tail = &pf->scope->head[qf->num_local_defs - 1].def_next;
+			*pf->scope->tail = 0;
 		}
 		if (qf->num_relocs) {
 			pf->refs = relocs + qf->relocs;

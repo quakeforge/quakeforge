@@ -38,6 +38,7 @@ static const char rcsid[] =
 #include "def.h"
 #include "expr.h"
 #include "immediate.h"
+#include "reloc.h"
 #include "strpool.h"
 #include "type.h"
 
@@ -109,6 +110,7 @@ ReuseConstant (expr_t *expr, def_t *def)
 	hashtab_t  *tab = 0;
 	type_t     *type;
 	expr_t      e = *expr;
+	reloc_t    *reloc = 0;
 
 	if (!rep)
 		rep = dstring_newstr ();
@@ -218,8 +220,21 @@ ReuseConstant (expr_t *expr, def_t *def)
 	}
 	cn->initialized = cn->constant = 1;
 	// copy the immediate to the global area
-	if (e.type == ex_string)
-		e.e.integer_val = ReuseString (rep->str);
+	switch (e.type) {
+		case ex_string:
+			e.e.integer_val = ReuseString (rep->str);
+			reloc = new_reloc (cn->ofs, rel_def_string);
+			break;
+		case ex_func:
+			reloc = new_reloc (cn->ofs, rel_def_func);
+			break;
+		default:
+			break;
+	}
+	if (reloc) {
+		reloc->next = pr.relocs;
+		pr.relocs = reloc;
+	}
 
 	memcpy (G_POINTER (void, cn->ofs), &e.e, 4 * type_size (type));
 
