@@ -1592,6 +1592,33 @@ SV_netDoSvalues_f (void)
 }
 
 void
+SV_MaxRate_f (cvar_t *var)
+{
+	client_t   *cl;
+	int         maxrate = var->int_val;
+	int         i, rate = 2500;
+	const char *val;
+
+	Cvar_Info (var);
+	for (i = 0, cl = svs.clients; i < MAX_CLIENTS; i++, cl++) {
+		if (!cl->userinfo)
+			continue;
+		val = Info_ValueForKey (cl->userinfo, "rate");
+		if (strlen (val)) {
+			rate = atoi (val);
+
+			if (maxrate) {
+				rate = bound (500, rate, maxrate);
+			} else {
+				rate = max (500, rate);
+			}
+			cl->netchan.rate = 1.0 / rate;
+		}
+		SV_ClientPrintf (1, cl, PRINT_HIGH, "Net rate set to %i\n", rate);
+	}
+}
+
+void
 SV_SendBan (double till)
 {
 	char        data[128];
@@ -2062,7 +2089,7 @@ SV_InitLocal (void)
 					   "Sets the value for auto-aiming leniency");
 	sv_minqfversion = Cvar_Get ("sv_minqfversion", "0", CVAR_SERVERINFO,
 								Cvar_Info, "Minimum QF version on client");
-	sv_maxrate = Cvar_Get ("sv_maxrate", "10000", CVAR_SERVERINFO, Cvar_Info,
+	sv_maxrate = Cvar_Get ("sv_maxrate", "10000", CVAR_SERVERINFO, SV_MaxRate_f,
 						   "Maximum allowable rate");
 	sv_allow_log = Cvar_Get ("sv_allow_log", "1", CVAR_NONE, NULL,
 							 "Allow remote logging");
