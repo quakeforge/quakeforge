@@ -2565,7 +2565,7 @@ SV_Init (void)
 	// process command line arguments
 	Cmd_Exec_File (sv_cbuf, fs_usercfg->string, 0);
 	Cmd_StuffCmds (sv_cbuf);
-	Cbuf_Execute (sv_cbuf);
+	Cbuf_Execute_Stack (sv_cbuf);
 
 	// if a map wasn't specified on the command line, spawn start.map
 	if (sv.state == ss_dead)
