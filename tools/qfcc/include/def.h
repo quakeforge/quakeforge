@@ -51,6 +51,7 @@ typedef struct def_s {
 	unsigned		managed:1;		// managed temp
 	unsigned		global:1;		// globally declared def
 	unsigned		external:1;		// externally declared def
+	unsigned		local:1;		// function local def
 
 	string_t		file;			// source file
 	int				line;			// source line

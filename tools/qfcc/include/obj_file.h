@@ -36,7 +36,7 @@
 #include "QF/pr_debug.h"
 
 #define QFO			"QFO"
-#define QFO_VERSION 0x00001002		// MMmmmRRR 0.001.002 (hex)
+#define QFO_VERSION 0x00001003		// MMmmmRRR 0.001.002 (hex)
 
 typedef struct qfo_header_s {
 	char        qfo[4];
@@ -100,6 +100,7 @@ typedef struct qfo_function_s {
 typedef struct qfo_reloc_s {
 	int         ofs;
 	int         type;
+	int         def;
 } qfo_reloc_t;
 
 typedef struct qfo_s {

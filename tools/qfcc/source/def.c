@@ -152,16 +152,22 @@ set_storage_bits (def_t *def, storage_class_t storage)
 		case st_global:
 			def->global = 1;
 			def->external = 0;
+			def->local = 0;
 			break;
 		case st_extern:
 			def->global = 1;
 			def->external = 1;
+			def->local = 0;
 			break;
 		case st_static:
 			def->external = 0;
 			def->global = 0;
+			def->local = 0;
 			break;
 		case st_local:
+			def->external = 0;
+			def->global = 0;
+			def->local = 1;
 			break;
 	}
 	def->initialized = 0;
@@ -362,6 +368,7 @@ get_tempdef (type_t *type, scope_t *scope)
 	}
 	def->freed = def->removed = def->users = 0;
 	def->next = temp_scope.next;
+	set_storage_bits (def, st_local);
 	temp_scope.next = def;
 	return def;
 }

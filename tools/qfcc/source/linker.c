@@ -162,7 +162,7 @@ add_defs (qfo_t *qfo)
 		def->full_type = strpool_addstr (type_strings,
 										 qfo->types + def->full_type);
 		def->name = strpool_addstr (strings, qfo->strings + def->name);
-		if (!(def->flags & (QFOD_LOCAL | QFOD_ABSOLUTE))) {
+		if (!(def->flags & (QFOD_LOCAL | QFOD_EXTERNAL | QFOD_ABSOLUTE))) {
 			def->ofs += data_base;
 		}
 		def->relocs += reloc_base;
@@ -171,11 +171,11 @@ add_defs (qfo_t *qfo)
 		if (def->flags & QFOD_EXTERNAL) {
 			if ((d = Hash_Find (defined_defs, strings->strings + def->name))) {
 				def->ofs = d->ofs;
+				def->flags = d->flags;
 			} else {
 				Hash_Add (extern_defs, def);
 			}
 		} else {
-
 			if (def->flags & QFOD_GLOBAL) {
 				if ((d = Hash_Find (defined_defs,
 									strings->strings + def->name))) {
@@ -184,8 +184,6 @@ add_defs (qfo_t *qfo)
 					error (0, "%s redefined", strings->strings + def->name);
 				}
 			}
-			if (def->ofs)
-				def->ofs += data_base;
 			if (def->flags & QFOD_GLOBAL) {
 				while ((d = Hash_Find (extern_defs,
 									   strings->strings + def->name))) {
@@ -199,6 +197,7 @@ add_defs (qfo_t *qfo)
 						continue;
 					}
 					d->ofs = def->ofs;
+					d->flags = def->flags;
 				}
 				Hash_Add (defined_defs, def);
 			}
@@ -265,6 +264,11 @@ fixup_relocs (qfo_t *qfo)
 	for (reloc = relocs.relocs + reloc_base;
 		 reloc - relocs.relocs < relocs.num_relocs;
 		 reloc++) {
+		if (reloc->def != -1
+			&& ((defs.defs[reloc->def].flags & QFOD_EXTERNAL)
+				|| (defs.defs[reloc->def].flags & QFOD_LOCAL)
+				|| (defs.defs[reloc->def].flags & QFOD_ABSOLUTE)))
+			continue;
 		switch ((reloc_type)reloc->type) {
 			case rel_none:
 				break;

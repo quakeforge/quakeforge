@@ -129,15 +129,18 @@ flags (def_t *d)
 		flags |= QFOD_GLOBAL;
 	if (d->external)
 		flags |= QFOD_EXTERNAL;
+	if (d->local)
+		flags |= QFOD_LOCAL;
 	return flags;
 }
 
 static void
-write_relocs (reloc_t *r, qfo_reloc_t **reloc)
+write_relocs (reloc_t *r, qfo_reloc_t **reloc, int def)
 {
 	while (r) {
 		(*reloc)->ofs  = LittleLong (r->ofs);
 		(*reloc)->type = LittleLong (r->type);
+		(*reloc)->def  = LittleLong (def);
 		(*reloc)++;
 		r = r->next;
 	}
@@ -156,7 +159,7 @@ write_def (def_t *d, qfo_def_t *def, qfo_reloc_t **reloc)
 	def->flags      = LittleLong (flags (d));
 	def->file       = LittleLong (d->file);
 	def->line       = LittleLong (d->line);
-	write_relocs (d->refs, reloc);
+	write_relocs (d->refs, reloc, d->obj_def);
 }
 
 static void
@@ -195,13 +198,13 @@ setup_data (void)
 		func->num_parms      = LittleLong (function_parms (f, func->parm_size));
 		func->relocs         = LittleLong (reloc - relocs);
 		func->num_relocs     = LittleLong (count_relocs (f->refs));
-		write_relocs (f->refs, &reloc);
+		write_relocs (f->refs, &reloc, -1);
 
 		if (f->scope)
 			for (d = f->scope->head; d; d = d->def_next)
 				write_def (d, def++, &reloc);
 	}
-	write_relocs (pr.relocs, &reloc);
+	write_relocs (pr.relocs, &reloc, -1);
 	for (st = pr.code->code; st - pr.code->code < pr.code->size; st++) {
 		st->op = LittleLong (st->op);
 		st->a  = LittleLong (st->a);
@@ -484,6 +487,7 @@ qfo_to_progs (qfo_t *qfo, pr_info_t *pr)
 		pd->absolute    = (qd->flags & QFOD_ABSOLUTE)    != 0;
 		pd->global      = (qd->flags & QFOD_GLOBAL)      != 0;
 		pd->external    = (qd->flags & QFOD_EXTERNAL)    != 0;
+		pd->local       = (qd->flags & QFOD_LOCAL)       != 0;
 		pd->file = qd->file;
 		pd->line = qd->line;
 	}
