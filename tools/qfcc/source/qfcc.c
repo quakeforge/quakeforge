@@ -811,7 +811,7 @@ DecodeArgs (int argc, char **argv)
 	options.save_temps = false;
 	options.verbosity = 0;
 
-	sourcedir = ".";
+	sourcedir = "";
 	progs_src = "progs.src";
 
 	while ((c = getopt_long (argc, argv, "s:"	// source dir
@@ -1010,7 +1010,7 @@ main (int argc, char **argv)
 
 	DecodeArgs (argc, argv);
 
-	if (strcmp (sourcedir, ".")) {
+	if (strcmp (sourcedir, "")) {
 		printf ("Source directory: %s\n", sourcedir);
 	}
 	if (strcmp (progs_src, "progs.src")) {
@@ -1021,7 +1021,10 @@ main (int argc, char **argv)
 
 	InitData ();
 
-	snprintf (filename, sizeof (filename), "%s/%s", sourcedir, progs_src);
+	if (*sourcedir)
+		snprintf (filename, sizeof (filename), "%s/%s", sourcedir, progs_src);
+	else
+		snprintf (filename, sizeof (filename), "%s", progs_src);
 	LoadFile (filename, (void *) &src);
 
 	if (!(src = Parse (src)))
@@ -1076,8 +1079,11 @@ main (int argc, char **argv)
 		// extern int yydebug;
 		// yydebug = 1;
 
-		snprintf (filename, sizeof (filename), "%s%c%s", sourcedir,
-				  PATH_SEPARATOR, qfcc_com_token);
+		if (*sourcedir)
+			snprintf (filename, sizeof (filename), "%s%c%s", sourcedir,
+					  PATH_SEPARATOR, qfcc_com_token);
+		else
+			snprintf (filename, sizeof (filename), "%s", qfcc_com_token);
 		if (options.verbosity >= 2)
 			printf ("compiling %s\n", filename);
 
@@ -1088,11 +1094,20 @@ main (int argc, char **argv)
 				char	*temp;
 			
 				temp = strrchr (basename, '.');
-			
 				if (temp)
 					*temp = '\0';	// ignore the rest of the string
 
-				snprintf (tempname, sizeof (tempname), "%s.p", basename);
+				temp = strrchr (basename, '/');
+				if (!temp)
+					temp = basename;
+				else
+					temp++;
+
+				if (*sourcedir)
+					snprintf (tempname, sizeof (tempname), "%s%c%s", sourcedir,
+							  PATH_SEPARATOR, temp);
+				else
+					snprintf (tempname, sizeof (tempname), "%s.p", temp);
 				free (basename);
 			} else {
 				temp1 = getenv ("TMPDIR");
