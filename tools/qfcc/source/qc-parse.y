@@ -110,7 +110,7 @@ typedef struct {
 
 %token	LOCAL RETURN WHILE DO IF ELSE FOR BREAK CONTINUE ELIPSIS NIL
 %token	IFBE IFB IFAE IFA
-%token	SWITCH CASE DEFAULT STRUCT ENUM
+%token	SWITCH CASE DEFAULT STRUCT ENUM TYPEDEF
 %token	<type> TYPE
 
 %type	<type>	type opt_func func_parms array_decl
@@ -160,13 +160,15 @@ def
 	  { current_type = build_type ($1, $4); } func_def_list
 	| STRUCT NAME
 	  { struct_type = new_struct ($2); } '=' '{' struct_defs '}'
-	| ENUM '{' enum_list opt_comma '}' opt_name
+	| ENUM '{' enum_list opt_comma '}'
 	  { process_enum ($3); }
-	;
-
-opt_name
-	: /* empty */
-	| NAME {}
+	| TYPEDEF type NAME
+	  { new_typedef ($3, $2); }
+	| TYPEDEF ENUM '{' enum_list opt_comma '}' NAME
+		{
+			process_enum ($4);
+			new_typedef ($7, &type_integer);
+		}
 	;
 
 struct_defs
@@ -342,6 +344,8 @@ param
 type
 	: opt_field TYPE { current_type = $2; } opt_func
 	  { $$ = build_type ($1, $4 ? $4 : $2); }
+	| opt_field TYPE { current_type = $2; } array_decl
+	  { $$ = build_type ($1, $4); }
 	;
 
 opt_var_initializer

@@ -32,8 +32,53 @@ static const char rcsid[] =
 
 #include <stdlib.h>
 
+#include "QF/hash.h"
 
 #include "qfcc.h"
+
+typedef struct {
+	const char *name;
+	type_t     *type;
+} typedef_t;
+
+static hashtab_t *typedef_hash;
+
+static const char *
+typedef_get_key (void *t, void *unused)
+{
+	return ((typedef_t *)t)->name;
+}
+
+void
+new_typedef (const char *name, type_t *type)
+{
+	typedef_t  *td;
+
+	if (!typedef_hash)
+		typedef_hash = Hash_NewTable (1023, typedef_get_key, 0, 0);
+	td = Hash_Find (typedef_hash, name);
+	if (td) {
+		error (0, "%s redefined", name);
+		return;
+	}
+	td = malloc (sizeof (typedef_t));
+	td->name = name;
+	td->type = type;
+	Hash_Add (typedef_hash, td);
+}
+
+type_t *
+get_typedef (const char *name)
+{
+	typedef_t  *td;
+
+	if (!typedef_hash)
+		return 0;
+	td = Hash_Find (typedef_hash, name);
+	if (!td)
+		return 0;
+	return td->type;
+}
 
 type_t *
 pointer_type (type_t *aux)

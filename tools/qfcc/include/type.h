@@ -32,6 +32,8 @@
 #ifndef __type_h
 #define __type_h
 
+void new_typedef (const char *name, struct type_s *type);
+struct type_s *get_typedef (const char *name);
 struct type_s *pointer_type (struct type_s *aux);
 void print_type (struct type_s *type);
 

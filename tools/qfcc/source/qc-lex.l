@@ -36,6 +36,7 @@ static const char rcsid[] =
 #include "qfcc.h"
 #include "scope.h"
 #include "struct.h"
+#include "type.h"
 #include "qc-parse.h"
 
 #define YY_NO_UNPUT
@@ -242,6 +243,7 @@ static keyword_t keywords[] = {
 	{"NIL",			NIL,	0,					PROG_ID_VERSION},
 	{"struct",		STRUCT, 0,					PROG_VERSION},
 	{"enum",		ENUM,	0,					PROG_ID_VERSION},
+	{"typedef",		TYPEDEF, 0,					PROG_ID_VERSION},
 };
 
 static const char *
@@ -269,8 +271,7 @@ type_or_name (char *token)
 		yylval.type = keyword->type;
 		return keyword->value;
 	}
-	type = find_struct (token);
-	if (type) {
+	if ((type = find_struct (token)) || (type = get_typedef (token))) {
 		yylval.type = type;
 		return TYPE;
 	}
