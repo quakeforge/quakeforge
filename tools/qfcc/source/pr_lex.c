@@ -203,9 +203,9 @@ PR_LexString (void)
 						if (*pr_file_p <= 9)
 							c += *pr_file_p - '0';
 						else if (*pr_file_p <= 'F')
-							c += *pr_file_p - 'A';
+							c += *pr_file_p - 'A' + 10;
 						else
-							c += *pr_file_p - 'a';
+							c += *pr_file_p - 'a' + 10;
 						pr_file_p++;
 					}
 					if (!*pr_file_p)
