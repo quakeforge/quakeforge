@@ -129,111 +129,6 @@ CL_NewDlight (int key, vec3_t org, int effects)
 
 int         bitcounts[32];				// / just for protocol profiling
 
-/*
-	CL_ParseDelta
-
-	Can go from either a baseline or a previous packet_entity
-*/
-void
-CL_ParseDelta (entity_state_t *from, entity_state_t *to, int bits)
-{
-	int		i;
-
-	// set everything to the state we are delta'ing from
-	*to = *from;
-
-	to->number = bits & 511;
-	bits &= ~511;
-
-	if (bits & U_MOREBITS) {			// read in the low order bits
-		i = MSG_ReadByte (net_message);
-		bits |= i;
-	}
-	// count the bits for net profiling
-//	for (i=0 ; i<16 ; i++)
-//		if (bits&(1<<i))
-//			bitcounts[i]++;
-
-	// LordHavoc: Endy neglected to mark this as being part of the QSG
-	// version 2 stuff...
-	if (bits & U_EXTEND1) {
-		bits |= MSG_ReadByte (net_message) << 16;
-		if (bits & U_EXTEND2)
-			bits |= MSG_ReadByte (net_message) << 24;
-	}
-
-	to->flags = bits;
-
-	if (bits & U_MODEL)
-		to->modelindex = MSG_ReadByte (net_message);
-
-	if (bits & U_FRAME)
-		to->frame = MSG_ReadByte (net_message);
-
-	if (bits & U_COLORMAP)
-		to->colormap = MSG_ReadByte (net_message);
-
-	if (bits & U_SKIN)
-		to->skinnum = MSG_ReadByte (net_message);
-
-	if (bits & U_EFFECTS)
-		to->effects = MSG_ReadByte (net_message);
-
-	if (bits & U_ORIGIN1)
-		to->origin[0] = MSG_ReadCoord (net_message);
-
-	if (bits & U_ANGLE1)
-		to->angles[0] = MSG_ReadAngle (net_message);
-
-	if (bits & U_ORIGIN2)
-		to->origin[1] = MSG_ReadCoord (net_message);
-
-	if (bits & U_ANGLE2)
-		to->angles[1] = MSG_ReadAngle (net_message);
-
-	if (bits & U_ORIGIN3)
-		to->origin[2] = MSG_ReadCoord (net_message);
-
-	if (bits & U_ANGLE3)
-		to->angles[2] = MSG_ReadAngle (net_message);
-
-	// LordHavoc: Endy neglected to mark this as being part of the QSG
-	// version 2 stuff... rearranged it and implemented missing effects
-// Ender (QSG - Begin)
-	if (bits & U_ALPHA)
-		to->alpha = MSG_ReadByte (net_message);
-	if (bits & U_SCALE)
-		to->scale = MSG_ReadByte (net_message);
-	if (bits & U_EFFECTS2)
-		to->effects = (to->effects & 0xFF) | (MSG_ReadByte (net_message) << 8);
-	if (bits & U_GLOWSIZE)
-		to->glow_size = MSG_ReadByte (net_message);
-	if (bits & U_GLOWCOLOR)
-		to->glow_color = MSG_ReadByte (net_message);
-	if (bits & U_COLORMOD)
-		to->colormod = MSG_ReadByte (net_message);
-	if (bits & U_FRAME2)
-		to->frame = (to->frame & 0xFF) | (MSG_ReadByte (net_message) << 8);
-// Ender (QSG - End)
-
-	if (bits & U_SOLID) {
-		// FIXME
-	}
-/*
-	if ((!to->alpha) || (!to->colormod))
-		Con_Printf("fa: %d, fc: %d, ta: %d, tc: %d\n",
-				   from->alpha, from->colormod, to->alpha, to->colormod);
-*/
-/*
-	if ((!ent->alpha) || (!ent->colormod[0]) || (!ent->colormod[1]) ||
-		(!ent->colormod[2])) {
-		Con_Printf ("ea: %f, ec0: %f, ec1: %f ec2: %f, sa: %d, sc: %d\n",
-					ent->alpha, ent->colormod[0], ent->colormod[1],
-					ent->colormod[2], s1->alpha, s1->colormod);
-	}
-*/
-}
-
 void
 CL_EntityState_Copy (entity_state_t *src, entity_state_t *dest, int bits)
 {
@@ -278,34 +173,6 @@ CL_EntityState_Copy (entity_state_t *src, entity_state_t *dest, int bits)
 
 	if (bits & U_SOLID) {
 		// FIXME
-	}
-}
-
-void
-FlushEntityPacket (void)
-{
-	entity_state_t	olde, newe;
-	int				word;
-
-	Con_DPrintf ("FlushEntityPacket\n");
-
-	memset (&olde, 0, sizeof (olde));
-
-	cl.validsequence = 0;				// can't render a frame
-	cl.frames[cls.netchan.incoming_sequence & UPDATE_MASK].invalid = true;
-
-	// read it all, but ignore it
-	while (1) {
-		word = (unsigned short) MSG_ReadShort (net_message);
-		if (net_message->badread) {			// something didn't parse right...
-			Host_NetError ("msg_badread in packetentities");
-			return;
-		}
-
-		if (!word)
-			break;						// done
-
-		CL_ParseDelta (&olde, &newe, word);
 	}
 }
 
@@ -397,7 +264,8 @@ CL_ParseDeltaPacketEntities ()
 	if (oldpacket != -1) {
 		if (cls.netchan.outgoing_sequence - oldpacket >= UPDATE_BACKUP - 1) {
 			// we can't use this, it is too old
-			FlushEntityPacket ();
+			Con_DPrintf ("FlushEntityPacket\n");
+			cl.validsequence = 0;				// can't render a frame
 			return;
 		}
 		cl.validsequence = cls.netchan.incoming_sequence;
