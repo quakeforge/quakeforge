@@ -112,6 +112,7 @@ int
 PR_RelocateBuiltins (progs_t *pr)
 {
 	int         i, ind;
+	int         bad = 0;
 	dfunction_t *func;
 	builtin_t  *bi;
 	const char *bi_name;
@@ -122,23 +123,26 @@ PR_RelocateBuiltins (progs_t *pr)
 		if (func->first_statement > 0)
 			continue;
 
+		bi_name = PR_GetString (pr, func->s_name);
+
 		if (!func->first_statement) {
-			bi_name = PR_GetString (pr, func->s_name);
 			bi = PR_FindBuiltin (pr, bi_name);
 			if (!bi) {
 				Sys_Printf ("PR_RelocateBuiltins: %s: undefined builtin %s\n",
 							pr->progs_name, bi_name);
-				return 0;
+				bad = 1;
+				continue;
 			}
 			func->first_statement = -bi->binum;
 		}
 
 		ind = -func->first_statement;
 		if (ind >= pr->numbuiltins || !(bi = pr->builtins[ind]) || !bi->proc) {
-			Sys_Printf ("Bad builtin call number: %d\n", ind);
-			return 0;
+			Sys_Printf ("Bad builtin call number: %s = #%d\n", bi_name, ind);
+			bad = 1;
+			continue;
 		}
 		((bfunction_t *) func)->func = bi->proc;
 	}
-	return 1;
+	return !bad;
 }
