@@ -1,20 +1,21 @@
+QWAQ_LIBS=@QWAQ_LIBS@
+QWAQ_DEPS=@QWAQ_DEPS@
+QWAQ_INCS=@QWAQ_INCS@
+
+INCLUDES=	-I$(top_srcdir)/include $(QWAQ_INCS)
+
 QFCC=$(top_builddir)/tools/qfcc/source/qfcc
 QCFLAGS=-qq -g -Werror
-INCLUDES= -I$(top_srcdir)/include
 
 noinst_PROGRAMS=qwaq
 noinst_DATA=qwaq.dat
 
-qwaq_libs= \
-	$(top_builddir)/libs/gamecode/engine/libQFgamecode.la \
-	$(top_builddir)/libs/util/libQFutil.la
-
 qwaq_dat_src= \
-	main.qc test.r
+	defs.qc main.qc test.r
 
 qwaq_SOURCES= main.c builtins.c
-qwaq_LDADD= $(qwaq_libs)
-qwaq_DEPENDENCIES= $(qwaq_libs)
+qwaq_LDADD= $(QWAQ_LIBS)
+qwaq_DEPENDENCIES= $(QWAQ_DEPS)
 
 qwaq.dat: progs.src $(qwaq_dat_src) $(top_srcdir)/cs-code/object.r
 	$(QFCC) $(QCFLAGS)

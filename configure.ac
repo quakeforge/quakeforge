@@ -1873,6 +1873,13 @@ AC_SUBST(QFPROGS_LIBS)
 AC_SUBST(QFPROGS_DEPS)
 AC_SUBST(QFPROGS_INCS)
 
+QWAQ_DEPS='$(top_builddir)/libs/gamecode/engine/libQFgamecode.la $(top_builddir)/libs/util/libQFutil.la'
+QWAQ_LIBS="${QWAQ_DEPS} ${WINMM}"
+QWAQ_INCS=''
+AC_SUBST(QWAQ_LIBS)
+AC_SUBST(QWAQ_DEPS)
+AC_SUBST(QWAQ_INCS)
+
 PAK_DEPS='$(top_builddir)/libs/util/libQFutil.la'
 PAK_LIBS="${PAK_DEPS} ${WINMM}"
 PAK_INCS=""
