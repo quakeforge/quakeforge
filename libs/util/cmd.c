@@ -48,8 +48,8 @@ static const char rcsid[] =
 #include "QF/sys.h"
 #include "QF/vfs.h"
 #include "QF/zone.h"
-
 #include "compat.h"
+#include "QF/dstring.h"
 
 typedef struct cmdalias_s {
 	struct cmdalias_s *next;
@@ -59,7 +59,15 @@ typedef struct cmdalias_s {
 
 cmdalias_t *cmd_alias;
 cmd_source_t cmd_source;
-qboolean    cmd_wait;
+dstring_t *cmd_buffer, *cmd_legacybuffer, *cmd_activebuffer, *cmd_argbuf;
+qboolean cmd_wait = false;
+qboolean cmd_legacy = false;
+int cmd_argc;
+int cmd_maxargc = 0;
+dstring_t **cmd_argv = 0;
+int *cmd_args = 0;
+int *cmd_argspace = 0;
+
 
 cvar_t     *cmd_warncmd;
 cvar_t     *cmd_highchars;
@@ -86,148 +94,151 @@ Cmd_Wait_f (void)
 						COMMAND BUFFER
 */
 
-sizebuf_t   cmd_text;
 byte        cmd_text_buf[8192];
 
 void
 Cbuf_Init (void)
 {
-	cmd_text.data = cmd_text_buf;
-	cmd_text.maxsize = sizeof (cmd_text_buf);
+
+	cmd_buffer = dstring_newstr ();
+	cmd_legacybuffer = dstring_newstr ();
+	cmd_activebuffer = cmd_buffer;
+	cmd_argbuf = dstring_newstr ();
 }
 
-/*
-	Cbuf_AddText
 
-	Adds command text at the end of the buffer
+void
+Cbuf_AddTextTo (dstring_t *buffer, const char *text)
+{
+	dstring_appendstr (buffer, text);
+}
+
+/* 
+	Cbuf_AddText
+	
+	Add text to the active buffer
 */
+
 void
 Cbuf_AddText (const char *text)
 {
-	int         l;
-
-	l = strlen (text);
-
-	if (cmd_text.cursize + l < cmd_text.maxsize) {
-		SZ_Write (&cmd_text, text, l);
-		return;
-	}
-	Sys_Printf ("Cbuf_AddText: overflow\n");
+	Cbuf_AddTextTo (cmd_activebuffer, text);
 }
 
-/*
-	Cbuf_InsertText
+void
+Cbuf_InsertTextTo (dstring_t *buffer, const char *text)
+{
+	dstring_insertstr (buffer, "\n", 0);
+	dstring_insertstr (buffer, text, 0);
+}
 
-	Adds command text to the beginning of the buffer.
-	Adds a \n to the text
+/* Cbuf_InsertText
+
+	Add text to the beginning of the active buffer
 */
+
 void
 Cbuf_InsertText (const char *text)
 {
-	int         textlen;
-
-	textlen = strlen (text);
-	if (cmd_text.cursize + 1 + textlen >= cmd_text.maxsize) {
-		Sys_Printf ("Cbuf_InsertText: overflow\n");
-		return;
-	}
-
-	if (!cmd_text.cursize) {
-		memcpy (cmd_text.data, text, textlen);
-		cmd_text.cursize = textlen;
-		return;
-	}
-	// Move up to make room for inserted text
-	memmove (cmd_text.data + textlen + 1, cmd_text.data, cmd_text.cursize);
-	cmd_text.cursize += textlen + 1;
-
-	// Insert new text
-	memcpy (cmd_text.data, text, textlen);
-	cmd_text.data[textlen] = '\n';
+	Cbuf_InsertTextTo (cmd_activebuffer, text);
 }
 
-static const char *
-extract_line (void)
-{
-	int         i;
-	char       *text;
-	int         quotes;
-	static char *line;
-	static int  line_size;
 
-	// find a \n or ; line break
-	text = (char *) cmd_text.data;
-	quotes = 0;
-	for (i = 0; i < cmd_text.cursize; i++) {
-		if (text[i] == '"')
-			quotes++;
-		if (!(quotes & 1) && text[i] == ';')
-			break;						// don't break if inside a quoted
-										// string
+/*
+	extract_line
+	
+	Finds the next \n,\r, or ;-delimeted
+	line in the command buffer and copies
+	it into a buffer.  Also shifts the rest
+	of the command buffer back to the start.
+*/
+
+void
+extract_line (dstring_t *buffer, dstring_t *line)
+{
+	int i, squotes = 0, dquotes = 0;
+	char *text = buffer->str;
+	
+	for (i = 0; text[i]; i++) {
+		if (text[i] == '\'' && !dquotes)
+			squotes^=1;
+		if (text[i] == '"' && !squotes)
+			dquotes^=1;
+		if (text[i] == ';' && !squotes && !dquotes)
+			break;
 		if (text[i] == '\n' || text[i] == '\r')
 			break;
 	}
+	if (i)
+		dstring_insert (line, buffer->str, i, 0);
+	if (text[i])
+		dstring_snip (buffer, 0, i + 1);
+	else // We've hit the end of the buffer, just clear it
+		dstring_clearstr (buffer); 
+}
 
-	if (i + 1 > line_size) {
-		line_size = ((i + 1) + 1023) & ~1023;
-		line = realloc (line, line_size);
-		if (!line)
-			Sys_Error ("extract_line: memory alloc failur");
+/*
+	Cbuf_ExecuteBuffer
+	
+	Extracts and executes each line in the
+	command buffer, until it is empty or
+	a wait command is executed
+*/
+
+void 
+Cbuf_ExecuteBuffer (dstring_t *buffer)
+{
+	dstring_t *buf = dstring_newstr ();
+		
+	while (strlen(buffer->str)) {
+		extract_line (buffer, buf);
+		Cmd_ExecuteString(buf->str, src_command);
+		if (cmd_wait) {
+			cmd_wait = false;
+			break;
+		}
+		dstring_clearstr(buf);
 	}
-
-	memcpy (line, text, i);
-	line[i] = '\0';
-	// delete the text from the command buffer and move remaining commands
-	// down this is necessary because commands (exec, alias) can insert
-	// data at the beginning of the text buffer
-
-	if (i == cmd_text.cursize)
-		cmd_text.cursize = 0;
-	else {
-		i++;
-		cmd_text.cursize -= i;
-		memcpy (text, text + i, cmd_text.cursize);
-	}
-	return line;
+	dstring_delete (buf);
 }
 
 void
 Cbuf_Execute (void)
 {
-	const char *line;
-
-	while (cmd_text.cursize) {
-		line = extract_line ();
-		// execute the command line
-		// Sys_DPrintf("+%s\n",line),
-		Cmd_ExecuteString (line, src_command);
-
-		if (cmd_wait) {					// skip out while text still remains
-										// in buffer, leaving it
-			// for next frame
-			cmd_wait = false;
-			break;
-		}
-	}
-}
+	cmd_activebuffer = cmd_legacybuffer; // Put legacy buffer into context
+	cmd_legacy = true;
+	Cbuf_ExecuteBuffer (cmd_activebuffer);
+	cmd_legacy = false;
+	cmd_activebuffer = cmd_buffer; // Next, do modern filtered buffer
+	Cbuf_ExecuteBuffer (cmd_activebuffer);
+	cmd_activebuffer = cmd_buffer; // The modern buffer should be in context by default
+}	
+/*
+	Cbuf_Execute_Sets
+	
+	Similar to Cbuf_Execute, but only
+	executes set and setrom commands. Used
+	for reading config files before the cmd
+	subsystem is entirely loaded.
+*/
 
 void
 Cbuf_Execute_Sets (void)
 {
-	const char *line;
-
-	while (cmd_text.cursize) {
-		line = extract_line ();
-		// execute the command line
-		if (strnequal (line, "set", 3) && isspace ((int) line[3])) {
-			// Sys_DPrintf ("+%s\n",line);
-			Cmd_ExecuteString (line, src_command);
-		} else if (strnequal (line, "setrom", 6) && isspace ((int) line[6])) {
-			// Sys_DPrintf ("+%s\n",line);
-			Cmd_ExecuteString (line, src_command);
+	dstring_t *buf = dstring_newstr ();
+	
+	while (strlen(cmd_buffer->str)) {
+		extract_line (cmd_buffer, buf);
+		if (!strncmp (buf->str, "set", 3) && isspace ((int) buf->str[3])) {
+			Cmd_ExecuteString (buf->str, src_command);
+		} else if (!strncmp (buf->str, "setrom", 6) && isspace ((int) buf->str[6])) {
+			Cmd_ExecuteString (buf->str, src_command);
 		}
+		dstring_clearstr(buf);
 	}
+	dstring_delete (buf);
 }
+
 
 /*
 						SCRIPT COMMANDS
@@ -340,11 +351,7 @@ Cmd_Exec_f (void)
 void
 Cmd_Echo_f (void)
 {
-	int         i;
-
-	for (i = 1; i < Cmd_Argc (); i++)
-		Sys_Printf ("%s ", Cmd_Argv (i));
-	Sys_Printf ("\n");
+	Sys_Printf ("%s\n", Cmd_Args (1));
 }
 
 /*
@@ -384,7 +391,6 @@ Cmd_Alias_f (void)
 		alias->next = *a;
 		*a = alias;
 	}
-
 	// copy the rest of the command line
 	cmd = malloc (strlen (Cmd_Args (1)) + 2);// can never be longer
 	if (!cmd)
@@ -441,14 +447,6 @@ typedef struct cmd_function_s {
 	const char       *description;
 } cmd_function_t;
 
-
-#define	MAX_ARGS		80
-
-static int  cmd_argc;
-static char *cmd_argv[MAX_ARGS];
-static const char *cmd_null_string = "";
-static const char *cmd_args[MAX_ARGS];
-
 static cmd_function_t *cmd_functions;	// possible commands to execute
 
 int
@@ -461,83 +459,337 @@ const char       *
 Cmd_Argv (int arg)
 {
 	if (arg >= cmd_argc)
-		return cmd_null_string;
-	return cmd_argv[arg];
+		return "";
+	return cmd_argv[arg]->str;
 }
 
 /*
 	Cmd_Args
 
-	Returns a single string containing argv(1) to argv(argc()-1)
+	Returns a single string containing argv(start) to argv(argc()-1)
 */
 const char       *
 Cmd_Args (int start)
 {
-	if (start >= cmd_argc || !cmd_args[start])
+	if (start >= cmd_argc)
 		return "";
-	return cmd_args[start];
+	return cmd_argbuf->str + cmd_args[start];
+}
+
+int Cmd_GetToken (const char *str) {
+	int i, squote, dquote;
+	
+	/* Only stop on comments at the beginning of tokens */
+	if (!strncmp(str, "//", 2))
+		return 0;
+	for (i = 0, squote = 0, dquote = 0; i <= strlen(str); i++) {
+		/* If we find a comment in the middle of a token, end the token
+		so it will be picked up on the next call */
+		if (!strncmp(str+i, "//", 2) && !dquote && !squote)
+			break;
+		if (str[i] == 0) {
+			if (dquote) { // We never found another quote, backtrack
+				for (; str[i] != '"'; i--);
+				dquote = 0;
+				continue;
+			}
+			else if (squote) {
+				for (; str[i] != '\''; i--);
+				squote = 0;
+				continue;
+			}
+			else // End of string, this token is done
+				break;
+		}
+		else if (str[i] == '\'' && (!i || str[i-1] != '\\') && !dquote) {
+			if (i) // If not at start of string, we must be at the end of a token
+				break;
+			squote = 1;
+		}
+		else if (str[i] == '"' && (!i || str[i-1] != '\\') && !squote) {
+			if (i) // Start new token
+				break;
+			dquote = 1;
+		}
+		else if (isspace(str[i]) && !dquote && !squote) {
+			break;
+		}
+	}
+	return i;
+}
+
+int tag_shift = 0;
+int tag_special = 0;
+
+struct stable_s {char a, b;} stable1[] =
+{
+	{'f', 0x0D}, // Fake message
+	
+	{'[', 0x90}, // Gold braces
+	{']', 0x91},
+	
+	{'(', 0x80}, // Scroll bar characters
+	{'=', 0x81},
+	{')', 0x82},
+	{'|', 0x83},
+	
+	{'<', 0x9D}, // Vertical line characters
+	{'-', 0x9E},
+	{'>', 0x9F},
+	
+	{'.', 0x05}, // White dot
+	
+	{'#', 0x0B}, // White block
+	
+	{'a', 0x7F}, // White arrow. DO NOT USE WITH <b> TAG IN ANYTHING SENT TO SERVER.  PERIOD.
+	{'A', 0x8D}, // Brown arrow
+	
+	{'0', 0x92}, // Golden numbers
+	{'1', 0x93},
+	{'2', 0x94},
+	{'3', 0x95},
+	{'4', 0x96},
+	{'5', 0x97},
+	{'6', 0x98},
+	{'7', 0x99},
+	{'8', 0x9A},
+	{'9', 0x9B},
+	{0, 0}
+};
+
+/*
+	Cmd_ProcessTags
+	
+	Looks for html-like tags in a dstring and
+	modifies the string accordingly
+
+	FIXME:  This has become messy.  Create tag.[ch]
+	and write a more generalized tag parser using
+	callbacks
+*/
+
+void
+Cmd_ProcessTags (dstring_t *dstr)
+{
+	int close = 0, ignore = 0, i, n, c;
+	char *str = dstr->str;
+	
+	for (i = 0; i < strlen(str); i++) {
+		if (str[i] == '<' && (!i || str[i-1] != '\\')) {
+			close = 0;
+			for (n = 1; str[i+n] != '>' || str[i+n-1] == '\\'; n++)
+				if (str[n] == 0)
+					return;
+			if (str[i+1] == '/')
+				close = 1;
+			if (!strncmp(str+i+close+1, "i", 1)) {
+				if (ignore && !close) // If we are ignoring, ignore a non close
+					continue;
+				else if (close && ignore) // If we are closing, turn off ignore
+					ignore--;
+				else if (!close)
+					ignore++; // Otherwise, turn ignore on
+			}					
+			else if (ignore) // If ignore isn't being changed and we are ignore, go on
+				continue;
+			else if (!strncmp(str+i+close+1, "b", 1))
+				tag_shift = close ? tag_shift - 1 : tag_shift + 1;
+			else if (!strncmp(str+i+close+1, "s", 1))
+				tag_special = close ? tag_special - 1 : tag_special + 1;
+			if (tag_shift < 0)
+				tag_shift = 0;
+			if (tag_special < 0)
+				tag_special = 0;
+			dstring_snip(dstr, i, n+1);
+			i--;
+			continue;
+		}
+		c = str[i];	
+		/* This ignores escape characters, unless it is itself escaped */
+		if (c == '\\' && (!i || str[i-1] != '\\'))
+			continue;
+		if (tag_special) {
+			for (n = 0; stable1[n].a; n++)
+				if (c == stable1[n].a)
+					c = str[i] = stable1[n].b;
+		}
+		if (tag_shift && c < 128)
+			c = (str[i] += 128);
+	}
+}
+	
+/*
+	Cmd_ProcessVariables
+	
+	Looks for occurances of ${varname} and
+	replaces them with the contents of the
+	variable.
+*/
+
+void
+Cmd_ProcessVariables (dstring_t *dstr)
+{
+	char *str = dstr->str;
+	dstring_t *varname;
+	cvar_t *var;
+	int i, n;
+	
+	varname = dstring_newstr ();
+	
+	for (i = 0; i < strlen(str); i++) {
+		if (str[i] == '$' && str[i+1] == '{' && (!i || str[i-1] != '\\')) {
+			for (n = 0; str[i+n] != '}'; n++)
+				if (!str[i+n])
+					return; // Open curly braces, give up
+			/* Copy text between braces into a buffer */
+			dstring_clearstr (varname);
+			dstring_insert (varname, str+i+2, n-2, 0);
+			var = 0;
+			var = Cvar_FindVar(varname->str);
+			if (var) {// Do we have a match?
+				dstring_snip (dstr, i, n+1); // Nuke it
+				dstring_insertstr (dstr, var->string, i); // Stick in the value of variable
+			}
+		}
+	}
+	dstring_delete (varname);
 }
 
 /*
-	Cmd_TokenizeString
-
-	Parses the given string into command line tokens.
+	Cmd_ProcessEscapes
+	
+	Looks for the escape character \ and
+	removes it.  Special cases exist for
+	\\ and \n; otherwise, it is simply
+	filtered.  This should be the last
+	step in the parser so that quotes,
+	tags, etc. can be escaped
 */
+
 void
-Cmd_TokenizeString (const char *text)
-{
-	static char *argv_buf;
-	static size_t argv_buf_size;
-	int         argv_idx;
-
-	if (!argv_buf_size) {
-		argv_buf_size = 1024;	//FIXME dynamic
-		argv_buf = malloc (argv_buf_size);
-		if (!argv_buf)
-			Sys_Error ("Cmd_TokenizeString: could not allocate %ld bytes",
-					   (long)argv_buf_size);
+Cmd_ProcessEscapes (dstring_t *dstr) {
+	int i;
+	char *str = dstr->str;
+	
+	for (i = 0; i < strlen(str); i++) {
+		if (str[i] == '\\' && str[i+1]) {
+			dstring_snip(dstr, i, 1);
+			if (str[i] == '\\')
+				i++;
+			if (str[i] == 'n')
+				str[i] = '\n';
+			i--;
+		}
 	}
+}
 
-	argv_idx = 0;
+/*
+	Cmd_ProcessPercents
+	
+	Replaces %i with Cmd_Argv(i)
+*/
 
-	cmd_argc = 0;
-	memset (cmd_args, 0, sizeof (cmd_args));
-
-	while (1) {
-		// skip whitespace up to a \n
-		while (*text && *(unsigned char *) text <= ' ' && *text != '\n') {
-			text++;
-		}
-
-		if (*text == '\n') {			// a newline seperates commands in
-										// the buffer
-			text++;
-			break;
-		}
-
-		if (!*text)
-			return;
-
-		if (cmd_argc < MAX_ARGS)
-		    cmd_args[cmd_argc] = text;
-
-		text = COM_Parse (text);
-		if (!text)
-			return;
-
-		if (cmd_argc < MAX_ARGS) {
-			size_t         len = strlen (com_token) + 1;
-
-			if (argv_idx + len > argv_buf_size) {
-				Sys_Printf ("Cmd_TokenizeString: overflow\n");
-				return;
+void Cmd_ProcessPercents (dstring_t *dstr) {
+	int i, n;
+	long int num;
+	char *str = dstr->str;
+	
+	for (i = 0; i < strlen(str); i++) {
+		if (str[i] == '%') {
+			if (str[i+1] == '%') {
+				dstring_snip (dstr, i, 1);
+				continue;
 			}
-			cmd_argv[cmd_argc] = argv_buf + argv_idx;
-			strcpy (cmd_argv[cmd_argc], com_token);
-			argv_idx += len;
-
-			cmd_argc++;
+			for (n = 1; isdigit(str[i+n]); n++);
+			if (n < 2)
+				continue;
+			num = strtol(str+i+1, 0, 10);
+			dstring_snip (dstr, i, n);
+			dstring_insertstr (dstr, Cmd_Argv(num), i);
 		}
+	}
+}				
+
+/*
+	Cmd_TokenizeString
+	
+	This takes a normal string, parses it
+	into tokens, runs various filters on
+	each token, and recombines them with the
+	correct white space into a string for
+	the purpose of executing a console
+	command.  If the string begins with a \,
+	filters are not run and the \ is stripped.
+	Anything that stuffs commands into the
+	console that requires absolute backwards
+	compatibility should be changed to prepend
+	it with a \.  An example of this is
+	fullserverinfo, which requires that \
+	be left alone since it is the delimeter
+	for info keys.
+*/
+	
+void
+Cmd_TokenizeString (const char *text, qboolean filter)
+{
+	int i = 0, n, len = 0, quotes = 0, space;
+	const char *str = text;
+	
+	cmd_argc = 0;
+	
+	/* Turn off tags at the beginning of a command.
+	This causes tags to continue past token boundaries. */
+	tag_shift = 0;
+	tag_special = 0;
+	if (text[0] == '|')
+		str++;
+	while (strlen(str + i)) {
+		space = 0;
+		while (isspace(str[i])) {
+			i++;
+			space++;
+		}
+		len = Cmd_GetToken (str + i);
+		if (!len)
+			break;
+		cmd_argc++;
+		if (cmd_argc > cmd_maxargc) {
+			cmd_argv = realloc(cmd_argv, sizeof(dstring_t *)*cmd_argc);
+			if (!cmd_argv)
+				Sys_Error ("Cmd_TokenizeString:  Failed to reallocate memory.\n");
+			cmd_args = realloc(cmd_args, sizeof(int)*cmd_argc);
+			if (!cmd_args)
+				Sys_Error ("Cmd_TokenizeString:  Failed to reallocate memory.\n");
+			cmd_argspace = realloc(cmd_argspace, sizeof(int)*cmd_argc);
+			if (!cmd_argspace)
+				Sys_Error ("Cmd_TokenizeString:  Failed to reallocate memory.\n");
+			cmd_argv[cmd_argc-1] = dstring_newstr ();
+			cmd_maxargc++;
+		}
+		dstring_clearstr(cmd_argv[cmd_argc-1]);
+		cmd_argspace[cmd_argc-1] = space;
+		/* Remove surrounding quotes or double quotes */
+		quotes = 0;
+		if ((str[i] == '\'' && str[i+len] == '\'') || (str[i] == '"' && str[i+len] == '"')) {
+			i++;
+			len-=1;
+			quotes = 1;
+		}
+		dstring_insert(cmd_argv[cmd_argc-1], str + i, len, 0);
+		if (filter && text[0] != '|') {
+			Cmd_ProcessTags(cmd_argv[cmd_argc-1]);
+			Cmd_ProcessVariables(cmd_argv[cmd_argc-1]);
+			Cmd_ProcessEscapes(cmd_argv[cmd_argc-1]);
+		}
+		i += len + quotes; /* If we ended on a quote, skip it */
+	}
+	/* Now we must reconstruct cmd_args */
+	dstring_clearstr (cmd_argbuf);
+	for (i = 0; i < cmd_argc; i++) {
+		for (n = 0; n < cmd_argspace[i]; n++)
+			dstring_appendstr (cmd_argbuf," ");
+		cmd_args[i] = strlen(cmd_argbuf->str);
+		dstring_appendstr (cmd_argbuf, cmd_argv[i]->str);
 	}
 }
 
@@ -765,76 +1017,6 @@ Cmd_CompleteAliasBuildList (const char *partial)
 }
 
 /*
-	Cmd_ExpandVariables
-
-	Expand $fov-like expressions
-	FIXME: better handling of buffer overflows?
-*/
-// dest must point to a 1024-byte buffer
-void
-Cmd_ExpandVariables (const char *data, char *dest)
-{
-	unsigned int c;
-	char        buf[1024];
-	int         i, len;
-	cvar_t      *bestvar;
-	int         quotes = 0;
-
-	len = 0;
-
-	// parse a regular word
-	while ((c = *data) != 0) {
-		if (c == '"')
-			quotes++;
-		if (c == '$' && *(data+1) == '{' && !(quotes & 1)) {
-			data+=2;
-			// Copy the text between the braces to a temp buffer
-			i = 0;
-			buf[0] = 0;
-			bestvar = NULL;
-			while ((c = *data) != 0 && c != '}') {
-				data++;
-				buf[i++] = c;
-				buf[i] = 0;
-				if (i >= sizeof (buf) - 1)
-					break;
-			}
-			data++;
-			bestvar = Cvar_FindVar(buf);
-
-			if (bestvar) {
-				// check buffer size
-				if (len + strlen (bestvar->string) >= 1024 - 1)
-					break;
-
-				strcpy (&dest[len], bestvar->string);
-				len += strlen (bestvar->string);
-				i = strlen (bestvar->name);
-				while (buf[i])
-					dest[len++] = buf[i++];
-			} else {
-				// no matching cvar name was found
-				dest[len++] = '$';
-				dest[len++] = '{';
-				if (len + strlen (buf) >= 1024)
-					break;
-				strcpy (&dest[len], buf);
-				len += strlen (buf);
-				dest[len++] = '}';
-			}
-		} else {
-			dest[len] = c;
-			data++;
-			len++;
-			if (len >= 1024 - 1)
-				break;
-		}
-	};
-
-	dest[len] = 0;
-}
-
-/*
 	Cmd_ExecuteString
 
 	A complete command line has been parsed, so try to execute it
@@ -844,35 +1026,16 @@ Cmd_ExecuteString (const char *text, cmd_source_t src)
 {
 	cmd_function_t *cmd;
 	cmdalias_t *a;
-	char        buf[1024];
-
 	cmd_source = src;
 
-	
-#if 0
-	Cmd_TokenizeString (text);
-#else
-	if (cmd_highchars->value) {
-		char buf2[1024];
-
-		strncpy(buf, text, sizeof(buf) - 1);
-		buf[sizeof(buf) - 1] = 0;
-		Cmd_ParseSpecial (buf);
-		Cmd_ExpandVariables (buf, buf2);
-		Cmd_TokenizeString (buf2);
-	}
-	else {
-		Cmd_ExpandVariables (text, buf);
-		Cmd_TokenizeString (buf);
-	}
-#endif
+	Cmd_TokenizeString (text, !cmd_legacy);
 
 	// execute the command line
 	if (!Cmd_Argc ())
 		return;							// no tokens
 
 	// check functions
-	cmd = (cmd_function_t*)Hash_Find (cmd_hash, cmd_argv[0]);
+	cmd = (cmd_function_t*)Hash_Find (cmd_hash, cmd_argv[0]->str);
 	if (cmd) {
 		if (cmd->function)
 			cmd->function ();
@@ -884,15 +1047,20 @@ Cmd_ExecuteString (const char *text, cmd_source_t src)
 		return;
 
 	// check alias
-	a = (cmdalias_t*)Hash_Find (cmd_alias_hash, cmd_argv[0]);
+	a = (cmdalias_t*)Hash_Find (cmd_alias_hash, cmd_argv[0]->str);
 	if (a) {
-		Cbuf_InsertText ("\n");
-		Cbuf_InsertText (a->value);
+		dstring_t *temp = dstring_newstr ();
+		dstring_appendstr (temp, "\n");
+		dstring_appendstr (temp, a->value);
+		Cmd_ProcessPercents (temp);
+		Cbuf_InsertText (temp->str);
+		dstring_delete (temp);
 		return;
 	}
 
 	if (cmd_warncmd->int_val || developer->int_val)
 		Sys_Printf ("Unknown command \"%s\"\n", Cmd_Argv (0));
+	cmd_argc = 0;
 }
 
 /*
@@ -1119,78 +1287,3 @@ skipwhite:
 	write_com_token (len, 0);
 	return data;
 }
-
-struct stable_s {char a, b;} stable1[] =
-{
-	{'\\',0x0D}, // Fake message
-	{'[', 0x90}, // Gold braces
-	{']', 0x91},
-	{'(', 0x80}, // Scroll bar characters
-	{'=', 0x81},
-	{')', 0x82},
-	{'|', 0x83},
-	{'<', 0x9D}, // Vertical line characters
-	{'-', 0X9E},
-	{'>', 0x9F},
-	{'.', 0x8E}, // Gold dot
-	{',', 0x0E}, // White dot
-	{'G', 0x86}, // Ocrana leds from ocrana.wad
-	{'R', 0x87},
-	{'Y', 0x88},
-	{'B', 0x89},
-	{'a', 0x7F}, // White arrow
-	{'A', 0x8D}, // Brown arrow
-	{'0', 0x92}, // Gold numbers
-	{'1', 0x93},
-	{'2', 0x94},
-	{'3', 0x95},
-	{'4', 0x96},
-	{'5', 0x97},
-	{'6', 0x98},
-	{'7', 0x99},
-	{'8', 0x9A},
-	{'9', 0x9B},
-	{'n', '\n'}, // Newline!
-	{0, 0}
-};
-	
-
-void Cmd_ParseSpecial (char *s)
-{
-	char        *d;
-	int         i, i2;
-	char        c = 0;
-
-	i = 0;
-	d = s;
-
-	while (*s) {
-		if ((*s == '\\') && ((s[1] == '#') || (s[1] == '$') || (s[1] == '\\'))) {
-			d[i++] = s[1];
-			s+=2;
-			continue;
-		}
-		if ((*s == '$') && (s[1] != '\0')) {
-			for (i2 = 0; stable1[i2].a; i2++) {
-				if (s[1] == stable1[i2].a) {
-					c = stable1[i2].b;
-					break;
-				}
-			}
-			if (c) {
-				d[i++] = c;
-				s += 2;
-				continue;
-			}
-		}
-		if ((*s == '#') && (s[1] != '\0')) {
-			d[i++] = s[1] ^ 128;
-			s += 2;
-			continue;
-		}
-		d[i++] = *s++;
-	}
-	d[i] = 0;
-	return;
-}
-

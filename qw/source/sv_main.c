@@ -513,7 +513,7 @@ SVC_Status (void)
 		return;
 
 	con_printf_no_log = 1;
-	Cmd_TokenizeString ("status");
+	Cmd_TokenizeString ("status", false);
 	SV_BeginRedirect (RD_PACKET);
 	SV_Printf ("%s\n", Info_MakeString (svs.info, 0));
 	for (i = 0; i < MAX_CLIENTS; i++) {
@@ -1027,7 +1027,7 @@ SV_ConnectionlessPacket (void)
 
 	s = MSG_ReadString (net_message);
 
-	Cmd_TokenizeString (s);
+	Cmd_TokenizeString (s, false);
 
 	c = Cmd_Argv (0);
 

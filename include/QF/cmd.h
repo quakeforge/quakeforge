@@ -29,7 +29,9 @@
 #ifndef __cmd_h
 #define __cmd_h
 
+
 #include "QF/qtypes.h"
+#include "QF/dstring.h"
 
 //===========================================================================
 
@@ -49,6 +51,7 @@ The game starts with a Cbuf_AddText ("exec quake.rc\n"); Cbuf_Execute ();
 void Cbuf_Init (void);
 // allocates an initial text buffer that will grow as needed
 
+void Cbuf_AddTextTo (dstring_t *buffer, const char *text);
 void Cbuf_AddText (const char *text);
 // as new commands are generated from the console or keybindings,
 // the text is added to the end of the command buffer.
@@ -127,7 +130,7 @@ int Cmd_CheckParm (const char *parm);
 // Returns the position (1 to argc-1) in the command's argument list
 // where the given parameter apears, or 0 if not present
 
-void Cmd_TokenizeString (const char *text);
+void Cmd_TokenizeString (const char *text, qboolean filter);
 // Takes a null terminated string.  Does not need to be /n terminated.
 // breaks the string up into arg tokens.
 
@@ -148,8 +151,8 @@ void Cmd_Exec_File (const char *path);
 extern char	*com_token;
 const char *COM_Parse (const char *data);
 
-void Cmd_ParseSpecial (char *s);
-
 extern struct cvar_s *cmd_warncmd;
+
+extern dstring_t *cmd_legacybuffer; // Allow access to the legacy buffer as an alternate console buffer
 
 #endif // __cmd_h
