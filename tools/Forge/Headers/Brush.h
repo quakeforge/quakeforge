@@ -22,12 +22,12 @@ extern	BOOL	brushdraw;			// YES when drawing cutbrushes and ents
 - deselect;
 - (BOOL)isSelected;
 
-- (BOOL)XYmouseDown: (NXPoint *)pt;		// return YES if brush handled
-- (BOOL)ZmouseDown: (NXPoint *)pt;		// return YES if brush handled
+- (BOOL)XYmouseDown: (NSPoint *)pt;		// return YES if brush handled
+- (BOOL)ZmouseDown: (NSPoint *)pt;		// return YES if brush handled
 
-- _keyDown:(NXEvent *)theEvent;
+- _keyDown:(NSEvent *)theEvent;
 
-- (NXPoint)centerPoint;						// for camera flyby mode
+- (NSPoint)centerPoint;						// for camera flyby mode
 
 - InstanceSize;
 - XYDrawSelf;

@@ -104,7 +104,7 @@ void qprintf (char *fmt, ...)		// prints text to cmd_out_i
 	va_end (argptr);
 
 	[g_cmd_out_i setStringValue: string];
-	NXPing ();
+	NSPing ();
 	
 	return;
 }
@@ -124,7 +124,7 @@ void Error (char *error, ...)
 	static char		string[1024];
 	
 	if (in_error)
-		[NXApp terminate: NULL];
+		[NSApp terminate: NULL];
 	in_error = YES;
 	
 	va_start (argptr,error);
@@ -134,9 +134,9 @@ void Error (char *error, ...)
 	strcat (string, "\nmap saved to "FN_CRASHSAVE);
 
 	[map_i writeMapFile: FN_CRASHSAVE useRegion: NO];
-	NXRunAlertPanel ("Error",string,NULL,NULL,NULL);
+	NSRunAlertPanel ("Error",string,NULL,NULL,NULL);
 		
-	[NXApp terminate: NULL];
+	[NSApp terminate: NULL];
 }
 
 
@@ -158,7 +158,7 @@ void CleanupName (char *in, char *out)
 }
 
 
-void PrintRect (NXRect *r)
+void PrintRect (NSRect *r)
 {
 	printf ("(%4.0f, %4.0f) + (%4.0f, %4.0f) = (%4.0f,%4.0f)\n"
 		,r->origin.x,r->origin.y,

@@ -1,99 +1,94 @@
-
 #import <AppKit/AppKit.h>
 #include <sys/stat.h>
 
-#define BASEPATHKEY		"basepath"
-#define	MAPNAMESKEY		"maps"
-#define DESCKEY			"desc"
-#define	WADSKEY			"wads"
-#define	BSPFULLVIS		"bspfullvis"
-#define	BSPFASTVIS		"bspfastvis"
-#define	BSPNOVIS		"bspnovis"
-#define	BSPRELIGHT		"bsprelight"
-#define	BSPLEAKTEST		"bspleaktest"
-#define	BSPENTITIES		"bspentities"
+#define EntSubdir		@"progs"
+#define MapSubdir		@"maps"
 
-#define	SUBDIR_ENT		"progs"		// subdir names in heirarchy
-#define	SUBDIR_MAPS		"maps"
-#define SUBDIR_GFX		"gfx"
-
-extern	id project_i;
+#define	MapNames		@"mapNames"
+#define Descriptions	@"descriptions"
+#define	WadFiles		@"wadFiles"
+#define	BSPFullVis		@"bspFullVisCommand"
+#define	BSPFastVis		@"bspFastVisCommand"
+#define	BSPNoVis		@"bspNoVisCommand"
+#define	BSPRelight		@"bspRelightCommand"
+#define	BSPLeakTest		@"bspLeakTestCommand"
+#define	BSPEntities		@"bspEntitiesCommand"
 
 @interface Project: NSObject
 {
-	id	projectInfo;		// dictionary storage of project info
+	id	projectInfo;		// NSDictionary storage of project info
 
-	id	basepathinfo_i;		// outlet to base path info textfield
-	id	mapbrowse_i;		// outlet to QuakeEd Maps browser
-	id	currentmap_i;		// outlet to current map textfield
-	id	mapList;			// list of map names (Storage)
-	id	descList;			// list of map descriptions (Storage)
-	id	wadList;			// list of wad names (Storage)
+	id	mapNames;			// Array of map names (NSString)
+	id	descriptions;		// Array of map descriptions (NSString)
+	id	wadNames;			// Array of wad names (NSString)
+
+	id	pBasePathField;		// outlet to base path info (NSTextField)
+	id	pCurrentMapField;	// outlet to current map textfield
+	id	pBSPOutputView; 	// outlet to a command output NSTextView
+	id	pMapBrowser;		// outlet to Forge Maps browser
 	
-	id	pis_panel_i;		// outlet to Project Info Settings (PIS) panel
+	id	projectPrefsPanel;	// outlet to Project Preferences panel
 
-	id	pis_basepath_i;		// outlet to PIS->base path
-	id	pis_wads_i;			// outlet to PIS->wad browser	
-	id	pis_fullvis_i;		// outlet to PIS->full vis command
-	id	pis_fastvis_i;		// outlet to PIS->fast vis command
-	id	pis_novis_i;		// outlet to PIS->no vis command
-	id	pis_relight_i;		// outlet to PIS->relight command
-	id	pis_leaktest_i;		// outlet to PIS->leak test command
-
-	id	BSPoutput_i;		// outlet to Text
+	id	ppBasePath;			// outlet to PPanel->"Base Path"
+	id	ppWadBrowser;		// outlet to PPanel->"WAD Browser"
+	id	ppFullVisField;		// outlet to PPanel->"Full VIS Compile"
+	id	ppFastVisField;		// outlet to PPanel->"Fast VIS Compile"
+	id	ppNoVisField;		// outlet to PPanel->"No VIS Compile"
+	id	ppRelightField;		// outlet to PPanel->"Relighting Compile"
+	id	ppLeakTestField;	// outlet to PPanel->"Leak Check Compile"
 	
-	NSString	*path_projectinfo;	// path of QE_Project file
+	NSString	*_projectPath;	// path to *.forge file
 
-	NSString	*path_basepath; 	// base path of heirarchy
+	NSString	*_basePath; 	// base path of heirarchy
+	NSString	*_progsPath;	// derived from basepath
+	NSString	*_mapPath;		// derived from basepath
+	NSString	*_finalMapPath;	// derived from basepath
 
-	NSString	*path_progdir;		// derived from basepath
-	NSString	*path_mapdirectory; // derived from basepath
-	NSString	*path_finalmapdir;	// derived from basepath
+	NSString	*_wad8;		// path of texture WAD for cmd-8 key
+	NSString	*_wad9;		// path of texture WAD for cmd-9 key
+	NSString	*_wad0;		// path of texture WAD for cmd-0 key
 
-	NSString	*path_wad8;		// path of texture WAD for cmd-8 key
-	NSString	*path_wad9;		// path of texture WAD for cmd-9 key
-	NSString	*path_wad0;		// path of texture WAD for cmd-0 key
-
-	NSString	*string_fullvis;	// cmd-line parm
-	NSString	*string_fastvis;	// cmd-line parm
-	NSString	*string_novis;		// cmd-line parm
-	NSString	*string_relight;	// cmd-line parm
-	NSString	*string_leaktest;	// cmd-line parm
-	NSString	*string_entities;	// cmd-line parm
+	NSString	*_fullVisCommand;	// cmd-line parm
+	NSString	*_fastVisCommand;	// cmd-line parm
+	NSString	*_noVisCommand; 	// cmd-line parm
+	NSString	*_relightCommand;	// cmd-line parm
+	NSString	*_leakTestCommand;	// cmd-line parm
+	NSString	*_entitiesCommand;	// cmd-line parm
 
 	int	showDescriptions;	// 1 = show map descs in browser
 
 	time_t	lastModified;	// last time project file was modified
 }
 
-- initProject;
-- initVars;
+- (id) initProject;
+- (id) initVars;
+- (void) initProjectSettings;
 
-- (char *)currentProjectFile;
+- (void) setTextureWad: (NSString *) wadFile;
 
-- setTextureWad: (char *)wf;
+- (void) addToOutput: (NSString *) string;
 
-- addToOutput: (NSString *) string;
-- clearBspOutput: sender;
-- initProjSettings;
-- changeChar: (char) f to: (char) t in: (id) obj;
-- (int) searchForString: (NSString *) str in: (id) obj;
+- (void) changeString: (NSString *) f to: (NSString *) t in: (id) obj;
+- (BOOL) searchForString: (NSString *) str in: (id) obj;
 
-- parseProjectFile;		// read defaultsdatabase for project path
-- openProjectFile: (NSString *) path;	// called by openProject and newProject
-- openProject;
-- clickedOnMap:sender;		// called if clicked on map in browser
-- clickedOnWad:sender;		// called if clicked on wad in browser
+- (void) parseProjectFile;				// read database for project path
+- (void) openProjectWithFile: (NSString *) path;	// called by openProject and newProject
+- (id) openProject;
+
+- (void) wadWasClicked: (id) sender;	// called if clicked on wad in browser
+- (void) mapWasClicked: (id) sender;	// called if clicked on map in browser
+- (void) clearBspOutput: (id) sender;	// Called if the BSP output view should
+										//	be cleared
 
 //	methods to query the project file
-
+- (NSString *) currentProject;
 - (NSString *) mapDirectory;
 - (NSString *) finalMapDirectory;
 - (NSString *) progDirectory;
 
-- (NSString *) WAD8;
-- (NSString *) WAD9;
-- (NSString *) WAD0;
+- (NSString *) wad8;
+- (NSString *) wad9;
+- (NSString *) wad0;
 
 - (NSString *) fullVisCommand;
 - (NSString *) fastVisCommand;

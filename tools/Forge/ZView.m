@@ -15,9 +15,9 @@ float	zplanedir;
 initFrame:
 ==================
 */
-- initFrame:(const NXRect *)frameRect
+- initFrame:(const NSRect *)frameRect
 {
-	NXPoint	pt;
+	NSPoint	pt;
 	
 	origin[0] = 0.333;
 	origin[1] = 0.333;
@@ -72,7 +72,7 @@ initFrame:
 	return zscrollview_i;
 }
 
-- setXYOrigin: (NXPoint *)pt
+- setXYOrigin: (NSPoint *)pt
 {
 	origin[0] = pt->x + 0.333;
 	origin[1] = pt->y + 0.333;
@@ -89,10 +89,10 @@ initFrame:
 setOrigin:scale:
 ===================
 */
-- setOrigin: (NXPoint *)pt scale: (float)sc
+- setOrigin: (NSPoint *)pt scale: (float)sc
 {
-	NXRect		sframe;
-	NXRect		newbounds;
+	NSRect		sframe;
+	NSRect		newbounds;
 	
 //
 // calculate the area visible in the cliprect
@@ -156,7 +156,7 @@ Called when the scaler popup on the window is used
 - scaleMenuTarget: sender
 {
 	char	const	*item;
-	NXRect		visrect, sframe;
+	NSRect		visrect, sframe;
 	float		nscale;
 	
 	item = [[sender selectedCell] title];
@@ -238,7 +238,7 @@ If realbounds has shrunk, nothing will change.
 */
 - newRealBounds
 {
-	NXRect		sbounds;
+	NSRect		sbounds;
 	float		vistop, visbottom;
 
 	if (minheight == oldminheight && maxheight == oldmaxheight)
@@ -299,7 +299,7 @@ Rect is in global world (unscaled) coordinates
 ============
 */
 
-- drawGrid: (const NXRect *)rect
+- drawGrid: (const NSRect *)rect
 {
 	int		y, stopy;
 	float	top,bottom;
@@ -441,9 +441,9 @@ drawSelf
 ===============================================================================
 */
 
-- drawSelf:(const NXRect *)rects :(int)rectCount
+- drawSelf:(const NSRect *)rects :(int)rectCount
 {
-	NXRect		visRect;
+	NSRect		visRect;
 	
 	minheight = 999999;
 	maxheight = -999999;
@@ -453,7 +453,7 @@ drawSelf
 	rects = &visRect;
 
 // erase window
-	NXEraseRect (&rects[0]);
+	NSEraseRect (&rects[0]);
 	
 // draw grid
 	[self drawGrid: &rects[0]];
@@ -491,17 +491,17 @@ XYDrawSelf
 
 /*
 ==============
-getPoint: (NXPoint *)pt
+getPoint: (NSPoint *)pt
 ==============
 */
-- getPoint: (NXPoint *)pt
+- getPoint: (NSPoint *)pt
 {
 	pt->x = origin[0] + 0.333;	// offset a bit to avoid edge cases
 	pt->y = origin[1] + 0.333;
 	return self;
 }
 
-- setPoint: (NXPoint *)pt
+- setPoint: (NSPoint *)pt
 {
 	origin[0] = pt->x;
 	origin[1] = pt->y;
@@ -523,14 +523,14 @@ MOUSE CLICKING
 dragLoop:
 ================
 */
-static	NXPoint		oldreletive;
-- dragFrom: (NXEvent *)startevent 
+static	NSPoint		oldreletive;
+- dragFrom: (NSEvent *)startevent 
 	useGrid: (BOOL)ug
 	callback: (void (*) (float dy)) callback
 {
-	NXEvent		*event;
-	NXPoint		startpt, newpt;
-	NXPoint		reletive, delta;
+	NSEvent		*event;
+	NSPoint		startpt, newpt;
+	NSPoint		reletive, delta;
 	int		gridsize;
 
 	gridsize = [xyview_i gridsize];
@@ -542,10 +542,10 @@ static	NXPoint		oldreletive;
 	
 	while (1)
 	{
-		event = [NXApp getNextEvent: 
-			NX_LMOUSEUPMASK | NX_LMOUSEDRAGGEDMASK
-			| NX_RMOUSEUPMASK | NX_RMOUSEDRAGGEDMASK];
-		if (event->type == NX_LMOUSEUP || event->type == NX_RMOUSEUP)
+		event = [NSApp getNextEvent: 
+			NSLeftMouseUpMask | NSLeftMouseDraggedMask
+			| NSRightMouseUpMask | NSRightMouseDraggedMask];
+		if (event->type == NSLeftMouseUp || event->type == NSRightMouseUp)
 			break;
 			
 		newpt = event->location;
@@ -583,7 +583,7 @@ void ZDragCallback (float dy)
 	[quakeed_i redrawInstance];
 }
 
-- selectionDragFrom: (NXEvent*)theEvent	
+- selectionDragFrom: (NSEvent*)theEvent	
 {
 	qprintf ("dragging selection");
 	[self	dragFrom:	theEvent 
@@ -599,8 +599,8 @@ void ZDragCallback (float dy)
 
 void ZScrollCallback (float dy)
 {
-	NXRect		basebounds;
-	NXPoint		neworg;
+	NSRect		basebounds;
+	NSPoint		neworg;
 	float		scale;
 	
 	[ [zview_i superview] getBounds: &basebounds];
@@ -614,7 +614,7 @@ void ZScrollCallback (float dy)
 	[zview_i setOrigin: &neworg scale: scale];
 }
 
-- scrollDragFrom: (NXEvent*)theEvent	
+- scrollDragFrom: (NSEvent*)theEvent	
 {
 	qprintf ("scrolling view");
 	[self	dragFrom:	theEvent 
@@ -637,9 +637,9 @@ void ZControlCallback (float dy)
 	[quakeed_i redrawInstance];
 }
 
-- (BOOL)planeDragFrom: (NXEvent*)theEvent	
+- (BOOL)planeDragFrom: (NSEvent*)theEvent	
 {
-	NXPoint			pt;
+	NSPoint			pt;
 	vec3_t			dragpoint;
 	
 	if ([map_i numSelected] != 1)
@@ -680,9 +680,9 @@ void ZControlCallback (float dy)
 mouseDown
 ===================
 */
-- mouseDown:(NXEvent *)theEvent
+- mouseDown:(NSEvent *)theEvent
 {
-	NXPoint	pt;
+	NSPoint	pt;
 	int		flags;
 	vec3_t	p1;
 	
@@ -693,12 +693,12 @@ mouseDown
 	p1[1] = origin[1];
 	p1[2] = pt.y;
 	
-	flags = theEvent->flags & (NX_SHIFTMASK | NX_CONTROLMASK | NX_ALTERNATEMASK | NX_COMMANDMASK);
+	flags = theEvent->flags & (NSShiftKeyMask | NSControlKeyMask | NSAlternateKeyMask | NSCommandKeyMask);
 
 //
 // shift click to select / deselect a brush from the world
 //
-	if (flags == NX_SHIFTMASK)
+	if (flags == NSShiftKeyMask)
 	{		
 		[map_i selectRay: p1 : p1 : NO];
 		return self;
@@ -707,7 +707,7 @@ mouseDown
 //
 // alt click = set entire brush texture
 //
-	if (flags == NX_ALTERNATEMASK)
+	if (flags == NSAlternateKeyMask)
 	{
 		[map_i setTextureRay: p1 : p1 : YES];
 		return self;
@@ -716,7 +716,7 @@ mouseDown
 //
 // control click = position view
 //
-	if (flags == NX_CONTROLMASK)
+	if (flags == NSControlKeyMask)
 	{
 		[cameraview_i setZOrigin: pt.y];
 		[quakeed_i updateAll];
@@ -756,15 +756,15 @@ mouseDown
 rightMouseDown
 ===================
 */
-- rightMouseDown:(NXEvent *)theEvent
+- rightMouseDown:(NSEvent *)theEvent
 {
-	NXPoint	pt;
+	NSPoint	pt;
 	int		flags;
 		
 	pt= theEvent->location;
 	[self convertPoint:&pt  fromView:NULL];
 
-	flags = theEvent->flags & (NX_SHIFTMASK | NX_CONTROLMASK | NX_ALTERNATEMASK | NX_COMMANDMASK);
+	flags = theEvent->flags & (NSShiftKeyMask | NSControlKeyMask | NSAlternateKeyMask | NSCommandKeyMask);
 
 	
 //
@@ -795,11 +795,11 @@ rightMouseDown
 modalMoveLoop
 ================
 */
-- modalMoveLoop: (NXPoint *)basept :(vec3_t)movemod : converter
+- modalMoveLoop: (NSPoint *)basept :(vec3_t)movemod : converter
 {
 	vec3_t		originbase;	
-	NXEvent		*event;
-	NXPoint		newpt;
+	NSEvent		*event;
+	NSPoint		newpt;
 	vec3_t		delta;
 	
 	int			i;
@@ -811,7 +811,7 @@ modalMoveLoop
 //
 	goto drawentry;
 
-	while (event->type != NX_LMOUSEUP)
+	while (event->type != NSLeftMouseUp)
 	{
 		//
 		// calculate new point
@@ -833,10 +833,10 @@ drawentry:
 		//
 		[quakeed_i newinstance];
 		[self display];
-		NXPing ();
+		NSPing ();
 				
-		event = [NXApp getNextEvent: 
-			NX_LMOUSEUPMASK | NX_LMOUSEDRAGGEDMASK];		
+		event = [NSApp getNextEvent: 
+			NSLeftMouseUpMask | NSLeftMouseDraggedMask];		
 	}
 
 //
@@ -852,7 +852,7 @@ drawentry:
 XYmouseDown
 ===============
 */
-- (BOOL)XYmouseDown: (NXPoint *)pt
+- (BOOL)XYmouseDown: (NSPoint *)pt
 {	
 	vec3_t		movemod;
 	

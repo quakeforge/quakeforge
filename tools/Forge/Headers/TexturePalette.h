@@ -1,24 +1,20 @@
 
-typedef union
-{
+typedef union pixel32_u {
 	byte		chan[4];
 	unsigned	p;
 } pixel32_t;
 
 
-typedef struct
-{
+typedef struct texturedef_s {
 	char	texture[16];
 	float	rotate;
 	float	shift[2];
 	float	scale[2];
 } texturedef_t;
 
-
-typedef struct
-{
+typedef struct qtexture_s {
 	char		name[16];
-	
+
 	int			width;
 	int			height;
 	NSBitmapImageRep	*rep;
@@ -34,9 +30,7 @@ extern	qtexture_t 		qtextures[MAX_TEXTURES];
 void	TEX_InitFromWad (char *path);
 qtexture_t *TEX_ForName (char *name);
 
-
-typedef struct
-{
+typedef struct {
 	id		image;		// NXImage
 	NSRect	r;
 	char	*name;
@@ -68,46 +62,46 @@ extern	id texturepalette_i;
 	int	selectedTexture;
 }
 
-- (char*)currentWad;
-- initPaletteFromWadfile:(char *)wf;
+- (NSString *) currentWad;
+- initPaletteFromWadfile:(NSString *) wadFile;
 - computeTextureViewSize;
 - alphabetize;
 - getList;
-- (int)getSelectedTexture;
-- setSelectedTexture:(int)which;
-- (int)getSelectedTexIndex;
+- (int) getSelectedTexture;
+- setSelectedTexture: (int) which;
+- (int) getSelectedTexIndex;
 
 // Called externally
-- (char *)getSelTextureName;
-- setTextureByName:(char *)name;
+- (NSString *) selectedTextureName;
+- selectTextureByName: (NSString *) name;
 
 // New methods to replace the 2 above ones
-- setTextureDef:(texturedef_t *)td;
-- getTextureDef:(texturedef_t *)td;
+- (texturedef_t *) textureDef;
+- setTextureDef: (texturedef_t *) td;
 
 // Action methods
-- searchForTexture:sender;
+- searchForTexture: (id) sender;
 
-- clearTexinfo: sender;
+- clearTexinfo: (id) sender;
 
-- incXShift:sender;
-- decXShift:sender;
+- incXShift: (id) sender;
+- decXShift: (id) sender;
 
-- incYShift:sender;
-- decYShift:sender;
+- incYShift: (id) sender;
+- decYShift: (id) sender;
 
-- incRotate: sender;
-- decRotate: sender;
+- incRotate: (id) sender;
+- decRotate: (id) sender;
 
-- incXScale:sender;
-- decXScale:sender;
+- incXScale: (id) sender;
+- decXScale: (id) sender;
 
-- incYScale:sender;
-- decYScale:sender;
+- incYScale: (id) sender;
+- decYScale: (id) sender;
 
-- texturedefChanged: sender;
-- onlyShowMapTextures:sender;
-- (int) searchForTextureInPalette:(char *)texture;
-- setDisplayFlag:(int)index to:(int)value;
+- texturedefChanged: (id) sender;
+- onlyShowMapTextures: (id) sender;
+- (int) searchForTextureInPalette: (NSString *) texture;
+- setDisplayFlag: (int) index to: (int) value;
 
 @end
