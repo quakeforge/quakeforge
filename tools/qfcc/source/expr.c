@@ -89,19 +89,6 @@ expr_type expr_types[] = {
 	ex_integer,		// ev_integer
 };
 
-const char *type_names[] = {
-	"void",
-	"string",
-	"float",
-	"vector",
-	"entity",
-	"field",
-	"function",
-	"pointer",
-	"quaternion",
-	"int",
-};
-
 type_t *
 get_type (expr_t *e)
 {
@@ -242,7 +229,7 @@ type_mismatch (expr_t *e1, expr_t *e2, int op)
 	t2 = extract_type (e2);
 
 	return error (e1, "type mismatch: %s %s %s",
-				  type_names[t1], get_op_string (op), type_names[t2]);
+				  type_name[t1], get_op_string (op), type_name[t2]);
 }
 
 void
@@ -446,7 +433,7 @@ print_expr (expr_t *e)
 			} else {
 				printf("<>");
 			}
-			printf (":%s:%d)@", type_names [e->e.temp.type->type],
+			printf (":%s:%d)@", type_name [e->e.temp.type->type],
 					e->e.temp.users);
 			break;
 		case ex_nil:
