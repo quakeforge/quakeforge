@@ -59,9 +59,18 @@ typedef struct cmdalias_s {
 
 cmdalias_t *cmd_alias;
 cmd_source_t cmd_source;
-dstring_t *cmd_buffer, *cmd_legacybuffer, *cmd_activebuffer, *cmd_argbuf;
+
+/* FIXME: All these separate buffers are sort of hacky
+The command buffer interface should be generalized and
+each part of QF (console, stufftext, config files and scripts)
+that needs one should allocate and maintain its own.
+*/
+dstring_t *cmd_buffer; // Console buffer
+dstring_t *cmd_legacybuffer; // Server stuffcmd buffer with absolute backwards-compatibility
+dstring_t *cmd_activebuffer; // Buffer currently being executed
+dstring_t *cmd_argbuf; // Buffer for reconstructing tokens into single string
 qboolean cmd_wait = false;
-qboolean cmd_legacy = false;
+qboolean cmd_legacy = false; // Are we executing current buffer in legacy mode?
 int cmd_argc;
 int cmd_maxargc = 0;
 dstring_t **cmd_argv = 0;
@@ -76,6 +85,18 @@ hashtab_t  *cmd_alias_hash;
 hashtab_t  *cmd_hash;
 
 //=============================================================================
+
+
+/* Quick function to determine if a character is escaped */
+qboolean 
+escaped (const char *str, int i)
+{
+	int n, c;
+	if (!i)
+		return 0;
+	for (n = i-1, c = 0; n >= 0 && str[n] == '\\'; n--,c++);
+	return c & 1;
+}
 
 /*
 	Cmd_Wait_f
@@ -160,11 +181,11 @@ extract_line (dstring_t *buffer, dstring_t *line)
 	char *text = buffer->str;
 	
 	for (i = 0; text[i]; i++) {
-		if (text[i] == '\'' && !dquotes)
+		if (text[i] == '\'' && !escaped(text,i) && !dquotes)
 			squotes^=1;
-		if (text[i] == '"' && !squotes)
+		if (text[i] == '"' && !escaped(text,i) && !squotes)
 			dquotes^=1;
-		if (text[i] == ';' && !squotes && !dquotes)
+		if (text[i] == ';' && !escaped(text,i) && !squotes && !dquotes)
 			break;
 		if (text[i] == '\n' || text[i] == '\r')
 			break;
@@ -189,7 +210,8 @@ void
 Cbuf_ExecuteBuffer (dstring_t *buffer)
 {
 	dstring_t *buf = dstring_newstr ();
-		
+	dstring_t *temp = cmd_activebuffer; // save old context
+	cmd_activebuffer = buffer;
 	while (strlen(buffer->str)) {
 		extract_line (buffer, buf);
 		Cmd_ExecuteString(buf->str, src_command);
@@ -200,18 +222,16 @@ Cbuf_ExecuteBuffer (dstring_t *buffer)
 		dstring_clearstr(buf);
 	}
 	dstring_delete (buf);
+	cmd_activebuffer = temp; // restore old context
 }
 
 void
 Cbuf_Execute (void)
 {
-	cmd_activebuffer = cmd_legacybuffer; // Put legacy buffer into context
+	Cbuf_ExecuteBuffer (cmd_buffer); // Console buffer gets precedence
 	cmd_legacy = true;
-	Cbuf_ExecuteBuffer (cmd_activebuffer);
+	Cbuf_ExecuteBuffer (cmd_legacybuffer); // Then legacy/stufftext buffer
 	cmd_legacy = false;
-	cmd_activebuffer = cmd_buffer; // Next, do modern filtered buffer
-	Cbuf_ExecuteBuffer (cmd_activebuffer);
-	cmd_activebuffer = cmd_buffer; // The modern buffer should be in context by default
 }	
 /*
 	Cbuf_Execute_Sets
@@ -312,7 +332,7 @@ Cmd_Exec_File (const char *path)
 			f[len] = 0;
 			Qread (file, f, len);
 			Qclose (file);
-			Cbuf_InsertText (f);
+			Cbuf_InsertTextTo (cmd_buffer, f); // Always insert into console
 			free (f);
 		}
 	}
@@ -335,7 +355,7 @@ Cmd_Exec_f (void)
 		Sys_Printf ("couldn't exec %s\n", Cmd_Argv (1));
 		return;
 	}
-	Cbuf_InsertText (f);
+	Cbuf_InsertTextTo (cmd_buffer, f); // Always insert into console
 	Hunk_FreeToLowMark (mark);
 
 	if (!Cvar_Command () && (cmd_warncmd->int_val
