@@ -25,11 +25,11 @@ Class (string name) obj_lookup_class = #0;
 string (SEL selector) sel_get_name = #0;
 string (SEL selector) sel_get_type = #0;
 SEL (string name) sel_get_uid = #0;
-SEL (string name) sel_get_any_uid = #0;
-SEL (string name) sel_get_any_typed_uid = #0;
-SEL (string name, string type) sel_get_typed_uid = #0;
+//SEL (string name) sel_get_any_uid = #0;
+//SEL (string name) sel_get_any_typed_uid = #0;
+//SEL (string name, string type) sel_get_typed_uid = #0;
 SEL (string name) sel_register_name = #0;
-SEL (string name, string type) sel_register_typed_name = #0;
+//SEL (string name, string type) sel_register_typed_name = #0;
 BOOL (SEL aSel) sel_is_mapped = #0;
 
 Method (Class class, SEL aSel) class_get_class_method = #0;

@@ -8,7 +8,7 @@ typedef enum {
 
 @extern void (id object, integer code, string fmt, ...) obj_error;
 @extern void (id object, integer code, string fmt, @va_list args) obj_verror;
-//obj_error_handler (objc_error_handler func) obj_set_error_handler = #0;
+//obj_error_handler (objc_error_handler func) obj_set_error_handler;
 @extern IMP (id receiver, SEL op) obj_msg_lookup;
 @extern IMP (Super class, SEL op) obj_msg_lookup_super;
 //retval_t (id receiver, SEL op, @va_list args) obj_msg_sendv;
@@ -18,20 +18,20 @@ typedef enum {
 @extern (void []) (void [] mem, integer size) obj_realloc;
 @extern (void []) (integer nelem, integer size) obj_calloc;
 @extern void (void [] mem) obj_free;
-//(void []) (void) obj_get_uninstalled_dtable = #0;
+//(void []) (void) obj_get_uninstalled_dtable;
 
 @extern Class (string name) obj_get_class;
 @extern Class (string name) obj_lookup_class;
-//Class (void [][] enum_stage) obj_next_class = #0;
+//Class (void [][] enum_stage) obj_next_class;
 
 @extern string (SEL selector) sel_get_name;
 @extern string (SEL selector) sel_get_type;
 @extern SEL (string name) sel_get_uid;
-@extern SEL (string name) sel_get_any_uid;
-@extern SEL (string name) sel_get_any_typed_uid;
-@extern SEL (string name, string type) sel_get_typed_uid;
+//@extern SEL (string name) sel_get_any_uid;
+//@extern SEL (string name) sel_get_any_typed_uid;
+//@extern SEL (string name, string type) sel_get_typed_uid;
 @extern SEL (string name) sel_register_name;
-@extern SEL (string name, string type) sel_register_typed_name;
+//@extern SEL (string name, string type) sel_register_typed_name;
 @extern BOOL (SEL aSel) sel_is_mapped;
 
 @extern Method (Class class, SEL aSel) class_get_class_method;
