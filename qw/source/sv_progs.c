@@ -401,7 +401,7 @@ resolve (progs_t *pr)
 	// progs engine needs these globals anyway
 	sv_pr_state.globals.self = sv_globals.self;
 	sv_pr_state.globals.time = sv_globals.time;
-	return 0;
+	return 1;
 }
 
 void
