@@ -30,17 +30,13 @@ static const char rcsid[] =
 #ifdef HAVE_CONFIG_H
 # include "config.h"
 #endif
-#ifdef HAVE_IO_H
-# include <io.h>
-#endif
 #ifdef HAVE_STRING_H
 # include <string.h>
 #endif
+#ifdef HAVE_STRINGS_H
+# include <strings.h>
+#endif
 
-#include <ctype.h>
-#include <dirent.h>
-#include <fcntl.h>
-#include <stdarg.h>
 #include <stdlib.h>
 
 #include "QF/bspfile.h"
@@ -76,67 +72,74 @@ swap_bsp (bsp_t *bsp, int todisk)
 
 	// vertexes
 	for (i=0 ; i<bsp->numvertexes ; i++) {
+		dvertex_t  *vertex = &bsp->vertexes[i];
 		for (j=0 ; j<3 ; j++)
-			bsp->vertexes[i].point[j] = LittleFloat (bsp->vertexes[i].point[j]);
+			vertex->point[j] = LittleFloat (vertex->point[j]);
 	}
 		
 	// planes
 	for (i=0 ; i<bsp->numplanes ; i++) {
+		dplane_t   *plane = &bsp->planes[i];
 		for (j=0 ; j<3 ; j++)
-			bsp->planes[i].normal[j] = LittleFloat (bsp->planes[i].normal[j]);
-		bsp->planes[i].dist = LittleFloat (bsp->planes[i].dist);
-		bsp->planes[i].type = LittleLong (bsp->planes[i].type);
+			plane->normal[j] = LittleFloat (plane->normal[j]);
+		plane->dist = LittleFloat (plane->dist);
+		plane->type = LittleLong (plane->type);
 	}
 	
 	// texinfos
 	for (i=0 ; i<bsp->numtexinfo ; i++) {
+		texinfo_t  *texinfo = &bsp->texinfo[i];
 		for (j=0 ; j<8 ; j++)
-			bsp->texinfo[i].vecs[0][j] = LittleFloat (bsp->texinfo[i].vecs[0][j]);
-		bsp->texinfo[i].miptex = LittleLong (bsp->texinfo[i].miptex);
-		bsp->texinfo[i].flags = LittleLong (bsp->texinfo[i].flags);
+			texinfo->vecs[0][j] = LittleFloat (texinfo->vecs[0][j]);
+		texinfo->miptex = LittleLong (texinfo->miptex);
+		texinfo->flags = LittleLong (texinfo->flags);
 	}
 	
 	// faces
 	for (i=0 ; i<bsp->numfaces ; i++) {
-		bsp->faces[i].texinfo = LittleShort (bsp->faces[i].texinfo);
-		bsp->faces[i].planenum = LittleShort (bsp->faces[i].planenum);
-		bsp->faces[i].side = LittleShort (bsp->faces[i].side);
-		bsp->faces[i].lightofs = LittleLong (bsp->faces[i].lightofs);
-		bsp->faces[i].firstedge = LittleLong (bsp->faces[i].firstedge);
-		bsp->faces[i].numedges = LittleShort (bsp->faces[i].numedges);
+		dface_t    *face = &bsp->faces[i];
+		face->texinfo = LittleShort (face->texinfo);
+		face->planenum = LittleShort (face->planenum);
+		face->side = LittleShort (face->side);
+		face->lightofs = LittleLong (face->lightofs);
+		face->firstedge = LittleLong (face->firstedge);
+		face->numedges = LittleShort (face->numedges);
 	}
 
 	// nodes
 	for (i=0 ; i<bsp->numnodes ; i++) {
-		bsp->nodes[i].planenum = LittleLong (bsp->nodes[i].planenum);
+		dnode_t    *node = &bsp->nodes[i];
+		node->planenum = LittleLong (node->planenum);
 		for (j=0 ; j<3 ; j++) {
-			bsp->nodes[i].mins[j] = LittleShort (bsp->nodes[i].mins[j]);
-			bsp->nodes[i].maxs[j] = LittleShort (bsp->nodes[i].maxs[j]);
+			node->mins[j] = LittleShort (node->mins[j]);
+			node->maxs[j] = LittleShort (node->maxs[j]);
 		}
-		bsp->nodes[i].children[0] = LittleShort (bsp->nodes[i].children[0]);
-		bsp->nodes[i].children[1] = LittleShort (bsp->nodes[i].children[1]);
-		bsp->nodes[i].firstface = LittleShort (bsp->nodes[i].firstface);
-		bsp->nodes[i].numfaces = LittleShort (bsp->nodes[i].numfaces);
+		node->children[0] = LittleShort (node->children[0]);
+		node->children[1] = LittleShort (node->children[1]);
+		node->firstface = LittleShort (node->firstface);
+		node->numfaces = LittleShort (node->numfaces);
 	}
 
 	// leafs
 	for (i=0 ; i<bsp->numleafs ; i++) {
-		bsp->leafs[i].contents = LittleLong (bsp->leafs[i].contents);
+		dleaf_t    *leaf = &bsp->leafs[i];
+		leaf->contents = LittleLong (leaf->contents);
 		for (j=0 ; j<3 ; j++) {
-			bsp->leafs[i].mins[j] = LittleShort (bsp->leafs[i].mins[j]);
-			bsp->leafs[i].maxs[j] = LittleShort (bsp->leafs[i].maxs[j]);
+			leaf->mins[j] = LittleShort (leaf->mins[j]);
+			leaf->maxs[j] = LittleShort (leaf->maxs[j]);
 		}
 
-		bsp->leafs[i].firstmarksurface = LittleShort (bsp->leafs[i].firstmarksurface);
-		bsp->leafs[i].nummarksurfaces = LittleShort (bsp->leafs[i].nummarksurfaces);
-		bsp->leafs[i].visofs = LittleLong (bsp->leafs[i].visofs);
+		leaf->firstmarksurface = LittleShort (leaf->firstmarksurface);
+		leaf->nummarksurfaces = LittleShort (leaf->nummarksurfaces);
+		leaf->visofs = LittleLong (leaf->visofs);
 	}
 
 	// clipnodes
 	for (i=0 ; i<bsp->numclipnodes ; i++) {
-		bsp->clipnodes[i].planenum = LittleLong (bsp->clipnodes[i].planenum);
-		bsp->clipnodes[i].children[0] = LittleShort (bsp->clipnodes[i].children[0]);
-		bsp->clipnodes[i].children[1] = LittleShort (bsp->clipnodes[i].children[1]);
+		dclipnode_t *clipnode = &bsp->clipnodes[i];
+		clipnode->planenum = LittleLong (clipnode->planenum);
+		clipnode->children[0] = LittleShort (clipnode->children[0]);
+		clipnode->children[1] = LittleShort (clipnode->children[1]);
 	}
 
 	// miptex
@@ -152,17 +155,22 @@ swap_bsp (bsp_t *bsp, int todisk)
 	}
 	
 	// marksurfaces
-	for (i=0 ; i<bsp->nummarksurfaces ; i++)
-		bsp->marksurfaces[i] = LittleShort (bsp->marksurfaces[i]);
+	for (i=0 ; i<bsp->nummarksurfaces ; i++) {
+		unsigned short *marksurface = &bsp->marksurfaces[i];
+		*marksurface = LittleShort (*marksurface);
+	}
 
 	// surfedges
-	for (i=0 ; i<bsp->numsurfedges ; i++)
-		bsp->surfedges[i] = LittleLong (bsp->surfedges[i]);
+	for (i=0 ; i<bsp->numsurfedges ; i++) {
+		int        *surfedge = &bsp->surfedges[i];
+		*surfedge = LittleLong (*surfedge);
+	}
 
 	// edges
 	for (i=0 ; i<bsp->numedges ; i++) {
-		bsp->edges[i].v[0] = LittleShort (bsp->edges[i].v[0]);
-		bsp->edges[i].v[1] = LittleShort (bsp->edges[i].v[1]);
+		dedge_t    *edge = &bsp->edges[i];
+		edge->v[0] = LittleShort (edge->v[0]);
+		edge->v[1] = LittleShort (edge->v[1]);
 	}
 }
 
