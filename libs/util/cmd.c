@@ -50,11 +50,9 @@
 #include "QF/vfs.h"
 #include "QF/zone.h"
 
-#define	MAX_ALIAS_NAME	32
-
 typedef struct cmdalias_s {
 	struct cmdalias_s *next;
-	char        name[MAX_ALIAS_NAME];
+	char       *name;
 	char       *value;
 } cmdalias_t;
 
@@ -380,54 +378,54 @@ CopyString (char *in)
 void
 Cmd_Alias_f (void)
 {
-	cmdalias_t *a;
-	char        cmd[1024];
+	cmdalias_t *alias;
+	char       *cmd;
 	int         i, c;
 	char       *s;
 
 	if (Cmd_Argc () == 1) {
 		Con_Printf ("Current alias commands:\n");
-		for (a = cmd_alias; a; a = a->next)
-			Con_Printf ("%s : %s\n", a->name, a->value);
+		for (alias = cmd_alias; alias; alias = alias->next)
+			Con_Printf ("%s : %s\n", alias->name, alias->value);
 		return;
 	}
 
 	s = Cmd_Argv (1);
-	if (strlen (s) >= MAX_ALIAS_NAME) {
-		Con_Printf ("Alias name is too long\n");
-		return;
-	}
 	// if the alias already exists, reuse it
-	a = (cmdalias_t*)Hash_Find (cmd_alias_hash, s);
-	if (a) {
-		free (a->value);
-	}
+	alias = (cmdalias_t*)Hash_Find (cmd_alias_hash, s);
+	if (alias) {
+		free (alias->value);
+	} else {
+		cmdalias_t **a;
 
-	if (!a) {
-		a = calloc (1, sizeof (cmdalias_t));
-		a->next = cmd_alias;
-		cmd_alias = a;
-		strcpy (a->name, s);
-		Hash_Add (cmd_alias_hash, a);
+		alias = calloc (1, sizeof (cmdalias_t));
+		alias->name = strdup (s);
+		Hash_Add (cmd_alias_hash, alias);
+		for (a = &cmd_alias; *a; a = &(*a)->next)
+			if (strcmp ((*a)->name, alias->name) >=0)
+				break;
+		alias->next = *a;
+		*a = alias;
 	}
 
 // copy the rest of the command line
+	cmd = malloc (strlen (Cmd_Args ()) + 2);// can never be longer
 	cmd[0] = 0;							// start out with a null string
 	c = Cmd_Argc ();
 	for (i = 2; i < c; i++) {
-		strncat (cmd, Cmd_Argv (i), sizeof (cmd) - strlen (cmd));
-		if (i != c)
-			strncat (cmd, " ", sizeof (cmd) - strlen (cmd));
+		strcat (cmd, Cmd_Argv (i));
+		if (i != c - 1)
+			strcat (cmd, " ");
 	}
 	strncat (cmd, "\n", sizeof (cmd) - strlen (cmd));
 
-	a->value = CopyString (cmd);
+	alias->value = cmd;
 }
 
 void
 Cmd_UnAlias_f (void)
 {
-	cmdalias_t *a, *prev;
+	cmdalias_t *alias;
 	char       *s;
 
 	if (Cmd_Argc () != 2) {
@@ -436,25 +434,21 @@ Cmd_UnAlias_f (void)
 	}
 
 	s = Cmd_Argv (1);
-	if (strlen (s) >= MAX_ALIAS_NAME) {
-		Con_Printf ("Alias name is too long\n");
-		return;
-	}
+	alias = Hash_Del (cmd_alias_hash, s);
 
-	prev = cmd_alias;
-	for (a = cmd_alias; a; a = a->next) {
-		if (!strcmp (s, a->name)) {
-			Hash_Del (cmd_alias_hash, s);
-			free (a->value);
-			prev->next = a->next;
-			if (a == cmd_alias)
-				cmd_alias = a->next;
-			free (a);
-			return;
-		}
-		prev = a;
+	if (alias) {
+		cmdalias_t **a;
+
+		for (a = &cmd_alias; *a != alias; a = &(*a)->next)
+			;
+		*a = alias->next;
+
+		free (alias->name);
+		free (alias->value);
+		free (alias);
+	} else {
+		Con_Printf ("Unknown alias \"%s\"\n", s);
 	}
-	Con_Printf ("Unknown alias \"%s\"\n", s);
 }
 
 /*
@@ -721,8 +715,8 @@ Cmd_CompleteBuildList (char *partial)
 	Thanks to taniwha
 
 */
-char
-*Cmd_CompleteAlias (char * partial)
+char *
+Cmd_CompleteAlias (char * partial)
 {
 	cmdalias_t	*alias;
 	int			len;
@@ -967,6 +961,7 @@ static void
 cmd_alias_free (void *_a, void *unused)
 {
 	cmdalias_t *a = (cmdalias_t*)_a;
+	free (a->name);
 	free (a->value);
 	free (a);
 }
