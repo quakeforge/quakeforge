@@ -59,7 +59,7 @@ init_quotables (void)
 {
 	const char *unquotables = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ"
 							  "abcdefghijklmnopqrstuvwxyz!#$%&*+-./:?@|~_^";
-	const byte *c;
+	const char *c;
 	memset (quotable_bitmap, ~0, sizeof (quotable_bitmap));
 	for (c = unquotables; *c; c++)
 		quotable_bitmap[*c / 8] &= ~(1 << (*c % 8));

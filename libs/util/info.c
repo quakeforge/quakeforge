@@ -100,23 +100,21 @@ Info_SetValueForStarKey (info_t *info, const char *key, const char *value,
 {
 	info_key_t *k;
 	int         cursize;
-	char       *str;
-	byte       *s, *d;
+	char		*str, *d, *s;
 
 	if (strstr (key, "\\") || strstr (value, "\\")) {
 		Sys_Printf ("Can't use keys or values with a \\\n");
 		return 0;
 	}
-
 	if (strstr (key, "\"") || strstr (value, "\"")) {
 		Sys_Printf ("Can't use keys or values with a \"\n");
 		return 0;
 	}
-
 	if (strlen (key) > 63 || strlen (value) > 63) {
 		Sys_Printf ("Keys and values must be < 64 characters.\n");
 		return 0;
 	}
+
 	k = Hash_Find (info->tab, key);
 	cursize = info->cursize;
 	if (k) {
@@ -132,7 +130,7 @@ Info_SetValueForStarKey (info_t *info, const char *key, const char *value,
 		if (strequal (k->value, value))
 			return 0;
 		info->cursize -= strlen (k->value) + 1;
-		free ((char*)k->value);
+		free ((char *) k->value);
 	} else {
 		if (!(k = malloc (sizeof (info_key_t))))
 			Sys_Error ("Info_SetValueForStarKey: out of memory");
