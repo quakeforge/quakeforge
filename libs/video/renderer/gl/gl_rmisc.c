@@ -80,8 +80,8 @@ R_Envmap_f (void)
 {
 	byte        buffer[256 * 256 * 4];
 
-	QFGL_glDrawBuffer (GL_FRONT);
-	QFGL_glReadBuffer (GL_FRONT);
+	glDrawBuffer (GL_FRONT);
+	glReadBuffer (GL_FRONT);
 	envmap = true;
 
 	r_refdef.vrect.x = 0;
@@ -94,44 +94,44 @@ R_Envmap_f (void)
 	r_refdef.viewangles[2] = 0;
 	GL_BeginRendering (&glx, &gly, &glwidth, &glheight);
 	R_RenderView ();
-	QFGL_glReadPixels (0, 0, 256, 256, GL_RGBA, GL_UNSIGNED_BYTE, buffer);
+	glReadPixels (0, 0, 256, 256, GL_RGBA, GL_UNSIGNED_BYTE, buffer);
 	COM_WriteFile ("env0.rgb", buffer, sizeof (buffer));
 
 	r_refdef.viewangles[1] = 90;
 	GL_BeginRendering (&glx, &gly, &glwidth, &glheight);
 	R_RenderView ();
-	QFGL_glReadPixels (0, 0, 256, 256, GL_RGBA, GL_UNSIGNED_BYTE, buffer);
+	glReadPixels (0, 0, 256, 256, GL_RGBA, GL_UNSIGNED_BYTE, buffer);
 	COM_WriteFile ("env1.rgb", buffer, sizeof (buffer));
 
 	r_refdef.viewangles[1] = 180;
 	GL_BeginRendering (&glx, &gly, &glwidth, &glheight);
 	R_RenderView ();
-	QFGL_glReadPixels (0, 0, 256, 256, GL_RGBA, GL_UNSIGNED_BYTE, buffer);
+	glReadPixels (0, 0, 256, 256, GL_RGBA, GL_UNSIGNED_BYTE, buffer);
 	COM_WriteFile ("env2.rgb", buffer, sizeof (buffer));
 
 	r_refdef.viewangles[1] = 270;
 	GL_BeginRendering (&glx, &gly, &glwidth, &glheight);
 	R_RenderView ();
-	QFGL_glReadPixels (0, 0, 256, 256, GL_RGBA, GL_UNSIGNED_BYTE, buffer);
+	glReadPixels (0, 0, 256, 256, GL_RGBA, GL_UNSIGNED_BYTE, buffer);
 	COM_WriteFile ("env3.rgb", buffer, sizeof (buffer));
 
 	r_refdef.viewangles[0] = -90;
 	r_refdef.viewangles[1] = 0;
 	GL_BeginRendering (&glx, &gly, &glwidth, &glheight);
 	R_RenderView ();
-	QFGL_glReadPixels (0, 0, 256, 256, GL_RGBA, GL_UNSIGNED_BYTE, buffer);
+	glReadPixels (0, 0, 256, 256, GL_RGBA, GL_UNSIGNED_BYTE, buffer);
 	COM_WriteFile ("env4.rgb", buffer, sizeof (buffer));
 
 	r_refdef.viewangles[0] = 90;
 	r_refdef.viewangles[1] = 0;
 	GL_BeginRendering (&glx, &gly, &glwidth, &glheight);
 	R_RenderView ();
-	QFGL_glReadPixels (0, 0, 256, 256, GL_RGBA, GL_UNSIGNED_BYTE, buffer);
+	glReadPixels (0, 0, 256, 256, GL_RGBA, GL_UNSIGNED_BYTE, buffer);
 	COM_WriteFile ("env5.rgb", buffer, sizeof (buffer));
 
 	envmap = false;
-	QFGL_glDrawBuffer (GL_BACK);
-	QFGL_glReadBuffer (GL_BACK);
+	glDrawBuffer (GL_BACK);
+	glReadBuffer (GL_BACK);
 	GL_EndRendering ();
 }
 
@@ -166,14 +166,14 @@ R_Init (void)
 
 	texture_extension_number = Skin_Init_Textures (texture_extension_number);
 
-	QFGL_glEnableClientState (GL_COLOR_ARRAY);
-	QFGL_glEnableClientState (GL_VERTEX_ARRAY);
-	QFGL_glEnableClientState (GL_TEXTURE_COORD_ARRAY);
+	glEnableClientState (GL_COLOR_ARRAY);
+	glEnableClientState (GL_VERTEX_ARRAY);
+	glEnableClientState (GL_TEXTURE_COORD_ARRAY);
 
-//	QFGL_glInterleavedArrays(GL_T2F_C4F_N3F_V3F, 0, varray);
-	QFGL_glTexCoordPointer (2, GL_FLOAT, sizeof(varray[0]), varray[0].texcoord);
-	QFGL_glColorPointer (4, GL_FLOAT, sizeof(varray[0]), varray[0].color);
-	QFGL_glVertexPointer (3, GL_FLOAT, sizeof(varray[0]), varray[0].vertex);
+//	glInterleavedArrays(GL_T2F_C4F_N3F_V3F, 0, varray);
+	glTexCoordPointer (2, GL_FLOAT, sizeof(varray[0]), varray[0].texcoord);
+	glColorPointer (4, GL_FLOAT, sizeof(varray[0]), varray[0].color);
+	glVertexPointer (3, GL_FLOAT, sizeof(varray[0]), varray[0].vertex);
 }
 
 
@@ -230,7 +230,7 @@ R_TimeRefresh_f (void)
 	int         i;
 	double      start, stop, time;
 
-	QFGL_glFinish ();
+	glFinish ();
 	GL_EndRendering ();
 
 	start = Sys_DoubleTime ();
@@ -238,7 +238,7 @@ R_TimeRefresh_f (void)
 		GL_BeginRendering (&glx, &gly, &glwidth, &glheight);
 		r_refdef.viewangles[1] = i / 128.0 * 360.0;
 		R_RenderView ();
-		QFGL_glFinish ();
+		glFinish ();
 		GL_EndRendering ();
 	}
 

@@ -129,9 +129,9 @@ R_RenderDlight (dlight_t *light)
 		return;
 	}
 
-	QFGL_glBegin (GL_TRIANGLE_FAN);
+	glBegin (GL_TRIANGLE_FAN);
 
-	QFGL_glColor3fv (light->color);
+	glColor3fv (light->color);
 
 	VectorSubtract (r_origin, light->origin, v);
 	VectorNormalize (v);
@@ -139,8 +139,8 @@ R_RenderDlight (dlight_t *light)
 	for (i = 0; i < 3; i++)
 		v[i] = light->origin[i] + v[i] * rad;
 
-	QFGL_glVertex3fv (v);
-	QFGL_glColor3f (0, 0, 0);
+	glVertex3fv (v);
+	glColor3f (0, 0, 0);
 
 	for (i = 16; i >= 0; i--) {
 		for (j = 0; j < 3; j++)
@@ -148,10 +148,10 @@ R_RenderDlight (dlight_t *light)
 						   vup[j] * (*bub_sin)) * rad;
 		bub_sin += 2;
 		bub_cos += 2;
-		QFGL_glVertex3fv (v);
+		glVertex3fv (v);
 	}
 
-	QFGL_glEnd ();
+	glEnd ();
 }
 
 
@@ -164,10 +164,10 @@ R_RenderDlights (void)
 	if (!gl_dlight_polyblend->int_val)
 		return;
 
-	QFGL_glDepthMask (GL_FALSE);
-	QFGL_glDisable (GL_TEXTURE_2D);
-	QFGL_glBlendFunc (GL_ONE, GL_ONE);
-	QFGL_glShadeModel (GL_SMOOTH);
+	glDepthMask (GL_FALSE);
+	glDisable (GL_TEXTURE_2D);
+	glBlendFunc (GL_ONE, GL_ONE);
+	glShadeModel (GL_SMOOTH);
 
 	l = r_dlights;
 	for (i = 0; i < MAX_DLIGHTS; i++, l++) {
@@ -177,11 +177,11 @@ R_RenderDlights (void)
 	}
 
 	if (!gl_dlight_smooth->int_val)
-		QFGL_glShadeModel (GL_FLAT);
-	QFGL_glColor3ubv (lighthalf_v);
-	QFGL_glEnable (GL_TEXTURE_2D);
-	QFGL_glBlendFunc (GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-	QFGL_glDepthMask (GL_TRUE);
+		glShadeModel (GL_FLAT);
+	glColor3ubv (lighthalf_v);
+	glEnable (GL_TEXTURE_2D);
+	glBlendFunc (GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+	glDepthMask (GL_TRUE);
 }
 
 

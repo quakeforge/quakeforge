@@ -213,10 +213,10 @@ GL_TextureMode_f (void)
 // change all the existing mipmap texture objects
 	for (i = 0, glt = gltextures; i < numgltextures; i++, glt++) {
 		if (glt->mipmap) {
-			QFGL_glBindTexture (GL_TEXTURE_2D, glt->texnum);
-			QFGL_glTexParameterf (GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER,
+			glBindTexture (GL_TEXTURE_2D, glt->texnum);
+			glTexParameterf (GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER,
 					 gl_filter_min);
-			QFGL_glTexParameterf (GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER,
+			glTexParameterf (GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER,
 					 gl_filter_max);
 		}
 	}
@@ -395,7 +395,7 @@ GL_Upload32 (unsigned int *data, int width, int height, qboolean mipmap,
 				    scaled_height);
 	}
 
-	QFGL_glTexImage2D (GL_TEXTURE_2D, 0, intformat, scaled_width, scaled_height, 0,
+	glTexImage2D (GL_TEXTURE_2D, 0, intformat, scaled_width, scaled_height, 0,
 		      GL_RGBA, GL_UNSIGNED_BYTE, scaled);
 
 	if (mipmap) {
@@ -408,20 +408,20 @@ GL_Upload32 (unsigned int *data, int width, int height, qboolean mipmap,
 			scaled_width = max (scaled_width, 1);
 			scaled_height = max (scaled_height, 1);
 			miplevel++;
-			QFGL_glTexImage2D (GL_TEXTURE_2D, miplevel, intformat, scaled_width,
+			glTexImage2D (GL_TEXTURE_2D, miplevel, intformat, scaled_width,
 				      scaled_height, 0, GL_RGBA, GL_UNSIGNED_BYTE, scaled);
 		}
 	}
 
 	if (mipmap) {
-		QFGL_glTexParameterf (GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, gl_filter_min);
-		QFGL_glTexParameterf (GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, gl_filter_max);
+		glTexParameterf (GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, gl_filter_min);
+		glTexParameterf (GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, gl_filter_max);
 	} else {
-		QFGL_glTexParameterf (GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, gl_filter_max);
+		glTexParameterf (GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, gl_filter_max);
 		if (gl_picmip->int_val)
-			QFGL_glTexParameterf (GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+			glTexParameterf (GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 		else
-			QFGL_glTexParameterf (GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, gl_filter_max);
+			glTexParameterf (GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, gl_filter_max);
 	}
 
 	free (scaled);
@@ -463,7 +463,7 @@ GL_Upload8_EXT (byte * data, int width, int height, qboolean mipmap,
 		GL_Resample8BitTexture (data, width, height, scaled, scaled_width,
 					scaled_height);
 	}
-	QFGL_glTexImage2D (GL_TEXTURE_2D, 0, GL_COLOR_INDEX8_EXT, scaled_width,
+	glTexImage2D (GL_TEXTURE_2D, 0, GL_COLOR_INDEX8_EXT, scaled_width,
 		      scaled_height, 0, GL_COLOR_INDEX, GL_UNSIGNED_BYTE, scaled);
 
 	if (mipmap) {
@@ -477,21 +477,21 @@ GL_Upload8_EXT (byte * data, int width, int height, qboolean mipmap,
 			scaled_width = max (scaled_width, 1);
 			scaled_height = max (scaled_height, 1);
 			miplevel++;
-			QFGL_glTexImage2D (GL_TEXTURE_2D, miplevel, GL_COLOR_INDEX8_EXT,
+			glTexImage2D (GL_TEXTURE_2D, miplevel, GL_COLOR_INDEX8_EXT,
 				      scaled_width, scaled_height, 0, GL_COLOR_INDEX,
 				      GL_UNSIGNED_BYTE, scaled);
 		}
 	}
  
 	if (mipmap) {
-		QFGL_glTexParameterf (GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, gl_filter_min);
-		QFGL_glTexParameterf (GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, gl_filter_max);
+		glTexParameterf (GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, gl_filter_min);
+		glTexParameterf (GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, gl_filter_max);
 	} else {
-		QFGL_glTexParameterf (GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, gl_filter_max);
+		glTexParameterf (GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, gl_filter_max);
 		if (gl_picmip->int_val)
-			QFGL_glTexParameterf (GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+			glTexParameterf (GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 		else
-			QFGL_glTexParameterf (GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, gl_filter_max);
+			glTexParameterf (GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, gl_filter_max);
 	}
 
 	free (scaled);
@@ -588,7 +588,7 @@ SetupTexture:
 	glt->bytesperpixel = bytesperpixel;
 	glt->mipmap = mipmap;
 
-	QFGL_glBindTexture (GL_TEXTURE_2D, glt->texnum);
+	glBindTexture (GL_TEXTURE_2D, glt->texnum);
 
 	switch (glt->bytesperpixel) {
 	case 1:

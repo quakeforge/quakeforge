@@ -39,7 +39,7 @@
 
 #include "QF/qtypes.h"
 #include "QF/GL/types.h"
-#include "QF/GL/qf_ext.h"
+#include "QF/GL/extensions.h"
 
 // Multitexturing
 extern QF_glActiveTextureARB	qglActiveTexture;

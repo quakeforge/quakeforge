@@ -246,7 +246,7 @@ Draw_Init (void)
 	GLint		texSize;
 
 	// Some cards have a texture size limit.
-	QFGL_glGetIntegerv(GL_MAX_TEXTURE_SIZE, &texSize);
+	glGetIntegerv(GL_MAX_TEXTURE_SIZE, &texSize);
 	Cvar_Set (gl_max_size, va("%d", texSize));
 
 	Cmd_AddCommand ("gl_texturemode", &GL_TextureMode_f, "Texture mipmap quality.");
@@ -264,8 +264,8 @@ Draw_Init (void)
 	char_texture = GL_LoadTexture ("charset", 128, 128, draw_chars, false, true, 1);	// 1999-12-27 Conwidth/height charset fix by TcT
 	cs_texture = GL_LoadTexture ("crosshair", 8, 8, cs_data, false, true, 1);
 
-	QFGL_glTexParameterf (GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-	QFGL_glTexParameterf (GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+	glTexParameterf (GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+	glTexParameterf (GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 
 	// save a texture slot for translated picture
 	translate_texture = texture_extension_number++;
@@ -307,18 +307,18 @@ Draw_Character8 (int x, int y, int num)
 	fcol = col * 0.0625;
 	size = 0.0625;
 
-	QFGL_glBindTexture (GL_TEXTURE_2D, char_texture);
+	glBindTexture (GL_TEXTURE_2D, char_texture);
 
-	QFGL_glBegin (GL_QUADS);
-	QFGL_glTexCoord2f (fcol, frow);
-	QFGL_glVertex2f (x, y);
-	QFGL_glTexCoord2f (fcol + size, frow);
-	QFGL_glVertex2f (x + 8, y);
-	QFGL_glTexCoord2f (fcol + size, frow + size);
-	QFGL_glVertex2f (x + 8, y + 8);
-	QFGL_glTexCoord2f (fcol, frow + size);
-	QFGL_glVertex2f (x, y + 8);
-	QFGL_glEnd ();
+	glBegin (GL_QUADS);
+	glTexCoord2f (fcol, frow);
+	glVertex2f (x, y);
+	glTexCoord2f (fcol + size, frow);
+	glVertex2f (x + 8, y);
+	glTexCoord2f (fcol + size, frow + size);
+	glVertex2f (x + 8, y + 8);
+	glTexCoord2f (fcol, frow + size);
+	glVertex2f (x, y + 8);
+	glEnd ();
 }
 
 
@@ -366,20 +366,20 @@ Draw_Crosshair (int swap)
 			y = scr_vrect.y + scr_vrect.height / 2 - 3 + cl_crossy->int_val;
 
 			pColor = (unsigned char *) &d_8to24table[crosshaircolor->int_val];
-			QFGL_glColor4ubv (pColor);
-			QFGL_glBindTexture (GL_TEXTURE_2D, cs_texture);
+			glColor4ubv (pColor);
+			glBindTexture (GL_TEXTURE_2D, cs_texture);
 
-			QFGL_glBegin (GL_QUADS);
-			QFGL_glTexCoord2f (0, 0);
-			QFGL_glVertex2f (x - 4, y - 4);
-			QFGL_glTexCoord2f (1, 0);
-			QFGL_glVertex2f (x + 12, y - 4);
-			QFGL_glTexCoord2f (1, 1);
-			QFGL_glVertex2f (x + 12, y + 12);
-			QFGL_glTexCoord2f (0, 1);
-			QFGL_glVertex2f (x - 4, y + 12);
-			QFGL_glEnd ();
-			QFGL_glColor3ubv (lighthalf_v);
+			glBegin (GL_QUADS);
+			glTexCoord2f (0, 0);
+			glVertex2f (x - 4, y - 4);
+			glTexCoord2f (1, 0);
+			glVertex2f (x + 12, y - 4);
+			glTexCoord2f (1, 1);
+			glVertex2f (x + 12, y + 12);
+			glTexCoord2f (0, 1);
+			glVertex2f (x - 4, y + 12);
+			glEnd ();
+			glColor3ubv (lighthalf_v);
 			break;
 	}
 }
@@ -392,17 +392,17 @@ Draw_Pic (int x, int y, qpic_t *pic)
 
 	gl = (glpic_t *) pic->data;
 
-	QFGL_glBindTexture (GL_TEXTURE_2D, gl->texnum);
-	QFGL_glBegin (GL_QUADS);
-	QFGL_glTexCoord2f (0, 0);
-	QFGL_glVertex2f (x, y);
-	QFGL_glTexCoord2f (1, 0);
-	QFGL_glVertex2f (x + pic->width, y);
-	QFGL_glTexCoord2f (1, 1);
-	QFGL_glVertex2f (x + pic->width, y + pic->height);
-	QFGL_glTexCoord2f (0, 1);
-	QFGL_glVertex2f (x, y + pic->height);
-	QFGL_glEnd ();
+	glBindTexture (GL_TEXTURE_2D, gl->texnum);
+	glBegin (GL_QUADS);
+	glTexCoord2f (0, 0);
+	glVertex2f (x, y);
+	glTexCoord2f (1, 0);
+	glVertex2f (x + pic->width, y);
+	glTexCoord2f (1, 1);
+	glVertex2f (x + pic->width, y + pic->height);
+	glTexCoord2f (0, 1);
+	glVertex2f (x, y + pic->height);
+	glEnd ();
 }
 
 
@@ -421,19 +421,19 @@ Draw_SubPic (int x, int y, qpic_t *pic, int srcx, int srcy, int width,
 	newtl = (float) srcy / (float) pic->height;
 	newth = newtl + (float) height / (float) pic->height;
 
-	QFGL_glColor3f (0.8, 0.8, 0.8);
-	QFGL_glBindTexture (GL_TEXTURE_2D, gl->texnum);
-	QFGL_glBegin (GL_QUADS);
-	QFGL_glTexCoord2f (newsl, newtl);
-	QFGL_glVertex2f (x, y);
-	QFGL_glTexCoord2f (newsh, newtl);
-	QFGL_glVertex2f (x + width, y);
-	QFGL_glTexCoord2f (newsh, newth);
-	QFGL_glVertex2f (x + width, y + height);
-	QFGL_glTexCoord2f (newsl, newth);
-	QFGL_glVertex2f (x, y + height);
-	QFGL_glEnd ();
-	QFGL_glColor3ubv (lighthalf_v);
+	glColor3f (0.8, 0.8, 0.8);
+	glBindTexture (GL_TEXTURE_2D, gl->texnum);
+	glBegin (GL_QUADS);
+	glTexCoord2f (newsl, newtl);
+	glVertex2f (x, y);
+	glTexCoord2f (newsh, newtl);
+	glVertex2f (x + width, y);
+	glTexCoord2f (newsh, newth);
+	glVertex2f (x + width, y + height);
+	glTexCoord2f (newsl, newth);
+	glVertex2f (x, y + height);
+	glEnd ();
+	glColor3ubv (lighthalf_v);
 }
 
 
@@ -450,7 +450,7 @@ Draw_TransPicTranslate (int x, int y, qpic_t *pic, byte * translation)
 	byte       *src;
 	int         p;
 
-	QFGL_glBindTexture (GL_TEXTURE_2D, translate_texture);
+	glBindTexture (GL_TEXTURE_2D, translate_texture);
 
 	c = pic->width * pic->height;
 
@@ -466,24 +466,24 @@ Draw_TransPicTranslate (int x, int y, qpic_t *pic, byte * translation)
 		}
 	}
 
-	QFGL_glTexImage2D (GL_TEXTURE_2D, 0, gl_alpha_format, 64, 64, 0, GL_RGBA,
+	glTexImage2D (GL_TEXTURE_2D, 0, gl_alpha_format, 64, 64, 0, GL_RGBA,
 				  GL_UNSIGNED_BYTE, trans);
 
-	QFGL_glTexParameterf (GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, gl_filter_min);
-	QFGL_glTexParameterf (GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, gl_filter_max);
+	glTexParameterf (GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, gl_filter_min);
+	glTexParameterf (GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, gl_filter_max);
 
-	QFGL_glColor3f (0.8, 0.8, 0.8);
-	QFGL_glBegin (GL_QUADS);
-	QFGL_glTexCoord2f (0, 0);
-	QFGL_glVertex2f (x, y);
-	QFGL_glTexCoord2f (1, 0);
-	QFGL_glVertex2f (x + pic->width, y);
-	QFGL_glTexCoord2f (1, 1);
-	QFGL_glVertex2f (x + pic->width, y + pic->height);
-	QFGL_glTexCoord2f (0, 1);
-	QFGL_glVertex2f (x, y + pic->height);
-	QFGL_glEnd ();
-	QFGL_glColor3ubv (lighthalf_v);
+	glColor3f (0.8, 0.8, 0.8);
+	glBegin (GL_QUADS);
+	glTexCoord2f (0, 0);
+	glVertex2f (x, y);
+	glTexCoord2f (1, 0);
+	glVertex2f (x + pic->width, y);
+	glTexCoord2f (1, 1);
+	glVertex2f (x + pic->width, y + pic->height);
+	glTexCoord2f (0, 1);
+	glVertex2f (x, y + pic->height);
+	glEnd ();
+	glColor3ubv (lighthalf_v);
 }
 
 
@@ -512,16 +512,16 @@ Draw_ConsoleBackground (int lines)
 		static float xfactor = .3f;
 		static float xstep = .005f;
 
-		QFGL_glPushMatrix ();
-		QFGL_glMatrixMode (GL_TEXTURE);
-		QFGL_glPushMatrix ();
-		QFGL_glLoadIdentity ();
+		glPushMatrix ();
+		glMatrixMode (GL_TEXTURE);
+		glPushMatrix ();
+		glLoadIdentity ();
 		xangle += gl_conspin->value;
 		xfactor += xstep;
 		if (xfactor > 8 || xfactor < .3f)
 			xstep = -xstep;
-		QFGL_glRotatef (xangle, 0, 0, 1);
-		QFGL_glScalef (xfactor, xfactor, xfactor);
+		glRotatef (xangle, 0, 0, 1);
+		glScalef (xfactor, xfactor, xfactor);
 	}
 	// slide console up/down or stretch it?
 	if (gl_constretch->int_val)
@@ -537,35 +537,35 @@ Draw_ConsoleBackground (int lines)
 		alpha = (float) (gl_conalpha->value * lines) / y;
 	}
 
-	QFGL_glColor4f (0.8, 0.8, 0.8, alpha);
+	glColor4f (0.8, 0.8, 0.8, alpha);
 
 	// draw the console texture
-	QFGL_glBindTexture (GL_TEXTURE_2D, gl->texnum);
-	QFGL_glBegin (GL_QUADS);
-	QFGL_glTexCoord2f (0, 0 + ofs);
-	QFGL_glVertex2f (0, 0);
-	QFGL_glTexCoord2f (1, 0 + ofs);
-	QFGL_glVertex2f (vid.conwidth, 0);
-	QFGL_glTexCoord2f (1, 1);
-	QFGL_glVertex2f (vid.conwidth, lines);
-	QFGL_glTexCoord2f (0, 1);
-	QFGL_glVertex2f (0, lines);
-	QFGL_glEnd ();
+	glBindTexture (GL_TEXTURE_2D, gl->texnum);
+	glBegin (GL_QUADS);
+	glTexCoord2f (0, 0 + ofs);
+	glVertex2f (0, 0);
+	glTexCoord2f (1, 0 + ofs);
+	glVertex2f (vid.conwidth, 0);
+	glTexCoord2f (1, 1);
+	glVertex2f (vid.conwidth, lines);
+	glTexCoord2f (0, 1);
+	glVertex2f (0, lines);
+	glEnd ();
 
 	// turn off alpha blending
 	if (alpha < 1.0) {
-		QFGL_glColor3f (0.8, 0.8, 0.8);
+		glColor3f (0.8, 0.8, 0.8);
 	}
 
 	if (gl_conspin->value) {
-		QFGL_glPopMatrix ();
-		QFGL_glMatrixMode (GL_MODELVIEW);
-		QFGL_glPopMatrix ();
+		glPopMatrix ();
+		glMatrixMode (GL_MODELVIEW);
+		glPopMatrix ();
 	}
 
 	Draw_AltString8 (vid.conwidth - strlen (cl_verstring->string) * 8 - 11,
 			 lines - 14, cl_verstring->string);
-	QFGL_glColor3ubv (lighthalf_v);
+	glColor3ubv (lighthalf_v);
 }
 
 
@@ -578,19 +578,19 @@ Draw_ConsoleBackground (int lines)
 void
 Draw_TileClear (int x, int y, int w, int h)
 {
-	QFGL_glColor3f (0.8, 0.8, 0.8);
-	QFGL_glBindTexture (GL_TEXTURE_2D, *(int *) draw_backtile->data);
-	QFGL_glBegin (GL_QUADS);
-	QFGL_glTexCoord2f (x / 64.0, y / 64.0);
-	QFGL_glVertex2f (x, y);
-	QFGL_glTexCoord2f ((x + w) / 64.0, y / 64.0);
-	QFGL_glVertex2f (x + w, y);
-	QFGL_glTexCoord2f ((x + w) / 64.0, (y + h) / 64.0);
-	QFGL_glVertex2f (x + w, y + h);
-	QFGL_glTexCoord2f (x / 64.0, (y + h) / 64.0);
-	QFGL_glVertex2f (x, y + h);
-	QFGL_glEnd ();
-	QFGL_glColor3ubv (lighthalf_v);
+	glColor3f (0.8, 0.8, 0.8);
+	glBindTexture (GL_TEXTURE_2D, *(int *) draw_backtile->data);
+	glBegin (GL_QUADS);
+	glTexCoord2f (x / 64.0, y / 64.0);
+	glVertex2f (x, y);
+	glTexCoord2f ((x + w) / 64.0, y / 64.0);
+	glVertex2f (x + w, y);
+	glTexCoord2f ((x + w) / 64.0, (y + h) / 64.0);
+	glVertex2f (x + w, y + h);
+	glTexCoord2f (x / 64.0, (y + h) / 64.0);
+	glVertex2f (x, y + h);
+	glEnd ();
+	glColor3ubv (lighthalf_v);
 }
 
 
@@ -602,20 +602,20 @@ Draw_TileClear (int x, int y, int w, int h)
 void
 Draw_Fill (int x, int y, int w, int h, int c)
 {
-	QFGL_glDisable (GL_TEXTURE_2D);
-	QFGL_glColor3f (vid_basepal[c * 3] / 255.0, vid_basepal[c * 3 + 1] / 255.0,
+	glDisable (GL_TEXTURE_2D);
+	glColor3f (vid_basepal[c * 3] / 255.0, vid_basepal[c * 3 + 1] / 255.0,
 			   vid_basepal[c * 3 + 2] / 255.0);
 
-	QFGL_glBegin (GL_QUADS);
+	glBegin (GL_QUADS);
 
-	QFGL_glVertex2f (x, y);
-	QFGL_glVertex2f (x + w, y);
-	QFGL_glVertex2f (x + w, y + h);
-	QFGL_glVertex2f (x, y + h);
+	glVertex2f (x, y);
+	glVertex2f (x + w, y);
+	glVertex2f (x + w, y + h);
+	glVertex2f (x, y + h);
 
-	QFGL_glEnd ();
-	QFGL_glColor3ubv (lighthalf_v);
-	QFGL_glEnable (GL_TEXTURE_2D);
+	glEnd ();
+	glColor3ubv (lighthalf_v);
+	glEnable (GL_TEXTURE_2D);
 }
 
 
@@ -625,18 +625,18 @@ Draw_Fill (int x, int y, int w, int h, int c)
 void
 Draw_FadeScreen (void)
 {
-	QFGL_glDisable (GL_TEXTURE_2D);
-	QFGL_glColor4f (0, 0, 0, 0.7);
-	QFGL_glBegin (GL_QUADS);
+	glDisable (GL_TEXTURE_2D);
+	glColor4f (0, 0, 0, 0.7);
+	glBegin (GL_QUADS);
 
-	QFGL_glVertex2f (0, 0);
-	QFGL_glVertex2f (vid.width, 0);
-	QFGL_glVertex2f (vid.width, vid.height);
-	QFGL_glVertex2f (0, vid.height);
+	glVertex2f (0, 0);
+	glVertex2f (vid.width, 0);
+	glVertex2f (vid.width, vid.height);
+	glVertex2f (0, vid.height);
 
-	QFGL_glEnd ();
-	QFGL_glColor3ubv (lighthalf_v);
-	QFGL_glEnable (GL_TEXTURE_2D);
+	glEnd ();
+	glColor3ubv (lighthalf_v);
+	glEnable (GL_TEXTURE_2D);
 
 	Sbar_Changed ();
 }
@@ -677,17 +677,17 @@ Draw_EndDisc (void)
 void
 GL_Set2D (void)
 {
-	QFGL_glViewport (glx, gly, glwidth, glheight);
+	glViewport (glx, gly, glwidth, glheight);
 
-	QFGL_glMatrixMode (GL_PROJECTION);
-	QFGL_glLoadIdentity ();
-	QFGL_glOrtho (0, vid.width, vid.height, 0, -99999, 99999);
+	glMatrixMode (GL_PROJECTION);
+	glLoadIdentity ();
+	glOrtho (0, vid.width, vid.height, 0, -99999, 99999);
 
-	QFGL_glMatrixMode (GL_MODELVIEW);
-	QFGL_glLoadIdentity ();
+	glMatrixMode (GL_MODELVIEW);
+	glLoadIdentity ();
 
-	QFGL_glDisable (GL_DEPTH_TEST);
-	QFGL_glDisable (GL_CULL_FACE);
+	glDisable (GL_DEPTH_TEST);
+	glDisable (GL_CULL_FACE);
 
-	QFGL_glColor3ubv (lighthalf_v);
+	glColor3ubv (lighthalf_v);
 }

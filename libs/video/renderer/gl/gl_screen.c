@@ -582,7 +582,7 @@ SCR_ScreenShot (int width, int height)
 	if (!tex)
 		return 0;
 
-	QFGL_glReadPixels (glx, gly, vid.width, vid.height, GL_RGB, GL_UNSIGNED_BYTE,
+	glReadPixels (glx, gly, vid.width, vid.height, GL_RGB, GL_UNSIGNED_BYTE,
 				  tex->data + vid.width * vid.height);
 
 	w = (vid.width < width) ? vid.width : width;
@@ -653,7 +653,7 @@ SCR_ScreenShot_f (void)
 		return;
 	}
 	buffer = malloc (glwidth * glheight * 3);
-	QFGL_glReadPixels (glx, gly, glwidth, glheight, GL_BGR_EXT, GL_UNSIGNED_BYTE,
+	glReadPixels (glx, gly, glwidth, glheight, GL_BGR_EXT, GL_UNSIGNED_BYTE,
 				  buffer);
 	WriteTGAfile (pcxname, buffer, glwidth, glheight);
 	free (buffer);
@@ -892,33 +892,33 @@ SCR_UpdateScreen (double realtime, SCR_Func *scr_funcs, int swap)
 	}
 
 	// also makes polyblend apply to whole screen
-	QFGL_glDisable (GL_TEXTURE_2D);
+	glDisable (GL_TEXTURE_2D);
 
 	if (v_blend[3]) {
-		QFGL_glBegin (GL_QUADS);
+		glBegin (GL_QUADS);
 
-		QFGL_glColor4fv (v_blend);
-		QFGL_glVertex2f (0, 0);
-		QFGL_glVertex2f (vid.width, 0);
-		QFGL_glVertex2f (vid.width, vid.height);
-		QFGL_glVertex2f (0, vid.height);
+		glColor4fv (v_blend);
+		glVertex2f (0, 0);
+		glVertex2f (vid.width, 0);
+		glVertex2f (vid.width, vid.height);
+		glVertex2f (0, vid.height);
 
-		QFGL_glEnd ();
-		QFGL_glColor3ubv (lighthalf_v);
+		glEnd ();
+		glColor3ubv (lighthalf_v);
 	}
 
-	QFGL_glEnable (GL_TEXTURE_2D);
+	glEnable (GL_TEXTURE_2D);
 
 	V_UpdatePalette ();
 
 	if (r_speeds->int_val) {
-//      QFGL_glFinish ();
+//      glFinish ();
 		time2 = Sys_DoubleTime ();
 		Con_Printf ("%3i ms  %4i wpoly %4i epoly\n",
 					(int) ((time2 - time1) * 1000), c_brush_polys,
 					c_alias_polys);
 	}
 
-	QFGL_glFinish ();
+	glFinish ();
 	GL_EndRendering ();
 }

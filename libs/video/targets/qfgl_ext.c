@@ -58,7 +58,7 @@
 
 #include "QF/qtypes.h"
 
-#include "QF/GL/qf_ext.h"
+#include "QF/GL/extensions.h"
 #include "QF/GL/funcs.h"
 
 /*
@@ -98,7 +98,7 @@ QFGL_ExtensionPresent (const char *name)
 	static const GLubyte *gl_extensions = NULL;
 
 	if (!gl_extensions) {				// get and save GL extension list
-		gl_extensions = QFGL_glGetString (GL_EXTENSIONS);
+		gl_extensions = glGetString (GL_EXTENSIONS);
 	}
 
 	return QFGL_ParseExtensionList (gl_extensions, name);

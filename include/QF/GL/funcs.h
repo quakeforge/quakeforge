@@ -26,13 +26,17 @@
 	$Id$
 */
 
-#ifndef __QF_GL_funcs_h
-#define __QF_GL_funcs_h
+#ifndef __QF_GL_funcs_h_
+#define __QF_GL_funcs_h_
 
 #include "QF/GL/types.h"
+#include "QF/qtypes.h"
 
-#define QFGL_NEED(ret, name, args)	extern ret (* QFGL_##name) args
+#define QFGL_NEED(ret, name, args)	extern ret (* name) args
 #include "QF/GL/qf_funcs_list.h"
 #undef QFGL_NEED
 
-#endif // __QF_GL_funcs_h
+qboolean GLF_Init (void);
+void *QFGL_ProcAddress (void *, const char *);
+
+#endif // __QF_GL_funcs_h_

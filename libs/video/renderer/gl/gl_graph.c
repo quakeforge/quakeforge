@@ -122,22 +122,22 @@ R_LineGraph (int x, int y, int *h_vals, int count)
 			dest[0] = 0xff;
 	}
 
-	QFGL_glBindTexture (GL_TEXTURE_2D, graph_texture[graph_index]);
+	glBindTexture (GL_TEXTURE_2D, graph_texture[graph_index]);
 
 	GL_Upload8 (graph_texels[graph_index], graph_width[graph_index], s, 0, 1);
 
-	QFGL_glBegin (GL_QUADS);
-	QFGL_glTexCoord2f (0, 0);
-	QFGL_glVertex2f (x, y);
-	QFGL_glTexCoord2f (1, 0);
-	QFGL_glVertex2f (x + graph_width[graph_index], y);
-	QFGL_glTexCoord2f (1, 1);
-	QFGL_glVertex2f (x + graph_width[graph_index], y - s);
-	QFGL_glTexCoord2f (0, 1);
-	QFGL_glVertex2f (x, y - s);
-	QFGL_glEnd ();
+	glBegin (GL_QUADS);
+	glTexCoord2f (0, 0);
+	glVertex2f (x, y);
+	glTexCoord2f (1, 0);
+	glVertex2f (x + graph_width[graph_index], y);
+	glTexCoord2f (1, 1);
+	glVertex2f (x + graph_width[graph_index], y - s);
+	glTexCoord2f (0, 1);
+	glVertex2f (x, y - s);
+	glEnd ();
 
-	QFGL_glColor3ubv (lighthalf_v);
+	glColor3ubv (lighthalf_v);
 
 	graph_index = (graph_index + 1) % NUM_GRAPH_TEXTURES;
 }
