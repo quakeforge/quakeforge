@@ -108,13 +108,11 @@ CL_Init_Entity (entity_t *ent)
 	memset (ent, 0, sizeof (*ent));
 
 	ent->colormap = vid.colormap;
-#if 0
 	ent->glow_size = 0;
 	ent->glow_color = 254;
 	ent->alpha = 1;
 	ent->scale = 1;
 	ent->colormod[0] = ent->colormod[1] = ent->colormod[2] = 1;
-#endif
 	ent->pose1 = ent->pose2 = -1;
 }
 
