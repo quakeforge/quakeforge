@@ -70,6 +70,8 @@ CL_NetStats (int swap)
 	int x, y;
 	if (!show_ping->int_val && !show_pl->int_val)
 		return;
+	if (cls.state != ca_active)
+		return;
 	x = swap ? vid.width - 104 : 0;
 	y = vid.height - sb_lines - 16;
 	// request new ping times every two second
