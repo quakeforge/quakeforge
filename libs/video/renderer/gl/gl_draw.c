@@ -84,8 +84,6 @@ typedef struct {
 	int         texnum;
 } glpic_t;
 
-extern int gl_filter_min, gl_filter_max;
-
 typedef struct cachepic_s {
 	char        name[MAX_QPATH];
 	qboolean    dirty;
@@ -95,12 +93,12 @@ typedef struct cachepic_s {
 
 #define	MAX_CACHED_PICS		128
 static cachepic_t cachepics[MAX_CACHED_PICS];
-static int  numcachepics;
+static int     numcachepics;
 
-static byte menuplyr_pixels[4096];
+static byte    menuplyr_pixels[4096];
 
-extern byte *vid_basepal;
-
+extern byte   *vid_basepal;
+extern int     gl_filter_max, gl_filter_min;
 extern cvar_t *crosshair, *cl_crossx, *cl_crossy, *crosshaircolor,
 			  *r_lightmap_components;
 

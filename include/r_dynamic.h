@@ -59,7 +59,7 @@ void R_TeleportSplash (vec3_t org);
 void R_PushDlights (vec3_t entorigin);
 
 void R_InitParticles (void);
-void R_ClearParticles (void);
+inline void R_ClearParticles (void); // DESPAIR
 void R_DrawParticles (void);
 
 #define MAX_FIRES				128		// rocket flames

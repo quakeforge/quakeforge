@@ -44,15 +44,15 @@
 #include "QF/vid.h"
 #include "QF/GL/defines.h"
 #include "QF/GL/funcs.h"
+#include "QF/GL/qf_rlight.h"
 #include "QF/GL/qf_sky.h"
 #include "QF/GL/qf_textures.h"
-#include "QF/GL/qf_rlight.h"
 #include "QF/GL/qf_vid.h"
 
 #include "compat.h"
+#include "r_cvar.h"
 #include "r_shared.h"
 #include "view.h"
-#include "r_cvar.h"
 
 char       *suf[6] = { "rt", "bk", "lf", "ft", "up", "dn" };
 int         solidskytexture;
@@ -103,15 +103,15 @@ R_LoadSkys (const char *skyname)
 		Con_Printf ("Unable to load skybox %s, using normal sky\n", skyname);
 }
 
-void
+inline void
 R_SkyBoxPolyVec (vec5_t v)
 {
 	// avoid interpolation seams
 //	s = s * (254.0/256.0) + (1.0/256.0);
 //	t = t * (254.0/256.0) + (1.0/256.0);
 	qfglTexCoord2fv (v);
-	qfglVertex3f (r_refdef.vieworg[0] + v[2],
-				r_refdef.vieworg[1] + v[3], r_refdef.vieworg[2] + v[4]);
+	qfglVertex3f (r_refdef.vieworg[0] + v[2], r_refdef.vieworg[1] + v[3],
+				  r_refdef.vieworg[2] + v[4]);
 }
 
 #define ftc(x) (x * (254.0/256.0) + (1.0/256.0))
@@ -261,7 +261,7 @@ R_DrawSkyDome (void)
 	qfglDepthRange (gldepthmin, gldepthmax);
 }
 
-void
+inline void
 R_DrawSky (void)
 {
 	if (skyloaded)

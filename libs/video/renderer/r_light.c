@@ -288,9 +288,7 @@ R_PushDlights (vec3_t entorigin)
 	}
 }
 
-/*
-  LIGHT SAMPLING
-*/
+/* LIGHT SAMPLING */
 
 mplane_t   *lightplane;
 vec3_t      lightspot;

@@ -201,7 +201,7 @@ R_Init_Cvars (void)
 							 "Detail of player skins. 0 best, 4 worst.");
 	gl_reporttjunctions = Cvar_Get ("gl_reporttjunctions", "0", CVAR_NONE,
 									NULL, "None");
-	gl_sky_clip = Cvar_Get ("gl_sky_clip", "0", CVAR_ARCHIVE, NULL,
+	gl_sky_clip = Cvar_Get ("gl_sky_clip", "2", CVAR_ARCHIVE, NULL,
 							"controls amount of sky overdraw");
 	gl_sky_divide = Cvar_Get ("gl_sky_divide", "1", CVAR_ARCHIVE, NULL,
 							  "subdivide sky polys");

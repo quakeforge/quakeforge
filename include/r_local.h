@@ -46,7 +46,7 @@
 typedef struct
 {
 	int     destcolor[3];
-	int     percent;        // 0-256
+	int     percent;        // 0-255
 } cshift_t;
 
 #define CSHIFT_CONTENTS 0
@@ -269,7 +269,7 @@ qboolean R_AliasCheckBBox (void);
 
 void R_DrawParticles (void);
 void R_InitParticles (void);
-void R_ClearParticles (void);
+inline void R_ClearParticles (void);
 void R_ReadPointFile_f (void);
 void R_SurfacePatch (void);
 

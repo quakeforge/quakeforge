@@ -34,8 +34,8 @@
 
 #include "QF/qtypes.h"
 #include "QF/GL/defines.h"
-#include "QF/GL/qf_vid.h"
 #include "QF/GL/funcs.h"
+#include "QF/GL/qf_vid.h"
 
 extern void noise_diamondsquare(unsigned char *noise, int size);
 extern void noise_plasma(unsigned char *noise, int size);

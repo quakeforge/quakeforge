@@ -89,8 +89,8 @@ particle_new (ptype_t type, int texnum, vec3_t org, float scale, vec3_t vel,
 	part->tex = texnum;
 	part->scale = scale;
 
-	VectorScale (up, 1.5, part->up);
-	VectorScale (right, 1.5, part->right);
+//	VectorScale (up, 1.5, part->up);
+//	VectorScale (right, 1.5, part->right);
 
 	return part;
 }
@@ -163,7 +163,7 @@ R_Particles_Init_Cvars (void)
 			  "is 0, although it's best to use r_particles 0 instead.");
 }
 
-void
+inline void
 R_ClearParticles (void)
 {
 	numparticles = 0;
@@ -221,6 +221,7 @@ R_ParticleExplosion (vec3_t org)
 {
 	if (!r_particles->int_val)
 		return;
+
 	particle_new_random (pt_smokecloud, part_tex_smoke[rand () & 7], org, 4,
 						 30, 8, r_realtime + 5, (rand () & 7) + 8,
 						 128 + (rand () & 63));
@@ -266,9 +267,6 @@ R_BlobExplosion (vec3_t org)
 static void
 R_RunSparkEffect (vec3_t org, int count, int ofuzz)
 {
-	if (!r_particles->int_val)
-		return;
-
 	particle_new (pt_smokecloud, part_tex_smoke[rand () & 7], org, 
 				  (ofuzz / 8) * .75, vec3_origin, r_realtime + 99, 
 				  12 + (rand () & 3), 96, vec3_origin, vec3_origin);
@@ -278,29 +276,23 @@ R_RunSparkEffect (vec3_t org, int count, int ofuzz)
 							 ramp[rand () % 6], lhrandom (0, 255));
 }
 
-static void
+inline static void
 R_RunGunshotEffect (vec3_t org, int count)
 {
 	int         scale;
 
-	if (!r_particles->int_val)
-		return;
-
 	if (count > 6)
-		scale = 3;
+		scale = 24;
 	else
-		scale = 2;
+		scale = 16;
 
-	R_RunSparkEffect (org, count * 10, 8 * scale);
+	R_RunSparkEffect (org, count * 10, scale);
 	return;
 }
 
-static void
+inline static void
 R_BloodPuff (vec3_t org, int count)
 {
-	if (!r_particles->int_val)
-		return;
-
 	particle_new (pt_bloodcloud, part_tex_smoke[rand () & 7], org, 9,
 				  vec3_origin, r_realtime + 99, 68 + (rand () & 3), 128,
 				  vec3_origin, vec3_origin);
@@ -357,6 +349,9 @@ R_RunParticleEffect (vec3_t org, int color, int count)
 void
 R_RunSpikeEffect (vec3_t org, particle_effect_t type)
 {
+	if (!r_particles->int_val)
+		return;
+
 	switch (type) {
 		case PE_SPIKE:
 			R_RunSparkEffect (org, 5, 8);
@@ -441,7 +436,7 @@ void
 R_RocketTrail (int type, entity_t *ent)
 {
 	byte        palpha, pcolor;
-	float       dist, len, pdie, pscale;
+	float       dist, len, pdie, pscale, pscalenext;
 	int         ptex, j;
 	ptype_t     ptype;
 	vec3_t      porg, pvel, up, right, subtract, vec;
@@ -454,35 +449,69 @@ R_RocketTrail (int type, entity_t *ent)
 
 	VectorSubtract (ent->origin, ent->old_origin, vec);
 	len = VectorNormalize (vec);
+	pdie = r_realtime + 2;
+	ptex = part_tex_dot;
+	ptype = pt_static;
+	palpha = 255;
+	pcolor = 0;
+	pscale = pscalenext = 3;
+	dist = 3;
+	switch (type) {
+		case 0:					// rocket trail
+			pdie = r_realtime + 0.4;
+			pscale = lhrandom (1, 2);
+			ptype = pt_smoke;
+			break;
+		case 1:					// grenade trail
+			pscale = lhrandom (4, 9);
+			ptype = pt_smoke;
+			break;
+		case 2:					// blood
+			pscale = lhrandom (4, 10);
+			ptype = pt_grav;
+			break;
+		case 4:					// slight blood
+			palpha = 192;
+			pdie = r_realtime + 1.3;
+			pscale = lhrandom (1, 6);
+			ptype = pt_grav;
+			break;
+		case 3:					// green tracer
+			pdie = r_realtime + 0.5;
+			ptype = pt_fire;
+			break;
+		case 5:					// flame tracer
+			pdie = r_realtime + 0.5;
+			ptype = pt_fire;
+			break;
+		case 6:					// voor trail
+			pdie = r_realtime + 0.3;
+			ptex = part_tex_dot;
+			ptype = pt_static;
+			break;
+	}
+
 	while (len > 0) {
 		VectorCopy (vec3_origin, up);
 		VectorCopy (vec3_origin, right);
 		VectorCopy (vec3_origin, pvel);
-		pdie = r_realtime + 2;
-		ptype = pt_static;
-		ptex = part_tex_dot;
-		palpha = 255;
-		pcolor = 0;
-		pscale = 6;
-		dist = 40;
 
 		switch (type) {
 			case 0:					// rocket trail
-				pdie = r_realtime + 60;
-//				ptype = pt_smokering; // Mercury's Rings
-				ptype = pt_smoke;
-				pscale = lhrandom (6, 8);
+				pscalenext = lhrandom (1, 2);
+				dist =  (pscale + pscalenext) * 4;
 //				pcolor = (rand () & 255); // Misty-chan's Easter Egg
 				pcolor = (rand () & 3) + 12;
 				palpha = 128 + (rand () & 31);
 //				VectorVectors(vec, right, up); // Mercury's Rings
 				VectorCopy (ent->old_origin, porg);
+//				ptype = pt_smokering; // Mercury's Rings
 //				ptex = part_tex_smoke_ring[rand () & 7]; // Mercury's Rings
 				ptex = part_tex_smoke[rand () & 7];
 				break;
 			case 1:					// grenade trail
-				ptype = pt_smoke;
-				pscale = lhrandom (7, 10);
+				pscalenext = lhrandom (4, 9);
+				dist = (pscale + pscalenext) * 4;
 //				pcolor = (rand () & 255); // Misty-chan's Easter Egg
 				pcolor = (rand () & 3);
 				palpha = 128 + (rand () & 31);
@@ -490,25 +519,30 @@ R_RocketTrail (int type, entity_t *ent)
 				ptex = part_tex_smoke[rand () & 7];
 				break;
 			case 2:					// blood
-				pscale = 5;
-			case 4:					// slight blood
-				pscale += lhrandom (1, 4);
+				pscalenext = lhrandom (4, 10);
+				dist = (pscale + pscalenext) * 4;
 				ptex = part_tex_smoke[rand () & 7];
 				pcolor = 68 + (rand () & 3);
 				for (j = 0; j < 3; j++) {
 					pvel[j] = lhrandom (-3, 3) * type;
 					porg[j] = ent->old_origin[j] + lhrandom (-1.5, 1.5);
 				}
-				ptype = pt_grav;
+				break;
+			case 4:					// slight blood
+				pscalenext = lhrandom (1, 6);
+				dist = (pscale + pscalenext) * 4;
+				ptex = part_tex_smoke[rand () & 7];
+				pcolor = 68 + (rand () & 3);
+				for (j = 0; j < 3; j++) {
+					pvel[j] = lhrandom (-3, 3) * type;
+					porg[j] = ent->old_origin[j] + lhrandom (-1.5, 1.5);
+				}
 				break;
 			case 3:					// green tracer
 			case 5:					// flame tracer
 			{
 				static int  tracercount;
 
-				dist = 3;
-				pdie = r_realtime + 0.5;
-				ptype = pt_fire;
 				ptex = part_tex_smoke[rand () & 7];
 				pscale = lhrandom (1, 2);
 				if (type == 3)
@@ -526,17 +560,14 @@ R_RocketTrail (int type, entity_t *ent)
 					pvel[0] = 30 * -vec[1];
 					pvel[1] = 30 * vec[0];
 				}
-				break;
+			}
+			break;
 			case 6:					// voor trail
-				dist = 3;
 				pcolor = 9 * 16 + 8 + (rand () & 3);
-				ptype = pt_static;
 				pscale = lhrandom (.75, 1.5);
-				pdie = r_realtime + 0.3;
 				for (j = 0; j < 3; j++)
 					porg[j] = ent->old_origin[j] + lhrandom (-8, 8);
 				break;
-				}
 		}
 
 		VectorScale (vec, min(dist, len), subtract);
@@ -545,6 +576,7 @@ R_RocketTrail (int type, entity_t *ent)
 
 		particle_new (ptype, ptex, porg, pscale, pvel, pdie, pcolor, palpha,
 					  up, right);
+		pscale = pscalenext;
 	}
 }
 
@@ -651,13 +683,13 @@ R_DrawParticles (void)
 				part->vel[2] -= grav;
 				break;
 			case pt_smoke:
-				if ((part->alpha -= r_frametime * 90) < 1)
+				if ((part->alpha -= r_frametime * 96) < 1)
 					part->die = -1;
-				part->scale += r_frametime * 6;
+				part->scale += r_frametime * 4;
 //				part->org[2] += r_frametime * 30 - grav;
 				break;
 			case pt_smokering:
-				if ((part->alpha -= r_frametime * 130) < 1)
+				if ((part->alpha -= r_frametime * 128) < 1)
 					part->die = -1;
 				part->scale += r_frametime * 10;
 //				part->org[2] += r_frametime * 30 - grav;

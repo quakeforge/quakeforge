@@ -44,14 +44,14 @@
 #include "QF/render.h"
 #include "QF/skin.h"
 #include "QF/sys.h"
-#include "QF/vid.h"
 #include "QF/vfs.h"
-#include "QF/GL/funcs.h"
-#include "QF/GL/qf_vid.h"
+#include "QF/vid.h"
 #include "QF/GL/defines.h"
+#include "QF/GL/funcs.h"
 #include "QF/GL/qf_rmain.h"
 #include "QF/GL/qf_rsurf.h"
 #include "QF/GL/qf_screen.h"
+#include "QF/GL/qf_vid.h"
 
 #include "r_dynamic.h"
 #include "r_local.h"
@@ -66,7 +66,7 @@ extern cvar_t	*gl_lerp_anim;
 extern cvar_t	*r_netgraph;
 
 extern void GDT_Init ();
-extern int R_InitGraphTextures (int base);
+extern int  R_InitGraphTextures (int base);
 
 
 /*

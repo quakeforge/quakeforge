@@ -35,8 +35,8 @@
 #include "QF/console.h"
 #include "QF/cvar.h"
 #include "QF/qargs.h"
-#include "QF/vfs.h"
 #include "QF/render.h"
+#include "QF/vfs.h"
 
 #include "compat.h"
 #include "r_cvar.h"
@@ -47,12 +47,10 @@ int         ramp1[8] = { 0x6f, 0x6d, 0x6b, 0x69, 0x67, 0x65, 0x63, 0x61 };
 int         ramp2[8] = { 0x6f, 0x6e, 0x6d, 0x6c, 0x6b, 0x6a, 0x68, 0x66 };
 int         ramp3[8] = { 0x6d, 0x6b, 6, 5, 4, 3 };
 
-particle_t *active_particles, *free_particles;
-
-particle_t *particles;
 int         r_numparticles;
-
+particle_t *active_particles, *free_particles, *particles;
 vec3_t      r_pright, r_pup, r_ppn;
+
 
 /*
 	R_MaxParticlesCheck
@@ -80,15 +78,14 @@ R_MaxParticlesCheck (cvar_t *var)
 	R_ClearParticles ();
 }
 
-
 void
 R_Particles_Init_Cvars (void)
 {
 	// Does a callback to R_MaxParticleCheck when the cvar changes. Neat trick.
 	Cvar_Get ("cl_max_particles", "2048", CVAR_ARCHIVE, R_MaxParticlesCheck,
-			  "Maximum amount of particles to display. No maximum, minimum is 1.");
+			  "Maximum amount of particles to display. No maximum, minimum "
+			  "is 1.");
 }
-
 
 void
 R_ClearParticles (void)
@@ -102,7 +99,6 @@ R_ClearParticles (void)
 		particles[i].next = &particles[i + 1];
 	particles[r_numparticles - 1].next = NULL;
 }
-
 
 void
 R_ReadPointFile_f (void)
@@ -153,7 +149,6 @@ R_ReadPointFile_f (void)
 	Con_Printf ("%i points read\n", c);
 }
 
-
 void
 R_RunSpikeEffect (vec3_t pos, particle_effect_t type)
 {
@@ -175,7 +170,6 @@ R_RunSpikeEffect (vec3_t pos, particle_effect_t type)
 	}
 }
 
-
 void
 R_RunPuffEffect (vec3_t pos, particle_effect_t type, byte cnt)
 {
@@ -196,7 +190,6 @@ R_RunPuffEffect (vec3_t pos, particle_effect_t type, byte cnt)
 			break;
 	}
 }
-
 
 void
 R_ParticleExplosion (vec3_t org)
@@ -234,7 +227,6 @@ R_ParticleExplosion (vec3_t org)
 	}
 }
 
-
 void
 R_ParticleExplosion2 (vec3_t org, int colorStart, int colorLength)
 {
@@ -263,7 +255,6 @@ R_ParticleExplosion2 (vec3_t org, int colorStart, int colorLength)
 		}
 	}
 }
-
 
 void
 R_BlobExplosion (vec3_t org)
@@ -302,7 +293,6 @@ R_BlobExplosion (vec3_t org)
 	}
 }
 
-
 void
 R_RunParticleEffect (vec3_t org, int color, int count)
 {
@@ -337,7 +327,6 @@ R_RunParticleEffect (vec3_t org, int color, int count)
 		}
 	}
 }
-
 
 void
 R_LavaSplash (vec3_t org)
@@ -378,7 +367,6 @@ R_LavaSplash (vec3_t org)
 			}
 }
 
-
 void
 R_TeleportSplash (vec3_t org)
 {
@@ -418,7 +406,6 @@ R_TeleportSplash (vec3_t org)
 			}
 }
 
-
 void
 R_RocketTrail (int type, entity_t *ent)
 {
@@ -445,36 +432,38 @@ R_RocketTrail (int type, entity_t *ent)
 		VectorCopy (vec3_origin, p->vel);
 		p->die = r_realtime + 2;
 
-		if (type == 4) {				// slight blood
-			p->type = pt_slowgrav;
-			p->color = 67 + (rand () & 3);
-			for (j = 0; j < 3; j++)
-				p->org[j] = ent->old_origin[j] + ((rand () % 6) - 3);
-			len -= 3;
-		} else if (type == 2) {			// blood
-			p->type = pt_slowgrav;
-			p->color = 67 + (rand () & 3);
-			for (j = 0; j < 3; j++)
-				p->org[j] = ent->old_origin[j] + ((rand () % 6) - 3);
-		} else if (type == 6) {			// voor trail
-			p->color = 9 * 16 + 8 + (rand () & 3);
-			p->type = pt_static;
-			p->die = r_realtime + 0.3;
-			for (j = 0; j < 3; j++)
-				p->org[j] = ent->old_origin[j] + ((rand () & 15) - 8);
-		} else if (type == 1) {			// smoke smoke
-			p->ramp = (rand () & 3) + 2;
-			p->color = ramp3[(int) p->ramp];
-			p->type = pt_fire;
-			for (j = 0; j < 3; j++)
-				p->org[j] = ent->old_origin[j] + ((rand () % 6) - 3);
-		} else if (type == 0) {			// rocket trail
+		// originally an if/else, ordered 4, 2, 6, 1, 0, 3|5
+		switch (type) {
+		case 0:							// rocket trail
 			p->ramp = (rand () & 3);
 			p->color = ramp3[(int) p->ramp];
 			p->type = pt_fire;
 			for (j = 0; j < 3; j++)
 				p->org[j] = ent->old_origin[j] + ((rand () % 6) - 3);
-		} else if (type == 3 || type == 5) {	// tracer
+			break;
+		case 1:							// smoke smoke
+			p->ramp = (rand () & 3) + 2;
+			p->color = ramp3[(int) p->ramp];
+			p->type = pt_fire;
+			for (j = 0; j < 3; j++)
+				p->org[j] = ent->old_origin[j] + ((rand () % 6) - 3);
+			break;
+		case 4:							// slight blood
+			p->type = pt_slowgrav;
+			p->color = 67 + (rand () & 3);
+			for (j = 0; j < 3; j++)
+				p->org[j] = ent->old_origin[j] + ((rand () % 6) - 3);
+			len -= 3;
+			break;
+		case 2:							// blood
+			p->type = pt_slowgrav;
+			p->color = 67 + (rand () & 3);
+			for (j = 0; j < 3; j++)
+				p->org[j] = ent->old_origin[j] + ((rand () % 6) - 3);
+			break;
+		case 3:							// green tracer
+		case 5:							// flame tracer
+		{
 			static int  tracercount;
 
 			p->die = r_realtime + 0.5;
@@ -494,7 +483,15 @@ R_RocketTrail (int type, entity_t *ent)
 				p->vel[0] = 30 * -vec[1];
 				p->vel[1] = 30 * vec[0];
 			}
-
+		}
+		break;
+		case 6:							// voor trail
+			p->color = 9 * 16 + 8 + (rand () & 3);
+			p->type = pt_static;
+			p->die = r_realtime + 0.3;
+			for (j = 0; j < 3; j++)
+				p->org[j] = ent->old_origin[j] + ((rand () & 15) - 8);
+			break;
 		}
 
 		VectorAdd (ent->old_origin, vec, ent->old_origin);
@@ -553,7 +550,6 @@ R_DrawParticles (void)
 						p->color = ramp3[(int) p->ramp];
 					p->vel[2] += grav;
 					break;
-
 				case pt_explode:
 					p->ramp += time2;
 					if (p->ramp >= 8)
@@ -564,7 +560,6 @@ R_DrawParticles (void)
 						p->vel[i] += p->vel[i] * dvel;
 					p->vel[2] -= grav;
 					break;
-
 				case pt_explode2:
 					p->ramp += time3;
 					if (p->ramp >= 8)
@@ -575,19 +570,16 @@ R_DrawParticles (void)
 						p->vel[i] -= p->vel[i] * frametime;
 					p->vel[2] -= grav;
 					break;
-
 				case pt_blob:
 					for (i = 0; i < 3; i++)
 						p->vel[i] += p->vel[i] * dvel;
 					p->vel[2] -= grav;
 					break;
-
 				case pt_blob2:
 					for (i = 0; i < 2; i++)
 						p->vel[i] -= p->vel[i] * dvel;
 					p->vel[2] -= grav;
 					break;
-
 				case pt_slowgrav:
 				case pt_grav:
 					p->vel[2] -= grav;

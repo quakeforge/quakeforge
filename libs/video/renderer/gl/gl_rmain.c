@@ -121,7 +121,7 @@ glrmain_init (void)
 	// LordHavoc: place for gl_rmain setup code
 }
 
-void
+inline void
 R_RotateForEntity (entity_t *e)
 {
 	qfglTranslatef (e->origin[0], e->origin[1], e->origin[2]);
@@ -247,7 +247,6 @@ float      *shadedots = r_avertexnormal_dots[0];
 int         lastposenum, lastposenum0;
 vec3_t      shadevector;
 
-
 static void
 GL_DrawAliasFrame (vert_order_t *vo, qboolean fb)
 {
@@ -371,7 +370,8 @@ GL_DrawAliasShadow (aliashdr_t *paliashdr, int posenum)
 	Interpolated shadow drawing
 */
 void
-GL_DrawAliasBlendedShadow (aliashdr_t *paliashdr, int pose1, int pose2, entity_t *e)
+GL_DrawAliasBlendedShadow (aliashdr_t *paliashdr, int pose1, int pose2,
+						   entity_t *e)
 {
 	float       blend, height, lheight, lerp;
 	int         count;
@@ -807,7 +807,7 @@ R_DrawViewModel (void)
 	qfglColor3ubv (color_white);
 }
 
-static int
+inline static int
 SignbitsForPlane (mplane_t *out)
 {
 	int         bits, j;
