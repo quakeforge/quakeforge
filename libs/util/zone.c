@@ -366,7 +366,7 @@ Cache_Move (cache_system_t * c)
 // we are clearing up space at the bottom, so only allocate it late
 	new = Cache_TryAlloc (c->size, true);
 	if (new) {
-//      Con_Printf ("cache_move ok\n");
+		Con_DPrintf ("cache_move ok\n");
 
 		memcpy (new + 1, c + 1, c->size - sizeof (cache_system_t));
 		new->user = c->user;
@@ -374,7 +374,7 @@ Cache_Move (cache_system_t * c)
 		Cache_Free (c->user);
 		new->user->data = (void *) (new + 1);
 	} else {
-//      Con_Printf ("cache_move failed\n");
+		Con_DPrintf ("cache_move failed\n");
 
 		Cache_Free (c->user);			// tough luck...
 	}
