@@ -592,8 +592,8 @@ R_DrawAliasModel (entity_t *e)
 				qfglLightfv (gl_light, GL_DIFFUSE, color);
 				qfglLightfv (gl_light, GL_SPECULAR, color);
 				qfglLightf (gl_light, GL_QUADRATIC_ATTENUATION,
-							5.0 / (l->radius * l->radius));
-				qfglLightf (gl_light, GL_CONSTANT_ATTENUATION, 0.5);
+							1.0 / (l->radius * l->radius));
+//				qfglLightf (gl_light, GL_CONSTANT_ATTENUATION, 0.5);
 				used_lights++;
 			}
 		}

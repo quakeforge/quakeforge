@@ -430,6 +430,7 @@ CheckVertexArraySize (void)
 static void
 CheckLights (void)
 {
+	int		i;
 	float	dark[4] = {0.0, 0.0, 0.0, 1.0},
 //			light[4] = {1.0, 1.0, 1.0, 1.0},
 			specular[4] = {0.6, 0.6, 0.6, 1.0};
@@ -442,8 +443,15 @@ CheckLights (void)
 	qfglLightModelf (GL_LIGHT_MODEL_TWO_SIDE, 0.0);
 	// Set up material defaults
 	qfglMaterialf (GL_FRONT, GL_SHININESS, 1.0);
-//	qfglMaterialfv (GL_FRONT, GL_AMBIENT_AND_DIFFUSE, light);
 	qfglMaterialfv (GL_FRONT, GL_SPECULAR, specular);
+//	qfglMaterialfv (GL_FRONT, GL_AMBIENT_AND_DIFFUSE, light);
+
+	for (i = 0; i < gl_max_lights; i++) {
+		qfglEnable (GL_LIGHT0 + i);
+		qfglLightf (GL_LIGHT0 + i, GL_CONSTANT_ATTENUATION, 0.0);
+		qfglDisable (GL_LIGHT0 + i);
+	}
+
 	qfglDisable (GL_LIGHTING);
 }
 
