@@ -10,6 +10,6 @@ bin_PROGRAMS=	qfprogs
 
 #man_MANS=	qfprogs.1
 
-qfprogs_SOURCES=	disassemble.c globals.c qfprogs.c strings.c
+qfprogs_SOURCES=	disassemble.c globals.c modules.c qfprogs.c strings.c
 qfprogs_LDADD=	$(QFPROGS_LIBS)
 qfprogs_DEPENDENCIES= $(QFPROGS_DEPS)

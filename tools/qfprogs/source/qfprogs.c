@@ -60,6 +60,7 @@ static const char rcsid[] =
 
 #include "disassemble.h"
 #include "globals.h"
+#include "modules.h"
 #include "strings.h"
 
 static const struct option long_options[] = {
@@ -68,6 +69,7 @@ static const struct option long_options[] = {
 	{"strings", no_argument, 0, 's'},
 	{"fields", no_argument, 0, 'f'},
 	{"functions", no_argument, 0, 'F'},
+	{"modules", no_argument, 0, 'M'},
 	{NULL, 0, NULL, 0},
 };
 
@@ -221,7 +223,7 @@ main (int argc, char **argv)
 	void      (*func)(progs_t *pr) = dump_globals;
 
 	init_qf ();
-	while ((c = getopt_long (argc, argv, "dgsfF", long_options, 0)) != EOF) {
+	while ((c = getopt_long (argc, argv, "dgsfFM", long_options, 0)) != EOF) {
 		switch (c) {
 			case 'd':
 				func = disassemble_progs;
@@ -237,6 +239,9 @@ main (int argc, char **argv)
 				break;
 			case 'F':
 				func = dump_functions;
+				break;
+			case 'M':
+				func = dump_modules;
 				break;
 			default:
 				return 1;
