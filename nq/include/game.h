@@ -156,8 +156,6 @@
 #define	SOUND_CHANNELS		8
 
 
-extern qboolean		msg_suppress_1;		// suppresses resolution and cache size console output
-										//  an fullscreen DIB focus gain/loss
 extern int			current_skill;		// skill level for currently loaded level (in case
 										//  the user changes the cvar while the level is
 										//  running, this reflects the level actually in use)

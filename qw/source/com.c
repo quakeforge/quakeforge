@@ -44,7 +44,6 @@ cvar_t     *registered;
 int         static_registered = 1;		// only for startup check, then set
 
 qboolean    com_modified;				// set true if using non-id files
-qboolean    msg_suppress_1 = 0;
 
 void        COM_Path_f (void);
 

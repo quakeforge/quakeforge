@@ -2338,10 +2338,7 @@ AppActivate (BOOL fActive, BOOL minimize)
 		if (ActiveApp) {
 			if (vid_fulldib_on_focus_mode) {
 				if (vid.initialized) {
-					msg_suppress_1 = true;	// don't want to see normal mode
-											// set message
 					VID_SetMode (vid_fulldib_on_focus_mode, vid_curpal);
-					msg_suppress_1 = false;
 
 					t = in_mode_set;
 					in_mode_set = true;
@@ -2364,10 +2361,7 @@ AppActivate (BOOL fActive, BOOL minimize)
 				if (vid.initialized) {
 					force_minimized = true;
 					i = vid_fulldib_on_focus_mode;
-					msg_suppress_1 = true;	// don't want to see normal mode
-											// set message
 					VID_SetMode (windowed_default, vid_curpal);
-					msg_suppress_1 = false;
 					vid_fulldib_on_focus_mode = i;
 					force_minimized = false;
 

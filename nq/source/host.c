@@ -79,7 +79,6 @@ static plugin_list_t client_plugin_list[] = {
 		CLIENT_PLUGIN_LIST
 };
 
-qboolean	msg_suppress_1 = 0;
 qboolean	host_initialized;			// true if into command execution
 
 quakeparms_t host_parms;

@@ -51,10 +51,6 @@ extern double	host_frametime;		// Tonik
 
 extern int		host_framecount;	// incremented every frame, never reset
 
-extern qboolean	msg_suppress_1;		// Suppresses resolution and cache size
-									// console output and fullscreen DIB focus
-									// gain/loss
-
 void Host_ServerFrame (void);
 void Host_InitCommands (void);
 void Host_Init (void);
