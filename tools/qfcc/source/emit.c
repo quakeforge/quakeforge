@@ -346,7 +346,6 @@ emit_deref_expr (expr_t *e, def_t *dest)
 			d = emit_statement (e, op, d, z, dest);
 		}
 		if (e->e.pointer.def) {
-			d->global = e->e.pointer.def->global;
 			d->local = e->e.pointer.def->local;
 		}
 		return d;
