@@ -12,12 +12,12 @@
 - (id) init;
 - (id) initWithIncrement: (integer) inc;
 - (void) free;
-- (void []) getItemAt: (integer) index;
-- (void) setItemAt: (integer) index item:(void []) item;
-- (void) addItem: (void []) item;
-- (void) removeItem: (void []) item;
-- (void []) removeItemAt: (integer) index;
-- (void []) insertItemAt: (integer) index item:(void []) item;
+- (id) getItemAt: (integer) index;
+- (void) setItemAt: (integer) index item:(id) item;
+- (void) addItem: (id) item;
+- (void) removeItem: (id) item;
+- (id) removeItemAt: (integer) index;
+- (id) insertItemAt: (integer) index item:(id) item;
 - (integer) count;
 @end
 

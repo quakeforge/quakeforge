@@ -26,7 +26,7 @@
 	obj_free (array);
 }
 
-- (void []) getItemAt: (integer) index
+- (id) getItemAt: (integer) index
 {
 	if (index == -1)
 		index = count - 1;
@@ -35,7 +35,7 @@
 	return array[index];
 }
 
-- (void) setItemAt: (integer) index item: (void []) item
+- (void) setItemAt: (integer) index item: (id) item
 {
 	if (index == -1)
 		index = count - 1;
@@ -44,7 +44,7 @@
 	array[index] = item;
 }
 
-- (void) addItem: (void []) item
+- (void) addItem: (id) item
 {
 	if (count == size) {
 		size += incr;
@@ -53,7 +53,7 @@
 	array[count++] = item;
 }
 
-- (void) removeItem: (void []) item
+- (void) removeItem: (id) item
 {
 	local integer i, n;
 
@@ -66,10 +66,10 @@
 	return;
 }
 
-- (void []) removeItemAt: (integer) index
+- (id) removeItemAt: (integer) index
 {
 	local integer i;
-	local void [] item;
+	local id item;
 
 	if (index == -1)
 		index = count -1;
@@ -82,7 +82,7 @@
 	return item;
 }
 
-- (void []) insertItemAt: (integer) index item:(void []) item
+- (id) insertItemAt: (integer) index item:(id) item
 {
 	local integer i;
 	if (index == -1)
