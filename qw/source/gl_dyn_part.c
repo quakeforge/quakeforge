@@ -583,8 +583,8 @@ R_DrawParticles (void)
 	// LordHavoc: particles should not affect zbuffer
 	glDepthMask (GL_FALSE);
 
-	VectorScale (up, 1.5, o_up);
-	VectorScale (right, 1.5, o_right);
+	VectorScale (vup, 1.5, o_up);
+	VectorScale (vright, 1.5, o_right);
 
 	glInterleavedArrays (GL_T2F_C4UB_V3F, 0, (void *) &(vertex_array[0]));
 
