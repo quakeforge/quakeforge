@@ -1,1 +1,1 @@
-SUBDIRS= include lib game
+SUBDIRS= include lib game cl_menu

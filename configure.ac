@@ -1996,8 +1996,6 @@ AC_OUTPUT(
 	tools/qwaq/progs.src
 	tools/wav/Makefile
 
-	cs-code/Makefile
-
 	ruamoko/Makefile
 	ruamoko/include/Makefile
 	ruamoko/lib/Makefile
