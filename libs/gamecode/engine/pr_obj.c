@@ -879,10 +879,20 @@ pr__c_Object__conformsTo_ (progs_t *pr)
 }
 
 static void
-pr__i_Object__error_ (progs_t *pr)
+pr__i_Object_error_error_ (progs_t *pr)
 {
 	//pr_id_t    *object = &P_STRUCT (pr, pr_id_t, 0);
 	//const char *fmt = P_GSTRING (pr, 2);
+	//...
+	//XXX
+	PR_RunError (pr, "%s, not implemented", __FUNCTION__);
+}
+
+static void
+pr__c_Object__conformsToProtocol_ (progs_t *pr)
+{
+	//pr_id_t    *object = &P_STRUCT (pr, pr_id_t, 0);
+	//pr_protocol_t *proto = &P_STRUCT (pr, pr_protocol_t, 2);
 	//...
 	//XXX
 	PR_RunError (pr, "%s, not implemented", __FUNCTION__);
@@ -957,7 +967,8 @@ static struct {
 	{"_i_Object__hash",			pr__i_Object__hash},
 	{"_i_Object__compare_",		pr__i_Object__compare_},
 	{"_c_Object__conformsTo_",	pr__c_Object__conformsTo_},
-	{"_i_Object__error_",		pr__i_Object__error_},
+	{"_i_Object_error_error_",		pr__i_Object_error_error_},
+	{"_c_Object__conformsToProtocol_",	pr__c_Object__conformsToProtocol_},
 };
 
 void
