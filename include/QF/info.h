@@ -51,12 +51,13 @@ qboolean Info_FilterForKey (const char *key, const char **filter_list);
 
 void Info_Print (info_t *info);
 void Info_RemoveKey (info_t *info, const char *key);
-void Info_SetValueForKey (info_t *info, const char *key, const char *value, int flags);
-void Info_SetValueForStarKey (info_t *info, const char *key, const char *value, int flags);
+int Info_SetValueForKey (info_t *info, const char *key, const char *value, int flags);
+int Info_SetValueForStarKey (info_t *info, const char *key, const char *value, int flags);
 const char *Info_ValueForKey (info_t *info, const char *key);
 
 info_t *Info_ParseString (const char *s, int maxsize, int flags);
 void Info_Destroy (info_t *info);
 char *Info_MakeString (info_t *info, int (*filter)(const char *));
+void Info_AddKeys (info_t *info, info_t *keys);
 
 #endif	// _INFO_H

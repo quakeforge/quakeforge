@@ -94,8 +94,9 @@ Info_RemoveKey (info_t *info, const char *key)
 	}
 }
 
-void
-Info_SetValueForStarKey (info_t *info, const char *key, const char *value, int flags)
+int
+Info_SetValueForStarKey (info_t *info, const char *key, const char *value,
+						 int flags)
 {
 	info_key_t *k;
 	int         cursize;
@@ -104,17 +105,17 @@ Info_SetValueForStarKey (info_t *info, const char *key, const char *value, int f
 
 	if (strstr (key, "\\") || strstr (value, "\\")) {
 		Sys_Printf ("Can't use keys or values with a \\\n");
-		return;
+		return 0;
 	}
 
 	if (strstr (key, "\"") || strstr (value, "\"")) {
 		Sys_Printf ("Can't use keys or values with a \"\n");
-		return;
+		return 0;
 	}
 
 	if (strlen (key) > 63 || strlen (value) > 63) {
 		Sys_Printf ("Keys and values must be < 64 characters.\n");
-		return;
+		return 0;
 	}
 	k = Hash_Find (info->tab, key);
 	cursize = info->cursize;
@@ -125,11 +126,11 @@ Info_SetValueForStarKey (info_t *info, const char *key, const char *value, int f
 	if (info->maxsize &&
 		cursize + strlen (key) + 1 + strlen (value) + 1 > info->maxsize) {
 		Sys_Printf ("Info string length exceeded\n");
-		return;
+		return 0;
 	}
 	if (k) {
 		if (strequal (k->value, value))
-			return;
+			return 0;
 		info->cursize -= strlen (k->value) + 1;
 		free ((char*)k->value);
 	} else {
@@ -156,18 +157,19 @@ Info_SetValueForStarKey (info_t *info, const char *key, const char *value, int f
 	*d = 0;
 	info->cursize += strlen (str) + 1;
 	k->value = str;
+	return 1;
 }
 
-void
+int
 Info_SetValueForKey (info_t *info, const char *key, const char *value,
 					 int flags)
 {
 	if (key[0] == '*') {
 		Sys_Printf ("Can't set * keys\n");
-		return;
+		return 0;
 	}
 
-	Info_SetValueForStarKey (info, key, value, flags);
+	return Info_SetValueForStarKey (info, key, value, flags);
 }
 
 void
@@ -268,4 +270,17 @@ Info_MakeString (info_t *info, int (*filter)(const char *))
 	*d = 0;
 	free (key_list);
 	return string;
+}
+
+void
+Info_AddKeys (info_t *info, info_t *keys)
+{
+	info_key_t **key_list;
+	info_key_t **key;
+
+	key_list = (info_key_t **)Hash_GetList (keys->tab);
+	for (key = key_list; *key; key++) {
+		Info_SetValueForKey (info, (*key)->key, (*key)->value, 0);
+	}
+	free (key_list);
 }

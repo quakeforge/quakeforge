@@ -411,7 +411,7 @@ read_hosts (const char *fname)
 {
 	FILE       *host_file;
 	int         host_port;
-	char        host_name[256];		//FIXME: overflow
+	char        host_name[256];
 	static const char *fake_heartbeat = "      ";
 	char       *buf;
 	struct sockaddr_in host_addr;
@@ -501,7 +501,7 @@ ma_log (const char *fmt, ...)
 	va_list     args;
 	time_t      mytime = 0;
 	struct tm  *local = NULL;
-	char        stamp[1024];		//FIXME: overflow
+	char        stamp[123];
 
 	mytime = time (NULL);
 	local = localtime (&mytime);

@@ -1290,7 +1290,7 @@ QFS_Open (const char *path, const char *mode)
 QFile *
 QFS_WOpen (const char *path, int zip)
 {
-	char        mode[5] = "wb\000\000";
+	char        mode[5] = "wb\000\000\000";
 
 	if (zip) {
 		mode[2] = 'z';

@@ -183,7 +183,7 @@ static void
 SV_SendServerinfo (client_t *client)
 {
 	const char **s;
-	char		 message[2048];
+	char        message[2048];
 
 	MSG_WriteByte (&client->message, svc_print);
 	snprintf (message, sizeof (message), "%c\nVersion %s server (%i CRC)", 2,

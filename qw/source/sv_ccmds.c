@@ -341,12 +341,12 @@ SV_Give_f (void)
 }
 
 // Use this to keep track of current level  --KB
-static char curlevel[MAX_QPATH] = "";		//FIXME: overflow
+static dstring_t *curlevel;
 
 const char *
 SV_Current_Map (void)
 {
-	return curlevel;
+	return curlevel ? curlevel->str : "";
 }
 
 static const char *
@@ -393,29 +393,33 @@ nice_time (float time)
 static void
 SV_Map_f (void)
 {
-	char        level[MAX_QPATH];		//FIXME: overflow
-	char        expanded[MAX_QPATH];		//FIXME: overflow
+	const char *level;
+	char       *expanded;
 	QFile      *f;
+
+	if (!curlevel)
+		curlevel = dstring_newstr ();
 
 	if (Cmd_Argc () > 2) {
 		SV_Printf ("map <levelname> : continue game on a new level\n");
 		return;
 	}
 	if (Cmd_Argc () == 1) {
-		SV_Printf ("map is %s (%s)\n", curlevel, nice_time (sv.time));
+		SV_Printf ("map is %s (%s)\n", curlevel->str, nice_time (sv.time));
 		return;
 	}
-	strncpy (level, Cmd_Argv (1), sizeof (level) - 1);
-	level[sizeof (level) - 1] = 0;
+	level = Cmd_Argv (1);
 
 	// check to make sure the level exists
-	snprintf (expanded, sizeof (expanded), "maps/%s.bsp", level);
+	expanded = nva ("maps/%s.bsp", level);
 	QFS_FOpenFile (expanded, &f);
 	if (!f) {
 		SV_Printf ("Can't find %s\n", expanded);
+		free (expanded);
 		return;
 	}
 	Qclose (f);
+	free (expanded);
 
 	if (sv.demorecording)
 		SV_Stop_f ();
@@ -423,8 +427,7 @@ SV_Map_f (void)
 	SV_BroadcastCommand ("changing\n");
 	SV_SendMessagesToAll ();
 
-	strncpy (curlevel, level, sizeof (curlevel) - 1);
-	curlevel[sizeof (curlevel) - 1] = 0;
+	dstring_copystr (curlevel, level);
 	SV_SpawnServer (level);
 
 	SV_BroadcastCommand ("reconnect\n");
@@ -562,17 +565,36 @@ SV_Status_f (void)
 #define MAXPENALTY 10.0
 
 static void
-SV_Cuff_f (void)
+SV_Punish (int mode)
 {
 	int         i;
 	double      mins = 0.5;
 	qboolean    all = false, done = false;
 	client_t    *cl = 0;
-	char        text[1024];		//FIXME: overflow
+	dstring_t  *text = dstring_new();
+	const char *cmd = 0;
+	const char *cmd_do = 0;
+	const char *cmd_undo = 0;
+	int         field_offs = 0;
+
+	switch (mode) {
+		case 0:
+			cmd = "cuff";
+			cmd_do = "cuffed";
+			cmd_undo = "un-cuffed";
+			field_offs = field_offset (client_t, cuff_time);
+			break;
+		case 1:
+			cmd = "mute";
+			cmd_do = "muted";
+			cmd_undo = "can speak";
+			field_offs = field_offset (client_t, lockedtill);
+			break;
+	}
 
 	if (Cmd_Argc () != 2 && Cmd_Argc () != 3) {
-		SV_Printf ("usage: cuff <name/userid/ALL> [minutes]\n"
-				   "       (default = 0.5, 0 = cancel cuff).\n");
+		SV_Printf ("usage: %s <name/userid/ALL> [minutes]\n"
+				   "       (default = 0.5, 0 = cancel cuff).\n", cmd);
 		return;
 	}
 
@@ -589,133 +611,52 @@ SV_Cuff_f (void)
 			mins = MAXPENALTY;
 	}
 	if (cl) {
-		cl->cuff_time = realtime + mins * 60.0;
+		*(double *)((char *)cl + field_offs) = realtime + mins * 60.0;
 		if (mins) {
-			sprintf (text, "You are cuffed for %.1f minutes\n\n"
-					 "reconnecting won't help...\n", mins);
-			ClientReliableWrite_Begin (cl, svc_centerprint, 2 + strlen (text));
-			ClientReliableWrite_String (cl, text);
+			dsprintf (text, "You are %s for %.1f minutes\n\n"
+					 "reconnecting won't help...\n", cmd_do, mins);
+			ClientReliableWrite_Begin (cl, svc_centerprint,
+									   2 + strlen (text->str));
+			ClientReliableWrite_String (cl, text->str);
 		}
 	}
 	if (all) {
 		for (i = 0, cl = svs.clients; i < MAX_CLIENTS; i++, cl++) {
 			if (cl->state < cs_zombie)
 				continue;
-			cl->cuff_time = realtime + mins * 60.0;
+			*(double *)((char *)cl + field_offs) = realtime + mins * 60.0;
 			done = true;
 			if (mins) {
-				sprintf (text, "You are cuffed for %.1f minutes\n\n"
-						 "reconnecting won't help...\n", mins);
+				dsprintf (text, "You are %s for %.1f minutes\n\n"
+						 "reconnecting won't help...\n", cmd_do, mins);
 				ClientReliableWrite_Begin (cl, svc_centerprint,
-										   2 + strlen (text));
-				ClientReliableWrite_String (cl, text);
+										   2 + strlen (text->str));
+				ClientReliableWrite_String (cl, text->str);
 			}
 		}
 	}
 	if (done) {
 		if (mins)
-			SV_BroadcastPrintf (PRINT_HIGH, "%s cuffed for %.1f minutes.\n",
-								all? "All Users" : cl->name, mins);
+			SV_BroadcastPrintf (PRINT_HIGH, "%s %s for %.1f minutes.\n",
+								all? "All Users" : cl->name, cmd_do, mins);
 		else
-			SV_BroadcastPrintf (PRINT_HIGH, "%s un-cuffed.\n",
-								all? "All Users" : cl->name);
+			SV_BroadcastPrintf (PRINT_HIGH, "%s %s.\n",
+								all? "All Users" : cl->name, cmd_do);
 	}
+	dstring_delete (text);
+}
+
+static void
+SV_Cuff_f (void)
+{
+	SV_Punish (0);
 }
 
 
 static void
 SV_Mute_f (void)
 {
-	int         i;
-	double      mins = 0.5;
-	qboolean    all = false, done = false;
-	client_t    *cl = 0;
-	char        text[1024];		//FIXME: overflow
-
-	if (Cmd_Argc () != 2 && Cmd_Argc () != 3) {
-		SV_Printf ("usage: mute <name/userid/ALL> [minutes]\n"
-				   "       (default = 0.5, 0 = cancel mute).\n");
-		return;
-	}
-	if (strequal (Cmd_Argv (1),"ALL")) {
-		all = true;
-	} else {
-		cl = SV_Match_User (Cmd_Argv (1));
-	}
-	if (!all && !cl)
-		return;
-	if (Cmd_Argc () == 3) {
-		mins = atof (Cmd_Argv (2));
-		if (mins < 0.0 || mins > MAXPENALTY)
-			mins = MAXPENALTY;
-	}
-	if (cl) {
-		cl->lockedtill = realtime + mins * 60.0;
-		done = true;
-		if (mins) {
-			sprintf (text, "You are muted for %.1f minutes\n\n"
-					 "reconnecting won't help...\n", mins);
-			ClientReliableWrite_Begin (cl, svc_centerprint, 2 + strlen (text));
-			ClientReliableWrite_String (cl, text);
-		}
-	}
-	if (all) {
-		for (i = 0, cl = svs.clients; i < MAX_CLIENTS; i++, cl++) {
-			if (cl->state < cs_zombie)
-				continue;
-			cl->lockedtill = realtime + mins * 60.0;
-			done = true;
-			if (mins) {
-				sprintf (text, "You are muted for %.1f minutes\n\n"
-						 "reconnecting won't help...\n", mins);
-				ClientReliableWrite_Begin (cl, svc_centerprint,
-										   2 + strlen (text));
-				ClientReliableWrite_String (cl, text);
-			}
-		}
-	}
-	if (done) {
-		if (mins)
-			SV_BroadcastPrintf (PRINT_HIGH, "%s muted for %.1f minutes.\n",
-								all? "All Users" : cl->name, mins);
-		else
-			SV_BroadcastPrintf (PRINT_HIGH, "%s allowed to speak.\n",
-								all? "All Users" : cl->name);
-	}
-}
-
-static void
-SV_Tell (const char *prefix)
-{
-	char       *p;
-	char        text[512];		//FIXME: overflow
-	client_t   *cl;
-	int         i;
-
-	if (Cmd_Argc () < 3) {
-		SV_Printf ("usage: tell <name/userid> <text...>\n");
-		return;
-	}
-	if (!(cl = SV_Match_User (Cmd_Argv (1))))
-		return;
-
-	p = Hunk_TempAlloc (strlen (Cmd_Args (2)) + 1);
-	strcpy (p, Cmd_Args (2));
-	if (*p == '"') {
-		p++;
-		p[strlen (p) - 1] = 0;
-	}
-	// construct  "[PRIVATE] Console> "
-	sprintf (text, "[\xd0\xd2\xc9\xd6\xc1\xd4\xc5] %s\x8d ", prefix);
-	i = strlen (text);
-	strncat (text, p, sizeof (text) - 1 - i);
-	text[sizeof (text) - 1] = 0;
-	SV_Printf ("%s\n", text);
-	for (; text[i];)
-		text[i++] |= 0x80; // non-bold text
-	SV_ClientPrintf (1, cl, PRINT_CHAT, "\n"); // bell
-	SV_ClientPrintf (1, cl, PRINT_HIGH, "%s\n", text);
-	SV_ClientPrintf (1, cl, PRINT_CHAT, "%s", ""); // bell
+	SV_Punish (1);
 }
 
 static void
@@ -759,11 +700,10 @@ SV_Match_f (void)
 
 
 static void
-SV_ConSay (const char *prefix)
+SV_ConSay (const char *prefix, client_t *client)
 {
 	char       *p;
-	char        text[1024];		//FIXME: overflow
-	client_t   *client;
+	dstring_t  *text;
 	int         j;
 
 	if (Cmd_Argc () < 2)
@@ -775,51 +715,67 @@ SV_ConSay (const char *prefix)
 		p++;
 		p[strlen (p) - 1] = 0;
 	}
-	strcpy (text, prefix);				// bold header
-	strcat (text, "\x8d ");				// and arrow
-	j = strlen (text);
-	strncat (text, p, sizeof (text) - j);
-	SV_Printf ("%s\n", text);
-	while (text[j])
-		text[j++] |= 0x80;				// non-bold text
+	text = dstring_new ();
+	dstring_copystr (text, prefix);
+	dstring_appendstr (text, "\x8d ");				// arrow
+	j = strlen (text->str);
+	dstring_appendstr (text, p);
+	SV_Printf ("%s\n", text->str);
+	while (text->str[j])
+		text->str[j++] |= 0x80;				// non-bold text
 
-	for (j = 0, client = svs.clients; j < MAX_CLIENTS; j++, client++) {
-		if (client->state < cs_zombie)
-			continue;
-		SV_ClientPrintf (1, client, PRINT_HIGH, "%s\n", text);
-		if (*prefix != 'I')		// beep, except for Info says
-			SV_ClientPrintf (0, client, PRINT_CHAT, "%s", "");
-	}
-	if (sv.demorecording) {
-		DemoWrite_Begin (dem_all, 0, strlen (text) + 3);
-		MSG_WriteByte (&demo.dbuf->sz, svc_print);
-		MSG_WriteByte (&demo.dbuf->sz, PRINT_CHAT);
-		MSG_WriteString (&demo.dbuf->sz, text);
+	if (client) {
+		SV_ClientPrintf (1, client, PRINT_CHAT, "\n"); // bell
+		SV_ClientPrintf (1, client, PRINT_HIGH, "%s\n", text->str);
+		SV_ClientPrintf (1, client, PRINT_CHAT, "%s", ""); // bell
+	} else {
+		for (j = 0, client = svs.clients; j < MAX_CLIENTS; j++, client++) {
+			if (client->state < cs_zombie)
+				continue;
+			SV_ClientPrintf (1, client, PRINT_HIGH, "%s\n", text->str);
+			if (*prefix != 'I')		// beep, except for Info says
+				SV_ClientPrintf (0, client, PRINT_CHAT, "%s", "");
+		}
+		if (sv.demorecording) {
+			DemoWrite_Begin (dem_all, 0, strlen (text->str) + 3);
+			MSG_WriteByte (&demo.dbuf->sz, svc_print);
+			MSG_WriteByte (&demo.dbuf->sz, PRINT_CHAT);
+			MSG_WriteString (&demo.dbuf->sz, text->str);
+		}
 	}
 }
 
 static void
 SV_Tell_f (void)
 {
+	client_t   *cl;
+
+	if (Cmd_Argc () < 3) {
+		SV_Printf ("usage: tell <name/userid> <text...>\n");
+		return;
+	}
+	if (!(cl = SV_Match_User (Cmd_Argv (1))))
+		return;
+
 	if (rcon_from_user)
-		SV_Tell("Admin");
+		SV_ConSay ("[\xd0\xd2\xc9\xd6\xc1\xd4\xc5] Admin", cl);
 	else
-		SV_Tell("Console");
+		SV_ConSay ("[\xd0\xd2\xc9\xd6\xc1\xd4\xc5] Console", cl);
 }
 
 static void
 SV_ConSay_f (void)
 {
 	if (rcon_from_user)
-		SV_ConSay ("Admin");
+		SV_ConSay ("Admin", 0);
 	else
-		SV_ConSay ("Console");
+		SV_ConSay ("Console", 0);
 }
 
 static void
 SV_ConSay_Info_f (void)
 {
-	SV_ConSay ("Info");
+	SV_ConSay ("Info", 0);
 }
 
 static void

@@ -663,45 +663,16 @@ CL_AddQFInfoKeys (void)
 static void
 CL_FullInfo_f (void)
 {
-	char        key[512], value[512];		//FIXME: overflow
-	char       *o;
-	const char *s;
+	info_t     *info;
 
 	if (Cmd_Argc () != 2) {
 		Con_Printf ("fullinfo <complete info string>\n");
 		return;
 	}
 
-	s = Cmd_Argv (1);
-	if (*s == '\\')
-		s++;
-	while (*s) {
-		o = key;
-		while (*s && *s != '\\')
-			*o++ = *s++;
-		*o = 0;
-
-		if (!*s) {
-			Con_Printf ("MISSING VALUE\n");
-			return;
-		}
-
-		o = value;
-		s++;
-		while (*s && *s != '\\')
-			*o++ = *s++;
-		*o = 0;
-
-		if (*s)
-			s++;
-
-		if (strcaseequal (key, pmodel_name) || strcaseequal (key, emodel_name))
-			continue;
-
-		Info_SetValueForKey (cls.userinfo, key, value,
-							 (!strequal (key, "name")) |
-							 (strequal (key, "team") << 1));
-	}
+	info = Info_ParseString (Cmd_Argv (1), MAX_INFO_STRING, 0);
+	Info_AddKeys (cls.userinfo, info);
+	Info_Destroy (info);
 }
 
 /*

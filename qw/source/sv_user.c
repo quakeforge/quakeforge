@@ -558,15 +558,15 @@ SV_Begin_f (void *unused)
 static void
 SV_NextDownload_f (void *unused)
 {
-	byte        buffer[1024];
+	byte        buffer[768];		// FIXME protocol limit? could be bigger?
 	int         percent, size, r;
 
 	if (!host_client->download)
 		return;
 
 	r = host_client->downloadsize - host_client->downloadcount;
-	if (r > 768)
-		r = 768;
+	if (r > sizeof (buffer))
+		r = sizeof (buffer);
 	r = Qread (host_client->download, buffer, r);
 	ClientReliableWrite_Begin (host_client, svc_download, 6 + r);
 	ClientReliableWrite_Short (host_client, r);
@@ -741,29 +741,16 @@ static void
 SV_Say (qboolean team)
 {
 	char       *i, *p;
-	char		text[2048], t1[32];
-	const char *t2, *type;
+	dstring_t  *text;
+	const char *t1 = 0, *t2, *type, *fmt;
 	client_t   *client;
 	int			tmp, j, cls = 0;
 
 	if (Cmd_Argc () < 2)
 		return;
 
-	if (team) {
-		strncpy (t1, Info_ValueForKey (host_client->userinfo, "team"), 31);
-		t1[31] = 0;
-	}
-
-	if (host_client->spectator && (!sv_spectalk->int_val || team)) {
-		snprintf (text, sizeof (text), "[SPEC] %s: ", host_client->name);
-		type = "2";
-	} else if (team) {
-		snprintf (text, sizeof (text), "(%s): ", host_client->name);
-		type = "1";
-	} else {
-		snprintf (text, sizeof (text), "%s: ", host_client->name);
-		type = "0";
-	}
+	if (team)
+		t1 = Info_ValueForKey (host_client->userinfo, "team");
 
 	if (fp_messages) {
 		if (!sv.paused && realtime < host_client->lockedtill) {
@@ -793,6 +780,20 @@ SV_Say (qboolean team)
 		host_client->whensaid[host_client->whensaidhead] = realtime;
 	}
 
+	text = dstring_new ();
+
+	if (host_client->spectator && (!sv_spectalk->int_val || team)) {
+		fmt = "[SPEC] %s: ";
+		type = "2";
+	} else if (team) {
+		fmt = "(%s): ";
+		type = "1";
+	} else {
+		fmt = "%s: ";
+		type = "0";
+	}
+	dsprintf (text, fmt, host_client->name);
+
 	p = Hunk_TempAlloc (strlen (Cmd_Args (1)) + 1);
 	strcpy (p, Cmd_Args (1));
 
@@ -810,6 +811,7 @@ SV_Say (qboolean team)
 				SV_ClientPrintf (1, host_client, PRINT_HIGH, "You were kicked "
 								 "for attempting to fake messages\n");
 				SV_DropClient (host_client);
+				dstring_delete (text);
 				return;
 			} else
 				*i = '#';
@@ -818,11 +820,9 @@ SV_Say (qboolean team)
 	if (sv_chat_e->func)
 		GIB_Event_Callback (sv_chat_e, 2, va ("%i", host_client->userid), p,
 							type);
-		
-	strncat (text, p, sizeof (text) - strlen (text));
-	strncat (text, "\n", sizeof (text) - strlen (text));
 
-	SV_Printf ("%s", text);
+	dstring_appendstr (text, p);
+	dstring_appendstr (text, "\n");
 
 	for (j = 0, client = svs.clients; j < MAX_CLIENTS; j++, client++) {
 		if (client->state < cs_connected)	// Clients connecting can hear.
@@ -843,22 +843,25 @@ SV_Say (qboolean team)
 			}
 		}
 		cls |= 1 << j;
-		SV_ClientPrintf (0, client, PRINT_CHAT, "%s", text);
+		SV_ClientPrintf (0, client, PRINT_CHAT, "%s", text->str);
 	}
 
-	if (!sv.demorecording || !cls)
+	if (!sv.demorecording || !cls) {
+		dstring_delete (text);
 		return;
+	}
 	// non-team messages should be seen allways, even if not tracking any
 	// player
 	if (!team && ((host_client->spectator && sv_spectalk->value)
 				  || !host_client->spectator)) {
-		DemoWrite_Begin (dem_all, 0, strlen (text) + 3);
+		DemoWrite_Begin (dem_all, 0, strlen (text->str) + 3);
 	} else {
-		DemoWrite_Begin (dem_multiple, cls, strlen (text) + 3);
+		DemoWrite_Begin (dem_multiple, cls, strlen (text->str) + 3);
 	}
 	MSG_WriteByte (&demo.dbuf->sz, svc_print);
 	MSG_WriteByte (&demo.dbuf->sz, PRINT_CHAT);
-	MSG_WriteString (&demo.dbuf->sz, text);
+	MSG_WriteString (&demo.dbuf->sz, text->str);
+	dstring_delete (text);
 }
 
 static void
@@ -1084,7 +1087,7 @@ SV_Msg_f (void *unused)
 static void
 SV_SetInfo_f (void *unused)
 {
-	char        oldval[MAX_INFO_STRING];
+	char       *oldval;
 
 	if (Cmd_Argc () == 1) {
 		SV_Printf ("User info settings:\n");
@@ -1100,22 +1103,20 @@ SV_SetInfo_f (void *unused)
 	if (Cmd_Argv (1)[0] == '*')
 		return;							// don't set priveledged values
 
-	// preserve the old value
-	strcpy (oldval, Info_ValueForKey (host_client->userinfo,
-									  Cmd_Argv (1)));
-
 	if (UserInfoCallback) {
 		*sv_globals.self = EDICT_TO_PROG (&sv_pr_state, sv_player);
 		P_STRING (&sv_pr_state, 0) = PR_SetString (&sv_pr_state, Cmd_Argv (1));
 		P_STRING (&sv_pr_state, 1) = PR_SetString (&sv_pr_state, Cmd_Argv (2));
 		PR_ExecuteProgram (&sv_pr_state, UserInfoCallback);
 		return;
-	} else {
-		Info_SetValueForKey (host_client->userinfo, Cmd_Argv (1), Cmd_Argv (2),
-							 !sv_highchars->int_val);
-		if (strequal
-			(Info_ValueForKey (host_client->userinfo, Cmd_Argv (1)), oldval))
-			return;								// key hasn't changed
+	}
+
+	oldval = strdup (Info_ValueForKey (host_client->userinfo, Cmd_Argv (1)));
+	if (!Info_SetValueForKey (host_client->userinfo, Cmd_Argv (1),
+							  Cmd_Argv (2), !sv_highchars->int_val)) {
+		// key hasn't changed
+		free (oldval);
+		return;
 	}
 
 	// process any changed values
@@ -1127,6 +1128,7 @@ SV_SetInfo_f (void *unused)
 							Cmd_Argv (1), oldval,
 							Info_ValueForKey (host_client->userinfo,
 											  Cmd_Argv (1)));
+	free (oldval);
 
 	if (Info_FilterForKey (Cmd_Argv (1), client_info_filters)) {
 		MSG_WriteByte (&sv.reliable_datagram, svc_setinfo);

@@ -541,14 +541,12 @@ SV_DemoWritePackets (int num)
 }
 
 static int
-memwrite (QFile * _mem, const void *buffer, int size)
+memwrite (QFile *_mem, const void *buffer, int size)
 {
-	int         i;
 	byte      **mem = (byte **) _mem;
-	const byte *buf;
 
-	for (i = size, buf = buffer; i; i--)
-		*(*mem)++ = *buf++;
+	memcpy (*mem, buffer, size);
+	*mem += size;
 
 	return size;
 }
@@ -585,18 +583,12 @@ SV_Stop (int reason)
 	}
 
 	if (reason == 2) {
-		char        path[MAX_OSPATH];
-
 		// stop and remove
 		if (demo.disk)
 			Qclose (demo.file);
 
-		sprintf (path, "%s/%s/%s", qfs_gamedir->dir.def, demo.path->str,
-				 demo.name->str);
-		QFS_Remove (path);
-
-		strcpy (path + strlen (path) - 3, "txt");
-		QFS_Remove (path);
+		QFS_Remove (demo.name->str);
+		QFS_Remove (demo.text->str);
 
 		demo.file = NULL;
 		sv.demorecording = false;
@@ -632,8 +624,8 @@ SV_Stop (int reason)
 	if (!reason)
 		SV_BroadcastPrintf (PRINT_CHAT, "Server recording completed\n");
 	else
-		SV_BroadcastPrintf (PRINT_CHAT,
-							"Server recording stoped\nMax demo size exceeded\n");
+		SV_BroadcastPrintf (PRINT_CHAT, "Server recording stoped\n"
+							"Max demo size exceeded\n");
 /*
 	if (sv_onrecordfinish->string[0]) {
 		extern redirect_t sv_redirected;
@@ -740,12 +732,15 @@ SV_WriteSetDemoMessage (void)
 static const char *
 SV_PrintTeams (void)
 {
-	char        teams[MAX_CLIENTS][128];
+	const char *teams[MAX_CLIENTS];
 	char       *p;
 	int         i, j, numcl = 0, numt = 0;
 	client_t   *clients[MAX_CLIENTS];
-	char        buf[2048] = { 0 };
 	const char *team;
+	static dstring_t *buffer;
+
+	if (!buffer)
+		buffer = dstring_new ();
 
 	// count teams and players
 	for (i = 0; i < MAX_CLIENTS; i++) {
@@ -756,42 +751,43 @@ SV_PrintTeams (void)
 
 		team = Info_ValueForKey (svs.clients[i].userinfo, "team");
 		clients[numcl++] = &svs.clients[i];
+
 		for (j = 0; j < numt; j++)
 			if (!strcmp (team, teams[j]))
 				break;
 		if (j != numt)
 			continue;
 
-		strcpy (teams[numt++], team);
+		teams[numt++] = team;
 	}
 
 	// create output
 
 	if (numcl == 2)						// duel
 	{
-		sprintf (buf, "team1 %s\nteam2 %s\n", clients[0]->name,
-				 clients[1]->name);
+		dsprintf (buffer, "team1 %s\nteam2 %s\n", clients[0]->name,
+				  clients[1]->name);
 	} else if (!teamplay->int_val)		// ffa
 	{
-		sprintf (buf, "players:\n");
+		dsprintf (buffer, "players:\n");
 		for (i = 0; i < numcl; i++)
-			sprintf (buf + strlen (buf), "  %s\n", clients[i]->name);
+			dasprintf (buffer, "  %s\n", clients[i]->name);
 	} else {							// teamplay
 		for (j = 0; j < numt; j++) {
-			sprintf (buf + strlen (buf), "team %s:\n", teams[j]);
+			dasprintf (buffer, "team %s:\n", teams[j]);
 			for (i = 0; i < numcl; i++) {
 				team = Info_ValueForKey (svs.clients[i].userinfo, "team");
 				if (!strcmp (team, teams[j]))
-					sprintf (buf + strlen (buf), "  %s\n", clients[i]->name);
+					dasprintf (buffer, "  %s\n", clients[i]->name);
 			}
 		}
 	}
 
 	if (!numcl)
 		return "\n";
-	for (p = buf; *p; p++)
+	for (p = buffer->str; *p; p++)
 		*p = sys_char_map[(byte) * p];
-	return va ("%s", buf);
+	return buffer->str;
 }
 
 static int
@@ -806,19 +802,21 @@ SV_Record (char *name)
 	sizebuf_t   buf;
 	char        buf_data[MAX_MSGLEN];
 	int         n, i;
-	char        path[MAX_OSPATH];
 	const char *info;
-	dstring_t  *tn = demo.name, *tp = demo.path;
 
 	client_t   *player;
 	const char *gamedir, *s;
 	int         seq = 1;
 
-	memset (&demo, 0, sizeof (demo));
+	{
+		// save over memset
+		dstring_t  *tn = demo.name, *tt = demo.text;
+		memset (&demo, 0, sizeof (demo));
+		dstring_clearstr (demo.name = tn);
+		dstring_clearstr (demo.text = tt);
+	}
 	for (i = 0; i < UPDATE_BACKUP; i++)
 		demo.recorder.frames[i].entities.entities = demo_entities[i];
-	dstring_clearstr (demo.name = tn);
-	dstring_clearstr (demo.path = tp);
 
 	DemoBuffer_Init (&demo.dbuffer, demo.buffer, sizeof (demo.buffer));
 	DemoSetMsgBuf (NULL, &demo.frames[0].buf);
@@ -835,45 +833,36 @@ SV_Record (char *name)
 	SV_InitRecord ();
 
 	s = name + strlen (name);
-	while (*s != '/')
+	while (s > name && *s != '/')
 		s--;
-	dstring_clearstr (demo.name);
-	dstring_clearstr (demo.path);
-	dstring_appendstr (demo.name, s + 1);
-	dstring_appendstr (demo.path, sv_demoDir->string);
+	dstring_copystr (demo.name, s + (*s == '/'));
 
-	if (demo.path->size < 2)
-		dstring_appendstr (demo.path, ".");
-
-	SV_BroadcastPrintf (PRINT_CHAT, "Server starts recording (%s):\n%s\n",
+	SV_BroadcastPrintf (PRINT_CHAT, "Server started recording (%s):\n%s\n",
 						demo.disk ? "disk" : "memory", demo.name->str);
 	Cvar_Set (serverdemo, demo.name->str);
 
-	strcpy (path, name);
-	strcpy (path + strlen (path) - 3, "txt");
+	dstring_copystr (demo.text, name);
+	strcpy (demo.text->str + strlen (demo.text->str) - 3, "txt");
 
 	if (sv_demotxt->int_val) {
 		QFile      *f;
 
-		f = QFS_Open (path, "w+t");
+		f = QFS_Open (demo.text->str, "w+t");
 		if (f != NULL) {
-			char        buf[2000];
 			char        date[20];
 			time_t      tim;
 
 			time (&tim);
-			strftime (date, 19, "%Y-%m-%d-%H-%M", localtime (&tim));
-
-			sprintf (buf, "date %s\nmap %s\nteamplay %d\ndeathmatch %d\n"
+			strftime (date, sizeof (date), "%Y-%m-%d-%H-%M", localtime (&tim));
+			Qprintf (f, "date %s\nmap %s\nteamplay %d\ndeathmatch %d\n"
 					 "timelimit %d\n%s",
 					 date, sv.name, teamplay->int_val,
-					 deathmatch->int_val, timelimit->int_val, SV_PrintTeams ());
-			Qwrite (f, buf, strlen (buf));
-			Qflush (f);
+					 deathmatch->int_val, timelimit->int_val, 
+					 SV_PrintTeams ());
 			Qclose (f);
 		}
 	} else
-		unlink (path);
+		QFS_Remove (demo.text->str);
 
 	sv.demorecording = true;
 	demo.pingtime = demo.time = sv.time;
@@ -1058,25 +1047,27 @@ SV_Record (char *name)
 	Cleans the demo name, removes restricted chars, makes name lowercase
 */
 
-static char       *
+static char *
 SV_CleanName (const unsigned char *name)
 {
-	static char text[1024];
-	char       *out = text;
+	static char *text;
+	static size_t text_len;
+	char       *out, c;
 
-	*out = sys_char_map[*name++];
+	if (text_len < strlen (name)) {
+		text_len = (strlen (name) + 1023) & ~1023;
+		text = realloc (text, text_len);
+	}
 
-	while (*name)
-		if (*out == '_' && sys_char_map[*name] == '_')
-			name++;
-		else
-			*++out = sys_char_map[*name++];
+	out = text;
+	do {
+		c = sys_char_map[*name++];
+		if (c != '_')
+			*out++ = c;
+	} while (c);
 
-	*++out = 0;
 	return text;
 }
-
-#define MAX_DEMO_NAME 64				// FIXME
 
 /*
 	SV_Record_f
@@ -1253,7 +1244,7 @@ Demo_Init (void)
 	}
 
 	demo.name = dstring_newstr ();
-	demo.path = dstring_newstr ();
+	demo.text = dstring_newstr ();
 
 	svs.demomem = Hunk_AllocName (size, "demo");
 	svs.demomemsize = size;

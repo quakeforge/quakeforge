@@ -1361,8 +1361,8 @@ PF_logfrag (progs_t *pr)
 
 	// do gib event callback
 	if (sv_frag_e->func) {
-		char buf[16];		//FIXME: overflow
-		char type1[2], type2[2];		//FIXME: overflow
+		char buf[16];
+		char type1[2], type2[2];
 		int u1, u2;
 		
 		type1[1] = type2[1] = 0;

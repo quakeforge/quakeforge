@@ -416,7 +416,7 @@ Sbar_SortFrags (qboolean includespec)
 static void
 Sbar_SortTeams (void)
 {
-	char        t[16 + 1];		//FIXME: overflow
+	char        t[16 + 1];
 	int         i, j, k;
 	player_info_t *s;
 
@@ -535,7 +535,7 @@ dmo_ping (view_t *view, int x, int y, player_info_t *s)
 static inline void
 dmo_uid (view_t *view, int x, int y, player_info_t *s)
 {
-	char		num[12];		//FIXME: overflow
+	char		num[12];
 	int         p;
 
 	p = s->userid;
@@ -683,7 +683,7 @@ draw_weapons_hud (view_t *view)
 static void
 draw_ammo_sbar (view_t *view)
 {
-	char        num[12];		//FIXME: overflow
+	char        num[12];
 	int         i;
 
 	// ammo counts
@@ -704,7 +704,7 @@ draw_ammo_sbar (view_t *view)
 static void
 draw_ammo_hud (view_t *view)
 {
-	char        num[12];		//FIXME: overflow
+	char        num[12];
 	int         i;
 
 	// ammo counts
@@ -989,7 +989,7 @@ Sbar_Draw (void)
 void
 Sbar_TeamOverlay (view_t *view)
 {
-	char        num[12];		//FIXME: overflow
+	char        num[20];
 	int         pavg, plow, phigh, i, k, l, x, y;
 	team_t     *tm;
 	info_key_t *player_team = cl.players[cl.playernum].team;
@@ -1481,7 +1481,7 @@ static void
 draw_minifrags (view_t *view)
 {
 	int         numlines, top, bottom, f, i, k, x, y;
-	char        num[12];		//FIXME: overflow
+	char        num[20];
 	player_info_t *s;
 
 	scr_copyeverything = 1;
@@ -1555,7 +1555,7 @@ static void
 draw_miniteam (view_t *view)
 {
 	int         i, k, x, y;
-	char        num[12];		//FIXME: overflow
+	char        num[12];
 	info_key_t *player_team = cl.players[cl.playernum].team;
 	team_t     *tm;
 
@@ -1590,7 +1590,7 @@ draw_time (view_t *view)
 	struct tm  *local = NULL;
 	time_t      utc = 0;
 	const char *timefmt = NULL;
-	char        st[80];		//FIXME: overflow
+	char        st[80];
 
 	// Get local time
 	utc = time (NULL);
@@ -1609,7 +1609,7 @@ draw_time (view_t *view)
 static void
 draw_fps (view_t *view)
 {
-	static char   st[80];		//FIXME: overflow
+	static char   st[80];
 	double        t;
 	static double lastframetime;
 	static double lastfps;

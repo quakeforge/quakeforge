@@ -91,7 +91,7 @@ typedef struct {
 	float       fixangletime[MAX_CLIENTS];
 	vec3_t      angles[MAX_CLIENTS];
 	struct dstring_s *name;
-	struct dstring_s *path;
+	struct dstring_s *text;
 	int         parsecount;
 	int         lastwritten;
 	demo_frame_t frames[DEMO_FRAMES];
