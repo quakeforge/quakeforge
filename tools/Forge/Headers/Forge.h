@@ -1,7 +1,4 @@
 
-#include <sys/types.h>
-#include <signal.h>
-
 extern id	quakeed_i;
 
 extern BOOL	filter_light, filter_path, filter_entities;
@@ -21,8 +18,9 @@ void qprintf (char *fmt, ...);		// prints text to cmd_out_i
 {
 	BOOL			dirty;
 	NSMutableString	*filename;		// full path with .map extension
+	unsigned int	eventMask;
 
-// UI objects
+	// UI objects
 	id		brushcount_i;
 	id		entitycount_i;
 	id		regionbutton_i;
@@ -43,58 +41,62 @@ void qprintf (char *fmt, ...);		// prints text to cmd_out_i
 	id		xy_drawmode_i;	// passed over to xyview after init
 }
 
-- setDefaultFilename;
-- (NSString *)currentFilename;
+- (void) setDefaultFilename;
+- (NSString *) currentFilename;
 
-- updateAll;		// when a model has been changed
-- updateCamera;		// when the camera has moved
-- updateXY;
-- updateZ;
+// events
+- (void) postAppDefined;	// post an NSAppDefined event
+- (void) addToEventMask: (unsigned int) mask;
+- (unsigned int) eventMask;
+- (NSEvent *) peekNextEvent;
 
-- updateAll: sender;
+- (void) updateAll;		// when a model has been changed
+- (void) updateCamera;		// when the camera has moved
+- (void) updateXY;
+- (void) updateZ;
 
-- newinstance;		// force next flushwindow to clear all instance drawing
-- redrawInstance;	// erase and redraw all instance now
+- (void) updateAll: (id) sender;
 
-- appWillTerminate: sender;
+- (void) newinstance;		// force next flushwindow to clear all instance drawing
+- (void) redrawInstance;	// erase and redraw all instance now
 
-- openProject: sender;
+- (void) appWillTerminate: (id) sender;
 
-- textCommand: sender;
+- (void) openProject: (id) sender;
 
-- applyRegion: sender;
+- (void) textCommand: (id) sender;
+
+- (void) applyRegion: (id) sender;
 
 - (BOOL) dirty;
 
-- clear: sender;
-- centerCamera: sender;
-- centerZChecker: sender;
+- (void) clear: (id) sender;
+- (void) centerCamera: (id) sender;
+- (void) centerZChecker: (id) sender;
 
-- changeXYLookUp: sender;
+- (void) changeXYLookUp: (id) sender;
 
-- setBrushRegion: sender;
-- setXYRegion: sender;
+- (void) setBrushRegion: (id) sender;
+- (void) setXYRegion: (id) sender;
 
-- open: sender;
-- save: sender;
-- saveAs: sender;
+- (void) open: (id) sender;
+- (void) save: (id) sender;
+- (void) saveAs: (id) sender;
 
-- doOpen: (NSString *) fname;
+- (void) doOpen: (NSString *) fname;
 
-- saveBSP: (NSString *) cmdline dialog: (BOOL) wt;
+- (void) saveBSP: (NSString *) cmdline dialog: (BOOL) wt;
 
-- BSP_Full: sender;
-- BSP_FastVis: sender;
-- BSP_NoVis: sender;
-- BSP_relight: sender;
-- BSP_stop: sender;
-- BSP_entities: sender;
+- (void) BSP_Full: (id) sender;
+- (void) BSP_FastVis: (id) sender;
+- (void) BSP_NoVis: (id) sender;
+- (void) BSP_relight: (id) sender;
+- (void) BSP_stop: (id) sender;
+- (void) BSP_entities: (id) sender;
 
-//
-// UI querie for other objects
-//
-- (BOOL)showCoordinates;
-- (BOOL)showNames;
+// UI queries for other objects
+- (BOOL) showCoordinates;
+- (BOOL) showNames;
 
 @end
 

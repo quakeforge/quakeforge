@@ -10,12 +10,12 @@ A ? size means take the exact brush size.
 
 (these are really comments, but a space has been added to shut the compiler up.)
 
-/ *QUAKED <classname> (0 0 0) ?
-/ *QUAKED <classname> (0 0 0) (-8 -8 -8) (8 8 8)
+/*QUAKED <classname> (0 0 0) ?
+/*QUAKED <classname> (0 0 0) (-8 -8 -8) (8 8 8)
 
 Flag names can follow the size description:
 
-/ *QUAKED func_door (0 .5 .8) ? START_OPEN STONE_SOUND DOOR_DONT_LINK GOLD_KEY SILVER_KEY
+/*QUAKED func_door (0 .5 .8) ? START_OPEN STONE_SOUND DOOR_DONT_LINK GOLD_KEY SILVER_KEY
 
 */
 char	*debugname;

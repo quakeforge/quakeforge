@@ -111,7 +111,7 @@ void CheckCmdDone(DPSTimedEntry tag, double now, void *userData)
 init
 ===============
 */
-- initWithContentRect: (NSRect) contentRect
+- (id) initWithContentRect: (NSRect) contentRect
 		styleMask: (unsigned int) styleMask
 		backing: (NSBackingStoreType) backingType
 		defer: (BOOL) flag
@@ -121,9 +121,9 @@ init
 			backing: backingType
 			defer: flag];
 
-//	[self addToEventMask: NSRightMouseDraggedMask | NSLeftMouseDraggedMask];	
+	[self addToEventMask: NSRightMouseDraggedMask | NSLeftMouseDraggedMask];	
 	
-    malloc_error (My_Malloc_Error);
+//    malloc_error (My_Malloc_Error);
 	
 	quakeed_i = self;
 	dirty = autodirty = NO;
@@ -135,7 +135,7 @@ init
 	return self;
 }
 
-- setDefaultFilename
+- (void) setDefaultFilename
 {
 	if (!filename) {
 		filename = [NSMutableString stringWithString: tempSaveFile];
@@ -145,11 +145,11 @@ init
 
 	[self setTitleWithRepresentedFilename: filename];
 	
-	return self;
+	return;
 }
 
 
-- (BOOL)dirty
+- (BOOL) dirty
 {
 	return dirty;
 }
@@ -170,76 +170,56 @@ BOOL	updatexy;
 BOOL	updatez;
 BOOL	updatecamera;
 
-- (void) postAppDefined
-{
-	NSEvent *ev;
-
-	if (updateinflight)
-		return;
-
-	ev = [NSEvent otherEventWithType: NSApplicationDefined
-			location: (NSPoint) {0,0} modifierFlags: 0
-			timestamp: [[NSDate date] timeIntervalSince1970]
-			windowNumber: [self windowNumber]
-			context: nil subtype: 0 data1: 0 data2: 0];
-
-	// post an event at the end of the queue
-	DPSPostEvent(nil, ev, 0);
-//	printf ("posted\n");
-	updateinflight = YES;
-}
-
-
 int	c_updateall;
-- updateAll			// when a model has been changed
+- (void) updateAll			// when a model has been changed
 {
 	updatecamera = updatexy = updatez = YES;
 	c_updateall++;
 	[self postAppDefined];
-	return self;
+	return;
 }
 
-- updateAll:sender
+- (void) updateAll: (id) sender
 {
 	[self updateAll];
-	return self;
+	return;
 }
 
-- updateCamera		// when the camera has moved
+- (void) updateCamera		// when the camera has moved
 {
 	updatecamera = YES;
 	clearinstance = YES;
 	
 	[self postAppDefined];
-	return self;
+	return;
 }
 
-- updateXY
+- (void) updateXY
 {
 	updatexy = YES;
 	[self postAppDefined];
-	return self;
+	return;
 }
 
-- updateZ
+- (void) updateZ
 {
 	updatez = YES;
 	[self postAppDefined];
-	return self;
+	return;
 }
 
 
-- newinstance
+- (void) newinstance
 {
 	clearinstance = YES;
-	return self;
+	return;
 }
 
-- redrawInstance
+- (void) redrawInstance
 {
 	clearinstance = YES;
 	[self flushWindow];
-	return self;
+	return;
 }
 
 /*
@@ -262,40 +242,81 @@ instance draw the brush after each flush
 	[cameraview_i lockFocus];	
 
 	if (clearinstance) {
-		PSnewinstance ();
+//		PSnewinstance ();
 		clearinstance = NO;
 	}
 
-	PSsetinstance (1);
+//	PSsetinstance (1);
 	linestart (0,0,0);
 	[map_i makeSelectedPerform: @selector(CameraDrawSelf)];
 	[clipper_i cameraDrawSelf];
 	lineflush ();
-	PSsetinstance (0);
+//	PSsetinstance (0);
 	[cameraview_i unlockFocus];	
 
 	[xyview_i lockFocus];
-	PSsetinstance (1);
+//	PSsetinstance (1);
 	linestart (0,0,0);
 	[map_i makeSelectedPerform: @selector(XYDrawSelf)];
 	lineflush ();
 	[cameraview_i XYDrawSelf];
 	[zview_i XYDrawSelf];
 	[clipper_i XYDrawSelf];
-	PSsetinstance (0);
+//	PSsetinstance (0);
 	[xyview_i unlockFocus];
 
 	[zview_i lockFocus];
-	PSsetinstance (1);
+//	PSsetinstance (1);
 	[map_i makeSelectedPerform: @selector(ZDrawSelf)];
 	[cameraview_i ZDrawSelf];
 	[clipper_i ZDrawSelf];
-	PSsetinstance (0);
+//	PSsetinstance (0);
 	[zview_i unlockFocus];
 
 	return;
 }
 
+
+/*
+	EVENTS
+*/
+
+- (void) postAppDefined
+{
+	NSEvent *ev;
+
+	if (updateinflight)
+		return;
+
+	ev = [NSEvent otherEventWithType: NSApplicationDefined
+			location: (NSPoint) {0,0} modifierFlags: 0
+			timestamp: [[NSDate date] timeIntervalSince1970]
+			windowNumber: [self windowNumber]
+			context: nil subtype: 0 data1: 0 data2: 0];
+
+	// post an event at the end of the queue
+	[self postEvent: ev atStart: NO];
+//	printf ("posted\n");
+	updateinflight = YES;
+}
+
+- (void) addToEventMask: (unsigned int) mask
+{
+	eventMask |= mask;
+}
+
+- (unsigned int) eventMask
+{
+	return eventMask;
+}
+
+- (NSEvent *) peekNextEvent
+{
+	return [self nextEventMatchingMask: eventMask
+				untilDate: [NSDate distantFuture]
+				inMode: NSEventTrackingRunLoopMode
+				dequeue: NO];
+}
 
 /*
 ==============================================================================
@@ -305,7 +326,7 @@ App delegate methods
 ==============================================================================
 */
 
-- applicationDefined: (NSEvent *) theEvent
+- (void) applicationDefined: (NSEvent *) theEvent
 {
 	NSEvent 	*ev;
 	
@@ -314,10 +335,10 @@ App delegate methods
 //printf ("serviced\n");
 	
 // update screen	
-	ev = [NSApp peekNextEvent: -1];
+	ev = [self peekNextEvent];
 	if (ev) {
 		[self postAppDefined];
-		return self;
+		return;
 	}
 		
 	[self disableFlushWindow];	
@@ -341,10 +362,10 @@ App delegate methods
 	
 //	NXPing ();
 	
-	return self;
+	return;
 }
 
-- appDidInitialize: sender
+- (void) appDidInitialize: (id) sender
 {
 #if 0
 	NSScreen	const *screens;
@@ -381,19 +402,19 @@ App delegate methods
 
 //malloc_debug(-1);		// DEBUG
 	
-	return self;
+	return;
 }
 
-- appWillTerminate:sender
+- (void) appWillTerminate: (id) sender
 {
 // FIXME: save dialog if dirty
-	return self;
+	return;
 }
 
 
 //===========================================================================
 
-- textCommand: sender
+- (void) textCommand: (id) sender
 {
 	NSString	*t;
 	
@@ -407,26 +428,26 @@ App delegate methods
 		if (!b)
 		{
 			qprintf ("nothing selected");
-			return self;
+			return;
 		}
 		td = [b texturedef];
 		qprintf (td->texture);
-		return self;
+		return;
 	}
 	else
 		qprintf ("Unknown command\n");
-	return self;
+	return;
 }
 
 
-- openProject:sender
+- (void) openProject: (id) sender
 {
 	[project_i	openProject];
-	return self;
+	return;
 }
 
 
-- clear: sender
+- (void) clear: (id) sender
 {	
 	[map_i newMap];
 
@@ -434,11 +455,11 @@ App delegate methods
 	[regionbutton_i setIntValue: 0];
 	[self setDefaultFilename];
 
-	return self;
+	return;
 }
 
 
-- centerCamera: sender
+- (void) centerCamera: (id) sender
 {
 	NSRect	sbounds = [[xyview_i superview] bounds];
 
@@ -448,10 +469,10 @@ App delegate methods
 	[cameraview_i setXYOrigin: sbounds.origin];
 	[self updateAll];
 	
-	return self;
+	return;
 }
 
-- centerZChecker: sender
+- (void) centerZChecker: (id) sender
 {
 	NSRect	sbounds = [[xyview_i superview] bounds];
 	
@@ -461,10 +482,10 @@ App delegate methods
 	[zview_i setPoint: sbounds.origin];
 	[self updateAll];
 	
-	return self;
+	return;
 }
 
-- changeXYLookUp: sender
+- (void) changeXYLookUp: (id) sender
 {
 	if ([sender intValue])
 	{
@@ -475,7 +496,7 @@ App delegate methods
 		xy_viewnormal[2] = -1;
 	}
 	[self updateAll];
-	return self;
+	return;
 }
 
 /*
@@ -492,7 +513,7 @@ REGION MODIFICATION
 applyRegion:
 ==================
 */
-- applyRegion: sender
+- (void) applyRegion: (id) sender
 {
 	filter_clip_brushes = [filter_clip_i intValue];
 	filter_water_brushes = [filter_water_i intValue];
@@ -511,10 +532,10 @@ applyRegion:
 	
 	[self updateAll];
 
-	return self;
+	return;
 }
 
-- setBrushRegion: sender
+- (void) setBrushRegion: (id) sender
 {
 	id		b;
 
@@ -523,7 +544,7 @@ applyRegion:
 	if ([map_i numSelected] != 1)
 	{
 		qprintf ("must have a single brush selected");
-		return self;
+		return;
 	} 
 
 	b = [map_i selectedBrush];
@@ -534,10 +555,10 @@ applyRegion:
 	[regionbutton_i setIntValue: 1];
 	[self applyRegion: self];
 	
-	return self;
+	return;
 }
 
-- setXYRegion: sender
+- (void) setXYRegion: (id) sender
 {
 	NSRect	bounds = [[xyview_i superview] bounds];
 
@@ -552,18 +573,18 @@ applyRegion:
 	[regionbutton_i setIntValue: 1];
 	[self applyRegion: self];
 	
-	return self;
+	return;
 }
 
 //
-// UI querie for other objects
+// UI queries for other objects
 //
-- (BOOL)showCoordinates
+- (BOOL) showCoordinates
 {
 	return [show_coordinates_i intValue];
 }
 
-- (BOOL)showNames
+- (BOOL) showNames
 {
 	return [show_names_i intValue];
 }
@@ -593,7 +614,7 @@ ExpandCommand (NSString *input, NSString *src, NSString *dest)
 saveBSP
 =============
 */
-- saveBSP: (NSString *) cmdline dialog: (BOOL) wt
+- (void) saveBSP: (NSString *) cmdline dialog: (BOOL) wt
 {
 	int			oldLightFilter;
 	int			oldPathFilter;
@@ -604,7 +625,7 @@ saveBSP
 	
 	if (bsppid) {
 		NSBeep();
-		return self;
+		return;
 	}
 
 //
@@ -673,52 +694,52 @@ saveBSP
 		}
 	}
 	
-	return self;
+	return;
 }
 
 
-- BSP_Full: sender
+- (void) BSP_Full: (id) sender
 {
 	[self saveBSP: [project_i fullVisCommand] dialog: NO];
-	return self;
+	return;
 }
 
-- BSP_FastVis: sender
+- (void) BSP_FastVis: (id) sender
 {
 	[self saveBSP: [project_i fastVisCommand] dialog: NO];
-	return self;
+	return;
 }
 
-- BSP_NoVis: sender
+- (void) BSP_NoVis: (id) sender
 {
 	[self saveBSP: [project_i noVisCommand] dialog: NO];
-	return self;
+	return;
 }
 
-- BSP_relight: sender
+- (void) BSP_relight: (id) sender
 {
 	[self saveBSP: [project_i relightCommand] dialog: NO];
-	return self;
+	return;
 }
 
-- BSP_entities: sender
+- (void) BSP_entities: (id) sender
 {
 	[self saveBSP: [project_i entitiesCommand] dialog: NO];
-	return self;
+	return;
 }
 
-- BSP_stop: sender
+- (void) BSP_stop: (id) sender
 {
 	if (!bsppid) {
 		NSBeep ();
-		return self;
+		return;
 	}
 	
 	kill (bsppid, 9);
 //	CheckCmdDone (cmdte, 0, NULL);
 	[project_i addToOutput: @"\n\n========= STOPPED =========\n\n"];
 	
-	return self;
+	return;
 }
 
 
@@ -730,7 +751,7 @@ doOpen:
 Called by open or the project panel
 ==============
 */
-- doOpen: (NSString *)fname;
+- (void) doOpen: (NSString *) fname
 {	
 	[filename setString: fname];
 	
@@ -742,7 +763,7 @@ Called by open or the project panel
 
 	qprintf ("%s loaded\n", fname);
 	
-	return self;
+	return;
 }
 
 
@@ -751,7 +772,7 @@ Called by open or the project panel
 open
 ==============
 */
-- open: sender;
+- (void) open: (id) sender
 {
 	id	openPanel = [NSOpenPanel openPanel];
 	id	fileTypes = [NSArray arrayWithObject: @"map"];
@@ -760,11 +781,11 @@ open
 			runModalForDirectory: [project_i mapDirectory]
 			file: @""
 			types: fileTypes] != NSOKButton)
-		return self;
+		return;
 
 	[self doOpen: [openPanel filename]];
 	
-	return self;
+	return;
 }
 
 
@@ -773,7 +794,7 @@ open
 save:
 ==============
 */
-- save: sender;
+- (void) save: (id) sender
 {
 	NSString 	*backup;
 
@@ -790,14 +811,14 @@ save:
 
 	[map_i writeMapFile: filename useRegion: NO];
 
-	return self;
+	return;
 }
 
 
 /*
 	saveAs
 */
-- saveAs: sender;
+- (void) saveAs: (id) sender
 {
 	id			panel_i = [NSSavePanel savePanel];
 	NSString	*dir;
@@ -806,7 +827,7 @@ save:
 	
 	[panel_i setRequiredFileType: @"map"];
 	if ([panel_i runModalForDirectory: [project_i mapDirectory] file: dir] != NSOKButton)
-		return self;
+		return;
 	
 	[filename setString: [panel_i filename]];
 	
@@ -814,7 +835,7 @@ save:
 	
 	[self save: self];	
 	
-	return self;
+	return;
 }
 
 
@@ -835,7 +856,7 @@ save:
 	return filename;
 }
 
-- deselect: sender
+- (void) deselect: (id) sender
 {
 	if ([clipper_i hide])	// first click hides clipper only
 		return [self updateAll];
@@ -844,7 +865,7 @@ save:
 	[map_i makeSelectedPerform: @selector(deselect)];
 	[self updateAll];
 	
-	return self;
+	return;
 }
 
 
