@@ -735,9 +735,6 @@ CL_StartDemo (void)
 {
 	char		name[MAX_OSPATH];
 
-	// disconnect from server
-	CL_Disconnect ();
-
 	// open the demo file
 	strncpy (name, demoname, sizeof (name));
 	COM_DefaultExtension (name, ".qwd");
@@ -769,6 +766,10 @@ CL_PlayDemo_f (void)
 		Con_Printf ("play <demoname> : plays a demo\n");
 		return;
 	}
+	timedemo_runs = timedemo_count = 1;	// make sure looped timedemos stop
+	// disconnect from server
+	CL_Disconnect ();
+
 	strncpy (demoname, Cmd_Argv (1), sizeof (demoname));
 	CL_StartDemo ();
 }
@@ -864,6 +865,10 @@ CL_TimeDemo_f (void)
 		Con_Printf ("timedemo <demoname> [count]: gets demo speeds\n");
 		return;
 	}
+	timedemo_runs = timedemo_count = 1;	// make sure looped timedemos stop
+	// disconnect from server
+	CL_Disconnect ();
+
 	if (Cmd_Argc () == 3) {
 		timedemo_count = atoi (Cmd_Argv (2));
 	} else {
