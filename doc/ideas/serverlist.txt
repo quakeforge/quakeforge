@@ -1,0 +1,25 @@
+Ideas for console based server list.
+
+2 lists, favorates and all (possably a seperate filtered all list)
+favorates listed in [nq|qw]servers.txt
+master servers listed in [nq|qw]masters.txt
+all is all servers reported by masters
+
+filter all by ping and game, limit ping to 600 (double what I consider playable)optional filter of min players on server
+
+Possable Commands
+slist refresh // refreshes the details of the currently listed servers
+slist update // if favorates list it does a refresh 
+	     // otherwise it queries the master servers
+	     // either case auto request details
+slist favorates|all|filtered // switches to the appropriate list favorates being
+			     // the default
+slist list // shows what list is being used
+slist // lists servers from active list
+slist # // lists details of server no. # from list
+slist connect [#] // connects to server in list, not including a # makes qf
+		  // connect to the last server whos details were displayed
+slist add // adds current server to favorates list (auto save)
+slist del # // remove server no. # from the favorates list (auto save)
+slist insert # // insert current server into position no # in the favorates list
+
