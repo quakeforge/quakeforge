@@ -166,6 +166,8 @@ cvar_t     *localid;
 cvar_t     *cl_port;
 cvar_t     *cl_autorecord;
 
+cvar_t     *cl_fb_players;
+
 static qboolean allowremotecmd = true;
 
 /*  info mirrors */
@@ -396,6 +398,11 @@ CL_ClearState (void)
 	// wipe the entire cl structure
 	Info_Destroy (cl.serverinfo);
 	memset (&cl, 0, sizeof (cl));
+
+	// Note: we should probably hack around this and give diff values for diff gamedirs
+	cl.fpd = FPD_DEFAULT;
+	cl.fbskins = FBSKINS_DEFAULT;
+
 	for (i = 0; i < UPDATE_BACKUP; i++)
 		cl.frames[i].packet_entities.entities = cl_entities[i];
 	memset (cl_entities, 0, sizeof (cl_entities));
@@ -624,6 +631,12 @@ CL_FullServerinfo_f (void)
 	}
 	if ((p = Info_ValueForKey (cl.serverinfo, "watervis")) && *p) {
 		cl.watervis = atoi (p);
+	}
+	if ((p = Info_ValueForKey (cl.serverinfo, "fpd")) && *p) {
+		cl.fpd = atoi (p);
+	}
+	if ((p = Info_ValueForKey (cl.serverinfo, "fbskins")) && *p) {
+		cl.fbskins = atoi (p);
 	}
 	if ((p = Info_ValueForKey (cl.serverinfo, "skybox")) && *p) {
 		Cvar_Set (r_skyname, p);
@@ -1075,6 +1088,30 @@ Force_CenterView_f (void)
 	cl.viewangles[PITCH] = 0;
 }
 
+static void
+CL_PRotate_f (void)
+{
+	if ((cl.fpd & FPD_LIMIT_PITCH) || Cmd_Argc() < 2)
+		return;
+
+	cl.viewangles[PITCH] += atoi (Cmd_Argv (1));
+
+	if (cl.viewangles[PITCH] < -70)
+		cl.viewangles[PITCH] = -70;
+	else if (cl.viewangles[PITCH] > 80)
+		cl.viewangles[PITCH] = 80;
+}
+
+static void
+CL_Rotate_f (void)
+{
+	if ((cl.fpd & FPD_LIMIT_YAW) || Cmd_Argc() < 2)
+		return;
+
+	cl.viewangles[YAW] += atoi (Cmd_Argv (1));
+	cl.viewangles[YAW] = anglemod (cl.viewangles[YAW]);
+}
+
 void
 CL_SetState (cactive_t state)
 {
@@ -1177,6 +1214,8 @@ CL_Init (void)
 					"uploading");
 	Cmd_AddCommand ("force_centerview", Force_CenterView_f, "force the view "
 					"to be level");
+	Cmd_AddCommand ("rotate", CL_Rotate_f, "Look left or right a given amount. Usage: rotate <degrees>");
+	Cmd_AddCommand ("protate", CL_PRotate_f, "Look up or down a given amount. Usage: protate <degrees>");
 	// forward to server commands
 	Cmd_AddCommand ("kill", CL_Cmd_ForwardToServer, "Suicide :)");
 	Cmd_AddCommand ("pause", CL_Cmd_ForwardToServer, "Pause the game");
@@ -1239,6 +1278,8 @@ CL_Init_Cvars (void)
 								 "turn `run' speed multiplier");
 	cl_backspeed = Cvar_Get ("cl_backspeed", "200", CVAR_ARCHIVE, NULL,
 							 "backward speed");
+	cl_fb_players = Cvar_Get ("cl_fb_players", "0", CVAR_ARCHIVE, NULL, "fullbrightness of player models. "
+							"server must allow (via fbskins serverinfo).");
 	cl_forwardspeed = Cvar_Get ("cl_forwardspeed", "200", CVAR_ARCHIVE, NULL,
 								"forward speed");
 	cl_movespeedkey = Cvar_Get ("cl_movespeedkey", "2.0", CVAR_NONE, NULL,

@@ -131,7 +131,7 @@ Team_ParseSay (const char *s)
 	size_t      i, bracket;
 	static location_t *location = NULL;
 
-	if (!cl_parsesay->int_val)
+	if (!cl_parsesay->int_val || (cl.fpd & FPD_NO_MACROS))
 		return s;
 
 	i = 0;
@@ -435,6 +435,13 @@ static const char *
 Team_F_Skins (char *args)
 {
 	int		totalfb, l;
+	float		allfb = 0.0;
+
+	allfb = min (cl.fbskins, cl_fb_players->value);
+
+	if (allfb >= 1.0) {
+		return "say Player models fullbright";
+	}
 
 	while (isspace ((byte) *args))
 		args++;
@@ -442,8 +449,9 @@ Team_F_Skins (char *args)
 
 	if (l == 0) {
 		totalfb = Skin_FbPercent (0);
-		return va ("say Average percent fullbright for all loaded skins is "
-				   "%d.%d%%", totalfb / 10, totalfb % 10);
+		return va ("say Player models have %f%% brightness\n"
+			   "say Average percent fullbright for all loaded skins is "
+			   "%d.%d%%", allfb * 100, totalfb / 10, totalfb % 10);
 	}
 
 	totalfb = Skin_FbPercent (args);

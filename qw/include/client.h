@@ -199,6 +199,26 @@ typedef struct
 
 extern client_static_t	cls;
 
+#define FPD_NO_MACROS		0x0001			// Many clients ignore this, and it isn't used, but let's honor it
+#define FPD_NO_TIMERS		0x0002			// We never allow timers anyway
+#define FPD_NO_STRIGGER	0x0004			// Don't have soundtrigger yet, but this disables it
+#define FPD_HIDE_PERCENTE	0x0020			// Ditto
+#define FPD_HIDE_POINT		0x0080			// Can ignore if we do visibility checking for point
+#define FPD_NO_TEAMSKIN	0x0100			// Disable skin force
+#define FPD_NO_TEAMCOLOR	0x0200			// Disable color force
+#define FPD_HIDE_ITEM		0x0400			// No idea what this does
+#define FPD_LIMIT_PITCH	0x4000			// Limit pitchspeed 
+#define FPD_LIMIT_YAW		0x8000			// Limit yawspeed
+
+#define FPD_DEFAULT		(FPD_HIDE_PERCENTE | FPD_NO_TEAMSKIN)
+
+// These limits prevent a usable RJ script, requiring > 0.1 sec of turning time. 
+#define FPD_MAXPITCH		1000
+#define FPD_MAXYAW		2000
+
+// Default fbskins value. This should really be different for different gamedirs, but eh
+#define FBSKINS_DEFAULT		0.0
+
 /*
   the client_state_t structure is wiped completely at every server signon
 */
@@ -279,6 +299,8 @@ typedef struct
 	int			no_pogo_stick;
 	int			teamplay;
 	int			watervis;
+	int			fpd;
+	int			fbskins;
 
 // refresh related state
 	struct model_s	*worldmodel;	// cl_entitites[0].model
@@ -333,6 +355,7 @@ extern	struct cvar_s	*hud_pl;
 
 extern	struct cvar_s	*skin;
 
+extern	struct cvar_s	*cl_fb_players;
 
 #define	MAX_STATIC_ENTITIES	128			// torches, etc
 

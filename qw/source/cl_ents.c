@@ -459,6 +459,15 @@ CL_LinkPacketEntities (void)
 
 		(*ent)->model = model = cl.model_precache[s1->modelindex];
 
+		(*ent)->min_light = 0;
+		(*ent)->fullbright = 0;
+
+		if (s1->modelindex == cl_playerindex) {
+			(*ent)->min_light = min (cl.fbskins, cl_fb_players->value);
+			if ((*ent)->min_light >= 1.0)
+				(*ent)->fullbright = 1;
+		}
+
 		// set colormap
 		if (s1->colormap && (s1->colormap <= MAX_CLIENTS)
 			&& cl.players[s1->colormap - 1].name[0]
@@ -940,6 +949,10 @@ CL_LinkPlayers (void)
 		ent->frame = state->frame;
 		ent->colormap = info->translations;
 		ent->skinnum = state->skinnum;
+
+		ent->min_light = 0;
+		ent->fullbright = 0;
+
 		if (state->modelindex == cl_playerindex) { //XXX
 			// use custom skin
 			if (!info->skin)
@@ -952,6 +965,11 @@ CL_LinkPlayers (void)
 			} else {
 				ent->skin = NULL;
 			}
+
+			ent->min_light = min (cl.fbskins, cl_fb_players->value);
+
+			if (ent->min_light >= 1.0)
+				ent->fullbright = 1;
 		} else {
 			ent->skin = NULL;
 		}

@@ -1104,6 +1104,10 @@ CL_ServerInfo (void)
 		Sbar_DMO_Init_f (hud_scoreboard_uid); // HUD setup, cl.teamplay changed
 	} else if (strequal (key, "watervis")) {
 		cl.watervis = atoi (value);
+	} else if (strequal (key, "fpd")) {
+		cl.fpd = atoi (value);
+	} else if (strequal (key, "fbskins")) {
+		cl.fbskins = atoi (value);
 //	} else if (strequal (key, "*z_ext") {
 //		cl.z_ext = atoi (value);
 //	} else if (strequal (key, "pm_bunnyspeedcap") {
