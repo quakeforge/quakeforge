@@ -1,6 +1,7 @@
 typedef enum {
 	ex_statement,
-	ex_expr,
+	ex_expr,	// binary expression
+	ex_uexpr,	// unary expression
 	ex_def,
 	ex_int,
 	ex_float,
@@ -13,6 +14,7 @@ typedef struct estatement_s {
 } estatement_t;
 
 typedef struct expr_s {
+	struct expr_s *next;
 	expr_type	type;
 	union {
 		struct {
@@ -34,3 +36,4 @@ typedef struct expr_s {
 expr_t *new_expr (void);
 expr_t *binary_expr (int op, expr_t *e1, expr_t *e2);
 expr_t *unary_expr (int op, expr_t *e);
+expr_t *function_expr (expr_t *e1, expr_t *e2);

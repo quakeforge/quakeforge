@@ -44,7 +44,8 @@ typedef struct {
 %left	EQ NE LE GE LT GT
 %left	'+' '-'
 %left	'*' '/' '&' '|'
-%left	'!' '.' '('
+%left	'!' '.'
+%right	'('
 
 %token	<string_val> NAME STRING_VAL
 %token	<int_val> INT_VAL
@@ -287,7 +288,11 @@ statement
 	| RETURN ';' {}
 	| WHILE '(' expr ')' statement {}
 	| DO statement WHILE '(' expr ')' ';' {}
-	| LOCAL type def_list ';' {}
+	| LOCAL type
+		{
+			current_type = $2;
+		}
+	  def_list ';' {}
 	| IF '(' expr ')' statement {}
 	| IF '(' expr ')' statement ELSE statement {}
 	| FOR '(' expr ';' expr ';' expr ')' statement {}
@@ -297,7 +302,7 @@ statement
 expr
 	: expr AND expr	{ $$ = binary_expr (AND, $1, $3); }
 	| expr OR expr	{ $$ = binary_expr (OR,  $1, $3); }
-	| expr '=' expr	{ $$ = binary_expr ('.', $1, $3); }
+	| expr '=' expr	{ $$ = binary_expr ('=', $1, $3); }
 	| expr EQ expr	{ $$ = binary_expr (EQ,  $1, $3); }
 	| expr NE expr	{ $$ = binary_expr (NE,  $1, $3); }
 	| expr LE expr	{ $$ = binary_expr (LE,  $1, $3); }
@@ -309,10 +314,10 @@ expr
 	| expr '*' expr	{ $$ = binary_expr ('*', $1, $3); }
 	| expr '/' expr	{ $$ = binary_expr ('/', $1, $3); }
 	| expr '&' expr	{ $$ = binary_expr ('&', $1, $3); }
-	| expr '|' expr	{ $$ = binary_expr ('!', $1, $3); }
+	| expr '|' expr	{ $$ = binary_expr ('|', $1, $3); }
 	| expr '.' expr	{ $$ = binary_expr ('.', $1, $3); }
-	| expr '(' arg_list ')'
-	| expr '(' ')'
+	| expr '(' arg_list ')'	{ $$ = function_expr ($1, $3); }
+	| expr '(' ')'			{ $$ = function_expr ($1, 0); }
 	| '-' expr		{ $$ = unary_expr ('-', $2); }
 	| '!' expr		{ $$ = unary_expr ('!', $2); }
 	| NAME
@@ -328,6 +333,10 @@ expr
 arg_list
 	: expr
 	| arg_list ',' expr
+		{
+			$3->next = $1;
+			$$ = $3;
+		}
 	;
 
 const
