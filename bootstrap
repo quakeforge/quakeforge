@@ -2,10 +2,17 @@
 cd `dirname $0`
 
 if test "$1" = "clean"; then
-	find . -name Makefile.in -print0 | xargs -r0 rm -f
-	find . -name '*~' -type f -print0 | xargs -r0 rm -f
-	find . -name '*.rej' -type f -print0 | xargs -r0 rm -f
-	find . -name '*.orig' -type f -print0 | xargs -r0 rm -f
+	UNAME=`uname`
+	if test $UNAME = OpenBSD || test $UNAME = Darwin ; then
+		ARGS="-0"
+	else
+		ARGS="-r0"
+	fi
+
+	find . -name Makefile.in -print0 | xargs $ARGS rm -f
+	find . -name '*~' -type f -print0 | xargs $ARGS rm -f
+	find . -name '*.rej' -type f -print0 | xargs $ARGS rm -f
+	find . -name '*.orig' -type f -print0 | xargs $ARGS rm -f
 	rm -f aclocal.m4 build-stamp changelog-stamp config.cache config.log \
 		  config.status configure configure-stamp install-sh libtool missing \
 		  mkinstalldirs quakeforge-config quakeforge.lsm
@@ -13,12 +20,12 @@ if test "$1" = "clean"; then
 	rm -rf autom4te.cache
 
 	cd -
-	find . -name Makefile -print0 | xargs -r0 rm -f
+	find . -name Makefile -print0 | xargs $ARGS rm -f
 	rm -f RPM/build_rpm RPM/quakeforge.conf RPM/quakeforge.spec RPM/rpmmacros
-	find . -name '*.o' -type f -print0 | xargs -r0 rm -f
-	find . -name '*.lo' -type f -print0 | xargs -r0 rm -f
-	find . -name '.libs' -type d -print0 | xargs -r0 rm -rf
-	find . -name '.deps' -type d -print0 | xargs -r0 rm -rf
+	find . -name '*.o' -type f -print0 | xargs $ARGS rm -f
+	find . -name '*.lo' -type f -print0 | xargs $ARGS rm -f
+	find . -name '.libs' -type d -print0 | xargs $ARGS rm -rf
+	find . -name '.deps' -type d -print0 | xargs $ARGS rm -rf
 	exit 0
 fi
 # Check libtoolize version, fix for Debian/Woody
