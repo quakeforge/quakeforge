@@ -253,11 +253,13 @@ void
 SCR_UpdateScreen (double realtime, SCR_Func *scr_funcs)
 {
 	double      time1 = 0, time2;
+	static int  begun = 0;
 
 	if (block_drawing)
 		return;
 
-	GL_EndRendering ();
+	if (begun)
+		GL_EndRendering ();
 
 	r_realtime = realtime;
 
@@ -270,6 +272,7 @@ SCR_UpdateScreen (double realtime, SCR_Func *scr_funcs)
 		return;							// not initialized yet
 
 	GL_BeginRendering (&glx, &gly, &glwidth, &glheight);
+	begun = 1;
 
 	if (r_speeds->int_val) {
 		time1 = Sys_DoubleTime ();
