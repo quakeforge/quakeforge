@@ -167,12 +167,14 @@ if test "x$ac_cv_header_pthread_h" = "xyes"; then
 		[#include <pthread.h>],
 		[pthread_attr_t type;
 		 pthread_attr_init(&type);],
-		[PTHREAD_FLAGS=-pthread],
-		[PTHREAD_FLAGS=-lpthread]
+		[PTHREAD_LDFLAGS=-pthread],
+		[PTHREAD_LDFLAGS=-lpthread]
 	)
 	LDFLAGS="$save_ldflags"
+	PTHREAD_CFLAGS=-D_REENTRANT
 fi
-AC_SUBST(PTHREAD_FLAGS)
+AC_SUBST(PTHREAD_LDFLAGS)
+AC_SUBST(PTHREAD_CFLAGS)
 
 dnl ==================================================================
 dnl Checks for typedefs, structures, and compiler characteristics

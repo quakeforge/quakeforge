@@ -59,16 +59,13 @@ static const char rcsid[] =
 #include "vis.h"
 #include "options.h"
 
-static int  leafsee;
-static byte portalsee[MAX_PORTALS];
-
 void
 CheckStack (leaf_t *leaf, threaddata_t *thread)
 {
-    pstack_t	*p;
+    pstack_t	*portal;
 	
-    for (p = thread->pstack_head.next; p; p = p->next)
-		if (p->leaf == leaf)
+    for (portal = thread->pstack_head.next; portal; portal = portal->next)
+		if (portal->leaf == leaf)
 			Sys_Error ("CheckStack: leaf recursion");
 }
 
@@ -208,7 +205,7 @@ RecursiveLeafFlow (int leafnum, threaddata_t *thread, pstack_t *prevstack)
     long		*test, *might, *vis;
     qboolean	more;
     pstack_t	stack;
-    portal_t	*p;
+    portal_t	*portal;
     plane_t		backplane;
     winding_t	*source, *target;
 
@@ -233,17 +230,18 @@ RecursiveLeafFlow (int leafnum, threaddata_t *thread, pstack_t *prevstack)
 
 	// check all portals for flowing into other leafs       
     for (i = 0; i < leaf->numportals; i++) {
-		p = leaf->portals[i];
+		portal = leaf->portals[i];
 
-		if (!(prevstack->mightsee[p->leaf >> 3] & (1 << (p->leaf & 7))))
+		if (!(prevstack->mightsee[portal->leaf >> 3]
+			  & (1 << (portal->leaf & 7))))
 			continue;		// can't possibly see it
 		// if the portal can't see anything we haven't already seen, skip it
-		if (p->status == stat_done) {
+		if (portal->status == stat_done) {
 			c_vistest++;
-			test = (long *) p->visbits;
+			test = (long *) portal->visbits;
 		} else {
 			c_mighttest++;
-			test = (long *) p->mightsee;
+			test = (long *) portal->mightsee;
 		}
 		more = false;
 		for (j = 0; j < bitlongs; j++) {
@@ -256,19 +254,19 @@ RecursiveLeafFlow (int leafnum, threaddata_t *thread, pstack_t *prevstack)
 			continue;
 
 		// get plane of portal, point normal into the neighbor leaf
-		stack.portalplane = p->plane;
-		VectorSubtract (vec3_origin, p->plane.normal, backplane.normal);
-		backplane.dist = -p->plane.dist;
+		stack.portalplane = portal->plane;
+		VectorSubtract (vec3_origin, portal->plane.normal, backplane.normal);
+		backplane.dist = -portal->plane.dist;
 
 		if (_VectorCompare (prevstack->portalplane.normal, backplane.normal))
 			continue;		// can't go out a coplanar face
 
 		c_portalcheck++;
 
-		stack.portal = p;
+		stack.portal = portal;
 		stack.next = NULL;
 
-		target = ClipWinding(p->winding, &thread->pstack_head.portalplane,
+		target = ClipWinding(portal->winding, &thread->pstack_head.portalplane,
 							 false);
 		if (!target)
 			continue;
@@ -278,7 +276,7 @@ RecursiveLeafFlow (int leafnum, threaddata_t *thread, pstack_t *prevstack)
 
 			stack.source = prevstack->source;
 			stack.pass = target;
-			RecursiveLeafFlow (p->leaf, thread, &stack);
+			RecursiveLeafFlow (portal->leaf, thread, &stack);
 			FreeWinding (target);
 			continue;
 		}
@@ -335,7 +333,7 @@ RecursiveLeafFlow (int leafnum, threaddata_t *thread, pstack_t *prevstack)
 		c_portalpass++;
 
 		// flow through it for real
-		RecursiveLeafFlow (p->leaf, thread, &stack);
+		RecursiveLeafFlow (portal->leaf, thread, &stack);
 
 		FreeWinding (source);
 		FreeWinding (target);
@@ -345,100 +343,28 @@ RecursiveLeafFlow (int leafnum, threaddata_t *thread, pstack_t *prevstack)
 }
 
 void
-PortalFlow (portal_t *p)
+PortalFlow (portal_t *portal)
 {
     threaddata_t	data;
 
 	LOCK;
-    if (p->status != stat_selected)
+    if (portal->status != stat_selected)
 		Sys_Error ("PortalFlow: reflowed");
-    p->status = stat_working;
+    portal->status = stat_working;
 	UNLOCK;
 
-    p->visbits = calloc (1, bitbytes);
+    portal->visbits = calloc (1, bitbytes);
 
     memset (&data, 0, sizeof (data));
-    data.leafvis = p->visbits;
-    data.base = p;
+    data.leafvis = portal->visbits;
+    data.base = portal;
 
-    data.pstack_head.portal = p;
-    data.pstack_head.source = p->winding;
-    data.pstack_head.portalplane = p->plane;
-    data.pstack_head.mightsee = p->mightsee;
+    data.pstack_head.portal = portal;
+    data.pstack_head.source = portal->winding;
+    data.pstack_head.portalplane = portal->plane;
+    data.pstack_head.mightsee = portal->mightsee;
 
-    RecursiveLeafFlow (p->leaf, &data, &data.pstack_head);
+    RecursiveLeafFlow (portal->leaf, &data, &data.pstack_head);
 
-    p->status = stat_done;
-}
-
-/*
-	This is a rough first-order aproximation that is used to trivially reject
-	some of the final calculations.
-*/
-void
-SimpleFlood (portal_t *srcportal, int leafnum)
-{
-    int			i;
-    leaf_t		*leaf;
-    portal_t	*p;
-
-    if (srcportal->mightsee[leafnum >> 3] & (1 << (leafnum & 7)))
-		return;
-    srcportal->mightsee[leafnum >> 3] |= (1 << (leafnum & 7));
-    leafsee++;
-
-    leaf = &leafs[leafnum];
-
-    for (i = 0; i < leaf->numportals; i++) {
-		p = leaf->portals[i];
-		if (!portalsee[p - portals])
-			continue;
-		SimpleFlood (srcportal, p->leaf);
-    }
-}
-
-void
-BasePortalVis (void)
-{
-    int			i, j, k;
-	float		d;
-    portal_t	*tp, *p;
-    winding_t	*winding;
-
-    for (i = 0, p = portals; i < numportals * 2; i++, p++) {
-		p->mightsee = calloc (1, bitbytes);
-
-		memset (portalsee, 0, numportals * 2);
-
-		for (j = 0, tp = portals; j < numportals * 2; j++, tp++) {
-			if (j == i)
-				continue;
-
-			winding = tp->winding;
-			for (k = 0; k < winding->numpoints; k++) {
-				d = DotProduct (winding->points[k],
-								p->plane.normal) - p->plane.dist;
-				if (d > ON_EPSILON)
-					break;
-			}
-			if (k == winding->numpoints)
-				continue;	// no points on front
-
-			winding = p->winding;
-			for (k = 0; k < winding->numpoints; k++) {
-				d = DotProduct (winding->points[k],
-								tp->plane.normal) - tp->plane.dist;
-				if (d < -ON_EPSILON)
-					break;
-			}
-			if (k == winding->numpoints)
-				continue;	// no points on front
-
-			portalsee[j] = 1;
-		}
-
-		leafsee = 0;
-		SimpleFlood (p, p->leaf);
-		p->nummightsee = leafsee;
-    }
+    portal->status = stat_done;
 }

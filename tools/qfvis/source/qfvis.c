@@ -68,33 +68,33 @@ pthread_mutex_t *my_mutex;
 
 bsp_t *bsp;
 
-options_t	options;
+options_t   options;
 
-int			c_chains;
-int			c_mighttest;
-int			c_portaltest;
-int			c_portalpass;
-int			c_portalcheck;
-int			c_vistest;
+int         c_chains;
+int         c_mighttest;
+int         c_portaltest;
+int         c_portalpass;
+int         c_portalcheck;
+int         c_vistest;
 
-int			numportals;
-int			portalleafs;
-int			originalvismapsize;
-int			totalvis;
-int			count_sep;
-int			bitbytes;	// (portalleafs + 63)>>3
-int			bitlongs;
+int         numportals;
+int         portalleafs;
+int         originalvismapsize;
+int         totalvis;
+int         count_sep;
+int         bitbytes;	// (portalleafs + 63)>>3
+int         bitlongs;
 
-portal_t	*portals;
-leaf_t		*leafs;
-dstring_t   *visdata;
-byte		*uncompressed;		// [bitbytes * portalleafs]
+portal_t   *portals;
+leaf_t     *leafs;
+dstring_t  *visdata;
+byte       *uncompressed;		// [bitbytes * portalleafs]
 
 
 void
 PlaneFromWinding (winding_t *winding, plane_t *plane)
 {
-	vec3_t		v1, v2;
+	vec3_t      v1, v2;
 
 	// calc plane
 	VectorSubtract (winding->points[2], winding->points[1], v1);
@@ -104,11 +104,11 @@ PlaneFromWinding (winding_t *winding, plane_t *plane)
 	plane->dist = DotProduct (winding->points[0], plane->normal);
 }
 
-winding_t	*
+winding_t *
 NewWinding (int points)
 {
-	winding_t	*winding;
-	int 		size;
+	winding_t  *winding;
+	int         size;
 
 	if (points > MAX_POINTS_ON_WINDING)
 		Sys_Error ("NewWinding: %i points", points);
@@ -126,11 +126,11 @@ FreeWinding (winding_t *winding)
 		free (winding);
 }
 
-winding_t	*
+winding_t *
 CopyWinding (winding_t *winding)
 {
-	int			size;
-	winding_t	*copy;
+	int         size;
+	winding_t  *copy;
 
 	size = (int) ((winding_t *) 0)->points[winding->numpoints];
 	copy = malloc (size);
@@ -150,17 +150,17 @@ CopyWinding (winding_t *winding)
 	If keepon is true, an exactly on-plane winding will be saved, otherwise
 	it will be clipped away.
 */
-winding_t	*
+winding_t *
 ClipWinding (winding_t *in, plane_t *split, qboolean keepon)
 {
-	int			maxpts, i, j;
-	int			sides[MAX_POINTS_ON_WINDING];
-	int			counts[3];
-	vec_t		dists[MAX_POINTS_ON_WINDING];
-	vec_t		dot;
-	vec_t		*p1, *p2;
-	vec3_t		mid;
-	winding_t	*neww;
+	int         maxpts, i, j;
+	int         sides[MAX_POINTS_ON_WINDING];
+	int         counts[3];
+	vec_t       dists[MAX_POINTS_ON_WINDING];
+	vec_t       dot;
+	vec_t      *p1, *p2;
+	vec3_t      mid;
+	winding_t  *neww;
 
 	counts[0] = counts[1] = counts[2] = 0;
 
@@ -245,12 +245,12 @@ ClipWinding (winding_t *in, plane_t *split, qboolean keepon)
 	Returns the portals from the least complex, so the later ones can reuse
 	the earlier information.
 */
-portal_t	*
+portal_t *
 GetNextPortal (void)
 {
-	int			j;
-	portal_t	*p, *tp;
-	int			min;
+	int         j;
+	portal_t   *p, *tp;
+	int         min;
 
 	LOCK;
 
@@ -275,7 +275,7 @@ GetNextPortal (void)
 void *
 LeafThread (void *thread)
 {
-	portal_t	*portal;
+	portal_t   *portal;
 
 	do {
 		portal = GetNextPortal ();
@@ -297,10 +297,10 @@ LeafThread (void *thread)
 int
 CompressRow (byte *vis, byte *dest)
 {
-	int			j;
-	int			rep;
-	int			visrow;
-	byte		*dest_p;
+	int         j;
+	int         rep;
+	int         visrow;
+	byte       *dest_p;
 
 	dest_p = dest;
 	visrow = (portalleafs + 7) >> 3;
@@ -331,11 +331,11 @@ CompressRow (byte *vis, byte *dest)
 void
 LeafFlow (int leafnum)
 {
-	byte		*outbuffer;
-	byte		compressed[MAX_MAP_LEAFS / 8];
-	int			numvis, i, j;
-	leaf_t		*leaf;
-	portal_t	*portal;
+	byte       *outbuffer;
+	byte        compressed[MAX_MAP_LEAFS / 8];
+	int         numvis, i, j;
+	leaf_t     *leaf;
+	portal_t   *portal;
 
 	// flow through all portals, collecting visible bits
 	outbuffer = uncompressed + leafnum * bitbytes;
@@ -372,7 +372,7 @@ LeafFlow (int leafnum)
 void
 CalcPortalVis (void)
 {
-	int			i;
+	int         i;
 
 	// fastvis just uses mightsee for a very loose bound
 	if (options.minimal) {
@@ -385,7 +385,7 @@ CalcPortalVis (void)
 
 #ifdef HAVE_PTHREAD_H
 	{
-		pthread_t	work_threads[MAX_THREADS];
+		pthread_t   work_threads[MAX_THREADS];
 		void *status;
 		pthread_attr_t attrib;
 
@@ -428,7 +428,7 @@ CalcPortalVis (void)
 void
 CalcVis (void)
 {
-	int			i;
+	int         i;
 
 	BasePortalVis ();
 	CalcPortalVis ();
@@ -444,7 +444,7 @@ CalcVis (void)
 qboolean
 PlaneCompare (plane_t *p1, plane_t *p2)
 {
-	int			i;
+	int         i;
 
 	if (fabs (p1->dist - p2->dist) > 0.01)
 		return false;
@@ -456,17 +456,17 @@ PlaneCompare (plane_t *p1, plane_t *p2)
 	return true;
 }
 
-sep_t	*
+sep_t *
 FindPassages (winding_t *source, winding_t *pass)
 {
-	double		length;
-	float		d;
-	int			counts[3];
-	int			i, j, k, l;
-	plane_t		plane;
-	qboolean	fliptest;
-	sep_t		*sep, *list;
-	vec3_t		v1, v2;
+	double      length;
+	float       d;
+	int         counts[3];
+	int         i, j, k, l;
+	plane_t     plane;
+	qboolean    fliptest;
+	sep_t      *sep, *list;
+	vec3_t      v1, v2;
 
 	list = NULL;
 
@@ -564,11 +564,11 @@ FindPassages (winding_t *source, winding_t *pass)
 void
 CalcPassages (void)
 {
-	int			count, count2, i, j, k;
-	leaf_t		*leaf;
-	portal_t	*p1, *p2;
-	sep_t		*sep;
-	passage_t	*passages;
+	int         count, count2, i, j, k;
+	leaf_t     *leaf;
+	portal_t   *p1, *p2;
+	sep_t      *sep;
+	passage_t  *passages;
 
 	if (options.verbosity >= 0)
 		printf ("building passages...\n");
@@ -618,14 +618,14 @@ CalcPassages (void)
 void
 LoadPortals (char *name)
 {
-	char		magic[80];
-	FILE		*f;
-	int			leafnums[2];
-	int			numpoints, i, j;
-	leaf_t		*leaf;
-	plane_t		plane;
-	portal_t	*portal;
-	winding_t	*winding;
+	char        magic[80];
+	FILE       *f;
+	int         leafnums[2];
+	int         numpoints, i, j;
+	leaf_t     *leaf;
+	plane_t     plane;
+	portal_t   *portal;
+	winding_t  *winding;
 
 	if (!strcmp (name, "-"))
 		f = stdin;
