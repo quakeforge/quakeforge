@@ -12,6 +12,8 @@ CB_  Menu_Item callback
 MENU_ Menu making function
 DRAW_ Draw 
 KEYEV_ Keyevent callback
+CB_ME_ Menu_EnterHook callback
+CB_ML_ Menu_LeaveHook callback
 
 Comment functions like this:
 /*
