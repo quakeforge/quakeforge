@@ -50,10 +50,12 @@ static const char rcsid[] =
 
 #include "compat.h"
 
-void        Mod_LoadAliasModel (model_t *mod, void *buf, cache_allocator_t allocator);
+void        Mod_LoadAliasModel (model_t *mod, void *buf,
+								cache_allocator_t allocator);
 void        Mod_LoadSpriteModel (model_t *mod, void *buf);
 void        Mod_LoadBrushModel (model_t *mod, void *buf);
-model_t	*Mod_RealLoadModel (model_t *mod, qboolean crash, cache_allocator_t allocator);
+model_t	*	Mod_RealLoadModel (model_t *mod, qboolean crash,
+							   cache_allocator_t allocator);
 void		Mod_CallbackLoad (void *object, cache_allocator_t allocator);
 
 model_t    *loadmodel;
@@ -65,19 +67,16 @@ int         mod_numknown;
 
 texture_t  *r_notexture_mip;
 
-cvar_t     *gl_subdivide_size;
 cvar_t     *gl_mesh_cache;
+cvar_t     *gl_subdivide_size;
 
 
 void
 Mod_Init (void)
 {
-	int x, y, m;
-	byte *dest;
-	int mip0size = 16*16;
-	int mip1size = 8*8;
-	int mip2size = 4*4;
-	int mip3size = 2*2;
+	byte   *dest;
+	int		m, x, y;
+	int mip0size = 16*16, mip1size = 8*8, mip2size = 4*4, mip3size = 2*2;
 
 	memset (mod_novis, 0xff, sizeof (mod_novis));
 	r_notexture_mip = Hunk_AllocName (sizeof (texture_t) + mip0size + mip1size
@@ -155,7 +154,7 @@ Mod_FindName (const char *name)
 
 	Loads a model into the cache
 */
-model_t    *
+model_t *
 Mod_LoadModel (model_t *mod, qboolean crash)
 {
 	if (!mod->needload) {
@@ -173,6 +172,7 @@ Mod_RealLoadModel (model_t *mod, qboolean crash, cache_allocator_t allocator)
 {
 	unsigned int *buf;
 	byte		stackbuf[1024];			// avoid dirtying the cache heap
+
 	// load the file
 	buf =
 		(unsigned int *) COM_LoadStackFile (mod->name, stackbuf,
@@ -194,6 +194,7 @@ Mod_RealLoadModel (model_t *mod, qboolean crash, cache_allocator_t allocator)
 	} else {
 		mod->shadow_alpha = 255;
 	}
+
 	if (strnequal (mod->name, "progs/flame", 11)
 		|| strnequal (mod->name, "progs/bolt", 10)) {
 		mod->fullbright = 1;
@@ -201,6 +202,7 @@ Mod_RealLoadModel (model_t *mod, qboolean crash, cache_allocator_t allocator)
 	} else {
 		mod->fullbright = 0;
 	}
+
 	if (strequal (mod->name, "progs/player.mdl")) {
 		mod->min_light = 8;
 	} else if (strnequal (mod->name, "progs/v_", 8)) {
@@ -279,8 +281,8 @@ Mod_TouchModel (const char *name)
 void
 Mod_Print (void)
 {
-	int         i;
-	model_t    *mod;
+	int			i;
+	model_t	   *mod;
 
 	Sys_Printf ("Cached models:\n");
 	for (i = 0, mod = mod_known; i < mod_numknown; i++, mod++) {
