@@ -855,12 +855,13 @@ void
 CL_ConnectionlessPacket (void)
 {
 	char       *s;
-	int         c;
+	int         c, clcp_temp;
 
 	MSG_BeginReading (net_message);
 	MSG_ReadLong (net_message);					// skip the -1
 
 	c = MSG_ReadByte (net_message);
+	clcp_temp = 0;
 	if (!cls.demoplayback)
 		Con_Printf ("%s: ", NET_AdrToString (net_from));
 //  Con_DPrintf ("%s", net_message.data + 5);
@@ -986,6 +987,14 @@ CL_ConnectionlessPacket (void)
 		return;
 	}
 
+	if (c == M2C_MASTER_REPLY)
+	{
+		Con_Printf("Master Server Reply\n");
+		clcp_temp = MSG_ReadByte (net_message);
+		s = MSG_ReadString (net_message);
+		MSL_ParseServerList(s);
+		return;
+	}
 	if (c == svc_disconnect) {
 		if (cls.demoplayback)
 			Host_EndGame ("End of demo");

@@ -63,5 +63,8 @@ char *gettokstart(char *str, int req, char delim);
 int gettoklen(char *str, int req, char delim);
 
 void timepassed (double time1, double *time2);
+
+void MSL_ParseServerList(char *msl_data);
+	
 void SList_Init (void);
 #endif	// _CL_SLIST_H

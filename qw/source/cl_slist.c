@@ -61,6 +61,8 @@
 #include "QF/va.h"
 
 server_entry_t *slist;
+server_entry_t *all_slist;
+
 int slist_last_details;
 
 server_entry_t *
@@ -76,9 +78,9 @@ SL_Add (server_entry_t *start, char *ip, char *desc)
 		start->prev = 0;
 		start->next = 0;
 		start->server = malloc (strlen (ip) + 1);
-		start->desc = malloc (strlen (desc) + 1);
+		start->desc = malloc (strlen (desc ? desc : ip) + 1);
 		strcpy (start->server, ip);
-		strcpy (start->desc, desc);
+		strcpy (start->desc, desc ? desc : ip);
 		return (start);
 	}
 
@@ -88,10 +90,10 @@ SL_Add (server_entry_t *start, char *ip, char *desc)
 
 	p->next->prev = p;
 	p->next->server = malloc (strlen (ip) + 1);
-	p->next->desc = malloc (strlen (desc) + 1);
+	p->next->desc = malloc (strlen (desc ? desc : ip) + 1);
 
 	strcpy (p->next->server, ip);
-	strcpy (p->next->desc, desc);
+	strcpy (p->next->desc, desc ? desc : ip);
 
 	return (start);
 }
@@ -406,6 +408,30 @@ SL_Con_Details (server_entry_t *sldata, int slitemno)
 }
 
 void
+SL_MasterUpdate(void)
+{
+	netadr_t addy;
+	char data[] = "c\n";
+	NET_StringToAdr ("qwmaster.ocrana.de:27000", &addy);
+	NET_SendPacket (3, data, addy);
+	NET_StringToAdr ("qwmaster.barrysworld.com:27000", &addy);
+	NET_SendPacket (3, data, addy);
+	NET_StringToAdr ("203.55.240.100:27000", &addy);
+	NET_SendPacket (3, data, addy);
+	NET_StringToAdr ("192.246.40.37:27000", &addy);
+	NET_SendPacket (3, data, addy);
+	NET_StringToAdr ("192.246.40.37:27002", &addy);
+	NET_SendPacket (3, data, addy);
+	NET_StringToAdr ("192.246.40.37:27003", &addy);
+	NET_SendPacket (3, data, addy);
+	NET_StringToAdr ("192.246.40.37:27004", &addy);
+	NET_SendPacket (3, data, addy);
+	NET_StringToAdr ("192.246.40.37:27006", &addy);
+	NET_SendPacket (3, data, addy);
+	NET_StringToAdr ("203.9.148.7:27000", &addy);
+}
+
+void
 SL_Command (void)
 {
 	int sltemp = 0;
@@ -418,6 +444,14 @@ SL_Command (void)
 			SL_Update(slist);
 		else
 			Con_Printf("Syntax: slist update\n");
+	}
+	else if (strcasecmp(Cmd_Argv(1),"masterupdate") == 0)
+	{
+		SL_MasterUpdate();
+	}
+	else if (strcasecmp(Cmd_Argv(1),"masterlist") == 0)
+	{
+		SL_Con_List(all_slist);
 	}
 	else if (strcasecmp(Cmd_Argv(1),"connect") == 0)
 	{
@@ -441,6 +475,20 @@ SL_Command (void)
 			SL_Con_Details(slist,sltemp);
 	}
 }
+void
+MSL_ParseServerList(char *msl_data)
+{
+	int msl_ptr;
+	for (msl_ptr = 0; msl_ptr < strlen(msl_data); msl_ptr = msl_ptr + 6)
+	{
+		all_slist = SL_Add(all_slist, va("%i.%i.%i.%i:%i",
+			(byte)msl_data[msl_ptr],
+			(byte)msl_data[msl_ptr+1],
+			(byte)msl_data[msl_ptr+2],
+			(byte)msl_data[msl_ptr+3],
+			((byte)msl_data[msl_ptr+4]<<8)|(byte)msl_data[msl_ptr+5]), NULL);
+	}
+}
 
 void SList_Init (void)
 {
@@ -457,6 +505,7 @@ void SList_Init (void)
 			slist = SL_LoadF (servlist, slist);
 			Qclose (servlist);
 		}
+		all_slist = NULL;
 	}
 	Cmd_AddCommand("slist",SL_Command,"console commands to access server list\n");
 }

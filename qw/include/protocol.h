@@ -62,6 +62,7 @@
 #define	A2C_CLIENT_COMMAND	'B'	// + command line
 #define	S2M_SHUTDOWN		'C'
 
+#define M2C_MASTER_REPLY	'd'	// + \n + qw server port list
 
 //==================
 // note that there are some defs.qc that mirror to these numbers
