@@ -1,5 +1,5 @@
 dnl Process this file with autoconf to produce a configure script.
-AC_PREREQ(2.13)
+AC_PREREQ(2.52)
 AC_INIT(qw/source/sv_main.c)
 AC_REVISION($Revision$) dnl
 AM_CONFIG_HEADER(include/config.h)
