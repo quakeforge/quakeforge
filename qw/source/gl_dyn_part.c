@@ -489,7 +489,7 @@ R_RocketTrail (int type, entity_t *ent)
 				pdie = cl.time + 60;
 //				ptype = pt_smokering; // Mercury's Rings
 				ptype = pt_smoke;
-				pscale = lhrandom (9, 12);
+				pscale = lhrandom (6, 8);
 //				pcolor = (rand () & 255); // Misty-chan's Easter Egg
 				pcolor = (rand () & 3) + 12;
 				palpha = 128 + (rand () & 31);
@@ -500,17 +500,17 @@ R_RocketTrail (int type, entity_t *ent)
 				break;
 			case 1:					// grenade trail
 				ptype = pt_smoke;
-				pscale = lhrandom (6, 9);
+				pscale = lhrandom (7, 10);
 //				pcolor = (rand () & 255); // Misty-chan's Easter Egg
-				pcolor = (rand () & 2);
+				pcolor = (rand () & 3);
 				palpha = 128 + (rand () & 31);
 				VectorCopy (ent->old_origin, porg);
 				ptex = part_tex_smoke[rand () & 7];
 				break;
 			case 2:					// blood
-				pscale = 12;
+				pscale = 5;
 			case 4:					// slight blood
-				pscale += lhrandom (0.01, 3);
+				pscale += lhrandom (1, 4);
 				ptex = part_tex_smoke[rand () & 7];
 				pcolor = 68 + (rand () & 3);
 				for (j = 0; j < 3; j++) {
@@ -703,25 +703,27 @@ R_DrawParticles (void)
 				if ((part->alpha -= host_frametime * 90) < 1)
 					part->die = -1;
 				part->scale += host_frametime * 6;
-				part->org[2] += host_frametime * 30;
+//				part->org[2] += host_frametime * 30;
 				break;
 			case pt_smokering:
 				if ((part->alpha -= host_frametime * 130) < 1)
 					part->die = -1;
 				part->scale += host_frametime * 10;
-				part->org[2] += host_frametime * 30;
+//				part->org[2] += host_frametime * 30;
 				break;
 			case pt_smokecloud:
 				if ((part->alpha -= host_frametime * 128) < 1)
+				{
 					part->die = -1;
+					break;
+				}
 				part->scale += host_frametime * 60;
-				part->org[2] += host_frametime * 90;
+				part->org[2] += host_frametime * 30;
 				break;
 			case pt_bloodcloud:
 				if ((part->alpha -= host_frametime * 64) < 1)
 				{
 					part->die = -1;
-					// extra break only helps here
 					break;
 				}
 				part->scale += host_frametime * 4;
