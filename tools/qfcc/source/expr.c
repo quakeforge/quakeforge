@@ -850,14 +850,14 @@ binary_expr (int op, expr_t *e1, expr_t *e2)
 	if (t1 != t2) {
 		switch (t1) {
 			case ev_float:
-				if (t2 == ev_vector) {
+				if (t2 == ev_vector && op == '*') {
 					type = &type_vector;
 				} else {
 					goto type_mismatch;
 				}
 				break;
 			case ev_vector:
-				if (t2 == ev_float) {
+				if (t2 == ev_float && op == '*') {
 					type = &type_vector;
 				} else {
 					goto type_mismatch;
