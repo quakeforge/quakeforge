@@ -2278,6 +2278,7 @@ address_expr (expr_t *e1, expr_t *e2, type_t *t)
 			return e2;
 		if (e->type == ex_pointer && e2->type == ex_short) {
 			e->e.pointer.val += e2->e.short_val;
+			e->e.pointer.type = t;
 		} else {
 			if (e2->type != ex_short || e2->e.short_val) {
 				if (e->type == ex_expr && e->e.expr.op == '&') {
@@ -2358,13 +2359,18 @@ assign_expr (expr_t *e1, expr_t *e2)
 		else
 			return error (e1, "invalid lvalue in assignment");
 	}
-	//XXX func = func ???
-	check_initialized (e2);
 	t1 = get_type (e1);
 	t2 = get_type (e2);
 	if (!t1 || !t2) {
 		error (e1, "internal error");
 		abort ();
+	}
+	//XXX func = func ???
+	if (t1->type != ev_pointer || t2->type != ev_array)
+		check_initialized (e2);
+	else {
+		e2 = address_expr (e2, 0, t2->aux_type);
+		t2 = get_type (e2);
 	}
 	if (e2->type == ex_bool)
 		e2 = convert_from_bool (e2, t1);
