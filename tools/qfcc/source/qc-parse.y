@@ -352,7 +352,7 @@ def_name
 			if (current_scope->type == sc_local
 				&& current_scope->parent->type == sc_params) {
 				scope_t *scope;
-				def_t      *def = get_def (0, $1, scope, 0);
+				def_t      *def = get_def (0, $1, current_scope, 0);
 				if (def) {
 					scope = def->scope;
 					if (scope->type == sc_params)
