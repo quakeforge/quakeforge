@@ -728,6 +728,10 @@ CL_ParsePlayerinfo (void)
 void
 CL_AddFlagModels (entity_t *ent, int team, int key)
 {
+	static float flag_offsets[] = {
+		16.0, 22.0, 26.0, 25.0, 24.0, 18.0,					// 29-34 axpain
+		16.0, 24.0, 24.0, 22.0, 18.0, 16.0,					// 35-40 pain
+	};
 	float		f;
 	int			i;
 	entity_t  **newent;
@@ -738,45 +742,7 @@ CL_AddFlagModels (entity_t *ent, int team, int key)
 
 	f = 14.0;
 	if (ent->frame >= 29 && ent->frame <= 40) {
-		switch (ent->frame) {
-			case 29:									// 29-34 axpain
-				f = 16.0;
-				break;
-			case 30:
-				f = 22.0;
-				break;
-			case 31:
-				f = 26.0;
-				break;
-			case 32:
-				f = 25.0;
-				break;
-			case 33:
-				f = 24.0;
-				break;
-			case 34:
-				f = 18.0;
-				break;
-
-			case 35:									// 35-40 pain
-				f = 16.0;
-				break;
-			case 36:
-				f = 24.0;
-				break;
-			case 37:
-				f = 24.0;
-				break;
-			case 38:
-				f = 22.0;
-				break;
-			case 39:
-				f = 18.0;
-				break;
-			case 40:
-				f = 16.0;
-				break;
-		}
+		f = flag_offsets[ent->frame - 29];
 	} else if (ent->frame >= 103 && ent->frame <= 118) {
 		if (ent->frame <= 106)							// 103-104 nailattack
 			f = 20.0;									// 105-106 light
