@@ -49,7 +49,7 @@ static __attribute__ ((unused)) const char rcsid[] =
 
 #define	PAINTBUFFER_SIZE	512
 portable_samplepair_t paintbuffer[PAINTBUFFER_SIZE * 2];
-int         max_overpaint;				// number of extra samples painted
+static int  max_overpaint;				// number of extra samples painted
 										// due to phase shift
 int         snd_scaletable[32][256];
 int        *snd_p, snd_linear_count, snd_vol;

@@ -51,8 +51,8 @@ static __attribute__ ((unused)) const char rcsid[] =
 
 static int midi_intiialized = 0;
 	
-cvar_t * wildmidi_volume;
-cvar_t * wildmidi_config;
+static cvar_t  *wildmidi_volume;
+static cvar_t  *wildmidi_config;
 
 static int
 midi_init ( void ) {

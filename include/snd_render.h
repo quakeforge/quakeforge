@@ -101,28 +101,6 @@ struct channel_s {
 };
 
 void SND_PaintChannels(unsigned int endtime);
-void SND_Init (void);
-void SND_Shutdown (void);
-void SND_AmbientOff (void);
-void SND_AmbientOn (void);
-void SND_TouchSound (const char *sample);
-void SND_ClearBuffer (void);
-void SND_StaticSound (sfx_t *sfx, const vec3_t origin, float vol,
-					  float attenuation);
-void SND_StartSound (int entnum, int entchannel, sfx_t *sfx,
-					 const vec3_t origin, float fvol,  float attenuation);
-void SND_StopSound (int entnum, int entchannel);
-sfx_t *SND_PrecacheSound (const char *sample);
-void SND_ClearPrecache (void);
-void SND_Update (const vec3_t origin, const vec3_t v_forward,
-				 const vec3_t v_right, const vec3_t v_up);
-void SND_StopAllSounds (qboolean clear);
-void SND_BeginPrecaching (void);
-void SND_EndPrecaching (void);
-void SND_ExtraUpdate (void);
-void SND_LocalSound (const char *s);
-void SND_BlockSound (void);
-void SND_UnblockSound (void);
 
 void SND_ResampleMono (sfxbuffer_t *sc, byte *data, int length, void *prev);
 void SND_ResampleStereo (sfxbuffer_t *sc, byte *data, int length, void *prev);
@@ -131,10 +109,6 @@ sfxbuffer_t *SND_GetCache (long samples, int rate, int inwidth, int channels,
 						   sfxblock_t *block, cache_allocator_t allocator);
 
 void SND_InitScaletable (void);
-// picks a channel based on priorities, empty slots, number of channels
-channel_t *SND_PickChannel(int entnum, int entchannel);
-// spatializes a channel
-void SND_Spatialize(channel_t *ch);
 
 void SND_Load (sfx_t *sfx);
 void SND_CallbackLoad (void *object, cache_allocator_t allocator);

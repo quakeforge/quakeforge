@@ -57,7 +57,6 @@ static __attribute__ ((unused)) const char rcsid[] =
 
 volatile dma_t *shm = 0;
 unsigned int    paintedtime;				// sample PAIRS
-qboolean        snd_initialized = false;
 
 cvar_t         *snd_loadas8bit;
 cvar_t         *volume;
@@ -66,38 +65,39 @@ cvar_t         *snd_interp;
 channel_t       channels[MAX_CHANNELS];
 int             total_channels;
 
-int			snd_blocked = 0;
+static qboolean snd_initialized = false;
+static int      snd_blocked = 0;
 static qboolean snd_ambient = 1;
 
-vec3_t		listener_origin;
-vec3_t		listener_forward;
-vec3_t		listener_right;
-vec3_t		listener_up;
-vec_t		sound_nominal_clip_dist = 1000.0;
+static vec3_t   listener_origin;
+static vec3_t   listener_forward;
+static vec3_t   listener_right;
+static vec3_t   listener_up;
+static vec_t    sound_nominal_clip_dist = 1000.0;
 
-unsigned    soundtime;					// sample PAIRS
+static unsigned soundtime;					// sample PAIRS
 
 #define	MAX_SFX		512
-sfx_t	   *known_sfx;					// hunk allocated [MAX_SFX]
-int			num_sfx;
+static sfx_t   *known_sfx;					// hunk allocated [MAX_SFX]
+static int      num_sfx;
 
-sfx_t	   *ambient_sfx[NUM_AMBIENTS];
+static sfx_t   *ambient_sfx[NUM_AMBIENTS];
 
-int			sound_started = 0;
+static int      sound_started = 0;
 
 
-cvar_t	   *ambient_fade;
-cvar_t	   *ambient_level;
-cvar_t	   *nosound;
-cvar_t	   *precache;
-cvar_t	   *snd_mixahead;
-cvar_t	   *snd_noextraupdate;
-cvar_t	   *snd_phasesep;
-cvar_t	   *snd_show;
-cvar_t	   *snd_volumesep;
+static cvar_t  *ambient_fade;
+static cvar_t  *ambient_level;
+static cvar_t  *nosound;
+static cvar_t  *precache;
+static cvar_t  *snd_mixahead;
+static cvar_t  *snd_noextraupdate;
+static cvar_t  *snd_phasesep;
+static cvar_t  *snd_show;
+static cvar_t  *snd_volumesep;
 
-static general_data_t			plugin_info_general_data;
-static snd_render_data_t		render_data = {
+static general_data_t plugin_info_general_data;
+static snd_render_data_t render_data = {
 	0,
 	0,
 	0,
@@ -106,7 +106,7 @@ static snd_render_data_t		render_data = {
 	0,
 };
 
-static snd_output_funcs_t      *snd_output_funcs;
+static snd_output_funcs_t *snd_output_funcs;
 
 
 // User-setable variables =====================================================
@@ -115,17 +115,17 @@ static snd_output_funcs_t      *snd_output_funcs;
 // isolating performance in the renderer.  The fakedma_updates is
 // number of times SND_Update() is called per second.
 
-qboolean	fakedma = false;
-int			fakedma_updates = 15;
+static qboolean	fakedma = false;
+//static int      fakedma_updates = 15;
 
 
-void
+static void
 SND_AmbientOff (void)
 {
 	snd_ambient = false;
 }
 
-void
+static void
 SND_AmbientOn (void)
 {
 	snd_ambient = true;
@@ -203,7 +203,7 @@ SND_FindName (const char *name)
 	return sfx;
 }
 
-void
+static void
 SND_TouchSound (const char *name)
 {
 	sfx_t	   *sfx;
@@ -215,7 +215,7 @@ SND_TouchSound (const char *name)
 	sfx->touch (sfx);
 }
 
-sfx_t *
+static sfx_t *
 SND_PrecacheSound (const char *name)
 {
 	sfx_t	   *sfx;
@@ -235,7 +235,7 @@ SND_PrecacheSound (const char *name)
 
 //=============================================================================
 
-channel_t *
+static channel_t *
 SND_PickChannel (int entnum, int entchannel)
 {
 	int			ch_idx, first_to_die;
@@ -277,7 +277,7 @@ SND_PickChannel (int entnum, int entchannel)
 	return &channels[first_to_die];
 }
 
-void
+static void
 SND_Spatialize (channel_t *ch)
 {
 	int			phase;					// in samples
@@ -324,7 +324,7 @@ SND_Spatialize (channel_t *ch)
 }
 
 // Start a sound effect =======================================================
-void
+static void
 SND_StartSound (int entnum, int entchannel, sfx_t *sfx, const vec3_t origin,
 				float fvol, float attenuation)
 {
@@ -394,7 +394,7 @@ SND_StartSound (int entnum, int entchannel, sfx_t *sfx, const vec3_t origin,
 	}
 }
 
-void
+static void
 SND_StopSound (int entnum, int entchannel)
 {
 	int			i;
@@ -414,7 +414,26 @@ SND_StopSound (int entnum, int entchannel)
 	}
 }
 
-void
+static void
+SND_ClearBuffer (void)
+{
+	int			clear;
+	int         i;
+
+
+	if (!sound_started || !shm || !shm->buffer)
+		return;
+
+	if (shm->samplebits == 8)
+		clear = 0x80;
+	else
+		clear = 0;
+
+	for (i = 0; i < shm->samples * shm->samplebits / 8; i++)
+		shm->buffer[i] = 0;
+}
+
+static void
 SND_StopAllSounds (qboolean clear)
 {
 	int			i;
@@ -442,26 +461,7 @@ SND_StopAllSoundsC (void)
 	SND_StopAllSounds (true);
 }
 
-void
-SND_ClearBuffer (void)
-{
-	int			clear;
-	int         i;
-
-
-	if (!sound_started || !shm || !shm->buffer)
-		return;
-
-	if (shm->samplebits == 8)
-		clear = 0x80;
-	else
-		clear = 0;
-
-	for (i = 0; i < shm->samples * shm->samplebits / 8; i++)
-		shm->buffer[i] = 0;
-}
-
-void
+static void
 SND_StaticSound (sfx_t *sfx, const vec3_t origin, float vol,
 				 float attenuation)
 {
@@ -618,7 +618,7 @@ SND_Update_ (void)
 
 	Called once each time through the main loop
 */
-void
+static void
 SND_Update (const vec3_t origin, const vec3_t forward, const vec3_t right,
 			const vec3_t up)
 {
@@ -697,7 +697,7 @@ SND_Update (const vec3_t origin, const vec3_t forward, const vec3_t right,
 	SND_Update_ ();
 }
 
-void
+static void
 SND_ExtraUpdate (void)
 {
 	if (!sound_started || snd_noextraupdate->int_val)
@@ -803,7 +803,7 @@ SND_SoundList (void)
 	Sys_Printf ("Total resident: %i\n", total);
 }
 
-void
+static void
 SND_LocalSound (const char *sound)
 {
 	sfx_t	   *sfx;
@@ -821,22 +821,22 @@ SND_LocalSound (const char *sound)
 	SND_StartSound (*render_data.viewentity, -1, sfx, vec3_origin, 1, 1);
 }
 
-void
+static void
 SND_ClearPrecache (void)
 {
 }
 
-void
+static void
 SND_BeginPrecaching (void)
 {
 }
 
-void
+static void
 SND_EndPrecaching (void)
 {
 }
 
-void
+static void
 SND_BlockSound (void)
 {
 	if (++snd_blocked == 1) {
@@ -845,7 +845,7 @@ SND_BlockSound (void)
 	}
 }
 
-void
+static void
 SND_UnblockSound (void)
 {
 	if (!snd_blocked)
@@ -890,7 +890,7 @@ SND_Init_Cvars (void)
 							  "max stereo volume separation. 1.0 is max");
 }
 
-void
+static void
 SND_Init (void)
 {
 	snd_output_funcs = render_data.output->functions->snd_output;
@@ -964,7 +964,7 @@ SND_Init (void)
 }
 
 // Shutdown sound engine ======================================================
-void
+static void
 SND_Shutdown (void)
 {
 
