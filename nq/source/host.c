@@ -2,7 +2,7 @@
 /*
 	host.c
 
-	@description@
+	host init
 
 	Copyright (C) 1996-1997  Id Software, Inc.
 
@@ -31,28 +31,29 @@
 # include "config.h"
 #endif
 
-#include "host.h"
-#include "r_local.h"
-#include "server.h"
-#include "view.h"
-#include "chase.h"
 #include "QF/cdaudio.h"
 #include "QF/compat.h"
 #include "QF/cmd.h"
 #include "QF/console.h"
+#include "QF/input.h"
 #include "QF/keys.h"
 #include "QF/msg.h"
 #include "QF/plugin.h"
 #include "QF/qargs.h"
+#include "QF/screen.h"
 #include "QF/sys.h"
 #include "QF/va.h"
-#include "sbar.h"
 #include "QF/vid.h"
+
+#include "chase.h"
 #include "draw.h"
-#include "QF/input.h"
-#include "QF/screen.h"
 #include "gib.h"
+#include "host.h"
+#include "r_local.h"
+#include "sbar.h"
+#include "server.h"
 #include "sv_progs.h"
+#include "view.h"
 
 extern void R_Particles_Init_Cvars (void);
 
@@ -115,11 +116,6 @@ cvar_t     *pausable;
 cvar_t     *temp1;
 
 
-/*
-================
-Host_EndGame
-================
-*/
 void
 Host_EndGame (char *message, ...)
 {
@@ -146,11 +142,9 @@ Host_EndGame (char *message, ...)
 }
 
 /*
-================
-Host_Error
+	Host_Error
 
-This shuts down both the client and server
-================
+	This shuts down both the client and server
 */
 void
 Host_Error (char *error, ...)
@@ -184,11 +178,7 @@ Host_Error (char *error, ...)
 	longjmp (host_abortserver, 1);
 }
 
-/*
-================
-Host_FindMaxClients
-================
-*/
+
 void
 Host_FindMaxClients (void)
 {
@@ -233,11 +223,6 @@ Host_FindMaxClients (void)
 }
 
 
-/*
-=======================
-Host_InitLocal
-======================
-*/
 void
 Host_InitLocal (void)
 {
@@ -274,11 +259,9 @@ Host_InitLocal (void)
 
 
 /*
-===============
-Host_WriteConfiguration
+	Host_WriteConfiguration
 
-Writes key bindings and archived cvars to config.cfg
-===============
+	Writes key bindings and archived cvars to config.cfg
 */
 void
 Host_WriteConfiguration (void)
@@ -303,12 +286,10 @@ Host_WriteConfiguration (void)
 
 
 /*
-=================
-SV_ClientPrintf
+	SV_ClientPrintf
 
-Sends text across to be displayed 
-FIXME: make this just a stuffed echo?
-=================
+	Sends text across to be displayed
+	FIXME: make this just a stuffed echo
 */
 void
 SV_ClientPrintf (char *fmt, ...)
@@ -324,12 +305,11 @@ SV_ClientPrintf (char *fmt, ...)
 	MSG_WriteString (&host_client->message, string);
 }
 
-/*
-=================
-SV_BroadcastPrintf
 
-Sends text to all active clients
-=================
+/*
+	SV_BroadcastPrintf
+
+	Sends text to all active clients
 */
 void
 SV_BroadcastPrintf (char *fmt, ...)
@@ -349,12 +329,11 @@ SV_BroadcastPrintf (char *fmt, ...)
 		}
 }
 
-/*
-=================
-Host_ClientCommands
 
-Send text over to the client to be executed
-=================
+/*
+	Host_ClientCommands
+
+	Send text over to the client to be executed
 */
 void
 Host_ClientCommands (char *fmt, ...)
@@ -370,13 +349,12 @@ Host_ClientCommands (char *fmt, ...)
 	MSG_WriteString (&host_client->message, string);
 }
 
-/*
-=====================
-SV_DropClient
 
-Called when the player is getting totally kicked off the host
-if (crash = true), don't bother sending signofs
-=====================
+/*
+	SV_DropClient
+
+	Called when the player is getting totally kicked off the host
+	if (crash = true), don't bother sending signofs
 */
 void
 SV_DropClient (qboolean crash)
@@ -431,12 +409,11 @@ SV_DropClient (qboolean crash)
 	}
 }
 
-/*
-==================
-Host_ShutdownServer
 
-This only happens at the end of a game, not between levels
-==================
+/*
+	Host_ShutdownServer
+
+	This only happens at the end of a game, not between levels
 */
 void
 Host_ShutdownServer (qboolean crash)
@@ -503,12 +480,10 @@ Host_ShutdownServer (qboolean crash)
 
 
 /*
-================
-Host_ClearMemory
+	Host_ClearMemory
 
-This clears all the memory used by both the client and server, but does
-not reinitialize anything.
-================
+	This clears all the memory used by both the client and server, but does
+	not reinitialize anything.
 */
 void
 Host_ClearMemory (void)
@@ -529,11 +504,9 @@ Host_ClearMemory (void)
 
 
 /*
-===================
-Host_FilterTime
+	Host_FilterTime
 
-Returns false if the time is too short to run a frame
-===================
+	Returns false if the time is too short to run a frame
 */
 qboolean
 Host_FilterTime (float time)
@@ -561,11 +534,9 @@ Host_FilterTime (float time)
 
 
 /*
-===================
-Host_GetConsoleCommands
+	Host_GetConsoleCommands
 
-Add them exactly as if they had been typed at the console
-===================
+	Add them exactly as if they had been typed at the console
 */
 void
 Host_GetConsoleCommands (void)
@@ -581,12 +552,6 @@ Host_GetConsoleCommands (void)
 }
 
 
-/*
-==================
-Host_ServerFrame
-
-==================
-*/
 #ifdef FPS_20
 
 void
@@ -664,11 +629,9 @@ Host_ServerFrame (void)
 
 
 /*
-==================
-Host_Frame
+	Host_Frame
 
-Runs all active servers
-==================
+	Runs all active servers
 */
 void
 _Host_Frame (float time)
@@ -765,6 +728,7 @@ _Host_Frame (float time)
 	fps_count++;
 }
 
+
 void
 Host_Frame (float time)
 {
@@ -807,6 +771,7 @@ extern QFile *vcrFile;
 
 #define	VCR_SIGNATURE	0x56435231
 // "VCR1"
+
 
 void
 Host_InitVCR (quakeparms_t *parms)
@@ -869,11 +834,7 @@ Host_InitVCR (quakeparms_t *parms)
 
 }
 
-/*
-====================
-Host_Init
-====================
-*/
+
 void
 Host_Init (quakeparms_t *parms)
 {
@@ -1008,12 +969,10 @@ Host_Init (quakeparms_t *parms)
 
 
 /*
-===============
-Host_Shutdown
+	Host_Shutdown
 
-FIXME: this is a callback from Sys_Quit and Sys_Error.  It would be better
-to run quit through here before the final handoff to the sys code.
-===============
+	FIXME: this is a callback from Sys_Quit and Sys_Error.  It would be
+	better to run quit through here before final handoff to the sys code.
 */
 void
 Host_Shutdown (void)
