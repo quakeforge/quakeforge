@@ -212,7 +212,7 @@ array_type (type_t *aux, int size)
 	type_t      new;
 
 	memset (&new, 0, sizeof (new));
-	new.type = ev_pointer;
+	new.type = ev_array;
 	new.aux_type = aux;
 	new.num_parms = size;
 	return find_type (&new);
@@ -342,6 +342,12 @@ _encode_type (dstring_t *encoding, type_t *type, int level)
 		case ev_sel:
 			dstring_appendstr (encoding, ":");
 			break;
+		case ev_array:
+			dstring_appendstr (encoding, "[");
+			dstring_appendstr (encoding, va ("%d ", type->num_parms));
+			//XXX dstring_appendstr (encoding, name);
+			dstring_appendstr (encoding, "]");
+			break;
 		case ev_type_count:
 			dstring_appendstr (encoding, "?");
 			break;
@@ -415,6 +421,8 @@ type_size (type_t *type)
 				 field = field->next)
 				size += type_size (field->type);
 			return size;
+		case ev_array:
+			return type->num_parms * type_size (type->aux_type);
 	}
 	return 0;
 }

@@ -57,6 +57,8 @@ static const char rcsid[] =
 
 def_t      *emit_sub_expr (expr_t *e, def_t *dest);
 
+static expr_t zero;
+
 void
 add_statement_ref (def_t *def, dstatement_t *st, reloc_type type)
 {
@@ -247,7 +249,8 @@ emit_assign_expr (int oper, expr_t *e)
 		def_b = emit_sub_expr (e2, 0);
 		if (e->rvalue && def_b->managed)
 			def_b->users++;
-		if (e1->type == ex_expr && extract_type (e1->e.expr.e1) == ev_pointer) {
+		if (e1->type == ex_expr && extract_type (e1->e.expr.e1) == ev_pointer
+			&& e1->e.expr.e1->type < ex_string) {
 			def_a = emit_sub_expr (e1->e.expr.e1, 0);
 			def_c = emit_sub_expr (e1->e.expr.e2, 0);
 			op = opcode_find (operator, def_b, def_a, def_c);
@@ -286,12 +289,58 @@ emit_bind_expr (expr_t *e1, expr_t *e2)
 }
 
 def_t *
+emit_address_expr (expr_t *e)
+{
+	def_t      *def_a, *def_b, *d;
+	opcode_t   *op;
+
+	def_a = emit_sub_expr (e->e.expr.e1, 0);
+	def_b = emit_sub_expr (e->e.expr.e2, 0);
+	op = opcode_find ("&", def_a, def_b, 0);
+	d = emit_statement (e->line, op, def_a, def_b, 0);
+	return d;
+}
+
+def_t *
+emit_deref_expr (expr_t *e, def_t *dest)
+{
+	def_t      *d;
+	type_t     *type = e->e.expr.type;
+
+	e = e->e.expr.e1;
+	if (!dest && (e->type != ex_pointer
+				  || !(e->e.pointer.val > 0
+					   && e->e.pointer.val < 65536))) {
+		dest = get_tempdef (type, current_scope);
+		dest->users += 2;
+	}
+print_expr (e); printf ("%p\n", dest);
+	if (e->type == ex_expr
+		&& e->e.expr.op == '&'
+		&& e->e.expr.e1->type < ex_string)
+		e->e.expr.op = '.';
+	d = emit_sub_expr (e, dest);
+	if (dest && d != dest) {
+		def_t      *z;
+		opcode_t   *op;
+		
+		zero.type = ex_short;
+		z = emit_sub_expr (&zero, 0);
+		op = opcode_find (".", d, z, dest);
+		return emit_statement (e->line, op, d, z, dest);
+	} else {
+		if (!d->name)
+			d->type = type;
+	}
+	return d;
+}
+
+def_t *
 emit_sub_expr (expr_t *e, def_t *dest)
 {
 	opcode_t   *op;
 	const char *operator;
 	def_t      *def_a, *def_b, *d = 0;
-	static expr_t zero;
 	def_t      *tmp = 0;
 
 	switch (e->type) {
@@ -317,6 +366,10 @@ emit_sub_expr (expr_t *e, def_t *dest)
 				d = emit_assign_expr (e->e.expr.op, e);
 				if (!d->managed)
 					d->users++;
+				break;
+			}
+			if (e->e.expr.op == '&' && e->e.expr.type->type == ev_pointer) {
+				d = emit_address_expr (e);
 				break;
 			}
 			if (e->e.expr.e1->type == ex_block
@@ -377,20 +430,7 @@ emit_sub_expr (expr_t *e, def_t *dest)
 					}
 					break;
 				case '.':
-					if (!dest
-						&& (e->e.expr.e1->type != ex_pointer
-							|| !(e->e.expr.e1->e.pointer.val > 0
-								 && e->e.expr.e1->e.pointer.val < 65536))) {
-						dest = get_tempdef (e->e.expr.type, current_scope);
-						dest->users += 2;
-					}
-					if (e->e.expr.e1->type == ex_expr
-						&& e->e.expr.e1->e.expr.op == '&')
-						e->e.expr.e1->e.expr.op = '.';
-					d = emit_sub_expr (e->e.expr.e1, dest);
-					if (!d->name)
-						d->type = e->e.expr.type;
-					return d;
+					return emit_deref_expr (e, dest);
 				case 'C':
 					def_a = emit_sub_expr (e->e.expr.e1, 0);
 					if (def_a->type->type == ev_pointer
@@ -428,7 +468,8 @@ emit_sub_expr (expr_t *e, def_t *dest)
 		case ex_pointer:
 			if (e->e.pointer.val > 0 && e->e.pointer.val < 65536
 				&& e->e.pointer.type->type != ev_struct) {
-				d = new_def (e->e.pointer.type, 0, current_scope);
+				d = new_def (pointer_type (e->e.pointer.type), 0,
+							 current_scope);
 				d->ofs = e->e.short_val;
 				d->absolute = e->e.pointer.abs;
 				d->users = 1;

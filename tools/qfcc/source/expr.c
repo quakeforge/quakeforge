@@ -103,6 +103,7 @@ type_t     *types[] = {
 	&type_void,							// FIXME what type?
 	&type_void,							// FIXME what type?
 	&type_SEL,
+	&type_void,							// FIXME what type?
 };
 
 expr_type   expr_types[] = {
@@ -122,6 +123,7 @@ expr_type   expr_types[] = {
 	ex_nil,								// ev_object
 	ex_nil,								// ev_class
 	ex_nil,								// ev_sel
+	ex_nil,								// ev_array
 };
 
 void
@@ -1072,6 +1074,7 @@ expr_t *
 test_expr (expr_t *e, int test)
 {
 	expr_t     *new = 0;
+	etype_t     type;
 
 	if (e->type == ex_error)
 		return e;
@@ -1081,7 +1084,7 @@ test_expr (expr_t *e, int test)
 	if (!test)
 		return unary_expr ('!', e);
 
-	switch (extract_type (e)) {
+	switch (type = extract_type (e)) {
 		case ev_type_count:
 			error (e, "internal error");
 			abort ();
@@ -1129,7 +1132,8 @@ test_expr (expr_t *e, int test)
 		case ev_object:
 		case ev_class:
 		case ev_sel:
-			return error (e, "struct cannot be tested");
+		case ev_array:
+			return error (e, "%s cannot be tested", pr_type_name[type]);
 	}
 	new->line = e->line;
 	new->file = e->file;
@@ -1748,7 +1752,7 @@ array_expr (expr_t *array, expr_t *index)
 	if (index->type == ex_error)
 		return index;
 
-	if (array_type->type != ev_pointer || array_type->num_parms < 1)
+	if (array_type->type != ev_pointer && array_type->type != ev_array)
 		return error (array, "not an array");
 	if (index_type != &type_integer && index_type != &type_uinteger)
 		return error (index, "invalid array index type");
@@ -1769,9 +1773,14 @@ array_expr (expr_t *array, expr_t *index)
 			&& index->e.uinteger_val < 32768)) {
 		index->type = ex_short;
 	}
-	e = new_binary_expr ('.', array, index);
-	e->e.expr.type = pointer_type (array_type->aux_type);
-	return unary_expr ('.', e);
+	if (array_type->type == ev_array) {
+		e = address_expr (array, index, array_type->aux_type);
+	} else {
+		e = new_binary_expr ('.', array, index);
+		e->e.expr.type = pointer_type (array_type->aux_type);
+	}
+	e = unary_expr ('.', e);
+	return e;
 }
 
 expr_t *
@@ -1789,7 +1798,7 @@ address_expr (expr_t *e1, expr_t *e2, type_t *t)
 	switch (e1->type) {
 		case ex_def:
 			type = e1->e.def->type;
-			if (type->type == ev_struct) {
+			if (type->type == ev_struct || type->type == ev_array) {
 				int         abs = e1->e.def->global;
 				def_t      *def = e1->e.def;
 
@@ -1930,10 +1939,12 @@ assign_expr (expr_t *e1, expr_t *e2)
 			e = e2->e.expr.e1;
 			if (e->type != ex_pointer
 				|| !(e->e.pointer.val > 0 && e->e.pointer.val < 65536)) {
-				e2 = e;
-				if (e2->type == ex_expr && e2->e.expr.op == '&'
-					&& e2->e.expr.type->type == ev_pointer)
+				if (e->type == ex_expr && e->e.expr.op == '&'
+					&& e->e.expr.type->type == ev_pointer
+					&& e->e.expr.e1->type < ex_string) {
+					e2 = e;
 					e2->e.expr.op = '.';
+				}
 			}
 		}
 	}
@@ -1979,7 +1990,7 @@ init_elements (def_t *def, expr_t *eles)
 {
 	expr_t     *e;
 	int         count, i;
-	float      *g = &G_FLOAT (G_INT (def->ofs));
+	pr_type_t  *g = G_POINTER (pr_type_t, def->ofs);
 
 	for (count = 0, e = eles->e.block.head; e; count++, e = e->next)
 		if (e->type == ex_error)
@@ -1997,7 +2008,7 @@ init_elements (def_t *def, expr_t *eles)
 				g += type_size (def->type->aux_type);
 			} else {
 				if (e->type == ex_string) {
-					*(int*)g = ReuseString (e->e.string_val);
+					g->string_var = ReuseString (e->e.string_val);
 				} else {
 					memcpy (g, &e->e, type_size (get_type (e)) * 4);
 				}

@@ -48,10 +48,13 @@ dump_strings (progs_t *pr)
 	int i = 0;
 	char *s = pr->pr_strings;
 
+	printf ("%d ", 0);
 	while (i++ < pr->pr_stringsize) {
 		switch (*s) {
 			case 0:
 				fputs ("\n", stdout);
+				if (i < pr->pr_stringsize)
+					printf ("%d ", i);
 				break;
 			case 9:
 				fputs ("\\t", stdout);

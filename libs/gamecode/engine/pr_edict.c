@@ -70,10 +70,11 @@ int         pr_type_size[ev_type_count] = {
 	1,			// ev_integer
 	1,			// ev_uinteger
 	0,			// ev_short        value in opcode
-	1,			// ev_struct       variable
-	1,			// ev_object       variable
-	1,			// ev_class        variable
+	0,			// ev_struct       variable
+	0,			// ev_object       variable
+	0,			// ev_class        variable
 	2,			// ev_sel
+	0,			// ev_array        variable
 };
 
 const char *pr_type_name[ev_type_count] = {
@@ -93,6 +94,7 @@ const char *pr_type_name[ev_type_count] = {
 	"object",
 	"Class",
 	"SEL",
+	"array",
 };
 
 ddef_t     *ED_FieldAtOfs (progs_t * pr, int ofs);
