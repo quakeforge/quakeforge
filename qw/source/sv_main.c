@@ -65,10 +65,6 @@ static __attribute__ ((unused)) const char rcsid[] =
 
 #include "QF/cbuf.h"
 #include "QF/idparse.h"
-#include "QF/gib_parse.h"
-#include "QF/gib_buffer.h"
-#include "QF/gib_thread.h"
-#include "QF/gib_init.h"
 #include "QF/cmd.h"
 #include "QF/console.h"
 #include "QF/cvar.h"

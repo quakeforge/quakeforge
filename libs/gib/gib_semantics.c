@@ -31,9 +31,9 @@
 #include <string.h>
 
 #include "QF/qtypes.h"
-#include "QF/gib_tree.h"
-#include "QF/gib_parse.h"
-#include "QF/gib_semantics.h"
+#include "gib_tree.h"
+#include "gib_parse.h"
+#include "gib_semantics.h"
 
 static gib_tree_t *
 GIB_Semantic_Normal_To_Lines (gib_tree_t * tokens, const char *program, gib_tree_flags_t flags, unsigned int start, unsigned int end)

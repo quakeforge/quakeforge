@@ -41,12 +41,13 @@ const char  rcsid[] = "$Id$";
 
 #include "QF/sys.h"
 #include "QF/cbuf.h"
-#include "QF/gib_parse.h"
-#include "QF/gib_thread.h"
-#include "QF/gib_function.h"
-#include "QF/gib_buffer.h"
+#include "QF/gib.h"
 #include "QF/dstring.h"
 #include "QF/hash.h"
+
+#include "gib_tree.h"
+#include "gib_function.h"
+#include "gib_thread.h"
 
 gib_thread_t *gib_threads = 0;
 gib_thread_t **gib_thread_p = &gib_threads;
@@ -94,7 +95,7 @@ GIB_Thread_New (void)
 {
 	gib_thread_t *new = calloc (1, sizeof (gib_thread_t));
 
-	new->cbuf = Cbuf_New (&gib_interp);
+	new->cbuf = Cbuf_New (GIB_Interpreter ());
 	new->id = nextid;
 	nextid++;
 	return new;

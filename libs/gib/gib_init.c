@@ -42,17 +42,17 @@ const char  rcsid[] =
 #include "QF/qtypes.h"
 #include "QF/cbuf.h"
 #include "QF/quakefs.h"
-#include "QF/gib_parse.h"
-#include "QF/gib_builtin.h"
-#include "QF/gib_regex.h"
-#include "QF/gib_thread.h"
-#include "QF/gib_vars.h"
-#include "QF/gib_buffer.h"
-#include "QF/gib_init.h"
 #include "QF/cmd.h"
 #include "QF/sys.h"
 #include "QF/zone.h"
 #include "QF/cvar.h"
+#include "QF/gib.h"
+
+#include "gib_parse.h"
+#include "gib_vars.h"
+#include "gib_regex.h"
+#include "gib_builtin.h"
+#include "gib_thread.h"
 
 static void
 GIB_Exec_Override_f (void)
@@ -75,16 +75,16 @@ GIB_Exec_Override_f (void)
 		&& (cmd_warncmd->int_val || (developer && developer->int_val)))
 		Sys_Printf ("execing %s\n", Cmd_Argv (1));
 	if (!strcmp (Cmd_Argv (1) + strlen (Cmd_Argv (1)) - 4, ".gib")
-		|| cbuf_active->interpreter == &gib_interp) {
+		|| cbuf_active->interpreter == GIB_Interpreter ()) {
 		// GIB script, put it in a new buffer on the stack
-		cbuf_t     *sub = Cbuf_PushStack (&gib_interp);
+		cbuf_t     *sub = Cbuf_PushStack (GIB_Interpreter ());
 
 		GIB_DATA (sub)->script = malloc (sizeof (gib_script_t));
 		GIB_DATA (sub)->script->file = strdup (Cmd_Argv (1));
 		GIB_DATA (sub)->script->text = strdup (f);
 		GIB_DATA (sub)->script->refs = 1;
 		Cbuf_AddText (sub, f);
-		if (gib_parse_error && cbuf_active->interpreter == &gib_interp)
+		if (gib_parse_error && cbuf_active->interpreter == GIB_Interpreter ())
 			GIB_Error ("parse", "%s: Parse error while executing %s.",
 					   Cmd_Argv (0), Cmd_Argv (1));
 	} else

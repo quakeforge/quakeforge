@@ -42,9 +42,9 @@ const char  rcsid[] = "$Id$";
 #include "QF/va.h"
 #include "QF/hash.h"
 #include "QF/cvar.h"
-#include "QF/gib_vars.h"
-#include "QF/gib_buffer.h"
-#include "QF/gib_parse.h"
+
+#include "gib_parse.h"
+#include "gib_vars.h"
 
 hashtab_t  *gib_globals = 0;
 hashtab_t  *gib_domains = 0;

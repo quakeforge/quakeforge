@@ -44,14 +44,11 @@ const char  rcsid[] = "$Id$";
 #include "QF/va.h"
 #include "QF/cmd.h"
 #include "QF/cbuf.h"
-#include "QF/gib_buffer.h"
-#include "QF/gib_process.h"
-#include "QF/gib_builtin.h"
-#include "QF/gib_function.h"
-#include "QF/gib_vars.h"
-#include "QF/gib_parse.h"
-#include "QF/gib_semantics.h"
+#include "QF/gib.h"
 
+#include "gib_parse.h"
+#include "gib_process.h"
+#include "gib_semantics.h"
 
 /* 
 	GIB_Escaped

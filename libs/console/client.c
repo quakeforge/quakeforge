@@ -56,7 +56,7 @@ static __attribute__ ((unused)) const char rcsid[] =
 #include "QF/sys.h"
 #include "QF/va.h"
 #include "QF/vid.h"
-#include "QF/gib_builtin.h"
+#include "QF/gib.h"
 
 #include "compat.h"
 

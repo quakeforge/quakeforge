@@ -44,7 +44,7 @@ const char  rcsid[] =
 #include "regex.h"
 #include "QF/dstring.h"
 #include "QF/hash.h"
-#include "QF/gib_regex.h"
+#include "gib_regex.h"
 #include "QF/qtypes.h"
 
 hashtab_t  *gib_regexs;

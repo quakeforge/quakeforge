@@ -41,8 +41,7 @@ static __attribute__ ((unused)) const char rcsid[] =
 #include "QF/dstring.h"
 #include "QF/hash.h"
 #include "QF/info.h"
-#include "QF/gib_builtin.h"
-#include "QF/gib_thread.h"
+#include "QF/gib.h"
 
 #include "server.h"
 #include "client.h"

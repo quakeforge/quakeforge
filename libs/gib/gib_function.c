@@ -43,12 +43,13 @@ const char  rcsid[] =
 #include "QF/dstring.h"
 #include "QF/hash.h"
 #include "QF/cbuf.h"
-#include "QF/gib_parse.h"
-#include "QF/gib_buffer.h"
-#include "QF/gib_function.h"
-#include "QF/gib_vars.h"
-#include "QF/gib_tree.h"
 #include "QF/va.h"
+#include "QF/gib.h"
+
+#include "gib_buffer.h"
+#include "gib_tree.h"
+#include "gib_function.h"
+#include "gib_vars.h"
 
 hashtab_t  *gib_functions = 0;
 

@@ -29,7 +29,7 @@
 	$Id$
 */
 
-#include "QF/gib_thread.h"
+#include "QF/gib.h"
 
 extern gib_event_t *sv_chat_e;
 extern gib_event_t *sv_client_connect_e;

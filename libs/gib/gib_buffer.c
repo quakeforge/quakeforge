@@ -43,14 +43,16 @@ const char  rcsid[] = "$Id$";
 #include "QF/dstring.h"
 #include "QF/cbuf.h"
 #include "QF/hash.h"
-#include "QF/gib_parse.h"
-#include "QF/gib_buffer.h"
-#include "QF/gib_tree.h"
-#include "QF/gib_vars.h"
-#include "QF/gib_execute.h"
+#include "QF/gib.h"
 #include "QF/idparse.h"
 
-void
+#include "gib_tree.h"
+#include "gib_parse.h"
+#include "gib_vars.h"
+#include "gib_execute.h"
+#include "gib_buffer.h"
+
+static void
 GIB_Buffer_Construct (struct cbuf_s *cbuf)
 {
 	cbuf->data = calloc (1, sizeof (gib_buffer_data_t));
@@ -59,7 +61,7 @@ GIB_Buffer_Construct (struct cbuf_s *cbuf)
 	cbuf->strict = true;
 }
 
-void
+static void
 GIB_Buffer_Destruct (struct cbuf_s *cbuf)
 {
 	gib_buffer_data_t *g = GIB_DATA (cbuf);
@@ -86,7 +88,7 @@ GIB_Buffer_Destruct (struct cbuf_s *cbuf)
 	free (cbuf->data);
 }
 
-void
+static void
 GIB_Buffer_Reset (struct cbuf_s *cbuf)
 {
 	gib_buffer_data_t *g = GIB_DATA (cbuf);
@@ -125,7 +127,7 @@ GIB_Buffer_Get_Line_Num (const char *program, unsigned int pos)
 	return line;
 }
 
-void
+static void
 GIB_Buffer_Add (cbuf_t * cbuf, const char *str)
 {
 	gib_buffer_data_t *g = GIB_DATA (cbuf);
@@ -166,7 +168,7 @@ GIB_Buffer_Add (cbuf_t * cbuf, const char *str)
 		);
 }
 
-void
+static void
 GIB_Buffer_Insert (cbuf_t * cbuf, const char *str)
 {
 	gib_buffer_data_t *g = GIB_DATA (cbuf);
@@ -308,3 +310,9 @@ cbuf_interpreter_t gib_interp = {
 	GIB_Execute,
 	GIB_Execute,
 };
+
+cbuf_interpreter_t *
+GIB_Interpreter (void)
+{
+	return &gib_interp;
+}

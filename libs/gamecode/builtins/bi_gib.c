@@ -45,7 +45,8 @@ static __attribute__ ((unused)) const char rcsid[] =
 #include "QF/hash.h"
 #include "QF/progs.h"
 #include "QF/sys.h"
-#include "QF/gib_builtin.h"
+#include "QF/gib.h"
+#include "gib_builtin.h"
 
 typedef struct bi_gib_builtin_s {
 	struct bi_gib_builtin_s *next;
@@ -123,7 +124,9 @@ bi_GIB_Builtin_Add (progs_t *pr)
 
 	builtin = malloc (sizeof (bi_gib_builtin_t));
 
-	builtin->builtin = GIB_Builtin_Add (name, bi_gib_builtin_f);
+	GIB_Builtin_Add (name, bi_gib_builtin_f);
+
+	builtin->builtin = GIB_Builtin_Find (name);
 	builtin->pr = pr;
 	builtin->func = func;
 	builtin->next = res->builtins;

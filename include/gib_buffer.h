@@ -33,40 +33,10 @@
 #define __gib_buffer_h
 
 #include "QF/cbuf.h"
-#include "QF/gib_tree.h"
+#include "gib_tree.h"
 #include "QF/dstring.h"
 
-#define GIB_DATA(buffer) ((gib_buffer_data_t *)(buffer->data))
-
-
-typedef struct gib_script_s {
-	const char *text, *file;
-	unsigned int refs;
-} gib_script_t;
-
-typedef struct gib_buffer_data_s {
-	struct gib_script_s *script;
-	struct gib_tree_s *program, *ip;
-	struct dstring_s *arg_composite;
-	qboolean waitret;
-	struct gib_sstack_s {
-		struct gib_dsarray_s {
-			struct dstring_s **dstrs;
-			unsigned int realsize, size;
-		} *values;
-		unsigned int size, p;
-	} stack;
-	struct hashtab_s *locals; // Local variables
-	struct hashtab_s *globals; // Current domain
-} gib_buffer_data_t;
-
-
-void GIB_Buffer_Construct (struct cbuf_s *cbuf);
-void GIB_Buffer_Destruct (struct cbuf_s *cbuf);
-void GIB_Buffer_Reset (struct cbuf_s *cbuf);
 void GIB_Buffer_Set_Program (cbuf_t *cbuf, gib_tree_t *program);
-void GIB_Buffer_Add (cbuf_t *cbuf, const char *str);
-void GIB_Buffer_Insert (cbuf_t *cbuf, const char *str);
 void GIB_Buffer_Push_Sstack (struct cbuf_s *cbuf);
 void GIB_Buffer_Pop_Sstack (struct cbuf_s *cbuf);
 dstring_t *GIB_Buffer_Dsarray_Get (struct cbuf_s *cbuf);

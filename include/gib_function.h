@@ -34,8 +34,8 @@
 
 #include "QF/dstring.h"
 #include "QF/hash.h"
-#include "QF/gib_tree.h"
-#include "QF/gib_buffer.h"
+
+#include "gib_tree.h"
 
 typedef struct gib_function_s {
 	const char *name;

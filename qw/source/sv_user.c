@@ -55,7 +55,6 @@ static __attribute__ ((unused)) const char rcsid[] =
 #include "QF/quakefs.h"
 #include "QF/sys.h"
 #include "QF/va.h"
-#include "QF/gib_thread.h"
 
 #include "bothdefs.h"
 #include "compat.h"

@@ -54,15 +54,16 @@ const char  rcsid[] =
 #include "QF/cbuf.h"
 #include "QF/hash.h"
 #include "QF/dstring.h"
-#include "QF/gib_parse.h"
-#include "QF/gib_execute.h"
-#include "QF/gib_builtin.h"
-#include "QF/gib_buffer.h"
-#include "QF/gib_function.h"
-#include "QF/gib_vars.h"
-#include "QF/gib_regex.h"
-#include "QF/gib_thread.h"
+#include "QF/gib.h"
+
 #include "regex.h"
+#include "gib_buffer.h"
+#include "gib_parse.h"
+#include "gib_function.h"
+#include "gib_vars.h"
+#include "gib_regex.h"
+#include "gib_thread.h"
+#include "gib_builtin.h"
 
 char        gib_null_string[] = "";
 
@@ -92,7 +93,7 @@ GIB_Builtin_Free (void *ele, void *ptr)
 	Registers a new builtin GIB command.
 */
 
-gib_builtin_t *
+void
 GIB_Builtin_Add (const char *name, void (*func) (void))
 {
 	gib_builtin_t *new;
@@ -105,8 +106,6 @@ GIB_Builtin_Add (const char *name, void (*func) (void))
 	new->func = func;
 	new->name = strdup (name);
 	Hash_Add (gib_builtins, new);
-
-	return new;
 }
 
 void

@@ -29,7 +29,4 @@
 	$Id$
 */
 
-
-int GIB_Process_Embedded (gib_tree_t *node, cbuf_args_t *args);
-int GIB_Process_Math (struct dstring_s *token, unsigned int i);
-void GIB_Process_Escapes (char *str);
+void GIB_Execute (cbuf_t *cbuf);

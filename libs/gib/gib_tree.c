@@ -40,7 +40,7 @@ const char  rcsid[] = "$Id$";
 
 #include "QF/sys.h"
 #include "QF/qtypes.h"
-#include "QF/gib_tree.h"
+#include "gib_tree.h"
 
 gib_tree_t *
 GIB_Tree_New (enum gib_tree_type_e type)

@@ -10,14 +10,12 @@
 #include "QF/zone.h"
 #include "QF/quakefs.h"
 #include "QF/quakeio.h"
-#include "QF/gib_parse.h"
-#include "QF/gib_init.h"
-#include "QF/gib_thread.h"
-#include "QF/gib_function.h"
-#include "QF/gib_builtin.h"
-#include "QF/gib_buffer.h"
+#include "QF/gib.h"
 #include "QF/dstring.h"
 #include "QF/va.h"
+
+#include "gib_thread.h"
+#include "gib_parse.h"
 
 extern gib_thread_t *gib_threads;
 
@@ -39,7 +37,7 @@ static int
 Carne_Execute_Script (const char *path, cbuf_args_t *args)
 {
 	QFile *file;
-	cbuf_t *mbuf = Cbuf_New (&gib_interp);
+	cbuf_t *mbuf = Cbuf_New (GIB_Interpreter ());
 	char *f;
 	int len, i;
 	
@@ -92,7 +90,7 @@ static int
 Carne_Execute_Stdin (void)
 {
 	char linebuf[1024];
-	cbuf_t *cbuf = Cbuf_New (&gib_interp);
+	cbuf_t *cbuf = Cbuf_New (GIB_Interpreter ());
 	
 	memset (linebuf, 0, sizeof(linebuf));
 	

@@ -3,7 +3,7 @@
 
 	#DESCRIPTION#
 
-	Copyright (C) 2002 #AUTHOR#
+	Copyright (C) 2003 #AUTHOR#
 
 	Author: #AUTHOR#
 	Date: #DATE#
@@ -29,14 +29,40 @@
 	$Id$
 */
 
-#include "QF/cbuf.h" // For cbuf_active
-#include "QF/gib_buffer.h" // For GIB_DATA()
-#include "QF/dstring.h" // For ->str
+#ifndef __gib_h
+#define __gib_h
 
-typedef struct gib_builtin_s {
-	const char *name;
-	void (*func) (void);
-} gib_builtin_t;
+// Dependencies
+
+#include "QF/dstring.h"
+#include "QF/cbuf.h"
+
+// Buffer access (required to use GIB_Arg* macros)
+
+#define GIB_DATA(buffer) ((gib_buffer_data_t *)(buffer->data))
+
+typedef struct gib_script_s {
+	const char *text, *file;
+	unsigned int refs;
+} gib_script_t;
+
+typedef struct gib_buffer_data_s {
+	struct gib_script_s *script;
+	struct gib_tree_s *program, *ip;
+	struct dstring_s *arg_composite;
+	qboolean waitret;
+	struct gib_sstack_s {
+		struct gib_dsarray_s {
+			struct dstring_s **dstrs;
+			unsigned int realsize, size;
+		} *values;
+		unsigned int size, p;
+	} stack;
+	struct hashtab_s *locals; // Local variables
+	struct hashtab_s *globals; // Current domain
+} gib_buffer_data_t;
+
+// Builtin function interface
 
 extern char gib_null_string[];
 
@@ -50,11 +76,33 @@ extern char gib_null_string[];
 
 #define GIB_CanReturn() (GIB_DATA(cbuf_active)->waitret)
 
-void GIB_Arg_Strip_Delim (unsigned int arg);
 dstring_t *GIB_Return (const char *str);
 void GIB_Error (const char *type, const char *fmt, ...);
-gib_builtin_t *GIB_Builtin_Add (const char *name, void (*func) (void));
+void GIB_Builtin_Add (const char *name, void (*func) (void));
 void GIB_Builtin_Remove (const char *name);
 qboolean GIB_Builtin_Exists (const char *name);
-gib_builtin_t *GIB_Builtin_Find (const char *name);
-void GIB_Builtin_Init (qboolean sandbox);
+
+// Event interface
+
+typedef struct gib_event_s {
+	const char *name;
+	struct gib_function_s *func;
+} gib_event_t;
+
+gib_event_t *GIB_Event_New (const char *name);
+void GIB_Event_Callback (gib_event_t *event, unsigned int argc, ...);
+
+// Interpreter interface (for creating GIB cbufs)
+
+cbuf_interpreter_t *GIB_Interpreter (void);
+
+// Thread interface
+
+void GIB_Thread_Execute (void);
+
+// Init interface
+
+void GIB_Init (qboolean sandbox);
+
+
+#endif

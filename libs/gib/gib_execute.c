@@ -41,12 +41,15 @@ const char  rcsid[] =
 
 #include "QF/cbuf.h"
 #include "QF/cmd.h"
-#include "QF/gib_buffer.h"
-#include "QF/gib_vars.h"
-#include "QF/gib_process.h"
-#include "QF/gib_builtin.h"
-#include "QF/gib_function.h"
-#include "QF/gib_execute.h"
+#include "QF/gib.h"
+
+#include "gib_buffer.h"
+#include "gib_builtin.h"
+#include "gib_function.h"
+#include "gib_vars.h"
+#include "gib_tree.h"
+#include "gib_process.h"
+#include "gib_execute.h"
 
 static void
 GIB_Execute_Generate_Composite (struct cbuf_s *cbuf)
@@ -172,7 +175,7 @@ GIB_Execute_Prepare_Line (cbuf_t * cbuf, gib_tree_t * line)
 	return 0;
 }
 
-int
+static int
 GIB_Execute_For_Next (cbuf_t * cbuf)
 {
 	unsigned int index;

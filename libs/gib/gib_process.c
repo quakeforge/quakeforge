@@ -43,13 +43,12 @@ const char  rcsid[] = "$Id$";
 #include "QF/dstring.h"
 #include "QF/cbuf.h"
 #include "QF/cvar.h"
-#include "QF/gib_buffer.h"
-#include "QF/gib_parse.h"
-#include "QF/gib_vars.h"
-#include "QF/gib_process.h"
-#include "QF/gib_builtin.h"
+#include "QF/gib.h"
 
 #include "exp.h"
+#include "gib_buffer.h"
+#include "gib_vars.h"
+#include "gib_process.h"
 
 int
 GIB_Process_Math (struct dstring_s *token, unsigned int i)

@@ -29,5 +29,26 @@
 	$Id$
 */
 
-int GIB_Execute_For_Next (cbuf_t *cbuf);
-void GIB_Execute (cbuf_t *cbuf);
+#ifndef __gib_thread_h
+#define __gib_thread_h
+
+#include "gib_function.h"
+
+typedef struct gib_thread_s {
+	unsigned long int id;
+	struct cbuf_s *cbuf;
+	struct gib_thread_s *prev, *next;
+} gib_thread_t;
+
+void GIB_Thread_Add (gib_thread_t *thread);
+void GIB_Thread_Remove (gib_thread_t *thread);
+void GIB_Thread_Delete (gib_thread_t *thread);
+gib_thread_t *GIB_Thread_Find (unsigned long int id);
+gib_thread_t *GIB_Thread_New (void);
+
+int GIB_Event_Register (const char *name, gib_function_t *func);
+void GIB_Event_Init (void);
+
+extern gib_thread_t *gib_threads;
+
+#endif
