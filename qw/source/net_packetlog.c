@@ -506,8 +506,8 @@ Parse_Server_Packet ()
 					break;
 				case svc_print:
 					// FIXME: i==PRINT_CHAT
-					Net_LogPrintf (" [%d]", MSG_ReadByte (&packet));
-					Net_LogPrintf (" %s", MSG_ReadString (&packet));
+					Net_LogPrintf ("[%d] ", MSG_ReadByte (&packet));
+					Net_LogPrintf ("%s", MSG_ReadString (&packet));
 					break;
 				case svc_stufftext:
 					Net_LogPrintf ("%s", MSG_ReadString (&packet));

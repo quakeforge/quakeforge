@@ -719,13 +719,20 @@ SV_SendClientMessages (void)
 		}
 		// if the reliable message overflowed, drop the client
 		if (c->netchan.message.overflowed) {
+			int i;
 			extern void Analyze_Server_Packet (byte *data, int len);
-			byte *data = Hunk_TempAlloc (c->netchan.message.cursize + 8);
+			byte *data = Hunk_TempAlloc (MAX_MSGLEN + 8);
 
 			memset (data, 0, 8);
+
 			memcpy (data + 8, c->netchan.message.data,
 					c->netchan.message.cursize);
 			Analyze_Server_Packet (data, c->netchan.message.cursize + 8);
+
+			for (i = 0; i < c->num_backbuf; i++) {
+				memcpy (data + 8, c->backbuf_data[i], c->backbuf_size[i]);
+				Analyze_Server_Packet (data, c->backbuf_size[i] + 8);
+			}
 
 			SZ_Clear (&c->netchan.message);
 			SZ_Clear (&c->datagram);
