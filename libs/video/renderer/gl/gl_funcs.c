@@ -51,7 +51,7 @@
 
 // First we need to get all the function pointers declared.
 #define QFGL_NEED(ret, name, args) \
-ret (* name) args = NULL;
+ret (* qf##name) args = NULL;
 #include "QF/GL/qf_funcs_list.h"
 #undef QFGL_NEED
 
@@ -61,25 +61,22 @@ GLF_Init (void)
 {
 	void	*handle;
 
-#ifdef HAVE_DLOPEN
+#if defined(HAVE_DLOPEN)
 	if (!(handle = dlopen (gl_libgl->string, RTLD_NOW))) {
 		Sys_Error ("Couldn't load OpenGL library %s: %s\n", gl_libgl->string, dlerror ());
 		return false;
 	}
-#else
-# if _WIN32
+#elif defined(_WIN32)
 	if (!(handle = LoadLibrary (gl_libgl->string))) {
 		Sys_Error ("Couldn't load OpenGL library %s!\n", gl_libgl->string);
 		return false;
 	}
-# else
-	Sys_Error ("Cannot load libraries: %s was built without DSO support", PROGRAM);
-	return false;
-# endif
+#else
+# error "Cannot load libraries: %s was not configured with DSO support"
 #endif
 
 #define QFGL_NEED(ret, name, args)	\
-	name = QFGL_ProcAddress (handle, #name);
+	qf##name = QFGL_ProcAddress (handle, #name);
 
 #include "QF/GL/qf_funcs_list.h"
 #undef QFGL_NEED
@@ -94,47 +91,47 @@ QFGL_ProcAddress (void *handle, const char *name)
 	static qboolean inited = false;
 	void			*glfunc = NULL;
 
-#ifdef HAVE_DLOPEN
+#if defined(HAVE_DLOPEN)
 	static QF_glXGetProcAddressARB	glGetProcAddress = NULL;
-#else
-# ifdef _WIN32
+#elif defined(_WIN32)
 	static void * (* wglGetProcAddress)	(char *)	glGetProcAddress = NULL;
-# endif
+#else
+	static void *glGetProcAddress = NULL;
 #endif
 
-	if (!handle || !name)
+	if (!handle || !name) {
+		inited = false;
 		return NULL;
+	}
 
 	if (!inited) {
 		inited = true;
-#ifdef HAVE_DLOPEN
+#if defined(HAVE_DLOPEN)
 		glGetProcAddress = dlsym (handle, "glXGetProcAddressARB");
-#else
-# ifdef _WIN32
+#elif defined(_WIN32)
 		glGetProcAddress = GetProcAddress (handle, "wglGetProcAddress");
-# endif
 #endif
 	}
 
 	Sys_Printf ("DEBUG: Finding symbol %s ... ", name);
-#ifdef HAVE_DLOPEN
-	if (glGetProcAddress)
-		glfunc = glGetProcAddress (name);
-	else
+#if defined(HAVE_DLOPEN)
 		glfunc = dlsym (handle, name);
-#else
-# ifdef _WIN32
-	if (glGetProcAddress)
-		glfunc = glGetProcAddress (name);
-	else
+#elif defined(_WIN32)
 		glfunc = GetProcAddress (handle, name);
-# endif
 #endif
-	if (glfunc) {
-		Sys_Printf ("found [0x%x]\n", (unsigned int) glfunc);
+	if (glGetProcAddress && glfunc != glGetProcAddress (name)) {
+		Con_Printf ("mismatch! [%p != %p]\n", glfunc, glGetProcAddress (name));
 		return glfunc;
-	} else {
-		Sys_Printf ("not found\n");
-		return NULL;
 	}
+
+	if (!glfunc && glGetProcAddress)
+		glfunc = glGetProcAddress (name);
+
+	if (glfunc) {
+		Con_Printf ("found [%p]\n", glfunc);
+		return glfunc;
+	}
+	
+	Con_Printf ("not found\n");
+	return NULL;
 }
