@@ -82,8 +82,8 @@ Mod_LoadExternalTextures (model_t *mod)
 			continue;
 
 		// replace special flag characters with underscores
-		if (tx->name[0] == '*') {
-		 	filename = va ("maps/_%s.tga", tx->name + 1);
+		if (tx->name[0] == '*') { // FIXME: translate to # or _?
+		 	filename = va ("maps/#%s.tga", tx->name + 1);
 		} else {
 		 	filename = va ("maps/%s.tga", tx->name);
 		}
@@ -91,7 +91,7 @@ Mod_LoadExternalTextures (model_t *mod)
 
 		if (!f) {
 			if (tx->name[0] == '*') {
-				filename = va ("textures/_%s.tga", tx->name + 1);
+				filename = va ("textures/#%s.tga", tx->name + 1);
 			} else {
 				filename = va ("textures/%s.tga", tx->name);
 			}
