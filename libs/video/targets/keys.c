@@ -705,9 +705,22 @@ Key_WriteBindings (VFile *f)
 
 	for (j = 0; j < IMT_LAST; j++)
 		for (i = 0; i < QFK_LAST; i++)
-			if ((bind = Key_GetBinding(j, i)))
-				Qprintf (f, "in_bind %s %s \"%s\"\n", Key_IMTnumToString (j),
-						 Key_KeynumToString (i), bind);
+			if ((bind = Key_GetBinding(j, i))) {
+				if (f)
+					Qprintf (f, "in_bind %s %s \"%s\"\n",
+							 Key_IMTnumToString (j),
+							 Key_KeynumToString (i), bind);
+				else
+					Sys_Printf ("in_bind %s %s \"%s\"\n",
+							 Key_IMTnumToString (j),
+							 Key_KeynumToString (i), bind);
+			}
+}
+
+void
+Key_Bindlist_f (void)
+{
+	Key_WriteBindings (0);
 }
 
 /*
@@ -782,6 +795,7 @@ Key_Init (void)
 	Cmd_AddCommand ("unbind", Key_Unbind_f,
 					"wrapper for in_unbind that uses in_bind_imt for the imt "
 					"parameter");
+	Cmd_AddCommand ("bindlist", Key_Bindlist_f, "list all of the key bindings");
 }
 
 void

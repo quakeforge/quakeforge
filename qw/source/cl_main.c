@@ -1666,12 +1666,12 @@ Host_Init (void)
 
 	CL_Init_Memory ();
 
+	pr_gametype = "quakeworld";
+
 	cls.userinfo = Info_ParseString ("", MAX_INFO_STRING);
 	cl.serverinfo = Info_ParseString ("", MAX_INFO_STRING);
 
 	PI_Init ();
-
-	pr_gametype = "quakeworld";
 
 	CL_Cam_Init_Cvars ();
 	CL_Input_Init_Cvars ();
@@ -1730,7 +1730,6 @@ Host_Init (void)
 
 	CL_TimeFrames_Init();
 
-//	Con_Printf ("Exe: "__TIME__" "__DATE__"\n");
 	Con_Printf ("%4.1f megabyte heap.\n", cl_mem_size->value);
 
 	vid_basepal = (byte *) COM_LoadHunkFile ("gfx/palette.lmp");
@@ -1764,24 +1763,22 @@ Host_Init (void)
 	if (!cl_quakerc->int_val || check_quakerc ())
 		Cmd_StuffCmds_f ();
 
-	Cbuf_AddText ("echo Type connect <internet address> or use a server "
-				  "browser to connect to a game.\n");
-	Cbuf_AddText ("cmd_warncmd 1\n");
-
 	Hunk_AllocName (0, "-HOST_HUNKLEVEL-");
 	host_hunklevel = Hunk_LowMark ();
 
 	host_initialized = true;
 
-
 	Con_Printf ("\nClient version %s (build %04d)\n\n", VERSION,
 				build_number ());
 
 	Con_Printf ("\x80\x81\x81\x82 %s initialized \x80\x81\x81\x82\n", PROGRAM);
-
 	Con_NewMap ();			// force the menus to be loaded
 
 	CL_UpdateScreen (realtime);
+
+	Cbuf_AddText ("echo Type connect <internet address> or use a server "
+				  "browser to connect to a game.\n");
+	Cbuf_AddText ("cmd_warncmd 1\n");
 }
 
 void

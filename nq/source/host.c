@@ -48,6 +48,7 @@ static const char rcsid[] =
 #include "QF/va.h"
 #include "QF/vid.h"
 
+#include "buildnum.h"
 #include "chase.h"
 #include "compat.h"
 #include "host.h"
@@ -912,9 +913,6 @@ Host_Init (void)
 	Host_Skin_Init_Cvars ();
 	V_Init_Cvars ();
 
-	Cmd_StuffCmds_f ();
-	Cbuf_Execute_Sets ();
-
 	PR_Init ();
 	BI_Init ();
 
@@ -941,12 +939,10 @@ Host_Init (void)
 	W_LoadWadFile ("gfx.wad");
 	Key_Init ();
 	Mod_Init ();
-	// FIXME: MENUCODE
-//	M_Init ();
+
 	SV_Progs_Init ();
 	SV_Init ();
 
-//	Con_Printf ("Exe: " __TIME__ " " __DATE__ "\n");
 	Con_Printf ("%4.1f megabyte heap\n", host_mem_size->value);
 
 	if (cls.state != ca_dedicated) {
@@ -986,7 +982,10 @@ Host_Init (void)
 
 	host_initialized = true;
 
-	Con_Printf ("\x80\x81\x81\x81\x81\x81\x81%s Initialized\x81\x81\x81\x81\x81\x81\x81\x82\n", PROGRAM);
+	Con_Printf ("\nVersion %s (build %04d)\n\n", VERSION,
+				build_number ());
+
+	Con_Printf ("\x80\x81\x81\x82 %s Initialized\x80\x81\x81\x82\n", PROGRAM);
 	Con_NewMap ();
 
 	CL_UpdateScreen (cl.time);
