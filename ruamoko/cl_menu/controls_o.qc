@@ -214,7 +214,6 @@ CB_MAIN_control_binding =
 			Key_SetBinding (IMT_0, key, binding.command);
 		} else {
 			// else, remove a binding and assign a new one
-			dprint ("FOO\n");
 			Key_SetBinding (IMT_0, Key_LookupBinding(IMT_0, 1, binding.command), "");
 			Key_SetBinding (IMT_0, key, binding.command);
 		}
