@@ -35,10 +35,11 @@
 #ifdef HAVE_STRINGS_H
 # include <strings.h>
 #endif
-#include <stdlib.h>
 
+#include <stdlib.h>
 #include <SDL.h>
 
+#include "QF/compat.h"
 #include "QF/console.h"
 #include "QF/cvar.h"
 #include "d_local.h"
@@ -160,8 +161,9 @@ VID_Init (unsigned char *palette)
 	// Initialize display
 	if (!(screen = SDL_SetVideoMode (vid.width, vid.height, 8, flags)))
 		Sys_Error ("VID: Couldn't set video mode: %s\n", SDL_GetError ());
+	VID_InitGamma (palette);
 	VID_SetPalette (palette);
-	VID_SetCaption ("");
+//	VID_SetCaption (""); // FIXME?
 
 	// now know everything we need to know about the buffer
 	VGA_width = vid.conwidth = vid.width;
@@ -297,5 +299,6 @@ VID_SetCaption (char *text)
 qboolean
 VID_SetGamma (double gamma)
 {
-	return false; //FIXME
+//	return SDL_SetGamma ((float) gamma, (float) gamma, (float) gamma);
+	return false; // FIXME
 }

@@ -78,11 +78,9 @@ extern void VID_Init8bitPalette (void);
 void
 VID_Shutdown (void)
 {
-	if (!vid_initialized)
-		return;
-
-	Con_Printf ("VID_Shutdown\n");
-
+//	if (!vid_initialized)
+//		return;
+//	Con_Printf ("VID_Shutdown\n");
 	SDL_Quit ();
 }
 
@@ -206,6 +204,7 @@ VID_Init (unsigned char *palette)
 	GL_Init ();
 
 	GL_CheckBrightness (palette);
+	VID_InitGamma (palette);
 	VID_SetPalette (palette);
 
 	// Check for 3DFX Extensions and initialize them.
@@ -252,7 +251,7 @@ VID_SetCaption (char *text)
 qboolean
 VID_SetGamma (double gamma)
 {
-	return false; //FIXME
+	return SDL_SetGamma((float) gamma, (float) gamma, (float) gamma); 
 }
 
 void
