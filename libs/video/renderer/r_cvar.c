@@ -137,7 +137,7 @@ cvar_t     *scr_showram;
 cvar_t     *scr_showturtle;
 cvar_t     *scr_viewsize;
 
-float	cl_wateralpha;
+float		cl_wateralpha;
 
 static void
 r_particles_f (cvar_t *var)
