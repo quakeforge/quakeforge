@@ -399,7 +399,7 @@ free_location (def_t *def)
 def_t *
 get_tempdef (type_t *type, scope_t *scope)
 {
-	int         size = type_size (type);
+	int         size = type_size (type) - 1;
 	def_t      *def;
 
 	if (free_temps[size]) {
@@ -438,7 +438,7 @@ free_tempdefs (void)
 						pr_type_name[d->type->type],
 						d->ofs, d->users, d->managed);
 			}
-			size = type_size (d->type);
+			size = type_size (d->type) - 1;
 			if (d->expr)
 				d->expr->e.temp.def = 0;
 
