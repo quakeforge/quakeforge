@@ -47,7 +47,7 @@ typedef unsigned char byte;
 #undef true
 #undef false
 # ifdef __bool_true_false_are_defined
-typedef enum    {q_false, q_true} qboolean
+typedef enum    {q_false, q_true} qboolean;
 #define true q_true;
 #define false q_false;
 # else
