@@ -1888,7 +1888,6 @@ AC_SUBST(PAK_INCS)
 
 AC_DEFINE_UNQUOTED(PATH_SEPARATOR, '/', [Define this to your operating system's path separator character])
 AC_DEFINE_UNQUOTED(CPP_NAME, "$CPP_NAME", [Define this to the command line for the C preprocessor])
-AC_DEFINE(USE_CPP, 1, [Define this if you want qfcc to use the C preprocessor])
 
 AM_CONDITIONAL(BUILD_GL, test "$BUILD_GL" = "yes")
 AM_CONDITIONAL(BUILD_SW, test "$BUILD_SW" = "yes")

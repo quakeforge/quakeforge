@@ -94,19 +94,16 @@ static struct option const long_options[] = {
 	{"files", no_argument, 0, 'F'},
 	{"traditional", no_argument, 0, 't'},
 	{"strip-path", required_argument, 0, 'p'},
-#ifdef USE_CPP
 	{"define", required_argument, 0, 'D'},
 	{"include", required_argument, 0, 'I'},
 	{"undefine", required_argument, 0, 'U'},
 	{"cpp", required_argument, 0, 256},
-#endif
 	{NULL, 0, NULL, 0}
 };
 
 char        destfile[1024];
 char        debugfile[1024];
 
-#ifdef USE_CPP
 typedef struct cpp_arg_s {
 	struct cpp_arg_s *next;
 	const char *arg;
@@ -120,7 +117,6 @@ const char **cpp_argv;
 char       *cpp_name = CPP_NAME;
 static int  cpp_argc = 0;
 dstring_t  *tempname;
-#endif
 
 pr_info_t   pr;
 
@@ -583,18 +579,15 @@ usage (int status)
 			"    -W, --warn OPTION,...     Set warning options\n"
 			"    -h, --help                Display this help and exit\n"
 			"    -V, --version             Output version information and exit\n\n"
-#ifdef USE_CPP
 			"    -S, --save-temps          Do not delete temporary files\n"
 			"    -D, --define SYMBOL[=VAL],...  Define symbols for the preprocessor\n"
 			"    -I, --include DIR,...          Set directories for the preprocessor \n"
 			"                                   to search for #includes\n"
 			"    -U, --undefine SYMBOL,...      Undefine preprocessor symbols\n\n"
-#endif
 			"For help on options for --code and --warn, see the qfcc(1) manual page\n");
 	exit (status);
 }
 
-#ifdef USE_CPP
 static void
 add_cpp_arg (const char *arg)
 {
@@ -663,19 +656,16 @@ build_cpp_args (const char *in_name, const char *out_name)
 	//	printf ("%s ", *arg);
 	//puts ("");
 }
-#endif
 
 static int
 DecodeArgs (int argc, char **argv)
 {
 	int         c;
 
-#ifdef USE_CPP
 	add_cpp_def ("-D__QFCC__=1");
 	add_cpp_def ("-D__QUAKEC__=1");
 	add_cpp_def ("-D__RUAMOKO__=1");
 	add_cpp_def ("-D__RAUMOKO__=1");
-#endif
 
 	options.code.progsversion = PROG_VERSION;
 	options.warnings.uninited_variable = true;
@@ -698,12 +688,10 @@ DecodeArgs (int argc, char **argv)
 										 "h"	// help
 										 "V"	// version
 										 "p:"	// strip path
-#ifdef USE_CPP
 										 "S"	// save temps
 										 "D:"	// define
 										 "I:"	// set includes
 										 "U:"	// undefine
-#endif
 							 , long_options, (int *) 0)) != EOF) {
 		switch (c) {
 			case 'h':					// help
@@ -755,9 +743,7 @@ DecodeArgs (int argc, char **argv)
 							options.code.debug = false;
 						} else if (!(strcasecmp (temp, "v6only"))) {
 							options.code.progsversion = PROG_ID_VERSION;
-#ifdef USE_CPP
 							add_cpp_def ("-D__VERSION6__=1");
-#endif
 						} else if (!(strcasecmp (temp, "no-v6only"))) {
 							options.code.progsversion = PROG_VERSION;
 						}
@@ -813,7 +799,6 @@ DecodeArgs (int argc, char **argv)
 					free (opts);
 				}
 				break;
-#ifdef USE_CPP
 			case 256:					// --cpp=
 				cpp_name = strdup (optarg);
 				break;
@@ -853,7 +838,6 @@ DecodeArgs (int argc, char **argv)
 					free (opts);
 				}
 				break;
-#endif
 			default:
 				usage (1);
 		}
@@ -866,11 +850,10 @@ DecodeArgs (int argc, char **argv)
 FILE *
 preprocess_file (const char *filename)
 {
-#ifdef USE_CPP
-# ifndef _WIN32
+#ifndef _WIN32
 	pid_t       pid;
 	int         tempfd = 0;
-# endif
+#endif
 	char       *temp1;
 	char       *temp2 = strrchr (this_program, PATH_SEPARATOR);
 
@@ -910,7 +893,7 @@ preprocess_file (const char *filename)
 		}
 		build_cpp_args (filename, tempname->str);
 
-# ifdef _WIN32
+#ifdef _WIN32
 		if (!options.save_temps)
 			mktemp (tempname->str);
 
@@ -932,7 +915,7 @@ preprocess_file (const char *filename)
 		}
 
 		return fopen (tempname->str, "rt");
-# else
+#else
 		if (!options.save_temps)
 			tempfd = mkstemp (tempname->str);
 
@@ -981,9 +964,8 @@ preprocess_file (const char *filename)
 			return fopen (tempname->str, "rt");
 		else
 			return fdopen (tempfd, "r+t");
-# endif
-	}
 #endif
+	}
 	return fopen (filename, "rt");
 }
 
@@ -1022,10 +1004,8 @@ main (int argc, char **argv)
 
 	DecodeArgs (argc, argv);
 
-#ifdef USE_CPP
 	tempname = dstring_new ();
 	parse_cpp_name ();
-#endif
 
 	if (options.verbosity >= 1 && strcmp (sourcedir, "")) {
 		printf ("Source directory: %s\n", sourcedir);
@@ -1099,14 +1079,12 @@ main (int argc, char **argv)
 		clear_frame_macros ();
 		error = yyparse () || pr_error_count;
 		fclose (yyin);
-#ifdef USE_CPP
 		if (cpp_name && (!options.save_temps)) {
 			if (unlink (tempname->str)) {
 				perror ("unlink");
 				exit (1);
 			}
 		}
-#endif
 		if (error)
 			return 1;
 	}
