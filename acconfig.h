@@ -16,9 +16,6 @@
 /* Define this to the QSG standard version you support */
 #undef QSG_VERSION
 
-/* Define if you want to use QF-style defaults instead of Id-style */
-#undef NEWSTYLE
-
 /* Define this to the location of the global config file */
 #undef FS_GLOBALCFG
 
@@ -30,12 +27,6 @@
 
 /* Define this to the unshared game directory root */
 #undef FS_USERPATH
-
-/* Define this to the base game for the engine to load */
-#undef BASEGAME
-
-/* Define this to the base directory for the client to download skins to */
-#undef SKINBASE
 
 /* Define this to use experimental code */
 #undef _EXPERIMENTAL_

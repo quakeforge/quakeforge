@@ -65,23 +65,6 @@
 /* Version string */
 #include "version.h"
 
-/* Define if you want to use QF-style defaults instead of Id-style */
-#undef NEWSTYLE
-
-/* Define this to the subdirectory name of the default game */
-#ifdef NEWSTYLE
-# define BASEGAME "base"
-#else
-# define BASEGAME "id1"
-#endif
-
-/* Define this to the base directory for the client to download skins to */
-#ifdef NEWSTYLE
-# define SKINBASE "base"
-#else
-# define SKINBASE "qw"
-#endif
-
 /* Define if you have the XFree86 DGA extension */
 #undef HAVE_DGA
 

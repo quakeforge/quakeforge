@@ -1082,15 +1082,10 @@ COM_Filesystem_Init_Cvars (void)
 							 "location of shared (read only) game directories");
 	fs_userpath = Cvar_Get ("fs_userpath", FS_USERPATH, CVAR_ROM,
 							"location of your game directories");
-	fs_basegame = Cvar_Get ("fs_basegame", BASEGAME, CVAR_ROM,
+	fs_basegame = Cvar_Get ("fs_basegame", "id1", CVAR_ROM,
 							"game to use by default");
-#ifdef NEWSTYLE
-	fs_skinbase= Cvar_Get ("fs_skinbase", fs_basegame->string, CVAR_ROM,
+	fs_skinbase= Cvar_Get ("fs_skinbase", "qw", CVAR_ROM,
 							"location of skins dir for downloads");
-#else
-	fs_skinbase= Cvar_Get ("fs_skinbase", SKINBASE, CVAR_ROM,
-							"location of skins dir for downloads");
-#endif
 }
 
 /*

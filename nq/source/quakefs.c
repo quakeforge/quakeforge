@@ -930,7 +930,7 @@ COM_InitFilesystem ( void )
 			"location of shared (read only) game directories");
 	fs_userpath = Cvar_Get ("fs_userpath", FS_USERPATH, CVAR_ROM,
 			"location of your game directories");
-	fs_basegame = Cvar_Get ("fs_basegame", BASEGAME, CVAR_ROM,
+	fs_basegame = Cvar_Get ("fs_basegame", "id1", CVAR_ROM,
 			"game to use by default");
 
 /*
