@@ -604,7 +604,7 @@ _Host_Frame (float time)
 
 	// check for commands typed to the host
 	Host_GetConsoleCommands ();
-	
+
 	GIB_Thread_Execute ();
 
 	// process console commands

@@ -448,6 +448,7 @@ C_ProcessInput (void)
 #endif
 		while (1) {
 			const char *cmd = Sys_ConsoleInput ();
+			printf ("%s\n", cmd);
 			if (!cmd)
 				break;
 			Cbuf_AddText (con_data.cbuf, cmd);
