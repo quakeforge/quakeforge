@@ -148,7 +148,6 @@ cvar_t     *m_forward;
 cvar_t     *m_side;
 
 cvar_t     *cl_predict_players;
-cvar_t     *cl_predict_players2;
 cvar_t     *cl_solid_players;
 
 cvar_t     *localid;
@@ -1253,12 +1252,9 @@ CL_Init_Cvars (void)
 						"display current packet loss to server");
 	show_time = Cvar_Get ("show_time", "0", CVAR_NONE, NULL,
 						  "display the current time");
-	cl_predict_players2 = Cvar_Get ("cl_predict_players2", "1", CVAR_NONE,
-									NULL, "If this and cl_predict_players are "
-									"0, no player prediction is done");
 	cl_predict_players = Cvar_Get ("cl_predict_players", "1", CVAR_NONE, NULL,
-								   "If this and cl_predict_players2 is 0, no "
-								   "player prediction is done");
+								   "If this is 0, no player prediction is "
+								   "done");
 	cl_solid_players = Cvar_Get ("cl_solid_players", "1", CVAR_NONE, NULL,
 								 "Are players solid? If off, you can walk "
 								 "through them with difficulty");

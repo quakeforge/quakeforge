@@ -58,7 +58,6 @@
 #include "view.h"
 
 extern cvar_t *cl_predict_players;
-extern cvar_t *cl_predict_players2;
 extern cvar_t *cl_solid_players;
 
 static struct predicted_player {
@@ -865,8 +864,7 @@ CL_LinkPlayers (void)
 
 		// only predict half the move to minimize overruns
 		msec = 500 * (playertime - state->state_time);
-		if (msec <= 0 || (!cl_predict_players->int_val &&
-						  !cl_predict_players2->int_val)) {
+		if (msec <= 0 || (!cl_predict_players->int_val)) {
 			VectorCopy (state->origin, (*ent)->origin);
 		} else {	// predict players movement
 			state->command.msec = msec = min (msec, 255);
@@ -972,7 +970,7 @@ CL_SetUpPlayerPrediction (qboolean dopred)
 			// only predict half the move to minimize overruns
 			msec = 500 * (playertime - state->state_time);
 			if (msec <= 0 ||
-				(!cl_predict_players->int_val && !cl_predict_players2->int_val)
+				(!cl_predict_players->int_val)
 				|| !dopred) {
 				VectorCopy (state->origin, pplayer->origin);
 				// Con_DPrintf ("nopredict\n");
