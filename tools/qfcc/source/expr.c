@@ -931,6 +931,10 @@ function_expr (expr_t *e1, expr_t *e2)
 		}
 		if (err)
 			return err;
+	} else {
+		for (e = e2; e; e = e->next)
+			if (e->type == ex_integer)
+				warning (e, "passing integer consant into ... function");
 	}
 	e = new_binary_expr ('c', e1, e2);
 	e->e.expr.type = ftype->aux_type;
