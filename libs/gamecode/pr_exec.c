@@ -375,47 +375,47 @@ PR_ExecuteProgram (progs_t * pr, func_t fnum)
 			case OP_LT:
 				OPC.float_var = OPA.float_var < OPB.float_var;
 				break;
-			case OP_AND:
-				OPC.float_var = OPA.float_var && OPB.float_var;
+			case OP_AND:	// OPA and OPB have to be float for -0.0
+				OPC.int_var = OPA.float_var && OPB.float_var;
 				break;
-			case OP_OR:
-				OPC.float_var = OPA.float_var || OPB.float_var;
+			case OP_OR:	// OPA and OPB have to be float for -0.0
+				OPC.int_var = OPA.float_var || OPB.float_var;
 				break;
 			case OP_NOT_F:
-				OPC.float_var = !OPA.float_var;
+				OPC.int_var = !OPA.float_var;
 				break;
 			case OP_NOT_V:
-				OPC.float_var = !OPA.vector_var[0] && !OPA.vector_var[1]
+				OPC.int_var = !OPA.vector_var[0] && !OPA.vector_var[1]
 					&& !OPA.vector_var[2];
 				break;
 			case OP_NOT_S:
-				OPC.float_var = !OPA.string_var || !*PR_GetString (pr, OPA.string_var);
+				OPC.int_var = !OPA.string_var || !*PR_GetString (pr, OPA.string_var);
 				break;
 			case OP_NOT_FNC:
-				OPC.float_var = !OPA.func_var;
+				OPC.int_var = !OPA.func_var;
 				break;
 			case OP_NOT_ENT:
-				OPC.float_var = !OPA.entity_var;
+				OPC.int_var = !OPA.entity_var;
 				break;
 			case OP_EQ_F:
-				OPC.float_var = OPA.float_var == OPB.float_var;
+				OPC.int_var = OPA.float_var == OPB.float_var;
 				break;
 			case OP_EQ_V:
-				OPC.float_var = (OPA.vector_var[0] == OPB.vector_var[0])
+				OPC.int_var = (OPA.vector_var[0] == OPB.vector_var[0])
 					&& (OPA.vector_var[1] == OPB.vector_var[1])
 					&& (OPA.vector_var[2] == OPB.vector_var[2]);
 				break;
 			case OP_EQ_E:
-				OPC.float_var = OPA.int_var == OPB.int_var;
+				OPC.int_var = OPA.int_var == OPB.int_var;
 				break;
 			case OP_EQ_FNC:
-				OPC.float_var = OPA.func_var == OPB.func_var;
+				OPC.int_var = OPA.func_var == OPB.func_var;
 				break;
 			case OP_NE_F:
-				OPC.float_var = OPA.float_var != OPB.float_var;
+				OPC.int_var = OPA.float_var != OPB.float_var;
 				break;
 			case OP_NE_V:
-				OPC.float_var = (OPA.vector_var[0] != OPB.vector_var[0])
+				OPC.int_var = (OPA.vector_var[0] != OPB.vector_var[0])
 					|| (OPA.vector_var[1] != OPB.vector_var[1])
 					|| (OPA.vector_var[2] != OPB.vector_var[2]);
 				break;
@@ -436,14 +436,14 @@ PR_ExecuteProgram (progs_t * pr, func_t fnum)
 						case OP_NE_S: break;
 						case OP_EQ_S: cmp = !cmp; break;
 					}
-					OPC.float_var = cmp;
+					OPC.int_var = cmp;
 				}
 				break;
 			case OP_NE_E:
-				OPC.float_var = OPA.int_var != OPB.int_var;
+				OPC.int_var = OPA.int_var != OPB.int_var;
 				break;
 			case OP_NE_FNC:
-				OPC.float_var = OPA.func_var != OPB.func_var;
+				OPC.int_var = OPA.func_var != OPB.func_var;
 				break;
 
 			// ==================
