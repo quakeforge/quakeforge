@@ -230,8 +230,7 @@ Cbuf_Execute_Sets (void)
 		if (strnequal (line, "set", 3) && isspace ((int) line[3])) {
 			// Con_DPrintf ("+%s\n",line);
 			Cmd_ExecuteString (line, src_command);
-		}
-		if (strnequal (line, "setrom", 6) && isspace ((int) line[6])) {
+		} else if (strnequal (line, "setrom", 6) && isspace ((int) line[6])) {
 			// Con_DPrintf ("+%s\n",line);
 			Cmd_ExecuteString (line, src_command);
 		}
