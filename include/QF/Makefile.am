@@ -1,6 +1,6 @@
 AUTOMAKE_OPTIONS = foreign
-includedir = $(prefix)/include/QF
-nobase_include_HEADERS = \
+pkgincludedir = $(includedir)/QF
+nobase_pkginclude_HEADERS = \
 	bspfile.h cbuf.h cdaudio.h checksum.h clip_hull.h cmd.h \
 	console.h crc.h csqc.h cvar.h dstring.h draw.h gib.h hash.h hl.h \
 	idparse.h image.h in_event.h info.h input.h joystick.h keys.h link.h \
