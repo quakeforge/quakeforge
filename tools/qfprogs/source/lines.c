@@ -51,13 +51,43 @@ static __attribute__ ((unused)) const char rcsid[] =
 void
 dump_lines (progs_t *pr)
 {
-	int i;
+	int i, line, addr;
+	pr_lineno_t *lineno;
+	pr_auxfunction_t *aux_func = 0;
+	dfunction_t *func = 0;
 
 	if (!pr->debug)
 		return;
 	for (i = 0; i < pr->debug->num_linenos; i++) {
-		pr_lineno_t *lineno = &pr->linenos[i];
+		lineno = &pr->linenos[i];
 
-		printf ("%5d %5d\n", lineno->fa.addr, lineno->line);
+		if (!lineno->line) {
+			aux_func = 0;
+			func = 0;
+			if (lineno->fa.func >= 0
+				&& lineno->fa.func < pr->debug->num_auxfunctions)
+				aux_func = pr->auxfunctions + lineno->fa.func;
+			if (aux_func && aux_func->function >= 0
+				&& aux_func->function < pr->progs->numfunctions)
+				func = pr->pr_functions + aux_func->function;
+		}
+
+		printf ("%5d %5d", lineno->fa.addr, lineno->line);
+		line = addr = -1;
+		if (aux_func)
+			line = aux_func->source_line + lineno->line;
+		if (func)
+			addr = lineno->line ? lineno->fa.addr : func->first_statement;
+		if (aux_func && func)
+			printf (" %05x %s:%d %s+%d", addr, pr->pr_strings + func->s_file,
+					line, pr->pr_strings + func->s_name,
+					addr - func->first_statement);
+		else if (aux_func)
+			printf ("%d %d %d %d %d", aux_func->function, line,
+					aux_func->line_info, aux_func->local_defs,
+					aux_func->num_locals);
+		else if (lineno->line)
+			printf ("%5x", lineno->fa.addr);
+		printf ("\n");
 	}
 }
