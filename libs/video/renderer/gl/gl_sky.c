@@ -38,9 +38,9 @@
 
 #include "QF/compat.h"
 #include "QF/console.h"
-#include "QF/quakefs.h"
 #include "QF/render.h"
 #include "QF/tga.h"
+#include "QF/vfs.h"
 #include "QF/vid.h"
 
 #include "glquake.h"

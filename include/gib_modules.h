@@ -30,7 +30,7 @@
 */
 
 #include "QF/gib.h"
-#include "QF/quakeio.h"
+#include "QF/vfile.h"
 
 void GIB_Module_Load (char *name, VFile *f);
 gib_module_t *GIB_Create_Module (char *name);

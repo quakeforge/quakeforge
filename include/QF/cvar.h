@@ -30,7 +30,7 @@
 #define __cvar_h
 
 #include "QF/qtypes.h"
-#include "QF/quakeio.h"
+#include "QF/vfile.h"
 
 typedef struct cvar_s
 {

@@ -40,10 +40,10 @@
 #include "QF/console.h"
 #include "QF/hash.h"
 #include "QF/pcx.h"
-#include "QF/quakefs.h"
 #include "QF/skin.h"
 #include "QF/sys.h"
 #include "QF/texture.h"
+#include "QF/vfs.h"
 
 #include "client.h"
 

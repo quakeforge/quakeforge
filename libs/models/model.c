@@ -43,8 +43,8 @@
 #include "QF/cvar.h"
 #include "QF/model.h"
 #include "QF/qendian.h"
-#include "QF/quakefs.h"
 #include "QF/sys.h"
+#include "QF/vfs.h"
 
 void        Mod_LoadAliasModel (model_t *mod, void *buf);
 void        Mod_LoadSpriteModel (model_t *mod, void *buf);

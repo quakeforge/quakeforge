@@ -40,7 +40,7 @@
 #include "QF/keys.h"
 #include "QF/qargs.h"
 #include "QF/qendian.h"
-#include "QF/quakefs.h"
+#include "QF/vfs.h"
 #include "sbar.h"
 #include "QF/screen.h"
 #include "QF/sound.h"

@@ -37,14 +37,14 @@
 #endif
 
 #include "QF/cmd.h"
+#include "QF/console.h"
 #include "QF/msg.h"
-#include "net.h"
-#include "net_vcr.h"
 #include "QF/qargs.h"
 #include "QF/sizebuf.h"
-#include "QF/console.h"
 #include "QF/sys.h"
-#include "QF/quakeio.h"
+#include "QF/vfile.h"
+#include "net.h"
+#include "net_vcr.h"
 #include "server.h"
 
 qsocket_t  *net_activeSockets = NULL;

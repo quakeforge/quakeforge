@@ -39,7 +39,7 @@
 #include "sv_progs.h"
 #include "QF/sizebuf.h"
 #include "QF/info.h"
-#include "QF/quakeio.h"
+#include "QF/vfile.h"
 #include "client.h"
 
 extern progs_t sv_pr_state;

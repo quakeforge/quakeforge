@@ -46,7 +46,7 @@
 
 #include "QF/console.h"
 #include "QF/gib.h"
-#include "QF/quakeio.h"
+#include "QF/vfile.h"
 
 #include "gib_modules.h"
 

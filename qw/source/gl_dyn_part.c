@@ -42,10 +42,11 @@
 #include "QF/compat.h"
 #include "QF/console.h"
 #include "QF/qargs.h"
-#include "QF/quakefs.h"
+#include "QF/vfs.h"
 #include "QF/render.h"
 #include "QF/sys.h"
 #include "QF/varrays.h"
+#include "QF/vfile.h"
 
 #include "glquake.h"
 #include "r_dynamic.h"

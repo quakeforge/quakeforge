@@ -45,9 +45,9 @@
 #include "QF/hash.h"
 #include "QF/qargs.h"
 #include "QF/qendian.h"
-#include "QF/quakefs.h"
 #include "QF/sizebuf.h"
 #include "QF/sys.h"
+#include "QF/vfs.h"
 #include "QF/zone.h"
 
 #define	MAX_ALIAS_NAME	32

@@ -40,8 +40,8 @@
 #include "QF/pcx.h"
 #include "QF/qendian.h"
 #include "QF/qtypes.h"
-#include "QF/quakefs.h"
 #include "QF/texture.h"
+#include "QF/vfs.h"
 #include "QF/vid.h"
 #include "QF/zone.h"
 

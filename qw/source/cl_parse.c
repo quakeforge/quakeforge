@@ -51,6 +51,7 @@
 #include "QF/sound.h"
 #include "QF/teamplay.h"
 #include "QF/va.h"
+#include "QF/vfile.h"
 
 #include "bothdefs.h"
 #include "cl_ents.h"

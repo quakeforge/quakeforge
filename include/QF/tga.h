@@ -31,6 +31,7 @@
 
 #include "QF/gcc_attr.h"
 #include "QF/qtypes.h"
+#include "QF/vfile.h"
 
 #ifndef __GNUC__
 # if defined (__BORLANDC__) || defined (_MSC_VER)

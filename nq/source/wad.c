@@ -31,9 +31,9 @@
 #endif
 
 #include "QF/qendian.h"
-#include "QF/quakefs.h"
 #include "QF/sys.h"
 #include "QF/wad.h"
+#include "QF/vfs.h"
 
 int         wad_numlumps;
 lumpinfo_t *wad_lumps;

@@ -41,9 +41,9 @@
 #include "QF/compat.h"
 #include "QF/console.h"
 #include "QF/locs.h"
-#include "QF/quakefs.h"
 #include "QF/qtypes.h"
 #include "QF/sys.h"
+#include "QF/vfs.h"
 
 #include "client.h"
 

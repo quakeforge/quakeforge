@@ -35,7 +35,7 @@
 #include "QF/compat.h"
 #include "QF/console.h"
 #include "QF/qargs.h"
-#include "QF/quakefs.h"
+#include "QF/vfs.h"
 #include "QF/render.h"
 
 #include "r_cvar.h"

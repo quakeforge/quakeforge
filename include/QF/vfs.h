@@ -32,7 +32,7 @@
 #define __quakefs_h
 
 #include "QF/qtypes.h"
-#include "QF/quakeio.h"
+#include "QF/vfile.h"
 #include "QF/cvar.h"
 
 //============================================================================

@@ -39,9 +39,9 @@
 #include <stdlib.h>
 
 #include "QF/qendian.h"
-#include "QF/quakefs.h"
 #include "QF/sys.h"
 #include "QF/tga.h"
+#include "QF/vfs.h"
 
 
 static int

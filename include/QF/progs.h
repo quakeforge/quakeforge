@@ -30,7 +30,7 @@
 #define _PROGS_H
 
 #include "QF/link.h"
-#include "QF/quakeio.h"
+#include "QF/vfile.h"
 #include "QF/pr_comp.h"
 
 typedef union eval_s

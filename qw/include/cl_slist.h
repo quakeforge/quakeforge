@@ -31,7 +31,7 @@
 #ifndef _CL_SLIST_H
 #define _CL_SLIST_H
 
-#include "QF/quakeio.h"
+#include "QF/vfile.h"
 
 typedef struct server_entry_s {
   	char *server;

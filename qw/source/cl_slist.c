@@ -58,9 +58,9 @@
 #include "client.h"
 #include "QF/cmd.h"
 #include "QF/console.h"
-#include "QF/quakefs.h"
 #include "QF/sys.h"
 #include "QF/va.h"
+#include "QF/vfile.h"
 
 server_entry_t *slist;
 server_entry_t *all_slist;

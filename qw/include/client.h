@@ -30,7 +30,7 @@
 #define _CLIENT_H
 
 #include "QF/info.h"
-#include "QF/quakefs.h"
+#include "QF/vfs.h"
 #include "QF/vid.h"
 #include "QF/zone.h"
 

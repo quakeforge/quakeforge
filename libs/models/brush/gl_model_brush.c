@@ -44,7 +44,7 @@
 #include "glquake.h"
 #include "QF/model.h"
 #include "QF/qendian.h"
-#include "QF/quakefs.h"
+#include "QF/vfs.h"
 
 int         Mod_Fullbright (byte * skin, int width, int height, char *name);
 

@@ -38,9 +38,9 @@
 
 #include "QF/console.h"
 #include "QF/draw.h"
-#include "QF/quakefs.h"
 #include "QF/sound.h"
 #include "QF/sys.h"
+#include "QF/vfs.h"
 
 #include "d_iface.h"
 #include "r_cvar.h"

@@ -38,9 +38,9 @@
 
 #include "QF/console.h"
 #include "QF/qendian.h"
-#include "QF/quakefs.h"
 #include "QF/sound.h"
 #include "QF/sys.h"
+#include "QF/vfs.h"
 
 int         cache_full_cycle;
 

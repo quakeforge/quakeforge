@@ -70,7 +70,7 @@
 #include "QF/qargs.h"
 #include "QF/qendian.h"
 #include "QF/qtypes.h"
-#include "QF/quakefs.h"
+#include "QF/vfs.h"
 #include "QF/sys.h"
 #include "QF/va.h"
 #include "QF/zone.h"

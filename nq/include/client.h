@@ -35,8 +35,8 @@
 #include "QF/info.h"
 #include "QF/mathlib.h"
 #include "QF/model.h"
-#include "QF/quakefs.h"
 #include "QF/sound.h"
+#include "QF/vfs.h"
 
 #include "net.h"
 #include "protocol.h"

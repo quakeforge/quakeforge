@@ -52,7 +52,6 @@
 #include "QF/input.h"
 #include "QF/qargs.h"
 #include "QF/qendian.h"
-#include "QF/quakefs.h"
 #include "QF/va.h"
 #include "QF/vid.h"
 

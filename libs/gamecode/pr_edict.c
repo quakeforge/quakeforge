@@ -47,10 +47,10 @@
 #include "QF/progs.h"
 #include "QF/qdefs.h"
 #include "QF/qendian.h"
-#include "QF/quakefs.h"
 #include "QF/sys.h"	//XXX
 #include "QF/zone.h"
 #include "QF/va.h"
+#include "QF/vfs.h"
 
 cvar_t     *pr_boundscheck;
 cvar_t     *pr_deadbeef;

@@ -45,8 +45,8 @@
 #include "QF/model.h"
 #include "QF/msg.h"
 #include "QF/qendian.h"
-#include "QF/quakefs.h"
 #include "QF/sys.h"
+#include "QF/vfs.h"
 
 #include "d_iface.h"
 #include "r_local.h"

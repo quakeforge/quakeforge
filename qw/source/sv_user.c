@@ -41,19 +41,19 @@
 #include <stdlib.h>
 #include <ctype.h>
 
-#include "bothdefs.h"
 #include "QF/checksum.h"
 #include "QF/cmd.h"
 #include "QF/compat.h"
 #include "QF/cvar.h"
 #include "QF/msg.h"
-#include "msg_ucmd.h"
-#include "pmove.h"
-#include "QF/quakefs.h"
-#include "server.h"
-#include "sv_progs.h"
 #include "QF/sys.h"
 #include "QF/va.h"
+#include "QF/vfs.h"
+#include "bothdefs.h"
+#include "msg_ucmd.h"
+#include "pmove.h"
+#include "server.h"
+#include "sv_progs.h"
 #include "world.h"
 
 edict_t    *sv_player;

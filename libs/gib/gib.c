@@ -37,7 +37,7 @@
 #include "QF/cmd.h"
 #include "QF/console.h"
 #include "QF/gib.h"
-#include "QF/quakefs.h"
+#include "QF/vfs.h"
 
 #include "gib_instructions.h"
 #include "gib_interpret.h"

@@ -50,6 +50,7 @@
 #include "QF/keys.h"
 #include "QF/screen.h"
 #include "QF/sys.h"
+#include "QF/vfs.h"
 
 /*
   key up events are sent even if in console mode

@@ -30,12 +30,12 @@
 # include "config.h"
 #endif
 
-#include "QF/cvar.h"
-#include "QF/quakefs.h"
-#include "QF/console.h"
-#include "QF/qargs.h"
-#include "game.h"
 #include "QF/cmd.h"
+#include "QF/console.h"
+#include "QF/cvar.h"
+#include "QF/qargs.h"
+#include "QF/vfs.h"
+#include "game.h"
 
 void Cvar_Info (struct cvar_s *var);
 

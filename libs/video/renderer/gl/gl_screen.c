@@ -44,12 +44,12 @@
 #include "QF/draw.h"
 #include "QF/keys.h"
 #include "QF/pcx.h"
-#include "QF/quakefs.h" // MAX_OSPATH
 #include "QF/render.h"  // r_refdef
 #include "QF/screen.h"
 #include "QF/sys.h"
 #include "QF/texture.h"
 #include "QF/tga.h"
+#include "QF/vfs.h"     // MAX_OSPATH
 
 #include "glquake.h"
 #include "r_cvar.h"

@@ -29,7 +29,7 @@
 #ifndef __pcx_h
 #define __pcx_h
 
-#include "QF/quakeio.h"
+#include "QF/vfile.h"
 
 typedef struct
 {

@@ -32,7 +32,7 @@
 # include <config.h>
 #endif
 #include "QF/qargs.h"
-#include "QF/quakefs.h"
+#include "QF/vfs.h"
 #include "game.h"
 
 qboolean standard_quake = false;

@@ -39,7 +39,7 @@
 #include "QF/progs.h"
 #include "QF/sizebuf.h"
 #include "QF/info.h"
-#include "QF/quakeio.h"
+#include "QF/vfile.h"
 
 #define	QW_SERVER
 

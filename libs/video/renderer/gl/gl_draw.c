@@ -41,12 +41,12 @@
 #include "QF/cmd.h"
 #include "QF/console.h"
 #include "QF/draw.h"
-#include "QF/quakefs.h"
 #include "QF/render.h"
 #include "QF/screen.h"
 #include "QF/sys.h"
 #include "QF/vid.h"
 #include "QF/va.h"
+#include "QF/vfs.h"
 
 #include "glquake.h"
 #include "r_cvar.h"

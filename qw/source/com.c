@@ -35,8 +35,8 @@
 #include "QF/cmd.h"
 #include "QF/console.h"
 #include "QF/cvar.h"
-#include "QF/quakefs.h"
 #include "QF/sys.h"
+#include "QF/vfs.h"
 
 cvar_t     *registered;
 

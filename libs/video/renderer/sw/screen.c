@@ -44,11 +44,11 @@
 #include "QF/draw.h"
 #include "QF/keys.h"
 #include "QF/pcx.h"
-#include "QF/quakefs.h"
 #include "QF/render.h"
 #include "QF/screen.h"
 #include "QF/sys.h"
 #include "QF/texture.h"
+#include "QF/vfs.h"
 #include "QF/vid.h"
 
 #include "d_iface.h"

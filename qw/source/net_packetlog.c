@@ -44,7 +44,7 @@
 #include "QF/msg.h"
 #include "net.h"
 #include "protocol.h"
-#include "QF/quakefs.h"
+#include "QF/vfs.h"
 #include "server.h"
 #include "QF/va.h"
 

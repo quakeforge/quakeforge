@@ -47,6 +47,7 @@
 #include "QF/cvar.h"
 #include "QF/hash.h"
 #include "QF/qargs.h"
+#include "QF/vfs.h"
 
 #define USER_RO_CVAR "User-created READ-ONLY Cvar"
 #define USER_CVAR "User-created cvar"

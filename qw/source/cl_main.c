@@ -47,6 +47,9 @@
 #ifdef HAVE_NETINET_IN_H
 # include <netinet/in.h>
 #endif
+#ifdef HAVE_UNISTD_H
+# include <unistd.h>
+#endif
 
 #ifdef HAVE_WINSOCK_H
 # include <winsock.h>
@@ -70,7 +73,6 @@
 #include "QF/msg.h"
 #include "QF/plugin.h"
 #include "QF/qendian.h"
-#include "QF/quakefs.h"
 #include "QF/qargs.h"
 #include "QF/screen.h"
 #include "QF/sound.h"
@@ -78,6 +80,7 @@
 #include "QF/teamplay.h"
 #include "QF/vid.h"
 #include "QF/va.h"
+#include "QF/vfs.h"
 
 #include "bothdefs.h"
 #include "buildnum.h"
