@@ -60,3 +60,5 @@ qfodump_LDADD=			$(QFCC_LIBS)
 qfodump_DEPENDENCIES=	$(QFCC_DEPS)
 
 emit.c expr.c switch.c qc-lex.l: qc-parse.h
+
+EXTRA_DIST=qc-lex.c qc-parse.c qc-parse.h
