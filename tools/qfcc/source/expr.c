@@ -12,16 +12,21 @@ extern function_t *current_func;
 int lineno_base;
 
 static etype_t qc_types[] = {
-	ev_void,	// ex_label
-	ev_void,	// ex_block
-	ev_void,	// ex_expr
-	ev_void,	// ex_uexpr
-	ev_void,	// ex_def
-	ev_void,	// FIXME ex_int
-	ev_float,	// ex_float
-	ev_string,	// ex_string
-	ev_vector,	// ex_vector
-	ev_void,	// FIXME ex_quaternion
+	ev_void,		// ex_label
+	ev_void,		// ex_block
+	ev_void,		// ex_expr
+	ev_void,		// ex_uexpr
+	ev_void,		// ex_def
+
+	ev_string,		// ex_string
+	ev_float,		// ex_float
+	ev_vector,		// ex_vector
+	ev_entity,		// ex_entity
+	ev_field,		// ex_field
+	ev_func,		// ex_func
+	ev_pointer,		// ex_pointer
+	ev_quaternion,	// ex_quaternion
+	ev_int,			// ex_int
 };
 
 static type_t *types[] = {
@@ -33,6 +38,8 @@ static type_t *types[] = {
 	&type_field,
 	&type_function,
 	&type_pointer,
+	&type_quaternion,
+	//XXX&type_int,
 };
 
 static expr_type expr_types[] = {
@@ -40,10 +47,12 @@ static expr_type expr_types[] = {
 	ex_string,		// ev_string
 	ex_float,		// ev_float
 	ex_vector,		// ev_vector
-	ex_label,		// ev_entity (ick)
-	ex_label,		// ev_field (ick)
-	ex_label,		// ev_func (ick)
-	ex_label,		// ev_pointer (ick)
+	ex_entity,		// ev_entity
+	ex_field,		// ev_field
+	ex_func,		// ev_func
+	ex_pointer,		// ev_pointer
+	ex_quaternion,	// ev_quaternion
+	ex_int,			// ev_int
 };
 
 static const char *type_names[] = {
@@ -56,6 +65,7 @@ static const char *type_names[] = {
 	"function",
 	"pointer",
 	"quaternion",
+	"int",
 };
 
 static etype_t
@@ -64,22 +74,25 @@ get_type (expr_t *e)
 	switch (e->type) {
 		case ex_label:
 		case ex_block:
-		case ex_quaternion: //FIXME
 			return ev_void;
 		case ex_expr:
 		case ex_uexpr:
 			return e->e.expr.type->type;
 		case ex_def:
 			return e->e.def->type->type;
+		case ex_string:
+		case ex_float:
+		case ex_vector:
+		case ex_entity:
+		case ex_field:
+		case ex_func:
+		case ex_pointer:
+		case ex_quaternion:
+			return qc_types[e->type];
 		case ex_int: //FIXME?
 			e->type = ex_float;
 			e->e.float_val = e->e.int_val;
 			return ev_float;
-		case ex_float:
-		case ex_string:
-		case ex_vector:
-		//FIXME case ex_quaternion:
-			return qc_types[e->type];
 	}
 	return ev_void;
 }
@@ -313,14 +326,11 @@ print_expr (expr_t *e)
 		case ex_def:
 			printf ("%s", e->e.def->name);
 			break;
-		case ex_int:
-			printf ("%d", e->e.int_val);
+		case ex_string:
+			printf ("\"%s\"", e->e.string_val);
 			break;
 		case ex_float:
 			printf ("%g", e->e.float_val);
-			break;
-		case ex_string:
-			printf ("\"%s\"", e->e.string_val);
 			break;
 		case ex_vector:
 			printf ("'%g", e->e.vector_val[0]);
@@ -332,6 +342,13 @@ print_expr (expr_t *e)
 			printf (" %g", e->e.quaternion_val[1]);
 			printf (" %g", e->e.quaternion_val[2]);
 			printf (" %g'", e->e.quaternion_val[3]);
+			break;
+		case ex_entity:
+		case ex_field:
+		case ex_func:
+		case ex_pointer:
+		case ex_int:
+			printf ("%d", e->e.int_val);
 			break;
 	}
 }
@@ -537,6 +554,54 @@ field_expr (expr_t *e1, expr_t *e2)
 	return e;
 }
 
+static expr_t *
+test_expr (expr_t *e, int test)
+{
+	expr_t *new = 0;
+
+	if (!test)
+		return unary_expr ('!', e);
+
+	switch (get_type (e)) {
+		case ev_int://FIXME
+		case ev_type_count:
+		case ev_void:
+			error (e, "internal error");
+			abort ();
+		case ev_string:
+			new = new_expr ();
+			new->type = ex_string;
+			break;
+		case ev_float:
+			return e;
+		case ev_vector:
+			new = new_expr ();
+			new->type = ex_vector;
+			break;
+		case ev_entity:
+			new = new_expr ();
+			new->type = ex_entity;
+			break;
+		case ev_field:
+			new = new_expr ();
+			new->type = ex_field;
+			break;
+		case ev_func:
+			new = new_expr ();
+			new->type = ex_func;
+			break;
+		case ev_pointer:
+			new = new_expr ();
+			new->type = ex_pointer;
+			break;
+		case ev_quaternion:
+			new = new_expr ();
+			new->type = ex_quaternion;
+			break;
+	}
+	return binary_expr (NE, e, new);
+}
+
 expr_t *
 binary_expr (int op, expr_t *e1, expr_t *e2)
 {
@@ -545,7 +610,12 @@ binary_expr (int op, expr_t *e1, expr_t *e2)
 	if (op == '.')
 		return field_expr (e1, e2);
 
-	if (e1->type >= ex_int && e2->type >= ex_int)
+	if (op == OR || op == AND) {
+		e1 = test_expr (e1, true);
+		e2 = test_expr (e2, true);
+	}
+
+	if (e1->type >= ex_string && e2->type >= ex_string)
 		return binary_const (op, e1, e2);
 
 	if ((op == '&' || op == '|')
@@ -631,6 +701,10 @@ unary_expr (int op, expr_t *e)
 					e->e.float_val *= -1;
 					return e;
 				case ex_string:
+				case ex_entity:
+				case ex_field:
+				case ex_func:
+				case ex_pointer:
 					return error (e, "invalid type for unary -");
 				case ex_vector:
 					e->e.vector_val[0] *= -1;
@@ -682,6 +756,12 @@ unary_expr (int op, expr_t *e)
 									&& !e->e.quaternion_val[3];
 					e->type = ex_int;
 					return e;
+				case ex_entity:
+				case ex_field:
+				case ex_func:
+				case ex_pointer:
+					error (e, "internal error");
+					abort ();
 			}
 			break;
 		default:
@@ -882,9 +962,9 @@ emit_sub_expr (expr_t *e, def_t *dest)
 	int priority;
 
 	switch (e->type) {
-		default:
 		case ex_label:
 		case ex_block:
+			error (e, "internal error");
 			abort ();
 		case ex_expr:
 			if (e->e.expr.op == 'c')
@@ -983,13 +1063,18 @@ emit_sub_expr (expr_t *e, def_t *dest)
 			return emit_statement (e->line, op, def_a, def_b, dest);
 		case ex_def:
 			return e->e.def;
-		case ex_int:
-		case ex_float:
 		case ex_string:
+		case ex_float:
 		case ex_vector:
+		case ex_entity:
+		case ex_field:
+		case ex_func:
+		case ex_pointer:
 		case ex_quaternion:
+		case ex_int:
 			return PR_ReuseConstant (e, 0);
 	}
+	return 0;
 }
 
 void
@@ -1068,11 +1153,15 @@ emit_expr (expr_t *e)
 			}
 			break;
 		case ex_def:
-		case ex_int:
-		case ex_float:
 		case ex_string:
+		case ex_float:
 		case ex_vector:
+		case ex_entity:
+		case ex_field:
+		case ex_func:
+		case ex_pointer:
 		case ex_quaternion:
+		case ex_int:
 			warning (e, "Ignoring useless expression");
 			break;
 	}

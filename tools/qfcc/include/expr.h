@@ -4,11 +4,16 @@ typedef enum {
 	ex_expr,	// binary expression
 	ex_uexpr,	// unary expression
 	ex_def,
-	ex_int,
-	ex_float,
+
 	ex_string,
+	ex_float,
 	ex_vector,
+	ex_entity,
+	ex_field,
+	ex_func,
+	ex_pointer,
 	ex_quaternion,
+	ex_int,
 } expr_type;
 
 typedef struct {
@@ -38,11 +43,16 @@ typedef struct expr_s {
 			struct expr_s *e2;
 		}		expr;
 		def_t	*def;
-		int		int_val;
-		float	float_val;
+
 		char	*string_val;
+		float	float_val;
 		float	vector_val[3];
+		int		entity_val;
+		int		field_val;
+		int		func_val;
+		int		pointer_val;
 		float	quaternion_val[4];
+		int		int_val;
 	} e;
 } expr_t;
 

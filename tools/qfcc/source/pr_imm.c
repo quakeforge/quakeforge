@@ -27,6 +27,10 @@
 static hashtab_t  *string_imm_defs;
 static hashtab_t  *float_imm_defs;
 static hashtab_t  *vector_imm_defs;
+static hashtab_t  *entity_imm_defs;
+static hashtab_t  *field_imm_defs;
+static hashtab_t  *func_imm_defs;
+static hashtab_t  *pointer_imm_defs;
 static hashtab_t  *quaternion_imm_defs;
 
 static const char *
@@ -63,6 +67,16 @@ quaternion_imm_get_key (void *_def, void *unused)
 	sprintf (rep, "\001quaternion:%08X\001%08X\001%08X\001%08X\001",
 			 G_INT(def->ofs), G_INT(def->ofs+1),
 			 G_INT(def->ofs+2), G_INT(def->ofs+3));
+	return rep;
+}
+
+static const char *
+int_imm_get_key (void *_def, void *_str)
+{
+	def_t      *def = (def_t*)_def;
+	static char rep[60];
+	char       *str = (char*)_str;
+	sprintf (rep, "\001%s:%08X", str, G_INT(def->ofs));
 	return rep;
 }
 
@@ -148,7 +162,7 @@ def_t *
 PR_ReuseConstant (expr_t *expr, def_t *def)
 {
 	def_t	*cn = 0;
-	char rep[60];
+	char rep[60], *r = rep;
 	hashtab_t *tab = 0;
 	type_t *type;
 	expr_t e = *expr;
@@ -157,19 +171,42 @@ PR_ReuseConstant (expr_t *expr, def_t *def)
 		string_imm_defs = Hash_NewTable (16381, string_imm_get_key, 0, 0);
 		float_imm_defs = Hash_NewTable (16381, float_imm_get_key, 0, 0);
 		vector_imm_defs = Hash_NewTable (16381, vector_imm_get_key, 0, 0);
+		entity_imm_defs = Hash_NewTable (16381, int_imm_get_key, 0, "entity");
+		field_imm_defs = Hash_NewTable (16381, int_imm_get_key, 0, "field");
+		func_imm_defs = Hash_NewTable (16381, int_imm_get_key, 0, "func");
+		pointer_imm_defs = Hash_NewTable (16381, int_imm_get_key, 0, "pointer");
 		quaternion_imm_defs = Hash_NewTable (16381, quaternion_imm_get_key, 0, 0);
 	}
 	switch (e.type) {
+		case ex_entity:
+			sprintf (rep, "\001entity:%08X\001", e.e.int_val);
+			tab = float_imm_defs;
+			type = &type_entity;
+			break;
+		case ex_field:
+			sprintf (rep, "\001field:%08X\001", e.e.int_val);
+			tab = float_imm_defs;
+			type = &type_field;
+			break;
+		case ex_func:
+			sprintf (rep, "\001func:%08X\001", e.e.int_val);
+			tab = float_imm_defs;
+			type = &type_function;
+			break;
+		case ex_pointer:
+			sprintf (rep, "\001pointer:%08X\001", e.e.int_val);
+			tab = pointer_imm_defs;
+			type = &type_pointer;
+			break;
 		case ex_int:
 			e.e.float_val = e.e.int_val; //FIXME
 		case ex_float:
 			sprintf (rep, "\001float:%08X\001", e.e.int_val);
-			cn = (def_t*) Hash_Find (float_imm_defs, rep);
 			tab = float_imm_defs;
 			type = &type_float;
 			break;
 		case ex_string:
-			cn = (def_t*) Hash_Find (string_imm_defs, e.e.string_val);
+			r = e.e.string_val;
 			tab = string_imm_defs;
 			type = &type_string;
 			break;
@@ -178,7 +215,6 @@ PR_ReuseConstant (expr_t *expr, def_t *def)
 					 *(int*)&e.e.vector_val[0],
 					 *(int*)&e.e.vector_val[1],
 					 *(int*)&e.e.vector_val[2]);
-			cn = (def_t*) Hash_Find (vector_imm_defs, rep);
 			tab = vector_imm_defs;
 			type = &type_vector;
 			break;
@@ -188,13 +224,13 @@ PR_ReuseConstant (expr_t *expr, def_t *def)
 					 *(int*)&e.e.quaternion_val[1],
 					 *(int*)&e.e.quaternion_val[2],
 					 *(int*)&e.e.quaternion_val[3]);
-			cn = (def_t*) Hash_Find (quaternion_imm_defs, rep);
 			tab = vector_imm_defs;
 			type = &type_quaternion;
 			break;
 		default:
 			abort ();
 	}
+	cn = (def_t*) Hash_Find (tab, rep);
 	if (cn) {
 		if (def) {
 			PR_FreeLocation (def);
