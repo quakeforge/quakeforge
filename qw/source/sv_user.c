@@ -1379,7 +1379,7 @@ SV_ExecuteUserCommand (const char *s)
 	} else {
 		if (!u->no_redirect)
 			SV_BeginRedirect (RD_CLIENT);
-		u->func (u);
+		u->func (u->userdata);
 		if (!u->no_redirect)
 			SV_EndRedirect ();
 	}
