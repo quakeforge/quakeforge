@@ -75,7 +75,7 @@ function zoom::increase {
 	ifnot ${zoom.zoomed} {
 		return
 	}
-	zoom.mult = (${zoom.mult.step}*${zoom.mult})
+	zoom.mult *= ${zoom.mult.step}
 	if (${zoom.mult} > ${zoom.mult.upper}) {
 		zoom.mult = ${zoom.mult.upper}
 	}
@@ -84,7 +84,7 @@ function zoom::increase {
 
 function zoom::decrease {
 	ifnot ${zoom.zoomed} return
-	zoom.mult = (${zoom.mult}/${zoom.mult.step})
+	zoom.mult /= ${zoom.mult.step}
 	if (${zoom.mult} < ${zoom.mult.lower}) {
 		zoom.mult = ${zoom.mult.lower}
 	}

@@ -161,9 +161,9 @@ function custom::record::stop {
 function custom::record {
 	custom.menu.cur = 0
 	custom.recording = ""
-	bind "0" "custom.record.stop"
-	bind "8" "custom.record.seek -1"
-	bind "9" "custom.record.seek 1"
+	bind "0" "custom::record::stop"
+	bind "8" "custom::record::seek -1"
+	bind "9" "custom::record::seek 1"
 	for i in `range 1 7` {
 		bind $i "custom::record::item ",($i-1)
 	}

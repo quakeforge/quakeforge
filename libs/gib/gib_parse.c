@@ -274,12 +274,14 @@ GIB_Parse_Extract_Line (struct cbuf_s *cbuf)
 		} else if (dstr->str[i] == '\n' || dstr->str[i] == ';')
 			break;
 	}
-	
+
 	if (dstr->str[0]) { // If something is left in the buffer
 		if (i)// If we used any of it
 			dstring_insert (cbuf->line, 0, dstr->str, i);
-		// Clip out what we used or any leftover newlines or ;s
-		dstring_snip (dstr, 0, i + (dstr->str[i] == '\n' || dstr->str[i] == ';'));
+		// Clip out what we used
+		while (isspace ((byte) dstr->str[i]) || dstr->str[i] == ';') // Eliminate white space/null statements
+			i++;
+		dstring_snip (dstr, 0, i);
 	}
 	return;
 

@@ -134,14 +134,18 @@ GIB_Arg_Strip_Delim (unsigned int arg)
 	}
 }
 
-void
+dstring_t *
 GIB_Return (const char *str)
 {
 	if (GIB_DATA(cbuf_active)->type != GIB_BUFFER_PROXY)
-		return;
+		return 0;
 	dstring_clearstr (GIB_DATA(cbuf_active->up)->ret.retval);
-	dstring_appendstr (GIB_DATA(cbuf_active->up)->ret.retval, str);
 	GIB_DATA(cbuf_active->up)->ret.available = true;
+	if (!str)
+		return GIB_DATA(cbuf_active->up)->ret.retval;
+	else
+		dstring_appendstr (GIB_DATA(cbuf_active->up)->ret.retval, str);
+	return 0;
 }
 
 /*
@@ -153,9 +157,7 @@ void
 GIB_Function_f (void)
 {
 	if (GIB_Argc () != 3)
-		Cbuf_Error ("syntax", 
-					"function: invalid syntax\n"
-					"usage: function function_name {program}");
+		GIB_USAGE ("name program");
 	else
 		GIB_Function_Define (GIB_Argv(1), GIB_Argv(2));
 }			
@@ -164,9 +166,7 @@ void
 GIB_Function_Get_f (void)
 {
 	if (GIB_Argc () != 2)
-		Cbuf_Error ("syntax",
-					"function.get: invalid syntax\n"
-					"usage: function::get function_name");
+		GIB_USAGE ("name");
 	else {
 		gib_function_t *f;
 		if ((f = GIB_Function_Find (GIB_Argv (1))))
@@ -182,9 +182,7 @@ GIB_Local_f (void)
 	int i;
 	
 	if (GIB_Argc () < 2)
-		Cbuf_Error ("syntax",
-					"local: invalid syntax\n"
-					"usage: local varname1 varname2 varname3 [...]");
+		GIB_USAGE ("var1 [var2 var3 ...]");
 	else
 		for (i = 1; i < GIB_Argc(); i++)
 			GIB_Var_Set_Local (cbuf_active, GIB_Argv(i), "");
@@ -196,9 +194,7 @@ GIB_Global_f (void)
 	int i;
 	
 	if (GIB_Argc () < 2)
-		Cbuf_Error ("syntax",
-					"global: invalid syntax\n"
-					"usage: global varname1 varname2 varname3 [...]");
+		GIB_USAGE ("var1 [var2 var3 ...]");
 	else
 		for (i = 1; i < GIB_Argc(); i++)
 			GIB_Var_Set_Global (GIB_Argv(i), "");
@@ -208,10 +204,9 @@ void
 GIB_Global_Delete_f (void)
 {
 	if (GIB_Argc () != 2)
-		Cbuf_Error ("syntax",
-					"global::delete: invalid syntax\n"
-					"usage: global.delete variable");
-	GIB_Var_Free_Global (GIB_Argv(1));
+		GIB_USAGE ("var");
+	if (GIB_Var_Get_Global (GIB_Argv(1)))
+		GIB_Var_Free_Global (GIB_Argv(1));
 }
 
 void
@@ -220,9 +215,7 @@ GIB_Return_f (void)
 	cbuf_t *sp;
 	
 	if (GIB_Argc () > 2)
-		Cbuf_Error ("syntax",
-					"return: invalid syntax\n"
-					"usage: return <value>");
+		GIB_USAGE ("[value]");
 	else {
 		sp = cbuf_active;
 		while (sp->interpreter == &gib_interp && GIB_DATA(sp)->type == GIB_BUFFER_LOOP) { // Get out of loops
@@ -241,7 +234,7 @@ GIB_Return_f (void)
 		  !sp->up->up ||  // Nothing above proxy buffer on the stack
 		  sp->up->up->interpreter != &gib_interp || // Not a GIB buffer to return to
 		  !GIB_DATA(sp->up->up)->ret.waiting) // Buffer doesn't want a return value
-			Sys_Printf("Warning: unwanted return value discarded.\n"); // Not a serious error
+			Sys_Printf("GIB warning: unwanted return value discarded.\n"); // Not a serious error
 		else {
 			dstring_clearstr (GIB_DATA(sp->up->up)->ret.retval);
 			dstring_appendstr (GIB_DATA(sp->up->up)->ret.retval, GIB_Argv(1));
@@ -257,7 +250,7 @@ GIB_If_f (void)
 	if ((!strcmp (GIB_Argv (3), "else") && GIB_Argc() >= 5) || // if condition {program} else ...
 	    (GIB_Argc() == 3)) { // if condition {program}
 	    	condition = atoi(GIB_Argv(1));
-	    	if (!strcmp (GIB_Argv(0), "ifnot"))
+	    	if (GIB_Argv(0)[2])
 	    		condition = !condition;
 	    	if (condition) {
 		    	GIB_Arg_Strip_Delim (2);
@@ -268,20 +261,14 @@ GIB_If_f (void)
 	    	} else if (GIB_Argc() > 5)
 	    		Cbuf_InsertText (cbuf_active, GIB_Args (4));
 	} else
-		Cbuf_Error ("syntax",
-					"if: invalid syntax\n"
-					"usage: if condition {program} [else ...]"
-					);
+		GIB_USAGE ("condition program [else ...]");
 }
 
 void
 GIB_While_f (void)
 {
 	if (GIB_Argc() != 3) {
-		Cbuf_Error ("syntax",
-					"while: invalid syntax\n"
-					"usage: while condition {program}"
-					);
+		GIB_USAGE ("condition program");
 	} else {
 		cbuf_t *sub = Cbuf_New (&gib_interp);
 		GIB_DATA(sub)->type = GIB_BUFFER_LOOP;
@@ -292,7 +279,7 @@ GIB_While_f (void)
 		cbuf_active->down = sub;
 		sub->up = cbuf_active;
 		GIB_Arg_Strip_Delim (2);
-		dstring_appendstr (GIB_DATA(sub)->loop_program, va("ifnot %s break;%s", GIB_Argv (1), GIB_Argv (2)));
+		dstring_appendstr (GIB_DATA(sub)->loop_program, va("ifnot %s break\n%s", GIB_Argv (1), GIB_Argv (2)));
 		Cbuf_AddText (sub, GIB_DATA(sub)->loop_program->str);
 		cbuf_active->state = CBUF_STATE_STACK;
 	}
@@ -305,10 +292,7 @@ GIB_Field_Get_f (void)
 	char *list, *end;
 	const char *ifs;
 	if (GIB_Argc() < 3 || GIB_Argc() > 4) {
-		Cbuf_Error ("syntax",
-					"field::get: invalid syntax\n"
-					"usage: field::get list element [ifs]"
-					);
+		GIB_USAGE ("list element [fs]");
 		return;
 	}
 	field = atoi (GIB_Argv(2));
@@ -377,12 +361,9 @@ GIB_For_f (void)
 {
 	if (strcmp ("in", GIB_Argv (2)) ||
 	   (GIB_Argc() == 7 && strcmp ("by", GIB_Argv(4))) ||
-	   (GIB_Argc() != 5 && GIB_Argc() != 7)) {
-		Cbuf_Error ("syntax",
-					"for: invalid syntax\n"
-					"usage: for variable in list {program}"
-					);
-	} else if (GIB_Argv (3)[0]) {
+	   (GIB_Argc() != 5 && GIB_Argc() != 7))
+		GIB_USAGE ("variable in list [by fs] program");
+	else if (GIB_Argv (3)[0]) {
 		char *ll;
 		const char *ifs;
 		cbuf_t *sub = Cbuf_New (&gib_interp);
@@ -395,7 +376,7 @@ GIB_For_f (void)
 			Cbuf_DeleteStack (cbuf_active->down);
 		cbuf_active->down = sub;
 		sub->up = cbuf_active;
-		// Store all for-loop data in one big buffer (easy to clean up)
+		// Store all for-loop data in one big dstring (easy to clean up)
 		dstring_appendstr (GIB_DATA(sub)->loop_data, GIB_Argv(3));
 		dstring_append (GIB_DATA(sub)->loop_data, GIB_Argv(1), strlen(GIB_Argv(1))+1);
 		if (GIB_Argc() == 7)
@@ -433,7 +414,7 @@ GIB_Continue_f (void)
 {
 	if (GIB_DATA(cbuf_active)->type != GIB_BUFFER_LOOP)
 		Cbuf_Error ("syntax",
-					"break attempted outside of a loop"
+					"continue attempted outside of a loop"
 					);
 	else
 		dstring_clearstr (cbuf_active->buf);
@@ -465,9 +446,7 @@ GIB_Function_Export_f (void)
 	int i;
 	
 	if (GIB_Argc() < 2)
-		Cbuf_Error ("syntax",
-					"function::export: invalid syntax\n"
-					"usage: function::export function1 function2 function3 [...]");
+		GIB_USAGE ("function1 [function2 function3 ...]");
 	for (i = 1; i < GIB_Argc(); i++) {
 		if (!(f = GIB_Function_Find (GIB_Argv (i))))
 			Cbuf_Error ("function", "function::export: function '%s' not found", GIB_Argv (i));
@@ -481,37 +460,38 @@ GIB_Function_Export_f (void)
 void
 GIB_String_Length_f (void)
 {
+	dstring_t *ret;
 	if (GIB_Argc() != 2)
-		Cbuf_Error ("syntax",
-	  	"string::length: invalid syntax\n"
-		  "usage: string::length string");
-	else
-		GIB_Return (va("%i", (int) strlen(GIB_Argv(1))));
+		GIB_USAGE ("string");
+	else if ((ret = GIB_Return (0)))
+		dsprintf (ret, "%i", (int) strlen(GIB_Argv(1)));
 }
 
 void
 GIB_String_Equal_f (void)
 {
 	if (GIB_Argc() != 3)
-		Cbuf_Error ("syntax",
-	  	"string::equal: invalid syntax\n"
-		  "usage: string::equal string1 string2");
+		GIB_USAGE ("string1 string2");
+	else if (strcmp(GIB_Argv(1), GIB_Argv(2)))
+		GIB_Return ("0");
 	else
-		GIB_Return (va("%i", !strcmp(GIB_Argv(1), GIB_Argv(2))));
+		GIB_Return ("1");
 }
 
 void
 GIB_String_Findsub_f (void)
 {
+	dstring_t *ret;
 	char *haystack, *res;
 	if (GIB_Argc() != 3) {
 		GIB_USAGE ("string substr");
 		return;
 	}
 	haystack = GIB_Argv(1);
-	if ((res = strstr(haystack, GIB_Argv(2))))
-		GIB_Return (va("%lu", (unsigned long int)(res - haystack)));
-	else
+	if ((res = strstr(haystack, GIB_Argv(2)))) {
+		if ((ret = GIB_Return (0)))
+		dsprintf (ret, "%lu", (unsigned long int)(res - haystack));
+	} else
 		GIB_Return ("-1");
 }
 	
@@ -537,7 +517,7 @@ void
 GIB_Regex_Replace_f (void)
 {
 	regex_t *reg;
-	int ofs, len;//, e;
+	int ofs, len;
 	regmatch_t match[10];
 	
 	if (GIB_Argc() != 5) {
@@ -563,6 +543,7 @@ GIB_Regex_Extract_f (void)
 {
 	regex_t *reg;
 	regmatch_t *match;
+	dstring_t *ret;
 	int i;
 	char o;
 	
@@ -583,7 +564,8 @@ GIB_Regex_Extract_f (void)
 				GIB_Argv(1)[match[i].rm_eo] = o;
 			}
 		}
-		GIB_Return (va("%lu", (unsigned long) match[0].rm_eo));
+		if ((ret = GIB_Return (0)))
+			dsprintf (ret, "%lu", (unsigned long) match[0].rm_eo);
 	} else
 		GIB_Return ("-1");
 	free (match);
@@ -592,15 +574,15 @@ GIB_Regex_Extract_f (void)
 void
 GIB_Thread_Create_f (void)
 {
+	dstring_t *ret;
 	if (GIB_Argc() != 2)
-		Cbuf_Error ("syntax",
-	  	"thread::create: invalid syntax\n"
-		  "usage: thread::create program");
+		GIB_USAGE ("program");
 	else {
 		gib_thread_t *thread = GIB_Thread_New ();
 		Cbuf_AddText (thread->cbuf, GIB_Argv(1));
 		GIB_Thread_Add (thread);
-		GIB_Return (va("%lu", thread->id));
+		if ((ret = GIB_Return (0)))
+			dsprintf (ret, "%lu", thread->id);
 	}
 }
 
@@ -608,9 +590,7 @@ void
 GIB_Thread_Kill_f (void)
 {
 	if (GIB_Argc() != 2)
-		Cbuf_Error ("syntax",
-	  	"thread::kill: invalid syntax\n"
-		  "usage: thread::kill id");
+		GIB_USAGE ("id");
 	else {
 		gib_thread_t *thread;
 		cbuf_t *cur;
@@ -640,7 +620,7 @@ GIB_File_Transform_Path_Null (dstring_t *path)
 	char *s;
 	
 	// Convert backslash to forward slash
-	while ((s = strchr (path->str, '\\')))
+	for (s = strchr(path->str, '\\'); s; s = strchr (s, '\\'))
 		*s = '/';
 	return 0;
 }
@@ -648,29 +628,28 @@ GIB_File_Transform_Path_Null (dstring_t *path)
 int
 GIB_File_Transform_Path_Secure (dstring_t *path)
 {
-		char *s /* , e_dir[MAX_OSPATH] */;
+	char *s /* , e_dir[MAX_OSPATH] */;
 	
-		while ((s = strchr (path->str, '\\')))
-			*s = '/';
-		if (Sys_PathType (path->str) != PATHTYPE_RELATIVE_BELOW)
-			return -1;
-		/* Qexpand_squiggle (fs_userpath->string, e_dir); */
-		dstring_insertstr (path, 0, "/");
-		dstring_insertstr (path, 0, /* e_dir */ com_gamedir);
-		return 0;
+	for (s = strchr(path->str, '\\'); s; s = strchr (s, '\\'))
+		*s = '/';
+	if (Sys_PathType (path->str) != PATHTYPE_RELATIVE_BELOW)
+		return -1;
+	/* Qexpand_squiggle (fs_userpath->string, e_dir); */
+	dstring_insertstr (path, 0, "/");
+	dstring_insertstr (path, 0, /* e_dir */ com_gamedir);
+	return 0;
 }
 		
 void
 GIB_File_Read_f (void)
 {
 	QFile      *file;
-	char       *path, *contents = 0;
+	char       *path;
 	int        len;
+	dstring_t  *ret;
 
 	if (GIB_Argc () != 2) {
-		Cbuf_Error ("syntax",
-		  "file::read: invalid syntax\n"
-		  "usage: file::read path_and_filename");
+		GIB_USAGE ("file");
 		return;
 	}
 	if (!*GIB_Argv (1)) {
@@ -683,23 +662,23 @@ GIB_File_Read_f (void)
 		  "file::read: access to %s denied", GIB_Argv(1));
 		return;
 	}
+	if (!(ret = GIB_Return (0)))
+		return;
 	path = GIB_Argv (1);
 	file = Qopen (path, "r");
 	if (file) {
 		len = Qfilesize (file);
-		contents = (char *) malloc (len + 1);
-		SYS_CHECKMEM (contents);
-		contents[len] = 0;
-		Qread (file, contents, len);
+		ret->size = len+1;
+		dstring_adjust (ret);
+		Qread (file, ret->str, len);
+		ret->str[len] = 0;
 		Qclose (file);
 	}
-	if (!contents) {
+	if (!file) {
 		Cbuf_Error ("file",
-		  "file::read: could not open %s for reading: %s", path, strerror (errno));
+		  "file::read: could not read %s: %s", path, strerror (errno));
 		return;
 	}
-	GIB_Return (contents);
-	free (contents);
 }
 
 void
@@ -709,9 +688,7 @@ GIB_File_Write_f (void)
 	char       *path;
 	
 	if (GIB_Argc () != 3) {
-		Cbuf_Error ("syntax",
-		  "file::write: invalid syntax\n"
-		  "usage: file::write path_and_filename data");
+		GIB_USAGE ("file data");
 		return;
 	}
 	if (!*GIB_Argv(1)) {
@@ -744,9 +721,7 @@ GIB_File_Find_f (void)
 	dstring_t  *list;
 
 	if (GIB_Argc () != 2) {
-		Cbuf_Error ("syntax",
-		  "file::find: invalid syntax\n"
-		  "usage: file::find path_and_glob");
+		GIB_USAGE ("glob");
 		return;
 	}
 	if (GIB_File_Transform_Path (GIB_Argd(1))) {
@@ -759,11 +734,11 @@ GIB_File_Find_f (void)
 	if (!s) { // No slash in path
 		glob = path; // The glob is the entire argument
 		path = "."; // The path is the current directory
-	} else {
+	} else if (s == path) // Unix filesystem root (carne only)
+		path = "/";
+	else {
 		*s = 0; // Split the string at the final slash
 		glob = s+1;
-		if (!*path) // If we now have a null path...
-			path = "/"; // we wanted the filesystem root in unix
 	}
 	directory = opendir (path);
 	if (!directory) {
@@ -771,22 +746,19 @@ GIB_File_Find_f (void)
 		  "file.find: could not open directory %s: %s", path, strerror (errno));
 		return;
 	}
-	list = dstring_newstr ();
-	if (!(ifs = GIB_Var_Get_Local (cbuf_active, "ifs")))
+	if ((list = GIB_Return (0))) {
+		if (!(ifs = GIB_Var_Get_Local (cbuf_active, "ifs")))
 			ifs = "\n"; // Newlines don't appear in filenames and are part of the default ifs
-	while ((entry = readdir (directory))) {
-		if (strcmp (entry->d_name, ".") &&
-		  strcmp (entry->d_name, "..") &&
-		  !fnmatch (glob, entry->d_name, 0)) {
-			dstring_appendsubstr (list, ifs, 1);
-			dstring_appendstr (list, entry->d_name);
+		while ((entry = readdir (directory))) {
+			if (strcmp (entry->d_name, ".") &&
+			  strcmp (entry->d_name, "..") &&
+			  !fnmatch (glob, entry->d_name, 0)) {
+				dstring_appendsubstr (list, ifs, 1);
+				dstring_appendstr (list, entry->d_name);
+			}
 		}
 	}
-	if (list->str[0])
-		GIB_Return (list->str + 1);
-	else
-		GIB_Return ("");
-	dstring_delete (list);
+	closedir (directory);
 }
 
 void
@@ -795,9 +767,7 @@ GIB_File_Move_f (void)
 	char *path1, *path2;
 
 	if (GIB_Argc () != 3) {
-		Cbuf_Error ("syntax",
-		  "file::move: invalid syntax\n"
-		  "usage: file::move from_file to_file");
+		GIB_USAGE ("from_file to_file");
 		return;
 	}
 	if (GIB_File_Transform_Path (GIB_Argd(1))) {
@@ -824,9 +794,7 @@ GIB_File_Delete_f (void)
 	char *path;
 
 	if (GIB_Argc () != 2) {
-		Cbuf_Error ("syntax",
-		  "file::delete: invalid syntax\n"
-		  "usage: file::delete file");
+		GIB_USAGE ("file");
 		return;
 	}
 	if (GIB_File_Transform_Path (GIB_Argd(1))) {
@@ -848,9 +816,7 @@ GIB_Range_f (void)
 	dstring_t *dstr;
 	const char *ifs;
 	if (GIB_Argc () < 3 || GIB_Argc () > 4) {
-		Cbuf_Error ("syntax",
-		  "range: invalid syntax\n"
-		  "range: lower upper [step]");
+		GIB_USAGE ("lower upper [step]");
 		return;
 	}
 
@@ -877,9 +843,7 @@ void
 GIB_Print_f (void)
 {
 	if (GIB_Argc() != 2) {
-		Cbuf_Error ("syntax",
-		  "print: invalid syntax\n"
-		  "usage: print text");
+		GIB_USAGE ("text");
 		return;
 	}
 	Sys_Printf ("%s", GIB_Argv(1));
