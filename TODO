@@ -45,6 +45,7 @@ M  software targets should mix color at 16/16 or 24/32 color
 ?  server should shutdown cleanly when it recieves SIGTERM and SIGHUP
 ?  client-only commands (rejected if done via a server stuffcmd)
 X  ~/.quakeforgerc should support all commands, not just set and setrom
+o  clean up TODO ;)
 
 These are explained better in doc/ideas/rhamph.txt:
 ?  portal vis system
@@ -97,6 +98,10 @@ o         |       \--- textures   PCX, QFS (multi-skins), TGA
 o         +--- gamecode           Gamecode
 o         |       +--- engine     Progs interpreter (core)
 o         |       \--- builtins   Progs utility builtins
+o         +--- models             Generic API
+o         |       +--- alias      Alias model loader
+o         |       +--- brush      Brush model loader
+o         |       \--- sprite     Sprite model loader
 o         +--- network            Network code (like netchan, but sane)
 o         |       +--- transport  Low-level protocols (UDP, TCP+UDP, etc.)
 o         |       +--- netquake   Quake's wire protocol
