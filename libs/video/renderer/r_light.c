@@ -93,98 +93,6 @@ R_AnimateLight (void)
 	}
 }
 
-// LordHavoc: heavily modified, to eliminate unnecessary texture uploads,
-//            and support bmodel lighting better
-void
-R_RecursiveMarkLights (const vec3_t lightorigin, dlight_t *light, int bit,
-					   mnode_t *node)
-{
-	int         i;
-	float       ndist, maxdist;
-	mplane_t   *splitplane;
-	msurface_t *surf;
-
-	maxdist = light->radius * light->radius;
-
-loc0:
-	if (node->contents < 0)
-		return;
-
-	splitplane = node->plane;
-	ndist = DotProduct (lightorigin, splitplane->normal) - splitplane->dist;
-
-	if (ndist > light->radius) {
-		// Save time by not pushing another stack frame.
-		if (node->children[0]->contents >= 0) {
-			node = node->children[0];
-			goto loc0;
-		}
-		return;
-	}
-	if (ndist < -light->radius) {
-		// Save time by not pushing another stack frame.
-		if (node->children[1]->contents >= 0) {
-			node = node->children[1];
-			goto loc0;
-		}
-		return;
-	}
-
-	// mark the polygons
-	surf = r_worldentity.model->surfaces + node->firstsurface;
-	for (i = 0; i < node->numsurfaces; i++, surf++) {
-		int s, t;
-		float l, dist, dist2;
-		vec3_t	impact;
-
-		dist = ndist;
-
-		dist2 = dist * dist;
-		if (dist2 >= maxdist)
-			continue;
-
-		impact[0] = light->origin[0] - surf->plane->normal[0] * dist;
-		impact[1] = light->origin[1] - surf->plane->normal[1] * dist;
-		impact[2] = light->origin[2] - surf->plane->normal[2] * dist;
-
-		l = DotProduct (impact, surf->texinfo->vecs[0]) +
-			surf->texinfo->vecs[0][3] - surf->texturemins[0];
-		s = l + 0.5;
-		if (s < 0)
-			s = 0;
-		else if (s > surf->extents[0])
-			s = surf->extents[0];
-		s = l - s;
-		l = DotProduct (impact, surf->texinfo->vecs[1]) +
-			surf->texinfo->vecs[1][3] - surf->texturemins[1];
-		t = l + 0.5;
-		if (t < 0)
-			t = 0;
-		else if (t > surf->extents[1])
-			t = surf->extents[1];
-		t = l - t;
-
-		if ((s * s + t * t + dist * dist) < maxdist) {
-			if (surf->dlightframe != r_framecount) {
-				surf->dlightframe = r_framecount;
-				surf->dlightbits = bit;
-			} else {
-				surf->dlightbits |= bit;
-			}
-		}
-	}
-
-	if (node->children[0]->contents >= 0) {
-		if (node->children[1]->contents >= 0)
-			R_RecursiveMarkLights (lightorigin, light, bit, node->children[1]);
-		node = node->children[0];
-		goto loc0;
-	} else if (node->children[1]->contents >= 0) {
-		node = node->children[1];
-		goto loc0;
-	}
-}
-
 static inline void
 real_mark_surfaces (float dist, msurface_t *surf, const vec3_t lightorigin,
 					dlight_t *light, int bit)
@@ -247,6 +155,63 @@ mark_surfaces (msurface_t *surf, const vec3_t lightorigin, dlight_t *light,
 
 	real_mark_surfaces (dist, surf, lightorigin, light, bit);
 }
+
+// LordHavoc: heavily modified, to eliminate unnecessary texture uploads,
+//            and support bmodel lighting better
+void
+R_RecursiveMarkLights (const vec3_t lightorigin, dlight_t *light, int bit,
+					   mnode_t *node)
+{
+	int         i;
+	float       ndist, maxdist;
+	mplane_t   *splitplane;
+	msurface_t *surf;
+	mvertex_t  *vertices;
+
+	vertices = r_worldentity.model->vertexes;
+	maxdist = light->radius;
+
+loc0:
+	if (node->contents < 0)
+		return;
+
+	splitplane = node->plane;
+	ndist = DotProduct (lightorigin, splitplane->normal) - splitplane->dist;
+
+	if (ndist > maxdist * maxdist) {
+		// Save time by not pushing another stack frame.
+		if (node->children[0]->contents >= 0) {
+			node = node->children[0];
+			goto loc0;
+		}
+		return;
+	}
+	if (ndist < -maxdist * maxdist) {
+		// Save time by not pushing another stack frame.
+		if (node->children[1]->contents >= 0) {
+			node = node->children[1];
+			goto loc0;
+		}
+		return;
+	}
+
+	// mark the polygons
+	surf = r_worldentity.model->surfaces + node->firstsurface;
+	for (i = 0; i < node->numsurfaces; i++, surf++) {
+		mark_surfaces (surf, lightorigin, light, bit);
+	}
+
+	if (node->children[0]->contents >= 0) {
+		if (node->children[1]->contents >= 0)
+			R_RecursiveMarkLights (lightorigin, light, bit, node->children[1]);
+		node = node->children[0];
+		goto loc0;
+	} else if (node->children[1]->contents >= 0) {
+		node = node->children[1];
+		goto loc0;
+	}
+}
+
 
 void
 R_MarkLights (const vec3_t lightorigin, dlight_t *light, int bit,
