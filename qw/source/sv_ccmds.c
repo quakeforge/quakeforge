@@ -747,7 +747,7 @@ SV_Ban_f (void)
 			return;
 		}
 	}
-	Con_Printf ("Couldn't find user %s\n", Cmd_Argv(1));
+	SV_Printf ("Couldn't find user %s\n", Cmd_Argv(1));
 }
 
 void

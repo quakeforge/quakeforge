@@ -887,7 +887,7 @@ SVC_DirectConnect (void)
 		SV_Printf ("Spectator %s (%s) connected\n", newcl->name,
 				   NET_AdrToString (adr));
 	else
-		Con_Printf ("Client %s (%s) connected\n", newcl->name,
+		SV_Printf ("Client %s (%s) connected\n", newcl->name,
 					NET_AdrToString (adr));
 	newcl->sendinfo = true;
 
@@ -1624,16 +1624,16 @@ SV_SavePenaltyFilter (client_t *cl, filtertype_t type, double pentime)
 	for (i = 0; i < numipfilters; i++)
 		if (ipfilters[i].mask == 32 && SV_IPCompare (ipfilters[i].ip, b)
 			&& ipfilters[i].type == type) {
-			Con_Printf ("Penalty for user %d already exists\n", cl->userid);
+			SV_Printf ("Penalty for user %d already exists\n", cl->userid);
 			return;
 		}
 
 	if (numipfilters == MAX_IPFILTERS) {
-		Con_Printf ("IP filter list is full\n");
+		SV_Printf ("IP filter list is full\n");
 		return;
 	}
 
-	Con_Printf ("Penalty saved for user %d\n", cl->userid);
+	SV_Printf ("Penalty saved for user %d\n", cl->userid);
 	ipfilters[numipfilters].mask = 32;
 	SV_IPCopy (ipfilters[numipfilters].ip, b);
 	ipfilters[numipfilters].time = pentime;
@@ -1653,7 +1653,7 @@ SV_RestorePenaltyFilter (client_t *cl, filtertype_t type)
 	// search for existing penalty filter of same type
 	for (i = 0; i < numipfilters; i++) {
 		if (type == ipfilters[i].type && SV_IPCompare (ip, ipfilters[i].ip)) {
-			Con_Printf ("Penalty restored for user %d\n", cl->userid);
+			SV_Printf ("Penalty restored for user %d\n", cl->userid);
 			return ipfilters[i].time;
 		}
 	}
