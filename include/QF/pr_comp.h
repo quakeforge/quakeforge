@@ -25,6 +25,7 @@
 
 typedef int	func_t;
 typedef int	string_t;
+typedef int pointer_t;
 
 typedef enum {
 	ev_void,
