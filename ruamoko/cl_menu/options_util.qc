@@ -64,7 +64,7 @@
 
 -(BOOL)value
 {
-	return cvar (name);
+	return Cvar_GetInteger (name);
 }
 
 @end
@@ -110,21 +110,21 @@
 @implementation CvarColor
 -(void)next
 {
-	local float val = cvar (name);
+	local float val = Cvar_GetFloat (name);
 	val = min_max_cnt (0, 13, 1, val, 1);
-	cvar_set (name, ftos (val));
+	Cvar_SetFloat (name, val);
 }
 
 -(void)prev
 {
-	local float val = cvar (name);
+	local float val = Cvar_GetFloat (name);
 	val = min_max_cnt (0, 13, 1, val, 0);
-	cvar_set (name, ftos (val));
+	Cvar_SetFloat (name, val);
 }
 
 -(integer)value
 {
-	return (integer) cvar (name);
+	return Cvar_GetInteger (name);
 }
 @end
 
@@ -174,26 +174,26 @@
 
 -(void)inc
 {
-	local float val = cvar (name);
+	local float val = Cvar_GetFloat (name);
 	val = min_max_cnt (min, max, step, val, 1);
-	cvar_set (name, ftos (val));
+	Cvar_SetFloat (name, val);
 }
 
 -(void)dec
 {
-	local float val = cvar (name);
+	local float val = Cvar_GetFloat (name);
 	val = min_max_cnt (min, max, step, val, 0);
-	cvar_set (name, ftos (val));
+	Cvar_SetFloat (name, val);
 }
 
 -(float)value
 {
-	return cvar (name);
+	return Cvar_GetFloat (name);
 }
 
 -(integer)percentage
 {
-	return to_percentage(min, max, cvar (name));
+	return to_percentage(min, max, Cvar_GetFloat (name));
 }
 
 @end
@@ -253,13 +253,13 @@
 @implementation CrosshairCvar
 -(void) next
 {
-	local integer val = cvar (name);
-	cvar_set (name, itos ((val + 1) % 4));
+	local integer val = Cvar_GetInteger (name);
+	Cvar_SetInteger (name, (val + 1) % 4);
 }
 
 -(integer) crosshair
 {
-	return cvar (name);
+	return Cvar_GetInteger (name);
 }
 @end
 

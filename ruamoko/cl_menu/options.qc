@@ -49,7 +49,7 @@ CvarToggleView time_view;
 CvarRangeView gamma_view;
 CvarRangeView viewsize_view;
 
-Group control_options;
+Group control_options;			// not done
 CvarToggleView grab_mouse_view;
 CvarToggleView freelook_view;
 CvarToggleView lookspring_view;
@@ -65,19 +65,14 @@ CvarRangeView volume_view;
 CvarRangeView bgmvolume_view;
 
 Group player_options;
-// input for playername and teamname
 InputLine player_config_plname_il;
 InputLine player_config_tname_il;
+InputLine player_config_iactive;
 CvarColorView topcolor_view;
 CvarColorView bottomcolor_view;
 
-// this holds active inputline pointer
-InputLine player_config_iactive;
-
 Group network_options;
-// input for playername
 InputLine network_config_rate_il;
-// this holds active inputline pointer
 InputLine network_config_iactive;
 
 /*
@@ -355,12 +350,12 @@ CB_control_options =
 			[grab_mouse_view toggle];
 			break;
 		case "autorun":
-			if(cvar("cl_forwardspeed") < 400) {
-				Cbuf_AddText ("set cl_forwardspeed 400\n");
-				Cbuf_AddText ("set cl_backspeed 400\n");
+			if(Cvar_GetFloat ("cl_forwardspeed") < 400) {
+				Cvar_SetFloat ("cl_forwardspeed", 400);
+				Cvar_SetFloat ("cl_backspeed", 400);
 			} else {
-				Cbuf_AddText ("set cl_forwardspeed 200\n");
-				Cbuf_AddText ("set cl_backspeed 200\n");
+				Cvar_SetFloat ("cl_forwardspeed", 200);
+				Cvar_SetFloat ("cl_backspeed", 200);
 			}
 			break;
 		case "freelook":
@@ -373,10 +368,10 @@ CB_control_options =
 			[lookstrafe_view toggle];
 			break;
 		case "m_pitch":
-			if(cvar("m_pitch") < 0) {
-				Cbuf_AddText ("set m_pitch 0.022\n");
+			if(Cvar_GetFloat ("m_pitch") < 0) {
+				Cvar_SetFloat ("m_pitch", 0.022);
 			} else {
-				Cbuf_AddText ("set m_pitch -0.022\n");
+				Cvar_SetFloat ("m_pitch", -0.022);
 			}
 			break;
 		case "mouseamp":
@@ -409,9 +404,9 @@ DRAW_control_options =
 	[grab_mouse_view draw];
 
 	draw_val_item (x + 70, y + 80, spacing, "Auto run",
-				   cvar ("cl_forwardspeed") < 400 ? "Off" : "On");
+				   Cvar_GetFloat  ("cl_forwardspeed") < 400 ? "Off" : "On");
 	draw_val_item (x + 70, y + 90, spacing, "Mouse Invert",
-				   cvar ("m_pitch") < 0 ?  "On" : "Off");
+				   Cvar_GetFloat  ("m_pitch") < 0 ?  "On" : "Off");
 	bar_pad = y + 90;
 
 	[mouse_amp_view setBasePos:x y:y];
@@ -627,9 +622,11 @@ KEYEV_player_options =
 		case QFK_RETURN:
 			if (player_config_iactive) {
 				if (player_config_iactive == player_config_plname_il) {
-					cvar_set (playername_cvar, [player_config_plname_il text]);
+					Cvar_SetString (playername_cvar,
+									[player_config_plname_il text]);
 				} else if (player_config_iactive == player_config_tname_il) {
-					cvar_set (teamname_cvar, [player_config_tname_il text]);
+					Cvar_SetString (teamname_cvar,
+									[player_config_tname_il text]);
 				}
 				player_config_iactive = NIL;
 			} else {
@@ -683,12 +680,6 @@ DRAW_player_options =
 	[player_options setBasePos:x y:y];
 	[player_options draw];
 
-//	draw_val_item (x + 70, y + PLAYER_CONF_Y_PAD + 45, spacing, "Top color", 
-//				   "   " + ftos (cvar ("topcolor"))); 
-//	draw_val_item (x + 70, y + PLAYER_CONF_Y_PAD + 60, spacing,
-//				   "Bottom color", "   " + ftos (cvar ("bottomcolor"))); 
-
-
 	opt_cursor  (x + 62, y + player_config_cursor_tbl[player_config_cursor]);
 	return 1;
 };
@@ -710,8 +701,8 @@ CB_ME_player_options =
 
 	teamname_cvar = "team"; // FIXME: is this something else in netquake?
 
-	[player_config_plname_il setText:Cvar_GetCvarString (playername_cvar)]; 
-	[player_config_tname_il setText:Cvar_GetCvarString (teamname_cvar)]; 
+	[player_config_plname_il setText:Cvar_GetString (playername_cvar)]; 
+	[player_config_tname_il setText:Cvar_GetString (teamname_cvar)]; 
 };
 
 /*
@@ -832,7 +823,8 @@ KEYEV_network_options =
 		case QFK_RETURN:
 			if (network_config_iactive) {
 				if(network_config_iactive == network_config_rate_il) {
-					cvar_set("rate", [network_config_rate_il text]);
+					Cvar_SetString ("rate",
+									[network_config_rate_il text]);
 				}
 				network_config_iactive = NIL;
 			} else {
@@ -882,7 +874,7 @@ DRAW_network_options =
 integer () 
 CB_ME_network_options =
 {
-	[network_config_rate_il setText:Cvar_GetCvarString("rate")]; 
+	[network_config_rate_il setText:Cvar_GetString ("rate")]; 
 };
 
 /*
