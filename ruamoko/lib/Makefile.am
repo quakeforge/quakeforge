@@ -27,19 +27,19 @@ EXTRA_LIBRARIES= $(ruamoko_libs)
 	$(QFCC) $(QCFLAGS) $(QCPPFLAGS) -c -o $@ $<
 
 libr_a_SOURCES=\
-	cbuf.r cmd.r cvar.r file.r qfile.r string.r \
+	cbuf.r cmd.r cvar.r file.r hash.r plist.r qfile.r string.r \
 	Object.r AutoreleasePool.r Array.r Entity.r List.r ListNode.r Stack.r
 libr_a_AR=$(PAK) -cf
 
 libqw_a_SOURCES=\
-	crudefile.r debug.r hash.r entities.r infokey.r math.r message.r \
-	physics.r plist.r qw_message.r qw_physics.r qw_sys.r \
+	crudefile.r debug.r entities.r infokey.r math.r message.r \
+	physics.r qw_message.r qw_physics.r qw_sys.r \
 	server.r sound.r system.r
 libqw_a_AR=$(PAK) -cf
 
 libnq_a_SOURCES=\
-	crudefile.r debug.r hash.r entities.r infokey.r math.r message.r \
-	nq_message.r physics.r plist.r server.r sound.r system.r
+	crudefile.r debug.r entities.r infokey.r math.r message.r \
+	nq_message.r physics.r server.r sound.r system.r
 libnq_a_AR=$(PAK) -cf
 
 libcsqc_a_SOURCES= \
