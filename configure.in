@@ -33,7 +33,7 @@ AC_SUBST(NQ_QSG_VERSION)
 AC_SUBST(QW_VERSION)
 AC_SUBST(QW_QSG_VERSION)
 
-ISODATE=$(date +%Y-%m-%d)
+ISODATE=`date +%Y-%m-%d`
 AC_SUBST(ISODATE)
 
 AC_LANG_C
@@ -71,7 +71,7 @@ if test "$1" = gcc; then
 	shift
 	args="$*"
 	AC_MSG_CHECKING(for fubared gcc)
-	if test $(gcc --version) = 2.96; then
+	if test `gcc --version` = 2.96; then
 		AC_MSG_RESULT(yes. You poor sod, hope you have kgcc)
 		CC="kgcc $args"
 		set $CPP
