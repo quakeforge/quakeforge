@@ -48,7 +48,6 @@
 #include "QF/sys.h"
 #include "QF/vid.h"
 
-//#include "cl_parse.h"
 #include "client.h"
 #include "d_iface.h"
 #include "host.h"

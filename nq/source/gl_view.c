@@ -39,6 +39,7 @@
 #include <stdio.h>
 
 #include "QF/compat.h"
+#include "QF/info.h"
 
 #include "client.h"
 #include "glquake.h"

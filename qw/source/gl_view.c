@@ -39,6 +39,7 @@
 #include <stdio.h>
 
 #include "QF/compat.h"
+#include "QF/info.h"
 
 #include "bothdefs.h"
 #include "client.h"

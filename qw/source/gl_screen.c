@@ -44,6 +44,8 @@
 #include "QF/draw.h"
 #include "QF/keys.h"
 #include "QF/pcx.h"
+#include "QF/quakefs.h" // MAX_OSPATH
+#include "QF/render.h"  // r_refdef
 #include "QF/skin.h"
 #include "QF/sys.h"
 #include "QF/tga.h"
@@ -53,7 +55,6 @@
 #include "glquake.h"
 #include "host.h"
 #include "r_cvar.h"
-#include "r_local.h"
 #include "sbar.h"
 #include "view.h"
 
