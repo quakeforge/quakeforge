@@ -1277,7 +1277,7 @@ dnl ==================================================================
 
 AC_MSG_CHECKING(for libz.a in X11)
 need_abs_libz=no
-for d in $(echo $X_LIBS | sed -e 's/-L//'); do
+for d in `echo $X_LIBS | sed -e 's/-L//'`; do
 	if test -f $d/libz.a; then
 		need_abs_libz=yes
 		break
