@@ -155,4 +155,3 @@ Known problems in 0.5.2:
     o Starting an SDL client (-sdl, -sgl or -sdl32) in fullscreen mode
       and then going windowed requires in_grab to be toggled from 0 to 1
       and back to 0 before the mouse will be released.
-    o the svgalib clients may have problems with initializing the mouse
