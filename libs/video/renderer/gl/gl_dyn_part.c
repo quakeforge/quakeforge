@@ -56,7 +56,7 @@
 
 int			ramp[8] = { 0x6f, 0x6d, 0x6b, 0x69, 0x67, 0x65, 0x63, 0x61 };
 
-extern int			part_tex_dot, part_tex_spark, part_tex_smoke[8];
+extern int			part_tex_dot, part_tex_smoke, part_tex_spark;
 extern short		r_maxparticles, numparticles;
 extern particle_t  *particles, **freeparticles;
 
@@ -174,11 +174,11 @@ R_ParticleExplosion (vec3_t org)
 // 	else if (numparticles + j >= r_maxparticles)
 //		j = r_maxparticles - numparticles;
 		
-	particle_new_random (pt_smokecloud, part_tex_smoke[rand () & 7], org, 4,
+	particle_new_random (pt_smokecloud, part_tex_smoke, org, 4,
 						 30, 8, r_realtime + 5, (rand () & 7) + 8,
 						 128 + (rand () & 63));
-/*
-	for (i=0; i < j; i++) {
+
+/*	for (i=0; i < j; i++) {
 		particle_new_random (pt_fallfadespark, part_tex_spark, org, 16,
 							 1.5, 256, r_realtime + 5, ramp[rand () & 7],
 							 255);
@@ -239,7 +239,7 @@ R_RunSparkEffect (vec3_t org, int count, int ofuzz)
 		j = r_maxparticles - numparticles;
 	count = j - 1;
 
-	particle_new (pt_smokecloud, part_tex_smoke[rand () & 7], org,
+	particle_new (pt_smokecloud, part_tex_smoke, org,
 				  ofuzz * 0.08, vec3_origin, r_realtime + 9,
 				  12 + (rand () & 3), 64 + (rand () & 31));
 	while (count--)
@@ -254,7 +254,7 @@ R_BloodPuff (vec3_t org, int count)
 	if (numparticles >= r_maxparticles)
 		return;
 
-	particle_new (pt_bloodcloud, part_tex_smoke[rand () & 7], org, 9,
+	particle_new (pt_bloodcloud, part_tex_smoke, org, 9,
 				  vec3_origin, r_realtime + 99, 68 + (rand () & 3), 128);
 }
 
@@ -287,7 +287,7 @@ R_RunPuffEffect (vec3_t org, particle_effect_t type, byte count)
 			else if (numparticles + count >= r_maxparticles)
 				count = r_maxparticles - numparticles - 1;
 
-			particle_new (pt_smokecloud, part_tex_smoke[rand () & 7], org,
+			particle_new (pt_smokecloud, part_tex_smoke, org,
 						  3, vec3_origin, r_realtime + 9,
 						  12 + (rand () & 3), 64 + (rand () & 31));
 			while (count--)
@@ -447,7 +447,7 @@ R_RocketTrail (entity_t *ent)
 		len -= dist;
 
 		// Misty-chan's Easter Egg: change color to (rand () & 255)
-		particle_new (pt_smoke, part_tex_smoke[rand () & 7], ent->old_origin,
+		particle_new (pt_smoke, part_tex_smoke, ent->old_origin,
 					  pscale, vec3_origin, r_realtime + 2.0,
 					  12 + (rand () & 3), 128 + (rand () & 31));
 		pscale = pscalenext;
@@ -479,7 +479,7 @@ R_GrenadeTrail (entity_t *ent)
 		len -= dist;
 
 		// Misty-chan's Easter Egg: change color to (rand () & 255)
-		particle_new (pt_smoke, part_tex_smoke[rand () & 7], ent->old_origin,
+		particle_new (pt_smoke, part_tex_smoke, ent->old_origin,
 					  pscale, vec3_origin, r_realtime + 2.0, (rand () & 3),
 					  128 + (rand () & 31));
 		pscale = pscalenext;
@@ -519,7 +519,7 @@ R_BloodTrail (entity_t *ent)
 		VectorAdd (ent->old_origin, subtract, ent->old_origin);
 		len -= dist;
 
-		particle_new (pt_grav, part_tex_smoke[rand () & 7], porg, pscale, pvel,
+		particle_new (pt_grav, part_tex_smoke, porg, pscale, pvel,
 					  r_realtime + 2.0, 68 + (rand () & 3), 255);
 		pscale = pscalenext;
 	}
@@ -558,7 +558,7 @@ R_SlightBloodTrail (entity_t *ent)
 		VectorAdd (ent->old_origin, subtract, ent->old_origin);
 		len -= dist;
 
-		particle_new (pt_grav, part_tex_smoke[rand () & 7], porg, pscale, pvel,
+		particle_new (pt_grav, part_tex_smoke, porg, pscale, pvel,
 					  r_realtime + 1.5, 68 + (rand () & 3), 192);
 		pscale = pscalenext;
 	}
@@ -596,7 +596,7 @@ R_GreenTrail (entity_t *ent)
 		VectorAdd (ent->old_origin, subtract, ent->old_origin);
 		len -= dist;
 
-		particle_new (pt_fire, part_tex_smoke[rand () & 7], ent->old_origin,
+		particle_new (pt_fire, part_tex_smoke, ent->old_origin,
 					  2.0 + qfrandom (1.0), pvel, r_realtime + 0.5,
 					  52 + (rand () & 4), 255);
 	}
@@ -634,7 +634,7 @@ R_FlameTrail (entity_t *ent)
 		VectorAdd (ent->old_origin, subtract, ent->old_origin);
 		len -= dist;
 
-		particle_new (pt_fire, part_tex_smoke[rand () & 7], ent->old_origin,
+		particle_new (pt_fire, part_tex_smoke, ent->old_origin,
 					  2.0 + qfrandom (1.0), pvel, r_realtime + 0.5, 234, 255);
 	}
 }
@@ -767,7 +767,7 @@ R_DrawParticles (void)
 				part->scale += r_frametime * 4;
 //				part->org[2] += r_frametime * 30 - grav;
 				break;
-			case pt_smokecloud:
+			case pt_smokecloud: // DESPAIR
 				if ((part->alpha -= r_frametime * 140) < 1)
 				{
 					part->die = -1;
@@ -783,16 +783,6 @@ R_DrawParticles (void)
 					break;
 				}
 				part->scale += r_frametime * 4;
-				part->vel[2] -= grav;
-				break;
-			case pt_fadespark:
-				if ((part->alpha -= r_frametime * 256) < 1)
-					part->die = -1;
-				part->vel[2] -= grav;
-				break;
-			case pt_fadespark2:
-				if ((part->alpha -= r_frametime * 512) < 1)
-					part->die = -1;
 				part->vel[2] -= grav;
 				break;
 			case pt_fallfadespark:

@@ -86,10 +86,12 @@ cvar_t     *r_ambient;
 cvar_t     *r_clearcolor;
 cvar_t     *r_dlight_lightmap;
 cvar_t     *r_drawentities;
+cvar_t     *r_drawexplosions; // DESPAIR
 cvar_t     *r_drawflat;
 cvar_t     *r_drawviewmodel;
 cvar_t     *r_dspeeds;
 cvar_t     *r_dynamic;
+cvar_t     *r_explosionclip; // DESPAIR
 cvar_t     *r_firecolor;
 cvar_t     *r_graphheight;
 cvar_t     *r_lightmap_components;
@@ -252,6 +254,8 @@ R_Init_Cvars (void)
 	r_drawentities = Cvar_Get ("r_drawentities", "1", CVAR_NONE, NULL,
 							   "Toggles drawing of entities (almost "
 							   "everything but the world)");
+	r_drawexplosions = Cvar_Get ("r_drawexplosions", "1", CVAR_ARCHIVE, NULL,
+								 "Draw explosions."); // DESPAIR
 	r_drawflat = Cvar_Get ("r_drawflat", "0", CVAR_NONE, NULL,
 						   "Toggles the drawing of textures");
 	r_drawviewmodel = Cvar_Get ("r_drawviewmodel", "1", CVAR_ARCHIVE, NULL,
@@ -260,6 +264,8 @@ R_Init_Cvars (void)
 						  "Toggles the display of drawing speed information");
 	r_dynamic = Cvar_Get ("r_dynamic", "1", CVAR_NONE, NULL,
 						  "Set to 0 to disable lightmap changes");
+	r_explosionclip = Cvar_Get ("r_explosionclip", "0", CVAR_ARCHIVE, NULL,
+								"Clip explosions."); // DESPAIR
 	r_firecolor = Cvar_Get ("r_firecolor", "0.9 0.4 0", CVAR_ARCHIVE, NULL,
 							"color of rocket and lava ball fires");
 	r_graphheight = Cvar_Get ("r_graphheight", "32", CVAR_NONE, NULL,

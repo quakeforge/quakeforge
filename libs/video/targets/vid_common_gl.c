@@ -62,33 +62,33 @@
 #define WARP_WIDTH              320
 #define WARP_HEIGHT             200
 
-unsigned int d_8to24table[256];
-unsigned char d_15to8table[65536];
+unsigned char	d_15to8table[65536];
+unsigned int	d_8to24table[256];
 
-cvar_t     *vid_mode;
-cvar_t     *gl_multitexture;
+QF_glActiveTextureARB	qglActiveTexture = NULL;
+QF_glMultiTexCoord2fARB	qglMultiTexCoord2f = NULL;
 
-QF_glActiveTextureARB   qglActiveTexture = NULL;
-QF_glMultiTexCoord2fARB qglMultiTexCoord2f = NULL;
-int gl_filter_min = GL_LINEAR_MIPMAP_NEAREST, gl_filter_max = GL_LINEAR;
+const char		   *gl_extensions;
+const char		   *gl_renderer;
+const char		   *gl_vendor;
+const char		   *gl_version;
 
-int         texture_extension_number = 1;
-float       gldepthmin, gldepthmax;
-
-const char *gl_vendor;
-const char *gl_renderer;
-const char *gl_version;
-const char *gl_extensions;
+int         		texture_extension_number = 1;
+int					gl_filter_min = GL_LINEAR_MIPMAP_NEAREST;
+int					gl_filter_max = GL_LINEAR;
+float       		gldepthmin, gldepthmax;
 
 // ARB Multitexture
-qboolean	gl_mtex_active = false;
-qboolean    gl_mtex_capable = false;
-GLenum		gl_mtex_enum = GL_TEXTURE0_ARB;
+qboolean			gl_mtex_active = false;
+qboolean    		gl_mtex_capable = false;
+GLenum				gl_mtex_enum = GL_TEXTURE0_ARB;
 
 QF_glColorTableEXT	qglColorTableEXT = NULL;
 qboolean			is8bit = false;
 
-cvar_t	*vid_use8bit;
+cvar_t			   *gl_multitexture;
+cvar_t			   *vid_mode;
+cvar_t			   *vid_use8bit;
 
 extern byte			gammatable[256];
 extern qboolean		GLF_Init ();
@@ -139,9 +139,10 @@ CheckMultiTextureExtensions (void)
 			if (qglMultiTexCoord2f && gl_mtex_enum)
 				gl_mtex_capable = true;
 			else
-				Con_Printf ("disabled, could not find required functions\n");
+				Con_Printf ("Multitexture disabled, could not find required "
+							"functions\n");
 		} else {
-			Con_Printf ("disabled, not enough TMUs.\n");
+			Con_Printf ("Multitexture disabled, not enough TMUs.\n");
 		}
 	} else {
 		Con_Printf ("not found.\n");

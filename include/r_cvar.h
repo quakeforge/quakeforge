@@ -45,11 +45,13 @@ extern struct cvar_s     *r_ambient;
 extern struct cvar_s     *r_clearcolor;
 extern struct cvar_s     *r_dlight_lightmap;
 extern struct cvar_s     *r_drawentities;
+extern struct cvar_s     *r_drawexplosions; // DESPAIR
 extern struct cvar_s     *r_drawflat;
 extern struct cvar_s     *r_draworder;
 extern struct cvar_s     *r_drawviewmodel;
 extern struct cvar_s     *r_dspeeds;
 extern struct cvar_s     *r_dynamic;
+extern struct cvar_s	 *r_explosionclip; // DESPAIR
 extern struct cvar_s     *r_firecolor;
 extern struct cvar_s     *r_fullbright;
 extern struct cvar_s     *r_graphheight;
