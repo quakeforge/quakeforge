@@ -32,6 +32,8 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include "QF/cmd.h"
 #include "QF/cvar.h"
 #include "QF/pcx.h"
+#include "QF/png.h"
+#include "QF/quakefs.h"
 #include "QF/quakeio.h"
 #include "QF/sys.h"
 #include "QF/zone.h"
@@ -78,6 +80,7 @@ typedef unsigned char eightbit;
 typedef struct options_t {
 	char       *bspf_name;
 	char       *outf_name;
+	int         outf_type;
 
 	float       scaledown;
 	float       z_pad;
@@ -227,6 +230,7 @@ def_options (struct options_t *opt)
 
 	locopt.bspf_name = NULL;
 	locopt.outf_name = NULL;
+	locopt.outf_type = 0;
 
 	locopt.scaledown = 4.0;
 	locopt.image_pad = 16.0;
@@ -382,7 +386,17 @@ get_options (struct options_t *opt, int argc, char *argv[])
 			if (locopt.bspf_name == NULL) {
 				locopt.bspf_name = arg;
 			} else if (locopt.outf_name == NULL) {
+				const char *ext;
 				locopt.outf_name = arg;
+				ext = QFS_FileExtension (locopt.outf_name);
+				if (strcmp (ext, ".pcx") == 0)
+					locopt.outf_type = 0;
+				else if (strcmp (ext, ".png") == 0)
+					locopt.outf_type = 1;
+				else {
+					printf ("Unknown output format: %s\n", ext);
+					exit (1);
+				}
 			} else {
 				printf ("Unknown option: %s\n", arg);
 				show_help ();
@@ -873,11 +887,64 @@ render_map (bsp_t *bsp)
 	return image;
 }
 
+static void
+write_png (image_t *image)
+{
+	byte       *data, *in, *out, b;
+	int         size = image->width * image->height;
+
+	out = data = malloc (size * 3);
+	for (in = image->image; in - image->image < size; in++) {
+		b = *in;
+		*out++ = b;
+		*out++ = b;
+		*out++ = b;
+	}
+	WritePNG (options.outf_name, data, image->width, image->height);
+}
+
+static void
+write_pcx (image_t *image)
+{
+	pcx_t      *pcx;
+	int         pcx_len, i;
+	byte        palette[768];
+	QFile      *outfile;
+
+	outfile = Qopen (options.outf_name, "wb");
+	if (outfile == NULL) {
+		fprintf (stderr, "Error opening output file %s.\n", options.outf_name);
+
+		exit (1);
+	}
+
+	// quick and dirty greyscale palette
+	for (i = 0; i < 256; i++) {
+		palette[i * 3 + 0] = i;
+		palette[i * 3 + 1] = i;
+		palette[i * 3 + 2] = i;
+	}
+
+	Cvar_Init_Hash ();
+	Cmd_Init_Hash ();
+	Cvar_Init ();
+	Sys_Init_Cvars ();
+	Cmd_Init ();
+
+	Memory_Init (malloc (MEMSIZE), MEMSIZE);
+	pcx = EncodePCX (image->image, image->width, image->height,
+					 image->width, palette, false, &pcx_len);
+	if (Qwrite (outfile, pcx, pcx_len) != pcx_len) {
+		fprintf (stderr, "Error writing to %s\n", options.outf_name);
+		exit (1);
+	}
+	Qclose (outfile);
+}
+
 int
 main (int argc, char *argv[])
 {
 	QFile      *bspfile;
-	QFile      *outfile;
 	bsp_t      *bsp;
 	image_t    *image;
 
@@ -904,40 +971,16 @@ main (int argc, char *argv[])
 
 	/* Write image */
 
-	outfile = Qopen (options.outf_name, "wb");
-	if (outfile == NULL) {
-		fprintf (stderr, "Error opening output file %s.\n", options.outf_name);
-
-		return 1;
-	} else {
-		pcx_t      *pcx;
-		int         pcx_len, i;
-		byte        palette[768];
-
-		// quick and dirty greyscale palette
-		for (i = 0; i < 256; i++) {
-			palette[i * 3 + 0] = i;
-			palette[i * 3 + 1] = i;
-			palette[i * 3 + 2] = i;
-		}
-
-		Cvar_Init_Hash ();
-		Cmd_Init_Hash ();
-		Cvar_Init ();
-		Sys_Init_Cvars ();
-		Cmd_Init ();
-
-		Memory_Init (malloc (MEMSIZE), MEMSIZE);
-		pcx = EncodePCX (image->image, image->width, image->height,
-						 image->width, palette, false, &pcx_len);
-		if (Qwrite (outfile, pcx, pcx_len) != pcx_len) {
-			fprintf (stderr, "Error writing to %s\n", options.outf_name);
-			return 1;
-		}
+	switch (options.outf_type) {
+		case 0:
+			write_pcx (image);
+			break;
+		case 1:
+			write_png (image);
+			break;
 	}
 
 	printf ("File written to %s.\n", options.outf_name);
-	Qclose (outfile);
 
 	/* Close, done! */
 
