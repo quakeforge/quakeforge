@@ -333,11 +333,16 @@ R_DrawViewModel (void)
 		|| !currententity->model)
 		return;
 
-	// hack the depth range to prevent view model from poking into walls
-	qfglDepthRange (gldepthmin, gldepthmin + 0.3 * (gldepthmax - gldepthmin));
-	qfglEnable (GL_CULL_FACE);
-	qfglEnable (GL_LIGHTING);
-	qfglEnable (GL_NORMALIZE);
+	
+	switch (gl_viewmodel_hack->int_val) {
+		case 1: // sometimes buggy
+			qfglDepthRange (gldepthmin, gldepthmin + 0.3 * (gldepthmax - gldepthmin));
+			break;
+		case 2: // sometimes slow
+			qfglClear (GL_DEPTH_BUFFER_BIT);
+			break;
+	}
+
 	if (gl_affinemodels->int_val)
 		qfglHint (GL_PERSPECTIVE_CORRECTION_HINT, GL_NICEST);
 	if (gl_mtex_active_tmus >= 2) {
@@ -524,7 +529,6 @@ R_SetupGL (void)
 	qfglGetFloatv (GL_MODELVIEW_MATRIX, r_world_matrix);
 
 	// set drawing parms
-//	qfglEnable (GL_CULL_FACE);
 	qfglDisable (GL_ALPHA_TEST);
 	qfglAlphaFunc (GL_GREATER, 0.5);
 	qfglEnable (GL_DEPTH_TEST);
@@ -658,10 +662,10 @@ R_RenderView_ (void)
 
 	// render normal view
 	R_RenderScene ();
-	R_DrawViewModel ();
 	R_DrawWaterSurfaces ();
 	R_DrawParticles ();
-
+	R_DrawViewModel ();
+	
 	// render mirror view
 	R_Mirror ();
 

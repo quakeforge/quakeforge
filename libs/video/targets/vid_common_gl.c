@@ -119,6 +119,7 @@ cvar_t      *gl_multitexture;
 cvar_t		*gl_tessellate;
 cvar_t		*gl_textures_bgra;
 cvar_t      *gl_vaelements_max;
+cvar_t      *gl_viewmodel_hack;
 cvar_t      *gl_screenshot_byte_swap;
 cvar_t      *vid_mode;
 cvar_t      *vid_use8bit;
@@ -275,6 +276,13 @@ GL_Common_Init_Cvars (void)
 								  "Limit the vertex array size for buggy "
 								  "drivers. 0 (default) uses driver provided "
 								  "limit, -1 disables use of vertex arrays.");
+	gl_viewmodel_hack = Cvar_Get ("gl_viewmodel_hack", "1", CVAR_ARCHIVE, NULL,
+								"Depth buffer kludge to get weapon model to draw "
+								"on top. 0 - don't kludge, weapon pokes through "
+								"walls. 1 - fast method, some buggy drivers don't "
+								"like it. 2 - slow method, should work with all "
+								"drivers");
+
 }
 
 static void
@@ -445,7 +453,7 @@ CheckLights (void)
 
 	for (i = 0; i < gl_max_lights; i++) {
 		qfglEnable (GL_LIGHT0 + i);
-		qfglLightf (GL_LIGHT0 + i, GL_CONSTANT_ATTENUATION, 0.25);
+		qfglLightf (GL_LIGHT0 + i, GL_CONSTANT_ATTENUATION, 0.5);
 		qfglDisable (GL_LIGHT0 + i);
 	}
 
