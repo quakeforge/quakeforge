@@ -85,6 +85,7 @@ void
 class_init (void)
 {
 	class_Class.super_class = get_class ("Object", 1);
+	class_Class.methods = new_methodlist ();
 }
 
 def_t *
@@ -130,6 +131,7 @@ get_class (const char *name, int create)
 	new = *type_Class.aux_type;
 	new.s.class = c;
 	c->type = pointer_type (find_type (&new));
+	c->methods = new_methodlist ();
 	c->class_type.is_class = 1;
 	c->class_type.c.class = c;
 	if (name)
@@ -438,12 +440,10 @@ class_find_method (class_type_t *class_type, method_t *method)
 					error (0, "method type mismatch");
 				if (methods != start_methods) {
 					m = copy_method (m);
-					if (m->instance)
-						m->params->type = start_class->type;
-					else
-						m->params->type = &type_Class;
+					set_self_type (start_class, m);
 					add_method (start_methods, m);
 				}
+				method_set_param_names (m, method);
 				return m;
 			}
 		if (class->methods == methods)
@@ -459,11 +459,8 @@ class_find_method (class_type_t *class_type, method_t *method)
 				sel->str, class_name,
 				category_name ? va (" (%s)", category_name) : "");
 	}
+	set_self_type (start_class, method);
 	add_method (start_methods, method);
-	if (method->instance)
-		method->params->type = start_class->type;
-	else
-		method->params->type = &type_Class;
 	dstring_delete (sel);
 	return method;
 }
@@ -492,17 +489,15 @@ class_message_response (class_t *class, int class_msg, expr_t *sel)
 		return 0;
 	} else {
 		while (c) {
-			if (c->methods) {
-				for (cat = c->categories; cat; cat = cat->next) {
-					for (m = cat->methods->head; m; m = m->next) {
-						if (strcmp (selector->name, m->name) == 0)
-							return m;
-					}
-				}
-				for (m = c->methods->head; m; m = m->next) {
+			for (cat = c->categories; cat; cat = cat->next) {
+				for (m = cat->methods->head; m; m = m->next) {
 					if (strcmp (selector->name, m->name) == 0)
 						return m;
 				}
+			}
+			for (m = c->methods->head; m; m = m->next) {
+				if (strcmp (selector->name, m->name) == 0)
+					return m;
 			}
 			c = c->super_class;
 		}
@@ -593,6 +588,7 @@ get_category (const char *class_name, const char *category_name, int create)
 	class->categories = category;
 	category->name = category_name;
 	category->class = class;
+	category->methods = new_methodlist ();
 	category->class_type.is_class = 0;
 	category->class_type.c.category = category;
 	if (class_name && category_name)
@@ -605,11 +601,11 @@ category_add_methods (category_t *category, methodlist_t *methods)
 {
 	if (!methods)
 		return;
-	if (!category->methods)
-		category->methods = new_methodlist ();
 	*category->methods->tail = methods->head;
 	category->methods->tail = methods->tail;
 	free (methods);
+
+	methods_set_self_type (category->class, category->methods);
 }
 
 void
