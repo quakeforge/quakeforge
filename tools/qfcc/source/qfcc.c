@@ -1164,7 +1164,7 @@ main (int argc, char **argv)
 	DecodeArgs (argc, argv);
 
 #ifdef USE_CPP
-	tempname = dstring_newstr ();
+	tempname = dstring_new ();
 	parse_cpp_name ();
 #endif
 
