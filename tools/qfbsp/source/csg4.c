@@ -1,20 +1,21 @@
-/*  Copyright (C) 1996-1997  Id Software, Inc.
+/*
+	Copyright (C) 1996-1997  Id Software, Inc.
 
-    This program is free software; you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation; either version 2 of the License, or
-    (at your option) any later version.
+	This program is free software; you can redistribute it and/or modify
+	it under the terms of the GNU General Public License as published by
+	the Free Software Foundation; either version 2 of the License, or
+	(at your option) any later version.
 
-    This program is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
+	This program is distributed in the hope that it will be useful,
+	but WITHOUT ANY WARRANTY; without even the implied warranty of
+	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+	GNU General Public License for more details.
 
-    You should have received a copy of the GNU General Public License
-    along with this program; if not, write to the Free Software
-    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
+	You should have received a copy of the GNU General Public License
+	along with this program; if not, write to the Free Software
+	Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 
-    See file, 'COPYING', for details.
+	See file, 'COPYING', for details.
 */
 
 // csg4.c
@@ -28,28 +29,24 @@
 #include "bsp5.h"
 
 /*
-
 NOTES
------
-Brushes that touch still need to be split at the cut point to make a tjunction
 
+Brushes that touch still need to be split at the cut point to make a tjunction
 */
 
 face_t     *validfaces[MAX_MAP_PLANES];
-
-
 face_t     *inside, *outside;
 int         brushfaces;
 int         csgfaces;
 int         csgmergefaces;
 
+
 void
-DrawList (face_t * list)
+DrawList (face_t *list)
 {
 	for (; list; list = list->next)
 		Draw_DrawFace (list);
 }
-
 
 /*
 ==================
@@ -60,7 +57,7 @@ MergeFace.
 ==================
 */
 face_t     *
-NewFaceFromFace (face_t * in)
+NewFaceFromFace (face_t *in)
 {
 	face_t     *newf;
 
@@ -76,22 +73,15 @@ NewFaceFromFace (face_t * in)
 	return newf;
 }
 
-
-/*
-==================
-SplitFace
-
-==================
-*/
 void
-SplitFace (face_t * in, plane_t *split, face_t ** front, face_t ** back)
+SplitFace (face_t *in, plane_t *split, face_t **front, face_t **back)
 {
-	vec_t       dists[MAXEDGES + 1];
+	face_t     *newf, *new2;
+	int         i, j;
 	int         sides[MAXEDGES + 1];
 	int         counts[3];
 	vec_t       dot;
-	int         i, j;
-	face_t     *newf, *new2;
+	vec_t       dists[MAXEDGES + 1];
 	vec_t      *p1, *p2;
 	vec3_t      mid;
 
@@ -130,7 +120,6 @@ SplitFace (face_t * in, plane_t *split, face_t ** front, face_t ** back)
 	*front = new2 = NewFaceFromFace (in);
 
 // distribute the points and generate splits
-
 	for (i = 0; i < in->numpoints; i++) {
 		if (newf->numpoints > MAXEDGES || new2->numpoints > MAXEDGES)
 			Sys_Error ("SplitFace: numpoints > MAXEDGES");
@@ -160,8 +149,7 @@ SplitFace (face_t * in, plane_t *split, face_t ** front, face_t ** back)
 		p2 = in->pts[(i + 1) % in->numpoints];
 
 		dot = dists[i] / (dists[i] - dists[i + 1]);
-		for (j = 0; j < 3; j++) {		// avoid round off error when
-										// possible
+		for (j = 0; j < 3; j++) {		// avoid round off error when possible
 			if (split->normal[j] == 1)
 				mid[j] = split->dist;
 			else if (split->normal[j] == -1)
@@ -203,9 +191,8 @@ frontside is the side of the plane that holds the outside list
 void
 ClipInside (int splitplane, int frontside, qboolean precedence)
 {
-	face_t     *f, *next;
+	face_t     *insidelist, *next, *f;
 	face_t     *frags[2];
-	face_t     *insidelist;
 	plane_t    *split;
 
 	split = &planes[splitplane];
@@ -215,9 +202,8 @@ ClipInside (int splitplane, int frontside, qboolean precedence)
 		next = f->next;
 
 		if (f->planenum == splitplane) {	// exactly on, handle special
-			if (frontside != f->planeside || precedence) {	// allways clip
-															// off opposite
-															// faceing
+			if (frontside != f->planeside || precedence) {	// always clip off
+															// opposite faceing
 				frags[frontside] = NULL;
 				frags[!frontside] = f;
 			} else {					// leave it on the outside
@@ -241,7 +227,6 @@ ClipInside (int splitplane, int frontside, qboolean precedence)
 	inside = insidelist;
 }
 
-
 /*
 ==================
 SaveOutside
@@ -253,8 +238,7 @@ void
 SaveOutside (qboolean mirror)
 {
 	face_t     *f, *next, *newf;
-	int         i;
-	int         planenum;
+	int         planenum, i;
 
 	for (f = outside; f; f = next) {
 		next = f->next;
@@ -279,7 +263,8 @@ SaveOutside (qboolean mirror)
 
 		validfaces[planenum] = MergeFaceToList (f, validfaces[planenum]);
 		if (newf)
-			validfaces[planenum] = MergeFaceToList (newf, validfaces[planenum]);
+			validfaces[planenum] = MergeFaceToList (newf,
+													validfaces[planenum]);
 
 		validfaces[planenum] = FreeMergeListScraps (validfaces[planenum]);
 	}
@@ -295,7 +280,7 @@ Free all the faces that got clipped out
 void
 FreeInside (int contents)
 {
-	face_t     *f, *next;
+	face_t     *next, *f;
 
 	for (f = inside; f; f = next) {
 		next = f->next;
@@ -308,7 +293,6 @@ FreeInside (int contents)
 			FreeFace (f);
 	}
 }
-
 
 //==========================================================================
 
@@ -323,11 +307,10 @@ faces.
 surface_t  *
 BuildSurfaces (void)
 {
-	face_t    **f;
 	face_t     *count;
+	face_t    **f;
 	int         i;
-	surface_t  *s;
-	surface_t  *surfhead;
+	surface_t  *surfhead, *s;
 
 	surfhead = NULL;
 
@@ -352,15 +335,10 @@ BuildSurfaces (void)
 
 //==========================================================================
 
-/*
-==================
-CopyFacesToOutside
-==================
-*/
 void
-CopyFacesToOutside (brush_t * b)
+CopyFacesToOutside (brush_t *b)
 {
-	face_t     *f, *newf;
+	face_t     *newf, *f;
 
 	outside = NULL;
 
@@ -385,7 +363,6 @@ CopyFacesToOutside (brush_t * b)
 	}
 }
 
-
 /*
 ==================
 CSGFaces
@@ -394,12 +371,12 @@ Returns a list of surfaces containing aall of the faces
 ==================
 */
 surface_t  *
-CSGFaces (brushset_t * bs)
+CSGFaces (brushset_t *bs)
 {
 	brush_t    *b1, *b2;
+	face_t     *f;
 	int         i;
 	qboolean    overwrite;
-	face_t     *f;
 	surface_t  *surfhead;
 
 	qprintf ("---- CSGFaces ----\n");
@@ -410,9 +387,7 @@ CSGFaces (brushset_t * bs)
 
 	Draw_ClearWindow ();
 
-//
 // do the solid faces
-//
 	for (b1 = bs->brushes; b1; b1 = b1->next) {
 		// set outside to a copy of the brush's faces
 		CopyFacesToOutside (b1);

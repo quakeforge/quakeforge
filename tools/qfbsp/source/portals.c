@@ -1,20 +1,21 @@
-/*  Copyright (C) 1996-1997  Id Software, Inc.
+/*
+	Copyright (C) 1996-1997  Id Software, Inc.
 
-    This program is free software; you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation; either version 2 of the License, or
-    (at your option) any later version.
+	This program is free software; you can redistribute it and/or modify
+	it under the terms of the GNU General Public License as published by
+	the Free Software Foundation; either version 2 of the License, or
+	(at your option) any later version.
 
-    This program is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
+	This program is distributed in the hope that it will be useful,
+	but WITHOUT ANY WARRANTY; without even the implied warranty of
+	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+	GNU General Public License for more details.
 
-    You should have received a copy of the GNU General Public License
-    along with this program; if not, write to the Free Software
-    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
+	You should have received a copy of the GNU General Public License
+	along with this program; if not, write to the Free Software
+	Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 
-    See file, 'COPYING', for details.
+	See file, 'COPYING', for details.
 */
 
 #ifdef HAVE_CONFIG_H
@@ -25,20 +26,11 @@
 
 #include "bsp5.h"
 
+node_t      outside_node;				// portals outside the world face this
 
-node_t      outside_node;				// portals outside the world face
 
-										// this
-
-//=============================================================================
-
-/*
-=============
-AddPortalToNodes
-=============
-*/
 void
-AddPortalToNodes (portal_t * p, node_t * front, node_t * back)
+AddPortalToNodes (portal_t *p, node_t *front, node_t *back)
 {
 	if (p->nodes[0] || p->nodes[1])
 		Sys_Error ("AddPortalToNode: allready included");
@@ -52,14 +44,8 @@ AddPortalToNodes (portal_t * p, node_t * front, node_t * back)
 	back->portals = p;
 }
 
-
-/*
-=============
-RemovePortalFromNode
-=============
-*/
 void
-RemovePortalFromNode (portal_t * portal, node_t * l)
+RemovePortalFromNode (portal_t *portal, node_t *l)
 {
 	portal_t  **pp, *t;
 
@@ -93,7 +79,7 @@ RemovePortalFromNode (portal_t * portal, node_t * l)
 //============================================================================
 
 void
-PrintPortal (portal_t * p)
+PrintPortal (portal_t *p)
 {
 	int         i;
 	winding_t  *w;
@@ -112,13 +98,12 @@ The created portals will face the global outside_node
 ================
 */
 void
-MakeHeadnodePortals (node_t * node)
+MakeHeadnodePortals (node_t *node)
 {
-	vec3_t      bounds[2];
-	int         i, j, n;
-	portal_t   *p, *portals[6];
+	int         side, i, j, n;
 	plane_t     bplanes[6], *pl;
-	int         side;
+	portal_t   *p, *portals[6];
+	vec3_t      bounds[2];
 
 	Draw_ClearWindow ();
 
@@ -170,7 +155,7 @@ MakeHeadnodePortals (node_t * node)
 //============================================================================
 
 void
-CheckWindingInNode (winding_t * w, node_t * node)
+CheckWindingInNode (winding_t *w, node_t *node)
 {
 	int         i, j;
 
@@ -185,10 +170,10 @@ CheckWindingInNode (winding_t * w, node_t * node)
 }
 
 void
-CheckWindingArea (winding_t * w)
+CheckWindingArea (winding_t *w)
 {
-	int         i;
 	float       total, add;
+	int         i;
 	vec3_t      v1, v2, cross;
 
 	total = 0;
@@ -205,7 +190,7 @@ CheckWindingArea (winding_t * w)
 
 
 void
-PlaneFromWinding (winding_t * w, plane_t *plane)
+PlaneFromWinding (winding_t *w, plane_t *plane)
 {
 	vec3_t      v1, v2;
 
@@ -218,14 +203,13 @@ PlaneFromWinding (winding_t * w, plane_t *plane)
 }
 
 void
-CheckLeafPortalConsistancy (node_t * node)
+CheckLeafPortalConsistancy (node_t *node)
 {
-	int         side, side2;
-	portal_t   *p, *p2;
-	plane_t     plane, plane2;
-	int         i;
-	winding_t  *w;
 	float       dist;
+	int         side, side2, i;
+	plane_t     plane, plane2;
+	portal_t   *p, *p2;
+	winding_t  *w;
 
 	side = side2 = 0;					// quiet compiler warning
 
@@ -258,45 +242,32 @@ CheckLeafPortalConsistancy (node_t * node)
 					return;
 				}
 			}
-
 		}
 	}
 }
 
-
-/*
-================
-CutNodePortals_r
-
-================
-*/
 void
-CutNodePortals_r (node_t * node)
+CutNodePortals_r (node_t *node)
 {
-	plane_t    *plane, clipplane;
+	int         side;
 	node_t     *f, *b, *other_node;
+	plane_t    *plane, clipplane;
 	portal_t   *p, *new_portal, *next_portal;
 	winding_t  *w, *frontwinding, *backwinding;
-	int         side;
 
 //  CheckLeafPortalConsistancy (node);
 
-//
 // seperate the portals on node into it's children  
-//
-	if (node->contents) {
+	if (node->contents)
 		return;							// at a leaf, no more dividing
-	}
 
 	plane = &planes[node->planenum];
 
 	f = node->children[0];
 	b = node->children[1];
 
-//
 // create the new portal by taking the full plane winding for the cutting plane
 // and clipping it by all of the planes from the other portals
-//
 	new_portal = AllocPortal ();
 	new_portal->planenum = node->planenum;
 
@@ -325,9 +296,8 @@ CutNodePortals_r (node_t * node)
 		new_portal->winding = w;
 		AddPortalToNodes (new_portal, f, b);
 	}
-//
+
 // partition the portals
-//
 	for (p = node->portals; p; p = next_portal) {
 		if (p->nodes[0] == node)
 			side = 0;
@@ -341,9 +311,7 @@ CutNodePortals_r (node_t * node)
 		RemovePortalFromNode (p, p->nodes[0]);
 		RemovePortalFromNode (p, p->nodes[1]);
 
-//
 // cut the portal into two portals, one on each side of the cut plane
-//
 		DivideWinding (p->winding, plane, &frontwinding, &backwinding);
 
 		if (!frontwinding) {
@@ -381,9 +349,7 @@ CutNodePortals_r (node_t * node)
 
 	CutNodePortals_r (f);
 	CutNodePortals_r (b);
-
 }
-
 
 /*
 ==================
@@ -393,7 +359,7 @@ Builds the exact polyhedrons for the nodes and leafs
 ==================
 */
 void
-PortalizeWorld (node_t * headnode)
+PortalizeWorld (node_t *headnode)
 {
 	qprintf ("----- portalize ----\n");
 
@@ -401,15 +367,8 @@ PortalizeWorld (node_t * headnode)
 	CutNodePortals_r (headnode);
 }
 
-
-/*
-==================
-FreeAllPortals
-
-==================
-*/
 void
-FreeAllPortals (node_t * node)
+FreeAllPortals (node_t *node)
 {
 	portal_t   *p, *nextp;
 
@@ -430,13 +389,7 @@ FreeAllPortals (node_t * node)
 	}
 }
 
-/*
-==============================================================================
-
-PORTAL FILE GENERATION
-
-==============================================================================
-*/
+// PORTAL FILE GENERATION =====================================================
 
 #define	PORTALFILE	"PRT1"
 
@@ -445,7 +398,7 @@ int         num_visleafs;				// leafs the player can be in
 int         num_visportals;
 
 void
-WriteFloat (FILE * f, vec_t v)
+WriteFloat (FILE *f, vec_t v)
 {
 	if (fabs (v - (int) (v + 0.5)) < 0.001)
 		fprintf (f, "%i ", (int) (v + 0.5));
@@ -454,12 +407,12 @@ WriteFloat (FILE * f, vec_t v)
 }
 
 void
-WritePortalFile_r (node_t * node)
+WritePortalFile_r (node_t *node)
 {
 	int         i;
+	plane_t    *pl, plane2;
 	portal_t   *p;
 	winding_t  *w;
-	plane_t    *pl, plane2;
 
 	if (!node->contents) {
 		WritePortalFile_r (node->children[0]);
@@ -476,18 +429,17 @@ WritePortalFile_r (node_t * node)
 			&& p->nodes[0]->contents == p->nodes[1]->contents) {
 			// write out to the file
 
-			// sometimes planes get turned around when they are very near
-			// the changeover point between different axis.  interpret the
-			// plane the same way vis will, and flip the side orders if
-			// needed
+			// sometimes planes get turned around when they are very near the
+			// changeover point between different axis.  interpret the plane
+			// the same way vis will, and flip the side orders if needed
 			pl = &planes[p->planenum];
 			PlaneFromWinding (w, &plane2);
-			if (DotProduct (pl->normal, plane2.normal) < 0.99) {	// backwards...
-				fprintf (pf, "%i %i %i ", w->numpoints, p->nodes[1]->visleafnum,
-						 p->nodes[0]->visleafnum);
+			if (DotProduct (pl->normal, plane2.normal) < 0.99) { // backwards..
+				fprintf (pf, "%i %i %i ", w->numpoints,
+						 p->nodes[1]->visleafnum, p->nodes[0]->visleafnum);
 			} else
-				fprintf (pf, "%i %i %i ", w->numpoints, p->nodes[0]->visleafnum,
-						 p->nodes[1]->visleafnum);
+				fprintf (pf, "%i %i %i ", w->numpoints,
+						 p->nodes[0]->visleafnum, p->nodes[1]->visleafnum);
 			for (i = 0; i < w->numpoints; i++) {
 				fprintf (pf, "(");
 				WriteFloat (pf, w->points[i][0]);
@@ -506,13 +458,8 @@ WritePortalFile_r (node_t * node)
 
 }
 
-/*
-================
-NumberLeafs_r
-================
-*/
 void
-NumberLeafs_r (node_t * node)
+NumberLeafs_r (node_t *node)
 {
 	portal_t   *p;
 
@@ -543,17 +490,10 @@ NumberLeafs_r (node_t * node)
 		} else
 			p = p->next[1];
 	}
-
 }
 
-
-/*
-================
-WritePortalfile
-================
-*/
 void
-WritePortalfile (node_t * headnode)
+WritePortalfile (node_t *headnode)
 {
 // set the visleafnum field in every leaf and count the total number of portals
 	num_visleafs = 0;

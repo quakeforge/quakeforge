@@ -1,20 +1,21 @@
-/*  Copyright (C) 1996-1997  Id Software, Inc.
+/*
+	Copyright (C) 1996-1997  Id Software, Inc.
 
-    This program is free software; you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation; either version 2 of the License, or
-    (at your option) any later version.
+	This program is free software; you can redistribute it and/or modify
+	it under the terms of the GNU General Public License as published by
+	the Free Software Foundation; either version 2 of the License, or
+	(at your option) any later version.
 
-    This program is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
+	This program is distributed in the hope that it will be useful,
+	but WITHOUT ANY WARRANTY; without even the implied warranty of
+	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+	GNU General Public License for more details.
 
-    You should have received a copy of the GNU General Public License
-    along with this program; if not, write to the Free Software
-    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
+	You should have received a copy of the GNU General Public License
+	along with this program; if not, write to the Free Software
+	Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 
-    See file, 'COPYING', for details.
+	See file, 'COPYING', for details.
 */
 
 // bsp5.c
@@ -37,9 +38,7 @@
 
 bsp_t      *bsp;
 
-//
 // command line flags
-//
 qboolean    drawflag;
 qboolean    nofill;
 qboolean    notjunc;
@@ -66,7 +65,6 @@ qboolean    worldmodel;
 
 int         hullnum;
 
-//===========================================================================
 
 void
 qprintf (char *fmt, ...)
@@ -81,11 +79,6 @@ qprintf (char *fmt, ...)
 	va_end (argptr);
 }
 
-/*
-=================
-BaseWindingForPlane
-=================
-*/
 winding_t  *
 BaseWindingForPlane (plane_t *p)
 {
@@ -150,15 +143,8 @@ BaseWindingForPlane (plane_t *p)
 	return w;
 }
 
-
-
-/*
-==================
-CopyWinding
-==================
-*/
 winding_t  *
-CopyWinding (winding_t * w)
+CopyWinding (winding_t *w)
 {
 	int         size;
 	winding_t  *c;
@@ -168,8 +154,6 @@ CopyWinding (winding_t * w)
 	memcpy (c, w, size);
 	return c;
 }
-
-
 
 /*
 ==================
@@ -183,7 +167,6 @@ CheckWinding (winding_t * w)
 {
 }
 
-
 /*
 ==================
 ClipWinding
@@ -195,17 +178,16 @@ it will be clipped away.
 ==================
 */
 winding_t  *
-ClipWinding (winding_t * in, plane_t *split, qboolean keepon)
+ClipWinding (winding_t *in, plane_t *split, qboolean keepon)
 {
-	vec_t       dists[MAX_POINTS_ON_WINDING];
+	int         maxpts, i, j;
 	int         sides[MAX_POINTS_ON_WINDING];
 	int         counts[3];
 	vec_t       dot;
-	int         i, j;
+	vec_t       dists[MAX_POINTS_ON_WINDING];
 	vec_t      *p1, *p2;
 	vec3_t      mid;
 	winding_t  *neww;
-	int         maxpts;
 
 	counts[0] = counts[1] = counts[2] = 0;
 
@@ -236,8 +218,8 @@ ClipWinding (winding_t * in, plane_t *split, qboolean keepon)
 	if (!counts[1])
 		return in;
 
-	maxpts = in->numpoints + 4;			// can't use counts[0]+2 because
-	// of fp grouping errors
+	maxpts = in->numpoints + 4;			// can't use counts[0]+2 because of fp
+										// grouping errors
 	neww = NewWinding (maxpts);
 
 	for (i = 0; i < in->numpoints; i++) {
@@ -261,8 +243,7 @@ ClipWinding (winding_t * in, plane_t *split, qboolean keepon)
 		p2 = in->points[(i + 1) % in->numpoints];
 
 		dot = dists[i] / (dists[i] - dists[i + 1]);
-		for (j = 0; j < 3; j++) {		// avoid round off error when
-										// possible
+		for (j = 0; j < 3; j++) {		// avoid round off error when possible
 			if (split->normal[j] == 1)
 				mid[j] = split->dist;
 			else if (split->normal[j] == -1)
@@ -284,7 +265,6 @@ ClipWinding (winding_t * in, plane_t *split, qboolean keepon)
 	return neww;
 }
 
-
 /*
 ==================
 DivideWinding
@@ -296,18 +276,17 @@ new windings will be created.
 ==================
 */
 void
-DivideWinding (winding_t * in, plane_t *split, winding_t ** front,
-			   winding_t ** back)
+DivideWinding (winding_t *in, plane_t *split, winding_t **front,
+			   winding_t **back)
 {
-	vec_t       dists[MAX_POINTS_ON_WINDING];
+	int         maxpts, i, j;
 	int         sides[MAX_POINTS_ON_WINDING];
 	int         counts[3];
 	vec_t       dot;
-	int         i, j;
+	vec_t       dists[MAX_POINTS_ON_WINDING];
 	vec_t      *p1, *p2;
 	vec3_t      mid;
 	winding_t  *f, *b;
-	int         maxpts;
 
 	counts[0] = counts[1] = counts[2] = 0;
 
@@ -409,16 +388,11 @@ PrintMemory (void)
 	printf ("portals : %6i (%6i)\n", c_activeportals, c_peakportals);
 }
 
-/*
-==================
-NewWinding
-==================
-*/
 winding_t  *
 NewWinding (int points)
 {
-	winding_t  *w;
 	int         size;
+	winding_t  *w;
 
 	if (points > MAX_POINTS_ON_WINDING)
 		Sys_Error ("NewWinding: %i points", points);
@@ -434,21 +408,13 @@ NewWinding (int points)
 	return w;
 }
 
-
 void
-FreeWinding (winding_t * w)
+FreeWinding (winding_t *w)
 {
 	c_activewindings--;
 	free (w);
 }
 
-
-
-/*
-===========
-AllocFace
-===========
-*/
 face_t     *
 AllocFace (void)
 {
@@ -465,21 +431,14 @@ AllocFace (void)
 	return f;
 }
 
-
 void
-FreeFace (face_t * f)
+FreeFace (face_t *f)
 {
 	c_activefaces--;
-//  memset (f,0xff,sizeof(face_t));
+//	memset (f, 0xff, sizeof (face_t));
 	free (f);
 }
 
-
-/*
-===========
-AllocSurface
-===========
-*/
 surface_t  *
 AllocSurface (void)
 {
@@ -496,17 +455,12 @@ AllocSurface (void)
 }
 
 void
-FreeSurface (surface_t * s)
+FreeSurface (surface_t *s)
 {
 	c_activesurfaces--;
 	free (s);
 }
 
-/*
-===========
-AllocPortal
-===========
-*/
 portal_t   *
 AllocPortal (void)
 {
@@ -523,18 +477,12 @@ AllocPortal (void)
 }
 
 void
-FreePortal (portal_t * p)
+FreePortal (portal_t *p)
 {
 	c_activeportals--;
 	free (p);
 }
 
-
-/*
-===========
-AllocNode
-===========
-*/
 node_t     *
 AllocNode (void)
 {
@@ -546,11 +494,6 @@ AllocNode (void)
 	return n;
 }
 
-/*
-===========
-AllocBrush
-===========
-*/
 brush_t    *
 AllocBrush (void)
 {
@@ -564,20 +507,14 @@ AllocBrush (void)
 
 //===========================================================================
 
-/*
-===============
-ProcessEntity
-===============
-*/
 void
 ProcessEntity (int entnum)
 {
-	entity_t   *ent;
+	brushset_t *bs;
 	char        mod[80];
+	entity_t   *ent;
 	surface_t  *surfs;
 	node_t     *nodes;
-	brushset_t *bs;
-
 
 	ent = &entities[entnum];
 	if (!ent->brushes)
@@ -597,11 +534,8 @@ ProcessEntity (int entnum)
 	} else
 		worldmodel = true;
 
-
-//
 // take the brush_ts and clip off all overlapping and contained faces,
 // leaving a perfect skin of the model with no hidden faces
-//
 	bs = Brush_LoadEntity (ent, hullnum);
 
 	if (!bs->brushes) {
@@ -614,14 +548,11 @@ ProcessEntity (int entnum)
 
 	if (hullnum != 0) {
 		nodes = SolidBSP (surfs, true);
-		if (entnum == 0 && !nofill)		// assume non-world bmodels are
-										// simple
-		{
+		if (entnum == 0 && !nofill) {	// assume non-world bmodels are simple
 			PortalizeWorld (nodes);
 			if (FillOutside (nodes)) {
 				surfs = GatherNodeFaces (nodes);
-				nodes = SolidBSP (surfs, false);	// make a really good
-													// tree
+				nodes = SolidBSP (surfs, false);	// make a really good tree
 			}
 			FreeAllPortals (nodes);
 		}
@@ -629,7 +560,6 @@ ProcessEntity (int entnum)
 		WriteClipNodes (nodes);
 		BumpModel (hullnum);
 	} else {
-		// 
 		// SolidBSP generates a node tree
 		// 
 		// if not the world, make a good tree first
@@ -637,13 +567,9 @@ ProcessEntity (int entnum)
 		// because the outside filling will force a regeneration later
 		nodes = SolidBSP (surfs, entnum == 0);
 
-		// 
 		// build all the portals in the bsp tree
 		// some portals are solid polygons, and some are paths to other leafs
-		// 
-		if (entnum == 0 && !nofill)		// assume non-world bmodels are
-										// simple
-		{
+		if (entnum == 0 && !nofill) {	// assume non-world bmodels are simple
 			PortalizeWorld (nodes);
 
 			if (FillOutside (nodes)) {
@@ -676,12 +602,6 @@ ProcessEntity (int entnum)
 	}
 }
 
-/*
-=================
-UpdateEntLump
-
-=================
-*/
 void
 UpdateEntLump (void)
 {
@@ -718,10 +638,10 @@ Write the clipping hull out to a text file so the parent process can get it
 void
 WriteClipHull (void)
 {
-	FILE       *f;
-	int         i;
-	dplane_t   *p;
+	FILE        *f;
 	dclipnode_t *d;
+	dplane_t    *p;
+	int          i;
 
 	hullfilename[strlen (hullfilename) - 1] = '0' + hullnum;
 
@@ -761,15 +681,12 @@ Read the files written out by the child processes
 void
 ReadClipHull (int hullnum)
 {
-	FILE       *f;
-	int         i, j, n;
-	int         firstclipnode;
-	dplane_t    p;
+	FILE        *f;
 	dclipnode_t *d;
-	int         c1, c2;
-	float       f1, f2, f3, f4;
-	int         junk;
-	vec3_t      norm;
+	dplane_t     p;
+	float        f1, f2, f3, f4;
+	int          firstclipnode, junk, c1, c2, i, j, n;
+	vec3_t       norm;
 
 	hullfilename[strlen (hullfilename) - 1] = '0' + hullnum;
 
@@ -798,11 +715,9 @@ ReadClipHull (int hullnum)
 			Sys_Error ("ReadClipHull: MAX_MAP_CLIPNODES");
 		d = &bsp->clipnodes[bsp->numclipnodes];
 		bsp->numclipnodes++;
-		if (fscanf
-			(f, "%i : %f %f %f %f : %i %i\n", &junk, &f1, &f2, &f3, &f4, &c1,
-			 &c2) != 7)
+		if (fscanf (f, "%i : %f %f %f %f : %i %i\n", &junk, &f1, &f2, &f3, &f4,
+					&c1, &c2) != 7)
 			Sys_Error ("Error parsing %s", hullfilename);
-
 
 		p.normal[0] = f1;
 		p.normal[1] = f2;
@@ -821,12 +736,6 @@ ReadClipHull (int hullnum)
 
 }
 
-/*
-=================
-CreateSingleHull
-
-=================
-*/
 void
 CreateSingleHull (void)
 {
@@ -843,12 +752,6 @@ CreateSingleHull (void)
 		WriteClipHull ();
 }
 
-/*
-=================
-CreateHulls
-
-=================
-*/
 void
 CreateHulls (void)
 {
@@ -890,10 +793,8 @@ CreateHulls (void)
 	if (hullnum)
 		exit (0);
 
-	wait (NULL);						// wait for clip hull process to
-										// finish
-	wait (NULL);						// wait for clip hull process to
-										// finish
+	wait (NULL);						// wait for clip hull process to finish
+	wait (NULL);						// wait for clip hull process to finish
 
 #else
 // create the hulls sequentially
@@ -917,12 +818,6 @@ CreateHulls (void)
 
 }
 
-/*
-=================
-ProcessFile
-
-=================
-*/
 void
 ProcessFile (char *sourcebase, char *bspfilename1)
 {
@@ -973,26 +868,17 @@ ProcessFile (char *sourcebase, char *bspfilename1)
 	FinishBSPFile ();
 }
 
-
-/*
-==================
-main
-
-==================
-*/
 int
 main (int argc, char **argv)
 {
-	int         i;
-	double      start, end;
 	char        sourcename[1024];
 	char        destname[1024];
+	double      start, end;
+	int         i;
 
-//  malloc_debug (15);
+//	malloc_debug (15);
 
-//
 // check command line flags
-//
 	for (i = 1; i < argc; i++) {
 		if (argv[i][0] != '-')
 			break;
@@ -1009,8 +895,7 @@ main (int argc, char **argv)
 		else if (!strcmp (argv[i], "-verbose"))
 			allverbose = true;
 		else if (!strcmp (argv[i], "-usehulls"))
-			usehulls = true;			// don't fork -- use the existing
-										// files
+			usehulls = true;			// don't fork -- use the existing files
 		else if (!strcmp (argv[i], "-hullnum")) {
 			hullnum = atoi (argv[i + 1]);
 			i++;
@@ -1025,17 +910,12 @@ main (int argc, char **argv)
 		Sys_Error
 			("usage: qbsp [options] sourcefile [destfile]\noptions: -nojunc -nofill -threads[124] -draw -onlyents -verbose -proj <projectpath>");
 
-	// XXX SetQdirFromPath (argv[i]);
+// XXX	SetQdirFromPath (argv[i]);
 
-//
 // let forked processes change name for ps status
-//
 	argv0 = argv[0];
 
-
-//
 // create destination name if not specified
-//
 	strcpy (sourcename, argv[i]);
 	COM_DefaultExtension (sourcename, ".map");
 
@@ -1047,9 +927,7 @@ main (int argc, char **argv)
 	} else
 		strcpy (destname, argv[i + 1]);
 
-//
 // do it!
-//
 	start = Sys_DoubleTime ();
 	ProcessFile (sourcename, destname);
 	end = Sys_DoubleTime ();

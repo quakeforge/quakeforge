@@ -1,20 +1,21 @@
-/*  Copyright (C) 1996-1997  Id Software, Inc.
+/*
+	Copyright (C) 1996-1997  Id Software, Inc.
 
-    This program is free software; you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation; either version 2 of the License, or
-    (at your option) any later version.
+	This program is free software; you can redistribute it and/or modify
+	it under the terms of the GNU General Public License as published by
+	the Free Software Foundation; either version 2 of the License, or
+	(at your option) any later version.
 
-    This program is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
+	This program is distributed in the hope that it will be useful,
+	but WITHOUT ANY WARRANTY; without even the implied warranty of
+	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+	GNU General Public License for more details.
 
-    You should have received a copy of the GNU General Public License
-    along with this program; if not, write to the Free Software
-    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
+	You should have received a copy of the GNU General Public License
+	along with this program; if not, write to the Free Software
+	Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 
-    See file, 'COPYING', for details.
+	See file, 'COPYING', for details.
 */
 
 // tjunc.c
@@ -26,7 +27,6 @@
 #include "QF/sys.h"
 
 #include "bsp5.h"
-
 
 typedef struct wvert_s {
 	vec_t       t;
@@ -47,13 +47,12 @@ int         tjuncfaces;
 #define	MAXWVERTS	0x20000
 #define	MAXWEDGES	0x10000
 
-
 wvert_t     wverts[MAXWVERTS];
 wedge_t     wedges[MAXWEDGES];
 
 
 void
-PrintFace (face_t * f)
+PrintFace (face_t *f)
 {
 	int         i;
 
@@ -73,10 +72,10 @@ static vec3_t hash_min, hash_scale;
 static void
 InitHash (vec3_t mins, vec3_t maxs)
 {
+	int         newsize[2];
 	vec3_t      size;
 	vec_t       volume;
 	vec_t       scale;
-	int         newsize[2];
 
 	VectorCopy (mins, hash_min);
 	VectorSubtract (maxs, mins, size);
@@ -141,11 +140,10 @@ CanonicalVector (vec3_t vec)
 wedge_t    *
 FindEdge (vec3_t p1, vec3_t p2, vec_t *t1, vec_t *t2)
 {
-	vec3_t      origin;
-	vec3_t      dir;
-	wedge_t    *w;
-	vec_t       temp;
 	int         h;
+	vec3_t      dir, origin;
+	vec_t       temp;
+	wedge_t    *w;
 
 	VectorSubtract (p2, p1, dir);
 	CanonicalVector (dir);
@@ -202,17 +200,10 @@ FindEdge (vec3_t p1, vec3_t p2, vec_t *t1, vec_t *t2)
 	return w;
 }
 
-
-/*
-===============
-AddVert
-
-===============
-*/
 #define	T_EPSILON	0.01
 
 void
-AddVert (wedge_t * w, vec_t t)
+AddVert (wedge_t *w, vec_t t)
 {
 	wvert_t    *v, *newv;
 
@@ -239,13 +230,6 @@ AddVert (wedge_t * w, vec_t t)
 	v->prev = newv;
 }
 
-
-/*
-===============
-AddEdge
-
-===============
-*/
 void
 AddEdge (vec3_t p1, vec3_t p2)
 {
@@ -257,14 +241,8 @@ AddEdge (vec3_t p1, vec3_t p2)
 	AddVert (w, t2);
 }
 
-/*
-===============
-AddFaceEdges
-
-===============
-*/
 void
-AddFaceEdges (face_t * f)
+AddFaceEdges (face_t *f)
 {
 	int         i, j;
 
@@ -273,7 +251,6 @@ AddFaceEdges (face_t * f)
 		AddEdge (f->pts[i], f->pts[j]);
 	}
 }
-
 
 //============================================================================
 
@@ -286,13 +263,12 @@ void        FixFaceEdges (face_t * f);
 face_t     *newlist;
 
 void
-SplitFaceForTjunc (face_t * f, face_t * original)
+SplitFaceForTjunc (face_t *f, face_t *original)
 {
-	int         i;
 	face_t     *new, *chain;
+	int         firstcorner, lastcorner, i;
 	vec3_t      dir, test;
 	vec_t       v;
-	int         firstcorner, lastcorner;
 
 	chain = NULL;
 	do {
@@ -316,29 +292,27 @@ SplitFaceForTjunc (face_t * f, face_t * original)
 			VectorSubtract (f->pts[lastcorner - 1], f->pts[lastcorner], test);
 			VectorNormalize (test);
 			v = DotProduct (test, dir);
-			if (v < 0.9999 || v > 1.00001) {
+			if (v < 0.9999 || v > 1.00001)
 				break;
-			}
 		}
 
 		// find the first corner    
 		VectorSubtract (f->pts[1], f->pts[0], dir);
 		VectorNormalize (dir);
 		for (firstcorner = 1; firstcorner < f->numpoints - 1; firstcorner++) {
-			VectorSubtract (f->pts[firstcorner + 1], f->pts[firstcorner], test);
+			VectorSubtract (f->pts[firstcorner + 1], f->pts[firstcorner],
+							test);
 			VectorNormalize (test);
 			v = DotProduct (test, dir);
-			if (v < 0.9999 || v > 1.00001) {
+			if (v < 0.9999 || v > 1.00001)
 				break;
-			}
 		}
 
 		if (firstcorner + 2 >= MAXPOINTS) {
 			// rotate the point winding
 			VectorCopy (f->pts[0], test);
-			for (i = 1; i < f->numpoints; i++) {
+			for (i = 1; i < f->numpoints; i++)
 				VectorCopy (f->pts[i], f->pts[i - 1]);
-			}
 			VectorCopy (test, f->pts[f->numpoints - 1]);
 			goto restart;
 		}
@@ -362,33 +336,22 @@ SplitFaceForTjunc (face_t * f, face_t * original)
 		else
 			new->numpoints = MAXPOINTS;
 
-		for (i = 0; i < new->numpoints; i++) {
+		for (i = 0; i < new->numpoints; i++)
 			VectorCopy (f->pts[i], new->pts[i]);
-		}
-
-
-		for (i = new->numpoints - 1; i < f->numpoints; i++) {
+		for (i = new->numpoints - 1; i < f->numpoints; i++)
 			VectorCopy (f->pts[i], f->pts[i - (new->numpoints - 2)]);
-		}
 		f->numpoints -= (new->numpoints - 2);
 	} while (1);
 
 }
 
-
-/*
-===============
-FixFaceEdges
-
-===============
-*/
 void
-FixFaceEdges (face_t * f)
+FixFaceEdges (face_t *f)
 {
 	int         i, j, k;
+	vec_t       t1, t2;
 	wedge_t    *w;
 	wvert_t    *v;
-	vec_t       t1, t2;
 
 	*superface = *f;
 
@@ -423,14 +386,12 @@ FixFaceEdges (face_t * f)
 // the face needs to be split into multiple faces because of too many edges
 
 	SplitFaceForTjunc (superface, f);
-
 }
-
 
 //============================================================================
 
 void
-tjunc_find_r (node_t * node)
+tjunc_find_r (node_t *node)
 {
 	face_t     *f;
 
@@ -445,9 +406,9 @@ tjunc_find_r (node_t * node)
 }
 
 void
-tjunc_fix_r (node_t * node)
+tjunc_fix_r (node_t *node)
 {
-	face_t     *f, *next;
+	face_t     *next, *f;
 
 	if (node->planenum == PLANENUM_LEAF)
 		return;
@@ -465,26 +426,18 @@ tjunc_fix_r (node_t * node)
 	tjunc_fix_r (node->children[1]);
 }
 
-/*
-===========
-tjunc
-
-===========
-*/
 void
-tjunc (node_t * headnode)
+tjunc (node_t *headnode)
 {
-	vec3_t      maxs, mins;
 	int         i;
+	vec3_t      maxs, mins;
 
 	qprintf ("---- tjunc ----\n");
 
 	if (notjunc)
 		return;
 
-//
 // identify all points on common edges
-//
 
 // origin points won't allways be inside the map, so extend the hash area 
 	for (i = 0; i < 3; i++) {
@@ -503,9 +456,7 @@ tjunc (node_t * headnode)
 
 	qprintf ("%i world edges  %i edge points\n", numwedges, numwverts);
 
-//
 // add extra vertexes on edges where needed
-//
 	tjuncs = tjuncfaces = 0;
 
 	tjunc_fix_r (headnode);

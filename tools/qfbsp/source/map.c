@@ -1,20 +1,21 @@
-/*  Copyright (C) 1996-1997  Id Software, Inc.
+/*
+	Copyright (C) 1996-1997  Id Software, Inc.
 
-    This program is free software; you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation; either version 2 of the License, or
-    (at your option) any later version.
+	This program is free software; you can redistribute it and/or modify
+	it under the terms of the GNU General Public License as published by
+	the Free Software Foundation; either version 2 of the License, or
+	(at your option) any later version.
 
-    This program is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
+	This program is distributed in the hope that it will be useful,
+	but WITHOUT ANY WARRANTY; without even the implied warranty of
+	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+	GNU General Public License for more details.
 
-    You should have received a copy of the GNU General Public License
-    along with this program; if not, write to the Free Software
-    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
+	You should have received a copy of the GNU General Public License
+	along with this program; if not, write to the Free Software
+	Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 
-    See file, 'COPYING', for details.
+	See file, 'COPYING', for details.
 */
 
 // map.c
@@ -44,14 +45,7 @@ entity_t    entities[MAX_MAP_ENTITIES];
 int         nummiptex;
 char        miptex[MAX_MAP_TEXINFO][16];
 
-//============================================================================
 
-/*
-===============
-FindMiptex
-
-===============
-*/
 int
 FindMiptex (char *name)
 {
@@ -83,8 +77,8 @@ FindTexinfo (texinfo_t *t)
 
 // set the special flag
 	if (miptex[t->miptex][0] == '*'
-		|| !strncasecmp (miptex[t->miptex], "sky", 3)) t->flags |= TEX_SPECIAL;
-
+		|| !strncasecmp (miptex[t->miptex], "sky", 3))
+		t->flags |= TEX_SPECIAL;
 
 	tex = bsp->texinfo;
 	for (i = 0; i < bsp->numtexinfo; i++, tex++) {
@@ -111,7 +105,6 @@ FindTexinfo (texinfo_t *t)
 	return i;
 }
 
-
 //============================================================================
 
 #define	MAXTOKEN	128
@@ -137,9 +130,7 @@ GetToken (qboolean crossline)
 	if (unget)							// is a token allready waiting?
 		return true;
 
-//
 // skip space
-//
   skipspace:
 	while (*script_p <= 32) {
 		if (!*script_p) {
@@ -154,8 +145,7 @@ GetToken (qboolean crossline)
 		}
 	}
 
-	if (script_p[0] == '/' && script_p[1] == '/')	// comment field
-	{
+	if (script_p[0] == '/' && script_p[1] == '/') {		// comment field
 		if (!crossline)
 			Sys_Error ("Line %i is incomplete\n", scriptline);
 		while (*script_p++ != '\n')
@@ -166,9 +156,8 @@ GetToken (qboolean crossline)
 			}
 		goto skipspace;
 	}
-//
+
 // copy token
-//
 	token_p = token;
 
 	if (*script_p == '"') {
@@ -199,16 +188,10 @@ UngetToken ()
 	unget = true;
 }
 
-
 //============================================================================
 
 entity_t   *mapent;
 
-/*
-=================
-ParseEpair
-=================
-*/
 void
 ParseEpair (void)
 {
@@ -230,12 +213,6 @@ ParseEpair (void)
 
 //============================================================================
 
-
-/*
-==================
-textureAxisFromPlane
-==================
-*/
 vec3_t      baseaxis[18] = {
 	{0, 0, 1}, {1, 0, 0}, {0, -1, 0},	// floor
 	{0, 0, -1}, {1, 0, 0}, {0, -1, 0},	// ceiling
@@ -248,9 +225,8 @@ vec3_t      baseaxis[18] = {
 void
 TextureAxisFromPlane (plane_t *pln, vec3_t xv, vec3_t yv)
 {
-	int         bestaxis;
 	float       dot, best;
-	int         i;
+	int         bestaxis, i;
 
 	best = 0;
 	bestaxis = 0;
@@ -267,26 +243,19 @@ TextureAxisFromPlane (plane_t *pln, vec3_t xv, vec3_t yv)
 	VectorCopy (baseaxis[bestaxis * 3 + 2], yv);
 }
 
-
 //=============================================================================
 
-
-/*
-=================
-ParseBrush
-=================
-*/
 void
 ParseBrush (void)
 {
+	float       shift[2], rotate, scale[2];
+	int         i, j;
 	mbrush_t   *b;
 	mface_t    *f, *f2;
+	texinfo_t   tx;
 	vec3_t      planepts[3];
 	vec3_t      t1, t2, t3;
-	int         i, j;
-	texinfo_t   tx;
 	vec_t       d;
-	float       shift[2], rotate, scale[2];
 
 	b = &mapbrushes[nummapbrushes];
 	nummapbrushes++;
@@ -314,7 +283,6 @@ ParseBrush (void)
 			GetToken (false);
 			if (strcmp (token, ")"))
 				Sys_Error ("parsing brush");
-
 		}
 
 		// read the texturedef
@@ -332,11 +300,12 @@ ParseBrush (void)
 		GetToken (false);
 		scale[1] = atof (token);
 
-		// if the three points are all on a previous plane, it is a
-		// duplicate plane
+		// if the three points are all on a previous plane, it is a duplicate
+		// plane
 		for (f2 = b->faces; f2; f2 = f2->next) {
 			for (i = 0; i < 3; i++) {
-				d = DotProduct (planepts[i], f2->plane.normal) - f2->plane.dist;
+				d = DotProduct (planepts[i], f2->plane.normal)
+					- f2->plane.dist;
 				if (d < -ON_EPSILON || d > ON_EPSILON)
 					break;
 			}
@@ -369,14 +338,11 @@ ParseBrush (void)
 		VectorNormalize (f->plane.normal);
 		f->plane.dist = DotProduct (t3, f->plane.normal);
 
-		// 
 		// fake proper texture vectors from QuakeEd style
-		// 
 		{
-			vec3_t      vecs[2];
+			float       ang, sinv, cosv, ns, nt;
 			int         sv, tv;
-			float       ang, sinv, cosv;
-			float       ns, nt;
+			vec3_t      vecs[2];
 
 			TextureAxisFromPlane (&f->plane, vecs[0], vecs[1]);
 
@@ -384,7 +350,6 @@ ParseBrush (void)
 				scale[0] = 1;
 			if (!scale[1])
 				scale[1] = 1;
-
 
 			// rotate axis
 			if (rotate == 0) {
@@ -439,11 +404,6 @@ ParseBrush (void)
 	} while (1);
 }
 
-/*
-================
-ParseEntity
-================
-*/
 qboolean
 ParseEntity (void)
 {
@@ -474,11 +434,6 @@ ParseEntity (void)
 	return true;
 }
 
-/*
-================
-LoadMapFile
-================
-*/
 void
 LoadMapFile (char *filename)
 {
@@ -566,13 +521,12 @@ GetVectorForKey (entity_t *ent, char *key, vec3_t vec)
 	vec[2] = v3;
 }
 
-
 void
 WriteEntitiesToString (void)
 {
 	char       *buf, *end;
-	epair_t    *ep;
 	char        line[128];
+	epair_t    *ep;
 	int         i;
 
 	buf = bsp->entdata;

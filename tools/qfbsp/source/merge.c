@@ -1,20 +1,21 @@
-/*  Copyright (C) 1996-1997  Id Software, Inc.
+/*
+	Copyright (C) 1996-1997  Id Software, Inc.
 
-    This program is free software; you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation; either version 2 of the License, or
-    (at your option) any later version.
+	This program is free software; you can redistribute it and/or modify
+	it under the terms of the GNU General Public License as published by
+	the Free Software Foundation; either version 2 of the License, or
+	(at your option) any later version.
 
-    This program is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
+	This program is distributed in the hope that it will be useful,
+	but WITHOUT ANY WARRANTY; without even the implied warranty of
+	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+	GNU General Public License for more details.
 
-    You should have received a copy of the GNU General Public License
-    along with this program; if not, write to the Free Software
-    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
+	You should have received a copy of the GNU General Public License
+	along with this program; if not, write to the Free Software
+	Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 
-    See file, 'COPYING', for details.
+	See file, 'COPYING', for details.
 */
 
 // merge.c
@@ -27,24 +28,18 @@
 
 #include "bsp5.h"
 
-
 #define CONTINUOUS_EPSILON	0.001
 
-/*
-================
-CheckColinear
 
-================
-*/
 void
-CheckColinear (face_t * f)
+CheckColinear (face_t *f)
 {
 	int         i, j;
 	vec3_t      v1, v2;
 
 	for (i = 0; i < f->numpoints; i++) {
-// skip the point if the vector from the previous point is the same
-// as the vector to the next point
+// skip the point if the vector from the previous point is the same as the
+// vector to the next point
 		j = (i - 1 < 0) ? f->numpoints - 1 : i - 1;
 		VectorSubtract (f->pts[i], f->pts[j], v1);
 		VectorNormalize (v1);
@@ -59,28 +54,27 @@ CheckColinear (face_t * f)
 
 }
 
-
 /*
 =============
 TryMerge
 
-If two polygons share a common edge and the edges that meet at the
-common points are both inside the other polygons, merge them
+If two polygons share a common edge and the edges that meet at the common
+points are both inside the other polygons, merge them
 
 Returns NULL if the faces couldn't be merged, or the new face.
 The originals will NOT be freed.
 =============
 */
 face_t     *
-TryMerge (face_t * f1, face_t * f2)
+TryMerge (face_t *f1, face_t *f2)
 {
-	vec_t      *p1, *p2, *p3, *p4, *back;
 	face_t     *newf;
 	int         i, j, k, l;
-	vec3_t      normal, delta, planenormal;
-	vec_t       dot;
 	plane_t    *plane;
 	qboolean    keep1, keep2;
+	vec3_t      normal, delta, planenormal;
+	vec_t       dot;
+	vec_t      *p1, *p2, *p3, *p4, *back;
 
 	if (f1->numpoints == -1 || f2->numpoints == -1)
 		return NULL;
@@ -93,11 +87,9 @@ TryMerge (face_t * f1, face_t * f2)
 	if (f1->contents[1] != f2->contents[1])
 		return NULL;
 
-//
 // find a common edge
-//  
 	p1 = p2 = NULL;						// stop compiler warning
-	j = 0;								// 
+	j = 0;
 
 	for (i = 0; i < f1->numpoints; i++) {
 		p1 = f1->pts[i];
@@ -121,10 +113,8 @@ TryMerge (face_t * f1, face_t * f2)
 	if (i == f1->numpoints)
 		return NULL;					// no matching edges
 
-//
 // check slope of connected lines
 // if the slopes are colinear, the point can be removed
-//
 	plane = &planes[f1->planenum];
 	VectorCopy (plane->normal, planenormal);
 	if (f1->planeside)
@@ -154,11 +144,9 @@ TryMerge (face_t * f1, face_t * f2)
 		return NULL;					// not a convex polygon
 	keep2 = dot < -CONTINUOUS_EPSILON;
 
-//
 // build the new polygon
-//
 	if (f1->numpoints + f2->numpoints > MAXEDGES) {
-//      Sys_Error ("TryMerge: too many edges!");
+//		Sys_Error ("TryMerge: too many edges!");
 		return NULL;
 	}
 
@@ -184,20 +172,14 @@ TryMerge (face_t * f1, face_t * f2)
 	return newf;
 }
 
-
-/*
-===============
-MergeFaceToList
-===============
-*/
 qboolean    mergedebug;
 face_t     *
-MergeFaceToList (face_t * face, face_t * list)
+MergeFaceToList (face_t *face, face_t *list)
 {
 	face_t     *newf, *f;
 
 	for (f = list; f; f = f->next) {
-//CheckColinear (f);        
+//		CheckColinear (f);        
 		if (mergedebug) {
 			Draw_ClearWindow ();
 			Draw_DrawFace (face);
@@ -217,14 +199,8 @@ MergeFaceToList (face_t * face, face_t * list)
 	return face;
 }
 
-
-/*
-===============
-FreeMergeListScraps
-===============
-*/
 face_t     *
-FreeMergeListScraps (face_t * merged)
+FreeMergeListScraps (face_t *merged)
 {
 	face_t     *head, *next;
 
@@ -242,17 +218,10 @@ FreeMergeListScraps (face_t * merged)
 	return head;
 }
 
-
-/*
-===============
-MergePlaneFaces
-===============
-*/
 void
-MergePlaneFaces (surface_t * plane)
+MergePlaneFaces (surface_t *plane)
 {
-	face_t     *f1, *next;
-	face_t     *merged;
+	face_t     *merged, *next, *f1;
 
 	merged = NULL;
 
@@ -265,18 +234,12 @@ MergePlaneFaces (surface_t * plane)
 	plane->faces = FreeMergeListScraps (merged);
 }
 
-
-/*
-============
-MergeAll
-============
-*/
 void
 MergeAll (surface_t * surfhead)
 {
-	surface_t  *surf;
-	int         mergefaces;
 	face_t     *f;
+	int         mergefaces;
+	surface_t  *surf;
 
 	printf ("---- MergeAll ----\n");
 

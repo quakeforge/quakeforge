@@ -1,20 +1,21 @@
-/*  Copyright (C) 1996-1997  Id Software, Inc.
+/*
+	Copyright (C) 1996-1997  Id Software, Inc.
 
-    This program is free software; you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation; either version 2 of the License, or
-    (at your option) any later version.
+	This program is free software; you can redistribute it and/or modify
+	it under the terms of the GNU General Public License as published by
+	the Free Software Foundation; either version 2 of the License, or
+	(at your option) any later version.
 
-    This program is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
+	This program is distributed in the hope that it will be useful,
+	but WITHOUT ANY WARRANTY; without even the implied warranty of
+	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+	GNU General Public License for more details.
 
-    You should have received a copy of the GNU General Public License
-    along with this program; if not, write to the Free Software
-    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
+	You should have received a copy of the GNU General Public License
+	along with this program; if not, write to the Free Software
+	Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 
-    See file, 'COPYING', for details.
+	See file, 'COPYING', for details.
 */
 
 // divide.h
@@ -28,16 +29,13 @@
 
 #include "bsp5.h"
 
-
-surface_t   newcopy_t;
-
 /*
 a surface has all of the faces that could be drawn on a given plane
 
-the outside filling stage can remove some of them so a better bsp can be generated
-
+the outside filling stage can remove some of them so a better bsp can be
+generated
 */
-
+surface_t   newcopy_t;
 int         subdivides;
 
 
@@ -50,14 +48,14 @@ piece off and insert the remainder in the next link
 ===============
 */
 void
-SubdivideFace (face_t * f, face_t ** prevptr)
+SubdivideFace (face_t *f, face_t **prevptr)
 {
+	face_t     *front, *back, *next;
 	float       mins, maxs;
-	vec_t       v;
 	int         axis, i;
 	plane_t     plane;
-	face_t     *front, *back, *next;
 	texinfo_t  *tex;
+	vec_t       v;
 
 // special (non-surface cached) faces don't need subdivision
 	tex = &bsp->texinfo[f->texturenum];
@@ -101,17 +99,11 @@ SubdivideFace (face_t * f, face_t ** prevptr)
 	}
 }
 
-
-/*
-================
-SubdivideFaces
-================
-*/
 void
-SubdivideFaces (surface_t * surfhead)
+SubdivideFaces (surface_t *surfhead)
 {
-	surface_t  *surf;
 	face_t     *f, **prevptr;
+	surface_t  *surf;
 
 	qprintf ("--- SubdivideFaces ---\n");
 
@@ -133,26 +125,21 @@ SubdivideFaces (surface_t * surfhead)
 
 }
 
-
 /*
 =============================================================================
-
 GatherNodeFaces
 
 Frees the current node tree and returns a new chain of the surfaces that
 have inside faces.
 =============================================================================
 */
-
 void
-GatherNodeFaces_r (node_t * node)
+GatherNodeFaces_r (node_t *node)
 {
-	face_t     *f, *next;
+	face_t     *next, *f;
 
 	if (node->planenum != PLANENUM_LEAF) {
-//
 // decision node
-//
 		for (f = node->faces; f; f = next) {
 			next = f->next;
 			if (!f->numpoints) {		// face was removed outside
@@ -168,21 +155,13 @@ GatherNodeFaces_r (node_t * node)
 
 		free (node);
 	} else {
-//
 // leaf node
-//
 		free (node);
 	}
 }
 
-/*
-================
-GatherNodeFaces
-
-================
-*/
 surface_t  *
-GatherNodeFaces (node_t * headnode)
+GatherNodeFaces (node_t *headnode)
 {
 	memset (validfaces, 0, sizeof (validfaces));
 	GatherNodeFaces_r (headnode);
@@ -222,11 +201,10 @@ static vec3_t hash_min, hash_scale;
 static void
 InitHash (void)
 {
-	vec3_t      size;
-	vec_t       volume;
-	vec_t       scale;
-	int         newsize[2];
 	int         i;
+	int         newsize[2];
+	vec3_t      size;
+	vec_t       scale, volume;
 
 	memset (hashverts, 0, sizeof (hashverts));
 
@@ -261,18 +239,11 @@ HashVec (vec3_t vec)
 	return h;
 }
 
-
-/*
-=============
-GetVertex
-=============
-*/
 int
 GetVertex (vec3_t in, int planenum)
 {
-	int         h;
-	int         i;
 	hashvert_t *hv;
+	int         h, i;
 	vec3_t      vert;
 
 	for (i = 0; i < 3; i++) {
@@ -290,10 +261,10 @@ GetVertex (vec3_t in, int planenum)
 			&& fabs (hv->point[2] - vert[2]) < POINT_EPSILON) {
 			hv->numedges++;
 			if (hv->numplanes == 3)
-				return hv->num;			// allready known to be a corner
+				return hv->num;			// already known to be a corner
 			for (i = 0; i < hv->numplanes; i++)
 				if (hv->planenums[i] == planenum)
-					return hv->num;		// allready know this plane
+					return hv->num;		// already know this plane
 			if (hv->numplanes == 2)
 				c_cornerverts++;
 			else
@@ -329,6 +300,7 @@ GetVertex (vec3_t in, int planenum)
 
 //===========================================================================
 
+int         c_tryedges;
 
 /*
 ==================
@@ -337,14 +309,11 @@ GetEdge
 Don't allow four way edges
 ==================
 */
-int         c_tryedges;
-
 int
-GetEdge (vec3_t p1, vec3_t p2, face_t * f)
+GetEdge (vec3_t p1, vec3_t p2, face_t *f)
 {
-	int         v1, v2;
 	dedge_t    *edge;
-	int         i;
+	int         v1, v2, i;
 
 	if (!f->contents[0])
 		Sys_Error ("GetEdge: 0 contents");
@@ -374,14 +343,8 @@ GetEdge (vec3_t p1, vec3_t p2, face_t * f)
 	return i;
 }
 
-
-/*
-==================
-FindFaceEdges
-==================
-*/
 void
-FindFaceEdges (face_t * face)
+FindFaceEdges (face_t *face)
 {
 	int         i;
 
@@ -403,8 +366,8 @@ CheckVertexes
 void
 CheckVertexes (void)
 {
-	int         cb, c0, c1, c2, c3;
 	hashvert_t *hv;
+	int         cb, c0, c1, c2, c3;
 
 	cb = c0 = c1 = c2 = c3 = 0;
 	for (hv = hvertex; hv != hvert_p; hv++) {
@@ -437,25 +400,22 @@ void
 CheckEdges (void)
 {
 	dedge_t    *edge;
-	int         i;
 	dvertex_t  *d1, *d2;
 	face_t     *f1, *f2;
-	int         c_nonconvex;
-	int         c_multitexture;
+	int			c_multitexture, c_nonconvex, i;
 
 	c_nonconvex = c_multitexture = 0;
 
-//  CheckVertexes ();
+//	CheckVertexes ();
 
 	for (i = 1; i < bsp->numedges; i++) {
 		edge = &bsp->edges[i];
 		if (!edgefaces[i][1]) {
 			d1 = &bsp->vertexes[edge->v[0]];
 			d2 = &bsp->vertexes[edge->v[1]];
-			qprintf
-				("unshared edge at: (%8.2f, %8.2f, %8.2f) (%8.2f, %8.2f, %8.2f)\n",
-				 d1->point[0], d1->point[1], d1->point[2], d2->point[0],
-				 d2->point[1], d2->point[2]);
+			qprintf ("unshared edge at: (%8.2f, %8.2f, %8.2f) (%8.2f, %8.2f, "
+					 "%8.2f)\n", d1->point[0], d1->point[1], d1->point[2],
+					 d2->point[0], d2->point[1], d2->point[2]);
 		} else {
 			f1 = edgefaces[i][0];
 			f2 = edgefaces[i][1];
@@ -474,21 +434,15 @@ CheckEdges (void)
 		}
 	}
 
-//  qprintf ("%5i edges\n", i);
-//  qprintf ("%5i c_nonconvex\n", c_nonconvex);
-//  qprintf ("%5i c_multitexture\n", c_multitexture);
+//	qprintf ("%5i edges\n", i);
+//	qprintf ("%5i c_nonconvex\n", c_nonconvex);
+//	qprintf ("%5i c_multitexture\n", c_multitexture);
 
-//  CheckVertexes ();
+//	CheckVertexes ();
 }
 
-
-/*
-================
-MakeFaceEdges_r
-================
-*/
 void
-MakeFaceEdges_r (node_t * node)
+MakeFaceEdges_r (node_t *node)
 {
 	face_t     *f;
 
@@ -502,13 +456,8 @@ MakeFaceEdges_r (node_t * node)
 	MakeFaceEdges_r (node->children[1]);
 }
 
-/*
-================
-MakeFaceEdges
-================
-*/
 void
-MakeFaceEdges (node_t * headnode)
+MakeFaceEdges (node_t *headnode)
 {
 	qprintf ("----- MakeFaceEdges -----\n");
 
@@ -518,7 +467,7 @@ MakeFaceEdges (node_t * headnode)
 
 	MakeFaceEdges_r (headnode);
 
-//  CheckEdges ();
+//	CheckEdges ();
 
 	GrowNodeRegions (headnode);
 

@@ -1,20 +1,21 @@
-/*  Copyright (C) 1996-1997  Id Software, Inc.
+/*
+	Copyright (C) 1996-1997  Id Software, Inc.
 
-    This program is free software; you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation; either version 2 of the License, or
-    (at your option) any later version.
+	This program is free software; you can redistribute it and/or modify
+	it under the terms of the GNU General Public License as published by
+	the Free Software Foundation; either version 2 of the License, or
+	(at your option) any later version.
 
-    This program is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
+	This program is distributed in the hope that it will be useful,
+	but WITHOUT ANY WARRANTY; without even the implied warranty of
+	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+	GNU General Public License for more details.
 
-    You should have received a copy of the GNU General Public License
-    along with this program; if not, write to the Free Software
-    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
+	You should have received a copy of the GNU General Public License
+	along with this program; if not, write to the Free Software
+	Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 
-    See file, 'COPYING', for details.
+	See file, 'COPYING', for details.
 */
 
 #ifdef HAVE_CONFIG_H
@@ -34,11 +35,9 @@
 
 #include "bsp5.h"
 
-
 int         headclipnode;
 int         firstface;
 
-//===========================================================================
 
 /*
 ==================
@@ -50,8 +49,8 @@ Used to find plane index numbers for clip nodes read from child processes
 int
 FindFinalPlane (dplane_t *p)
 {
-	int         i;
 	dplane_t   *dplane;
+	int         i;
 
 	for (i = 0, dplane = bsp->planes; i < bsp->numplanes; i++, dplane++) {
 		if (p->type != dplane->type)
@@ -67,9 +66,7 @@ FindFinalPlane (dplane_t *p)
 		return i;
 	}
 
-//
 // new plane
-//
 	if (bsp->numplanes == MAX_MAP_PLANES)
 		Sys_Error ("numplanes == MAX_MAP_PLANES");
 	dplane = &bsp->planes[bsp->numplanes];
@@ -79,15 +76,13 @@ FindFinalPlane (dplane_t *p)
 	return bsp->numplanes - 1;
 }
 
-
-
 int         planemapping[MAX_MAP_PLANES];
 
 void
-WriteNodePlanes_r (node_t * node)
+WriteNodePlanes_r (node_t *node)
 {
-	plane_t    *plane;
 	dplane_t   *dplane;
+	plane_t    *plane;
 
 	if (node->planenum == -1)
 		return;
@@ -113,14 +108,8 @@ WriteNodePlanes_r (node_t * node)
 	WriteNodePlanes_r (node->children[1]);
 }
 
-/*
-==================
-WriteNodePlanes
-
-==================
-*/
 void
-WriteNodePlanes (node_t * nodes)
+WriteNodePlanes (node_t *nodes)
 {
 	memset (planemapping, -1, sizeof (planemapping));
 	WriteNodePlanes_r (nodes);
@@ -128,18 +117,11 @@ WriteNodePlanes (node_t * nodes)
 
 //===========================================================================
 
-/*
-==================
-WriteClipNodes_r
-
-==================
-*/
 int
-WriteClipNodes_r (node_t * node)
+WriteClipNodes_r (node_t *node)
 {
-	int         i, c;
 	dclipnode_t *cn;
-	int         num;
+	int         num, c, i;
 
 // FIXME: free more stuff?  
 	if (node->planenum == -1) {
@@ -168,7 +150,7 @@ representation and frees the original memory.
 ==================
 */
 void
-WriteClipNodes (node_t * nodes)
+WriteClipNodes (node_t *nodes)
 {
 	headclipnode = bsp->numclipnodes;
 	WriteClipNodes_r (nodes);
@@ -176,16 +158,11 @@ WriteClipNodes (node_t * nodes)
 
 //===========================================================================
 
-/*
-==================
-WriteLeaf
-==================
-*/
 void
-WriteLeaf (node_t * node)
+WriteLeaf (node_t *node)
 {
-	face_t    **fp, *f;
 	dleaf_t    *leaf_p;
+	face_t    **fp, *f;
 
 // emit a leaf
 	leaf_p = &bsp->leafs[bsp->numleafs];
@@ -193,17 +170,13 @@ WriteLeaf (node_t * node)
 
 	leaf_p->contents = node->contents;
 
-//
 // write bounding box info
-//  
 	VectorCopy (node->mins, leaf_p->mins);
 	VectorCopy (node->maxs, leaf_p->maxs);
 
 	leaf_p->visofs = -1;				// no vis info yet
 
-//
 // write the marksurfaces
-//
 	leaf_p->firstmarksurface = bsp->nummarksurfaces;
 
 	for (fp = node->markfaces; *fp; fp++) {
@@ -221,14 +194,8 @@ WriteLeaf (node_t * node)
 	leaf_p->nummarksurfaces = bsp->nummarksurfaces - leaf_p->firstmarksurface;
 }
 
-
-/*
-==================
-WriteDrawNodes_r
-==================
-*/
 void
-WriteDrawNodes_r (node_t * node)
+WriteDrawNodes_r (node_t *node)
 {
 	dnode_t    *n;
 	int         i;
@@ -246,10 +213,7 @@ WriteDrawNodes_r (node_t * node)
 	n->firstface = node->firstface;
 	n->numfaces = node->numfaces;
 
-//
 // recursively output the other nodes
-//  
-
 	for (i = 0; i < 2; i++) {
 		if (node->children[i]->planenum == -1) {
 			if (node->children[i]->contents == CONTENTS_SOLID)
@@ -265,17 +229,11 @@ WriteDrawNodes_r (node_t * node)
 	}
 }
 
-/*
-==================
-WriteDrawNodes
-==================
-*/
 void
-WriteDrawNodes (node_t * headnode)
+WriteDrawNodes (node_t *headnode)
 {
-	int         i;
-	int         start;
 	dmodel_t   *bm;
+	int         start, i;
 
 #if 0
 	if (headnode->contents < 0)
@@ -302,13 +260,11 @@ WriteDrawNodes (node_t * headnode)
 	bm->visleafs = bsp->numleafs - start;
 
 	for (i = 0; i < 3; i++) {
-		bm->mins[i] = headnode->mins[i] + SIDESPACE + 1;	// remove the
-															// padding
+		bm->mins[i] = headnode->mins[i] + SIDESPACE + 1;  // remove the padding
 		bm->maxs[i] = headnode->maxs[i] - SIDESPACE - 1;
 	}
 // FIXME: are all the children decendant of padded nodes?
 }
-
 
 /*
 ==================
@@ -370,12 +326,6 @@ CleanupName (char *in, char *out)
 		out[i] = 0;
 }
 
-
-/*
-=================
-TEX_InitFromWad
-=================
-*/
 void
 TEX_InitFromWad (char *path)
 {
@@ -398,16 +348,11 @@ TEX_InitFromWad (char *path)
 	}
 }
 
-/*
-==================
-LoadLump
-==================
-*/
 int
-LoadLump (char *name, byte * dest)
+LoadLump (char *name, byte *dest)
 {
-	int         i;
 	char        cname[16];
+	int         i;
 
 	CleanupName (name, cname);
 
@@ -423,17 +368,10 @@ LoadLump (char *name, byte * dest)
 	return 0;
 }
 
-
-/*
-==================
-AddAnimatingTextures
-==================
-*/
 void
 AddAnimatingTextures (void)
 {
-	int         base;
-	int         i, j, k;
+	int         base, i, j, k;
 	char        name[32];
 
 	base = nummiptex;
@@ -449,7 +387,6 @@ AddAnimatingTextures (void)
 			else
 				name[1] = 'A' + j - 10;	// alternate animation
 
-
 			// see if this name exists in the wadfile
 			for (k = 0; k < wadinfo.numlumps; k++)
 				if (!strcmp (name, lumpinfo[k].name)) {
@@ -462,19 +399,14 @@ AddAnimatingTextures (void)
 	printf ("added %i texture frames\n", nummiptex - base);
 }
 
-/*
-==================
-WriteMiptex
-==================
-*/
 void
 WriteMiptex (void)
 {
-	int         i, len;
 	byte       *data;
-	dmiptexlump_t *l;
 	char       *path;
 	char        fullpath[1024];
+	dmiptexlump_t *l;
+	int         i, len;
 
 	path = ValueForKey (&entities[0], "_wad");
 	if (!path || !path[0]) {
@@ -510,12 +442,6 @@ WriteMiptex (void)
 
 //===========================================================================
 
-
-/*
-==================
-BeginBSPFile
-==================
-*/
 void
 BeginBSPFile (void)
 {
@@ -529,12 +455,6 @@ BeginBSPFile (void)
 	firstface = 0;
 }
 
-
-/*
-==================
-FinishBSPFile
-==================
-*/
 void
 FinishBSPFile (void)
 {
@@ -545,7 +465,7 @@ FinishBSPFile (void)
 
 	WriteMiptex ();
 
-	// XXX PrintBSPFileSizes ();
+// XXX	PrintBSPFileSizes ();
 	f = Qopen (bspfilename, "wb");
 	WriteBSPFile (bsp, f);
 	Qclose (f);

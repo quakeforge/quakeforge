@@ -1,20 +1,21 @@
-/*  Copyright (C) 1996-1997  Id Software, Inc.
+/*
+	Copyright (C) 1996-1997  Id Software, Inc.
 
-    This program is free software; you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation; either version 2 of the License, or
-    (at your option) any later version.
+	This program is free software; you can redistribute it and/or modify
+	it under the terms of the GNU General Public License as published by
+	the Free Software Foundation; either version 2 of the License, or
+	(at your option) any later version.
 
-    This program is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
+	This program is distributed in the hope that it will be useful,
+	but WITHOUT ANY WARRANTY; without even the implied warranty of
+	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+	GNU General Public License for more details.
 
-    You should have received a copy of the GNU General Public License
-    along with this program; if not, write to the Free Software
-    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
+	You should have received a copy of the GNU General Public License
+	along with this program; if not, write to the Free Software
+	Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 
-    See file, 'COPYING', for details.
+	See file, 'COPYING', for details.
 */
 
 // region.h
@@ -28,7 +29,6 @@
 #include "bsp5.h"
 
 /*
-
 input
 -----
 vertexes
@@ -42,14 +42,13 @@ smaller set of edges
 regions
 ? triangulated regions
 face to region mapping numbers
-
 */
 
 #define	MAX_EDGES_IN_REGION	32
 
 int         firstedge;
-
 vec3_t      region_mins, region_maxs;
+
 
 void
 AddPointToRegion (vec3_t p)
@@ -72,7 +71,7 @@ ClearRegionSize (void)
 }
 
 void
-AddFaceToRegionSize (face_t * f)
+AddFaceToRegionSize (face_t *f)
 {
 	int         i;
 
@@ -80,16 +79,11 @@ AddFaceToRegionSize (face_t * f)
 		AddPointToRegion (f->pts[i]);
 }
 
-/*
-==============
-CanJoinFaces
-==============
-*/
 qboolean
-CanJoinFaces (face_t * f, face_t * f2)
+CanJoinFaces (face_t *f, face_t *f2)
 {
-	vec3_t      oldmins, oldmaxs;
 	int         i;
+	vec3_t      oldmins, oldmaxs;
 
 	if (f2->planenum != f->planenum
 		|| f2->planeside != f->planeside || f2->texturenum != f->texturenum)
@@ -97,7 +91,7 @@ CanJoinFaces (face_t * f, face_t * f2)
 	if (f2->outputnumber != -1)
 		return false;
 	if (f2->contents[0] != f->contents[0]) {	// does this ever happen?
-												// theyy shouldn't share.
+												// they shouldn't share.
 		printf ("CanJoinFaces: edge with different contents");
 		return false;
 	}
@@ -114,7 +108,8 @@ CanJoinFaces (face_t * f, face_t * f2)
 			}
 		}
 	} else {
-		if (bsp->numsurfedges - firstedge + f2->numpoints > MAX_EDGES_IN_REGION)
+		if (bsp->numsurfedges - firstedge + f2->numpoints
+			> MAX_EDGES_IN_REGION)
 			return false;				// a huge water or sky polygon
 	}
 
@@ -122,18 +117,11 @@ CanJoinFaces (face_t * f, face_t * f2)
 	return true;
 }
 
-
-/*
-==============
-RecursiveGrowRegion
-==============
-*/
 void
-RecursiveGrowRegion (dface_t *r, face_t * f)
+RecursiveGrowRegion (dface_t *r, face_t *f)
 {
-	int         e;
 	face_t     *f2;
-	int         i;
+	int         e, i;
 
 	if (f->outputnumber == bsp->numfaces)
 		return;
@@ -175,8 +163,8 @@ RecursiveGrowRegion (dface_t *r, face_t * f)
 void
 PrintDface (int f)
 {										// for debugging
-	dface_t    *df;
 	dedge_t    *e;
+	dface_t    *df;
 	int         i, n;
 
 	df = &bsp->faces[f];
@@ -193,9 +181,9 @@ PrintDface (int f)
 void
 FindVertexUse (int v)
 {										// for debugging
-	int         i, j, n;
-	dface_t    *df;
 	dedge_t    *e;
+	dface_t    *df;
+	int         i, j, n;
 
 	for (i = firstmodelface; i < bsp->numfaces; i++) {
 		df = &bsp->faces[i];
@@ -213,8 +201,8 @@ FindVertexUse (int v)
 void
 FindEdgeUse (int v)
 {										// for debugging
-	int         i, j, n;
 	dface_t    *df;
+	int         i, j, n;
 
 	for (i = firstmodelface; i < bsp->numfaces; i++) {
 		df = &bsp->faces[i];
@@ -228,6 +216,8 @@ FindEdgeUse (int v)
 	}
 }
 
+int         edgemapping[MAX_MAP_EDGES];
+
 /*
 ================
 HealEdges
@@ -236,16 +226,15 @@ Extends e1 so that it goes all the way to e2, and removes all references
 to e2
 ================
 */
-int         edgemapping[MAX_MAP_EDGES];
 void
 HealEdges (int e1, int e2)
 {
-	int         i, j, n, saved;
-	dface_t    *df;
-	dedge_t    *ed, *ed2;
-	vec3_t      v1, v2;
-	dface_t    *found[2];
+	int         saved, i, j, n;
 	int         foundj[2];
+	dedge_t    *ed, *ed2;
+	dface_t    *df;
+	dface_t    *found[2];
+	vec3_t      v1, v2;
 
 	return;
 	e1 = edgemapping[e1];
@@ -318,17 +307,11 @@ typedef struct {
 
 checkpoint_t checkpoints[MAX_MAP_VERTS];
 
-/*
-==============
-RemoveColinearEdges
-==============
-*/
 void
 RemoveColinearEdges (void)
 {
-	int         i, j, v;
-	int         c0, c1, c2, c3;
 	checkpoint_t *cp;
+	int           c0, c1, c2, c3, i, j, v;
 
 // no edges remapped yet
 	for (i = 0; i < bsp->numedges; i++)
@@ -371,23 +354,17 @@ RemoveColinearEdges (void)
 		}
 	}
 
-//  qprintf ("%5i c0\n", c0);
-//  qprintf ("%5i c1\n", c1);
-//  qprintf ("%5i c2\n", c2);
-//  qprintf ("%5i c3+\n", c3);
+//	qprintf ("%5i c0\n", c0);
+//	qprintf ("%5i c1\n", c1);
+//	qprintf ("%5i c2\n", c2);
+//	qprintf ("%5i c3+\n", c3);
 	qprintf ("%5i deges removed by tjunction healing\n", c2);
 }
 
-/*
-==============
-CountRealNumbers
-==============
-*/
 void
 CountRealNumbers (void)
 {
-	int         i;
-	int         c;
+	int         c, i;
 
 	qprintf ("%5i regions\n", bsp->numfaces - firstmodelface);
 
@@ -406,11 +383,6 @@ CountRealNumbers (void)
 
 //=============================================================================
 
-/*
-==============
-GrowNodeRegion_r
-==============
-*/
 void
 GrowNodeRegion_r (node_t * node)
 {
@@ -424,11 +396,10 @@ GrowNodeRegion_r (node_t * node)
 	node->firstface = bsp->numfaces;
 
 	for (f = node->faces; f; f = f->next) {
-//      if (f->outputnumber != -1)
-//          continue;   // allready grown into an earlier region
+//		if (f->outputnumber != -1)
+//			continue;		// allready grown into an earlier region
 
 		// emit a region
-
 		if (bsp->numfaces == MAX_MAP_FACES)
 			Sys_Error ("MAX_MAP_FACES");
 		f->outputnumber = bsp->numfaces;
@@ -442,7 +413,6 @@ GrowNodeRegion_r (node_t * node)
 		r->lightofs = -1;
 
 		// add the face and mergable neighbors to it
-
 #if 0
 		ClearRegionSize ();
 		AddFaceToRegionSize (f);
@@ -467,26 +437,19 @@ GrowNodeRegion_r (node_t * node)
 	GrowNodeRegion_r (node->children[1]);
 }
 
-
-/*
-==============
-GrowNodeRegions
-==============
-*/
 void
-GrowNodeRegions (node_t * headnode)
+GrowNodeRegions (node_t *headnode)
 {
 	qprintf ("---- GrowRegions ----\n");
 
 	GrowNodeRegion_r (headnode);
 
-//RemoveColinearEdges ();
+//	RemoveColinearEdges ();
 	CountRealNumbers ();
 }
 
 /*
 ===============================================================================
-
 Turn the faces on a plane into optimal non-convex regions
 The edges may still be split later as a result of tjunctions
 
@@ -496,12 +459,10 @@ typedef struct
 	vec3_t	origin;
 	vec3_t	p[2];
 } 
+
 for all faces
 	for all edges
 		for all edges so far
 			if overlap
 				split
-				
-
-===============================================================================
 */

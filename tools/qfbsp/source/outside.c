@@ -27,22 +27,16 @@
 
 int         outleafs;
 
-/*
-===========
-PointInLeaf
-===========
-*/
 node_t     *
-PointInLeaf (node_t * node, vec3_t point)
+PointInLeaf (node_t *node, vec3_t point)
 {
 	vec_t       d;
 
 	if (node->contents)
 		return node;
 
-	d =
-		DotProduct (planes[node->planenum].normal,
-					point) - planes[node->planenum].dist;
+	d = DotProduct (planes[node->planenum].normal, point)
+		- planes[node->planenum].dist;
 
 	if (d > 0)
 		return PointInLeaf (node->children[0], point);
@@ -50,13 +44,8 @@ PointInLeaf (node_t * node, vec3_t point)
 	return PointInLeaf (node->children[1], point);
 }
 
-/*
-===========
-PlaceOccupant
-===========
-*/
 qboolean
-PlaceOccupant (int num, vec3_t point, node_t * headnode)
+PlaceOccupant (int num, vec3_t point, node_t *headnode)
 {
 	node_t     *n;
 
@@ -67,21 +56,16 @@ PlaceOccupant (int num, vec3_t point, node_t * headnode)
 	return true;
 }
 
-
-/*
-==============
-MarkLeakTrail
-==============
-*/
 portal_t   *prevleaknode;
 FILE       *leakfile;
+
 void
-MarkLeakTrail (portal_t * n2)
+MarkLeakTrail (portal_t *n2)
 {
-	int         i, j;
-	vec3_t      p1, p2, dir;
 	float       len;
+	int         i, j;
 	portal_t   *n1;
+	vec3_t      p1, p2, dir;
 
 	if (hullnum)
 		return;
@@ -116,6 +100,9 @@ MarkLeakTrail (portal_t * n2)
 	}
 }
 
+int         hit_occupied;
+int         backdraw;
+
 /*
 ==================
 RecursiveFillOutside
@@ -124,10 +111,8 @@ If fill is false, just check, don't fill
 Returns true if an occupied leaf is reached
 ==================
 */
-int         hit_occupied;
-int         backdraw;
 qboolean
-RecursiveFillOutside (node_t * l, qboolean fill)
+RecursiveFillOutside (node_t *l, qboolean fill)
 {
 	portal_t   *p;
 	int         s;
@@ -165,14 +150,8 @@ RecursiveFillOutside (node_t * l, qboolean fill)
 	return false;
 }
 
-/*
-==================
-ClearOutFaces
-
-==================
-*/
 void
-ClearOutFaces (node_t * node)
+ClearOutFaces (node_t *node)
 {
 	face_t    **fp;
 
@@ -191,22 +170,14 @@ ClearOutFaces (node_t * node)
 	node->faces = NULL;
 }
 
-
 //=============================================================================
 
-/*
-===========
-FillOutside
-
-===========
-*/
 qboolean
-FillOutside (node_t * node)
+FillOutside (node_t *node)
 {
-	int         s;
-	vec_t      *v;
-	int         i;
+	int         i, s;
 	qboolean    inside;
+	vec_t      *v;
 
 	qprintf ("----- FillOutside ----\n");
 
@@ -224,9 +195,8 @@ FillOutside (node_t * node)
 	}
 
 	if (!inside) {
-		printf
-			("Hullnum %i: No entities in empty space -- no filling performed\n",
-			 hullnum);
+		printf ("Hullnum %i: No entities in empty space -- no filling "
+				"performed\n", hullnum);
 		return false;
 	}
 

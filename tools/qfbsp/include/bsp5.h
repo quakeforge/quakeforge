@@ -1,22 +1,22 @@
-/*  Copyright (C) 1996-1997  Id Software, Inc.
+/*
+	Copyright (C) 1996-1997  Id Software, Inc.
 
-    This program is free software; you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation; either version 2 of the License, or
-    (at your option) any later version.
+	This program is free software; you can redistribute it and/or modify
+	it under the terms of the GNU General Public License as published by
+	the Free Software Foundation; either version 2 of the License, or
+	(at your option) any later version.
 
-    This program is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
+	This program is distributed in the hope that it will be useful,
+	but WITHOUT ANY WARRANTY; without even the implied warranty of
+	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+	GNU General Public License for more details.
 
-    You should have received a copy of the GNU General Public License
-    along with this program; if not, write to the Free Software
-    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
+	You should have received a copy of the GNU General Public License
+	along with this program; if not, write to the Free Software
+	Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 
-    See file, 'COPYING', for details.
+	See file, 'COPYING', for details.
 */
-
 
 // bsp5.h
 
@@ -30,7 +30,6 @@ typedef struct
 	int		type;
 } plane_t;
 
-
 #include "map.h"
 
 #define	MAX_THREADS	4
@@ -43,7 +42,6 @@ typedef struct
 #define	SIDESPACE	24
 
 //============================================================================
-
 
 typedef struct
 {
@@ -84,7 +82,6 @@ typedef struct visfacet_s
 	int				edges[MAXEDGES];
 } face_t;
 
-
 typedef struct surface_s
 {
 	struct surface_s	*next;
@@ -92,15 +89,12 @@ typedef struct surface_s
 	int			planenum;
 	int			outputplanenum;		// only valid after WriteSurfacePlanes
 	vec3_t		mins, maxs;
-	qboolean		onnode;				// true if surface has already been used
+	qboolean		onnode;			// true if surface has already been used
 									// as a splitting node
 	face_t		*faces;	// links to all the faces on either side of the surf
 } surface_t;
 
-
-//
 // there is a node_t structure for every node and leaf in the bsp tree
-//
 #define	PLANENUM_LEAF		-1
 
 typedef struct node_s
@@ -124,9 +118,7 @@ typedef struct node_s
 	int				occupied;		// light number in leaf for outside filling
 } node_t;
 
-//=============================================================================
-
-// brush.c
+// brush.c ====================================================================
 
 #define	NUM_HULLS		2				// normal and +16
 
@@ -153,9 +145,7 @@ brushset_t *Brush_LoadEntity (entity_t *ent, int hullnum);
 int	PlaneTypeForNormal (vec3_t normal);
 int	FindPlane (plane_t *dplane, int *side);
 
-//=============================================================================
-
-// csg4.c
+// csg4.c =====================================================================
 
 // build surfaces is also used by GatherNodeFaces
 extern	face_t	*validfaces[MAX_MAP_PLANES];
@@ -165,27 +155,21 @@ face_t *NewFaceFromFace (face_t *in);
 surface_t *CSGFaces (brushset_t *bs);
 void SplitFace (face_t *in, plane_t *split, face_t **front, face_t **back);
 
-//=============================================================================
-
-// solidbsp.c
+// solidbsp.c =================================================================
 
 void DivideFacet (face_t *in, plane_t *split, face_t **front, face_t **back);
 void CalcSurfaceInfo (surface_t *surf);
 void SubdivideFace (face_t *f, face_t **prevptr);
 node_t *SolidBSP (surface_t *surfhead, qboolean midsplit);
 
-//=============================================================================
-
-// merge.c
+// merge.c ====================================================================
 
 void MergePlaneFaces (surface_t *plane);
 face_t *MergeFaceToList (face_t *face, face_t *list);
 face_t *FreeMergeListScraps (face_t *merged);
 void MergeAll (surface_t *surfhead);
 
-//=============================================================================
-
-// surfaces.c
+// surfaces.c =================================================================
 
 extern	int		c_cornerverts;
 extern	int		c_tryedges;
@@ -200,9 +184,7 @@ surface_t *GatherNodeFaces (node_t *headnode);
 
 void MakeFaceEdges (node_t *headnode);
 
-//=============================================================================
-
-// portals.c
+// portals.c ==================================================================
 
 typedef struct portal_s
 {
@@ -218,21 +200,15 @@ void PortalizeWorld (node_t *headnode);
 void WritePortalfile (node_t *headnode);
 void FreeAllPortals (node_t *node);
 
-//=============================================================================
-
-// region.c
+// region.c ===================================================================
 
 void GrowNodeRegions (node_t *headnode);
 
-//=============================================================================
-
-// tjunc.c
+// tjunc.c ====================================================================
 
 void tjunc (node_t *headnode);
 
-//=============================================================================
-
-// writebsp.c
+// writebsp.c =================================================================
 
 void WriteNodePlanes (node_t *headnode);
 void WriteClipNodes (node_t *headnode);
@@ -244,9 +220,7 @@ int FindFinalPlane (dplane_t *p);
 void BeginBSPFile (void);
 void FinishBSPFile (void);
 
-//=============================================================================
-
-// draw.c
+// draw.c =====================================================================
 
 void Draw_ClearBounds (void);
 void Draw_AddToBounds (vec3_t v);
@@ -266,9 +240,7 @@ void DrawBrush (brush_t *b);
 void DrawWinding (winding_t *w);
 void DrawTri (vec3_t p1, vec3_t p2, vec3_t p3);
 
-//=============================================================================
-
-// outside.c
+// outside.c ==================================================================
 
 qboolean FillOutside (node_t *node);
 
@@ -295,7 +267,6 @@ extern	char	bspfilename[1024];
 extern	char	pointfilename[1024];
 
 extern	qboolean	worldmodel;
-
 
 // misc functions
 
