@@ -22,7 +22,7 @@ pkgdata_DATA= menu.dat$(GZ)
 menu_src= \
 	cbuf.r client_menu.qc cmd.r controls_o.qc cvar.r draw.r file.r \
 	game.r inputline.r inputline_util.qc key.r  menu.r options.qc \
-	options_util.qc servlist.qc string.r stringh.r object.r
+	options_util.qc servlist.qc string.r stringh.r
 
 %.qfo: %.r
 	$(QFCC) $(QCFLAGS) $(QCPPFLAGS) -p $(STRIP) -c -o $@ $<
@@ -37,6 +37,6 @@ menu.dat$(GZ): $(menu_obj) $(QFCC_DEP)
 	$(GZIP)
 
 EXTRA_DIST= $(menu_src) cbuf.h client_menu.h cmd.h controls_o.h cvar.h \
-		draw.h file.h game.h inputline.h key.h menu.h object.h options.h \
+		draw.h file.h game.h inputline.h key.h menu.h options.h \
 		options_util.h servlist.h string.h stringh.h
 CLEANFILES= *.dat *.sym *.gz *.qfo
