@@ -767,6 +767,7 @@ ProcessFile (void)
 	bsp = BSP_New ();
 	if (options.portal) {
 		LoadBSP ();
+		bsp2prt ();
 		return;
 	}
 

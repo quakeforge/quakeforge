@@ -61,7 +61,6 @@ dvertex_t  *vertices;
 dedge_t    *edges;
 int        *surfedges;
 unsigned short *marksurfaces;
-plane_t    *mplanes;
 static brushset_t bs;
 
 static void
@@ -98,13 +97,14 @@ load_planes (void)
 	dplane_t   *p;
 	int         i;
 
-	mplanes = malloc (bsp->numplanes * sizeof (plane_t));
+	memset (planes, 0, sizeof (planes));
 	for (i = 0; i < bsp->numplanes; i++) {
 		p = bsp->planes + i;
-		VectorCopy (p->normal, mplanes[i].normal);
-		mplanes[i].dist = p->dist;
-		mplanes[i].type = p->type;
+		VectorCopy (p->normal, planes[i].normal);
+		planes[i].dist = p->dist;
+		planes[i].type = p->type;
 	}
+	numbrushplanes = bsp->numplanes;
 }
 
 static void
@@ -218,7 +218,6 @@ void
 LoadBSP (void)
 {
 	QFile      *f;
-	vec3_t      ooo = {1, 1, 1};
 
 	f = Qopen (options.bspfile, "rb");
 	if (!f)
@@ -239,12 +238,16 @@ LoadBSP (void)
 	load_nodes ();
 	load_models ();
 	load_textures ();
+}
 
-		memcpy (planes, mplanes, bsp->numplanes * sizeof (plane_t));
-		numbrushplanes = bsp->numplanes;
-		VectorSubtract (bsp->models[0].mins, ooo, bs.mins);
-		VectorAdd (bsp->models[0].maxs, ooo, bs.maxs);
-		brushset = &bs;
-		PortalizeWorld (nodes);
-		WritePortalfile (nodes);
+void
+bsp2prt (void)
+{
+	vec3_t      ooo = {1, 1, 1};
+
+	VectorSubtract (bsp->models[0].mins, ooo, bs.mins);
+	VectorAdd (bsp->models[0].maxs, ooo, bs.maxs);
+	brushset = &bs;
+	PortalizeWorld (nodes);
+	WritePortalfile (nodes);
 }
