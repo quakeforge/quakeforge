@@ -5,15 +5,15 @@ M = more testing
 I = in progress
 W = waiting on other work
 
+X	native integer type
+X	?: operator
+X	<op>= operator ( var += expr, etc. )
+X	allow temp defs at higher levels
+I	gut out old parser
 o	switch/case, for any type
 o	break/continue keywords for switch() and for(;;)
-X	native integer type
 o	quaternion type
-o	?: operator
-X	<op>= operator ( var += expr, etc. )
 o	pre- and post- increment operators (++ and --)
 o	CSE optimisations
-I	gut out old parser
-o	allow temp defs at higher leves
 o	move the chained funcion support out of emit_function_expr into
 	funciton_expr
