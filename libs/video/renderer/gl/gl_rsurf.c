@@ -801,12 +801,7 @@ R_RecursiveWorldNode (mnode_t *node)
 	side = dot < 0;
 
 	// recurse down the children, front side first
-	// LordHavoc: save a stack frame by avoiding a call
-	if (node->children[side]->contents != CONTENTS_SOLID
-		&& node->children[side]->visframe == r_visframecount
-		&& !R_CullBox (node->children[side]->minmaxs,
-					   node->children[side]->minmaxs + 3))
-		R_RecursiveWorldNode (node->children[side]);
+	R_RecursiveWorldNode (node->children[side]);
 
 	// draw stuff
 	if ((c = node->numsurfaces)) {
@@ -840,13 +835,7 @@ R_RecursiveWorldNode (mnode_t *node)
 		}
 	}
 	// recurse down the back side
-	// LordHavoc: save a stack frame by avoiding a call
-	side = !side;
-	if (node->children[side]->contents != CONTENTS_SOLID
-		&& node->children[side]->visframe == r_visframecount
-		&& !R_CullBox (node->children[side]->minmaxs,
-					   node->children[side]->minmaxs + 3))
-		R_RecursiveWorldNode (node->children[side]);
+	R_RecursiveWorldNode (node->children[!side]);
 }
 
 void
