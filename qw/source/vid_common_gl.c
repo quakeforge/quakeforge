@@ -159,7 +159,7 @@ VID_InitGamma (unsigned char *pal)
 
 			Cvar_SetFlags (vid_gamma, vid_gamma->flags | CVAR_ROM);
 			for (i = 0; i < 256; i++) {	// Create the gamma-correction table
-				v = (int) (255.0 * pow ((double) i / 255.0, g));
+				v = (int) (255.0 * pow ((double) i / 255.0, g) + 0.5);
 				gammatable[i] = bound (0, v, 255);
 			}
 		}
