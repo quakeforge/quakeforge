@@ -57,7 +57,7 @@ dict_free (void *i, void *unused)
 {
 	dictkey_t	*item = (dictkey_t *) i;
 	free (item->key);
-	PL_FreeItem (item->value);	// Make descended stuff get freed
+	PL_Free (item->value);	// Make descended stuff get freed
 	free (item);
 }
 
@@ -113,7 +113,7 @@ PL_NewString (const char *str)
 }
 
 void
-PL_FreeItem (plitem_t *item)
+PL_Free (plitem_t *item)
 {
 	switch (item->type) {
 		case QFDictionary:
@@ -124,7 +124,7 @@ PL_FreeItem (plitem_t *item)
 				int 	i = ((plarray_t *) item->data)->numvals;
 
 				while (i-- > 0) {
-					PL_FreeItem (((plarray_t *) item->data)->values[i]);
+					PL_Free (((plarray_t *) item->data)->values[i]);
 				}
 				free (((plarray_t *) item->data)->values);
 				free (item->data);
@@ -157,6 +157,29 @@ PL_ObjectForKey (plitem_t *item, const char *key)
 }
 
 plitem_t *
+PL_D_AllKeys (plitem_t *dict)
+{
+	void		**list;
+	dictkey_t	*current;
+	plitem_t	*array;
+
+	if (dict->type != QFDictionary)
+		return NULL;
+
+	if (!(list = Hash_GetList ((hashtab_t *) dict->data)))
+		return NULL;
+
+	if (!(array = PL_NewArray ()))
+		return NULL;
+
+	while ((current = (dictkey_t *) *list++)) {
+		PL_A_AddObject (array, PL_NewString (current->key));
+	}
+
+	return array;
+}
+
+plitem_t *
 PL_ObjectAtIndex (plitem_t *item, int index)
 {
 	plarray_t  *array = (plarray_t *) item->data;
@@ -178,15 +201,20 @@ PL_D_AddObject (plitem_t *dict, plitem_t *key, plitem_t *value)
 	if (key->type != QFString)
 		return NULL;
 
-	k = malloc (sizeof (dictkey_t));
+	if ((k = Hash_Find ((hashtab_t *)dict->data, key->data))) {
+		PL_Free ((plitem_t *) k->value);
+		k->value = value;	// FIXME: should this be a copy?
+	} else {
+		k = malloc (sizeof (dictkey_t));
 
-	if (!k)
-		return NULL;
+		if (!k)
+			return NULL;
 
-	k->key = strdup ((char *) key->data);
-	k->value = value;
+		k->key = strdup ((char *) key->data);
+		k->value = value;	// FIXME: see above
 
-	Hash_Add ((hashtab_t *)dict->data, k);
+		Hash_Add ((hashtab_t *)dict->data, k);
+	}
 	return dict;
 }
 
@@ -465,42 +493,42 @@ PL_ParsePropertyListItem (pldata_t *pl)
 			plitem_t	*value;
 
 			if (!(key = PL_ParsePropertyListItem (pl))) {
-				PL_FreeItem (item);
+				PL_Free (item);
 				return NULL;
 			}
 
 			if (!(PL_SkipSpace (pl))) {
-				PL_FreeItem (key);
-				PL_FreeItem (item);
+				PL_Free (key);
+				PL_Free (item);
 				return NULL;
 			}
 
 			if (key->type != QFString) {
 				pl->error = "Key is not a string";
-				PL_FreeItem (key);
-				PL_FreeItem (item);
+				PL_Free (key);
+				PL_Free (item);
 				return NULL;
 			}
 
 			if (pl->ptr[pl->pos] != '=') {
 				pl->error = "Unexpected character (expected '=')";
-				PL_FreeItem (key);
-				PL_FreeItem (item);
+				PL_Free (key);
+				PL_Free (item);
 				return NULL;
 			}
 			pl->pos++;
 
 			// If there is no value, lose the key				
 			if (!(value = PL_ParsePropertyListItem (pl))) {
-				PL_FreeItem (key);
-				PL_FreeItem (item);
+				PL_Free (key);
+				PL_Free (item);
 				return NULL;
 			}
 
 			if (!(PL_SkipSpace (pl))) {
-				PL_FreeItem (key);
-				PL_FreeItem (value);
-				PL_FreeItem (item);
+				PL_Free (key);
+				PL_Free (value);
+				PL_Free (item);
 				return NULL;
 			}
 
@@ -508,25 +536,25 @@ PL_ParsePropertyListItem (pldata_t *pl)
 				pl->pos++;
 			} else if (pl->ptr[pl->pos] != '}') {
 				pl->error = "Unexpected character (wanted ';' or '}')";
-				PL_FreeItem (key);
-				PL_FreeItem (value);
-				PL_FreeItem (item);
+				PL_Free (key);
+				PL_Free (value);
+				PL_Free (item);
 				return NULL;
 			}
 
 			// Add the key/value pair to the dictionary
 			if (!PL_D_AddObject (item, key, value)) {
-				PL_FreeItem (key);
-				PL_FreeItem (value);
-				PL_FreeItem (item);
+				PL_Free (key);
+				PL_Free (value);
+				PL_Free (item);
 				return NULL;
 			}
-			PL_FreeItem (key);
+			PL_Free (key);
 		}
 
 		if (pl->pos >= pl->end) {	// Catch the error
 			pl->error = "Unexpected end of string when parsing dictionary";
-			PL_FreeItem (item);
+			PL_Free (item);
 			return NULL;
 		}
 		pl->pos++;
@@ -546,13 +574,13 @@ PL_ParsePropertyListItem (pldata_t *pl)
 			plitem_t	*value;
 
 			if (!(value = PL_ParsePropertyListItem (pl))) {
-				PL_FreeItem (item);
+				PL_Free (item);
 				return NULL;
 			}
 
 			if (!(PL_SkipSpace (pl))) {
-				PL_FreeItem (value);
-				PL_FreeItem (item);
+				PL_Free (value);
+				PL_Free (item);
 				return NULL;
 			}
 
@@ -560,15 +588,15 @@ PL_ParsePropertyListItem (pldata_t *pl)
 				pl->pos++;
 			} else if (pl->ptr[pl->pos] != ')') {
 				pl->error = "Unexpected character (wanted ',' or ')')";
-				PL_FreeItem (value);
-				PL_FreeItem (item);
+				PL_Free (value);
+				PL_Free (item);
 				return NULL;
 			}
 
 			if (!PL_A_AddObject (item, value)) {
 				pl->error = "Unexpected character (too many items in array)";
-				PL_FreeItem (value);
-				PL_FreeItem (item);
+				PL_Free (value);
+				PL_Free (item);
 				return NULL;
 			}
 		}

@@ -37,6 +37,37 @@
 inrange((ch), '0', '9') ? ((ch) - 0x30) \
 : (inrange((ch), 'a', 'f') ? ((ch) - 0x57) : ((ch) - 0x37))
 
+/**
+	There are four types of data that can be stored in a property list:
+
+		QFDictionary	A list of values, each associated with a key (a C string).
+		QFArray			A list of indexed values
+		QFString		A string.
+		QFBinary		Random binary data. The parser doesn't load these yet.
+
+	In textual form, a dictionary looks like:
+
+	{
+		key = value;
+	}
+
+	An array looks like:
+
+	(
+		value1,
+		value2
+	)
+
+	An unquoted string may contain only alphanumeric characters and/or the
+	underscore character, '_'. Quoted strings may contain whitespace, C escape
+	sequences, and so on. The quote character is '"'.
+
+	QFBinary data (though not loaded currently) is hex-encoded and contained
+	within angle brackets, < >. The length of the encoded data must be an even
+	number, so while <FF00> is valid, <F00> isn't.
+
+	Property lists may contain C-style or BCPL-style comments.
+*/
 typedef enum {QFDictionary, QFArray, QFBinary, QFString} pltype_t;	// possible types
 
 /*
@@ -78,9 +109,51 @@ typedef struct plbinary_s	plbinary_t;
 
 struct hashtab_s;
 
+/**
+	\fn plitem_t *PL_GetPropertyList (const char *string)
+	\brief Create an in-memory representation of the contents of a property list
+	
+	\param string	the saved plist, as read from a file.
+
+	\return Returns an object equivalent to the passed-in string.
+	You are responsible for freeing the object returned.
+*/
 plitem_t *PL_GetPropertyList (const char *);
+
+/**
+	\fn plitem_t *PL_ObjectForKey (plitem_t *dict, const char *key)
+	\brief Retrieve a value from a dictionary object.
+
+	\param dict	The dictionary to retrieve a value from
+	\param key	The unique key associated with the value
+
+	\return	You are NOT responsible for freeing the returned object. It will
+	be destroyed when its container is.
+*/
 plitem_t *PL_ObjectForKey (plitem_t *, const char *);
+
+/**
+	\fn plitem_t *PL_ObjectAtIndex (plitem_t *array, int idx)
+	\brief Retrieve a value from an array object.
+
+	\param array	The array to get the value from
+	\param idx		The index within the array to retrieve
+
+	\return	You are NOT responsible for freeing the returned object. It will
+	be destroyed when its container is.
+*/
 plitem_t *PL_ObjectAtIndex (plitem_t *, int);
+
+/**
+	\fn plitem_t *PL_D_AllKeys (plitem_t *dict)
+	\brief Retrieve a list of all keys in a dictionary.
+
+	\param dict The dictionary to list
+
+	\return Returns an Array containing Strings. You are responsible for
+	freeing this array.
+*/
+plitem_t *PL_D_AllKeys (plitem_t *);
 
 plitem_t *PL_D_AddObject (plitem_t *, plitem_t *, plitem_t *);
 plitem_t *PL_A_AddObject (plitem_t *, plitem_t *);
@@ -91,7 +164,14 @@ plitem_t *PL_NewArray (void);
 plitem_t *PL_NewData (void *, int);
 plitem_t *PL_NewString (const char *);
 
-void PL_FreeItem (struct plitem_s *);
+/**
+	\fn void PL_Free (plitem_t *object)
+	\brief Free a property list object
+
+	This function takes care of freeing any referenced property list data, so
+	only call it on top-level objects.
+*/
+void PL_Free (plitem_t *);
 
 typedef struct pldata_s {	// Unparsed property list string
 	const char		*ptr;
