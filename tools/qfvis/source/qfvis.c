@@ -847,7 +847,8 @@ main (int argc, char **argv)
 	CalcVis ();
 
 	if (options.verbosity >= 0)
-		printf ("c_chains: %i\n", c_chains);
+		printf ("c_chains: %i%s\n", c_chains,
+				options.threads > 1 ? " (not reliable)" :"");
 
 	BSP_AddVisibility (bsp, visdata->str, visdata->size);
 	if (options.verbosity >= 0)

@@ -217,7 +217,7 @@ RecursiveLeafFlow (int leafnum, threaddata_t *thread, pstack_t *prevstack)
     portal_t	*p;
     plane_t		backplane;
     winding_t	*source, *target;
-	
+
     c_chains++;
 
     leaf = &leafs[leafnum];
