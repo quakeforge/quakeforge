@@ -133,7 +133,7 @@ new_struct (const char *name)
 	if (name) {
 		strct = (struct_t *) Hash_Find (structs, name);
 		if (strct) {
-			error (0, "duplicate struct definition");
+			error (0, "duplicate struct definition: `%s'", name);
 			return 0;
 		}
 	}
