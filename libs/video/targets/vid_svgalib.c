@@ -58,7 +58,6 @@
 void        VGA_UpdatePlanarScreen (void *srcbuffer);
 
 cvar_t      *vid_system_gamma;
-qboolean    vid_gamma_avail;
 
 static int  num_modes, current_mode;
 static vga_modeinfo *modes;

@@ -75,7 +75,6 @@ static qboolean vid_initialized = false;
 
 cvar_t     *vid_fullscreen;
 cvar_t      *vid_system_gamma;
-qboolean    vid_gamma_avail;
 
 int         VID_options_items = 1;
 int         modestate;

@@ -77,6 +77,7 @@ extern unsigned int 	d_8to24table[256];
 extern int				scr_width, scr_height;
 extern qboolean 		DDActive;
 extern byte 			gammatable[256];
+extern qboolean			vid_gamma_avail;
 
 // called at startup and after any gamma correction
 void VID_SetPalette (unsigned char *palette);
