@@ -1449,7 +1449,9 @@ function_expr (expr_t *e1, expr_t *e2)
 		if (parm_count > ftype->num_parms) {
 			return error (e1, "too many arguments");
 		} else if (parm_count < ftype->num_parms) {
-			return error (e1, "too few arguments");
+			if (!options.traditional)
+				return error (e1, "too few arguments");
+			warning (e1, "too few arguments");
 		}
 	}
 	for (i = parm_count, e = e2; i > 0; i--, e = e->next) {
@@ -1524,9 +1526,18 @@ expr_t *
 return_expr (function_t *f, expr_t *e)
 {
 	if (!e) {
-		if (f->def->type->aux_type != &type_void)
-			return error (e, "return from non-void function without a value");
-	} else {
+		if (f->def->type->aux_type != &type_void) {
+			if (options.traditional) {
+				warning (e, "return from non-void function without a value");
+				e = new_expr ();
+				e->type = ex_nil;
+			} else {
+				e = error (e, "return from non-void function without a value");
+				return e;
+			}
+		}
+	}
+	if (e) {
 		type_t     *t = get_type (e);
 
 		if (f->def->type->aux_type == &type_void)
@@ -1737,10 +1748,14 @@ assign_expr (expr_t *e1, expr_t *e2)
 		convert_nil (e2, t2);
 	}
 
-	if (t1 != t2)
-		return type_mismatch (e1, e2, op);
-	else
+	if (t1 != t2) {
+		if (!options.traditional || t1->type != ev_func || t2->type != ev_func)
+			return type_mismatch (e1, e2, op);
+		warning (e1, "assignment between disparate function types");
 		type = t1;
+	} else {
+		type = t1;
+	}
 	if (is_indirect (e1) && is_indirect (e2)) {
 		expr_t     *temp = new_temp_def_expr (t1);
 

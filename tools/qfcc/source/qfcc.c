@@ -80,6 +80,7 @@ static struct option const long_options[] = {
 	{"help", no_argument, 0, 'h'},
 	{"version", no_argument, 0, 'V'},
 	{"files", no_argument, 0, 'F'},
+	{"traditional", no_argument, 0, 't'},
 #ifdef USE_CPP
 	{"define", required_argument, 0, 'D'},
 	{"include", required_argument, 0, 'I'},
@@ -856,6 +857,10 @@ DecodeArgs (int argc, char **argv)
 				break;
 			case 'g':					// debug
 				options.code.debug = true;
+				break;
+			case 't':					// traditional
+				options.traditional = true;
+				options.code.progsversion = PROG_ID_VERSION;
 				break;
 			case 'C':{					// code options
 					char       *opts = strdup (optarg);

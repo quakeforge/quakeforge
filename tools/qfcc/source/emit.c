@@ -192,7 +192,10 @@ emit_assign_expr (int oper, expr_t *e)
 					warning (e1, "assignment to constant %s (Moooooooo!)",
 							 def_a->name);
 			} else {
-				error (e1, "assignment to constant %s", def_a->name);
+				if (options.traditional)
+					warning (e1, "assignment to constant %s", def_a->name);
+				else
+					error (e1, "assignment to constant %s", def_a->name);
 			}
 		}
 		def_b = emit_sub_expr (e2, def_a);

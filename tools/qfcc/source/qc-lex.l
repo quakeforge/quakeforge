@@ -216,34 +216,35 @@ typedef struct {
 	const char	*name;
 	int			value;
 	type_t		*type;
+	int			traditional;
 	int			version;
 } keyword_t;
 
 static keyword_t keywords[] = {
-	{"void",		TYPE,	&type_void,			PROG_ID_VERSION},
-	{"float",		TYPE,	&type_float,		PROG_ID_VERSION},
-	{"string",		TYPE,	&type_string,		PROG_ID_VERSION},
-	{"vector",		TYPE,	&type_vector,		PROG_ID_VERSION},
-	{"entity",		TYPE,	&type_entity,		PROG_ID_VERSION},
-	{"quaternion",	TYPE,	&type_quaternion,	PROG_VERSION},
-	{"integer",		TYPE,	&type_integer,		PROG_VERSION},
-	{"function",	TYPE,	&type_function,		PROG_VERSION},
-	{"local",		LOCAL,	0,					PROG_ID_VERSION},
-	{"return",		RETURN,	0,					PROG_ID_VERSION},
-	{"while",		WHILE,	0,					PROG_ID_VERSION},
-	{"do",			DO,		0,					PROG_ID_VERSION},
-	{"if",			IF,		0,					PROG_ID_VERSION},
-	{"else",		ELSE,	0,					PROG_ID_VERSION},
-	{"for",			FOR,	0,					PROG_ID_VERSION},
-	{"break",		BREAK,	0,					PROG_ID_VERSION},
-	{"continue",	CONTINUE, 0,				PROG_ID_VERSION},
-	{"switch",		SWITCH,	0,					PROG_ID_VERSION},
-	{"case",		CASE,	0,					PROG_ID_VERSION},
-	{"default",		DEFAULT, 0,					PROG_ID_VERSION},
-	{"NIL",			NIL,	0,					PROG_ID_VERSION},
-	{"struct",		STRUCT, 0,					PROG_VERSION},
-	{"enum",		ENUM,	0,					PROG_ID_VERSION},
-	{"typedef",		TYPEDEF, 0,					PROG_ID_VERSION},
+	{"void",		TYPE,	&type_void,			1, PROG_ID_VERSION},
+	{"float",		TYPE,	&type_float,		1, PROG_ID_VERSION},
+	{"string",		TYPE,	&type_string,		1, PROG_ID_VERSION},
+	{"vector",		TYPE,	&type_vector,		1, PROG_ID_VERSION},
+	{"entity",		TYPE,	&type_entity,		1, PROG_ID_VERSION},
+	{"quaternion",	TYPE,	&type_quaternion,	0, PROG_VERSION},
+	{"integer",		TYPE,	&type_integer,		0, PROG_VERSION},
+	{"function",	TYPE,	&type_function,		0, PROG_VERSION},
+	{"local",		LOCAL,	0,					1, PROG_ID_VERSION},
+	{"return",		RETURN,	0,					1, PROG_ID_VERSION},
+	{"while",		WHILE,	0,					1, PROG_ID_VERSION},
+	{"do",			DO,		0,					1, PROG_ID_VERSION},
+	{"if",			IF,		0,					1, PROG_ID_VERSION},
+	{"else",		ELSE,	0,					1, PROG_ID_VERSION},
+	{"for",			FOR,	0,					0, PROG_ID_VERSION},
+	{"break",		BREAK,	0,					0, PROG_ID_VERSION},
+	{"continue",	CONTINUE, 0,				0, PROG_ID_VERSION},
+	{"switch",		SWITCH,	0,					0, PROG_ID_VERSION},
+	{"case",		CASE,	0,					0, PROG_ID_VERSION},
+	{"default",		DEFAULT, 0,					0, PROG_ID_VERSION},
+	{"NIL",			NIL,	0,					0, PROG_ID_VERSION},
+	{"struct",		STRUCT, 0,					0, PROG_VERSION},
+	{"enum",		ENUM,	0,					0, PROG_ID_VERSION},
+	{"typedef",		TYPEDEF, 0,					0, PROG_ID_VERSION},
 };
 
 static const char *
@@ -263,7 +264,8 @@ type_or_name (char *token)
 		int i;
 		keyword_tab = Hash_NewTable (1021, keyword_get_key, 0, 0);
 		for (i = 0; i < sizeof (keywords) / sizeof (keywords[0]); i++)
-			if (keywords[i].version <= options.code.progsversion)
+			if (keywords[i].traditional >= options.traditional
+				&& keywords[i].version <= options.code.progsversion)
 				Hash_Add (keyword_tab, &keywords[i]);
 	}
 	keyword = Hash_Find (keyword_tab, token);

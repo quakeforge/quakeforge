@@ -594,6 +594,7 @@ typedef struct {
 	int				verbosity;		// 0=silent, goes up to 2 currently
 	qboolean		save_temps;		// save temporary files
 	qboolean		files_dat;		// generate files.dat
+	qboolean		traditional;	// behave more like qcc
 } options_t;
 
 extern options_t options;
