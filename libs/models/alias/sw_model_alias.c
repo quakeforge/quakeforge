@@ -118,6 +118,9 @@ Mod_LoadAliasFrame (void *pin, int *posenum, maliasframedesc_t *frame, int extra
 		// byte values, don't worry about endianness
 		frame->bboxmin.v[i] = pdaliasframe->bboxmin.v[i];
 		frame->bboxmax.v[i] = pdaliasframe->bboxmax.v[i];
+
+		aliasbboxmins[i] = min (frame->bboxmin.v[i], aliasbboxmins[i]);
+		aliasbboxmaxs[i] = max (frame->bboxmax.v[i], aliasbboxmaxs[i]);
 	}
 
 	pinframe = (trivertx_t *) (pdaliasframe + 1);
@@ -183,6 +186,9 @@ Mod_LoadAliasGroup (void *pin, int *posenum, maliasframedesc_t *frame, int extra
 		// these are byte values, so we don't have to worry about endianness
 		frame->bboxmin.v[i] = pingroup->bboxmin.v[i];
 		frame->bboxmax.v[i] = pingroup->bboxmax.v[i];
+
+		aliasbboxmins[i] = min (frame->bboxmin.v[i], aliasbboxmins[i]);
+		aliasbboxmaxs[i] = max (frame->bboxmax.v[i], aliasbboxmaxs[i]);
 	}
 
 	frame->frame = (byte *) paliasgroup - (byte *) pheader;

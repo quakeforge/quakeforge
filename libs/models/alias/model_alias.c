@@ -52,10 +52,6 @@ static const char rcsid[] =
 
 #include "compat.h"
 
-/*
-	ALIAS MODELS
-*/
-
 aliashdr_t *pheader;
 
 stvert_t    *stverts;
@@ -67,6 +63,8 @@ int triangles_size = 0;
 // sequence of poses
 trivertx_t *poseverts[MAXALIASFRAMES];
 int         posenum = 0;
+int			aliasbboxmins[3], aliasbboxmaxs[3];
+
 
 void *
 Mod_LoadAllSkins (int numskins, daliasskintype_t *pskintype, int *pskinindex)
@@ -264,6 +262,8 @@ Mod_LoadAliasModel (model_t *mod, void *buffer, cache_allocator_t allocator)
 	// load the frames
 	posenum = 0;
 	pframetype = (daliasframetype_t *) &pintriangles[pheader->mdl.numtris];
+	aliasbboxmins[0] = aliasbboxmins[1] = aliasbboxmins[2] =  99999;
+	aliasbboxmaxs[0] = aliasbboxmaxs[1] = aliasbboxmaxs[2] = -99999;
 
 	for (i = 0; i < numframes; i++) {
 		aliasframetype_t frametype;
@@ -286,9 +286,12 @@ Mod_LoadAliasModel (model_t *mod, void *buffer, cache_allocator_t allocator)
 
 	mod->type = mod_alias;
 
-// FIXME: do this right
-	mod->mins[0] = mod->mins[1] = mod->mins[2] = -16;
-	mod->maxs[0] = mod->maxs[1] = mod->maxs[2] = 16;
+	for (i = 0; i < 3; i++) {
+		mod->mins[i] = aliasbboxmins[i] * pheader->mdl.scale[i] +
+			pheader->mdl.scale_origin[i];
+		mod->maxs[i] = aliasbboxmaxs[i] * pheader->mdl.scale[i] +
+			pheader->mdl.scale_origin[i];
+	}
 
 	// build the draw lists
 	Mod_MakeAliasModelDisplayLists (mod, pheader, buffer, com_filesize, extra);

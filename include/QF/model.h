@@ -346,6 +346,8 @@ extern	aliashdr_t	*pheader;
 extern	stvert_t	*stverts;
 extern	mtriangle_t	*triangles;
 extern	trivertx_t	*poseverts[MAXALIASFRAMES];
+extern  int			 aliasbboxmins[3];
+extern  int			 aliasbboxmaxs[3];
 
 //===================================================================
 
