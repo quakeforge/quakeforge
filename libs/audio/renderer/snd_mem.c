@@ -68,7 +68,7 @@ SND_GetCache (long samples, int rate, int inwidth, int channels,
 	sc->speed = rate;
 	sc->width = inwidth;
 	sc->stereo = channels;
-	sc->size = size;
+	sc->bytes = size;
 	memcpy (sc->data + size, "\xde\xad\xbe\xef", 4);
 	return sc;
 }
@@ -174,7 +174,7 @@ SND_ResampleSfx (sfxcache_t *sc, byte * data)
 	sc->length = outcount;
 	if (sc->loopstart != -1)
 		sc->loopstart = sc->loopstart / stepscale;
-	if (memcmp (sc->data + sc->size, "\xde\xad\xbe\xef", 4))
+	if (memcmp (sc->data + sc->bytes, "\xde\xad\xbe\xef", 4))
 		Sys_Error ("SND_ResampleSfx screwed the pooch");
 }
 
