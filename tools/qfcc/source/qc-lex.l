@@ -220,6 +220,8 @@ static keyword_t keywords[] = {
 	{"if",			IF,		0,					PROG_ID_VERSION},
 	{"else",		ELSE,	0,					PROG_ID_VERSION},
 	{"for",			FOR,	0,					PROG_ID_VERSION},
+	{"break",		BREAK,	0,					PROG_ID_VERSION},
+	{"continue",	CONTINUE, 0,				PROG_ID_VERSION},
 	{"NIL",			NIL,	0,					PROG_ID_VERSION},
 };
 

@@ -14,7 +14,7 @@ X	move the chained funcion support out of emit_function_expr into
 X	pre- and post- increment operators (++ and --)
 I	gut out old parser
 o	switch/case, for any type
-o	break/continue keywords for switch() and for(;;)
+X	break/continue keywords for switch() and for(;;)
 o	quaternion type. Tricky: requires 4 word args/return
 o	CSE optimisations
 X	full scoping

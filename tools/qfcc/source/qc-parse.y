@@ -103,13 +103,14 @@ typedef struct {
 %token	<vector_val> VECTOR_VAL
 %token	<quaternion_val> QUATERNION_VAL
 
-%token	LOCAL RETURN WHILE DO IF ELSE FOR ELIPSIS NIL
+%token	LOCAL RETURN WHILE DO IF ELSE FOR BREAK CONTINUE ELIPSIS NIL
 %token	<type> TYPE
 
 %type	<type>	type maybe_func
 %type	<def>	param param_list def_item def_list def_name
 %type	<expr>	const opt_expr expr arg_list
 %type	<expr>	statement statements statement_block
+%type	<expr>	break_label continue_label
 %type	<function> begin_function
 %type	<def_list> save_inits
 
@@ -122,6 +123,8 @@ def_t	*current_def;
 def_t	param_scope;
 function_t *current_func;
 expr_t	*local_expr;
+expr_t	*break_label;
+expr_t	*continue_label;
 
 def_t		*pr_scope;					// the function being parsed, or NULL
 string_t	s_file;						// filename for function definition
@@ -404,38 +407,59 @@ statement
 		{
 			$$ = return_expr (current_func, 0);
 		}
-	| WHILE '(' expr ')' save_inits statement
+	| BREAK ';'
+		{
+			if (break_label)
+				$$ = new_unary_expr ('g', break_label);
+			else
+				$$ = error (0, "break outside of loop or switch");
+		}
+	| CONTINUE ';'
+		{
+			if (continue_label)
+				$$ = new_unary_expr ('g', continue_label);
+			else
+				$$ = error (0, "continue outside of loop");
+		}
+	| WHILE break_label continue_label '(' expr ')' save_inits statement
 		{
 			expr_t *l1 = new_label_expr ();
-			expr_t *l2 = new_label_expr ();
+			expr_t *l2 = break_label;
 			expr_t *e;
 
-			restore_local_inits ($5);
-			free_local_inits ($5);
+			restore_local_inits ($7);
+			free_local_inits ($7);
 
 			$$ = new_block_expr ();
 
-			e = new_binary_expr ('n', test_expr ($3, 1), l2);
-			e->line = $3->line;
-			e->file = $3->file;
+			e = new_binary_expr ('n', test_expr ($5, 1), l2);
+			e->line = $5->line;
+			e->file = $5->file;
 			append_expr ($$, e);
 			append_expr ($$, l1);
-			append_expr ($$, $6);
-			e = new_binary_expr ('i', test_expr ($3, 1), l1);
-			e->line = $3->line;
-			e->file = $3->file;
+			append_expr ($$, $8);
+			append_expr ($$, continue_label);
+			e = new_binary_expr ('i', test_expr ($5, 1), l1);
+			e->line = $5->line;
+			e->file = $5->file;
 			append_expr ($$, e);
 			append_expr ($$, l2);
+			break_label = $2;
+			continue_label = $3;
 		}
-	| DO statement WHILE '(' expr ')' ';'
+	| DO break_label continue_label statement WHILE '(' expr ')' ';'
 		{
 			expr_t *l1 = new_label_expr ();
 
 			$$ = new_block_expr ();
 
 			append_expr ($$, l1);
-			append_expr ($$, $2);
-			append_expr ($$, new_binary_expr ('i', test_expr ($5, 1), l1));
+			append_expr ($$, $4);
+			append_expr ($$, continue_label);
+			append_expr ($$, new_binary_expr ('i', test_expr ($7, 1), l1));
+			append_expr ($$, break_label);
+			break_label = $2;
+			continue_label = $3;
 		}
 	| LOCAL type
 		{
@@ -503,31 +527,48 @@ statement
 			free_local_inits (else_ini);
 			free_local_inits ($<def_list>8);
 		}
-	| FOR '(' opt_expr ';' opt_expr ';' opt_expr ')' save_inits statement
+	| FOR break_label continue_label '(' opt_expr ';' opt_expr ';' opt_expr ')' save_inits statement
 		{
 			expr_t *l1 = new_label_expr ();
-			expr_t *l2 = new_label_expr ();
+			expr_t *l2 = break_label;
 
-			restore_local_inits ($9);
-			free_local_inits ($9);
+			restore_local_inits ($11);
+			free_local_inits ($11);
 
 			$$ = new_block_expr ();
 
-			append_expr ($$, $3);
-			if ($5)
-				append_expr ($$, new_binary_expr ('n', test_expr ($5, 1), l2));
+			append_expr ($$, $5);
+			if ($7)
+				append_expr ($$, new_binary_expr ('n', test_expr ($7, 1), l2));
 			append_expr ($$, l1);
-			append_expr ($$, $10);
-			append_expr ($$, $7);
+			append_expr ($$, $12);
+			append_expr ($$, continue_label);
+			append_expr ($$, $9);
 			if ($5)
-				append_expr ($$, new_binary_expr ('i', test_expr ($5, 1), l1));
+				append_expr ($$, new_binary_expr ('i', test_expr ($7, 1), l1));
 			append_expr ($$, l2);
+			break_label = $2;
+			continue_label = $3;
 		}
 	| expr ';'
 		{
 			$$ = $1;
 		}
 	;
+
+break_label
+	: /* empty */
+		{
+			$$ = break_label;
+			break_label = new_label_expr ();
+		}
+
+continue_label
+	: /* empty */
+		{
+			$$ = continue_label;
+			continue_label = new_label_expr ();
+		}
 
 save_inits
 	: /* empty */
