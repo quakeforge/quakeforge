@@ -105,7 +105,7 @@ m		([\-+]?)
 						return INT_VAL;
 					}
 
-0x{XDIGIT}+			{
+0[xX]{XDIGIT}+		{
 						const char *c = yytext + 2;
 						yylval.integer_val = 0;
 						while (*c) {
