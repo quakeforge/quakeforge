@@ -261,7 +261,7 @@ FillOutside (node_t *node)
 		qprintf ("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!\n");
 
 		if (!options.hullnum) {
-			node_t     *n, *nextnode;;
+			node_t     *n, *nextnode;
 			portal_t   *p, *p2;
 			int         i, j, next, side;
 			vec3_t      wc;
