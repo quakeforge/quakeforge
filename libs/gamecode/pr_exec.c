@@ -965,7 +965,7 @@ char       *
 PR_GetString (progs_t * pr, int num)
 {
 	if (num < 0) {
-		// Con_DPrintf("GET:%d == %s\n", num, pr->pr_strtbl[-num]);
+		//Con_DPrintf("GET:%d == %s\n", num, pr->pr_strtbl[-num]);
 		return pr->pr_strtbl[-num];
 	}
 	return pr->pr_strings + num;
@@ -977,8 +977,8 @@ PR_SetString (progs_t * pr, char *s)
 	int         i = s - pr->pr_strings;
 
 	if (i < 0 || i > pr->pr_stringsize) {
-		for (i = 0; i <= pr->num_prstr; i++)
-			if (pr->pr_strtbl[i] == s)
+		for (i = 1; i <= pr->num_prstr; i++)
+			if (strequal (pr->pr_strtbl[i], s))
 				break;
 		if (i < pr->num_prstr)
 			return -i;
@@ -986,7 +986,7 @@ PR_SetString (progs_t * pr, char *s)
 			Sys_Error ("MAX_PRSTR");
 		pr->num_prstr++;
 		pr->pr_strtbl[pr->num_prstr] = s;
-		// Con_DPrintf("SET:%d == %s\n", -pr->num_prstr, s);
+		//Con_DPrintf("SET:%d == %s\n", -pr->num_prstr, s);
 		return -pr->num_prstr;
 	}
 	return (int) (s - pr->pr_strings);
