@@ -85,6 +85,7 @@ Changes from 0.5.4
           kick default
         * fix bug where certain looped sounds would cause a hang
 		* 64 bit compile fixes
+		* alias models are no longer black on maps with no lighting info
     o qfcc enhancements.
         * conforms better to Objective-C sematics
         * "struct" support closer to that of C (ie, separate namespace)
