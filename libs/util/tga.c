@@ -231,6 +231,17 @@ setup_pixrow_span (TargaHeader *targa, tex_t *tex, byte **_pixrow, int *_span)
 	*_span = span;
 }
 
+static byte *
+skip_colormap (TargaHeader *targa, byte *data)
+{
+	int         bpe;
+	if (!targa->colormap_type)
+		return data;
+	Sys_DPrintf ("LoadTGA: skipping colormap\n");
+	bpe = (targa->pixel_size +7) / 8;
+	return data + bpe * targa->colormap_length;
+}
+
 static cmap_t *
 parse_colormap (TargaHeader *targa, byte **dataByte)
 {
@@ -502,6 +513,8 @@ decode_truecolor_32_rle (TargaHeader *targa, tex_t *tex, byte *dataByte)
 static void
 decode_truecolor (TargaHeader *targa, tex_t *tex, byte *dataByte)
 {
+	dataByte = skip_colormap (targa, dataByte);
+
 	switch (targa->pixel_size) {
 		case 24:
 			tex->format = tex_rgb;
@@ -519,6 +532,8 @@ decode_truecolor (TargaHeader *targa, tex_t *tex, byte *dataByte)
 static void
 decode_truecolor_rle (TargaHeader *targa, tex_t *tex, byte *dataByte)
 {
+	dataByte = skip_colormap (targa, dataByte);
+
 	switch (targa->pixel_size) {
 		case 24:
 			tex->format = tex_rgb;
@@ -538,6 +553,8 @@ decode_greyscale (TargaHeader *targa, tex_t *tex, byte *dataByte)
 {
 	byte       *pixcol, *pixrow;
 	int         column, columns, rows, span;
+
+	dataByte = skip_colormap (targa, dataByte);
 
 	if (targa->pixel_size != 8)
 		Sys_Error ("LoadTGA: unsupported truecolor pixel size");
