@@ -87,8 +87,6 @@ qboolean    r_fov_greater_than_90;
 
 entity_t    r_worldentity;
 
-mplane_t    frustum[4];
-
 // view origin
 vec3_t      vup, base_vup;
 vec3_t      vpn, base_vpn;

@@ -1310,6 +1310,31 @@ Host_EndGame (const char *message, ...)
 }
 
 /*
+	Host_NetError
+
+	Used for networking errors that disconnect, but don't exit the
+	client
+*/
+void
+Host_NetError (const char *message, ...)
+{
+	va_list argptr;
+	int old = 0;
+
+	old = net_packetlog->int_val;
+	if (net_packetlog->int_val)
+		Cvar_Set (net_packetlog, "0");
+	Log_Incoming_Packet (net_message->message->data,
+						 net_message->message->cursize);
+	if (old)
+		Cvar_SetValue (net_packetlog, old);
+
+	va_start (argptr, message);
+	Host_EndGame (message, argptr);
+	va_end (argptr);
+}
+
+/*
 	Host_Error
 
 	This shuts down the client and exits qwcl

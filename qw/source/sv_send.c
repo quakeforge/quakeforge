@@ -783,7 +783,6 @@ SV_SendClientMessages (void)
 		// if the reliable message overflowed, drop the client
 		if (c->netchan.message.overflowed) {
 			int i;
-			extern void Analyze_Server_Packet (byte *data, int len);
 			byte *data = Hunk_TempAlloc (MAX_MSGLEN + 8);
 
 			memset (data, 0, 8);

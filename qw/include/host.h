@@ -60,6 +60,7 @@ void Host_InitCommands (void);
 void Host_Init (void);
 void Host_Shutdown(void);
 void Host_Error (const char *error, ...) __attribute__((format(printf,1,2)));
+void Host_NetError (const char *error, ...) __attribute((format(printf,1,2)));
 void Host_EndGame (const char *message, ...) __attribute__((format(printf,1,2)));
 void Host_Frame (float time);
 void Host_Quit_f (void);

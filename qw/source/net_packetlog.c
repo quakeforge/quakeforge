@@ -67,8 +67,8 @@ extern qboolean is_server;
 
 int         Net_LogStart (const char *fname);
 
-void Analyze_Server_Packet (const byte * data, int len);
-void Analyze_Client_Packet (const byte * data, int len);
+void Analyze_Server_Packet (const byte *data, int len);
+void Analyze_Client_Packet (const byte *data, int len);
 void Parse_Server_Packet (void);
 void Parse_Client_Packet (void);
 void Net_LogStop (void);
@@ -193,11 +193,13 @@ Net_LogPrintf (char *fmt, ...)
 	va_start (argptr, fmt);
 	vsnprintf (text, sizeof (text), fmt, argptr);
 	va_end (argptr);
-	if (!Net_PacketLog)
-		return;
 
+	if (!Net_PacketLog)
+		Net_PacketLog = _stdout;
 	Qprintf (Net_PacketLog, "%s", text);
 	Qflush (Net_PacketLog);
+	if (Net_PacketLog == _stdout)
+		Net_PacketLog = NULL;
 }
 
 int
@@ -395,16 +397,12 @@ Log_Delta(int bits)
 
 
 void
-Analyze_Server_Packet (const byte * data, int len)
+Analyze_Server_Packet (const byte *data, int len)
 {
-	if (!Net_PacketLog)
-		Net_PacketLog = _stdout;
 	packet.message->data = (byte*)data;
 	packet.message->cursize = len;
 	MSG_BeginReading (&packet);
 	Parse_Server_Packet ();
-	if (Net_PacketLog == _stdout)
-		Net_PacketLog = NULL;
 }
 
 
@@ -842,16 +840,12 @@ Parse_Server_Packet ()
 }
 
 void
-Analyze_Client_Packet (const byte * data, int len)
+Analyze_Client_Packet (const byte *data, int len)
 {
-	if (!Net_PacketLog)
-		Net_PacketLog = _stdout;
 	packet.message->data = (byte*)data;
 	packet.message->cursize = len;
 	MSG_BeginReading (&packet);
 	Parse_Client_Packet ();
-	if (Net_PacketLog == _stdout)
-		Net_PacketLog = NULL;
 }
 
 void

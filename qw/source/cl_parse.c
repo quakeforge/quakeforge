@@ -445,7 +445,7 @@ CL_ParseDownload (void)
 	}
 
 	if (download.size <= 0) {
-		Host_EndGame ("Bad download block, size %d", download.size);
+		Host_NetError ("Bad download block, size %d", download.size);
 	}
 
 	// open the file if not opened yet
@@ -662,9 +662,9 @@ CL_ParseServerData (void)
 	if (protover != PROTOCOL_VERSION &&
 		!(cls.demoplayback
 		  && (protover <= 26 && protover >= 28)))
-			Host_EndGame ("Server returned version %i, not %i\nYou probably "
-						  "need to upgrade.\nCheck http://www.quakeworld.net/",
-						  protover, PROTOCOL_VERSION);
+			Host_NetError ("Server returned version %i, not %i\nYou probably "
+						   "need to upgrade.\nCheck http://www.quakeworld.net/",
+						   protover, PROTOCOL_VERSION);
 
 	cl.servercount = serverdata.servercount;
 
@@ -759,7 +759,7 @@ CL_ParseSoundlist (void)
 			break;
 		numsounds++;
 		if (numsounds == MAX_SOUNDS)
-			Host_EndGame ("Server sent too many sound_precache");
+			Host_NetError ("Server sent too many sound_precache");
 		strcpy (cl.sound_name[numsounds], str);
 	}
 
@@ -792,7 +792,7 @@ CL_ParseModellist (void)
 			break;
 		nummodels++;
 		if (nummodels == MAX_MODELS)
-			Host_EndGame ("Server sent too many model_precache");
+			Host_NetError ("Server sent too many model_precache");
 		strncpy (cl.model_name[nummodels], str, MAX_QPATH - 1);
 		cl.model_name[nummodels][MAX_QPATH - 1] = '\0';
 
@@ -867,7 +867,7 @@ CL_ParseStatic (void)
 	NET_SVC_SpawnStatic_Parse (&block, net_message);
 
 	if (cl.num_statics >= MAX_STATIC_ENTITIES)
-		Host_EndGame ("Too many static entities");
+		Host_NetError ("Too many static entities");
 	ent = &cl_static_entities[cl.num_statics++];
 	CL_Init_Entity (ent);
 
@@ -903,7 +903,7 @@ CL_ParseStartSoundPacket (void)
 	NET_SVC_Sound_Parse (&sound, net_message);
 
 	if (sound.entity > MAX_EDICTS)
-		Host_EndGame ("CL_ParseStartSoundPacket: ent = %i", sound.entity);
+		Host_NetError ("CL_ParseStartSoundPacket: ent = %i", sound.entity);
 
 	S_StartSound (sound.entity, sound.channel,
 				  cl.sound_precache[sound.sound_num], sound.position,
@@ -978,8 +978,8 @@ CL_ParseUpdateUserInfo (void)
 	NET_SVC_UpdateUserInfo_Parse (&updateuserinfo, net_message);
 
 	if (updateuserinfo.slot >= MAX_CLIENTS)
-		Host_EndGame
-			("CL_ParseServerMessage: svc_updateuserinfo > MAX_SCOREBOARD");
+		Host_NetError ("CL_ParseServerMessage: svc_updateuserinfo > "
+					   "MAX_SCOREBOARD");
 
 	player = &cl.players[updateuserinfo.slot];
 	player->userid = updateuserinfo.userid;
@@ -999,7 +999,7 @@ CL_SetInfo (void)
 	NET_SVC_SetInfo_Parse (&setinfo, net_message);
 
 	if (setinfo.slot >= MAX_CLIENTS)
-		Host_EndGame ("CL_ParseServerMessage: svc_setinfo > MAX_SCOREBOARD");
+		Host_NetError ("CL_ParseServerMessage: svc_setinfo > MAX_SCOREBOARD");
 
 	player = &cl.players[setinfo.slot];
 
@@ -1039,7 +1039,7 @@ CL_SetStat (int stat, int value)
 
 	if (stat < 0 || stat >= MAX_CL_STATS)
 //		Sys_Error ("CL_SetStat: %i is invalid", stat);
-		Host_EndGame ("CL_SetStat: %i is invalid", stat);
+		Host_NetError ("CL_SetStat: %i is invalid", stat);
 
 	Sbar_Changed ();
 
@@ -1116,7 +1116,7 @@ CL_ParseServerMessage (void)
 	// parse the message
 	while (1) {
 		if (net_message->badread) {
-			Host_EndGame ("CL_ParseServerMessage: Bad server message");
+			Host_NetError ("CL_ParseServerMessage: Bad server message");
 			break;
 		}
 
@@ -1134,8 +1134,8 @@ CL_ParseServerMessage (void)
 		// other commands
 		switch (cmd) {
 			default:
-				Host_EndGame
-					("CL_ParseServerMessage: Illegible server message");
+				Host_NetError ("CL_ParseServerMessage: Illegible "
+							   "server message");
 				break;
 
 			case svc_nop:
@@ -1185,7 +1185,7 @@ CL_ParseServerMessage (void)
 				i = MSG_ReadByte (net_message);
 				if (i >= MAX_LIGHTSTYLES)
 //					Sys_Error ("svc_lightstyle > MAX_LIGHTSTYLES");
-					Host_EndGame ("svc_lightstyle > MAX_LIGHTSTYLES");
+					Host_NetError ("svc_lightstyle > MAX_LIGHTSTYLES");
 				strncpy (r_lightstyle[i].map, MSG_ReadString (net_message),
 						 sizeof (r_lightstyle[i].map) - 1);
 				r_lightstyle[i].map[sizeof (r_lightstyle[i].map) - 1] = 0;
@@ -1205,24 +1205,24 @@ CL_ParseServerMessage (void)
 				Sbar_Changed ();
 				i = MSG_ReadByte (net_message);
 				if (i >= MAX_CLIENTS)
-					Host_EndGame ("CL_ParseServerMessage: svc_updatefrags > "
-								  "MAX_SCOREBOARD");
+					Host_NetError ("CL_ParseServerMessage: svc_updatefrags > "
+								   "MAX_SCOREBOARD");
 				cl.players[i].frags = MSG_ReadShort (net_message);
 				break;
 
 			case svc_updateping:
 				i = MSG_ReadByte (net_message);
 				if (i >= MAX_CLIENTS)
-					Host_EndGame ("CL_ParseServerMessage: svc_updateping > "
-						 "MAX_SCOREBOARD");
+					Host_NetError ("CL_ParseServerMessage: svc_updateping > "
+								   "MAX_SCOREBOARD");
 				cl.players[i].ping = MSG_ReadShort (net_message);
 				break;
 
 			case svc_updatepl:
 				i = MSG_ReadByte (net_message);
 				if (i >= MAX_CLIENTS)
-					Host_EndGame ("CL_ParseServerMessage: svc_updatepl > "
-								  "MAX_SCOREBOARD");
+					Host_NetError ("CL_ParseServerMessage: svc_updatepl > "
+								   "MAX_SCOREBOARD");
 				cl.players[i].pl = MSG_ReadByte (net_message);
 				break;
 
@@ -1230,8 +1230,8 @@ CL_ParseServerMessage (void)
 				// time is sent over as seconds ago
 				i = MSG_ReadByte (net_message);
 				if (i >= MAX_CLIENTS)
-					Host_EndGame ("CL_ParseServerMessage: svc_updateentertime "
-								  "> MAX_SCOREBOARD");
+					Host_NetError ("CL_ParseServerMessage: svc_updateentertime "
+								   "> MAX_SCOREBOARD");
 				cl.players[i].entertime = realtime - MSG_ReadFloat
 					(net_message);
 				break;
@@ -1360,7 +1360,7 @@ CL_ParseServerMessage (void)
 				break;
 
 			case svc_deltapacketentities:
-				CL_ParseDeltaPacketEntities (true);
+				CL_ParseDeltaPacketEntities ();
 				break;
 
 			case svc_maxspeed:

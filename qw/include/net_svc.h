@@ -177,14 +177,24 @@ typedef struct net_svc_soundlist_s
 	byte		nextsound;
 } net_svc_soundlist_t;
 
+typedef struct net_svc_delta_s
+{
+	unsigned short	word;
+	entity_state_t	state;
+} net_svc_delta_t;
+
 typedef struct net_svc_packetentities_s
 {
 	int			num;
-	struct {
-		unsigned short	word;
-		entity_state_t	state;
-	} vars[MAX_PACKET_ENTITIES];
+	net_svc_delta_t	vars[MAX_PACKET_ENTITIES + 1];
 } net_svc_packetentities_t;
+
+typedef struct net_svc_deltapacketentities_s
+{
+	int			num;
+	byte		from;
+	net_svc_delta_t	vars[MAX_PACKET_ENTITIES + 1];
+} net_svc_deltapacketentities_t;
 
 qboolean NET_SVC_Print_Parse (net_svc_print_t *block, msg_t *msg);
 qboolean NET_SVC_Damage_Parse (net_svc_damage_t *block, msg_t *msg);
@@ -207,5 +217,7 @@ qboolean NET_SVC_Modellist_Parse (net_svc_modellist_t *block, msg_t *msg);
 qboolean NET_SVC_Soundlist_Parse (net_svc_soundlist_t *block, msg_t *msg);
 qboolean NET_SVC_PacketEntities_Parse (net_svc_packetentities_t *block,
 									   msg_t *msg);
+qboolean NET_SVC_DeltaPacketEntities_Parse (net_svc_deltapacketentities_t *block,
+											msg_t *msg);
 
 #endif // NET_SVC_H

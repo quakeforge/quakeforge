@@ -131,10 +131,12 @@ void Netchan_AckPacket (netchan_t *chan);
 qboolean Netchan_CanPacket (netchan_t *chan);
 qboolean Netchan_CanReliable (netchan_t *chan);
 
-extern int Net_Log_Init (const char **sound_precache);
-extern void Log_Incoming_Packet (const char *p, int len);
-extern void Log_Outgoing_Packet (const char *p, int len);
-extern void Net_LogStop (void);
+int Net_Log_Init (const char **sound_precache);
+void Log_Incoming_Packet (const char *p, int len);
+void Log_Outgoing_Packet (const char *p, int len);
+void Net_LogStop (void);
+void Analyze_Server_Packet (const byte *data, int len);
+void Analyze_Client_Packet (const byte *data, int len);
 
 extern struct cvar_s *net_packetlog;
 

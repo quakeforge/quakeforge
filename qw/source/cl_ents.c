@@ -298,7 +298,7 @@ FlushEntityPacket (void)
 	while (1) {
 		word = (unsigned short) MSG_ReadShort (net_message);
 		if (net_message->badread) {			// something didn't parse right...
-			Host_EndGame ("msg_badread in packetentities");
+			Host_NetError ("msg_badread in packetentities");
 			return;
 		}
 
@@ -325,7 +325,7 @@ CL_ParsePacketEntities (void)
 	newp->num_entities = 0;
 
 	if (NET_SVC_PacketEntities_Parse (&block, net_message)) {
-		Host_EndGame ("CL_ParsePacketEntities: Bad Read");
+		Host_NetError ("CL_ParsePacketEntities: Bad Read");
 		return;
 	}
 
@@ -338,8 +338,8 @@ CL_ParsePacketEntities (void)
 		}
 
 		if (index >= MAX_PACKET_ENTITIES) {
-			Host_EndGame ("CL_ParsePacketEntities: index == "
-						  "MAX_PACKET_ENTITIES");
+			Host_NetError ("CL_ParsePacketEntities: index == "
+						   "MAX_PACKET_ENTITIES");
 			return;
 		}
 
@@ -363,26 +363,30 @@ CL_ParsePacketEntities (void)
 	rest of the data stream.
 */
 void
-CL_ParseDeltaPacketEntities (qboolean delta)
+CL_ParseDeltaPacketEntities ()
 {
+	int			i;
 	byte		from;
 	int			oldindex, newindex, newnum, oldnum, oldpacket, newpacket, word;
 	packet_entities_t *oldp, *newp, dummy;
 	qboolean	full;
+	net_svc_deltapacketentities_t block;
+
+	if (NET_SVC_DeltaPacketEntities_Parse (&block, net_message)) {
+		Host_NetError ("CL_ParseDeltaPacketEntities: Bad Read");
+		return;
+	}
 
 	newpacket = cls.netchan.incoming_sequence & UPDATE_MASK;
 	newp = &cl.frames[newpacket].packet_entities;
 	cl.frames[newpacket].invalid = false;
 
-	if (delta) {
-		from = MSG_ReadByte (net_message);
+	from = block.from;
 
-		oldpacket = cl.frames[newpacket].delta_sequence;
+	oldpacket = cl.frames[newpacket].delta_sequence;
 
-		if ((from & UPDATE_MASK) != (oldpacket & UPDATE_MASK))
-			Con_DPrintf ("WARNING: from mismatch\n");
-	} else
-		oldpacket = -1;
+	if ((from & UPDATE_MASK) != (oldpacket & UPDATE_MASK))
+		Con_DPrintf ("WARNING: from mismatch\n");
 
 	full = false;
 	if (oldpacket != -1) {
@@ -404,10 +408,10 @@ CL_ParseDeltaPacketEntities (qboolean delta)
 	newindex = 0;
 	newp->num_entities = 0;
 
-	while (1) {
-		word = (unsigned short) MSG_ReadShort (net_message);
+	for (i = 0;; i++) {
+		word = block.vars[i].word;
 		if (net_message->badread) {			// something didn't parse right...
-			Host_EndGame ("msg_badread in packetentities");
+			Host_NetError ("msg_badread in packetentities");
 			return;
 		}
 
@@ -415,8 +419,8 @@ CL_ParseDeltaPacketEntities (qboolean delta)
 			while (oldindex < oldp->num_entities) {	
 //				Con_Printf ("copy %i\n", oldp->entities[oldindex].number);
 				if (newindex >= MAX_PACKET_ENTITIES) {
-					Host_EndGame ("CL_ParseDeltaPacketEntities: newindex == "
-								  "MAX_PACKET_ENTITIES");
+					Host_NetError ("CL_ParseDeltaPacketEntities: newindex == "
+								   "MAX_PACKET_ENTITIES (1st)");
 					return;
 				}
 				newp->entities[newindex] = oldp->entities[oldindex];
@@ -430,16 +434,16 @@ CL_ParseDeltaPacketEntities (qboolean delta)
 			oldp->entities[oldindex].number;
 
 		while (newnum > oldnum) {
+//		if (newnum > oldnum) {
 			if (full) {
 				Con_Printf ("WARNING: oldcopy on full update");
-				FlushEntityPacket ();
 				return;
 			}
 //			Con_Printf ("copy %i\n", oldnum);
 			// copy one of the old entities over to the new packet unchanged
 			if (newindex >= MAX_PACKET_ENTITIES) {
-				Host_EndGame ("CL_ParseDeltaPacketEntities: newindex == "
-							  "MAX_PACKET_ENTITIES");
+				Host_NetError ("CL_ParseDeltaPacketEntities: newindex == "
+							   "MAX_PACKET_ENTITIES (2nd)");
 				return;
 			}
 			newp->entities[newindex] = oldp->entities[oldindex];
@@ -455,19 +459,23 @@ CL_ParseDeltaPacketEntities (qboolean delta)
 				if (full) {
 					cl.validsequence = 0;
 					Con_Printf ("WARNING: U_REMOVE on full update\n");
-					FlushEntityPacket ();
 					return;
 				}
 				continue;
 			}
 
 			if (newindex >= MAX_PACKET_ENTITIES) {
-				Host_EndGame ("CL_ParseDeltaPacketEntities: newindex == "
-							  "MAX_PACKET_ENTITIES");
+				Host_NetError ("CL_ParseDeltaPacketEntities: newindex == "
+							   "MAX_PACKET_ENTITIES (3rd)");
 				return;
 			}
-			CL_ParseDelta (&cl_baselines[newnum], &newp->entities[newindex],
-						   word);
+			CL_EntityState_Copy (&cl_baselines[newnum],
+								 &newp->entities[newindex],
+								 ~block.vars[i].state.flags);
+			CL_EntityState_Copy (&block.vars[i].state,
+								 &newp->entities[newindex],
+								 block.vars[i].state.flags);
+			newp->entities[newindex].number = block.vars[i].state.number;
 			newindex++;
 			continue;
 		}
@@ -484,8 +492,13 @@ CL_ParseDeltaPacketEntities (qboolean delta)
 				continue;
 			}
 //			Con_Printf ("delta %i\n", newnum);
-			CL_ParseDelta (&oldp->entities[oldindex],
-						   &newp->entities[newindex], word);
+			CL_EntityState_Copy (&oldp->entities[oldindex],
+								 &newp->entities[newindex],
+								 ~block.vars[i].state.flags);
+			CL_EntityState_Copy (&block.vars[i].state,
+								 &newp->entities[newindex],
+								 block.vars[i].state.flags);
+			newp->entities[newindex].number = block.vars[i].state.number;
 			newindex++;
 			oldindex++;
 		}
@@ -733,7 +746,7 @@ CL_ParsePlayerinfo (void)
 
 	if (block.playernum > MAX_CLIENTS)
 //		Sys_Error ("CL_ParsePlayerinfo: bad block.playernum");
-		Host_EndGame ("CL_ParsePlayerinfo: bad block.playernum");
+		Host_NetError ("CL_ParsePlayerinfo: bad block.playernum");
 
 	state = &cl.frames[parsecountmod].playerstate[block.playernum];
 
