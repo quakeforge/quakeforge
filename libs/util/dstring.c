@@ -33,7 +33,9 @@ static const char rcsid[] =
 #include "QF/sys.h"
 #include "QF/dstring.h"
 
-dstring_t *dstring_new (void) {
+dstring_t *
+dstring_new (void)
+{
 	dstring_t *new;
 	
 	new = calloc (1, sizeof(dstring_t));
@@ -42,13 +44,17 @@ dstring_t *dstring_new (void) {
 	return new;
 }
 
-void dstring_delete (dstring_t *dstr) {
+void
+dstring_delete (dstring_t *dstr)
+{
 	if (dstr->str)
 		free (dstr->str);
 	free (dstr);
 }
 	
-void dstring_adjust (dstring_t *dstr) {
+void
+dstring_adjust (dstring_t *dstr)
+{
 	if (dstr->size > dstr->truesize) {
 		dstr->str = realloc(dstr->str, dstr->size);
 		if (!dstr->str)
@@ -57,7 +63,9 @@ void dstring_adjust (dstring_t *dstr) {
 	}
 }
 
-void dstring_append (dstring_t *dstr, const char *data, unsigned int len) {
+void
+dstring_append (dstring_t *dstr, const char *data, unsigned int len)
+{
 	unsigned int ins = dstr->size; // Save insertion point
 	
 	dstr->size += len;
@@ -65,7 +73,10 @@ void dstring_append (dstring_t *dstr, const char *data, unsigned int len) {
 	memcpy (dstr->str + ins, data, len);
 }
 
-void dstring_insert (dstring_t *dstr, const char *data, unsigned int len, unsigned int pos) {
+void
+dstring_insert (dstring_t *dstr, const char *data, unsigned int len,
+				unsigned int pos)
+{
 	unsigned int oldsize = dstr->size;
 	
 	dstr->size += len;
@@ -74,18 +85,24 @@ void dstring_insert (dstring_t *dstr, const char *data, unsigned int len, unsign
 	memcpy (dstr->str+pos, data, len);
 }
 
-void dstring_snip (dstring_t *dstr, unsigned int pos, unsigned int len) {
+void
+dstring_snip (dstring_t *dstr, unsigned int pos, unsigned int len)
+{
 	memmove (dstr->str+pos, dstr->str+pos+len, dstr->size-pos-len);
 	dstr->size -= len;
 	dstring_adjust (dstr);
 }
 
-void dstring_clear (dstring_t *dstr) {
+void
+dstring_clear (dstring_t *dstr)
+{
 	dstr->size = 0;
 	dstring_adjust (dstr);
 }
 
-dstring_t *dstring_newstr (void) {
+dstring_t *
+dstring_newstr (void)
+{
 	dstring_t *new;
 	
 	new = calloc(1, sizeof(dstring_t));
@@ -96,17 +113,24 @@ dstring_t *dstring_newstr (void) {
 	new->str[0] = 0;
 	return new;
 }
-void dstring_appendstr (dstring_t *dstr, const char *str) {
+
+void
+dstring_appendstr (dstring_t *dstr, const char *str) {
 		dstr->size += strlen(str);
 		dstring_adjust(dstr);
 		strcat(dstr->str, str);
 }
 
-void dstring_insertstr (dstring_t *dstr, const char *str, unsigned int pos) {
-	dstring_insert (dstr, str, strlen(str), pos); // Don't instert strlen + 1 to achieve concatenation
+void
+dstring_insertstr (dstring_t *dstr, const char *str, unsigned int pos)
+{
+	// Don't instert strlen + 1 to achieve concatenation
+	dstring_insert (dstr, str, strlen(str), pos);
 }
 
-void dstring_clearstr (dstring_t *dstr) {
+void
+dstring_clearstr (dstring_t *dstr)
+{
 	dstr->size = 1;
 	dstring_adjust (dstr);
 	dstr->str[0] = 0;
