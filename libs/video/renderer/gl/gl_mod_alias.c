@@ -336,12 +336,13 @@ GL_GetAliasFrameVerts (int frame, aliashdr_t *paliashdr, entity_t *e)
 			for (j = 0; j < 3; j++)
 				vo_v->vert[j] = verts->v[j] + (verts +
 					count)->v[j] / (float)256;
+			vo_v->lightdot = shadedots[verts->lightnormalindex];
 		}
-		vo_v->lightdot = shadedots[verts->lightnormalindex];
 	} else {
-		for (i = 0, vo_v = vo->verts; i < count; i++, vo_v++, verts++)
+		for (i = 0, vo_v = vo->verts; i < count; i++, vo_v++, verts++) {
 			VectorCopy (verts->v, vo_v->vert);
-		vo_v->lightdot = shadedots[verts->lightnormalindex];
+			vo_v->lightdot = shadedots[verts->lightnormalindex];
+		}
 	}
 	lastposenum = pose;
 	return vo;
