@@ -132,8 +132,8 @@ SV_CreateBaseline (void)
 		// LordHavoc: setup baseline to include new effects
 		((entity_state_t*)svent->data)->alpha = 255;
 		((entity_state_t*)svent->data)->scale = 16;
-		((entity_state_t*)svent->data)->glowsize = 0;
-		((entity_state_t*)svent->data)->glowcolor = 254;
+		((entity_state_t*)svent->data)->glow_size = 0;
+		((entity_state_t*)svent->data)->glow_color = 254;
 		((entity_state_t*)svent->data)->colormap = 255;
 
 		// 

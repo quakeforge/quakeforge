@@ -699,8 +699,8 @@ CL_ClearBaselines (void)
 	for (i = 0; i < MAX_EDICTS; i++) {
 		cl_baselines[i].alpha = 255;
 		cl_baselines[i].scale = 16;
-		cl_baselines[i].glowcolor = 254;
-		cl_baselines[i].glowsize = 0;
+		cl_baselines[i].glow_color = 254;
+		cl_baselines[i].glow_size = 0;
 		cl_baselines[i].colormod = 255;
 	}
 }
@@ -817,8 +817,8 @@ CL_ParseBaseline (entity_state_t *es)
 	// colormod, etc)
 	es->alpha = 255;
 	es->scale = 16;
-	es->glowcolor = 254;
-	es->glowsize = 0;
+	es->glow_color = 254;
+	es->glow_size = 0;
 	es->colormod = 255;
 }
 

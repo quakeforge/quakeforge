@@ -214,10 +214,10 @@ SV_WriteDelta (entity_state_t *from, entity_state_t *to, sizebuf_t *msg,
 		if (to->scale != from->scale)
 			bits |= U_SCALE;
 
-		if (to->glowsize != from->glowsize)
+		if (to->glow_size != from->glow_size)
 			bits |= U_GLOWSIZE;
 
-		if (to->glowcolor != from->glowcolor)
+		if (to->glow_color != from->glow_color)
 			bits |= U_GLOWCOLOR;
 
 		if (to->colormod != from->colormod)
@@ -295,9 +295,9 @@ SV_WriteDelta (entity_state_t *from, entity_state_t *to, sizebuf_t *msg,
 	if (bits & U_EFFECTS2)
 		MSG_WriteByte (msg, (to->effects >> 8));
 	if (bits & U_GLOWSIZE)
-		MSG_WriteByte (msg, to->glowsize);
+		MSG_WriteByte (msg, to->glow_size);
 	if (bits & U_GLOWCOLOR)
-		MSG_WriteByte (msg, to->glowcolor);
+		MSG_WriteByte (msg, to->glow_color);
 	if (bits & U_COLORMOD)
 		MSG_WriteByte (msg, to->colormod);
 	if (bits & U_FRAME2)
@@ -567,8 +567,8 @@ SV_WriteEntitiesToClient (client_t *client, sizebuf_t *msg)
 		{
 			state->alpha = 255;
 			state->scale = 16;
-			state->glowsize = 0;
-			state->glowcolor = 254;
+			state->glow_size = 0;
+			state->glow_color = 254;
 			state->colormod = 255;
 
 			if (sv_fields.alpha != -1 && SVFIELD (ent, alpha, float))
@@ -577,11 +577,11 @@ SV_WriteEntitiesToClient (client_t *client, sizebuf_t *msg)
 			if (sv_fields.scale != -1 && SVFIELD (ent, scale, float))
 				state->scale = bound (0, SVFIELD (ent, scale, float), 15.9375) * 16.0;
 
-			if (sv_fields.glowsize != -1 && SVFIELD (ent, glowsize, float))
-				state->glowsize = bound (-1024, (int) SVFIELD (ent, glowsize, float), 1016) >> 3;
+			if (sv_fields.glow_size != -1 && SVFIELD (ent, glow_size, float))
+				state->glow_size = bound (-1024, (int) SVFIELD (ent, glow_size, float), 1016) >> 3;
 
-			if (sv_fields.glowcolor != -1 && SVFIELD (ent, glowcolor, float))
-				state->glowcolor = (int) SVFIELD (ent, glowcolor, float);
+			if (sv_fields.glow_color != -1 && SVFIELD (ent, glow_color, vector))
+				state->glow_color = (int) SVFIELD (ent, glow_color, vector);
 
 			if (sv_fields.colormod != -1
 				&& SVFIELD (ent, colormod, vector)[0]

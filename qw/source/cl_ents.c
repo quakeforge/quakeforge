@@ -272,9 +272,9 @@ CL_ParseDelta (entity_state_t *from, entity_state_t *to, int bits)
 	if (bits & U_EFFECTS2)
 		to->effects = (to->effects & 0xFF) | (MSG_ReadByte (net_message) << 8);
 	if (bits & U_GLOWSIZE)
-		to->glowsize = MSG_ReadByte (net_message);
+		to->glow_size = MSG_ReadByte (net_message);
 	if (bits & U_GLOWCOLOR)
-		to->glowcolor = MSG_ReadByte (net_message);
+		to->glow_color = MSG_ReadByte (net_message);
 	if (bits & U_COLORMOD)
 		to->colormod = MSG_ReadByte (net_message);
 	if (bits & U_FRAME2)
@@ -520,8 +520,8 @@ CL_LinkPacketEntities (void)
 		// Ender: Extend (Colormod) [QSG - Begin]
 		// N.B: All messy code below is the sole fault of LordHavoc and
 		// his futile attempts to save bandwidth. :)
-		(*ent)->glowsize =	s1->glowsize < 128 ? s1->glowsize * 8.0 : (s1->glowsize - 256) * 8.0;
-		(*ent)->glowcolor = s1->glowcolor;
+		(*ent)->glow_size =	s1->glow_size < 128 ? s1->glow_size * 8.0 : (s1->glow_size - 256) * 8.0;
+		(*ent)->glow_color = s1->glow_color;
 		(*ent)->alpha = s1->alpha / 255.0;
 		(*ent)->scale = s1->scale / 16.0;
 
@@ -665,8 +665,8 @@ CL_LinkProjectiles (void)
 		(*ent)->scoreboard = NULL;
 		// LordHavoc: Endy had neglected to do this as part of the QSG
 		// VERSION 2 stuff
-		(*ent)->glowsize = 0;
-		(*ent)->glowcolor = 254;
+		(*ent)->glow_size = 0;
+		(*ent)->glow_color = 254;
 		(*ent)->alpha = 1;
 		(*ent)->scale = 1;
 		(*ent)->colormod[0] = (*ent)->colormod[1] = (*ent)->colormod[2] = 1;
@@ -896,8 +896,8 @@ CL_LinkPlayers (void)
 
 		// LordHavoc: more QSG VERSION 2 stuff, FIXME: players don't have
 		// extend stuff
-		(*ent)->glowsize = 0;
-		(*ent)->glowcolor = 254;
+		(*ent)->glow_size = 0;
+		(*ent)->glow_color = 254;
 		(*ent)->alpha = 1;
 		(*ent)->scale = 1;
 		(*ent)->colormod[0] = (*ent)->colormod[1] = (*ent)->colormod[2] = 1;

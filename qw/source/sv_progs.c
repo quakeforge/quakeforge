@@ -158,91 +158,81 @@ SV_LoadProgs (void)
 	(void *) sv_globals.trace_inwater = PR_GetGlobalPointer (&sv_pr_state, "trace_inwater");
 	(void *) sv_globals.msg_entity = PR_GetGlobalPointer (&sv_pr_state, "msg_entity");
 
-	sv_funcs.main =
-		ED_FindFunction (&sv_pr_state, "main") - sv_pr_state.pr_functions;
-	sv_funcs.StartFrame =
-		ED_FindFunction (&sv_pr_state, "StartFrame") - sv_pr_state.pr_functions;
-	sv_funcs.PlayerPreThink =
-		ED_FindFunction (&sv_pr_state, "PlayerPreThink") - sv_pr_state.pr_functions;
-	sv_funcs.PlayerPostThink =
-		ED_FindFunction (&sv_pr_state, "PlayerPostThink") - sv_pr_state.pr_functions;
-	sv_funcs.ClientKill =
-		ED_FindFunction (&sv_pr_state, "ClientKill") - sv_pr_state.pr_functions;
-	sv_funcs.ClientConnect =
-		ED_FindFunction (&sv_pr_state, "ClientConnect") - sv_pr_state.pr_functions;
-	sv_funcs.PutClientInServer =
-		ED_FindFunction (&sv_pr_state, "PutClientInServer") - sv_pr_state.pr_functions;
-	sv_funcs.ClientDisconnect =
-		ED_FindFunction (&sv_pr_state, "ClientDisconnect") - sv_pr_state.pr_functions;
-	sv_funcs.SetNewParms =
-		ED_FindFunction (&sv_pr_state, "SetNewParms") - sv_pr_state.pr_functions;
-	sv_funcs.SetChangeParms =
-		ED_FindFunction (&sv_pr_state, "SetChangeParms") - sv_pr_state.pr_functions;
+	sv_funcs.main = PR_GetFunctionIndex (&sv_pr_state, "main");
+	sv_funcs.StartFrame = PR_GetFunctionIndex (&sv_pr_state, "StartFrame");
+	sv_funcs.PlayerPreThink = PR_GetFunctionIndex (&sv_pr_state, "PlayerPreThink");
+	sv_funcs.PlayerPostThink = PR_GetFunctionIndex (&sv_pr_state, "PlayerPostThink");
+	sv_funcs.ClientKill = PR_GetFunctionIndex (&sv_pr_state, "ClientKill");
+	sv_funcs.ClientConnect = PR_GetFunctionIndex (&sv_pr_state, "ClientConnect");
+	sv_funcs.PutClientInServer = PR_GetFunctionIndex (&sv_pr_state, "PutClientInServer");
+	sv_funcs.ClientDisconnect = PR_GetFunctionIndex (&sv_pr_state, "ClientDisconnect");
+	sv_funcs.SetNewParms = PR_GetFunctionIndex (&sv_pr_state, "SetNewParms");
+	sv_funcs.SetChangeParms = PR_GetFunctionIndex (&sv_pr_state, "SetChangeParms");
 
-	sv_fields.modelindex = ED_FindField (&sv_pr_state, "modelindex")->ofs;
-	sv_fields.absmin = ED_FindField (&sv_pr_state, "absmin")->ofs;
-	sv_fields.absmax = ED_FindField (&sv_pr_state, "absmax")->ofs;
-	sv_fields.ltime = ED_FindField (&sv_pr_state, "ltime")->ofs;
-	sv_fields.lastruntime = ED_FindField (&sv_pr_state, "lastruntime")->ofs;
-	sv_fields.movetype = ED_FindField (&sv_pr_state, "movetype")->ofs;
-	sv_fields.solid = ED_FindField (&sv_pr_state, "solid")->ofs;
-	sv_fields.origin = ED_FindField (&sv_pr_state, "origin")->ofs;
-	sv_fields.oldorigin = ED_FindField (&sv_pr_state, "oldorigin")->ofs;
-	sv_fields.velocity = ED_FindField (&sv_pr_state, "velocity")->ofs;
-	sv_fields.angles = ED_FindField (&sv_pr_state, "angles")->ofs;
-	sv_fields.avelocity = ED_FindField (&sv_pr_state, "avelocity")->ofs;
-	sv_fields.classname = ED_FindField (&sv_pr_state, "classname")->ofs;
-	sv_fields.model = ED_FindField (&sv_pr_state, "model")->ofs;
-	sv_fields.frame = ED_FindField (&sv_pr_state, "frame")->ofs;
-	sv_fields.skin = ED_FindField (&sv_pr_state, "skin")->ofs;
-	sv_fields.effects = ED_FindField (&sv_pr_state, "effects")->ofs;
-	sv_fields.mins = ED_FindField (&sv_pr_state, "mins")->ofs;
-	sv_fields.maxs = ED_FindField (&sv_pr_state, "maxs")->ofs;
-	sv_fields.size = ED_FindField (&sv_pr_state, "size")->ofs;
-	sv_fields.touch = ED_FindField (&sv_pr_state, "touch")->ofs;
-	sv_fields.think = ED_FindField (&sv_pr_state, "think")->ofs;
-	sv_fields.blocked = ED_FindField (&sv_pr_state, "blocked")->ofs;
-	sv_fields.nextthink = ED_FindField (&sv_pr_state, "nextthink")->ofs;
-	sv_fields.groundentity = ED_FindField (&sv_pr_state, "groundentity")->ofs;
-	sv_fields.health = ED_FindField (&sv_pr_state, "health")->ofs;
-	sv_fields.frags = ED_FindField (&sv_pr_state, "frags")->ofs;
-	sv_fields.weapon = ED_FindField (&sv_pr_state, "weapon")->ofs;
-	sv_fields.weaponmodel = ED_FindField (&sv_pr_state, "weaponmodel")->ofs;
-	sv_fields.weaponframe = ED_FindField (&sv_pr_state, "weaponframe")->ofs;
-	sv_fields.currentammo = ED_FindField (&sv_pr_state, "currentammo")->ofs;
-	sv_fields.ammo_shells = ED_FindField (&sv_pr_state, "ammo_shells")->ofs;
-	sv_fields.ammo_nails = ED_FindField (&sv_pr_state, "ammo_nails")->ofs;
-	sv_fields.ammo_rockets = ED_FindField (&sv_pr_state, "ammo_rockets")->ofs;
-	sv_fields.ammo_cells = ED_FindField (&sv_pr_state, "ammo_cells")->ofs;
-	sv_fields.items = ED_FindField (&sv_pr_state, "items")->ofs;
-	sv_fields.takedamage = ED_FindField (&sv_pr_state, "takedamage")->ofs;
-	sv_fields.chain = ED_FindField (&sv_pr_state, "chain")->ofs;
-	sv_fields.view_ofs = ED_FindField (&sv_pr_state, "view_ofs")->ofs;
-	sv_fields.button0 = ED_FindField (&sv_pr_state, "button0")->ofs;
-	sv_fields.button1 = ED_FindField (&sv_pr_state, "button1")->ofs;
-	sv_fields.button2 = ED_FindField (&sv_pr_state, "button2")->ofs;
-	sv_fields.impulse = ED_FindField (&sv_pr_state, "impulse")->ofs;
-	sv_fields.fixangle = ED_FindField (&sv_pr_state, "fixangle")->ofs;
-	sv_fields.v_angle = ED_FindField (&sv_pr_state, "v_angle")->ofs;
-	sv_fields.netname = ED_FindField (&sv_pr_state, "netname")->ofs;
-	sv_fields.enemy = ED_FindField (&sv_pr_state, "enemy")->ofs;
-	sv_fields.flags = ED_FindField (&sv_pr_state, "flags")->ofs;
-	sv_fields.colormap = ED_FindField (&sv_pr_state, "colormap")->ofs;
-	sv_fields.team = ED_FindField (&sv_pr_state, "team")->ofs;
-	sv_fields.teleport_time = ED_FindField (&sv_pr_state, "teleport_time")->ofs;
-	sv_fields.armorvalue = ED_FindField (&sv_pr_state, "armorvalue")->ofs;
-	sv_fields.waterlevel = ED_FindField (&sv_pr_state, "waterlevel")->ofs;
-	sv_fields.watertype = ED_FindField (&sv_pr_state, "watertype")->ofs;
-	sv_fields.ideal_yaw = ED_FindField (&sv_pr_state, "ideal_yaw")->ofs;
-	sv_fields.yaw_speed = ED_FindField (&sv_pr_state, "yaw_speed")->ofs;
-	sv_fields.goalentity = ED_FindField (&sv_pr_state, "goalentity")->ofs;
-	sv_fields.spawnflags = ED_FindField (&sv_pr_state, "spawnflags")->ofs;
-	sv_fields.dmg_take = ED_FindField (&sv_pr_state, "dmg_take")->ofs;
-	sv_fields.dmg_save = ED_FindField (&sv_pr_state, "dmg_save")->ofs;
-	sv_fields.dmg_inflictor = ED_FindField (&sv_pr_state, "dmg_inflictor")->ofs;
-	sv_fields.owner = ED_FindField (&sv_pr_state, "owner")->ofs;
-	sv_fields.message = ED_FindField (&sv_pr_state, "message")->ofs;
-	sv_fields.sounds = ED_FindField (&sv_pr_state, "sounds")->ofs;
+	sv_fields.modelindex = PR_GetFieldOffset (&sv_pr_state, "modelindex");
+	sv_fields.absmin = PR_GetFieldOffset (&sv_pr_state, "absmin");
+	sv_fields.absmax = PR_GetFieldOffset (&sv_pr_state, "absmax");
+	sv_fields.ltime = PR_GetFieldOffset (&sv_pr_state, "ltime");
+	sv_fields.lastruntime = PR_GetFieldOffset (&sv_pr_state, "lastruntime");
+	sv_fields.movetype = PR_GetFieldOffset (&sv_pr_state, "movetype");
+	sv_fields.solid = PR_GetFieldOffset (&sv_pr_state, "solid");
+	sv_fields.origin = PR_GetFieldOffset (&sv_pr_state, "origin");
+	sv_fields.oldorigin = PR_GetFieldOffset (&sv_pr_state, "oldorigin");
+	sv_fields.velocity = PR_GetFieldOffset (&sv_pr_state, "velocity");
+	sv_fields.angles = PR_GetFieldOffset (&sv_pr_state, "angles");
+	sv_fields.avelocity = PR_GetFieldOffset (&sv_pr_state, "avelocity");
+	sv_fields.classname = PR_GetFieldOffset (&sv_pr_state, "classname");
+	sv_fields.model = PR_GetFieldOffset (&sv_pr_state, "model");
+	sv_fields.frame = PR_GetFieldOffset (&sv_pr_state, "frame");
+	sv_fields.skin = PR_GetFieldOffset (&sv_pr_state, "skin");
+	sv_fields.effects = PR_GetFieldOffset (&sv_pr_state, "effects");
+	sv_fields.mins = PR_GetFieldOffset (&sv_pr_state, "mins");
+	sv_fields.maxs = PR_GetFieldOffset (&sv_pr_state, "maxs");
+	sv_fields.size = PR_GetFieldOffset (&sv_pr_state, "size");
+	sv_fields.touch = PR_GetFieldOffset (&sv_pr_state, "touch");
+	sv_fields.think = PR_GetFieldOffset (&sv_pr_state, "think");
+	sv_fields.blocked = PR_GetFieldOffset (&sv_pr_state, "blocked");
+	sv_fields.nextthink = PR_GetFieldOffset (&sv_pr_state, "nextthink");
+	sv_fields.groundentity = PR_GetFieldOffset (&sv_pr_state, "groundentity");
+	sv_fields.health = PR_GetFieldOffset (&sv_pr_state, "health");
+	sv_fields.frags = PR_GetFieldOffset (&sv_pr_state, "frags");
+	sv_fields.weapon = PR_GetFieldOffset (&sv_pr_state, "weapon");
+	sv_fields.weaponmodel = PR_GetFieldOffset (&sv_pr_state, "weaponmodel");
+	sv_fields.weaponframe = PR_GetFieldOffset (&sv_pr_state, "weaponframe");
+	sv_fields.currentammo = PR_GetFieldOffset (&sv_pr_state, "currentammo");
+	sv_fields.ammo_shells = PR_GetFieldOffset (&sv_pr_state, "ammo_shells");
+	sv_fields.ammo_nails = PR_GetFieldOffset (&sv_pr_state, "ammo_nails");
+	sv_fields.ammo_rockets = PR_GetFieldOffset (&sv_pr_state, "ammo_rockets");
+	sv_fields.ammo_cells = PR_GetFieldOffset (&sv_pr_state, "ammo_cells");
+	sv_fields.items = PR_GetFieldOffset (&sv_pr_state, "items");
+	sv_fields.takedamage = PR_GetFieldOffset (&sv_pr_state, "takedamage");
+	sv_fields.chain = PR_GetFieldOffset (&sv_pr_state, "chain");
+	sv_fields.view_ofs = PR_GetFieldOffset (&sv_pr_state, "view_ofs");
+	sv_fields.button0 = PR_GetFieldOffset (&sv_pr_state, "button0");
+	sv_fields.button1 = PR_GetFieldOffset (&sv_pr_state, "button1");
+	sv_fields.button2 = PR_GetFieldOffset (&sv_pr_state, "button2");
+	sv_fields.impulse = PR_GetFieldOffset (&sv_pr_state, "impulse");
+	sv_fields.fixangle = PR_GetFieldOffset (&sv_pr_state, "fixangle");
+	sv_fields.v_angle = PR_GetFieldOffset (&sv_pr_state, "v_angle");
+	sv_fields.netname = PR_GetFieldOffset (&sv_pr_state, "netname");
+	sv_fields.enemy = PR_GetFieldOffset (&sv_pr_state, "enemy");
+	sv_fields.flags = PR_GetFieldOffset (&sv_pr_state, "flags");
+	sv_fields.colormap = PR_GetFieldOffset (&sv_pr_state, "colormap");
+	sv_fields.team = PR_GetFieldOffset (&sv_pr_state, "team");
+	sv_fields.teleport_time = PR_GetFieldOffset (&sv_pr_state, "teleport_time");
+	sv_fields.armorvalue = PR_GetFieldOffset (&sv_pr_state, "armorvalue");
+	sv_fields.waterlevel = PR_GetFieldOffset (&sv_pr_state, "waterlevel");
+	sv_fields.watertype = PR_GetFieldOffset (&sv_pr_state, "watertype");
+	sv_fields.ideal_yaw = PR_GetFieldOffset (&sv_pr_state, "ideal_yaw");
+	sv_fields.yaw_speed = PR_GetFieldOffset (&sv_pr_state, "yaw_speed");
+	sv_fields.goalentity = PR_GetFieldOffset (&sv_pr_state, "goalentity");
+	sv_fields.spawnflags = PR_GetFieldOffset (&sv_pr_state, "spawnflags");
+	sv_fields.dmg_take = PR_GetFieldOffset (&sv_pr_state, "dmg_take");
+	sv_fields.dmg_save = PR_GetFieldOffset (&sv_pr_state, "dmg_save");
+	sv_fields.dmg_inflictor = PR_GetFieldOffset (&sv_pr_state, "dmg_inflictor");
+	sv_fields.owner = PR_GetFieldOffset (&sv_pr_state, "owner");
+	sv_fields.message = PR_GetFieldOffset (&sv_pr_state, "message");
+	sv_fields.sounds = PR_GetFieldOffset (&sv_pr_state, "sounds");
 
 	// Zoid, find the spectator functions
 	SpectatorConnect = SpectatorThink = SpectatorDisconnect = 0;
@@ -261,8 +251,8 @@ SV_LoadProgs (void)
 
 	sv_fields.alpha = ED_GetFieldIndex (&sv_pr_state, "alpha");
 	sv_fields.scale = ED_GetFieldIndex (&sv_pr_state, "scale");
-	sv_fields.glowsize = ED_GetFieldIndex (&sv_pr_state, "glow_size");
-	sv_fields.glowcolor = ED_GetFieldIndex (&sv_pr_state, "glow_color");
+	sv_fields.glow_size = ED_GetFieldIndex (&sv_pr_state, "glow_size");
+	sv_fields.glow_color = ED_GetFieldIndex (&sv_pr_state, "glow_color");
 	sv_fields.colormod = ED_GetFieldIndex (&sv_pr_state, "colormod");
 }
 

@@ -98,10 +98,12 @@ void ED_ParseGlobals (progs_t *pr, char *data);
 
 void ED_LoadFromFile (progs_t *pr, char *data);
 
-ddef_t *ED_FindField (progs_t *pr, char *name);
+ddef_t *ED_FindField (progs_t *pr, const char *name);
 int ED_GetFieldIndex (progs_t *pr, char *name);
-dfunction_t *ED_FindFunction (progs_t *pr, char *name);
+dfunction_t *ED_FindFunction (progs_t *pr, const char *name);
 
+int PR_AccessField (progs_t *pr, const char *name, etype_t type,
+					const char *file, int line);
 
 //define EDICT_NUM(p,n) ((edict_t *)(*(p)->edicts+ (n)*(p)->pr_edict_size))
 //define NUM_FOR_EDICT(p,e) (((byte *)(e) - *(p)->edicts)/(p)->pr_edict_size)
@@ -142,7 +144,10 @@ extern	builtin_t *pr_builtins;
 extern int pr_numbuiltins;
 
 ddef_t *PR_FindGlobal (progs_t *pr, const char *name);
+
 eval_t *PR_GetGlobalPointer (progs_t *pr, const char *name);
+func_t PR_GetFunctionIndex (progs_t *pr, const char *name);
+int PR_GetFieldOffset (progs_t *pr, const char *name);
 
 void PR_Error (progs_t *pr, const char *error, ...) __attribute__((format(printf,2,3)));
 void PR_RunError (progs_t *pr, char *error, ...) __attribute__((format(printf,2,3)));

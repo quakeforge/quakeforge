@@ -74,8 +74,8 @@ typedef struct entity_s
 	float					colormod[3]; // color tint for model
 	float					alpha; // opacity (alpha) of the model
 	float					scale; // size scaler of the model
-	float					glowsize; // how big the glow is (can be negative)
-	byte					glowcolor; // color of glow (paletted)
+	float					glow_size; // how big the glow is (can be negative)
+	byte					glow_color; // color of glow (paletted)
 
 	// FIXME: could turn these into a union
 	int						trivial_accept;

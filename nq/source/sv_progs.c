@@ -144,7 +144,6 @@ SV_LoadProgs (void)
 (void *) sv_globals.frametime = PR_GetGlobalPointer (&sv_pr_state, "frametime");
 (void *) sv_globals.force_retouch = PR_GetGlobalPointer (&sv_pr_state, "force_retouch");
 (void *) sv_globals.mapname = PR_GetGlobalPointer (&sv_pr_state, "mapname");
-(void *) sv_globals.startspot = PR_GetGlobalPointer (&sv_pr_state, "startspot");
 (void *) sv_globals.deathmatch = PR_GetGlobalPointer (&sv_pr_state, "deathmatch");
 (void *) sv_globals.coop = PR_GetGlobalPointer (&sv_pr_state, "coop");
 (void *) sv_globals.teamplay = PR_GetGlobalPointer (&sv_pr_state, "teamplay");
@@ -167,18 +166,22 @@ SV_LoadProgs (void)
 (void *) sv_globals.trace_inopen = PR_GetGlobalPointer (&sv_pr_state, "trace_inopen");
 (void *) sv_globals.trace_inwater = PR_GetGlobalPointer (&sv_pr_state, "trace_inwater");
 (void *) sv_globals.msg_entity = PR_GetGlobalPointer (&sv_pr_state, "msg_entity");
-(void *) sv_globals.null = PR_GetGlobalPointer (&sv_pr_state, "null");
 
-sv_funcs.main = ED_FindFunction (&sv_pr_state, "main") - sv_pr_state. pr_functions;
-sv_funcs.StartFrame = ED_FindFunction (&sv_pr_state, "StartFrame") - sv_pr_state. pr_functions;
-sv_funcs.PlayerPreThink = ED_FindFunction (&sv_pr_state, "PlayerPreThink") - sv_pr_state. pr_functions;
-sv_funcs.PlayerPostThink = ED_FindFunction (&sv_pr_state, "PlayerPostThink") - sv_pr_state. pr_functions;
-sv_funcs.ClientKill = ED_FindFunction (&sv_pr_state, "ClientKill") - sv_pr_state. pr_functions;
-sv_funcs.ClientConnect = ED_FindFunction (&sv_pr_state, "ClientConnect") - sv_pr_state. pr_functions;
-sv_funcs.PutClientInServer = ED_FindFunction (&sv_pr_state, "PutClientInServer") - sv_pr_state. pr_functions;
-sv_funcs.ClientDisconnect = ED_FindFunction (&sv_pr_state, "ClientDisconnect") - sv_pr_state. pr_functions;
-sv_funcs.SetNewParms = ED_FindFunction (&sv_pr_state, "SetNewParms") - sv_pr_state. pr_functions;
-sv_funcs.SetChangeParms = ED_FindFunction (&sv_pr_state, "SetChangeParms") - sv_pr_state. pr_functions;
+#ifdef QUAKE2
+(void *) sv_globals.startspot = PR_GetGlobalPointer (&sv_pr_state, "startspot");
+(void *) sv_globals.null = PR_GetGlobalPointer (&sv_pr_state, "null");
+#endif
+
+sv_funcs.main = PR_GetFunctionIndex (&sv_pr_state, "main");
+sv_funcs.StartFrame = PR_GetFunctionIndex (&sv_pr_state, "StartFrame");
+sv_funcs.PlayerPreThink = PR_GetFunctionIndex (&sv_pr_state, "PlayerPreThink");
+sv_funcs.PlayerPostThink = PR_GetFunctionIndex (&sv_pr_state, "PlayerPostThink");
+sv_funcs.ClientKill = PR_GetFunctionIndex (&sv_pr_state, "ClientKill");
+sv_funcs.ClientConnect = PR_GetFunctionIndex (&sv_pr_state, "ClientConnect");
+sv_funcs.PutClientInServer = PR_GetFunctionIndex (&sv_pr_state, "PutClientInServer");
+sv_funcs.ClientDisconnect = PR_GetFunctionIndex (&sv_pr_state, "ClientDisconnect");
+sv_funcs.SetNewParms = PR_GetFunctionIndex (&sv_pr_state, "SetNewParms");
+sv_funcs.SetChangeParms = PR_GetFunctionIndex (&sv_pr_state, "SetChangeParms");
 
 sv_fields.modelindex = ED_GetFieldIndex (&sv_pr_state, "modelindex");
 sv_fields.absmin = ED_GetFieldIndex (&sv_pr_state, "absmin");

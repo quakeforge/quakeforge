@@ -280,8 +280,8 @@ typedef struct
 	// LordHavoc: Endy neglected to mark this as a QSG version 2 thingy...
 	byte	alpha;
 	byte	scale;
-	byte	glowsize;
-	byte	glowcolor;
+	byte	glow_size;
+	byte	glow_color;
 	byte	colormod;
 } entity_state_t;
 

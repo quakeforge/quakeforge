@@ -62,6 +62,17 @@ int         type_size[8] = {
 	sizeof (void *) / 4
 };
 
+char       *type_name[8] = {
+	"void",
+	"string",
+	"float",
+	"vector",
+	"entity",
+	"field",
+	"function",
+	"pointer",
+};
+
 ddef_t     *ED_FieldAtOfs (progs_t * pr, int ofs);
 qboolean    ED_ParseEpair (progs_t * pr, pr_type_t *base, ddef_t *key, char *s);
 
@@ -187,7 +198,7 @@ ED_FieldAtOfs (progs_t * pr, int ofs)
 	ED_FindField
 */
 ddef_t     *
-ED_FindField (progs_t * pr, char *name)
+ED_FindField (progs_t * pr, const char *name)
 {
 	return  Hash_Find (pr->field_hash, name);
 }
@@ -220,15 +231,35 @@ PR_GetGlobalPointer (progs_t *pr, const char *name)
 	def = PR_FindGlobal (pr, name);
 	if (def)
 		return (eval_t*)&pr->pr_globals[def->ofs];
+	PR_Error (pr, "undefined global %s", name);
 	return 0;
 }
 
+func_t
+PR_GetFunctionIndex (progs_t *pr, const char *name)
+{
+	dfunction_t *func = ED_FindFunction (pr, name);
+	if (func)
+		return func - pr->pr_functions;
+	PR_Error (pr, "undefined function %s", name);
+	return -1;
+}
+
+int
+PR_GetFieldOffset (progs_t *pr, const char *name)
+{
+	ddef_t *def = ED_FindField (pr, name);
+	if (def)
+		return def->ofs;
+	PR_Error (pr, "undefined field %s", name);
+	return -1;
+}
 
 /*
 	ED_FindFunction
 */
 dfunction_t *
-ED_FindFunction (progs_t * pr, char *name)
+ED_FindFunction (progs_t * pr, const char *name)
 {
 	return  Hash_Find (pr->function_hash, name);
 }
@@ -1215,4 +1246,18 @@ PR_Error (progs_t *pr, const char *error, ...)
 	va_end (argptr);
 
 	Sys_Error ("%s", string);
+}
+
+int
+PR_AccessField (progs_t *pr, const char *name, etype_t type,
+				const char *file, int line)
+{
+	ddef_t *def = ED_FindField (pr, name);
+
+	if (!def)
+		PR_Error (pr, "undefined field %s accessed at %s:%d", name, file, line);
+	if (def->type != type)
+		PR_Error (pr, "bad type access to %s as %s (should be %s) at %s:%d",
+				  name, type_name[type], type_name[def->type], file, line);
+	return def->ofs;
 }
