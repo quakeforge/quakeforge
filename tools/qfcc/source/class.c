@@ -1,7 +1,7 @@
 /*
-	function.c
+	class.c
 
-	QC function support code
+	QC class support code
 
 	Copyright (C) 2002 Bill Currie
 
@@ -64,9 +64,9 @@ static hashtab_t *class_hash;
 static hashtab_t *category_hash;
 static hashtab_t *protocol_hash;
 
-class_t         class_id = {1, "id", 0, 0, 0, 0, 0, 0, &type_id};
-class_t         class_Class = {1, "Class", 0, 0, 0, 0, 0, 0, &type_Class};
-class_t         class_Protocol = {1, "Protocl", 0, 0, 0, 0, 0, 0, &type_Protocol};
+class_t     class_id = {1, "id", 0, 0, 0, 0, 0, 0, &type_id};
+class_t     class_Class = {1, "Class", 0, 0, 0, 0, 0, 0, &type_Class};
+class_t     class_Protocol = {1, "Protocl", 0, 0, 0, 0, 0, 0, &type_Protocol};
 
 static const char *
 class_get_key (void *class, void *unused)

@@ -1,12 +1,11 @@
 /*
 	qfcc.h
 
-	#DESCRIPTION#
+	QuakeForge Code Compiler (main program)
 
-	Copyright (C) 2001 #AUTHOR#
-
-	Author: #AUTHOR#
-	Date: #DATE#
+	Copyright (C) 1996-1997 id Software, Inc.
+	Copyright (C) 2001 Jeff Teunissen <deek@quakeforge.net>
+	Copyright (C) 2001 Bill Currie <bill@taniwha.org>
 
 	This program is free software; you can redistribute it and/or
 	modify it under the terms of the GNU General Public License

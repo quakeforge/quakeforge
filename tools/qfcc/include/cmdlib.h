@@ -26,15 +26,6 @@
 
 #include <stdio.h>
 
-int FileLength (FILE *f);
-
-void	Error (char *error, ...)__attribute__((format(printf, 1,2)));
-
-FILE	*SafeOpenWrite (const char *filename);
-FILE	*SafeOpenRead (const char *filename);
-void	SafeRead (FILE *f, void *buffer, int count);
-void	SafeWrite (FILE *f, void *buffer, int count);
-
 int		LoadFile (const char *filename, void **bufferptr);
 
 #endif
