@@ -269,6 +269,8 @@ Model_NextDownload (void)
 			return;						// started a download
 	}
 
+	Netchan_AckPacket (&cls.netchan);
+
 	for (i = 1; i < MAX_MODELS; i++) {
 		if (!cl.model_name[i][0])
 			break;
@@ -328,6 +330,8 @@ Sound_NextDownload (void)
 		if (!CL_CheckOrDownloadFile (va ("sound/%s", s)))
 			return;						// started a download
 	}
+
+	Netchan_AckPacket (&cls.netchan);
 
 	for (i = 1; i < MAX_SOUNDS; i++) {
 		if (!cl.sound_name[i][0])
