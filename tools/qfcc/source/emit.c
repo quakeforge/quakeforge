@@ -493,7 +493,7 @@ emit_sub_expr (expr_t *e, def_t *dest)
 				dest->users += 2;
 			}
 			op = opcode_find (operator, def_a->type, def_b->type,
-							  e->e.expr.type);
+							  dest->type);
 			d = emit_statement (e, op, def_a, def_b, dest);
 			break;
 		case ex_uexpr:
