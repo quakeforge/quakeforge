@@ -512,21 +512,21 @@ R_DrawAliasModel (entity_t *e, qboolean cull)
 	int			  lnum, i, texture;
 	int			  fb_texture = 0;
 	aliashdr_t	 *paliashdr;
-	model_t		 *clmodel;
+	model_t		 *model;
 	vec3_t		  dist, mins, maxs, scale;
 	vert_order_t *vo;
 
-	clmodel = e->model;
+	model = e->model;
 
-	VectorAdd (e->origin, clmodel->mins, mins);
-	VectorAdd (e->origin, clmodel->maxs, maxs);
+	VectorAdd (e->origin, model->mins, mins);
+	VectorAdd (e->origin, model->maxs, maxs);
 
 	if (cull && R_CullBox (mins, maxs)) 
 		return;
 
 	VectorSubtract (r_origin, e->origin, modelorg);
 
-	if (!clmodel->fullbright) {
+	if (!model->fullbright) {
 		// get lighting information
 		R_LightPoint (e->origin);
 		ambientcolor[0] *= e->colormod[0];
@@ -558,7 +558,7 @@ R_DrawAliasModel (entity_t *e, qboolean cull)
 		}
 		// always give the gun some light
 		shade = max (shadecolor[0], max (shadecolor[1], shadecolor[2]));
-		minshade = clmodel->min_light / 200.0;
+		minshade = model->min_light / 200.0;
 		if (e == r_view_model && shade < minshade) {
 			shadecolor[0] += minshade - shade;
 			shadecolor[1] += minshade - shade;
@@ -602,7 +602,7 @@ R_DrawAliasModel (entity_t *e, qboolean cull)
 
 		skindesc = R_AliasGetSkindesc (e->skinnum, paliashdr);
 		texture = skindesc->texnum;
-		if (gl_fb_models->int_val && !clmodel->fullbright)
+		if (gl_fb_models->int_val && !model->fullbright)
 			fb_texture = skindesc->fb_texnum;
 	}
 
@@ -614,7 +614,7 @@ R_DrawAliasModel (entity_t *e, qboolean cull)
 	if (modelalpha < 1.0)
 		qfglDepthMask (GL_FALSE);
 
-	if (clmodel->fullbright) {
+	if (model->fullbright) {
 		qfglBindTexture (GL_TEXTURE_2D, texture);
 		GL_DrawAliasFrame_fb (vo);
 	} else if (!fb_texture) {
@@ -649,13 +649,13 @@ R_DrawAliasModel (entity_t *e, qboolean cull)
 
 	// FIXME: Translucent objects should cast colored shadows
 	// torches, grenades, and lightning bolts do not have shadows
-	if (r_shadows->int_val && clmodel->shadow_alpha) {
+	if (r_shadows->int_val && model->shadow_alpha) {
 		qfglPushMatrix ();
 		R_RotateForEntity (e);
 
 		qfglDisable (GL_TEXTURE_2D);
 		qfglDepthMask (GL_FALSE);
-		color_black[3] = modelalpha * ((clmodel->shadow_alpha + 1) / 2);
+		color_black[3] = modelalpha * ((model->shadow_alpha + 1) / 2);
 		qfglColor4ubv (color_black);
 
 		GL_DrawAliasShadow (paliashdr, vo);
