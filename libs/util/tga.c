@@ -118,8 +118,7 @@ struct tex_s *
 LoadTGA (VFile *fin)
 {
 	byte       *dataByte, *pixcol, *pixrow;
-	int         column, row, columns, rows, numPixels, span;
-	int         targa_mark;
+	int         column, row, columns, rows, numPixels, span, targa_mark;
 	TargaHeader *targa;
 	tex_t      *tex;
 

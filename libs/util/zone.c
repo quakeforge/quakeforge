@@ -71,7 +71,6 @@ void        Cache_FreeLow (int new_low_hunk);
 void        Cache_FreeHigh (int new_high_hunk);
 
 /*
-
    						ZONE MEMORY ALLOCATION
 
 	There is never any space between memblocks, and there will never be two
@@ -109,7 +108,7 @@ Z_ClearZone (memzone_t *zone, int size)
 	// set the entire zone to one free block
 
 	zone->blocklist.next = zone->blocklist.prev = block =
-		(memblock_t *)( (byte *)zone + sizeof(memzone_t) );
+		(memblock_t *) ((byte *) zone + sizeof (memzone_t));
 	zone->blocklist.tag = 1;	// in use block
 	zone->blocklist.id = 0;
 	zone->blocklist.size = 0;
@@ -118,7 +117,7 @@ Z_ClearZone (memzone_t *zone, int size)
 	block->prev = block->next = &zone->blocklist;
 	block->tag = 0;			// free block
 	block->id = ZONEID;
-	block->size = size - sizeof(memzone_t);
+	block->size = size - sizeof (memzone_t);
 }
 
 void
@@ -129,7 +128,7 @@ Z_Free (memzone_t *zone, void *ptr)
 	if (!ptr)
 		Sys_Error ("Z_Free: NULL pointer");
 
-	block = (memblock_t *) ( (byte *)ptr - sizeof(memblock_t));
+	block = (memblock_t *) ((byte *) ptr - sizeof (memblock_t));
 	if (block->id != ZONEID)
 		Sys_Error ("Z_Free: freed a pointer without ZONEID");
 	if (block->tag == 0)
@@ -159,8 +158,8 @@ Z_Free (memzone_t *zone, void *ptr)
 	}
 }
 
-void
-*Z_Malloc (memzone_t *zone, int size)
+void *
+Z_Malloc (memzone_t *zone, int size)
 {
 	void	*buf;
 
@@ -174,8 +173,8 @@ void
 	return buf;
 }
 
-void
-*Z_TagMalloc (memzone_t *zone, int size, int tag)
+void *
+Z_TagMalloc (memzone_t *zone, int size, int tag)
 {
 	int			 extra;
 	memblock_t	*start, *rover, *new, *base;
@@ -185,15 +184,15 @@ void
 
 	// scan through the block list looking for the first free block
 	// of sufficient size
-	size += sizeof(memblock_t);	// account for size of block header
-	size += 4;					// space for memory trash tester
-	size = (size + 7) & ~7;		// align to 8-byte boundary
+	size += sizeof (memblock_t);	// account for size of block header
+	size += 4;						// space for memory trash tester
+	size = (size + 7) & ~7;			// align to 8-byte boundary
 	
 	base = rover = zone->rover;
 	start = base->prev;
 	
 	do {
-		if (rover == start)	// scaned all the way around the list
+		if (rover == start)			// scaned all the way around the list
 			return NULL;
 		if (rover->tag)
 			base = rover = rover->next;
@@ -205,7 +204,7 @@ void
 	extra = base->size - size;
 	if (extra >  MINFRAGMENT) {
 		// there will be a free fragment after the allocated block
-		new = (memblock_t *) ((byte *)base + size );
+		new = (memblock_t *) ((byte *) base + size);
 		new->size = extra;
 		new->tag = 0;			// free block
 		new->prev = base;
@@ -223,22 +222,22 @@ void
 	base->id = ZONEID;
 
 	// marker for memory trash testing
-	*(int *)((byte *)base + base->size - 4) = ZONEID;
+	*(int *) ((byte *) base + base->size - 4) = ZONEID;
 
-	return (void *) ((byte *)base + sizeof(memblock_t));
+	return (void *) ((byte *) base + sizeof (memblock_t));
 }
 
 void *
 Z_Realloc (memzone_t *zone, void *ptr, int size)
 {
-	memblock_t *block;
 	int         old_size;
+	memblock_t *block;
 	void       *old_ptr;
 	
 	if (!ptr)
 		return Z_Malloc (zone, size);
 
-	block = (memblock_t *) ( (byte *)ptr - sizeof(memblock_t));
+	block = (memblock_t *) ((byte *) ptr - sizeof (memblock_t));
 	if (block->id != ZONEID)
 		Sys_Error ("Z_Realloc: realloced a pointer without ZONEID");
 	if (block->tag == 0)
@@ -305,8 +304,7 @@ Z_CheckHeap (memzone_t *zone)
 
 typedef struct {
 	int         sentinal;
-	int         size;					// including sizeof(hunk_t), -1 = not 
-										// allocated
+	int         size;			// including sizeof(hunk_t), -1 = not allocated
 	char        name[8];
 } hunk_t;
 
@@ -560,7 +558,7 @@ Hunk_TempAlloc (int size)
 typedef struct cache_system_s {
 	cache_user_t *user;
 	char        name[16];
-	int         size;					// including this header
+	int         size;							// including this header
 	int			readlock;
 	struct cache_system_s *prev, *next;
 	struct cache_system_s *lru_prev, *lru_next;	// for LRU flushing 
@@ -578,11 +576,11 @@ void Cache_Profile (void);
 #define CACHE_WRITE_LOCK	{ if (cache_writelock) \
 								Sys_Error ("Cache double-locked!"); \
 							  else \
-							cache_writelock++; }
+								cache_writelock++; }
 #define CACHE_WRITE_UNLOCK	{ if (!cache_writelock) \
 								Sys_Error ("Cache already unlocked!"); \
 							  else \
-							cache_writelock--; }
+								cache_writelock--; }
 
 #ifndef MMAPPED_CACHE
 void
@@ -686,6 +684,7 @@ qboolean
 Cache_FreeLRU ()
 {
 	cache_system_t *cs;
+
 	for (cs = cache_head.lru_prev; cs->readlock; cs = cs->lru_prev)
 		;
 	if (cs == &cache_head)
@@ -845,10 +844,12 @@ Cache_Init (void)
 	cache_head.next = cache_head.prev = &cache_head;
 	cache_head.lru_next = cache_head.lru_prev = &cache_head;
 
-	Cmd_AddCommand ("cache_flush", Cache_Flush, "Clears the current game cache");
+	Cmd_AddCommand ("cache_flush", Cache_Flush, "Clears the current game "
+					"cache");
 	Cmd_AddCommand ("cache_profile", Cache_Profile, "Prints a profile of "
 					"the current cache");
-	Cmd_AddCommand ("cache_print", Cache_Print, "Prints out items in the cache");
+	Cmd_AddCommand ("cache_print", Cache_Print, "Prints out items in the "
+					"cache");
 }
 
 /*
@@ -890,11 +891,11 @@ Cache_RealFree (cache_user_t *c)
 #endif
 }
 
-
 void       *
 Cache_Check (cache_user_t *c)
 {
 	void *mem;
+
 	CACHE_WRITE_LOCK;
 	mem = Cache_RealCheck (c);
 	CACHE_WRITE_UNLOCK;
@@ -922,6 +923,7 @@ void *
 Cache_Alloc (cache_user_t *c, int size, const char *name)
 {
 	void *mem;
+
 	CACHE_WRITE_LOCK;
 	mem = Cache_RealAlloc (c, size, name);
 	CACHE_WRITE_UNLOCK;
@@ -1032,6 +1034,7 @@ void *
 Cache_TryGet (cache_user_t *c)
 {
 	void *mem;
+
 	CACHE_WRITE_LOCK;
 
 	mem = Cache_RealCheck (c);
@@ -1050,6 +1053,7 @@ void *
 Cache_Get (cache_user_t *c)
 {
 	void *mem = Cache_TryGet (c);
+
 	if (!mem)
 		Sys_Error ("Cache_Get: couldn't get cache!");
 	return mem;
@@ -1059,6 +1063,7 @@ void
 Cache_Release (cache_user_t *c)
 {
 	int *readlock;
+
 	CACHE_WRITE_LOCK;
 	readlock = &(((cache_system_t *)c->data) - 1)->readlock;
 
@@ -1072,22 +1077,19 @@ Cache_Release (cache_user_t *c)
 	CACHE_WRITE_UNLOCK;
 }
 
-
-/*
-	QA_alloc and friends
-*/
+// QA_alloc and friends =======================================================
 
 size_t (*QA_alloc_callback) (size_t size);
 
 void *
 QA_alloc (unsigned flags, ...)
 {
-	void *mem;
-	void *ptr = 0;
+	int failure = QA_NOFAIL;
 	size_t size = 0;
 	qboolean zeroed = false;
-	int failure = QA_NOFAIL;
 	va_list ap;
+	void *mem;
+	void *ptr = 0;
 
 	if (flags & ~(QA_FAILURE | QA_PREVIOUS | QA_SIZE | QA_ZEROED))
 		Sys_Error ("QA_alloc: bad flags: %u", flags);
@@ -1103,14 +1105,16 @@ QA_alloc (unsigned flags, ...)
 		failure = va_arg (ap, int);
 	va_end (ap);
 
-	if (failure != QA_NOFAIL && failure != QA_LATEFAIL && failure != QA_EARLYFAIL)
+	if (failure != QA_NOFAIL && failure != QA_LATEFAIL && failure
+		!= QA_EARLYFAIL)
 		Sys_Error ("QA_alloc: invalid failure type: %u", failure);
 
 	if (size) {
 		do {
 			if (ptr) {
 				if (zeroed)
-					Sys_Error ("QA_alloc: Zeroing reallocated memory not yet supported");
+					Sys_Error ("QA_alloc: Zeroing reallocated memory not yet "
+							   "supported");
 				else
 					mem = realloc (ptr, size);
 			} else {
@@ -1162,11 +1166,11 @@ char *
 QA_strdup (const char *s)
 {
 	char *mem;
+
 	mem = QA_malloc (strlen (s) + 1);
 	strcpy (mem, s);
 	return mem;
 }
-
 
 //============================================================================
 

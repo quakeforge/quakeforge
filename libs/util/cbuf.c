@@ -61,7 +61,7 @@ Cbuf_ArgsNew (void)
 void
 Cbuf_ArgsDelete (cbuf_args_t *args)
 {
-	int         i;
+	int		i;
 
 	for (i = 0; i < args->argv_size; i++)
 		dstring_delete (args->argv[i]);
@@ -73,7 +73,7 @@ Cbuf_ArgsDelete (cbuf_args_t *args)
 void
 Cbuf_ArgsAdd (cbuf_args_t *args, const char *arg)
 {
-	int         i;
+	int		i;
 
 	if (args->argc == args->argv_size) {
 		args->argv_size += 4;
@@ -93,7 +93,7 @@ Cbuf_ArgsAdd (cbuf_args_t *args, const char *arg)
 cbuf_t *
 Cbuf_New (cbuf_interpreter_t *interp)
 {
-	cbuf_t     *cbuf = calloc (1, sizeof (cbuf_t));
+	cbuf_t		*cbuf = calloc (1, sizeof (cbuf_t));
 
 	cbuf->buf = dstring_newstr ();
 	cbuf->line = dstring_newstr ();
@@ -120,7 +120,7 @@ Cbuf_Delete (cbuf_t *cbuf)
 void
 Cbuf_DeleteStack (cbuf_t *stack)
 {
-	cbuf_t *next;
+	cbuf_t		*next;
 	
 	for (; stack; stack = next) {
 		next = stack->down;
@@ -164,7 +164,7 @@ Cbuf_Execute (cbuf_t *cbuf)
 void
 Cbuf_Execute_Stack (cbuf_t *cbuf)
 {
-	cbuf_t *sp;
+	cbuf_t		*sp;
 	
 	for (sp = cbuf; sp->down; sp = sp->down);
 	while (sp) {
@@ -230,4 +230,3 @@ Cbuf_Error (const char *class, const char *fmt, ...)
 	dstring_clearstr (cbuf_active->buf);
 	dstring_delete (message);
 }
-
