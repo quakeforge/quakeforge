@@ -41,12 +41,15 @@
 #include "QF/console.h"
 #include "QF/cvar.h"
 #include "QF/draw.h"
+#include "QF/msg.h"
 #include "QF/pcx.h"
 #include "QF/screen.h"
 #include "QF/texture.h"
+#include "QF/va.h"
 
 #include "cl_parse.h"
 #include "client.h"
+#include "compat.h"
 #include "sbar.h"
 
 void
@@ -61,11 +64,45 @@ SCR_DrawNet (int swap)
 	Draw_Pic (scr_vrect.x + 64, scr_vrect.y, scr_net);
 }
 
+void
+CL_NetStats (int swap)
+{
+	int x, y;
+	if (!show_ping->int_val && !show_pl->int_val)
+		return;
+	x = swap ? vid.width - 104 : 0;
+	y = vid.height - sb_lines - 16;
+	// request new ping times every two second
+	if (realtime - cl.last_ping_request > 2) {
+		cl.last_ping_request = realtime;
+		MSG_WriteByte (&cls.netchan.message, clc_stringcmd);
+		SZ_Print (&cls.netchan.message, "pings");
+	}
+	if (show_ping->int_val) {
+		int ping = cl.players[cl.playernum].ping;
+		ping = bound (0, ping, 999);
+		Draw_String8 (x, y, va ("%3d ms", ping));
+		x+= 48;
+	} else if (swap) {
+		x += 56;
+	}
+	if (show_ping->int_val && show_pl->int_val) {
+		Draw_String8(x, y, "/");
+		x += 8;
+	}
+	if (show_pl->int_val) {
+		int lost = CL_CalcNet ();
+		lost = bound (0, lost, 999);
+		Draw_String8 (x, y, va ("%3d pl", lost));
+	}
+}
+
 static SCR_Func scr_funcs[] = {
 	Draw_Crosshair,
 	SCR_DrawRam,
 	SCR_DrawNet,
 	CL_NetGraph,
+	CL_NetStats,
 	SCR_DrawFPS,
 	SCR_DrawTime,
 	SCR_DrawTurtle,

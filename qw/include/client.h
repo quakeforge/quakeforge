@@ -303,6 +303,9 @@ extern	struct cvar_s	*cl_name;
 
 extern	struct cvar_s	*cl_model_crcs;
 
+extern	struct cvar_s	*show_ping;
+extern	struct cvar_s	*show_pl;
+
 
 #define	MAX_STATIC_ENTITIES	128			// torches, etc
 

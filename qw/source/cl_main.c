@@ -195,6 +195,8 @@ byte       *vid_colormap;
 
 cvar_t     *host_speeds;
 cvar_t     *show_fps;
+cvar_t     *show_ping;
+cvar_t     *show_pl;
 cvar_t     *show_time;
 cvar_t     *cl_demospeed;
 
@@ -1255,6 +1257,10 @@ CL_Init_Cvars (void)
 							 "sending rcon commands");
 	show_fps = Cvar_Get ("show_fps", "0", CVAR_NONE, NULL,
 						 "display realtime frames per second");
+	show_ping = Cvar_Get ("show_ping", "o", CVAR_NONE, NULL,
+						  "display current ping to server");
+	show_pl = Cvar_Get ("show_pl", "o", CVAR_NONE, NULL,
+						"display current packet loss to server");
 	show_time = Cvar_Get ("show_time", "0", CVAR_NONE, NULL,
 						  "display the current time");
 	cl_predict_players2 = Cvar_Get ("cl_predict_players2", "1", CVAR_NONE,
