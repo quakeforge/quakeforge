@@ -44,14 +44,14 @@
 #include "QF/pcx.h"
 #include "QF/qendian.h"
 #include "QF/screen.h"
+#include "QF/skin.h"
 #include "QF/sys.h"
+#include "QF/texture.h"
 #include "QF/va.h"
 
 #include "cl_parse.h"
 #include "client.h"
 #include "host.h"
-#include "skin.h"
-#include "texture.h"
 
 cvar_t     *baseskin;
 cvar_t     *noskins;

@@ -45,6 +45,7 @@
 #include "QF/locs.h"
 #include "QF/mathlib.h"
 #include "QF/qargs.h"
+#include "QF/skin.h"
 #include "QF/sound.h"
 #include "QF/sys.h"
 #include "QF/vid.h"
@@ -57,7 +58,6 @@
 #include "glquake.h"
 #include "r_dynamic.h"
 #include "r_local.h"
-#include "skin.h"
 #include "view.h"
 
 entity_t	r_worldentity;

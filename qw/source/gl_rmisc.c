@@ -41,6 +41,7 @@
 #include "QF/cmd.h"
 #include "QF/console.h"
 #include "QF/cvar.h"
+#include "QF/skin.h"
 #include "QF/sys.h"
 #include "QF/vid.h"
 #include "QF/varrays.h"
@@ -48,7 +49,6 @@
 #include "glquake.h"
 #include "r_dynamic.h"
 #include "r_local.h"
-#include "skin.h"
 
 varray_t2f_c4f_v3f_t varray[MAX_VARRAY_VERTS];
 

@@ -41,12 +41,12 @@
 #include "QF/qendian.h"
 #include "QF/qtypes.h"
 #include "QF/quakefs.h"
+#include "QF/texture.h"
 #include "QF/vid.h"
 #include "QF/zone.h"
 
 #include "cl_parse.h"
 #include "host.h"
-#include "texture.h"
 
 
 tex_t *

@@ -30,13 +30,14 @@
 # include "config.h"
 #endif
 
+#include "QF/compat.h"
+#include "QF/skin.h"
+#include "QF/sys.h"
+#include "QF/texture.h"
+
 #include "glquake.h"
 #include "host.h"
 #include "protocol.h"
-#include "skin.h"
-#include "QF/compat.h"
-#include "QF/sys.h"
-#include "texture.h"
 
 byte        player_8bit_texels[320 * 200];
 static byte translate[256];

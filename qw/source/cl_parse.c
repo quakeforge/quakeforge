@@ -43,27 +43,28 @@
 #include <unistd.h>
 #endif
 
-#include "bothdefs.h"
 #include "QF/cdaudio.h"
+#include "QF/cmd.h"
+#include "QF/compat.h"
+#include "QF/console.h"
+#include "QF/msg.h"
+#include "QF/skin.h"
+#include "QF/screen.h"
+#include "QF/sound.h"
+#include "QF/teamplay.h"
+#include "QF/va.h"
+
+#include "bothdefs.h"
 #include "cl_ents.h"
 #include "cl_input.h"
 #include "cl_main.h"
 #include "cl_parse.h"
 #include "cl_tent.h"
 #include "client.h"
-#include "QF/cmd.h"
-#include "QF/compat.h"
-#include "QF/console.h"
 #include "host.h"
-#include "QF/msg.h"
 #include "pmove.h"
 #include "protocol.h"
-#include "QF/screen.h"
 #include "sbar.h"
-#include "skin.h"
-#include "QF/sound.h"
-#include "QF/teamplay.h"
-#include "QF/va.h"
 #include "view.h"
 
 extern cvar_t *gl_dlight_polyblend;

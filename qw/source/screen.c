@@ -43,6 +43,7 @@
 #include "QF/console.h"
 #include "QF/keys.h"
 #include "QF/pcx.h"
+#include "QF/skin.h"
 #include "QF/sys.h"
 #include "QF/vid.h"
 
@@ -52,7 +53,6 @@
 #include "draw.h"
 #include "host.h"
 #include "sbar.h"
-#include "skin.h"
 #include "view.h"
 
 /*

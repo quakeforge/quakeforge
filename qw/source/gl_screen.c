@@ -43,6 +43,7 @@
 #include "QF/console.h"
 #include "QF/keys.h"
 #include "QF/pcx.h"
+#include "QF/skin.h"
 #include "QF/sys.h"
 #include "QF/tga.h"
 
@@ -52,7 +53,6 @@
 #include "host.h"
 #include "r_local.h"
 #include "sbar.h"
-#include "skin.h"
 #include "view.h"
 
 /*

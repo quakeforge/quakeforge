@@ -41,11 +41,12 @@
 
 #include "QF/compat.h"
 #include "QF/console.h"
-#include "glquake.h"
 #include "QF/model.h"
 #include "QF/qendian.h"
+#include "QF/skin.h"
+
+#include "glquake.h"
 #include "server.h"
-#include "skin.h"
 
 extern model_t *loadmodel;
 
