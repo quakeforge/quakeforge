@@ -838,16 +838,17 @@ field_expr (expr_t *e1, expr_t *e2)
 	}
 	if (t1 == ev_pointer
 		&& (strct = get_type(e1)->aux_type)->type == ev_struct) {
-		if (e2->type != ex_name)
-			return error (e2, "structure field name expected");
-		field = struct_find_field (strct, e2->e.string_val);
-		if (!field)
-			return error (e2, "structure has no field %s", e2->e.string_val);
-		e2->type = ex_short;
-		e2->e.short_val = field->offset;
-		e = new_binary_expr ('.', e1, e2);
-		e->e.expr.type = field->type;
-		return e;
+		if (e2->type == ex_name) {
+			field = struct_find_field (strct, e2->e.string_val);
+			if (!field)
+				return error (e2, "structure has no field %s",
+						      e2->e.string_val);
+			e2->type = ex_short;
+			e2->e.short_val = field->offset;
+			e = new_binary_expr ('.', e1, e2);
+			e->e.expr.type = field->type;
+			return e;
+		}
 	}
 	t2 = extract_type (e2);
 
@@ -1262,7 +1263,8 @@ unary_expr (int op, expr_t *e)
 				case ex_expr:
 					if (e->e.expr.op == '.') {
 						expr_t     *e1 = e->e.expr.e1;
-						if (get_type (e1) == &type_entity) {
+						etype_t     t1 = extract_type (e1);
+						if (t1 == ev_entity || t1 == ev_pointer) {
 							type_t      new;
 
 							memset (&new, 0, sizeof (new));
@@ -1527,7 +1529,7 @@ array_expr (expr_t *array, expr_t *index)
 	if (index->type >= ex_integer &&
 		index->e.uinteger_val >= array_type->num_parms)
 			return error (index, "array index out of bounds");
-	size = pr_type_size[array_type->aux_type->type];
+	size = PR_GetTypeSize (array_type->aux_type);
 	if (size > 1) {
 		scale = new_expr ();
 		scale->type = expr_types[index_type->type];

@@ -490,6 +490,7 @@ extern	def_t	*pr_scope;
 extern	int		pr_error_count;
 
 void PR_NewLine (void);
+int PR_GetTypeSize (type_t *type);
 def_t *PR_GetArray (type_t *etype, const char *name, int size, def_t *scope,
 					int *allocate);
 
