@@ -243,7 +243,8 @@ Chase_Update (void)
 	for (i = 0; i < 3; i++)
 		camera_origin[i] = r_refdef.vieworg[i]
 			- forward[i] * chase_back->value - right[i] * chase_right->value;
-	camera_origin[2] = r_refdef.vieworg[2] + chase_up->value;
+//	camera_origin[2] = r_refdef.vieworg[2] + chase_up->value; // DESPAIR
+	camera_origin[2] += chase_up->value;
 
 	// check for walls between player and camera
 	TraceLine (r_refdef.vieworg, camera_origin, stop);
