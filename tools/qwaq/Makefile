@@ -21,7 +21,7 @@ $(EXE): $(OBJ) $(LIBS)
 	$(CC) $(LDFLAGS) -o $@ $^ -lQFgamecode -lQFutil
 
 $(EXE).dat: progs.src *.qc
-	qfcc --warn=error --debug
+	qfcc --warn=error --code=debug
 
 clean:
 	rm -f $(EXE) *.o *.d core *.dat *.sym progdefs.h
