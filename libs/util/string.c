@@ -34,7 +34,6 @@ static const char rcsid[] =
 #include <string.h>
 
 #include "compat.h"
-#include "string.h"
 
 
 /*

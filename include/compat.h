@@ -92,10 +92,16 @@ extern int vsnprintf(char *s, size_t maxlen, const char *format, va_list arg);
 // FIXME: glibc has strcasestr, but only declares it if __USE_GNU is defined
 #if !defined(strcasestr)
 # define strcasestr Q_strcasestr
+# define need_qstring_h
 #endif
 // FIXME: same as above
 #if !defined(strnlen)
 # define strnlen Q_strnlen
+# define need_qstring_h
+#endif
+
+#ifdef need_qstring_h
+# include "qstring.h"
 #endif
 
 #undef field_offset
