@@ -179,8 +179,7 @@ C(D_DrawParticle):
 	jl		LPop1AndDone
 
 	flds	pt_color(%edi)	// color | 1/z * 0x8000
-// FIXME: use Terje's fast fp->int trick?
-	fistpl	DP_Color		// 1/z * 0x8000
+	fstps	DP_Color		// 1/z * 0x8000
 
 	movl	C(d_viewbuffer),%ebx
 
