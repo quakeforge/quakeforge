@@ -1,0 +1,13 @@
+AUTOMAKE_OPTIONS= foreign
+
+PAK_LIBS=@PAK_LIBS@
+PAK_DEPS=@PAK_DEPS@
+PAK_INCS=@PAK_INCS@
+
+INCLUDES= -I$(top_srcdir)/include $(PAK_INCS)
+
+bin_PROGRAMS= pak
+
+pak_SOURCES= pak.c pakfile.c
+pak_LDADD= $(PAK_LIBS)
+pak_DEPENDENCIES= $(PAK_DEPS)

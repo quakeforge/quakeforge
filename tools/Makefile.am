@@ -1,1 +1,1 @@
-SUBDIRS=qfcc
+SUBDIRS=pak qfcc

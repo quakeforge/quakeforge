@@ -1804,6 +1804,13 @@ AC_SUBST(QFCC_LIBS)
 AC_SUBST(QFCC_DEPS)
 AC_SUBST(QFCC_INCS)
 
+PAK_DEPS='$(top_builddir)/libs/util/libQFutil.la'
+PAK_LIBS="${QFCC_DEPS} ${WINMM}"
+PAK_INCS=""
+AC_SUBST(PAK_LIBS)
+AC_SUBST(PAK_DEPS)
+AC_SUBST(PAK_INCS)
+
 AC_DEFINE_UNQUOTED(PATH_SEPARATOR, '/', [Define this to your operating system's path separator character])
 AC_DEFINE_UNQUOTED(CPP_NAME, "$CPP_NAME", [Define this to the command line for the C preprocessor])
 AC_DEFINE(USE_CPP, 1, [Define this if you want qfcc to use the C preprocessor])
@@ -1865,6 +1872,7 @@ AC_OUTPUT(
 	nq/source/Makefile
 
 	tools/Makefile
+	tools/pak/Makefile
 	tools/qfcc/Makefile
 	tools/qfcc/doc/Makefile
 	tools/qfcc/doc/man/Makefile
