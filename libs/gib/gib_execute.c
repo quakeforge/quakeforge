@@ -202,7 +202,8 @@ GIB_Execute (cbuf_t *cbuf)
 				g->waitret = false;
 			if (cbuf->args->argc >= 2 && !strcmp (cbuf->args->argv[1]->str, "=") && ((gib_tree_t *)cbuf->args->argm[1])->delim == ' ') {
 				unsigned int index;
-				GIB_Var_Assign (GIB_Var_Get_Complex (&g->locals, &g->globals, cbuf->args->argv[0]->str, &index, true), index, cbuf->args->argv+2, cbuf->args->argc-2);
+				gib_var_t *var = GIB_Var_Get_Complex (&g->locals, &g->globals, cbuf->args->argv[0]->str, &index, true);
+				GIB_Var_Assign (var, index, cbuf->args->argv+2, cbuf->args->argc-2);
 			}
 			else if ((b = GIB_Builtin_Find (cbuf->args->argv[0]->str))) {
 				b->func ();
