@@ -1,7 +1,7 @@
 /*
 	r_efrag.c
 
-	@description@
+	(description)
 
 	Copyright (C) 1996-1997  Id Software, Inc.
 
@@ -42,11 +42,7 @@ mnode_t    *r_pefragtopnode;
 //===========================================================================
 
 /*
-===============================================================================
-
 					ENTITY FRAGMENT FUNCTIONS
-
-===============================================================================
 */
 
 efrag_t   **lastlink;
@@ -57,11 +53,9 @@ entity_t   *r_addent;
 
 
 /*
-================
-R_RemoveEfrags
+	R_RemoveEfrags
 
-Call when removing an object from the world or moving it to another position
-================
+	Call when removing an object from the world or moving it to another position
 */
 void
 R_RemoveEfrags (entity_t *ent)
@@ -95,9 +89,7 @@ R_RemoveEfrags (entity_t *ent)
 }
 
 /*
-===================
-R_SplitEntityOnNode
-===================
+	R_SplitEntityOnNode
 */
 void
 R_SplitEntityOnNode (mnode_t *node)
@@ -161,9 +153,7 @@ R_SplitEntityOnNode (mnode_t *node)
 
 
 /*
-===================
-R_SplitEntityOnNode2
-===================
+	R_SplitEntityOnNode2
 */
 void
 R_SplitEntityOnNode2 (mnode_t *node)
@@ -177,10 +167,7 @@ R_SplitEntityOnNode2 (mnode_t *node)
 	if (node->contents < 0) {
 		if (node->contents != CONTENTS_SOLID)
 			r_pefragtopnode = node;		// we've reached a non-solid leaf, so 
-										// 
-		// 
-		// it's
-		// visible and not BSP clipped
+										// it's visible and not BSP clipped
 		return;
 	}
 
@@ -201,9 +188,7 @@ R_SplitEntityOnNode2 (mnode_t *node)
 
 
 /*
-===========
-R_AddEfrags
-===========
+	R_AddEfrags
 */
 void
 R_AddEfrags (entity_t *ent)
@@ -236,11 +221,9 @@ R_AddEfrags (entity_t *ent)
 
 
 /*
-================
-R_StoreEfrags
+	R_StoreEfrags
 
-// FIXME: a lot of this goes away with edge-based
-================
+	// FIXME: a lot of this goes away with edge-based
 */
 void
 R_StoreEfrags (efrag_t **ppefrag)
@@ -258,21 +241,22 @@ R_StoreEfrags (efrag_t **ppefrag)
 			case mod_alias:
 			case mod_brush:
 			case mod_sprite:
-			pent = pefrag->entity;
+				pent = pefrag->entity;
 
-			if ((pent->visframe != r_framecount) &&
-				(cl_numvisedicts < MAX_VISEDICTS)) {
-				cl_visedicts[cl_numvisedicts++] = pent;
+				if ((pent->visframe != r_framecount) &&
+					(cl_numvisedicts < MAX_VISEDICTS)) {
+					cl_visedicts[cl_numvisedicts++] = pent;
 
-				// mark that we've recorded this entity for this frame
-				pent->visframe = r_framecount;
-			}
+					// mark that we've recorded this entity for this frame
+					pent->visframe = r_framecount;
+				}
 
-			ppefrag = &pefrag->leafnext;
-			break;
+				ppefrag = &pefrag->leafnext;
+				break;
 
 			default:
-			Sys_Error ("R_StoreEfrags: Bad entity type %d\n", clmodel->type);
+				Sys_Error ("R_StoreEfrags: Bad entity type %d\n",
+						   clmodel->type);
 		}
 	}
 }
