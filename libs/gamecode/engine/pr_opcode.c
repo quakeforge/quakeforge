@@ -215,29 +215,28 @@ opcode_t    pr_opcodes[] = {
 };
 
 
-static const char *
-opcode_get_key (void *_op, void *unused)
+static unsigned long
+opcode_get_hash (void *op, void *unused)
 {
-	static char		rep[4];
-	char		   *r = rep;
-	opcode_t	   *op = (opcode_t *)_op;
+	return ((opcode_t *)op)->opcode;
+}
 
-	*r++ = (op->opcode & 0x7f) + 2;
-	*r++ = ((op->opcode >> 7) & 0x7f) + 2;
-	*r++ = ((op->opcode >> 14) & 0x3) + 2;
-	*r = 0;
-	return rep;
+static int
+opcode_compare (void *_opa, void *_opb, void *unused)
+{
+	opcode_t   *opa = (opcode_t *)_opa;
+	opcode_t   *opb = (opcode_t *)_opb;
+
+	return opa->opcode == opb->opcode;
 }
 
 opcode_t *
 PR_Opcode (short opcode)
 {
-	char		rep[100];
 	opcode_t	op;
 
 	op.opcode = opcode;
-	strcpy (rep, opcode_get_key (&op, 0));
-	return Hash_Find (opcode_table, rep);
+	return Hash_FindElement (opcode_table, &op);
 }
 
 void
@@ -245,11 +244,13 @@ PR_Opcode_Init (void)
 {
 	opcode_t   *op;
 
-	opcode_table = Hash_NewTable (1021, opcode_get_key, 0, 0);
+	opcode_table = Hash_NewTable (1021, 0, 0, 0);
+	Hash_SetHashCompare (opcode_table, opcode_get_hash, opcode_compare);
 
 	for (op = pr_opcodes; op->name; op++) {
-		Hash_Add (opcode_table, op);
+		Hash_AddElement (opcode_table, op);
 	}
+	Hash_Stats (opcode_table);
 }
 
 static inline void
