@@ -70,7 +70,7 @@ void () blarg =
 
 float (float baz) test_int =
 {
-	return baz;
+	return 1;
 };
 
 .entity owner;
