@@ -56,12 +56,12 @@ int         snd_scaletable[32][256];
 int        *snd_p, snd_linear_count, snd_vol;
 short      *snd_out;
 
-void        Snd_WriteLinearBlastStereo16 (void);
-sfxcache_t *I_S_LoadSound (sfx_t *s);
+void        SND_WriteLinearBlastStereo16 (void);
+sfxcache_t *SND_LoadSound (sfx_t *s);
 
 #ifndef USE_INTEL_ASM
 void
-Snd_WriteLinearBlastStereo16 (void)
+SND_WriteLinearBlastStereo16 (void)
 {
 	int         i;
 	int         val;
@@ -87,7 +87,7 @@ Snd_WriteLinearBlastStereo16 (void)
 #endif
 
 void
-I_S_TransferStereo16 (int endtime)
+SND_TransferStereo16 (int endtime)
 {
 	int         lpos;
 	int         lpaintedtime;
@@ -124,7 +124,7 @@ I_S_TransferStereo16 (int endtime)
 		snd_linear_count <<= 1;
 
 		// write a linear blast of samples
-		Snd_WriteLinearBlastStereo16 ();
+		SND_WriteLinearBlastStereo16 ();
 
 		snd_p += snd_linear_count;
 		lpaintedtime += (snd_linear_count >> 1);
@@ -137,7 +137,7 @@ I_S_TransferStereo16 (int endtime)
 }
 
 void
-I_S_TransferPaintBuffer (int endtime)
+SND_TransferPaintBuffer (int endtime)
 {
 	int         out_idx;
 	int         count;
@@ -149,7 +149,7 @@ I_S_TransferPaintBuffer (int endtime)
 	DWORD      *pbuf;
 
 	if (shm->samplebits == 16 && shm->channels == 2) {
-		I_S_TransferStereo16 (endtime);
+		SND_TransferStereo16 (endtime);
 		return;
 	}
 
@@ -215,7 +215,7 @@ void        SND_PaintChannelFrom8 (channel_t *ch, sfxcache_t *sc, int endtime);
 void        SND_PaintChannelFrom16 (channel_t *ch, sfxcache_t *sc, int endtime);
 
 void
-I_S_PaintChannels (int endtime)
+SND_PaintChannels (int endtime)
 {
 	int         i;
 	int         end;
@@ -241,7 +241,7 @@ I_S_PaintChannels (int endtime)
 				continue;
 			if (!ch->leftvol && !ch->rightvol)
 				continue;
-			sc = I_S_LoadSound (ch->sfx);
+			sc = SND_LoadSound (ch->sfx);
 			if (!sc)
 				continue;
 
@@ -276,7 +276,7 @@ I_S_PaintChannels (int endtime)
 		}
 
 		// transfer out according to DMA format
-		I_S_TransferPaintBuffer (end);
+		SND_TransferPaintBuffer (end);
 
 		memmove (paintbuffer, paintbuffer + end - paintedtime,
 				 max_overpaint * sizeof (paintbuffer[0]));

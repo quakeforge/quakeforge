@@ -45,13 +45,14 @@
 
 int         cache_full_cycle;
 
-byte       *I_S_Alloc (int size);
+byte       *SND_Alloc (int size);
+wavinfo_t   SND_GetWavinfo (char *name, byte * wav, int wavlength);
 
 /*
-	ResampleSfx
+	SND_ResampleSfx
 */
 void
-ResampleSfx (sfx_t *sfx, int inrate, int inwidth, byte * data)
+SND_ResampleSfx (sfx_t *sfx, int inrate, int inwidth, byte * data)
 {
 	int         outcount;
 	int         srcsample;
@@ -164,10 +165,10 @@ ResampleSfx (sfx_t *sfx, int inrate, int inwidth, byte * data)
 //=============================================================================
 
 /*
-	I_S_LoadSound
+	SND_LoadSound
 */
 sfxcache_t *
-I_S_LoadSound (sfx_t *s)
+SND_LoadSound (sfx_t *s)
 {
 	char        namebuffer[256];
 	byte       *data;
@@ -196,7 +197,7 @@ I_S_LoadSound (sfx_t *s)
 		return NULL;
 	}
 
-	info = GetWavinfo (s->name, data, com_filesize);
+	info = SND_GetWavinfo (s->name, data, com_filesize);
 	if (info.channels != 1) {
 		Con_Printf ("%s is a stereo sample\n", s->name);
 		return NULL;
@@ -222,7 +223,7 @@ I_S_LoadSound (sfx_t *s)
 	sc->width = info.width;
 	sc->stereo = info.channels;
 
-	ResampleSfx (s, sc->speed, sc->width, data + info.dataofs);
+	SND_ResampleSfx (s, sc->speed, sc->width, data + info.dataofs);
 
 	return sc;
 }
@@ -242,7 +243,7 @@ int         iff_chunk_len;
 
 
 short
-GetLittleShort (void)
+SND_GetLittleShort (void)
 {
 	short       val = 0;
 
@@ -253,7 +254,7 @@ GetLittleShort (void)
 }
 
 int
-GetLittleLong (void)
+SND_GetLittleLong (void)
 {
 	int         val = 0;
 
@@ -266,7 +267,7 @@ GetLittleLong (void)
 }
 
 void
-FindNextChunk (char *name)
+SND_FindNexctChunk (char *name)
 {
 	while (1) {
 		data_p = last_chunk;
@@ -277,13 +278,13 @@ FindNextChunk (char *name)
 		}
 
 		data_p += 4;
-		iff_chunk_len = GetLittleLong ();
+		iff_chunk_len = SND_GetLittleLong ();
 		if (iff_chunk_len < 0) {
 			data_p = NULL;
 			return;
 		}
 //      if (iff_chunk_len > 1024*1024)
-//          Sys_Error ("FindNextChunk: %i length is past the 1 meg sanity limit", iff_chunk_len);
+//          Sys_Error ("SND_FindNexctChunk: %i length is past the 1 meg sanity limit", iff_chunk_len);
 		data_p -= 8;
 		last_chunk = data_p + 8 + ((iff_chunk_len + 1) & ~1);
 		if (!strncmp (data_p, name, 4))
@@ -292,15 +293,15 @@ FindNextChunk (char *name)
 }
 
 void
-FindChunk (char *name)
+SND_FindChunk (char *name)
 {
 	last_chunk = iff_data;
-	FindNextChunk (name);
+	SND_FindNexctChunk (name);
 }
 
 
 void
-DumpChunks (void)
+SND_DumpChunks (void)
 {
 	char        str[5];
 
@@ -309,17 +310,17 @@ DumpChunks (void)
 	do {
 		memcpy (str, data_p, 4);
 		data_p += 4;
-		iff_chunk_len = GetLittleLong ();
+		iff_chunk_len = SND_GetLittleLong ();
 		Con_Printf ("0x%x : %s (%d)\n", (int) (data_p - 4), str, iff_chunk_len);
 		data_p += (iff_chunk_len + 1) & ~1;
 	} while (data_p < iff_end);
 }
 
 /*
-	GetWavinfo
+	SND_GetWavinfo
 */
 wavinfo_t
-GetWavinfo (char *name, byte * wav, int wavlength)
+SND_GetWavinfo (char *name, byte * wav, int wavlength)
 {
 	wavinfo_t   info;
 	int         i;
@@ -335,48 +336,48 @@ GetWavinfo (char *name, byte * wav, int wavlength)
 	iff_end = wav + wavlength;
 
 // find "RIFF" chunk
-	FindChunk ("RIFF");
+	SND_FindChunk ("RIFF");
 	if (!(data_p && !strncmp (data_p + 8, "WAVE", 4))) {
 		Con_Printf ("Missing RIFF/WAVE chunks\n");
 		return info;
 	}
 // get "fmt " chunk
 	iff_data = data_p + 12;
-// DumpChunks ();
+// SND_DumpChunks ();
 
-	FindChunk ("fmt ");
+	SND_FindChunk ("fmt ");
 	if (!data_p) {
 		Con_Printf ("Missing fmt chunk\n");
 		return info;
 	}
 	data_p += 8;
-	format = GetLittleShort ();
+	format = SND_GetLittleShort ();
 	if (format != 1) {
 		Con_Printf ("Microsoft PCM format only\n");
 		return info;
 	}
 
-	info.channels = GetLittleShort ();
-	info.rate = GetLittleLong ();
+	info.channels = SND_GetLittleShort ();
+	info.rate = SND_GetLittleLong ();
 	data_p += 4 + 2;
-	info.width = GetLittleShort () / 8;
+	info.width = SND_GetLittleShort () / 8;
 
 // get cue chunk
-	FindChunk ("cue ");
+	SND_FindChunk ("cue ");
 	if (data_p) {
 		data_p += 32;
-		info.loopstart = GetLittleLong ();
+		info.loopstart = SND_GetLittleLong ();
 //      Con_Printf("loopstart=%d\n", sfx->loopstart);
 
 		// if the next chunk is a LIST chunk, look for a cue length marker
-		FindNextChunk ("LIST");
+		SND_FindNexctChunk ("LIST");
 		if (data_p) {
 			if (!strncmp (data_p + 28, "mark", 4)) {	// this is not a
 				// proper parse, but
 				// it works with
 				// cooledit...
 				data_p += 24;
-				i = GetLittleLong ();	// samples in loop
+				i = SND_GetLittleLong ();	// samples in loop
 				info.samples = info.loopstart + i;
 //              Con_Printf("looped length: %i\n", i);
 			}
@@ -385,14 +386,14 @@ GetWavinfo (char *name, byte * wav, int wavlength)
 		info.loopstart = -1;
 
 // find data chunk
-	FindChunk ("data");
+	SND_FindChunk ("data");
 	if (!data_p) {
 		Con_Printf ("Missing data chunk\n");
 		return info;
 	}
 
 	data_p += 4;
-	samples = GetLittleLong () / info.width;
+	samples = SND_GetLittleLong () / info.width;
 
 	if (info.samples) {
 		if (samples < info.samples)

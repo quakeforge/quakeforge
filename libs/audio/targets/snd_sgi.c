@@ -58,23 +58,23 @@ general_funcs_t    plugin_info_general_funcs;
 sound_data_t       plugin_info_sound_data;
 sound_funcs_t      plugin_info_sound_funcs;
 
-void I_S_Init (void);
-void I_S_Shutdown (void);
-void I_S_AmbientOff (void);
-void I_S_AmbientOn (void);
-void I_S_TouchSound (char *sample);
-void I_S_ClearBuffer (void);
-void I_S_StaticSound (sfx_t *sfx, vec3_t origin, float vol, float attenuation);
-void I_S_StartSound (int entnum, int entchannel, sfx_t *sfx, vec3_t origin, float fvol,  float attenuation);
-void I_S_StopSound (int entnum, int entchannel);
-sfx_t *I_S_PrecacheSound (char *sample);
-void I_S_ClearPrecache (void);
-void I_S_Update (vec3_t origin, vec3_t v_forward, vec3_t v_right, vec3_t v_up);
-void I_S_StopAllSounds (qboolean clear);
-void I_S_BeginPrecaching (void);
-void I_S_EndPrecaching (void);
-void I_S_ExtraUpdate (void);
-void I_S_LocalSound (char *s);
+void SND_Init (void);
+void SND_Shutdown (void);
+void SND_AmbientOff (void);
+void SND_AmbientOn (void);
+void SND_TouchSound (char *sample);
+void SND_ClearBuffer (void);
+void SND_StaticSound (sfx_t *sfx, vec3_t origin, float vol, float attenuation);
+void SND_StartSound (int entnum, int entchannel, sfx_t *sfx, vec3_t origin, float fvol,  float attenuation);
+void SND_StopSound (int entnum, int entchannel);
+sfx_t *SND_PrecacheSound (char *sample);
+void SND_ClearPrecache (void);
+void SND_Update (vec3_t origin, vec3_t v_forward, vec3_t v_right, vec3_t v_up);
+void SND_StopAllSounds (qboolean clear);
+void SND_BeginPrecaching (void);
+void SND_EndPrecaching (void);
+void SND_ExtraUpdate (void);
+void SND_LocalSound (char *s);
 
 
 qboolean
@@ -359,24 +359,24 @@ PluginInfo (void) {
     plugin_info_funcs.input = NULL;
     plugin_info_funcs.sound = &plugin_info_sound_funcs;
 
-    plugin_info_general_funcs.p_Init = I_S_Init;
-    plugin_info_general_funcs.p_Shutdown = I_S_Shutdown;
+    plugin_info_general_funcs.p_Init = SND_Init;
+    plugin_info_general_funcs.p_Shutdown = SND_Shutdown;
 
-    plugin_info_sound_funcs.pS_AmbientOff = I_S_AmbientOff;
-    plugin_info_sound_funcs.pS_AmbientOn = I_S_AmbientOn;
-    plugin_info_sound_funcs.pS_TouchSound = I_S_TouchSound;
-    plugin_info_sound_funcs.pS_ClearBuffer = I_S_ClearBuffer;
-    plugin_info_sound_funcs.pS_StaticSound = I_S_StaticSound;
-    plugin_info_sound_funcs.pS_StartSound = I_S_StartSound;
-    plugin_info_sound_funcs.pS_StopSound = I_S_StopSound;
-    plugin_info_sound_funcs.pS_PrecacheSound = I_S_PrecacheSound;
-    plugin_info_sound_funcs.pS_ClearPrecache = I_S_ClearPrecache;
-    plugin_info_sound_funcs.pS_Update = I_S_Update;
-    plugin_info_sound_funcs.pS_StopAllSounds = I_S_StopAllSounds;
-    plugin_info_sound_funcs.pS_BeginPrecaching = I_S_BeginPrecaching;
-    plugin_info_sound_funcs.pS_EndPrecaching = I_S_EndPrecaching;
-    plugin_info_sound_funcs.pS_ExtraUpdate = I_S_ExtraUpdate;
-    plugin_info_sound_funcs.pS_LocalSound = I_S_LocalSound;
+    plugin_info_sound_funcs.pS_AmbientOff = SND_AmbientOff;
+    plugin_info_sound_funcs.pS_AmbientOn = SND_AmbientOn;
+    plugin_info_sound_funcs.pS_TouchSound = SND_TouchSound;
+    plugin_info_sound_funcs.pS_ClearBuffer = SND_ClearBuffer;
+    plugin_info_sound_funcs.pS_StaticSound = SND_StaticSound;
+    plugin_info_sound_funcs.pS_StartSound = SND_StartSound;
+    plugin_info_sound_funcs.pS_StopSound = SND_StopSound;
+    plugin_info_sound_funcs.pS_PrecacheSound = SND_PrecacheSound;
+    plugin_info_sound_funcs.pS_ClearPrecache = SND_ClearPrecache;
+    plugin_info_sound_funcs.pS_Update = SND_Update;
+    plugin_info_sound_funcs.pS_StopAllSounds = SND_StopAllSounds;
+    plugin_info_sound_funcs.pS_BeginPrecaching = SND_BeginPrecaching;
+    plugin_info_sound_funcs.pS_EndPrecaching = SND_EndPrecaching;
+    plugin_info_sound_funcs.pS_ExtraUpdate = SND_ExtraUpdate;
+    plugin_info_sound_funcs.pS_LocalSound = SND_LocalSound;
 
     return &plugin_info;
 }

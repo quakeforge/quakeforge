@@ -182,11 +182,11 @@ LDone:
 // Transfer of stereo buffer to 16-bit DMA buffer code
 //----------------------------------------------------------------------
 
-.globl C(Snd_WriteLinearBlastStereo16)
+.globl C(SND_WriteLinearBlastStereo16)
 #ifdef PIC
-	.type	C(Snd_WriteLinearBlastStereo16),@function
+	.type	C(SND_WriteLinearBlastStereo16),@function
 #endif
-C(Snd_WriteLinearBlastStereo16):
+C(SND_WriteLinearBlastStereo16):
 	pushl	%esi				// preserve register variables
 	pushl	%edi
 	pushl	%ebx
@@ -273,7 +273,7 @@ LClampDone2:
 	ret
 #ifdef PIC
 .Lfe2:
-	.size	C(Snd_WriteLinearBlastStereo16),.Lfe2-C(Snd_WriteLinearBlastStereo16)
+	.size	C(SND_WriteLinearBlastStereo16),.Lfe2-C(SND_WriteLinearBlastStereo16)
 #endif
 
 
