@@ -42,9 +42,6 @@ The GIB Scripting Language
 \layout Author
 
 Brian Koropoff
-\layout Date
-
-21 February 2003
 \layout Standard
 \pagebreak_top \pagebreak_bottom 
 
@@ -63,7 +60,7 @@ Purpose and Applications
 
 GIB
 \begin_inset Foot
-collapsed false
+collapsed true
 
 \layout Standard
 
@@ -179,7 +176,7 @@ Cooperative
 An event system, wherein GIB functions can be run when a certain event occurs,
  such as a chat message being received or the player's health changing.
 \layout Itemize
-\pagebreak_bottom 
+
 Integration with the console.
  Console commands can be used from GIB, and GIB functions can be 
 \begin_inset Quotes eld
@@ -191,7 +188,7 @@ exported
 
  to the console as normal commands.
 \layout Section
-
+\pagebreak_top 
 Language Basics
 \layout Subsection
 
@@ -628,11 +625,11 @@ echo "Hello" // This is a comment
 
 echo "// This is not a comment"
 \layout Standard
-\pagebreak_bottom 
+
 Proper use of comments in your scripts will make them easier to read and
  understand.
 \layout Section
-
+\pagebreak_top 
 Variables
 \begin_inset LatexCommand \label{sec:variables}
 
@@ -798,7 +795,7 @@ To use variables with unusual names, or to separate the name of a variable
  Examples:
 \layout LyX-Code
 
-echo The variable with the name /
+echo /
 \backslash 
 /
 \backslash 
@@ -813,7 +810,7 @@ echo The variable with the name /
 }.
 \layout LyX-Code
 
-echo Thecurrentfieldofvisionis${fov}degrees.Wheredidmyspacebargo?
+echo Fieldofvisionis${fov}degrees.Wheredidmyspacebargo?
 \layout Standard
 
 Variables that do not exist are considered to contain an empty string.
@@ -1311,4 +1308,446 @@ Variable Scope
 \layout Comment
 
 FIXME: add this section!
+\layout Subsubsection
+
+Locals
+\layout Subsubsection
+
+Globals
+\layout Subsubsection
+
+Domains
+\layout Section
+\pagebreak_top 
+Flow Control
+\layout Standard
+
+Flow control refers to controlling the order in which commands are executed
+ -- or if they are executed at all -- in your GIB script.
+ GIB currently offers two ways to control program flow:
+\layout Description
+
+Conditionals execute a command or group of commands if a certain condition
+ is met
+\layout Description
+
+Loops execute a command or group of commands multiple times while a certain
+ condition is met.
+\layout Subsection
+
+Conditionals
+\layout Subsubsection
+
+
+\family typewriter 
+if
+\family default 
+ and 
+\family typewriter 
+ifnot
+\layout Standard
+
+The 
+\family typewriter 
+if
+\family default 
+ structure will execute a group of commands when a condition is 
+\begin_inset Quotes eld
+\end_inset 
+
+true.
+\begin_inset Quotes erd
+\end_inset 
+
+ An optional 
+\family typewriter 
+else
+\family default 
+ structure may follow, which contains a group of commands to be executed
+ if the condition is 
+\begin_inset Quotes eld
+\end_inset 
+
+false
+\begin_inset Quotes erd
+\end_inset 
+
+.
+ When 
+\family typewriter 
+ifnot
+\family default 
+ is used, the condition is reversed.
+ The syntax for 
+\family typewriter 
+if
+\family default 
+ and 
+\family typewriter 
+ifnot
+\family default 
+ is as follows:
+\layout LyX-Code
+
+if condition block1 [else block2]
+\layout Standard
+
+Explanations of what each part means follow:
+\layout Description
+
+condition may be any type of argument that is not a program block.
+ Its value will be treated as a number; 0 will be deemed 
+\begin_inset Quotes eld
+\end_inset 
+
+false
+\begin_inset Quotes erd
+\end_inset 
+
+ and all other numbers will be deemd 
+\begin_inset Quotes eld
+\end_inset 
+
+true.
+\begin_inset Quotes erd
+\end_inset 
+
+ If the value does not appear to be a number, it will be considered false.
+ When 
+\family typewriter 
+ifnot
+\family default 
+ is used instead of 
+\family typewriter 
+if
+\family default 
+, true and false are reversed.
+\layout Description
+
+block1 must be a program block argument.
+ If 
+\family typewriter 
+condition
+\family default 
+ was considered to be true, the commands in the block will be executed.
+\layout Description
+
+else may optionally follow 
+\family typewriter 
+block1
+\family default 
+, in which case 
+\family typewriter 
+block2
+\family default 
+ must also be provided.
+\layout Description
+
+block2 can be either a command or a single program block.
+ If 
+\family typewriter 
+condition
+\family default 
+ was false and 
+\family typewriter 
+block2
+\family default 
+ was provided, it will be executed instead of 
+\family typewriter 
+block1
+\family default 
+.
+\layout Standard
+
+The simplest form of 
+\family typewriter 
+if
+\family default 
+ is shown in Figure 
+\begin_inset LatexCommand \vref{cap:if-simple}
+
+\end_inset 
+
+.
+ Because the number 1 is non-zero and thus considered true, the program
+ block will be executed and text will be printed.
+\layout Standard
+
+
+\begin_inset Float figure
+wide false
+collapsed true
+
+\layout LyX-Code
+\line_top \line_bottom 
+
+\begin_inset Include \verbatiminput{if-simple.gib}
+preview false
+
+\end_inset 
+
+
+\layout Caption
+
+Simple 
+\family typewriter 
+if
+\family default 
+ structure
+\begin_inset LatexCommand \label{cap:if-simple}
+
+\end_inset 
+
+
+\end_inset 
+
+
+\layout Standard
+
+Figure 
+\begin_inset LatexCommand \vref{cap:if-else}
+
+\end_inset 
+
+ is similar to Figure 
+\begin_inset LatexCommand \ref{cap:if-simple}
+
+\end_inset 
+
+, but includes an 
+\family typewriter 
+else
+\family default 
+ structure.
+ The condition argument is false, and thus the second program block is executed.
+\layout Standard
+
+
+\begin_inset Float figure
+wide false
+collapsed true
+
+\layout LyX-Code
+\line_top \line_bottom 
+
+\begin_inset Include \verbatiminput{if-else.gib}
+preview false
+
+\end_inset 
+
+
+\layout Caption
+
+
+\family typewriter 
+if/else
+\family default 
+ structure
+\begin_inset LatexCommand \label{cap:if-else}
+
+\end_inset 
+
+
+\end_inset 
+
+
+\layout Standard
+
+Besides a program block, a simple command may follow 
+\family typewriter 
+else
+\family default 
+, including another 
+\family typewriter 
+if
+\family default 
+ structure.
+ This allows 
+\family typewriter 
+if
+\family default 
+ structures to be chained together.
+ The first stucture that is true will be the one executed, as shown by Figure
+ 
+\begin_inset LatexCommand \ref{cap:if-chain}
+
+\end_inset 
+
+.
+\layout Standard
+
+
+\begin_inset Float figure
+wide false
+collapsed false
+
+\layout LyX-Code
+\line_top \line_bottom 
+
+\begin_inset Include \verbatiminput{if-chain.gib}
+preview false
+
+\end_inset 
+
+
+\layout Caption
+
+Chained 
+\family typewriter 
+if
+\family default 
+ structures
+\begin_inset LatexCommand \label{cap:if-chain}
+
+\end_inset 
+
+
+\end_inset 
+
+
+\layout Standard
+
+Remember that 
+\family typewriter 
+ifnot
+\family default 
+ may always be used in place of 
+\family typewriter 
+if
+\family default 
+ to reverse 
+\family typewriter 
+condition
+\family default 
+.
+\layout Subsection
+
+Loops
+\layout Subsubsection
+
+
+\family typewriter 
+while
+\layout Standard
+
+The 
+\family typewriter 
+while
+\family default 
+ structure is very similar to a basic 
+\family typewriter 
+if
+\family default 
+ structure, except that the program block is continuosly executed as long
+ as the condition argument is 
+\begin_inset Quotes eld
+\end_inset 
+
+true.
+\begin_inset Quotes erd
+\end_inset 
+
+ The formal syntax is:
+\layout LyX-Code
+
+while condition block
+\layout Description
+
+condition is the same as 
+\family typewriter 
+condition
+\family default 
+ in an 
+\family typewriter 
+if
+\family default 
+ structure; all non-zero numbers are 
+\begin_inset Quotes eld
+\end_inset 
+
+true,
+\begin_inset Quotes erd
+\end_inset 
+
+ anything else is false.
+ If condition is true, block will be executed.
+\layout Description
+
+block must be a program block argument.
+ If 
+\family typewriter 
+condition
+\family default 
+ is true, it will be executed.
+ After it has been executed, 
+\family typewriter 
+condition
+\family default 
+ will be checked again.
+ As long as 
+\family typewriter 
+condition
+\family default 
+ is true, 
+\family typewriter 
+block
+\family default 
+ will be continually executed.
+\layout Standard
+
+Figure 
+\begin_inset LatexCommand \vref{cap:while}
+
+\end_inset 
+
+ shows an example 
+\family typewriter 
+while
+\family default 
+ loop and its output.
+\layout Standard
+
+
+\begin_inset Float figure
+wide false
+collapsed false
+
+\layout LyX-Code
+\line_top \line_bottom 
+
+\begin_inset Include \verbatiminput{while.gib}
+preview false
+
+\end_inset 
+
+
+\layout Standard
+
+
+\series bold 
+Output:
+\layout LyX-Code
+
+
+\begin_inset Include \verbatiminput{while.gib.out}
+preview false
+
+\end_inset 
+
+
+\layout Caption
+
+Example 
+\family typewriter 
+while
+\family default 
+ loop.
+\begin_inset LatexCommand \label{cap:while}
+
+\end_inset 
+
+
+\end_inset 
+
+
 \the_end

@@ -1,0 +1,7 @@
+if 0 {
+    echo The first condition is true.
+} else if 1 {
+    echo The first condition is false but the second is true.
+} else {
+    echo Neither condition is true.
+}

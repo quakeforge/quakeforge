@@ -1,0 +1,5 @@
+if 0 {
+    echo Condition is true.
+} else {
+    echo Condition is false.
+}
