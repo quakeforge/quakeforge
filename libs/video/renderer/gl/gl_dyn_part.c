@@ -222,7 +222,6 @@ R_ParticleExplosion (vec3_t org)
 {
 	if (!r_particles->int_val)
 		return;
-
 	particle_new_random (pt_smokecloud, part_tex_smoke[rand () & 7], org, 4,
 						 30, 8, r_realtime + 5, (rand () & 7) + 8,
 						 128 + (rand () & 63));
@@ -275,9 +274,9 @@ R_RunSparkEffect (vec3_t org, int count, int ofuzz)
 				  (ofuzz / 8) * .75, vec3_origin, r_realtime + 99, 
 				  12 + (rand () & 3), 96, vec3_origin, vec3_origin);
 	while (count--)
-		particle_new_random (pt_fallfadespark, part_tex_spark, org, ofuzz * .75,
-							 1, 96, r_realtime + 5, ramp[rand () % 6], 
-							 lhrandom (0, 255));
+		particle_new_random (pt_fallfadespark, part_tex_spark, org,
+							 ofuzz * .75, 1, 96, r_realtime + 5,
+							 ramp[rand () % 6], lhrandom (0, 255));
 }
 
 static void
@@ -532,7 +531,6 @@ R_RocketTrail (int type, entity_t *ent)
 				}
 				break;
 			case 6:					// voor trail
-// Use smoke ring effects here, once merged with nq? --Despair
 				dist = 3;
 				pcolor = 9 * 16 + 8 + (rand () & 3);
 				ptype = pt_static;
@@ -680,13 +678,13 @@ R_DrawParticles (void)
 				if ((part->alpha -= r_frametime * 90) < 1)
 					part->die = -1;
 				part->scale += r_frametime * 6;
-//				part->org[2] += r_frametime * 30;
+//				part->org[2] += r_frametime * 30 - grav;
 				break;
 			case pt_smokering:
 				if ((part->alpha -= r_frametime * 130) < 1)
 					part->die = -1;
 				part->scale += r_frametime * 10;
-//				part->org[2] += r_frametime * 30;
+//				part->org[2] += r_frametime * 30 - grav;
 				break;
 			case pt_smokecloud:
 				if ((part->alpha -= r_frametime * 128) < 1)

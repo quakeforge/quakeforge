@@ -55,7 +55,6 @@ cvar_t     *gl_clear;
 cvar_t     *gl_conalpha;
 cvar_t     *gl_conspin;
 cvar_t     *gl_constretch;
-cvar_t     *gl_dlight_lightmap;
 cvar_t     *gl_dlight_polyblend;
 cvar_t     *gl_dlight_smooth;
 cvar_t     *gl_fb_bmodels;
@@ -65,7 +64,6 @@ cvar_t     *gl_keeptjunctions;
 cvar_t     *gl_lerp_anim;
 cvar_t     *gl_libgl;
 cvar_t     *gl_lightmap_align;
-cvar_t     *gl_lightmap_components;
 cvar_t     *gl_lightmap_subimage;
 cvar_t     *gl_max_size;
 cvar_t     *gl_nocolors;
@@ -85,6 +83,7 @@ cvar_t     *r_aliastransadj;
 cvar_t     *r_aliastransbase;
 cvar_t     *r_ambient;
 cvar_t     *r_clearcolor;
+cvar_t     *r_dlight_lightmap;
 cvar_t     *r_drawentities;
 cvar_t     *r_drawflat;
 cvar_t     *r_drawviewmodel;
@@ -92,6 +91,7 @@ cvar_t     *r_dspeeds;
 cvar_t     *r_dynamic;
 cvar_t     *r_firecolor;
 cvar_t     *r_graphheight;
+cvar_t     *r_lightmap_components;
 cvar_t     *r_maxedges;
 cvar_t     *r_maxsurfs;
 cvar_t     *r_mirroralpha;
@@ -156,9 +156,6 @@ R_Init_Cvars (void)
 						   "speed at which the console spins");
 	gl_constretch = Cvar_Get ("gl_constretch", "0", CVAR_ARCHIVE, NULL,
 							  "toggle console between slide and stretch");
-	gl_dlight_lightmap = Cvar_Get ("gl_dlight_lightmap", "1", CVAR_ARCHIVE,
-								   NULL, "Set to 1 for high quality dynamic "
-								   "lighting.");
 	gl_dlight_polyblend = Cvar_Get ("gl_dlight_polyblend", "0", CVAR_ARCHIVE,
 									NULL, "Set to 1 to use a dynamic light "
 									"effect faster on GL");
@@ -181,9 +178,6 @@ R_Init_Cvars (void)
 								  "Workaround for nvidia slow path. Set to 4 "
 								  "or 16 if you have an nvidia 3d "
 								  "accelerator, set to 1 otherwise.");
-	gl_lightmap_components = Cvar_Get ("gl_lightmap_components", "4", CVAR_ROM,
-									   NULL, "Lightmap texture components. 1 "
-									   "is greyscale, 3 is RGB, 4 is RGBA.");
 	gl_lightmap_subimage = Cvar_Get ("gl_lightmap_subimage", "1", CVAR_NONE,
 									 NULL, "Lightmap Update method. Default 2 "
 									 "updates a minimum 'dirty rectangle' "
@@ -234,6 +228,9 @@ R_Init_Cvars (void)
 	r_clearcolor = Cvar_Get ("r_clearcolor", "2", CVAR_NONE, NULL,
 							 "This sets the color for areas outside of the "
 							 "current map");
+	r_dlight_lightmap = Cvar_Get ("r_dlight_lightmap", "1", CVAR_ARCHIVE,
+								  NULL, "Set to 1 for high quality dynamic "
+								  "lighting.");
 	r_drawentities = Cvar_Get ("r_drawentities", "1", CVAR_NONE, NULL,
 							   "Toggles drawing of entities (almost "
 							   "everything but the world)");
@@ -250,6 +247,9 @@ R_Init_Cvars (void)
 	r_graphheight = Cvar_Get ("r_graphheight", "32", CVAR_NONE, NULL,
 							  "Set the number of lines displayed in the "
 							  "various graphs");
+	r_lightmap_components = Cvar_Get ("r_lightmap_components", "4", CVAR_ROM,
+									  NULL, "Lightmap texture components. 1 "
+									  "is greyscale, 3 is RGB, 4 is RGBA.");
 	r_maxedges = Cvar_Get ("r_maxedges", "0", CVAR_NONE, NULL,
 						   "Sets the maximum number of edges");
 	r_maxsurfs = Cvar_Get ("r_maxsurfs", "0", CVAR_NONE, NULL,

@@ -130,9 +130,9 @@ R_ForceLightUpdate (void)
 }
 
 /*
-	R_AddDynamicLights
+  R_AddDynamicLights
 
-	LordHavoc: completely rewrote this, relies on 64bit integer math...
+  LordHavoc: completely rewrote this, relies on 64bit integer math...
 */
 void
 R_AddDynamicLights (msurface_t *surf)
@@ -208,12 +208,12 @@ R_AddDynamicLights (msurface_t *surf)
 }
 
 /*
-	R_BuildLightMap
+  R_BuildLightMap
 
-	Combine and scale multiple lightmaps
-	After talking it over with LordHavoc, I've decided to switch to using
-	 GL_RGB for colored lights and averaging them out for plain white
-	 lighting if needed.  Much cleaner that way.  --KB
+  Combine and scale multiple lightmaps.
+  After talking it over with LordHavoc, I've decided to switch to using
+  GL_RGB for colored lights and averaging them out for plain white
+  lighting if needed.  Much cleaner that way.  --KB
 */
 void
 R_BuildLightMap (msurface_t *surf, byte * dest, int stride)
@@ -311,9 +311,9 @@ R_BuildLightMap (msurface_t *surf, byte * dest, int stride)
 }
 
 /*
-	R_TextureAnimation
+  R_TextureAnimation
 
-	Returns the proper texture for a given time and base texture
+  Returns the proper texture for a given time and base texture
 */
 texture_t  *
 R_TextureAnimation (texture_t *base)
@@ -344,7 +344,7 @@ R_TextureAnimation (texture_t *base)
 }
 
 /*
-	BRUSH MODELS
+  BRUSH MODELS
 */
 
 extern int  solidskytexture;
@@ -699,7 +699,7 @@ R_DrawBrushModel (entity_t *e)
 	psurf = &clmodel->surfaces[clmodel->firstmodelsurface];
 
 	// calculate dynamic lighting for bmodel if it's not an instanced model
-	if (clmodel->firstmodelsurface != 0 && gl_dlight_lightmap->int_val) {
+	if (clmodel->firstmodelsurface != 0 && r_dlight_lightmap->int_val) {
 		vec3_t      lightorigin;
 
 		for (k = 0; k < MAX_DLIGHTS; k++) {
@@ -759,7 +759,7 @@ R_DrawBrushModel (entity_t *e)
 }
 
 /*
-	WORLD MODEL
+  WORLD MODEL
 */
 
 void
@@ -1107,9 +1107,9 @@ GL_CreateSurfaceLightmap (msurface_t *surf)
 }
 
 /*
-	GL_BuildLightmaps
+  GL_BuildLightmaps
 
-	Builds the lightmap texture with all the surfaces from all brush models
+  Builds the lightmap texture with all the surfaces from all brush models
 */
 void
 GL_BuildLightmaps (model_t **models, int num_models)
@@ -1126,7 +1126,7 @@ GL_BuildLightmaps (model_t **models, int num_models)
 		texture_extension_number += MAX_LIGHTMAPS;
 	}
 
-	switch (gl_lightmap_components->int_val) {
+	switch (r_lightmap_components->int_val) {
 	case 1:
 		gl_internalformat = 1;
 		gl_lightmap_format = GL_LUMINANCE;
@@ -1156,7 +1156,8 @@ GL_BuildLightmaps (model_t **models, int num_models)
 		for (i = 0; i < m->numsurfaces; i++) {
 			if (m->surfaces[i].flags & SURF_DRAWTURB)
 				continue;
-			if (gl_sky_divide->int_val && (m->surfaces[i].flags & SURF_DRAWSKY))
+			if (gl_sky_divide->int_val && (m->surfaces[i].flags &
+										   SURF_DRAWSKY))
 				continue;
 			GL_CreateSurfaceLightmap (m->surfaces + i);
 			BuildSurfaceDisplayList (m->surfaces + i);

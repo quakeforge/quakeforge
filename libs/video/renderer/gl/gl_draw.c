@@ -59,10 +59,12 @@
 #include "sbar.h"
 
 extern byte *vid_basepal;
+
 extern cvar_t *crosshair, *cl_crossx, *cl_crossy, *crosshaircolor,
-	*gl_lightmap_components;
+			  *r_lightmap_components;
 
 byte *draw_chars;						// 8*8 graphic characters
+
 qpic_t     *draw_backtile;
 
 static int  translate_texture;
@@ -109,7 +111,8 @@ Draw_PicFromWad (const char *name)
 	p = W_GetLumpName (name);
 	gl = (glpic_t *) p->data;
 
-	gl->texnum = GL_LoadTexture (name, p->width, p->height, p->data, false, true, 1);
+	gl->texnum = GL_LoadTexture (name, p->width, p->height, p->data, false,
+								 true, 1);
 
 	return p;
 }

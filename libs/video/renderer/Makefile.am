@@ -21,7 +21,8 @@ endif
 
 lib_LTLIBRARIES = $(RENDERER_GL) $(RENDERER_SW) $(RENDERER_SW32)
 
-common_SOURCES = r_cvar.c r_efrag.c r_ent.c r_graph.c r_main.c r_part.c
+common_SOURCES = r_cvar.c r_efrag.c r_ent.c r_graph.c r_light.c r_main.c \
+		 r_part.c
 
 libQFrenderer_gl_la_LDFLAGS = -version-info 1:0:0
 libQFrenderer_gl_la_LIBADD = gl/libgl.la
