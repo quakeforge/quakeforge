@@ -811,7 +811,7 @@ draw_hipnotic_weapons_sbar (view_t *view)
 static void
 draw_hipnotic_weapons_hud (view_t *view)
 {
-	int         flashon, grenadeflashing = 0, i, x;
+	int         flashon, grenadeflashing = 0, i, x = 0;
 	static int  y[] = {0, 16, 32, 48, 64, 96, 112, 128, 144, 80, 80};
 	qpic_t     *pic;
 	int         mask;
@@ -832,6 +832,7 @@ draw_hipnotic_weapons_hud (view_t *view)
 		if (cl.stats[STAT_ITEMS] & mask) {
 			flashon = calc_flashon (time, mask);
 
+			pic = 0;
 			if (i < 7) {
 				pic = sb_weapons[flashon][i];
 			} else if (i < 9) {
