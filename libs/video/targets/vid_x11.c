@@ -399,6 +399,11 @@ event_shm (XEvent * event)
 		oktodraw = true;
 }
 
+void
+VID_Center_f (void) {
+	X11_ForceViewPort ();
+}
+
 /*
 	VID_Init
 
@@ -413,6 +418,8 @@ VID_Init (unsigned char *palette)
 	XVisualInfo template;
 	int         num_visuals;
 	int         template_mask;
+
+	Cmd_AddCommand ("vid_center", VID_Center_f, "Center the view port on the quake window in a virtual desktop.\n");
 
 	VID_GetWindowSize (320, 200);
 

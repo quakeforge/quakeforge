@@ -46,6 +46,7 @@
 # include <X11/extensions/xf86dga.h>
 #endif
 
+#include "QF/cmd.h"
 #include "QF/compat.h"
 #include "QF/console.h"
 #include "QF/input.h"
@@ -131,6 +132,11 @@ GL_EndRendering (void)
 }
 
 void
+VID_Center_f (void) {
+	X11_ForceViewPort ();
+}
+
+void
 VID_Init (unsigned char *palette)
 {
 	int         i;
@@ -143,6 +149,8 @@ VID_Init (unsigned char *palette)
 		GLX_DEPTH_SIZE, 1,
 		None
 	};
+
+	Cmd_AddCommand ("vid_center", VID_Center_f, "Center the view port on the quake window in a virtual desktop.\n");
 
 	VID_GetWindowSize (640, 480);
 	Con_CheckResize (); // Now that we have a window size, fix console

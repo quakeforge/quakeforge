@@ -101,6 +101,7 @@ cvar_t		*vid_fullscreen;
 cvar_t		*vid_system_gamma;
 qboolean	vid_gamma_avail;
 qboolean	vid_fullscreen_active;
+static qboolean    vid_context_created = false;
 static double	x_gamma;
 
 static int	xss_timeout;
@@ -384,6 +385,8 @@ X11_CreateWindow (int width, int height)
 	aWMDelete = XInternAtom (x_disp, "WM_DELETE_WINDOW", False);
 	XSetWMProtocols (x_disp, x_win, &aWMDelete, 1);
 
+	vid_context_created = true;
+
 	if (vidmode_active && vid_fullscreen->int_val) {
 		XMoveWindow (x_disp, x_win, 0, 0);
 		XWarpPointer (x_disp, None, x_win, 0, 0, 0, 0,
@@ -435,15 +438,31 @@ void
 X11_ForceViewPort (void)
 {
 #ifdef HAVE_VIDMODE
-	int         x, y;
-
-	if (vidmode_active && vid_fullscreen->int_val) {
-		do {
-			XF86VidModeSetViewPort (x_disp, x_screen, 0, 0);
-			poll (0, 0, 50);
-			XF86VidModeGetViewPort (x_disp, x_screen, &x, &y);
-		} while (x || y);
+	printf("in thinger\n");
+	if (vidmode_avail && vid_context_created) {
+		Window theroot,scrap;
+		int x,y,ax,ay;
+		unsigned int width,height,bdwidth,depth;
+		
+		if ((XGetGeometry(x_disp,x_win,&theroot,&x,&y,&width,&height,
+				  &bdwidth,&depth) == False)) {
+			Con_Printf ("XGetWindowAttributes failed in vid_center.\n");
+		} else {
+			XTranslateCoordinates(x_disp,x_win,theroot,-bdwidth,-bdwidth,
+								  &ax,&ay,&scrap);
+			Con_Printf("Setting viewport to %dx%d (%d,%d)\n",ax,ay,
+					   width,height);
+			XF86VidModeSetViewPort(x_disp,x_screen,ax,ay);
+		}
+	} else {
+		/* "icky kludge code" */
+		XWarpPointer(x_disp,x_win,x_win,0,0,0,0, 0,0);
+		XWarpPointer(x_disp,x_win,x_win,0,0,0,0, scr_width,scr_height);
 	}
+#else
+	/* "icky kludge code" */
+	XWarpPointer(x_disp,x_win,x_win,0,0,0,0, 0,0);
+	XWarpPointer(x_disp,x_win,x_win,0,0,0,0, scr_width,scr_height);
 #endif
 }
 
