@@ -86,6 +86,9 @@ hashtab_t *merge_local_inits (hashtab_t *dl_1, hashtab_t *dl_2);
 void restore_local_inits (hashtab_t *def_list);
 void free_local_inits (hashtab_t *def_list);
 
+expr_t *argc_expr (void);
+expr_t *argv_expr (void);
+
 %}
 
 %union {
@@ -128,7 +131,7 @@ void free_local_inits (hashtab_t *def_list);
 %token	LOCAL RETURN WHILE DO IF ELSE FOR BREAK CONTINUE ELLIPSIS NIL
 %token	IFBE IFB IFAE IFA
 %token	SWITCH CASE DEFAULT STRUCT UNION ENUM TYPEDEF SUPER SELF THIS
-%token	ARGC ARGV EXTERN STATIC SYSTEM SIZEOF
+%token	ARGS ARGC ARGV EXTERN STATIC SYSTEM SIZEOF
 %token	ELE_START
 %token	<type> TYPE
 %token	CLASS DEFS ENCODE END IMPLEMENTATION INTERFACE PRIVATE PROTECTED
@@ -823,8 +826,9 @@ expr
 	| expr INCOP				{ $$ = incop_expr ($2, $1, 1); }
 	| obj_expr					{ $$ = $1; }
 	| NAME						{ $$ = new_name_expr ($1); }
-	| ARGC						{ $$ = new_name_expr (".argc"); }
-	| ARGV						{ $$ = new_name_expr (".argv"); }
+	| ARGS						{ $$ = new_name_expr (".args"); }
+	| ARGC						{ $$ = argc_expr (); }
+	| ARGV						{ $$ = argv_expr (); }
 	| SELF						{ $$ = new_self_expr (); }
 	| THIS						{ $$ = new_this_expr (); }
 	| SIZEOF '(' expr ')'		{ $$ = sizeof_expr ($3, 0); }
@@ -1389,4 +1393,18 @@ void
 free_local_inits (hashtab_t *def_list)
 {
 	Hash_DelTable (def_list);
+}
+
+expr_t *
+argc_expr (void)
+{
+	warning (0, "@argc deprecated: use @args.count");
+	return binary_expr ('.', new_name_expr (".args"), new_name_expr ("count"));
+}
+
+expr_t *
+argv_expr (void)
+{
+	warning (0, "@argv deprecated: use @args.list");
+	return binary_expr ('.', new_name_expr (".args"), new_name_expr ("list"));
 }

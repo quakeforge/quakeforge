@@ -68,7 +68,7 @@ type_t      type_string = { ev_string, "string" };
 type_t      type_float = { ev_float, "float" };
 type_t      type_vector = { ev_vector, "vector" };
 type_t      type_entity = { ev_entity, "entity" };
-type_t      type_field = { ev_field, "field" };
+type_t      type_field = { ev_field, "field", NULL, &type_void };
 
 // type_function is a void() function used for state defs
 type_t      type_function = { ev_func, "function", NULL, &type_void };
@@ -90,6 +90,7 @@ type_t      type_Method = { ev_pointer, "Method" };
 type_t     *type_category;
 type_t     *type_ivar;
 type_t     *type_module;
+type_t      type_va_list;
 
 type_t     *vector_struct;
 
@@ -565,6 +566,7 @@ type_size (type_t *type)
 		case ev_type_count:
 			return pr_type_size[type->type];
 		case ev_struct:
+			return type->num_parms;
 		case ev_object:
 		case ev_class:
 			for (size = 0, field = type->struct_head;
@@ -645,6 +647,20 @@ init_types (void)
 	new_struct_field (type, &type_string, "ivar_name", vis_public);
 	new_struct_field (type, &type_string, "ivar_type", vis_public);
 	new_struct_field (type, &type_integer, "ivar_offset", vis_public);
+
+	init_struct (malloc (sizeof (struct_t)), &type_va_list, 0);
+	new_struct_field (&type_va_list, &type_integer, "count", vis_public);
+	type = new_union (0);
+	new_struct_field (type, &type_string,   "string_val",   vis_public);
+	new_struct_field (type, &type_float,    "float_val",    vis_public);
+	new_struct_field (type, &type_vector,   "vector_val",   vis_public);
+	new_struct_field (type, &type_entity,   "entity_val",   vis_public);
+	new_struct_field (type, &type_field,    "field_val",    vis_public);
+	new_struct_field (type, &type_function, "func_val",     vis_public);
+	new_struct_field (type, &type_pointer,  "pointer_val",  vis_public);
+	new_struct_field (type, &type_integer,  "integer_val",  vis_public);
+	new_struct_field (type, &type_uinteger, "uinteger_val", vis_public);
+	new_struct_field (&type_va_list, pointer_type (type), "list", vis_public);
 #if 0
 	type = type_module = new_struct ("obj_module_t");
 	new_struct_field (type, &type_integer, "version", vis_public);

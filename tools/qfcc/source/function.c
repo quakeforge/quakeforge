@@ -141,18 +141,15 @@ build_scope (function_t *f, def_t *func, param_t *params)
 	int         i;
 	def_t      *def;
 	param_t    *p;
-	def_t      *argv = 0;
+	def_t      *args = 0;
 	int         parm_ofs[MAX_PARMS];
 
 	f->scope = new_scope (sc_params, new_defspace (), pr.scope);
 
 	if (func->type->num_parms < 0) {
-		def = get_def (&type_integer, ".argc", f->scope, st_local);
-		def->used = 1;
-		def_initialized (def);
-		argv = get_def (&type_pointer, ".argv", f->scope, st_local);
-		argv->used = 1;
-		def_initialized (argv);
+		args = get_def (&type_va_list, ".args", f->scope, st_local);
+		args->used = 1;
+		def_initialized (args);
 	}
 
 	for (p = params, i = 0; p; p = p->next) {
@@ -172,12 +169,10 @@ build_scope (function_t *f, def_t *func, param_t *params)
 		i++;
 	}
 
-	if (argv) {
+	if (args) {
 		while (i < MAX_PARMS) {
 			def = get_def (&type_vector, 0, f->scope, st_local);
 			def->used = 1;
-			if (argv->type == &type_pointer)
-				argv->type = array_type (&type_vector, MAX_PARMS - i);
 			i++;
 		}
 	}

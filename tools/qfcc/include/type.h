@@ -72,6 +72,7 @@ extern	type_t	type_Method;
 extern	type_t	*type_category;
 extern	type_t	*type_ivar;
 extern	type_t	*type_module;
+extern	type_t	type_va_list;
 
 extern	type_t	*vector_struct;
 
