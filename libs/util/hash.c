@@ -51,6 +51,7 @@ struct hashlink_s {
 
 struct hashtab_s {
 	size_t tab_size;
+	size_t num_ele;
 	void *user_data;
 	int (*compare)(void*,void*,void*);
 	unsigned long (*get_hash)(void*,void*);
@@ -148,6 +149,7 @@ Hash_FlushTable (hashtab_t *tab)
 				tab->free_ele (data, tab->user_data);
 		}
 	}
+	tab->num_ele = 0;
 }
 
 int
@@ -165,6 +167,7 @@ Hash_Add (hashtab_t *tab, void *ele)
 	lnk->prev = &tab->tab[ind];
 	lnk->data = ele;
 	tab->tab[ind] = lnk;
+	tab->num_ele++;
 	return 0;
 }
 
@@ -183,6 +186,7 @@ Hash_AddElement (hashtab_t *tab, void *ele)
 	lnk->prev = &tab->tab[ind];
 	lnk->data = ele;
 	tab->tab[ind] = lnk;
+	tab->num_ele++;
 	return 0;
 }
 
@@ -231,6 +235,7 @@ Hash_Del (hashtab_t *tab, const char *key)
 				lnk->next->prev = lnk->prev;
 			*lnk->prev = lnk->next;
 			free (lnk);
+			tab->num_ele--;
 			return data;
 		}
 		lnk = lnk->next;
@@ -253,9 +258,33 @@ Hash_DelElement (hashtab_t *tab, void *ele)
 				lnk->next->prev = lnk->prev;
 			*lnk->prev = lnk->next;
 			free (lnk);
+			tab->num_ele--;
 			return data;
 		}
 		lnk = lnk->next;
 	}
 	return 0;
+}
+
+void **
+Hash_GetList (hashtab_t *tab)
+{
+	void      **list;
+	void      **l;
+	size_t      ind;
+
+	l = list = malloc ((tab->num_ele + 1) * sizeof (void*));
+	if (!list)
+		return 0;
+	for (ind = 0; ind < tab->tab_size; ind++) {
+		struct hashlink_s *lnk;
+
+		for (lnk = tab->tab[ind]; lnk; lnk = lnk->next) {
+			if (l - list == tab->num_ele)
+				Sys_Error ("hash.c: internal error\n");
+			*l++ = lnk->data;
+		}
+	}
+	*l++ = 0;
+	return list;
 }

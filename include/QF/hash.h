@@ -114,4 +114,10 @@ void *Hash_DelElement (hashtab_t *tab, void *ele);
 */
 unsigned long Hash_String (const char *str);
 
+/*
+	return a list of all elements in the table. it is the caller's
+	responsibilty to free() the array. Null terminated.
+*/
+void **Hash_GetList (hashtab_t *tab);
+
 #endif // __hash_h
