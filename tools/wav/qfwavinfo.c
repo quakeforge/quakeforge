@@ -53,6 +53,7 @@ main (int argc, char **argv)
 		}
 		if (!f || !riff) {
 			fprintf (stderr, "couldn't read %s\n", argv[optind]);
+			optind++;
 			continue;
 		}
 		optind++;
