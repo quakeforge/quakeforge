@@ -1888,14 +1888,14 @@ SV_Frame (float time)
 		// don't bother running a frame if sys_ticrate seconds haven't passed
 		sv_frametime = realtime - old_time;
 		if ((sv_frametime >= sv_mintic->value) || (sv_frametime <= 0)) {
-			if ((sv_frametime > sv_maxtic->value) || (sv_frametime <= 0)) {
+			if (sv_frametime > sv_maxtic->value) {
 				sv_frametime = sv_maxtic->value;
+			}
 			old_time = realtime;
 
 			*sv_globals.frametime = sv_frametime;
 
 			SV_Physics ();
-			}
 		}
 	}
 
