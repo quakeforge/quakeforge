@@ -45,7 +45,7 @@ typedef enum {
 } etype_t;
 
 extern int pr_type_size[ev_type_count];
-extern const char *type_name[ev_type_count];
+extern const char *pr_type_name[ev_type_count];
 
 #define	OFS_NULL		0
 #define	OFS_RETURN		1

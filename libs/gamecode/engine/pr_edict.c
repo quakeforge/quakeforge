@@ -73,7 +73,7 @@ int         pr_type_size[ev_type_count] = {
 	1,			// variable
 };
 
-const char *type_name[ev_type_count] = {
+const char *pr_type_name[ev_type_count] = {
 	"void",
 	"string",
 	"float",
@@ -1398,6 +1398,7 @@ PR_AccessField (progs_t *pr, const char *name, etype_t type,
 		PR_Error (pr, "undefined field %s accessed at %s:%d", name, file, line);
 	if (def->type != type)
 		PR_Error (pr, "bad type access to %s as %s (should be %s) at %s:%d",
-				  name, type_name[type], type_name[def->type], file, line);
+				  name, pr_type_name[type], pr_type_name[def->type],
+				  file, line);
 	return def->ofs;
 }

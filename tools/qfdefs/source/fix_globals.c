@@ -82,8 +82,8 @@ fix_missing_globals (progs_t *pr, def_t *globals)
 				fprintf (stderr,
 						 "global def %s at %d has mismatched type (%s, %s)\n",
 						 def->name, def->offset,
-						 type_name[def->type & ~DEF_SAVEGLOBAL],
-						 type_name[d->type & ~DEF_SAVEGLOBAL]);
+						 pr_type_name[def->type & ~DEF_SAVEGLOBAL],
+						 pr_type_name[d->type & ~DEF_SAVEGLOBAL]);
 				exit (1);
 			}
 			if (strcmp (def->name, PR_GetString (pr, d->s_name)) == 0)

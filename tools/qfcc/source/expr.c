@@ -275,7 +275,7 @@ type_mismatch (expr_t *e1, expr_t *e2, int op)
 	t2 = extract_type (e2);
 
 	return error (e1, "type mismatch: %s %s %s",
-				  type_name[t1], get_op_string (op), type_name[t2]);
+				  pr_type_name[t1], get_op_string (op), pr_type_name[t2]);
 }
 
 void
@@ -510,7 +510,7 @@ print_expr (expr_t *e)
 			} else {
 				printf ("<>");
 			}
-			printf (":%s:%d)@", type_name[e->e.temp.type->type],
+			printf (":%s:%d)@", pr_type_name[e->e.temp.type->type],
 					e->e.temp.users);
 			break;
 		case ex_nil:
@@ -535,7 +535,7 @@ print_expr (expr_t *e)
 			printf (" %g'", e->e.quaternion_val[3]);
 			break;
 		case ex_pointer:
-			printf ("(%s)[%d]", type_name[e->e.pointer.type->type],
+			printf ("(%s)[%d]", pr_type_name[e->e.pointer.type->type],
 					e->e.pointer.val);
 			break;
 		case ex_entity:
@@ -1714,7 +1714,7 @@ assign_expr (expr_t *e1, expr_t *e2)
 		type = t1;
 //print_expr (e1); printf(" %d\n", e1->line);
 //print_expr (e2); printf("\n");
-//printf ("%s  %s\n", type_name[t1->type], type_name[t2->type]);
+//printf ("%s  %s\n", pr_type_name[t1->type], pr_type_name[t2->type]);
 	if (is_indirect (e1) && is_indirect (e2)) {
 		expr_t     *temp = new_temp_def_expr (t1);
 
