@@ -43,12 +43,13 @@ static __attribute__ ((unused)) const char rcsid[] =
 #include "QF/cmd.h"
 #include "QF/console.h"
 #include "QF/cvar.h"
+#include "QF/idparse.h"
+#include "QF/input.h"
 #include "QF/msg.h"
 #include "QF/sys.h"
 #include "QF/screen.h"
 #include "QF/skin.h"
 #include "QF/sound.h" // FIXME: DEFAULT_SOUND_PACKET_*
-#include "QF/input.h"
 
 #include "client.h"
 #include "host.h"
@@ -223,6 +224,7 @@ static void
 map_cfg (const char *mapname, int all)
 {
 	char       *name = malloc (strlen (mapname) + 4 + 1);
+	cbuf_t     *cbuf = Cbuf_New (&id_interp);
 	QFile      *f;
 
 	QFS_StripExtension (mapname, name);
@@ -230,15 +232,16 @@ map_cfg (const char *mapname, int all)
 	QFS_FOpenFile (name, &f);
 	if (f) {
 		Qclose (f);
-		Cmd_Exec_File (host_cbuf, name, 1);
+		Cmd_Exec_File (cbuf, name, 1);
 	} else {
-		Cmd_Exec_File (host_cbuf, "maps_default.cfg", 1);
+		Cmd_Exec_File (cbuf, "maps_default.cfg", 1);
 	}
 	if (all)
-		Cbuf_Execute_Stack (host_cbuf);
+		Cbuf_Execute_Stack (cbuf);
 	else
-		Cbuf_Execute_Sets (host_cbuf);
+		Cbuf_Execute_Sets (cbuf);
 	free (name);
+	Cbuf_Delete (cbuf);
 }
 
 static void
