@@ -71,8 +71,6 @@ cvar_t     *sv_waterfriction;
 
 #define	MOVE_EPSILON	0.01
 
-void        SV_Physics_Toss (edict_t *ent);
-
 void
 SV_CheckAllEnts (void)
 {
