@@ -84,7 +84,7 @@ QF_glColorTableEXT	qglColorTableEXT = NULL;
 qboolean			is8bit = false;
 
 cvar_t      *gl_multitexture;
-cvar_t      *gl_max_vaelements;
+cvar_t      *gl_vaelements_max;
 cvar_t      *gl_screenshot_byte_swap;
 cvar_t      *vid_mode;
 cvar_t      *vid_use8bit;
@@ -108,7 +108,7 @@ GL_Common_Init_Cvars (void)
 {
 	vid_use8bit = Cvar_Get ("vid_use8bit", "0", CVAR_ROM, NULL,	"Use 8-bit "
 							"shared palettes.");
-	gl_max_vaelements = Cvar_Get ("gl_max_vaelements", "0", CVAR_ROM, NULL,
+	gl_vaelements_max = Cvar_Get ("gl_vaelements_max", "0", CVAR_ROM, NULL,
 								  "limit the vertex array size for buggy "
 								  "drivers. 0 (default) uses driver provided "
 								  "limit");
@@ -166,8 +166,8 @@ CheckVertexArraySize (void)
 	qfglGetIntegerv (GL_MAX_ELEMENTS_VERTICES, &vaelements);
 	if (vaelements > 65536)
 		vaelements = 65536;
-	if (gl_max_vaelements->int_val)
-		vaelements = min (gl_max_vaelements->int_val, vaelements);
+	if (gl_vaelements_max->int_val)
+		vaelements = min (gl_vaelements_max->int_val, vaelements);
 //	qfglGetIntegerv (MAX_ELEMENTS_INDICES, *vaindices);
 }
 
