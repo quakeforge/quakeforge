@@ -143,7 +143,7 @@ R_RenderFullbrights (void)
 }
 
 static inline void
-R_RenderBrushPoly_3 (msurface_t *fa, texture_t *tex)
+R_RenderBrushPoly_3 (msurface_t *fa)
 {
 	float      *v;
 	int			i;
@@ -164,7 +164,7 @@ R_RenderBrushPoly_3 (msurface_t *fa, texture_t *tex)
 }
 
 static inline void
-R_RenderBrushPoly_2 (msurface_t *fa, texture_t *tex)
+R_RenderBrushPoly_2 (msurface_t *fa)
 {
 	float      *v;
 	int			i;
@@ -184,7 +184,7 @@ R_RenderBrushPoly_2 (msurface_t *fa, texture_t *tex)
 }
 
 static inline void
-R_RenderBrushPoly_1 (msurface_t *fa, texture_t *tex)
+R_RenderBrushPoly_1 (msurface_t *fa)
 {
 	float      *v;
 	int			i;
@@ -313,7 +313,7 @@ DrawTextureChains (void)
 					qfglBindTexture (GL_TEXTURE_2D, lightmap_textures +
 									 s->lightmaptexturenum);
 
-					R_RenderBrushPoly_3 (s, tex);
+					R_RenderBrushPoly_3 (s);
 				}
 
 				qglActiveTexture (gl_mtex_enum + 2);
@@ -326,7 +326,7 @@ DrawTextureChains (void)
 					qfglBindTexture (GL_TEXTURE_2D, lightmap_textures +
 									 s->lightmaptexturenum);
 
-					R_RenderBrushPoly_2 (s, tex);
+					R_RenderBrushPoly_2 (s);
 				}
 
 				qglActiveTexture (gl_mtex_enum + 0);
@@ -350,7 +350,7 @@ DrawTextureChains (void)
 			qfglBindTexture (GL_TEXTURE_2D, tex->gl_texturenum);
 
 			for (s = tex->texturechain; s; s = s->texturechain)
-				R_RenderBrushPoly_1 (s, tex);
+				R_RenderBrushPoly_1 (s);
 
 			tex->texturechain = NULL;
 			tex->texturechain_tail = &tex->texturechain;
@@ -505,7 +505,7 @@ R_DrawBrushModel (entity_t *e)
 
 						qglActiveTexture (gl_mtex_enum + 0);
 						qfglBindTexture (GL_TEXTURE_2D, tex->gl_texturenum);
-						R_RenderBrushPoly_3 (psurf, tex);
+						R_RenderBrushPoly_3 (psurf);
 
 						qglActiveTexture (gl_mtex_enum + 2);
 						qfglDisable (GL_TEXTURE_2D);
@@ -522,7 +522,7 @@ R_DrawBrushModel (entity_t *e)
 
 						qglActiveTexture (gl_mtex_enum + 0);
 						qfglBindTexture (GL_TEXTURE_2D, tex->gl_texturenum);
-						R_RenderBrushPoly_2 (psurf, tex);
+						R_RenderBrushPoly_2 (psurf);
 
 						qglActiveTexture (gl_mtex_enum + 1);
 						qfglDisable (GL_TEXTURE_2D);
@@ -531,7 +531,7 @@ R_DrawBrushModel (entity_t *e)
 					}
 				} else {
 					qfglBindTexture (GL_TEXTURE_2D, tex->gl_texturenum);
-					R_RenderBrushPoly_1 (psurf, tex);
+					R_RenderBrushPoly_1 (psurf);
 
 					if (tex->gl_fb_texturenum && gl_fb_bmodels->int_val) {
 						psurf->polys->fb_chain =
