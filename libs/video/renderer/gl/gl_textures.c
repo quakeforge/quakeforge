@@ -82,12 +82,14 @@ static glmode_t modes[] = {
 	{"GL_NEAREST_MIPMAP_LINEAR", GL_NEAREST_MIPMAP_LINEAR, GL_NEAREST},
 	{"GL_LINEAR_MIPMAP_NEAREST", GL_LINEAR_MIPMAP_NEAREST, GL_LINEAR},
 	{"GL_LINEAR_MIPMAP_LINEAR", GL_LINEAR_MIPMAP_LINEAR, GL_LINEAR}
+//	Anisotropic...
 };
 
 typedef struct {
 	const char *name;
 	int format;
 } glformat_t;
+
 #if 0
 static glformat_t formats[] = {
 /*
@@ -105,6 +107,12 @@ static glformat_t formats[] = {
 	{"GL_ALPHA8", GL_ALPHA8},
 	{"GL_ALPHA12", GL_ALPHA12},
 	{"GL_ALPHA16", GL_ALPHA16},
+/*
+	{"GL_DEPTH_COMPONENT", GL_DEPTH_COMPONENT},
+	{"GL_DEPTH_COMPONENT16", GL_DEPTH_COMPONENT16},
+	{"GL_DEPTH_COMPONENT24", GL_DEPTH_COMPONENT24},
+	{"GL_DEPTH_COMPONENT32", GL_DEPTH_COMPONENT32},
+*/
 	{"GL_LUMINANCE", GL_LUMINANCE},
 	{"GL_LUMINANCE4", GL_LUMINANCE4},
 	{"GL_LUMINANCE8", GL_LUMINANCE8},
@@ -163,19 +171,20 @@ static glformat_t formats[] = {
 	{"BGR_EXT", BGR_EXT},
 	{"BGRA_EXT", BGRA_EXT},
 */
-/* ARB_texture_compression
+/* 1.4 texture_compression -- Append _ARB for older ARB version.
  * only applicable for CompressedTexImage and CompressedTexSubimage
  * which will complicate upload paths. *ponder*
-	{"COMPRESSED_ALPHA_ARB", COMPRESSED_ALPHA_ARB},
-	{"COMPRESSED_LUMINANCE_ARB", COMPRESSED_LUMINANCE_ARB},
-	{"COMPRESSED_LUMINANCE_ALPHA_ARB", COMPRESSED_LUMINANCE_ALPHA_ARB},
-	{"COMPRESSED_INTENSITY_ARB", COMPRESSED_INTENSITY_ARB},
-	{"COMPRESSED_RGB_ARB", COMPRESSED_RGB_ARB},
-	{"COMPRESSED_RGBA_ARB", COMPRESSED_RGBA_ARB},
+	{"COMPRESSED_ALPHA", COMPRESSED_ALPHA},
+	{"COMPRESSED_LUMINANCE", COMPRESSED_LUMINANCE},
+	{"COMPRESSED_LUMINANCE_ALPHA", COMPRESSED_LUMINANCE_ALPHA},
+	{"COMPRESSED_INTENSITY", COMPRESSED_INTENSITY},
+	{"COMPRESSED_RGB", COMPRESSED_RGB_ARB},
+	{"COMPRESSED_RGBA", COMPRESSED_RGBA},
 */
 	{"NULL", 0}
 };
 #endif
+
 int gl_alpha_format = 4, gl_lightmap_format = 4, gl_solid_format = 3;
 
 
@@ -219,6 +228,7 @@ GL_TextureMode_f (void)
 		}
 	}
 }
+
 #if 0
 static int
 GL_TextureDepth_f (int format)
@@ -247,6 +257,7 @@ GL_TextureDepth_f (int format)
 	return formats[i].format;
 }
 #endif
+
 static void
 GL_ResampleTexture (unsigned int *in, int inwidth, int inheight,
 					unsigned int *out, int outwidth, int outheight)
@@ -494,7 +505,6 @@ GL_Upload8_EXT (byte *data, int width, int height, qboolean mipmap,
 
 	free (scaled);
 }
-
 
 void
 GL_Upload8 (byte *data, int width, int height, qboolean mipmap, qboolean alpha)
