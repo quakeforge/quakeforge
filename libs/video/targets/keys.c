@@ -62,6 +62,8 @@ imt_t		game_target = IMT_CONSOLE;
 char       *keybindings[IMT_LAST][QFK_LAST];
 int			keydown[QFK_LAST];
 
+static int  keyhelp;
+
 typedef struct {
 	char	*name;
 	imt_t	imtnum;
@@ -723,6 +725,12 @@ Key_Bindlist_f (void)
 	Key_WriteBindings (0);
 }
 
+void
+keyhelp_f (void)
+{
+	keyhelp = 1;
+}
+
 /*
   Key_Event
 
@@ -734,10 +742,17 @@ Key_Event (knum_t key, short unicode, qboolean down)
 {
 //  Con_Printf ("%d %d %d : %d\n", game_target, key_dest, key, down); //@@@
 
-	if (down)
+	if (down) {
 		keydown[key]++;
-	else
+		if (keyhelp) {
+			Con_Printf ("Key name for that key is \"%s\"\n",
+						Key_KeynumToString (key));
+			keyhelp = 0;
+			return; // gobble the key
+		}
+	} else {
 		keydown[key] = 0;
+	}
 
 	// handle escape specially, so the user can never unbind it
 	if (unicode == '\x1b' || key == QFK_ESCAPE) {
@@ -796,6 +811,9 @@ Key_Init (void)
 					"wrapper for in_unbind that uses in_bind_imt for the imt "
 					"parameter");
 	Cmd_AddCommand ("bindlist", Key_Bindlist_f, "list all of the key bindings");
+	Cmd_AddCommand ("keyhelp", keyhelp_f, "display the keyname for the next "
+					"RECOGNIZED key-press. If the key pressed produces no "
+					"output, " PROGRAM " does not recognise that key.");
 }
 
 void
