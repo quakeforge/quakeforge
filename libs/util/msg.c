@@ -269,7 +269,7 @@ MSG_ReadString (msg_t *msg)
 	char   *string;
 	int		len, maxlen;
 
-	if (msg->readcount + 1 > msg->message->cursize) {
+	if (msg->badread || msg->readcount + 1 > msg->message->cursize) {
 		msg->badread = true;
 		return "";
 	}
@@ -279,54 +279,19 @@ MSG_ReadString (msg_t *msg)
 	maxlen = msg->message->cursize - msg->readcount;
 	len = strnlen (string, maxlen);
 	if (len == maxlen) {
+		msg->readcount = msg->readcount;
 		msg->badread = true;
-		return "";
+		if (len + 1 > msg->badread_string_size) {
+			if (msg->badread_string)
+				free (msg->badread_string);
+			msg->badread_string = malloc (len + 1);
+			msg->badread_string_size = len + 1;
+		}
+		strncpy (msg->badread_string, string, len);
+		msg->badread_string[len] = 0;
+		return msg->badread_string;
 	}
 	msg->readcount += len + 1;
-
-	return string;
-}
-
-// Netchan_OutOfBandPrint is broken such that it strips the
-// terminating nul, which means connection packets (amoung others)
-// aren't nul-terminated.  So I provide the old string function for
-// connectionless-packet parsers to use.
-char *
-MSG_ReadStaticString (msg_t *msg)
-{
-	static char string[2048];
-	int         l, c;
-
-	l = 0;
-	do {
-		c = MSG_ReadChar (msg);
-		if (c == -1 || c == 0)
-			break;
-		string[l] = c;
-		l++;
-	} while (l < sizeof (string) - 1);
-
-	string[l] = 0;
-
-	return string;
-}
-
-char       *
-MSG_ReadStringLine (msg_t *msg)
-{
-	static char string[2048];
-	int         l, c;
-
-	l = 0;
-	do {
-		c = MSG_ReadChar (msg);
-		if (c == -1 || c == 0 || c == '\n')
-			break;
-		string[l] = c;
-		l++;
-	} while (l < sizeof (string) - 1);
-
-	string[l] = 0;
 
 	return string;
 }

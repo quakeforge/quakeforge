@@ -1153,7 +1153,6 @@ CL_ParseServerMessage (void)
 
 			case svc_print: {
 				char p[2048];
-				int j;
 				i = MSG_ReadByte (net_message);
 				s = MSG_ReadString (net_message);
 				if (i == PRINT_CHAT) {
@@ -1161,13 +1160,13 @@ CL_ParseServerMessage (void)
 					// teammates
 
 					if (cl_nofake->int_val) {
-						do {
-							p[j] = (s[j] == 13) ? '#' : s[j];
-							if (j == sizeof (p) - 1) {
-								p[j] = '\0';
-								break;
-							}
-						} while (s[j++]);
+						char       *c;
+						strncpy (p, s, sizeof (p));
+						p[sizeof (p) - 1] = 0;
+						for (c = p; *c; c++) {
+							if (*c == '\r')
+								*c = '#';
+						}
 						s = p;
 					}
 					con_ormask = 128;

@@ -843,7 +843,7 @@ CL_Reconnect_f (void)
 void
 CL_ConnectionlessPacket (void)
 {
-	char       *s;
+	const char *s;
 	int         c, clcp_temp;
 
 	MSG_BeginReading (net_message);
@@ -873,6 +873,7 @@ CL_ConnectionlessPacket (void)
 	// remote command from gui front end
 	if (c == A2C_CLIENT_COMMAND) {
 		char        cmdtext[2048];
+		int         len;
 
 		Con_Printf ("client command\n");
 
@@ -883,20 +884,23 @@ CL_ConnectionlessPacket (void)
 			Con_Printf ("Command packet from remote host.  Ignored.\n");
 			return;
 		}
-		s = MSG_ReadStaticString (net_message);
+		s = MSG_ReadString (net_message);
 
 		strncpy (cmdtext, s, sizeof (cmdtext) - 1);
 		cmdtext[sizeof (cmdtext) - 1] = 0;
 
-		s = MSG_ReadStaticString (net_message);
+		s = MSG_ReadString (net_message);
 
 		while (*s && isspace ((int) *s))
 			s++;
-		while (*s && isspace ((int) (s[strlen (s) - 1])))
-			s[strlen (s) - 1] = 0;
+		len = strlen (s);
+		while (len && isspace ((byte) s[len - 1]))
+			len--;
 
 		if (!allowremotecmd
-			&& (!*localid->string || strcmp (localid->string, s))) {
+			&& (!*localid->string
+				|| strlen (localid->string) > len
+				|| strncmp (localid->string, s, len))) {
 			if (!*localid->string) {
 				Con_Printf ("===========================\n");
 				Con_Printf ("Command packet received from local host, but no "
@@ -923,7 +927,7 @@ CL_ConnectionlessPacket (void)
 	}
 	// print command from somewhere
 	if (c == A2C_PRINT) {
-		s = MSG_ReadStaticString (net_message);
+		s = MSG_ReadString (net_message);
 		if (SL_CheckStatus(NET_AdrToString (net_from), s))
 		{
 			Con_Printf("status response\n");
@@ -952,7 +956,7 @@ CL_ConnectionlessPacket (void)
 	if (c == S2C_CHALLENGE) {
 		Con_Printf ("challenge\n");
 
-		s = MSG_ReadStaticString (net_message);
+		s = MSG_ReadString (net_message);
 		cls.challenge = atoi (s);
 		if (strstr (s, "QF"))
 			CL_AddQFInfoKeys ();
@@ -964,7 +968,7 @@ CL_ConnectionlessPacket (void)
 	{
 		Con_Printf("Master Server Reply\n");
 		clcp_temp = MSG_ReadByte (net_message);
-		s = MSG_ReadStaticString (net_message);
+		s = MSG_ReadString (net_message);
 		MSL_ParseServerList(s);
 		return;
 	}

@@ -1017,7 +1017,7 @@ SV_ConnectionlessPacket (void)
 	MSG_BeginReading (net_message);
 	MSG_ReadLong (net_message);					// skip the -1 marker
 
-	s = MSG_ReadStringLine (net_message);
+	s = MSG_ReadString (net_message);
 
 	Cmd_TokenizeString (s);
 
