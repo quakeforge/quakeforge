@@ -3,7 +3,7 @@
 
 	QuakeC plist api
 
-	Copyright (C) 2002 Bill Currie
+	Copyright (C) 2003 Bill Currie
 
 	Author: Bill Currie <bill@taniwha.org>
 	Date: 2003/4/7
