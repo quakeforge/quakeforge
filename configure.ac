@@ -1464,102 +1464,21 @@ dnl ==================================================================
 dnl Find out what to build
 dnl ==================================================================
 
-AC_ARG_WITH(clients,
-	[  --with-clients=<list>   compile clients in <list>;
-                          3dfx,fbdev,glx,mgl,sdl,sdl32,sgl,svga,wgl,x11],
-	clients="$withval",
-	clients="all"
+QF_WITH_TARGETS(
+	clients,
+	[  --with-clients=<list>   compile clients in <list>:],
+	[3dfx,fbdev,glx,mgl,sdl,sdl32,sgl,svga,wgl,x11],dummy
 )
-if test "$clients" = "all"; then
-	ENABLE_3DFX=yes
-	ENABLE_FBDEV=yes
-	ENABLE_GLX=yes
-	ENABLE_MGL=yes
-	ENABLE_SDL=yes
-	ENABLE_SDL32=yes
-	ENABLE_SGL=yes
-	ENABLE_SVGA=yes
-	ENABLE_WGL=yes
-	ENABLE_X11=yes
-else
-	ENABLE_3DFX=no
-	ENABLE_FBDEV=no
-	ENABLE_GLX=no
-	ENABLE_MGL=no
-	ENABLE_SDL=no
-	ENABLE_SDL32=no
-	ENABLE_SGL=no
-	ENABLE_SVGA=no
-	ENABLE_WGL=no
-	ENABLE_X11=no
-	IFS=","
-	for client in $clients; do
-		case "$client" in
-			3dfx)
-				ENABLE_3DFX=yes
-				;;
-			fbdev)
-				ENABLE_FBDEV=yes
-				;;
-			glx)
-				ENABLE_GLX=yes
-				;;
-			mgl)
-				ENABLE_MGL=yes
-				;;
-			sdl)
-				ENABLE_SDL=yes
-				;;
-			sdl32)
-				ENABLE_SDL32=yes
-				;;
-			sgl)
-				ENABLE_SGL=yes
-				;;
-			svga)
-				ENABLE_SVGA=yes
-				;;
-			wgl)
-				ENABLE_WGL=yes
-				;;
-			x11)
-				ENABLE_X11=yes
-				;;
-		esac
-	done
-	IFS=" "
-fi
-
-AC_ARG_WITH(servers,
-	[  --with-servers=<list>   compile dedicated server
-                          master,nq,qw],
-	servers="$withval",
-	servers=all
+QF_WITH_TARGETS(
+	servers,
+	[  --with-servers=<list>   compile dedicated server:],
+	[master,nq,qw],dummy
 )
-if test "$servers" = "all"; then
-	ENABLE_NQ_SERVER=yes
-	ENABLE_QW_MASTER=yes
-	ENABLE_QW_SERVER=yes
-else
-	ENABLE_NQ_SERVER=no
-	ENABLE_QW_MASTER=no
-	ENABLE_QW_SERVER=no
-	IFS=","
-	for server in $servers; do
-		case "$server" in
-			nq)
-				ENABLE_NQ_SERVER=yes
-				;;
-			master)
-				ENABLE_QW_MASTER=yes
-				;;
-			qw)
-				ENABLE_QW_SERVER=yes
-				;;
-		esac
-	done
-	IFS=" "
-fi
+QF_WITH_TARGETS(
+	tools,
+	[  --with-tools=<list>     compile qf tools:],
+	[pak,qfcc,qfdefs,qflight,qfmodelgen,qfprogs,qfvis,qwaq,wav],dummy
+)
 
 unset CL_TARGETS
 QW_TARGETS=""
@@ -1582,7 +1501,7 @@ VID_REND_NOINST_TARGETS=""
 VID_TARGETS=""
 
 if test "x$HAVE_FBDEV" = xyes; then
-	if test "x$ENABLE_FBDEV" = xyes; then
+	if test "x$ENABLE_clients_fbdev" = xyes; then
 		QW_TARGETS="$QW_TARGETS qw-client-fbdev\$(EXEEXT)"
 		NQ_TARGETS="$NQ_TARGETS nq-fbdev\$(EXEEXT)"
 		CL_TARGETS="$CL_TARGETS FBDEV"
@@ -1597,7 +1516,7 @@ fi
 if test "x$HAVE_X" = xyes; then
 	CAN_BUILD_GL=yes
 	CAN_BUILD_SW=yes
-	if test "x$ENABLE_GLX" = xyes; then
+	if test "x$ENABLE_clients_glx" = xyes; then
 		QW_TARGETS="$QW_TARGETS qw-client-glx\$(EXEEXT)"
 		NQ_TARGETS="$NQ_TARGETS nq-glx\$(EXEEXT)"
 		CL_TARGETS="$CL_TARGETS GLX"
@@ -1607,7 +1526,7 @@ if test "x$HAVE_X" = xyes; then
 		QF_NEED(qw, [client common net])
 		QF_NEED(nq, [client common net])
 	fi
-	if test "x$ENABLE_X11" = xyes; then
+	if test "x$ENABLE_clients_x11" = xyes; then
 		QW_TARGETS="$QW_TARGETS qw-client-x11\$(EXEEXT)"
 		NQ_TARGETS="$NQ_TARGETS nq-x11\$(EXEEXT)"
 		CL_TARGETS="$CL_TARGETS X11"
@@ -1619,7 +1538,7 @@ if test "x$HAVE_X" = xyes; then
 	fi
 fi
 if test "x$HAVE_MGL" = xyes; then
-	if test "x$ENABLE_MGL" = xyes; then
+	if test "x$ENABLE_clients_mgl" = xyes; then
 		QW_TARGETS="$QW_TARGETS qw-client-mgl\$(EXEEXT)"
 		NQ_TARGETS="$NQ_TARGETS nq-mgl\$(EXEEXT)"
 		CL_TARGETS="$CL_TARGETS MGL"
@@ -1632,7 +1551,7 @@ if test "x$HAVE_MGL" = xyes; then
 	CAN_BUILD_SW=yes
 fi
 if test "x$HAVE_SDL" = xyes; then
-	if test "x$ENABLE_SDL" = xyes; then
+	if test "x$ENABLE_clients_sdl" = xyes; then
 		QW_TARGETS="$QW_TARGETS qw-client-sdl\$(EXEEXT)"
 		NQ_TARGETS="$NQ_TARGETS nq-sdl\$(EXEEXT)"
 		CL_TARGETS="$CL_TARGETS SDL"
@@ -1643,7 +1562,7 @@ if test "x$HAVE_SDL" = xyes; then
 		QF_NEED(nq, [client common net sdl])
 	fi
 	CAN_BUILD_SW=yes
-	if test "x$ENABLE_SDL32" = xyes; then
+	if test "x$ENABLE_clients_sdl32" = xyes; then
 		QW_TARGETS="$QW_TARGETS qw-client-sdl32\$(EXEEXT)"
 		NQ_TARGETS="$NQ_TARGETS nq-sdl32\$(EXEEXT)"
 		CL_TARGETS="$CL_TARGETS SDL32"
@@ -1654,7 +1573,7 @@ if test "x$HAVE_SDL" = xyes; then
 		QF_NEED(nq, [client common net sdl])
 	fi
 	CAN_BUILD_SW32=yes
-	if test "x$ENABLE_SGL" = xyes; then
+	if test "x$ENABLE_clients_sgl" = xyes; then
 		QW_TARGETS="$QW_TARGETS qw-client-sgl\$(EXEEXT)"
 		NQ_TARGETS="$NQ_TARGETS nq-sgl\$(EXEEXT)"
 		CL_TARGETS="$CL_TARGETS SDL-GL"
@@ -1667,7 +1586,7 @@ if test "x$HAVE_SDL" = xyes; then
 	fi
 fi
 if test "x$HAVE_SVGA" = xyes; then
-	if test "x$ENABLE_SVGA" = xyes; then
+	if test "x$ENABLE_clients_svga" = xyes; then
 		QW_TARGETS="$QW_TARGETS qw-client-svga\$(EXEEXT)"
 		NQ_TARGETS="$NQ_TARGETS nq-svga\$(EXEEXT)"
 		CL_TARGETS="$CL_TARGETS SVGAlib"
@@ -1678,7 +1597,7 @@ if test "x$HAVE_SVGA" = xyes; then
 		QF_NEED(nq, [client common net])
 	fi
 	CAN_BUILD_SW=yes
-	if test "x$ENABLE_3DFX" = xyes; then
+	if test "x$ENABLE_clients_3dfx" = xyes; then
 		QW_TARGETS="$QW_TARGETS qw-client-3dfx\$(EXEEXT)"
 		NQ_TARGETS="$NQ_TARGETS nq-3dfx\$(EXEEXT)"
 		CL_TARGETS="$CL_TARGETS 3dfx"
@@ -1691,7 +1610,7 @@ if test "x$HAVE_SVGA" = xyes; then
 	CAN_BUILD_GL=yes
 fi
 if test "x$mingw" = xyes; then
-	if test "x$ENABLE_WGL" = xyes; then
+	if test "x$ENABLE_clients_wgl" = xyes; then
 		QW_TARGETS="$QW_TARGETS qw-client-wgl\$(EXEEXT)"
 		NQ_TARGETS="$NQ_TARGETS nq-wgl\$(EXEEXT)"
 		CL_TARGETS="$CL_TARGETS WGL"
@@ -1705,20 +1624,69 @@ if test "x$mingw" = xyes; then
 fi
 
 unset SV_TARGETS
-if test "x$ENABLE_NQ_SERVER" = xyes; then
+if test "x$ENABLE_servers_nq" = xyes; then
 	NQ_TARGETS="nq-server\$(EXEEXT) $NQ_TARGETS"
 	SV_TARGETS="$SV_TARGETS nq"
 	QF_NEED(nq, [common net server])
 fi
-if test "x$ENABLE_QW_MASTER" = xyes; then
+if test "x$ENABLE_servers_master" = xyes; then
 	QW_TARGETS="qw-master\$(EXEEXT) $QW_TARGETS"
 	SV_TARGETS="$SV_TARGETS master"
 fi
-if test "x$ENABLE_QW_SERVER" = xyes; then
+if test "x$ENABLE_servers_qw" = xyes; then
 	QW_TARGETS="qw-server\$(EXEEXT) $QW_TARGETS"
 	SV_TARGETS="$SV_TARGETS qw"
 	QF_NEED(qw, [common net server])
 fi
+
+unset PAK_TARGETS
+unset QFCC_TARGETS
+unset QFDEFS_TARGETS
+unset QFLIGHT_TARGETS
+unset QFMODELGEN_TARGETS
+unset QFPROGS_TARGETS
+unset QFVIS_TARGETS
+unset QWAQ_TARGETS
+unset WAV_TARGETS
+unset TOOLS_TARGETS
+if test "x$ENABLE_tools_pak" = xyes; then
+	TOOLS_TARGETS="$TOOLS_TARGETS pak"
+fi
+if test "x$ENABLE_tools_qfcc" = xyes; then
+	TOOLS_TARGETS="$TOOLS_TARGETS qfcc"
+fi
+if test "x$ENABLE_tools_qfdefs" = xyes; then
+	TOOLS_TARGETS="$TOOLS_TARGETS qfdefs"
+fi
+if test "x$ENABLE_tools_qflight" = xyes; then
+	TOOLS_TARGETS="$TOOLS_TARGETS qflight"
+fi
+if test "x$ENABLE_tools_qfmodelgen" = xyes; then
+	TOOLS_TARGETS="$TOOLS_TARGETS qfmodelgen"
+fi
+if test "x$ENABLE_tools_qfprogs" = xyes; then
+	TOOLS_TARGETS="$TOOLS_TARGETS qfprogs"
+fi
+if test "x$ENABLE_tools_qfvis" = xyes; then
+	TOOLS_TARGETS="$TOOLS_TARGETS qfvis"
+fi
+if test "x$ENABLE_tools_qwaq" = xyes; then
+	TOOLS_TARGETS="$TOOLS_TARGETS qwaq"
+fi
+if test "x$ENABLE_tools_wav" = xyes; then
+	TOOLS_TARGETS="$TOOLS_TARGETS wav"
+fi
+AM_CONDITIONAL(BUILD_PAK, test "$ENABLE_tools_pak" = "yes")
+AM_CONDITIONAL(BUILD_QFCC, test "$ENABLE_tools_qfcc" = "yes")
+AM_CONDITIONAL(BUILD_QFDEFS, test "$ENABLE_tools_qfdefs" = "yes")
+AM_CONDITIONAL(BUILD_QFLIGHT, test "$ENABLE_tools_qflight" = "yes")
+AM_CONDITIONAL(BUILD_QFMODELGEN, test "$ENABLE_tools_qfmodelgen" = "yes")
+AM_CONDITIONAL(BUILD_QFPROGS, test "$ENABLE_tools_qfprogs" = "yes")
+AM_CONDITIONAL(BUILD_QFVIS, test "$ENABLE_tools_qfvis" = "yes")
+AM_CONDITIONAL(BUILD_QWAQ, test "$ENABLE_tools_qwaq" = "yes" -a "$ENABLE_tools_qfcc" = "yes")
+AM_CONDITIONAL(BUILD_WAV, test "$ENABLE_tools_wav" = "yes")
+
+AM_CONDITIONAL(BUILD_RUAMOKO, test "$ENABLE_tools_qfcc" = "yes" -a "$ENABLE_tools_pak" = "yes")
 
 if test "x$BUILD_SW" = xyes; then
 	VID_REND_NOINST_TARGETS="$VID_REND_NOINST_TARGETS libQFrenderer_sw.la"
@@ -2095,6 +2063,7 @@ AC_MSG_RESULT([
 	Build type         :$BUILD_TYPE
 	Server support     :${SV_TARGETS- no}
 	Client support     :${CL_TARGETS- no}
+	Tools support      :${TOOLS_TARGETS- no}
 	Sound support      :${SOUND_TYPES- no}
 	CD Audio system    :${CDTYPE- no}
 	IPv6 networking    : $NETTYPE_IPV6

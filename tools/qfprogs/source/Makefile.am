@@ -6,7 +6,14 @@ QFPROGS_INCS=@QFPROGS_INCS@
 
 INCLUDES= -I$(top_srcdir)/include $(QFPROGS_INCS)
 
-bin_PROGRAMS=	qfprogs
+if BUILD_QFPROGS
+qfprogs=qfprogs
+else
+qfprogs=
+endif
+
+bin_PROGRAMS=	$(qfprogs)
+EXTRA_PROGRAMS= qfprogs
 
 #man_MANS=	qfprogs.1
 

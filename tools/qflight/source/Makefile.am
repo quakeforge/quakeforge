@@ -6,7 +6,14 @@ QFLIGHT_INCS=@QFLIGHT_INCS@
 
 INCLUDES=	-I$(top_srcdir)/include $(QFLIGHT_INCS)
 
-bin_PROGRAMS=	qflight
+if BUILD_QFLIGHT
+qflight=qflight
+else
+qflight=
+endif
+
+bin_PROGRAMS=	$(qflight)
+EXTRA_PROGRAMS= qflight
 
 qflight_SOURCES= entities.c ltface.c options.c qflight.c threads.c trace.c
 

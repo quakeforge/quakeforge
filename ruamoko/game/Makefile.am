@@ -10,7 +10,14 @@ QCFLAGS=-qq -g -Werror
 QCPPFLAGS=-I. -I$(srcdir) -I$(top_builddir)/ruamoko/include -I$(top_srcdir)/ruamoko/include
 STRIP=$(shell echo `echo -n $(srcdir)/ | sed -e 's/[^/]//g' | wc -c`)
 
-pkgdata_DATA= game.dat
+if BUILD_RUAMOKO
+data=game.dat
+else
+data=
+endif
+
+pkgdata_DATA= $(data)
+EXTRA_DATA= game.dat
 
 game_src= Axe.r GameEntity.r World.r tempent.r
 

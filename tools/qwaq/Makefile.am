@@ -7,8 +7,18 @@ INCLUDES=	-I$(top_srcdir)/include $(QWAQ_INCS)
 QFCC=$(top_builddir)/tools/qfcc/source/qfcc
 QCFLAGS=-qq -g -Werror
 
-noinst_PROGRAMS=qwaq
-noinst_DATA=qwaq.dat
+if BUILD_QWAQ
+qwaq=qwaq
+data=qwaq.dat
+else
+qwaq=
+data=
+endif
+
+noinst_PROGRAMS=$(qwaq)
+noinst_DATA=$(data)
+EXTRA_PROGRAMS=qwaq
+EXTRA_DATA=qwaq.dat
 
 qwaq_dat_src= \
 	defs.qc main.qc test.r

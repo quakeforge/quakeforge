@@ -1135,3 +1135,23 @@ for qfn_lib in $2; do
 done
 AC_SUBST($1_libs)
 ])
+
+AC_DEFUN(QF_WITH_TARGETS, [
+AC_ARG_WITH($1,
+	[$2]
+	[$3], $1="$withval", $1=all
+)
+if test "x${$1}" = "xall"; then
+	for qf_t in `echo '$3' | sed -e "s/,/ /g"`''; do
+		eval ENABLE_$1_${qf_t}=yes
+	done
+else
+	for qf_t in `echo '$3' | sed -e "s/,/ /g"`''; do
+		if echo ",${clients}," | grep ",$qf_t," > /dev/null; then
+			eval ENABLE_$1_${qf_t}=yes
+		else
+			eval ENABLE_$1_${qf_t}=no
+		fi
+	done
+fi
+])

@@ -2,6 +2,12 @@ AUTOMAKE_OPTIONS= foreign
 
 SUBDIRS=	include source
 
-man_MANS=	qflight.1
+if BUILD_QFLIGHT
+mans=qflight.1
+else
+mans=
+endif
 
-EXTRA_DIST=	$(man_MANS)
+man_MANS=	$(mans)
+
+EXTRA_MANS=	qflight.1

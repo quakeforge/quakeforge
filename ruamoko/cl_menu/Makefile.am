@@ -17,7 +17,16 @@ GZ=
 endif
 STRIP=$(shell echo `echo -n $(srcdir)/ | sed -e 's/[^/]//g' | wc -c`)
 
-pkgdata_DATA= menu.dat$(GZ)
+menu_data=menu.dat$(GZ)
+
+if BUILD_RUAMOKO
+data=$(menu_data)
+else
+data=
+endif
+
+pkgdata_DATA= $(data)
+EXTRA_DATA= $(menu_data)
 
 menu_src= \
 	client_menu.qc controls_o.qc \

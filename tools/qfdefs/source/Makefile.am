@@ -7,8 +7,17 @@ QFDEFS_INCS=@QFDEFS_INCS@
 INCLUDES=   -I$(top_srcdir)/include $(QFDEFS_INCS)
 GENDEFS=./gendefs
 
-bin_PROGRAMS=	qfdefs
-noinst_PROGRAMS=	gendefs
+if BUILD_QFDEFS
+qfdefs=qfdefs
+gendefs=gendefs
+else
+qfdefs=
+gendefs=
+endif
+
+bin_PROGRAMS=	$(qfdefs)
+noinst_PROGRAMS=	$(gendefs)
+EXTRA_PROGRAMS= qfdefs gendefs
 
 qfdefs_SOURCES=		defs.c defs_nq.c defs_qw.c fix_globals.c qfdefs.c
 qfdefs_LDADD=		$(QFDEFS_LIBS)

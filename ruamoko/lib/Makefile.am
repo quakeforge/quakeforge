@@ -8,7 +8,15 @@ RANLIB=touch
 
 INCLUDES=	-I$(top_srcdir)/ruamoko/include -I$(top_srcdir)/include
 
-noinst_LIBRARIES= libr.a libgui.a libcsqc.a
+ruamoko_libs=libr.a libgui.a libcsqc.a
+if BUILD_RUAMOKO
+libs=$(ruamoko_libs)
+else
+libs=
+endif
+
+noinst_LIBRARIES= $(libs)
+EXTRA_LIBRARIES= $(ruamoko_libs)
 
 %.qfo: %.r
 	$(QFCC) $(QCFLAGS) $(QCPPFLAGS) -c -o $@ $<
@@ -30,4 +38,4 @@ libcsqc_a_SOURCES= \
 	cbuf.r cmd.r cvar.r file.r
 libcsqc_a_AR=	$(PAK) -cf
 
-CLEANFILES=	*.qfo
+CLEANFILES=	*.qfo *.o

@@ -35,8 +35,17 @@ QFCC_INCS=@QFCC_INCS@
 INCLUDES=	-I$(top_srcdir)/include $(QFCC_INCS)
 YFLAGS = -d
 
-bin_PROGRAMS=	qfcc
-noinst_PROGRAMS= qfodump
+if BUILD_QFCC
+qfcc=qfcc
+qfodump=qfodump
+else
+qfcc=
+qfodump=
+endif
+
+bin_PROGRAMS=	$(qfcc)
+noinst_PROGRAMS= $(qfodump)
+EXTRA_PROGRAMS= qfcc qfodump
 
 qfcc_SOURCES= \
 	class.c cpp.c debug.c def.c emit.c expr.c function.c idstuff.c \
