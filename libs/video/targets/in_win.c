@@ -563,7 +563,28 @@ unsigned short scantokey[128] = {
 	0, 0, 0, 0, 0, 0, 0, 0
 };
 
-unsigned short extscantokey[128] = {
+unsigned short shift_scantokey[128] = {
+//  0       1        2       3       4       5       6       7
+//  8       9        A       B       C       D       E       F
+	0, 27, '!', '@', '#', '$', '%', '^',
+	'&', '*', '(', ')', '_', '+', K_BACKSPACE, 9,	// 0
+	'Q', 'W', 'E', 'R', 'T', 'Y', 'U', 'I',
+	'O', 'P', '{', '}', 13, K_LCTRL, 'A', 'S',	// 1
+	'D', 'F', 'G', 'H', 'J', 'K', 'L', ':',
+	'"', '~', K_LSHIFT, '|', 'Z', 'X', 'C', 'V',	// 2
+	'B', 'N', 'M', '<', '>', '?', K_RSHIFT, K_KP_MULTIPLY,
+	K_LALT, ' ', K_CAPSLOCK, K_F1, K_F2, K_F3, K_F4, K_F5,	// 3
+	K_F6, K_F7, K_F8, K_F9, K_F10, K_PAUSE, K_SCROLLOCK, K_KP7,
+	K_KP8, K_KP9, K_KP_MINUS, K_KP4, K_KP5, K_KP6, K_KP_PLUS, K_KP1,	// 4
+	K_KP2, K_KP3, K_KP0, K_KP_PERIOD, 0, 0, 0, K_F11,
+	K_F12, 0, 0, 0, 0, 0, 0, 0,			// 5
+	0, 0, 0, 0, 0, 0, 0, 0,
+	0, 0, 0, 0, 0, 0, 0, 0,
+	0, 0, 0, 0, 0, 0, 0, 0,
+	0, 0, 0, 0, 0, 0, 0, 0
+};
+
+unsigned short ext_scantokey[128] = {
 //  0       1        2       3       4       5       6       7
 //  8       9        A       B       C       D       E       F
 	0, 27, '1', '2', '3', '4', '5', '6',					// 0
@@ -584,18 +605,43 @@ unsigned short extscantokey[128] = {
 	0, 0, 0, 0, 0, 0, 0, 0
 };
 
+unsigned short shift_ext_scantokey[128] = {
+//  0       1        2       3       4       5       6       7
+//  8       9        A       B       C       D       E       F
+	0, 27, '!', '@', '#', '$', '%', '^',
+	'&', '*', '(', ')', '_', '+', K_BACKSPACE, 9,	// 0
+	'Q', 'W', 'E', 'R', 'T', 'Y', 'U', 'I',
+	'O', 'P', '{', '}', K_KP_ENTER, K_RCTRL, 'A', 'S',	// 1
+	'D', 'F', 'G', 'H', 'J', 'K', 'L', ':',
+	'"', '~', K_LSHIFT, '|', 'Z', 'X', 'C', 'V',	// 2
+	'B', 'N', 'M', '<', '>', K_KP_DIVIDE, K_RSHIFT, '*',
+	K_RALT, ' ', K_CAPSLOCK, K_F1, K_F2, K_F3, K_F4, K_F5,	// 3
+	K_F6, K_F7, K_F8, K_F9, K_F10, K_NUMLOCK, 0, K_HOME,
+	K_UP, K_PAGEUP, '-', K_LEFT, '5', K_RIGHT, '+', K_END,	// 4
+	K_DOWN, K_PAGEDOWN, K_INSERT, K_DELETE, 0, 0, 0, K_F11,
+	K_F12, 0, 0, 0, 0, 0, 0, 0,			// 5
+	0, 0, 0, 0, 0, 0, 0, 0,
+	0, 0, 0, 0, 0, 0, 0, 0,
+	0, 0, 0, 0, 0, 0, 0, 0,
+	0, 0, 0, 0, 0, 0, 0, 0
+};
+
+#define ROTL(x,n) (((x)<<(n))|(x)>>(32-n))
+
 /*
 	MapKey
 
 	Map from windows to quake keynums
 */
 void
-MapKey (unsigned int keycode, int *k, int *u)
+MapKey (unsigned int keycode, int press, int *k, int *u)
 {
 	int         extended;
 	int         scan;
 	int         key;
 	int         uc;
+	unsigned long mask = ~1;
+	static unsigned long shifts;
 
 	extended = (keycode >> 24) & 1;
 	scan = (keycode >> 16) & 255;
@@ -606,16 +652,48 @@ MapKey (unsigned int keycode, int *k, int *u)
 	}
 
 	if (extended)
-		key = extscantokey[scan];
+		key = ext_scantokey[scan];
 	else
 		key = scantokey[scan];
-	if (key >= 0 && key <= 255)
-		uc = key;
-	else
+	
+	if (shifts & 0x0c) {
+		if (extended)
+			uc = shift_ext_scantokey[scan];
+		else
+			uc = shift_scantokey[scan];
+	} else {
+		if (extended)
+			uc = ext_scantokey[scan];
+		else
+			uc = scantokey[scan];
+	}
+
+	if (uc > 255)
 		uc = 0;
-	Con_DPrintf ("%08x %02x %04x %c\n", keycode, scan, key, uc > 32 && uc < 127 ? uc : '#');
-	if (key >= 'A' && key <= 'Z')
-		key += 'a' - 'A';
+
+	switch (key) {
+		case K_RSHIFT:
+			shifts &= mask;
+			shifts |= press;
+			break;
+		case K_LSHIFT:
+			shifts &= ROTL(mask, 1);
+			shifts |= ROTL(press, 1);
+			break;
+		case K_RCTRL:
+			shifts &= ROTL(mask, 2);
+			shifts |= ROTL(press, 2);
+			break;
+		case K_LCTRL:
+			shifts &= ROTL(mask, 3);
+			shifts |= ROTL(press, 3);
+			break;
+		default:
+			break;
+	}
+
+	Con_DPrintf ("%08x %02x %04x %c\n", keycode, scan, key,
+				 uc > 32 && uc < 127 ? uc : '#');
 	*k = key;
 	*u = uc;
 }
@@ -721,13 +799,13 @@ MainWndProc (HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 
 	case WM_KEYDOWN:
 	case WM_SYSKEYDOWN:
-		MapKey (lParam, &key, &unicode);
+		MapKey (lParam, 1, &key, &unicode);
 		Key_Event (key, unicode, true);
 		break;
 
 	case WM_KEYUP:
 	case WM_SYSKEYUP:
-		MapKey (lParam, &key, &unicode);
+		MapKey (lParam, 0, &key, &unicode);
 		Key_Event (key, unicode, false);
 		break;
 
