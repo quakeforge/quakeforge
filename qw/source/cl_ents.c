@@ -252,15 +252,15 @@ CL_ParseDeltaPacketEntities ()
 
 	oldpacket = cl.frames[newpacket].delta_sequence;
 
-	if ((block.from & UPDATE_MASK) != (oldpacket & UPDATE_MASK)) {
-		Host_NetError ("CL_ParseDeltaPacketEntities: from mismatch\n");
-		return;
-	}
 	if (cls.netchan.outgoing_sequence - oldpacket >= UPDATE_BACKUP - 1) {
 		// we can't use this, it is too old
-		Host_NetError ("CL_ParseDeltaPacketEntities: old packet\n");
-//		cl.validsequence = 0;				// can't render a frame
-//		cl.frames[newpacket].invalid = true;
+		Con_DPrintf ("CL_ParseDeltaPacketEntities: old packet\n");
+		cl.validsequence = 0;				// can't render a frame
+		cl.frames[newpacket].invalid = true;
+		return;
+	}
+	if ((block.from & UPDATE_MASK) != (oldpacket & UPDATE_MASK)) {
+		Host_NetError ("CL_ParseDeltaPacketEntities: from mismatch\n");
 		return;
 	}
 	if (oldpacket == -1) {
