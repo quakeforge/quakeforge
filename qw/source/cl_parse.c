@@ -692,9 +692,9 @@ CL_ParseServerData (void)
 		Host_WriteConfiguration ();
 		cflag = true;
 		Draw_ClearCache ();
-	}
 
-	QFS_Gamedir (str);
+		QFS_Gamedir (str);
+	}
 
 	// ZOID--run the autoexec.cfg in the gamedir if it exists
 	if (cflag) {
