@@ -170,6 +170,6 @@ extern func_t EndFrame;
 extern func_t SpectatorConnect;
 extern func_t SpectatorThink;
 extern func_t SpectatorDisconnect;
-extern func_t SetUserInfo;
+extern func_t UserInfoCallback;
 
 #endif // __sv_progs_h

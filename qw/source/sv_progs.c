@@ -59,7 +59,7 @@ func_t	EndFrame;
 func_t	SpectatorConnect;
 func_t	SpectatorDisconnect;
 func_t	SpectatorThink;
-func_t	SetUserInfo;
+func_t	UserInfoCallback;
 
 static int reserved_edicts = MAX_CLIENTS;
 
@@ -256,7 +256,7 @@ SV_LoadProgs (void)
 
 	// Zoid, find the spectator functions
 	SpectatorConnect = SpectatorThink = SpectatorDisconnect = 0;
-	SetUserInfo = 0;
+	UserInfoCallback = 0;
 
 	if ((f = ED_FindFunction (&sv_pr_state, "SpectatorConnect")) != NULL)
 		SpectatorConnect = (func_t) (f - sv_pr_state.pr_functions);
@@ -264,8 +264,8 @@ SV_LoadProgs (void)
 		SpectatorThink = (func_t) (f - sv_pr_state.pr_functions);
 	if ((f = ED_FindFunction (&sv_pr_state, "SpectatorDisconnect")) != NULL)
 		SpectatorDisconnect = (func_t) (f - sv_pr_state.pr_functions);
-	if ((f = ED_FindFunction (&sv_pr_state, "SetUserInfo")) != NULL)
-		SetUserInfo = (func_t) (f - sv_pr_state.pr_functions);
+	if ((f = ED_FindFunction (&sv_pr_state, "UserInfoCallback")) != NULL)
+		UserInfoCallback = (func_t) (f - sv_pr_state.pr_functions);
 
 	// 2000-01-02 EndFrame function by Maddes/FrikaC
 	EndFrame = 0;
