@@ -13,7 +13,7 @@ main (int argc, char **argv)
 		list_t     *riff = 0;
 		d_chunk_t **ck;
 		int         sample_start, sample_count;
-puts (*argv);
+
 		f = Qopen (*argv, "rbz");
 		if (f) {
 			riff = riff_read (f);
@@ -82,7 +82,7 @@ puts (*argv);
 					break;
 				case CASE ('d','a','t','a'):
 #if 0
-					printf ("data: %d\n", (*ck)->len);
+					printf ("data: %d %d\n", *(int*)((data_t*)(*ck))->data, (*ck)->len);
 #endif
 					sample_count = (*ck)->len;
 					break;
