@@ -436,7 +436,7 @@ def_t *PR_ReuseConstant (expr_t *expr, def_t *def);
 
 qboolean PR_Check (token_type_t type, const char *string);
 void PR_Expect (token_type_t type, const char *string);
-void PR_ParseError (const char *error, ...);
+void PR_ParseError (const char *error, ...)__attribute__((format(printf, 1,2)));
 
 
 extern	jmp_buf		pr_parse_abort;		// longjump with this on parse error

@@ -49,7 +49,7 @@ extern char **myargv;
 
 int FileLength (FILE *f);
 
-void	Error (char *error, ...);
+void	Error (char *error, ...)__attribute__((format(printf, 1,2)));
 int		CheckParm (char *check);
 
 FILE	*SafeOpenWrite (char *filename);
