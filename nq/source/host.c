@@ -510,6 +510,7 @@ Host_ClearMemory (void)
 qboolean
 Host_FilterTime (float time)
 {
+	float       timedifference;
 	float       timescale = 1.0;
 
 	if (cls.demoplayback) {
@@ -518,6 +519,12 @@ Host_FilterTime (float time)
 	}
 
 	realtime += time;
+
+	//FIXME not having the framerate cap is nice, but it breaks net play
+	timedifference = (timescale / 72.0) - (realtime - oldrealtime);
+
+	if (!cls.timedemo && (timedifference > 0))
+		return false;                   // framerate is too high
 
 	host_frametime = realtime - oldrealtime;
 	oldrealtime = realtime;
