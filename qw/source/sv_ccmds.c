@@ -45,6 +45,7 @@
 #include "qendian.h"
 #include "quakefs.h"
 #include "server.h"
+#include "sv_progs.h"
 #include "sys.h"
 #include "va.h"
 
@@ -216,8 +217,8 @@ SV_God_f (void)
 	if (!SV_SetPlayer ())
 		return;
 
-	sv_player->v.v.flags = (int) sv_player->v.v.flags ^ FL_GODMODE;
-	if (!((int) sv_player->v.v.flags & FL_GODMODE))
+	SVFIELD (sv_player, flags, float) = (int) SVFIELD (sv_player, flags, float) ^ FL_GODMODE;
+	if (!((int) SVFIELD (sv_player, flags, float) & FL_GODMODE))
 		SV_ClientPrintf (host_client, PRINT_HIGH, "godmode OFF\n");
 	else
 		SV_ClientPrintf (host_client, PRINT_HIGH, "godmode ON\n");
@@ -236,11 +237,11 @@ SV_Noclip_f (void)
 	if (!SV_SetPlayer ())
 		return;
 
-	if (sv_player->v.v.movetype != MOVETYPE_NOCLIP) {
-		sv_player->v.v.movetype = MOVETYPE_NOCLIP;
+	if (SVFIELD (sv_player, movetype, float) != MOVETYPE_NOCLIP) {
+		SVFIELD (sv_player, movetype, float) = MOVETYPE_NOCLIP;
 		SV_ClientPrintf (host_client, PRINT_HIGH, "noclip ON\n");
 	} else {
-		sv_player->v.v.movetype = MOVETYPE_WALK;
+		SVFIELD (sv_player, movetype, float) = MOVETYPE_WALK;
 		SV_ClientPrintf (host_client, PRINT_HIGH, "noclip OFF\n");
 	}
 }
@@ -276,24 +277,24 @@ SV_Give_f (void)
 		case '7':
 		case '8':
 		case '9':
-			sv_player->v.v.items =
-				(int) sv_player->v.v.items | IT_SHOTGUN << (t[0] - '2');
+			SVFIELD (sv_player, items, float) =
+				(int) SVFIELD (sv_player, items, float) | IT_SHOTGUN << (t[0] - '2');
 			break;
 
 		case 's':
-			sv_player->v.v.ammo_shells = v;
+			SVFIELD (sv_player, ammo_shells, float) = v;
 			break;
 		case 'n':
-			sv_player->v.v.ammo_nails = v;
+			SVFIELD (sv_player, ammo_nails, float) = v;
 			break;
 		case 'r':
-			sv_player->v.v.ammo_rockets = v;
+			SVFIELD (sv_player, ammo_rockets, float) = v;
 			break;
 		case 'h':
-			sv_player->v.v.health = v;
+			SVFIELD (sv_player, health, float) = v;
 			break;
 		case 'c':
-			sv_player->v.v.ammo_cells = v;
+			SVFIELD (sv_player, ammo_cells, float) = v;
 			break;
 	}
 }
@@ -414,7 +415,7 @@ SV_Status_f (void)
 
 			Con_Printf ("%-16.16s  ", cl->name);
 
-			Con_Printf ("%6i %5i", cl->userid, (int) cl->edict->v.v.frags);
+			Con_Printf ("%6i %5i", cl->userid, (int) SVFIELD (cl->edict, frags, float));
 			if (cl->spectator)
 				Con_Printf (" (s)\n");
 			else
@@ -444,7 +445,7 @@ SV_Status_f (void)
 		for (i = 0, cl = svs.clients; i < MAX_CLIENTS; i++, cl++) {
 			if (!cl->state)
 				continue;
-			Con_Printf ("%5i %6i ", (int) cl->edict->v.v.frags, cl->userid);
+			Con_Printf ("%5i %6i ", (int) SVFIELD (cl->edict, frags, float), cl->userid);
 
 			s = NET_BaseAdrToString (cl->netchan.remote_address);
 

@@ -45,6 +45,7 @@
 #include "console.h"
 #include "net.h"
 #include "game.h"
+#include "sv_progs.h"
 
 // This is enables a simple IP banning mechanism
 #define BAN_TEST
@@ -145,8 +146,8 @@ NET_Ban_f (void)
 		}
 		print = Con_Printf;
 	} else {
-		if (pr_global_struct->deathmatch && !host_client->privileged)
-			return;
+		if (*sv_globals.deathmatch
+			&& !host_client->privileged) return;
 		print = SV_ClientPrintf;
 	}
 
@@ -945,7 +946,7 @@ _Datagram_CheckNewConnections (void)
 		MSG_WriteByte (net_message->message, playerNumber);
 		MSG_WriteString (net_message->message, client->name);
 		MSG_WriteLong (net_message->message, client->colors);
-		MSG_WriteLong (net_message->message, (int) client->edict->v.frags);
+		MSG_WriteLong (net_message->message, SVFIELD (client->edict, frags, float));
 		MSG_WriteLong (net_message->message,
 					   (int) (net_time - client->netconnection->connecttime));
 		MSG_WriteString (net_message->message, client->netconnection->address);

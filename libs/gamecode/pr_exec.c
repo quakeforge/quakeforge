@@ -41,7 +41,6 @@
 #include "console.h"
 #include "cvar.h"
 #include "progs.h"
-#include "server.h"
 #include "sys.h"
 
 char       *pr_opnames[] = {
@@ -138,7 +137,7 @@ char       *pr_opnames[] = {
 	PR_PrintStatement
 */
 void
-PR_PrintStatement (progs_t *pr, dstatement_t *s)
+PR_PrintStatement (progs_t * pr, dstatement_t *s)
 {
 	int         i;
 
@@ -156,7 +155,8 @@ PR_PrintStatement (progs_t *pr, dstatement_t *s)
 		Con_Printf ("branch %i", s->a);
 	} else if ((unsigned int) (s->op - OP_STORE_F) < 6) {
 		Con_Printf ("%s", PR_GlobalString (pr, (unsigned short) s->a));
-		Con_Printf ("%s", PR_GlobalStringNoContents (pr, (unsigned short) s->b));
+		Con_Printf ("%s",
+					PR_GlobalStringNoContents (pr, (unsigned short) s->b));
 	} else {
 		if (s->a)
 			Con_Printf ("%s", PR_GlobalString (pr, (unsigned short) s->a));
@@ -173,7 +173,7 @@ PR_PrintStatement (progs_t *pr, dstatement_t *s)
 	PR_StackTrace
 */
 void
-PR_StackTrace (progs_t *pr)
+PR_StackTrace (progs_t * pr)
 {
 	dfunction_t *f;
 	int         i;
@@ -200,7 +200,7 @@ PR_StackTrace (progs_t *pr)
 	PR_Profile
 */
 void
-PR_Profile (progs_t *pr)
+PR_Profile (progs_t * pr)
 {
 	dfunction_t *f, *best;
 	int         max;
@@ -234,7 +234,7 @@ PR_Profile (progs_t *pr)
 	Aborts the currently executing function
 */
 void
-PR_RunError (progs_t *pr, char *error, ...)
+PR_RunError (progs_t * pr, char *error, ...)
 {
 	va_list     argptr;
 	char        string[1024];
@@ -247,10 +247,10 @@ PR_RunError (progs_t *pr, char *error, ...)
 	PR_StackTrace (pr);
 	Con_Printf ("%s\n", string);
 
-	pr->pr_depth = 0;						// dump the stack so SV_Error can
-	// shutdown functions
+	pr->pr_depth = 0;					// dump the stack so PR_Error can
+										// shutdown functions
 
-	SV_Error ("Program error");
+	PR_Error (pr, "Program error");
 }
 
 /*
@@ -265,10 +265,11 @@ PR_RunError (progs_t *pr, char *error, ...)
 	Returns the new program statement counter
 */
 int
-PR_EnterFunction (progs_t *pr, dfunction_t *f)
+PR_EnterFunction (progs_t * pr, dfunction_t *f)
 {
 	int         i, j, c, o;
 
+	//printf("%s:\n", PR_GetString(pr,f->s_name));
 	pr->pr_stack[pr->pr_depth].s = pr->pr_xstatement;
 	pr->pr_stack[pr->pr_depth].f = pr->pr_xfunction;
 	pr->pr_depth++;
@@ -289,7 +290,9 @@ PR_EnterFunction (progs_t *pr, dfunction_t *f)
 	o = f->parm_start;
 	for (i = 0; i < f->numparms; i++) {
 		for (j = 0; j < f->parm_size[i]; j++) {
-			((int *) pr->pr_globals)[o] = ((int *) pr->pr_globals)[OFS_PARM0 + i * 3 + j];
+
+			((int *) pr->pr_globals)[o] =
+				((int *) pr->pr_globals)[OFS_PARM0 + i * 3 + j];
 			o++;
 		}
 	}
@@ -302,12 +305,12 @@ PR_EnterFunction (progs_t *pr, dfunction_t *f)
 	PR_LeaveFunction
 */
 int
-PR_LeaveFunction (progs_t *pr)
+PR_LeaveFunction (progs_t * pr)
 {
 	int         i, c;
 
 	if (pr->pr_depth <= 0)
-		SV_Error ("prog stack underflow");
+		PR_Error (pr, "prog stack underflow");
 
 // restore locals from the stack
 	c = pr->pr_xfunction->locals;
@@ -330,15 +333,17 @@ PR_LeaveFunction (progs_t *pr)
 /*
 	PR_ExecuteProgram
 */
-// LordHavoc: optimized
-#define OPA ((eval_t *)&pr->pr_globals[(unsigned short) st->a])
-#define OPB ((eval_t *)&pr->pr_globals[(unsigned short) st->b])
-#define OPC ((eval_t *)&pr->pr_globals[(unsigned short) st->c])
+#define OPA (pr->pr_globals[(unsigned short) st->a])
+#define OPB (pr->pr_globals[(unsigned short) st->b])
+#define OPC (pr->pr_globals[(unsigned short) st->c])
+#define E_OPA ((eval_t *)&OPA)
+#define E_OPB ((eval_t *)&OPB)
+#define E_OPC ((eval_t *)&OPC)
 
 extern cvar_t *pr_boundscheck;
 
 void
-PR_ExecuteProgram (progs_t *pr, func_t fnum)
+PR_ExecuteProgram (progs_t * pr, func_t fnum)
 {
 	dstatement_t *st;
 	dfunction_t *f, *newf;
@@ -348,12 +353,13 @@ PR_ExecuteProgram (progs_t *pr, func_t fnum)
 	int         profile, startprofile;
 
 	if (!fnum || fnum >= pr->progs->numfunctions) {
-		if (pr->pr_global_struct->self)
-			ED_Print (pr, PROG_TO_EDICT (pr, pr->pr_global_struct->self));
-		SV_Error ("PR_ExecuteProgram: NULL function");
+		if (*pr->globals.self)
+			ED_Print (pr, PROG_TO_EDICT (pr, *pr->globals.self));
+		PR_Error (pr, "PR_ExecuteProgram: NULL function");
 	}
 
 	f = &pr->pr_functions[fnum];
+	//printf("%s:\n", PR_GetString(pr,f->s_name));
 
 	pr->pr_trace = false;
 
@@ -377,134 +383,134 @@ PR_ExecuteProgram (progs_t *pr, func_t fnum)
 
 		switch (st->op) {
 			case OP_ADD_F:
-				OPC->_float = OPA->_float + OPB->_float;
+				E_OPC->_float = E_OPA->_float + E_OPB->_float;
 				break;
 			case OP_ADD_V:
-				OPC->vector[0] = OPA->vector[0] + OPB->vector[0];
-				OPC->vector[1] = OPA->vector[1] + OPB->vector[1];
-				OPC->vector[2] = OPA->vector[2] + OPB->vector[2];
+				E_OPC->vector[0] = E_OPA->vector[0] + E_OPB->vector[0];
+				E_OPC->vector[1] = E_OPA->vector[1] + E_OPB->vector[1];
+				E_OPC->vector[2] = E_OPA->vector[2] + E_OPB->vector[2];
 				break;
 			case OP_SUB_F:
-				OPC->_float = OPA->_float - OPB->_float;
+				E_OPC->_float = E_OPA->_float - E_OPB->_float;
 				break;
 			case OP_SUB_V:
-				OPC->vector[0] = OPA->vector[0] - OPB->vector[0];
-				OPC->vector[1] = OPA->vector[1] - OPB->vector[1];
-				OPC->vector[2] = OPA->vector[2] - OPB->vector[2];
+				E_OPC->vector[0] = E_OPA->vector[0] - E_OPB->vector[0];
+				E_OPC->vector[1] = E_OPA->vector[1] - E_OPB->vector[1];
+				E_OPC->vector[2] = E_OPA->vector[2] - E_OPB->vector[2];
 				break;
 			case OP_MUL_F:
-				OPC->_float = OPA->_float * OPB->_float;
+				E_OPC->_float = E_OPA->_float * E_OPB->_float;
 				break;
 			case OP_MUL_V:
-				OPC->_float =
-					OPA->vector[0] * OPB->vector[0] +
-					OPA->vector[1] * OPB->vector[1] +
-					OPA->vector[2] * OPB->vector[2];
+				E_OPC->_float =
+					E_OPA->vector[0] * E_OPB->vector[0] +
+					E_OPA->vector[1] * E_OPB->vector[1] +
+					E_OPA->vector[2] * E_OPB->vector[2];
 				break;
 			case OP_MUL_FV:
-				OPC->vector[0] = OPA->_float * OPB->vector[0];
-				OPC->vector[1] = OPA->_float * OPB->vector[1];
-				OPC->vector[2] = OPA->_float * OPB->vector[2];
+				E_OPC->vector[0] = E_OPA->_float * E_OPB->vector[0];
+				E_OPC->vector[1] = E_OPA->_float * E_OPB->vector[1];
+				E_OPC->vector[2] = E_OPA->_float * E_OPB->vector[2];
 				break;
 			case OP_MUL_VF:
-				OPC->vector[0] = OPB->_float * OPA->vector[0];
-				OPC->vector[1] = OPB->_float * OPA->vector[1];
-				OPC->vector[2] = OPB->_float * OPA->vector[2];
+				E_OPC->vector[0] = E_OPB->_float * E_OPA->vector[0];
+				E_OPC->vector[1] = E_OPB->_float * E_OPA->vector[1];
+				E_OPC->vector[2] = E_OPB->_float * E_OPA->vector[2];
 				break;
 			case OP_DIV_F:
-				OPC->_float = OPA->_float / OPB->_float;
+				E_OPC->_float = E_OPA->_float / E_OPB->_float;
 				break;
 			case OP_BITAND:
-				OPC->_float = (int) OPA->_float & (int) OPB->_float;
+				E_OPC->_float = (int) E_OPA->_float & (int) E_OPB->_float;
 				break;
 			case OP_BITOR:
-				OPC->_float = (int) OPA->_float | (int) OPB->_float;
+				E_OPC->_float = (int) E_OPA->_float | (int) E_OPB->_float;
 				break;
 			case OP_GE:
-				OPC->_float = OPA->_float >= OPB->_float;
+				E_OPC->_float = E_OPA->_float >= E_OPB->_float;
 				break;
 			case OP_LE:
-				OPC->_float = OPA->_float <= OPB->_float;
+				E_OPC->_float = E_OPA->_float <= E_OPB->_float;
 				break;
 			case OP_GT:
-				OPC->_float = OPA->_float > OPB->_float;
+				E_OPC->_float = E_OPA->_float > E_OPB->_float;
 				break;
 			case OP_LT:
-				OPC->_float = OPA->_float < OPB->_float;
+				E_OPC->_float = E_OPA->_float < E_OPB->_float;
 				break;
 			case OP_AND:
-				OPC->_float = OPA->_float && OPB->_float;
+				E_OPC->_float = E_OPA->_float && E_OPB->_float;
 				break;
 			case OP_OR:
-				OPC->_float = OPA->_float || OPB->_float;
+				E_OPC->_float = E_OPA->_float || E_OPB->_float;
 				break;
 			case OP_NOT_F:
-				OPC->_float = !OPA->_float;
+				E_OPC->_float = !E_OPA->_float;
 				break;
 			case OP_NOT_V:
-				OPC->_float = !OPA->vector[0] && !OPA->vector[1]
-					&& !OPA->vector[2];
+				E_OPC->_float = !E_OPA->vector[0] && !E_OPA->vector[1]
+					&& !E_OPA->vector[2];
 				break;
 			case OP_NOT_S:
-				OPC->_float = !OPA->string || !*PR_GetString (pr, OPA->string);
+				E_OPC->_float = !E_OPA->string || !*PR_GetString (pr, E_OPA->string);
 				break;
 			case OP_NOT_FNC:
-				OPC->_float = !OPA->function;
+				E_OPC->_float = !E_OPA->function;
 				break;
 			case OP_NOT_ENT:
-				OPC->_float = (PROG_TO_EDICT (pr, OPA->edict) == *pr->edicts);
+				E_OPC->_float = (PROG_TO_EDICT (pr, E_OPA->edict) == *pr->edicts);
 				break;
 			case OP_EQ_F:
-				OPC->_float = OPA->_float == OPB->_float;
+				E_OPC->_float = E_OPA->_float == E_OPB->_float;
 				break;
 			case OP_EQ_V:
-				OPC->_float = (OPA->vector[0] == OPB->vector[0])
-					&& (OPA->vector[1] == OPB->vector[1])
-					&& (OPA->vector[2] == OPB->vector[2]);
+				E_OPC->_float = (E_OPA->vector[0] == E_OPB->vector[0])
+					&& (E_OPA->vector[1] == E_OPB->vector[1])
+					&& (E_OPA->vector[2] == E_OPB->vector[2]);
 				break;
 			case OP_EQ_S:
-				OPC->_float =
-					!strcmp (PR_GetString (pr, OPA->string),
-							 PR_GetString (pr, OPB->string));
+				E_OPC->_float =
+					!strcmp (PR_GetString (pr, E_OPA->string),
+							 PR_GetString (pr, E_OPB->string));
 				break;
 			case OP_EQ_E:
-				OPC->_float = OPA->_int == OPB->_int;
+				E_OPC->_float = E_OPA->_int == E_OPB->_int;
 				break;
 			case OP_EQ_FNC:
-				OPC->_float = OPA->function == OPB->function;
+				E_OPC->_float = E_OPA->function == E_OPB->function;
 				break;
 			case OP_NE_F:
-				OPC->_float = OPA->_float != OPB->_float;
+				E_OPC->_float = E_OPA->_float != E_OPB->_float;
 				break;
 			case OP_NE_V:
-				OPC->_float = (OPA->vector[0] != OPB->vector[0])
-					|| (OPA->vector[1] != OPB->vector[1])
-					|| (OPA->vector[2] != OPB->vector[2]);
+				E_OPC->_float = (E_OPA->vector[0] != E_OPB->vector[0])
+					|| (E_OPA->vector[1] != E_OPB->vector[1])
+					|| (E_OPA->vector[2] != E_OPB->vector[2]);
 				break;
 			case OP_NE_S:
-				OPC->_float =
-					strcmp (PR_GetString (pr, OPA->string),
-							PR_GetString (pr, OPB->string));
+				E_OPC->_float =
+					strcmp (PR_GetString (pr, E_OPA->string),
+							PR_GetString (pr, E_OPB->string));
 				break;
 			case OP_NE_E:
-				OPC->_float = OPA->_int != OPB->_int;
+				E_OPC->_float = E_OPA->_int != E_OPB->_int;
 				break;
 			case OP_NE_FNC:
-				OPC->_float = OPA->function != OPB->function;
+				E_OPC->_float = E_OPA->function != E_OPB->function;
 				break;
 
-				// ==================
+			// ==================
 			case OP_STORE_F:
 			case OP_STORE_ENT:
 			case OP_STORE_FLD:			// integers
 			case OP_STORE_S:
 			case OP_STORE_FNC:			// pointers
-				OPB->_int = OPA->_int;
+				E_OPB->_int = E_OPA->_int;
 				break;
 			case OP_STORE_V:
-				OPB->vector[0] = OPA->vector[0];
-				OPB->vector[1] = OPA->vector[1];
-				OPB->vector[2] = OPA->vector[2];
+				E_OPB->vector[0] = E_OPA->vector[0];
+				E_OPB->vector[1] = E_OPA->vector[1];
+				E_OPB->vector[2] = E_OPA->vector[2];
 				break;
 
 			case OP_STOREP_F:
@@ -513,60 +519,64 @@ PR_ExecuteProgram (progs_t *pr, func_t fnum)
 			case OP_STOREP_S:
 			case OP_STOREP_FNC:		// pointers
 				if (pr_boundscheck->int_val
-					&& (OPB->_int < 0 || OPB->_int + 4 > pr->pr_edictareasize)) {
+					&& (E_OPB->_int < 0 || E_OPB->_int + 4 > pr->pr_edictareasize)) {
 					pr->pr_xstatement = st - pr->pr_statements;
 					PR_RunError
-						(pr, "Progs attempted to write to an out of bounds edict\n");
+						(pr,
+						 "Progs attempted to write to an out of bounds edict\n");
 					return;
 				}
-				if (pr_boundscheck->int_val && (OPB->_int % pr->pr_edict_size <
+				if (pr_boundscheck->int_val && (E_OPB->_int % pr->pr_edict_size <
 												((byte *) & (*pr->edicts)->v -
-												 (byte *) *pr->edicts))) {
+												 (byte *) * pr->edicts))) {
 					pr->pr_xstatement = st - pr->pr_statements;
 					PR_RunError
 						(pr, "Progs attempted to write to an engine edict field\n");
 					return;
 				}
-				ptr = (eval_t *) ((byte *) *pr->edicts + OPB->_int);
-				ptr->_int = OPA->_int;
+				ptr = (eval_t *) ((byte *) * pr->edicts + E_OPB->_int);
+				ptr->_int = E_OPA->_int;
 				break;
 			case OP_STOREP_V:
 				if (pr_boundscheck->int_val
-					&& (OPB->_int < 0 || OPB->_int + 12 > pr->pr_edictareasize)) {
+					&& (E_OPB->_int < 0 || E_OPB->_int + 12 > pr->pr_edictareasize)) {
 					pr->pr_xstatement = st - pr->pr_statements;
 					PR_RunError
-						(pr, "Progs attempted to write to an out of bounds edict\n");
+						(pr,
+						 "Progs attempted to write to an out of bounds edict\n");
 					return;
 				}
-				ptr = (eval_t *) ((byte *) *pr->edicts + OPB->_int);
-				ptr->vector[0] = OPA->vector[0];
-				ptr->vector[1] = OPA->vector[1];
-				ptr->vector[2] = OPA->vector[2];
+				ptr = (eval_t *) ((byte *) * pr->edicts + E_OPB->_int);
+				ptr->vector[0] = E_OPA->vector[0];
+				ptr->vector[1] = E_OPA->vector[1];
+				ptr->vector[2] = E_OPA->vector[2];
 				break;
 			case OP_ADDRESS:
 				if (pr_boundscheck->int_val
-					&& (OPA->edict < 0 || OPA->edict >= pr->pr_edictareasize)) {
+					&& (E_OPA->edict < 0 || E_OPA->edict >= pr->pr_edictareasize)) {
 					pr->pr_xstatement = st - pr->pr_statements;
 					PR_RunError
 						(pr, "Progs attempted to address an out of bounds edict\n");
 					return;
 				}
 				if (pr_boundscheck->int_val
-					&& (OPA->edict == 0 && pr->null_bad)) {
+					&& (E_OPA->edict == 0 && pr->null_bad)) {
 					pr->pr_xstatement = st - pr->pr_statements;
 					PR_RunError (pr, "assignment to world entity");
 					return;
 				}
 				if (pr_boundscheck->int_val
-					&& (OPB->_int < 0 || OPB->_int >= pr->progs->entityfields)) {
+					&& (E_OPB->_int < 0 || E_OPB->_int >= pr->progs->entityfields)) {
 					pr->pr_xstatement = st - pr->pr_statements;
 					PR_RunError
-						(pr, "Progs attempted to address an invalid field in an edict\n");
+						(pr,
+						 "Progs attempted to address an invalid field in an edict\n");
 					return;
 				}
-				ed = PROG_TO_EDICT (pr, OPA->edict);
-				OPC->_int =
-					(byte *) ((int *) &ed->v + OPB->_int) - (byte *) *pr->edicts;
+				ed = PROG_TO_EDICT (pr, E_OPA->edict);
+				E_OPC->_int =
+					(byte *) ((int *) &ed->v + E_OPB->_int)
+							  - (byte *) * pr->edicts;
 				break;
 			case OP_LOAD_F:
 			case OP_LOAD_FLD:
@@ -574,56 +584,61 @@ PR_ExecuteProgram (progs_t *pr, func_t fnum)
 			case OP_LOAD_S:
 			case OP_LOAD_FNC:
 				if (pr_boundscheck->int_val
-					&& (OPA->edict < 0 || OPA->edict >= pr->pr_edictareasize)) {
+					&& (E_OPA->edict < 0 || E_OPA->edict >= pr->pr_edictareasize)) {
 					pr->pr_xstatement = st - pr->pr_statements;
 					PR_RunError
-						(pr, "Progs attempted to read an out of bounds edict number\n");
+						(pr,
+						 "Progs attempted to read an out of bounds edict number\n");
 					return;
 				}
 				if (pr_boundscheck->int_val
-					&& (OPB->_int < 0 || OPB->_int >= pr->progs->entityfields)) {
+					&& (E_OPB->_int < 0 || E_OPB->_int >= pr->progs->entityfields)) {
 					pr->pr_xstatement = st - pr->pr_statements;
 					PR_RunError
-						(pr, "Progs attempted to read an invalid field in an edict\n");
+						(pr,
+						 "Progs attempted to read an invalid field in an edict\n");
 					return;
 				}
-				ed = PROG_TO_EDICT (pr, OPA->edict);
-				OPC->_int = ((eval_t *) ((int *) &ed->v + OPB->_int))->_int;
+				ed = PROG_TO_EDICT (pr, E_OPA->edict);
+				E_OPC->_int = ((eval_t *) ((int *) &ed->v + E_OPB->_int))->_int;
 				break;
 			case OP_LOAD_V:
 				if (pr_boundscheck->int_val
-					&& (OPA->edict < 0 || OPA->edict >= pr->pr_edictareasize)) {
+					&& (E_OPA->edict < 0 || E_OPA->edict >= pr->pr_edictareasize)) {
 					pr->pr_xstatement = st - pr->pr_statements;
 					PR_RunError
-						(pr, "Progs attempted to read an out of bounds edict number\n");
+						(pr,
+						 "Progs attempted to read an out of bounds edict number\n");
 					return;
 				}
 				if (pr_boundscheck->int_val
-					&& (OPB->_int < 0 || OPB->_int + 2 >= pr->progs->entityfields)) {
+					&& (E_OPB->_int < 0
+						|| E_OPB->_int + 2 >= pr->progs->entityfields)) {
 					pr->pr_xstatement = st - pr->pr_statements;
 					PR_RunError
-						(pr, "Progs attempted to read an invalid field in an edict\n");
+						(pr,
+						 "Progs attempted to read an invalid field in an edict\n");
 					return;
 				}
-				ed = PROG_TO_EDICT (pr, OPA->edict);
-				OPC->vector[0] =
-					((eval_t *) ((int *) &ed->v + OPB->_int))->vector[0];
-				OPC->vector[1] =
-					((eval_t *) ((int *) &ed->v + OPB->_int))->vector[1];
-				OPC->vector[2] =
-					((eval_t *) ((int *) &ed->v + OPB->_int))->vector[2];
+				ed = PROG_TO_EDICT (pr, E_OPA->edict);
+				E_OPC->vector[0] =
+					((eval_t *) ((int *) &ed->v + E_OPB->_int))->vector[0];
+				E_OPC->vector[1] =
+					((eval_t *) ((int *) &ed->v + E_OPB->_int))->vector[1];
+				E_OPC->vector[2] =
+					((eval_t *) ((int *) &ed->v + E_OPB->_int))->vector[2];
 				break;
-				// ==================
+			// ==================
 			case OP_IFNOT:
-				if (!OPA->_int)
-					st += st->b - 1;	// offset the s++
+				if (!E_OPA->_int)
+					st += st->b - 1;		// offset the s++
 				break;
 			case OP_IF:
-				if (OPA->_int)
-					st += st->b - 1;	// offset the s++
+				if (E_OPA->_int)
+					st += st->b - 1;		// offset the s++
 				break;
 			case OP_GOTO:
-				st += st->a - 1;		// offset the s++
+				st += st->a - 1;			// offset the s++
 				break;
 			case OP_CALL0:
 			case OP_CALL1:
@@ -638,9 +653,9 @@ PR_ExecuteProgram (progs_t *pr, func_t fnum)
 				startprofile = profile;
 				pr->pr_xstatement = st - pr->pr_statements;
 				pr->pr_argc = st->op - OP_CALL0;
-				if (!OPA->function)
+				if (!E_OPA->function)
 					PR_RunError (pr, "NULL function");
-				newf = &pr->pr_functions[OPA->function];
+				newf = &pr->pr_functions[E_OPA->function];
 				if (newf->first_statement < 0) {	// negative
 					// statements are
 					// built in functions
@@ -656,211 +671,207 @@ PR_ExecuteProgram (progs_t *pr, func_t fnum)
 				break;
 			case OP_DONE:
 			case OP_RETURN:
-				pr->pr_globals[OFS_RETURN] = pr->pr_globals[(unsigned short) st->a];
-				pr->pr_globals[OFS_RETURN + 1] =
-					pr->pr_globals[(unsigned short) st->a + 1];
-				pr->pr_globals[OFS_RETURN + 2] =
-					pr->pr_globals[(unsigned short) st->a + 2];
+				memcpy (&pr->pr_globals[OFS_RETURN], &OPA, 3 * sizeof (OPA));
 				st = &pr->pr_statements[PR_LeaveFunction (pr)];
 				if (pr->pr_depth == exitdepth)
-					return;				// all done
+					return;					// all done
 				break;
 			case OP_STATE:
-				ed = PROG_TO_EDICT (pr, pr->pr_global_struct->self);
-				ed->v.v.nextthink = pr->pr_global_struct->time + 0.1;
-				ed->v.v.frame = OPA->_float;
-				ed->v.v.think = OPB->function;
+				ed = PROG_TO_EDICT (pr, *pr->globals.self);
+				ed->v[pr->fields.nextthink].float_var = *pr->globals.time + 0.1;
+				ed->v[pr->fields.frame].float_var = E_OPA->_float;
+				ed->v[pr->fields.think].func_var = E_OPB->function;
 				break;
 // LordHavoc: to be enabled when Progs version 7 (or whatever it will be numbered) is finalized
 /*
 			case OP_ADD_I:
-				OPC->_int = OPA->_int + OPB->_int;
+				E_OPC->_int = E_OPA->_int + E_OPB->_int;
 				break;
 			case OP_ADD_IF:
-				OPC->_int = OPA->_int + (int) OPB->_float;
+				E_OPC->_int = E_OPA->_int + (int) E_OPB->_float;
 				break;
 			case OP_ADD_FI:
-				OPC->_float = OPA->_float + (float) OPB->_int;
+				E_OPC->_float = E_OPA->_float + (float) E_OPB->_int;
 				break;
 			case OP_SUB_I:
-				OPC->_int = OPA->_int - OPB->_int;
+				E_OPC->_int = E_OPA->_int - E_OPB->_int;
 				break;
 			case OP_SUB_IF:
-				OPC->_int = OPA->_int - (int) OPB->_float;
+				E_OPC->_int = E_OPA->_int - (int) E_OPB->_float;
 				break;
 			case OP_SUB_FI:
-				OPC->_float = OPA->_float - (float) OPB->_int;
+				E_OPC->_float = E_OPA->_float - (float) E_OPB->_int;
 				break;
 			case OP_MUL_I:
-				OPC->_int = OPA->_int * OPB->_int;
+				E_OPC->_int = E_OPA->_int * E_OPB->_int;
 				break;
 			case OP_MUL_IF:
-				OPC->_int = OPA->_int * (int) OPB->_float;
+				E_OPC->_int = E_OPA->_int * (int) E_OPB->_float;
 				break;
 			case OP_MUL_FI:
-				OPC->_float = OPA->_float * (float) OPB->_int;
+				E_OPC->_float = E_OPA->_float * (float) E_OPB->_int;
 				break;
 			case OP_MUL_VI:
-				OPC->vector[0] = (float) OPB->_int * OPA->vector[0];
-				OPC->vector[1] = (float) OPB->_int * OPA->vector[1];
-				OPC->vector[2] = (float) OPB->_int * OPA->vector[2];
+				E_OPC->vector[0] = (float) E_OPB->_int * E_OPA->vector[0];
+				E_OPC->vector[1] = (float) E_OPB->_int * E_OPA->vector[1];
+				E_OPC->vector[2] = (float) E_OPB->_int * E_OPA->vector[2];
 				break;
 			case OP_DIV_VF:
 				{
-					float       temp = 1.0f / OPB->_float;
+					float       temp = 1.0f / E_OPB->_float;
 
-					OPC->vector[0] = temp * OPA->vector[0];
-					OPC->vector[1] = temp * OPA->vector[1];
-					OPC->vector[2] = temp * OPA->vector[2];
+					E_OPC->vector[0] = temp * E_OPA->vector[0];
+					E_OPC->vector[1] = temp * E_OPA->vector[1];
+					E_OPC->vector[2] = temp * E_OPA->vector[2];
 				}
 				break;
 			case OP_DIV_I:
-				OPC->_int = OPA->_int / OPB->_int;
+				E_OPC->_int = E_OPA->_int / E_OPB->_int;
 				break;
 			case OP_DIV_IF:
-				OPC->_int = OPA->_int / (int) OPB->_float;
+				E_OPC->_int = E_OPA->_int / (int) E_OPB->_float;
 				break;
 			case OP_DIV_FI:
-				OPC->_float = OPA->_float / (float) OPB->_int;
+				E_OPC->_float = E_OPA->_float / (float) E_OPB->_int;
 				break;
 			case OP_CONV_IF:
-				OPC->_float = OPA->_int;
+				E_OPC->_float = E_OPA->_int;
 				break;
 			case OP_CONV_FI:
-				OPC->_int = OPA->_float;
+				E_OPC->_int = E_OPA->_float;
 				break;
 			case OP_BITAND_I:
-				OPC->_int = OPA->_int & OPB->_int;
+				E_OPC->_int = E_OPA->_int & E_OPB->_int;
 				break;
 			case OP_BITOR_I:
-				OPC->_int = OPA->_int | OPB->_int;
+				E_OPC->_int = E_OPA->_int | E_OPB->_int;
 				break;
 			case OP_BITAND_IF:
-				OPC->_int = OPA->_int & (int) OPB->_float;
+				E_OPC->_int = E_OPA->_int & (int) E_OPB->_float;
 				break;
 			case OP_BITOR_IF:
-				OPC->_int = OPA->_int | (int) OPB->_float;
+				E_OPC->_int = E_OPA->_int | (int) E_OPB->_float;
 				break;
 			case OP_BITAND_FI:
-				OPC->_float = (int) OPA->_float & OPB->_int;
+				E_OPC->_float = (int) E_OPA->_float & E_OPB->_int;
 				break;
 			case OP_BITOR_FI:
-				OPC->_float = (int) OPA->_float | OPB->_int;
+				E_OPC->_float = (int) E_OPA->_float | E_OPB->_int;
 				break;
 			case OP_GE_I:
-				OPC->_float = OPA->_int >= OPB->_int;
+				E_OPC->_float = E_OPA->_int >= E_OPB->_int;
 				break;
 			case OP_LE_I:
-				OPC->_float = OPA->_int <= OPB->_int;
+				E_OPC->_float = E_OPA->_int <= E_OPB->_int;
 				break;
 			case OP_GT_I:
-				OPC->_float = OPA->_int > OPB->_int;
+				E_OPC->_float = E_OPA->_int > E_OPB->_int;
 				break;
 			case OP_LT_I:
-				OPC->_float = OPA->_int < OPB->_int;
+				E_OPC->_float = E_OPA->_int < E_OPB->_int;
 				break;
 			case OP_AND_I:
-				OPC->_float = OPA->_int && OPB->_int;
+				E_OPC->_float = E_OPA->_int && E_OPB->_int;
 				break;
 			case OP_OR_I:
-				OPC->_float = OPA->_int || OPB->_int;
+				E_OPC->_float = E_OPA->_int || E_OPB->_int;
 				break;
 			case OP_GE_IF:
-				OPC->_float = (float) OPA->_int >= OPB->_float;
+				E_OPC->_float = (float) E_OPA->_int >= E_OPB->_float;
 				break;
 			case OP_LE_IF:
-				OPC->_float = (float) OPA->_int <= OPB->_float;
+				E_OPC->_float = (float) E_OPA->_int <= E_OPB->_float;
 				break;
 			case OP_GT_IF:
-				OPC->_float = (float) OPA->_int > OPB->_float;
+				E_OPC->_float = (float) E_OPA->_int > E_OPB->_float;
 				break;
 			case OP_LT_IF:
-				OPC->_float = (float) OPA->_int < OPB->_float;
+				E_OPC->_float = (float) E_OPA->_int < E_OPB->_float;
 				break;
 			case OP_AND_IF:
-				OPC->_float = (float) OPA->_int && OPB->_float;
+				E_OPC->_float = (float) E_OPA->_int && E_OPB->_float;
 				break;
 			case OP_OR_IF:
-				OPC->_float = (float) OPA->_int || OPB->_float;
+				E_OPC->_float = (float) E_OPA->_int || E_OPB->_float;
 				break;
 			case OP_GE_FI:
-				OPC->_float = OPA->_float >= (float) OPB->_int;
+				E_OPC->_float = E_OPA->_float >= (float) E_OPB->_int;
 				break;
 			case OP_LE_FI:
-				OPC->_float = OPA->_float <= (float) OPB->_int;
+				E_OPC->_float = E_OPA->_float <= (float) E_OPB->_int;
 				break;
 			case OP_GT_FI:
-				OPC->_float = OPA->_float > (float) OPB->_int;
+				E_OPC->_float = E_OPA->_float > (float) E_OPB->_int;
 				break;
 			case OP_LT_FI:
-				OPC->_float = OPA->_float < (float) OPB->_int;
+				E_OPC->_float = E_OPA->_float < (float) E_OPB->_int;
 				break;
 			case OP_AND_FI:
-				OPC->_float = OPA->_float && (float) OPB->_int;
+				E_OPC->_float = E_OPA->_float && (float) E_OPB->_int;
 				break;
 			case OP_OR_FI:
-				OPC->_float = OPA->_float || (float) OPB->_int;
+				E_OPC->_float = E_OPA->_float || (float) E_OPB->_int;
 				break;
 			case OP_NOT_I:
-				OPC->_float = !OPA->_int;
+				E_OPC->_float = !E_OPA->_int;
 				break;
 			case OP_EQ_I:
-				OPC->_float = OPA->_int == OPB->_int;
+				E_OPC->_float = E_OPA->_int == E_OPB->_int;
 				break;
 			case OP_EQ_IF:
-				OPC->_float = (float) OPA->_int == OPB->_float;
+				E_OPC->_float = (float) E_OPA->_int == E_OPB->_float;
 				break;
 			case OP_EQ_FI:
-				OPC->_float = OPA->_float == (float) OPB->_int;
+				E_OPC->_float = E_OPA->_float == (float) E_OPB->_int;
 				break;
 			case OP_NE_I:
-				OPC->_float = OPA->_int != OPB->_int;
+				E_OPC->_float = E_OPA->_int != E_OPB->_int;
 				break;
 			case OP_NE_IF:
-				OPC->_float = (float) OPA->_int != OPB->_float;
+				E_OPC->_float = (float) E_OPA->_int != E_OPB->_float;
 				break;
 			case OP_NE_FI:
-				OPC->_float = OPA->_float != (float) OPB->_int;
+				E_OPC->_float = E_OPA->_float != (float) E_OPB->_int;
 				break;
 			case OP_STORE_I:
-				OPB->_int = OPA->_int;
+				E_OPB->_int = E_OPA->_int;
 				break;
 			case OP_STOREP_I:
 				if (pr_boundscheck->int_val
-					&& (OPB->_int < 0 || OPB->_int + 4 > pr->pr_edictareasize)) {
+					&& (E_OPB->_int < 0 || E_OPB->_int + 4 > pr->pr_edictareasize)) {
 					pr->pr_xstatement = st - pr->pr_statements;
 					PR_RunError
 						(pr, "Progs attempted to write to an out of bounds edict\n");
 					return;
 				}
 				if (pr_boundscheck->int_val
-					&& (OPB->_int % pr->pr_edict_size <
+					&& (E_OPB->_int % pr->pr_edict_size <
 						((byte *) & (*pr->edicts)->v - (byte *) *pr->edicts))) {
 					pr->pr_xstatement = st - pr->pr_statements;
 					PR_RunError
 						(pr, "Progs attempted to write to an engine edict field\n");
 					return;
 				}
-				ptr = (eval_t *) ((byte *) *pr->edicts + OPB->_int);
-				ptr->_int = OPA->_int;
+				ptr = (eval_t *) ((byte *) *pr->edicts + E_OPB->_int);
+				ptr->_int = E_OPA->_int;
 				break;
 			case OP_LOAD_I:
 				if (pr_boundscheck->int_val
-					&& (OPA->edict < 0 || OPA->edict >= pr->pr_edictareasize)) {
+					&& (E_OPA->edict < 0 || E_OPA->edict >= pr->pr_edictareasize)) {
 					pr->pr_xstatement = st - pr->pr_statements;
 					PR_RunError
 						(pr, "Progs attempted to read an out of bounds edict number\n");
 					return;
 				}
 				if (pr_boundscheck->int_val
-					&& (OPB->_int < 0 || OPB->_int >= pr->progs->entityfields)) {
+					&& (E_OPB->_int < 0 || E_OPB->_int >= pr->progs->entityfields)) {
 					pr->pr_xstatement = st - pr->pr_statements;
 					PR_RunError
 						(pr, "Progs attempted to read an invalid field in an edict\n");
 					return;
 				}
-				ed = PROG_TO_EDICT (pr, OPA->edict);
-				OPC->_int = ((eval_t *) ((int *) &ed->v + OPB->_int))->_int;
+				ed = PROG_TO_EDICT (pr, E_OPA->edict);
+				E_OPC->_int = ((eval_t *) ((int *) &ed->v + E_OPB->_int))->_int;
 				break;
 
 			case OP_GSTOREP_I:
@@ -870,29 +881,29 @@ PR_ExecuteProgram (progs_t *pr, func_t fnum)
 			case OP_GSTOREP_S:
 			case OP_GSTOREP_FNC:	// pointers
 				if (pr_boundscheck->int_val
-					&& (OPB->_int < 0 || OPB->_int >= pr->pr_globaldefs)) {
+					&& (E_OPB->_int < 0 || E_OPB->_int >= pr->pr_globaldefs)) {
 					pr->pr_xstatement = st - pr->pr_statements;
 					PR_RunError
 						(pr, "Progs attempted to write to an invalid indexed global\n");
 					return;
 				}
-				pr->pr_globals[OPB->_int] = OPA->_float;
+				pr->pr_globals[E_OPB->_int] = E_OPA->_float;
 				break;
 			case OP_GSTOREP_V:
 				if (pr_boundscheck->int_val
-					&& (OPB->_int < 0 || OPB->_int + 2 >= pr->pr_globaldefs)) {
+					&& (E_OPB->_int < 0 || E_OPB->_int + 2 >= pr->pr_globaldefs)) {
 					pr->pr_xstatement = st - pr->pr_statements;
 					PR_RunError
 						(pr, "Progs attempted to write to an invalid indexed global\n");
 					return;
 				}
-				pr->pr_globals[OPB->_int] = OPA->vector[0];
-				pr->pr_globals[OPB->_int + 1] = OPA->vector[1];
-				pr->pr_globals[OPB->_int + 2] = OPA->vector[2];
+				pr->pr_globals[E_OPB->_int] = E_OPA->vector[0];
+				pr->pr_globals[E_OPB->_int + 1] = E_OPA->vector[1];
+				pr->pr_globals[E_OPB->_int + 2] = E_OPA->vector[2];
 				break;
 
 			case OP_GADDRESS:
-				i = OPA->_int + (int) OPB->_float;
+				i = E_OPA->_int + (int) E_OPB->_float;
 				if (pr_boundscheck->int_val
 					&& (i < 0 || i >= pr->pr_globaldefs)) {
 					pr->pr_xstatement = st - pr->pr_statements;
@@ -900,7 +911,7 @@ PR_ExecuteProgram (progs_t *pr, func_t fnum)
 						(pr, "Progs attempted to address an out of bounds global\n");
 					return;
 				}
-				OPC->_float = pr->pr_globals[i];
+				E_OPC->_float = pr->pr_globals[i];
 				break;
 
 			case OP_GLOAD_I:
@@ -910,30 +921,30 @@ PR_ExecuteProgram (progs_t *pr, func_t fnum)
 			case OP_GLOAD_S:
 			case OP_GLOAD_FNC:
 				if (pr_boundscheck->int_val
-					&& (OPA->_int < 0 || OPA->_int >= pr->pr_globaldefs)) {
+					&& (E_OPA->_int < 0 || E_OPA->_int >= pr->pr_globaldefs)) {
 					pr->pr_xstatement = st - pr->pr_statements;
 					PR_RunError
 						(pr, "Progs attempted to read an invalid indexed global\n");
 					return;
 				}
-				OPC->_float = pr->pr_globals[OPA->_int];
+				E_OPC->_float = pr->pr_globals[E_OPA->_int];
 				break;
 
 			case OP_GLOAD_V:
 				if (pr_boundscheck->int_val
-					&& (OPA->_int < 0 || OPA->_int + 2 >= pr->pr_globaldefs)) {
+					&& (E_OPA->_int < 0 || E_OPA->_int + 2 >= pr->pr_globaldefs)) {
 					pr->pr_xstatement = st - pr->pr_statements;
 					PR_RunError
 						(pr, "Progs attempted to read an invalid indexed global\n");
 					return;
 				}
-				OPC->vector[0] = pr->pr_globals[OPA->_int];
-				OPC->vector[1] = pr->pr_globals[OPA->_int + 1];
-				OPC->vector[2] = pr->pr_globals[OPA->_int + 2];
+				E_OPC->vector[0] = pr->pr_globals[E_OPA->_int];
+				E_OPC->vector[1] = pr->pr_globals[E_OPA->_int + 1];
+				E_OPC->vector[2] = pr->pr_globals[E_OPA->_int + 2];
 				break;
 
 			case OP_BOUNDCHECK:
-				if (OPA->_int < 0 || OPA->_int >= st->b) {
+				if (E_OPA->_int < 0 || E_OPA->_int >= st->b) {
 					pr->pr_xstatement = st - pr->pr_statements;
 					PR_RunError
 						(pr, "Progs boundcheck failed at line number %d, value is < 0 or >= %d\n",
@@ -944,14 +955,14 @@ PR_ExecuteProgram (progs_t *pr, func_t fnum)
 
 */
 			default:
-				pr->pr_xstatement = st - pr->pr_statements;
-				PR_RunError (pr, "Bad opcode %i", st->op);
+			pr->pr_xstatement = st - pr->pr_statements;
+			PR_RunError (pr, "Bad opcode %i", st->op);
 		}
 	}
 }
 
 char       *
-PR_GetString (progs_t *pr, int num)
+PR_GetString (progs_t * pr, int num)
 {
 	if (num < 0) {
 		// Con_DPrintf("GET:%d == %s\n", num, pr->pr_strtbl[-num]);
@@ -961,11 +972,11 @@ PR_GetString (progs_t *pr, int num)
 }
 
 int
-PR_SetString (progs_t *pr, char *s)
+PR_SetString (progs_t * pr, char *s)
 {
-	int         i;
+	int         i = s - pr->pr_strings;
 
-	if (s - pr->pr_strings < 0) {
+	if (i < 0 || i > pr->pr_stringsize) {
 		for (i = 0; i <= pr->num_prstr; i++)
 			if (pr->pr_strtbl[i] == s)
 				break;

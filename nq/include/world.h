@@ -30,7 +30,7 @@
 #define __world_h
 
 #include "qtypes.h"
-#include "progs.h"
+#include "sv_progs.h"
 
 typedef struct
 {

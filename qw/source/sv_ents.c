@@ -39,15 +39,8 @@
 #include "msg.h"
 #include "msg_ucmd.h"
 #include "server.h"
+#include "sv_progs.h"
 #include "sys.h"
-
-// LordHavoc: added and removed certain eval_ items
-// Ender Extends (QSG - Begin)
-extern int  eval_alpha, eval_scale, eval_glowsize, eval_glowcolor,
-
-	eval_colormod;
-// Ender Extends (QSG - End)
-extern eval_t *GETEDICTFIELDVALUE (edict_t *ed, int fieldoffset);
 
 /*
 	The PVS must include a small area around the client to allow head
@@ -119,8 +112,8 @@ extern int  sv_nailmodel, sv_supernailmodel, sv_playermodel;
 qboolean
 SV_AddNailUpdate (edict_t *ent)
 {
-	if (ent->v.v.modelindex != sv_nailmodel
-		&& ent->v.v.modelindex != sv_supernailmodel) return false;
+	if (SVFIELD (ent, modelindex, float) != sv_nailmodel
+		&& SVFIELD (ent, modelindex, float) != sv_supernailmodel) return false;
 	if (numnails == MAX_NAILS)
 		return true;
 	nails[numnails] = ent;
@@ -144,11 +137,11 @@ SV_EmitNailUpdate (sizebuf_t *msg)
 
 	for (n = 0; n < numnails; n++) {
 		ent = nails[n];
-		x = (int) (ent->v.v.origin[0] + 4096) >> 1;
-		y = (int) (ent->v.v.origin[1] + 4096) >> 1;
-		z = (int) (ent->v.v.origin[2] + 4096) >> 1;
-		p = (int) (16 * ent->v.v.angles[0] / 360) & 15;
-		yaw = (int) (256 * ent->v.v.angles[1] / 360) & 255;
+		x = (int) (SVFIELD (ent, origin, vector)[0] + 4096) >> 1;
+		y = (int) (SVFIELD (ent, origin, vector)[1] + 4096) >> 1;
+		z = (int) (SVFIELD (ent, origin, vector)[2] + 4096) >> 1;
+		p = (int) (16 * SVFIELD (ent, angles, vector)[0] / 360) & 15;
+		yaw = (int) (256 * SVFIELD (ent, angles, vector)[1] / 360) & 255;
 
 		bits[0] = x;
 		bits[1] = (x >> 8) | (y << 4);
@@ -364,7 +357,7 @@ SV_EmitPacketEntities (client_t *client, packet_entities_t *to, sizebuf_t *msg)
 										// the baseline
 			ent = EDICT_NUM (&sv_pr_state, newnum);
 //Con_Printf ("baseline %i\n", newnum);
-			SV_WriteDelta (&ent->baseline, &to->entities[newindex], msg, true,
+			SV_WriteDelta (ent->data, &to->entities[newindex], msg, true,
 						   client->stdver);
 			newindex++;
 			continue;
@@ -418,18 +411,18 @@ SV_WritePlayersToClient (client_t *client, edict_t *clent, byte * pvs,
 
 		pflags = PF_MSEC | PF_COMMAND;
 
-		if (ent->v.v.modelindex != sv_playermodel)
+		if (SVFIELD (ent, modelindex, float) != sv_playermodel)
 			pflags |= PF_MODEL;
 		for (i = 0; i < 3; i++)
-			if (ent->v.v.velocity[i])
+			if (SVFIELD (ent, velocity, vector)[i])
 				pflags |= PF_VELOCITY1 << i;
-		if (ent->v.v.effects)
+		if (SVFIELD (ent, effects, float))
 			pflags |= PF_EFFECTS;
-		if (ent->v.v.skin)
+		if (SVFIELD (ent, skin, float))
 			pflags |= PF_SKINNUM;
-		if (ent->v.v.health <= 0)
+		if (SVFIELD (ent, health, float) <= 0)
 			pflags |= PF_DEAD;
-		if (ent->v.v.mins[2] != -24)
+		if (SVFIELD (ent, mins, vector)[2] != -24)
 			pflags |= PF_GIB;
 
 		if (cl->spectator) {			// only sent origin and velocity to
@@ -438,21 +431,21 @@ SV_WritePlayersToClient (client_t *client, edict_t *clent, byte * pvs,
 		} else if (ent == clent) {		// don't send a lot of data on
 										// personal entity
 			pflags &= ~(PF_MSEC | PF_COMMAND);
-			if (ent->v.v.weaponframe)
+			if (SVFIELD (ent, weaponframe, float))
 				pflags |= PF_WEAPONFRAME;
 		}
 
 		if (client->spec_track && client->spec_track - 1 == j &&
-			ent->v.v.weaponframe) pflags |= PF_WEAPONFRAME;
+			SVFIELD (ent, weaponframe, float)) pflags |= PF_WEAPONFRAME;
 
 		MSG_WriteByte (msg, svc_playerinfo);
 		MSG_WriteByte (msg, j);
 		MSG_WriteShort (msg, pflags);
 
 		for (i = 0; i < 3; i++)
-			MSG_WriteCoord (msg, ent->v.v.origin[i]);
+			MSG_WriteCoord (msg, SVFIELD (ent, origin, vector)[i]);
 
-		MSG_WriteByte (msg, ent->v.v.frame);
+		MSG_WriteByte (msg, SVFIELD (ent, frame, float));
 
 		if (pflags & PF_MSEC) {
 			msec = 1000 * (sv.time - cl->localtime);
@@ -464,10 +457,10 @@ SV_WritePlayersToClient (client_t *client, edict_t *clent, byte * pvs,
 		if (pflags & PF_COMMAND) {
 			cmd = cl->lastcmd;
 
-			if (ent->v.v.health <= 0) {	// don't show the corpse looking
+			if (SVFIELD (ent, health, float) <= 0) {	// don't show the corpse looking
 										// around...
 				cmd.angles[0] = 0;
-				cmd.angles[1] = ent->v.v.angles[1];
+				cmd.angles[1] = SVFIELD (ent, angles, vector)[1];
 				cmd.angles[0] = 0;
 			}
 
@@ -479,19 +472,19 @@ SV_WritePlayersToClient (client_t *client, edict_t *clent, byte * pvs,
 
 		for (i = 0; i < 3; i++)
 			if (pflags & (PF_VELOCITY1 << i))
-				MSG_WriteShort (msg, ent->v.v.velocity[i]);
+				MSG_WriteShort (msg, SVFIELD (ent, velocity, vector)[i]);
 
 		if (pflags & PF_MODEL)
-			MSG_WriteByte (msg, ent->v.v.modelindex);
+			MSG_WriteByte (msg, SVFIELD (ent, modelindex, float));
 
 		if (pflags & PF_SKINNUM)
-			MSG_WriteByte (msg, ent->v.v.skin);
+			MSG_WriteByte (msg, SVFIELD (ent, skin, float));
 
 		if (pflags & PF_EFFECTS)
-			MSG_WriteByte (msg, ent->v.v.effects);
+			MSG_WriteByte (msg, SVFIELD (ent, effects, float));
 
 		if (pflags & PF_WEAPONFRAME)
-			MSG_WriteByte (msg, ent->v.v.weaponframe);
+			MSG_WriteByte (msg, SVFIELD (ent, weaponframe, float));
 	}
 }
 
@@ -521,7 +514,7 @@ SV_WriteEntitiesToClient (client_t *client, sizebuf_t *msg)
 
 	// find the client's PVS
 	clent = client->edict;
-	VectorAdd (clent->v.v.origin, clent->v.v.view_ofs, org);
+	VectorAdd (SVFIELD (clent, origin, vector), SVFIELD (clent, view_ofs, vector), org);
 	pvs = SV_FatPVS (org);
 
 	// send over the players in the PVS
@@ -537,7 +530,7 @@ SV_WriteEntitiesToClient (client_t *client, sizebuf_t *msg)
 	for (e = MAX_CLIENTS + 1, ent = EDICT_NUM (&sv_pr_state, e); e < sv.num_edicts;
 		 e++, ent = NEXT_EDICT (&sv_pr_state, ent)) {
 		// ignore ents without visible models
-		if (!ent->v.v.modelindex || !*PR_GetString (&sv_pr_state, ent->v.v.model))
+		if (!SVFIELD (ent, modelindex, float) || !*PR_GetString (&sv_pr_state, SVFIELD (ent, model, string)))
 			continue;
 
 		// ignore if not touching a PV leaf
@@ -560,49 +553,44 @@ SV_WriteEntitiesToClient (client_t *client, sizebuf_t *msg)
 
 		state->number = e;
 		state->flags = 0;
-		VectorCopy (ent->v.v.origin, state->origin);
-		VectorCopy (ent->v.v.angles, state->angles);
-		state->modelindex = ent->v.v.modelindex;
-		state->frame = ent->v.v.frame;
-		state->colormap = ent->v.v.colormap;
-		state->skinnum = ent->v.v.skin;
-		state->effects = ent->v.v.effects;
+		VectorCopy (SVFIELD (ent, origin, vector), state->origin);
+		VectorCopy (SVFIELD (ent, angles, vector), state->angles);
+		state->modelindex = SVFIELD (ent, modelindex, float);
+		state->frame = SVFIELD (ent, frame, float);
+		state->colormap = SVFIELD (ent, colormap, float);
+		state->skinnum = SVFIELD (ent, skin, float);
+		state->effects = SVFIELD (ent, effects, float);
 
 		// LordHavoc: cleaned up Endy's coding style, shortened the code,
 		// and implemented missing effects
 // Ender: EXTEND (QSG - Begin)
 		{
-			eval_t     *val;
-
 			state->alpha = 255;
 			state->scale = 16;
 			state->glowsize = 0;
 			state->glowcolor = 254;
 			state->colormod = 255;
 
-			if ((val = GETEDICTFIELDVALUE (ent, eval_alpha))
-				&& val->_float != 0)
-				state->alpha = bound (0, val->_float, 1) * 255.0;
+			if (sv_fields.alpha != -1 && SVFIELD (ent, alpha, float))
+				state->alpha = bound (0, SVFIELD (ent, alpha, float), 1) * 255.0;
 
-			if ((val = GETEDICTFIELDVALUE (ent, eval_scale))
-				&& val->_float != 0)
-				state->scale = bound (0, val->_float, 15.9375) * 16.0;
+			if (sv_fields.scale != -1 && SVFIELD (ent, scale, float))
+				state->scale = bound (0, SVFIELD (ent, scale, float), 15.9375) * 16.0;
 
-			if ((val = GETEDICTFIELDVALUE (ent, eval_glowsize))
-				&& val->_float != 0)
-				state->glowsize = bound (-1024, (int) val->_float, 1016) >> 3;
+			if (sv_fields.glowsize != -1 && SVFIELD (ent, glowsize, float))
+				state->glowsize = bound (-1024, (int) SVFIELD (ent, glowsize, float), 1016) >> 3;
 
-			if ((val = GETEDICTFIELDVALUE (ent, eval_glowcolor))
-				&& val->_float != 0)
-				state->glowcolor = (int) val->_float;
+			if (sv_fields.glowcolor != -1 && SVFIELD (ent, glowcolor, float))
+				state->glowcolor = (int) SVFIELD (ent, glowcolor, float);
 
-			if ((val = GETEDICTFIELDVALUE (ent, eval_colormod))
-				&& (val->vector[0] != 0 || val->vector[1] != 0
-					|| val->vector[2] != 0))
+			if (sv_fields.colormod != -1
+				&& SVFIELD (ent, colormod, vector)[0]
+				&& SVFIELD (ent, colormod, vector)[1]
+				&& SVFIELD (ent, colormod, vector)[2])
 				state->colormod =
-					((int) (bound (0, val->vector[0], 1) * 7.0) << 5) |
-					((int) (bound (0, val->vector[1], 1) * 7.0) << 2) |
-					(int) (bound (0, val->vector[2], 1) * 3.0);
+					((int) (bound (0, SVFIELD (ent, colormod, vector)[0], 1) * 7.0) << 5) |
+					((int) (bound (0, SVFIELD (ent, colormod, vector)[1], 1) * 7.0) << 2) |
+					(int) (bound (0, SVFIELD (ent, colormod, vector)[2], 1) * 3.0);
 		}
 // Ender: EXTEND (QSG - End)
 	}

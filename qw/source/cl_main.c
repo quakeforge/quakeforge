@@ -1021,7 +1021,7 @@ CL_ReadPackets (void)
 	while (CL_GetMessage ()) {
 
 #ifdef PACKET_LOGGING
-                if (cls.demoplayback) Log_Incoming_Packet(net_message.data,net_message.cursize);
+                if (cls.demoplayback) Log_Incoming_Packet(net_message->message->data,net_message->message->cursize);
 #endif
 		// 
 		// remote command packet

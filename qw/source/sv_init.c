@@ -40,6 +40,7 @@
 #include "msg.h"
 #include "quakefs.h"
 #include "server.h"
+#include "sv_progs.h"
 #include "world.h"
 #include "va.h"
 
@@ -48,6 +49,8 @@ server_t    sv;							// local server
 char        localmodels[MAX_MODELS][5];	// inline model names for precache
 
 char        localinfo[MAX_LOCALINFO_STRING + 1];	// local game info
+
+entity_state_t baselines[MAX_EDICTS];
 
 /*
 	SV_ModelIndex
@@ -108,30 +111,30 @@ SV_CreateBaseline (void)
 			continue;
 		// create baselines for all player slots,
 		// and any other edict that has a visible model
-		if (entnum > MAX_CLIENTS && !svent->v.v.modelindex)
+		if (entnum > MAX_CLIENTS && !SVFIELD (svent, modelindex, float))
 			continue;
 
 		// 
 		// create entity baseline
 		// 
-		VectorCopy (svent->v.v.origin, svent->baseline.origin);
-		VectorCopy (svent->v.v.angles, svent->baseline.angles);
-		svent->baseline.frame = svent->v.v.frame;
-		svent->baseline.skinnum = svent->v.v.skin;
+		VectorCopy (SVFIELD (svent, origin, vector), ((entity_state_t*)svent->data)->origin);
+		VectorCopy (SVFIELD (svent, angles, vector), ((entity_state_t*)svent->data)->angles);
+		((entity_state_t*)svent->data)->frame = SVFIELD (svent, frame, float);
+		((entity_state_t*)svent->data)->skinnum = SVFIELD (svent, skin, float);
 		if (entnum > 0 && entnum <= MAX_CLIENTS) {
-			svent->baseline.colormap = entnum;
-			svent->baseline.modelindex = SV_ModelIndex ("progs/player.mdl");
+			((entity_state_t*)svent->data)->colormap = entnum;
+			((entity_state_t*)svent->data)->modelindex = SV_ModelIndex ("progs/player.mdl");
 		} else {
-			svent->baseline.colormap = 0;
-			svent->baseline.modelindex =
-				SV_ModelIndex (PR_GetString (&sv_pr_state, svent->v.v.model));
+			((entity_state_t*)svent->data)->colormap = 0;
+			((entity_state_t*)svent->data)->modelindex =
+				SV_ModelIndex (PR_GetString (&sv_pr_state, SVFIELD (svent, model, string)));
 		}
 		// LordHavoc: setup baseline to include new effects
-		svent->baseline.alpha = 255;
-		svent->baseline.scale = 16;
-		svent->baseline.glowsize = 0;
-		svent->baseline.glowcolor = 254;
-		svent->baseline.colormap = 255;
+		((entity_state_t*)svent->data)->alpha = 255;
+		((entity_state_t*)svent->data)->scale = 16;
+		((entity_state_t*)svent->data)->glowsize = 0;
+		((entity_state_t*)svent->data)->glowcolor = 254;
+		((entity_state_t*)svent->data)->colormap = 255;
 
 		// 
 		// flush the signon message out to a seperate buffer if
@@ -145,13 +148,13 @@ SV_CreateBaseline (void)
 		MSG_WriteByte (&sv.signon, svc_spawnbaseline);
 		MSG_WriteShort (&sv.signon, entnum);
 
-		MSG_WriteByte (&sv.signon, svent->baseline.modelindex);
-		MSG_WriteByte (&sv.signon, svent->baseline.frame);
-		MSG_WriteByte (&sv.signon, svent->baseline.colormap);
-		MSG_WriteByte (&sv.signon, svent->baseline.skinnum);
+		MSG_WriteByte (&sv.signon, ((entity_state_t*)svent->data)->modelindex);
+		MSG_WriteByte (&sv.signon, ((entity_state_t*)svent->data)->frame);
+		MSG_WriteByte (&sv.signon, ((entity_state_t*)svent->data)->colormap);
+		MSG_WriteByte (&sv.signon, ((entity_state_t*)svent->data)->skinnum);
 		for (i = 0; i < 3; i++) {
-			MSG_WriteCoord (&sv.signon, svent->baseline.origin[i]);
-			MSG_WriteAngle (&sv.signon, svent->baseline.angles[i]);
+			MSG_WriteCoord (&sv.signon, ((entity_state_t*)svent->data)->origin[i]);
+			MSG_WriteAngle (&sv.signon, ((entity_state_t*)svent->data)->angles[i]);
 		}
 	}
 }
@@ -173,7 +176,7 @@ SV_SaveSpawnparms (void)
 		return;							// no progs loaded yet
 
 	// serverflags is the only game related thing maintained
-	svs.serverflags = sv_pr_state.pr_global_struct->serverflags;
+	svs.serverflags = *sv_globals.serverflags;
 
 	for (i = 0, host_client = svs.clients; i < MAX_CLIENTS; i++, host_client++) {
 		if (host_client->state != cs_spawned)
@@ -183,10 +186,10 @@ SV_SaveSpawnparms (void)
 		host_client->state = cs_connected;
 
 		// call the progs to get default spawn parms for the new client
-		sv_pr_state.pr_global_struct->self = EDICT_TO_PROG (&sv_pr_state, host_client->edict);
-		PR_ExecuteProgram (&sv_pr_state, sv_pr_state.pr_global_struct->SetChangeParms);
+		*sv_globals.self = EDICT_TO_PROG (&sv_pr_state, host_client->edict);
+		PR_ExecuteProgram (&sv_pr_state, sv_funcs.SetChangeParms);
 		for (j = 0; j < NUM_SPAWN_PARMS; j++)
-			host_client->spawn_parms[j] = (&sv_pr_state.pr_global_struct->parm1)[j];
+			host_client->spawn_parms[j] = sv_globals.parms[j];
 	}
 }
 
@@ -339,7 +342,14 @@ SV_SpawnServer (char *server)
 							 MAX_SERVERINFO_STRING);
 
 	// allocate edicts
-	sv.edicts = Hunk_AllocName (MAX_EDICTS * sv_pr_state.pr_edict_size, "edicts");
+	sv_pr_state.pr_edictareasize = sv_pr_state.pr_edict_size * MAX_EDICTS;
+	sv.edicts = Hunk_AllocName (sv_pr_state.pr_edictareasize, "edicts");
+
+	// init the data field of the edicts
+	for (i = 0; i < MAX_EDICTS; i++) {
+		ent = EDICT_NUM (&sv_pr_state, i);
+		ent->data = &baselines[i];
+	}
 
 	// leave slots at start for clients only
 	sv.num_edicts = MAX_CLIENTS + 1;
@@ -387,14 +397,14 @@ SV_SpawnServer (char *server)
 
 	ent = EDICT_NUM (&sv_pr_state, 0);
 	ent->free = false;
-	ent->v.v.model = PR_SetString (&sv_pr_state, sv.worldmodel->name);
-	ent->v.v.modelindex = 1;				// world model
-	ent->v.v.solid = SOLID_BSP;
-	ent->v.v.movetype = MOVETYPE_PUSH;
+	SVFIELD (ent, model, string) = PR_SetString (&sv_pr_state, sv.worldmodel->name);
+	SVFIELD (ent, modelindex, float) = 1;				// world model
+	SVFIELD (ent, solid, float) = SOLID_BSP;
+	SVFIELD (ent, movetype, float) = MOVETYPE_PUSH;
 
-	sv_pr_state.pr_global_struct->mapname = PR_SetString (&sv_pr_state, sv.name);
+	*sv_globals.mapname = PR_SetString (&sv_pr_state, sv.name);
 	// serverflags are for cross level information (sigils)
-	sv_pr_state.pr_global_struct->serverflags = svs.serverflags;
+	*sv_globals.serverflags = svs.serverflags;
 
 	// run the frame start qc function to let progs check cvars
 	SV_ProgStartFrame ();

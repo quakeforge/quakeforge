@@ -128,8 +128,8 @@ libqfnet_a_SOURCES=	net_bsd.c net_dgrm.c net_loop.c \
 EXTRA_libqfcd_a_SOURCES=net_dos.c net_bw.c net_ipx.c net_mp.c net_ser.c \
 			net_win.c net_wins.c net_wipx.c
 
-client_LIBS=	-L. -L../../libs -lqfsys -lqfsnd -lqfcd -lqfjs -lqfnet -lqfutil $(SOUND_LIBS) $(NET_LIBS) $(Z_LIBS)
-client_LIB_DEPS= libqfsys.a libqfsnd.a libqfcd.a libqfjs.a libqfnet.a ../../libs/libqfutil.a
+client_LIBS=	-L. -L../../libs -lqfsys -lqfsnd -lqfcd -lqfjs -lqfnet -lqfgamecode -lqfutil $(SOUND_LIBS) $(NET_LIBS) $(Z_LIBS)
+client_LIB_DEPS= libqfsys.a libqfsnd.a libqfcd.a libqfjs.a libqfnet.a ../../libs/libqfgamecode.a ../../libs/libqfutil.a
 
 client_SOURCES= cl_cam.c cl_cmd.c cl_demo.c cl_input.c cl_main.c cl_parse.c \
 		cl_tent.c console.c keys.c menu.c sbar.c r_part.c r_view.c \
@@ -137,8 +137,8 @@ client_SOURCES= cl_cam.c cl_cmd.c cl_demo.c cl_input.c cl_main.c cl_parse.c \
 		gib_interpret.c gib_modules.c gib_parse.c gib_stack.c vid.c
 
 server_SOURCES= host.c host_cmd.c \
-		pr_cmds.c pr_edict.c pr_exec.c \
-		sv_cvar.c sv_main.c sv_move.c sv_phys.c sv_user.c
+		pr_cmds.c \
+		sv_cvar.c sv_main.c sv_move.c sv_phys.c sv_progs.c sv_user.c
 
 combined_SOURCES= $(common_SOURCES) $(client_SOURCES) $(server_SOURCES)
 

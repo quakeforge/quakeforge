@@ -38,11 +38,14 @@
 #include "cmd.h"
 #include "host.h"
 #include "world.h"
+#include "sv_progs.h"
 
 server_t    sv;
 server_static_t svs;
 
 char        localmodels[MAX_MODELS][5];	// inline model names for precache
+
+entity_state_t baselines[MAX_EDICTS];
 
 //============================================================================
 
@@ -157,7 +160,7 @@ SV_StartSound (edict_t *entity, int channel, char *sample, int volume,
 		return;
 	}
 
-	ent = NUM_FOR_EDICT (entity);
+	ent = NUM_FOR_EDICT (&sv_pr_state, entity);
 
 	channel = (ent << 3) | channel;
 
@@ -178,8 +181,8 @@ SV_StartSound (edict_t *entity, int channel, char *sample, int volume,
 	MSG_WriteByte (&sv.datagram, sound_num);
 	for (i = 0; i < 3; i++)
 		MSG_WriteCoord (&sv.datagram,
-						entity->v.origin[i] + 0.5 * (entity->v.mins[i] +
-													 entity->v.maxs[i]));
+						SVFIELD (entity, origin, vector)[i] + 0.5 * (SVFIELD (entity, mins, vector)[i] +
+													   SVFIELD (entity, maxs, vector)[i]));
 }
 
 /*
@@ -206,7 +209,7 @@ SV_SendServerinfo (client_t *client)
 
 	MSG_WriteByte (&client->message, svc_print);
 	snprintf (message, sizeof (message), "%c\nVersion %s server (%i CRC)", 2,
-			  NQ_VERSION, pr_crc);
+			  NQ_VERSION, sv_pr_state.crc);
 	MSG_WriteString (&client->message, message);
 
 	MSG_WriteByte (&client->message, svc_serverinfo);
@@ -218,7 +221,8 @@ SV_SendServerinfo (client_t *client)
 	else
 		MSG_WriteByte (&client->message, GAME_COOP);
 
-	snprintf (message, sizeof (message), pr_strings + sv.edicts->v.message);
+	snprintf (message, sizeof (message),
+			  PR_GetString (&sv_pr_state, SVFIELD (sv.edicts, message, string)));
 
 	MSG_WriteString (&client->message, message);
 
@@ -232,12 +236,13 @@ SV_SendServerinfo (client_t *client)
 
 // send music
 	MSG_WriteByte (&client->message, svc_cdtrack);
-	MSG_WriteByte (&client->message, sv.edicts->v.sounds);
-	MSG_WriteByte (&client->message, sv.edicts->v.sounds);
+	MSG_WriteByte (&client->message, SVFIELD (sv.edicts, sounds, float));
+	MSG_WriteByte (&client->message, SVFIELD (sv.edicts, sounds, float));
 
 // set view 
 	MSG_WriteByte (&client->message, svc_setview);
-	MSG_WriteShort (&client->message, NUM_FOR_EDICT (client->edict));
+	MSG_WriteShort (&client->message,
+					NUM_FOR_EDICT (&sv_pr_state, client->edict));
 
 	MSG_WriteByte (&client->message, svc_signonnum);
 	MSG_WriteByte (&client->message, 1);
@@ -270,7 +275,7 @@ SV_ConnectClient (int clientnum)
 
 	edictnum = clientnum + 1;
 
-	ent = EDICT_NUM (edictnum);
+	ent = EDICT_NUM (&sv_pr_state, edictnum);
 
 // set up the client_t
 	netconnection = client->netconnection;
@@ -294,9 +299,10 @@ SV_ConnectClient (int clientnum)
 		memcpy (client->spawn_parms, spawn_parms, sizeof (spawn_parms));
 	else {
 		// call the progs to get default spawn parms for the new client
-		PR_ExecuteProgram (pr_global_struct->SetNewParms);
+		PR_ExecuteProgram (&sv_pr_state,
+						   sv_funcs.SetNewParms);
 		for (i = 0; i < NUM_SPAWN_PARMS; i++)
-			client->spawn_parms[i] = (&pr_global_struct->parm1)[i];
+			client->spawn_parms[i] = sv_globals.parms[i];
 	}
 
 	SV_SendServerinfo (client);
@@ -444,15 +450,15 @@ SV_WriteEntitiesToClient (edict_t *clent, sizebuf_t *msg)
 	edict_t    *ent;
 
 // find the client's PVS
-	VectorAdd (clent->v.origin, clent->v.view_ofs, org);
+	VectorAdd (SVFIELD (clent, origin, vector), SVFIELD (clent, view_ofs, vector), org);
 	pvs = SV_FatPVS (org);
 
 // send over all entities (excpet the client) that touch the pvs
-	ent = NEXT_EDICT (sv.edicts);
-	for (e = 1; e < sv.num_edicts; e++, ent = NEXT_EDICT (ent)) {
+	ent = NEXT_EDICT (&sv_pr_state, sv.edicts);
+	for (e = 1; e < sv.num_edicts; e++, ent = NEXT_EDICT (&sv_pr_state, ent)) {
 #ifdef QUAKE2
 		// don't send if flagged for NODRAW and there are no lighting effects
-		if (ent->v.effects == EF_NODRAW)
+		if (SVFIELD (ent, effects, float) == EF_NODRAW)
 			continue;
 #endif
 
@@ -460,7 +466,7 @@ SV_WriteEntitiesToClient (edict_t *clent, sizebuf_t *msg)
 		if (ent != clent)				// clent is ALLWAYS sent
 		{
 // ignore ents without visible models
-			if (!ent->v.modelindex || !pr_strings[ent->v.model])
+			if (!SVFIELD (ent, modelindex, float) || !*PR_GetString (&sv_pr_state, SVFIELD (ent, model, string)))
 				continue;
 
 			for (i = 0; i < ent->num_leafs; i++)
@@ -479,36 +485,36 @@ SV_WriteEntitiesToClient (edict_t *clent, sizebuf_t *msg)
 		bits = 0;
 
 		for (i = 0; i < 3; i++) {
-			miss = ent->v.origin[i] - ent->baseline.origin[i];
+			miss = SVFIELD (ent, origin, vector)[i] - ((entity_state_t*)ent->data)->origin[i];
 			if (miss < -0.1 || miss > 0.1)
 				bits |= U_ORIGIN1 << i;
 		}
 
-		if (ent->v.angles[0] != ent->baseline.angles[0])
+		if (SVFIELD (ent, angles, vector)[0] != ((entity_state_t*)ent->data)->angles[0])
 			bits |= U_ANGLE1;
 
-		if (ent->v.angles[1] != ent->baseline.angles[1])
+		if (SVFIELD (ent, angles, vector)[1] != ((entity_state_t*)ent->data)->angles[1])
 			bits |= U_ANGLE2;
 
-		if (ent->v.angles[2] != ent->baseline.angles[2])
+		if (SVFIELD (ent, angles, vector)[2] != ((entity_state_t*)ent->data)->angles[2])
 			bits |= U_ANGLE3;
 
-		if (ent->v.movetype == MOVETYPE_STEP)
+		if (SVFIELD (ent, movetype, float) == MOVETYPE_STEP)
 			bits |= U_NOLERP;			// don't mess up the step animation
 
-		if (ent->baseline.colormap != ent->v.colormap)
+		if (((entity_state_t*)ent->data)->colormap != SVFIELD (ent, colormap, float))
 			bits |= U_COLORMAP;
 
-		if (ent->baseline.skin != ent->v.skin)
+		if (((entity_state_t*)ent->data)->skin != SVFIELD (ent, skin, float))
 			bits |= U_SKIN;
 
-		if (ent->baseline.frame != ent->v.frame)
+		if (((entity_state_t*)ent->data)->frame != SVFIELD (ent, frame, float))
 			bits |= U_FRAME;
 
-		if (ent->baseline.effects != ent->v.effects)
+		if (((entity_state_t*)ent->data)->effects != SVFIELD (ent, effects, float))
 			bits |= U_EFFECTS;
 
-		if (ent->baseline.modelindex != ent->v.modelindex)
+		if (((entity_state_t*)ent->data)->modelindex != SVFIELD (ent, modelindex, float))
 			bits |= U_MODEL;
 
 		if (e >= 256)
@@ -530,27 +536,27 @@ SV_WriteEntitiesToClient (edict_t *clent, sizebuf_t *msg)
 			MSG_WriteByte (msg, e);
 
 		if (bits & U_MODEL)
-			MSG_WriteByte (msg, ent->v.modelindex);
+			MSG_WriteByte (msg, SVFIELD (ent, modelindex, float));
 		if (bits & U_FRAME)
-			MSG_WriteByte (msg, ent->v.frame);
+			MSG_WriteByte (msg, SVFIELD (ent, frame, float));
 		if (bits & U_COLORMAP)
-			MSG_WriteByte (msg, ent->v.colormap);
+			MSG_WriteByte (msg, SVFIELD (ent, colormap, float));
 		if (bits & U_SKIN)
-			MSG_WriteByte (msg, ent->v.skin);
+			MSG_WriteByte (msg, SVFIELD (ent, skin, float));
 		if (bits & U_EFFECTS)
-			MSG_WriteByte (msg, ent->v.effects);
+			MSG_WriteByte (msg, SVFIELD (ent, effects, float));
 		if (bits & U_ORIGIN1)
-			MSG_WriteCoord (msg, ent->v.origin[0]);
+			MSG_WriteCoord (msg, SVFIELD (ent, origin, vector)[0]);
 		if (bits & U_ANGLE1)
-			MSG_WriteAngle (msg, ent->v.angles[0]);
+			MSG_WriteAngle (msg, SVFIELD (ent, angles, vector)[0]);
 		if (bits & U_ORIGIN2)
-			MSG_WriteCoord (msg, ent->v.origin[1]);
+			MSG_WriteCoord (msg, SVFIELD (ent, origin, vector)[1]);
 		if (bits & U_ANGLE2)
-			MSG_WriteAngle (msg, ent->v.angles[1]);
+			MSG_WriteAngle (msg, SVFIELD (ent, angles, vector)[1]);
 		if (bits & U_ORIGIN3)
-			MSG_WriteCoord (msg, ent->v.origin[2]);
+			MSG_WriteCoord (msg, SVFIELD (ent, origin, vector)[2]);
 		if (bits & U_ANGLE3)
-			MSG_WriteAngle (msg, ent->v.angles[2]);
+			MSG_WriteAngle (msg, SVFIELD (ent, angles, vector)[2]);
 	}
 }
 
@@ -566,9 +572,9 @@ SV_CleanupEnts (void)
 	int         e;
 	edict_t    *ent;
 
-	ent = NEXT_EDICT (sv.edicts);
-	for (e = 1; e < sv.num_edicts; e++, ent = NEXT_EDICT (ent)) {
-		ent->v.effects = (int) ent->v.effects & ~EF_MUZZLEFLASH;
+	ent = NEXT_EDICT (&sv_pr_state, sv.edicts);
+	for (e = 1; e < sv.num_edicts; e++, ent = NEXT_EDICT (&sv_pr_state, ent)) {
+		SVFIELD (ent, effects, float) = (int) SVFIELD (ent, effects, float) & ~EF_MUZZLEFLASH;
 	}
 
 }
@@ -594,18 +600,18 @@ SV_WriteClientdataToMessage (edict_t *ent, sizebuf_t *msg)
 //
 // send a damage message
 //
-	if (ent->v.dmg_take || ent->v.dmg_save) {
-		other = PROG_TO_EDICT (ent->v.dmg_inflictor);
+	if (SVFIELD (ent, dmg_take, float) || SVFIELD (ent, dmg_save, float)) {
+		other = PROG_TO_EDICT (&sv_pr_state, SVFIELD (ent, dmg_inflictor, entity));
 		MSG_WriteByte (msg, svc_damage);
-		MSG_WriteByte (msg, ent->v.dmg_save);
-		MSG_WriteByte (msg, ent->v.dmg_take);
+		MSG_WriteByte (msg, SVFIELD (ent, dmg_save, float));
+		MSG_WriteByte (msg, SVFIELD (ent, dmg_take, float));
 		for (i = 0; i < 3; i++)
 			MSG_WriteCoord (msg,
-							other->v.origin[i] + 0.5 * (other->v.mins[i] +
-														other->v.maxs[i]));
+							SVFIELD (other, origin, vector)[i] + 0.5 * (SVFIELD (other, mins, vector)[i] +
+														  SVFIELD (other, maxs, vector)[i]));
 
-		ent->v.dmg_take = 0;
-		ent->v.dmg_save = 0;
+		SVFIELD (ent, dmg_take, float) = 0;
+		SVFIELD (ent, dmg_save, float) = 0;
 	}
 //
 // send the current viewpos offset from the view entity
@@ -613,57 +619,57 @@ SV_WriteClientdataToMessage (edict_t *ent, sizebuf_t *msg)
 	SV_SetIdealPitch ();				// how much to look up / down ideally
 
 // a fixangle might get lost in a dropped packet.  Oh well.
-	if (ent->v.fixangle) {
+	if (SVFIELD (ent, fixangle, float)) {
 		MSG_WriteByte (msg, svc_setangle);
 		for (i = 0; i < 3; i++)
-			MSG_WriteAngle (msg, ent->v.angles[i]);
-		ent->v.fixangle = 0;
+			MSG_WriteAngle (msg, SVFIELD (ent, angles, vector)[i]);
+		SVFIELD (ent, fixangle, float) = 0;
 	}
 
 	bits = 0;
 
-	if (ent->v.view_ofs[2] != DEFAULT_VIEWHEIGHT)
+	if (SVFIELD (ent, view_ofs, vector)[2] != DEFAULT_VIEWHEIGHT)
 		bits |= SU_VIEWHEIGHT;
 
-	if (ent->v.idealpitch)
+	if (SVFIELD (ent, idealpitch, float))
 		bits |= SU_IDEALPITCH;
 
 // stuff the sigil bits into the high bits of items for sbar, or else
 // mix in items2
 #ifdef QUAKE2
-	items = (int) ent->v.items | ((int) ent->v.items2 << 23);
+	items = (int) SVFIELD (ent, items, float) | ((int) SVFIELD (ent, items2, float) << 23);
 #else
-	val = GetEdictFieldValue (ent, "items2");
+	val = GetEdictFieldValue (&sv_pr_state, ent, "items2");
 
 	if (val)
-		items = (int) ent->v.items | ((int) val->_float << 23);
+		items = (int) SVFIELD (ent, items, float) | ((int) val->_float << 23);
 	else
 		items =
-			(int) ent->v.items | ((int) pr_global_struct->serverflags << 28);
+			(int) SVFIELD (ent, items, float) | ((int) sv_globals.serverflags << 28);
 #endif
 
 	bits |= SU_ITEMS;
 
-	if ((int) ent->v.flags & FL_ONGROUND)
+	if ((int) SVFIELD (ent, flags, float) & FL_ONGROUND)
 		bits |= SU_ONGROUND;
 
-	if (ent->v.waterlevel >= 2)
+	if (SVFIELD (ent, waterlevel, float) >= 2)
 		bits |= SU_INWATER;
 
 	for (i = 0; i < 3; i++) {
-		if (ent->v.punchangle[i])
+		if (SVFIELD (ent, punchangle, vector)[i])
 			bits |= (SU_PUNCH1 << i);
-		if (ent->v.velocity[i])
+		if (SVFIELD (ent, velocity, vector)[i])
 			bits |= (SU_VELOCITY1 << i);
 	}
 
-	if (ent->v.weaponframe)
+	if (SVFIELD (ent, weaponframe, float))
 		bits |= SU_WEAPONFRAME;
 
-	if (ent->v.armorvalue)
+	if (SVFIELD (ent, armorvalue, float))
 		bits |= SU_ARMOR;
 
-//  if (ent->v.weapon)
+//  if (SVFIELD (ent, weapon, float))
 	bits |= SU_WEAPON;
 
 // send the data
@@ -672,40 +678,42 @@ SV_WriteClientdataToMessage (edict_t *ent, sizebuf_t *msg)
 	MSG_WriteShort (msg, bits);
 
 	if (bits & SU_VIEWHEIGHT)
-		MSG_WriteChar (msg, ent->v.view_ofs[2]);
+		MSG_WriteChar (msg, SVFIELD (ent, view_ofs, vector)[2]);
 
 	if (bits & SU_IDEALPITCH)
-		MSG_WriteChar (msg, ent->v.idealpitch);
+		MSG_WriteChar (msg, SVFIELD (ent, idealpitch, float));
 
 	for (i = 0; i < 3; i++) {
 		if (bits & (SU_PUNCH1 << i))
-			MSG_WriteChar (msg, ent->v.punchangle[i]);
+			MSG_WriteChar (msg, SVFIELD (ent, punchangle, vector)[i]);
 		if (bits & (SU_VELOCITY1 << i))
-			MSG_WriteChar (msg, ent->v.velocity[i] / 16);
+			MSG_WriteChar (msg, SVFIELD (ent, velocity, vector)[i] / 16);
 	}
 
 // [always sent]    if (bits & SU_ITEMS)
 	MSG_WriteLong (msg, items);
 
 	if (bits & SU_WEAPONFRAME)
-		MSG_WriteByte (msg, ent->v.weaponframe);
+		MSG_WriteByte (msg, SVFIELD (ent, weaponframe, float));
 	if (bits & SU_ARMOR)
-		MSG_WriteByte (msg, ent->v.armorvalue);
+		MSG_WriteByte (msg, SVFIELD (ent, armorvalue, float));
 	if (bits & SU_WEAPON)
-		MSG_WriteByte (msg, SV_ModelIndex (pr_strings + ent->v.weaponmodel));
+		MSG_WriteByte (msg,
+					   SV_ModelIndex (PR_GetString (&sv_pr_state,
+									  SVFIELD (ent, weaponmodel, string))));
 
-	MSG_WriteShort (msg, ent->v.health);
-	MSG_WriteByte (msg, ent->v.currentammo);
-	MSG_WriteByte (msg, ent->v.ammo_shells);
-	MSG_WriteByte (msg, ent->v.ammo_nails);
-	MSG_WriteByte (msg, ent->v.ammo_rockets);
-	MSG_WriteByte (msg, ent->v.ammo_cells);
+	MSG_WriteShort (msg, SVFIELD (ent, health, float));
+	MSG_WriteByte (msg, SVFIELD (ent, currentammo, float));
+	MSG_WriteByte (msg, SVFIELD (ent, ammo_shells, float));
+	MSG_WriteByte (msg, SVFIELD (ent, ammo_nails, float));
+	MSG_WriteByte (msg, SVFIELD (ent, ammo_rockets, float));
+	MSG_WriteByte (msg, SVFIELD (ent, ammo_cells, float));
 
 	if (standard_quake) {
-		MSG_WriteByte (msg, ent->v.weapon);
+		MSG_WriteByte (msg, SVFIELD (ent, weapon, float));
 	} else {
 		for (i = 0; i < 32; i++) {
-			if (((int) ent->v.weapon) & (1 << i)) {
+			if (((int) SVFIELD (ent, weapon, float)) & (1 << i)) {
 				MSG_WriteByte (msg, i);
 				break;
 			}
@@ -765,16 +773,17 @@ SV_UpdateToReliableMessages (void)
 // check for changes to be sent over the reliable streams
 	for (i = 0, host_client = svs.clients; i < svs.maxclients;
 		 i++, host_client++) {
-		if (host_client->old_frags != host_client->edict->v.frags) {
+		if (host_client->old_frags != SVFIELD (host_client->edict, frags, float)) {
 			for (j = 0, client = svs.clients; j < svs.maxclients; j++, client++) {
 				if (!client->active)
 					continue;
 				MSG_WriteByte (&client->message, svc_updatefrags);
 				MSG_WriteByte (&client->message, i);
-				MSG_WriteShort (&client->message, host_client->edict->v.frags);
+				MSG_WriteShort (&client->message,
+								SVFIELD (host_client->edict, frags, float));
 			}
 
-			host_client->old_frags = host_client->edict->v.frags;
+			host_client->old_frags = SVFIELD (host_client->edict, frags, float);
 		}
 	}
 
@@ -932,26 +941,26 @@ SV_CreateBaseline (void)
 
 	for (entnum = 0; entnum < sv.num_edicts; entnum++) {
 		// get the current server version
-		svent = EDICT_NUM (entnum);
+		svent = EDICT_NUM (&sv_pr_state, entnum);
 		if (svent->free)
 			continue;
-		if (entnum > svs.maxclients && !svent->v.modelindex)
+		if (entnum > svs.maxclients && !SVFIELD (svent, modelindex, float))
 			continue;
 
 		// 
 		// create entity baseline
 		// 
-		VectorCopy (svent->v.origin, svent->baseline.origin);
-		VectorCopy (svent->v.angles, svent->baseline.angles);
-		svent->baseline.frame = svent->v.frame;
-		svent->baseline.skin = svent->v.skin;
+		VectorCopy (SVFIELD (svent, origin, vector), ((entity_state_t*)svent->data)->origin);
+		VectorCopy (SVFIELD (svent, angles, vector), ((entity_state_t*)svent->data)->angles);
+		((entity_state_t*)svent->data)->frame = SVFIELD (svent, frame, float);
+		((entity_state_t*)svent->data)->skin = SVFIELD (svent, skin, float);
 		if (entnum > 0 && entnum <= svs.maxclients) {
-			svent->baseline.colormap = entnum;
-			svent->baseline.modelindex = SV_ModelIndex ("progs/player.mdl");
+			((entity_state_t*)svent->data)->colormap = entnum;
+			((entity_state_t*)svent->data)->modelindex = SV_ModelIndex ("progs/player.mdl");
 		} else {
-			svent->baseline.colormap = 0;
-			svent->baseline.modelindex =
-				SV_ModelIndex (pr_strings + svent->v.model);
+			((entity_state_t*)svent->data)->colormap = 0;
+			((entity_state_t*)svent->data)->modelindex =
+				SV_ModelIndex (PR_GetString (&sv_pr_state,SVFIELD (svent, model, string)));
 		}
 
 		// 
@@ -960,13 +969,13 @@ SV_CreateBaseline (void)
 		MSG_WriteByte (&sv.signon, svc_spawnbaseline);
 		MSG_WriteShort (&sv.signon, entnum);
 
-		MSG_WriteByte (&sv.signon, svent->baseline.modelindex);
-		MSG_WriteByte (&sv.signon, svent->baseline.frame);
-		MSG_WriteByte (&sv.signon, svent->baseline.colormap);
-		MSG_WriteByte (&sv.signon, svent->baseline.skin);
+		MSG_WriteByte (&sv.signon, ((entity_state_t*)svent->data)->modelindex);
+		MSG_WriteByte (&sv.signon, ((entity_state_t*)svent->data)->frame);
+		MSG_WriteByte (&sv.signon, ((entity_state_t*)svent->data)->colormap);
+		MSG_WriteByte (&sv.signon, ((entity_state_t*)svent->data)->skin);
 		for (i = 0; i < 3; i++) {
-			MSG_WriteCoord (&sv.signon, svent->baseline.origin[i]);
-			MSG_WriteAngle (&sv.signon, svent->baseline.angles[i]);
+			MSG_WriteCoord (&sv.signon, ((entity_state_t*)svent->data)->origin[i]);
+			MSG_WriteAngle (&sv.signon, ((entity_state_t*)svent->data)->angles[i]);
 		}
 	}
 }
@@ -1015,7 +1024,7 @@ SV_SaveSpawnparms (void)
 {
 	int         i, j;
 
-	svs.serverflags = pr_global_struct->serverflags;
+	svs.serverflags = *sv_globals.serverflags;
 
 	for (i = 0, host_client = svs.clients; i < svs.maxclients;
 		 i++, host_client++) {
@@ -1023,10 +1032,13 @@ SV_SaveSpawnparms (void)
 			continue;
 
 		// call the progs to get default spawn parms for the new client
-		pr_global_struct->self = EDICT_TO_PROG (host_client->edict);
-		PR_ExecuteProgram (pr_global_struct->SetChangeParms);
+		*sv_globals.self =
+			EDICT_TO_PROG (&sv_pr_state, host_client->edict);
+		PR_ExecuteProgram (&sv_pr_state,
+						   sv_funcs.SetChangeParms);
 		for (j = 0; j < NUM_SPAWN_PARMS; j++)
-			host_client->spawn_parms[j] = (&pr_global_struct->parm1)[j];
+			host_client->spawn_parms[j] =
+				sv_globals.parms[j];
 	}
 }
 
@@ -1092,12 +1104,18 @@ SV_SpawnServer (char *server)
 #endif
 
 // load progs to get entity field count
-	PR_LoadProgs ();
+	SV_LoadProgs ();
 
 // allocate server memory
 	sv.max_edicts = MAX_EDICTS;
+	sv_pr_state.pr_edictareasize = sv_pr_state.pr_edict_size * MAX_EDICTS;
+	sv.edicts = Hunk_AllocName (sv_pr_state.pr_edictareasize, "edicts");
 
-	sv.edicts = Hunk_AllocName (sv.max_edicts * pr_edict_size, "edicts");
+	// init the data field of the edicts
+	for (i = 0; i < MAX_EDICTS; i++) {
+		ent = EDICT_NUM (&sv_pr_state, i);
+		ent->data = &baselines[i];
+	}
 
 	sv.datagram.maxsize = sizeof (sv.datagram_buf);
 	sv.datagram.cursize = 0;
@@ -1114,7 +1132,7 @@ SV_SpawnServer (char *server)
 // leave slots at start for clients only
 	sv.num_edicts = svs.maxclients + 1;
 	for (i = 0; i < svs.maxclients; i++) {
-		ent = EDICT_NUM (i + 1);
+		ent = EDICT_NUM (&sv_pr_state, i + 1);
 		svs.clients[i].edict = ent;
 	}
 
@@ -1138,9 +1156,9 @@ SV_SpawnServer (char *server)
 //
 	SV_ClearWorld ();
 
-	sv.sound_precache[0] = pr_strings;
+	sv.sound_precache[0] = sv_pr_state.pr_strings;
 
-	sv.model_precache[0] = pr_strings;
+	sv.model_precache[0] = sv_pr_state.pr_strings;
 	sv.model_precache[1] = sv.modelname;
 	for (i = 1; i < sv.worldmodel->numsubmodels; i++) {
 		sv.model_precache[1 + i] = localmodels[i];
@@ -1150,28 +1168,29 @@ SV_SpawnServer (char *server)
 //
 // load the rest of the entities
 //  
-	ent = EDICT_NUM (0);
-	memset (&ent->v, 0, progs->entityfields * 4);
+	ent = EDICT_NUM (&sv_pr_state, 0);
+	memset (&ent->v, 0, sv_pr_state.progs->entityfields * 4);
 	ent->free = false;
-	ent->v.model = sv.worldmodel->name - pr_strings;
-	ent->v.modelindex = 1;				// world model
-	ent->v.solid = SOLID_BSP;
-	ent->v.movetype = MOVETYPE_PUSH;
+	SVFIELD (ent, model, string) = PR_SetString (&sv_pr_state, sv.worldmodel->name);
+	SVFIELD (ent, modelindex, float) = 1;			// world model
+	SVFIELD (ent, solid, float) = SOLID_BSP;
+	SVFIELD (ent, movetype, float) = MOVETYPE_PUSH;
 
 	if (coop->int_val)
-		pr_global_struct->coop = coop->int_val;
+		*sv_globals.coop = coop->int_val;
 	else
-		pr_global_struct->deathmatch = deathmatch->int_val;
+		*sv_globals.deathmatch = deathmatch->int_val;
 
-	pr_global_struct->mapname = sv.name - pr_strings;
+	*sv_globals.mapname = PR_SetString (&sv_pr_state, sv.name);
 #ifdef QUAKE2
-	pr_global_struct->startspot = sv.startspot - pr_strings;
+	*sv_globals.startspot =
+		PR_SetString (&sv_pr_state, sv.startspot);
 #endif
 
 // serverflags are for cross level information (sigils)
-	pr_global_struct->serverflags = svs.serverflags;
+	*sv_globals.serverflags = svs.serverflags;
 
-	ED_LoadFromFile (sv.worldmodel->entities);
+	ED_LoadFromFile (&sv_pr_state, sv.worldmodel->entities);
 
 	sv.active = true;
 

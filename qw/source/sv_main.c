@@ -49,6 +49,7 @@
 #include "qargs.h"
 #include "quakefs.h"
 #include "server.h"
+#include "sv_progs.h"
 #include "sys.h"
 #include "va.h"
 #include "ver_check.h"
@@ -250,12 +251,12 @@ SV_DropClient (client_t *drop)
 		if (!drop->spectator) {
 			// call the prog function for removing a client
 			// this will set the body to a dead frame, among other things
-			sv_pr_state.pr_global_struct->self = EDICT_TO_PROG (&sv_pr_state, drop->edict);
-			PR_ExecuteProgram (&sv_pr_state, sv_pr_state.pr_global_struct->ClientDisconnect);
+			*sv_globals.self = EDICT_TO_PROG (&sv_pr_state, drop->edict);
+			PR_ExecuteProgram (&sv_pr_state, sv_funcs.ClientDisconnect);
 		} else if (SpectatorDisconnect) {
 			// call the prog function for removing a client
 			// this will set the body to a dead frame, among other things
-			sv_pr_state.pr_global_struct->self = EDICT_TO_PROG (&sv_pr_state, drop->edict);
+			*sv_globals.self = EDICT_TO_PROG (&sv_pr_state, drop->edict);
 			PR_ExecuteProgram (&sv_pr_state, SpectatorDisconnect);
 		}
 	}
@@ -278,7 +279,7 @@ SV_DropClient (client_t *drop)
 	drop->connection_started = realtime;	// for zombie timeout
 
 	drop->old_frags = 0;
-	drop->edict->v.v.frags = 0;
+	SVFIELD (drop->edict, frags, float) = 0;
 	drop->name[0] = 0;
 	memset (drop->userinfo, 0, sizeof (drop->userinfo));
 
@@ -841,9 +842,9 @@ SVC_DirectConnect (void)
 	newcl->lockedtill = 0;
 
 	// call the progs to get default spawn parms for the new client
-	PR_ExecuteProgram (&sv_pr_state, sv_pr_state.pr_global_struct->SetNewParms);
+	PR_ExecuteProgram (&sv_pr_state, sv_funcs.SetNewParms);
 	for (i = 0; i < NUM_SPAWN_PARMS; i++)
-		newcl->spawn_parms[i] = (&sv_pr_state.pr_global_struct->parm1)[i];
+		newcl->spawn_parms[i] = sv_globals.parms[i];
 
 	if (newcl->spectator)
 		Con_Printf ("Spectator %s connected\n", newcl->name);

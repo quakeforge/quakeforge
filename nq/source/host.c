@@ -51,6 +51,7 @@
 #include "sys.h"
 #include "screen.h"
 #include "gib.h"
+#include "sv_progs.h"
 
 /*
 
@@ -394,10 +395,12 @@ SV_DropClient (qboolean crash)
 		if (host_client->edict && host_client->spawned) {
 			// call the prog function for removing a client
 			// this will set the body to a dead frame, among other things
-			saveSelf = pr_global_struct->self;
-			pr_global_struct->self = EDICT_TO_PROG (host_client->edict);
-			PR_ExecuteProgram (pr_global_struct->ClientDisconnect);
-			pr_global_struct->self = saveSelf;
+			saveSelf = *sv_globals.self;
+			*sv_globals.self =
+				EDICT_TO_PROG (&sv_pr_state, host_client->edict);
+			PR_ExecuteProgram (&sv_pr_state,
+							   sv_funcs.ClientDisconnect);
+			*sv_globals.self = saveSelf;
 		}
 
 		Sys_Printf ("Client %s removed\n", host_client->name);
@@ -590,7 +593,7 @@ void
 _Host_ServerFrame (void)
 {
 // run the world state  
-	pr_global_struct->frametime = host_frametime;
+	*sv_globals.frametime = host_frametime;
 
 // read client messages
 	SV_RunClients ();
@@ -608,7 +611,7 @@ Host_ServerFrame (void)
 	float       temp_host_frametime;
 
 // run the world state  
-	pr_global_struct->frametime = host_frametime;
+	*sv_globals.frametime = host_frametime;
 
 // set the time and clear the general datagram
 	SV_ClearDatagram ();
@@ -637,7 +640,7 @@ void
 Host_ServerFrame (void)
 {
 // run the world state  
-	pr_global_struct->frametime = host_frametime;
+	*sv_globals.frametime = host_frametime;
 
 // set the time and clear the general datagram
 	SV_ClearDatagram ();
@@ -943,7 +946,10 @@ Host_Init (quakeparms_t *parms)
 	Key_Init ();
 	Con_Init ();
 	M_Init ();
+	PR_Init_Cvars ();
 	PR_Init ();
+	SV_Progs_Init_Cvars ();
+	SV_Progs_Init ();
 	Mod_Init ();
 	NET_Init ();
 	SV_Init ();

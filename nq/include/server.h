@@ -36,11 +36,13 @@
 #include "cvar.h"
 #include "protocol.h"
 #include "model.h"
-#include "progs.h"
+#include "sv_progs.h"
 #include "sizebuf.h"
 #include "info.h"
 #include "quakeio.h"
 #include "client.h"
+
+extern progs_t sv_pr_state;
 
 typedef struct
 {
@@ -282,7 +284,7 @@ qboolean SV_movestep (edict_t *ent, vec3_t move, qboolean relink);
 
 void SV_WriteClientdataToMessage (edict_t *ent, sizebuf_t *msg);
 
-void SV_MoveToGoal (void);
+void SV_MoveToGoal (progs_t *pr);
 
 void SV_CheckForNewClients (void);
 void SV_RunClients (void);
@@ -292,5 +294,9 @@ void SV_SpawnServer (char *server, char *startspot);
 #else
 void SV_SpawnServer (char *server);
 #endif
+
+void SV_LoadProgs (void);
+void SV_Progs_Init (void);
+void SV_Progs_Init_Cvars (void);
 
 #endif // __server_h

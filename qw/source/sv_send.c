@@ -40,6 +40,7 @@
 #include "bothdefs.h"
 #include "msg.h"
 #include "server.h"
+#include "sv_progs.h"
 #include "sys.h"
 
 #define CHAN_AUTO   0
@@ -332,12 +333,12 @@ SV_Multicast (vec3_t origin, int to)
 		if (to == MULTICAST_PHS_R || to == MULTICAST_PHS) {
 			vec3_t      delta;
 
-			VectorSubtract (origin, client->edict->v.v.origin, delta);
+			VectorSubtract (origin, SVFIELD (client->edict, origin, vector), delta);
 			if (Length (delta) <= 1024)
 				goto inrange;
 		}
 
-		leaf = Mod_PointInLeaf (client->edict->v.v.origin, sv.worldmodel);
+		leaf = Mod_PointInLeaf (SVFIELD (client->edict, origin, vector), sv.worldmodel);
 		if (leaf) {
 			// -1 is because pvs rows are 1 based, not 0 based like leafs
 			leafnum = leaf - sv.worldmodel->leafs - 1;
@@ -429,13 +430,13 @@ SV_StartSound (edict_t *entity, int channel, char *sample, int volume,
 		channel |= SND_ATTENUATION;
 
 	// use the entity origin unless it is a bmodel
-	if (entity->v.v.solid == SOLID_BSP) {
+	if (SVFIELD (entity, solid, float) == SOLID_BSP) {
 		for (i = 0; i < 3; i++)
 			origin[i] =
-				entity->v.v.origin[i] + 0.5 * (entity->v.v.mins[i] +
-											 entity->v.v.maxs[i]);
+				SVFIELD (entity, origin, vector)[i] + 0.5 * (SVFIELD (entity, mins, vector)[i] +
+											 SVFIELD (entity, maxs, vector)[i]);
 	} else {
-		VectorCopy (entity->v.v.origin, origin);
+		VectorCopy (SVFIELD (entity, origin, vector), origin);
 	}
 
 	MSG_WriteByte (&sv.multicast, svc_sound);
@@ -502,25 +503,25 @@ SV_WriteClientdataToMessage (client_t *client, sizebuf_t *msg)
 		client->chokecount = 0;
 	}
 	// send a damage message if the player got hit this frame
-	if (ent->v.v.dmg_take || ent->v.v.dmg_save) {
-		other = PROG_TO_EDICT (&sv_pr_state, ent->v.v.dmg_inflictor);
+	if (SVFIELD (ent, dmg_take, float) || SVFIELD (ent, dmg_save, float)) {
+		other = PROG_TO_EDICT (&sv_pr_state, SVFIELD (ent, dmg_inflictor, entity));
 		MSG_WriteByte (msg, svc_damage);
-		MSG_WriteByte (msg, ent->v.v.dmg_save);
-		MSG_WriteByte (msg, ent->v.v.dmg_take);
+		MSG_WriteByte (msg, SVFIELD (ent, dmg_save, float));
+		MSG_WriteByte (msg, SVFIELD (ent, dmg_take, float));
 		for (i = 0; i < 3; i++)
 			MSG_WriteCoord (msg,
-							other->v.v.origin[i] + 0.5 * (other->v.v.mins[i] +
-														other->v.v.maxs[i]));
+							SVFIELD (other, origin, vector)[i] + 0.5 * (SVFIELD (other, mins, vector)[i] +
+														SVFIELD (other, maxs, vector)[i]));
 
-		ent->v.v.dmg_take = 0;
-		ent->v.v.dmg_save = 0;
+		SVFIELD (ent, dmg_take, float) = 0;
+		SVFIELD (ent, dmg_save, float) = 0;
 	}
 	// a fixangle might get lost in a dropped packet.  Oh well.
-	if (ent->v.v.fixangle) {
+	if (SVFIELD (ent, fixangle, float)) {
 		MSG_WriteByte (msg, svc_setangle);
 		for (i = 0; i < 3; i++)
-			MSG_WriteAngle (msg, ent->v.v.angles[i]);
-		ent->v.v.fixangle = 0;
+			MSG_WriteAngle (msg, SVFIELD (ent, angles, vector)[i]);
+		SVFIELD (ent, fixangle, float) = 0;
 	}
 }
 
@@ -545,29 +546,29 @@ SV_UpdateClientStats (client_t *client)
 	if (client->spectator && client->spec_track > 0)
 		ent = svs.clients[client->spec_track - 1].edict;
 
-	stats[STAT_HEALTH] = ent->v.v.health;
-	stats[STAT_WEAPON] = SV_ModelIndex (PR_GetString (&sv_pr_state, ent->v.v.weaponmodel));
-	stats[STAT_AMMO] = ent->v.v.currentammo;
-	stats[STAT_ARMOR] = ent->v.v.armorvalue;
-	stats[STAT_SHELLS] = ent->v.v.ammo_shells;
-	stats[STAT_NAILS] = ent->v.v.ammo_nails;
-	stats[STAT_ROCKETS] = ent->v.v.ammo_rockets;
-	stats[STAT_CELLS] = ent->v.v.ammo_cells;
+	stats[STAT_HEALTH] = SVFIELD (ent, health, float);
+	stats[STAT_WEAPON] = SV_ModelIndex (PR_GetString (&sv_pr_state, SVFIELD (ent, weaponmodel, string)));
+	stats[STAT_AMMO] = SVFIELD (ent, currentammo, float);
+	stats[STAT_ARMOR] = SVFIELD (ent, armorvalue, float);
+	stats[STAT_SHELLS] = SVFIELD (ent, ammo_shells, float);
+	stats[STAT_NAILS] = SVFIELD (ent, ammo_nails, float);
+	stats[STAT_ROCKETS] = SVFIELD (ent, ammo_rockets, float);
+	stats[STAT_CELLS] = SVFIELD (ent, ammo_cells, float);
 	if (!client->spectator)
-		stats[STAT_ACTIVEWEAPON] = ent->v.v.weapon;
+		stats[STAT_ACTIVEWEAPON] = SVFIELD (ent, weapon, float);
 	// stuff the sigil bits into the high bits of items for sbar
 	stats[STAT_ITEMS] =
-		(int) ent->v.v.items | ((int) sv_pr_state.pr_global_struct->serverflags << 28);
+		(int) SVFIELD (ent, items, float) | ((int) *sv_globals.serverflags << 28);
 
 	// Extensions to the QW 2.40 protocol for Mega2k  --KB
-	stats[STAT_VIEWHEIGHT] = (int) ent->v.v.view_ofs[2];
+	stats[STAT_VIEWHEIGHT] = (int) SVFIELD (ent, view_ofs, vector)[2];
 
 	// FIXME: this should become a * key!  --KB
-	if (ent->v.v.movetype == MOVETYPE_FLY && !atoi (Info_ValueForKey
+	if (SVFIELD (ent, movetype, float) == MOVETYPE_FLY && !atoi (Info_ValueForKey
 												  (svs.info, "playerfly")))
-		ent->v.v.movetype = MOVETYPE_WALK;
+		SVFIELD (ent, movetype, float) = MOVETYPE_WALK;
 
-	stats[STAT_FLYMODE] = (ent->v.v.movetype == MOVETYPE_FLY);
+	stats[STAT_FLYMODE] = (SVFIELD (ent, movetype, float) == MOVETYPE_FLY);
 
 
 	for (i = 0; i < MAX_CL_STATS; i++)
@@ -649,16 +650,16 @@ SV_UpdateToReliableMessages (void)
 			host_client->sendinfo = false;
 			SV_FullClientUpdate (host_client, &sv.reliable_datagram);
 		}
-		if (host_client->old_frags != host_client->edict->v.v.frags) {
+		if (host_client->old_frags != SVFIELD (host_client->edict, frags, float)) {
 			for (j = 0, client = svs.clients; j < MAX_CLIENTS; j++, client++) {
 				if (client->state < cs_connected)
 					continue;
 				ClientReliableWrite_Begin (client, svc_updatefrags, 4);
 				ClientReliableWrite_Byte (client, i);
-				ClientReliableWrite_Short (client, host_client->edict->v.v.frags);
+				ClientReliableWrite_Short (client, SVFIELD (host_client->edict, frags, float));
 			}
 
-			host_client->old_frags = host_client->edict->v.v.frags;
+			host_client->old_frags = SVFIELD (host_client->edict, frags, float);
 		}
 		// maxspeed/entgravity changes
 		ent = host_client->edict;
