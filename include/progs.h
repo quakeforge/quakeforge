@@ -30,6 +30,7 @@
 #define _PROGS_H
 
 #include "link.h"
+#include "pr_comp.h"
 
 typedef union eval_s
 {
@@ -57,14 +58,8 @@ typedef struct edict_s
 	int			num_leafs;
 	short		leafnums[MAX_ENT_LEAFS];
 
-	entity_state_t	baseline;
-	
 	float		freetime;			// sv.time when the object was freed
-	union {
-		entvars_t	v;				// C exported fields from progs
-		pr_type_t   vv[1];
-	} v;
-// other fields from progs come immediately after
+	pr_type_t   v[1];			// fields from progs
 } edict_t;
 #define	EDICT_FROM_AREA(l) STRUCT_FROM_LINK(l,edict_t,area)
 
@@ -192,7 +187,6 @@ struct progs_s {
 	ddef_t			*pr_globaldefs;
 	ddef_t			*pr_fielddefs;
 	dstatement_t	*pr_statements;
-	globalvars_t	*pr_global_struct;
 	pr_type_t		*pr_globals;			// same as pr_global_struct
 
 	int				pr_edict_size;	// in bytes
@@ -215,6 +209,7 @@ struct progs_s {
 
 	edict_t			**edicts;
 	int				*num_edicts;
+	int				*max_edicts;
 	double			*time;
 	int				null_bad;
 

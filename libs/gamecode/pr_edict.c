@@ -44,8 +44,8 @@
 #include "qdefs.h"
 #include "qendian.h"
 #include "quakefs.h"
-#include "server.h"
-#include "world.h"
+#include "zone.h"
+#include "va.h"
 
 cvar_t	*pr_boundscheck;
 
@@ -136,18 +136,8 @@ ED_Free (progs_t *pr, edict_t *ed)
 	if (pr->unlink)
 		pr->unlink (ed);				// unlink from world bsp
 
+	ED_ClearEdict (pr, ed);
 	ed->free = true;
-	ed->v.v.model = 0;
-	ed->v.v.takedamage = 0;
-	ed->v.v.modelindex = 0;
-	ed->v.v.colormap = 0;
-	ed->v.v.skin = 0;
-	ed->v.v.frame = 0;
-	VectorCopy (vec3_origin, ed->v.v.origin);
-	VectorCopy (vec3_origin, ed->v.v.angles);
-	ed->v.v.nextthink = -1;
-	ed->v.v.solid = 0;
-
 	ed->freetime = *(pr)->time;
 }
 
@@ -952,12 +942,11 @@ PR_LoadProgs (progs_t *pr, char *progsname)
 
 	pr->num_prstr = 0;
 
-	pr->pr_global_struct = (globalvars_t *) ((byte *) pr->progs + pr->progs->ofs_globals);
-	pr->pr_globals = (pr_type_t *) pr->pr_global_struct;
+	pr->pr_globals = (pr_type_t *) ((byte *) pr->progs + pr->progs->ofs_globals);
 
 	pr->pr_edict_size =
 
-		pr->progs->entityfields * 4 + sizeof (edict_t) - sizeof (entvars_t);
+		pr->progs->entityfields * 4 + sizeof (edict_t) - sizeof (pr_type_t);
 
 	pr->pr_edictareasize = pr->pr_edict_size * MAX_EDICTS;
 
