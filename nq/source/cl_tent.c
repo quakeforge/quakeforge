@@ -216,7 +216,7 @@ CL_ParseTEnt (void)
 {
 	byte        type;
 	dlight_t   *dl;
-	int         colorStart, colorLength, rnd;
+	int         colorStart, colorLength;
 	int         cnt = -1;
 	explosion_t *ex;
 	vec3_t      pos;
@@ -246,16 +246,19 @@ CL_ParseTEnt (void)
 			MSG_ReadCoordV (net_message, pos);
 			R_SpikeEffect (pos);
 
-			if (rand () % 5)
-				S_StartSound (-1, 0, cl_sfx_tink1, pos, 1, 1);
-			else {
-				rnd = rand () & 3;
-				if (rnd == 1)
+			switch (rand () % 20) {
+				case 19:
 					S_StartSound (-1, 0, cl_sfx_ric1, pos, 1, 1);
-				else if (rnd == 2)
+					break;
+				case 18:
 					S_StartSound (-1, 0, cl_sfx_ric2, pos, 1, 1);
-				else
+					break;
+				case 17:
+				case 16:
 					S_StartSound (-1, 0, cl_sfx_ric3, pos, 1, 1);
+					break;
+				default:
+					S_StartSound (-1, 0, cl_sfx_tink1, pos, 1, 1);
 			}
 			break;
 
@@ -263,16 +266,19 @@ CL_ParseTEnt (void)
 			MSG_ReadCoordV (net_message, pos);
 			R_SuperSpikeEffect (pos);
 
-			if (rand () % 5)
-				S_StartSound (-1, 0, cl_sfx_tink1, pos, 1, 1);
-			else {
-				rnd = rand () & 3;
-				if (rnd == 1)
+			switch (rand () % 20) {
+				case 19:
 					S_StartSound (-1, 0, cl_sfx_ric1, pos, 1, 1);
-				else if (rnd == 2)
+					break;
+				case 18:
 					S_StartSound (-1, 0, cl_sfx_ric2, pos, 1, 1);
-				else
+					break;
+				case 17:
+				case 16:
 					S_StartSound (-1, 0, cl_sfx_ric3, pos, 1, 1);
+					break;
+				default:
+					S_StartSound (-1, 0, cl_sfx_tink1, pos, 1, 1);
 			}
 			break;
 
