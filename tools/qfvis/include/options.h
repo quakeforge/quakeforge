@@ -32,15 +32,16 @@
 #include "QF/qtypes.h"
 
 typedef struct {
-	int			verbosity;		// 0=silent
-	int			threads;
-	qboolean	minimal;
-	int			level;
-	char		*bspfile;
+	int         verbosity;		// 0=silent
+	int         threads;
+	qboolean    minimal;
+	int         level;
+	char       *bspfile;
 } options_t;
 
 extern options_t options;
 int DecodeArgs (int argc, char **argv);
 void usage (int status);
 extern const char *this_program;
+
 #endif//__options_h

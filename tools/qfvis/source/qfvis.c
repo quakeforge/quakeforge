@@ -89,55 +89,6 @@ dstring_t   *visdata;
 byte		*uncompressed;		// [bitbytes * portalleafs]
 
 
-#if 0
-void
-NormalizePlane (plane_t *dp)
-{
-	vec_t		ax, ay, az;
-
-	if (dp->normal[0] == -1.0) {
-		dp->normal[0] = 1.0;
-		dp->dist = -dp->dist;
-		return;
-	}
-	if (dp->normal[1] == -1.0) {
-		dp->normal[1] = 1.0;
-		dp->dist = -dp->dist;
-		return;
-	}
-	if (dp->normal[2] == -1.0) {
-		dp->normal[2] = 1.0;
-		dp->dist = -dp->dist;
-		return;
-	}
-
-	ax = fabs (dp->normal[0]);
-	ay = fabs (dp->normal[1]);
-	az = fabs (dp->normal[2]);
-
-	if (ax >= ay && ax >= az) {
-		if (dp->normal[0] < 0) {
-			VectorSubtract (vec3_origin, dp->normal, dp->normal);
-			dp->dist = -dp->dist;
-		}
-		return;
-	}
-
-	if (ay >= ax && ay >= az) {
-		if (dp->normal[1] < 0) {
-			VectorSubtract (vec3_origin, dp->normal, dp->normal);
-			dp->dist = -dp->dist;
-		}
-		return;
-	}
-
-	if (dp->normal[2] < 0) {
-		VectorSubtract (vec3_origin, dp->normal, dp->normal);
-		dp->dist = -dp->dist;
-	}
-}
-#endif
-
 void
 PlaneFromWinding (winding_t *winding, plane_t *plane)
 {
@@ -172,37 +123,6 @@ FreeWinding (winding_t *winding)
 {
 	if (!winding->original)
 		free (winding);
-}
-
-// FIXME: currently unused
-void
-pw (winding_t *winding)
-{
-	int			i;
-	
-	
-	for (i = 0; i < winding->numpoints; i++)
-		printf ("(%5.1f, %5.1f, %5.1f)\n", winding->points[i][0], 
-				winding->points[i][1], 
-				winding->points[i][2]);
-}
-
-// FIXME: currently unused
-void
-prl (leaf_t *leaf)
-{
-	int			i;
-	portal_t	*portal;
-	plane_t		plane;
-
-	for (i = 0; i < leaf->numportals; i++) {
-		portal = leaf->portals[i];
-		plane = portal->plane;
-		printf ("portal %4i to leaf %4i : %7.1f : (%4.1f, %4.1f, %4.1f)\n", 
-				(int) (portal - portals), 
-				portal->leaf, plane.dist, 
-				plane.normal[0], plane.normal[1], plane.normal[2]);
-	}
 }
 
 winding_t	*
@@ -442,12 +362,7 @@ LeafFlow (int leafnum)
 		printf ("leaf %4i : %4i visible\n", leafnum, numvis);
 	totalvis += numvis;
 
-#if 0
-	i = (portalleafs + 7) >> 3;
-	memcpy (compressed, outbuffer, i);
-#else
 	i = CompressRow (outbuffer, compressed);
-#endif
 
 	bsp->leafs[leafnum + 1].visofs = visdata->size;
 	dstring_append (visdata, compressed, i);
