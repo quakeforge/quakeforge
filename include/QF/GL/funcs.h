@@ -37,6 +37,6 @@
 #undef QFGL_NEED
 
 qboolean GLF_Init (void);
-void *QFGL_ProcAddress (void *, const char *, qboolean crit);
+void *QFGL_ProcAddress (void *, const char *, qboolean);
 
 #endif // __QF_GL_funcs_h_
