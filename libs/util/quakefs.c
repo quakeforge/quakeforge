@@ -151,21 +151,6 @@ COM_FileBase (const char *in, char *out)
 	}
 }
 
-int
-COM_FileOpenRead (char *path, QFile **hndl)
-{
-	QFile      *f;
-
-	f = Qopen (path, "rbz");
-	if (!f) {
-		*hndl = NULL;
-		return -1;
-	}
-	*hndl = f;
-
-	return Qfilesize (f);
-}
-
 
 void
 COM_Path_f (void)
@@ -265,40 +250,6 @@ COM_CreatePath (const char *path)
 			*ofs = '/';
 		}
 	}
-}
-
-/*
-	COM_CopyFile
-
-	Copies a file over from the net to the local cache, creating any
-	directories needed.  This is for the convenience of developers using
-	ISDN from home.
-*/
-void
-COM_CopyFile (char *netpath, char *cachepath)
-{
-	int         remaining, count;
-	char        buf[4096];
-	QFile      *in, *out;
-
-	remaining = COM_FileOpenRead (netpath, &in);
-	COM_CreatePath (cachepath);  // create directories up to the cache file
-	out = Qopen (cachepath, "wb");
-	if (!out)
-		Sys_Error ("Error opening %s", cachepath);
-
-	while (remaining) {
-		if (remaining < sizeof (buf))
-			count = remaining;
-		else
-			count = sizeof (buf);
-		Qread (in, buf, count);
-		Qwrite (out, buf, count);
-		remaining -= count;
-	}
-
-	Qclose (in);
-	Qclose (out);
 }
 
 QFile      *
@@ -630,7 +581,7 @@ COM_LoadPackFile (char *packfile)
 #define FNAME_SIZE	MAX_OSPATH
 
 // Note, this is /NOT/ a work-alike strcmp, this groups numbers sanely.
-int
+static int
 qstrcmp (char **os1, char **os2)
 {
 	int         in1, in2, n1, n2;
