@@ -381,7 +381,7 @@ keyname_t   keynames[] = {
 qboolean
 Key_Game (knum_t key, short unicode)
 {
-	char       *kb;
+	const char *kb;
 	char        cmd[1024];
 
 	kb = Key_GetBinding(game_target, key);
@@ -792,7 +792,7 @@ Key_Init_Cvars (void)
 							"unbind wrappers to in_bind and in_unbind");
 }
 
-char *
+const char *
 Key_GetBinding (imt_t imt, knum_t key)
 {
 	return keybindings[imt][key];

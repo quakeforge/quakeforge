@@ -361,11 +361,16 @@ typedef enum {
 } imt_t;											// Input Mapping Table
 
 // key_none should, preferably, be last
-typedef enum {key_game, key_console, key_message, key_menu, key_none} keydest_t;
+typedef enum {
+	key_game,
+	key_console,
+	key_message,
+	key_menu,
+	key_none
+} keydest_t;
 
 #ifndef __QFCC__
-typedef struct
-{
+typedef struct {
 	int     down[2];        // key nums holding it down
 	int     state;          // low bit is down state
 } kbutton_t;
@@ -375,30 +380,17 @@ extern imt_t		game_target;
 
 extern char		*keybindings[IMT_LAST][QFK_LAST];
 extern int		keydown[QFK_LAST];
-extern int		key_lastpress;
-
-extern char chat_buffer[];
-extern	int chat_bufferlen;
-extern	qboolean	chat_team;
 
 void Key_Event (knum_t key, short unicode, qboolean down);
 void Key_Init (void);
 void Key_Init_Cvars (void);
 void Key_WriteBindings (VFile *f);
 void Key_ClearStates (void);
-char *Key_GetBinding (imt_t imt, knum_t key);
+const char *Key_GetBinding (imt_t imt, knum_t key);
 void Key_SetBinding (imt_t target, knum_t keynum, const char *binding);
 
 
-void Key_ClearTyping (void);
-
-float Key_KeyState (kbutton_t *key);
 const char *Key_KeynumToString (knum_t keynum);
-
-#define		MAXCMDLINE	256
-extern char key_lines[32][MAXCMDLINE];
-extern int edit_line;
-extern int key_linepos;
 #endif
 
 #endif // _KEYS_H
