@@ -476,7 +476,12 @@ qfo_to_progs (qfo_t *qfo, pr_info_t *pr)
 		 i < pr->num_functions; i++) {
 		*pr->func_tail = pf;
 		pr->func_tail = &pf->next;
-		pf->aux = 0;//XXX
+		pf->aux = new_auxfunction ();
+		pf->aux->function = i + 1;
+		pf->aux->source_line = qf->line;
+		pf->aux->line_info = qf->line_info;
+		pf->aux->local_defs = qf->local_defs;
+		pf->aux->num_locals = qf->num_local_defs;
 		pf->builtin = qf->builtin;
 		pf->code = qf->code;
 		pf->function_num = i + 1;
