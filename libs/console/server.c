@@ -252,8 +252,8 @@ static void
 C_Init (void)
 {
 #ifdef HAVE_CURSES_H
-	cvar_t     *curses = Cvar_Get ("sv_use_curses", "1", CVAR_ROM, NULL,
-								   "set to 0 to disable curses server console");
+	cvar_t	  *curses = Cvar_Get ("sv_use_curses", "0", CVAR_ROM, NULL,
+								  "Set to 1 to enable curses server console.");
 	use_curses = curses->int_val;
 	if (use_curses) {
 		signal (SIGWINCH, sigwinch);
