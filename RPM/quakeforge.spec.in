@@ -11,6 +11,12 @@
 %define HAVE_SVGA   '@HAVE_SVGA@'
 %define HAVE_X11    '@HAVE_X@'
 
+%define HAVE_ALSA   '@HAVE_ALSA@'
+%define HAVE_OSS    '@HAVE_OSS@'
+
+%define BUILD_GL    '@CAN_BUILD_GL@'
+%define BUILD_SW    '@CAN_BUILD_SW@'
+
 Name:		%{name}
 Version:	%{version}
 Release:	%{release}
@@ -33,6 +39,12 @@ adding portability and optional extensions to enhance gameplay.
 
 
 
+
+%package common
+Summary:	QuakeForge 3D game engine - common files
+Group:		Amusements/Games
+#Requires:
+%description common
 
 %package server
 Summary:	QuakeForge 3D game engine - Server
@@ -96,6 +108,62 @@ Group:		Amusements/Games
 %description x11
 %endif
 
+%if "%{HAVE_ALSA}"=="'yes'"
+%package snd-alsa
+Summary:	ALSA 0.9 sound plugin for QuakeForge
+Group:		Amusements/Games
+#Requires:
+%description snd-alsa
+The ALSA 0.9 plugin for QuakeForge provides digital audio output for QuakeForge
+targets that contain clients.
+%endif
+
+%if "%{HAVE_OSS}"=="'yes'"
+%package snd-oss
+Summary:	OSS sound plugin for QuakeForge
+Group:		Amusements/Games
+#Requires:
+%description snd-oss
+The OSS plugin for QuakeForge provides digital audio output (using OSS/Linux,
+OSS/Free, or kernel sound) for QuakeForge targets that contain clients.
+
+NOTE: This plugin does not work on all systems, since it uses memory-mapped
+I/O for the output device. If you have trouble, try the quakeforge-alsa
+package.
+%endif
+
+%if "%{HAVE_SDL}"=="'yes'"
+%package snd-sdl
+Summary:	SDL sound plugin for QuakeForge
+Group:		Amusements/Games
+#Requires:
+%description snd-sdl
+The SDL plugin for QuakeForge provides digital audio output for QuakeForge
+targets that contain clients.
+%endif
+
+%if "%{BUILD_GL}"=="'yes'"
+%package libs-gl
+Summary:	QuakeForge 3D game engine - OpenGL renderer libraries
+Group:	Amusements/Games
+#Requires:
+%description libs-gl
+%endif
+
+%if "%{BUILD_SW}"=="'yes'"
+%package libs-sw
+Summary:	QuakeForge 3D game engine - Software renderer libraries
+Group:	Amusements/Games
+#Requires:
+%description libs-sw
+%endif
+
+%package devel
+Summary:	QuakeForge 3D game engine - headers and devel libs
+Group:	Amusements/Games
+Requires:	quakeforge-common
+%description devel
+
 
 
 
@@ -110,15 +178,47 @@ make
 %install
 if [ -d $RPM_BUILD_ROOT ]; then rm -rf $RPM_BUILD_ROOT; fi
 mkdir -p $RPM_BUILD_ROOT
+mkdir -p $RPM_BUILD_ROOT/etc
 mkdir -p $RPM_BUILD_ROOT/%{_prefix}/share/games/quakeforge
 make install DESTDIR=$RPM_BUILD_ROOT
+cp RPM/quakeforge.conf $RPM_BUILD_ROOT/etc
 
 %clean
 rm -rf $RPM_BUILD_ROOT
 
+
+
 %files
 %doc COPYING INSTALL TODO doc/*
 %attr(-,root,root) %dir	%{_prefix}/share/games/quakeforge
+
+%files common
+%attr(-,root,root) /etc/quakeforge.conf
+%attr(-,root,root) %{_prefix}/lib/libQFcd.so.1
+%attr(-,root,root) %{_prefix}/lib/libQFcd.so.1.0.0
+%attr(-,root,root) %{_prefix}/lib/libQFconsole.so.1
+%attr(-,root,root) %{_prefix}/lib/libQFconsole.so.1.0.0 
+%attr(-,root,root) %{_prefix}/lib/libQFgamecode.so.1
+%attr(-,root,root) %{_prefix}/lib/libQFgamecode.so.1.0.0
+%attr(-,root,root) %{_prefix}/lib/libQFgib.so.1
+%attr(-,root,root) %{_prefix}/lib/libQFgib.so.1.0.0
+%attr(-,root,root) %{_prefix}/lib/libQFjs.so.1
+%attr(-,root,root) %{_prefix}/lib/libQFjs.so.1.0.0
+%attr(-,root,root) %{_prefix}/lib/libQFmodels.so.1
+%attr(-,root,root) %{_prefix}/lib/libQFmodels.so.1.0.0
+%attr(-,root,root) %{_prefix}/lib/libQFsound.so.1
+%attr(-,root,root) %{_prefix}/lib/libQFsound.so.1.0.0
+%attr(-,root,root) %{_prefix}/lib/libQFutil.so.1
+%attr(-,root,root) %{_prefix}/lib/libQFutil.so.1.0.0
+%attr(-,root,root) %{_prefix}/lib/quakeforge/libcd_null.so
+%attr(-,root,root) %{_prefix}/lib/quakeforge/libcd_null.so.1
+%attr(-,root,root) %{_prefix}/lib/quakeforge/libcd_null.so.1.0.0
+%attr(-,root,root) %{_prefix}/lib/quakeforge/libsound_disk.so
+%attr(-,root,root) %{_prefix}/lib/quakeforge/libsound_disk.so.1
+%attr(-,root,root) %{_prefix}/lib/quakeforge/libsound_disk.so.1.0.0
+%attr(-,root,root) %{_prefix}/lib/quakeforge/libsound_null.so
+%attr(-,root,root) %{_prefix}/lib/quakeforge/libsound_null.so.1
+%attr(-,root,root) %{_prefix}/lib/quakeforge/libsound_null.so.1.0.0
 
 %if "%{HAVE_SERVER}"=="'yes'"
 %files server
@@ -167,3 +267,160 @@ rm -rf $RPM_BUILD_ROOT
 %attr(-,root,root)	%{_prefix}/bin/qw-client-x11
 %attr(-,root,root)	%{_prefix}/bin/nq-x11
 %endif
+
+%if "%{HAVE_ALSA}"=="'yes'"
+%files snd-alsa
+%attr(-,root,root)	%{_prefix}/lib/quakeforge/libsound_alsa0_9.so
+%attr(-,root,root)	%{_prefix}/lib/quakeforge/libsound_alsa0_9.so.1
+%attr(-,root,root)	%{_prefix}/lib/quakeforge/libsound_alsa0_9.so.1.0.0
+%endif
+
+%if "%{HAVE_OSS}"=="'yes'"
+%files snd-oss
+%attr(-,root,root)	%{_prefix}/lib/quakeforge/libsound_oss.so
+%attr(-,root,root)	%{_prefix}/lib/quakeforge/libsound_oss.so.1
+%attr(-,root,root)	%{_prefix}/lib/quakeforge/libsound_oss.so.1.0.0
+%endif
+
+%if "%{HAVE_SDL}"=="'yes'"
+%files snd-sdl
+%attr(-,root,root)	%{_prefix}/lib/quakeforge/libsound_sdl.so
+%attr(-,root,root)	%{_prefix}/lib/quakeforge/libsound_sdl.so.1
+%attr(-,root,root)	%{_prefix}/lib/quakeforge/libsound_sdl.so.1.0.0
+%endif
+
+%if "%{BUILD_GL}"=="'yes'"
+%files libs-gl
+%attr(-,root,root)	%{_prefix}/lib/libQFmodels_gl.so.1
+%attr(-,root,root)	%{_prefix}/lib/libQFmodels_gl.so.1.0.0
+%attr(-,root,root)	%{_prefix}/lib/libQFrenderer_gl.so.1
+%attr(-,root,root)	%{_prefix}/lib/libQFrenderer_gl.so.1.0.0
+%endif
+
+%if "%{BUILD_SW}"=="'yes'"
+%files libs-sw
+%attr(-,root,root)	%{_prefix}/lib/libQFmodels_sw.so.1
+%attr(-,root,root)	%{_prefix}/lib/libQFmodels_sw.so.1.0.0
+%attr(-,root,root)	%{_prefix}/lib/libQFrenderer_sw.so.1
+%attr(-,root,root)	%{_prefix}/lib/libQFrenderer_sw.so.1.0.0
+%endif
+
+%files devel
+%if "%{HAVE_3DFX}"=="'yes'"
+%attr(-,root,root)	%{_prefix}/lib/libQF3dfx.a
+%attr(-,root,root)	%{_prefix}/lib/libQF3dfx.la
+%attr(-,root,root)	%{_prefix}/lib/libQF3dfx.so
+%endif
+%attr(-,root,root)	%{_prefix}/lib/libQFcd.a
+%attr(-,root,root)	%{_prefix}/lib/libQFcd.la
+%attr(-,root,root)	%{_prefix}/lib/libQFcd.so
+%attr(-,root,root)	%{_prefix}/lib/libQFconsole.a
+%attr(-,root,root)	%{_prefix}/lib/libQFconsole.la
+%attr(-,root,root)	%{_prefix}/lib/libQFconsole.so
+%attr(-,root,root)	%{_prefix}/lib/libQFgamecode.a
+%attr(-,root,root)	%{_prefix}/lib/libQFgamecode.la
+%attr(-,root,root)	%{_prefix}/lib/libQFgamecode.so
+%attr(-,root,root)	%{_prefix}/lib/libQFgib.a
+%attr(-,root,root)	%{_prefix}/lib/libQFgib.la
+%attr(-,root,root)	%{_prefix}/lib/libQFgib.so
+%if "%{HAVE_GLX}"=="'yes'"
+%attr(-,root,root)	%{_prefix}/lib/libQFglx.a
+%attr(-,root,root)	%{_prefix}/lib/libQFglx.la
+%attr(-,root,root)	%{_prefix}/lib/libQFglx.so
+%endif
+%attr(-,root,root)	%{_prefix}/lib/libQFjs.a
+%attr(-,root,root)	%{_prefix}/lib/libQFjs.la
+%attr(-,root,root)	%{_prefix}/lib/libQFjs.so
+%attr(-,root,root)	%{_prefix}/lib/libQFmodels.a
+%attr(-,root,root)	%{_prefix}/lib/libQFmodels.la
+%attr(-,root,root)	%{_prefix}/lib/libQFmodels.so
+%if "%{HAVE_SDL}"=="'yes'"
+%attr(-,root,root)	%{_prefix}/lib/libQFsdl.a
+%attr(-,root,root)	%{_prefix}/lib/libQFsdl.la
+%attr(-,root,root)	%{_prefix}/lib/libQFsdl.so
+%endif
+%if "%{HAVE_SGL}"=="'yes'"
+%attr(-,root,root)	%{_prefix}/lib/libQFsgl.a
+%attr(-,root,root)	%{_prefix}/lib/libQFsgl.la
+%attr(-,root,root)	%{_prefix}/lib/libQFsgl.so
+%endif
+%attr(-,root,root)	%{_prefix}/lib/libQFsound.a
+%attr(-,root,root)	%{_prefix}/lib/libQFsound.la
+%attr(-,root,root)	%{_prefix}/lib/libQFsound.so
+%attr(-,root,root)	%{_prefix}/lib/libQFutil.a
+%attr(-,root,root)	%{_prefix}/lib/libQFutil.la
+%attr(-,root,root)	%{_prefix}/lib/libQFutil.so
+%if "%{HAVE_X11}"=="'yes'"
+%attr(-,root,root)	%{_prefix}/lib/libQFx11.a
+%attr(-,root,root)	%{_prefix}/lib/libQFx11.la
+%attr(-,root,root)	%{_prefix}/lib/libQFx11.so
+%endif
+%attr(-,root,root)	%{_prefix}/include/QF/GL/defines.h
+%attr(-,root,root)	%{_prefix}/include/QF/GL/extensions.h
+%attr(-,root,root)	%{_prefix}/include/QF/GL/funcs.h
+%attr(-,root,root)	%{_prefix}/include/QF/GL/qf_funcs_list.h
+%attr(-,root,root)	%{_prefix}/include/QF/GL/qf_rlight.h
+%attr(-,root,root)	%{_prefix}/include/QF/GL/qf_rmain.h
+%attr(-,root,root)	%{_prefix}/include/QF/GL/qf_rsurf.h
+%attr(-,root,root)	%{_prefix}/include/QF/GL/qf_screen.h
+%attr(-,root,root)	%{_prefix}/include/QF/GL/qf_sky.h
+%attr(-,root,root)	%{_prefix}/include/QF/GL/qf_textures.h
+%attr(-,root,root)	%{_prefix}/include/QF/GL/qf_vid.h
+%attr(-,root,root)	%{_prefix}/include/QF/GL/types.h
+%attr(-,root,root)	%{_prefix}/include/QF/bspfile.h
+%attr(-,root,root)	%{_prefix}/include/QF/cdaudio.h
+%attr(-,root,root)	%{_prefix}/include/QF/checksum.h
+%attr(-,root,root)	%{_prefix}/include/QF/clip_hull.h
+%attr(-,root,root)	%{_prefix}/include/QF/cmd.h
+%attr(-,root,root)	%{_prefix}/include/QF/console.h
+%attr(-,root,root)	%{_prefix}/include/QF/crc.h
+%attr(-,root,root)	%{_prefix}/include/QF/cvar.h
+%attr(-,root,root)	%{_prefix}/include/QF/draw.h
+%attr(-,root,root)	%{_prefix}/include/QF/gcc_attr.h
+%attr(-,root,root)	%{_prefix}/include/QF/gib.h
+%attr(-,root,root)	%{_prefix}/include/QF/hash.h
+%attr(-,root,root)	%{_prefix}/include/QF/hl.h
+%attr(-,root,root)	%{_prefix}/include/QF/info.h
+%attr(-,root,root)	%{_prefix}/include/QF/input.h
+%attr(-,root,root)	%{_prefix}/include/QF/joystick.h
+%attr(-,root,root)	%{_prefix}/include/QF/keys.h
+%attr(-,root,root)	%{_prefix}/include/QF/link.h
+%attr(-,root,root)	%{_prefix}/include/QF/locs.h
+%attr(-,root,root)	%{_prefix}/include/QF/mathlib.h
+%attr(-,root,root)	%{_prefix}/include/QF/mdfour.h
+%attr(-,root,root)	%{_prefix}/include/QF/model.h
+%attr(-,root,root)	%{_prefix}/include/QF/modelgen.h
+%attr(-,root,root)	%{_prefix}/include/QF/msg.h
+%attr(-,root,root)	%{_prefix}/include/QF/pcx.h
+%attr(-,root,root)	%{_prefix}/include/QF/plugin.h
+%attr(-,root,root)	%{_prefix}/include/QF/plugin/cd.h
+%attr(-,root,root)	%{_prefix}/include/QF/plugin/console.h
+%attr(-,root,root)	%{_prefix}/include/QF/plugin/general.h
+%attr(-,root,root)	%{_prefix}/include/QF/plugin/input.h
+%attr(-,root,root)	%{_prefix}/include/QF/plugin/sound.h
+%attr(-,root,root)	%{_prefix}/include/QF/pr_comp.h
+%attr(-,root,root)	%{_prefix}/include/QF/pr_debug.h
+%attr(-,root,root)	%{_prefix}/include/QF/progs.h
+%attr(-,root,root)	%{_prefix}/include/QF/qargs.h
+%attr(-,root,root)	%{_prefix}/include/QF/qdefs.h
+%attr(-,root,root)	%{_prefix}/include/QF/qendian.h
+%attr(-,root,root)	%{_prefix}/include/QF/qfplist.h
+%attr(-,root,root)	%{_prefix}/include/QF/qtypes.h
+%attr(-,root,root)	%{_prefix}/include/QF/render.h
+%attr(-,root,root)	%{_prefix}/include/QF/screen.h
+%attr(-,root,root)	%{_prefix}/include/QF/sizebuf.h
+%attr(-,root,root)	%{_prefix}/include/QF/skin.h
+%attr(-,root,root)	%{_prefix}/include/QF/sound.h
+%attr(-,root,root)	%{_prefix}/include/QF/spritegn.h
+%attr(-,root,root)	%{_prefix}/include/QF/sys.h
+%attr(-,root,root)	%{_prefix}/include/QF/teamplay.h
+%attr(-,root,root)	%{_prefix}/include/QF/texture.h
+%attr(-,root,root)	%{_prefix}/include/QF/tga.h
+%attr(-,root,root)	%{_prefix}/include/QF/uint32.h
+%attr(-,root,root)	%{_prefix}/include/QF/va.h
+%attr(-,root,root)	%{_prefix}/include/QF/ver_check.h
+%attr(-,root,root)	%{_prefix}/include/QF/vfile.h
+%attr(-,root,root)	%{_prefix}/include/QF/vfs.h
+%attr(-,root,root)	%{_prefix}/include/QF/vid.h
+%attr(-,root,root)	%{_prefix}/include/QF/wad.h
+%attr(-,root,root)	%{_prefix}/include/QF/zone.h

@@ -1,0 +1,15 @@
+// QuakeForge: Newtree Configuration
+
+// Location of shared data
+setrom fs_sharepath "@prefix@/share/games/quakeforge"
+
+// Location of user's personal data
+setrom fs_userpath "~/.quakeforge"
+
+// Video defaults
+set vid_width 640
+set vid_height 480
+set vid_fullscreen 0
+
+// Uncomment for high-quality OpenGL rendering
+//gl_texturemode gl_linear_mipmap_linear
