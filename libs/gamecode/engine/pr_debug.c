@@ -439,9 +439,11 @@ static const char *
 value_string (progs_t *pr, etype_t type, pr_type_t *val)
 {
 	static dstring_t *line;
-	ddef_t		*def;
-	int          ofs;
+	ddef_t     *def;
+	int         ofs;
+	edict_t    *edict;
 	dfunction_t	*f;
+	const char *str;
 
 	if (!line)
 		line = dstring_new ();
@@ -452,11 +454,38 @@ value_string (progs_t *pr, etype_t type, pr_type_t *val)
 		case ev_string:
 			if (!PR_StringValid (pr, val->string_var))
 				return "*** invalid ***";
-			dsprintf (line, "\"%s\"", PR_GetString (pr, val->string_var));
+			str = PR_GetString (pr, val->string_var);
+			dstring_copystr (line, "\"");
+			while (*str) {
+				const char *s;
+
+				for (s = str; *s && !strchr ("\"\n\t", *s); s++)
+					;
+				if (s != str)
+					dstring_appendsubstr (line, str, s - str);
+				if (*s) {
+					switch (*s) {
+						case '\"':
+							dstring_appendstr (line, "\\\"");
+							break;
+						case '\n':
+							dstring_appendstr (line, "\\n");
+							break;
+						case '\t':
+							dstring_appendstr (line, "\\t");
+							break;
+						default:
+							dasprintf (line, "\\x%02x", *s & 0xff);
+					}
+					s++;
+				}
+				str = s;
+			}
+			dstring_appendstr (line, "\"");
 			break;
 		case ev_entity:
-			dsprintf (line, "entity %i",
-					  NUM_FOR_BAD_EDICT (pr, PROG_TO_EDICT (pr, val->entity_var)));
+			edict = PROG_TO_EDICT (pr, val->entity_var);
+			dsprintf (line, "entity %i", NUM_FOR_BAD_EDICT (pr, edict));
 			break;
 		case ev_func:
 			if (val->func_var < 0 || val->func_var >= pr->progs->numfunctions)

@@ -55,6 +55,9 @@ static __attribute__ ((unused)) const char rcsid[] =
 
 #include "compat.h"
 
+cvar_t     *pr_boundscheck;
+cvar_t     *pr_deadbeef_ents;
+cvar_t     *pr_deadbeef_locals;
 cvar_t     *pr_faultchecks;
 
 static const char *

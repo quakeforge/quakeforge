@@ -48,10 +48,50 @@ static __attribute__ ((unused)) const char rcsid[] =
 
 hashtab_t *opcode_table;
 
+int			pr_type_size[ev_type_count] = {
+	1,			// ev_void
+	1,			// ev_string
+	1,			// ev_float
+	3,			// ev_vector
+	1,			// ev_entity
+	1,			// ev_field
+	1,			// ev_func
+	1,			// ev_pointer
+	4,			// ev_quaternion
+	1,			// ev_integer
+	1,			// ev_uinteger
+	0,			// ev_short        value in opcode
+	0,			// ev_struct       variable
+	0,			// ev_object       variable
+	0,			// ev_class        variable
+	2,			// ev_sel
+	0,			// ev_array        variable
+};
+
+const char	*pr_type_name[ev_type_count] = {
+	"void",
+	"string",
+	"float",
+	"vector",
+	"entity",
+	"field",
+	"function",
+	"pointer",
+	"quaternion",
+	"integer",
+	"uinteger",
+	"short",
+	"struct",
+	"object",
+	"Class",
+	"SEL",
+	"array",
+};
+
 // default format is "%Ga, %Gb, %gc"
-// V  PR_GlobalString, void
-// G  PR_GlobalString
-// g  PR_GlobalStringNoContents
+// V  global_string, contents, void
+// G  global_string, contents
+// g  global_string, no contents
 // s  as short
 // O  address + short
 //

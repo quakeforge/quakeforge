@@ -56,50 +56,6 @@ static __attribute__ ((unused)) const char rcsid[] =
 
 #include "compat.h"
 
-cvar_t		*pr_boundscheck;
-cvar_t		*pr_deadbeef_ents;
-cvar_t		*pr_deadbeef_locals;
-
-int			pr_type_size[ev_type_count] = {
-	1,			// ev_void
-	1,			// ev_string
-	1,			// ev_float
-	3,			// ev_vector
-	1,			// ev_entity
-	1,			// ev_field
-	1,			// ev_func
-	1,			// ev_pointer
-	4,			// ev_quaternion
-	1,			// ev_integer
-	1,			// ev_uinteger
-	0,			// ev_short        value in opcode
-	0,			// ev_struct       variable
-	0,			// ev_object       variable
-	0,			// ev_class        variable
-	2,			// ev_sel
-	0,			// ev_array        variable
-};
-
-const char	*pr_type_name[ev_type_count] = {
-	"void",
-	"string",
-	"float",
-	"vector",
-	"entity",
-	"field",
-	"function",
-	"pointer",
-	"quaternion",
-	"integer",
-	"uinteger",
-	"short",
-	"struct",
-	"object",
-	"Class",
-	"SEL",
-	"array",
-};
-
 /*
 	ED_ClearEdict
 
@@ -289,7 +245,8 @@ NUM_FOR_EDICT (progs_t *pr, edict_t *e)
 	b = NUM_FOR_BAD_EDICT (pr, e);
 
 	if (b && (b < 0 || b >= *(pr)->num_edicts))
-		PR_RunError (pr, "NUM_FOR_EDICT: bad pointer %d %p %p", b, e, * (pr)->edicts);
+		PR_RunError (pr, "NUM_FOR_EDICT: bad pointer %d %p %p", b, e,
+					 *(pr)->edicts);
 
 	return b;
 }
