@@ -60,10 +60,12 @@ get_inputline (progs_t *pr, int arg, const char *func)
 {
 	pr_type_t  *handle;
 	inputline_t *line;
+	int          min = (pr_type_t *) pr->zone - pr->pr_globals;
+	int          max = min + pr->zone_size / sizeof (pr_type_t);
 
-	if (arg <= ((pr_type_t *) pr->zone - pr->pr_globals)
-		|| (size_t) arg >= (pr->zone_size / sizeof (pr_type_t)))
-		PR_RunError (pr, "%s: Invalid inputline_t", func);
+	if (arg <= min || arg >= max)
+		PR_RunError (pr, "%s: Invalid inputline_t: $%x $%x $%x", func, arg,
+					 min, max);
 
 	handle = pr->pr_globals + arg;
 
