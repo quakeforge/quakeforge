@@ -1,8 +1,8 @@
-noinst_LIBRARIES = libutil.a
+noinst_LIBRARIES = libqfutil.a
 
-libutil_a_SOURCES = cmd.c cvar.c hash.c mdfour.c sizebuf.c va.c zone.c
+libqfutil_a_SOURCES = cmd.c cvar.c hash.c mdfour.c sizebuf.c va.c zone.c
 
-all-local: ../libutil.a
+all-local: ../libqfutil.a
 
-../libutil.a: libutil.a
+../libqfutil.a: libqfutil.a
 	cp $(noinst_LIBRARIES) ..

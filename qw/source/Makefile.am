@@ -86,8 +86,8 @@ server_SOURCES=	pr_edict.c pr_exec.c pr_offs.c sv_ccmds.c sv_cvar.c \
 		sv_user.c ver_check.c world.c $(world_ASM)
 
 qw_server_SOURCES=	$(common_SOURCES) $(server_SOURCES)
-qw_server_LDADD=	-L. -L../../libs -lqfnet -lqfsys_sv -lutil $(NET_LIBS) $(Z_LIBS) $(DL_LIBS)
-qw_server_DEPENDENCIES= libqfnet.a libqfsys_sv.a ../../libs/libutil.a
+qw_server_LDADD=	-L. -L../../libs -lqfnet -lqfsys_sv -lqfutil $(NET_LIBS) $(Z_LIBS) $(DL_LIBS)
+qw_server_DEPENDENCIES= libqfnet.a libqfsys_sv.a ../../libs/libqfutil.a
 
 #
 # Client builds
@@ -170,8 +170,8 @@ endif
 libqfjs_a_CFLAGS=	$(JOY_CFLAGS)
 EXTRA_libqfjs_a_SOURCES= joy_linux.c joy_win.c joy_null.c
 
-CLIENT_LIBS=	-L. -L../../libs -lqfnet -lqfsys_cl -lqfsnd -lqfcd -lqfjs -lutil $(SOUND_LIBS) $(NET_LIBS) $(CD_LIBS) $(JOY_LIBS) $(Z_LIBS)
-CLIENT_LIB_DEPS= libqfnet.a libqfsys_cl.a libqfsnd.a libqfcd.a libqfjs.a ../../libs/libutil.a
+CLIENT_LIBS=	-L. -L../../libs -lqfnet -lqfsys_cl -lqfsnd -lqfcd -lqfjs -lqfutil $(SOUND_LIBS) $(NET_LIBS) $(CD_LIBS) $(JOY_LIBS) $(Z_LIBS)
+CLIENT_LIB_DEPS= libqfnet.a libqfsys_cl.a libqfsnd.a libqfcd.a libqfjs.a ../../libs/libqfutil.a
 
 if ASM_ARCH
 client_ASM=	snd_mixa.S cl_math.S
