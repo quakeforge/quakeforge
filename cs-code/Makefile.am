@@ -8,7 +8,7 @@ pkgdatadir=@sharepath@/id1
 QFCC=$(top_builddir)/tools/qfcc/source/qfcc
 QCFLAGS=-g -Werror
 QCPPFLAGS=-I. -I$(srcdir) -I$(top_builddir)/include -I$(top_srcdir)/include
-GZIP=if echo $@ | grep -q .gz; then gzip -fv `basename $@ .gz`; if test -f `basename $@ .dat.gz`.sym; then gzip -fv9 `basename $@ .dat.gz`.sym; fi; fi
+GZIP=if echo $@ | grep -q .gz; then gzip -fv `basename $@ .gz`; if test -f `basename $@ .dat.gz`.sym; then gzip -fv `basename $@ .dat.gz`.sym; fi; fi
 if HAVE_ZLIB
 GZ=.gz
 else
