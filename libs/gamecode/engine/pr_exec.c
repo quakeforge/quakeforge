@@ -387,9 +387,8 @@ PR_ExecuteProgram (progs_t * pr, func_t fnum)
 				OPC.integer_var = OPA.float_var == OPB.float_var;
 				break;
 			case OP_EQ_V:
-				OPC.integer_var = (OPA.vector_var[0] == OPB.vector_var[0])
-					&& (OPA.vector_var[1] == OPB.vector_var[1])
-					&& (OPA.vector_var[2] == OPB.vector_var[2]);
+				OPC.integer_var = VectorCompare (OPA.vector_var,
+												 OPB.vector_var);
 				break;
 			case OP_EQ_E:
 				OPC.integer_var = OPA.integer_var == OPB.integer_var;
@@ -401,9 +400,8 @@ PR_ExecuteProgram (progs_t * pr, func_t fnum)
 				OPC.integer_var = OPA.float_var != OPB.float_var;
 				break;
 			case OP_NE_V:
-				OPC.integer_var = (OPA.vector_var[0] != OPB.vector_var[0])
-					|| (OPA.vector_var[1] != OPB.vector_var[1])
-					|| (OPA.vector_var[2] != OPB.vector_var[2]);
+				OPC.integer_var = !VectorCompare (OPA.vector_var,
+												  OPB.vector_var);
 				break;
 			case OP_LE_S:
 			case OP_GE_S:
