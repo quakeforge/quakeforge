@@ -19,7 +19,7 @@ DEP=$(patsubst %.o,%.d,$(OBJ))
 all: $(EXE) $(EXE).dat
 
 $(EXE): $(OBJ) $(LIBS)
-	$(CC) $(LDFLAGS) -o $@ $^ ../../d.o/libs/gamecode/engine/.libs/libQFgamecode.a -lQFutil -lz -lm
+	$(CC) $(LDFLAGS) -o $@ $^ -lQFgamecode -lQFutil -lz -lm
 
 $(EXE).dat: progs.src *.qc ../../cs-code/object.r *.r
 	qfcc --warn=error --code=debug
