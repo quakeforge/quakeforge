@@ -281,6 +281,7 @@ wad_extract (wad_t *wad, lumpinfo_t *pf)
 			Qread (wad->handle, qpic, pf->size);
 			pcx = EncodePCX (qpic->data, qpic->width, qpic->height,
 							 qpic->width, default_palette, false, &len);
+			free (qpic);
 			if (Qwrite (file, pcx, len) != len) {
 				fprintf (stderr, "Error writing to %s\n", name.str);
 				return -1;
@@ -293,6 +294,7 @@ wad_extract (wad_t *wad, lumpinfo_t *pf)
 			pcx = EncodePCX ((byte *) mip + mip->offsets[0],
 							 mip->width, mip->height, mip->width,
 							 default_palette, false, &len);
+			free (mip);
 			if (Qwrite (file, pcx, len) != len) {
 				fprintf (stderr, "Error writing to %s\n", name.str);
 				return -1;
