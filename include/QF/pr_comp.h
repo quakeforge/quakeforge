@@ -256,7 +256,7 @@ typedef enum {
 	OP_GT_P,
 } pr_opcode_e;
 
-typedef struct
+typedef struct opcode_s
 {
 	const char	*name;
 	const char	*opname;
@@ -276,7 +276,7 @@ typedef struct statement_s
 	unsigned short	a,b,c;
 } dstatement_t;
 
-typedef struct
+typedef struct ddef_s
 {
 	unsigned short	type;		// if DEF_SAVEGLOBGAL bit is set
 								// the variable needs to be saved in savegames
@@ -288,7 +288,7 @@ typedef struct
 
 #define	MAX_PARMS	8
 
-typedef struct
+typedef struct dfunction_s
 {
 	int		first_statement;	// negative numbers are builtins
 	int		parm_start;
@@ -307,7 +307,7 @@ typedef struct
 #define	PROG_ID_VERSION	6
 #define	PROG_VERSION	0x00fff002	// MMmmmRRR 0.fff.002 (hex)
 
-typedef struct
+typedef struct dprograms_s
 {
 	int		version;
 	int		crc;			// check of header file

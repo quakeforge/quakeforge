@@ -341,7 +341,6 @@ PR_GlobalString (progs_t * pr, int ofs, etype_t type)
 	char       *s;
 	int         i;
 	ddef_t     *def = 0;
-	void       *val;
 	static char line[128];
 
 	if (type == ev_short) {
@@ -350,7 +349,6 @@ PR_GlobalString (progs_t * pr, int ofs, etype_t type)
 	}
 	if (pr_debug->int_val && pr->debug)
 		def = PR_Get_Local_Def (pr, ofs);
-	val = (void *) &pr->pr_globals[ofs];
 	if (!def)
 		def = ED_GlobalAtOfs (pr, ofs);
 	if (!def && type == ev_void)
@@ -365,7 +363,10 @@ PR_GlobalString (progs_t * pr, int ofs, etype_t type)
 			if (type != def->type)
 				oi = "!";
 		}
-		s = PR_ValueString (pr, type, val);
+		if (ofs > pr->globals_size)
+			s = "Out of bounds";
+		else
+			s = PR_ValueString (pr, type, &pr->pr_globals[ofs]);
 		snprintf (line, sizeof (line), "%i(%s%s)%s", ofs, oi, name, s);
 	}
 

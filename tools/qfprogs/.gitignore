@@ -1,0 +1,11 @@
+.vimrc
+ChangeLog
+Makefile
+Makefile.in
+aclocal.m4
+confdefs.h
+configure
+config.log
+config.cache
+config.status
+qfcc.lsm

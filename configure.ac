@@ -1852,8 +1852,15 @@ AC_SUBST(QFCC_LIBS)
 AC_SUBST(QFCC_DEPS)
 AC_SUBST(QFCC_INCS)
 
+QFPROGS_DEPS='$(top_builddir)/libs/gamecode/engine/libQFgamecode.la $(top_builddir)/libs/util/libQFutil.la'
+QFPROGS_LIBS="${QFPROGS_DEPS} ${WINMM}"
+QFPROGS_INCS='-I$(top_srcdir)/tools/qfprogs/include'
+AC_SUBST(QFPROGS_LIBS)
+AC_SUBST(QFPROGS_DEPS)
+AC_SUBST(QFPROGS_INCS)
+
 PAK_DEPS='$(top_builddir)/libs/util/libQFutil.la'
-PAK_LIBS="${QFCC_DEPS} ${WINMM}"
+PAK_LIBS="${PAK_DEPS} ${WINMM}"
 PAK_INCS=""
 AC_SUBST(PAK_LIBS)
 AC_SUBST(PAK_DEPS)
@@ -1926,6 +1933,9 @@ AC_OUTPUT(
 	tools/qfcc/doc/man/Makefile
 	tools/qfcc/include/Makefile
 	tools/qfcc/source/Makefile
+	tools/qfprogs/Makefile
+	tools/qfprogs/include/Makefile
+	tools/qfprogs/source/Makefile
 
 	cs-code/Makefile
 	cs-code/menu.src

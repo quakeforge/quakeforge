@@ -1,0 +1,15 @@
+AUTOMAKE_OPTIONS= foreign
+
+QFPROGS_LIBS=@QFPROGS_LIBS@
+QFPROGS_DEPS=@QFPROGS_DEPS@
+QFPROGS_INCS=@QFPROGS_INCS@
+
+INCLUDES= -I$(top_srcdir)/include $(QFPROGS_INCS)
+
+bin_PROGRAMS=	qfprogs
+
+#man_MANS=	qfprogs.1
+
+qfprogs_SOURCES=	disassemble.c qfprogs.c
+qfprogs_LDADD=	$(QFPROGS_LIBS)
+qfprogs_DEPENDENCIES= $(QFPROGS_DEPS)
