@@ -36,6 +36,7 @@ static const char rcsid[] =
 #import <Foundation/NSDebug.h>
 
 #import <AppKit/NSApplication.h>
+#import <AppKit/NSNibLoading.h>
 #import <AppKit/NSMenu.h>
 #import <AppKit/NSWindow.h>
 
@@ -71,7 +72,7 @@ static const char rcsid[] =
 
 - (BOOL) applicationShouldTerminateAfterLastWindowClosed: (NSApplication *) app;
 {
-	return YES;
+	return NO;
 }
 
 /******
@@ -89,12 +90,24 @@ static const char rcsid[] =
 */
 - (void) newProject: (id) sender;
 {
-	NSLog (@"This _will_ create a new project, but it doesn't yet.");
+	fileMode = CCreateMode;
+
+	if (![NSBundle loadNibNamed: @"Project" owner: self])
+		NSLog (@"Could not create new Project window!");
+
+	fileMode = CNoMode;
+	return;
 }
 
 - (void) openProject: (id) sender;
 {
-	NSLog (@"This _will_ open a project, but it doesn't yet.");
+	fileMode = COpenMode;
+
+	if (![NSBundle loadNibNamed: @"Project" owner: self])
+		NSLog (@"Could not create new Project window!");
+
+	fileMode = CNoMode;
+	return;
 }
 
 - (void) saveProject: (id) sender;
@@ -175,6 +188,7 @@ static const char rcsid[] =
 ******/
 - (void) awakeFromNib
 {
+	fileMode = CNoMode;
 	[window setFrameAutosaveName: @"Project View"];
 	[window setFrameUsingName: @"Project View"];
 }
@@ -187,26 +201,34 @@ static const char rcsid[] =
 {
 	NSDictionary	*info = nil;
 
+	/*
+		Let's get paranoid about stuff we load... :)
+	*/
 	if (!aBundle) {
 		NSLog (@"Controller -bundleController: sent nil bundle");
 		return;
 	}
 
-	info = [aBundle infoDictionary];
-	if (![aBundle principalClass]) {
-		
-		if (!(info || [info objectForKey: @"NSExecutable"])) {
-			NSLog (@"%@ has no principal class and no info dictionary", aBundle);
-			return;
-		}
+	if (!(info = [aBundle infoDictionary])) {
+		NSLog (@"Bundle %@ has no info dictionary!", aBundle);
+		return;
+	}
 
+	if (![info objectForKey: @"NSExecutable"]) {
+		NSLog (@"Bundle %@ has no executable!", aBundle);
+		return;
+	}
+
+	if (![aBundle principalClass]) {
 		NSLog (@"Bundle `%@' has no principal class!", [[info objectForKey: @"NSExecutable"] lastPathComponent]);
 		return;
 	}
+
 	if (![[aBundle principalClass] conformsToProtocol: @protocol(ForgeBundle)]) {
 		NSLog (@"Bundle %@'s principal class does not conform to the ForgeBundle protocol.", [[info objectForKey: @"NSExecutable"] lastPathComponent]);
 		return;
-	}	
+	}
+
 	[[(id <ForgeBundle>) [aBundle principalClass] alloc] initWithOwner: self];
 }
 
@@ -222,6 +244,11 @@ static const char rcsid[] =
 
 	[prefsController addPrefsViewController: aPrefsController];
 	return YES;
+}
+
+- (CMode) fileMode
+{
+	return fileMode;
 }
 
 @end

@@ -608,4 +608,13 @@
 	);
 	Super = NSObject;
     };
+    Project = {
+	Actions = (
+	    closeProject:
+	);
+	Outlets = (
+	    owner
+	);
+	Super = NSObject;
+    };
 }

@@ -40,11 +40,14 @@
 #import "BundleController.h"
 #import "PrefsController.h"
 
+typedef enum {CNoMode = 0, COpenMode, CCreateMode} CMode;
+
 @interface Controller: NSObject <BundleDelegate>
 {
 	IBOutlet BundleController	*bundleController;
 	IBOutlet PrefsController	*prefsController;
 	IBOutlet id					window;
+	IBOutlet CMode				fileMode;
 }
 
 // App delegate methods
@@ -73,4 +76,7 @@
 - (IBAction) addFileToProject: (id) sender;
 - (IBAction) addNewFileToProject: (id) sender;
 - (IBAction) open: (id) sender;
+
+// Private (for Project)
+- (CMode) fileMode;
 @end

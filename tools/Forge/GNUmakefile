@@ -52,12 +52,13 @@ ADDITIONAL_GUI_LIBS +=
 Forge_MAIN_MODEL_FILE=	Forge.gorm
 Forge_RESOURCE_FILES= \
 	Bundles/MainPrefs/MainPrefs.forgeb \
-	Forge.gorm \
 	Forge.tiff \
 	ForgeDocument.tiff \
 	ForgeInfo.plist
 
 Forge_LOCALIZED_RESOURCE_FILES= \
+	Forge.gorm \
+	Project.gorm \
 	Localizable.strings
 
 # Languages we're localized for
@@ -71,7 +72,8 @@ Forge_HEADERS= \
 	Config.h \
 	BundleController.h \
 	Controller.h \
-	PrefsController.h
+	PrefsController.h \
+	Project.h
 
 #
 # Class files
@@ -80,6 +82,7 @@ Forge_OBJC_FILES= \
 	BundleController.m \
 	Controller.m \
 	PrefsController.m \
+	Project.m \
 	main.m
 
 #

@@ -1,48 +1,9 @@
-/* App Name */
-"Forge" = "Forge";
-
-/* Controller.m Menus */
-"Info" = "Info";
-	"Info Panel..." = "Info Panel...";
-	"Preferences..." = "Preferences...";
-	"Help" = "Help";
-
-"Project" = "Project";
-	"Open..." = "Open...";
-	"New" = "New";
-	"Save..." = "Save...";
-	"Save As..." = "Save As...";
-	"Close" = "Close";
-
-"File" = "File";
-	"Save All" = "Save All";
-	"Revert to Saved" = "Revert to Saved";
-
-"Edit" = "Edit";
-	"Cut" = "Cut";
-	"Copy" = "Copy";
-	"Paste" = "Paste";
-	"Delete" = "Delete";
-	"Select All" = "Select All";
-
-"BSP" = "BSP";
-	"None" = "None";
-
-"Brush" = "Brush";
-
+/* Menu names */
 "Windows" = "Windows";
 
 "Services" = "Services";
 
-"Hide" = "Hide";
-
-"Quit" = "Quit";
-
-/* Preferences Window buttons */
-
-"Preferences" = "Preferences";
-
-"OK" = "OK";
-"Cancel" = "Cancel";
-"Apply" = "Apply";
-"Default" = "Default";
+/*
+	The other strings are located inside the .gorm files, so they need to be
+	edited there.
+*/
