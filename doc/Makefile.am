@@ -8,6 +8,7 @@ EXTRA_DIST= 3dfx.txt CodingStyle glqnotes.txt \
 	qf-client-x11-cmd.txt qf-client-x11-cvar.txt qf-server-cmd.txt \
 	qf-server-cvar.txt quake.gif quake.ico readme.txt \
 	skybox.fig template.h timestamps.txt wqreadme.txt \
+	quakeforge.dox.in \
 	\
 	config/glspeed-v1.cfg config/glspeed-v3.cfg config/swspeed.cfg \
 	\
@@ -24,3 +25,6 @@ EXTRA_DIST= 3dfx.txt CodingStyle glqnotes.txt \
 	data/docs/readme.glquake data/docs/readme.squake data/docs/readme.x11 \
 	\
 	ideas/quakedownload.txt ideas/rhamph.txt ideas/serverlist.txt
+
+doc: quakeforge.dox
+	doxygen quakeforge.dox

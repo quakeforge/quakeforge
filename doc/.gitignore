@@ -1,4 +1,5 @@
 Makefile
 Makefile.in
-texinfo
+doxygen
 man
+texinfo

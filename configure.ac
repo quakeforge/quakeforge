@@ -2099,6 +2099,7 @@ AC_OUTPUT(
 	ruamoko/cl_menu/Makefile
 
 	doc/Makefile
+	doc/quakeforge.dox
 	doc/man/Makefile
 
 	debian/Makefile
