@@ -57,6 +57,7 @@ static const char rcsid[] =
 #include <getopt.h>
 
 #include <QF/crc.h>
+#include <QF/dstring.h>
 #include <QF/hash.h>
 #include <QF/qendian.h>
 #include <QF/sys.h>
@@ -106,6 +107,7 @@ cpp_arg_t **cpp_def_tail = &cpp_def_list;
 const char **cpp_argv;
 char       *cpp_name = CPP_NAME;
 static int  cpp_argc = 0;
+dstring_t  *tempname;
 #endif
 
 pr_info_t   pr;
@@ -996,6 +998,128 @@ DecodeArgs (int argc, char **argv)
 
 //============================================================================
 
+FILE *
+preprocess_file (const char *filename)
+{
+#ifdef USE_CPP
+# ifndef _WIN32
+	pid_t       pid;
+	int         tempfd = 0;
+# endif
+	char       *temp1;
+	char       *temp2 = strrchr (this_program, PATH_SEPARATOR);
+
+	if (cpp_name) {
+		if (options.save_temps) {
+			char	*basename = strdup (filename);
+			char	*temp;
+		
+			temp = strrchr (basename, '.');
+			if (temp)
+				*temp = '\0';	// ignore the rest of the string
+
+			temp = strrchr (basename, '/');
+			if (!temp)
+				temp = basename;
+			else
+				temp++;
+
+			if (*sourcedir) {
+				tempname->size = strlen (sourcedir) + 1 + strlen (temp) + 1;
+				dstring_adjust (tempname);
+				sprintf (tempname->str, "%s%c%s", sourcedir,
+						 PATH_SEPARATOR, temp);
+			} else {
+				tempname->size = strlen (temp) + 2 + 1;
+				dstring_adjust (tempname);
+				sprintf (tempname->str, "%s.p", temp);
+			}
+			free (basename);
+		} else {
+			temp1 = getenv ("TMPDIR");
+			if ((!temp1) || (!temp1[0])) {
+				temp1 = getenv ("TEMP");
+				if ((!temp1) || (!temp1[0])) {
+					temp1 = "/tmp";
+				}
+			}
+
+			tempname->size = strlen (temp1) + 1
+							 + strlen (temp2 ? temp2 + 1 : this_program) + 1;
+			sprintf (tempname->str, "%s%c%sXXXXXX", temp1,
+					  PATH_SEPARATOR, temp2 ? temp2 + 1 : this_program);
+		}
+		build_cpp_args (filename, tempname->str);
+
+# ifdef _WIN32
+		if (!options.save_temps)
+			mktemp (tempname->str);
+		yyin = fopen (tempname->str, "wt");
+		fclose (yyin);
+
+		{
+			int		status = spawnvp (_P_WAIT, cpp_argv[0], (char **)cpp_argv);
+
+			if (status) {
+				fprintf (stderr, "%s: cpp returned error code %d\n",
+						filename,
+						status);
+				exit (1);
+			}
+		}
+
+		yyin = fopen (tempname->str, "rt");
+# else
+		if (!options.save_temps)
+			tempfd = mkstemp (tempname->str);
+
+		if ((pid = fork ()) == -1) {
+			perror ("fork");
+			exit (1);
+		}
+		if (!pid) {
+			// we're a child, check for abuse
+			execvp (cpp_argv[0], (char **)cpp_argv);
+			fprintf (stderr, "Child shouldn't reach here\n");
+			exit (1);
+		} else {
+			// give parental guidance (or bury it in the back yard)
+			int         status;
+			pid_t       rc;
+
+//              printf ("pid = %d\n", pid);
+			if ((rc = waitpid (0, &status, 0 | WUNTRACED)) != pid) {
+				if (rc == -1) {
+					perror ("wait");
+					exit (1);
+				}
+				fprintf (stderr, "%s: The wrong child (%d) died. Don't ask me, I don't know either.\n",
+						this_program,
+						rc);
+				exit (1);
+			}
+			if (WIFEXITED (status)) {
+				if (WEXITSTATUS (status)) {
+					fprintf (stderr, "%s: cpp returned error code %d\n",
+							filename,
+							WEXITSTATUS (status));
+					exit (1);
+				}
+			} else {
+				fprintf (stderr, "%s: cpp returned prematurely.\n", filename);
+				exit (1);
+			}
+		}
+		if (options.save_temps)
+			return fopen (tempname->str, "rt");
+		else
+			return fdopen (tempfd, "r+t");
+# endif
+	}
+#endif
+	return fopen (filename, "rt");
+}
+
 /*
 	main
 
@@ -1014,6 +1138,11 @@ main (int argc, char **argv)
 	this_program = argv[0];
 
 	DecodeArgs (argc, argv);
+
+#ifdef USE_CPP
+	tempname = dstring_newstr ();
+	parse_cpp_name ();
+#endif
 
 	if (strcmp (sourcedir, "")) {
 		printf ("Source directory: %s\n", sourcedir);
@@ -1060,21 +1189,8 @@ main (int argc, char **argv)
 
 	PR_BeginCompilation ();
 
-#ifdef USE_CPP
-	parse_cpp_name ();
-#endif
-
 	// compile all the files
 	while ((src = Parse (src))) {
-#ifdef USE_CPP
-# ifndef _WIN32
-		pid_t       pid;
-		int         tempfd = 0;
-# endif
-		char       *temp1;
-		char       *temp2 = strrchr (argv[0], PATH_SEPARATOR);
-		char        tempname[1024];
-#endif
 		int         error;
 
 		extern FILE *yyin;
@@ -1092,112 +1208,8 @@ main (int argc, char **argv)
 		if (options.verbosity >= 2)
 			printf ("compiling %s\n", filename);
 
-#ifdef USE_CPP
-		if (cpp_name) {
-			if (options.save_temps) {
-				char	*basename = strdup (filename);
-				char	*temp;
-			
-				temp = strrchr (basename, '.');
-				if (temp)
-					*temp = '\0';	// ignore the rest of the string
+		yyin = preprocess_file (filename);
 
-				temp = strrchr (basename, '/');
-				if (!temp)
-					temp = basename;
-				else
-					temp++;
-
-				if (*sourcedir)
-					snprintf (tempname, sizeof (tempname), "%s%c%s", sourcedir,
-							  PATH_SEPARATOR, temp);
-				else
-					snprintf (tempname, sizeof (tempname), "%s.p", temp);
-				free (basename);
-			} else {
-				temp1 = getenv ("TMPDIR");
-				if ((!temp1) || (!temp1[0])) {
-					temp1 = getenv ("TEMP");
-					if ((!temp1) || (!temp1[0])) {
-						temp1 = "/tmp";
-					}
-				}
-
-				snprintf (tempname, sizeof (tempname), "%s%c%sXXXXXX", temp1,
-						  PATH_SEPARATOR, temp2 ? temp2 + 1 : argv[0]);
-			}
-			build_cpp_args (filename, tempname);
-
-# ifdef _WIN32
-			if (!options.save_temps)
-				mktemp (tempname);
-			yyin = fopen (tempname, "wt");
-			fclose (yyin);
-
-			{
-				int		status = spawnvp (_P_WAIT, cpp_argv[0], (char **)cpp_argv);
-
-				if (status) {
-					fprintf (stderr, "%s: cpp returned error code %d\n",
-							filename,
-							status);
-					exit (1);
-				}
-			}
-
-			yyin = fopen (tempname, "rt");
-# else
-			if (!options.save_temps)
-				tempfd = mkstemp (tempname);
-
-			if ((pid = fork ()) == -1) {
-				perror ("fork");
-				return 1;
-			}
-			if (!pid) {
-				// we're a child, check for abuse
-				execvp (cpp_argv[0], (char **)cpp_argv);
-				fprintf (stderr, "Child shouldn't reach here\n");
-				exit (1);
-			} else {
-				// give parental guidance (or bury it in the back yard)
-				int         status;
-				pid_t       rc;
-
-//              printf ("pid = %d\n", pid);
-				if ((rc = waitpid (0, &status, 0 | WUNTRACED)) != pid) {
-					if (rc == -1) {
-						perror ("wait");
-						exit (1);
-					}
-					fprintf (stderr, "%s: The wrong child (%d) died. Don't ask me, I don't know either.\n",
-							this_program,
-							rc);
-					exit (1);
-				}
-				if (WIFEXITED (status)) {
-					if (WEXITSTATUS (status)) {
-						fprintf (stderr, "%s: cpp returned error code %d\n",
-								filename,
-								WEXITSTATUS (status));
-						exit (1);
-					}
-				} else {
-					fprintf (stderr, "%s: cpp returned prematurely.\n", filename);
-					exit (1);
-				}
-			}
-			if (options.save_temps)
-				yyin = fopen (tempname, "rt");
-			else
-				yyin = fdopen (tempfd, "r+t");
-# endif
-		} else {
-			yyin = fopen (filename, "rt");
-		}
-#else
-		yyin = fopen (filename, "rt");
-#endif
 		s_file = ReuseString (filename);
 		pr_source_line = 1;
 		clear_frame_macros ();
@@ -1205,7 +1217,7 @@ main (int argc, char **argv)
 		fclose (yyin);
 #ifdef USE_CPP
 		if (cpp_name && (!options.save_temps)) {
-			if (unlink (tempname)) {
+			if (unlink (tempname->str)) {
 				perror ("unlink");
 				exit (1);
 			}
