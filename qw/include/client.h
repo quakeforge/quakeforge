@@ -328,8 +328,8 @@ extern	struct cvar_s	*cl_model_crcs;
 
 extern	struct cvar_s	*rate;
 
-extern	struct cvar_s	*show_ping;
-extern	struct cvar_s	*show_pl;
+extern	struct cvar_s	*hud_ping;
+extern	struct cvar_s	*hud_pl;
 
 extern	struct cvar_s	*skin;
 

@@ -1102,9 +1102,9 @@ draw_time (view_t *view)
 	utc = time (NULL);
 	local = localtime (&utc);
 
-	if (show_time->int_val == 1) {  // Use international format
+	if (hud_time->int_val == 1) {  // Use international format
 		timefmt = "%k:%M";
-	} else if (show_time->int_val >= 2) {   // US AM/PM display
+	} else if (hud_time->int_val >= 2) {   // US AM/PM display
 		timefmt = "%l:%M %P";
 	}
 
@@ -1133,9 +1133,9 @@ draw_fps (view_t *view)
 static void
 draw_stuff (view_t *view)
 {
-	if (show_time->int_val > 0)
+	if (hud_time->int_val > 0)
 		draw_time (view);
-	if (show_fps->int_val > 0)
+	if (hud_fps->int_val > 0)
 		draw_fps (view);
 }
 

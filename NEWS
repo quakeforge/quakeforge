@@ -4,7 +4,9 @@ NEWS for the QuakeForge project
 Changes from 0.5.4
     o more cvar renaming: scr_consize -> con_size, scr_conspeed -> con_speed,
       gl_conalpha -> con_alpha, vid_conwidth -> con_width,
-      vid_conheight -> con_height
+      vid_conheight -> con_height, show_fps -> hud_fps, show_ping -> hud_ping,
+      show_pl -> hud_pl, show_time -> hud_time,
+      show_scoresuid -> hud_scoreboard_uid
     o demo_speed no longer affects console scrolling or cursor blink rate
     o save game loading fixed
     o FPS display now updated every 0.2 seconds and displays to the tenth of

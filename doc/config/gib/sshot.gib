@@ -32,13 +32,13 @@
 //	r_dlight_lightmap 1 (on)
 //	r_shadows 1 (on)
 //	r_wateralpha 0.3 (translucent)
-//	show_fps 0 (off)
+//	hud_fps 0 (off)
 
 domain sshot
 
 global rcsid = "$Id$"
 
-global cvars = crosshair r_dlight_lightmap r_shadows r_wateralpha show_fps
+global cvars = crosshair r_dlight_lightmap r_shadows r_wateralpha hud_fps
 
 function cvar::save {
 	for i in @args[1:] {
@@ -58,7 +58,7 @@ function sshot {
 	set r_dlight_lightmap 1
 	set r_shadows 1
 	set r_wateralpha 0.3
-	set show_fps 0
+	set hud_fps 0
 	wait
 	if (#args == 2) { // named screenshot
 		// find next available name

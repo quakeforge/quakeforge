@@ -75,8 +75,8 @@ cvar_t     *m_yaw;
 cvar_t     *m_forward;
 cvar_t     *m_side;
 
-cvar_t     *show_fps;
-cvar_t     *show_time;
+cvar_t     *hud_fps;
+cvar_t     *hud_time;
 
 int         fps_count;
 
@@ -135,10 +135,10 @@ CL_InitCvars (void)
 						  "mouse forward/back speed");
 	m_side = Cvar_Get ("m_side", "0.8", CVAR_ARCHIVE, NULL,
 					   "mouse strafe speed");
-	show_fps = Cvar_Get ("show_fps", "0", CVAR_ARCHIVE, NULL,
-						 "display realtime frames per second");
-	show_time = Cvar_Get ("show_time", "0", CVAR_ARCHIVE, NULL,
-						  "display the current time");
+	hud_fps = Cvar_Get ("hud_fps", "0", CVAR_ARCHIVE, NULL,
+						"display realtime frames per second");
+	hud_time = Cvar_Get ("hud_time", "0", CVAR_ARCHIVE, NULL,
+						 "display the current time");
 }
 
 void

@@ -212,10 +212,10 @@ byte       *host_basepal;
 byte       *vid_colormap;
 
 cvar_t     *host_speeds;
-cvar_t     *show_fps;
-cvar_t     *show_ping;
-cvar_t     *show_pl;
-cvar_t     *show_time;
+cvar_t     *hud_fps;
+cvar_t     *hud_ping;
+cvar_t     *hud_pl;
+cvar_t     *hud_time;
 
 int         fps_count;
 
@@ -229,7 +229,7 @@ char        prespawn_name[] = "prespawn %i 0 %i";
 char        modellist_name[] = "modellist %i %i";
 char        soundlist_name[] = "soundlist %i %i";
 
-extern cvar_t *cl_showscoresuid;
+extern cvar_t *hud_scoreboard_uid;
 
 
 static void
@@ -621,7 +621,7 @@ CL_FullServerinfo_f (void)
 	}
 	if ((p = Info_ValueForKey (cl.serverinfo, "teamplay")) && *p) {
 		cl.teamplay = atoi (p);
-		Sbar_DMO_Init_f (cl_showscoresuid); // HUD setup, cl.teamplay changed
+		Sbar_DMO_Init_f (hud_scoreboard_uid); // HUD setup, cl.teamplay changed
 	}
 	if ((p = Info_ValueForKey (cl.serverinfo, "watervis")) && *p) {
 		cl.watervis = atoi (p);
@@ -1289,14 +1289,14 @@ CL_Init_Cvars (void)
 	rcon_address = Cvar_Get ("rcon_address", "", CVAR_NONE, NULL, "server IP "
 							 "address when client not connected - for "
 							 "sending rcon commands");
-	show_fps = Cvar_Get ("show_fps", "0", CVAR_ARCHIVE, NULL,
-						 "display realtime frames per second");
-	show_ping = Cvar_Get ("show_ping", "0", CVAR_ARCHIVE, NULL,
-						  "display current ping to server");
-	show_pl = Cvar_Get ("show_pl", "0", CVAR_ARCHIVE, NULL,
-						"display current packet loss to server");
-	show_time = Cvar_Get ("show_time", "0", CVAR_ARCHIVE, NULL,
-						  "Display the current time, 1 24hr, 2 AM/PM");
+	hud_fps = Cvar_Get ("hud_fps", "0", CVAR_ARCHIVE, NULL,
+						"display realtime frames per second");
+	hud_ping = Cvar_Get ("hud_ping", "0", CVAR_ARCHIVE, NULL,
+						 "display current ping to server");
+	hud_pl = Cvar_Get ("hud_pl", "0", CVAR_ARCHIVE, NULL,
+					   "display current packet loss to server");
+	hud_time = Cvar_Get ("hud_time", "0", CVAR_ARCHIVE, NULL,
+						 "Display the current time, 1 24hr, 2 AM/PM");
 	cl_predict_players = Cvar_Get ("cl_predict_players", "1", CVAR_NONE, NULL,
 								   "If this is 0, no player prediction is "
 								   "done");

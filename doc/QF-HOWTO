@@ -201,7 +201,7 @@ this document uptodate and to make it complete.
     - Set vid_width and vid_height to the appropriate values.
 
   o View Frames per second
-   - Set the cvar 'show_fps' to 1: /set show_fps 1
+   - Set the cvar 'hud_fps' to 1: /set hud_fps 1
 
 4.2 Audio
 ---------

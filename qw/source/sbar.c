@@ -93,13 +93,13 @@ qboolean	hudswap;
 
 static qboolean largegame = false;
 
-cvar_t     *cl_showscoresuid;
 cvar_t     *fs_fraglog;
 cvar_t     *cl_fraglog;
 cvar_t     *hud_sbar;
 cvar_t     *hud_sbar_separator;
 cvar_t     *hud_swap;
 cvar_t     *hud_scoreboard_gravity;
+cvar_t     *hud_scoreboard_uid;
 
 static view_t *sbar_view;
 static view_t *sbar_inventory_view;
@@ -1400,7 +1400,7 @@ Sbar_Draw_DMO_Ping_UID (view_t *view, int l, int y, int skip)
 void
 Sbar_DMO_Init_f (cvar_t *var)
 {
-	// "var" is "cl_showscoresuid"
+	// "var" is "hud_scoreboard_uid"
 	if (!var) {
 		Sbar_Draw_DMO_func = Sbar_Draw_DMO_Ping;
 		return;
@@ -1596,9 +1596,9 @@ draw_time (view_t *view)
 	utc = time (NULL);
 	local = localtime (&utc);
 
-	if (show_time->int_val == 1) {  // Use international format
+	if (hud_time->int_val == 1) {  // Use international format
 		timefmt = "%k:%M";
-	} else if (show_time->int_val >= 2) {   // US AM/PM display
+	} else if (hud_time->int_val >= 2) {   // US AM/PM display
 		timefmt = "%l:%M %P";
 	}
 
@@ -1633,17 +1633,17 @@ draw_net (view_t *view)
 		MSG_WriteByte (&cls.netchan.message, clc_stringcmd);
 		SZ_Print (&cls.netchan.message, "pings");
 	}
-	if (show_ping->int_val) {
+	if (hud_ping->int_val) {
 		int ping = cl.players[cl.playernum].ping;
 
 		ping = bound (0, ping, 999);
 		draw_string (view, 0, 0, va ("%3d ms ", ping));
 	}
 
-	if (show_ping->int_val && show_pl->int_val)
+	if (hud_ping->int_val && hud_pl->int_val)
 		draw_character (view, 48, 0, '/');
 
-	if (show_pl->int_val) {
+	if (hud_pl->int_val) {
 		int lost = CL_CalcNet ();
 
 		lost = bound (0, lost, 999);
@@ -1654,11 +1654,11 @@ draw_net (view_t *view)
 static void
 draw_stuff (view_t *view)
 {
-	if (show_time->int_val > 0)
+	if (hud_time->int_val > 0)
 		draw_time (view);
-	if (show_fps->int_val > 0)
+	if (hud_fps->int_val > 0)
 		draw_fps (view);
-	if (cls.state == ca_active && (show_ping->int_val || show_pl->int_val))
+	if (cls.state == ca_active && (hud_ping->int_val || hud_pl->int_val))
 		draw_net (view);
 }
 
@@ -1966,7 +1966,7 @@ Sbar_Init (void)
 
 	r_viewsize_callback = viewsize_f;
 
-	cl_showscoresuid = Cvar_Get ("cl_showscoresuid", "0", CVAR_NONE,
+	hud_scoreboard_uid = Cvar_Get ("hud_scoreboard_uid", "0", CVAR_NONE,
 								 Sbar_DMO_Init_f, "Set to 1 to show uid "
 								 "instead of ping. Set to 2 to show both.");
 	fs_fraglog = Cvar_Get ("fs_fraglog", "qw-scores.log", CVAR_ARCHIVE, NULL,

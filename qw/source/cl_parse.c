@@ -167,8 +167,7 @@ int         cl_h_playerindex, cl_gib1index, cl_gib2index, cl_gib3index;
 
 int         packet_latency[NET_TIMINGS];
 
-
-extern cvar_t *cl_showscoresuid;
+extern cvar_t *hud_scoreboard_uid;
 
 
 int
@@ -1102,9 +1101,18 @@ CL_ServerInfo (void)
 		cl.no_pogo_stick = no_pogo_stick->int_val;
 	} else if (strequal (key, "teamplay")) {
 		cl.teamplay = atoi (value);
-		Sbar_DMO_Init_f (cl_showscoresuid); // HUD setup, cl.teamplay changed
+		Sbar_DMO_Init_f (hud_scoreboard_uid); // HUD setup, cl.teamplay changed
 	} else if (strequal (key, "watervis")) {
 		cl.watervis = atoi (value);
+//	} else if (strequal (key, "*z_ext") {
+//		cl.z_ext = atoi (value);
+//	} else if (strequal (key, "pm_bunnyspeedcap") {
+//		cl.bunnyspeedcap = atof (value);
+//	} else if (strequal (key, "pm_slidefix") {
+//		movevars.slidefix = atoi (value);
+//	} else if (strequal (key, "pm_ktjump") {
+//		movevars.ktjump = atof (value);
+//		FIXME: need to set to 0.5 otherwise, outside of else structure
 	}
 }
 

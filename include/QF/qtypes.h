@@ -33,7 +33,13 @@
 
 #include <stdio.h>
 
+#ifdef HAVE_SYSTEM_MSG_T
+# define msg_t sys_msg_t
+#endif
 #include <sys/types.h>
+#ifdef HAVE_SYSTEM_MSG_T
+# undef msg_t
+#endif
 
 #define MAX_QPATH	64
 
