@@ -373,7 +373,6 @@ PR_Get_Source_Line (progs_t *pr, unsigned int addr)
 	if (!func || !fname)
 		return 0;
 	line = PR_Get_Lineno_Line (pr, lineno);
-	line += func->source_line;
 
 	file = PR_Load_Source_File (pr, fname);
 
