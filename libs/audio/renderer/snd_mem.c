@@ -270,7 +270,7 @@ SND_StreamAdvance (sfxbuffer_t *buffer, unsigned int count)
 		buffer->pos += count;
 		if (buffer->pos >= sfx->length) {
 			if (sfx->loopstart == (unsigned int)-1) {
-				// reset the buffer and fill it incase it's needed again
+				// reset the buffer and fill it in case it's needed again
 				headpos = buffer->pos = 0;
 				buffer->head = buffer->tail = 0;
 				count = 0;
@@ -343,8 +343,7 @@ sfxbuffer_t *
 SND_GetCache (long samples, int rate, int inwidth, int channels,
 			  sfxblock_t *block, cache_allocator_t allocator)
 {
-	int         len, size;
-	int         width;
+	int         len, size, width;
 	float		stepscale;
 	sfxbuffer_t *sc;
 	sfx_t      *sfx = block->sfx;
@@ -352,7 +351,7 @@ SND_GetCache (long samples, int rate, int inwidth, int channels,
 	width = snd_loadas8bit->int_val ? 1 : 2;
 	stepscale = (float) rate / shm->speed;	// usually 0.5, 1, or 2
 	len = size = samples / stepscale;
-//printf ("%ld %d\n", samples, size);
+//	printf ("%ld %d\n", samples, size);
 	size *= width * channels;
 	sc = allocator (&block->cache, sizeof (sfxbuffer_t) + size, sfx->name);
 	if (!sc)
@@ -396,7 +395,7 @@ SND_ResampleMono (sfxbuffer_t *sc, byte *data, int length, void *prev)
 	stepscale = (float) inrate / shm->speed;	// usually 0.5, 1, or 2
 
 	outcount = length / stepscale;
-//printf ("%d %d\n", length, outcount);
+//	printf ("%d %d\n", length, outcount);
 
 	sc->sfx->length = info->samples / stepscale;
 	if (info->loopstart != (unsigned int)-1)
@@ -425,21 +424,25 @@ SND_ResampleMono (sfxbuffer_t *sc, byte *data, int length, void *prev)
 
 	// resample / decimate to the current source rate
 	if (stepscale == 1) {
-		if (inwidth == 1 && outwidth == 1) {
-			for (i = 0; i < outcount; i++) {
-				*ob++ = *ib++ - 128;
+		if (inwidth == 1) {
+			if (outwidth == 1) {
+				for (i = 0; i < outcount; i++) {
+					*ob++ = *ib++ - 128;
+				}
+			} else if (outwidth == 2) {
+				for (i = 0; i < outcount; i++) {
+					*os++ = (*ib++ - 128) << 8;
+				}
 			}
-		} else if (inwidth == 1 && outwidth == 2) {
-			for (i = 0; i < outcount; i++) {
-				*os++ = (*ib++ - 128) << 8;
-			}
-		} else if (inwidth == 2 && outwidth == 1) {
-			for (i = 0; i < outcount; i++) {
-				*ob++ = LittleShort (*is++) >> 8;
-			}
-		} else if (inwidth == 2 && outwidth == 2) {
-			for (i = 0; i < outcount; i++) {
-				*os++ = LittleShort (*is++);
+		} else if (inwidth == 2) {
+			if (outwidth == 1) {
+				for (i = 0; i < outcount; i++) {
+					*ob++ = LittleShort (*is++) >> 8;
+				}
+			} else if (outwidth == 2) {
+				for (i = 0; i < outcount; i++) {
+					*os++ = LittleShort (*is++);
+				}
 			}
 		}
 	} else {
@@ -502,14 +505,13 @@ SND_ResampleMono (sfxbuffer_t *sc, byte *data, int length, void *prev)
 void
 SND_ResampleStereo (sfxbuffer_t *sc, byte *data, int length, void *prev)
 {
-	int			fracstep, outcount, sl, sr, samplefrac, srcsample, i;
+	int			fracstep, outcount, outwidth, samplefrac, srcsample, sl, sr, i;
 	float		stepscale;
 	stereo8_t  *ib, *ob, *pb;
 	stereo16_t *is, *os, *ps;
 	wavinfo_t  *info = sc->sfx->wavinfo (sc->sfx);
 	int         inwidth = info->width;
 	int         inrate = info->rate;
-	int         outwidth;
 	stereo16_t  zero_s;
 	stereo8_t   zero_b;
 
@@ -566,25 +568,29 @@ SND_ResampleStereo (sfxbuffer_t *sc, byte *data, int length, void *prev)
 
 	// resample / decimate to the current source rate
 	if (stepscale == 1) {
-		if (inwidth == 1 && outwidth == 1) {
-			for (i = 0; i < outcount; i++, ob++, ib++) {
-				ob->left = ib->left - 128;
-				ob->right = ib->right - 128;
+		if (inwidth == 1) {
+			if (outwidth == 1) {
+				for (i = 0; i < outcount; i++, ob++, ib++) {
+					ob->left = ib->left - 128;
+					ob->right = ib->right - 128;
+				}
+			} else if (outwidth == 2) {
+				for (i = 0; i < outcount; i++, os++, ib++) {
+					os->left = (ib->left - 128) << 8;
+					os->right = (ib->right - 128) << 8;
+				}
 			}
-		} else if (inwidth == 1 && outwidth == 2) {
-			for (i = 0; i < outcount; i++, os++, ib++) {
-				os->left = (ib->left - 128) << 8;
-				os->right = (ib->right - 128) << 8;
-			}
-		} else if (inwidth == 2 && outwidth == 1) {
-			for (i = 0; i < outcount; i++, ob++, ib++) {
-				ob->left = LittleShort (is->left) >> 8;
-				ob->right = LittleShort (is->right) >> 8;
-			}
-		} else if (inwidth == 2 && outwidth == 2) {
-			for (i = 0; i < outcount; i++, os++, is++) {
-				os->left = LittleShort (is->left);
-				os->right = LittleShort (is->right);
+		} else if (inwidth == 2) {
+			if (outwidth == 1) {
+				for (i = 0; i < outcount; i++, ob++, ib++) {
+					ob->left = LittleShort (is->left) >> 8;
+					ob->right = LittleShort (is->right) >> 8;
+				}
+			} else if (outwidth == 2) {
+				for (i = 0; i < outcount; i++, os++, is++) {
+					os->left = LittleShort (is->left);
+					os->right = LittleShort (is->right);
+				}
 			}
 		}
 	} else {
@@ -697,25 +703,29 @@ SND_NoResampleStereo (sfxbuffer_t *sc, byte *data, int length, void *prev)
 	if (!length)
 		return;
 
-	if (inwidth == 1 && outwidth == 1) {
-		for (i = 0; i < outcount; i++, ob++, ib++) {
-			ob->left = ib->left - 128;
-			ob->right = ib->right - 128;
+	if (inwidth == 1) {
+		if (outwidth == 1) {
+			for (i = 0; i < outcount; i++, ob++, ib++) {
+				ob->left = ib->left - 128;
+				ob->right = ib->right - 128;
+			}
+		} else if (outwidth == 2) {
+			for (i = 0; i < outcount; i++, os++, ib++) {
+				os->left = (ib->left - 128) << 8;
+				os->right = (ib->right - 128) << 8;
+			}
 		}
-	} else if (inwidth == 1 && outwidth == 2) {
-		for (i = 0; i < outcount; i++, os++, ib++) {
-			os->left = (ib->left - 128) << 8;
-			os->right = (ib->right - 128) << 8;
-		}
-	} else if (inwidth == 2 && outwidth == 1) {
-		for (i = 0; i < outcount; i++, ob++, ib++) {
-			ob->left = LittleShort (is->left) >> 8;
-			ob->right = LittleShort (is->right) >> 8;
-		}
-	} else if (inwidth == 2 && outwidth == 2) {
-		for (i = 0; i < outcount; i++, os++, is++) {
-			os->left = LittleShort (is->left);
-			os->right = LittleShort (is->right);
+	} else if (inwidth == 2) {
+		if (outwidth == 1) {
+			for (i = 0; i < outcount; i++, ob++, ib++) {
+				ob->left = LittleShort (is->left) >> 8;
+				ob->right = LittleShort (is->right) >> 8;
+			}
+		} else if (outwidth == 2) {
+			for (i = 0; i < outcount; i++, os++, is++) {
+				os->left = LittleShort (is->left);
+				os->right = LittleShort (is->right);
+			}
 		}
 	}
 	{

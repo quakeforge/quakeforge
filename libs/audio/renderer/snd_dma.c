@@ -346,25 +346,22 @@ static void
 s_start_sound (int entnum, int entchannel, sfx_t *sfx, const vec3_t origin,
 				float fvol, float attenuation)
 {
-	int			ch_idx, vol;
+	int			 ch_idx, vol;
 	unsigned int skip;
-	channel_t  *target_chan, *check;
+	channel_t   *target_chan, *check;
 
 	if (!sound_started)
 		return;
-
 	if (!sfx)
 		return;
-
 	if (nosound->int_val)
 		return;
-
-	vol = fvol * 255;
-
 	// pick a channel to play on
 	target_chan = s_pick_channel (entnum, entchannel);
 	if (!target_chan)
 		return;
+
+	vol = fvol * 255;
 
 	// spatialize
 	memset (target_chan, 0, sizeof (*target_chan));
@@ -435,9 +432,7 @@ s_stop_sound (int entnum, int entchannel)
 static void
 s_clear_buffer (void)
 {
-	int			clear;
-	int         i;
-
+	int			clear, i;
 
 	if (!sound_started || !shm || !shm->buffer)
 		return;
@@ -500,7 +495,7 @@ s_static_sound (sfx_t *sfx, const vec3_t origin, float vol,
 	if (!sfx->retain (sfx))
 		return;
 
-	if (sfx->loopstart == (unsigned int)-1) {
+	if (sfx->loopstart == (unsigned int) -1) {
 		Sys_Printf ("Sound %s not looped\n", sfx->name);
 		sfx->release (sfx);
 		return;
@@ -533,7 +528,6 @@ s_updateAmbientSounds (void)
 
 	if (!snd_ambient)
 		return;
-
 	// calc ambient sound levels
 	if (!*render_data.worldmodel)
 		return;
@@ -879,6 +873,7 @@ s_unblock_sound (void)
 {
 	if (!snd_blocked)
 		return;
+
 	if (!--snd_blocked) {
 		s_clear_buffer ();
 		snd_output_funcs->pS_O_UnblockSound ();
@@ -1005,7 +1000,6 @@ s_init (void)
 static void
 s_shutdown (void)
 {
-
 	if (!sound_started)
 		return;
 

@@ -451,6 +451,7 @@ SND_PaintChannelFrom16 (channel_t *ch, sfxbuffer_t *sc, int count)
 
 	if (pos + count > sc->length) {
 		unsigned int sub = sc->length - pos;
+
 		snd_paint_mono_16 (0, ch, samps, sub);
 		snd_paint_mono_16 (sub, ch, sc->data, count - sub);
 	} else {
@@ -472,6 +473,7 @@ SND_PaintChannelStereo8 (channel_t *ch, sfxbuffer_t *sc, int count)
 
 	if (pos + count > sc->length) {
 		unsigned int sub = sc->length - pos;
+
 		snd_paint_stereo_8 (0, ch, samps, sub);
 		snd_paint_stereo_8 (sub, ch, sc->data, count - sub);
 	} else {
@@ -493,6 +495,7 @@ SND_PaintChannelStereo16 (channel_t *ch, sfxbuffer_t *sc, int count)
 
 	if (pos + count > sc->length) {
 		unsigned int sub = sc->length - pos;
+
 		snd_paint_stereo_16 (0, ch, samps, sub);
 		snd_paint_stereo_16 (sub, ch, sc->data, count - sub);
 	} else {
