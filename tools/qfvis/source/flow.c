@@ -107,7 +107,9 @@ ClipToSeparators (winding_t *source, winding_t *pass, winding_t *target,
 		for (j = 0; j < pass->numpoints; j++) {
 			VectorSubtract (pass->points[j], source->points[i], v2);
 
-			CrossProduct (v1, v2, plane.normal);
+			plane.normal[0] = v1[1] * v2[2] - v1[2] * v2[1];
+			plane.normal[1] = v1[2] * v2[0] - v1[0] * v2[2];
+			plane.normal[2] = v1[0] * v2[1] - v1[1] * v2[0];
 
 			length = DotProduct (plane.normal, plane.normal);
 
