@@ -86,7 +86,7 @@ new_struct_field (struct_t *strct, type_t *type, const char *name,
 
 	if (!strct)
 		return 0;
-	field = malloc (sizeof (struct_field_t));
+	field = calloc (sizeof (struct_field_t), 1);
 	field->visibility = visibility;
 	if (name)
 		field->name = save_string (name);
