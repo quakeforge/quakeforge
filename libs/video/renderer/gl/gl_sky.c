@@ -316,7 +316,7 @@ R_InitSky (texture_t *mt)
 		solidskytexture = texture_extension_number++;
 	qfglBindTexture (GL_TEXTURE_2D, solidskytexture);
 	qfglTexImage2D (GL_TEXTURE_2D, 0, gl_solid_format, 128, 128, 0, GL_RGBA,
-				  GL_UNSIGNED_BYTE, trans);
+					GL_UNSIGNED_BYTE, trans);
 	qfglTexParameterf (GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 	qfglTexParameterf (GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 
@@ -333,7 +333,7 @@ R_InitSky (texture_t *mt)
 		alphaskytexture = texture_extension_number++;
 	qfglBindTexture (GL_TEXTURE_2D, alphaskytexture);
 	qfglTexImage2D (GL_TEXTURE_2D, 0, gl_alpha_format, 128, 128, 0, GL_RGBA,
-				  GL_UNSIGNED_BYTE, trans);
+					GL_UNSIGNED_BYTE, trans);
 	qfglTexParameterf (GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 	qfglTexParameterf (GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 }
