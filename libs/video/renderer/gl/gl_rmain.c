@@ -265,6 +265,7 @@ R_DrawEntitiesOnList (void)
 		qfglHint (GL_PERSPECTIVE_CORRECTION_HINT, GL_NICEST);
 	if (tess)
 		qfglEnable (GL_PN_TRIANGLES_ATI);
+	qfglEnable (GL_CULL_FACE);
 	for (i = 0; i < r_numvisedicts; i++) {
 		if (r_visedicts[i]->model->type != mod_alias)
 			continue;
@@ -276,6 +277,7 @@ R_DrawEntitiesOnList (void)
 		R_DrawAliasModel (currententity);
 	}
 	qfglColor3ubv (color_white);
+	qfglDisable (GL_CULL_FACE);
 	if (tess)
 		qfglDisable (GL_PN_TRIANGLES_ATI);
 	if (gl_affinemodels->int_val)
@@ -322,6 +324,7 @@ R_DrawViewModel (void)
 
 	// hack the depth range to prevent view model from poking into walls
 	qfglDepthRange (gldepthmin, gldepthmin + 0.3 * (gldepthmax - gldepthmin));
+	qfglEnable (GL_CULL_FACE);
 	if (gl_affinemodels->int_val)
 		qfglHint (GL_PERSPECTIVE_CORRECTION_HINT, GL_NICEST);
 
@@ -344,6 +347,7 @@ R_DrawViewModel (void)
 	}
 	if (gl_affinemodels->int_val)
 		qfglHint (GL_PERSPECTIVE_CORRECTION_HINT, GL_DONT_CARE);
+	qfglDisable (GL_CULL_FACE);
 	qfglDepthRange (gldepthmin, gldepthmax);
 }
 
@@ -497,7 +501,7 @@ R_SetupGL (void)
 	qfglGetFloatv (GL_MODELVIEW_MATRIX, r_world_matrix);
 
 	// set drawing parms
-	qfglEnable (GL_CULL_FACE);
+//	qfglEnable (GL_CULL_FACE);
 	qfglDisable (GL_ALPHA_TEST);
 	qfglAlphaFunc (GL_GREATER, 0.5);
 	qfglEnable (GL_DEPTH_TEST);

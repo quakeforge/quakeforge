@@ -106,8 +106,11 @@ qboolean			gl_feature_mach64 = false;
 
 // ATI PN_triangles
 static qboolean		TruForm;
-static GLint		tess_max;
-GLint				tess;
+static int			tess_max;
+int					tess;
+
+// GL_LIGHT
+int					gl_max_lights;
 
 cvar_t		*gl_doublebright;
 cvar_t      *gl_fb_bmodels;
@@ -424,6 +427,26 @@ CheckVertexArraySize (void)
 //	qfglGetIntegerv (MAX_ELEMENTS_INDICES, *vaindices);
 }
 
+static void
+CheckLights (void)
+{
+	float	dark[4] = {0.0, 0.0, 0.0, 1.0},
+//			light[4] = {1.0, 1.0, 1.0, 1.0},
+			specular[4] = {0.6, 0.6, 0.6, 1.0};
+
+	qfglGetIntegerv (GL_MAX_LIGHTS, &gl_max_lights);
+	Con_Printf ("Max GL Lights %lu.\n", (long unsigned) gl_max_lights);
+
+	qfglEnable (GL_LIGHTING);
+	qfglLightModelfv (GL_LIGHT_MODEL_AMBIENT, dark);
+	qfglLightModelf (GL_LIGHT_MODEL_TWO_SIDE, 0.0);
+	// Set up material defaults
+	qfglMaterialf (GL_FRONT, GL_SHININESS, 1.0);
+//	qfglMaterialfv (GL_FRONT, GL_AMBIENT_AND_DIFFUSE, light);
+	qfglMaterialfv (GL_FRONT, GL_SPECULAR, specular);
+	qfglDisable (GL_LIGHTING);
+}
+
 void
 VID_SetPalette (unsigned char *palette)
 {
@@ -528,6 +551,7 @@ GL_Init_Common (void)
 	CheckTruFormExtensions ();
 	GL_Common_Init_Cvars ();
 	CheckVertexArraySize ();
+	CheckLights ();
 }
 
 void

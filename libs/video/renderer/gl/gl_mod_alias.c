@@ -67,8 +67,8 @@ static __attribute__ ((unused)) const char rcsid[] =
 #include "view.h"
 
 typedef struct {
-	vec3_t      vert;
-	float       lightdot;
+	vec3_t		vert;
+	vec3_t		normal;
 } blended_vert_t;
 
 typedef struct {
@@ -94,63 +94,37 @@ vec3_t		shadevector;
 static inline void
 GL_DrawAliasFrameTri (vert_order_t *vo)
 {
-	float			color[4];
 	int				count;
 	blended_vert_t *verts;
 	tex_coord_t	   *tex_coord;
 
 	verts = vo->verts;
 	tex_coord = vo->tex_coord;
-	color[3] = modelalpha;
 	count = vo->count;
+
 	qfglBegin (GL_TRIANGLES);
 	do {
+		// texture coordinates come from the draw list
 		qfglTexCoord2fv (tex_coord->st);
-		VectorMultAdd (ambientcolor, verts->lightdot, shadecolor, color);
-		qfglColor4fv (color);
-		qfglVertex3fv (verts->vert);
-
 		tex_coord++;
+
+		// normals and vertexes come from the frame list
+		qfglNormal3fv (verts->normal);
+		qfglVertex3fv (verts->vert);
 		verts++;
 	} while (count--);
-	qfglEnd();
-}
-
-static inline void
-GL_DrawAliasFrameTri_fb (vert_order_t *vo)
-{
-	float			color[4] = { 1.0, 1.0, 1.0, 0.0};
-	int				count;
-	blended_vert_t *verts;
-	tex_coord_t	   *tex_coord;
-
-	verts = vo->verts;
-	color[3] = modelalpha * 1.0;
-	count = vo->count;
-	tex_coord = vo->tex_coord;
-	qfglBegin (GL_TRIANGLES);
-	do {
-		qfglTexCoord2fv (tex_coord->st);
-		qfglColor4fv (color);
-		qfglVertex3fv (verts->vert);
-
-		tex_coord++;
-		verts++;
-	} while (--count);
-	qfglEnd();
+	qfglEnd ();
 }
 
 static inline void
 GL_DrawAliasFrameTriMulti (vert_order_t *vo)
 {
-	float			color[4];
 	int				count;
 	blended_vert_t *verts;
 	tex_coord_t	   *tex_coord;
 
 	verts = vo->verts;
 	tex_coord = vo->tex_coord;	
-	color[3] = modelalpha;
 	count = vo->count;
 	qfglBegin (GL_TRIANGLES);
 	do {
@@ -160,9 +134,7 @@ GL_DrawAliasFrameTriMulti (vert_order_t *vo)
 		tex_coord++;
 
 		// normals and vertexes come from the frame list
-		VectorMultAdd (ambientcolor, verts->lightdot, shadecolor, color);
-		qfglColor4fv (color);
-
+		qfglNormal3fv (verts->normal);
 		qfglVertex3fv (verts->vert);
 		verts++;
 	} while (--count);
@@ -172,15 +144,12 @@ GL_DrawAliasFrameTriMulti (vert_order_t *vo)
 static inline void
 GL_DrawAliasFrame (vert_order_t *vo)
 {
-	float			color[4];
 	int				count;
 	int			   *order;
 	blended_vert_t *verts;
 
 	verts = vo->verts;
 	order = vo->order;
-
-	color[3] = modelalpha;
 
 	while ((count = *order++)) {
 		// get the vertex count and primitive type
@@ -196,46 +165,7 @@ GL_DrawAliasFrame (vert_order_t *vo)
 			qfglTexCoord2fv ((float *) order);
 			order += 2;
 
-			// normals and vertexes come from the frame list
-			VectorMultAdd (ambientcolor, verts->lightdot, shadecolor, color);
-
-			qfglColor4fv (color);
-
-			qfglVertex3fv (verts->vert);
-			verts++;
-		} while (--count);
-
-		qfglEnd ();
-	}
-}
-
-static inline void
-GL_DrawAliasFrame_fb (vert_order_t *vo)
-{
-	int				count;
-	int			   *order;
-	blended_vert_t *verts;
-
-	verts = vo->verts;
-	order = vo->order;
-
-	color_white[3] = modelalpha * 255;
-	qfglColor4ubv (color_white);
-
-	while ((count = *order++)) {
-		// get the vertex count and primitive type
-		if (count < 0) {
-			count = -count;
-			qfglBegin (GL_TRIANGLE_FAN);
-		} else {
-			qfglBegin (GL_TRIANGLE_STRIP);
-		}
-
-		do {
-			// texture coordinates come from the draw list
-			qfglTexCoord2fv ((float *) order);
-			order += 2;
-
+			qfglNormal3fv (verts->normal);
 			qfglVertex3fv (verts->vert);
 			verts++;
 		} while (--count);
@@ -247,7 +177,6 @@ GL_DrawAliasFrame_fb (vert_order_t *vo)
 static inline void
 GL_DrawAliasFrameMulti (vert_order_t *vo)
 {
-	float			color[4];
 	int				count;
 	int			   *order;
 	blended_vert_t *verts;
@@ -255,8 +184,6 @@ GL_DrawAliasFrameMulti (vert_order_t *vo)
 	verts = vo->verts;
 	order = vo->order;
 
-	color[3] = modelalpha;
-	
 	while ((count = *order++)) {
 		// get the vertex count and primitive type
 		if (count < 0) {
@@ -273,10 +200,7 @@ GL_DrawAliasFrameMulti (vert_order_t *vo)
 			order += 2;
 
 			// normals and vertexes come from the frame list
-			VectorMultAdd (ambientcolor, verts->lightdot, shadecolor, color);
-
-			qfglColor4fv (color);
-
+			qfglNormal3fv (verts->normal);
 			qfglVertex3fv (verts->vert);
 			verts++;
 		} while (--count);
@@ -365,7 +289,8 @@ GL_GetAliasFrameVerts16 (int frame, aliashdr_t *paliashdr, entity_t *e)
 	vo->order = (int *) ((byte *) paliashdr + paliashdr->commands);
 	vo->verts = (blended_vert_t *) &vo[1];
 	if (paliashdr->tex_coord) {
-		vo->tex_coord = (tex_coord_t *) ((byte *) paliashdr + paliashdr->tex_coord);
+		vo->tex_coord = (tex_coord_t *) ((byte *) paliashdr
+										 + paliashdr->tex_coord);
 	} else {
 		vo->tex_coord = NULL;
 	}
@@ -389,7 +314,6 @@ GL_GetAliasFrameVerts16 (int frame, aliashdr_t *paliashdr, entity_t *e)
 	if (gl_lerp_anim->int_val) {
 		trivertx16_t *verts1, *verts2;
 		float       blend;
-		vec3_t      v1, v2;
 
 		e->frame_interval = interval;
 
@@ -421,27 +345,29 @@ GL_GetAliasFrameVerts16 (int frame, aliashdr_t *paliashdr, entity_t *e)
 			for (i = 0, vo_v = vo->verts; i < count;
 				 i++, vo_v++, verts1++, verts2++) {
 				float      *n1, *n2;
-				float       d1, d2;
 
-				VectorBlend (v1, v2, blend, vo_v->vert);
+				VectorBlend (verts1->v, verts2->v, blend, vo_v->vert);
 				n1 = r_avertexnormals[verts1->lightnormalindex];
 				n2 = r_avertexnormals[verts2->lightnormalindex];
-				d1 = DotProduct (shadevector, n1);
-				d2 = DotProduct (shadevector, n2);
-				vo_v->lightdot = max (0, d1 * (1.0 - blend) + d2 * blend);
+				VectorBlend (n1, n2, blend, vo_v->normal);
+				if (vo_v->normal[0] == 0.0 && vo_v->normal[1] == 0.0
+					&& vo_v->normal[2] == 0.0) {
+					if (blend < 0.5) {
+						VectorCopy (n1, vo_v->normal);
+					} else {
+						VectorCopy (n2, vo_v->normal);
+					}
+				}
 			}
 			return vo;
 		}
 	} else {
 		verts += pose * count;
 	}
-	for (i = 0, vo_v = vo->verts; i < count; i++, vo_v++, verts++) {
-		float      *n;
-		float       d;
 
-		n = r_avertexnormals[verts->lightnormalindex];
-		d = DotProduct (shadevector, n);
-		vo_v->lightdot = max (0.0, d);
+	for (i = 0, vo_v = vo->verts; i < count; i++, vo_v++, verts++) {
+		VectorCopy (verts->v, vo_v->vert);
+		VectorCopy (r_avertexnormals[verts->lightnormalindex], vo_v->normal);
 	}
 	return vo;
 }
@@ -528,28 +454,29 @@ GL_GetAliasFrameVerts (int frame, aliashdr_t *paliashdr, entity_t *e)
 			for (i = 0, vo_v = vo->verts; i < count;
 				 i++, vo_v++, verts1++, verts2++) {
 				float      *n1, *n2;
-				float       d1, d2;
 
 				VectorBlend (verts1->v, verts2->v, blend, vo_v->vert);
 				n1 = r_avertexnormals[verts1->lightnormalindex];
 				n2 = r_avertexnormals[verts2->lightnormalindex];
-				d1 = DotProduct (shadevector, n1);
-				d2 = DotProduct (shadevector, n2);
-				vo_v->lightdot = max (0, d1 * (1.0 - blend) + d2 * blend);
+				VectorBlend (n1, n2, blend, vo_v->normal);
+				if (vo_v->normal[0] == 0.0 && vo_v->normal[1] == 0.0
+					&& vo_v->normal[2] == 0.0) {
+					if (blend < 0.5) {
+						VectorCopy (n1, vo_v->normal);
+					} else {
+						VectorCopy (n2, vo_v->normal);
+					}
+				}
 			}
 			return vo;
 		}
 	} else {
 		verts += pose * count;
 	}
-	for (i = 0, vo_v = vo->verts; i < count; i++, vo_v++, verts++) {
-		float      *n;
-		float       d;
 
+	for (i = 0, vo_v = vo->verts; i < count; i++, vo_v++, verts++) {
 		VectorCopy (verts->v, vo_v->vert);
-		n = r_avertexnormals[verts->lightnormalindex];
-		d = DotProduct (shadevector, n);
-		vo_v->lightdot = max (0.0, d);
+		VectorCopy (r_avertexnormals[verts->lightnormalindex], vo_v->normal);
 	}
 	return vo;
 }
@@ -597,11 +524,15 @@ R_AliasGetSkindesc (int skinnum, aliashdr_t *ahdr)
 void
 R_DrawAliasModel (entity_t *e)
 {
-	float		  add, an, minshade, radius, shade;
-	int			  texture, i;
-	int			  fb_texture = 0;
+	float		  radius, d;
+	float		  position[4] = {0.0, 0.0, 0.0, 1.0},
+				  color[4] = {0.0, 0.0, 0.0, 1.0},
+				  emission[4] = {0.0, 0.0, 0.0, 1.0};
+	int			  gl_light, texture;
+	int			  fb_texture = 0, used_lights = 0;
 	unsigned int  lnum;
 	aliashdr_t	 *paliashdr;
+	dlight_t	 *l;
 	model_t		 *model;
 	vec3_t		  dist, scale;
 	vert_order_t *vo;
@@ -616,54 +547,73 @@ R_DrawAliasModel (entity_t *e)
 
 	VectorSubtract (r_origin, e->origin, modelorg);
 
+	modelalpha = e->colormod[3];
+
 	if (!model->fullbright) {
 		// get lighting information
 		R_LightPoint (e->origin);
-		ambientcolor[0] *= e->colormod[0];
-		ambientcolor[1] *= e->colormod[1];
-		ambientcolor[2] *= e->colormod[2];
 		VectorScale (ambientcolor, 0.005, ambientcolor);
-		VectorCopy (ambientcolor, shadecolor);
 
-		for (lnum = 0; lnum < r_maxdlights; lnum++) {
-			if (r_dlights[lnum].die >= r_realtime) {
-				float		d;
+		qfglEnable (GL_LIGHTING);
+		used_lights = 0;
+		VectorZero (emission);
+		emission[3] = 1.0;
 
-				VectorSubtract (e->origin, r_dlights[lnum].origin, dist);
-				d = DotProduct (dist, dist);
-				d = max (d, 64.0) * 200.0;
-				add = r_dlights[lnum].radius * r_dlights[lnum].radius * 8.0 /
-					d;
+		for (l = r_dlights, lnum = 0; lnum < r_maxdlights; lnum++, l++) {
+			if (l->die >= r_realtime) {
+				VectorSubtract (l->origin, e->origin, dist);
+				// Out of range
+				if ((d = DotProduct (dist, dist)) > ((l->radius + radius)
+													 * (l->radius + radius))) {
+					continue;
+				}
 
-				if (add > 0.0)
-					VectorMultAdd (ambientcolor, add, r_dlights[lnum].color,
-								   ambientcolor);
+				// Inside the model
+				if (d < (radius * radius * 0.25)) {
+					VectorMultAdd (emission, 1.5, l->color, emission);
+					continue;
+				}
+				if (used_lights >= gl_max_lights) { // too many, use emission
+					VectorMultAdd (emission,
+								   1.5 * (1 - (d / (l->radius * l->radius))),
+								   l->color, emission);
+					continue;
+				}
+
+				VectorCopy (l->origin, position);
+				position[3] = 1.0;
+
+				VectorScale (l->color, l->radius / 128.0, color);
+				color[3] = 1.0;
+
+				gl_light = GL_LIGHT0 + used_lights;
+				qfglEnable (gl_light);
+				qfglLightfv (gl_light, GL_POSITION, position);
+				qfglLightfv (gl_light, GL_DIFFUSE, color);
+				qfglLightfv (gl_light, GL_SPECULAR, color);
+				qfglLightf (gl_light, GL_QUADRATIC_ATTENUATION,
+							5.0 / (l->radius * l->radius));
+				qfglLightf (gl_light, GL_CONSTANT_ATTENUATION, 0.5);
+				used_lights++;
 			}
 		}
 
-		// clamp lighting so it doesn't overbright as much
-		for (i = 0; i < 3; i++) {
-			ambientcolor[i] = min (ambientcolor[i], 128.0 / 200.0);
-			if (ambientcolor[i] + shadecolor[i] > 1)
-				shadecolor[i] = 1 - ambientcolor[i];
-		}
-		// always give the gun some light
-		shade = max (ambientcolor[0], max (ambientcolor[1], ambientcolor[2]));
-		minshade = model->min_light;
-		if (shade < minshade) {
-			ambientcolor[0] += minshade - shade;
-			ambientcolor[1] += minshade - shade;
-			ambientcolor[2] += minshade - shade;
+		if (model->min_light) {
+			int		i;
+
+			for (i = 0; i < 3; i++) {
+				if (ambientcolor[i] < model->min_light)
+					ambientcolor[i] = model->min_light;
+			}
 		}
 
-		an = e->angles[1] * (M_PI / 180.0);
-		shadevector[0] = cos (-an);
-		shadevector[1] = sin (-an);
-		shadevector[2] = 1.0;
-		VectorNormalize (shadevector);
+		VectorAdd (ambientcolor, emission, emission);
+		d = max (emission[0], max (emission[1], emission[2]));
+		if (d > 1.0)
+			VectorScale (emission, 1.0 / d, emission);
+		qfglMaterialfv (GL_FRONT, GL_EMISSION, emission);
+		qfglEnable (GL_NORMALIZE);
 	}
-
-	modelalpha = e->colormod[3];
 
 	// locate the proper data
 	paliashdr = Cache_Get (&e->model->cache);
@@ -706,14 +656,15 @@ R_DrawAliasModel (entity_t *e)
 
 	if (modelalpha < 1.0)
 		qfglDepthMask (GL_FALSE);
+	qfglColor4fv (e->colormod);
 
 	// draw all the triangles
 	if (model->fullbright) {
 		qfglBindTexture (GL_TEXTURE_2D, texture);
 		if (vo->tex_coord)
-			GL_DrawAliasFrameTri_fb (vo);
+			GL_DrawAliasFrameTri (vo);
 		else 
-			GL_DrawAliasFrame_fb (vo);
+			GL_DrawAliasFrame (vo);
 	} else if (!fb_texture) {
 		// Model has no fullbrights, don't bother with multi
 		qfglBindTexture (GL_TEXTURE_2D, texture);
@@ -744,13 +695,21 @@ R_DrawAliasModel (entity_t *e)
 			if (vo->tex_coord) {
 				qfglBindTexture (GL_TEXTURE_2D, texture);
 				GL_DrawAliasFrameTri (vo);
+
+				qfglDisable (GL_LIGHTING);
+				if (!tess)
+					qfglDisable (GL_NORMALIZE);
 				qfglBindTexture (GL_TEXTURE_2D, fb_texture);
-				GL_DrawAliasFrameTri_fb (vo);
+				GL_DrawAliasFrameTri (vo);
 			} else {
 				qfglBindTexture (GL_TEXTURE_2D, texture);
 				GL_DrawAliasFrame (vo);
+
+				qfglDisable (GL_LIGHTING);
+				if (!tess)
+					qfglDisable (GL_NORMALIZE);
 				qfglBindTexture (GL_TEXTURE_2D, fb_texture);
-				GL_DrawAliasFrame_fb (vo);
+				GL_DrawAliasFrame (vo);
 			}
 		}
 	}
@@ -776,6 +735,15 @@ R_DrawAliasModel (entity_t *e)
 	} else if (modelalpha < 1.0) {
 		qfglDepthMask (GL_TRUE);
 	}
+
+	while (used_lights--) {
+		qfglDisable (GL_LIGHT0 + used_lights);
+	}
+	VectorZero (emission);
+	qfglMaterialfv (GL_FRONT, GL_EMISSION, emission);
+	qfglDisable (GL_LIGHTING);
+	qfglDisable (GL_NORMALIZE);
+	qfglColor3ubv (color_white);
 
 	Cache_Release (&e->model->cache);
 }
