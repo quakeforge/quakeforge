@@ -15,7 +15,7 @@ endif
 bin_PROGRAMS=	$(qfmodelgen)
 EXTRA_PROGRAMS= qfmodelgen
 
-qfmodelgen_SOURCES= cmdlib.c lbmlib.c modelgen.c scriplib.c trilib.c
+qfmodelgen_SOURCES= lbmlib.c modelgen.c trilib.c
 
 qfmodelgen_LDADD=		$(QFMODELGEN_LIBS)
 qfmodelgen_DEPENDENCIES=	$(QFMODELGEN_DEPS)

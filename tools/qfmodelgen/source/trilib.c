@@ -25,8 +25,8 @@
 #include "QF/mathlib.h"
 #include "QF/qendian.h"
 #include "QF/quakeio.h"
+#include "QF/sys.h"
 
-#include "cmdlib.h"
 #include "trilib.h"
 
 // on disk representation of a face
@@ -170,7 +170,7 @@ LoadTriangleList (char *filename, triangle_t **pptri, int *numtriangles)
 			ptri++;
 
 			if ((ptri - *pptri) >= MAXTRIANGLES)
-				Error ("Error: too many triangles; increase MAXTRIANGLES\n");
+				Sys_Error ("Error: too many triangles; increase MAXTRIANGLES\n");
 		}
 	}
 

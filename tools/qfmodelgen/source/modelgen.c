@@ -23,17 +23,29 @@
 // /raid/quake/models/<scriptname>.mdl.
 
 //#include <sys/stat.h>
+#include "config.h"
+
 #include <stdlib.h>
 #include <string.h>
+#include <errno.h>
+#ifdef HAVE_UNISTD_H
+# include <unistd.h>
+#endif
+#ifdef _WIN32
+# include <direct.h>
+#endif
 
+#include "QF/dstring.h"
 #include "QF/modelgen.h"
 #include "QF/qendian.h"
+#include "QF/quakefs.h"
 #include "QF/quakeio.h"
+#include "QF/script.h"
+#include "QF/sys.h"
 
-#include "cmdlib.h"
 #include "lbmlib.h"
-#include "scriplib.h"	//FIXME real parser
 #include "trilib.h"
+#include "compat.h"
 
 #define MAXVERTS		2048
 #define MAXFRAMES		256
@@ -111,6 +123,66 @@ trivertx_t	tarray[MAXVERTS];
 
 char	outname[1024];
 
+script_t scr;
+
+/*
+qdir will hold the path up to the quake directory, including the slash
+
+  f:\quake\
+  /raid/quake/
+
+gamedir will hold qdir + the game directory (id1, id2, etc)
+*/
+
+char		qdir[1024];
+char		gamedir[1024];
+
+static void
+SetQdirFromPath (char *path)
+{
+	char	temp[1024];
+	char	*c;
+
+	if (!(path[0] == '/' || path[0] == '\\' || path[1] == ':'))
+	{	// path is partial
+		getcwd (temp, sizeof (temp));
+		strcat (temp, path);
+		path = temp;
+	}
+
+	// search for "quake" in path
+
+	for (c=path ; *c ; c++)
+		if (!strncasecmp (c, "quake", 5)) {
+			strncpy (qdir, path, c+6-path);
+			printf ("qdir: %s\n", qdir);
+			c += 6;
+			while (*c) {
+				if (*c == '/' || *c == '\\') {
+					strncpy (gamedir, path, c+1-path);
+					printf ("gamedir: %s\n", gamedir);
+					return;
+				}
+				c++;
+			}
+			Sys_Error ("No gamedir in %s", path);
+			return;
+		}
+	Sys_Error ("SetQdirFromPath: no 'quake' in %s", path);
+}
+
+static const char *
+ExpandPath (const char *path)
+{
+	static char full[1024];
+
+	if (!qdir)
+		Sys_Error ("ExpandPath called without qdir set");
+	if (path[0] == '/' || path[0] == '\\' || path[1] == ':')
+		return path;
+	sprintf (full, "%s%s", qdir, path);
+	return full;
+}
 
 static void
 ClearModel (void)
@@ -156,7 +228,7 @@ WriteFrame (QFile *modelouthandle, int framenum)
 		tarray[j].lightnormalindex = pframe[j].lightnormalindex;
 
 		if (tarray[j].lightnormalindex > NUMVERTEXNORMALS)
-			Error ("invalid lightnormalindex %d\n",
+			Sys_Error ("invalid lightnormalindex %d\n",
 				   tarray[j].lightnormalindex);
 
 		for (k = 0; k < 3; k++) {
@@ -357,9 +429,9 @@ WriteModel (void)
 	}
 
 	if (!skincount)
-		Error ("frames with no skins\n");
+		Sys_Error ("frames with no skins\n");
 
-	StripExtension (outname);
+	QFS_StripExtension (outname, outname);
 	strcat (outname, ".mdl");
 
 	printf ("---------------------\n");
@@ -495,16 +567,16 @@ Cmd_Base (void)
 	triangle_t	*ptri;
 	int			 time1, i, j, k;
 
-	GetToken (false);
-	strcpy (qbasename, token);
+	Script_GetToken (&scr, false);
+	strcpy (qbasename, scr.token->str);
 
-	sprintf (file1, "%s/%s.tri", cdpartial, token);
-	ExpandPathAndArchive (file1);
+	sprintf (file1, "%s/%s.tri", cdpartial, scr.token->str);
+	ExpandPath/*AndArchive*/ (file1);
 
-	sprintf (file1, "%s/%s.tri", cddir, token);
-	time1 = FileTime (file1);
+	sprintf (file1, "%s/%s.tri", cddir, scr.token->str);
+	time1 = Sys_FileTime (file1);
 	if (time1 == -1)
-		Error ("%s doesn't exist", file1);
+		Sys_Error ("%s doesn't exist", file1);
 
 // load the base triangles
 	LoadTriangleList (file1, &ptri, &model.numtris);
@@ -550,22 +622,22 @@ Cmd_Skin (void)
 	byte	*ppal, *pskinbitmap, *ptemp1, *ptemp2;
 	int		time1, i;
 
-	GetToken (false);	
-	strcpy (skinname, token);
+	Script_GetToken (&scr, false);	
+	strcpy (skinname, scr.token->str);
 
-	sprintf (file1, "%s/%s.lbm", cdpartial, token);
-	ExpandPathAndArchive (file1);
+	sprintf (file1, "%s/%s.lbm", cdpartial, scr.token->str);
+	ExpandPath/*AndArchive*/ (file1);
 
-	sprintf (file1, "%s/%s.lbm", cddir, token);
-	time1 = FileTime (file1);
+	sprintf (file1, "%s/%s.lbm", cddir, scr.token->str);
+	time1 = Sys_FileTime (file1);
 	if (time1 == -1)
-		Error ("%s not found", file1);
+		Sys_Error ("%s not found", file1);
 	
-	if (TokenAvailable ()) {
-		GetToken (false);
-		skins[skincount].interval = atof (token);
+	if (Script_TokenAvailable (&scr, false)) {
+		Script_GetToken (&scr, false);
+		skins[skincount].interval = atof (scr.token->str);
 		if (skins[skincount].interval <= 0.0)
-			Error ("Non-positive interval");
+			Sys_Error ("Non-positive interval");
 	} else {
 		skins[skincount].interval = 0.1;
 	}
@@ -579,7 +651,7 @@ Cmd_Skin (void)
 			malloc (model.skinwidth * model.skinheight);
 
 	if (!skins[skincount].pdata)
-		Error ("couldn't get memory for skin texture");
+		Sys_Error ("couldn't get memory for skin texture");
 
 	ptemp1 = skins[skincount].pdata;
 	ptemp2 = pskinbitmap;
@@ -593,7 +665,7 @@ Cmd_Skin (void)
 	skincount++;
 
 	if (skincount > MAXSKINS)
-		Error ("Too many skins; increase MAXSKINS");
+		Sys_Error ("Too many skins; increase MAXSKINS");
 }
 
 static void
@@ -604,12 +676,12 @@ GrabFrame (char *frame, int isgroup)
 	trivert_t	*ptrivert;
 
 	sprintf (file1, "%s/%s.tri", cdpartial, frame);
-	ExpandPathAndArchive (file1);
+	ExpandPath/*AndArchive*/ (file1);
 
 	sprintf (file1, "%s/%s.tri", cddir, frame);
-	time1 = FileTime (file1);
+	time1 = Sys_FileTime (file1);
 	if (time1 == -1)
-		Error ("%s does not exist", file1);
+		Sys_Error ("%s does not exist", file1);
 
 	printf ("grabbing %s\n", file1);
 	frames[framecount].interval = 0.1;
@@ -619,14 +691,14 @@ GrabFrame (char *frame, int isgroup)
 	LoadTriangleList (file1, &ptri, &numtris);
 
 	if (numtris != model.numtris)
-		Error ("number of triangles doesn't match\n");
+		Sys_Error ("number of triangles doesn't match\n");
 
 // set the intervals
-	if (isgroup && TokenAvailable ()) {
-		GetToken (false);
-		frames[framecount].interval = atof (token);
+	if (isgroup && Script_TokenAvailable (&scr, false)) {
+		Script_GetToken (&scr, false);
+		frames[framecount].interval = atof (scr.token->str);
 		if (frames[framecount].interval <= 0.0)
-			Error ("Non-positive interval %s %f", token,
+			Sys_Error ("Non-positive interval %s %f", scr.token->str,
 					frames[framecount].interval);
 	} else {
 		frames[framecount].interval = 0.1;
@@ -726,7 +798,7 @@ GrabFrame (char *frame, int isgroup)
 				v[j] /= vnorms[i].numnormals;
 			}
 		} else {
-			Error ("Vertex with no non-degenerate triangles attached");
+			Sys_Error ("Vertex with no non-degenerate triangles attached");
 		}
 
 		VectorNormalize (v);
@@ -750,7 +822,7 @@ GrabFrame (char *frame, int isgroup)
 	framecount++;
 
 	if (framecount >= MAXFRAMES)
-		Error ("Too many frames; increase MAXFRAMES");
+		Sys_Error ("Too many frames; increase MAXFRAMES");
 
 	free (ptri);
 	firstframe = 0;
@@ -759,9 +831,9 @@ GrabFrame (char *frame, int isgroup)
 static void
 Cmd_Frame (int isgroup)
 {
-	while (TokenAvailable ()) {
-		GetToken (false);
-		GrabFrame (token, isgroup);
+	while (Script_TokenAvailable (&scr, false)) {
+		Script_GetToken (&scr, false);
+		GrabFrame (scr.token->str, isgroup);
 
 		if (!isgroup)
 			model.numframes++;
@@ -775,28 +847,27 @@ Cmd_SkinGroupStart (void)
 
 	groupskin = skincount++;
 	if (skincount >= MAXFRAMES)
-		Error ("Too many skins; increase MAXSKINS");
+		Sys_Error ("Too many skins; increase MAXSKINS");
 
 	skins[groupskin].type = ALIAS_SKIN_GROUP;
 	skins[groupskin].numgroupskins = 0;
 
 	while (1) {
-		GetToken (true);
-		if (endofscript)
-			Error ("End of file during group");
+		if (!Script_GetToken (&scr, true))
+			Sys_Error ("End of file during group");
 
-		if (!strcmp (token, "$skin")) {
+		if (!strcmp (scr.token->str, "$skin")) {
 			Cmd_Skin ();
 			skins[groupskin].numgroupskins++;
-		} else if (!strcmp (token, "$skingroupend")) {
+		} else if (!strcmp (scr.token->str, "$skingroupend")) {
 			break;
 		} else {
-			Error ("$skin or $skingroupend expected\n");
+			Sys_Error ("$skin or $skingroupend expected\n");
 		}
 	}
 
 	if (skins[groupskin].numgroupskins == 0)
-		Error ("Empty group\n");
+		Sys_Error ("Empty group\n");
 }
 
 static void
@@ -806,29 +877,28 @@ Cmd_FrameGroupStart (void)
 
 	groupframe = framecount++;
 	if (framecount >= MAXFRAMES)
-		Error ("Too many frames; increase MAXFRAMES");
+		Sys_Error ("Too many frames; increase MAXFRAMES");
 
 	frames[groupframe].type = ALIAS_GROUP;
 	frames[groupframe].numgroupframes = 0;
 
 	while (1) {
-		GetToken (true);
-		if (endofscript)
-			Error ("End of file during group");
+		if (!Script_GetToken (&scr, true))
+			Sys_Error ("End of file during group");
 
-		if (!strcmp (token, "$frame")) {
+		if (!strcmp (scr.token->str, "$frame")) {
 			Cmd_Frame (1);
-		} else if (!strcmp (token, "$framegroupend")) {
+		} else if (!strcmp (scr.token->str, "$framegroupend")) {
 			break;
 		} else {
-			Error ("$frame or $framegroupend expected\n");
+			Sys_Error ("$frame or $framegroupend expected\n");
 		}
 	}
 
 	frames[groupframe].numgroupframes += framecount - groupframe - 1;
 
 	if (frames[groupframe].numgroupframes == 0)
-		Error ("Empty group\n");
+		Sys_Error ("Empty group\n");
 }
 
 static void
@@ -836,14 +906,14 @@ Cmd_Origin (void)
 {
 // rotate points into frame of reference so model points down the positive x
 // axis
-	GetToken (false);
-	adjust[1] = -atof (token);
+	Script_GetToken (&scr, false);
+	adjust[1] = -atof (scr.token->str);
 
-	GetToken (false);
-	adjust[0] = atof (token);
+	Script_GetToken (&scr, false);
+	adjust[0] = atof (scr.token->str);
 
-	GetToken (false);
-	adjust[2] = -atof (token);
+	Script_GetToken (&scr, false);
+	adjust[2] = -atof (scr.token->str);
 }
 
 static void
@@ -851,36 +921,36 @@ Cmd_Eyeposition (void)
 {
 // rotate points into frame of reference so model points down the positive x
 // axis
-	GetToken (false);
-	model.eyeposition[1] = atof (token);
+	Script_GetToken (&scr, false);
+	model.eyeposition[1] = atof (scr.token->str);
 
-	GetToken (false);
-	model.eyeposition[0] = -atof (token);
+	Script_GetToken (&scr, false);
+	model.eyeposition[0] = -atof (scr.token->str);
 
-	GetToken (false);
-	model.eyeposition[2] = atof (token);
+	Script_GetToken (&scr, false);
+	model.eyeposition[2] = atof (scr.token->str);
 }
 
 static void
 Cmd_ScaleUp (void)
 {
-	GetToken (false);
-	scale_up = atof (token);
+	Script_GetToken (&scr, false);
+	scale_up = atof (scr.token->str);
 }
 
 static void
 Cmd_Flags (void)
 {
-	GetToken (false);
-	model.flags = atoi (token);
+	Script_GetToken (&scr, false);
+	model.flags = atoi (scr.token->str);
 }
 
 static void
 Cmd_Modelname (void)
 {
 	WriteModel ();
-	GetToken (false);
-	strcpy (outname, token);
+	Script_GetToken (&scr, false);
+	strcpy (outname, scr.token->str);
 }
 
 static void
@@ -888,49 +958,48 @@ ParseScript (void)
 {
 	while (1) {
 		do {	// look for a line starting with a $ command
-			GetToken (true);
-			if (endofscript)
+			if (!Script_GetToken (&scr, true))
 				return;
-			if (token[0] == '$')
+			if (scr.token->str[0] == '$')
 				break;				
-			while (TokenAvailable())
-				GetToken (false);
+			while (Script_TokenAvailable (&scr, false))
+				Script_GetToken (&scr, false);
 		} while (1);
 	
-		if (!strcmp (token, "$modelname")) {
+		if (!strcmp (scr.token->str, "$modelname")) {
 			Cmd_Modelname ();
-		} else if (!strcmp (token, "$base")) {
+		} else if (!strcmp (scr.token->str, "$base")) {
 			Cmd_Base ();
-		} else if (!strcmp (token, "$cd")) {
+		} else if (!strcmp (scr.token->str, "$cd")) {
 			if (cdset)
-				Error ("Two $cd in one model");
+				Sys_Error ("Two $cd in one model");
 			cdset = true;
-			GetToken (false);
-			strcpy (cdpartial, token);
-			strcpy (cddir, ExpandPath(token));
-		} else if (!strcmp (token, "$sync")) {
+			Script_GetToken (&scr, false);
+			strcpy (cdpartial, scr.token->str);
+			strcpy (cddir, ExpandPath(scr.token->str));
+		} else if (!strcmp (scr.token->str, "$sync")) {
 			model.synctype = ST_SYNC;
-		} else if (!strcmp (token, "$origin")) {
+		} else if (!strcmp (scr.token->str, "$origin")) {
 			Cmd_Origin ();
-		} else if (!strcmp (token, "$eyeposition")) {
+		} else if (!strcmp (scr.token->str, "$eyeposition")) {
 			Cmd_Eyeposition ();
-		} else if (!strcmp (token, "$scale")) {
+		} else if (!strcmp (scr.token->str, "$scale")) {
 			Cmd_ScaleUp ();
-		} else if (!strcmp (token, "$flags")) {
+		} else if (!strcmp (scr.token->str, "$flags")) {
 			Cmd_Flags ();
-		} else if (!strcmp (token, "$frame")) {
+		} else if (!strcmp (scr.token->str, "$frame")) {
 			Cmd_Frame (0);
-		} else if (!strcmp (token, "$skin")) {
+		} else if (!strcmp (scr.token->str, "$skin")) {
 			Cmd_Skin ();
 			model.numskins++;
-		} else if (!strcmp (token, "$framegroupstart")) {
+		} else if (!strcmp (scr.token->str, "$framegroupstart")) {
 			Cmd_FrameGroupStart ();
 			model.numframes++;
-		} else if (!strcmp (token, "$skingroupstart")) {
+		} else if (!strcmp (scr.token->str, "$skingroupstart")) {
 			Cmd_SkinGroupStart ();
 			model.numskins++;
 		} else {
-			Error ("bad command %s\n", token);
+			Sys_Error ("bad command %s\n", scr.token->str);
 		}
 	}
 }
@@ -938,25 +1007,31 @@ ParseScript (void)
 int
 main (int argc, char **argv)
 {
-	int		i;
+	int		i, bytes;
 	char	path[1024];
+	QFile  *file;
+	char   *buf;
 
-	if (argc != 2 && argc != 4)
-		Error ("usage: modelgen [-archive directory] file.qc");
+	if (argc != 2)
+		Sys_Error ("usage: modelgen file.qc");
 		
-	if (!strcmp(argv[1], "-archive")) {
-		archive = true;
-		strcpy (archivedir, argv[2]);
-		printf ("Archiving source to: %s\n", archivedir);
-		i = 3;
-	} else
-		i = 1;
+	i = 1;
 
 // load the script
 	strcpy (path, argv[i]);
-	DefaultExtension (path, ".qc");
+	QFS_DefaultExtension (path, ".qc");
 	SetQdirFromPath (path);
-	LoadScriptFile (path);
+
+	file = Qopen (path, "rt");
+	if (!file)
+		Sys_Error ("couldn't open %s. %s", path, strerror(errno));
+	bytes = Qfilesize (file);
+	buf = malloc (bytes + 1);
+	bytes = Qread (file, buf, bytes);
+	buf[bytes] = 0;
+	Qclose (file);
+	Script_Start (&scr, path, buf);
+
 	
 // parse it
 	memset (&model, 0, sizeof (model));

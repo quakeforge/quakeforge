@@ -18,11 +18,67 @@
 */
 
 // lbmlib.c
+#include "config.h"
+
+#include <string.h>
+#include <malloc.h>
+#include <errno.h>
 
 #include "QF/qendian.h"
+#include "QF/quakeio.h"
+#include "QF/sys.h"
 
-#include "cmdlib.h"
 #include "lbmlib.h"
+
+static int
+LoadFile (const char *fname, void **buf)
+{
+	QFile      *file;
+	char       *src;
+	int         len;
+
+	*buf = 0;
+	file = Qopen (fname, "rt");
+	if (!file)
+		return 0;
+	len = Qfilesize (file);
+	src = malloc (len + 1);
+	src[Qfilesize (file)] = 0;
+	Qread (file, src, len);
+	Qclose (file);
+	*buf = src;
+	return len;
+}
+
+static QFile *
+SafeOpenWrite (const char *filename)
+{
+	QFile	*f;
+
+	f = Qopen(filename, "wb");
+
+	if (!f)
+		Sys_Error ("Error opening %s: %s",filename,strerror(errno));
+
+	return f;
+}
+
+static void
+SafeWrite (QFile *f, void *buffer, int count)
+{
+	if (Qwrite (f, buffer, count) != count)
+		Sys_Error ("File read failure");
+}
+
+static void
+SaveFile (const char *filename, void *buffer, int count)
+{
+	QFile	*f;
+
+	f = SafeOpenWrite (filename);
+	SafeWrite (f, buffer, count);
+	Qclose (f);
+}
 
 /*
 ============================================================================
@@ -86,7 +142,7 @@ LBMRLEDecompress (byte *source, byte *unpacked, int bpwidth)
 	} while (count < bpwidth);
 
 	if (count > bpwidth)
-		Error ("Decompression exceeded width!\n");
+		Sys_Error ("Decompression exceeded width!\n");
 
 
 	return source;
@@ -292,7 +348,7 @@ LoadLBM (char *filename, byte **picture, byte **palette)
 // parse the LBM header
 	LBM_P = LBMbuffer;
 	if (*(int *) LBMbuffer != LittleLong (FORMID))
-	   Error ("No FORM ID at start of file!\n");
+	   Sys_Error ("No FORM ID at start of file!\n");
 
 	LBM_P += 4;
 	formlength = BigLong (*(int *) LBM_P );
@@ -302,7 +358,7 @@ LoadLBM (char *filename, byte **picture, byte **palette)
 	formtype = LittleLong (*(int *) LBM_P);
 
 	if (formtype != ILBMID && formtype != PBMID)
-		Error ("Unrecognized form type: %c%c%c%c\n", formtype & 0xff,
+		Sys_Error ("Unrecognized form type: %c%c%c%c\n", formtype & 0xff,
 			   (formtype >> 8) & 0xff, (formtype >> 16) & 0xff,
 			   (formtype >> 24) & 0xff);
 
@@ -369,7 +425,7 @@ LoadLBM (char *filename, byte **picture, byte **palette)
 					mungecall = MungeBitPlanes8;
 					break;
 				default:
-					Error ("Can't munge %i bit planes!\n",bmhd.nPlanes);
+					Sys_Error ("Can't munge %i bit planes!\n",bmhd.nPlanes);
 				}
 
 				for (y = 0; y < bmhd.h; y++, pic_p += bmhd.w) {
