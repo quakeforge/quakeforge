@@ -765,6 +765,9 @@ SV_SendClientMessages (void)
 		// if the reliable message overflowed,
 		// drop the client
 		if (c->netchan.message.overflowed) {
+			extern void Analyze_Server_Packet (byte *data, int len);
+
+			Analyze_Server_Packet (c->netchan.message.data, c->netchan.message.cursize);
 			SZ_Clear (&c->netchan.message);
 			SZ_Clear (&c->datagram);
 			SV_BroadcastPrintf (PRINT_HIGH, "%s overflowed\n", c->name);

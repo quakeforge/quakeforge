@@ -168,7 +168,7 @@ char       *clc_string[] = {
 #define svc_particle            18		// [vec3] <variable>
 #define svc_signonnum           25		// [byte]  used for the signon
 										// sequence
-
+static VFile       _stdout;
 static VFile      *Net_PacketLog;
 static char      **Net_sound_precache;
 static sizebuf_t   _packet;
@@ -397,10 +397,16 @@ Log_Delta(int bits)
 void
 Analyze_Server_Packet (byte * data, int len)
 {
+	if (!Net_PacketLog) {
+		_stdout.file = stdout;
+		Net_PacketLog = &_stdout;
+	}
 	packet.message->data = data;
 	packet.message->cursize = len;
 	MSG_BeginReading (&packet);
 	Parse_Server_Packet ();
+	if (Net_PacketLog == &_stdout)
+		Net_PacketLog = NULL;
 }
 
 
@@ -850,11 +856,16 @@ Parse_Server_Packet ()
 void
 Analyze_Client_Packet (byte * data, int len)
 {
-	// FIXME: quick-hack
+	if (!Net_PacketLog) {
+		_stdout.file = stdout;
+		Net_PacketLog = &_stdout;
+	}
 	packet.message->data = data;
 	packet.message->cursize = len;
 	MSG_BeginReading (&packet);
 	Parse_Client_Packet ();
+	if (Net_PacketLog == &_stdout)
+		Net_PacketLog = NULL;
 }
 
 void
