@@ -110,6 +110,9 @@ C_ExecLine (const char *line)
 static void
 C_Init (void)
 {
+	cvar_t     *curses = Cvar_Get ("sv_use_curses", "1", CVAR_ROM, NULL,
+								   "set to 0 to disable curses server console");
+	use_curses = curses->int_val;
 #ifdef HAVE_CURSES_H
 	if (use_curses) {
 		initscr ();
@@ -291,7 +294,8 @@ C_ProcessInput (void)
 		while (1) {
 			const char *cmd = Sys_ConsoleInput ();
 			if (!cmd)
-				Cbuf_AddText (cmd);
+				break;
+			Cbuf_AddText (cmd);
 		}
 }
 
