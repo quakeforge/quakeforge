@@ -114,8 +114,12 @@ void *
 QFGL_LoadLibrary (void)
 {
 	void		*handle;
+	int          flags = RTLD_NOW;
 
-	if (!(handle = dlopen (gl_driver->string, RTLD_NOW))) {
+#ifdef RTLD_GLOBAL
+	flags |= RTLD_GLOBAL;
+#endif
+	if (!(handle = dlopen (gl_driver->string, flags))) {
 		Sys_Error ("Couldn't load OpenGL library %s: %s", gl_driver->string,
 				   dlerror ());
 	}
