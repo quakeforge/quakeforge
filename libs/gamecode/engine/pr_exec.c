@@ -347,6 +347,9 @@ PR_ExecuteProgram (progs_t * pr, func_t fnum)
 			case OP_MUL_QF:
 				QuatScale (OPA.quat_var, OPB.float_var, OPC.quat_var);
 				break;
+			case OP_CONJ_Q:
+				QuatConj (OPA.quat_var, OPC.quat_var);
+				break;
 			case OP_DIV_F:
 				OPC.float_var = OPA.float_var / OPB.float_var;
 				break;

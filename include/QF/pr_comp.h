@@ -294,6 +294,7 @@ typedef enum {
 	OP_MUL_Q,
 	OP_MUL_QF,
 	OP_MUL_FQ,
+	OP_CONJ_Q,
 	OP_NOT_Q,
 	OP_EQ_Q,
 	OP_NE_Q,

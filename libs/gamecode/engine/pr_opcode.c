@@ -134,6 +134,11 @@ opcode_t pr_opcodes[] = {
 	 PROG_ID_VERSION,
 	},
 
+	{"~", "conj.q", OP_CONJ_Q, false,
+	 ev_quat, ev_void, ev_quat,
+	 PROG_ID_VERSION,
+	},
+
 	{"/", "div.f", OP_DIV_F, false,
 	 ev_float, ev_float, ev_float,
 	 PROG_ID_VERSION,
