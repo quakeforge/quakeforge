@@ -1,0 +1,192 @@
+#!/usr/bin/env python
+
+import re
+import string
+from pprint import *
+
+directive_re = re.compile (
+    r'^\s*#\s*(define|undef|include|includelist|endlist|ifdef|ifndef|endif|else|pragma)\b' +
+    r'((\s*("[^"]*"|[^ \t\n\r\f\v/]+|/(?!/)))?)' +
+    r'((\s*("[^"]*"|[^ \t\n\r\f\v/]+|/(?!/)))*)' +
+    r'((\s*//.*)?)')
+macro_re = re.compile (r'#([A-Za-z_]\w*)')
+arg_re = re.compile (
+    r'((\s*("[^"]*"|[^ \t\n\r\f\v/]+|/(?!/)))?)' +
+    r'((\s*("[^"]*"|[^ \t\n\r\f\v/]+|/(?!/)))*)' +
+    r'((\s*//.*)?)')
+
+current_file = []
+source_list = []
+qcc_list = []
+defines = {}
+progs_dat = "progs.dat"
+progs_src = "progs.src"
+compile_this_file = 1
+keep_newlines = 1
+check_redefines = 1
+
+def append_file (filename):
+	global current_file
+	f = open (filename, "rt")
+	lines = f.readlines ()
+	f.close ()
+	for i in range (len (lines)):
+		lines[i] = string.rstrip (lines[i])
+	current_file = current_file + lines
+
+def parse_filename (args):
+	m = arg_re.match (args)
+	fname = string.strip (m.groups()[0])
+	if fname:
+	    if fname[0] == '"':
+		    fname = fname[1:]
+	    if fname[-1] == '"':
+		    fname = fname[:-1]
+	return fname
+
+def parse_pragma (pragma, args):
+	global progs_dat, progs_dat
+	global compile_this_file, keep_newlines, check_redefines
+	if pragma == 'PROGS_DAT':
+		progs_dat = parse_filename (args)
+	elif pragma == 'PROGS_SRC':
+		progs_dat = parse_filename (args)
+	elif pragma == 'DONT_COMPILE_THIS_FILE':
+		compile_this_file = 0
+	elif pragma == 'COMPILE_THIS_FILE':
+		compile_this_file = 1
+	elif pragma == 'KEEP_NEWLINES':
+		keep_newlines = parse_on_off (args)
+	elif pragma == 'CHECK_REDEFINES':
+		check_redefines = parse_on_off (args)
+	else:
+		print "ignoring " + pragma
+
+def do_preprogs_src ():
+	global current_file
+	current_file = []
+	append_file ("preprogs.src")
+	preprogs = current_file
+	for p in preprogs:
+		m = directive_re.match (p)
+		if (m):
+			g = m.groups()
+			directive = g[0]
+			arg1 = string.strip (g[1])
+			margs = string.strip (g[4])
+			#pprint ((directive, arg1, margs))
+			if directive == 'pragma':
+				parse_pragma (arg1, margs)
+			elif directive == 'includelist':
+				fname = parse_filename (arg1)
+				if fname:
+					source_list.append (fname)
+			elif directive == 'endlist':
+				pass
+			else:
+				print "ignoring " + p
+		else:
+			fname = parse_filename (p)
+			if fname:
+				source_list.append (fname)
+				
+def include_file (fname):
+	global current_file
+	fname = parse_filename (fname)
+	if fname:
+		append_file (fname)
+
+def process_source (source_file):
+	global compile_this_file, current_file
+	print source_file
+	compile_this_file = 1
+	includelist = 0
+	current_file = []
+	output = []
+	condition = [1]
+	append_file (source_file)
+	i = 0
+	while i < len (current_file):
+		l = current_file[i]
+		m = directive_re.match (l)
+		if (m):
+			g = m.groups()
+			directive = g[0]
+			arg1 = string.strip (g[1])
+			margs = string.strip (g[4])
+			#pprint ((directive, arg1, margs))
+			if directive == 'pragma':
+				if condition[-1]:
+					parse_pragma (arg1, margs)
+			elif directive == 'include':
+				if condition[-1]:
+					include_file (arg1)
+			elif directive == 'includelist':
+				if condition[-1]:
+					include_file (arg1)
+					includelist = 1
+			elif directive == 'endlist':
+				if condition[-1]:
+					includelist = 0
+			elif directive == 'define':
+				if condition[-1]:
+					defines[arg1] = margs
+			elif directive == 'undef':
+				if condition[-1]:
+					if defines.has_key (arg1):
+						del defines[arg1]
+			elif directive == 'ifdef':
+				condition.append (condition[-1])
+				if not defines.has_key (arg1):
+					condition[-1]=0
+			elif directive == 'ifndef':
+				condition.append (condition[-1])
+				if defines.has_key (arg1):
+					condition[-1]=0
+			elif directive == 'else':
+				condition[-1] = not condition[-1]
+			elif directive == 'endif':
+				del condition[-1]
+			else:
+				if condition[-1]:
+					print "ignoring " + l
+			output.append ('//' + l)
+		else:
+			if (includelist):
+				fname = parse_filename (l)
+				if fname:
+					include_file (fname)
+				output.append ('//' + l)
+			else:
+				if not condition[-1]:
+					l = '//##' + l
+				else:
+					s = macro_re.search (l)
+					while s:
+						id = s.groups()[0]
+						if defines.has_key (id):
+							l = (l[:s.start()]
+							     + defines[id]
+							     + l[s.end():])
+							s = macro_re.search (l)
+						else:
+							s = macro_re.search (l,
+								s.start(1))
+				output.append (l)
+		i = i + 1
+	if compile_this_file:
+		fname = source_file + '.pqc'
+		qcc_list.append (fname)
+		f = open (fname, "wt")
+		for l in output:
+			f.write(l + '\n')
+		f.close ()
+
+do_preprogs_src ()
+for s in source_list:
+	process_source (s)
+f = open (progs_src, "wt")
+f.write (progs_dat + '\n\n')
+for l in qcc_list:
+	f.write(l + '\n')
+f.close ()
