@@ -63,7 +63,6 @@ int			c_chains;
 int			c_portalskip, c_leafskip;
 int			c_vistest, c_mighttest;
 int			c_leafsee, c_portalsee;
-int			active;
 
 byte		portalsee[MAX_PORTALS];
 

@@ -473,16 +473,16 @@ CalcPortalVis (void)
 		pthread_t	work_threads[MAX_THREADS];
 		void *status;
 		pthread_attr_t attrib;
-		pthread_mutexattr_t mattrib;
+//		pthread_mutexattr_t mattrib;
 		
 
 		my_mutex = malloc (sizeof (*my_mutex));
-		if (pthread_mutexattr_init (&mattrib) == -1)
-			fprintf (stderr, "pthread_mutex_attr_create failed\n");
+//		if (pthread_mutexattr_init (&mattrib) == -1)
+//			fprintf (stderr, "pthread_mutex_attr_create failed\n");
 //		if (pthread_mutexattr_settype (&mattrib, PTHREAD_MUTEX_ADAPTIVE_NP)
 //			== -1)
 //			fprintf (stderr, "pthread_mutexattr_setkind_np failed\n");	
-		if (pthread_mutex_init (my_mutex, &mattrib) == -1)
+		if (pthread_mutex_init (my_mutex, 0) == -1)
 			fprintf (stderr, "pthread_mutex_init failed\n");
 		if (pthread_attr_init (&attrib) == -1)
 			fprintf (stderr, "pthread_attr_create failed\n");
