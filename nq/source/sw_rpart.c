@@ -53,7 +53,6 @@ int         r_numparticles;
 
 vec3_t      r_pright, r_pup, r_ppn;
 
-
 /*
 	R_MaxParticlesCheck
 
@@ -183,6 +182,12 @@ R_RunPuffEffect (vec3_t pos, byte type, byte cnt)
 	switch (type) {
 		case TE_GUNSHOT:
 			R_RunParticleEffect (pos, 0, 20 * cnt);
+			break;
+		case TE_BLOOD:
+			R_RunParticleEffect (pos, 73, 20 * cnt);
+			break;
+		case TE_LIGHTNINGBLOOD:
+			R_RunParticleEffect (pos, 225, 50);
 			break;
 	}
 }

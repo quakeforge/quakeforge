@@ -1,5 +1,5 @@
 /*
-	r_part.c
+	sw_rpart.c
 
 	(description)
 
@@ -39,6 +39,7 @@
 
 #include "client.h"
 #include "host.h"
+#include "r_cvar.h"
 #include "r_dynamic.h"
 #include "r_local.h"
 
@@ -52,8 +53,6 @@ particle_t *particles;
 int         r_numparticles;
 
 vec3_t      r_pright, r_pup, r_ppn;
-cvar_t      *r_particles;
-
 
 /*
 	R_MaxParticlesCheck
@@ -87,8 +86,7 @@ R_Particles_Init_Cvars (void)
 {
 	// Does a callback to R_MaxParticleCheck when the cvar changes. Neat trick.
 	Cvar_Get ("cl_max_particles", "2048", CVAR_ARCHIVE, R_MaxParticlesCheck,
-			  "Maximum amount of particles to display. No maximum, minimum "
-			  "is 1.");
+			  "Maximum amount of particles to display. No maximum, minimum is 1.");
 }
 
 
