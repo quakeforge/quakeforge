@@ -1505,7 +1505,7 @@ SV_RunCmd (usercmd_t *ucmd, qboolean inside)
 	SVfloat (sv_player, button2) = (ucmd->buttons & 2) >> 1;
 	if (ucmd->impulse)
 		SVfloat (sv_player, impulse) = ucmd->impulse;
-	if (host_client->cuff_time > realtime)
+	if (host_client->cuff_time > Sys_DoubleTime() )
 		SVfloat (sv_player, button0) = SVfloat (sv_player, impulse) = 0;
 
 //

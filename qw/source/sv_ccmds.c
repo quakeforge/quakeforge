@@ -580,7 +580,7 @@ SV_Cuff_f (void)
 		if (!cl->state)
 			continue;
 		if (all || (cl->userid == uid)) {
-			cl->cuff_time = realtime + mins*60.0;
+			cl->cuff_time = (Sys_DoubleTime () + mins*60.0);
 			done = true;
 			if (mins) {
 				sprintf(text,

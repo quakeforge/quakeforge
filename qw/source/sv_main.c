@@ -1642,7 +1642,7 @@ SV_SavePenaltyFilter (client_t *cl, filtertype_t type, double pentime)
 {
 	int i;
 	byte *b;
-	if (pentime < realtime)   // no point
+	if (pentime < Sys_DoubleTime () )   // no point
 		return;
 
 	b = cl->netchan.remote_address.ip;
