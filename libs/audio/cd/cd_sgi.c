@@ -51,6 +51,7 @@ static char cd_dev[64] = "/dev/cdrom";
 
 static CDPLAYER *cdp = NULL;
 
+
 static void
 CDAudio_Eject (void)
 {
@@ -61,10 +62,11 @@ CDAudio_Eject (void)
 		Con_DPrintf ("CDAudio_Eject: CDeject failed\n");
 }
 
+
 static int
 CDAudio_GetState (void)
 {
-	CDSTATUS    cds;
+	CDSTATUS	cds;
 
 	if (cdp == NULL || !enabled)
 		return -1;						// no cd init'd
@@ -77,10 +79,11 @@ CDAudio_GetState (void)
 	return cds.state;
 }
 
+
 static int
 CDAudio_MaxTrack (void)
 {
-	CDSTATUS    cds;
+	CDSTATUS	cds;
 
 	if (cdp == NULL || !enabled)
 		return -1;						// no cd init'd
@@ -93,10 +96,11 @@ CDAudio_MaxTrack (void)
 	return cds.last;
 }
 
+
 void
 CDAudio_Play (byte track, qboolean looping)
 {
-	int         maxtrack = CDAudio_MaxTrack ();
+	int			maxtrack = CDAudio_MaxTrack ();
 
 	if (!initialized || !enabled)
 		return;
@@ -119,7 +123,7 @@ CDAudio_Play (byte track, qboolean looping)
 		return;
 	}
 	// don't try to play a non-audio track
-	/* mw: how to do this on irix? entry0.cdte_track = track;
+/* mw: how to do this on irix? entry0.cdte_track = track;
 	   entry0.cdte_format = CDROM_MSF; if ( ioctl(cdfile, CDROMREADTOCENTRY,
 	   &entry0) == -1 ) { Con_DPrintf("CDAudio: ioctl cdromreadtocentry
 	   failed\n"); return; }
@@ -131,7 +135,8 @@ CDAudio_Play (byte track, qboolean looping)
 	   Con_DPrintf("CDAudio: ioctl cdromreadtocentry failed\n"); return; }
 
 	   if (entry0.cdte_ctrl == CDROM_DATA_TRACK) { Con_Printf("track %i is
-	   not audio\n", track); return; } */
+	   not audio\n", track); return; }
+*/
 
 	if (CDAudio_GetState () == CD_PLAYING) {
 		if (playTrack == track)
@@ -149,6 +154,7 @@ CDAudio_Play (byte track, qboolean looping)
 	playTrack = track;
 }
 
+
 void
 CDAudio_Stop (void)
 {
@@ -158,6 +164,7 @@ CDAudio_Stop (void)
 	if (CDstop (cdp) == 0)
 		Con_DPrintf ("CDAudio_Stop: CDStop failed (%d)\n", errno);
 }
+
 
 void
 CDAudio_Pause (void)
@@ -169,6 +176,7 @@ CDAudio_Pause (void)
 		Con_DPrintf ("CDAudio_PAUSE: CDtogglepause failed (%d)\n", errno);
 }
 
+
 void
 CDAudio_Resume (void)
 {
@@ -178,6 +186,7 @@ CDAudio_Resume (void)
 	if (CDtogglepause (cdp) == 0)
 		Con_DPrintf ("CDAudio_Resume: CDtogglepause failed (%d)\n", errno);
 }
+
 
 static void
 CD_f (void)
@@ -273,6 +282,7 @@ CD_f (void)
 	}
 }
 
+
 void
 CDAudio_Update (void)
 {
@@ -295,6 +305,7 @@ CDAudio_Update (void)
 		CDAudio_GetState () != CD_PAUSED && playLooping)
 			CDAudio_Play (playTrack, true);
 }
+
 
 int
 CDAudio_Init (void)
@@ -342,6 +353,7 @@ CDAudio_Init (void)
 	return 0;
 }
 
+
 void
 CDAudio_Shutdown (void)
 {
@@ -353,5 +365,3 @@ CDAudio_Shutdown (void)
 	cdp = NULL;
 	initialized = false;
 }
-
-/* end of file */

@@ -25,6 +25,7 @@
 
 	$Id$
 */
+
 #ifdef HAVE_CONFIG_H
 # include "config.h"
 #endif
@@ -52,10 +53,11 @@ static qboolean initialized = false;
 static qboolean enabled = true;
 static qboolean playLooping = false;
 
-static SDL_CD	*cd_id;
+static SDL_CD  *cd_id;
 static float	cdvolume = 1.0;
 
 static void CD_f (void);
+
 
 static void
 CDAudio_Eject (void)
@@ -103,10 +105,11 @@ CDAudio_Play (byte track, qboolean looping)
 	playLooping = looping;
 }
 
+
 void
 CDAudio_Stop (void)
 {
-	int         cdstate;
+	int			cdstate;
 
 	if (!cd_id || !enabled)
 		return;
@@ -117,6 +120,7 @@ CDAudio_Stop (void)
 	if (SDL_CDStop (cd_id))
 		Con_DPrintf ("CDAudio_Stop: Failed to stop track.\n");
 }
+
 
 void
 CDAudio_Pause (void)
@@ -163,6 +167,7 @@ CDAudio_Update (void)
 		&& (SDL_CDStatus (cd_id) != CD_PAUSED))
 		CDAudio_Play (cd_id->cur_track + 1, true);
 }
+
 
 int
 CDAudio_Init (void)
@@ -230,11 +235,12 @@ CDAudio_Shutdown (void)
 
 
 #define CD_f_DEFINED
+
 static void
 CD_f (void)
 {
 	char       *command;
-	int         cdstate;
+	int			cdstate;
 
 	if (Cmd_Argc () < 2)
 		return;

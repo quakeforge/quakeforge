@@ -1,7 +1,7 @@
 /*
-	cd_audio.c
+	cd_dos.c
 
-	(description)
+	support for cd music in dos.
 
 	Copyright (C) 1996-1997  Id Software, Inc.
 

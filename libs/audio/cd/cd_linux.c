@@ -42,7 +42,6 @@
 # include <sys/ioctl.h>
 #endif
 
-
 #include <errno.h>
 #include <fcntl.h>
 #include <stdlib.h>
@@ -70,6 +69,7 @@ static byte maxTrack;
 static int  cdfile = -1;
 cvar_t *mus_cddevice;
 
+
 static void
 CDAudio_Eject (void)
 {
@@ -90,6 +90,7 @@ CDAudio_CloseDoor (void)
 	if (ioctl (cdfile, CDROMCLOSETRAY) == -1)
 		Con_DPrintf ("CDAudio: ioctl cdromclosetray failed\n");
 }
+
 
 static int
 CDAudio_GetAudioDiskInfo (void)
@@ -183,8 +184,8 @@ CDAudio_Play (byte track, qboolean looping)
 					 strerror (errno));
 		return;
 	}
-	// if ( ioctl(cdfile, CDROMRESUME) == -1 ) 
-	// Con_DPrintf("CDAudio: ioctl cdromresume failed\n");
+//	if ( ioctl(cdfile, CDROMRESUME) == -1 ) 
+//	Con_DPrintf("CDAudio: ioctl cdromresume failed\n");
 
 	playLooping = looping;
 	playTrack = track;
@@ -210,6 +211,7 @@ CDAudio_Stop (void)
 	wasPlaying = false;
 	playing = false;
 }
+
 
 void
 CDAudio_Pause (void)
@@ -244,6 +246,7 @@ CDAudio_Resume (void)
 		Con_DPrintf ("CDAudio: ioctl cdromresume failed\n");
 	playing = true;
 }
+
 
 static void
 CD_f (void)
@@ -351,6 +354,7 @@ CD_f (void)
 	}
 }
 
+
 void
 CDAudio_Update (void)
 {
@@ -389,6 +393,7 @@ CDAudio_Update (void)
 	}
 }
 
+
 void
 Mus_CDChange (cvar_t *mus_cdaudio)
 {
@@ -419,6 +424,7 @@ Mus_CDChange (cvar_t *mus_cdaudio)
 
 	mus_enabled = true;
 }
+
 
 int
 CDAudio_Init (void)
@@ -462,4 +468,3 @@ CDAudio_Shutdown (void)
 	}
 	mus_enabled = false;
 }
-

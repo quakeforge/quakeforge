@@ -1,7 +1,7 @@
 /*
 	cd_null.c
 
-	(description)
+	support for no cd audio
 
 	Copyright (C) 1996-1997  Id Software, Inc.
 
@@ -31,6 +31,7 @@
 #endif
 
 #include "QF/cdaudio.h"
+
 
 void
 CDAudio_Play (byte track, qboolean looping)
