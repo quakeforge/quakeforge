@@ -97,41 +97,29 @@ static inline void
 real_mark_surfaces (float dist, msurface_t *surf, const vec3_t lightorigin,
 					dlight_t *light, int bit)
 {
-	float      dist2, d;
+	float      dist2, is, it;
 	float      maxdist = light->radius * light->radius;
 	vec3_t     impact;
 
-	dist2 = dist * dist;
+	dist2 = maxdist - dist * dist;
 	VectorMultSub (light->origin, dist, surf->plane->normal, impact);
 
-	d = DotProduct (impact, surf->texinfo->vecs[0])
-		+ surf->texinfo->vecs[0][3] - surf->texturemins[0];
-	if (d < 0) {
-		dist2 += d * d;
-		if (dist2 >= maxdist)
-			return;
-	} else {
-		d -= surf->extents[0] + 16;
-		if (d > 0) {
-			dist2 += d * d;
-			if (dist2 >= maxdist)
-				return;
-		}
-	}
-	d = DotProduct (impact, surf->texinfo->vecs[1])
+	is = DotProduct (impact, surf->texinfo->vecs[0])
+	 	+ surf->texinfo->vecs[0][3] - surf->texturemins[0];
+	it = DotProduct (impact, surf->texinfo->vecs[1])
 		+ surf->texinfo->vecs[1][3] - surf->texturemins[1];
-	if (d < 0) {
-		dist2 += d * d;
-		if (dist2 >= maxdist)
-			return;
-	} else {
-		d -= surf->extents[1] + 16;
-		if (d > 0) {
-			dist2 += d * d;
-			if (dist2 >= maxdist)
-				return;
-		}
-	}
+
+	// compress the square to a point
+	if (is > surf->extents[0])
+		is -= surf->extents[0];
+	else if (is > 0)
+		is = 0;
+	if (it > surf->extents[1])
+		it -= surf->extents[1];
+	else if (it > 0)
+		it = 0;
+	if (is * is + it * it > dist2)
+		return;
 
 	if (surf->dlightframe != r_framecount) {
 		surf->dlightbits = 0;
@@ -149,7 +137,7 @@ mark_surfaces (msurface_t *surf, const vec3_t lightorigin, dlight_t *light,
 	dist = PlaneDiff(lightorigin, surf->plane);
 	if (surf->flags & SURF_PLANEBACK)
 		dist = -dist;
-	if ((dist < -0.25f && !(surf->flags & SURF_LIGHTBOTHSIDES))
+	if ((dist < 0 && !(surf->flags & SURF_LIGHTBOTHSIDES))
 		|| dist > light->radius)
 		return;
 
