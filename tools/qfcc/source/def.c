@@ -270,6 +270,7 @@ get_def (type_t *type, const char *name, scope_t *scope,
 		if (storage == st_global || storage == st_static) {
 			G_INT (def->ofs) = new_location (type->aux_type, pr.entity_data);
 			reloc_def_field (def, def->ofs);
+			def->constant = 1;
 		}
 
 		if (type->aux_type->type == ev_vector) {
