@@ -1,4 +1,3 @@
-#include "QF/keys.h"
 
 float () random = #0;
 string () gametype = #0;
@@ -417,10 +416,7 @@ void () multi_player_menu =
 	Menu_End ();
 };
 
-void () options_menu =
-{
-	Menu_Item (54, 72, "", quit_f);
-};
+
 
 void () help_menu =
 {
