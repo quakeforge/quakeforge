@@ -179,9 +179,6 @@ int         pr_gc_count = 0;
 void        SV_AcceptClient (netadr_t adr, int userid, char *userinfo);
 void        Master_Shutdown (void);
 
-static jmp_buf client_abort;	//Dwonis want's me to FIXME this,
-								//not that I blam him ;)
-
 
 const char *client_info_filters[] = {  // Info keys needed by client
 	"name",
@@ -340,7 +337,6 @@ SV_DropClient (client_t *drop)
 
 	// send notification to all remaining clients
 	SV_FullClientUpdate (drop, &sv.reliable_datagram);
-	longjmp (client_abort, 1);
 }
 
 int
@@ -1726,8 +1722,7 @@ SV_ReadPackets (void)
 				good = true;
 				cl->send_message = true;	// reply at end of frame
 				if (cl->state != cs_zombie) {
-					if (!setjmp (client_abort))
-						SV_ExecuteClientMessage (cl);
+					SV_ExecuteClientMessage (cl);
 				}
 			}
 			break;
@@ -2264,7 +2259,7 @@ SV_ExtractFromUserinfo (client_t *cl)
 							 "different name.\n");
 			SV_Printf("Client %d kicked for having a invalid name\n",
 					  cl->userid);
-			SV_DropClient (cl);
+			cl->drop = true;
 			return;
 		}
 
@@ -2278,7 +2273,7 @@ SV_ExtractFromUserinfo (client_t *cl)
 									"name spam\n", cl->name);
 				SV_ClientPrintf (cl, PRINT_HIGH, "You were kicked "
 								 "from the game for name spamming\n");
-				SV_DropClient (cl);
+				cl->drop = true;
 				return;
 			}
 		}
