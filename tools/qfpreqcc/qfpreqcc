@@ -38,10 +38,10 @@ def parse_filename (args):
 	m = arg_re.match (args)
 	fname = string.strip (m.groups()[0])
 	if fname:
-	    if fname[0] == '"':
-		    fname = fname[1:]
-	    if fname[-1] == '"':
-		    fname = fname[:-1]
+		if fname[0] == '"':
+			fname = fname[1:]
+		if fname[-1] == '"':
+			fname = fname[:-1]
 	return fname
 
 def parse_pragma (pragma, args):
