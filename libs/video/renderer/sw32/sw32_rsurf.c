@@ -914,3 +914,8 @@ R_DrawSurfaceBlock32 (void)
 	}
 }
 */
+
+void
+R_SurfacePatch (void)
+{
+}

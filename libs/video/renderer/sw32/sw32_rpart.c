@@ -58,8 +58,42 @@ particle_t *particles;
 int         r_numparticles;
 
 vec3_t      r_pright, r_pup, r_ppn;
-cvar_t      *r_particles;
 
+
+/*
+	R_MaxParticlesCheck
+
+	Misty-chan: EXTREME heavy lifting and bugfixing thanks goes out to taniwha
+				- I built this, and he got it working :)
+*/
+void
+R_MaxParticlesCheck (cvar_t *var)
+{
+	// Do not use 0 in this! sw doesn't grok 0 and it'll segfault if we do!
+	r_numparticles = max(var->int_val, 1);
+        
+	/*
+	Debugging code. will print what the above was set to, and is also useful
+	for checking if this is accidentally being run all the time.
+	Con_Printf ("%d", r_numparticles);
+	*/
+	
+	if (particles)
+		free (particles);
+                
+	particles = (particle_t *) calloc (r_numparticles, sizeof (particle_t));
+        
+	R_ClearParticles ();
+}
+
+
+void
+R_Particles_Init_Cvars (void)
+{
+	// Does a callback to R_MaxParticleCheck when the cvar changes. Neat trick.
+	Cvar_Get ("cl_max_particles", "2048", CVAR_ARCHIVE, R_MaxParticlesCheck,
+			  "Maximum amount of particles to display. No maximum, minimum is 1.");
+}
 
 void
 R_InitParticles (void)
@@ -212,6 +246,35 @@ R_ParticleExplosion (vec3_t org)
 				p->org[j] = org[j] + ((rand () % 32) - 16);
 				p->vel[j] = (rand () % 512) - 256;
 			}
+		}
+	}
+}
+
+void
+R_ParticleExplosion2 (vec3_t org, int colorStart, int colorLength)
+{
+	int              i, j;
+	particle_t      *p;
+	int              colorMod = 0;
+
+	for (i=0; i<512; i++)
+	{
+		if (!free_particles)
+			return;
+		p = free_particles;
+		free_particles = p->next;
+		p->next = active_particles;
+		active_particles = p;
+
+		p->die = r_realtime + 0.3;
+		p->color = colorStart + (colorMod % colorLength);
+		colorMod++;
+
+		p->type = pt_blob;
+		for (j=0 ; j<3 ; j++)
+		{
+			p->org[j] = org[j] + ((rand()%32)-16);
+			p->vel[j] = (rand()%512)-256;
 		}
 	}
 }

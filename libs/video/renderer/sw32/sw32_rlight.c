@@ -61,6 +61,58 @@ R_AnimateLight (void)
 	DYNAMIC LIGHTS
 */
 
+void
+R_RecursiveMarkLights (vec3_t lightorigin, dlight_t *light, int bit,
+					   mnode_t *node)
+{
+	mplane_t   *splitplane;
+	float       ndist, maxdist;
+	msurface_t *surf;
+	int         i;
+
+	maxdist = light->radius * light->radius;
+loc0:
+	if (node->contents < 0)
+		return;
+
+	splitplane = node->plane;
+	ndist = DotProduct (lightorigin, splitplane->normal) - splitplane->dist;
+
+	if (ndist > light->radius) {
+		if (node->children[0]->contents >= 0) {
+			node = node->children[0];
+			goto loc0;
+		}
+		return;
+	}
+	if (ndist < -light->radius) {
+		if (node->children[1]->contents >= 0) {
+			node = node->children[1];
+			goto loc0;
+		}
+		return;
+	}
+	// mark the polygons
+	surf = r_worldentity.model->surfaces + node->firstsurface;
+	for (i = 0; i < node->numsurfaces; i++, surf++) {
+		if (surf->dlightframe != r_framecount) {
+			surf->dlightbits = 0;
+			surf->dlightframe = r_framecount;
+		}
+		surf->dlightbits |= bit;
+	}
+
+	if (node->children[0]->contents >= 0) {
+		if (node->children[1]->contents >= 0)
+			R_RecursiveMarkLights (lightorigin, light, bit, node->children[1]);
+		node = node->children[0];
+		goto loc0;
+	} else if (node->children[1]->contents >= 0) {
+		node = node->children[1];
+		goto loc0;
+	}
+}
+
 static void
 mark_surfaces (msurface_t *surf, vec3_t lightorigin,  dlight_t *light,
 			   int bit)

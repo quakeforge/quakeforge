@@ -142,9 +142,6 @@ void        R_MarkLeaves (void);
 void        CreatePassages (void);
 void        SetVisibilityByPassages (void);
 
-void        R_NetGraph (void);
-void        R_ZGraph (void);
-
 cvar_t     *r_draworder;
 
 extern cvar_t *scr_fov;
@@ -900,8 +897,7 @@ R_RenderView_ (void)
 
 	if (!r_dspeeds->int_val) {
 		VID_UnlockBuffer ();
-		S_ExtraUpdate ();				// don't let sound get messed up if
-										// going slow
+		S_ExtraUpdate ();		// don't let sound get messed up if going slow
 		VID_LockBuffer ();
 	}
 
@@ -936,9 +932,6 @@ R_RenderView_ (void)
 
 	if (r_timegraph->int_val)
 		R_TimeGraph ();
-
-	if (r_netgraph->int_val)
-		R_NetGraph ();
 
 	if (r_zgraph->int_val)
 		R_ZGraph ();

@@ -148,7 +148,6 @@ qboolean    scr_skipupdate;
 qboolean    block_drawing;
 
 void        SCR_ScreenShot_f (void);
-void        SCR_RSShot_f (void);
 
 /*
 	CENTER PRINTING
@@ -488,8 +487,6 @@ SCR_Init (void)
 	// register our commands
 	Cmd_AddCommand ("screenshot", SCR_ScreenShot_f, "Take a screenshot and "
 					"write it as qfxxx.tga in the current directory");
-	Cmd_AddCommand ("snap", SCR_RSShot_f, "Take a screenshot and upload it "
-					"to the server");
 	Cmd_AddCommand ("sizeup", SCR_SizeUp_f, "Increase the size of the screen");
 	Cmd_AddCommand ("sizedown", SCR_SizeDown_f, "Decrease the size of the "
 					"screen");
@@ -675,6 +672,12 @@ SCR_DrawConsole (int swap)
   SCREEN SHOTS
 */
 
+tex_t *
+SCR_ScreenShot (int width, int height)
+{
+	return 0;
+}
+
 void
 SCR_ScreenShot_f (void)
 {
@@ -794,134 +797,6 @@ SCR_DrawStringToSnap (const char *s, tex_t *tex, int x, int y)
 		dest += 8;
 	}
 }
-
-/*
-void
-SCR_RSShot_f (void)
-{
-	int         x, y;
-	unsigned char *dest;
-	char        pcxname[80];
-	unsigned char *newbuf;
-	int         w, h;
-	int         dx, dy, dex, dey, nx;
-	int         r, b, g;
-	int         count;
-	float       fracw, frach;
-	char        st[80];
-	time_t      now;
-
-	if (CL_IsUploading ())
-		return;							// already one pending
-
-	if (cls.state < ca_onserver)
-		return;							// gotta be connected
-
-	Con_Printf ("Remote screen shot requested.\n");
-
-	snprintf (pcxname, sizeof (pcxname), "rss.pcx");
-
-	// save the pcx file 
-	D_EnableBackBufferAccess ();		// enable direct drawing of console
-										// to back buffer
-	w = (vid.width < RSSHOT_WIDTH) ? vid.width : RSSHOT_WIDTH;
-	h = (vid.height < RSSHOT_HEIGHT) ? vid.height : RSSHOT_HEIGHT;
-
-	fracw = (float) vid.width / (float) w;
-	frach = (float) vid.height / (float) h;
-
-	newbuf = calloc (1, w * h);
-
-	for (y = 0; y < h; y++) {
-		dest = newbuf + (w * y);
-
-		for (x = 0; x < w; x++) {
-			r = g = b = 0;
-
-			dx = x * fracw;
-			dex = (x + 1) * fracw;
-			if (dex == dx)
-				dex++;					// at least one
-			dy = y * frach;
-			dey = (y + 1) * frach;
-			if (dey == dy)
-				dey++;					// at least one
-
-			count = 0;
-			switch(r_pixbytes)
-			{
-			case 1:
-				for (; dy < dey; dy++) {
-					byte *src = (byte *) vid.buffer + (vid.rowbytes * dy) + dx;
-					for (nx = dx; nx < dex; nx++) {
-						r += vid_basepal[*src * 3];
-						g += vid_basepal[*src * 3 + 1];
-						b += vid_basepal[*src * 3 + 2];
-						src++;
-						count++;
-					}
-				}
-				break;
-			case 2:
-				for (;dy < dey;dy++) {
-					unsigned short *src = (unsigned short *) vid.buffer +
-						(vid.rowbytes * dy) + dx;
-					for (nx = dx; nx < dex; nx++) {
-						r += ((*src & 0xF800) >> 11) << (8 - 5);
-						g += ((*src & 0x07E0) >> 5) << (8 - 6);
-						b += ((*src & 0x001F) >> 0) << (8 - 5);
-						src++;
-						count++;
-					}
-				}
-				break;
-			case 4:
-				for (;dy < dey;dy++) {
-					unsigned int *src = (unsigned int *) vid.buffer +
-						(vid.rowbytes * dy) + dx;
-					for (nx = dx; nx < dex; nx++) {
-						r += ((byte *)src)[0];
-						g += ((byte *)src)[1];
-						b += ((byte *)src)[2];
-						src++;
-						count++;
-					}
-				}
-				break;
-			default:
-				Sys_Error("SCR_RSShot_f: unsupported r_pixbytes %i\n",
-						  r_pixbytes);
-			}
-			r /= count;
-			g /= count;
-			b /= count;
-			*dest++ = MipColor (r, g, b);
-		}
-	}
-
-	time (&now);
-	strcpy (st, ctime (&now));
-	st[strlen (st) - 1] = 0;
-	SCR_DrawStringToSnap (st, newbuf, w - strlen (st) * 8, 0, w);
-
-	strncpy (st, cls.servername, sizeof (st));
-	st[sizeof (st) - 1] = 0;
-	SCR_DrawStringToSnap (st, newbuf, w - strlen (st) * 8, 10, w);
-
-	strncpy (st, name->string, sizeof (st));
-	st[sizeof (st) - 1] = 0;
-	SCR_DrawStringToSnap (st, newbuf, w - strlen (st) * 8, 20, w);
-
-	WritePCXfile (pcxname, newbuf, w, h, w, vid_basepal, true, false);
-
-	free (newbuf);
-
-	D_DisableBackBufferAccess ();		// for adapters that can't stay mapped
-										// in for linear writes all the time
-	Con_Printf ("Wrote %s\n", pcxname);
-	Con_Printf ("Sending shot to server...\n");
-}
-*/
 
 //=============================================================================
 
