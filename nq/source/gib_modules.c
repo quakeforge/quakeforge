@@ -17,7 +17,7 @@
 #include "QF/cmd.h"
 #include "QF/zone.h"
 #include "QF/quakefs.h"
-#include "gib.h"
+#include "QF/gib.h"
 #include "gib_instructions.h"
 #include "gib_interpret.h"
 #include "gib_modules.h"

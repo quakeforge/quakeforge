@@ -47,7 +47,7 @@
 
 #include "chase.h"
 #include "draw.h"
-#include "gib.h"
+#include "QF/gib.h"
 #include "host.h"
 #include "r_local.h"
 #include "sbar.h"
