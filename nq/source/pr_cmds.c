@@ -62,7 +62,7 @@ static __attribute__ ((unused)) const char rcsid[] =
 	This is a TERMINAL error, which will kill off the entire server.
 	Dumps self.
 
-	error(value)
+	error (value)
 */
 void
 PF_error (progs_t *pr)
@@ -85,7 +85,7 @@ PF_error (progs_t *pr)
 	Dumps out self, then an error message.  The program is aborted and self is
 	removed, but the level can continue.
 
-	objerror(value)
+	objerror (value)
 */
 void
 PF_objerror (progs_t *pr)
@@ -107,7 +107,7 @@ PF_objerror (progs_t *pr)
 	PF_makevectors
 
 	Writes new values for v_forward, v_up, and v_right based on angles
-	makevectors(vector)
+	makevectors (vector)
 */
 void
 PF_makevectors (progs_t *pr)
@@ -231,7 +231,7 @@ PF_setsize (progs_t *pr)
 /*
 	PF_setmodel
 
-	setmodel(entity, model)
+	setmodel (entity, model)
 */
 void
 PF_setmodel (progs_t *pr)
@@ -269,7 +269,7 @@ PF_setmodel (progs_t *pr)
 
 	broadcast print to everyone on server
 
-	bprint(value)
+	bprint (value)
 */
 void
 PF_bprint (progs_t *pr)
@@ -285,7 +285,7 @@ PF_bprint (progs_t *pr)
 
 	single print to a specific client
 
-	sprint(clientent, value)
+	sprint (clientent, value)
 */
 void
 PF_sprint (progs_t *pr)
@@ -313,12 +313,12 @@ PF_sprint (progs_t *pr)
 
 	single print to a specific client
 
-	centerprint(clientent, value)
+	centerprint (clientent, value)
 */
 void
 PF_centerprint (progs_t *pr)
 {
-	const char       *s;
+	const char *s;
 	client_t   *client;
 	int         entnum;
 
@@ -339,7 +339,7 @@ PF_centerprint (progs_t *pr)
 /*
 	PF_particle
 
-	particle(origin, color, count)
+	particle (origin, color, count)
 */
 void
 PF_particle (progs_t *pr)
@@ -749,7 +749,7 @@ PF_precache_model (progs_t *pr)
 /*
 	PF_walkmove
 
-	float(float yaw, float dist) walkmove
+	float (float yaw, float dist) walkmove
 */
 void
 PF_walkmove (progs_t *pr)
@@ -790,7 +790,7 @@ PF_walkmove (progs_t *pr)
 /*
 	PF_droptofloor
 
-	void() droptofloor
+	void () droptofloor
 */
 void
 PF_droptofloor (progs_t *pr)
@@ -822,7 +822,7 @@ PF_droptofloor (progs_t *pr)
 /*
 	PF_lightstyle
 
-	void(float style, string value) lightstyle
+	void (float style, string value) lightstyle
 */
 void
 PF_lightstyle (progs_t *pr)
@@ -876,7 +876,7 @@ cvar_t     *sv_aim;
 	PF_aim
 
 	Pick a vector for the player to shoot along
-	vector aim(entity, missilespeed)
+	vector aim (entity, missilespeed)
 */
 void
 PF_aim (progs_t *pr)
@@ -1311,7 +1311,7 @@ PF_Fixme (progs_t *pr)
 static void
 PF_checkextension (progs_t *pr)
 {
-	G_FLOAT(pr, OFS_RETURN) = 0; //FIXME make this function actually useful :P
+	G_FLOAT (pr, OFS_RETURN) = 0; // FIXME: make this function actually useful
 }
 
 void
@@ -1320,69 +1320,121 @@ SV_PR_Cmds_Init ()
 	PR_Cmds_Init (&sv_pr_state);
 	PR_Obj_Progs_Init (&sv_pr_state);
 
-	PR_AddBuiltin (&sv_pr_state, "makevectors", PF_makevectors, 1);	// void(entity e) makevectors
-	PR_AddBuiltin (&sv_pr_state, "setorigin", PF_setorigin, 2);	// void(entity e, vector o) setorigin
-	PR_AddBuiltin (&sv_pr_state, "setmodel", PF_setmodel, 3);	// void(entity e, string m) setmodel
-	PR_AddBuiltin (&sv_pr_state, "setsize", PF_setsize, 4);	// void(entity e, vector min, vector max) setsize
-	PR_AddBuiltin (&sv_pr_state, "fixme", PF_Fixme, 5);	// void(entity e, vector min, vector max) setabssize
-	PR_AddBuiltin (&sv_pr_state, "sound", PF_sound, 8);	// void(entity e, float chan, string samp) sound
-	PR_AddBuiltin (&sv_pr_state, "error", PF_error, 10);	// void(string e) error
-	PR_AddBuiltin (&sv_pr_state, "objerror", PF_objerror, 11);	// void(string e) objerror
-	PR_AddBuiltin (&sv_pr_state, "spawn", PF_Spawn, 14);	// entity() spawn
-	PR_AddBuiltin (&sv_pr_state, "remove", PF_Remove, 15);	// void(entity e) remove
-	PR_AddBuiltin (&sv_pr_state, "traceline", PF_traceline, 16);	// float(vector v1, vector v2, float tryents) traceline
-	PR_AddBuiltin (&sv_pr_state, "checkclient", PF_checkclient, 17);	// entity() clientlist
-	PR_AddBuiltin (&sv_pr_state, "precache_sound", PF_precache_sound, 19);	// void(string s) precache_sound
-	PR_AddBuiltin (&sv_pr_state, "precache_model", PF_precache_model, 20);	// void(string s) precache_model
-	PR_AddBuiltin (&sv_pr_state, "stuffcmd", PF_stuffcmd, 21);	// void(entity client, string s) stuffcmd
-	PR_AddBuiltin (&sv_pr_state, "findradius", PF_findradius, 22);	// entity(vector org, float rad) findradius
-	PR_AddBuiltin (&sv_pr_state, "bprint", PF_bprint, 23);	// void(string s) bprint
-	PR_AddBuiltin (&sv_pr_state, "sprint", PF_sprint, 24);	// void(entity client, string s) sprint
-	PR_AddBuiltin (&sv_pr_state, "walkmove", PF_walkmove, 32);	// float(float yaw, float dist) walkmove
-	// 33
-	PR_AddBuiltin (&sv_pr_state, "droptofloor", PF_droptofloor, 34);	// float() droptofloor
-	PR_AddBuiltin (&sv_pr_state, "lightstyle", PF_lightstyle, 35);	// void(float style, string value) lightstyle
-	// 39
-	PR_AddBuiltin (&sv_pr_state, "checkbottom", PF_checkbottom, 40);	// float(entity e) checkbottom
-	PR_AddBuiltin (&sv_pr_state, "pointcontents", PF_pointcontents, 41);	// float(vector v) pointcontents
-	// 42
-	PR_AddBuiltin (&sv_pr_state, "aim", PF_aim, 44);	// vector(entity e, float speed) aim
-	PR_AddBuiltin (&sv_pr_state, "localcmd", PF_localcmd, 46);	// void(string s) localcmd
-	PR_AddBuiltin (&sv_pr_state, "particle", PF_particle, 48);	// void(vector o, vector d, float color, float count) particle
-	PR_AddBuiltin (&sv_pr_state, "changeyaw", PF_changeyaw, 49);	// void() ChangeYaw
-	// 50
+	// void (entity e) makevectors
+	PR_AddBuiltin (&sv_pr_state, "makevectors", PF_makevectors, 1);
+	// void (entity e, vector o) setorigin
+	PR_AddBuiltin (&sv_pr_state, "setorigin", PF_setorigin, 2);
+	// void (entity e, string m) setmodel
+	PR_AddBuiltin (&sv_pr_state, "setmodel", PF_setmodel, 3);
+	// void (entity e, vector min, vector max) setsize
+	PR_AddBuiltin (&sv_pr_state, "setsize", PF_setsize, 4);
+	// void (entity e, vector min, vector max) setabssize
+	PR_AddBuiltin (&sv_pr_state, "fixme", PF_Fixme, 5);
 
-	PR_AddBuiltin (&sv_pr_state, "writebyte", PF_WriteByte, 52);	// void(float to, float f) WriteByte
-	PR_AddBuiltin (&sv_pr_state, "writechar", PF_WriteChar, 53);	// void(float to, float f) WriteChar
-	PR_AddBuiltin (&sv_pr_state, "writeshort", PF_WriteShort, 54);	// void(float to, float f) WriteShort
-	PR_AddBuiltin (&sv_pr_state, "writelong", PF_WriteLong, 55);	// void(float to, float f) WriteLong
-	PR_AddBuiltin (&sv_pr_state, "writecoord", PF_WriteCoord, 56);	// void(float to, float f) WriteCoord
-	PR_AddBuiltin (&sv_pr_state, "writeangle", PF_WriteAngle, 57);	// void(float to, float f) WriteAngle
-	PR_AddBuiltin (&sv_pr_state, "writestring", PF_WriteString, 58);	// void(float to, string s) WriteString
-	PR_AddBuiltin (&sv_pr_state, "writeentity", PF_WriteEntity, 59);	// void(float to, entity s) WriteEntity
+	// void (entity e, float chan, string samp) sound
+	PR_AddBuiltin (&sv_pr_state, "sound", PF_sound, 8);
 
-	PR_AddBuiltin (&sv_pr_state, "movetogoal", SV_MoveToGoal, 67);		// void(float step) movetogoal
-	PR_AddBuiltin (&sv_pr_state, "precache_file", PF_precache_file, 68);	// string(string s) precache_file
-	PR_AddBuiltin (&sv_pr_state, "makestatic", PF_makestatic, 69);	// void(entity e) makestatic
+	// void (string e) error
+	PR_AddBuiltin (&sv_pr_state, "error", PF_error, 10);
+	// void (string e) objerror
+	PR_AddBuiltin (&sv_pr_state, "objerror", PF_objerror, 11);
+	// entity () spawn
+	PR_AddBuiltin (&sv_pr_state, "spawn", PF_Spawn, 14);
+	// void (entity e) remove
+	PR_AddBuiltin (&sv_pr_state, "remove", PF_Remove, 15);
+	// float (vector v1, vector v2, float tryents) traceline
+	PR_AddBuiltin (&sv_pr_state, "traceline", PF_traceline, 16);
+	// entity () clientlist
+	PR_AddBuiltin (&sv_pr_state, "checkclient", PF_checkclient, 17);
 
-	PR_AddBuiltin (&sv_pr_state, "changelevel", PF_changelevel, 70);	// void(string s) changelevel
-	// 71
+	// void (string s) precache_sound
+	PR_AddBuiltin (&sv_pr_state, "precache_sound", PF_precache_sound, 19);
+	// void (string s) precache_model
+	PR_AddBuiltin (&sv_pr_state, "precache_model", PF_precache_model, 20);
+	// void (entity client, string s) stuffcmd
+	PR_AddBuiltin (&sv_pr_state, "stuffcmd", PF_stuffcmd, 21);
+	// entity (vector org, float rad) findradius
+	PR_AddBuiltin (&sv_pr_state, "findradius", PF_findradius, 22);
+	// void (string s) bprint
+	PR_AddBuiltin (&sv_pr_state, "bprint", PF_bprint, 23);
+	// void (entity client, string s) sprint
+	PR_AddBuiltin (&sv_pr_state, "sprint", PF_sprint, 24);
 
-	PR_AddBuiltin (&sv_pr_state, "centerprint", PF_centerprint, 73);	// void(...) centerprint
+	// float (float yaw, float dist) walkmove
+	PR_AddBuiltin (&sv_pr_state, "walkmove", PF_walkmove, 32);
 
-	PR_AddBuiltin (&sv_pr_state, "ambientsound", PF_ambientsound, 74);	// void(vector pos, string samp, float vol, float atten) ambientsound
+	// float () droptofloor
+	PR_AddBuiltin (&sv_pr_state, "droptofloor", PF_droptofloor, 34);
+	// void (float style, string value) lightstyle
+	PR_AddBuiltin (&sv_pr_state, "lightstyle", PF_lightstyle, 35);
 
-	PR_AddBuiltin (&sv_pr_state, "precache_model2", PF_precache_model, 75);	// string(string s) precache_model2
-	PR_AddBuiltin (&sv_pr_state, "precache_sound2", PF_precache_sound, 76);	// string(string s) precache_sound2
-	PR_AddBuiltin (&sv_pr_state, "precache_file2", PF_precache_file, 77);	// string(string s) precache_file2
+	// float (entity e) checkbottom
+	PR_AddBuiltin (&sv_pr_state, "checkbottom", PF_checkbottom, 40);
+	// float (vector v) pointcontents
+	PR_AddBuiltin (&sv_pr_state, "pointcontents", PF_pointcontents, 41);
 
-	PR_AddBuiltin (&sv_pr_state, "setspawnparms", PF_setspawnparms, 78);	// void(entity e) setspawnparms
+	// vector (entity e, float speed) aim
+	PR_AddBuiltin (&sv_pr_state, "aim", PF_aim, 44);
 
-	PR_AddBuiltin (&sv_pr_state, "hullpointcontents", PF_hullpointcontents, 93);    // integer (entity ent, vector point) hullpointcontents
-	PR_AddBuiltin (&sv_pr_state, "getboxbounds", PF_getboxbounds, 94);  // vector (integer hull, integer max) getboxbounds
-	PR_AddBuiltin (&sv_pr_state, "getboxhull", PF_getboxhull, 95);  // integer () getboxhull
-	PR_AddBuiltin (&sv_pr_state, "freeboxhull", PF_freeboxhull, 96);    // void (integer hull) freeboxhull
-	PR_AddBuiltin (&sv_pr_state, "rotate_bbox", PF_rotate_bbox, 97);    // void (integer hull, vector right, vector forward, vector up, vector mins, vector maxs) rotate_bbox
+	// void (string s) localcmd
+	PR_AddBuiltin (&sv_pr_state, "localcmd", PF_localcmd, 46);
 
-	PR_AddBuiltin (&sv_pr_state, "checkextension", PF_checkextension, 99);	// float () checkextension
+	// void (vector o, vector d, float color, float count) particle
+	PR_AddBuiltin (&sv_pr_state, "particle", PF_particle, 48);
+	// void () ChangeYaw
+	PR_AddBuiltin (&sv_pr_state, "changeyaw", PF_changeyaw, 49);
+
+	// void (float to, float f) WriteByte
+	PR_AddBuiltin (&sv_pr_state, "writebyte", PF_WriteByte, 52);
+	// void (float to, float f) WriteChar
+	PR_AddBuiltin (&sv_pr_state, "writechar", PF_WriteChar, 53);
+	// void (float to, float f) WriteShort
+	PR_AddBuiltin (&sv_pr_state, "writeshort", PF_WriteShort, 54);
+	// void (float to, float f) WriteLong
+	PR_AddBuiltin (&sv_pr_state, "writelong", PF_WriteLong, 55);
+	// void (float to, float f) WriteCoord
+	PR_AddBuiltin (&sv_pr_state, "writecoord", PF_WriteCoord, 56);
+	// void (float to, float f) WriteAngle
+	PR_AddBuiltin (&sv_pr_state, "writeangle", PF_WriteAngle, 57);
+	// void (float to, string s) WriteString
+	PR_AddBuiltin (&sv_pr_state, "writestring", PF_WriteString, 58);
+	// void (float to, entity s) WriteEntity
+	PR_AddBuiltin (&sv_pr_state, "writeentity", PF_WriteEntity, 59);
+
+	// void (float step) movetogoal
+	PR_AddBuiltin (&sv_pr_state, "movetogoal", SV_MoveToGoal, 67);
+	// string (string s) precache_file
+	PR_AddBuiltin (&sv_pr_state, "precache_file", PF_precache_file, 68);
+	// void (entity e) makestatic
+	PR_AddBuiltin (&sv_pr_state, "makestatic", PF_makestatic, 69);
+	// void (string s) changelevel
+	PR_AddBuiltin (&sv_pr_state, "changelevel", PF_changelevel, 70);
+
+	// void (...) centerprint
+	PR_AddBuiltin (&sv_pr_state, "centerprint", PF_centerprint, 73);
+	// void (vector pos, string samp, float vol, float atten) ambientsound
+	PR_AddBuiltin (&sv_pr_state, "ambientsound", PF_ambientsound, 74);
+	// string (string s) precache_model2
+	PR_AddBuiltin (&sv_pr_state, "precache_model2", PF_precache_model, 75);
+	// string (string s) precache_sound2
+	PR_AddBuiltin (&sv_pr_state, "precache_sound2", PF_precache_sound, 76);
+	// string (string s) precache_file2
+	PR_AddBuiltin (&sv_pr_state, "precache_file2", PF_precache_file, 77);
+	// void (entity e) setspawnparms
+	PR_AddBuiltin (&sv_pr_state, "setspawnparms", PF_setspawnparms, 78);
+
+	// integer (entity ent, vector point) hullpointcontents
+	PR_AddBuiltin (&sv_pr_state, "hullpointcontents", PF_hullpointcontents,
+				   93);
+	// vector (integer hull, integer max) getboxbounds
+	PR_AddBuiltin (&sv_pr_state, "getboxbounds", PF_getboxbounds, 94);
+	// integer () getboxhull
+	PR_AddBuiltin (&sv_pr_state, "getboxhull", PF_getboxhull, 95);
+	// void (integer hull) freeboxhull
+	PR_AddBuiltin (&sv_pr_state, "freeboxhull", PF_freeboxhull, 96);
+	// void (integer hull, vector right, vector forward, vector up, vector mins, vector maxs) rotate_bbox
+	PR_AddBuiltin (&sv_pr_state, "rotate_bbox", PF_rotate_bbox, 97);
+
+	// float () checkextension
+	PR_AddBuiltin (&sv_pr_state, "checkextension", PF_checkextension, 99);
 }

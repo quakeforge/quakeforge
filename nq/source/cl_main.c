@@ -597,8 +597,8 @@ CL_RelinkEntities (void)
 			}
 		}
 		CL_NewDlight (i, ent->origin, state->effects);
-		if ( VectorDistance_fast(state->msg_origins[1], ent->origin)
-			 > (256*256))
+		if (VectorDistance_fast (state->msg_origins[1], ent->origin)
+			> (256 * 256))
 			VectorCopy (ent ->origin, state->msg_origins[1]);
 		if (ent->model->flags & EF_ROCKET) {
 			dl = R_AllocDlight (i);

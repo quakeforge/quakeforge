@@ -496,8 +496,8 @@ ReconstructHostEnt (struct hostent *s, void *flattened)
 	ptr = (char **) FARPKL (&old->h_aliases);
 	for (i = 0; i < (HOSTENT_ALIAS_LIMIT - 1) && FARPKL (ptr); i++, ptr++) {
 		s->h_aliases[i] = HostEnt_names[i];
-		// fstrncpyfrom(s->h_aliases[i], (void *) FARPKL(ptr),
-		// HOSTENT_STRLEN_LIMIT-1);
+//		fstrncpyfrom (s->h_aliases[i], (void *) FARPKL (ptr),
+//					  HOSTENT_STRLEN_LIMIT - 1);
 		s->h_aliases[i][HOSTENT_STRLEN_LIMIT - 1] = 0;
 	}
 	s->h_aliases[i] = 0;

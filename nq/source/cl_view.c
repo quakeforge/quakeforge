@@ -433,7 +433,7 @@ V_PrepBlend (void)
 	if (!vid.cshift_changed && !vid.recalc_refdef)
 		return;
 
-	V_CalcBlend();
+	V_CalcBlend ();
 }
 
 /* VIEW RENDERING */

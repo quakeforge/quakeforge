@@ -711,7 +711,7 @@ Host_Say (qboolean teamonly)
 
 	save = host_client;
 
-	p = Hunk_TempAlloc (strlen(Cmd_Args (1)) + 1);
+	p = Hunk_TempAlloc (strlen (Cmd_Args (1)) + 1);
 	strcpy (p, Cmd_Args (1));
 	// remove quotes if present
 	if (*p == '"') {
@@ -777,7 +777,7 @@ Host_Tell_f (void)
 	strcpy (text, host_client->name);
 	strcat (text, ": ");
 
-	p = Hunk_TempAlloc (strlen(Cmd_Args (1)) + 1);
+	p = Hunk_TempAlloc (strlen (Cmd_Args (1)) + 1);
 	strcpy (p, Cmd_Args (1));
 
 	// remove quotes if present

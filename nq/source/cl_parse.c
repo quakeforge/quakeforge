@@ -727,7 +727,9 @@ CL_ParseStaticSound (void)
 	S_StaticSound (cl.sound_precache[sound_num], org, vol, atten);
 }
 
-#define SHOWNET(x) if(cl_shownet->int_val==2)Con_Printf ("%3i:%s\n", net_message->readcount-1, x);
+#define SHOWNET(x) \
+	if (cl_shownet->int_val == 2) \
+		Con_Printf ("%3i:%s\n", net_message->readcount - 1, x);
 
 int viewentity;
 
@@ -883,7 +885,7 @@ CL_ParseServerMessage (void)
 
 			case svc_spawnbaseline:
 				i = MSG_ReadShort (net_message);
-				// must use CL_EntityNum() to force cl.num_entities up
+				// must use CL_EntityNum () to force cl.num_entities up
 				CL_ParseBaseline (CL_EntityNum (i));
 				break;
 			case svc_spawnstatic:

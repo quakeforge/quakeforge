@@ -154,11 +154,11 @@ CL_ClearTEnts (void)
 		int j;
 
 		for (j = 0; j < MAX_BEAM_ENTS; j++) {
-			CL_Init_Entity(&cl_beams[i].ent_list[j]);
+			CL_Init_Entity (&cl_beams[i].ent_list[j]);
 		}
 	}
 	for (i = 0; i < MAX_EXPLOSIONS; i++) {
-		CL_Init_Entity(&cl_explosions[i].ent);
+		CL_Init_Entity (&cl_explosions[i].ent);
 	}
 }
 
@@ -278,7 +278,7 @@ CL_ParseBeam (model_t *m)
 		b->entity = ent;
 		b->model = m;
 		b->endtime = cl.time + 0.2;
-		b->seed = rand();
+		b->seed = rand ();
 		VectorCopy (end, b->end);
 		if (b->entity != cl.viewentity) {
 			// this will be done in CL_UpdateBeams
@@ -424,7 +424,7 @@ CL_ParseTEnt (void)
 			dl->radius = 350;
 			dl->die = cl.time + 0.5;
 			dl->decay = 300;
-			colorStart = (colorStart + (rand() % colorLength)) * 3;
+			colorStart = (colorStart + (rand () % colorLength)) * 3;
 			dl->color[0] = vid.palette[colorStart] * (1.0 / 255.0);
 			dl->color[1] = vid.palette[colorStart + 1] * (1.0 / 255.0);
 			dl->color[2] = vid.palette[colorStart + 2] * (1.0 / 255.0);
