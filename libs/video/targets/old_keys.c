@@ -43,6 +43,10 @@ static const char rcsid[] =
 # include <alloca.h>
 #endif
 
+#ifdef _WIN32
+void *alloca(size_t size);
+#endif
+
 #include <ctype.h>
 #include <stdlib.h>
 

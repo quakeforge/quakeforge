@@ -58,6 +58,10 @@ static const char rcsid[] =
 
 #include "compat.h"
 
+#ifdef _WIN32
+void *alloca(size_t size);
+#endif
+
 #define BOX_WIDTH 2056
 
 /* cube face to sky texture offset conversion */
