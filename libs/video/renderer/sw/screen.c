@@ -581,7 +581,7 @@ SCR_ScreenShot (int width, int height)
 	fracw = (float) vid.width / (float) w;
 	frach = (float) vid.height / (float) h;
 
-	tex = Hunk_TempAlloc (field_offset (tex_t, data[w * h]));
+	tex = malloc (field_offset (tex_t, data[w * h]));
 	if (!tex)
 		return 0;
 
@@ -590,7 +590,7 @@ SCR_ScreenShot (int width, int height)
 	tex->palette = vid.palette;
 
 	for (y = 0; y < h; y++) {
-		dest = tex->data + (w * y);
+		dest = tex->data + (w * (h - y - 1));
 
 		for (x = 0; x < w; x++) {
 			r = g = b = 0;
@@ -608,9 +608,9 @@ SCR_ScreenShot (int width, int height)
 			for ( /* */ ; dy < dey; dy++) {
 				src = vid.buffer + (vid.rowbytes * dy) + dx;
 				for (nx = dx; nx < dex; nx++) {
-					r += vid.palette[*src * 3];
-					g += vid.palette[*src * 3 + 1];
-					b += vid.palette[*src * 3 + 2];
+					r += vid.basepal[*src * 3];
+					g += vid.basepal[*src * 3 + 1];
+					b += vid.basepal[*src * 3 + 2];
 					src++;
 					count++;
 				}
@@ -714,7 +714,7 @@ SCR_DrawCharToSnap (int num, byte * dest, int width)
 			else
 				dest[x] = 98;
 		source += 128;
-		dest += width;
+		dest -= width;
 	}
 
 }

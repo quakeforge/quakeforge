@@ -171,7 +171,8 @@ CL_RSShot_f (void)
 							  tex->height - 21);
 
 		pcx = EncodePCX (tex->data, tex->width, tex->height, tex->width,
-						 vid.palette, true, &pcx_len);
+						 vid.basepal, true, &pcx_len);
+		free (tex);
 	}
 	if (pcx) {
 		CL_StartUpload ((void *)pcx, pcx_len);

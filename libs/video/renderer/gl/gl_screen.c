@@ -511,21 +511,22 @@ SCR_DrawConsole (void)
 tex_t *
 SCR_ScreenShot (int width, int height)
 {
-	unsigned char *src, *dest;
+	unsigned char *src, *dest, *snap;
 	float          fracw, frach;
 	int            count, dex, dey, dx, dy, nx, r, g, b, x, y, w, h;
 	tex_t         *tex;
 
-	tex = Hunk_TempAlloc (field_offset (tex_t, data[vid.width *
-													vid.height * 3]));
-	if (!tex)
-		return 0;
+	snap = Hunk_TempAlloc (vid.width * vid.height * 3);
 
-	qfglReadPixels (glx, gly, vid.width, vid.height, GL_RGB, GL_UNSIGNED_BYTE,
-				    tex->data);
+	qfglReadPixels (0, 0, vid.width, vid.height, GL_RGB, GL_UNSIGNED_BYTE,
+				    snap);
 
 	w = (vid.width < width) ? vid.width : width;
 	h = (vid.height < height) ? vid.height : height;
+
+	tex = malloc (field_offset (tex_t, data[w * h]));
+	if (!tex)
+		return 0;
 
 	fracw = (float) vid.width / (float) w;
 	frach = (float) vid.height / (float) h;
@@ -535,7 +536,7 @@ SCR_ScreenShot (int width, int height)
 	tex->palette = vid.palette;
 
 	for (y = 0; y < h; y++) {
-		dest = tex->data + (w * 3 * y);
+		dest = snap + (w * 3 * y);
 
 		for (x = 0; x < w; x++) {
 			r = g = b = 0;
@@ -551,7 +552,7 @@ SCR_ScreenShot (int width, int height)
 
 			count = 0;
 			for (; dy < dey; dy++) {
-				src = tex->data + (vid.width * 3 * dy) + dx * 3;
+				src = snap + (vid.width * 3 * dy) + dx * 3;
 				for (nx = dx; nx < dex; nx++) {
 					r += *src++;
 					g += *src++;
@@ -570,7 +571,7 @@ SCR_ScreenShot (int width, int height)
 
 	// convert to eight bit
 	for (y = 0; y < h; y++) {
-		src = tex->data + (w * 3 * y);
+		src = snap + (w * 3 * y);
 		dest = tex->data + (w * y);
 
 		for (x = 0; x < w; x++) {
