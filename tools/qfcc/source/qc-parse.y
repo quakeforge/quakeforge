@@ -281,6 +281,7 @@ cfunction
 	  begin_function statement_block { $<op>$ = $<op>5; } end_function
 	    {
 			build_code_function ($7, $4, $8);
+			current_func = 0;
 		}
 	;
 
@@ -492,6 +493,7 @@ code_func
 	  begin_function statement_block { $<op>$ = $<op>3; } end_function
 		{
 			build_code_function ($5, $2, $6);
+			current_func = 0;
 		}
 	;
 
@@ -668,7 +670,6 @@ end_function
 	: /*empty*/
 		{
 			current_scope = current_scope->parent;
-			current_func = 0;
 			current_storage = $<op>0;
 		}
 	;
@@ -1341,6 +1342,7 @@ methoddef
 	  begin_function statement_block { $<op>$ = $<op>5; } end_function
 		{
 			$2->func = build_code_function ($7, $4, $8);
+			current_func = 0;
 		}
 	| ci methoddecl '=' '#' const ';'
 		{
