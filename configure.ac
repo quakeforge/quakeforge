@@ -137,7 +137,7 @@ AC_CHECK_HEADERS(
 	stdlib.h string.h strings.h sys/asoundlib.h sys/audioio.h sys/filio.h \
 	sys/ioctl.h sys/io.h sys/ipc.h sys/mman.h sys/param.h sys/poll.h \
 	sys/shm.h sys/signal.h sys/socket.h sys/soundcard.h sys/stat.h \
-	sys/time.h sys/types.h sys/wait.h termios.h time.h unistd.h vga.h \
+	sys/time.h sys/types.h sys/wait.h termios.h time.h unistd.h \
 	vgakeyboard.h vgamouse.h windows.h winsock.h
 )
 if test "x$mingw" = xyes; then
