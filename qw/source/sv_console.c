@@ -141,6 +141,9 @@ Con_Init (const char *plugin_name)
 	wrefresh (output);
 	wrefresh (status);
 	wrefresh (input);
+#else
+	if (setvbuf (stdout, 0, _IONBF, BUFSIZ))
+		Con_Printf ("warning: couldn't set stdout to linebuffered.\n");
 #endif
 }
 

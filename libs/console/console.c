@@ -33,6 +33,7 @@
 # include "config.h"
 #endif
 #include <stdarg.h>
+#include <stdio.h>
 
 #include "QF/console.h"
 #include "QF/cvar.h"
@@ -44,9 +45,10 @@ void
 Con_Init (const char *plugin_name)
 {
 	con_module = PI_LoadPlugin ("console", plugin_name);
-	if (con_module) {
+	if (con_module)
 		con_module->functions->general->p_Init ();
-	}
+	else
+		setvbuf (stdout, 0, _IOLBF, BUFSIZ);
 }
 
 void
