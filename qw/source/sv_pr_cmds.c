@@ -48,6 +48,7 @@ static const char rcsid[] =
 #include "compat.h"
 #include "crudefile.h"
 #include "server.h"
+#include "sv_demo.h"
 #include "sv_pr_cmds.h"
 #include "sv_progs.h"
 #include "world.h"
@@ -272,6 +273,12 @@ PF_centerprint (progs_t *pr)
 
 	ClientReliableWrite_Begin (cl, svc_centerprint, 2 + strlen (s));
 	ClientReliableWrite_String (cl, s);
+
+	if (sv.demorecording) {
+		DemoWrite_Begin (dem_single, entnum - 1, 2 + strlen (s));
+		MSG_WriteByte (&demo.dbuf->sz, svc_centerprint);
+		MSG_WriteString (&demo.dbuf->sz, s);
+	}
 }
 
 /*
@@ -568,6 +575,11 @@ PF_stuffcmd (progs_t *pr)
 		p[1] = 0;
 		ClientReliableWrite_Begin (cl, svc_stufftext, 2 + p - buf);
 		ClientReliableWrite_String (cl, buf);
+		if (sv.demorecording) {
+			DemoWrite_Begin (dem_single, cl - svs.clients, 2 + strlen(buf));
+			MSG_WriteByte (&demo.dbuf->sz, svc_stufftext);
+			MSG_WriteString (&demo.dbuf->sz, buf);
+		}
 		p[1] = t;
 		strcpy (buf, p + 1);		// safe because this is a downward, in
 									// buffer move
@@ -834,6 +846,12 @@ PF_lightstyle (progs_t *pr)
 			ClientReliableWrite_Char (client, style);
 			ClientReliableWrite_String (client, val);
 		}
+	if (sv.demorecording) {
+		DemoWrite_Begin (dem_all, 0, strlen (val) + 3);
+		MSG_WriteByte (&demo.dbuf->sz, svc_lightstyle);
+		MSG_WriteByte (&demo.dbuf->sz, style);
+		MSG_WriteString (&demo.dbuf->sz, val);
+	}
 }
 
 /*
@@ -1058,6 +1076,10 @@ PF_WriteByte (progs_t *pr)
 
 		ClientReliableCheckBlock (cl, 1);
 		ClientReliableWrite_Byte (cl, P_FLOAT (pr, 1));
+		if (sv.demorecording) {
+			DemoWrite_Begin (dem_single, cl - svs.clients, 1);
+			MSG_WriteByte (&demo.dbuf->sz, P_FLOAT (pr, 1));
+		}
 	} else
 		MSG_WriteByte (WriteDest (pr), P_FLOAT (pr, 1));
 }
@@ -1070,6 +1092,10 @@ PF_WriteChar (progs_t *pr)
 
 		ClientReliableCheckBlock (cl, 1);
 		ClientReliableWrite_Char (cl, P_FLOAT (pr, 1));
+		if (sv.demorecording) {
+			DemoWrite_Begin (dem_single, cl - svs.clients, 1);
+			MSG_WriteByte (&demo.dbuf->sz, P_FLOAT (pr, 1));
+		}
 	} else
 		MSG_WriteByte (WriteDest (pr), P_FLOAT (pr, 1));
 }
@@ -1082,6 +1108,10 @@ PF_WriteShort (progs_t *pr)
 
 		ClientReliableCheckBlock (cl, 2);
 		ClientReliableWrite_Short (cl, P_FLOAT (pr, 1));
+		if (sv.demorecording) {
+			DemoWrite_Begin (dem_single, cl - svs.clients, 2);
+			MSG_WriteShort (&demo.dbuf->sz, P_FLOAT (pr, 1));
+		}
 	} else
 		MSG_WriteShort (WriteDest (pr), P_FLOAT (pr, 1));
 }
@@ -1094,6 +1124,10 @@ PF_WriteLong (progs_t *pr)
 
 		ClientReliableCheckBlock (cl, 4);
 		ClientReliableWrite_Long (cl, P_FLOAT (pr, 1));
+		if (sv.demorecording) {
+			DemoWrite_Begin (dem_single, cl - svs.clients, 4);
+			MSG_WriteLong (&demo.dbuf->sz, P_FLOAT (pr, 1));
+		}
 	} else
 		MSG_WriteLong (WriteDest (pr), P_FLOAT (pr, 1));
 }
@@ -1106,6 +1140,10 @@ PF_WriteAngle (progs_t *pr)
 
 		ClientReliableCheckBlock (cl, 1);
 		ClientReliableWrite_Angle (cl, P_FLOAT (pr, 1));
+		if (sv.demorecording) {
+			DemoWrite_Begin (dem_single, cl - svs.clients, 1);
+			MSG_WriteAngle (&demo.dbuf->sz, P_FLOAT (pr, 1));
+		}
 	} else
 		MSG_WriteAngle (WriteDest (pr), P_FLOAT (pr, 1));
 }
@@ -1118,6 +1156,10 @@ PF_WriteCoord (progs_t *pr)
 
 		ClientReliableCheckBlock (cl, 2);
 		ClientReliableWrite_Coord (cl, P_FLOAT (pr, 1));
+		if (sv.demorecording) {
+			DemoWrite_Begin (dem_single, cl - svs.clients, 2);
+			MSG_WriteCoord (&demo.dbuf->sz, P_FLOAT (pr, 1));
+		}
 	} else
 		MSG_WriteCoord (WriteDest (pr), P_FLOAT (pr, 1));
 }
@@ -1130,6 +1172,11 @@ PF_WriteString (progs_t *pr)
 
 		ClientReliableCheckBlock (cl, 1 + strlen (P_STRING (pr, 1)));
 		ClientReliableWrite_String (cl, P_STRING (pr, 1));
+		if (sv.demorecording) {
+			DemoWrite_Begin (dem_single, cl - svs.clients,
+							 1 + strlen (P_STRING (pr, 1)));
+			MSG_WriteString (&demo.dbuf->sz, P_STRING (pr, 1));
+		}
 	} else
 		MSG_WriteString (WriteDest (pr), P_STRING (pr, 1));
 }
@@ -1142,6 +1189,10 @@ PF_WriteEntity (progs_t *pr)
 
 		ClientReliableCheckBlock (cl, 2);
 		ClientReliableWrite_Short (cl, P_EDICTNUM (pr, 1));
+		if (sv.demorecording) {
+			DemoWrite_Begin (dem_single, cl - svs.clients, 2);
+			MSG_WriteShort (&demo.dbuf->sz, P_EDICTNUM (pr, 1));
+		}
 	} else
 		MSG_WriteShort (WriteDest (pr), P_EDICTNUM (pr, 1));
 }
@@ -1346,8 +1397,7 @@ PF_cfread (progs_t *pr)
 void
 PF_cfwrite (progs_t *pr)
 {
-	R_FLOAT (pr) = CF_Write((int) G_FLOAT(pr, OFS_PARM0),
-										P_STRING (pr, 1));
+	R_FLOAT (pr) = CF_Write((int) P_FLOAT (pr, 0), P_STRING (pr, 1));
 }
 
 /*
@@ -1358,7 +1408,7 @@ PF_cfwrite (progs_t *pr)
 void
 PF_cfeof (progs_t *pr)
 {
-	R_FLOAT (pr) = CF_EOF ((int) G_FLOAT(pr, OFS_PARM0));
+	R_FLOAT (pr) = CF_EOF ((int) P_FLOAT (pr, 0));
 }
 
 /*
@@ -1589,7 +1639,7 @@ PF_Fixme (progs_t *pr)
 void
 PF_Checkextension (progs_t *pr)
 {
-	G_FLOAT(pr, OFS_RETURN) = 0; //FIXME make this function actually useful :P
+	R_FLOAT(pr) = 0;	 //FIXME make this function actually useful :P
 }
 
 static void
