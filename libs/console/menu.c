@@ -403,12 +403,19 @@ menu_free_progs_mem (progs_t *pr, void *mem)
 	free (mem);
 }
 
+static void *
+menu_load_file (progs_t *pr, const char *path)
+{
+	return COM_LoadFile (path, 0);
+}
+
 void
 Menu_Init (void)
 {
 	menu_pr_state.progs_name = "menu.dat";
 	menu_pr_state.allocate_progs_mem = menu_allocate_progs_mem;
 	menu_pr_state.free_progs_mem = menu_free_progs_mem;
+	menu_pr_state.load_file = menu_load_file;
 
 	PR_Resources_Init (&menu_pr_state);
 
