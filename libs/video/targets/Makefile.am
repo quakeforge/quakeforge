@@ -73,8 +73,10 @@ libQFsgl_la_SOURCES=	in_sdl.c qfgl_ext.c vid.c vid_common_gl.c vid_sgl.c \
 #
 # SVGAlib
 #
+if ASM_ARCH
 libQFsvga_la_LIBADD=	$(asm)
 libQFsvga_la_DEPENDENCIES=$(asm)
+endif
 libQFsvga_la_SOURCES=	in_svgalib.c vid.c vid_common_sw.c vid_svgalib.c \
 			$(in_common_SOURCE)
 
