@@ -997,7 +997,7 @@ ivar_decls
 	;
 
 ivar_decl
-	: type ivars				{ current_type = $1 }
+	: type ivars				{ current_type = $1; }
 	;
 
 ivars
