@@ -552,6 +552,9 @@ qwe_load (progs_t * pr)
 		if (f)
 			*qwe_func_list[i].field = (func_t) (f - pr->pr_functions);
 	}
+
+	sv_cbuf->unknown_command = qwe_console_cmd;
+	ucmd_unknown = qwe_user_cmd;
 	return 1;
 }
 
@@ -560,7 +563,4 @@ SV_PR_QWE_Init (progs_t *pr)
 {
 	PR_RegisterBuiltins (pr, builtins);
 	PR_AddLoadFunc (pr, qwe_load);
-
-	sv_cbuf->unknown_command = qwe_console_cmd;
-	ucmd_unknown = qwe_user_cmd;
 }

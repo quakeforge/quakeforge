@@ -184,6 +184,9 @@ SV_LoadProgs (void)
 
 	memset (&sv_funcs, 0, sizeof (sv_funcs));
 
+	sv_cbuf->unknown_command = 0;
+	ucmd_unknown = 0;
+
 	if (strequal (sv_progs_ext->string, "qf")) {
 		sv_range = PR_RANGE_QF;
 		range = "QF";
