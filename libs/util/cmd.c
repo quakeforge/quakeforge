@@ -146,12 +146,14 @@ Cbuf_InsertText (const char *text)
 	cmd_text.data[textlen] = '\n';
 }
 
-static void
-extract_line (char *line)
+static const char *
+extract_line (void)
 {
 	int         i;
 	char       *text;
 	int         quotes;
+	static char *line;
+	static int  line_size;
 
 	// find a \n or ; line break
 	text = (char *) cmd_text.data;
@@ -164,6 +166,13 @@ extract_line (char *line)
 										// string
 		if (text[i] == '\n' || text[i] == '\r')
 			break;
+	}
+
+	if (i + 1 > line_size) {
+		line_size = ((i + 1) + 1023) & ~1023;
+		line = realloc (line, line_size);
+		if (!line)
+			Sys_Error ("extract_line: memory alloc failur");
 	}
 
 	memcpy (line, text, i);
@@ -179,15 +188,16 @@ extract_line (char *line)
 		cmd_text.cursize -= i;
 		memcpy (text, text + i, cmd_text.cursize);
 	}
+	return line;
 }
 
 void
 Cbuf_Execute (void)
 {
-	char        line[1024];
+	const char *line;
 
 	while (cmd_text.cursize) {
-		extract_line (line);
+		line = extract_line ();
 		// execute the command line
 		// Sys_DPrintf("+%s\n",line),
 		Cmd_ExecuteString (line, src_command);
@@ -204,10 +214,10 @@ Cbuf_Execute (void)
 void
 Cbuf_Execute_Sets (void)
 {
-	char        line[1024];
+	const char *line;
 
 	while (cmd_text.cursize) {
-		extract_line (line);
+		line = extract_line ();
 		// execute the command line
 		if (strnequal (line, "set", 3) && isspace ((int) line[3])) {
 			// Sys_DPrintf ("+%s\n",line);
