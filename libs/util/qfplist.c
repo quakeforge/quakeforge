@@ -37,6 +37,7 @@
 #include "QF/hash.h"
 #include "QF/qfplist.h"
 #include "QF/qtypes.h"
+#include "QF/sys.h"
 
 static plitem_t *PL_ParsePropertyListItem (pldata_t *);
 static qboolean PL_SkipSpace (pldata_t *);
@@ -477,7 +478,7 @@ PL_GetPropertyList (const char *string)
 	pl->error = NULL;
 	pl->line = 1;
 
-	if (newpl = PL_ParsePropertyListItem (pl)) {
+	if ((newpl = PL_ParsePropertyListItem (pl))) {
 		free (pl);
 		return newpl;
 	} else {
