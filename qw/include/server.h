@@ -150,6 +150,7 @@ typedef enum {
 typedef struct client_s
 {
 	sv_client_state_t	state;
+	int				ping;				// fake ping for server clients
 	qboolean		prespawned;
 	qboolean		spawned;
 

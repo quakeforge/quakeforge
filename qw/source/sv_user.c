@@ -905,7 +905,7 @@ SV_Pings_f (ucmd_t *cmd)
 	int         j;
 
 	for (j = 0, client = svs.clients; j < MAX_CLIENTS; j++, client++) {
-		if (client->state != cs_spawned)
+		if (client->state != cs_spawned && client->state != cs_server)
 			continue;
 
 		ClientReliableWrite_Begin (host_client, svc_updateping, 4);

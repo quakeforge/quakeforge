@@ -710,7 +710,7 @@ SV_UpdateToReliableMessages (void)
 
 	// check for changes to be sent over the reliable streams to all clients
 	for (i = 0, host_client = svs.clients; i < MAX_CLIENTS; i++, host_client++) {
-		if (host_client->state != cs_spawned)
+		if (host_client->state != cs_spawned && host_client->state != cs_server)
 			continue;
 		if (host_client->sendinfo) {
 			host_client->sendinfo = false;

@@ -1768,6 +1768,7 @@ PF_SV_AllocClient (progs_t *pr)
 	//XXX netchan? Netchan_Setup (&newcl->netchan, adr, qport);
 	cl->state = cs_server;
 	cl->spectator = 0;
+	cl->connection_started = realtime;
 	RETURN_EDICT (pr, cl->edict);
 }
 
@@ -1779,6 +1780,7 @@ PF_SV_FreeClient (progs_t *pr)
 
 	if (entnum < 1 || entnum > MAX_CLIENTS || cl->state != cs_server)
 		PR_RunError (pr, "not a server client");
+
 	if (cl->userinfo)
 		Info_Destroy (cl->userinfo);
 	//SV_FullClientUpdate (cl, &sv.reliable_datagram);
@@ -1793,9 +1795,24 @@ PF_SV_SetUserinfo (progs_t *pr)
 	int         entnum = P_EDICTNUM (pr, 0);
 	client_t   *cl = svs.clients + entnum - 1;
 	const char *str = P_STRING (pr, 1);
+
+	if (entnum < 1 || entnum > MAX_CLIENTS || cl->state != cs_server)
+		PR_RunError (pr, "not a server client");
+
 	cl->userinfo = Info_ParseString (str, 1023, !sv_highchars->int_val);
 	cl->sendinfo = true;
 	SV_ExtractFromUserinfo (cl);
+}
+
+static void
+PR_SV_SetPing (progs_t *pr)
+{
+	int         entnum = P_EDICTNUM (pr, 0);
+	client_t   *cl = svs.clients + entnum - 1;
+
+	if (entnum < 1 || entnum > MAX_CLIENTS || cl->state != cs_server)
+		PR_RunError (pr, "not a server client");
+	cl->ping = P_INT (pr, 1);
 }
 
 void
@@ -1876,4 +1893,5 @@ SV_PR_Cmds_Init ()
 	PR_AddBuiltin (&sv_pr_state, "SV_AllocClient", PF_SV_AllocClient, -1);
 	PR_AddBuiltin (&sv_pr_state, "SV_FreeClient", PF_SV_FreeClient, -1);
 	PR_AddBuiltin (&sv_pr_state, "SV_SetUserinfo", PF_SV_SetUserinfo, -1);
+	PR_AddBuiltin (&sv_pr_state, "SV_SetPing", PR_SV_SetPing, -1);
 };

@@ -396,6 +396,8 @@ SV_CalcPing (client_t *cl)
 	int         count, i;
 	register client_frame_t *frame;
 
+	if (cl->state == cs_server)
+		return cl->ping;
 	ping = 0;
 	count = 0;
 	for (frame = cl->frames, i = 0; i < UPDATE_BACKUP; i++, frame++) {
