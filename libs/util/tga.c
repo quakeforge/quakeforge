@@ -49,32 +49,6 @@ static const char rcsid[] =
 #include "compat.h"
 
 
-static int
-fgetLittleShort (VFile *f)
-{
-	byte		b1, b2;
-
-	b1 = Qgetc (f);
-	b2 = Qgetc (f);
-
-	return (short) (b1 + b2 * 256);
-}
-
-/*
-static int
-fgetLittleLong (VFile *f)
-{
-	byte		b1, b2, b3, b4;
-
-	b1 = Qgetc(f);
-	b2 = Qgetc(f);
-	b3 = Qgetc(f);
-	b4 = Qgetc(f);
-
-	return b1 + (b2<<8) + (b3<<16) + (b4<<24);
-}
-*/
-
 static inline byte *
 blit_rgb (byte *buf, int count, byte red, byte green, byte blue)
 {
