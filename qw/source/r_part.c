@@ -54,6 +54,7 @@ cvar_t      *r_particles;
 
 /*
 	R_MaxParticlesCheck
+Misty-chan: EXTREME heavy lifting and bugfixing thanks goes out to taniwha - I built this, and he got it working :)
 */
 void
 R_MaxParticlesCheck (cvar_t *var)
@@ -61,9 +62,11 @@ R_MaxParticlesCheck (cvar_t *var)
 	// Do not use 0 in this! sw doesn't grok 0 and it's going to segfault if we do!
 	r_numparticles = max(var->int_val, 1);
         
-	// Debugging code. will print what the above was set to, and is also useful
-	// for checking if this is accidentally being run all the time. Safe to remove if you fixed this section (!)
+	/*
+	Debugging code. will print what the above was set to, and is also useful
+	for checking if this is accidentally being run all the time.
 	Con_Printf ("%d", r_numparticles);
+	*/
 	
 	if (particles)
 		free (particles);
@@ -77,16 +80,12 @@ R_MaxParticlesCheck (cvar_t *var)
 R_Particles_Init_Cvars
 */
 
-// Misty-chan: Hackhackhack to get below code to run. Remove if you got R_MaxParticlesCheck working!
-cvar_t      *cl_max_particles;
-
 void
 R_Particles_Init_Cvars (void)
 {
-// Does a callback... Currently which does absolutely NOTHING! Joy.
-cl_max_particles = Cvar_Get ("cl_max_particles", "2048", CVAR_ARCHIVE, R_MaxParticlesCheck,
-					"Maximum amount of particles to display");
-// This is a temporary hack until R_MaxParticlesCheck is fixed and does NOT belong here. Disable if you're trying to fix above code :)
+	// Does a callback to R_MaxParticleCheck when the cvar changes. Neat trick.
+	Cvar_Get ("cl_max_particles", "2048", CVAR_ARCHIVE, R_MaxParticlesCheck,
+					"Maximum amount of particles to display. No maximum, minimum is 1.");
 }
 
 /*

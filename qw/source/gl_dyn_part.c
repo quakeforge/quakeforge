@@ -131,9 +131,6 @@ particle_new_random (ptype_t type, int texnum, vec3_t org, int org_fuzz,
 void
 R_MaxParticlesCheck (cvar_t *var)
 {
-	// Clear the particles ala sw so we're at least consistent somewhat. GL doesn't need to do it before the max however.
-	R_ClearParticles();
-
 	/*
 	Catchall. If the user changed the setting to a number less than zero *or* if we had a wacky cfg get past
 	the init code check, this will make sure we don't have problems. Also note that grabbing the var->int_val is IMPORTANT:
@@ -156,6 +153,8 @@ R_MaxParticlesCheck (cvar_t *var)
 		calloc (r_numparticles, sizeof (particle_t));
 	freeparticles = (particle_t **)
 		calloc (r_numparticles, sizeof (particle_t*));			
+
+	R_ClearParticles();
 }
 
 /*
@@ -168,7 +167,7 @@ R_Particles_Init_Cvars (void)
 // Misty-chan: This is a cvar that does callbacks. Whenever it changes, it calls the function
 // R_MaxParticlesCheck and therefore is very nifty.
 	Cvar_Get ("cl_max_particles", "2048", CVAR_ARCHIVE, R_MaxParticlesCheck,
-					"Maximum amount of particles to display");
+					"Maximum amount of particles to display. No maximum, minimum is 0, although it's best to use r_particles 0 instead.");
 }
 
 /*
