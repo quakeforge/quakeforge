@@ -287,13 +287,10 @@ GL_GetAliasFrameVerts (int frame, aliashdr_t *paliashdr, entity_t *e)
 		if (r_paused || blend > 1)
 			blend = 1;
 
-		if (paliashdr->mdl.ident == POLYHEADER16)
-		{
+		if (paliashdr->mdl.ident == POLYHEADER16) {
 			verts1 = verts + e->pose1 * count * 2;
 			verts2 = verts + e->pose2 * count * 2;
-		}
-		else
-		{
+		} else {
 			verts1 = verts + e->pose1 * count;
 			verts2 = verts + e->pose2 * count;
 		}
@@ -307,20 +304,15 @@ GL_GetAliasFrameVerts (int frame, aliashdr_t *paliashdr, entity_t *e)
 				for (i = 0, vo_v = vo->verts; i < count;
 					 i++, vo_v++, verts1++, verts2++) {
 					for (j = 0; j < 3; j++) {
-						v1[j] = verts1->v[j] + (verts1
-							+ count)->v[j] /
-							(float)256;
-						v2[j] = verts2->v[j] + (verts2
-							+ count)->v[j] /
-							(float)256;
+						v1[j] = verts1->v[j] + (verts1 + count)->v[j] / 256.0;
+						v2[j] = verts2->v[j] + (verts2 + count)->v[j] / 256.0;
 					}
 					VectorBlend (v1, v2, blend, vo_v->vert);
 					vo_v->lightdot =
 						shadedots[verts1->lightnormalindex] * (1 - blend)
 						+ shadedots[verts2->lightnormalindex] * blend;
 				}
-			}
-			else {
+			} else {
 				for (i = 0, vo_v = vo->verts; i < count;
 					 i++, vo_v++, verts1++, verts2++) {
 					VectorBlend (verts1->v, verts2->v, blend, vo_v->vert);
@@ -346,8 +338,7 @@ GL_GetAliasFrameVerts (int frame, aliashdr_t *paliashdr, entity_t *e)
 					count)->v[j] / (float)256;
 		}
 		vo_v->lightdot = shadedots[verts->lightnormalindex];
-	}
-	else {
+	} else {
 		for (i = 0, vo_v = vo->verts; i < count; i++, vo_v++, verts++)
 			VectorCopy (verts->v, vo_v->vert);
 		vo_v->lightdot = shadedots[verts->lightnormalindex];
