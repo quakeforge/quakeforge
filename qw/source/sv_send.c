@@ -613,7 +613,7 @@ SV_UpdateToReliableMessages (void)
 			host_client->sendinfo = false;
 			SV_FullClientUpdate (host_client, &sv.reliable_datagram);
 		}
-		if (host_client->old_frags != SVfloat (host_client->edict, frags)) {
+		if (host_client->old_frags != (int) SVfloat (host_client->edict, frags)) {
 			for (j = 0, client = svs.clients; j < MAX_CLIENTS; j++, client++) {
 				if (client->state < cs_connected)
 					continue;
