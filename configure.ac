@@ -1223,7 +1223,7 @@ if test "x$optimize" = xyes; then
 		shift
 		args="$*"
 		AC_MSG_CHECKING(for gcc version)
-		CCVER="gcc `$CC --version | grep '[[0-9]]\.[[0-9]]' | sed -e 's/[[^0-9]]*\([[0-9.]]*\).*/\1/'`"
+		CCVER="gcc `$CC --version | grep '[[0-9]]\.[[0-9]]' | sed -e 's/.*(GCC)//' -e 's/[[^0-9]]*\([[0-9.]]*\).*/\1/'`"
 		set $CCVER
 		IFS="."
 		set $2
