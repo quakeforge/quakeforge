@@ -1040,8 +1040,6 @@ CL_UpdateUserinfo (void)
 		CL_ProcessUserInfo (slot, player);
 	} else {
 		// the server dropped the client
-		if (player->userinfo)
-			Info_Destroy (player->userinfo);
 		memset (player, 0, sizeof (*player));
 	}
 }
