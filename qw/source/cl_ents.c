@@ -64,9 +64,14 @@ static struct predicted_player {
 	vec3_t      origin;					// predicted origin
 } predicted_players[MAX_CLIENTS];
 
-entity_t    cl_packet_ents[512];	// FIXME: magic number
-entity_t    cl_flag_ents[MAX_CLIENTS];
+
+#define	MAX_PROJECTILES	32
+int          cl_num_projectiles;
+
 entity_t    cl_player_ents[MAX_CLIENTS];
+entity_t    cl_flag_ents[MAX_CLIENTS];
+entity_t    cl_projectiles[MAX_PROJECTILES];
+entity_t    cl_packet_ents[512];	// FIXME: magic number
 
 
 void
@@ -392,6 +397,7 @@ CL_LinkPacketEntities (void)
 	entity_state_t *s1;
 	model_t		   *model;
 	packet_entities_t *pack;
+	player_info_t  *info;
 
 	pack = &cl.frames[cls.netchan.incoming_sequence &
 					  UPDATE_MASK].packet_entities;
@@ -432,15 +438,15 @@ CL_LinkPacketEntities (void)
 			&& cl.players[s1->colormap - 1].name[0]
 			&& !strcmp ((*ent)->model->name, "progs/player.mdl")) {
 			(*ent)->colormap = cl.players[s1->colormap - 1].translations;
-			(*ent)->scoreboard = &cl.players[s1->colormap - 1];
+			info = &cl.players[s1->colormap - 1];
 		} else {
 			(*ent)->colormap = vid.colormap8;
-			(*ent)->scoreboard = NULL;
+			info = NULL;
 		}
 
-		if ((*ent)->scoreboard && !(*ent)->scoreboard->skin)
-			Skin_Find ((*ent)->scoreboard);
-		if ((*ent)->scoreboard && (*ent)->scoreboard->skin) {
+		if (info && !info->skin)
+			Skin_Find (info);
+		if (info && info->skin) {
 			(*ent)->skin = Skin_NewTempSkin ();
 			if ((*ent)->skin) {
 				i = s1->colormap - 1;
@@ -531,15 +537,6 @@ CL_LinkPacketEntities (void)
 
 /* PROJECTILE PARSING / LINKING */
 
-typedef struct {
-	int         modelindex;
-	entity_t	ent;
-} projectile_t;
-
-#define	MAX_PROJECTILES	32
-projectile_t cl_projectiles[MAX_PROJECTILES];
-int          cl_num_projectiles;
-
 void
 CL_ClearProjectiles (void)
 {
@@ -556,7 +553,7 @@ CL_ParseProjectiles (void)
 {
 	byte		bits[6];
 	int			i, c, j;
-	projectile_t *pr;
+	entity_t   *pr;
 
 	c = MSG_ReadByte (net_message);
 	for (i = 0; i < c; i++) {
@@ -569,12 +566,13 @@ CL_ParseProjectiles (void)
 		pr = &cl_projectiles[cl_num_projectiles];
 		cl_num_projectiles++;
 
-		pr->modelindex = cl_spikeindex;
-		pr->ent.origin[0] = ((bits[0] + ((bits[1] & 15) << 8)) << 1) - 4096;
-		pr->ent.origin[1] = (((bits[1] >> 4) + (bits[2] << 4)) << 1) - 4096;
-		pr->ent.origin[2] = ((bits[3] + ((bits[4] & 15) << 8)) << 1) - 4096;
-		pr->ent.angles[0] = 360 * (bits[4] >> 4) / 16;
-		pr->ent.angles[1] = 360 * bits[5] / 256;
+		pr->model = cl.model_precache[cl_spikeindex];
+		pr->colormap = vid.colormap8;
+		pr->origin[0] = ((bits[0] + ((bits[1] & 15) << 8)) << 1) - 4096;
+		pr->origin[1] = (((bits[1] >> 4) + (bits[2] << 4)) << 1) - 4096;
+		pr->origin[2] = ((bits[3] + ((bits[4] & 15) << 8)) << 1) - 4096;
+		pr->angles[0] = 360 * (bits[4] >> 4) / 16;
+		pr->angles[1] = 360 * bits[5] / 256;
 	}
 }
 
@@ -583,30 +581,16 @@ CL_LinkProjectiles (void)
 {
 	int			i;
 	entity_t  **ent;
-	projectile_t *pr;
+	entity_t   *pr;
 
 	for (i = 0, pr = cl_projectiles; i < cl_num_projectiles; i++, pr++) {
-		if (pr->modelindex < 1)
+		if (!pr->model)
 			continue;
-
 		// grab an entity to fill in
 		ent = R_NewEntity ();
 		if (!ent)
 			break;						// object list is full
-		*ent = &pr->ent;
-		(*ent)->model = cl.model_precache[pr->modelindex];
-		(*ent)->skinnum = 0;
-		(*ent)->frame = 0;
-		(*ent)->colormap = vid.colormap8;
-		(*ent)->scoreboard = NULL;
-		(*ent)->skin = NULL;
-		// LordHavoc: Endy had neglected to do this as part of the QSG
-		// VERSION 2 stuff
-		(*ent)->glow_size = 0;
-		(*ent)->glow_color = 254;
-		(*ent)->alpha = 1;
-		(*ent)->scale = 1;
-		(*ent)->colormod[0] = (*ent)->colormod[1] = (*ent)->colormod[2] = 1;
+		*ent = pr;
 	}
 }
 
@@ -651,9 +635,10 @@ CL_ParsePlayerinfo (void)
 			state->velocity[i] = 0;
 	}
 	if (flags & PF_MODEL)
-		state->modelindex = MSG_ReadByte (net_message);
+		i = MSG_ReadByte (net_message);
 	else
-		state->modelindex = cl_playerindex;
+		i = cl_playerindex;
+	state->modelindex = i;
 
 	if (flags & PF_SKINNUM)
 		state->skinnum = MSG_ReadByte (net_message);
@@ -790,7 +775,7 @@ CL_LinkPlayers (void)
 
 		// the player object never gets added
 		if (j == cl.playernum) {
-			if (!Cam_DrawPlayer (-1))
+			if (!Cam_DrawPlayer (-1))	// XXX
 				continue;
 		} else {
 			if (!Cam_DrawPlayer (j))
@@ -816,17 +801,17 @@ CL_LinkPlayers (void)
 		ent->model = cl.model_precache[state->modelindex];
 		ent->skinnum = state->skinnum;
 		ent->colormap = info->translations;
-		if (state->modelindex == cl_playerindex)
-			ent->scoreboard = info;		// use custom skin
-		else
-			ent->scoreboard = NULL;
-
-		if (ent->scoreboard && !ent->scoreboard->skin)
-			Skin_Find (ent->scoreboard);
-		if (ent->scoreboard && ent->scoreboard->skin) {
-			ent->skin = Skin_NewTempSkin ();
-			if (ent->skin) {
-				CL_NewTranslation (j, ent->skin);
+		if (state->modelindex == cl_playerindex) { //XXX
+			// use custom skin
+			if (!info->skin)
+				Skin_Find (info);
+			if (info && info->skin) {
+				ent->skin = Skin_NewTempSkin ();
+				if (ent->skin) {
+					CL_NewTranslation (j, ent->skin);
+				}
+			} else {
+				ent->skin = NULL;
 			}
 		} else {
 			ent->skin = NULL;

@@ -86,9 +86,8 @@ client_state_t cl;
 
 // FIXME: put these on hunk?
 entity_t    cl_entities[MAX_EDICTS];
-entity_state_t    cl_baselines[MAX_EDICTS];
+cl_entity_state_t    cl_baselines[MAX_EDICTS];
 entity_t    cl_static_entities[MAX_STATIC_ENTITIES];
-entity_state_t    cl_static_entity_baselines[MAX_STATIC_ENTITIES];
 
 
 void
@@ -179,12 +178,13 @@ CL_ClearState (void)
 	R_ClearParticles (); // FIXME: for R_ClearFires
 
 	for (i = 0; i < MAX_EDICTS; i++) {
-		cl_entities[i].baseline = &cl_baselines[i];
-		cl_entities[i].baseline->alpha = 255;
-		cl_entities[i].baseline->scale = 16;
-		cl_entities[i].baseline->glow_color = 254;
-		cl_entities[i].baseline->glow_size = 0;
-		cl_entities[i].baseline->colormod = 255;
+		cl_baselines[i].ent = &cl_entities[i];
+		cl_entities[i].alpha = 255;
+		cl_entities[i].scale = 16;
+		cl_entities[i].glow_color = 254;
+		cl_entities[i].glow_size = 0;
+		cl_entities[i].colormod[0] = cl_entities[i].colormod[1]
+								   = cl_entities[i].colormod[2] = 1;
 	}
 }
 
@@ -496,6 +496,7 @@ CL_RelinkEntities (void)
 {
 	entity_t  **_ent;
 	entity_t   *ent;
+	cl_entity_state_t *state;
 	dlight_t   *dl;
 	float       bobjrotate, frac, f, d;
 	int         i, j;
@@ -526,44 +527,45 @@ CL_RelinkEntities (void)
 	bobjrotate = anglemod (100 * cl.time);
 
 	// start on the entity after the world
-	for (i = 1, ent = cl_entities + 1; i < cl.num_entities; i++, ent++) {
+	for (i = 1, state = cl_baselines + 1; i < cl.num_entities; i++, state++) {
+		ent = state->ent;
 		if (!ent->model) {				// empty slot
-			if (ent->forcelink)
+			if (state->forcelink)
 				R_RemoveEfrags (ent);	// just became empty
 			continue;
 		}
 		// if the object wasn't included in the last packet, remove it
-		if (ent->msgtime != cl.mtime[0]) {
+		if (state->msgtime != cl.mtime[0]) {
 			ent->model = NULL;
 			continue;
 		}
 
 		VectorCopy (ent->origin, ent->old_origin);
 
-		if (ent->forcelink) {		// the entity was not updated in the
+		if (state->forcelink) {		// the entity was not updated in the
 									// last message so move to the final spot
-			VectorCopy (ent->msg_origins[0], ent->origin);
-			VectorCopy (ent->msg_angles[0], ent->angles);
+			VectorCopy (state->msg_origins[0], ent->origin);
+			VectorCopy (state->msg_angles[0], ent->angles);
 			ent->pose1 = ent->pose2 = -1;
 		} else {					// if the delta is large, assume a
 									// teleport and don't lerp
 			f = frac;
 			for (j = 0; j < 3; j++) {
-				delta[j] = ent->msg_origins[0][j] - ent->msg_origins[1][j];
+				delta[j] = state->msg_origins[0][j] - state->msg_origins[1][j];
 				if (delta[j] > 100 || delta[j] < -100)
 					f = 1;				// assume a teleportation, not a motion
 			}
 
 			// interpolate the origin and angles
 			for (j = 0; j < 3; j++) {
-				ent->origin[j] = ent->msg_origins[1][j] + f * delta[j];
+				ent->origin[j] = state->msg_origins[1][j] + f * delta[j];
 
-				d = ent->msg_angles[0][j] - ent->msg_angles[1][j];
+				d = state->msg_angles[0][j] - state->msg_angles[1][j];
 				if (d > 180)
 					d -= 360;
 				else if (d < -180)
 					d += 360;
-				ent->angles[j] = ent->msg_angles[1][j] + f * d;
+				ent->angles[j] = state->msg_angles[1][j] + f * d;
 			}
 
 		}
@@ -578,9 +580,9 @@ CL_RelinkEntities (void)
 		if (ent->model->flags & EF_ROTATE)
 			ent->angles[1] = bobjrotate;
 
-		if (ent->effects & EF_BRIGHTFIELD)
+		if (state->baseline.effects & EF_BRIGHTFIELD)
 			R_EntityParticles (ent);
-		if (ent->effects & EF_MUZZLEFLASH) {
+		if (state->baseline.effects & EF_MUZZLEFLASH) {
 			vec3_t      fv, rv, uv;
 
 			dl = R_AllocDlight (i);
@@ -596,9 +598,9 @@ CL_RelinkEntities (void)
 			dl->color[1] = 0.1;
 			dl->color[2] = 0.05;
 		}
-		CL_NewDlight (i, ent->origin, ent->effects);
-		if (VectorDistance_fast(ent->msg_origins[1], ent->origin) > (256*256))
-			VectorCopy (ent ->origin, ent->msg_origins[1]);
+		CL_NewDlight (i, ent->origin, state->baseline.effects);
+		if (VectorDistance_fast(state->msg_origins[1], ent->origin) > (256*256))
+			VectorCopy (ent ->origin, state->msg_origins[1]);
 		if (ent->model->flags & EF_ROCKET) {
 			dl = R_AllocDlight (i);
 			VectorCopy (ent->origin, dl->origin);
@@ -619,7 +621,7 @@ CL_RelinkEntities (void)
 		else if (ent->model->flags & EF_TRACER3)
 			R_VoorTrail (ent);
 
-		ent->forcelink = false;
+		state->forcelink = false;
 
 		if (i == cl.viewentity && !chase_active->int_val) {
 			continue;
@@ -725,8 +727,6 @@ Force_CenterView_f (void)
 void
 CL_Init (void)
 {
-	int i;
-
 	SZ_Alloc (&cls.message, 1024);
 
 	CL_InitInput ();
@@ -743,8 +743,4 @@ CL_Init (void)
 	Cmd_AddCommand ("demolist", Con_Demolist_DEM_f, "List available demos");
 	Cmd_AddCommand ("force_centerview", Force_CenterView_f, "force the view "
 					"to be level");
-
-	for (i = 0; i < MAX_STATIC_ENTITIES; i++) {
-		cl_static_entities[i].baseline = &cl_static_entity_baselines[i];
-	}
 }

@@ -105,19 +105,21 @@ char       *svc_strings[] = {
 
 	This error checks and tracks the total number of entities
 */
-entity_t   *
+cl_entity_state_t   *
 CL_EntityNum (int num)
 {
 	if (num >= cl.num_entities) {
 		if (num >= MAX_EDICTS)
 			Host_Error ("CL_EntityNum: %i is an invalid number", num);
 		while (cl.num_entities <= num) {
+			cl_baselines[cl.num_entities].ent =
+				&cl_entities[cl.num_entities];
 			cl_entities[cl.num_entities].colormap = vid.colormap8;
 			cl.num_entities++;
 		}
 	}
 
-	return &cl_entities[num];
+	return &cl_baselines[num];
 }
 
 void
@@ -328,6 +330,7 @@ void
 CL_ParseUpdate (int bits)
 {
 	entity_t   *ent;
+	cl_entity_state_t *state;
 	int         modnum, num, skin, i;
 	model_t    *model;
 	qboolean    forcelink;
@@ -349,13 +352,14 @@ CL_ParseUpdate (int bits)
 	else
 		num = MSG_ReadByte (net_message);
 
-	ent = CL_EntityNum (num);
+	state = CL_EntityNum (num);
+	ent = state->ent;
 
 	for (i = 0; i < 16; i++)
 		if (bits & (1 << i))
 			bitcounts[i]++;
 
-	if (ent->msgtime != cl.mtime[1])
+	if (state->msgtime != cl.mtime[1])
 		forcelink = true;				// no previous frame to lerp from
 	else
 		forcelink = false;
@@ -369,14 +373,14 @@ CL_ParseUpdate (int bits)
 		ent->colormod[0] = ent->colormod[1] = ent->colormod[2] = 1;
 	}
 
-	ent->msgtime = cl.mtime[0];
+	state->msgtime = cl.mtime[0];
 
 	if (bits & U_MODEL) {
 		modnum = MSG_ReadByte (net_message);
 		if (modnum >= MAX_MODELS)
 			Host_Error ("CL_ParseModel: bad modnum");
 	} else
-		modnum = ent->baseline->modelindex;
+		modnum = state->baseline.modelindex;
 
 	model = cl.model_precache[modnum];
 	if (model != ent->model) {
@@ -397,12 +401,12 @@ CL_ParseUpdate (int bits)
 	if (bits & U_FRAME)
 		ent->frame = MSG_ReadByte (net_message);
 	else
-		ent->frame = ent->baseline->frame;
+		ent->frame = state->baseline.frame;
 
 	if (bits & U_COLORMAP)
 		i = MSG_ReadByte (net_message);
 	else
-		i = ent->baseline->colormap;
+		i = state->baseline.colormap;
 	if (!i)
 		ent->colormap = vid.colormap8;
 	else {
@@ -414,7 +418,7 @@ CL_ParseUpdate (int bits)
 	if (bits & U_SKIN)
 		skin = MSG_ReadByte (net_message);
 	else
-		skin = ent->baseline->skin;
+		skin = state->baseline.skin;
 	if (skin != ent->skinnum) {
 		ent->skinnum = skin;
 		//XXX if (num > 0 && num <= cl.maxclients)
@@ -422,73 +426,73 @@ CL_ParseUpdate (int bits)
 	}
 
 	if (bits & U_EFFECTS)
-		ent->effects = MSG_ReadByte (net_message);
+		state->effects = MSG_ReadByte (net_message);
 	else
-		ent->effects = ent->baseline->effects;
+		state->effects = state->baseline.effects;
 
 	// shift the known values for interpolation
-	VectorCopy (ent->msg_origins[0], ent->msg_origins[1]);
-	VectorCopy (ent->msg_angles[0], ent->msg_angles[1]);
+	VectorCopy (state->msg_origins[0], state->msg_origins[1]);
+	VectorCopy (state->msg_angles[0], state->msg_angles[1]);
 
 	if (bits & U_ORIGIN1)
-		ent->msg_origins[0][0] = MSG_ReadCoord (net_message);
+		state->msg_origins[0][0] = MSG_ReadCoord (net_message);
 	else
-		ent->msg_origins[0][0] = ent->baseline->origin[0];
+		state->msg_origins[0][0] = state->baseline.origin[0];
 	if (bits & U_ANGLE1)
-		ent->msg_angles[0][0] = MSG_ReadAngle (net_message);
+		state->msg_angles[0][0] = MSG_ReadAngle (net_message);
 	else
-		ent->msg_angles[0][0] = ent->baseline->angles[0];
+		state->msg_angles[0][0] = state->baseline.angles[0];
 
 	if (bits & U_ORIGIN2)
-		ent->msg_origins[0][1] = MSG_ReadCoord (net_message);
+		state->msg_origins[0][1] = MSG_ReadCoord (net_message);
 	else
-		ent->msg_origins[0][1] = ent->baseline->origin[1];
+		state->msg_origins[0][1] = state->baseline.origin[1];
 	if (bits & U_ANGLE2)
-		ent->msg_angles[0][1] = MSG_ReadAngle (net_message);
+		state->msg_angles[0][1] = MSG_ReadAngle (net_message);
 	else
-		ent->msg_angles[0][1] = ent->baseline->angles[1];
+		state->msg_angles[0][1] = state->baseline.angles[1];
 
 	if (bits & U_ORIGIN3)
-		ent->msg_origins[0][2] = MSG_ReadCoord (net_message);
+		state->msg_origins[0][2] = MSG_ReadCoord (net_message);
 	else
-		ent->msg_origins[0][2] = ent->baseline->origin[2];
+		state->msg_origins[0][2] = state->baseline.origin[2];
 	if (bits & U_ANGLE3)
-		ent->msg_angles[0][2] = MSG_ReadAngle (net_message);
+		state->msg_angles[0][2] = MSG_ReadAngle (net_message);
 	else
-		ent->msg_angles[0][2] = ent->baseline->angles[2];
+		state->msg_angles[0][2] = state->baseline.angles[2];
 
 	if (bits & U_NOLERP)
-		ent->forcelink = true;
+		state->forcelink = true;
 
 	if (forcelink) {					// didn't have an update last message
-		VectorCopy (ent->msg_origins[0], ent->msg_origins[1]);
-		VectorCopy (ent->msg_origins[0], ent->origin);
-		VectorCopy (ent->msg_angles[0], ent->msg_angles[1]);
-		VectorCopy (ent->msg_angles[0], ent->angles);
-		ent->forcelink = true;
+		VectorCopy (state->msg_origins[0], state->msg_origins[1]);
+		VectorCopy (state->msg_origins[0], ent->origin);
+		VectorCopy (state->msg_angles[0], state->msg_angles[1]);
+		VectorCopy (state->msg_angles[0], ent->angles);
+		state->forcelink = true;
 	}
 }
 
 void
-CL_ParseBaseline (entity_t *ent)
+CL_ParseBaseline (cl_entity_state_t *state)
 {
 	int         i;
 
-	ent->baseline->modelindex = MSG_ReadByte (net_message);
-	ent->baseline->frame = MSG_ReadByte (net_message);
-	ent->baseline->colormap = MSG_ReadByte (net_message);
-	ent->baseline->skin = MSG_ReadByte (net_message);
+	state->baseline.modelindex = MSG_ReadByte (net_message);
+	state->baseline.frame = MSG_ReadByte (net_message);
+	state->baseline.colormap = MSG_ReadByte (net_message);
+	state->baseline.skin = MSG_ReadByte (net_message);
 	for (i = 0; i < 3; i++) {
-		ent->baseline->origin[i] = MSG_ReadCoord (net_message);
-		ent->baseline->angles[i] = MSG_ReadAngle (net_message);
+		state->baseline.origin[i] = MSG_ReadCoord (net_message);
+		state->baseline.angles[i] = MSG_ReadAngle (net_message);
 	}
 	// LordHavoc: set up the baseline to account for new effects (alpha,
 	// colormod, etc)
-	ent->baseline->alpha = 255;
-	ent->baseline->scale = 16;
-	ent->baseline->glow_color = 254;
-	ent->baseline->glow_size = 0;
-	ent->baseline->colormod = 255;
+	state->baseline.alpha = 255;
+	state->baseline.scale = 16;
+	state->baseline.glow_color = 254;
+	state->baseline.glow_size = 0;
+	state->baseline.colormod = 255;
 }
 
 /*
@@ -598,6 +602,7 @@ CL_ParseClientdata (int bits)
 void
 CL_ParseStatic (void)
 {
+	cl_entity_state_t state;
 	entity_t   *ent;
 	int         i;
 
@@ -606,24 +611,24 @@ CL_ParseStatic (void)
 		Host_Error ("Too many static entities");
 	ent = &cl_static_entities[i];
 	cl.num_statics++;
-	CL_ParseBaseline (ent);
+	CL_ParseBaseline (&state);
 
 	// copy it to the current state
-	ent->model = cl.model_precache[ent->baseline->modelindex];
-	ent->frame = ent->baseline->frame;
+	ent->model = cl.model_precache[state.baseline.modelindex];
+	ent->frame = state.baseline.frame;
 	ent->colormap = vid.colormap8;
-	ent->skinnum = ent->baseline->skin;
-	ent->effects = ent->baseline->effects;
+	ent->skinnum = state.baseline.skin;
+//FIXME ent->effects = state.baseline.effects;
 
-	ent->alpha = ent->baseline->alpha / 255.0;
-	ent->scale = ent->baseline->scale / 16.0;
-	ent->glow_color = ent->baseline->glow_color;
-	ent->glow_size = ent->baseline->glow_size;
+	ent->alpha = state.baseline.alpha / 255.0;
+	ent->scale = state.baseline.scale / 16.0;
+	ent->glow_color = state.baseline.glow_color;
+	ent->glow_size = state.baseline.glow_size;
 //FIXME need to get this from baseline
 	ent->colormod[0] = ent->colormod[1] = ent->colormod[2] = 1;
 
-	VectorCopy (ent->baseline->origin, ent->origin);
-	VectorCopy (ent->baseline->angles, ent->angles);
+	VectorCopy (state.baseline.origin, ent->origin);
+	VectorCopy (state.baseline.angles, ent->angles);
 	R_AddEfrags (ent);
 }
 

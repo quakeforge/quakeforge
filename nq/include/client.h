@@ -31,18 +31,17 @@
 
 #include <stdio.h>
 
-#include "QF/info.h"
 #include "QF/input.h"
 #include "QF/mathlib.h"
 #include "QF/model.h"
 #include "QF/sound.h"
 #include "QF/vfs.h"
+#include "QF/render.h"
 
+#include "game.h"
 #include "net.h"
 #include "protocol.h"
 #include "r_local.h"
-#include "QF/render.h"
-#include "game.h"
 
 
 typedef struct usercmd_s
@@ -223,6 +222,19 @@ typedef struct
 } client_state_t;
 
 
+typedef struct cl_entity_state_s {
+	entity_t		*ent;
+	entity_state_t	baseline;
+	int				forcelink;
+	vec3_t			msg_origins[2];
+	vec3_t			msg_angles[2];
+	double			msgtime;
+	int				effects;
+	int				colors;
+	struct model_s	*model;
+	int				skinnum;
+} cl_entity_state_t;
+
 /*
   cvars
 */
@@ -274,6 +286,7 @@ extern	client_state_t	cl;
 
 // FIXME, allocate dynamically
 extern	entity_t		cl_entities[MAX_EDICTS];
+extern	cl_entity_state_t	cl_baselines[MAX_EDICTS];
 extern	entity_t		cl_static_entities[MAX_STATIC_ENTITIES];
 
 extern int fps_count;
