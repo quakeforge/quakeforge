@@ -65,8 +65,20 @@ FloatZero:				.long	0
 Float2ToThe31nd:		.long	0x4f000000
 FloatMinus2ToThe31nd:	.long	0xcf000000
 
+.globl	r_ceil_cw, r_single_cw
+r_ceil_cw:		.long	0
+r_single_cw:	.long	0
+
 .globl	C(r_bmodelactive)
 C(r_bmodelactive):		.long	0
+
+.global C(R_InitVars)
+C(R_InitVars):
+	movl	ceil_cw, %eax
+	movl	single_cw, %edx
+	movl	%eax, r_ceil_cw
+	movl	%edx, r_single_cw
+	ret
 
 #endif	// USE_INTEL_ASM
 

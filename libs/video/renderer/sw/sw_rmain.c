@@ -137,6 +137,7 @@ float       se_time1, se_time2, de_time1, de_time2, dv_time1, dv_time2;
 void        R_MarkLeaves (void);
 
 void R_LoadSky_f (void);
+void R_InitVars (void);
 
 void
 R_Init (void)
@@ -145,6 +146,8 @@ R_Init (void)
 
 	// get stack position so we can guess if we are going to overflow
 	r_stack_start = (byte *) & dummy;
+
+	R_InitVars ();
 
 	R_InitTurb ();
 

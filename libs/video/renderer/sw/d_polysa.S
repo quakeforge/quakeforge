@@ -205,12 +205,12 @@ C(D_PolysetCalcGradients):
 							//  (t1*p01_minus_p21 - t0*p11_minus_p21)*
 							//  xstepdenominv | ystepdenominv |
 							//  xstepdenominv | p00_minus_p20 | p11_minus_p21
-	fldcw	ceil_cw
+	fldcw	r_ceil_cw
 	fistpl	C(r_lstepy)		// r_lstepx | ystepdenominv | xstepdenominv |
 							//  p00_minus_p20 | p11_minus_p21
 	fistpl	C(r_lstepx)		// ystepdenominv | xstepdenominv | p00_minus_p20 |
 							//  p11_minus_p21
-	fldcw	single_cw
+	fldcw	r_single_cw
 
 //	t0 = r_p0[2] - r_p2[2];
 //	t1 = r_p1[2] - r_p2[2];
