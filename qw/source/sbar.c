@@ -1058,48 +1058,55 @@ Sbar_DeathmatchOverlay (int start)
 	if (cl.teamplay) {
 		x = 4;
 //								0    40 64  104  152   192
-		if (cl_showscoresuid->int_val > 1)
+		if (cl_showscoresuid->int_val > 1) {
 			Draw_String (x, y, "ping pl fph time frags team  uid name");
-		else if (cl_showscoresuid->int_val > 0)
-			Draw_String (x, y, " uid pl fph time frags team name");
-		else
-			Draw_String (x, y, "ping pl fph time frags team name");
-		y += 8;
-
-		if (cl_showscoresuid->int_val > 1)
+			y += 8;
 			Draw_String (x, y, "\x1d\x1e\x1e\x1f \x1d\x1f \x1d\x1e\x1f "
 						 "\x1d\x1e\x1e\x1f \x1d\x1e\x1e\x1e\x1f "
 						 "\x1d\x1e\x1e\x1f \x1d\x1e\x1e\x1f "
 						 "\x1d\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1f");
-		else
+		} else if (cl_showscoresuid->int_val > 0) {
+			Draw_String (x, y, " uid pl fph time frags team name");
+			y += 8;
 			Draw_String (x, y, "\x1d\x1e\x1e\x1f \x1d\x1f \x1d\x1e\x1f "
 						 "\x1d\x1e\x1e\x1f \x1d\x1e\x1e\x1e\x1f "
 						 "\x1d\x1e\x1e\x1f "
 						 "\x1d\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1f");
-		y += 8;
+		} else {
+			Draw_String (x, y, "ping pl fph time frags team name");
+			y += 8;
+			Draw_String (x, y, "\x1d\x1e\x1e\x1f \x1d\x1f \x1d\x1e\x1f "
+						 "\x1d\x1e\x1e\x1f \x1d\x1e\x1e\x1e\x1f "
+						 "\x1d\x1e\x1e\x1f "
+						 "\x1d\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1f");
+		}
 	} else {
 		x = 16;
 //								0    40 64  104  152
-		if (cl_showscoresuid->int_val > 1)
+		if (cl_showscoresuid->int_val > 1) {
 			Draw_String (x, y, "ping pl fph time frags  uid name");
-		else if (cl_showscoresuid->int_val > 0)
-			Draw_String (x, y, " uid pl fph time frags name");
-		else
-			Draw_String (x, y, "ping pl fph time frags name");
-		y += 8;
-
-		if (cl_showscoresuid->int_val > 1)
+			y += 8;
 			Draw_String (x, y, "\x1d\x1e\x1e\x1f \x1d\x1f \x1d\x1e\x1f "
 						 "\x1d\x1e\x1e\x1f \x1d\x1e\x1e\x1e\x1f "
 						 "\x1d\x1e\x1e\x1f \x1d\x1e\x1e\x1e\x1e\x1e\x1e"
 						 "\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1f");
-		else
+		} else if (cl_showscoresuid->int_val > 0) {
+			Draw_String (x, y, " uid pl fph time frags name");
+			y += 8;
 			Draw_String (x, y, "\x1d\x1e\x1e\x1f \x1d\x1f \x1d\x1e\x1f "
 						 "\x1d\x1e\x1e\x1f \x1d\x1e\x1e\x1e\x1f "
 						 "\x1d\x1e\x1e\x1e\x1e\x1e\x1e"
 						 "\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1f");
-		y += 8;
+		} else {
+			Draw_String (x, y, "ping pl fph time frags name");
+			y += 8;
+			Draw_String (x, y, "\x1d\x1e\x1e\x1f \x1d\x1f \x1d\x1e\x1f "
+						 "\x1d\x1e\x1e\x1f \x1d\x1e\x1e\x1e\x1f "
+						 "\x1d\x1e\x1e\x1e\x1e\x1e\x1e"
+						 "\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1f");
+		}
 	}
+	y += 8;
 
 	for (i = 0; i < l && y <= vid.height - 10; i++) {
 		k = fragsort[i];
@@ -1277,7 +1284,7 @@ Sbar_MiniDeathmatchOverlay (void)
 
 	x = 324;
 
-	for ( /* */ ; i < scoreboardlines && y < vid.height - 8 + 1; i++) {
+	for (; i < scoreboardlines && y < vid.height - 8 + 1; i++) {
 		k = fragsort[i];
 		s = &cl.players[k];
 		if (!s->name[0])
