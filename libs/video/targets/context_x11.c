@@ -123,6 +123,10 @@ configure_notify (XEvent *event)
 	XConfigureEvent *c = &event->xconfigure;
 	pos_x = c->x;
 	pos_y = c->y;
+#ifdef HAVE_VIDMODE
+	if (vidmode_active)
+		X11_ForceViewPort ();
+#endif
 	Con_DPrintf ("ConfigureNotify: %ld %d %ld %ld %d,%d (%d,%d) %d %ld %d\n",
 				 c->serial, c->send_event, c->event, c->window, c->x, c->y,
 				 c->width, c->height, c->border_width, c->above,
@@ -427,7 +431,6 @@ X11_SetVidMode (int width, int height)
 
 				XF86VidModeSwitchToMode (x_disp, x_screen,
 										 vidmodes[best_mode]);
-				X11_ForceViewPort ();
 				vidmode_active = true;
 				X11_SetScreenSaver ();
 			} else {
@@ -470,8 +473,6 @@ X11_UpdateFullscreen (cvar_t *fullscreen)
 		X11_ForceMove (0, 0);
 		X11_SetMouse ();
 		IN_UpdateGrab (in_grab);
-		// Done in X11_SetVidMode but moved the window since then
-		X11_ForceViewPort (); 
 	}
 }
 
