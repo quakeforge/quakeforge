@@ -67,6 +67,7 @@ typedef struct {
 	int				(*surf_cache_size)(int width, int height);
 	void			(*flush_caches)(void);
 	void			(*init_caches)(void *cache, int size);
+	void			(*do_screen_buffer)(void);
 } viddef_t;
 
 extern viddef_t 		vid;				// global video state

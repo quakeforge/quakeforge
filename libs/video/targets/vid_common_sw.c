@@ -47,11 +47,6 @@ VID_InitBuffers (void)
 	if (vid.surf_cache_size)
 		cachesize = vid.surf_cache_size (vid.width, vid.height);
 
-	// Free the old screen buffer
-	if (vid.buffer) {
-		free (vid.buffer);
-		vid.conbuffer = vid.buffer = NULL;
-	}
 	// Free the old z-buffer
 	if (vid.zbuffer) {
 		free (vid.zbuffer);
@@ -64,10 +59,19 @@ VID_InitBuffers (void)
 		free (vid.surfcache);
 		vid.surfcache = NULL;
 	}
-	// Allocate the new screen buffer
-	vid.conbuffer = vid.buffer = calloc (buffersize, 1);
-	if (!vid.conbuffer) {
-		Sys_Error ("Not enough memory for video mode\n");
+	if (vid.do_screen_buffer) {
+		vid.do_screen_buffer ();
+	} else {
+		// Free the old screen buffer
+		if (vid.buffer) {
+			free (vid.buffer);
+			vid.conbuffer = vid.buffer = NULL;
+		}
+		// Allocate the new screen buffer
+		vid.conbuffer = vid.buffer = calloc (buffersize, 1);
+		if (!vid.conbuffer) {
+			Sys_Error ("Not enough memory for video mode\n");
+		}
 	}
 	// Allocate the new z-buffer
 	vid.zbuffer = calloc (zbuffersize, 1);

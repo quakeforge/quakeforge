@@ -89,7 +89,7 @@ int XShmQueryExtension (Display *);
 int XShmGetEventBase (Display *);
 
 static qboolean doShm;
-//static XShmSegmentInfo x_shminfo[2];
+static XShmSegmentInfo x_shminfo[2];
 
 static int	current_framebuffer;
 static XImage *x_framebuffer[2] = { 0, 0 };
@@ -303,45 +303,11 @@ D_EndDirectRect (int x, int y, int width, int height)
 static void
 ResetFrameBuffer (void)
 {
-#if 0 //XXX not yet
-	int         tbuffersize, tcachesize;
-
-	void       *vid_surfcache;
 	int         mem, pwidth;
-
-	// Calculate the sizes we want first
-	tbuffersize = vid.width * vid.height * sizeof (*d_pzbuffer);
-	tcachesize = D_SurfaceCacheForRes (vid.width, vid.height);
 
 	if (x_framebuffer[0]) {
 		XDestroyImage (x_framebuffer[0]);
 	}
-	// Free the old z-buffer
-	if (d_pzbuffer) {
-		free (d_pzbuffer);
-		d_pzbuffer = NULL;
-	}
-	// Free the old surface cache
-	vid_surfcache = D_SurfaceCacheAddress ();
-	if (vid_surfcache) {
-		D_FlushCaches ();
-		free (vid_surfcache);
-		vid_surfcache = NULL;
-	}
-	// Allocate the new z-buffer
-	d_pzbuffer = calloc (tbuffersize, 1);
-	if (!d_pzbuffer) {
-		Sys_Error ("Not enough memory for video mode\n");
-	}
-	// Allocate the new surface cache; free the z-buffer if we fail
-	vid_surfcache = calloc (tcachesize, 1);
-	if (!vid_surfcache) {
-		free (d_pzbuffer);
-		d_pzbuffer = NULL;
-		Sys_Error ("Not enough memory for video mode\n");
-	}
-
-	D_InitCaches (vid_surfcache, tcachesize);
 
 	pwidth = x_visinfo->depth / 8;
 
@@ -349,6 +315,7 @@ ResetFrameBuffer (void)
 		pwidth = 4;
 	mem = ((vid.width * pwidth + 7) & ~7) * vid.height;
 
+	// allocate new screen buffer
 	x_framebuffer[0] = XCreateImage (x_disp, x_vis, x_visinfo->depth,
 									 ZPixmap, 0, malloc (mem), vid.width,
 									 vid.height, 32, 0);
@@ -356,51 +323,15 @@ ResetFrameBuffer (void)
 	if (!x_framebuffer[0]) {
 		Sys_Error ("VID: XCreateImage failed\n");
 	}
-#endif
 }
 
 static void
 ResetSharedFrameBuffers (void)
 {
-#if 0
-	int 	tbuffersize, tcachesize;
-	void	*vid_surfcache;
-
 	int 	size;
 	int 	key;
 	int 	minsize = getpagesize ();
 	int 	frm;
-
-	// Calculate the sizes we want first
-	tbuffersize = vid.width * vid.height * sizeof (*d_pzbuffer);
-	tcachesize = D_SurfaceCacheForRes (vid.width, vid.height);
-
-	// Free the old z-buffer
-	if (d_pzbuffer) {
-		free (d_pzbuffer);
-		d_pzbuffer = NULL;
-	}
-	// Free the old surface cache
-	vid_surfcache = D_SurfaceCacheAddress ();
-	if (vid_surfcache) {
-		D_FlushCaches ();
-		free (vid_surfcache);
-		vid_surfcache = NULL;
-	}
-	// Allocate the new z-buffer
-	d_pzbuffer = calloc (tbuffersize, 1);
-	if (!d_pzbuffer) {
-		Sys_Error ("Not enough memory for video mode\n");
-	}
-	// Allocate the new surface cache; free the z-buffer if we fail
-	vid_surfcache = calloc (tcachesize, 1);
-	if (!vid_surfcache) {
-		free (d_pzbuffer);
-		d_pzbuffer = NULL;
-		Sys_Error ("Not enough memory for video mode\n");
-	}
-
-	D_InitCaches (vid_surfcache, tcachesize);
 
 	for (frm = 0; frm < 2; frm++) {
 
@@ -441,7 +372,25 @@ ResetSharedFrameBuffers (void)
 		shmctl (x_shminfo[frm].shmid, IPC_RMID, 0);
 
 	}
-#endif
+}
+
+static void
+x11_init_buffers (void)
+{
+	if (doShm)
+		ResetSharedFrameBuffers ();
+	else
+		ResetFrameBuffer ();
+
+	vid.direct = 0;
+	vid.rowbytes = x_framebuffer[0]->bytes_per_line;
+	vid.buffer = x_framebuffer[current_framebuffer]->data;
+	vid.conbuffer = vid.buffer;
+	vid.conwidth = vid.width;
+	vid.conheight = vid.height;
+	vid.conrowbytes = vid.rowbytes;
+	vid.aspect = ((float) vid.height / (float) vid.width) * (320.0 / 240.0);
+	current_framebuffer = 0;
 }
 
 static void
@@ -588,20 +537,10 @@ VID_Init (unsigned char *palette)
 
 	if (doShm) {
 		x_shmeventtype = XShmGetEventBase (x_disp) + ShmCompletion;
-		ResetSharedFrameBuffers ();
-	} else {
-		ResetFrameBuffer ();
 	}
 
-	current_framebuffer = 0;
-	vid.rowbytes = x_framebuffer[0]->bytes_per_line;
-	vid.buffer = x_framebuffer[0]->data;
-	vid.direct = 0;
-	vid.conbuffer = x_framebuffer[0]->data;
-	vid.conrowbytes = vid.rowbytes;
-	vid.conwidth = vid.width;
-	vid.conheight = vid.height;
-	vid.aspect = ((float) vid.height / (float) vid.width) * (320.0 / 240.0);
+	vid.do_screen_buffer = x11_init_buffers;
+	VID_InitBuffers ();
 
 //  XSynchronize (x_disp, False);
 	X11_AddEvent (x_shmeventtype, event_shm);
@@ -684,17 +623,8 @@ VID_Update (vrect_t *rects)
 		vid.width = config_notify_width & ~7;
 		vid.height = config_notify_height;
 
-		if (doShm)
-			ResetSharedFrameBuffers ();
-		else
-			ResetFrameBuffer ();
+		VID_InitBuffers ();
 
-		vid.rowbytes = x_framebuffer[0]->bytes_per_line;
-		vid.buffer = x_framebuffer[current_framebuffer]->data;
-		vid.conbuffer = vid.buffer;
-		vid.conwidth = vid.width;
-		vid.conheight = vid.height;
-		vid.conrowbytes = vid.rowbytes;
 		vid.recalc_refdef = 1;			/* force a surface cache flush */
 		Con_CheckResize ();
 		Con_Clear_f ();
