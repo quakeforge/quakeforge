@@ -82,7 +82,7 @@ allocate_stuff (void)
 	function_t *func;
 
 	num_defs = pr.scope->num_defs;
-	num_functions = pr.num_functions;
+	num_functions = pr.num_functions - 1;
 	num_relocs = 0;
 	for (def = pr.scope->head; def; def = def->def_next) {
 		num_relocs += count_relocs (def->refs);
@@ -167,7 +167,7 @@ setup_data (void)
 {
 	qfo_def_t  *def = defs;
 	def_t      *d;
-	qfo_function_t *func = functions + 1;
+	qfo_function_t *func = functions;
 	function_t *f;
 	qfo_reloc_t *reloc = relocs;
 	dstatement_t *st;
