@@ -43,6 +43,10 @@ extern int	cl_playerindex;
 extern int	cl_flagindex;
 extern int	cl_spikeindex;
 extern int	viewentity;
+extern int	cl_h_playerindex;
+extern int	cl_gib1index;
+extern int	cl_gib2index;
+extern int	cl_gib3index;
 
 int CL_CalcNet (void);
 void CL_ParseServerMessage (void);

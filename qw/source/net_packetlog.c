@@ -62,8 +62,6 @@ static const char rcsid[] =
 cvar_t     *net_packetlog;
 cvar_t     *net_loglevel;
 
-//extern server_t sv;
-
 int         Net_LogStart (const char *fname);
 
 void Analyze_Server_Packet (const byte *data, int len);

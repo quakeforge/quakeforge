@@ -414,8 +414,6 @@ CL_Record_f (void)
 	player_info_t *player;
 	sizebuf_t	buf;
 
-	extern char gamedirfile[];
-
 	c = Cmd_Argc ();
 	if (c != 2) {
 		Con_Printf ("record <demoname>\n");

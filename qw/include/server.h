@@ -557,6 +557,23 @@ extern struct cvar_s *sv_maxrate;
 extern struct cvar_s *sv_timestamps;
 extern struct cvar_s *sv_timefmt;
 extern struct cvar_s *sv_phs;
+extern struct cvar_s *sv_maxvelocity;
+extern struct cvar_s *sv_gravity;
+extern struct cvar_s *sv_aim;
+extern struct cvar_s *sv_stopspeed;
+extern struct cvar_s *sv_spectatormaxspeed;
+extern struct cvar_s *sv_accelerate;
+extern struct cvar_s *sv_airaccelerate;
+extern struct cvar_s *sv_wateraccelerate;
+extern struct cvar_s *sv_friction;
+extern struct cvar_s *sv_waterfriction;
+extern struct cvar_s *pr_double_remove;
+extern struct cvar_s *allow_download;
+extern struct cvar_s *allow_download_skins;
+extern struct cvar_s *allow_download_models;
+extern struct cvar_s *allow_download_sounds;
+extern struct cvar_s *allow_download_maps;
+
 extern int fp_messages;
 extern int fp_persecond;
 extern int fp_secondsdead;
@@ -566,5 +583,7 @@ extern struct cvar_s *nouse;
 extern char fp_msg[255];
 
 extern int sv_nailmodel, sv_supernailmodel, sv_playermodel;
+
+extern int con_printf_no_log;
 
 #endif // _SERVER_H

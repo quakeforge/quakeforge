@@ -373,9 +373,6 @@ CL_LinkPacketEntities (void)
 	model_t		   *model;
 	packet_entities_t *pack;
 
-	extern int  cl_h_playerindex, cl_gib1index, cl_gib2index, cl_gib3index;
-	extern int  cl_playerindex;
-
 	pack = &cl.frames[cls.netchan.incoming_sequence &
 					  UPDATE_MASK].packet_entities;
 
@@ -965,8 +962,6 @@ CL_SetSolidPlayers (int playernum)
 	int			j;
 	physent_t  *pent;
 	struct predicted_player *pplayer;
-
-	extern vec3_t player_maxs, player_mins;
 
 	if (!cl_solid_players->int_val)
 		return;

@@ -364,6 +364,8 @@ extern kbutton_t   in_up, in_down;
 
 extern	double			realtime;
 
+extern qboolean recording;
+
 void Cvar_Info (struct cvar_s *var);
 
 void CL_UpdateScreen (double realtime);

@@ -387,7 +387,6 @@ Draw_Crosshair (int swap)
 {
 	unsigned char *pColor;
 	int            x, y;
-	extern vrect_t scr_vrect;
 
 	switch (crosshair->int_val) {
 		case 0:

@@ -102,8 +102,6 @@ static const char rcsid[] =
 # endif
 #endif
 
-//extern int gethostname (char *, int);
-
 static int  net_acceptsocket = -1;		// socket for fielding new
 										// connections
 static int  net_controlsocket;

@@ -253,8 +253,6 @@ Model_NextDownload (void)
 	char       *s;
 	int         i;
 
-	extern char gamedirfile[];
-
 	if (cls.downloadnumber == 0) {
 		Con_Printf ("Checking models...\n");
 		CL_UpdateScreen (realtime);
@@ -648,8 +646,6 @@ CL_ParseServerData (void)
 	int         protover;
 	qboolean    cflag = false;
 	net_svc_serverdata_t serverdata;
-
-	extern char gamedirfile[MAX_OSPATH];
 
 	Con_DPrintf ("Serverdata packet received.\n");
 

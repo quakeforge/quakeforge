@@ -775,7 +775,6 @@ MainWndProc (HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 	LONG        lRet = 1;
 	int         fActive, fMinimized, temp;
 	int         key, unicode;
-	extern unsigned int uiWheelMessage;
 
 	if (uMsg == uiWheelMessage)
 		uMsg = WM_MOUSEWHEEL;

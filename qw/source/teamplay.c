@@ -48,6 +48,7 @@ static const char rcsid[] =
 #include "QF/teamplay.h"
 
 #include "bothdefs.h"
+#include "cl_input.h"
 #include "client.h"
 #include "compat.h"
 
@@ -65,8 +66,6 @@ void
 Team_BestWeaponImpulse (void)
 {
 	int         best, i, imp, items;
-
-	extern int  in_impulse;
 
 	items = cl.stats[STAT_ITEMS];
 	best = 0;

@@ -90,8 +90,6 @@ glRect_t     lightmap_rectchange[MAX_LIGHTMAPS];
 msurface_t  *waterchain = NULL;
 msurface_t  *sky_chain;
 
-//extern vec3_t shadecolor;				// Ender (Extend) Colormod
-
 
 // LordHavoc: place for gl_rsurf setup code
 void

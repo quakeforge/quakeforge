@@ -108,7 +108,6 @@ main (int argc, const char *argv[])
 	double      time, oldtime, newtime;
 	fd_set      fdset;
 	int         j;
-	extern int  net_socket;
 
 	memset (&host_parms, 0, sizeof (host_parms));
 

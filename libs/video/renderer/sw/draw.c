@@ -324,8 +324,6 @@ void
 Draw_Crosshair (int swap)
 {
 	int         x, y;
-	extern cvar_t *crosshair, *cl_crossx, *cl_crossy, *crosshaircolor;
-	extern vrect_t scr_vrect;
 	byte        c = crosshaircolor->int_val;
 
 	if (crosshair->int_val == 2) {

@@ -43,6 +43,7 @@ extern struct cvar_s *fs_sharepath;
 extern struct cvar_s *fs_basegame;
 extern struct cvar_s *fs_skinbase;
 
+extern int file_from_pak;
 extern int com_filesize;
 struct cache_user_s;
 

@@ -406,7 +406,7 @@ SCR_DrawFPS (int swap)
 	int           i, x, y;
 	static int    lastfps;
 
-	extern int    fps_count;
+	extern int    fps_count;	//FIXME
 
 	if (!show_fps->int_val)
 		return;

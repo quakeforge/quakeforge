@@ -493,8 +493,6 @@ SVC_Status (void)
 	client_t   *cl;
 	int         ping, bottom, top, i;
 
-	extern int  con_printf_no_log;
-
 	if (!sv_allow_status->int_val)
 		return;
 	if (CheckForFlood (FLOOD_STATUS))
@@ -1893,17 +1891,6 @@ void
 SV_InitLocal (void)
 {
 	int         i;
-	extern cvar_t *sv_maxvelocity;
-	extern cvar_t *sv_gravity;
-	extern cvar_t *sv_aim;
-	extern cvar_t *sv_stopspeed;
-	extern cvar_t *sv_spectatormaxspeed;
-	extern cvar_t *sv_accelerate;
-	extern cvar_t *sv_airaccelerate;
-	extern cvar_t *sv_wateraccelerate;
-	extern cvar_t *sv_friction;
-	extern cvar_t *sv_waterfriction;
-	extern cvar_t *pr_double_remove;
 
 	SV_UserInit ();
 

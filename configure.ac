@@ -1268,7 +1268,9 @@ if test "x$HAVE_ZLIB" = xyes; then
 		HAVE_ZLIB="no, due to conflicting $x11_old_libz/libz.a"
 		Z_LIBS=""
 	else
-		AC_MSG_RESULT(no)
+		if test -n "$X_LIBS"; then
+			AC_MSG_RESULT(no)
+		fi
 		AC_DEFINE(HAVE_ZLIB)
 	fi
 fi

@@ -65,8 +65,6 @@ void		SND_Init_Cvars ();
 
 // Internal sound data & structures ===========================================
 
-//extern double host_frametime; // From host.h
-
 int			snd_blocked = 0;
 static qboolean snd_ambient = 1;
 

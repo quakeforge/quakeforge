@@ -691,13 +691,6 @@ SV_BeginDownload_f (void)
 	char        realname[MAX_OSPATH];
 	int         zip;
 
-	extern cvar_t *allow_download;
-	extern cvar_t *allow_download_skins;
-	extern cvar_t *allow_download_models;
-	extern cvar_t *allow_download_sounds;
-	extern cvar_t *allow_download_maps;
-	extern int  file_from_pak;			// ZOID did file come from pak?
-
 	name = Cmd_Argv (1);
 // hacked by zoid to allow more conrol over download
 	// first off, no .. or global allow check

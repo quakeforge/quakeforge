@@ -43,7 +43,7 @@ static const char rcsid[] =
 #include "QF/model.h"
 
 
-const int mod_lightmap_bytes = 1; // was extern const int mod_lightmap_bytes;
+const int mod_lightmap_bytes = 1;
 
 
 void

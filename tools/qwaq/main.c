@@ -51,9 +51,6 @@ int reserved_edicts;
 
 void BI_Init (progs_t *progs);
 
-extern char *type_name[];
-extern cvar_t *developer;
-
 extern int *read_result; //FIXME: eww
 
 int

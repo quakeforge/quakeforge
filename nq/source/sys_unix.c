@@ -56,6 +56,7 @@ static const char rcsid[] =
 #include "QF/qargs.h"
 #include "QF/sys.h"
 
+#include "client.h"
 #include "host.h"
 #include "server.h"
 
@@ -149,8 +150,6 @@ main (int c, const char *v[])
 
 	double      time, oldtime, newtime;
 	quakeparms_t parms;
-	extern VFile *vcrFile;
-	extern int  recording;
 	int         j;
 
 	signal (SIGFPE, SIG_IGN);
