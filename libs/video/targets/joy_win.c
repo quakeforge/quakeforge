@@ -112,7 +112,7 @@ DWORD joy_oldbuttonstate, joy_oldpovstate;
 int  joy_id;
 DWORD joy_flags;
 DWORD joy_numbuttons;
-
+#if 0
 static PDWORD
 RawValuePointer (int axis)
 {
@@ -162,7 +162,7 @@ _JOY_Read (void)
 		return false;
 	}
 }
-
+#endif
 void
 JOY_Read (void)
 {
@@ -292,7 +292,7 @@ void
 JOY_Close (void)
 {
 }
-
+#if 0
 static void
 JOY_AdvancedUpdate_f (void)
 {
@@ -352,7 +352,6 @@ JOY_AdvancedUpdate_f (void)
 	}
 }
 
-#if 0
 void
 JOY_Init_Cvars(void)
 {

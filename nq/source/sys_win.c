@@ -66,23 +66,6 @@ static const char tracking_tag[] = "Clams & Mooses";
 
 static HANDLE tevent;
 
-// FILE IO ====================================================================
-
-#define	MAX_HANDLES		10
-QFile      *sys_handles[MAX_HANDLES];
-
-static int
-findhandle (void)
-{
-	int         i;
-
-	for (i = 1; i < MAX_HANDLES; i++)
-		if (!sys_handles[i])
-			return i;
-	Sys_Error ("out of handles");
-	return -1;
-}
-
 // SYSTEM IO ==================================================================
 
 static void

@@ -602,7 +602,7 @@ VID_SetCaption (const char *text)
 	}
 }
 
-static WORD systemgammaramps[3][256];
+//static WORD systemgammaramps[3][256];
 static WORD currentgammaramps[3][256];
 
 qboolean
@@ -620,7 +620,7 @@ VID_SetGamma (double gamma)
 	ReleaseDC (NULL, hdc);
 	return i;
 }
-
+#if 0
 static void
 VID_SaveGamma (void)
 {
@@ -638,3 +638,4 @@ VID_RestoreGamma (void)
 	SetDeviceGammaRamp (hdc, &systemgammaramps[0][0]);
 	ReleaseDC (NULL, hdc);
 }
+#endif
