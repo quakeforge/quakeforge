@@ -50,7 +50,7 @@ vector_imm_get_key (void *_def, void *unused)
 	def_t       *def = (def_t*)_def;
 	static char rep[60];
 	sprintf (rep, "\001vector:%08X\001%08X\001%08X\001",
-			 G_INT(def->ofs), G_INT(def->ofs+1), G_INT(def->ofs+1));
+			 G_INT(def->ofs), G_INT(def->ofs+1), G_INT(def->ofs+2));
 	return rep;
 }
 
@@ -114,17 +114,6 @@ PR_ParseImmediate (void)
 			4 * type_size[pr_immediate_type->type]);
 
 	Hash_Add (tab, cn);
-
-	if (pr_immediate_type == &type_vector) {
-		int i;
-
-		for (i = 0; i < 3; i++) {
-			def_t *d = PR_NewDef (&type_float, "IMMEDIATE", 0);
-			d->initialized = 1;
-			d->ofs = cn->ofs + i;
-			Hash_Add (float_imm_defs, d);
-		}
-	}
 
 	PR_Lex ();
 
