@@ -1000,6 +1000,7 @@ SVC_RemoteCommand (void)
 		if (strcmp (Cmd_Argv (2), "say") == 0
 			||  strcmp (Cmd_Argv (2), "kick") == 0
 			||  strcmp (Cmd_Argv (2), "ban") == 0
+			||  strcmp (Cmd_Argv (2), "map") == 0
 			||  strcmp (Cmd_Argv (2), "mute") == 0
 			||  strcmp (Cmd_Argv (2), "cuff") == 0
 			||  strcmp (Cmd_Argv (2), "exec") == 0
