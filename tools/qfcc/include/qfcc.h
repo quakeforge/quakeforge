@@ -109,7 +109,7 @@ int yyparse (void);
 extern int yydebug;
 
 #ifdef _WIN32
-char *fix_backslash (const char *path);
+char *fix_backslash (char *path);
 #define NORMALIZE(x) fix_backslash (x)
 #else
 #define NORMALIZE(x) x
