@@ -1966,7 +1966,6 @@ AC_SUBST(RANLIB)
 dnl Output files
 AC_OUTPUT(
 	Makefile
-	quakeforge-config
 	quakeforge.lsm
 
 	include/Makefile
@@ -2049,7 +2048,7 @@ AC_OUTPUT(
 	RPM/quakeforge.conf
 	RPM/quakeforge.spec,
 
-	chmod +x quakeforge-config RPM/build_rpm
+	chmod +x RPM/build_rpm
 	if test -n "$AR" -a "$AR" != "ar"; then
 		sed -e 's/^AR="ar"$/AR="'$AR'"/' libtool > libtool.qf
 		if cmp -s libtool.qf libtool; then
