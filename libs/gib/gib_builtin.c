@@ -762,7 +762,7 @@ GIB_File_Transform_Path_Secure (dstring_t * path)
 		*s = '/';
 	if (Sys_PathType (path->str) != PATHTYPE_RELATIVE_BELOW)
 		return -1;
-	
+
 	dstring_insertstr (path, 0, "/");
 	dstring_insertstr (path, 0, qfs_gamedir->dir.def);
 	dstring_insertstr (path, 0, "/");
@@ -787,15 +787,11 @@ GIB_File_Read_f (void)
 		GIB_Error ("file", "%s: null filename provided", GIB_Argv (0));
 		return;
 	}
-	if (GIB_File_Transform_Path (GIB_Argd (1))) {
-		GIB_Error ("access",
-				   "%s: access to %s denied", GIB_Argv (0), GIB_Argv (1));
-		return;
-	}
+
 	if (!(ret = GIB_Return (0)))
 		return;
 	path = GIB_Argv (1);
-	file = Qopen (path, "r");
+	QFS_FOpenFile (path, &file);
 	if (file) {
 		len = Qfilesize (file);
 		ret->size = len + 1;
@@ -803,8 +799,7 @@ GIB_File_Read_f (void)
 		Qread (file, ret->str, len);
 		ret->str[len] = 0;
 		Qclose (file);
-	}
-	if (!file) {
+	} else {
 		GIB_Error ("file",
 				   "%s: could not read %s: %s", GIB_Argv (0), path,
 				   strerror (errno));
@@ -815,7 +810,6 @@ GIB_File_Read_f (void)
 static void
 GIB_File_Write_f (void)
 {
-	QFile      *file;
 	char       *path;
 
 	if (GIB_Argc () != 3) {
@@ -826,20 +820,9 @@ GIB_File_Write_f (void)
 		GIB_Error ("file", "%s: null filename provided", GIB_Argv (0));
 		return;
 	}
-	if (GIB_File_Transform_Path (GIB_Argd (1))) {
-		GIB_Error ("access",
-				   "%s: access to %s denied", GIB_Argv (0), GIB_Argv (1));
-		return;
-	}
+
 	path = GIB_Argv (1);
-	if (!(file = Qopen (path, "w"))) {
-		GIB_Error ("file",
-				   "%s: could not open %s for writing: %s", GIB_Argv (0), path,
-				   strerror (errno));
-		return;
-	}
-	Qprintf (file, "%s", GIB_Argv (2));
-	Qclose (file);
+	QFS_WriteFile (path, GIB_Argv(2), GIB_Argd(2)->size-1);
 }
 
 static void
