@@ -47,6 +47,7 @@ static __attribute__ ((unused)) const char rcsid[] =
 #include "QF/cvar.h"
 #include "QF/model.h"
 #include "QF/qendian.h"
+#include "QF/quakefs.h"
 #include "QF/render.h"
 #include "QF/sys.h"
 
@@ -823,17 +824,21 @@ Mod_LoadBrushModel (model_t *mod, void *buffer)
 	mod->checksum2 = 0;
 
 	for (i = 0; i < HEADER_LUMPS; i++) {
+		lump_t     *lump = header->lumps + i;
+		int         csum;
+
+		if (lump->fileofs > qfs_filesize
+			|| (lump->fileofs + lump->filelen) > qfs_filesize)
+			Sys_Error ("Mod_LoadBrushModel: %s seems to be truncated",
+					   mod->name);
 		if (i == LUMP_ENTITIES)
 			continue;
-		mod->checksum ^= LittleLong (Com_BlockChecksum
-									 (mod_base + header->lumps[i].fileofs,
-									  header->lumps[i].filelen));
+		csum = Com_BlockChecksum (mod_base + lump->fileofs, lump->filelen);
+		csum = LittleLong (csum);
+		mod->checksum ^= csum;
 
-		if (i == LUMP_VISIBILITY || i == LUMP_LEAFS || i == LUMP_NODES)
-			continue;
-		mod->checksum2 ^= LittleLong (Com_BlockChecksum
-									  (mod_base + header->lumps[i].fileofs,
-									   header->lumps[i].filelen));
+		if (i != LUMP_VISIBILITY && i != LUMP_LEAFS && i != LUMP_NODES)
+			mod->checksum2 ^= csum;
 	}
 
 	// load into heap
