@@ -4,7 +4,6 @@
 	game specific support (notably hipnotic, rogue and abyss)
 
 	Copyright (C) 1996-1997  Id Software, Inc.
-	Copyright (C) 1999,2000  Nelson Rush.
 	Copyright (C) 1999,2000  contributors of the QuakeForge project
 	Please see the file "AUTHORS" for a list of contributors
 
@@ -35,24 +34,14 @@
 #include "qargs.h"
 #include "game.h"
 
+qboolean standard_quake = false;
+
 /*
     Game_Init
 */
 void
 Game_Init (void)
 {
-	if (COM_CheckParm ("-abyss")) {
-		abyss = true;
-		standard_quake = true;
-	}
-
-	if (COM_CheckParm ("-rogue")) {
-		rogue = true;
-		standard_quake = false;
-	}
-
-	if (COM_CheckParm ("-hipnotic")) {
-		hipnotic = true;
-		standard_quake = false;
-	}
+	// This used to have the -hipnotic and -rogue checks, but they've been
+	// moved to quakefs.c for the time being..
 }
