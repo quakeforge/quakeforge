@@ -115,9 +115,13 @@ cl_hudswap_f (cvar_t *var)
 {
 	if (var->int_val) {
 		hud_armament_view->gravity = grav_southwest;
+		hud_armament_view->children[0]->gravity = grav_northwest;
+		hud_armament_view->children[1]->gravity = grav_southeast;
 		stuff_view->gravity = grav_southeast;
 	} else {
 		hud_armament_view->gravity = grav_southeast;
+		hud_armament_view->children[0]->gravity = grav_northeast;
+		hud_armament_view->children[1]->gravity = grav_southwest;
 		stuff_view->gravity = grav_southwest;
 	}
 	view_move (hud_armament_view, hud_armament_view->xpos,
@@ -486,15 +490,12 @@ draw_weapons_sbar (view_t *view)
 static void
 draw_weapons_hud (view_t *view)
 {
-	int         flashon, i, x = 0;
-
-	if (view->parent->gravity == grav_southeast)
-		x = view->xlen - 24;
+	int         flashon, i;
 
 	for (i = 0; i < 7; i++) {
 		if (cl.stats[STAT_ITEMS] & (IT_SHOTGUN << i)) {
 			flashon = calc_flashon (cl.item_gettime[i], IT_SHOTGUN << i);
-			draw_subpic (view, x, i * 16, sb_weapons[flashon][i], 0, 0, 24, 16);
+			draw_subpic (view, 0, i * 16, sb_weapons[flashon][i], 0, 0, 24, 16);
 			if (flashon > 1)
 				sb_updates = 0;			// force update to remove flash
 		}
@@ -557,6 +558,9 @@ draw_frags (view_t *view)
 	char        num[12];
 	scoreboard_t *s;
 
+	if (cl.maxclients == 1)
+		return;
+
 	Sbar_SortFrags ();
 
 	// draw the text
@@ -576,8 +580,8 @@ draw_frags (view_t *view)
 		top = Sbar_ColorForMap (top);
 		bottom = Sbar_ColorForMap (bottom);
 
-		draw_fill (view, x + 4, 0, 28, 4, top);
-		draw_fill (view, x + 4, 4, 28, 3, bottom);
+		draw_fill (view, x + 4, 1, 28, 4, top);
+		draw_fill (view, x + 4, 5, 28, 3, bottom);
 
 		// draw number
 		snprintf (num, sizeof (num), "%3i", s->frags);
@@ -714,15 +718,12 @@ draw_rogue_weapons_sbar (view_t *view)
 static void
 draw_rogue_weapons_hud (view_t *view)
 {
-	int         flashon, i, x = 0;
-
-	if (view->parent->gravity == grav_southeast)
-		x = view->xlen - 24;
+	int         flashon, i;
 
 	for (i = 0; i < 7; i++) {
 		if (cl.stats[STAT_ITEMS] & (IT_SHOTGUN << i)) {
 			flashon = calc_flashon (cl.item_gettime[i], IT_SHOTGUN << i);
-			draw_subpic (view, x, i * 16, sb_weapons[flashon][i], 0, 0, 24, 16);
+			draw_subpic (view, 0, i * 16, sb_weapons[flashon][i], 0, 0, 24, 16);
 			if (flashon > 1)
 				sb_updates = 0;			// force update to remove flash
 		}
@@ -730,7 +731,7 @@ draw_rogue_weapons_hud (view_t *view)
 	for (i = 0; i < 5; i++) {
 		//if (cl.stats[STAT_ACTIVEWEAPON] == (RIT_LAVA_NAILGUN << i)) {
 		if (cl.stats[STAT_ITEMS] & (RIT_LAVA_NAILGUN << i)) {
-			draw_pic (view, x, i * 16 + 112, rsb_weapons[i]);
+			draw_pic (view, 0, i * 16 + 112, rsb_weapons[i]);
 		}
 	}
 }
@@ -878,14 +879,11 @@ draw_hipnotic_weapons_sbar (view_t *view)
 static void
 draw_hipnotic_weapons_hud (view_t *view)
 {
-	int         flashon, grenadeflashing = 0, i, x = 0;
+	int         flashon, grenadeflashing = 0, i;
 	static int  y[] = {0, 16, 32, 48, 64, 96, 112, 128, 144, 80, 80};
 	qpic_t     *pic;
 	int         mask;
 	float       time;
-
-	if (view->parent->gravity == grav_southeast)
-		x = view->xlen - 24;
 
 	// hipnotic weapons
 	for (i = 0; i < 11; i++) {
@@ -924,7 +922,7 @@ draw_hipnotic_weapons_hud (view_t *view)
 			}
 
 			if (pic)
-				draw_pic (view, x, y[i], pic);
+				draw_pic (view, 0, y[i], pic);
 
 			if (flashon > 1)
 				sb_updates = 0;		// force update to remove flash
@@ -1251,7 +1249,7 @@ init_hud_views (void)
 
 	hud_armament_view = view_new (0, 48, 42, 156, grav_southeast);
 
-	view = view_new (0, 0, 42, 112, grav_northeast);
+	view = view_new (0, 0, 24, 112, grav_northeast);
 	view->draw = draw_weapons_hud;
 	view_add (hud_armament_view, view);
 
@@ -1355,9 +1353,14 @@ init_hipnotic_hud_views (void)
 
 	hud_view->resize_y = 1;
 
-	hud_armament_view = view_new (0, 48, 42, 204, grav_southeast);
+	if (vid.conheight < 252) {
+		hud_armament_view = view_new (0, min (vid.conheight - 160, 48),
+									  66, 160, grav_southeast);
+	} else {
+		hud_armament_view = view_new (0, 48, 42, 204, grav_southeast);
+	}
 
-	view = view_new (0, 0, 42, 160, grav_northeast);
+	view = view_new (0, 0, 24, 160, grav_northeast);
 	view->draw = draw_hipnotic_weapons_hud;
 	view_add (hud_armament_view, view);
 
@@ -1457,9 +1460,14 @@ init_rogue_hud_views (void)
 
 	hud_view->resize_y = 1;
 
-	hud_armament_view = view_new (0, 48, 42, 236, grav_southeast);
+	if (vid.conheight < 284) {
+		hud_armament_view = view_new (0, min (vid.conheight - 192, 48),
+									  66, 192, grav_southeast);
+	} else {
+		hud_armament_view = view_new (0, 48, 42, 236, grav_southeast);
+	}
 
-	view = view_new (0, 0, 42, 192, grav_northeast);
+	view = view_new (0, 0, 24, 192, grav_northeast);
 	view->draw = draw_rogue_weapons_hud;
 	view_add (hud_armament_view, view);
 
