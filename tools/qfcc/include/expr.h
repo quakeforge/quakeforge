@@ -84,6 +84,7 @@ expr_t *new_block_expr (void);
 expr_t *new_binary_expr (int op, expr_t *e1, expr_t *e2);
 expr_t *new_unary_expr (int op, expr_t *e1);
 expr_t *new_temp_def_expr (type_t *type);
+expr_t *new_bind_expr (expr_t *e1, expr_t *e2);
 
 void inc_users (expr_t *e);
 

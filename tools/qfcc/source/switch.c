@@ -298,7 +298,7 @@ build_switch (expr_t *sw, case_node_t  *tree, int op, expr_t *sw_val,
 			branch->file = sw_val->file;
 			append_expr (sw, branch);
 		}
-		append_expr (sw, new_binary_expr ('b', temp, utemp));
+		append_expr (sw, new_bind_expr (temp, utemp));
 		test = binary_expr (GT, utemp, range);
 		test->line = sw_val->line;
 		test->file = sw_val->file;
@@ -357,7 +357,7 @@ switch_expr (switch_block_t *switch_block, expr_t *break_label,
 	default_expr->line = sw_val->line;
 	default_expr->file = sw_val->file;
 
-	append_expr (sw, binary_expr ('b', switch_block->test, sw_val));
+	append_expr (sw, new_bind_expr (switch_block->test, sw_val));
 
 	for (l = labels; *l; l++)
 		num_labels++;

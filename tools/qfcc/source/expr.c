@@ -365,6 +365,24 @@ new_temp_def_expr (type_t *type)
 }
 
 expr_t *
+new_bind_expr (expr_t *e1, expr_t *e2)
+{
+	expr_t     *e;
+
+	if (!e2 || e2->type != ex_temp) {
+		error (e1, "internal error");
+		abort ();
+	}
+	//e = new_binary_expr ('b', e1, e2);
+	e = new_expr ();
+	e->type = ex_expr;
+	e->e.expr.op = 'b';
+	e->e.expr.e1 = e1;
+	e->e.expr.e2 = e2;
+	return e;
+}
+
+expr_t *
 append_expr (expr_t *block, expr_t *e)
 {
 	if (block->type != ex_block)
@@ -867,11 +885,6 @@ binary_expr (int op, expr_t *e1, expr_t *e2)
 		check_initialized (e1);
 	check_initialized (e2);
 
-	if (e1->type != ex_block)
-		inc_users (e1);
-	if (e2->type != ex_block)
-		inc_users (e2);
-
 	if (op == '=' && e1->type == ex_def)
 		PR_DefInitialized (e1->e.def);
 
@@ -879,6 +892,7 @@ binary_expr (int op, expr_t *e1, expr_t *e2)
 		&& e2->type == ex_block && e2->e.block.is_call
 		&& e1->e.block.result) {
 		e = new_temp_def_expr (e1->e.block.result->e.def->type);
+		inc_users (e);
 		e1 = binary_expr ('=', e, e1);
 	}
 
@@ -1271,8 +1285,10 @@ function_expr (expr_t *e1, expr_t *e2)
 					                    arg_exprs[i][0]));
 	}
 	if (arg_expr_count) {
-		e = new_binary_expr ('b', arg_exprs[arg_expr_count - 1][0],
-							 arg_exprs[arg_expr_count - 1][1]);
+		e = new_bind_expr (arg_exprs[arg_expr_count - 1][0],
+						   arg_exprs[arg_expr_count - 1][1]);
+		inc_users (arg_exprs[arg_expr_count - 1][0]);
+		inc_users (arg_exprs[arg_expr_count - 1][1]);
 		append_expr (call, e);
 	}
 	e = new_binary_expr ('c', e1, args);
