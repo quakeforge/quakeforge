@@ -1934,8 +1934,11 @@ return_expr (function_t *f, expr_t *e)
 
 		if (e->type == ex_error)
 			return e;
-		if (f->def->type->aux_type == &type_void)
-			return error (e, "returning a value for a void function");
+		if (f->def->type->aux_type == &type_void) {
+			if (!options.traditional)
+				return error (e, "returning a value for a void function");
+			warning (e, "returning a value for a void function");
+		}
 		if (f->def->type->aux_type == &type_float && e->type == ex_integer) {
 			e->type = ex_float;
 			e->e.float_val = e->e.integer_val;
