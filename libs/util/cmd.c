@@ -2490,16 +2490,6 @@ Cmd_Threadstats_f (void)
 		Sys_Printf("%li\n", t->id);
 }
 
-/* Prints hash statistsics */
-void
-Cmd_Hash_Stats_f (void)
-{
-	Sys_Printf ("alias hash table:\n");
-	Hash_Stats (cmd_alias_hash);
-	Sys_Printf ("command hash table:\n");
-	Hash_Stats (cmd_hash);
-}
-
 /*
 	Cmd_Init_Hash
 
@@ -2559,8 +2549,6 @@ Cmd_Init (void)
 	Cmd_AddCommand ("killthread", Cmd_Killthread_f, "Kills thread with id $1");
 	Cmd_AddCommand ("threadstats", Cmd_Threadstats_f, "Shows statistics about threads");
 
-	//Cmd_AddCommand ("cmd_hash_stats", Cmd_Hash_Stats_f, "Display statistics "
-	//				"alias and command hash tables");
 	cmd_warncmd = Cvar_Get ("cmd_warncmd", "0", CVAR_NONE, NULL, "Toggles the "
 							"display of error messages for unknown commands");
 	cmd_maxloop = Cvar_Get ("cmd_maxloop", "0", CVAR_NONE, NULL, "Controls the "
