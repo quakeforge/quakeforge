@@ -1040,16 +1040,3 @@ SV_SpawnServer (const char *server)
 
 	Con_DPrintf ("Server spawned.\n");
 }
-
-void
-SV_Error (const char *error, ...)
-{
-	va_list     argptr;
-	static char string[1024];
-
-	va_start (argptr, error);
-	vsnprintf (string, sizeof (string), error, argptr);
-	va_end (argptr);
-
-	Host_Error ("%s", string);
-}

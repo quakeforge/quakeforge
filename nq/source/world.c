@@ -42,6 +42,7 @@ static const char rcsid[] =
 #include "QF/clip_hull.h"
 #include "QF/console.h"
 #include "QF/crc.h"
+#include "QF/sys.h"
 
 #include "compat.h"
 #include "server.h"
@@ -166,12 +167,12 @@ SV_HullForEntity (edict_t *ent, const vec3_t mins, const vec3_t maxs,
 	} if (SVfloat (ent, solid) == SOLID_BSP) {
 		// explicit hulls in the BSP model
 		if (SVfloat (ent, movetype) != MOVETYPE_PUSH)
-			SV_Error ("SOLID_BSP without MOVETYPE_PUSH");
+			Sys_Error ("SOLID_BSP without MOVETYPE_PUSH");
 
 		model = sv.models[(int) SVfloat (ent, modelindex)];
 
 		if (!model || model->type != mod_brush)
-			SV_Error ("SOLID_BSP with a non bsp model");
+			Sys_Error ("SOLID_BSP with a non bsp model");
 
 		hull = &model->hulls[hull_index];
 	}
@@ -419,7 +420,7 @@ SV_HullPointContents (hull_t *hull, int num, const vec3_t p)
 
 	while (num >= 0) {
 		if (num < hull->firstclipnode || num > hull->lastclipnode)
-			SV_Error ("SV_HullPointContents: bad node number");
+			Sys_Error ("SV_HullPointContents: bad node number");
 
 		node = hull->clipnodes + num;
 		plane = hull->planes + node->planenum;
@@ -641,7 +642,7 @@ SV_ClipToLinks (areanode_t *node, moveclip_t * clip)
 		if (touch == clip->passedict)
 			continue;
 		if (SVfloat (touch, solid) == SOLID_TRIGGER)
-			SV_Error ("Trigger in clipping list");
+			Sys_Error ("Trigger in clipping list");
 
 		if (clip->type == MOVE_NOMONSTERS && SVfloat (touch, solid)
 			!= SOLID_BSP)

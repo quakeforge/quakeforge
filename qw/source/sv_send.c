@@ -363,7 +363,7 @@ SV_Multicast (const vec3_t origin, int to)
 
 	default:
 		mask = NULL;
-		SV_Error ("SV_Multicast: bad to:%i", to);
+		Sys_Error ("SV_Multicast: bad to:%i", to);
 	}
 
 	// send the data to all relevent clients
@@ -425,13 +425,13 @@ SV_StartSound (edict_t *entity, int channel, const char *sample, int volume,
 	vec3_t      origin;
 
 	if (volume < 0 || volume > 255)
-		SV_Error ("SV_StartSound: volume = %i", volume);
+		Sys_Error ("SV_StartSound: volume = %i", volume);
 
 	if (attenuation < 0 || attenuation > 4)
-		SV_Error ("SV_StartSound: attenuation = %f", attenuation);
+		Sys_Error ("SV_StartSound: attenuation = %f", attenuation);
 
 	if (channel < 0 || channel > 15)
-		SV_Error ("SV_StartSound: channel = %i", channel);
+		Sys_Error ("SV_StartSound: channel = %i", channel);
 
 	// find precache number for sound
 	for (sound_num = 1; sound_num < MAX_SOUNDS

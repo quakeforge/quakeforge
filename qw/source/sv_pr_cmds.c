@@ -41,6 +41,7 @@ static const char rcsid[] =
 #include "QF/cmd.h"
 #include "QF/cvar.h"
 #include "QF/msg.h"
+#include "QF/sys.h"
 #include "QF/va.h"
 
 #include "compat.h"
@@ -76,7 +77,7 @@ PF_error (progs_t *pr)
 	ed = PROG_TO_EDICT (pr, *sv_globals.self);
 	ED_Print (pr, ed);
 
-	SV_Error ("Program error");
+	Sys_Error ("Program error");
 }
 
 /*
@@ -100,7 +101,7 @@ PF_objerror (progs_t *pr)
 	ED_Print (pr, ed);
 	ED_Free (pr, ed);
 
-	SV_Error ("Program error");
+	Sys_Error ("Program error");
 }
 
 /*
@@ -999,7 +1000,7 @@ WriteDest (progs_t *pr)
 		return &sv.datagram;
 
 	case MSG_ONE:
-		SV_Error ("Shouldn't be at MSG_ONE");
+		Sys_Error ("Shouldn't be at MSG_ONE");
 #if 0
 		ent = PROG_TO_EDICT (pr, *sv_globals.msg_entity);
 		entnum = NUM_FOR_EDICT (pr, ent);

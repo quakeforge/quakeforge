@@ -32,6 +32,7 @@ static const char rcsid[] =
 #endif
 
 #include "QF/cvar.h"
+#include "QF/sys.h"
 
 #include "pmove.h"
 #include "server.h"
@@ -274,7 +275,7 @@ SV_FlyMove (edict_t *ent, float time, trace_t *steptrace)
 			break;						// moved the entire distance
 
 		if (!trace.ent)
-			SV_Error ("SV_FlyMove: !trace.ent");
+			Sys_Error ("SV_FlyMove: !trace.ent");
 
 		if (trace.plane.normal[2] > 0.7) {
 			blocked |= 1;				// floor
@@ -870,7 +871,7 @@ SV_RunEntity (edict_t *ent)
 		SV_Physics_Toss (ent);
 		break;
 	default:
-		SV_Error ("SV_Physics: bad movetype %i", (int) SVfloat (ent,
+		Sys_Error ("SV_Physics: bad movetype %i", (int) SVfloat (ent,
 																movetype));
 	}
 }

@@ -422,7 +422,6 @@ extern	const char *client_info_filters[];
 //===========================================================
 // FIXME: declare exported functions in their own relevant .h
 
-void SV_Error (const char *error, ...) __attribute__((format(printf,1,2)));
 void SV_Init (void);
 void SV_Progs_Init (void);
 void SV_Progs_Init_Cvars (void);

@@ -41,6 +41,7 @@ static const char rcsid[] =
 #include "QF/cvar.h"
 #include "QF/info.h"
 #include "QF/msg.h"
+#include "QF/sys.h"
 #include "QF/va.h"
 #include "QF/vfs.h"
 
@@ -70,7 +71,7 @@ SV_ModelIndex (const char *name)
 		if (!strcmp (sv.model_precache[i], name))
 			return i;
 	if (i == MAX_MODELS || !sv.model_precache[i])
-		SV_Error ("SV_ModelIndex: model %s not precached", name);
+		Sys_Error ("SV_ModelIndex: model %s not precached", name);
 	return i;
 }
 
@@ -86,7 +87,7 @@ SV_FlushSignon (void)
 		return;
 
 	if (sv.num_signon_buffers == MAX_SIGNON_BUFFERS - 1)
-		SV_Error ("sv.num_signon_buffers == MAX_SIGNON_BUFFERS-1");
+		Sys_Error ("sv.num_signon_buffers == MAX_SIGNON_BUFFERS-1");
 
 	sv.signon_buffer_size[sv.num_signon_buffers - 1] = sv.signon.cursize;
 	sv.signon.data = sv.signon_buffers[sv.num_signon_buffers];

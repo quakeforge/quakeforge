@@ -65,6 +65,7 @@ static const char rcsid[] =
 #include "compat.h"
 
 static void Sys_StdPrintf (const char *fmt, va_list args);
+static void Sys_ErrPrintf (const char *fmt, va_list args);
 
 cvar_t     *sys_nostdout;
 cvar_t     *sys_extrasleep;
@@ -73,7 +74,8 @@ cvar_t     *sys_sleep;
 
 int         sys_checksum;
 
-static sys_printf_t sys_printf_function = Sys_StdPrintf;
+static sys_printf_t sys_std_printf_function = Sys_StdPrintf;
+static sys_printf_t sys_err_printf_function = Sys_ErrPrintf;
 
 typedef struct shutdown_list_s {
 	struct shutdown_list_s *next;
@@ -169,28 +171,50 @@ Sys_FileTime (const char *path)
 	actual implementation of Sys_Printf.
 */
 void
-Sys_SetPrintf (sys_printf_t func)
+Sys_SetStdPrintf (sys_printf_t func)
 {
-	sys_printf_function = func;
+	sys_std_printf_function = func;
+}
+
+void
+Sys_SetErrPrintf (sys_printf_t func)
+{
+	sys_err_printf_function = func;
+}
+
+void
+Sys_Print (FILE *stream, const char *fmt, va_list args)
+{
+	char        msg[MAXPRINTMSG];
+	unsigned char *p;
+
+	vsnprintf (msg, sizeof (msg), fmt, args);
+
+#ifdef WIN32
+	if (stream == stderr)
+		MessageBox (NULL, string, "Error", 0 /* MB_OK */ );
+#endif
+
+	/* translate to ASCII instead of printing [xx]  --KB */
+	for (p = (unsigned char *) msg; *p; p++)
+		putc (sys_char_map[*p], stream);
+
+	fflush (stream);
 }
 
 static void
 Sys_StdPrintf (const char *fmt, va_list args)
 {
-	char        msg[MAXPRINTMSG];
-
-	unsigned char *p;
-
 	if (sys_nostdout && sys_nostdout->int_val)
 		return;
+	Sys_Print (stdout, fmt, args);
+}
 
-	vsnprintf (msg, sizeof (msg), fmt, args);
-
-	/* translate to ASCII instead of printing [xx]  --KB */
-	for (p = (unsigned char *) msg; *p; p++)
-		putc (sys_char_map[*p], stdout);
-
-	fflush (stdout);
+static void
+Sys_ErrPrintf (const char *fmt, va_list args)
+{
+	fprintf (stderr, "Fatal Error: ");
+	Sys_Print (stderr, fmt, args);
 }
 
 void
@@ -198,7 +222,7 @@ Sys_Printf (const char *fmt, ...)
 {
 	va_list     args;
 	va_start (args, fmt);
-	sys_printf_function (fmt, args);
+	sys_std_printf_function (fmt, args);
 	va_end (args);
 }
 
@@ -210,7 +234,7 @@ Sys_DPrintf (const char *fmt, ...)
 	if (!developer || !developer->int_val)
 		return;
 	va_start (args, fmt);
-	sys_printf_function (fmt, args);
+	sys_std_printf_function (fmt, args);
 	va_end (args);
 }
 
@@ -326,16 +350,10 @@ void
 Sys_Error (const char *error, ...)
 {
 	va_list     argptr;
-	char        string[1024];
 
 	va_start (argptr, error);
-	vsnprintf (string, sizeof (string), error, argptr);
+	sys_err_printf_function (error, argptr);
 	va_end (argptr);
-
-#ifdef WIN32
-	MessageBox (NULL, string, "Error", 0 /* MB_OK */ );
-#endif
-	fprintf (stderr, "Fatal error: %s\n", string);
 
 	run_shutdown_list ();
 

@@ -232,26 +232,21 @@ SV_Shutdown (void)
 	then exits
 */
 void
-SV_Error (const char *error, ...)
+SV_Error (const char *error, va_list argptr)
 {
-	va_list     argptr;
 	static char string[1024];
 	static qboolean inerror = false;
 
 	if (inerror)
-		Sys_Error ("SV_Error: recursively entered (%s)", string);
+		return;
 
 	inerror = true;
 
-	va_start (argptr, error);
 	vsnprintf (string, sizeof (string), error, argptr);
-	va_end (argptr);
-
-	SV_Printf ("SV_Error: %s\n", string);
 
 	SV_FinalMessage (va ("server crashed: %s\n", string));
 
-	Sys_Error ("SV_Error: %s\n", string);
+	Sys_Print (stderr, error, argptr);
 }
 
 /*
@@ -2422,7 +2417,8 @@ SV_Init (void)
 								  CVAR_ROM, 0, "Plugin used for the console");
 	PI_RegisterPlugins (server_plugin_list);
 	Con_Init (sv_console_plugin->string);
-	Sys_SetPrintf (SV_Print);
+	Sys_SetStdPrintf (SV_Print);
+	Sys_SetErrPrintf (SV_Error);
 
 	COM_Filesystem_Init_Cvars ();
 	Game_Init_Cvars ();
@@ -2476,5 +2472,5 @@ SV_Init (void)
 	if (sv.state == ss_dead)
 		Cmd_ExecuteString ("map start", src_command);
 	if (sv.state == ss_dead)
-		SV_Error ("Could not initialize server");
+		Sys_Error ("Could not initialize server");
 }

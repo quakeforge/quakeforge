@@ -58,7 +58,7 @@ Con_Init (const char *plugin_name)
 	con_module = PI_LoadPlugin ("console", plugin_name);
 	if (con_module) {
 		con_module->functions->general->p_Init ();
-		Sys_SetPrintf (con_module->functions->console->pC_Print);
+		Sys_SetStdPrintf (con_module->functions->console->pC_Print);
 	} else {
 		setvbuf (stdout, 0, _IOLBF, BUFSIZ);
 	}
