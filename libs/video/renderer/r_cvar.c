@@ -37,6 +37,7 @@ static const char rcsid[] =
 #endif
 
 #include "QF/cvar.h"
+#include "QF/model.h"
 
 #include "r_cvar.h"
 #include "r_dynamic.h"
@@ -144,6 +145,21 @@ static void
 r_particles_max_f (cvar_t *var)
 {
 	R_MaxParticlesCheck (r_particles, var);
+}
+
+static void
+r_lightmap_components_f (cvar_t *var)
+{
+	switch (var->int_val) {
+		case 1:
+			mod_lightmap_bytes = 1;
+			break;
+		case 3:
+		case 4:
+		default:
+			mod_lightmap_bytes = 3;
+			break;
+	}
 }
 
 void
@@ -278,7 +294,8 @@ R_Init_Cvars (void)
 							  "Set the number of lines displayed in the "
 							  "various graphs");
 	r_lightmap_components = Cvar_Get ("r_lightmap_components", "3", CVAR_ROM,
-									  NULL, "Lightmap texture components. 1 "
+									  r_lightmap_components_f,
+									  "Lightmap texture components. 1 "
 									  "is greyscale, 3 is RGB, 4 is RGBA.");
 	r_maxedges = Cvar_Get ("r_maxedges", "0", CVAR_NONE, NULL,
 						   "Sets the maximum number of edges");

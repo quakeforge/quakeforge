@@ -482,4 +482,6 @@ extern char loadname[32];
 extern byte *mod_base;
 extern byte mod_novis[MAX_MAP_LEAFS / 8];
 
+extern int mod_lightmap_bytes;
+
 #endif	// _MODEL_H

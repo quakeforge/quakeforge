@@ -35,7 +35,7 @@ static const char rcsid[] =
 #include "QF/cvar.h"
 #include "QF/model.h"
 
-const int   mod_lightmap_bytes = 1;
+int         mod_lightmap_bytes = 1;
 
 void Mod_LoadBrushModel (model_t *mod, void *buffer);
 
