@@ -44,7 +44,7 @@ typedef enum {
 
 	K_BACKSPACE = 127,
 
-	K_CAPSLOCK,
+	K_CAPSLOCK = 256,
 	K_PRNTSCR,
 	K_SCRLCK,
 	K_PAUSE,
@@ -105,7 +105,7 @@ typedef enum {
 //
 // mouse buttons generate virtual keys
 //
-	K_MOUSE1 = 200,
+	K_MOUSE1,
 	K_MOUSE2,
 	K_MOUSE3,
 
@@ -157,7 +157,10 @@ typedef enum {
 // JACK: Intellimouse(c) Mouse Wheel Support
 
 	K_MWHEELUP,
-	K_MWHEELDOWN
+	K_MWHEELDOWN,
+
+// keys count
+	K_NUM_KEYS,
 } keynum_t;
 
 typedef struct
@@ -171,8 +174,8 @@ typedef struct
 typedef enum {key_game, key_console, key_message, key_menu, key_none} keydest_t;
 
 extern keydest_t	key_dest;
-extern char *keybindings[256];
-extern	int		key_repeats[256];
+extern char *keybindings[K_NUM_KEYS];
+extern	int		key_repeats[K_NUM_KEYS];
 extern	int		key_lastpress;
 
 extern char chat_buffer[];
