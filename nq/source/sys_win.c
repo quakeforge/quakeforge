@@ -32,7 +32,6 @@ static __attribute__ ((unused)) const char rcsid[] =
 	"$Id$";
 
 #include "winquake.h"
-#include "conproc.h"
 #include "win32/resources/resource.h"
 
 #include "QF/console.h"
@@ -66,9 +65,6 @@ HANDLE      hinput, houtput;
 static const char tracking_tag[] = "Clams & Mooses";
 
 static HANDLE tevent;
-static HANDLE hFile;
-static HANDLE heventParent;
-static HANDLE heventChild;
 
 // FILE IO ====================================================================
 
@@ -137,12 +133,6 @@ shutdown (void)
 {
 	if (tevent)
 		CloseHandle (tevent);
-
-	if (isDedicated)
-		FreeConsole ();
-
-	// shut down QHOST hooks if necessary
-	DeinitConProc ();
 }
 
 // WINDOWS CRAP ===============================================================
@@ -166,7 +156,6 @@ WinMain (HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine,
 	double      time, oldtime, newtime;
 	MEMORYSTATUS lpBuffer;
 	static char cwd[1024];
-	int         t;
 	RECT        rect;
 
 	// previous instances do not exist in Win32
@@ -238,33 +227,6 @@ WinMain (HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine,
 
 	if (!tevent)
 		Sys_Error ("Couldn't create event");
-
-	if (isDedicated) {
-		if (!AllocConsole ()) {
-			Sys_Error ("Couldn't create dedicated server console");
-		}
-
-		hinput = GetStdHandle (STD_INPUT_HANDLE);
-		houtput = GetStdHandle (STD_OUTPUT_HANDLE);
-
-		// give QHOST a chance to hook into the console
-		if ((t = COM_CheckParm ("-HFILE")) > 0) {
-			if (t < com_argc)
-				hFile = (HANDLE) atoi (com_argv[t + 1]);
-		}
-
-		if ((t = COM_CheckParm ("-HPARENT")) > 0) {
-			if (t < com_argc)
-				heventParent = (HANDLE) atoi (com_argv[t + 1]);
-		}
-
-		if ((t = COM_CheckParm ("-HCHILD")) > 0) {
-			if (t < com_argc)
-				heventChild = (HANDLE) atoi (com_argv[t + 1]);
-		}
-
-		InitConProc (hFile, heventParent, heventChild);
-	}
 
 	Host_Init ();
 

@@ -228,7 +228,7 @@ nq_wgl_libs=  \
 			$(opengl_QFLIBS) \
 			$(top_builddir)/libs/video/targets/libQFwgl.la \
 			$(client_LIBS)
-nq_wgl_SOURCES= 	conproc.c sys_win.c
+nq_wgl_SOURCES= 	sys_win.c
 nq_wgl_LDADD=		$(nq_wgl_libs) -lgdi32 -lcomctl32 -lwinmm $(NET_LIBS)
 nq_wgl_LDFLAGS= 	$(common_ldflags)
 nq_wgl_DEPENDENCIES=	$(nq_wgl_libs)
