@@ -118,6 +118,14 @@ C_ExecLine (const char *line)
 	Cbuf_AddText (line);
 }
 
+static inline void
+draw_fun_char (WINDOW *win, byte c)
+{
+	chtype      ch = c;
+	ch = sys_char_map[ch] | attr_table[attr_map[ch]];
+	waddch (win, ch);
+}
+
 static void
 C_DrawOutput (void)
 {
@@ -156,11 +164,8 @@ C_DrawOutput (void)
 				text = l->text + l->len - 1;
 			}
 		}
-		while (len--) {
-			chtype      ch = *text++;
-			ch = sys_char_map[ch] | attr_table[attr_map[ch]];
-			waddch (output, ch);
-		}
+		while (len--)
+			draw_fun_char (output, *text++);
 	} while (cur_line < output_buffer->cur_line);
 	//wrefresh (stdscr);
 	wrefresh (output);
@@ -244,7 +249,7 @@ C_Init (void)
 		init_pair (4, COLOR_YELLOW, COLOR_BLUE);
 		init_pair (5, COLOR_CYAN, COLOR_BLACK);
 
-		scrollok (output, FALSE);
+		scrollok (output, TRUE);
 		leaveok (output, TRUE);
 
 		scrollok (status, FALSE);
@@ -314,7 +319,9 @@ C_Print (const char *fmt, va_list args)
 #ifdef HAVE_CURSES_H
 	if (use_curses) {
 		Con_BufferAddText (output_buffer, buffer);
-		C_DrawOutput ();
+		while (*txt)
+			draw_fun_char (output, *txt++);
+		wrefresh (output);
 		wrefresh (input);	// move the screen cursor back to the input line
 	} else
 #endif
