@@ -224,7 +224,8 @@ GIB_Parse_Tokens (const char *program, unsigned int *i, unsigned int pofs, gib_t
 	unsigned int tstart, start;
 	gib_tree_t *nodes = 0, *cur, *new, *embs = 0, *tmp;
 	gib_tree_t **node = &nodes;
-	qboolean    cat = false;
+	enum {CAT_NORMAL = 0, CAT_DISALLOW, CAT_CONCAT} cat = CAT_DISALLOW;
+	const char *catestr = "Comma found before first argument, nothing to concatenate to.";
 
 	gib_parse_error = false;
 
@@ -234,10 +235,15 @@ GIB_Parse_Tokens (const char *program, unsigned int *i, unsigned int pofs, gib_t
 			(*i)++;
 		// Check for concatenation, skip comma and any more whitespace
 		if (program[*i] == ',') {
-			cat = true;
+			if (cat == CAT_DISALLOW) {
+				GIB_Parse_Error(catestr, *i + pofs);
+				goto ERROR;
+			}
+			cat = CAT_CONCAT;
 			(*i)++;
 			continue;
-		}
+		} else
+			cat = CAT_NORMAL;
 		// New line/command?
 		if (!program[*i] || program[*i] == '\n' || program[*i] == ';')
 			break;
@@ -290,6 +296,12 @@ GIB_Parse_Tokens (const char *program, unsigned int *i, unsigned int pofs, gib_t
 		str = calloc (*i - tstart + 1, sizeof (char));
 		memcpy (str, program + tstart, *i - tstart);
 		if (cur->delim == '{') {
+			if (cat == CAT_CONCAT) {
+				GIB_Parse_Error ("Program blocks may not be concatenated with other arguments.", start + pofs);
+				goto ERROR;
+			}
+			catestr = "Program blocks may not be concatenated with other arguments.";
+			cat = CAT_DISALLOW;
 			// Try to parse sub-program
 			if (!(new = GIB_Parse_Lines (str, tstart + pofs)))
 				goto ERROR;
@@ -315,7 +327,13 @@ GIB_Parse_Tokens (const char *program, unsigned int *i, unsigned int pofs, gib_t
 			}
 			// Check for array splitting
 			// Concatenating this onto something else is non-sensical
-			if (cur->delim == ' ' && (str[0] == '@' || str[0] == '%') && !cat) {
+			if (cur->delim == ' ' && (str[0] == '@' || str[0] == '%')) {
+				if (cat == CAT_CONCAT) {
+					GIB_Parse_Error ("Variable expansions may not be concatenated with other arguments.", start + pofs);
+					goto ERROR;
+				}
+				catestr = "Variable expansions may not be concatenated with other arguments.";
+				cat = CAT_DISALLOW;
 				cur->flags |= TREE_A_EXPAND;
 			}
 			// We can handle escape characters now
@@ -323,10 +341,8 @@ GIB_Parse_Tokens (const char *program, unsigned int *i, unsigned int pofs, gib_t
 			GIB_Process_Escapes (str);
 		cur->str = str;
 
-		if (cat) {
+		if (cat == CAT_CONCAT)
 			cur->flags |= TREE_A_CONCAT;
-			cat = false;
-		}
 		// Nothing left to parse?
 		if (!program[*i])
 			break;

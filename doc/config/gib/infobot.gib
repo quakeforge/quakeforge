@@ -27,20 +27,10 @@ domain infobot
 
 global rcsid = "$Id$"
 
-global facts addr_cmds cmds
-global botname = "Console"
-
-// Set up some cvars if they aren't already
-ifnot $infobot_restrict {
-	set infobot_restrict 0
-}
-
-ifnot $(length $infobot_password) {
-	set infobot_password ""
-}
+global facts addr_cmds cmds current_file
 
 function infobot::makeKey {
-	return $(regex::replace $args[1] \. -- \_)_
+	return $(regex::replace $args[1] "\." -- "\_")_
 }
 
 function infobot::hasAccess {
@@ -48,12 +38,44 @@ function infobot::hasAccess {
 }
 
 function infobot::defineFactoid {
-	if (!$infobot_restrict || $(infobot::hasAccess $args[1])) {
+	if (!$infobot_restrict_factoids || $(infobot::hasAccess $args[1])) {
 		key = $(infobot::makeKey $args[2])
-		facts.$key = @args[3:]
+		// Filter out newlines/carriage returns
+		if ${facts.${key}[2]} {
+			return -2
+		}
+		facts.${key}[0] = $(regex::replace $args[3] "[\n\r]" g "")
+		facts.${key}[1] = @args[4:]
 		return 0
 	}
 	return -1
+}
+
+function infobot::factToString {
+	local out
+	for i in @args[1:] {
+		out = $out, $i, "\255"
+	}
+	return $out
+}
+
+function infobot::saveFactoids {
+	local output = ""
+	// Build up output to write to a file
+	for fact in %facts {
+		output = $output, $fact, "\255", $(infobot::factToString @facts.$fact), "\n"
+	}
+	file::write $args[1],".fct" $output
+}
+
+function infobot::loadFactoids {
+	delete facts
+	global facts
+	for line in $(split $(file::read $args[1],".fct") "\n") {
+		fact = $(split $line "\255")
+		facts.${fact[0]} = @fact[1:]
+	}
+	current_file = $args[1]
 }
 
 function infobot::chatEvent {
@@ -67,7 +89,7 @@ function infobot::chatEvent {
 	local res
 	
 	// see if we are being addressed by name
-	res = $(regex::extract $mesg $botname, "[:,][[:space:]]+(.+)" i)
+	res = $(regex::extract $mesg $infobot_name, "[:,][[:space:]]+(.+)" i)
 	if #res {
 		mesg = $res[2]
 		local addr = 1
@@ -91,10 +113,15 @@ function infobot::chatEvent {
 	}
 	res = $(regex::extract $mesg "^([^[:space:]]+)[[:space:]]+(is|are)[[:space:]]+(.+)" i)
 	if #res {
-		if ($(infobot::defineFactoid $args[1] $res[2] $res[4] $res[3]) && $addr) {
-			say $from, ": You do not have the privileges to alter factoids."
-		} else if $addr {
-			say $from, ": Understood."
+		res = $(infobot::defineFactoid $args[1] $res[2] $res[4] $res[3])
+		if $addr {
+			if ($res == -1) {
+				say $from, ": You do not have the privileges to alter factoids."
+			} else if ($res == -2) {
+				say $from, ": That factoid is locked."
+			} else {
+				say $from, ": Understood."
+			}
 		}
 		return
 	}
@@ -119,8 +146,8 @@ function infobot::cmdRegister {
 	cmds.$args[1] = $args[2]
 }
 
-function infobot::forget {
-	ifnot (!$infobot_restrict || $(infobot::hasAccess $args[1])) {
+function infobot::forgetFactoid {
+	if ($infobot_restrict_factoids && !$(infobot::hasAccess $args[1])) {
 		say $args[2], ": You do not have the privileges to alter factoids."
 		return
 	}
@@ -133,10 +160,76 @@ function infobot::forget {
 	}
 }
 
+function infobot::lockFactoid {
+	ifnot $(infobot::hasAccess $args[1]) {
+		say $args[2], ": You do not have the privileges to lock factoids."
+		return
+	}
+	fact = $(infobot::makeKey $args[3])
+	ifnot #{facts.$fact} {
+		say $args[2], ": No such factoid exists."
+		return
+	}
+	facts.${fact}[2] = 1
+	say $args[2], ": \"", $args[3], "\" is now locked."
+}
+
+function infobot::unlockFactoid {
+	ifnot $(infobot::hasAccess $args[1]) {
+		say $args[2], ": You do not have the privileges to unlock factoids."
+		return
+	}
+	fact = $(infobot::makeKey $args[3])
+	ifnot #{facts.$fact} {
+		say $args[2], ": No such factoid exists."
+		return
+	}
+	facts.${fact}[2] = 0
+	say $args[2], ": \"", $args[3], "\" is now unlocked."
+}
+
 function infobot::stats {
 	say $args[2], ": I currently reference ", $(count %facts), " factoid(s) and ", ($(count %cmds) + $(count %addr_cmds)), " command(s)."
 }
 
+function infobot::syncFactoids {
+	ifnot $(infobot::hasAccess $args[1]) {
+		say $args[2], ": You do not have syncing privileges."
+		return
+	}
+	if #args[3] {
+		file = $args[3]
+	} else {
+		file = $current_file
+	}
+	infobot::saveFactoids $file
+	say $args[2], ": Factoids successfully synced to file ", $file, ".fct."
+}
+
+// These are useful to the admin
+function::export infobot::saveFactoids infobot::loadFactoids
+
 event::register chat infobot::chatEvent
-infobot::cmdAddrRegister "forget" infobot::forget
+infobot::cmdAddrRegister "forget" infobot::forgetFactoid
+infobot::cmdAddrRegister "lock" infobot::lockFactoid
+infobot::cmdAddrRegister "unlock" infobot::unlockFactoid
 infobot::cmdAddrRegister "infostats" infobot::stats
+infobot::cmdAddrRegister "sync" infobot::syncFactoids
+
+// Set default values
+ifnot $(length $infobot_restrict_factoids) {
+	set infobot_restrict_factoids 0
+}
+
+ifnot $(length $infobot_password) {
+	set infobot_password "hackme"
+}
+
+ifnot $(length $infobot_name) {
+	set infobot_name "Console"
+}
+
+// Try to load a default factoids file
+if $(contains "default.fct" $(file::find *.fct)) {
+	infobot::loadFactoids "default"
+}

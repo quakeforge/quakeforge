@@ -84,7 +84,9 @@ GIB_Execute_Split_Var (cbuf_t * cbuf)
 	char       *c, *str = cbuf->args->argv[cbuf->args->argc - 1]->str + 1;
 	void       *m = cbuf->args->argm[cbuf->args->argc - 1];
 
-	i = strlen (str) - 1;
+	i = strlen (str);
+	if (i)
+		i--;
 	if (str[-1] == '@') {
 		if (str[i] == ']')
 			for (; i; i--)
@@ -229,15 +231,15 @@ GIB_Execute (cbuf_t * cbuf)
 				g->ip = g->ip->next;
 				continue;
 			case TREE_T_CMD:
+				if (g->ip->flags & TREE_L_EMBED) {
+					// Get ready for return values
+					g->waitret = true;
+					GIB_Buffer_Push_Sstack (cbuf);
+				} else
+					g->waitret = false;
 				if (GIB_Execute_Prepare_Line (cbuf, g->ip))
 					return;
 				else if (cbuf->args->argc) {
-					if (g->ip->flags & TREE_L_EMBED) {
-						// Get ready for return values
-						g->waitret = true;
-						GIB_Buffer_Push_Sstack (cbuf);
-					} else
-						g->waitret = false;
 					if ((b = GIB_Builtin_Find (cbuf->args->argv[0]->str)))
 						b->func ();
 					else if ((f = GIB_Function_Find (cbuf->args->argv[0]->str))) {
@@ -254,8 +256,8 @@ GIB_Execute (cbuf_t * cbuf)
 					}
 					if (cbuf->state)
 						return;
-					g->ip = g->ip->next;
 				}
+				g->ip = g->ip->next;
 				continue;
 			default:
 				GIB_Error ("QUAKEFORGE-BUG-PLEASE-REPORT", "Unknown instruction type; tastes like chicken.");
