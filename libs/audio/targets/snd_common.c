@@ -1,8 +1,7 @@
 /*
-	snd_null.c
+	snd_common.c
 
-	include this instead of all the other snd_* files to have no sound
-	code whatsoever
+	common externally visible sound variables
 
 	Copyright (C) 1996-1997  Id Software, Inc.
 	Copyright (C) 1999,2000  contributors of the QuakeForge project
@@ -32,10 +31,6 @@
 #include "QF/qtypes.h"
 #include "QF/sound.h"
 
-// =======================================================================
-// Various variables also defined in snd_dma.c
-// FIXME - should be put in one place
-// =======================================================================
 channel_t   channels[MAX_CHANNELS];
 int         total_channels;
 volatile dma_t *shm = 0;
