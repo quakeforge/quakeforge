@@ -525,6 +525,13 @@ open_file (searchpath_t *search, const char *filename, QFile **gzfile,
 			return com_filesize;
 		}
 	} else {
+		// sanity check the strings
+		if (strnlen (search->filename, sizeof (netpath))
+			+ strnlen (filename, sizeof (netpath)) + 2 > sizeof (netpath))
+			Sys_Error ("open_file: search->filename and/or filename "
+					   "bogus: `%.*s'  `%.*s'",
+					   (int) sizeof (netpath), search->filename,
+					   (int) sizeof (netpath), filename);
 		// check a file in the directory tree
 		snprintf (netpath, sizeof (netpath), "%s%s%s", search->filename,
 				  search->filename[0] ? "/" : "", filename);
