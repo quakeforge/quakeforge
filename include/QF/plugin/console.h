@@ -57,6 +57,7 @@ typedef struct console_data_s {
 	double				*realtime;
 	int					force_commandline;
 	int					ormask;
+	void				(*quit)(void);
 } console_data_t;
 
 #endif // __QF_plugin_console_h_

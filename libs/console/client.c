@@ -560,7 +560,7 @@ DrawInputLine (int x, int y, inputline_t *il)
 static void
 DrawInput (void)
 {
-	if (key_dest != key_console && !con_data.force_commandline)
+	if (key_dest != key_console)// && !con_data.force_commandline)
 		return;				// don't draw anything (always draw if not active)
 
 	DrawInputLine (8, con_vislines - 22, input_line);

@@ -40,6 +40,7 @@ static const char rcsid[] =
 #include "QF/plugin.h"
 #include "QF/progs.h"
 #include "QF/render.h"
+#include "QF/sys.h"
 #include "QF/vfs.h"
 
 typedef struct menu_pic_s {
@@ -58,6 +59,7 @@ typedef struct menu_item_s {
 	func_t      func;
 	func_t      cursor;
 	func_t      keyevent;
+	func_t      draw;
 	const char *text;
 	menu_pic_t *pics;
 } menu_item_t;
@@ -66,8 +68,7 @@ static progs_t  menu_pr_state;
 static menu_item_t *menu;
 static hashtab_t *menu_hash;
 static func_t   menu_init;
-static func_t   menu_keyevent;
-static func_t   menu_draw;
+static func_t   menu_quit;
 static const char *top_menu;
 
 static int
@@ -79,10 +80,6 @@ menu_resolve_globals (void)
 	if (!(f = ED_FindFunction (&menu_pr_state, sym = "menu_init")))
 		goto error;
 	menu_init = (func_t)(f - menu_pr_state.pr_functions);
-	if ((f = ED_FindFunction (&menu_pr_state, "menu_keyevent")))
-		menu_keyevent = (func_t)(f - menu_pr_state.pr_functions);
-	if ((f = ED_FindFunction (&menu_pr_state, "menu_draw")))
-		menu_draw = (func_t)(f - menu_pr_state.pr_functions);
 	return 1;
 error:
 	Con_Printf ("%s: undefined function %s\n", menu_pr_state.progs_name, sym);
@@ -143,10 +140,16 @@ bi_Menu_Begin (progs_t *pr)
 	m->text = strdup (text);
 	if (menu)
 		menu_add_item (menu, m);
-	else
-		top_menu = m->text;
 	menu = m;
 	Hash_Add (menu_hash, m);
+}
+
+static void
+bi_Menu_Draw (progs_t *pr)
+{
+	func_t      func = G_FUNCTION (pr, OFS_PARM0);
+
+	menu->draw = func;
 }
 
 static void
@@ -225,12 +228,57 @@ bi_Menu_End (progs_t *pr)
 }
 
 static void
+bi_Menu_TopMenu (progs_t *pr)
+{
+	const char *name = G_STRING (pr, OFS_PARM0);
+
+	if (top_menu)
+		free ((char*)top_menu);
+	top_menu = strdup (name);
+}
+
+static void
+bi_Menu_SelectMenu (progs_t *pr)
+{
+	const char *name = G_STRING (pr, OFS_PARM0);
+
+	menu = Hash_Find (menu_hash, name);
+}
+
+static void
+bi_Menu_SetQuit (progs_t *pr)
+{
+	func_t      func = G_FUNCTION (pr, OFS_PARM0);
+
+	menu_quit = func;
+}
+
+static void
+bi_Menu_Quit (progs_t *pr)
+{
+	if (con_data.quit)
+		con_data.quit ();
+	Sys_Quit ();
+}
+
+static void
 togglemenu_f (void)
 {
 	if (menu)
 		Menu_Leave ();
 	else
 		Menu_Enter ();
+}
+
+static void
+quit_f (void)
+{
+	if (menu_quit) {
+		PR_ExecuteProgram (&menu_pr_state, menu_quit);
+		if (!G_INT (&menu_pr_state, OFS_RETURN))
+			return;
+	}
+	bi_Menu_Quit (&menu_pr_state);
 }
 
 void
@@ -241,17 +289,23 @@ Menu_Init (void)
 	menu_hash = Hash_NewTable (61, menu_get_key, menu_free, 0);
 
 	PR_AddBuiltin (&menu_pr_state, "Menu_Begin", bi_Menu_Begin, -1);
+	PR_AddBuiltin (&menu_pr_state, "Menu_Draw", bi_Menu_Draw, -1);
 	PR_AddBuiltin (&menu_pr_state, "Menu_Pic", bi_Menu_Pic, -1);
 	PR_AddBuiltin (&menu_pr_state, "Menu_CenterPic", bi_Menu_CenterPic, -1);
 	PR_AddBuiltin (&menu_pr_state, "Menu_Item", bi_Menu_Item, -1);
 	PR_AddBuiltin (&menu_pr_state, "Menu_Cursor", bi_Menu_Cursor, -1);
 	PR_AddBuiltin (&menu_pr_state, "Menu_KeyEvent", bi_Menu_KeyEvent, -1);
 	PR_AddBuiltin (&menu_pr_state, "Menu_End", bi_Menu_End, -1);
+	PR_AddBuiltin (&menu_pr_state, "Menu_TopMenu", bi_Menu_TopMenu, -1);
+	PR_AddBuiltin (&menu_pr_state, "Menu_SelectMenu", bi_Menu_SelectMenu, -1);
+	PR_AddBuiltin (&menu_pr_state, "Menu_SetQuit", bi_Menu_SetQuit, -1);
+	PR_AddBuiltin (&menu_pr_state, "Menu_Quit", bi_Menu_Quit, -1);
 
 	R_Progs_Init (&menu_pr_state);
 
 	Cmd_AddCommand ("togglemenu", togglemenu_f,
 					"Toggle the display of the menu");
+	Cmd_AddCommand ("quit", quit_f, "Exit the program");
 }
 
 void
@@ -311,6 +365,11 @@ Menu_Draw (void)
 
 	*menu_pr_state.globals.time = *menu_pr_state.time;
 
+	if (menu->draw) {
+		PR_ExecuteProgram (&menu_pr_state, menu->draw);
+		return;
+	}
+
 	item = menu->items[menu->cur_item];
 
 	for (m_pic = menu->pics; m_pic; m_pic = m_pic->next) {
@@ -332,9 +391,6 @@ Menu_Draw (void)
 	} else {
 		Draw_Character (item->x, item->y,
 						12 + ((int) (*con_data.realtime * 4) & 1));
-	}
-	if (menu_draw) {
-		PR_ExecuteProgram (&menu_pr_state, menu_draw);
 	}
 }
 
@@ -361,6 +417,20 @@ Menu_KeyEvent (knum_t key, short unicode, qboolean down)
 		case QFM_WHEEL_UP:
 			menu->cur_item += menu->num_items - 1;
 			menu->cur_item %= menu->num_items;
+			break;
+		case QFK_RETURN:
+		case QFM_BUTTON1:
+			{
+				menu_item_t *item = menu->items[menu->cur_item];
+				if (item->func) {
+					G_INT (&menu_pr_state, OFS_PARM0) = key;
+					G_INT (&menu_pr_state, OFS_PARM1) =
+						PR_SetString (&menu_pr_state, item->text);
+					PR_ExecuteProgram (&menu_pr_state, item->func);
+				} else {
+					menu = item;
+				}
+			}
 			break;
 		default:
 			break;
