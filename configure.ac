@@ -21,11 +21,11 @@ NQ_QSG_VERSION=1.0
 QW_VERSION=2.40
 QW_QSG_VERSION=2.0
 
-AC_DEFINE_UNQUOTED(PROGRAM, 		"$PROGRAM")
-AC_DEFINE_UNQUOTED(NQ_VERSION,		"$NQ_VERSION")
-AC_DEFINE_UNQUOTED(NQ_QSG_VERSION,	"$NQ_QSG_VERSION")
-AC_DEFINE_UNQUOTED(QW_VERSION,		"$QW_VERSION")
-AC_DEFINE_UNQUOTED(QW_QSG_VERSION,	"$QW_QSG_VERSION")
+AC_DEFINE_UNQUOTED(PROGRAM, 		"$PROGRAM", ["Proper" package name])
+AC_DEFINE_UNQUOTED(NQ_VERSION,		"$NQ_VERSION", [Define this to the NetQuake standard version you support])
+AC_DEFINE_UNQUOTED(NQ_QSG_VERSION,	"$NQ_QSG_VERSION", [Define this to the QSG standard version you support in NetQuake])
+AC_DEFINE_UNQUOTED(QW_VERSION,		"$QW_VERSION", [Define this to the QuakeWorld standard version you support])
+AC_DEFINE_UNQUOTED(QW_QSG_VERSION,	"$QW_QSG_VERSION", [Define this to the QSG standard version you support in QuakeWorld])
 
 AC_SUBST(PROGRAM)
 AC_SUBST(NQ_VERSION)
@@ -148,7 +148,7 @@ AC_CHECK_HEADERS(
 if test "x$mingw" = xyes; then
 	AC_MSG_CHECKING(for fnmatch.h)
 	AC_MSG_RESULT(yes)
-	AC_DEFINE(HAVE_FNMATCH_H)
+	AC_DEFINE(HAVE_FNMATCH_H, 1, [Define this if you have fnmatch.h])
 else
 	AC_CHECK_HEADERS(fnmatch.h)
 fi
@@ -209,7 +209,7 @@ AC_MSG_CHECKING(for fnmatch in fnmatch.h)
 AC_TRY_COMPILE(
 	[#include "fnmatch.h"],
 	[int (*foo)() = fnmatch;],
-	AC_DEFINE(HAVE_FNMATCH_PROTO)
+	AC_DEFINE(HAVE_FNMATCH_PROTO, 1, [Define this if fnmatch is prototyped in fnmatch.h])
 	AC_MSG_RESULT(yes),
 	AC_MSG_RESULT(no)
 )
@@ -218,7 +218,7 @@ AC_MSG_CHECKING(for strnlen in string.h)
 AC_TRY_COMPILE(
 	[#include "string.h"],
 	[int (*foo)() = strnlen;],
-	AC_DEFINE(HAVE_STRNLEN_PROTO)
+	AC_DEFINE(HAVE_STRNLEN_PROTO, 1, [Define this if strnlen is prototyped in string.h])
 	AC_MSG_RESULT(yes),
 	AC_MSG_RESULT(no)
 )
@@ -227,7 +227,7 @@ AC_MSG_CHECKING(for strcasestr in string.h)
 AC_TRY_COMPILE(
 	[#include "string.h"],
 	[int (*foo)() = strnlen;],
-	AC_DEFINE(HAVE_STRCASESTR_PROTO)
+	AC_DEFINE(HAVE_STRCASESTR_PROTO, 1, [Define this if fnmatch is prototyped in string.h])
 	AC_MSG_RESULT(yes),
 	AC_MSG_RESULT(no)
 )
@@ -237,7 +237,7 @@ AC_TRY_COMPILE(
 	[#include <stdio.h>],
 	[fpos_t x = 0],
 	AC_MSG_RESULT(off_t),
-	AC_DEFINE(HAVE_FPOS_T_STRUCT)
+	AC_DEFINE(HAVE_FPOS_T_STRUCT, 1, [Define this if FPOS_T is a struct])
 	AC_MSG_RESULT(struct)
 )
 
@@ -245,7 +245,7 @@ AC_MSG_CHECKING(for socklen_t in sys/types.h)
 AC_TRY_COMPILE(
 	[#include <sys/types.h>],
 	[ socklen_t x = 0;],
-	AC_DEFINE(HAVE_SOCKLEN_T)
+	AC_DEFINE(HAVE_SOCKLEN_T, 1, [Define this if your system has socklen_t])
 	AC_MSG_RESULT(yes),
 	AC_MSG_RESULT(no)
 	dnl FreeBSD 4.0 has it in sys/socket.h
@@ -254,7 +254,7 @@ AC_TRY_COMPILE(
 		[#include <sys/types.h>
 		#include <sys/socket.h>],
 		[ socklen_t x = 0;],
-		AC_DEFINE(HAVE_SOCKLEN_T) AC_MSG_RESULT(yes),
+		AC_DEFINE(HAVE_SOCKLEN_T, 1, [Define this if your system has socklen_t]) AC_MSG_RESULT(yes),
 		AC_MSG_RESULT(no)
 	)
 )
@@ -264,7 +264,7 @@ AC_TRY_LINK(
 	[asm(".long _bar");
 	int bar;],
 	[],
-	AC_DEFINE(HAVE_SYM_PREFIX_UNDERSCORE) AC_MSG_RESULT(yes),
+	AC_DEFINE(HAVE_SYM_PREFIX_UNDERSCORE, 1, [Define this if C symbols are prefixed with an underscore]) AC_MSG_RESULT(yes),
 	AC_MSG_RESULT(no)
 )
 
@@ -272,7 +272,7 @@ AC_MSG_CHECKING(for size_t in sys/types.h)
 AC_TRY_COMPILE(
 	[#include <sys/types.h>],
 	[ size_t x = 0;],
-	AC_DEFINE(HAVE_SIZE_T) AC_MSG_RESULT(yes),
+	AC_DEFINE(HAVE_SIZE_T, 1, [Define this if your system has size_t]) AC_MSG_RESULT(yes),
 	AC_MSG_RESULT(no)
 )
 
@@ -282,7 +282,7 @@ AC_TRY_COMPILE(
 	[#include <sys/types.h>
 	#include <sys/socket.h>],
 	[ void f(void) { struct sockaddr_storage ss; ss.ss_len=0; }],
-	AC_DEFINE(HAVE_SS_LEN) AC_MSG_RESULT(yes),
+	AC_DEFINE(HAVE_SS_LEN, 1, [Define this if you have ss_len member in struct sockaddr_storage (BSD)]) AC_MSG_RESULT(yes),
 	AC_MSG_RESULT(no)
 )
 
@@ -291,7 +291,7 @@ AC_TRY_COMPILE(
 	[#include <sys/types.h>
 	#include <netinet/in.h>],
 	[ void f(void) { struct sockaddr_in6 s6; s6.sin6_len=0; }],
-	AC_DEFINE(HAVE_SIN6_LEN) AC_MSG_RESULT(yes),
+	AC_DEFINE(HAVE_SIN6_LEN, 1, [Define this if you have sin6_len member in struct sockaddr_in6 (BSD)]) AC_MSG_RESULT(yes),
 	AC_MSG_RESULT(no)
 )
 
@@ -300,7 +300,7 @@ AC_TRY_COMPILE(
 	[#include <sys/types.h>
 	#include <netinet/in.h>],
 	[ void f(void) { struct sockaddr sa; sa.sa_len=0; }],
-	AC_DEFINE(HAVE_SA_LEN) AC_MSG_RESULT(yes),
+	AC_DEFINE(HAVE_SA_LEN, 1, [Define this if you have sa_len member in struct sockaddr (BSD)]) AC_MSG_RESULT(yes),
 	AC_MSG_RESULT(no)
 )
 
@@ -324,7 +324,7 @@ AC_CHECK_FUNCS(
 DL_LIBS=""
 if test "x$ac_cv_func_dlopen" != "xyes"; then
 	AC_CHECK_LIB(dl, dlopen,
-		AC_DEFINE(HAVE_DLOPEN) DL_LIBS="-ldl"
+		AC_DEFINE(HAVE_DLOPEN, 1, [Define if you have the dlopen function.]) DL_LIBS="-ldl"
 	)
 fi
 AC_SUBST(DL_LIBS)
@@ -360,7 +360,7 @@ dnl Checks for stricmp/strcasecmp
 AC_CHECK_FUNC(strcasecmp, strcasecmp=yes, strcasecmp=no)
 if test $strcasecmp = no; then
 	AC_CHECK_FUNC(stricmp,
-		AC_DEFINE(strcasecmp, stricmp),
+		AC_DEFINE(strcasecmp, stricmp, [Define strcasecmp as stricmp if you have one but not the other]),
 		AC_MSG_ERROR([Neither stricmp nor strcasecmp found])
 	)
 fi
@@ -414,7 +414,7 @@ AC_ARG_WITH(ipv6,
 	if test "x$withval" = xno ; then
 		NETTYPE_IPV6=no
 	else
-		AC_DEFINE(HAVE_IPV6)
+		AC_DEFINE(HAVE_IPV6, 1, [Define this if you want IPv6 support])
 		NETTYPE_IPV6=yes
 		if test "x$withval" != xyes ; then
 			LIBS="$LIBS -L${withval}"
@@ -480,7 +480,7 @@ if test "x$HAVE_FBDEV" = xyes; then
 	AC_TRY_COMPILE(
 		[#include "linux/fb.h"],
 		[int foo = FB_AUX_VGA_PLANES_VGA4;],
-		AC_DEFINE(HAVE_FB_AUX_VGA_PLANES_VGA4)
+		AC_DEFINE(HAVE_FB_AUX_VGA_PLANES_VGA4, 1, [Define this if you have FB_AUX_VGA_PLANES_VGA4])
 		AC_MSG_RESULT(yes),
 		AC_MSG_RESULT(no)
 	)
@@ -488,7 +488,7 @@ if test "x$HAVE_FBDEV" = xyes; then
 	AC_TRY_COMPILE(
 		[#include "linux/fb.h"],
 		[int foo = FB_AUX_VGA_PLANES_CFB4;],
-		AC_DEFINE(HAVE_FB_AUX_VGA_PLANES_CFB4)
+		AC_DEFINE(HAVE_FB_AUX_VGA_PLANES_CFB4, 1, [Define this if you have FB_AUX_VGA_PLANES_CFB4])
 		AC_MSG_RESULT(yes),
 		AC_MSG_RESULT(no)
 	)
@@ -496,7 +496,7 @@ if test "x$HAVE_FBDEV" = xyes; then
 	AC_TRY_COMPILE(
 		[#include "linux/fb.h"],
 		[int foo = FB_AUX_VGA_PLANES_CFB8;],
-		AC_DEFINE(HAVE_FB_AUX_VGA_PLANES_CFB8)
+		AC_DEFINE(HAVE_FB_AUX_VGA_PLANES_CFB8, 1, [Define this if you have FB_AUX_VGA_PLANES_CFB4])
 		AC_MSG_RESULT(yes),
 		AC_MSG_RESULT(no)
 	)
@@ -556,7 +556,7 @@ if test "x$HAVE_VIDMODE" != xno; then
 	AC_CHECK_HEADER(X11/extensions/xf86vmode.h,
 		dnl Make sure the library works
 		AC_CHECK_LIB(Xxf86vm, XF86VidModeSwitchToMode,
-			AC_DEFINE(HAVE_VIDMODE)
+			AC_DEFINE(HAVE_VIDMODE, 1, [Define if you have the XFree86 VIDMODE extension])
 			VIDMODE_LIBS="-lXxf86vm",,
 			[$X_LIBS -lXext -lX11 $X_EXTRA_LIBS]
 		)
@@ -575,7 +575,7 @@ if test "x$HAVE_DGA" != xno; then
 	AC_CHECK_HEADER(X11/extensions/xf86dga.h,
 		dnl Make sure the library works
 		AC_CHECK_LIB(Xxf86dga, XF86DGAQueryVersion,
-			AC_DEFINE(HAVE_DGA)
+			AC_DEFINE(HAVE_DGA, 1, [Define if you have the XFree86 DGA extension])
 			DGA_LIBS="-lXxf86dga",,
 			[$X_LIBS -lXext -lX11 $X_EXTRA_LIBS]
 		)
@@ -603,7 +603,7 @@ if test "x$HAVE_GLIDE" != xno; then
 	if test "x$HAVE_GLIDE" != xyes; then
 		HAVE_GLIDE=no
 	else
-		AC_DEFINE(HAVE_GLIDE)
+		AC_DEFINE(HAVE_GLIDE, 1, [Define this if you have Glide])
 	fi
 	CPPFLAGS="$save_CPPFLAGS"
 fi
@@ -677,7 +677,7 @@ case "${host}" in
 		AC_ARG_ENABLE(asmopt,
 			[  --disable-asmopt        disable assembler optimization],
 			AC_MSG_RESULT(yes),
- 			AC_DEFINE(USE_INTEL_ASM)
+ 			AC_DEFINE(USE_INTEL_ASM, 1, [Define this if you want to use Intel assembly optimizations])
 			ASM_ARCH=yes
 			AC_MSG_RESULT(no)
 		)
@@ -1074,7 +1074,7 @@ if test "x$globalconf" = "xauto" || test "x$globalconf" = "xyes" || \
 	test "x$globalconf" = "xno"; then  dnl yes/no sanity checks
 	globalconf="$default_globalconf"
 fi
-AC_DEFINE_UNQUOTED(FS_GLOBALCFG, "$globalconf")
+AC_DEFINE_UNQUOTED(FS_GLOBALCFG, "$globalconf", [Define this to the location of the global config file])
 
 AC_ARG_WITH(user-cfg,
 [  --with-user-cfg=FILE    If set will change the name and location of the
@@ -1085,7 +1085,7 @@ if test "x$userconf" = "xauto" || test "x$userconf" = "xyes" || \
 	test "x$userconf" = "xno"; then  dnl yes/no sanity checks
 	userconf="$default_userconf"
 fi
-AC_DEFINE_UNQUOTED(FS_USERCFG, "$userconf")
+AC_DEFINE_UNQUOTED(FS_USERCFG, "$userconf", [Define this to the location of the user config file])
 
 AC_ARG_WITH(sharepath,
 [  --with-sharepath=DIR    Use DIR for shared game data, defaults to
@@ -1096,7 +1096,7 @@ if test "x$sharepath" = "xauto" -o "x$sharepath" = "xyes" -o "x$sharepath" = "x"
 elif test "x$sharepath" = xno; then
 	sharepath="."
 fi
-AC_DEFINE_UNQUOTED(FS_SHAREPATH, "$sharepath")
+AC_DEFINE_UNQUOTED(FS_SHAREPATH, "$sharepath", [Define this to the shared game directory root])
 AC_SUBST(sharepath)
 
 AC_ARG_WITH(userpath,
@@ -1108,7 +1108,7 @@ if test "x$userpath" = "xauto" -o "x$userpath" = "xyes" -o "x$userpath" = "x"; t
 elif test "x$userpath" = xno; then
 	userpath="."
 fi
-AC_DEFINE_UNQUOTED(FS_USERPATH, "$userpath")
+AC_DEFINE_UNQUOTED(FS_USERPATH, "$userpath", [Define this to the unshared game directory root])
 
 AC_ARG_WITH(plugin-path,
 [  --with-plugin-path=DIR  Use DIR for loading plugins, defaults to
@@ -1125,7 +1125,7 @@ else
 fi
 eval expanded_plugindir="$plugindir"
 eval expanded_plugindir="$expanded_plugindir"
-AC_DEFINE_UNQUOTED(FS_PLUGINPATH, "$expanded_plugindir")
+AC_DEFINE_UNQUOTED(FS_PLUGINPATH, "$expanded_plugindir", [Define this to the path from which to load plugins])
 AC_SUBST(plugindir)
 AC_SUBST(PLUGINDIR)
 
@@ -1141,7 +1141,7 @@ if test "$gl_driver" = auto; then
 		gl_driver="libGL.so.1"
 	fi
 fi
-AC_DEFINE_UNQUOTED(GL_DRIVER, "$gl_driver")
+AC_DEFINE_UNQUOTED(GL_DRIVER, "$gl_driver", [Define this to the default GL dynamic lib])
 
 dnl CFLAGS for release and devel versions
 AC_ARG_ENABLE(debug,
@@ -1166,7 +1166,7 @@ AC_ARG_ENABLE(optimize,
 AC_ARG_ENABLE(typecheck-progs,
 	[  --enable-typecheck-progs Enable type checking on progs field access])
 if test "x$enable_typecheck_progs" = xyes; then
-	AC_DEFINE(TYPECHECK_PROGS)
+	AC_DEFINE(TYPECHECK_PROGS, 1, [Define this if you want progs typechecking])
 fi
 
 AC_ARG_WITH(amd,
@@ -1382,7 +1382,7 @@ if test "x$HAVE_ZLIB" = xyes; then
 		if test -n "$X_LIBS"; then
 			AC_MSG_RESULT(no)
 		fi
-		AC_DEFINE(HAVE_ZLIB)
+		AC_DEFINE(HAVE_ZLIB, 1, [Define if you have zlib])
 	fi
 fi
 AC_SUBST(Z_LIBS)
@@ -1760,16 +1760,16 @@ for l in $SND_REND_STATIC; do
 	SND_RENDER_LIST='{"'"$n"'"'", ${n}_PluginInfo},$SND_RENDER_LIST"
 	SND_RENDER_PROTOS="$SND_RENDER_PROTOS extern QFPLUGIN plugin_t *${n}_PluginInfo (void);"
 done
-AC_DEFINE_UNQUOTED(SERVER_PLUGIN_LIST, $SERVER_PLUGIN_LIST)
-AC_DEFINE_UNQUOTED(SERVER_PLUGIN_PROTOS, $SERVER_PLUGIN_PROTOS)
-AC_DEFINE_UNQUOTED(CLIENT_PLUGIN_LIST, $CLIENT_PLUGIN_LIST)
-AC_DEFINE_UNQUOTED(CLIENT_PLUGIN_PROTOS, $CLIENT_PLUGIN_PROTOS)
-AC_DEFINE_UNQUOTED(CD_PLUGIN_LIST, $CD_PLUGIN_LIST)
-AC_DEFINE_UNQUOTED(CD_PLUGIN_PROTOS, $CD_PLUGIN_PROTOS)
-AC_DEFINE_UNQUOTED(SND_OUTPUT_LIST, $SND_OUTPUT_LIST)
-AC_DEFINE_UNQUOTED(SND_OUTPUT_PROTOS, $SND_OUTPUT_PROTOS)
-AC_DEFINE_UNQUOTED(SND_RENDER_LIST, $SND_RENDER_LIST)
-AC_DEFINE_UNQUOTED(SND_RENDER_PROTOS, $SND_RENDER_PROTOS)
+AC_DEFINE_UNQUOTED(SERVER_PLUGIN_LIST, $SERVER_PLUGIN_LIST, [list of server plugins])
+AC_DEFINE_UNQUOTED(SERVER_PLUGIN_PROTOS, $SERVER_PLUGIN_PROTOS, [list of server prototypes])
+AC_DEFINE_UNQUOTED(CLIENT_PLUGIN_LIST, $CLIENT_PLUGIN_LIST, [list of client plugins])
+AC_DEFINE_UNQUOTED(CLIENT_PLUGIN_PROTOS, $CLIENT_PLUGIN_PROTOS, [list of client prototypes])
+AC_DEFINE_UNQUOTED(CD_PLUGIN_LIST, $CD_PLUGIN_LIST, [list of cd plugins])
+AC_DEFINE_UNQUOTED(CD_PLUGIN_PROTOS, $CD_PLUGIN_PROTOS, [list of cd prototypes])
+AC_DEFINE_UNQUOTED(SND_OUTPUT_LIST, $SND_OUTPUT_LIST, [list of sound output plugins])
+AC_DEFINE_UNQUOTED(SND_OUTPUT_PROTOS, $SND_OUTPUT_PROTOS, [list of sound output prototypes])
+AC_DEFINE_UNQUOTED(SND_RENDER_LIST, $SND_RENDER_LIST, [list of sound render plugins])
+AC_DEFINE_UNQUOTED(SND_RENDER_PROTOS, $SND_RENDER_PROTOS, [list of sound render prototypes])
 
 AC_SUBST(NQ_TARGETS)
 AC_SUBST(QW_TARGETS)
@@ -1804,9 +1804,9 @@ AC_SUBST(QFCC_LIBS)
 AC_SUBST(QFCC_DEPS)
 AC_SUBST(QFCC_INCS)
 
-AC_DEFINE_UNQUOTED(PATH_SEPARATOR, '/')
-AC_DEFINE_UNQUOTED(CPP_NAME, "$CPP_NAME")
-AC_DEFINE(USE_CPP)
+AC_DEFINE_UNQUOTED(PATH_SEPARATOR, '/', [Define this to your operating system's path separator character])
+AC_DEFINE_UNQUOTED(CPP_NAME, "$CPP_NAME", [Define this to the command line for the C preprocessor])
+AC_DEFINE(USE_CPP, 1, [Define this if you want qfcc to use the C preprocessor])
 
 AM_CONDITIONAL(BUILD_GL, test "$BUILD_GL" = "yes")
 AM_CONDITIONAL(BUILD_SW, test "$BUILD_SW" = "yes")
