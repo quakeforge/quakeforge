@@ -40,7 +40,6 @@ static const char rcsid[] =
 #include "QF/msg.h"
 #include "QF/qendian.h"
 #include "QF/sys.h"
-#include "QF/string.h"
 
 #include "compat.h"
 

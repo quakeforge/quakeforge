@@ -62,7 +62,6 @@ static const char rcsid[] =
 #include "QF/msg.h"
 #include "QF/plugin.h"
 #include "QF/qargs.h"
-#include "QF/string.h"
 #include "QF/sys.h"
 #include "QF/va.h"
 #include "QF/ver_check.h"
