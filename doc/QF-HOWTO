@@ -47,9 +47,9 @@ proceed to section 3.
 1.1 Get QF by CVS
 -----------------
 Here are the two commands for getting the CVS:
-  $ cvs -d :pserver:anonymous@cvs.quakeforge.net:/cvsroot/quake login
+  $ cvs -d :pserver:anonymous@cvs.quakeforge.net:/project/cvs login
   login: (hit enter)
-  $ cvs -d :pserver:anonymous@cvs.quakeforge.net:/cvsroot/quake co quakeforge
+  $ cvs -d :pserver:anonymous@cvs.quakeforge.net:/project/cvs co quakeforge
 
 2. Requirements
 ---------------
