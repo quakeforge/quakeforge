@@ -28,7 +28,7 @@ libQFutil_la_DEPENDENCIES=	libasm.la
 libQFutil_la_SOURCES= \
 	bspfile.c buildnum.c cbuf.c checksum.c cmd.c crc.c cvar.c dstring.c \
 	fendian.c getopt.c getopt1.c hash.c idparse.c info.c link.c llist.c \
-	mathlib.c mdfour.c msg.c object.c pakfile.c plugin.c qargs.c qendian.c \
+	mathlib.c mdfour.c msg.c pakfile.c plugin.c qargs.c qendian.c \
 	qfplist.c quakefs.c quakeio.c riff.c sizebuf.c string.c sys.c \
 	va.c ver_check.c wad.c zone.c $(fnmatch)
 

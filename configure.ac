@@ -2084,6 +2084,7 @@ AC_OUTPUT(
 	include/QF/Makefile
 	include/QF/GL/Makefile
 	include/QF/plugin/Makefile
+	include/QF/classes/Makefile
 
 	libs/Makefile
 	libs/audio/Makefile
@@ -2103,6 +2104,7 @@ AC_OUTPUT(
 	libs/net/Makefile
 	libs/net/nc/Makefile
 	libs/net/nm/Makefile
+	libs/object/Makefile
 	libs/util/Makefile
 	libs/video/Makefile
 	libs/video/renderer/Makefile

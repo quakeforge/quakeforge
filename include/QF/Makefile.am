@@ -1,5 +1,5 @@
 AUTOMAKE_OPTIONS = foreign
-SUBDIRS = GL plugin
+SUBDIRS = GL plugin classes
 includedir = $(prefix)/include/QF
 include_HEADERS = bspfile.h cbuf.h cdaudio.h checksum.h clip_hull.h cmd.h \
 	console.h crc.h csqc.h cvar.h dstring.h draw.h gib.h hash.h hl.h \

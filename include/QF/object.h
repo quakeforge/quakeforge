@@ -52,17 +52,29 @@
 #define methodDecl(type, name, ...) (* name) (struct type##_s *self, ##__VA_ARGS__)
 #endif
 
-#define classDecl(name,extends,def) typedef struct name##_s {struct extends##_s base; def} name; extern Class * name##_class
+#define classObj(name) name##_class
+#define classDecl(name,extends,def) typedef struct name##_s {struct extends##_s base; def} name; extern Class * classObj(name); void __class_##name##_init (void)
+#define classInitFunc(name) Class * classObj(name); void __class_##name##_init (void)
+#define classInit(name) __class_##name##_init()
 #define retain(obj) (Object_Retain((Object *)obj))
 #define release(obj) (Object_Release((Object *)obj))
 
 #define instanceOf(obj, cl) (Object_InstaceOf((Object *)obj, cl##_class))
 
+struct Object_s;
+struct Class_s;
+struct List_s;
+
+typedef void (*ReplyHandler_t) (struct Object_s *retValue);
+
 typedef struct Object_s {
 	struct Class_s *cl;
 	int refs;
-	struct String_s *(*toString)(struct Object_s *obj);
+	struct String_s * methodDecl(Object, toString);
+	void methodDecl(Object, message, const char *name, struct List_s *args, struct Object_s *sender, ReplyHandler_t *reply);
+	void *data;
 } Object;
+extern struct Class_s * Object_class;
 #define OBJECT(o) ((Object *)(o))
 
 
@@ -79,39 +91,14 @@ classDecl (Class, Object,
 );
 #define CLASS(o) ((Class *)(o))
 
-classDecl (String, Object, 
-	const char *str;
-);
-#define STRING(o) ((String *)(o))
-
-classDecl (List, Object,
-	unsigned int count;
-	Object * methodDecl (List, get, unsigned int index);
-	qboolean methodDecl (List, add, Object *o);
-);
-#define LIST(o) ((List *)(o))
-
-classDecl (ArrayList, List,
-	Object **elements;
-);
-#define ARRAYLIST(o) ((ArrayList *)(o))
-
-classDecl (Number, Object,
-	int methodDecl (Number, intValue);
-	double methodDecl (Number, doubleValue);
-);
-#define NUMBER(o) ((Number *)(o))
-
-classDecl (Integer, Number,
-	int value;
-);
-#define INTEGER(o) ((Integer *)(o))
-
 Object *Object_Create (Class *cl);
 void Object_Delete (Object *obj);
 Object *Object_Retain (Object *obj);
 Object *Object_Release (Object *obj);
 qboolean Object_InstanceOf (Object *obj, Class *cl);
 void Object_Init (void);
+
+#include "QF/classes/List.h"
+#include "QF/classes/String.h"
 
 #endif

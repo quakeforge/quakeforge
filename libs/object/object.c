@@ -52,6 +52,11 @@ static __attribute__ ((unused)) const char rcsid[] =
 #include "QF/sys.h"
 #include "QF/object.h"
 #include "QF/va.h"
+#include "QF/object.h"
+
+#include "QF/classes/ArrayList.h"
+#include "QF/classes/Integer.h"
+#include "QF/classes/Double.h"
 
 static String *
 Object_ToString_f (Object *self) 
@@ -98,26 +103,6 @@ Class_Deinit_f (Object *self) {
 	free ((void *)CLASS(self)->name);
 }
 
-static String *
-String_ToString_f (Object *self)
-{
-	return STRING(self);
-}
-
-static Object *
-String_Init_f (Object *self, const char *value)
-{
-	superInit(String, self);
-	self->toString = String_ToString_f;
-	STRING(self)->str = strdup (value);
-	return self;
-}
-
-static void
-String_Deinit_f (Object *self)
-{
-	free((void *)STRING(self)->str);
-}
 
 Object *
 Object_Create (Class *cl)
@@ -168,158 +153,29 @@ Object_InstanceOf (Object *obj, Class *cl)
 	return false;
 }
 
-static String *
-List_ToString_f (Object *self)
+static void
+Object_Test (void)
 {
-	List *list = LIST(self);
-	String *str;
-	unsigned int i;
-	dstring_t *dstr = dstring_newstr();
-
-	dstring_appendstr (dstr, "{");
+	String *liststr;
+	Collection *list = newFloat(ArrayList, classObj(Object), NULL);
 	
-	for (i = 0; i < list->count; i++) {
-		str = methodCall(methodCall(list, get, i), toString);
-		retain(str);
-		dstring_appendstr (dstr, str->str);
-		release(str);
-		if (i < list->count - 1)
-			dstring_appendstr (dstr, ", ");
-	}
-	dstring_appendstr (dstr, "}");
-	str = newFloat(String, dstr->str);
-	dstring_delete (dstr);
-	return str;
-}
-		
-static Object *
-List_Init_f (Object *self)
-{
-	superInit(List, self);
-	LIST(self)->count = 0;
-	LIST(self)->get = NULL;
-	LIST(self)->add = NULL;
-	self->toString = List_ToString_f;
-	return self;
-}
-
-static void
-List_Deinit_f (Object *self)
-{
-}
-
-static Object *
-ArrayList_Get_f (List *self, unsigned int index)
-{
-	if (index >= self->count)
-		return NULL;
-	return ARRAYLIST(self)->elements[index];
-}
-
-static qboolean
-ArrayList_Add_f (List *self, Object *o)
-{
-	self->count++;
-	ARRAYLIST(self)->elements = realloc (ARRAYLIST(self)->elements, self->count);
-	ARRAYLIST(self)->elements[self->count-1] = o;
-	retain (o);
-	return true;
-}
-
-static Object *
-ArrayList_Init_f (Object *self)
-{
-	superInit (ArrayList, self);
-	ARRAYLIST(self)->elements = NULL;
-	LIST(self)->get = ArrayList_Get_f;
-	LIST(self)->add = ArrayList_Add_f;
-	return self;
-}
-
-static void
-ArrayList_Deinit_f (Object *self)
-{
-	unsigned int i;
-	Object **elements = ARRAYLIST(self)->elements;
-
-	for (i = 0; i < LIST(self)->count; i++)
-		release (elements[i]);
-	if (elements)
-		free (elements);
-}
-
-static Object *
-Number_Init_f (Object *self)
-{
-	superInit (Number, self);
-	NUMBER(self)->intValue = NULL;
-	NUMBER(self)->doubleValue = NULL;
-	return self;
-}
-
-static void
-Number_Deinit_f (Object *self)
-{
-}
-
-static String *
-Integer_ToString_f (Object *self)
-{
-	return newFloat(String, va("%i", INTEGER(self)->value));
-}
-
-static int
-Integer_IntValue_f (Number *self)
-{
-	return INTEGER(self)->value;
-}
-
-static double
-Integer_DoubleValue_f (Number *self)
-{
-	return (double) INTEGER(self)->value;
-}
-
-static Object *
-Integer_Init_f (Object *self, int value)
-{
-	superInit (Integer, self);
-	INTEGER(self)->value = value;
-	NUMBER(self)->intValue = Integer_IntValue_f;
-	NUMBER(self)->doubleValue = Integer_DoubleValue_f;
-	self->toString = Integer_ToString_f;
-	return self;
-}
-
-static void
-Integer_Deinit_f (Object *self)
-{
+	methodCall(list, add, newFloat(String, "Testing..."));
+	methodCall(list, add, newFloat(String, "One"));
+	methodCall(list, add, newFloat(Integer, 2));
+	methodCall(list, add, newFloat(Double, 3.0));
+	
+	liststr = methodCall(OBJECT(list), toString);
+	Sys_DPrintf("List: %s\n", liststr->str);
+	methodCall(LIST(list), removeAt, 2);
+	liststr = methodCall(OBJECT(list), toString);
+	Sys_DPrintf("List: %s\n", liststr->str);
+	methodCall(LIST(list), insertAt, 2, newFloat(String, "Mr. Two!"));
+	liststr = methodCall(OBJECT(list), toString);
+	Sys_DPrintf("List: %s\n", liststr->str);
 }
 
 Class *Object_class;
 Class *Class_class;
-Class *String_class;
-Class *List_class;
-Class *ArrayList_class;
-Class *Number_class;
-Class *Integer_class;
-
-static void
-Object_Test (void)
-{
-	List *l = new(ArrayList);
-	String *str;
-
-	methodCall(l, add, newFloat(Integer, 5));
-	methodCall(l, add, newFloat(String, "Daisy"));
-	methodCall(l, add, newFloat(Integer, 42));
-
-	str = methodCall(OBJECT(l), toString);
-	retain(str);
-	Sys_DPrintf("List: %s\n", str->str);
-	release(str);
-	release(l);
-}
 
 void
 Object_Init (void)
@@ -343,14 +199,18 @@ Object_Init (void)
 	   Class
 	*/
 
-	/* Create String class normally */
-	String_class = new(Class, "String", sizeof(String), Object_class, String_Init_f, String_Deinit_f, false);
-	/* Etc... */
-	List_class = new(Class, "List", sizeof(List), Object_class, List_Init_f, List_Deinit_f, true);
-	ArrayList_class = new(Class, "ArrayList", sizeof(ArrayList), List_class, ArrayList_Init_f, ArrayList_Deinit_f, false);
-	Number_class = new(Class, "Number", sizeof(Number), Object_class, Number_Init_f, Number_Deinit_f, true);
-	Integer_class = new(Class, "Integer", sizeof(Integer), Number_class, Integer_Init_f, Integer_Deinit_f, false);
+	/* Initialize standard classes */
+	classInit(String);
+	classInit(Number);
+		classInit(Integer);
+		classInit(Double);
+	classInit(Iterator);
+	classInit(Collection);
+		classInit(List);
+			classInit(ArrayList);
+	
+		
 
-	/* Run a test! */
+	/* Run test */
 	Object_Test();
 }
