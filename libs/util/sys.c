@@ -358,6 +358,7 @@ Sys_Error (const char *error, ...)
 	va_start (argptr, error);
 	sys_err_printf_function (error, argptr);
 	va_end (argptr);
+	sys_err_printf_function ("\r\n", argptr);		// FIXME is argptr ok?
 
 	Sys_Shutdown ();
 
