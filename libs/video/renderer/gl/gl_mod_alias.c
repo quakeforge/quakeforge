@@ -537,11 +537,26 @@ R_DrawAliasModel (entity_t *e)
 	qfglColor4fv (e->colormod);
 	
 	if (!is_fullbright) {
+		float lightadj;
+
 		// get lighting information
 		R_LightPoint (e->origin);
+
+		lightadj = (ambientcolor[0] + ambientcolor[1] + ambientcolor[2]) / 765.0;
+
+		// Do minlight stuff here since that's how software does it :)
+
+		if (lightadj > 0) {
+			if (lightadj < minlight)
+				lightadj = minlight / lightadj;
+			else
+				lightadj = 1.0;
 		
-		// 256 is fullbright, NOT 200 (was 1 / 200 or 0.005) -Grievre
-		VectorScale (ambientcolor, 1.0 / 256.0, ambientcolor);
+			// 255 is fullbright
+			VectorScale (ambientcolor, lightadj / 255.0, ambientcolor);
+		} else {
+			ambientcolor[0] = ambientcolor[1] = ambientcolor[2] = minlight;
+		}
 
 		if (gl_vector_light->int_val) {
 			for (l = r_dlights, lnum = 0; lnum < r_maxdlights; lnum++, l++) {
@@ -589,8 +604,6 @@ R_DrawAliasModel (entity_t *e)
 			// 1.5 to allow some pastelization (curb darkness from dlight)
 			if (d > 1.5) {
 				VectorScale (emission, 1.5 / d, emission);
-			} else if (d < minlight) { // had !used_lights (wtf)
-				emission[2] = emission[1] = emission[0] = minlight;
 			}
 
 			qfglMaterialfv (GL_FRONT, GL_EMISSION, emission);
@@ -619,8 +632,6 @@ R_DrawAliasModel (entity_t *e)
 			// 1.5 to allow some fading (curb emission making stuff dark)
 			if (d > 1.5) {
 				VectorScale (emission, 1.5 / d, emission);
-			} else if (d < minlight) {
-				emission[2] = emission[1] = emission[0] = minlight;
 			}
 
 			emission[0] *= e->colormod[0];

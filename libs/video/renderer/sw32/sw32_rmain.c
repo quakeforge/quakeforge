@@ -50,6 +50,7 @@ static __attribute__ ((unused)) const char rcsid[] =
 #include "QF/sound.h"
 #include "QF/sys.h"
 
+#include "compat.h"
 #include "r_cvar.h"
 #include "r_dynamic.h"
 #include "r_local.h"
@@ -434,6 +435,7 @@ R_DrawEntitiesOnList (void)
 	float       lightvec[3] = { -1, 0, 0 };
 	vec3_t      dist;
 	float       add;
+	float       minlight;
 
 	if (!r_drawentities->int_val)
 		return;
@@ -452,10 +454,13 @@ R_DrawEntitiesOnList (void)
 				VectorCopy (currententity->origin, r_entorigin);
 				VectorSubtract (r_origin, r_entorigin, modelorg);
 
+				minlight = max (currententity->min_light, currententity->model->min_light);
+
 				// see if the bounding box lets us trivially reject, also
 				// sets trivial accept status
 				if (R_AliasCheckBBox ()) {
-					j = R_LightPoint (currententity->origin);
+					// 128 instead of 255 due to clamping below
+					j = max (R_LightPoint (currententity->origin), minlight * 128);
 
 					lighting.ambientlight = j;
 					lighting.shadelight = j;
@@ -499,6 +504,7 @@ R_DrawViewModel (void)
 	unsigned int lnum;
 	vec3_t      dist;
 	float       add;
+	float       minlight;
 	dlight_t   *dl;
 
 	if (r_inhibit_viewmodel || !r_drawviewmodel->int_val
@@ -515,10 +521,10 @@ R_DrawViewModel (void)
 	VectorCopy (vup, viewlightvec);
 	VectorInverse (viewlightvec);
 
-	j = R_LightPoint (currententity->origin);
+	minlight = max (currententity->min_light, currententity->model->min_light);
 
-	if (j < 24)
-		j = 24;							// always give some light on gun
+	j = max (R_LightPoint (currententity->origin), minlight * 128);
+
 	r_viewlighting.ambientlight = j;
 	r_viewlighting.shadelight = j;
 
