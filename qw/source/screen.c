@@ -641,6 +641,8 @@ void
 SCR_ScreenShot_f (void)
 {
 	char        pcxname[MAX_OSPATH];
+	pcx_t      *pcx;
+	int         pcx_len;
 
 	// find a file name to save it to 
 	if (!COM_NextFilename (pcxname, "qf", ".pcx")) {
@@ -652,8 +654,10 @@ SCR_ScreenShot_f (void)
 	D_EnableBackBufferAccess ();
 
 	// save the pcx file
-	WritePCXfile (pcxname, vid.buffer, vid.width, vid.height, vid.rowbytes,
-				  vid_basepal, false, false);
+	pcx = EncodePCX (vid.buffer, vid.width, vid.height, vid.rowbytes,
+					 vid_basepal, false, &pcx_len);
+	COM_WriteFile (pcxname, pcx, pcx_len);
+
 
 	// for adapters that can't stay mapped in for linear writes all the time
 	D_DisableBackBufferAccess ();
@@ -751,6 +755,8 @@ SCR_RSShot_f (void)
 	int         x, y;
 	unsigned char *src, *dest;
 	char        pcxname[80];
+	pcx_t      *pcx;
+	int         pcx_len;
 	unsigned char *newbuf;
 	int         w, h;
 	int         dx, dy, dex, dey, nx;
@@ -831,7 +837,9 @@ SCR_RSShot_f (void)
 	st[sizeof (st) - 1] = 0;
 	SCR_DrawStringToSnap (st, newbuf, w - strlen (st) * 8, 20, w);
 
-	WritePCXfile (pcxname, newbuf, w, h, w, vid_basepal, true, false);
+	pcx = EncodePCX (newbuf, w, h, w, vid_basepal, false, &pcx_len);
+	CL_StartUpload ((void *)pcx, pcx_len);
+
 
 	free (newbuf);
 

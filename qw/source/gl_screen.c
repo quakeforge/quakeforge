@@ -734,6 +734,8 @@ SCR_RSShot_f (void)
 	int         x, y;
 	unsigned char *src, *dest;
 	char        pcxname[80];
+	pcx_t      *pcx;
+	int         pcx_len;
 	unsigned char *newbuf;
 	int         w, h;
 	int         dx, dy, dex, dey, nx;
@@ -825,7 +827,8 @@ SCR_RSShot_f (void)
 	st[sizeof (st) - 1] = 0;
 	SCR_DrawStringToSnap (st, newbuf, w - strlen (st) * 8, h - 21, w);
 
-	WritePCXfile (pcxname, newbuf, w, h, w, vid_basepal, true, true);
+	pcx = EncodePCX (newbuf, w, h, w, vid_basepal, true, &pcx_len);
+	CL_StartUpload ((void *)pcx, pcx_len);
 
 	free (newbuf);
 

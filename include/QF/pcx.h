@@ -47,9 +47,8 @@ typedef struct
     char	filler[58];
 } pcx_t;
 
-void WritePCXfile (char *filename, byte * data, int width, int height,
-				   int rowbytes, byte * palette, qboolean upload,
-				   qboolean flip);
+pcx_t *EncodePCX (byte * data, int width, int height,
+				  int rowbytes, byte * palette, qboolean flip, int *length);
 struct tex_s *LoadPCX (QFile *f, int convert);	// tex is from Hunk_TempAlloc
 
 #endif // __pcx_h

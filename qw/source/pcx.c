@@ -45,10 +45,6 @@
 #include "QF/vid.h"
 #include "QF/zone.h"
 
-#include "cl_parse.h"
-#include "host.h"
-
-
 tex_t *
 LoadPCX (QFile *f, int convert)
 {
@@ -149,17 +145,17 @@ LoadPCX (QFile *f, int convert)
 }
 
 
-void
-WritePCXfile (char *filename, byte * data, int width, int height,
-				int rowbytes, byte * palette, qboolean upload, qboolean flip)
+pcx_t *
+EncodePCX (byte * data, int width, int height,
+		   int rowbytes, byte * palette, qboolean flip, int *length)
 {
-	int 	i, j, length;
+	int 	i, j;
 	pcx_t	*pcx;
 	byte	*pack;
 
 	if (!(pcx = Hunk_TempAlloc (width * height * 2 + 1000))) {
 		Con_Printf ("WritePCXfile: not enough memory\n");
-		return;
+		return 0;
 	}
 
 	pcx->manufacturer = 0x0a;			// PCX id
@@ -205,10 +201,6 @@ WritePCXfile (char *filename, byte * data, int width, int height,
 		*pack++ = *palette++;
 
 	// write output file 
-	length = pack - (byte *) pcx;
-
-	if (upload)
-		CL_StartUpload ((void *) pcx, length);
-	else
-		COM_WriteFile (filename, pcx, length);
+	*length = pack - (byte *) pcx;
+	return pcx;
 }
