@@ -86,7 +86,7 @@ static int  p_mouse_x, p_mouse_y;
 
 #define KEY_MASK (KeyPressMask | KeyReleaseMask)
 #define MOUSE_MASK (ButtonPressMask | ButtonReleaseMask | PointerMotionMask)
-#define FOCUS_MASK (FocusChangeMask)
+#define FOCUS_MASK (FocusChangeMask | EnterWindowMask)
 #define INPUT_MASK (KEY_MASK | MOUSE_MASK | FOCUS_MASK)
 
 
@@ -168,6 +168,15 @@ selection_notify (XEvent *event)
 		Key_Event (QFK_UNKNOWN, 0, 0);
 	}
 	XFree (data);
+}
+
+static void
+enter_notify (XEvent *event)
+{
+	x_time = event->xcrossing.time;
+
+	p_mouse_x = event->xmotion.x;
+	p_mouse_y = event->xmotion.y;
 }
 
 static void
@@ -613,6 +622,7 @@ IN_LL_Init (void)
 	X11_AddEvent (FocusIn, &event_focusin);
 	X11_AddEvent (FocusOut, &event_focusout);
 	X11_AddEvent (SelectionNotify, &selection_notify);
+	X11_AddEvent (EnterNotify, &enter_notify);
 
 	if (!COM_CheckParm ("-nomouse")) {
 		dga_avail = VID_CheckDGA (x_disp, NULL, NULL, NULL);

@@ -93,7 +93,7 @@ Time 		x_time;
 
 qboolean    x_have_focus = false;
 
-#define X_MASK (VisibilityChangeMask | StructureNotifyMask | ExposureMask | FocusChangeMask)
+#define X_MASK (VisibilityChangeMask | StructureNotifyMask | ExposureMask | FocusChangeMask | EnterWindowMask)
 #define MOUSE_MASK (ButtonPressMask | ButtonReleaseMask | PointerMotionMask)
 
 #ifdef HAVE_VIDMODE
