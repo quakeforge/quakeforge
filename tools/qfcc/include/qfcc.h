@@ -603,6 +603,7 @@ typedef struct {
 	qboolean	undefined_function;	// Warn on undefined function use
 	qboolean	uninited_variable;	// Warn on use of uninitialized vars
 	qboolean	vararg_integer;		// Warn on passing an integer to vararg func
+	qboolean	integer_divide;		// Warn on integer constant division
 } warn_options_t;
 
 typedef struct {

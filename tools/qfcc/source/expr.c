@@ -736,7 +736,8 @@ do_op_integer (int op, expr_t *e1, expr_t *e2)
 			e1->e.integer_val *= i2;
 			break;
 		case '/':
-			warning (e2, "%d / %d == %d", i1, i2, i1 / i2);
+			if (options.warnings.integer_divide)
+				warning (e2, "%d / %d == %d", i1, i2, i1 / i2);
 			e1->e.integer_val /= i2;
 			break;
 		case '&':
@@ -812,7 +813,8 @@ do_op_uinteger (int op, expr_t *e1, expr_t *e2)
 			e1->e.uinteger_val *= i2;
 			break;
 		case '/':
-			warning (e2, "%d / %d == %d", i1, i2, i1 / i2);
+			if (options.warnings.integer_divide)
+				warning (e2, "%d / %d == %d", i1, i2, i1 / i2);
 			e1->e.uinteger_val /= i2;
 			break;
 		case '&':

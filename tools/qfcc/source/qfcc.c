@@ -793,11 +793,13 @@ DecodeArgs (int argc, char **argv)
 							options.warnings.undefined_function = true;
 							options.warnings.uninited_variable = true;
 							options.warnings.vararg_integer = true;
+							options.warnings.integer_divide = true;
 						} else if (!(strcasecmp (temp, "none"))) {
 							options.warnings.cow = false;
 							options.warnings.undefined_function = false;
 							options.warnings.uninited_variable = false;
 							options.warnings.vararg_integer = false;
+							options.warnings.integer_divide = false;
 						} else if (!(strcasecmp (temp, "cow"))) {
 							options.warnings.cow = true;
 						} else if (!(strcasecmp (temp, "no-cow"))) {
@@ -818,6 +820,10 @@ DecodeArgs (int argc, char **argv)
 							options.warnings.vararg_integer = true;
 						} else if (!(strcasecmp (temp, "no-vararg-integer"))) {
 							options.warnings.vararg_integer = false;
+						} else if (!(strcasecmp (temp, "integer-divide"))) {
+							options.warnings.integer_divide = true;
+						} else if (!(strcasecmp (temp, "no-integer-divide"))) {
+							options.warnings.integer_divide = false;
 						}
 						temp = strtok (NULL, ",");
 					}
