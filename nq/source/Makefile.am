@@ -76,7 +76,7 @@ client_LIBS=	$(top_builddir)/libs/gamecode/libQFgamecode.la \
 		$(top_builddir)/libs/audio/cd/libQFcd.la \
 		$(top_builddir)/libs/audio/targets/libQFsound.la \
 		$(top_builddir)/libs/video/targets/libQFjs.la \
-		-L. -lqfsys -lqfnet $(SOUND_LIBS) $(NET_LIBS)
+		-L. -lqfnet $(SOUND_LIBS) $(NET_LIBS)
 client_LIB_DEPS= libqfsys.a libqfnet.a
 
 client_SOURCES= cl_cam.c cl_cmd.c cl_demo.c cl_input.c cl_main.c cl_parse.c \
