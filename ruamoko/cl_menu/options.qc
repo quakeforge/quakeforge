@@ -454,11 +454,11 @@ string playername_cvar; // name of the cvar holding playername (gametype depende
 string teamname_cvar; // name of the cvar holding teamname (MAY ? gametype dependend)
 
 // input for playername and teamname
-inputline_t player_config_plname_il;
-inputline_t player_config_tname_il;
+InputLine player_config_plname_il;
+InputLine player_config_tname_il;
 
 // this holds active inputline pointer
-inputline_t player_config_iactive;
+InputLine player_config_iactive;
 
 // Y padding for the player config
 #define PLAYER_CONF_Y_PAD 60
@@ -506,9 +506,9 @@ KEYEV_player_options =
 		case QFK_RETURN:
 			if (player_config_iactive) {
 				if(player_config_iactive == player_config_plname_il) {
-					cvar_set(playername_cvar,InputLine_GetText(player_config_plname_il));
+					cvar_set(playername_cvar, [player_config_plname_il text]);
 				} else if(player_config_iactive == player_config_tname_il) {
-					cvar_set(teamname_cvar,InputLine_GetText(player_config_tname_il));
+					cvar_set(teamname_cvar, [player_config_tname_il text]);
 				}
 				player_config_iactive = NIL;
 			} else {
@@ -521,7 +521,7 @@ KEYEV_player_options =
 			break;
 	}
 	if(key != QFK_RETURN && player_config_iactive) {
-		InputLine_Process (player_config_iactive, key >= 256 ? key : unicode);
+		[player_config_iactive  processInput:(key >= 256 ? key : unicode)];
 	}
 
 	if(!(key == QFK_RIGHT || key == QFK_LEFT )) {
@@ -566,13 +566,11 @@ DRAW_player_options =
 
 	Draw_String(70, PLAYER_CONF_Y_PAD + 8, "Name..:");
 	text_box(120, PLAYER_CONF_Y_PAD, 17, 1);
-	InputLine_Draw (player_config_plname_il, 120, PLAYER_CONF_Y_PAD + 8, 
-		player_config_iactive == player_config_plname_il);
+	[player_config_plname_il draw: player_config_iactive == player_config_plname_il];
 
 	Draw_String(70, PLAYER_CONF_Y_PAD + 20 + 8, "Team..:");
 	text_box(120, PLAYER_CONF_Y_PAD + 20, 5, 1);
-	InputLine_Draw (player_config_tname_il, 120, PLAYER_CONF_Y_PAD + 8 + 20, 
-		player_config_iactive == player_config_tname_il);
+	[player_config_tname_il draw:player_config_iactive == player_config_tname_il];
 	
 
 	draw_val_item (70, PLAYER_CONF_Y_PAD + 45, spacing, "Top color", 
@@ -610,8 +608,8 @@ CB_ME_player_options =
 
 	teamname_cvar = "team"; // FIXME: is this maybe something other in netquake?
 
-	InputLine_SetText (player_config_plname_il, Cvar_GetCvarString(playername_cvar)); 
-	InputLine_SetText (player_config_tname_il, Cvar_GetCvarString(teamname_cvar)); 
+	[player_config_plname_il setText:Cvar_GetCvarString(playername_cvar)]; 
+	[player_config_tname_il setText:Cvar_GetCvarString(teamname_cvar)]; 
 };
 
 /*
@@ -622,10 +620,10 @@ CB_ME_player_options =
 void () 
 MENU_player_options =
 {
-	player_config_plname_il = InputLine_Create (4, 18, ' ');
-	InputLine_SetWidth (player_config_plname_il, 18);
-	player_config_tname_il = InputLine_Create (4, 7, ' ');
-	InputLine_SetWidth (player_config_tname_il, 7);
+	id (player_config_plname_il) = [[InputLine alloc] initWithBounds:[[Rect alloc] initWithComponents:120 :PLAYER_CONF_Y_PAD + 8 :18 :4] promptCharacter:' '];
+	[player_config_plname_il setWidth:18];
+	id (player_config_tname_il) = [[InputLine alloc] initWithBounds:[[Rect alloc] initWithComponents:120 :PLAYER_CONF_Y_PAD + 8 + 20 :7 :4] promptCharacter:' '];
+	[player_config_tname_il setWidth:7];
 	player_config_iactive = NIL;
 
 	Menu_Begin (54, 80, "Player");
@@ -642,9 +640,9 @@ MENU_player_options =
  ******************************************************************************/
 
 // input for playername
-inputline_t network_config_rate_il;
+InputLine network_config_rate_il;
 // this holds active inputline pointer
-inputline_t network_config_iactive;
+InputLine network_config_iactive;
 
 
 integer network_config_cursor;
@@ -687,7 +685,7 @@ KEYEV_network_options =
 		case QFK_RETURN:
 			if (network_config_iactive) {
 				if(network_config_iactive == network_config_rate_il) {
-					cvar_set("rate",InputLine_GetText(network_config_rate_il));
+					cvar_set("rate", [network_config_rate_il text]);
 				}
 				network_config_iactive = NIL;
 			} else {
@@ -698,7 +696,7 @@ KEYEV_network_options =
 			break;
 	}
 	if(key != QFK_RETURN && network_config_iactive) {
-		InputLine_Process (network_config_iactive, key >= 256 ? key : unicode);
+		[network_config_iactive processInput:(key >= 256 ? key : unicode)];
 	}
 
 	if(!(key == QFK_RIGHT || key == QFK_LEFT )) {
@@ -731,8 +729,7 @@ DRAW_network_options =
 
 	Draw_String(70, NETWORK_CONF_Y_PAD + 8, "Rate..:");
 	text_box(120, NETWORK_CONF_Y_PAD, 9, 1);
-	InputLine_Draw (network_config_rate_il, 120, NETWORK_CONF_Y_PAD + 8, 
-		network_config_iactive == network_config_rate_il);
+	[network_config_rate_il draw: network_config_iactive == network_config_rate_il];
 
 	opt_cursor  (62, player_config_cursor_tbl[player_config_cursor]);
 	return 1;
@@ -748,7 +745,7 @@ DRAW_network_options =
 integer () 
 CB_ME_network_options =
 {
-	InputLine_SetText (network_config_rate_il, Cvar_GetCvarString("rate")); 
+	[network_config_rate_il setText:Cvar_GetCvarString("rate")]; 
 };
 
 
@@ -761,8 +758,8 @@ CB_ME_network_options =
 void () 
 MENU_network_options =
 {
-	network_config_rate_il = InputLine_Create (4, 9, ' ');
-	InputLine_SetWidth (network_config_rate_il, 9);
+	id (network_config_rate_il) = [[InputLine alloc] initWithBounds:[[Rect alloc] initWithComponents: 120 :NETWORK_CONF_Y_PAD + 8 :9 :4] promptCharacter:' '];
+	[network_config_rate_il setWidth:9];
 
 	Menu_Begin (54, 90, "Network");
 	Menu_FadeScreen (1);

@@ -209,7 +209,7 @@ emit_function_call (expr_t *e, def_t *dest)
 		parm = def_parms[ind];
 		parm.type = types[extract_type (earg)];
 		arg = emit_sub_expr (earg, &parm);
-		if (earg->type != ex_expr && earg->type != ex_uexpr) {
+		if (arg != &parm) {
 			op = opcode_find ("=", arg, &parm, &def_void);
 			emit_statement (e, op, arg, &parm, 0);
 		}

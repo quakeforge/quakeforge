@@ -25,10 +25,10 @@ menu_src= \
 	options_util.qc servlist.qc string.r stringh.r
 
 %.qfo: %.r
-	$(QFCC) $(QCFLAGS) $(QCPPFLAGS) -p $(STRIP) -c -o $@ $<
+	$(QFCC) $(QCFLAGS) $(QCPPFLAGS) -c -o $@ $<
 
 %.qfo: %.qc
-	$(QFCC) $(QCFLAGS) $(QCPPFLAGS) -p $(STRIP) -c -o $@ $<
+	$(QFCC) $(QCFLAGS) $(QCPPFLAGS) -c -o $@ $<
 
 menu_obj=$(addsuffix .qfo,$(basename $(menu_src)))
 

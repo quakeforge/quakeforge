@@ -362,6 +362,56 @@ COM_OpenRead (const char *path, int offs, int len, int zip)
 		return Qdopen (fd, "rb");
 }
 
+char *
+COM_CompressPath (const char *pth)
+{
+	char       *path= malloc (strlen (pth) + 1);
+	char       *p, *d;
+
+	for (d = path; *pth; d++, pth++) {
+		if (*pth == '\\')
+			*d = '/';
+		else
+			*d = *pth;
+	}
+	*d = 0;
+
+	p = path;
+	while (*p) {
+		if (p[0] == '.') {
+			if (p[1] == '.') {
+				if (p[2] == '/' || p[2] == 0) {
+					d = p;
+					if (d > path)
+						d--;
+					while (d > path && d[-1] != '/')
+						d--;
+					if (d == path
+						&& d[0] == '.' && d[1] == '.'
+						&& (d[2] == '/' || d[2] == '0')) {
+						p += 2 + (p[2] == '/');
+						continue;
+					}
+					strcpy (d, p + 2 + (p[2] == '/'));
+					p = d;
+					continue;
+				}
+			} else if (p[1] == '/') {
+				strcpy (p, p + 2);
+				continue;
+			} else if (p[1] == 0) {
+				p[0] = 0;
+			}
+		}
+		while (*p && *p != '/')
+			p++;
+		if (*p == '/')
+			p++;
+	}
+
+	return path;
+}
+
 /*
 	contains_updir
 
@@ -444,6 +494,7 @@ int
 _COM_FOpenFile (const char *filename, VFile **gzfile, char *foundname, int zip)
 {
 	searchpath_t *search;
+	char       *path;
 #ifdef HAVE_VORBIS
 	char        oggfilename[MAX_OSPATH];
 #endif
@@ -451,9 +502,16 @@ _COM_FOpenFile (const char *filename, VFile **gzfile, char *foundname, int zip)
 	char        gzfilename[MAX_OSPATH];
 #endif
 
+	// make sure they're not trying to do weird stuff with our private files
+	path = COM_CompressPath (filename);
+	if (contains_updir(path)) {
+		Sys_Printf ("FindFile: %s: attempt to escape directory tree!\n", path);
+		goto error;
+	}
+
 #ifdef HAVE_VORBIS
-	if (strequal (".wav", COM_FileExtension (filename))) {
-		COM_StripExtension (filename, oggfilename);
+	if (strequal (".wav", COM_FileExtension (path))) {
+		COM_StripExtension (path, oggfilename);
 		strncat (oggfilename, ".ogg",
 				 sizeof (oggfilename) - strlen (oggfilename) - 1);
 	} else {
@@ -461,36 +519,33 @@ _COM_FOpenFile (const char *filename, VFile **gzfile, char *foundname, int zip)
 	}
 #endif
 #ifdef HAVE_ZLIB
-	snprintf (gzfilename, sizeof (gzfilename), "%s.gz", filename);
+	snprintf (gzfilename, sizeof (gzfilename), "%s.gz", path);
 #endif
-
-	// make sure they're not trying to do wierd stuff with our private files
-	if (contains_updir(filename)) {
-		Sys_Printf ("FindFile: %s: attempt to escape directory tree!\n",
-					filename);
-		goto error;
-	}
 
 	// search through the path, one element at a time
 	for (search = com_searchpaths; search; search = search->next) {
 #ifdef HAVE_VORBIS
 		if (oggfilename[0]
 			&& open_file (search, oggfilename, gzfile, foundname, zip) != -1)
-			return com_filesize;
+			goto ok;
 #endif
 #ifdef HAVE_ZLIB
 		if (open_file (search, gzfilename, gzfile, foundname, zip) != -1)
-			return com_filesize;
+			goto ok;
 #endif
-		if (open_file (search, filename, gzfile, foundname, zip) != -1)
-			return com_filesize;
+		if (open_file (search, path, gzfile, foundname, zip) != -1)
+			goto ok;
 	}
 
 	Sys_DPrintf ("FindFile: can't find %s\n", filename);
 error:
 	*gzfile = NULL;
 	com_filesize = -1;
+	free (path);
 	return -1;
+ok:
+	free(path);
+	return com_filesize;
 }
 
 int

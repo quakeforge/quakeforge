@@ -342,6 +342,7 @@ get_op_string (int op)
 		case 'b':	return "<bind>";
 		case 's':	return "<state>";
 		case 'c':	return "<call>";
+		case 'C':	return "<cast>";
 		default:
 			return "unknown";
 	}
@@ -2053,18 +2054,21 @@ cast_expr (type_t *type, expr_t *e)
 
 	e_type = get_type (e);
 
-	if (type->type == ev_pointer && e_type->type == ev_pointer) {
-		c = new_unary_expr ('C', e);
-		c->e.expr.type = type;
-	} else if (((type == &type_integer || type == &type_uinteger)
-				&& e_type == &type_float)
-			   || (type == &type_float
-				   && (e_type == &type_integer || e_type == &type_uinteger))) {
-		c = new_unary_expr ('C', e);
-		c->e.expr.type = type;
-	} else {
+	if (!(type->type == ev_pointer && e_type->type == ev_pointer)
+		&& !(((type == &type_integer || type == &type_uinteger)
+			  && e_type == &type_float)
+			 || (type == &type_float
+				 && (e_type == &type_integer || e_type == &type_uinteger)))) {
 		c = error (e, "can not cast from %s to %s",
 				   pr_type_name[extract_type (e)], pr_type_name[type->type]);
+		return c;
+	}
+	if (e->type == ex_uexpr && e->e.expr.op == '.') {
+		e->e.expr.type = type;
+		c = e;
+	} else {
+		c = new_unary_expr ('C', e);
+		c->e.expr.type = type;
 	}
 	return c;
 }

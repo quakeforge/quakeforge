@@ -396,10 +396,13 @@ free_tempdefs (void)
 			d = *def;
 			*def = d->next;
 
-			if (d->users < 0)
-				printf ("%s:%d: warning: %s %3d %3d %d\n", G_GETSTR (d->file),
-						d->line, pr_type_name[d->type->type], d->ofs, d->users,
-						d->managed);
+			if (d->users < 0) {
+				expr_t      e;
+				e.file = d->file;
+				e.line = d->line;
+				notice (&e, "%s %3d %3d %d", pr_type_name[d->type->type],
+						d->ofs, d->users, d->managed);
+			}
 			size = type_size (d->type);
 			if (d->expr)
 				d->expr->e.temp.def = 0;
@@ -425,9 +428,13 @@ reset_tempdefs (void)
 		free_temps[i] = 0;
 	}
 
-	for (d = temp_scope.next; d; d = d->next)
-		printf ("%s:%d: warning: %s %3d %3d %d\n", G_GETSTR (d->file), d->line,
-				pr_type_name[d->type->type], d->ofs, d->users, d->managed);
+	for (d = temp_scope.next; d; d = d->next) {
+		expr_t      e;
+		e.file = d->file;
+		e.line = d->line;
+		notice (&e, "%s %3d %3d %d", pr_type_name[d->type->type],
+				d->ofs, d->users, d->managed);
+	}
 	temp_scope.next = 0;
 }
 
