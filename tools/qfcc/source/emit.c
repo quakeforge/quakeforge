@@ -294,6 +294,7 @@ emit_address_expr (expr_t *e)
 	def_t      *def_a, *def_b, *d;
 	opcode_t   *op;
 
+print_expr (e); printf (" %d\n", e->line);
 	def_a = emit_sub_expr (e->e.expr.e1, 0);
 	def_b = emit_sub_expr (e->e.expr.e2, 0);
 	op = opcode_find ("&", def_a, def_b, 0);
@@ -306,28 +307,42 @@ emit_deref_expr (expr_t *e, def_t *dest)
 {
 	def_t      *d;
 	type_t     *type = e->e.expr.type;
+	def_t      *z;
+	opcode_t   *op;
 
 	e = e->e.expr.e1;
+	if (e->type == ex_pointer) {
+		if (e->e.pointer.val > 0 && e->e.pointer.val < 65536) {
+			d = new_def (e->e.pointer.type, 0, current_scope);
+			d->ofs = e->e.pointer.val;
+			d->absolute = e->e.pointer.abs;
+		} else {
+			d = ReuseConstant (e, 0);
+			zero.type = ex_short;
+			z = emit_sub_expr (&zero, 0);
+			op = opcode_find (".", d, z, dest);
+			d = emit_statement (e->line, op, d, z, dest);
+		}
+		return d;
+	}
 	if (!dest && (e->type != ex_pointer
 				  || !(e->e.pointer.val > 0
 					   && e->e.pointer.val < 65536))) {
 		dest = get_tempdef (type, current_scope);
 		dest->users += 2;
 	}
-print_expr (e); printf ("%p\n", dest);
+print_expr (e); printf (" %d %p\n", e->line, dest);
 	if (e->type == ex_expr
 		&& e->e.expr.op == '&'
 		&& e->e.expr.e1->type < ex_string)
 		e->e.expr.op = '.';
 	d = emit_sub_expr (e, dest);
+print_expr (e); printf (" %d %p\n", e->line, dest);
 	if (dest && d != dest) {
-		def_t      *z;
-		opcode_t   *op;
-		
 		zero.type = ex_short;
 		z = emit_sub_expr (&zero, 0);
 		op = opcode_find (".", d, z, dest);
-		return emit_statement (e->line, op, d, z, dest);
+		d = emit_statement (e->line, op, d, z, dest);
 	} else {
 		if (!d->name)
 			d->type = type;
@@ -466,16 +481,6 @@ emit_sub_expr (expr_t *e, def_t *dest)
 			d = e->e.temp.def;
 			break;
 		case ex_pointer:
-			if (e->e.pointer.val > 0 && e->e.pointer.val < 65536
-				&& e->e.pointer.type->type != ev_struct) {
-				d = new_def (pointer_type (e->e.pointer.type), 0,
-							 current_scope);
-				d->ofs = e->e.short_val;
-				d->absolute = e->e.pointer.abs;
-				d->users = 1;
-				break;
-			}
-			// fall through
 		case ex_string:
 		case ex_float:
 		case ex_vector:
