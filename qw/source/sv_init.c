@@ -43,22 +43,19 @@
 #include "QF/vfs.h"
 
 #include "compat.h"
+#include "crudefile.h"
 #include "server.h"
 #include "sv_progs.h"
 #include "world.h"
-#include "crudefile.h"
-
-server_t    sv;							// local server
-
-char        localmodels[MAX_MODELS][5];	// inline model names for precache
 
 char        localinfo[MAX_LOCALINFO_STRING + 1];	// local game info
+char        localmodels[MAX_MODELS][5];	// inline model names for precache
 
 entity_state_t baselines[MAX_EDICTS];
 
-/*
-	SV_ModelIndex
-*/
+server_t    sv;							// local server
+
+
 int
 SV_ModelIndex (const char *name)
 {
@@ -105,9 +102,8 @@ SV_FlushSignon (void)
 void
 SV_CreateBaseline (void)
 {
-	int         i;
+	int         i, entnum;
 	edict_t    *svent;
-	int         entnum;
 
 	for (entnum = 0; entnum < sv.num_edicts; entnum++) {
 		svent = EDICT_NUM (&sv_pr_state, entnum);
@@ -118,16 +114,17 @@ SV_CreateBaseline (void)
 		if (entnum > MAX_CLIENTS && !SVfloat (svent, modelindex))
 			continue;
 
-		// 
 		// create entity baseline
-		// 
-		VectorCopy (SVvector (svent, origin), ((entity_state_t*)svent->data)->origin);
-		VectorCopy (SVvector (svent, angles), ((entity_state_t*)svent->data)->angles);
+		VectorCopy (SVvector (svent, origin),
+					((entity_state_t*)svent->data)->origin);
+		VectorCopy (SVvector (svent, angles),
+					((entity_state_t*)svent->data)->angles);
 		((entity_state_t*)svent->data)->frame = SVfloat (svent, frame);
 		((entity_state_t*)svent->data)->skinnum = SVfloat (svent, skin);
 		if (entnum > 0 && entnum <= MAX_CLIENTS) {
 			((entity_state_t*)svent->data)->colormap = entnum;
-			((entity_state_t*)svent->data)->modelindex = SV_ModelIndex ("progs/player.mdl");
+			((entity_state_t*)svent->data)->modelindex = SV_ModelIndex
+				("progs/player.mdl");
 		} else {
 			((entity_state_t*)svent->data)->colormap = 0;
 			((entity_state_t*)svent->data)->modelindex =
@@ -140,15 +137,10 @@ SV_CreateBaseline (void)
 		((entity_state_t*)svent->data)->glow_color = 254;
 		((entity_state_t*)svent->data)->colormod = 255;
 
-		// 
-		// flush the signon message out to a seperate buffer if
-		// nearly full
-		// 
+		// flush the signon message out to a seperate buffer if nearly full
 		SV_FlushSignon ();
 
-		// 
 		// add to the message
-		// 
 		MSG_WriteByte (&sv.signon, svc_spawnbaseline);
 		MSG_WriteShort (&sv.signon, entnum);
 
@@ -157,12 +149,13 @@ SV_CreateBaseline (void)
 		MSG_WriteByte (&sv.signon, ((entity_state_t*)svent->data)->colormap);
 		MSG_WriteByte (&sv.signon, ((entity_state_t*)svent->data)->skinnum);
 		for (i = 0; i < 3; i++) {
-			MSG_WriteCoord (&sv.signon, ((entity_state_t*)svent->data)->origin[i]);
-			MSG_WriteAngle (&sv.signon, ((entity_state_t*)svent->data)->angles[i]);
+			MSG_WriteCoord (&sv.signon,
+							((entity_state_t*)svent->data)->origin[i]);
+			MSG_WriteAngle (&sv.signon,
+							((entity_state_t*)svent->data)->angles[i]);
 		}
 	}
 }
-
 
 /*
 	SV_SaveSpawnparms
@@ -182,7 +175,8 @@ SV_SaveSpawnparms (void)
 	// serverflags is the only game related thing maintained
 	svs.serverflags = *sv_globals.serverflags;
 
-	for (i = 0, host_client = svs.clients; i < MAX_CLIENTS; i++, host_client++) {
+	for (i = 0, host_client = svs.clients; i < MAX_CLIENTS; i++, host_client++)
+	{
 		if (host_client->state != cs_spawned)
 			continue;
 
@@ -206,12 +200,10 @@ SV_SaveSpawnparms (void)
 void
 SV_CalcPHS (void)
 {
-	int         rowbytes, rowwords;
-	int         i, j, k, l, index, num;
-	int         bitbyte;
-	unsigned int *dest, *src;
 	byte       *scan;
-	int         count, vcount;
+	int			bitbyte, count, index, num, rowbytes, rowwords, vcount, i, j,
+				k, l;
+	unsigned int *dest, *src;
 
 	SV_Printf ("Building PHS...\n");
 
@@ -233,7 +225,6 @@ SV_CalcPHS (void)
 			}
 		}
 	}
-
 
 	sv.phs = Hunk_Alloc (rowbytes * num);
 	count = 0;
@@ -277,7 +268,7 @@ SV_CheckModel (const char *mdl)
 	byte       *buf;
 	unsigned short crc = 0;
 
-//  int len;
+//	int len;
 
 	buf = (byte *) COM_LoadStackFile (mdl, stackbuf, sizeof (stackbuf));
 	if (buf) {
@@ -308,8 +299,7 @@ SV_SpawnServer (const char *server)
 	SV_SaveSpawnparms ();
 
 	svs.spawncount++;					// any partially connected client
-										// will be
-	// restarted
+										// will be restarted
 
 	sv.state = ss_dead;
 	sv_pr_state.null_bad = 0;
@@ -339,8 +329,8 @@ SV_SpawnServer (const char *server)
 
 	strcpy (sv.name, server);
 
-	// load progs to get entity field count
-	// which determines how big each edict is
+	// load progs to get entity field count which determines how big each
+	// edict is
 	SV_LoadProgs ();
 	Info_SetValueForStarKey (svs.info, "*progs", va ("%i", sv_pr_state.crc),
 							 MAX_SERVERINFO_STRING, !sv_highchars->int_val);
@@ -359,7 +349,7 @@ SV_SpawnServer (const char *server)
 	for (i = 0; i < MAX_CLIENTS; i++) {
 		ent = EDICT_NUM (&sv_pr_state, i + 1);
 		svs.clients[i].edict = ent;
-//ZOID - make sure we update frags right
+// ZOID - make sure we update frags right
 		svs.clients[i].old_frags = 0;
 	}
 
@@ -370,9 +360,7 @@ SV_SpawnServer (const char *server)
 	sv.worldmodel = Mod_ForName (sv.modelname, true);
 	SV_CalcPHS ();
 
-	// 
 	// clear physics interaction links
-	// 
 	SV_ClearWorld ();
 
 	sv.sound_precache[0] = sv_pr_state.pr_strings;
@@ -389,9 +377,7 @@ SV_SpawnServer (const char *server)
 	sv.model_player_checksum = SV_CheckModel ("progs/player.mdl");
 	sv.eyes_player_checksum = SV_CheckModel ("progs/eyes.mdl");
 
-	// 
 	// spawn the rest of the entities on the map
-	// 
 
 	// precache and static commands can be issued during
 	// map initialization

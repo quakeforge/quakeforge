@@ -31,9 +31,11 @@
 #endif
 
 #include "QF/cvar.h"
+
 #include "server.h"
 
 void        SV_SendServerInfoChange (const char *key, const char *value);
+
 
 /*
 
@@ -43,7 +45,6 @@ void        SV_SendServerInfoChange (const char *key, const char *value);
 	high char filtering is performed according to sv_highchars.value
 
 */
-
 void
 Cvar_Info (cvar_t *var)
 {
@@ -68,6 +69,6 @@ Cvar_Info (cvar_t *var)
 								 (sv_highchars && !sv_highchars->int_val));
 
 		SV_SendServerInfoChange (var->name, var->string);
-//      SV_BroadcastCommand ("fullserverinfo \"%s\"\n", svs.info);
+//		SV_BroadcastCommand ("fullserverinfo \"%s\"\n", svs.info);
 	}
 }

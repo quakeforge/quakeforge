@@ -29,12 +29,11 @@
 #ifdef HAVE_CONFIG_H
 # include "config.h"
 #endif
-
 #ifdef HAVE_STRING_H
-#include "string.h"
+# include "string.h"
 #endif
 #ifdef HAVE_STRINGS_H
-#include "strings.h"
+# include "strings.h"
 #endif
 
 #include "QF/cmd.h"
@@ -62,6 +61,7 @@ func_t	SpectatorThink;
 func_t	UserInfoCallback;
 
 static int reserved_edicts = MAX_CLIENTS;
+
 
 static void
 free_edict (progs_t *pr, edict_t *ent)
@@ -98,8 +98,9 @@ prune_edict (progs_t *pr, edict_t *ent)
 				(*sv_globals.current_skill == 0
 					&& ((int) SVfloat (ent, spawnflags) & SPAWNFLAG_NOT_EASY))
 						|| (*sv_globals.current_skill == 1
-					&& ((int) SVfloat (ent, spawnflags) & SPAWNFLAG_NOT_MEDIUM))
-						|| (*sv_globals.current_skill >= 2
+					&& ((int) SVfloat (ent, spawnflags) &
+						SPAWNFLAG_NOT_MEDIUM)) ||
+				(*sv_globals.current_skill >= 2
 					&& ((int) SVfloat (ent, spawnflags) & SPAWNFLAG_NOT_HARD))) {
 			return 1;
 		}
@@ -162,8 +163,8 @@ parse_field (progs_t *pr, const char *key, const char *value)
 void
 SV_LoadProgs (void)
 {
-	dfunction_t *f;
 	ddef_t *def;
+	dfunction_t *f;
 
 	PR_LoadProgs (&sv_pr_state, sv_progs->string);
 	if (!sv_pr_state.progs)
@@ -174,40 +175,66 @@ SV_LoadProgs (void)
 
 	(void *) sv_globals.other = PR_GetGlobalPointer (&sv_pr_state, "other");
 	(void *) sv_globals.world = PR_GetGlobalPointer (&sv_pr_state, "world");
-	(void *) sv_globals.frametime = PR_GetGlobalPointer (&sv_pr_state, "frametime");
+	(void *) sv_globals.frametime = PR_GetGlobalPointer (&sv_pr_state,
+														 "frametime");
 	(void *) sv_globals.newmis = PR_GetGlobalPointer (&sv_pr_state, "newmis");
-	(void *) sv_globals.force_retouch = PR_GetGlobalPointer (&sv_pr_state, "force_retouch");
-	(void *) sv_globals.mapname = PR_GetGlobalPointer (&sv_pr_state, "mapname");
-	(void *) sv_globals.serverflags = PR_GetGlobalPointer (&sv_pr_state, "serverflags");
-	(void *) sv_globals.total_secrets = PR_GetGlobalPointer (&sv_pr_state, "total_secrets");
-	(void *) sv_globals.total_monsters = PR_GetGlobalPointer (&sv_pr_state, "total_monsters");
-	(void *) sv_globals.found_secrets = PR_GetGlobalPointer (&sv_pr_state, "found_secrets");
-	(void *) sv_globals.killed_monsters = PR_GetGlobalPointer (&sv_pr_state, "killed_monsters");
+	(void *) sv_globals.force_retouch = PR_GetGlobalPointer (&sv_pr_state,
+															 "force_retouch");
+	(void *) sv_globals.mapname = PR_GetGlobalPointer (&sv_pr_state,
+													   "mapname");
+	(void *) sv_globals.serverflags = PR_GetGlobalPointer (&sv_pr_state,
+														   "serverflags");
+	(void *) sv_globals.total_secrets = PR_GetGlobalPointer (&sv_pr_state,
+															 "total_secrets");
+	(void *) sv_globals.total_monsters = PR_GetGlobalPointer
+		(&sv_pr_state, "total_monsters");
+	(void *) sv_globals.found_secrets = PR_GetGlobalPointer (&sv_pr_state,
+															 "found_secrets");
+	(void *) sv_globals.killed_monsters = PR_GetGlobalPointer
+		(&sv_pr_state, "killed_monsters");
 	(void *) sv_globals.parms = PR_GetGlobalPointer (&sv_pr_state, "parm1");
-	(void *) sv_globals.v_forward = PR_GetGlobalPointer (&sv_pr_state, "v_forward");
+	(void *) sv_globals.v_forward = PR_GetGlobalPointer (&sv_pr_state,
+														 "v_forward");
 	(void *) sv_globals.v_up = PR_GetGlobalPointer (&sv_pr_state, "v_up");
-	(void *) sv_globals.v_right = PR_GetGlobalPointer (&sv_pr_state, "v_right");
-	(void *) sv_globals.trace_allsolid = PR_GetGlobalPointer (&sv_pr_state, "trace_allsolid");
-	(void *) sv_globals.trace_startsolid = PR_GetGlobalPointer (&sv_pr_state, "trace_startsolid");
-	(void *) sv_globals.trace_fraction = PR_GetGlobalPointer (&sv_pr_state, "trace_fraction");
-	(void *) sv_globals.trace_endpos = PR_GetGlobalPointer (&sv_pr_state, "trace_endpos");
-	(void *) sv_globals.trace_plane_normal = PR_GetGlobalPointer (&sv_pr_state, "trace_plane_normal");
-	(void *) sv_globals.trace_plane_dist = PR_GetGlobalPointer (&sv_pr_state, "trace_plane_dist");
-	(void *) sv_globals.trace_ent = PR_GetGlobalPointer (&sv_pr_state, "trace_ent");
-	(void *) sv_globals.trace_inopen = PR_GetGlobalPointer (&sv_pr_state, "trace_inopen");
-	(void *) sv_globals.trace_inwater = PR_GetGlobalPointer (&sv_pr_state, "trace_inwater");
-	(void *) sv_globals.msg_entity = PR_GetGlobalPointer (&sv_pr_state, "msg_entity");
+	(void *) sv_globals.v_right = PR_GetGlobalPointer (&sv_pr_state,
+													   "v_right");
+	(void *) sv_globals.trace_allsolid = PR_GetGlobalPointer
+		(&sv_pr_state, "trace_allsolid");
+	(void *) sv_globals.trace_startsolid = PR_GetGlobalPointer
+		(&sv_pr_state, "trace_startsolid");
+	(void *) sv_globals.trace_fraction = PR_GetGlobalPointer
+		(&sv_pr_state, "trace_fraction");
+	(void *) sv_globals.trace_endpos = PR_GetGlobalPointer (&sv_pr_state,
+															"trace_endpos");
+	(void *) sv_globals.trace_plane_normal = PR_GetGlobalPointer
+		(&sv_pr_state, "trace_plane_normal");
+	(void *) sv_globals.trace_plane_dist = PR_GetGlobalPointer
+		(&sv_pr_state, "trace_plane_dist");
+	(void *) sv_globals.trace_ent = PR_GetGlobalPointer (&sv_pr_state,
+														 "trace_ent");
+	(void *) sv_globals.trace_inopen = PR_GetGlobalPointer (&sv_pr_state,
+															"trace_inopen");
+	(void *) sv_globals.trace_inwater = PR_GetGlobalPointer (&sv_pr_state,
+															 "trace_inwater");
+	(void *) sv_globals.msg_entity = PR_GetGlobalPointer (&sv_pr_state,
+														  "msg_entity");
 
 	sv_funcs.main = PR_GetFunctionIndex (&sv_pr_state, "main");
 	sv_funcs.StartFrame = PR_GetFunctionIndex (&sv_pr_state, "StartFrame");
-	sv_funcs.PlayerPreThink = PR_GetFunctionIndex (&sv_pr_state, "PlayerPreThink");
-	sv_funcs.PlayerPostThink = PR_GetFunctionIndex (&sv_pr_state, "PlayerPostThink");
+	sv_funcs.PlayerPreThink = PR_GetFunctionIndex (&sv_pr_state,
+												   "PlayerPreThink");
+	sv_funcs.PlayerPostThink = PR_GetFunctionIndex (&sv_pr_state,
+													"PlayerPostThink");
 	sv_funcs.ClientKill = PR_GetFunctionIndex (&sv_pr_state, "ClientKill");
-	sv_funcs.ClientConnect = PR_GetFunctionIndex (&sv_pr_state, "ClientConnect");
-	sv_funcs.PutClientInServer = PR_GetFunctionIndex (&sv_pr_state, "PutClientInServer");
-	sv_funcs.ClientDisconnect = PR_GetFunctionIndex (&sv_pr_state, "ClientDisconnect");
+	sv_funcs.ClientConnect = PR_GetFunctionIndex (&sv_pr_state,
+												  "ClientConnect");
+	sv_funcs.PutClientInServer = PR_GetFunctionIndex (&sv_pr_state,
+													  "PutClientInServer");
+	sv_funcs.ClientDisconnect = PR_GetFunctionIndex (&sv_pr_state,
+													 "ClientDisconnect");
 	sv_funcs.SetNewParms = PR_GetFunctionIndex (&sv_pr_state, "SetNewParms");
-	sv_funcs.SetChangeParms = PR_GetFunctionIndex (&sv_pr_state, "SetChangeParms");
+	sv_funcs.SetChangeParms = PR_GetFunctionIndex (&sv_pr_state,
+												   "SetChangeParms");
 
 	sv_fields.modelindex = PR_GetFieldOffset (&sv_pr_state, "modelindex");
 	sv_fields.absmin = PR_GetFieldOffset (&sv_pr_state, "absmin");
@@ -259,7 +286,8 @@ SV_LoadProgs (void)
 	sv_fields.flags = PR_GetFieldOffset (&sv_pr_state, "flags");
 	sv_fields.colormap = PR_GetFieldOffset (&sv_pr_state, "colormap");
 	sv_fields.team = PR_GetFieldOffset (&sv_pr_state, "team");
-	sv_fields.teleport_time = PR_GetFieldOffset (&sv_pr_state, "teleport_time");
+	sv_fields.teleport_time = PR_GetFieldOffset (&sv_pr_state,
+												 "teleport_time");
 	sv_fields.armorvalue = PR_GetFieldOffset (&sv_pr_state, "armorvalue");
 	sv_fields.waterlevel = PR_GetFieldOffset (&sv_pr_state, "waterlevel");
 	sv_fields.watertype = PR_GetFieldOffset (&sv_pr_state, "watertype");
@@ -269,7 +297,8 @@ SV_LoadProgs (void)
 	sv_fields.spawnflags = PR_GetFieldOffset (&sv_pr_state, "spawnflags");
 	sv_fields.dmg_take = PR_GetFieldOffset (&sv_pr_state, "dmg_take");
 	sv_fields.dmg_save = PR_GetFieldOffset (&sv_pr_state, "dmg_save");
-	sv_fields.dmg_inflictor = PR_GetFieldOffset (&sv_pr_state, "dmg_inflictor");
+	sv_fields.dmg_inflictor = PR_GetFieldOffset (&sv_pr_state,
+												 "dmg_inflictor");
 	sv_fields.owner = PR_GetFieldOffset (&sv_pr_state, "owner");
 	sv_fields.message = PR_GetFieldOffset (&sv_pr_state, "message");
 	sv_fields.sounds = PR_GetFieldOffset (&sv_pr_state, "sounds");
@@ -323,14 +352,14 @@ SV_Progs_Init (void)
 
 	SV_PR_Cmds_Init ();
 
-	Cmd_AddCommand ("edict", ED_PrintEdict_f,
-					"Report information on a given edict in the game. (edict (edict number))");
+	Cmd_AddCommand ("edict", ED_PrintEdict_f, "Report information on a given "
+					"edict in the game. (edict (edict number))");
 	Cmd_AddCommand ("edicts", ED_PrintEdicts_f,
 					"Display information on all edicts in the game.");
 	Cmd_AddCommand ("edictcount", ED_Count_f,
 					"Display summary information on the edicts in the game.");
-	Cmd_AddCommand ("profile", PR_Profile_f,
-					"FIXME: Report information about QuakeC Stuff (\?\?\?) No Description");
+	Cmd_AddCommand ("profile", PR_Profile_f, "FIXME: Report information about "
+					"QuakeC Stuff (\?\?\?) No Description");
 }
 
 void

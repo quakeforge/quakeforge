@@ -56,17 +56,15 @@
 #include "buildnum.h"
 #include "compat.h"
 #include "client.h"		//FIXME needed by cls below (for netchan)
+#include "crudefile.h"
 #include "game.h"
 #include "net.h"
 #include "pmove.h"
 #include "server.h"
 #include "sv_progs.h"
-#include "crudefile.h"
 
-quakeparms_t host_parms;
-qboolean    host_initialized;			// true if into command execution
-
-qboolean    rcon_from_user;
+client_t   *host_client;				// current client
+client_static_t cls;					//FIXME needed by netchan :/
 
 double      sv_frametime;
 double      realtime;					// without any filtering or bounding
@@ -75,8 +73,10 @@ int         host_hunklevel;
 
 netadr_t    master_adr[MAX_MASTERS];	// address of group servers
 
-client_t   *host_client;				// current client
-client_static_t cls;					//FIXME needed by netchan :/
+quakeparms_t host_parms;
+
+qboolean    host_initialized;			// true if into command execution
+qboolean    rcon_from_user;
 
 // DoS protection
 // FLOOD_PING, FLOOD_LOG, FLOOD_CONNECT, FLOOD_STATUS, FLOOD_RCON, FLOOD_BAN
@@ -85,31 +85,27 @@ client_static_t cls;					//FIXME needed by netchan :/
 double      netdosexpire[DOSFLOODCMDS] = { 1, 1, 2, 0.9, 1, 5 };
 double      netdosvalues[DOSFLOODCMDS] = { 12, 1, 3, 1, 1, 1 };
 
-cvar_t     *sv_netdosprotect;			// tone down DoS from quake servers
+cvar_t     *fs_globalcfg;
+cvar_t     *fs_usercfg;
 
 cvar_t     *sv_allow_status;
 cvar_t     *sv_allow_log;
 cvar_t     *sv_allow_ping;
 
-cvar_t     *fs_globalcfg;
-cvar_t     *fs_usercfg;
-
 cvar_t     *sv_mintic;					// bound the size of the
 cvar_t     *sv_maxtic;					// physics time tic
 
+cvar_t     *sv_netdosprotect;			// tone down DoS from quake servers
+
 cvar_t     *timeout;					// seconds without any message
 cvar_t     *zombietime;					// seconds to sink messages after
-
 										// disconnect
 
 cvar_t     *rcon_password;				// password for remote server
-cvar_t     *admin_password;				// password for admin
-
-										// commands
+cvar_t     *admin_password;				// password for admin commands
 
 cvar_t     *password;					// password for entering the game
 cvar_t     *spectator_password;			// password for entering as a
-
 										// spectator
 
 cvar_t     *allow_download;
@@ -119,7 +115,6 @@ cvar_t     *allow_download_sounds;
 cvar_t     *allow_download_maps;
 
 cvar_t     *sv_highchars;
-
 cvar_t     *sv_phs;
 
 cvar_t     *pausable;
@@ -129,18 +124,14 @@ extern cvar_t *sv_timekick_fuzz;
 extern cvar_t *sv_timekick_interval;
 
 cvar_t     *sv_minqfversion;			// Minimum QF version allowed to
-
 										// connect
 cvar_t     *sv_maxrate;					// Maximum allowable rate (silently
-
 										// capped)
 
 cvar_t     *sv_timestamps;
 cvar_t     *sv_timefmt;
 
-//
 // game rules mirrored in svs.info
-//
 cvar_t     *fraglimit;
 cvar_t     *timelimit;
 cvar_t     *teamplay;
@@ -163,7 +154,6 @@ int         pr_gc_count = 0;
 void        SV_AcceptClient (netadr_t adr, int userid, char *userinfo);
 void        Master_Shutdown (void);
 
-//============================================================================
 
 qboolean
 ServerPaused (void)
@@ -234,8 +224,8 @@ SV_Error (const char *error, ...)
 void
 SV_FinalMessage (const char *message)
 {
-	int         i;
 	client_t   *cl;
+	int         i;
 
 	SZ_Clear (net_message->message);
 	MSG_WriteByte (net_message->message, svc_print);
@@ -302,18 +292,11 @@ SV_DropClient (client_t *drop)
 	SV_FullClientUpdate (drop, &sv.reliable_datagram);
 }
 
-
-//====================================================================
-
-/*
-	SV_CalcPing
-*/
 int
 SV_CalcPing (client_t *cl)
 {
 	float       ping;
-	int         i;
-	int         count;
+	int         count, i;
 	register client_frame_t *frame;
 
 	ping = 0;
@@ -339,12 +322,12 @@ SV_CalcPing (client_t *cl)
 void
 SV_FullClientUpdate (client_t *client, sizebuf_t *buf)
 {
-	int         i;
 	char        info[MAX_INFO_STRING];
+	int         i;
 
 	i = client - svs.clients;
 
-//  SV_Printf("SV_FullClientUpdate:  Updated frags for client %d\n", i);
+//	SV_Printf("SV_FullClientUpdate:  Updated frags for client %d\n", i);
 
 	MSG_WriteByte (buf, svc_updatefrags);
 	MSG_WriteByte (buf, i);
@@ -387,10 +370,7 @@ SV_FullClientUpdateToClient (client_t *client, client_t *cl)
 		SV_FullClientUpdate (client, &cl->netchan.message);
 }
 
-
-/*
-	CONNECTIONLESS COMMANDS
-*/
+/* CONNECTIONLESS COMMANDS */
 
 /*
 	CheckForFlood :: EXPERIMENTAL
@@ -400,18 +380,15 @@ SV_FullClientUpdateToClient (client_t *client, client_t *cl)
 
 	Bad sides: affects gamespy and spytools somewhat...
 */
-
 int
 CheckForFlood (flood_enum_t cmdtype)
 {
-	static qboolean firsttime = true;
-	static flood_t floodstatus[DOSFLOODCMDS][DOSFLOODIP];
-
-	int         i;
 	double      currenttime;
 	double      oldestTime;
 	static double lastmessagetime = 0;
-	int         oldest;
+	static flood_t floodstatus[DOSFLOODCMDS][DOSFLOODIP];
+	int         oldest, i;
+	static qboolean firsttime = true;
 
 	if (!sv_netdosprotect->int_val)
 		return 0;
@@ -476,10 +453,8 @@ CheckForFlood (flood_enum_t cmdtype)
 void
 SVC_Status (void)
 {
-	int         i;
 	client_t   *cl;
-	int         ping;
-	int         top, bottom;
+	int         ping, bottom, top, i;
 
 	extern int  con_printf_no_log;
 
@@ -512,11 +487,10 @@ SVC_Status (void)
 	con_printf_no_log = 0;
 }
 
-/*
-	SV_CheckLog
-*/
+/* SV_CheckLog */
 #define	LOG_HIGHWATER	4096
 #define	LOG_FLUSH		10*60
+
 void
 SV_CheckLog (void)
 {
@@ -549,8 +523,8 @@ SV_CheckLog (void)
 void
 SVC_Log (void)
 {
-	int         seq;
 	char        data[MAX_DATAGRAM + 64];
+	int         seq;
 
 	if (!sv_allow_log->int_val)
 		return;
@@ -562,11 +536,8 @@ SVC_Log (void)
 	else
 		seq = -1;
 
-	if (seq == svs.logsequence - 1 || !sv_fraglogfile) {	// they already
-		// have this
-		// data, or we
-		// aren't logging 
-		// frags
+	if (seq == svs.logsequence - 1 || !sv_fraglogfile) {
+		// they already have this data, or we aren't logging frags
 		data[0] = A2A_NACK;
 		NET_SendPacket (1, data, net_from);
 		return;
@@ -575,9 +546,9 @@ SVC_Log (void)
 	Con_DPrintf ("sending log %i to %s\n", svs.logsequence - 1,
 				 NET_AdrToString (net_from));
 
-	// snprintf (data, sizeof (data), "stdlog %i\n", svs.logsequence-1);
-	// strncat (data,  (char *)svs.log_buf[((svs.logsequence-1)&1)],
-	// sizeof(data) - strlen (data));
+//	snprintf (data, sizeof (data), "stdlog %i\n", svs.logsequence-1);
+//	strncat (data,  (char *)svs.log_buf[((svs.logsequence-1)&1)],
+//	sizeof(data) - strlen (data));
 	snprintf (data, sizeof (data), "stdlog %i\n%s",
 			  svs.logsequence - 1,
 			  (char *) svs.log_buf[((svs.logsequence - 1) & 1)]);
@@ -617,9 +588,7 @@ SVC_Ping (void)
 void
 SVC_GetChallenge (void)
 {
-	int         i;
-	int         oldest;
-	int         oldestTime;
+	int         oldest, oldestTime, i;
 
 	oldest = 0;
 	oldestTime = 0x7fffffff;
@@ -655,19 +624,14 @@ void
 SVC_DirectConnect (void)
 {
 	char        userinfo[1024];
-	static int  userid;
-	netadr_t    adr;
-	int         i;
+	const char *s;
 	client_t   *cl, *newcl;
 	client_t    temp;
 	edict_t    *ent;
-	int         edictnum;
-	const char *s;
-	int         clients, spectators;
+	int         challenge, clients, edictnum, qport, spectators, version, i;
+	static int  userid;
+	netadr_t    adr;
 	qboolean    spectator;
-	int         qport;
-	int         version;
-	int         challenge;
 
 	if (CheckForFlood (FLOOD_CONNECT))
 		return;
@@ -715,11 +679,13 @@ SVC_DirectConnect (void)
 	if ((!s[0]) || sv_minqfversion->string[0]) {	// kick old clients?
 		if (ver_compare (s, sv_minqfversion->string) < 0) {
 			SV_Printf ("%s: Version %s is less than minimum version %s.\n",
-						NET_AdrToString (net_from), s, sv_minqfversion->string);
+						NET_AdrToString (net_from), s,
+					   sv_minqfversion->string);
 
-			Netchan_OutOfBandPrint (net_from,
-									"%c\nserver requires QuakeForge v%s or greater. Get it from http://www.quakeforge.net/\n",
-									A2C_PRINT, sv_minqfversion->string);
+			Netchan_OutOfBandPrint (net_from, "%c\nserver requires QuakeForge "
+									"v%s or greater. Get it from "
+									"http://www.quakeforge.net/\n", A2C_PRINT,
+									sv_minqfversion->string);
 			return;
 		}
 	}
@@ -899,8 +865,8 @@ Rcon_Validate (cvar_t *pass)
 char *
 Name_of_sender (void)
 {
-	int         i;
 	client_t   *cl;
+	int         i;
 
 	for (i=0, cl=svs.clients ; i<MAX_CLIENTS ; i++,cl++) {
 		if (cl->state == cs_free)
@@ -914,13 +880,12 @@ Name_of_sender (void)
 	return NULL;
 }
 
-
 /*
-	SVC_RemoteCommand
+  SVC_RemoteCommand
 
-	A client issued an rcon command.
-	Shift down the remaining args
-	Redirect all printfs
+  A client issued an rcon command.
+  Shift down the remaining args
+  Redirect all printfs
 */
 void
 SVC_RemoteCommand (void)
@@ -929,8 +894,8 @@ SVC_RemoteCommand (void)
 	int         len = 0;
 	char        remaining[1024];
 	char       *name;
-	qboolean    do_cmd = false;
 	qboolean    admin_cmd = false;
+	qboolean    do_cmd = false;
 
 	if (CheckForFlood (FLOOD_RCON))
 		return;
@@ -995,20 +960,18 @@ SVC_RemoteCommand (void)
 	SV_EndRedirect ();
 }
 
-
 /*
-	SV_ConnectionlessPacket
+  SV_ConnectionlessPacket
 
-	A connectionless packet has four leading 0xff
-	characters to distinguish it from a game channel.
-	Clients that are in the game can still send
-	connectionless packets.
+  A connectionless packet has four leading 0xff
+  characters to distinguish it from a game channel.
+  Clients that are in the game can still send
+  connectionless packets.
 */
 void
 SV_ConnectionlessPacket (void)
 {
-	const char *s;
-	const char *c;
+	const char *c, *s;
 
 	MSG_BeginReading (net_message);
 	MSG_ReadLong (net_message);					// skip the -1 marker
@@ -1049,7 +1012,6 @@ SV_ConnectionlessPacket (void)
 /*
 	PACKET FILTERING
 
-
 	You can add or remove addresses from the filter list with:
 
 	addip <ip>
@@ -1080,7 +1042,6 @@ SV_ConnectionlessPacket (void)
 	from your local network.
 */
 
-
 typedef struct {
 	unsigned int mask;
 	unsigned int compare;
@@ -1088,21 +1049,16 @@ typedef struct {
 
 #define	MAX_IPFILTERS	1024
 
-ipfilter_t  ipfilters[MAX_IPFILTERS];
-int         numipfilters;
-
 cvar_t     *filterban;
+int         numipfilters;
+ipfilter_t  ipfilters[MAX_IPFILTERS];
 
-/*
-	StringToFilter
-*/
 qboolean
 StringToFilter (const char *s, ipfilter_t * f)
 {
+	byte        b[4], m[4];
 	char        num[128];
 	int         i, j;
-	byte        b[4];
-	byte        m[4];
 
 	for (i = 0; i < 4; i++) {
 		b[i] = 0;
@@ -1135,9 +1091,6 @@ StringToFilter (const char *s, ipfilter_t * f)
 	return true;
 }
 
-/*
-	SV_AddIP_f
-*/
 void
 SV_AddIP_f (void)
 {
@@ -1158,14 +1111,11 @@ SV_AddIP_f (void)
 		ipfilters[i].compare = 0xffffffff;
 }
 
-/*
-	SV_RemoveIP_f
-*/
 void
 SV_RemoveIP_f (void)
 {
-	ipfilter_t  f;
 	int         i, j;
+	ipfilter_t  f;
 
 	if (!StringToFilter (Cmd_Argv (1), &f))
 		return;
@@ -1180,14 +1130,11 @@ SV_RemoveIP_f (void)
 	SV_Printf ("Didn't find %s.\n", Cmd_Argv (1));
 }
 
-/*
-	SV_ListIP_f
-*/
 void
 SV_ListIP_f (void)
 {
-	int         i;
 	byte        b[4];
+	int         i;
 
 	SV_Printf ("Filter list:\n");
 	for (i = 0; i < numipfilters; i++) {
@@ -1196,16 +1143,13 @@ SV_ListIP_f (void)
 	}
 }
 
-/*
-	SV_WriteIP_f
-*/
 void
 SV_WriteIP_f (void)
 {
-	VFile      *f;
-	char        name[MAX_OSPATH];
 	byte        b[4];
+	char        name[MAX_OSPATH];
 	int         i;
+	VFile      *f;
 
 	snprintf (name, sizeof (name), "%s/listip.cfg", com_gamedir);
 
@@ -1225,14 +1169,10 @@ SV_WriteIP_f (void)
 	Qclose (f);
 }
 
-/*
-	netDoSexpire_f
-*/
 void
 SV_netDoSexpire_f (void)
 {
-	int         arg1;
-	int         i;
+	int         arg1, i;
 
 	if (Cmd_Argc () == 1) {
 		SV_Printf ("Current DoS prot. expire settings: ");
@@ -1245,8 +1185,8 @@ SV_netDoSexpire_f (void)
 	}
 
 	if (Cmd_Argc () != DOSFLOODCMDS + 1) {
-		SV_Printf
-			("Usage: netdosexpire <ping> <log> <connect> <status> <rcon> <ban>\n");
+		SV_Printf ("Usage: netdosexpire <ping> <log> <connect> <status> "
+				   "<rcon> <ban>\n");
 		return;
 	}
 
@@ -1258,14 +1198,10 @@ SV_netDoSexpire_f (void)
 	return;
 }
 
-/*
-	DoSvalues_f
-*/
 void
 SV_netDoSvalues_f (void)
 {
-	int         arg1;
-	int         i;
+	int         arg1, i;
 
 	if (Cmd_Argc () == 1) {
 		SV_Printf ("Current DoS prot. value settings: ");
@@ -1278,8 +1214,8 @@ SV_netDoSvalues_f (void)
 	}
 
 	if (Cmd_Argc () != DOSFLOODCMDS + 1) {
-		SV_Printf
-			("Usage: netdosvalues <ping> <log> <connect> <status> <rcon> <ban>\n");
+		SV_Printf ("Usage: netdosvalues <ping> <log> <connect> <status> "
+				   "<rcon> <ban>\n");
 		return;
 	}
 
@@ -1291,9 +1227,6 @@ SV_netDoSvalues_f (void)
 	return;
 }
 
-/*
-	SV_SendBan
-*/
 void
 SV_SendBan (void)
 {
@@ -1310,9 +1243,6 @@ SV_SendBan (void)
 	NET_SendPacket (strlen (data), data, net_from);
 }
 
-/*
-	SV_FilterPacket
-*/
 qboolean
 SV_FilterPacket (void)
 {
@@ -1328,18 +1258,12 @@ SV_FilterPacket (void)
 	return !filterban->int_val;			// FIXME eh?
 }
 
-//============================================================================
-
-/*
-	SV_ReadPackets
-*/
 void
 SV_ReadPackets (void)
 {
-	int         i;
 	client_t   *cl;
+	int         qport, i;
 	qboolean    good;
-	int         qport;
 
 	good = false;
 	while (NET_GetPacket ()) {
@@ -1392,28 +1316,27 @@ SV_ReadPackets (void)
 			continue;
 
 		// packet is not from a known client
-		// SV_Printf ("%s:sequenced packet without connection\n"
-		// ,NET_AdrToString(net_from));
+//		SV_Printf ("%s:sequenced packet without connection\n",
+//				   NET_AdrToString(net_from));
 	}
 }
 
 /*
-	SV_CheckTimeouts
+  SV_CheckTimeouts
 
-	If a packet has not been received from a client in timeout.value
-	seconds, drop the conneciton.
+  If a packet has not been received from a client in timeout.value
+  seconds, drop the conneciton.
 
-	When a client is normally dropped, the client_t goes into a zombie
-	state for a few seconds to make sure any final reliable message gets
-	resent if necessary
+  When a client is normally dropped, the client_t goes into a zombie
+  state for a few seconds to make sure any final reliable message gets
+  resent if necessary
 */
 void
 SV_CheckTimeouts (void)
 {
-	int         i;
 	client_t   *cl;
 	float       droptime;
-	int         nclients;
+	int         nclients, i;
 
 	droptime = realtime - timeout->value;
 	nclients = 0;
@@ -1442,9 +1365,9 @@ SV_CheckTimeouts (void)
 }
 
 /*
-	SV_GetConsoleCommands
+  SV_GetConsoleCommands
 
-	Add them exactly as if they had been typed at the console
+  Add them exactly as if they had been typed at the console
 */
 void
 SV_GetConsoleCommands (void)
@@ -1503,9 +1426,6 @@ SV_GarbageCollect ()
 	}
 }
 
-/*
-	SV_Frame
-*/
 void
 SV_Frame (float time)
 {
@@ -1566,9 +1486,6 @@ SV_Frame (float time)
 	Con_ProcessInput (0, 0);	//XXX evil hack to get the cursor in the right place
 }
 
-/*
-	SV_InitLocal
-*/
 void
 SV_InitLocal (void)
 {
@@ -1586,153 +1503,170 @@ SV_InitLocal (void)
 
 	SV_UserInit ();
 
-	rcon_password = Cvar_Get ("rcon_password", "", CVAR_NONE, NULL, "Set the password for rcon 'root' commands");
-	admin_password = Cvar_Get ("admin_password", "", CVAR_NONE, NULL, "Set the password for rcon admin commands");
-	password = Cvar_Get ("password", "", CVAR_NONE, NULL, "Set the server password for players");
-	spectator_password = Cvar_Get ("spectator_password", "", CVAR_NONE, NULL, "Set the spectator password");
-
-	sv_mintic = Cvar_Get ("sv_mintic", "0.03", CVAR_NONE, NULL, 
-		"The minimum amount of time the server will wait before sending packets to a client. Set to .5 to make modem users happy");
-	sv_maxtic = Cvar_Get ("sv_maxtic", "0.1", CVAR_NONE, NULL, 
-		"The maximum amount of time in seconds before a client a receives an update from the server");
-	fraglimit = Cvar_Get ("fraglimit", "0", CVAR_SERVERINFO, Cvar_Info, "Amount of frags a player must attain in order to exit the level");
-	timelimit = Cvar_Get ("timelimit", "0", CVAR_SERVERINFO, Cvar_Info, 
-		"Sets the amount of time in minutes that is needed before advancing to the next level");
-	teamplay = Cvar_Get ("teamplay", "0", CVAR_SERVERINFO, Cvar_Info, 
-		"Determines teamplay rules. 0 off, 1 You cannot hurt yourself nor your teammates, "
-		"2 You can hurt yourself, your teammates, and you will lose one frag for killing a teammate"
-		"3 You can hurt yourself but you cannot hurt your teammates");
-	samelevel = Cvar_Get ("samelevel", "0", CVAR_SERVERINFO, Cvar_Info, 
-		"Determines the rules for level changing and exiting. 0 Allows advancing to the next level,"
-		"1 The same level will be played until someone exits,"
-		"2 The same level will be played and the exit will kill anybody that tries to exit,"
-		"3 The same level will be played and the exit will kill anybody that tries to exit, except on the Start map.");
-	maxclients = Cvar_Get ("maxclients", "8", CVAR_SERVERINFO, Cvar_Info, 
-		"Sets how many clients can connect to your server, this includes spectators and players");
-	maxspectators = Cvar_Get ("maxspectators", "8", CVAR_SERVERINFO, Cvar_Info, 
-		"Sets how many spectators can connect to your server. The maxclients value takes precidence over this value so this"
-		" value should always be equal-to or less-then the maxclients value");
+	rcon_password = Cvar_Get ("rcon_password", "", CVAR_NONE, NULL, "Set the "
+							  "password for rcon 'root' commands");
+	admin_password = Cvar_Get ("admin_password", "", CVAR_NONE, NULL, "Set "
+							   "the password for rcon admin commands");
+	password = Cvar_Get ("password", "", CVAR_NONE, NULL, "Set the server "
+						 "password for players");
+	spectator_password = Cvar_Get ("spectator_password", "", CVAR_NONE, NULL,
+								   "Set the spectator password");
+	sv_mintic = Cvar_Get ("sv_mintic", "0.03", CVAR_NONE, NULL, "The minimum "
+						  "amount of time the server will wait before sending "
+						  "packets to a client. Set to .5 to make modem users "
+						  "happy");
+	sv_maxtic = Cvar_Get ("sv_maxtic", "0.1", CVAR_NONE, NULL, "The maximum "
+						  "amount of time in seconds before a client a "
+						  "receives an update from the server");
+	fraglimit = Cvar_Get ("fraglimit", "0", CVAR_SERVERINFO, Cvar_Info,
+						  "Amount of frags a player must attain in order to "
+						  "exit the level");
+	timelimit = Cvar_Get ("timelimit", "0", CVAR_SERVERINFO, Cvar_Info,
+						  "Sets the amount of time in minutes that is needed "
+						  "before advancing to the next level");
+	teamplay = Cvar_Get ("teamplay", "0", CVAR_SERVERINFO, Cvar_Info,
+						 "Determines teamplay rules. 0 off, 1 You cannot hurt "
+						 "yourself nor your teammates, 2 You can hurt "
+						 "yourself, your teammates, and you will lose one "
+						 "frag for killing a teammate, 3 You can hurt "
+						 "yourself but you cannot hurt your teammates");
+	samelevel = Cvar_Get ("samelevel", "0", CVAR_SERVERINFO, Cvar_Info,
+						  "Determines the rules for level changing and "
+						  "exiting. 0 Allows advancing to the next level,"
+						  "1 The same level will be played until someone "
+						  "exits, 2 The same level will be played and the "
+						  "exit will kill anybody that tries to exit, 3 The "
+						  "same level will be played and the exit will kill "
+						  "anybody that tries to exit, except on the Start "
+						  "map.");
+	maxclients = Cvar_Get ("maxclients", "8", CVAR_SERVERINFO, Cvar_Info,
+						   "Sets how many clients can connect to your "
+						   "server, this includes spectators and players");
+	maxspectators = Cvar_Get ("maxspectators", "8", CVAR_SERVERINFO, Cvar_Info,
+							  "Sets how many spectators can connect to your "
+							  "server. The maxclients value takes precedence "
+							  "over this value so this value should always be "
+							  "equal-to or less-then the maxclients value");
 	hostname = Cvar_Get ("hostname", "unnamed", CVAR_SERVERINFO, Cvar_Info,
-			"Report or sets the server name");
+						 "Report or sets the server name");
 	deathmatch = Cvar_Get ("deathmatch", "1", CVAR_SERVERINFO, Cvar_Info, 
-		"Sets the rules for weapon and item respawning. "
-		"1 Does not leave weapons on the map. You can pickup weapons and items and they will respawn,"
-		"2 Leaves weapons on the map. You can only pick up a weapon once. Picked up items will not respawn,"
-		"3 Leaves weapons on the map. You can only pick up a weapon once. Picked up items will respawn.");
+						   "Sets the rules for weapon and item respawning. "
+						   "1 Does not leave weapons on the map. You can "
+						   "pickup weapons and items and they will respawn, "
+						   "2 Leaves weapons on the map. You can only pick up "
+						   "a weapon once. Picked up items will not respawn, "
+						   "3 Leaves weapons on the map. You can only pick up "
+						   "a weapon once. Picked up items will respawn.");
 	spawn = Cvar_Get ("spawn", "0", CVAR_SERVERINFO, Cvar_Info,
-			"Spawn the player entity");
+					  "Spawn the player entity");
 	watervis = Cvar_Get ("watervis", "0", CVAR_SERVERINFO, Cvar_Info,
-			"Toggle the use of r_watervis by OpenGL clients");
-
-	timeout = Cvar_Get ("timeout", "65", CVAR_NONE, NULL, 
-		"Sets the amount of time in seconds before a client is considered disconnected if the server does not receive a packet");
-	zombietime = Cvar_Get ("zombietime", "2", CVAR_NONE, NULL, 
-		"The number of seconds that the server will keep the character of a player on the map who seems to have disconnected");
-
+						 "Toggle the use of r_watervis by OpenGL clients");
+	timeout = Cvar_Get ("timeout", "65", CVAR_NONE, NULL, "Sets the amount of "
+						"time in seconds before a client is considered "
+						"disconnected if the server does not receive a "
+						"packet");
+	zombietime = Cvar_Get ("zombietime", "2", CVAR_NONE, NULL, "The number of "
+						   "seconds that the server will keep the character "
+						   "of a player on the map who seems to have "
+						   "disconnected");
 	sv_maxvelocity = Cvar_Get ("sv_maxvelocity", "2000", CVAR_NONE, NULL,
-			"Sets the maximum velocity an object can travel");
+							   "Sets the maximum velocity an object can "
+							   "travel");
 	sv_gravity = Cvar_Get ("sv_gravity", "800", CVAR_NONE, NULL,
-			"Sets the global value for the amount of gravity");
+						   "Sets the global value for the amount of gravity");
 	sv_stopspeed = Cvar_Get ("sv_stopspeed", "100", CVAR_NONE, NULL, 
-		"Sets the value that determines how fast the player should come to a complete stop");
+							 "Sets the value that determines how fast the "
+							 "player should come to a complete stop");
 	sv_maxspeed = Cvar_Get ("sv_maxspeed", "320", CVAR_NONE, NULL,
-			"Sets the maximum speed a player can move");
-	sv_spectatormaxspeed =
-		Cvar_Get ("sv_spectatormaxspeed", "500", CVAR_NONE, NULL,
-				"Sets the maximum speed a spectator can move");
+							"Sets the maximum speed a player can move");
+	sv_spectatormaxspeed = Cvar_Get ("sv_spectatormaxspeed", "500", CVAR_NONE,
+									 NULL, "Sets the maximum speed a "
+									 "spectator can move");
 	sv_accelerate = Cvar_Get ("sv_accelerate", "10", CVAR_NONE, NULL,
-			"Sets the acceleration value for the players");
+							  "Sets the acceleration value for the players");
 	sv_airaccelerate = Cvar_Get ("sv_airaccelerate", "0.7", CVAR_NONE, NULL,
-			"Sets how quickly the players accelerate in air");
-	sv_wateraccelerate =
-		Cvar_Get ("sv_wateraccelerate", "10", CVAR_NONE, NULL,
-				"Sets the water acceleration value");
+								 "Sets how quickly the players accelerate in "
+								 "air");
+	sv_wateraccelerate = Cvar_Get ("sv_wateraccelerate", "10", CVAR_NONE, NULL,
+								   "Sets the water acceleration value");
 	sv_friction = Cvar_Get ("sv_friction", "4", CVAR_NONE, NULL,
-			"Sets the friction value for the players");
+							"Sets the friction value for the players");
 	sv_waterfriction = Cvar_Get ("sv_waterfriction", "4", CVAR_NONE, NULL,
-			"Sets the water friction value");
-
+								 "Sets the water friction value");
 	sv_aim = Cvar_Get ("sv_aim", "2", CVAR_NONE, NULL,
-			"Sets the value for auto-aiming leniency");
-
-	sv_timekick =
-		Cvar_Get ("sv_timekick", "3", CVAR_SERVERINFO, Cvar_Info,
-				"Time cheat protection");
-	sv_timekick_fuzz =
-		Cvar_Get ("sv_timekick_fuzz", "15", CVAR_NONE, NULL,
-				  "Time cheat \"fuzz factor\"");
-	sv_timekick_interval =
-		Cvar_Get ("sv_timekick_interval", "30", CVAR_NONE, NULL,
-				  "Time cheat check interval");
-
-	sv_minqfversion =
-		Cvar_Get ("sv_minqfversion", "0", CVAR_SERVERINFO, Cvar_Info,
-				  "Minimum QF version on client");
-
-	sv_maxrate =
-		Cvar_Get ("sv_maxrate", "0", CVAR_SERVERINFO, Cvar_Info,
-				"Maximum allowable rate");
-
-	sv_allow_log =
-		Cvar_Get ("sv_allow_log", "1", CVAR_NONE, NULL, "Allow remote logging");
-	sv_allow_status =
-		Cvar_Get ("sv_allow_status", "1", CVAR_NONE, NULL,
-				  "Allow remote status queries (qstat etc)");
-	sv_allow_ping =
-		Cvar_Get ("sv_allow_pings", "1", CVAR_NONE, NULL,
-				  "Allow remote pings (qstat etc)");
-	sv_netdosprotect =
-		Cvar_Get ("sv_netdosprotect", "0", CVAR_NONE, NULL,
-				  "DoS flood attack protection");
-
-	sv_timestamps =
-		Cvar_Get ("sv_timestamps", "0", CVAR_NONE, NULL,
-				  "Time/date stamps in log entries");
-	sv_timefmt =
-		Cvar_Get ("sv_timefmt", "[%b %e %X] ", CVAR_NONE, NULL,
-				  "Time/date format to use");
-
+					   "Sets the value for auto-aiming leniency");
+	sv_timekick = Cvar_Get ("sv_timekick", "3", CVAR_SERVERINFO, Cvar_Info,
+							"Time cheat protection");
+	sv_timekick_fuzz = Cvar_Get ("sv_timekick_fuzz", "15", CVAR_NONE, NULL,
+								 "Time cheat \"fuzz factor\"");
+	sv_timekick_interval = Cvar_Get ("sv_timekick_interval", "30", CVAR_NONE,
+									 NULL, "Time cheat check interval");
+	sv_minqfversion = Cvar_Get ("sv_minqfversion", "0", CVAR_SERVERINFO,
+								Cvar_Info, "Minimum QF version on client");
+	sv_maxrate = Cvar_Get ("sv_maxrate", "0", CVAR_SERVERINFO, Cvar_Info,
+						   "Maximum allowable rate");
+	sv_allow_log = Cvar_Get ("sv_allow_log", "1", CVAR_NONE, NULL,
+							 "Allow remote logging");
+	sv_allow_status = Cvar_Get ("sv_allow_status", "1", CVAR_NONE, NULL,
+								"Allow remote status queries (qstat etc)");
+	sv_allow_ping = Cvar_Get ("sv_allow_pings", "1", CVAR_NONE, NULL,
+							  "Allow remote pings (qstat etc)");
+	sv_netdosprotect = Cvar_Get ("sv_netdosprotect", "0", CVAR_NONE, NULL,
+								 "DoS flood attack protection");
+	sv_timestamps = Cvar_Get ("sv_timestamps", "0", CVAR_NONE, NULL,
+							  "Time/date stamps in log entries");
+	sv_timefmt = Cvar_Get ("sv_timefmt", "[%b %e %X] ", CVAR_NONE, NULL,
+						   "Time/date format to use");
 	filterban = Cvar_Get ("filterban", "1", CVAR_NONE, NULL, 
-		"Determines the rules for the IP list "
-		"0 Only IP addresses on the Ban list will be allowed onto the server, "
-		"1 Only IP addresses NOT on the Ban list will be allowed onto the server");
-
+						  "Determines the rules for the IP list "
+						  "0 Only IP addresses on the Ban list will be "
+						  "allowed onto the server, 1 Only IP addresses NOT "
+						  "on the Ban list will be allowed onto the server");
 	allow_download = Cvar_Get ("allow_download", "1", CVAR_NONE, NULL,
-			"Toggle if clients can download game data from the server");
-	allow_download_skins =
-		Cvar_Get ("allow_download_skins", "1", CVAR_NONE, NULL,
-				"Toggle if clients can download skins from the server");
-	allow_download_models =
-		Cvar_Get ("allow_download_models", "1", CVAR_NONE, NULL,
-				"Toggle if clients can download models from the server");
-	allow_download_sounds =
-		Cvar_Get ("allow_download_sounds", "1", CVAR_NONE, NULL,
-				"Toggle if clients can download sounds from the server");
-	allow_download_maps =
-		Cvar_Get ("allow_download_maps", "1", CVAR_NONE, NULL,
-				"Toggle if clients can download maps from the server");
-
+							   "Toggle if clients can download game data from "
+							   "the server");
+	allow_download_skins = Cvar_Get ("allow_download_skins", "1", CVAR_NONE,
+									 NULL, "Toggle if clients can download "
+									 "skins from the server");
+	allow_download_models = Cvar_Get ("allow_download_models", "1", CVAR_NONE,
+									  NULL, "Toggle if clients can download "
+									  "models from the server");
+	allow_download_sounds = Cvar_Get ("allow_download_sounds", "1", CVAR_NONE,
+									  NULL, "Toggle if clients can download "
+									  "sounds from the server");
+	allow_download_maps = Cvar_Get ("allow_download_maps", "1", CVAR_NONE,
+									NULL, "Toggle if clients can download "
+									"maps from the server");
 	sv_highchars = Cvar_Get ("sv_highchars", "1", CVAR_NONE, NULL,
-			"Toggle the use of high character color names for players");
-
-	sv_phs = Cvar_Get ("sv_phs", "1", CVAR_NONE, NULL,
-	"Possibly Hearable Set. If set to zero, the server calculates sound hearability in realtime");
-	 
-	pausable = Cvar_Get ("pausable", "1", CVAR_NONE, NULL,
-			"Toggle if server can be paused 1 is on, 0 is off");
-
-	pr_gc = Cvar_Get ("pr_gc", "2", CVAR_NONE, NULL, "Enable/disable the garbage collector.  0 is off, 1 is on, 2 is auto (on for newer qfcc progs, off otherwise)");
-	pr_gc_interval = Cvar_Get ("pr_gc_interval", "50", CVAR_NONE, NULL, "Number of frames to wait before running string garbage collector.");
-
+							 "Toggle the use of high character color names "
+							 "for players");
+	sv_phs = Cvar_Get ("sv_phs", "1", CVAR_NONE, NULL, "Possibly Hearable "
+					   "Set. If set to zero, the server calculates sound "
+					   "hearability in realtime");
+ 	pausable = Cvar_Get ("pausable", "1", CVAR_NONE, NULL,
+						 "Toggle if server can be paused 1 is on, 0 is off");
+	pr_gc = Cvar_Get ("pr_gc", "2", CVAR_NONE, NULL, "Enable/disable the "
+					  "garbage collector.  0 is off, 1 is on, 2 is auto (on "
+					  "for newer qfcc progs, off otherwise)");
+	pr_gc_interval = Cvar_Get ("pr_gc_interval", "50", CVAR_NONE, NULL,
+							   "Number of frames to wait before running "
+							   "string garbage collector.");
 	// DoS protection
-	Cmd_AddCommand ("netdosexpire", SV_netDoSexpire_f, "FIXME: part of DoS protection obviously, but I don't know what it does. No Description");
-	Cmd_AddCommand ("netdosvalues", SV_netDoSvalues_f, "FIXME: part of DoS protection obviously, but I don't know what it does. No Description");
-
-	Cmd_AddCommand ("addip", SV_AddIP_f, "Add a single IP or a domain of IPs to the IP list of the server.\n"
-		"Useful for banning people. (addip (ipnumber))");
-	Cmd_AddCommand ("removeip", SV_RemoveIP_f, "Remove an IP address from the server IP list. (removeip (ipnumber))");
-	Cmd_AddCommand ("listip", SV_ListIP_f, "Print out the current list of IPs on the server list.");
-	Cmd_AddCommand ("writeip", SV_WriteIP_f, "Record all IP addresses on the server IP list. The file name is listip.cfg");
+	Cmd_AddCommand ("netdosexpire", SV_netDoSexpire_f, "FIXME: part of DoS "
+					"protection obviously, but I don't know what it does. No "
+					"Description");
+	Cmd_AddCommand ("netdosvalues", SV_netDoSvalues_f, "FIXME: part of DoS "
+					"protection obviously, but I don't know what it does. No "
+					"Description");
+	Cmd_AddCommand ("addip", SV_AddIP_f, "Add a single IP or a domain of IPs "
+					"to the IP list of the server.\n"
+					"Useful for banning people. (addip (ipnumber))");
+	Cmd_AddCommand ("removeip", SV_RemoveIP_f, "Remove an IP address from the "
+					"server IP list. (removeip (ipnumber))");
+	Cmd_AddCommand ("listip", SV_ListIP_f, "Print out the current list of IPs "
+					"on the server list.");
+	Cmd_AddCommand ("writeip", SV_WriteIP_f, "Record all IP addresses on the "
+					"server IP list. The file name is listip.cfg");
 
 	for (i = 0; i < MAX_MODELS; i++)
 		snprintf (localmodels[i], sizeof (localmodels[i]), "*%i", i);
@@ -1761,9 +1695,6 @@ SV_InitLocal (void)
 	svs.log[1].allowoverflow = true;
 }
 
-
-//============================================================================
-
 /*
 	Master_Heartbeat
 
@@ -1775,17 +1706,14 @@ void
 Master_Heartbeat (void)
 {
 	char        string[2048];
-	int         active;
-	int         i;
+	int         active, i;
 
 	if (realtime - svs.last_heartbeat < HEARTBEAT_SECONDS)
 		return;							// not time to send yet
 
 	svs.last_heartbeat = realtime;
 
-	// 
 	// count active users
-	// 
 	active = 0;
 	for (i = 0; i < MAX_CLIENTS; i++)
 		if (svs.clients[i].state == cs_connected ||
@@ -1838,10 +1766,10 @@ SV_ExtractFromUserinfo (client_t *cl)
 {
 	const char *val;
 	char       *q, *p;
-	int         i;
-	client_t   *client;
-	int         dupc = 1;
 	char        newname[80];
+	client_t   *client;
+	int         i;
+	int         dupc = 1;
 
 
 	// name for C code
@@ -1899,14 +1827,13 @@ SV_ExtractFromUserinfo (client_t *cl)
 								 MAX_INFO_STRING, !sv_highchars->int_val);
 			val = Info_ValueForKey (cl->userinfo, "name");
 
-			// If the new name was not set (due to the info string 
-			// being too long), drop the client to prevent an infinite
-			// loop.
+			// If the new name was not set (due to the info string being too
+			// long), drop the client to prevent an infinite loop.
 			if(strcmp(val, newname)) {
-				Netchan_OutOfBandPrint (net_from,
-							"%c\nPlease choose a different name.\n", A2C_PRINT);
-				SV_ClientPrintf (cl, PRINT_HIGH,
-								 "Please choose a different name.\n");
+				Netchan_OutOfBandPrint (net_from, "%c\nPlease choose a "
+										"different name.\n", A2C_PRINT);
+				SV_ClientPrintf (cl, PRINT_HIGH, "Please choose a different "
+								 "name.\n");
 				SV_Printf("Client %d kicked for invalid name\n", cl->userid);
 				SV_DropClient (cl);
 				return;
@@ -1922,18 +1849,18 @@ SV_ExtractFromUserinfo (client_t *cl)
 				cl->lastnamecount = 0;
 				cl->lastnametime = realtime;
 			} else if (cl->lastnamecount++ > 4) {
-				SV_BroadcastPrintf (PRINT_HIGH, "%s was kicked for name spam\n",
-									cl->name);
-				SV_ClientPrintf (cl, PRINT_HIGH,
-								 "You were kicked from the game for name spamming\n");
+				SV_BroadcastPrintf (PRINT_HIGH, "%s was kicked for name "
+									"spam\n", cl->name);
+				SV_ClientPrintf (cl, PRINT_HIGH, "You were kicked from the "
+								 "game for name spamming\n");
 				SV_DropClient (cl);
 				return;
 			}
 		}
 
 		if (cl->state >= cs_spawned && !cl->spectator)
-			SV_BroadcastPrintf (PRINT_HIGH, "%s changed name to %s\n", cl->name,
-								val);
+			SV_BroadcastPrintf (PRINT_HIGH, "%s changed name to %s\n",
+								cl->name, val);
 	}
 
 
@@ -1960,17 +1887,10 @@ SV_ExtractFromUserinfo (client_t *cl)
 	cl->stdver = atoi (Info_ValueForKey (cl->userinfo, "stdver"));
 }
 
-
-//============================================================================
-
-/*
-	SV_InitNet
-*/
 void
 SV_InitNet (void)
 {
-	int         port;
-	int         p;
+	int         port, p;
 
 	port = PORT_SERVER;
 	p = COM_CheckParm ("-port");
@@ -1989,16 +1909,12 @@ SV_InitNet (void)
 //  NET_StringToAdr ("192.246.40.70:27000", &idmaster_adr);
 }
 
-
-/*
-	SV_Init
-*/
 void
 SV_Init (void)
 {
 	COM_InitArgv (host_parms.argc, (const char**)host_parms.argv);
-	// COM_AddParm ("-game");
-	// COM_AddParm ("qw");
+//	COM_AddParm ("-game");
+//	COM_AddParm ("qw");
 
 	if (COM_CheckParm ("-minmemory"))
 		host_parms.memsize = MINIMUM_MEMORY;
@@ -2081,7 +1997,7 @@ SV_Init (void)
 
 	host_initialized = true;
 
-//  SV_Printf ("Exe: "__TIME__" "__DATE__"\n");
+//	SV_Printf ("Exe: "__TIME__" "__DATE__"\n");
 	SV_Printf ("%4.1f megabyte heap\n", host_parms.memsize / (1024 * 1024.0));
 
 	SV_Printf ("\n");

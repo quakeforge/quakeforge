@@ -39,16 +39,16 @@
 #include <stdlib.h>
 
 #include "QF/cmd.h"
-#include "compat.h"
 #include "QF/cvar.h"
 #include "QF/msg.h"
 #include "QF/qargs.h"
 #include "QF/qendian.h"
-#include "QF/vfs.h"
 #include "QF/sys.h"
 #include "QF/va.h"
+#include "QF/vfs.h"
 
 #include "bothdefs.h"
+#include "compat.h"
 #include "server.h"
 #include "sv_progs.h"
 
@@ -58,6 +58,7 @@ int         fp_messages = 4, fp_persecond = 4, fp_secondsdead = 10;
 char        fp_msg[255] = { 0 };
 extern cvar_t *cl_warncmd;
 extern redirect_t sv_redirected;
+
 
 qboolean
 SV_Match_User (const char *substr, int *uidp)
@@ -147,10 +148,6 @@ SV_SetMaster_f (void)
 	svs.last_heartbeat = -99999;
 }
 
-
-/*
-	SV_Quit_f
-*/
 void
 SV_Quit_f (void)
 {
@@ -160,9 +157,6 @@ SV_Quit_f (void)
 	Sys_Quit ();
 }
 
-/*
-	SV_Logfile_f
-*/
 void
 SV_Logfile_f (void)
 {
@@ -182,10 +176,6 @@ SV_Logfile_f (void)
 		SV_Printf ("failed.\n");
 }
 
-
-/*
-	SV_Fraglogfile_f
-*/
 void
 SV_Fraglogfile_f (void)
 {
@@ -219,7 +209,6 @@ SV_Fraglogfile_f (void)
 	SV_Printf ("Logging frags to %s.\n", name);
 }
 
-
 /*
 	SV_SetPlayer
 
@@ -229,8 +218,7 @@ qboolean
 SV_SetPlayer (void)
 {
 	client_t   *cl;
-	int         i;
-	int         idnum;
+	int         i, idnum;
 
 	idnum = atoi (Cmd_Argv (1));
 
@@ -246,7 +234,6 @@ SV_SetPlayer (void)
 	SV_Printf ("Userid %i is not on the server\n", idnum);
 	return false;
 }
-
 
 /*
 	SV_God_f
@@ -272,7 +259,6 @@ SV_God_f (void)
 		SV_ClientPrintf (host_client, PRINT_HIGH, "godmode ON\n");
 }
 
-
 void
 SV_Noclip_f (void)
 {
@@ -294,10 +280,6 @@ SV_Noclip_f (void)
 	}
 }
 
-
-/*
-	SV_Give_f
-*/
 void
 SV_Give_f (void)
 {
@@ -399,7 +381,6 @@ SV_Map_f (void)
 	SV_BroadcastCommand ("reconnect\n");
 }
 
-
 /*
 	SV_Kick_f
 
@@ -439,10 +420,6 @@ SV_Kick_f (void)
 	SV_Printf ("Couldn't find user number %i\n", uid);
 }
 
-
-/*
-	SV_Status_f
-*/
 void
 SV_Status_f (void)
 {
@@ -463,7 +440,7 @@ SV_Status_f (void)
 	SV_Printf ("avg response time: %i ms\n", (int) avg);
 	SV_Printf ("packets/frame    : %5.2f\n", pak);
 
-// min fps lat drp
+	// min fps lat drp
 	if (sv_redirected != RD_NONE) {
 		// most remote clients are 40 columns
 		// 0123456789012345678901234567890123456789
@@ -499,14 +476,15 @@ SV_Status_f (void)
 						cl->netchan.incoming_sequence);
 		}
 	} else {
-		SV_Printf
-			("frags userid address         name            rate ping drop  qport\n");
-		SV_Printf
-			("----- ------ --------------- --------------- ---- ---- ----- -----\n");
+		SV_Printf ("frags userid address         name            rate ping "
+				   "drop  qport\n");
+		SV_Printf ("----- ------ --------------- --------------- ---- ---- "
+				   "----- -----\n");
 		for (i = 0, cl = svs.clients; i < MAX_CLIENTS; i++, cl++) {
 			if (!cl->state)
 				continue;
-			SV_Printf ("%5i %6i ", (int) SVfloat (cl->edict, frags), cl->userid);
+			SV_Printf ("%5i %6i ", (int) SVfloat (cl->edict, frags),
+					   cl->userid);
 
 			s = NET_BaseAdrToString (cl->netchan.remote_address);
 
@@ -531,8 +509,6 @@ SV_Status_f (void)
 				SV_Printf (" (s)\n");
 			else
 				SV_Printf ("\n");
-
-
 		}
 	}
 	SV_Printf ("\n");
@@ -541,11 +517,10 @@ SV_Status_f (void)
 void
 SV_Tell (const char *prefix)
 {
-	int         i;
-	int         uid;
-	client_t   *cl;
 	char       *p;
 	char        text[512];
+	client_t   *cl;
+	int         i, uid;
 
 	if (Cmd_Argc () < 3) {
 		SV_Printf ("usage: tell <name/userid> <text...>\n");
@@ -587,10 +562,10 @@ SV_Tell (const char *prefix)
 void
 SV_ConSay (const char *prefix)
 {
-	client_t   *client;
-	int         j;
 	char       *p;
 	char        text[1024];
+	client_t   *client;
+	int         j;
 
 	if (Cmd_Argc () < 2)
 		return;
@@ -617,9 +592,6 @@ SV_ConSay (const char *prefix)
 	}
 }
 
-/*
-	SV_Tell_f
-*/
 void
 SV_Tell_f (void)
 {
@@ -629,9 +601,6 @@ SV_Tell_f (void)
 		SV_Tell("Console");
 }
 
-/*
-	SV_ConSay_f
-*/
 void
 SV_ConSay_f (void)
 {
@@ -647,10 +616,6 @@ SV_ConSay_Info_f (void)
 	SV_ConSay("Info");
 }
 
-
-/*
-	SV_Heartbeat_f
-*/
 void
 SV_Heartbeat_f (void)
 {
@@ -707,7 +672,6 @@ SV_Serverinfo_f (void)
 		SV_SendServerInfoChange (Cmd_Argv (1), Cmd_Argv (2));
 }
 
-
 /*
 	SV_Serverinfo_f
 
@@ -735,7 +699,6 @@ SV_Localinfo_f (void)
 	Info_SetValueForKey (localinfo, Cmd_Argv (1), Cmd_Argv (2),
 						 MAX_LOCALINFO_STRING, !sv_highchars->int_val);
 }
-
 
 /*
 	SV_User_f
@@ -794,7 +757,6 @@ SV_Gamedir (void)
 
 	Sets the gamedir and path to a different directory.
 */
-
 void
 SV_Floodprot_f (void)
 {
@@ -803,7 +765,8 @@ SV_Floodprot_f (void)
 	if (Cmd_Argc () == 1) {
 		if (fp_messages) {
 			SV_Printf
-				("Current floodprot settings: \nAfter %d msgs per %d seconds, silence for %d seconds\n",
+				("Current floodprot settings: \nAfter %d msgs per %d seconds, "
+				 "silence for %d seconds\n",
 				 fp_messages, fp_persecond, fp_secondsdead);
 			return;
 		} else
@@ -812,9 +775,11 @@ SV_Floodprot_f (void)
 
 	if (Cmd_Argc () != 4) {
 		SV_Printf
-			("Usage: floodprot <# of messages> <per # of seconds> <seconds to silence>\n");
+			("Usage: floodprot <# of messages> <per # of seconds> <seconds to "
+			 "silence>\n");
 		SV_Printf
-			("Use floodprotmsg to set a custom message to say to the flooder.\n");
+			("Use floodprotmsg to set a custom message to say to the "
+			 "flooder.\n");
 		return;
 	}
 
@@ -850,15 +815,12 @@ SV_Floodprotmsg_f (void)
 	snprintf (fp_msg, sizeof (fp_msg), "%s", Cmd_Argv (1));
 }
 
-/*
-	SV_Snap
-*/
 void
 SV_Snap (int uid)
 {
-	client_t   *cl;
 	char        pcxname[80];
 	char        checkname[MAX_OSPATH];
+	client_t   *cl;
 	int         i;
 
 	for (i = 0, cl = svs.clients; i < MAX_CLIENTS; i++, cl++) {
@@ -902,9 +864,6 @@ SV_Snap (int uid)
 	SV_Printf ("Requesting snap from user %d...\n", uid);
 }
 
-/*
-	SV_Snap_f
-*/
 void
 SV_Snap_f (void)
 {
@@ -920,9 +879,6 @@ SV_Snap_f (void)
 	SV_Snap (uid);
 }
 
-/*
-	SV_Snap
-*/
 void
 SV_SnapAll_f (void)
 {
@@ -936,9 +892,6 @@ SV_SnapAll_f (void)
 	}
 }
 
-/*
-	SV_InitOperatorCommands
-*/
 void
 SV_InitOperatorCommands (void)
 {
@@ -948,83 +901,114 @@ SV_InitOperatorCommands (void)
 								 MAX_SERVERINFO_STRING, 0);
 	}
 
-	Cmd_AddCommand ("logfile", SV_Logfile_f, "Toggles logging of console text to qconsole.log");
-	Cmd_AddCommand ("fraglogfile", SV_Fraglogfile_f, "Enables logging of kills to frag_##.log");
+	Cmd_AddCommand ("logfile", SV_Logfile_f, "Toggles logging of console text "
+					"to qconsole.log");
+	Cmd_AddCommand ("fraglogfile", SV_Fraglogfile_f, "Enables logging of kills "
+					"to frag_##.log");
 
-	Cmd_AddCommand ("snap", SV_Snap_f, "FIXME: Take a screenshot of userid? No Description");
+	Cmd_AddCommand ("snap", SV_Snap_f, "FIXME: Take a screenshot of userid? No "
+					"Description");
 	Cmd_AddCommand ("snapall", SV_SnapAll_f, "FIXME: No Description");
-	Cmd_AddCommand ("kick", SV_Kick_f, "Remove a user from the server (kick userid)");
-	Cmd_AddCommand ("status", SV_Status_f, "Report information on the current connected clients and the server - displays userids");
+	Cmd_AddCommand ("kick", SV_Kick_f, "Remove a user from the server (kick "
+					"userid)");
+	Cmd_AddCommand ("status", SV_Status_f, "Report information on the current "
+					"connected clients and the server - displays userids");
 
 	Cmd_AddCommand ("map", SV_Map_f, "Change to a new map (map mapname)");
-	Cmd_AddCommand ("setmaster", SV_SetMaster_f, "Lists the server with up to eight masters.\n"
-		"When a server is listed with a master, the master is aware of the server's IP address and port and it is added to the\n"
-		"list of current servers connected to a master. A heartbeat is sent to the master from the server to indicated that the\n"
-		"server is still running and alive.\n"
-   "\n"
-		"Examples:\n"
-		"setmaster 192.246.40.12:27002\n"
-		"setmaster 192.246.40.12:27002 192.246.40.12:27004");
-
-	Cmd_AddCommand ("heartbeat", SV_Heartbeat_f, "Force a heartbeat to be sent to the master server.\n"
-		"A heartbeat tells the Master the server's IP address and that it is still alive.");
+	Cmd_AddCommand ("setmaster", SV_SetMaster_f, "Lists the server with up to "
+					"eight masters.\n"
+					"When a server is listed with a master, the master is "
+					"aware of the server's IP address and port and it is added "
+					"to the\n"
+					"list of current servers connected to a master. A "
+					"heartbeat is sent to the master from the server to "
+					"indicated that the\n"
+					"server is still running and alive.\n\n"
+					"Examples:\n"
+					"setmaster 192.246.40.12:27002\n"
+					"setmaster 192.246.40.12:27002 192.246.40.12:27004");
+	Cmd_AddCommand ("heartbeat", SV_Heartbeat_f, "Force a heartbeat to be sent "
+					"to the master server.\n"
+					"A heartbeat tells the Master the server's IP address and "
+					"that it is still alive.");
 	Cmd_AddCommand ("quit", SV_Quit_f, "Shut down the server");
-	Cmd_AddCommand ("god", SV_God_f, "Toggle god cheat to userid (god userid) Requires cheats are enabled");
+	Cmd_AddCommand ("god", SV_God_f, "Toggle god cheat to userid (god userid) "
+					"Requires cheats are enabled");
 	Cmd_AddCommand ("give", SV_Give_f, "Give userid items, or health.\n"
-		"Items: 1 Axe, 2 Shotgun, 3 Double-Barrelled Shotgun, 4 Nailgun, 5 Super Nailgun, 6 Grenade Launcher, 7 Rocket Launcher,\n"
-		"8 ThunderBolt, C Cells, H Health, N Nails, R Rockets, S Shells.	Requires cheats are enabled. (give userid item amount)");
-	Cmd_AddCommand ("noclip", SV_Noclip_f, "Toggle no clipping cheat for userid. Requires cheats are enabled. (noclip userid)");
-	Cmd_AddCommand ("serverinfo", SV_Serverinfo_f, "Reports or sets information about server.\n"
-		"The information stored in this space is broadcast on the network to all players.\n"
-		"Values:\n"
-		"dq - Drop Quad Damage when a player dies.\n"
-		"dr - Drop Ring of Shadows when a player dies.\n"
-		"rj - Sets the multiplier rate for splash damage kick.\n"
-		"needpass - Displays the passwords enabled on the server.\n"
-		"watervis - Toggle the use of r_watervis by OpenGL clients.\n"
-		"Note: Keys with (*) in front cannot be changed. Maximum key size cannot exceed 64-bytes.\n"
-		"Maximum size for all keys cannot exceed 512-bytes.\n"
-		"(serverinfo key value)");
-		
-	Cmd_AddCommand ("localinfo", SV_Localinfo_f, "Shows or sets localinfo variables.\n"
-		"Useful for mod programmers who need to allow the admin to change settings.\n"
-		"This is an alternative storage space to the serverinfo space for mod variables.\n"
-		"The variables stored in this space are not broadcast on the network.\n"
-		"This space also has a 32-kilobyte limit which is much greater then the 512-byte limit on the serverinfo space.\n"
-		"Special Keys: (current map) (next map) - Using this combination will allow the creation of a custom map cycle without editing code.\n"
-		"\n"
-		"Example:\n"
-		"localinfo dm2 dm4\n"
-		"localinfo dm4 dm6\n"
-		"localinfo dm6 dm2\n"
-		"(localinfo key value)");
-
-	Cmd_AddCommand ("user", SV_User_f, "Report information about the user (user userid)");
-	Cmd_AddCommand ("sv_gamedir", SV_Gamedir, "Displays or determines the value of the serverinfo *gamedir variable.\n"
-		"Note: Useful when the physical gamedir directory has a different name than the widely accepted gamedir directory.\n"
-		"Example:\n"
-		"gamedir tf2_5; sv_gamedir fortress\n"
-		"gamedir ctf4_2; sv_gamedir ctf\n"
-		"(sv_gamedir dirname)");
-
-	Cmd_AddCommand ("floodprot", SV_Floodprot_f, "Sets the options for flood protection.\n"
-		"Default: 4 4 10\n"
-		"(floodprot (number of messages) (number of seconds) (silence time in seconds))");
-
-	Cmd_AddCommand ("floodprotmsg", SV_Floodprotmsg_f, "Sets the message displayed after flood protection is invoked (floodprotmsg message)");
-
+					"Items: 1 Axe, 2 Shotgun, 3 Double-Barrelled Shotgun, 4 "
+					"Nailgun, 5 Super Nailgun, 6 Grenade Launcher, 7 Rocket "
+					"Launcher,\n"
+					"8 ThunderBolt, C Cells, H Health, N Nails, R Rockets, S "
+					"Shells. Requires cheats to be enabled. (give userid item "
+					"amount)");
+	Cmd_AddCommand ("noclip", SV_Noclip_f, "Toggle no clipping cheat for "
+					"userid. Requires cheats to be enabled. (noclip userid)");
+	Cmd_AddCommand ("serverinfo", SV_Serverinfo_f, "Reports or sets "
+					"information about server.\n"
+					"The information stored in this space is broadcast on the "
+					"network to all players.\n"
+					"Values:\n"
+					"dq - Drop Quad Damage when a player dies.\n"
+					"dr - Drop Ring of Shadows when a player dies.\n"
+					"rj - Sets the multiplier rate for splash damage kick.\n"
+					"needpass - Displays the passwords enabled on the server.\n"
+					"watervis - Toggle the use of r_watervis by OpenGL "
+					"clients.\n"
+					"Note: Keys with (*) in front cannot be changed. Maximum "
+					"key size cannot exceed 64-bytes.\n"
+					"Maximum size for all keys cannot exceed 512-bytes.\n"
+					"(serverinfo key value)");
+	Cmd_AddCommand ("localinfo", SV_Localinfo_f, "Shows or sets localinfo "
+					"variables.\n"
+					"Useful for mod programmers who need to allow the admin to "
+					"change settings.\n"
+					"This is an alternative storage space to the serverinfo "
+					"space for mod variables.\n"
+					"The variables stored in this space are not broadcast on "
+					"the network.\n"
+					"This space also has a 32-kilobyte limit which is much "
+					"greater then the 512-byte limit on the serverinfo space.\n"
+					"Special Keys: (current map) (next map) - Using this "
+					"combination will allow the creation of a custom map cycle "
+					"without editing code.\n\n"
+					"Example:\n"
+					"localinfo dm2 dm4\n"
+					"localinfo dm4 dm6\n"
+					"localinfo dm6 dm2\n"
+					"(localinfo key value)");
+	Cmd_AddCommand ("user", SV_User_f, "Report information about the user "
+					"(user userid)");
+	Cmd_AddCommand ("sv_gamedir", SV_Gamedir, "Displays or determines the "
+					"value of the serverinfo *gamedir variable.\n"
+					"Note: Useful when the physical gamedir directory has a "
+					"different name than the widely accepted gamedir "
+					"directory.\n"
+					"Example:\n"
+					"gamedir tf2_5; sv_gamedir fortress\n"
+					"gamedir ctf4_2; sv_gamedir ctf\n"
+					"(sv_gamedir dirname)");
+	Cmd_AddCommand ("floodprot", SV_Floodprot_f, "Sets the options for flood "
+					"protection.\n"
+					"Default: 4 4 10\n"
+					"(floodprot (number of messages) (number of seconds) "
+					"(silence time in seconds))");
+	Cmd_AddCommand ("floodprotmsg", SV_Floodprotmsg_f, "Sets the message "
+					"displayed after flood protection is invoked (floodprotmsg "
+					"message)");
 	Cmd_AddCommand ("maplist", COM_Maplist_f, "List all maps on the server");
-
-	Cmd_AddCommand ("say", SV_ConSay_f, "Say something to everyone on the server. Will show up as the name 'Console' (or 'Admin') in game");
-	Cmd_AddCommand ("sayinfo", SV_ConSay_Info_f, "Say something to everyone on the server. Will show up as the name 'Info' in game");
-	Cmd_AddCommand ("tell", SV_Tell_f, "Say something to a specific user on the server. Will show up as the name 'Console' (or 'Admin') in game");
+	Cmd_AddCommand ("say", SV_ConSay_f, "Say something to everyone on the "
+					"server. Will show up as the name 'Console' (or 'Admin') "
+					"in game");
+	Cmd_AddCommand ("sayinfo", SV_ConSay_Info_f, "Say something to everyone on "
+					"the server. Will show up as the name 'Info' in game");
+	Cmd_AddCommand ("tell", SV_Tell_f, "Say something to a specific user on "
+					"the server. Will show up as the name 'Console' (or "
+					"'Admin') in game");
 	//XXX Cmd_AddCommand ("ban", SV_Ban_f);
 	//XXX Cmd_AddCommand ("cuff", SV_Cuff_f);
 	//XXX Cmd_AddCommand ("mute", SV_Mute_f);
 
-	cl_warncmd =
-		Cvar_Get ("cl_warncmd", "1", CVAR_NONE, NULL,
-				"Toggles the display of error messages for unknown commands"); 
-																			// poor 
-																			// description
+	cl_warncmd = Cvar_Get ("cl_warncmd", "1", CVAR_NONE, NULL, "Toggles the "
+						   "display of error messages for unknown commands"); 
+	// poor description
 }

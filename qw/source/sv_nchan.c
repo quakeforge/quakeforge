@@ -37,7 +37,9 @@
 #endif
 
 #include "QF/msg.h"
+
 #include "server.h"
+
 
 void
 PushBackbuf (client_t *cl)
@@ -50,12 +52,14 @@ PushBackbuf (client_t *cl)
 	cl->num_backbuf++;
 }
 
+
 // check to see if client block will fit, if not, rotate buffers
 void
 ClientReliableCheckBlock (client_t *cl, int maxsize)
 {
 	if (cl->num_backbuf ||
-		cl->netchan.message.cursize > cl->netchan.message.maxsize - maxsize - 1) {
+		cl->netchan.message.cursize > cl->netchan.message.maxsize - maxsize -
+		1) {
 		// we would probably overflow the buffer, save it for next
 		if (!cl->num_backbuf) {
 			PushBackbuf (cl);

@@ -37,7 +37,8 @@
 const int   mod_lightmap_bytes = 1;
 cvar_t     *gl_sky_divide;	// not used but needed for linking
 
-void        Mod_LoadBrushModel (model_t *mod, void *buffer);
+void Mod_LoadBrushModel (model_t *mod, void *buffer);
+
 
 void
 Mod_LoadLighting (lump_t *l)

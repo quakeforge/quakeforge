@@ -36,12 +36,14 @@
 # include <strings.h>
 #endif
 
-#include "compat.h"
 #include "QF/msg.h"
+#include "QF/sys.h"
+
+#include "compat.h"
 #include "msg_ucmd.h"
 #include "server.h"
 #include "sv_progs.h"
-#include "QF/sys.h"
+
 
 /*
 	The PVS must include a small area around the client to allow head
@@ -50,16 +52,17 @@
 	when the bob crosses a waterline.
 */
 
-int         fatbytes;
 byte        fatpvs[MAX_MAP_LEAFS / 8];
+int         fatbytes;
+
 
 void
 SV_AddToFatPVS (vec3_t org, mnode_t *node)
 {
-	int         i;
 	byte       *pvs;
-	mplane_t   *plane;
+	int         i;
 	float       d;
+	mplane_t   *plane;
 
 	while (1) {
 		// if this is a leaf, accumulate the pvs bits
@@ -100,10 +103,7 @@ SV_FatPVS (vec3_t org)
 	return fatpvs;
 }
 
-//=============================================================================
-
-// because there can be a lot of nails, there is a special
-// network protocol for them
+// nails are plentiful, so there is a special network protocol for them
 #define	MAX_NAILS	32
 edict_t    *nails[MAX_NAILS];
 int         numnails;
@@ -126,9 +126,8 @@ void
 SV_EmitNailUpdate (sizebuf_t *msg)
 {
 	byte        bits[6];				// [48 bits] xyzpy 12 12 12 4 8 
-	int         n, i;
+	int         i, n, p, x, y, z, yaw;
 	edict_t    *ent;
-	int         x, y, z, p, yaw;
 
 	if (!numnails)
 		return;
@@ -156,9 +155,6 @@ SV_EmitNailUpdate (sizebuf_t *msg)
 	}
 }
 
-//=============================================================================
-
-
 /*
 	SV_WriteDelta
 
@@ -169,11 +165,10 @@ void
 SV_WriteDelta (entity_state_t *from, entity_state_t *to, sizebuf_t *msg,
 			   qboolean force, int stdver)
 {
-	int         bits;
-	int         i;
+	int         bits, i;
 	float       miss;
 
-// send an update
+	// send an update
 	bits = 0;
 
 	for (i = 0; i < 3; i++) {
@@ -237,9 +232,7 @@ SV_WriteDelta (entity_state_t *from, entity_state_t *to, sizebuf_t *msg,
 	if (to->flags & U_SOLID)
 		bits |= U_SOLID;
 
-	// 
 	// write the message
-	// 
 	if (!to->number)
 		SV_Error ("Unset entity number");
 	if (to->number >= 512)
@@ -314,12 +307,10 @@ SV_WriteDelta (entity_state_t *from, entity_state_t *to, sizebuf_t *msg,
 void
 SV_EmitPacketEntities (client_t *client, packet_entities_t *to, sizebuf_t *msg)
 {
+	int         newindex, oldindex, newnum, oldnum, oldmax;
 	edict_t    *ent;
 	client_frame_t *fromframe;
 	packet_entities_t *from;
-	int         oldindex, newindex;
-	int         oldnum, newnum;
-	int         oldmax;
 
 	// this is the frame that we are going to delta update from
 	if (client->delta_sequence != -1) {
@@ -338,15 +329,16 @@ SV_EmitPacketEntities (client_t *client, packet_entities_t *to, sizebuf_t *msg)
 
 	newindex = 0;
 	oldindex = 0;
-//SV_Printf ("---%i to %i ----\n", client->delta_sequence & UPDATE_MASK
-//          , client->netchan.outgoing_sequence & UPDATE_MASK);
+//	SV_Printf ("---%i to %i ----\n", client->delta_sequence & UPDATE_MASK,
+//			   client->netchan.outgoing_sequence & UPDATE_MASK);
 	while (newindex < to->num_entities || oldindex < oldmax) {
 		newnum =
-			newindex >= to->num_entities ? 9999 : to->entities[newindex].number;
+			newindex >= to->num_entities ? 9999 :
+			to->entities[newindex].number;
 		oldnum = oldindex >= oldmax ? 9999 : from->entities[oldindex].number;
 
 		if (newnum == oldnum) {			// delta update from old position
-//SV_Printf ("delta %i\n", newnum);
+//			SV_Printf ("delta %i\n", newnum);
 			SV_WriteDelta (&from->entities[oldindex], &to->entities[newindex],
 						   msg, false, client->stdver);
 			oldindex++;
@@ -357,7 +349,7 @@ SV_EmitPacketEntities (client_t *client, packet_entities_t *to, sizebuf_t *msg)
 		if (newnum < oldnum) {			// this is a new entity, send it from 
 										// the baseline
 			ent = EDICT_NUM (&sv_pr_state, newnum);
-//SV_Printf ("baseline %i\n", newnum);
+//			SV_Printf ("baseline %i\n", newnum);
 			SV_WriteDelta (ent->data, &to->entities[newindex], msg, true,
 						   client->stdver);
 			newindex++;
@@ -366,7 +358,7 @@ SV_EmitPacketEntities (client_t *client, packet_entities_t *to, sizebuf_t *msg)
 
 		if (newnum > oldnum) {			// the old entity isn't present in
 										// the new message
-//SV_Printf ("remove %i\n", oldnum);
+//			SV_Printf ("remove %i\n", oldnum);
 			MSG_WriteShort (msg, oldnum | U_REMOVE);
 			oldindex++;
 			continue;
@@ -376,19 +368,14 @@ SV_EmitPacketEntities (client_t *client, packet_entities_t *to, sizebuf_t *msg)
 	MSG_WriteShort (msg, 0);			// end of packetentities
 }
 
-/*
-	SV_WritePlayersToClient
-*/
 void
 SV_WritePlayersToClient (client_t *client, edict_t *clent, byte * pvs,
 						 sizebuf_t *msg)
 {
-	int         i, j;
+	int         i, j, msec, pflags;
 	client_t   *cl;
 	edict_t    *ent;
-	int         msec;
 	usercmd_t   cmd;
-	int         pflags;
 
 	for (j = 0, cl = svs.clients; j < MAX_CLIENTS; j++, cl++) {
 		if (cl->state != cs_spawned)
@@ -458,8 +445,8 @@ SV_WritePlayersToClient (client_t *client, edict_t *clent, byte * pvs,
 		if (pflags & PF_COMMAND) {
 			cmd = cl->lastcmd;
 
-			if (SVfloat (ent, health) <= 0) {	// don't show the corpse looking
-										// around...
+			if (SVfloat (ent, health) <= 0) {	// don't show the corpse
+												// looking around...
 				cmd.angles[0] = 0;
 				cmd.angles[1] = SVvector (ent, angles)[1];
 				cmd.angles[0] = 0;
@@ -489,7 +476,6 @@ SV_WritePlayersToClient (client_t *client, edict_t *clent, byte * pvs,
 	}
 }
 
-
 /*
 	SV_WriteEntitiesToClient
 
@@ -501,14 +487,13 @@ SV_WritePlayersToClient (client_t *client, edict_t *clent, byte * pvs,
 void
 SV_WriteEntitiesToClient (client_t *client, sizebuf_t *msg)
 {
-	int         e, i;
 	byte       *pvs;
+	int         e, i;
 	vec3_t      org;
-	edict_t    *ent;
-	packet_entities_t *pack;
-	edict_t    *clent;
 	client_frame_t *frame;
+	edict_t    *clent, *ent;
 	entity_state_t *state;
+	packet_entities_t *pack;
 
 	// this is the frame we are creating
 	frame = &client->frames[client->netchan.incoming_sequence & UPDATE_MASK];
@@ -528,13 +513,14 @@ SV_WriteEntitiesToClient (client_t *client, sizebuf_t *msg)
 
 	numnails = 0;
 
-	for (e = MAX_CLIENTS + 1, ent = EDICT_NUM (&sv_pr_state, e); e < sv.num_edicts;
-		 e++, ent = NEXT_EDICT (&sv_pr_state, ent)) {
+	for (e = MAX_CLIENTS + 1, ent = EDICT_NUM (&sv_pr_state, e); e <
+			 sv.num_edicts; e++, ent = NEXT_EDICT (&sv_pr_state, ent)) {
 		if (ent->free)
 			continue;
 
 		// ignore ents without visible models
-		if (!SVfloat (ent, modelindex) || !*PR_GetString (&sv_pr_state, SVstring (ent, model)))
+		if (!SVfloat (ent, modelindex) || !*PR_GetString
+			(&sv_pr_state, SVstring (ent, model)))
 			continue;
 
 		// ignore if not touching a PV leaf
@@ -582,7 +568,8 @@ SV_WriteEntitiesToClient (client_t *client, sizebuf_t *msg)
 				state->scale = bound (0, SVfloat (ent, scale), 15.9375) * 16.0;
 
 			if (sv_fields.glow_size != -1 && SVfloat (ent, glow_size))
-				state->glow_size = bound (-1024, (int) SVfloat (ent, glow_size), 1016) >> 3;
+				state->glow_size = bound (-1024, (int) SVfloat
+										  (ent, glow_size), 1016) >> 3;
 
 			if (sv_fields.glow_color != -1 && SVvector (ent, glow_color))
 				state->glow_color = (int) SVvector (ent, glow_color);
@@ -592,8 +579,10 @@ SV_WriteEntitiesToClient (client_t *client, sizebuf_t *msg)
 				&& SVvector (ent, colormod)[1]
 				&& SVvector (ent, colormod)[2])
 				state->colormod =
-					((int) (bound (0, SVvector (ent, colormod)[0], 1) * 7.0) << 5) |
-					((int) (bound (0, SVvector (ent, colormod)[1], 1) * 7.0) << 2) |
+					((int) (bound (0, SVvector (ent, colormod)[0], 1) * 7.0)
+					 << 5) |
+					((int) (bound (0, SVvector (ent, colormod)[1], 1) * 7.0)
+					 << 2) |
 					(int) (bound (0, SVvector (ent, colormod)[2], 1) * 3.0);
 		}
 // Ender: EXTEND (QSG - End)

@@ -36,12 +36,14 @@
 #ifdef HAVE_STRINGS_H
 # include <strings.h>
 #endif
+#ifdef HAVE_UNISTD_H
+# include <unistd.h>
+#endif
 
+#include <errno.h>
 #include <stdarg.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <errno.h>
-#include <unistd.h>
 #include <sys/time.h>
 #include <sys/types.h>
 
@@ -75,12 +77,15 @@ Sys_Init_Cvars (void)
 {
 	sys_nostdout = Cvar_Get ("sys_nostdout", "0", CVAR_NONE, NULL,
 			"Toggles console screen output");
-	sys_extrasleep = Cvar_Get ("sys_extrasleep", "0", CVAR_NONE, NULL, 
-		"Set to cause whatever amount delay in microseconds you want. Mostly useful to generate simulated bad connections.");
+	sys_extrasleep = Cvar_Get ("sys_extrasleep", "0", CVAR_NONE, NULL,
+		"Set to cause whatever amount delay in microseconds you want. Mostly "
+							   "useful to generate simulated bad "
+							   "connections.");
 	sys_dead_sleep = Cvar_Get ("sys_dead_sleep", "1", CVAR_NONE, NULL,
-		"When set, the server gets NO cpu if no clients are connected"
-		"and there's no other activity. *MIGHT* cause problems with"
-		"some mods.");
+							   "When set, the server gets NO cpu if no "
+							   "clients are connected and there's no other "
+							   "activity. *MIGHT* cause problems with some "
+							   "mods.");
 }
 
 void
@@ -91,9 +96,6 @@ Sys_Init (void)
 #endif
 }
 
-/*
-	Sys_Quit
-*/
 void
 Sys_Quit (void)
 {
@@ -103,14 +105,11 @@ Sys_Quit (void)
 	exit (0);
 }
 
-/*
-	Sys_Error
-*/
 void
 Sys_Error (const char *error, ...)
 {
-	va_list     argptr;
 	char        string[1024];
+	va_list     argptr;
 
 	va_start (argptr, error);
 	vsnprintf (string, sizeof (string), error, argptr);
@@ -119,7 +118,6 @@ Sys_Error (const char *error, ...)
 
 	exit (1);
 }
-
 
 static int  do_stdin = 1;
 
@@ -152,16 +150,13 @@ Sys_ConsoleInput (void)
 	return text;
 }
 
-/*
-	main
-*/
 int
 main (int argc, const char *argv[])
 {
 	double      time, oldtime, newtime;
 	fd_set      fdset;
-	extern int  net_socket;
 	int         j;
+	extern int  net_socket;
 
 	memset (&host_parms, 0, sizeof (host_parms));
 
@@ -182,9 +177,7 @@ main (int argc, const char *argv[])
 	// run one frame immediately for first heartbeat
 	SV_Frame (0.1);
 
-	// 
 	// main loop
-	// 
 	oldtime = Sys_DoubleTime () - 0.1;
 	while (1) {
 		struct timeval _timeout;

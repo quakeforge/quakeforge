@@ -30,17 +30,17 @@
 # include "config.h"
 #endif
 
-#include <stdlib.h>
-#include <ctype.h>
-#include <winsock.h>
 #include <conio.h>
+#include <ctype.h>
+#include <stdlib.h>
+#include <winsock.h>
 
-#include "compat.h"
-#include "QF/qargs.h"
 #include "QF/cvar.h"
-#include "server.h"
+#include "QF/qargs.h"
 #include "QF/sys.h"
 
+#include "compat.h"
+#include "server.h"
 
 qboolean    is_server = true;
 qboolean    WinNT;
@@ -61,9 +61,10 @@ void
 Sys_Init_Cvars (void)
 {
 	sys_nostdout = Cvar_Get ("sys_nostdout", "0", CVAR_NONE, NULL,
-			"Toggle console output");
-	sys_sleep = Cvar_Get ("sys_sleep", "8", CVAR_NONE, NULL, 
-		"Sleep how long in seconds between checking for connections. minimum is 0, maximum is 13");
+							 "Toggle console output");
+	sys_sleep = Cvar_Get ("sys_sleep", "8", CVAR_NONE, NULL, "Sleep how long "
+						  "in seconds between checking for connections. "
+						  "Minimum is 0, maximum is 13");
 }
 
 void
@@ -74,8 +75,7 @@ Sys_Init (void)
 #ifdef USE_INTEL_ASM
 	Sys_SetFPCW ();
 #endif
-	// make sure the timer is high precision, otherwise
-	// NT gets 18ms resolution
+	// make sure the timer is high precision, otherwise NT gets 18ms resolution
 	timeBeginPeriod (1);
 
 	vinfo.dwOSVersionInfoSize = sizeof (vinfo);
@@ -94,9 +94,6 @@ Sys_Init (void)
 		WinNT = false;
 }
 
-/*
-	Sys_Quit
-*/
 void
 Sys_Quit (void)
 {
@@ -104,20 +101,17 @@ Sys_Quit (void)
 	exit (0);
 }
 
-/*
-	Sys_Error
-*/
 void
 Sys_Error (const char *error, ...)
 {
-	va_list     argptr;
 	char        text[1024];
+	va_list     argptr;
 
 	va_start (argptr, error);
 	vsnprintf (text, sizeof (text), error, argptr);
 	va_end (argptr);
 
-//    MessageBox(NULL, text, "Error", 0 /* MB_OK */ );
+//	MessageBox(NULL, text, "Error", 0 /* MB_OK */ );
 	printf ("ERROR: %s\n", text);
 
 	exit (1);
@@ -166,19 +160,15 @@ Sys_ConsoleInput (void)
 	return NULL;
 }
 
-/*
-	main
-*/
 char       *newargv[256];
 
 int
 main (int argc, const char **argv)
 {
 	double      newtime, time, oldtime;
-	struct timeval timeout;
 	fd_set      fdset;
-	int         t;
-	int         sleep_msec;
+	int         sleep_msec, t;
+	struct timeval timeout;
 
 	COM_InitArgv (argc, argv);
 
@@ -213,12 +203,10 @@ main (int argc, const char **argv)
 	if (WinNT)
 		Cvar_Set (sys_sleep, "0");
 
-// run one frame immediately for first heartbeat
+	// run one frame immediately for first heartbeat
 	SV_Frame (0.1);
 
-//
-// main loop
-//
+	// main loop
 	oldtime = Sys_DoubleTime () - 0.1;
 	while (1) {
 		// Now we want to give some processing time to other applications,
