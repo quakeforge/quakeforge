@@ -187,7 +187,7 @@ GIB_Function_f (void)
 			if (!(program = GIB_Parse_Lines (GIB_Argv
 							(GIB_Argc()-1), 0))) {
 				// Error!
-				GIB_Error ("parse", "Parse error while defining function '%s'.",
+				GIB_Error ("ParseError", "Parse error while defining function '%s'.",
 						   GIB_Argv (1));
 				return;
 			}
@@ -394,11 +394,11 @@ GIB_Function_Export_f (void)
 		GIB_USAGE ("function1 [function2 function3 ...]");
 	for (i = 1; i < GIB_Argc (); i++) {
 		if (!(f = GIB_Function_Find (GIB_Argv (i))))
-			GIB_Error ("function", "%s: function '%s' not found.", GIB_Argv (0),
+			GIB_Error ("UnknownFunctionError", "%s: function '%s' not found.", GIB_Argv (0),
 					   GIB_Argv (i));
 		else if (!f->exported) {
 			if (Cmd_Exists (f->name)) {
-				GIB_Error ("export",
+				GIB_Error ("NameConflictError",
 						   "%s: A console command with the name '%s' already exists.",
 						   GIB_Argv (0), GIB_Argv (i));
 				return;
@@ -570,7 +570,7 @@ GIB_Regex_Match_f (void)
 		 GIB_Regex_Compile (GIB_Argv (2),
 							REG_EXTENDED |
 							GIB_Regex_Translate_Options (GIB_Argv (3)))))
-		GIB_Error ("regex", "%s: %s", GIB_Argv (0), GIB_Regex_Error ());
+		GIB_Error ("RegexError", "%s: %s", GIB_Argv (0), GIB_Regex_Error ());
 	else if (regexec (reg, GIB_Argv (1), 0, 0, GIB_Regex_Translate_Runtime_Options (GIB_Argv (3))))
 		GIB_Return ("0");
 	else
@@ -597,7 +597,7 @@ GIB_Regex_Replace_f (void)
 		 GIB_Regex_Compile (GIB_Argv (2),
 							REG_EXTENDED |
 							GIB_Regex_Translate_Options (GIB_Argv (3)))))
-		GIB_Error ("regex", "%s: %s", GIB_Argv (0), GIB_Regex_Error ());
+		GIB_Error ("RegexError", "%s: %s", GIB_Argv (0), GIB_Regex_Error ());
 	else if (strchr (GIB_Argv (3), 'g'))
 		while (!regexec
 			   (reg, GIB_Argv (1) + ofs, 10, match, ofs > 0 ? REG_NOTBOL : 0)
@@ -629,7 +629,7 @@ GIB_Regex_Extract_f (void)
 		 GIB_Regex_Compile (GIB_Argv (2),
 							REG_EXTENDED |
 							GIB_Regex_Translate_Options (GIB_Argv (3)))))
-		GIB_Error ("regex", "%s: %s", GIB_Argv (0), GIB_Regex_Error ());
+		GIB_Error ("RegexError", "%s: %s", GIB_Argv (0), GIB_Regex_Error ());
 	else if (!regexec (reg, GIB_Argv (1), 32, match, GIB_Regex_Translate_Runtime_Options (GIB_Argv (3))) && match[0].rm_eo) {
 		dsprintf (GIB_Return (0), "%lu", (unsigned long) match[0].rm_eo);
 		for (i = 0; i < 32; i++) {
@@ -742,9 +742,9 @@ GIB_Event_Register_f (void)
 	if (GIB_Argc () != 3)
 		GIB_USAGE ("event function");
 	else if (!(func = GIB_Function_Find (GIB_Argv (2))) && GIB_Argv (2)[0])
-		GIB_Error ("function", "Function %s not found.", GIB_Argv (2));
+		GIB_Error ("UnknownFunctionError", "Function %s not found.", GIB_Argv (2));
 	else if (GIB_Event_Register (GIB_Argv (1), func))
-		GIB_Error ("event", "Event %s not found.", GIB_Argv (1));
+		GIB_Error ("UnknownEventError", "Event %s not found.", GIB_Argv (1));
 }
 
 /* File access */
@@ -792,7 +792,7 @@ GIB_File_Read_f (void)
 		return;
 	}
 	if (!*GIB_Argv (1)) {
-		GIB_Error ("file", "%s: null filename provided", GIB_Argv (0));
+		GIB_Error ("FileAccessError", "%s: null filename provided", GIB_Argv (0));
 		return;
 	}
 
@@ -808,7 +808,7 @@ GIB_File_Read_f (void)
 		ret->str[len] = 0;
 		Qclose (file);
 	} else {
-		GIB_Error ("file",
+		GIB_Error ("FileAccessError",
 				   "%s: could not read %s: %s", GIB_Argv (0), path,
 				   strerror (errno));
 		return;
@@ -825,7 +825,7 @@ GIB_File_Write_f (void)
 		return;
 	}
 	if (!*GIB_Argv (1)) {
-		GIB_Error ("file", "%s: null filename provided", GIB_Argv (0));
+		GIB_Error ("InvalidArgumentError", "%s: null filename provided", GIB_Argv (0));
 		return;
 	}
 
@@ -847,7 +847,7 @@ GIB_File_Find_f (void)
 		return;
 	}
 	if (GIB_File_Transform_Path (GIB_Argd (1))) {
-		GIB_Error ("access",
+		GIB_Error ("FileAccessError",
 				   "%s: access to %s denied", GIB_Argv (0), GIB_Argv (1));
 		return;
 	}
@@ -882,19 +882,19 @@ GIB_File_Move_f (void)
 		return;
 	}
 	if (GIB_File_Transform_Path (GIB_Argd (1))) {
-		GIB_Error ("access",
+		GIB_Error ("FileAccessError",
 				   "%s: access to %s denied", GIB_Argv (0), GIB_Argv (1));
 		return;
 	}
 	if (GIB_File_Transform_Path (GIB_Argd (2))) {
-		GIB_Error ("access",
+		GIB_Error ("FileAccessError",
 				   "%s: access to %s denied", GIB_Argv (0), GIB_Argv (2));
 		return;
 	}
 	path1 = GIB_Argv (1);
 	path2 = GIB_Argv (2);
 	if (QFS_Rename (path1, path2))
-		GIB_Error ("file", "%s: could not move %s to %s: %s", GIB_Argv (0),
+		GIB_Error ("FileAccessError", "%s: could not move %s to %s: %s", GIB_Argv (0),
 				   path1, path2, strerror (errno));
 }
 
@@ -908,13 +908,13 @@ GIB_File_Delete_f (void)
 		return;
 	}
 	if (GIB_File_Transform_Path (GIB_Argd (1))) {
-		GIB_Error ("access",
+		GIB_Error ("FileAccessError",
 				   "%s: access to %s denied", GIB_Argv (0), GIB_Argv (1));
 		return;
 	}
 	path = GIB_Argv (1);
 	if (QFS_Remove (path))
-		GIB_Error ("file", "%s: could not delete %s: %s", GIB_Argv (0), path,
+		GIB_Error ("FileAccessError", "%s: could not delete %s: %s", GIB_Argv (0), path,
 				   strerror (errno));
 }
 
@@ -955,12 +955,15 @@ GIB_Print_f (void)
 static void
 GIB_Class_f (void)
 {
-	if (GIB_Argc () == 5)
+	if (GIB_Object_Get (GIB_Argv(1))) {
+		GIB_Error ("ClassRedefinitionError", 
+				"Class '%s' already exists", GIB_Argv(1));
+	} else if (GIB_Argc () == 5)
 		GIB_Classes_Build_Scripted (GIB_Argv(1), GIB_Argv(3), 
 				GIB_Argm (4)->children,
 				GIB_DATA(cbuf_active)->script);
 	else
-		GIB_Classes_Build_Scripted (GIB_Argv(1), NULL,
+		GIB_Classes_Build_Scripted (GIB_Argv(1), "Object",
 				GIB_Argm (2)->children,
 				GIB_DATA(cbuf_active)->script);
 }
@@ -972,7 +975,7 @@ GIB_Emit_f (void)
 		GIB_USAGE ("signal [arg1 arg2 ...]");
 		return;
 	} else if (!GIB_DATA(cbuf_active)->reply.obj) {
-		GIB_Error ("emit", "Cannot emit signal in this context.");
+		GIB_Error ("InvalidContextError", "Cannot emit signal in this context.");
 		return;
 	} else {
 		int i;
@@ -1006,6 +1009,22 @@ GIB_Error_f (void)
 	} else
 		GIB_Error (GIB_Argv(1), "%s", GIB_Argv(2));
 }
+
+/*
+static void
+GIB_New_f (void)
+{
+	GIB_Object_t *classobj;
+	if (GIB_Argc() < 2) {
+		GIB_USAGE ("classname");
+	} else if (
+			   !(class = GIB_Object_Get(GIB_Argv(1)))
+			|| classobj->class->classobj != classobj) {
+		GIB_Error ("UnknownClassError", "Class '%s' does not exist", 
+				GIB_Argv(1));
+	} else {
+		GIB_Send (classobj, 
+*/
 
 static void
 GIB_bp1_f (void)

@@ -178,7 +178,7 @@ extern char gib_null_string[];
 #define GIB_Argd(x) ((x) < cbuf_active->args->argc ? cbuf_active->args->argv[(x)] : NULL)
 #define GIB_Argm(x) ((x) < cbuf_active->args->argc ? (gib_tree_t *)cbuf_active->args->argm[(x)] : NULL)
 
-#define GIB_USAGE(x) (GIB_Error ("syntax", "%s: invalid syntax\nusage: %s %s", GIB_Argv(0), GIB_Argv(0), (x)))
+#define GIB_USAGE(x) (GIB_Error ("SyntaxError", "%s: invalid syntax\nusage: %s %s", GIB_Argv(0), GIB_Argv(0), (x)))
 
 #define GIB_CanReturn() (GIB_DATA(cbuf_active)->waitret)
 

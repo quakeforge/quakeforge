@@ -352,7 +352,7 @@ GIB_Execute (cbuf_t * cbuf)
 						GIB_Execute_Generate_Composite (cbuf);
 						if (Cmd_Command (cbuf->args))
 							GIB_Error (
-								"command",
+								"UnknownCommandError",
 								"No builtin, function, or console command "
 								"named '%s' was found.",
 								cbuf->args->argv[0]->str

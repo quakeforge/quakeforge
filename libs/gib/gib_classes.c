@@ -226,7 +226,7 @@ Object_Destruct (void *data)
 	return;
 }
 
-gib_methodtab_t Object_methods[] = {
+static gib_methodtab_t Object_methods[] = {
 	{"retain", Object_Retain_f, NULL},
 	{"release", Object_Release_f, NULL},
 	{"init", Object_Init_f, NULL},
@@ -239,7 +239,7 @@ gib_methodtab_t Object_methods[] = {
 	{NULL, NULL, NULL}
 };
 
-gib_methodtab_t Object_class_methods[] = {
+static gib_methodtab_t Object_class_methods[] = {
 	{"parent", Object_SuperClass_f, NULL},
 	{"children", Object_Class_Children_f, NULL},
 	{"new", Object_Class_New_f, NULL},
@@ -248,7 +248,7 @@ gib_methodtab_t Object_class_methods[] = {
 	{NULL, NULL, NULL}
 };
 
-gib_classdesc_t Object_class = {
+static gib_classdesc_t Object_class = {
 	"Object", NULL,
 	Object_Construct, NULL,
 	Object_Destruct,
@@ -335,16 +335,16 @@ Thread_Destruct (void *data)
 	free (t);
 }
 
-gib_methodtab_t Thread_methods[] = {
+static gib_methodtab_t Thread_methods[] = {
 	{"init", Thread_Init_f, NULL},
 	{NULL, NULL, NULL}
 };
 
-gib_methodtab_t Thread_class_methods[] = {
+static gib_methodtab_t Thread_class_methods[] = {
 	{NULL, NULL, NULL}
 };
 
-gib_classdesc_t Thread_class = {
+static gib_classdesc_t Thread_class = {
 	"Thread", "Object",
 	Thread_Construct, NULL,
 	Thread_Destruct,
@@ -352,7 +352,7 @@ gib_classdesc_t Thread_class = {
 };
 
 /*
-   Object hash class
+   Object Hash class
 
    Stores references to objects in a Hash
 */
@@ -489,18 +489,18 @@ ObjectHash_Remove_f (gib_object_t *obj, gib_method_t *method, void *data,
 	return 0;
 }		
 
-gib_methodtab_t ObjectHash_methods[] = {
+static gib_methodtab_t ObjectHash_methods[] = {
 	{"insert", ObjectHash_Insert_f, NULL},
 	{"get", ObjectHash_Get_f, NULL},
 	{"remove", ObjectHash_Remove_f, NULL},
 	{NULL, NULL, NULL}
 };
 
-gib_methodtab_t ObjectHash_class_methods[] = {
+static gib_methodtab_t ObjectHash_class_methods[] = {
 	{NULL, NULL, NULL}
 };
 
-gib_classdesc_t ObjectHash_class = {
+static gib_classdesc_t ObjectHash_class = {
 	"ObjectHash", "Object",
 	ObjectHash_Construct, NULL,
 	ObjectHash_Destruct,

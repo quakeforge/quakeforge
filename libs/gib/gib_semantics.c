@@ -42,13 +42,13 @@ GIB_Semantic_Validate_Class (gib_tree_t * tokens)
 	
 	if (!tokens->next || !tokens->next->next) {
 		GIB_Parse_Error ("Malformed class definition; expected class "
-				"name, optional colon and parent class, and "
+				"name, optional 'extends' and parent class, and "
 				"program block.", tokens->start);
 		return -1;
 	}
 
 	if (tokens->next->next->delim == ' ' && !strcmp
-			(tokens->next->next->str, ":")) {
+			(tokens->next->next->str, "extends")) {
 		if (!tokens->next->next->next) {
 			GIB_Parse_Error ("Malformed class definition; "
 					"expected parent class after "
