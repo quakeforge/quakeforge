@@ -28,15 +28,15 @@
 	$Id$
 */
 
+#ifdef HAVE_CONFIG_H
+# include "config.h"
+#endif
+
 // FIXME: we did support Quake1 protocol too...
 
 #ifdef PACKET_LOGGING
 
 #define QUAKEWORLD
-
-#ifdef HAVE_CONFIG_H
-# include "config.h"
-#endif
 
 #include <ctype.h>
 #include <stdarg.h>
