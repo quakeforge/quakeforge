@@ -253,7 +253,7 @@ SNDDMA_UnblockSound (void)
 	--snd_blocked;
 }
 
-plugin_t *
+QFPLUGIN plugin_t *
 snd_output_sun_PluginInfo (void) {
 	plugin_info.type = qfp_sound;
 	plugin_info.api_version = QFPLUGIN_VERSION;

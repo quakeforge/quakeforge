@@ -609,7 +609,7 @@ static plugin_t plugin_info = {
 	&plugin_info_data,
 };
 
-plugin_t *
+QFPLUGIN plugin_t *
 console_client_PluginInfo (void)
 {
 	return &plugin_info;

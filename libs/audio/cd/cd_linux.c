@@ -446,7 +446,7 @@ I_CDAudio_Init (void)
 			Mus_CDChange, "device to use for CD music");
 }
 
-plugin_t *
+QFPLUGIN plugin_t *
 cd_linux_PluginInfo (void)
 {
 	plugin_info.type = qfp_cd;

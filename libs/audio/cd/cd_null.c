@@ -78,7 +78,7 @@ I_CD_f (void)
 {
 }
 
-plugin_t *
+QFPLUGIN plugin_t *
 cd_null_PluginInfo (void)
 {
 	plugin_info.type = qfp_cd;

@@ -31,7 +31,15 @@
 
 #define QFPLUGIN_VERSION	"1.0"
 
-#define QFPLUGIN
+#ifdef WIN32
+# ifdef DLL_EXPORT
+#  define QFPLUGIN __declspec(dllexport)
+# else
+#  define QFPLUGIN
+# endif
+#else
+# define QFPLUGIN
+#endif
 
 #include <QF/qtypes.h>
 #include <QF/plugin/cd.h>

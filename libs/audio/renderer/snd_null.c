@@ -172,7 +172,7 @@ SND_UnblockSound (void)
 {
 }
 
-plugin_t *
+QFPLUGIN plugin_t *
 snd_render_null_PluginInfo (void)
 {
     plugin_info.type = qfp_sound;

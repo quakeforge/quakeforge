@@ -491,7 +491,7 @@ I_CDAudio_Init (void)
 	}
 }
 
-plugin_t *
+QFPLUGIN plugin_t *
 cd_win_PluginInfo (void)
 {
 	plugin_info.type = qfp_cd;

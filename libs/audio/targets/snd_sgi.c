@@ -332,7 +332,7 @@ SNDDMA_UnblockSound (void)
 {
 }
 
-plugin_t *
+QFPLUGIN plugin_t *
 snd_output_sgi_PluginInfo (void) {
 	plugin_info.type = qfp_sound;
 	plugin_info.api_version = QFPLUGIN_VERSION;

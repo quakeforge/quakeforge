@@ -718,7 +718,7 @@ DSOUND_Restore (void)
 	return;
 }
 
-plugin_t *
+QFPLUGIN plugin_t *
 snd_output_win_PluginInfo (void) {
 	plugin_info.type = qfp_snd_output;
 	plugin_info.api_version = QFPLUGIN_VERSION;

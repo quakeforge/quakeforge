@@ -450,7 +450,7 @@ I_XMMS_f (void)
 
 }
 
-plugin_t   *
+QFPLUGIN plugin_t   *
 cd_xmms_PluginInfo (void)
 {
 	plugin_info.type = qfp_cd;
