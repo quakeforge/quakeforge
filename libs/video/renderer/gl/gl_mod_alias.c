@@ -555,9 +555,6 @@ R_DrawAliasModel (entity_t *e, qboolean cull)
 			ambientcolor[i] = min (ambientcolor[i], 128/200.0);
 			if (ambientcolor[i] + shadecolor[i] > 1)
 				shadecolor[i] = 1 - ambientcolor[i];
-			// never allow players to go totally black
-			if (shadecolor[i] < clmodel->min_light / 200.0)
-				shadecolor[i] = clmodel->min_light / 200.0;
 		}
 		// always give the gun some light
 		shade = max (shadecolor[0], max (shadecolor[1], shadecolor[2]));
