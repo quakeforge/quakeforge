@@ -142,7 +142,7 @@ GL_Init (void)
 void
 GL_EndRendering (void)
 {
-	glFlush ();
+	qfglFlush ();
 	SDL_GL_SwapBuffers ();
 	Sbar_Changed ();
 }
