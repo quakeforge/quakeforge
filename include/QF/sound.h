@@ -63,7 +63,8 @@ typedef struct
 	int 	speed;
 	int 	width;
 	int 	stereo;
-	byte	data[1];		// variable sized
+	int		size;
+	byte	data[4];		// variable sized
 } sfxcache_t;
 
 typedef struct

@@ -50,14 +50,38 @@ wavinfo_t   SND_GetWavinfo (const char *name, byte * wav, int wavlength);
 sfxcache_t *SND_LoadSound (sfx_t *sfx, cache_allocator_t allocator);
 sfxcache_t *SND_LoadOgg (VFile *file, sfx_t *sfx, cache_allocator_t allocator);
 
+sfxcache_t *
+SND_GetCache (long samples, int rate, int inwidth, int channels,
+			  sfx_t *sfx, cache_allocator_t allocator)
+{
+	int         size;
+	int         width;
+	sfxcache_t *sc;
+
+	width = snd_loadas8bit->int_val ? 1 : 2;
+	size = samples / ((float) rate / shm->speed);
+	size *= width * channels;
+	sc = allocator (&sfx->cache, size + sizeof (sfxcache_t), sfx->name);
+	if (!sc)
+		return 0;
+	sc->length = samples;
+	sc->speed = rate;
+	sc->width = inwidth;
+	sc->stereo = channels;
+	sc->size = size;
+	memcpy (sc->data + size, "\xde\xad\xbe\xef", 4);
+	return sc;
+}
 
 void
-SND_ResampleSfx (sfxcache_t *sc, int inrate, int inwidth, byte * data)
+SND_ResampleSfx (sfxcache_t *sc, byte * data)
 {
 	unsigned char *ib, *ob;
 	int			fracstep, outcount, sample, samplefrac, srcsample, i;
 	float		stepscale;
 	short	   *is, *os;
+	int         inwidth = sc->width;
+	int         inrate = sc->speed;
 
 	is = (short *) data;
 	os = (short *) sc->data;
@@ -150,6 +174,8 @@ SND_ResampleSfx (sfxcache_t *sc, int inrate, int inwidth, byte * data)
 	sc->length = outcount;
 	if (sc->loopstart != -1)
 		sc->loopstart = sc->loopstart / stepscale;
+	if (memcmp (sc->data + sc->size, "\xde\xad\xbe\xef", 4))
+		Sys_Error ("SND_ResampleSfx screwed the pooch");
 }
 
 sfxcache_t *
@@ -199,18 +225,14 @@ SND_LoadSound (sfx_t *sfx, cache_allocator_t allocator)
 		len = len * 2 * info.channels;
 	}
 
-	sc = allocator (&sfx->cache, len + sizeof (sfxcache_t), sfx->name);
-
+	sc = SND_GetCache (info.samples, info.rate, info.width, info.channels,
+					   sfx, allocator);
 	if (!sc)
 		return NULL;
 
-	sc->length = info.samples;
 	sc->loopstart = info.loopstart;
-	sc->speed = info.rate;
-	sc->width = info.width;
-	sc->stereo = info.channels;
 
-	SND_ResampleSfx (sc, sc->speed, sc->width, data + info.dataofs);
+	SND_ResampleSfx (sc, data + info.dataofs);
 
 	return sc;
 }

@@ -33,6 +33,12 @@ static const char rcsid[] =
 #ifdef HAVE_CONFIG_H
 # include "config.h"
 #endif
+#ifdef HAVE_STRING_H
+# include "string.h"
+#endif
+#ifdef HAVE_STRINGS_H
+# include "strings.h"
+#endif
 
 #ifdef HAVE_VORBIS
 
@@ -45,7 +51,9 @@ static const char rcsid[] =
 #include "QF/vfile.h"
 
 //FIXME should be in header
-void SND_ResampleSfx (sfxcache_t *sc, int inrate, int inwidth, byte * data);
+void SND_ResampleSfx (sfxcache_t *sc, byte * data);
+sfxcache_t *SND_GetCache (long samples, int rate, int inwidth, int channels,
+		    	          sfx_t *sfx, cache_allocator_t allocator);
 
 static size_t
 read_func (void *ptr, size_t size, size_t nmemb, void *datasource)
@@ -85,7 +93,7 @@ SND_LoadOgg (VFile *file, sfx_t *sfx, cache_allocator_t allocator)
 	OggVorbis_File vf;
 	vorbis_info *vi;
 	long        samples, size;
-	void       *data;
+	byte       *data, *d;
 	int         current_section;
 	sfxcache_t *sc = 0;
 
@@ -110,16 +118,25 @@ SND_LoadOgg (VFile *file, sfx_t *sfx, cache_allocator_t allocator)
 	data = malloc (size);
 	if (!data)
 		goto bail;
-	sc = allocator (&sfx->cache, size + sizeof (sfxcache_t), sfx->name);
+	sc = SND_GetCache (samples, vi->rate, 2, vi->channels, sfx, allocator);
 	if (!sc)
 		goto bail;
-	ov_read (&vf, data, size, 0, 2, 1, &current_section);
-	sc->length = samples;
-	sc->loopstart = 0;
-	sc->speed = vi->rate;
-	sc->width = 2;
-	sc->stereo = vi->channels;
-	SND_ResampleSfx (sc, sc->speed, sc->width, data);
+	d = data;
+	while (size) {
+		int         res = ov_read (&vf, d, size, 0, 2, 1, &current_section);
+		if (res > 0) {
+			size -= res;
+			d += res;
+		} else if (res < 0) {
+			Sys_Printf ("vorbis error %d\n", res);
+			goto bail;
+		} else {
+			Sys_Printf ("unexpected eof\n");
+			break;
+		}
+	}
+	sc->loopstart = -1;		//FIXME this breaks looped sounds
+	SND_ResampleSfx (sc, data);
   bail:
 	if (data)
 		free (data);
