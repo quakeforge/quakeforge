@@ -30,8 +30,10 @@
 # include "config.h"
 #endif
 
-
 #ifndef	USE_INTEL_ASM
+
+int         r_bmodelactive; 
+
 
 void
 R_Surf8Patch ()
