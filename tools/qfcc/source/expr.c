@@ -810,27 +810,29 @@ type_mismatch:
 expr_t *
 asx_expr (int op, expr_t *e1, expr_t *e2)
 {
+	expr_t *e = new_expr ();
+	*e = *e1;
 	switch (op) {
 		case ASADD:
-			return binary_expr ('=', e1, binary_expr ('+', e1, e2));
+			return binary_expr ('=', e, binary_expr ('+', e1, e2));
 		case ASSUB:
-			return binary_expr ('=', e1, binary_expr ('-', e1, e2));
+			return binary_expr ('=', e, binary_expr ('-', e1, e2));
 		case ASMUL:
-			return binary_expr ('=', e1, binary_expr ('*', e1, e2));
+			return binary_expr ('=', e, binary_expr ('*', e1, e2));
 		case ASDIV:
-			return binary_expr ('=', e1, binary_expr ('/', e1, e2));
+			return binary_expr ('=', e, binary_expr ('/', e1, e2));
 		case ASAND:
-			return binary_expr ('=', e1, binary_expr ('&', e1, e2));
+			return binary_expr ('=', e, binary_expr ('&', e1, e2));
 		case ASOR:
-			return binary_expr ('=', e1, binary_expr ('|', e1, e2));
+			return binary_expr ('=', e, binary_expr ('|', e1, e2));
 		case ASXOR:
-			return binary_expr ('=', e1, binary_expr ('^', e1, e2));
+			return binary_expr ('=', e, binary_expr ('^', e1, e2));
 		case ASMOD:
-			return binary_expr ('=', e1, binary_expr ('%', e1, e2));
+			return binary_expr ('=', e, binary_expr ('%', e1, e2));
 		case ASSHL:
-			return binary_expr ('=', e1, binary_expr (SHL, e1, e2));
+			return binary_expr ('=', e, binary_expr (SHL, e1, e2));
 		case ASSHR:
-			return binary_expr ('=', e1, binary_expr (SHR, e1, e2));
+			return binary_expr ('=', e, binary_expr (SHR, e1, e2));
 		default:
 			error (e1, "invalid operand for asx");
 	}
