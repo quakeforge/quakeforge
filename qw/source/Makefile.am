@@ -90,7 +90,8 @@ qf_server_LIBS= \
 		$(top_builddir)/libs/gamecode/builtins/libQFgamecode_builtins.la \
 		$(top_builddir)/libs/gamecode/engine/libQFgamecode.la \
 		$(top_builddir)/libs/console/libQFconsole.la \
-		$(top_builddir)/libs/util/libQFutil.la
+		$(top_builddir)/libs/util/libQFutil.la \
+		$(top_builddir)/libs/gib/libQFgib.la
 
 qw_server_SOURCES=	sv_model.c 
 qw_server_LDADD=	libserver.a libcommon.a libnet.a libasm.a $(qf_server_LIBS) $(NET_LIBS) $(DL_LIBS) $(CURSES_LIBS)
@@ -112,7 +113,8 @@ qf_client_LIBS= \
 		$(top_builddir)/libs/gamecode/engine/libQFgamecode.la \
 		$(top_builddir)/libs/audio/libQFcd.la \
 		$(top_builddir)/libs/audio/libQFsound.la \
-		$(top_builddir)/libs/util/libQFutil.la
+		$(top_builddir)/libs/util/libQFutil.la \
+		$(top_builddir)/libs/gib/libQFgib.la
 
 client_LIBS= libnet.a libasm.a $(qf_client_LIBS)
 client_libs= libclient.a libcommon.a

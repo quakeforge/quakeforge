@@ -1970,6 +1970,7 @@ AC_OUTPUT(
 	libs/audio/cd/Makefile
 	libs/audio/targets/Makefile
 	libs/audio/renderer/Makefile
+	libs/gib/Makefile
 	libs/console/Makefile
 	libs/gamecode/Makefile
 	libs/gamecode/engine/Makefile

@@ -51,6 +51,7 @@ static const char rcsid[] =
 #include "QF/va.h"
 #include "QF/vid.h"
 #include "QF/gib_thread.h"
+#include "QF/gib_init.h"
 
 #include "buildnum.h"
 #include "chase.h"
@@ -866,6 +867,7 @@ Host_Init (void)
 	Sys_Init ();
 
 	Cmd_Init ();
+	GIB_Init ();
 
 	// execute +set as early as possible
 	Cmd_StuffCmds (host_cbuf);

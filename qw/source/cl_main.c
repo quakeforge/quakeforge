@@ -83,6 +83,7 @@ static const char rcsid[] =
 #include "QF/va.h"
 #include "QF/vid.h"
 #include "QF/gib_thread.h"
+#include "QF/gib_init.h"
 
 #include "bothdefs.h"
 #include "buildnum.h"
@@ -628,16 +629,6 @@ CL_FullServerinfo_f (void)
 }
 
 void
-CL_Getserverinfo_f (void)
-{
-	if (Cmd_Argc () != 2) {
-		Cmd_Error ("getserverinfo: invalid number of arguments.\n");
-		return;
-	}
-	Cmd_Return (Info_ValueForKey (cl.serverinfo, Cmd_Argv(1)));
-}
-
-void
 CL_AddQFInfoKeys (void)
 {
 	char        cap[100] = "";			// max of 98 or so flags
@@ -735,22 +726,6 @@ CL_SetInfo_f (void)
 						 (strequal (Cmd_Argv (2), "team") << 1));
 	if (cls.state >= ca_connected)
 		CL_Cmd_ForwardToServer ();
-}
-
-void
-CL_GetInfo_f (void)
-{
-	const char *str;
-	
-	if (Cmd_Argc () != 2) {
-			Cmd_Error ("getinfo: invalid number of arguments\n");
-			return;
-	}
-	str = Info_ValueForKey(cls.userinfo, Cmd_Argv(1));
-	if (str)
-			Cmd_Return (str);
-	else
-			Cmd_Return ("");
 }
 
 /*
@@ -1232,14 +1207,10 @@ CL_Init (void)
 					"that Quake should switch to upon a backpack pickup.\n "
 					"w_switch - Determines the highest weapon that Quake "
 					"should switch to upon a weapon pickup.");
-	Cmd_AddCommand ("getinfo", CL_GetInfo_f, "Returns the value of client "
-					"info key $1");
 	Cmd_AddCommand ("fullinfo", CL_FullInfo_f, "Used by GameSpy and Qlist to "
 					"set setinfo variables");
 	Cmd_AddCommand ("fullserverinfo", CL_FullServerinfo_f, "Used by GameSpy "
 					"and Qlist to obtain server variables");
-	Cmd_AddCommand ("getserverinfo", CL_Getserverinfo_f, "Returns the value "
-					"corresponding to key $1 in the server info.");
 	Cmd_AddCommand ("download", CL_Download_f, "Manually download a quake "
 					"file from the server");
 	Cmd_AddCommand ("nextul", CL_NextUpload, "Tells the client to send the "
@@ -1700,6 +1671,7 @@ Host_Init (void)
 	Sys_Init ();
 
 	Cmd_Init ();
+	GIB_Init ();
 
 	// execute +set as early as possible
 	Cmd_StuffCmds (cl_cbuf);

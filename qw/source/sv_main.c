@@ -67,6 +67,7 @@ static const char rcsid[] =
 #include "QF/gib_parse.h"
 #include "QF/gib_buffer.h"
 #include "QF/gib_thread.h"
+#include "QF/gib_init.h"
 #include "QF/cmd.h"
 #include "QF/console.h"
 #include "QF/cvar.h"
@@ -2469,6 +2470,7 @@ SV_Init (void)
 	Cvar_Get ("cmd_warncmd", "1", CVAR_NONE, NULL, NULL);
 
 	Cmd_Init ();
+	GIB_Init ();
 
 	// execute +set as early as possible
 	Cmd_StuffCmds (sv_cbuf);

@@ -366,12 +366,6 @@ IN_Impulse (void)
 	Team_BestWeaponImpulse ();			// HACK HACK HACK
 }
 
-void
-IN_Getimpulse_f (void)
-{
-	Cmd_Return(va("%i", in_impulse));
-}
-
 /*
 	CL_KeyState
 
@@ -817,8 +811,6 @@ CL_Input_Init (void)
 					"jumping");
 	Cmd_AddCommand ("impulse", IN_Impulse, "Call a game function or QuakeC "
 					"function.");
-	Cmd_AddCommand ("getimpulse", IN_Getimpulse_f, "Returns the impulse that "
-					"will be sent to the server this frame");
 	Cmd_AddCommand ("+klook", IN_KLookDown, "When active, +forward and +back "
 					"perform +lookup and +lookdown");
 	Cmd_AddCommand ("-klook", IN_KLookUp, "When active, +forward and +back "

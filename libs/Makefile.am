@@ -1,3 +1,3 @@
 AUTOMAKE_OPTIONS= foreign
 
-SUBDIRS=	audio console gamecode models video util
+SUBDIRS=	audio console gamecode models video util gib

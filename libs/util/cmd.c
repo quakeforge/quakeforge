@@ -47,8 +47,6 @@ static const char rcsid[] =
 #include "QF/cmd.h"
 #include "QF/cvar.h"
 #include "QF/dstring.h"
-#include "QF/gib_builtin.h"
-#include "QF/gib_parse.h"
 #include "QF/hash.h"
 #include "QF/qargs.h"
 #include "QF/quakefs.h"
@@ -59,8 +57,6 @@ typedef struct cmdalias_s {
 	struct cmdalias_s *next;
 	const char *name;
 	const char *value;
-	qboolean    restricted;				// Created from restricted buffer
-	qboolean    legacy;					// Created from a legacy buffer
 } cmdalias_t;
 
 static cmdalias_t *cmd_alias;
@@ -482,19 +478,7 @@ Cmd_Exec_f (void)
 	if (!Cvar_Command ()
 		&& (cmd_warncmd->int_val || (developer && developer->int_val)))
 		Sys_Printf ("execing %s\n", Cmd_Argv (1));
-	
-	if (!strcmp (Cmd_Argv (1) + strlen (Cmd_Argv(1)) - 4, ".gib")) {
-		// GIB script, put it in a new buffer on the stack
-		cbuf_t *sub = Cbuf_New (&gib_interp);
-		if (cbuf_active->down)
-			Cbuf_DeleteStack (cbuf_active->down);
-		cbuf_active->down = sub;
-		sub->up = cbuf_active;
-		cbuf_active->state = CBUF_STATE_STACK;
-		Cbuf_AddText (sub, f);
-		GIB_Parse_Strip_Comments (sub);
-	} else
-		Cbuf_InsertText (cbuf_active, f);
+	Cbuf_InsertText (cbuf_active, f);
 	Hunk_FreeToLowMark (mark);
 }
 
@@ -609,10 +593,6 @@ Cmd_Init (void)
 	cmd_warncmd = Cvar_Get ("cmd_warncmd", "0", CVAR_NONE, NULL, "Toggles the "
 							"display of error messages for unknown commands");
 	cmd_cbuf = Cbuf_New (&id_interp);
-	
-	// FIXME:  GIB should really be initialized elsewhere
-	
-	GIB_Builtin_Init ();
 }
 
 int
@@ -644,7 +624,6 @@ Cmd_Exec_File (cbuf_t *cbuf, const char *path, int qfs)
 		if (f) {
 			f[len] = 0;
 			Qread (file, f, len);
-			// Always insert into console
 			Cbuf_InsertText (cbuf, f);
 			free (f);
 		}
@@ -652,14 +631,3 @@ Cmd_Exec_File (cbuf_t *cbuf, const char *path, int qfs)
 	}
 }
 
-void
-Cmd_Return (const char *value)
-{
-	//FIXME implement
-}
-
-void
-Cmd_Error (const char *message)
-{
-	Sys_Printf ("%s", message);
-}
