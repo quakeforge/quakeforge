@@ -17,9 +17,10 @@ X	full scoping
 I	gut out old parser
 X	switch/case, for any type
 o	short circuit logic for && and || (optional?)
-o	warn for local shaddowing parameter
+X	warn for local shaddowing parameter
 o	quaternion type. Tricky: requires 4 word args/return
 o	CSE optimisations. Hard?
-o	clean up error expression handling to minimuse follow on errors
+X	clean up error expression handling to minimuse follow on errors
 o	fix local structure used/uninitialized warnings
 o	arrays in entities/structures?
+o	object oriented features ala Objective-C
