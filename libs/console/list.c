@@ -39,6 +39,7 @@ static const char rcsid[] =
 
 #include "QF/console.h"
 
+void (*con_list_print)(const char *fmt, ...) = Con_Printf;
 
 /*
 	Con_DisplayList
@@ -49,14 +50,14 @@ static const char rcsid[] =
 
 */
 void
-Con_DisplayList(const char **list, int con_linewidth)
+Con_DisplayList (const char **list, int con_linewidth)
 {
 	const char	  **walk = list;
 	int				len = 0, maxlen = 0, pos =0, i = 0;
 	int				width = (con_linewidth - 4);
 
 	while (*walk) {
-		len = strlen(*walk);
+		len = strlen (*walk);
 		if (len > maxlen)
 			maxlen = len;
 		walk++;
@@ -64,20 +65,20 @@ Con_DisplayList(const char **list, int con_linewidth)
 	maxlen += 1;
 
 	while (*list) {
-		len = strlen(*list);
+		len = strlen (*list);
 		if (pos + maxlen >= width) {
-			Con_Printf("\n");
+			con_list_print ("\n");
 			pos = 0;
 		}
 
-		Con_Printf("%s", *list);
+		con_list_print ("%s", *list);
 		for (i = 0; i < (maxlen - len); i++)
-			Con_Printf(" ");
+			con_list_print (" ");
 
 		pos += maxlen;
 		list++;
 	}
 
 	if (pos)
-		Con_Printf("\n\n");
+		con_list_print ("\n\n");
 }

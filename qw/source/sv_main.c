@@ -2462,6 +2462,7 @@ SV_Init (void)
 	Con_Init (sv_console_plugin->string);
 	if (con_module)
 		con_module->data->console->cbuf = sv_cbuf;
+	con_list_print = Sys_Printf;
 	Sys_SetStdPrintf (SV_Print);
 	Sys_SetErrPrintf (SV_Error);
 

@@ -101,6 +101,7 @@ void Con_BasicCompleteCommandLine (inputline_t *il);
 // Generic libs/util/console.c function to display a list
 // formatted in columns on the console
 void Con_DisplayList(const char **list, int con_linewidth);
+extern void (*con_list_print)(const char *fmt, ...);
 
 inputline_t *Con_CreateInputLine (int lines, int lsize, char prompt);
 void Con_DestroyInputLine (inputline_t *inputline);
