@@ -167,7 +167,7 @@ typedef struct sockaddr_in msghdr_t;
 
 #endif
 
-#define MASTER_TIMEOUT 300
+#define MASTER_TIMEOUT 600
 #define SLIST_MULTIPLE 1
 
 typedef struct {
