@@ -73,7 +73,7 @@ libqw_server_a_SOURCES= \
 	sv_move.c sv_nchan.c sv_phys.c sv_pr_cmds.c sv_pr_qwe.c sv_progs.c \
 	sv_send.c sv_user.c world.c $(syssv_SRC)
 
-qf_server_LIBS= \
+qw_server_LIBS= \
 		$(SERVER_PLUGIN_STATIC_LIBS) \
 		$(top_builddir)/libs/net/libnet_chan.la \
 		$(top_builddir)/libs/ruamoko/libQFruamoko.la \
@@ -86,9 +86,9 @@ qf_server_LIBS= \
 		$(top_builddir)/libs/util/libQFutil.la
 
 qw_server_SOURCES=	
-qw_server_LDADD=	libqw_server.a libqw_common.a libasm.a $(qf_server_LIBS) $(NET_LIBS) $(DL_LIBS) $(CURSES_LIBS)
+qw_server_LDADD=	libqw_server.a libqw_common.a libasm.a $(qw_server_LIBS) $(NET_LIBS) $(DL_LIBS) $(CURSES_LIBS)
 qw_server_LDFLAGS=	$(common_ldflags)
-qw_server_DEPENDENCIES=	libqw_common.a libqw_server.a libasm.a $(qf_server_LIBS)
+qw_server_DEPENDENCIES=	libqw_common.a libqw_server.a libasm.a $(qw_server_LIBS)
 
 qw_master_SOURCES=	master.c
 qw_master_LDADD=	$(top_builddir)/libs/util/libQFutil.la $(NET_LIBS)
@@ -98,7 +98,7 @@ cl_plugin_LIBS= \
 		$(CLIENT_PLUGIN_STATIC_LIBS) \
 		$(top_builddir)/libs/ruamoko/libQFruamoko.la
 
-qf_client_LIBS= \
+qw_client_LIBS= \
 		$(top_builddir)/libs/net/libnet_chan.la \
 		$(top_builddir)/libs/console/libQFconsole.la \
 		$(top_builddir)/libs/video/targets/libQFjs.la \
@@ -110,7 +110,7 @@ qf_client_LIBS= \
 		$(top_builddir)/libs/util/libQFutil.la \
 		$(top_builddir)/libs/gib/libQFgib.la
 
-client_LIBS= libasm.a $(qf_client_LIBS)
+client_LIBS= libasm.a $(qw_client_LIBS)
 client_libs= libqw_client.a libqw_common.a
 
 libqw_client_a_SOURCES= \
