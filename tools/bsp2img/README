@@ -1,0 +1,94 @@
+BSP2BMP v0.0.12
+
+How to use:
+-----------
+
+bsp2bmp -h
+
+> BSP->bitmap, version 0.0.12
+> 
+> Usage:
+>   bsp2bmp [options] <bspfile> <outfile>
+> 
+> Options:
+>     -s<scaledown>     default: 4, ie 1/4 scale
+>     -z<z_scaling>     default: 0 for flat map, >0 for iso 3d, -1 for auto
+>     -p<padding>       default: 16-pixel border around final image
+>     -d<direction>     iso 3d direction: 7  0  1
+>                                          \ | /
+>                                         6--+--2
+>                                          / | \
+>                                         5  4  3
+>                       default: 7
+>     -c<camera_axis>   default: +Z (+/- X/Y/Z axis)
+>     -t<flatness>      threshold of dot product for edge removal;
+>                       default is 0.90
+>     -e                disable extraneous edges removal
+>     -a<area>          minimum area for a polygon to be drawn
+>                       default is 0
+>     -l<length>        minimum length for an edge to be drawn
+>                       default is 0
+>     -n                negative image (black on white)
+>     -r                write raw data, rather than bmp file
+
+Explanation of options:
+-----------------------
+
+scaledown - amount by which the bsp map coordinates are scaled down
+            by when generating the bitmap. The default of 1/4 size
+            gives a decent compromise between detail and a not-too-
+            overly large resulting image. Value must be less than 1.
+
+z_scaling - generate isometric-type (well, sorta) 3d look by taking
+            the Z-coordinate to shift the point when plotting the
+            bitmap. See <direction> for control of direction of
+            shift. The number specified is the maximum number of pixels
+            by which the shift will be done. If equal to 0 (default),
+            the map will be 'flat'
+
+padding - margin to place around the image, in pixels.
+          Default is 16.
+
+direction - direction in which shifting will be done for plotting of
+            Z-axis. Default direction is 1 (up and to the right),
+            which for a cube will give something like:
+
+               +-----+
+              /|    /|
+             / |   / |
+            +--|--+  |
+            |  +-----+
+            | /   | /
+            |/    |/
+            +-----+
+
+camera axis - axis along which the camera will sit. Valid choices
+
+flatness - extraneous edges are removed by taking the dot product of
+           the unit vector normals of the faces which use that edge. If
+           the dot product is less than this threshold, then the line
+           will be plotted.
+           A dot product of 1.0 means the two faces are in the
+           same plane, and hence the edge should be dropped. Anything
+           less than the threshold will be drawn. A bit of leeway is
+           allowed with a 0.90 threshold for rounding errors and map
+           design imperfections (ie. walls not EXACTLY parallel).
+
+area/line minimums - if a given edge is smaller than the line minimum
+                      or a given face is smaller than the area minimum,
+                     the line(s) won't be drawn. This can be used to 
+                     get rid of smaller details from cluttering up the
+                     final output. You may have to play around with the
+                     numbers to fine tune the output.
+
+raw data - if specified, output will be the raw bitmap data, not a BMP.
+
+Notes:
+------
+
+* NO error checking is done on the bsp file as of this moment. Use at your
+  own risk, if you plan on (or accidentally) specifiy a non-bsp file, or use
+  on a buggy (ie. improperly referenced faces/edges/etc.) bsp file.
+
+* Edge removal is still a big buggy... occasionally some edges which should
+  be kept are removed anyways, or vice versa!

@@ -1,0 +1,18 @@
+BSP2IMG_LIBS=@BSP2IMG_LIBS@
+BSP2IMG_DEPS=@BSP2IMG_DEPS@
+BSP2IMG_INCS=@BSP2IMG_INCS@
+
+INCLUDES=	-I$(top_srcdir)/include $(BSP2IMG_INCS)
+
+if BUILD_BSP2IMG
+bsp2img=bsp2img
+else
+bsp2img=
+endif
+
+bin_PROGRAMS=$(bsp2img)
+EXTRA_PROGRAMS=bsp2img
+
+bsp2img_SOURCES= bsp2img.c
+bsp2img_LDADD= $(BSP2IMG_LIBS)
+bsp2img_DEPENDENCIES= $(BSP2IMG_DEPS)

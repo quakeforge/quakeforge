@@ -1,0 +1,20 @@
+0.0.1 - orig program, flat maps
+0.0.2 - fixed buggy plotting code
+        lines overlapped properly now
+0.0.3 - added Z-axis handling
+0.0.4 - added command-line control of options
+0.0.5 - added direction of fake-Z offsetting
+0.0.6 - added camera axis, added auto-Z-offset selection
+0.0.7 - started implementing extraneous line removal
+0.0.8 - option to negate the picture
+0.0.9 - name now bsp2bmp, as it writes an (uncompressed) BMP file
+0.0.10 - bugfixes in BMP writing
+0.0.11 - add option for small polygon removal and small line removal,
+         more BMP writing bigfixes (but still doesn't seem right).
+0.0.12 - fixed a big bug introduced in last version's BMP writing code.
+         however is still not perfect.
+qf cvs - (Bill Currie) bring into QF using quakeio functions, creating an
+         image_t type for the line point drawing, ditching the raw and bmp
+         formats in favor of pcx (for now), and renaming to bsp2img. I'll be
+         working on getopt, bspfile and other image formats in the future as
+         well as generally cleaning up the code.
