@@ -74,15 +74,81 @@ fgetLittleLong (VFile *f)
 }
 */
 
+static inline byte *
+blit_rgb (byte *buf, int count, byte red, byte green, byte blue)
+{
+	while (count--) {
+		buf[0] = red;
+		buf[1] = green;
+		buf[2] = blue;
+		buf += 3;
+	}
+	return buf;
+}
+
+static inline byte *
+blit_rgba (byte *buf, int count, byte red, byte green, byte blue, byte alpha)
+{
+	while (count--) {
+		buf[0] = red;
+		buf[1] = green;
+		buf[2] = blue;
+		buf[3] = alpha;
+		buf += 4;
+	}
+	return buf;
+}
+
+static inline byte *
+read_bgr (byte *buf, int count, VFile *f)
+{
+	byte        blue = Qgetc (f);
+	byte        green = Qgetc (f);
+	byte        red = Qgetc (f);
+
+	return blit_rgb(buf, count, red, green, blue);
+}
+
+static inline byte *
+read_rgb (byte *buf, int count, VFile *f)
+{
+	byte        red = Qgetc (f);
+	byte        green = Qgetc (f);
+	byte        blue = Qgetc (f);
+
+	return blit_rgb(buf, count, red, green, blue);
+}
+
+static inline byte *
+read_bgra (byte *buf, int count, VFile *f)
+{
+	byte        blue = Qgetc (f);
+	byte        green = Qgetc (f);
+	byte        red = Qgetc (f);
+	byte        alpha = Qgetc (f);
+
+	return blit_rgba (buf, count, red, green, blue, alpha);
+}
+
+static inline byte *
+read_rgba (byte *buf, int count, VFile *f)
+{
+	byte        red = Qgetc (f);
+	byte        green = Qgetc (f);
+	byte        blue = Qgetc (f);
+	byte        alpha = Qgetc (f);
+
+	return blit_rgba (buf, count, red, green, blue, alpha);
+}
+
 struct tex_s *
 LoadTGA (VFile *fin)
 {
-	byte		   *pixbuf;
-	byte			red = 0, green = 0, blue = 0, alphabyte = 0;
-	int				column, row, columns, rows, numPixels;
+	byte       *pixcol, *pixrow;
+	int         column, row, columns, rows, numPixels, span;
 
-	TargaHeader		targa_header;
-	tex_t		   *targa_data;
+	TargaHeader targa_header;
+	tex_t      *targa_data;
 
 	targa_header.id_length = Qgetc (fin);
 	targa_header.colormap_type = Qgetc (fin);
@@ -135,118 +201,66 @@ LoadTGA (VFile *fin)
 	if (targa_header.id_length != 0)
 		Qseek (fin, targa_header.id_length, SEEK_CUR);	// skip TARGA image
 														// comment
+	span = columns * targa_data->format;
+	pixrow = targa_data->data + (rows - 1) * span;
 
 	if (targa_header.image_type == 2) {	// Uncompressed image
 		switch (targa_header.pixel_size) {
 			case 24:
-				for (row = rows - 1; row >= 0; row--) {
-					pixbuf = targa_data->data + row * columns *
-						targa_data->format;
-					for (column = 0; column < columns; column++) {
-						blue = Qgetc (fin);
-						green = Qgetc (fin);
-						red = Qgetc (fin);
-						*pixbuf++ = red;
-						*pixbuf++ = green;
-						*pixbuf++ = blue;
-					}
+				for (row = rows - 1; row >= 0; row--, pixrow -= span) {
+					pixcol = pixrow;
+					for (column = 0; column < columns; column++)
+						pixcol = read_bgr (pixcol, 1, fin);
 				}
 				break;
 			case 32:
-				for (row = rows - 1; row >= 0; row--) {
-					pixbuf = targa_data->data + row * columns *
-						targa_data->format;
-					for (column = 0; column < columns; column++) {
-						blue = Qgetc (fin);
-						green = Qgetc (fin);
-						red = Qgetc (fin);
-						alphabyte = Qgetc (fin);
-						*pixbuf++ = red;
-						*pixbuf++ = green;
-						*pixbuf++ = blue;
-						*pixbuf++ = alphabyte;
-					}
+				for (row = rows - 1; row >= 0; row--, pixrow -= span) {
+					pixcol = pixrow;
+					for (column = 0; column < columns; column++)
+						pixcol = read_bgra (pixcol, 1, fin);
 				}
 				break;
 		}
 	} else if (targa_header.image_type == 10) {	// RLE compressed image
-		unsigned char packetHeader, packetSize, j;
+		unsigned char packetHeader, packetSize;
 
-		for (row = rows - 1; row >= 0; row--) {
-			pixbuf = targa_data->data + row * columns * targa_data->format;
+		byte *(*expand)(byte *buf, int count, VFile *f);
+
+		if (targa_header.pixel_size == 24)
+			expand = read_bgr;
+		else
+			expand = read_bgra;
+
+		for (row = rows - 1; row >= 0; row--, pixrow -= span) {
+			pixcol = pixrow;
 			for (column = 0; column < columns;) {
 				packetHeader = Qgetc (fin);
 				packetSize = 1 + (packetHeader & 0x7f);
-				if (packetHeader & 0x80) {	// run-length packet
-					switch (targa_header.pixel_size) {
-						case 24:
-							blue = Qgetc (fin);
-							green = Qgetc (fin);
-							red = Qgetc (fin);
-							break;
-						case 32:
-							blue = Qgetc (fin);
-							green = Qgetc (fin);
-							red = Qgetc (fin);
-							alphabyte = Qgetc (fin);
-							break;
-					}
+				while (packetSize > columns - column) {
+					int count = columns - column;
 
-					for (j = 0; j < packetSize; j++) {
-						*pixbuf++ = red;
-						*pixbuf++ = green;
-						*pixbuf++ = blue;
-						if (targa_header.pixel_size > 24)
-							*pixbuf++ = alphabyte;
-						column++;
-						if (column == columns) {	// run spans across rows
-							column = 0;
-							if (row > 0)
-								row--;
-							else
-								goto breakOut;
-							pixbuf = targa_data->data + row * columns *
-								targa_data->format;
-						}
+					packetSize -= count;
+					if (packetHeader & 0x80) {	// run-length packet
+						expand (pixcol, count, fin);
+					} else {				// non run-length packet
+						while (count--)
+							expand (pixcol, 1, fin);
 					}
+					column = 0;
+					pixcol = (pixrow -= span);
+					if (--row < 0)
+						goto done;
+				}
+				column += packetSize;
+				if (packetHeader & 0x80) {	// run-length packet
+					pixcol = expand (pixcol, packetSize, fin);
 				} else {				// non run-length packet
-					for (j = 0; j < packetSize; j++) {
-						switch (targa_header.pixel_size) {
-							case 24:
-								blue = Qgetc (fin);
-								green = Qgetc (fin);
-								red = Qgetc (fin);
-								*pixbuf++ = red;
-								*pixbuf++ = green;
-								*pixbuf++ = blue;
-								break;
-							case 32:
-								blue = Qgetc (fin);
-								green = Qgetc (fin);
-								red = Qgetc (fin);
-								alphabyte = Qgetc (fin);
-								*pixbuf++ = red;
-								*pixbuf++ = green;
-								*pixbuf++ = blue;
-								*pixbuf++ = alphabyte;
-								break;
-						}
-						column++;
-						if (column == columns) {	// pixel packet run spans
-													// across rows
-							column = 0;
-							if (row > 0)
-								row--;
-							else
-								goto breakOut;
-							pixbuf = targa_data->data + row * columns *
-								targa_data->format;
-						}
-					}
+					while (packetSize--)
+						pixcol = expand (pixcol, 1, fin);
 				}
 			}
-		breakOut:;
 		}
+done:
 	}
 
 	Qclose (fin);
