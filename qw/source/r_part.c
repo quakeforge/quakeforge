@@ -61,7 +61,7 @@ void
 R_InitParticles (void)
 {
 	// Misty-chan: Chooses cvar if bigger than zero, otherwise ignore and set variable to zero. Deek showed this to me.
-	r_numparticles = max(cl_max_particles->int_val, 0);
+	r_numparticles = max(cl_max_particles->int_val, 1);
 
 	particles = (particle_t *)
 		Hunk_AllocName (r_numparticles * sizeof (particle_t), "particles");
