@@ -1448,6 +1448,9 @@ Host_SimulationTime (float time)
 	float       fps, timedifference;
 	float		timescale = 1.0;
 
+	if (cls.timedemo)
+		return 0;
+
 	if (cls.demoplayback) {
 		timescale = max (0, cl_demospeed->value);
 		time *= timescale;
@@ -1457,14 +1460,14 @@ Host_SimulationTime (float time)
 	if (oldrealtime > realtime)
 		oldrealtime = 0;
 
-	if (cl_maxfps->int_val)
-		fps = max (1, cl_maxfps->value);
-	else
+	if (!cl_maxfps->int_val)
 		return 0;
+
+	fps = max (1, cl_maxfps->value);
 
 	timedifference = (timescale / fps) - (realtime - oldrealtime);
 
-	if (!cls.timedemo && (timedifference > 0))
+	if (timedifference > 0)
 		return timedifference;					// framerate is too high
 	return 0;
 }
