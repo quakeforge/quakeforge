@@ -342,13 +342,13 @@ emit_move_expr (expr_t *e)
 	if (dst_type->type == ev_struct && src_type->type == ev_struct) {
 		size_expr = new_short_expr (type_size (dst->type));
 	} else if (dst_type->type == ev_struct) {
-		//if (dst->alias)
-		//	dst = dst->alias;
+		if (dst->alias)
+			dst = dst->alias;
 		dst = emit_sub_expr (address_expr (new_def_expr (dst), 0, 0), 0);
 		size_expr = new_integer_expr (type_size (dst_type));
 	} else if (src_type->type == ev_struct) {
-		//if (src->alias)
-		//	src = src->alias;
+		if (src->alias)
+			src = src->alias;
 		src = emit_sub_expr (address_expr (new_def_expr (src), 0, 0), 0);
 		size_expr = new_integer_expr (type_size (dst_type->aux_type));
 	} else {

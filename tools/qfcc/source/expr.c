@@ -2097,7 +2097,7 @@ address_expr (expr_t *e1, expr_t *e2, type_t *t)
 					e->e.pointer.val = 0;
 					e->e.pointer.type = t;
 					e->e.pointer.def = def;
-				} else if (type->type == ev_array) {
+				} else if (type->type == ev_array || type->type == ev_void) {
 					e = e1;
 					e->type = ex_pointer;
 					e->e.pointer.val = 0;
