@@ -1354,7 +1354,7 @@ PF_setinfokey (progs_t *pr)
 							 MAX_INFO_STRING, !sv_highchars->int_val);
 		SV_ExtractFromUserinfo (&svs.clients[e1 - 1]);
 
-		if (Info_FilterForKey (Cmd_Argv (1), client_info_filters)) {
+		if (Info_FilterForKey (key, client_info_filters)) {
 			MSG_WriteByte (&sv.reliable_datagram, svc_setinfo);
 			MSG_WriteByte (&sv.reliable_datagram, e1 - 1);
 			MSG_WriteString (&sv.reliable_datagram, key);
