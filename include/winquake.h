@@ -35,6 +35,13 @@
 
 #ifdef _WIN32 
 
+#ifdef HAVE__MINGW_H
+# include <_mingw.h>
+# if __MINGW32_MAJOR_VERSION == 0 && __MINGW32_MINOR_VERSION == 3
+#  define MINGW_HACKS
+# endif
+#endif
+
 #ifndef __GNUC__
 # pragma warning( disable : 4229 )  /* mgraph gets this */
 #endif
@@ -42,19 +49,27 @@
 #define byte __hide_byte
 #define shutdown __hide_shutdown
 
+#ifdef MINGW_HACKS
 #define LPCWAVEFORMATEX __hide_LPCWAVEFORMATEX
+#endif
 #include <windows.h>
+#ifdef MINGW_HACKS
 #undef LPCWAVEFORMATEX
+#endif
 
 #ifdef WINNT
-# undef WINNT
-# ifdef HAVE_DSOUND_H
-#  include <dsound.h>
+# ifdef MINGW_HACKS
+#  undef WINNT
 # endif
 # ifdef HAVE_DDRAW_H
 #  include <ddraw.h>
 # endif
-# define WINNT
+# ifdef MINGW_HACKS
+#  define WINNT
+# endif
+# ifdef HAVE_DSOUND_H
+#  include <dsound.h>
+# endif
 #else
 # include <windows.h>
 # ifdef HAVE_DSOUND_H
