@@ -39,7 +39,6 @@ static const char rcsid[] =
 
 #include "def.h"
 
-extern char *type_name[];
 
 void
 update_offsets (dprograms_t *pr, int mark, int count)

@@ -67,7 +67,7 @@ int         type_size[8] = {
 	sizeof (void *) / 4
 };
 
-char       *type_name[ev_type_count] = {
+const char *type_name[ev_type_count] = {
 	"void",
 	"string",
 	"float",

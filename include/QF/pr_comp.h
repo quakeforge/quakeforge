@@ -185,6 +185,7 @@ typedef struct
 } opcode_t;
 
 extern opcode_t pr_opcodes[];
+extern const char *type_name[ev_type_count];
 opcode_t *PR_Opcode (short opcode);
 void PR_Opcode_Init (void);
 
