@@ -37,7 +37,7 @@ fi
 lt=`which $libtoolize`
 if test -n "$lt" ; then
 	if test -x "$lt" ; then
-		LTIZE_VER=`$libtoolize --version | head -1 | sed 's/^[^0-9]*//'`
+		LTIZE_VER=`$libtoolize --version | head -1 | sed 's/.* \(\<[1-9][0-9]*\(\.[1-9][0-9]*\)\(\.[1-9][0-9]*\)*\).*/\1/'`
 		LTIZE_VER_MAJOR=`echo $LTIZE_VER | cut -f1 -d'.'`
 		LTIZE_VER_MINOR=`echo $LTIZE_VER | cut -f2 -d'.' | sed -e 's/[^0-9]//g'`
 
