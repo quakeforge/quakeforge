@@ -21,7 +21,7 @@ Name:		%{name}
 Version:	%{version}
 Release:	%{release}
 Vendor:		The QuakeForge Project 
-Packager:	The QuakeForge Project quake-devel@lists.sourceforge.net
+Packager:	The QuakeForge Project quakeforge-devel@lists.quakeforge.net
 URL:		http://www.quakeforge.net/
 Source:         %{name}-%{version}.tar.gz
 #Patch:		
