@@ -29,14 +29,21 @@
 #ifdef HAVE_CONFIG_H
 # include "config.h"
 #endif
+#ifdef HAVE_STRING_H
+# include <string.h>
+#endif
+#ifdef HAVE_STRINGS_H
+# include <strings.h>
+#endif
+
+#include <math.h>
+#include <stdio.h>
 
 #include "client.h"
 #include "glquake.h"
-#include "view.h"
-#include "r_local.h"
+#include "r_shared.h"
 
 int         r_dlightframecount;
-
 
 /*
 	R_AnimateLight
@@ -86,8 +93,8 @@ float       bubble_sintable[33], bubble_costable[33];
 void
 R_InitBubble ()
 {
-	float       a;
 	int         i;
+	float       a;
 	float      *bub_sin, *bub_cos;
 
 	bub_sin = bubble_sintable;
@@ -119,19 +126,23 @@ R_RenderDlight (dlight_t *light)
 	}
 
 	glBegin (GL_TRIANGLE_FAN);
-//  glColor3f (0.2,0.1,0.0);
-//  glColor3f (0.2,0.1,0.05); // changed dimlight effect
+
 	if (lighthalf)
 		glColor3f (light->color[0] * 0.5, light->color[1] * 0.5,
 				   light->color[2] * 0.5);
 	else
 		glColor3fv (light->color);
+
+	VectorSubtract (r_origin, light->origin, v);
+	VectorNormalize (v);
+
 	for (i = 0; i < 3; i++)
-		v[i] = light->origin[i] - vpn[i] * rad;
+		v[i] = light->origin[i] + v[i] * rad;
+
 	glVertex3fv (v);
 	glColor3f (0, 0, 0);
+
 	for (i = 16; i >= 0; i--) {
-//      a = i/16.0 * M_PI*2;
 		for (j = 0; j < 3; j++)
 			v[j] = light->origin[j] + (vright[j] * (*bub_cos) +
 						   vup[j] * (*bub_sin)) * rad;
@@ -139,6 +150,7 @@ R_RenderDlight (dlight_t *light)
 		bub_cos += 2;
 		glVertex3fv (v);
 	}
+
 	glEnd ();
 }
 
@@ -156,11 +168,11 @@ R_RenderDlights (void)
 
 	r_dlightframecount = r_framecount + 1;	// because the count hasn't
 	// advanced yet for this frame
-	glDepthMask (0);
+	glDepthMask (GL_FALSE);
 	glDisable (GL_TEXTURE_2D);
 	glEnable (GL_BLEND);
-	glShadeModel (GL_SMOOTH);
 	glBlendFunc (GL_ONE, GL_ONE);
+	glShadeModel (GL_SMOOTH);
 
 	l = cl_dlights;
 	for (i = 0; i < MAX_DLIGHTS; i++, l++) {
@@ -186,112 +198,95 @@ R_RenderDlights (void)
 */
 // LordHavoc: heavily modified, to eliminate unnecessary texture uploads,
 //            and support bmodel lighting better
-// LordHavoc: optimized to nearly eliminate recursion, and skip sky/water (who made it check those?)
 void
 R_MarkLights (vec3_t lightorigin, dlight_t *light, int bit, mnode_t *node)
 {
 	mplane_t   *splitplane;
-	float       dist, l, maxdist;
+	float       ndist, maxdist;
 	msurface_t *surf;
-	int         i, j, s, t;
-	vec3_t      impact;
+	int         i;
+
+	maxdist = light->radius * light->radius;
 
 loc0:
 	if (node->contents < 0)
 		return;
 
 	splitplane = node->plane;
-	dist = DotProduct (lightorigin, splitplane->normal) - splitplane->dist;
+	ndist = DotProduct (lightorigin, splitplane->normal) - splitplane->dist;
 
-	if (dist > light->radius) {
-		if (node->children[0]->contents >= 0)	// save some time by not
-			// pushing another stack
-			// frame
-//          R_MarkLights (lightorigin, light, bit, node->children[0]);
-		{
+	if (ndist > light->radius) {
+		// Save time by not pushing another stack frame.
+		if (node->children[0]->contents >= 0) {
 			node = node->children[0];
 			goto loc0;
 		}
 		return;
 	}
-	if (dist < -light->radius) {
-		if (node->children[1]->contents >= 0)	// save some time by not
-			// pushing another stack
-			// frame
-//          R_MarkLights (lightorigin, light, bit, node->children[1]);
-		{
+	if (ndist < -light->radius) {
+		// Save time by not pushing another stack frame.
+		if (node->children[1]->contents >= 0) {
 			node = node->children[1];
 			goto loc0;
 		}
 		return;
 	}
 
-	maxdist = light->radius * light->radius;
-
 // mark the polygons
 	surf = cl.worldmodel->surfaces + node->firstsurface;
 	for (i = 0; i < node->numsurfaces; i++, surf++) {
-		if (surf->flags & (SURF_DRAWTURB | SURF_DRAWSKY))	// water or sky
-			continue;
-		// LordHavoc: MAJOR dynamic light speedup here, eliminates marking of 
-		// 
-		// 
-		// surfaces that are too far away from light, thus preventing
-		// unnecessary renders and uploads
-		for (j = 0; j < 3; j++)
-			impact[j] = lightorigin[j] - surf->plane->normal[j] * dist;
+		int s, t;
+		float l, dist, dist2;
+		vec3_t	impact;
 
-		// clamp center of light to corner and check brightness
-		l =
-			DotProduct (impact,
-						surf->texinfo->vecs[0]) + surf->texinfo->vecs[0][3] -
-			surf->texturemins[0];
+		dist = ndist;
+
+		dist2 = dist * dist;
+		if (dist2 >= maxdist)
+			continue;
+
+		impact[0] = light->origin[0] - surf->plane->normal[0] * dist;
+		impact[1] = light->origin[1] - surf->plane->normal[1] * dist;
+		impact[2] = light->origin[2] - surf->plane->normal[2] * dist;
+
+		l = DotProduct (impact, surf->texinfo->vecs[0]) +
+			surf->texinfo->vecs[0][3] - surf->texturemins[0];
 		s = l + 0.5;
 		if (s < 0)
 			s = 0;
 		else if (s > surf->extents[0])
 			s = surf->extents[0];
 		s = l - s;
-		l =
-			DotProduct (impact,
-						surf->texinfo->vecs[1]) + surf->texinfo->vecs[1][3] -
-			surf->texturemins[1];
+		l = DotProduct (impact, surf->texinfo->vecs[1]) +
+			surf->texinfo->vecs[1][3] - surf->texturemins[1];
 		t = l + 0.5;
 		if (t < 0)
 			t = 0;
 		else if (t > surf->extents[1])
 			t = surf->extents[1];
 		t = l - t;
-		// compare to minimum light
+
 		if ((s * s + t * t + dist * dist) < maxdist) {
-			if (surf->dlightframe != r_dlightframecount)	// not dynamic
-				// until now
-			{
+			if (surf->dlightframe != r_framecount) {
+				surf->dlightframe = r_framecount;
 				surf->dlightbits = bit;
-				surf->dlightframe = r_dlightframecount;
-			} else						// already dynamic
+			} else {
 				surf->dlightbits |= bit;
+			}
 		}
 	}
 
-//  if (node->children[0]->contents >= 0) // save some time by not pushing another stack frame
-//      R_MarkLights (lightorigin, light, bit, node->children[0]);
-//  if (node->children[1]->contents >= 0) // save some time by not pushing another stack frame
-//      R_MarkLights (lightorigin, light, bit, node->children[1]);
-	// LordHavoc: mangled to eliminate most recursive calls
 	if (node->children[0]->contents >= 0) {
 		if (node->children[1]->contents >= 0)
 			R_MarkLights (lightorigin, light, bit, node->children[1]);
+
 		node = node->children[0];
 		goto loc0;
-	} else {
-		if (node->children[1]->contents >= 0) {
-			node = node->children[1];
-			goto loc0;
-		}
+	} else if (node->children[1]->contents >= 0) {
+		node = node->children[1];
+		goto loc0;
 	}
 }
-
 
 /*
 	R_PushDlights

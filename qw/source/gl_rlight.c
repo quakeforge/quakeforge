@@ -149,9 +149,6 @@ R_RenderDlight (dlight_t *light)
 	}
 
 	glEnd ();
-
-	// Don't glColor3ubv(lighthalf_v), as we reset in the function which
-	// calls this one, because this is called in a big loop.
 }
 
 /*
@@ -247,7 +244,7 @@ loc0:
 		impact[1] = light->origin[1] - surf->plane->normal[1] * dist;
 		impact[2] = light->origin[2] - surf->plane->normal[2] * dist;
 
-		l = DotProduct (impact, surf->texinfo->vecs[0]) + 
+		l = DotProduct (impact, surf->texinfo->vecs[0]) +
 			surf->texinfo->vecs[0][3] - surf->texturemins[0];
 		s = l + 0.5;
 		if (s < 0)
@@ -255,7 +252,7 @@ loc0:
 		else if (s > surf->extents[0])
 			s = surf->extents[0];
 		s = l - s;
-		l = DotProduct (impact, surf->texinfo->vecs[1]) + 
+		l = DotProduct (impact, surf->texinfo->vecs[1]) +
 			surf->texinfo->vecs[1][3] - surf->texturemins[1];
 		t = l + 0.5;
 		if (t < 0)
@@ -263,25 +260,6 @@ loc0:
 		else if (t > surf->extents[1])
 			t = surf->extents[1];
 		t = l - t;
-
-		/*
-		for (j = 0; j < 2; j++) {
-			d = DotProduct (impact, surf->texinfo->vecs[j]) + surf->texinfo->vecs[j][3] - surf->texturemins[j];
-
-			if (d < 0) {
-				dist2 += d * d;
-				if (dist2 >= maxdist)
-					continue;
-			} else {
-				d -= surf->extents[j] + 16;
-				if (d > 0) {
-					dist2 += d * d;
-					if (dist2 >= maxdist)
-						continue;
-				}
-			}
-		}
-		*/
 
 		if ((s * s + t * t + dist * dist) < maxdist) {
 			if (surf->dlightframe != r_framecount) {
@@ -305,105 +283,6 @@ loc0:
 	}
 }
 
-#if 0
-void
-R_MarkLights (vec3_t lightorigin, dlight_t *light, int bit, mnode_t *node)
-{
-	mplane_t   *splitplane;
-	float       ndist, maxdist;
-	msurface_t *surf;
-	int         i;
-
-	maxdist = light->radius * light->radius;
-
-loc0:
-	if (node->contents < 0)
-		return;
-
-	splitplane = node->plane;
-	ndist = DotProduct (lightorigin, splitplane->normal) - splitplane->dist;
-
-	if (ndist > light->radius) {
-		// Save time by not pushing another stack frame.
-		if (node->children[0]->contents >= 0) {
-			node = node->children[0];
-			goto loc0;
-		}
-		return;
-	}
-	if (ndist < -light->radius) {
-		// Save time by not pushing another stack frame.
-		if (node->children[1]->contents >= 0) {
-			node = node->children[1];
-			goto loc0;
-		}
-		return;
-	}
-
-// mark the polygons
-	surf = cl.worldmodel->surfaces + node->firstsurface;
-	for (i = 0; i < node->numsurfaces; i++, surf++) {
-		int j, d;
-		float dist, dist2, impact[3];
-
-		if (surf->flags & SURF_PLANEBACK)
-			dist = -ndist;
-		else
-			dist = ndist;
-
-		if (dist < -0.25f)
-			continue;
-		/*
-		if (dist < -0.25f && !(surf->flags & SURF_LIGHTBOTHSIDES))
-			continue;
-			*/
-
-		dist2 = dist * dist;
-		if (dist2 >= maxdist)
-			continue;
-
-		impact[0] = light->origin[0] - surf->plane->normal[0] * dist;
-		impact[1] = light->origin[1] - surf->plane->normal[1] * dist;
-		impact[2] = light->origin[2] - surf->plane->normal[2] * dist;
-
-		for (j = 0; j < 2; j++) {
-			d = DotProduct (impact, surf->texinfo->vecs[j]) + surf->texinfo->vecs[j][3] - surf->texturemins[j];
-
-			if (d < 0) {
-				dist2 += d * d;
-				if (dist2 >= maxdist)
-					continue;
-			} else {
-				d -= surf->extents[j] + 16;
-				if (d > 0) {
-					dist2 += d * d;
-					if (dist2 >= maxdist)
-						continue;
-				}
-			}
-		}
-
-		if (surf->dlightframe != r_framecount) {
-			surf->dlightframe = r_framecount;
-			surf->dlightbits = bit;
-		} else {
-			surf->dlightbits |= bit;
-		}
-	}
-
-	if (node->children[0]->contents >= 0) {
-		if (node->children[1]->contents >= 0)
-			R_MarkLights (lightorigin, light, bit, node->children[1]);
-
-		node = node->children[0];
-		goto loc0;
-	} else if (node->children[1]->contents >= 0) {
-		node = node->children[1];
-		goto loc0;
-	}
-}
-#endif
-
 /*
 	R_PushDlights
 */
@@ -423,7 +302,6 @@ R_PushDlights (vec3_t entorigin)
 		if (l->die < cl.time || !l->radius)
 			continue;
 		VectorSubtract (l->origin, entorigin, lightorigin);
-		//R_MarkLights (lightorigin, l, 1 << i, cl.worldmodel->nodes + cl.worldmodel->hulls[0].firstclipnode);
 		R_MarkLights (lightorigin, l, 1 << i, cl.worldmodel->nodes);
 	}
 }
