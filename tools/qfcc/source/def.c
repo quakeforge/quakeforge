@@ -151,6 +151,9 @@ set_storage_bits (def_t *def, storage_class_t storage)
 	switch (storage) {
 		case st_none:
 			break;
+		case st_system:
+			def->system = 1;
+			// fall through
 		case st_global:
 			def->global = 1;
 			def->external = 0;
@@ -240,6 +243,7 @@ get_def (type_t *type, const char *name, scope_t *scope,
 		case st_none:
 		case st_global:
 		case st_local:
+		case st_system:
 			space = scope->space;
 			break;
 		case st_extern:

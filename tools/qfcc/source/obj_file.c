@@ -134,6 +134,8 @@ flags (def_t *d)
 		flags |= QFOD_EXTERNAL;
 	if (d->local)
 		flags |= QFOD_LOCAL;
+	if (d->system)
+		flags |= QFOD_SYSTEM;
 	return flags;
 }
 
@@ -538,6 +540,7 @@ qfo_to_progs (qfo_t *qfo, pr_info_t *pr)
 		pd->global      = (qd->flags & QFOD_GLOBAL)      != 0;
 		pd->external    = (qd->flags & QFOD_EXTERNAL)    != 0;
 		pd->local       = (qd->flags & QFOD_LOCAL)       != 0;
+		pd->system      = (qd->flags & QFOD_SYSTEM)      != 0;
 		pd->file = qd->file;
 		pd->line = qd->line;
 	}

@@ -17,7 +17,7 @@ Changes from 0.3.0
 	* Object-oriented runtime system, in the style of Objective-C.
 	* Runtime fixups of built-in functions whose builtin number is
 	  zero. If a built-in function is available to the engine, with
-	  the same name given in the source code (i.e.
+	  the same name given in the source code (e.g.
 	  "void (void) coredump = #0;"), the engine will set the value
 	  to the actual number used by the engine.
 	* Debugging support (needs compiler support, which qfcc

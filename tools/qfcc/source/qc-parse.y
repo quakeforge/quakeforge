@@ -128,7 +128,7 @@ void free_local_inits (hashtab_t *def_list);
 %token	LOCAL RETURN WHILE DO IF ELSE FOR BREAK CONTINUE ELLIPSIS NIL
 %token	IFBE IFB IFAE IFA
 %token	SWITCH CASE DEFAULT STRUCT UNION ENUM TYPEDEF SUPER SELF THIS
-%token	ARGC ARGV EXTERN STATIC SIZEOF
+%token	ARGC ARGV EXTERN STATIC SYSTEM SIZEOF
 %token	ELE_START
 %token	<type> TYPE
 %token	CLASS DEFS ENCODE END IMPLEMENTATION INTERFACE PRIVATE PROTECTED
@@ -223,6 +223,7 @@ simple_def
 storage_class
 	: EXTERN		{ current_storage = st_extern; }
 	| STATIC		{ current_storage = st_static; }
+	| SYSTEM		{ current_storage = st_system; }
 	;
 
 struct_defs

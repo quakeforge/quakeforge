@@ -52,6 +52,7 @@ typedef struct def_s {
 	unsigned		global:1;		// globally declared def
 	unsigned		external:1;		// externally declared def
 	unsigned		local:1;		// function local def
+	unsigned		system:1;		// system def
 
 	string_t		file;			// source file
 	int				line;			// source line
@@ -98,6 +99,7 @@ typedef struct scope_s {
 typedef enum {
 	st_none,
 	st_global,
+	st_system,
 	st_extern,
 	st_static,
 	st_local
