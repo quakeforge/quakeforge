@@ -71,6 +71,11 @@ static __attribute__ ((unused)) const char rcsid[] =
   Memory is cleared/released when a server or client begins, not when they end.
 */
 
+SERVER_PLUGIN_PROTOS
+static plugin_list_t server_plugin_list[] = {
+		SERVER_PLUGIN_LIST
+};
+
 CLIENT_PLUGIN_PROTOS
 static plugin_list_t client_plugin_list[] = {
 		CLIENT_PLUGIN_LIST
@@ -918,11 +923,13 @@ Host_Init (void)
 	Game_Init ();
 	COM_Init ();
 
-	PI_RegisterPlugins (client_plugin_list);
-	if (isDedicated)
+	if (isDedicated) {
+		PI_RegisterPlugins (server_plugin_list);
 		Con_Init ("server");
-	else
+	} else {
+		PI_RegisterPlugins (client_plugin_list);
 		Con_Init ("client");
+	}
 	if (con_module) {
 		con_module->data->console->realtime = &con_realtime;
 		con_module->data->console->frametime = &con_frametime;
