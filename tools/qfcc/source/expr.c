@@ -12,6 +12,7 @@ extern function_t *current_func;
 
 static etype_t qc_types[] = {
 	ev_void,	// ex_label
+	ev_void,	// ex_block
 	ev_void,	// ex_expr
 	ev_void,	// ex_uexpr
 	ev_void,	// ex_def
@@ -38,6 +39,7 @@ get_type (expr_t *e)
 {
 	switch (e->type) {
 		case ex_label:
+		case ex_block:
 		case ex_quaternion: //FIXME
 			return ev_void;
 		case ex_expr:
@@ -73,10 +75,20 @@ new_label_expr (void)
 
 	expr_t *l = new_expr ();
 	l->type = ex_label;
-	l->e.label = calloc (1, sizeof (label_t));
-	l->e.label->name = malloc (1 + strlen (fname) + 1 + ceil (log10 (lnum)) + 1);
-	sprintf (l->e.label->name, "$%s_%d", fname, lnum);
+	l->e.label.name = malloc (1 + strlen (fname) + 1 + ceil (log10 (lnum)) + 1);
+	sprintf (l->e.label.name, "$%s_%d", fname, lnum);
 	return l;
+}
+
+expr_t *
+new_block_expr (void)
+{
+	expr_t *b = new_expr ();
+
+	b->type = ex_block;
+	b->e.block.head = 0;
+	b->e.block.tail = &b->e.block.head;
+	return b;
 }
 
 expr_t *
@@ -102,6 +114,21 @@ new_unary_expr (int op, expr_t *e1)
 	return e;
 }
 
+expr_t *
+append_expr (expr_t *block, expr_t *e)
+{
+	if (block->type != ex_block)
+		abort ();
+
+	if (!e)
+		return block;
+
+	*block->e.block.tail = e;
+	block->e.block.tail = &e->next;
+
+	return block;
+}
+
 void
 print_expr (expr_t *e)
 {
@@ -112,7 +139,15 @@ print_expr (expr_t *e)
 	}
 	switch (e->type) {
 		case ex_label:
-			printf ("%s", e->e.label->name);
+			printf ("%s", e->e.label.name);
+			break;
+		case ex_block:
+			printf ("{\n");
+			for (e = e->e.block.head; e; e = e->next) {
+				print_expr (e);
+				puts("");
+			}
+			printf ("}");
 			break;
 		case ex_expr:
 			print_expr (e->e.expr.e1);
@@ -465,6 +500,7 @@ unary_expr (int op, expr_t *e)
 		case '-':
 			switch (e->type) {
 				case ex_label:
+				case ex_block:
 					abort ();
 				case ex_uexpr:
 					if (e->e.expr.op == '-')
@@ -505,6 +541,7 @@ unary_expr (int op, expr_t *e)
 		case '!':
 			switch (e->type) {
 				case ex_label:
+				case ex_block:
 					abort ();
 				case ex_uexpr:
 				case ex_expr:

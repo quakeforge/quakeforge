@@ -278,21 +278,13 @@ statement_block
 statements
 	: /*empty*/
 		{
-			$$ = 0;
+			//printf("statements: /* empty */\n");
+			$$ = new_block_expr ();
 		}
 	| statements statement
 		{
-			if ($1) {
-				if ($2) {
-					expr_t *s = $1;
-					while (s->next)
-						s = s->next;
-					s->next = $2;
-				}
-				$$ = $1;
-			} else { 
-				$$ = $2;
-			}
+			//printf("statements: statements statement\n");
+			$$ = append_expr ($1, $2);
 		}
 	;
 
@@ -312,33 +304,23 @@ statement
 			expr_t *l1 = new_label_expr ();
 			expr_t *l2 = new_label_expr ();
 
-			expr_t *e = new_binary_expr ('n', $3, l2);
+			$$ = new_block_expr ();
 
-			$$ = e;
-
-			e = (e->next = l1);
-
-			e->next = $5;
-			while (e->next)
-				e = e->next;
-
-			e = (e->next = new_binary_expr ('i', $3, l1));
-
-			e->next = l2;
+			append_expr ($$, new_binary_expr ('n', $3, l2));
+			append_expr ($$, l1);
+			append_expr ($$, $5);
+			append_expr ($$, new_binary_expr ('i', $3, l1));
+			append_expr ($$, l2);
 		}
 	| DO statement WHILE '(' expr ')' ';'
 		{
 			expr_t *l1 = new_label_expr ();
 
-			expr_t *e = l1;
+			$$ = new_block_expr ();
 
-			$$ = e;
-
-			e->next = $2;
-			while (e->next)
-				e = e->next;
-
-			e->next = new_binary_expr ('i', $5, l1);
+			append_expr ($$, l1);
+			append_expr ($$, $2);
+			append_expr ($$, new_binary_expr ('i', $5, l1));
 		}
 	| LOCAL type
 		{
@@ -349,66 +331,40 @@ statement
 		{
 			expr_t *l1 = new_label_expr ();
 
-			expr_t *e = new_binary_expr ('n', $3, l1);
+			$$ = new_block_expr ();
 
-			$$ = e;
-
-			e->next = $5;
-			while (e->next)
-				e = e->next;
-
-			e->next = l1;
+			append_expr ($$, new_binary_expr ('n', $3, l1));
+			append_expr ($$, $5);
+			append_expr ($$, l1);
 		}
 	| IF '(' expr ')' statement ELSE statement
 		{
 			expr_t *l1 = new_label_expr ();
 			expr_t *l2 = new_label_expr ();
 
-			expr_t *e = new_binary_expr ('n', $3, l1);
+			$$ = new_block_expr ();
 
-			$$ = e;
-
-			e->next = $5;
-			while (e->next)
-				e = e->next;
-
-			e = (e->next = new_unary_expr ('g', l2));
-
-			e = (e->next = l1);
-
-			e->next = $7;
-			while (e->next)
-				e = e->next;
-
-			e->next = l2;
+			append_expr ($$, new_binary_expr ('n', $3, l1));
+			append_expr ($$, $5);
+			append_expr ($$, new_unary_expr ('g', l2));
+			append_expr ($$, l1);
+			append_expr ($$, $7);
+			append_expr ($$, l2);
 		}
 	| FOR '(' expr ';' expr ';' expr ')' statement
 		{
 			expr_t *l1 = new_label_expr ();
 			expr_t *l2 = new_label_expr ();
 
-			expr_t *e = new_binary_expr ('n', $5, l2);
+			$$ = new_block_expr ();
 
-			$$ = $3;
-			if ($$) {
-				$$->next = e;
-			} else {
-				$$ = e;
-			}
-			
-			e = (e->next = l1);
-
-			e->next = $9;
-			while (e->next)
-				e = e->next;
-
-			e->next = $7;
-			if (e->next)
-				e = e->next;
-
-			e = (e->next = new_binary_expr ('i', $5, l1));
-
-			e->next = l2;
+			append_expr ($$, $3);
+			append_expr ($$, new_binary_expr ('n', $5, l2));
+			append_expr ($$, l1);
+			append_expr ($$, $9);
+			append_expr ($$, $7);
+			append_expr ($$, new_binary_expr ('i', $5, l1));
+			append_expr ($$, l2);
 		}
 	| expr ';'
 		{
@@ -582,12 +538,12 @@ build_function (function_t *f)
 void
 emit_function (function_t *f, expr_t *e)
 {
-/*	PR_PrintType (f->def->type);
-	printf (" %s =\n{\n", f->def->name);
+	/*PR_PrintType (f->def->type);
+	printf (" %s =\n", f->def->name);
 	while (e) {
 		print_expr (e);
 		puts("");
 		e = e->next;
 	}
-	printf ("}\n");*/
+	puts ("");*/
 }

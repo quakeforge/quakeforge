@@ -1,5 +1,6 @@
 typedef enum {
 	ex_label,
+	ex_block,
 	ex_expr,	// binary expression
 	ex_uexpr,	// unary expression
 	ex_def,
@@ -16,11 +17,17 @@ typedef struct {
 	char *name;
 } label_t;
 
+typedef struct {
+	struct expr_s *head;
+	struct expr_s **tail;
+} block_t;
+
 typedef struct expr_s {
 	struct expr_s *next;
 	expr_type	type;
 	union {
-		label_t *label;
+		label_t label;
+		block_t block;
 		struct {
 			int		op;
 			type_t	*type;
@@ -38,8 +45,12 @@ typedef struct expr_s {
 
 expr_t *new_expr (void);
 expr_t *new_label_expr (void);
+expr_t *new_block_expr (void);
 expr_t *new_binary_expr (int op, expr_t *e1, expr_t *e2);
 expr_t *new_unary_expr (int op, expr_t *e1);
+
+expr_t *append_expr (expr_t *block, expr_t *e);
+
 void print_expr (expr_t *e);
 expr_t *binary_expr (int op, expr_t *e1, expr_t *e2);
 expr_t *unary_expr (int op, expr_t *e);
