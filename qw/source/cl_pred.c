@@ -51,8 +51,6 @@ void
 CL_PredictUsercmd (player_state_t * from, player_state_t * to, usercmd_t *u,
 				   qboolean clientplayer)
 {
-	// Dabb: if there is no movement to start with, don't predict...
-	// Despair: Not predicting for the client's player is painful.
 	if (!clientplayer) {
 		if (VectorIsZero (from->velocity)) {
 			VectorCopy (from->origin, to->origin);
@@ -76,7 +74,6 @@ CL_PredictUsercmd (player_state_t * from, player_state_t * to, usercmd_t *u,
 	}
 
 	VectorCopy (from->origin, pmove.origin);
-//	VectorCopy (from->viewangles, pmove.angles);
 	VectorCopy (u->angles, pmove.angles);
 	VectorCopy (from->velocity, pmove.velocity);
 
@@ -155,16 +152,6 @@ CL_PredictMove (void)
 		VectorCopy (from->playerstate[cl.playernum].origin, cl.simorg);
 		return;
 	}
-
-/* FIXME Despair: always predict clientplayer
-	// Dabb: if there is no movement to start with, don't predict...
-	if (!cl_predict_static->int_val
-		&& VectorIsZero (from->playerstate[cl.playernum].velocity)) {
-		VectorCopy (from->playerstate[cl.playernum].velocity, cl.simvel);
-		VectorCopy (from->playerstate[cl.playernum].origin, cl.simorg);
-		return;
-	}
-*/
 
 	// predict forward until cl.time <= to->senttime
 	oldphysent = pmove.numphysent;
