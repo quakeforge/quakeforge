@@ -11,8 +11,10 @@ QCPPFLAGS=-I. -I$(srcdir) -I$(top_builddir)/include -I$(top_srcdir)/include
 
 pkgdata_DATA= menu.dat
 
-menu.dat: menu.src menu.qc
+menu_src= menu.qc
+
+menu.dat: menu.src $(menu_src)
 	$(QFCC) $(QCFLAGS) $(QCPPFLAGS) -P $<
 
-EXTRA_DIST=	
+EXTRA_DIST= $(menu_src)
 CLEANFILES= *.dat *.sym
