@@ -159,8 +159,13 @@ PR_LexString (void)
 	int         c;
 	int         len;
 	int			i;
+	int			mask;
+	int			boldnext;
 
 	len = 0;
+	mask = 0x00;
+	boldnext = 0;
+
 	pr_file_p++;
 	do {
 		c = *pr_file_p++;
@@ -232,6 +237,17 @@ PR_LexString (void)
 				case 'v':
 					c = '\v';
 					break;
+				case '^':
+					if (*pr_file_p == '\"')
+						PR_ParseError ("Unexpected end of string after \\^");
+					boldnext = 1;
+					continue;
+				case '<':
+					mask = 0x80;
+					continue;
+				case '>':
+					mask = 0x00;
+					continue;
 				default:
 					PR_ParseError ("Unknown escape char");
 					break;
@@ -243,6 +259,10 @@ PR_LexString (void)
 			strcpy (pr_immediate_string, pr_token);
 			return;
 		}
+		if (boldnext)
+			c = c ^ 0x80;
+		boldnext = 0;
+		c = c ^ mask;
 		pr_token[len] = c;
 		len++;
 	} while (1);
