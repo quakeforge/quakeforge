@@ -134,7 +134,7 @@ AC_CHECK_HEADERS(
 	sys/ioctl.h sys/io.h sys/ipc.h sys/mman.h sys/param.h sys/poll.h \
 	sys/shm.h sys/signal.h sys/socket.h sys/soundcard.h sys/stat.h \
 	sys/time.h sys/types.h sys/wait.h termios.h time.h unistd.h vga.h \
-	vgakeyboard.h vgamouse.h windows.h winsock.h zlib.h
+	vgakeyboard.h vgamouse.h windows.h winsock.h
 )
 if test "x$mingw" = xyes; then
 	AC_MSG_CHECKING(for fnmatch.h)
@@ -352,6 +352,8 @@ AC_ARG_ENABLE(zlib,
 [  --disable-zlib          disable zlib support],
 )
 
+HAVE_ZLIB=no
+Z_LIBS=""
 if test "x$enable_zlib" != "xno"; then
   dnl Check for working -lz
   dnl Note - must have gztell *and* gzgets in -lz *and* zlib.h
@@ -1215,29 +1217,31 @@ dnl ==================================================================
 dnl Make sure we link against a working zlib
 dnl ==================================================================
 
-x11_old_libz=no
-if test -n "$X_LIBS"; then
-	AC_MSG_CHECKING(for libz.a in X11)
-	for d in `echo $X_LIBS | sed -e 's/-L//'`; do
-		if test -f $d/libz.a; then
-			x11_old_libz=$d
-			break
-		fi
-	done
-fi
-if test "x$x11_old_libz" != xno; then
-	AC_MSG_RESULT(yes)
-	AC_MSG_WARN(there is an old libz.a in $x11_old_libz)
-	AC_MSG_WARN($PROGRAM is unable to support compression)
-	AC_MSG_WARN(due to library search order issues)
-	AC_MSG_WARN(if you wish to have compression support)
-	AC_MSG_WARN(please delete $x11_old_libz/libz.a)
-	ac_cv_header_zlib_h=no
-	HAVE_ZLIB="no, due to conflicting $x11_old_libz/libz.a"
-	Z_LIBS=""
-else
-	AC_MSG_RESULT(no)
-	AC_DEFINE(HAVE_ZLIB)
+if test "x$HAVE_ZLIB" = xyes; then
+	x11_old_libz=no
+	if test -n "$X_LIBS"; then
+		AC_MSG_CHECKING(for libz.a in X11)
+		for d in `echo $X_LIBS | sed -e 's/-L//'`; do
+			if test -f $d/libz.a; then
+				x11_old_libz=$d
+				break
+			fi
+		done
+	fi
+	if test "x$x11_old_libz" != xno; then
+		AC_MSG_RESULT(yes)
+		AC_MSG_WARN(there is an old libz.a in $x11_old_libz)
+		AC_MSG_WARN($PROGRAM is unable to support compression)
+		AC_MSG_WARN(due to library search order issues)
+		AC_MSG_WARN(if you wish to have compression support)
+		AC_MSG_WARN(please delete $x11_old_libz/libz.a)
+		ac_cv_header_zlib_h=no
+		HAVE_ZLIB="no, due to conflicting $x11_old_libz/libz.a"
+		Z_LIBS=""
+	else
+		AC_MSG_RESULT(no)
+		AC_DEFINE(HAVE_ZLIB)
+	fi
 fi
 AC_SUBST(Z_LIBS)
 
