@@ -36,20 +36,22 @@
 # include <strings.h>
 #endif
 
-#include "cl_parse.h"
-#include "client.h"
+#include "QF/cmd.h"
 #include "QF/compat.h"
 #include "QF/console.h"
-#include "QF/cmd.h"
-#include "host.h"
+#include "QF/hash.h"
 #include "QF/msg.h"
-#include "pcx.h"
 #include "QF/qendian.h"
+#include "QF/sys.h"
+#include "QF/va.h"
+
+#include "cl_parse.h"
+#include "client.h"
+#include "host.h"
+#include "pcx.h"
 #include "screen.h"
 #include "skin.h"
-#include "QF/sys.h"
 #include "texture.h"
-#include "QF/va.h"
 
 cvar_t     *baseskin;
 cvar_t     *noskins;
@@ -60,7 +62,15 @@ cvar_t     *bottomcolor;
 char        allskins[128];
 
 skin_t      skin_cache[MAX_CACHED_SKINS];
+hashtab_t  *skin_hash;
 int         numskins;
+
+static char *
+skin_get_key (void *_skin, void *unused)
+{
+	skin_t *skin = (skin_t*)_skin;
+	return skin->name;
+}
 
 /*
 	Skin_Find
@@ -72,17 +82,16 @@ void
 Skin_Find (player_info_t *sc)
 {
 	skin_t     *skin;
-	int         i;
 	char        name[128], *s;
 
 	if (allskins[0])
-		strcpy (name, allskins);
+		strncpy (name, allskins, sizeof (name));
 	else {
 		s = Info_ValueForKey (sc->userinfo, "skin");
 		if (s && s[0])
-			strcpy (name, s);
+			strncpy (name, s, sizeof (name));
 		else
-			strcpy (name, baseskin->string);
+			strncpy (name, baseskin->string, sizeof (name));
 	}
 
 	if (strstr (name, "..") || *name == '.')
@@ -90,12 +99,11 @@ Skin_Find (player_info_t *sc)
 
 	COM_StripExtension (name, name);
 
-	for (i = 0; i < numskins; i++) {
-		if (!strcmp (name, skin_cache[i].name)) {
-			sc->skin = &skin_cache[i];
-			Skin_Cache (sc->skin);
-			return;
-		}
+	skin = Hash_Find (skin_hash, name);
+	if (skin) {
+		sc->skin = skin;
+		Skin_Cache (sc->skin);
+		return;
 	}
 
 	if (numskins == MAX_CACHED_SKINS) {	// ran out of spots, so flush
@@ -110,6 +118,8 @@ Skin_Find (player_info_t *sc)
 
 	memset (skin, 0, sizeof (*skin));
 	strncpy (skin->name, name, sizeof (skin->name) - 1);
+
+	Hash_Add (skin_hash, skin);
 }
 
 
@@ -246,6 +256,7 @@ Skin_Skins_f (void)
 			Cache_Free (&skin_cache[i].cache);
 	}
 	numskins = 0;
+	Hash_FlushTable (skin_hash);
 
 	cls.downloadnumber = 0;
 	cls.downloadtype = dl_skin;
@@ -303,6 +314,7 @@ CL_Color_f (void)
 void
 Skin_Init (void)
 {
+	skin_hash = Hash_NewTable (1021, skin_get_key, 0, 0);
 	Cmd_AddCommand ("skins", Skin_Skins_f, "Download all skins that are currently in use");
 	Cmd_AddCommand ("allskins", Skin_AllSkins_f, "Force all player skins to one skin");
 	Cmd_AddCommand ("color", CL_Color_f, "The pant and shirt color (color shirt pants) Note that if only shirt color is given, pants will match");
