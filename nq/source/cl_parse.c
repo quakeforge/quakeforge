@@ -483,6 +483,8 @@ CL_ParseUpdate (int bits)
 
 	if (bits & U_NOLERP)
 		forcelink = true;
+	if (bits & 0xffff0000)
+		printf ("%x\n", bits);
 
 // QSG Start
 	if (bits & U_ALPHA)
@@ -515,7 +517,7 @@ CL_ParseUpdate (int bits)
 		state->colormod = state->baseline.colormod;
 
 	if (!(bits & U_EXTEND2))
-		return;
+		goto link;
 
 	if (bits & U_GLOWTRAIL)
 		state->effects |= EF_GLOWTRAIL;
@@ -524,6 +526,7 @@ CL_ParseUpdate (int bits)
 		ent->frame = (ent->frame & 0xFF) | (MSG_ReadByte (net_message) << 8);
 // QSG End
 
+link:
 	if (forcelink) {					// didn't have an update last message
 		VectorCopy (state->msg_origins[0], state->msg_origins[1]);
 		VectorCopy (state->msg_origins[0], ent->origin);
