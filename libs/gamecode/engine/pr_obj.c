@@ -301,7 +301,7 @@ pr_obj_msg_sendv (progs_t *pr)
 	if (args.count > 6)
 		args.count = 6;
 	memcpy (G_POINTER (pr, OFS_PARM2), G_POINTER (pr, args.list),
-			args.count * 4);
+			args.count * 4 * 3);
 	call_function (pr, imp);
 }
 
