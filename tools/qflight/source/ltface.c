@@ -157,7 +157,7 @@ CalcFaceVectors (lightinfo_t *l)
 		tex->vecs[1][0] * tex->vecs[0][2];
 	texnormal[2] = tex->vecs[1][0] * tex->vecs[0][1] - 
 		tex->vecs[1][1] * tex->vecs[0][0];
-	VectorNormalize (texnormal);
+	_VectorNormalize (texnormal);
 
 	// flip it towards plane normal
 	distscale = DotProduct (texnormal, l->facenormal);
@@ -328,7 +328,7 @@ CalcPoints (lightinfo_t *l)
 
 				// move surf 8 pixels towards the center
 				VectorSubtract (facemid, surf, move);
-				VectorNormalize (move);
+				_VectorNormalize (move);
 				VectorMA (surf, 8, move, surf);
 			}
 			if (i == 2)
@@ -361,7 +361,7 @@ SingleLightFace (entity_t *light, lightinfo_t *l)
 
 	if (light->targetent) {
 		VectorSubtract (light->targetent->origin, light->origin, spotvec);
-		VectorNormalize (spotvec);
+		_VectorNormalize (spotvec);
 		if (!light->angle)
 			falloff = -cos (20 * M_PI / 180);
 		else
@@ -395,7 +395,7 @@ SingleLightFace (entity_t *light, lightinfo_t *l)
 				continue;		// light doesn't reach
 
 			VectorSubtract (light->origin, surf, incoming);
-			VectorNormalize (incoming);
+			_VectorNormalize (incoming);
 			angle = DotProduct (incoming, l->facenormal);
 			if (light->targetent) {	
 				// spotlight cutoff

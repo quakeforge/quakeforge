@@ -200,7 +200,7 @@ PlaneFromWinding (winding_t *w, plane_t *plane)
 	VectorSubtract (w->points[2], w->points[1], v1);
 	VectorSubtract (w->points[0], w->points[1], v2);
 	CrossProduct (v2, v1, plane->normal);
-	VectorNormalize (plane->normal);
+	_VectorNormalize (plane->normal);
 	plane->dist = DotProduct (w->points[0], plane->normal);
 }
 

@@ -42,11 +42,11 @@ CheckColinear (face_t *f)
 		// the vector to the next point
 		j = (i - 1 < 0) ? f->numpoints - 1 : i - 1;
 		VectorSubtract (f->pts[i], f->pts[j], v1);
-		VectorNormalize (v1);
+		_VectorNormalize (v1);
 
 		j = (i + 1 == f->numpoints) ? 0 : i + 1;
 		VectorSubtract (f->pts[j], f->pts[i], v2);
-		VectorNormalize (v2);
+		_VectorNormalize (v2);
 
 		if (_VectorCompare (v1, v2))
 			Sys_Error ("Colinear edge");
@@ -121,7 +121,7 @@ TryMerge (face_t *f1, face_t *f2)
 	back = f1->pts[(i + f1->numpoints - 1) % f1->numpoints];
 	VectorSubtract (p1, back, delta);
 	CrossProduct (planenormal, delta, normal);
-	VectorNormalize (normal);
+	_VectorNormalize (normal);
 
 	back = f2->pts[(j + 2) % f2->numpoints];
 	VectorSubtract (back, p1, delta);
@@ -133,7 +133,7 @@ TryMerge (face_t *f1, face_t *f2)
 	back = f1->pts[(i + 2) % f1->numpoints];
 	VectorSubtract (back, p2, delta);
 	CrossProduct (planenormal, delta, normal);
-	VectorNormalize (normal);
+	_VectorNormalize (normal);
 
 	back = f2->pts[(j + f2->numpoints - 1) % f2->numpoints];
 	VectorSubtract (back, p2, delta);

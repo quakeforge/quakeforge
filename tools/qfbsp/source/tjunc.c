@@ -110,7 +110,7 @@ HashVec (vec3_t vec)
 void
 CanonicalVector (vec3_t vec)
 {
-	VectorNormalize (vec);
+	_VectorNormalize (vec);
 	if (vec[0] > EQUAL_EPSILON)
 		return;
 	else if (vec[0] < -EQUAL_EPSILON) {
@@ -285,10 +285,10 @@ SplitFaceForTjunc (face_t *f, face_t *original)
 	  restart:
 		// find the last corner 
 		VectorSubtract (f->pts[f->numpoints - 1], f->pts[0], dir);
-		VectorNormalize (dir);
+		_VectorNormalize (dir);
 		for (lastcorner = f->numpoints - 1; lastcorner > 0; lastcorner--) {
 			VectorSubtract (f->pts[lastcorner - 1], f->pts[lastcorner], test);
-			VectorNormalize (test);
+			_VectorNormalize (test);
 			v = DotProduct (test, dir);
 			if (v < 0.9999 || v > 1.00001)
 				break;
@@ -296,11 +296,11 @@ SplitFaceForTjunc (face_t *f, face_t *original)
 
 		// find the first corner    
 		VectorSubtract (f->pts[1], f->pts[0], dir);
-		VectorNormalize (dir);
+		_VectorNormalize (dir);
 		for (firstcorner = 1; firstcorner < f->numpoints - 1; firstcorner++) {
 			VectorSubtract (f->pts[firstcorner + 1], f->pts[firstcorner],
 							test);
-			VectorNormalize (test);
+			_VectorNormalize (test);
 			v = DotProduct (test, dir);
 			if (v < 0.9999 || v > 1.00001)
 				break;

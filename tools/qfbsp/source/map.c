@@ -323,7 +323,7 @@ ParseBrush (void)
 			free (f);
 			break;
 		}
-		VectorNormalize (f->plane.normal);
+		_VectorNormalize (f->plane.normal);
 		f->plane.dist = DotProduct (t3, f->plane.normal);
 
 		// fake proper texture vectors from QuakeEd style

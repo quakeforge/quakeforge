@@ -86,7 +86,7 @@ CheckFace (face_t *f)
 			Sys_Error ("CheckFace: degenerate edge");
 
 		CrossProduct (facenormal, dir, edgenormal);
-		VectorNormalize (edgenormal);
+		_VectorNormalize (edgenormal);
 		edgedist = DotProduct (p1, edgenormal);
 		edgedist += ON_EPSILON;
 
@@ -569,7 +569,7 @@ AddHullEdge (vec3_t p1, vec3_t p2, int hullnum)
 	num_hull_edges++;
 
 	VectorSubtract (p1, p2, edgevec);
-	VectorNormalize (edgevec);
+	_VectorNormalize (edgevec);
 
 	for (a = 0; a < 3; a++) {
 		b = (a + 1) % 3;

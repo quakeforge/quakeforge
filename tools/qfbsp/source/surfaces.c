@@ -87,7 +87,7 @@ SubdivideFace (face_t *f, face_t **prevptr)
 
 			VectorCopy (tex->vecs[axis], plane.normal);
 			v = VectorLength (plane.normal);
-			VectorNormalize (plane.normal);
+			_VectorNormalize (plane.normal);
 			plane.dist = (mins + options.subdivide_size - 16) / v;
 			next = f->next;
 			SplitFace (f, &plane, &front, &back);

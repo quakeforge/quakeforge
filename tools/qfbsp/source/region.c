@@ -246,7 +246,7 @@ HealEdges (int e1, int e2)
 	ed2 = &bsp->edges[e2];
 	VectorSubtract (bsp->vertexes[ed->v[1]].point,
 					bsp->vertexes[ed->v[0]].point, v1);
-	VectorNormalize (v1);
+	_VectorNormalize (v1);
 
 	if (ed->v[0] == ed2->v[0])
 		ed->v[0] = ed2->v[1];
@@ -261,7 +261,7 @@ HealEdges (int e1, int e2)
 
 	VectorSubtract (bsp->vertexes[ed->v[1]].point,
 					bsp->vertexes[ed->v[0]].point, v2);
-	VectorNormalize (v2);
+	_VectorNormalize (v2);
 
 	if (!_VectorCompare (v1, v2))
 		Sys_Error ("HealEdges: edges not colinear");

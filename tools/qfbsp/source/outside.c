@@ -93,7 +93,7 @@ MarkLeakTrail (portal_t *n2)
 
 	VectorSubtract (p2, p1, dir);
 	len = VectorLength (dir);
-	VectorNormalize (dir);
+	_VectorNormalize (dir);
 
 	while (len > 2) {
 		fprintf (leakfile, "%f %f %f\n", p1[0], p1[1], p1[2]);

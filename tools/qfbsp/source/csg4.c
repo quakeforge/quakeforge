@@ -391,7 +391,8 @@ CSGFaces (brushset_t *bs)
 
 			// these faces are continued in another brush, so get rid of them
 			if (b1->contents == CONTENTS_SOLID
-				&& b2->contents <= CONTENTS_WATER) FreeInside (b2->contents);
+				&& b2->contents <= CONTENTS_WATER)
+				FreeInside (b2->contents);
 			else
 				FreeInside (CONTENTS_SOLID);
 		}

@@ -425,6 +425,25 @@ VectorNormalize (vec3_t v)
 	return length;
 }
 
+vec_t
+_VectorNormalize (vec3_t v)
+{
+	int         i;
+	double      length;
+
+	length = 0;
+	for (i=0 ; i < 3; i++)
+		length += v[i] * v[i];
+	length = sqrt (length);
+	if (length == 0)
+		return 0;
+
+	for (i=0 ; i <3; i++)
+		v[i] /= length;
+
+	return length;
+}
+
 void
 VectorInverse (vec3_t v)
 {
