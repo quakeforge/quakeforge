@@ -46,16 +46,15 @@ typedef struct
 } emitpoint_t;
 
 typedef enum {
-	pt_static, 
-	pt_grav, 
-	pt_blob, 
+	pt_static,
+	pt_grav,
+	pt_blob,
 	pt_blob2,
-	pt_smoke, 
-	pt_smokering, 
-	pt_smokecloud, 
+	pt_smoke,
+	pt_smokecloud,
 	pt_bloodcloud,
-	pt_fadespark, 
-	pt_fadespark2, 
+	pt_fadespark,
+	pt_fadespark2,
 	pt_fallfadespark,
 	pt_slowgrav,
 	pt_fire,

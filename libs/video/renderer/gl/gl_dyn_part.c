@@ -62,7 +62,6 @@ int         ramp[8] = { 0x6d, 0x6b, 0x06, 0x05, 0x04, 0x03, 0x02, 0x01 };
 extern int  part_tex_dot;
 extern int  part_tex_spark;
 extern int  part_tex_smoke[8];
-extern int  part_tex_smoke_ring[8];
 
 extern cvar_t *cl_max_particles;
 
@@ -492,10 +491,7 @@ R_RocketTrail (int type, entity_t *ent)
 //				pcolor = (rand () & 255); // Misty-chan's Easter Egg
 				pcolor = (rand () & 3) + 12;
 				palpha = 128 + (rand () & 31);
-//				VectorVectors(vec, right, up); // Mercury's Rings
 				VectorCopy (ent->old_origin, porg);
-//				ptype = pt_smokering; // Mercury's Rings
-//				ptex = part_tex_smoke_ring[rand () & 7]; // Mercury's Rings
 				ptex = part_tex_smoke[rand () & 7];
 				break;
 			case 1:					// grenade trail
@@ -668,12 +664,6 @@ R_DrawParticles (void)
 				if ((part->alpha -= r_frametime * 96) < 1)
 					part->die = -1;
 				part->scale += r_frametime * 4;
-//				part->org[2] += r_frametime * 30 - grav;
-				break;
-			case pt_smokering:
-				if ((part->alpha -= r_frametime * 128) < 1)
-					part->die = -1;
-				part->scale += r_frametime * 10;
 //				part->org[2] += r_frametime * 30 - grav;
 				break;
 			case pt_smokecloud:

@@ -43,12 +43,10 @@ extern void noise_plasma(unsigned char *noise, int size);
 static void GDT_InitDotParticleTexture (void);
 static void GDT_InitSparkParticleTexture (void);
 static void GDT_InitSmokeParticleTexture (void);
-static void GDT_InitSmokeRingParticleTexture (void);
 
 int         part_tex_dot;
 int         part_tex_spark;
 int         part_tex_smoke[8];
-int         part_tex_smoke_ring[8];
 
 
 void
@@ -57,7 +55,6 @@ GDT_Init (void)
 	GDT_InitDotParticleTexture ();
 	GDT_InitSparkParticleTexture ();
 	GDT_InitSmokeParticleTexture ();
-	GDT_InitSmokeRingParticleTexture ();
 }
 
 static void
@@ -159,6 +156,7 @@ GDT_InitSmokeParticleTexture (void)
 	}
 }
 
+#if 0
 static void
 GDT_InitSmokeRingParticleTexture (void)
 {
@@ -202,3 +200,4 @@ GDT_InitSmokeRingParticleTexture (void)
 			      GL_UNSIGNED_BYTE, data);
 	}
 }
+#endif
