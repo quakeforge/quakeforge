@@ -341,18 +341,21 @@ type_or_name (char *token)
 static hashtab_t *frame_tab;
 static hashtab_t *grab_tab;
 
-typedef struct {
+typedef struct frame_s {
+	struct frame_s *next;
 	const char *name;
 	int			num;
 } frame_t;
 
+static frame_t *free_frames;
+
 static frame_t grab_list[] = {
-	{"cd",		0},
-	{"origin",	0},
-	{"base",	0},
-	{"flags",	0},
-	{"scale",	0},
-	{"skin",	0},
+	{0, "cd",		0},
+	{0, "origin",	0},
+	{0, "base",		0},
+	{0, "flags",	0},
+	{0, "scale",	0},
+	{0, "skin",		0},
 };
 
 static const char *
@@ -362,10 +365,12 @@ frame_get_key (void *f, void *unused)
 }
 
 static void
-frame_free (void *f, void *unused)
+frame_free (void *_f, void *unused)
 {
-	free ((char*)((frame_t*)f)->name);
-	free (f);
+	frame_t    *f = (frame_t *)_f;
+	free ((char*)f->name);
+	f->next = free_frames;
+	free_frames = f;
 }
 
 int
@@ -403,8 +408,8 @@ static int frame_number;
 void
 add_frame_macro (char *token)
 {
-	frame_t *frame = malloc (sizeof (frame_t));
-	SYS_CHECKMEM (frame);
+	frame_t *frame;
+	ALLOC (1024, frame_t, frames, frame);
 
 	frame->name = strdup (token);
 	frame->num = frame_number++;

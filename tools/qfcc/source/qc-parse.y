@@ -1307,10 +1307,13 @@ obj_string
 
 %%
 
-typedef struct {
+typedef struct def_state_s {
+	struct def_state_s *next;
 	def_t		*def;
 	int			state;
 } def_state_t;
+
+static def_state_t *free_def_states;
 
 static const char *
 get_key (void *_d, void *unused)
@@ -1321,7 +1324,9 @@ get_key (void *_d, void *unused)
 static void
 free_key (void *_d, void *unused)
 {
-	free (_d);
+	def_state_t *d = (def_state_t *)_d;
+	d->next = free_def_states;
+	free_def_states = d;
 }
 
 static void
@@ -1332,8 +1337,8 @@ scan_scope (hashtab_t *tab, def_t *scope)
 		scan_scope (tab, scope->scope);
 	for (def = scope->scope_next; def; def = def->scope_next) {
 		if  (def->name && !def->removed) {
-			def_state_t *ds = malloc (sizeof (def_state_t));
-			SYS_CHECKMEM (ds);
+			def_state_t *ds;
+			ALLOC (1024, def_state_t, def_states, ds);
 			ds->def = def;
 			ds->state = def->initialized;
 			Hash_Add (tab, ds);
@@ -1362,8 +1367,7 @@ merge_local_inits (hashtab_t *dl_1, hashtab_t *dl_2)
 		d = Hash_Find (dl_2, (*ds)->def->name);
 		(*ds)->def->initialized = (*ds)->state;
 
-		nds = malloc (sizeof (def_state_t));
-		SYS_CHECKMEM (nds);
+		ALLOC (1024, def_state_t, def_states, nds);
 		nds->def = (*ds)->def;
 		nds->state = (*ds)->state && d->state;
 		Hash_Add (tab, nds);

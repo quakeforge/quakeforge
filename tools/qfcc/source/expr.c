@@ -59,7 +59,7 @@ static const char rcsid[] =
 #include "type.h"
 #include "qc-parse.h"
 
-
+static expr_t *free_exprs;
 int         lineno_base;
 
 etype_t     qc_types[] = {
@@ -346,7 +346,9 @@ inc_users (expr_t *e)
 expr_t *
 new_expr (void)
 {
-	expr_t     *e = calloc (1, sizeof (expr_t));
+	expr_t     *e;
+
+	ALLOC (16384, expr_t, exprs, e);
 
 	e->line = pr_source_line;
 	e->file = s_file;
@@ -1625,9 +1627,9 @@ function_expr (expr_t *e1, expr_t *e2)
 		expr_t     *ret = new_expr ();
 
 		ret->type = ex_def;
-		ret->e.def = memcpy (malloc (sizeof (def_t)), &def_ret, sizeof (def_t));
+		ret->e.def = PR_NewDef (0, 0, 0);
+		*ret->e.def = def_ret;
 
-		SYS_CHECKMEM (ret->e.def);
 		ret->e.def->type = ftype->aux_type;
 		call->e.block.result = ret;
 	}

@@ -214,15 +214,7 @@ PR_NewDef (type_t *type, const char *name, def_t *scope)
 {
 	def_t      *def;
 
-	if (!free_defs) {
-		int         i;
-		free_defs = malloc (16384 * sizeof (def_t));
-		for (i = 0; i < 16383; i++)
-			free_defs[i].next = &free_defs[i + 1];
-	}
-	def = free_defs;
-	free_defs = free_defs->next;
-	memset (def, 0, sizeof (*def));
+	ALLOC (16384, def_t, defs, def);
 
 	if (name) {
 		*pr.def_tail = def;
@@ -270,16 +262,7 @@ PR_FreeLocation (def_t *def)
 	int         size = type_size (def->type);
 	locref_t   *loc;
 
-	if (!free_free_locs) {
-		free_free_locs = malloc (256 * sizeof (locref_t));
-
-		SYS_CHECKMEM (free_free_locs);
-		for (loc = free_free_locs; loc - free_free_locs < 255; loc++)
-			loc->next = loc + 1;
-		loc->next = 0;
-	}
-	loc = free_free_locs;
-	free_free_locs = loc->next;
+	ALLOC (1024, locref_t, free_locs, loc);
 	loc->ofs = def->ofs;
 	loc->next = free_locs[size];
 	free_locs[size] = loc;

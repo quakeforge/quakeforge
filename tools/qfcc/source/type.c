@@ -54,7 +54,8 @@ static const char rcsid[] =
 #include "struct.h"
 #include "type.h"
 
-typedef struct {
+typedef struct typedef_s {
+	struct typedef_s *next;
 	const char *name;
 	type_t     *type;
 } typedef_t;
@@ -93,6 +94,8 @@ def_t       def_void = { &type_void, "temp" };
 def_t       def_function = { &type_function, "temp" };
 
 def_t       def_ret, def_parms[MAX_PARMS];
+
+static type_t *free_types;
 
 static inline void
 chain_type (type_t *type)
@@ -138,8 +141,7 @@ find_type (type_t *type)
 	}
 
 	// allocate a new one
-	check = malloc (sizeof (*check));
-	SYS_CHECKMEM (check);
+	ALLOC (1024, type_t, types, check);
 	*check = *type;
 
 	chain_type (check);
@@ -148,6 +150,7 @@ find_type (type_t *type)
 }
 
 static hashtab_t *typedef_hash;
+static typedef_t *free_typedefs;
 
 static const char *
 typedef_get_key (void *t, void *unused)
@@ -167,7 +170,7 @@ new_typedef (const char *name, type_t *type)
 		error (0, "%s redefined", name);
 		return;
 	}
-	td = malloc (sizeof (typedef_t));
+	ALLOC (1024, typedef_t, typedefs, td);
 	td->name = name;
 	td->type = type;
 	Hash_Add (typedef_hash, td);

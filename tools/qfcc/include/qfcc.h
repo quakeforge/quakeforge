@@ -90,4 +90,18 @@ extern	string_t	s_file;			// filename for function definition
 
 const char *strip_path (const char *filename);
 
+#define ALLOC(s, t, n, v)							\
+	do {											\
+		if (!free_##n) {							\
+			int         i;							\
+			free_##n = malloc ((s) * sizeof (t));	\
+			for (i = 0; i < (s) - 1; i++)			\
+				free_##n[i].next = &free_##n[i + 1];\
+			free_##n[i].next = 0;					\
+		}											\
+		v = free_##n;								\
+		free_##n = free_##n->next;					\
+		memset (v, 0, sizeof (*v));					\
+	} while (0)
+
 #endif//__qfcc_h
