@@ -71,8 +71,8 @@ Pmove_Init_Cvars (void)
 {
 	no_pogo_stick = Cvar_Get ("no_pogo_stick", "0", CVAR_SERVERINFO, Cvar_Info,
 							  "disable the ability to pogo stick: 0 pogo "
-							  "alowed, 1 no pogo, 2 pogo but high friction, 3 "
-							  "high friction and no pogo");
+							  "allowed, 1 no pogo, 2 pogo but high friction, "
+							  "3 high friction and no pogo");
 }
 
 #define	STEPSIZE	18
