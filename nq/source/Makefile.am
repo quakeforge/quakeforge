@@ -185,7 +185,7 @@ opengl_QFLIBS= \
 nq_3dfx_libs=  \
 			$(cl_plugin_LIBS) \
 			$(opengl_QFLIBS) \
-			$(top_builddir)/libs/video/targets/libQF3dfx.la \
+			$(top_builddir)/libs/video/targets/libQFtdfx.la \
 			$(client_LIBS)
 nq_3dfx_SOURCES= 	$(combined_sources) sys_unix.c
 nq_3dfx_LDADD=		$(nq_3dfx_libs) $(GLIDE_LIBS) $(SVGA_LIBS) $(NET_LIBS)

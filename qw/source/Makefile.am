@@ -214,7 +214,7 @@ qw_client_glx_DEPENDENCIES= $(qw_client_glx_libs)
 qw_client_3dfx_libs= \
 			$(cl_plugin_LIBS) \
 			$(opengl_LIBS) \
-			$(top_builddir)/libs/video/targets/libQF3dfx.la \
+			$(top_builddir)/libs/video/targets/libQFtdfx.la \
 			$(client_LIBS)
 qw_client_3dfx_SOURCES= $(common_sources) $(client_sources) cl_sys_unix.c
 qw_client_3dfx_LDADD= $(qw_client_3dfx_libs) \
