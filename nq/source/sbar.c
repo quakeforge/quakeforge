@@ -455,15 +455,6 @@ draw_solo (view_t *view)
 	draw_string (view, 232 - l * 4, 12, cl.levelname);
 }
 
-
-static void
-Sbar_DrawScoreboard (void)
-{
-	//Sbar_SoloScoreboard ();
-	//if (cl.gametype == GAME_DEATHMATCH)
-	//	Sbar_DeathmatchOverlay (overlay_view);
-}
-
 static void
 draw_ammo_sbar (view_t *view) 
 {
@@ -1003,14 +994,6 @@ draw_hipnotic_status (view_t *view)
 		draw_pic (view, 209, 12, sb_items[1]);
 }
 
-static void
-draw_overlay (view_t *view)
-{
-	if (sb_showscores || cl.stats[STAT_HEALTH] <= 0) {
-		Sbar_DrawScoreboard ();
-	}
-}
-
 void
 Sbar_Draw (void)
 {
@@ -1087,6 +1070,22 @@ Sbar_DeathmatchOverlay (view_t *view)
 		draw_string (view, x + 64, y, s->name);
 
 		y += 10;
+	}
+}
+
+static void
+Sbar_DrawScoreboard (void)
+{
+	//Sbar_SoloScoreboard ();
+	if (cl.gametype == GAME_DEATHMATCH)
+		Sbar_DeathmatchOverlay (overlay_view);
+}
+
+static void
+draw_overlay (view_t *view)
+{
+	if (sb_showscores || cl.stats[STAT_HEALTH] <= 0) {
+		Sbar_DrawScoreboard ();
 	}
 }
 
