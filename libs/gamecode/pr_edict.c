@@ -1005,18 +1005,10 @@ var_get_key (void *d, void *_pr)
 	return PR_GetString (pr, def->s_name);
 }
 
-/*
-	PR_LoadProgs
-*/
 void
-PR_LoadProgs (progs_t * pr, const char *progsname)
+_PR_LoadProgs (progs_t * pr, const char *progsname)
 {
 	int         i;
-	dstatement_t *st;
-
-// flush the non-C variable lookup cache
-	for (i = 0; i < GEFV_CACHESIZE; i++)
-		gefvCache[i].field[0] = 0;
 
 	if (progsname)
 		pr->progs = (dprograms_t *) COM_LoadHunkFile (progsname);
@@ -1116,6 +1108,27 @@ PR_LoadProgs (progs_t * pr, const char *progsname)
 
 	for (i = 0; i < pr->progs->numglobals; i++)
 		((int *) pr->pr_globals)[i] = LittleLong (((int *) pr->pr_globals)[i]);
+}
+
+/*
+	PR_LoadProgs
+*/
+void
+PR_LoadProgs (progs_t * pr, const char *progsname)
+{
+	int         i;
+	dstatement_t *st;
+
+	_PR_LoadProgs (pr, progsname);
+	if (!pr->progs)
+		return;
+
+	if (!progsname)
+		progsname = "(preloaded)";
+
+// flush the non-C variable lookup cache
+	for (i = 0; i < GEFV_CACHESIZE; i++)
+		gefvCache[i].field[0] = 0;
 
 	if (!(pr->globals.time = (float*)PR_GetGlobalPointer (pr, "time")))
 		PR_Error (pr, "%s: undefined symbol: time", progsname);
