@@ -330,8 +330,8 @@ def_name
 	;
 
 opt_comma_elipsis
-	: /* empty */ { $$ = 0 }
-	| ',' ELIPSIS { $$ = 1 }
+	: /* empty */ { $$ = 0; }
+	| ',' ELIPSIS { $$ = 1; }
 	;
 
 param_list
