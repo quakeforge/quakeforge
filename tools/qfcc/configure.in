@@ -51,6 +51,19 @@ AC_HEADER_STDC
 AC_CHECK_HEADERS(unistd.h)
 
 dnl Checks for typedefs, structures, and compiler characteristics.
+AC_ARG_ENABLE(profile,
+	[  --enable-profile        compile with profiling (for development)],
+	profile=$enable_profile
+)
+if test "x$profile" = xyes; then
+	BUILD_TYPE="$BUILD_TYPE Profile"
+	if test "x$GCC" = xyes; then
+		CFLAGS="$(echo $CFLAGS | sed -e 's/-fomit-frame-pointer//g') -pg"
+		LDFLAGS="$LDFLAGS -pg"
+	else
+		CFLAGS="$CFLAGS -p"
+	fi
+fi
 
 dnl Checks for library functions.
 

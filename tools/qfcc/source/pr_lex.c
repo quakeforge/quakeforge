@@ -49,11 +49,6 @@ char			pr_immediate_string[2048];
 
 int 			pr_error_count;
 
-char	*pr_punctuation[] = { // longer symbols first to avoid partial matches
-	"&&", "||", "<=", ">=", "==", "!=", ";", ",", "!", "*", "/", "(", ")", "-",
-	"+", "=", "[", "]", "{", "}", "...", ".", "<", ">", "#", "&", "|", NULL
-};
-
 // simple types.  function types are dynamically allocated
 type_t	type_void = { ev_void, &def_void };
 type_t	type_string = { ev_string, &def_string };
@@ -243,23 +238,117 @@ PR_LexName (void)
 void
 PR_LexPunctuation (void)
 {
-	int 	i;
-	int 	len;
-	char	*p;
+	char	*p = 0;
+	int      len = 1;
 
 	pr_token_type = tt_punct;
 
-	for (i = 0; (p = pr_punctuation[i]) != NULL; i++) {
-		len = strlen (p);
-		if (!strncmp (p, pr_file_p, len)) {
-			strcpy (pr_token, p);
-			if (p[0] == '{')
-				pr_bracelevel++;
-			else if (p[0] == '}')
-				pr_bracelevel--;
-			pr_file_p += len;
-			return;
-		}
+	switch (pr_file_p[0]) {
+		case '&':
+			if (pr_file_p[1] == '&') {
+				p = "&&";
+				len = 2;
+			} else {
+				p = "&";
+			}
+			break;
+		case '|':
+			if (pr_file_p[1] == '|') {
+				p = "||";
+				len = 2;
+			} else {
+				p = "|";
+			}
+			break;
+		case '<':
+			if (pr_file_p[1] == '=') {
+				p = "<=";
+				len = 2;
+			} else {
+				p = "<";
+			}
+			break;
+		case '>':
+			if (pr_file_p[1] == '=') {
+				p = ">=";
+				len = 2;
+			} else {
+				p = ">";
+			}
+			break;
+		case '=':
+			if (pr_file_p[1] == '=') {
+				p = "==";
+				len = 2;
+			} else {
+				p = "=";
+			}
+			break;
+		case '!':
+			if (pr_file_p[1] == '=') {
+				p = "!=";
+				len = 2;
+			} else {
+				p = "!";
+			}
+			break;
+		case ';':
+			p = ";";
+			break;
+		case ',':
+			p = ",";
+			break;
+		case '*':
+			p = "*";
+			break;
+		case '/':
+			p = "/";
+			break;
+		case '(':
+			p = "(";
+			break;
+		case ')':
+			p = ")";
+			break;
+		case '-':
+			p = "-";
+			break;
+		case '+':
+			p = "+";
+			break;
+		case '[':
+			p = "[";
+			break;
+		case ']':
+			p = "]";
+			break;
+		case '{':
+			p = "{";
+			break;
+		case '}':
+			p = "}";
+			break;
+		case '.':
+			if (pr_file_p[1] == '.' && pr_file_p[2] == '.') {
+				p = "...";
+				len = 3;
+			} else {
+				p = ".";
+			}
+			break;
+		case '#':
+			p = "#";
+			break;
+	}
+
+	if (p) {
+		strcpy (pr_token, p);
+		if (p[0] == '{')
+			pr_bracelevel++;
+		else if (p[0] == '}')
+			pr_bracelevel--;
+		pr_file_p += len;
+		return;
 	}
 
 	PR_ParseError ("Unknown punctuation");
