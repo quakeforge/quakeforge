@@ -31,6 +31,8 @@
 static __attribute__ ((unused)) const char rcsid[] = 
 	"$Id$";
 
+#ifdef HAVE_PNG
+
 #ifdef HAVE_STRING_H
 # include <string.h>
 #endif
@@ -176,3 +178,15 @@ LoadPNG (QFile *infile)
 		
 	return (tex);
 }
+
+#else
+
+#include "QF/image.h"
+
+tex_t *
+LoadPNG (QFile *infile)
+{
+	return 0;
+}
+
+#endif

@@ -543,6 +543,22 @@ if test "x$enable_zlib" != "xno"; then
   fi
 fi
 
+AC_ARG_ENABLE(png,
+[  --disable-png           disaple png support],
+)
+HAVE_PNG=no
+PNG_LIBS=""
+if test "x$enable_zlib" != "xno"; then
+	AC_CHECK_LIB(png, png_set_read_fn, HAVE_PNG=yes, HAVE_PNG=no, [$LIBS])
+	if test "x$HAVE_PNG" = "xyes"; then
+		AC_CHECK_HEADER(png.h, HAVE_PNG=yes, HAVE_PNG=no)
+		if test "x$HAVE_PNG" = "xyes"; then
+			PNG_LIBS="-lpng"
+			AC_DEFINE(HAVE_PNG, 1, [Define if you have libpng])
+		fi
+	fi
+fi
+AC_SUBST(PNG_LIBS)
 
 AC_ARG_WITH(ipv6,
 [  --with-ipv6=DIR         enable IPv6 support. Optional argument specifies
@@ -2185,7 +2201,7 @@ AC_MSG_RESULT([
 	Sound support      :${SOUND_TYPES- no}
 	CD Audio system    :${CDTYPE- no}
 	IPv6 networking    : $NETTYPE_IPV6
-	Compression support: gz=$HAVE_ZLIB ogg=$HAVE_VORBIS
+	Compression support: gz=$HAVE_ZLIB ogg=$HAVE_VORBIS png=$HAVE_PNG
 	Compiler version   : $CCVER
 	Compiler flags     : $CFLAGS
 	qfcc cpp invocation: $CPP_NAME
