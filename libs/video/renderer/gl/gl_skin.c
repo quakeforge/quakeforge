@@ -61,20 +61,33 @@ Skin_Set_Translate (int top, int bottom, void *_dest)
 	top = bound (0, top, 13) << 4;
 	bottom = bound (0, bottom, 13) << 4;
 
-	for (i = 0; i < 16; i++) {
-		if (top < 128)		// the artists made some backwards ranges. sigh.
-			translate[TOP_RANGE + i] = top + i;
+	if (VID_Is8bit ()) {	// 8bit texture upload
+		for (i = 0; i < 16; i++) {
+			// the artists made some backwards ranges. sigh.
+			if (top < 128)
+				translate[TOP_RANGE + i] = top + i;
+			else
+				translate[TOP_RANGE + i] = top + 15 - i;
+
+			if (bottom < 128)
+				translate[BOTTOM_RANGE + i] = bottom + i;
+			else
+				translate[BOTTOM_RANGE + i] = bottom + 15 - i;
+		}
+	} else {
+		if (top < 128)
+			memcpy (translate32 + TOP_RANGE, d_8to24table + top,
+					16 * sizeof (unsigned int));
 		else
-			translate[TOP_RANGE + i] = top + 15 - i;
+			for (i = 0; i < 16; i++)
+				translate32[TOP_RANGE + i] = d_8to24table[top + 15 - i];
 
 		if (bottom < 128)
-			translate[BOTTOM_RANGE + i] = bottom + i;
+			memcpy (translate32 + BOTTOM_RANGE, d_8to24table + bottom,
+					16 * sizeof (unsigned int));
 		else
-			translate[BOTTOM_RANGE + i] = bottom + 15 - i;
-	}
-	if (!VID_Is8bit()) {			// 32 bit upload, the norm.
-		for (i = 0; i < 256; i++)
-			translate32[i] = d_8to24table[translate[i]];
+			for (i = 0; i < 16; i++)
+				translate32[BOTTOM_RANGE + i] = d_8to24table[bottom + 15 - i];
 	}
 }
 
