@@ -48,7 +48,7 @@ fi
 am=`which automake`
 if test -n "$am" ; then
 	if test -x "$am" ; then
-		AM_VER=`automake --version |head| sed 's/automake (GNU automake) //'`
+		AM_VER=`automake --version | head -1 | sed 's/automake (GNU automake) //'`
 		AM_VER_MAJOR=`echo $AM_VER | cut -f1 -d.`
 		AM_VER_MINOR=`echo $AM_VER | cut -f2 -d.`
 		if test "$AM_VER_MAJOR" -lt "1"; then
