@@ -364,7 +364,6 @@ R_DrawBrushModel (entity_t *e)
 			} else if (psurf->flags & SURF_DRAWSKY) {
 // QSG FIXME: add modelalpha support for sky brushes
 				CHAIN_SURF_F2B (psurf, sky_chain);
-				return;
 			} else {
 				texture_t  *tex;
 
