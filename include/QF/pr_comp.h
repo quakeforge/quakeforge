@@ -159,6 +159,11 @@ typedef enum {
 
 	OP_CONV_IF,
 	OP_CONV_FI,
+
+	OP_BITXOR_F,
+	OP_BITXOR_I,
+	OP_BITNOT_F,
+	OP_BITNOT_I,
 } pr_opcode_e;
 
 typedef struct

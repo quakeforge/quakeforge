@@ -369,6 +369,9 @@ PR_LexPunctuation (void)
 				p = "|";
 			}
 			break;
+		case '^':
+			p = "^";
+			break;
 		case '<':
 			if (pr_file_p[1] == '=') {
 				p = "<=";

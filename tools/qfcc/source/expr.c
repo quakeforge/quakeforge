@@ -166,6 +166,8 @@ get_op_string (int op)
 		case '/':	return "/";
 		case '&':	return "&";
 		case '|':	return "|";
+		case '^':	return "^";
+		case '~':	return "~";
 		case '!':	return "!";
 		case '(':	return "(";
 		case '.':	return ".";
@@ -407,6 +409,9 @@ do_op_float (int op, expr_t *e1, expr_t *e2)
 		case '|':
 			e1->e.float_val = (int)f1 | (int)f2;
 			break;
+		case '^':
+			e1->e.float_val = (int)f1 ^ (int)f2;
+			break;
 		case AND:
 			e1->type = ex_integer;
 			e1->e.integer_val = f1 && f2;
@@ -509,6 +514,9 @@ do_op_integer (int op, expr_t *e1, expr_t *e2)
 			break;
 		case '|':
 			e1->e.integer_val = i1 | i2;
+			break;
+		case '^':
+			e1->e.integer_val = i1 ^ i2;
 			break;
 		case AND:
 			e1->e.integer_val = i1 && i2;
@@ -848,6 +856,42 @@ unary_expr (int op, expr_t *e)
 				case ex_pointer:
 					error (e, "internal error");
 					abort ();
+			}
+			break;
+		case '~':
+			switch (e->type) {
+				case ex_label:
+				case ex_block:
+					abort ();
+				case ex_uexpr:
+					if (e->e.expr.op == '~')
+						return e->e.expr.e1;
+				case ex_expr:
+				case ex_def:
+					{
+						expr_t *n = new_unary_expr (op, e);
+						type_t *t = e->type == ex_expr ? e->e.expr.type
+													   : e->e.def->type;
+						if (t != &type_integer && t != &type_float)
+							return error (e, "invalid type for unary ~");
+						n->e.expr.type = t;
+						return n;
+					}
+				case ex_integer:
+					e->e.integer_val = ~e->e.integer_val;
+					return e;
+				case ex_float:
+					e->e.float_val = ~(int)e->e.float_val;
+					e->type = ex_integer;
+					return e;
+				case ex_string:
+				case ex_vector:
+				case ex_quaternion:
+				case ex_entity:
+				case ex_field:
+				case ex_func:
+				case ex_pointer:
+					return error (e, "invalid type for unary ~");
 			}
 			break;
 		default:

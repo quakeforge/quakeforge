@@ -1253,6 +1253,10 @@ PR_LoadProgs (progs_t * pr, const char *progsname)
 			case OP_LOAD_I:
 			case OP_CONV_IF:
 			case OP_CONV_FI:
+			case OP_BITXOR_F:
+			case OP_BITXOR_I:
+			case OP_BITNOT_F:
+			case OP_BITNOT_I:
 				if ((unsigned short) st->a >= pr->progs->numglobals
 					|| (unsigned short) st->b >= pr->progs->numglobals
 					|| (unsigned short) st->c >= pr->progs->numglobals)

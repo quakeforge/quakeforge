@@ -224,6 +224,10 @@ emit_sub_expr (expr_t *e, def_t *dest)
 					operator = "&";
 					priority = 2;
 					break;
+				case '^':
+					operator = "^";
+					priority = 2;
+					break;
 				case '|':
 					operator = "|";
 					priority = 2;
@@ -242,6 +246,11 @@ emit_sub_expr (expr_t *e, def_t *dest)
 		case ex_uexpr:
 			if (e->e.expr.op == '!') {
 				operator = "!";
+				priority = -1;
+				def_a = emit_sub_expr (e->e.expr.e1, 0);
+				def_b = &def_void;
+			} else if (e->e.expr.op == '~') {
+				operator = "~";
 				priority = -1;
 				def_a = emit_sub_expr (e->e.expr.e1, 0);
 				def_b = &def_void;

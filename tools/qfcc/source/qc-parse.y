@@ -49,8 +49,8 @@ typedef struct {
 %left	OR AND
 %left	EQ NE LE GE LT GT
 %left	'+' '-'
-%left	'*' '/' '&' '|'
-%left	'!'
+%left	'*' '/' '&' '|' '^'
+%left	'!' '~'
 %right	'('
 %left	'.'
 
@@ -454,11 +454,13 @@ expr
 	| expr '/' expr			{ $$ = binary_expr ('/', $1, $3); }
 	| expr '&' expr			{ $$ = binary_expr ('&', $1, $3); }
 	| expr '|' expr			{ $$ = binary_expr ('|', $1, $3); }
+	| expr '^' expr			{ $$ = binary_expr ('^', $1, $3); }
 	| expr '(' arg_list ')'	{ $$ = function_expr ($1, $3); }
 	| expr '(' ')'			{ $$ = function_expr ($1, 0); }
 	| expr '.' expr			{ $$ = binary_expr ('.', $1, $3); }
 	| '-' expr %prec '!'	{ $$ = unary_expr ('-', $2); }
 	| '!' expr				{ $$ = unary_expr ('!', $2); }
+	| '~' expr				{ $$ = unary_expr ('~', $2); }
 	| NAME
 		{
 			$$ = new_expr ();

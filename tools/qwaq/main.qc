@@ -94,9 +94,9 @@ void () eek =
 	if (bop)
 		traceoff();
 	printf ("%v\n", v);
-	v = 2 * v;
+	v = ~2 * v;
 	printf ("%v\n", v);
-	v = v * 2;
+	v = v * ~2;
 	printf ("%v\n", v);
 	v = -v;
 	printf ("%v\n", v);

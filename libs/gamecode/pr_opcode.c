@@ -145,6 +145,10 @@ opcode_t    pr_opcodes[] = {
 	{"=", "storep.i", OP_STOREP_I, 5, true, ev_pointer, ev_integer, ev_integer, PROG_VERSION},
 	{".", "load.i", OP_LOAD_I, 1, false, ev_entity, ev_field, ev_integer, PROG_VERSION},
 
+	{"^", "bitxor.f", OP_BITXOR_F, 2, false, ev_float, ev_float, ev_float, PROG_VERSION},
+	{"^", "bitxor.i", OP_BITXOR_I, 2, false, ev_integer, ev_integer, ev_integer, PROG_VERSION},
+	{"~", "bitnot.f", OP_BITNOT_F, -1, false, ev_float, ev_void, ev_float, PROG_VERSION},
+	{"~", "bitnot.i", OP_BITNOT_I, -1, false, ev_integer, ev_void, ev_integer, PROG_VERSION},
 	{0},
 };
 

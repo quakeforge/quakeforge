@@ -363,6 +363,12 @@ PR_ExecuteProgram (progs_t * pr, func_t fnum)
 			case OP_BITOR:
 				OPC.float_var = (int) OPA.float_var | (int) OPB.float_var;
 				break;
+			case OP_BITXOR_F:
+				OPC.float_var = (int) OPA.float_var ^ (int) OPB.float_var;
+				break;
+			case OP_BITNOT_F:
+				OPC.float_var = ~ (int) OPA.float_var;
+				break;
 			case OP_GE:
 				OPC.float_var = OPA.float_var >= OPB.float_var;
 				break;
@@ -662,6 +668,12 @@ PR_ExecuteProgram (progs_t * pr, func_t fnum)
 				break;
 			case OP_BITOR_I:
 				OPC.integer_var = OPA.integer_var | OPB.integer_var;
+				break;
+			case OP_BITXOR_I:
+				OPC.integer_var = OPA.integer_var ^ OPB.integer_var;
+				break;
+			case OP_BITNOT_I:
+				OPC.integer_var = ~OPA.integer_var;
 				break;
 			case OP_GE_I:
 				OPC.integer_var = OPA.integer_var >= OPB.integer_var;
