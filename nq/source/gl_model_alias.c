@@ -263,7 +263,7 @@ Mod_LoadAliasFrame (void *pin, maliasframedesc_t *frame)
 		// these are byte values, so we don't have to worry about
 		// endianness
 		frame->bboxmin.v[i] = pdaliasframe->bboxmin.v[i];
-		frame->bboxmin.v[i] = pdaliasframe->bboxmax.v[i];
+		frame->bboxmax.v[i] = pdaliasframe->bboxmax.v[i];
 	}
 
 	pinframe = (trivertx_t *) (pdaliasframe + 1);
@@ -299,7 +299,7 @@ Mod_LoadAliasGroup (void *pin, maliasframedesc_t *frame)
 	for (i = 0; i < 3; i++) {
 		// these are byte values, so we don't have to worry about endianness
 		frame->bboxmin.v[i] = pingroup->bboxmin.v[i];
-		frame->bboxmin.v[i] = pingroup->bboxmax.v[i];
+		frame->bboxmax.v[i] = pingroup->bboxmax.v[i];
 	}
 
 	pin_intervals = (daliasinterval_t *) (pingroup + 1);
