@@ -70,7 +70,6 @@ static byte vid_current_palette[768];
 
 static int  svgalib_inited = 0;
 static int  svgalib_backgrounded = 0;
-static int  UseDisplay = 1;
 
 static cvar_t *vid_mode;
 static cvar_t *vid_redrawfull;
@@ -282,33 +281,25 @@ VID_InitModes (void)
 }
 
 static int
-get_mode (char *name, int width, int height, int depth)
+get_mode (int width, int height, int depth)
 {
 	int         i, ok, match;
 
 	match = (!!width) + (!!height) * 2 + (!!depth) * 4;
 
-	if (name) {
-		i = vga_getmodenumber (name);
-		if (!modes[i].width) {
-			Sys_Printf ("Mode [%s] not supported\n", name);
-			i = G320x200x256;
+	for (i = 0; i < num_modes; i++) {
+		if (modes[i].width) {
+			ok = (modes[i].width == width)
+				+ (modes[i].height == height) * 2
+				+ (modes[i].bytesperpixel == depth / 8) * 4;
+			if ((ok & match) == match)
+				break;
 		}
-	} else {
-		for (i = 0; i < num_modes; i++) {
-			if (modes[i].width) {
-				ok = (modes[i].width == width)
-					+ (modes[i].height == height) * 2
-					+ (modes[i].bytesperpixel == depth / 8) * 4;
-				if ((ok & match) == ok)
-					break;
-			}
-		}
-		if (i == num_modes) {
-			Sys_Printf ("Mode %dx%d (%d bits) not supported\n",
-						width, height, depth);
-			i = G320x200x256;
-		}
+	}
+	if (i == num_modes) {
+		Sys_Printf ("Mode %dx%d (%d bits) not supported\n",
+					width, height, depth);
+		i = G320x200x256;
 	}
 
 	return i;
@@ -322,9 +313,7 @@ VID_Shutdown (void)
 	if (!svgalib_inited)
 		return;
 
-	if (UseDisplay) {
-		vga_setmode (TEXT);
-	}
+	vga_setmode (TEXT);
 	svgalib_inited = 0;
 }
 
@@ -346,7 +335,7 @@ VID_SetPalette (byte * palette)
 			*(tp++) = *(palette++) >> 2;
 		}
 
-		if (UseDisplay && vga_oktowrite ()) {
+		if (vga_oktowrite ()) {
 			vga_setpalvec (0, 256, tmppal);
 		}
 	}
@@ -434,7 +423,6 @@ comefrom_background (void)
 void
 VID_Init (unsigned char *palette)
 {
-	int         w, h, d;
 	int         err;
 
 	// plugin_load("in_svgalib.so");
@@ -442,64 +430,44 @@ VID_Init (unsigned char *palette)
 	if (svgalib_inited)
 		return;
 
-	if (UseDisplay) {
-		err = vga_init ();
-		if (err)
-			Sys_Error ("SVGALib failed to allocate a new VC");
+	err = vga_init ();
+	if (err)
+		Sys_Error ("SVGALib failed to allocate a new VC");
 
-		if (vga_runinbackground_version () == 1) {
-			Con_Printf ("SVGALIB background support detected\n");
-			vga_runinbackground (VGA_GOTOBACK, goto_background);
-			vga_runinbackground (VGA_COMEFROMBACK, comefrom_background);
-			vga_runinbackground (1);
-		} else {
-			vga_runinbackground (0);
-		}
-
-		VID_InitModes ();
-
-		Cmd_AddCommand ("vid_nummodes", VID_NumModes_f, "Reports the total "
-						"number of video modes available.");
-		Cmd_AddCommand ("vid_describemode", VID_DescribeMode_f, "Report "
-						"information on specified video mode, default is "
-						"current.\n"
-						"(vid_describemode (mode))");
-		Cmd_AddCommand ("vid_describemodes", VID_DescribeModes_f, "Report "
-						"information on all video modes.");
-		Cmd_AddCommand ("vid_debug", VID_Debug_f, "FIXME: No Description");
-
-		/* Interpret command-line params */
-		w = h = d = 0;
-		if (getenv ("GSVGAMODE")) {
-			current_mode = get_mode (getenv ("GSVGAMODE"), w, h, d);
-		} else if (COM_CheckParm ("-mode")) {
-			current_mode =
-				get_mode (com_argv[COM_CheckParm ("-mode") + 1], w, h, d);
-		} else if (COM_CheckParm ("-w") || COM_CheckParm ("-h")
-				   || COM_CheckParm ("-d")) {
-			if (COM_CheckParm ("-w")) {
-				w = atoi (com_argv[COM_CheckParm ("-w") + 1]);
-			}
-			if (COM_CheckParm ("-h")) {
-				h = atoi (com_argv[COM_CheckParm ("-h") + 1]);
-			}
-			if (COM_CheckParm ("-d")) {
-				d = atoi (com_argv[COM_CheckParm ("-d") + 1]);
-			}
-			current_mode = get_mode (0, w, h, d);
-		} else {
-			current_mode = G320x200x256;
-		}
-
-		/* Set vid parameters */
-		VID_SetMode (current_mode, palette);
-		Con_CheckResize (); // Now that we have a window size, fix console
-
-		VID_InitGamma (palette);
-		VID_SetPalette (vid.palette);
-
-		vid.initialized = true;
+	if (vga_runinbackground_version () == 1) {
+		Con_Printf ("SVGALIB background support detected\n");
+		vga_runinbackground (VGA_GOTOBACK, goto_background);
+		vga_runinbackground (VGA_COMEFROMBACK, comefrom_background);
+		vga_runinbackground (1);
+	} else {
+		vga_runinbackground (0);
 	}
+
+	VID_InitModes ();
+
+	Cmd_AddCommand ("vid_nummodes", VID_NumModes_f, "Reports the total "
+					"number of video modes available.");
+	Cmd_AddCommand ("vid_describemode", VID_DescribeMode_f, "Report "
+					"information on specified video mode, default is "
+					"current.\n"
+					"(vid_describemode (mode))");
+	Cmd_AddCommand ("vid_describemodes", VID_DescribeModes_f, "Report "
+					"information on all video modes.");
+	Cmd_AddCommand ("vid_debug", VID_Debug_f, "FIXME: No Description");
+
+	/* Interpret command-line params */
+	VID_GetWindowSize (320, 200);
+
+	current_mode = get_mode (vid.width, vid.height, 0);
+
+	/* Set vid parameters */
+	VID_SetMode (current_mode, palette);
+	Con_CheckResize (); // Now that we have a window size, fix console
+
+	VID_InitGamma (palette);
+	VID_SetPalette (vid.palette);
+
+	vid.initialized = true;
 }
 
 void
@@ -593,23 +561,6 @@ VID_ModeInfo (int modenum)
 	} else {
 		return (badmodestr);
 	}
-}
-
-void
-VID_ExtraOptionDraw (unsigned int options_draw_cursor)
-{
-	/* No extra option menu items yet */
-}
-
-void
-VID_ExtraOptionCmd (int option_cursor)
-{
-#if 0
-	switch (option_cursor) {
-		case 1:						// Always start with 1
-			break;
-	}
-#endif
 }
 
 void
