@@ -94,8 +94,10 @@ pointer_type (type_t *aux)
 void
 print_type (type_t *type)
 {
-	if (!type)
+	if (!type) {
 		printf (" (null)");
+		return;
+	}
 	switch (type->type) {
 		case ev_func:
 			print_type (type->aux_type);
