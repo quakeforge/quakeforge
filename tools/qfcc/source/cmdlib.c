@@ -138,26 +138,3 @@ SafeWrite (FILE *f, void *buffer, int count)
 	if (fwrite (buffer, 1, count, f) != (size_t) count)
 		Error ("File read failure");
 }
-
-
-/*
-	LoadFile
-*/
-int
-LoadFile (const char *filename, void **bufferptr)
-{
-	FILE       *f;
-	int         length;
-	void       *buffer;
-
-	f = SafeOpenRead (filename);
-	length = FileLength (f);
-	buffer = malloc (length + 1);
-	SYS_CHECKMEM (buffer);
-	((char *) buffer)[length] = 0;
-	SafeRead (f, buffer, length);
-	fclose (f);
-
-	*bufferptr = buffer;
-	return length;
-}
