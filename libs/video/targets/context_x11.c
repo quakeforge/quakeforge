@@ -551,13 +551,13 @@ X11_GetWindowCoords (int *ax, int *ay)
 	if ((XGetGeometry (x_disp, x_win, &theroot, &x, &y, &width, &height,
 					   &bdwidth, &depth) == False)) {
 		Con_Printf ("XGetWindowAttributes failed in X11_GetWindowCoords.\n");
-		return true;
+		return false;
 	} else {
 		XTranslateCoordinates (x_disp,x_win,theroot, -bdwidth, -bdwidth,
 							   ax, ay, &scrap);
 		Con_DPrintf ("Window coords =  %dx%d (%d,%d)\n", *ax, *ay,
 					 width, height);
-		return false;
+		return true;
 	}
 #endif
 	return false;
