@@ -1193,11 +1193,32 @@ PR_LoadProgsFile (progs_t * pr, const char *progsname)
 		((int *) pr->pr_globals)[i] = LittleLong (((int *) pr->pr_globals)[i]);
 }
 
+int
+PR_ResolveGlobals (progs_t *pr)
+{
+	char *sym;
+
+	if (!(pr->globals.time = (float*)PR_GetGlobalPointer (pr, sym = "time")))
+		goto error;
+	if (!(pr->globals.self = (int*)PR_GetGlobalPointer (pr, sym = "self")))
+		goto error;
+	if ((pr->fields.nextthink = ED_GetFieldIndex (pr, sym = "nextthink")) == -1)
+		goto error;
+	if ((pr->fields.frame = ED_GetFieldIndex (pr, sym = "frame")) == -1)
+		goto error;
+	if ((pr->fields.think = ED_GetFieldIndex (pr, sym = "think")) == -1)
+		goto error;
+	return 1;
+error:
+	Sys_Printf ("%s: undefined symbol: %s", pr->progs_name, sym);
+	return 0;
+}
+
 /*
 	PR_LoadProgs
 */
 void
-PR_LoadProgs (progs_t * pr, const char *progsname)
+PR_LoadProgs (progs_t *pr, const char *progsname)
 {
 	PR_LoadProgsFile (pr, progsname);
 	if (!pr->progs)
@@ -1205,17 +1226,6 @@ PR_LoadProgs (progs_t * pr, const char *progsname)
 
 	if (!progsname)
 		progsname = "(preloaded)";
-
-	if (!(pr->globals.time = (float*)PR_GetGlobalPointer (pr, "time")))
-		PR_Error (pr, "%s: undefined symbol: time", progsname);
-	if (!(pr->globals.self = (int*)PR_GetGlobalPointer (pr, "self")))
-		PR_Error (pr, "%s: undefined symbol: self", progsname);
-	if ((pr->fields.nextthink = ED_GetFieldIndex (pr, "nextthink")) == -1)
-		PR_Error (pr, "%s: undefined field: nextthink", progsname);
-	if ((pr->fields.frame = ED_GetFieldIndex (pr, "frame")) == -1)
-		PR_Error (pr, "%s: undefined field: frame", progsname);
-	if ((pr->fields.think = ED_GetFieldIndex (pr, "think")) == -1)
-		PR_Error (pr, "%s: undefined field: think", progsname);
 
 	// initialise the strings managment code
 	PR_LoadStrings (pr);

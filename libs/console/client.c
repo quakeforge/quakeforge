@@ -462,7 +462,7 @@ C_Print (const char *fmt, va_list args)
 }
 
 static void
-C_KeyEvent (key_t key, short unicode, qboolean down)
+C_KeyEvent (knum_t key, short unicode, qboolean down)
 {
 	inputline_t *il;
 
@@ -508,6 +508,8 @@ C_KeyEvent (key_t key, short unicode, qboolean down)
 				if (con->display > con->current)
 					con->display = con->current;
 				return;
+			default:
+				break;
 		}
 		il = input_line;
 	}
@@ -698,6 +700,8 @@ C_DrawConsole (int lines)
 	} else {
 		if (key_dest == key_game || key_dest == key_message)
 			DrawNotify ();				// only draw notify in game
+		else if (key_dest == key_menu)
+			Menu_Draw ();
 	}
 }
 

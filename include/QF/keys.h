@@ -365,7 +365,7 @@ typedef enum {
 } imt_t;											// Input Mapping Table
 
 // key_none should, preferably, be last
-typedef enum {key_game, key_console, key_message, key_none} keydest_t;
+typedef enum {key_game, key_console, key_message, key_menu, key_none} keydest_t;
 
 extern keydest_t	key_dest;
 extern imt_t		game_target;

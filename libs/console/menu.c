@@ -34,6 +34,7 @@ static const char rcsid[] =
 #include <string.h>
 
 #include "QF/console.h"
+#include "QF/hash.h"
 #include "QF/plugin.h"
 #include "QF/progs.h"
 #include "QF/vfs.h"
@@ -58,6 +59,58 @@ typedef struct menu_item_s {
 
 static progs_t  menu_pr_state;
 static menu_item_t *menu;
+static hashtab_t *menu_hash;
+static func_t   menu_init;
+static func_t   menu_keyevent;
+static func_t   menu_draw;
+
+static int
+menu_resolve_globals (void)
+{
+	char       *sym;
+	dfunction_t *f;
+
+	if (!(f = ED_FindFunction (&menu_pr_state, sym = "menu_init")))
+		goto error;
+	menu_init = (func_t)(f - menu_pr_state.pr_functions);
+	if ((f = ED_FindFunction (&menu_pr_state, "menu_keyevent")))
+		menu_keyevent = (func_t)(f - menu_pr_state.pr_functions);
+	if ((f = ED_FindFunction (&menu_pr_state, "menu_draw")))
+		menu_draw = (func_t)(f - menu_pr_state.pr_functions);
+	return 1;
+error:
+	Con_Printf ("%s: undefined function %s\n", menu_pr_state.progs_name, sym);
+	return 0;
+}
+
+static const char *
+menu_get_key (void *m, void *unused)
+{
+	return ((menu_item_t *)m)->text;
+}
+
+static void
+menu_free (void *_m, void *unused)
+{
+	menu_item_t *m = (menu_item_t *)_m;
+
+	if (m->text)
+		free ((char*)m->text);
+	if (m->items) {
+		int         i;
+
+		for (i = 0; i < m->num_items; i++)
+			menu_free (m->items[i], 0);
+		free (m->items);
+	}
+	while (m->pics) {
+		menu_pic_t *p = m->pics;
+		m->pics = p->next;
+		if (p->name)
+			free ((char*)p->name);
+		free (p);
+	}
+}
 
 static void
 menu_add_item (menu_item_t *m, menu_item_t *i)
@@ -67,6 +120,7 @@ menu_add_item (menu_item_t *m, menu_item_t *i)
 							(m->max_items + 8) * sizeof (menu_item_t *));
 		m->max_items += 8;
 	}
+	i->parent = m;
 	m->items[m->num_items++] = i;
 }
 
@@ -80,10 +134,11 @@ bi_Menu_Begin (progs_t *pr)
 
 	m->x = x;
 	m->y = y;
-	m->text = text;
-	m->parent = menu;
-	menu_add_item (menu, m);
+	m->text = strdup (text);
+	if (menu)
+		menu_add_item (menu, m);
 	menu = m;
+	Hash_Add (menu_hash, m);
 }
 
 static void
@@ -127,7 +182,7 @@ bi_Menu_Item (progs_t *pr)
 
 	mi->x = x;
 	mi->y = y;
-	mi->text = text;
+	mi->text = strdup (text);
 	mi->func = func;
 	mi->parent = menu;
 	menu_add_item (menu, mi);
@@ -151,6 +206,8 @@ Menu_Init (void)
 {
 	menu_pr_state.progs_name = "menu.dat";
 
+	menu_hash = Hash_NewTable (61, menu_get_key, menu_free, 0);
+
 	PR_AddBuiltin (&menu_pr_state, "Menu_Begin", bi_Menu_Begin, -1);
 	PR_AddBuiltin (&menu_pr_state, "Menu_Pic", bi_Menu_Pic, -1);
 	PR_AddBuiltin (&menu_pr_state, "Menu_CenterPic", bi_Menu_CenterPic, -1);
@@ -171,23 +228,48 @@ Menu_Load (void)
 		free (menu_pr_state.progs);
 		menu_pr_state.progs = 0;
 	}
+	Hash_FlushTable (menu_hash);
+	menu = 0;
 
-	if ((size = COM_FOpenFile ("menu.dat", &file)) != -1) {
+	if ((size = COM_FOpenFile (menu_pr_state.progs_name, &file)) != -1) {
 		menu_pr_state.progs = malloc (size + 256 * 1024);
 		Qread (file, menu_pr_state.progs, size);
 		Qclose (file);
 		memset ((char *)menu_pr_state.progs + size, 0, 256 * 1024);
-		PR_LoadProgs (&menu_pr_state, 0);
-		if (!PR_RelocateBuiltins (&menu_pr_state)) {
+		PR_LoadProgsFile (&menu_pr_state, 0);
+
+		if (!PR_RelocateBuiltins (&menu_pr_state)
+			|| !PR_ResolveGlobals (&menu_pr_state)
+			|| !menu_resolve_globals ()) {
 			free (menu_pr_state.progs);
 			menu_pr_state.progs = 0;
+		} else {
+			PR_LoadStrings (&menu_pr_state);
+			PR_LoadDebug (&menu_pr_state);
+			PR_Check_Opcodes (&menu_pr_state);
 		}
 	}
 	if (!menu_pr_state.progs) {
 		// Not a fatal error, just means no menus
 		Con_SetOrMask (0x80);
-		Con_Printf ("Menu_Load: could not load menu.dat\n");
+		Con_Printf ("Menu_Load: could not load %s\n",
+					menu_pr_state.progs_name);
 		Con_SetOrMask (0x00);
 		return;
 	}
+	PR_ExecuteProgram (&menu_pr_state, menu_init);
+}
+
+void
+Menu_Draw (void)
+{
+	if (!menu)
+		return;
+}
+
+void
+Menu_KeyEvent (knum_t key, short unicode, qboolean down)
+{
+	if (!menu)
+		return;
 }

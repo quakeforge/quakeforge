@@ -37,7 +37,7 @@
 
 typedef void (QFPLUGIN *P_C_Print) (const char *fmt, va_list args);
 typedef void (QFPLUGIN *P_C_ProcessInput) (void);
-typedef void (QFPLUGIN *P_C_KeyEvent) (key_t key, short unicode, qboolean down);
+typedef void (QFPLUGIN *P_C_KeyEvent) (knum_t key, short unicode, qboolean down);
 typedef void (QFPLUGIN *P_C_DrawConsole) (int lines);
 typedef void (QFPLUGIN *P_C_CheckResize) (void);
 typedef void (QFPLUGIN *P_C_NewMap) (void);

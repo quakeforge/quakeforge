@@ -131,5 +131,7 @@ void Con_Demolist_DEM_f (void);
 
 void Menu_Init (void);
 void Menu_Load (void);
+void Menu_Draw (void);
+void Menu_KeyEvent (knum_t key, short unicode, qboolean down);
 
 #endif // __console_h
