@@ -563,8 +563,11 @@ Menu_KeyEvent (knum_t key, short unicode, qboolean down)
 	} else if (menu->items && menu->items[menu->cur_item]->func
 			   && menu->items[menu->cur_item]->allkeys) {
 		item = menu->items[menu->cur_item];
-		G_INT (&menu_pr_state, OFS_PARM0) =
-			PR_SetString (&menu_pr_state, item->text);
+		if (item->text)
+			G_INT (&menu_pr_state, OFS_PARM0) =
+				PR_SetString (&menu_pr_state, item->text);
+		else
+			G_INT (&menu_pr_state, OFS_PARM0) = 0;
 		G_INT (&menu_pr_state, OFS_PARM1) = key;
 		PR_ExecuteProgram (&menu_pr_state, item->func);
 		if (G_INT (&menu_pr_state, OFS_RETURN))
@@ -588,8 +591,11 @@ Menu_KeyEvent (knum_t key, short unicode, qboolean down)
 			{
 				item = menu->items[menu->cur_item];
 				if (item->func) {
-					G_INT (&menu_pr_state, OFS_PARM0) =
-						PR_SetString (&menu_pr_state, item->text);
+					if (item->text)
+						G_INT (&menu_pr_state, OFS_PARM0) =
+							PR_SetString (&menu_pr_state, item->text);
+					else
+						G_INT (&menu_pr_state, OFS_PARM0) = 0;
 					G_INT (&menu_pr_state, OFS_PARM1) = key;
 					PR_ExecuteProgram (&menu_pr_state, item->func);
 				} else {
