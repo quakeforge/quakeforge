@@ -600,15 +600,16 @@ PF_findradius (progs_t *pr)
 {
 	edict_t    *ent, *chain;
 	float       rad;
-	float      *org, *eorigin, *emins, *emaxs;
+	float      *eorigin, *emins, *emaxs;
 	int         i, j;
-	vec3_t      eorg;
+	vec3_t      eorg, org;
 
 	chain = (edict_t *) sv.edicts;
 
-	org = G_VECTOR (pr, OFS_PARM0);
+	VectorScale (G_VECTOR (pr, OFS_PARM0), 2, org);
 	rad = G_FLOAT (pr, OFS_PARM1);
-	rad *= rad;						// Square early, sqrt never.
+	// * 4 because the * 0.5 was removed from the emins-emaxs average
+	rad *= 4 * rad;					// Square early, sqrt never
 
 	ent = NEXT_EDICT (pr, sv.edicts);
 	for (i = 1; i < sv.num_edicts; i++, ent = NEXT_EDICT (pr, ent)) {
@@ -621,7 +622,7 @@ PF_findradius (progs_t *pr)
 		emaxs = SVvector (ent, maxs);
 
 		for (j = 0; j < 3; j++)
-			eorg[j] = org[j] - (eorigin[j] + (emins[j] + emaxs[j]) * 0.5);
+			eorg[j] = org[j] - 2 * eorigin[j] - emins[j] - emaxs[j];
 		if (DotProduct (eorg, eorg) > rad)
 			continue;
 
