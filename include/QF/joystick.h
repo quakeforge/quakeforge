@@ -26,26 +26,29 @@
 	$Id$
 */
 
-#include "QF/qtypes.h"
+#ifndef __QF_joystick_h_
+#define __QF_joystick_h_
+
+#include <QF/qtypes.h>
 
 #define JOY_MAX_AXES    6
 #define JOY_MAX_BUTTONS 16
 
-extern struct cvar_s *joy_device;		// Joystick device name
-extern struct cvar_s *joy_enable;		// Joystick enabling flag
-extern struct cvar_s *joy_sensitivity;	// Joystick sensitivity
+extern struct cvar_s	*joy_device;		// Joystick device name
+extern struct cvar_s	*joy_enable;		// Joystick enabling flag
+extern struct cvar_s	*joy_sensitivity;	// Joystick sensitivity
 
-extern qboolean joy_found;			// Joystick present?
-extern qboolean joy_active; 		// Joystick in use?
+extern qboolean 	joy_found;			// Joystick present?
+extern qboolean 	joy_active; 		// Joystick in use?
 
 struct joy_axis {
-	struct cvar_s *axis;
-	int         current;
+	struct cvar_s	*axis;
+	int 			current;
 };
 
 struct joy_button {
-	int         old;
-	int         current;
+	int 	old;
+	int 	current;
 };
 
 extern struct joy_axis joy_axes[JOY_MAX_AXES];
@@ -98,7 +101,7 @@ void JOY_Shutdown (void);
 	JOY_Open ()
 	JOY_Close ()
 
-	os specific joystick init/deinit
+	OS-specific joystick init/deinit
 */
 int JOY_Open (void);
 void JOY_Close (void);
@@ -106,6 +109,8 @@ void JOY_Close (void);
 /*
 	JOY_Read ()
 
-	os specific joystick reading
+	OS-specific joystick reading
 */
 void JOY_Read (void);
+
+#endif	// __QF_joystick_h_

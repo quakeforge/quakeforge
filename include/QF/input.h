@@ -26,17 +26,17 @@
 	$Id$
 */
 
-#ifndef _INPUT_H
-#define _INPUT_H
+#ifndef __QF_input_h_
+#define __QF_input_h_
 
-#include "QF/cvar.h"
+#include <QF/cvar.h>
 
 struct {
 	vec3_t angles;
 	vec3_t position;
 } viewdelta;
 
-#define freelook (in_mlook.state&1 || in_freelook->int_val)
+#define freelook (in_mlook.state & 1 || in_freelook->int_val)
 
 void IN_Init (void);
 void IN_Init_Cvars (void);
@@ -63,15 +63,14 @@ extern cvar_t		*in_freelook;
 extern cvar_t		*sensitivity;
 extern cvar_t		*lookstrafe;
 
-extern qboolean    in_mouse_avail;
-extern float       in_mouse_x, in_mouse_y;
+extern qboolean 	in_mouse_avail;
+extern float		in_mouse_x, in_mouse_y;
 
+void IN_LL_Init_Cvars (void);
+void IN_LL_Init (void);
+void IN_LL_Shutdown (void);
+void IN_LL_Commands (void);
+void IN_LL_SendKeyEvents (void);
+void IN_LL_ClearStates (void);
 
-void IN_LL_Init_Cvars ();
-void IN_LL_Init ();
-void IN_LL_Shutdown ();
-void IN_LL_Commands ();
-void IN_LL_SendKeyEvents ();
-void IN_LL_ClearStates ();
-
-#endif // _INPUT_H
+#endif // __QF_input_h_
