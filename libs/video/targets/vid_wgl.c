@@ -460,7 +460,7 @@ VID_Init (unsigned char *palette)
 
 	vid_fullscreen = Cvar_Get ("vid_fullscreen", "0", CVAR_ROM | CVAR_ARCHIVE, 
 							   NULL, "Run WGL client at fullscreen");
-	GL_Pre_Init ();
+	GLF_Init ();
 
 	qf_wglCreateContext = QFGL_ProcAddress (libgl_handle, "wglCreateContext",
 											true);

@@ -46,6 +46,7 @@
 extern void *libgl_handle;
 
 qboolean GLF_Init (void);
+qboolean GLF_FindFunctions (void);
 void *QFGL_ProcAddress (void *handle, const char *name, qboolean);
 
 void *QFGL_LoadLibrary (void); 

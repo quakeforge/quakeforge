@@ -134,7 +134,6 @@ qboolean VID_SetGamma (double);
 void VID_UpdateGamma (struct cvar_s *);
 
 void GL_Init_Common (void);
-void GL_Pre_Init (void);
 
 void VID_MakeColormaps (int fullbrights, byte *pal);
 

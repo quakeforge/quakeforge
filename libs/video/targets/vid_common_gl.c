@@ -320,17 +320,9 @@ VID_SetPalette (unsigned char *palette)
 }
 
 void
-GL_Pre_Init (void)
-{
-	if (!GLF_Init()) {
-		Sys_Error ("Can't init video.");
-		return;
-	}
-}
-
-void
 GL_Init_Common (void)
 {
+	GLF_FindFunctions ();
 	gl_version = qfglGetString (GL_VERSION);
 	if (sscanf (gl_version, "%d.%d", &gl_major, &gl_minor) == 2) {
 		gl_release_number = 0;

@@ -108,7 +108,7 @@ VID_Init (unsigned char *palette)
 	if (SDL_Init (SDL_INIT_VIDEO) < 0)
 		Sys_Error ("Couldn't initialize SDL: %s", SDL_GetError ());
 
-	GL_Pre_Init ();
+	GLF_Init ();
 
 	VID_GetWindowSize (640, 480);
 

@@ -83,16 +83,16 @@ typedef struct __GLXcontextRec *GLXContext;
 static GLXContext ctx = NULL;
 typedef XID GLXDrawable;
 
-void (* qfglXSwapBuffers) (Display *dpy, GLXDrawable drawable);
-XVisualInfo* (* qfglXChooseVisual) (Display *dpy, int screen, int *attribList);
-GLXContext (* qfglXCreateContext) (Display *dpy, XVisualInfo *vis,
-								   GLXContext shareList, Bool direct);
-Bool (* qfglXMakeCurrent) (Display *dpy, GLXDrawable drawable, GLXContext ctx);
+void (*qfglXSwapBuffers) (Display *dpy, GLXDrawable drawable);
+XVisualInfo* (*qfglXChooseVisual) (Display *dpy, int screen, int *attribList);
+GLXContext (*qfglXCreateContext) (Display *dpy, XVisualInfo *vis,
+								  GLXContext shareList, Bool direct);
+Bool (*qfglXMakeCurrent) (Display *dpy, GLXDrawable drawable, GLXContext ctx);
 
 
 // ============================================================================
 
-static int use_gl_procaddress = 1;
+static int use_gl_procaddress = 0;
 
 #if defined(HAVE_DLOPEN)
 
@@ -188,9 +188,7 @@ VID_Init (unsigned char *palette)
 		None
 	};
 
-	GL_Pre_Init ();
-
-	use_gl_procaddress = 0;
+	GLF_Init ();
 
 	qfglXSwapBuffers = QFGL_ProcAddress (libgl_handle, "glXSwapBuffers", true);
 	qfglXChooseVisual = QFGL_ProcAddress (libgl_handle, "glXChooseVisual",

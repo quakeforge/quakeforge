@@ -108,7 +108,12 @@ qboolean
 GLF_Init (void)
 {
 	libgl_handle = QFGL_LoadLibrary ();
+	return true;
+}
 
+qboolean
+GLF_FindFunctions (void)
+{
 #define QFGL_WANT(ret, name, args) \
 	qf##name = QFGL_ProcAddress (libgl_handle, #name, false);
 #define QFGL_NEED(ret, name, args) \

@@ -274,7 +274,7 @@ VID_Init (unsigned char *palette)
 	int         i;
 	GLint       attribs[32];
 
-	GL_Pre_Init ();
+	GLF_Init ();
 
 	qf_fxMesaCreateContext = QFGL_ProcAddress (libgl_handle,
 											"fxMesaCreateContext", true);
