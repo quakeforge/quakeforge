@@ -634,6 +634,7 @@ SL_LoadF (VFile *f, server_entry_t *start)
 			} else {
 				start = SL_Add (start, addr, "Unknown");
 			}
+			free (addr);
 		}
 	if (c == EOF)                                   // We're done
 		return start;

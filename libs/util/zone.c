@@ -533,14 +533,27 @@ typedef struct cache_system_s {
 	cache_user_t *user;
 	char        name[16];
 	int         size;					// including this header
+	int			readlock;
 	struct cache_system_s *prev, *next;
 	struct cache_system_s *lru_prev, *lru_next;	// for LRU flushing 
 } cache_system_t;
 
 cache_system_t *Cache_TryAlloc (int size, qboolean nobottom);
+void Cache_RealFree (cache_user_t *c);
+void *Cache_RealCheck (cache_user_t *c);
 cache_system_t cache_head;
+int cache_writelock;
 
 void Cache_Profile (void);
+
+#define CACHE_WRITE_LOCK	{ if (cache_writelock) \
+								Sys_Error ("Cache double-locked!"); \
+							  else \
+							cache_writelock++; }
+#define CACHE_WRITE_UNLOCK	{ if (!cache_writelock) \
+								Sys_Error ("Cache already unlocked!"); \
+							  else \
+							cache_writelock--; }
 
 #ifndef MMAPPED_CACHE
 void
@@ -556,12 +569,12 @@ Cache_Move (cache_system_t * c)
 		memcpy (new + 1, c + 1, c->size - sizeof (cache_system_t));
 		new->user = c->user;
 		memcpy (new->name, c->name, sizeof (new->name));
-		Cache_Free (c->user);
+		Cache_RealFree (c->user);
 		new->user->data = (void *) (new + 1);
 	} else {
 		Con_DPrintf ("cache_move failed\n");
 
-		Cache_Free (c->user);			// tough luck...
+		Cache_RealFree (c->user);			// tough luck...
 	}
 }
 #endif
@@ -607,7 +620,7 @@ Cache_FreeHigh (int new_high_hunk)
 		if ((byte *) c + c->size <= hunk_base + hunk_size - new_high_hunk)
 			return;						// there is space to grow the hunk
 		if (c == prev)
-			Cache_Free (c->user);		// didn't move out of the way
+			Cache_RealFree (c->user);	// didn't move out of the way
 		else {
 			Cache_Move (c);				// try to move it
 			prev = c;
@@ -747,8 +760,10 @@ Cache_TryAlloc (int size, qboolean nobottom)
 void
 Cache_Flush (void)
 {
+	CACHE_WRITE_LOCK;
 	while (cache_head.next != &cache_head)
-		Cache_Free (cache_head.next->user);	// reclaim the space
+		Cache_RealFree (cache_head.next->user);	// reclaim the space
+	CACHE_WRITE_UNLOCK;
 }
 
 void
@@ -756,17 +771,21 @@ Cache_Print (void)
 {
 	cache_system_t *cd;
 
+	CACHE_WRITE_LOCK;
 	for (cd = cache_head.next; cd != &cache_head; cd = cd->next) {
 		Con_Printf ("%8i : %s\n", cd->size, cd->name);
 	}
+	CACHE_WRITE_UNLOCK;
 }
 
 void
 Cache_Report (void)
 {
+	CACHE_WRITE_LOCK;
 	Con_DPrintf ("%4.1f megabyte data cache\n",
 				 (hunk_size - hunk_high_used -
 				  hunk_low_used) / (float) (1024 * 1024));
+	CACHE_WRITE_UNLOCK;
 }
 
 void
@@ -793,6 +812,14 @@ Cache_Init (void)
 void
 Cache_Free (cache_user_t *c)
 {
+	CACHE_WRITE_LOCK;
+	Cache_RealFree (c);
+	CACHE_WRITE_UNLOCK;
+}
+
+void
+Cache_RealFree (cache_user_t *c)
+{
 	cache_system_t *cs;
 
 	if (!c->data)
@@ -816,8 +843,19 @@ Cache_Free (cache_user_t *c)
 #endif
 }
 
+
 void       *
 Cache_Check (cache_user_t *c)
+{
+	void *mem;
+	CACHE_WRITE_LOCK;
+	mem = Cache_RealCheck (c);
+	CACHE_WRITE_UNLOCK;
+	return mem;
+}
+
+void       *
+Cache_RealCheck (cache_user_t *c)
 {
 	cache_system_t *cs;
 
@@ -837,6 +875,9 @@ void       *
 Cache_Alloc (cache_user_t *c, int size, const char *name)
 {
 	cache_system_t *cs;
+	void *mem;
+
+	CACHE_WRITE_LOCK;
 
 	if (c->data)
 		Sys_Error ("Cache_Alloc: already allocated");
@@ -859,10 +900,12 @@ Cache_Alloc (cache_user_t *c, int size, const char *name)
 		if (cache_head.lru_prev == &cache_head)
 			Sys_Error ("Cache_Alloc: out of memory");
 		// not enough memory at all
-		Cache_Free (cache_head.lru_prev->user);
+		Cache_RealFree (cache_head.lru_prev->user);
 	}
 
-	return Cache_Check (c);
+	mem = Cache_RealCheck (c);
+	CACHE_WRITE_UNLOCK;
+	return mem;
 }
 
 void
@@ -872,6 +915,8 @@ Cache_Profile (void)
 	unsigned int i;
 	unsigned int items[31] = {}, sizes[31] = {};
 	int count = 0, total = 0;
+
+	CACHE_WRITE_LOCK;
 
 	cs = cache_head.next;
 	while (cs != &cache_head) {
@@ -896,6 +941,8 @@ Cache_Profile (void)
 	}
 	Con_Printf ("Total allocations: %d in %d allocations, average of"
 				" %d per allocation\n", total, count, total / count);
+
+	CACHE_WRITE_UNLOCK;
 }
 
 /*
@@ -925,7 +972,8 @@ Qalloc (void *ptr, size_t size, unsigned modes)
 				else
 					mem = malloc (size);
 			}
-		} while ((modes & _QA_MODEMASK) != QA_EARLYFAIL && !mem && Qalloc_callback (size));
+		} while ((modes & _QA_MODEMASK) != QA_EARLYFAIL && !mem
+				 && Qalloc_callback && Qalloc_callback (size));
 
 		if (!mem && (modes & _QA_MODEMASK) == QA_NOFAIL)
 			Sys_Error ("Qalloc: could not allocate %d bytes!\n", size);
@@ -961,6 +1009,15 @@ void
 Qfree (void *ptr)
 {
 	Qalloc (ptr, 0, QA_NOFAIL);
+}
+
+char *
+Qstrdup (const char *s)
+{
+	char *mem;
+	mem = Qmalloc (strlen (s) + 1);
+	strcpy (mem, s);
+	return mem;
 }
 
 
