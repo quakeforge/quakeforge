@@ -159,8 +159,12 @@ function infobot::forgetFactoid_f {
 	}
 	fact = $(infobot::makeKey $args[3])
 	if #{facts.$fact} {
-		delete facts.$fact
-		infobot::say $args[2], ": I forgot about ", $args[3], "."
+		if ${facts.${fact}[2]} {
+			infobot::say $args[2], ": That factoid is locked."
+		} else {
+			delete facts.$fact
+			infobot::say $args[2], ": I forgot about ", $args[3], "."
+		}
 	} else {
 		infobot::say $args[2], ": I don't know anything about ", $args[3], "."
 	}
