@@ -266,7 +266,8 @@ CL_GetDemoMessage (void)
 //			Con_Printf("read: %ld bytes\n", net_message->message->cursize);
 			if (net_message->message->cursize > MAX_MSGLEN)
 //				Sys_Error ("Demo message > MAX_MSGLEN");
-				Host_NetError ("Demo message > MAX_MSGLEN");
+				Host_Error ("Demo message > MAX_MSGLEN: %d/%d",
+							net_message->message->cursize, MAX_MSGLEN);
 			r = Qread (cls.demofile, net_message->message->data,
 					   net_message->message->cursize);
 			if (r != net_message->message->cursize) {
