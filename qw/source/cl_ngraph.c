@@ -44,6 +44,8 @@ CL_NetGraph (void)
 	int         lost;
 	char        st[80];
 
+	a = 0; // shut up gcc
+
 	x = cl_hudswap->int_val ? vid.width - (NET_TIMINGS + 16): 0;
 	y = vid.height - sb_lines - 24 - r_graphheight->int_val - 1;
 
