@@ -1106,7 +1106,7 @@ SV_Record_f (void)
 			  sv_demoPrefix->string, SV_CleanName (Cmd_Argv (1)),
 			  sv_demoSuffix->string);
 
-	Sys_mkdir (va ("%s/%s", com_gamedir, sv_demoDir->string));
+	COM_CreatePath (name->str);
 
 	// open the demo file
 	name->size += 4;
@@ -1226,7 +1226,7 @@ SV_EasyRecord_f (void)
 	dsprintf (name2, "%s/%s/%s%s%s", com_gamedir, sv_demoDir->string,
 			  sv_demoPrefix->string, SV_CleanName (name->str),
 			  sv_demoSuffix->string);
-	Sys_mkdir (va ("%s/%s", com_gamedir, sv_demoDir->string));
+	COM_CreatePath (name2->str);
 
 	// find a filename that doesn't exist yet
 	dsprintf (name, "%s", name2->str);
