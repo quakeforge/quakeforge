@@ -1088,6 +1088,11 @@ convert_bool (expr_t *e, int block)
 {
 	expr_t     *b;
 
+	if (e->type == ex_expr && (e->e.expr.op == '=' || e->e.expr.op == PAS)
+		&& !e->paren)
+		warning (e,
+				 "suggest parentheses around assignment used as truth value");
+
 	if (e->type == ex_uexpr && e->e.expr.op == '!') {
 		e = convert_bool (e->e.expr.e1, 0);
 		if (e->type == ex_error)
