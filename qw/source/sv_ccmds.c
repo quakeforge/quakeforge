@@ -422,7 +422,7 @@ SV_Map_f (void)
 	free (expanded);
 
 	if (sv.demorecording)
-		SV_Stop_f ();
+		SV_Stop (0);
 
 	SV_BroadcastCommand ("changing\n");
 	SV_SendMessagesToAll ();

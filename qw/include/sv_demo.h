@@ -123,7 +123,6 @@ extern struct cvar_s *serverdemo;
 
 void DemoWrite_Begin (byte type, int to, int size);
 void SV_DemoWritePackets (int num);
-void SV_Stop_f (void);
 void SV_Stop (int reason);
 void DemoSetMsgBuf (demobuf_t *prev, demobuf_t *cur);
 void Demo_Init (void);

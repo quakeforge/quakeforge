@@ -334,7 +334,7 @@ SV_WriteDemoMessage (sizebuf_t *msg, int type, int to, float time)
 				demo.size += DWRITE (&c, sizeof (c), demo.dest);
 				break;
 			default:
-				SV_Stop_f ();
+				SV_Stop (0);
 				Con_Printf ("bad demo message type:%d", type);
 				return;
 		}
@@ -655,7 +655,7 @@ SV_Stop (int reason)
 	Cvar_Set (serverdemo, "");
 }
 
-void
+static void
 SV_Stop_f (void)
 {
 	SV_Stop (0);
@@ -1088,7 +1088,7 @@ SV_Record_f (void)
 	}
 
 	if (sv.demorecording)
-		SV_Stop_f ();
+		SV_Stop (0);
 
 	dsprintf (name, "%s/%s/%s%s%s", qfs_gamedir->dir.def, sv_demoDir->string,
 			  sv_demoPrefix->string, SV_CleanName (Cmd_Argv (1)),
@@ -1184,7 +1184,7 @@ SV_EasyRecord_f (void)
 	}
 
 	if (sv.demorecording)
-		SV_Stop_f ();
+		SV_Stop (0);
 
 	if (Cmd_Argc () == 2)
 		dsprintf (name, "%s", Cmd_Argv (1));

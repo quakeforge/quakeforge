@@ -249,7 +249,7 @@ SV_Shutdown (void)
 		sv_fraglogfile = NULL;
 	}
 	if (sv.demorecording)
-		SV_Stop_f ();
+		SV_Stop (0);
 
 	NET_Shutdown ();
 	Con_Shutdown ();
