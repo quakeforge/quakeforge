@@ -52,6 +52,31 @@ bi_Draw_Pic (progs_t *pr)
 }
 
 static void
+bi_Draw_CenterPic (progs_t *pr)
+{
+	int         x = G_INT (pr, OFS_PARM0);
+	int         y = G_INT (pr, OFS_PARM1);
+	const char *path = G_STRING (pr, OFS_PARM2);
+	qpic_t     *pic = Draw_CachePic (path, 1);
+
+	if (!pic) {
+		Con_DPrintf ("can't load %s\n", path);
+		return;
+	}
+	Draw_Pic (x + pic->width / 2, y, pic);
+}
+
+static void
+bi_Draw_Character (progs_t *pr)
+{
+	int         x = G_INT (pr, OFS_PARM0);
+	int         y = G_INT (pr, OFS_PARM1);
+	int         c = G_INT (pr, OFS_PARM2);
+
+	Draw_Character (x, y, c);
+}
+
+static void
 bi_Draw_String (progs_t *pr)
 {
 	int         x = G_INT (pr, OFS_PARM0);
@@ -61,9 +86,34 @@ bi_Draw_String (progs_t *pr)
 	Draw_String (x, y, text);
 }
 
+static void
+bi_Draw_nString (progs_t *pr)
+{
+	int         x = G_INT (pr, OFS_PARM0);
+	int         y = G_INT (pr, OFS_PARM1);
+	const char *text = G_STRING (pr, OFS_PARM2);
+	int         n = G_INT (pr, OFS_PARM3);
+
+	Draw_nString (x, y, text, n);
+}
+
+static void
+bi_Draw_AltString (progs_t *pr)
+{
+	int         x = G_INT (pr, OFS_PARM0);
+	int         y = G_INT (pr, OFS_PARM1);
+	const char *text = G_STRING (pr, OFS_PARM2);
+
+	Draw_AltString (x, y, text);
+}
+
 void
 R_Progs_Init (progs_t *pr)
 {
 	PR_AddBuiltin (pr, "Draw_Pic", bi_Draw_Pic, -1);
+	PR_AddBuiltin (pr, "Draw_CenterPic", bi_Draw_CenterPic, -1);
+	PR_AddBuiltin (pr, "Draw_Character", bi_Draw_Character, -1);
 	PR_AddBuiltin (pr, "Draw_String", bi_Draw_String, -1);
+	PR_AddBuiltin (pr, "Draw_nString", bi_Draw_nString, -1);
+	PR_AddBuiltin (pr, "Draw_AltString", bi_Draw_AltString, -1);
 }

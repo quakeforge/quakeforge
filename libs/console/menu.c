@@ -35,6 +35,7 @@ static const char rcsid[] =
 
 #include "QF/cmd.h"
 #include "QF/console.h"
+#include "QF/csqc.h"
 #include "QF/draw.h"
 #include "QF/hash.h"
 #include "QF/plugin.h"
@@ -316,6 +317,8 @@ Menu_Init (void)
 	PR_AddBuiltin (&menu_pr_state, "Menu_Quit", bi_Menu_Quit, -1);
 
 	Cbuf_Progs_Init (&menu_pr_state);
+	File_Progs_Init (&menu_pr_state);
+	String_Progs_Init (&menu_pr_state);
 	PR_Cmds_Init (&menu_pr_state);
 	R_Progs_Init (&menu_pr_state);
 
@@ -396,7 +399,7 @@ Menu_Draw (void)
 	}
 	for (i = 0; i < menu->num_items; i++) {
 		if (menu->items[i]->text) {
-			Draw_String (menu->items[i]->x, menu->items[i]->y,
+			Draw_String (menu->items[i]->x + 8, menu->items[i]->y,
 						 menu->items[i]->text);
 		}
 	}
