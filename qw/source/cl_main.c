@@ -226,7 +226,6 @@ char        prespawn_name[] = "prespawn %i 0 %i";
 char        modellist_name[] = "modellist %i %i";
 char        soundlist_name[] = "soundlist %i %i";
 
-cvar_t     *confirm_quit;
 
 void        CL_RSShot_f (void);
 
@@ -241,11 +240,6 @@ CL_Sbar_f (cvar_t *var)
 void
 CL_Quit_f (void)
 {
-	// FIXME: MENUCODE
-//	if (confirm_quit->int_val) {
-//		M_Menu_Quit_f ();
-//		return;
-//	}
 	if (!con_module)
 		Con_Printf ("I hope you wanted to quit\n");
 	CL_Disconnect ();
@@ -1232,8 +1226,6 @@ CL_Init_Cvars (void)
 							  "vars. Required by some servers, but clearing "
 							  "this can make the difference between "
 							  "connecting and not connecting on some others.");
-	confirm_quit = Cvar_Get ("confirm_quit", "1", CVAR_ARCHIVE, NULL,
-							 "confirm quit command");
 	cl_allow_cmd_pkt = Cvar_Get ("cl_allow_cmd_pkt", "1", CVAR_NONE, NULL,
 								 "enables packets from the likes of gamespy");
 	cl_paranoid = Cvar_Get ("cl_paranoid", "1", CVAR_NONE, NULL,

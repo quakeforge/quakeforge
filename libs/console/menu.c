@@ -36,6 +36,7 @@ static const char rcsid[] =
 #include "QF/cmd.h"
 #include "QF/console.h"
 #include "QF/csqc.h"
+#include "QF/cvar.h"
 #include "QF/draw.h"
 #include "QF/hash.h"
 #include "QF/plugin.h"
@@ -68,6 +69,8 @@ typedef struct menu_item_s {
 	const char *text;
 	menu_pic_t *pics;
 } menu_item_t;
+
+static cvar_t  *confirm_quit;
 
 static progs_t  menu_pr_state;
 static menu_item_t *menu;
@@ -326,7 +329,7 @@ togglemenu_f (void)
 static void
 quit_f (void)
 {
-	if (menu_quit) {
+	if (confirm_quit->int_val && menu_quit) {
 		PR_ExecuteProgram (&menu_pr_state, menu_quit);
 		if (!G_INT (&menu_pr_state, OFS_RETURN))
 			return;
@@ -383,6 +386,9 @@ Menu_Init (void)
 	Key_Progs_Init (&menu_pr_state);
 	PR_Cmds_Init (&menu_pr_state);
 	R_Progs_Init (&menu_pr_state);
+
+	confirm_quit = Cvar_Get ("confirm_quit", "1", CVAR_ARCHIVE, NULL,
+							 "confirm quit command");
 
 	Cmd_AddCommand ("togglemenu", togglemenu_f,
 					"Toggle the display of the menu");
