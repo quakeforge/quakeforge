@@ -1907,6 +1907,7 @@ PF_rotate_bbox (progs_t *pr)
 	float      *ma = G_VECTOR (pr, OFS_PARM5);
 	vec3_t      m[3];
 	vec3_t      mins, maxs;
+	float      *verts[6] = {maxs, mins, maxs, mins, maxs, mins};
 	hull_t     *hull = &pf_hull_list[h];
 	int         i, j;
 	vec3_t      v[8], d;
@@ -1951,29 +1952,11 @@ PF_rotate_bbox (progs_t *pr)
 	//Con_Printf ("'%0.1f %0.1f %0.1f'\n", hull->clip_maxs[0], hull->clip_maxs[1], hull->clip_maxs[2]);
 
 	// now set up the clip planes
-	hull->planes[0].dist = DotProduct (dir[1], maxs);
-	hull->planes[0].type = 4;
-	VectorCopy (dir[1], hull->planes[0].normal);
-
-	hull->planes[1].dist = DotProduct (dir[1], mins);
-	hull->planes[1].type = 4;
-	VectorCopy (dir[1], hull->planes[1].normal);
-
-	hull->planes[2].dist = DotProduct (dir[0], maxs);
-	hull->planes[2].type = 4;
-	VectorCopy (dir[0], hull->planes[2].normal);
-
-	hull->planes[3].dist = DotProduct (dir[0], mins);
-	hull->planes[3].type = 4;
-	VectorCopy (dir[0], hull->planes[3].normal);
-
-	hull->planes[4].dist = DotProduct (dir[2], maxs);
-	hull->planes[4].type = 4;
-	VectorCopy (dir[2], hull->planes[4].normal);
-
-	hull->planes[5].dist = DotProduct (dir[2], mins);
-	hull->planes[5].type = 4;
-	VectorCopy (dir[2], hull->planes[5].normal);
+	for (i = 0; i < 6; i++) {
+		hull->planes[i].dist = DotProduct (dir[i / 2], verts[i]);
+		hull->planes[i].type = 4;
+		VectorCopy (dir[i / 2], hull->planes[i].normal);
+	}
 }
 
 
