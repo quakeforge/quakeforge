@@ -63,9 +63,10 @@ static const char rcsid[] =
 typedef struct ucmd_s {
 	const char *name;
 	void        (*func) (struct ucmd_s *cmd);
-	int         no_redirect;
+	unsigned    no_redirect:1;
+	unsigned    overridable:1;
+	unsigned    freeable:1;
 	func_t      qc_hook;
-	int         freeable;
 } ucmd_t;
 
 edict_t    *sv_player;
@@ -1192,35 +1193,35 @@ SV_NoSnap_f (ucmd_t *cmd)
 }
 
 ucmd_t      ucmds[] = {
-	{"new", SV_New_f},
-	{"modellist", SV_Modellist_f},
-	{"soundlist", SV_Soundlist_f},
-	{"prespawn", SV_PreSpawn_f},
-	{"spawn", SV_Spawn_f},
-	{"begin", SV_Begin_f, 1},
+	{"new",			SV_New_f,			0, 0},
+	{"modellist",	SV_Modellist_f,		0, 0},
+	{"soundlist",	SV_Soundlist_f,		0, 0},
+	{"prespawn",	SV_PreSpawn_f,		0, 0},
+	{"spawn",		SV_Spawn_f,			0, 0},
+	{"begin",		SV_Begin_f,			1, 0},
 
-	{"drop", SV_Drop_f},
-	{"pings", SV_Pings_f},
+	{"drop",		SV_Drop_f,			0, 0},
+	{"pings",		SV_Pings_f,			0, 0},
 
 // issued by hand at client consoles    
-	{"rate", SV_Rate_f},
-	{"kill", SV_Kill_f, 1},
-	{"pause", SV_Pause_f, 1},
-	{"msg", SV_Msg_f},
+	{"rate",		SV_Rate_f,			0, 0},
+	{"kill",		SV_Kill_f,			1, 1},
+	{"pause",		SV_Pause_f,			1, 0},
+	{"msg",			SV_Msg_f,			0, 0},
 
-	{"say", SV_Say_f, 1},
-	{"say_team", SV_Say_Team_f, 1},
+	{"say",			SV_Say_f,			1, 1},
+	{"say_team",	SV_Say_Team_f,		1, 1},
 
-	{"setinfo", SV_SetInfo_f, 1},
+	{"setinfo",		SV_SetInfo_f,		1, 0},
 
-	{"serverinfo", SV_ShowServerinfo_f},
+	{"serverinfo",	SV_ShowServerinfo_f,0, 0},
 
-	{"download", SV_BeginDownload_f, 1},
-	{"nextdl", SV_NextDownload_f},
+	{"download",	SV_BeginDownload_f, 1, 0},
+	{"nextdl",		SV_NextDownload_f,	0, 0},
 
-	{"ptrack", SV_PTrack_f},			// ZOID - used with autocam
+	{"ptrack",		SV_PTrack_f,		0, 1},		// ZOID - used with autocam
 
-	{"snap", SV_NoSnap_f},
+	{"snap",		SV_NoSnap_f,		0, 0},
 
 };
 
@@ -1257,11 +1258,11 @@ SV_AddUserCommand (progs_t *pr)
 	const char *name = P_STRING (pr, 0);
 
 	cmd = Hash_Find (ucmd_table, name);
-	if (cmd) {
+	if (cmd && !cmd->overridable) {
 		SV_Printf ("%s already a user command\n", name);
 		return;
 	}
-	cmd = malloc (sizeof (ucmd_t));
+	cmd = calloc (1, sizeof (ucmd_t));
 	cmd->freeable = 1;
 	cmd->name = strdup (name);
 	cmd->func = call_qc_hook;
