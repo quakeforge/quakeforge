@@ -356,12 +356,13 @@ Qgets (QFile *file, char *buf, int count)
 	}
 	if (file->file)
 		buf = fgets (buf, count, file->file);
+	else {
 #ifdef HAVE_ZLIB
-	else
 		buf = gzgets (file->gzfile, buf, count);
 #else
-	return 0;
+		return 0;
 #endif
+	}
 	return buf ? ret : 0;
 }
 
