@@ -1323,6 +1323,11 @@ binary_expr (int op, expr_t *e1, expr_t *e2)
 					goto type_mismatch;
 				}
 				break;
+			case ev_pointer:
+				if (!type_assignable (t1, t2) && !type_assignable (t2, t1))
+					goto type_mismatch;
+				type = t1;
+				break;
 			default:
 			  type_mismatch:
 				return type_mismatch (e1, e2, op);
