@@ -21,7 +21,7 @@ typedef struct {
 	statref_t	*refs;
 	dstatement_t *statement;
 	char *name;
-} label_t;
+} elabel_t;
 
 typedef struct {
 	struct expr_s *head;
@@ -43,7 +43,7 @@ typedef struct expr_s {
 	string_t	file;
 	int			paren;
 	union {
-		label_t label;
+		elabel_t label;
 		block_t block;
 		struct {
 			int		op;

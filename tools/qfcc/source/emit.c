@@ -324,7 +324,7 @@ emit_expr (expr_t *e)
 	def_t *def_a;
 	def_t *def_b;
 	statref_t *ref;
-	label_t *label;
+	elabel_t *label;
 	//opcode_t *op;
 
 	switch (e->type) {
