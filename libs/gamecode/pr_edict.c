@@ -1006,7 +1006,7 @@ var_get_key (void *d, void *_pr)
 }
 
 void
-_PR_LoadProgs (progs_t * pr, const char *progsname)
+PR_LoadProgsFile (progs_t * pr, const char *progsname)
 {
 	int         i;
 
@@ -1017,6 +1017,7 @@ _PR_LoadProgs (progs_t * pr, const char *progsname)
 	if (!pr->progs)
 		return;
 
+	pr->progs_size = com_filesize;
 	Con_DPrintf ("Programs occupy %iK.\n", com_filesize / 1024);
 
 	// store prog crc
@@ -1119,7 +1120,7 @@ PR_LoadProgs (progs_t * pr, const char *progsname)
 	int         i;
 	dstatement_t *st;
 
-	_PR_LoadProgs (pr, progsname);
+	PR_LoadProgsFile (pr, progsname);
 	if (!pr->progs)
 		return;
 

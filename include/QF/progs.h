@@ -70,7 +70,7 @@ void PR_Init_Cvars (void);
 
 void PR_PrintStatement (progs_t * pr, dstatement_t *s);
 void PR_ExecuteProgram (progs_t *pr, func_t fnum);
-progs_t *PR_LoadProgsFile (const char *progsname);
+void PR_LoadProgsFile (progs_t *pr, const char *progsname);
 void PR_LoadProgs (progs_t *pr, const char *progsname);
 void PR_LoadStrings (progs_t *pr);
 void PR_LoadDebug (progs_t *pr);
@@ -137,6 +137,7 @@ extern	int		type_size[8];
 typedef void (*builtin_t) (progs_t *pr);
 
 ddef_t *PR_FindGlobal (progs_t *pr, const char *name);
+ddef_t *ED_GlobalAtOfs (progs_t * pr, int ofs);
 
 pr_type_t *PR_GetGlobalPointer (progs_t *pr, const char *name);
 func_t PR_GetFunctionIndex (progs_t *pr, const char *name);
@@ -198,6 +199,7 @@ typedef struct strref_s {
 struct progs_s {
 	const char		*progs_name;
 	dprograms_t		*progs;
+	int				progs_size;
 
 	struct hashtab_s *function_hash;
 	struct hashtab_s *global_hash;
