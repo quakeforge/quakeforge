@@ -668,7 +668,9 @@ QF_maGiC_VALUE
 #endif
 		],
 		SOUND_TYPES="$SOUND_TYPES OSS"
-		HAVE_OSS=yes,
+		HAVE_OSS=yes
+		OSS_LIBS=
+		,
 		AC_EGREP_CPP([QF_maGiC_VALUE],
 			[
 #include <linux/soundcard.h>
@@ -677,7 +679,9 @@ QF_maGiC_VALUE
 #endif
 			],
 			SOUND_TYPES="$SOUND_TYPES OSS"
-			HAVE_OSS=yes,
+			HAVE_OSS=yes
+			OSS_LIBS=
+			,
 			AC_EGREP_CPP([QF_maGiC_VALUE],
 				[
 #include <machine/soundcard.h>
@@ -687,11 +691,13 @@ QF_maGiC_VALUE
 				],
 				SOUND_TYPES="$SOUND_TYPES OSS"
 				HAVE_OSS=yes
+				OSS_LIBS=
 			)
 		)
 	)
 fi
 AC_SUBST(HAVE_OSS)
+AC_SUBST(OSS_LIBS)
 
 dnl SDL digital audio
 if test "x$HAVE_SDL" = "xyes"; then
