@@ -309,14 +309,14 @@ R_LightningBloodEffect_QF (const vec3_t org)
 
 	if (numparticles >= r_maxparticles)
 		return;
-	particle_new (pt_smokecloud, part_tex_smoke, org, 3, vec3_origin,
+	particle_new (pt_smokecloud, part_tex_smoke, org, 3.0, vec3_origin,
 				  r_realtime + 9.0, 12 + (rand () & 3),
 				  0.25 + qfrandom (0.125), 0.0);
 
 	if (numparticles + count >= r_maxparticles)
 		count = r_maxparticles - numparticles;
 	while (count--)
-		particle_new_random (pt_fallfadespark, part_tex_spark, org, 12, 2,
+		particle_new_random (pt_fallfadespark, part_tex_spark, org, 12, 2.0,
 							 128, r_realtime + 5.0, 244 + (rand () % 3), 1.0,
 							 0.0);
 }
@@ -372,14 +372,14 @@ R_KnightSpikeEffect_QF (const vec3_t org)
 
 	if (numparticles >= r_maxparticles)
 		return;
-	particle_new (pt_smokecloud, part_tex_smoke, org, 1, vec3_origin,
-				  r_realtime + 9, 234, 0.25 + qfrandom (0.125), 0.0);
+	particle_new (pt_smokecloud, part_tex_smoke, org, 1.0, vec3_origin,
+				  r_realtime + 9.0, 234, 0.25 + qfrandom (0.125), 0.0);
 
 	if (numparticles + count >= r_maxparticles)
 		count = r_maxparticles - numparticles;
 	while (count--)
 		particle_new_random (pt_fallfadespark, part_tex_dot, org, 6, 0.7, 96,
-							 r_realtime + 5, 234, 1.0, 0.0);
+							 r_realtime + 5.0, 234, 1.0, 0.0);
 }
 
 void
@@ -389,15 +389,14 @@ R_WizSpikeEffect_QF (const vec3_t org)
 
 	if (numparticles >= r_maxparticles)
 		return;
-	particle_new (pt_smokecloud, part_tex_smoke, org, 2, vec3_origin,
-				  r_realtime + 9, 52 + (rand () & 3), 0.25 + qfrandom (0.125),
-				  0.0);
+	particle_new (pt_smokecloud, part_tex_smoke, org, 2.0, vec3_origin,
+				  r_realtime + 9.0, 63, 0.25 + qfrandom (0.125), 0.0);
 
 	if (numparticles + count >= r_maxparticles)
 		count = r_maxparticles - numparticles;
 	while (count--)
 		particle_new_random (pt_fallfadespark, part_tex_dot, org, 12, 0.7, 96,
-							 r_realtime + 5, 52 + (rand () & 3), 1.0, 0.0);
+							 r_realtime + 5.0, 63, 1.0, 0.0);
 }
 
 void
@@ -430,7 +429,7 @@ R_LavaSplash_QF (const vec3_t org)
 			vel = 50 + (rnd & 63);
 			VectorScale (dir, vel, pvel);
 			particle_new (pt_grav, part_tex_dot, porg, 3, pvel,
-						  r_realtime + 2 + ((rnd >> 7) & 31) * 0.02,
+						  r_realtime + 2.0 + ((rnd >> 7) & 31) * 0.02,
 						  224 + ((rnd >> 12) & 7), 0.75, 0.0);
 		}
 	}
