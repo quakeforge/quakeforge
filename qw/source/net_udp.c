@@ -275,7 +275,7 @@ NET_GetPacket (void)
 #endif /* _WIN32 */
 		if (err == EWOULDBLOCK)
 			return false;
-		Con_Printf ("NET_GetPacket: %s\n", strerror (err));
+		Con_Printf ("NET_GetPacket: %d: %s\n", err, strerror (err));
 		return false;
 	}
 
