@@ -175,7 +175,7 @@ static NSMutableDictionary	*displayedValues = nil;
 	if (sharedInstance) {
 		[self dealloc];
 	} else {
-		[super init];
+		self = [super init];
 		currentValues = [[self preferencesFromDefaults] mutableCopy];
 		[self discardDisplayedValues];
 		sharedInstance = self;
