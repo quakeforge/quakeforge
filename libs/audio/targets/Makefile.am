@@ -1,6 +1,7 @@
 INCLUDES= -I$(top_srcdir)/include
 
-lib_LTLIBRARIES = libQFsound.la
+lib_LTLIBRARIES = @SND_TARGETS@
+EXTRA_LTLIBRARIES = libQFsound.la
 
 libQFsound_la_LDFLAGS = -version-info 1:0:0 $(CD_LIBS)
 
@@ -36,5 +37,8 @@ endif
 if SNDTYPE_NULL
 libQFsound_la_SOURCES=	snd_common.c snd_null.c
 endif
+libQFsound.la: $(libQFsound_la_OBJECTS) $(libQFsound_la_DEPENDENCIES)
+	$(LINK) -rpath $(libdir) $(libQFsound_la_LDFLAGS) $(libQFsound_la_OBJECTS) $(libQFsound_la_LIBADD) $(LIBS)
+
 
 LIBLIST = libQFsound.la @LIBRARY_SEARCH_PATH@

@@ -1,7 +1,7 @@
 INCLUDES= -I$(top_srcdir)/include $(GGI_CFLAGS) $(MGL_CFLAGS) $(SDL_CFLAGS) $(SVGA_CFLAGS) $(X_CFLAGS) $(GLX_CFLAGS) $(TDFXGL_CFLAGS)
 
-lib_LTLIBRARIES =	libQFjs.la @VID_TARGETS@
-EXTRA_LTLIBRARIES = libQFfbdev.la libQFsvga.la libQFx11.la libQFglx.la libQFsdl.la libQFsgl.la libQFtdfx.la libQFwgl.la libQFmgl.la
+lib_LTLIBRARIES =	@VID_TARGETS@
+EXTRA_LTLIBRARIES = libQFjs.la libQFfbdev.la libQFsvga.la libQFx11.la libQFglx.la libQFsdl.la libQFsgl.la libQFtdfx.la libQFwgl.la libQFmgl.la
 
 libQFjs_la_LDFLAGS=	-version-info 1:0:0
 
@@ -15,6 +15,8 @@ if JOYTYPE_NULL
 libQFjs_la_SOURCES=      joy.c joy_null.c
 endif
 libQFjs_la_CFLAGS=       $(JOY_CFLAGS)
+libQFjs.la: $(libQFjs_la_OBJECTS) $(libQFjs_la_DEPENDENCIES)
+	$(LINK) -rpath $(libdir) $(libQFjs_la_LDFLAGS) $(libQFjs_la_OBJECTS) $(libQFjs_la_LIBADD) $(LIBS)
 
 # Linux FBdev
 YFLAGS = -d
