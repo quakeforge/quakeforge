@@ -175,6 +175,8 @@ CL_ClearState (void)
 	// wipe the entire cl structure
 	memset (&cl, 0, sizeof (cl));
 
+	CL_Init_Entity (&cl.viewent);
+
 	SZ_Clear (&cls.message);
 
 	// clear other arrays   
@@ -192,11 +194,7 @@ CL_ClearState (void)
 
 	for (i = 0; i < MAX_EDICTS; i++) {
 		cl_baselines[i].ent = &cl_entities[i];
-		cl_entities[i].colormod[0] = cl_entities[i].colormod[1] =
-			cl_entities[i].colormod[2] = cl_entities[i].colormod[3] = 1.0;
-		cl_entities[i].scale = 16.0;
-		cl_entities[i].glow_size = 0.0;
-		cl_entities[i].glow_color = 254;
+		CL_Init_Entity (cl_entities + i);
 	}
 }
 

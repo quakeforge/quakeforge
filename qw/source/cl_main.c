@@ -401,6 +401,13 @@ CL_ClearState (void)
 {
 	S_StopAllSounds (true);
 
+	// wipe the entire cl structure
+	Info_Destroy (cl.serverinfo);
+	memset (&cl, 0, sizeof (cl));
+	cl.serverinfo = Info_ParseString ("", MAX_INFO_STRING);
+
+	CL_Init_Entity (&cl.viewent);
+
 	Con_DPrintf ("Clearing memory\n");
 	D_FlushCaches ();
 	Mod_ClearAll ();
@@ -413,11 +420,6 @@ CL_ClearState (void)
 	R_ClearEfrags ();
 	R_ClearDlights ();
 	R_ClearParticles ();
-
-	// wipe the entire cl structure
-	Info_Destroy (cl.serverinfo);
-	memset (&cl, 0, sizeof (cl));
-	cl.serverinfo = Info_ParseString ("", MAX_INFO_STRING);
 
 	SZ_Clear (&cls.netchan.message);
 

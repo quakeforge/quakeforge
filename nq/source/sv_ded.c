@@ -120,6 +120,11 @@ CL_Init (void)
 }
 
 void
+CL_Init_Entity (entity_t *ent)
+{
+}
+
+void
 CL_InitCvars (void)
 {
 	cl_name = Cvar_Get ("_cl_name", "player", CVAR_ARCHIVE, NULL, "");
