@@ -1150,11 +1150,6 @@ CL_Init (void)
 
 	CL_SetState (ca_disconnected);
 
-	Info_SetValueForKey (cls.userinfo, "name", "unnamed", 0);
-	Info_SetValueForKey (cls.userinfo, "topcolor", "0", 0);
-	Info_SetValueForKey (cls.userinfo, "bottomcolor", "0", 0);
-	Info_SetValueForKey (cls.userinfo, "rate", "2500", 0);
-	Info_SetValueForKey (cls.userinfo, "msg", "1", 0);
 	snprintf (st, sizeof (st), "%s", QW_VERSION);
 	Info_SetValueForStarKey (cls.userinfo, "*ver", st, 0);
 
