@@ -289,6 +289,7 @@ void
 _encode_type (dstring_t *encoding, type_t *type, int level)
 {
 	struct_field_t *field;
+	int         i, count;
 
 	switch (type->type) {
 		case ev_void:
@@ -310,7 +311,17 @@ _encode_type (dstring_t *encoding, type_t *type, int level)
 			dstring_appendstr (encoding, "F");
 			break;
 		case ev_func:
-			dstring_appendstr (encoding, "?");
+			dstring_appendstr (encoding, "(");
+			_encode_type (encoding, type->aux_type, level + 1);
+			if (type->num_parms < 0)
+				count = -type->num_parms - 1;
+			else
+				count = type->num_parms;
+			for (i = 0; i < count; i++)
+				_encode_type (encoding, type->parm_types[i], level + 1);
+			if (type->num_parms < 0)
+				dstring_appendstr (encoding, ".");
+			dstring_appendstr (encoding, ")");
 			break;
 		case ev_pointer:
 			type = type->aux_type;
@@ -321,6 +332,12 @@ _encode_type (dstring_t *encoding, type_t *type, int level)
 				case ev_class:
 					dstring_appendstr (encoding, "#");
 					break;
+				case ev_struct:
+					if (type == type_SEL.aux_type) {
+						dstring_appendstr (encoding, ":");
+						break;
+					}
+					// fall through
 				default:
 					dstring_appendstr (encoding, "^");
 					_encode_type (encoding, type, level + 1);
