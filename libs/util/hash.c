@@ -90,6 +90,33 @@ Hash_String (const char *str)
 #endif
 }
 
+unsigned long
+Hash_Buffer (const void *_buf, int len)
+{
+	const unsigned char *buf = _buf;
+#if 0
+	unsigned long h = 0;
+	while (len-- > 0) {
+		h = (h << 4) + (unsigned char)*buf++;
+		if (h&0xf0000000)
+			h = (h ^ (h >> 24)) & 0xfffffff;
+	}
+	return h;
+#else
+	// dx_hack_hash 
+	// shamelessly stolen from Daniel Phillips <phillips@innominate.de>
+	// from his post to lkml
+	unsigned long hash0 = 0x12a3fe2d, hash1 = 0x37abe8f9;
+	while (len-- > 0) {
+		unsigned long hash = hash1 + (hash0 ^ ((unsigned char)*buf++ * 71523));
+		if (hash < 0) hash -= 0x7fffffff;
+		hash1 = hash0;
+		hash0 = hash;
+	}
+	return hash0;
+#endif
+}
+
 static unsigned long
 get_hash (void *ele, void *data)
 {

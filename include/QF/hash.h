@@ -125,6 +125,11 @@ void *Hash_DelElement (hashtab_t *tab, void *ele);
 unsigned long Hash_String (const char *str);
 
 /*
+	returh the hash value of a buffer.
+*/
+unsigned long Hash_Buffer (const void *buf, int len);
+
+/*
 	return a list of all elements in the table. it is the caller's
 	responsibilty to free() the array. Null terminated.
 */
