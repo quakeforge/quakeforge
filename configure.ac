@@ -2002,6 +2002,7 @@ AC_OUTPUT(
 	ruamoko/include/Makefile
 	ruamoko/lib/Makefile
 	ruamoko/game/Makefile
+	ruamoko/cl_menu/Makefile
 
 	doc/Makefile
 	doc/man/Makefile
