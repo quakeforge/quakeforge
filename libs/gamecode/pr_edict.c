@@ -478,7 +478,7 @@ ED_Print (progs_t * pr, edict_t *ed)
 		type = d->type & ~DEF_SAVEGLOBAL;
 
 		for (j = 0; j < type_size[type]; j++)
-			if (((char*)v)[j])
+			if (v[j].int_var)
 				break;
 		if (j == type_size[type])
 			continue;
