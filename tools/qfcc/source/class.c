@@ -183,7 +183,9 @@ class_find_method (class_t *class, method_t *method)
 			return m;
 	sel = dstring_newstr ();
 	selector_name (sel, (keywordarg_t *)method->selector);
-	warning (0, "method %s not in %s%s", sel->str, class->class_name,
+	warning (0, "%s method %s not in %s%s",
+			 method->instance ? "instance" : "class",
+			 sel->str, class->class_name,
 			 class->category_name ? va (" (%s)", class->category_name) : "");
 	dstring_delete (sel);
 	return method;

@@ -138,12 +138,10 @@ copy_methods (methodlist_t *dst, methodlist_t *src)
 int
 method_compare (method_t *m1, method_t *m2)
 {
-	int         res;
-
-	res = strcmp (m1->name, m2->name) == 0
-		&& strcmp (m1->types, m2->types) == 0;
-
-	return res;
+	if (m1->instance != m2->instance)
+		return 0;
+	return strcmp (m1->name, m2->name) == 0
+			&& strcmp (m1->types, m2->types) == 0;
 }
 
 keywordarg_t *
