@@ -1185,7 +1185,7 @@ ucmd_t      ucmds[] = {
 	{"say", SV_Say_f, 1},
 	{"say_team", SV_Say_Team_f, 1},
 
-	{"setinfo", SV_SetInfo_f},
+	{"setinfo", SV_SetInfo_f, 1},
 
 	{"serverinfo", SV_ShowServerinfo_f},
 
