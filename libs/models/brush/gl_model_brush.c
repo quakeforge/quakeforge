@@ -43,6 +43,8 @@ static const char rcsid[] =
 #include "QF/model.h"
 #include "QF/qendian.h"
 #include "QF/sys.h"
+#include "QF/texture.h"
+#include "QF/tga.h"
 #include "QF/vfs.h"
 #include "QF/GL/qf_textures.h"
 
@@ -61,6 +63,33 @@ Mod_ProcessTexture (miptex_t *mt, texture_t *tx)
 	tx->gl_texturenum =
 		GL_LoadTexture (mt->name, tx->width, tx->height, (byte *) (tx + 1),
 						true, false, 1);
+}
+
+void
+Mod_LoadExternalTextures (model_t *mod)
+{
+	texture_t	*tx;
+	char		filename[MAX_QPATH + 4];
+	VFile		*f;
+	tex_t		*targa;
+	int i;
+
+	for (i = 0; i < mod->numtextures; i++)
+	{
+		tx = mod->textures[i];
+	 	snprintf (filename, sizeof (filename), "maps/%s.tga", tx->name);
+		COM_FOpenFile (filename, &f);
+		if (f) {
+			targa = LoadTGA (f);
+			Qclose (f);
+			if (targa->format < 4)
+				tx->gl_texturenum = GL_LoadTexture (tx->name, targa->width,
+					targa->height, targa->data, true, false, 3);
+			else
+				tx->gl_texturenum = GL_LoadTexture (tx->name, targa->width,
+					targa->height, targa->data, true, true, 4);
+		}
+	}
 }
 
 void

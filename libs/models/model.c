@@ -225,6 +225,7 @@ Mod_RealLoadModel (model_t *mod, qboolean crash, cache_allocator_t allocator)
 
 		default:
 			Mod_LoadBrushModel (mod, buf);
+			Mod_LoadExternalTextures (mod);
 			break;
 	}
 

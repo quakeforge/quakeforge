@@ -68,6 +68,11 @@ Mod_ProcessTexture (miptex_t *mx, texture_t *tx)
 }
 
 void
+Mod_LoadExternalTextures (model_t *mod)
+{
+}
+
+void
 GL_SubdivideSurface (msurface_t *fa)
 {
 }
