@@ -31,7 +31,7 @@ dnl Get the cflags and libraries from the sdl-config script
 dnl
 AC_ARG_WITH(sdl-prefix,[  --with-sdl-prefix=PFX   Prefix where SDL is installed (optional)],
             sdl_prefix="$withval", sdl_prefix="")
-AC_ARG_WITH(sdl-exec-prefix,[  --with-sdl-exec-prefix=PFX Exec prefix where SDL is installed (optional)],
+AC_ARG_WITH(sdl-exec-prefix,[  --with-sdl-exec-prefix=PFX   Exec prefix where SDL is installed (optional)],
             sdl_exec_prefix="$withval", sdl_exec_prefix="")
 AC_ARG_ENABLE(sdltest, [  --disable-sdltest       Do not try to compile and run a test SDL program],
 		    , enable_sdltest=yes)
@@ -414,7 +414,7 @@ AC_DEFUN(AM_PATH_OGG,
 [dnl 
 dnl Get the cflags and libraries
 dnl
-AC_ARG_WITH(ogg,[  --with-ogg=PFX   Prefix where libogg is installed (optional)], ogg_prefix="$withval", ogg_prefix="")
+AC_ARG_WITH(ogg,[  --with-ogg=PFX          Prefix where libogg is installed (optional)], ogg_prefix="$withval", ogg_prefix="")
 AC_ARG_WITH(ogg-libraries,[  --with-ogg-libraries=DIR   Directory where libogg library is installed (optional)], ogg_libraries="$withval", ogg_libraries="")
 AC_ARG_WITH(ogg-includes,[  --with-ogg-includes=DIR   Directory where libogg header files are installed (optional)], ogg_includes="$withval", ogg_includes="")
 AC_ARG_ENABLE(oggtest, [  --disable-oggtest       Do not try to compile and run a test Ogg program],, enable_oggtest=yes)
@@ -518,7 +518,7 @@ AC_DEFUN(AM_PATH_VORBIS,
 [dnl 
 dnl Get the cflags and libraries
 dnl
-AC_ARG_WITH(vorbis,[  --with-vorbis=PFX   Prefix where libvorbis is installed (optional)], vorbis_prefix="$withval", vorbis_prefix="")
+AC_ARG_WITH(vorbis,[  --with-vorbis=PFX       Prefix where libvorbis is installed (optional)], vorbis_prefix="$withval", vorbis_prefix="")
 AC_ARG_WITH(vorbis-libraries,[  --with-vorbis-libraries=DIR   Directory where libvorbis library is installed (optional)], vorbis_libraries="$withval", vorbis_libraries="")
 AC_ARG_WITH(vorbis-includes,[  --with-vorbis-includes=DIR   Directory where libvorbis header files are installed (optional)], vorbis_includes="$withval", vorbis_includes="")
 AC_ARG_ENABLE(vorbistest, [  --disable-vorbistest       Do not try to compile and run a test Vorbis program],, enable_vorbistest=yes)

@@ -562,7 +562,7 @@ if test "x$enable_zlib" != "xno"; then
 fi
 
 AC_ARG_ENABLE(png,
-[  --disable-png           disaple png support],
+[  --disable-png           disable png support],
 )
 HAVE_PNG=no
 PNG_LIBS=""
