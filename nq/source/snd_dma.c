@@ -91,6 +91,10 @@ int         sound_started = 0;
 cvar_t     *bgmvolume;
 cvar_t     *volume;
 
+cvar_t     *snd_device;
+cvar_t     *snd_rate;
+cvar_t     *snd_bits;
+cvar_t     *snd_stereo;
 cvar_t     *nosound;
 cvar_t     *precache;
 cvar_t     *loadas8bit;
@@ -200,6 +204,14 @@ S_Init (void)
 	Cmd_AddCommand ("soundlist", S_SoundList, "No Description");
 	Cmd_AddCommand ("soundinfo", S_SoundInfo_f, "No Description");
 
+	snd_device = Cvar_Get ("snd_device", "", CVAR_ROM,
+						   "sound device. \"\" is system default");
+	snd_rate = Cvar_Get ("snd_rate", "0", CVAR_ROM,
+						 "sound playback rate. 0 is system default");
+	snd_bits = Cvar_Get ("snd_bits", "0", CVAR_ROM,
+						 "sound sample depth. 0 is system default");
+	snd_stereo = Cvar_Get ("snd_stereo", "1", CVAR_ROM,
+						   "sound stereo output");
 	nosound = Cvar_Get ("nosound", "0", CVAR_NONE, "None");
 	volume = Cvar_Get ("volume", "0.7", CVAR_ARCHIVE, "None");
 	precache = Cvar_Get ("precache", "1", CVAR_NONE, "None");

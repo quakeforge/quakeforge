@@ -50,7 +50,7 @@ size_t      buffer_size;
 qboolean
 SNDDMA_Init (void)
 {
-	int         err, i;
+	int         err;
 	int         rate = -1, bps = -1, stereo = -1, frag_size;
 	snd_pcm_hw_params_t *hw;
 	snd_pcm_sw_params_t *sw;
@@ -58,29 +58,23 @@ SNDDMA_Init (void)
 	snd_pcm_hw_params_alloca (&hw);
 	snd_pcm_sw_params_alloca (&sw);
 
-	if ((i = COM_CheckParm ("-sndpcm")) != 0) {
-		pcmname = com_argv[i + 1];
-	}
-	if ((i = COM_CheckParm ("-sndbits")) != 0) {
-		bps = atoi (com_argv[i + 1]);
+	if (snd_device->string[0])
+		pcmname = snd_device->string;
+	if (snd_bits->int_val) {
+		bps = snd_bits->int_val;
 		if (bps != 16 && bps != 8) {
-			Con_Printf ("Error: invalid sample bits: %d\n", i);
+			Con_Printf ("Error: invalid sample bits: %d\n", bps);
 			return 0;
 		}
 	}
-	if ((i = COM_CheckParm ("-sndspeed")) != 0) {
-		rate = atoi (com_argv[i + 1]);
+	if (snd_rate->int_val) {
+		rate = snd_rate->int_val;
 		if (rate != 44100 && rate != 22050 && rate != 11025) {
 			Con_Printf ("Error: invalid sample rate: %d\n", rate);
 			return 0;
 		}
 	}
-	if ((i = COM_CheckParm ("-sndmono")) != 0) {
-		stereo = 0;
-	}
-	if ((i = COM_CheckParm ("-sndstereo")) != 0) {
-		stereo = 1;
-	}
+	stereo = snd_stereo->int_val;
 	if (!pcmname)
 		pcmname = "plug:0,0";
 	if ((err = snd_pcm_open (&pcm, pcmname,
