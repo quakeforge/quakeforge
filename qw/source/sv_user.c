@@ -333,7 +333,6 @@ SV_Spawn_f (void)
 	int         i;
 	client_t   *client;
 	edict_t    *ent;
-	pr_type_t  *val;
 	int         n;
 
 	if (host_client->state != cs_connected) {
@@ -397,13 +396,11 @@ SV_Spawn_f (void)
 	SVstring (ent, netname) = PR_SetString (&sv_pr_state, host_client->name);
 
 	host_client->entgravity = 1.0;
-	val = GetEdictFieldValue (&sv_pr_state, ent, "gravity");
-	if (val)
-		val->float_var = 1.0;
+	if (sv_fields.gravity != -1)
+		SVfloat (ent, gravity) = 1.0;
 	host_client->maxspeed = sv_maxspeed->value;
-	val = GetEdictFieldValue (&sv_pr_state, ent, "maxspeed");
-	if (val)
-		val->float_var = sv_maxspeed->value;
+	if (sv_fields.maxspeed != -1)
+		SVfloat (ent, gravity) = sv_maxspeed->value;
 
 //
 // force stats to be updated

@@ -339,6 +339,9 @@ SV_LoadProgs (void)
 	sv_fields.glow_color = ED_GetFieldIndex (&sv_pr_state, "glow_color");
 	sv_fields.colormod = ED_GetFieldIndex (&sv_pr_state, "colormod");
 
+	sv_fields.gravity = ED_GetFieldIndex (&sv_pr_state, "gravity");
+	sv_fields.maxspeed = ED_GetFieldIndex (&sv_pr_state, "maxspeed");
+
 	def = PR_FindGlobal (&sv_pr_state, "current_skill");
 	if (def)
 		sv_globals.current_skill = (float *) &sv_pr_state.pr_globals[def->ofs];

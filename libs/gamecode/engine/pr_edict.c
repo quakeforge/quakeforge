@@ -206,19 +206,6 @@ ED_Free (progs_t * pr, edict_t *ed)
 
 //===========================================================================
 
-pr_type_t     *
-GetEdictFieldValue (progs_t * pr, edict_t *ed, const char *field)
-{
-	ddef_t     *def;
-
-	def = ED_FindField (pr, field);
-
-	if (!def)
-		return NULL;
-
-	return &ed->v[def->ofs];
-}
-
 /*
 	PR_ValueString
 

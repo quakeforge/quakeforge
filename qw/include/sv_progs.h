@@ -156,6 +156,9 @@ typedef struct
 	int			glow_size;
 	int			glow_color;
 	int			colormod;
+
+	int			gravity;
+	int			maxspeed;
 } sv_fields_t;
 
 extern sv_fields_t sv_fields;

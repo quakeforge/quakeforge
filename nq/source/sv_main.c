@@ -513,7 +513,6 @@ SV_WriteClientdataToMessage (edict_t *ent, sizebuf_t *msg)
 {
 	int         bits, items, i;
 	edict_t    *other;
-	pr_type_t  *val;
 
 	// send a damage message
 	if (SVfloat (ent, dmg_take) || SVfloat (ent, dmg_save)) {
@@ -549,13 +548,12 @@ SV_WriteClientdataToMessage (edict_t *ent, sizebuf_t *msg)
 
 	// stuff the sigil bits into the high bits of items for sbar, or else
 	// mix in items2
-	val = GetEdictFieldValue (&sv_pr_state, ent, "items2");
-
-	if (val)
-		items = (int) SVfloat (ent, items) | ((int) val->float_var << 23);
+	if (sv_fields.items2 != -1)
+		items = (int) SVfloat (ent, items) | ((int) SVfloat (ent, items2)
+											  << 23);
 	else
-		items = (int) SVfloat (ent, items) | ((int) *sv_globals.serverflags <<
-											  28);
+		items = (int) SVfloat (ent, items) | ((int) *sv_globals.serverflags
+											  << 28);
 
 	bits |= SU_ITEMS;
 

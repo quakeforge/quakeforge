@@ -228,14 +228,14 @@ ClipVelocity (vec3_t in, vec3_t normal, vec3_t out, float overbounce)
 #define	MAX_CLIP_PLANES	5
 
 /*
-  SV_FlyMove
+	SV_FlyMove
 
-  The basic solid body movement clip that slides along multiple planes
-  Returns the clipflags if the velocity was modified (hit something solid)
-  1 = floor
-  2 = wall / step
-  4 = dead stop
-  If steptrace is not NULL, the trace of any vertical wall hit will be stored
+	The basic solid body movement clip that slides along multiple planes
+	Returns the clipflags if the velocity was modified (hit something solid)
+	1 = floor
+	2 = wall / step
+	4 = dead stop
+	If steptrace is not NULL, the trace of any vertical wall hit will be stored
 */
 int
 SV_FlyMove (edict_t *ent, float time, trace_t *steptrace)
@@ -354,11 +354,8 @@ SV_AddGravity (edict_t *ent)
 {
 	float       ent_gravity;
 
-	pr_type_t  *val;
-
-	val = GetEdictFieldValue (&sv_pr_state, ent, "gravity");
-	if (val && val->float_var)
-		ent_gravity = val->float_var;
+	if (sv_fields.gravity != -1 && SVfloat (ent, gravity))
+		ent_gravity = SVfloat (ent, gravity);
 	else
 		ent_gravity = 1.0;
 	SVvector (ent, velocity)[2] -= ent_gravity * sv_gravity->value * sv_frametime;
@@ -382,8 +379,8 @@ SV_PushEntity (edict_t *ent, vec3_t push)
 	if (SVfloat (ent, movetype) == MOVETYPE_FLYMISSILE)
 		trace = SV_Move (SVvector (ent, origin), SVvector (ent, mins),
 						 SVvector (ent, maxs), end, MOVE_MISSILE, ent);
-	else if (SVfloat (ent, solid) == SOLID_TRIGGER || SVfloat (ent, solid) ==
-			 SOLID_NOT)
+	else if (SVfloat (ent, solid) == SOLID_TRIGGER
+			 || SVfloat (ent, solid) == SOLID_NOT)
 		// only clip against bmodels
 		trace = SV_Move (SVvector (ent, origin), SVvector (ent, mins),
 						 SVvector (ent, maxs), end, MOVE_NOMONSTERS, ent);
@@ -665,8 +662,8 @@ SV_Physics_Toss (edict_t *ent)
 
 	// stop if on ground
 	if (trace.plane.normal[2] > 0.7) {
-		if (SVvector (ent, velocity)[2] < 60 || SVfloat (ent, movetype) !=
-			MOVETYPE_BOUNCE) {
+		if (SVvector (ent, velocity)[2] < 60
+			|| SVfloat (ent, movetype) != MOVETYPE_BOUNCE) {
 			SVfloat (ent, flags) = (int) SVfloat (ent, flags) | FL_ONGROUND;
 			SVentity (ent, groundentity) = EDICT_TO_PROG (&sv_pr_state,
 														  trace.ent);
@@ -706,8 +703,7 @@ SV_Physics_Step (edict_t *ent)
 		SV_FlyMove (ent, sv_frametime, NULL);
 		SV_LinkEdict (ent, true);
 
-		if ((int) SVfloat (ent, flags) & FL_ONGROUND)	// just hit ground
-		{
+		if ((int) SVfloat (ent, flags) & FL_ONGROUND) {	// just hit ground
 			if (hitsound)
 				SV_StartSound (ent, 0, "demon/dland2.wav", 255, 1);
 		}
