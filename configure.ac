@@ -609,7 +609,7 @@ AC_ARG_ENABLE(oss,
 AC_ARG_ENABLE(sound,
 	[  --disable-sound         disable sound outright])
 
-SOUND_TYPES=
+SOUND_TYPES=""
 AC_MSG_CHECKING(for sound support)
 
 HAVE_ALSA=no
@@ -659,6 +659,8 @@ QF_maGiC_VALUE
 fi
 AC_SUBST(ALSA_LIBS)
 AC_SUBST(HAVE_ALSA)
+
+SOUND_TYPES="$SOUND_TYPES DISK"
 
 dnl MME
 if test "x$ac_cv_header_mme_mmsystem_h" = "xyes" -a \
@@ -1183,7 +1185,7 @@ if test "x$GCC" = "xyes"; then
 fi
 
 AS="$CC"
-ASFLAGS="\$(DEFS) $CFLAGS $CPPFLAGS \$(DEFAULT_INCLUDES) \$(INCLUDES)"
+ASFLAGS="\$(DEFS) \$(CFLAGS) \$(CPPFLAGS) \$(DEFAULT_INCLUDES) \$(INCLUDES)"
 AC_SUBST(AS)
 AC_SUBST(ASFLAGS)
 
@@ -1292,9 +1294,35 @@ else
 fi
 
 AC_ARG_WITH(server,
-	[  --with-server           compile dedicated server],
-	SV_TARGETS="$withval", SV_TARGETS=yes
+	[  --with-servers=<list>   compile dedicated server
+                          master,nq,qw],
+	servers="$withval",
+	servers=all
 )
+if test "$servers" = "all"; then
+	ENABLE_NQ_SERVER=no		# doesn't work yet
+	ENABLE_QW_MASTER=yes
+	ENABLE_QW_SERVER=yes
+else
+	ENABLE_NQ_SERVER=no
+	ENABLE_QW_MASTER=no
+	ENABLE_QW_SERVER=no
+	IFS=","
+	for server in $servers; do
+		case "$server" in
+			nq)
+				ENABLE_NQ_SERVER=yes
+				;;
+			master)
+				ENABLE_QW_MASTER=yes
+				;;
+			qw)
+				ENABLE_QW_SERVER=yes
+				;;
+		esac
+	done
+	IFS=" "
+fi
 
 CL_TARGETS=""
 QW_TARGETS=""
@@ -1400,9 +1428,19 @@ if test "x$mingw" = xyes; then
 	fi
 	CAN_BUILD_GL=yes
 fi
-if test "x$SV_TARGETS" = xyes; then
-	QW_TARGETS="qw-server\$(EXEEXT) qw-master\$(EXEEXT) $QW_TARGETS"
-#	NQ_TARGETS="nq-server\$(EXEEXT) $NQ_TARGETS"
+
+SV_TARGETS=""
+if test "x$ENABLE_NQ_SERVER" = xyes; then
+	NQ_TARGETS="nq-server\$(EXEEXT) $NQ_TARGETS"
+	SV_TARGETS="$SV_TARGETS nq"
+fi
+if test "x$ENABLE_QW_MASTER" = xyes; then
+	QW_TARGETS="qw-master\$(EXEEXT) $QW_TARGETS"
+	SV_TARGETS="$SV_TARGETS master"
+fi
+if test "x$ENABLE_QW_SERVER" = xyes; then
+	QW_TARGETS="qw-server\$(EXEEXT) $QW_TARGETS"
+	SV_TARGETS="$SV_TARGETS qw"
 fi
 
 if test "x$BUILD_SW" = xyes; then
@@ -1467,6 +1505,7 @@ else
 	SND_TARGETS=""
 	SOUND_TYPES=""
 fi
+
 AC_SUBST(NQ_TARGETS)
 AC_SUBST(QW_TARGETS)
 AC_SUBST(CD_PLUGIN_TARGETS)
@@ -1547,7 +1586,7 @@ AC_OUTPUT(
 	RPM/quakeforge.spec,
 
 	chmod +x quakeforge-config RPM/build_rpm
-	if test "$AR" != "ar"; then
+	if test -n "$AR" -a "$AR" != "ar"; then
 		sed -e 's/^AR="ar"$/AR="'$AR'"/' libtool > libtool.qf
 		if cmp -s libtool.qf libtool; then
 			echo libtool is unchanged
