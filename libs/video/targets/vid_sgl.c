@@ -154,7 +154,9 @@ VID_Init (unsigned char *palette)
 //	SDL_GL_SetAttribute (SDL_GL_STENCIL_SIZE, 0);	// Try for 0, 8
 //	SDL_GL_SetAttribute (SDL_GL_STEREO, 1);			// Someday...
 
-	for (j = 0; j < 5; j++) {
+	for (i = 0; i < 5; i++) {
+		int k;
+		int color[5] = {32, 24, 16, 15, 0};
 		int rgba[5][4] = {
 			{8, 8, 8, 0},
 			{8, 8, 8, 8},
@@ -163,19 +165,24 @@ VID_Init (unsigned char *palette)
 			{5, 5, 5, 1},
 		};
 
-		SDL_GL_SetAttribute (SDL_GL_RED_SIZE, rgba[j][0]);
-		SDL_GL_SetAttribute (SDL_GL_GREEN_SIZE, rgba[j][1]);
-		SDL_GL_SetAttribute (SDL_GL_BLUE_SIZE, rgba[j][2]);
-		SDL_GL_SetAttribute (SDL_GL_ALPHA_SIZE, rgba[j][3]);
+		SDL_GL_SetAttribute (SDL_GL_RED_SIZE, rgba[i][0]);
+		SDL_GL_SetAttribute (SDL_GL_GREEN_SIZE, rgba[i][1]);
+		SDL_GL_SetAttribute (SDL_GL_BLUE_SIZE, rgba[i][2]);
+		SDL_GL_SetAttribute (SDL_GL_ALPHA_SIZE, rgba[i][3]);
 
-		for (i = 32; i >= 16; i -= 8) {
-			SDL_GL_SetAttribute (SDL_GL_DEPTH_SIZE, i);
-			if ((screen = SDL_SetVideoMode (scr_width, scr_height, 0, flags)))
-				goto success;
+		for (j = 0; j < 5; j++) {
+			for (k = 32; k >= 16; k -= 8) {
+				SDL_GL_SetAttribute (SDL_GL_DEPTH_SIZE, k);
+				if ((screen = SDL_SetVideoMode (scr_width, scr_height,
+												color[j], flags)))
+					goto success;
+			}
 		}
 	}
+
 	Sys_Error ("Couldn't set video mode: %s", SDL_GetError ());
 	SDL_Quit ();
+
 success:
 	vid.height = vid.conheight = min (vid.conheight, scr_height);
 	vid.width = vid.conwidth = min (vid.conwidth, scr_width);
@@ -189,7 +196,6 @@ success:
 	VID_SDL_GammaCheck ();
 	VID_InitGamma (palette);
 	VID_SetPalette (vid.palette);
-
 	VID_Init8bitPalette ();	// Check for 3DFX Extensions and initialize them.
 
 	Con_Printf ("Video mode %dx%d initialized.\n", scr_width, scr_height);
