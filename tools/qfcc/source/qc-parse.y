@@ -366,7 +366,7 @@ def_item
 	: def_name opt_initializer
 		{
 			$$ = $1;
-			if ($$ && $$->global
+			if ($$ && !$$->local
 				&& $$->type->type != ev_func)
 				def_initialized ($$);
 		}
