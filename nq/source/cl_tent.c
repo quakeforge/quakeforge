@@ -47,6 +47,7 @@ static const char rcsid[] =
 #include "QF/sys.h"
 
 #include "client.h"
+#include "compat.h"
 #include "r_dynamic.h"
 
 #define	MAX_BEAMS	8
@@ -59,6 +60,7 @@ typedef struct {
 	vec3_t      start, end;
 	entity_t    ent_list[MAX_BEAM_ENTS];
 	int         ent_count;
+	int			seed;
 } beam_t;
 
 beam_t      cl_beams[MAX_BEAMS];
@@ -149,6 +151,7 @@ CL_ClearTEnts (void)
 	memset (&cl_explosions, 0, sizeof (cl_explosions));
 	for (i = 0; i < MAX_BEAMS; i++) {
 		int j;
+
 		for (j = 0; j < MAX_BEAM_ENTS; j++) {
 			CL_Init_Entity(&cl_beams[i].ent_list[j]);
 		}
@@ -179,11 +182,89 @@ CL_AllocExplosion (void)
 	return &cl_explosions[index];
 }
 
+static beam_t *
+beam_alloc (int ent)
+{
+	int         i;
+	beam_t     *b;
+
+	// override any beam with the same entity
+	for (i = 0, b = cl_beams; i < MAX_BEAMS; i++, b++)
+		if (b->entity == ent)
+			return b;
+	// find a free beam
+	for (i = 0, b = cl_beams; i < MAX_BEAMS; i++, b++)
+		if (!b->model || b->endtime < cl.time)
+			return b;
+	Con_Printf ("beam list overflow!\n");
+	return 0;
+}
+
+static inline void
+beam_clear (beam_t *b)
+{
+	if (b->ent_count) {
+		entity_t   *e = b->ent_list + b->ent_count;
+
+		while (e != b->ent_list)
+			R_RemoveEfrags (e-- - 1);
+		b->ent_count = 0;
+	}
+}
+
+static inline void
+beam_setup (beam_t *b)
+{
+	entity_t   *ent;
+	float       forward, pitch, yaw, d;
+	int         ent_count;
+	vec3_t      dist, org;
+
+	// calculate pitch and yaw
+	VectorSubtract (b->end, b->start, dist);
+
+	if (dist[1] == 0 && dist[0] == 0) {
+		yaw = 0;
+		if (dist[2] > 0)
+			pitch = 90;
+		else
+			pitch = 270;
+	} else {
+		yaw = (int) (atan2 (dist[1], dist[0]) * 180 / M_PI);
+		if (yaw < 0)
+			yaw += 360;
+
+		forward = sqrt (dist[0] * dist[0] + dist[1] * dist[1]);
+		pitch = (int) (atan2 (dist[2], forward) * 180 / M_PI);
+		if (pitch < 0)
+			pitch += 360;
+	}
+
+	// add new entities for the lightning
+	VectorCopy (b->start, org);
+	d = VectorNormalize (dist);
+	VectorScale (dist, 30, dist);
+	ent_count = ceil (d / 30);
+	ent_count = min (ent_count, MAX_BEAM_ENTS);
+	b->ent_count = ent_count;
+	d = 0;
+	while (ent_count--) {
+		ent = &b->ent_list[ent_count];
+		VectorMA (org, d, dist, ent->origin);
+		d += 1.0;
+		ent->model = b->model;
+		ent->angles[0] = pitch;
+		ent->angles[1] = yaw;
+		if (!ent->efrag)
+			R_AddEfrags (ent);
+	}
+}
+
 void
 CL_ParseBeam (model_t *m)
 {
 	beam_t     *b;
-	int         ent, i;
+	int         ent;
 	vec3_t      start, end;
 
 	ent = MSG_ReadShort (net_message);
@@ -191,28 +272,19 @@ CL_ParseBeam (model_t *m)
 	MSG_ReadCoordV (net_message, start);
 	MSG_ReadCoordV (net_message, end);
 
-	// override any beam with the same entity
-	for (i = 0, b = cl_beams; i < MAX_BEAMS; i++, b++)
-		if (b->entity == ent) {
-			b->entity = ent;
-			b->model = m;
-			b->endtime = cl.time + 0.2;
+	if ((b = beam_alloc (ent))) {
+		beam_clear (b);
+		b->entity = ent;
+		b->model = m;
+		b->endtime = cl.time + 0.2;
+		b->seed = rand();
+		VectorCopy (end, b->end);
+		if (b->entity != cl.viewentity) {
+			// this will be done in CL_UpdateBeams
 			VectorCopy (start, b->start);
-			VectorCopy (end, b->end);
-			return;
-		}
-	// find a free beam
-	for (i = 0, b = cl_beams; i < MAX_BEAMS; i++, b++) {
-		if (!b->model || b->endtime < cl.time) {
-			b->entity = ent;
-			b->model = m;
-			b->endtime = cl.time + 0.2;
-			VectorCopy (start, b->start);
-			VectorCopy (end, b->end);
-			return;
+			beam_setup (b);
 		}
 	}
-	Con_Printf ("beam list overflow!\n");
 }
 
 void
@@ -393,13 +465,18 @@ CL_UpdateBeams (void)
 
 	// update lightning
 	for (i = 0, b = cl_beams; i < MAX_BEAMS; i++, b++) {
-		if (!b->model || b->endtime < cl.time)
+		if (!b->model || b->endtime < cl.time) {
+			beam_clear (b);
 			continue;
+		}
 
 		// if coming from the player, update the start position
 		if (b->entity == cl.viewentity) {
+			beam_clear (b);
 			VectorCopy (cl_entities[cl.viewentity].origin, b->start);
+			beam_setup (b);
 		}
+
 		// calculate pitch and yaw
 		VectorSubtract (b->end, b->start, dist);
 
@@ -489,9 +566,8 @@ CL_ParseParticleEffect (void)
 	count = MSG_ReadByte (net_message);
 	color = MSG_ReadByte (net_message);
 
-	if (count == 255) {
+	if (count == 255)
 		R_ParticleExplosion (org);
-	} else {
+	else
 		R_RunParticleEffect (org, dir, color, count);
-	}
 }

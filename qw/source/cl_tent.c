@@ -53,7 +53,7 @@ static const char rcsid[] =
 #include "compat.h"
 #include "r_dynamic.h"
 
-#define	MAX_BEAMS	8
+#define	MAX_BEAMS 8
 #define MAX_BEAM_ENTS 20
 
 typedef struct {
@@ -68,7 +68,7 @@ typedef struct {
 
 beam_t      cl_beams[MAX_BEAMS];
 
-#define	MAX_EXPLOSIONS	8
+#define	MAX_EXPLOSIONS 8
 
 typedef struct {
 	float       start;
@@ -139,7 +139,7 @@ CL_Init_Entity (entity_t *ent)
 	memset (ent, 0, sizeof (*ent));
 
 	ent->colormap = vid.colormap8;
-	ent->colormod[0] = ent->colormod[1] = ent->colormod[2] = 
+	ent->colormod[0] = ent->colormod[1] = ent->colormod[2] =
 		ent->colormod[3] = 1.0;
 	ent->scale = 1.0;
 	ent->pose1 = ent->pose2 = -1;
@@ -185,8 +185,8 @@ CL_AllocExplosion (void)
 	return &cl_explosions[index];
 }
 
-beam_t *
-CL_AllocBeam (int ent)
+static beam_t *
+beam_alloc (int ent)
 {
 	int         i;
 	beam_t     *b;
@@ -204,10 +204,11 @@ CL_AllocBeam (int ent)
 }
 
 static inline void
-clear_beam (beam_t *b)
+beam_clear (beam_t *b)
 {
 	if (b->ent_count) {
 		entity_t   *e = b->ent_list + b->ent_count;
+
 		while (e != b->ent_list)
 			R_RemoveEfrags (e-- - 1);
 		b->ent_count = 0;
@@ -215,7 +216,7 @@ clear_beam (beam_t *b)
 }
 
 static inline void
-setup_beam (beam_t *b)
+beam_setup (beam_t *b)
 {
 	entity_t   *ent;
 	float       forward, pitch, yaw, d;
@@ -274,8 +275,8 @@ CL_ParseBeam (model_t *m)
 	MSG_ReadCoordV (net_message, start);
 	MSG_ReadCoordV (net_message, end);
 
-	if ((b = CL_AllocBeam (ent))) {
-		clear_beam (b);
+	if ((b = beam_alloc (ent))) {
+		beam_clear (b);
 		b->entity = ent;
 		b->model = m;
 		b->endtime = cl.time + 0.2;
@@ -284,7 +285,7 @@ CL_ParseBeam (model_t *m)
 		if (b->entity != cl.viewentity) {
 			// this will be done in CL_UpdateBeams
 			VectorCopy (start, b->start);
-			setup_beam (b);
+			beam_setup (b);
 		}
 	}
 }
@@ -479,18 +480,18 @@ CL_UpdateBeams (void)
 	// update lightning
 	for (i = 0, b = cl_beams; i < MAX_BEAMS; i++, b++) {
 		if (!b->model || b->endtime < cl.time) {
-			clear_beam (b);
+			beam_clear (b);
 			continue;
 		}
 
 		// if coming from the player, update the start position
 		if (b->entity == cl.viewentity) {
-			clear_beam (b);
+			beam_clear (b);
 			VectorCopy (cl.simorg, b->start);
-			setup_beam (b);
+			beam_setup (b);
 		}
 
-		seed = b->seed + ((int)(cl.time * BEAM_SEED_INTERVAL) %
+		seed = b->seed + ((int) (cl.time * BEAM_SEED_INTERVAL) %
 						  BEAM_SEED_INTERVAL);
 
 		// add new entities for the lightning
