@@ -330,6 +330,7 @@ static void
 PF_traceon (progs_t *pr)
 {
 	pr->pr_trace = true;
+	pr->pr_trace_depth = pr->pr_depth;
 }
 
 /*

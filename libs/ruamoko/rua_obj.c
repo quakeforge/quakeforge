@@ -52,18 +52,9 @@ static __attribute__ ((unused)) const char rcsid[] =
 #include "rua_internal.h"
 
 static void
-call_function (progs_t *pr, func_t func)
 {
-	dfunction_t *f;
 
-	if (!func)
-		PR_RunError (pr, "NULL function");
-	f = pr->pr_functions + func;
-	if (f->first_statement < 0) {
-		// negative statements are built in functions
-		((bfunction_t *) f)->func (pr);
 	} else {
-		PR_EnterFunction (pr, f);
 	}
 }
 
@@ -418,8 +409,8 @@ rua_obj_msg_lookup (progs_t *pr)
 {
 	pr_id_t    *receiver = &P_STRUCT (pr, pr_id_t, 0);
 	pr_sel_t   *op = &P_STRUCT (pr, pr_sel_t, 1);
-	pr_method_t *method = obj_msg_lookup (pr, receiver, op);
-	R_INT (pr) = method ? method->method_imp : 0;
+
+	R_INT (pr) = obj_msg_lookup (pr, receiver, op);
 }
 
 static void
@@ -427,8 +418,8 @@ rua_obj_msg_lookup_super (progs_t *pr)
 {
 	pr_super_t *super = &P_STRUCT (pr, pr_super_t, 0);
 	pr_sel_t   *_cmd = &P_STRUCT (pr, pr_sel_t, 1);
-	pr_method_t *method = obj_msg_lookup_super (pr, super, _cmd);
-	R_INT (pr) = method ? method->method_imp : 0;
+
+	R_INT (pr) = obj_msg_lookup_super (pr, super, _cmd);
 }
 
 static void
@@ -436,18 +427,19 @@ rua_obj_msg_sendv (progs_t *pr)
 {
 	pr_id_t    *receiver = &P_STRUCT (pr, pr_id_t, 0);
 	pr_sel_t   *op = &P_STRUCT (pr, pr_sel_t, 1);
-	pr_va_list_t args = P_STRUCT (pr, pr_va_list_t, 2);
-	pr_method_t *method = obj_msg_lookup (pr, receiver, op);
+	pr_va_list_t *args = (pr_va_list_t *) &P_POINTER (pr, 2);
+	pr_type_t  *params = G_GPOINTER (pr, args->list);
+	int         count = args->count;
+	func_t      imp = obj_msg_lookup (pr, receiver, op);
 
-	if (!method)
+	if (!imp)
 		PR_RunError (pr, "%s does not respond to %s",
 					 PR_GetString (pr, object_get_class_name (pr, receiver)),
-					 PR_GetString (pr, op->sel_id));
-	if (args.count > 6)
-		args.count = 6;
-	memcpy (pr->pr_params[2], G_GPOINTER (pr, args.list),
-			args.count * 4 * pr->pr_param_size);
-	call_function (pr, method->method_imp);
+					 PR_GetString (pr, pr->selector_names[op->sel_id]));
+	if (count > 6)
+		count = 6;
+	memcpy (pr->pr_params[2], params, count * 4 * pr->pr_param_size);
+	PR_CallFunction (pr, imp);
 }
 
 static void
@@ -517,7 +509,7 @@ rua_obj_msgSend (progs_t *pr)
 {
 	pr_id_t    *self = &P_STRUCT (pr, pr_id_t, 0);
 	pr_sel_t   *_cmd = &P_STRUCT (pr, pr_sel_t, 1);
-	pr_method_t *method;
+	func_t      imp;
 
 	if (!self) {
 		R_INT (pr) = R_INT (pr);
@@ -525,13 +517,13 @@ rua_obj_msgSend (progs_t *pr)
 	}
 	if (!_cmd)
 		PR_RunError (pr, "null selector");
-	method = obj_msg_lookup (pr, self, _cmd);
-	if (!method)
+	imp = obj_msg_lookup (pr, self, _cmd);
+	if (!imp)
 		PR_RunError (pr, "%s does not respond to %s",
 					 PR_GetString (pr, object_get_class_name (pr, self)),
-					 PR_GetString (pr, _cmd->sel_id));
+					 PR_GetString (pr, pr->selector_names[_cmd->sel_id]));
 
-	call_function (pr, method->method_imp);
+	PR_CallFunction (pr, imp);
 }
 
 static void
@@ -539,17 +531,17 @@ rua_obj_msgSend_super (progs_t *pr)
 {
 	pr_super_t *super = &P_STRUCT (pr, pr_super_t, 0);
 	pr_sel_t   *_cmd = &P_STRUCT (pr, pr_sel_t, 1);
-	pr_method_t *method;
+	func_t      imp;
 
-	method = obj_msg_lookup_super (pr, super, _cmd);
-	if (!method) {
+	imp = obj_msg_lookup_super (pr, super, _cmd);
+	if (!imp) {
 		pr_id_t    *self = &G_STRUCT (pr, pr_id_t, super->self);
 		PR_RunError (pr, "%s does not respond to %s",
 					 PR_GetString (pr, object_get_class_name (pr, self)),
-					 PR_GetString (pr, _cmd->sel_id));
+					 PR_GetString (pr, pr->selector_names[_cmd->sel_id]));
 	}
 	P_POINTER (pr, 0) = super->self;
-	call_function (pr, method->method_imp);
+	PR_CallFunction (pr, imp);
 }
 
 static void
