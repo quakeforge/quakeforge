@@ -105,30 +105,30 @@ IN_LL_SendKeyEvents (void)
 		switch (k) {
 			case '\r':
 			case '\n':
-				k = K_ENTER;
+				k = K_RETURN;
 				break;
 			case '\033':
 				if (read(0, buf, 2) != 2)
 					break;
 				switch (buf[1]) {
 					case 'A':
-						k = K_UPARROW;
+						k = K_UP;
 						break;
 					case 'B':
-						k = K_DOWNARROW;
+						k = K_DOWN;
 						break;
 					case 'C':
-						k = K_RIGHTARROW;
+						k = K_RIGHT;
 						break;
 					case 'D':
-						k = K_LEFTARROW;
+						k = K_LEFT;
 						break;
 				}
 				break;
 		}
 		down = 1;
-		Key_Event(k, -1, down);
-		Key_Event(k, -1, !down);
+		Key_Event(k, buf[0], down);
+		Key_Event(k, buf[0], !down);
 	}
 }
 
