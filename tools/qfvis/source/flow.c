@@ -357,9 +357,11 @@ PortalFlow (portal_t *p)
 {
     threaddata_t	data;
 
-    if (p->status != stat_working)
+	LOCK;
+    if (p->status != stat_selected)
 		Sys_Error ("PortalFlow: reflowed");
     p->status = stat_working;
+	UNLOCK;
 
     p->visbits = calloc (1, bitbytes);
 

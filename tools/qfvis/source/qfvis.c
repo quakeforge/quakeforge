@@ -263,7 +263,7 @@ GetNextPortal (void)
 	}
 
 	if (p)
-		p->status = stat_working;
+		p->status = stat_selected;
 
 	UNLOCK;
 
@@ -388,26 +388,30 @@ CalcPortalVis (void)
 		void *status;
 		pthread_attr_t attrib;
 
-		my_mutex = malloc (sizeof (*my_mutex));
-		if (pthread_mutex_init (my_mutex, 0) == -1)
-			Sys_Error ("pthread_mutex_init failed");
-		if (pthread_attr_init (&attrib) == -1)
-			Sys_Error ("pthread_attr_create failed");
-		if (pthread_attr_setstacksize (&attrib, 0x100000) == -1)
-			Sys_Error ("pthread_attr_setstacksize failed");
-		for (i = 0; i < options.threads; i++) {
-			if (pthread_create (&work_threads[i], &attrib, LeafThread,
-								(void *) i) == -1)
-				Sys_Error ("pthread_create failed");
-		}
+		if (options.threads > 1) {
+			my_mutex = malloc (sizeof (*my_mutex));
+			if (pthread_mutex_init (my_mutex, 0) == -1)
+				Sys_Error ("pthread_mutex_init failed");
+			if (pthread_attr_init (&attrib) == -1)
+				Sys_Error ("pthread_attr_create failed");
+			if (pthread_attr_setstacksize (&attrib, 0x100000) == -1)
+				Sys_Error ("pthread_attr_setstacksize failed");
+			for (i = 0; i < options.threads; i++) {
+				if (pthread_create (&work_threads[i], &attrib, LeafThread,
+									(void *) i) == -1)
+					Sys_Error ("pthread_create failed");
+			}
 
-		for (i = 0; i < options.threads; i++) {
-			if (pthread_join (work_threads[i], &status) == -1)
-				Sys_Error ("pthread_join failed");
-		}
+			for (i = 0; i < options.threads; i++) {
+				if (pthread_join (work_threads[i], &status) == -1)
+					Sys_Error ("pthread_join failed");
+			}
 
-		if (pthread_mutex_destroy (my_mutex) == -1)
-			Sys_Error ("pthread_mutex_destroy failed");
+			if (pthread_mutex_destroy (my_mutex) == -1)
+				Sys_Error ("pthread_mutex_destroy failed");
+		} else {
+			LeafThread (0);
+		}
 	}
 #else
 	LeafThread (0);
