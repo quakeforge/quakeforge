@@ -36,6 +36,8 @@
 #import <Foundation/NSBundle.h>
 #import <Foundation/NSObject.h>
 
+#import <AppKit/NSNibDeclarations.h>
+
 #import "PrefsController.h"
 #import "PrefsView.h"
 
@@ -75,7 +77,7 @@
 
 @interface BundleController: NSObject
 {
-	id				delegate;
+	IBOutlet id		delegate;
 	NSMutableArray	*loadedBundles;
 }
 

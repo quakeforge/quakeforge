@@ -1,8 +1,5 @@
 {
     BundleController = {
-	Actions = (
-	    setDelegate
-	);
 	Outlets = (
 	    delegate
 	);
@@ -13,10 +10,9 @@
 	    addFileToProject:,
 	    addNewFileToProject:,
 	    closeProject:,
-	    createNewProject:,
-	    infoPanel:,
+	    newProject:,
+	    open:,
 	    openProject:,
-	    openSelectedFile:,
 	    saveProject:,
 	    showPreferencesPanel:
 	);

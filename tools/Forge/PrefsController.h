@@ -54,22 +54,17 @@
 - (id) init;
 - (void) dealloc;
 
-/*
-	Notification methods
-*/
-- (void) windowWillClose: (NSNotification *) aNotification;
-
 /***
 	Stuff we do in our subclass
 ***/
-- (void) orderFrontPreferencesPanel: (id) sender;
-- (void) addPrefsViewController: (id <PrefsViewController>) aPrefsViewController;
+- (IBAction) orderFrontPreferencesPanel: (id) sender;
+- (IBAction) addPrefsViewController: (id <PrefsViewController>) aPrefsViewController;
 
-- (void) savePreferences: (id) sender;
-- (void) savePreferencesAndCloseWindow: (id) sender;
+- (IBAction) savePreferences: (id) sender;
+- (IBAction) savePreferencesAndCloseWindow: (id) sender;
 
-- (void) loadPreferences: (id) sender;
-- (void) resetToDefaults: (id) sender;
+- (IBAction) loadPreferences: (id) sender;
+- (IBAction) resetToDefaults: (id) sender;
 
 - (NSBox *) prefsViewBox;
 @end

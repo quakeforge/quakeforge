@@ -61,12 +61,16 @@
 - (void) applicationWillTerminate: (NSNotification *) not;
 
 // Action methods
-- (IBAction) createNew: (id) sender;
-- (IBAction) createNewProject: (id) sender;
-- (IBAction) infoPanel: (id) sender;
-- (IBAction) open: (id) sender;
-- (IBAction) openProject: (id) sender;
-- (IBAction) saveProject: (id) sender;
 - (IBAction) showPreferencesPanel: (id) sender;
 
+// Projects
+- (IBAction) newProject: (id) sender;
+- (IBAction) openProject: (id) sender;
+- (IBAction) saveProject: (id) sender;
+- (IBAction) closeProject: (id) sender;
+
+// Files
+- (IBAction) addFileToProject: (id) sender;
+- (IBAction) addNewFileToProject: (id) sender;
+- (IBAction) open: (id) sender;
 @end

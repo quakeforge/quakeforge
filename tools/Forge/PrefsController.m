@@ -47,11 +47,21 @@ static const char rcsid[] =
 static PrefsController	*sharedInstance = nil;
 static NSMutableArray	*prefsViews = nil;
 
+/*
+	sharedPrefsController
+
+	Returns the shared instance
+*/
 + (PrefsController *) sharedPrefsController
 {
 	return (sharedInstance ? sharedInstance : [[self alloc] init]);
 }
 
+/*
+	init
+
+	Ensures that there is only one global instance of the class
+*/
 - (id) init
 {
 	if (sharedInstance) {
@@ -65,28 +75,28 @@ static NSMutableArray	*prefsViews = nil;
 	return sharedInstance;	
 }
 
+/*
+	awakeFromNib
+
+	Initialize stuff that can't be set in the nib/gorm file.
+*/
 - (void) awakeFromNib
 {
-	NSButtonCell	*prototype;
+	// Let the systen keep track of where it belongs
+	[window setFrameAutosaveName: @"Preferences"];
+	[window setFrameUsingName: @"Preferences"];
 
 	// keep the window out of the menu until it's seen
 	[window setExcludedFromWindowsMenu: YES];
 
-	if (iconList)
+	if (iconList)	// stop processing if we already have an icon list
 		return;
 
-	/* Prototype button for the matrix */
-	prototype = [[[NSButtonCell alloc] init] autorelease];
-	[prototype setButtonType: NSPushOnPushOffButton];
-	[prototype setImagePosition: NSImageOverlaps];
-
-	/* What is the matrix? */
+	/* What is the matrix? :) */
 	iconList = [[NSMatrix alloc] initWithFrame: NSMakeRect (0, 0, 64, 64)];
+	[iconList setCellClass: [NSButtonCell class]];
 	[iconList setCellSize: NSMakeSize (64, 64)];
 	[iconList setMode: NSRadioModeMatrix];
-	[iconList setPrototype: prototype];
-	[iconList setTarget: self];
-	[iconList setAction: @selector(cellWasClicked:)];
 
 	[scrollView setHasHorizontalScroller: YES];
 	[scrollView setHasVerticalScroller: NO];
@@ -101,24 +111,24 @@ static NSMutableArray	*prefsViews = nil;
 	[super dealloc];
 }
 
-- (void) windowWillClose: (NSNotification *) aNotification
-{
-}
+/*
+	orderFrontPreferencesPanel:
 
-- (void) orderFrontPreferencesPanel: (id) sender
+	Display our window
+*/
+- (IBAction) orderFrontPreferencesPanel: (id) sender
 {
 	[window setExcludedFromWindowsMenu: NO];
 	[window makeKeyAndOrderFront: self];
-	return;
 }
 
-- (void) savePreferencesAndCloseWindow: (id) sender
+- (IBAction) savePreferencesAndCloseWindow: (id) sender
 {
 	[self savePreferences: self];
 	[window close];
 }
 
-- (void) savePreferences: (id) sender
+- (IBAction) savePreferences: (id) sender
 {
 	NSEnumerator				*enumerator = [prefsViews objectEnumerator];
 	id <PrefsViewController>	current;
@@ -131,7 +141,7 @@ static NSMutableArray	*prefsViews = nil;
 	[[NSUserDefaults standardUserDefaults] synchronize];
 }
 
-- (void) loadPreferences: (id) sender
+- (IBAction) loadPreferences: (id) sender
 {
 	NSEnumerator				*enumerator = [prefsViews objectEnumerator];
 	id <PrefsViewController>	current;
@@ -144,7 +154,7 @@ static NSMutableArray	*prefsViews = nil;
 	[[NSUserDefaults standardUserDefaults] synchronize];
 }
 
-- (void) resetToDefaults: (id) sender
+- (IBAction) resetToDefaults: (id) sender
 {
 	NSEnumerator				*enumerator = [prefsViews objectEnumerator];
 	id <PrefsViewController>	current;
@@ -157,7 +167,13 @@ static NSMutableArray	*prefsViews = nil;
 	[[NSUserDefaults standardUserDefaults] synchronize];
 }
 
-- (void) addPrefsViewController: (id <PrefsViewController>) aController;
+/*
+	addPrefsViewController:
+
+	Add a prefs view controller to our list, if it hasn't been added already.
+	Also, create an icon for the matrix.
+*/
+- (IBAction) addPrefsViewController: (id <PrefsViewController>) aController;
 {
 	NSButtonCell	*button = [[NSButtonCell alloc] init];
 
@@ -175,8 +191,6 @@ static NSMutableArray	*prefsViews = nil;
 
 	[iconList addColumnWithCells: [NSArray arrayWithObject: button]];
 	[iconList sizeToCells];
-	[iconList setNeedsDisplay: YES];
-//	[prefsPanel addPrefsViewButton: controller];
 }
 
 - (NSBox *) prefsViewBox

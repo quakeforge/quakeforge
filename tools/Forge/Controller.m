@@ -37,6 +37,7 @@ static const char rcsid[] =
 
 #import <AppKit/NSApplication.h>
 #import <AppKit/NSMenu.h>
+#import <AppKit/NSWindow.h>
 
 #import "Controller.h"
 #import "PrefsController.h"
@@ -73,38 +74,9 @@ static const char rcsid[] =
 	return YES;
 }
 
-/*
+/******
 	Action methods
-*/
-- (void) createNew: (id) sender;
-{
-	NSLog (@"This _would_ create a new file, but it doesn't.");
-}
-
-- (void) createNewProject: (id) sender;
-{
-	NSLog (@"This _would_ create a new project, but it doesn't.");
-}
-
-- (void) infoPanel: (id) sender;
-{
-	[NSApp orderFrontStandardAboutPanel: self];
-}
-
-- (void) open: (id) sender;
-{
-	NSLog (@"This _would_ open a file, but it doesn't.");
-}
-
-- (void) openProject: (id) sender;
-{
-	NSLog (@"This _would_ open a project, but it doesn't.");
-}
-
-- (void) saveProject: (id) sender;
-{
-	NSLog (@"This _would_ save, but it doesn't.");
-}
+******/
 
 - (void) showPreferencesPanel: (id) sender;
 {
@@ -113,8 +85,49 @@ static const char rcsid[] =
 }
 
 /*
-	Notifications
+	Project management
 */
+- (void) newProject: (id) sender;
+{
+	NSLog (@"This _will_ create a new project, but it doesn't yet.");
+}
+
+- (void) openProject: (id) sender;
+{
+	NSLog (@"This _will_ open a project, but it doesn't yet.");
+}
+
+- (void) saveProject: (id) sender;
+{
+	NSLog (@"This _will_ save the project, but it doesn't yet.");
+}
+
+- (void) closeProject: (id) sender;
+{
+	NSLog (@"This _will_ close the project, but it doesn't yet.");
+}
+
+/*
+	File-level stuff.
+*/
+- (void) addFileToProject: (id) sender;
+{
+	NSLog (@"This _will_ copy/move a file into the project, but it doesn't yet.");
+}
+
+- (void) addNewFileToProject: (id) sender;
+{
+	NSLog (@"This _will_ create a new file, but it doesn't yet.");
+}
+
+- (void) open: (id) sender;
+{
+	NSLog (@"This _will_ open a file, but it doesn't yet.");
+}
+
+/******
+	Notifications
+******/
 
 /*
 	applicationDidFinishLaunching:
@@ -162,6 +175,8 @@ static const char rcsid[] =
 ******/
 - (void) awakeFromNib
 {
+	[window setFrameAutosaveName: @"Project View"];
+	[window setFrameUsingName: @"Project View"];
 }
 
 /******
