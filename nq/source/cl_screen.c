@@ -78,29 +78,32 @@ static SCR_Func scr_funcs_normal[] = {
 
 static SCR_Func scr_funcs_intermission[] = {
 	Sbar_IntermissionOverlay,
+	Con_DrawConsole,
 	0
 };
 
 static SCR_Func scr_funcs_finale[] = {
 	Sbar_FinaleOverlay,
+	Con_DrawConsole,
 	0,
+};
+
+static SCR_Func *scr_funcs[] = {
+	scr_funcs_normal,
+	scr_funcs_intermission,
+	scr_funcs_finale,
 };
 
 void
 CL_UpdateScreen (double realtime)
 {
-	SCR_Func   *scr_funcs = scr_funcs_normal;
+	unsigned    index = cl.intermission;
+
+	if (index > sizeof (scr_funcs) / sizeof (scr_funcs[0]))
+		index = 0;
 
 	cl_wateralpha = r_wateralpha->value;
 
-	if (r_force_fullscreen /*FIXME better test*/ == 1
-		&& key_dest == key_game) {
-		scr_funcs = scr_funcs_intermission;
-	} else if (r_force_fullscreen /*FIXME better test*/ == 2
-			   && key_dest == key_game) {
-		scr_funcs = scr_funcs_finale;
-	}
-
 	V_PrepBlend ();
-	SCR_UpdateScreen (realtime, scr_funcs);
+	SCR_UpdateScreen (realtime, scr_funcs[index]);
 }
