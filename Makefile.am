@@ -4,6 +4,8 @@ AUTOMAKE_OPTIONS= foreign
 SUBDIRS=	debian doc include libs qw nq
 
 EXTRA_DIST=	ChangeLog RPM/build_rpm.in \
+		tools/cross/cross-configure.sh tools/cross/cross-make.sh \
+		tools/cross/cross.sh \
 		tools/gas2masm/Makefile tools/gas2masm/gas2masm.c \
 		tools/gas2masm/gas2masm.dsp tools/gas2masm/gas2masm.dsw \
 		tools/gas2masm/gas2masm.mak tools/gas2masm/gas2masm.mdp \
