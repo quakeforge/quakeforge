@@ -1482,7 +1482,7 @@ R_DrawParticles (void)
 				part->vel[2] -= fast_grav;
 				break;
 			case pt_fallfadespark:
-				part->ramp += time10;
+				part->ramp += time15;
 				if (part->ramp >= 8) {
 					part->die = -1;
 					break;
