@@ -154,6 +154,9 @@ CL_EntFromBaseline (entity_state_t *es, entity_t *ent, int ind)
 		cl_entity_model_states[ind].model = ent->model;
 		cl_entity_model_states[ind].skinnum = ent->skinnum;
 		CL_SetColormap (ent, es->colormap - 1);
+	} else {
+		ent->colormap = vid.colormap8;
+		ent->skin = NULL;
 	}
 }
 
