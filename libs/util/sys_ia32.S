@@ -55,6 +55,7 @@ fpenv:
 
 #define F_BEGIN(name)			\
 .globl C(name)					;\
+	EXPORT(name)				;\
 	.type	C(name),@function	;\
 C(name):
 
