@@ -436,9 +436,10 @@ X11_CreateWindow (int width, int height)
 
 	// window attributes
 	attr.background_pixel = 0;
+	attr.border_pixel = 0;
 	attr.colormap = XCreateColormap (x_disp, x_root, x_vis, AllocNone);
 	attr.event_mask = X_MASK;
-	mask = CWBackPixel | CWColormap | CWEventMask;
+	mask = CWBackPixel | CWBorderPixel | CWColormap | CWEventMask;
 
 	x_win = XCreateWindow (x_disp, x_root, 0, 0, width, height, 0,
 						   x_visinfo->depth, InputOutput, x_vis, mask, &attr);
