@@ -464,8 +464,6 @@ IN_LL_Init (void)
 		XChangeWindowAttributes (x_disp, x_win, attribmask, &attribs_2);
 	}
 
-	XAutoRepeatOff (x_disp);
-
 	if (COM_CheckParm ("-nomouse"))
 		return;
 

@@ -67,7 +67,7 @@ int         key_lastpress;
 int         edit_line = 0;
 int         history_line = 0;
 
-keydest_t   key_dest;
+keydest_t   key_dest = key_console;
 
 char       *keybindings[256];
 qboolean    consolekeys[256];			// if true, can't be rebound while in 
