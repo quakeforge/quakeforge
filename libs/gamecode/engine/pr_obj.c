@@ -554,7 +554,7 @@ pr_class_get_class_name (progs_t *pr)
 {
 	pr_class_t *class = &P_STRUCT (pr, pr_class_t, 0);
 	R_INT (pr) = PR_CLS_ISCLASS (class) ? class->name
-													: PR_SetString (pr, "Nil");
+										: PR_SetString (pr, "Nil");
 }
 
 static void
