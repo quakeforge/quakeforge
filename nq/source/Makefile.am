@@ -38,7 +38,7 @@ bin_PROGRAMS =	@NQ_TARGETS@
 EXTRA_PROGRAMS= nq-3dfx nq-fbdev nq-glx nq-mgl nq-sdl \
 		nq-sgl nq-svga nq-wgl nq-x11 nq-server
 
-noinst_LIBRARIES= libqfsys.a libqfjs.a libqfnet.a
+noinst_LIBRARIES= libqfjs.a libqfnet.a
 
 #if ASM_ARCH
 math_ASM= 	cl_math.S
@@ -57,11 +57,10 @@ common_SOURCES= game.c wad.c world.c \
 # ... System type
 #
 if SYSTYPE_WIN32
-libqfsys_a_SOURCES=	sys_win.c fnmatch.c
+qfsys_SRC=	sys_win.c fnmatch.c
 else
-libqfsys_a_SOURCES=	sys_unix.c
+qfsys_SRC=	sys_unix.c
 endif
-EXTRA_libqfsys_a_SOURCES= dirent.c fnmatch.c sys_unix.c sys_win.c
 
 #
 # ... Joystick
@@ -88,8 +87,8 @@ client_LIBS=	$(top_builddir)/libs/gamecode/libQFgamecode.la \
 		$(top_builddir)/libs/util/libQFutil.la \
 		$(top_builddir)/libs/audio/cd/libQFcd.la \
 		$(top_builddir)/libs/audio/targets/libQFsound.la \
-		-L. -lqfsys -lqfjs -lqfnet $(SOUND_LIBS) $(NET_LIBS)
-client_LIB_DEPS= libqfsys.a libqfjs.a libqfnet.a
+		-L. -lqfjs -lqfnet $(SOUND_LIBS) $(NET_LIBS)
+client_LIB_DEPS= libqfjs.a libqfnet.a
 
 client_SOURCES= cl_cam.c cl_cmd.c cl_demo.c cl_input.c cl_main.c cl_parse.c \
 		cl_tent.c console.c keys.c sbar.c r_part.c r_view.c \
@@ -100,7 +99,7 @@ server_SOURCES= host.c host_cmd.c \
 		pr_cmds.c \
 		sv_cvar.c sv_main.c sv_move.c sv_phys.c sv_progs.c sv_user.c
 
-combined_SOURCES= $(common_SOURCES) $(client_SOURCES) $(server_SOURCES)
+combined_SOURCES= $(common_SOURCES) $(client_SOURCES) $(server_SOURCES) $(qfsys_SRC)
 
 #
 # Software-rendering targets
@@ -228,7 +227,7 @@ nq_server_DEPENDENCIES=libqfnet.a
 # Stuff that doesn't get linked into an executable NEEDS to be mentioned here,
 # or it won't be distributed with 'make dist'
 #
-EXTRA_DIST=	#nq.dsp
+EXTRA_DIST=	#nq.dsp dirent.c fnmatch.c sys_unix.c sys_win.c
 
 # Kill the temp files, hopefully.
 CLEANFILES  = *.i *.s $(YACCLEX_CLEANFILES)

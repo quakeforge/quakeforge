@@ -340,65 +340,6 @@ Sys_Quit (void)
 
 /*
 ================
-Sys_DoubleTime
-================
-*/
-double
-Sys_DoubleTime (void)
-{
-	static int  sametimecount;
-	static unsigned int oldtime;
-	static int  first = 1;
-	LARGE_INTEGER PerformanceCount;
-	unsigned int temp, t2;
-	double      time;
-
-	Sys_PushFPCW_SetHigh ();
-
-	QueryPerformanceCounter (&PerformanceCount);
-
-	temp = ((unsigned int) PerformanceCount.LowPart >> lowshift) |
-		((unsigned int) PerformanceCount.HighPart << (32 - lowshift));
-
-	if (first) {
-		oldtime = temp;
-		first = 0;
-	} else {
-		// check for turnover or backward time
-		if ((temp <= oldtime) && ((oldtime - temp) < 0x10000000)) {
-			oldtime = temp;				// so we can't get stuck
-		} else {
-			t2 = temp - oldtime;
-
-			time = (double) t2 *pfreq;
-
-			oldtime = temp;
-
-			curtime += time;
-
-			if (curtime == lastcurtime) {
-				sametimecount++;
-
-				if (sametimecount > 100000) {
-					curtime += 1.0;
-					sametimecount = 0;
-				}
-			} else {
-				sametimecount = 0;
-			}
-
-			lastcurtime = curtime;
-		}
-	}
-
-	Sys_PopFPCW ();
-
-	return curtime;
-}
-
-
-/*
-================
 Sys_InitFloatTime
 ================
 */
