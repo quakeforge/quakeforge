@@ -137,11 +137,12 @@ expr_t *argv_expr (void);
 %token	CLASS DEFS ENCODE END IMPLEMENTATION INTERFACE PRIVATE PROTECTED
 %token	PROTOCOL PUBLIC SELECTOR
 
-%type	<type>	type non_field_type type_name
+%type	<type>	type non_field_type type_name def simple_def struct_def
+%type	<type>	struct_def_item ivar_decl ivar_declarator def_item def_list
+%type	<type>	struct_def_list ivars
 %type	<param> function_decl
 %type	<param>	param param_list
-%type	<def>	def_name
-%type	<def>	def_item def_list
+%type	<def>	def_name opt_initializer methoddef var_initializer
 %type	<expr>	const opt_expr expr element_list element_list1 element
 %type	<expr>	string_val opt_state_expr array_decl
 %type	<expr>	statement statements statement_block
@@ -168,8 +169,6 @@ expr_t *argv_expr (void);
 
 %{
 
-type_t	*current_type;
-def_t	*current_def;
 function_t *current_func;
 param_t *current_params;
 expr_t	*current_init;
@@ -197,13 +196,13 @@ defs
 	;
 
 def
-	: type { current_storage = st_global; current_type = $1; } def_list { }
-	| storage_class type { current_type = $2; } def_list
-	| storage_class '{' simple_defs '}'
+	: type { current_storage = st_global; $$ = $1; } def_list { }
+	| storage_class type { $$ = $2; } def_list { }
+	| storage_class '{' simple_defs '}' { }
 	| STRUCT NAME
-	  { struct_type = new_struct ($2); } '=' '{' struct_defs '}'
+	  { struct_type = new_struct ($2); } '=' '{' struct_defs '}' { }
 	| UNION NAME
-	  { struct_type = new_union ($2); } '=' '{' struct_defs '}'
+	  { struct_type = new_union ($2); } '=' '{' struct_defs '}' { }
 	| ENUM '{' enum_list opt_comma '}'
 	  { process_enum ($3); }
 	| TYPEDEF type NAME
@@ -221,7 +220,7 @@ simple_defs
 	;
 
 simple_def
-	: type { current_type = $1; } def_list { }
+	: type { $$ = $1; } def_list { }
 	;
 
 storage_class
@@ -246,7 +245,7 @@ struct_defs
 	;
 
 struct_def
-	: type { current_type = $1; } struct_def_list { }
+	: type { $$ = $1; } struct_def_list { }
 	;
 
 enum_list
@@ -354,26 +353,25 @@ array_decl
 	;
 
 struct_def_list
-	: struct_def_list ',' struct_def_item
+	: struct_def_list ',' { $$ = $<type>0; } struct_def_item
 	| struct_def_item
 	;
 
 struct_def_item
-	: NAME { new_struct_field (struct_type, current_type, $1, vis_public); }
+	: NAME { new_struct_field (struct_type, $<type>0, $1, vis_public); }
 	;
 
 def_list
-	: def_list ',' def_item
+	: def_list ',' { $$ = $<type>0; } def_item
 	| def_item
 	;
 
 def_item
 	: def_name opt_initializer
 		{
-			$$ = $1;
-			if ($$ && !$$->local
-				&& $$->type->type != ev_func)
-				def_initialized ($$);
+			if ($1 && !$1->local
+				&& $1->type->type != ev_func)
+				def_initialized ($1);
 		}
 	;
 
@@ -388,15 +386,14 @@ def_name
 						warning (0, "local %s shadows param %s", $1, def->name);
 				}
 			}
-			$$ = get_def (current_type, $1, current_scope, current_storage);
-			current_def = $$;
+			$$ = get_def ($<type>0, $1, current_scope, current_storage);
 		}
 	;
 
 opt_initializer
-	: /*empty*/
-	| { element_flag = current_type->type != ev_func; } var_initializer
-		{ element_flag = 0; }
+	: /*empty*/ { }
+	| { element_flag = $<def>0->type->type != ev_func; $$ = $<def>0; }
+	  var_initializer { element_flag = 0; }
 	;
 
 var_initializer
@@ -404,14 +401,14 @@ var_initializer
 		{
 			if (current_scope->type == sc_local) {
 				append_expr (local_expr,
-							 assign_expr (new_def_expr (current_def), $2));
-				def_initialized (current_def);
+							 assign_expr (new_def_expr ($<def>0), $2));
+				def_initialized ($<def>0);
 			} else {
 				if ($2->type >= ex_string) {
-					if (current_def->type->type == ev_func) {
+					if ($<def>0->type->type == ev_func) {
 						PARSE_ERROR;
 					} else {
-						current_def = ReuseConstant ($2,  current_def);
+						ReuseConstant ($2,  $<def>0);
 					}
 				} else {
 					error ($2, "non-constant expression used for initializer");
@@ -420,23 +417,24 @@ var_initializer
 		}
 	| '=' ELE_START { current_init = new_block_expr (); } element_list '}'
 		{
-			init_elements (current_def, $4);
+			init_elements ($<def>0, $4);
 			current_init = 0;
 		}
 	| '=' '#' const
 		{
-			build_builtin_function (current_def, $3);
+			build_builtin_function ($<def>0, $3);
 		}
-	| '=' opt_state_expr begin_function statement_block end_function
+	| '=' opt_state_expr { $$ = $<def>0; }
+	  begin_function statement_block end_function
 		{
-			build_function ($3);
+			build_function ($4);
 			if ($2) {
-				$2->next = $4;
-				emit_function ($3, $2);
+				$2->next = $5;
+				emit_function ($4, $2);
 			} else {
-				emit_function ($3, $4);
+				emit_function ($4, $5);
 			}
-			finish_function ($3);
+			finish_function ($4);
 		}
 	;
 
@@ -445,8 +443,7 @@ opt_state_expr
 		{
 			$$ = 0;
 		}
-	| '[' const ',' { $<def>$ = current_def; }
-	  def_name { current_def = $<def>4; } ']'
+	| '[' const ',' { $<type>$ = &type_function; } def_name ']'
 		{
 			if ($2->type == ex_integer)
 				convert_int ($2);
@@ -509,8 +506,8 @@ opt_comma
 begin_function
 	: /*empty*/
 		{
-			$$ = current_func = new_function (current_def->name);
-			$$->def = current_def;
+			$$ = current_func = new_function ($<def>0->name);
+			$$->def = $<def>0;
 			$$->refs = new_reloc ($$->def->ofs, rel_def_func);
 			$$->code = pr.code->size;
 			if (options.code.debug) {
@@ -521,7 +518,7 @@ begin_function
 
 				lineno->fa.func = $$->aux - pr.auxfunctions;
 			}
-			build_scope ($$, current_def, current_params);
+			build_scope ($$, $<def>0, current_params);
 			current_scope = $$->scope;
 		}
 	;
@@ -658,7 +655,7 @@ statement
 	| LOCAL type
 		{
 			current_storage = st_local;
-			current_type = $2;
+			$<type>$ = $2;
 			local_expr = new_block_expr ();
 		}
 	  def_list ';'
@@ -1078,19 +1075,18 @@ ivar_decls
 	;
 
 ivar_decl
-	: type { current_type = $1; } ivars { }
+	: type { $$ = $1; } ivars { }
 	;
 
 ivars
 	: ivar_declarator
-	| ivars ',' ivar_declarator
+	| ivars ',' { $$ = $<type>0; } ivar_declarator
 	;
 
 ivar_declarator
 	: NAME
 		{
-			new_struct_field (current_ivars, current_type,
-							  $1, current_visibility);
+			new_struct_field (current_ivars, $<type>0, $1, current_visibility);
 		}
 	;
 
@@ -1102,7 +1098,7 @@ methoddef
 		}
 	  opt_state_expr
 		{
-			current_def = $2->def = method_def (current_class, $2);
+			$$ = $2->def = method_def (current_class, $2);
 			current_params = $2->params;
 		}
 	  begin_function statement_block end_function
@@ -1132,7 +1128,7 @@ methoddef
 		}
 	  opt_state_expr
 		{
-			current_def = $2->def = method_def (current_class, $2);
+			$$ = $2->def = method_def (current_class, $2);
 			current_params = $2->params;
 		}
 	  begin_function statement_block end_function
