@@ -24,7 +24,8 @@ AC_PROG_YACC
 AM_PROG_LEX
 
 CPP_NAME=$ac_cv_prog_CPP
-AC_DEFINE_UNQUOTED(CPP_NAME, "$CPP_NAME")
+AC_DEFINE_UNQUOTED(CPP_NAME, "$CPP_NAME",
+				   [Define this to the command line for the C preprocessor])
 
 dnl We want warnings, lots of warnings...
 if test "x$GCC" = xyes; then
@@ -55,7 +56,8 @@ if test "x$profile" = xyes; then
 	fi
 fi
 
-AC_DEFINE_UNQUOTED(PATH_SEPARATOR, '/')
+AC_DEFINE_UNQUOTED(PATH_SEPARATOR, '/',
+			[Define this to your operating system's path separator character])
 
 dnl Checks for library functions.
 
@@ -109,7 +111,8 @@ QFCC_INCS=""
 
 AC_ARG_ENABLE(cpp,
 	[  --enable-cpp            Enable use of the C preprocessor.],
-	AC_DEFINE(USE_CPP)
+	AC_DEFINE(USE_CPP, 1,
+			  [Define this to the command line for the C preprocessor])
 )
 
 if test "x$HAVE_QF" = xno; then
