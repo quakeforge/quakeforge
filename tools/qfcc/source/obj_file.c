@@ -504,6 +504,7 @@ qfo_to_progs (qfo_t *qfo, pr_info_t *pr)
 	def_t      *pd;
 	qfo_def_t  *qd;
 	reloc_t    *relocs = 0;
+	int         first_local;
 
 	if (qfo->num_relocs)
 		relocs = calloc (qfo->num_relocs, sizeof (reloc_t));
@@ -547,19 +548,12 @@ qfo_to_progs (qfo_t *qfo, pr_info_t *pr)
 		pd->file = qd->file;
 		pd->line = qd->line;
 	}
-	pr->scope->tail = &pr->scope->head;
-	for (i = 0, pd = pr->scope->head; i < pr->scope->num_defs; i++, pd++) {
-		if ((*pr->scope->tail)->local) {
-			*pr->scope->tail = 0;
-			break;
-		}
-		pr->scope->tail = &(*pr->scope->tail)->def_next;
-	}
 
 	pr->num_functions = qfo->num_funcs + 1;
 	if (qfo->num_funcs)
 		pr->func_head = calloc (qfo->num_funcs, sizeof (function_t));
 	pr->func_tail = &pr->func_head;
+	first_local = qfo->num_defs;
 	for (i = 0, pf = pr->func_head, qf = qfo->funcs;
 		 i < qfo->num_funcs; i++, pf++, qf++) {
 		*pr->func_tail = pf;
@@ -580,6 +574,8 @@ qfo_to_progs (qfo_t *qfo, pr_info_t *pr)
 		pf->scope = new_scope (sc_params, init_space (qf->locals_size, 0),
 							   pr->scope);
 		if (qf->num_local_defs) {
+			if (first_local > qf->local_defs)
+				first_local = qf->local_defs;
 			pf->scope->head = pr->scope->head + qf->local_defs;
 			pf->scope->tail = &pf->scope->head[qf->num_local_defs - 1].def_next;
 			*pf->scope->tail = 0;
@@ -595,6 +591,11 @@ qfo_to_progs (qfo_t *qfo, pr_info_t *pr)
 			pf->refs = relocs + qf->relocs;
 			pf->refs[qf->num_relocs - 1].next = 0;
 		}
+	}
+	if (first_local > 0) {
+		pd = pr->scope->head + first_local - 1;
+		pr->scope->tail = &pd->def_next;
+		pd->def_next = 0;
 	}
 	pr->num_linenos = pr->linenos_size = qfo->num_lines;
 	if (pr->num_linenos) {

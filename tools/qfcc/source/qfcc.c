@@ -770,6 +770,8 @@ main (int argc, char **argv)
 
 	opcode_init ();
 	init_types ();
+	InitData ();
+	clear_immediates ();
 
 	if (source_files) {
 		res = separate_compile ();
