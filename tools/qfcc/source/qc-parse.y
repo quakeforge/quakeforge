@@ -906,6 +906,7 @@ new_class_name
 			}
 			current_class = $$;
 		}
+	;
 
 class_with_super
 	: class_name ':' class_name
@@ -960,6 +961,7 @@ protocol_name
 				$$ = get_protocol ($1, 1);
 			}
 		}
+	;
 
 classdef
 	: INTERFACE new_class_name
