@@ -104,6 +104,7 @@ qf_client_LIBS= \
 		$(top_builddir)/libs/gamecode/engine/libQFgamecode.la \
 		$(top_builddir)/libs/audio/libQFcd.la \
 		$(top_builddir)/libs/audio/libQFsound.la \
+		$(top_builddir)/libs/image/libQFimage.la \
 		$(top_builddir)/libs/util/libQFutil.la \
 		$(top_builddir)/libs/gib/libQFgib.la
 

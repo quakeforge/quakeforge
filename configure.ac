@@ -1978,7 +1978,7 @@ AC_SUBST(plugin_libadd)
 
 QF_DEPS(BSP2IMG,
 	[-I$(top_srcdir)/tools/qfbsp/include],
-	[$(top_builddir)/libs/util/libQFutil.la],
+	[$(top_builddir)/libs/image/libQFimage.la $(top_builddir)/libs/util/libQFutil.la],
 	[$(WIN32_LIBS)],
 )
 QF_DEPS(QFBSP,
@@ -2072,11 +2072,12 @@ AC_OUTPUT(
 	libs/audio/cd/Makefile
 	libs/audio/targets/Makefile
 	libs/audio/renderer/Makefile
-	libs/gib/Makefile
 	libs/console/Makefile
 	libs/gamecode/Makefile
 	libs/gamecode/engine/Makefile
 	libs/gamecode/builtins/Makefile
+	libs/gib/Makefile
+	libs/image/Makefile
 	libs/models/Makefile
 	libs/models/alias/Makefile
 	libs/models/brush/Makefile
