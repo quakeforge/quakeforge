@@ -38,16 +38,16 @@
 // Various variables also defined in snd_dma.c
 // FIXME - should be put in one place
 // =======================================================================
-extern channel_t       channels[MAX_CHANNELS];
-extern int             total_channels;
-extern volatile dma_t *shm;
-extern cvar_t         *loadas8bit;
-extern int             paintedtime;				// sample PAIRS
-extern qboolean        snd_initialized;
+channel_t       channels[MAX_CHANNELS];
+int             total_channels;
+volatile dma_t *shm = 0;
+cvar_t         *loadas8bit;
+int             paintedtime;				// sample PAIRS
+qboolean        snd_initialized = false;
 
-extern cvar_t         *bgmvolume;
-extern cvar_t         *volume;
-extern cvar_t         *snd_interp;
+cvar_t         *bgmvolume;
+cvar_t         *volume;
+cvar_t         *snd_interp;
 
 cvar_t                *snd_plugin;
 plugin_t              *sndmodule = NULL;

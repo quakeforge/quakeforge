@@ -9,7 +9,7 @@ lib_LTLIBRARIES= @CD_TARGETS@ @SND_TARGETS@
 EXTRA_LTLIBRARIES= libQFsound.la libQFcd.la
 
 libQFsound_la_LDFLAGS= -version-info 1:0:0
-libQFsound_la_SOURCES= snd_common.c snd.c
+libQFsound_la_SOURCES= snd.c
 libQFsound.la: $(libQFsound_la_OBJECTS) $(libQFsound_la_DEPENDENCIES)
 	$(LINK) -rpath $(libdir) $(libQFsound_la_LDFLAGS) $(libQFsound_la_OBJECTS) $(libQFsound_la_LIBADD) $(LIBS)
 
