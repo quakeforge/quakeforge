@@ -41,7 +41,7 @@
 channel_t       channels[MAX_CHANNELS];
 int             total_channels;
 volatile dma_t *shm = 0;
-cvar_t         *loadas8bit;
+cvar_t         *snd_loadas8bit;
 int             paintedtime;				// sample PAIRS
 qboolean        snd_initialized = false;
 
@@ -78,15 +78,15 @@ void
 S_Init_Cvars (void)
 {
 	volume = Cvar_Get ("volume", "0.7", CVAR_ARCHIVE, NULL,
-			"Volume level of sounds");
-	loadas8bit =
-		Cvar_Get ("loadas8bit", "0", CVAR_NONE, NULL, "Load samples as 8-bit");
+					   "Volume level of sounds");
+	snd_loadas8bit = Cvar_Get ("snd_loadas8bit", "0", CVAR_NONE, NULL,
+							   "Load samples as 8-bit");
 	bgmvolume = Cvar_Get ("bgmvolume", "1", CVAR_ARCHIVE, NULL,
-			"CD music volume");
+						  "CD music volume");
 	snd_interp = Cvar_Get ("snd_interp", "1", CVAR_ARCHIVE, NULL,
 	                              "control sample interpolation");
 	snd_plugin = Cvar_Get ("snd_plugin", "null", CVAR_ARCHIVE, NULL,
-			"Sound Plugin to use");
+						   "Sound Plugin to use");
 }
 
 void
