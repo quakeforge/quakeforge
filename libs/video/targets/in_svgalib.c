@@ -384,7 +384,7 @@ IN_InitMouse (void)
 		mouserate = atoi (com_argv[COM_CheckParm ("-mrate") + 1]);
 	}
 #if 0
-	printf ("Mouse: dev=%s,type=%s,speed=%d\n",
+	Sys_Printf ("Mouse: dev=%s,type=%s,speed=%d\n",
 			mousedev, mice[mtype].name, mouserate);
 #endif
 	if (mouse_init (mousedev, mtype, mouserate)) {

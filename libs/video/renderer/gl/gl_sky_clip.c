@@ -482,7 +482,7 @@ process_corners (struct box_def *box)
 				vec3_t      v[3];
 
 				center = faces_bit_magic[sel];
-				// printf ("%02o %d  %d %d %d %d %d\n", sel, center,
+				// Sys_Printf ("%02o %d  %d %d %d %d %d\n", sel, center,
 				// visit[0].face,
 				// visit[1].face, visit[2].face, visit[3].face,
 				// visit[4].face);

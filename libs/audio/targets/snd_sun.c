@@ -80,7 +80,7 @@ static qboolean
 SNDDMA_Init (void)
 {
 	if (snd_inited) {
-		printf ("Sound already init'd\n");
+		Sys_Printf ("Sound already init'd\n");
 		return 0;
 	}
 
@@ -235,7 +235,7 @@ SNDDMA_Submit (void)
 	wbufp = stop;
 
 	if (write (audio_fd, writebuf, bytes) < bytes)
-		printf ("audio can't keep up!\n");
+		Sys_Printf ("audio can't keep up!\n");
 
 }
 

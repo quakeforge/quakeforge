@@ -350,7 +350,7 @@ ResetSharedFrameBuffers (void)
 		// attach to the shared memory segment
 		x_shminfo[frm].shmaddr = (void *) shmat (x_shminfo[frm].shmid, 0, 0);
 
-		printf ("VID: shared memory id=%d, addr=0x%lx\n", x_shminfo[frm].shmid,
+		Sys_Printf ("VID: shared memory id=%d, addr=0x%lx\n", x_shminfo[frm].shmid,
 				(long) x_shminfo[frm].shmaddr);
 
 		x_framebuffer[frm]->data = x_shminfo[frm].shmaddr;
@@ -451,10 +451,10 @@ VID_Init (unsigned char *palette)
 	x_vis = x_visinfo->visual;
 
 	if (num_visuals > 1) {
-		printf ("Found more than one visual id at depth %d:\n",
+		Sys_Printf ("Found more than one visual id at depth %d:\n",
 				template.depth);
 		for (i = 0; i < num_visuals; i++)
-			printf ("	-visualid %d\n", (int) x_visinfo[i].visualid);
+			Sys_Printf ("	-visualid %d\n", (int) x_visinfo[i].visualid);
 	} else {
 		if (num_visuals == 0) {
 			if (template_mask == VisualIDMask) {
@@ -466,15 +466,15 @@ VID_Init (unsigned char *palette)
 	}
 
 	if (verbose) {
-		printf ("Using visualid %d:\n", (int) x_visinfo->visualid);
-		printf ("	class %d\n", x_visinfo->class);
-		printf ("	screen %d\n", x_visinfo->screen);
-		printf ("	depth %d\n", x_visinfo->depth);
-		printf ("	red_mask 0x%x\n", (int) x_visinfo->red_mask);
-		printf ("	green_mask 0x%x\n", (int) x_visinfo->green_mask);
-		printf ("	blue_mask 0x%x\n", (int) x_visinfo->blue_mask);
-		printf ("	colormap_size %d\n", x_visinfo->colormap_size);
-		printf ("	bits_per_rgb %d\n", x_visinfo->bits_per_rgb);
+		Sys_Printf ("Using visualid %d:\n", (int) x_visinfo->visualid);
+		Sys_Printf ("	class %d\n", x_visinfo->class);
+		Sys_Printf ("	screen %d\n", x_visinfo->screen);
+		Sys_Printf ("	depth %d\n", x_visinfo->depth);
+		Sys_Printf ("	red_mask 0x%x\n", (int) x_visinfo->red_mask);
+		Sys_Printf ("	green_mask 0x%x\n", (int) x_visinfo->green_mask);
+		Sys_Printf ("	blue_mask 0x%x\n", (int) x_visinfo->blue_mask);
+		Sys_Printf ("	colormap_size %d\n", x_visinfo->colormap_size);
+		Sys_Printf ("	bits_per_rgb %d\n", x_visinfo->bits_per_rgb);
 	}
 
 	/* Setup attributes for main window */

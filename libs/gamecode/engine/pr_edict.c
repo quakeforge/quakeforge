@@ -104,7 +104,7 @@ ED_ClearEdict (progs_t * pr, edict_t *e, int val)
 	int i;
 
 	if (NUM_FOR_EDICT(pr,e)<*pr->reserved_edicts)
-		printf("clearing reserved edict %d\n", NUM_FOR_EDICT(pr,e));
+		Sys_Printf("clearing reserved edict %d\n", NUM_FOR_EDICT(pr,e));
 	for (i=0; i < pr->progs->entityfields; i++)
 		e->v[i].integer_var = val;
 	//memset (&e->v, 0, pr->progs->entityfields * 4);

@@ -178,7 +178,7 @@ PR_EnterFunction (progs_t * pr, dfunction_t *f)
 	int			i, j, c, o;
 	int			k;
 
-	//printf("%s:\n", PR_GetString(pr,f->s_name));
+	//Sys_Printf("%s:\n", PR_GetString(pr,f->s_name));
 	pr->pr_stack[pr->pr_depth].s = pr->pr_xstatement;
 	pr->pr_stack[pr->pr_depth].f = pr->pr_xfunction;
 	pr->pr_depth++;
@@ -265,7 +265,7 @@ PR_ExecuteProgram (progs_t * pr, func_t fnum)
 	}
 
 	f = &pr->pr_functions[fnum];
-	//printf("%s:\n", PR_GetString(pr,f->s_name));
+	//Sys_Printf("%s:\n", PR_GetString(pr,f->s_name));
 
 	pr->pr_trace = false;
 

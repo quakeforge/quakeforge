@@ -137,7 +137,7 @@ qboolean
 X11_AddEvent (int event, void (*event_handler) (XEvent *))
 {
 	if (event >= LASTEvent) {
-		printf ("event: %d, LASTEvent: %d\n", event, LASTEvent);
+		Sys_Printf ("event: %d, LASTEvent: %d\n", event, LASTEvent);
 		return false;
 	}
 	
