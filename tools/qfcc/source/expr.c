@@ -38,6 +38,7 @@ static const char rcsid[] =
 
 #include "qfcc.h"
 #include "scope.h"
+#include "struct.h"
 #include "qc-parse.h"
 
 
@@ -51,6 +52,7 @@ etype_t     qc_types[] = {
 	ev_void,							// ex_def
 	ev_void,							// ex_temp
 	ev_void,							// ex_nil
+	ev_void,							// ex_name
 
 	ev_string,							// ex_string
 	ev_float,							// ex_float
@@ -93,13 +95,31 @@ expr_type   expr_types[] = {
 	ex_integer,							// ev_integer
 	ex_uinteger,						// ev_uinteger
 	ex_short,							// ev_short
+	ex_nil,								// ev_struct FIXME???
 };
+
+void
+convert_name (expr_t *e)
+{
+	if (e->type == ex_name) {
+		const char * name = e->e.string_val;
+
+		e->type = ex_def;
+		e->e.def = PR_GetDef (NULL, name, pr_scope, false);
+		if (!e->e.def) {
+			error (e, "Undeclared variable \"%s\".", name);
+			e->e.def = &def_float;
+		}
+	}
+}
 
 type_t *
 get_type (expr_t *e)
 {
+	convert_name (e);
 	switch (e->type) {
 		case ex_label:
+		case ex_name:
 			return 0;					// something went very wrong
 		case ex_nil:
 			return &type_void;
@@ -487,6 +507,7 @@ print_expr (expr_t *e)
 			printf ("NULL");
 			break;
 		case ex_string:
+		case ex_name:
 			printf ("\"%s\"", e->e.string_val);
 			break;
 		case ex_float:
@@ -798,8 +819,36 @@ field_expr (expr_t *e1, expr_t *e2)
 {
 	etype_t     t1, t2;
 	expr_t     *e;
+	type_t     *strct;
+	struct_field_t *field;
 
 	t1 = extract_type (e1);
+	if (t1 == ev_struct) {
+		strct = get_type (e1);
+		if (e2->type != ex_name)
+			return error (e2, "structure field name expected");
+		field = struct_find_field (strct, e2->e.string_val);
+		if (!field)
+			return error (e2, "structure has no field %s", e2->e.string_val);
+		e2->type = ex_short;
+		e2->e.short_val = field->offset;
+		e = new_binary_expr ('.', unary_expr ('&', e1), e2);
+		e->e.expr.type = field->type;
+		return e;
+	}
+	if (t1 == ev_pointer
+		&& (strct = get_type(e1)->aux_type)->type == ev_struct) {
+		if (e2->type != ex_name)
+			return error (e2, "structure field name expected");
+		field = struct_find_field (strct, e2->e.string_val);
+		if (!field)
+			return error (e2, "structure has no field %s", e2->e.string_val);
+		e2->type = ex_short;
+		e2->e.short_val = field->offset;
+		e = new_binary_expr ('.', e1, e2);
+		e->e.expr.type = field->type;
+		return e;
+	}
 	t2 = extract_type (e2);
 
 	if ((t1 != ev_entity || t2 != ev_field)
@@ -831,8 +880,7 @@ test_expr (expr_t *e, int test)
 			error (e, "internal error");
 			abort ();
 		case ev_void:
-			error (e, "void has no value");
-			break;
+			return error (e, "void has no value");
 		case ev_string:
 			new = new_expr ();
 			new->type = ex_string;
@@ -871,6 +919,8 @@ test_expr (expr_t *e, int test)
 			new = new_expr ();
 			new->type = ex_quaternion;
 			break;
+		case ev_struct:
+			return error (e, "struct cannot be tested");
 	}
 	new->line = e->line;
 	new->file = e->file;
@@ -894,9 +944,9 @@ binary_expr (int op, expr_t *e1, expr_t *e2)
 	type_t     *type = 0;
 	expr_t     *e;
 
+	convert_name (e1);
 	if (op != '=')
 		check_initialized (e1);
-	check_initialized (e2);
 
 	if (op == '=' && e1->type == ex_def)
 		PR_DefInitialized (e1->e.def);
@@ -910,6 +960,9 @@ binary_expr (int op, expr_t *e1, expr_t *e2)
 
 	if (op == '.')
 		return field_expr (e1, e2);
+
+	convert_name (e2);
+	check_initialized (e2);
 
 	if (op == OR || op == AND) {
 		e1 = test_expr (e1, true);
@@ -1028,11 +1081,13 @@ asx_expr (int op, expr_t *e1, expr_t *e2)
 expr_t *
 unary_expr (int op, expr_t *e)
 {
+	convert_name (e);
 	check_initialized (e);
 	switch (op) {
 		case '-':
 			switch (e->type) {
 				case ex_label:
+				case ex_name:
 					error (e, "internal error");
 					abort ();
 				case ex_uexpr:
@@ -1084,6 +1139,8 @@ unary_expr (int op, expr_t *e)
 		case '!':
 			switch (e->type) {
 				case ex_label:
+				case ex_name:
+					error (e, "internal error");
 					abort ();
 				case ex_block:
 					if (!e->e.block.result)
@@ -1142,13 +1199,15 @@ unary_expr (int op, expr_t *e)
 		case '~':
 			switch (e->type) {
 				case ex_label:
+				case ex_name:
+					error (e, "internal error");
 					abort ();
 				case ex_uexpr:
 					if (e->e.expr.op == '~')
 						return e->e.expr.e1;
 				case ex_block:
 					if (!e->e.block.result)
-						return error (e, "invalid type for unary -");
+						return error (e, "invalid type for unary ~");
 				case ex_expr:
 				case ex_def:
 				case ex_temp:
@@ -1183,8 +1242,54 @@ unary_expr (int op, expr_t *e)
 					return error (e, "invalid type for unary ~");
 			}
 			break;
-		default:
-			abort ();
+		case '&':
+			switch (e->type) {
+				case ex_label:
+				case ex_name:
+					error (e, "internal error");
+					abort ();
+				case ex_def:
+					{
+						type_t      new;
+						expr_t     *n = new_unary_expr (op, e);
+
+						memset (&new, 0, sizeof (new));
+						new.type = ev_pointer;
+						new.aux_type = e->e.def->type;
+						n->e.expr.type = PR_FindType (&new);
+						return n;
+					}
+				case ex_expr:
+					if (e->e.expr.op == '.') {
+						expr_t     *e1 = e->e.expr.e1;
+						if (get_type (e1) == &type_entity) {
+							type_t      new;
+
+							memset (&new, 0, sizeof (new));
+							new.type = ev_pointer;
+							new.aux_type = e->e.expr.type;
+							e->e.expr.type = PR_FindType (&new);
+							return e;
+						}
+					}
+				case ex_uexpr:
+				case ex_block:
+				case ex_temp:
+				case ex_short:
+				case ex_integer:
+				case ex_uinteger:
+				case ex_float:
+				case ex_nil:
+				case ex_string:
+				case ex_vector:
+				case ex_quaternion:
+				case ex_entity:
+				case ex_field:
+				case ex_func:
+				case ex_pointer:
+					return error (e, "invalid type for unary &");
+			}
+			break;
 	}
 	error (e, "internal error");
 	abort ();

@@ -37,7 +37,8 @@ new_struct_field (type_t *strct, type_t *type, const char *name)
 	field->next = 0;
 	*strct->struct_tail = field;
 	strct->struct_tail = &field->next;
-	return 0;
+	Hash_Add (strct->struct_fields, field);
+	return field;
 }
 
 struct_field_t *

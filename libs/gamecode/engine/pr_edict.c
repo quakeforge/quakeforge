@@ -40,7 +40,6 @@ static const char rcsid[] =
 #include <stdio.h>
 
 #include "QF/cmd.h"
-#include "compat.h"
 #include "QF/crc.h"
 #include "QF/cvar.h"
 #include "QF/hash.h"
@@ -51,6 +50,8 @@ static const char rcsid[] =
 #include "QF/zone.h"
 #include "QF/va.h"
 #include "QF/vfs.h"
+
+#include "compat.h"
 
 cvar_t     *pr_boundscheck;
 cvar_t     *pr_deadbeef_ents;
@@ -69,6 +70,7 @@ int         pr_type_size[ev_type_count] = {
 	1,
 	1,
 	0,			// value in opcode
+	1,			// variable
 };
 
 const char *type_name[ev_type_count] = {
@@ -84,6 +86,7 @@ const char *type_name[ev_type_count] = {
 	"integer",
 	"uinteger",
 	"short",
+	"struct",
 };
 
 ddef_t     *ED_FieldAtOfs (progs_t * pr, int ofs);
@@ -512,12 +515,16 @@ PR_GlobalString (progs_t * pr, int ofs, etype_t type)
 }
 
 char       *
-PR_GlobalStringNoContents (progs_t * pr, int ofs)
+PR_GlobalStringNoContents (progs_t * pr, int ofs, etype_t type)
 {
 	int         i;
 	ddef_t     *def = 0;
 	static char line[128];
 
+	if (type == ev_short) {
+		snprintf (line, sizeof (line), "%-20d", (short) ofs);
+		return line;
+	}
 	if (pr_debug->int_val && pr->debug)
 		def = PR_Get_Local_Def (pr, ofs);
 	if (!def)

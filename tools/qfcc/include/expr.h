@@ -6,6 +6,7 @@ typedef enum {
 	ex_def,
 	ex_temp,	// temporary variable
 	ex_nil,		// umm, nil, null. nuff said
+	ex_name,
 
 	ex_string,
 	ex_float,

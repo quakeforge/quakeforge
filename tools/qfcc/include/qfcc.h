@@ -283,10 +283,13 @@ typedef struct type_s
 	etype_t			type;
 	struct def_s	*def;		// a def that points to this type
 	struct type_s	*next;
-// function types are more complex
+// function/pointer/struct types are more complex
 	struct type_s	*aux_type;	// return type or field type
 	int				num_parms;	// -1 = variable args
 	struct type_s	*parm_types[MAX_PARMS];	// only [num_parms] allocated
+	struct hashtab_s *struct_fields;
+	struct struct_field_s	*struct_head;
+	struct struct_field_s	**struct_tail;
 } type_t;
 
 typedef struct statref_s {
@@ -359,6 +362,7 @@ extern	type_t	type_quaternion;
 extern	type_t	type_integer;
 extern	type_t	type_uinteger;
 extern	type_t	type_short;
+extern	type_t	type_struct;
 
 extern	def_t	def_void;
 extern	def_t	def_string;
@@ -372,6 +376,7 @@ extern	def_t	def_quaternion;
 extern	def_t	def_integer;
 extern	def_t	def_uinteger;
 extern	def_t	def_short;
+extern	def_t	def_struct;
 
 struct function_s
 {

@@ -77,6 +77,8 @@ emit_statement (int sline, opcode_t *op, def_t *var_a, def_t *var_b,
 		if (op->type_c == ev_void) {
 			var_c = NULL;
 			statement->c = 0;
+		} else {
+			statement->c = var_c->ofs;
 		}
 		ret = var_a;
 	} else {							// allocate result space
@@ -249,6 +251,7 @@ emit_sub_expr (expr_t *e, def_t *dest)
 					emit_expr (e);
 				break;
 			}
+		case ex_name:
 		case ex_nil:
 		case ex_label:
 			error (e, "internal error");
@@ -299,6 +302,24 @@ emit_sub_expr (expr_t *e, def_t *dest)
 					dest = PR_GetTempDef (e->e.expr.type, pr_scope);
 					dest->users += 2;
 				}
+			} else if (e->e.expr.op == '&') {
+				static expr_t zero;
+				def_t      *tmp = 0;
+
+				zero.type = ex_short;
+
+				operator = "&";
+				if (e->e.expr.e1->type == ex_expr
+					&& e->e.expr.e1->e.expr.op == '.') {
+					tmp = PR_GetTempDef (e->e.expr.type, pr_scope);
+					tmp->users += 2;
+				}
+				def_a = emit_sub_expr (e->e.expr.e1, tmp);
+				def_b = emit_sub_expr (&zero, 0);
+				if (!dest) {
+					dest = PR_GetTempDef (e->e.expr.type, pr_scope);
+					dest->users += 2;
+				}
 			} else {
 				abort ();
 			}
@@ -335,6 +356,7 @@ emit_sub_expr (expr_t *e, def_t *dest)
 			d = PR_NewDef (&type_short, 0, pr_scope);
 			d->ofs = e->e.short_val;
 			d->absolute = 1;
+			d->users = 1;
 			break;
 	}
 	PR_FreeTempDefs ();
@@ -454,6 +476,7 @@ emit_expr (expr_t *e)
 			warning (e, "Ignoring useless expression");
 			break;
 		case ex_nil:
+		case ex_name:
 			error (e, "internal error");
 			abort ();
 	}

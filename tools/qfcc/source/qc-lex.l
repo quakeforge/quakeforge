@@ -35,6 +35,7 @@ static const char rcsid[] =
 #include <QF/sys.h>
 #include "qfcc.h"
 #include "scope.h"
+#include "struct.h"
 #include "qc-parse.h"
 
 #define YY_NO_UNPUT
@@ -227,6 +228,7 @@ static keyword_t keywords[] = {
 	{"case",		CASE,	0,					PROG_ID_VERSION},
 	{"default",		DEFAULT, 0,					PROG_ID_VERSION},
 	{"NIL",			NIL,	0,					PROG_ID_VERSION},
+	{"struct",		STRUCT, 0,					PROG_VERSION},
 };
 
 static const char *
@@ -238,22 +240,26 @@ keyword_get_key (void *kw, void *unused)
 int
 type_or_name (char *token)
 {
-	static int initialized = 0;
 	static hashtab_t *keyword_tab;
-	keyword_t *keyword;
+	keyword_t  *keyword;
+	type_t     *type;
 
-	if (!initialized) {
+	if (!keyword_tab) {
 		int i;
 		keyword_tab = Hash_NewTable (1021, keyword_get_key, 0, 0);
 		for (i = 0; i < sizeof (keywords) / sizeof (keywords[0]); i++)
 			if (keywords[i].version <= options.code.progsversion)
 				Hash_Add (keyword_tab, &keywords[i]);
-		initialized = 1;
 	}
 	keyword = Hash_Find (keyword_tab, token);
 	if (keyword) {
 		yylval.type = keyword->type;
 		return keyword->value;
+	}
+	type = find_struct (token);
+	if (type) {
+		yylval.type = type;
+		return TYPE;
 	}
 	yylval.string_val = strdup (token);
 	return NAME;

@@ -35,6 +35,7 @@ static const char rcsid[] =
 #include <QF/hash.h>
 #include <QF/sys.h>
 
+#include "struct.h"
 #include "switch.h"
 
 #define YYDEBUG 1
@@ -110,7 +111,7 @@ typedef struct {
 
 %token	LOCAL RETURN WHILE DO IF ELSE FOR BREAK CONTINUE ELIPSIS NIL
 %token	IFBE IFB IFAE IFA
-%token	SWITCH CASE DEFAULT
+%token	SWITCH CASE DEFAULT STRUCT
 %token	<type> TYPE
 
 %type	<type>	type opt_func func_parms array_decl
@@ -137,6 +138,7 @@ expr_t	*local_expr;
 expr_t	*break_label;
 expr_t	*continue_label;
 switch_block_t *switch_block;
+type_t	*struct_type;
 
 def_t		*pr_scope;					// the function being parsed, or NULL
 string_t	s_file;						// filename for function definition
@@ -157,6 +159,22 @@ def
 	  { current_type = build_type ($1, $4); } var_def_list
 	| opt_field TYPE { current_type = $2; } func_parms
 	  { current_type = build_type ($1, $4); } func_def_list
+	| STRUCT NAME
+	  { struct_type = new_struct ($2); } '=' '{' struct_defs '}'
+	;
+
+struct_defs
+	: /* empty */
+	| struct_defs struct_def ';'
+	;
+
+struct_def
+	: opt_field TYPE
+	  { current_type = build_type ($1, $2); } struct_def_list
+	| opt_field TYPE { current_type = $2; } array_decl
+	  { current_type = build_type ($1, $4); } struct_def_list
+	| opt_field TYPE { current_type = $2; } func_parms
+	  { current_type = build_type ($1, $4); } struct_def_list
 	;
 
 opt_field
@@ -216,6 +234,15 @@ array_decl
 				$$ = build_array_type ($2->e.integer_val);
 		}
 	| '[' ']' { $$ = build_array_type (0); }
+	;
+
+struct_def_list
+	: struct_def_list ',' struct_def_item
+	| struct_def_item
+	;
+
+struct_def_item
+	: NAME { new_struct_field (struct_type, current_type, $1); }
 	;
 
 var_def_list
@@ -683,12 +710,8 @@ expr
 	| NAME
 		{
 			$$ = new_expr ();
-			$$->type = ex_def;
-			$$->e.def = PR_GetDef (NULL, $1, pr_scope, false);
-			if (!$$->e.def) {
-				error (0, "Undeclared variable \"%s\".", $1);
-				$$->e.def = &def_float;
-			}
+			$$->type = ex_name;
+			$$->e.string_val = $1;
 		}
 	| const						{ $$ = $1; }
 	| '(' expr ')'				{ $$ = $2; $$->paren = 1; }
@@ -804,6 +827,14 @@ build_type (int is_field, type_t *type)
 		memset (&new, 0, sizeof (new));
 		new.type = ev_field;
 		new.aux_type = type;
+		return PR_FindType (&new);
+	} else if (type->type == ev_struct) {
+		type_t      new;
+
+		memset (&new, 0, sizeof (new));
+		new.type = ev_pointer;
+		new.aux_type = type;
+		new.num_parms = 1;
 		return PR_FindType (&new);
 	} else {
 		return type;

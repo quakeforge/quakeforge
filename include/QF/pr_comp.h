@@ -39,6 +39,7 @@ typedef enum {
 	ev_integer,
 	ev_uinteger,
 	ev_short,			// value is embedded in the opcode
+	ev_struct,
 	
 	ev_type_count		// not a type, gives number of types
 } etype_t;
@@ -236,6 +237,8 @@ typedef enum {
 	OP_STOREBI_FNC,
 	OP_STOREBI_I,
 	OP_STOREBI_P,
+
+	OP_LEAI,
 } pr_opcode_e;
 
 typedef struct

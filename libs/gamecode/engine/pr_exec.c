@@ -86,13 +86,15 @@ PR_PrintStatement (progs_t * pr, dstatement_t *s)
 			if (op->type_c != ev_void)
 				Sys_Printf ("%s", PR_GlobalString (pr, s->b, op->type_b));
 			else
-				Sys_Printf ("%s", PR_GlobalStringNoContents (pr, s->b));
+				Sys_Printf ("%s", PR_GlobalStringNoContents (pr, s->b,
+															 op->type_b));
 		}
 		if (op->type_c != ev_void) {
 			if (op->type_b == ev_pointer && op->type_c == ev_integer)
 				Sys_Printf ("%s", PR_GlobalString (pr, s->c, op->type_c));
 			else
-				Sys_Printf ("%s", PR_GlobalStringNoContents (pr, s->c));
+				Sys_Printf ("%s", PR_GlobalStringNoContents (pr, s->c,
+															 op->type_c));
 		}
 	}
 	Sys_Printf ("\n");
@@ -595,6 +597,11 @@ PR_ExecuteProgram (progs_t * pr, func_t fnum)
 
 			case OP_LEA:
 				pointer = OPA.integer_var + OPB.integer_var;
+				OPC.integer_var = pointer;
+				break;
+
+			case OP_LEAI:
+				pointer = OPA.integer_var + (short) st->b;
 				OPC.integer_var = pointer;
 				break;
 

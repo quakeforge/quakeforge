@@ -121,7 +121,8 @@ opcode_t    pr_opcodes[] = {
 	{"&", "address.i",   OP_ADDRESS_I,   false, ev_integer, ev_void, ev_pointer, PROG_VERSION},
 	{"&", "address.p",   OP_ADDRESS_P,   false, ev_pointer, ev_void, ev_pointer, PROG_VERSION},
 
-	{"&", "lea", OP_LEA, false, ev_pointer, ev_integer, ev_pointer, PROG_VERSION},
+	{"&", "lea",  OP_LEA,  false, ev_pointer, ev_integer, ev_pointer, PROG_VERSION},
+	{"&", "leai", OP_LEAI, false, ev_pointer, ev_short, ev_pointer, PROG_VERSION},
 
 	{"=", "store.f",   OP_STORE_F,   true, ev_float, ev_float, ev_void, PROG_ID_VERSION},
 	{"=", "store.v",   OP_STORE_V,   true, ev_vector, ev_vector, ev_void, PROG_ID_VERSION},

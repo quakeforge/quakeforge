@@ -102,6 +102,14 @@ PR_GetArray (type_t *etype, const char *name, int size, def_t *scope,
 	return def;
 }
 
+int
+PR_GetTypeSize (type_t *type)
+{
+	if (type->type == ev_struct)
+		return type->num_parms;
+	return pr_type_size[type->type];
+}
+
 /*
 	PR_GetDef
 
@@ -113,6 +121,7 @@ PR_GetDef (type_t *type, const char *name, def_t *scope, int *allocate)
 {
 	def_t      *def = check_for_name (type, name, scope, allocate);
 	char        element[MAX_NAME];
+	int         size;
 
 	if (def || !allocate)
 		return def;
@@ -147,7 +156,7 @@ PR_GetDef (type_t *type, const char *name, def_t *scope, int *allocate)
 		d->used = 1;
 		d->parent = def;
 	} else {
-		*allocate += pr_type_size[type->type];
+		*allocate += PR_GetTypeSize(type);
 	}
 
 	if (type->type == ev_field) {
@@ -171,13 +180,15 @@ PR_GetDef (type_t *type, const char *name, def_t *scope, int *allocate)
 			d->used = 1;				// always `used'
 			d->parent = def;
 		} else if (type->aux_type->type == ev_pointer) {
-			pr.size_fields += type->aux_type->num_parms
-				* pr_type_size[type->aux_type->aux_type->type];
+			size = PR_GetTypeSize (type->aux_type->aux_type);
+			pr.size_fields += type->aux_type->num_parms * size;
 		} else {
-			pr.size_fields += pr_type_size[type->aux_type->type];
+			size = PR_GetTypeSize (type->aux_type);
+			pr.size_fields += size;
 		}
 	} else if (type->type == ev_pointer) {
-		*allocate += type->num_parms * pr_type_size[type->aux_type->type];
+		size = PR_GetTypeSize (type->aux_type);
+		*allocate += type->num_parms * size;
 		def->initialized = def->constant = 1;
 	}
 
