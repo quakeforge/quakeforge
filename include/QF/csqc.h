@@ -40,5 +40,7 @@ void Cbuf_Progs_Init (struct progs_s *pr);
 void File_Progs_Init (struct progs_s *pr);
 void InputLine_Progs_Init (struct progs_s *pr);
 void String_Progs_Init (struct progs_s *pr);
+void Cvar_Progs_Init (struct progs_s *pr);
+void Key_Progs_Init (struct progs_s *pr);
 
 #endif//__QF_csqc_h
