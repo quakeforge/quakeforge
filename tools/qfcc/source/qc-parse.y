@@ -37,6 +37,7 @@ static const char rcsid[] =
 
 #include "struct.h"
 #include "switch.h"
+#include "type.h"
 
 #define YYDEBUG 1
 #define YYERROR_VERBOSE 1
@@ -70,7 +71,6 @@ void free_local_inits (hashtab_t *def_list);
 typedef struct {
 	type_t	*type;
 	def_t	*scope;
-	def_t	*pscope;
 } scope_t;
 
 %}
@@ -131,7 +131,6 @@ typedef struct {
 
 type_t	*current_type;
 def_t	*current_def;
-def_t	param_scope;
 function_t *current_func;
 expr_t	*local_expr;
 expr_t	*break_label;
@@ -197,17 +196,15 @@ func_parms
 		{
 			$<scope>$.scope = pr_scope;
 			$<scope>$.type = current_type;
-			$<scope>$.pscope = param_scope.scope_next;
-			param_scope.scope_next = 0;
-			param_scope.alloc = &param_scope.locals;
-			*param_scope.alloc = 0;
-			pr_scope = &param_scope;
+
+			pr_scope = PR_NewDef (0, 0, 0);
+			pr_scope->alloc = &pr_scope->locals;
+			*pr_scope->alloc = 0;
 		}
 	  param_list
 		{
-			PR_FlushScope (&param_scope, 1);
+			PR_FlushScope (pr_scope, 1);
 			current_type = $<scope>2.type;
-			param_scope.scope_next = $<scope>2.pscope;
 			pr_scope = $<scope>2.scope;
 		}
 	  ')'
@@ -797,6 +794,7 @@ parse_params (def_t *parms)
 			parms = parms->next;
 		} while (parms);
 	}
+	//print_type (&new); puts("");
 	return PR_FindType (&new);
 }
 
