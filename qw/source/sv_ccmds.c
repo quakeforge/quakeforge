@@ -37,6 +37,7 @@
 #endif
 
 #include <stdlib.h>
+#include <ctype.h>
 
 #include "QF/cmd.h"
 #include "QF/cvar.h"
@@ -59,6 +60,16 @@ char        fp_msg[255] = { 0 };
 extern cvar_t *cl_warncmd;
 extern redirect_t sv_redirected;
 
+static qboolean
+match_char (char a, char b)
+{
+	a = tolower (sys_char_map[(byte)a]);
+	b = tolower (sys_char_map[(byte)b]);
+
+	if (a == b || (a == '1' && b == 'i') || (a == 'i' || b == '1'))
+		return true;
+	return false;
+}
 
 qboolean
 SV_Match_User (const char *substr, int *uidp)
@@ -76,10 +87,11 @@ SV_Match_User (const char *substr, int *uidp)
 	for (i = 0, cl = svs.clients; i < MAX_CLIENTS; i++, cl++) {
 		if (!cl->state)
 			continue;
-		str = strchr (cl->name, substr[0]);
-		while (str) {
+		for (str = cl->name; *str && !match_char (*str, substr[0]); str++)
+			;
+		while (*str) {
 			for (j = 0; substr[j] && str[j]; j++)
-				if (sys_char_map[(byte)substr[j]] != sys_char_map[(byte)str[j]])
+				if (!match_char (substr[j], str[j]))
 					break;
 			if (!substr[j]) {		// found a match;
 				*uidp = cl->userid;
@@ -89,6 +101,9 @@ SV_Match_User (const char *substr, int *uidp)
 				str = 0;
 			} else {
 				str = strchr (str + 1, substr[0]);
+				for (str = str + 1;
+					 *str && !match_char (*str, substr[0]); str++)
+					;
 			}
 		}
 	}
