@@ -89,6 +89,7 @@ AC_PROG_CC
 AC_PROG_CPP
 AC_PROG_LN_S
 AC_PROG_RANLIB
+AC_LIBTOOL_WIN32_DLL
 AM_PROG_LIBTOOL
 AC_PROG_YACC
 AM_PROG_LEX
@@ -562,7 +563,7 @@ AC_ARG_ENABLE(xmms,
 [  --disable-xmms          disable checking for XMMS],
 )
 
-if test "x$enable_xmms" != xno; then
+if test "x$mingw" != xyes -a "x$enable_xmms" != xno; then
 	AM_PATH_XMMS(0.9.5.1,
 		HAVE_XMMS=yes,
 		HAVE_XMMS=no)
