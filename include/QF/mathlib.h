@@ -149,7 +149,10 @@ R_CullBox (const vec3_t mins, const vec3_t maxs)
 	return false;
 }
 
-extern inline qboolean
+#ifndef IMPLEMENT_R_CullSphere
+extern inline
+#endif
+qboolean
 R_CullSphere (const vec3_t origin, const float radius)
 {
 	int		i;

@@ -40,6 +40,7 @@ static const char rcsid[] =
 #include <math.h>
 
 #define IMPLEMENT_R_CullBox
+#define IMPLEMENT_R_CullSphere
 
 #include "QF/mathlib.h"
 #include "QF/qtypes.h"
