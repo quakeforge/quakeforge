@@ -46,6 +46,7 @@
 #include "host.h"
 #include "qargs.h"
 #include "qendian.h"
+#include "sbar.h"
 #include "sys.h"
 #include "va.h"
 
@@ -118,6 +119,7 @@ GL_EndRendering (void)
 {
 	glFlush ();
 	SDL_GL_SwapBuffers ();
+	Sbar_Changed ();
 }
 
 void
