@@ -112,8 +112,7 @@ NewWinding (int points)
 		fprintf (stderr, "NewWinding: %i points\n", points);
 
 	size = (int) ((winding_t *) 0)->points[points];
-	winding = malloc (size);
-	memset (winding, 0, size);
+	winding = calloc (1, size);
 
 	return winding;
 }
@@ -388,15 +387,8 @@ CalcPortalVis (void)
 		pthread_t	work_threads[MAX_THREADS];
 		void *status;
 		pthread_attr_t attrib;
-//		pthread_mutexattr_t mattrib;
-		
 
 		my_mutex = malloc (sizeof (*my_mutex));
-//		if (pthread_mutexattr_init (&mattrib) == -1)
-//			fprintf (stderr, "pthread_mutex_attr_create failed\n");
-//		if (pthread_mutexattr_settype (&mattrib, PTHREAD_MUTEX_ADAPTIVE_NP)
-//			== -1)
-//			fprintf (stderr, "pthread_mutexattr_setkind_np failed\n");	
 		if (pthread_mutex_init (my_mutex, 0) == -1)
 			fprintf (stderr, "pthread_mutex_init failed\n");
 		if (pthread_attr_init (&attrib) == -1)
@@ -655,11 +647,9 @@ LoadPortals (char *name)
 	bitlongs = bitbytes / sizeof (long);
 
 	// each file portal is split into two memory portals
-	portals = malloc (2 * numportals * sizeof (portal_t));
-	memset (portals, 0, 2 * numportals * sizeof (portal_t));
+	portals = calloc (2 * numportals, sizeof (portal_t));
 
-	leafs = malloc (portalleafs * sizeof (leaf_t));
-	memset (leafs, 0, portalleafs * sizeof (leaf_t));
+	leafs = calloc (portalleafs, sizeof (leaf_t));
 
 	originalvismapsize = portalleafs * ((portalleafs + 7) / 8);
 
@@ -756,8 +746,7 @@ main (int argc, char **argv)
 	dstring_appendstr (portalfile, ".prt");
 	LoadPortals (portalfile->str);
 
-	uncompressed = malloc (bitbytes * portalleafs);
-	memset (uncompressed, 0, bitbytes * portalleafs);
+	uncompressed = calloc (bitbytes, portalleafs);
 
 	CalcVis ();
 
