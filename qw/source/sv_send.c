@@ -630,8 +630,8 @@ SV_UpdateClientStats (client_t *client)
 	stats[STAT_VIEWHEIGHT] = (int) SVvector (ent, view_ofs)[2];
 
 	// FIXME: this should become a * key!  --KB
-	if (SVfloat (ent, movetype) == MOVETYPE_FLY && !atoi (Info_ValueForKey
-												  (svs.info, "playerfly")))
+	if (SVfloat (ent, movetype) == MOVETYPE_FLY
+		&& !atoi (Info_ValueForKey (svs.info, "playerfly")))
 		SVfloat (ent, movetype) = MOVETYPE_WALK;
 
 	stats[STAT_FLYMODE] = (SVfloat (ent, movetype) == MOVETYPE_FLY);
@@ -955,6 +955,16 @@ SV_SendDemoMessage(void)
 		// stuff the sigil bits into the high bits of items for sbar
 		stats[STAT_ITEMS] = ((int)SVfloat (ent, items)
 							 | ((int)sv_globals.serverflags << 28));
+
+		// Extensions to the QW 2.40 protocol for Mega2k  --KB
+		stats[STAT_VIEWHEIGHT] = (int) SVvector (ent, view_ofs)[2];
+
+		// FIXME: this should become a * key!  --KB
+		if (SVfloat (ent, movetype) == MOVETYPE_FLY
+			&& !atoi (Info_ValueForKey (svs.info, "playerfly")))
+			SVfloat (ent, movetype) = MOVETYPE_WALK;
+
+		stats[STAT_FLYMODE] = (SVfloat (ent, movetype) == MOVETYPE_FLY);
 
 		for (j=0 ; j<MAX_CL_STATS ; j++)
 			if (stats[j] != demo.stats[i][j]) {
