@@ -38,6 +38,8 @@ static const char rcsid[] =
 # include <strings.h>
 #endif
 
+#include "fnmatch.h"
+
 #include "QF/progs.h"
 #include "QF/va.h"
 #include "QF/vfs.h"
@@ -45,6 +47,60 @@ static const char rcsid[] =
 
 #define MAX_HANDLES 20
 static VFile *handles[MAX_HANDLES];
+
+static const char *file_ban_list[] = {
+	"default.cfg{,.gz}",
+	"demo1.dem{,.gz}",
+	"demo2.dem{,.gz}",
+	"demo3.dem{,.gz}",
+	"end1.bin{,.gz}",
+	"end2.bin{,.gz}",
+	"gfx.wad{,.gz}",
+	"progs.dat{,.gz}",
+	"quake.rc{,.gz}",
+	0,
+};
+
+static const char *dir_ban_list[] = {
+	"gfx",
+	"maps",
+	"progs",
+	"skins",
+	"sound",
+	0,
+};
+
+static int
+file_readable (char *path)
+{
+	char        t;
+	char       *p = strchr (path, '/');
+	const char **match;
+
+	if (p) {
+		t = *p;
+		*p = 0;
+		for (match = dir_ban_list; *match; match++) {
+			if (fnmatch (*match, path, FNM_PATHNAME) == 0) {
+				*p = t;
+				return 0;
+			}
+		}
+	} else {
+		for (match = file_ban_list; *match; match++) {
+			if (fnmatch (*match, path, FNM_PATHNAME) == 0) {
+				return 0;
+			}
+		}
+	}
+	return 1;
+}
+
+static int
+file_writeable (char *path)
+{
+	return file_readable (path);
+}
 
 static void
 bi_File_Open (progs_t *pr)
@@ -54,6 +110,29 @@ bi_File_Open (progs_t *pr)
 	char       *path= Hunk_TempAlloc (strlen (pth) + 1);
 	char       *p, *d;
 	int         h;
+	int         do_write = 0;
+	int         do_read = 0;
+
+	p = strchr (mode, 'r');
+	if (p) {
+		do_read |= 1;
+		if (p[1] == '+')
+			do_write |= 1;
+	}
+
+	p = strchr (mode, 'w');
+	if (p) {
+		do_write |= 1;
+		if (p[1] == '+')
+			do_read |= 1;
+	}
+
+	p = strchr (mode, 'a');
+	if (p) {
+		do_write |= 1;
+		if (p[1] == '+')
+			do_read |= 1;
+	}
 
 	for (d = path; *pth; d++, pth++) {
 		if (*pth == '\\')
@@ -100,6 +179,12 @@ bi_File_Open (progs_t *pr)
 	if (path[0] == '.' && path[1] == '.' && (path[2] == '/' || path [2] == 0))
 		goto error;
 	if (path[strlen (path) - 1] =='/')
+		goto error;
+	if (!do_read && !do_write)
+		goto error;
+	if (do_read && !file_readable (path))
+		goto error;
+	if (do_write && !file_writeable (path))
 		goto error;
 	for (h = 0; h < MAX_HANDLES && handles[h]; h++)
 		;
