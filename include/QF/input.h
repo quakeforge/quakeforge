@@ -77,10 +77,10 @@ extern float		in_mouse_x, in_mouse_y;
 void IN_LL_Init_Cvars (void);
 void IN_LL_Init (void);
 void IN_LL_Shutdown (void);
-void IN_LL_Grab_Input (void);
-void IN_LL_Ungrab_Input (void);
 void IN_LL_SendKeyEvents (void);
 void IN_LL_ClearStates (void);
+int IN_LL_Grab_Input (void);
+int IN_LL_Ungrab_Input (void);
 
 extern kbutton_t   in_strafe, in_klook, in_speed, in_mlook;
 
