@@ -362,7 +362,6 @@ if test "x$enable_zlib" != "xno"; then
         AC_CHECK_HEADER(zlib.h, HAVE_ZLIB=yes, HAVE_ZLIB=no)
         if test "x$HAVE_ZLIB" = "xyes"; then
            Z_LIBS="-lz"
-           AC_DEFINE(HAVE_ZLIB)
         fi
      fi
   fi
@@ -1196,36 +1195,29 @@ dnl ==================================================================
 dnl Make sure we link against a working zlib
 dnl ==================================================================
 
-AC_MSG_CHECKING(for libz.a in X11)
-need_abs_libz=no
-for d in `echo $X_LIBS | sed -e 's/-L//'`; do
-	if test -f $d/libz.a; then
-		need_abs_libz=yes
-		break
-	fi
-done
-AC_MSG_RESULT($need_abs_libz)
-
-AC_ARG_WITH(libz,
-[  --with-libz=<path list> specify directories to search for zlib],
-zlib_paths="$withval", zlib_paths="")
-if test "x$need_abs_libz" = "xyes"; then
-	AC_MSG_CHECKING(for location of libz.a or libz.so)
-	zlib_location="unknown"
-	for d in $zlib_paths /usr/local/lib /usr/lib /lib; do
-		for f in libz.so libz.a; do
-			if test -f $d/$f; then
-			zlib_location=$d/$f
+x11_old_libz=no
+if test -n "$X_LIBS"; then
+	AC_MSG_CHECKING(for libz.a in X11)
+	for d in `echo $X_LIBS | sed -e 's/-L//'`; do
+		if test -f $d/libz.a; then
+			x11_old_libz=$d
 			break
 		fi
-		done
 	done
-	AC_MSG_RESULT($zlib_location)
-	if test "$zlib_location" = unknown; then
-		echo need to specify zlib location with --with-libz
-		exit 1
-	fi
-	Z_LIBS="$zlib_location"
+fi
+if test "x$x11_old_libz" != xno; then
+	AC_MSG_RESULT(yes)
+	AC_MSG_WARN(there is an old libz.a in $x11_old_libz)
+	AC_MSG_WARN($PROGRAM is unable to support compression)
+	AC_MSG_WARN(due to library search order issues)
+	AC_MSG_WARN(if you wish to have compression support)
+	AC_MSG_WARN(please delete $x11_old_libz/libz.a)
+	ac_cv_header_zlib_h=no
+	HAVE_ZLIB="no, due to conflicting $x11_old_libz/libz.a"
+	Z_LIBS=""
+else
+	AC_MSG_RESULT(no)
+	AC_DEFINE(HAVE_ZLIB)
 fi
 AC_SUBST(Z_LIBS)
 
