@@ -393,7 +393,9 @@ IN_InitMouse (void)
 	//       closing it to ensure its opened how we want it
 	mouse_close();
 	if (mouse_init (mousedev, mtype, mouserate)) {
-		Con_Printf ("No mouse found\n");
+		Con_Printf ("No mouse found. Check your libvga.conf mouse settings"
+					" and that the mouse\n"
+					"device has appropriate permission settings.\n");
 		UseMouse = 0;
 	} else {
 		mouse_seteventhandler ((void *) mousehandler);
