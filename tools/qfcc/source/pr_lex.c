@@ -34,56 +34,57 @@
 
 #include "qfcc.h"
 
-int 			pr_source_line;
+int         pr_source_line;
 
-char			pr_parm_names[MAX_PARMS][MAX_NAME];
+char        pr_parm_names[MAX_PARMS][MAX_NAME];
 
-char			*pr_file_p;
-char			*pr_line_start;		// start of current source line
+char       *pr_file_p;
+char       *pr_line_start;				// start of current source line
 
-int 			pr_bracelevel;
+int         pr_bracelevel;
 
-char			pr_token[2048];
-int				pr_token_len;
-token_type_t	pr_token_type;
-type_t			*pr_immediate_type;
-eval_t			pr_immediate;
+char        pr_token[2048];
+int         pr_token_len;
+token_type_t pr_token_type;
+type_t     *pr_immediate_type;
+eval_t      pr_immediate;
 
-char			pr_immediate_string[2048];
+char        pr_immediate_string[2048];
 
-int 			pr_error_count;
+int         pr_error_count;
 
 // simple types.  function types are dynamically allocated
-type_t	type_void = { ev_void, &def_void };
-type_t	type_string = { ev_string, &def_string };
-type_t	type_float = { ev_float, &def_float };
-type_t	type_vector = { ev_vector, &def_vector };
-type_t	type_entity = { ev_entity, &def_entity };
-type_t	type_field = { ev_field, &def_field };
+type_t      type_void = { ev_void, &def_void };
+type_t      type_string = { ev_string, &def_string };
+type_t      type_float = { ev_float, &def_float };
+type_t      type_vector = { ev_vector, &def_vector };
+type_t      type_entity = { ev_entity, &def_entity };
+type_t      type_field = { ev_field, &def_field };
+
 // type_function is a void() function used for state defs
-type_t	type_function = { ev_func, &def_function, NULL, &type_void };
-type_t	type_pointer = { ev_pointer, &def_pointer };
-type_t	type_quaternion = { ev_quaternion, &def_quaternion };
-type_t	type_integer = { ev_integer, &def_integer };
-type_t	type_uinteger = { ev_uinteger, &def_uinteger };
+type_t      type_function = { ev_func, &def_function, NULL, &type_void };
+type_t      type_pointer = { ev_pointer, &def_pointer };
+type_t      type_quaternion = { ev_quaternion, &def_quaternion };
+type_t      type_integer = { ev_integer, &def_integer };
+type_t      type_uinteger = { ev_uinteger, &def_uinteger };
 
-type_t	type_floatfield = { ev_field, &def_field, NULL, &type_float };
+type_t      type_floatfield = { ev_field, &def_field, NULL, &type_float };
 
-def_t	def_void = { &type_void, "temp" };
-def_t	def_string = { &type_string, "temp" };
-def_t	def_float = { &type_float, "temp" };
-def_t	def_vector = { &type_vector, "temp" };
-def_t	def_entity = { &type_entity, "temp" };
-def_t	def_field = { &type_field, "temp" };
-def_t	def_function = { &type_function, "temp" };
-def_t	def_pointer = { &type_pointer, "temp" };
-def_t	def_quaternion = { &type_quaternion, "temp"};
-def_t	def_integer = { &type_integer, "temp"};
-def_t	def_uinteger = { &type_uinteger, "temp"};
+def_t       def_void = { &type_void, "temp" };
+def_t       def_string = { &type_string, "temp" };
+def_t       def_float = { &type_float, "temp" };
+def_t       def_vector = { &type_vector, "temp" };
+def_t       def_entity = { &type_entity, "temp" };
+def_t       def_field = { &type_field, "temp" };
+def_t       def_function = { &type_function, "temp" };
+def_t       def_pointer = { &type_pointer, "temp" };
+def_t       def_quaternion = { &type_quaternion, "temp" };
+def_t       def_integer = { &type_integer, "temp" };
+def_t       def_uinteger = { &type_uinteger, "temp" };
 
-def_t	def_ret, def_parms[MAX_PARMS];
+def_t       def_ret, def_parms[MAX_PARMS];
 
-def_t	*def_for_type[8] = {
+def_t      *def_for_type[8] = {
 	&def_void, &def_string, &def_float, &def_vector,
 	&def_entity, &def_field, &def_function, &def_pointer
 };
@@ -97,9 +98,9 @@ void
 PR_LexString (void)
 {
 	int         c;
-	int			i;
-	int			mask;
-	int			boldnext;
+	int         i;
+	int         mask;
+	int         boldnext;
 
 	pr_token_len = 0;
 	mask = 0x00;
@@ -132,8 +133,8 @@ PR_LexString (void)
 				case '6':
 				case '7':
 					for (i = c = 0; i < 3
-									&& *pr_file_p >= '0'
-									&& *pr_file_p <='7'; i++, pr_file_p++) {
+						 && *pr_file_p >= '0'
+						 && *pr_file_p <= '7'; i++, pr_file_p++) {
 						c *= 8;
 						c += *pr_file_p - '0';
 					}
@@ -210,9 +211,10 @@ PR_LexString (void)
 void
 PR_PrintType (type_t *type)
 {
-	int i;
+	int         i;
+
 	if (!type) {
-		printf("(null)");
+		printf ("(null)");
 		return;
 	}
 	switch (type->type) {
@@ -266,9 +268,9 @@ PR_PrintType (type_t *type)
 type_t *
 PR_FindType (type_t *type)
 {
-	def_t		*def;
-	type_t		*check;
-	int 		i;
+	def_t      *def;
+	type_t     *check;
+	int         i;
 
 	for (check = pr.types; check; check = check->next) {
 		if (check->type != type->type
@@ -300,6 +302,7 @@ PR_FindType (type_t *type)
 
 	// allocate a generic def for the type, so fields can reference it
 	def = malloc (sizeof (def_t));
+
 	if (!check)
 		Sys_Error ("PR_FindType: Memory Allocation Failure\n");
 	def->name = "COMPLEX TYPE";

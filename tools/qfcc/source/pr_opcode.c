@@ -27,26 +27,27 @@ static const char rcsid[] =
 
 #include "qfcc.h"
 
-hashtab_t *opcode_type_table_ab;
-hashtab_t *opcode_type_table_abc;
+hashtab_t  *opcode_type_table_ab;
+hashtab_t  *opcode_type_table_abc;
 
-opcode_t *op_done;
-opcode_t *op_return;
-opcode_t *op_if;
-opcode_t *op_ifnot;
-opcode_t *op_ifbe;
-opcode_t *op_ifb;
-opcode_t *op_ifae;
-opcode_t *op_ifa;
-opcode_t *op_state;
-opcode_t *op_goto;
-opcode_t *op_jump;
-opcode_t *op_jumpb;
+opcode_t   *op_done;
+opcode_t   *op_return;
+opcode_t   *op_if;
+opcode_t   *op_ifnot;
+opcode_t   *op_ifbe;
+opcode_t   *op_ifb;
+opcode_t   *op_ifae;
+opcode_t   *op_ifa;
+opcode_t   *op_state;
+opcode_t   *op_goto;
+opcode_t   *op_jump;
+opcode_t   *op_jumpb;
 
 statref_t *
 PR_NewStatref (dstatement_t *st, int field)
 {
-	statref_t *ref = calloc (1, sizeof (statref_t));
+	statref_t  *ref = calloc (1, sizeof (statref_t));
+
 	ref->statement = st;
 	ref->field = field;
 	return ref;
@@ -56,7 +57,8 @@ void
 PR_AddStatementRef (def_t *def, dstatement_t *st, int field)
 {
 	if (def) {
-		statref_t *ref = PR_NewStatref (st, field);
+		statref_t  *ref = PR_NewStatref (st, field);
+
 		ref->next = def->refs;
 		def->refs = ref;
 
@@ -70,15 +72,15 @@ PR_AddStatementRef (def_t *def, dstatement_t *st, int field)
 static unsigned long
 get_hash (void *_op, void *_tab)
 {
-	opcode_t *op = (opcode_t *)_op;
-	hashtab_t **tab = (hashtab_t **)_tab;
+	opcode_t   *op = (opcode_t *) _op;
+	hashtab_t **tab = (hashtab_t **) _tab;
 	unsigned long hash;
 
 	if (tab == &opcode_type_table_ab) {
-		hash = ROTL(~op->type_a, 8) + ROTL(~op->type_b, 16);
+		hash = ROTL (~op->type_a, 8) + ROTL (~op->type_b, 16);
 	} else if (tab == &opcode_type_table_abc) {
-		hash = ROTL(~op->type_a, 8) + ROTL(~op->type_b, 16)
-			   + ROTL(~op->type_c, 24);
+		hash = ROTL (~op->type_a, 8) + ROTL (~op->type_b, 16)
+			+ ROTL (~op->type_c, 24);
 	} else {
 		abort ();
 	}
@@ -88,10 +90,10 @@ get_hash (void *_op, void *_tab)
 static int
 compare (void *_opa, void *_opb, void *_tab)
 {
-	opcode_t *opa = (opcode_t *)_opa;
-	opcode_t *opb = (opcode_t *)_opb;
-	hashtab_t **tab = (hashtab_t **)_tab;
-	int cmp;
+	opcode_t   *opa = (opcode_t *) _opa;
+	opcode_t   *opb = (opcode_t *) _opb;
+	hashtab_t **tab = (hashtab_t **) _tab;
+	int         cmp;
 
 	if (tab == &opcode_type_table_ab) {
 		cmp = (opa->type_a == opb->type_a)
@@ -109,7 +111,7 @@ compare (void *_opa, void *_opb, void *_tab)
 opcode_t *
 PR_Opcode_Find (const char *name, def_t *var_a, def_t *var_b, def_t *var_c)
 {
-	opcode_t op;
+	opcode_t    op;
 	hashtab_t **tab;
 
 	op.name = name;
@@ -131,7 +133,7 @@ PR_Opcode_Find (const char *name, def_t *var_a, def_t *var_b, def_t *var_c)
 void
 PR_Opcode_Init_Tables (void)
 {
-	opcode_t *op;
+	opcode_t   *op;
 
 	PR_Opcode_Init ();
 	opcode_type_table_ab = Hash_NewTable (1021, 0, 0, &opcode_type_table_ab);

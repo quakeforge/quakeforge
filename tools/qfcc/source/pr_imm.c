@@ -26,73 +26,78 @@ static const char rcsid[] =
 
 #include "qfcc.h"
 
-static hashtab_t  *string_imm_defs;
-static hashtab_t  *float_imm_defs;
-static hashtab_t  *vector_imm_defs;
-static hashtab_t  *entity_imm_defs;
-static hashtab_t  *field_imm_defs;
-static hashtab_t  *func_imm_defs;
-static hashtab_t  *pointer_imm_defs;
-static hashtab_t  *quaternion_imm_defs;
-static hashtab_t  *integer_imm_defs;
+static hashtab_t *string_imm_defs;
+static hashtab_t *float_imm_defs;
+static hashtab_t *vector_imm_defs;
+static hashtab_t *entity_imm_defs;
+static hashtab_t *field_imm_defs;
+static hashtab_t *func_imm_defs;
+static hashtab_t *pointer_imm_defs;
+static hashtab_t *quaternion_imm_defs;
+static hashtab_t *integer_imm_defs;
 
 static const char *
 string_imm_get_key (void *_def, void *unused)
 {
-	def_t       *def = (def_t*)_def;
+	def_t      *def = (def_t *) _def;
+
 	return G_STRING (def->ofs);
 }
 
 static const char *
 float_imm_get_key (void *_def, void *unused)
 {
-	def_t       *def = (def_t*)_def;
+	def_t      *def = (def_t *) _def;
 	static char rep[20];
-	snprintf (rep, sizeof (rep), "\001float:%08X\001", G_INT(def->ofs));
+
+	snprintf (rep, sizeof (rep), "\001float:%08X\001", G_INT (def->ofs));
 	return rep;
 }
 
 static const char *
 vector_imm_get_key (void *_def, void *unused)
 {
-	def_t       *def = (def_t*)_def;
+	def_t      *def = (def_t *) _def;
 	static char rep[60];
+
 	snprintf (rep, sizeof (rep), "\001vector:%08X\001%08X\001%08X\001",
-			 G_INT(def->ofs), G_INT(def->ofs+1), G_INT(def->ofs+2));
+			  G_INT (def->ofs), G_INT (def->ofs + 1), G_INT (def->ofs + 2));
 	return rep;
 }
 
 static const char *
 quaternion_imm_get_key (void *_def, void *unused)
 {
-	def_t       *def = (def_t*)_def;
+	def_t      *def = (def_t *) _def;
 	static char rep[60];
+
 	snprintf (rep, sizeof (rep),
-			 "\001quaternion:%08X\001%08X\001%08X\001%08X\001",
-			 G_INT(def->ofs), G_INT(def->ofs+1),
-			 G_INT(def->ofs+2), G_INT(def->ofs+3));
+			  "\001quaternion:%08X\001%08X\001%08X\001%08X\001",
+			  G_INT (def->ofs), G_INT (def->ofs + 1),
+			  G_INT (def->ofs + 2), G_INT (def->ofs + 3));
 	return rep;
 }
 
 static const char *
 int_imm_get_key (void *_def, void *_str)
 {
-	def_t      *def = (def_t*)_def;
+	def_t      *def = (def_t *) _def;
 	static char rep[60];
-	char       *str = (char*)_str;
-	snprintf (rep, sizeof (rep), "\001%s:%08X\001", str, G_INT(def->ofs));
+	char       *str = (char *) _str;
+
+	snprintf (rep, sizeof (rep), "\001%s:%08X\001", str, G_INT (def->ofs));
 	return rep;
 }
 
 def_t *
 PR_ReuseConstant (expr_t *expr, def_t *def)
 {
-	def_t	*cn = 0;
-	char rep[60];
+	def_t      *cn = 0;
+	char        rep[60];
 	const char *r = rep;
-	hashtab_t *tab = 0;
-	type_t *type;
-	expr_t e = *expr;
+	hashtab_t  *tab = 0;
+	type_t     *type;
+	expr_t      e = *expr;
 
 	if (!string_imm_defs) {
 		string_imm_defs = Hash_NewTable (16381, string_imm_get_key, 0, 0);
@@ -102,7 +107,8 @@ PR_ReuseConstant (expr_t *expr, def_t *def)
 		field_imm_defs = Hash_NewTable (16381, int_imm_get_key, 0, "field");
 		func_imm_defs = Hash_NewTable (16381, int_imm_get_key, 0, "func");
 		pointer_imm_defs = Hash_NewTable (16381, int_imm_get_key, 0, "pointer");
-		quaternion_imm_defs = Hash_NewTable (16381, quaternion_imm_get_key, 0, 0);
+		quaternion_imm_defs =
+			Hash_NewTable (16381, quaternion_imm_get_key, 0, 0);
 		integer_imm_defs = Hash_NewTable (16381, int_imm_get_key, 0, "integer");
 
 		Hash_Add (string_imm_defs, PR_NewDef (&type_string, ".imm", 0));
@@ -113,7 +119,8 @@ PR_ReuseConstant (expr_t *expr, def_t *def)
 	}
 	switch (e.type) {
 		case ex_entity:
-			snprintf (rep, sizeof (rep), "\001entity:%08X\001", e.e.integer_val);
+			snprintf (rep, sizeof (rep), "\001entity:%08X\001",
+					  e.e.integer_val);
 			tab = entity_imm_defs;
 			type = &type_entity;
 			break;
@@ -128,14 +135,16 @@ PR_ReuseConstant (expr_t *expr, def_t *def)
 			type = &type_function;
 			break;
 		case ex_pointer:
-			snprintf (rep, sizeof (rep), "\001pointer:%08X\001", e.e.integer_val);
+			snprintf (rep, sizeof (rep), "\001pointer:%08X\001",
+					  e.e.integer_val);
 			tab = pointer_imm_defs;
 			type = &type_pointer;
 			break;
 		case ex_integer:
 		case ex_uinteger:
 			if (!def || def->type != &type_float) {
-				snprintf (rep, sizeof (rep), "\001integer:%08X\001", e.e.integer_val);
+				snprintf (rep, sizeof (rep), "\001integer:%08X\001",
+						  e.e.integer_val);
 				tab = integer_imm_defs;
 				if (e.type == ex_uinteger)
 					type = &type_uinteger;
@@ -159,25 +168,25 @@ PR_ReuseConstant (expr_t *expr, def_t *def)
 			break;
 		case ex_vector:
 			snprintf (rep, sizeof (rep), "\001vector:%08X\001%08X\001%08X\001",
-					 *(int*)&e.e.vector_val[0],
-					 *(int*)&e.e.vector_val[1],
-					 *(int*)&e.e.vector_val[2]);
+					  *(int *) &e.e.vector_val[0],
+					  *(int *) &e.e.vector_val[1], *(int *) &e.e.vector_val[2]);
 			tab = vector_imm_defs;
 			type = &type_vector;
 			break;
 		case ex_quaternion:
-			snprintf (rep, sizeof (rep), "\001quaternion:%08X\001%08X\001%08X\001%08X\001",
-					 *(int*)&e.e.quaternion_val[0],
-					 *(int*)&e.e.quaternion_val[1],
-					 *(int*)&e.e.quaternion_val[2],
-					 *(int*)&e.e.quaternion_val[3]);
+			snprintf (rep, sizeof (rep),
+					  "\001quaternion:%08X\001%08X\001%08X\001%08X\001",
+					  *(int *) &e.e.quaternion_val[0],
+					  *(int *) &e.e.quaternion_val[1],
+					  *(int *) &e.e.quaternion_val[2],
+					  *(int *) &e.e.quaternion_val[3]);
 			tab = vector_imm_defs;
 			type = &type_quaternion;
 			break;
 		default:
 			abort ();
 	}
-	cn = (def_t*) Hash_Find (tab, r);
+	cn = (def_t *) Hash_Find (tab, r);
 	if (cn) {
 		if (def) {
 			PR_FreeLocation (def);
@@ -207,9 +216,9 @@ PR_ReuseConstant (expr_t *expr, def_t *def)
 		cn->ofs = PR_NewLocation (type);
 		pr_global_defs[cn->ofs] = cn;
 		if (type == &type_vector || type == &type_quaternion) {
-			int i;
+			int         i;
 
-			for (i = 0; i< 3 + (type == &type_quaternion); i++)
+			for (i = 0; i < 3 + (type == &type_quaternion); i++)
 				PR_NewDef (&type_float, ".imm", 0);
 		}
 	}

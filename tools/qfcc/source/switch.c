@@ -27,7 +27,7 @@
 		Boston, MA  02111-1307, USA
 
 */
-static const char rcsid[] = 
+static const char rcsid[] =
 	"$Id$";
 
 #include <QF/hash.h>
@@ -49,7 +49,7 @@ typedef struct case_node_s {
 static unsigned long
 get_hash (void *_cl, void *unused)
 {
-	case_label_t *cl = (case_label_t*)_cl;
+	case_label_t *cl = (case_label_t *) _cl;
 
 	return cl->value ? cl->value->e.integer_val : 0;
 }
@@ -57,8 +57,8 @@ get_hash (void *_cl, void *unused)
 static int
 compare (void *_cla, void *_clb, void *unused)
 {
-	case_label_t *cla = (case_label_t*)_cla;
-	case_label_t *clb = (case_label_t*)_clb;
+	case_label_t *cla = (case_label_t *) _cla;
+	case_label_t *clb = (case_label_t *) _clb;
 	expr_t     *v1 = cla->value;
 	expr_t     *v2 = clb->value;
 
@@ -102,6 +102,7 @@ switch_block_t *
 new_switch_block (void)
 {
 	switch_block_t *switch_block = malloc (sizeof (switch_block_t));
+
 	if (!switch_block)
 		Sys_Error ("new_switch_block: Memory Allocation Failure\n");
 	switch_block->labels = Hash_NewTable (127, 0, 0, 0);
@@ -113,8 +114,8 @@ new_switch_block (void)
 static int
 label_compare (const void *_a, const void *_b)
 {
-	const case_label_t **a = (const case_label_t **)_a;
-	const case_label_t **b = (const case_label_t **)_b;
+	const case_label_t **a = (const case_label_t **) _a;
+	const case_label_t **b = (const case_label_t **) _b;
 	const char *s1, *s2;
 
 	switch ((*a)->value->type) {
@@ -149,6 +150,7 @@ new_case_node (expr_t *low, expr_t *high)
 		node->_label = 0;
 	} else {
 		int         size;
+
 		if (low->type != ex_integer) {
 			error (low, "switch: internal error");
 			abort ();
@@ -185,11 +187,12 @@ build_case_tree (case_label_t **labels, int count, int range)
 {
 	case_node_t **nodes;
 	int         i, j, k;
-	int			num_nodes = 0;
+	int         num_nodes = 0;
 
 	qsort (labels, count, sizeof (*labels), label_compare);
 
-	nodes = (case_node_t **) malloc (count * sizeof (case_node_t*));
+	nodes = (case_node_t **) malloc (count * sizeof (case_node_t *));
+
 	if (!nodes)
 		Sys_Error ("out of memory");
 
@@ -224,7 +227,7 @@ build_case_tree (case_label_t **labels, int count, int range)
 }
 
 static void
-build_switch (expr_t *sw, case_node_t  *tree, int op, expr_t *sw_val,
+build_switch (expr_t *sw, case_node_t *tree, int op, expr_t *sw_val,
 			  expr_t *temp, expr_t *default_label)
 {
 	expr_t     *test;
@@ -326,6 +329,7 @@ build_switch (expr_t *sw, case_node_t  *tree, int op, expr_t *sw_val,
 		for (i = 0; i <= high - low; i++) {
 			dstatement_t *st;
 			statref_t  *ref;
+
 			st = (dstatement_t *) &pr_globals[G_INT (def->ofs) + i];
 			ref = PR_NewStatref (st, 3);
 			ref->next = tree->labels[i]->e.label.refs;
@@ -335,7 +339,7 @@ build_switch (expr_t *sw, case_node_t  *tree, int op, expr_t *sw_val,
 }
 
 struct expr_s *
-switch_expr (switch_block_t *switch_block, expr_t *break_label, 
+switch_expr (switch_block_t *switch_block, expr_t *break_label,
 			 expr_t *statements)
 {
 	case_label_t **labels, **l;
@@ -349,10 +353,10 @@ switch_expr (switch_block_t *switch_block, expr_t *break_label,
 
 	sw_val->line = switch_block->test->line;
 	sw_val->file = switch_block->test->file;
-	
+
 	default_label->value = 0;
 	default_label = Hash_DelElement (switch_block->labels, default_label);
-	labels = (case_label_t **)Hash_GetList (switch_block->labels);
+	labels = (case_label_t **) Hash_GetList (switch_block->labels);
 
 	if (!default_label) {
 		default_label = &_default_label;
@@ -368,14 +372,14 @@ switch_expr (switch_block_t *switch_block, expr_t *break_label,
 		num_labels++;
 	if (options.code.progsversion == PROG_ID_VERSION
 		|| (type != &type_string
-			&& type != &type_float
-			&& type != &type_integer)
+			&& type != &type_float && type != &type_integer)
 		|| num_labels < 8) {
 		for (l = labels; *l; l++) {
 			expr_t     *cmp = binary_expr (EQ, sw_val, (*l)->value);
 			expr_t     *test = new_binary_expr ('i',
 												test_expr (cmp, 1),
 												(*l)->label);
+
 			test->line = cmp->line = sw_val->line;
 			test->file = cmp->file = sw_val->file;
 			append_expr (sw, test);

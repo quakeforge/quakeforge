@@ -27,7 +27,7 @@
 		Boston, MA  02111-1307, USA
 
 */
-static const char rcsid[] = 
+static const char rcsid[] =
 	"$Id$";
 
 #include "qfcc.h"
@@ -42,7 +42,7 @@ pr_lineno_t *linenos;
 
 static int  locals_size;
 int         num_locals;
-ddef_t      *locals;
+ddef_t     *locals;
 
 pr_auxfunction_t *
 new_auxfunction (void)

@@ -49,27 +49,27 @@
 
 #define PATHSEPERATOR   '/'
 
-char		com_token[1024];
-qboolean	com_eof;
+char        com_token[1024];
+qboolean    com_eof;
 
 /*
 	Error
 
 	For abnormal program terminations
-*/ 
+*/
 void
-Error (char *error, ...) 
+Error (char *error, ...)
 {
-	va_list argptr;
-	
+	va_list     argptr;
+
 	printf ("************ ERROR ************\n");
-	
+
 	va_start (argptr, error);
 	vprintf (error, argptr);
 	va_end (argptr);
 	printf ("\n");
 	exit (1);
-} 
+}
 
 
 /*
@@ -80,8 +80,8 @@ Error (char *error, ...)
 char *
 Parse (char *data)
 {
-	int 	c;
-	int 	len = 0;
+	int         c;
+	int         len = 0;
 
 	com_token[0] = 0;
 
@@ -89,7 +89,7 @@ Parse (char *data)
 		return NULL;
 
 	// skip whitespace
-skipwhite:
+  skipwhite:
 	while ((c = *data) <= ' ') {
 		if (c == 0) {
 			com_eof = true;
@@ -104,7 +104,6 @@ skipwhite:
 			data++;
 		goto skipwhite;
 	}
-
 	// handle quoted strings specially
 	if (c == '\"') {
 		data++;
@@ -118,7 +117,6 @@ skipwhite:
 			len++;
 		} while (1);
 	}
-
 	// parse single characters
 	if (c == '{' || c == '}' || c == ')' || c == '(' || c == '\'' || c == ':') {
 		com_token[len] = c;
@@ -126,7 +124,6 @@ skipwhite:
 		com_token[len] = 0;
 		return data + 1;
 	}
-
 	// parse a regular word
 	do {
 		com_token[len] = c;
@@ -158,8 +155,8 @@ skipwhite:
 int
 FileLength (FILE *f)
 {
-	int 	pos;
-	int 	end;
+	int         pos;
+	int         end;
 
 	pos = ftell (f);
 	fseek (f, 0, SEEK_END);
@@ -173,7 +170,7 @@ FileLength (FILE *f)
 FILE *
 SafeOpenWrite (char *filename)
 {
-	FILE	*f;
+	FILE       *f;
 
 	f = fopen (filename, "wb");
 
@@ -219,9 +216,9 @@ SafeWrite (FILE *f, void *buffer, int count)
 int
 LoadFile (char *filename, void **bufferptr)
 {
-	FILE	*f;
-	int 	length;
-	void	*buffer;
+	FILE       *f;
+	int         length;
+	void       *buffer;
 
 	f = SafeOpenRead (filename);
 	length = FileLength (f);

@@ -27,7 +27,7 @@
 		Boston, MA  02111-1307, USA
 
 */
-static const char rcsid[] = 
+static const char rcsid[] =
 	"$Id$";
 
 #include <stdlib.h>
@@ -39,26 +39,29 @@ static const char rcsid[] =
 #include "scope.h"
 #include "qc-parse.h"
 
-def_t *emit_sub_expr (expr_t *e, def_t *dest);
+def_t      *emit_sub_expr (expr_t *e, def_t *dest);
 
 def_t *
-emit_statement (int sline, opcode_t *op, def_t *var_a, def_t *var_b, def_t *var_c)
+emit_statement (int sline, opcode_t *op, def_t *var_a, def_t *var_b,
+				def_t *var_c)
 {
-	dstatement_t    *statement;
-	def_t			*ret;
+	dstatement_t *statement;
+	def_t      *ret;
 
 	if (!op) {
-		expr_t e;
+		expr_t      e;
+
 		e.line = sline;
 		e.file = s_file;
 		error (&e, "ice ice baby\n");
 		abort ();
 	}
 	if (options.code.debug) {
-		int				line = sline - lineno_base;
+		int         line = sline - lineno_base;
 
 		if (line != linenos[num_linenos - 1].line) {
-			pr_lineno_t		*lineno = new_lineno ();
+			pr_lineno_t *lineno = new_lineno ();
+
 			lineno->line = line;
 			lineno->fa.addr = numstatements;
 		}
@@ -76,7 +79,7 @@ emit_statement (int sline, opcode_t *op, def_t *var_a, def_t *var_b, def_t *var_
 			statement->c = 0;
 		}
 		ret = var_a;
-	} else {	// allocate result space
+	} else {							// allocate result space
 		if (!var_c) {
 			var_c = PR_GetTempDef (types[op->type_c], pr_scope);
 			var_c->users += 2;
@@ -98,8 +101,8 @@ void
 emit_branch (int line, opcode_t *op, expr_t *e, expr_t *l)
 {
 	dstatement_t *st;
-	statref_t *ref;
-	def_t *def = 0;
+	statref_t  *ref;
+	def_t      *def = 0;
 
 	if (e)
 		def = emit_sub_expr (e, 0);
@@ -120,12 +123,12 @@ emit_branch (int line, opcode_t *op, expr_t *e, expr_t *l)
 def_t *
 emit_function_call (expr_t *e, def_t *dest)
 {
-	def_t *func = emit_sub_expr (e->e.expr.e1, 0);
-	def_t parm;
-	def_t *arg;
-	expr_t *earg;
-	opcode_t *op;
-	int count = 0, ind;
+	def_t      *func = emit_sub_expr (e->e.expr.e1, 0);
+	def_t       parm;
+	def_t      *arg;
+	expr_t     *earg;
+	opcode_t   *op;
+	int         count = 0, ind;
 
 	for (earg = e->e.expr.e2; earg; earg = earg->next)
 		count++;
@@ -157,10 +160,10 @@ emit_function_call (expr_t *e, def_t *dest)
 def_t *
 emit_assign_expr (expr_t *e)
 {
-	def_t	*def_a, *def_b, *def_c;
-	opcode_t *op;
-	expr_t *e1 = e->e.expr.e1;
-	expr_t *e2 = e->e.expr.e2;
+	def_t      *def_a, *def_b, *def_c;
+	opcode_t   *op;
+	expr_t     *e1 = e->e.expr.e1;
+	expr_t     *e2 = e->e.expr.e2;
 
 	if (e1->type == ex_temp && e1->e.temp.users < 2) {
 		e1->e.temp.users--;
@@ -182,8 +185,8 @@ emit_assign_expr (expr_t *e)
 		} else {
 			if (def_a->constant) {
 				if (options.code.cow) {
-					int size = pr_type_size [def_a->type->type];
-					int ofs = PR_NewLocation (def_a->type);
+					int         size = pr_type_size[def_a->type->type];
+					int         ofs = PR_NewLocation (def_a->type);
 
 					memcpy (pr_globals + ofs, pr_globals + def_a->ofs, size);
 					def_a->ofs = ofs;
@@ -221,9 +224,10 @@ emit_bind_expr (expr_t *e1, expr_t *e2)
 	def = emit_sub_expr (e1, e2->e.temp.def);
 	if (t1 != t2) {
 		def_t      *tmp = PR_NewDef (t2, 0, def->scope);
+
 		tmp->ofs = def->ofs;
 		tmp->users = e2->e.temp.users;
-		tmp->freed = 1;			// don't free this offset when freeing def
+		tmp->freed = 1;				// don't free this offset when freeing def
 		def = tmp;
 	}
 	e2->e.temp.def = def;
@@ -335,11 +339,11 @@ emit_sub_expr (expr_t *e, def_t *dest)
 void
 emit_expr (expr_t *e)
 {
-	def_t *def;
-	def_t *def_a;
-	def_t *def_b;
-	statref_t *ref;
-	elabel_t *label;
+	def_t      *def;
+	def_t      *def_a;
+	def_t      *def_b;
+	statref_t  *ref;
+	elabel_t   *label;
 
 	switch (e->type) {
 		case ex_label:
@@ -357,10 +361,10 @@ emit_expr (expr_t *e)
 						ref->statement->c = label->statement - ref->statement;
 						break;
 					case 3:
-						*(int*)ref->statement = label->statement - statements;
+						*(int *) ref->statement = label->statement - statements;
 						break;
 					default:
-						abort();
+						abort ();
 				}
 			}
 			break;

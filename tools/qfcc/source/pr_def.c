@@ -29,22 +29,22 @@ static const char rcsid[] =
 
 typedef struct locref_s {
 	struct locref_s *next;
-	int ofs;
+	int         ofs;
 } locref_t;
 
-def_t		*pr_global_defs[MAX_REGS];	// to find def for a global variable
-static def_t *free_temps[4];	// indexted by type size
+def_t      *pr_global_defs[MAX_REGS];	// to find def for a global variable
+static def_t *free_temps[4];			// indexted by type size
 static def_t temp_scope;
-static locref_t *free_locs[4];	// indexted by type size
+static locref_t *free_locs[4];			// indexted by type size
 static locref_t *free_free_locs;
 
-static hashtab_t  *defs_by_name;
+static hashtab_t *defs_by_name;
 
 static const char *
 defs_get_key (void *_def, void *_tab)
 {
-	def_t		*def = (def_t*)_def;
-	hashtab_t	**tab = (hashtab_t**) _tab;
+	def_t      *def = (def_t *) _def;
+	hashtab_t **tab = (hashtab_t **) _tab;
 
 	if (tab == &defs_by_name) {
 		return def->name;
@@ -55,14 +55,13 @@ defs_get_key (void *_def, void *_tab)
 static def_t *
 check_for_name (type_t *type, const char *name, def_t *scope, int *allocate)
 {
-	def_t	*def;
+	def_t      *def;
 
 	if (!defs_by_name) {
 		defs_by_name = Hash_NewTable (16381, defs_get_key, 0, &defs_by_name);
 	}
-
 	// see if the name is already in use
-	def = (def_t*) Hash_Find (defs_by_name, name);
+	def = (def_t *) Hash_Find (defs_by_name, name);
 	if (def) {
 		if (allocate && scope == def->scope)
 			if (type && def->type != type)
@@ -77,6 +76,7 @@ static inline type_t *
 find_type (type_t *type, type_t *aux_type)
 {
 	type_t      new;
+
 	memset (&new, 0, sizeof (new));
 	new.type = type->type;
 	new.aux_type = aux_type;
@@ -88,14 +88,15 @@ def_t *
 PR_GetArray (type_t *etype, const char *name, int size, def_t *scope,
 			 int *allocate)
 {
-	type_t  *type = find_type (&type_pointer, etype);
-	def_t	*def = check_for_name (type, name, scope, allocate);
+	type_t     *type = find_type (&type_pointer, etype);
+	def_t      *def = check_for_name (type, name, scope, allocate);
+
 	if (def || !allocate)
 		return def;
 	def = PR_NewDef (type, name, scope);
 	def->ofs = *allocate;
 	def->initialized = def->constant = 1;
-	*allocate += pr_type_size [type->type] * size + 1;
+	*allocate += pr_type_size[type->type] * size + 1;
 	pr_global_defs[def->ofs] = def;
 	G_INT (def->ofs) = def->ofs + 1;
 	return def;
@@ -110,8 +111,8 @@ PR_GetArray (type_t *etype, const char *name, int size, def_t *scope,
 def_t *
 PR_GetDef (type_t *type, const char *name, def_t *scope, int *allocate)
 {
-	def_t	*def = check_for_name (type, name, scope, allocate);
-	char	element[MAX_NAME];
+	def_t      *def = check_for_name (type, name, scope, allocate);
+	char        element[MAX_NAME];
 
 	if (def || !allocate)
 		return def;
@@ -120,13 +121,13 @@ PR_GetDef (type_t *type, const char *name, def_t *scope, int *allocate)
 	def = PR_NewDef (type, name, scope);
 	Hash_Add (defs_by_name, def);
 
-	//FIXME: need to sort out location re-use
+	// FIXME: need to sort out location re-use
 	def->ofs = *allocate;
 	pr_global_defs[*allocate] = def;
 
-	/*
-		make automatic defs for the vectors elements
-		.origin can be accessed as .origin_x, .origin_y, and .origin_z
+	/* 
+		make automatic defs for the vectors elements .origin can be accessed
+		as .origin_x, .origin_y, and .origin_z
 	*/
 	if (type->type == ev_vector) {
 		def_t      *d;
@@ -157,21 +158,21 @@ PR_GetDef (type_t *type, const char *name, def_t *scope, int *allocate)
 
 			snprintf (element, sizeof (element), "%s_x", name);
 			d = PR_GetDef (&type_floatfield, element, scope, allocate);
-			d->used = 1;	// always `used'
+			d->used = 1;				// always `used'
 			d->parent = def;
 
 			snprintf (element, sizeof (element), "%s_y", name);
 			d = PR_GetDef (&type_floatfield, element, scope, allocate);
-			d->used = 1;	// always `used'
+			d->used = 1;				// always `used'
 			d->parent = def;
 
 			snprintf (element, sizeof (element), "%s_z", name);
 			d = PR_GetDef (&type_floatfield, element, scope, allocate);
-			d->used = 1;	// always `used'
+			d->used = 1;				// always `used'
 			d->parent = def;
 		} else if (type->aux_type->type == ev_pointer) {
 			pr.size_fields += type->aux_type->num_parms
-							  * pr_type_size[type->aux_type->aux_type->type];
+				* pr_type_size[type->aux_type->aux_type->type];
 		} else {
 			pr.size_fields += pr_type_size[type->aux_type->type];
 		}
@@ -186,7 +187,7 @@ PR_GetDef (type_t *type, const char *name, def_t *scope, int *allocate)
 def_t *
 PR_NewDef (type_t *type, const char *name, def_t *scope)
 {
-	def_t *def;
+	def_t      *def;
 
 	def = calloc (1, sizeof (def_t));
 
@@ -214,8 +215,8 @@ PR_NewDef (type_t *type, const char *name, def_t *scope)
 int
 PR_NewLocation (type_t *type)
 {
-	int size = pr_type_size[type->type];
-	locref_t *loc;
+	int         size = pr_type_size[type->type];
+	locref_t   *loc;
 
 	if (free_locs[size]) {
 		loc = free_locs[size];
@@ -233,11 +234,12 @@ PR_NewLocation (type_t *type)
 void
 PR_FreeLocation (def_t *def)
 {
-	int size = pr_type_size[def->type->type];
-	locref_t *loc;
+	int         size = pr_type_size[def->type->type];
+	locref_t   *loc;
 
 	if (!free_free_locs) {
 		free_free_locs = malloc (256 * sizeof (locref_t));
+
 		if (!free_free_locs)
 			Sys_Error ("PR_FreeLocation: Memory Allocation Failure\n");
 		for (loc = free_free_locs; loc - free_free_locs < 255; loc++)
@@ -254,8 +256,9 @@ PR_FreeLocation (def_t *def)
 def_t *
 PR_GetTempDef (type_t *type, def_t *scope)
 {
-	int size = pr_type_size[type->type];
-	def_t *def;
+	int         size = pr_type_size[type->type];
+	def_t      *def;
+
 	if (free_temps[size]) {
 		def = free_temps[size];
 		free_temps[size] = def->next;
@@ -274,8 +277,8 @@ PR_GetTempDef (type_t *type, def_t *scope)
 void
 PR_FreeTempDefs (void)
 {
-	def_t **def, *d;
-	int size;
+	def_t     **def, *d;
+	int         size;
 
 	def = &temp_scope.next;
 	while (*def) {
@@ -284,7 +287,8 @@ PR_FreeTempDefs (void)
 			*def = d->next;
 
 			if (d->users < 0)
-				printf ("%s:%d: warning: %s %3d %3d\n", strings + d->file, d->line, type_name[d->type->type], d->ofs, d->users);
+				printf ("%s:%d: warning: %s %3d %3d\n", strings + d->file,
+						d->line, type_name[d->type->type], d->ofs, d->users);
 			size = pr_type_size[d->type->type];
 			if (d->expr)
 				d->expr->e.temp.def = 0;
@@ -303,27 +307,29 @@ PR_FreeTempDefs (void)
 void
 PR_ResetTempDefs (void)
 {
-	int i;
-	def_t *d;
+	int         i;
+	def_t      *d;
 
 	for (i = 0; i < sizeof (free_temps) / sizeof (free_temps[0]); i++) {
 		free_temps[i] = 0;
 	}
 
 	for (d = temp_scope.next; d; d = d->next)
-		printf ("%s:%d: warning: %s %3d %3d\n", strings + d->file, d->line, type_name[d->type->type], d->ofs, d->users);
+		printf ("%s:%d: warning: %s %3d %3d\n", strings + d->file, d->line,
+				type_name[d->type->type], d->ofs, d->users);
 	temp_scope.next = 0;
 }
 
 void
 PR_FlushScope (def_t *scope, int force_used)
 {
-	def_t *def;
+	def_t      *def;
 
 	for (def = scope->scope_next; def; def = def->scope_next) {
 		if (def->name) {
 			if (!force_used && !def->used) {
-				expr_t     e;
+				expr_t      e;
+
 				e.line = def->line;
 				e.file = def->file;
 				warning (&e, "unused variable `%s'", def->name);
@@ -341,8 +347,7 @@ PR_DefInitialized (def_t *d)
 {
 	d->initialized = 1;
 	if (d->type == &type_vector
-		|| (d->type->type == ev_field
-			&& d->type->aux_type == &type_vector)) {
+		|| (d->type->type == ev_field && d->type->aux_type == &type_vector)) {
 		d = d->def_next;
 		d->initialized = 1;
 		d = d->def_next;

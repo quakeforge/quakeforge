@@ -27,7 +27,7 @@
 		Boston, MA  02111-1307, USA
 
 */
-static const char rcsid[] = 
+static const char rcsid[] =
 	"$Id$";
 
 #include <stdlib.h>
@@ -41,30 +41,30 @@ static const char rcsid[] =
 #include "qc-parse.h"
 
 
-int lineno_base;
+int         lineno_base;
 
-etype_t qc_types[] = {
-	ev_void,		// ex_label
-	ev_void,		// ex_block
-	ev_void,		// ex_expr
-	ev_void,		// ex_uexpr
-	ev_void,		// ex_def
-	ev_void,		// ex_temp
-	ev_void,		// ex_nil
+etype_t     qc_types[] = {
+	ev_void,							// ex_label
+	ev_void,							// ex_block
+	ev_void,							// ex_expr
+	ev_void,							// ex_uexpr
+	ev_void,							// ex_def
+	ev_void,							// ex_temp
+	ev_void,							// ex_nil
 
-	ev_string,		// ex_string
-	ev_float,		// ex_float
-	ev_vector,		// ex_vector
-	ev_entity,		// ex_entity
-	ev_field,		// ex_field
-	ev_func,		// ex_func
-	ev_pointer,		// ex_pointer
-	ev_quaternion,	// ex_quaternion
-	ev_integer,		// ex_integer
-	ev_uinteger,	// ex_uinteger
+	ev_string,							// ex_string
+	ev_float,							// ex_float
+	ev_vector,							// ex_vector
+	ev_entity,							// ex_entity
+	ev_field,							// ex_field
+	ev_func,							// ex_func
+	ev_pointer,							// ex_pointer
+	ev_quaternion,						// ex_quaternion
+	ev_integer,							// ex_integer
+	ev_uinteger,						// ex_uinteger
 };
 
-type_t *types[] = {
+type_t     *types[] = {
 	&type_void,
 	&type_string,
 	&type_float,
@@ -78,18 +78,18 @@ type_t *types[] = {
 	&type_uinteger,
 };
 
-expr_type expr_types[] = {
-	ex_nil,			// ev_void
-	ex_string,		// ev_string
-	ex_float,		// ev_float
-	ex_vector,		// ev_vector
-	ex_entity,		// ev_entity
-	ex_field,		// ev_field
-	ex_func,		// ev_func
-	ex_pointer,		// ev_pointer
-	ex_quaternion,	// ev_quaternion
-	ex_integer,		// ev_integer
-	ex_uinteger,	// ev_uinteger
+expr_type   expr_types[] = {
+	ex_nil,								// ev_void
+	ex_string,							// ev_string
+	ex_float,							// ev_float
+	ex_vector,							// ev_vector
+	ex_entity,							// ev_entity
+	ex_field,							// ev_field
+	ex_func,							// ev_func
+	ex_pointer,							// ev_pointer
+	ex_quaternion,						// ev_quaternion
+	ex_integer,							// ev_integer
+	ex_uinteger,						// ev_uinteger
 };
 
 type_t *
@@ -97,7 +97,7 @@ get_type (expr_t *e)
 {
 	switch (e->type) {
 		case ex_label:
-			return 0;		// something went very wrong
+			return 0;					// something went very wrong
 		case ex_nil:
 			return &type_void;
 		case ex_block:
@@ -135,6 +135,7 @@ etype_t
 extract_type (expr_t *e)
 {
 	type_t     *type = get_type (e);
+
 	if (type)
 		return type->type;
 	return ev_type_count;
@@ -144,9 +145,9 @@ expr_t *
 error (expr_t *e, const char *fmt, ...)
 {
 	va_list     args;
-	string_t file = s_file;
-	int line = pr_source_line;
-	
+	string_t    file = s_file;
+	int         line = pr_source_line;
+
 	va_start (args, fmt);
 	if (e) {
 		file = e->file;
@@ -169,15 +170,15 @@ void
 warning (expr_t *e, const char *fmt, ...)
 {
 	va_list     args;
-	string_t file = s_file;
-	int line = pr_source_line;
+	string_t    file = s_file;
+	int         line = pr_source_line;
 
 	if (options.warnings.promote) {
-		options.warnings.promote = 0;		// only want to do this once
+		options.warnings.promote = 0;	// only want to do this once
 		fprintf (stderr, "%s: warnings treated as errors\n", "qfcc");
 		pr_error_count++;
 	}
-	
+
 	va_start (args, fmt);
 	if (e) {
 		file = e->file;
@@ -226,14 +227,15 @@ get_op_string (int op)
 		case 'b':	return "<bind>";
 		case 's':	return "<state>";
 		case 'c':	return "<call>";
-		default:	return "unknown";
+		default:
+			return "unknown";
 	}
 }
 
 expr_t *
 type_mismatch (expr_t *e1, expr_t *e2, int op)
 {
-	etype_t t1, t2;
+	etype_t     t1, t2;
 
 	t1 = extract_type (e1);
 	t2 = extract_type (e2);
@@ -250,7 +252,7 @@ check_initialized (expr_t *e)
 			&& !(e->e.def->type->type == ev_func && !e->e.def->scope)
 			&& !e->e.def->initialized) {
 			warning (e, "%s may be used uninitialized", e->e.def->name);
-			e->e.def->initialized = 1; // only warn once
+			e->e.def->initialized = 1;	// only warn once
 		}
 	}
 }
@@ -267,7 +269,8 @@ inc_users (expr_t *e)
 expr_t *
 new_expr (void)
 {
-	expr_t *e = calloc (1, sizeof (expr_t));
+	expr_t     *e = calloc (1, sizeof (expr_t));
+
 	e->line = pr_source_line;
 	e->file = s_file;
 	return e;
@@ -278,7 +281,7 @@ num_digits (int val)
 {
 	int         num = 1;
 
-//	printf ("%d ", val);
+//  printf ("%d ", val);
 	if (val < 0) {
 		num++;
 		val = -val;
@@ -287,7 +290,7 @@ num_digits (int val)
 		val /= 10;
 		num++;
 	}
-//	printf ("%d\n", num);
+//  printf ("%d\n", num);
 	return num;
 }
 
@@ -299,6 +302,7 @@ new_label_name (void)
 	const char *fname = current_func->def->name;
 	int         len = 1 + strlen (fname) + 1 + num_digits (lnum) + 1;
 	char       *lname = malloc (len);
+
 	if (!lname)
 		Sys_Error ("new_label_expr: Memory Allocation Failure\n");
 	snprintf (lname, len, "$%s_%d", fname, lnum);
@@ -309,7 +313,8 @@ expr_t *
 new_label_expr (void)
 {
 
-	expr_t *l = new_expr ();
+	expr_t     *l = new_expr ();
+
 	l->type = ex_label;
 	l->e.label.name = new_label_name ();
 	return l;
@@ -318,7 +323,7 @@ new_label_expr (void)
 expr_t *
 new_block_expr (void)
 {
-	expr_t *b = new_expr ();
+	expr_t     *b = new_expr ();
 
 	b->type = ex_block;
 	b->e.block.head = 0;
@@ -329,7 +334,7 @@ new_block_expr (void)
 expr_t *
 new_binary_expr (int op, expr_t *e1, expr_t *e2)
 {
-	expr_t *e = new_expr ();
+	expr_t     *e = new_expr ();
 
 	inc_users (e1);
 	inc_users (e2);
@@ -344,7 +349,7 @@ new_binary_expr (int op, expr_t *e1, expr_t *e2)
 expr_t *
 new_unary_expr (int op, expr_t *e1)
 {
-	expr_t *e = new_expr ();
+	expr_t     *e = new_expr ();
 
 	inc_users (e1);
 
@@ -357,7 +362,7 @@ new_unary_expr (int op, expr_t *e1)
 expr_t *
 new_temp_def_expr (type_t *type)
 {
-	expr_t *e = new_expr ();
+	expr_t     *e = new_expr ();
 
 	e->type = ex_temp;
 	e->e.temp.type = type;
@@ -373,7 +378,7 @@ new_bind_expr (expr_t *e1, expr_t *e2)
 		error (e1, "internal error");
 		abort ();
 	}
-	//e = new_binary_expr ('b', e1, e2);
+	// e = new_binary_expr ('b', e1, e2);
 	e = new_expr ();
 	e->type = ex_expr;
 	e->e.expr.op = 'b';
@@ -422,14 +427,15 @@ print_expr (expr_t *e)
 			printf ("{\n");
 			for (e = e->e.block.head; e; e = e->next) {
 				print_expr (e);
-				puts("");
+				puts ("");
 			}
 			printf ("}");
 			break;
 		case ex_expr:
 			print_expr (e->e.expr.e1);
 			if (e->e.expr.op == 'c') {
-				expr_t *p = e->e.expr.e2;
+				expr_t     *p = e->e.expr.e2;
+
 				printf ("(");
 				while (p) {
 					print_expr (p);
@@ -466,14 +472,14 @@ print_expr (expr_t *e)
 			printf (":");
 			if (e->e.temp.def) {
 				if (e->e.temp.def->name) {
-					printf("%s", e->e.temp.def->name);
+					printf ("%s", e->e.temp.def->name);
 				} else {
-					printf("<%d>", e->e.temp.def->ofs);
+					printf ("<%d>", e->e.temp.def->ofs);
 				}
 			} else {
-				printf("<>");
+				printf ("<>");
 			}
-			printf (":%s:%d)@", type_name [e->e.temp.type->type],
+			printf (":%s:%d)@", type_name[e->e.temp.type->type],
 					e->e.temp.users);
 			break;
 		case ex_nil:
@@ -512,13 +518,13 @@ print_expr (expr_t *e)
 static expr_t *
 do_op_string (int op, expr_t *e1, expr_t *e2)
 {
-	int len;
-	char *buf;
+	int         len;
+	char       *buf;
 	const char *s1, *s2;
 
 	s1 = e1->e.string_val ? e1->e.string_val : "";
 	s2 = e2->e.string_val ? e2->e.string_val : "";
-	
+
 	switch (op) {
 		case '+':
 			len = strlen (s1) + strlen (s2) + 1;
@@ -562,11 +568,11 @@ do_op_string (int op, expr_t *e1, expr_t *e2)
 static expr_t *
 do_op_float (int op, expr_t *e1, expr_t *e2)
 {
-	float f1, f2;
+	float       f1, f2;
 
 	f1 = e1->e.float_val;
 	f2 = e2->e.float_val;
-	
+
 	switch (op) {
 		case '+':
 			e1->e.float_val += f2;
@@ -581,22 +587,22 @@ do_op_float (int op, expr_t *e1, expr_t *e2)
 			e1->e.float_val /= f2;
 			break;
 		case '&':
-			e1->e.float_val = (int)f1 & (int)f2;
+			e1->e.float_val = (int) f1 & (int) f2;
 			break;
 		case '|':
-			e1->e.float_val = (int)f1 | (int)f2;
+			e1->e.float_val = (int) f1 | (int) f2;
 			break;
 		case '^':
-			e1->e.float_val = (int)f1 ^ (int)f2;
+			e1->e.float_val = (int) f1 ^ (int) f2;
 			break;
 		case '%':
-			e1->e.float_val = (int)f1 % (int)f2;
+			e1->e.float_val = (int) f1 % (int) f2;
 			break;
 		case SHL:
-			e1->e.float_val = (int)f1 << (int)f2;
+			e1->e.float_val = (int) f1 << (int) f2;
 			break;
 		case SHR:
-			e1->e.float_val = (int)f1 >> (int)f2;
+			e1->e.float_val = (int) f1 >> (int) f2;
 			break;
 		case AND:
 			e1->type = ex_integer;
@@ -639,11 +645,11 @@ do_op_float (int op, expr_t *e1, expr_t *e2)
 static expr_t *
 do_op_vector (int op, expr_t *e1, expr_t *e2)
 {
-	float *v1, *v2;
+	float      *v1, *v2;
 
 	v1 = e1->e.vector_val;
 	v2 = e2->e.vector_val;
-	
+
 	switch (op) {
 		case '+':
 			VectorAdd (v1, v2, v1);
@@ -658,14 +664,14 @@ do_op_vector (int op, expr_t *e1, expr_t *e2)
 		case EQ:
 			e1->type = ex_integer;
 			e1->e.integer_val = (v1[0] == v2[0])
-							&& (v1[1] == v2[1])
-							&& (v1[2] == v2[2]);
+							 && (v1[1] == v2[1])
+							 && (v1[2] == v2[2]);
 			break;
 		case NE:
 			e1->type = ex_integer;
 			e1->e.integer_val = (v1[0] == v2[0])
-							|| (v1[1] != v2[1])
-							|| (v1[2] != v2[2]);
+							 || (v1[1] != v2[1])
+							 || (v1[2] != v2[2]);
 			break;
 		default:
 			return error (e1, "invalid operand for vector");
@@ -676,11 +682,11 @@ do_op_vector (int op, expr_t *e1, expr_t *e2)
 static expr_t *
 do_op_integer (int op, expr_t *e1, expr_t *e2)
 {
-	int i1, i2;
+	int         i1, i2;
 
 	i1 = e1->e.integer_val;
 	i2 = e2->e.integer_val;
-	
+
 	switch (op) {
 		case '+':
 			e1->e.integer_val += i2;
@@ -771,14 +777,13 @@ static expr_t *(*do_op[]) (int op, expr_t *e1, expr_t *e2) = {
 static expr_t *
 binary_const (int op, expr_t *e1, expr_t *e2)
 {
-	etype_t t1, t2;
-	//expr_t *e;
+	etype_t     t1, t2;
 
 	t1 = extract_type (e1);
 	t2 = extract_type (e2);
 
 	if (t1 == t2) {
-		return do_op[t1](op, e1, e2);
+		return do_op[t1] (op, e1, e2);
 	} else {
 		return type_mismatch (e1, e2, op);
 	}
@@ -787,8 +792,8 @@ binary_const (int op, expr_t *e1, expr_t *e2)
 static expr_t *
 field_expr (expr_t *e1, expr_t *e2)
 {
-	etype_t t1, t2;
-	expr_t *e;
+	etype_t     t1, t2;
+	expr_t     *e;
 
 	t1 = extract_type (e1);
 	t2 = extract_type (e2);
@@ -809,7 +814,7 @@ field_expr (expr_t *e1, expr_t *e2)
 expr_t *
 test_expr (expr_t *e, int test)
 {
-	expr_t *new = 0;
+	expr_t     *new = 0;
 
 	check_initialized (e);
 
@@ -891,10 +896,9 @@ binary_expr (int op, expr_t *e1, expr_t *e2)
 		PR_DefInitialized (e1->e.def);
 
 	if (e1->type == ex_block && e1->e.block.is_call
-		&& e2->type == ex_block && e2->e.block.is_call
-		&& e1->e.block.result) {
+		&& e2->type == ex_block && e2->e.block.is_call && e1->e.block.result) {
 		e = new_temp_def_expr (e1->e.block.result->e.def->type);
-		inc_users (e);	// for the block itself
+		inc_users (e);					// for the block itself
 		e1 = binary_expr ('=', e, e1);
 	}
 
@@ -932,7 +936,8 @@ binary_expr (int op, expr_t *e1, expr_t *e2)
 
 	if ((op == '&' || op == '|')
 		&& e1->type == ex_uexpr && e1->e.expr.op == '!' && !e1->paren) {
-		warning (e1, "ambiguous logic. Suggest explicit parentheses with expressions involving ! and %c", op);
+		warning (e1, "ambiguous logic. Suggest explicit parentheses with "
+				 "expressions involving ! and %c", op);
 	}
 
 	if (op == '=' && t1->type != ev_void && e2->type == ex_nil) {
@@ -973,7 +978,7 @@ binary_expr (int op, expr_t *e1, expr_t *e2)
 				}
 				break;
 			default:
-type_mismatch:
+			  type_mismatch:
 				return type_mismatch (e1, e2, op);
 		}
 	} else {
@@ -988,7 +993,7 @@ type_mismatch:
 		type = &type_float;
 	}
 	if (op == '=' && e1->type == ex_expr && e1->e.expr.op == '.') {
-		if (get_type(e1->e.expr.e1) == &type_entity) {
+		if (get_type (e1->e.expr.e1) == &type_entity) {
 			type_t      new;
 
 			memset (&new, 0, sizeof (new));
@@ -1008,7 +1013,8 @@ type_mismatch:
 expr_t *
 asx_expr (int op, expr_t *e1, expr_t *e2)
 {
-	expr_t *e = new_expr ();
+	expr_t     *e = new_expr ();
+
 	*e = *e1;
 	return binary_expr ('=', e, binary_expr (op, e1, e2));
 }
@@ -1033,10 +1039,10 @@ unary_expr (int op, expr_t *e)
 				case ex_def:
 				case ex_temp:
 					{
-						expr_t *n = new_unary_expr (op, e);
+						expr_t     *n = new_unary_expr (op, e);
+
 						n->e.expr.type = (e->type == ex_def)
-										 ? e->e.def->type
-										 : e->e.expr.type;
+							? e->e.def->type : e->e.expr.type;
 						return n;
 					}
 				case ex_integer:
@@ -1078,7 +1084,8 @@ unary_expr (int op, expr_t *e)
 				case ex_def:
 				case ex_temp:
 					{
-						expr_t *n = new_unary_expr (op, e);
+						expr_t     *n = new_unary_expr (op, e);
+
 						if (options.code.progsversion > PROG_ID_VERSION)
 							n->e.expr.type = &type_integer;
 						else
@@ -1101,15 +1108,15 @@ unary_expr (int op, expr_t *e)
 					return e;
 				case ex_vector:
 					e->e.integer_val = !e->e.vector_val[0]
-									&& !e->e.vector_val[1]
-									&& !e->e.vector_val[2];
+						&& !e->e.vector_val[1]
+						&& !e->e.vector_val[2];
 					e->type = ex_integer;
 					return e;
 				case ex_quaternion:
 					e->e.integer_val = !e->e.quaternion_val[0]
-									&& !e->e.quaternion_val[1]
-									&& !e->e.quaternion_val[2]
-									&& !e->e.quaternion_val[3];
+						&& !e->e.quaternion_val[1]
+						&& !e->e.quaternion_val[2]
+						&& !e->e.quaternion_val[3];
 					e->type = ex_integer;
 					return e;
 				case ex_entity:
@@ -1134,8 +1141,9 @@ unary_expr (int op, expr_t *e)
 				case ex_def:
 				case ex_temp:
 					{
-						expr_t *n = new_unary_expr (op, e);
-						type_t *t = get_type (e);
+						expr_t     *n = new_unary_expr (op, e);
+						type_t     *t = get_type (e);
+
 						if (t != &type_integer && t != &type_float)
 							return error (e, "invalid type for unary ~");
 						n->e.expr.type = t;
@@ -1146,7 +1154,7 @@ unary_expr (int op, expr_t *e)
 					e->e.integer_val = ~e->e.integer_val;
 					return e;
 				case ex_float:
-					e->e.float_val = ~(int)e->e.float_val;
+					e->e.float_val = ~(int) e->e.float_val;
 					e->type = ex_integer;
 					return e;
 				case ex_nil:
@@ -1217,10 +1225,10 @@ function_expr (expr_t *e1, expr_t *e2)
 	}
 
 	if (e1->type == ex_def && e2 && e2->type == ex_string) {
-		//FIXME eww, I hate this, but it's needed :(
-		//FIXME make a qc hook? :)
-		def_t *func = e1->e.def;
-		def_t *e = PR_ReuseConstant (e2, 0);
+		// FIXME eww, I hate this, but it's needed :(
+		// FIXME make a qc hook? :)
+		def_t      *func = e1->e.def;
+		def_t      *e = PR_ReuseConstant (e2, 0);
 
 		if (strncmp (func->name, "precache_sound", 14) == 0)
 			PrecacheSound (e, func->name[4]);
@@ -1230,9 +1238,7 @@ function_expr (expr_t *e1, expr_t *e2)
 			PrecacheFile (e, func->name[13]);
 	}
 
-	ftype = e1->type == ex_def
-			? e1->e.def->type
-			: e1->e.expr.type;
+	ftype = e1->type == ex_def ? e1->e.def->type : e1->e.expr.type;
 
 	for (e = e2; e; e = e->next)
 		parm_count++;
@@ -1247,7 +1253,7 @@ function_expr (expr_t *e1, expr_t *e2)
 		}
 	}
 	for (i = parm_count, e = e2; i > 0; i--, e = e->next) {
-		type_t *t = get_type (e);
+		type_t     *t = get_type (e);
 
 		if (ftype->parm_types[i - 1] == &type_float && e->type == ex_integer) {
 			e->type = ex_float;
@@ -1263,8 +1269,8 @@ function_expr (expr_t *e1, expr_t *e2)
 				err = error (e, "type mismatch for parameter %d of %s",
 							 i, e1->e.def->name);
 		} else {
-			//if (e->type == ex_integer)
-			//	warning (e, "passing integer consant into ... function");
+			if (e->type == ex_integer && options.warnings.vararg_integer)
+				warning (e, "passing integer consant into ... function");
 		}
 		arg_types[parm_count - i] = t;
 	}
@@ -1285,8 +1291,7 @@ function_expr (expr_t *e1, expr_t *e2)
 		a = &(*a)->next;
 	}
 	for (i = 0; i < arg_expr_count - 1; i++) {
-		append_expr (call, binary_expr ('=', arg_exprs[i][1],
-					                    arg_exprs[i][0]));
+		append_expr (call, binary_expr ('=', arg_exprs[i][1], arg_exprs[i][0]));
 	}
 	if (arg_expr_count) {
 		e = new_bind_expr (arg_exprs[arg_expr_count - 1][0],
@@ -1300,8 +1305,10 @@ function_expr (expr_t *e1, expr_t *e2)
 	append_expr (call, e);
 	if (ftype->aux_type != &type_void) {
 		expr_t     *ret = new_expr ();
+
 		ret->type = ex_def;
 		ret->e.def = memcpy (malloc (sizeof (def_t)), &def_ret, sizeof (def_t));
+
 		if (!ret->e.def)
 			Sys_Error ("function_expr: Memory Allocation Failure\n");
 		ret->e.def->type = ftype->aux_type;
@@ -1317,7 +1324,7 @@ return_expr (function_t *f, expr_t *e)
 		if (f->def->type->aux_type != &type_void)
 			return error (e, "return from non-void function without a value");
 	} else {
-		type_t *t = get_type (e);
+		type_t     *t = get_type (e);
 
 		if (f->def->type->aux_type == &type_void)
 			return error (e, "returning a value for a void function");
@@ -1332,7 +1339,7 @@ return_expr (function_t *f, expr_t *e)
 		}
 		if (f->def->type->aux_type != t)
 			return error (e, "type mismatch for return value of %s",
-							f->def->name);
+						  f->def->name);
 	}
 	return new_unary_expr ('r', e);
 }
@@ -1340,11 +1347,11 @@ return_expr (function_t *f, expr_t *e)
 expr_t *
 conditional_expr (expr_t *cond, expr_t *e1, expr_t *e2)
 {
-	expr_t    *block = new_block_expr ();
-	type_t    *type1 = get_type (e1);
-	type_t    *type2 = get_type (e2);
-	expr_t    *tlabel = new_label_expr ();
-	expr_t    *elabel = new_label_expr ();
+	expr_t     *block = new_block_expr ();
+	type_t     *type1 = get_type (e1);
+	type_t     *type2 = get_type (e2);
+	expr_t     *tlabel = new_label_expr ();
+	expr_t     *elabel = new_label_expr ();
 
 	block->e.block.result = (type1 == type2) ? new_temp_def_expr (type1) : 0;
 	append_expr (block, new_binary_expr ('i', test_expr (cond, 1), tlabel));
@@ -1368,7 +1375,7 @@ incop_expr (int op, expr_t *e, int postop)
 	expr_t     *one = new_expr ();
 	expr_t     *incop;
 
-	one->type = ex_integer;		// integer constants get auto-cast to float
+	one->type = ex_integer;			// integer constants get auto-cast to float
 	one->e.integer_val = 1;
 	incop = asx_expr (op, e, one);
 	if (postop) {
@@ -1399,11 +1406,11 @@ array_expr (expr_t *array, expr_t *index)
 		return error (index, "invalid array index type");
 	if (index->type >= ex_integer &&
 		index->e.uinteger_val >= array_type->num_parms)
-		return error (index, "array index out of bounds");
+			return error (index, "array index out of bounds");
 	size = pr_type_size[array_type->aux_type->type];
 	if (size > 1) {
 		scale = new_expr ();
-		scale->type = expr_types [index_type->type];
+		scale->type = expr_types[index_type->type];
 		scale->e.integer_val = size;
 		index = binary_expr ('*', index, scale);
 	}

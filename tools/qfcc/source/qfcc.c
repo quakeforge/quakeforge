@@ -56,23 +56,23 @@
 
 #include "qfcc.h"
 
-options_t	options;
+options_t   options;
 
-char		*sourcedir;
-const char	*this_program;
+char       *sourcedir;
+const char *this_program;
 
 static struct option const long_options[] = {
-	{"source",	required_argument,	0, 's'},
-	{"quiet",	no_argument,		0, 'q'},
-	{"verbose",	no_argument,		0, 'v'},
-	{"code",	required_argument,	0, 'C'},
-	{"warn",	required_argument,	0, 'W'},
-	{"help",	no_argument,		0, 'h'},
-	{"version", no_argument,		0, 'V'},
+	{"source", required_argument, 0, 's'},
+	{"quiet", no_argument, 0, 'q'},
+	{"verbose", no_argument, 0, 'v'},
+	{"code", required_argument, 0, 'C'},
+	{"warn", required_argument, 0, 'W'},
+	{"help", no_argument, 0, 'h'},
+	{"version", no_argument, 0, 'V'},
 #ifdef USE_CPP
-	{"define",	required_argument,	0, 'D'},
-	{"include",	required_argument,	0, 'I'},
-	{"undefine",required_argument,	0, 'U'},
+	{"define", required_argument, 0, 'D'},
+	{"include", required_argument, 0, 'I'},
+	{"undefine", required_argument, 0, 'U'},
 #endif
 	{NULL, 0, NULL, 0}
 };
@@ -86,11 +86,11 @@ char        debugfile[1024];
 /*
 	We reserve 6 args at the end.
 */
-char		*cpp_argv[CPP_MAX_ARGS];
-static int	cpp_argc = 0;
+char       *cpp_argv[CPP_MAX_ARGS];
+static int  cpp_argc = 0;
 #endif
 
-pr_info_t	pr;
+pr_info_t   pr;
 
 float       pr_globals[MAX_REGS];
 int         numpr_globals;
@@ -108,7 +108,7 @@ int         numfunctions;
 
 ddef_t      globals[MAX_GLOBALS];
 int         numglobaldefs;
-int			num_localdefs;
+int         num_localdefs;
 const char *big_function = 0;
 
 ddef_t      fields[MAX_FIELDS];
@@ -135,11 +135,12 @@ int         numfiles;
 void
 WriteFiles (void)
 {
-	FILE	*f;
-	int 	i;
-	char	filename[1024];
+	FILE       *f;
+	int         i;
+	char        filename[1024];
 
-	snprintf (filename, sizeof (filename), "%s%cfiles.dat", sourcedir, PATH_SEPARATOR);
+	snprintf (filename, sizeof (filename), "%s%cfiles.dat", sourcedir,
+			  PATH_SEPARATOR);
 	f = fopen (filename, "w");
 	if (!f)
 		Error ("Couldn't open %s", filename);
@@ -169,13 +170,13 @@ static hashtab_t *strings_tab;
 static const char *
 stings_get_key (void *_str, void *unsued)
 {
-	return (char*)_str;
+	return (char *) _str;
 }
 
 int
 CopyString (const char *str)
 {
-	int 	old;
+	int         old;
 
 	if (!strings_tab) {
 		strings_tab = Hash_NewTable (16381, stings_get_key, 0, 0);
@@ -190,7 +191,7 @@ CopyString (const char *str)
 int
 ReuseString (const char *str)
 {
-	char *s;
+	char       *s;
 
 	if (!strings_tab)
 		return CopyString (str);
@@ -203,7 +204,7 @@ ReuseString (const char *str)
 void
 InitData (void)
 {
-	int 	i;
+	int         i;
 
 	numstatements = 1;
 	strofs = 1;
@@ -220,19 +221,19 @@ InitData (void)
 void
 WriteData (int crc)
 {
-	def_t		*def;
-	ddef_t		*dd;
+	def_t      *def;
+	ddef_t     *dd;
 	dprograms_t progs;
 	pr_debug_header_t debug;
-	FILE		*h;
-	int 		i;
+	FILE       *h;
+	int         i;
 
 	for (def = pr.def_head.def_next; def; def = def->def_next) {
 		if (def->scope)
 			continue;
 		if (def->type->type == ev_func) {
-//			df = &functions[numfunctions];
-//			numfunctions++;
+//          df = &functions[numfunctions];
+//          numfunctions++;
 		} else if (def->type->type == ev_field) {
 			dd = &fields[numfielddefs];
 			numfielddefs++;
@@ -253,10 +254,10 @@ WriteData (int crc)
 		dd->ofs = def->ofs;
 	}
 
-//	PrintStrings ();
-//	PrintFunctions ();
-//	PrintFields ();
-//	PrintGlobals ();
+//  PrintStrings ();
+//  PrintFunctions ();
+//  PrintFields ();
+//  PrintGlobals ();
 	strofs = (strofs + 3) & ~3;
 
 	if (options.verbosity >= 0) {
@@ -290,7 +291,8 @@ WriteData (int crc)
 	progs.ofs_functions = ftell (h);
 	progs.numfunctions = numfunctions;
 	for (i = 0; i < numfunctions; i++) {
-		functions[i].first_statement = LittleLong (functions[i].first_statement);
+		functions[i].first_statement =
+			LittleLong (functions[i].first_statement);
 		functions[i].parm_start = LittleLong (functions[i].parm_start);
 		functions[i].s_name = LittleLong (functions[i].s_name);
 		functions[i].s_file = LittleLong (functions[i].s_file);
@@ -352,7 +354,7 @@ WriteData (int crc)
 	fclose (h);
 	debug.crc = LittleShort (debug.crc);
 	debug.you_tell_me_and_we_will_both_know = 0;
-	
+
 	h = SafeOpenWrite (debugfile);
 	SafeWrite (h, &debug, sizeof (debug));
 
@@ -399,7 +401,7 @@ char *
 PR_String (char *string)
 {
 	static char buf[80];
-	char		*s;
+	char       *s;
 
 	s = buf;
 	*s++ = '"';
@@ -436,7 +438,7 @@ PR_String (char *string)
 def_t *
 PR_DefForFieldOfs (gofs_t ofs)
 {
-	def_t	*d;
+	def_t      *d;
 
 	for (d = pr.def_head.def_next; d; d = d->def_next) {
 		if (d->type->type != ev_field)
@@ -458,7 +460,7 @@ PR_DefForFieldOfs (gofs_t ofs)
 void
 PR_BeginCompilation (void)
 {
-	int 	i;
+	int         i;
 
 	numpr_globals = RESERVED_OFS;
 	pr.def_tail = &pr.def_head;
@@ -466,7 +468,8 @@ PR_BeginCompilation (void)
 	for (i = 0; i < RESERVED_OFS; i++)
 		pr_global_defs[i] = &def_void;
 
-	// link the function type in so state forward declarations match proper type
+	// link the function type in so state forward declarations match proper
+	// type
 	pr.types = &type_function;
 	type_function.next = NULL;
 	pr_error_count = 0;
@@ -475,7 +478,8 @@ PR_BeginCompilation (void)
 void
 PR_RelocateRefs (def_t *def)
 {
-	statref_t	*ref;
+	statref_t  *ref;
+
 	for (ref = def->refs; ref; ref = ref->next) {
 		switch (ref->field) {
 			case 0:
@@ -488,7 +492,7 @@ PR_RelocateRefs (def_t *def)
 				ref->statement->c = def->ofs;
 				break;
 			default:
-				abort();
+				abort ();
 		}
 	}
 }
@@ -499,14 +503,13 @@ PR_RelocateRefs (def_t *def)
 	called after all files are compiled to check for errors.
 	Returns false if errors were detected.
 */
-qboolean
-PR_FinishCompilation (void)
+qboolean PR_FinishCompilation (void)
 {
-	def_t		*d;
-	qboolean	errors = false;
-	function_t	*f;
-	def_t		*def;
-	expr_t       e;
+	def_t      *d;
+	qboolean    errors = false;
+	function_t *f;
+	def_t      *def;
+	expr_t      e;
 
 	// check to make sure all functions prototyped have code
 	if (options.warnings.undefined_function)
@@ -567,17 +570,19 @@ PR_FinishCompilation (void)
 int
 PR_WriteProgdefs (char *filename)
 {
-	def_t			*d;
-	FILE			*f;
-	unsigned short	crc;
-	int 			c;
+	def_t      *d;
+	FILE       *f;
+	unsigned short crc;
+	int         c;
 
 	if (options.verbosity >= 1)
 		printf ("writing %s\n", filename);
 	f = fopen (filename, "w");
 
 	// print global vars until the first field is defined
-	fprintf (f,	"\n/* file generated by qcc, do not modify */\n\ntypedef struct\n{\tint\tpad[%i];\n", RESERVED_OFS);
+	fprintf (f,
+			 "\n/* file generated by qcc, do not modify */\n\ntypedef struct\n{\tint\tpad[%i];\n",
+			 RESERVED_OFS);
 
 	for (d = pr.def_head.def_next; d; d = d->def_next) {
 		if (!strcmp (d->name, "end_sys_globals"))
@@ -658,8 +663,8 @@ PR_WriteProgdefs (char *filename)
 void
 PR_PrintFunction (def_t *def)
 {
-	def_t *d;
-	statref_t *r;
+	def_t      *d;
+	statref_t  *r;
 
 	printf ("%s\n", def->name);
 	for (d = def->scope_next; d; d = d->scope_next) {
@@ -667,7 +672,7 @@ PR_PrintFunction (def_t *def)
 				d->name ? d->name : "<temp>",
 				d->ofs, d->type->type, pr_type_size[d->type->type]);
 		for (r = d->refs; r; r = r->next)
-			printf (" %ld", (long)(r->statement - statements));
+			printf (" %ld", (long) (r->statement - statements));
 		printf ("\n");
 	}
 }
@@ -677,31 +682,29 @@ usage (int status)
 {
 	printf ("%s - QuakeForge Code Compiler\n", this_program);
 	printf ("Usage: %s [options]\n", this_program);
-	printf (
-"Options:\n"
-"    -s, --source DIR          Look for progs.src in DIR instead of \".\"\n"
-"    -q, --quiet               Inhibit usual output\n"
-"    -v, --verbose             Display more output than usual\n"
-"    -g,                       Generate debuggin info\n"
-"    -C, --code OPTION,...     Set code generation options\n"
-"    -W, --warn OPTION,...     Set warning options\n"
-"    -h, --help                Display this help and exit\n"
-"    -V, --version             Output version information and exit\n\n"
+	printf ("Options:\n"
+			"    -s, --source DIR          Look for progs.src in DIR instead of \".\"\n"
+			"    -q, --quiet               Inhibit usual output\n"
+			"    -v, --verbose             Display more output than usual\n"
+			"    -g,                       Generate debuggin info\n"
+			"    -C, --code OPTION,...     Set code generation options\n"
+			"    -W, --warn OPTION,...     Set warning options\n"
+			"    -h, --help                Display this help and exit\n"
+			"    -V, --version             Output version information and exit\n\n"
 #ifdef USE_CPP
-"    -D, --define SYMBOL[=VAL],...  Define symbols for the preprocessor\n"
-"    -I, --include DIR,...          Set directories for the preprocessor \n"
-"                                   to search for #includes\n"
-"    -U, --undefine SYMBOL,...      Undefine preprocessor symbols\n\n"
+			"    -D, --define SYMBOL[=VAL],...  Define symbols for the preprocessor\n"
+			"    -I, --include DIR,...          Set directories for the preprocessor \n"
+			"                                   to search for #includes\n"
+			"    -U, --undefine SYMBOL,...      Undefine preprocessor symbols\n\n"
 #endif
-"For help on options for --code and --warn, see the qfcc(1) manual page\n"
-	);
+			"For help on options for --code and --warn, see the qfcc(1) manual page\n");
 	exit (status);
 }
 
 static int
 DecodeArgs (int argc, char **argv)
 {
-	int		c;
+	int         c;
 
 #ifdef USE_CPP
 	for (c = 0; c < CPP_MAX_ARGS; cpp_argv[c++] = NULL);	// clear the args
@@ -717,44 +720,43 @@ DecodeArgs (int argc, char **argv)
 
 	sourcedir = ".";
 
-	while ((c = getopt_long (argc, argv,
-			"s:"	// source dir
-			"q"		// quiet
-			"v"		// verbose
-			"g"		// debug
-			"C:"	// code options
-			"W:"	// warning options
-			"h"		// help
-			"V"		// version
+	while ((c = getopt_long (argc, argv, "s:"	// source dir
+										 "q"	// quiet
+										 "v"	// verbose
+										 "g"	// debug
+										 "C:"	// code options
+										 "W:"	// warning options
+										 "h"	// help
+										 "V"	// version
 #ifdef USE_CPP
-			"D:"	// define
-			"I:"	// set includes
-			"U:"	// undefine
+										 "D:"	// define
+										 "I:"	// set includes
+										 "U:"	// undefine
 #endif
-			, long_options, (int *) 0)) != EOF) {
+							 , long_options, (int *) 0)) != EOF) {
 		switch (c) {
-			case 'h':	// help
+			case 'h':					// help
 				usage (0);
 				break;
-			case 'V':	// version
+			case 'V':					// version
 				printf ("%s version %s\n", PACKAGE, VERSION);
 				exit (0);
 				break;
-			case 's':	// src dir
+			case 's':					// src dir
 				sourcedir = strdup (optarg);
 				break;
-			case 'q':	// quiet
+			case 'q':					// quiet
 				options.verbosity -= 1;
 				break;
-			case 'v':	// verbose
+			case 'v':					// verbose
 				options.verbosity += 1;
 				break;
-			case 'g':	// debug
+			case 'g':					// debug
 				options.code.debug = 1;
 				break;
-			case 'C': {	// code options
-					char	*opts = strdup (optarg);
-					char	*temp = strtok (opts, ",");
+			case 'C':{					// code options
+					char       *opts = strdup (optarg);
+					char       *temp = strtok (opts, ",");
 
 					while (temp) {
 						if (!(strcasecmp (temp, "cow"))) {
@@ -782,9 +784,9 @@ DecodeArgs (int argc, char **argv)
 					free (opts);
 				}
 				break;
-			case 'W': {	// warning options
-					char	*opts = strdup (optarg);
-					char	*temp = strtok (opts, ",");
+			case 'W':{					// warning options
+					char       *opts = strdup (optarg);
+					char       *temp = strtok (opts, ",");
 
 					while (temp) {
 						if (!(strcasecmp (temp, "all"))) {
@@ -824,45 +826,45 @@ DecodeArgs (int argc, char **argv)
 				}
 				break;
 #ifdef USE_CPP
-			case 'D': {	// defines for cpp
-					char	*opts = strdup (optarg);
-					char	*temp = strtok (opts, ",");
+			case 'D':{					// defines for cpp
+					char       *opts = strdup (optarg);
+					char       *temp = strtok (opts, ",");
 
 					while (temp && (cpp_argc < CPP_MAX_USER_ARGS)) {
-						char	temp2[1024];
+						char        temp2[1024];
 
 						snprintf (temp2, sizeof (temp2), "%s%s", "-D", temp);
 						cpp_argv[cpp_argc++] = strdup (temp2);
 						temp = strtok (NULL, ",");
- 					}
+					}
 					free (opts);
 				}
 				break;
-			case 'I': {	// includes
-					char	*opts = strdup (optarg);
-					char	*temp = strtok (opts, ",");
+			case 'I':{					// includes
+					char       *opts = strdup (optarg);
+					char       *temp = strtok (opts, ",");
 
 					while (temp && (cpp_argc < CPP_MAX_USER_ARGS)) {
-						char	temp2[1024];
+						char        temp2[1024];
 
 						snprintf (temp2, sizeof (temp2), "%s%s", "-I", temp);
 						cpp_argv[cpp_argc++] = strdup (temp2);
 						temp = strtok (NULL, ",");
- 					}
+					}
 					free (opts);
 				}
 				break;
-			case 'U': {	// undefines
-					char	*opts = strdup (optarg);
-					char	*temp = strtok (opts, ",");
+			case 'U':{					// undefines
+					char       *opts = strdup (optarg);
+					char       *temp = strtok (opts, ",");
 
 					while (temp && (cpp_argc < CPP_MAX_USER_ARGS)) {
-						char	temp2[1024];
+						char        temp2[1024];
 
 						snprintf (temp2, sizeof (temp2), "%s%s", "-U", temp);
 						cpp_argv[cpp_argc++] = strdup (temp2);
 						temp = strtok (NULL, ",");
- 					}
+					}
 					free (opts);
 				}
 				break;
@@ -873,7 +875,7 @@ DecodeArgs (int argc, char **argv)
 	}
 	return optind;
 }
-	
+
 //============================================================================
 
 /*
@@ -884,10 +886,10 @@ DecodeArgs (int argc, char **argv)
 int
 main (int argc, char **argv)
 {
-	char		*src;
-	char		filename[1024];
-	int 		crc;
-	double		start, stop;
+	char       *src;
+	char        filename[1024];
+	int         crc;
+	double      start, stop;
 
 	start = Sys_DoubleTime ();
 
@@ -914,7 +916,8 @@ main (int argc, char **argv)
 		printf ("outputfile: %s\n", destfile);
 	}
 	if (options.code.debug) {
-		char *s;
+		char       *s;
+
 		strcpy (debugfile, com_token);
 
 		s = debugfile + strlen (debugfile);
@@ -937,23 +940,24 @@ main (int argc, char **argv)
 	while ((src = Parse (src))) {
 #ifdef USE_CPP
 # ifndef _WIN32
-		pid_t	pid;
-		int 	tempfd;
+		pid_t       pid;
+		int         tempfd;
 # endif
-		char	*temp1;
-		char	*temp2 = strrchr (argv[0], PATH_SEPARATOR);
-		char	tempname[1024];
+		char       *temp1;
+		char       *temp2 = strrchr (argv[0], PATH_SEPARATOR);
+		char        tempname[1024];
 #endif
-		int		error;
+		int         error;
 
 		extern FILE *yyin;
-		int yyparse (void);
+		int         yyparse (void);
 		extern void clear_frame_macros (void);
 
-		//extern int yydebug;
-		//yydebug = 1;
+		// extern int yydebug;
+		// yydebug = 1;
 
-		snprintf (filename, sizeof (filename), "%s%c%s", sourcedir, PATH_SEPARATOR, com_token);
+		snprintf (filename, sizeof (filename), "%s%c%s", sourcedir,
+				  PATH_SEPARATOR, com_token);
 		if (options.verbosity >= 2)
 			printf ("compiling %s\n", filename);
 
@@ -977,7 +981,7 @@ main (int argc, char **argv)
 			fclose (yyin);
 
 			{
-				int status = spawnvp (_P_WAIT, "cpp", cpp_argv);
+				int         status = spawnvp (_P_WAIT, "cpp", cpp_argv);
 
 				if (status) {
 					fprintf (stderr, "cpp returned error code %d", status);
@@ -992,19 +996,21 @@ main (int argc, char **argv)
 				perror ("fork");
 				return 1;
 			}
-			if (!pid) { // we're a child, check for abuse
+			if (!pid) {
+				// we're a child, check for abuse
 				cpp_argv[cpp_argc++] = "-o";
 				cpp_argv[cpp_argc++] = tempname;
 				cpp_argv[cpp_argc++] = filename;
-				
+
 				execvp ("cpp", cpp_argv);
 				printf ("Child shouldn't reach here\n");
 				exit (1);
-			} else { 	// give parental guidance (or bury it in the back yard)
-				int 	status;
-				pid_t	rc;
-					
-//				printf ("pid = %d\n", pid);
+			} else {
+				// give parental guidance (or bury it in the back yard)
+				int         status;
+				pid_t       rc;
+
+//              printf ("pid = %d\n", pid);
 				if ((rc = waitpid (0, &status, 0 | WUNTRACED)) != pid) {
 					if (rc == -1) {
 						perror ("wait");

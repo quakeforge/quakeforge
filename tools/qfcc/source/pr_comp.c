@@ -30,8 +30,8 @@ static const char rcsid[] =
 void
 PrecacheSound (def_t *e, int ch)
 {
-	char	*n;
-	int 	i;
+	char       *n;
+	int         i;
 
 	if (!e->ofs)
 		return;
@@ -59,8 +59,8 @@ PrecacheSound (def_t *e, int ch)
 void
 PrecacheModel (def_t *e, int ch)
 {
-	char	*n;
-	int 	i;
+	char       *n;
+	int         i;
 
 	if (!e->ofs)
 		return;
@@ -88,8 +88,8 @@ PrecacheModel (def_t *e, int ch)
 void
 PrecacheFile (def_t *e, int ch)
 {
-	char	*n;
-	int 	i;
+	char       *n;
+	int         i;
 
 	if (!e->ofs)
 		return;
