@@ -47,6 +47,7 @@ static const char rcsid[] =
 #include "QF/texture.h"
 #include "QF/tga.h"
 #include "QF/va.h"
+#include "QF/vid.h"
 #include "QF/GL/qf_textures.h"
 
 #include "compat.h"
@@ -148,12 +149,12 @@ Mod_LoadLighting (lump_t *l)
 
 	if (mod_lightmap_bytes > 1)
 		for (i = 0; i < l->filelen ; i++) {
-			d = *in++;
+			d = gammatable[*in++];
 			*out++ = d;
 			*out++ = d;
 			*out++ = d;
 		}
 	else
 		for (i = 0; i < l->filelen ; i++)
-			*out++ = *in++;
+			*out++ = gammatable[*in++];
 }
