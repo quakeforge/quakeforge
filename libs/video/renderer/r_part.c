@@ -83,15 +83,16 @@ R_DarkFieldParticles (entity_t *ent)
 }
 
 #define NUMVERTEXNORMALS	162
-extern float		r_avertexnormals[NUMVERTEXNORMALS][3];
 static float		beamlength = 16;
 static vec3_t		avelocities[NUMVERTEXNORMALS];
+
+extern float		r_avertexnormals[NUMVERTEXNORMALS][3];
 
 void
 R_EntityParticles (entity_t *ent)
 {
 	int         count, i;
-	float       angle, dist, sr, sp, sy, cr, cp, cy;
+	float       angle, dist, sp, sy, cp, cy; // cr, sr
 	particle_t *p;
 	vec3_t      forward;
 
@@ -110,9 +111,10 @@ R_EntityParticles (entity_t *ent)
 		angle = r_realtime * avelocities[i][1];
 		sp = sin (angle);
 		cp = cos (angle);
-		angle = r_realtime * avelocities[i][2];
-		sr = sin (angle);
-		cr = cos (angle);
+// Next 3 lines results aren't currently used, may be in future. --Despair
+//		angle = r_realtime * avelocities[i][2];
+//		sr = sin (angle);
+//		cr = cos (angle);
 
 		forward[0] = cp * cy;
 		forward[1] = cp * sy;
@@ -129,14 +131,11 @@ R_EntityParticles (entity_t *ent)
 		p->color = 0x6f;
 		p->type = pt_explode;
 
-		p->org[0] =
-			ent->origin[0] + r_avertexnormals[i][0] * dist +
+		p->org[0] = ent->origin[0] + r_avertexnormals[i][0] * dist +
 			forward[0] * beamlength;
-		p->org[1] =
-			ent->origin[1] + r_avertexnormals[i][1] * dist +
+		p->org[1] = ent->origin[1] + r_avertexnormals[i][1] * dist +
 			forward[1] * beamlength;
-		p->org[2] =
-			ent->origin[2] + r_avertexnormals[i][2] * dist +
+		p->org[2] = ent->origin[2] + r_avertexnormals[i][2] * dist +
 			forward[2] * beamlength;
 	}
 }
