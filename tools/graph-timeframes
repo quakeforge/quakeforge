@@ -1,0 +1,48 @@
+#!/bin/sh
+
+# Converts a timeframes.txt to a timeframes.png
+
+if [ -z "`which xmgrace`" ]; then
+	echo "This script requires grace to be installed"
+	exit 1
+fi
+
+# Setup our file vars
+if [ "$#" -ge "2" ]; then
+	infile="$1"
+else
+	infile="${HOME}/.quakeforge/timeframes.txt"
+fi
+if [ "$#" -ge "3" ]; then
+	outfile="$2"
+else
+	outfile="timeframes.png"
+fi
+batchfile="`tempfile -p timeframe`"
+
+# Drop the commands into a file
+echo -e	\
+	'DEVICE "PNG" OP "compression:9"\n' \
+	's0.y = s0.y / 1000\n' \
+	'title "Time Spent On Each Frame"\n' \
+	'xaxis label "Frame Number"\n' \
+	'yaxis label "Time in Milliseconds"\n' \
+	>> "$batchfile"
+
+# Autoscale the Y axes
+echo -e \
+	'AUTOSCALE ONREAD YAXES\n' \
+	'autoscale\n' \
+	>> "$batchfile"
+
+# Scale the X axes ourselves, since grace doesn't seem to do it properly
+if [ "$infile" != "-" ]; then
+	echo "WORLD XMAX" "`cat \"$infile\" | wc -l`" >> "$batchfile"
+:
+fi
+
+# Run xmgrace, skipping the first line since it's probably bogus
+tail +2 "$infile" | xmgrace - -batch "$batchfile" -hdevice PNG -printfile "$outfile" -hardcopy
+
+# Cleanup
+rm "$batchfile"
