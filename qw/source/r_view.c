@@ -257,24 +257,6 @@ V_DriftPitch (void)
 */
 
 
-qboolean
-V_CheckGamma (void)
-{
-	static float    oldgamma;
-
-	if (vid_gamma) {		// might get called before vid_gamma gets set
-		if (oldgamma == vid_gamma->value)
-			return false;
-
-		oldgamma = vid_gamma->value;
-	}
-
-	vid.recalc_refdef = 1;	// force a surface cache flush
-
-	return true;
-}
-
-
 void
 V_ParseDamage (void)
 {

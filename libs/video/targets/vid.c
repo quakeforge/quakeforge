@@ -143,6 +143,8 @@ VID_UpdateGamma (cvar_t *vid_gamma)
 	if (vid_gamma->flags & CVAR_ROM)	// System gamma unavailable
 		return;
 
+	vid.recalc_refdef = 1;				// force a surface cache flush
+
 	if (vid_gamma_avail && vid_system_gamma->int_val) {	// Have system, use it
 		Con_DPrintf ("Setting hardware gamma to %g\n", gamma);
 		VID_BuildGammaTable (1.0);	// hardware gamma wants a linear palette

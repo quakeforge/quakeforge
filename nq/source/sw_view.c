@@ -42,8 +42,6 @@ extern cvar_t   *cl_cshift_powerup;
 
 extern byte gammatable[256];
 
-qboolean    V_CheckGamma (void);
-
 
 extern void V_CalcGlowCshift (void); 
 
@@ -65,7 +63,6 @@ V_UpdatePalette (void)
 	byte       *basepal, *newpal;
 	byte        pal[768];
 	int         r, g, b;
-	qboolean    force;
 
 	V_CalcPowerupCshift ();
 
@@ -94,8 +91,7 @@ V_UpdatePalette (void)
 	if (cl.cshifts[CSHIFT_BONUS].percent < 0)
 		cl.cshifts[CSHIFT_BONUS].percent = 0;
 
-	force = V_CheckGamma ();
-	if (!new && !force)
+	if (!new)
 		return;
 
 	basepal = vid_basepal;

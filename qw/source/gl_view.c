@@ -50,8 +50,6 @@ extern double    host_frametime;
 
 extern byte      gammatable[256];
 
-extern qboolean  V_CheckGamma (void);
-
 extern cvar_t   *cl_cshift_powerup;
 
 byte             ramps[3][256];
@@ -141,7 +139,6 @@ V_UpdatePalette (void)
 {
 	int         i, j;
 	qboolean    new;
-	qboolean    force;
 
 	V_CalcPowerupCshift ();
 
@@ -170,8 +167,7 @@ V_UpdatePalette (void)
 	if (cl.cshifts[CSHIFT_BONUS].percent < 0)
 		cl.cshifts[CSHIFT_BONUS].percent = 0;
 
-	force = V_CheckGamma ();
-	if (!new && !force)
+	if (!new)
 		return;
 
 	V_CalcBlend ();
