@@ -837,13 +837,14 @@ main (int argc, char **argv)
 	char        destname[1024];
 	double      start, end;
 
+	// let forked processes change name for ps status
+	this_program = argv0 = argv[0];
+
 	// check command line flags
 	DecodeArgs (argc, argv);
 
 // XXX	SetQdirFromPath (argv[i]);
 
-	// let forked processes change name for ps status
-	argv0 = argv[0];
 
 	// do it!
 	start = Sys_DoubleTime ();
