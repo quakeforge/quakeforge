@@ -1693,7 +1693,7 @@ function_expr (expr_t *e1, expr_t *e2)
 		expr_t     *ret = new_expr ();
 
 		ret->type = ex_def;
-		ret->e.def = new_def (ftype->aux_type, 0, pr.scope);
+		ret->e.def = new_def (ftype->aux_type, 0, 0);
 		ret->e.def->ofs = def_ret.ofs;
 
 		call->e.block.result = ret;

@@ -280,17 +280,21 @@ new_def (type_t *type, const char *name, scope_t *scope)
 
 	ALLOC (16384, def_t, defs, def);
 
-	*scope->tail = def;
-	scope->tail = &def->def_next;
-	scope->num_defs++;
+	if (scope) {
+		*scope->tail = def;
+		scope->tail = &def->def_next;
+		scope->num_defs++;
+	}
 
 	def->return_addr = __builtin_return_address (0);
 
 	def->name = name ? save_string (name) : 0;
 	def->type = type;
 
-	def->scope = scope;
-	def->space = scope->space;
+	if (scope) {
+		def->scope = scope;
+		def->space = scope->space;
+	}
 
 	def->file = pr.source_file;
 	def->line = pr.source_line;
