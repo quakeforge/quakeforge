@@ -565,12 +565,12 @@ SV_CheckLog (void)
 
 	sz = &svs.log[svs.logsequence & 1];
 
-	// bump sequence if allmost full, or ten minutes have passed and
+	// bump sequence if almost full, or ten minutes have passed and
 	// there is something still sitting there
 	if (sz->cursize > LOG_HIGHWATER
-		|| (realtime - svs.logtime > LOG_FLUSH && sz->cursize)) {
+		|| (Sys_DoubleTime () - svs.logtime > LOG_FLUSH && sz->cursize)) {
 		// swap buffers and bump sequence
-		svs.logtime = realtime;
+		svs.logtime = Sys_DoubleTime ();
 		svs.logsequence++;
 		sz = &svs.log[svs.logsequence & 1];
 		sz->cursize = 0;
