@@ -121,7 +121,7 @@ static void
 cl_hudswap_f (cvar_t *var)
 {
 	hudswap = var->int_val;
-	if (hudswap) {
+	if (var->int_val) {
 		hud_armament_view->gravity = grav_southwest;
 		stuff_view->gravity = grav_southeast;
 	} else {
@@ -882,7 +882,7 @@ draw_status (view_t *view)
 		draw_num (view, 24, 0, 666, 3, 1);
 	} else {
 		draw_num (view, 24, 0, cl.stats[STAT_ARMOR], 3,
-					  cl.stats[STAT_ARMOR] <= 25);
+				  cl.stats[STAT_ARMOR] <= 25);
 		if (cl.stats[STAT_ITEMS] & IT_ARMOR3)
 			draw_pic (view, 0, 0, sb_armor[2]);
 		else if (cl.stats[STAT_ITEMS] & IT_ARMOR2)

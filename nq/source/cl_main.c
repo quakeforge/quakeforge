@@ -62,7 +62,6 @@ cvar_t     *cl_writecfg;
 
 cvar_t     *cl_shownet;
 cvar_t     *cl_nolerp;
-cvar_t     *cl_hudswap;
 
 cvar_t     *cl_cshift_bonus; 
 cvar_t     *cl_cshift_contents; 
@@ -80,7 +79,6 @@ cvar_t     *show_fps;
 cvar_t     *show_time;
 
 int         fps_count;
-qboolean	hudswap;
 
 client_static_t cls;
 client_state_t cl;
@@ -90,15 +88,6 @@ entity_t    cl_entities[MAX_EDICTS];
 cl_entity_state_t    cl_baselines[MAX_EDICTS];
 entity_t    cl_static_entities[MAX_STATIC_ENTITIES];
 
-
-static void
-cl_hudswap_f (cvar_t *var)
-{
-	if (cl_hudswap)
-        hudswap = cl_hudswap->int_val;
-	else
-		hudswap = 0;
-}
 
 void
 CL_InitCvars (void)
@@ -136,8 +125,6 @@ CL_InitCvars (void)
 						   "show network packets. 0=off, 1=basic, 2=verbose");
 	cl_nolerp = Cvar_Get ("cl_nolerp", "0", CVAR_NONE, NULL,
 						  "linear motion interpolation");
-	cl_hudswap = Cvar_Get ("cl_hudswap", "0", CVAR_ARCHIVE, cl_hudswap_f,
-						   "new HUD on left side?");
 	lookspring = Cvar_Get ("lookspring", "0", CVAR_ARCHIVE, NULL, "Snap view "
 						   "to center when moving and no mlook/klook");
 	m_pitch = Cvar_Get ("m_pitch", "0.022", CVAR_ARCHIVE, NULL,
