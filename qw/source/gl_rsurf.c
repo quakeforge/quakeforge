@@ -55,6 +55,7 @@ int			skytexturenum;
 
 extern vec3_t shadecolor;				// Ender (Extend) Colormod
 
+int			gl_internalformat;
 int         lightmap_bytes;				// 1, 3, or 4
 int         lightmap_textures;
 
@@ -366,7 +367,7 @@ GL_UploadLightmap (int i, int x, int y, int w, int h)
 					 GL_UNSIGNED_BYTE,
 					 lightmaps[i] + (y * BLOCK_WIDTH) * lightmap_bytes);
 */
-	glTexImage2D (GL_TEXTURE_2D, 0, lightmap_bytes, BLOCK_WIDTH,
+	glTexImage2D (GL_TEXTURE_2D, 0, gl_internalformat, BLOCK_WIDTH,
 				  BLOCK_HEIGHT, 0, gl_lightmap_format,
 				  GL_UNSIGNED_BYTE, lightmaps[i]);
 }
@@ -1154,15 +1155,18 @@ GL_BuildLightmaps (void)
 
 	switch (gl_lightmap_components->int_val) {
 	case 1:
+		gl_internalformat = 1;
 		gl_lightmap_format = GL_LUMINANCE;
 		lightmap_bytes = 1;
 		break;
 	case 3:
+		gl_internalformat = 3;
 		gl_lightmap_format = GL_RGB;
 		lightmap_bytes = 3;
 		break;
 	case 4:
 	default:
+		gl_internalformat = 3;
 		gl_lightmap_format = GL_RGBA;
 		lightmap_bytes = 4;
 		break;
