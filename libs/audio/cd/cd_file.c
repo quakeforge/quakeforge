@@ -86,7 +86,8 @@ static sfx_t *cd_sfx;
 /* tracklist cvar */
 static cvar_t *mus_ogglist;	
 
-/* file descriptor (can make local? */
+/* current track, used when pausing */
+static int current_track;
 
 /* parsed tracklist, dictionary format */
 static plitem_t *tracklist = NULL;	
@@ -131,9 +132,10 @@ I_OGGMus_Stop (void)
 
 	if (!playing)
 		return;
-
-	wasPlaying = false;
+	
+	current_track=-1;
 	playing = false;
+	wasPlaying=false;
 
 	if (cd_sfx) {
 		cd_sfx->close (cd_sfx);
@@ -210,7 +212,7 @@ Load_Tracklist (void)
 static void
 I_OGGMus_Pause (void)
 {
-	Sys_DPrintf ("Entering I_OGGMus_Pause\n");
+	Sys_DPrintf("I_OGGMus: Pausing on track: %d.\n",current_track);
 	/* pause the ogg playback. */
 	/* just kinda cheat and stop it for the time being */
 	if (tracklist == NULL || !mus_enabled)
@@ -218,8 +220,11 @@ I_OGGMus_Pause (void)
 
 	if (!playing)
 		return;
-
-	I_OGGMus_Stop ();
+	
+	if (cd_sfx) {
+		cd_sfx->close (cd_sfx);
+		cd_channel->sfx=NULL;
+	}
 
 	wasPlaying = playing;
 	playing = false;
@@ -268,26 +273,35 @@ I_OGGMus_Play (int track, qboolean looping)
 		if (cd_sfx->wavinfo)
 			info = cd_sfx->wavinfo (cd_sfx);
 		if (info)
-			info->loopstart = 0;
+		{
+			if (looping == true)
+				info->loopstart = 0;
+			else
+				info->loopstart =-1;
+		}
 		cd_channel->sfx = cd_sfx->open (cd_sfx);
 		set_volume ();
 	}
 
 	free (trackstring);
 	playing = true;
+	current_track=track;
 }
 
 /* unpause. might just cheat and restart playing */
 static void
 I_OGGMus_Resume (void)
 {
-	Sys_DPrintf ("Entering I_OGGMus_Resume\n");
 
 	if (tracklist == NULL || !mus_enabled)
 		return;
 
 	if (!wasPlaying)
 		return;
+
+	Sys_DPrintf("I_OGGMus: resuming track: %d.\n",current_track);
+	I_OGGMus_Play(current_track,true);
+
 	playing = true;
 }
 
