@@ -261,7 +261,8 @@ map_cfg (const char *mapname, int all)
 
 	COM_StripExtension (mapname, name);
 	strcat (name, ".cfg");
-	if (COM_FOpenFile (name, &f)) {
+	COM_FOpenFile (name, &f);
+	if (f) {
 		Qclose (f);
 		Cmd_Exec_File (cl_cbuf, name);
 	} else {
