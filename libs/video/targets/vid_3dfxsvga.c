@@ -75,10 +75,10 @@ static const char rcsid[] =
 
 typedef struct tfxMesaContext *fxMesaContext;
 
-void (* fxMesaDestroyContext) (fxMesaContext ctx);
-void (* fxMesaSwapBuffers) (void);
-fxMesaContext (* fxMesaCreateContext) (GLuint win, GrScreenResolution_t, GrScreenRefresh_t, const GLint attribList[]);
-void (* fxMesaMakeCurrent) (fxMesaContext ctx);
+void (* qf_fxMesaDestroyContext) (fxMesaContext ctx);
+void (* qf_fxMesaSwapBuffers) (void);
+fxMesaContext (* qf_fxMesaCreateContext) (GLuint win, GrScreenResolution_t, GrScreenRefresh_t, const GLint attribList[]);
+void (* qf_fxMesaMakeCurrent) (fxMesaContext ctx);
 
 // FIXME!!!!! This belongs in include/qfgl_ext.h -- deek
 typedef void (GLAPIENTRY * QF_3DfxSetDitherModeEXT) (GrDitherMode_t mode);
@@ -101,7 +101,7 @@ VID_Shutdown (void)
 	if (!fc)
 		return;
 
-	fxMesaDestroyContext (fc);
+	qf_fxMesaDestroyContext (fc);
 }
 
 void
@@ -161,7 +161,7 @@ void
 GL_EndRendering (void)
 {
 	qfglFlush ();
-	fxMesaSwapBuffers ();
+	qf_fxMesaSwapBuffers ();
 	Sbar_Changed ();
 }
 
@@ -265,13 +265,13 @@ VID_Init (unsigned char *palette)
 
 	GL_Pre_Init ();
 
-	fxMesaCreateContext = QFGL_ProcAddress (libgl_handle,
+	qf_fxMesaCreateContext = QFGL_ProcAddress (libgl_handle,
 											"fxMesaCreateContext", true);
-	fxMesaDestroyContext = QFGL_ProcAddress (libgl_handle,
+	qf_fxMesaDestroyContext = QFGL_ProcAddress (libgl_handle,
 											 "fxMesaDestroyContext", true);
-	fxMesaMakeCurrent = QFGL_ProcAddress (libgl_handle,
+	qf_fxMesaMakeCurrent = QFGL_ProcAddress (libgl_handle,
 										  "fxMesaMakeCurrent", true);
-	fxMesaSwapBuffers = QFGL_ProcAddress (libgl_handle,
+	qf_fxMesaSwapBuffers = QFGL_ProcAddress (libgl_handle,
 										  "fxMesaSwapBuffers", true);
 	
 	VID_GetWindowSize (640, 480);
@@ -309,12 +309,12 @@ VID_Init (unsigned char *palette)
 
 	vid.conheight = max (vid.conheight, 200);
 
-	fc = fxMesaCreateContext (0, findres (&scr_width, &scr_height),
+	fc = qf_fxMesaCreateContext (0, findres (&scr_width, &scr_height),
 							  GR_REFRESH_75Hz, attribs);
 	if (!fc)
 		Sys_Error ("Unable to create 3DFX context.\n");
 
-	fxMesaMakeCurrent (fc);
+	qf_fxMesaMakeCurrent (fc);
 
 	vid.width = vid.conwidth = min (vid.conwidth, scr_width);
 	vid.height = vid.conheight = min (vid.conheight, scr_height);

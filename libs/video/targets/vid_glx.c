@@ -81,10 +81,10 @@ typedef struct __GLXcontextRec *GLXContext;
 static GLXContext ctx = NULL;
 typedef XID GLXDrawable;
 
-void (* glXSwapBuffers) (Display *dpy, GLXDrawable drawable);
-XVisualInfo* (* glXChooseVisual) (Display *dpy, int screen, int *attribList);
-GLXContext (* glXCreateContext) (Display *dpy, XVisualInfo *vis, GLXContext shareList, Bool direct);
-Bool (* glXMakeCurrent) (Display *dpy, GLXDrawable drawable, GLXContext ctx);
+void (* qfglXSwapBuffers) (Display *dpy, GLXDrawable drawable);
+XVisualInfo* (* qfglXChooseVisual) (Display *dpy, int screen, int *attribList);
+GLXContext (* qfglXCreateContext) (Display *dpy, XVisualInfo *vis, GLXContext shareList, Bool direct);
+Bool (* qfglXMakeCurrent) (Display *dpy, GLXDrawable drawable, GLXContext ctx);
 
 extern void GL_Pre_Init (void);
 extern void GL_Init_Common (void);
@@ -120,7 +120,7 @@ void
 GL_EndRendering (void)
 {
 	qfglFlush ();
-	glXSwapBuffers (x_disp, x_win);
+	qfglXSwapBuffers (x_disp, x_win);
 	Sbar_Changed ();
 }
 
@@ -145,11 +145,11 @@ VID_Init (unsigned char *palette)
 
 	GL_Pre_Init ();
 
-	glXSwapBuffers = QFGL_ProcAddress (libgl_handle, "glXSwapBuffers", true);
-	glXChooseVisual = QFGL_ProcAddress (libgl_handle, "glXChooseVisual", true);
-	glXCreateContext = QFGL_ProcAddress (libgl_handle, "glXCreateContext",
+	qfglXSwapBuffers = QFGL_ProcAddress (libgl_handle, "glXSwapBuffers", true);
+	qfglXChooseVisual = QFGL_ProcAddress (libgl_handle, "glXChooseVisual", true);
+	qfglXCreateContext = QFGL_ProcAddress (libgl_handle, "glXCreateContext",
 										 true);
-	glXMakeCurrent = QFGL_ProcAddress (libgl_handle, "glXMakeCurrent", true);
+	qfglXMakeCurrent = QFGL_ProcAddress (libgl_handle, "glXMakeCurrent", true);
 
 	Cmd_AddCommand ("vid_center", VID_Center_f, "Center the view port on the "
 					"quake window in a virtual desktop.\n");
@@ -184,7 +184,7 @@ VID_Init (unsigned char *palette)
 
 	X11_OpenDisplay ();
 
-	x_visinfo = glXChooseVisual (x_disp, x_screen, attrib);
+	x_visinfo = qfglXChooseVisual (x_disp, x_screen, attrib);
 	if (!x_visinfo) {
 		Sys_Error ("Error couldn't get an RGB, Double-buffered, Depth "
 				   "visual\n");
@@ -198,9 +198,9 @@ VID_Init (unsigned char *palette)
 
 	XSync (x_disp, 0);
 
-	ctx = glXCreateContext (x_disp, x_visinfo, NULL, True);
+	ctx = qfglXCreateContext (x_disp, x_visinfo, NULL, True);
 
-	glXMakeCurrent (x_disp, x_win, ctx);
+	qfglXMakeCurrent (x_disp, x_win, ctx);
 
 	vid.height = vid.conheight = min (vid.conheight, scr_height);
 	vid.width = vid.conwidth = min (vid.conwidth, scr_width);
