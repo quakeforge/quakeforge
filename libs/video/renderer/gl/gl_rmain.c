@@ -519,8 +519,6 @@ GL_GetAliasFrameVerts (int frame, aliashdr_t *paliashdr, entity_t *e)
 			blend = 1;
 		lerp = 1 - blend;
 
-
-
 		verts1 = verts + e->pose1 * count;
 		verts2 = verts + e->pose2 * count;
 
@@ -531,9 +529,10 @@ GL_GetAliasFrameVerts (int frame, aliashdr_t *paliashdr, entity_t *e)
 									+ verts2[i].v[1] * blend;
 			vo->verts[i].vert[2] = verts1[i].v[2] * lerp
 									+ verts2[i].v[2] * blend;
-			vo->verts[i].lightdot =
-				shadedots[verts[i].lightnormalindex] * lerp
-				+ shadedots[verts2[i].lightnormalindex] * blend;
+			//vo->verts[i].lightdot =
+			//	shadedots[verts[i].lightnormalindex] * lerp
+			//	+ shadedots[verts2[i].lightnormalindex] * blend;
+			vo->verts[i].lightdot = shadedots[verts[i].lightnormalindex];
 		}
 		lastposenum0 = e->pose1;
 		lastposenum = e->pose2;
