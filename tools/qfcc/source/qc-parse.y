@@ -123,10 +123,16 @@ expr_t *argv_expr (void);
 
 %right	<op> '=' ASX PAS /* pointer assign */
 %right	'?' ':'
-%left	OR AND
-%left	EQ NE LE GE LT GT
-%left	SHL SHR %left	'+' '-'
-%left	'*' '/' '&' '|' '^' '%'
+%left	OR
+%left	AND
+%left	'|'
+%left	'^'
+%left	'&'
+%left	EQ NE
+%left	LE GE LT GT
+%left	SHL SHR
+%left	'+' '-'
+%left	'*' '/' '%'
 %right	<op> UNARY INCOP
 %left	HYPERUNARY
 %left	'.' '(' '['
