@@ -30,6 +30,12 @@ static const char rcsid[] =
 #ifdef HAVE_CONFIG_H
 # include "config.h"
 #endif
+#ifdef HAVE_STRING_H
+# include <string.h>
+#endif
+#ifdef HAVE_STRINGS_H
+# include <strings.h>
+#endif
 
 #include <stdlib.h>
 
@@ -39,23 +45,42 @@ static const char rcsid[] =
 #include "QF/GL/qf_noisetextures.h"
 #include "QF/GL/qf_vid.h"
 
+/*
 int         part_tex_dot;
 int         part_tex_smoke;
 int         part_tex_spark;
+*/
 
+int			part_tex;
+
+
+static void
+GDT_InitParticleTexture (void)
+{
+	byte data[64][64][2];
+
+	memset (data, 0, sizeof (data));
+
+	part_tex = texture_extension_number++;
+	qfglBindTexture (GL_TEXTURE_2D, part_tex);
+	qfglTexParameterf (GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+	qfglTexParameterf (GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+	qfglTexImage2D (GL_TEXTURE_2D, 0, 2, 64, 64, 0, GL_LUMINANCE_ALPHA,
+					GL_UNSIGNED_BYTE, data);
+}
 
 static void
 GDT_InitDotParticleTexture (void)
 {
-	byte        data[16][16][2];
+	byte        data[32][32][2];
 	int         x, y, dx2, dy, d;
 
-	for (x = 0; x < 16; x++) {
-		dx2 = x - 8;
+	for (x = 0; x < 32; x++) {
+		dx2 = x - 16;
 		dx2 *= dx2;
-		for (y = 0; y < 16; y++) {
-			dy = y - 8;
-			d = 255 - 4 * (dx2 + (dy * dy));
+		for (y = 0; y < 32; y++) {
+			dy = y - 16;
+			d = 255 - (dx2 + (dy * dy));
 			if (d <= 0) {
 				d = 0;
 				data[y][x][0] = 0;
@@ -65,26 +90,22 @@ GDT_InitDotParticleTexture (void)
 			data[y][x][1] = (byte) d;
 		}
 	}
-	part_tex_dot = texture_extension_number++;
-	qfglBindTexture (GL_TEXTURE_2D, part_tex_dot);
-	qfglTexParameterf (GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-	qfglTexParameterf (GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-	qfglTexImage2D (GL_TEXTURE_2D, 0, 2, 16, 16, 0, GL_LUMINANCE_ALPHA,
-		      GL_UNSIGNED_BYTE, data);
+	qfglTexSubImage2D (GL_TEXTURE_2D, 0, 0, 0, 32, 32, GL_LUMINANCE_ALPHA,
+					   GL_UNSIGNED_BYTE, data);
 }
 
 static void
 GDT_InitSparkParticleTexture (void)
 {
-	byte        data[16][16][2];
+	byte        data[32][32][2];
 	int         x, y, dx2, dy, d;
 
-	for (x = 0; x < 16; x++) {
-		dx2 = 8 - abs (x - 8);
+	for (x = 0; x < 32; x++) {
+		dx2 = 16 - abs (x - 16);
 		dx2 *= dx2;
-		for (y = 0; y < 16; y++) {
-			dy = 8 - abs (y - 8);
-			d = 3 * (dx2 + dy * dy) - 100;
+		for (y = 0; y < 32; y++) {
+			dy = 16 - abs (y - 16);
+			d = (dx2 + dy * dy) - 200;
 			if (d > 255)
 				d = 255;
 			if (d < 1) {
@@ -96,12 +117,8 @@ GDT_InitSparkParticleTexture (void)
 			data[y][x][1] = (byte) d;
 		}
 	}
-	part_tex_spark = texture_extension_number++;
-	qfglBindTexture (GL_TEXTURE_2D, part_tex_spark);
-	qfglTexParameterf (GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-	qfglTexParameterf (GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-	qfglTexImage2D (GL_TEXTURE_2D, 0, 2, 16, 16, 0, GL_LUMINANCE_ALPHA,
-		      GL_UNSIGNED_BYTE, data);
+	qfglTexSubImage2D (GL_TEXTURE_2D, 0, 32, 0, 32, 32, GL_LUMINANCE_ALPHA,
+					   GL_UNSIGNED_BYTE, data);
 }
 
 static void
@@ -133,17 +150,14 @@ GDT_InitSmokeParticleTexture (void)
 			}
 		}
 	}
-	part_tex_smoke = texture_extension_number++;
-	qfglBindTexture (GL_TEXTURE_2D, part_tex_smoke);
-	qfglTexParameterf (GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-	qfglTexParameterf (GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-	qfglTexImage2D (GL_TEXTURE_2D, 0, 2, 32, 32, 0, GL_LUMINANCE_ALPHA,
-					GL_UNSIGNED_BYTE, data);
+	qfglTexSubImage2D (GL_TEXTURE_2D, 0, 0, 32, 32, 32, GL_LUMINANCE_ALPHA,
+					   GL_UNSIGNED_BYTE, data);
 }
 
 void
 GDT_Init (void)
 {
+	GDT_InitParticleTexture ();
 	GDT_InitDotParticleTexture ();
 	GDT_InitSparkParticleTexture ();
 	GDT_InitSmokeParticleTexture ();

@@ -106,7 +106,10 @@ R_MaxParticlesCheck (cvar_t *r_particles, cvar_t *r_particles_max)
 												sizeof (particle_t *));
 	}
 
-	R_ClearParticles();
+	R_ClearParticles ();
+
+	if (r_init)
+		R_InitParticles ();
 }
 
 void

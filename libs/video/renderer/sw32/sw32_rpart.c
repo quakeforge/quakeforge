@@ -50,6 +50,11 @@ int			ramp3[8] = { 0x6d, 0x6b, 6, 5, 4, 3 };
 
 
 void
+R_InitParticles (void)
+{
+}
+
+void
 R_ClearParticles (void)
 {
 	int         i;

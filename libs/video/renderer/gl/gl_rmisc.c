@@ -59,7 +59,7 @@ static const char rcsid[] =
 #include "r_local.h"
 #include "varrays.h"
 
-varray_t2f_c4ub_v3f_t varray[MAX_VARRAY_VERTS];
+int			r_init = 0;
 
 qboolean    VID_Is8bit (void);
 void        R_InitBubble (void);
@@ -159,15 +159,12 @@ R_Init (void)
 
 	texture_extension_number = Skin_Init_Textures (texture_extension_number);
 
+	r_init = 1;
+	R_InitParticles ();
+	
 	qfglEnableClientState (GL_COLOR_ARRAY);
 	qfglEnableClientState (GL_VERTEX_ARRAY);
 	qfglEnableClientState (GL_TEXTURE_COORD_ARRAY);
-
-//	qfglInterleavedArrays (GL_T2F_C4UB_N3F_V3F, 0, varray); // Models w/normals
-//	qfglInterleavedArrays (GL_T2F_C4UB_V3F, 0, varray); // Polys w/o normals
-	qfglTexCoordPointer (2, GL_FLOAT, sizeof(varray[0]), varray[0].texcoord);
-	qfglColorPointer (4, GL_UNSIGNED_BYTE, sizeof(varray[0]), varray[0].color);
-	qfglVertexPointer (3, GL_FLOAT, sizeof(varray[0]), varray[0].vertex);
 }
 
 void

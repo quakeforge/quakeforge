@@ -59,6 +59,14 @@ static const char rcsid[] =
 
 int			ramp[8] = { 0x6f, 0x6d, 0x6b, 0x69, 0x67, 0x65, 0x63, 0x61 };
 
+int part_tex_dot = 0;
+int part_tex_spark = 1;
+int part_tex_smoke = 2;
+
+int						pVAsize;
+int					   *pVAindices;
+varray_t2f_c4ub_v3f_t  *particleVertexArray;
+
 
 inline static void
 particle_new (ptype_t type, int texnum, vec3_t org, float scale, vec3_t vel,
@@ -106,6 +114,41 @@ inline void
 R_ClearParticles (void)
 {
 	numparticles = 0;
+}
+
+void
+R_InitParticles (void)
+{
+	int		i;
+
+	if (r_maxparticles && r_init) {
+		if (vaelements > 3)
+			pVAsize = min (vaelements - (vaelements % 4), r_maxparticles * 4);
+		else
+			pVAsize = r_maxparticles * 4;
+		Con_Printf ("%i maximum vertex elements.\n", pVAsize);
+
+		if (particleVertexArray)
+			free (particleVertexArray);
+		particleVertexArray = (varray_t2f_c4ub_v3f_t *)
+			calloc (pVAsize, sizeof (varray_t2f_c4ub_v3f_t));
+		qfglInterleavedArrays (GL_T2F_C4UB_V3F, 0, particleVertexArray);
+
+		if (pVAindices)
+			free (pVAindices);
+		pVAindices = (int *) calloc (pVAsize, sizeof (int));
+		for (i = 0; i < pVAsize; i++)
+			pVAindices[i] = i;
+	} else {
+		if (particleVertexArray) {
+			free (particleVertexArray);
+			particleVertexArray = 0;
+		}
+		if (pVAindices) {
+			free (pVAindices);
+			pVAindices = 0;
+		}
+	}
 }
 
 void
@@ -695,6 +738,43 @@ R_ParticleExplosion_EE (vec3_t org)
 }
 
 void
+R_TeleportSplash_EE (vec3_t org)
+{
+	float       vel;
+	int         rnd, i, j, k;
+	int			l = 896;
+	vec3_t      dir, porg, pvel;
+
+	if (numparticles + l >= r_maxparticles) {
+		return;
+	} // else if (numparticles + l >= r_maxparticles) {
+//		l = r_maxparticles - numparticles;
+//	}
+
+	for (i = -16; i < 16; i += 4) {
+		dir[1] = i * 8;
+		for (j = -16; j < 16; j += 4) {
+			dir[0] = j * 8;
+			for (k = -24; k < 32; k += 4) {
+				dir[2] = k * 8;
+				
+				rnd = rand ();
+				porg[0] = org[0] + i + (rnd & 3);
+				porg[1] = org[1] + j + ((rnd >> 2) & 3);
+				porg[2] = org[2] + k + ((rnd >> 4) & 3);
+
+				VectorNormalize (dir);
+				vel = 50 + ((rnd >> 6) & 63);
+				VectorScale (dir, vel, pvel);
+				particle_new (pt_grav, part_tex_spark, porg, 0.6, pvel,
+							  (r_realtime + 0.2 + (rand () & 15) * 0.01),
+							  rand () & 255, 255);
+			}
+		}
+	}
+}
+
+void
 R_RocketTrail_EE (entity_t *ent)
 {
 	float		dist, maxlen, origlen, percent, pscale, pscalenext;
@@ -796,6 +876,8 @@ R_DrawParticles (void)
 					fire_alpha, fire_scale, smoke_alpha, smoke_scale,
 					smokecloud_alpha, smokecloud_org, smokecloud_scale;
 	int				activeparticles, maxparticle, j, k;
+	unsigned int	vacount;
+	varray_t2f_c4ub_v3f_t		*VA;
 	particle_t	   *part;
 	vec3_t			up_scale, right_scale, up_right_scale, down_right_scale;
 
@@ -804,15 +886,7 @@ R_DrawParticles (void)
 
 	// LordHavoc: particles should not affect zbuffer
 	qfglDepthMask (GL_FALSE);
-
-	varray[0].texcoord[0] = 0;
-	varray[0].texcoord[1] = 1;
-	varray[1].texcoord[0] = 0;
-	varray[1].texcoord[1] = 0;
-	varray[2].texcoord[0] = 1;
-	varray[2].texcoord[1] = 0;
-	varray[3].texcoord[0] = 1;
-	varray[3].texcoord[1] = 1;
+	qfglBindTexture (GL_TEXTURE_2D, part_tex);
 
 	grav = (fast_grav = r_frametime * 800.0) * 0.05;
 	dvel = bloodcloud_scale = smoke_scale = r_frametime * 4.0;
@@ -828,6 +902,8 @@ R_DrawParticles (void)
 	minparticledist = DotProduct (r_refdef.vieworg, vpn) + 32.0;
 
 	activeparticles = 0;
+	vacount = 0;
+	VA = particleVertexArray;
 	maxparticle = -1;
 	j = 0;
 
@@ -836,15 +912,46 @@ R_DrawParticles (void)
 		// Note, we must still do physics and such on them.
 		if (!(DotProduct (part->org, vpn) < minparticledist)) {
 			at = (byte *) & d_8to24table[(byte) part->color];
+			VA[0].color[0] = at[0];
+			VA[0].color[1] = at[1];
+			VA[0].color[2] = at[2];
+			VA[0].color[3] = part->alpha;
+			memcpy (VA[1].color, VA[0].color, sizeof(VA[0].color));
+			memcpy (VA[2].color, VA[0].color, sizeof(VA[0].color));
+			memcpy (VA[3].color, VA[0].color, sizeof(VA[0].color));
 
-			varray[0].color[0] = at[0];
-			varray[0].color[1] = at[1];
-			varray[0].color[2] = at[2];
-			varray[0].color[3] = part->alpha;
-
-			memcpy (varray[1].color, varray[0].color, sizeof(varray[0].color));
-			memcpy (varray[2].color, varray[0].color, sizeof(varray[0].color));
-			memcpy (varray[3].color, varray[0].color, sizeof(varray[0].color));
+			switch (part->tex) {
+			case 0:
+				VA[0].texcoord[0] = 0;
+				VA[0].texcoord[1] = 0.5;
+				VA[1].texcoord[0] = 0;
+				VA[1].texcoord[1] = 0;
+				VA[2].texcoord[0] = 0.5;
+				VA[2].texcoord[1] = 0;
+				VA[3].texcoord[0] = 0.5;
+				VA[3].texcoord[1] = 0.5;
+				break;
+			case 1:
+				VA[0].texcoord[0] = 0.5;
+				VA[0].texcoord[1] = 0.5;
+				VA[1].texcoord[0] = 0.5;
+				VA[1].texcoord[1] = 0;
+				VA[2].texcoord[0] = 1;
+				VA[2].texcoord[1] = 0;
+				VA[3].texcoord[0] = 1;
+				VA[3].texcoord[1] = 0.5;
+				break;
+			case 2:
+				VA[0].texcoord[0] = 0;
+				VA[0].texcoord[1] = 1;
+				VA[1].texcoord[0] = 0;
+				VA[1].texcoord[1] = 0.5;
+				VA[2].texcoord[0] = 0.5;
+				VA[2].texcoord[1] = 0.5;
+				VA[3].texcoord[0] = 0.5;
+				VA[3].texcoord[1] = 1;
+				break;
+			}
 
 			scale = part->scale;
 
@@ -854,13 +961,19 @@ R_DrawParticles (void)
 			VectorAdd (right_scale, up_scale, up_right_scale);
 			VectorSubtract (right_scale, up_scale, down_right_scale);
 
-			VectorAdd (part->org, up_right_scale,   varray[0].vertex);
-			VectorAdd (part->org, down_right_scale, varray[1].vertex);
-			VectorSubtract (part->org, up_right_scale,   varray[2].vertex);
-			VectorSubtract (part->org, down_right_scale, varray[3].vertex);
+			VectorAdd (part->org, up_right_scale,   VA[0].vertex);
+			VectorAdd (part->org, down_right_scale, VA[1].vertex);
+			VectorSubtract (part->org, up_right_scale,   VA[2].vertex);
+			VectorSubtract (part->org, down_right_scale, VA[3].vertex);
 
-			qfglBindTexture (GL_TEXTURE_2D, part->tex);
-			qfglDrawArrays (GL_QUADS, 0, 4);
+			VA += 4;
+			vacount += 4;
+			if (vacount + 4 > pVAsize) {
+				qfglDrawElements (GL_QUADS, vacount, GL_UNSIGNED_INT,
+								  pVAindices);
+				vacount = 0;
+				VA = particleVertexArray;
+			}
 		}
 
 		VectorMA (part->org, r_frametime, part->vel, part->org);
@@ -925,10 +1038,13 @@ R_DrawParticles (void)
 			activeparticles++;
 		}
 	}
+	if (vacount)
+		qfglDrawElements (GL_QUADS, vacount, GL_UNSIGNED_INT, pVAindices);
+
 	k = 0;
 	while (maxparticle >= activeparticles) {
 		*freeparticles[k++] = particles[maxparticle--];
-		while (maxparticle >= activeparticles && 
+		while (maxparticle >= activeparticles &&
 			   particles[maxparticle].die <= r_realtime)
 			maxparticle--;
 	}
@@ -944,10 +1060,12 @@ r_easter_eggs_f (cvar_t *var)
 	if (easter_eggs) {
 		if (easter_eggs->int_val) {
 			R_ParticleExplosion = R_ParticleExplosion_EE;
+			R_TeleportSplash = R_TeleportSplash_EE;
 			R_RocketTrail = R_RocketTrail_EE;
 			R_GrenadeTrail = R_GrenadeTrail_EE;
 		} else {
 			R_ParticleExplosion = R_ParticleExplosion_QF;
+			R_TeleportSplash = R_TeleportSplash_QF;
 			R_RocketTrail = R_RocketTrail_QF;
 			R_GrenadeTrail = R_GrenadeTrail_QF;
 		}

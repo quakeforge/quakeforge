@@ -67,6 +67,7 @@ int         r_pixbytes = 1;
 float       r_aliasuvscale = 1.0;
 int         r_outofsurfaces;
 int         r_outofedges;
+int			r_init = 0;
 
 qboolean    r_dowarp, r_dowarpold, r_viewchanged;
 

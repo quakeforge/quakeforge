@@ -69,6 +69,7 @@ const char		   *gl_renderer;
 const char		   *gl_vendor;
 const char		   *gl_version;
 
+int					vaelements;
 int         		texture_extension_number = 1;
 int					gl_filter_min = GL_LINEAR_MIPMAP_NEAREST;
 int					gl_filter_max = GL_LINEAR;
@@ -86,7 +87,6 @@ cvar_t			   *gl_multitexture;
 cvar_t			   *gl_screenshot_byte_swap;
 cvar_t			   *vid_mode;
 cvar_t			   *vid_use8bit;
-
 
 
 static void
@@ -153,6 +153,13 @@ CheckMultiTextureExtensions (void)
 	} else {
 		Con_Printf ("not found.\n");
 	}
+}
+
+void
+CheckVertexArraySize (void)
+{
+	qfglGetIntegerv (GL_MAX_ELEMENTS_VERTICES, &vaelements);
+//	qfglGetIntegerv (MAX_ELEMENTS_INDICES, *vaindices);
 }
 
 void
@@ -280,6 +287,8 @@ GL_Init_Common (void)
 	qfglTexEnvf (GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
 
 	CheckMultiTextureExtensions ();
+	CheckVertexArraySize ();
+
 	GL_Common_Init_Cvars ();
 }
 

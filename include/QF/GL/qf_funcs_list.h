@@ -120,7 +120,7 @@ QFGL_NEED (void, glDisable, (GLenum cap));
 QFGL_NEED (void, glDisableClientState, (GLenum cap));
 QFGL_NEED (void, glDrawArrays, (GLenum mode, GLint first, GLsizei count));
 QFGL_NEED (void, glDrawBuffer, (GLenum mode));
-QFGL_DONT_NEED (void, glDrawElements, (GLenum mode, GLsizei count, GLenum type, const GLvoid * indices));
+QFGL_NEED (void, glDrawElements, (GLenum mode, GLsizei count, GLenum type, const GLvoid * indices));
 QFGL_DONT_NEED (void, glDrawPixels, (GLsizei width, GLsizei height, GLenum format, GLenum type, const GLvoid * pixels));
 QFGL_DONT_NEED (void, glDrawRangeElements, (GLenum mode, GLuint start, GLuint end, GLsizei count, GLenum type, const GLvoid * indices));
 QFGL_DONT_NEED (void, glEdgeFlag, (GLboolean flag));
