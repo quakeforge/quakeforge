@@ -58,7 +58,9 @@ void emit_function (function_t *f, expr_t *e);
 void build_scope (function_t *f, def_t *func);
 
 hashtab_t *save_local_inits (def_t *scope);
+hashtab_t *merge_local_inits (hashtab_t *dl_1, hashtab_t *dl_2);
 void restore_local_inits (hashtab_t *def_list);
+void free_local_inits (hashtab_t *def_list);
 
 typedef struct {
 	type_t	*type;
@@ -435,6 +437,7 @@ statement
 			append_expr ($$, $6);
 			append_expr ($$, l1);
 			restore_local_inits ($5);
+			free_local_inits ($5);
 		}
 	| IF '(' expr ')' save_inits statement ELSE
 		{
@@ -443,9 +446,11 @@ statement
 		}
 	  statement
 		{
-			expr_t *l1 = new_label_expr ();
-			expr_t *l2 = new_label_expr ();
-			expr_t *e;
+			expr_t     *l1 = new_label_expr ();
+			expr_t     *l2 = new_label_expr ();
+			expr_t     *e;
+			hashtab_t  *merged;
+			hashtab_t  *else_ini;
 
 			$$ = new_block_expr ();
 
@@ -462,8 +467,13 @@ statement
 			append_expr ($$, l1);
 			append_expr ($$, $9);
 			append_expr ($$, l2);
-			restore_local_inits ($5);
-			// XXX fancy stuff here :)
+			else_ini = save_local_inits (pr_scope);
+			merged = merge_local_inits ($<def_list>8, else_ini);
+			restore_local_inits (merged);
+			free_local_inits (merged);
+			free_local_inits (else_ini);
+			free_local_inits ($5);
+			free_local_inits ($<def_list>8);
 		}
 	| FOR '(' opt_expr ';' opt_expr ';' opt_expr ')' statement
 		{
@@ -731,13 +741,74 @@ emit_function (function_t *f, expr_t *e)
 	//puts ("");
 }
 
+typedef struct {
+	def_t		*def;
+	int			state;
+} def_state_t;
+
+static const char *
+get_key (void *_d, void *unused)
+{
+	return ((def_state_t *)_d)->def->name;
+}
+
+static void
+free_key (void *_d, void *unused)
+{
+	free (_d);
+}
+
 hashtab_t *
 save_local_inits (def_t *scope)
 {
-	return 0;
+	hashtab_t  *tab = Hash_NewTable (61, get_key, free_key, 0);
+	def_t      *def;
+	for (def = scope->scope_next; def; def = def->scope_next) {
+		if  (def->name) {
+			def_state_t *ds = malloc (sizeof (def_state_t));
+			ds->def = def;
+			ds->state = def->initialized;
+			Hash_Add (tab, ds);
+		}
+	}
+	return tab;
+}
+
+hashtab_t *
+merge_local_inits (hashtab_t *dl_1, hashtab_t *dl_2)
+{
+	hashtab_t  *tab = Hash_NewTable (61, get_key, free_key, 0);
+	def_state_t **ds_list = (def_state_t **)Hash_GetList (dl_1);
+	def_state_t **ds;
+	def_state_t *d;
+	def_state_t *nds;
+
+	for (ds = ds_list; *ds; ds++) {
+		d = Hash_Find (dl_2, (*ds)->def->name);
+		(*ds)->def->initialized = (*ds)->state;
+
+		nds = malloc (sizeof (def_state_t));
+		nds->def = (*ds)->def;
+		nds->state = (*ds)->state && d->state;
+		Hash_Add (tab, nds);
+	}
+	free (ds_list);
+	return tab;
 }
 
 void
 restore_local_inits (hashtab_t *def_list)
 {
+	def_state_t **ds_list = (def_state_t **)Hash_GetList (def_list);
+	def_state_t **ds;
+
+	for (ds = ds_list; *ds; ds++)
+		(*ds)->def->initialized = (*ds)->state;
+	free (ds_list);
+}
+
+void
+free_local_inits (hashtab_t *def_list)
+{
+	Hash_DelTable (def_list);
 }
