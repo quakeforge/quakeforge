@@ -176,24 +176,22 @@ S_StartSound (int entnum, int entchannel, sfx_t *sfx, const vec3_t origin,
 			  float fvol, float attenuation)
 {
 	if (snd_render_funcs)
-		snd_render_funcs->pS_StartSound
-			(entnum, entchannel, sfx, origin, fvol, attenuation);
+		snd_render_funcs->pS_StartSound (entnum, entchannel, sfx, origin, fvol,
+										 attenuation);
 }
 
 void
 S_StopSound (int entnum, int entchannel)
 {
 	if (snd_render_funcs)
-		snd_render_funcs->pS_StopSound
-			(entnum, entchannel);
+		snd_render_funcs->pS_StopSound (entnum, entchannel);
 }
 
-sfx_t      *
+sfx_t *
 S_PrecacheSound (const char *sample)
 {
 	if (snd_render_funcs)
-		return snd_render_funcs->pS_PrecacheSound
-			(sample);
+		return snd_render_funcs->pS_PrecacheSound (sample);
 	else
 		return NULL;
 }
@@ -210,8 +208,7 @@ S_Update (const vec3_t origin, const vec3_t v_forward, const vec3_t v_right,
 		  const vec3_t v_up)
 {
 	if (snd_render_funcs)
-		snd_render_funcs->pS_Update (origin, v_forward,
-															 v_right, v_up);
+		snd_render_funcs->pS_Update (origin, v_forward, v_right, v_up);
 }
 
 void
