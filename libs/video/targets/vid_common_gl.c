@@ -49,8 +49,9 @@
 #include "QF/input.h"
 #include "QF/qargs.h"
 #include "QF/quakefs.h"
-#include "glquake.h"
 #include "QF/qfgl_ext.h"
+#include "QF/vid.h"
+#include "glquake.h"
 #include "sbar.h"
 
 #define WARP_WIDTH              320

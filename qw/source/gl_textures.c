@@ -46,8 +46,8 @@
 #include "draw.h"
 #include "glquake.h"
 #include "sbar.h"
-#include "screen.h"
 #include "QF/sys.h"
+#include "QF/vid.h"
 
 extern unsigned char d_15to8table[65536];
 extern cvar_t *gl_picmip;

@@ -58,7 +58,7 @@
 #include "QF/msg.h"
 #include "pmove.h"
 #include "protocol.h"
-#include "screen.h"
+#include "QF/screen.h"
 #include "sbar.h"
 #include "skin.h"
 #include "QF/sound.h"

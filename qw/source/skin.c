@@ -49,7 +49,7 @@
 #include "client.h"
 #include "host.h"
 #include "pcx.h"
-#include "screen.h"
+#include "QF/screen.h"
 #include "skin.h"
 #include "texture.h"
 

@@ -20,7 +20,7 @@ libQFjs_la_CFLAGS=       $(JOY_CFLAGS)
 YFLAGS = -d
 libQFfbdev_la_LDFLAGS=	-version-info 1:0:0
 libQFfbdev_la_SOURCES=	fbset.c fbset_modes_y.y fbset_modes_l.l \
-			in_common.c in_fbdev.c vid.c vid_fbdev.c
+			in_common.c in_fbdev.c vid.c vid_common_sw.c vid_fbdev.c
 YACCLEX_CLEANFILES=	fbset_modes_y.c fbset_modes_y.h \
 			fbset_modes_y.tab.h fbset_modes_l.c
 EXTRA_libQFfbdev_la_SOURCES=fbset_modes_y.h

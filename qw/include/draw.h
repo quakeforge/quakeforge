@@ -29,7 +29,7 @@
 #ifndef _DRAW_H
 #define _DRAW_H
 
-#include "wad.h"
+#include "QF/wad.h"
 
 extern qpic_t *draw_disc; // also used on sbar
 

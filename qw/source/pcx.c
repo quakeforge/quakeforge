@@ -44,6 +44,7 @@
 #include "QF/qtypes.h"
 #include "QF/quakefs.h"
 #include "texture.h"
+#include "QF/vid.h"
 #include "QF/zone.h"
 
 /*

@@ -48,14 +48,16 @@
 
 #include "QF/compat.h"
 #include "QF/console.h"
-#include "context_x11.h"
-#include "glquake.h"
 #include "QF/input.h"
 #include "QF/qargs.h"
 #include "QF/qendian.h"
 #include "QF/quakefs.h"
-#include "sbar.h"
 #include "QF/va.h"
+#include "QF/vid.h"
+
+#include "context_x11.h"
+#include "glquake.h"
+#include "sbar.h"
 
 #define WARP_WIDTH		320
 #define WARP_HEIGHT 	200

@@ -32,15 +32,12 @@
 
 #include <math.h>
 
-#include "QF/cvar.h"
-#include "QF/compat.h"
-#include "QF/qargs.h"
 #include "QF/vid.h"
-
 
 void
 VID_InitBuffers (void)
 {
+#if 0 //XXX not just yet
 	int         buffersize, zbuffersize, cachesize;
 	void       *vid_surfcache;
 
@@ -89,4 +86,5 @@ VID_InitBuffers (void)
 	}
 
 	D_InitCaches (vid_surfcache, cachesize);
+#endif
 }

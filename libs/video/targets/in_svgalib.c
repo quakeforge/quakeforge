@@ -61,17 +61,10 @@ static unsigned char scantokey[128];
 static int  mouse_buttons;
 static int  mouse_buttonstate;
 static int  mouse_oldbuttonstate;
-static float mouse_x, mouse_y;
-static float old_mouse_x, old_mouse_y;
 static int  mx, my;
 
 static void IN_InitKeyboard (void);
 static void IN_InitMouse (void);
-
-cvar_t		*_windowed_mouse;
-cvar_t		*m_filter;
-cvar_t		*sensitivity;
-cvar_t		*lookstrafe;
 
 static void
 keyhandler (int scancode, int state)
@@ -104,7 +97,7 @@ mousehandler (int buttonstate, int dx, int dy, int dz, int drx, int dry, int drz
 
 
 void
-IN_Init (void)
+IN_LL_Init (void)
 {
 	if (COM_CheckParm ("-nokbd"))
 		UseKeyboard = 0;
@@ -116,22 +109,13 @@ IN_Init (void)
 	if (UseMouse)
 		IN_InitMouse ();
 
-	JOY_Init ();
-
 	in_svgalib_inited = 1;
 	return;
 }
 
 void
-IN_Init_Cvars (void)
+IN_LL_Init_Cvars (void)
 {
-	JOY_Init_Cvars ();
-	m_filter = Cvar_Get ("m_filter", "0", CVAR_ARCHIVE, NULL,
-			"Toggle mouse input filtering.");
-	lookstrafe = Cvar_Get ("lookstrafe", "0", CVAR_ARCHIVE, NULL,
-						   "when mlook/klook on player will strafe");
-	sensitivity = Cvar_Get ("sensitivity", "3", CVAR_ARCHIVE, NULL,
-							"mouse sensitivity multiplier");
 }
 
 static void
@@ -288,13 +272,13 @@ IN_InitMouse (void)
 	} else {
 		mouse_seteventhandler ((void *) mousehandler);
 	}
+	in_mouse_avail = 1;
 }
 
 void
-IN_Shutdown (void)
+IN_LL_Shutdown (void)
 {
-	JOY_Shutdown ();
-	Con_Printf ("IN_Shutdown\n");
+	Con_Printf ("IN_LL_Shutdown\n");
 
 	if (UseMouse)
 		mouse_close ();
@@ -305,7 +289,7 @@ IN_Shutdown (void)
 
 
 void
-IN_SendKeyEvents (void)
+IN_LL_SendKeyEvents (void)
 {
 	if (!in_svgalib_inited)
 		return;
@@ -317,9 +301,8 @@ IN_SendKeyEvents (void)
 
 
 void
-IN_Commands (void)
+IN_LL_Commands (void)
 {
-	JOY_Command ();
 	if (UseMouse) {
 		/* Poll mouse values */
 		while (mouse_update ());
@@ -347,49 +330,5 @@ IN_Commands (void)
 			Key_Event (K_MOUSE3, 0, false);
 
 		mouse_oldbuttonstate = mouse_buttonstate;
-	}
-}
-
-
-void
-IN_Move (void)
-{
-	JOY_Move ();
-
-	if (!UseMouse)
-		return;
-
-	/* Poll mouse values */
-	while (mouse_update ());
-
-	if (m_filter->int_val) {
-		mouse_x = (mx + old_mouse_x) * 0.5;
-		mouse_y = (my + old_mouse_y) * 0.5;
-	} else {
-		mouse_x = mx;
-		mouse_y = my;
-	}
-	old_mouse_x = mx;
-	old_mouse_y = my;
-	/* Clear for next update */
-	mx = my = 0;
-
-	mouse_x *= sensitivity->value;
-	mouse_y *= sensitivity->value;
-
-	/* Add mouse X/Y movement to cmd */
-	if ((in_strafe.state & 1) || (lookstrafe->int_val && freelook)) {
-		viewdelta.position[0] += mouse_x;
-	} else {
-		viewdelta.angles[YAW] -= mouse_x;
-	}
-
-	if (freelook && !(in_strafe.state & 1)) {
-		viewdelta.angles[PITCH] += mouse_y;
-	} else {
-		if (in_strafe.state & 1)
-			viewdelta.position[1] -= mouse_y;
-		else
-			viewdelta.position[2] -= mouse_y;
 	}
 }

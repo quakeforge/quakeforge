@@ -71,14 +71,13 @@
 #include "QF/cvar.h"
 #include "QF/qargs.h"
 #include "QF/qendian.h"
+#include "QF/screen.h"
 #include "QF/sys.h"
 #include "QF/va.h"
-#include "client.h"
+#include "QF/vid.h"
+
 #include "context_x11.h"
-#include "d_local.h"
 #include "dga_check.h"
-#include "draw.h"
-#include "screen.h"
 
 extern viddef_t vid;	// global video state
 unsigned short	d_8to16table[256];
@@ -90,7 +89,7 @@ int XShmQueryExtension (Display *);
 int XShmGetEventBase (Display *);
 
 static qboolean doShm;
-static XShmSegmentInfo x_shminfo[2];
+//static XShmSegmentInfo x_shminfo[2];
 
 static int	current_framebuffer;
 static XImage *x_framebuffer[2] = { 0, 0 };
@@ -304,6 +303,7 @@ D_EndDirectRect (int x, int y, int width, int height)
 static void
 ResetFrameBuffer (void)
 {
+#if 0 //XXX not yet
 	int         tbuffersize, tcachesize;
 
 	void       *vid_surfcache;
@@ -356,11 +356,13 @@ ResetFrameBuffer (void)
 	if (!x_framebuffer[0]) {
 		Sys_Error ("VID: XCreateImage failed\n");
 	}
+#endif
 }
 
 static void
 ResetSharedFrameBuffers (void)
 {
+#if 0
 	int 	tbuffersize, tcachesize;
 	void	*vid_surfcache;
 
@@ -439,7 +441,7 @@ ResetSharedFrameBuffers (void)
 		shmctl (x_shminfo[frm].shmid, IPC_RMID, 0);
 
 	}
-
+#endif
 }
 
 static void
@@ -470,8 +472,6 @@ VID_Init (unsigned char *palette)
 	vid.height = vid_height->int_val;
 	Con_CheckResize (); // Now that we have a window size, fix console
 
-	vid.maxwarpwidth = WARP_WIDTH;
-	vid.maxwarpheight = WARP_HEIGHT;
 	vid.numpages = 2;
 	vid.colormap = vid_colormap;
 	vid.fullbright = 256 - LittleLong (*((int *) vid.colormap + 2048));

@@ -41,7 +41,7 @@
 #include "host.h"
 #include "QF/msg.h"
 #include "pmove.h"
-#include "screen.h"
+#include "QF/screen.h"
 #include "QF/vid.h"
 #include "view.h"
 

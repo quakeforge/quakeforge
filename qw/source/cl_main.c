@@ -88,7 +88,7 @@
 #include "QF/quakefs.h"
 #include "QF/qargs.h"
 #include "sbar.h"
-#include "screen.h"
+#include "QF/screen.h"
 #include "skin.h"
 #include "QF/sound.h"
 #include "QF/sys.h"

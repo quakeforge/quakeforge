@@ -46,7 +46,7 @@
 #include "draw.h"
 #include "QF/msg.h"
 #include "sbar.h"
-#include "screen.h"
+#include "QF/screen.h"
 #include "QF/va.h"
 #include "QF/vid.h"
 

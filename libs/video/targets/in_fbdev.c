@@ -72,7 +72,7 @@ static struct termios old_tty, new_tty;
 static int tty_fd = 0;
 
 void
-IN_Init (void)
+IN_LL_Init (void)
 {
 	fd_blocking(0, 0);
 	tcgetattr(tty_fd, &old_tty);
@@ -85,17 +85,17 @@ IN_Init (void)
 }
 
 void
-IN_Init_Cvars (void)
+IN_LL_Init_Cvars (void)
 {
 }
 
 void
-IN_Shutdown (void)
+IN_LL_Shutdown (void)
 {
 }
 
 void
-IN_SendKeyEvents (void)
+IN_LL_SendKeyEvents (void)
 {
 	int k, down;
 	char buf[4];
@@ -133,12 +133,7 @@ IN_SendKeyEvents (void)
 }
 
 void
-IN_Commands (void)
-{
-}
-
-void
-IN_Move (void)
+IN_LL_Commands (void)
 {
 }
 
@@ -146,6 +141,6 @@ IN_Move (void)
 	IN_ModeChanged
 */
 void
-IN_ModeChanged (void)
+IN_LL_ModeChanged (void)
 {
 }

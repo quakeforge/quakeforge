@@ -47,7 +47,7 @@
 #include "QF/mathlib.h"
 #include "r_dynamic.h"
 #include "r_local.h"
-#include "screen.h"
+#include "QF/screen.h"
 #include "QF/sound.h"
 #include "QF/sys.h"
 #include "view.h"

@@ -67,8 +67,6 @@ extern glvert_t glv;
 
 extern	int glx, gly, glwidth, glheight;
 
-// r_local.h -- private refresh defs
-
 #define ALIAS_BASE_SIZE_RATIO		(1.0 / 11.0)
 					// normalizing factor so player model works out to about
 					//  1 pixel per triangle
@@ -86,54 +84,6 @@ extern	int glx, gly, glwidth, glheight;
 
 #define BACKFACE_EPSILON	0.01
 
-
-void R_TimeRefresh_f (void);
-void R_ReadPointFile_f (void);
-texture_t *R_TextureAnimation (texture_t *base);
-
-typedef struct surfcache_s {
-	struct surfcache_s	*next;
-	struct surfcache_s 	**owner;		// NULL is an empty chunk of memory
-	int					lightadj[MAXLIGHTMAPS]; // checked for strobe flush
-	int					dlight;
-	int					size;		// including header
-	unsigned int		width;
-	unsigned int		height;		// DEBUG only needed for debug
-	float				mipscale;
-	struct texture_s	*texture;	// checked for animating textures
-	byte				data[4];	// width*height elements
-} surfcache_t;
-
-#if 0
-//====================================================
-
-
-extern	entity_t	r_worldentity;
-extern	qboolean	r_cache_thrash;		// compatability
-extern	vec3_t		modelorg, r_entorigin;
-extern	entity_t	*currententity;
-extern	int			r_visframecount;	// ??? what difs?
-extern	int			r_framecount;
-extern	mplane_t	frustum[4];
-extern	int		c_brush_polys, c_alias_polys;
-
-
-//
-// view origin
-//
-extern	vec3_t	vup;
-extern	vec3_t	vpn;
-extern	vec3_t	vright;
-extern	vec3_t	r_origin;
-
-//
-// screen size info
-//
-extern	refdef_t	r_refdef;
-extern	mleaf_t		*r_viewleaf, *r_oldviewleaf;
-extern	texture_t	*r_notexture_mip;
-extern	int		d_lightstylevalue[256];	// 8.8 fraction of base light value
-#endif
 extern	qboolean	envmap;
 extern	int	currenttexture;
 extern	int	cnttextures[2];
@@ -145,22 +95,7 @@ extern	int	player_fb_textures;
 
 extern	int	skytexturenum;		// index in cl.loadmodel, not gl texture object
 
-extern cvar_t	*r_norefresh;
-extern cvar_t	*r_drawentities;
-extern cvar_t	*r_drawworld;
-extern cvar_t	*r_drawviewmodel;
-extern cvar_t	*r_particles;
-extern cvar_t	*r_speeds;
-extern cvar_t	*r_waterwarp;
-extern cvar_t	*r_fullbright;
-extern cvar_t	*r_lightmap;
-extern cvar_t	*r_shadows;
-extern cvar_t	*r_mirroralpha;
-extern cvar_t	*r_wateralpha;
-extern cvar_t	*r_waterripple;
-extern cvar_t	*r_dynamic;
 extern cvar_t	*r_novis;
-extern cvar_t	*r_netgraph;
 
 extern cvar_t	*gl_affinemodels;
 extern cvar_t	*gl_clear;
@@ -209,30 +144,19 @@ extern int		gl_lightmap_format;
 extern int		gl_solid_format;
 extern int		gl_alpha_format;
 
-extern float	r_world_matrix[16];
-
-extern float bubble_sintable[], bubble_costable[];
-extern float v_blend[4];
-
+extern unsigned char lighthalf_v[3];
 
 extern const char *gl_vendor;
 extern const char *gl_renderer;
 extern const char *gl_version;
 extern const char *gl_extensions;
 
-void R_TranslatePlayerSkin (int playernum);
 void GL_Bind (int texnum);
 
 // Multitexture
 
 #define    TEXTURE0_SGIS                               0x835E
 #define    TEXTURE1_SGIS                               0x835F
-
-#ifndef _WIN32
-# ifndef APIENTRY
-#  define APIENTRY /* */
-# endif
-#endif
 
 typedef void (APIENTRY *lpMTexFUNC) (GLenum, GLfloat, GLfloat);
 typedef void (APIENTRY *lpSelTexFUNC) (GLenum);
@@ -260,108 +184,5 @@ void GL_Upload8_EXT (byte *data, int width, int height,  qboolean mipmap, qboole
 void GL_Set2D (void);
 void GL_CheckGamma (unsigned char *pal);
 void GL_CheckBrightness (unsigned char *pal);
-
-void EmitWaterPolys (msurface_t *fa);
-void EmitSkyPolys (msurface_t *fa);
-void EmitBothSkyLayers (msurface_t *fa);
-void R_DrawSkyChain (msurface_t *s);
-void R_LoadSkys (char *);
-void R_DrawSky (void);
-
-void R_RotateForEntity (entity_t *e);
-
-qboolean R_CullBox (vec3_t mins, vec3_t maxs);
-
-void AddLightBlend (float, float, float, float);
-void GL_SelectTexture (GLenum target);
-
-//
-// gl_rpart.c
-//
-typedef struct {
-	int		key;                    // allows reusability
-	vec3_t	origin, owner;
-	float	size;
-	float	die, decay;             // duration settings
-	float	minlight;               // lighting threshold
-	float	color[3];				// RGB
-} fire_t;
-
-void R_AddFire (vec3_t, vec3_t, entity_t *ent);
-fire_t *R_AllocFire (int);
-void R_DrawFire (fire_t *);
-void R_UpdateFires (void);
-
-//
-// gl_warp.c
-//
-void GL_SubdivideSurface (msurface_t *fa);
-void EmitBothSkyLayers (msurface_t *fa);
-void EmitWaterPolys (msurface_t *fa);
-void EmitSkyPolys (msurface_t *fa);
-void R_DrawSkyChain (msurface_t *s);
-void R_LoadSkys (char *);
-void R_DrawSky (void);
-void R_DrawSkyChain (msurface_t *sky_chain);
-
-//
-// gl_draw.c
-//
-void GL_Set2D (void);
-
-//
-// gl_rmain.c
-//
-void GL_CheckBrightness (unsigned char *pal);
-//qboolean R_CullBox (vec3_t mins, vec3_t maxs);
-void R_RotateForEntity (entity_t *e);
-
-extern inline qboolean R_CullBox (vec3_t mins, vec3_t maxs)
-{
-	int i;
-
-	for (i=0 ; i<4 ; i++)
-		if (BoxOnPlaneSide (mins, maxs, &frustum[i]) == 2)
-			return true;
-	return false;
-}
-
-
-//
-// gl_rlight.c
-//
-
-extern float bubble_sintable[], bubble_costable[];
-extern float v_blend[4];
-
-void R_MarkLights (vec3_t lightorigin, dlight_t *light, int bit, mnode_t *node);
-void R_AnimateLight (void);
-void R_RenderDlights (void);
-int R_LightPoint (vec3_t p);
-void AddLightBlend (float, float, float, float);
-
-//
-// gl_refrag.c
-//
-void R_StoreEfrags (efrag_t **ppefrag);
-
-//
-// gl_screen.c
-//
-
-extern qboolean lighthalf;
-extern unsigned char lighthalf_v[3];
-
-//
-// gl_rsurf.c
-//
-void R_DrawBrushModel (entity_t *e);
-void R_DrawWorld (void);
-void GL_BuildLightmaps (void);
-
-//
-// gl_ngraph.c
-//
-void R_NetGraph (void);
 
 #endif // __glquake_h

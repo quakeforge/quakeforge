@@ -38,13 +38,15 @@
 
 #include <stdio.h>
 
+#include "client.h"
 #include "QF/cmd.h"
 #include "QF/console.h"
 #include "draw.h"
 #include "glquake.h"
 #include "sbar.h"
-#include "screen.h"
+#include "QF/screen.h"
 #include "QF/sys.h"
+#include "QF/vid.h"
 
 
 extern byte *vid_basepal;

@@ -58,6 +58,10 @@ void IN_ModeChanged (void);
 void IN_HandlePause (qboolean paused);
 
 extern cvar_t		*_windowed_mouse;
+extern cvar_t		*m_filter;
+extern cvar_t		*in_freelook;
+extern cvar_t		*sensitivity;
+extern cvar_t		*lookstrafe;
 
 extern qboolean    in_mouse_avail;
 extern float       in_mouse_x, in_mouse_y;
