@@ -81,12 +81,6 @@ msurface_t **sky_chain_tail;
 		(chain) = (surf);						\
 	} while (0)
 
-#if 1
-# define CHAIN_SURF CHAIN_SURF_F2B
-#else
-# define CHAIN_SURF CHAIN_SURF_B2F
-#endif
-
 extern int			lightmap_textures;
 extern qboolean		lightmap_modified[MAX_LIGHTMAPS];
 extern glpoly_t    *lightmap_polys[MAX_LIGHTMAPS];
@@ -368,7 +362,7 @@ R_DrawBrushModel (entity_t *e)
 				}
 			} else if (psurf->flags & SURF_DRAWSKY) {
 // QSG FIXME: add modelalpha support for sky brushes
-				CHAIN_SURF (psurf, sky_chain);
+				CHAIN_SURF_F2B (psurf, sky_chain);
 				return;
 			} else {
 				texture_t  *tex;
@@ -453,21 +447,21 @@ R_RecursiveWorldNode (mnode_t *node)
 				continue;				// wrong side
 
 			if (surf->flags & SURF_DRAWTURB) {
-					CHAIN_SURF_B2F (surf, waterchain);
+				CHAIN_SURF_B2F (surf, waterchain);
 			} else if (surf->flags & SURF_DRAWSKY) {
-				CHAIN_SURF (surf, sky_chain);
+				CHAIN_SURF_F2B (surf, sky_chain);
 			} else {
 				texture_t  *tex;
 
 				if (!surf->texinfo->texture->anim_total)
 					tex = surf->texinfo->texture;
-				else 
+				else
 					tex = R_TextureAnimation (surf);
 				if (tex->gl_fb_texturenum > 0) {
 					surf->polys->fb_chain = fullbright_polys[tex->gl_fb_texturenum];
 					fullbright_polys[tex->gl_fb_texturenum] = surf->polys;
 				}
-				CHAIN_SURF (surf, tex->texturechain);
+				CHAIN_SURF_F2B (surf, tex->texturechain);
 			}
 		}
 	}
