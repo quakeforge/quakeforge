@@ -20,6 +20,7 @@ void PR_PrintType(type_t*);
 type_t *parse_params (def_t *parms);
 function_t *new_function (void);
 void build_function (function_t *f);
+void finish_function (function_t *f);
 void emit_function (function_t *f, expr_t *e);
 void build_scope (function_t *f, def_t *func);
 
@@ -224,6 +225,7 @@ opt_initializer
 								 ? $3->e.int_val : (int)$3->e.float_val;
 					f->def = current_def;
 					build_function (f);
+					finish_function (f);
 				}
 			}
 		}
@@ -231,6 +233,7 @@ opt_initializer
 		{
 			build_function ($2);
 			emit_function ($2, $3);
+			finish_function ($2);
 		}
 	| '=' '[' const ','
 		{
@@ -253,6 +256,7 @@ opt_initializer
 			e->next = $10;
 
 			emit_function ($9, e);
+			finish_function ($9);
 		}
 	;
 
@@ -521,11 +525,16 @@ new_function (void)
 void
 build_function (function_t *f)
 {
+	f->def->initialized = 1;
+	G_FUNCTION (f->def->ofs) = numfunctions;
+}
+
+void
+finish_function (function_t *f)
+{
 	dfunction_t *df;
 	int i;
 
-	f->def->initialized = 1;
-	G_FUNCTION (f->def->ofs) = numfunctions;
 	// fill in the dfunction
 	df = &functions[numfunctions];
 	numfunctions++;
