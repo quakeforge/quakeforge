@@ -673,7 +673,7 @@ VID_SetGamma (double gamma)
 	return false; //FIXME
 }
 
-#ifdef i386
+#if defined(i386) && defined(__GLIBC__) && (__GLIBC__ < 2 || (__GLIBC__ == 2 && __GLIBC_MINOR__ < 2))
 void
 outb (unsigned char val, unsigned short port)
 {
