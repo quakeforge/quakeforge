@@ -137,13 +137,16 @@ COM_extract_line (cbuf_t *cbuf)
 				break;
 			if (text[i] == '/' && text[i + 1] == '/') {
 				int         j = i;
-				while (j < len && text[j] != '\n' && text[j] != '\r')
+				while (j < len && text[j] != '\n'
+					   && (text[j] != '\r'
+						   || (j < len - 1 && text[j + 1] != '\n')))
 					j++;
 				dstring_snip (cbuf->buf, i, j - i);
 				break;
 			}
 		}
-		if (text[i] == '\n' || text[i] == '\r')
+		if (text[i] == '\n'
+			|| (text[i] == '\r' && (i == len - 1 || text[ i + 1] == '\n')))
 			break;
 	}
 	if (i)
