@@ -147,6 +147,8 @@ cvar_t     *cl_solid_players;
 
 cvar_t     *localid;
 
+cvar_t    *cl_port;
+
 static qboolean allowremotecmd = true;
 
 /*  info mirrors */
@@ -1296,6 +1298,8 @@ CL_Init_Cvars (void)
 					"4 is none");
 	noaim = Cvar_Get ("noaim", "0", CVAR_ARCHIVE | CVAR_USERINFO, Cvar_Info,
 					  "Auto aim off switch. Set to 1 to turn off.");
+	cl_port = Cvar_Get ("cl_port", PORT_CLIENT, CVAR_NONE, Cvar_Info,
+						"UDP Port for client to use.");
 
 	R_Particles_Init_Cvars ();
 }
@@ -1627,7 +1631,7 @@ Host_Init (void)
 	Game_Init ();
 	COM_Init ();
 
-	NET_Init (PORT_CLIENT);
+	NET_Init (cl_port->int_val);
 	Netchan_Init ();
 #ifdef PACKET_LOGGING
 	{

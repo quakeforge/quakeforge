@@ -38,7 +38,7 @@
 
 //=========================================
 
-#define	PORT_CLIENT	27001
+#define	PORT_CLIENT	"27001"
 #define	PORT_MASTER	27000
 #define	PORT_SERVER	27500
 
