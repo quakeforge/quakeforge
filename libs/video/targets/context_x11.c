@@ -299,7 +299,6 @@ X11_ForceMove (int x, int y)
 		return;
 
 	XMoveWindow (x_disp, x_win, x, y);
-//	XFlush(x_disp);
 	X11_WaitForEvent (ConfigureNotify);
 	nx = pos_x - x;
 	ny = pos_y - y;
@@ -310,8 +309,6 @@ X11_ForceMove (int x, int y)
 	y -= ny;
 
 	XMoveWindow (x_disp, x_win, x, y);
-//	XSync (x_disp, false);
-	// this is the best we can do.
 	X11_WaitForEvent (ConfigureNotify);
 }
 
