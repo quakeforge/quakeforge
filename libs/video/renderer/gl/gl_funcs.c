@@ -58,9 +58,62 @@ static const char rcsid[] =
 
 // First we need to get all the function pointers declared.
 #define QFGL_NEED(ret, name, args) \
-ret (* qf##name) args = NULL;
+ret (GLAPIENTRY * qf##name) args = NULL;
 #include "QF/GL/qf_funcs_list.h"
 #undef QFGL_NEED
+
+#if defined(HAVE_DLOPEN)
+
+static QF_glXGetProcAddressARB	glGetProcAddress = NULL;
+static void * (*getProcAddress) (void *handle, const char *symbol);
+
+void *
+QFGL_LoadLibrary (void)
+{
+	void	*handle;
+
+	if (!(handle = dlopen (gl_driver->string, RTLD_NOW))) {
+		Sys_Error ("Couldn't load OpenGL library %s: %s\n", gl_driver->string,
+				   dlerror ());
+	}
+	getProcAddress = dlsym;
+	glGetProcAddress = dlsym (handle, "glXGetProcAddressARB");
+	return handle;
+}
+
+#elif defined(_WIN32)
+
+static void * (APIENTRY *glGetProcAddress) (const char *) = NULL;
+static FARPROC (WINAPI *getProcAddress) (HINSTANCE,LPCSTR);
+
+void *
+QFGL_LoadLibrary (void)
+{
+	void	*handle;
+
+	if (!(handle = LoadLibrary (gl_driver->string))) {
+		Sys_Error ("Couldn't load OpenGL library %s!\n", gl_driver->string);
+	}
+	getProcAddress = GetProcAddress;
+	(FARPROC)glGetProcAddress = GetProcAddress (handle, "wglGetProcAddress");
+	return handle;
+}
+
+#else
+
+# error "Cannot load libraries: %s was not configured with DSO support"
+
+// the following is to avoid other compiler errors
+static QF_glXGetProcAddressARB	glGetProcAddress = NULL;
+static void * (*getProcAddress) (void *handle, const char *symbol);
+
+void *
+QFGL_LoadLibrary (void)
+{
+	return 0;
+}
+
+#endif
 
 // Then we need to open the libGL and set all the symbols.
 qboolean
@@ -68,26 +121,13 @@ GLF_Init (void)
 {
 	void	*handle;
 
-#if defined(HAVE_DLOPEN)
-	if (!(handle = dlopen (gl_driver->string, RTLD_NOW))) {
-		Sys_Error ("Couldn't load OpenGL library %s: %s\n", gl_driver->string,
-				   dlerror ());
-		return false;
-	}
-#elif defined(_WIN32)
-	if (!(handle = LoadLibrary (gl_driver->string))) {
-		Sys_Error ("Couldn't load OpenGL library %s!\n", gl_driver->string);
-		return false;
-	}
-#else
-# error "Cannot load libraries: %s was not configured with DSO support"
-#endif
+	handle = QFGL_LoadLibrary ();
 
 #define QFGL_NEED(ret, name, args)	\
 	qf##name = QFGL_ProcAddress (handle, #name, true);
-
 #include "QF/GL/qf_funcs_list.h"
 #undef QFGL_NEED
+
 	// tell ProcAddress to clear its cache
 	QFGL_ProcAddress (NULL, NULL, false);
 
@@ -99,45 +139,12 @@ void *
 QFGL_ProcAddress (void *handle, const char *name, qboolean crit)
 {
 	void			*glfunc = NULL;
-	static qboolean inited = false;
-
-#if defined(HAVE_DLOPEN)
-	static QF_glXGetProcAddressARB	glGetProcAddress = NULL;
-#elif defined(_WIN32)
-	static void * (* glGetProcAddress) (const char *) = NULL;
-#else
-	static void *glGetProcAddress = NULL;
-#endif
-
-	if (!handle || !name) {
-		inited = false;
-		return NULL;
-	}
-
-	if (!inited) {
-		inited = true;
-#if defined(HAVE_DLOPEN)
-		glGetProcAddress = dlsym (handle, "glXGetProcAddressARB");
-#elif defined(_WIN32)
-		(FARPROC)glGetProcAddress = GetProcAddress (handle,
-													"wglGetProcAddress");
-#endif
-	}
 
 	Con_DPrintf ("DEBUG: Finding symbol %s ... ", name);
-#if defined(HAVE_DLOPEN)
-		glfunc = dlsym (handle, name);
-#elif defined(_WIN32)
-		glfunc = GetProcAddress (handle, name);
-#endif
-	if (glGetProcAddress && glfunc != glGetProcAddress (name)) {
-		Con_DPrintf ("mismatch! [%p != %p]\n", glfunc,
-					 glGetProcAddress (name));
-		return glfunc;
-	}
-
-	if (!glfunc && glGetProcAddress)
+	if (glGetProcAddress)
 		glfunc = glGetProcAddress (name);
+	if (!glfunc)
+		glfunc = getProcAddress (handle, name);
 
 	if (glfunc) {
 		Con_DPrintf ("found [%p]\n", glfunc);

@@ -29,10 +29,11 @@
 #ifndef __QF_GL_funcs_h_
 #define __QF_GL_funcs_h_
 
+#include "QF/GL/extensions.h"
 #include "QF/GL/types.h"
 #include "QF/qtypes.h"
 
-#define QFGL_NEED(ret, name, args)	extern ret (* qf##name) args
+#define QFGL_NEED(ret, name, args)	extern ret (GLAPIENTRY * qf##name) args
 #include "QF/GL/qf_funcs_list.h"
 #undef QFGL_NEED
 
