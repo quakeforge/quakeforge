@@ -22,8 +22,8 @@ extern	float	zplanedir;
 - clearBounds;
 - getBounds: (float *)top :(float *)bottom;
 
-- getPoint: (NSPoint *)pt;
-- setPoint: (NSPoint *)pt;
+- getPoint: (NSPoint) point;
+- setPoint: (NSPoint) point;
 
 - addToHeightRange: (float)height;
 
@@ -34,7 +34,7 @@ extern	float	zplanedir;
 
 - (BOOL)XYmouseDown: (NSPoint *)pt;
 
-- setXYOrigin: (NSPoint *)pt;
+- setXYOrigin: (NSPoint) point;
 
 - setOrigin: (NSPoint *)pt scale: (float)sc;
 
