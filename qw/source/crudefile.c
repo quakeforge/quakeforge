@@ -65,7 +65,7 @@ typedef struct cf_file_s {
 	char *buf;
 	int size;
 	int writtento;
-	char mode; // 'r' for read, 'w' for write
+	char mode; // 'r' for read, 'w' for write, 'a' for append
 } cf_file_t;
 
 cf_file_t *cf_filep;
@@ -95,7 +95,7 @@ CF_ValidDesc (int desc)
 	CF_AlreadyOpen
 
 	Returns 1 if mode == 'r' and the file is already open for
-	writing, or if if mode == 'w' and the file's already open at all.
+	writing, or if if mode == 'w' or 'a' and the file's already open at all.
 */
 static int
 CF_AlreadyOpen (const char * path, char mode)
@@ -105,10 +105,10 @@ CF_AlreadyOpen (const char * path, char mode)
 	for (i = 0; i < cf_filepcount; i++) {
 		if (!cf_filep[i].file)
 			continue;
-		if (mode == 'r' && cf_filep[i].mode == 'w' &&
+		if (mode == 'r' && (cf_filep[i].mode == 'w' || cf_filep[i].mode == 'a') &&
 			strequal (path, cf_filep[i].path))
 			return 1;
-		if (mode == 'w' && strequal (path, cf_filep[i].path))
+		if ((mode == 'w' || mode == 'a')&& strequal (path, cf_filep[i].path))
 			return 1;
 	}
 	return 0;
@@ -350,7 +350,7 @@ CF_Write (int desc, const char *buf) // should be const char *, but Qwrite isn't
 {
 	int len;
 
-	if (!CF_ValidDesc (desc) || cf_filep[desc].mode != 'w' || cf_cursize >=
+	if (!CF_ValidDesc (desc) || !(cf_filep[desc].mode == 'w' || cf_filep[desc].mode == 'a') || cf_cursize >=
 		cf_maxsize) {
 		return 0;
 	}
