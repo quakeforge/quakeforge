@@ -1548,6 +1548,15 @@ AC_OUTPUT(
 	chmod +x quakeforge-config RPM/build_rpm
 )
 
+if test "x$CCVER" = "x"; then
+	CCVER=$CC
+else
+	if test "$CCVER" = "gcc 2.96"; then
+		CCVER="$CCVER
+(Note: You might need CC=kgcc ./configure on some systems)"
+	fi
+fi
+
 AC_MSG_RESULT([
 	QuakeForge has been configured successfully.
 
@@ -1558,23 +1567,15 @@ AC_MSG_RESULT([
 	CD Audio system: $CDTYPE
 	IPv6 networking: $NETTYPE_IPV6
 	Compression support: $HAVE_ZLIB
-])
-if test "x$CCVER" != "x"; then
-	if test "x$CCVER" = "xgcc 2.96"; then
-AC_MSG_RESULT([
-	Compiler version: $CCVER (CC=kgcc ./configure may be needed)
-])
-	else
-AC_MSG_RESULT([
 	Compiler version: $CCVER
-])
-fi
+
 	Shared game data directory: $sharepath
 	Per-user game data directory: $userpath
 	Plugin load directory: $pluginpath
 	Global configuration file: $globalconf
 	User configuration file: $userconf
 ])
+
 if test -d $srcdir/CVS; then
 	echo "WARNING: Hackers at work, watch for falling bits of code."
 	echo "(This is from a development CVS tree. Expect problems)"
