@@ -200,7 +200,7 @@ PR_LexString (void)
 					c = 0;
 					while (*pr_file_p && isxdigit (*pr_file_p)) {
 						c *= 16;
-						if (*pr_file_p <= 9)
+						if (*pr_file_p <= '9')
 							c += *pr_file_p - '0';
 						else if (*pr_file_p <= 'F')
 							c += *pr_file_p - 'A' + 10;
