@@ -515,6 +515,8 @@ type_assignable (type_t *dst, type_t *src)
 		return 0;
 	dst = dst->aux_type;
 	src = src->aux_type;
+	if (dst->type == ev_void)
+		return 1;
 	if ((dst->type != ev_object && dst->type != ev_class)
 		|| (src->type != ev_object && src->type != ev_class))
 		return 0;
