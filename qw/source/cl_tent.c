@@ -293,6 +293,9 @@ CL_ParseTEnt (void)
 	int          colorStart, colorLength;
 	int          cnt = -1;
 	vec3_t       pos;
+	sfx_t *	 	 spike_sound[] = {
+		cl_sfx_ric3, cl_sfx_ric3, cl_sfx_ric2, cl_sfx_ric1,
+	};
 
 	type = MSG_ReadByte (net_message);
 	switch (type) {
@@ -311,40 +314,32 @@ CL_ParseTEnt (void)
 		case TE_SPIKE:					// spike hitting wall
 			MSG_ReadCoordV (net_message, pos);
 			R_SpikeEffect (pos);
+			{
+				int		i;
+				sfx_t  *sound;
 
-			switch (rand () % 20) {
-				case 19:
-					S_StartSound (-1, 0, cl_sfx_ric1, pos, 1, 1);
-					break;
-				case 18:
-					S_StartSound (-1, 0, cl_sfx_ric2, pos, 1, 1);
-					break;
-				case 17:
-				case 16:
-					S_StartSound (-1, 0, cl_sfx_ric3, pos, 1, 1);
-					break;
-				default:
-					S_StartSound (-1, 0, cl_sfx_tink1, pos, 1, 1);
+				i = (rand () % 20) - 16;
+				if (i >= 0)
+					sound = spike_sound[i];
+				else
+					sound = cl_sfx_tink1;
+				S_StartSound (-1, 0, sound, pos, 1, 1);
 			}
 			break;
 
 		case TE_SUPERSPIKE:				// super spike hitting wall
 			MSG_ReadCoordV (net_message, pos);
 			R_SuperSpikeEffect (pos);
+			{
+				int		i;
+				sfx_t  *sound;
 
-			switch (rand () % 20) {
-				case 19:
-					S_StartSound (-1, 0, cl_sfx_ric1, pos, 1, 1);
-					break;
-				case 18:
-					S_StartSound (-1, 0, cl_sfx_ric2, pos, 1, 1);
-					break;
-				case 17:
-				case 16:
-					S_StartSound (-1, 0, cl_sfx_ric3, pos, 1, 1);
-					break;
-				default:
-					S_StartSound (-1, 0, cl_sfx_tink1, pos, 1, 1);
+				i = (rand () % 20) - 16;
+				if (i >= 0)
+					sound = spike_sound[i];
+				else
+					sound = cl_sfx_tink1;
+				S_StartSound (-1, 0, sound, pos, 1, 1);
 			}
 			break;
 
