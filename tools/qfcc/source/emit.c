@@ -200,6 +200,7 @@ emit_assign_expr (int oper, expr_t *e)
 			op = PR_Opcode_Find (operator, def_b, def_a, &def_void);
 			emit_statement (e->line, op, def_b, def_a, 0);
 		}
+		return def_a;
 	} else {
 		def_b = emit_sub_expr (e2, 0);
 		if (e1->type == ex_expr && extract_type (e1->e.expr.e1) == ev_pointer) {
@@ -212,10 +213,8 @@ emit_assign_expr (int oper, expr_t *e)
 			op = PR_Opcode_Find (operator, def_b, def_a, &def_void);
 		}
 		emit_statement (e->line, op, def_b, def_a, def_c);
+		return def_b;
 	}
-	if (def_a->type->type != ev_pointer)
-		return def_a;
-	return def_b;
 }
 
 def_t *
