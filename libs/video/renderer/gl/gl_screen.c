@@ -509,25 +509,14 @@ SCR_SetUpToDrawConsole (void)
 			scr_con_current = scr_conlines;
 	}
 
-	if (clearconsole++ < vid.numpages) {
+	if (clearconsole++ < vid.numpages)
 		Sbar_Changed ();
-	} else if (clearnotify++ < vid.numpages) {
-	} else
-		con_notifylines = 0;
 }
 
 void
 SCR_DrawConsole (void)
 {
-	if (scr_con_current) {
-		scr_copyeverything = 1;
-		Con_DrawConsole (scr_con_current);
-		Con_DrawDownload (scr_con_current);
-		clearconsole = 0;
-	} else {
-		if (key_dest == key_game || key_dest == key_message)
-			Con_DrawNotify ();			// only draw notify in game
-	}
+	Con_DrawConsole (scr_con_current);
 }
 
 /* SCREEN SHOTS */
@@ -793,8 +782,8 @@ SCR_UpdateScreen (double realtime, SCR_Func *scr_funcs)
 		}
 	}
 
-	if (!scr_initialized || !con_initialized)	// not initialized yet
-		return;
+	if (!scr_initialized)
+		return;							// not initialized yet
 
 	if (oldviewsize != scr_viewsize->int_val) {
 		oldviewsize = scr_viewsize->int_val;

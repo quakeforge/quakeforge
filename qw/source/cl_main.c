@@ -106,6 +106,11 @@ static const char rcsid[] =
 #include "sbar.h"
 #include "view.h"
 
+CLIENT_PLUGIN_PROTOS
+static plugin_list_t client_plugin_list[] = {
+		CLIENT_PLUGIN_LIST
+};
+
 void        CL_RemoveQFInfoKeys ();
 
 // we need to declare some mouse variables here, because the menu system
@@ -1681,7 +1686,13 @@ Host_Init (void)
 
 	W_LoadWadFile ("gfx.wad");
 	Key_Init ();
+	PI_RegisterPlugins (client_plugin_list);
 	Con_Init ("client");
+	if (con_module) {
+		con_module->data->console->dl_name = cls.downloadname;
+		con_module->data->console->dl_percent = &cls.downloadpercent;
+		con_module->data->console->realtime = &realtime;
+	}
 	Mod_Init ();
 
 	CL_TimeFrames_Init();

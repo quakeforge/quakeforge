@@ -57,8 +57,6 @@ static const char rcsid[] =
 cvar_t     *cl_chatmode;
 cvar_t     *in_bind_imt;
 
-char        key_lines[32][MAXCMDLINE];
-int         key_linepos;
 int         key_lastpress;
 
 int         edit_line = 0;
@@ -386,34 +384,6 @@ keyname_t   keynames[] = {
 
 
 /*
-  LINE TYPING INTO THE CONSOLE
-*/
-
-qboolean
-CheckForCommand (void)
-{
-	char        command[128];
-	const char *cmd, *s;
-	int         i;
-
-	s = key_lines[edit_line] + 1;
-
-	for (i = 0; i < 127; i++)
-		if (s[i] <= ' ')
-			break;
-		else
-			command[i] = s[i];
-	command[i] = 0;
-
-	cmd = Cmd_CompleteCommand (command);
-	if (!cmd || strcmp (cmd, command))
-		cmd = Cvar_CompleteVariable (command);
-	if (!cmd || strcmp (cmd, command))
-		return false;					// just a chat message
-	return true;
-}
-
-/*
   Key_Game
 
   Game key handling.
@@ -460,133 +430,10 @@ Key_Game (knum_t key, short unicode)
 void
 Key_Console (knum_t key, short unicode)
 {
-	int i;
-
-	if (keydown[key] != 1)
+	if (keydown[key] == 1 && Key_Game (key, unicode))
 		return;
 
-	if (Key_Game (key, unicode))
-		return;
-
-	if (unicode == '\x0D' || key == QFK_RETURN) {
-		// backslash text are commands, else
-		if (!strncmp(key_lines[edit_line], "//", 2))
-			goto no_lf;
-		else if (key_lines[edit_line][1] == '\\' ||
-				key_lines[edit_line][1] == '/')
-			Cbuf_AddText (key_lines[edit_line] + 2);	// skip the >
-		else if (cl_chatmode->int_val != 1 && CheckForCommand ())
-			Cbuf_AddText (key_lines[edit_line] + 1);	// valid command
-		else if (cl_chatmode->int_val) {		// convert to a chat message
-			Cbuf_AddText ("say ");
-			Cbuf_AddText (key_lines[edit_line] + 1);	// skip the >
-		} else
-			Cbuf_AddText (key_lines[edit_line] + 1);	// skip the >
-
-		Cbuf_AddText ("\n");
-no_lf:
-		Con_Printf ("%s\n", key_lines[edit_line]);
-		edit_line = (edit_line + 1) & 31;
-		history_line = edit_line;
-		key_lines[edit_line][0] = ']';
-		key_lines[edit_line][1] = '\0';
-		key_linepos = 1;
-		return;
-	}
-
-	if (unicode == '\t') {				// command completion
-		Con_CompleteCommandLine ();
-		return;
-	}
-
-	if (unicode == '\x08') {
-		if (key_linepos > 1) {
-			memmove(key_lines[edit_line] + key_linepos - 1,
-					key_lines[edit_line] + key_linepos,
-					strlen(key_lines[edit_line] + key_linepos) + 1);
-			key_linepos--;
-		}
-		return;
-	}
-
-	if (key == QFK_DELETE) {
-		if (key_linepos < strlen (key_lines[edit_line])) {
-			memmove(key_lines[edit_line] + key_linepos,
-					key_lines[edit_line] + key_linepos + 1,
-					strlen(key_lines[edit_line] + key_linepos + 1) + 1);
-		}
-		return;
-	}
-
-	if (key == QFK_RIGHT) {
-		if (key_linepos < strlen (key_lines[edit_line]))
-			key_linepos++;
-		return;
-	}
-	if (key == QFK_LEFT) {
-		if (key_linepos > 1)
-			key_linepos--;
-		return;
-	}
-	if (key == QFK_UP) {
-		do {
-			history_line = (history_line - 1) & 31;
-		} while (history_line != edit_line && !key_lines[history_line][1]);
-		if (history_line == edit_line)
-			history_line = (edit_line + 1) & 31;
-		strcpy (key_lines[edit_line], key_lines[history_line]);
-		key_linepos = strlen (key_lines[edit_line]);
-		return;
-	}
-	if (key == QFK_DOWN) {
-		if (history_line == edit_line)
-			return;
-		do {
-			history_line = (history_line + 1) & 31;
-		}
-		while (history_line != edit_line && !key_lines[history_line][1]);
-		if (history_line == edit_line) {
-			key_lines[edit_line][0] = ']';
-			key_linepos = 1;
-		} else {
-			strcpy (key_lines[edit_line], key_lines[history_line]);
-			key_linepos = strlen (key_lines[edit_line]);
-		}
-		return;
-	}
-
-	if (key == QFK_PAGEUP || key == QFM_WHEEL_UP) {
-		con->display -= 2;
-		return;
-	}
-	if (key == QFK_PAGEDOWN || key == QFM_WHEEL_DOWN) {
-		con->display += 2;
-		if (con->display > con->current)
-			con->display = con->current;
-		return;
-	}
-
-	if (key == QFK_HOME) {
-		key_linepos = 1;
-		return;
-	}
-	if (key == QFK_END) {
-		key_linepos = strlen (key_lines[edit_line]);
-		return;
-	}
-
-	if (unicode < 32 || unicode > 127)
-		return;							// non printable
-
-	i = strlen (key_lines[edit_line]);
-	if (i >= MAXCMDLINE - 1)
-		return;
-
-	// This also moves the ending \0
-	memmove (key_lines[edit_line] + key_linepos + 1,
-			key_lines[edit_line] + key_linepos, i - key_linepos + 1);
-	key_lines[edit_line][key_linepos] = unicode;
-	key_linepos++;
+	Con_KeyEvent (key, unicode, keydown[key]);
 }
 
 void
@@ -947,7 +794,7 @@ Key_Event (knum_t key, short unicode, qboolean down)
 				break;
 			case key_game:
 			case key_console:
-				Con_ToggleConsole_f ();
+				Cbuf_AddText ("toggleconsole\n");
 				break;
 			default:
 				Sys_Error ("Bad key_dest");
@@ -989,15 +836,7 @@ Key_ClearStates (void)
 void
 Key_Init (void)
 {
-	int         i;
-
 	OK_Init ();
-
-	for (i = 0; i < 32; i++) {
-		key_lines[i][0] = ']';
-		key_lines[i][1] = 0;
-	}
-	key_linepos = 1;
 
 	// register our functions
 	Cmd_AddCommand ("in_bind", Key_In_Bind_f, "Assign a command or a set of "
@@ -1025,13 +864,6 @@ Key_Init_Cvars (void)
 	in_bind_imt = Cvar_Get ("in_bind_imt", "imt_default", CVAR_ARCHIVE,
 							in_bind_imt_f, "imt parameter for the bind and "
 							"unbind wrappers to in_bind and in_unbind");
-}
-
-void
-Key_ClearTyping (void)
-{
-	key_lines[edit_line][1] = 0;		// clear any typing
-	key_linepos = 1;
 }
 
 char *

@@ -85,6 +85,13 @@ Con_DestroyInputLine (inputline_t *inputline)
 }
 
 void
+Con_ClearTyping (inputline_t *il)
+{
+	il->lines[il->edit_line][1] = 0;
+	il->linepos = 1;
+}
+
+void
 Con_ProcessInputLine (inputline_t *il, int ch)
 {
 	int			i;

@@ -45,7 +45,7 @@ static const char rcsid[] =
 
 int         con_linewidth;				// characters across screen
 
-static plugin_t *con_module;
+plugin_t *con_module;
 
 static con_buffer_t *(*const buffer) (size_t, int) = Con_CreateBuffer;
 static void (*const complete)(inputline_t *) = Con_BasicCompleteCommandLine;
@@ -118,4 +118,32 @@ Con_ProcessInput (void)
 			Con_Printf ("no input for you\n");
 		}
 	}
+}
+
+void
+Con_KeyEvent (knum_t key, short unicode, qboolean down)
+{
+	if (con_module)
+		con_module->functions->console->pC_KeyEvent (key, unicode, down);
+}
+
+void
+Con_SetOrMask (int mask)
+{
+	if (con_module)
+		con_module->data->console->ormask = mask;
+}
+
+void
+Con_DrawConsole (int lines)
+{
+	if (con_module)
+		con_module->functions->console->pC_DrawConsole (lines);
+}
+
+void
+Con_CheckResize (void)
+{
+	if (con_module)
+		con_module->functions->console->pC_CheckResize ();
 }

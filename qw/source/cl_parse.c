@@ -1180,12 +1180,12 @@ CL_ParseServerMessage (void)
 						}
 						s = p;
 					}
-					con_ormask = 128;
+					Con_SetOrMask (128);
 					S_LocalSound ("misc/talk.wav");
 					Team_ParseChat(s);
 				}
 				Con_Printf ("%s", s);
-				con_ormask = 0;
+				Con_SetOrMask (0);
 				break;
 			}
 			case svc_centerprint:

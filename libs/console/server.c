@@ -434,6 +434,9 @@ static general_data_t plugin_info_general_data;
 static console_funcs_t plugin_info_console_funcs = {
 	C_Print,
 	C_ProcessInput,
+	0,
+	0,
+	0,
 };
 static console_data_t plugin_info_console_data;
 

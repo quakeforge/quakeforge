@@ -65,10 +65,10 @@ EXTRA_libqfnet_la_SOURCES= \
 		net_wipx.c net_udp.c
 
 client_LIBFILES= \
+		$(CLIENT_PLUGIN_STATIC_LIBS) \
 		$(top_builddir)/libs/video/targets/libQFjs.la \
 		$(top_builddir)/libs/audio/libQFcd.la \
-		$(top_builddir)/libs/audio/libQFsound.la \
-		$(top_builddir)/libs/console/filelist.o
+		$(top_builddir)/libs/audio/libQFsound.la
 
 server_LIBFILES= \
 		$(SERVER_PLUGIN_STATIC_LIBS) \
@@ -78,6 +78,7 @@ server_LIBFILES= \
 common_LIBFILES= \
 		libasm.la \
 		libqfnet.la \
+		$(top_builddir)/libs/console/libQFconsole.la \
 		$(top_builddir)/libs/gamecode/engine/libQFgamecode.la \
 		$(top_builddir)/libs/gamecode/builtins/libQFgamecode_builtins.la \
 		$(top_builddir)/libs/gib/libQFgib.la \
@@ -91,7 +92,7 @@ server_LIB_DEPS=$(server_LIBFILES) $(common_LIBFILES)
 
 client_sources=	cl_cam.c cl_cmd.c cl_demo.c cl_input.c cl_main.c cl_screen.c \
 		cl_parse.c cl_tent.c cl_view.c host_skin.c skin.c \
-		console.c locs.c sbar.c
+		locs.c sbar.c
 
 server_sources= host.c host_cmd.c pr_cmds.c sv_cvar.c sv_main.c \
 		sv_move.c sv_phys.c sv_progs.c sv_user.c

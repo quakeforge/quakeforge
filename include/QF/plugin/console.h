@@ -31,22 +31,30 @@
 
 #include <stdarg.h>
 
+#include <QF/keys.h>
 #include <QF/qtypes.h>
 #include <QF/plugin.h>
 
 typedef void (QFPLUGIN *P_C_Print) (const char *fmt, va_list args);
 typedef void (QFPLUGIN *P_C_ProcessInput) (void);
+typedef void (QFPLUGIN *P_C_KeyEvent) (key_t key, short unicode, qboolean down);
+typedef void (QFPLUGIN *P_C_DrawConsole) (int lines);
+typedef void (QFPLUGIN *P_C_CheckResize) (void);
 
 typedef struct console_func_s {
 	P_C_Print			pC_Print;
 	P_C_ProcessInput	pC_ProcessInput;
+	P_C_KeyEvent		pC_KeyEvent;
+	P_C_DrawConsole		pC_DrawConsole;
+	P_C_CheckResize		pC_CheckResize;
 } console_funcs_t;
 
 typedef struct console_data_s {
 	const char			*dl_name;
-	int					dl_percent;
-	double				realtime;
+	int					*dl_percent;
+	double				*realtime;
 	int					force_commandline;
+	int					ormask;
 } console_data_t;
 
 #endif // __QF_plugin_console_h_

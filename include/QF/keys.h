@@ -30,6 +30,7 @@
 #ifndef _KEYS_H
 #define _KEYS_H
 
+#include "QF/qtypes.h"
 #include "QF/vfile.h"
 
 // these are the key numbers that should be passed to Key_Event

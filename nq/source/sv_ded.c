@@ -36,6 +36,7 @@ static const char rcsid[] =
 
 #include "QF/cvar.h"
 #include "QF/keys.h"
+#include "QF/plugin.h"
 #include "QF/sys.h"
 
 #include "client.h"
@@ -295,3 +296,10 @@ void
 V_Init_Cvars (void)
 {
 }
+
+QFPLUGIN plugin_t *
+console_client_PluginInfo (void)
+{
+	return 0;
+}   
+

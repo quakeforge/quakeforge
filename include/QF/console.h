@@ -31,6 +31,7 @@
 
 #include <stdarg.h>
 
+#include "QF/keys.h"
 #include "QF/qtypes.h"
 #include "QF/gcc_attr.h"
 
@@ -75,26 +76,19 @@ typedef struct {
 	int			cur_line;			// current line
 } con_buffer_t;
 
-extern	old_console_t	con_main;
-extern	old_console_t	con_chat;
-extern	old_console_t	*con;		// point to either con_main or con_chat
-
-extern	int			con_ormask;
 extern	int			con_linewidth;
+extern struct plugin_s *con_module;
 
-extern int con_totallines;
-extern qboolean con_initialized;
-extern byte *con_chars;
-extern	int	con_notifylines;		// scan lines to clear for notify lines
+//extern int con_totallines;
+//extern qboolean con_initialized;
+//extern byte *con_chars;
 
 void Con_CheckResize (void);
 void Con_DrawConsole (int lines);
-void Con_DrawDownload (int lines);
 
 void Con_Print (const char *fmt, va_list args);
 void Con_Printf (const char *fmt, ...) __attribute__((format(printf,1,2)));
 void Con_DPrintf (const char *fmt, ...) __attribute__((format(printf,1,2)));
-void Con_DrawNotify (void);
 void Con_ToggleConsole_f (void);
 
 // wrapper function to attempt to either complete the command line
@@ -110,6 +104,7 @@ void Con_DisplayList(const char **list, int con_linewidth);
 
 inputline_t *Con_CreateInputLine (int lines, int width, char prompt);
 void Con_DestroyInputLine (inputline_t *inputline);
+void Con_ClearTyping (inputline_t *il);
 void Con_ProcessInputLine (inputline_t *il, int ch);
 
 con_buffer_t *Con_CreateBuffer (size_t buffer_size, int max_lines);
@@ -123,6 +118,8 @@ void Con_Init_Cvars (void);
 void Con_Shutdown (void);
 
 void Con_ProcessInput (void);
+void Con_KeyEvent (knum_t key, short unicode, qboolean down);
+void Con_SetOrMask (int mask);
 
 void Con_Maplist_f (void);
 void Con_Skinlist_f (void);

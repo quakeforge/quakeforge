@@ -66,6 +66,11 @@ static const char rcsid[] =
   Memory is cleared/released when a server or client begins, not when they end.
 */
 
+CLIENT_PLUGIN_PROTOS
+static plugin_list_t client_plugin_list[] = {
+		CLIENT_PLUGIN_LIST
+};
+
 qboolean	msg_suppress_1 = 0;
 qboolean	host_initialized;			// true if into command execution
 
@@ -925,10 +930,15 @@ Host_Init (quakeparms_t *parms)
 
 	PI_Init ();
 
+	PI_RegisterPlugins (client_plugin_list);
+
 	if (isDedicated)
 		Con_Init ("server");
 	else
 		Con_Init ("client");
+	if (con_module) {
+		con_module->data->console->realtime = &realtime;
+	}
 
 	V_Init ();
 	COM_Init ();
