@@ -421,7 +421,7 @@ init_types (void)
 	chain_type (&type_SEL);
 
 	type_method = new_struct (0);
-	new_struct_field (type_method, &type_SEL, "method_name", vis_public);
+	new_struct_field (type_method, type_SEL.aux_type, "method_name", vis_public);
 	new_struct_field (type_method, &type_string, "method_types", vis_public);
 	new_struct_field (type_method, &type_IMP, "method_imp", vis_public);
 	chain_type (type_method);
