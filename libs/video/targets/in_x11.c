@@ -575,7 +575,7 @@ grab_error (int code, const char *device)
 			reason = "unknown reason";
 			break;
 	}
-	Con_Printf ("failed to grab %s: %s", device, reason);
+	Con_Printf ("failed to grab %s: %s\n", device, reason);
 }
 
 void
