@@ -1053,7 +1053,7 @@ dnl ==================================================================
 
 dnl Set $prefix and $exec_prefix to $ac_default_prefix if they are not set
 test "x$prefix" = xNONE && prefix=$ac_default_prefix
-test "x$exec_prefix" = xNONE && exec_prefix='${prefix}'
+test "x$exec_prefix" = xNONE && exec_prefix="${prefix}"
 
 if test "x$SYSTYPE" = xWIN32; then
 	default_globalconf="~/${PACKAGE}.conf"
@@ -1111,6 +1111,20 @@ elif test "x$userpath" = xno; then
 	userpath="."
 fi
 AC_DEFINE_UNQUOTED(FS_USERPATH, "$userpath")
+
+AC_ARG_WITH(userpath,
+[  --with-plugin-path=DIR     Use DIR for loading plugins, defaults to
+                          \${libdir}/quakeforge],
+pluginpath=$withval, pluginpath="auto")
+
+eval foo="$libdir"
+default_pluginpath="$foo/$PACKAGE"
+if test "x$pluginpath" = "xauto" -o "x$pluginpath" = "xyes" -o "x$pluginpath" = "x"; then
+	pluginpath="$default_pluginpath"
+elif test "x$pluginpath" = xno; then
+	pluginpath="."
+fi
+AC_DEFINE_UNQUOTED(FS_PLUGINPATH, "$pluginpath")
 
 dnl CFLAGS for release and devel versions
 CFLAGS=""
@@ -1496,6 +1510,7 @@ AC_MSG_RESULT([
 
 	Shared game data directory: $sharepath
 	Per-user game data directory: $userpath
+	Plugin load directory: $pluginpath
 	Global configuration file: $globalconf
 	User configuration file: $userconf
 ])

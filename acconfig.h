@@ -25,6 +25,9 @@
 /* Define this to the location of the user config file */
 #undef FS_USERCFG
 
+/* Define this to the path from which to load plugins */
+#undef FS_PLUGINPATH
+
 /* Define this to the shared game directory root */
 #undef FS_SHAREPATH
 
