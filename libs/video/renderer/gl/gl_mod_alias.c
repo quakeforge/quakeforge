@@ -367,6 +367,8 @@ GL_GetAliasFrameVerts (int frame, aliashdr_t *paliashdr, entity_t *e)
 			lastposenum = e->pose2;
 			return vo;
 		}
+	} else {
+		verts += pose * count;
 	}
 	for (i = 0; i < count; i++) {
 		vo->verts[i].vert[0] = verts[i].v[0];
