@@ -42,6 +42,7 @@
 
 #include "QF/compat.h"
 #include "QF/sys.h"
+#include "QF/render.h"
 
 #include "client.h"
 #include "glquake.h"
