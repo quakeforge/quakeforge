@@ -1,9 +1,10 @@
-aclocal.m4
+.vimrc
+Makefile
 Makefile.in
+aclocal.m4
 confdefs.h
 configure
 config.log
 config.cache
 config.status
-Makefile
 qfcc.lsm
