@@ -1104,7 +1104,7 @@ methoddef
 		}
 	| '-' methoddecl '=' '#' const ';'
 		{
-			$2->instance = 0;
+			$2->instance = 1;
 			$2 = class_find_method (current_class, $2);
 			$2->def = method_def (current_class, $2);
 

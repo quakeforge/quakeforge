@@ -273,8 +273,12 @@ emit_methods (methodlist_t *_methods, const char *name, int instance)
 	if (!_methods)
 		return 0;
 	for (count = 0, method = _methods->head; method; method = method->next)
-		if (!method->instance == !instance)
+		if (!method->instance == !instance) {
+			if (!method->def) {
+				warning (0, "method %s not implemented", method->name);
+			}
 			count++;
+		}
 	if (!count)
 		return 0;
 	method_list = new_struct (0);
@@ -289,7 +293,7 @@ emit_methods (methodlist_t *_methods, const char *name, int instance)
 	methods->method_next = 0;
 	methods->method_count = count;
 	for (i = 0, method = _methods->head; method; method = method->next) {
-		if (!method->instance != !instance)
+		if (!method->instance != !instance || !method->def)
 			continue;
 		methods->method_list[i].method_name.sel_id = ReuseString (method->name);
 		methods->method_list[i].method_name.sel_types =
