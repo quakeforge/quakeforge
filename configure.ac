@@ -1569,8 +1569,9 @@ if test "x$HAVE_FBDEV" = xyes; then
 		CL_TARGETS="$CL_TARGETS FBDEV"
 		VID_TARGETS="$VID_TARGETS libQFfbdev.la"
 		BUILD_SW=yes
-		vid_need_common=yes
-		vid_need_sw=yes
+		QF_NEED(vid, [common sw])
+		QF_NEED(qw, [client common net])
+		QF_NEED(nq, [client common net])
 	fi
 	CAN_BUILD_SW=yes
 fi
@@ -1583,9 +1584,9 @@ if test "x$HAVE_X" = xyes; then
 		CL_TARGETS="$CL_TARGETS GLX"
 		VID_TARGETS="$VID_TARGETS libQFglx.la"
 		BUILD_GL=yes
-		vid_need_common=yes
-		vid_need_gl=yes
-		vid_need_x11=yes
+		QF_NEED(vid, [common gl x11])
+		QF_NEED(qw, [client common net])
+		QF_NEED(nq, [client common net])
 	fi
 	if test "x$ENABLE_X11" = xyes; then
 		QW_TARGETS="$QW_TARGETS qw-client-x11\$(EXEEXT)"
@@ -1593,9 +1594,9 @@ if test "x$HAVE_X" = xyes; then
 		CL_TARGETS="$CL_TARGETS X11"
 		VID_TARGETS="$VID_TARGETS libQFx11.la"
 		BUILD_SW=yes
-		vid_need_common=yes
-		vid_need_sw=yes
-		vid_need_x11=yes
+		QF_NEED(vid, [common sw x11])
+		QF_NEED(qw, [client common net])
+		QF_NEED(nq, [client common net])
 	fi
 fi
 if test "x$HAVE_MGL" = xyes; then
@@ -1605,8 +1606,9 @@ if test "x$HAVE_MGL" = xyes; then
 		CL_TARGETS="$CL_TARGETS MGL"
 		VID_TARGETS="$VID_TARGETS libQFwgl.la"
 		BUILD_SW=yes
-		vid_need_common=yes
-		vid_need_sw=yes
+		QF_NEED(vid, [common sw])
+		QF_NEED(qw, [client common net])
+		QF_NEED(nq, [client common net])
 	fi
 	CAN_BUILD_SW=yes
 fi
@@ -1617,9 +1619,9 @@ if test "x$HAVE_SDL" = xyes; then
 		CL_TARGETS="$CL_TARGETS SDL"
 		VID_TARGETS="$VID_TARGETS libQFsdl.la"
 		BUILD_SW=yes
-		vid_need_common=yes
-		vid_need_sdl=yes
-		vid_need_sw=yes
+		QF_NEED(vid, [common sdl sw])
+		QF_NEED(qw, [client common net sdl])
+		QF_NEED(nq, [client common net sdl])
 	fi
 	CAN_BUILD_SW=yes
 	if test "x$ENABLE_SDL32" = xyes; then
@@ -1628,9 +1630,9 @@ if test "x$HAVE_SDL" = xyes; then
 		CL_TARGETS="$CL_TARGETS SDL32"
 		VID_TARGETS="$VID_TARGETS libQFsdl32.la"
 		BUILD_SW32=yes
-		vid_need_common=yes
-		vid_need_sdl=yes
-		vid_need_sw32=yes
+		QF_NEED(vid, [common sdl sw32])
+		QF_NEED(qw, [client common net sdl])
+		QF_NEED(nq, [client common net sdl])
 	fi
 	CAN_BUILD_SW32=yes
 	if test "x$ENABLE_SGL" = xyes; then
@@ -1639,10 +1641,10 @@ if test "x$HAVE_SDL" = xyes; then
 		CL_TARGETS="$CL_TARGETS SDL-GL"
 		VID_TARGETS="$VID_TARGETS libQFsgl.la"
 		BUILD_GL=yes
-		vid_need_common=yes
-		vid_need_gl=yes
-		vid_need_sdl=yes
 		CAN_BUILD_GL=yes
+		QF_NEED(vid, [common sdl gl])
+		QF_NEED(qw, [client common net sdl])
+		QF_NEED(nq, [client common net sdl])
 	fi
 fi
 if test "x$HAVE_SVGA" = xyes; then
@@ -1652,10 +1654,9 @@ if test "x$HAVE_SVGA" = xyes; then
 		CL_TARGETS="$CL_TARGETS SVGAlib"
 		VID_TARGETS="$VID_TARGETS libQFsvga.la"
 		BUILD_SW=yes
-		vid_need_asm=yes
-		vid_need_common=yes
-		vid_need_sw=yes
-		vid_need_svga=yes
+		QF_NEED(vid, [asm common svga sw])
+		QF_NEED(qw, [client common net])
+		QF_NEED(nq, [client common net])
 	fi
 	CAN_BUILD_SW=yes
 	if test "x$ENABLE_3DFX" = xyes; then
@@ -1664,10 +1665,9 @@ if test "x$HAVE_SVGA" = xyes; then
 		CL_TARGETS="$CL_TARGETS 3dfx"
 		VID_TARGETS="$VID_TARGETS libQFtdfx.la"
 		BUILD_GL=yes
-		vid_need_asm=yes
-		vid_need_common=yes
-		vid_need_gl=yes
-		vid_need_svga=yes
+		QF_NEED(vid, [asm common gl svga])
+		QF_NEED(qw, [client common net])
+		QF_NEED(nq, [client common net])
 	fi
 	CAN_BUILD_GL=yes
 fi
@@ -1678,48 +1678,18 @@ if test "x$mingw" = xyes; then
 		CL_TARGETS="$CL_TARGETS WGL"
 		VID_TARGETS="$VID_TARGETS libQFwgl.la"
 		BUILD_GL=yes
-		vid_need_common=yes
-		vid_need_gl=yes
+		QF_NEED(vid, [common gl])
+		QF_NEED(qw, [client common net])
+		QF_NEED(nq, [client common net])
 	fi
 	CAN_BUILD_GL=yes
-fi
-
-if test "$vid_need_x11" = yes; then
-	VID_TARGETS="$VID_TARGETS libx11.la"
-fi
-
-if test "$vid_need_svga" = yes; then
-	VID_TARGETS="$VID_TARGETS libsvga.la"
-fi
-
-if test "$vid_need_sw32" = yes; then
-	VID_TARGETS="$VID_TARGETS libsw32.la"
-fi
-
-if test "$vid_need_sw" = yes; then
-	VID_TARGETS="$VID_TARGETS libsw.la"
-fi
-
-if test "$vid_need_sdl" = yes; then
-	VID_TARGETS="$VID_TARGETS libsdl.la"
-fi
-
-if test "$vid_need_gl" = yes; then
-	VID_TARGETS="$VID_TARGETS libgl.la"
-fi
-
-if test "$vid_need_common" = yes; then
-	VID_TARGETS="$VID_TARGETS libcommon.la"
-fi
-
-if test "$vid_need_asm" = yes; then
-	VID_TARGETS="$VID_TARGETS libasm.la"
 fi
 
 unset SV_TARGETS
 if test "x$ENABLE_NQ_SERVER" = xyes; then
 	NQ_TARGETS="nq-server\$(EXEEXT) $NQ_TARGETS"
 	SV_TARGETS="$SV_TARGETS nq"
+	QF_NEED(nq, [common net server])
 fi
 if test "x$ENABLE_QW_MASTER" = xyes; then
 	QW_TARGETS="qw-master\$(EXEEXT) $QW_TARGETS"
@@ -1728,6 +1698,7 @@ fi
 if test "x$ENABLE_QW_SERVER" = xyes; then
 	QW_TARGETS="qw-server\$(EXEEXT) $QW_TARGETS"
 	SV_TARGETS="$SV_TARGETS qw"
+	QF_NEED(qw, [common net server])
 fi
 
 if test "x$BUILD_SW" = xyes; then
@@ -1744,6 +1715,10 @@ if test "x$BUILD_GL" = xyes; then
 	VID_REND_TARGETS="$VID_REND_TARGETS libQFrenderer_gl.la"
 	VID_MODEL_TARGETS="$VID_MODEL_TARGETS libQFmodels_gl.la"
 fi
+
+QF_PROCESS_NEED(vid, [asm common gl sdl sw sw32 svga x11])
+QF_PROCESS_NEED(qw, [client common net sdl server], a)
+QF_PROCESS_NEED(nq, [client common net sdl server], a)
 
 AC_SUBST(CAN_BUILD_GL)
 AC_SUBST(CAN_BUILD_SW)

@@ -45,13 +45,14 @@ else
 asm=
 endif
 
-asm_src= worlda.S
+noinst_LIBRARIES= @qw_libs@ $(asm)
+EXTRA_LIBRARIES=libasm.a libclient.a libcommon.a libnet.a libsdl.a libserver.a
 
-libasm_a_SOURCES= $(asm_src)
 
-noinst_LIBRARIES= libqfnet.a libcommon.a libserver.a libclient.a $(asm)
-
+libasm_a_SOURCES= worlda.S
 libcommon_a_SOURCES= com.c game.c msg_ucmd.c pmove.c pmovetst.c net_packetlog.c
+libsdl_a_SOURCES=cl_sys_sdl.c
+libsdl_a_CFLAGS=$(SDL_CFLAGS)
 
 common_ldflags= -export-dynamic
 
@@ -63,8 +64,8 @@ ipvX_src= $(ipv6_src)
 else
 ipvX_src= $(ipv4_src)
 endif
-libqfnet_a_SOURCES=	net_chan.c $(ipvX_src)
-EXTRA_libqfnet_a_SOURCES= $(ipv4_src) $(ipv6_src)
+libnet_a_SOURCES=	net_chan.c $(ipvX_src)
+EXTRA_libnet_a_SOURCES= $(ipv4_src) $(ipv6_src)
 
 # Server builds
 #
@@ -90,9 +91,9 @@ qf_server_LIBS= \
 		$(top_builddir)/libs/util/libQFutil.la
 
 qw_server_SOURCES=	sv_model.c 
-qw_server_LDADD=	libserver.a libcommon.a libqfnet.a libasm.a $(qf_server_LIBS) $(NET_LIBS) $(DL_LIBS) $(CURSES_LIBS)
+qw_server_LDADD=	libserver.a libcommon.a libnet.a libasm.a $(qf_server_LIBS) $(NET_LIBS) $(DL_LIBS) $(CURSES_LIBS)
 qw_server_LDFLAGS=	$(common_ldflags)
-qw_server_DEPENDENCIES=	libcommon.a libserver.a libqfnet.a libasm.a $(qf_server_LIBS)
+qw_server_DEPENDENCIES=	libcommon.a libserver.a libnet.a libasm.a $(qf_server_LIBS)
 
 qw_master_SOURCES=	master.c
 qw_master_LDADD=	$(top_builddir)/libs/util/libQFutil.la $(NET_LIBS)
@@ -111,7 +112,7 @@ qf_client_LIBS= \
 		$(top_builddir)/libs/audio/libQFsound.la \
 		$(top_builddir)/libs/util/libQFutil.la
 
-client_LIBS= libqfnet.a libasm.a $(qf_client_LIBS)
+client_LIBS= libnet.a libasm.a $(qf_client_LIBS)
 client_libs= libclient.a libcommon.a
 
 libclient_a_SOURCES= \
@@ -157,11 +158,11 @@ qw_client_sdl_libs= \
 			$(soft_LIBS) \
 			$(top_builddir)/libs/video/targets/libQFsdl.la \
 			$(client_LIBS)
-qw_client_sdl_SOURCES=	cl_sys_sdl.c
-qw_client_sdl_LDADD= $(qw_client_sdl_libs) $(SDL_LIBS) $(NET_LIBS)
+qw_client_sdl_SOURCES=
+qw_client_sdl_LDADD= libsdl.a $(qw_client_sdl_libs) $(SDL_LIBS) $(NET_LIBS)
 qw_client_sdl_LDFLAGS=  $(common_ldflags)
 qw_client_sdl_CFLAGS=$(SDL_CFLAGS)
-qw_client_sdl_DEPENDENCIES= $(qw_client_sdl_libs)
+qw_client_sdl_DEPENDENCIES= libsdl.a $(qw_client_sdl_libs)
 
 # ... 32-bit software, SDL
 qw_client_sdl32_libs= \
@@ -171,11 +172,11 @@ qw_client_sdl32_libs= \
 			$(top_builddir)/libs/models/libQFmodels_sw.la \
 			$(top_builddir)/libs/video/targets/libQFsdl32.la \
 			$(client_LIBS)
-qw_client_sdl32_SOURCES=cl_sys_sdl.c
-qw_client_sdl32_LDADD= $(qw_client_sdl32_libs) $(SDL_LIBS) $(NET_LIBS)
+qw_client_sdl32_SOURCES=
+qw_client_sdl32_LDADD= libsdl.a $(qw_client_sdl32_libs) $(SDL_LIBS) $(NET_LIBS)
 qw_client_sdl32_LDFLAGS=$(common_ldflags)
 qw_client_sdl32_CFLAGS=$(SDL_CFLAGS)
-qw_client_sdl32_DEPENDENCIES= $(qw_client_sdl32_libs)
+qw_client_sdl32_DEPENDENCIES= libsdl.a $(qw_client_sdl32_libs)
 
 # ... Linux SVGAlib
 qw_client_svga_libs= \
@@ -185,9 +186,9 @@ qw_client_svga_libs= \
 			$(top_builddir)/libs/video/targets/libQFsvga.la \
 			$(client_LIBS)
 qw_client_svga_SOURCES= cl_sys_unix.c
-qw_client_svga_LDADD= $(qw_client_svga_libs) $(SVGA_LIBS) $(NET_LIBS)
+qw_client_svga_LDADD= libsdl.a $(qw_client_svga_libs) $(SVGA_LIBS) $(NET_LIBS)
 qw_client_svga_LDFLAGS=  $(common_ldflags)
-qw_client_svga_DEPENDENCIES= $(qw_client_svga_libs)
+qw_client_svga_DEPENDENCIES= libsdl.a $(qw_client_svga_libs)
 
 # ... X11
 qw_client_x11_libs= \
@@ -242,7 +243,7 @@ qw_client_sgl_libs= \
 			$(opengl_LIBS) \
 			$(top_builddir)/libs/video/targets/libQFsgl.la \
 			$(client_LIBS)
-qw_client_sgl_SOURCES=	cl_sys_sdl.c
+qw_client_sgl_SOURCES=
 qw_client_sgl_LDADD= $(qw_client_sgl_libs) $(SDL_LIBS) $(DL_LIBS) $(NET_LIBS)
 qw_client_sgl_LDFLAGS=  $(common_ldflags)
 qw_client_sgl_CFLAGS=$(SDL_CFLAGS)
@@ -262,7 +263,6 @@ qw_client_wgl_DEPENDENCIES= $(qw_client_wgl_libs)
 
 # Stuff that doesn't get linked into an executable NEEDS to be mentioned here,
 # or it won't be distributed with 'make dist'
-EXTRA_DIST=	$(asm_src)
 
 # Kill the temp files, hopefully.
 CLEANFILES	= *.i *.s $(YACCLEX_CLEANFILES)
