@@ -1772,7 +1772,7 @@ Host_Init (void)
 	CL_UpdateScreen (realtime);
 	CL_UpdateScreen (realtime);
 
-	if (connect_time == -1 {
+	if (connect_time == -1) {
 		Cbuf_AddText (cl_cbuf, "echo Type connect <internet address> or use a "
 					  "server browser to connect to a game.\n");
 	}
