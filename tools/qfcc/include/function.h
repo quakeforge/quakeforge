@@ -42,7 +42,6 @@ typedef struct function_s {
 	int                 function_num;
 	string_t            s_file;		// source file with definition
 	string_t            s_name;
-	int                 file_line;
 	struct def_s       *def;
 	struct scope_s     *scope;
 	struct reloc_s     *refs;

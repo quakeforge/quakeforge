@@ -573,7 +573,6 @@ qfo_to_progs (qfo_t *qfo, pr_info_t *pr)
 		pf->function_num = i + 1;
 		pf->s_file = qf->file;
 		pf->s_name = qf->name;
-		pf->file_line = qf->line;
 		pf->def = pr->scope->head + qf->def;
 		pf->scope = new_scope (sc_params, init_space (qf->locals_size, 0),
 							   pr->scope);
