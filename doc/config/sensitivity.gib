@@ -1,0 +1,7 @@
+alias "sensitivity" {
+if #{$argn == 1} {
+        echo "\"$0\" is \"$in_mouse_amp\""
+        return
+    }
+    in_mouse_amp $1
+}
