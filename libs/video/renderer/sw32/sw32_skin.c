@@ -49,107 +49,105 @@ void
 Skin_Set_Translate (int top, int bottom, void *_dest)
 {
 	int         i, j;
-	byte *dest2; // FIXME: bleargh, this needs cleaning up
 
 	top = bound (0, top, 13) * 16;
 	bottom = bound (0, bottom, 13) * 16;
 
 	switch(r_pixbytes) {
-	case 1:
-	{
-		byte *source;
-		byte *dest = (byte *) _dest;
+		case 1:
+			{
+				byte *source;
+				byte *dest = (byte *) _dest;
 
-		source = vid.colormap8;
-		memcpy (dest, vid.colormap8, VID_GRADES * 256);
+				source = vid.colormap8;
+				memcpy (dest, vid.colormap8, VID_GRADES * 256);
 
-		for (i = 0; i < VID_GRADES; i++, dest += 256, source += 256) {
-			if (top < 128)				// the artists made some backwards
-										// ranges.  sigh.
-				memcpy (dest + TOP_RANGE, source + top, 16);
-			else
-				for (j = 0; j < 16; j++)
-					dest[TOP_RANGE + j] = source[top + 15 - j];
+				for (i = 0; i < VID_GRADES; i++, dest += 256, source += 256) {
+					if (top < 128)	// the artists made some backwards ranges.
+						memcpy (dest + TOP_RANGE, source + top, 16);
+					else
+						for (j = 0; j < 16; j++)
+							dest[TOP_RANGE + j] = source[top + 15 - j];
 
-			if (bottom < 128)
-				memcpy (dest + BOTTOM_RANGE, source + bottom, 16);
-			else
-				for (j = 0; j < 16; j++)
-					dest[BOTTOM_RANGE + j] = source[bottom + 15 - j];
-		}
+					if (bottom < 128)
+						memcpy (dest + BOTTOM_RANGE, source + bottom, 16);
+					else
+						for (j = 0; j < 16; j++)
+							dest[BOTTOM_RANGE + j] = source[bottom + 15 - j];
+				}
+			}
+			break;
+		case 2:
+			{
+				unsigned short *source;
+				unsigned short *dest = (unsigned short *) _dest;
+
+				source = vid.colormap16;
+				memcpy (dest, vid.colormap16, 2 * VID_GRADES * 256);
+
+				for (i = 0; i < VID_GRADES; i++, dest += 256, source += 256) {
+					if (top < 128)
+					{
+						for (j = 0; j < 16; j++)
+							dest[TOP_RANGE + j] = source[top + j];
+					}
+					else
+					{
+						for (j = 0; j < 16; j++)
+							dest[TOP_RANGE + j] = source[top + 15 - j];
+					}
+
+					if (bottom < 128)
+					{
+						for (j = 0; j < 16; j++)
+							dest[BOTTOM_RANGE + j] = source[bottom + j];
+					}
+					else
+					{
+						for (j = 0; j < 16; j++)
+							dest[BOTTOM_RANGE + j] = source[bottom + 15 - j];
+					}
+				}
+			}
+			break;
+		case 4:
+			{
+				unsigned int *source;
+				unsigned int *dest = (unsigned int *) _dest;
+
+				source = vid.colormap32;
+				memcpy (dest, vid.colormap32, 4 * VID_GRADES * 256);
+
+				for (i = 0; i < VID_GRADES; i++, dest += 256, source += 256) {
+					if (top < 128)
+					{
+						for (j = 0; j < 16; j++)
+							dest[TOP_RANGE + j] = source[top + j];
+					}
+					else
+					{
+						for (j = 0; j < 16; j++)
+							dest[TOP_RANGE + j] = source[top + 15 - j];
+					}
+
+					if (bottom < 128)
+					{
+						for (j = 0; j < 16; j++)
+							dest[BOTTOM_RANGE + j] = source[bottom + j];
+					}
+					else
+					{
+						for (j = 0; j < 16; j++)
+							dest[BOTTOM_RANGE + j] = source[bottom + 15 - j];
+					}
+				}
+			}
+			break;
+		default:
+			Sys_Error("Skin_Set_Translate: unsupported r_pixbytes %i\n",
+					  r_pixbytes);
 	}
-	break;
-	case 2:
-	{
-		unsigned short *source;
-		unsigned short *dest = (unsigned short *) _dest;
-
-		source = vid.colormap16;
-		memcpy (dest, vid.colormap16, 2 * VID_GRADES * 256);
-
-		for (i = 0; i < VID_GRADES; i++, dest += 256, source += 256) {
-			if (top < 128)
-			{
-				for (j = 0; j < 16; j++)
-					dest[TOP_RANGE + j] = source[top + j];
-			}
-			else
-			{
-				for (j = 0; j < 16; j++)
-					dest[TOP_RANGE + j] = source[top + 15 - j];
-			}
-
-			if (bottom < 128)
-			{
-				for (j = 0; j < 16; j++)
-					dest[BOTTOM_RANGE + j] = source[bottom + j];
-			}
-			else
-			{
-				for (j = 0; j < 16; j++)
-					dest[BOTTOM_RANGE + j] = source[bottom + 15 - j];
-			}
-		}
-	}
-	break;
-	case 4:
-	{
-		unsigned int *source;
-		unsigned int *dest = (unsigned int *) _dest;
-
-		source = vid.colormap32;
-		memcpy (dest, vid.colormap32, 4 * VID_GRADES * 256);
-
-		for (i = 0; i < VID_GRADES; i++, dest += 256, source += 256) {
-			if (top < 128)
-			{
-				for (j = 0; j < 16; j++)
-					dest[TOP_RANGE + j] = source[top + j];
-			}
-			else
-			{
-				for (j = 0; j < 16; j++)
-					dest[TOP_RANGE + j] = source[top + 15 - j];
-			}
-
-			if (bottom < 128)
-			{
-				for (j = 0; j < 16; j++)
-					dest[BOTTOM_RANGE + j] = source[bottom + j];
-			}
-			else
-			{
-				for (j = 0; j < 16; j++)
-					dest[BOTTOM_RANGE + j] = source[bottom + 15 - j];
-			}
-		}
-	}
-	break;
-	default:
-		Sys_Error("Skin_Set_Translate: unsupported r_pixbytes %i\n",
-				  r_pixbytes);
-	}
-
+/*
 	dest2 = (byte *) _dest;
 
 	for (j = 0;j < 256;j++)
@@ -170,6 +168,7 @@ Skin_Set_Translate (int top, int bottom, void *_dest)
 		for (j = 0; j < 16; j++)
 			dest2[BOTTOM_RANGE + j] = d_8to24table[bottom + 15 - j];
 	}
+*/
 }
 
 void

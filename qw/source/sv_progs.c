@@ -45,8 +45,6 @@
 #include "sv_progs.h"
 #include "world.h"
 
-#define PROGHEADER_CRC 54730
-
 sv_globals_t sv_globals;
 sv_funcs_t sv_funcs;
 sv_fields_t sv_fields;

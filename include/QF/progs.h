@@ -26,8 +26,8 @@
 	$Id$
 */
 
-#ifndef _PROGS_H
-#define _PROGS_H
+#ifndef __QF_progs_h
+#define __QF_progs_h
 
 #include "QF/link.h"
 #include "QF/vfile.h"
@@ -291,4 +291,4 @@ struct progs_s {
 	} fields;
 };
 
-#endif // _PROGS_H
+#endif//__QF_progs_h
