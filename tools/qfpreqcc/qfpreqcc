@@ -8,13 +8,13 @@ from pprint import *
 
 directive_re = re.compile (
     r'^\s*#\s*(define|undef|include|includelist|endlist|ifdef|ifndef|endif|else|pragma)\b' +
-    r'((\s*("[^"]*"|[^ \t\n\r\f\v/]+|/(?!/)))?)' +
-    r'((\s*("[^"]*"|[^ \t\n\r\f\v/]+|/(?!/)))*)' +
+    r'((\s*("[^"]*"|[^ \t\n\r\f\v/]+|/(?!/))+)?)' +
+    r'((\s*("[^"]*"|[^ \t\n\r\f\v/]+|/(?!/))+)*)' +
     r'((\s*//.*)?)')
 macro_re = re.compile (r'#([A-Za-z_]\w*)')
 arg_re = re.compile (
-    r'((\s*("[^"]*"|[^ \t\n\r\f\v/]+|/(?!/)))?)' +
-    r'((\s*("[^"]*"|[^ \t\n\r\f\v/]+|/(?!/)))*)' +
+    r'((\s*("[^"]*"|[^ \t\n\r\f\v/]+|/(?!/))+)?)' +
+    r'((\s*("[^"]*"|[^ \t\n\r\f\v/]+|/(?!/))+)*)' +
     r'((\s*//.*)?)')
 
 current_file = []
