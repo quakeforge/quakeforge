@@ -42,7 +42,6 @@ static __attribute__ ((unused)) const char rcsid[] =
 
 #include <ctype.h>
 #include <sys/time.h>
-#include <sys/types.h>
 
 #ifdef HAVE_UNISTD_H
 # include <unistd.h>
@@ -206,8 +205,7 @@ X11_OpenDisplay (void)
 		x_screen = DefaultScreen (x_disp);
 		x_root = RootWindow (x_disp, x_screen);
 
-		// for debugging only
-		XSynchronize (x_disp, True);
+		XSynchronize (x_disp, true);		// for debugging only
 
 		x_disp_ref_count = 1;
 	} else {
@@ -428,11 +426,11 @@ X11_Init_Cvars (void)
 void
 X11_CreateWindow (int width, int height)
 {
-	XSetWindowAttributes	attr;
-	XClassHint		*ClassHint;
-	XSizeHints		*SizeHints;
-	char			*resname;
+	char		   *resname;
 	unsigned long	mask;
+	XSetWindowAttributes	attr;
+	XClassHint	   *ClassHint;
+	XSizeHints	   *SizeHints;
 
 	// window attributes
 	attr.background_pixel = 0;
