@@ -56,6 +56,7 @@ static const char rcsid[] =
 #include "QF/joystick.h"
 #include "QF/keys.h"
 #include "QF/mathlib.h"
+#include "QF/vid.h"
 
 cvar_t     *in_grab;
 cvar_t     *in_amp;
@@ -75,8 +76,6 @@ float       in_mouse_x, in_mouse_y;
 static float in_old_mouse_x, in_old_mouse_y;
 
 static int  input_grabbed;
-
-extern cvar_t		*vid_fullscreen;
 
 void // called from context_x11.c
 IN_UpdateGrab (cvar_t *var)

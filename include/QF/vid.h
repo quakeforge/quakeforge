@@ -38,6 +38,8 @@ struct cvar_s;
 extern byte   *vid_basepal;
 extern byte   *vid_colormap;
 
+extern struct cvar_s *vid_fullscreen;
+
 typedef struct vrect_s {
 	int				 x,y,width,height;
 	struct vrect_s	*pnext;

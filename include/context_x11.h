@@ -46,7 +46,6 @@ extern int		x_screen;
 extern int		x_shmeventtype;
 extern qboolean doShm;
 extern qboolean oktodraw;
-extern struct cvar_s *vid_fullscreen;
 
 void GetEvent (void);
 

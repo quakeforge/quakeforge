@@ -60,7 +60,6 @@ HWND 		mainwindow;
 
 // static float oldin_grab = 0;
 
-cvar_t     *vid_fullscreen;
 cvar_t     *vid_bitdepth;
 extern viddef_t vid;					// global video state
 

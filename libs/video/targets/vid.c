@@ -56,6 +56,7 @@ int 		scr_width, scr_height;
 cvar_t		*vid_width;
 cvar_t		*vid_height;
 
+cvar_t     *vid_fullscreen;
 
 void
 VID_GetWindowSize (int def_w, int def_h)

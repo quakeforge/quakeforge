@@ -99,7 +99,6 @@ static int  UseDisplay = 1;
 static cvar_t *vid_mode;
 static cvar_t *vid_redrawfull;
 static cvar_t *vid_waitforrefresh;
-cvar_t *vid_fullscreen;
 
 static char *framebuffer_ptr;
 
