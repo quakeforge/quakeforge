@@ -1,16 +1,72 @@
-I want `entities' to be a very lightweight object.  They would perform the same tasks as structs in C, but with other things (optionally) assosiated with them, such as physics interactions and networking/communications addressing.  On a large scale they'd perform the traditional role of players, interacting with physics, take input on the client, and so forth.  But on a smaller scale an `entity' may just be the spawning of a group of particle sparks.  Here we would only need to transmit the number of particles and the location, and possible some type of particle information (bright yellow vs deep red).  We would not need to transmit the entity number, or even when the entity is removed, since the client could determine that information itself.
+I want `entities' to be a very lightweight object.  They would perform
+the same tasks as structs in C, but with other things (optionally)
+assosiated with them, such as physics interactions and
+networking/communications addressing.  On a large scale they'd perform
+the traditional role of players, interacting with physics, take input on
+the client, and so forth.  But on a smaller scale an `entity' may just
+be the spawning of a group of particle sparks.  Here we would only need
+to transmit the number of particles and the location, and possible some
+type of particle information (bright yellow vs deep red).  We would not
+need to transmit the entity number, or even when the entity is removed,
+since the client could determine that information itself.
 
-To acomplish this we need a wide variety of entity types, and preferably seperate entity indexes too.  When a server that sends something to update a rocket it only needs to affect rockets, not players and other seperate entities.  As well, the different fields with an entity should be handled differently; some can be ignored altogether, some only need partial information (eg the current position), while others need to transmit every change of state.  Some may only need to send a small range of data, eg 0 through 10, even though the field itself is a 32bit integer.  (actually, it may be better to specify the field as a range at the language level, and leave the implementation the job of making it a 32bit integer.  this avoids 32bit vs 64bit issues.)
+To acomplish this we need a wide variety of entity types, and preferably
+seperate entity indexes too.  When a server that sends something to
+update a rocket it only needs to affect rockets, not players and other
+seperate entities.  As well, the different fields with an entity should
+be handled differently; some can be ignored altogether, some only need
+partial information (eg the current position), while others need to
+transmit every change of state.  Some may only need to send a small
+range of data, eg 0 through 10, even though the field itself is a 32bit
+integer.  (actually, it may be better to specify the field as a range at
+the language level, and leave the implementation the job of making it a
+32bit integer.  this avoids 32bit vs 64bit issues.) 
 
-I like the idea of having seperate threads.  QuakeC does different threads of a sort, by setting an entities think function and a nextthink time, but it is extremely limited.  UnrealScript's method is somewhat better, but I don't believe it allows real multithreading that would take advantage of a SMP box, and thus I think it's still too limited.  While real multithreading requires addressing issues such as locking and concurent accesses, I don't think that's impossible to do in an effective and efficient way, it'd just require alot of thought and planning.
+I like the idea of having seperate threads.  QuakeC does different
+threads of a sort, by setting an entities think function and a nextthink
+time, but it is extremely limited.  UnrealScript's method is somewhat
+better, but I don't believe it allows real multithreading that would
+take advantage of a SMP box, and thus I think it's still too limited. 
+While real multithreading requires addressing issues such as locking and
+concurent accesses, I don't think that's impossible to do in an
+effective and efficient way, it'd just require alot of thought and
+planning. 
 
-UnrealScript also supports `mutators', which are in essence overriden functions as you would find in C++.  While I can see the obvious benefit of them, I believe they require much detailed examination of how they'd interact, especially with networking, to be used effectively.
+UnrealScript also supports `mutators', which are in essence overriden
+functions as you would find in C++.  While I can see the obvious benefit
+of them, I believe they require much detailed examination of how they'd
+interact, especially with networking, to be used effectively. 
 
-A comment on enumerations.  They could be broken down into two types.  The first, simpler form, is basically like in C.  It makes the sourcecode more readable by converting the textual FOO_A into a number when compiling.  It could also help debugging, by printing out the reversed information.  But a second, more powerful form, would allow a base module to define one form of the enumeration, while an extension module adds some items to it.  The base module would see such additions as FOO_UNKNOWN and be unable create them itself, but it would be able to change the variable from FOO_UNKNOWN and copy the FOO_UNKNOWN into another variable, which'd would have the value of the original variable from the extension module's point of view.
+A comment on enumerations.  They could be broken down into two types. 
+The first, simpler form, is basically like in C.  It makes the
+sourcecode more readable by converting the textual FOO_A into a number
+when compiling.  It could also help debugging, by printing out the
+reversed information.  But a second, more powerful form, would allow a
+base module to define one form of the enumeration, while an extension
+module adds some items to it.  The base module would see such additions
+as FOO_UNKNOWN and be unable create them itself, but it would be able to
+change the variable from FOO_UNKNOWN and copy the FOO_UNKNOWN into
+another variable, which'd would have the value of the original variable
+from the extension module's point of view. 
 
-[a note on implimentation: the extension module would probably have a global constant which defines the enumeration and it's textual form.  When the server loads the module it'd fill in the global constant with whatever value was convenient.  Thus, several modules could define extensions, and they would not conflict (unless the textual versions were the same).  For multiple servers to communicate it'd be unreasonable to require one to change it's constants; instead they should negotiate a mapping table when they connect, and convert them to the form the other desires when transferring them.]
+[a note on implimentation: the extension module would probably have a
+global constant which defines the enumeration and it's textual form. 
+When the server loads the module it'd fill in the global constant with
+whatever value was convenient.  Thus, several modules could define
+extensions, and they would not conflict (unless the textual versions
+were the same).  For multiple servers to communicate it'd be
+unreasonable to require one to change it's constants; instead they
+should negotiate a mapping table when they connect, and convert them to
+the form the other desires when transferring them.] 
 
-I would like to have an explicit pointer type.  However, I would like the operations available for it to be limited and safe.  You would not be able to use pointer arithmetic (foo + 5), but array indexing would be available (foo[5]).  You would not be able to convert pointers between types, but perhaps would have pointers that can point to several types, or "parent" types that are inherited into several types, and a withtype language construct that'd allow the following block of code to treat the pointer as a specific type, eg:
+I would like to have an explicit pointer type.  However, I would like
+the operations available for it to be limited and safe.  You would not
+be able to use pointer arithmetic (foo + 5), but array indexing would be
+available (foo[5]).  You would not be able to convert pointers between
+types, but perhaps would have pointers that can point to several types,
+or "parent" types that are inherited into several types, and a withtype
+language construct that'd allow the following block of code to treat the
+pointer as a specific type, eg: 
 
 class foo;
 class bar inherits foo;
@@ -21,35 +77,104 @@ if (a.class == class foo)
 	}
 // a is now considered to be a class foo again
 
-Of course this is just an idea, and the class semantics are pulled off the top of my head.  It'd require refinement before practical use.
+Of course this is just an idea, and the class semantics are pulled off
+the top of my head.  It'd require refinement before practical use. 
 
-Another matter is variable initialization.  Before a variable can be used it must always be initialized.  But for a language to be guaranteed safe the compiler must detect all situations where it might be used uninitialized.  I propose that, since the compiler will detect the usages anyway, we should make them all be initialized by default, and save the programmer the trouble of doing it manually.  Then the compiler's detection could work in reverse, and not initialize the situations where it's sure they won't be used.
+Another matter is variable initialization.  Before a variable can be
+used it must always be initialized.  But for a language to be guaranteed
+safe the compiler must detect all situations where it might be used
+uninitialized.  I propose that, since the compiler will detect the
+usages anyway, we should make them all be initialized by default, and
+save the programmer the trouble of doing it manually.  Then the
+compiler's detection could work in reverse, and not initialize the
+situations where it's sure they won't be used. 
 
-As mentioned above, spawning a particle entity would entale sending some data to the client.  This should be done through the fields of another entity, and said field would probably be changed serially.  Or perhaps an array that's not changed serially.  Either way though, it effectively creates a heirarchy of objects.
+As mentioned above, spawning a particle entity would entale sending some
+data to the client.  This should be done through the fields of another
+entity, and said field would probably be changed serially.  Or perhaps
+an array that's not changed serially.  Either way though, it effectively
+creates a heirarchy of objects. 
 
-Serial state changes would be limited to one change per frame/tick.  To perform more than one change per frame you could create an array, which'd effective queue up the changes.  The entire array would then be sent over the network each frame.
+Serial state changes would be limited to one change per frame/tick.  To
+perform more than one change per frame you could create an array,
+which'd effective queue up the changes.  The entire array would then be
+sent over the network each frame. 
 
-The particle entity spawning would take place in such an array.  Each frame would add some entities to the array, which'd be transmitted serially (although without a strong requirement for reliability), and would automatically be cleared at the end of the frame.  The client would then keep track of the particles in it's own data structures.
+The particle entity spawning would take place in such an array.  Each
+frame would add some entities to the array, which'd be transmitted
+serially (although without a strong requirement for reliability), and
+would automatically be cleared at the end of the frame.  The client
+would then keep track of the particles in it's own data structures. 
 
-For bitfields you should use an array of numbers with a 0 to 1 range, and allow the implimentation to fit them in to a more efficient data structure.
+For bitfields you should use an array of numbers with a 0 to 1 range,
+and allow the implimentation to fit them in to a more efficient data
+structure. 
 
-So far for fields transmition modes we have 'not transmitted', 'transmit changes', and 'transmit current'.  Arrays (?) also have a 'automatically clear' flag.
+So far for fields transmition modes we have 'not transmitted', 'transmit
+changes', and 'transmit current'.  Arrays (?) also have a 'automatically
+clear' flag. 
 
-It may be worth noting that mods would be expected to processes several incoming frames within one of it's own frames.  This may mean that an entity's callbacks could be called several times in one frame.  Therefor you require an array/queue for serialized/'transmit changes' fields.  Perhaps then that mode can only apply to arrays.  On second thought, no.  For entities controlled by the server it'd have no issue limiting them to one change per frame.  And for ones it doesn't control it may want to apply such a limitation anyway.
+It may be worth noting that mods would be expected to processes several
+incoming frames within one of it's own frames.  This may mean that an
+entity's callbacks could be called several times in one frame.  Therefor
+you require an array/queue for serialized/'transmit changes' fields. 
+Perhaps then that mode can only apply to arrays.  On second thought, no.
+ For entities controlled by the server it'd have no issue limiting them
+ to one change per frame.  And for ones it doesn't control it may want
+ to apply such a limitation anyway. 
 
-The server should use Just In Time compiling of the modules, and cache this between runs to prevent unnecesary recompilation.  The client should have a version string and crc (MD5 hash?) to identify each module (of which it may have several), and save them per-server incase it differs.  This'd allow a client to have modules from different servers simultaneously, even if they're modified without properly updating the version number.  It may require "garbage collection" though, to clean up old unused versions.
+The server should use Just In Time compiling of the modules, and cache
+this between runs to prevent unnecesary recompilation.  The client
+should have a version string and crc (MD5 hash?) to identify each module
+(of which it may have several), and save them per-server incase it
+differs.  This'd allow a client to have modules from different servers
+simultaneously, even if they're modified without properly updating the
+version number.  It may require "garbage collection" though, to clean up
+old unused versions. 
 
-The engine would handle sending the data over the wire, resending dropped packets, etc.  I'm not sure if what I've provided so far for field modes is powerful enough, and in a sense it's tempting to provide some sort of callback for the mod to add other methods, but I'm not sure if that could be efficient/effective, or if it's even needed.  I probably just need to go through some proper examples.
+The engine would handle sending the data over the wire, resending
+dropped packets, etc.  I'm not sure if what I've provided so far for
+field modes is powerful enough, and in a sense it's tempting to provide
+some sort of callback for the mod to add other methods, but I'm not sure
+if that could be efficient/effective, or if it's even needed.  I
+probably just need to go through some proper examples. 
 
-Another aspect is that some entities may be visible to all players, while others are only visible to some players, and still others aren't visible to any.  Except for a few global pieces of data such as talking and a global sound, most entities should be limited by PVS/PHS anyway.  Perhaps each player should have it's own list of relevent entities, through which it'd have links to the rest?  Eg, it'd have a link to the/a world entity, which'd have have the PVS/PHS and the normal entity lists.  A player could also have links to several world entities, either on different servers or forming different sections of the map on one server.  It's origin would then be relative to that world entity.
+Another aspect is that some entities may be visible to all players,
+while others are only visible to some players, and still others aren't
+visible to any.  Except for a few global pieces of data such as talking
+and a global sound, most entities should be limited by PVS/PHS anyway. 
+Perhaps each player should have it's own list of relevent entities,
+through which it'd have links to the rest?  Eg, it'd have a link to
+the/a world entity, which'd have have the PVS/PHS and the normal entity
+lists.  A player could also have links to several world entities, either
+on different servers or forming different sections of the map on one
+server.  It's origin would then be relative to that world entity. 
 
-Additionally to the pvs, though, we'd want the mod to be able to limit an entity's visibility to only the players on a given team.  Perhaps each player entity should have it's own entity list, to which everything in the PVS would be added at the end of each frame, as well as whatever other checks the mod wanted to do.  I'm not sure how much overhead that'd add though.  (The PVS test itself would be done by the engine, but the mod would call a function to do that).
+Additionally to the pvs, though, we'd want the mod to be able to limit
+an entity's visibility to only the players on a given team.  Perhaps
+each player entity should have it's own entity list, to which everything
+in the PVS would be added at the end of each frame, as well as whatever
+other checks the mod wanted to do.  I'm not sure how much overhead
+that'd add though.  (The PVS test itself would be done by the engine,
+but the mod would call a function to do that). 
 
-We'd want a very powerful find function.  It should have flags such as PVS, PHS, radius (with a distance), and arc.  Ignoring certain entities (such as your center point) could probably be done best by the mod.  We'd also want to to control if it'd be sorted (closest first), and partial vs full search (partial could be continued after, but may not be.)  There's a fair bit of overlap with traceline here, not sure what we'd want to do with it all.
+We'd want a very powerful find function.  It should have flags such as
+PVS, PHS, radius (with a distance), and arc.  Ignoring certain entities
+(such as your center point) could probably be done best by the mod. 
+We'd also want to to control if it'd be sorted (closest first), and
+partial vs full search (partial could be continued after, but may not
+be.)  There's a fair bit of overlap with traceline here, not sure what
+we'd want to do with it all. 
 
-Re traceline: you should pass it pointers/references to the variables you want it to modify, instead of it modifying globals.
+Re traceline: you should pass it pointers/references to the variables
+you want it to modify, instead of it modifying globals. 
 
-Since we lack pointer arithmetic we can't directly seperate a section of an array.  Additionally, the array needs to have it's length assosiated with it.  Perhaps we should have an "array slice" class that has the base array, it's size, and an offset into it.
+Since we lack pointer arithmetic we can't directly seperate a section of
+an array.  Additionally, the array needs to have it's length assosiated
+with it.  Perhaps we should have an "array slice" class that has the
+base array, it's size, and an offset into it. 
 
-Race conditions, including, but not limited to, deleting an entity while something else is using it - we need to document programming techniques to handle these situations.
+Race conditions, including, but not limited to, deleting an entity while
+something else is using it - we need to document programming techniques
+to handle these situations. 
 
