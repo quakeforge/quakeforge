@@ -69,17 +69,17 @@ static __attribute__ ((unused)) const char rcsid[] =
 
 byte	   *draw_chars;						// 8*8 graphic characters
 
-int         tVAsize;
-int        *tVAindices;
-int         tVAcount;
-float	*textVertices, *tV;
-float	*textCoords, *tC;
+int			tVAsize;
+int		   *tVAindices;
+int			tVAcount;
+float	   *textVertices, *tV;
+float	   *textCoords, *tC;
 
-qpic_t     *draw_backtile;
+qpic_t	   *draw_backtile;
 
-static int  translate_texture;
-static int  char_texture;
-static int  cs_texture;					// crosshair texturea
+static int	translate_texture;
+static int	char_texture;
+static int	cs_texture;					// crosshair texturea
 
 static byte color_0_8[4] = { 204, 204, 204, 255 };
 
@@ -104,21 +104,21 @@ static byte cs_data[2*64] = {
 };
 
 typedef struct {
-	int         texnum;
+	int			texnum;
 } glpic_t;
 
 typedef struct cachepic_s {
-	char        name[MAX_QPATH];
-	qboolean    dirty;
-	qpic_t      pic;
-	byte        padding[32];			// for appended glpic
+	char		name[MAX_QPATH];
+	qboolean	dirty;
+	qpic_t		pic;
+	byte		padding[32];			// for appended glpic
 } cachepic_t;
 
 #define	MAX_CACHED_PICS		128
 static cachepic_t cachepics[MAX_CACHED_PICS];
-static int     numcachepics;
+static int		numcachepics;
 
-static byte    menuplyr_pixels[4096];
+static byte		menuplyr_pixels[4096];
 
 
 void
@@ -127,11 +127,11 @@ Draw_InitText (void)
 	int		i;
 
 	if (r_init) {
-		if (vaelements > 3)
+		if (vaelements > 3) {
 			tVAsize = vaelements - (vaelements % 4);
-		else if (vaelements >= 0)
+		} else if (vaelements >= 0) {
 			tVAsize = 2048;
-		else
+		} else
 			tVAsize = 0;
 
 		if (tVAsize) {
@@ -174,10 +174,9 @@ Draw_InitText (void)
 qpic_t *
 Draw_PicFromWad (const char *name)
 {
-	glpic_t    *gl;
-	qpic_t     *p;
-	tex_t      *targa;
-
+	glpic_t	   *gl;
+	qpic_t	   *p;
+	tex_t	   *targa;
 
 	targa = LoadImage (name);
 	if (targa) {
@@ -185,17 +184,17 @@ Draw_PicFromWad (const char *name)
 		p->width = targa->width;
 		p->height = targa->height;
 		gl = (glpic_t *) p->data;
-		if (targa->format < 4)
-			gl->texnum = GL_LoadTexture (name, targa->width,
-				targa->height, targa->data, false, false, 3);
-		else
-			gl->texnum = GL_LoadTexture (name, targa->width,
-				targa->height, targa->data, false, true, 4);
+		if (targa->format < 4) {
+			gl->texnum = GL_LoadTexture (name, targa->width, targa->height,
+										 targa->data, false, false, 3);
+		} else
+			gl->texnum = GL_LoadTexture (name, targa->width, targa->height,
+										 targa->data, false, true, 4);
 	} else {
 		p = W_GetLumpName (name);
 		gl = (glpic_t *) p->data;
-		gl->texnum = GL_LoadTexture (name, p->width, p->height,
-					p->data, false, true, 1);
+		gl->texnum = GL_LoadTexture (name, p->width, p->height, p->data,
+									 false, true, 1);
 	}
 	return p;
 }
@@ -232,12 +231,12 @@ Draw_CachePic (const char *path, qboolean alpha)
 	// Check for a .tga first
 	targa = LoadImage (path);
 	if (targa) {
-		if (targa->format < 4)
+		if (targa->format < 4) {
 			gl->texnum = GL_LoadTexture ("", targa->width, targa->height,
-				targa->data, false, alpha, 3);
-		else
+										 targa->data, false, alpha, 3);
+		} else
 			gl->texnum = GL_LoadTexture ("", targa->width, targa->height,
-				targa->data, false, alpha, 4);
+										 targa->data, false, alpha, 4);
 		pic->pic.width = targa->width;
 		pic->pic.height = targa->height;
 	} else if (!strcmp (path + strlen (path) - 4, ".lmp")) {
@@ -250,7 +249,7 @@ Draw_CachePic (const char *path, qboolean alpha)
 		SwapPic (dat);
 
 		gl->texnum = GL_LoadTexture ("", dat->width, dat->height, dat->data,
-								 false, alpha, 1);
+									 false, alpha, 1);
 		pic->pic.width = dat->width;
 		pic->pic.height = dat->height;
 		if (!strcmp (path, "gfx/menuplyr.lmp"))
@@ -322,7 +321,6 @@ Draw_TextBox (int x, int y, int width, int lines, byte alpha)
 	qfglColor3ubv (color_white);
 }
 
-
 void
 Draw_Init (void)
 {
@@ -336,24 +334,24 @@ Draw_Init (void)
 	// write the version string into the background before turning it into a
 	// texture
 	
-	image = LoadImage ("gfx/conchars.png");
+	image = LoadImage ("gfx/conchars");
 	if (image) {	
-		if (image->format < 4)
-			char_texture = GL_LoadTexture ("charset",
-										   image->width, image->height,
-										   image->data, false, false, 3);
-		else
-			char_texture = GL_LoadTexture ("charset",
-										   image->width, image->height,
-										   image->data, false, true, 4);
+		if (image->format < 4) {
+			char_texture = GL_LoadTexture ("charset", image->width,
+										   image->height, image->data, false,
+										   false, 3);
+		} else
+			char_texture = GL_LoadTexture ("charset", image->width,
+										   image->height, image->data, false,
+										   true, 4);
 	} else {
 		draw_chars = W_GetLumpName ("conchars");
 		for (i = 0; i < 256 * 64; i++)
 			if (draw_chars[i] == 0)
 				draw_chars[i] = 255;		// proper transparent color
 		
-		char_texture = GL_LoadTexture ("charset", 128, 128, draw_chars,
-									   false, true, 1);
+		char_texture = GL_LoadTexture ("charset", 128, 128, draw_chars, false,
+									   true, 1);
 	}
 
 	// now turn them into textures
@@ -414,7 +412,7 @@ queue_character (float x, float y, int num)
 static inline void
 tVA_increment (void)
 {
-	tVAcount +=4;
+	tVAcount += 4;
 	if (tVAcount + 4 > tVAsize)
 		flush_text ();
 }
@@ -501,8 +499,7 @@ Draw_AltString (int x, int y, const char *str)
 	y1 = (float) y;
 
 	while (*str) {
-		if ((num = *str++ | 0x80) != (0x80 | 32)) // Don't render spaces
-		{
+		if ((num = *str++ | 0x80) != (0x80 | 32)) {		// Don't render spaces
 			queue_character (x1, y1, num);
 			tVA_increment ();
 		}
@@ -640,7 +637,7 @@ Draw_TransPicTranslate (int x, int y, qpic_t *pic, byte * translation)
 	}
 
 	qfglTexImage2D (GL_TEXTURE_2D, 0, gl_alpha_format, 64, 64, 0, GL_RGBA,
-				  GL_UNSIGNED_BYTE, trans);
+					GL_UNSIGNED_BYTE, trans);
 
 	qfglTexParameterf (GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, gl_filter_min);
 	qfglTexParameterf (GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, gl_filter_max);
@@ -696,9 +693,9 @@ Draw_ConsoleBackground (int lines, byte alpha)
 		qfglScalef (xfactor, xfactor, xfactor);
 	}
 	// slide console up/down or stretch it?
-	if (gl_constretch->int_val)
+	if (gl_constretch->int_val) {
 		ofs = 0;
-	else
+	} else
 		ofs = (vid.conheight - lines) / (float) vid.conheight;
 
 	color_0_8[3] = alpha;
