@@ -154,7 +154,7 @@ main (int argc, const char **argv)
 	Sys_RegisterShutdown (Host_Shutdown);
 	Sys_RegisterShutdown (shutdown);
 
-	printf ("Host_Init\n");
+	Con_Printf ("Host_Init\n");
 	Host_Init (&parms);
 
 	Sys_Init_Cvars ();

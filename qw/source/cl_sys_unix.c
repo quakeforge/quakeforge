@@ -175,7 +175,7 @@ main (int c, const char *v[])
 	host_parms.membase = malloc (host_parms.memsize);
 
 	if (!host_parms.membase) {
-		printf ("Can't allocate memory for zone.\n");
+		Con_Printf ("Can't allocate memory for zone.\n");
 		return 1;
 	}
 

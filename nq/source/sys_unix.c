@@ -175,7 +175,7 @@ main (int c, const char *v[])
 	Sys_RegisterShutdown (Host_Shutdown);
 	Sys_RegisterShutdown (shutdown);
 
-	Sys_Printf ("Host_Init\n");
+	Con_Printf ("Host_Init\n");
 	Host_Init (&parms);
 
 	Sys_Init_Cvars ();
@@ -183,7 +183,7 @@ main (int c, const char *v[])
 
 	if (!sys_nostdout->int_val) {
 		fcntl (0, F_SETFL, fcntl (0, F_GETFL, 0) | FNDELAY);
-		printf ("Quake -- Version %s\n", NQ_VERSION);
+		Con_Printf ("Quake -- Version %s\n", NQ_VERSION);
 	}
 
 	oldtime = Sys_DoubleTime () - 0.1;
