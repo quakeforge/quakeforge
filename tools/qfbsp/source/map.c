@@ -199,7 +199,7 @@ GetToken (qboolean crossline)
 				map_error ("EOF inside quoted token");
 			if (*script_p == '\n')
 				script_line++;
-			*token_p++ = *script_p++;
+			script_p++;
 		}
 		dstring_copysubstr (&token, token_p, script_p - token_p);
 		script_p++;
