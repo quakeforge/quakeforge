@@ -650,7 +650,7 @@ SV_WriteClientdataToMessage (edict_t *ent, sizebuf_t *msg)
 		items = (int) SVFIELD (ent, items, float) | ((int) val->float_var << 23);
 	else
 		items =
-			(int) SVFIELD (ent, items, float) | ((int) sv_globals.serverflags << 28);
+			(int) SVFIELD (ent, items, float) | ((int) *sv_globals.serverflags << 28);
 #endif
 
 	bits |= SU_ITEMS;
