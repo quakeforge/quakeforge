@@ -32,7 +32,6 @@
 #include "qtypes.h"
 #include "cvar.h"
 
-extern qboolean standard_quake;
 extern qboolean noclip_anglehack;
 
 typedef struct

@@ -1438,6 +1438,8 @@ DEBUGGING TOOLS
 ===============================================================================
 */
 
+// FIXME: This cheat should be re-implemented OUTSIDE the engine!
+#if 0
 /*
 ==================
 Host_Give_f
@@ -1579,6 +1581,8 @@ Host_Give_f (void)
 		break;
 	}
 }
+#endif
+
 
 edict_t    *
 FindViewthing (void)
@@ -1824,7 +1828,6 @@ Host_InitCommands (void)
 	Cmd_AddCommand ("ping", Host_Ping_f, "No Description");
 	Cmd_AddCommand ("load", Host_Loadgame_f, "No Description");
 	Cmd_AddCommand ("save", Host_Savegame_f, "No Description");
-	Cmd_AddCommand ("give", Host_Give_f, "No Description");
 
 	Cmd_AddCommand ("startdemos", Host_Startdemos_f, "No Description");
 	Cmd_AddCommand ("demos", Host_Demos_f, "No Description");

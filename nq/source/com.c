@@ -38,6 +38,7 @@
 #include "game.h"
 #include "cmd.h"
 
+cvar_t     *registered;
 cvar_t     *cmdline;
 int         static_registered = 1;
 
