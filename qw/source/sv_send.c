@@ -148,7 +148,7 @@ SV_Print (const char *fmt, va_list args)
 				int len;
 				int i;
 
-				if (!*end)
+				if (!end)
 					end = in + strlen (in);
 				*end = '\0';
 				for (i = 0; i < MAX_CLIENTS; i++) {

@@ -1897,6 +1897,7 @@ SV_InitLocal (void)
 	extern cvar_t *sv_wateraccelerate;
 	extern cvar_t *sv_friction;
 	extern cvar_t *sv_waterfriction;
+	extern cvar_t *pr_double_remove;
 
 	SV_UserInit ();
 
@@ -2056,6 +2057,12 @@ SV_InitLocal (void)
 	pr_gc_interval = Cvar_Get ("pr_gc_interval", "50", CVAR_NONE, NULL,
 							   "Number of frames to wait before running "
 							   "string garbage collector.");
+	pr_double_remove = Cvar_Get ("pr_double_remove", "1", CVAR_NONE, NULL,
+								 "Handling of double entity remove.  "
+								 "0 is silently ignore, 1 prints a "
+								 "traceback, and 2 gives an error.\n"
+								 "Only works if debugging is available "
+								 "and enabled");
 	// DoS protection
 	Cmd_AddCommand ("netdosexpire", SV_netDoSexpire_f, "FIXME: part of DoS "
 					"protection obviously, but I don't know what it does. No "

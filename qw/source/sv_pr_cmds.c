@@ -641,12 +641,21 @@ PF_Spawn (progs_t *pr)
 	RETURN_EDICT (pr, ed);
 }
 
+cvar_t *pr_double_remove;
+
 void
 PF_Remove (progs_t *pr)
 {
 	edict_t    *ed;
 
 	ed = G_EDICT (pr, OFS_PARM0);
+	if (ed->free && pr_double_remove->int_val) {
+		if (pr_double_remove->int_val == 1) {
+			PR_DumpState (pr);
+			SV_Printf ("Double entity remove\n");
+		} else // == 2
+			PR_RunError (pr, "Double entity remove\n");
+	}
 	ED_Free (pr, ed);
 }
 
