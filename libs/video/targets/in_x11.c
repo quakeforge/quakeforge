@@ -498,7 +498,6 @@ static void
 event_focusout (XEvent *event)
 {
 	if (x_have_focus) {
-		Con_Printf ("focusout\n");
 		x_have_focus = false;
 		XAutoRepeatOn (x_disp);
 		if (in_snd_block->int_val) {
@@ -512,7 +511,6 @@ event_focusout (XEvent *event)
 static void
 event_focusin (XEvent *event)
 {
-	Con_Printf ("focusin\n");
 	x_have_focus = true;
 	if (key_dest == key_game)
 		XAutoRepeatOff (x_disp);
