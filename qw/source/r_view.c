@@ -47,12 +47,10 @@
 #include "view.h"
 
 /*
-
-The view is allowed to move slightly from it's true position for bobbing,
-but if it exceeds 8 pixels linear distance (spherical, not box), the list of
-entities sent from the server may not include everything in the pvs, especially
-when crossing a water boudnary.
-
+	The view is allowed to move slightly from it's true position for bobbing,
+	but if it exceeds 8 pixels linear distance (spherical, not box), the list
+	of entities sent from the server may not include everything in the pvs,
+	especially when crossing a water boudnary.
 */
 
 extern cvar_t *cl_cshift_bonus;
