@@ -232,8 +232,7 @@ struct_defs
 	;
 
 struct_def
-	: type struct_def_list
-	  {}
+	: type { current_type = $1; } struct_def_list
 	;
 
 enum_list
