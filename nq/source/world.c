@@ -39,13 +39,9 @@
 #include "world.h"
 
 /*
-
-entities never clip against themselves, or their owner
-
-line of sight checks trace->crosscontent, but bullets don't
-
+  entities never clip against themselves, or their owner
+  line of sight checks trace->crosscontent, but bullets don't
 */
-
 
 typedef struct {
 	vec3_t      boxmins, boxmaxs;		// enclose the test object along
@@ -59,12 +55,9 @@ typedef struct {
 	edict_t    *passedict;
 } moveclip_t;
 
-
 int         SV_HullPointContents (hull_t *hull, int num, vec3_t p);
 
-/*
-	HULL BOXES
-*/
+/* HULL BOXES */
 
 static hull_t box_hull;
 static dclipnode_t box_clipnodes[6];
@@ -105,7 +98,6 @@ SV_InitBoxHull (void)
 
 }
 
-
 /*
 	SV_HullForBox
 
@@ -124,7 +116,6 @@ SV_HullForBox (vec3_t mins, vec3_t maxs)
 
 	return &box_hull;
 }
-
 
 /*
 	SV_HullForEntity
@@ -175,10 +166,7 @@ SV_HullForEntity (edict_t *ent, vec3_t mins, vec3_t maxs, vec3_t offset)
 	return hull;
 }
 
-
-/*
-	ENTITY AREA CHECKING
-*/
+/* ENTITY AREA CHECKING */
 
 typedef struct areanode_s {
 	int         axis;					// -1 = leaf node
@@ -193,7 +181,6 @@ typedef struct areanode_s {
 
 static areanode_t sv_areanodes[AREA_NODES];
 static int  sv_numareanodes;
-
 
 areanode_t *
 SV_CreateAreaNode (int depth, vec3_t mins, vec3_t maxs)
@@ -234,7 +221,6 @@ SV_CreateAreaNode (int depth, vec3_t mins, vec3_t maxs)
 	return anode;
 }
 
-
 void
 SV_ClearWorld (void)
 {
@@ -245,7 +231,6 @@ SV_ClearWorld (void)
 	SV_CreateAreaNode (0, sv.worldmodel->mins, sv.worldmodel->maxs);
 }
 
-
 void
 SV_UnlinkEdict (edict_t *ent)
 {
@@ -254,7 +239,6 @@ SV_UnlinkEdict (edict_t *ent)
 	RemoveLink (&ent->area);
 	ent->area.prev = ent->area.next = NULL;
 }
-
 
 void
 SV_TouchLinks (edict_t *ent, areanode_t *node)
@@ -302,7 +286,6 @@ SV_TouchLinks (edict_t *ent, areanode_t *node)
 		SV_TouchLinks (ent, node->children[1]);
 }
 
-
 void
 SV_FindTouchedLeafs (edict_t *ent, mnode_t *node)
 {
@@ -339,7 +322,6 @@ SV_FindTouchedLeafs (edict_t *ent, mnode_t *node)
 	if (sides & 2)
 		SV_FindTouchedLeafs (ent, node->children[1]);
 }
-
 
 void
 SV_LinkEdict (edict_t *ent, qboolean touch_triggers)
@@ -410,11 +392,7 @@ SV_LinkEdict (edict_t *ent, qboolean touch_triggers)
 		SV_TouchLinks (ent, sv_areanodes);
 }
 
-
-/*
-	POINT TESTING IN HULLS
-*/
-
+/* POINT TESTING IN HULLS */
 
 #ifndef USE_INTEL_ASM
 int
@@ -445,7 +423,6 @@ SV_HullPointContents (hull_t *hull, int num, vec3_t p)
 }
 #endif // !USE_INTEL_ASM
 
-
 int
 SV_PointContents (vec3_t p)
 {
@@ -457,13 +434,11 @@ SV_PointContents (vec3_t p)
 	return cont;
 }
 
-
 int
 SV_TruePointContents (vec3_t p)
 {
 	return SV_HullPointContents (&sv.worldmodel->hulls[0], 0, p);
 }
-
 
 /*
 	SV_TestEntityPosition
@@ -486,14 +461,10 @@ SV_TestEntityPosition (edict_t *ent)
 	return NULL;
 }
 
-
-/*
-	LINE TESTING IN HULLS
-*/
+/* LINE TESTING IN HULLS */
 
 // 1/32 epsilon to keep floating point happy
 #define	DIST_EPSILON	(0.03125)
-
 
 qboolean
 SV_RecursiveHullCheck (hull_t *hull, int num, float p1f, float p2f, vec3_t p1,
@@ -619,7 +590,6 @@ SV_RecursiveHullCheck (hull_t *hull, int num, float p1f, float p2f, vec3_t p1,
 	return false;
 }
 
-
 /*
 	SV_ClipMoveToEntity
 
@@ -662,7 +632,6 @@ SV_ClipMoveToEntity (edict_t *ent, vec3_t start, vec3_t mins, vec3_t maxs,
 
 	return trace;
 }
-
 
 /*
 	SV_ClipToLinks
@@ -743,7 +712,6 @@ SV_ClipToLinks (areanode_t *node, moveclip_t * clip)
 		SV_ClipToLinks (node->children[1], clip);
 }
 
-
 void
 SV_MoveBounds (vec3_t start, vec3_t mins, vec3_t maxs, vec3_t end,
 			   vec3_t boxmins, vec3_t boxmaxs)
@@ -766,7 +734,6 @@ SV_MoveBounds (vec3_t start, vec3_t mins, vec3_t maxs, vec3_t end,
 	}
 #endif
 }
-
 
 trace_t
 SV_Move (vec3_t start, vec3_t mins, vec3_t maxs, vec3_t end, int type,

@@ -35,30 +35,33 @@
 #ifdef HAVE_STRINGS_H
 # include <strings.h>
 #endif
+#ifdef HAVE_UNISTD_H
+# include <unistd.h>
+#endif
 
-#include <signal.h>
-#include <stdlib.h>
-#include <limits.h>
-#include <sys/time.h>
-#include <sys/types.h>
-#include <unistd.h>
+#include <ctype.h>
+#include <errno.h>
 #include <fcntl.h>
+#include <limits.h>
+#include <signal.h>
 #include <stdarg.h>
 #include <stdio.h>
+#include <stdlib.h>
+#include <time.h>
 #include <sys/ipc.h>
+#include <sys/mman.h>
 #include <sys/shm.h>
 #include <sys/stat.h>
-#include <ctype.h>
+#include <sys/time.h>
+#include <sys/types.h>
 #include <sys/wait.h>
-#include <sys/mman.h>
-#include <errno.h>
-#include <time.h>
+
+#include "QF/qargs.h"
+#include "QF/qtypes.h"
+#include "QF/sys.h"
 
 #include "client.h"
-#include "QF/sys.h"
 #include "host.h"
-#include "QF/qtypes.h"
-#include "QF/qargs.h"
 
 qboolean    isDedicated;
 
@@ -70,6 +73,7 @@ char       *cachedir = "/tmp";
 cvar_t     *sys_linerefresh;
 cvar_t     *timestamps;
 cvar_t     *timeformat;
+
 
 int
 Sys_FileOpenRead (char *path, int *handle)
@@ -187,7 +191,7 @@ Sys_Error (char *error, ...)
 	va_list     argptr;
 	char        string[1024];
 
-// change stdin to non blocking
+	// change stdin to non blocking
 	fcntl (0, F_SETFL, fcntl (0, F_GETFL, 0) & ~FNDELAY);
 
 	va_start (argptr, error);
@@ -233,7 +237,6 @@ Sys_DoubleTime (void)
 
 	return (tp.tv_sec - secbase) + tp.tv_usec / 1000000.0;
 }
-
 
 char *
 Sys_ConsoleInput (void)
@@ -329,4 +332,3 @@ main (int argc, char *argv[])
 	}
 	return true;						// return success
 }
-

@@ -29,38 +29,43 @@
 #ifdef HAVE_CONFIG_H
 # include "config.h"
 #endif
-
-#include <stdio.h>
-#include <stdlib.h>
-#include <errno.h>
-#include <fcntl.h>
-#include <limits.h>
-#ifdef HAVE_IO_H
-# include <io.h>
-#endif
 #ifdef HAVE_CONIO_H
 # include <conio.h>
 #endif
+#ifdef HAVE_IO_H
+# include <io.h>
+#endif
+#ifdef HAVE_STRING_H
+# include <string.h>
+#endif
+#ifdef HAVE_STRINGS_H
+# include <strings.h>
+#endif
+#ifdef HAVE_UNISTD_H
+# include <unistd.h>
+#endif
+
+#include <errno.h>
+#include <fcntl.h>
+#include <limits.h>
+#include <stdio.h>
+#include <stdlib.h>
 
 #ifndef _WIN32
-# include <unistd.h>
-# include <stdarg.h>
-# include <string.h>
 # include <ctype.h>
-# include <fcntl.h>
 # include <signal.h>
-# include <limits.h>
-# include <sys/types.h>
+# include <stdarg.h>
 # include <sys/mman.h>
+# include <sys/types.h>
 #endif
 
 #include <SDL.h>
 #include <SDL_main.h>
 
 #include "QF/cvar.h"
+#include "QF/qargs.h"
+#include "QF/qargs.h"
 #include "QF/sys.h"
-#include "QF/qargs.h"
-#include "QF/qargs.h"
 
 #include "client.h"
 #include "compat.h"
@@ -74,8 +79,7 @@ int         noconinput;
 
 #ifdef _WIN32
 # include "winquake.h"
-						// FIXME: minimized is not currently supported under
-						// SDL
+// FIXME: minimized is not currently supported under SDL
 qboolean    Minimized = false;
 void        MaskExceptions (void);
 #endif
@@ -110,8 +114,7 @@ Sys_Init (void)
 #endif
 
 #ifdef _WIN32
-	// make sure the timer is high precision, otherwise
-	// NT gets 18ms resolution
+	// make sure the timer is high precision, otherwise NT gets 18ms resolution
 	timeBeginPeriod (1);
 
 	vinfo.dwOSVersionInfoSize = sizeof (vinfo);
@@ -127,9 +130,6 @@ Sys_Init (void)
 #endif
 }
 
-/*
-	Sys_Quit
-*/
 void
 Sys_Quit (void)
 {
@@ -137,9 +137,6 @@ Sys_Quit (void)
 	exit (0);
 }
 
-/*
-	Sys_Error
-*/
 void
 Sys_Error (const char *error, ...)
 {
@@ -189,13 +186,11 @@ Sys_ConsoleInput (void)
 	return NULL;
 }
 
-
 #ifndef USE_INTEL_ASM
 void
 Sys_HighFPPrecision (void)
 {
 }
-
 
 void
 Sys_LowFPPrecision (void)
@@ -215,8 +210,8 @@ Sys_Sleep (void)
 int
 SDL_main (int c, char **v)
 {
-	double      time, oldtime, newtime;
 	int         j;
+	double      time, oldtime, newtime;
 
 #ifndef WIN32
 	signal (SIGFPE, SIG_IGN);
@@ -249,7 +244,7 @@ SDL_main (int c, char **v)
 
 	oldtime = Sys_DoubleTime ();
 	while (1) {
-// find time spent rendering last frame
+		// find time spent rendering last frame
 		newtime = Sys_DoubleTime ();
 		time = newtime - oldtime;
 

@@ -33,6 +33,7 @@
 #endif
 
 #include "QF/cvar.h"
+
 #include "server.h"
 
 void

@@ -30,22 +30,17 @@
 # include "config.h"
 #endif
 
-#include "winquake.h"
-#include "errno.h"
 #include <sys\types.h>
 #include <sys\timeb.h>
 
+#include "winquake.h"
+#include "errno.h"
 
-/*
-===============================================================================
-
-FILE IO
-
-===============================================================================
-*/
+// FILE IO ====================================================================
 
 #define	MAX_HANDLES		10
 VFile      *sys_handles[MAX_HANDLES];
+
 
 int
 findhandle (void)
@@ -59,11 +54,6 @@ findhandle (void)
 	return -1;
 }
 
-/*
-================
-filelength
-================
-*/
 int
 filelength (VFile *f)
 {
@@ -157,15 +147,7 @@ Sys_mkdir (char *path)
 {
 }
 
-
-/*
-===============================================================================
-
-SYSTEM IO
-
-===============================================================================
-*/
-
+// SYSTEM IO ==================================================================
 
 void
 Sys_DebugLog (char *file, char *fmt, ...)
@@ -182,7 +164,7 @@ Sys_Error (char *error, ...)
 	vsnprintf (text, sizeof (text), error, argptr);
 	va_end (argptr);
 
-//    MessageBox(NULL, text, "Error", 0 /* MB_OK */ );
+//	MessageBox(NULL, text, "Error", 0 /* MB_OK */ );
 	printf ("ERROR: %s\n", text);
 
 	exit (1);
@@ -224,7 +206,6 @@ void
 Sys_Sleep (void)
 {
 }
-
 
 void
 IN_SendKeyEvents (void)
@@ -278,14 +259,6 @@ Sys_ConsoleInput (void)
 	return NULL;
 }
 
-
-
-/*
-==================
-main
-
-==================
-*/
 char       *newargv[256];
 
 int
@@ -305,7 +278,7 @@ main (int argc, char **argv)
 	if (cwd[Q_strlen (cwd) - 1] == '\\')
 		cwd[Q_strlen (cwd) - 1] = 0;
 	parms.basedir = cwd;				// "f:/quake";
-//  parms.basedir = "f:\\quake";
+//	parms.basedir = "f:\\quake";
 
 	COM_InitArgv (argc, argv);
 

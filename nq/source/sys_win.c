@@ -82,20 +82,15 @@ void        Sys_PopFPCW (void);
 volatile int sys_checksum;
 
 
-/*
-================
-Sys_PageIn
-================
-*/
 void
 Sys_PageIn (void *ptr, int size)
 {
 	byte       *x;
 	int         m, n;
 
-// touch all the memory to make sure it's there. The 16-page skip is to
-// keep Win 95 from thinking we're trying to page ourselves in (we are
-// doing that, of course, but there's no reason we shouldn't)
+	// touch all the memory to make sure it's there. The 16-page skip is to
+	// keep Win 95 from thinking we're trying to page ourselves in (we are
+	// doing that, of course, but there's no reason we shouldn't)
 	x = (byte *) ptr;
 
 	for (n = 0; n < 4; n++) {
@@ -106,14 +101,7 @@ Sys_PageIn (void *ptr, int size)
 	}
 }
 
-
-/*
-===============================================================================
-
-FILE IO
-
-===============================================================================
-*/
+// FILE IO ====================================================================
 
 #define	MAX_HANDLES		10
 VFile      *sys_handles[MAX_HANDLES];
@@ -130,15 +118,7 @@ findhandle (void)
 	return -1;
 }
 
-
-/*
-===============================================================================
-
-SYSTEM IO
-
-===============================================================================
-*/
-
+// SYSTEM IO ==================================================================
 
 #ifndef USE_INTEL_ASM
 
@@ -164,11 +144,6 @@ MaskExceptions (void)
 
 #endif
 
-/*
-================
-Sys_Init
-================
-*/
 void
 Sys_Init (void)
 {
@@ -182,8 +157,8 @@ Sys_Init (void)
 	if (!QueryPerformanceFrequency (&PerformanceFreq))
 		Sys_Error ("No hardware timer available");
 
-// get 32 out of the 64 time bits such that we have around
-// 1 microsecond resolution
+	// get 32 out of the 64 time bits such that we have around
+	// 1 microsecond resolution
 	lowpart = (unsigned int) PerformanceFreq.LowPart;
 	highpart = (unsigned int) PerformanceFreq.HighPart;
 	lowshift = 0;
@@ -214,7 +189,6 @@ Sys_Init (void)
 	else
 		WinNT = false;
 }
-
 
 void
 Sys_Error (const char *error, ...)
@@ -252,7 +226,6 @@ Sys_Error (const char *error, ...)
 		WriteFile (houtput, text3, strlen (text3), &dummy, NULL);
 		WriteFile (houtput, text4, strlen (text4), &dummy, NULL);
 
-
 		starttime = Sys_DoubleTime ();
 		sc_return_on_enter = true;		// so Enter will get us out of here
 
@@ -261,8 +234,7 @@ Sys_Error (const char *error, ...)
 		}
 	} else {
 		// switch to windowed so the message box is visible, unless we
-		// already
-		// tried that and failed
+		// already tried that and failed
 		if (!in_sys_error0) {
 			in_sys_error0 = 1;
 			VID_SetDefaultMode ();
@@ -278,7 +250,7 @@ Sys_Error (const char *error, ...)
 		in_sys_error1 = 1;
 		Host_Shutdown ();
 	}
-// shut down QHOST hooks if necessary
+	// shut down QHOST hooks if necessary
 	if (!in_sys_error2) {
 		in_sys_error2 = 1;
 		DeinitConProc ();
@@ -286,7 +258,6 @@ Sys_Error (const char *error, ...)
 
 	exit (1);
 }
-
 
 void
 Sys_Quit (void)
@@ -302,18 +273,12 @@ Sys_Quit (void)
 	if (isDedicated)
 		FreeConsole ();
 
-// shut down QHOST hooks if necessary
+	// shut down QHOST hooks if necessary
 	DeinitConProc ();
 
 	exit (0);
 }
 
-
-/*
-================
-Sys_InitFloatTime
-================
-*/
 void
 Sys_InitFloatTime (void)
 {
@@ -332,7 +297,6 @@ Sys_InitFloatTime (void)
 	lastcurtime = curtime;
 }
 
-
 const char *
 Sys_ConsoleInput (void)
 {
@@ -346,7 +310,6 @@ Sys_ConsoleInput (void)
 
 	if (!isDedicated)
 		return NULL;
-
 
 	for (;;) {
 		if (!GetNumberOfConsoleInputEvents (hinput, &numevents))
@@ -366,7 +329,7 @@ Sys_ConsoleInput (void)
 				ch = recs[0].Event.KeyEvent.uChar.AsciiChar;
 
 				switch (ch) {
-					case '\r':
+				case '\r':
 					WriteFile (houtput, "\r\n", 2, &dummy, NULL);
 
 					if (len) {
@@ -383,14 +346,14 @@ Sys_ConsoleInput (void)
 
 					break;
 
-					case '\b':
+				case '\b':
 					WriteFile (houtput, "\b \b", 3, &dummy, NULL);
 					if (len) {
 						len--;
 					}
 					break;
 
-					default:
+				default:
 					if (ch >= ' ') {
 						WriteFile (houtput, &ch, 1, &dummy, NULL);
 						text[len] = ch;
@@ -413,40 +376,19 @@ Sys_Sleep (void)
 	Sleep (1);
 }
 
+// WINDOWS CRAP ===============================================================
 
-/*
-==============================================================================
-
- WINDOWS CRAP
-
-==============================================================================
-*/
-
-
-/*
-==================
-WinMain
-==================
-*/
 void
 SleepUntilInput (int time)
 {
-
 	MsgWaitForMultipleObjects (1, &tevent, FALSE, time, QS_ALLINPUT);
 }
 
-
-/*
-==================
-WinMain
-==================
-*/
 HINSTANCE   global_hInstance;
 int         global_nCmdShow;
 char       *argv[MAX_NUM_ARGVS];
 static char *empty_string = "";
 HWND        hwnd_dialog;
-
 
 int         WINAPI
 WinMain (HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine,
@@ -496,7 +438,6 @@ WinMain (HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine,
 				*lpCmdLine = 0;
 				lpCmdLine++;
 			}
-
 		}
 	}
 
@@ -510,8 +451,8 @@ WinMain (HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine,
 	isDedicated = (COM_CheckParm ("-dedicated") != 0);
 
 	if (!isDedicated) {
-		hwnd_dialog =
-			CreateDialog (hInstance, MAKEINTRESOURCE (IDD_DIALOG1), NULL, NULL);
+		hwnd_dialog = CreateDialog (hInstance, MAKEINTRESOURCE (IDD_DIALOG1),
+									NULL, NULL);
 
 		if (hwnd_dialog) {
 			if (GetWindowRect (hwnd_dialog, &rect)) {
@@ -528,9 +469,9 @@ WinMain (HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine,
 			SetForegroundWindow (hwnd_dialog);
 		}
 	}
-// take the greater of all the available memory or half the total memory,
-// but at least 8 Mb and no more than 16 Mb, unless they explicitly
-// request otherwise
+	// take the greater of all the available memory or half the total memory,
+	// but at least 8 Mb and no more than 16 Mb, unless they explicitly
+	// request otherwise
 	parms.memsize = lpBuffer.dwAvailPhys;
 
 	if (parms.memsize < MINIMUM_WIN_MEMORY)

@@ -36,20 +36,23 @@
 #include "QF/cvar.h"
 #include "QF/host.h"
 #include "QF/keys.h"
+
 #include "client.h"
 
 int         m_return_state;
 qboolean    m_return_onerror;
 char        m_return_reason[32];
 enum { m_none, m_main, m_singleplayer, m_load, m_save, m_multiplayer, m_setup,
-	m_net, m_options, m_video, m_keys, m_help, m_quit, m_serialconfig,
-	m_modemconfig, m_lanconfig, m_gameoptions, m_search, m_slist
+	   m_net, m_options, m_video, m_keys, m_help, m_quit, m_serialconfig,
+	   m_modemconfig, m_lanconfig, m_gameoptions, m_search, m_slist
 } m_state;
+
 keydest_t   key_dest;
 client_static_t cls;
 client_state_t cl;
 vec3_t      vright, vup, vleft, vpn;
 float       scr_centertime_off;
+
 
 void
 Con_Printf (char *fmt, ...)

@@ -36,23 +36,26 @@
 #ifdef HAVE_STRINGS_H
 # include <strings.h>
 #endif
+#ifdef HAVE_UNISTD_H
+# include <unistd.h>
+#endif
 
+#include <errno.h>
+#include <fcntl.h>
+#include <signal.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <errno.h>
-#include <unistd.h>
+#include <time.h>
+#include <sys/mman.h>
 #include <sys/stat.h>
 #include <sys/time.h>
-#include <fcntl.h>
-#include <sys/mman.h>
-#include <signal.h>
-#include <time.h>
 
 #include "QF/sys.h"
 #include "QF/qargs.h"
 #include "QF/cvar.h"
-#include "server.h"
+
 #include "host.h"
+#include "server.h"
 
 qboolean    isDedicated;
 
@@ -72,9 +75,6 @@ Sys_Init (void)
 #endif
 }
 
-/*
-	Sys_Quit
-*/
 void
 Sys_Quit (void)
 {
@@ -84,16 +84,13 @@ Sys_Quit (void)
 	exit (0);
 }
 
-/*
-	Sys_Error
-*/
 void
 Sys_Error (const char *error, ...)
 {
 	va_list     argptr;
 	char        string[1024];
 
-// change stdin to non blocking
+	// change stdin to non blocking
 	fcntl (0, F_SETFL, fcntl (0, F_GETFL, 0) & ~FNDELAY);
 
 	va_start (argptr, error);
@@ -125,7 +122,7 @@ Sys_DebugLog (const char *file, const char *fmt, ...)
 void
 floating_point_exception_handler (int whatever)
 {
-//  Sys_Warn("floating point exception\n");
+//	Sys_Warn("floating point exception\n");
 	signal (SIGFPE, floating_point_exception_handler);
 }
 
@@ -171,7 +168,6 @@ void
 Sys_LowFPPrecision (void)
 {
 }
-
 #endif
 
 int
@@ -200,8 +196,8 @@ main (int c, const char *v[])
 	parms.membase = malloc (parms.memsize);
 
 	parms.basedir = basedir;
-// caching is disabled by default, use -cachedir to enable
-//  parms.cachedir = cachedir;
+	// caching is disabled by default, use -cachedir to enable
+//	parms.cachedir = cachedir;
 
 	fcntl (0, F_SETFL, fcntl (0, F_GETFL, 0) | FNDELAY);
 
@@ -220,15 +216,14 @@ main (int c, const char *v[])
 
 	oldtime = Sys_DoubleTime () - 0.1;
 	while (1) {
-// find time spent rendering last frame
+		// find time spent rendering last frame
 		newtime = Sys_DoubleTime ();
 		time = newtime - oldtime;
 
 		if (cls.state == ca_dedicated) {	// play vcrfiles at max speed
 			if (time < sys_ticrate->value && (!vcrFile || recording)) {
 				usleep (1);
-				continue;				// not time to run a server only tic
-				// yet
+				continue;			// not time to run a server only tic yet
 			}
 			time = sys_ticrate->value;
 		}
@@ -239,8 +234,5 @@ main (int c, const char *v[])
 			oldtime += time;
 
 		Host_Frame (time);
-
 	}
-
 }
-
