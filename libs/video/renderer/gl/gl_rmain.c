@@ -261,11 +261,20 @@ R_DrawEntitiesOnList (void)
 		R_DrawBrushModel (currententity);
 	}
 
+	if (gl_mtex_active_tmus >= 2) {
+		qglActiveTexture (gl_mtex_enum + 1);
+		qfglEnable (GL_TEXTURE_2D);
+		qfglTexEnvf (GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_DECAL);
+		qfglDisable (GL_TEXTURE_2D);
+		qglActiveTexture (gl_mtex_enum + 0);
+	}
 	if (gl_affinemodels->int_val)
 		qfglHint (GL_PERSPECTIVE_CORRECTION_HINT, GL_NICEST);
 	if (tess)
 		qfglEnable (GL_PN_TRIANGLES_ATI);
 	qfglEnable (GL_CULL_FACE);
+	qfglEnable (GL_LIGHTING);
+	qfglEnable (GL_NORMALIZE);
 	for (i = 0; i < r_numvisedicts; i++) {
 		if (r_visedicts[i]->model->type != mod_alias)
 			continue;
@@ -277,6 +286,8 @@ R_DrawEntitiesOnList (void)
 		R_DrawAliasModel (currententity);
 	}
 	qfglColor3ubv (color_white);
+	qfglDisable (GL_NORMALIZE);
+	qfglDisable (GL_LIGHTING);
 	qfglDisable (GL_CULL_FACE);
 	if (tess)
 		qfglDisable (GL_PN_TRIANGLES_ATI);
@@ -325,10 +336,20 @@ R_DrawViewModel (void)
 	// hack the depth range to prevent view model from poking into walls
 	qfglDepthRange (gldepthmin, gldepthmin + 0.3 * (gldepthmax - gldepthmin));
 	qfglEnable (GL_CULL_FACE);
+	qfglEnable (GL_LIGHTING);
+	qfglEnable (GL_NORMALIZE);
 	if (gl_affinemodels->int_val)
 		qfglHint (GL_PERSPECTIVE_CORRECTION_HINT, GL_NICEST);
+	if (gl_mtex_active_tmus >= 2) {
+		qglActiveTexture (gl_mtex_enum + 1);
+		qfglEnable (GL_TEXTURE_2D);
+		qfglTexEnvf (GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_DECAL);
+		qfglDisable (GL_TEXTURE_2D);
+		qglActiveTexture (gl_mtex_enum + 0);
+	}
 
 	R_DrawAliasModel (currententity);
+
 	qfglColor3ubv (color_white);
 	if (gl_mtex_active_tmus >= 2) { // FIXME: Ugly, but faster than cleaning
 									// up in every R_DrawAliasModel()!
@@ -347,6 +368,8 @@ R_DrawViewModel (void)
 	}
 	if (gl_affinemodels->int_val)
 		qfglHint (GL_PERSPECTIVE_CORRECTION_HINT, GL_DONT_CARE);
+	qfglDisable (GL_NORMALIZE);
+	qfglDisable (GL_LIGHTING);
 	qfglDisable (GL_CULL_FACE);
 	qfglDepthRange (gldepthmin, gldepthmax);
 }
@@ -535,9 +558,9 @@ R_RenderScene (void)
 	R_DrawEntitiesOnList ();
 	R_RenderDlights ();
 
-	R_ClearErrors ();
 	if (R_TestErrors (0))
 		R_DisplayErrors ();
+	R_ClearErrors ();
 }
 
 static void
@@ -547,7 +570,7 @@ R_Mirror (void)
 	entity_t  **ent;
 	msurface_t *s;
 
-	if (!mirror)
+//	if (!mirror) // FIXME: Broken
 		return;
 
 	memcpy (r_base_world_matrix, r_world_matrix, sizeof (r_base_world_matrix));
@@ -590,7 +613,7 @@ R_Mirror (void)
 
 	qfglLoadMatrixf (r_base_world_matrix);
 
-	color_white[2] = r_mirroralpha->value * 255;
+	color_white[3] = r_mirroralpha->value * 255;
 	qfglColor4ubv (color_white);
 	s = r_worldentity.model->textures[mirrortexturenum]->texturechain;
 	for (; s; s = s->texturechain) {
@@ -708,7 +731,7 @@ R_BuildFisheyeLookup (int width, int height, float fov)
 			float yaw = sqrt (dx * dx + dy * dy) * fov / width;
 			float roll = atan2 (dy, dx);
 			// X is a first index and Y is a second, because later
-			// when we draw QUAD_STRIPes we need next Y vertix coordinate.
+			// when we draw QUAD_STRIPs we need next Y vertex coordinate.
 			v = &FisheyeLookupTbl[x / gl_cube_map_step][y / gl_cube_map_step];
 			v->x = sin (yaw) * cos (roll);
 			v->y = -sin (yaw) * sin (roll);

@@ -432,8 +432,9 @@ CheckLights (void)
 {
 	int		i;
 	float	dark[4] = {0.0, 0.0, 0.0, 1.0},
-//			light[4] = {1.0, 1.0, 1.0, 1.0},
-			specular[4] = {0.6, 0.6, 0.6, 1.0};
+			ambient[4] = {0.2, 0.2, 0.2, 1.0},
+			diffuse[4] = {0.7, 0.7, 0.7, 1.0},
+			specular[4] = {0.1, 0.1, 0.1, 1.0};
 
 	qfglGetIntegerv (GL_MAX_LIGHTS, &gl_max_lights);
 	Con_Printf ("Max GL Lights %lu.\n", (long unsigned) gl_max_lights);
@@ -441,16 +442,18 @@ CheckLights (void)
 	qfglEnable (GL_LIGHTING);
 	qfglLightModelfv (GL_LIGHT_MODEL_AMBIENT, dark);
 	qfglLightModelf (GL_LIGHT_MODEL_TWO_SIDE, 0.0);
-	// Set up material defaults
-	qfglMaterialf (GL_FRONT, GL_SHININESS, 1.0);
-	qfglMaterialfv (GL_FRONT, GL_SPECULAR, specular);
-//	qfglMaterialfv (GL_FRONT, GL_AMBIENT_AND_DIFFUSE, light);
 
 	for (i = 0; i < gl_max_lights; i++) {
 		qfglEnable (GL_LIGHT0 + i);
-		qfglLightf (GL_LIGHT0 + i, GL_CONSTANT_ATTENUATION, 0.0);
+		qfglLightf (GL_LIGHT0 + i, GL_CONSTANT_ATTENUATION, 0.25);
 		qfglDisable (GL_LIGHT0 + i);
 	}
+
+	// Set up material defaults
+	qfglMaterialfv (GL_FRONT, GL_AMBIENT, ambient);
+	qfglMaterialfv (GL_FRONT, GL_DIFFUSE, diffuse);
+	qfglMaterialfv (GL_FRONT, GL_SPECULAR, specular);
+	qfglMaterialf (GL_FRONT, GL_SHININESS, 1.0);
 
 	qfglDisable (GL_LIGHTING);
 }

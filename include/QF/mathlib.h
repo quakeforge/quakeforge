@@ -49,6 +49,7 @@ extern const vec_t * const vec3_origin;
 #define VectorNegate(a,b) {(b)[0]=-(a)[0];(b)[1]=-(a)[1];(b)[2]=-(a)[2];}
 #define VectorAdd(a,b,c) {(c)[0]=(a)[0]+(b)[0];(c)[1]=(a)[1]+(b)[1];(c)[2]=(a)[2]+(b)[2];}
 #define VectorCopy(a,b) {(b)[0]=(a)[0];(b)[1]=(a)[1];(b)[2]=(a)[2];}
+#define VectorMult(a,b,c) {(c)[0]=(a)[0]*(b)[0];(c)[1]=(a)[1]*(b)[1];(c)[2]=(a)[2]*(b)[2];}
 #define VectorMultAdd(a,s,b,c) {(c)[0]=(a)[0]+(s)*(b)[0];(c)[1]=(a)[1]+(s)*(b)[1];(c)[2]=(a)[2]+(s)*(b)[2];}
 #define VectorMultSub(a,s,b,c) {(c)[0]=(a)[0]-(s)*(b)[0];(c)[1]=(a)[1]-(s)*(b)[1];(c)[2]=(a)[2]-(s)*(b)[2];}
 #define VectorLength(a) sqrt(DotProduct(a, a))
