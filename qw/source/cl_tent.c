@@ -202,7 +202,7 @@ void
 CL_ParseBeam (model_t *m)
 {
 	beam_t     *b;
-	int         ent, i;
+	int         ent;
 	vec3_t      start, end;
 
 	ent = MSG_ReadShort (net_message);
@@ -211,9 +211,12 @@ CL_ParseBeam (model_t *m)
 	MSG_ReadCoordV (net_message, end);
 
 	if ((b = CL_AllocBeam (ent))) {
-		for (i = 0; i < b->ent_count; i++)
-			if (b->ent_list[i].efrag)
-				R_RemoveEfrags (&b->ent_list[i]);
+		if (b->ent_count) {
+			entity_t   *e = b->ent_list + b->ent_count;
+			while (e != b->ent_list)
+				R_RemoveEfrags (e-- - 1);
+			b->ent_count = 0;
+		}
 		b->entity = ent;
 		b->model = m;
 		b->endtime = cl.time + 0.2;
@@ -411,8 +414,12 @@ CL_UpdateBeams (void)
 	// update lightning
 	for (i = 0, b = cl_beams; i < MAX_BEAMS; i++, b++) {
 		if (!b->model || b->endtime < cl.time) {
-			while (b->ent_count)
-				R_RemoveEfrags (&b->ent_list[--b->ent_count]);
+			if (b->ent_count) {
+				entity_t   *e = b->ent_list + b->ent_count;
+				while (e != b->ent_list)
+					R_RemoveEfrags (e-- - 1);
+				b->ent_count = 0;
+			}
 			continue;
 		}
 
