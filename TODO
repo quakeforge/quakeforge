@@ -21,7 +21,7 @@ o  software PCXs don't work in X11 at least if you're using 16/24/32 color
 o  doublesize modes (eg, render in 320x240 but display in 640x480)
 o  allow qf clients to download .lit files from qf servers.
 o  better server control of certain cvars
-o  ogg support
+X  ogg support
 o  triggers (f_respawn, f_death, f_took; cl_triggers)
 o  stateful console (eg, rcon mode, chat mode, normal command mode...)
 o  scripted hud
