@@ -535,7 +535,7 @@ ED_Print (progs_t * pr, edict_t *ed)
 	int         l;
 	ddef_t     *d;
 	pr_type_t  *v;
-	int         i, j;
+	int         i;
 	char       *name;
 	int         type;
 
@@ -556,11 +556,29 @@ ED_Print (progs_t * pr, edict_t *ed)
 		// if the value is still all 0, skip the field
 		type = d->type & ~DEF_SAVEGLOBAL;
 
-		for (j = 0; j < type_size[type]; j++)
-			if (v[j].integer_var)
+		switch (type) {
+			case ev_entity:
+			case ev_integer:
+			case ev_func:
+			case ev_field:
+				if (!v->integer_var)
+					continue;
 				break;
-		if (j == type_size[type])
-			continue;
+			case ev_string:
+				if (!PR_GetString (pr, v->string_var)[0])
+					continue;
+				break;
+			case ev_float:
+				if (!v->float_var)
+					continue;
+				break;
+			case ev_vector:
+				if (!v[0].float_var && !v[1].float_var && !v[2].float_var)
+					continue;
+				break;
+			default:
+				PR_Error (pr, "ED_Print: Unhandled type %d\n", type);
+		}
 
 		Con_Printf ("%s", name);
 		l = strlen (name);
