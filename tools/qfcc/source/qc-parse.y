@@ -65,7 +65,7 @@ typedef struct {
 
 %type	<type>	type maybe_func
 %type	<def>	param param_list def_item def_list def_name
-%type	<expr>	const expr arg_list
+%type	<expr>	signed_const const expr arg_list
 %type	<expr>	statement statements statement_block
 %type	<function> begin_function
 
@@ -199,7 +199,7 @@ param
 
 opt_initializer
 	: /*empty*/
-	| '=' const
+	| '=' signed_const
 		{
 			if (pr_scope) {
 				def_t *imm = PR_ReuseConstant ($2, 0);
@@ -425,6 +425,14 @@ arg_list
 		}
 	;
 
+signed_const
+	: const
+	| '-' const
+		{
+			$$ = unary_expr ('-', $2);
+		}
+	;
+
 const
 	: FLOAT_VAL
 		{
@@ -455,10 +463,6 @@ const
 			$$ = new_expr ();
 			$$->type = ex_int;
 			$$->e.int_val = $1;
-		}
-	| '-' const
-		{
-			$$ = unary_expr ('-', $2);
 		}
 	;
 
