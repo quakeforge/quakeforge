@@ -1331,8 +1331,15 @@ unary_expr (int op, expr_t *e)
 		case '.':
 			if (extract_type (e) != ev_pointer)
 				return error (e, "invalid type for unary .");
-			e = new_unary_expr ('.', e);
-			e->e.expr.type = get_type (e->e.expr.e1)->aux_type;
+			if (e->type == ex_expr && e->e.expr.op == '&'
+				&& (extract_type (e->e.expr.e1) == ev_entity
+					|| extract_type (e->e.expr.e1) == ev_pointer)) {
+				e->e.expr.op = '.';
+				e->e.expr.type = e->e.expr.type->aux_type;
+			} else {
+				e = new_unary_expr ('.', e);
+				e->e.expr.type = get_type (e->e.expr.e1)->aux_type;
+			}
 			return e;
 	}
 	error (e, "internal error");
@@ -1619,16 +1626,15 @@ address_expr (expr_t *e1, expr_t *e2, type_t *t)
 			break;
 		case ex_expr:
 			if (e1->e.expr.op == '.') {
-				expr_t     *e = e1->e.expr.e1;
-
-				type = get_type (e);
-				if (type->type == ev_entity || type->type == ev_pointer) {
-					e->e.expr.type = pointer_type (type);
-					e->e.expr.op = '&';
-					return e;
-				}
+				e = e1;
+				e->e.expr.op = '&';
+				e->e.expr.type = pointer_type (e->e.expr.type);
+				print_expr (e);puts("");
+				printf ("%s %s\n", pr_type_name[e->e.expr.type->type],
+						pr_type_name[e->e.expr.type->aux_type->type]);
+				break;
 			}
-			return error (e, "invalid type for unary &");
+			return error (e1, "invalid type for unary &");
 		case ex_uexpr:
 			if (e1->e.expr.op == '.') {
 				e = e1->e.expr.e1;

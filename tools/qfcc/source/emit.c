@@ -350,7 +350,7 @@ emit_sub_expr (expr_t *e, def_t *dest)
 					dest = PR_GetTempDef (e->e.expr.type, pr_scope);
 					dest->users += 2;
 				}
-			} if (e->e.expr.op == '.') {
+			} else if (e->e.expr.op == '.') {
 				if (!dest
 					&& (e->e.expr.e1->type != ex_pointer
 						|| !(e->e.expr.e1->e.pointer.val > 0
