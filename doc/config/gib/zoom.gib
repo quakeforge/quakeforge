@@ -26,7 +26,7 @@
 
 global zoom
 
-function "zoom.init" { // Initialize basic options
+function zoom::init { // Initialize basic options
 	if ($argc != 6) {
 		echo "Usage: $0 base_amp base_fov min_zoom max_zoom zoom_step"
 		return
@@ -45,7 +45,7 @@ function "zoom.init" { // Initialize basic options
 // Default initial values
 zoom.init 1 90 1 90 1.15
 
-function "zoom.adjust" { // Adjust fov and sensitivity to match zoom factor
+function zoom::adjust { // Adjust fov and sensitivity to match zoom factor
 	if ${zoom.zoomed} {
 		set fov (${zoom.fov}/${zoom.mult})
 		set in_amp (${zoom.amp}/${zoom.mult})
@@ -56,22 +56,22 @@ function "zoom.adjust" { // Adjust fov and sensitivity to match zoom factor
 	}
 }
 
-function "zoom.in" {
+function zoom::in {
 	zoom.zoomed = 1
-	zoom.adjust
+	zoom::adjust
 }
 
-function "zoom.out" {
+function zoom::out {
 	zoom.zoomed = 0
-	zoom.adjust
+	zoom::adjust
 }
 
-function "zoom.toggle" {
+function zoom::toggle {
 	zoom.zoomed = (!${zoom.zoomed})
-	zoom.adjust
+	zoom::adjust
 }
 
-function "zoom.increase" {
+function zoom::increase {
 	ifnot ${zoom.zoomed} {
 		return
 	}
@@ -79,22 +79,16 @@ function "zoom.increase" {
 	if (${zoom.mult} > ${zoom.mult.upper}) {
 		zoom.mult = ${zoom.mult.upper}
 	}
-	zoom.adjust
+	zoom::adjust
 }
 
-function "zoom.decrease" {
+function zoom::decrease {
 	ifnot ${zoom.zoomed} return
 	zoom.mult = (${zoom.mult}/${zoom.mult.step})
 	if (${zoom.mult} < ${zoom.mult.lower}) {
 		zoom.mult = ${zoom.mult.lower}
 	}
-	zoom.adjust
+	zoom::adjust
 }
 
-export zoom.init
-export zoom.increase
-export zoom.decrease
-export zoom.in
-export zoom.out
-export zoom.toggle
-
+function::export zoom::init zoom::increase zoom::decrease zoom::in zoom::out zoom::toggle

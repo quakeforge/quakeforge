@@ -345,8 +345,8 @@ C_GIB_Print_Center_f (void)
 {
 	if (GIB_Argc () != 2) {
 		Cbuf_Error ("syntax",
-		  "print.center: invalid syntax\n"
-		  "usage: print.center text");
+		  "print::center: invalid syntax\n"
+		  "usage: print::center text");
 		return;
 	}
 	SCR_CenterPrint (GIB_Argv(1));
@@ -409,7 +409,7 @@ C_Init (void)
 					"file");
 					
 	// register GIB builtins
-	GIB_Builtin_Add ("print.center", C_GIB_Print_Center_f, GIB_BUILTIN_NORMAL);
+	GIB_Builtin_Add ("print::center", C_GIB_Print_Center_f, GIB_BUILTIN_NORMAL);
 	
 	con_initialized = true;
 }

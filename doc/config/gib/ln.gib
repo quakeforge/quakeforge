@@ -20,7 +20,7 @@ function "ln" {
 	export $2
 }
 
-export ln
+function::export ln
 
 // QuakeForge		qwcl
 ln "in_mouse_amp"	"sensitivity"

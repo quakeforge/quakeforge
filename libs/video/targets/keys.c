@@ -676,8 +676,8 @@ Key_GIB_Bind_Get_f (void)
 
 	if (GIB_Argc() != 2) {
 		Cbuf_Error ("syntax",
-		            "bind.get: invalid syntax\n"
-		            "usage: bind.get key"
+		            "bind::get: invalid syntax\n"
+		            "usage: bind::get key"
 		           );
 		return;
 	}
@@ -687,12 +687,12 @@ Key_GIB_Bind_Get_f (void)
 	key = OK_TranslateKeyName (GIB_Argv (1));
 
 	if ((t = Key_StringToIMTnum (imt)) == -1) {
-		Cbuf_Error ("bind", "bind.get: invalid imt %s", imt);
+		Cbuf_Error ("bind", "bind::get: invalid imt %s", imt);
 		return;
 	}
 
 	if ((k = Key_StringToKeynum (key)) == -1) {
-		Cbuf_Error ("bind", "bind.get: invalid key %s", key);
+		Cbuf_Error ("bind", "bind::get: invalid key %s", key);
 		return;
 	}
 	
@@ -858,7 +858,7 @@ Key_Init (cbuf_t *cb)
 					"RECOGNIZED key-press. If the key pressed produces no "
 					"output, " PROGRAM " does not recognise that key.");
 
-	GIB_Builtin_Add ("bind.get", Key_GIB_Bind_Get_f, GIB_BUILTIN_NORMAL);
+	GIB_Builtin_Add ("bind::get", Key_GIB_Bind_Get_f, GIB_BUILTIN_NORMAL);
 
 }
 

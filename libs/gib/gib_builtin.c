@@ -158,12 +158,12 @@ GIB_Function_f (void)
 }			
 
 void
-GIB_FunctionDotGet_f (void)
+GIB_Function_Get_f (void)
 {
 	if (GIB_Argc () != 2)
 		Cbuf_Error ("syntax",
 					"function.get: invalid syntax\n"
-					"usage: function.get function_name");
+					"usage: function::get function_name");
 	else {
 		gib_function_t *f;
 		if ((f = GIB_Function_Find (GIB_Argv (1))))
@@ -176,26 +176,29 @@ GIB_FunctionDotGet_f (void)
 void
 GIB_Local_f (void)
 {
-	if (GIB_Argc () != 2)
+	int i;
+	
+	if (GIB_Argc () < 2)
 		Cbuf_Error ("syntax",
-					"lset: invalid syntax\n"
-					"usage: local variable");
+					"local: invalid syntax\n"
+					"usage: local varname1 varname2 varname3 [...]");
 	else
-		GIB_Var_Set_Local (cbuf_active, GIB_Argv(1), "");
+		for (i = 1; i < GIB_Argc(); i++)
+			GIB_Var_Set_Local (cbuf_active, GIB_Argv(i), "");
 }
 
 void
 GIB_Global_f (void)
 {
-	if (GIB_Argc () != 2)
+	int i;
+	
+	if (GIB_Argc () < 2)
 		Cbuf_Error ("syntax",
 					"global: invalid syntax\n"
-					"usage: global variable");
-	else {
-		char *a = strdup (GIB_Argv(1));
-		GIB_Var_Set_Global (a, "");
-		free(a);
-	}
+					"usage: global varname1 varname2 varname3 [...]");
+	else
+		for (i = 1; i < GIB_Argc(); i++)
+			GIB_Var_Set_Global (GIB_Argv(i), "");
 }
 
 void
@@ -203,7 +206,7 @@ GIB_Global_Delete_f (void)
 {
 	if (GIB_Argc () != 2)
 		Cbuf_Error ("syntax",
-					"global.delete: invalid syntax\n"
+					"global::delete: invalid syntax\n"
 					"usage: global.delete variable");
 	GIB_Var_Free_Global (GIB_Argv(1));
 }
@@ -299,8 +302,8 @@ GIB_Field_Get_f (void)
 	const char *ifs;
 	if (GIB_Argc() < 3 || GIB_Argc() > 4) {
 		Cbuf_Error ("syntax",
-					"field.get: invalid syntax\n"
-					"usage: field.get list element [ifs]"
+					"field::get: invalid syntax\n"
+					"usage: field::get list element [ifs]"
 					);
 		return;
 	}
@@ -415,6 +418,7 @@ GIB_Break_f (void)
 	}					
 }
 
+// Note: this is a standard console command, not a GIB builtin
 void
 GIB_Runexported_f (void)
 {
@@ -434,19 +438,22 @@ GIB_Runexported_f (void)
 }
 
 void
-GIB_Export_f (void)
+GIB_Function_Export_f (void)
 {
 	gib_function_t *f;
+	int i;
 	
-	if (GIB_Argc() != 2)
+	if (GIB_Argc() < 2)
 		Cbuf_Error ("syntax",
-					"export: invalid syntax\n"
-					"usage: export function");
-	else if (!(f = GIB_Function_Find (GIB_Argv (1))))
-		Cbuf_Error ("existance", "export: function '%s' not found", GIB_Argv (1));
-	else if (!f->exported) {
-		Cmd_AddCommand (f->name->str, GIB_Runexported_f, "Exported GIB function.");
-		f->exported = true;
+					"function::export: invalid syntax\n"
+					"usage: funciton::export function1 function2 function3 [...]");
+	for (i = 1; i < GIB_Argc(); i++) {
+		if (!(f = GIB_Function_Find (GIB_Argv (i))))
+			Cbuf_Error ("function", "function::export: function '%s' not found", GIB_Argv (i));
+		else if (!f->exported) {
+			Cmd_AddCommand (f->name->str, GIB_Runexported_f, "Exported GIB function.");
+			f->exported = true;
+		}
 	}
 }
 
@@ -455,8 +462,8 @@ GIB_String_Length_f (void)
 {
 	if (GIB_Argc() != 2)
 		Cbuf_Error ("syntax",
-	  	"string.length: invalid syntax\n"
-		  "usage: string.length string");
+	  	"string::length: invalid syntax\n"
+		  "usage: string::length string");
 	else
 		GIB_Return (va("%i", (int) strlen(GIB_Argv(1))));
 }
@@ -466,8 +473,8 @@ GIB_String_Equal_f (void)
 {
 	if (GIB_Argc() != 3)
 		Cbuf_Error ("syntax",
-	  	"string.length: invalid syntax\n"
-		  "usage: string.equal string1 string2");
+	  	"string::equal: invalid syntax\n"
+		  "usage: string::equal string1 string2");
 	else
 		GIB_Return (va("%i", !strcmp(GIB_Argv(1), GIB_Argv(2))));
 }
@@ -477,8 +484,8 @@ GIB_Thread_Create_f (void)
 {
 	if (GIB_Argc() != 2)
 		Cbuf_Error ("syntax",
-	  	"thread.create: invalid syntax\n"
-		  "usage: thread.create program");
+	  	"thread::create: invalid syntax\n"
+		  "usage: thread::create program");
 	else {
 		gib_thread_t *thread = GIB_Thread_New ();
 		Cbuf_AddText (thread->cbuf, GIB_Argv(1));
@@ -492,8 +499,8 @@ GIB_Thread_Kill_f (void)
 {
 	if (GIB_Argc() != 2)
 		Cbuf_Error ("syntax",
-	  	"thread.kill: invalid syntax\n"
-		  "usage: thread.kill id");
+	  	"thread::kill: invalid syntax\n"
+		  "usage: thread::kill id");
 	else {
 		gib_thread_t *thread;
 		cbuf_t *cur;
@@ -515,52 +522,6 @@ GIB_Thread_Kill_f (void)
 
 /* File access */
 
-int
-GIB_CollapsePath (char *str)
-{
-	char       *d, *p, *path;
-
-	p = path = str;
-	while (*p) {
-		if (p[0] == '.') {
-			if (p[1] == '.') {
-				if (p[2] == '/' || p[2] == 0) {
-					d = p;
-					if (d > path)
-						d--;
-					while (d > path && d[-1] != '/')
-						d--;
-					if (d == path
-						&& d[0] == '.' && d[1] == '.'
-						&& (d[2] == '/' || d[2] == '0')) {
-						p += 2 + (p[2] == '/');
-						continue;
-					}
-					strcpy (d, p + 2 + (p[2] == '/'));
-					p = d + (d != path);
-				}
-			} else if (p[1] == '/') {
-				strcpy (p, p + 2);
-				continue;
-			} else if (p[1] == 0) {
-				p[0] = 0;
-			}
-		}
-		while (*p && *p != '/')
-			p++;
-		if (*p == '/')
-			p++;
-	}
-	if ((!path[0])
-		|| (path[0] == '.' && path[1] == '.'
-			&& (path[2] == '/' || path[2] == 0))
-		|| (path[strlen (path) - 1] == '/')
-		|| path[0] == '~') {
-		return 0;
-	}
-	return 1;
-}
-
 void
 GIB_File_Read_f (void)
 {
@@ -569,25 +530,31 @@ GIB_File_Read_f (void)
 
 	if (GIB_Argc () != 2) {
 		Cbuf_Error ("syntax",
-		  "file.read: invalid syntax\n"
-		  "usage: file.read path_and_filename");
+		  "file::read: invalid syntax\n"
+		  "usage: file::read path_and_filename");
 		return;
 	}
-	path = GIB_Argv (1);
-	if (!GIB_CollapsePath (path)) {
+	path = COM_CompressPath (GIB_Argv (1));
+	if (!path[0]) {
+		Cbuf_Error ("file",
+		  "file::read: null filename provided");
+		return;
+	}
+	if (path[0] == '/' || (path[0] == '.' && path[1] == '.')) {
 		Cbuf_Error ("access",
-		  "file.read: access to %s denied", path);
+		  "file::read: access to %s denied", path);
 		return;
 	}
 	mark = Hunk_LowMark ();
 	contents = (char *) COM_LoadHunkFile (path);
 	if (!contents) {
 		Cbuf_Error ("file",
-		  "file.read: could not open %s/%s for reading: %s", com_gamedir, path, strerror (errno));
+		  "file::read: could not open %s/%s for reading: %s", com_gamedir, path, strerror (errno));
 		return;
 	}
 	GIB_Return (contents);
 	Hunk_FreeToLowMark (mark);
+	free (path);
 }
 
 void
@@ -598,23 +565,29 @@ GIB_File_Write_f (void)
 	
 	if (GIB_Argc () != 3) {
 		Cbuf_Error ("syntax",
-		  "file.write: invalid syntax\n"
-		  "usage: file.write path_and_filename data");
+		  "file::write: invalid syntax\n"
+		  "usage: file::write path_and_filename data");
 		return;
 	}
-	path = GIB_Argv (1);
-	if (!GIB_CollapsePath (path)) {
+	path = COM_CompressPath (GIB_Argv (1));
+	if (!path[0]) {
+		Cbuf_Error ("file",
+		  "file::write: null filename provided");
+		return;
+	}
+	if (path[0] == '/' || (path[0] == '.' && path[1] == '.')) {
 		Cbuf_Error ("access",
-		  "file.write: access to %s denied", path);
+		  "file::write: access to %s denied", path);
 		return;
 	}
 	if (!(file = Qopen (va ("%s/%s", com_gamedir, path), "w"))) {
 		Cbuf_Error ("file",
-		  "file.write: could not open %s/%s for writing: %s", com_gamedir, path, strerror (errno));
+		  "file::write: could not open %s/%s for writing: %s", com_gamedir, path, strerror (errno));
 		return;
 	}
 	Qprintf (file, "%s", GIB_Argv (2));
 	Qclose (file);
+	free (path);
 }
 
 void
@@ -628,15 +601,20 @@ GIB_File_Find_f (void)
 
 	if (GIB_Argc () < 2 || GIB_Argc () > 3) {
 		Cbuf_Error ("syntax",
-		  "file.find: invalid syntax\n"
-		  "usage: file.find glob [path]");
+		  "file::find: invalid syntax\n"
+		  "usage: file::find glob [path]");
 		return;
 	}
-	path = GIB_Argv (2);
+	path = COM_CompressPath (GIB_Argv (2));
 	if (GIB_Argc () == 3) {
-		if (!GIB_CollapsePath (path)) {
+		if (!path[0]) {
+			Cbuf_Error ("file",
+			  "file::find: null path provided");
+			return;
+		}
+		if (path[0] == '/' || (path[0] == '.' && path[1] == '.')) {
 			Cbuf_Error ("access", 
-			  "file.find: access to %s denied", path);
+			  "file::find: access to %s denied", path);
 			return;
 		}
 	}
@@ -662,6 +640,7 @@ GIB_File_Find_f (void)
 	else
 		GIB_Return ("");
 	dstring_delete (list);
+	free (path);
 }
 
 void
@@ -672,20 +651,20 @@ GIB_File_Move_f (void)
 
 	if (GIB_Argc () != 3) {
 		Cbuf_Error ("syntax",
-		  "file.move: invalid syntax\n"
-		  "usage: file.move from_file to_file");
+		  "file::move: invalid syntax\n"
+		  "usage: file::move from_file to_file");
 		return;
 	}
-	path1 = GIB_Argv (1);
-	path2 = GIB_Argv (2);
-	if (!GIB_CollapsePath (path1)) {
+	path1 = COM_CompressPath (GIB_Argv (1));
+	path2 = COM_CompressPath (GIB_Argv (2));
+	if (path1[0] == '/' || (path1[0] == '.' && path1[1] == '.')) {
 		Cbuf_Error ("access",
-		  "file.move: access to %s denied", path1);
+		  "file::move: access to %s denied", path1);
 		return;
 	}
-	if (!GIB_CollapsePath (path2)) {
+	if (path2[0] == '/' || (path2[0] == '.' && path2[1] == '.')) {
 		Cbuf_Error ("access",
-		  "file.move: access to %s denied", path2);
+		  "file::move: access to %s denied", path2);
 		return;
 	}
 	from = dstring_newstr ();
@@ -694,10 +673,12 @@ GIB_File_Move_f (void)
 	dsprintf (to, "%s/%s", com_gamedir, path2);
 	if (Qrename (from->str, to->str))
 		Cbuf_Error ("file",
-		  "file.move: could not move %s to %s: %s",
+		  "file::move: could not move %s to %s: %s",
 	      from->str, to->str, strerror(errno));
 	dstring_delete (from);
 	dstring_delete (to);
+	free (path1);
+	free (path2);
 }
 
 void
@@ -707,20 +688,21 @@ GIB_File_Delete_f (void)
 
 	if (GIB_Argc () != 2) {
 		Cbuf_Error ("syntax",
-		  "file.delete: invalid syntax\n"
-		  "usage: file.delete file");
+		  "file::delete: invalid syntax\n"
+		  "usage: file::delete file");
 		return;
 	}
-	path = GIB_Argv (1);
-	if (!GIB_CollapsePath (path)) {
+	path = COM_CompressPath (GIB_Argv (1));
+	if (path[0] == '/' || (path[0] == '.' && path[1] == '.')) {
 		Cbuf_Error ("access",
-		  "file.delete: access to %s denied", path);
+		  "file::delete: access to %s denied", path);
 		return;
 	}
 	if (Qremove(va("%s/%s", com_gamedir, path)))
 		Cbuf_Error ("file",
-		  "file.delete: could not delete %s/%s: %s",
+		  "file::delete: could not delete %s/%s: %s",
 	      com_gamedir, path, strerror(errno));
+	free (path);
 }
 
 void
@@ -773,28 +755,28 @@ GIB_Builtin_Init (void)
 	gib_globals = Hash_NewTable (512, GIB_Var_Get_Key, GIB_Var_Free, 0);
 
 	GIB_Builtin_Add ("function", GIB_Function_f, GIB_BUILTIN_NORMAL);
-	GIB_Builtin_Add ("function.get", GIB_FunctionDotGet_f, GIB_BUILTIN_NORMAL);
-	GIB_Builtin_Add ("export", GIB_Export_f, GIB_BUILTIN_NORMAL);
+	GIB_Builtin_Add ("function::get", GIB_Function_Get_f, GIB_BUILTIN_NORMAL);
+	GIB_Builtin_Add ("function::export", GIB_Function_Export_f, GIB_BUILTIN_NORMAL);
 	GIB_Builtin_Add ("local", GIB_Local_f, GIB_BUILTIN_NORMAL);
 	GIB_Builtin_Add ("global", GIB_Global_f, GIB_BUILTIN_NORMAL);
-	GIB_Builtin_Add ("global.delete", GIB_Global_Delete_f, GIB_BUILTIN_NORMAL);
+	GIB_Builtin_Add ("global::delete", GIB_Global_Delete_f, GIB_BUILTIN_NORMAL);
 	GIB_Builtin_Add ("return", GIB_Return_f, GIB_BUILTIN_NORMAL);
 	GIB_Builtin_Add ("if", GIB_If_f, GIB_BUILTIN_FIRSTONLY);
 	GIB_Builtin_Add ("ifnot", GIB_If_f, GIB_BUILTIN_FIRSTONLY);
 	GIB_Builtin_Add ("while", GIB_While_f, GIB_BUILTIN_NOPROCESS);
-	GIB_Builtin_Add ("field.get", GIB_Field_Get_f, GIB_BUILTIN_NORMAL);
+	GIB_Builtin_Add ("field::get", GIB_Field_Get_f, GIB_BUILTIN_NORMAL);
 	GIB_Builtin_Add ("for", GIB_For_f, GIB_BUILTIN_NORMAL);
 	GIB_Builtin_Add ("__for", GIB___For_f, GIB_BUILTIN_NORMAL);
 	GIB_Builtin_Add ("break", GIB_Break_f, GIB_BUILTIN_NORMAL);
-	GIB_Builtin_Add ("string.length", GIB_String_Length_f, GIB_BUILTIN_NORMAL);
-	GIB_Builtin_Add ("string.equal", GIB_String_Equal_f, GIB_BUILTIN_NORMAL);
-	GIB_Builtin_Add ("thread.create", GIB_Thread_Create_f, GIB_BUILTIN_NORMAL);
-	GIB_Builtin_Add ("thread.kill", GIB_Thread_Kill_f, GIB_BUILTIN_NORMAL);
-	GIB_Builtin_Add ("file.read", GIB_File_Read_f, GIB_BUILTIN_NORMAL);
-	GIB_Builtin_Add ("file.write", GIB_File_Write_f, GIB_BUILTIN_NORMAL);
-	GIB_Builtin_Add ("file.find", GIB_File_Find_f, GIB_BUILTIN_NORMAL);
-	GIB_Builtin_Add ("file.move", GIB_File_Move_f, GIB_BUILTIN_NORMAL);
-	GIB_Builtin_Add ("file.delete", GIB_File_Delete_f, GIB_BUILTIN_NORMAL);
+	GIB_Builtin_Add ("string::length", GIB_String_Length_f, GIB_BUILTIN_NORMAL);
+	GIB_Builtin_Add ("string::equal", GIB_String_Equal_f, GIB_BUILTIN_NORMAL);
+	GIB_Builtin_Add ("thread::create", GIB_Thread_Create_f, GIB_BUILTIN_NORMAL);
+	GIB_Builtin_Add ("thread::kill", GIB_Thread_Kill_f, GIB_BUILTIN_NORMAL);
+	GIB_Builtin_Add ("file::read", GIB_File_Read_f, GIB_BUILTIN_NORMAL);
+	GIB_Builtin_Add ("file::write", GIB_File_Write_f, GIB_BUILTIN_NORMAL);
+	GIB_Builtin_Add ("file::find", GIB_File_Find_f, GIB_BUILTIN_NORMAL);
+	GIB_Builtin_Add ("file::move", GIB_File_Move_f, GIB_BUILTIN_NORMAL);
+	GIB_Builtin_Add ("file::delete", GIB_File_Delete_f, GIB_BUILTIN_NORMAL);
 	GIB_Builtin_Add ("range", GIB_Range_f, GIB_BUILTIN_NORMAL);
 	GIB_Builtin_Add ("print", GIB_Print_f, GIB_BUILTIN_NORMAL);
 }

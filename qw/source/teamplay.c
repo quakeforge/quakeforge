@@ -403,14 +403,14 @@ locs_loc (void)
 }
 
 void
-Locs_Location_Get (void)
+Locs_Loc_Get (void)
 {
 	location_t *location;
 
 	if (GIB_Argc() != 1)
 		Cbuf_Error ("syntax",
-					"location.get: invalid syntax\n"
-					"usage: location.get");
+					"loc::get: invalid syntax\n"
+					"usage: loc::get");
 	else {
 		location = locs_find (cl.simorg);
 		GIB_Return (location ? location->name : "unknown");
@@ -422,7 +422,7 @@ Locs_Init (void)
 {
 	Cmd_AddCommand ("loc", locs_loc, "Location marker editing commands: 'loc "
 					"help' for more");
-	GIB_Builtin_Add ("location.get", Locs_Location_Get, GIB_BUILTIN_NORMAL);
+	GIB_Builtin_Add ("loc::get", Locs_Loc_Get, GIB_BUILTIN_NORMAL);
 }
 
 char *
