@@ -141,6 +141,14 @@
 #define dem_stats       5
 #define dem_all         6
 
+#define DF_ORIGIN   1
+#define DF_ANGLES   (1<<3)
+#define DF_EFFECTS  (1<<6)
+#define DF_SKINNUM  (1<<7)
+#define DF_DEAD     (1<<8)
+#define DF_GIB      (1<<9)
+#define DF_WEAPONFRAME (1<<10)
+#define DF_MODEL    (1<<11)
 
 // ==============================================
 

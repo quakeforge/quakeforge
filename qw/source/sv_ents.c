@@ -393,15 +393,6 @@ SV_EmitPacketEntities (client_t *client, packet_entities_t *to, sizebuf_t *msg)
 	MSG_WriteShort (msg, 0);			// end of packetentities
 }
 
-#define DF_ORIGIN   1			//FIXME move to protocol.h
-#define DF_ANGLES   (1<<3)
-#define DF_EFFECTS  (1<<6)
-#define DF_SKINNUM  (1<<7)
-#define DF_DEAD     (1<<8)
-#define DF_GIB      (1<<9)
-#define DF_WEAPONFRAME (1<<10)
-#define DF_MODEL    (1<<11)
-
 void
 SV_WritePlayersToClient (client_t *client, edict_t *clent, byte * pvs,
 						 sizebuf_t *msg)
