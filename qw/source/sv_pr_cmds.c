@@ -1765,11 +1765,9 @@ PF_SV_AllocClient (progs_t *pr)
 		return;
 	}
 
-	cl->userinfo = Info_ParseString ("", 1023, !sv_highchars->int_val);
 	//XXX netchan? Netchan_Setup (&newcl->netchan, adr, qport);
 	cl->state = cs_server;
 	cl->spectator = 0;
-	//SV_ExtractFromUserinfo (cl);
 	RETURN_EDICT (pr, cl->edict);
 }
 
@@ -1787,6 +1785,17 @@ PF_SV_FreeClient (progs_t *pr)
 	//if (sv_client_disconnect_e->func)
 	//	GIB_Event_Callback (sv_client_disconnect_e, 2, va("%u", cl->userid),
 	//						"server");
+}
+
+static void
+PF_SV_SetUserinfo (progs_t *pr)
+{
+	int         entnum = P_EDICTNUM (pr, 0);
+	client_t   *cl = svs.clients + entnum - 1;
+	const char *str = P_STRING (pr, 1);
+	cl->userinfo = Info_ParseString (str, 1023, !sv_highchars->int_val);
+	cl->sendinfo = true;
+	SV_ExtractFromUserinfo (cl);
 }
 
 void
@@ -1866,4 +1875,5 @@ SV_PR_Cmds_Init ()
 
 	PR_AddBuiltin (&sv_pr_state, "SV_AllocClient", PF_SV_AllocClient, -1);
 	PR_AddBuiltin (&sv_pr_state, "SV_FreeClient", PF_SV_FreeClient, -1);
+	PR_AddBuiltin (&sv_pr_state, "SV_SetUserinfo", PF_SV_SetUserinfo, -1);
 };
