@@ -514,6 +514,7 @@ CL_ParseDownload (void)
 		}
 
 		cls.download = NULL;
+		cls.downloadname[0] = 0;
 		cls.downloadpercent = 0;
 
 		// get another file if needed
