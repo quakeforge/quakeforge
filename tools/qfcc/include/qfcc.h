@@ -252,7 +252,7 @@ typedef struct type_s
 typedef struct def_s
 {
 	type_t		*type;
-	char		*name;
+	const char		*name;
 	struct def_s	*next;
 	struct def_s	*scope_next;	// to facilitate hash table removal
 	gofs_t		ofs;
@@ -293,7 +293,7 @@ struct function_s
 {
 	int					builtin;	// if non 0, call an internal function
 	int					code;		// first statement
-	char				*file;		// source file with definition
+	const char			*file;		// source file with definition
 	int					file_line;
 	struct def_s		*def;
 	int					parm_ofs[MAX_PARMS];	// allways contiguous, right?
@@ -369,9 +369,9 @@ type_t *PR_ParseType (void);
 char *PR_ParseName (void);
 def_t *PR_ParseImmediate (def_t *def);
 
-qboolean PR_Check (token_type_t type, char *string);
-void PR_Expect (token_type_t type, char *string);
-void PR_ParseError (char *error, ...);
+qboolean PR_Check (token_type_t type, const char *string);
+void PR_Expect (token_type_t type, const char *string);
+void PR_ParseError (const char *error, ...);
 
 
 extern	jmp_buf		pr_parse_abort;		// longjump with this on parse error
@@ -395,7 +395,7 @@ extern	def_t	*pr_scope;
 extern	int		pr_error_count;
 
 void PR_NewLine (void);
-def_t *PR_GetDef (type_t *type, char *name, def_t *scope, qboolean allocate);
+def_t *PR_GetDef (type_t *type, const char *name, def_t *scope, qboolean allocate);
 def_t *PR_NewDef (type_t *type, const char *name, def_t *scope);
 void PR_FlushScope (def_t *scope);
 
@@ -416,7 +416,7 @@ char *PR_ValueString (etype_t type, void *val);
 
 void PR_ClearGrabMacros (void);
 
-qboolean	PR_CompileFile (char *string, char *filename);
+qboolean	PR_CompileFile (char *string, const char *filename);
 
 extern	qboolean	pr_dumpasm;
 
@@ -464,7 +464,7 @@ extern	char		precache_files[MAX_FILES][MAX_DATA_PATH];
 extern	int			precache_files_block[MAX_SOUNDS];
 extern	int			numfiles;
 
-int	CopyString (char *str);
-int	ReuseString (char *str);
+int	CopyString (const char *str);
+int	ReuseString (const char *str);
 
 

@@ -593,7 +593,7 @@ PR_ParseDefs (void)
 	Compile the null-terminated text, adding definitions to the pr structure
 */
 qboolean
-PR_CompileFile (char *string, char *filename)
+PR_CompileFile (char *string, const char *filename)
 {
 	if (!pr.memory)
 		Error ("PR_CompileFile: Didn't clear");

@@ -69,7 +69,7 @@ int         num_temp_skins;
 int         skin_textures;
 int         skin_fb_textures;
 
-static char *
+static const char *
 skin_get_key (void *_skin, void *unused)
 {
 	skin_t *skin = (skin_t*)_skin;

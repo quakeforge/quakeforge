@@ -41,12 +41,12 @@ typedef struct hashlink_s {
 typedef struct hashtab_s {
 	size_t tab_size;
 	void *user_data;
-	char *(*get_key)(void*,void*);
+	const char *(*get_key)(void*,void*);
 	void (*free_ele)(void*,void*);
 	hashlink_t *tab[1];				// variable size
 } hashtab_t;
 
-hashtab_t *Hash_NewTable (int tsize, char *(*gk)(void*,void*),
+hashtab_t *Hash_NewTable (int tsize, const char *(*gk)(void*,void*),
 						  void (*f)(void*,void*), void *ud);
 void Hash_DelTable (hashtab_t *tab);
 void Hash_FlushTable (hashtab_t *tab);

@@ -30,7 +30,7 @@ int 		pr_edict_size;
 
 static hashtab_t  *defs_by_name;
 
-static char *
+static const char *
 defs_get_key (void *_def, void *_tab)
 {
 	def_t		*def = (def_t*)_def;
@@ -49,7 +49,7 @@ defs_get_key (void *_def, void *_tab)
 	If allocate is true, a new def will be allocated if it can't be found
 */
 def_t *
-PR_GetDef (type_t *type, char *name, def_t *scope, qboolean allocate)
+PR_GetDef (type_t *type, const char *name, def_t *scope, qboolean allocate)
 {
 	def_t	*def;
 	char	element[MAX_NAME];

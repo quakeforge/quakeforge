@@ -42,7 +42,7 @@
 #include "QF/hash.h"
 #include "QF/progs.h"
 
-static char *
+static const char *
 strref_get_key (void *_sr, void *notused)
 {
 	strref_t *sr = (strref_t*)_sr;

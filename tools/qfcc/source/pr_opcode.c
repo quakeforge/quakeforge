@@ -169,7 +169,7 @@ PR_Statement (opcode_t * op, def_t * var_a, def_t * var_b)
 	return var_c;
 }
 
-static char *
+static const char *
 get_key (void *_op, void *_tab)
 {
 	opcode_t *op = (opcode_t *)_op;

@@ -69,7 +69,7 @@ hash (const char *str)
 }
 
 hashtab_t *
-Hash_NewTable (int tsize, char *(*gk)(void*,void*), void (*f)(void*,void*),
+Hash_NewTable (int tsize, const char *(*gk)(void*,void*), void (*f)(void*,void*),
 			   void *ud)
 {
 	hashtab_t *tab = calloc (1, (size_t)&((hashtab_t*)0)->tab[tsize]);

@@ -28,14 +28,14 @@ static hashtab_t  *string_imm_defs;
 static hashtab_t  *float_imm_defs;
 static hashtab_t  *vector_imm_defs;
 
-static char *
+static const char *
 string_imm_get_key (void *_def, void *unused)
 {
 	def_t       *def = (def_t*)_def;
 	return G_STRING (def->ofs);
 }
 
-static char *
+static const char *
 float_imm_get_key (void *_def, void *unused)
 {
 	def_t       *def = (def_t*)_def;
@@ -44,7 +44,7 @@ float_imm_get_key (void *_def, void *unused)
 	return rep;
 }
 
-static char *
+static const char *
 vector_imm_get_key (void *_def, void *unused)
 {
 	def_t       *def = (def_t*)_def;

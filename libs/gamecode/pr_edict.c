@@ -990,7 +990,7 @@ ED_LoadFromFile (progs_t * pr, char *data)
 	Con_DPrintf ("%i entities inhibited\n", inhibit);
 }
 
-static char *
+static const char *
 function_get_key (void *f, void *_pr)
 {
 	progs_t *pr = (progs_t*)_pr;
@@ -998,7 +998,7 @@ function_get_key (void *f, void *_pr)
 	return PR_GetString (pr, func->s_name);
 }
 
-static char *
+static const char *
 var_get_key (void *d, void *_pr)
 {
 	progs_t *pr = (progs_t*)_pr;

@@ -112,14 +112,14 @@ WriteFiles (void)
 */
 static hashtab_t *strings_tab;
 
-static char *
+static const char *
 stings_get_key (void *_str, void *unsued)
 {
 	return (char*)_str;
 }
 
 int
-CopyString (char *str)
+CopyString (const char *str)
 {
 	int 	old;
 
@@ -134,7 +134,7 @@ CopyString (char *str)
 }
 
 int
-ReuseString (char *str)
+ReuseString (const char *str)
 {
 	char *s;
 

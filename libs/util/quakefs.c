@@ -716,7 +716,7 @@ COM_LoadStackFile (char *path, void *buffer, int bufsize)
 	return buf;
 }
 
-static char *
+static const char *
 pack_get_key (void *_p, void *unused)
 {
 	packfile_t *p = (packfile_t *) _p;

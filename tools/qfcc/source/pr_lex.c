@@ -568,7 +568,7 @@ PR_Lex (void)
 	Aborts the current file load
 */
 void
-PR_ParseError (char *error, ...)
+PR_ParseError (const char *error, ...)
 {
 	va_list 	argptr;
 	char		string[1024];
@@ -590,7 +590,7 @@ PR_ParseError (char *error, ...)
 	to string
 */
 void
-PR_Expect (token_type_t type, char *string)
+PR_Expect (token_type_t type, const char *string)
 {
 	if (type != pr_token_type || strcmp (string, pr_token))
 		PR_ParseError ("expected %s, found %s", string, pr_token);
@@ -605,7 +605,7 @@ PR_Expect (token_type_t type, char *string)
 	Otherwise, return false and do nothing else.
 */
 qboolean
-PR_Check (token_type_t type, char *string)
+PR_Check (token_type_t type, const char *string)
 {
 	if (type != pr_token_type || strcmp (string, pr_token))
 		return false;

@@ -824,14 +824,14 @@ cmd_alias_free (void *_a, void *unused)
 	free (a);
 }
 
-static char *
+static const char *
 cmd_alias_get_key (void *_a, void *unused)
 {
 	cmdalias_t *a = (cmdalias_t*)_a;
 	return a->name;
 }
 
-static char *
+static const char *
 cmd_get_key (void *c, void *unused)
 {
 	cmd_function_t *cmd = (cmd_function_t*)c;
