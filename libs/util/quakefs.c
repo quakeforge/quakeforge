@@ -70,6 +70,7 @@ static const char rcsid[] =
 #include "QF/cvar.h"
 #include "QF/hash.h"
 #include "QF/pak.h"
+#include "QF/pakfile.h"
 #include "QF/qargs.h"
 #include "QF/qendian.h"
 #include "QF/qtypes.h"
@@ -409,10 +410,9 @@ open_file (searchpath_t *search, const char *filename, VFile **gzfile,
 
 	// is the element a pak file?
 	if (search->pack) {
-		packfile_t *packfile;
+		dpackfile_t *packfile;
 
-		packfile = (packfile_t *) Hash_Find (search->pack->file_hash,
-											 filename);
+		packfile = pack_find_file (search->pack, filename);
 		if (packfile) {
 			Sys_DPrintf ("PackFile: %s : %s\n", search->pack->filename,
 						 packfile->name);
@@ -586,14 +586,6 @@ COM_LoadStackFile (const char *path, void *buffer, int bufsize)
 	return buf;
 }
 
-static const char *
-pack_get_key (void *_p, void *unused)
-{
-	packfile_t *p = (packfile_t *) _p;
-
-	return p->name;
-}
-
 /*
 	COM_LoadPackFile
 
@@ -605,52 +597,11 @@ pack_get_key (void *_p, void *unused)
 pack_t     *
 COM_LoadPackFile (char *packfile)
 {
-	dpackheader_t header;
-	int         i;
-	packfile_t *newfiles;
-	int         numpackfiles;
-	pack_t     *pack;
-	VFile      *packhandle;
-	dpackfile_t info[MAX_FILES_IN_PACK];
-	hashtab_t  *hash;
+	pack_t     *pack = pack_open (packfile);
 
-	if (COM_FileOpenRead (packfile, &packhandle) == -1)
-		return NULL;
-
-	Qread (packhandle, &header, sizeof (header));
-	if (header.id[0] != 'P' || header.id[1] != 'A'
-		|| header.id[2] != 'C' || header.id[3] != 'K')
-		Sys_Error ("%s is not a packfile", packfile);
-	header.dirofs = LittleLong (header.dirofs);
-	header.dirlen = LittleLong (header.dirlen);
-
-	numpackfiles = header.dirlen / sizeof (dpackfile_t);
-
-	if (numpackfiles > MAX_FILES_IN_PACK)
-		Sys_Error ("%s has %i files", packfile, numpackfiles);
-
-	newfiles = calloc (1, numpackfiles * sizeof (packfile_t));
-	hash = Hash_NewTable (1021, pack_get_key, 0, 0);
-
-	Qseek (packhandle, header.dirofs, SEEK_SET);
-	Qread (packhandle, info, header.dirlen);
-
-	// parse the directory
-	for (i = 0; i < numpackfiles; i++) {
-		strcpy (newfiles[i].name, info[i].name);
-		newfiles[i].filepos = LittleLong (info[i].filepos);
-		newfiles[i].filelen = LittleLong (info[i].filelen);
-		Hash_Add (hash, &newfiles[i]);
-	}
-
-	pack = calloc (1, sizeof (pack_t));
-	strcpy (pack->filename, packfile);
-	pack->handle = packhandle;
-	pack->numfiles = numpackfiles;
-	pack->files = newfiles;
-	pack->file_hash = hash;
-
-	Sys_Printf ("Added packfile %s (%i files)\n", packfile, numpackfiles);
+	if (pack)
+		Sys_Printf ("Added packfile %s (%i files)\n",
+					packfile, pack->numfiles);
 	return pack;
 }
 

@@ -8,9 +8,8 @@
 #include <fcntl.h>
 #include <errno.h>
 
-#include <QF/qendian.h>
-
-#include "pakfile.h"
+#include "QF/pakfile.h"
+#include "QF/qendian.h"
 
 #ifdef _WIN32
 void *alloca(size_t size);
@@ -49,7 +48,7 @@ pack_del (pack_t *pack)
 	if (pack->files)
 		free (pack->files);
 	if (pack->handle)
-		fclose (pack->handle);
+		Qclose (pack->handle);
 	if (pack->filename)
 		free (pack->filename);
 	if (pack->file_hash)
@@ -65,11 +64,11 @@ pack_open (const char *name)
 
 	if (!pack)
 		return 0;
-	pack->handle = fopen (name, "rb");
+	pack->handle = Qopen (name, "rb");
 	if (!pack->handle) {
 		goto error;
 	}
-	if (fread (&pack->header, 1, sizeof (pack->header), pack->handle)
+	if (Qread (pack->handle, &pack->header, sizeof (pack->header))
 		!= sizeof (pack->header)) {
 		fprintf (stderr, "%s: not a pack file", name);
 		goto error;
@@ -90,8 +89,8 @@ pack_open (const char *name)
 		fprintf (stderr, "out of memory\n");
 		goto error;
 	}
-	fseek (pack->handle, pack->header.dirofs, SEEK_SET);
-	fread (pack->files, pack->numfiles, sizeof (pack->files[0]), pack->handle);
+	Qseek (pack->handle, pack->header.dirofs, SEEK_SET);
+	Qread (pack->handle, pack->files, pack->numfiles * sizeof (pack->files[0]));
 
 	for (i = 0; i < pack->numfiles; i++) {
 		pack->files[i].filepos = LittleLong (pack->files[i].filepos);
@@ -112,14 +111,14 @@ pack_create (const char *name)
 	if (!pack)
 		return 0;
 
-	pack->handle = fopen (name, "wb");
+	pack->handle = Qopen (name, "wb");
 	if (!pack->handle) {
 		pack_del (pack);
 		return 0;
 	}
 	strncpy (pack->header.id, "PACK", sizeof (pack->header.id));
 
-	fwrite (&pack->header, 1, sizeof (pack->header), pack->handle);
+	Qwrite (pack->handle, &pack->header, sizeof (pack->header));
 
 	return pack;
 }
@@ -131,24 +130,24 @@ pack_close (pack_t *pack)
 
 	if (pack->modified) {
 		if (pack->numfiles > pack->old_numfiles) {
-			fseek (pack->handle, 0, SEEK_END);
-			pack->header.dirofs = ftell (pack->handle);
+			Qseek (pack->handle, 0, SEEK_END);
+			pack->header.dirofs = Qtell (pack->handle);
 		}
 		for (i = 0; i < pack->numfiles; i++) {
 			pack->files[i].filepos = LittleLong (pack->files[i].filepos);
 			pack->files[i].filelen = LittleLong (pack->files[i].filelen);
 		}
-		fseek (pack->handle, pack->header.dirofs, SEEK_SET);
-		fwrite (pack->files, pack->numfiles,
-				sizeof (pack->files[0]), pack->handle);
+		Qseek (pack->handle, pack->header.dirofs, SEEK_SET);
+		Qwrite (pack->handle, pack->files,
+				pack->numfiles * sizeof (pack->files[0]));
 		pack->header.dirlen = pack->numfiles * sizeof (pack->files[0]);
 		pack->header.dirofs = LittleLong (pack->header.dirofs);
 		pack->header.dirlen = LittleLong (pack->numfiles
 										  * sizeof (pack->files[0]));
-		fseek (pack->handle, 0, SEEK_SET);
-		fwrite (&pack->header, 1, sizeof (pack->header), pack->handle);
+		Qseek (pack->handle, 0, SEEK_SET);
+		Qwrite (pack->handle, &pack->header, sizeof (pack->header));
 
-		fseek (pack->handle, 0, SEEK_END);
+		Qseek (pack->handle, 0, SEEK_END);
 	}
 	pack_del (pack);
 }
@@ -157,7 +156,7 @@ int
 pack_add (pack_t *pack, const char *filename)
 {
 	dpackfile_t *pf;
-	FILE       *file;
+	VFile      *file;
 	char        buffer[16384];
 	int         bytes;
 
@@ -167,11 +166,7 @@ pack_add (pack_t *pack, const char *filename)
 	if (pack->numfiles == pack->files_size) {
 		dpackfile_t *f;
 		
-		if (pack->files_size == MAX_FILES_IN_PACK)
-			return -1;
 		pack->files_size += 64;
-		if (pack->files_size > MAX_FILES_IN_PACK)
-			pack->files_size = MAX_FILES_IN_PACK;
 
 		f = realloc (pack->files, pack->files_size * sizeof (dpackfile_t));
 		if (!f)
@@ -179,7 +174,7 @@ pack_add (pack_t *pack, const char *filename)
 		pack->files = f;
 	}
 
-	file = fopen (filename, "rb");
+	file = Qopen (filename, "rb");
 	if (!file)
 		return -1;
 
@@ -194,17 +189,17 @@ pack_add (pack_t *pack, const char *filename)
 	strncpy (pf->name, filename, sizeof (pf->name));
 	pf->name[sizeof (pf->name) - 1] = 0;
 
-	fseek (pack->handle, 0, SEEK_END);
-	pf->filepos = ftell (pack->handle);
+	Qseek (pack->handle, 0, SEEK_END);
+	pf->filepos = Qtell (pack->handle);
 	pf->filelen = 0;
-	while ((bytes = fread (buffer, 1, sizeof (buffer), file))) {
-		fwrite (buffer, 1, bytes, pack->handle);
+	while ((bytes = Qread (file, buffer, sizeof (buffer)))) {
+		Qwrite (pack->handle, buffer, bytes);
 		pf->filelen += bytes;
 	}
-	fclose (file);
+	Qclose (file);
 	if (pack->pad && pf->filelen & 3) {
 		static char buf[4];
-		fwrite (buf, 1, 4 - (pf->filelen & 3), pack->handle);
+		Qwrite (pack->handle, buf, 4 - (pf->filelen & 3));
 	}
 	Hash_Add (pack->file_hash, pf);
 	return 0;
@@ -239,23 +234,29 @@ pack_extract (pack_t *pack, dpackfile_t *pf)
 	const char *name = pf->name;
 	int         count;
 	int         len;
-	FILE       *file;
+	VFile      *file;
 	char        buffer[16384];
 
 	if (make_parents (name) == -1)
 		return -1;
-	if (!(file = fopen (name, "wb")))
+	if (!(file = Qopen (name, "wb")))
 		return -1;
-	fseek (pack->handle, pf->filepos, SEEK_SET);
+	Qseek (pack->handle, pf->filepos, SEEK_SET);
 	len = pf->filelen;
 	while (len) {
 		count = len;
 		if (count > sizeof (buffer))
 			count = sizeof (buffer);
-		count = fread (buffer, 1, count, pack->handle);
-		fwrite (buffer, 1, count, file);
+		count = Qread (pack->handle, buffer, count);
+		Qwrite (file, buffer, count);
 		len -= count;
 	}
-	fclose (file);
+	Qclose (file);
 	return 0;
+}
+
+dpackfile_t *
+pack_find_file (pack_t *pack, const char *filename)
+{
+	return Hash_Find (pack->file_hash, filename);
 }

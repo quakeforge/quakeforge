@@ -70,6 +70,7 @@ static const char rcsid[] =
 #include "QF/console.h"
 #include "QF/cvar.h"
 #include "QF/hash.h"
+#include "QF/pakfile.h"
 #include "QF/qargs.h"
 #include "QF/qendian.h"
 #include "QF/qtypes.h"

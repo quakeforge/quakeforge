@@ -46,8 +46,8 @@ static const char rcsid[] =
 #include <stdlib.h>
 
 #include <QF/qtypes.h>
+#include <QF/pakfile.h>
 
-#include "pakfile.h"
 #include "pak.h"
 
 const char	*this_program;
