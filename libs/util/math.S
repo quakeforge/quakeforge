@@ -61,6 +61,7 @@ Ljmptab:	.long	Lcase0, Lcase1, Lcase2, Lcase3
 
 	.align 2
 .globl C(BoxOnPlaneSide)
+	EXPORT(BoxOnPlaneSide)
 #ifdef PIC
 	.type	C(BoxOnPlaneSide),@function
 #endif

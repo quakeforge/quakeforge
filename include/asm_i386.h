@@ -35,6 +35,12 @@
 # define C(label) label
 #endif
 
+#ifdef _WIN32
+# define EXPORT(label)	.def C(label); .scl 2; .type 32; .endef
+#else
+# define EXPORT(label)
+#endif
+
 //
 // !!! note that this file must match the corresponding C structures at all
 // times !!!
