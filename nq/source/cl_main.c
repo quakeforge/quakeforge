@@ -546,6 +546,7 @@ CL_RelinkEntities (void)
 									// last message so move to the final spot
 			VectorCopy (ent->msg_origins[0], ent->origin);
 			VectorCopy (ent->msg_angles[0], ent->angles);
+			ent->pose1 = ent->pose2 = -1;
 		} else {					// if the delta is large, assume a
 									// teleport and don't lerp
 			f = frac;
