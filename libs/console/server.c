@@ -69,6 +69,7 @@ static WINDOW *output;
 static WINDOW *status;
 static WINDOW *input;
 static int screen_x, screen_y;
+static int interrupted;
 
 #define     MAXCMDLINE  256
 static inputline_t *input_line;
@@ -111,7 +112,7 @@ C_ExecLine (const char *line)
 static void
 sigwinch (int sig)
 {
-	ungetch (KEY_RESIZE);
+	interrupted = 1;
 	signal (SIGWINCH, sigwinch);
 }
 #endif
@@ -231,17 +232,17 @@ C_ProcessInput (void)
 		int         ch = wgetch (input), i;
 		const char *text;
 
-		switch (ch) {
-			case KEY_RESIZE:
-				{
-					struct winsize size;
+		if (interrupted) {
+			struct winsize size;
 
-					if (ioctl (fileno (stdout), TIOCGWINSZ, &size) == 0) {
-						resizeterm (size.ws_row, size.ws_col);
-						wrefresh (curscr);
-					}
-				}
-				break;
+			interrupted = 0;
+			if (ioctl (fileno (stdout), TIOCGWINSZ, &size) == 0) {
+				resizeterm (size.ws_row, size.ws_col);
+				wrefresh (curscr);
+			}
+		}
+
+		switch (ch) {
 			case KEY_ENTER:
 			case '\n':
 			case '\r':
