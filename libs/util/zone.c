@@ -766,8 +766,13 @@ void
 Cache_Flush (void)
 {
 	CACHE_WRITE_LOCK;
-	while (cache_head.next != &cache_head)
+	while (cache_head.next != &cache_head) {
+		if (!cache_head.next->user->data)
+			Sys_Error ("Cache_Flush: user/system out of sync for "
+					   "'%s' with %d size",
+					   cache_head.next->name, cache_head.next->size);
 		Cache_RealFree (cache_head.next->user);	// reclaim the space
+	}
 	CACHE_WRITE_UNLOCK;
 }
 
