@@ -350,7 +350,7 @@ Cmd_Alias_f (void)
 	}
 	if (alias)
 		free ((char *) alias->value);
-	else {
+	else if (!Cmd_Exists (s)) {
 		cmdalias_t **a;
 
 		alias = calloc (1, sizeof (cmdalias_t));
@@ -362,7 +362,10 @@ Cmd_Alias_f (void)
 				break;
 		alias->next = *a;
 		*a = alias;
-		Cmd_AddCommand (alias->name, Cmd_Runalias_f, "User-created command.");
+		Cmd_AddCommand (alias->name, Cmd_Runalias_f, "Alias command.");
+	} else {
+		Sys_Printf ("alias: a command with the name \"%s\" already exists.\n", s);
+		return;
 	}
 	// copy the rest of the command line
 	cmd = malloc (strlen (Cmd_Args (1)) + 2);	// can never be longer

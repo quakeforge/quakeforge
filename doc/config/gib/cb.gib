@@ -56,7 +56,7 @@ custom.load.menu_f = {
 	custom.menu.${custom.menu.size}.size = 0
 	function "__menu" $2
 	__menu
-	custom.menu.size = (${custom.menu.size} + 1)
+	custom.menu.size++
 }
 	
 custom.load.item_f = {
@@ -68,7 +68,7 @@ custom.load.item_f = {
 	custom.item.$1 = 1
 	custom.item.$1.menu = $i
 	custom.item.$1.number = $n
-	custom.menu.$i.size = ($n + 1)
+	custom.menu.$i.size++
 }
 
 custom.load.buy_f = {
