@@ -303,6 +303,27 @@ bi_hash_clear (progs_t *pr, void *data)
 	res->tabs = 0;
 }
 
+static builtin_t builtins[] = {
+	{"Hash_NewTable",			bi_Hash_NewTable,			-1},
+	{"Hash_SetHashCompare",		bi_Hash_SetHashCompare,		-1},
+	{"Hash_DelTable",			bi_Hash_DelTable,			-1},
+	{"Hash_FlushTable",			bi_Hash_FlushTable,			-1},
+	{"Hash_Add",				bi_Hash_Add,				-1},
+	{"Hash_AddElement",			bi_Hash_AddElement,			-1},
+	{"Hash_Find",				bi_Hash_Find,				-1},
+	{"Hash_FindElement",		bi_Hash_FindElement,		-1},
+	{"Hash_FindList",			bi_Hash_FindList,			-1},
+	{"Hash_FindElementList",	bi_Hash_FindElementList,	-1},
+	{"Hash_Del",				bi_Hash_Del,				-1},
+	{"Hash_DelElement",			bi_Hash_DelElement,			-1},
+	{"Hash_Free",				bi_Hash_Free,				-1},
+	{"Hash_String",				bi_Hash_String,				-1},
+	{"Hash_Buffer",				bi_Hash_Buffer,				-1},
+	{"Hash_GetList",			bi_Hash_GetList,			-1},
+	{"Hash_Stats",				bi_Hash_Stats,				-1},
+	{0}
+};
+
 void
 Hash_Progs_Init (progs_t *pr)
 {
@@ -310,21 +331,5 @@ Hash_Progs_Init (progs_t *pr)
 	res->tabs = 0;
 
 	PR_Resources_Register (pr, "Hash", res, bi_hash_clear);
-	PR_AddBuiltin (pr, "Hash_NewTable", bi_Hash_NewTable, -1);
-	PR_AddBuiltin (pr, "Hash_SetHashCompare", bi_Hash_SetHashCompare, -1);
-	PR_AddBuiltin (pr, "Hash_DelTable", bi_Hash_DelTable, -1);
-	PR_AddBuiltin (pr, "Hash_FlushTable", bi_Hash_FlushTable, -1);
-	PR_AddBuiltin (pr, "Hash_Add", bi_Hash_Add, -1);
-	PR_AddBuiltin (pr, "Hash_AddElement", bi_Hash_AddElement, -1);
-	PR_AddBuiltin (pr, "Hash_Find", bi_Hash_Find, -1);
-	PR_AddBuiltin (pr, "Hash_FindElement", bi_Hash_FindElement, -1);
-	PR_AddBuiltin (pr, "Hash_FindList", bi_Hash_FindList, -1);
-	PR_AddBuiltin (pr, "Hash_FindElementList", bi_Hash_FindElementList, -1);
-	PR_AddBuiltin (pr, "Hash_Del", bi_Hash_Del, -1);
-	PR_AddBuiltin (pr, "Hash_DelElement", bi_Hash_DelElement, -1);
-	PR_AddBuiltin (pr, "Hash_Free", bi_Hash_Free, -1);
-	PR_AddBuiltin (pr, "Hash_String", bi_Hash_String, -1);
-	PR_AddBuiltin (pr, "Hash_Buffer", bi_Hash_Buffer, -1);
-	PR_AddBuiltin (pr, "Hash_GetList", bi_Hash_GetList, -1);
-	PR_AddBuiltin (pr, "Hash_Stats", bi_Hash_Stats, -1);
+	PR_RegisterBuiltins (pr, builtins);
 }

@@ -626,16 +626,11 @@ static builtin_t builtins[] = {
 	{"stoi",		PF_stoi,		113},
 	{"stov",		PF_stov,		114},
 	{"gametype",	PR_gametype,	115},
+	{0}
 };
 
 void
 PR_Cmds_Init (progs_t *pr)
 {
-	int         i;
-	builtin_t  *bi;
-		
-	for (i = 0; i < sizeof (builtins) / sizeof (builtins[0]); i++) {
-		bi = builtins + i;
-		PR_AddBuiltin (pr, bi->name, bi->proc, bi->binum);
-	}
-};
+	PR_RegisterBuiltins (pr, builtins);
+}

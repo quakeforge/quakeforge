@@ -414,6 +414,28 @@ menu_load_file (progs_t *pr, const char *path)
 	return QFS_LoadFile (path, 0);
 }
 
+static builtin_t builtins[] = {
+	{"Menu_Begin",			bi_Menu_Begin,			-1},
+	{"Menu_FadeScreen",		bi_Menu_FadeScreen,		-1},
+	{"Menu_Draw",			bi_Menu_Draw,			-1},
+	{"Menu_EnterHook",		bi_Menu_EnterHook,		-1},
+	{"Menu_LeaveHook",		bi_Menu_LeaveHook,		-1},
+	{"Menu_Pic",			bi_Menu_Pic,			-1},
+	{"Menu_SubPic",			bi_Menu_SubPic,			-1},
+	{"Menu_CenterPic",		bi_Menu_CenterPic,		-1},
+	{"Menu_CenterSubPic",	bi_Menu_CenterSubPic,	-1},
+	{"Menu_Item",			bi_Menu_Item,			-1},
+	{"Menu_Cursor",			bi_Menu_Cursor,			-1},
+	{"Menu_KeyEvent",		bi_Menu_KeyEvent,		-1},
+	{"Menu_End",			bi_Menu_End,			-1},
+	{"Menu_TopMenu",		bi_Menu_TopMenu,		-1},
+	{"Menu_SelectMenu",		bi_Menu_SelectMenu,		-1},
+	{"Menu_SetQuit",		bi_Menu_SetQuit,		-1},
+	{"Menu_Quit",			bi_Menu_Quit,			-1},
+	{"Menu_GetIndex",		bi_Menu_GetIndex,		-1},
+	{0},
+};
+
 void
 Menu_Init (void)
 {
@@ -426,24 +448,7 @@ Menu_Init (void)
 
 	menu_hash = Hash_NewTable (61, menu_get_key, menu_free, 0);
 
-	PR_AddBuiltin (&menu_pr_state, "Menu_Begin", bi_Menu_Begin, -1);
-	PR_AddBuiltin (&menu_pr_state, "Menu_FadeScreen", bi_Menu_FadeScreen, -1);
-	PR_AddBuiltin (&menu_pr_state, "Menu_Draw", bi_Menu_Draw, -1);
-	PR_AddBuiltin (&menu_pr_state, "Menu_EnterHook", bi_Menu_EnterHook, -1);
-	PR_AddBuiltin (&menu_pr_state, "Menu_LeaveHook", bi_Menu_LeaveHook, -1);
-	PR_AddBuiltin (&menu_pr_state, "Menu_Pic", bi_Menu_Pic, -1);
-	PR_AddBuiltin (&menu_pr_state, "Menu_SubPic", bi_Menu_SubPic, -1);
-	PR_AddBuiltin (&menu_pr_state, "Menu_CenterPic", bi_Menu_CenterPic, -1);
-	PR_AddBuiltin (&menu_pr_state, "Menu_CenterSubPic", bi_Menu_CenterSubPic, -1);
-	PR_AddBuiltin (&menu_pr_state, "Menu_Item", bi_Menu_Item, -1);
-	PR_AddBuiltin (&menu_pr_state, "Menu_Cursor", bi_Menu_Cursor, -1);
-	PR_AddBuiltin (&menu_pr_state, "Menu_KeyEvent", bi_Menu_KeyEvent, -1);
-	PR_AddBuiltin (&menu_pr_state, "Menu_End", bi_Menu_End, -1);
-	PR_AddBuiltin (&menu_pr_state, "Menu_TopMenu", bi_Menu_TopMenu, -1);
-	PR_AddBuiltin (&menu_pr_state, "Menu_SelectMenu", bi_Menu_SelectMenu, -1);
-	PR_AddBuiltin (&menu_pr_state, "Menu_SetQuit", bi_Menu_SetQuit, -1);
-	PR_AddBuiltin (&menu_pr_state, "Menu_Quit", bi_Menu_Quit, -1);
-	PR_AddBuiltin (&menu_pr_state, "Menu_GetIndex", bi_Menu_GetIndex, -1);
+	PR_RegisterBuiltins (&menu_pr_state, builtins);
 
 	PR_Obj_Progs_Init (&menu_pr_state);
 

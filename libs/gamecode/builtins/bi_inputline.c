@@ -224,6 +224,19 @@ bi_il_clear (progs_t *pr, void *data)
 		}
 }
 
+static builtin_t builtins[] = {
+	{"InputLine_Create",		bi_InputLine_Create,		-1},
+	{"InputLine_SetUserData",	bi_InputLine_SetUserData,	-1},
+	{"InputLine_SetWidth",		bi_InputLine_SetWidth,		-1},
+	{"InputLine_SetText",		bi_InputLine_SetText,		-1},
+	{"InputLine_GetText",		bi_InputLine_GetText,		-1},
+	{"InputLine_Destroy",		bi_InputLine_Destroy,		-1},
+	{"InputLine_Clear",			bi_InputLine_Clear,			-1},
+	{"InputLine_Process",		bi_InputLine_Process,		-1},
+	{"InputLine_Draw",			bi_InputLine_Draw,			-1},
+	{0}
+};
+
 void
 InputLine_Progs_Init (progs_t *pr)
 {
@@ -232,16 +245,7 @@ InputLine_Progs_Init (progs_t *pr)
 	res->lines = calloc (sizeof (inputline_t *), res->max_lines);
 
 	PR_Resources_Register (pr, "InputLine", res, bi_il_clear);
-	PR_AddBuiltin (pr, "InputLine_Create", bi_InputLine_Create, -1);
-	PR_AddBuiltin (pr, "InputLine_SetUserData",
-				   bi_InputLine_SetUserData, -1);
-	PR_AddBuiltin (pr, "InputLine_SetWidth", bi_InputLine_SetWidth, -1);
-	PR_AddBuiltin (pr, "InputLine_SetText", bi_InputLine_SetText, -1);
-	PR_AddBuiltin (pr, "InputLine_GetText", bi_InputLine_GetText, -1);
-	PR_AddBuiltin (pr, "InputLine_Destroy", bi_InputLine_Destroy, -1);
-	PR_AddBuiltin (pr, "InputLine_Clear", bi_InputLine_Clear, -1);
-	PR_AddBuiltin (pr, "InputLine_Process", bi_InputLine_Process, -1);
-	PR_AddBuiltin (pr, "InputLine_Draw", bi_InputLine_Draw, -1);
+	PR_RegisterBuiltins (pr, builtins);
 }
 
 void

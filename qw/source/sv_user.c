@@ -1892,12 +1892,17 @@ SV_ExecuteClientMessage (client_t *cl)
 	}
 }
 
+static builtin_t builtins[] = {
+	{"SV_AddUserCommand",	PF_AddUserCommand,	-1},
+	{0}
+};
+
 void
 SV_UserInit (void)
 {
 	ucmd_table = Hash_NewTable (251, ucmds_getkey, ucmds_free, 0);
 	Hash_SetHashCompare (ucmd_table, ucmd_get_hash, ucmd_compare);
-	PR_AddBuiltin (&sv_pr_state, "SV_AddUserCommand", PF_AddUserCommand, -1);
+	PR_RegisterBuiltins (&sv_pr_state, builtins);
 	cl_rollspeed = Cvar_Get ("cl_rollspeed", "200", CVAR_NONE, NULL,
 							 "How quickly a player straightens out after "
 							 "strafing");

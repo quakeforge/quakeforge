@@ -348,8 +348,6 @@ SV_Progs_Init (void)
 	sv_pr_state.reserved_edicts = &reserved_edicts;
 	sv_pr_state.unlink = SV_UnlinkEdict;
 	sv_pr_state.flush = SV_FlushSignon;
-	sv_pr_state.builtins = 0;
-	sv_pr_state.numbuiltins = 0;
 	sv_pr_state.parse_field = parse_field;
 	sv_pr_state.prune_edict = prune_edict;
 	sv_pr_state.free_edict = free_edict; // eww, I hate the need for this :(

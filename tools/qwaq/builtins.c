@@ -149,18 +149,23 @@ bi_printf (progs_t *pr)
 	dstring_delete (dstr);
 }
 
+static builtin_t builtins[] = {
+	{"print",		bi_print,		1},
+	{"errno",		bi_errno,		3},
+	{"strerror",	bi_strerror,	4},
+	{"open",		bi_open,		5},
+	{"close",		bi_close,		6},
+	{"read",		bi_read,		7},
+	{"write",		bi_write,		8},
+	{"seek",		bi_seek,		9},
+	{"traceon",		bi_traceon,		10},
+	{"traceoff",	bi_traceoff,	11},
+	{"printf",		bi_printf,		12},
+	{0}
+};
+
 void
 BI_Init (progs_t *pr)
 {
-	PR_AddBuiltin (pr, "print", bi_print, 1);
-	PR_AddBuiltin (pr, "errno", bi_errno, 3);
-	PR_AddBuiltin (pr, "strerror", bi_strerror, 4);
-	PR_AddBuiltin (pr, "open", bi_open, 5);
-	PR_AddBuiltin (pr, "close", bi_close, 6);
-	PR_AddBuiltin (pr, "read", bi_read, 7);
-	PR_AddBuiltin (pr, "write", bi_write, 8);
-	PR_AddBuiltin (pr, "seek", bi_seek, 9);
-	PR_AddBuiltin (pr, "traceon", bi_traceon, 10);
-	PR_AddBuiltin (pr, "traceoff", bi_traceoff, 11);
-	PR_AddBuiltin (pr, "printf", bi_printf, 12);
+	PR_RegisterBuiltins (pr, builtins);
 }

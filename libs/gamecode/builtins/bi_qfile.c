@@ -268,6 +268,37 @@ bi_Qfilesize (progs_t *pr)
 	R_INT (pr) = Qfilesize (*h);
 }
 
+static builtin_t secure_builtins[] = {
+	{"Qrename",		secured,		-1},
+	{"Qremove",		secured,		-1},
+	{"Qopen",		secured,		-1},
+	{0}
+};
+
+static builtin_t insecure_builtins[] = {
+	{"Qrename",		bi_Qrename,		-1},
+	{"Qremove",		bi_Qremove,		-1},
+	{"Qopen",		bi_Qopen,		-1},
+	{0}
+};
+
+static builtin_t builtins[] = {
+	{"Qclose",		bi_Qclose,		-1},
+	{"Qgetline",	bi_Qgetline,	-1},
+	{"Qread",		bi_Qread,		-1},
+	{"Qwrite",		bi_Qwrite,		-1},
+	{"Qputs",		bi_Qputs,		-1},
+//	{"Qgets",		bi_Qgets,		-1},
+	{"Qgetc",		bi_Qgetc,		-1},
+	{"Qputc",		bi_Qputc,		-1},
+	{"Qseek",		bi_Qseek,		-1},
+	{"Qtell",		bi_Qtell,		-1},
+	{"Qflush",		bi_Qflush,		-1},
+	{"Qeof",		bi_Qeof,		-1},
+	{"Qfilesize",	bi_Qfilesize,	-1},
+	{0}
+};
+
 void
 QFile_Progs_Init (progs_t *pr, int secure)
 {
@@ -275,25 +306,9 @@ QFile_Progs_Init (progs_t *pr, int secure)
 
 	PR_Resources_Register (pr, "QFile", res, bi_qfile_clear);
 	if (secure) {
-		PR_AddBuiltin (pr, "Qrename", secured, -1);
-		PR_AddBuiltin (pr, "Qremove", secured, -1);
-		PR_AddBuiltin (pr, "Qopen", secured, -1);
+		PR_RegisterBuiltins (pr, secure_builtins);
 	} else {
-		PR_AddBuiltin (pr, "Qrename", bi_Qrename, -1);
-		PR_AddBuiltin (pr, "Qremove", bi_Qremove, -1);
-		PR_AddBuiltin (pr, "Qopen", bi_Qopen, -1);
+		PR_RegisterBuiltins (pr, insecure_builtins);
 	}
-	PR_AddBuiltin (pr, "Qclose", bi_Qclose, -1);
-	PR_AddBuiltin (pr, "Qgetline", bi_Qgetline, -1);
-	PR_AddBuiltin (pr, "Qread", bi_Qread, -1);
-	PR_AddBuiltin (pr, "Qwrite", bi_Qwrite, -1);
-	PR_AddBuiltin (pr, "Qputs", bi_Qputs, -1);
-//	PR_AddBuiltin (pr, "Qgets", bi_Qgets, -1);
-	PR_AddBuiltin (pr, "Qgetc", bi_Qgetc, -1);
-	PR_AddBuiltin (pr, "Qputc", bi_Qputc, -1);
-	PR_AddBuiltin (pr, "Qseek", bi_Qseek, -1);
-	PR_AddBuiltin (pr, "Qtell", bi_Qtell, -1);
-	PR_AddBuiltin (pr, "Qflush", bi_Qflush, -1);
-	PR_AddBuiltin (pr, "Qeof", bi_Qeof, -1);
-	PR_AddBuiltin (pr, "Qfilesize", bi_Qfilesize, -1);
+	PR_RegisterBuiltins (pr, builtins);
 }

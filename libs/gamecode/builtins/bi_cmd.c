@@ -147,6 +147,14 @@ bi_Cmd_Args (progs_t *pr)
 //Cmd_ExecuteString
 //Cmd_ForwardToServer
 
+static builtin_t builtins[] = {
+	{"Cmd_AddCommand",	bi_Cmd_AddCommand,	-1},
+	{"Cmd_Argc",		bi_Cmd_Argc,		-1},
+	{"Cmd_Argv",		bi_Cmd_Argv,		-1},
+	{"Cmd_Args",		bi_Cmd_Args,		-1},
+	{0}
+};
+
 void
 Cmd_Progs_Init (progs_t *pr)
 {
@@ -157,8 +165,5 @@ Cmd_Progs_Init (progs_t *pr)
 
 	bi_cmds = Hash_NewTable (1021, bi_cmd_get_key, bi_cmd_free, 0);
 
-	PR_AddBuiltin (pr, "Cmd_AddCommand", bi_Cmd_AddCommand, -1);
-	PR_AddBuiltin (pr, "Cmd_Argc", bi_Cmd_Argc, -1);
-	PR_AddBuiltin (pr, "Cmd_Argv", bi_Cmd_Argv, -1);
-	PR_AddBuiltin (pr, "Cmd_Args", bi_Cmd_Args, -1);
+	PR_RegisterBuiltins (pr, builtins);
 }

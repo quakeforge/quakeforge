@@ -169,6 +169,20 @@ plist_compare (void *k1, void *k2, void *unused)
 	return k1 == k2;
 }
 
+static builtin_t builtins[] = {
+	{"PL_GetPropertyList",			bi_PL_GetPropertyList,			-1},
+	{"PL_ObjectForKey",				bi_PL_ObjectForKey,				-1},
+	{"PL_ObjectAtIndex",			bi_PL_ObjectAtIndex,			-1},
+	{"PL_D_AddObject",				bi_PL_D_AddObject,				-1},
+	{"PL_A_AddObject",				bi_PL_A_AddObject,				-1},
+	{"PL_A_InsertObjectAtIndex",	bi_PL_A_InsertObjectAtIndex,	-1},
+	{"PL_NewDictionary",			bi_PL_NewDictionary,			-1},
+	{"PL_NewArray",					bi_PL_NewArray,					-1},
+//	{"PL_NewData",					bi_PL_NewData,					-1},
+	{"PL_NewString",				bi_PL_NewString,				-1},
+	{0}
+};
+
 void
 Plist_Progs_Init (progs_t *pr)
 {
@@ -177,14 +191,5 @@ Plist_Progs_Init (progs_t *pr)
 	Hash_SetHashCompare (res->items, plist_get_hash, plist_compare);
 
 	PR_Resources_Register (pr, "plist", res, bi_plist_clear);
-	PR_AddBuiltin (pr, "PL_GetPropertyList", bi_PL_GetPropertyList, -1);
-	PR_AddBuiltin (pr, "PL_ObjectForKey", bi_PL_ObjectForKey, -1);
-	PR_AddBuiltin (pr, "PL_ObjectAtIndex", bi_PL_ObjectAtIndex, -1);
-	PR_AddBuiltin (pr, "PL_D_AddObject", bi_PL_D_AddObject, -1);
-	PR_AddBuiltin (pr, "PL_A_AddObject", bi_PL_A_AddObject, -1);
-	PR_AddBuiltin (pr, "PL_A_InsertObjectAtIndex", bi_PL_A_InsertObjectAtIndex, -1);
-	PR_AddBuiltin (pr, "PL_NewDictionary", bi_PL_NewDictionary, -1);
-	PR_AddBuiltin (pr, "PL_NewArray", bi_PL_NewArray, -1);
-	//PR_AddBuiltin (pr, "PL_NewData", bi_PL_NewData, -1);
-	PR_AddBuiltin (pr, "PL_NewString", bi_PL_NewString, -1);
+	PR_RegisterBuiltins (pr, builtins);
 }

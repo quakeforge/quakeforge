@@ -56,8 +56,13 @@ bi_Cvar_GetCvarString (progs_t *pr)
 	RETURN_STRING (pr, Cvar_VariableString (varname));
 }
 
+static builtin_t builtins[] = {
+	{"Cvar_GetCvarString",	bi_Cvar_GetCvarString,	-1},
+	{0}
+};
+
 void
 Cvar_Progs_Init (progs_t *pr)
 {
-	PR_AddBuiltin (pr, "Cvar_GetCvarString", bi_Cvar_GetCvarString, -1);
+	PR_RegisterBuiltins (pr, builtins);
 }

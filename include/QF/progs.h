@@ -210,8 +210,9 @@ const char *PR_GlobalStringNoContents (progs_t *pr, int ofs, etype_t type);
 
 pr_type_t *GetEdictFieldValue(progs_t *pr, edict_t *ed, const char *field);
 
-void PR_AddBuiltin (progs_t *pr, const char *name, builtin_proc builtin, int num);
+void PR_RegisterBuiltins (progs_t *pr, builtin_t *builtins);
 builtin_t *PR_FindBuiltin (progs_t *pr, const char *name);
+builtin_t *PR_FindBuiltinNum (progs_t *pr, int num);
 int PR_RelocateBuiltins (progs_t *pr);
 int PR_ResolveGlobals (progs_t *pr);
 
@@ -313,6 +314,9 @@ struct progs_s {
 	int         zone_size;
 
 	struct hashtab_s *builtin_hash;
+	struct hashtab_s *builtin_num_hash;
+	unsigned    bi_next;
+
 	struct hashtab_s *function_hash;
 	struct hashtab_s *global_hash;
 	struct hashtab_s *field_hash;
@@ -377,9 +381,6 @@ struct progs_s {
 	void     *(*load_file)(progs_t *pr, const char *path);
 	void     *(*allocate_progs_mem)(progs_t *pr, int size);
 	void      (*free_progs_mem)(progs_t *pr, void *mem);
-
-	builtin_t **builtins;
-	int         numbuiltins;
 
 	pr_resource_t *resources;
 	struct hashtab_s *resource_hash;

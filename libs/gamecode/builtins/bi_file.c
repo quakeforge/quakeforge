@@ -173,8 +173,13 @@ error:
 	R_INT (pr) = 0;
 }
 
+static builtin_t builtins[] = {
+	{"File_Open",	bi_File_Open,	-1},
+	{0}
+};
+
 void
 File_Progs_Init (progs_t *pr)
 {
-	PR_AddBuiltin (pr, "File_Open", bi_File_Open, -1);
+	PR_RegisterBuiltins (pr, builtins);
 }

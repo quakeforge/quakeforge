@@ -176,6 +176,15 @@ bi_GIB_Handle_Get (progs_t *pr)
 	//	R_INT (pr) = 0;
 }
 
+static builtin_t builtins[] = {
+	{"GIB_Builtin_Add",	bi_GIB_Builtin_Add,	-1},
+	{"GIB_Return",		bi_GIB_Return,		-1},
+	{"GIB_Handle_New",	bi_GIB_Handle_New,	-1},
+	{"GIB_Handle_Free",	bi_GIB_Handle_Free,	-1},
+	{"GIB_Handle_Get",	bi_GIB_Handle_Get,	-1},
+	{0}
+};
+
 void
 GIB_Progs_Init (progs_t *pr)
 {
@@ -184,11 +193,8 @@ GIB_Progs_Init (progs_t *pr)
 
 	PR_Resources_Register (pr, "GIB", res, bi_gib_builtin_clear);
 
-	bi_gib_builtins = Hash_NewTable (1021, bi_gib_builtin_get_key, bi_gib_builtin_free, 0);
+	bi_gib_builtins = Hash_NewTable (1021, bi_gib_builtin_get_key,
+									 bi_gib_builtin_free, 0);
 
-	PR_AddBuiltin (pr, "GIB_Builtin_Add", bi_GIB_Builtin_Add, -1);
-	PR_AddBuiltin (pr, "GIB_Return", bi_GIB_Return, -1);
-	PR_AddBuiltin (pr, "GIB_Handle_New", bi_GIB_Handle_New, -1);
-	PR_AddBuiltin (pr, "GIB_Handle_Free", bi_GIB_Handle_Free, -1);
-	PR_AddBuiltin (pr, "GIB_Handle_Get", bi_GIB_Handle_Get, -1);
+	PR_RegisterBuiltins (pr, builtins);
 }

@@ -116,11 +116,16 @@ bi_QFS_WriteFile (progs_t *pr)
 	QFS_WriteFile (va ("%s/%s", qfs_gamedir->dir.def, filename), buf, count);
 }
 
+static builtin_t builtins[] = {
+	{"QFS_Rename",		bi_QFS_Rename,		-1},
+	{"QFS_LoadFile",	bi_QFS_LoadFile,	-1},
+	{"QFS_OpenFile",	bi_QFS_OpenFile,	-1},
+	{"QFS_WriteFile",	bi_QFS_WriteFile,	-1},
+	{0}
+};
+
 void
 QFS_Progs_Init (progs_t *pr)
 {
-	PR_AddBuiltin (pr, "QFS_Rename", bi_QFS_Rename, -1);
-	PR_AddBuiltin (pr, "QFS_LoadFile", bi_QFS_LoadFile, -1);
-	PR_AddBuiltin (pr, "QFS_OpenFile", bi_QFS_OpenFile, -1);
-	PR_AddBuiltin (pr, "QFS_WriteFile", bi_QFS_WriteFile, -1);
+	PR_RegisterBuiltins (pr, builtins);
 }

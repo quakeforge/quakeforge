@@ -221,6 +221,19 @@ bi_draw_clear (progs_t *pr, void *data)
 	Hash_FlushTable (res->pic_hash);
 }
 
+static builtin_t builtins[] = {
+	{"Draw_CachePic",	bi_Draw_CachePic,	-1},
+	{"Draw_Pic",		bi_Draw_Pic,		-1},
+	{"Draw_SubPic",		bi_Draw_SubPic,		-1},
+	{"Draw_CenterPic",	bi_Draw_CenterPic,	-1},
+	{"Draw_Character",	bi_Draw_Character,	-1},
+	{"Draw_String",		bi_Draw_String,		-1},
+	{"Draw_nString",	bi_Draw_nString,	-1},
+	{"Draw_AltString",	bi_Draw_AltString,	-1},
+	{"Draw_Fill",		bi_Draw_Fill,		-1},
+	{0}
+};
+
 void
 R_Progs_Init (progs_t *pr)
 {
@@ -228,13 +241,5 @@ R_Progs_Init (progs_t *pr)
 	res->pic_hash = Hash_NewTable (61, bi_draw_get_key, bi_draw_free, 0);
 
 	PR_Resources_Register (pr, "Draw", res, bi_draw_clear);
-	PR_AddBuiltin (pr, "Draw_CachePic", bi_Draw_CachePic, -1);
-	PR_AddBuiltin (pr, "Draw_Pic", bi_Draw_Pic, -1);
-	PR_AddBuiltin (pr, "Draw_SubPic", bi_Draw_SubPic, -1);
-	PR_AddBuiltin (pr, "Draw_CenterPic", bi_Draw_CenterPic, -1);
-	PR_AddBuiltin (pr, "Draw_Character", bi_Draw_Character, -1);
-	PR_AddBuiltin (pr, "Draw_String", bi_Draw_String, -1);
-	PR_AddBuiltin (pr, "Draw_nString", bi_Draw_nString, -1);
-	PR_AddBuiltin (pr, "Draw_AltString", bi_Draw_AltString, -1);
-	PR_AddBuiltin (pr, "Draw_Fill", bi_Draw_Fill, -1);
+	PR_RegisterBuiltins (pr, builtins);
 }

@@ -340,8 +340,6 @@ SV_Progs_Init (void)
 	sv_pr_state.time = &sv.time;
 	sv_pr_state.reserved_edicts = &svs.maxclients;
 	sv_pr_state.unlink = SV_UnlinkEdict;
-	sv_pr_state.builtins = 0;
-	sv_pr_state.numbuiltins = 0;
 	sv_pr_state.parse_field = parse_field;
 	sv_pr_state.prune_edict = prune_edict;
 

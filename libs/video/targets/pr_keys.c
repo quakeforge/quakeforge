@@ -130,13 +130,17 @@ bi_Key_KeynumToString (progs_t *pr)
 	RETURN_STRING (pr, Key_KeynumToString (keynum));
 };
 
+static builtin_t builtins[] = {
+	{"Key_SetBinding",		bi_Key_SetBinding,		-1},
+	{"Key_LookupBinding",	bi_Key_LookupBinding,	-1},
+	{"Key_CountBinding",	bi_Key_CountBinding,	-1},
+	{"Key_KeynumToString",	bi_Key_KeynumToString,	-1},
+// NEED THIS ?//	{"Key_StringToKeynum",	bi_Key_KeynumToString,	-1},
+	{0}
+};
 
 void
 Key_Progs_Init (progs_t *pr)
 {
-	PR_AddBuiltin (pr, "Key_SetBinding", bi_Key_SetBinding, -1);
-	PR_AddBuiltin (pr, "Key_LookupBinding", bi_Key_LookupBinding, -1);
-	PR_AddBuiltin (pr, "Key_CountBinding", bi_Key_CountBinding, -1);
-	PR_AddBuiltin (pr, "Key_KeynumToString", bi_Key_KeynumToString, -1);
-// NEED THIS ?//	PR_AddBuiltin (pr, "Key_StringToKeynum", bi_Key_KeynumToString, -1);
+	PR_RegisterBuiltins (pr, builtins);
 }

@@ -54,58 +54,97 @@ static __attribute__ ((unused)) const char rcsid[] =
 
 #include "compat.h"
 
+/*
+	Builtins are arranged into groups of 65536 to allow for diffent expantion
+	sets. eg, stock id is 0x0000xxxx, quakeforge is 0x000fxxxx. predefined
+	groups go up to 0x0fffxxxx allowing 4096 different groups. Builtins
+	0x10000000 to 0x7fffffff are reserved for auto-allocation. The range
+	0x8000000 to 0xffffffff is unavailable due to the builtin number being
+	a negative statement address.
+*/
+#define PR_AUTOBUILTIN 0x10000000
+
 static const char *
 builtin_get_key (void *_bi, void *unused)
 {
 	builtin_t *bi = (builtin_t *)_bi;
+
 	return bi->name;
 }
 
-#define PR_AUTOBUILTIN 120
-void
-PR_AddBuiltin (progs_t *pr, const char *name, builtin_proc builtin, int num)
+static unsigned long
+builtin_get_hash (void *_bi, void *unused)
 {
-	int i;
+	builtin_t *bi = (builtin_t *)_bi;
 
-	if (!pr->builtin_hash)
+	return bi->binum;
+}
+
+static int
+builtin_compare (void *_bia, void *_bib, void *unused)
+{
+	builtin_t *bia = (builtin_t *)_bia;
+	builtin_t *bib = (builtin_t *)_bib;
+
+	return bia->binum == bib->binum;
+}
+
+static int
+builtin_next (progs_t *pr)
+{
+	if (!pr->bi_next)
+		pr->bi_next = PR_AUTOBUILTIN;
+	if (pr->bi_next == 0x80000000)
+		PR_Error (pr, "too many auto-allocated builtins");
+	return pr->bi_next++;
+}
+
+void
+PR_RegisterBuiltins (progs_t *pr, builtin_t *builtins)
+{
+	builtin_t  *bi;
+
+	if (!pr->builtin_hash) {
 		pr->builtin_hash = Hash_NewTable (1021, builtin_get_key, 0, pr);
-
-	if (pr->numbuiltins == 0) {
-		pr->builtins = calloc (PR_AUTOBUILTIN, sizeof (builtin_t*));
-		pr->numbuiltins = PR_AUTOBUILTIN;
-		if (!pr->builtins)
-			PR_Error (pr, "PR_AddBuiltin: memory allocation error!");
+		pr->builtin_num_hash = Hash_NewTable (1021, 0, 0, pr);
+		Hash_SetHashCompare (pr->builtin_num_hash, builtin_get_hash,
+							 builtin_compare);
 	}
 
-	if (num < 0) {
-		for (i = PR_AUTOBUILTIN;
-			 i < pr->numbuiltins && pr->builtins[i]; i++)
-			;
-		if (i >= pr->numbuiltins) {
-			pr->numbuiltins++;
-			pr->builtins = realloc (pr->builtins,
-									pr->numbuiltins * sizeof (builtin_t*));
-			if (!pr->builtins)
-				PR_Error (pr, "PR_AddBuiltin: memory allocation error!");
-		}
-	} else {
-		if (num >= PR_AUTOBUILTIN || num == 0)
-			PR_Error (pr, "PR_AddBuiltin: invalid builtin number.");
-		if (pr->builtins[num])
-			PR_Error (pr, "PR_AddBuiltin: builtin number already exists.");
-		i = num;
+	while (builtins->name) {
+		if (builtins->binum == 0 || builtins->binum >= PR_AUTOBUILTIN)
+			PR_Error (pr, "bad builtin number: %s = #%d", builtins->name,
+					  builtins->binum);
+
+		if (builtins->binum < 0)
+			builtins->binum = builtin_next (pr);
+
+		if ((bi = Hash_Find (pr->builtin_hash, builtins->name))
+			|| (bi = Hash_FindElement (pr->builtin_num_hash, builtins)))
+			PR_Error (pr, "builtin %s = #%d already defined (%s = #%d)",
+					  builtins->name, builtins->binum,
+					  bi->name, bi->binum);
+
+		Hash_Add (pr->builtin_hash, builtins);
+		Hash_AddElement (pr->builtin_num_hash, builtins);
+
+		builtins++;
 	}
-	pr->builtins[i] = malloc (sizeof (builtin_t));
-	pr->builtins[i]->proc = builtin;
-	pr->builtins[i]->name = name;
-	pr->builtins[i]->binum = i;
-	Hash_Add (pr->builtin_hash, pr->builtins[i]);
 }
 
 builtin_t *
 PR_FindBuiltin (progs_t *pr, const char *name)
 {
 	return (builtin_t *) Hash_Find (pr->builtin_hash, name);
+}
+
+builtin_t *
+PR_FindBuiltinNum (progs_t *pr, int num)
+{
+	builtin_t   bi;
+
+	bi.binum = num;
+	return (builtin_t *) Hash_FindElement (pr->builtin_num_hash, &bi);
 }
 
 static void
@@ -150,9 +189,8 @@ PR_RelocateBuiltins (progs_t *pr)
 			func->first_statement = -bi->binum;
 		}
 
-		ind = -func->first_statement;
-		if (ind >= pr->numbuiltins || !(bi = pr->builtins[ind])
-			|| !(proc = bi->proc)) {
+		bi = PR_FindBuiltinNum (pr, -func->first_statement);
+		if (!bi || !(proc = bi->proc)) {
 			Sys_DPrintf ("WARNING: Bad builtin call number: %s = #%d\n",
 						 bi_name, ind);
 			proc = bi_no_function;

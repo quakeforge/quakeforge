@@ -53,21 +53,16 @@ static __attribute__ ((unused)) const char rcsid[] =
 static void
 call_function (progs_t *pr, func_t func)
 {
-	dfunction_t *newf;
+	dfunction_t *f;
 
 	if (!func)
 		PR_RunError (pr, "NULL function");
-	newf = pr->pr_functions + func;
-	if (newf->first_statement < 0) {
+	f = pr->pr_functions + func;
+	if (f->first_statement < 0) {
 		// negative statements are built in functions
-		int         i = -newf->first_statement;
-
-		if (i >= pr->numbuiltins || !pr->builtins[i]
-			|| !pr->builtins[i]->proc)
-			PR_RunError (pr, "Bad builtin call number");
-		pr->builtins[i]->proc (pr);
+		((bfunction_t *) f)->func (pr);
 	} else {
-		PR_EnterFunction (pr, newf);
+		PR_EnterFunction (pr, f);
 	}
 }
 
@@ -919,79 +914,73 @@ pr__c_Object__conformsToProtocol_ (progs_t *pr)
 
 //====================================================================
 
-static struct {
-	const char *name;
-	void      (*func)(progs_t *pr);
-} obj_methods [] = {
-	{"__obj_exec_class",		pr___obj_exec_class},
+static builtin_t obj_methods [] = {
+	{"__obj_exec_class",			pr___obj_exec_class,			-1},
 
-	{"obj_error",				pr_obj_error},
-	{"obj_verror",				pr_obj_verror},
-	{"obj_set_error_handler",	pr_obj_set_error_handler},
-	{"obj_msg_lookup",			pr_obj_msg_lookup},
-	{"obj_msg_lookup_super",	pr_obj_msg_lookup_super},
-	{"obj_msg_sendv",			pr_obj_msg_sendv},
-	{"obj_malloc",				pr_obj_malloc},
-	{"obj_atomic_malloc",		pr_obj_atomic_malloc},
-	{"obj_valloc",				pr_obj_valloc},
-	{"obj_realloc",				pr_obj_realloc},
-	{"obj_calloc",				pr_obj_calloc},
-	{"obj_free",				pr_obj_free},
-	{"obj_get_uninstalled_dtable", pr_obj_get_uninstalled_dtable},
-	{"obj_msgSend",				pr_obj_msgSend},
-	{"obj_msgSend_super",		pr_obj_msgSend_super},
+	{"obj_error",					pr_obj_error,					-1},
+	{"obj_verror",					pr_obj_verror,					-1},
+	{"obj_set_error_handler",		pr_obj_set_error_handler,		-1},
+	{"obj_msg_lookup",				pr_obj_msg_lookup,				-1},
+	{"obj_msg_lookup_super",		pr_obj_msg_lookup_super,		-1},
+	{"obj_msg_sendv",				pr_obj_msg_sendv,				-1},
+	{"obj_malloc",					pr_obj_malloc,					-1},
+	{"obj_atomic_malloc",			pr_obj_atomic_malloc,			-1},
+	{"obj_valloc",					pr_obj_valloc,					-1},
+	{"obj_realloc",					pr_obj_realloc,					-1},
+	{"obj_calloc",					pr_obj_calloc,					-1},
+	{"obj_free",					pr_obj_free,					-1},
+	{"obj_get_uninstalled_dtable",	pr_obj_get_uninstalled_dtable,	-1},
+	{"obj_msgSend",					pr_obj_msgSend,					-1},
+	{"obj_msgSend_super",			pr_obj_msgSend_super,			-1},
+	
+	{"obj_get_class",				pr_obj_get_class,				-1},
+	{"obj_lookup_class",			pr_obj_lookup_class,			-1},
+	{"obj_next_class",				pr_obj_next_class,				-1},
 
-	{"obj_get_class",			pr_obj_get_class},
-	{"obj_lookup_class",		pr_obj_lookup_class},
-	{"obj_next_class",			pr_obj_next_class},
+	{"sel_get_name",				pr_sel_get_name,				-1},
+	{"sel_get_type",				pr_sel_get_type,				-1},
+	{"sel_get_uid",					pr_sel_get_uid,					-1},
+	{"sel_register_name",			pr_sel_register_name,			-1},
+	{"sel_is_mapped",				pr_sel_is_mapped,				-1},
 
-	{"sel_get_name",			pr_sel_get_name},
-	{"sel_get_type",			pr_sel_get_type},
-	{"sel_get_uid",				pr_sel_get_uid},
-	{"sel_register_name",		pr_sel_register_name},
-	{"sel_is_mapped",			pr_sel_is_mapped},
+	{"class_get_class_method",		pr_class_get_class_method,		-1},
+	{"class_get_instance_method",	pr_class_get_instance_method,	-1},
+	{"class_pose_as",				pr_class_pose_as,				-1},
+	{"class_create_instance",		pr_class_create_instance,		-1},
+	{"class_get_class_name",		pr_class_get_class_name,		-1},
+	{"class_get_instance_size",		pr_class_get_instance_size,		-1},
+	{"class_get_meta_class",		pr_class_get_meta_class,		-1},
+	{"class_get_super_class",		pr_class_get_super_class,		-1},
+	{"class_get_version",			pr_class_get_version,			-1},
+	{"class_is_class",				pr_class_is_class,				-1},
+	{"class_is_meta_class",			pr_class_is_meta_class,			-1},
+	{"class_set_version",			pr_class_set_version,			-1},
+	{"class_get_gc_object_type",	pr_class_get_gc_object_type,	-1},
+	{"class_ivar_set_gcinvisible",	pr_class_ivar_set_gcinvisible,	-1},
 
-	{"class_get_class_method",	pr_class_get_class_method},
-	{"class_get_instance_method", pr_class_get_instance_method},
-	{"class_pose_as",			pr_class_pose_as},
-	{"class_create_instance",	pr_class_create_instance},
-	{"class_get_class_name",	pr_class_get_class_name},
-	{"class_get_instance_size",	pr_class_get_instance_size},
-	{"class_get_meta_class",	pr_class_get_meta_class},
-	{"class_get_super_class",	pr_class_get_super_class},
-	{"class_get_version",		pr_class_get_version},
-	{"class_is_class",			pr_class_is_class},
-	{"class_is_meta_class",		pr_class_is_meta_class},
-	{"class_set_version",		pr_class_set_version},
-	{"class_get_gc_object_type", pr_class_get_gc_object_type},
-	{"class_ivar_set_gcinvisible", pr_class_ivar_set_gcinvisible},
+	{"method_get_imp",				pr_method_get_imp,				-1},
+	{"get_imp",						pr_get_imp,						-1},
 
-	{"method_get_imp",			pr_method_get_imp},
-	{"get_imp",					pr_get_imp},
+	{"object_copy",					pr_object_copy,					-1},
+	{"object_dispose",				pr_object_dispose,				-1},
+	{"object_get_class",			pr_object_get_class,			-1},
+	{"object_get_class_name",		pr_object_get_class_name,		-1},
+	{"object_get_meta_class",		pr_object_get_meta_class,		-1},
+	{"object_get_super_class",		pr_object_get_super_class,		-1},
+	{"object_is_class",				pr_object_is_class,				-1},
+	{"object_is_instance",			pr_object_is_instance,			-1},
+	{"object_is_meta_class",		pr_object_is_meta_class,		-1},
 
-	{"object_copy",				pr_object_copy},
-	{"object_dispose",			pr_object_dispose},
-	{"object_get_class",		pr_object_get_class},
-	{"object_get_class_name",	pr_object_get_class_name},
-	{"object_get_meta_class",	pr_object_get_meta_class},
-	{"object_get_super_class",	pr_object_get_super_class},
-	{"object_is_class",			pr_object_is_class},
-	{"object_is_instance",		pr_object_is_instance},
-	{"object_is_meta_class",	pr_object_is_meta_class},
-
-	{"_i_Object__hash",			pr__i_Object__hash},
-	{"_i_Object_error_error_",		pr__i_Object_error_error_},
-	{"_c_Object__conformsToProtocol_",	pr__c_Object__conformsToProtocol_},
+	{"_i_Object__hash",				pr__i_Object__hash,				-1},
+	{"_i_Object_error_error_",		pr__i_Object_error_error_,		-1},
+	{"_c_Object__conformsToProtocol_", pr__c_Object__conformsToProtocol_, -1},
+	{0}
 };
 
 void
 PR_Obj_Progs_Init (progs_t *pr)
 {
-	size_t      i;
-
-	for (i = 0; i < sizeof (obj_methods) / sizeof (obj_methods[0]); i++) {
-		PR_AddBuiltin (pr, obj_methods[i].name, obj_methods[i].func, -1);
-	}
+	PR_RegisterBuiltins (pr, obj_methods);
 }
 
 int
