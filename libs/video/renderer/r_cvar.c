@@ -71,7 +71,6 @@ cvar_t     *gl_lightmap_align;
 cvar_t     *gl_lightmap_subimage;
 cvar_t     *gl_max_size;
 cvar_t     *gl_nocolors;
-cvar_t     *gl_occlusion;
 cvar_t     *gl_particle_mip;
 cvar_t     *gl_particle_size;
 cvar_t     *gl_picmip;
@@ -255,9 +254,6 @@ R_Init_Cvars (void)
 							"Texture dimension");
 	gl_nocolors = Cvar_Get ("gl_nocolors", "0", CVAR_NONE, NULL,
 							"Set to 1, turns off all player colors");
-	gl_occlusion = Cvar_Get ("gl_occlusion", "0", CVAR_NONE, NULL,
-							 "Toggles experimental alias model occlusion "
-							 "tests.");
 	gl_particle_mip = Cvar_Get ("gl_particle_mip", "0", CVAR_NONE, NULL,
 								"Toggles particle texture mipmapping.");
 	gl_particle_size = Cvar_Get ("gl_particle_size", "5", CVAR_NONE, NULL,

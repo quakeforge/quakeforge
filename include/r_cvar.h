@@ -28,7 +28,6 @@ extern struct cvar_s     *gl_lightmap_subimage;
 extern struct cvar_s     *gl_max_size;
 extern struct cvar_s     *gl_multitexture;
 extern struct cvar_s     *gl_nocolors;
-extern struct cvar_s     *gl_occlusion;
 extern struct cvar_s     *gl_particle_mip;
 extern struct cvar_s     *gl_particle_size;
 extern struct cvar_s     *gl_picmip;
