@@ -83,7 +83,7 @@ dump_class (progs_t *pr, pr_class_t *class)
 		class_name = PR_GetString (pr, class->name);
 	if (class->super_class) {
 		if (PR_StringValid (pr, class->super_class))
-			class_name = PR_GetString (pr, class->super_class);
+			super_class_name = PR_GetString (pr, class->super_class);
 		printf ("    %s @ %d : %s\n", class_name, POINTER_TO_PROG (pr, class),
 				super_class_name);
 	} else {
