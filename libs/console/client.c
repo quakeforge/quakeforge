@@ -308,9 +308,13 @@ C_ExecLine (const char *line)
 static void
 C_Say (const char *line)
 {
-	Cbuf_AddTextTo (cmd_legacybuffer, "say \"");
-	Cbuf_AddTextTo (cmd_legacybuffer, line);
-	Cbuf_AddTextTo (cmd_legacybuffer, "\"\n");
+	dstring_t *dstr = dstring_newstr ();
+	dstring_appendstr (dstr, line);
+	escape (dstr, "\"$#~\\");
+	Cbuf_AddTextTo (cmd_keybindbuffer, "say \"");
+	Cbuf_AddTextTo (cmd_keybindbuffer, dstr->str);
+	Cbuf_AddTextTo (cmd_keybindbuffer, "\"\n");
+	dstring_delete (dstr);
 	key_dest = key_game;
 	game_target = IMT_0;
 }
@@ -318,9 +322,13 @@ C_Say (const char *line)
 static void
 C_SayTeam (const char *line)
 {
-	Cbuf_AddTextTo (cmd_legacybuffer, "say_team \"");
-	Cbuf_AddTextTo (cmd_legacybuffer, line);
-	Cbuf_AddTextTo (cmd_legacybuffer, "\"\n");
+	dstring_t *dstr = dstring_newstr ();
+	dstring_appendstr (dstr, line);
+	escape (dstr, "\"");
+	Cbuf_AddTextTo (cmd_keybindbuffer, "say_team \"");
+	Cbuf_AddTextTo (cmd_keybindbuffer, dstr->str);
+	Cbuf_AddTextTo (cmd_keybindbuffer, "\"\n");
+	dstring_delete (dstr);
 	key_dest = key_game;
 	game_target = IMT_0;
 }

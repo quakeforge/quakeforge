@@ -258,24 +258,15 @@ escaped (const char *str, int i)
 
 /* Quick function to escape stuff in a dstring */
 void
-escape (dstring_t * dstr)
+escape (dstring_t * dstr, const char *clist)
 {
 	int         i;
 
 	for (i = 0; i < strlen (dstr->str); i++) {
-		switch (dstr->str[i]) {
-			case '\\':
-			case '$':
-			case '#':
-			case '{':
-			case '}':
-			case '\"':
-			case '\'':
-			case '<':
-			case '>':
+		if (strchr(clist, dstr->str[i]) && !escaped(dstr->str,i)) {
 				dstring_insertstr (dstr, "\\", i);
 				i++;
-				break;
+				continue;
 		}
 	}
 }
@@ -394,27 +385,23 @@ Cbuf_InsertText (const char *text)
 void
 Cbuf_ExtractLine (dstring_t * buffer, dstring_t * line, qboolean legacy)
 {
-	int         i, squotes = 0, dquotes = 0, braces = 0, n;
+	int         i, dquotes = 0, braces = 0, n;
 	char		*tmp;
 
 	for (i = 0; buffer->str[i]; i++) {
-		if (!legacy && buffer->str[i] == '\'' && !escaped (buffer->str, i)
-			&& !dquotes)
-			squotes ^= 1;
-		if (buffer->str[i] == '"' && !escaped (buffer->str, i)
-			&& !squotes)
+		if (buffer->str[i] == '"' && !escaped (buffer->str, i))
 			dquotes ^= 1;
 		if (buffer->str[i] == ';' && !escaped (buffer->str, i)
-			&& !squotes && !dquotes && !braces)
+			&& !dquotes && !braces)
 			break;
 		if (!legacy && buffer->str[i] == '{' && !escaped (buffer->str, i)
-			&& !squotes && !dquotes)
+			&& !dquotes)
 			braces++;
 		if (!legacy && buffer->str[i] == '}' && !escaped (buffer->str, i)
-			&& !squotes && !dquotes)
+			&& !dquotes)
 			braces--;
 		if (buffer->str[i] == '/' && buffer->str[i + 1] == '/'
-			&& !squotes && !dquotes) {
+			&& !dquotes) {
 			// Filter out comments until newline
 			if ((tmp = strchr (buffer->str+i, '\n')))
 				n = tmp - (buffer->str+i);
@@ -424,13 +411,8 @@ Cbuf_ExtractLine (dstring_t * buffer, dstring_t * line, qboolean legacy)
 				n = strlen(buffer->str+i); // snip till \0
 			dstring_snip (buffer, i, n);
 		}
-		if (buffer->str[i] == '\n' || buffer->str[i] == '\r') {
-			if (braces) {
-				dstring_snip (buffer, i, 1);
-				i--;
-			} else
-				break;
-		}
+		if ((buffer->str[i] == '\n' || buffer->str[i] == '\r') && !braces)
+			break;
 	}
 	if (i)
 		dstring_insert (line, buffer->str, i, 0);
@@ -477,6 +459,9 @@ Cbuf_ExecuteBuffer (cmd_buffer_t *buffer)
 
 		if (buffer->position == cmd_ready) {
 			Cbuf_ExtractLine (buffer->buffer, buf, buffer->legacy);
+			if (!buf->str[0])
+				continue;
+			Sys_DPrintf("Cbuf_ExecuteBuffer:  Executing line %s\n", buf->str);
 			Cmd_TokenizeString (buf->str, cmd_activebuffer->legacy);
 			if (cmd_error)
 				break;
@@ -875,17 +860,6 @@ Cmd_EndDoubleQuote (const char *str)
 	return -1;							// Not found
 }
 
-int
-Cmd_EndSingleQuote (const char *str)
-{
-	int         i;
-
-	for (i = 1; i < strlen (str); i++) {
-		if (str[i] == '\'' && !escaped (str, i))
-			return i;
-	}
-	return -1;							// Not found
-}
 
 int
 Cmd_EndBrace (const char *str)
@@ -905,12 +879,6 @@ Cmd_EndBrace (const char *str)
 				return n;
 			else
 				i += n;
-		} else if (str[i] == '\'' && !escaped (str, i)) {
-			n = Cmd_EndSingleQuote (str + i);
-			if (n < 0)
-				return n;
-			else
-				i += n;
 		} else if (str[i] == '}' && !escaped (str, i))
 			return i;
 	}
@@ -923,8 +891,6 @@ Cmd_GetToken (const char *str, qboolean legacy)
 	int         i, ret;
 
 	if (!legacy) {
-		if (*str == '\'')
-			return Cmd_EndSingleQuote (str);
 		if (*str == '{')
 			return Cmd_EndBrace (str);
 		if (*str == '}')
@@ -936,13 +902,6 @@ Cmd_GetToken (const char *str, qboolean legacy)
 		if (isspace ((byte)str[i]))
 			break;
 		if (!legacy) {
-			if (str[i] == '\'' && !escaped (str,i)) {
-				ret = Cmd_EndSingleQuote (str+i);
-				if (ret < 0)
-					return ret;
-				i += ret;
-				continue;
-			}
 			if (str[i] == '{' && !escaped (str,i)) {
 				ret = Cmd_EndBrace (str+i);
 				if (ret < 0)
@@ -1403,8 +1362,10 @@ Cmd_TokenizeString (const char *text, qboolean legacy)
 	   continue past token boundaries. */
 	tag_shift = 0;
 	tag_special = 0;
-	if (text[0] == '|')
+	if (text[0] == '|') {
+		legacy = true;
 		str++;
+	}
 	while (strlen (str + i)) {
 		if (!legacy && cmd_argc == 1) { // See if command wants unprocessed tokens
 			cmd = (cmd_function_t *) Hash_Find (cmd_hash, cmd_activebuffer->argv[0]->original->str);
@@ -1463,7 +1424,7 @@ Cmd_TokenizeString (const char *text, qboolean legacy)
 		}
 		dstring_insert (cmd_activebuffer->argv[cmd_argc-1]->original, str + i, len, 0);
 		dstring_insert (cmd_activebuffer->argv[cmd_argc-1]->processed, str + i, len, 0);
-		if (!legacy && !braces && process && text[0] != '|')
+		if (!legacy && !braces && process)
 			cmd_activebuffer->argv[cmd_argc-1]->state = cmd_process;
 		else
 			cmd_activebuffer->argv[cmd_argc-1]->state = cmd_original;
@@ -1905,7 +1866,7 @@ Cmd_If_f (void)
 	int ret;
 
 	if ((Cmd_Argc () !=3 && !(Cmd_Argc () >= 5)) || (Cmd_Argc () > 5 && strcmp(Cmd_Argv(3),"else"))) {
-		Sys_Printf ("Usage: if {condition} {commands} else {commands}\n");
+		Cmd_Error ("Malformed if statement.\n");
 		return;
 	}
 
@@ -1949,7 +1910,7 @@ Cmd_While_f (void) {
 	sub = Cmd_NewBuffer (false);
 	sub->locals = cmd_activebuffer->locals; // Use current local variables
 	sub->loop = true;
-	dstring_appendstr (sub->looptext, va("ifnot '%s' break\n", Cmd_Argv(1)));
+	dstring_appendstr (sub->looptext, va("ifnot %s break\n", Cmd_Argv(1)));
 	dstring_appendstr (sub->looptext, Cmd_Argv(2));
 	Cmd_ExecuteSubroutine (sub);
 	return;
@@ -1959,12 +1920,12 @@ void
 Cmd_For_f (void) {
 	cmd_buffer_t *sub;
 	dstring_t *arg1, *init, *cond, *inc;
-	
+
 	if (Cmd_Argc() < 2 || Cmd_Argc() > 3) {
 		Cmd_Error("Malformed for statement.\n");
 		return;
 	}
-	
+
 	arg1 = dstring_newstr ();
 	init = dstring_newstr ();
 	cond = dstring_newstr ();
@@ -1978,7 +1939,7 @@ Cmd_For_f (void) {
 		sub = Cmd_NewBuffer (false);
 		sub->locals = cmd_activebuffer->locals; // Use current local variables
 		sub->loop = true;
-		dstring_appendstr (sub->looptext, va("ifnot '%s' break\n", cond->str));
+		dstring_appendstr (sub->looptext, va("ifnot %s break\n", cond->str));
 		dstring_appendstr (sub->looptext, va("%s\n", Cmd_Argv(2)));
 		dstring_appendstr (sub->looptext, va("%s", inc->str));
 		Cbuf_InsertTextTo (sub, init->str);

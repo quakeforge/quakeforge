@@ -31,6 +31,7 @@
 
 
 #include "QF/qtypes.h"
+#include "QF/dstring.h"
 
 typedef struct cmd_localvar_s {
 	struct dstring_s *key, *value;
@@ -88,6 +89,8 @@ typedef struct cmd_buffer_s {
 } cmd_buffer_t;
 
 //===========================================================================
+
+void	escape (dstring_t * dstr, const char *clist);
 
 /*
 
