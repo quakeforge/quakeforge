@@ -317,12 +317,10 @@ C_Say (const char *line)
 {
 	if (!*line)
 		return;
-	dstring_t *dstr = dstring_newstr ();
-	dstring_appendstr (dstr, line);
+
 	Cbuf_AddText (con_data.cbuf, "say \"");
-	Cbuf_AddText (con_data.cbuf, dstr->str);
+	Cbuf_AddText (con_data.cbuf, line);
 	Cbuf_AddText (con_data.cbuf, "\"\n");
-	dstring_delete (dstr);
 	key_dest = key_game;
 	game_target = IMT_0;
 }
@@ -332,12 +330,10 @@ C_SayTeam (const char *line)
 {
 	if (!*line)
 		return;
-	dstring_t *dstr = dstring_newstr ();
-	dstring_appendstr (dstr, line);
+
 	Cbuf_AddText (con_data.cbuf, "say_team \"");
-	Cbuf_AddText (con_data.cbuf, dstr->str);
+	Cbuf_AddText (con_data.cbuf, line);
 	Cbuf_AddText (con_data.cbuf, "\"\n");
-	dstring_delete (dstr);
 	key_dest = key_game;
 	game_target = IMT_0;
 }
