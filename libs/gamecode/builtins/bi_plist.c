@@ -158,11 +158,24 @@ bi_plist_clear (progs_t *pr, void *data)
 	Hash_FlushTable (res->items);
 }
 
+static unsigned long
+plist_get_hash (void *key, void *unused)
+{
+	return (unsigned long) key;
+}
+
+static int
+plist_compare (void *k1, void *k2, void *unused)
+{
+	return k1 == k2;
+}
+
 void
 Plist_Progs_Init (progs_t *pr)
 {
 	plist_resources_t *res = malloc (sizeof (plist_resources_t));
-	res->plist = PL_NewArray ();
+	res->items = Hash_NewTable (1021, 0, 0, 0);
+	Hash_SetHashCompare (res->items, plist_get_hash, plist_compare);
 
 	PR_Resources_Register (pr, "plist", res, bi_plist_clear);
 	PR_AddBuiltin (pr, "PL_GetPropertyList", bi_PL_GetPropertyList, -1);
