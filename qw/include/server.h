@@ -133,7 +133,7 @@ typedef struct
 	packet_entities_t	entities;
 } client_frame_t;
 
-#define MAX_BACK_BUFFERS	4
+#define MAX_BACK_BUFFERS	8
 #define MAX_STUFFTEXT		512
 
 typedef struct client_s
