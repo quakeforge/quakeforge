@@ -422,7 +422,7 @@ GL_GetAliasFrameVerts (int frame, aliashdr_t *paliashdr, entity_t *e)
 		verts1 = verts + e->pose1 * count;
 		verts2 = verts + e->pose2 * count;
 
-		if (blend == 1.0) {
+		if (blend == 0.0) {
 			verts = verts1;
 		} else if (blend == 1.0) {
 			verts = verts2;
