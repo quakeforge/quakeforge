@@ -60,27 +60,27 @@ typedef struct {
 	statref_t	*refs;
 	dstatement_t *statement;
 	const char *name;
-} elabel_t;
+} ex_label_t;
 
 typedef struct {
 	struct expr_s *head;
 	struct expr_s **tail;
 	struct expr_s *result;
 	int			is_call;
-} block_t;
+} ex_block_t;
 
 typedef struct {
 	struct expr_s *expr;
 	def_t		*def;
 	type_t		*type;
 	int			users;
-} temp_t;
+} ex_temp_t;
 
 typedef struct {
 	int			val;
 	type_t		*type;
 	int			abs;
-} pointer_t;
+} ex_pointer_t;
 
 typedef struct expr_s {
 	struct expr_s *next;
@@ -90,8 +90,8 @@ typedef struct expr_s {
 	unsigned	paren:1;
 	unsigned	rvalue:1;
 	union {
-		elabel_t label;
-		block_t block;
+		ex_label_t label;
+		ex_block_t block;
 		struct {
 			int		op;
 			type_t	*type;
@@ -99,7 +99,7 @@ typedef struct expr_s {
 			struct expr_s *e2;
 		}		expr;
 		def_t	*def;
-		temp_t	temp;
+		ex_temp_t temp;
 
 		const char	*string_val;
 		float	float_val;
@@ -107,7 +107,7 @@ typedef struct expr_s {
 		int		entity_val;
 		int		field_val;
 		int		func_val;
-		pointer_t	pointer;
+		ex_pointer_t	pointer;
 		float	quaternion_val[4];
 		int		integer_val;
 		unsigned int	uinteger_val;

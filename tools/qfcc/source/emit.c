@@ -421,7 +421,7 @@ emit_expr (expr_t *e)
 	def_t      *def_a;
 	def_t      *def_b;
 	statref_t  *ref;
-	elabel_t   *label;
+	ex_label_t *label;
 
 	//printf ("%d ", e->line);
 	//print_expr (e);
