@@ -84,7 +84,7 @@ emit_statement (int sline, opcode_t *op, def_t *var_a, def_t *var_b,
 		expr_t      e;
 
 		e.line = sline;
-		e.file = s_file;
+		e.file = pr.source_file;
 		error (&e, "ice ice baby\n");
 		abort ();
 	}
@@ -107,7 +107,7 @@ emit_statement (int sline, opcode_t *op, def_t *var_a, def_t *var_b,
 	}
 	statement = &pr.statements[pr.num_statements];
 	pr.num_statements++;
-	pr.statement_linenums[statement - pr.statements] = pr_source_line;
+	pr.statement_linenums[statement - pr.statements] = pr.source_line;
 	statement->op = op->opcode;
 	statement->a = var_a ? var_a->ofs : 0;
 	statement->b = var_b ? var_b->ofs : 0;

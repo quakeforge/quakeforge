@@ -272,8 +272,8 @@ new_def (type_t *type, const char *name, scope_t *scope)
 	def->scope = scope;
 	def->space = scope->space;
 
-	def->file = s_file;
-	def->line = pr_source_line;
+	def->file = pr.source_file;
+	def->line = pr.source_line;
 
 	return def;
 }

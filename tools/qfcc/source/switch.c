@@ -342,11 +342,11 @@ switch_expr (switch_block_t *switch_block, expr_t *break_label,
 	expr_t     *sw_val = new_temp_def_expr (type);
 	expr_t     *default_expr;
 	int         num_labels = 0;
-	int         saved_line = pr_source_line;
-	string_t    saved_file = s_file;
+	int         saved_line = pr.source_line;
+	string_t    saved_file = pr.source_file;
 
-	pr_source_line = sw_val->line = switch_block->test->line;
-	s_file = sw_val->file = switch_block->test->file;
+	pr.source_line = sw_val->line = switch_block->test->line;
+	pr.source_file = sw_val->file = switch_block->test->file;
 
 	default_label->value = 0;
 	default_label = Hash_DelElement (switch_block->labels, default_label);
@@ -401,8 +401,8 @@ switch_expr (switch_block_t *switch_block, expr_t *break_label,
 		}
 		build_switch (sw, case_tree, op, sw_val, temp, default_label->label);
 	}
-	pr_source_line = saved_line;
-	s_file = saved_file;
+	pr.source_line = saved_line;
+	pr.source_file = saved_file;
 	append_expr (sw, statements);
 	append_expr (sw, break_label);
 	return sw;

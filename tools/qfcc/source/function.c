@@ -179,7 +179,7 @@ new_function (const char *name)
 	pr.func_tail = &f->next;
 	f->function_num = pr.num_functions++;
 	f->s_name = ReuseString (name);
-	f->s_file = s_file;
+	f->s_file = pr.source_file;
 	return f;
 }
 
@@ -246,14 +246,14 @@ emit_function (function_t *f, expr_t *e)
 
 	current_scope = f->scope;
 	while (e) {
-		//printf ("%d ", pr_source_line);
+		//printf ("%d ", pr.source_line);
 		//print_expr (e);
 		//puts("");
 
 		emit_expr (e);
 		e = e->next;
 	}
-	emit_statement (pr_source_line, op_done, 0, 0, 0);
+	emit_statement (pr.source_line, op_done, 0, 0, 0);
 	flush_scope (current_scope, 0);
 	current_scope = pr.scope;
 	reset_tempdefs ();

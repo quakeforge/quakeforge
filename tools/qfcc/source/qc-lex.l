@@ -93,7 +93,7 @@ m		([\-+]?)
 							if (c == EOF)
 								error (0, "EOF in comment");
 							if (c == '\n')
-								pr_source_line++;
+								pr.source_line++;
 						} while (c != '/' && c != EOF);
 					}
 
@@ -162,8 +162,8 @@ m		([\-+]?)
 						str = make_string (p);		// grab the filename
 						while (*p && *p != '\n')	// ignore flags
 							p++;
-						pr_source_line = line - 1;
-						s_file = ReuseString (strip_path (str));
+						pr.source_line = line - 1;
+						pr.source_file = ReuseString (strip_path (str));
 					}
 
 [+\-*/&|^%]=		{
@@ -226,7 +226,7 @@ m		([\-+]?)
 <grab_other>[^\r\n]*	/* skip */
 
 <*>\r*\n			{
-						pr_source_line++;
+						pr.source_line++;
 						BEGIN (INITIAL);
 					}
 

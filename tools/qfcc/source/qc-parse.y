@@ -63,7 +63,6 @@ static const char rcsid[] =
 #define YYERROR_VERBOSE 1
 
 extern char *yytext;
-extern int pr_source_line;
 
 void
 yyerror (const char *s)
@@ -180,8 +179,6 @@ visibility_t current_visibility;
 type_t	*current_ivars;
 scope_t *current_scope;
 storage_class_t current_storage;
-
-string_t	s_file;						// filename for function definition
 
 int      element_flag;
 
@@ -493,7 +490,7 @@ begin_function
 			if (options.code.debug) {
 				pr_lineno_t *lineno = new_lineno ();
 				$$->aux = new_auxfunction ();
-				$$->aux->source_line = pr_source_line;
+				$$->aux->source_line = pr.source_line;
 				$$->aux->line_info = lineno - linenos;
 				$$->aux->local_defs = num_locals;
 

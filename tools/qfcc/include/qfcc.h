@@ -66,6 +66,10 @@ typedef struct pr_info_s {
 	struct defspace_s *far_data;
 	struct defspace_s *entity_data;
 	struct scope_s *scope;
+
+	string_t        source_file;
+	int             source_line;
+	int             error_count;
 } pr_info_t;
 
 extern	pr_info_t	pr;
@@ -73,10 +77,8 @@ extern	pr_info_t	pr;
 //============================================================================
 
 extern	char		destfile[];
-extern	int			pr_source_line;
 
 extern	struct scope_s *current_scope;
-extern	int		pr_error_count;
 
 #define G_var(t, o)		(pr.near_data->data[o].t##_var)
 #define	G_FLOAT(o)		G_var (float, o)
@@ -88,8 +90,6 @@ extern	int		pr_error_count;
 #define G_STRUCT(t,o)	(*G_POINTER (t, o))
 
 #define POINTER_OFS(p)	((pr_type_t *) (p) - pr.near_data->data)
-
-extern	string_t	s_file;			// filename for function definition
 
 const char *strip_path (const char *filename);
 

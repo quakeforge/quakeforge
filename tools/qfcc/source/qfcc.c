@@ -89,9 +89,6 @@ char        debugfile[1024];
 
 pr_info_t   pr;
 
-int         pr_source_line;
-int         pr_error_count;
-
 ddef_t      *globals;
 int         numglobaldefs;
 
@@ -133,8 +130,8 @@ InitData (void)
 		memset (&pr, 0, sizeof (pr));
 	}
 	chain_initial_types ();
-	pr_source_line = 1;
-	pr_error_count = 0;
+	pr.source_line = 1;
+	pr.error_count = 0;
 	pr.num_statements = 1;
 	pr.statements_size = 16384;
 	pr.statements = calloc (pr.statements_size, sizeof (dstatement_t));
@@ -340,7 +337,7 @@ begin_compilation (void)
 	pr.near_data->size = RESERVED_OFS;
 	pr.func_tail = &pr.func_head;
 
-	pr_error_count = 0;
+	pr.error_count = 0;
 }
 
 qboolean
@@ -482,8 +479,8 @@ compile_to_obj (const char *file, const char *obj)
 	clear_structs ();
 	clear_enums ();
 	clear_typedefs ();
-	s_file = ReuseString (strip_path (file));
-	err = yyparse () || pr_error_count;
+	pr.source_file = ReuseString (strip_path (file));
+	err = yyparse () || pr.error_count;
 	fclose (yyin);
 	if (cpp_name && (!options.save_temps)) {
 		if (unlink (tempname->str)) {
@@ -602,10 +599,10 @@ progs_src_compile (void)
 
 		yyin = preprocess_file (filename->str);
 
-		s_file = ReuseString (strip_path (filename->str));
-		pr_source_line = 1;
+		pr.source_file = ReuseString (strip_path (filename->str));
+		pr.source_line = 1;
 		clear_frame_macros ();
-		err = yyparse () || pr_error_count;
+		err = yyparse () || pr.error_count;
 		fclose (yyin);
 		if (cpp_name && (!options.save_temps)) {
 			if (unlink (tempname->str)) {

@@ -33,6 +33,12 @@ static const char rcsid[] =
 #ifdef HAVE_CONFIG_H
 # include "config.h"
 #endif
+#ifdef HAVE_STRING_H
+# include <string.h>
+#endif
+#ifdef HAVE_STRINGS_H
+# include <strings.h>
+#endif
 #include <stdlib.h>
 
 #include "QF/hash.h"
@@ -84,6 +90,8 @@ add_defs (qfo_t *qfo)
 		} else {
 			if (def->flags & QFOD_GLOBAL) {
 				if ((d = Hash_Find (defined_defs, pr.strings + def->name))) {
+					pr.source_file = (*def)->file;
+					pr.source_line = (*def)->line;
 					error (0, "%s redefined", pr.strings + def->name);
 				}
 			}
@@ -99,6 +107,8 @@ add_defs (qfo_t *qfo)
 				while ((d = Hash_Find (extern_defs, pr.strings + def->name))) {
 					Hash_Del (extern_defs, pr.strings + d->name);
 					if (d->full_type != def->full_type) {
+						pr.source_file = (*def)->file;
+						pr.source_line = (*def)->line;
 						error (0, "type mismatch %s %s",
 							   pr.strings + def->full_type,
 							   pr.strings + d->full_type);
@@ -162,4 +172,11 @@ linker_add_object_file (const char *filename)
 void
 linker_finish (void)
 {
+	qfo_def_t **undef_defs, **def;
+	undef_defs = (qfo_def_t **) Hash_GetList (extern_defs);
+	for (def = undef_defs; *def; def++) {
+		pr.source_file = (*def)->file;
+		pr.source_line = (*def)->line;
+		error (0, "undefined symbol %s", pr.strings + (*def)->name);
+	}
 }

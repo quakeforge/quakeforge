@@ -224,8 +224,8 @@ expr_t *
 error (expr_t *e, const char *fmt, ...)
 {
 	va_list     args;
-	string_t    file = s_file;
-	int         line = pr_source_line;
+	string_t    file = pr.source_file;
+	int         line = pr.source_line;
 
 	va_start (args, fmt);
 	if (e) {
@@ -236,7 +236,7 @@ error (expr_t *e, const char *fmt, ...)
 	vfprintf (stderr, fmt, args);
 	fputs ("\n", stderr);
 	va_end (args);
-	pr_error_count++;
+	pr.error_count++;
 
 	if (e) {
 		e->type = ex_error;
@@ -247,13 +247,13 @@ error (expr_t *e, const char *fmt, ...)
 void
 _warning (expr_t *e, const char *fmt, va_list args)
 {
-	string_t    file = s_file;
-	int         line = pr_source_line;
+	string_t    file = pr.source_file;
+	int         line = pr.source_line;
 
 	if (options.warnings.promote) {
 		options.warnings.promote = 0;	// only want to do this once
 		fprintf (stderr, "%s: warnings treated as errors\n", "qfcc");
-		pr_error_count++;
+		pr.error_count++;
 	}
 
 	if (e) {
@@ -287,8 +287,8 @@ notice (expr_t *e, const char *fmt, ...)
 	if (options.notices.promote) {
 		_warning (e, fmt, args);
 	} else {
-		string_t    file = s_file;
-		int         line = pr_source_line;
+		string_t    file = pr.source_file;
+		int         line = pr.source_line;
 
 		if (e) {
 			file = e->file;
@@ -386,8 +386,8 @@ new_expr (void)
 
 	ALLOC (16384, expr_t, exprs, e);
 
-	e->line = pr_source_line;
-	e->file = s_file;
+	e->line = pr.source_line;
+	e->file = pr.source_file;
 	return e;
 }
 
