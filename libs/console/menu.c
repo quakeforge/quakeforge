@@ -61,6 +61,8 @@ typedef struct menu_item_s {
 	func_t      cursor;
 	func_t      keyevent;
 	func_t      draw;
+	func_t      enter_hook;
+	func_t      leave_hook;
 	unsigned    fadescreen:1;
 	unsigned    allkeys:1;
 	const char *text;
@@ -157,9 +159,19 @@ bi_Menu_FadeScreen (progs_t *pr)
 static void
 bi_Menu_Draw (progs_t *pr)
 {
-	func_t      func = G_FUNCTION (pr, OFS_PARM0);
+	menu->draw = G_FUNCTION (pr, OFS_PARM0);
+}
 
-	menu->draw = func;
+static void
+bi_Menu_EnterHook (progs_t *pr)
+{
+	menu->enter_hook = G_FUNCTION (pr, OFS_PARM0);
+}
+
+static void
+bi_Menu_LeaveHook (progs_t *pr)
+{
+	menu->leave_hook = G_FUNCTION (pr, OFS_PARM0);
 }
 
 static void
@@ -345,6 +357,8 @@ Menu_Init (void)
 	PR_AddBuiltin (&menu_pr_state, "Menu_Begin", bi_Menu_Begin, -1);
 	PR_AddBuiltin (&menu_pr_state, "Menu_FadeScreen", bi_Menu_FadeScreen, -1);
 	PR_AddBuiltin (&menu_pr_state, "Menu_Draw", bi_Menu_Draw, -1);
+	PR_AddBuiltin (&menu_pr_state, "Menu_EnterHook", bi_Menu_EnterHook, -1);
+	PR_AddBuiltin (&menu_pr_state, "Menu_LeaveHook", bi_Menu_LeaveHook, -1);
 	PR_AddBuiltin (&menu_pr_state, "Menu_Pic", bi_Menu_Pic, -1);
 	PR_AddBuiltin (&menu_pr_state, "Menu_CenterPic", bi_Menu_CenterPic, -1);
 	PR_AddBuiltin (&menu_pr_state, "Menu_Item", bi_Menu_Item, -1);
@@ -524,12 +538,18 @@ Menu_Enter ()
 	key_dest = key_menu;
 	game_target = IMT_CONSOLE;
 	menu = Hash_Find (menu_hash, top_menu);
+	if (menu && menu->enter_hook) {
+		PR_ExecuteProgram (&menu_pr_state, menu->enter_hook);
+	}
 }
 
 void
 Menu_Leave ()
 {
 	if (menu) {
+		if (menu->leave_hook) {
+			PR_ExecuteProgram (&menu_pr_state, menu->leave_hook);
+		}
 		menu = menu->parent;
 		if (!menu) {
 			if (con_data.force_commandline) {
