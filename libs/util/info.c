@@ -153,6 +153,7 @@ Info_SetValueForStarKey (info_t *info, const char *key, const char *value, int f
 		if (*s > 13)
 			*d++ = *s;
 	}
+	*d = 0;
 	info->cursize += strlen (str) + 1;
 	k->value = str;
 }
