@@ -1211,12 +1211,6 @@ if test "x$enable_typecheck_progs" = xyes; then
 	AC_DEFINE(TYPECHECK_PROGS, 1, [Define this if you want progs typechecking])
 fi
 
-AC_ARG_WITH(amd,
-	[  --with-amd              Optimize for AMD processors instead of Intel],
-	HAVE_AMD="yes",
-	HAVE_AMD="no"
-)
-
 AC_MSG_CHECKING(for optimization)
 if test "x$optimize" = xyes; then
 	AC_MSG_RESULT(yes)
@@ -1266,11 +1260,7 @@ if test "x$optimize" = xyes; then
 			auto)
 				case "${host_cpu}" in
 					i?86)
-						if test "x$HAVE_AMD" = "xyes"; then
-							MORE_CFLAGS="-march=k6"
-						else
-							MORE_CFLAGS="-march=${host_cpu}"
-						fi
+						MORE_CFLAGS="-march=${host_cpu}"
 						;;
 					*)
 						MORE_CFLAGS=""
