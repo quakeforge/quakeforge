@@ -136,6 +136,10 @@ flags (def_t *d)
 		flags |= QFOD_LOCAL;
 	if (d->system)
 		flags |= QFOD_SYSTEM;
+	if (!flags) {
+		fprintf (stderr, "malformed def flags\n");
+		abort ();
+	}
 	return flags;
 }
 

@@ -335,16 +335,19 @@ emit_deref_expr (expr_t *e, def_t *dest)
 
 	e = e->e.expr.e1;
 	if (e->type == ex_pointer) {
-		if (e->e.pointer.val > 0 && e->e.pointer.val < 65536) {
+		if (e->e.pointer.val >= 0 && e->e.pointer.val < 65536) {
 			d = new_def (e->e.pointer.type, 0, current_scope);
 			d->ofs = e->e.pointer.val;
-			d->absolute = e->e.pointer.abs;
 		} else {
 			d = ReuseConstant (e, 0);
 			zero.type = ex_short;
 			z = emit_sub_expr (&zero, 0);
 			op = opcode_find (".", d, z, dest);
 			d = emit_statement (e, op, d, z, dest);
+		}
+		if (e->e.pointer.def) {
+			d->global = e->e.pointer.def->global;
+			d->local = e->e.pointer.def->local;
 		}
 		return d;
 	}

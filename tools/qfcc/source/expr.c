@@ -1242,7 +1242,6 @@ field_expr (expr_t *e1, expr_t *e2)
 								i = e1->e.pointer.val;
 								e->e.pointer.val = i + field->offset;
 								e->e.pointer.type = field->type;
-								e->e.pointer.abs = e1->e.pointer.abs;
 								return unary_expr ('.', e);
 							}
 						}
@@ -2056,28 +2055,21 @@ address_expr (expr_t *e1, expr_t *e2, type_t *t)
 				def_t      *def = e1->e.def;
 				type = def->type;
 				if (type->type == ev_struct) {
-					int         abs = e1->e.def->global;
-					def_t      *def = e1->e.def;
-
 					e = e1;
 					e->type = ex_pointer;
 					e->e.pointer.val = def->ofs;
 					e->e.pointer.type = t;
-					e->e.pointer.abs = abs;
+					e->e.pointer.def = def;
 				} else if (type->type == ev_array) {
-					int         abs = e1->e.def->global;
-					def_t      *def = e1->e.def;
-
 					e = e1;
 					e->type = ex_pointer;
 					e->e.pointer.val = def->ofs;
 					e->e.pointer.type = t;
-					e->e.pointer.abs = abs;
+					e->e.pointer.def = def;
 				} else {
 					e = new_unary_expr ('&', e1);
 					e->e.expr.type = pointer_type (type);
 				}
-				e->e.pointer.def = def;
 				break;
 			}
 		case ex_expr:

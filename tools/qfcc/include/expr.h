@@ -80,7 +80,6 @@ typedef struct {
 typedef struct {
 	int			val;
 	struct type_s *type;
-	int			abs;
 	struct def_s *def;
 } ex_pointer_t;
 
