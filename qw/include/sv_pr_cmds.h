@@ -86,6 +86,7 @@ void PF_pointcontents (progs_t *pr);
 void PF_nextent (progs_t *pr);
 void PF_aim (progs_t *pr);
 void PF_changeyaw (progs_t *pr);
+void PF_WriteBytes (progs_t *pr);
 void PF_WriteByte (progs_t *pr);
 void PF_WriteChar (progs_t *pr);
 void PF_WriteShort (progs_t *pr);

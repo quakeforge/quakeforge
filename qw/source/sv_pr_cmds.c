@@ -1070,6 +1070,30 @@ Write_GetClient (progs_t *pr)
 }
 
 void
+PF_WriteBytes (progs_t *pr)
+{
+	int         i, p;
+
+	if (P_FLOAT (pr, 0) == MSG_ONE) {
+		client_t   *cl = Write_GetClient (pr);
+
+		ClientReliableCheckBlock (cl, pr->pr_argc);
+		if (sv.demorecording)
+			DemoWrite_Begin (dem_single, cl - svs.clients, pr->pr_argc);
+		for (i = 1; i < pr->pr_argc; i++) {
+			p = G_FLOAT (pr, OFS_PARM0 + i * (OFS_PARM1 - OFS_PARM0));
+			ClientReliableWrite_Byte (cl, p);
+			if (sv.demorecording)
+				MSG_WriteByte (&demo.dbuf->sz, p);
+		}
+	} else
+		for (i = 1; i < pr->pr_argc; i++) {
+			p = G_FLOAT (pr, OFS_PARM0 + i * (OFS_PARM1 - OFS_PARM0));
+			MSG_WriteByte (WriteDest (pr), p);
+		}
+}
+
+void
 PF_WriteByte (progs_t *pr)
 {
 	if (P_FLOAT (pr, 0) == MSG_ONE) {
@@ -1728,6 +1752,7 @@ SV_PR_Cmds_Init ()
 	PR_AddBuiltin (&sv_pr_state, "localcmd", PF_localcmd, 46); // void (string s) localcmd
 	PR_AddBuiltin (&sv_pr_state, "changeyaw", PF_changeyaw, 49); // void () ChangeYaw
 	PR_AddBuiltin (&sv_pr_state, "writebyte", PF_WriteByte, 52); // void (float to, float f) WriteByte
+	PR_AddBuiltin (&sv_pr_state, "WriteBytes", PF_WriteBytes, -1); // void (float to, ...) WriteBytes
 	PR_AddBuiltin (&sv_pr_state, "writechar", PF_WriteChar, 53); // void (float to, float f) WriteChar
 	PR_AddBuiltin (&sv_pr_state, "writeshort", PF_WriteShort, 54); // void (float to, float f) WriteShort
 	PR_AddBuiltin (&sv_pr_state, "writelong", PF_WriteLong, 55); // void(float to, float f) WriteLong
