@@ -28,7 +28,7 @@ main ()
 	func_t main_func;
 	FILE *f;
 	int len;
-	//int i;
+	int i;
 
 	Cvar_Init_Hash ();
 	Cmd_Init_Hash ();
@@ -62,9 +62,9 @@ main ()
 		Sys_Error ("couldn't load %s\n", "qwaq.dat");
 
 	*progs.edicts = PR_InitEdicts (&progs, MAX_EDICTS);
-#if 0
 	for (i = 0; i < progs.progs->numstatements; i++)
 		PR_PrintStatement (&progs, &progs.pr_statements[i]);
+#if 0
 	printf ("\n");
 	for (i = 0; i < progs.progs->numfunctions; i++) {
 		dfunction_t *func = &progs.pr_functions[i];
