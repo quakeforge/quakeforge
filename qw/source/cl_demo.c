@@ -975,8 +975,8 @@ CL_FinishTimeDemo (void)
 	time = Sys_DoubleTime () - cls.td_starttime;
 	if (!time)
 		time = 1;
-	Con_Printf ("%i frames %5.2f seconds %5.2f fps\n", frames, time,
-				frames / time);
+	Con_Printf ("%i frame%s %.4g seconds %.4g fps\n", frames,
+				frames == 1 ? "" : "s", time, frames / time);
 
 	CL_TimeFrames_DumpLog ();
 	demo_timeframes_isactive = 0;
