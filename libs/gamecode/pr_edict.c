@@ -53,6 +53,7 @@
 #include "QF/va.h"
 
 cvar_t     *pr_boundscheck;
+cvar_t     *pr_deadbeef;
 
 int         type_size[8] = {
 	1,
@@ -160,7 +161,11 @@ ED_Free (progs_t * pr, edict_t *ed)
 	if (pr->unlink)
 		pr->unlink (ed);				// unlink from world bsp
 
-	ED_ClearEdict (pr, ed, 0xdeadbeef);
+	if (pr_deadbeef->int_val) {
+		ED_ClearEdict (pr, ed, 0xdeadbeef);
+	} else {
+		ED_ClearEdict (pr, ed, 0);
+	}
 	ed->free = true;
 	ed->freetime = *(pr)->time;
 }
@@ -1215,12 +1220,16 @@ PR_InitEdicts (progs_t *pr, int num_edicts)
 	int     i, j;
 	pr->pr_edictareasize = pr->pr_edict_size * num_edicts;
 	edicts = Hunk_AllocName (pr->pr_edictareasize, "edicts");
-	memset (edicts, 0, *pr->reserved_edicts * pr->pr_edict_size);
 	(*pr->edicts) = edicts;
-	for (j =  *pr->reserved_edicts; j < num_edicts; j++) {
-		e = EDICT_NUM (pr, j);
-		for (i=0; i < pr->progs->entityfields; i++)
-			e->v[i].int_var = 0xdeadbeef;
+	if (pr_deadbeef->int_val) {
+		memset (edicts, 0, *pr->reserved_edicts * pr->pr_edict_size);
+		for (j =  *pr->reserved_edicts; j < num_edicts; j++) {
+			e = EDICT_NUM (pr, j);
+			for (i=0; i < pr->progs->entityfields; i++)
+				e->v[i].int_var = 0xdeadbeef;
+		}
+	} else {
+		memset (edicts, 0, pr->pr_edictareasize);
 	}
 	return edicts;
 }
@@ -1231,6 +1240,8 @@ PR_Init_Cvars (void)
 	pr_boundscheck =
 		Cvar_Get ("pr_boundscheck", "1", CVAR_NONE, NULL,
 				  "Server progs bounds checking");
+	pr_deadbeef = Cvar_Get ("pr_deadbeef", "0", CVAR_NONE, NULL,
+							"set to clear unallocated memory ot 0xdeadbeef");
 }
 
 void
