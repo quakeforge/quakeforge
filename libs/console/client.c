@@ -573,7 +573,7 @@ DrawNotify (void)
 		Draw_Character (i << 3, v,
 						10 + ((int) (*con_data.realtime
 									 * con_cursorspeed) & 1));
-		if (strlen (s) - il->scroll + skip > con_linewidth - 1)
+		if (strlen (s) + skip > con_linewidth - 1)
 			Draw_Character ((con_linewidth - 1) << 3, v, '>' | 0x80);
 		v += 8;
 	}
