@@ -813,6 +813,7 @@ Key_Event (int key, int alt_key, qboolean down)
 				break;
 			case key_game:
 			case key_console:
+				Con_ToggleConsole_f ();
 //				M_ToggleMenu_f ();
 				break;
 			default:
