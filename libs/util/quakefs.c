@@ -536,9 +536,34 @@ COM_OpenRead (const char *path, int offs, int len, int zip)
 		return Qdopen (fd, "rb");
 }
 
-int         file_from_pak;				// global indicating file came from
+/*
+	contains_updir
 
-										// pack file ZOID
+	Checks if a string contains an updir ('..'), either at the ends or
+	surrounded by slashes ('/').  Doesn't check for leading slash.
+*/
+int
+contains_updir (const char *filename)
+{
+	int i;
+
+	if (filename[0] == 0 || filename [1] == 0)
+                return 0;
+
+	// FIXME: maybe I should handle alternate seperators?
+	for (i = 0; filename[i+1]; i++) {
+		if (!(i == 0 || filename[i-1] == '/')           // beginning of string or first slash
+		    || filename[i] != '.'                       // first dot
+		    || filename[i+1] != '.')                    // second dot
+			continue;
+
+		if (filename[i+2] == 0 || filename[i+2] == '/') // end of string or second slash
+			return 1;
+	}
+	return 0;
+}
+
+int file_from_pak; // global indicating file came from pack file ZOID
 
 /*
 	COM_FOpenFile
@@ -563,6 +588,12 @@ _COM_FOpenFile (const char *filename, VFile **gzfile, char *foundname, int zip)
 #endif
 
 	file_from_pak = 0;
+
+// make sure they're not trying to do wierd stuff with our private files
+	if (contains_updir(filename)) {
+		Con_Printf ("FindFile: %s: attempt to escape directory tree!\n", filename);
+		return -1;
+	}
 
 //
 // search through the path, one element at a time
