@@ -74,6 +74,10 @@ static general_funcs_t    plugin_info_general_funcs;
 static snd_output_data_t  plugin_info_sound_data;
 static snd_output_funcs_t plugin_info_sound_funcs;
 
+static void
+SNDDMA_Init_Cvars (void)
+{
+}
 
 static volatile dma_t *
 SNDDMA_Init (void)
@@ -272,7 +276,7 @@ PLUGIN_INFO(snd_output, sun)
 	plugin_info_funcs.input = NULL;
 	plugin_info_funcs.snd_output = &plugin_info_sound_funcs;
 
-	plugin_info_general_funcs.p_Init = NULL; //SNDDMA_Init_Cvars;
+	plugin_info_general_funcs.p_Init = SNDDMA_Init_Cvars;
 	plugin_info_general_funcs.p_Shutdown = NULL;
 
 	plugin_info_sound_funcs.pS_O_Init = SNDDMA_Init;
