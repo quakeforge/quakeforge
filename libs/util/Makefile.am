@@ -1,8 +1,9 @@
-noinst_LIBRARIES = libqfutil.a
+lib_LTLIBRARIES = libQFutil.la
 
-libqfutil_a_SOURCES = checksum.c cmd.c crc.c cvar.c hash.c info.c link.c math.S mathlib.c mdfour.c msg.c qargs.c qendian.c qfplist.c sizebuf.c va.c ver_check.c zone.c
+libQFutil_la_LDFLAGS = -version-info 1:0:0
+libQFutil_la_SOURCES = \
+	checksum.c cmd.c crc.c cvar.c hash.c info.c link.c math.S mathlib.c \
+	mdfour.c msg.c qargs.c qendian.c qfplist.c sizebuf.c va.c ver_check.c \
+	zone.c
 
-all-local: ../libqfutil.a
-
-../libqfutil.a: libqfutil.a
-	cp $(noinst_LIBRARIES) ..
+LIBLIST = libQFutil.la @LIBRARY_SEARCH_PATH@

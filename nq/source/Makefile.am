@@ -26,6 +26,7 @@
 #
 #	$Id$
 #
+AUTOMAKE_OPTIONS=	foreign
 
 #
 # Stuff that is common to both client and server
@@ -128,8 +129,8 @@ libqfnet_a_SOURCES=	net_bsd.c net_dgrm.c net_loop.c \
 EXTRA_libqfcd_a_SOURCES=net_dos.c net_bw.c net_ipx.c net_mp.c net_ser.c \
 			net_win.c net_wins.c net_wipx.c
 
-client_LIBS=	-L. -L../../libs -lqfsys -lqfsnd -lqfcd -lqfjs -lqfnet -lqfgamecode -lqfutil $(SOUND_LIBS) $(NET_LIBS) $(Z_LIBS)
-client_LIB_DEPS= libqfsys.a libqfsnd.a libqfcd.a libqfjs.a libqfnet.a ../../libs/libqfgamecode.a ../../libs/libqfutil.a
+client_LIBS=	$(top_builddir)/libs/gamecode/libQFgamecode.la $(top_builddir)/libs/util/libQFutil.la -L. -lqfsys -lqfsnd -lqfcd -lqfjs -lqfnet $(SOUND_LIBS) $(NET_LIBS) $(Z_LIBS)
+client_LIB_DEPS= libqfsys.a libqfsnd.a libqfcd.a libqfjs.a libqfnet.a
 
 client_SOURCES= cl_cam.c cl_cmd.c cl_demo.c cl_input.c cl_main.c cl_parse.c \
 		cl_tent.c console.c keys.c sbar.c r_part.c r_view.c \

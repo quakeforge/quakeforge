@@ -9,3 +9,4 @@ config.log
 config.status
 configure
 configure-stamp
+libtool

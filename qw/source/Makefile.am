@@ -86,8 +86,8 @@ server_SOURCES=	sv_ccmds.c sv_cvar.c \
 		sv_user.c world.c $(world_ASM)
 
 qw_server_SOURCES=	$(common_SOURCES) $(server_SOURCES)
-qw_server_LDADD=	-L. -L../../libs -lqfnet -lqfsys_sv -lqfgamecode -lqfutil $(NET_LIBS) $(Z_LIBS) $(DL_LIBS)
-qw_server_DEPENDENCIES= libqfnet.a libqfsys_sv.a ../../libs/libqfgamecode.a  ../../libs/libqfutil.a
+qw_server_LDADD= 	$(top_builddir)/libs/util/libQFutil.la $(top_builddir)/libs/gamecode/libQFgamecode.la -L. -lqfnet -lqfsys_sv $(NET_LIBS) $(Z_LIBS) $(DL_LIBS)
+qw_server_DEPENDENCIES= libqfnet.a libqfsys_sv.a
 
 #
 # Client builds
@@ -170,8 +170,8 @@ endif
 libqfjs_a_CFLAGS=	$(JOY_CFLAGS)
 EXTRA_libqfjs_a_SOURCES= joy_linux.c joy_win.c joy_null.c
 
-CLIENT_LIBS=	-L. -L../../libs -lqfnet -lqfsys_cl -lqfsnd -lqfcd -lqfjs -lqfgamecode -lqfutil $(SOUND_LIBS) $(NET_LIBS) $(CD_LIBS) $(JOY_LIBS) $(Z_LIBS)
-CLIENT_LIB_DEPS= libqfnet.a libqfsys_cl.a libqfsnd.a libqfcd.a libqfjs.a ../../libs/libqfgamecode.a ../../libs/libqfutil.a
+CLIENT_LIBS=		$(top_builddir)/libs/util/libQFutil.la $(top_builddir)/libs/gamecode/libQFgamecode.la -L. -lqfnet -lqfsys_cl -lqfsnd -lqfcd -lqfjs $(SOUND_LIBS) $(NET_LIBS) $(CD_LIBS) $(JOY_LIBS) $(Z_LIBS)
+CLIENT_LIB_DEPS=	libqfnet.a libqfsys_cl.a libqfsnd.a libqfcd.a libqfjs.a
 
 if ASM_ARCH
 client_ASM=	snd_mixa.S cl_math.S

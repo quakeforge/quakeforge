@@ -1,4 +1,7 @@
-.vimrc
-Makefile.in
-Makefile
+*.la
+*.lo
 .deps
+.libs
+.vimrc
+Makefile
+Makefile.in

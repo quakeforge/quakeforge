@@ -1,8 +1,6 @@
-noinst_LIBRARIES = libqfgamecode.a
+lib_LTLIBRARIES = libQFgamecode.la
 
-libqfgamecode_a_SOURCES = pr_edict.c pr_exec.c pr_strings.c
+libQFgamecode_la_LDFLAGS = -version-info 1:0:0
+libQFgamecode_la_SOURCES = pr_edict.c pr_exec.c pr_strings.c
 
-all-local: ../libqfgamecode.a
-
-../libqfgamecode.a: libqfgamecode.a
-	cp $(noinst_LIBRARIES) ..
+LIBLIST = libQFgamecode.la @LIBRARY_SEARCH_PATH@

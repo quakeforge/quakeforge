@@ -5,10 +5,14 @@
 *.obj
 *.s
 .deps
+.libs
 .vimrc
 Makefile
 Makefile.in
 client.exe
+fbset_modes_l.c
+fbset_modes_y.c
+fbset_modes_y.h
 qw-client-3dfx
 qw-client-3dfx.exe
 qw-client-fbdev
@@ -24,6 +28,3 @@ qw-client-x11
 qw-client-x11.exe
 qw-server
 qw-server.exe
-fbset_modes_y.c
-fbset_modes_y.h
-fbset_modes_l.c
