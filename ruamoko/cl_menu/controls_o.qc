@@ -359,8 +359,8 @@ DRAW_misc_control_binding =
 
 	bind_desc_pad = 120;
 
-	Draw_String		(x + 20, y + 10, "Backspace/Delete: Del binding");
-	Draw_String     (x + 20, y + 20, "Enter:            New binding");
+	Draw_String (x + 20, y + 10, "Backspace/Delete: Del binding");
+	Draw_String (x + 20, y + 20, "Enter:            New binding");
 
 	hl = [misc_bindings count];	
 	for(i=0;i < hl; i++) {
