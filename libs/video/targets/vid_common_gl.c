@@ -83,10 +83,11 @@ GLenum				gl_mtex_enum = GL_TEXTURE0_ARB;
 QF_glColorTableEXT	qglColorTableEXT = NULL;
 qboolean			is8bit = false;
 
-cvar_t			   *gl_multitexture;
-cvar_t			   *gl_screenshot_byte_swap;
-cvar_t			   *vid_mode;
-cvar_t			   *vid_use8bit;
+cvar_t      *gl_multitexture;
+cvar_t      *gl_max_vaelements;
+cvar_t      *gl_screenshot_byte_swap;
+cvar_t      *vid_mode;
+cvar_t      *vid_use8bit;
 
 
 static void
@@ -107,6 +108,10 @@ GL_Common_Init_Cvars (void)
 {
 	vid_use8bit = Cvar_Get ("vid_use8bit", "0", CVAR_ROM, NULL,	"Use 8-bit "
 							"shared palettes.");
+	gl_max_vaelements = Cvar_Get ("gl_max_vaelements", "0", CVAR_ROM, NULL,
+								  "limit the vertex array size for buggy "
+								  "drivers. 0 (default) uses driver provided "
+								  "limit");
 	gl_multitexture = Cvar_Get ("gl_multitexture", "0", CVAR_ARCHIVE,
 								gl_multitexture_f, "Use multitexture when "
 								"available");
@@ -161,6 +166,8 @@ CheckVertexArraySize (void)
 	qfglGetIntegerv (GL_MAX_ELEMENTS_VERTICES, &vaelements);
 	if (vaelements > 65536)
 		vaelements = 65536;
+	if (gl_max_vaelements->int_val)
+		vaelements = min (gl_max_vaelements->int_val, vaelements);
 //	qfglGetIntegerv (MAX_ELEMENTS_INDICES, *vaindices);
 }
 
@@ -256,6 +263,8 @@ GL_Pre_Init (void)
 void
 GL_Init_Common (void)
 {
+	GL_Common_Init_Cvars ();
+
 	gl_vendor = qfglGetString (GL_VENDOR);
 	Con_Printf ("GL_VENDOR: %s\n", gl_vendor);
 	gl_renderer = qfglGetString (GL_RENDERER);
@@ -289,8 +298,6 @@ GL_Init_Common (void)
 
 	CheckMultiTextureExtensions ();
 	CheckVertexArraySize ();
-
-	GL_Common_Init_Cvars ();
 }
 
 void
