@@ -1140,7 +1140,7 @@ elif test "x$userpath" = xno; then
 fi
 AC_DEFINE_UNQUOTED(FS_USERPATH, "$userpath")
 
-AC_ARG_WITH(userpath,
+AC_ARG_WITH(plugin-path,
 [  --with-plugin-path=DIR     Use DIR for loading plugins, defaults to
                           \${libdir}/quakeforge],
 pluginpath=$withval, pluginpath="auto")
