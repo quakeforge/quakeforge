@@ -59,13 +59,8 @@ static const char rcsid[] =
 #include "vis.h"
 #include "options.h"
 
-int			c_chains;
-int			c_portalskip, c_leafskip;
-int			c_vistest, c_mighttest;
-int			c_leafsee, c_portalsee;
-
-byte		portalsee[MAX_PORTALS];
-
+static int  leafsee;
+static byte portalsee[MAX_PORTALS];
 
 void
 CheckStack (leaf_t *leaf, threaddata_t *thread)
@@ -240,10 +235,8 @@ RecursiveLeafFlow (int leafnum, threaddata_t *thread, pstack_t *prevstack)
     for (i = 0; i < leaf->numportals; i++) {
 		p = leaf->portals[i];
 
-		if (!(prevstack->mightsee[p->leaf >> 3] & (1 << (p->leaf & 7)))) {
-			c_leafskip++;
+		if (!(prevstack->mightsee[p->leaf >> 3] & (1 << (p->leaf & 7))))
 			continue;		// can't possibly see it
-		}
 		// if the portal can't see anything we haven't already seen, skip it
 		if (p->status == stat_done) {
 			c_vistest++;
@@ -259,10 +252,9 @@ RecursiveLeafFlow (int leafnum, threaddata_t *thread, pstack_t *prevstack)
 				more = true;
 		}
 
-		if (!more) {		// can't see anything new
-			c_portalskip++;
+		if (!more)			// can't see anything new
 			continue;
-		}
+
 		// get plane of portal, point normal into the neighbor leaf
 		stack.portalplane = p->plane;
 		VectorSubtract (vec3_origin, p->plane.normal, backplane.normal);
@@ -393,7 +385,7 @@ SimpleFlood (portal_t *srcportal, int leafnum)
     if (srcportal->mightsee[leafnum >> 3] & (1 << (leafnum & 7)))
 		return;
     srcportal->mightsee[leafnum >> 3] |= (1 << (leafnum & 7));
-    c_leafsee++;
+    leafsee++;
 
     leaf = &leafs[leafnum];
 
@@ -416,7 +408,6 @@ BasePortalVis (void)
     for (i = 0, p = portals; i < numportals * 2; i++, p++) {
 		p->mightsee = calloc (1, bitbytes);
 
-		c_portalsee = 0;
 		memset (portalsee, 0, numportals * 2);
 
 		for (j = 0, tp = portals; j < numportals * 2; j++, tp++) {
@@ -444,11 +435,10 @@ BasePortalVis (void)
 				continue;	// no points on front
 
 			portalsee[j] = 1;
-			c_portalsee++;
 		}
 
-		c_leafsee = 0;
+		leafsee = 0;
 		SimpleFlood (p, p->leaf);
-		p->nummightsee = c_leafsee;
+		p->nummightsee = leafsee;
     }
 }

@@ -117,16 +117,15 @@ extern int c_portalpass;
 extern int c_portalcheck;
 extern int bitbytes;
 extern int bitlongs;
+extern struct bsp_s *bsp;
 
 extern portal_t *portals;
 extern leaf_t *leafs;
-extern qboolean showgetleaf;
-extern byte *vismap, *vismap_p, *vismap_end;	// past visfile
 extern byte *uncompressed;
 
-extern int c_portalskip, c_leafskip;
-extern int c_vistest, c_mighttest;
 extern int c_chains;
+extern int c_mighttest;
+extern int c_vistest;
 
 void FreeWinding (winding_t *winding);
 winding_t *NewWinding (int points);
@@ -137,7 +136,5 @@ void LeafFlow (int leafnum);
 void BasePortalVis (void);
 void PortalFlow (portal_t *portal);
 void CalcAmbientSounds (void);
-
-extern struct bsp_s *bsp;
 
 #endif// __vis_h

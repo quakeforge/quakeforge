@@ -70,21 +70,23 @@ bsp_t *bsp;
 
 options_t	options;
 
-int			numportals;
-int			portalleafs;
+int			c_chains;
+int			c_mighttest;
 int			c_portaltest;
 int			c_portalpass;
 int			c_portalcheck;
+int			c_vistest;
+
+int			numportals;
+int			portalleafs;
 int			originalvismapsize;
 int			totalvis;
 int			count_sep;
 int			bitbytes;	// (portalleafs + 63)>>3
 int			bitlongs;
-int			leafon;		// the next leaf to be given to a thread to process
 
 portal_t	*portals;
 leaf_t		*leafs;
-qboolean	showgetleaf = true;
 dstring_t   *visdata;
 byte		*uncompressed;		// [bitbytes * portalleafs]
 
@@ -381,7 +383,6 @@ CalcPortalVis (void)
 		return;
 	}
 
-	leafon = 0;
 #ifdef HAVE_PTHREAD_H
 	{
 		pthread_t	work_threads[MAX_THREADS];
