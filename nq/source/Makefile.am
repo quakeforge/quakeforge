@@ -145,7 +145,8 @@ nq_sdl_DEPENDENCIES=	$(nq_sdl_libs)
 # ... 32-bit software, SDL
 nq_sdl32_libs=  \
 			$(cl_plugin_LIBS) \
-			$(soft_QFLIBS) \
+			$(top_builddir)/libs/video/renderer/libQFrenderer_sw32.la \
+			$(top_builddir)/libs/models/libQFmodels_sw.la \
 			$(top_builddir)/libs/video/targets/libQFsdl32.la \
 			$(client_LIBS)
 nq_sdl32_SOURCES=	$(combined_sources) sys_sdl.c
