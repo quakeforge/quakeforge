@@ -24,14 +24,14 @@
 		Boston, MA  02111-1307, USA
 */
 
-#ifndef _VERSION_H
-#define _VERSION_H
+#ifndef __version_h_
+#define __version_h_
 
 /* Version strings */
-#define PACKAGE 	"@PACKAGE@"
-#define PROGRAM 	"@PROGRAM@"
-#define VERSION 	"@VERSION@"
-#define QW_VERSION	"@QW_VERSION@"
-#define QSG_VERSION	"@QSG_VERSION@"
+#define PACKAGE 		"@PACKAGE@"
+#define PROGRAM 		"@PROGRAM@"
+#define VERSION 		"@VERSION@"
+#define QW_VERSION		"@QW_VERSION@"
+#define QW_QSG_VERSION	"@QW_QSG_VERSION@"
 
-#endif	// _VERSION_H
+#endif	// __version_h_

@@ -115,5 +115,8 @@
 /* Define this if FPOS_T is a struct */
 #undef HAVE_FPOS_T_STRUCT
 
+/* Define strcasecmp as stricmp if you have one but not the other */
+#undef strcasecmp
+
 @BOTTOM@
 #endif // __config_h_

@@ -1622,7 +1622,7 @@ SV_InitLocal (void)
 	// Brand server as QF, with appropriate QSG standards version  --KB
 	Info_SetValueForStarKey (svs.info, "*qf_version", VERSION,
 							 MAX_SERVERINFO_STRING);
-	Info_SetValueForStarKey (svs.info, "*qsg_version", QSG_VERSION,
+	Info_SetValueForStarKey (svs.info, "*qsg_version", QW_QSG_VERSION,
 							 MAX_SERVERINFO_STRING);
 
 	// init fraglog stuff

@@ -277,8 +277,12 @@ fi
 AC_SUBST(DL_LIBS)
 
 dnl Checks for stricmp/strcasecmp
-AC_CHECK_FUNC(stricmp,,
-	AC_CHECK_FUNC(strcasecmp, AC_DEFINE(stricmp,strcasecmp)))
+AC_CHECK_FUNC(strcasecmp,
+	,
+	AC_CHECK_FUNC(stricmp,
+		AC_DEFINE(strcasecmp,	stricmp)
+	)
+)
 
 dnl Check for vsnprintf
 if test "x$ac_cv_func_vsnprintf" = "xno" -a \

@@ -629,7 +629,7 @@ CL_AddQFInfoKeys (void)
 	Info_SetValueForStarKey (cls.userinfo, "*cap", cap, MAX_INFO_STRING);
 	Info_SetValueForStarKey (cls.userinfo, "*qf_version", VERSION,
 							 MAX_INFO_STRING);
-	Info_SetValueForStarKey (cls.userinfo, "*qsg_version", QSG_VERSION,
+	Info_SetValueForStarKey (cls.userinfo, "*qsg_version", QW_QSG_VERSION,
 							 MAX_INFO_STRING);
 	Con_Printf ("QuakeForge server detected\n");
 }

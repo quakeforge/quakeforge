@@ -24,14 +24,14 @@
 		Boston, MA  02111-1307, USA
 */
 
-#ifndef _VERSION_H
-#define _VERSION_H
+#ifndef __version_h_
+#define __version_h_
 
 /* Version strings */
 #define PACKAGE 		"quakeforge"
 #define PROGRAM 		"QuakeForge"
 #define VERSION 		"0.3.0"
-#define QSG_VERSION		""
-#define QUAKE_VERSION	"@QUAKE_VERSION@"
+#define NQ_VERSION		"1.09"
+#define NQ_QSG_VERSION	"1.0"
 
-#endif	// _VERSION_H
+#endif	// __version_h_
