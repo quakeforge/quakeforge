@@ -1,4 +1,3 @@
 #!/bin/sh
 
-echo "If you see a couple warnings about cross-compiling, don't worry"
 aclocal && autoheader && libtoolize --automake && automake --add-missing && autoconf
