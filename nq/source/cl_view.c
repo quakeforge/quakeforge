@@ -673,8 +673,8 @@ V_CalcRefdef (void)
 	view->frame = cl.stats[STAT_WEAPONFRAME];
 	view->colormap = vid.colormap8;
 	// LordHavoc: make gun visible
-	view->alpha = 1;
-	view->colormod[0] = view->colormod[1] = view->colormod[2] = 1;
+	view->colormod[0] = view->colormod[1] = view->colormod[2] =
+		view->colormod[3] = 1.0;
 
 	// set up the refresh position
 	VectorAdd (r_refdef.viewangles, cl.punchangle, r_refdef.viewangles);

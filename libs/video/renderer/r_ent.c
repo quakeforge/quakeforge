@@ -65,11 +65,11 @@ R_Init_Entity (entity_t *ent)
 	memset (ent, 0, sizeof (*ent));
 
 	ent->colormap = vid.colormap8;
-	ent->glow_size = 0;
+	ent->colormod[0] = ent->colormod[1] = ent->colormod[2] =
+		ent->colormod[3] = 1.0;
+	ent->scale = 1.0;
+	ent->glow_size = 0.0;
 	ent->glow_color = 254;
-	ent->alpha = 1;
-	ent->scale = 1;
-	ent->colormod[0] = ent->colormod[1] = ent->colormod[2] = 1;
 	ent->pose1 = ent->pose2 = -1;
 }
 

@@ -465,15 +465,9 @@ CL_LinkPacketEntities (void)
 		// Ender: Extend (Colormod) [QSG - Begin]
 		// N.B: All messy code below is the sole fault of LordHavoc and
 		// his futile attempts to save bandwidth. :)
-		(*ent)->glow_size =	s1->glow_size < 128 ? s1->glow_size * 8.0 :
-			(s1->glow_size - 256) * 8.0;
-		(*ent)->glow_color = s1->glow_color;
-		(*ent)->alpha = s1->alpha / 255.0;
-		(*ent)->scale = s1->scale / 16.0;
-
 		if (s1->colormod == 255) {
 			(*ent)->colormod[0] = (*ent)->colormod[1] =
-				(*ent)->colormod[2] = 1;
+				(*ent)->colormod[2] = 1.0;
 		} else {
 			(*ent)->colormod[0] = (float) ((s1->colormod >> 5) & 7) * (1.0 /
 																	   7.0);
@@ -481,6 +475,11 @@ CL_LinkPacketEntities (void)
 																	   7.0);
 			(*ent)->colormod[2] = (float) (s1->colormod & 3) * (1.0 / 3.0);
 		}
+		(*ent)->colormod[3] = s1->alpha / 255.0;
+		(*ent)->scale = s1->scale / 16.0;
+		(*ent)->glow_size =	s1->glow_size < 128 ? s1->glow_size * 8.0 :
+			(s1->glow_size - 256) * 8.0;
+		(*ent)->glow_color = s1->glow_color;
 		// Ender: Extend (Colormod) [QSG - End]
 
 		// set skin
@@ -803,10 +802,38 @@ CL_LinkPlayers (void)
 		// stuff entity in map
 		R_AddEfrags (ent);
 
-		ent->frame = state->frame;
+		// only predict half the move to minimize overruns
+		msec = 500 * (playertime - state->state_time);
+		if (msec <= 0 || (!cl_predict_players->int_val)) {
+			VectorCopy (state->origin, ent->origin);
+		} else {	// predict players movement
+			state->command.msec = msec = min (msec, 255);
+
+			oldphysent = pmove.numphysent;
+			CL_SetSolidPlayers (j);
+			CL_PredictUsercmd (state, &exact, &state->command, false);
+			pmove.numphysent = oldphysent;
+			VectorCopy (exact.origin, ent->origin);
+		}
+
+		// angles
+		if (j == cl.playernum)
+		{
+			ent->angles[PITCH] = -cl.viewangles[PITCH] / 3;
+			ent->angles[YAW] = cl.viewangles[YAW];
+		}
+		else
+		{
+			ent->angles[PITCH] = -state->viewangles[PITCH] / 3;
+			ent->angles[YAW] = state->viewangles[YAW];
+		}
+		ent->angles[ROLL] = 0;
+		ent->angles[ROLL] = V_CalcRoll (ent->angles, state->velocity) * 4;
+
 		ent->model = cl.model_precache[state->modelindex];
-		ent->skinnum = state->skinnum;
+		ent->frame = state->frame;
 		ent->colormap = info->translations;
+		ent->skinnum = state->skinnum;
 		if (state->modelindex == cl_playerindex) { //XXX
 			// use custom skin
 			if (!info->skin)
@@ -825,39 +852,11 @@ CL_LinkPlayers (void)
 
 		// LordHavoc: more QSG VERSION 2 stuff, FIXME: players don't have
 		// extend stuff
-		ent->glow_size = 0;
+		ent->colormod[0] = ent->colormod[1] = ent->colormod[2] =
+			ent->colormod[3] = 1.0;
+		ent->scale = 1.0;
+		ent->glow_size = 0.0;
 		ent->glow_color = 254;
-		ent->alpha = 1;
-		ent->scale = 1;
-		ent->colormod[0] = ent->colormod[1] = ent->colormod[2] = 1;
-
-		// angles
-		if (j == cl.playernum)
-		{
-			ent->angles[PITCH] = -cl.viewangles[PITCH] / 3;
-			ent->angles[YAW] = cl.viewangles[YAW];
-		}
-		else
-		{
-			ent->angles[PITCH] = -state->viewangles[PITCH] / 3;
-			ent->angles[YAW] = state->viewangles[YAW];
-		}
-		ent->angles[ROLL] = 0;
-		ent->angles[ROLL] = V_CalcRoll (ent->angles, state->velocity) * 4;
-
-		// only predict half the move to minimize overruns
-		msec = 500 * (playertime - state->state_time);
-		if (msec <= 0 || (!cl_predict_players->int_val)) {
-			VectorCopy (state->origin, ent->origin);
-		} else {	// predict players movement
-			state->command.msec = msec = min (msec, 255);
-
-			oldphysent = pmove.numphysent;
-			CL_SetSolidPlayers (j);
-			CL_PredictUsercmd (state, &exact, &state->command, false);
-			pmove.numphysent = oldphysent;
-			VectorCopy (exact.origin, ent->origin);
-		}
 
 		if (state->effects & EF_FLAG1)
 			CL_AddFlagModels (ent, 0, j);

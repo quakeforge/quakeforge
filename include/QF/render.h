@@ -83,8 +83,7 @@ typedef struct entity_s
 	struct efrag_s			*efrag;			// linked list of efrags
 	int						visframe;		// last frame this entity was
 											// found in an active leaf
-	vec3_t					colormod;		// color tint for model
-	float					alpha;			// opacity (alpha) of the model
+	float					colormod[4];	// color tint and alpha for model
 	float					scale;			// size scaler of the model
 	float					glow_size;		// how big the glow is (can be negative)
 	byte					glow_color;		// color of glow (paletted)

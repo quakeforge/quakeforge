@@ -713,11 +713,11 @@ CL_ClearBaselines (void)
 
 	memset (cl_baselines, 0, sizeof (cl_baselines));
 	for (i = 0; i < MAX_EDICTS; i++) {
+		cl_baselines[i].colormod = 255;
 		cl_baselines[i].alpha = 255;
 		cl_baselines[i].scale = 16;
-		cl_baselines[i].glow_color = 254;
 		cl_baselines[i].glow_size = 0;
-		cl_baselines[i].colormod = 255;
+		cl_baselines[i].glow_color = 254;
 	}
 }
 
@@ -816,11 +816,11 @@ CL_ParseBaseline (entity_state_t *es)
 	MSG_ReadCoordAngleV (net_message, es->origin, es->angles);
 
 	// LordHavoc: set up baseline to for new effects (alpha, colormod, etc)
+	es->colormod = 255;
 	es->alpha = 255;
 	es->scale = 16;
-	es->glow_color = 254;
 	es->glow_size = 0;
-	es->colormod = 255;
+	es->glow_color = 254;
 }
 
 /*

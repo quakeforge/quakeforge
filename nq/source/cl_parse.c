@@ -106,7 +106,7 @@ char       *svc_strings[] = {
 
 	This error checks and tracks the total number of entities
 */
-cl_entity_state_t   *
+cl_entity_state_t *
 CL_EntityNum (int num)
 {
 	if (num >= cl.num_entities) {
@@ -367,11 +367,11 @@ CL_ParseUpdate (int bits)
 
 	if (forcelink) {
 // FIXME: do this right (ie, protocol support)
-		ent->alpha = 1;
-		ent->scale = 1;
+		ent->colormod[0] = ent->colormod[1] = ent->colormod[2] = 
+			ent->colormod[3] = 1.0;
+		ent->scale = 1.0;
+		ent->glow_size = 0.0;
 		ent->glow_color = 254;
-		ent->glow_size = 0;
-		ent->colormod[0] = ent->colormod[1] = ent->colormod[2] = 1;
 	}
 
 	state->msgtime = cl.mtime[0];
@@ -496,8 +496,8 @@ CL_ParseBaseline (cl_entity_state_t *state)
 	// LordHavoc: set up baseline for new effects (alpha, colormod, etc)
 	state->baseline.alpha = 255;
 	state->baseline.scale = 16;
-	state->baseline.glow_color = 254;
 	state->baseline.glow_size = 0;
+	state->baseline.glow_color = 254;
 	state->baseline.colormod = 255;
 }
 
@@ -620,21 +620,20 @@ CL_ParseStatic (void)
 	CL_ParseBaseline (&state);
 
 	// copy it to the current state
+	VectorCopy (state.baseline.origin, ent->origin);
+	VectorCopy (state.baseline.angles, ent->angles);
 	ent->model = cl.model_precache[state.baseline.modelindex];
 	ent->frame = state.baseline.frame;
 	ent->colormap = vid.colormap8;
 	ent->skinnum = state.baseline.skin;
 //FIXME ent->effects = state.baseline.effects;
-
-	ent->alpha = state.baseline.alpha / 255.0;
+//FIXME need to get colormod from baseline
+	ent->colormod[0] = ent->colormod[1] = ent->colormod[2] = 1.0;
+	ent->colormod[3] = state.baseline.alpha / 255.0;
 	ent->scale = state.baseline.scale / 16.0;
-	ent->glow_color = state.baseline.glow_color;
 	ent->glow_size = state.baseline.glow_size;
-//FIXME need to get this from baseline
-	ent->colormod[0] = ent->colormod[1] = ent->colormod[2] = 1;
+	ent->glow_color = state.baseline.glow_color;
 
-	VectorCopy (state.baseline.origin, ent->origin);
-	VectorCopy (state.baseline.angles, ent->angles);
 	R_AddEfrags (ent);
 }
 

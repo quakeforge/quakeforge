@@ -192,12 +192,11 @@ CL_ClearState (void)
 
 	for (i = 0; i < MAX_EDICTS; i++) {
 		cl_baselines[i].ent = &cl_entities[i];
-		cl_entities[i].alpha = 255;
-		cl_entities[i].scale = 16;
+		cl_entities[i].colormod[0] = cl_entities[i].colormod[1] =
+			cl_entities[i].colormod[2] = cl_entities[i].colormod[3] = 1.0;
+		cl_entities[i].scale = 16.0;
+		cl_entities[i].glow_size = 0.0;
 		cl_entities[i].glow_color = 254;
-		cl_entities[i].glow_size = 0;
-		cl_entities[i].colormod[0] = cl_entities[i].colormod[1]
-								   = cl_entities[i].colormod[2] = 1;
 	}
 }
 

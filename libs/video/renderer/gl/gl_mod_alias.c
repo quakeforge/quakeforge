@@ -550,7 +550,7 @@ R_DrawAliasModel (entity_t *e, qboolean cull)
 	}
 
 	VectorScale (e->colormod, 2.0 * shadelight, shadecolor);
-	modelalpha = e->alpha;
+	modelalpha = e->colormod[3];
 
 	// locate the proper data
 	paliashdr = Cache_Get (&e->model->cache);

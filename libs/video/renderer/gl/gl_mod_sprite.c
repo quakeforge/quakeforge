@@ -115,7 +115,7 @@ R_DrawSpriteModel (entity_t *e)
 		VectorScale (right, e->scale, right);
 	}
 
-	modelalpha = e->alpha;
+	modelalpha = e->colormod[3];
 	if (modelalpha < 1.0)
 		qfglDepthMask (GL_FALSE);
 
