@@ -86,8 +86,8 @@ JOY_Move (void)
 	if (!joy_active || !joy_enable->int_val)
 		return;
 
-	mult_joy = 1 / (201 - (4 * joy_amp->value * joy_pre_amp->value *
-						   in_amp->value * in_pre_amp->value));
+	mult_joy = (joy_amp->value * joy_pre_amp->value *
+				in_amp->value * in_pre_amp->value) / 200.0;
 	// Yes, mult_joy looks like a mess, but use of pre_amp values is useful in
 	// scripts, and *_pre_amp will matter once joystick filtering/acceleration
 	// is implemented
@@ -95,64 +95,44 @@ JOY_Move (void)
 	for (i = 0; i < JOY_MAX_AXES; i++) {
 		switch (joy_axes[i].axis->int_val) {
 			case 1:
-				if (joy_axes[i].current) {
-					viewdelta.angles[YAW] -=
-						(float) (joy_axes[i].current * mult_joy);
-				}
+				if (joy_axes[i].current)
+					viewdelta.angles[YAW] -= joy_axes[i].current * mult_joy;
 				break;
 			case -1:
-				if (joy_axes[i].current) {
-					viewdelta.angles[YAW] +=
-						(float) (joy_axes[i].current * mult_joy);
-				}
+				if (joy_axes[i].current)
+					viewdelta.angles[YAW] += joy_axes[i].current * mult_joy;
 				break;
 			case 2:
-				if (joy_axes[i].current) {
-					viewdelta.position[2] -=
-						(float) (joy_axes[i].current * mult_joy);
-				}
+				if (joy_axes[i].current)
+					viewdelta.position[2] -= joy_axes[i].current * mult_joy;
 				break;
 			case -2:
-				if (joy_axes[i].current) {
-					viewdelta.position[2] +=
-						(float) (joy_axes[i].current * mult_joy);
-				}
+				if (joy_axes[i].current)
+					viewdelta.position[2] += joy_axes[i].current * mult_joy;
 				break;
 			case 3:
-				if (joy_axes[i].current) {
-					viewdelta.position[0] +=
-						(float) (joy_axes[i].current * mult_joy);
-				}
+				if (joy_axes[i].current)
+					viewdelta.position[0] += joy_axes[i].current * mult_joy;
 				break;
 			case -3:
-				if (joy_axes[i].current) {
-					viewdelta.position[0] -=
-						(float) (joy_axes[i].current * mult_joy);
-				}
+				if (joy_axes[i].current)
+					viewdelta.position[0] -= joy_axes[i].current * mult_joy;
 				break;
 			case 4:
-				if (joy_axes[i].current) {
-					viewdelta.angles[PITCH] -=
-						(float) (joy_axes[i].current * mult_joy);
-				}
+				if (joy_axes[i].current)
+					viewdelta.angles[PITCH] -= joy_axes[i].current * mult_joy;
 				break;
 			case -4:
-				if (joy_axes[i].current) {
-					viewdelta.angles[PITCH] +=
-						(float) (joy_axes[i].current * mult_joy);
-				}
+				if (joy_axes[i].current)
+					viewdelta.angles[PITCH] += joy_axes[i].current * mult_joy;
 				break;
 			case 5:
-				if (joy_axes[i].current) {
-				viewdelta.position[1] -=
-					(float) (joy_axes[i].current * mult_joy);
-				}
+				if (joy_axes[i].current)
+					viewdelta.position[1] -= joy_axes[i].current * mult_joy;
 				break;
 			case -5:
-				if (joy_axes[i].current) {
-					viewdelta.position[1] +=
-						(float) (joy_axes[i].current * mult_joy);
-				}
+				if (joy_axes[i].current)
+					viewdelta.position[1] += joy_axes[i].current * mult_joy;
 				break;
 			default:
 				break;
