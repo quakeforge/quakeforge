@@ -501,6 +501,8 @@ IN_LL_Init (void)
 		X11_AddEvent (ButtonPress, &event_button);
 		X11_AddEvent (ButtonRelease, &event_button);
 		X11_AddEvent (MotionNotify, &event_motion);
+
+		in_mouse_avail = 1;
 	}
 }
 
