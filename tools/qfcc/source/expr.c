@@ -2592,8 +2592,10 @@ message_expr (expr_t *receiver, keywordarg_t *message)
 		expr_t      *err;
 		if ((err = method_check_params (method, args)))
 			return err;
+		call = build_function_call (send_message (super), method->type, args);
+	} else {
+		call = build_function_call (send_message (super), &type_IMP, args);
 	}
-	call = build_function_call (send_message (super), method->type, args);
 
 	if (call->type == ex_error)
 		return receiver;
