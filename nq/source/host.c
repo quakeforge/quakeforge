@@ -925,6 +925,8 @@ void Host_Init (quakeparms_t *parms)
 	Host_InitVCR (parms);
 	Host_InitLocal ();
 	W_LoadWadFile ("gfx.wad");
+	Key_Init_Cvars ();
+	Con_Init_Cvars ();
 	Key_Init ();
 	Con_Init ();	
 	M_Init ();	
