@@ -187,6 +187,8 @@ cvar_t     *pr_gc;
 cvar_t     *pr_gc_interval;
 int         pr_gc_count = 0;
 
+int         sv_net_initialized;
+
 void        SV_AcceptClient (netadr_t adr, int userid, char *userinfo);
 void        Master_Shutdown (void);
 
@@ -241,20 +243,22 @@ SV_Shutdown (void)
 void
 SV_Error (const char *error, va_list argptr)
 {
-	dstring_t  *string;
 	static qboolean inerror = false;
 
 	if (inerror)
 		return;
 
-	string = dstring_new ();
-
 	inerror = true;
 
-	dvsprintf (string, error, argptr);
-	dstring_insertstr (string, 0, "server crashed: ");
-	dstring_appendstr (string, "\n");
-	SV_FinalMessage (string->str);
+	if (sv_net_initialized) {
+		dstring_t  *string = dstring_new ();
+
+		dvsprintf (string, error, argptr);
+		dstring_insertstr (string, 0, "server crashed: ");
+		dstring_appendstr (string, "\n");
+		SV_FinalMessage (string->str);
+		dstring_delete (string);
+	}
 
 	if (con_module) {
 		con_module->functions->console->pC_Print (error, argptr);
@@ -2361,6 +2365,7 @@ SV_InitNet (void)
 	// heartbeats will always be sent to the id master
 	svs.last_heartbeat = -99999;		// send immediately
 //  NET_StringToAdr ("192.246.40.70:27000", &idmaster_adr);
+	sv_net_initialized = 1;
 }
 
 void
