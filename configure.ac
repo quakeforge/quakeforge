@@ -1872,9 +1872,11 @@ if test -n "$CL_TARGETS"; then
 	SND_TARGETS="libQFsound.la"
 	JOY_TARGETS="libQFjs.la"
 	if test "`echo $SOUND_TYPES | grep ALSA0_9`"; then
-		SND_PLUGIN_TARGETS="$SND_PLUGIN_TARGETS snd_output_alsa0_9.la"
+		ALSA_PLUGIN="snd_output_alsa0_9"
+		SND_PLUGIN_TARGETS="$SND_PLUGIN_TARGETS $ALSA_PLUGIN.la"
 	elif test "`echo $SOUND_TYPES | grep ALSA`"; then
-		SND_PLUGIN_TARGETS="$SND_PLUGIN_TARGETS snd_output_alsa.la"
+		ALSA_PLUGIN="snd_output_alsa"
+		SND_PLUGIN_TARGETS="$SND_PLUGIN_TARGETS $ALSA_PLUGIN.la"
 	fi
 	if test "`echo $SOUND_TYPES | grep MME`"; then
 		SND_PLUGIN_TARGETS="$SND_PLUGIN_TARGETS snd_output_mme.la"
@@ -1910,6 +1912,7 @@ else
 	SND_TARGETS=""
 	unset SOUND_TYPES
 fi
+AC_SUBST(ALSA_PLUGIN)
 
 SERVER_PLUGIN_TARGETS="console_server.la"
 SERVER_PLUGIN_STATIC=""

@@ -16,6 +16,8 @@
 %define BUILD_GL    '@CAN_BUILD_GL@'
 %define BUILD_SW    '@CAN_BUILD_SW@'
 
+%define ALSA_PLUGIN '@ALSA_PLUGIN@'
+
 %define fs_sharepath %{_prefix}/share/games/quakeforge
 
 Name:		%{name}
@@ -199,11 +201,11 @@ package.
 
 %if "%{HAVE_ALSA}"=="'yes'"
 %package alsa
-Summary:	ALSA 0.9 sound plugin for QuakeForge
+Summary:	ALSA sound plugin for QuakeForge
 Group:		Amusements/Games
 #Requires:
 %description alsa
-The ALSA 0.9 plugin for QuakeForge provides digital audio output for QuakeForge
+The ALSA plugin for QuakeForge provides digital audio output for QuakeForge
 targets that contain clients.
 %endif
 
@@ -400,7 +402,7 @@ rm -rf $RPM_BUILD_ROOT
 
 %if "%{HAVE_ALSA}"=="'yes'"
 %files alsa
-%attr(-,root,root)	%{_prefix}/lib/quakeforge/snd_output_alsa.so*
+%attr(-,root,root)	%{_prefix}/lib/quakeforge/%{ALSA_PLUGIN}.so*
 %endif
 
 %if "%{HAVE_OSS}"=="'yes'"
