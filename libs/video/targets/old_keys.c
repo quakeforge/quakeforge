@@ -170,8 +170,8 @@ old_keyname_t   old_keynames[] = {
 	{"U",				"K_u"},
 	{"V",				"K_v"},
 	{"W",				"K_w"},
-	{"X",				"K_y"},
-	{"Y",				"K_x"},
+	{"X",				"K_x"},
+	{"Y",				"K_y"},
 	{"Z",				"K_z"},
 
 	{" ",				"K_SPACE"},
