@@ -82,8 +82,9 @@ main (int argc, const char **argv)
 
 	startup ();
 
-	COM_InitArgv (argc, argv);
+	memset (&host_parms, 0, sizeof (host_parms));
 
+	COM_InitArgv (argc, argv);
 	host_parms.argc = com_argc;
 	host_parms.argv = com_argv;
 

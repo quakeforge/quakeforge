@@ -80,13 +80,15 @@ int
 main (int argc, const char **argv)
 {
 	double      time, oldtime, newtime;
+	int         i;
 
 	memset (&host_parms, 0, sizeof (host_parms));
 
-	COM_InitArgv (argc, argv);
-
 	// dedicated server ONLY!
-	if (!COM_CheckParm ("-dedicated")) {
+	for (i = 1; i < argc; i++)
+		if (!strcmp (argv[i], "-dedicated"))
+			break;
+	if (i != argc) {
 		const char **newargv;
 
 		newargv = malloc ((argc + 2) * sizeof (*newargv));
@@ -94,10 +96,11 @@ main (int argc, const char **argv)
 		newargv[argc++] = "-dedicated";
 		newargv[argc] = 0;
 		argv = newargv;
-		COM_InitArgv (argc, argv);
-		host_parms.argc = com_argc;
-		host_parms.argv = com_argv;
 	}
+
+	COM_InitArgv (argc, argv);
+	host_parms.argc = com_argc;
+	host_parms.argv = com_argv;
 
 	fcntl (0, F_SETFL, fcntl (0, F_GETFL, 0) | O_NONBLOCK);
 

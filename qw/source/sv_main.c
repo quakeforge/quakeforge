@@ -2475,8 +2475,6 @@ SV_Init_Memory (void)
 void
 SV_Init (void)
 {
-	COM_InitArgv (host_parms.argc, (const char**)host_parms.argv);
-
 	sv_cbuf = Cbuf_New (&id_interp);
 	sv_args = Cbuf_ArgsNew ();
 

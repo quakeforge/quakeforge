@@ -52,12 +52,11 @@ shutdown (void)
 {
 }
 
-const char       *newargv[256];
-
 int
 main (int argc, const char **argv)
 {
 	double      time, oldtime;
+	int         i;
 
 	memset (&host_parms, 0, sizeof (host_parms));
 
@@ -66,17 +65,21 @@ main (int argc, const char **argv)
 	if (cwd[Q_strlen (cwd) - 1] == '\\')
 		cwd[Q_strlen (cwd) - 1] = 0;
 #endif
-	COM_InitArgv (argc, argv);
-
 	// dedicated server ONLY!
-	if (!COM_CheckParm ("-dedicated")) {
+	for (i = 1; i < argc; i++)
+		if (!strcmp (argv[i], "-dedicated"))
+			break;
+	if (i != argc) {
+		const char **newargv;
+
+		newargv = malloc ((argc + 2) * sizeof (*newargv));
 		memcpy (newargv, argv, argc * 4);
-		newargv[argc] = "-dedicated";
-		argc++;
+		newargv[argc++] = "-dedicated";
+		newargv[argc] = 0;
 		argv = newargv;
-		COM_InitArgv (argc, argv);
 	}
 
+	COM_InitArgv (argc, argv);
 	host_parms.argc = com_argc;
 	host_parms.argv = com_argv;
 
