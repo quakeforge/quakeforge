@@ -348,12 +348,13 @@ I_S_Shutdown (void)
 	if (shm)
 		shm->gamealive = 0;
 
-	shm = 0;
 	sound_started = 0;
 
 	if (!fakedma) {
 		SNDDMA_Shutdown ();
 	}
+
+	shm = 0;
 }
 
 
