@@ -197,7 +197,7 @@ nq_wgl_DEPENDENCIES=	$(top_builddir)/libs/video/renderer/libQFrenderer_gl.la \
 # Dedicated Server
 ded_sources=	sys_unixd.c sv_ded.c
 
-nq_server_sources=	$(common_sources) $(server_sources) $(ded_sources)
+nq_server_SOURCES=	$(common_sources) $(server_sources) $(ded_sources)
 nq_server_LDADD=	libqfnet.la libasm.la
 nq_server_DEPENDENCIES=	libqfnet.la libasm.la
 
