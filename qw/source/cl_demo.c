@@ -49,6 +49,7 @@
 #include "QF/va.h"
 
 void        CL_FinishTimeDemo (void);
+int demotime_cached;
 
 /*
 	DEMO CODE
@@ -75,6 +76,7 @@ CL_StopPlayback (void)
 	cls.demofile = NULL;
 	cls.state = ca_disconnected;
 	cls.demoplayback = 0;
+	demotime_cached = 0;
 
 	if (cls.timedemo)
 		CL_FinishTimeDemo ();
@@ -167,7 +169,6 @@ CL_GetDemoMessage (void)
 	float       demotime;
 	byte        c;
 	usercmd_t  *pcmd;
-	static int  demotime_cached;
 	static float cached_demotime;
 
 	// read the time from the packet
