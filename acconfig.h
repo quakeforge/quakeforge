@@ -145,5 +145,12 @@
 #undef SND_RENDER_LIST
 #undef SND_RENDER_PROTOS
 
+#if defined (WIN32) && !defined(_WIN32)
+# define _WIN32
+#endif
+#if defined (_WIN32) && !defined(WIN32)
+# define WIN32
+#endif
+
 @BOTTOM@
 #endif // __config_h_

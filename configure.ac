@@ -55,7 +55,7 @@ case "$host_os" in
 		if test "$host" != "$build"; then
 			case "$build_os" in
 				cygwin*)
-					CFLAGS="$CFLAGS -mno-cygwin"
+					CFLAGS="$CFLAGS -mno-cygwin -mconsole"
 					CPPFLAGS="$CPPFLAGS $CFLAGS"
 					;;
 				*)
@@ -563,6 +563,17 @@ if test "x$enable_sdl" != xno; then
 		HAVE_SDL=yes,
 		HAVE_SDL=no)
 	AC_SUBST(HAVE_SDL)
+	if test "x$HAVE_SDL" = "xyes"; then
+		case "$host_os" in
+			mingw*)
+				case "$build_os" in
+					cygwin*)
+						SDL_LIBS=`echo $SDL_LIBS | sed -e 's/-mwindows//'`
+						;;
+				esac
+			;;
+		esac
+	fi
 fi
 
 dnl XMMS Checks
