@@ -182,7 +182,7 @@ Mod_LoadSkin (byte * skin, int skinsize, int snum, int gnum, qboolean group,
 }
 
 void *
-Mod_LoadAliasFrame (void *pin, int *posenum, maliasframedesc_t *frame)
+Mod_LoadAliasFrame (void *pin, int *posenum, maliasframedesc_t *frame, int extra)
 {
 	trivertx_t *pinframe;
 	int         i;
@@ -205,13 +205,16 @@ Mod_LoadAliasFrame (void *pin, int *posenum, maliasframedesc_t *frame)
 	poseverts[(*posenum)] = pinframe;
 	(*posenum)++;
 
-	pinframe += pheader->mdl.numverts;
+	if (extra)
+		pinframe += pheader->mdl.numverts * 2;
+	else
+		pinframe += pheader->mdl.numverts;
 
 	return (void *) pinframe;
 }
 
 void *
-Mod_LoadAliasGroup (void *pin, int *posenum, maliasframedesc_t *frame)
+Mod_LoadAliasGroup (void *pin, int *posenum, maliasframedesc_t *frame, int extra)
 {
 	daliasgroup_t *pingroup;
 	int         i, numframes;
@@ -242,7 +245,12 @@ Mod_LoadAliasGroup (void *pin, int *posenum, maliasframedesc_t *frame)
 	for (i = 0; i < numframes; i++) {
 		poseverts[(*posenum)] = (trivertx_t *) ((daliasframe_t *) ptemp + 1);
 		(*posenum)++;
-		ptemp =	(trivertx_t *) ((daliasframe_t *) ptemp + 1) + pheader->mdl.numverts;
+		if (extra)
+			ptemp =	(trivertx_t *) ((daliasframe_t *) ptemp + 1)
+				+ pheader->mdl.numverts * 2;
+		else
+			ptemp =	(trivertx_t *) ((daliasframe_t *) ptemp + 1)
+				+ pheader->mdl.numverts;
 	}
 	return ptemp;
 }

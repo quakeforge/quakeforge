@@ -73,7 +73,7 @@ Mod_LoadSkin (byte *skin, int skinsize, int snum, int gnum,
 }
 
 void
-Mod_MakeAliasModelDisplayLists (model_t *m, aliashdr_t *hdr, void *_m, int _s)
+Mod_MakeAliasModelDisplayLists (model_t *m, aliashdr_t *hdr, void *_m, int _s, int extra)
 {
 	int         i, j;
 	stvert_t   *pstverts;
@@ -104,7 +104,7 @@ Mod_MakeAliasModelDisplayLists (model_t *m, aliashdr_t *hdr, void *_m, int _s)
 }
 
 void *
-Mod_LoadAliasFrame (void *pin, int *posenum, maliasframedesc_t *frame)
+Mod_LoadAliasFrame (void *pin, int *posenum, maliasframedesc_t *frame, int extra)
 {
 	trivertx_t *pframe, *pinframe;
 	int         i, j;
@@ -121,7 +121,12 @@ Mod_LoadAliasFrame (void *pin, int *posenum, maliasframedesc_t *frame)
 	}
 
 	pinframe = (trivertx_t *) (pdaliasframe + 1);
-	pframe = Hunk_AllocName (pheader->mdl.numverts * sizeof (*pframe),
+
+	if (extra)
+		pframe = Hunk_AllocName (pheader->mdl.numverts * sizeof (*pframe) * 2,
+							 loadname);
+	else
+		pframe = Hunk_AllocName (pheader->mdl.numverts * sizeof (*pframe),
 							 loadname);
 
 	frame->frame = (byte *) pframe - (byte *) pheader;
@@ -137,13 +142,27 @@ Mod_LoadAliasFrame (void *pin, int *posenum, maliasframedesc_t *frame)
 		}
 	}
 
-	pinframe += pheader->mdl.numverts;
+	if (extra)
+	{
+		for (j = pheader->mdl.numverts; j < pheader->mdl.numverts * 2; j++)
+		{
+			int		k;
+			for (k = 0; k < 3; k++)
+				pframe[j].v[k] = pinframe[j].v[k];
+		}
+	}
+
+	if (extra)
+		pinframe += pheader->mdl.numverts * 2;
+	else
+		pinframe += pheader->mdl.numverts;
+
 
 	return (void *) pinframe;
 }
 
 void *
-Mod_LoadAliasGroup (void *pin, int *posenum, maliasframedesc_t *frame)
+Mod_LoadAliasGroup (void *pin, int *posenum, maliasframedesc_t *frame, int extra)
 {
 	daliasgroup_t *pingroup;
 	maliasgroup_t *paliasgroup;
@@ -187,7 +206,7 @@ Mod_LoadAliasGroup (void *pin, int *posenum, maliasframedesc_t *frame)
 
 	for (i = 0; i < numframes; i++) {
 		maliasframedesc_t temp_frame;
-		ptemp = Mod_LoadAliasFrame (ptemp, &i, &temp_frame);
+		ptemp = Mod_LoadAliasFrame (ptemp, &i, &temp_frame, extra);
 		memcpy (&paliasgroup->frames[i], &temp_frame,
 				sizeof(paliasgroup->frames[i]));
 	}

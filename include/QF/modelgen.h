@@ -126,4 +126,8 @@ typedef struct {
 
 #define IDPOLYHEADER	(('O'<<24)+('P'<<16)+('D'<<8)+'I')
 														// little-endian "IDPO"
+
+// special header indicating 16 bit vertices - little-endian "MD16"
+#define POLYHEADER16	(('6'<<24)+('1'<<16)+('D'<<8)+'M')
+
 #endif // _MODELGEN_H

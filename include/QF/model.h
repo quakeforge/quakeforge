@@ -462,12 +462,12 @@ int     Mod_CalcFullbright (byte *in, byte *out, int pixels);
 int     Mod_Fullbright (byte * skin, int width, int height, char *name);
 
 
-void    *Mod_LoadAliasFrame (void *pin, int *posenum, maliasframedesc_t *frame);
-void    *Mod_LoadAliasGroup (void *pin, int *posenum, maliasframedesc_t *frame);
+void    *Mod_LoadAliasFrame (void *pin, int *posenum, maliasframedesc_t *frame, int extra);
+void    *Mod_LoadAliasGroup (void *pin, int *posenum, maliasframedesc_t *frame, int extra);
 void	*Mod_LoadSkin (byte *skin, int skinsize, int snum, int gnum,
 					   qboolean group, maliasskindesc_t *skindesc);
 void     Mod_MakeAliasModelDisplayLists (model_t *m, aliashdr_t *hdr, void *_m,
-										 int _s);
+										 int _s, int extra);
 void	 Mod_FinalizeAliasModel (model_t *m, aliashdr_t *hdr);
 void	 Mod_SpriteLoadTexture (mspriteframe_t *pspriteframe, int framenum);
 

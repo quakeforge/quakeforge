@@ -151,6 +151,11 @@ Mod_LoadAliasModel (model_t *mod, void *buffer, cache_allocator_t allocator)
 	unsigned short crc;
 	void       *mem;
 
+	int extra = 0; // extra precision bytes
+
+	if (LittleLong (*(unsigned int *) buffer) == POLYHEADER16)
+		extra = 1; // extra precision bytes
+
 	CRC_Init (&crc);
 	for (len = com_filesize, p = buffer; len; len--, p++)
 		CRC_ProcessByte (&crc, *p);
@@ -253,11 +258,11 @@ Mod_LoadAliasModel (model_t *mod, void *buffer, cache_allocator_t allocator)
 		if (frametype == ALIAS_SINGLE) {
 			pframetype = (daliasframetype_t *)
 				Mod_LoadAliasFrame (pframetype + 1, &posenum,
-									&pheader->frames[i]);
+									&pheader->frames[i], extra);
 		} else {
 			pframetype = (daliasframetype_t *)
 				Mod_LoadAliasGroup (pframetype + 1, &posenum,
-									&pheader->frames[i]);
+									&pheader->frames[i], extra);
 		}
 	}
 
@@ -270,7 +275,7 @@ Mod_LoadAliasModel (model_t *mod, void *buffer, cache_allocator_t allocator)
 	mod->maxs[0] = mod->maxs[1] = mod->maxs[2] = 16;
 
 	// build the draw lists
-	Mod_MakeAliasModelDisplayLists (mod, pheader, buffer, com_filesize);
+	Mod_MakeAliasModelDisplayLists (mod, pheader, buffer, com_filesize, extra);
 
 	Mod_FinalizeAliasModel (mod, pheader);
 
