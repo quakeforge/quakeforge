@@ -59,10 +59,11 @@ float       v_blend[4];
 
 qboolean    V_CheckGamma (void);
 
+
 /*
 	V_CalcBlend
 
-	LordHavoc made this a real, (messy,) true alpha blend.  Cleaned it up
+	LordHavoc made this a real, true alpha blend.  Cleaned it up
 	 a bit, but otherwise this is his code.  --KB
 */
 void
@@ -115,9 +116,6 @@ V_CalcBlend (void)
 }
 
 
-/*
-	V_CalcPowerupCshift
-*/
 void
 V_CalcPowerupCshift (void)
 {
@@ -161,9 +159,7 @@ V_CalcPowerupCshift (void)
 		cl.cshifts[CSHIFT_POWERUP].percent = 0;
 }
 
-/*
-	V_UpdatePalette
-*/
+
 void
 V_UpdatePalette (void)
 {

@@ -30,10 +30,17 @@
 #ifdef HAVE_CONFIG_H
 # include "config.h"
 #endif
+#ifdef HAVE_STRING_H 
+# include <string.h> 
+#endif 
+#ifdef HAVE_STRINGS_H 
+# include <strings.h> 
+#endif 
 
-#include "client.h"
 #include "QF/console.h"
 #include "QF/compat.h"
+
+#include "client.h"
 #include "glquake.h"
 #include "host.h"
 #include "view.h"
@@ -55,10 +62,11 @@ extern cvar_t     *scr_ofsz;
 byte        ramps[3][256];
 float       v_blend[4];					// rgba 0.0 - 1.0
 
+
 /*
 	V_CalcBlend
 
-	LordHavoc made this a real, (messy,) true alpha blend.  Cleaned it up
+	LordHavoc made this a real, true alpha blend.  Cleaned it up
 	a bit, but otherwise this is his code.  --KB
 */
 void
@@ -105,6 +113,7 @@ V_CalcBlend (void)
 	v_blend[2] = min (b, 255.0) / 255.0;
 	v_blend[3] = bound (0.0, a, 1.0);
 }
+
 
 /*
 	V_UpdatePalette
@@ -153,9 +162,6 @@ V_UpdatePalette (void)
 	V_CalcBlend ();
 }
 
-/* 
- *	View Rendering
- */
 
 /*
 	V_RenderView
@@ -191,13 +197,13 @@ V_RenderView (void)
 	R_RenderView ();
 }
 
+
 /*
 	BuildGammaTable
 
 	In software mode, this function gets the palette ready for changing...
 	in GL, it does very little as you can see.
 */
-
 void
 BuildGammaTable (float b, float c)
 {
