@@ -71,7 +71,8 @@ ResampleSfx (sfx_t *sfx, int inrate, int inwidth, byte * data)
 	ob = sc->data;
 
 	stepscale = (float) inrate / shm->speed;	// this is usually 0.5, 1, or 
-												// 2
+												// 
+	// 2
 
 	outcount = sc->length / stepscale;
 
@@ -370,9 +371,9 @@ GetWavinfo (char *name, byte * wav, int wavlength)
 		FindNextChunk ("LIST");
 		if (data_p) {
 			if (!strncmp (data_p + 28, "mark", 4)) {	// this is not a
-														// proper parse, but
-														// it works with
-														// cooledit...
+				// proper parse, but
+				// it works with
+				// cooledit...
 				data_p += 24;
 				i = GetLittleLong ();	// samples in loop
 				info.samples = info.loopstart + i;

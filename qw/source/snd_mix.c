@@ -47,7 +47,9 @@
 
 #define	PAINTBUFFER_SIZE	512
 portable_samplepair_t paintbuffer[PAINTBUFFER_SIZE * 2];
-int max_overpaint; // number of extra samples painted due to phase shift
+int         max_overpaint;				// number of extra samples painted
+
+										// due to phase shift
 int         snd_scaletable[32][256];
 int        *snd_p, snd_linear_count, snd_vol;
 short      *snd_out;
@@ -94,14 +96,13 @@ S_TransferStereo16 (int endtime)
 	lpaintedtime = paintedtime;
 
 #ifdef _WIN32
-        if (pDSBuf) {
-                pbuf=DSOUND_LockBuffer(true);
-                if(!pbuf) {
-                        Con_Printf("DSOUND_LockBuffer fails!\n");
-                        return;
-                }
-        }
-	else
+	if (pDSBuf) {
+		pbuf = DSOUND_LockBuffer (true);
+		if (!pbuf) {
+			Con_Printf ("DSOUND_LockBuffer fails!\n");
+			return;
+		}
+	} else
 #endif
 	{
 		pbuf = (DWORD *) shm->buffer;
@@ -127,7 +128,8 @@ S_TransferStereo16 (int endtime)
 	}
 
 #ifdef _WIN32
-	if (pDSBuf) DSOUND_LockBuffer(false);
+	if (pDSBuf)
+		DSOUND_LockBuffer (false);
 #endif
 }
 
@@ -156,14 +158,13 @@ S_TransferPaintBuffer (int endtime)
 	snd_vol = volume->value * 256;
 
 #ifdef _WIN32
-        if (pDSBuf) {
-                pbuf=DSOUND_LockBuffer(true);
-                if(!pbuf) {
-                        Con_Printf("DSOUND_LockBuffer fails!\n");
-                        return;
-                }
-        }
-	else
+	if (pDSBuf) {
+		pbuf = DSOUND_LockBuffer (true);
+		if (!pbuf) {
+			Con_Printf ("DSOUND_LockBuffer fails!\n");
+			return;
+		}
+	} else
 #endif
 	{
 		pbuf = (DWORD *) shm->buffer;
@@ -197,7 +198,8 @@ S_TransferPaintBuffer (int endtime)
 		}
 	}
 #ifdef _WIN32
-	if (pDSBuf) DSOUND_LockBuffer(false);
+	if (pDSBuf)
+		DSOUND_LockBuffer (false);
 #endif
 }
 
@@ -225,8 +227,8 @@ S_PaintChannels (int endtime)
 			end = paintedtime + PAINTBUFFER_SIZE;
 
 		// clear the paint buffer
-//		memset (paintbuffer, 0,
-//				(end - paintedtime) * sizeof (portable_samplepair_t));
+//      memset (paintbuffer, 0,
+//              (end - paintedtime) * sizeof (portable_samplepair_t));
 		max_overpaint = 0;
 
 		// paint in the channels.
@@ -274,9 +276,9 @@ S_PaintChannels (int endtime)
 		S_TransferPaintBuffer (end);
 
 		memmove (paintbuffer, paintbuffer + end - paintedtime,
-			max_overpaint * sizeof (paintbuffer[0]));
+				 max_overpaint * sizeof (paintbuffer[0]));
 		memset (paintbuffer + max_overpaint, 0, sizeof (paintbuffer)
-			- max_overpaint * sizeof (paintbuffer[0]));
+				- max_overpaint * sizeof (paintbuffer[0]));
 
 		paintedtime = end;
 	}
@@ -331,14 +333,14 @@ SND_PaintChannelFrom16 (channel_t *ch, sfxcache_t *sc, int count)
 	int         left, right;
 	int         leftvol, rightvol;
 	signed short *sfx;
-	unsigned int	i = 0;
-	unsigned int	left_phase, right_phase;	// Never allowed < 0 anyway
+	unsigned int i = 0;
+	unsigned int left_phase, right_phase;	// Never allowed < 0 anyway
 
 	leftvol = ch->leftvol;
 	rightvol = ch->rightvol;
 
 	max_overpaint = max (abs (ch->phase),
-			     max (abs (ch->oldphase), max_overpaint));
+						 max (abs (ch->oldphase), max_overpaint));
 
 	sfx = (signed short *) sc->data + ch->pos;
 	ch->pos += count;
@@ -352,9 +354,9 @@ SND_PaintChannelFrom16 (channel_t *ch, sfxcache_t *sc, int count)
 	}
 
 	if (ch->oldphase != ch->phase) {
-		unsigned int    old_phase_left, old_phase_right;
-		unsigned int    new_phase_left, new_phase_right;
-		unsigned int    count_left, count_right, c;
+		unsigned int old_phase_left, old_phase_right;
+		unsigned int new_phase_left, new_phase_right;
+		unsigned int count_left, count_right, c;
 
 		if (ch->oldphase >= 0) {
 			old_phase_left = ch->oldphase;
@@ -364,7 +366,7 @@ SND_PaintChannelFrom16 (channel_t *ch, sfxcache_t *sc, int count)
 			old_phase_right = -ch->oldphase;
 		}
 		new_phase_left = left_phase;
-                new_phase_right = right_phase;
+		new_phase_right = right_phase;
 
 		if (new_phase_left > old_phase_left)
 			count_left = 2 * (new_phase_left - old_phase_left);
@@ -379,9 +381,9 @@ SND_PaintChannelFrom16 (channel_t *ch, sfxcache_t *sc, int count)
 		c = min (count, max (count_right, count_left));
 		count -= c;
 		while (c) {
-			int data = sfx[i];
-			int left = (data * leftvol) >> 8;
-			int right = (data * rightvol) >> 8;
+			int         data = sfx[i];
+			int         left = (data * leftvol) >> 8;
+			int         right = (data * rightvol) >> 8;
 
 			if (new_phase_left < old_phase_left) {
 				if (!(count_left & 1)) {

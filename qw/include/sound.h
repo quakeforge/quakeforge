@@ -172,6 +172,10 @@ extern	cvar_t *loadas8bit;
 extern	cvar_t *bgmvolume;
 extern	cvar_t *volume;
 
+extern	cvar_t	*snd_device;
+extern	cvar_t	*snd_rate;
+extern	cvar_t	*snd_bits;
+extern	cvar_t	*snd_stereo;
 extern	cvar_t	*snd_interp;
 extern cvar_t *snd_stereo_phase_separation;
 

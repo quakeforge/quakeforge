@@ -101,6 +101,10 @@ int         sound_started = 0;
 cvar_t     *bgmvolume;
 cvar_t     *volume;
 
+cvar_t     *snd_device;
+cvar_t     *snd_rate;
+cvar_t     *snd_bits;
+cvar_t     *snd_stereo;
 cvar_t     *nosound;
 cvar_t     *precache;
 cvar_t     *loadas8bit;
@@ -197,13 +201,18 @@ void
 S_Init (void)
 {
 
-	Con_Printf("\nSound Initialization\n");
+	Con_Printf ("\nSound Initialization\n");
 
-	Cmd_AddCommand ("play", S_Play, "Play selected sound effect (play pathto/sound.wav)");
-	Cmd_AddCommand ("playvol", S_PlayVol, "Play selected sound effect at selected volume (playvol pathto/sound.wav num");
-	Cmd_AddCommand ("stopsound", S_StopAllSoundsC, "Stops all sounds currently being played");
-	Cmd_AddCommand ("soundlist", S_SoundList, "Reports a list of sounds in the cache");
-	Cmd_AddCommand ("soundinfo", S_SoundInfo_f, "Report information on the sound system");
+	Cmd_AddCommand ("play", S_Play,
+					"Play selected sound effect (play pathto/sound.wav)");
+	Cmd_AddCommand ("playvol", S_PlayVol,
+					"Play selected sound effect at selected volume (playvol pathto/sound.wav num");
+	Cmd_AddCommand ("stopsound", S_StopAllSoundsC,
+					"Stops all sounds currently being played");
+	Cmd_AddCommand ("soundlist", S_SoundList,
+					"Reports a list of sounds in the cache");
+	Cmd_AddCommand ("soundinfo", S_SoundInfo_f,
+					"Report information on the sound system");
 
 	if (COM_CheckParm ("-nosound"))
 		return;
@@ -221,7 +230,7 @@ S_Init (void)
 
 	S_Startup ();
 
-	if (sound_started == 0)		// sound startup failed? Bail out.
+	if (sound_started == 0)				// sound startup failed? Bail out.
 		return;
 
 	SND_InitScaletable ();
@@ -261,22 +270,47 @@ S_Init (void)
 void
 S_Init_Cvars (void)
 {
+	snd_device = Cvar_Get ("snd_device", "", CVAR_ROM,
+						   "sound device. \"\" is system default");
+	snd_rate = Cvar_Get ("snd_rate", "0", CVAR_ROM,
+						 "sound playback rate. 0 is system default");
+	snd_bits = Cvar_Get ("snd_bits", "0", CVAR_ROM,
+						 "sound sample depth. 0 is system default");
+	snd_stereo = Cvar_Get ("snd_stereo", "1", CVAR_ROM,
+						   "sound stereo output");
 	nosound = Cvar_Get ("nosound", "0", CVAR_NONE, "Set to turn sound off");
-	volume = Cvar_Get ("volume", "0.7", CVAR_ARCHIVE, "Set the volume for sound playback");
-	precache = Cvar_Get ("precache", "1", CVAR_NONE, "Toggle the use of a precache");
-	loadas8bit = Cvar_Get ("loadas8bit", "0", CVAR_NONE, "Toggles if sounds are loaded as 8-bit samples");
+	volume =
+		Cvar_Get ("volume", "0.7", CVAR_ARCHIVE,
+				  "Set the volume for sound playback");
+	precache =
+		Cvar_Get ("precache", "1", CVAR_NONE, "Toggle the use of a precache");
+	loadas8bit =
+		Cvar_Get ("loadas8bit", "0", CVAR_NONE,
+				  "Toggles if sounds are loaded as 8-bit samples");
 	bgmvolume = Cvar_Get ("bgmvolume", "1", CVAR_ARCHIVE, "Volume of CD music");
-	ambient_level = Cvar_Get ("ambient_level", "0.3", CVAR_NONE, "Ambient sounds' volume");
-	ambient_fade = Cvar_Get ("ambient_fade", "100", CVAR_NONE, "How quickly ambient sounds fade in or out");
-	snd_noextraupdate = Cvar_Get ("snd_noextraupdate", "0", CVAR_NONE, 
-		"Toggles the correct value display in host_speeds. Usually messes up sound playback when in effect");
-	snd_show = Cvar_Get ("snd_show", "0", CVAR_NONE, "Toggles the display of sounds currently being played");
+	ambient_level =
+		Cvar_Get ("ambient_level", "0.3", CVAR_NONE, "Ambient sounds' volume");
+	ambient_fade =
+		Cvar_Get ("ambient_fade", "100", CVAR_NONE,
+				  "How quickly ambient sounds fade in or out");
+	snd_noextraupdate =
+		Cvar_Get ("snd_noextraupdate", "0", CVAR_NONE,
+				  "Toggles the correct value display in host_speeds. Usually messes up sound playback when in effect");
+	snd_show =
+		Cvar_Get ("snd_show", "0", CVAR_NONE,
+				  "Toggles the display of sounds currently being played");
 	snd_interp =
 		Cvar_Get ("snd_interp", "1", CVAR_ARCHIVE,
 				  "control sample interpolation");
-	snd_phasesep = Cvar_Get ("snd_phasesep", "0.0", CVAR_ARCHIVE, "max stereo phase separation in ms. 0.6 is for 20cm head");
-	snd_volumesep = Cvar_Get("snd_volumesep", "1.0", CVAR_ARCHIVE, "max stereo volume separation in ms. 1.0 is max");
-	_snd_mixahead = Cvar_Get ("_snd_mixahead", "0.1", CVAR_ARCHIVE, "Delay time for sounds");
+	snd_phasesep =
+		Cvar_Get ("snd_phasesep", "0.0", CVAR_ARCHIVE,
+				  "max stereo phase separation in ms. 0.6 is for 20cm head");
+	snd_volumesep =
+		Cvar_Get ("snd_volumesep", "1.0", CVAR_ARCHIVE,
+				  "max stereo volume separation in ms. 1.0 is max");
+	_snd_mixahead =
+		Cvar_Get ("_snd_mixahead", "0.1", CVAR_ARCHIVE,
+				  "Delay time for sounds");
 }
 
 
@@ -428,7 +462,7 @@ SND_Spatialize (channel_t *ch)
 {
 	vec_t       dot;
 	vec_t       dist;
-	int	phase;	// in samples
+	int         phase;					// in samples
 	vec_t       lscale, rscale, scale;
 	vec3_t      source_vec;
 	sfx_t      *snd;
@@ -605,7 +639,8 @@ S_ClearBuffer (void)
 		clear = 0;
 
 #ifdef _WIN32
-	if (pDSBuf) DSOUND_ClearBuffer(clear);
+	if (pDSBuf)
+		DSOUND_ClearBuffer (clear);
 	else
 #endif
 	{
@@ -737,7 +772,8 @@ S_Update (vec3_t origin, vec3_t forward, vec3_t right, vec3_t up)
 	for (i = NUM_AMBIENTS; i < total_channels; i++, ch++) {
 		if (!ch->sfx)
 			continue;
-		ch->oldphase = ch->phase;		// prepare to lerp from prev to next phase
+		ch->oldphase = ch->phase;		// prepare to lerp from prev to next
+										// phase
 		SND_Spatialize (ch);			// respatialize channel
 		if (!ch->leftvol && !ch->rightvol)
 			continue;
@@ -811,7 +847,7 @@ GetSoundtime (void)
 		buffers++;						// buffer wrapped
 
 		if (paintedtime > 0x40000000) {	// time to chop things off to avoid
-										// 32 bit limits
+			// 32 bit limits
 			buffers = 0;
 			paintedtime = fullsamples;
 			S_StopAllSounds (true);
@@ -861,7 +897,8 @@ S_Update_ (void)
 		endtime = soundtime + samps;
 
 #ifdef _WIN32
-	if(pDSBuf) DSOUND_Restore();
+	if (pDSBuf)
+		DSOUND_Restore ();
 #endif
 
 	S_PaintChannels (endtime);

@@ -40,7 +40,8 @@
 #define iDirectSoundCreate(a,b,c)	pDirectSoundCreate(a,b,c)
 
 HRESULT (WINAPI * pDirectSoundCreate) (GUID FAR * lpGUID,
-	   LPDIRECTSOUND FAR * lplpDS,IUnknown FAR * pUnkOuter);
+									   LPDIRECTSOUND FAR * lplpDS,
+									   IUnknown FAR * pUnkOuter);
 
 // 64K is > 1 second at 16-bit, 22050 Hz
 #define	WAV_BUFFERS				64
@@ -181,8 +182,7 @@ FreeSound (void)
 
 	Direct-Sound support
 */
-sndinitstat
-SNDDMA_InitDirect (void)
+sndinitstat SNDDMA_InitDirect (void)
 {
 	DSBUFFERDESC dsbuf;
 	DSBCAPS     dsbcaps;
@@ -269,9 +269,10 @@ SNDDMA_InitDirect (void)
 		if (DS_OK ==
 			IDirectSound_CreateSoundBuffer (pDS, &dsbuf, &pDSPBuf, NULL)) {
 			pformat = format;
-	
+
 			if (DS_OK != IDirectSoundBuffer_SetFormat (pDSPBuf, &pformat)) {
-			} else primary_format_set = true;
+			} else
+				primary_format_set = true;
 		}
 	}
 
@@ -305,7 +306,7 @@ SNDDMA_InitDirect (void)
 	} else {
 		if (DS_OK !=
 			IDirectSound_SetCooperativeLevel (pDS, mainwindow,
-				  DSSCL_WRITEPRIMARY)) {
+											  DSSCL_WRITEPRIMARY)) {
 			Con_Printf ("Set coop level failed\n");
 			FreeSound ();
 			return SIS_FAILURE;
@@ -328,7 +329,8 @@ SNDDMA_InitDirect (void)
 	reps = 0;
 
 	while ((hresult = IDirectSoundBuffer_Lock (pDSBuf, 0, gSndBufSize,
-			(LPVOID *) & lpData, &dwSize, NULL,NULL, 0)) != DS_OK) {
+											   (LPVOID *) & lpData, &dwSize,
+											   NULL, NULL, 0)) != DS_OK) {
 		if (hresult != DSERR_BUFFERLOST) {
 			Con_Printf ("SNDDMA_InitDirect: DS::Lock Sound Buffer Failed\n");
 			FreeSound ();
@@ -354,7 +356,7 @@ SNDDMA_InitDirect (void)
 
 	IDirectSoundBuffer_Stop (pDSBuf);
 	IDirectSoundBuffer_GetCurrentPosition (pDSBuf, &mmstarttime.u.sample,
-		&dwWrite);
+										   &dwWrite);
 	IDirectSoundBuffer_Play (pDSBuf, 0, 0, DSBPLAY_LOOPING);
 
 	shm->soundalive = true;
@@ -403,7 +405,8 @@ SNDDMA_InitWav (void)
 
 	/* Open a waveform device for output using window callback. */
 	while ((hr = waveOutOpen ((LPHWAVEOUT) & hWaveOut, WAVE_MAPPER,
-			  &format,0, 0L, CALLBACK_NULL)) != MMSYSERR_NOERROR) {
+							  &format, 0, 0L,
+							  CALLBACK_NULL)) != MMSYSERR_NOERROR) {
 		if (hr != MMSYSERR_ALLOCATED) {
 			Con_Printf ("waveOutOpen failed\n");
 			return false;
@@ -501,7 +504,7 @@ SNDDMA_Init (void)
 	dsound_init = wav_init = 0;
 
 	stat = SIS_FAILURE;					// assume DirectSound won't
-										// initialize
+	// initialize
 
 	/* Init DirectSound */
 	if (!wavonly) {
@@ -565,7 +568,8 @@ SNDDMA_GetDMAPos (void)
 
 	if (dsound_init) {
 		mmtime.wType = TIME_SAMPLES;
-		IDirectSoundBuffer_GetCurrentPosition (pDSBuf, &mmtime.u.sample, &dwWrite);
+		IDirectSoundBuffer_GetCurrentPosition (pDSBuf, &mmtime.u.sample,
+											   &dwWrite);
 		s = mmtime.u.sample - mmstarttime.u.sample;
 	} else if (wav_init) {
 		s = snd_sent * WAV_BUFFER_SIZE;
@@ -642,16 +646,16 @@ SNDDMA_Shutdown (void)
 	FreeSound ();
 }
 
-DWORD *
-DSOUND_LockBuffer(qboolean lockit)
+DWORD      *
+DSOUND_LockBuffer (qboolean lockit)
 {
 	int         reps;
 
-	static DWORD 	dwSize;
-	static DWORD 	dwSize2;
-	static DWORD	*pbuf1;
-	static DWORD	*pbuf2;
-	HRESULT     	hresult;
+	static DWORD dwSize;
+	static DWORD dwSize2;
+	static DWORD *pbuf1;
+	static DWORD *pbuf2;
+	HRESULT     hresult;
 
 	if (!pDSBuf)
 		return NULL;
@@ -659,8 +663,9 @@ DSOUND_LockBuffer(qboolean lockit)
 	if (lockit) {
 		reps = 0;
 		while ((hresult = IDirectSoundBuffer_Lock (pDSBuf, 0, gSndBufSize,
-		(LPVOID *) & pbuf1, &dwSize,
-		(LPVOID *) & pbuf2, &dwSize2,0)) != DS_OK) {
+												   (LPVOID *) & pbuf1, &dwSize,
+												   (LPVOID *) & pbuf2, &dwSize2,
+												   0)) != DS_OK) {
 			if (hresult != DSERR_BUFFERLOST) {
 				Con_Printf
 					("S_TransferStereo16: DS::Lock Sound Buffer Failed\n");
@@ -679,33 +684,36 @@ DSOUND_LockBuffer(qboolean lockit)
 		}
 	} else {
 		IDirectSoundBuffer_Unlock (pDSBuf, pbuf1, dwSize, NULL, 0);
-		pbuf1=NULL;
-		pbuf2=NULL;
-		dwSize=0;
-		dwSize2=0;
+		pbuf1 = NULL;
+		pbuf2 = NULL;
+		dwSize = 0;
+		dwSize2 = 0;
 	}
-	return(pbuf1);
+	return (pbuf1);
 }
 
-void DSOUND_ClearBuffer(int clear)
+void
+DSOUND_ClearBuffer (int clear)
 {
-	DWORD *pData;
+	DWORD      *pData;
 
 // FIXME: this should be called with 2nd pbuf2 = NULL, dwsize =0
-	pData=DSOUND_LockBuffer(true);
+	pData = DSOUND_LockBuffer (true);
 	memset (pData, clear, shm->samples * shm->samplebits / 8);
-	DSOUND_LockBuffer(false);
+	DSOUND_LockBuffer (false);
 }
 
-void DSOUND_Restore(void)
+void
+DSOUND_Restore (void)
 {
 // if the buffer was lost or stopped, restore it and/or restart it
-        DWORD       dwStatus;
+	DWORD       dwStatus;
 
-        if (!pDSBuf) return;
+	if (!pDSBuf)
+		return;
 
 	if (IDirectSoundBuffer_GetStatus (pDSBuf, &dwStatus) != DD_OK)
-        	Con_Printf ("Couldn't get sound buffer status\n");
+		Con_Printf ("Couldn't get sound buffer status\n");
 
 	if (dwStatus & DSBSTATUS_BUFFERLOST)
 		IDirectSoundBuffer_Restore (pDSBuf);
@@ -713,6 +721,5 @@ void DSOUND_Restore(void)
 	if (!(dwStatus & DSBSTATUS_PLAYING))
 		IDirectSoundBuffer_Play (pDSBuf, 0, 0, DSBPLAY_LOOPING);
 
-        return;
+	return;
 }
-

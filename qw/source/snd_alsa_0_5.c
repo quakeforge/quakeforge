@@ -123,14 +123,11 @@ SNDDMA_Init (void)
 		Con_Printf ("No sound cards detected\n");
 		return 0;
 	}
-	if ((i = COM_CheckParm ("-sndcard")) != 0) {
-		card = atoi (com_argv[i + 1]);
+	if (snd_device->string[0]) {
+		sscanf (snd_device->string, "%d,%d", &card, &dev);
 	}
-	if ((i = COM_CheckParm ("-snddev")) != 0) {
-		dev = atoi (com_argv[i + 1]);
-	}
-	if ((i = COM_CheckParm ("-sndbits")) != 0) {
-		i = atoi (com_argv[i + 1]);
+	if (snd_bits->int_val) {
+		i = snd_bits->int_val;
 		if (i == 16) {
 			format = SND_PCM_SFMT_S16_LE;
 		} else if (i == 8) {
@@ -140,16 +137,14 @@ SNDDMA_Init (void)
 			return 0;
 		}
 	}
-	if ((i = COM_CheckParm ("-sndspeed")) != 0) {
-		rate = atoi (com_argv[i + 1]);
+	if (snd_rate->int_val) {
+		rate = snd_rate->int_val;
 		if (rate != 44100 && rate != 22050 && rate != 11025) {
 			Con_Printf ("Error: invalid sample rate: %d\n", rate);
 			return 0;
 		}
 	}
-	if ((i = COM_CheckParm ("-sndmono")) != 0) {
-		stereo = 0;
-	}
+	stereo = snd_stereo->int_val;
 	if (card == -1) {
 		for (card = 0; card < SND_CARDS; card++) {
 			if (!(mask & (1 << card)))
@@ -273,9 +268,10 @@ SNDDMA_Init (void)
 	shm->samplebits = setup.format.format == SND_PCM_SFMT_S16_LE ? 16 : 8;
 	shm->samples =
 		setup.buf.block.frags * setup.buf.block.frag_size / (shm->samplebits / 8);	// mono 
-																					// samples 
-																					// in 
-																					// buffer
+																					// 
+	// samples 
+	// in 
+	// buffer
 	shm->speed = setup.format.rate;
 	shm->buffer = (unsigned char *) mmap_data;
 	Con_Printf ("%5d stereo\n", shm->channels - 1);
