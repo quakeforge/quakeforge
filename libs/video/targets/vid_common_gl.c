@@ -77,7 +77,8 @@ int					gl_major;
 int					gl_minor;
 int					gl_release_number;
 
-int					gl_bgra_capable, use_bgra;
+static int			gl_bgra_capable;
+int					use_bgra;
 int					gl_va_capable;
 int					vaelements;
 int         		texture_extension_number = 1;
@@ -86,11 +87,11 @@ int					gl_filter_max = GL_LINEAR;
 float       		gldepthmin, gldepthmax;
 
 // Multitexture
-qboolean			gl_mtex_capable = false;
-qboolean			gl_mtex_fullbright = false;
-int					gl_mtex_active_tmus = 0;
-
+static qboolean		gl_mtex_capable = false;
+static int			gl_mtex_tmus = 0;
 GLenum				gl_mtex_enum;
+int					gl_mtex_active_tmus = 0;
+qboolean			gl_mtex_fullbright = false;
 
 // Combine
 qboolean			gl_combine_capable = false;
@@ -101,8 +102,9 @@ qboolean			is8bit = false;
 qboolean			gl_feature_mach64 = false;
 
 // ATI PN_triangles
-qboolean			TruForm;
-GLint				tess, tess_max;
+static qboolean		TruForm;
+static GLint		tess_max;
+GLint				tess;
 
 cvar_t		*gl_doublebright;
 cvar_t      *gl_fb_bmodels;
@@ -115,21 +117,22 @@ cvar_t      *gl_screenshot_byte_swap;
 cvar_t      *vid_mode;
 cvar_t      *vid_use8bit;
 
-static int gl_mtex_tmus = 0;
-
 
 static void
 gl_max_size_f (cvar_t *var)
 {
 	GLint		texSize;
 
+	if (!var)
+		return;
+
 	// Check driver's max texture size
 	qfglGetIntegerv (GL_MAX_TEXTURE_SIZE, &texSize);
-
-	if (var->int_val < 1)
+	if (var->int_val < 1) {
 		Cvar_SetValue (var, texSize);
-	else
+	} else {
 		Cvar_SetValue (var, bound (1, var->int_val, texSize));
+	}
 }
 
 static void
@@ -152,11 +155,8 @@ gl_textures_bgra_f (cvar_t *var)
 	if (!var)
 		return;
 
-	if (var->int_val) {
-		if (gl_bgra_capable)
-			use_bgra = 1;
-		else
-			use_bgra = 0;
+	if (var->int_val && gl_bgra_capable) {
+		use_bgra = 1;
 	} else {
 		use_bgra = 0;
 	}
@@ -167,6 +167,7 @@ gl_fb_bmodels_f (cvar_t *var)
 {
 	if (!var)
 		return;
+
 	if (var->int_val && gl_mtex_tmus >= 3) {
 		gl_mtex_fullbright = true;
 	} else {
