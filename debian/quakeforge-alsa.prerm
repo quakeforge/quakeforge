@@ -1,0 +1,7 @@
+#!/bin/sh
+
+update-alternatives --remove quakeforge-audio-default /usr/lib/quakeforge/libsnd_output_alsa0_9.so
+
+#DEBHELPER#
+
+exit 0

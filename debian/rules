@@ -21,6 +21,7 @@ x11	:= $(PACKAGE)-x11
 
 alsa	:= $(PACKAGE)-alsa
 oss	:= $(PACKAGE)-oss
+QFCC	:= qfcc
 
 build	:= $(shell pwd)/debian/tmp
 tmp	:= debian/tmp
@@ -37,6 +38,8 @@ configure-stamp:
 	# Add here commands to configure the package.
 	[ -d CVS ] && ./bootstrap
 	./configure --prefix=/usr $(RETARGET) --bindir=/usr/games \
+		    --without-fbdev \
+		    --disable-xmms \
 		    --mandir=\$${prefix}/share/man \
 		    --infodir=\$${prefix}/share/info \
 		    --with-plugin-path=/usr/lib/quakeforge \
@@ -79,19 +82,22 @@ install: build
 
 	# quakeforge-common
 	find $(tmp)/etc ! -type d | sed -e "s:^$(tmp)::" > debian/$(common).conffiles
+	install -D -m755 debian/$(common).shlibs debian/$(common)/DEBIAN/shlibs
 	dh_movefiles -p$(common) --sourcedir=$(tmp) \
 		etc/quakeforge.conf \
 		usr/lib/libQFcd.so.* \
 		usr/lib/libQFconsole.so.* \
+		usr/lib/libQFcsqc.so.* \
 		usr/lib/libQFgamecode.so.* \
 		usr/lib/libQFgamecode_builtins.so.* \
-		usr/lib/libQFgib.so.* \
 		usr/lib/libQFjs.so.* \
 		usr/lib/libQFmodels.so.* \
 		usr/lib/libQFsound.so.* \
 		usr/lib/libQFutil.so.* \
 		usr/lib/quakeforge/libcd_null.so* \
+		usr/lib/quakeforge/libconsole_client.so* \
 		usr/lib/quakeforge/libsnd_output_disk.so* \
+		usr/lib/quakeforge/libsnd_output_null.so* \
 		usr/lib/quakeforge/libsnd_render_default.so*
 	dh_installdocs -p$(common) NEWS TODO
 	dh_installchangelogs -p$(common) ChangeLog
@@ -102,10 +108,10 @@ install: build
 		usr/lib/libQFcd.so \
 		usr/lib/libQFconsole.*a \
 		usr/lib/libQFconsole.so \
+		usr/lib/libQFcsqc.*a \
+		usr/lib/libQFcsqc.so \
 		usr/lib/libQFgamecode.*a \
 		usr/lib/libQFgamecode.so \
-		usr/lib/libQFgib.*a \
-		usr/lib/libQFgib.so \
 		usr/lib/libQFjs.*a \
 		usr/lib/libQFjs.so \
 		usr/lib/libQFmodels.*a \
@@ -125,6 +131,7 @@ install: build
 	dh_movefiles -p$(gllib) --sourcedir=$(tmp) \
 		usr/lib/libQFmodels_gl.so.* \
 		usr/lib/libQFrenderer_gl.so.*
+	install -D -m755 debian/$(gllib).shlibs debian/$(gllib)/DEBIAN/shlibs
 	install -d -m755 debian/$(gllib)/usr/share/doc
 	ln -s $(common) debian/$(gllib)/usr/share/doc/$(gllib)
 
@@ -132,6 +139,7 @@ install: build
 	dh_movefiles -p$(swlib) --sourcedir=$(tmp) \
 		usr/lib/libQFmodels_sw.so.* \
 		usr/lib/libQFrenderer_sw.so.*
+	install -D -m755 debian/$(swlib).shlibs debian/$(swlib)/DEBIAN/shlibs
 	install -d -m755 debian/$(swlib)/usr/share/doc
 	ln -s $(common) debian/$(swlib)/usr/share/doc/$(swlib)
 
@@ -191,6 +199,15 @@ install: build
 	install -d -m755 debian/$(oss)/usr/share/doc
 	ln -s $(common) debian/$(oss)/usr/share/doc/$(oss)
 
+	# qfcc
+	install -D -m755 $(tmp)/usr/games/qfcc $(tmp)/usr/bin/qfcc
+	rm -f $(tmp)/usr/games/qfcc
+	dh_movefiles -p$(QFCC) --sourcedir=$(tmp) \
+		usr/bin/qfcc \
+		usr/share/man/man1/qfcc.1
+	install -d -m755 debian/$(QFCC)/usr/share/doc
+	ln -s $(common) debian/$(QFCC)/usr/share/doc/$(QFCC)
+
 	# quakeforge
 	find $(tmp) -type d -empty | xargs -r rmdir -p --ignore-fail-on-non-empty
 	dh_movefiles -p$(PACKAGE) --sourcedir=$(tmp)
@@ -212,6 +229,7 @@ binary-arch: build install
 	dh_testroot
 	dh_installexamples
 	dh_installmenu
+	dh_installman -p$(QFCC)
 	dh_undocumented
 	dh_strip
 	dh_link

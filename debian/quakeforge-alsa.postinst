@@ -1,0 +1,7 @@
+#!/bin/sh -e
+
+update-alternatives --install /usr/lib/quakeforge/libsnd_output_default.so quakeforge-audio-default /usr/lib/quakeforge/libsnd_output_alsa0_9.so 100
+
+#DEBHELPER#
+
+exit 0

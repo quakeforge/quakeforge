@@ -3,7 +3,7 @@ Section: contrib/games
 Priority: optional
 Maintainer: Jeff Teunissen <deek@debian.org>
 Standards-Version: 3.1.1
-Build-Depends: automake, autoconf, libtool, bison, flex, debhelper, libsdl1.2-dev, zlib1g-dev, libncurses5-dev, svgalibg1-dev, xlibs-dev (>= 4)
+Build-Depends: automake, autoconf, libtool, bison, flex, debhelper, libsdl1.2-dev, zlib1g-dev, libncurses5-dev, svgalibg1-dev, xlibs-dev (>= 4), libasound2-dev
 
 Package: quakeforge
 Architecture: any
@@ -172,3 +172,16 @@ Depends: quakeforge-common, ${shlibs:Depends}
 Description: ALSA 0.9 digital audio output plugin for QuakeForge
  The ALSA 0.9 plugin for QuakeForge provides digital audio output for QuakeForge
  targets that contain clients.
+
+Package: qfcc
+Architecture: any
+Depends: cpp, ${shlibs:Depends}
+Description: The QuakeForge Code Compiler
+ QFCC is an optimizing byte-code compiler for the Ruamoko language, a language
+ based strongly on Id Software's QuakeC. The bytecode interpreter for QuakeC
+ and Ruamoko is located inside the Quake engine (though there is a standalone
+ interpreter available).
+ .
+ QFCC is designed to work with the QuakeForge engines, but will work with
+ most non-QuakeForge servers with a couple of changes to its command-line
+ options.
