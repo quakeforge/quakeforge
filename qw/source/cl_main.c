@@ -615,7 +615,7 @@ CL_FullServerinfo_f (void)
 		cl.watervis = atoi (p);
 	}
 	if ((p = Info_ValueForKey (cl.serverinfo, "skybox")) && *p) {
-		// FIXME: Didn't actually do anything anyway
+		Cvar_Set (r_skyname, p);
 	}
 }
 
