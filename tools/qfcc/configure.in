@@ -102,11 +102,11 @@ fi
 AM_CONDITIONAL(NEW_PARSER, test "x$enable_new_parser" != "xno")
 
 AC_ARG_ENABLE(cpp,
-	[  --enable-cpp            Enable use of the C preprocessor.]
-)
-if test "x$enable_new_parser" = "xyes"; then
+	[  --enable-cpp            Enable use of the C preprocessor.],
+if test "x$enable_new_parser" != "xno"; then
 	AC_DEFINE(USE_CPP)
 fi
+)
 
 if test "x$HAVE_QF" = xno; then
 	echo '***'
