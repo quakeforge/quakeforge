@@ -1389,7 +1389,15 @@ ifnot
  is as follows:
 \layout LyX-Code
 
-if condition block1 [else block2]
+
+\family sans 
+if
+\family default 
+ condition block1 [
+\family sans 
+else
+\family default 
+ block2]
 \layout Standard
 
 Explanations of what each part means follow:
@@ -1476,12 +1484,26 @@ if
 
 \begin_inset Float figure
 wide false
-collapsed true
+collapsed false
 
 \layout LyX-Code
 \line_top \line_bottom 
 
 \begin_inset Include \verbatiminput{if-simple.gib}
+preview false
+
+\end_inset 
+
+
+\layout Standard
+
+
+\series bold 
+Output:
+\layout LyX-Code
+
+
+\begin_inset Include \verbatiminput{if-simple.gib.out}
 preview false
 
 \end_inset 
@@ -1525,12 +1547,26 @@ else
 
 \begin_inset Float figure
 wide false
-collapsed true
+collapsed false
 
 \layout LyX-Code
 \line_top \line_bottom 
 
 \begin_inset Include \verbatiminput{if-else.gib}
+preview false
+
+\end_inset 
+
+
+\layout Standard
+
+
+\series bold 
+Output:
+\layout LyX-Code
+
+
+\begin_inset Include \verbatiminput{if-else.gib.out}
 preview false
 
 \end_inset 
@@ -1585,6 +1621,20 @@ collapsed false
 \line_top \line_bottom 
 
 \begin_inset Include \verbatiminput{if-chain.gib}
+preview false
+
+\end_inset 
+
+
+\layout Standard
+
+
+\series bold 
+Output:
+\layout LyX-Code
+
+
+\begin_inset Include \verbatiminput{if-chain.gib.out}
 preview false
 
 \end_inset 
@@ -1650,7 +1700,11 @@ true.
  The formal syntax is:
 \layout LyX-Code
 
-while condition block
+
+\family sans 
+while
+\family default 
+ condition block
 \layout Description
 
 condition is the same as 
@@ -1710,7 +1764,7 @@ while
 
 \begin_inset Float figure
 wide false
-collapsed false
+collapsed true
 
 \layout LyX-Code
 \line_top \line_bottom 
@@ -1750,4 +1804,275 @@ while
 \end_inset 
 
 
+\layout Subsubsection
+
+
+\family typewriter 
+for
+\layout Standard
+
+The for loop executes a program block once for every argument in a list.
+ Each execution, a variable will be set to the value of the current argument.
+ Syntax:
+\layout LyX-Code
+
+
+\family sans 
+for
+\family default 
+ variable 
+\family sans 
+in
+\family default 
+ list block
+\layout Description
+
+variable is the variable that will be set to the value of the current argument
+ each time the program block is executed.
+\layout Description
+
+in is a simple placeholder between 
+\family typewriter 
+variable
+\family default 
+ and 
+\family typewriter 
+list
+\family default 
+.
+ It emphasizes the fact that 
+\emph on 
+for
+\emph default 
+ each argument 
+\emph on 
+in
+\emph default 
+ the list, the program block will be executed.
+\layout Description
+
+list can be any number of arguments, including expansions.
+\layout Description
+
+block must be the last argument to 
+\family typewriter 
+for
+\family default 
+, and it must be a program block.
+\layout Standard
+
+Figure 
+\begin_inset LatexCommand \vref{cap:for}
+
+\end_inset 
+
+ shows an example 
+\family typewriter 
+for
+\family default 
+ loop and its output.
+\layout Standard
+
+
+\begin_inset Float figure
+wide false
+collapsed false
+
+\layout LyX-Code
+\line_top \line_bottom 
+
+\begin_inset Include \verbatiminput{for.gib}
+preview false
+
+\end_inset 
+
+
+\layout Standard
+
+
+\series bold 
+Output:
+\layout LyX-Code
+
+
+\begin_inset Include \verbatiminput{for.gib.out}
+preview false
+
+\end_inset 
+
+
+\layout Caption
+
+Example 
+\family typewriter 
+for
+\family default 
+ loop
+\begin_inset LatexCommand \label{cap:for}
+
+\end_inset 
+
+
+\end_inset 
+
+
+\layout Subsubsection
+
+Additional Loop Functions: 
+\family typewriter 
+break
+\family default 
+ and 
+\family typewriter 
+continue
+\layout Standard
+
+Two functions are available to control the behavior of loops during execution
+ of their program blocks:
+\layout Description
+
+break immediately ends the program block and leaves the loop.
+\layout Description
+
+continue returns to the top of the loop.
+ This means that 
+\family typewriter 
+while
+\family default 
+ loops check their condition argument again and 
+\family typewriter 
+for
+\family default 
+ loops move to the next argument in the list.
+\layout Standard
+
+Figure 
+\begin_inset LatexCommand \vref{cap:break}
+
+\end_inset 
+
+ shows an example use of 
+\family typewriter 
+break
+\family default 
+ and its output, while Figure 
+\begin_inset LatexCommand \vref{cap:continue}
+
+\end_inset 
+
+ shows an example use of 
+\family typewriter 
+continue
+\family default 
+.
+\layout Standard
+
+
+\begin_inset Float figure
+wide false
+collapsed false
+
+\layout LyX-Code
+\line_top \line_bottom 
+
+\begin_inset Include \verbatiminput{break.gib}
+preview false
+
+\end_inset 
+
+
+\layout Standard
+
+
+\series bold 
+Output:
+\layout LyX-Code
+
+
+\begin_inset Include \verbatiminput{break.gib.out}
+preview false
+
+\end_inset 
+
+
+\layout Caption
+
+Example use of 
+\family typewriter 
+break
+\begin_inset LatexCommand \label{cap:break}
+
+\end_inset 
+
+
+\end_inset 
+
+
+\layout Standard
+
+
+\begin_inset Float figure
+wide false
+collapsed false
+
+\layout LyX-Code
+\line_top \line_bottom 
+
+\begin_inset Include \verbatiminput{continue.gib}
+preview false
+
+\end_inset 
+
+
+\layout Standard
+
+
+\series bold 
+Output:
+\layout LyX-Code
+
+
+\begin_inset Include \verbatiminput{continue.gib.out}
+preview false
+
+\end_inset 
+
+
+\layout Caption
+
+Example use of 
+\family typewriter 
+continue
+\begin_inset LatexCommand \label{cap:continue}
+
+\end_inset 
+
+
+\end_inset 
+
+
+\layout Section
+\pagebreak_top 
+Functions
+\layout Subsection
+
+Types and Concepts
+\layout Subsection
+
+Defining Functions
+\layout Subsection
+
+Accessing Arguments
+\layout Subsection
+
+Return Values
+\layout Subsubsection
+
+Returning Values from Functions
+\layout Subsubsection
+
+Embedding Return Values
+\layout Subsubsection
+
+Expanding Return Values
 \the_end

@@ -1,0 +1,6 @@
+for num in 1 2 3 4 {
+    if ($num == 3) {
+        continue
+    }
+    echo Number: $num
+}

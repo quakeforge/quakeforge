@@ -1,0 +1,8 @@
+num = 4
+while $num {
+    echo Number: $num
+    if ($num == 2) {
+        break
+    }
+    num = ($num - 1)
+}
