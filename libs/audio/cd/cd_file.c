@@ -66,24 +66,30 @@ static __attribute__ ((unused)) const char  rcsid[] =
 
 #include "compat.h"
 
+/* Generic plugin structures */
 static general_data_t plugin_info_general_data;
 static general_funcs_t plugin_info_general_funcs;
 
+/* global status variables. */
 static qboolean playing = false;
 static qboolean wasPlaying = false;
 static qboolean mus_enabled = false;
-
+static qboolean ogglistvalid = false;	// true if a valid ogg list has been
+										// loaded
+/* volume cvar */
 static cvar_t *bgmvolume;
 
+/* sound resources */
 static channel_t *cd_channel;
 static sfx_t *cd_sfx;
 
-/* added by Andrew, for cd_ogg */
-static cvar_t *mus_ogglist;				// contain the filename of the ogglist. 
-static QFile *oggfile = NULL;			// filedescriptor with track map
-static qboolean ogglistvalid = false;	// true if a valid ogg list has been
-										// loaded
-static plitem_t *tracklist = NULL;		// the parsed tracklist
+/* tracklist cvar */
+static cvar_t *mus_ogglist;	
+
+/* file descriptor (can make local? */
+
+/* parsed tracklist, dictionary format */
+static plitem_t *tracklist = NULL;	
 
 /* end of added variables. */
 
@@ -114,36 +120,89 @@ I_OGGMus_Eject (void)
 	return;
 }
 
+/* stop playback of music */
+static void
+I_OGGMus_Stop (void)
+{
+	Sys_DPrintf ("Entering I_OGGMus_Stop\n");
+
+	if (tracklist == NULL || !mus_enabled)
+		return;
+
+	if (!playing)
+		return;
+
+	wasPlaying = false;
+	playing = false;
+
+	if (cd_sfx) {
+		cd_sfx->close (cd_sfx);
+		cd_channel->sfx=NULL;
+	}
+}
+
+static void
+I_OGGMus_Shutdown (void)
+{
+	Sys_DPrintf ("Entering I_OGGMus_Shutdown\n");
+
+	if (tracklist != NULL) {
+		I_OGGMus_Stop ();
+		PL_Free (tracklist);
+		tracklist = NULL;
+	}
+	mus_enabled = false;
+}
+
 /* we've opened the trackmap file from the quake resources
  * go through it, and make ourselves a tracklist map */
 static int
-I_OGGMus_GetAudioDiskInfo (void)
+Load_Tracklist (void)
 {
-	/* read the track list, parse it a bit, map it into a list */
-	int         size = -1;
-	char       *buffile = NULL;
+	int size = -1;
+	char *buffile = NULL;
+	static QFile *oggfile = NULL;
 
-	Sys_DPrintf ("Entering I_OGGMus_GetAudioDiskInfo\n");
-	ogglistvalid = false;
+	Sys_DPrintf ("Entering Load_Tracklist\n");
 
-	if (oggfile == NULL) {
+	/* kill off the old tracklist, and make sure we're not playing anything */
+	I_OGGMus_Shutdown ();
+
+	ogglistvalid=false;
+	mus_enabled = false;
+
+	if (!mus_ogglist || strequal (mus_ogglist->string, "none")) {
+		/* bail if we don't have a valid filename */
+		return -1;
+	}
+
+	size = QFS_FOpenFile (mus_ogglist->string, &oggfile);
+	if (size == -1) {
+		Sys_Printf ("Mus_OggInit: open of file \"%s\" failed\n",
+			mus_ogglist->string);
+		return -1;
+	}
+
+	if (oggfile==NULL) {
 		return -1;
 	}
 
 	/* rewind the stream */
 	Qseek (oggfile, 0, SEEK_SET);
-	size = Qfilesize (oggfile);
-	buffile = calloc (size + 10, sizeof (char));
+	size= Qfilesize (oggfile);
+	buffile = calloc (size+10, sizeof (char));
 	Qread (oggfile, buffile, size);
 	tracklist = PL_GetPropertyList (buffile);
 	if (!tracklist || tracklist->type != QFDictionary) {
 		Sys_Printf ("Malformed or empty tracklist file. check mus_ogglist\n");
 		return -1;
 	}
+
 	free (buffile);
+	Qclose (oggfile);
 
-	ogglistvalid = true;
-
+	ogglistvalid=true;
+	mus_enabled=true;
 	return 0;
 }
 
@@ -160,30 +219,12 @@ I_OGGMus_Pause (void)
 	if (!playing)
 		return;
 
+	I_OGGMus_Stop ();
+
 	wasPlaying = playing;
 	playing = false;
 }
 
-/* stop playback of music. */
-static void
-I_OGGMus_Stop (void)
-{
-	Sys_DPrintf ("Entering I_OGGMus_Stop\n");
-	/* okay, stop playing oggs.  */
-	if (tracklist == NULL || !mus_enabled)
-		return;
-
-	if (!playing)
-		return;
-
-	wasPlaying = false;
-	playing = false;
-
-	if (cd_sfx) {
-		cd_sfx->close (cd_sfx);
-		cd_channel->sfx = cd_sfx = NULL;
-	}
-}
 
 /* start playing, if we've got a trackmap.
  * cry if we can't find a file to play */
@@ -250,24 +291,6 @@ I_OGGMus_Resume (void)
 	playing = true;
 }
 
-static void
-I_OGGMus_Shutdown (void)
-{
-	Sys_DPrintf ("Entering I_OGGMus_Shutdown\n");
-	/* clean up a bit, destroy the ogg if i have to */
-
-	if (tracklist != NULL) {
-		I_OGGMus_Stop ();
-		PL_Free (tracklist);
-		tracklist = NULL;
-	}
-	if (oggfile != NULL) {
-		Qclose (oggfile);
-		oggfile = NULL;
-	}
-	mus_enabled = false;
-}
-
 /* print out the current track map. */
 static void
 I_OGGMus_Info (void)
@@ -291,7 +314,7 @@ I_OGGMus_Info (void)
 		Sys_Printf ("\n" "Tracklist loaded from file:\n%s\n"
 					"---------------------------\n", mus_ogglist->string);
 
-		/* loop through the list with PL_ObjectAtIndex() */
+		/* loop through the list with PL_ObjectAtIndex () */
 
 		for (iter = 0;
 			 iter < ((plarray_t *) (keylist->data))->numvals; iter++) {
@@ -348,10 +371,7 @@ I_OGG_f (void)
 	}
 
 	if (strequal (command, "reset")) {
-		mus_enabled = true;
-		if (playing)
-			I_OGGMus_Stop ();
-		I_OGGMus_GetAudioDiskInfo ();
+		Load_Tracklist ();
 		return;
 	}
 
@@ -366,7 +386,7 @@ I_OGG_f (void)
 	}
 
 	if (!tracklist) {
-		I_OGGMus_GetAudioDiskInfo ();
+		Load_Tracklist ();
 		if (!tracklist) {
 			Sys_Printf ("Can't initialize tracklist.\n");
 			return;
@@ -419,41 +439,10 @@ I_OGGMus_Update (void)
 
 /* called when the mus_ogglist cvar is changed */
 static void
-Mus_OggChange (cvar_t *mus_ogglist)
+Mus_OggChange (cvar_t *ogglist)
 {
-	int         size;
-
-	Sys_DPrintf ("Entering Mus_OggChange\n");
-
-	/* make sure we're not playing anything right now, and we've cleaned up */
-	CDAudio_Shutdown ();
-
-	if (strequal (mus_ogglist->string, "none")) {
-		/* bail if we don't have one */
-		mus_enabled = false;
-		return;
-	}
-
-	size = QFS_FOpenFile (mus_ogglist->string, &oggfile);
-	if (size == -1) {
-		Sys_Printf ("Mus_OGGInit: open of file \"%s\" failed\n",
-					mus_ogglist->string);
-		mus_enabled = false;
-		return;
-	}
-
-	if (I_OGGMus_GetAudioDiskInfo () == -1) {
-		/* check the info, read it in.  done */
-		Sys_Printf ("Mus_OGGInit: invalid track map.\n");
-		ogglistvalid = false;
-		mus_enabled = false;
-		return;
-	}
-
-	if (!cd_channel)
-		mus_enabled = false;
-	else
-		mus_enabled = true;
+	mus_ogglist=ogglist;
+	Load_Tracklist ();
 }
 
 /* change volume on sound object */
