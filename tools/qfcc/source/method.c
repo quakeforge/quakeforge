@@ -139,7 +139,7 @@ copy_methods (methodlist_t *dst, methodlist_t *src)
 {
 	method_t *s, *d;
 
-	for (s = src->head; s; s++) {
+	for (s = src->head; s; s = s->next) {
 		d = malloc (sizeof (method_t));
 		*d = *s;
 		d->next = 0;
