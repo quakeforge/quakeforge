@@ -233,8 +233,9 @@ BOOL (id object) object_is_meta_class = #0;
 	local IMP msg;
 
 	if (!aSelector || !(msg = obj_msg_lookup (self, aSelector)))
-		return [self error: "invalid selector passed to %s",
-					sel_get_name (_cmd)];
+		[self error: "invalid selector passed to %s: %s",
+					object_get_class_name (self),
+					sel_get_name (aSelector)];
 
 	return msg (self, aSelector);
 }
@@ -244,8 +245,9 @@ BOOL (id object) object_is_meta_class = #0;
 	local IMP msg;
 
 	if (!aSelector || !(msg = obj_msg_lookup (self, aSelector)))
-		return [self error: "invalid selector passed to %s",
-					sel_get_name (_cmd)];
+		[self error: "invalid selector passed to %s: %s",
+					object_get_class_name (self),
+					sel_get_name (aSelector)];
 
 	return msg (self, aSelector, anObject);
 }
@@ -257,7 +259,7 @@ BOOL (id object) object_is_meta_class = #0;
 	local IMP msg;
 
 	if (!aSelector || !(msg = obj_msg_lookup (self, aSelector)))
-		return [self error: "invalid selector passed to %s",
+		[self error: "invalid selector passed to %s",
 					sel_get_name (_cmd)];
 
 	return msg (self, aSelector, anObject, anotherObject);

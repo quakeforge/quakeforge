@@ -18,13 +18,13 @@
 	return self;
 }
 
-- (void) free
+- (void) dealloc
 {
 	local integer i;
 	for (i = 0; i < count; i++)
-		[array[i] free];
+		[array[i] dealloc];
 	obj_free (array);
-	[super free];
+	[super dealloc];
 }
 
 - (id) getItemAt: (integer) index
