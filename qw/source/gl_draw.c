@@ -47,6 +47,7 @@
 #include "QF/screen.h"
 #include "QF/sys.h"
 #include "QF/vid.h"
+#include "QF/va.h"
 
 
 extern byte *vid_basepal;
@@ -271,13 +272,15 @@ void
 Draw_Init (void)
 {
 	int         i;
+	GLint		texSize;
+
+	// Some cards have a texture size limit.
+	glGetIntegerv(GL_MAX_TEXTURE_SIZE, &texSize);
+	Cvar_Set (gl_max_size, va("%d", texSize));
 
 	// LordHavoc: 3DFX's dithering has terrible artifacts with lightmode 1
-	// 3dfx can only handle 256 wide textures
-	if (!strncasecmp ((char *) gl_renderer, "3dfx", 4) ||
-	    !strncasecmp ((char *) gl_renderer, "Mesa Glide", 10))
+	if (strstr (gl_renderer, "3dfx") || strstr (gl_renderer, "Mesa Glide"))
 	{
-		Cvar_Set (gl_max_size, "256");
 		Cvar_Set (gl_lightmode, "0");
 	}
 
