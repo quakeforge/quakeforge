@@ -248,14 +248,3 @@ VID_SetGamma (double gamma)
 {
 	return X11_SetGamma (gamma);
 }
-
-void
-VID_UpdateGamma (cvar_t *vid_gamma)
-{
-	if (vid_gamma->flags & CVAR_ROM)	// System gamma unavailable
-		return;
-	
-	Cvar_SetValue (vid_gamma, bound (0.1, vid_gamma->value, 9.9));
-	
-	X11_SetGamma (vid_gamma->value);
-}

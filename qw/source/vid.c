@@ -29,20 +29,26 @@
 #ifdef HAVE_CONFIG_H
 # include "config.h"
 #endif
+#include <math.h>
 
+#include "QF/compat.h"
 #include "QF/cvar.h"
 #include "vid.h"
+#include "view.h"
 #include "QF/va.h"
 #include "QF/qargs.h"
 #include "QF/sys.h"
 
 extern viddef_t vid;					// global video state
 
+cvar_t  *vid_system_gamma;
+qboolean vid_gamma_avail;		// hardware gamma availability
+byte     gammatable[256];
+cvar_t	*vid_gamma;
+
 int         scr_width, scr_height;
 cvar_t     *vid_width;
 cvar_t     *vid_height;
-
-byte		gammatable[256];
 
 void
 VID_GetWindowSize (int def_w, int def_h)
@@ -92,28 +98,64 @@ VID_GetWindowSize (int def_w, int def_h)
 	scr_height = vid.height = vid_height->int_val;
 }
 
-#if 0
+/*
+	VID_UpdateGamma
+
+	This is a callback to update the palette or system gamma whenever the
+	vid_gamma Cvar is changed.
+*/
 void
-VID_CalcGamma (double gamma)
+VID_UpdateGamma (cvar_t *vid_gamma)
 {
 	int 	i;
-	int 	v;
-	double	g = bound (0.3, gamma, 3);
+	
+	if (vid_gamma->flags & CVAR_ROM)	// System gamma unavailable
+		return;
 
-	Cvar_SetValue (gamma, g);
+	Cvar_SetValue (vid_gamma, bound (0.1, vid_gamma->value, 9.9));
 
-	if (!(gamma_flipped->int_val))
-		g = 1.0 / g;
-
-	if (g == 1.0) {
-		for (i = 0; i < 256; i++) {
+	if (vid_gamma_avail && vid_system_gamma->int_val) {	// Have sys gamma, use it
+		for (i = 0; i < 256; i++) { 	// linear, to keep things kosher
 			gammatable[i] = i;
 		}
-	}
-	
-	for (i = 0; i < 256; i++) {
-		v = (int) (255.0 * pow ((double) i / 255.0, g));
-		gammatable[i] = bound (0, v, 255);
+		VID_SetGamma (vid_gamma->value);
+	} else {	// We have to hack the palette
+		if (vid_gamma->value == 1.0) {	// screw the math, 1.0 is linear
+			for (i = 0; i < 256; i++) {
+				gammatable[i] = i;
+			}
+		} else {
+			double	g = 1.0 / vid_gamma->value;
+			int 	v;
+
+			for (i = 0; i < 256; i++) {	// Update the gamma LUT
+				v = (int) ((255.0 * pow ((double) i / 255.0, g)) + 0.5);
+				gammatable[i] = bound (0, v, 255);
+			}
+		}
+		
+		V_UpdatePalette (); // update with the new palette
 	}
 }
-#endif
+
+/*
+	VID_InitGamma
+
+	Initialize the gamma lookup table
+
+	This function is less complex than the GL version.
+*/
+void
+VID_InitGamma (unsigned char *pal)
+{
+	int 	i;
+	double	gamma = 1.45;
+
+	if ((i = COM_CheckParm ("-gamma"))) {
+		gamma = atof (com_argv[i + 1]);
+	}
+	gamma = bound (0.1, gamma, 9.9);
+
+	vid_gamma = Cvar_Get ("vid_gamma", va("%f", gamma), CVAR_ARCHIVE,
+						  VID_UpdateGamma, "Gamma correction");
+}

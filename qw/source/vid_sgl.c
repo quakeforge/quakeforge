@@ -253,14 +253,3 @@ VID_SetGamma (double gamma)
 {
 	return SDL_SetGamma((float) gamma, (float) gamma, (float) gamma); 
 }
-
-void
-VID_UpdateGamma (cvar_t *vid_gamma)
-{
-	if (vid_gamma->flags & CVAR_ROM)    // System gamma unavailable
-		return;
-
-	Cvar_SetValue (vid_gamma, bound (0.1, vid_gamma->value, 9.9));
-
-	VID_SetGamma (vid_gamma->value);
-}

@@ -120,56 +120,6 @@ CheckMultiTextureExtensions (void)
 	}
 }
 
-/*
-	VID_InitGamma
-
-	Initialize the gamma lookup table
-
-	This function does some nasty things to Cvars, but at least we have the
-	excuse that it has to.
-*/
-void
-VID_InitGamma (unsigned char *pal)
-{
-	int 	i;
-	double	gamma;
-
-	vid_gamma = Cvar_Get ("vid_gamma", "1.45", CVAR_ARCHIVE, VID_UpdateGamma,
-						  "Gamma correction");
-
-	if ((i = COM_CheckParm ("-gamma"))) {
-		gamma = atof (com_argv[i + 1]);
-	} else {
-		gamma = vid_gamma->value;
-	}
-	gamma = bound (0.1, gamma, 9.9);
-
-	Cvar_SetValue (vid_gamma, gamma);
-
-	if (gamma == 1.0) {	// screw the math, 1.0 is linear
-		for (i = 0; i < 256; i++) {
-			gammatable[i] = i;
-		}
-	} else {
-		if (vid_system_gamma->int_val) {
-			VID_SetGamma (gamma);
-		} else {
-			double	g = 1.0 / gamma;
-			int 	v;
-
-			Cvar_SetFlags (vid_gamma, vid_gamma->flags | CVAR_ROM);
-			for (i = 0; i < 256; i++) {	// Create the gamma-correction table
-				v = (int) (255.0 * pow ((double) i / 255.0, g) + 0.5);
-				gammatable[i] = bound (0, v, 255);
-			}
-		}
-	}
-
-	for (i = 0; i < 768; i++) {	// correct the palette
-		pal[i] = gammatable[pal[i]];
-	}
-}
-
 void
 VID_SetPalette (unsigned char *palette)
 {
