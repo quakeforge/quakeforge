@@ -8,6 +8,8 @@ W = waiting on other work
 X  fix skybox/dome vis problems (workable solution found, needs new renderer)
 X  It's possible to stick on some obtuse-angled corners qwsv 2.3x didn't
 X  ~/.quakeforgerc should support all commands, not just set and setrom
+X  software PCXs don't work in X11 at least if you're using 16/24/32 color
+X  ogg support
 M  it seems possible to crash a QF server still - need to fix this!
 M  merge nq and qw code bases
 M  mingw cross compiling
@@ -17,11 +19,9 @@ I  GL is still way too slow
 I  Client side QuakeC.
 I  menu rewrite
 I  clean up TODO ;)
-X  software PCXs don't work in X11 at least if you're using 16/24/32 color
 o  doublesize modes (eg, render in 320x240 but display in 640x480)
 o  allow qf clients to download .lit files from qf servers.
 o  better server control of certain cvars
-X  ogg support
 o  triggers (f_respawn, f_death, f_took; cl_triggers)
 o  stateful console (eg, rcon mode, chat mode, normal command mode...)
 o  scripted hud
@@ -50,7 +50,7 @@ o  add individual server ping/info request from console
 ?  delta compression for protocol
 ?  transmit nails as source/direction/speed/time rather than
    direction/location, to improve delta compression
-?  custom particle explosions (doable via csqc)
+?  custom particle explosions (controlled via csqc)
 ?  server should shutdown cleanly when it recieves SIGTERM and SIGHUP
 ?  client-only commands (rejected if done via a server stuffcmd)
 ?  bring software-mode skybox code in from Quake 2
