@@ -381,7 +381,7 @@ CL_ParseTEnt (void)
 			if (type == TE_GUNSHOT) {
 				cnt = 20;
 			} else {
-				cnt = MSG_ReadByte (net_message);
+				cnt = MSG_ReadByte (net_message) * 20;
 			}
 			/* FALLTHROUGH */
 		case TE_LIGHTNINGBLOOD:		// lightning hitting body

@@ -377,7 +377,7 @@ CL_ParseTEnt (void)
 
 		case TE_GUNSHOT:				// bullet hitting wall
 		case TE_BLOOD:					// bullets hitting body
-			cnt = MSG_ReadByte (net_message);
+			cnt = MSG_ReadByte (net_message) * 20;
 		case TE_LIGHTNINGBLOOD:		// lightning hitting body
 			pos[0] = MSG_ReadCoord (net_message);
 			pos[1] = MSG_ReadCoord (net_message);

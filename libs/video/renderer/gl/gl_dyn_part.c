@@ -281,7 +281,7 @@ R_RunGunshotEffect (vec3_t org, int count)
 	else
 		scale = 16;
 
-	R_RunSparkEffect (org, count * 10, scale);
+	R_RunSparkEffect (org, count / 2, scale);
 	return;
 }
 

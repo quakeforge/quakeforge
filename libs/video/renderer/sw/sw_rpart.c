@@ -178,10 +178,10 @@ R_RunPuffEffect (vec3_t pos, particle_effect_t type, byte cnt)
 
 	switch (type) {
 		case PE_GUNSHOT:
-			R_RunParticleEffect (pos, 0, 20 * cnt);
+			R_RunParticleEffect (pos, 0, cnt);
 			break;
 		case PE_BLOOD:
-			R_RunParticleEffect (pos, 73, 20 * cnt);
+			R_RunParticleEffect (pos, 73, cnt);
 			break;
 		case PE_LIGHTNINGBLOOD:
 			R_RunParticleEffect (pos, 225, 50);

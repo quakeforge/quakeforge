@@ -145,7 +145,7 @@ emit_assign_expr (expr_t *e)
 				memcpy (pr_globals + ofs, pr_globals + def_a->ofs, size);
 				def_a->ofs = ofs;
 				def_a->initialized = 0;
-				warning (e1, "assignment to constant %s", def_a->name);
+				//warning (e1, "assignment to constant %s", def_a->name);
 			} else {
 				error (e1, "assignment to constant %s", def_a->name);
 			}
