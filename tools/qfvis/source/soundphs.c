@@ -70,8 +70,8 @@ static __attribute__ ((unused)) const char rcsid[] =
 static void
 SurfaceBBox (dface_t *s, vec3_t mins, vec3_t maxs)
 {
-	int vi, e, i, j;
-	float *v;
+	int		vi, e, i, j;
+	float  *v;
 
 	mins[0] = mins[1] = 999999;
 	maxs[0] = maxs[1] = -99999;
@@ -97,11 +97,11 @@ void
 CalcAmbientSounds (void)
 {
 	byte		*vis;
-	dface_t		*surf;
-	dleaf_t		*leaf, *hit;
+	int			 ambient_type, ofs, i, j, k, l;
 	float		 maxd, vol, d;
 	float		 dists[NUM_AMBIENTS];
-	int			 ambient_type, ofs, i, j, k, l;
+	dface_t		*surf;
+	dleaf_t		*leaf, *hit;
 	vec3_t		 mins, maxs;
 	texinfo_t	*info;
 	miptex_t	*miptex;

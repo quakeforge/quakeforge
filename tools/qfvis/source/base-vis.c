@@ -71,8 +71,8 @@ static void
 SimpleFlood (portal_t *srcportal, int clusternum)
 {
     int			i;
-    cluster_t	*cluster;
-    portal_t	*portal;
+    cluster_t  *cluster;
+    portal_t   *portal;
 
     if (srcportal->mightsee[clusternum >> 3] & (1 << (clusternum & 7)))
 		return;
@@ -94,8 +94,8 @@ BasePortalVis (void)
 {
     int			i, j, k;
 	float		d;
-    portal_t	*tp, *portal;
-    winding_t	*winding;
+    portal_t   *tp, *portal;
+    winding_t  *winding;
 
     for (i = 0, portal = portals; i < numportals * 2; i++, portal++) {
 		portal->mightsee = calloc (1, bitbytes);

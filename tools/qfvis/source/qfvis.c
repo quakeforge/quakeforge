@@ -52,8 +52,8 @@ static __attribute__ ((unused)) const char rcsid[] =
 # include <pthread.h>
 #endif
 
-#include "QF/cmd.h"
 #include "QF/bspfile.h"
+#include "QF/cmd.h"
 #include "QF/dstring.h"
 #include "QF/mathlib.h"
 #include "QF/qtypes.h"
@@ -160,10 +160,9 @@ winding_t *
 ClipWinding (winding_t *in, plane_t *split, qboolean keepon)
 {
 	int         maxpts, i, j;
-	int         sides[MAX_POINTS_ON_WINDING];
-	int         counts[3];
-	vec_t       dists[MAX_POINTS_ON_WINDING];
+	int         counts[3], sides[MAX_POINTS_ON_WINDING];
 	vec_t       dot;
+	vec_t       dists[MAX_POINTS_ON_WINDING];
 	vec_t      *p1, *p2;
 	vec3_t      mid;
 	winding_t  *neww;
@@ -254,9 +253,8 @@ ClipWinding (winding_t *in, plane_t *split, qboolean keepon)
 static portal_t *
 GetNextPortal (void)
 {
-	int         j;
+	int         min, j;
 	portal_t   *p, *tp;
-	int         min;
 
 	LOCK;
 
@@ -307,9 +305,7 @@ LeafThread (void *thread)
 static int
 CompressRow (byte *vis, byte *dest)
 {
-	int         j;
-	int         rep;
-	int         visrow;
+	int         rep, visrow, j;
 	byte       *dest_p;
 
 	dest_p = dest;
@@ -357,8 +353,8 @@ ClusterFlowExpand (byte *src, byte *dest)
 void
 ClusterFlow (int clusternum)
 {
-	byte       *outbuffer;
 	byte        compressed[MAX_MAP_LEAFS / 8];
+	byte       *outbuffer;
 	int         numvis, i, j;
 	cluster_t  *cluster;
 	portal_t   *portal;
@@ -495,8 +491,8 @@ FindPassages (winding_t *source, winding_t *pass)
 {
 	double      length;
 	float       d;
-	int         counts[3];
 	int         i, j, k, l;
+	int         counts[3];
 	plane_t     plane;
 	qboolean    fliptest;
 	sep_t      *sep, *list;
@@ -654,14 +650,14 @@ LoadPortals (char *name)
 {
 	const char *line;
 	char       *err;
-	QFile      *f;
-	int         clusternums[2];
 	int         numpoints, i, j, k;
 	int         read_leafs = 0;
+	int         clusternums[2];
 	cluster_t  *cluster;
 	plane_t     plane;
 	portal_t   *portal;
 	winding_t  *winding;
+	QFile	   *f;
 
 	if (!strcmp (name, "-"))
 		f = Qdopen (0, "rt"); // create a QFile of stdin

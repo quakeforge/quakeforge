@@ -200,13 +200,13 @@ static void
 RecursiveClusterFlow (int clusternum, threaddata_t *thread, pstack_t *prevstack)
 {
 	int			i, j;
-    cluster_t	*cluster;
-    long		*test, *might, *vis;
+    long	   *test, *might, *vis;
     qboolean	more;
+    cluster_t  *cluster;
     pstack_t	stack;
-    portal_t	*portal;
+    portal_t   *portal;
     plane_t		backplane;
-    winding_t	*source, *target;
+    winding_t  *source, *target;
 
     c_chains++;
 
@@ -266,8 +266,8 @@ RecursiveClusterFlow (int clusternum, threaddata_t *thread, pstack_t *prevstack)
 		stack.portal = portal;
 		stack.next = NULL;
 
-		target = ClipWinding(portal->winding, &thread->pstack_head.portalplane,
-							 false);
+		target = ClipWinding (portal->winding,
+							  &thread->pstack_head.portalplane, false);
 		if (!target)
 			continue;
 
