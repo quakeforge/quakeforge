@@ -119,6 +119,9 @@ CL_NewDlight (int key, vec3_t org, int effects)
 			VectorCopy (normal, dl->color);
 			break;
 	}
+	if (effects & EF_DIMLIGHT) {
+		VectorScale (dl->color, 0.5, dl->color);
+	}
 	radius = 200 + (rand () & 31);
 	if (effects & EF_BRIGHTLIGHT) {
 		radius += 200;
