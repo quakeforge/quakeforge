@@ -389,14 +389,14 @@ loop:
 		lightmap = surf->samples;
 		r = 0;
 		if (lightmap) {
-			lightmap += dt * ((surf->extents[0] >> 4) + 1) + ds;
+			lightmap += (dt * ((surf->extents[0] >> 4) + 1) + ds) * mod_lightmap_bytes;
 
 			for (maps = 0; maps < MAXLIGHTMAPS && surf->styles[maps] != 255;
 				 maps++) {
 				scale = d_lightstylevalue[surf->styles[maps]];
 				r += *lightmap * scale;
 				lightmap += ((surf->extents[0] >> 4) + 1) *
-					((surf->extents[1] >> 4) + 1);
+					((surf->extents[1] >> 4) + 1) * mod_lightmap_bytes;
 			}
 
 			r >>= 8;
