@@ -1,7 +1,7 @@
 /*
 	snd_alsa.c
 
-	Support for ALSA 0.9 sound driver (cvs development version)
+	Support for ALSA 1.0 sound driver (cvs development version)
 
 	Copyright (C) 1999,2000  contributors of the QuakeForge project
 	Please see the file "AUTHORS" for a list of contributors
@@ -46,7 +46,7 @@ static int  snd_inited;
 
 static snd_pcm_t  *pcm;
 static const char *pcmname = NULL;
-static size_t      buffer_size;
+static snd_pcm_uframes_t buffer_size;
 static int		   snd_blocked = 0;
 static volatile dma_t sn;
 
@@ -74,7 +74,7 @@ static qboolean
 load_libasound (void)
 {
 	if (!(alsa_handle = dlopen ("libasound.so.2", RTLD_GLOBAL | RTLD_NOW))) {
-		Sys_Printf ("couldn't load libasound.so.2: %s\n", dlerror ());
+		Sys_Printf ("Couldn't load libasound.so.2: %s\n", dlerror ());
 		return false;
 	}
 #define QF_ALSA_NEED(ret, func, params) \
@@ -110,10 +110,12 @@ static int SNDDMA_GetDMAPos (void);
 static qboolean
 SNDDMA_Init (void)
 {
-	int			err, frag_size;
-	int			rate = -1, bps = -1, stereo = -1;
+	int					 err;
+	int					 bps = -1, stereo = -1;
+	unsigned int		 rate = 0;
 	snd_pcm_hw_params_t	*hw;
 	snd_pcm_sw_params_t	*sw;
+	snd_pcm_uframes_t	 frag_size;
 
 	if (!load_libasound ())
 		return false;
@@ -140,8 +142,7 @@ SNDDMA_Init (void)
 	stereo = snd_stereo->int_val;
 	if (!pcmname)
 		pcmname = "default";
-	if ((err = qfsnd_pcm_open (&pcm, pcmname,
-							   SND_PCM_STREAM_PLAYBACK,
+	if ((err = qfsnd_pcm_open (&pcm, pcmname, SND_PCM_STREAM_PLAYBACK,
 							   SND_PCM_NONBLOCK)) < 0) {
 		Sys_Printf ("Error: audio open error: %s\n", qfsnd_strerror (err));
 		return 0;
@@ -150,41 +151,16 @@ SNDDMA_Init (void)
 	Sys_Printf ("Using PCM %s.\n", pcmname);
 	qfsnd_pcm_hw_params_any (pcm, hw);
 
-	switch (rate) {
-		case -1:
-			if (qfsnd_pcm_hw_params_set_rate_near (pcm, hw, 44100, 0) >= 0) {
-				frag_size = 256;		/* assuming stereo 8 bit */
-				rate = 44100;
-			} else if (qfsnd_pcm_hw_params_set_rate_near (pcm, hw,
-														  22050, 0) >= 0) {
-				frag_size = 128;		/* assuming stereo 8 bit */
-				rate = 22050;
-			} else if (qfsnd_pcm_hw_params_set_rate_near (pcm, hw,
-														  11025, 0) >= 0) {
-				frag_size = 64;			/* assuming stereo 8 bit */
-				rate = 11025;
-			} else {
-				Sys_Printf ("ALSA: no useable rates\n");
-				goto error;
-			}
-			break;
-		case 11025:
-		case 22050:
-		case 44100:
-			if (qfsnd_pcm_hw_params_set_rate_near (pcm, hw, rate, 0) >= 0) {
-				frag_size = 64 * rate / 11025;	/* assuming stereo 8 bit */
-				break;
-			}
-			/* Fall through */
-		default:
-			Sys_Printf ("ALSA: desired rate not supported\n");
-			goto error;
+	if (qfsnd_pcm_hw_params_set_access (pcm, hw,
+										SND_PCM_ACCESS_MMAP_INTERLEAVED) < 0) {
+		Sys_Printf ("ALSA: interleaved is not supported\n");
+		goto error;
 	}
 
 	switch (bps) {
 		case -1:
-			if (qfsnd_pcm_hw_params_set_format (pcm, hw,
-												SND_PCM_FORMAT_S16_LE) >= 0) {
+			if (qfsnd_pcm_hw_params_set_format (pcm, hw, SND_PCM_FORMAT_S16_LE)
+				>= 0) {
 				bps = 16;
 			} else if (qfsnd_pcm_hw_params_set_format (pcm, hw,
 													   SND_PCM_FORMAT_U8)
@@ -208,12 +184,6 @@ SNDDMA_Init (void)
 			goto error;
 	}
 
-	if (qfsnd_pcm_hw_params_set_access (pcm, hw,
-										SND_PCM_ACCESS_MMAP_INTERLEAVED) < 0) {
-		Sys_Printf ("ALSA: interleaved is not supported\n");
-		goto error;
-	}
-
 	switch (stereo) {
 		case -1:
 			if (qfsnd_pcm_hw_params_set_channels (pcm, hw, 2) >= 0) {
@@ -227,7 +197,8 @@ SNDDMA_Init (void)
 			break;
 		case 0:
 		case 1:
-			if (qfsnd_pcm_hw_params_set_channels (pcm, hw, stereo ? 2 : 1) >= 0)
+			if (qfsnd_pcm_hw_params_set_channels (pcm, hw, stereo ? 2 : 1)
+				>= 0)
 				break;
 			/* Fall through */
 		default:
@@ -235,7 +206,42 @@ SNDDMA_Init (void)
 			goto error;
 	}
 
-	qfsnd_pcm_hw_params_set_period_size_near (pcm, hw, frag_size, 0);
+	switch (rate) {
+		case 0:
+			rate = 44100;
+			if (qfsnd_pcm_hw_params_set_rate_near (pcm, hw, &rate, 0) >= 0) {
+				frag_size = 256;		// assuming stereo 8 bit
+			} else {
+				rate = 22050;
+				if (qfsnd_pcm_hw_params_set_rate_near (pcm, hw, &rate, 0)
+					>= 0) {
+					frag_size = 128;		// assuming stereo 8 bit
+				} else {
+					rate = 11025;
+					if (qfsnd_pcm_hw_params_set_rate_near (pcm, hw, &rate, 0)
+						>= 0) {
+						frag_size = 64;			// assuming stereo 8 bit
+					} else {
+						Sys_Printf ("ALSA: no useable rates\n");
+						goto error;
+					}
+				}
+			}
+			break;
+		case 11025:
+		case 22050:
+		case 44100:
+			if (qfsnd_pcm_hw_params_set_rate_near (pcm, hw, &rate, 0) >= 0) {
+				frag_size = 64 * rate / 11025;	// assuming stereo 8 bit
+				break;
+			}
+			/* Fall through */
+		default:
+			Sys_Printf ("ALSA: desired rate not supported\n");
+			goto error;
+	}
+
+	qfsnd_pcm_hw_params_set_period_size_near (pcm, hw, &frag_size, 0);
 
 	err = qfsnd_pcm_hw_params (pcm, hw);
 	if (err < 0) {
@@ -257,15 +263,15 @@ SNDDMA_Init (void)
 	memset ((dma_t *) shm, 0, sizeof (*shm));
 	shm->splitbuffer = 0;
 	shm->channels = stereo + 1;
-	shm->submission_chunk = qfsnd_pcm_hw_params_get_period_size (hw, 0);
-										// don't
-										// mix less than this #
+	qfsnd_pcm_hw_params_get_period_size (hw, (snd_pcm_uframes_t *)
+										 &shm->submission_chunk, 0);
+										// don't mix less than this
 	shm->samplepos = 0;					// in mono samples
 	shm->samplebits = bps;
-	buffer_size = qfsnd_pcm_hw_params_get_buffer_size (hw);
-	shm->samples = buffer_size * shm->channels;	// mono samples in buffer
+	qfsnd_pcm_hw_params_get_buffer_size (hw, &buffer_size); // FIXME: check error return value
+	shm->samples = buffer_size * shm->channels;		// mono samples in buffer
 	shm->speed = rate;
-	SNDDMA_GetDMAPos ();//XXX sets shm->buffer
+	SNDDMA_GetDMAPos ();		//XXX sets shm->buffer
 	Sys_Printf ("%5d stereo\n", shm->channels - 1);
 	Sys_Printf ("%5d samples\n", shm->samples);
 	Sys_Printf ("%5d samplepos\n", shm->samplepos);
@@ -296,7 +302,7 @@ SNDDMA_GetDMAPos (void)
 	offset *= shm->channels;
 	nframes *= shm->channels;
 	shm->samplepos = offset;
-	shm->buffer = areas->addr;//XXX FIXME there's an area per channel
+	shm->buffer = areas->addr;	//XXX FIXME there's an area per channel
 	return shm->samplepos;
 }
 
