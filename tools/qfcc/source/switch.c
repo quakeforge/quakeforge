@@ -213,9 +213,9 @@ switch_expr (switch_block_t *switch_block, expr_t *break_label,
 	for (l = labels; *l; l++)
 		num_labels++;
 	if (options.code.progsversion == PROG_ID_VERSION
-		|| (type->type != ev_string
-			&& type->type != ev_float
-			&& type->type != ev_integer)
+		|| (type != &type_string
+			&& type != &type_float
+			&& type != &type_integer)
 		|| num_labels < 8) {
 		for (l = labels; *l; l++) {
 			expr_t     *cmp = binary_expr (EQ, sw_val, (*l)->value);
@@ -227,8 +227,13 @@ switch_expr (switch_block_t *switch_block, expr_t *break_label,
 			append_expr (sw, test);
 		}
 	} else {
-		expr_t     *temp = new_temp_def_expr (type);
+		expr_t     *temp;
 		int         op;
+
+		if (type == &type_string)
+			temp = new_temp_def_expr (&type_integer);
+		else
+			temp = new_temp_def_expr (type);
 		qsort (labels, num_labels, sizeof (*labels), label_compare);
 		switch (type->type) {
 			case ev_string:
