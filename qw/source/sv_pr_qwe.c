@@ -178,7 +178,7 @@ PF_substr (progs_t * pr)
 
 	tmp = Hunk_TempAlloc (len);
 	strncpy (tmp, s, len - 1);
-	tmp[len] = 0;
+	tmp[len - 1] = 0;
 
 	RETURN_STRING (pr, tmp);
 }
@@ -238,8 +238,7 @@ PF_str2short (progs_t * pr)
 	PF_newstr
 
 	string newstr (string str [, float size])
-
-	ignores size (there for compatability with qwe)
+	The new string will be at least as big as size, if given.
 */
 static void
 PF_newstr (progs_t * pr)
@@ -250,8 +249,8 @@ PF_newstr (progs_t * pr)
 
 	s = P_GSTRING (pr, 0);
 
-	i = PR_NewString (pr);
-	dstr = PR_GetDString (pr, i);
+	i = PR_NewMutableString (pr);
+	dstr = PR_GetMutableString (pr, i);
 
 	dstring_copystr (dstr, s);
 
