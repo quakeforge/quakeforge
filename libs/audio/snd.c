@@ -39,18 +39,6 @@ static __attribute__ ((unused)) const char rcsid[] =
 #include "QF/plugin.h"
 #include "QF/sys.h"
 
-// =======================================================================
-// Various variables also defined in snd_dma.c
-// FIXME - should be put in one place
-// =======================================================================
-volatile dma_t *shm = 0;
-unsigned int    paintedtime;				// sample PAIRS
-qboolean        snd_initialized = false;
-
-cvar_t         *snd_loadas8bit;
-cvar_t         *volume;
-cvar_t         *snd_interp;
-
 static cvar_t  *snd_output;
 static cvar_t  *snd_render;
 static plugin_t *snd_render_module = NULL;
@@ -112,12 +100,6 @@ S_Init (struct model_s **worldmodel, int *viewentity, double *host_frametime)
 void
 S_Init_Cvars (void)
 {
-	volume = Cvar_Get ("volume", "0.7", CVAR_ARCHIVE, NULL,
-					   "Volume level of sounds");
-	snd_loadas8bit = Cvar_Get ("snd_loadas8bit", "0", CVAR_NONE, NULL,
-							   "Load samples as 8-bit");
-	snd_interp = Cvar_Get ("snd_interp", "1", CVAR_ARCHIVE, NULL,
-	                              "control sample interpolation");
 #ifdef _WIN32
 	snd_output = Cvar_Get ("snd_output", "dx", CVAR_ROM, NULL,
 						   "Sound Output Plugin to use");

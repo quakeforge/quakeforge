@@ -55,6 +55,14 @@ static __attribute__ ((unused)) const char rcsid[] =
 
 // Internal sound data & structures ===========================================
 
+volatile dma_t *shm = 0;
+unsigned int    paintedtime;				// sample PAIRS
+qboolean        snd_initialized = false;
+
+cvar_t         *snd_loadas8bit;
+cvar_t         *volume;
+cvar_t         *snd_interp;
+
 channel_t       channels[MAX_CHANNELS];
 int             total_channels;
 
@@ -851,6 +859,8 @@ SND_UnblockSound (void)
 static void
 SND_Init_Cvars (void)
 {
+	snd_interp = Cvar_Get ("snd_interp", "1", CVAR_ARCHIVE, NULL,
+	                              "control sample interpolation");
 	ambient_fade = Cvar_Get ("ambient_fade", "100", CVAR_NONE, NULL,
 							 "How quickly ambient sounds fade in or out");
 	ambient_level = Cvar_Get ("ambient_level", "0.3", CVAR_NONE, NULL,
