@@ -340,12 +340,12 @@ p, .Normal
 <p><span style="font-family: 'Arial'; font-size: 12.000000pt">example:</span></p>
 <p><br>
 </p>
-<p><span style="font-family: 'Courier'; font-size: 12.000000pt">for i in "</span><span style="font-family: 'Courier'; font-size: 12.000000pt">1 2 3 4 5"</span><span style="font-family: 'Courier'; font-size: 12.000000pt"> {</span></p>
-<p><span style="font-family: 'Courier'; font-size: 12.000000pt">	echo $i</span><span style="font-family: 'Courier'; font-size: 12.000000pt">, "</span><span style="font-family: 'Courier'; font-size: 12.000000pt">&nbsp;</span><span style="font-family: 'Courier'; font-size: 12.000000pt">times 2 is</span><span style="font-family: 'Courier'; font-size: 12.000000pt"> ", </span><span style="font-family: 'Courier'; font-size: 12.000000pt">($i * 2)</span></p>
+<p><span style="font-family: 'Courier'; font-size: 12.000000pt">for i in "1 2 3 4 5" {</span></p>
+<p><span style="font-family: 'Courier'; font-size: 12.000000pt">	echo $i, " times 2 is ", ($i * 2)</span></p>
 <p><span style="font-family: 'Courier'; font-size: 12.000000pt">}</span></p>
 <p><br>
 </p>
-<p><span style="font-family: 'Arial'; font-size: 12.000000pt">notes: </span><span style="font-family: 'Arial'; font-size: 12.000000pt">"</span><span style="font-family: 'Arial'; font-size: 12.000000pt">for</span><span style="font-family: 'Arial'; font-size: 12.000000pt">"</span><span style="font-family: 'Arial'; font-size: 12.000000pt"> iter</span><span style="font-family: 'Arial'; font-size: 12.000000pt">ates a </span><span style="font-family: 'Arial'; font-size: 12.000000pt">local variable through each whitespace-separated token </span><span style="font-family: 'Arial'; font-size: 12.000000pt">of a list.&nbsp; </span><span style="font-family: 'Arial'; font-size: 12.000000pt">To achi</span><span style="font-family: 'Arial'; font-size: 12.000000pt">eve this, the internal command </span><span style="font-family: 'Arial'; font-size: 12.000000pt">"</span><span style="font-family: 'Arial'; font-size: 12.000000pt">__for</span><span style="font-family: 'Arial'; font-size: 12.000000pt">"</span><span style="font-family: 'Arial'; font-size: 12.000000pt"> is used </span><span style="font-family: 'Arial'; font-size: 12.000000pt">at the start of each iteration.&nbsp; Manual use of this command is highly discouraged.</span></p>
+<p><span style="font-family: 'Arial'; font-size: 12.000000pt">notes: "for" iterates a local variable through each whitespace-separated token of a list.&nbsp; To achieve this, the internal command "__for" is used at the start of each iteration.&nbsp; Manual use of this command is highly discouraged.</span></p>
 <p><br>
 </p>
 <p><span style="font-family: 'Courier'; font-size: 12.000000pt">if/ifnot</span></p>
@@ -374,7 +374,7 @@ p, .Normal
 <p><span style="font-family: 'Courier'; font-size: 12.000000pt">}</span></p>
 <p><br>
 </p>
-<p><span style="font-family: 'Arial'; font-size: 12.000000pt">notes:&nbsp; </span><span style="font-family: 'Courier'; font-size: 12.000000pt">if</span><span style="font-family: 'Arial'; font-size: 12.000000pt"> executes </span><span style="font-family: 'Courier'; font-size: 12.000000pt">program </span><span style="font-family: 'Arial'; font-size: 12.000000pt">when condition evaluates to a non-zero number (true).&nbsp; If the condition is false but else and a second program are present, it will be executed instead. </span><span style="font-family: 'Courier'; font-size: 12.000000pt">If-else</span><span style="font-family: 'Arial'; font-size: 12.000000pt"> statements can be chained together.&nbsp; If </span><span style="font-family: 'Courier'; font-size: 12.000000pt">ifnot</span><span style="font-family: 'Arial'; font-size: 12.000000pt"> is used instead of </span><span style="font-family: 'Courier'; font-size: 12.000000pt">if</span><span style="font-family: 'Arial'; font-size: 12.000000pt">,</span><span style="font-family: 'Arial'; font-size: 12.000000pt"> the first program will be executed if the statement is false and the second if the statement is true.</span></p>
+<p><span style="font-family: 'Arial'; font-size: 12.000000pt">notes:&nbsp; </span><span style="font-family: 'Courier'; font-size: 12.000000pt">if</span><span style="font-family: 'Arial'; font-size: 12.000000pt"> executes </span><span style="font-family: 'Courier'; font-size: 12.000000pt">program </span><span style="font-family: 'Arial'; font-size: 12.000000pt">when condition evaluates to a non-zero number (true).&nbsp; If the condition is false but else and a second program are present, it will be executed instead. </span><span style="font-family: 'Courier'; font-size: 12.000000pt">If-else</span><span style="font-family: 'Arial'; font-size: 12.000000pt"> statements can be chained together.&nbsp; If </span><span style="font-family: 'Courier'; font-size: 12.000000pt">ifnot</span><span style="font-family: 'Arial'; font-size: 12.000000pt"> is used instead of </span><span style="font-family: 'Courier'; font-size: 12.000000pt">if</span><span style="font-family: 'Arial'; font-size: 12.000000pt">, the first program will be executed if the statement is false and the second if the statement is true.</span></p>
 <p><br>
 </p>
 <p><span style="font-weight: bold; font-family: 'Times New Roman'; font-size: 16.000000pt">Math Evaluator</span></p>
@@ -420,10 +420,10 @@ p, .Normal
 <p><span style="font-family: 'Arial'; font-size: 12.000000pt">Note that all trigonometric functions operate in radians.</span></p>
 <p><br>
 </p>
-<p><span style="font-weight: bold; font-family: 'Times New Roman'; font-size: 16.000000pt">File </span><span style="font-weight: bold; font-family: 'Times New Roman'; font-size: 16.000000pt">access</span></p>
+<p><span style="font-weight: bold; font-family: 'Times New Roman'; font-size: 16.000000pt">File access</span></p>
 <p><br>
 </p>
-<p><span style="font-family: 'Arial'; font-size: 12.000000pt">GIB prov</span><span style="font-family: 'Arial'; font-size: 12.000000pt">ides r</span><span style="font-family: 'Arial'; font-size: 12.000000pt">udimentary </span><span style="font-family: 'Arial'; font-size: 12.000000pt">file </span><span style="font-family: 'Arial'; font-size: 12.000000pt">access t</span><span style="font-family: 'Arial'; font-size: 12.000000pt">o the current game directory</span><span style="font-family: 'Arial'; font-size: 12.000000pt"> (the direc</span><span style="font-family: 'Arial'; font-size: 12.000000pt">tory where the currently-loaded mod resides,</span><span style="font-family: 'Arial'; font-size: 12.000000pt"> determined by the console variable gamedir</span><span style="font-family: 'Arial'; font-size: 12.000000pt">).</span><span style="font-family: 'Arial'; font-size: 12.000000pt">&nbsp; All subdirector</span><span style="font-family: 'Arial'; font-size: 12.000000pt">ies of</span><span style="font-family: 'Arial'; font-size: 12.000000pt"> the </span><span style="font-family: 'Arial'; font-size: 12.000000pt">current game</span><span style="font-family: 'Arial'; font-size: 12.000000pt"> directory</span><span style="font-family: 'Arial'; font-size: 12.000000pt"> are accessible,&nbsp;</span><span style="font-family: 'Arial'; font-size: 12.000000pt">but </span><span style="font-family: 'Arial'; font-size: 12.000000pt">attempts to escape </span><span style="font-family: 'Arial'; font-size: 12.000000pt">higher into the file</span><span style="font-family: 'Arial'; font-size: 12.000000pt"> </span><span style="font-family: 'Arial'; font-size: 12.000000pt">system via </span><span style="font-family: 'Arial'; font-size: 12.000000pt">"</span><span style="font-family: 'Arial'; font-size: 12.000000pt">..</span><span style="font-family: 'Arial'; font-size: 12.000000pt">"</span><span style="font-family: 'Arial'; font-size: 12.000000pt"> will cause an access error.</span></p>
+<p><span style="font-family: 'Arial'; font-size: 12.000000pt">GIB provides rudimentary file access to the current game directory (the directory where the currently-loaded mod resides, determined by the console variable gamedir).&nbsp; All subdirectories of the current game directory are accessible, but attempts to escape higher into the file system via ".." will cause an access error.</span></p>
 <p><br>
 </p>
 <p><span style="font-family: 'Courier'; font-size: 12.000000pt">file.read</span></p>
@@ -432,59 +432,99 @@ p, .Normal
 <p><br>
 </p>
 <p><span style="font-family: 'Courier'; font-size: 12.000000pt">file.write</span></p>
-<p><span style="font-family: 'Arial'; font-size: 12.000000pt">usage: </span><span style="font-family: 'Courier'; font-size: 12.000000pt">file.write file con</span><span style="font-family: 'Courier'; font-size: 12.000000pt">tents</span></p>
-<p><span style="font-family: 'Arial'; font-size: 12.000000pt">Creates/overwrites </span><span style="font-family: 'Courier'; font-size: 12.000000pt">file</span><span style="font-family: 'Arial'; font-size: 12.000000pt"> with </span><span style="font-family: 'Courier'; font-size: 12.000000pt">con</span><span style="font-family: 'Courier'; font-size: 12.000000pt">tents</span></p>
+<p><span style="font-family: 'Arial'; font-size: 12.000000pt">usage: </span><span style="font-family: 'Courier'; font-size: 12.000000pt">file.write file contents</span></p>
+<p><span style="font-family: 'Arial'; font-size: 12.000000pt">Creates/overwrites </span><span style="font-family: 'Courier'; font-size: 12.000000pt">file</span><span style="font-family: 'Arial'; font-size: 12.000000pt"> with </span><span style="font-family: 'Courier'; font-size: 12.000000pt">contents</span></p>
 <p><br>
 </p>
-<p><span style="font-family: 'Courier'; font-size: 12.000000pt">fil</span><span style="font-family: 'Courier'; font-size: 12.000000pt">e.find</span></p>
-<p><span style="font-family: 'Arial'; font-size: 12.000000pt">usage</span><span style="font-family: 'Arial'; font-size: 12.000000pt">:</span><span style="font-family: 'Arial'; font-size: 12.000000pt"> </span><span style="font-family: 'Courier'; font-size: 12.000000pt">file.find glob</span><span style="font-family: 'Courier'; font-size: 12.000000pt"> [</span><span style="font-family: 'Courier'; font-size: 12.000000pt">subdir]</span></p>
-<p><span style="font-family: 'Arial'; font-size: 12.000000pt">Returns a list suitable for use </span><span style="font-family: 'Arial'; font-size: 12.000000pt">in a for loop of all files in the current game</span><span style="font-family: 'Arial'; font-size: 12.000000pt"> </span><span style="font-family: 'Arial'; font-size: 12.000000pt">dir</span><span style="font-family: 'Arial'; font-size: 12.000000pt">ectory</span><span style="font-family: 'Arial'; font-size: 12.000000pt"> that match</span><span style="font-family: 'Arial'; font-size: 12.000000pt"> </span><span style="font-family: 'Courier'; font-size: 12.000000pt">glob</span><span style="font-family: 'Arial'; font-size: 12.000000pt">.&nbsp; "*.cfg" and "fi</span><span style="font-family: 'Arial'; font-size: 12.000000pt">le???.foo" are examples of globs.&nbsp; If the </span><span style="font-family: 'Arial'; font-size: 12.000000pt">optional </span><span style="font-family: 'Courier'; font-size: 12.000000pt">subdir </span><span style="font-family: 'Arial'; font-size: 12.000000pt">argument is provided, that directory will be searched instead of the </span><span style="font-family: 'Arial'; font-size: 12.000000pt">root game directory.</span></p>
+<p><span style="font-family: 'Courier'; font-size: 12.000000pt">file.find</span></p>
+<p><span style="font-family: 'Arial'; font-size: 12.000000pt">usage: </span><span style="font-family: 'Courier'; font-size: 12.000000pt">file.find glob [subdir]</span></p>
+<p><span style="font-family: 'Arial'; font-size: 12.000000pt">Returns a list suitable for use in a for loop of all files in the current game directory that match </span><span style="font-family: 'Courier'; font-size: 12.000000pt">glob</span><span style="font-family: 'Arial'; font-size: 12.000000pt">.&nbsp; "*.cfg" and "file???.foo" are examples of globs.&nbsp; If the optional </span><span style="font-family: 'Courier'; font-size: 12.000000pt">subdir </span><span style="font-family: 'Arial'; font-size: 12.000000pt">argument is provided, that directory will be searched instead of the root game directory.</span></p>
 <p><br>
 </p>
 <p><br>
 </p>
-<p><span style="font-weight: bold; font-family: 'Times New Roman'; font-size: 16.000000pt">Threads</span><span style="font-weight: bold; font-family: 'Times New Roman'; font-size: 16.000000pt"> and callbacks</span></p>
+<p><span style="font-weight: bold; font-family: 'Times New Roman'; font-size: 16.000000pt">Threads and callbacks</span></p>
 <p><br>
 </p>
-<p><span style="font-family: 'Arial'; font-size: 12.000000pt">Threads are </span><span style="font-family: 'Arial'; font-size: 12.000000pt">highly e</span><span style="font-family: 'Arial'; font-size: 12.000000pt">xp</span><span style="font-family: 'Arial'; font-size: 12.000000pt">erimental at this point, and aren't </span><span style="font-family: 'Arial'; font-size: 12.000000pt">true threads in that multitasking is not pre-emptive.&nbsp; Threads must&nbsp;</span><span style="font-family: 'Arial'; font-size: 12.000000pt">issue the wait command</span><span style="font-family: 'Arial'; font-size: 12.000000pt"> to relinquish control to </span><span style="font-family: 'Arial'; font-size: 12.000000pt">the console and other threads.</span></p>
+<p><span style="font-family: 'Arial'; font-size: 12.000000pt">Threads are highly experimental at this point, and aren't true threads in that multitasking is not pre-emptive.&nbsp; Threads must issue the wait command to relinquish control to the console and other threads.</span></p>
 <p><br>
 </p>
-<p><span style="font-family: 'Arial'; font-size: 12.000000pt">Callbacks are </span><span style="font-family: 'Arial'; font-size: 12.000000pt">functions register</span><span style="font-family: 'Arial'; font-size: 12.000000pt">ed to be started in a thread when a certain event is triggered in the client or server.&nbsp; Currently, </span><span style="font-family: 'Arial'; font-size: 12.000000pt">only a few</span><span style="font-family: 'Arial'; font-size: 12.000000pt"> events in qw-client </span><span style="font-family: 'Arial'; font-size: 12.000000pt">can have callbacks associated with them, although more will be added.</span><span style="font-family: 'Arial'; font-size: 12.000000pt">&nbsp; See the events documentation for detai</span><span style="font-family: 'Arial'; font-size: 12.000000pt">ls.</span></p>
+<p><span style="font-family: 'Arial'; font-size: 12.000000pt">Callbacks are functions registered to be started in a thread when a certain event is triggered in the client or server.&nbsp; Currently, only a few events in qw-client can have callbacks associated with them, although more will be added.</span></p>
 <p><br>
 </p>
 <p><span style="font-family: 'Courier'; font-size: 12.000000pt">thread.create</span></p>
 <p><span style="font-family: 'Arial'; font-size: 12.000000pt">usage: </span><span style="font-family: 'Courier'; font-size: 12.000000pt">thread.create program</span></p>
-<p><span style="font-family: 'Arial'; font-size: 12.000000pt">Creates a new thread containing </span><span style="font-family: 'Courier'; font-size: 12.000000pt">program</span><span style="font-family: 'Arial'; font-size: 12.000000pt">.&nbsp; Ret</span><span style="font-family: 'Arial'; font-size: 12.000000pt">urns a unique</span><span style="font-family: 'Arial'; font-size: 12.000000pt"> ID number that should be </span><span style="font-family: 'Arial'; font-size: 12.000000pt">s</span><span style="font-family: 'Arial'; font-size: 12.000000pt">aved for </span><span style="font-family: 'Arial'; font-size: 12.000000pt">looping threads.</span></p>
+<p><span style="font-family: 'Arial'; font-size: 12.000000pt">Creates a new thread containing </span><span style="font-family: 'Courier'; font-size: 12.000000pt">program</span><span style="font-family: 'Arial'; font-size: 12.000000pt">.&nbsp; Returns a unique ID number that should be saved for looping threads.</span></p>
 <p><br>
 </p>
 <p><span style="font-family: 'Courier'; font-size: 12.000000pt">thread.kill</span></p>
 <p><span style="font-family: 'Arial'; font-size: 12.000000pt">usage: </span><span style="font-family: 'Courier'; font-size: 12.000000pt">thread.kill id</span></p>
-<p><span style="font-family: 'Arial'; font-size: 12.000000pt">Immediately ends the thread with </span><span style="font-family: 'Arial'; font-size: 12.000000pt">the ID </span><span style="font-family: 'Courier'; font-size: 12.000000pt">id</span><span style="font-family: 'Arial'; font-size: 12.000000pt">.</span></p>
+<p><span style="font-family: 'Arial'; font-size: 12.000000pt">Immediately ends the thread with the ID </span><span style="font-family: 'Courier'; font-size: 12.000000pt">id</span><span style="font-family: 'Arial'; font-size: 12.000000pt">.</span></p>
 <p><br>
 </p>
+<p><span style="font-weight: bold; font-family: 'Times New Roman'; font-size: 16.000000pt">Game</span><span style="font-weight: bold; font-family: 'Times New Roman'; font-size: 16.000000pt">-</span><span style="font-weight: bold; font-family: 'Times New Roman'; font-size: 16.000000pt">play hooks</span></p>
 <p><br>
 </p>
-<p><span style="font-weight: bold; font-family: 'Times New Roman'; font-size: 16.000000pt">Miscellaneous </span><span style="font-weight: bold; font-family: 'Times New Roman'; font-size: 16.000000pt">b</span><span style="font-weight: bold; font-family: 'Times New Roman'; font-size: 16.000000pt">uil</span><span style="font-weight: bold; font-family: 'Times New Roman'; font-size: 16.000000pt">t-in functions</span></p>
+<p><span style="font-family: 'Arial'; font-size: 12.000000pt">As of the 0.5.2 release of QuakeForge, </span><span style="font-family: 'Arial'; font-size: 12.000000pt">qw-client provides several global variables and callbacks so that GIB can monitor player stats</span><span style="font-family: 'Arial'; font-size: 12.000000pt">.&nbsp; The "player" global tree variable is updated with information as follows:</span></p>
 <p><br>
 </p>
-<p><span style="font-family: 'Courier'; font-size: 12.000000pt">func</span><span style="font-family: 'Courier'; font-size: 12.000000pt">tion.get</span></p>
-<p><span style="font-family: 'Arial'; font-size: 12.000000pt">usage</span><span style="font-family: 'Arial'; font-size: 12.000000pt">:</span><span style="font-family: 'Arial'; font-size: 12.000000pt"> </span><span style="font-family: 'Courier'; font-size: 12.000000pt">function.get function</span></p>
-<p><span style="font-family: 'Arial'; font-size: 12.000000pt">Retu</span><span style="font-family: 'Arial'; font-size: 12.000000pt">rns the program text of </span><span style="font-family: 'Courier'; font-size: 12.000000pt">function</span><span style="font-family: 'Arial'; font-size: 12.000000pt">.</span></p>
+<p><span style="font-family: 'Courier'; font-size: 12.000000pt">player.health:&nbsp; </span><span style="font-family: 'Courier'; font-size: 12.000000pt">The </span><span style="font-family: 'Courier'; font-size: 12.000000pt">player's health</span></p>
+<p><span style="font-family: 'Courier'; font-size: 12.000000pt">player.a</span><span style="font-family: 'Courier'; font-size: 12.000000pt">rmor:&nbsp; The pl</span><span style="font-family: 'Courier'; font-size: 12.000000pt">a</span><span style="font-family: 'Courier'; font-size: 12.000000pt">yer's armor</span></p>
+<p><span style="font-family: 'Courier'; font-size: 12.000000pt">player.armor.type</span><span style="font-family: 'Courier'; font-size: 12.000000pt">:&nbsp; The type </span><span style="font-family: 'Courier'; font-size: 12.000000pt">(green, yellow, red, none) of armor the player is wearing.</span></p>
+<p><span style="font-family: 'Courier'; font-size: 12.000000pt">player.ammo</span><span style="font-family: 'Courier'; font-size: 12.000000pt">.(type)</span><span style="font-family: 'Courier'; font-size: 12.000000pt">:&nbsp; </span><span style="font-family: 'Courier'; font-size: 12.000000pt">Ammo of (type) that is a</span><span style="font-family: 'Courier'; font-size: 12.000000pt">v</span><span style="font-family: 'Courier'; font-size: 12.000000pt">a</span><span style="font-family: 'Courier'; font-size: 12.000000pt">ilable.&nbsp; </span><span style="font-family: 'Courier'; font-size: 12.000000pt">(type) can be shells, nails, rockets, or cells</span><span style="font-family: 'Courier'; font-size: 12.000000pt">.</span></p>
+<p><span style="font-family: 'Courier'; font-size: 12.000000pt">player.</span><span style="font-family: 'Courier'; font-size: 12.000000pt">weapon.(number):&nbsp; </span><span style="font-family: 'Courier'; font-size: 12.000000pt">1 i</span><span style="font-family: 'Courier'; font-size: 12.000000pt">f the weapon corresponding to (number</span><span style="font-family: 'Courier'; font-size: 12.000000pt">) is available, 0 otherwise.</span></p>
+<p><span style="font-family: 'Courier'; font-size: 12.000000pt">player.key.</span><span style="font-family: 'Courier'; font-size: 12.000000pt">(</span><span style="font-family: 'Courier'; font-size: 12.000000pt">number)</span><span style="font-family: 'Courier'; font-size: 12.000000pt">: </span><span style="font-family: 'Courier'; font-size: 12.000000pt">1 if</span><span style="font-family: 'Courier'; font-size: 12.000000pt"> the player has key or flag (number).</span><span style="font-family: 'Courier'; font-size: 12.000000pt">&nbsp; Number can be 1 or 2.</span></p>
+<p><br>
+</p>
+<p><span style="font-family: 'Arial'; font-size: 12.000000pt">Several callbacks can be registered </span><span style="font-family: 'Arial'; font-size: 12.000000pt">that will get cal</span><span style="font-family: 'Arial'; font-size: 12.000000pt">led when one of these </span><span style="font-family: 'Arial'; font-size: 12.000000pt">stats changes</span><span style="font-family: 'Arial'; font-size: 12.000000pt">.&nbsp; Simply set the glo</span><span style="font-family: 'Arial'; font-size: 12.000000pt">bal variable to the name of the function to be called</span><span style="font-family: 'Arial'; font-size: 12.000000pt">:</span></p>
+<p><br>
+</p>
+<p><span style="font-family: 'Courier'; font-size: 12.000000pt">player.health.callback:&nbsp; Passed the new health value as an argument</span></p>
+<p><span style="font-family: 'Courier'; font-size: 12.000000pt">player.armor.callback:&nbsp; Passed the new armor value.</span></p>
+<p><span style="font-family: 'Courier'; font-size: 12.000000pt">player.</span><span style="font-family: 'Courier'; font-size: 12.000000pt">ammo.(type).callback:&nbsp; Passed the new am</span><span style="font-family: 'Courier'; font-size: 12.000000pt">mo value.</span></p>
+<p><span style="font-family: 'Courier'; font-size: 12.000000pt">player.weapon.callback:&nbsp; Called when available weapons change.</span></p>
+<p><span style="font-family: 'Courier'; font-size: 12.000000pt">player.key.callbac</span><span style="font-family: 'Courier'; font-size: 12.000000pt">k:&nbsp; Called when a</span><span style="font-family: 'Courier'; font-size: 12.000000pt">ny key is gained or lost.</span></p>
+<p><br>
+</p>
+<p><span style="font-family: 'Arial'; font-size: 12.000000pt">Note that in the future these callbacks may get registered in a different way.&nbsp; These hooks are currently for t</span><span style="font-family: 'Arial'; font-size: 12.000000pt">esting purposes only.</span></p>
+<p><br>
+</p>
+<p><span style="font-weight: bold; font-family: 'Times New Roman'; font-size: 16.000000pt">Miscellaneous built-in functions</span></p>
+<p><br>
+</p>
+<p><span style="font-family: 'Courier'; font-size: 12.000000pt">function.get</span></p>
+<p><span style="font-family: 'Arial'; font-size: 12.000000pt">usage: </span><span style="font-family: 'Courier'; font-size: 12.000000pt">function.get function</span></p>
+<p><span style="font-family: 'Arial'; font-size: 12.000000pt">Returns the program text of </span><span style="font-family: 'Courier'; font-size: 12.000000pt">function</span><span style="font-family: 'Arial'; font-size: 12.000000pt">.</span></p>
 <p><br>
 </p>
 <p><span style="font-family: 'Courier'; font-size: 12.000000pt">string.equal</span></p>
-<p><span style="font-family: 'Arial'; font-size: 12.000000pt">usage: </span><span style="font-family: 'Courier'; font-size: 12.000000pt">str</span><span style="font-family: 'Courier'; font-size: 12.000000pt">ing.equal string1 string2</span></p>
-<p><span style="font-family: 'Arial'; font-size: 12.000000pt">Returns 1 i</span><span style="font-family: 'Arial'; font-size: 12.000000pt">f the two strings are the same, 0 otherwise.</span></p>
+<p><span style="font-family: 'Arial'; font-size: 12.000000pt">usage: </span><span style="font-family: 'Courier'; font-size: 12.000000pt">string.equal string1 string2</span></p>
+<p><span style="font-family: 'Arial'; font-size: 12.000000pt">Returns 1 if the two strings are the same, 0 otherwise.</span></p>
 <p><br>
 </p>
 <p><span style="font-family: 'Courier'; font-size: 12.000000pt">string.length</span></p>
 <p><span style="font-family: 'Arial'; font-size: 12.000000pt">usage: </span><span style="font-family: 'Courier'; font-size: 12.000000pt">string.length string</span></p>
-<p><span style="font-family: 'Arial'; font-size: 12.000000pt">Retu</span><span style="font-family: 'Arial'; font-size: 12.000000pt">rns the length of </span><span style="font-family: 'Courier'; font-size: 12.000000pt">string</span><span style="font-family: 'Arial'; font-size: 12.000000pt">.</span></p>
+<p><span style="font-family: 'Arial'; font-size: 12.000000pt">Returns the length of </span><span style="font-family: 'Courier'; font-size: 12.000000pt">string</span><span style="font-family: 'Arial'; font-size: 12.000000pt">.</span></p>
 <p><br>
 </p>
 <p><span style="font-family: 'Courier'; font-size: 12.000000pt">range</span></p>
-<p><span style="font-family: 'Arial'; font-size: 12.000000pt">usage</span><span style="font-family: 'Arial'; font-size: 12.000000pt">: </span><span style="font-family: 'Courier'; font-size: 12.000000pt">range start end </span><span style="font-family: 'Courier'; font-size: 12.000000pt">[</span><span style="font-family: 'Courier'; font-size: 12.000000pt">step</span><span style="font-family: 'Courier'; font-size: 12.000000pt">]</span></p>
-<p><span style="font-family: 'Arial'; font-size: 12.000000pt">Returns</span><span style="font-family: 'Arial'; font-size: 12.000000pt"> a space-separated list of numbers between </span><span style="font-family: 'Courier'; font-size: 12.000000pt">start</span><span style="font-family: 'Arial'; font-size: 12.000000pt"> and </span><span style="font-family: 'Courier'; font-size: 12.000000pt">end</span><span style="font-family: 'Arial'; font-size: 12.000000pt">.&nbsp; If a step size isn't specified</span><span style="font-family: 'Arial'; font-size: 12.000000pt">, 1 is used.&nbsp; If </span><span style="font-family: 'Arial'; font-size: 12.000000pt">end is less than start a</span><span style="font-family: 'Arial'; font-size: 12.000000pt">nd a custom step siz</span><span style="font-family: 'Arial'; font-size: 12.000000pt">e</span><span style="font-family: 'Arial'; font-size: 12.000000pt"> is specified, it must be negative</span><span style="font-family: 'Arial'; font-size: 12.000000pt">.&nbsp; </span><span style="font-family: 'Courier'; font-size: 12.000000pt">step</span><span style="font-family: 'Arial'; font-size: 12.000000pt"> can</span><span style="font-family: 'Arial'; font-size: 12.000000pt">not be 0 either.&nbsp; This command is </span><span style="font-family: 'Arial'; font-size: 12.000000pt">best used with </span><span style="font-family: 'Courier'; font-size: 12.000000pt">for</span><span style="font-family: 'Arial'; font-size: 12.000000pt"> loops.</span></p>
+<p><span style="font-family: 'Arial'; font-size: 12.000000pt">usage: </span><span style="font-family: 'Courier'; font-size: 12.000000pt">range start end [step]</span></p>
+<p><span style="font-family: 'Arial'; font-size: 12.000000pt">Returns a space-separated list of numbers between </span><span style="font-family: 'Courier'; font-size: 12.000000pt">start</span><span style="font-family: 'Arial'; font-size: 12.000000pt"> and </span><span style="font-family: 'Courier'; font-size: 12.000000pt">end</span><span style="font-family: 'Arial'; font-size: 12.000000pt">.&nbsp; If a step size isn't specified, 1 is used.&nbsp; If end is less than start and a custom step size is specified, it must be negative.&nbsp; </span><span style="font-family: 'Courier'; font-size: 12.000000pt">step</span><span style="font-family: 'Arial'; font-size: 12.000000pt"> cannot be 0 either.&nbsp; This command is best used with </span><span style="font-family: 'Courier'; font-size: 12.000000pt">for</span><span style="font-family: 'Arial'; font-size: 12.000000pt"> loops.</span></p>
+<p><br>
+</p>
+<p><span style="font-family: 'Arial'; font-size: 12.000000pt">Gameplay hooks and callbacks</span></p>
+<p><br>
+</p>
+<p><span style="font-weight: bold; font-family: 'Times New Roman'; font-size: 16.000000pt">Using </span><span style="font-weight: bold; font-family: 'Times New Roman'; font-size: 16.000000pt">GIB</span></p>
+<p><br>
+</p>
+<p><span style="font-family: 'Arial'; font-size: 12.000000pt">GIB code should be p</span><span style="font-family: 'Arial'; font-size: 12.000000pt">laced in a file with the extension</span><span style="font-family: 'Arial'; font-size: 12.000000pt"> </span><span style="font-family: 'Arial'; font-size: 12.000000pt">.g</span><span style="font-family: 'Arial'; font-size: 12.000000pt">ib.&nbsp; </span><span style="font-family: 'Arial'; font-size: 12.000000pt">You can then load it like any other script with the exe</span><span style="font-family: 'Arial'; font-size: 12.000000pt">c command:</span></p>
+<p><br>
+</p>
+<p><span style="font-family: 'Courier'; font-size: 12.000000pt">exec script.gib</span></p>
+<p><br>
+</p>
+<p><span style="font-family: 'Arial'; font-size: 12.000000pt">Scripts ending in .gib will be placed in a new buffer on the execution stack set to use the GIB interpreter rather than the normal quake console interpreter.&nbsp; Note that all other scripts a</span><span style="font-family: 'Arial'; font-size: 12.000000pt">re simply copied into the current buffer.&nbsp; This means ANY script run from GIB will be considered a GIB script.&nbsp; Future versions of GIB will </span><span style="font-family: 'Arial'; font-size: 12.000000pt">allow you to force a command to be run </span><span style="font-family: 'Arial'; font-size: 12.000000pt">in a standard console buffer.</span></p>
 </div>
 </body>
 </html>
