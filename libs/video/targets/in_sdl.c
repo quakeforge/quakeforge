@@ -57,6 +57,7 @@ event_focusout (void)
 {
 	if (in_snd_block->int_val) {
 		S_BlockSound ();
+		S_ClearBuffer ();
 		CDAudio_Pause ();
 	}
 }
@@ -65,6 +66,7 @@ static void
 event_focusin (void)
 {
 	if (in_snd_block->int_val) {
+		S_ClearBuffer ();
 		S_UnblockSound ();
 		CDAudio_Resume ();
 	}

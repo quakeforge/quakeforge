@@ -483,6 +483,7 @@ event_focusout (XEvent *event)
 	XAutoRepeatOn (x_disp);
 	if (in_snd_block->int_val) {
 		S_BlockSound ();
+		S_ClearBuffer ();
 		CDAudio_Pause ();
 	}
 }
@@ -493,6 +494,7 @@ event_focusin (XEvent *event)
 	if (key_dest == key_game)
 		XAutoRepeatOff (x_disp);
 	if (in_snd_block->int_val) {
+		S_ClearBuffer ();
 		S_UnblockSound ();
 		CDAudio_Resume ();
 	}

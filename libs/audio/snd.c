@@ -73,7 +73,6 @@ plugin_list_t   snd_render_list[] = {
 void
 S_Init (struct model_s **worldmodel, int *viewentity, double *host_frametime)
 {
-	S_Init_Cvars ();
 	if (!*snd_output->string || !*snd_render->string) {
 		Sys_Printf ("Not loading sound due to no renderer/output\n");
 		return;
