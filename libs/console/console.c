@@ -45,7 +45,7 @@ Con_Init (const char *plugin_name)
 {
 	con_module = PI_LoadPlugin ("console", plugin_name);
 	if (con_module) {
-		con_module->functions->console->pC_Init ();
+		con_module->functions->general->p_Init ();
 	}
 }
 
@@ -58,7 +58,7 @@ void
 Con_Shutdown (void)
 {
 	if (con_module) {
-		con_module->functions->console->pC_Shutdown ();
+		con_module->functions->general->p_Shutdown ();
 		PI_UnloadPlugin (con_module);
 	}
 }
