@@ -36,16 +36,18 @@
 # include <strings.h>
 #endif
 
+#include "QF/compat.h"
+#include "QF/console.h"
+#include "QF/msg.h"
+#include "QF/render.h"
+
 #include "cl_cam.h"
 #include "cl_ents.h"
 #include "cl_main.h"
 #include "cl_pred.h"
 #include "cl_tent.h"
-#include "QF/compat.h"
-#include "QF/console.h"
 #include "d_iface.h"
 #include "host.h"
-#include "QF/msg.h"
 #include "msg_ucmd.h"
 #include "pmove.h"
 #include "r_dynamic.h"
@@ -794,8 +796,10 @@ CL_LinkPlayers (void)
 		CL_NewDlight (j, org, state->effects);
 
 		// the player object never gets added
-		if (j == cl.playernum)
+		if (j == cl.playernum) {
+			r_player_entity = &cl_player_ents[state - frame->playerstate];
 			continue;
+		}
 
 		if (!state->modelindex)
 			continue;

@@ -45,16 +45,14 @@
 #include "QF/locs.h"
 #include "QF/mathlib.h"
 #include "QF/qargs.h"
+#include "QF/render.h"
 #include "QF/skin.h"
 #include "QF/sound.h"
 #include "QF/sys.h"
 #include "QF/vid.h"
 
-#include "bothdefs.h"
-#include "cl_cam.h"
-#include "cl_main.h"
-#include "cl_parse.h" //FIXME CL_NewTranslation
-#include "cl_tent.h" // only for mirror support
+#include "cl_parse.h"
+#include "client.h"
 #include "glquake.h"
 #include "r_cvar.h"
 #include "r_dynamic.h"
@@ -62,6 +60,8 @@
 #include "view.h"
 
 entity_t    r_worldentity;
+
+qboolean    r_cache_thrash;				// compatability
 
 vec3_t      modelorg, r_entorigin;
 entity_t   *currententity;
@@ -586,7 +586,7 @@ R_SetupAliasBlendedFrame (int frame, aliashdr_t *paliashdr, entity_t *e, qboolea
 	}
 
 	// wierd things start happening if blend passes 1
-	if (cl.paused || blend > 1)
+	if (r_paused || blend > 1)
 		blend = 1;
 
 	GL_DrawAliasBlendedFrame (paliashdr, e->pose1, e->pose2, blend, fb);
@@ -636,7 +636,7 @@ R_DrawAliasModel (entity_t *e)
 	shadelight = R_LightPoint (currententity->origin);
 
 	// always give the gun some light
-	if (e == &cl.viewent)
+	if (e == r_view_model)
 		shadelight = max (shadelight, 24);
 
 	for (lnum = 0; lnum < MAX_DLIGHTS; lnum++) {
@@ -846,6 +846,9 @@ R_DrawEntitiesOnList (void)
 		currententity = r_visedicts[i];
 		modelalpha = currententity->alpha;
 
+		if (currententity == r_player_entity)
+			currententity->angles[PITCH] *= 0.3;
+
 		R_DrawAliasModel (currententity);
 	}
 
@@ -863,12 +866,12 @@ R_DrawEntitiesOnList (void)
 static void
 R_DrawViewModel (void)
 {
-	currententity = &cl.viewent;
-	if (!r_drawviewmodel->int_val || !Cam_DrawViewModel ()
+	currententity = r_view_model;
+	if (r_inhibit_viewmodel
+		|| !r_drawviewmodel->int_val
 		|| envmap
 		|| !r_drawentities->int_val
-		|| (cl.stats[STAT_ITEMS] & IT_INVISIBILITY)
-		|| cl.stats[STAT_HEALTH] <= 0 || !currententity->model)
+		|| !currententity->model)
 		return;
 
 	// this is a HACK!  --KB
@@ -937,10 +940,6 @@ R_SetFrustum (void)
 void
 R_SetupFrame (void)
 {
-	// don't allow cheats in multiplayer
-	if (!atoi (Info_ValueForKey (cl.serverinfo, "watervis")))
-		Cvar_SetValue (r_wateralpha, 1);
-
 	R_AnimateLight ();
 
 	r_framecount++;
@@ -956,6 +955,8 @@ R_SetupFrame (void)
 
 	V_SetContentsColor (r_viewleaf->contents);
 	V_CalcBlend ();
+
+	r_cache_thrash = false;
 
 	c_brush_polys = 0;
 	c_alias_polys = 0;
@@ -1094,7 +1095,6 @@ void R_RenderBrushPoly (msurface_t *fa);
 void
 R_Mirror (void)
 {
-#if 0
 	float       d;
 	msurface_t *s;
 	entity_t   **ent;
@@ -1117,7 +1117,7 @@ R_Mirror (void)
 
 	ent = R_NewEntity();
 	if (ent)
-		*ent = &cl_entities[cl.viewentity];
+		*ent = r_player_entity;
 
 	gldepthmin = 0.5;
 	gldepthmax = 1;
@@ -1149,7 +1149,6 @@ R_Mirror (void)
 		R_RenderBrushPoly (s);
 	r_worldentity.model->textures[mirrortexturenum]->texturechain = NULL;
 	glColor4f (1, 1, 1, 1);
-#endif
 }
 
 

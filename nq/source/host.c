@@ -709,6 +709,7 @@ _Host_Frame (float time)
 						   || (cl.stats[STAT_ITEMS] & IT_INVISIBILITY)
 						   || cl.stats[STAT_HEALTH] <= 0);
 	r_force_fullscreen = cl.intermission;
+	r_paused = cl.paused;
 	r_view_model = &cl.viewent;
 
 	SCR_UpdateScreen (cl.time);

@@ -5,9 +5,11 @@
 
 qboolean    r_inhibit_viewmodel;
 qboolean    r_force_fullscreen;
+qboolean    r_paused;
 double      r_realtime;
 dlight_t    r_dlights[MAX_DLIGHTS];
 entity_t   *r_view_model;
+entity_t   *r_player_entity;
 
 dlight_t *
 R_AllocDlight (int key)

@@ -172,7 +172,9 @@ extern	int		reinit_surfcache;	// if 1, surface cache is currently empty
 extern qboolean	r_cache_thrash;	// set if thrashing the surface cache
 extern qboolean	r_inhibit_viewmodel;
 extern qboolean	r_force_fullscreen;
+extern qboolean	r_paused;
 extern entity_t *r_view_model;
+extern entity_t *r_player_entity;
 
 void *D_SurfaceCacheAddress (void);
 int D_SurfaceCacheForRes (int width, int height);

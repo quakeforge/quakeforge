@@ -505,6 +505,8 @@ CL_RelinkEntities (void)
 	vec3_t      delta;
 	float       bobjrotate;
 	dlight_t   *dl;
+	
+	r_player_entity = &cl_entities[cl.viewentity];
 
 	// determine partial update time    
 	frac = CL_LerpPoint ();
@@ -650,8 +652,9 @@ CL_RelinkEntities (void)
 
 		ent->forcelink = false;
 
-		if (i == cl.viewentity && !chase_active->int_val)
+		if (i == cl.viewentity && !chase_active->int_val) {
 			continue;
+		}
 #ifdef QUAKE2
 		if (ent->effects & EF_NODRAW)
 			continue;

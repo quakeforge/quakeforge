@@ -45,12 +45,12 @@
 #include "QF/locs.h"
 #include "QF/mathlib.h"
 #include "QF/qargs.h"
+#include "QF/render.h"
 #include "QF/skin.h"
 #include "QF/sound.h"
 #include "QF/sys.h"
 #include "QF/vid.h"
 
-#include "chase.h"
 #include "client.h"
 #include "glquake.h"
 #include "r_cvar.h"
@@ -585,7 +585,7 @@ R_SetupAliasBlendedFrame (int frame, aliashdr_t *paliashdr, entity_t *e, qboolea
 	}
 
 	// wierd things start happening if blend passes 1
-	if (cl.paused || blend > 1)
+	if (r_paused || blend > 1)
 		blend = 1;
 
 	GL_DrawAliasBlendedFrame (paliashdr, e->pose1, e->pose2, blend, fb);
@@ -635,7 +635,7 @@ R_DrawAliasModel (entity_t *e)
 	shadelight = R_LightPoint (currententity->origin);
 
 	// always give the gun some light
-	if (e == &cl.viewent)
+	if (e == r_view_model)
 		shadelight = max (shadelight, 24);
 
 	for (lnum = 0; lnum < MAX_DLIGHTS; lnum++) {
@@ -832,7 +832,7 @@ R_DrawEntitiesOnList (void)
 		currententity = r_visedicts[i];
 		modelalpha = currententity->alpha;
 
-		if (currententity == &cl_entities[cl.viewentity])
+		if (currententity == r_player_entity)
 			currententity->angles[PITCH] *= 0.3;
 
 		R_DrawAliasModel (currententity);
@@ -852,12 +852,12 @@ R_DrawEntitiesOnList (void)
 static void
 R_DrawViewModel (void)
 {
-	currententity = &cl.viewent;
-	if (!r_drawviewmodel->int_val || chase_active->int_val
+	currententity = r_view_model;
+	if (r_inhibit_viewmodel
+		|| !r_drawviewmodel->int_val
 		|| envmap
 		|| !r_drawentities->int_val
-		|| (cl.stats[STAT_ITEMS] & IT_INVISIBILITY)
-		|| cl.stats[STAT_HEALTH] <= 0 || !currententity->model)
+		|| !currententity->model)
 		return;
 
 	// this is a HACK!  --KB
@@ -1103,7 +1103,7 @@ R_Mirror (void)
 
 	ent = R_NewEntity();
 	if (ent)
-		*ent = &cl_entities[cl.viewentity];
+		*ent = r_player_entity;
 
 	gldepthmin = 0.5;
 	gldepthmax = 1;
