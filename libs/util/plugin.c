@@ -117,12 +117,17 @@ pi_get_symbol (void *handle, const char *name)
 }
 
 static void *
-pi_open_lib (const char *name)
+pi_open_lib (const char *name, int global_syms)
 {
 	void       *dlhand;
+	int        flags = RTLD_NOW;
 
 #if defined(HAVE_DLOPEN)
-	if (!(dlhand = dlopen (name, RTLD_NOW))) {
+# if defined(RTLD_GLOBAL)
+	if (global_syms)
+		flags |= RTLD_GLOBAL;
+# endif
+	if (!(dlhand = dlopen (name, flags))) {
 		pi_error = dlerror ();
 		return 0;
 	}
@@ -185,6 +190,10 @@ PI_Plugin_Load_f (void)
 	pi = PI_LoadPlugin (type, name);
 	if (!pi)
 		Sys_Printf ("Error loading plugin %s %s\n", type, name);
+	
+	else if (pi->functions && pi->functions->general && 
+			 pi->functions->general->p_Init)
+		pi->functions->general->p_Init ();
 }
 
 static void
@@ -284,7 +293,7 @@ PI_LoadPlugin (const char *type, const char *name)
 		pi_realname (realname, sizeof (realname), type,
 					(tmpname ? tmpname + 1 : name));
 
-		if (!(dlhand = pi_open_lib (realname))) {
+		if (!(dlhand = pi_open_lib (realname, 0))) {
 			// lib not found
 			Sys_Printf ("Could not load plugin \"%s\".\n", realname);
 			Sys_DPrintf ("Reason: \"%s\".\n", pi_error);
@@ -309,9 +318,44 @@ PI_LoadPlugin (const char *type, const char *name)
 				}
 			}
 		}
-	}
 
-	if (!(plugin = plugin_info ())) {	// Something went badly wrong
+		// get the plugin data structure
+		if (!(plugin = plugin_info ())) {
+			pi_close_lib (dlhand);
+			Sys_Printf ("Something went badly wrong.\n");
+			return NULL;
+		}
+
+#if defined(HAVE_DLOPEN) && defined(RTLD_GLOBAL)
+		// check if it wants its syms to be global
+		if (plugin->data->general->flag & PIF_GLOBAL) {
+			// do the whole thing over again with global syms
+			pi_close_lib (dlhand);
+			
+			// try to reopen
+			if (!(dlhand = pi_open_lib (realname, 1))) {
+				Sys_Printf ("Error reopening plugin \"%s\".\n", realname);
+				Sys_DPrintf ("Reason: \"%s\".\n", pi_error);
+				return NULL;
+			}
+			
+			// get the plugin_info func pointer
+			if (!(plugin_info = pi_get_symbol (dlhand, plugin_info_name))) {
+				pi_close_lib (dlhand);
+				Sys_Printf ("Plugin info function missing on reload\n");
+				return NULL;
+			}
+			
+			// get the plugin data structure
+			if (!(plugin = plugin_info ())) {
+				pi_close_lib (dlhand);
+				Sys_Printf ("Something went badly wrong on module reload\n");
+				return NULL;
+			}
+		}
+#endif
+
+	} else if (!(plugin = plugin_info ())) {	// Something went badly wrong
 		pi_close_lib (dlhand);
 		Sys_Printf ("Something went badly wrong.\n");
 		return NULL;

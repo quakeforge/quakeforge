@@ -44,7 +44,10 @@ typedef struct general_func_s {
 	P_Shutdown	p_Shutdown;
 } general_funcs_t;
 
+#define PIF_GLOBAL 1
+
 typedef struct general_data_s {
+	int flag;
 } general_data_t;
 
 #endif // __QF_plugin_general_h_
