@@ -679,7 +679,10 @@ PF_precache_sound (progs_t *pr)
 
 	for (i = 0; i < MAX_SOUNDS; i++) {
 		if (!sv.sound_precache[i]) {
-			sv.sound_precache[i] = s;
+			char *c = Hunk_Alloc (strlen (s) + 1);
+			strcpy (c, s);
+			sv.sound_precache[i] = c; // blah, const
+			Con_DPrintf ("PF_precache_sound: %3d %s\n", i, s);
 			return;
 		}
 		if (!strcmp (sv.sound_precache[i], s))
@@ -705,7 +708,9 @@ PF_precache_model (progs_t *pr)
 
 	for (i = 0; i < MAX_MODELS; i++) {
 		if (!sv.model_precache[i]) {
-			sv.model_precache[i] = s;
+			char *c = Hunk_Alloc (strlen (s) + 1);
+			strcpy (c, s);
+			sv.model_precache[i] = c; // blah, const
 			Con_DPrintf ("PF_precache_model: %3d %s\n", i, s);
 			return;
 		}
