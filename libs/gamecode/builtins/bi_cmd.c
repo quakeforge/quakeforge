@@ -148,6 +148,12 @@ bi_Cmd_Argu (progs_t *pr)
 	RETURN_STRING (pr, Cmd_Argu (G_INT (pr, OFS_PARM0)));
 }
 
+static void
+bi_Cmd_Return (progs_t *pr)
+{
+	Cmd_Return (G_STRING (pr, OFS_PARM0));
+}
+
 //Cmd_CheckParm
 //Cmd_TokenizeString
 //Cmd_ExecuteString
@@ -168,4 +174,5 @@ Cmd_Progs_Init (progs_t *pr)
 	PR_AddBuiltin (pr, "Cmd_Argv", bi_Cmd_Argv, -1);
 	PR_AddBuiltin (pr, "Cmd_Args", bi_Cmd_Args, -1);
 	PR_AddBuiltin (pr, "Cmd_Argu", bi_Cmd_Argu, -1);
+	PR_AddBuiltin (pr, "Cmd_Return", bi_Cmd_Return, -1);
 }
