@@ -556,7 +556,7 @@ GIB_File_Read_f (void)
 	}
 	path = cbuf_active->args->argv[1]->str;
 	if (!GIB_CollapsePath (path)) {
-		Cbuf_Error ("access"
+		Cbuf_Error ("access",
 		  "file.read: access to %s denied", path);
 		return;
 	}
@@ -585,7 +585,7 @@ GIB_File_Write_f (void)
 	}
 	path = cbuf_active->args->argv[1]->str;
 	if (!GIB_CollapsePath (path)) {
-		Cbuf_Error ("access"
+		Cbuf_Error ("access",
 		  "file.write: access to %s denied", path);
 		return;
 	}
@@ -617,7 +617,7 @@ GIB_File_Find_f (void)
 	if (GIB_Argc () == 3) {
 		path = cbuf_active->args->argv[2]->str;
 		if (!GIB_CollapsePath (path)) {
-			Cbuf_Error ("access"
+			Cbuf_Error ("access", 
 			  "file.find: access to %s denied", path);
 			return;
 		}
