@@ -1,16 +1,18 @@
 INCLUDES= -I$(top_srcdir)/include $(GGI_CFLAGS) $(MGL_CFLAGS) $(SDL_CFLAGS) $(SVGA_CFLAGS) $(X_CFLAGS) $(GLIDE_CFLAGS)
 
-noinst_LTLIBRARIES= libasm.la @VID_TARGETS@
+if ASM_ARCH
+asm= libasm.la
+else
+asm=
+endif
+
+noinst_LTLIBRARIES= @VID_TARGETS@
 
 EXTRA_LTLIBRARIES= \
 	libQFjs.la libQFfbdev.la libQFglx.la libQFsvga.la libQFx11.la \
-	libQFsdl.la libQFsdl32.la libQFsgl.la libQFwgl.la
+	libQFsdl.la libQFsdl32.la libQFsgl.la libQFwgl.la libasm.la
 
-if ASM_ARCH
 libasm_la_SOURCES= d_copy.S
-else
-libasm_la_SOURCES=
-endif
 
 joy_linux_src= joy_linux.c
 joy_win_src= joy_win.c
@@ -71,8 +73,8 @@ libQFsgl_la_SOURCES=	in_sdl.c qfgl_ext.c vid.c vid_common_gl.c vid_sgl.c \
 #
 # SVGAlib
 #
-libQFsvga_la_LIBADD=	libasm.la
-libQFsvga_la_DEPENDENCIES=libasm.la
+libQFsvga_la_LIBADD=	$(asm)
+libQFsvga_la_DEPENDENCIES=$(asm)
 libQFsvga_la_SOURCES=	in_svgalib.c vid.c vid_common_sw.c vid_svgalib.c \
 			$(in_common_SOURCE)
 
@@ -92,4 +94,4 @@ libQFx11_la_SOURCES=	in_x11.c vid.c context_x11.c dga_check.c \
 # Kill the temp files, hopefully.
 CLEANFILES  = *.i *.s $(YACCLEX_CLEANFILES)
 
-EXTRA_DIST= $(libasm_la_SOURCES) $(fbdev_c) $(fbdev_h)
+EXTRA_DIST= $(fbdev_c) $(fbdev_h)
