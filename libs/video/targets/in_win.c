@@ -357,12 +357,38 @@ IN_StartupMouse (void)
 		IN_ActivateMouse ();
 }
 
+static void
+in_paste_buffer_f (void)
+{
+	HANDLE      th;
+	char       *clipText;
+	int         i;
+
+	if (OpenClipboard (NULL)) {
+		th = GetClipboardData (CF_TEXT);
+		if (th) {
+			clipText = GlobalLock (th);
+			if (clipText) {
+				for (i = 0; clipText[i]
+							&& !strchr ("\n\r\b", clipText[i]); i++) {
+					Key_Event (QFK_UNKNOWN, clipText[i], 1);
+					Key_Event (QFK_UNKNOWN, 0, 0);
+				}
+			}
+			GlobalUnlock (th);
+		}
+		CloseClipboard ();
+	}
+}
+
 void
 IN_LL_Init (void)
 {
 	uiWheelMessage = RegisterWindowMessage ("MSWHEEL_ROLLMSG");
 
 	IN_StartupMouse ();
+	Cmd_AddCommand ("in_paste_buffer", in_paste_buffer_f,
+					"Paste the contents of the C&P buffer to the console");
 }
 
 void
