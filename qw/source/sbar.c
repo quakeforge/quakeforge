@@ -1174,7 +1174,7 @@ Sbar_Draw_DMO_Team_Ping (view_t *view, int l, int y, int skip)
 			continue;
 
 		dmo_ping (view, x + 0, y, s);
-		dmo_pl (view, x + 0, y, s);
+		dmo_pl (view, x + 32, y, s);
 
 		if (s->spectator) {
 			draw_string (view, x + 72, y, "(spectator)");
