@@ -1,3 +1,5 @@
+#include "QF/gib.h"
+
 void GIB_AddInstruction (char *name, gib_func_t func);
 gib_inst_t *GIB_Find_Instruction (char *name);
 void GIB_Init_Instructions (void);

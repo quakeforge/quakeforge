@@ -7,23 +7,18 @@
 #ifdef HAVE_STRINGS_H
 # include <strings.h>
 #endif
-
-#include <ctype.h>
 #include <stdlib.h>
-#include "QF/cvar.h"
+#include <ctype.h>
+
 #include "QF/console.h"
-#include "QF/qargs.h"
 #include "QF/cmd.h"
-#include "QF/zone.h"
-#include "QF/quakefs.h"
 #include "QF/gib.h"
+
+#include "gib_error.h"
 #include "gib_instructions.h"
 #include "gib_interpret.h"
-#include "gib_modules.h"
 #include "gib_parse.h"
 #include "gib_vars.h"
-#include "gib_error.h"
-#include "gib_stack.h"
 
 static gib_inst_t *gibinstructions;
 

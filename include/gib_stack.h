@@ -1,3 +1,5 @@
+#include "QF/gib.h"
+
 #define GIB_LOCALS gib_substack[gib_subsp - 1].local
 #define GIB_CURRENTMOD gib_substack[gib_subsp - 1].mod
 #define GIB_CURRENTSUB gib_substack[gib_subsp - 1].sub

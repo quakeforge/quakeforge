@@ -1,3 +1,5 @@
+#include "QF/gib.h"
+
 int GIB_Get_Inst (char *start);
 int GIB_Get_Arg (char *start);
 int GIB_End_Quote (char *start);

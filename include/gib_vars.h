@@ -1,3 +1,4 @@
+#include "QF/gib.h"
 
 gib_var_t *GIB_Var_FindLocal (char *key);
 gib_var_t *GIB_Var_FindGlobal (char *key);

@@ -1,3 +1,6 @@
+#ifndef __GIB_H
+#define __GIB_H
+
 typedef int (*gib_func_t) (void);
 
 typedef struct gib_var_s
@@ -36,3 +39,4 @@ void GIB_Gib_f (void);
 void GIB_Load_f (void);
 void GIB_Stats_f (void);
 
+#endif // __GIB_H

@@ -1,3 +1,5 @@
+#include "QF/gib.h"
+
 #define GIB_MAXCALLS 2048
 #define GIB_MAXSUBARGS 256
 
