@@ -72,10 +72,12 @@ particle_new (ptype_t type, int texnum, vec3_t org, float scale, vec3_t vel,
 {
 	particle_t *part;
 
+/*
 	if (numparticles >= r_numparticles) {
-		// Con_Printf("FAILED PARTICLE ALLOC!\n");
+		Con_Printf("FAILED PARTICLE ALLOC!\n");
 		return NULL;
 	}
+*/
 
 	part = &particles[numparticles++];
 
@@ -211,24 +213,44 @@ R_ReadPointFile_f (void)
 void
 R_ParticleExplosion (vec3_t org)
 {
+//	int			i;
+//	int			j = 1024;
+
 	if (!r_particles->int_val)
 		return;
 
+	if (numparticles >= r_numparticles)
+		return;
+// 	else if (numparticles + j >= r_numparticles)
+//		j = r_numparticles - numparticles;
+		
 	particle_new_random (pt_smokecloud, part_tex_smoke[rand () & 7], org, 4,
 						 30, 8, r_realtime + 5, (rand () & 7) + 8,
 						 128 + (rand () & 63));
+/*
+	for (i=0; i < j; i++) {
+		particle_new_random (pt_fallfadespark, part_tex_spark, org, 16,
+							 1.5, 256, r_realtime + 5, ramp[rand () & 7],
+							 255);
+	}
+*/
 }
 
 void
 R_ParticleExplosion2 (vec3_t org, int colorStart, int colorLength)
 {
 	int         i;
-	int         colorMod = 0;
+	int         colorMod = 0, j = 512;
 
 	if (!r_particles->int_val)
 		return;
 	
-	for (i = 0; i < 512; i++) {
+	if (numparticles >= r_numparticles)
+		return;
+	else if (numparticles + j >= r_numparticles)
+		j = r_numparticles - numparticles;
+
+	for (i = 0; i < j; i++) {
 		particle_new_random (pt_blob, part_tex_dot, org, 16, 2, 256,
 							 (r_realtime + 0.3),
 							 (colorStart + (colorMod % colorLength)), 255);
@@ -240,16 +262,22 @@ void
 R_BlobExplosion (vec3_t org)
 {
 	int         i;
+	int			j = 1024;
 
 	if (!r_particles->int_val)
 		return;
 
-	for (i = 0; i < 512; i++) {
+	if (numparticles >= r_numparticles)
+		return;
+	else if (numparticles + j >= r_numparticles)
+		j = r_numparticles - numparticles;
+
+	for (i = 0; i < j / 2; i++) {
 		particle_new_random (pt_blob, part_tex_dot, org, 12, 2, 256,
 							 (r_realtime + 1 + (rand () & 7) * 0.05),
 							 (66 + rand () % 6), 255);
 	}
-	for (i = 0; i < 512; i++) {
+	for (i = 0; i < j / 2; i++) {
 		particle_new_random (pt_blob2, part_tex_dot, org, 12, 2, 256,
 							 (r_realtime + 1 + (rand () & 7) * 0.05),
 							 (150 + rand () % 6), 255);
@@ -259,6 +287,14 @@ R_BlobExplosion (vec3_t org)
 static void
 R_RunSparkEffect (vec3_t org, int count, int ofuzz)
 {
+	int			j = count + 1;
+
+	if (numparticles >= r_numparticles)
+		return;
+	else if (numparticles + j >= r_numparticles)
+		j = r_numparticles - numparticles;
+	count = j - 1;
+
 	particle_new (pt_smokecloud, part_tex_smoke[rand () & 7], org,
 				  ofuzz * 0.08, vec3_origin, r_realtime + 9,
 				  12 + (rand () & 3), 64 + (rand () & 31));
@@ -271,6 +307,9 @@ R_RunSparkEffect (vec3_t org, int count, int ofuzz)
 inline static void
 R_BloodPuff (vec3_t org, int count)
 {
+	if (numparticles >= r_numparticles)
+		return;
+
 	particle_new (pt_bloodcloud, part_tex_smoke[rand () & 7], org, 9,
 				  vec3_origin, r_realtime + 99, 68 + (rand () & 3), 128);
 }
@@ -297,12 +336,18 @@ R_RunPuffEffect (vec3_t org, particle_effect_t type, byte count)
 		case PE_LIGHTNINGBLOOD:
 			R_BloodPuff (org, 5 + (rand () & 1));
 			count = 4 + (rand () % 5);
+
+			if (numparticles >= r_numparticles)
+				return;
+			else if (numparticles + count >= r_numparticles)
+				count = r_numparticles - numparticles - 1;
+
 			particle_new (pt_smokecloud, part_tex_smoke[rand () & 7], org,
 						  3, vec3_origin, r_realtime + 9,
 						  12 + (rand () & 3), 64 + (rand () & 31));
 			while (count--)
 				particle_new_random (pt_fallfadespark, part_tex_spark, org,
-									 16, 1, 128, r_realtime + 5,
+									 12, 2, 128, r_realtime + 5,
 									 244 + (rand () % 3), 255);
 			break;
 		default:
@@ -314,9 +359,13 @@ void
 R_RunParticleEffect (vec3_t org, int color, int count)
 {
 	int         scale, i, j;
+	int			k = count;
 	vec3_t      porg;
 
 	if (!r_particles->int_val)
+		return;
+
+	if (numparticles >= r_numparticles)
 		return;
 
 	if (count > 130)
@@ -325,6 +374,10 @@ R_RunParticleEffect (vec3_t org, int color, int count)
 		scale = 2;
 	else
 		scale = 1;
+
+	if (numparticles + k >= r_numparticles)
+		k = r_numparticles - numparticles;
+	count = k;
 
 	for (i = 0; i < count; i++) {
 		for (j = 0; j < 3; j++) {
@@ -365,13 +418,20 @@ R_LavaSplash (vec3_t org)
 {
 	float       vel;
 	int         i, j;
+	int			k = 256;
 	vec3_t      dir, porg, pvel;
 
 	if (!r_particles->int_val)
 		return;
 
-	for (i = -128; i < 128; i+=16) {
-		for (j = -128; j < 128; j+=16) {
+	if (numparticles + k >= r_numparticles) {
+		return;
+	} // else if (numparticles + k >= r_numparticles) {
+//		k = r_numparticles - numparticles;
+//	}
+
+	for (i = -128; i < 128; i += 16) {
+		for (j = -128; j < 128; j += 16) {
 			dir[0] = j + (rand () & 7);
 			dir[1] = i + (rand () & 7);
 			dir[2] = 256;
@@ -395,10 +455,17 @@ R_TeleportSplash (vec3_t org)
 {
 	float       vel;
 	int         i, j, k;
+	int			l = 896;
 	vec3_t      dir, porg, pvel;
 
 	if (!r_particles->int_val)
 		return;
+
+	if (numparticles + l >= r_numparticles) {
+		return;
+	} // else if (numparticles + l >= r_numparticles) {
+//		l = r_numparticles - numparticles;
+//	}
 
 	for (i = -16; i < 16; i += 4)
 		for (j = -16; j < 16; j += 4)
@@ -436,6 +503,9 @@ R_RocketTrail (entity_t *ent)
 	pscale = 1.5 + qfrandom (1.5);
 
 	while (len > 0) {
+		if (numparticles >= r_numparticles)
+			return;
+
 		pscalenext = 1.5 + qfrandom (1.5);
 		dist = (pscale + pscalenext) * 3.0;
 
@@ -465,6 +535,9 @@ R_GrenadeTrail (entity_t *ent)
 	pscale = 6.0 + qfrandom (7.0);
 
 	while (len > 0) {
+		if (numparticles >= r_numparticles)
+			return;
+
 		pscalenext = 6.0 + qfrandom (7.0);
 		dist = (pscale + pscalenext) * 2.0;
 
@@ -495,6 +568,9 @@ R_BloodTrail (entity_t *ent)
 	pscale = 5.0 + qfrandom (10.0);
 
 	while (len > 0) {
+		if (numparticles >= r_numparticles)
+			return;
+
 		VectorCopy (vec3_origin, pvel);
 		VectorCopy (ent->old_origin, porg);
 
@@ -531,6 +607,9 @@ R_SlightBloodTrail (entity_t *ent)
 	pscale = 1.5 + qfrandom (7.5);
 
 	while (len > 0) {
+		if (numparticles >= r_numparticles)
+			return;
+
 		VectorCopy (vec3_origin, pvel);
 		VectorCopy (ent->old_origin, porg);
 
@@ -567,6 +646,9 @@ R_GreenTrail (entity_t *ent)
 	dist = 3.0;
 
 	while (len > 0) {
+		if (numparticles >= r_numparticles)
+			return;
+
 		VectorCopy (vec3_origin, pvel);
 		tracercount++;
 		if (tracercount & 1) {
@@ -602,6 +684,9 @@ R_FlameTrail (entity_t *ent)
 	dist = 3.0;
 
 	while (len > 0) {
+		if (numparticles >= r_numparticles)
+			return;
+
 		VectorCopy (vec3_origin, pvel);
 		tracercount++;
 		if (tracercount & 1) {
@@ -636,6 +721,9 @@ R_VoorTrail (entity_t *ent)
 	dist = 3.0;
 
 	while (len > 0) {
+		if (numparticles >= r_numparticles)
+			return;
+
 		for (j = 0; j < 3; j++)
 			porg[j] = ent->old_origin[j] + qfrandom (16.0) - 8.0;
 
