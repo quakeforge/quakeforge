@@ -1504,6 +1504,7 @@ AC_OUTPUT(
 	libs/audio/cd/Makefile
 	libs/audio/targets/Makefile
 	libs/gamecode/Makefile
+	libs/gib/Makefile
 	libs/models/Makefile
 	libs/models/alias/Makefile
 	libs/models/brush/Makefile
