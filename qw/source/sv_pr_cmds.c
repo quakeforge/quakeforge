@@ -1815,7 +1815,7 @@ hull_t pf_hull_list[MAX_PF_HULLS];
 static void
 PF_getboxhull (progs_t *pr)
 {
-	hull_t  *hull = pf_free_hulls;
+	hull_t     *hull;
 
 	if (!pf_hull_list_inited) {
 		int     i;
@@ -1826,19 +1826,22 @@ PF_getboxhull (progs_t *pr)
 		pf_free_hulls = pf_hull_list;
 	}
 
+	hull = pf_free_hulls;
 	if (hull) {
 		pf_free_hulls = (hull_t*)hull->clipnodes;
 		SV_InitHull (hull, pf_clipnodes[hull - pf_hull_list],
 					 pf_planes[hull - pf_hull_list]);
+		G_INT (pr, OFS_RETURN) = (hull - pf_hull_list) + 1;
+	} else {
+		G_INT (pr, OFS_RETURN) = 0;
 	}
-	G_INT (pr, OFS_RETURN) = (hull - pf_hull_list) + 1;
 }
 
 static void
 PF_freeboxhull (progs_t *pr)
 {
-	int      h = G_INT (pr, OFS_PARM0) - 1;
-	hull_t  *hull = &pf_hull_list[h];
+	int         h = G_INT (pr, OFS_PARM0) - 1;
+	hull_t     *hull = &pf_hull_list[h];
 
 	if (h < 0 || h > MAX_PF_HULLS - 1
 		|| hull->clipnodes != pf_clipnodes[h]
@@ -1852,14 +1855,26 @@ PF_freeboxhull (progs_t *pr)
 static void
 PF_rotate_bbox (progs_t *pr)
 {
-	int      h = G_INT (pr, OFS_PARM0) - 1;
-	float   *angles = G_VECTOR (pr, OFS_PARM1);
-	float   *mins = G_VECTOR (pr, OFS_PARM2);
-	float   *maxs = G_VECTOR (pr, OFS_PARM3);
-	vec3_t   f, r, u;
-	hull_t  *hull = &pf_hull_list[h];
+	int         h = G_INT (pr, OFS_PARM0) - 1;
+	float      *r = G_VECTOR (pr, OFS_PARM1);
+	float      *f = G_VECTOR (pr, OFS_PARM2);
+	float      *u = G_VECTOR (pr, OFS_PARM3);
+	float      *mi = G_VECTOR (pr, OFS_PARM4);
+	float      *ma = G_VECTOR (pr, OFS_PARM5);
+	vec3_t      m[3];
+	vec3_t      mins, maxs;
+	hull_t     *hull = &pf_hull_list[h];
+	int         i;
 
-	AngleVectors (angles, f, r, u);
+	for (i = 0; i < 3; i++) {
+		m[i][0] = r[i];
+		m[i][1] = f[i];
+		m[i][2] = u[i];
+	}
+	for (i = 0; i < 3; i++) {
+		mins[i] = DotProduct (m[i], mi);
+		maxs[i] = DotProduct (m[i], ma);
+	}
 
 	hull->planes[0].dist = DotProduct (f, maxs);
 	hull->planes[0].type = 4;
