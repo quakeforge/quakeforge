@@ -184,7 +184,6 @@ WriteLeaf (node_t *node)
 
 	leaf_p.nummarksurfaces = bsp->nummarksurfaces - leaf_p.firstmarksurface;
 	BSP_AddLeaf (bsp, &leaf_p);
-	printf ("nummarksurfaces: %d\n", bsp->nummarksurfaces);
 }
 
 void
