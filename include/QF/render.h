@@ -83,9 +83,11 @@ typedef struct entity_s
 	vec3_t					msg_origins[2];	// last two updates (0 is newest)
 	vec3_t					msg_angles[2];	// last two updates (0 is newest)
 	struct model_s			*model;			// NULL = no model
+	struct model_s			*_model;		// for nq skin support
 	int						frame;
 	byte					*colormap;
 	int						skinnum;		// for Alias models
+	int						_skinnum;		// for nq skin support
 	struct skin_s			*skin;
 
 	struct player_info_s	*scoreboard;	// identify player

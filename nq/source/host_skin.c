@@ -126,6 +126,7 @@ CL_NewTranslation (int slot, skin_t *skin)
 	int         top, bottom;
 	byte       *dest;
 	model_t    *model;
+	entity_t   *entity;
 	int         skinnum;
 
 	if (slot > cl.maxclients)
@@ -135,12 +136,27 @@ CL_NewTranslation (int slot, skin_t *skin)
 	dest = player->translations;
 	top = (player->colors & 0xf0) >> 4;
 	bottom = player->colors & 15;
-	model = cl_entities[1 + slot].model;
-	skinnum = cl_entities[1 + slot].skinnum;
+	entity = &cl_entities[1 + slot];
+	model = entity->model;
+	skinnum = entity->skinnum;
 
-	Skin_Set_Translate (top, bottom, dest);
-	memset (skin, 0, sizeof (*skin));
+	memset (skin, 0, sizeof (*skin)); //XXX external skins not yet supported
+
+	if (!model)
+		return;
+
 	skin->texture = skin_textures + slot; //FIXME
 	skin->data.texels = 0; //FIXME
+
+	if (player->colors == player->_colors
+		&& entity->model == entity->_model
+		&& entity->skinnum == entity->_skinnum)
+		return;
+
+	player->_colors = player->colors;
+	entity->_model = entity->model;
+	entity->_skinnum = entity->skinnum;
+
+	Skin_Set_Translate (top, bottom, dest);
 	Skin_Do_Translation_Model (model, skinnum, slot, skin);
 }
