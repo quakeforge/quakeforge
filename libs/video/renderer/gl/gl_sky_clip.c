@@ -659,6 +659,38 @@ R_DrawSkyDomePoly (glpoly_t *poly)
 }
 
 void
+EmitSkyPolys (float speedscale, msurface_t *fa)
+{
+	glpoly_t   *p;
+	float      *v;
+	int         i;
+	float       s, t;
+	vec3_t      dir;
+	float       length;
+
+	for (p = fa->polys; p; p = p->next) {
+		qfglBegin (GL_POLYGON);
+		for (i = 0, v = p->verts[0]; i < p->numverts; i++, v += VERTEXSIZE) {
+			VectorSubtract (v, r_origin, dir);
+			dir[2] *= 3;	// flatten the sphere
+
+			length = DotProduct (dir, dir);
+			length = 6 * 63 / sqrt (length);
+
+			dir[0] *= length;
+			dir[1] *= length;
+
+			s = (speedscale + dir[0]) * (1.0/128);
+			t = (speedscale + dir[1]) * (1.0/128);
+
+			qfglTexCoord2f (s, t);
+			qfglVertex3fv (v);
+		}
+		qfglEnd ();
+	}
+}
+
+void
 R_DrawSkyChain (msurface_t *sky_chain)
 {
 	msurface_t *sc = sky_chain;
@@ -694,6 +726,30 @@ R_DrawSkyChain (msurface_t *sky_chain)
 			sc = sc->texturechain;
 		}
 		qfglDepthRange (gldepthmin, gldepthmax);
+	} else if (gl_sky_clip->int_val == 2) {
+		float       speedscale;
+
+		speedscale = r_realtime*8;
+		speedscale -= (int)speedscale & ~127 ;
+
+		qfglBindTexture (GL_TEXTURE_2D, solidskytexture);
+		while (sc) {
+			EmitSkyPolys (speedscale, sc);
+			sc = sc->texturechain;
+		}
+
+		if (gl_skymultipass->int_val) {
+			sc = sky_chain;
+
+			speedscale = r_realtime*16;
+			speedscale -= (int)speedscale & ~127 ;
+
+			qfglBindTexture (GL_TEXTURE_2D, alphaskytexture);
+			while (sc) {
+				EmitSkyPolys (speedscale, sc);
+				sc = sc->texturechain;
+			}
+		}
 	} else {
 		// this code is duplicated from above because skydome is not yet
 		// clipped

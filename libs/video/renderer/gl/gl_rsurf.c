@@ -335,10 +335,6 @@ R_TextureAnimation (texture_t *base)
 
 /* BRUSH MODELS */
 
-extern float speedscale;				// for top sky and bottom sky
-extern int   solidskytexture;
-extern int   alphaskytexture;
-
 void
 GL_UploadLightmap (int i, int x, int y, int w, int h)
 {

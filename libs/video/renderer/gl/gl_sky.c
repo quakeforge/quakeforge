@@ -55,7 +55,6 @@
 #include "r_cvar.h"
 
 char       *suf[6] = { "rt", "bk", "lf", "ft", "up", "dn" };
-float       speedscale;					// for top sky and bottom sky
 int         solidskytexture;
 int         alphaskytexture;
 
@@ -230,6 +229,8 @@ R_DrawSkyLayer (float s)
 void
 R_DrawSkyDome (void)
 {
+	float       speedscale;					// for top sky and bottom sky
+
 	qfglDisable (GL_DEPTH_TEST);
 	qfglDepthRange (gldepthmax, gldepthmax);
 
