@@ -74,7 +74,6 @@
 
 cvar_t     *in_snd_block;
 cvar_t     *in_dga;
-cvar_t     *in_dga_mouseaccel;
 
 static qboolean dga_avail;
 static qboolean dga_active;
@@ -545,8 +544,6 @@ IN_LL_Init_Cvars (void)
 							"block sound output on window focus loss");
 	in_dga = Cvar_Get ("in_dga", "1", CVAR_ARCHIVE, NULL,
 			"DGA Input support");
-	in_dga_mouseaccel = Cvar_Get ("in_dga_mouseaccel", "1", CVAR_ARCHIVE, NULL,
-								  "DGA Mouse accelleration multiplier");
 }
 
 

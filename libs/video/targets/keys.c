@@ -394,7 +394,6 @@ keyname_t   keynames[] = {
 			LINE TYPING INTO THE CONSOLE
 */
 
-
 qboolean
 CheckForCommand (void)
 {
@@ -420,11 +419,9 @@ CheckForCommand (void)
 }
 
 /*
-====================
-Key_Game
+  Key_Game
 
-Game key handling.
-====================
+  Game key handling.
 */
 qboolean
 Key_Game (knum_t key, short unicode)
@@ -461,11 +458,9 @@ Key_Game (knum_t key, short unicode)
 }
 
 /*
-====================
-Key_Console
+  Key_Console
 
-Interactive line editing and console scrollback
-====================
+  Interactive line editing and console scrollback
 */
 void
 Key_Console (knum_t key, short unicode)
@@ -478,7 +473,7 @@ Key_Console (knum_t key, short unicode)
 	if (Key_Game (key, unicode))
 		return;
 
-	if (unicode == '\x0D' || key == K_RETURN) {				// backslash text are commands, else
+	if (unicode == '\x0D' || key == K_RETURN) {			// backslash text are commands, else
 		if (!strncmp(key_lines[edit_line], "//", 2))
 			goto no_lf;
 		else if (key_lines[edit_line][1] == '\\' ||
@@ -651,18 +646,14 @@ Key_Message (knum_t key, short unicode)
 
 //============================================================================
 
-
 /*
-===================
-Key_StringToImtnum
-
-Returns a imt number to be used to index imtbindings[] by looking at
-the given string.  Single ascii characters return themselves, while
-the K_* names are matched up.
-===================
+  Key_StringToIMTnum
+  Returns an imt number to be used to index imtbindings[] by looking at
+  the given string.  Single ascii characters return themselves, while
+  the K_* names are matched up.
 */
 int
-Key_StringToImtnum (const char *str)
+Key_StringToIMTnum (const char *str)
 {
 	imtname_t  *kn;
 
@@ -677,15 +668,13 @@ Key_StringToImtnum (const char *str)
 }
 
 /*
-===================
-Key_ImtnumToString
+  Key_IMTnumToString
 
-Returns a string (a K_* name) for the
-given imtnum.
-===================
+  Returns a string (a K_* name) for the given imtnum.
+  FIXME: handle quote special (general escape sequence?)
 */
 char *
-Key_ImtnumToString (const int imtnum)
+Key_IMTnumToString (const int imtnum)
 {
 	imtname_t  *kn;
 
@@ -747,18 +736,12 @@ Key_KeynumToString (knum_t keynum)
 	return "<UNKNOWN KEYNUM>";
 }
 
-/*
-===================
-Key_In_Unbind_f
-===================
-*/
-
 void
 Key_In_Unbind (const char *imt, const char *key)
 {
 	int t, b;
 
-	t = Key_StringToImtnum (imt);
+	t = Key_StringToIMTnum (imt);
 	if (t == -1) {
 		Con_Printf ("\"%s\" isn't a valid imt\n", imt);
 		return;
@@ -793,19 +776,12 @@ Key_Unbindall_f (void)
 			Key_SetBinding (j, i, NULL);
 }
 
-
-/*
-===================
-Key_In_Bind_f
-===================
-*/
-
 void
 Key_In_Bind (const char *imt, const char *key, const char *cmd)
 {
 	int t, b;
 
-	t = Key_StringToImtnum (imt);
+	t = Key_StringToIMTnum (imt);
 	if (t == -1) {
 		Con_Printf ("\"%s\" isn't a valid imt\n", imt);
 		return;
@@ -906,18 +882,13 @@ Key_Bind_f (void)
 void
 in_bind_imt_f (cvar_t *var)
 {
-	if (Key_StringToImtnum (var->string) == -1) {
+	if (Key_StringToIMTnum (var->string) == -1) {
 		Con_Printf ("\"%s\" is not a valid imt. setting to \"imt_default\"\n",
 					var->string);
 		Cvar_Set (var, "imt_default");
 	}
 }
 
-/*
-===================
-Key_GameTarget_f
-===================
-*/
 void
 Key_InputMappingTable_f (void)
 {
@@ -926,12 +897,12 @@ Key_InputMappingTable_f (void)
 	c = Cmd_Argc ();
 
 	if (c != 2) {
-		Con_Printf ("Current imt is %s\n", Key_ImtnumToString(game_target));
+		Con_Printf ("Current imt is %s\n", Key_IMTnumToString(game_target));
 		Con_Printf ("imt <imt> : set to a specific input mapping table\n");
 		return;
 	}
 
-	t = Key_StringToImtnum (Cmd_Argv (1));
+	t = Key_StringToIMTnum (Cmd_Argv (1));
 	if (t == -1) {
 		Con_Printf ("\"%s\" isn't a valid imt\n", Cmd_Argv (1));
 		return;
@@ -941,11 +912,9 @@ Key_InputMappingTable_f (void)
 }
 
 /*
-============
-Key_WriteBindings
+  Key_WriteBindings
 
-Writes lines containing "bind key value"
-============
+  Writes lines containing "bind key value"
 */
 void
 Key_WriteBindings (VFile *f)
@@ -956,17 +925,15 @@ Key_WriteBindings (VFile *f)
 	for (j = 0; j < IMT_LAST; j++)
 		for (i = 0; i < K_LAST; i++)
 			if ((bind = Key_GetBinding(j, i)))
-				Qprintf (f, "in_bind %s %s \"%s\"\n", Key_ImtnumToString (j),
+				Qprintf (f, "in_bind %s %s \"%s\"\n", Key_IMTnumToString (j),
 						 Key_KeynumToString (i), bind);
 }
 
 /*
-===================
-Key_Event
+  Key_Event
 
-Called by the system between frames for both key up and key down events
-Should NOT be called during an interrupt!
-===================
+  Called by the system between frames for both key up and key down events
+  Should NOT be called during an interrupt!
 */
 void
 Key_Event (knum_t key, short unicode, qboolean down)
@@ -1020,11 +987,6 @@ Key_Event (knum_t key, short unicode, qboolean down)
 	}
 }
 
-/*
-===================
-Key_ClearStates
-===================
-*/
 void
 Key_ClearStates (void)
 {
@@ -1037,11 +999,6 @@ Key_ClearStates (void)
 	}
 }
 
-/*
-===================
-Key_Init
-===================
-*/
 void
 Key_Init (void)
 {
@@ -1065,7 +1022,6 @@ Key_Init (void)
 	Cmd_AddCommand ("unbindall", Key_Unbindall_f,
 					"Remove all binds (USE CAUTIOUSLY!!!)");
 	Cmd_AddCommand ("imt", Key_InputMappingTable_f, "");
-
 	Cmd_AddCommand ("bind", Key_Bind_f,
 					"wrapper for in_bind that uses in_bind_imt for the imt "
 					"parameter");
