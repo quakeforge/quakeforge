@@ -412,8 +412,8 @@ class_find_method (class_type_t *class_type, method_t *method)
 	sel = dstring_newstr ();
 	selector_name (sel, (keywordarg_t *)method->selector);
 	if (options.warnings.interface_check) {
-		warning (0, "%s method %s not in %s%s",
-				method->instance ? "instance" : "class",
+		warning (0, "Method `%c%s' not found in %s%s's interface",
+				method->instance ? '-' : '+',
 				sel->str, class_name,
 				category_name ? va (" (%s)", category_name) : "");
 	}
