@@ -66,6 +66,7 @@ qboolean    isDedicated = false;
 void
 Sys_Init (void)
 {
+	MaskExceptions ();
 #ifdef USE_INTEL_ASM
 	Sys_SetFPCW ();
 #endif
