@@ -840,6 +840,8 @@ SVC_DirectConnect (void)
 	Netchan_Setup (&newcl->netchan, adr, qport);
 
 	newcl->state = cs_connected;
+	newcl->prespawned = false;
+	newcl->spawned = false;
 	svs.num_clients++;
 
 	newcl->datagram.allowoverflow = true;

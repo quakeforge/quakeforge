@@ -304,6 +304,8 @@ SV_PreSpawn_f (void)
 		host_client->checksum = check;
 	}
 
+	host_client->prespawned = true;
+
 	if (buf == sv.num_signon_buffers - 1)
 		command = va ("cmd spawn %i 0\n", svs.spawncount);
 	else
@@ -345,6 +347,14 @@ SV_Spawn_f (void)
 		SV_New_f ();
 		return;
 	}
+// make sure they're not trying to cheat by spawning without prespawning
+	if (host_client->prespawned == false) {
+		SV_BroadcastPrintf (PRINT_HIGH,
+							va ("%s has been kicked for trying to spawn before prespawning!\n",
+								host_client->name));
+		SV_DropClient (host_client);
+		return;
+	}
 
 	n = atoi (Cmd_Argv (2));
 
@@ -354,6 +364,9 @@ SV_Spawn_f (void)
 		SV_New_f ();
 		return;
 	}
+
+	host_client->spawned = true;
+
 	// send all current names, colors, and frag counts
 	// FIXME: is this a good thing?
 	SZ_Clear (&host_client->netchan.message);
@@ -462,6 +475,16 @@ SV_Begin_f (void)
 	if (atoi (Cmd_Argv (1)) != svs.spawncount) {
 		SV_Printf ("SV_Begin_f from different level\n");
 		SV_New_f ();
+		return;
+	}
+
+	// make sure they're not trying to cheat by beginning without spawning
+	if (host_client->spawned == false) {
+		SV_BroadcastPrintf (PRINT_HIGH,
+							va ("%s has been kicked for trying to begin before spawning!\n"
+									"Have a nice day!\n", // 1 string!
+								host_client->name));
+		SV_DropClient (host_client);
 		return;
 	}
 

@@ -139,6 +139,8 @@ typedef struct
 typedef struct client_s
 {
 	sv_client_state_t	state;
+	qboolean		prespawned;
+	qboolean		spawned;
 
 	int				spectator;			// non-interactive
 
