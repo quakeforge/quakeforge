@@ -30,21 +30,21 @@
 # include "config.h"
 #endif
 
+#include "QF/render.h"
 #include "QF/sound.h"
 
 #include "d_ifacea.h"
 #include "r_local.h"
-#include "QF/render.h"
 
-#if 0
-FIXME
-	the complex cases add new polys on most lines, so dont optimize for
-	keeping them the same have multiple free span lists to try to get better
-	coherence ? low depth complexity-- 1 to 3 or so this breaks spans at every
-	edge, even hidden ones (bad)
+/*
+  FIXME
+  the complex cases add new polys on most lines, so dont optimize for
+  keeping them the same have multiple free span lists to try to get better
+  coherence ? low depth complexity-- 1 to 3 or so this breaks spans at every
+  edge, even hidden ones (bad)
 
-	have a sentinal at both ends ?
-#endif
+  have a sentinal at both ends
+*/
 
 edge_t     *auxedges;
 edge_t     *r_edges, *edge_p, *edge_max;
@@ -115,7 +115,6 @@ R_DrawCulledPolys (void)
 	}
 }
 
-
 void
 R_BeginEdgeFrame (void)
 {
@@ -134,15 +133,14 @@ R_BeginEdgeFrame (void)
 	surfaces[1].key = 0x7FFFFFFF;
 	r_currentkey = 0;
 
-// FIXME: set with memset
+	// FIXME: set with memset
 	for (v = r_refdef.vrect.y; v < r_refdef.vrectbottom; v++) {
 		newedges[v] = removeedges[v] = NULL;
 	}
 }
 
-
 #ifdef PIC
-#undef USE_INTEL_ASM //XXX asm pic hack
+# undef USE_INTEL_ASM //XXX asm pic hack
 #endif
 
 #ifndef USE_INTEL_ASM
@@ -187,7 +185,6 @@ R_InsertNewEdges (edge_t *edgestoadd, edge_t *edgelist)
 	} while ((edgestoadd = next_edge) != NULL);
 }
 
-
 void
 R_RemoveEdges (edge_t *pedge)
 {
@@ -197,7 +194,6 @@ R_RemoveEdges (edge_t *pedge)
 		pedge->prev->next = pedge->next;
 	} while ((pedge = pedge->nextremove) != NULL);
 }
-
 
 void
 R_StepActiveU (edge_t *pedge)
@@ -260,7 +256,6 @@ R_StepActiveU (edge_t *pedge)
 
 #endif // !USE_INTEL_ASM
 
-
 void
 R_CleanupSpan (void)
 {
@@ -287,7 +282,6 @@ R_CleanupSpan (void)
 	} while (surf != &surfaces[1]);
 }
 
-
 void
 R_LeadingEdgeBackwards (edge_t *edge)
 {
@@ -298,9 +292,8 @@ R_LeadingEdgeBackwards (edge_t *edge)
 	// it's adding a new surface in, so find the correct place
 	surf = &surfaces[edge->surfs[1]];
 
-	// don't start a span if this is an inverted span, with the end
-	// edge preceding the start edge (that is, we've already seen the
-	// end edge)
+	// don't start a span if this is an inverted span, with the end edge
+	// preceding the start edge (that is, we've already seen the end edge)
 	if (++surf->spanstate == 1) {
 		surf2 = surfaces[1].next;
 
@@ -357,7 +350,6 @@ R_LeadingEdgeBackwards (edge_t *edge)
 	}
 }
 
-
 void
 R_TrailingEdge (surf_t *surf, edge_t *edge)
 {
@@ -390,7 +382,6 @@ R_TrailingEdge (surf_t *surf, edge_t *edge)
 	}
 }
 
-
 #ifndef USE_INTEL_ASM
 
 void
@@ -405,9 +396,8 @@ R_LeadingEdge (edge_t *edge)
 		// it's adding a new surface in, so find the correct place
 		surf = &surfaces[edge->surfs[1]];
 
-		// don't start a span if this is an inverted span, with the end
-		// edge preceding the start edge (that is, we've already seen the
-		// end edge)
+		// don't start a span if this is an inverted span, with the end edge
+		// preceding the start edge (that is, we've already seen the end edge)
 		if (++surf->spanstate == 1) {
 			if (surf->insubmodel)
 				r_bmodelactive++;
@@ -504,7 +494,6 @@ R_LeadingEdge (edge_t *edge)
 	}
 }
 
-
 void
 R_GenerateSpans (void)
 {
@@ -537,7 +526,6 @@ R_GenerateSpans (void)
 
 #endif // !USE_INTEL_ASM
 
-
 void
 R_GenerateSpansBackward (void)
 {
@@ -560,7 +548,6 @@ R_GenerateSpansBackward (void)
 
 	R_CleanupSpan ();
 }
-
 
 /*
 	R_ScanEdges
