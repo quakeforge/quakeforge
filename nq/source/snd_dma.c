@@ -433,7 +433,7 @@ void SND_Spatialize(channel_t *ch)
     vec3_t source_vec;
 	sfx_t *snd;
 
-// anything coming from the view entity will allways be full volume
+// anything coming from the view entity will always be full volume
 	if (ch->entnum == cl.viewentity)
 	{
 		ch->leftvol = ch->master_vol;
