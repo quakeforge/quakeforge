@@ -1341,7 +1341,7 @@ if test "x$optimize" = xyes; then
 		CFLAGS="$saved_cflags"
 		light="-O2"
 		AC_ARG_ENABLE(strict-aliasing,
-	[  --enable-strict-aliasing enable the -fstrict-aliasing ooption of gcc])
+	[  --enable-strict-aliasing enable the -fstrict-aliasing option of gcc])
 		if test "x$enable_strict_aliasing" = "xyes"; then
 			heavy="$heavy -fstrict-aliasing"
 			light="$light -fstrict-aliasing"
