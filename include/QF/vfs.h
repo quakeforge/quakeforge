@@ -52,21 +52,22 @@ extern char	gamedirfile[MAX_OSPATH];
 void COM_WriteFile (char *filename, void *data, int len);
 void COM_WriteBuffers (const char *filename, int count, ...);
 
-int _COM_FOpenFile (char *filename, VFile **gzfile, char *foundname, int zip);
-int COM_FOpenFile (char *filename, VFile **gzfile);
+int _COM_FOpenFile (const char *filename, VFile **gzfile, char *foundname, int zip);
+int COM_FOpenFile (const char *filename, VFile **gzfile);
 void COM_CloseFile (VFile *h);
 int COM_filelength (VFile *f);
-void COM_FileBase (char *in, char *out);
+void COM_FileBase (const char *in, char *out);
 void COM_DefaultExtension (char *path, char *extension);
 char *COM_SkipPath (char *pathname);
 void COM_StripExtension (char *in, char *out);
 int COM_NextFilename (char *filename, const char *prefix, const char *ext);
 
 
-byte *COM_LoadStackFile (char *path, void *buffer, int bufsize);
-byte *COM_LoadTempFile (char *path);
-byte *COM_LoadHunkFile (char *path);
-void COM_LoadCacheFile (char *path, struct cache_user_s *cu);
+byte *COM_LoadFile (const char *path, int usehunk);
+byte *COM_LoadStackFile (const char *path, void *buffer, int bufsize);
+byte *COM_LoadTempFile (const char *path);
+byte *COM_LoadHunkFile (const char *path);
+void COM_LoadCacheFile (const char *path, struct cache_user_s *cu);
 void COM_CreatePath (char *path);
 void COM_Gamedir (char *dir);
 void COM_Filesystem_Init (void);

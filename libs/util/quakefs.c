@@ -165,10 +165,10 @@ searchpath_t *com_base_searchpaths;		// without gamedirs
 	COM_FileBase
 */
 void
-COM_FileBase (char *in, char *out)
+COM_FileBase (const char *in, char *out)
 {
-	char       *slash, *dot;
-	char       *s;
+	const char *slash, *dot;
+	const char *s;
 
 	slash = in;
 	dot = NULL;
@@ -548,7 +548,7 @@ int         file_from_pak;				// global indicating file came from
 	Sets com_filesize and one of handle or file
 */
 int
-_COM_FOpenFile (char *filename, VFile **gzfile, char *foundname, int zip)
+_COM_FOpenFile (const char *filename, VFile **gzfile, char *foundname, int zip)
 {
 	searchpath_t *search;
 	char        netpath[MAX_OSPATH];
@@ -625,7 +625,7 @@ _COM_FOpenFile (char *filename, VFile **gzfile, char *foundname, int zip)
 }
 
 int
-COM_FOpenFile (char *filename, VFile **gzfile)
+COM_FOpenFile (const char *filename, VFile **gzfile)
 {
 	char        foundname[MAX_OSPATH];
 
@@ -643,7 +643,7 @@ int         loadsize;
 	Allways appends a 0 byte to the loaded data.
 */
 byte       *
-COM_LoadFile (char *path, int usehunk)
+COM_LoadFile (const char *path, int usehunk)
 {
 	VFile      *h;
 	byte       *buf = NULL;
@@ -685,19 +685,19 @@ COM_LoadFile (char *path, int usehunk)
 }
 
 byte       *
-COM_LoadHunkFile (char *path)
+COM_LoadHunkFile (const char *path)
 {
 	return COM_LoadFile (path, 1);
 }
 
 byte       *
-COM_LoadTempFile (char *path)
+COM_LoadTempFile (const char *path)
 {
 	return COM_LoadFile (path, 2);
 }
 
 void
-COM_LoadCacheFile (char *path, struct cache_user_s *cu)
+COM_LoadCacheFile (const char *path, struct cache_user_s *cu)
 {
 	loadcache = cu;
 	COM_LoadFile (path, 3);
@@ -705,7 +705,7 @@ COM_LoadCacheFile (char *path, struct cache_user_s *cu)
 
 // uses temp hunk if larger than bufsize
 byte       *
-COM_LoadStackFile (char *path, void *buffer, int bufsize)
+COM_LoadStackFile (const char *path, void *buffer, int bufsize)
 {
 	byte       *buf;
 
