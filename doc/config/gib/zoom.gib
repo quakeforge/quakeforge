@@ -91,7 +91,7 @@ function zoom::increase {
 	if (!$zoomed) {
 		return
 	}
-	mult = `cap $min ($mult*$step) $max`
+	mult = `clamp $min ($mult*$step) $max`
 	zoom::adjust
 }
 
@@ -99,7 +99,7 @@ function zoom::decrease {
 	if (!$zoomed) {
 		return
 	}
-	mult = `cap $min ($mult/$step) $max`
+	mult = `clamp $min ($mult/$step) $max`
 	zoom::adjust
 }
 
