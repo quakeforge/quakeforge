@@ -149,6 +149,9 @@ Draw_CachePic (const char *path, qboolean alpha)
 	int         i;
 	glpic_t    *gl;
 	qpic_t     *dat;
+	char        filename[MAX_QPATH + 4];
+	VFile      *f;
+	tex_t      *targa;
 
 	// First, check if its cached..
 	for (pic = cachepics, i = 0; i < numcachepics; pic++, i++)
@@ -178,7 +181,21 @@ Draw_CachePic (const char *path, qboolean alpha)
 
 	// Now feed it to the GL stuff and get a texture number..
 	gl = (glpic_t *) pic->pic.data;
-	gl->texnum = GL_LoadTexture ("", dat->width, dat->height, dat->data,
+
+	snprintf (filename, sizeof (filename), "%s.tga", path);
+	COM_FOpenFile (filename, &f);
+	if (f) {
+		targa = LoadTGA (f);
+		Qclose (f);
+		if (targa->format < 4)
+			gl->texnum = GL_LoadTexture ("", targa->width, targa->height,
+				targa->data, false, alpha, 3);
+		else
+			gl->texnum = GL_LoadTexture ("", targa->width, targa->height,
+				targa->data, false, alpha, 4);
+	}
+	else
+		gl->texnum = GL_LoadTexture ("", dat->width, dat->height, dat->data,
 								 false, alpha, 1);
 
 	// Now lets mark this cache entry as used..
