@@ -1,0 +1,5 @@
+function hello {
+    for word in "hello" "world" {
+        echo $word
+    }
+}
