@@ -817,8 +817,8 @@ void
 emit_expr (expr_t *e)
 {
 	def_t *def;
-	//def_t *def_a;
-	//def_t *def_b;
+	def_t *def_a;
+	def_t *def_b;
 	//opcode_t *op;
 	statref_t *ref;
 	dstatement_t *st;
@@ -842,6 +842,9 @@ emit_expr (expr_t *e)
 				case 'c':
 					break;
 				case 's':
+					def_a = emit_sub_expr (e->e.expr.e1, 0);
+					def_b = emit_sub_expr (e->e.expr.e2, 0);
+					emit_statement (op_state, def_a, def_b, 0);
 					break;
 				default:
 					fprintf (stderr,
