@@ -37,6 +37,8 @@
 
 #include "QF/cvar.h"
 
+#include "r_dynamic.h"
+
 extern cvar_t *gl_sky_divide;		// FIXME
 
 cvar_t     *cl_crossx;
@@ -123,6 +125,12 @@ cvar_t     *scr_showram;
 cvar_t     *scr_showturtle;
 cvar_t     *scr_viewsize;
 
+static void
+r_particles_f (cvar_t *var)
+{
+	if (!var->int_val)
+		R_ClearParticles ();
+}
 
 void
 R_Init_Cvars (void)
@@ -270,7 +278,7 @@ R_Init_Cvars (void)
 	r_numsurfs = Cvar_Get ("r_numsurfs", "0", CVAR_NONE, NULL,
 						   "Toggles the displaying of number of surfaces "
 						   "currently being viewed");
-	r_particles = Cvar_Get ("r_particles", "1", CVAR_ARCHIVE, NULL,
+	r_particles = Cvar_Get ("r_particles", "1", CVAR_ARCHIVE, r_particles_f,
 							"Toggles drawing of particles.");
 	r_reportedgeout = Cvar_Get ("r_reportedgeout", "0", CVAR_NONE, NULL,
 								"Toggle the display of how many edges were "

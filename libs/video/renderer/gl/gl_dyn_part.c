@@ -69,7 +69,7 @@ extern cvar_t *cl_max_particles;
 
 inline particle_t *
 particle_new (ptype_t type, int texnum, vec3_t org, float scale, vec3_t vel,
-			  float die, byte color, byte alpha, vec3_t up, vec3_t right)
+			  float die, byte color, byte alpha)
 {
 	particle_t *part;
 
@@ -89,9 +89,6 @@ particle_new (ptype_t type, int texnum, vec3_t org, float scale, vec3_t vel,
 	part->tex = texnum;
 	part->scale = scale;
 
-//	VectorScale (up, 1.5, part->up);
-//	VectorScale (right, 1.5, part->right);
-
 	return part;
 }
 
@@ -109,8 +106,7 @@ particle_new_random (ptype_t type, int texnum, vec3_t org, int org_fuzz,
 		if (vel_fuzz)
 			pvel[j] = lhrandom (-vel_fuzz, vel_fuzz);
 	}
-	return particle_new (type, texnum, porg, scale, pvel, die, color, alpha,
-						 vec3_origin, vec3_origin);
+	return particle_new (type, texnum, porg, scale, pvel, die, color, alpha);
 }
 
 /*
@@ -206,7 +202,7 @@ R_ReadPointFile_f (void)
 		c++;
 
 		if (!particle_new (pt_static, part_tex_dot, org, 1.5, vec3_origin,
-						   99999, (-c) & 15, 255, vec3_origin, vec3_origin)) {
+						   99999, (-c) & 15, 255)) {
 			Con_Printf ("Not enough free particles\n");
 			break;
 		}
@@ -269,7 +265,7 @@ R_RunSparkEffect (vec3_t org, int count, int ofuzz)
 {
 	particle_new (pt_smokecloud, part_tex_smoke[rand () & 7], org, 
 				  (ofuzz / 8) * .75, vec3_origin, r_realtime + 99, 
-				  12 + (rand () & 3), 96, vec3_origin, vec3_origin);
+				  12 + (rand () & 3), 96);
 	while (count--)
 		particle_new_random (pt_fallfadespark, part_tex_spark, org,
 							 ofuzz * .75, 1, 96, r_realtime + 5,
@@ -294,8 +290,7 @@ inline static void
 R_BloodPuff (vec3_t org, int count)
 {
 	particle_new (pt_bloodcloud, part_tex_smoke[rand () & 7], org, 9,
-				  vec3_origin, r_realtime + 99, 68 + (rand () & 3), 128,
-				  vec3_origin, vec3_origin);
+				  vec3_origin, r_realtime + 99, 68 + (rand () & 3), 128);
 }
 
 void
@@ -341,8 +336,7 @@ R_RunParticleEffect (vec3_t org, int color, int count)
 		}
 		particle_new (pt_grav, part_tex_dot, porg, 1.5, vec3_origin,
 					  (r_realtime + 0.1 * (rand () % 5)),
-					  (color & ~7) + (rand () & 7), 255, vec3_origin,
-					  vec3_origin);
+					  (color & ~7) + (rand () & 7), 255);
 	}
 }
 
@@ -395,8 +389,7 @@ R_LavaSplash (vec3_t org)
 			VectorScale (dir, vel, pvel);
 			particle_new (pt_grav, part_tex_dot, porg, 3, pvel,
 						  (r_realtime + 2 + (rand () & 31) * 0.02),
-						  (224 + (rand () & 7)), 193, vec3_origin,
-						  vec3_origin);
+						  (224 + (rand () & 7)), 193);
 		}
 	}
 }
@@ -427,8 +420,7 @@ R_TeleportSplash (vec3_t org)
 				VectorScale (dir, vel, pvel);
 				particle_new (pt_grav, part_tex_spark, porg, 0.6, pvel,
 							  (r_realtime + 0.2 + (rand () & 7) * 0.02),
-							  (7 + (rand () & 7)), 255, vec3_origin,
-							  vec3_origin);
+							  (7 + (rand () & 7)), 255);
 			}
 }
 
@@ -439,7 +431,7 @@ R_RocketTrail (int type, entity_t *ent)
 	float       dist, len, pdie, pscale, pscalenext;
 	int         ptex, j;
 	ptype_t     ptype;
-	vec3_t      porg, pvel, up, right, subtract, vec;
+	vec3_t      porg, pvel, subtract, vec;
 
 	if (type == 0)
 		R_AddFire (ent->old_origin, ent->origin, ent);
@@ -492,8 +484,6 @@ R_RocketTrail (int type, entity_t *ent)
 	}
 
 	while (len > 0) {
-		VectorCopy (vec3_origin, up);
-		VectorCopy (vec3_origin, right);
 		VectorCopy (vec3_origin, pvel);
 
 		switch (type) {
@@ -574,8 +564,7 @@ R_RocketTrail (int type, entity_t *ent)
 		VectorAdd (ent->old_origin, subtract, ent->old_origin);
 		len -= dist;
 
-		particle_new (ptype, ptex, porg, pscale, pvel, pdie, pcolor, palpha,
-					  up, right);
+		particle_new (ptype, ptex, porg, pscale, pvel, pdie, pcolor, palpha);
 		pscale = pscalenext;
 	}
 }
@@ -588,14 +577,14 @@ R_DrawParticles (void)
 	float       dvel, grav, fast_grav, minparticledist, scale;
 	int         activeparticles, maxparticle, j, k;
 	particle_t *part;
-	vec3_t		up, right, o_up, o_right;
+	vec3_t		up, right;
 	vec3_t		up_scale, right_scale, up_right_scale, down_right_scale;
 	
 	// LordHavoc: particles should not affect zbuffer
 	qfglDepthMask (GL_FALSE);
 
-	VectorScale (vup, 1.5, o_up);
-	VectorScale (vright, 1.5, o_right);
+	VectorScale (vup, 1.5, up);
+	VectorScale (vright, 1.5, right);
 
 	varray[0].texcoord[0] = 0; varray[0].texcoord[1] = 1;
 	varray[1].texcoord[0] = 0; varray[1].texcoord[1] = 0;
@@ -624,18 +613,9 @@ R_DrawParticles (void)
 
 		// Don't render particles too close to us.
 		// Note, we must still do physics and such on them.
-		if (!(DotProduct (part->org, vpn) < minparticledist) && 
-				r_particles->int_val) {
+		if (!(DotProduct (part->org, vpn) < minparticledist)) {
 			at = (byte *) & d_8to24table[(byte) part->color];
 			alpha = part->alpha;
-
-			if (VectorCompare(part->up, part->right)) {
-				memcpy(up, o_up, sizeof(up));
-				memcpy(right, o_right, sizeof(right));
-			} else {
-				memcpy(up, part->up, sizeof(up));
-				memcpy(right, part->right, sizeof(right));
-			}
 
 			varray[0].color[0] = (float) at[0] / 255;
 			varray[0].color[1] = (float) at[1] / 255;
@@ -736,10 +716,6 @@ R_DrawParticles (void)
 				Con_DPrintf ("unhandled particle type %d\n", part->type);
 				break;
 		}
-		// LordHavoc: immediate removal of unnecessary particles (must be
-		// done to ensure compactor below operates properly in all cases)
-		if (part->die <= r_realtime)
-			freeparticles[j++] = part;
 	}
 	k = 0;
 	while (maxparticle >= activeparticles) {
