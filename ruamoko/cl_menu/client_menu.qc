@@ -7,7 +7,6 @@
 #include "InputLine.h"
 #include "Rect.h"
 #include "string.h"
-#include "math.h"
 #include "cbuf.h"
 #include "options.h"
 #include "servlist.h"
@@ -21,6 +20,7 @@ entity self;
 .float nextthink;
 .float frame;
 .void () think;
+float () random = #7;
 
 string [6] dot_name = {
 	"gfx/menudot1.lmp",

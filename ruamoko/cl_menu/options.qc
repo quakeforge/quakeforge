@@ -29,7 +29,6 @@
 #include "menu.h"
 #include "system.h"
 #include "string.h"
-#include "math.h"
 #include "draw.h"
 #include "cvar.h"
 #include "key.h"
@@ -82,7 +81,7 @@ CB_video_options =
 			Cbuf_AddText ("toggle vid_fullscreen\n");
 			break;
 		case "crosshair":
-			selected_crosshair = ftoi (cvar ("crosshair"));
+			selected_crosshair = (integer) cvar ("crosshair");
 			selected_crosshair++;
 			if (selected_crosshair >= 3) {
 			    selected_crosshair = 0;
@@ -598,11 +597,11 @@ DRAW_player_options =
 	// Draw nice color boxes
 	text_box (x + 192, y + PLAYER_CONF_Y_PAD + 45 - 8, 1, 1);
 	Draw_Fill (x + 200, y + PLAYER_CONF_Y_PAD + 45, 16, 8,
-			   ftoi (cvar ("topcolor")) * 16 + 8);
+			   (integer) cvar ("topcolor") * 16 + 8);
 
 	text_box (x + 192, y + PLAYER_CONF_Y_PAD + 60 - 8, 1, 1);
 	Draw_Fill (x + 200, y + PLAYER_CONF_Y_PAD + 60, 16, 8,
-			   ftoi (cvar ("bottomcolor")) * 16 + 8);
+			   (integer) cvar ("bottomcolor") * 16 + 8);
 
 	opt_cursor  (x + 62, y + player_config_cursor_tbl[player_config_cursor]);
 	return 1;

@@ -26,7 +26,6 @@
 
 #include "draw.h"
 #include "system.h"
-#include "math.h"
 #include "string.h"
 
 /*
@@ -59,7 +58,7 @@ draw_perc_bar =
 		perc_val = 0;
 	}
 
-	perc = itof (perc_val) / (100 / itof (size));
+	perc = (float) perc_val / (100 / (float) size);
 
 	/* 128, 129, 130 and 131 are special characters for scrollbars */
 	Draw_Character (x, y, 128);								// draw beginning
@@ -67,7 +66,7 @@ draw_perc_bar =
 		Draw_Character (x + ((i + 1) * 8), y, 129);			// draw the borders
 	}
 	Draw_Character (x + ((i + 1) * 8), y, 130);				// draw last char
-    Draw_Character (x + ((ftoi (perc) + 1) * 8), y, 131);	// draw slider
+    Draw_Character (x + (((integer) perc + 1) * 8), y, 131);	// draw slider
 };
 
 /*
@@ -125,7 +124,7 @@ to_percentage =
 	if (val < 0) {
 		val = 0;
 	}
-	perc = ftoi ((val / max_v) * 100);
+	perc = (integer) ((val / max_v) * 100);
 
 	return perc;
 };
