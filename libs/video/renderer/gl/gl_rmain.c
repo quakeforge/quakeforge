@@ -63,6 +63,12 @@
 #include "r_local.h"
 #include "view.h"
 
+typedef struct {
+	trivertx_t *verts;
+	int        *order;
+	int         blended;
+} vert_order_t;
+
 entity_t    r_worldentity;
 
 qboolean    r_cache_thrash;				// compatability
@@ -247,18 +253,16 @@ int         lastposenum, lastposenum0;
 
 
 static void
-GL_DrawAliasFrame (aliashdr_t *paliashdr, int posenum, qboolean fb)
+GL_DrawAliasFrame (vert_order_t *vo, qboolean fb)
 {
 	float       l;
 	trivertx_t *verts;
 	int        *order;
 	int         count;
+	int         blended = vo->blended;
 
-	lastposenum = posenum;
-
-	verts = (trivertx_t *) ((byte *) paliashdr + paliashdr->posedata);
-	verts += posenum * paliashdr->poseverts;
-	order = (int *) ((byte *) paliashdr + paliashdr->commands);
+	verts = vo->verts;
+	order = vo->order;
 
 	if (modelalpha != 1.0)
 		qfglDepthMask (GL_FALSE);
@@ -283,7 +287,11 @@ GL_DrawAliasFrame (aliashdr_t *paliashdr, int posenum, qboolean fb)
 
 			if (!fb) {
 				// normals and vertexes come from the frame list
-				l = shadedots[verts->lightnormalindex] * shadelight;
+				if (blended)
+					l = verts->lightnormalindex / 256.0;
+				else
+					l = shadedots[verts->lightnormalindex];
+				l *= shadelight;
 
 				// LordHavoc: cleanup after Endy
 				qfglColor4f (shadecolor[0] * l, shadecolor[1] * l,
@@ -300,82 +308,6 @@ GL_DrawAliasFrame (aliashdr_t *paliashdr, int posenum, qboolean fb)
 	if (modelalpha != 1.0)
 		qfglDepthMask (GL_TRUE);
 
-	qfglColor3ubv (lighthalf_v);
-}
-
-
-/*
-	GL_DrawAliasBlendedFrame
-
-	Interpolated model drawing
-*/
-void
-GL_DrawAliasBlendedFrame (aliashdr_t *paliashdr, int pose1, int pose2, float blend, qboolean fb)
-{
-	float		light;
-	float 		lerp;
-	trivertx_t	*verts1;
-	trivertx_t	*verts2;
-	int 		*order;
-	int 		count;
-
-	lastposenum0 = pose1;
-	lastposenum = pose2;
-
-	verts1 = (trivertx_t *) ((byte *) paliashdr + paliashdr->posedata);
-	verts2 = verts1;
-
-	verts1 += pose1 * paliashdr->poseverts;
-	verts2 += pose2 * paliashdr->poseverts;
-
-	order = (int *) ((byte *) paliashdr + paliashdr->commands);
-
-	if (modelalpha != 1.0)
-		qfglDepthMask (GL_FALSE);
-
-	if (fb) {	// don't do this in the loop, it doesn't change
-		qfglColor4f (1, 1, 1, modelalpha);
-	}
-
-	lerp = 1 - blend;
-	while ((count = *order++)) {	// get the vertex count and primitive type
-
-		if (count < 0) {
-			count = -count;
-			qfglBegin (GL_TRIANGLE_FAN);
-		} else {
-			qfglBegin (GL_TRIANGLE_STRIP);
-		}
-
-		do {
-			// texture coordinates come from the draw list
-			qfglTexCoord2f (((float *) order)[0], ((float *) order)[1]);
-			order += 2;
-
-			if (!fb) {
-				// normals and vertexes come from the frame list
-				// blend the light intensity from the two frames together
-				light = shadelight * ((shadedots[verts1->lightnormalindex] *
-									   lerp)
-									+ (shadedots[verts2->lightnormalindex] *
-									   blend));
-				qfglColor4f (shadecolor[0] * light, shadecolor[1] * light,
-							shadecolor[2] * light, modelalpha);
-			}
-
-			// blend the vertex positions from each frame together
-			qfglVertex3f ((verts1->v[0] * lerp) + (verts2->v[0] * blend),
-						(verts1->v[1] * lerp) + (verts2->v[1] * blend),
-						(verts1->v[2] * lerp) + (verts2->v[2] * blend));
-
-			verts1++;
-			verts2++;
-		} while (--count);
-		qfglEnd ();
-	}
-
-	if (modelalpha != 1.0)
-		qfglDepthMask (GL_TRUE);
 	qfglColor3ubv (lighthalf_v);
 }
 
@@ -511,11 +443,15 @@ GL_DrawAliasBlendedShadow (aliashdr_t *paliashdr, int pose1, int pose2, entity_t
 }
 
 
-static void
-R_SetupAliasFrame (int frame, aliashdr_t *paliashdr, qboolean fb)
+vert_order_t *
+GL_GetAliasFrameVerts (int frame, aliashdr_t *paliashdr, entity_t *e)
 {
-	int         pose, numposes;
-	float       interval;
+	vert_order_t *vo;
+	int        *order;
+	int         count;
+	int         pose;
+	int         numposes;
+	trivertx_t *verts;
 
 	if ((frame >= paliashdr->mdl.numframes) || (frame < 0)) {
 		Con_DPrintf ("R_AliasSetupFrame: no such frame %d\n", frame);
@@ -525,62 +461,85 @@ R_SetupAliasFrame (int frame, aliashdr_t *paliashdr, qboolean fb)
 	pose = paliashdr->frames[frame].firstpose;
 	numposes = paliashdr->frames[frame].numposes;
 
-	if (numposes > 1) {
-		interval = paliashdr->frames[frame].interval;
-		pose += (int) (r_realtime / interval) % numposes;
-	}
+	verts = (trivertx_t *) ((byte *) paliashdr + paliashdr->posedata);
 
-	GL_DrawAliasFrame (paliashdr, pose, fb);
-}
+	if (numposes == 1 || !gl_lerp_anim->int_val) {
+		float       interval;
 
-
-void
-R_SetupAliasBlendedFrame (int frame, aliashdr_t *paliashdr, entity_t *e, qboolean fb)
-{
-	int 	pose, numposes;
-	float	blend;
-
-	if ((frame >= paliashdr->mdl.numframes) || (frame < 0)) {
-		Con_DPrintf ("R_AliasSetupFrame: no such frame %d\n", frame);
-		frame = 0;
-	}
-
-	pose = paliashdr->frames[frame].firstpose;
-	numposes = paliashdr->frames[frame].numposes;
-
-	if (numposes > 1) {
-		e->frame_interval = paliashdr->frames[frame].interval;
-		pose += (int) (r_realtime / e->frame_interval) % numposes;
-	} else {
-		/*
-			One tenth of a second is good for most Quake animations. If the
-			nextthink is longer then the animation is usually meant to pause
-			(e.g. check out the shambler magic animation in shambler.qc).  If
-			its shorter then things will still be smoothed partly, and the
-			jumps will be less noticable because of the shorter time.  So,
-			this is probably a good assumption.
-		*/
-		e->frame_interval = 0.1;
-	}
-
-	if (e->pose2 != pose) {
-		e->frame_start_time = r_realtime;
-		if (e->pose2 == -1) {
-			e->pose1 = pose;
-		} else {
-			e->pose1 = e->pose2;
+		if (numposes > 1) {
+			interval = paliashdr->frames[frame].interval;
+			pose += (int) (r_realtime / interval) % numposes;
 		}
-		e->pose2 = pose;
-		blend = 0;
+		vo = Hunk_TempAlloc (sizeof (*vo));
+		vo->verts = verts + pose * paliashdr->poseverts;
+		vo->order = (int *) ((byte *) paliashdr + paliashdr->commands);
+		vo->blended = 0;
+		lastposenum = pose;
 	} else {
-		blend = (r_realtime - e->frame_start_time) / e->frame_interval;
+		trivertx_t *verts1, *verts2;
+		float      blend, lerp;
+		int        i;
+
+		if (numposes > 1) {
+			e->frame_interval = paliashdr->frames[frame].interval;
+			pose += (int) (r_realtime / e->frame_interval) % numposes;
+		} else {
+			/*
+				One tenth of a second is good for most Quake animations. If
+				the nextthink is longer then the animation is usually meant
+				to pause (e.g. check out the shambler magic animation in
+				shambler.qc).  If its shorter then things will still be
+				smoothed partly, and the jumps will be less noticable
+				because of the shorter time.  So, this is probably a good
+				assumption.
+			*/
+			e->frame_interval = 0.1;
+		}
+
+		if (e->pose2 != pose) {
+			e->frame_start_time = r_realtime;
+			if (e->pose2 == -1) {
+				e->pose1 = pose;
+			} else {
+				e->pose1 = e->pose2;
+			}
+			e->pose2 = pose;
+			blend = 0;
+		} else {
+			blend = (r_realtime - e->frame_start_time) / e->frame_interval;
+		}
+
+		// wierd things start happening if blend passes 1
+		if (r_paused || blend > 1)
+			blend = 1;
+		lerp = 1 - blend;
+
+		order = (int *) ((byte *) paliashdr + paliashdr->commands);
+
+		count = paliashdr->poseverts;
+		vo = Hunk_TempAlloc (sizeof (*vo) + count * sizeof (trivertx_t));
+		vo->order = order;
+		vo->verts = (trivertx_t*)&vo[1];
+		vo->blended = 1;
+
+		verts1 = verts + e->pose1 * count;
+		verts2 = verts + e->pose2 * count;
+
+		for (i = 0; i < count; i++) {
+			vo->verts[i].v[0] = verts1[i].v[0] * lerp
+								+ verts2[i].v[0] * blend;
+			vo->verts[i].v[1] = verts1[i].v[1] * lerp
+								+ verts2[i].v[1] * blend;
+			vo->verts[i].v[2] = verts1[i].v[2] * lerp
+								+ verts2[i].v[2] * blend;
+			vo->verts[i].lightnormalindex =
+				(shadedots[verts[i].lightnormalindex] * lerp
+				 + shadedots[verts2[i].lightnormalindex] * blend) * 256;
+		}
+		lastposenum0 = e->pose1;
+		lastposenum = e->pose2;
 	}
-
-	// wierd things start happening if blend passes 1
-	if (r_paused || blend > 1)
-		blend = 1;
-
-	GL_DrawAliasBlendedFrame (paliashdr, e->pose1, e->pose2, blend, fb);
+	return vo;
 }
 
 
@@ -599,6 +558,7 @@ R_DrawAliasModel (entity_t *e, qboolean cull)
 	int         fb_texture = 0;
 	int         skinnum;
 	qboolean	modelIsFullbright = false;
+	vert_order_t *vo;
 
 	clmodel = currententity->model;
 
@@ -715,21 +675,14 @@ R_DrawAliasModel (entity_t *e, qboolean cull)
 	if (gl_affinemodels->int_val)
 		qfglHint (GL_PERSPECTIVE_CORRECTION_HINT, GL_NICEST);
 
-	if (gl_lerp_anim->int_val) {
-		R_SetupAliasBlendedFrame (currententity->frame, paliashdr, currententity, false);
-	} else {
-		R_SetupAliasFrame (currententity->frame, paliashdr, false);
-	}
+	vo = GL_GetAliasFrameVerts (currententity->frame, paliashdr, currententity);
+
+	GL_DrawAliasFrame (vo, false);
 
 	// This block is GL fullbright support for objects...
 	if (fb_texture) {
 		qfglBindTexture (GL_TEXTURE_2D, fb_texture);
-		if (gl_lerp_anim->int_val) {
-			R_SetupAliasBlendedFrame (currententity->frame, paliashdr,
-			                          currententity, true);
-		} else {
-			R_SetupAliasFrame (currententity->frame, paliashdr, true);
-		}
+		GL_DrawAliasFrame (vo, true);
 	}
 
 	if (gl_affinemodels->int_val)
