@@ -672,17 +672,15 @@ draw_console (view_t *view)
 static void
 draw_say (view_t *view)
 {
-	if (key_dest == key_message) {
-		clearnotify = 0;
-		scr_copytop = 1;
+	clearnotify = 0;
+	scr_copytop = 1;
 
-		if (chat_team) {
-			Draw_String (view->xabs + 8, view->yabs, "say_team:");
-			DrawInputLine (view->xabs + 80, view->yabs, 1, say_team_line);
-		} else {
-			Draw_String (view->xabs + 8, view->yabs, "say:");
-			DrawInputLine (view->xabs + 40, view->yabs, 1, say_line);
-		}
+	if (chat_team) {
+		Draw_String (view->xabs + 8, view->yabs, "say_team:");
+		DrawInputLine (view->xabs + 80, view->yabs, 1, say_team_line);
+	} else {
+		Draw_String (view->xabs + 8, view->yabs, "say:");
+		DrawInputLine (view->xabs + 40, view->yabs, 1, say_line);
 	}
 }
 
@@ -719,6 +717,8 @@ C_DrawConsole (int lines)
 {
 	if (console_view->ylen != lines)
 		view_resize (console_view, console_view->xlen, lines);
+
+	say_view->visible = key_dest == key_message;
 	console_view->visible = lines != 0;
 	menu_view->visible = key_dest == key_menu;
 
@@ -763,7 +763,7 @@ C_Init (void)
 	con_data.view->draw = view_draw;
 
 	console_view = view_new (0, 0, 320, 200, grav_northwest);
-	say_view     = view_new (0, 0, 320, 32, grav_northwest);
+	say_view     = view_new (0, 0, 320, 8, grav_northwest);
 	notify_view  = view_new (0, 8, 320, 32, grav_northwest);
 	menu_view    = view_new (0, 0, 320, 200, grav_center);
 
