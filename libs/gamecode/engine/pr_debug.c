@@ -499,7 +499,10 @@ value_string (progs_t *pr, etype_t type, pr_type_t *val)
 			break;
 		case ev_field:
 			def = ED_FieldAtOfs (pr, val->integer_var);
-			dsprintf (line, ".%s", PR_GetString (pr, def->s_name));
+			if (def)
+				dsprintf (line, ".%s", PR_GetString (pr, def->s_name));
+			else
+				dsprintf (line, ".<$%04x>", val->integer_var);
 			break;
 		case ev_void:
 			return "void";
