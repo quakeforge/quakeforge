@@ -80,19 +80,19 @@ opcode_t    pr_opcodes[] = {
 
 	{".", "address", OP_ADDRESS, 1, false, ev_entity, ev_field, ev_pointer, PROG_ID_VERSION},
 
-	{"=", "store.f", OP_STORE_F, 5, true, ev_float, ev_float, ev_float, PROG_ID_VERSION},
-	{"=", "store.v", OP_STORE_V, 5, true, ev_vector, ev_vector, ev_vector, PROG_ID_VERSION},
-	{"=", "store.s", OP_STORE_S, 5, true, ev_string, ev_string, ev_string, PROG_ID_VERSION},
-	{"=", "store.ent", OP_STORE_ENT, 5, true, ev_entity, ev_entity, ev_entity, PROG_ID_VERSION},
-	{"=", "store.fld", OP_STORE_FLD, 5, true, ev_field, ev_field, ev_field, PROG_ID_VERSION},
-	{"=", "store.fnc", OP_STORE_FNC, 5, true, ev_func, ev_func, ev_func, PROG_ID_VERSION},
+	{"=", "store.f", OP_STORE_F, 5, true, ev_float, ev_float, ev_void, PROG_ID_VERSION},
+	{"=", "store.v", OP_STORE_V, 5, true, ev_vector, ev_vector, ev_void, PROG_ID_VERSION},
+	{"=", "store.s", OP_STORE_S, 5, true, ev_string, ev_string, ev_void, PROG_ID_VERSION},
+	{"=", "store.ent", OP_STORE_ENT, 5, true, ev_entity, ev_entity, ev_void, PROG_ID_VERSION},
+	{"=", "store.fld", OP_STORE_FLD, 5, true, ev_field, ev_field, ev_void, PROG_ID_VERSION},
+	{"=", "store.fnc", OP_STORE_FNC, 5, true, ev_func, ev_func, ev_void, PROG_ID_VERSION},
 
-	{"=", "storep.f", OP_STOREP_F, 5, true, ev_pointer, ev_float, ev_float, PROG_ID_VERSION},
-	{"=", "storep.v", OP_STOREP_V, 5, true, ev_pointer, ev_vector, ev_vector, PROG_ID_VERSION},
-	{"=", "storep.s", OP_STOREP_S, 5, true, ev_pointer, ev_string, ev_string, PROG_ID_VERSION},
-	{"=", "storep.ent", OP_STOREP_ENT, 5, true, ev_pointer, ev_entity, ev_entity, PROG_ID_VERSION},
-	{"=", "storep.fld", OP_STOREP_FLD, 5, true, ev_pointer, ev_field, ev_field, PROG_ID_VERSION},
-	{"=", "storep.fnc", OP_STOREP_FNC, 5, true, ev_pointer, ev_func, ev_func, PROG_ID_VERSION},
+	{"=", "storep.f", OP_STOREP_F, 5, true, ev_float, ev_pointer, ev_void, PROG_ID_VERSION},
+	{"=", "storep.v", OP_STOREP_V, 5, true, ev_vector, ev_pointer, ev_void, PROG_ID_VERSION},
+	{"=", "storep.s", OP_STOREP_S, 5, true, ev_string, ev_pointer, ev_void, PROG_ID_VERSION},
+	{"=", "storep.ent", OP_STOREP_ENT, 5, true, ev_entity, ev_pointer, ev_void, PROG_ID_VERSION},
+	{"=", "storep.fld", OP_STOREP_FLD, 5, true, ev_field, ev_pointer, ev_void, PROG_ID_VERSION},
+	{"=", "storep.fnc", OP_STOREP_FNC, 5, true, ev_func, ev_pointer, ev_void, PROG_ID_VERSION},
 
 	{"<RETURN>", "return", OP_RETURN, -1, false, ev_void, ev_void, ev_void, PROG_ID_VERSION},
 
@@ -148,8 +148,8 @@ opcode_t    pr_opcodes[] = {
 	{"!", "not.i", OP_NOT_I, -1, false, ev_integer, ev_integer, ev_integer, PROG_VERSION},
 	{"==", "eq.i", OP_EQ_I, 4, false, ev_integer, ev_integer, ev_integer, PROG_VERSION},
 	{"!=", "ne.i", OP_NE_I, 4, false, ev_integer, ev_integer, ev_integer, PROG_VERSION},
-	{"=", "store.i", OP_STORE_I, 5, true, ev_integer, ev_integer, ev_integer, PROG_VERSION},
-	{"=", "storep.i", OP_STOREP_I, 5, true, ev_pointer, ev_integer, ev_integer, PROG_VERSION},
+	{"=", "store.i", OP_STORE_I, 5, true, ev_integer, ev_integer, ev_void, PROG_VERSION},
+	{"=", "storep.i", OP_STOREP_I, 5, true, ev_integer, ev_pointer, ev_void, PROG_VERSION},
 	{".", "load.i", OP_LOAD_I, 1, false, ev_entity, ev_field, ev_integer, PROG_VERSION},
 
 	{"^", "bitxor.f", OP_BITXOR_F, 2, false, ev_float, ev_float, ev_float, PROG_VERSION},

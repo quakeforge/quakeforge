@@ -99,7 +99,7 @@ emit_function_call (expr_t *e, def_t *dest)
 		args[ind] = PR_GetTempDef (types[get_type (earg)], pr_scope);
 		arg = emit_sub_expr (earg, args[ind]);
 		if (earg->type != ex_expr && earg->type != ex_uexpr) {
-			op = PR_Opcode_Find ("=", 5, arg, args[ind], args[ind]);
+			op = PR_Opcode_Find ("=", 5, arg, args[ind], &def_void);
 			emit_statement (e->line, op, arg, args[ind], 0);
 		}
 	}
@@ -108,7 +108,7 @@ emit_function_call (expr_t *e, def_t *dest)
 		arg = args[ind];
 		parm = def_parms[ind];
 		parm.type = arg->type;
-		op = PR_Opcode_Find ("=", 5, arg, &parm, &parm);
+		op = PR_Opcode_Find ("=", 5, arg, &parm, &def_void);
 		emit_statement (e->line, op, arg, &parm, 0);
 	}
 	op = PR_Opcode_Find (va ("<CALL%d>", count), -1, &def_function,  &def_void, &def_void);
@@ -118,7 +118,7 @@ emit_function_call (expr_t *e, def_t *dest)
 	if (def_ret.type->type != ev_void) {
 		if (!dest)
 			dest = PR_GetTempDef (def_ret.type, pr_scope);
-		op = PR_Opcode_Find ("=", 5, dest, &def_ret, &def_ret);
+		op = PR_Opcode_Find ("=", 5, &def_ret, dest, &def_void);
 		emit_statement (e->line, op, &def_ret, dest, 0);
 		return dest;
 	} else
@@ -136,7 +136,7 @@ emit_assign_expr (expr_t *e)
 	def_a = emit_sub_expr (e1, 0);
 	if (def_a->type == &type_pointer) {
 		def_b = emit_sub_expr (e2, 0);
-		op = PR_Opcode_Find ("=", 5, def_a, def_b, def_b);
+		op = PR_Opcode_Find ("=", 5, def_b, def_a, &def_void);
 		emit_statement (e->line, op, def_b, def_a, 0);
 	} else {
 		if (def_a->initialized) {
@@ -153,7 +153,7 @@ emit_assign_expr (expr_t *e)
 		}
 		def_b = emit_sub_expr (e2, def_a);
 		if (def_b != def_a) {
-			op = PR_Opcode_Find ("=", 5, def_a, def_b, def_b);
+			op = PR_Opcode_Find ("=", 5, def_b, def_a, &def_void);
 			emit_statement (e->line, op, def_b, def_a, 0);
 		}
 	}
