@@ -637,6 +637,7 @@ void
 build_function (function_t *f)
 {
 	f->def->constant = 1;
+	f->def->initialized = 1;
 	G_FUNCTION (f->def->ofs) = numfunctions;
 }
 

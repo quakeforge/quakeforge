@@ -710,10 +710,11 @@ PR_FinishCompilation (void)
 	if (options.undefined_function_warning)
 		for (d = pr.def_head.def_next; d; d = d->def_next) {
 			if (d->type->type == ev_func && !d->scope) {	// function args ok
-//				f = G_FUNCTION(d->ofs);
-//				if (!f || (!f->code && !f->builtin))
-				if (!d->constant) {
-					warning (0, "function %s was not defined\n", d->name);
+				if (d->used) {
+					if (!d->initialized) {
+						warning (0, "function %s was called but not defined\n",
+								 d->name);
+					}
 				}
 			}
 		}
@@ -931,7 +932,7 @@ main (int argc, char **argv)
 "	--cow			allow assignment to initialized globals\n"
 "	--id			only support id (progs version 6) features\n"
 "	--warn=error	treat warnings as errors\n"
-"	--undefined-function-warning	warn when a function isn't defined\n"
+"	--no-undefined-function-warning	don't warn when a function isn't defined\n"
 );
 		return 1;
 	}
@@ -980,8 +981,9 @@ main (int argc, char **argv)
 		options.warn_error = 1;
 	}
 
-	if (CheckParm ("--undefined-function-warning")) {
-		options.undefined_function_warning = 1;
+	options.undefined_function_warning = 1;
+	if (CheckParm ("--no-undefined-function-warning")) {
+		options.undefined_function_warning = 0;
 	}
 
 	if (strcmp (sourcedir, ".")) {
