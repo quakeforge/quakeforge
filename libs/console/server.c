@@ -90,6 +90,7 @@ static inputline_t *input_line;
 #define BUFFER_SIZE 32768
 #define MAX_LINES 1024
 static con_buffer_t *output_buffer;
+static int view_offset;
 
 static chtype attr_table[4] = {
 	A_NORMAL,
@@ -132,7 +133,7 @@ C_DrawOutput (void)
 	// this is not the most efficient way to update the screen, but oh well
 	int         lines = screen_y - 3; // leave a blank line
 	int         width = screen_x;
-	int         cur_line = output_buffer->cur_line;
+	int         cur_line = output_buffer->cur_line + view_offset;
 	int         i, y;
 
 	if (lines < 1)
@@ -166,7 +167,7 @@ C_DrawOutput (void)
 		}
 		while (len--)
 			draw_fun_char (output, *text++);
-	} while (cur_line < output_buffer->cur_line);
+	} while (cur_line < output_buffer->cur_line + view_offset);
 	//wrefresh (stdscr);
 	wrefresh (output);
 }
@@ -367,6 +368,8 @@ C_Print (const char *fmt, va_list args)
 	}
 }
 
+static void C_KeyEvent (knum_t key, short unicode, qboolean down);
+
 static void
 C_ProcessInput (void)
 {
@@ -445,7 +448,7 @@ C_ProcessInput (void)
 				if (ch < 0 || ch >= 256)
 					ch = 0;
 		}
-		Con_ProcessInputLine (input_line, ch);
+		C_KeyEvent (ch, 0, 1);
 	} else
 #endif
 		while (1) {
@@ -459,6 +462,30 @@ C_ProcessInput (void)
 static void
 C_KeyEvent (knum_t key, short unicode, qboolean down)
 {
+	int         ovf = view_offset;
+
+	switch (key) {
+		case QFK_PAGEUP:
+			view_offset -= 10;
+			if (view_offset <= -(output_buffer->num_lines - (screen_y - 3)))
+				view_offset = -(output_buffer->num_lines - (screen_y - 3)) + 1;
+			if (ovf != view_offset)
+				C_DrawOutput ();
+			break;
+		case QFK_PAGEDOWN:
+			view_offset += 10;
+			if (view_offset > 0)
+				view_offset = 0;
+			if (ovf != view_offset)
+				C_DrawOutput ();
+			break;
+		case '\f':
+			C_DrawOutput ();
+			break;
+		default:
+			Con_ProcessInputLine (input_line, key);
+			break;
+	}
 }
 
 static void
