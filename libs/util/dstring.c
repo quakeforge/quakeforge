@@ -125,8 +125,9 @@ dstring_appendstr (dstring_t *dstr, const char *str) {
 
 void
 dstring_appendsubstr (dstring_t *dstr, const char *str, unsigned int len) {
-		if (len > strlen (str))
-			len = strlen (str);
+		unsigned int l = strlen (str);
+		if (len > l)
+			len = l;
 		dstr->size += len;
 		dstring_adjust(dstr);
 		strncat(dstr->str, str, len);
@@ -135,8 +136,19 @@ dstring_appendsubstr (dstring_t *dstr, const char *str, unsigned int len) {
 void
 dstring_insertstr (dstring_t *dstr, const char *str, unsigned int pos)
 {
-	// Don't instert strlen + 1 to achieve concatenation
+	// Don't insert strlen + 1 to achieve concatenation
 	dstring_insert (dstr, str, strlen(str), pos);
+}
+
+void
+dstring_insertsubstr (dstring_t *dstr, const char *str, unsigned int pos,
+					  unsigned int len)
+{
+	// Don't insert strlen + 1 to achieve concatenation
+	unsigned int l = strlen (str);
+	if (len > l)
+		len = l;
+	dstring_insert (dstr, str, len, pos);
 }
 
 void

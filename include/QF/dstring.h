@@ -54,6 +54,8 @@ dstring_t *dstring_newstr (void);
 void dstring_appendstr (dstring_t *dstr, const char *str);
 void dstring_appendsubstr (dstring_t *dstr, const char *str, unsigned int len);
 void dstring_insertstr (dstring_t *dstr, const char *str, unsigned int pos);
+void dstring_insertsubstr (dstring_t *dstr, const char *str, unsigned int pos,
+						   unsigned int len);
 void dstring_clearstr (dstring_t *dstr);
 
 int dvsprintf (dstring_t *dstr, const char *fmt, va_list args);
