@@ -25,7 +25,7 @@ o  doublesize modes (eg, render in 320x240 but display in 640x480)
 ?  Draw_Pic and friends need a cleanup in GL at least
 ?  console commands to see a user, ignore talk from them, etc
 ?  improved crosshairs (custom file, 32 bit for GL, etc)
-W  software targets should mix color at 16/16 or 24/32 color
+M  software targets should mix color at 16/16 or 24/32 color
 ?  Draw_Pic and other tex draw functions should use local palettes
 ?  wad loader should load wad3 and fall back to wad2 if necessary
 ?  better control over client console logging
@@ -41,7 +41,7 @@ W  software targets should mix color at 16/16 or 24/32 color
 ?  custom particle explosions (doable via csqc)
 ?  server should shutdown cleanly when it recieves SIGTERM and SIGHUP
 ?  client-only commands (rejected if done via a server stuffcmd)
-?  ~/.quakeforgerc should support all commands, not just set and setrom
+X  ~/.quakeforgerc should support all commands, not just set and setrom
 
 These are explained better in doc/ideas/rhamph.txt:
 ?  portal vis system
