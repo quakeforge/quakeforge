@@ -827,14 +827,14 @@ PlayerMove (void)
 	// set onground, watertype, and waterlevel
 	PM_CategorizePosition ();
 
-	if (no_pogo_stick->int_val & 2) {
-		if (onground != -1 && pmove.oldonground == -1) {	// just landed
-			float save = movevars.friction;
-			pmove.waterjumptime = 0;
-			movevars.friction *= 3;
-			PM_Friction ();
-			movevars.friction = save;
-		}
+	if (pmove.cmd.buttons & BUTTON_JUMP
+		&& onground != -1 && pmove.oldonground == -1	// just landed
+		&& no_pogo_stick->int_val & 2) {
+		float save = movevars.friction;
+		pmove.waterjumptime = 0;
+		movevars.friction *= 3;
+		PM_Friction ();
+		movevars.friction = save;
 	}
 	pmove.oldonground = onground;
 
