@@ -496,7 +496,7 @@ CL_ParseParticleEffect (void)
 
 	MSG_ReadCoordV (net_message, org);
 	for (i = 0; i < 3; i++)
-		dir[i] = MSG_ReadChar (net_message) * (15.0 / 16.0);
+		dir[i] = ((signed char) MSG_ReadByte (net_message)) * (15.0 / 16.0);
 	count = MSG_ReadByte (net_message);
 	color = MSG_ReadByte (net_message);
 

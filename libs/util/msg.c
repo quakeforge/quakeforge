@@ -179,17 +179,6 @@ MSG_GetReadCount (msg_t *msg)
 	return msg->readcount;
 }
 
-// returns -1 and sets msg->badread if no more characters are available
-int
-MSG_ReadChar (msg_t *msg)
-{
-	if (msg->readcount + 1 <= msg->message->cursize)
-		return (signed char) msg->message->data[msg->readcount++];
-
-	msg->badread = true;
-	return -1;
-}
-
 int
 MSG_ReadByte (msg_t *msg)
 {
@@ -317,14 +306,14 @@ MSG_ReadCoordAngleV (msg_t *msg, vec3_t coord, vec3_t angles)
 
 	for (i = 0; i < 3; i++) {
 		coord[i] = MSG_ReadShort (msg) * (1.0 / 8.0);
-		angles[i] = MSG_ReadChar (msg) * (360.0 / 256.0);
+		angles[i] = ((signed char) MSG_ReadByte (msg)) * (360.0 / 256.0);
 	}
 }
 
 float
 MSG_ReadAngle (msg_t *msg)
 {
-	return MSG_ReadChar (msg) * (360.0 / 256.0);
+	return ((signed char) MSG_ReadByte (msg)) * (360.0 / 256.0);
 }
 
 void
@@ -333,7 +322,7 @@ MSG_ReadAngleV (msg_t *msg, vec3_t angles)
 	int		i;
 
 	for (i = 0; i < 3; i++)
-		angles[i] = MSG_ReadChar (msg) * (360.0 / 256.0);
+		angles[i] = ((signed char) MSG_ReadByte (msg)) * (360.0 / 256.0);
 }
 
 float

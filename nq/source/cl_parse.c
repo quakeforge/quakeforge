@@ -509,23 +509,23 @@ CL_ParseClientdata (int bits)
 	int         i, j;
 
 	if (bits & SU_VIEWHEIGHT)
-		cl.viewheight = MSG_ReadChar (net_message);
+		cl.viewheight = ((signed char) MSG_ReadByte (net_message));
 	else
 		cl.viewheight = DEFAULT_VIEWHEIGHT;
 
 	if (bits & SU_IDEALPITCH)
-		cl.idealpitch = MSG_ReadChar (net_message);
+		cl.idealpitch = ((signed char) MSG_ReadByte (net_message));
 	else
 		cl.idealpitch = 0;
 
 	VectorCopy (cl.mvelocity[0], cl.mvelocity[1]);
 	for (i = 0; i < 3; i++) {
 		if (bits & (SU_PUNCH1 << i))
-			cl.punchangle[i] = MSG_ReadChar (net_message);
+			cl.punchangle[i] = ((signed char) MSG_ReadByte (net_message));
 		else
 			cl.punchangle[i] = 0;
 		if (bits & (SU_VELOCITY1 << i))
-			cl.mvelocity[0][i] = MSG_ReadChar (net_message) * 16;
+			cl.mvelocity[0][i] = ((signed char) MSG_ReadByte (net_message)) * 16;
 		else
 			cl.mvelocity[0][i] = 0;
 	}
