@@ -522,6 +522,9 @@ Menu_KeyEvent (knum_t key, short unicode, qboolean down)
 					PR_ExecuteProgram (&menu_pr_state, item->func);
 				} else {
 					menu = item;
+					if (menu->enter_hook) {
+						PR_ExecuteProgram (&menu_pr_state, menu->enter_hook);
+					}
 				}
 			}
 			break;
