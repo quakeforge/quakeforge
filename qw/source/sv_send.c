@@ -747,8 +747,14 @@ SV_SendClientMessages (void)
 		// drop the client
 		if (c->netchan.message.overflowed) {
 			extern void Analyze_Server_Packet (byte *data, int len);
+			byte *data = Hunk_TempAlloc (c->netchan.message.cursize + 8);
 
-			Analyze_Server_Packet (c->netchan.message.data, c->netchan.message.cursize);
+			memset (data, 0, 8);
+			memcpy (data + 8, c->netchan.message.data,
+					c->netchan.message.cursize);
+			Analyze_Server_Packet (c->netchan.message.data,
+								   c->netchan.message.cursize + 8);
+
 			SZ_Clear (&c->netchan.message);
 			SZ_Clear (&c->datagram);
 			SV_BroadcastPrintf (PRINT_HIGH, "%s overflowed\n", c->name);
