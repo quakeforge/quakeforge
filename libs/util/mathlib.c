@@ -71,7 +71,7 @@ ProjectPointOnPlane (vec3_t dst, const vec3_t p, const vec3_t normal)
 	dst[2] = p[2] - d * n[2];
 }
 
-//  assumes "src" is normalized
+// assumes "src" is normalized
 void
 PerpendicularVector (vec3_t dst, const vec3_t src)
 {
@@ -100,7 +100,8 @@ PerpendicularVector (vec3_t dst, const vec3_t src)
 # pragma optimize( "", off )
 #endif
 
-void VectorVectors(const vec3_t forward, vec3_t right, vec3_t up)
+void
+VectorVectors(const vec3_t forward, vec3_t right, vec3_t up)
 {
 	float d;
 
@@ -112,7 +113,7 @@ void VectorVectors(const vec3_t forward, vec3_t right, vec3_t up)
 	right[0] -= d * forward[0];
 	right[1] -= d * forward[1];
 	right[2] -= d * forward[2];
-	VectorNormalize(right);
+	VectorNormalize (right);
 	CrossProduct(right, forward, up);
 }
 
@@ -411,33 +412,29 @@ vec_t
 _Length (vec3_t v)
 {
 	float		length;
-	int			i;
 
-	length = 0;
-	for (i = 0; i < 3; i++)
-		length += v[i] * v[i];
-	length = sqrt (length);				// FIXME
-
+	length = sqrt (DotProduct (v, v));
 	return length;
 }
 
 float
 VectorNormalize (vec3_t v)
 {
-	float		length, ilength;
+	float length;
 
-	length = v[0] * v[0] + v[1] * v[1] + v[2] * v[2];
-	length = sqrt (length);				// FIXME
+	length = DotProduct (v, v);
+	if (length)
+	{
+		float ilength;
 
-	if (length) {
-		ilength = 1 / length;
+		length = sqrt (length);
+		ilength = 1.0 / length;
 		v[0] *= ilength;
 		v[1] *= ilength;
 		v[2] *= ilength;
 	}
 
 	return length;
-
 }
 
 void

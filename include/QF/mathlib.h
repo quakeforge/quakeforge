@@ -36,8 +36,8 @@
 # define M_PI	    3.14159265358979323846  // matches value in gcc v2 math.h
 #endif
 
-extern vec3_t vec3_origin;
-extern  int nanmask;
+extern int		nanmask;
+extern vec3_t	vec3_origin;
 
 #define IS_NAN(x) (((*(int *)&x)&nanmask)==nanmask)
 
@@ -84,7 +84,7 @@ void _VectorCopy (vec3_t in, vec3_t out);
 int _VectorCompare (vec3_t v1, vec3_t v2);
 //vec_t Length (vec3_t v);
 void CrossProduct (const vec3_t v1, const vec3_t v2, vec3_t cross);
-float VectorNormalize (vec3_t v);	       // returns vector length
+float VectorNormalize (vec3_t v);			// returns vector length
 void VectorInverse (vec3_t v);
 void _VectorScale (vec3_t in, vec_t scale, vec3_t out);
 int Q_log2(int val);
