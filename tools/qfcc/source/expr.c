@@ -958,7 +958,7 @@ return_expr (function_t *f, expr_t *e)
 		}
 		if (f->def->type->aux_type != t)
 			return error (e, "type mismatch for return value of %s",
-							e->e.def->name);
+							f->def->name);
 	}
 	return new_unary_expr ('r', e);
 }
