@@ -1710,6 +1710,7 @@ assign_expr (expr_t *e1, expr_t *e2)
 		e = new_block_expr ();
 		append_expr (e, assign_expr (temp, e2));
 		append_expr (e, assign_expr (e1, temp));
+		e->e.block.result = temp;
 		return e;
 	} else if (is_indirect (e1)) {
 		if (e1->type == ex_expr) {
