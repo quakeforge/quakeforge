@@ -109,17 +109,17 @@ GL_Common_Init_Cvars (void)
 	vid_use8bit = Cvar_Get ("vid_use8bit", "0", CVAR_ROM, NULL,	"Use 8-bit "
 							"shared palettes.");
 	gl_vaelements_max = Cvar_Get ("gl_vaelements_max", "0", CVAR_ROM, NULL,
-								  "limit the vertex array size for buggy "
+								  "Limit the vertex array size for buggy "
 								  "drivers. 0 (default) uses driver provided "
-								  "limit");
+								  "limit, -1 disables use of vertex arrays.");
 	gl_multitexture = Cvar_Get ("gl_multitexture", "0", CVAR_ARCHIVE,
 								gl_multitexture_f, "Use multitexture when "
-								"available");
+								"available.");
 	gl_screenshot_byte_swap =
-		Cvar_Get ("gl_screenshot_byte_swap", "0",
-				  CVAR_NONE, gl_screenshot_byte_swap_f,
-				  "Swap the bytes for gl screenshots. Needed if you get "
-				  "screenshots with red and blue swapped.");
+		Cvar_Get ("gl_screenshot_byte_swap", "0", CVAR_NONE,
+				  gl_screenshot_byte_swap_f, "Swap the bytes for gl "
+				  "screenshots. Needed if you get screenshots with red and "
+				  "blue swapped.");
 }
 
 /*
@@ -137,7 +137,6 @@ CheckMultiTextureExtensions (void)
 	}
 
 	if (QFGL_ExtensionPresent ("GL_ARB_multitexture")) {
-
 		int max_texture_units = 0;
 
 		qfglGetIntegerv (GL_MAX_TEXTURE_UNITS_ARB, &max_texture_units);
@@ -257,9 +256,6 @@ GL_Pre_Init (void)
 	}
 }
 
-/*
-	GL_Init_Common
-*/
 void
 GL_Init_Common (void)
 {
