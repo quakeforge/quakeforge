@@ -33,5 +33,5 @@ YFLAGS = -d
 
 bin_PROGRAMS=	qfcc
 
-qfcc_SOURCES=	cmdlib.c debug.c pr_comp.c pr_def.c pr_imm.c pr_lex.c pr_opcode.c qfcc.c qc-parse.y qc-lex.l emit.c expr.c switch.c
+qfcc_SOURCES=	cmdlib.c debug.c pr_comp.c pr_def.c pr_imm.c pr_lex.c pr_opcode.c qfcc.c qc-parse.y qc-lex.l emit.c expr.c switch.c getopt.c getopt1.c
 qfcc_LDADD=	-lQFgamecode -lQFutil
