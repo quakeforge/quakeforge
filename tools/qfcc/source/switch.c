@@ -181,7 +181,7 @@ balance_case_tree (case_node_t **nodes, int base, int count)
 }
 
 static case_node_t *
-build_case_tree (case_label_t **labels, int count)
+build_case_tree (case_label_t **labels, int count, int range)
 {
 	case_node_t **nodes;
 	int         i, j, k;
@@ -193,7 +193,7 @@ build_case_tree (case_label_t **labels, int count)
 	if (!nodes)
 		Sys_Error ("out of memory");
 
-	if (labels[0]->value->type == ex_integer) {
+	if (range && labels[0]->value->type == ex_integer) {
 		for (i = 0; i < count - 1; i = j, num_nodes++) {
 			for (j = i + 1; j < count; j++) {
 				if (labels[j]->value->e.integer_val
@@ -258,9 +258,10 @@ build_switch (expr_t *sw, case_node_t  *tree, int op, expr_t *sw_val,
 	test = binary_expr ('=', temp, test);
 	test->line = sw_val->line;
 	test->file = sw_val->file;
+	append_expr (sw, test);
 
 	if (tree->low == tree->high) {
-		branch = new_binary_expr ('n', test, tree->labels[0]);
+		branch = new_binary_expr ('n', temp, tree->labels[0]);
 		branch->line = sw_val->line;
 		branch->file = sw_val->file;
 		append_expr (sw, branch);
@@ -295,8 +296,6 @@ build_switch (expr_t *sw, case_node_t  *tree, int op, expr_t *sw_val,
 						   &numpr_globals);
 		table->type = ex_def;
 		table->e.def = def;
-
-		append_expr (sw, test);
 
 		if (tree->left) {
 			branch = new_binary_expr (IFB, temp, low_label);
@@ -391,7 +390,7 @@ switch_expr (switch_block_t *switch_block, expr_t *break_label,
 			temp = new_temp_def_expr (&type_integer);
 		else
 			temp = new_temp_def_expr (type);
-		case_tree = build_case_tree (labels, num_labels);
+		case_tree = build_case_tree (labels, num_labels, type == &type_integer);
 		switch (type->type) {
 			case ev_string:
 				op = NE;

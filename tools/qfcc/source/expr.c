@@ -888,13 +888,11 @@ binary_expr (int op, expr_t *e1, expr_t *e2)
 	if (op == '=' && e1->type == ex_def)
 		PR_DefInitialized (e1->e.def);
 
-	if (op == '=')
-		inc_users (e1);
-
 	if (e1->type == ex_block && e1->e.block.is_call
 		&& e2->type == ex_block && e2->e.block.is_call
 		&& e1->e.block.result) {
 		e = new_temp_def_expr (e1->e.block.result->e.def->type);
+		inc_users (e);	// for the block itself
 		e1 = binary_expr ('=', e, e1);
 	}
 
@@ -1365,7 +1363,7 @@ incop_expr (int op, expr_t *e, int postop)
 {
 	expr_t     *one = new_expr ();
 	expr_t     *incop;
-	
+
 	one->type = ex_integer;		// integer constants get auto-cast to float
 	one->e.integer_val = 1;
 	incop = asx_expr (op, e, one);
@@ -1376,7 +1374,6 @@ incop_expr (int op, expr_t *e, int postop)
 
 		temp = new_temp_def_expr (type);
 		append_expr (block, binary_expr ('=', temp, e));
-		temp->e.temp.users = 1;
 		append_expr (block, incop);
 		block->e.block.result = temp;
 		return block;
