@@ -201,6 +201,13 @@ opt_initializer
 	: /*empty*/
 	| '=' const
 		{
+			if (pr_scope) {
+				def_t *imm = PR_ReuseConstant ($2, 0);
+				opcode_t *op = PR_Opcode_Find ("=", 5, imm, imm, current_def);
+				emit_statement (op, imm, current_def, 0);
+			} else {
+				current_def = PR_ReuseConstant ($2,  current_def);
+			}
 		}
 	| '=' '#' const
 		{

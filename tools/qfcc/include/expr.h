@@ -58,4 +58,5 @@ expr_t *binary_expr (int op, expr_t *e1, expr_t *e2);
 expr_t *unary_expr (int op, expr_t *e);
 expr_t *function_expr (expr_t *e1, expr_t *e2);
 
+def_t *emit_statement (opcode_t *op, def_t *var_a, def_t *var_b, def_t *var_c);
 void emit_expr (expr_t *e);

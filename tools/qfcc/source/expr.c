@@ -712,6 +712,18 @@ emit_assign_expr (expr_t *e)
 		op = PR_Opcode_Find ("=", 5, def_a, def_b, def_b);
 		emit_statement (op, def_b, def_a, 0);
 	} else {
+		if (def_a->initialized) {
+			if (options.cow) {
+				int size = type_size [def_a->type->type];
+				int ofs = PR_NewLocation (def_a->type);
+				memcpy (pr_globals + ofs, pr_globals + def_a->ofs, size);
+				def_a->ofs = ofs;
+				def_a->initialized = 0;
+			} else {
+				fprintf (stderr, "%s:%d: assignment to constant %s\n",
+						 strings + e->file, e->line, def_a->name);
+			}
+		}
 		def_b = emit_sub_expr (e->e.expr.e2, def_a);
 	}
 	return def_b;
