@@ -822,6 +822,14 @@ case "${host}" in
 		SYSTYPE=WIN32
 		AC_MSG_RESULT([Win32 driver])
 		WIN32_LIBS=' $(NET_LIBS)'
+		if test "x$host" != "x$build"; then
+			case "$build_os" in
+				cygwin*)
+					WIN32_LIBS=" -L/usr/lib/w32api $WIN32_LIBS"
+					;;
+			esac
+		fi
+
 		;;
 	i?86-*-cygwin*)
 		SYSTYPE=WIN32
@@ -1552,6 +1560,18 @@ if test "x$SYSTYPE" = "xWIN32"; then
 	ASFLAGS="\$(DEFS) \$(CFLAGS) \$(CPPFLAGS) \$(DEFAULT_INCLUDES) \$(INCLUDES) -D_WIN32"
 	plugin_ldflags="-no-undefined"
 	plugin_libadd="-luser32 -lgdi32 -lwinmm"
+	case "$host_os" in
+		mingw*)
+			if test "x$host" != "x$build"; then
+				case "$build_os" in
+					cygwin*)
+						plugin_libadd=" -L/usr/lib/w32api $plugin_libadd"
+						;;
+				esac
+			fi
+			;;
+	esac
+
 else
 	ASFLAGS="\$(DEFS) \$(CFLAGS) \$(CPPFLAGS) \$(DEFAULT_INCLUDES) \$(INCLUDES)"
 	plugin_ldflags=
