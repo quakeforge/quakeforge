@@ -83,7 +83,8 @@ static int	cs_texture;					// crosshair texturea
 
 static byte color_0_8[4] = { 204, 204, 204, 255 };
 
-static byte cs_data[2*64] = {
+// NOTE: this array is INCORRECT for direct uploading see Draw_Init
+static byte cs_data[8 * 8 * 4] = {
 		0xff, 0xff, 0xff, 0xfe, 0xff, 0xff, 0xff, 0xff,
 		0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
 		0xff, 0xff, 0xff, 0xfe, 0xff, 0xff, 0xff, 0xff,
@@ -326,6 +327,7 @@ Draw_Init (void)
 {
 	int	     i;
 	tex_t	*image;
+	byte    *cs_tmp_data;
 
 	Cmd_AddCommand ("gl_texturemode", &GL_TextureMode_f,
 					"Texture mipmap quality.");
@@ -356,8 +358,21 @@ Draw_Init (void)
 									   true, 1);
 	}
 
-	// now turn them into textures
-	cs_texture = GL_LoadTexture ("crosshair", 8, 16, cs_data, false, true, 1);
+	// re-arrange the cs_data bytes so they're layed out properly for
+	// subimaging
+	cs_tmp_data = malloc (sizeof (cs_data));
+	for (i = 0; i < 8 * 8; i++) {
+		int         x, y;
+		x = i % 8;
+		y = i / 8;
+		cs_tmp_data[y * 16 + x + 0 * 8 * 8 + 0] = cs_data[i + 0 * 8 * 8];
+		cs_tmp_data[y * 16 + x + 0 * 8 * 8 + 8] = cs_data[i + 1 * 8 * 8];
+		cs_tmp_data[y * 16 + x + 2 * 8 * 8 + 0] = cs_data[i + 2 * 8 * 8];
+		cs_tmp_data[y * 16 + x + 2 * 8 * 8 + 8] = cs_data[i + 3 * 8 * 8];
+	}
+	cs_texture = GL_LoadTexture ("crosshair", 16, 16, cs_tmp_data,
+								 false, true, 1);
+	free (cs_tmp_data);
 
 	qfglTexParameterf (GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
 	qfglTexParameterf (GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
@@ -527,13 +542,13 @@ crosshair_2 (int x, int y)
 	qfglBegin (GL_QUADS);
 
 	qfglTexCoord2f (0, 0);
-	qfglVertex2f (x - 6, y - 6);
-	qfglTexCoord2f (1, 0);
-	qfglVertex2f (x + 9, y - 6);
-	qfglTexCoord2f (1, 0.5);
+	qfglVertex2f (x - 7, y - 7);
+	qfglTexCoord2f (0.5, 0);
+	qfglVertex2f (x + 9, y - 7);
+	qfglTexCoord2f (0.5, 0.5);
 	qfglVertex2f (x + 9, y + 9);
 	qfglTexCoord2f (0, 0.5);
-	qfglVertex2f (x - 6, y + 9);
+	qfglVertex2f (x - 7, y + 9);
 
 	qfglEnd ();
 	qfglColor3ubv (color_white);
@@ -550,14 +565,14 @@ crosshair_3 (int x, int y)
 
 	qfglBegin (GL_QUADS);
 
-	qfglTexCoord2f (0, 0.5);
-	qfglVertex2f (x - 6, y - 6);
+	qfglTexCoord2f (0.5, 0);
+	qfglVertex2f (x - 7, y - 7);
+	qfglTexCoord2f (1, 0);
+	qfglVertex2f (x + 9, y - 7);
 	qfglTexCoord2f (1, 0.5);
-	qfglVertex2f (x + 9, y - 6);
-	qfglTexCoord2f (1, 1);
 	qfglVertex2f (x + 9, y + 9);
-	qfglTexCoord2f (0, 1);
-	qfglVertex2f (x - 6, y + 9);
+	qfglTexCoord2f (0.5, 0.5);
+	qfglVertex2f (x - 7, y + 9);
 
 	qfglEnd ();
 	qfglColor3ubv (color_white);
