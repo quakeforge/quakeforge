@@ -37,7 +37,7 @@ qfcc \- The QuakeForge Code Compiler
 .RI [ options ]
 .RI [ files ]
 .SH DESCRIPTION
-\fBqfcc\fP compiles Ruamoko source into a form that the QuakeForge server can
+\fBqfcc\fP compiles Ruamoko source into a form that the QuakeForge engine can
 understand.
 .SH OPTIONS
 \fBqfcc\fP takes the following arguments:
@@ -55,7 +55,7 @@ Display more output than usual.
 Generate debugging info. Synonym for \fB\-\-code debug\fP.
 .TP
 .B \-o, \-\0output\-file FILE
-Secify output file name.
+Specify output file name.
 .TP
 .B \-P, \-\-progs\-src FILE
 File to use instead of progs.src
@@ -101,7 +101,7 @@ for include files.
 Undefine preprocessor symbols, if the preprocessor is in use.
 .TP
 .B \-\-cpp CPPSPEC
-cpp execution command line. See \fBCPP NAME\fP for details.
+\fBcpp\fP execution command line. See \fBCPP NAME\fP for details.
 .TP
 .B \-L DIR
 Add DIR to the search path used for -l.
@@ -116,7 +116,7 @@ Compile only, do not link. Can be used in either progs.src or separate
 compilation modes.
 .TP
 .B \-r
-Incremental linking. Generate a larger object files from other object files
+Incremental linking. Generate a larger object file from other object files
 and libraries.
 .TP
 .B \-z
@@ -194,20 +194,20 @@ Silences all notice messages.
 Promote notices to warnings. If warnings are being treated as errors, so will
 notices.
 .SH "CPP NAME"
-When preprocessing source files, \fBqfcc\fP calls cpp (the C preprocessor)
-with a configurable command line. This is useful when wishing to use an
-alternative preprocessor (though it must be command line compatable with cpp)
-and when \fBqfcc\fP has been mis-configured to call cpp incorrectly for your
-operating system. If the latter is the case, please report the details
-(operating system, detection methods, correct execution specificaiton). The
-base default execution spec (on most Linux systems) is \fBcpp %d -o %o %i\fP.
-This spec is similar in concept to a printf string. The name of the program
-may be either absolute (eg /lib/cpp) or relative as the PATH will be searched.
-Available substituions:
+When preprocessing source files, \fBqfcc\fP calls \fBcpp\fP (the C
+preprocessor) with a configurable command line. This is useful when wishing
+to use an alternative preprocessor (though it must be command line compatible
+with \fBcpp\fP) and when \fBqfcc\fP has been mis-configured to call \fBcpp\fP
+incorrectly for your operating system. If the latter is the case, please
+report the details (operating system, detection methods, correct execution
+specification). The base default execution spec (on most Linux systems) is
+\fBcpp %d -o %o %i\fP.  This spec is similar in concept to a printf string.
+The name of the program may be either absolute (eg /lib/\fBcpp\fP) or
+relative as the PATH will be searched.  Available substitutions:
 .TP
 .B %d
-Mainly for defines (-D, -U and -I) but %d will be replaced by all cpp options
-that \fBqfcc\fP will be passing.
+Mainly for defines (-D, -U and -I) but %d will be replaced by all \fBcpp\fP
+options that \fBqfcc\fP will be passing.
 .TP
 .B %o
 This will be replaced by the output file path. Could be either absolute or
