@@ -593,6 +593,12 @@ CL_FullServerinfo_f (void)
 		else
 			Con_Printf ("Invalid QSG Protocol number: %s", p);
 	}
+	if ((p = Info_ValueForKey (cl.serverinfo, "chase")) && *p) {
+		cl.chase = atof (p);
+	}
+	if ((p = Info_ValueForKey (cl.serverinfo, "watervis")) && *p) {
+		cl.watervis = atof (p);
+	}
 	if ((p = Info_ValueForKey (cl.serverinfo, "skybox")) && *p) {
 		//FIXME didn't actually do anything anyway
 	}
@@ -1473,7 +1479,7 @@ Host_Frame (float time)
 	r_frametime = host_frametime;
 
 	// don't allow cheats in multiplayer
-	if (r_active && !atoi (Info_ValueForKey (cl.serverinfo, "watervis")))
+	if (r_active && !cl.watervis && r_wateralpha->value != 1.0)
 		Cvar_SetValue (r_wateralpha, 1);
 
 	CL_UpdateScreen (realtime);

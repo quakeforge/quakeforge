@@ -729,8 +729,7 @@ V_CalcRefdef (void)
 	} else
 		oldz = cl.simorg[2];
 
-	if (atoi (Info_ValueForKey (cl.serverinfo, "chase"))
-		&& chase_active->int_val)
+	if (cl.chase && chase_active->int_val)
 		Chase_Update ();
 }
 

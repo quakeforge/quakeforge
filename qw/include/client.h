@@ -257,6 +257,10 @@ typedef struct
 	int			viewentity;
 	float		stdver;
 
+	// serverinfo mirrors
+	int			watervis;
+	int			chase;
+
 // refresh related state
 	struct model_s	*worldmodel;	// cl_entitites[0].model
 	int			num_entities;	// stored bottom up in cl_entities array

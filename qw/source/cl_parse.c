@@ -1026,6 +1026,11 @@ CL_ServerInfo (void)
 	Con_DPrintf ("SERVERINFO: %s=%s\n", key, value);
 
 	Info_SetValueForKey (cl.serverinfo, key, value, MAX_SERVERINFO_STRING, 0);
+	if (strequal (key, "chase")) {
+		cl.chase = atoi (value);
+	} else if (strequal (key, "watervis")) {
+		cl.watervis = atoi (value);
+	}
 }
 
 void

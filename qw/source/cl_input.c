@@ -522,7 +522,7 @@ CL_BaseMove (usercmd_t *cmd)
 	IN_Move ();
 
 		// adjust for chase camera angles
- 	if (atoi (Info_ValueForKey (cl.serverinfo, "chase"))
+ 	if (cl.chase
 		&& (chase_active->int_val == 2 || chase_active->int_val == 3))
 	{
 		vec3_t dir = {0,0,0}, forward, right, up;

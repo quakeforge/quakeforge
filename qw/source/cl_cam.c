@@ -143,8 +143,7 @@ vlen (vec3_t v)
 qboolean
 Cam_DrawViewModel (void)
 {
-	if (atoi (Info_ValueForKey (cl.serverinfo, "chase"))
-		&& chase_active->int_val)
+	if (cl.chase && chase_active->int_val)
 		return false;
 
 	if (!cl.spectator)
@@ -159,8 +158,7 @@ Cam_DrawViewModel (void)
 qboolean
 Cam_DrawPlayer (int playernum)
 {
-	if (atoi (Info_ValueForKey (cl.serverinfo, "chase")) == 0
-		|| chase_active->int_val == 0)
+	if (cl.chase == 0 || chase_active->int_val == 0)
 		return true;
 
 	if (cl.spectator && autocam && locked && cl_chasecam->int_val &&
