@@ -93,9 +93,15 @@ dict_free (void *i, void *unused)
 }
 
 plitem_t *
-PL_ObjectForKey (hashtab_t *table, const char *key)
+PL_ObjectForKey (plitem_t *item, const char *key)
 {
-	dictkey_t *k = (dictkey_t *) Hash_Find (table, key);
+	hashtab_t *table = (hashtab_t *) item->data;
+	dictkey_t *k;
+
+	if (item->type != QFDictionary)
+		return NULL;
+
+	k = (dictkey_t *) Hash_Find (table, key);
 	return k ? k->value : NULL;
 }
 

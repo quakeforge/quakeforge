@@ -81,7 +81,7 @@ typedef struct plbinary_s	plbinary_t;
 struct hashtab_s;
 
 plitem_t *PL_GetPropertyList (const char *);
-plitem_t *PL_ObjectForKey (struct hashtab_s *, const char *);
+plitem_t *PL_ObjectForKey (plitem_t *, const char *);
 void PL_FreeItem (struct plitem_s *);
 
 typedef struct pldata_s {	// Unparsed property list string
