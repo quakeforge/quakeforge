@@ -1660,7 +1660,7 @@ SV_PR_Cmds_Init ()
 	PR_AddBuiltin (&sv_pr_state, "logfrag", PF_logfrag, 79); // void (entity killer, entity killee) logfrag
 	PR_AddBuiltin (&sv_pr_state, "infokey", PF_infokey, 80); // string (entity e, string key) infokey
 	PR_AddBuiltin (&sv_pr_state, "multicast", PF_multicast, 82); // void (vector where, float set) multicast
-	kR_AddBuiltin (&sv_pr_state, "testentitypos", PF_testentitypos, 92); // entity (entity ent) testentitypos
+	PR_AddBuiltin (&sv_pr_state, "testentitypos", PF_testentitypos, 92); // entity (entity ent) testentitypos
 	PR_AddBuiltin (&sv_pr_state, "hullpointcontents", PF_hullpointcontents, 93);	// integer (entity ent, vector point) hullpointcontents
 	PR_AddBuiltin (&sv_pr_state, "getboxbounds", PF_getboxbounds, 94); // vector (integer hull, integer max) getboxbounds
 	PR_AddBuiltin (&sv_pr_state, "getboxhull", PF_getboxhull, 95); // integer () getboxhull
