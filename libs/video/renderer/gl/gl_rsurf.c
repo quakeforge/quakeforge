@@ -258,9 +258,9 @@ R_BuildLightMap (msurface_t *surf, byte * dest, int stride)
 	bl = blocklights;
 
 	if (gl_mtex_active) {
-		shift = 7;      // 0-1 lightmap range.
+		shift = 7;		// 0-1 lightmap range.
 	} else {
-		shift = 8;      // 0-2 lightmap range.
+		shift = 8;		// 0-2 lightmap range.
 	}
 
 	switch (lightmap_bytes) {
