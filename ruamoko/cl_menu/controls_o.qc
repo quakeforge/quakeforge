@@ -96,8 +96,8 @@ init_binding_hash =
 	StringHash_Set(weapon_binding_hash, "Super Shotgun", "impulse 3", 0);
 	StringHash_Set(weapon_binding_hash, "Nailgun", "impulse 4", 0);
 	StringHash_Set(weapon_binding_hash, "Super Nailgun", "impulse 5", 0);
-	StringHash_Set(weapon_binding_hash, "Rocket L. ", "impulse 6", 0);
-	StringHash_Set(weapon_binding_hash, "Grenade L. ", "impulse 7", 0);
+	StringHash_Set(weapon_binding_hash, "Grenade L. ", "impulse 6", 0);
+	StringHash_Set(weapon_binding_hash, "Rocket L. ", "impulse 7", 0);
 	StringHash_Set(weapon_binding_hash, "Thunderbolt", "impulse 8", 0);
 
 };
