@@ -101,6 +101,7 @@ SND_LoadOgg (QFile *file, sfx_t *sfx, cache_allocator_t allocator)
 
 	if (ov_open_callbacks (file, &vf, 0, 0, callbacks) < 0) {
 		Sys_Printf ("Input does not appear to be an Ogg bitstream.\n");
+		Qclose (file);
 		return 0;
 	}
 	vi = ov_info (&vf, -1);
