@@ -1,10 +1,12 @@
 #!/bin/sh
 
-# This is my script for building a complete cross-compiler
-# toolchain. It is based partly on Mo Dejong's script for doing
-# the same, but with some added fixes.
+# This is my script for building a complete cross-compiler toolchain.
+# It is based partly on Ray Kelm's script, which in turn was built on
+# Mo Dejong's script for doing the same, but with some added fixes.
+# The intent with this script is to build a cross-compiled version
+# of the current MinGW environment.
 #
-# Written by Ray Kelm <rhk@newimage.com>
+# Updated by Sam Lantinga <slouken@libsdl.org>
 
 # what flavor are we building?
 
@@ -17,28 +19,26 @@ PREFIX=/usr/local/cross-tools
 # you probably don't need to change anything from here down
 
 TOPDIR=`pwd`
-SRCDIR=$TOPDIR/source
+SRCDIR="$TOPDIR/source"
 
-# these files are available from Mumit Khan's archive
+# These are the files from the MinGW 1.1 release
 
-BINUTILS=binutils-19990818
-BINUTILS_TAR=$BINUTILS-1-src.tar.gz
-GCC=gcc-2.95.2
-GCC_TAR=$GCC-1-src.tar.gz
-MSVCRT_ZIP=bin-msvcrt-2000-03-27.zip
-MUMIT_URL=ftp://ftp.xraylith.wisc.edu/pub/khan/gnu-win32/mingw32/snapshots/gcc-2.95.2-1
-MUMIT_URL2=ftp://ftp.xraylith.wisc.edu/pub/khan/gnu-win32/mingw32/runtime
+MINGW_URL=http://unc.dl.sourceforge.net/sourceforge/mingw
+GCC=gcc-3.2-20020817-1
+GCC_ARCHIVE=$GCC.src.tar.gz
+GCC_PATCH=""
+BINUTILS=binutils-2.13.90-20021006-2
+BINUTILS_ARCHIVE=$BINUTILS-src.tar.gz
+MINGW=mingw-runtime-2.2
+MINGW_ARCHIVE=$MINGW.tar.gz
+W32API=w32api-2.0
+W32API_ARCHIVE=$W32API.tar.gz
 
-# taniwha's binutils patch
-BINUTILS_PATCH=binutils-19990818-bison-patch
-TAN_URL=http://quakeforge.net/~taniwha/
+# These are the files from the SDL website
 
-# this is from my archive
-
-GCC_PATCH=gcc-2.95.2-libio-patch
-RHK_URL=http://www.newimage.com/~rhk/crossgcc/
-OPENGL_TAR=opengl.tar.gz
-DIRECTX_TAR=directx.tar.gz
+SDL_URL=http://www.libsdl.org/extras/win32/common
+OPENGL_ARCHIVE=opengl-devel.tar.gz
+DIRECTX_ARCHIVE=directx-devel.tar.gz
 
 # need install directory first on the path so gcc can find binutils
 
@@ -50,10 +50,10 @@ PATH="$PREFIX/bin:$PATH"
 
 download_file()
 {
-	cd $SRCDIR
+	cd "$SRCDIR"
 	if test ! -f $1 ; then
 		echo "Downloading $1"
-		wget $2/$1
+		wget "$2/$1"
 		if test ! -f $1 ; then
 			echo "Could not download $1"
 			exit 1
@@ -61,142 +61,166 @@ download_file()
 	else
 		echo "Found $1 in the srcdir $SRCDIR"
 	fi
-  	cd $TOPDIR
+  	cd "$TOPDIR"
 }
 
 download_files()
 {
-	mkdir -p $SRCDIR
+	mkdir -p "$SRCDIR"
 	
 	# Make sure wget is installed
 	if test "x`which wget`" = "x" ; then
 		echo "You need to install wget."
 		exit 1
 	fi
-	download_file $BINUTILS_TAR $MUMIT_URL
-	download_file $BINUTILS_PATCH $TAN_URL
-	download_file $GCC_TAR $MUMIT_URL
-	download_file $MSVCRT_ZIP $MUMIT_URL2
-	download_file $GCC_PATCH $RHK_URL
-	download_file $OPENGL_TAR $RHK_URL
-	download_file $DIRECTX_TAR $RHK_URL
+	download_file "$GCC_ARCHIVE" "$MINGW_URL"
+	download_file "$BINUTILS_ARCHIVE" "$MINGW_URL"
+	download_file "$MINGW_ARCHIVE" "$MINGW_URL"
+	download_file "$W32API_ARCHIVE" "$MINGW_URL"
+	download_file "$OPENGL_ARCHIVE" "$SDL_URL"
+	download_file "$DIRECTX_ARCHIVE" "$SDL_URL"
 }
 
 install_libs()
 {
-	echo "Installing binary cross libs and includes"
-	mkdir -p $PREFIX/$TARGET
-	cd $PREFIX
-	unzip -q -o $SRCDIR/$MSVCRT_ZIP
-	cd $PREFIX/$TARGET
-	gzip -dc $SRCDIR/opengl.tar.gz | tar xf -
-	gzip -dc $SRCDIR/directx.tar.gz | tar xf -
-	cd $TOPDIR
+	echo "Installing cross libs and includes"
+	mkdir -p "$PREFIX/$TARGET"
+	cd "$PREFIX/$TARGET"
+	gzip -dc "$SRCDIR/$MINGW_ARCHIVE" | tar xf -
+	gzip -dc "$SRCDIR/$W32API_ARCHIVE" | tar xf -
+	gzip -dc "$SRCDIR/$OPENGL_ARCHIVE" | tar xf -
+	gzip -dc "$SRCDIR/$DIRECTX_ARCHIVE" | tar xf -
+	cd "$TOPDIR"
 }
 
 extract_binutils()
 {
-	cd $SRCDIR
-	rm -rf $BINUTILS
+	cd "$SRCDIR"
+	rm -rf "$BINUTILS"
 	echo "Extracting binutils"
-	gzip -dc $SRCDIR/$BINUTILS_TAR | tar xf -
-	cd $TOPDIR
-}
-
-patch_binutils()
-{
-	echo "Patching binutils"
-	cd $SRCDIR/$BINUTILS
-	patch -p1 < $SRCDIR/$BINUTILS_PATCH
-	cd $TOPDIR
+	gzip -dc "$SRCDIR/$BINUTILS_ARCHIVE" | tar xf -
+	mv binutills-2.13.90-20021006-2 binutils-2.13.90-20021006-2
+	cd "$TOPDIR"
 }
 
 configure_binutils()
 {
-	cd $TOPDIR
-	rm -rf binutils-$TARGET
-	mkdir binutils-$TARGET
-	cd binutils-$TARGET
+	cd "$TOPDIR"
+	rm -rf "binutils-$TARGET"
+	mkdir "binutils-$TARGET"
+	cd "binutils-$TARGET"
 	echo "Configuring binutils"
-	$SRCDIR/$BINUTILS/configure --prefix=$PREFIX --target=$TARGET &> configure.log
-	cd $TOPDIR
+	"$SRCDIR/$BINUTILS/configure" --prefix="$PREFIX" --target=$TARGET &> configure.log
+	cd "$TOPDIR"
 }
 
 build_binutils()
 {
-	cd $TOPDIR/binutils-$TARGET
+	cd "$TOPDIR/binutils-$TARGET"
 	echo "Building binutils"
 	make &> make.log
 	if test $? -ne 0; then
-		echo "make failed"
+		echo "make failed - log available: binutils-$TARGET/make.log"
 		exit 1
 	fi
-	cd $TOPDIR
+	cd "$TOPDIR"
 }
 
 install_binutils()
 {
-	cd $TOPDIR/binutils-$TARGET
+	cd "$TOPDIR/binutils-$TARGET"
 	echo "Installing binutils"
 	make install &> make-install.log
 	if test $? -ne 0; then
-		echo "install failed"
+		echo "install failed - log available: binutils-$TARGET/make-install.log"
 		exit 1
 	fi
-	cd $TOPDIR
+	cd "$TOPDIR"
 }
 
 extract_gcc()
 {
-	cd $SRCDIR
-	rm -rf $GCC
+	cd "$SRCDIR"
+	rm -rf "$GCC"
 	echo "Extracting gcc"
-	gzip -dc $SRCDIR/$GCC_TAR | tar xf -
-	cd $TOPDIR
+	gzip -dc "$SRCDIR/$GCC_ARCHIVE" | tar xf -
+	cd "$TOPDIR"
 }
 
 patch_gcc()
 {
-	echo "Patching gcc"
-	cd $SRCDIR/$GCC
-	patch -p1 < $SRCDIR/$GCC_PATCH
-	cd $TOPDIR
+	if [ "$GCC_PATCH" != "" ]; then
+		echo "Patching gcc"
+		cd "$SRCDIR/$GCC"
+		patch -p1 < "$SRCDIR/$GCC_PATCH"
+		cd "$TOPDIR"
+	fi
 }
 
 configure_gcc()
 {
-	cd $TOPDIR
-	rm -rf gcc-$TARGET
-	mkdir gcc-$TARGET
-	cd gcc-$TARGET
+	cd "$TOPDIR"
+	rm -rf "gcc-$TARGET"
+	mkdir "gcc-$TARGET"
+	cd "gcc-$TARGET"
 	echo "Configuring gcc"
-	$SRCDIR/$GCC/configure -v --prefix=$PREFIX --target=$TARGET \
-		--with-gnu-as --with-gnu-ld --disable-multilib &> configure.log
-	cd $TOPDIR
+	"$SRCDIR/$GCC/configure" -v \
+		--prefix="$PREFIX" --target=$TARGET \
+		--with-headers="$PREFIX/$TARGET/include" \
+		--with-gnu-as --with-gnu-ld \
+		--without-newlib --disable-multilib &> configure.log
+	cd "$TOPDIR"
 }
 
 build_gcc()
 {
-	cd $TOPDIR/gcc-$TARGET
+	cd "$TOPDIR/gcc-$TARGET"
 	echo "Building gcc"
 	make LANGUAGES="c c++" &> make.log
 	if test $? -ne 0; then
-		echo "make failed"
+		echo "make failed - log available: gcc-$TARGET/make.log"
 		exit 1
 	fi
-	cd $TOPDIR
+	cd "$TOPDIR"
 }
 
 install_gcc()
 {
-	cd $TOPDIR/gcc-$TARGET
+	cd "$TOPDIR/gcc-$TARGET"
 	echo "Installing gcc"
 	make LANGUAGES="c c++" install &> make-install.log
 	if test $? -ne 0; then
-		echo "install failed"
+		echo "install failed - log available: gcc-$TARGET/make-install.log"
 		exit 1
 	fi
-	cd $TOPDIR
+	cd "$TOPDIR"
+}
+
+final_tweaks()
+{
+	echo "Finalizing installation"
+
+	# remove gcc build headers
+	rm -rf "$PREFIX/$TARGET/sys-include"
+
+	# make cc and c++ symlinks to gcc and g++
+	if [ ! -f "$PREFIX/$TARGET/bin/g++" ]; then
+		ln "$PREFIX/bin/$TARGET-g++" "$PREFIX/$TARGET/bin/g++"
+	fi
+	if [ ! -f "$PREFIX/$TARGET/bin/cc" ]; then
+		ln -s "gcc" "$PREFIX/$TARGET/bin/cc"
+	fi
+	if [ ! -f "$PREFIX/$TARGET/bin/c++" ]; then
+		ln -s "g++" "$PREFIX/$TARGET/bin/c++"
+	fi
+
+	# strip all the binaries
+	ls "$PREFIX"/bin/* "$PREFIX/$TARGET"/bin/* | egrep -v '.dll$' |
+	while read file; do
+		strip "$file"
+	done
+
+	echo "Installation complete!"
 }
 
 download_files
@@ -204,7 +228,6 @@ download_files
 install_libs
 
 extract_binutils
-patch_binutils
 configure_binutils
 build_binutils
 install_binutils
@@ -215,3 +238,4 @@ configure_gcc
 build_gcc
 install_gcc
 
+final_tweaks
