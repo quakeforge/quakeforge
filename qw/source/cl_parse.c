@@ -411,6 +411,7 @@ CL_ParseDownload (void)
 	if (cls.demoplayback) {
 		if (size > 0)
 			net_message->readcount += size;
+		cls.downloadname[0] = 0;
 		return;							// not in demo playback
 	}
 
@@ -421,6 +422,7 @@ CL_ParseDownload (void)
 			Qclose (cls.download);
 			cls.download = NULL;
 		}
+		cls.downloadname[0] = 0;
 		CL_RequestNextDownload ();
 		return;
 	}
@@ -457,6 +459,7 @@ CL_ParseDownload (void)
 
 		cls.download = Qopen (name, "wb");
 		if (!cls.download) {
+			cls.downloadname[0] = 0;
 			net_message->readcount += size;
 			Con_Printf ("Failed to open %s\n", cls.downloadtempname);
 			CL_RequestNextDownload ();
