@@ -140,7 +140,7 @@ LoadPNG (QFile *infile)
 	 * this file may have come from--so if it doesn't have a file gamma, don't
 	 * do any correction ("do no harm")
 	 */
-	if (png_get_gAMA(png_ptr, info_ptr, &gamma))
+	if (!png_get_gAMA(png_ptr, info_ptr, &gamma))
 		png_set_gamma (png_ptr, 1.0, gamma);
 
 	/* All transformations have been registered, now update the info_ptr structure */		
