@@ -2122,23 +2122,23 @@ SV_PR_Cmds_Init ()
 	// 89
 	// 90
 	// 91
-	PR_AddBuiltin (&sv_pr_state, "testentitypos", PF_testentitypos, 92);	// entity (entity ent) testentitypos = #92
-	PR_AddBuiltin (&sv_pr_state, "hullpointcontents", PF_hullpointcontents, 93);	// integer (entity ent, vector point) hullpointcontents = #93
-	PR_AddBuiltin (&sv_pr_state, "getboxbounds", PF_getboxbounds, 94);	// vector (integer hull, integer max) getboxbounds = #94
-	PR_AddBuiltin (&sv_pr_state, "getboxhull", PF_getboxhull, 95);	// integer () getboxhull = #95
-	PR_AddBuiltin (&sv_pr_state, "freeboxhull", PF_freeboxhull, 96);	// void (integer hull) freeboxhull = #96
-	PR_AddBuiltin (&sv_pr_state, "rotate_bbox", PF_rotate_bbox, 97);	// void (integer hull, vector right, vector forward, vector up, vector mins, vector maxs) rotate_bbox = #97
-	PR_AddBuiltin (&sv_pr_state, "checkmove", PF_checkmove, 98);	// void (vector start, vector mins, vector maxs, vector end, float type, entity passent) checkmove = #98
+	PR_AddBuiltin (&sv_pr_state, "testentitypos", PF_testentitypos, -1);	// entity (entity ent) testentitypos = #92
+	PR_AddBuiltin (&sv_pr_state, "hullpointcontents", PF_hullpointcontents, -1);	// integer (entity ent, vector point) hullpointcontents = #93
+	PR_AddBuiltin (&sv_pr_state, "getboxbounds", PF_getboxbounds, -1);	// vector (integer hull, integer max) getboxbounds = #94
+	PR_AddBuiltin (&sv_pr_state, "getboxhull", PF_getboxhull, -1);	// integer () getboxhull = #95
+	PR_AddBuiltin (&sv_pr_state, "freeboxhull", PF_freeboxhull, -1);	// void (integer hull) freeboxhull = #96
+	PR_AddBuiltin (&sv_pr_state, "rotate_bbox", PF_rotate_bbox, -1);	// void (integer hull, vector right, vector forward, vector up, vector mins, vector maxs) rotate_bbox = #97
+	PR_AddBuiltin (&sv_pr_state, "checkmove", PF_checkmove, -1);	// void (vector start, vector mins, vector maxs, vector end, float type, entity passent) checkmove = #98
 	PR_AddBuiltin (&sv_pr_state, "checkextension", PF_Checkextension, 99);	// = #99
-	PR_AddBuiltin (&sv_pr_state, "strlen", PF_strlen, 100);	// = #100
-	PR_AddBuiltin (&sv_pr_state, "charcount", PF_charcount, 101);	// = #101
-	PR_AddBuiltin (&sv_pr_state, "setinfokey", PF_setinfokey, 102);	// void (entity ent, string key, string value) setinfokey = #102
-	PR_AddBuiltin (&sv_pr_state, "cfopen", PF_cfopen, 103);	// float (string path, string mode) cfopen = #103
-	PR_AddBuiltin (&sv_pr_state, "cfclose", PF_cfclose, 104);	// void (float desc) cfclose = #104
-	PR_AddBuiltin (&sv_pr_state, "cfread", PF_cfread, 105);	// string (float desc) cfread = #105
-	PR_AddBuiltin (&sv_pr_state, "cfwrite", PF_cfwrite, 106);	// float (float desc, string buf) cfwrite = #106
-	PR_AddBuiltin (&sv_pr_state, "cfeof", PF_cfeof, 107);	// float (float desc) cfeof = #107
-	PR_AddBuiltin (&sv_pr_state, "cfquota", PF_cfquota, 108);	// float () cfquota = #108
+	PR_AddBuiltin (&sv_pr_state, "strlen", PF_strlen, -1);	// = #100
+	PR_AddBuiltin (&sv_pr_state, "charcount", PF_charcount, -1);	// = #101
+	PR_AddBuiltin (&sv_pr_state, "setinfokey", PF_setinfokey, -1);	// void (entity ent, string key, string value) setinfokey = #102
+	PR_AddBuiltin (&sv_pr_state, "cfopen", PF_cfopen, -1);	// float (string path, string mode) cfopen = #103
+	PR_AddBuiltin (&sv_pr_state, "cfclose", PF_cfclose, -1);	// void (float desc) cfclose = #104
+	PR_AddBuiltin (&sv_pr_state, "cfread", PF_cfread, -1);	// string (float desc) cfread = #105
+	PR_AddBuiltin (&sv_pr_state, "cfwrite", PF_cfwrite, -1);	// float (float desc, string buf) cfwrite = #106
+	PR_AddBuiltin (&sv_pr_state, "cfeof", PF_cfeof, -1);	// float (float desc) cfeof = #107
+	PR_AddBuiltin (&sv_pr_state, "cfquota", PF_cfquota, -1);	// float () cfquota = #108
 	PR_AddBuiltin (&sv_pr_state, "checkfunction", PF_checkfunction, 109);	// function (string name) checkfunction = #109
 	PR_AddBuiltin (&sv_pr_state, "getfunction", PF_getfunction, 110);	// function (string name) getfunction = #110
 };
