@@ -116,8 +116,7 @@ R_DrawSpriteModel (entity_t *e)
 	mspriteframe_t	*frame;
 	vec3_t			 point, v_forward, v_right, v_up;
 
-	// don't even bother culling, because it's just a single
-	// polygon without a surface cache
+	// don't bother culling, it's just a single polygon without a surface cache
 	frame = R_GetSpriteFrame (e);
 	psprite = e->model->cache.data;
 

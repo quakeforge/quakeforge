@@ -182,6 +182,8 @@ R_DrawEntitiesOnList (void)
 		R_DrawBrushModel (currententity);
 	}
 
+	if (gl_affinemodels->int_val)
+		qfglHint (GL_PERSPECTIVE_CORRECTION_HINT, GL_NICEST);
 	for (i = 0; i < r_numvisedicts; i++) {
 		if (r_visedicts[i]->model->type != mod_alias)
 			continue;
@@ -192,6 +194,8 @@ R_DrawEntitiesOnList (void)
 
 		R_DrawAliasModel (currententity, true);
 	}
+	if (gl_affinemodels->int_val)
+		qfglHint (GL_PERSPECTIVE_CORRECTION_HINT, GL_DONT_CARE);
 
 	qfglColor3ubv (color_white);
 	qfglEnable (GL_ALPHA_TEST);

@@ -434,8 +434,8 @@ R_DrawAliasModel (entity_t *e, qboolean cull)
 	VectorAdd (e->origin, clmodel->mins, mins);
 	VectorAdd (e->origin, clmodel->maxs, maxs);
 
-	if (cull && R_CullBox (mins, maxs))
-			return;
+	if (cull && R_CullBox (mins, maxs)) 
+		return;
 
 	VectorCopy (e->origin, r_entorigin);
 	VectorSubtract (r_origin, r_entorigin, modelorg);
@@ -518,9 +518,6 @@ R_DrawAliasModel (entity_t *e, qboolean cull)
 
 	qfglBindTexture (GL_TEXTURE_2D, texture);
 
-	if (gl_affinemodels->int_val)
-		qfglHint (GL_PERSPECTIVE_CORRECTION_HINT, GL_NICEST);
-
 	vo = GL_GetAliasFrameVerts (e->frame, paliashdr, e);
 
 	GL_DrawAliasFrame (vo, false);
@@ -531,16 +528,10 @@ R_DrawAliasModel (entity_t *e, qboolean cull)
 		GL_DrawAliasFrame (vo, true);
 	}
 
-	if (gl_affinemodels->int_val)
-		qfglHint (GL_PERSPECTIVE_CORRECTION_HINT, GL_DONT_CARE);
-
 	qfglPopMatrix ();
 
-	if (r_shadows->int_val) {
-		// torches, grenades, and lightning bolts do not have shadows
-		if (!clmodel->shadow_alpha)
-			return;
-
+	// torches, grenades, and lightning bolts do not have shadows
+	if (r_shadows->int_val && clmodel->shadow_alpha) {
 		qfglPushMatrix ();
 		R_RotateForEntity (e);
 
