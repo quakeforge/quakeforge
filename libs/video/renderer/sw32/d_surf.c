@@ -35,6 +35,7 @@
 #include "QF/qargs.h"
 #include "QF/sys.h"
 
+#include "compat.h"
 #include "d_local.h"
 #include "r_local.h"
 
@@ -154,7 +155,7 @@ D_SCAlloc (int width, int size)
 		Sys_Error ("D_SCAlloc: bad cache size %d\n", size);
 
 	/* This adds the offset of data[0] in the surfcache_t struct. */
-	size += (int) ((surfcache_t *) 0)->data;
+	size += field_offset (surfcache_t, data);
 
 #define SIZE_ALIGN	(sizeof(surfcache_t*)-1)
 	size = (size + SIZE_ALIGN) & ~SIZE_ALIGN;

@@ -33,6 +33,7 @@
 #include "QF/render.h"
 #include "QF/sys.h"
 
+#include "compat.h"
 #include "d_local.h"
 
 static int  sprite_height;
@@ -645,6 +646,7 @@ D_SpriteCalculateGradients (void)
 	VectorInverse (p_taxis);
 
 	distinv = 1.0 / (-DotProduct (modelorg, r_spritedesc.vpn));
+	distinv = min (distinv, 1.0);
 
 	d_sdivzstepu = p_saxis[0] * xscaleinv;
 	d_tdivzstepu = p_taxis[0] * xscaleinv;

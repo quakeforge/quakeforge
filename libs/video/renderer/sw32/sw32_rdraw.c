@@ -32,6 +32,7 @@
 
 #include "QF/render.h"
 
+#include "compat.h"
 #include "r_local.h"
 
 #define MAXLEFTCLIPEDGES		100
@@ -494,6 +495,7 @@ R_RenderFace (msurface_t *fa, int clipflags)
 	TransformVector (pplane->normal, p_normal);
 // FIXME: cache this?
 	distinv = 1.0 / (pplane->dist - DotProduct (modelorg, pplane->normal));
+	distinv = min (distinv, 1.0);
 
 	surface_p->d_zistepu = p_normal[0] * xscaleinv * distinv;
 	surface_p->d_zistepv = -p_normal[1] * yscaleinv * distinv;
@@ -594,6 +596,7 @@ R_RenderBmodelFace (bedge_t *pedges, msurface_t *psurf)
 	TransformVector (pplane->normal, p_normal);
 // FIXME: cache this?
 	distinv = 1.0 / (pplane->dist - DotProduct (modelorg, pplane->normal));
+	distinv = min (distinv, 1.0);
 
 	surface_p->d_zistepu = p_normal[0] * xscaleinv * distinv;
 	surface_p->d_zistepv = -p_normal[1] * yscaleinv * distinv;
