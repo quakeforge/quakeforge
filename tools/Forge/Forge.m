@@ -5,10 +5,13 @@
 
 #import "Forge.h"
 
-id	quakeed_i;
-id	entclasses_i;
+#include <sys/types.h>
+#include <signal.h>
 
-id	g_cmd_out_i;
+id		quakeed_i;
+id		entclasses_i;
+
+id		g_cmd_out_i;
 
 BOOL	autodirty;
 BOOL	filter_light, filter_path, filter_entities;
@@ -63,19 +66,19 @@ void AutoSave(DPSTimedEntry tag, double now, void *userData)
 
 void DisplayCmdOutput (void)
 {
-	char	*buffer;
+	NSString	*output;
 
-	LoadFile (FN_CMDOUT, (void **)&buffer);
-	unlink (FN_CMDOUT);
-	[project_i addToOutput:buffer];
-	free (buffer);
+	output = [NSString stringWithContentsOfFile: commandOutput];
+	unlink ([commandOutput cString]);
+	[project_i addToOutput: output];
+	[output release];
 
 	if ([preferences_i getShowBSP])
-		[inspcontrol_i changeInspectorTo:i_output];
+		[inspcontrol_i changeInspectorTo: i_output];
 
 	[preferences_i playBspSound];		
 	
-	NSPing ();
+//	NSPing ();
 }
 
 /*
@@ -120,7 +123,7 @@ init
 
 //	[self addToEventMask: NSRightMouseDraggedMask | NSLeftMouseDraggedMask];	
 	
-    malloc_error(My_Malloc_Error);
+    malloc_error (My_Malloc_Error);
 	
 	quakeed_i = self;
 	dirty = autodirty = NO;
@@ -134,7 +137,12 @@ init
 
 - setDefaultFilename
 {
-	filename = [NSString stringWithCString: FN_TEMPSAVE];
+	if (!filename) {
+		filename = [NSMutableString stringWithString: tempSaveFile];
+	} else {
+		[filename setString: tempSaveFile];
+	}
+
 	[self setTitleWithRepresentedFilename: filename];
 	
 	return self;
@@ -187,7 +195,7 @@ int	c_updateall;
 {
 	updatecamera = updatexy = updatez = YES;
 	c_updateall++;
-	postappdefined ();
+	[self postAppDefined];
 	return self;
 }
 
@@ -202,21 +210,21 @@ int	c_updateall;
 	updatecamera = YES;
 	clearinstance = YES;
 	
-	postappdefined ();
+	[self postAppDefined];
 	return self;
 }
 
 - updateXY
 {
 	updatexy = YES;
-	postappdefined ();
+	[self postAppDefined];
 	return self;
 }
 
 - updateZ
 {
 	updatez = YES;
-	postappdefined ();
+	[self postAppDefined];
 	return self;
 }
 
@@ -299,20 +307,18 @@ App delegate methods
 
 - applicationDefined: (NSEvent *) theEvent
 {
-	NSEvent 	*ev, *evp;
+	NSEvent 	*ev;
 	
 	updateinflight = NO;
 
 //printf ("serviced\n");
 	
 // update screen	
-	evp = [NSApp peekNextEvent:-1 into:&ev];
-	if (evp)
-	{
-		postappdefined();
+	ev = [NSApp peekNextEvent: -1];
+	if (ev) {
+		[self postAppDefined];
 		return self;
 	}
-
 		
 	[self disableFlushWindow];	
 
@@ -340,8 +346,10 @@ App delegate methods
 
 - appDidInitialize: sender
 {
+#if 0
 	NSScreen	const *screens;
 	int			screencount;
+#endif
 	
 	running = YES;
 	g_cmd_out_i = cmd_out_i;	// for qprintf
@@ -569,28 +577,14 @@ BSP PROCESSING
 ==============================================================================
 */
 
-void ExpandCommand (char *in, char *out, char *src, char *dest)
+NSString *
+ExpandCommand (NSString *input, NSString *src, NSString *dest)
 {
-	while (*in)
-	{
-		if (in[0] == '$')
-		{
-			if (in[1] == '1')
-			{
-				strcpy (out, src);
-				out += strlen(src);
-			}
-			else if (in[1] == '2')
-			{
-				strcpy (out, dest);
-				out += strlen(dest);
-			}
-			in += 2;			
-			continue;
-		}
-		*out++ = *in++;
-	}
-	*out = 0;
+	return [[[[input
+					componentsSeparatedByString: @"$1"]
+					componentsJoinedByString: src]
+					componentsSeparatedByString: @"$2"]
+					componentsJoinedByString: dest];
 }
 
 
@@ -599,18 +593,17 @@ void ExpandCommand (char *in, char *out, char *src, char *dest)
 saveBSP
 =============
 */
-- saveBSP: (char *) cmdline dialog: (BOOL) wt
+- saveBSP: (NSString *) cmdline dialog: (BOOL) wt
 {
-	char	expandedcmd[1024];
+	int			oldLightFilter;
+	int			oldPathFilter;
+	NSString	*expandedcmd;
 	NSString	*mappath;
-	char	bsppath[1024];
-	int		oldLightFilter;
-	int		oldPathFilter;
-	char	*destdir;
+	NSString 	*bsppath;
+	NSString	*destdir;
 	
-	if (bsppid)
-	{
-		NXBeep();
+	if (bsppid) {
+		NSBeep();
 		return self;
 	}
 
@@ -624,14 +617,14 @@ saveBSP
 	[self applyRegion: self];
 	
 	if ([regionbutton_i intValue]) {
-		mappath = [[[NSString stringWithString: filename]
+		mappath = [[filename
 						stringByDeletingPathExtension]
 						stringByAppendingPathExtension: @"reg"];
 		[map_i writeMapFile: mappath useRegion: YES];
 		wt = YES;		// always pop the dialog on region ops
+	} else {
+		mappath = filename;
 	}
-	else
-		strcpy (mappath, filename);
 		
 // save the entire thing, just in case there is a problem
 	[self save: self];
@@ -643,43 +636,39 @@ saveBSP
 //
 // write the command to the bsp host
 //	
-	destdir = [project_i getFinalMapDirectory];
+	destdir = [project_i finalMapDirectory];
 
-	strcpy (bsppath, destdir);
-	strcat (bsppath, "/");
-	ExtractFileBase (mappath, bsppath + strlen(bsppath));
-	strcat (bsppath, ".bsp");
+	bsppath = [[destdir
+					stringByAppendingString: @"/"]
+					stringByAppendingString: [[[mappath lastPathComponent]
+						stringByDeletingPathExtension]
+						stringByAppendingPathExtension: @"bsp"]];
 	
-	ExpandCommand (cmdline, expandedcmd, mappath, bsppath);
+	expandedcmd = ExpandCommand (cmdline, mappath, bsppath);
 
-	strcat (expandedcmd, " > ");
-	strcat (expandedcmd, FN_CMDOUT);
-	strcat (expandedcmd, "\n");
-	printf ("system: %s", expandedcmd);
-
-	[project_i addToOutput: "\n\n========= BUSY =========\n\n"];
+	NSLog (@"system: %s", expandedcmd);
+	
+	[project_i addToOutput: @"\n\n========= BUSY =========\n\n"];
 	[project_i addToOutput: expandedcmd];
 
 	if ([preferences_i getShowBSP])
 		[inspcontrol_i changeInspectorTo:i_output];
 	
-	if (wt)
-	{
-		id		panel;
+	if (wt) {
+		id	panel;
 		
-		panel = NXGetAlertPanel("BSP In Progress",expandedcmd,NULL,NULL,NULL);
-		[panel makeKeyAndOrderFront:NULL];
-		system(expandedcmd);
-		NXFreeAlertPanel(panel);
-		[self makeKeyAndOrderFront:NULL];
+		panel = NSGetAlertPanel (@"BSP In Progress", expandedcmd, NULL, NULL, NULL);
+	
+		[panel makeKeyAndOrderFront: NULL];
+		system ([expandedcmd cString]);
+		NSReleaseAlertPanel (panel);
+		[self makeKeyAndOrderFront: NULL];
+	
 		DisplayCmdOutput ();
-	}
-	else
-	{
-		cmdte = DPSAddTimedEntry(1, CheckCmdDone, self, NX_BASETHRESHOLD);
-		if (! (bsppid = fork ()) )
-		{
-			system (expandedcmd);
+	} else {
+//		cmdte = DPSAddTimedEntry(1, CheckCmdDone, self, NX_BASETHRESHOLD);
+		if (!(bsppid = fork ())) {
+			system ([expandedcmd cString]);
 			exit (0);
 		}
 	}
@@ -690,45 +679,44 @@ saveBSP
 
 - BSP_Full: sender
 {
-	[self saveBSP:[project_i getFullVisCmd] dialog: NO];
+	[self saveBSP: [project_i fullVisCommand] dialog: NO];
 	return self;
 }
 
 - BSP_FastVis: sender
 {
-	[self saveBSP:[project_i getFastVisCmd] dialog: NO];
+	[self saveBSP: [project_i fastVisCommand] dialog: NO];
 	return self;
 }
 
 - BSP_NoVis: sender
 {
-	[self saveBSP:[project_i getNoVisCmd] dialog: NO];
+	[self saveBSP: [project_i noVisCommand] dialog: NO];
 	return self;
 }
 
 - BSP_relight: sender
 {
-	[self saveBSP:[project_i getRelightCmd] dialog: NO];
+	[self saveBSP: [project_i relightCommand] dialog: NO];
 	return self;
 }
 
 - BSP_entities: sender
 {
-	[self saveBSP:[project_i getEntitiesCmd] dialog: NO];
+	[self saveBSP: [project_i entitiesCommand] dialog: NO];
 	return self;
 }
 
 - BSP_stop: sender
 {
-	if (!bsppid)
-	{
-		NXBeep();
+	if (!bsppid) {
+		NSBeep ();
 		return self;
 	}
 	
 	kill (bsppid, 9);
-	CheckCmdDone (cmdte, 0, NULL);
-	[project_i addToOutput: "\n\n========= STOPPED =========\n\n"];
+//	CheckCmdDone (cmdte, 0, NULL);
+	[project_i addToOutput: @"\n\n========= STOPPED =========\n\n"];
 	
 	return self;
 }
@@ -742,14 +730,14 @@ doOpen:
 Called by open or the project panel
 ==============
 */
-- doOpen: (char *)fname;
+- doOpen: (NSString *)fname;
 {	
-	strcpy (filename, fname);
+	[filename setString: fname];
 	
-	[map_i readMapFile:filename];
+	[map_i readMapFile: filename];
 	
 	[regionbutton_i setIntValue: 0];
-	[self setTitleAsFilename:fname];
+	[self setTitleWithRepresentedFilename: filename];
 	[self updateAll];
 
 	qprintf ("%s loaded\n", fname);
@@ -765,18 +753,16 @@ open
 */
 - open: sender;
 {
-	id			openpanel;
-	static char	*suffixlist[] = {"map", 0};
+	id	openPanel = [NSOpenPanel openPanel];
+	id	fileTypes = [NSArray arrayWithObject: @"map"];
 
-	openpanel = [OpenPanel new];
-
-	if ( [openpanel 
-			runModalForDirectory: [project_i getMapDirectory] 
-			file: ""
-			types: suffixlist] != NX_OKTAG)
+	if ([openPanel
+			runModalForDirectory: [project_i mapDirectory]
+			file: @""
+			types: fileTypes] != NSOKButton)
 		return self;
 
-	[self doOpen: (char *)[openpanel filename]];
+	[self doOpen: [openPanel filename]];
 	
 	return self;
 }
@@ -789,18 +775,18 @@ save:
 */
 - save: sender;
 {
-	char		backup[1024];
+	NSString 	*backup;
 
-// force a name change if using tempname
-	if (!strcmp (filename, FN_TEMPSAVE) )
+	// force a name change if using tempname
+	if ([filename isEqualToString: tempSaveFile])
 		return [self saveAs: self];
 		
 	dirty = autodirty = NO;
 
-	strcpy (backup, filename);
-	StripExtension (backup);
-	strcat (backup, ".bak");
-	rename (filename, backup);		// copy old to .bak
+	backup = [[filename	stringByDeletingPathExtension]
+				stringByAppendingPathExtension: @"bak"];
+
+	rename ([filename cString], [backup cString]);		// copy old to .bak
 
 	[map_i writeMapFile: filename useRegion: NO];
 
@@ -809,24 +795,22 @@ save:
 
 
 /*
-==============
-saveAs
-==============
+	saveAs
 */
 - saveAs: sender;
 {
-	id		panel_i;
-	char	dir[1024];
+	id			panel_i = [NSSavePanel savePanel];
+	NSString	*dir;
 	
-	panel_i = [SavePanel new];
-	ExtractFileBase (filename, dir);
-	[panel_i setRequiredFileType: "map"];
-	if ( [panel_i runModalForDirectory:[project_i getMapDirectory] file: dir] != NX_OKTAG)
+	dir = [[filename lastPathComponent] stringByDeletingPathExtension];
+	
+	[panel_i setRequiredFileType: @"map"];
+	if ([panel_i runModalForDirectory: [project_i mapDirectory] file: dir] != NSOKButton)
 		return self;
 	
-	strcpy (filename, [panel_i filename]);
+	[filename setString: [panel_i filename]];
 	
-	[self setTitleAsFilename:filename];
+	[self setTitleWithRepresentedFilename: filename];
 	
 	[self save: self];	
 	
@@ -846,7 +830,7 @@ saveAs
 //
 //	AJR - added this for Project info
 //
-- (char *)currentFilename
+- (NSString *) currentFilename
 {
 	return filename;
 }
@@ -856,7 +840,7 @@ saveAs
 	if ([clipper_i hide])	// first click hides clipper only
 		return [self updateAll];
 
-	[map_i setCurrentEntity: [map_i objectAt: 0]];	// make world selected
+	[map_i setCurrentEntity: [map_i objectAtIndex: 0]];	// make world selected
 	[map_i makeSelectedPerform: @selector(deselect)];
 	[self updateAll];
 	
@@ -875,150 +859,143 @@ keyDown
 #define	KEY_UPARROW			0xad
 #define	KEY_DOWNARROW		0xaf
 
-- keyDown:(NSEvent *)theEvent
+- (void) keyDown:(NSEvent *)theEvent
 {
-    int		ch;
-	
-// function keys
-	switch (theEvent->data.key.keyCode)
-	{
-	case 60:	// F2
-		[cameraview_i setDrawMode: dr_wire];
-		qprintf ("wire draw mode");
-		return self;
-	case 61:	// F3
-		[cameraview_i setDrawMode: dr_flat];
-		qprintf ("flat draw mode");
-		return self;
-	case 62:	// F4
-		[cameraview_i setDrawMode: dr_texture];
-		qprintf ("texture draw mode");
-		return self;
+	// function keys
+	switch ([[theEvent characters] characterAtIndex: 0]) {
+		case NSF2FunctionKey:	// F2
+			[cameraview_i setDrawMode: dr_wire];
+			qprintf ("wire draw mode");
+			return;
+		case NSF3FunctionKey:	// F3
+			[cameraview_i setDrawMode: dr_flat];
+			qprintf ("flat draw mode");
+			return;
+		case NSF4FunctionKey:	// F4
+			[cameraview_i setDrawMode: dr_texture];
+			qprintf ("texture draw mode");
+			return;
+		case NSF5FunctionKey:	// F5
+			[xyview_i setDrawMode: dr_wire];
+			qprintf ("wire draw mode");
+			return;
+		case NSF6FunctionKey:	// F6
+			qprintf ("texture draw mode");
+			return;
 
-	case 63:	// F5
-		[xyview_i setDrawMode: dr_wire];
-		qprintf ("wire draw mode");
-		return self;
-	case 64:	// F6
-		qprintf ("texture draw mode");
-		return self;
+		case NSF8FunctionKey:	// F8
+			[cameraview_i homeView: self];
+			return;
 		
-	case 66:	// F8
-		[cameraview_i homeView: self];
-		return self;
-		
-	case 88:	// F12
-		[map_i subtractSelection: self];
-		return self;
+		case NSF12FunctionKey:	// F12
+			[map_i subtractSelection: self];
+			return;
 
-	case 106:	// page up
-		[cameraview_i upFloor: self];
-		return self;
-		
-	case 107:	// page down
-		[cameraview_i downFloor: self];
-		return self;
-		
-	case 109:	// end
-		[self deselect: self];
-		return self;
+		case NSPageUpFunctionKey:	// page up
+			[cameraview_i upFloor: self];
+			return;
+		case NSPageDownFunctionKey:	// page down
+			[cameraview_i downFloor: self];
+			return;
+
+		case NSEndFunctionKey:	// end
+			[self deselect: self];
+			return;
 	}
 
-// portable things
-    ch = tolower(theEvent->data.key.charCode);
-		
-	switch (ch)
-	{
-	case KEY_RIGHTARROW:
-	case KEY_LEFTARROW:
-	case KEY_UPARROW:
-	case KEY_DOWNARROW:
-	case 'a':
-	case 'z':
-	case 'd':
-	case 'c':
-	case '.':
-	case ',':
-		[cameraview_i _keyDown: theEvent];
-		break;
+	// portable things
+	switch ([[[theEvent characters] lowercaseString] characterAtIndex: 0]) {
+		case NSRightArrowFunctionKey:
+		case NSLeftArrowFunctionKey:
+		case NSUpArrowFunctionKey:
+		case NSDownArrowFunctionKey:
+		case 'a':
+		case 'z':
+		case 'd':
+		case 'c':
+		case '.':
+		case ',':
+			[cameraview_i _keyDown: theEvent];
+			break;
 
-	case 27:	// escape
-		autodirty = dirty = YES;
-		[self deselect: self];
-		return self;
+		case 27:	// escape
+			autodirty = dirty = YES;
+			[self deselect: self];
+			return;
 		
-	case 127:	// delete
-		autodirty = dirty = YES;
-		[map_i makeSelectedPerform: @selector(remove)];
-		[clipper_i hide];
-		[self updateAll];
-		break;
+		case NSDeleteFunctionKey:	// delete
+			autodirty = dirty = YES;
+			[map_i makeSelectedPerform: @selector(remove)];
+			[clipper_i hide];
+			[self updateAll];
+			break;
 
-	case '/':
-		[clipper_i flipNormal];
-		[self updateAll];
-		break;
-		
-	case 13:	// enter
-		[clipper_i carve];
-		[self updateAll];
-		qprintf ("carved brush");
-		break;
-		
-	case ' ':
-		[map_i cloneSelection: self];
-		break;
-		
+		case '/':
+			[clipper_i flipNormal];
+			[self updateAll];
+			break;
+
+		case 13:	// enter
+			[clipper_i carve];
+			[self updateAll];
+			qprintf ("carved brush");
+			break;
+
+		case ' ':
+			[map_i cloneSelection: self];
+			break;
 
 //
 // move selection keys
 //		
-	case '2':
-		VectorCopy (vec3_origin, sb_translate);
-		sb_translate[1] = -[xyview_i gridsize];
-		[map_i makeSelectedPerform: @selector(translate)];
-		[self updateAll];
-		break;
-	case '8':
-		VectorCopy (vec3_origin, sb_translate);
-		sb_translate[1] = [xyview_i gridsize];
-		[map_i makeSelectedPerform: @selector(translate)];
-		[self updateAll];
-		break;
+		case '2':
+			VectorCopy (vec3_origin, sb_translate);
+			sb_translate[1] = -[xyview_i gridsize];
+			[map_i makeSelectedPerform: @selector(translate)];
+			[self updateAll];
+			break;
 
-	case '4':
-		VectorCopy (vec3_origin, sb_translate);
-		sb_translate[0] = -[xyview_i gridsize];
-		[map_i makeSelectedPerform: @selector(translate)];
-		[self updateAll];
-		break;
-	case '6':
-		VectorCopy (vec3_origin, sb_translate);
-		sb_translate[0] = [xyview_i gridsize];
-		[map_i makeSelectedPerform: @selector(translate)];
-		[self updateAll];
-		break;
+		case '8':
+			VectorCopy (vec3_origin, sb_translate);
+			sb_translate[1] = [xyview_i gridsize];
+			[map_i makeSelectedPerform: @selector(translate)];
+			[self updateAll];
+			break;
 
-	case '-':
-		VectorCopy (vec3_origin, sb_translate);
-		sb_translate[2] = -[xyview_i gridsize];
-		[map_i makeSelectedPerform: @selector(translate)];
-		[self updateAll];
-		break;
-	case '+':
-		VectorCopy (vec3_origin, sb_translate);
-		sb_translate[2] = [xyview_i gridsize];
-		[map_i makeSelectedPerform: @selector(translate)];
-		[self updateAll];
-		break;
+		case '4':
+			VectorCopy (vec3_origin, sb_translate);
+			sb_translate[0] = -[xyview_i gridsize];
+			[map_i makeSelectedPerform: @selector(translate)];
+			[self updateAll];
+			break;
 
-	default:
-		qprintf ("undefined keypress");
-		NopSound ();
-		break;
+		case '6':
+			VectorCopy (vec3_origin, sb_translate);
+			sb_translate[0] = [xyview_i gridsize];
+			[map_i makeSelectedPerform: @selector(translate)];
+			[self updateAll];
+			break;
+
+		case '-':
+			VectorCopy (vec3_origin, sb_translate);
+			sb_translate[2] = -[xyview_i gridsize];
+			[map_i makeSelectedPerform: @selector(translate)];
+			[self updateAll];
+			break;
+		case '+':
+			VectorCopy (vec3_origin, sb_translate);
+			sb_translate[2] = [xyview_i gridsize];
+			[map_i makeSelectedPerform: @selector(translate)];
+			[self updateAll];
+			break;
+
+		default:
+			qprintf ("undefined keypress");
+			NopSound ();
+			break;
 	}
 
-    return self;
+    return;
 }
 
 

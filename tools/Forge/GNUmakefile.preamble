@@ -2,10 +2,10 @@
 ADDITIONAL_CPPFLAGS += 
 
 # Additional flags to pass to the Objective-C compiler
-ADDITIONAL_OBJCFLAGS += -g -Wall
+ADDITIONAL_OBJCFLAGS += -g -Wall -Werror
 
 # Additional flags to pass to the C compiler
-ADDITIONAL_CFLAGS += -g -Wall
+ADDITIONAL_CFLAGS += -g -Wall -Werror
 
 # Additional include directories the compiler should search
 ADDITIONAL_INCLUDE_DIRS += -I ./Headers
@@ -16,7 +16,20 @@ ADDITIONAL_LDFLAGS +=
 # Additional library directories the linker should search
 ADDITIONAL_LIB_DIRS +=
 
+# Additional libraries
+
+# GNUstepWeb
+ADDITIONAL_GSW_LIBS +=
+# GUI apps
+ADDITIONAL_GUI_LIBS +=
+# Libraries
+ADDITIONAL_LIBRARY_LIBS +=
+# ObjC stuff
+ADDITIONAL_OBJC_LIBS +=
+# Tools
 ADDITIONAL_TOOL_LIBS +=
+# WebObjects
+ADDITIONAL_WO_LIBS +=
 
 #
 # Flags dealing with installing and uninstalling

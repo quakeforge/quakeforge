@@ -19,7 +19,7 @@
 
 extern	id project_i;
 
-@interface Project:Object
+@interface Project: NSObject
 {
 	id	projectInfo;		// dictionary storage of project info
 
@@ -42,24 +42,24 @@ extern	id project_i;
 
 	id	BSPoutput_i;		// outlet to Text
 	
-	char	path_projectinfo[128];	// path of QE_Project file
+	NSString	*path_projectinfo;	// path of QE_Project file
 
-	char	path_basepath[128];		// base path of heirarchy
+	NSString	*path_basepath; 	// base path of heirarchy
 
-	char	path_progdir[128];		// derived from basepath
-	char	path_mapdirectory[128];	// derived from basepath
-	char	path_finalmapdir[128];	// derived from basepath
-	
-	char	path_wad8[128];			// path of texture WAD for cmd-8 key
-	char	path_wad9[128];			// path of texture WAD for cmd-9 key
-	char	path_wad0[128];			// path of texture WAD for cmd-0 key
+	NSString	*path_progdir;		// derived from basepath
+	NSString	*path_mapdirectory; // derived from basepath
+	NSString	*path_finalmapdir;	// derived from basepath
 
-	char	string_fullvis[1024];	// cmd-line parm
-	char	string_fastvis[1024];	// cmd-line parm
-	char	string_novis[1024];		// cmd-line parm
-	char	string_relight[1024];	// cmd-line parm
-	char	string_leaktest[1024];	// cmd-line parm
-	char	string_entities[1024];	// cmd-line parm
+	NSString	*path_wad8;		// path of texture WAD for cmd-8 key
+	NSString	*path_wad9;		// path of texture WAD for cmd-9 key
+	NSString	*path_wad0;		// path of texture WAD for cmd-0 key
+
+	NSString	*string_fullvis;	// cmd-line parm
+	NSString	*string_fastvis;	// cmd-line parm
+	NSString	*string_novis;		// cmd-line parm
+	NSString	*string_relight;	// cmd-line parm
+	NSString	*string_leaktest;	// cmd-line parm
+	NSString	*string_entities;	// cmd-line parm
 
 	int	showDescriptions;	// 1 = show map descs in browser
 
@@ -73,36 +73,36 @@ extern	id project_i;
 
 - setTextureWad: (char *)wf;
 
-- addToOutput:(char *)string;
-- clearBspOutput:sender;
+- addToOutput: (NSString *) string;
+- clearBspOutput: sender;
 - initProjSettings;
-- changeChar:(char)f to:(char)t in:(id)obj;
-- (int)searchForString:(char *)str in:(id)obj;
+- changeChar: (char) f to: (char) t in: (id) obj;
+- (int) searchForString: (NSString *) str in: (id) obj;
 
 - parseProjectFile;		// read defaultsdatabase for project path
-- openProjectFile:(char *)path;	// called by openProject and newProject
+- openProjectFile: (NSString *) path;	// called by openProject and newProject
 - openProject;
 - clickedOnMap:sender;		// called if clicked on map in browser
 - clickedOnWad:sender;		// called if clicked on wad in browser
 
-//	methods to querie the project file
+//	methods to query the project file
 
-- (char *)getMapDirectory;
-- (char *)getFinalMapDirectory;
-- (char *)getProgDirectory;
+- (NSString *) mapDirectory;
+- (NSString *) finalMapDirectory;
+- (NSString *) progDirectory;
 
-- (char *)getWAD8;
-- (char *)getWAD9;
-- (char *)getWAD0;
+- (NSString *) WAD8;
+- (NSString *) WAD9;
+- (NSString *) WAD0;
 
-- (char *)getFullVisCmd;
-- (char *)getFastVisCmd;
-- (char *)getNoVisCmd;
-- (char *)getRelightCmd;
-- (char *)getLeaktestCmd;
-- (char *)getEntitiesCmd;
+- (NSString *) fullVisCommand;
+- (NSString *) fastVisCommand;
+- (NSString *) noVisCommand;
+- (NSString *) relightCommand;
+- (NSString *) leakTestCommand;
+- (NSString *) entitiesCommand;
 
 @end
 
-void changeString(char cf,char ct,char *string);
+void changeString(char cf, char ct, char *string);
 

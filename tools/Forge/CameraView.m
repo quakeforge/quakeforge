@@ -368,7 +368,7 @@ drawSolid
 */
 - drawSolid
 {
-	unsigned char	*planes[5];
+	const unsigned char	*planes[5];
 		
 //
 // draw it
@@ -408,7 +408,7 @@ drawSolid
 		planes
 	);
 
-	NSPing ();
+//	NSPing ();
 	[[self window] setBackingType:NSBackingStoreBuffered];
 	
 	
@@ -468,9 +468,8 @@ drawSelf
 	else
 		[self drawWire: rects];
 
-	if (timedrawing)
-	{
-		NSPing ();
+	if (timedrawing) {
+//		NSPing ();
 		drawtime = I_FloatTime() - drawtime;
 		printf ("CameraView drawtime: %5.3f\n", drawtime);
 	}

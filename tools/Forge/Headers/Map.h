@@ -14,34 +14,34 @@ extern	id	map_i;
 
 - writeStats;
 
-- readMapFile: (char *)fname;
-- writeMapFile: (char *)fname useRegion: (BOOL)reg;
+- readMapFile: (NSString *) fname;
+- writeMapFile: (NSString *) fname useRegion: (BOOL) reg;
 
-- entityConnect: (vec3_t)p1 : (vec3_t)p2;
+- entityConnect: (vec3_t) p1 : (vec3_t) p2;
 
-- selectRay: (vec3_t)p1 : (vec3_t)p2 : (BOOL)ef;
-- grabRay: (vec3_t)p1 : (vec3_t)p2;
-- setTextureRay: (vec3_t)p1 : (vec3_t)p2 : (BOOL)allsides;
-- getTextureRay: (vec3_t)p1 : (vec3_t)p2;
+- selectRay: (vec3_t) p1 : (vec3_t) p2 : (BOOL) ef;
+- grabRay: (vec3_t) p1 : (vec3_t) p2;
+- setTextureRay: (vec3_t) p1 : (vec3_t) p2 : (BOOL) allsides;
+- getTextureRay: (vec3_t) p1 : (vec3_t) p2;
 
 - currentEntity;
 - setCurrentEntity: ent;
 
-- (float)currentMinZ;
-- setCurrentMinZ: (float)m;
-- (float)currentMaxZ;
-- setCurrentMaxZ: (float)m;
+- (float) currentMinZ;
+- setCurrentMinZ: (float) m;
+- (float) currentMaxZ;
+- setCurrentMaxZ: (float) m;
 
-- (int)numSelected;
+- (int) numSelected;
 - selectedBrush;			// returns the first selected brush
 
 //
 // operations on current selection
 //
-- makeSelectedPerform: (SEL)sel;
-- makeUnselectedPerform: (SEL)sel;
-- makeAllPerform: (SEL)sel;
-- makeGlobalPerform: (SEL)sel;	// in and out of region
+- makeSelectedPerform: (SEL) sel;
+- makeUnselectedPerform: (SEL) sel;
+- makeAllPerform: (SEL) sel;
+- makeGlobalPerform: (SEL) sel;	// in and out of region
 
 - cloneSelection: sender;
 

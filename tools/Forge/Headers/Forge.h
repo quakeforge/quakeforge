@@ -1,4 +1,7 @@
 
+#include <sys/types.h>
+#include <signal.h>
+
 extern id	quakeed_i;
 
 extern BOOL	filter_light, filter_path, filter_entities;
@@ -16,8 +19,8 @@ void qprintf (char *fmt, ...);		// prints text to cmd_out_i
 
 @interface Forge: NSWindow
 {
-	BOOL		dirty;
-	NSString	*filename;		// full path with .map extension
+	BOOL			dirty;
+	NSMutableString	*filename;		// full path with .map extension
 
 // UI objects
 	id		brushcount_i;
@@ -41,27 +44,27 @@ void qprintf (char *fmt, ...);		// prints text to cmd_out_i
 }
 
 - setDefaultFilename;
-- (char *)currentFilename;
+- (NSString *)currentFilename;
 
 - updateAll;		// when a model has been changed
 - updateCamera;		// when the camera has moved
 - updateXY;
 - updateZ;
 
-- updateAll:sender;
+- updateAll: sender;
 
 - newinstance;		// force next flushwindow to clear all instance drawing
 - redrawInstance;	// erase and redraw all instance now
 
-- appWillTerminate:sender;
+- appWillTerminate: sender;
 
-- openProject:sender;
+- openProject: sender;
 
 - textCommand: sender;
 
 - applyRegion: sender;
 
-- (BOOL)dirty;
+- (BOOL) dirty;
 
 - clear: sender;
 - centerCamera: sender;
@@ -76,9 +79,9 @@ void qprintf (char *fmt, ...);		// prints text to cmd_out_i
 - save: sender;
 - saveAs: sender;
 
-- doOpen: (char *)fname;
+- doOpen: (NSString *) fname;
 
-- saveBSP:(char *)cmdline dialog:(BOOL)wt;
+- saveBSP: (NSString *) cmdline dialog: (BOOL) wt;
 
 - BSP_Full: sender;
 - BSP_FastVis: sender;

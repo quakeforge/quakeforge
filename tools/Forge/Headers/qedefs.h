@@ -49,10 +49,11 @@ qboolean GetToken (qboolean crossline);	// returns false at eof
 void UngetToken ();
 
 
-#define	FN_CMDOUT		"/tmp/QuakeEdCmd.txt"
-#define	FN_TEMPSAVE		"/qcache/temp.map"
-#define	FN_AUTOSAVE		"/qcache/AutoSaveMap.map"
-#define	FN_CRASHSAVE	"/qcache/ErrorSaveMap.map"
-#define	FN_DEVLOG		"/qcache/devlog"
+extern NSString 	*commandOutput;
+extern NSString 	*developerLogFile;
+
+extern NSString 	*tempSaveFile;
+extern NSString 	*autoSaveFile;
+extern NSString 	*errorSaveFile;
 
 extern char *debugname;
