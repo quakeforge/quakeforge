@@ -1227,6 +1227,9 @@ PR_LoadProgs (progs_t *pr, const char *progsname)
 	if (!progsname)
 		progsname = "(preloaded)";
 
+	if (!PR_ResolveGlobals (pr))
+		PR_Error (pr, "unable to load %s", progsname);
+
 	// initialise the strings managment code
 	PR_LoadStrings (pr);
 
