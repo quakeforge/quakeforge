@@ -5,9 +5,9 @@ INCLUDES= -I$(top_srcdir)/include
 lib_LTLIBRARIES= libQFimage.la
 
 libQFimage_la_LDFLAGS=		-version-info 1:0:0
-libQFimage_la_LIBADD=		
+libQFimage_la_LIBADD=		-lpng
 libQFimage_la_DEPENDENCIES=
 libQFimage_la_SOURCES= \
-	pcx.c tga.c
+	pcx.c png.c tga.c
 
 EXTRA_DIST=
