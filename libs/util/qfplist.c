@@ -203,7 +203,7 @@ PL_D_AddObject (plitem_t *dict, plitem_t *key, plitem_t *value)
 
 	if ((k = Hash_Find ((hashtab_t *)dict->data, key->data))) {
 		PL_Free ((plitem_t *) k->value);
-		k->value = value;	// FIXME: should this be a copy?
+		k->value = value;
 	} else {
 		k = malloc (sizeof (dictkey_t));
 
@@ -211,7 +211,7 @@ PL_D_AddObject (plitem_t *dict, plitem_t *key, plitem_t *value)
 			return NULL;
 
 		k->key = strdup ((char *) key->data);
-		k->value = value;	// FIXME: see above
+		k->value = value;
 
 		Hash_Add ((hashtab_t *)dict->data, k);
 	}
