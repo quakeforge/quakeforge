@@ -391,8 +391,8 @@ open_file (searchpath_t *search, const char *filename, QFile **gzfile,
 					   (int) sizeof (netpath), search->filename,
 					   (int) sizeof (netpath), filename);
 		// check a file in the directory tree
-		snprintf (netpath, sizeof (netpath), "%s%s%s", search->filename,
-				  search->filename[0] ? "/" : "", filename);
+		snprintf (netpath, sizeof (netpath), "%s/%s", search->filename,
+				  filename);
 
 		strncpy (foundname, filename, MAX_OSPATH);
 		if (Sys_FileTime (netpath) == -1)
@@ -784,19 +784,6 @@ void
 COM_Filesystem_Init (void)
 {
 	int         i;
-
-	if (!fs_sharepath->string[0]
-		&& !fs_userpath->string[0]
-		&& !fs_basegame->string[0]) {
-		// a util (or a silly user:) are subverting the fs code
-		// add the directory to the search path
-		searchpath_t *search = calloc (1, sizeof (searchpath_t));
-		strcpy (search->filename, "");
-		search->next = com_searchpaths;
-		com_searchpaths = search;
-		com_base_searchpaths = com_searchpaths;
-		return;
-	}
 
 	// start up with basegame->string by default
 	COM_CreateGameDirectory (fs_basegame->string);
