@@ -41,6 +41,7 @@
 #include "QF/sys.h"
 #include "QF/zone.h"
 
+
 void
 SZ_Alloc (sizebuf_t *buf, int startsize)
 {
@@ -96,11 +97,9 @@ SZ_Print (sizebuf_t *buf, const char *data)
 	len = strlen (data) + 1;
 
 	if (!buf->cursize || buf->data[buf->cursize - 1])
-		memcpy ((byte *) SZ_GetSpace (buf, len), data, len);	// no
-																// trailing 0
+		// no trailing 0
+		memcpy ((byte *) SZ_GetSpace (buf, len), data, len);
 	else
-		memcpy ((byte *) SZ_GetSpace (buf, len - 1) - 1, data, len);	// write 
-																		// over 
-																		// trailing 
-																		// 0
+		// write over trailing 0
+		memcpy ((byte *) SZ_GetSpace (buf, len - 1) - 1, data, len);
 }
