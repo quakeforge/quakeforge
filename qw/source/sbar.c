@@ -1052,8 +1052,8 @@ Sbar_TeamOverlay (view_t *view)
 		draw_string (view, x + 104 + 88, y, num);
 
 		if (player_team && strnequal (player_team->value, tm->team, 16)) {
-			Draw_Character (x + 104 - 8, y, 16);
-			Draw_Character (x + 104 + 32, y, 17);
+			draw_character (view, x + 104 - 8, y, 16);
+			draw_character (view, x + 104 + 32, y, 17);
 		}
 
 		y += 8;
