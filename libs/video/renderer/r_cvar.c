@@ -283,7 +283,7 @@ R_Init_Cvars (void)
 									 "entire lightmap.");
 	gl_nocolors = Cvar_Get ("gl_nocolors", "0", CVAR_NONE, NULL,
 							"Set to 1, turns off all player colors");
-	gl_overbright = Cvar_Get ("gl_overbright", "1", CVAR_NONE,
+	gl_overbright = Cvar_Get ("gl_overbright", "0", CVAR_NONE,
 							  gl_overbright_f, "Darken lightmaps so that "
 							  "dynamic lights can be overbright. 1 = 0.75 "
 							  "brightness, 2 = 0.5 brightness.");
