@@ -108,4 +108,6 @@ int yyparse (void);
 		memset (v, 0, sizeof (*v));					\
 	} while (0)
 
+#define RUP(x,a) (((x) + ((a) - 1)) % (a))
+
 #endif//__qfcc_h

@@ -49,6 +49,7 @@ static const char rcsid[] =
 #include "immediate.h"
 #include "obj_file.h"
 #include "qfcc.h"
+#include "reloc.h"
 #include "strpool.h"
 
 static hashtab_t *extern_defs;
@@ -59,9 +60,27 @@ static defspace_t *data;
 static defspace_t *far_data;
 static strpool_t *strings;
 static strpool_t *type_strings;
+static struct {
+	qfo_reloc_t *relocs;
+	int         num_relocs;
+	int         max_relocs;
+} relocs;
+static struct {
+	qfo_def_t  *defs;
+	int         num_defs;
+	int         max_defs;
+} defs;
+static struct {
+	qfo_function_t *funcs;
+	int         num_funcs;
+	int         max_funcs;
+} funcs;
 static int      code_base;
 static int      data_base;
 static int      far_data_base;
+static int      reloc_base;
+static int      def_base;
+static int      func_base;
 
 static const char *
 defs_get_key (void *_def, void *unused)
@@ -71,20 +90,80 @@ defs_get_key (void *_def, void *unused)
 	return G_GETSTR (def->name);
 }
 
-void
+static void
+add_strings (qfo_t *qfo)
+{
+	int         i;
+
+	for (i = 0; i < qfo->strings_size; i += strlen (qfo->strings + i))
+		strpool_addstr (strings, qfo->strings + i);
+}
+
+static void
+add_relocs (qfo_t *qfo)
+{
+	int         i;
+
+	if (relocs.num_relocs + qfo->num_relocs > relocs.max_relocs) {
+		relocs.max_relocs = RUP (relocs.num_relocs + qfo->num_relocs, 16384);
+		relocs.relocs = realloc (relocs.relocs,
+								 relocs.max_relocs * sizeof (qfo_reloc_t));
+	}
+	relocs.num_relocs += qfo->num_relocs;
+	memcpy (relocs.relocs + reloc_base, qfo->relocs,
+			qfo->num_relocs * sizeof (qfo_reloc_t));
+	for (i = reloc_base; i < relocs.num_relocs; i++) {
+		qfo_reloc_t *reloc = relocs.relocs + i;
+		switch ((reloc_type)reloc->type) {
+			case rel_none:
+				break;
+			case rel_op_a_def:
+			case rel_op_b_def:
+			case rel_op_c_def:
+			case rel_op_a_op:
+			case rel_op_b_op:
+			case rel_op_c_op:
+				reloc->ofs += code_base;
+				break;
+			case rel_def_op:
+			case rel_def_def:
+			case rel_def_func:
+			case rel_def_string:
+				reloc->ofs += data_base;
+				break;
+		}
+	}
+}
+
+static void
 add_defs (qfo_t *qfo)
 {
-	qfo_def_t  *def;
-	qfo_def_t  *d;
+	int         i;
 
-	for (def = qfo->defs; def - qfo->defs < qfo->num_defs; def++) {
+	if (defs.num_defs + qfo->num_defs > defs.max_defs) {
+		defs.max_defs = RUP (defs.num_defs + qfo->num_defs, 16384);
+		defs.defs = realloc (defs.defs, defs.max_defs * sizeof (qfo_def_t));
+	}
+	defs.num_defs += qfo->num_defs;
+	memcpy (defs.defs + def_base, qfo->defs,
+			qfo->num_defs * sizeof (qfo_def_t));
+	for (i = def_base; i < defs.num_defs; i++) {
+		qfo_def_t *def = defs.defs + i;
+
 		def->full_type = strpool_addstr (type_strings,
-										 qfo->strings + def->full_type);
-		def->name      = strpool_addstr (strings, qfo->strings + def->name);
-		def->file      = strpool_addstr (strings, qfo->strings + def->file);
+										 qfo->types + def->full_type);
+		def->name = strpool_addstr (strings, qfo->strings + def->name);
+		if (!(def->flags & (QFOD_LOCAL | QFOD_ABSOLUTE))) {
+			def->ofs += data_base;
+		}
+		def->relocs += reloc_base;
+		def->file = strpool_addstr (strings, qfo->strings + def->file);
+
 		if (def->flags & QFOD_EXTERNAL) {
 			Hash_Add (extern_defs, def);
 		} else {
+			qfo_def_t  *d;
+
 			if (def->flags & QFOD_GLOBAL) {
 				if ((d = Hash_Find (defined_defs, G_GETSTR (def->name)))) {
 					pr.source_file = def->file;
@@ -117,17 +196,73 @@ add_defs (qfo_t *qfo)
 	}
 }
 
-void
-add_functions (qfo_t *qfo)
+static void
+add_funcs (qfo_t *qfo)
 {
-	qfo_function_t *func;
+	int         i;
 
-	for (func = qfo->functions; func - qfo->functions < qfo->num_functions;
-		 func++) {
+	if (funcs.num_funcs + qfo->num_functions > funcs.max_funcs) {
+		funcs.max_funcs = RUP (funcs.num_funcs + qfo->num_functions, 16384);
+		funcs.funcs = realloc (funcs.funcs,
+								 funcs.max_funcs * sizeof (qfo_function_t));
+	}
+	funcs.num_funcs += qfo->num_functions;
+	memcpy (funcs.funcs + func_base, qfo->functions,
+			qfo->num_functions * sizeof (qfo_function_t));
+	for (i = func_base; i < funcs.num_funcs; i++) {
+		qfo_function_t *func = funcs.funcs + i;
 		func->name = strpool_addstr (strings, qfo->strings + func->name);
 		func->file = strpool_addstr (strings, qfo->strings + func->file);
 		if (func->code)
-			func->code += pr.code->size;
+			func->code += code_base;
+		if (func->def)
+			func->def += def_base;
+		if (func->local_defs)
+			func->local_defs += def_base;
+		func->relocs += reloc_base;
+	}
+}
+
+static void
+fixup_relocs (qfo_t *qfo)
+{
+	qfo_reloc_t *reloc;
+
+	for (reloc = relocs.relocs + reloc_base;
+		 reloc - relocs.relocs < relocs.num_relocs;
+		 reloc++) {
+		switch ((reloc_type)reloc->type) {
+			case rel_none:
+				break;
+			case rel_op_a_def:
+				code->code[reloc->ofs].a += data_base;
+				break;
+			case rel_op_b_def:
+				code->code[reloc->ofs].b += data_base;
+				break;
+			case rel_op_c_def:
+				code->code[reloc->ofs].c += data_base;
+				break;
+			case rel_op_a_op:
+			case rel_op_b_op:
+			case rel_op_c_op:
+				break;
+			case rel_def_op:
+				data->data[reloc->ofs].integer_var += code_base;
+				break;
+			case rel_def_def:
+				data->data[reloc->ofs].integer_var += data_base;
+				break;
+			case rel_def_func:
+				data->data[reloc->ofs].integer_var += func_base;
+				break;
+			case rel_def_string:
+				data->data[reloc->ofs].string_var =
+					strpool_addstr (strings,
+							qfo->strings + data->data[reloc->ofs].string_var);
+				reloc->ofs += data_base;
+				break;
+		}
 	}
 }
 
@@ -157,13 +292,31 @@ linker_add_object_file (const char *filename)
 	code_base = code->size;
 	data_base = data->size;
 	far_data_base = far_data->size;
+	reloc_base = relocs.num_relocs;
+	def_base = defs.num_defs;
+	func_base = funcs.num_funcs;
 
-	add_defs (qfo);
-	add_functions (qfo);
 	codespace_addcode (code, qfo->code, qfo->code_size);
-	//add_data (qfo);
-	//add_far_data (qfo);
-	//add_strings (qfo);
+	defspace_adddata (data, qfo->data, qfo->data_size);
+	defspace_adddata (far_data, qfo->far_data, qfo->far_data_size);
+	add_strings (qfo);
+	add_relocs (qfo);
+	add_defs (qfo);
+	add_funcs (qfo);
+
+	fixup_relocs (qfo);
+	
+	qfo_delete (qfo);
+
+	qfo = qfo_new ();
+	qfo_add_code (qfo, code->code, code->size);
+	qfo_add_data (qfo, data->data, data->size);
+	qfo_add_far_data (qfo, far_data->data, far_data->size);
+	qfo_add_strings (qfo, strings->strings, strings->size);
+	qfo_add_relocs (qfo, relocs.relocs, relocs.num_relocs);
+	qfo_add_defs (qfo, defs.defs, defs.num_defs);
+	qfo_add_functions (qfo, funcs.funcs, funcs.num_funcs);
+	qfo_add_types (qfo, type_strings->strings, type_strings->size);
 }
 
 void

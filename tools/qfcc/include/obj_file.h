@@ -72,6 +72,7 @@ typedef struct qfo_def_s {
 #define QFOD_ABSOLUTE		(1u<<2)
 #define QFOD_GLOBAL			(1u<<3)
 #define QFOD_EXTERNAL		(1u<<4)
+#define QFOD_LOCAL			(1u<<5)
 
 typedef struct qfo_function_s {
 	string_t    name;
@@ -133,5 +134,15 @@ typedef struct qfo_s {
 
 int write_obj_file (const char *filename);
 qfo_t *read_obj_file (const char *filename);
+qfo_t *qfo_new (void);
+void qfo_add_code (qfo_t *qfo, dstatement_t *code, int code_size);
+void qfo_add_data (qfo_t *qfo, pr_type_t *data, int data_size);
+void qfo_add_far_data (qfo_t *qfo, pr_type_t *far_data, int far_data_size);
+void qfo_add_strings (qfo_t *qfo, const char *strings, int strings_size);
+void qfo_add_relocs (qfo_t *qfo, qfo_reloc_t *relocs, int num_relocs);
+void qfo_add_defs (qfo_t *qfo, qfo_def_t *defs, int num_defs);
+void qfo_add_functions (qfo_t *qfo, qfo_function_t *functions, int num_functions);
+void qfo_add_types (qfo_t *qfo, const char *types, int types_size);
+void qfo_delete (qfo_t *qfo);
 
 #endif//__obj_file_h

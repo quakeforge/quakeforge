@@ -107,6 +107,8 @@ relocate_refs (reloc_t *refs, int ofs)
 			case rel_def_func:
 				G_INT (refs->ofs) = ofs;
 				break;
+			case rel_def_string:
+				break;
 		}
 		refs = refs->next;
 	}

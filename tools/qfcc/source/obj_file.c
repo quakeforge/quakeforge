@@ -499,3 +499,89 @@ qfo_to_progs (qfo_t *qfo, pr_info_t *pr)
 	}
 	return 0;
 }
+
+qfo_t *
+qfo_new (void)
+{
+	return calloc (1, sizeof (qfo_t));
+}
+
+void
+qfo_add_code (qfo_t *qfo, dstatement_t *code, int code_size)
+{
+	qfo->code = malloc (code_size * sizeof (dstatement_t));
+	memcpy (qfo->code, code, code_size * sizeof (dstatement_t));
+}
+
+void
+qfo_add_data (qfo_t *qfo, pr_type_t *data, int data_size)
+{
+	qfo->data = malloc (data_size * sizeof (pr_type_t));
+	memcpy (qfo->data, data, data_size * sizeof (pr_type_t));
+}
+
+void
+qfo_add_far_data (qfo_t *qfo, pr_type_t *far_data, int far_data_size)
+{
+	qfo->far_data = malloc (far_data_size * sizeof (pr_type_t));
+	memcpy (qfo->far_data, far_data, far_data_size * sizeof (pr_type_t));
+}
+
+void
+qfo_add_strings (qfo_t *qfo, const char *strings, int strings_size)
+{
+	qfo->strings = malloc (strings_size);
+	memcpy (qfo->strings, strings, strings_size);
+}
+
+void
+qfo_add_relocs (qfo_t *qfo, qfo_reloc_t *relocs, int num_relocs)
+{
+	qfo->relocs = malloc (num_relocs * sizeof (qfo_reloc_t));
+	memcpy (qfo->relocs, relocs, num_relocs * sizeof (qfo_reloc_t));
+}
+
+void
+qfo_add_defs (qfo_t *qfo, qfo_def_t *defs, int num_defs)
+{
+	qfo->defs = malloc (num_defs * sizeof (qfo_def_t));
+	memcpy (qfo->defs, defs, num_defs * sizeof (qfo_def_t));
+}
+
+void
+qfo_add_functions (qfo_t *qfo, qfo_function_t *functions, int num_functions)
+{
+	qfo->functions = malloc (num_functions * sizeof (qfo_function_t));
+	memcpy (qfo->functions, functions, num_functions * sizeof (qfo_function_t));
+}
+
+void
+qfo_add_types (qfo_t *qfo, const char *types, int types_size)
+{
+	qfo->types = malloc (types_size);
+	memcpy (qfo->types, types, types_size);
+}
+
+void
+qfo_delete (qfo_t *qfo)
+{
+	if (!qfo)
+		return;
+	if (qfo->code)
+		free (qfo->code);
+	if (qfo->data)
+		free (qfo->data);
+	if (qfo->far_data)
+		free (qfo->far_data);
+	if (qfo->strings)
+		free (qfo->strings);
+	if (qfo->relocs)
+		free (qfo->relocs);
+	if (qfo->defs)
+		free (qfo->defs);
+	if (qfo->functions)
+		free (qfo->functions);
+	if (qfo->types)
+		free (qfo->types);
+	free (qfo);
+}
