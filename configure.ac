@@ -1387,7 +1387,7 @@ if test "x$HAVE_X" = xyes; then
 	CAN_BUILD_SW=yes
 fi
 if test "x$SV_TARGETS" = xyes; then
-	QW_TARGETS="qw-server\$(EXEEXT) $QW_TARGETS"
+	QW_TARGETS="qw-server\$(EXEEXT) qw-master\$(EXEEXT) $QW_TARGETS"
 #	NQ_TARGETS="nq-server\$(EXEEXT) $NQ_TARGETS"
 fi
 

@@ -37,7 +37,7 @@ GLIDE_LIBS= @GLIDE_LIBS@
 
 EXTRA_PROGRAMS= qw-client-3dfx qw-client-fbdev qw-client-glx qw-client-mgl \
 		qw-client-sdl qw-client-sdl32 qw-client-sgl qw-client-svga \
-		qw-client-wgl qw-client-x11 qw-server
+		qw-client-wgl qw-client-x11 qw-server qw-master
 
 if ASM_ARCH
 ASM = libasm.la
@@ -86,6 +86,9 @@ qw_server_SOURCES=	$(common_SOURCES) $(server_SOURCES)
 qw_server_LDADD=	libqfnet.la $(ASM) $(qf_server_LIBS) $(NET_LIBS) $(DL_LIBS) $(CURSES_LIBS)
 qw_server_LDFLAGS=	$(common_ldflags)
 qw_server_DEPENDENCIES=	libqfnet.la $(ASM) $(qf_server_LIBS)
+
+qw_master_SOURCES=	master.c
+qw_master_LDFLAGS=	$(common_ldflags)
 
 qf_client_LIBS=	$(top_builddir)/libs/video/targets/libQFjs.la \
 		$(top_builddir)/libs/gamecode/engine/libQFgamecode.la \
