@@ -1,7 +1,7 @@
 AUTOMAKE_OPTIONS = foreign
 SUBDIRS = GL plugin
 includedir = $(prefix)/include/QF
-include_HEADERS = bspfile.h cdaudio.h checksum.h clip_hull.h cmd.h \
+include_HEADERS = bspfile.h cbuf.h cdaudio.h checksum.h clip_hull.h cmd.h \
 	console.h crc.h csqc.h cvar.h dstring.h draw.h gcc_attr.h hash.h hl.h \
 	in_event.h info.h input.h joystick.h keys.h link.h locs.h \
 	mathlib.h mdfour.h model.h modelgen.h msg.h pak.h pakfile.h pcx.h \
