@@ -137,6 +137,10 @@
 #undef SERVER_PLUGIN_LIST
 #undef SERVER_PLUGIN_PROTOS
 
+/* list of client plugins and prototypes */
+#undef CLIENT_PLUGIN_LIST
+#undef CLIENT_PLUGIN_PROTOS
+
 /* list of cd plugins and prototypes */
 #undef CD_PLUGIN_LIST
 #undef CD_PLUGIN_PROTOS

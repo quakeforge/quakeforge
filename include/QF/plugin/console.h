@@ -46,6 +46,7 @@ typedef struct console_data_s {
 	const char			*dl_name;
 	int					dl_percent;
 	double				realtime;
+	int					force_commandline;
 } console_data_t;
 
 #endif // __QF_plugin_console_h_

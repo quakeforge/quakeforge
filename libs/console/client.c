@@ -59,14 +59,6 @@ static general_data_t plugin_info_general_data;
 static console_data_t plugin_info_console_data;
 #define con_data plugin_info_console_data
 
-int         con_ormask;
-console_t   con_main;
-console_t   con_chat;
-console_t  *con;						// point to either con_main or con_chat
-
-int         con_totallines;				// total lines in console scrollback
-
-
 float       con_cursorspeed = 4;
 
 cvar_t     *con_notifytime;				// seconds
@@ -87,16 +79,27 @@ qboolean    con_initialized;
 
 
 void
+Con_ClearNotify (void)
+{
+	int			i;
+
+	for (i = 0; i < NUM_CON_TIMES; i++)
+		con_times[i] = 0;
+}
+
+void
 Con_ToggleConsole_f (void)
 {
 	Key_ClearTyping ();
-/*XXX
+
 	if (key_dest == key_console) {
-		if (cls.state == ca_active)
+		if (con_data.force_commandline)
+			key_dest = key_console;
+		else
 			key_dest = key_game;
 	} else
 		key_dest = key_console;
-*/
+
 	Con_ClearNotify ();
 }
 
@@ -106,11 +109,13 @@ Con_ToggleChat_f (void)
 	Key_ClearTyping ();
 
 	if (key_dest == key_console) {
-/*XXX
-		if (cls.state == ca_active)
-*/
+		if (con_data.force_commandline) {
+			key_dest = key_console;
+			game_target = IMT_CONSOLE;
+		} else {
 			key_dest = key_game;
 			game_target = IMT_0;
+		}
 	} else {
 		key_dest = key_console;
 		game_target = IMT_CONSOLE;
@@ -130,21 +135,10 @@ Con_Clear_f (void)
 }
 
 void
-Con_ClearNotify (void)
-{
-	int			i;
-
-	for (i = 0; i < NUM_CON_TIMES; i++)
-		con_times[i] = 0;
-}
-
-void
 Con_MessageMode_f (void)
 {
-/*XXX
-	if (cls.state != ca_active)
+	if (con_data.force_commandline)
 		return;
-*/
 	chat_team = false;
 	key_dest = key_message;
 }
@@ -152,14 +146,13 @@ Con_MessageMode_f (void)
 void
 Con_MessageMode2_f (void)
 {
-/*XXX
-	if (cls.state != ca_active)
+	if (con_data.force_commandline)
 		return;
-*/
 	chat_team = true;
 	key_dest = key_message;
 }
 
+/*
 void
 Con_Resize (console_t *con)
 {
@@ -208,6 +201,7 @@ Con_Resize (console_t *con)
 	con->current = con_totallines - 1;
 	con->display = con->current;
 }
+*/
 
 /*
 	Con_CheckResize
@@ -217,13 +211,17 @@ Con_Resize (console_t *con)
 void
 Con_CheckResize (void)
 {
-	Con_Resize (&con_main);
-	Con_Resize (&con_chat);
+	//XXX Con_Resize (&con_main);
+	//XXX Con_Resize (&con_chat);
 }
 
 static void
 C_Init (void)
 {
+	con_notifytime = Cvar_Get ("con_notifytime", "3", CVAR_NONE, NULL,
+							   "How long in seconds messages are displayed "
+							   "on screen");
+
 	con_debuglog = COM_CheckParm ("-condebug");
 
 	con = &con_main;
@@ -248,14 +246,6 @@ C_Init (void)
 static void
 C_Shutdown (void)
 {
-}
-
-void
-Con_Init_Cvars (void)
-{
-	con_notifytime = Cvar_Get ("con_notifytime", "3", CVAR_NONE, NULL,
-							   "How long in seconds messages are displayed "
-							   "on screen");
 }
 
 void
@@ -374,10 +364,8 @@ Con_DrawInput (void)
 	char		temp[MAXCMDLINE];
 	char	   *text;
 
-/*XXX
-	if (key_dest != key_console && cls.state == ca_active)
+	if (key_dest != key_console && !con_data.force_commandline)
 		return;				// don't draw anything (always draw if not active)
-*/
 
 	text = strcpy (temp, key_lines[edit_line]);
 
