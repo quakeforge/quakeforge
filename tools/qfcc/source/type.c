@@ -100,6 +100,14 @@ chain_type (type_t *type)
 	pr.types = type;
 }
 
+type_t *
+new_type (void)
+{
+	type_t     *type;
+	ALLOC (1024, type_t, types, type);
+	return type;
+}
+
 /*
 	find_type
 
@@ -137,7 +145,7 @@ find_type (type_t *type)
 	}
 
 	// allocate a new one
-	ALLOC (1024, type_t, types, check);
+	check = new_type ();
 	*check = *type;
 
 	chain_type (check);

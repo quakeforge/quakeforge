@@ -40,6 +40,8 @@ static const char rcsid[] =
 #include "qfcc.h"
 #include "reloc.h"
 
+static reloc_t *free_refs;
+
 void
 relocate_refs (reloc_t *refs, int ofs)
 {
@@ -106,8 +108,9 @@ relocate_refs (reloc_t *refs, int ofs)
 reloc_t *
 new_reloc (int ofs, reloc_type type)
 {
-	reloc_t    *ref = calloc (1, sizeof (reloc_t));
+	reloc_t    *ref;
 
+	ALLOC (1024, reloc_t, refs, ref);
 	ref->ofs = ofs;
 	ref->type = type;
 	return ref;

@@ -139,7 +139,7 @@ new_struct (const char *name)
 	}
 	strct = malloc (sizeof (struct_t));
 	strct->name = name;
-	strct->type = calloc (1, sizeof (type_t));
+	strct->type = new_type ();
 	strct->type->type = ev_struct;
 	strct->type->struct_tail = &strct->type->struct_head;
 	strct->type->struct_fields = Hash_NewTable (61, struct_field_get_key, 0, 0);

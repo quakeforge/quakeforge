@@ -75,6 +75,7 @@ extern	type_t	*type_module;
 
 struct dstring_s;
 
+type_t *new_type (void);
 type_t *find_type (type_t *new);
 void new_typedef (const char *name, type_t *type);
 type_t *get_typedef (const char *name);
