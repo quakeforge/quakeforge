@@ -509,7 +509,7 @@ X11_SetGamma (double gamma)
 # ifdef X_XF86VidModeSetGamma
 	XF86VidModeGamma	xgamma;
 	
-	if (vidmode_avail && vid_system_gamma->int_val) {
+	if (vid_gamma_avail && vid_system_gamma->int_val) {
 		xgamma.red = xgamma.green = xgamma.blue = (float) gamma;
 		if (XF86VidModeSetGamma (x_disp, x_screen, &xgamma))
 			return true;
