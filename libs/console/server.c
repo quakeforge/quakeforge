@@ -280,6 +280,15 @@ C_ProcessInput (void)
 				getmaxyx (stdscr, screen_y, screen_x);
 				con_linewidth = screen_x;
 				input_line->width = screen_x;
+				/* while a little ugly, this is needed because ncurses auto
+				 * resizing doesn't always do the right thing
+				 */
+				wresize (input, 1, screen_x);
+				mvwin (input, screen_y - 1, 0);
+				wresize (status, 1, screen_x);
+				mvwin (status, screen_y - 2, 0);
+				wresize (output, screen_y - 2, screen_x);
+				mvwin (status, 0, 0);
 				wrefresh (curscr);
 			}
 		}
@@ -327,7 +336,7 @@ C_ProcessInput (void)
 				break;
 			default:
 				if (ch < 0 || ch >= 256)
-					return;
+					ch = 0;
 		}
 		Con_ProcessInputLine (input_line, ch);
 	} else
