@@ -76,10 +76,7 @@ V_CalcBlend (void)
 	int         i;
 
 	for (i = 0; i < NUM_CSHIFTS; i++) {
-		if (!gl_cshiftpercent->value)
-			continue;
-
-		a2 = ((cl.cshifts[i].percent * gl_cshiftpercent->value) / 100.0) / 255.0;
+		a2 = cl.cshifts[i].percent / 255.0;
 
 		if (!a2)
 			continue;

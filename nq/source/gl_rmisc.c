@@ -62,8 +62,6 @@ extern cvar_t	*r_netgraph;
 
 extern void GDT_Init ();
 
-extern entity_t r_worldentity;
-
 
 /*
 	R_Envmap_f

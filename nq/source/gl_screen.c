@@ -782,7 +782,7 @@ SCR_RSShot_f (void)
 	st[sizeof (st) - 1] = 0;
 	SCR_DrawStringToSnap (st, newbuf, w - strlen (st) * 8, h - 11, w);
 
-	strncpy (st, name->string, sizeof (st));
+	strncpy (st, cl_name->string, sizeof (st));
 	st[sizeof (st) - 1] = 0;
 	SCR_DrawStringToSnap (st, newbuf, w - strlen (st) * 8, h - 21, w);
 
@@ -938,10 +938,9 @@ SCR_UpdateScreen (void)
 	// draw any areas not covered by the refresh
 	SCR_TileClear ();
 
-#if 0 // R_NetGraph qw-only?
 	if (r_netgraph->int_val)
 		R_NetGraph ();
-#endif
+
 	if (cl.intermission == 1 && key_dest == key_game) {
 		Sbar_IntermissionOverlay ();
 	} else if (cl.intermission == 2 && key_dest == key_game) {
