@@ -728,11 +728,19 @@ QFS_CompressPath (const char *pth)
 	Assumes canonical (compressed) path.
 */
 static inline int
-contains_updir (const char *path)
+contains_updir (const char *path, int levels)
 {
-	if (path[0] == '.' && path[1] == '.'
-		&& (path [2] == '/' || path[2] == 0))
-		return 1;
+	do {
+		if (path[0] != '.' || path[1] != '.'
+			|| (path[2] != '/' && path[2] != 0))
+			return 0;
+		if (!path[2])
+			break;
+		// first part of path is ../
+		if (levels <= 0)
+			return 1;
+		path += 3;
+	} while (levels-- > 0);
 	return 0;
 }
 
@@ -809,7 +817,7 @@ _QFS_FOpenFile (const char *filename, QFile **gzfile,
 
 	// make sure they're not trying to do weird stuff with our private files
 	path = QFS_CompressPath (filename);
-	if (contains_updir(path)) {
+	if (contains_updir(path, 1)) {
 		Sys_DPrintf ("FindFile: %s: attempt to escape directory tree!\n", path);
 		goto error;
 	}
@@ -1317,7 +1325,7 @@ QFS_Open (const char *path, const char *mode)
 	int         write = 0;
 
 	cpath = QFS_CompressPath (path);
-	if (contains_updir (cpath)) {
+	if (contains_updir (cpath, 0)) {
 		errno = EACCES;
 		file = 0;
 	} else {
