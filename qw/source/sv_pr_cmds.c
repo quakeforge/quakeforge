@@ -1156,6 +1156,9 @@ PF_makestatic (progs_t *pr)
 
 	ent = P_EDICT (pr, 0);
 
+	// flush the signon message out to a separate buffer if nearly full
+	SV_FlushSignon ();
+
 	MSG_WriteByte (&sv.signon, svc_spawnstatic);
 
 	model = PR_GetString (pr, SVstring (ent, model));
