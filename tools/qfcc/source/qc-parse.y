@@ -562,6 +562,7 @@ emit_function (function_t *f, expr_t *e)
 	emit_statement (op_done, 0, 0, 0);
 	PR_FlushScope (pr_scope);
 	pr_scope = 0;
+	PR_ResetTempDefs ();
 
 	//puts ("");
 }
