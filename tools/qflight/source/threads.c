@@ -102,9 +102,9 @@ RunThreadsOn (threadfunc_t *func)
 				fprintf (stderr, "pthread_join failed");
 			free (l[i]);
 		}
-	}
+	} else
 #endif
-	else {
+	{
 		lightinfo_t *l = malloc (sizeof (lightinfo_t));
 		func (l);
 	}
