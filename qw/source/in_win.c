@@ -427,8 +427,10 @@ IN_Init_Cvars (void)
 	// mouse variables
 	m_filter = Cvar_Get ("m_filter", "0", CVAR_ARCHIVE, NULL,
 			"Toggle mouse input filtering.");
+	_windowed_mouse = Cvar_Get ("_windowed_mouse", "0", CVAR_ARCHIVE, NULL,
+			"Grab the mouse from X while playing quake");
 
-        JOY_Init_Cvars();
+	JOY_Init_Cvars();
 }
 
 /*

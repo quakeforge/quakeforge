@@ -235,7 +235,7 @@ qw_client_sgl_DEPENDENCIES= $(CLIENT_LIB_DEPS)
 #
 # SGI/Microsoft WGL (Windows OpenGL)
 #
-wgl_SOURCES=	vid_wgl.c
+wgl_SOURCES=	vid_wgl.c vid_common_gl.c
 
 qw_client_wgl_SOURCES=	$(common_SOURCES) $(client_SOURCES) $(ogl_SOURCES) $(wgl_SOURCES) in_win.c
 qw_client_wgl_LDADD=	$(CLIENT_LIBS) $(GLX_LIBS) -lgdi32

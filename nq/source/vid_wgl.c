@@ -157,7 +157,7 @@ typedef void (APIENTRY * lp3DFXFUNC) (int, int, int, int, int, const void *);
 lp3DFXFUNC  glColorTableEXT;
 qboolean    is8bit = false;
 qboolean    isPermedia = false;
-int         gl_mtex_enum = TEXTURE0_SGIS;
+GLenum      gl_mtex_enum = TEXTURE0_SGIS;
 qboolean    gl_arb_mtex = false;
 qboolean    gl_mtexable = false;
 
