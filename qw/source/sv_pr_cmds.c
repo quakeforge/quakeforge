@@ -1855,7 +1855,19 @@ PR_SV_UserCmd (progs_t *pr)
 	SV_PreRunCmd ();
 	SV_RunCmd (&ucmd, 0);
 	SV_PostRunCmd ();
-};
+}
+
+static void
+PR_SV_Spawn (progs_t *pr)
+{
+	int         entnum = P_EDICTNUM (pr, 0);
+	client_t   *cl = svs.clients + entnum - 1;
+
+	if (entnum < 1 || entnum > MAX_CLIENTS || cl->state != cs_server)
+		PR_RunError (pr, "not a server client");
+
+	SV_Spawn (cl);
+}
 
 void
 SV_PR_Cmds_Init ()
@@ -2023,4 +2035,6 @@ SV_PR_Cmds_Init ()
 	PR_AddBuiltin (&sv_pr_state, "SV_SetPing", PR_SV_SetPing, -1);
 	// void (entity cl, float secs, vector angles, vector move, integer buttons, integer impulse) SV_UserCmd
 	PR_AddBuiltin (&sv_pr_state, "SV_UserCmd", PR_SV_UserCmd, -1);
+	// void (entity cl) SV_Spawn
+	PR_AddBuiltin (&sv_pr_state, "SV_Spawn", PR_SV_Spawn, -1);
 };

@@ -547,6 +547,7 @@ void *SV_AddUserCommand (const char *name, void (*func) (void *userdata),
 				         void *userdata,
 				         void (*on_free) (void *userdata));
 int SV_RemoveUserCommand (void *cmd);
+void SV_Spawn (client_t *client);
 
 //
 // svonly.c

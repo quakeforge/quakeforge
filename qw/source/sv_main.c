@@ -466,7 +466,7 @@ SV_FullClientUpdate (client_t *client, sizebuf_t *buf)
 void
 SV_FullClientUpdateToClient (client_t *client, client_t *cl)
 {
-	if (client->state < cs_connected)
+	if (client->state < cs_connected && client->state != cs_server)
 		return;
 	ClientReliableCheckBlock (cl, 24 + client->userinfo->cursize);
 	if (cl->num_backbuf) {

@@ -334,12 +334,32 @@ SV_PreSpawn_f (void *unused)
 	MSG_WriteString (msg, command);
 }
 
+void
+SV_Spawn (client_t *client)
+{
+	edict_t    *ent;
+
+	// set up the edict
+	ent = client->edict;
+
+	memset (&ent->v, 0, sv_pr_state.progs->entityfields * 4);
+	SVfloat (ent, colormap) = NUM_FOR_EDICT (&sv_pr_state, ent);
+	SVfloat (ent, team) = 0; // FIXME
+	SVstring (ent, netname) = PR_SetString (&sv_pr_state, host_client->name);
+
+	host_client->entgravity = 1.0;
+	if (sv_fields.gravity != -1)
+		SVfloat (ent, gravity) = 1.0;
+	host_client->maxspeed = sv_maxspeed->value;
+	if (sv_fields.maxspeed != -1)
+		SVfloat (ent, maxspeed) = sv_maxspeed->value;
+}
+
 static void
 SV_Spawn_f (void *unused)
 {
 	int         i, n;
 	client_t   *client;
-	edict_t    *ent;
 
 	if (host_client->state != cs_connected) {
 		SV_Printf ("Spawn not valid -- already spawned\n");
@@ -389,20 +409,7 @@ SV_Spawn_f (void *unused)
 		ClientReliableWrite_String (host_client, sv.lightstyles[i]);
 	}
 
-	// set up the edict
-	ent = host_client->edict;
-
-	memset (&ent->v, 0, sv_pr_state.progs->entityfields * 4);
-	SVfloat (ent, colormap) = NUM_FOR_EDICT (&sv_pr_state, ent);
-	SVfloat (ent, team) = 0; // FIXME
-	SVstring (ent, netname) = PR_SetString (&sv_pr_state, host_client->name);
-
-	host_client->entgravity = 1.0;
-	if (sv_fields.gravity != -1)
-		SVfloat (ent, gravity) = 1.0;
-	host_client->maxspeed = sv_maxspeed->value;
-	if (sv_fields.maxspeed != -1)
-		SVfloat (ent, maxspeed) = sv_maxspeed->value;
+	SV_Spawn (host_client);
 
 //
 // force stats to be updated
