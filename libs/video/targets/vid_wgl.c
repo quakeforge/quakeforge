@@ -59,10 +59,10 @@ static __attribute__ ((unused)) const char rcsid[] =
 extern const char *gl_renderer;
 
 HWND		mainwindow;
-qboolean win_canalttab = false;
+qboolean	win_canalttab = false;
 modestate_t modestate = MS_UNINIT;
 RECT		window_rect;
-DEVMODE	win_gdevmode;
+DEVMODE		win_gdevmode;
 int			window_center_x, window_center_y, window_x, window_y, window_width,
 			window_height;
 
@@ -85,24 +85,25 @@ static BOOL (GLAPIENTRY *qf_wglMakeCurrent) (HDC, HGLRC);
 #define NO_MODE					(MODE_WINDOWED - 1)
 #define MODE_FULLSCREEN_DEFAULT	(MODE_WINDOWED + 1)
 
-static int	windowed_mouse;
-static HICON hIcon;
+static int		windowed_mouse;
 
+static HICON	hIcon;
 static RECT		WindowRect;
-static DWORD		WindowStyle;
+static DWORD	WindowStyle;
 
 static qboolean	fullsbardraw = true;
 
-static HDC         maindc;
+static HDC		maindc;
 
-static void        GL_Init (void);
 
+static void GL_Init (void);
 static void * (WINAPI *glGetProcAddress) (const char *symbol) = NULL;
+
 
 void *
 QFGL_GetProcAddress (void *handle, const char *name)
 {
-	void       *glfunc = NULL;
+	void   *glfunc = NULL;
 
 	if (glGetProcAddress)
 		glfunc = glGetProcAddress (name);
@@ -114,18 +115,15 @@ QFGL_GetProcAddress (void *handle, const char *name)
 void *
 QFGL_LoadLibrary (void)
 {
-	void   *handle;
+	void	   *handle;
 
 	if (!(handle = LoadLibrary (gl_driver->string)))
 		Sys_Error ("Couldn't load OpenGL library %s!", gl_driver->string);
-	(FARPROC)glGetProcAddress = GetProcAddress (handle, "wglGetProcAddress");
+	(FARPROC) glGetProcAddress = GetProcAddress (handle, "wglGetProcAddress");
 	return handle;
 }
 
-
 //====================================
-
-
 
 static void
 CenterWindow (HWND hWndCenter, int width, int height, BOOL lefttopjustify)
@@ -159,12 +157,12 @@ VID_SetWindowedMode ( void )
 	height = rect.bottom - rect.top;
 
 	// Create the window
-	mainwindow = CreateWindow ("QuakeForge", "GLQuakeWorld",
+	mainwindow = CreateWindow ("QuakeForge", PROGRAM,
 							   WindowStyle, rect.left, rect.top, width, height,
 							   NULL, NULL, global_hInstance, NULL);
 
 	if (!mainwindow)
-		Sys_Error ("Couldn't create DIB window (%lx)",GetLastError());
+		Sys_Error ("Couldn't create DIB window (%lx)", GetLastError ());
 
 	// Center and show the window
 	CenterWindow (mainwindow, WindowRect.right - WindowRect.left,
@@ -200,15 +198,16 @@ VID_SetFullDIBMode ( void )
 	int			width, height;
 	RECT		rect;
 
-	if (ChangeDisplaySettings (&win_gdevmode, CDS_FULLSCREEN) != DISP_CHANGE_SUCCESSFUL)
+	if (ChangeDisplaySettings (&win_gdevmode, CDS_FULLSCREEN)
+		!= DISP_CHANGE_SUCCESSFUL)
 		Sys_Error ("Couldn't set fullscreen DIB mode (%lx)", GetLastError());
 
-// FIXME: some drivers have broken FS popup window handling
-// until I find way around it, or find some other cause for it
-// this is way to avoid it
-
-	if (COM_CheckParm ("-brokenpopup")) WindowStyle = 0;
-	else WindowStyle = WS_POPUP | WS_CLIPSIBLINGS | WS_CLIPCHILDREN;
+	// FIXME: some drivers have broken FS popup window handling until I find a
+	// way around it, or find some other cause for it this is a way to avoid it
+	if (COM_CheckParm ("-brokenpopup"))
+		WindowStyle = 0;
+	else
+		WindowStyle = WS_POPUP | WS_CLIPSIBLINGS | WS_CLIPCHILDREN;
 
 	rect = WindowRect;
 	AdjustWindowRect (&rect, WindowStyle, FALSE);
@@ -217,9 +216,9 @@ VID_SetFullDIBMode ( void )
 	height = rect.bottom - rect.top;
 
 	// Create the DIB window
-	mainwindow = CreateWindow ("QuakeForge", "GLQuakeWorld",
-		WindowStyle, rect.left, rect.top, width, height, NULL, NULL,
-		global_hInstance, NULL);
+	mainwindow = CreateWindow ("QuakeForge", "GLQuakeWorld", WindowStyle,
+							   rect.left, rect.top, width, height, NULL, NULL,
+							   global_hInstance, NULL);
 
 	if (!mainwindow)
 		Sys_Error ("Couldn't create DIB window (%lx)",GetLastError());
@@ -229,8 +228,8 @@ VID_SetFullDIBMode ( void )
 
 	// Because we have set the background brush for the window to NULL
 	// (to avoid flickering when re-sizing the window on the desktop), we
-	// clear the window to black when created, otherwise it will be
-	// empty while Quake starts up.
+	// clear the window to black when created, otherwise it will be empty
+	// while Quake starts up.
 	hdc = GetDC (mainwindow);
 	PatBlt (hdc, 0, 0, WindowRect.right, WindowRect.bottom, BLACKNESS);
 	ReleaseDC (mainwindow, hdc);
@@ -256,7 +255,6 @@ VID_SetMode (unsigned char *palette)
 	MSG			msg;
 
 	// so Con_Printfs don't mess us up by forcing vid and snd updates
-
 	CDAudio_Pause ();
 
 	WindowRect.top = WindowRect.left = 0;
@@ -317,7 +315,8 @@ VID_SetMode (unsigned char *palette)
 	// fix the leftover Alt from any Alt-Tab or the like that switched us away
 	IN_ClearStates ();
 
-	Con_Printf ("Video mode %ix%i initialized.\n",vid_width->int_val, vid_height->int_val);
+	Con_Printf ("Video mode %ix%i initialized.\n", vid_width->int_val,
+				vid_height->int_val);
 
 	VID_SetPalette (palette);
 
@@ -452,7 +451,7 @@ bSetupPixelFormat (HDC hDC)
 void
 VID_Init (unsigned char *palette)
 {
-	BOOL			stat;
+	BOOL		stat;
 	int			bpp, vid_mode;
 	HDC			hdc;
 	HGLRC		baseRC;
@@ -460,8 +459,7 @@ VID_Init (unsigned char *palette)
 	WNDCLASS	wc;
 
 	vid_fullscreen = Cvar_Get ("vid_fullscreen", "0", CVAR_ROM | CVAR_ARCHIVE, 
-								NULL,
-							   "Run WGL client at fullscreen");
+							   NULL, "Run WGL client at fullscreen");
 	GL_Pre_Init ();
 
 	qf_wglCreateContext = QFGL_ProcAddress (libgl_handle, "wglCreateContext",
@@ -479,7 +477,6 @@ VID_Init (unsigned char *palette)
 
 	hIcon = LoadIcon (global_hInstance, MAKEINTRESOURCE (IDI_ICON1));
 
-	
 
 	// Register the frame class
 	wc.style = 0;
@@ -494,7 +491,7 @@ VID_Init (unsigned char *palette)
 	wc.lpszClassName = "QuakeForge";
 
 	if (!RegisterClass (&wc))
-		Sys_Error ("Couldn't register window class (%lx)", GetLastError());
+		Sys_Error ("Couldn't register window class (%lx)", GetLastError ());
 
 	VID_GetWindowSize (640, 480);
 
@@ -506,7 +503,6 @@ VID_Init (unsigned char *palette)
 		}
 
 		ReleaseDC (NULL, hdc);
-
 	} else {
 		if (COM_CheckParm ("-bpp")) {
 			bpp = atoi (com_argv[COM_CheckParm ("-bpp") + 1]);
@@ -517,12 +513,15 @@ VID_Init (unsigned char *palette)
 		do {
 			stat = EnumDisplaySettings (NULL, vid_mode, &win_gdevmode);
 
-			if ((win_gdevmode.dmBitsPerPel == bpp) && (win_gdevmode.dmPelsWidth == vid.width) &&
-					(win_gdevmode.dmPelsHeight == vid.height)) {
-				win_gdevmode.dmFields = DM_BITSPERPEL | DM_PELSWIDTH | DM_PELSHEIGHT;
+			if ((win_gdevmode.dmBitsPerPel == bpp)
+				&& (win_gdevmode.dmPelsWidth == vid.width)
+				&& (win_gdevmode.dmPelsHeight == vid.height)) {
+				win_gdevmode.dmFields = (DM_BITSPERPEL | DM_PELSWIDTH
+										 | DM_PELSHEIGHT);
 
-				if (ChangeDisplaySettings (&win_gdevmode, CDS_TEST | CDS_FULLSCREEN) ==
-						DISP_CHANGE_SUCCESSFUL) {
+				if (ChangeDisplaySettings (&win_gdevmode,
+										   CDS_TEST | CDS_FULLSCREEN)
+					== DISP_CHANGE_SUCCESSFUL) {
 					break;
 				}
 			}	
@@ -530,7 +529,8 @@ VID_Init (unsigned char *palette)
 			vid_mode++;
 		} while (stat);
 		if (!stat)
-			Sys_Error("Couldn't get requested resolution (%i, %i, %i)",vid_width->int_val, vid_height->int_val, bpp);
+			Sys_Error ("Couldn't get requested resolution (%i, %i, %i)",
+					   vid_width->int_val, vid_height->int_val, bpp);
 	}
 
 	vid.maxwarpwidth = WARP_WIDTH;
@@ -555,13 +555,14 @@ VID_Init (unsigned char *palette)
 		lasterror=GetLastError();
 		if (maindc && mainwindow)
 			ReleaseDC (mainwindow, maindc);
-		Sys_Error("Could not initialize GL (wglCreateContext failed).\n\nMake "
-				  "sure you in are 65535 color mode, and try running -window. "
-				  "\nError code: (%lx)", lasterror);
+		Sys_Error ("Could not initialize GL (wglCreateContext failed).\n\n"
+				   "Make sure you are in 65535 color mode, and try running "
+				   "with -window.\n"
+				   "Error code: (%lx)", lasterror);
 	}
 
 	if (!qf_wglMakeCurrent (maindc, baseRC)) {
-		lasterror=GetLastError();
+		lasterror = GetLastError ();
 		if (baseRC)
 			qf_wglDeleteContext (baseRC);
 		if (maindc && mainwindow)
@@ -620,6 +621,7 @@ VID_SetGamma (double gamma)
 	ReleaseDC (NULL, hdc);
 	return i;
 }
+
 #if 0
 static void
 VID_SaveGamma (void)
