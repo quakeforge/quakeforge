@@ -44,16 +44,3 @@ ServerPaused (void)
 {
 	return false;
 }
-
-void
-SV_Error (char *error, ...)
-{
-	static char	string[1024];
-	va_list		argptr;
-
-	va_start (argptr, error);
-	vsnprintf (string, sizeof (string), error, argptr);
-	va_end (argptr);
-
-	Sys_Error ("%s\n", string);
-}
