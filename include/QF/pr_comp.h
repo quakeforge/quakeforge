@@ -31,7 +31,7 @@
 #ifndef _PR_COMP_H
 #define _PR_COMP_H
 
-#include "qtypes.h"
+#include "QF/qtypes.h"
 
 typedef enum {
 	ev_void,

@@ -44,7 +44,7 @@
 #include "scriplib.h"
 #include "trilib.h"
 #include "lbmlib.h"
-#include "mathlib.h"
+#include "QF/mathlib.h"
 
 #endif
 

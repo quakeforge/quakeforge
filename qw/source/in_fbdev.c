@@ -38,8 +38,8 @@
 #include <sys/ioctl.h>
 
 #include "protocol.h"
-#include "cvar.h"
-#include "keys.h"
+#include "QF/cvar.h"
+#include "QF/keys.h"
 
 cvar_t		*_windowed_mouse;
 

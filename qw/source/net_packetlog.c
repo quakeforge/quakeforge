@@ -38,12 +38,12 @@
 #include <ctype.h>
 #include <stdarg.h>
 
-#include "msg.h"
+#include "QF/msg.h"
 #include "net.h"
 #include "protocol.h"
-#include "quakefs.h"
+#include "QF/quakefs.h"
 #include "server.h"
-#include "va.h"
+#include "QF/va.h"
 
 cvar_t     *netlogger;
 cvar_t     *netloglevel;

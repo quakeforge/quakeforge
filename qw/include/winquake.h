@@ -43,7 +43,7 @@
 # include <mgraph.h>
 #endif
 
-#include "qtypes.h"
+#include "QF/qtypes.h"
 
 #ifndef WM_MOUSEWHEEL
 # define WM_MOUSEWHEEL                   0x020A

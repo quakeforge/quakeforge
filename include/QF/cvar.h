@@ -29,8 +29,8 @@
 #ifndef __cvar_h
 #define __cvar_h
 
-#include "qtypes.h"
-#include "quakeio.h"
+#include "QF/qtypes.h"
+#include "QF/quakeio.h"
 
 typedef struct cvar_s
 {

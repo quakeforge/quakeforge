@@ -31,7 +31,7 @@
 #ifndef __qendian_h
 #define __qendian_h
 
-#include "qtypes.h"
+#include "QF/qtypes.h"
 
 #ifndef NULL
 # define NULL ((void *)0)

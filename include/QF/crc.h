@@ -29,7 +29,7 @@
 #ifndef __crc_h
 #define __crc_h
 
-#include "qtypes.h"
+#include "QF/qtypes.h"
 
 void CRC_Init(unsigned short *crcvalue);
 void CRC_ProcessByte(unsigned short *crcvalue, byte data);

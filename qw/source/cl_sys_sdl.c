@@ -56,9 +56,9 @@
 #include <SDL.H>
 #include <SDL_main.H>
 
-#include "sys.h"
-#include "qargs.h"
-#include "qargs.h"
+#include "QF/sys.h"
+#include "QF/qargs.h"
+#include "QF/qargs.h"
 #include "client.h"
 #include "host.h"
 

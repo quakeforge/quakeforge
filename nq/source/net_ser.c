@@ -33,7 +33,7 @@
 
 #include "net_ser.h"
 #include "dosisms.h"
-#include "crc.h"
+#include "QF/crc.h"
 
 #include "net_comx.c"
 

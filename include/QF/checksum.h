@@ -29,7 +29,7 @@
 #ifndef __checksum_h
 #define __checksum_h
 
-#include "qtypes.h"
+#include "QF/qtypes.h"
 
 unsigned int Com_BlockChecksum (void *buffer, int length);
 void Com_BlockFullChecksum (void *buffer, int len, unsigned char *outbuf);

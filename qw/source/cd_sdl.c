@@ -41,9 +41,9 @@
 #include <SDL.h>
 
 #include "cdaudio.h"
-#include "cmd.h"
-#include "console.h"
-#include "qargs.h"
+#include "QF/cmd.h"
+#include "QF/console.h"
+#include "QF/qargs.h"
 #include "sound.h"
 
 static qboolean cdValid = false;

@@ -34,7 +34,7 @@
 # include "config.h"
 #endif
 
-#include "gcc_attr.h"
+#include "QF/gcc_attr.h"
 
 char	*va(char *format, ...) __attribute__((format(printf,1,2)));
 // does a varargs printf into a temp buffer

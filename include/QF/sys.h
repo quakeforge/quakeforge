@@ -29,7 +29,7 @@
 #ifndef __sys_h
 #define __sys_h
 
-#include "gcc_attr.h"
+#include "QF/gcc_attr.h"
 
 //
 // file IO

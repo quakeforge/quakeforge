@@ -31,9 +31,9 @@
 #ifndef __quakefs_h
 #define __quakefs_h
 
-#include "qtypes.h"
-#include "quakeio.h"
-#include "cvar.h"
+#include "QF/qtypes.h"
+#include "QF/quakeio.h"
+#include "QF/cvar.h"
 
 //============================================================================
 

@@ -31,21 +31,21 @@
 #endif
 
 #include "cdaudio.h"
-#include "cmd.h"
-#include "console.h"
+#include "QF/cmd.h"
+#include "QF/console.h"
 #include "draw.h"
 #include "glquake.h"
 #include "host.h"
 #include "in_win.h"
-#include "keys.h"
-#include "qargs.h"
-#include "qendian.h"
+#include "QF/keys.h"
+#include "QF/qargs.h"
+#include "QF/qendian.h"
 #include "resource.h"
 #include "sbar.h"
 #include "screen.h"
 #include "sound.h"
-#include "sys.h"
-#include "va.h"
+#include "QF/sys.h"
+#include "QF/va.h"
 #include "winquake.h"
 
 extern void (*vid_menudrawfn) (void);

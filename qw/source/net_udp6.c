@@ -93,12 +93,12 @@
 # include <libc.h>
 #endif
 
-#include "console.h"
-#include "msg.h"
+#include "QF/console.h"
+#include "QF/msg.h"
 #include "net.h"
-#include "qargs.h"
-#include "qtypes.h"
-#include "sys.h"
+#include "QF/qargs.h"
+#include "QF/qtypes.h"
+#include "QF/sys.h"
 
 #ifndef MAXHOSTNAMELEN
 # define MAXHOSTNAMELEN	512

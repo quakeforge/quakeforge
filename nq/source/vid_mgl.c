@@ -33,22 +33,22 @@
 #include <stdlib.h>
 
 #include "quakedef.h"
-#include "va.h"
+#include "QF/va.h"
 #include "winquake.h"
-#include "sys.h"
+#include "QF/sys.h"
 #include "d_local.h"
 #include "resource.h"
 #include "in_win.h"
-#include "keys.h"
+#include "QF/keys.h"
 #include "screen.h"
 #include "wad.h"
-#include "cmd.h"
-#include "qendian.h"
+#include "QF/cmd.h"
+#include "QF/qendian.h"
 #include "draw.h"
-#include "console.h"
+#include "QF/console.h"
 #include "sound.h"
 #include "cdaudio.h"
-#include "qargs.h"
+#include "QF/qargs.h"
 
 #define	MINIMUM_MEMORY	0x550000
 

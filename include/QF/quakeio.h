@@ -40,7 +40,7 @@
 # include <zlib.h>
 #endif
 
-#include "gcc_attr.h"
+#include "QF/gcc_attr.h"
 
 typedef struct {
 	FILE *file;

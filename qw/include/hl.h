@@ -30,7 +30,7 @@
 #ifndef _HL_BSP_H
 #define _HL_BSP_H
 
-#include "qtypes.h"
+#include "QF/qtypes.h"
 
 extern void CL_ParseEntityLump(char *entdata);
 extern void HL_Mod_LoadLighting (lump_t *l);

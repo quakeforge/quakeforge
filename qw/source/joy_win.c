@@ -42,14 +42,14 @@
 
 #include "cl_input.h"
 #include "client.h"
-#include "cmd.h"
-#include "console.h"
-#include "cvar.h"
+#include "QF/cmd.h"
+#include "QF/console.h"
+#include "QF/cvar.h"
 #include "host.h"
 #include "input.h"
-#include "keys.h"
+#include "QF/keys.h"
 #include "protocol.h"
-#include "qargs.h"
+#include "QF/qargs.h"
 #include "view.h"
 
 // Joystick variables and structures

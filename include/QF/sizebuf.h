@@ -28,7 +28,7 @@
 #ifndef __sizebuf_h
 #define __sizebuf_h
 
-#include "qtypes.h"
+#include "QF/qtypes.h"
 
 typedef struct sizebuf_s
 {

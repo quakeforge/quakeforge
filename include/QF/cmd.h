@@ -29,7 +29,7 @@
 #ifndef __cmd_h
 #define __cmd_h
 
-#include "qtypes.h"
+#include "QF/qtypes.h"
 
 //===========================================================================
 

@@ -30,7 +30,7 @@
 #ifndef __mdfour_h
 #define __mdfour_h
 
-#include "uint32.h"
+#include "QF/uint32.h"
 
 #define MDFOUR_DIGEST_BYTES 16
 

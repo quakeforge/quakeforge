@@ -29,7 +29,7 @@
 #ifndef __qfplist_h_
 #define __qfplist_h_
 
-#include "qtypes.h"
+#include "QF/qtypes.h"
 
 //	Ugly defines for fast checking and conversion from char to number
 #define inrange(ch,min,max) ((ch) >= (min) && (ch) <= (max))

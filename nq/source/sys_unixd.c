@@ -50,10 +50,10 @@
 #include <time.h>
 
 #include "client.h"
-#include "sys.h"
+#include "QF/sys.h"
 #include "host.h"
-#include "qtypes.h"
-#include "qargs.h"
+#include "QF/qtypes.h"
+#include "QF/qargs.h"
 
 qboolean    isDedicated;
 

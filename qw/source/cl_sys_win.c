@@ -39,13 +39,13 @@
 #include <windows.h>
 
 #include "client.h"
-#include "console.h"
+#include "QF/console.h"
 #include "host.h"
-#include "qargs.h"
+#include "QF/qargs.h"
 #include "resource.h"
 #include "screen.h"
 #include "sound.h"
-#include "sys.h"
+#include "QF/sys.h"
 #include "vid.h"
 
 qboolean    is_server = false;

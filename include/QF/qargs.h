@@ -31,7 +31,7 @@
 #ifndef __qargs_h
 #define __qargs_h
 
-#include "qtypes.h"
+#include "QF/qtypes.h"
 
 extern	int		com_argc;
 extern	char	**com_argv;

@@ -32,8 +32,8 @@
 // console
 //
 
-#include "qtypes.h"
-#include "gcc_attr.h"
+#include "QF/qtypes.h"
+#include "QF/gcc_attr.h"
 
 #define		CON_TEXTSIZE	16384
 typedef struct

@@ -29,9 +29,9 @@
 #ifndef _PROGS_H
 #define _PROGS_H
 
-#include "link.h"
-#include "quakeio.h"
-#include "pr_comp.h"
+#include "QF/link.h"
+#include "QF/quakeio.h"
+#include "QF/pr_comp.h"
 
 typedef union eval_s
 {

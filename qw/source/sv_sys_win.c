@@ -35,10 +35,10 @@
 #include <winsock.h>
 #include <conio.h>
 
-#include "qargs.h"
-#include "cvar.h"
+#include "QF/qargs.h"
+#include "QF/cvar.h"
 #include "server.h"
-#include "sys.h"
+#include "QF/sys.h"
 
 
 qboolean    is_server = true;

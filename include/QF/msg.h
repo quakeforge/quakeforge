@@ -28,7 +28,7 @@
 #ifndef _MSG_H
 #define _MSG_H
 
-#include "sizebuf.h"
+#include "QF/sizebuf.h"
 
 void MSG_WriteChar (sizebuf_t *sb, int c);
 void MSG_WriteByte (sizebuf_t *sb, int c);

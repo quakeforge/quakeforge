@@ -30,7 +30,7 @@
 #ifndef _KEYS_H
 #define _KEYS_H
 
-#include "quakeio.h"
+#include "QF/quakeio.h"
 
 // these are the key numbers that should be passed to Key_Event
 

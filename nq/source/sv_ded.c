@@ -33,9 +33,9 @@
 #include <stdio.h>
 #include <stdarg.h>
 
-#include "cvar.h"
-#include "host.h"
-#include "keys.h"
+#include "QF/cvar.h"
+#include "QF/host.h"
+#include "QF/keys.h"
 #include "client.h"
 
 int         m_return_state;

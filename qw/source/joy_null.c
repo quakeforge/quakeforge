@@ -30,10 +30,10 @@
 # include "config.h"
 #endif
 
-#include "console.h"
-#include "cvar.h"
+#include "QF/console.h"
+#include "QF/cvar.h"
 #include "protocol.h"
-#include "qtypes.h"
+#include "QF/qtypes.h"
 
 // Joystick variables and structures
 cvar_t     *joy_device;					// Joystick device name
