@@ -2,29 +2,39 @@
 		****************
 
 Author: elmex <elmex@x-paste.de>
-Last Update: 10.01.2001
+Last Update: 11.01.2001 
 
 ======================================
 0. Introduction
+  0.1 ChangeLog
 1 Getting Quakeforge
-1.1 Get QF by CVS
+  1.1 Get QF by CVS
 2 Requirements
 3 Compiling Quakeforge
-3.1 Configure
-3.2 Build
-3.3 Quake1 datafiles
-3.4 Start quake
-4 Configure/Use Quakeforge FAQ
-4.1 Video 
-4.2 Audio 
-4.3 Input
-4.4 Misc
+  3.1 Configure
+  3.2 Build
+  3.3 Quake1 datafiles
+  3.4 Start quake
+4 Configure/Use Quakeforge Hints
+  4.1 Video 
+  4.2 Audio 
+  4.3 Input
+  4.4 Misc
+5. FAQ
 ======================================
 
 0. Introduction
 ---------------
 This document describes howto install quakeforge and configure it.
 The configuration is organized in a FAQ.
+
+0.1 ChangeLog
+-------------
+11.01.2001	- Some rearrange of the Text,
+		  Added cmdlist notes,
+		  FAQ-Section rearranged to Hints-Section,
+		  added a extra FAQ-Section and
+		  added some new hints
 
 1. Getting Quakeforge
 ---------------------
@@ -151,16 +161,20 @@ Test it:
 4. Configure Quakeforge FAQ
 -----------------------------------
 This section sums up the most important options for different
-stuff in quakeforge in a FAQ.
+stuff in quakeforge in a list of Hints.
+
 There are a lot more options you can change, to get a list of all with
 documentation do:
-  $ nq-x11 +cvarlist doc +quit > doc
+  $ nq-x11 +cvarlist doc +quit > cvar.list
 or
   $ qw-client-x11 +cvarlist doc +quit > fe
 
 You can do that with any client. (If you want the list of cvars avaible 
 for server start the server and use '/cvarlist doc' to get a documentation,
 but this may not output a good list)
+
+There is too a cmd-list:
+  $ nq-x11 +cmdlist doc +quit > cmd.list
 
 For most cvars (options) you can set in config.cfg (in the gamedata-dir of
 quakeforge (eg. ~/.quakeforge/id1/config.cfg)) or in ~/.quakeforgerc
@@ -179,28 +193,36 @@ this document uptodate and to make it complete.
 
 4.1 Video
 ---------
-Q: My window is so small in X, how can i make it bigger?
-A: Set vid_width and vid_height to the appropriate values.
+  o Set resolution of quake in X
+    - Set vid_width and vid_height to the appropriate values.
 
-Q: The mouse don't want to stay in the window!
-A: Set in_grab to 1, that will grab the mouse. 
-   (I recommend to make a bind to "toggle in_grab" for make the options
-    toggleable)
+  o View Frames per second
+   - Set the cvar 'show_fps' to 1: /set show_fps 1
 
 4.2 Audio
 ---------
-Q: Quake hangs on "Sound Initialization"!
-A: Another programm is using the sound-device. Try the -nosound option.
+  o Quake hangs on "Sound Initialization"
+   - Another programm is using the sound-device. Try the -nosound option.
    Try to figure out the sound-driver you need and their values for the
    cvars snd_output.
 
 4.3 Input
 ---------
-Q: I want to have mouse-look, howto?
-A: Put '+mlook' into ~/.quakeforgerc or autoexec.cfg
+  o Enable mouselook
+   - Put '+mlook' into ~/.quakeforgerc or autoexec.cfg
+
+  o Keep the mouse stay in the window
+    - Set in_grab to 1, that will grab the mouse. (I recommend to make a bind 
+    to "toggle in_grab" for make the options toggleable)
 
 4.4 Misc
 --------
+  o Change map
+   - Use the 'map' command. To get a list of possible maps use:
+     /maplist and then /map <map> (eg. /map e1m6)
+
+5. FAQ
+------
 Q: HELP! Where is the menu? Everytime i press ESC the console comes.
 A: Quakeforge has no menu yet, you will have to set the cvars manually
    until the menu is finished.
