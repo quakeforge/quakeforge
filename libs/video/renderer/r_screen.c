@@ -386,8 +386,6 @@ SCR_DrawPause (void)
 void
 SCR_SetUpToDrawConsole (void)
 {
-	Con_CheckResize ();
-
 	// decide on the height of the console
 	if (!r_active) {
 		scr_conlines = vid.height;		// full screen
