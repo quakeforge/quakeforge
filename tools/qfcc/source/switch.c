@@ -69,7 +69,11 @@ get_hash (void *_cl, void *unused)
 {
 	case_label_t *cl = (case_label_t *) _cl;
 
-	return cl->value ? cl->value->e.integer_val : 0;
+	if (!cl->value)
+		return 0;
+	if (cl->value->type == ex_string)
+		return (unsigned long) cl->value->e.string_val;
+	return cl->value->e.integer_val;
 }
 
 static int
@@ -84,6 +88,10 @@ compare (void *_cla, void *_clb, void *unused)
 		return 1;
 	if ((v1 && !v2) || (!v1 && v2))
 		return 0;
+	if (v1->type != v2->type)
+		return 0;
+	if (v1->type == ex_string)
+		return v1->e.string_val == v2->e.string_val;
 	return v1->e.integer_val == v2->e.integer_val;
 }
 
