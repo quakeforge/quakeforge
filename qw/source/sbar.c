@@ -165,18 +165,23 @@ cl_overlay_gravity_f (cvar_t *var)
 static void
 calc_sb_lines (cvar_t *var)
 {
+	int        stuff_y;
+
 	if (var->int_val >= 120) {
 		sb_lines = 0;
+		stuff_y = 0;
 	} else if (var->int_val >= 110) {
 		sb_lines = 24;
 		sbar_inventory_view->visible = 0;
 		hud_inventory_view->visible = 0;
 		hud_armament_view->visible = 0;
+		stuff_y = 32;
 	} else {
-		sb_lines = 24 + 16 + 8;
+		sb_lines = 48;
 		sbar_inventory_view->visible = 1;
 		hud_inventory_view->visible = 1;
 		hud_armament_view->visible = 1;
+		stuff_y = 48;
 	}
 	if (sb_lines) {
 		sbar_view->visible = 1;
@@ -187,6 +192,7 @@ calc_sb_lines (cvar_t *var)
 		sbar_view->visible = 0;
 		hud_view->visible = 0;
 	}
+	view_move (stuff_view, stuff_view->xpos, stuff_y);
 }
 
 static void
