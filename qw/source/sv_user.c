@@ -42,13 +42,15 @@
 #include <ctype.h>
 
 #include "QF/checksum.h"
+#include "QF/clip_hull.h"
 #include "QF/cmd.h"
-#include "compat.h"
 #include "QF/cvar.h"
 #include "QF/msg.h"
 #include "QF/sys.h"
 #include "QF/va.h"
 #include "QF/vfs.h"
+
+#include "compat.h"
 #include "bothdefs.h"
 #include "msg_ucmd.h"
 #include "pmove.h"
@@ -1311,9 +1313,9 @@ AddLinksToPmove (areanode_t *node)
 
 			if (sv_fields.rotated_bbox != -1
 				&& SVFIELD (check, rotated_bbox, integer)) {
-				int h = SVFIELD (check, rotated_bbox, integer);
-				extern hull_t pf_hull_list[];
-				pe->hull = &pf_hull_list[h - 1];
+				int h = SVFIELD (check, rotated_bbox, integer) - 1;
+				extern clip_hull_t *pf_hull_list[];
+				pe->hull = pf_hull_list[h]->hulls[1];
 			} else {
 				pe->hull = 0;
 				if (SVFIELD (check, solid, float) == SOLID_BSP) {

@@ -45,7 +45,7 @@ typedef void (*sys_printf_t) (const char *fmt, va_list args);
 void Sys_SetPrintf (sys_printf_t func);
 
 void Sys_Printf (const char *fmt, ...) __attribute__((format(printf,1,2)));
-void Sys_Error (const char *error, ...) __attribute__((format(printf,1,2)));
+void Sys_Error (const char *error, ...) __attribute__((format(printf,1,2), noreturn));
 void Sys_Quit (void);
 double Sys_DoubleTime (void);
 

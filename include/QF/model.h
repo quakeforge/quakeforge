@@ -202,7 +202,7 @@ typedef struct mleaf_s
 } mleaf_t;
 
 // !!! if this is changed, it must be changed in asm_i386.h too !!!
-typedef struct
+typedef struct hull_s
 {
 	dclipnode_t	*clipnodes;
 	mplane_t	*planes;

@@ -143,8 +143,8 @@ pr_type_t *PR_GetGlobalPointer (progs_t *pr, const char *name);
 func_t PR_GetFunctionIndex (progs_t *pr, const char *name);
 int PR_GetFieldOffset (progs_t *pr, const char *name);
 
-void PR_Error (progs_t *pr, const char *error, ...) __attribute__((format(printf,2,3)));
-void PR_RunError (progs_t *pr, const char *error, ...) __attribute__((format(printf,2,3)));
+void PR_Error (progs_t *pr, const char *error, ...) __attribute__((format(printf,2,3), noreturn));
+void PR_RunError (progs_t *pr, const char *error, ...) __attribute__((format(printf,2,3), noreturn));
 
 void ED_PrintEdicts (progs_t *pr, const char *fieldval);
 void ED_PrintNum (progs_t *pr, int ent);

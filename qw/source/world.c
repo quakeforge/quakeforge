@@ -38,6 +38,7 @@
 
 #include <stdio.h>
 
+#include "QF/clip_hull.h"
 #include "QF/console.h"
 #include "QF/crc.h"
 
@@ -152,17 +153,27 @@ SV_HullForEntity (edict_t *ent, vec3_t mins, vec3_t maxs, vec3_t offset)
 	model_t    *model;
 	vec3_t		size;
 	vec3_t		hullmins, hullmaxs;
-	hull_t     *hull;
+	hull_t     *hull = 0;
+	int         hull_index = 0;
 
-	if (sv_fields.rotated_bbox != -1
-		&& SVFIELD (ent, rotated_bbox, integer)) {
-		extern hull_t pf_hull_list[];
-		hull = &pf_hull_list[SVFIELD (ent, rotated_bbox, integer) - 1];
-		VectorCopy (SVFIELD (ent, origin, vector), offset);
-		return hull;
+	if ((sv_fields.rotated_bbox != -1
+		 && SVFIELD (ent, rotated_bbox, integer))
+		|| SVFIELD (ent, solid, float) == SOLID_BSP) {
+		VectorSubtract (maxs, mins, size);
+		if (size[0] < 3)
+			hull_index = 0;
+		else if (size[0] <= 32)
+			hull_index = 1;
+		else
+			hull_index = 2;
 	}
 	// decide which clipping hull to use, based on the size
-	if (SVFIELD (ent, solid, float) == SOLID_BSP) {
+	if (sv_fields.rotated_bbox != -1
+		&& SVFIELD (ent, rotated_bbox, integer)) {
+		extern clip_hull_t *pf_hull_list[];
+		int h = SVFIELD (ent, rotated_bbox, integer) - 1;
+		hull = pf_hull_list[h]->hulls[hull_index];
+	} if (SVFIELD (ent, solid, float) == SOLID_BSP) {
 		// explicit hulls in the BSP model
 		if (SVFIELD (ent, movetype, float) != MOVETYPE_PUSH)
 			SV_Error ("SOLID_BSP without MOVETYPE_PUSH");
@@ -172,14 +183,10 @@ SV_HullForEntity (edict_t *ent, vec3_t mins, vec3_t maxs, vec3_t offset)
 		if (!model || model->type != mod_brush)
 			SV_Error ("SOLID_BSP with a non bsp model");
 
-		VectorSubtract (maxs, mins, size);
-		if (size[0] < 3)
-			hull = &model->hulls[0];
-		else if (size[0] <= 32)
-			hull = &model->hulls[1];
-		else
-			hull = &model->hulls[2];
+		hull = &model->hulls[hull_index];
+	}
 
+	if (hull) {
 		// calculate an offset value to center the origin
 		VectorSubtract (hull->clip_mins, mins, offset);
 		VectorAdd (offset, SVFIELD (ent, origin, vector), offset);

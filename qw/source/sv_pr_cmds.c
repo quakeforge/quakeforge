@@ -33,17 +33,18 @@
 # include <string.h>
 #endif
 
+#include "QF/clip_hull.h"
 #include "QF/cmd.h"
-#include "compat.h"
 #include "QF/cvar.h"
 #include "QF/msg.h"
 #include "QF/va.h"
 
+#include "compat.h"
+#include "crudefile.h"
 #include "server.h"
 #include "sv_pr_cmds.h"
 #include "sv_progs.h"
 #include "world.h"
-#include "crudefile.h"
 
 #define	RETURN_EDICT(p, e) ((p)->pr_globals[OFS_RETURN].integer_var = EDICT_TO_PROG(p, e))
 #define	RETURN_STRING(p, s) ((p)->pr_globals[OFS_RETURN].integer_var = PR_SetString((p), s))
@@ -1815,11 +1816,7 @@ PF_testentitypos (progs_t *pr)
 
 
 #define MAX_PF_HULLS 64		// FIXME make dynamic?
-static int pf_hull_list_inited;
-static hull_t *pf_free_hulls;
-static dclipnode_t pf_clipnodes[MAX_PF_HULLS][6];
-static mplane_t pf_planes[MAX_PF_HULLS][6];
-hull_t pf_hull_list[MAX_PF_HULLS];
+clip_hull_t *pf_hull_list[MAX_PF_HULLS];
 
 static void
 PF_hullpointcontents (progs_t *pr)
@@ -1840,40 +1837,37 @@ static void
 PF_getboxbounds (progs_t *pr)
 {
 	int         h = G_INT (pr, OFS_PARM0) - 1;
-	hull_t     *hull = &pf_hull_list[h];
+	clip_hull_t *ch;
 
-	if (h < 0 || h > MAX_PF_HULLS - 1
-		|| hull->clipnodes != pf_clipnodes[h]
-		|| hull->planes != pf_planes[h])
+	if (h < 0 || h > MAX_PF_HULLS - 1 || !(ch = pf_hull_list[h]))
 		PR_RunError (pr, "PF_freeboxhull: invalid box hull handle\n");
 
 	if (G_INT (pr, OFS_PARM1)) {
-		VectorCopy (hull->clip_maxs, G_VECTOR (pr, OFS_RETURN));
+		VectorCopy (ch->maxs, G_VECTOR (pr, OFS_RETURN));
 	} else {
-		VectorCopy (hull->clip_mins, G_VECTOR (pr, OFS_RETURN));
+		VectorCopy (ch->mins, G_VECTOR (pr, OFS_RETURN));
 	}
 }
 
 static void
 PF_getboxhull (progs_t *pr)
 {
-	hull_t     *hull;
+	clip_hull_t *ch = 0;
+	int         i;
 
-	if (!pf_hull_list_inited) {
-		int     i;
-		pf_hull_list_inited = 1;
-		for (i = 0; i < MAX_PF_HULLS - 1; i++)
-			pf_hull_list[i].clipnodes = (dclipnode_t*)&pf_hull_list[i + 1];
-		pf_hull_list[i].clipnodes = 0;
-		pf_free_hulls = pf_hull_list;
+	for (i = 0; i < MAX_PF_HULLS; i++) {
+		if (!pf_hull_list[i]) {
+			ch = MOD_Alloc_Hull (6, 6);
+			break;
+		}
 	}
 
-	hull = pf_free_hulls;
-	if (hull) {
-		pf_free_hulls = (hull_t*)hull->clipnodes;
-		SV_InitHull (hull, pf_clipnodes[hull - pf_hull_list],
-					 pf_planes[hull - pf_hull_list]);
-		G_INT (pr, OFS_RETURN) = (hull - pf_hull_list) + 1;
+	if (ch) {
+		pf_hull_list[i] = ch;
+		G_INT (pr, OFS_RETURN) = i + 1;
+		for (i = 0; i < MAX_MAP_HULLS; i++)
+			SV_InitHull (ch->hulls[i], ch->hulls[i]->clipnodes,
+						 ch->hulls[i]->planes);
 	} else {
 		G_INT (pr, OFS_RETURN) = 0;
 	}
@@ -1883,15 +1877,12 @@ static void
 PF_freeboxhull (progs_t *pr)
 {
 	int         h = G_INT (pr, OFS_PARM0) - 1;
-	hull_t     *hull = &pf_hull_list[h];
+	clip_hull_t *ch;
 
-	if (h < 0 || h > MAX_PF_HULLS - 1
-		|| hull->clipnodes != pf_clipnodes[h]
-		|| hull->planes != pf_planes[h])
+	if (h < 0 || h > MAX_PF_HULLS - 1 || !(ch = pf_hull_list[h]))
 		PR_RunError (pr, "PF_freeboxhull: invalid box hull handle\n");
-	hull->clipnodes = (dclipnode_t*)pf_free_hulls;
-	hull->planes = 0;
-	pf_free_hulls = hull;
+	pf_hull_list[h] = 0;
+	MOD_Free_Hull (ch);
 }
 
 static void
@@ -1905,25 +1896,36 @@ PF_rotate_bbox (progs_t *pr)
 				};
 	float      *mi = G_VECTOR (pr, OFS_PARM4);
 	float      *ma = G_VECTOR (pr, OFS_PARM5);
-	vec3_t      m[3];
+
 	vec3_t      mins, maxs;
 	float      *verts[6] = {maxs, mins, maxs, mins, maxs, mins};
-	hull_t     *hull = &pf_hull_list[h];
-	int         i, j;
+
+	vec3_t      mins_offs = { -16, -16, -32 };
+	vec3_t      maxs_offs = { +16, +16, +32 };
 	vec3_t      v[8], d;
+	hull_t     *hull;
+	clip_hull_t *ch;
+	int         i, j;
 	float       l;
+
+	if (h < 0 || h > MAX_PF_HULLS - 1 || !(ch = pf_hull_list[h]))
+		PR_RunError (pr, "PF_freeboxhull: invalid box hull handle\n");
 
 	// set up the rotation matrix. the three orientation vectors form the
 	// columns of the rotation matrix
 	for (i = 0; i < 3; i++) {
 		for (j = 0; j < 3; j++) {
-			m[i][j] = dir[j][i];
+			ch->axis[i][j] = dir[j][i];
 		}
 	}
 	// rotate the bounding box points
 	for (i = 0; i < 3; i++) {
-		mins[i] = DotProduct (m[i], mi);
-		maxs[i] = DotProduct (m[i], ma);
+		mins[i] = DotProduct (ch->axis[i], mi);
+		maxs[i] = DotProduct (ch->axis[i], ma);
+		//if (mins[i] > maxs[i]) {
+		//	mins_offs[i] *= -1;
+		//	maxs_offs[i] *= -1;
+		//}
 	}
 	// find all 8 corners of the rotated box
 	VectorCopy (mins, v[0]);
@@ -1938,24 +1940,66 @@ PF_rotate_bbox (progs_t *pr)
 		VectorSubtract (maxs, x, v[3 + i * 2]);
 	}
 	// now find the aligned bounding box
-	VectorCopy (v[0], hull->clip_mins);
-	VectorCopy (v[0], hull->clip_maxs);
+	VectorCopy (v[0], ch->mins);
+	VectorCopy (v[0], ch->maxs);
 	for (i = 0; i < 8; i++) {
 		//Con_Printf ("'%0.1f %0.1f %0.1f'\n", v[i][0], v[i][1], v[i][2]);
 		for (j = 0; j < 3; j++) {
-			hull->clip_mins[j] = min (hull->clip_mins[j], v[i][j]);
-			hull->clip_maxs[j] = max (hull->clip_maxs[j], v[i][j]);
+			ch->mins[j] = min (ch->mins[j], v[i][j]);
+			ch->maxs[j] = max (ch->maxs[j], v[i][j]);
 		}
 	}
-	//Con_Printf ("---\n");
-	//Con_Printf ("'%0.1f %0.1f %0.1f'\n", hull->clip_mins[0], hull->clip_mins[1], hull->clip_mins[2]);
-	//Con_Printf ("'%0.1f %0.1f %0.1f'\n", hull->clip_maxs[0], hull->clip_maxs[1], hull->clip_maxs[2]);
 
+	hull = ch->hulls[0];
 	// now set up the clip planes
 	for (i = 0; i < 6; i++) {
 		hull->planes[i].dist = DotProduct (dir[i / 2], verts[i]);
 		hull->planes[i].type = 4;
 		VectorCopy (dir[i / 2], hull->planes[i].normal);
+		//Con_Printf ("%f   %f %f %f\n",
+		//			hull->planes[i].dist,
+		//			hull->planes[i].normal[0], hull->planes[i].normal[1],
+		//			hull->planes[i].normal[2]);
+	}
+
+	hull = ch->hulls[1];
+	hull->clip_mins[0] = -16;
+	hull->clip_mins[1] = -16;
+	hull->clip_mins[2] = -24;
+	hull->clip_maxs[0] = 16;
+	hull->clip_maxs[1] = 16;
+	hull->clip_maxs[2] = 32;
+	VectorAdd (mins_offs, mins, mins);
+	VectorAdd (maxs_offs, maxs, maxs);
+	for (i = 0; i < 6; i++) {
+		hull->planes[i].dist = DotProduct (dir[i / 2], verts[i]);
+		hull->planes[i].type = 4;
+		VectorCopy (dir[i / 2], hull->planes[i].normal);
+		//Con_Printf ("%f   %f %f %f\n",
+		//			hull->planes[i].dist,
+		//			hull->planes[i].normal[0], hull->planes[i].normal[1],
+		//			hull->planes[i].normal[2]);
+	}
+
+	hull = ch->hulls[2];
+	hull->clip_mins[0] = -32;
+	hull->clip_mins[1] = -32;
+	hull->clip_mins[2] = -24;
+	hull->clip_maxs[0] = 32;
+	hull->clip_maxs[1] = 32;
+	hull->clip_maxs[2] = 64;
+
+	maxs_offs[2] = 0;
+	VectorAdd (mins_offs, mins, mins);
+	VectorAdd (maxs_offs, maxs, maxs);
+	for (i = 0; i < 6; i++) {
+		hull->planes[i].dist = DotProduct (dir[i / 2], verts[i]);
+		hull->planes[i].type = 4;
+		VectorCopy (dir[i / 2], hull->planes[i].normal);
+		//Con_Printf ("%f   %f %f %f\n",
+		//			hull->planes[i].dist,
+		//			hull->planes[i].normal[0], hull->planes[i].normal[1],
+		//			hull->planes[i].normal[2]);
 	}
 }
 
