@@ -94,6 +94,8 @@ dstring_insert (dstring_t *dstr, unsigned int pos, const char *data,
 {
 	unsigned int oldsize = dstr->size;
 
+	if (pos > dstr->size)
+		pos = dstr->size;
 	dstr->size += len;
 	dstring_adjust (dstr);
 	memmove (dstr->str + pos + len, dstr->str + pos, oldsize - pos);
@@ -103,6 +105,12 @@ dstring_insert (dstring_t *dstr, unsigned int pos, const char *data,
 void
 dstring_snip (dstring_t *dstr, unsigned int pos, unsigned int len)
 {
+	if (pos > dstr->size)
+		pos = dstr->size;
+	if (pos + len > dstr->size)
+		len = dstr->size - pos;
+	if (!len)
+		return;
 	memmove (dstr->str + pos, dstr->str + pos + len, dstr->size - pos - len);
 	dstr->size -= len;
 	dstring_adjust (dstr);
@@ -120,6 +128,10 @@ dstring_replace (dstring_t *dstr, unsigned int pos, unsigned int rlen,
 				const char *data, unsigned int len)
 {
 	unsigned int oldsize = dstr->size;
+	if (pos > dstr->size)
+		pos = dstr->size;
+	if (pos + rlen > dstr->size)
+		rlen = dstr->size - pos;
 	if (rlen < len) {
 		dstr->size += len - rlen;
 		dstring_adjust (dstr);
