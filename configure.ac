@@ -236,8 +236,8 @@ AC_TRY_COMPILE(
 AC_MSG_CHECKING(for strcasestr in string.h)
 AC_TRY_COMPILE(
 	[#include "string.h"],
-	[int (*foo)() = strnlen;],
-	AC_DEFINE(HAVE_STRCASESTR_PROTO, 1, [Define this if fnmatch is prototyped in string.h])
+	[int (*foo)() = strcasestr;],
+	AC_DEFINE(HAVE_STRCASESTR_PROTO, 1, [Define this if strcasestr is prototyped in string.h])
 	AC_MSG_RESULT(yes),
 	AC_MSG_RESULT(no)
 )
