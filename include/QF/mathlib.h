@@ -42,7 +42,7 @@ extern const vec_t * const vec3_origin;
 #define EQUAL_EPSILON 0.001
 #define RINT(x) (floor ((x) + 0.5))
 
-#define IS_NAN(x) (((*(int *)&x)&nanmask)==nanmask)
+#define IS_NAN(x) (((*(int *) (char *) &x) & nanmask) == nanmask)
 
 #define DotProduct(a,b) ((a)[0] * (b)[0] + (a)[1] * (b)[1] + (a)[2] * (b)[2])
 #define VectorSubtract(a,b,c) \
@@ -59,46 +59,40 @@ extern const vec_t * const vec3_origin;
 	} while (0)
 #define VectorAdd(a,b,c) \
 	do { \
-		(c)[0]=(a)[0]+(b)[0]; \
-		(c)[1]=(a)[1]+(b)[1]; \
-		(c)[2]=(a)[2]+(b)[2]; \
+		(c)[0] = (a)[0] + (b)[0]; \
+		(c)[1] = (a)[1] + (b)[1]; \
+		(c)[2] = (a)[2] + (b)[2]; \
 	} while (0)
 #define VectorCopy(a,b) \
 	do { \
-		(b)[0]=(a)[0]; \
-		(b)[1]=(a)[1]; \
-		(b)[2]=(a)[2]; \
-	} while (0)
-#define VectorMult(a,b,c) \
-	do { \
-		(c)[0]=(a)[0]*(b)[0]; \
-		(c)[1]=(a)[1]*(b)[1]; \
-		(c)[2]=(a)[2]*(b)[2]; \
+		(b)[0] = (a)[0]; \
+		(b)[1] = (a)[1]; \
+		(b)[2] = (a)[2]; \
 	} while (0)
 #define VectorMultAdd(a,s,b,c) \
 	do { \
-		(c)[0]=(a)[0]+(s)*(b)[0]; \
-		(c)[1]=(a)[1]+(s)*(b)[1]; \
-		(c)[2]=(a)[2]+(s)*(b)[2]; \
+		(c)[0] = (a)[0] + (s) * (b)[0]; \
+		(c)[1] = (a)[1] + (s) * (b)[1]; \
+		(c)[2] = (a)[2] + (s) * (b)[2]; \
 	} while (0)
 #define VectorMultSub(a,s,b,c) \
 	do { \
-		(c)[0]=(a)[0]-(s)*(b)[0]; \
-		(c)[1]=(a)[1]-(s)*(b)[1]; \
-		(c)[2]=(a)[2]-(s)*(b)[2]; \
+		(c)[0] = (a)[0] - (s) * (b)[0]; \
+		(c)[1] = (a)[1] - (s) * (b)[1]; \
+		(c)[2] = (a)[2] - (s) * (b)[2]; \
 	} while (0)
 #define VectorLength(a) sqrt(DotProduct(a, a))
 
 #define VectorScale(a,b,c) \
 	do { \
-		(c)[0]=(a)[0]*(b); \
-		(c)[1]=(a)[1]*(b); \
-		(c)[2]=(a)[2]*(b); \
+		(c)[0] = (a)[0] * (b); \
+		(c)[1] = (a)[1] * (b); \
+		(c)[2] = (a)[2] * (b); \
 	} while (0)
 #define VectorCompare(x, y) \
 	(((x)[0] == (y)[0]) && ((x)[1] == (y)[1]) && ((x)[2] == (y)[2]))
 
-#define VectorIsZero(a) ((a)[0] == 0 && (a)[1] == 0 && (a)[2] == 0)
+#define VectorIsZero(a) (!(a)[0] && !(a)[1] && !(a)[2])
 #define VectorZero(a) ((a)[2] = (a)[1] = (a)[0] = 0);
 
 #define VectorBlend(v1,v2,b,v) \
@@ -106,6 +100,81 @@ extern const vec_t * const vec3_origin;
 		(v)[0] = (v1)[0] * (1 - (b)) + (v2)[0] * (b); \
 		(v)[1] = (v1)[1] * (1 - (b)) + (v2)[1] * (b); \
 		(v)[2] = (v1)[2] * (1 - (b)) + (v2)[2] * (b); \
+	} while (0)
+
+#define QDotProduct(a,b) ((a)[0] * (b)[0] + (a)[1] * (b)[1] \
+						  + (a)[2] * (b)[2] + (a)[3] * (b)[3])
+#define QuatSubtract(a,b,c) \
+	do { \
+		(c)[0] = (a)[0] - (b)[0]; \
+		(c)[1] = (a)[1] - (b)[1]; \
+		(c)[2] = (a)[2] - (b)[2]; \
+		(c)[3] = (a)[3] - (b)[3]; \
+	} while (0)
+#define QuatNegate(a,b) \
+	do { \
+		(b)[0] = -(a)[0]; \
+		(b)[1] = -(a)[1]; \
+		(b)[2] = -(a)[2]; \
+		(b)[3] = -(a)[3]; \
+	} while (0)
+#define QuatConj(a,b) \
+	do { \
+		(b)[0] = (a)[0]; \
+		(b)[1] = -(a)[1]; \
+		(b)[2] = -(a)[2]; \
+		(b)[3] = -(a)[3]; \
+	} while (0)
+#define QuatAdd(a,b,c) \
+	do { \
+		(c)[0] = (a)[0] + (b)[0]; \
+		(c)[1] = (a)[1] + (b)[1]; \
+		(c)[2] = (a)[2] + (b)[2]; \
+		(c)[3] = (a)[3] + (b)[3]; \
+	} while (0)
+#define QuatCopy(a,b) \
+	do { \
+		(b)[0] = (a)[0]; \
+		(b)[1] = (a)[1]; \
+		(b)[2] = (a)[2]; \
+		(b)[3] = (a)[3]; \
+	} while (0)
+#define QuatMultAdd(a,s,b,c) \
+	do { \
+		(c)[0] = (a)[0] + (s) * (b)[0]; \
+		(c)[1] = (a)[1] + (s) * (b)[1]; \
+		(c)[2] = (a)[2] + (s) * (b)[2]; \
+		(c)[3] = (a)[3] + (s) * (b)[3]; \
+	} while (0)
+#define QuatMultSub(a,s,b,c) \
+	do { \
+		(c)[0] = (a)[0] - (s) * (b)[0]; \
+		(c)[1] = (a)[1] - (s) * (b)[1]; \
+		(c)[2] = (a)[2] - (s) * (b)[2]; \
+		(c)[3] = (a)[3] - (s) * (b)[3]; \
+	} while (0)
+#define QuatLength(a) sqrt(QDotProduct(a, a))
+
+#define QuatScale(a,b,c) \
+	do { \
+		(c)[0] = (a)[0] * (b); \
+		(c)[1] = (a)[1] * (b); \
+		(c)[2] = (a)[2] * (b); \
+		(c)[3] = (a)[3] * (3); \
+	} while (0)
+#define QuatCompare(x, y) \
+	(((x)[0] == (y)[0]) && ((x)[1] == (y)[1]) \
+	 && ((x)[2] == (y)[2]) && ((x)[3] == (y)[3]))
+
+#define QuatIsZero(a) (!(a)[0] && !(a)[1] && !(a)[2] && !(a)[3])
+#define QuatZero(a) ((a)[3] = (a)[2] = (a)[1] = (a)[0] = 0);
+
+#define QuatBlend(v1,v2,b,v) \
+	do { \
+		(v)[0] = (v1)[0] * (1 - (b)) + (v2)[0] * (b); \
+		(v)[1] = (v1)[1] * (1 - (b)) + (v2)[1] * (b); \
+		(v)[2] = (v1)[2] * (1 - (b)) + (v2)[2] * (b); \
+		(v)[3] = (v1)[3] * (1 - (b)) + (v2)[3] * (b); \
 	} while (0)
 
 /*
@@ -161,6 +230,8 @@ float anglemod (float a);
 void RotatePointAroundVector (vec3_t dst, const vec3_t axis,
 							  const vec3_t point, float degrees);
 
+void QuatMult (const quat_t v1, const quat_t v2, quat_t out);
+
 #define BOX_ON_PLANE_SIDE(emins, emaxs, p)				\
 	(((p)->type < 3)?									\
 	(													\
@@ -177,9 +248,11 @@ void RotatePointAroundVector (vec3_t dst, const vec3_t axis,
 	:													\
 	BoxOnPlaneSide( (emins), (emaxs), (p)))
 
-#define PlaneDist(point,plane)  ((plane)->type < 3 ? (point)[(plane)->type] : DotProduct((point), (plane)->normal))
-#define PlaneDiff(point,plane) (((plane)->type < 3 ? (point)[(plane)->type] : DotProduct((point), (plane)->normal)) - (plane)->dist)
-
+#define PlaneDist(point,plane) \
+	((plane)->type < 3 ? (point)[(plane)->type] \
+	 				   : DotProduct((point), (plane)->normal))
+#define PlaneDiff(point,plane) \
+	(PlaneDist (point, plane) - (plane)->dist)
 
 extern mplane_t * const frustum;
 extern inline qboolean R_CullBox (const vec3_t mins, const vec3_t maxs);
