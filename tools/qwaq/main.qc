@@ -1,30 +1,21 @@
-string hello = "hello";
-string world = "world";
 float () main =
 {
-	local string s;
+	local float handle;
+	local string buffer;
 
-	print (hello + " " + world + "\n");
-	if (hello < world)
-		print (hello);
-	if (world > hello)
-		print (world);
-	print ("\n");
-	s = hello + world;
-	s = s + "\n";
-	print (s);
-};
-
-float () CheckExistence =
-{
-	return 1;
-};
-
-void () test =
-{
-	if (CheckExistence() == 0) {
-		return;
+	handle = open ("builtins.c", 0);
+	if (handle == -1) {
+		print (strerror (errno ()) + "\n");
+		return 1;
 	}
-	local entity p;
-	p = self;
+	do {
+		buffer = read (handle, 1024);
+		if (read_result == -1) {
+			print (strerror (errno ()) + "\n");
+			return 1;
+		}
+		print (buffer);
+	} while (read_result == 1024);
+	close (handle);
+	return 0;
 };

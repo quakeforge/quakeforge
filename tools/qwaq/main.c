@@ -20,13 +20,15 @@ void BI_Init (progs_t *progs);
 
 extern char *type_name[];
 
+extern float *read_result; //FIXME: eww
+
 int
 main ()
 {
 	func_t main_func;
 	FILE *f;
 	int len;
-	int i;
+	//int i;
 
 	Cvar_Init_Hash ();
 	Cmd_Init_Hash ();
@@ -43,6 +45,7 @@ main ()
 	progs.edicts = &edicts;
 	progs.num_edicts = &num_edicts;
 	progs.reserved_edicts = &reserved_edicts;
+	progs.no_exec_limit = 1;
 
 	f = fopen ("qwaq.dat", "rb");
 	if (f) {
@@ -59,7 +62,7 @@ main ()
 		Sys_Error ("couldn't load %s\n", "qwaq.dat");
 
 	*progs.edicts = PR_InitEdicts (&progs, MAX_EDICTS);
-
+#if 0
 	for (i = 0; i < progs.progs->numstatements; i++)
 		PR_PrintStatement (&progs, &progs.pr_statements[i]);
 	printf ("\n");
@@ -85,6 +88,8 @@ main ()
 		printf ("%s %d %d %s\n", type_name[def->type & ~DEF_SAVEGLOBAL], (def->type & DEF_SAVEGLOBAL) != 0, def->ofs, PR_GetString (&progs, def->s_name));
 	}
 	printf ("\n");
+#endif
+	read_result = (float*)PR_GetGlobalPointer (&progs, "read_result");
 	main_func = PR_GetFunctionIndex (&progs, "main");
 	PR_ExecuteProgram (&progs, main_func);
 	return 0;
