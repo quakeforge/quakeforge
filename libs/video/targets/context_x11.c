@@ -408,12 +408,12 @@ void X11_UpdateFullscreen (cvar_t *fullscreen)
 
 	if (!fullscreen->int_val) {
 		X11_RestoreVidMode ();
-		if (in_grab) {
-			IN_UpdateGrab(in_grab);
-		}
 		if (window_saved) {
 			X11_ForceMove(window_x, window_y);
 			window_saved = 0;
+		}
+		if (in_grab) {
+			IN_UpdateGrab(in_grab);
 		}
 		return;
 	} else {
@@ -424,7 +424,11 @@ void X11_UpdateFullscreen (cvar_t *fullscreen)
 			window_saved = 0;
 			return;
 		}
+		if (in_grab) {
+			IN_UpdateGrab(in_grab);
+		}
 		X11_ForceMove(0, 0);
+		XWarpPointer(x_disp,None,x_win,0,0,0,0,vid.width/2,vid.height/2);
 		X11_ForceViewPort (); 
 		/* Done in X11_SetVidMode but moved the window since then */
 		if (in_grab) {
