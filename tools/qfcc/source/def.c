@@ -262,25 +262,28 @@ get_def (type_t *type, const char *name, scope_t *scope,
 
 	set_storage_bits (def, storage);
 
-	// make automatic defs for the vectors elements .origin can be accessed
-	// as .origin_x, .origin_y, and .origin_z
-	if (type->type == ev_vector && name) {
-		vector_component (0, def, 0, scope, storage);
-		vector_component (0, def, 1, scope, storage);
-		vector_component (0, def, 2, scope, storage);
-	}
-
-	if (type->type == ev_field) {
-		if (storage == st_global || storage == st_static) {
-			G_INT (def->ofs) = new_location (type->aux_type, pr.entity_data);
-			reloc_def_field (def, def->ofs);
-			def->constant = 1;
+	if (name) {
+		// make automatic defs for the vectors elements .origin can be accessed
+		// as .origin_x, .origin_y, and .origin_z
+		if (type->type == ev_vector) {
+			vector_component (0, def, 0, scope, storage);
+			vector_component (0, def, 1, scope, storage);
+			vector_component (0, def, 2, scope, storage);
 		}
 
-		if (type->aux_type->type == ev_vector) {
-			vector_component (1, def, 0, scope, storage);
-			vector_component (1, def, 1, scope, storage);
-			vector_component (1, def, 2, scope, storage);
+		if (type->type == ev_field) {
+			if (storage == st_global || storage == st_static) {
+				G_INT (def->ofs) = new_location (type->aux_type,
+												 pr.entity_data);
+				reloc_def_field (def, def->ofs);
+				def->constant = 1;
+			}
+
+			if (type->aux_type->type == ev_vector) {
+				vector_component (1, def, 0, scope, storage);
+				vector_component (1, def, 1, scope, storage);
+				vector_component (1, def, 2, scope, storage);
+			}
 		}
 	}
 	if (storage == st_extern)
