@@ -111,7 +111,7 @@ switch_expr (switch_block_t *switch_block, expr_t *break_label,
 	temp->file = switch_block->test->file;
 	
 	default_label->value = 0;
-	default_label = Hash_FindElement (switch_block->labels, default_label);
+	default_label = Hash_DelElement (switch_block->labels, default_label);
 	labels = (case_label_t **)Hash_GetList (switch_block->labels);
 
 	if (default_label)
@@ -123,15 +123,13 @@ switch_expr (switch_block_t *switch_block, expr_t *break_label,
 
 	append_expr (sw, binary_expr ('b', switch_block->test, temp));
 	for (l = labels; *l; l++) {
-		if ((*l)->value) {
-			expr_t     *cmp = binary_expr (EQ, temp, (*l)->value);
-			expr_t     *test = new_binary_expr ('i',
-												test_expr (cmp, 1),
-												(*l)->label);
-			test->line = cmp->line = temp->line;
-			test->file = cmp->file = temp->file;
-			append_expr (sw, test);
-		}
+		expr_t     *cmp = binary_expr (EQ, temp, (*l)->value);
+		expr_t     *test = new_binary_expr ('i',
+											test_expr (cmp, 1),
+											(*l)->label);
+		test->line = cmp->line = temp->line;
+		test->file = cmp->file = temp->file;
+		append_expr (sw, test);
 	}
 	append_expr (sw, default_expr);
 	append_expr (sw, statements);
