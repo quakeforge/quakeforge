@@ -1,0 +1,116 @@
+QuakeForge Coding Style
+~~~~~~~~~~~~~~~~~~~~~~~
+
+You /WILL/ indent with hard tabs, or you will be harmed. :) You can
+format for whatever tab spacing you like, but if you indent with spaces
+you will be hurt and you will have deserved it. :)
+
+For best results, use 4-space tabs, because that's what id used and what
+most of us use.
+
+Each file should have a standard comment, formatted as in the example
+below. Please, when you create a new file, make sure you put an ID at
+the bottom of the opening comment. This is something special that CVS 
+translates into a string that shows information on what version the file
+is, when it was last edited, and so on. This is done by embedding
+[dollar sign]Id[dollar sign].
+
+All source files MUST #include "config.h" if the symbol HAVE_CONFIG_H
+is defined. Likewise, no source file may be compiled multiple times to
+produce different object files -- one source, one object.
+
+Atop each function you write, attach a /* */ comment heading, containing
+the name and a short, DESCRIPTIVE summary of the function's purpose.
+Indent both of these with one or more tabs. The function is to
+immediately follow the heading, with no space between.
+
+The return type should be located on the line previous to the function's
+name. This is to facilitate easy searches for a function using the
+simple regular expression "^FuncName".
+
+Functions that do not take a value should be explicitly declared to
+accept void, not simply ().
+
+Please use the SECTION_ prefix for new functions.
+
+Cross-target prefixes:
+IN_	Input
+JOY_	Joystick (called by IN_* functions)
+R_	Rendering
+S_	Sound
+VID_	Low-level video
+
+Target-specific prefixes:
+
+CL_	Client
+GL_	OpenGL rendering
+QFGL_	OpenGL portability aids
+SNDDMA_	DMA Sound (called from S_*)
+SV_	Server
+SW_	Software rendering
+x11_	X11R6-specific window handling
+
+An example:
+
+/*
+	filename.c
+
+	Description of this file
+
+	Copyright (C) 2002 Your Name <your@email.addr>
+
+	This program is free software; you can redistribute it and/or
+	modify it under the terms of the GNU General Public License
+	as published by the Free Software Foundation; either version 2
+	of the License, or (at your option) any later version.
+
+	This program is distributed in the hope that it will be useful,
+	but WITHOUT ANY WARRANTY; without even the implied warranty of
+	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+
+	See the GNU General Public License for more details.
+
+	You should have received a copy of the GNU General Public
+	License along with this program; if not, write to:
+
+		Free Software Foundation, Inc.
+		59 Temple Place - Suite 330
+		Boston, MA  02111-1307, USA
+
+	$Id$
+*/
+
+#ifdef HAVE_CONFIG_H
+# include "config.h"
+#endif
+
+/*
+	SECTION_FunctionName
+
+	Description
+*/
+returntype
+SECTION_FunctionName (args)
+{
+	type	var;
+
+	for (var = 0; var; var++) {	// do something silly
+		:
+		:
+	}
+}
+
+For switch statements:
+
+switch (expr) {
+	case X:		// foo
+		:
+		:
+		break;
+	case Y:		// bar
+		:
+		:
+		break;
+	default:	// fallthrough
+		whatever;
+}

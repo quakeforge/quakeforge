@@ -1,0 +1,208 @@
+-----------------------------------------------------------------------
+COMPILING NEWTREE FOR WIN32 (Win95/98,NT/2000)
+
+We've succesfully compiled newtree source code with following
+compilers:
+
+- Microsoft Visual C 6.0 (commercial)
+- Borland C++ compiler v5.5 (free) and v5.02
+- Borland C++ Builder 5 (commercial)
+- Mingw (free, GPL), (GCC 2.95.2, http://www.mingw.org)
+
+-----------------------------------------------------------------------
+Steps to compile standalone on win32 platforms with VC++.
+
+To compile under "free" Borland C++, see couple of paragraphs below.
+
+1) either: (reccommended)
+     download and install MGL for VC++. it is available from Scitech at
+     http://www.scitechsoft.com
+   
+     IMPORTANT: make sure you add the mgl include and lib paths to VC++'s
+     options in Tools->Options->Directories
+
+     // Tonik: latest MGL from Scitech seems to have a couple of bugs,
+     like F10 and alt keys not working :(
+
+   or:
+     if you don't feel like downloading the latest version of the MGL,
+     which is very highly recommended, you can get the scitech directory
+     from the q1source.zip file, rename the MGLLT.LIB file in it to
+     MGLFX.LIB, and put the appropriate paths into VC++'s options, as
+     above.
+
+   also:
+     download the source for zlib from http://www.info-zip.org/pub/infozip/zlib/
+     and build a static library named zlib.lib (also, build a debug version named
+     zlibd.lib if you plan to build the debug targets.). put the lib files in a
+     directory together, and add it to the MSVC libraries path, and add the
+     directory with the zlib source code to the include paths (see above)
+
+   or:
+     open include/vc/config.h and change the line that reads
+        #define HAVE_ZLIB
+     to
+        #undef HAVE_ZLIB
+     and remove zlib.lib and zlibd.lib from the project settings
+     (not reccommended)
+
+2) Build the gas2masm Debug program first. all the other targets depend
+   on this one.
+
+3) Build the other targets.
+
+-----------------------------------------------------------------------
+COMPILING QUAKEFORGE TREE (http://quake.sourceforge.net)
+UNDER BORLAND C++ 5.02 and 5.5
+
+0) Get latest Quakeforge CVS snapshot if you don't have it already.
+
+1) Get and install latest SCITECH MGL (http://www.scitechsoft.com), you
+don't need to install sources and demo's, just libraries and includes.
+
+2) If you want to compile SDL/SGL targets, you also need to get SDL 
+Source Code and Win32 Binary Runtime (http://www.libsdl.org.)  
+Extract the runtime (sdl.dll) into the lib subdirectory of the SDL 
+Source Code. If you don't know what SDL means, you don't need this.
+
+3) Get and install Dirext-X 7.0 libraries and header files
+(headers http://www.microsoft.com/downloads/release.asp?ReleaseID=12471)
+(borland lib: http://www.microsoft.com/downloads/release.asp?ReleaseID=17051)
+
+4) If you don't have Borland complier (5.02 or 5.5, or C++ Builder 5),
+get and install FREE Borland C++ complier 5.5.
+(http://www.borland.com/bcppbuilder/freecompiler/)
+or get from alternative location:
+(http://www.saunalahti.fi/~mipes/freecommandlinetools.exe)
+
+Make sure you install latest Borland C++ free complier service packs for
+5.5 to upgrade it to 5.5.1.
+
+http://www.borland.com/devsupport/bcppbuilder/patches/bcc55/bcc55sp1.zip
+http://www.borland.com/devsupport/bcppbuilder/patches/bcc55/bcc55sp2.exe
+or get from alternative location:
+(http://www.saunalahti.fi/~mipes/bcc55sp1.zip)
+(http://www.saunalahti.fi/~mipes/bcc55sp2.exe)
+
+5) Borland preprocessor can't process quake .S files. You need to get
+.ASM files or use some other complier to preprocess them.
+ASM files must be placed on newtree SOURCE dir.
+(http://www.saunalahti.fi/~mipes/qf-asms.zip)
+
+6) You need to have either MASM or TASM to compile ASM files. If you've
+TASM32, you need to uncomment it in makefiles.
+
+(For MASM: http://www.microsoft.com/ddk/download/98/BINS_DDK.EXE)
+(MASM patch: http://support.microsoft.com/support/kb/articles/Q228/4/54.asp)
+
+You only need to extract BINS_DDK.EXE and get two files, ML.EXE and ML.ERR
+from it. Then get and run patch to upgrade ML.EXE to version 6.14. Put
+ML.EXE and ML.ERR in some directory which is included in your %path.
+
+7) Download ZLIB source code from http://www.info-zip.org/pub/infozip/zlib/
+and build a static library named zlib.lib. You have to copy makefile.b32
+from MSDOS directory to zlib main dir and then comment out or delete
+MODEL=-WX line in makefile.b32. Then do:
+
+make -fmakefile.b32 zlib.lib
+
+and it'll make lib and stuff. You can safely ignore any complains
+from zlib makefile as long as it builds working zlib.lib.
+
+8) For GL targets, you'll need to have import library for OPENGL stuffs
+one coming with Borland C++ itself is screwed!
+
+implib -c -f opengl32.lib c:\windows\system\opengl32.dll
+
+9) If you want to compile SDL/SGL, you HAVE to run this command 
+in the SDL source code bin directory where you put the SDL binary 
+runtime (sdl.dll):
+
+implib -a -c sdl.lib sdl.dll
+
+10) Check all paths in makefiles (found in sources directory, see list of
+makefiles below) and correct them to suit your system. You shouldn't need
+to change anything below "# end of system dependant stuff."
+
+11) When everything else is done, just start making
+
+cd source
+make -fqf-client-win
+make -fqf-client-wgl
+...
+and you should be on your way.
+
+
+qf-server.mak           Makefile for QuakeWorld server for windows
+
+qf-client-win.mak       Makefile for QuakeWorld client, software renderer
+
+qf-client-wgl.mak       Makefile for QuakeWorld client, OpenGL renderer
+
+qf-client-sdl.mak       Makefile for QuakeWorld client, software SDL renderer
+                        Requires SDL SDK (www.libsdl.org)
+
+qf-client-sgl.mak       Makefile for QuakeWorld client, SDL opengl wrapper
+                        Requires SDL SDK (www.libsdl.org)
+
+For FREE IDE for your BC 5.5:
+http://www.objectcentral.com/vide.htm
+-----------------------------------------------------------------------
+COMPILING NEWTREE WITH MINGW (http://www.mingw.org)
+
+These are MINGW compile instructions for users without cygwin or self-hosting
+mingw. If you've cygwin or self-hosting mingw, you can soon use standard 
+./configure process. You can also build WIN32 binaries under Linux using 
+cross-compiling mingw. Note: THIS IS WORK IN A PROGRESS (in case you
+haven't noticed yet)
+
+1) Get and install MINGW compiler. See mingw home page for closer details.
+Make sure your MINGW\BIN directory is in your PATH.
+(if you want easy way in, get http://www.libsdl.org/Xmingw32/mingw32.zip and extract it)
+
+2) Get and install LATEST WIN32API for mingw
+(http://sourceforge.net/project/showfiles.php?group_id=2435)
+
+Latest one at the time of the writing is 
+http://download.sourceforge.net/mingw/w32api-0.4-20001122.tar.gz
+
+3) Get and install ZLIB
+You can either download ZLIB source code from
+http://www.info-zip.org/pub/infozip/zlib/
+and compile it OR get zlib packages from
+http://sourceforge.net/projects/mingwrep/
+and just install them.
+
+4) If you want to compile SDL/SGL targets, you also need to get SDL 
+Source Code and Win32 Binary Runtime (http://www.libsdl.org.)
+Extract the runtime (sdl.dll) into the lib subdirectory of the SDL 
+Source Code. If you don't know what SDL means, you don't need this.
+
+Look libsdl FAQ page for closer details how to get mingw working with SDL.
+
+5) Go to source directory and check paths in makefile.mgw and change them
+to suit your system.
+
+Then just type:
+
+make -fmakefile.mgw
+
+And hope for best. You will see lot of "warnings" but they're ok as long
+as you manage to get working .EXE files.
+
+Notes about mingw:
+If you get weird compile errors, try getting
+http://pws.prserv.net/thefortins/basetyps_h.tar.gz
+and replacing your basetyps.h with it.
+
+If you don't have WORKING DirectX libs with your mingw, you need
+to get them.
+(http://pws.prserv.net/thefortins/directx6_1-cyg.tar.gz)
+Any later DX release (7.0, 8.0) is fine too.
+
+If you don't get SDL library to build with mingw, don't worry, you're
+not the only one. Just FLAME ON SDL dev. team, not us.
+
+-----------------------------------------------------------------------
+
+

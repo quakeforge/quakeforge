@@ -1,0 +1,354 @@
+quakeforge (0.2.99beta6-0) frozen unstable; urgency=low
+
+  * New upstream version
+
+ -- Jeff Teunissen <deek@dusknet.dhs.org>  Tue, 14 Nov 2000 03:28:03 -0500
+
+quakeforge (0.2.99alpha0-1) frozen unstable; urgency=low
+
+  * New upstream release
+  * New maintainer
+  * uquake-* targets dropped upstream, to be re-added in new package
+  * New package quakeforge-common contains quakeforge.conf conffile
+
+ -- Jeff Teunissen <deek@dusknet.dhs.org>  Tue, 14 Nov 2000 03:26:04 -0500
+
+quakeforge (0.2-20000308-1) frozen unstable; urgency=low
+
+  * Unstable CVS snapshot
+  * quake-* binaries are now named uquake-*
+  * -gl targets are now more properly named -glx
+  * Some minor annoyances with the status bar fixed in 0.1.1 have not been
+    fixed in 0.2-d yet.  You won't see them, unless you play hip/rogue and
+    they aren't really critical.
+  * Sorry, no ~/.quake handling internally yet.
+
+ -- Joseph Carter <knghtbrd@debian.org>  Wed,  8 Mar 2000 01:21:04 -0800
+
+quakeforge (0.1.1-1) frozen unstable; urgency=medium
+
+  * New upstream bugfix for people on Quack!
+  * Fixed two nasty segfaults that could hose a box under SVGALib
+  * Made UQuake statusbar behave sanely with cl_sbar 1 again
+  * cl_sbar ignored properly in rogue/hipnotic--always assumed to be 1
+  * default gl_clear to 1 so noclip doesn't do strange things onscreen
+  * changed glClearColor to black so gl_clear 1 doesn't look like crap
+
+ -- Joseph Carter <knghtbrd@debian.org>  Sun, 27 Feb 2000 03:31:31 -0800
+
+quakeforge (0.1.0-1) frozen unstable; urgency=HIGH
+
+  * "0.0.9-1" was actually "0.1-20000103-1"
+  * Fixed the sig4's in the SVGALib-using targets
+  * replaced qwprogs.dat, no longer segfaults (Closes: #54152)
+  * -ip will let you bind a specific IP (Closes: #14445)  (I hope)
+  * quake-svga is suid root like other svgalib apps now (Closes: #47954)
+  * quake-x11 restores repeat properly on normal exit (Closes: #48018)
+  * If /dev/dsp can't be opened, just don't use sound (Closes: #53533)
+  * The return of the wrapper scripts..  They've been rewritten a bit for
+    dealing with unpacked pak files.  A new quake-lib-stub is needed if your
+    pak files are not all lowercase.  (Closes: #54153, #54221, #54634)
+  * svgalib targets are i386 only at the moment  =<  (Closes: #54451)
+  * Built with newer libsdl  (Closes: #54488)
+  * README now notes the gl_ztrick issue..  Essentially ztrick is a hack
+    Id used to keep from clearing the Z buffer, it worked with older Mesa
+    and with the 3dfx GL MCD.  Mesa 3+ flicker madly, so it defaults to off
+    in the -gl target.  You still have to disable it by hand for the -3dfx
+    target (since it's intended to be used with the 3dfx GL MCD..)  If set
+    once to 0 it will be saved in that state.  (Closes: #54530)
+  * If you want to start -svga and -3dfx from X, use open.  Documented this
+    in the README.  (Closes: #54595)
+  * Package relationships updated/fixed.  (Closes: #54747, #54868)
+  * docs are now installed more sanely.  (Closes: #54749)
+  * bins and data owned by games isn't going to happen  (Closes: #54742)
+
+ -- Joseph Carter <knghtbrd@debian.org>  Sun, 16 Jan 2000 13:26:24 -0800
+
+quakeforge (0.0.9-1) unstable; urgency=low
+
+  * Major new upstream version--Quake is GPL!
+
+ -- Joseph Carter <knghtbrd@debian.org>  Mon,  3 Jan 2000 00:09:58 -0800
+
+quake (1.09-1.30-2pre3.2) unstable; urgency=low
+
+  * Build with new shlibs files - the shlibs files are now NORMAL shlibs
+    files, but a patch to dpkg-shlibdeps is still required.
+  * quake-common package - it exists now and everything depends on it,
+    though it doesn't do anything yet but depend on the quake-lib's the
+    way the quake bins used to.  Will eventually do useful stuff.
+  * Fully FHS compliant now!
+  * (Re)wrote descriptions for the packages
+  * GLQuake packages depend on quake-common, this fixes a bug that would
+    let you install glquake* without installing any quake-lib*'s..
+
+ -- Joseph Carter <knghtbrd@debian.org>  Mon,  6 Sep 1999 14:19:53 -0700
+
+quake (1.09-1.30-2pre3.1) unstable; urgency=low
+
+  * Hopefully ironed out the dependencies/shlibs stuff (still uses my .
+    soname patch
+  * Changed the wrappers of the glquake stuff a little
+
+ -- Joseph Carter <knghtbrd@debian.org>  Sat, 31 Jul 1999 10:54:47 -0700
+ 
+quake (1.09-1.30-2pre3) unstable; urgency=low
+
+  * Not released officially
+  * build debs of the libs glquake bins are shipped with
+  * build debs of the 3 glquake bins---all depend on the libs package FOR
+    NOW (this will change) and there's no manpages for them yet, RTF
+    README if you don't know the options.
+
+ -- Joseph Carter <knghtbrd@debian.org>  Sat, 31 Jul 1999 00:42:25 -0700
+
+quake (1.09-1.30-2) unstable; urgency=low
+
+  * Actually compress the manpages this time
+
+ -- Joseph Carter <knghtbrd@debian.org>  Thu, 17 Jun 1999 01:38:37 -0700
+
+quake (1.09-1.30-1) unstable; urgency=low
+
+  * New upstream version - glibc2 binaries at last!
+  * Since the quake binaries all came in one package, I've combined the
+    squake and xquake packages.
+
+ -- Joseph Carter <knghtbrd@debian.org>  Sun, 13 Jun 1999 23:52:01 -0700
+
+squake (1.09-1.1-15) unstable; urgency=low
+
+  * Adopted the package - Must Have Quake!
+
+ -- Joseph Carter <knghtbrd@debian.org>  Fri, 28 May 1999 06:32:41 -0700
+
+squake (1.09-1.1-14) unstable; urgency=low
+
+  * Orphaned the package, I don't maintain non-free things anymore.
+
+ -- Joey Hess <joeyh@master.debian.org>  Thu, 18 Mar 1999 15:00:22 -0800
+
+squake (1.09-1.1-13) frozen unstable; urgency=low
+
+  * Updated the copyright file with info from a very old mail from ID
+    software in which they told me that repackaging it as a deb is not a
+    deriviative work.
+  * Updated the copyright file to include all of slicense.txt, instead of
+    referencing it.
+  * No code changes, and I think the copyright fixups are important enough
+    to put it in to frozen.
+
+ -- Joey Hess <joeyh@master.debian.org>  Mon,  7 Dec 1998 15:34:16 -0800
+
+squake (1.09-1.1-12) unstable; urgency=low
+
+  * The wrapper can now handle uppercase .PAK files (#28781).
+
+ -- Joey Hess <joeyh@master.debian.org>  Sat, 31 Oct 1998 21:06:48 -0800
+
+squake (1.09-1.1-11) unstable; urgency=low
+
+  * Modified wrapper so it will add /usr/games to the end of PATH, and run
+    squake.real (w/o full filename). This is mainly to support some things
+    aa quake will need to do.
+
+ -- Joey Hess <joeyh@master.debian.org>  Mon,  7 Sep 1998 16:58:08 -0700
+
+squake (1.09-1.1-10) unstable; urgency=low
+
+  * Fixed the wrapper so it runs squake.real properly even if /usr/games
+    isn't in the user's PATH.
+  * Added a note to the README.Debian about the common squake is suid root,
+    but mouse doesn't work problem.
+
+ -- Joey Hess <joeyh@master.debian.org>  Wed, 19 Aug 1998 22:39:23 -0700
+
+squake (1.09-1.1-9) unstable; urgency=low
+
+  * Removed icon=none from menu file.
+
+ -- Joey Hess <joeyh@master.debian.org>  Wed,  5 Aug 1998 14:24:19 -0700
+
+squake (1.09-1.1-8) unstable; urgency=low
+
+  * Fixed wrapper not to use source bashism.
+
+ -- Joey Hess <joeyh@master.debian.org>  Thu, 30 Jul 1998 20:48:17 -0700
+
+squake (1.09-1.1-7) unstable; urgency=low
+
+  * Fixed package description spelling(#18953).
+
+ -- Joey Hess <joeyh@master.debian.org>  Thu,  5 Mar 1998 16:36:54 -0800
+
+squake (1.09-1.1-6) unstable; urgency=low
+
+  * Added man page for squake.
+  * Fixed all other lintian errors & warnings.
+
+ -- Joey Hess <joeyh@master.debian.org>  Sat, 21 Feb 1998 14:01:25 -0800
+
+squake (1.09-1.1-5) unstable; urgency=low
+
+  * Updated standards-version.
+
+ -- Joey Hess <joeyh@master.debian.org>  Mon,  9 Feb 1998 14:10:46 -0800
+
+squake (1.09-1.1-4) unstable; urgency=low
+
+  * Modified wraper script each user has an individual .quake directory in
+    their home directory (#15452).
+
+ -- Joey Hess <joeyh@master.debian.org>  Sat, 29 Nov 1997 14:22:01 -0500
+
+squake (1.09-1.1-3) unstable; urgency=low
+
+  * Use debhelper.
+  * Don't do the runme stuff anymore, becuase ID no longer distributes a
+    runme script.
+
+ -- Joey Hess <joeyh@master.debian.org>  Sun, 16 Nov 1997 19:21:34 -0500
+
+squake (1.09-1.1-2) unstable; urgency=low
+
+  * Fixed postinst prompting (#12601).
+
+ -- Joey Hess <joeyh@master.debian.org>  Mon,  8 Sep 1997 18:56:39 -0400
+
+squake (1.09-1.1-1) unstable; urgency=low
+
+  * New upstream release.
+  * Moved to non-free.
+  * Preserve file dates.
+  * Added README.debian about the suid problem.
+
+ -- Joey Hess <joeyh@master.debian.org>  Tue, 6 May 1997 20:37:13 -0400
+
+squake (1.07-1.0-3) unstable; urgency=low
+
+  * Check for /etc/suid.conf, not the suidmananger binary. Actually, I let
+    debstd handle it. Maybe I've finally gotten this right..
+
+ -- Joey Hess <joeyh@master.debian.org>  Tue, 6 May 1997 20:37:13 -0400
+
+squake (1.07-1.0-2) unstable; urgency=low
+
+  * Fixed stupid error; will install if suidmanager is not present now.
+
+ -- Joey Hess <joeyh@master.debian.org>  Tue, 6 May 1997 20:14:23 -0400
+
+squake (1.07-1.0-1) unstable; urgency=low
+
+  * New upstream release.
+  * Register /usr/games/squake.real with suidregister, so permissions get
+    preserved across upgrades. This lets you come up with your own security 
+    scheme for making squake suid.
+
+ -- Joey Hess <joeyh@master.debian.org>  Tue, 6 May 1997 16:10:04 -0400
+
+squake (1.07-0.992-2) unstable; urgency=high
+
+  * A security hole is known in squake which could allow users to get root
+    if the program is installed suid. As a temporary fix until a fixed
+    version is available, squake is no longer installed suid.
+  * New upstream version.
+  * Fixed a problem with the .orig.tar.gz file which was making dpkg-source
+    refuse to unpack it.
+  * Moved into contrib, which is the proper section for this package, as 
+    there is no source code available.
+  * Converted menu file to menu-1 format.
+
+ -- Joey Hess <joeyh@master.debian.org>  Fri, 25 Apr 1997 15:34:37 -0400
+
+squake (1.07-0.991-1) unstable; urgency=low
+
+  * Updated to squake version 0.991.
+  * Split quake source package into xquake and squake source packages.
+    Had to do this becuase new versions of xquake and squake are coming out
+    at different times.
+  * Changed version number to reflect both the main quake revision number
+    and the squake subrevision number.
+  * Routine update of debian/rules:
+    Run dpkg-gencontrol after debstd, and delete substvars during clean.
+
+ -- Joey Hess <joeyh@master.debian.org>  Sat, 5 Apr 1997 21:33:44 -0500
+
+quake (1.06-4) unstable; urgency=low
+
+  * Modified wrapper script so it reads /etc/quake.conf to determine where
+    the quake libraries are. This will eliminate the need for symlinks if
+    quake-lib-stub is used.
+  * Routine update of debian/rules:
+    Run dpkg-gencontrol after debstd, and delete substvars during clean.
+
+ -- Joey Hess <joeyh@master.debian.org>  Sat, 22 Mar 1997 18:14:53 -0500
+
+quake (1.06-3) unstable; urgency=low
+
+  * Got rid of the binary patching, and went over to small wrapper scripts 
+    that cd to /var/lib/games/quake. This is to fix bug #7767, -game didn't
+    work.
+  * Routine update of debian/rules:
+    Modifications for multiple binary package support.
+
+ -- Joey Hess <joeyh@master.debian.org>  Sun, 2 Mar 1997 15:03:53 -0500
+
+quake (1.06-2) unstable; urgency=low
+
+  * Removed s-bit from file in orig.tar.gz file, so dpkg-source -x will
+    work.
+
+ -- Joey Hess <joeyh@master.debian.org>  Wed, 26 Feb 1997 15:24:41 -0500
+
+quake (1.06-1) unstable; urgency=low
+
+  * Added a squake binary (version 0.99), thanks to the work Dave 'Zoid' 
+    Kirsch.
+  * Updated to new uptream release of xquake (thanks to Linus Torvalds for 
+    building the 1.06 xquake binaries (and for a few other things <g>)).
+  * Split into 2 binary packages: xquake and squake.
+  * Dropped xf86quake out of the package for now, as a 1.06 version is not
+    available.
+  * Routine update of debian/rules:
+    Modifications for multiple binary package support.
+
+ -- Joey Hess <joeyh@master.debian.org>  Fri, 7 Feb 1997 20:51:24 -0500
+
+quake (1.01-4) unstable; urgency=low
+
+  * Changed an error message in xf86quake that told the user to chmod 666
+    /dev/mem.
+
+ -- Joey Hess <joeyh@master.debian.org>  Sat, 4 Jan 1997 19:31:04 -0500
+
+quake (1.01-3) unstable; urgency=low
+
+  * Changed libc5 dependancy to make users of debian 1.2 happy.
+  * Routine update of debian/rules:
+    Use build-stamp instead of build.
+
+ -- Joey Hess <joeyh@master.debian.org>  Tue, 31 Dec 1996 12:29:55 -0500
+
+quake (1.01-2) unstable; urgency=low
+
+  * Changed quake-lib dependancy: requires exactly quake-lib 1.01, or
+    the new quake-lib-stub package.
+  * Modified README.debian to document that quake-lib greater than 1.01
+    will likely not work with this version of quake.
+  * xf86quake is no longer suid root, as that is almost certianly a security 
+    hole. Added documentation to README.debian about this.
+  * Added a menu file.
+  * Routine update of debian/rules:
+    New email address.
+
+ -- Joey Hess <joeyh@master.debian.org>  Sat, 28 Dec 1996 14:56:08 -0500
+
+quake (1.01-1) non-free; urgency=low
+
+  * First release.
+
+ -- Joey Hess <joeyh@master.debian.org>  Mon, 11 Nov 1996 16:23:43 -0500
+
+Local variables:
+mode: debian-changelog
+End:

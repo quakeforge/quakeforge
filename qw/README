@@ -1,0 +1,232 @@
+QuakeForge - Release Notes
+Copyright (C) 1996-1997 Id Software, Inc.
+Copyright (C) 1999-2001 contributors to the QuakeForge Project
+
+This program is free software; you can redistribute it and/or modify it
+under the terms of the GNU General Public License as published by the
+Free Software Foundation; either version 2 of the License, or (at your
+option) any later version.
+
+This program is distributed in the hope that it will be useful, but
+WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program; if not, write to:
+
+	Free Software Foundation, Inc.
+	59 Temple Place, Suite 330
+	Boston, MA 02111-1307 USA
+
+See file COPYING for license details.
+
+Quake and QuakeWorld are registered trademarks of Id Software, Inc. All
+other trademarks are the property of their respective owners.
+
+
+Table of Contents
+~~~~~~~~~~~~~~~~~
+
+1	Special Thanks
+2	System Requirements
+3	Compiling and Running QuakeForge
+4	Platform-Specific Issues
+5	Errata and Known Bugs
+6	Troubleshooting
+7	Technical Support
+8	Joystick Notes
+9	Tested Systems
+
+
+1	Special Thanks
+~~~~~~~~~~~~~~~~~~~~~~
+
+The QuakeForge Project would like to thank Id Software, Inc. for writing
+and releasing Quake under the GNU General Public License (GPL).  We'd
+like to thank John Carmack and Dave "Zoid" Kirsch in particular for the
+support they have provided to us and to the Free Software community as a
+whole.
+
+We would also like to thank the following organizations for their
+contributions to QuakeForge:
+
+   VA Linux Systems, Inc.
+   3Dfx Interactive, Inc.
+
+And last but certainly not least, we would like to thank every single
+person who has contributed even one line of code, documentation, or
+other support to the QuakeForge project. Without all of you, we would
+not be where we are today.
+
+If you'd like to contribute in any way to the QuakeForge project, please
+contact our mailing list at quake-devel@lists.sourceforge.net.
+
+
+2	System Requirements
+~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+* A raster-capable display. ;-)
+* 16 megabytes of memory beyond operating system footprint.
+* A Floating-point processor (FPU). While not strictly required,
+  QuakeForge uses a lot of floating-point math, so a FPU is highly
+  recommended.
+* 10MB of free hard disk space to build all targets. In addition to the
+  base system, you will require game data files. For the default game
+  ("Quake"), you will need either the shareware or registered version of
+  Quake.
+
+
+3	Compiling and Running QuakeForge
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Please read the INSTALL file for more information on compiling.
+
+Autoconf 2.13 or later and automake 1.3 or later are required to use
+the bootstrap script, which creates the "configure" script.
+
+After you have compiled successfully, you must download the shareware
+version of Quake 1 to play. Insert the proper binaries in the same
+directory as the unpacked shareware files, and run.
+
+We are currently working on a free replacement for the Quake game data
+files.
+
+
+4	Platform-Specific Issues
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+This section discusses issues that affect only certain platforms.
+
+4.1	Linux/Unix
+
+SVGALib-using targets (-svga and -3dfx) can't be started from within the
+X Window System. This is caused by a design limitation in SVGAlib. As a
+workaround, you can use "open" to start those targets from within X.
+(example: "open -s -- qf-client-svga")
+
+4.2	Windows 95/98/Me
+
+The MGL-using Windows target (qf-client-win) is unable to use the Alt
+and F10 keys. This is caused by a bug in the SciTech MGL library, which
+intercepts these key events before the client gets to see them. The
+SDL-using targets (currently available from the Borland-compiled
+distribution only) do not exhibit this problem, but may have other
+issues themselves that we are unaware of.
+
+4.2	Windows NT/2000
+
+For the most part, issues for Windows 9x-based operating environments
+will be similar. However, because of numerous differences in the way
+Windows NT and Windows 9x operate, these systems may have specific
+issues.
+
+
+5	Errata and Known Bugs
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Problem:  After running the X11 target my keyboard repeat turns off! How
+          do I turn it back on?
+Solution: xset r on
+
+
+6	Troubleshooting
+~~~~~~~~~~~~~~~~~~~~~~~
+
+If QuakeForge fails to start up, or has problems not addressed elsewhere
+in the documentation, try the -safe command line switch, which disables
+a number of parts of QuakeForge that can be problems if there are
+hardware or configuration problems.  The -safe command line switch is
+equivalent to -stdvid, -nosound, -nonet, and -nocdaudio together.  Those
+four switches do the following:
+
+  -stdvid	disables VESA video modes
+  -nosound	disables sound card support
+  -nonet	disables network card support
+  -nocdaudio	disables CD audio support
+
+If -safe makes the problem go away, try using each of the switches
+individually to isolate the area in which you're experiencing the
+problem, then either correct the configuration or hardware problem or
+play QuakeForge with that functionality disabled.
+
+
+7	Technical Support
+~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Please do not contact Id Software, Inc. regarding technical support
+issues related to QuakeForge. QuakeForge is heavily modified from the
+original Quake source release and Id Software does not support these
+modifications.
+
+Visit the QuakeForge project's webpage for more information on technical
+support, bugs reports, and help at: http://www.quakeforge.net/
+
+Thank you.
+
+
+8	Joystick notes
+~~~~~~~~~~~~~~~~~~~~~~
+
+Your joystick must be plugged in when QuakeForge is launched.
+
+If you have a joystick plugged in, but do not wish QuakeForge to try to
+use it, just add the -nojoy option to the QuakeForge command line.
+
+You may disable joystick reads from the QuakeForge console with the 
+"joy_enable 0" command.
+
+There are default configuration bindings for joystick buttons.
+
+If your joystick or interface card reports three or four buttons and you
+only have two, use the QuakeForge console command "joy_buttons 2".
+
+The "mlook" and "sidestep" commands work with a joystick exactly as they
+do for a mouse, as does the "invert mouse up/down" menu option.
+
+
+9	Tested Systems
+~~~~~~~~~~~~~~~~~~~~~~
+
+Processors tested:
+   AMD Athlon
+   AMD K6-2
+   Apple/IBM/Motorola PowerPC
+   Compaq/Digital Alpha 21x64
+   IBM Power3
+   Intel Pentium
+   Intel Pentium II
+   Intel Pentium III
+   MIPS R10000
+   Sun UltraSPARC
+   SGI Indigo 2
+
+Operating systems tested:
+   Linux 2.x
+   FreeBSD
+   Solaris
+   SGI Irix
+   IBM AIX 4.x
+   Compaq/Digital Tru64 Unix
+   Windows 98
+   Windows NT
+   Windows 2000
+
+Video cards tested (On Intel-based systems):
+   3Dfx Voodoo Graphics (Linux)
+   3Dfx Voodoo 2 (Linux)
+   3Dfx Voodoo 3 3000 (Linux)
+   Creative Labs Graphics Blaster RivaTNT (Linux)
+   Diamond Stealth 2000 PRO (Linux)
+   Matrox G200 (Linux)
+   Matrox G400 (Linux)
+   STB Velocity 4400 RivaTNT (Linux)
+
+Please send user testimonials via e-mail to the QuakeForge users mailing list,
+located at:
+
+	"Quake-User" <quake-user@lists.sourceforge.net>
+
+Visit http://www.quakeforge.net/ to find out more about subscribing to our
+mailing lists and for more information.
+

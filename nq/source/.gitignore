@@ -1,0 +1,17 @@
+.vimrc
+*.a
+*.d
+*.o
+*.obj
+Makefile
+Makefile.in
+nuq-ggi
+nuq-glx
+nuq-sdl
+nuq-svga
+nuq-x11
+nuq-3dfx
+nuq-sgl
+nuq.exe
+nuq-wgl.exe
+.deps

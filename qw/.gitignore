@@ -1,0 +1,15 @@
+.vimrc
+ChangeLog
+Makefile
+Makefile.in
+aclocal.m4
+build-stamp
+config.cache
+config.log
+config.status
+configure
+configure-stamp
+quakeforge-*.tar.bz2
+quakeforge-*.tar.gz
+quakeforge-*.zip
+quakeforge.lsm

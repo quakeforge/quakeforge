@@ -1,0 +1,7 @@
+ o  windows port (Hey, Coderjoe, make some time!:)
+ o  fix sky rendering
+        too slow due to overdraw
+        areas that should be black are greenish
+ o  make alsa support more generic for odd hw (eg gus, hammerfall)
+<LordHavoc> you must support skyboxes (in software and GL), transparency (in software and GL), colored lighting (at least in GL, and if you're doing the others, you might as well do it in software as well), two protocols (DarkPlaces for netplay compatibility, and the ancient neh_gl protocol for the movies, which is much simpler than DP protocol and very bloated), the menus (including the map list and all in the server setup)
+<LordHavoc> here's some stuff you'll find amusing to try to support then: interpolated animations, DP protocol, DP particles (Nehahra uses the same particle engine, albeit an older version), mod music (honestly I skipped this myself, but nehahra uses 2 tunes), dzip support (I skipped this, and mindcrime seems to be in no hurry to actually use it)Z

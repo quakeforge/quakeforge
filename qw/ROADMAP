@@ -1,0 +1,31 @@
+o = todo
+X = done
+? = maybe but not likely
+M = more testing
+I = in progress
+W = waiting on other work
+
+X  water textures are seriously screwed in GL
+X  Endy's effects need to be made to work properly (totally broken!)
+X  R_DrawParticles in software hangs
+X  timestamping server (and optionally client) consoles
+X  teamplay messages ($location, $health; %L, %h?; cl_parsesay)
+X  fullbrights on models (yeah, we have to..)
+M  it seems possible to crash a QF server still - need to fix this!
+M  Scitech MGL used in win32 is screwed - dump it and use SDL
+I  GL is still way too slow
+I  Client side QuakeC.
+W  fix skybox/dome vis problems (workable solution found, needs new renderer)
+o  It's possible to stick on some obtuse-angled corners qwsv 2.3x didn't
+o  better server control of certain cvars
+o  triggers (f_respawn, f_death, f_took; cl_triggers)
+o  software PCXs don't work in X11 at least if you're using 16/24/32 color
+?  more direct intra-team comms (eg, talk to offense or defense directly)
+?  Draw_Pic and friends need a cleanup in GL at least
+?  console commands to see a user, ignore talk from them, etc
+?  improved crosshairs (custom file, 32 bit for GL, etc)
+?  software targets should mix color at 16/16 or 24/32 color
+?  Draw_Pic and other tex draw functions should use local palettes
+?  wad loader should load wad3 and fall back to wad2 if necessary
+?  better control over client console logging
+?  ban reasons and expire times
