@@ -114,9 +114,9 @@ void 	Cvar_WriteVariables (QFile *f);
 cvar_t *Cvar_FindVar (char *var_name);
 
 void Cvar_Init_Hash (void);
-void Cvar_Init();
+void Cvar_Init (void);
 
-void Cvar_Shutdown();
+void Cvar_Shutdown (void);
 
 extern cvar_t	*cvar_vars;
 
