@@ -71,14 +71,18 @@ bi_File_Open (progs_t *pr)
 			if (p[1] == '.') {
 				if (p[2] == '/' || p[2] == 0) {
 					d = p;
+					if (d > path)
+						d--;
 					while (d > path && d[-1] != '/')
 						d--;
 					if (d == path
-						|| (d[-1] == '.' && d[-2] == '.'
-							&& (d - 2 == path || d[-3] == '/')))
+						&& d[0] == '.' && d[1] == '.'
+						&& (d[2] == '/' || d[2] == '0')) {
+						p += 2 + (p[2] == '/');
 						continue;
-					strcpy (d, p + 2);
-					p = d + 1;
+					}
+					strcpy (d, p + 2 + (p[2] == '/'));
+					p = d + (d != path);
 				}
 			} else if (p[1] == '/') {
 				strcpy (p, p + 2);
@@ -92,7 +96,7 @@ bi_File_Open (progs_t *pr)
 		if (*p == '/')
 			p++;
 	}
-	printf ("'%s'  '%s'\n", G_STRING (pr, OFS_PARM0), path);
+	//printf ("'%s'  '%s'\n", G_STRING (pr, OFS_PARM0), path);
 	if (!path[0])
 		goto error;
 	if (path[0] == '.' && path[1] == '.' && (path[2] == '/' || path [2] == 0))
