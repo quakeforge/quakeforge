@@ -433,6 +433,8 @@ SND_ResampleMono (sfxbuffer_t *sc, byte *data, int length, void *prev)
 				for (i = 0; i < outcount; i++) {
 					*os++ = (*ib++ - 128) << 8;
 				}
+			} else {
+				goto general_Mono;
 			}
 		} else if (inwidth == 2) {
 			if (outwidth == 1) {
@@ -443,10 +445,12 @@ SND_ResampleMono (sfxbuffer_t *sc, byte *data, int length, void *prev)
 				for (i = 0; i < outcount; i++) {
 					*os++ = LittleShort (*is++);
 				}
+			} else {
+				goto general_Mono;
 			}
 		}
-	} else {
-		// general case
+	} else {				// general case
+general_Mono:
 		if (snd_interp->int_val && stepscale < 1) {
 			int			j;
 			int			points = 1 / stepscale;
@@ -579,6 +583,8 @@ SND_ResampleStereo (sfxbuffer_t *sc, byte *data, int length, void *prev)
 					os->left = (ib->left - 128) << 8;
 					os->right = (ib->right - 128) << 8;
 				}
+			} else {
+				goto general_Stereo;
 			}
 		} else if (inwidth == 2) {
 			if (outwidth == 1) {
@@ -591,10 +597,12 @@ SND_ResampleStereo (sfxbuffer_t *sc, byte *data, int length, void *prev)
 					os->left = LittleShort (is->left);
 					os->right = LittleShort (is->right);
 				}
+			} else {
+				goto general_Stereo;
 			}
 		}
-	} else {
-		// general case
+	} else {				// general case
+general_Stereo:
 		if (snd_interp->int_val && stepscale < 1) {
 			int			j;
 			int			points = 1 / stepscale;
