@@ -3,7 +3,8 @@ NEWS for the QuakeForge project
 
 Changes from 0.5.4
     o more cvar renaming: scr_consize -> con_size, scr_conspeed -> con_speed,
-      gl_conalpha -> con_alpha
+      gl_conalpha -> con_alpha, vid_conwidth -> con_width,
+      vid_conheight -> con_height
     o demo_speed no longer affects console scrolling or cursor blink rate
 
 Changes from 0.5.3
