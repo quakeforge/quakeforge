@@ -7,6 +7,8 @@
 #include "scope.h"
 #include "qc-parse.h"
 
+def_t *emit_sub_expr (expr_t *e, def_t *dest);
+
 def_t *
 emit_statement (int sline, opcode_t *op, def_t *var_a, def_t *var_b, def_t *var_c)
 {
@@ -41,11 +43,19 @@ emit_statement (int sline, opcode_t *op, def_t *var_a, def_t *var_b, def_t *var_
 		statement->c = 0;
 		ret = var_a;
 	} else {	// allocate result space
-		if (!var_c)
+		if (!var_c) {
 			var_c = PR_GetTempDef (types[op->type_c], pr_scope);
+			var_c->users += 2;
+		}
 		statement->c = var_c->ofs;
 		ret = var_c;
 	}
+	if (var_a)
+		var_a->users--;
+	if (var_b)
+		var_b->users--;
+	if (var_c)
+		var_c->users--;
 	PR_AddStatementRef (var_a, statement, 0);
 	PR_AddStatementRef (var_b, statement, 1);
 	PR_AddStatementRef (var_c, statement, 2);
@@ -54,8 +64,6 @@ emit_statement (int sline, opcode_t *op, def_t *var_a, def_t *var_b, def_t *var_
 		return var_a;
 	return var_c;
 }
-
-def_t *emit_sub_expr (expr_t *e, def_t *dest);
 
 void
 emit_branch (int line, opcode_t *op, expr_t *e, expr_t *l)
@@ -125,7 +133,7 @@ emit_assign_expr (expr_t *e)
 	expr_t *e2 = e->e.expr.e2;
 
 	def_a = emit_sub_expr (e1, 0);
-	if (def_a->type == &type_pointer) {
+	if (def_a->type->type == ev_pointer) {
 		def_b = emit_sub_expr (e2, 0);
 		op = PR_Opcode_Find ("=", 5, def_b, def_a, &def_void);
 		emit_statement (e->line, op, def_b, def_a, 0);
@@ -154,27 +162,31 @@ emit_assign_expr (expr_t *e)
 def_t *
 emit_sub_expr (expr_t *e, def_t *dest)
 {
-	opcode_t *op;
-	char *operator;
-	def_t *def_a, *def_b;
-	int priority;
+	opcode_t   *op;
+	char       *operator;
+	def_t      *def_a, *def_b, *d = 0;
+	int         priority;
 
 	switch (e->type) {
 		case ex_block:
 			if (e->e.block.result) {
-				def_t *res = emit_sub_expr (e->e.block.result, dest);
+				d = emit_sub_expr (e->e.block.result, dest);
 				for (e = e->e.block.head; e; e = e->next)
 					emit_expr (e);
-				return res;
+				break;
 			}
 		case ex_label:
 			error (e, "internal error");
 			abort ();
 		case ex_expr:
-			if (e->e.expr.op == 'c')
-				return emit_function_call (e, dest);
-			if (e->e.expr.op == '=')
-				return emit_assign_expr (e);
+			if (e->e.expr.op == 'c') {
+				d = emit_function_call (e, dest);
+				break;
+			}
+			if (e->e.expr.op == '=') {
+				d = emit_assign_expr (e);
+				break;
+			}
 			def_a = emit_sub_expr (e->e.expr.e1, 0);
 			def_b = emit_sub_expr (e->e.expr.e2, 0);
 			switch (e->e.expr.op) {
@@ -257,10 +269,13 @@ emit_sub_expr (expr_t *e, def_t *dest)
 				default:
 					abort ();
 			}
-			if (!dest)
+			if (!dest) {
 				dest = PR_GetTempDef (e->e.expr.type, pr_scope);
+				dest->users += 2;
+			}
 			op = PR_Opcode_Find (operator, priority, def_a, def_b, dest);
-			return emit_statement (e->line, op, def_a, def_b, dest);
+			d = emit_statement (e->line, op, def_a, def_b, dest);
+			break;
 		case ex_uexpr:
 			if (e->e.expr.op == '!') {
 				operator = "!";
@@ -281,23 +296,30 @@ emit_sub_expr (expr_t *e, def_t *dest)
 				priority = 3;
 				def_a = PR_ReuseConstant (&zero, 0);
 				def_b = emit_sub_expr (e->e.expr.e1, 0);
-				if (!dest)
+				if (!dest) {
 					dest = PR_GetTempDef (e->e.expr.type, pr_scope);
+					dest->users += 2;
+				}
 			} else {
 				abort ();
 			}
 			op = PR_Opcode_Find (operator, priority, def_a, def_b, dest);
-			return emit_statement (e->line, op, def_a, def_b, dest);
+			d = emit_statement (e->line, op, def_a, def_b, dest);
+			break;
 		case ex_def:
-			return e->e.def;
+			d = e->e.def;
+			break;
 		case ex_temp:
 			if (!e->e.temp.def) {
 				if (dest)
 					e->e.temp.def = dest;
 				else
 					e->e.temp.def = PR_GetTempDef (e->e.temp.type, pr_scope);
+				e->e.temp.def->users = e->e.temp.users;
+				e->e.temp.def->expr = e;
 			}
-			return e->e.temp.def;
+			d = e->e.temp.def;
+			break;
 		case ex_string:
 		case ex_float:
 		case ex_vector:
@@ -307,9 +329,11 @@ emit_sub_expr (expr_t *e, def_t *dest)
 		case ex_pointer:
 		case ex_quaternion:
 		case ex_integer:
-			return PR_ReuseConstant (e, 0);
+			d = PR_ReuseConstant (e, 0);
+			break;
 	}
-	return 0;
+	PR_FreeTempDefs ();
+	return d;
 }
 
 void
@@ -320,10 +344,6 @@ emit_expr (expr_t *e)
 	def_t *def_b;
 	statref_t *ref;
 	elabel_t *label;
-	//opcode_t *op;
-	static int level = 0;
-
-	level++;
 
 	switch (e->type) {
 		case ex_label:
@@ -404,6 +424,5 @@ emit_expr (expr_t *e)
 			warning (e, "Ignoring useless expression");
 			break;
 	}
-	if (--level == 0)
-		PR_FreeTempDefs ();
+	PR_FreeTempDefs ();
 }

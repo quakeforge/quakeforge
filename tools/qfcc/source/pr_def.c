@@ -204,6 +204,7 @@ PR_GetTempDef (type_t *type, def_t *scope)
 		def->ofs = scope->num_locals;
 		scope->num_locals += type_size[size];
 	}
+	def->users = 0;
 	def->next = temp_scope.next;
 	temp_scope.next = def;
 	return def;
@@ -212,27 +213,40 @@ PR_GetTempDef (type_t *type, def_t *scope)
 void
 PR_FreeTempDefs (void)
 {
-	def_t *def, *d;
+	def_t **def, *d;
 	int size;
 
-	for (def = temp_scope.next; def; def = d) {
-		size = type_size[def->type->type];
-		d = def->next;
-		def->next = free_temps[size];
-		free_temps[size] = def;
+	def = &temp_scope.next;
+	while (*def) {
+		if ((*def)->users <= 0) {
+			d = *def;
+			*def = d->next;
+
+			size = type_size[d->type->type];
+			if (d->expr)
+				d->expr->e.temp.def = 0;
+
+			d->next = free_temps[size];
+			free_temps[size] = d;
+		} else {
+			def = &(*def)->next;
+		}
 	}
-	temp_scope.next = 0;
 }
 
 void
 PR_ResetTempDefs (void)
 {
 	int i;
-	//def_t *d;
+	def_t *d;
 
 	for (i = 0; i < sizeof (free_temps) / sizeof (free_temps[0]); i++) {
 		free_temps[i] = 0;
 	}
+
+	for (d = temp_scope.next; d; d = d->next)
+		printf ("%3d %3d\n", d->ofs, d->users);
+	temp_scope.next = 0;
 }
 
 void

@@ -199,6 +199,15 @@ type_mismatch (expr_t *e1, expr_t *e2, int op)
 				  type_names[t1], get_op_string (op), type_names[t2]);
 }
 
+void
+inc_users (expr_t *e)
+{
+	if (e && e->type == ex_temp)
+		e->e.temp.users++;
+	else if (e && e->type == ex_block)
+		inc_users (e->e.block.result);
+}
+
 expr_t *
 new_expr (void)
 {
@@ -211,13 +220,14 @@ new_expr (void)
 expr_t *
 new_label_expr (void)
 {
-	static int label = 0;
-	int lnum = ++label;
+	static int  label = 0;
+	int         lnum = ++label;
 	const char *fname = current_func->def->name;
+	int         len = 1 + strlen (fname) + 1 + ceil (log10 (lnum) + 1) + 1;
 
 	expr_t *l = new_expr ();
 	l->type = ex_label;
-	l->e.label.name = malloc (1 + strlen (fname) + 1 + ceil (log10 (lnum)) + 1);
+	l->e.label.name = malloc (len);
 	sprintf (l->e.label.name, "$%s_%d", fname, lnum);
 	return l;
 }
@@ -238,6 +248,9 @@ new_binary_expr (int op, expr_t *e1, expr_t *e2)
 {
 	expr_t *e = new_expr ();
 
+	inc_users (e1);
+	inc_users (e2);
+
 	e->type = ex_expr;
 	e->e.expr.op = op;
 	e->e.expr.e1 = e1;
@@ -249,6 +262,8 @@ expr_t *
 new_unary_expr (int op, expr_t *e1)
 {
 	expr_t *e = new_expr ();
+
+	inc_users (e1);
 
 	e->type = ex_uexpr;
 	e->e.expr.op = op;
@@ -327,11 +342,28 @@ print_expr (expr_t *e)
 			printf (" u%s", get_op_string (e->e.expr.op));
 			break;
 		case ex_def:
-			printf ("%s", e->e.def->name);
+			if (e->e.def->name)
+				printf ("%s", e->e.def->name);
+			if (e->e.def->scope) {
+				printf ("<%d>", e->e.def->ofs);
+			} else {
+				printf ("[%d]", e->e.def->ofs);
+			}
 			break;
 		case ex_temp:
+			printf ("(");
 			print_expr (e->e.temp.expr);
-			printf ("@");
+			printf (":");
+			if (e->e.temp.def) {
+				if (e->e.temp.def->name) {
+					printf("%s", e->e.temp.def->name);
+				} else {
+					printf("<%d>", e->e.temp.def->ofs);
+				}
+			} else {
+				printf("<>");
+			}
+			printf (":%s)@", type_names [e->e.temp.type->type]);
 			break;
 		case ex_string:
 			printf ("\"%s\"", e->e.string_val);
@@ -797,7 +829,12 @@ type_mismatch:
 		type = &type_float;
 	}
 	if (op == '=' && e1->type == ex_expr && e1->e.expr.op == '.') {
-		e1->e.expr.type = &type_pointer;
+		type_t      new;
+
+		memset (&new, 0, sizeof (new));
+		new.type = ev_pointer;
+		type = new.aux_type = e1->e.expr.type;
+		e1->e.expr.type = PR_FindType (&new);
 	}
 	if (!type)
 		error (e1, "internal error");

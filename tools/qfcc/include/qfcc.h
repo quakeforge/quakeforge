@@ -290,6 +290,9 @@ typedef struct def_s {
 	int				initialized;// 1 when a declaration included "= immediate"
 	statref_t		*refs;		// for relocations
 
+	int				users;			// ref counted temps
+	struct expr_s	*expr;			// temp expr using this def
+
 	struct def_s	*def_next;		// for writing out the global defs list
 	struct def_s	*next;			// general purpose linking
 	struct def_s	*scope_next;	// to facilitate hash table removal
@@ -425,6 +428,7 @@ type_t *PR_ParseType (void);
 char *PR_ParseName (void);
 def_t *PR_ParseImmediate (def_t *def);
 def_t *PR_ReuseConstant (expr_t *expr, def_t *def);
+type_t *PR_FindType (type_t *new);
 
 qboolean PR_Check (token_type_t type, const char *string);
 void PR_Expect (token_type_t type, const char *string);
