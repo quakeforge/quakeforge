@@ -57,8 +57,10 @@ D_WarpScreen (void)
 	int        *turb;
 	int        *col;
 	byte      **row;
-	byte       *rowptr[1024];
-	int         column[1280];
+	
+	/* FIXME: allocate these arrays properly */
+	byte       *rowptr[1024 + AMP2 * 2];
+	int         column[1280 + AMP2 * 2];
 	float       wratio, hratio;
 
 	w = r_refdef.vrect.width;
