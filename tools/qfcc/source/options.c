@@ -112,13 +112,19 @@ static void
 usage (int status)
 {
 	printf ("%s - QuakeForge Code Compiler\n", this_program);
-	printf ("Usage: %s [options]\n", this_program);
+	printf ("Usage: %s [options] [files]\n", this_program);
 	printf (
 "Options:\n"
 "    -s, --source DIR          Look for progs.src in DIR instead of \".\"\n"
 "    -q, --quiet               Inhibit usual output\n"
 "    -v, --verbose             Display more output than usual\n"
-"    -g,                       Generate debuggin info\n"
+"    -g,                       Generate debugging info\n"
+"    -o, --output-file FILE    Specify output file name\n"
+"    -P, --progs-src FILE      File to use instad of progs.src\n"
+"    -F, --files               Generate files.dat\n"
+"    -t, --traditional         Traditional QuakeC mode: implies v6only\n"
+"    -p, --strip-path NUM      Strip NUM leading path elements from file\n"
+"                              names\n"
 "    -C, --code OPTION,...     Set code generation options\n"
 "    -W, --warn OPTION,...     Set warning options\n"
 "    -N, --notice OPTION,...   Set notice options\n"
@@ -126,9 +132,16 @@ usage (int status)
 "    -V, --version             Output version information and exit\n\n"
 "    -S, --save-temps          Do not delete temporary files\n"
 "    -D, --define SYMBOL[=VAL],...  Define symbols for the preprocessor\n"
-"    -I, --include DIR,...          Set directories for the preprocessor \n"
+"    -I, --include DIR,...          Set directories for the preprocessor\n"
 "                                   to search for #includes\n"
-"    -U, --undefine SYMBOL,...      Undefine preprocessor symbols\n\n"
+"    -U, --undefine SYMBOL,...      Undefine preprocessor symbols\n"
+"        --cpp CPPSPEC         cpp execution command line\n"
+"    -L DIR                    Add linker library search path\n"
+"    -l LIB                    Link with libLIB.a\n"
+"    -c                        Compile only, don't link\n"
+"    -r                        Incremental linking\n"
+"    -z                        Compress object files\n"
+"\n"
 "For help on options for --code and --warn, see the qfcc(1) manual page\n"
 	);
 	exit (status);
