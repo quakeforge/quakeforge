@@ -37,6 +37,8 @@
 # include <strings.h>
 #endif
 
+#include <stdlib.h>		// should be sys/types.h, but bc is stupid
+
 #include "QF/hash.h"
 
 #include "compat.h"
