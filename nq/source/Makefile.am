@@ -127,7 +127,7 @@ libqfnet_a_SOURCES=	net_bsd.c net_dgrm.c net_loop.c \
 EXTRA_libqfcd_a_SOURCES=net_dos.c net_bw.c net_ipx.c net_mp.c net_ser.c \
 			net_win.c net_wins.c net_wipx.c
 
-client_LIBS=	$(top_builddir)/libs/gamecode/libQFgamecode.la $(top_builddir)/libs/util/libQFutil.la -L. -lqfsys -lqfsnd -lqfcd -lqfjs -lqfnet $(SOUND_LIBS) $(NET_LIBS) $(Z_LIBS)
+client_LIBS=	$(top_builddir)/libs/gamecode/libQFgamecode.la $(top_builddir)/libs/util/libQFutil.la -L. -lqfsys -lqfsnd -lqfcd -lqfjs -lqfnet $(SOUND_LIBS) $(NET_LIBS)
 client_LIB_DEPS= libqfsys.a libqfsnd.a libqfcd.a libqfjs.a libqfnet.a
 
 client_SOURCES= cl_cam.c cl_cmd.c cl_demo.c cl_input.c cl_main.c cl_parse.c \
@@ -260,7 +260,7 @@ nq_wgl_DEPENDENCIES=$(client_LIB_DEPS)
 ded_SOURCES=sys_unixd.c sv_ded.c
 
 nq_server_SOURCES=$(common_SOURCES) $(server_SOURCES) $(ded_SOURCES)
-nq_server_LDADD= libqfnet.a $(Z_LIBS)
+nq_server_LDADD= libqfnet.a
 nq_server_DEPENDENCIES=libqfnet.a
 
 #

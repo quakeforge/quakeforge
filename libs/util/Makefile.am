@@ -1,6 +1,6 @@
 lib_LTLIBRARIES = libQFutil.la
 
-libQFutil_la_LDFLAGS = -version-info 1:0:0
+libQFutil_la_LDFLAGS = -version-info 1:0:0 $(Z_LIBS)
 libQFutil_la_SOURCES = \
 	checksum.c cmd.c console.c crc.c cvar.c hash.c info.c link.c math.S \
 	mathlib.c \
