@@ -87,6 +87,7 @@ extern unsigned int 	d_8to24table[256];
 
 extern int				scr_width, scr_height;
 extern byte 			gammatable[256];
+extern struct cvar_s	*vid_gamma;
 extern qboolean			vid_gamma_avail;
 
 // called at startup and after any gamma correction

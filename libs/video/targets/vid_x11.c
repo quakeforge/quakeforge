@@ -387,14 +387,14 @@ x11_init_buffers (void)
 
 	vid.aspect = ((float) vid.height / (float) vid.width) * (320.0 / 240.0);
 }
-
+#if 0
 static void
 event_shm (XEvent * event)
 {
 	if (doShm)
 		oktodraw = true;
 }
-
+#endif
 static void
 VID_Center_f (void) {
 	X11_ForceViewPort ();
@@ -548,7 +548,7 @@ VID_Init (unsigned char *palette)
 	VID_InitBuffers ();
 
 //  XSynchronize (x_disp, False);
-	X11_AddEvent (x_shmeventtype, event_shm);
+//	X11_AddEvent (x_shmeventtype, event_shm);
 
 	vid.initialized = true;
 }

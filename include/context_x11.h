@@ -47,6 +47,7 @@ extern int		x_shmeventtype;
 extern Time		x_time;
 extern qboolean doShm;
 extern qboolean oktodraw;
+extern qboolean x_have_focus;
 
 void GetEvent (void);
 

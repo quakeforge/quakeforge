@@ -480,22 +480,26 @@ event_button (XEvent *event)
 static void
 event_focusout (XEvent *event)
 {
+	x_have_focus = false;
 	XAutoRepeatOn (x_disp);
 	if (in_snd_block->int_val) {
 		S_BlockSound ();
 		CDAudio_Pause ();
 	}
+	X11_RestoreGamma ();
 }
 
 static void
 event_focusin (XEvent *event)
 {
+	x_have_focus = true;
 	if (key_dest == key_game)
 		XAutoRepeatOff (x_disp);
 	if (in_snd_block->int_val) {
 		S_UnblockSound ();
 		CDAudio_Resume ();
 	}
+	VID_UpdateGamma (vid_gamma);
 }
 
 static void

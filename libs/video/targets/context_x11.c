@@ -91,7 +91,9 @@ Window		x_win;
 Cursor		nullcursor = None;
 Time 		x_time;
 
-#define X_MASK (VisibilityChangeMask | StructureNotifyMask | ExposureMask)
+qboolean    x_have_focus = false;
+
+#define X_MASK (VisibilityChangeMask | StructureNotifyMask | ExposureMask | FocusChangeMask)
 #define MOUSE_MASK (ButtonPressMask | ButtonReleaseMask | PointerMotionMask)
 
 #ifdef HAVE_VIDMODE
@@ -667,7 +669,7 @@ X11_SetGamma (double gamma)
 # ifdef X_XF86VidModeSetGamma
 	XF86VidModeGamma	xgamma;
 	
-	if (vid_gamma_avail && vid_system_gamma->int_val) {
+	if (vid_gamma_avail && vid_system_gamma->int_val && x_have_focus) {
 		xgamma.red = xgamma.green = xgamma.blue = (float) gamma;
 		if (XF86VidModeSetGamma (x_disp, x_screen, &xgamma))
 			return true;
