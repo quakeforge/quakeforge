@@ -428,7 +428,7 @@ CL_LinkPacketEntities (void)
 		(*ent)->model = model = cl.model_precache[s1->modelindex];
 
 		// set colormap
-		if (s1->colormap && (s1->colormap < MAX_CLIENTS)
+		if (s1->colormap && (s1->colormap <= MAX_CLIENTS)
 			&& cl.players[s1->colormap - 1].name[0]
 			&& !strcmp ((*ent)->model->name, "progs/player.mdl")) {
 			(*ent)->colormap = cl.players[s1->colormap - 1].translations;
@@ -618,7 +618,6 @@ CL_ParsePlayerinfo (void)
 
 	num = MSG_ReadByte (net_message);
 	if (num > MAX_CLIENTS)
-//		Sys_Error ("CL_ParsePlayerinfo: bad num");
 		Host_Error ("CL_ParsePlayerinfo: bad num");
 
 	state = &cl.frames[parsecountmod].playerstate[num];
