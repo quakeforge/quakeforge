@@ -501,12 +501,15 @@ qfs_load_config (void)
 	QFile      *f;
 	int         len;
 	char       *buf;
+	char       *dirconf;
 
-	if (!(f = Qopen (fs_dirconf->string, "rt"))) {
-		Sys_DPrintf ("Could not load `%s', using builtin defaults\n",
-					fs_dirconf->string);
+	dirconf = expand_squiggle (fs_dirconf->string);
+	if (!(f = Qopen (dirconf, "rt")))
+		Sys_DPrintf ("Could not load `%s', using builtin defaults\n", dirconf);
+	free (dirconf);
+	if (!f)
 		goto no_config;
-	}
+
 	len = Qfilesize (f);
 	buf = malloc (len + 3); // +3 for { } and \0
 
