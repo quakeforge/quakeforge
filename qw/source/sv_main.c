@@ -1901,18 +1901,6 @@ SV_CheckVars (void)
 static void
 SV_GarbageCollect (void)
 {
-	if (pr_gc->int_val == 1
-		|| (pr_gc->int_val == 2 && sv_pr_state.progs->version == PROG_VERSION)) {
-		pr_gc_count++;
-		if (pr_gc_count >= pr_gc_interval->int_val) {
-			pr_gc_count = 0;
-			PR_GarbageCollect (&sv_pr_state);
-		}
-	} else {
-		// Make sure the count gets reset if the gc is disabled.  I
-		// could use a callback, but I'm lazy
-		pr_gc_count = 0;
-	}
 	Object_Garbage_Collect ();
 }
 

@@ -56,12 +56,6 @@ bi_print (progs_t *pr)
 }
 
 static void
-bi_GarbageCollect (progs_t *pr)
-{
-	PR_GarbageCollect (pr);
-}
-
-static void
 bi_errno (progs_t *pr)
 {
 	R_INT (pr) = errno;
@@ -183,7 +177,6 @@ void
 BI_Init (progs_t *pr)
 {
 	PR_AddBuiltin (pr, "print", bi_print, 1);
-	PR_AddBuiltin (pr, "GarbageCollect", bi_GarbageCollect, 2);
 	PR_AddBuiltin (pr, "errno", bi_errno, 3);
 	PR_AddBuiltin (pr, "strerror", bi_strerror, 4);
 	PR_AddBuiltin (pr, "open", bi_open, 5);

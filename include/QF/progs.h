@@ -227,7 +227,6 @@ int PR_SetTempString(progs_t *pr, const char *s);
 int PR_NewString (progs_t *pr);
 void PR_FreeString (progs_t *pr, int str);
 void PR_FreeTempStrings (progs_t *pr);
-void PR_GarbageCollect (progs_t *pr);
 
 //
 // PR Resources stuff

@@ -137,9 +137,12 @@ strref_free (void *_sr, void *_pr)
 	progs_t		*pr = (progs_t*)_pr;
 	strref_t	*sr = (strref_t*)_sr;
 
+	// Since this is only ever called by Hash_FlushTable, the memory pointed
+	// to by sr->string or sr->dstring has already been lost in the progs
+	// load/reload and thus there's no need to free it.
+
 	// free the string and ref only if it's not a static string
 	if (sr < pr->static_strings || sr >= pr->static_strings + pr->num_strings) {
-		PR_Zone_Free (pr, sr->string);
 		free_string_ref (pr, sr);
 	}
 }
@@ -186,53 +189,6 @@ PR_LoadStrings (progs_t *pr)
 	}
 	pr->num_strings = count;
 	return 1;
-}
-
-void
-PR_GarbageCollect (progs_t *pr)
-{
-	const char *str;
-	unsigned int i;
-	int         j;
-	ddef_t     *def;
-	strref_t   *sr;
-
-	for (i = 0; i < pr->dyn_str_size; i++)
-		for (j = 0; j < 1024; j++)
-			pr->dynamic_strings[i][j].count = 0;
-	for (i = 0; i < pr->progs->numglobaldefs; i++) {
-		def = &pr->pr_globaldefs[i];
-		if ((def->type & ~DEF_SAVEGLOBAL) == ev_string) {
-			str = G_GSTRING (pr, def->ofs);
-			if (str) {
-				sr = Hash_Find (pr->strref_hash, str);
-				if (sr)
-					sr->count++;
-			}
-		}
-	}
-	for (i = 0; i < pr->progs->numfielddefs; i++) {
-		def = &pr->pr_fielddefs[i];
-		if ((def->type & ~DEF_SAVEGLOBAL) == ev_string) {
-			for (j = 0; j < *pr->num_edicts; j++) {
-				str = E_GSTRING (pr, EDICT_NUM (pr, j), def->ofs);
-				if (str) {
-					sr = Hash_Find (pr->strref_hash, str);
-					if (sr)
-						sr->count++;
-				}
-			}
-		}
-	}
-	for (i = 0; i < pr->dyn_str_size; i++) {
-		for (j = 0; j < 1024; j++) {
-			sr = &pr->dynamic_strings[i][j];
-			if (sr->string && !sr->count) {
-				Hash_Del (pr->strref_hash, sr->string);
-				strref_free (sr, pr);
-			}
-		}
-	}
 }
 
 static inline strref_t *
