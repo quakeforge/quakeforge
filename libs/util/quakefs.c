@@ -428,12 +428,15 @@ _COM_FOpenFile (const char *filename, VFile **gzfile, char *foundname, int zip)
 		if (search->pack) {
 			packfile_t *packfile;
 
-			packfile = (packfile_t *) Hash_Find (search->pack->file_hash,
-												 filename);
 #ifdef HAVE_ZLIB
+			packfile = (packfile_t *) Hash_Find (search->pack->file_hash,
+												 gzfilename);
 			if (!packfile)
 				packfile = (packfile_t *) Hash_Find (search->pack->file_hash,
-													 gzfilename);
+													 filename);
+#else
+			packfile = (packfile_t *) Hash_Find (search->pack->file_hash,
+												 filename);
 #endif
 			if (packfile) {
 				Sys_DPrintf ("PackFile: %s : %s\n", search->pack->filename,
@@ -448,22 +451,30 @@ _COM_FOpenFile (const char *filename, VFile **gzfile, char *foundname, int zip)
 			}
 		} else {
 			// check a file in the directory tree
+#ifdef HAVE_ZLIB
+			snprintf (netpath, sizeof (netpath), "%s%s%s", search->filename,
+					  search->filename[0] ? "/" : "", gzfilename);
+
+			strncpy (foundname, gzfilename, MAX_OSPATH);
+			findtime = Sys_FileTime (netpath);
+			if (findtime == -1) {
+				strncpy (foundname, filename, MAX_OSPATH);
+				snprintf (netpath, sizeof (netpath), "%s%s%s",
+						  search->filename,
+						  search->filename[0] ? "/" : "", filename);
+				findtime = Sys_FileTime (netpath);
+				if (findtime == -1)
+					continue;
+			}
+#else
 			snprintf (netpath, sizeof (netpath), "%s%s%s", search->filename,
 					  search->filename[0] ? "/" : "", filename);
 
 			strncpy (foundname, filename, MAX_OSPATH);
 			findtime = Sys_FileTime (netpath);
-			if (findtime == -1) {
-#ifdef HAVE_ZLIB
-				strncpy (foundname, gzfilename, MAX_OSPATH);
-				snprintf (netpath, sizeof (netpath), "%s%s%s",
-						  search->filename,
-						  search->filename[0] ? "/" : "", gzfilename);
-				findtime = Sys_FileTime (netpath);
-				if (findtime == -1)
+			if (findtime == -1)
+				continue;
 #endif
-					continue;
-			}
 
 			Sys_DPrintf ("FindFile: %s\n", netpath);
 
