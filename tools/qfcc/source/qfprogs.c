@@ -363,6 +363,16 @@ convert_qfo (void)
 				pr.pr_fielddefs[progs.numfielddefs++] = ddef;
 			}
 		}
+	}
+
+	progs.numglobals = qfo->data_size;
+	pr.globals_size = progs.numglobals + num_locals + num_externs;
+	pr.pr_globals = calloc (pr.globals_size, sizeof (pr_type_t));
+	memcpy (pr.pr_globals, qfo->data, qfo->data_size * sizeof (pr_type_t));
+
+	for (i = 0; i < qfo->num_defs; i++) {
+		qfo_def_t  *def = defs + i;
+
 		for (j = 0; j < def->num_relocs; j++) {
 			qfo_reloc_t *reloc = qfo->relocs + def->relocs + j;
 			switch ((reloc_type)reloc->type) {
@@ -405,11 +415,6 @@ convert_qfo (void)
 			}
 		}
 	}
-
-	progs.numglobals = qfo->data_size;
-	pr.globals_size = progs.numglobals + num_locals + num_externs;
-	pr.pr_globals = calloc (pr.globals_size, sizeof (pr_type_t));
-	memcpy (pr.pr_globals, qfo->data, qfo->data_size * sizeof (pr_type_t));
 
 	pr.pr_edict_size = progs.entityfields * 4;
 
