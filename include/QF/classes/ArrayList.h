@@ -37,6 +37,7 @@
 classDecl (ArrayList, List,
 	unsigned int realsize;
 	Object **elements;
+	ObjRefs_t allrefs;
 );
 #define ARRAYLIST(o) ((ArrayList *)(o))
 
@@ -45,6 +46,7 @@ classDecl (ArrayListIterator, Iterator,
 	unsigned int pos;
 	unsigned int smods;
 	qboolean alive;
+	ObjRefs_t allrefs;
 );
 #define ARRAYLISTITERATOR(o) ((ArrayListIterator *)(o))
 

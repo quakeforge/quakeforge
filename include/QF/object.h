@@ -61,6 +61,12 @@
 
 #define instanceOf(obj, cl) (Object_InstaceOf((Object *)obj, cl##_class))
 
+typedef struct ObjRefs_s {
+	struct Object_s **objs;
+	unsigned int count;
+	struct ObjRefs_s *next;
+} ObjRefs_t;
+
 struct Object_s;
 struct Class_s;
 struct List_s;
@@ -70,10 +76,10 @@ typedef void (*ReplyHandler_t) (struct Object_s *retValue);
 typedef struct Object_s {
 	struct Class_s *cl;
 	int refs;
-	qboolean junked;
+	qboolean marked;
 	struct Object_s *next;
 	struct String_s * methodDecl(Object, toString);
-	void methodDecl(Object, message, const char *name, struct List_s *args, struct Object_s *sender, ReplyHandler_t *reply);
+	ObjRefs_t * methodDecl(Object, allRefs);
 	void *data;
 
 } Object;
@@ -99,6 +105,8 @@ void Object_Delete (Object *obj);
 Object *Object_Retain (Object *obj);
 Object *Object_Release (Object *obj);
 qboolean Object_InstanceOf (Object *obj, Class *cl);
+void Object_AddToRoot (Object *obj);
+void Object_RemoveFromRoot (Object *obj);
 void Object_Init (void);
 void Object_Garbage_Collect (void);
 

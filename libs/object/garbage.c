@@ -42,48 +42,61 @@ static __attribute__ ((unused)) const char rcsid[] =
 
 #include "garbage.h"
 
-unsigned int junked = 0;
 Object *junk = NULL;
+unsigned int junked = 0;
 
 void
-Garbage_Junk_Object (Object *o)
+Garbage_Do_Mark (Object *root)
 {
-	Sys_DPrintf ("GC: %s@%p ready for collection.\n", o->cl->name, o);
-	if (!o->junked && !o->refs) {
-		o->next = junk;
-		junk = o;
-		o->junked = true;
-		junked++;
+	if (!root->marked) {
+		ObjRefs_t *allrefs;
+		root->marked = true;
+		Sys_DPrintf ("GC: Marked %s@%p.\n", root->cl->name, root);
+		if (root->allRefs)
+			for (allrefs = methodCall(root, allRefs); allrefs; allrefs = allrefs->next) {
+				unsigned int i;
+				for (i = 0; i < allrefs->count; i++)
+					Garbage_Do_Mark (allrefs->objs[i]);
+			}
+	}
+}
+
+void
+Garbage_Do_Sweep (Object **allobjs)
+{
+	Object **prevNext;
+	Object *obj;
+
+	for (prevNext = allobjs, obj = *allobjs; obj; obj = *prevNext) {
+		if (obj->marked) {
+			obj->marked = false;
+			prevNext = &obj->next;
+		} else if (!obj->refs) {
+			*prevNext = obj->next;
+			obj->next = junk;
+			junk = obj;
+			junked++;
+			Sys_DPrintf ("GC: %s@%p is ready for disposal...\n", obj->cl->name, obj);
+		} else
+			*prevNext = obj->next;
 	}
 }
 
 unsigned int
-Garbage_Amount (void)
+Garbage_Pending (void)
 {
 	return junked;
 }
 
-
 void
-Garbage_Collect (unsigned int amount)
+Garbage_Dispose (unsigned int amount)
 {
-	Object *o;
+	Object *next;
 
-	if (!amount)
-		return;
-	Sys_DPrintf ("GC: Collecting %u objects...\n", amount);
-
-	for (o = junk; o && amount; o = junk) {
-		junk = o->next;
-		if (!o->refs) {
-			Sys_DPrintf("GC: Collecting %s@%p...\n", o->cl->name, o);
-			Object_Delete (o);
-			amount--;
-		} else {
-			Sys_DPrintf("GC: %s@%p gained references, not collecting...\n", o->cl->name, o);
-			o->junked = false;
-		}
+	for (; junk && amount; junk = next, amount--) {
+		next = junk->next;
+		Sys_DPrintf ("GC: Disposing of %s@%p...\n", junk->cl->name, junk);
+		Object_Delete (junk);
 		junked--;
 	}
-	junk = o;
 }

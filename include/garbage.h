@@ -32,8 +32,9 @@
 #ifndef __garbage_h
 #define __garbage_h
 
-void Garbage_Junk_Object (Object *o);
-unsigned int Garbage_Amount (void);
-void Garbage_Collect (unsigned int amount);
+void Garbage_Do_Mark (Object *root);
+void Garbage_Do_Sweep (Object **allobjs);
+unsigned int Garbage_Pending (void);
+void Garbage_Dispose (unsigned int amount);
 
 #endif

@@ -1907,13 +1907,13 @@ SV_GarbageCollect (void)
 		if (pr_gc_count >= pr_gc_interval->int_val) {
 			pr_gc_count = 0;
 			PR_GarbageCollect (&sv_pr_state);
-			Object_Garbage_Collect ();
 		}
 	} else {
 		// Make sure the count gets reset if the gc is disabled.  I
 		// could use a callback, but I'm lazy
 		pr_gc_count = 0;
 	}
+	Object_Garbage_Collect ();
 }
 
 void

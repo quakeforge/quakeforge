@@ -58,6 +58,9 @@ static __attribute__ ((unused)) const char rcsid[] =
 #include "QF/classes/Integer.h"
 #include "QF/classes/Double.h"
 
+Object *allObjs = NULL;
+ArrayList *rootObj = NULL;
+
 static String *
 Object_ToString_f (Object *self) 
 {
@@ -67,6 +70,7 @@ Object_ToString_f (Object *self)
 static void
 Object_Init_f (Object *self) 
 {
+	self->allRefs = NULL;
 	self->toString = Object_ToString_f;
 	Sys_DPrintf("%s@%p initing...\n", self->cl->name, self);
 }
@@ -108,12 +112,13 @@ Object_Create (Class *cl, qboolean floating)
 {
 	Object *new = malloc (cl->size);
 	new->cl = cl;
-	new->junked = false;
 	if (floating) {
 		new->refs = 0;
-		Garbage_Junk_Object (new);
 	} else
 		new->refs = 1;
+	new->marked = false;
+	new->next = allObjs;
+	allObjs = new;
 	return new;
 }
 
@@ -135,8 +140,8 @@ Object_Retain (Object *obj)
 Object *
 Object_Release (Object *obj)
 {
-	if (obj->refs && --obj->refs == 0)
-		Garbage_Junk_Object (obj);
+	if (obj->refs)
+		obj->refs--;
 	return obj;
 }
 
@@ -148,6 +153,18 @@ Object_InstanceOf (Object *obj, Class *cl)
 		if (c == cl)
 			return true;
 	return false;
+}
+
+void
+Object_AddToRoot (Object *obj)
+{
+	methodCall(COLLECTION(rootObj), add, obj);
+}
+
+void
+Object_RemoveFromRoot (Object *obj)
+{
+	methodCall(COLLECTION(rootObj), remove, obj);
 }
 
 static void
@@ -169,6 +186,12 @@ Object_Test (void)
 	methodCall(LIST(list), insertAt, 2, newFloat(String, "Mr. Two!"));
 	liststr = methodCall(OBJECT(list), toString);
 	Sys_DPrintf("List: %s\n", liststr->str);
+
+	list = newFloat(ArrayList, classObj(Object), NULL);
+	methodCall(list, add, newFloat(String, "Don't free me!"));
+	methodCall(list, add, newFloat(Integer, 5));
+	methodCall(list, add, newFloat(Double, 3.14));
+	Object_AddToRoot (OBJECT(methodCall(list, iterator)));
 }
 
 Class *Object_class;
@@ -206,7 +229,7 @@ Object_Init (void)
 		classInit(List);
 			classInit(ArrayList);
 	
-		
+	rootObj = new(ArrayList, classObj(Object), NULL);
 
 	/* Run test */
 	Object_Test();
@@ -215,7 +238,18 @@ Object_Init (void)
 void
 Object_Garbage_Collect (void)
 {
-	unsigned int amount;
-	if ((amount = Garbage_Amount()))
-		Garbage_Collect (amount / 2 + 1);
+	static unsigned int frames = 0;
+
+	frames++;
+
+	if (frames % 2000 == 0) {
+		Sys_DPrintf("GC: Marking...\n");
+		Garbage_Do_Mark (OBJECT(rootObj));
+		Sys_DPrintf("GC: Sweeping...\n");
+		Garbage_Do_Sweep (&allObjs);
+	}
+	if (frames % 50 == 0 && Garbage_Pending()) {
+		Sys_DPrintf("GC: Disposing...\n");
+		Garbage_Dispose (Garbage_Pending()/2 + 1);
+	}
 }

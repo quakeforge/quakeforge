@@ -46,6 +46,12 @@ static __attribute__ ((unused)) const char rcsid[] =
 
 #include "QF/classes/ArrayList.h"
 
+static ObjRefs_t *
+ArrayListIterator_AllRefs_f (Object *self)
+{
+	return &ARRAYLISTITERATOR(self)->allrefs;
+}
+
 static Object *
 ArrayListIterator_Next_f (Iterator *self)
 {
@@ -75,9 +81,13 @@ static Object *
 ArrayListIterator_Init_f (Object *self, ArrayList *list)
 {
 	superInit (ArrayListIterator, self);
+	self->allRefs = ArrayListIterator_AllRefs_f;
 	ITERATOR(self)->next = ArrayListIterator_Next_f;
 	ITERATOR(self)->hasNext = ArrayListIterator_HasNext_f;
-	ARRAYLISTITERATOR(self)->list = ARRAYLIST(retain(list));
+	ARRAYLISTITERATOR(self)->list = ARRAYLIST(list);
+	ARRAYLISTITERATOR(self)->allrefs.objs = (Object **)&ARRAYLISTITERATOR(self)->list;
+	ARRAYLISTITERATOR(self)->allrefs.count = 1;
+	ARRAYLISTITERATOR(self)->allrefs.next = NULL;
 	ARRAYLISTITERATOR(self)->smods = LIST(list)->smods;
 	ARRAYLISTITERATOR(self)->pos = 0;
 	ARRAYLISTITERATOR(self)->alive = COLLECTION(list)->count ? true : false;
@@ -87,7 +97,15 @@ ArrayListIterator_Init_f (Object *self, ArrayList *list)
 static void
 ArrayListIterator_Deinit_f (Object *self)
 {
-	release(ARRAYLISTITERATOR(self)->list);
+}
+
+static ObjRefs_t *
+ArrayList_AllRefs_f (Object *self)
+{
+	ARRAYLIST(self)->allrefs.objs = ARRAYLIST(self)->elements;
+	ARRAYLIST(self)->allrefs.count = COLLECTION(self)->count;
+	ARRAYLIST(self)->allrefs.next = NULL;
+	return &ARRAYLIST(self)->allrefs;
 }
 
 static void
@@ -109,13 +127,8 @@ ArrayList_Set_f (List *self, unsigned int index, Object *o)
 		if (!Object_InstanceOf (o, COLLECTION(list)->type))
 			return false;
 		ArrayList_EnsureCapacity (list, index+1);
-		retain(o);
-		if (list->elements[index])
-			release (list->elements[index]);
 		list->elements[index] = o;
 	} else if (index < COLLECTION(list)->count) {
-		if (list->elements[index])
-			release (list->elements[index]);
 		list->elements[index] = NULL;
 	}
 	if (COLLECTION(list)->count < index+1)
@@ -151,7 +164,6 @@ ArrayList_InsertAt_f (List *self, unsigned int index, Object *o)
 		return false;
 	else {
 		ArrayList_MakeRoomAt (list, index);
-		retain(o);
 		list->elements[index] = o;
 		return true;
 	}
@@ -165,8 +177,6 @@ ArrayList_RemoveAt_f (List *self, unsigned int index)
 		return NULL;
 	else {
 		Object *o = list->elements[index];
-		if (o)
-			release(o);
 		COLLECTION(list)->count--;
 		memmove(list->elements+index, list->elements+index+1, sizeof(Object *) * (COLLECTION(list)->count-index));
 		LIST(list)->smods++;
@@ -183,8 +193,6 @@ ArrayList_Add_f (Collection *self, Object *o)
 	else {
 		ArrayList_EnsureCapacity (list, ++COLLECTION(list)->count);
 		list->elements[COLLECTION(list)->count-1] = o;
-		if (o)
-			retain(o);
 		return true;
 	}
 }
@@ -207,16 +215,13 @@ ArrayList_Init_f (Object *self, Class *type, Collection *source)
 	COLLECTION(self)->add = ArrayList_Add_f;
 	COLLECTION(self)->iterator = ArrayList_Iterator_f;
 	superInit(List, self, type, source);
+	self->allRefs = ArrayList_AllRefs_f;
 	return self;
 }
 
 static void
 ArrayList_Deinit_f (Object *self)
 {
-	unsigned int i;
-	for (i = 0; i < COLLECTION(self)->count; i++)
-		if (ARRAYLIST(self)->elements[i])
-			release(ARRAYLIST(self)->elements[i]);
 	free(ARRAYLIST(self)->elements);
 }
 
