@@ -73,6 +73,31 @@ class_get_key (void *c, void *pr)
 	return PR_GetString ((progs_t *)pr, ((pr_class_t *)c)->name);
 }
 
+static unsigned long
+category_get_hash (void *_c, void *_pr)
+{
+	progs_t    *pr = (progs_t *) _pr;
+	pr_category_t *cat = (pr_category_t *) _c;
+	const char *category_name = PR_GetString (pr, cat->category_name);
+	const char *class_name = PR_GetString (pr, cat->class_name);
+
+	return Hash_String (category_name) ^ Hash_String (class_name);
+}
+
+static int
+category_compare (void *_c1, void *_c2, void *_pr)
+{
+	progs_t    *pr = (progs_t *) _pr;
+	pr_category_t *c1 = (pr_category_t *) _c1;
+	pr_category_t *c2 = (pr_category_t *) _c2;
+	const char *cat1 = PR_GetString (pr, c1->category_name);
+	const char *cat2 = PR_GetString (pr, c2->category_name);
+	const char *cls1 = PR_GetString (pr, c1->class_name);
+	const char *cls2 = PR_GetString (pr, c2->class_name);
+	return strcmp (cat1, cat2) == 0 && strcmp (cls1, cls2) == 0;
+}
+
+
 static void
 dump_ivars (progs_t *pr, pointer_t _ivars)
 {
@@ -134,6 +159,32 @@ finish_class (progs_t *pr, pr_class_t *class, pointer_t object_ptr)
 }
 
 static void
+finish_category (progs_t *pr, pr_category_t *category)
+{
+	const char *class_name = PR_GetString (pr, category->class_name);
+	const char *category_name = PR_GetString (pr, category->category_name);
+	pr_class_t *class = Hash_Find (pr->classes, class_name);
+	pr_method_list_t *method_list;
+
+	if (!class)
+		PR_Error (pr, "broken category %s (%s): class %s not found",
+				  class_name, category_name, class_name);
+	if (category->instance_methods) {
+		method_list = &G_STRUCT (pr, pr_method_list_t,
+								 category->instance_methods);
+		method_list->method_next = class->methods;
+		class->methods = category->instance_methods;
+	}
+	if (category->class_methods) {
+		pr_class_t *meta = &G_STRUCT (pr, pr_class_t, class->class_pointer);
+		method_list = &G_STRUCT (pr, pr_method_list_t,
+								 category->class_methods);
+		method_list->method_next = meta->methods;
+		meta->methods = category->class_methods;
+	}
+}
+
+static void
 pr___obj_exec_class (progs_t *pr)
 {
 	pr_module_t *module = &P_STRUCT (pr, pr_module_t, 0);
@@ -184,6 +235,7 @@ pr___obj_exec_class (progs_t *pr)
 		Sys_DPrintf ("    instance methods: %d\n", category->instance_methods);
 		Sys_DPrintf ("    class methods: %d\n", category->class_methods);
 		Sys_DPrintf ("    protocols: %d\n", category->protocols);
+		Hash_AddElement (pr->categories, category);
 		ptr++;
 	}
 }
@@ -923,11 +975,21 @@ PR_InitRuntime (progs_t *pr)
 {
 	int         fnum;
 	pr_class_t **class_list, **class;;
+	pr_category_t **category_list, **category;
 
 	if (!pr->classes)
 		pr->classes = Hash_NewTable (1021, class_get_key, 0, pr);
 	else
 		Hash_FlushTable (pr->classes);
+
+	if (!pr->categories) {
+		pr->categories = Hash_NewTable (1021, 0, 0, pr);
+		Hash_SetHashCompare (pr->categories,
+							 category_get_hash, category_compare);
+	} else {
+		Hash_FlushTable (pr->categories);
+	}
+
 	pr->fields.this = ED_GetFieldIndex (pr, ".this");
 	for (fnum = 0; fnum < pr->progs->numfunctions; fnum++) {
 		if (strequal (PR_GetString (pr, pr->pr_functions[fnum].s_name),
@@ -950,4 +1012,11 @@ PR_InitRuntime (progs_t *pr)
 			finish_class (pr, *class, object_ptr);
 	}
 	free (class_list);
+
+	category_list = (pr_category_t **) Hash_GetList (pr->categories);
+	if (*category_list) {
+		for (category = category_list; *category; category++)
+			finish_category (pr, *category);
+	}
+	free (category_list);
 }
