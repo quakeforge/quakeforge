@@ -497,6 +497,7 @@ int
 Sys_CheckInput (int idle, int net_socket)
 {
 	fd_set      fdset;
+	int         res;
 	struct timeval _timeout;
 	struct timeval *timeout = 0;
 
@@ -534,8 +535,8 @@ Sys_CheckInput (int idle, int net_socket)
 	if (!idle || !sys_dead_sleep->int_val)
 		timeout = &_timeout;
 
-	if (select (net_socket + 1, &fdset, NULL, NULL, timeout) == -1
-		&& errno != EINTR)
+	res = select (net_socket + 1, &fdset, NULL, NULL, timeout);
+	if (res == 0 || res == -1)
 		return 0;
 	stdin_ready = FD_ISSET (0, &fdset);
 	return 1;
