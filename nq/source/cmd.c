@@ -239,7 +239,7 @@ Cbuf_Execute (void)
 		extract_line (line);
 		// execute the command line
 		//Con_DPrintf("+%s\n",line),
-		Cmd_ExecuteString_src (line, src_command);
+		Cmd_ExecuteString (line, src_command);
 
 		if (cmd_wait)
 		{	// skip out while text still remains in buffer, leaving it
@@ -265,7 +265,7 @@ Cbuf_Execute_Sets (void)
 		if (strncmp(line,"set",3)==0
 			&& isspace((int) line[3]))
 			//Con_DPrintf("+%s\n",line),
-			Cmd_ExecuteString_src (line, src_command);
+			Cmd_ExecuteString (line, src_command);
 	}
 }
 
@@ -812,13 +812,13 @@ void Cmd_ExpandVariables (char *data, char *dest)
 
 /*
 ============
-Cmd_ExecuteString_src
+Cmd_ExecuteString
 
 A complete command line has been parsed, so try to execute it
 FIXME: lookupnoadd the token to speed search?
 ============
 */
-void Cmd_ExecuteString_src (char *text, cmd_source_t src)
+void Cmd_ExecuteString (char *text, cmd_source_t src)
 {
 	cmd_function_t	*cmd;
 	cmdalias_t		*a;

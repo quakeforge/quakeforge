@@ -319,7 +319,7 @@ void Host_Map_f (void)
 			strcat (cls.spawnparms, " ");
 		}
 		
-		Cmd_ExecuteString_src ("connect local", src_command);
+		Cmd_ExecuteString ("connect local", src_command);
 	}	
 }
 

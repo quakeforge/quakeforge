@@ -910,7 +910,7 @@ SVC_RemoteCommand (void)
 
 		SV_BeginRedirect (RD_PACKET);
 
-		Cmd_ExecuteString (remaining);
+		Cmd_ExecuteString (remaining, src_command);
 
 	}
 
@@ -1956,7 +1956,7 @@ SV_Init (void)
 
 	// if a map wasn't specified on the command line, spawn start.map
 	if (sv.state == ss_dead)
-		Cmd_ExecuteString ("map start");
+		Cmd_ExecuteString ("map start", src_command);
 	if (sv.state == ss_dead)
 		SV_Error ("Couldn't spawn a server");
 }

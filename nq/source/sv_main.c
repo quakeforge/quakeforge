@@ -1002,7 +1002,7 @@ void SV_SendReconnect (void)
 #ifdef QUAKE2
 		Cbuf_InsertText ("reconnect\n");
 #else
-		Cmd_ExecuteString_src ("reconnect\n", src_command);
+		Cmd_ExecuteString ("reconnect\n", src_command);
 #endif
 }
 

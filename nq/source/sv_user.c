@@ -589,7 +589,7 @@ nextmsg:
 				if (ret == 2)
 					Cbuf_InsertText (s);
 				else if (ret == 1)
-					Cmd_ExecuteString_src (s, src_client);
+					Cmd_ExecuteString (s, src_client);
 				else
 					Con_DPrintf("%s tried to %s\n", host_client->name, s);
 				break;

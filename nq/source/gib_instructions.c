@@ -145,7 +145,7 @@ int GIB_Con_f (void)
 	if (GIB_Argc() != 1)
 		return GIB_E_NUMARGS;
 	
-	Cmd_ExecuteString_src (GIB_Argv(1), src_command);
+	Cmd_ExecuteString (GIB_Argv(1), src_command);
 	
 	return 0;
 }

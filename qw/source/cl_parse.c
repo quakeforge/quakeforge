@@ -1346,7 +1346,7 @@ CL_ParseServerMessage (void)
 				break;
 
 			case svc_sellscreen:
-				Cmd_ExecuteString ("help");
+				Cmd_ExecuteString ("help", src_command);
 				break;
 
 			case svc_smallkick:

@@ -61,7 +61,7 @@ typedef struct cmdalias_s {
 } cmdalias_t;
 
 cmdalias_t *cmd_alias;
-
+cmd_source_t cmd_source;
 qboolean    cmd_wait;
 
 cvar_t     *cl_warncmd;
@@ -205,7 +205,7 @@ Cbuf_Execute (void)
 		extract_line (line);
 		// execute the command line
 		// Con_DPrintf("+%s\n",line),
-		Cmd_ExecuteString (line);
+		Cmd_ExecuteString (line, src_command);
 
 		if (cmd_wait) {					// skip out while text still remains
 										// in buffer, leaving it
@@ -231,11 +231,11 @@ Cbuf_Execute_Sets (void)
 		// execute the command line
 		if (strnequal (line, "set", 3) && isspace ((int) line[3])) {
 			// Con_DPrintf ("+%s\n",line);
-			Cmd_ExecuteString (line);
+			Cmd_ExecuteString (line, src_command);
 		}
 		if (strnequal (line, "setrom", 6) && isspace ((int) line[6])) {
 			// Con_DPrintf ("+%s\n",line);
-			Cmd_ExecuteString (line);
+			Cmd_ExecuteString (line, src_command);
 		}
 	}
 }
@@ -738,11 +738,13 @@ Cmd_ExpandVariables (char *data, char *dest)
 	FIXME: lookupnoadd the token to speed search?
 */
 void
-Cmd_ExecuteString (char *text)
+Cmd_ExecuteString (char *text, cmd_source_t src)
 {
 	cmd_function_t *cmd;
 	cmdalias_t *a;
 	char        buf[1024];
+
+	cmd_source = src;
 
 #if 0
 	Cmd_TokenizeString (text);
