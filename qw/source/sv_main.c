@@ -1885,20 +1885,25 @@ SV_Frame (float time)
 	if (!sv.paused) {
 		static double old_time;
 
+		// Misty: Make sure we don't set sv_frametime to 0 or less than 0.
+		// Progs HATES it when we do that.
+		if (realtime - old_time > 0) {
 		// don't bother running a frame if sys_ticrate seconds haven't passed
-		sv_frametime = realtime - old_time;
-		if (sv_frametime >= sv_mintic->value) {
-			if (sv_frametime > sv_maxtic->value) {
-				sv_frametime = sv_maxtic->value;
+			sv_frametime = realtime - old_time;
+			if (sv_frametime >= sv_mintic->value) {
+				if (sv_frametime > sv_maxtic->value) {
+					sv_frametime = sv_maxtic->value;
+				}
+				old_time = realtime;
+
+				*sv_globals.frametime = sv_frametime;
+
+				SV_Physics ();
 			}
+		} else {
 			old_time = realtime;
-
-			*sv_globals.frametime = sv_frametime;
-
-			SV_Physics ();
 		}
 	}
-
 	// get packets
 	SV_ReadPackets ();
 

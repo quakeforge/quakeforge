@@ -331,6 +331,9 @@ SV_SpawnServer (const char *server)
 
 	strcpy (sv.name, server);
 
+	// Misty: What, me worry? (Yes, it's BAAAACK) HACKHACKHACK
+	realtime = 0.1;
+
 	// load progs to get entity field count which determines how big each
 	// edict is
 	SV_LoadProgs ();
