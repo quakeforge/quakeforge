@@ -157,7 +157,7 @@ I_CDAudio_Stop (void)
 }
 
 static void
-I_CDAudio_Play (byte track, qboolean looping)
+I_CDAudio_Play (int track, qboolean looping)
 {
 	struct cdrom_tocentry entry0;
 	struct cdrom_tocentry entry1;
@@ -325,12 +325,12 @@ I_CD_f (void)
 	}
 
 	if (strequal (command, "play")) {
-		CDAudio_Play ((byte) atoi (Cmd_Argv (2)), false);
+		CDAudio_Play ((int) atoi (Cmd_Argv (2)), false);
 		return;
 	}
 
 	if (strequal (command, "loop")) {
-		CDAudio_Play ((byte) atoi (Cmd_Argv (2)), true);
+		CDAudio_Play ((int) atoi (Cmd_Argv (2)), true);
 		return;
 	}
 

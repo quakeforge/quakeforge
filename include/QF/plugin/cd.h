@@ -36,7 +36,7 @@
 */
 typedef void (QFPLUGIN *P_CDAudio_CD_f) (void); //
 typedef void (QFPLUGIN *P_CDAudio_Pause) (void);
-typedef void (QFPLUGIN *P_CDAudio_Play) (byte, qboolean);
+typedef void (QFPLUGIN *P_CDAudio_Play) (int, qboolean);
 typedef void (QFPLUGIN *P_CDAudio_Resume) (void);
 typedef void (QFPLUGIN *P_CDAudio_Shutdown) (void);
 typedef void (QFPLUGIN *P_CDAudio_Update) (void);

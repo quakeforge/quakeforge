@@ -91,8 +91,25 @@ static qboolean playing = false;
 static qboolean wasPlaying = false;
 static qboolean musEnabled = true;
 
-static void I_XMMS_f (void);
 
+static void I_XMMS_Running(void);
+static void I_XMMS_Stop(void);
+static void I_XMMS_Play(int, qboolean);
+static void I_XMMS_Pause(void);
+static void I_XMMS_Resume(void);
+static void I_XMMS_Next(void);
+static void I_XMMS_Prev(void);
+static void I_XMMS_Update(void);
+static void I_XMMS_Init(void);
+static void I_XMMS_Shutdown(void);
+static void I_XMMS_Kill(void);
+static void I_XMMS_On(void);
+static void I_XMMS_Off(void);
+static void I_XMMS_Shuffle(void);
+static void I_XMMS_Repeat(void);
+static void I_XMMS_Pos(int);
+static void I_XMMS_f(void);
+QFPLUGIN plugin_t *cd_xmms_PluginInfo (void);
 
 /* static float cdvolume; */
 /* static byte remap[100]; */
@@ -177,9 +194,9 @@ I_XMMS_Stop (void)						// stop playing
 	return;
 }
 
-// Play, don't use track and looping atm, :/
+// Play
 static void
-I_XMMS_Play (byte track, qboolean looping)
+I_XMMS_Play (int track, qboolean looping) // looping for compatability 
 {
 	// don't try if "xmms off" has been called
 	if (!musEnabled)
@@ -190,8 +207,10 @@ I_XMMS_Play (byte track, qboolean looping)
 		xmms_remote_pause (0);
 		return;
 	}
-	if (xmms_remote_is_playing (0))
-		return;
+
+	if(track >= 0) xmms_remote_set_playlist_pos(0, track); // set position
+
+	if (xmms_remote_is_playing (0)) return;
 
 	xmms_remote_play (0);
 
@@ -286,12 +305,13 @@ I_XMMS_Init (void)
 					"off - Stops control and playback of XMMS.\n"
 					"on - Starts XMMS if not running, or enables playback.\n"
 					"pause - Pause the XMMS playback.\n"
-					"play - Begins playing tracks according to the playlist.\n"
+					"play (position) - Begins playing tracks (from position) according to the playlist.\n"
 					"stop - Stops the currently playing track.\n"
 					"next - Plays the next track in the playlist.\n"
 					"prev - Plays the previous track in the playlist.\n"
 					"shuffle - Toggle shuffling the playlist.\n"
-					"repeat - Toggle repeating of the playlist.");
+					"repeat - Toggle repeating of the playlist.\n"
+					"pos - Set playlist position.");
 	return;
 
 }
@@ -380,6 +400,15 @@ I_XMMS_Repeat (void)
 }
 
 static void
+I_XMMS_Pos (int track)
+{
+	if(!musEnabled) return;
+	if(track < 0) return;
+	xmms_remote_set_playlist_pos(0, track);
+	return;
+}
+
+static void
 I_XMMS_f (void)
 {
 
@@ -393,7 +422,7 @@ I_XMMS_f (void)
 	command = Cmd_Argv (1);
 
 	if (strequal (command, "play")) {
-		I_XMMS_Play ((byte) atoi (Cmd_Argv (2)), false);
+		I_XMMS_Play (((int) atoi (Cmd_Argv (2)) -1), 0);
 		return;
 	}
 
@@ -439,6 +468,11 @@ I_XMMS_f (void)
 
 	if (strequal (command, "repeat")) {
 		I_XMMS_Repeat ();
+		return;
+	}
+
+	if (strequal (command, "pos")) {
+		I_XMMS_Pos (((int) atoi (Cmd_Argv (2)) -1 ));
 		return;
 	}
 

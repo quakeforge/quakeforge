@@ -107,7 +107,7 @@ pCDAudio_Pause (void)
 }
 
 void
-pCDAudio_Play (byte track, qboolean looping)
+pCDAudio_Play (int track, qboolean looping)
 {
 	int			maxtrack = CDAudio_MaxTrack ();
 
@@ -268,12 +268,12 @@ pCD_f (void)
 	}
 
 	if (strequal (command, "play")) {
-		CDAudio_Play ((byte) atoi (Cmd_Argv (2)), false);
+		CDAudio_Play ((int) atoi (Cmd_Argv (2)), false);
 		return;
 	}
 
 	if (strequal (command, "loop")) {
-		CDAudio_Play ((byte) atoi (Cmd_Argv (2)), true);
+		CDAudio_Play ((int) atoi (Cmd_Argv (2)), true);
 		return;
 	}
 

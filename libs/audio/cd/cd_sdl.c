@@ -107,7 +107,7 @@ I_CDAudio_Stop (void)
 }
 
 static void
-I_CDAudio_Play (byte track, qboolean looping)
+I_CDAudio_Play (int track, qboolean looping)
 {
 	/* Initialize cd_stat to avoid warning */
 	/* XXX - Does this default value make sense? */

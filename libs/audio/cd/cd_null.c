@@ -49,7 +49,7 @@ I_CDAudio_Pause (void)
 }
 
 static void
-I_CDAudio_Play (byte track, qboolean looping)
+I_CDAudio_Play (int track, qboolean looping)
 {
 }
 

@@ -66,7 +66,7 @@ static byte maxTrack;
 
 static UINT        wDeviceID;
 
-static void I_CDAudio_Play (byte track, qboolean looping);
+static void I_CDAudio_Play (int track, qboolean looping);
 static void I_CDAudio_Stop (void);
 
 
@@ -194,7 +194,7 @@ I_CDAudio_Pause (void)
 }
 
 static void
-I_CDAudio_Play (byte track, qboolean looping)
+I_CDAudio_Play (int track, qboolean looping)
 {
 	DWORD       dwReturn;
 	MCI_PLAY_PARMS mciPlayParms;
@@ -405,12 +405,12 @@ I_CD_f (void)
 	}
 
 	if (strequal (command, "play")) {
-		I_CDAudio_Play ((byte) atoi (Cmd_Argv (2)), false);
+		I_CDAudio_Play ((int) atoi (Cmd_Argv (2)), false);
 		return;
 	}
 
 	if (strequal (command, "loop")) {
-		I_CDAudio_Play ((byte) atoi (Cmd_Argv (2)), true);
+		I_CDAudio_Play ((int) atoi (Cmd_Argv (2)), true);
 		return;
 	}
 
