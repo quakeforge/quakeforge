@@ -56,6 +56,7 @@
 #include <asm/page.h>
 #include <linux/kd.h>
 #include <linux/vt.h>
+#include <math.h>
 
 #include "QF/cmd.h"
 #include "QF/console.h"
@@ -64,6 +65,7 @@
 #include "QF/qargs.h"
 #include "QF/qendian.h"
 #include "QF/sys.h"
+#include "QF/vid.h"
 
 #include "fbset.h"
 

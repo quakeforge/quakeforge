@@ -24,10 +24,10 @@ libQFfbdev_la_SOURCES=	fbset.c fbset_modes_y.y fbset_modes_l.l vid_fbdev.c in_fb
 YACCLEX_CLEANFILES=	fbset_modes_y.c fbset_modes_y.h fbset_modes_y.tab.h fbset_modes_l.c
 EXTRA_libQFfbdev_la_SOURCES=fbset_modes_y.h
 
-fbset_modes_y.o: fbset_modes_y.c
-	$(COMPILE) -Wno-error -c fbset_modes_y.c
-fbset_modes_l.o: fbset_modes_l.c
-	$(COMPILE) -Wno-error -c fbset_modes_l.c
+fbset_modes_y.lo: $(srcdir)/fbset_modes_y.c
+	$(COMPILE) -Wno-error -c $<
+fbset_modes_l.lo: $(srcdir)/fbset_modes_l.c
+	$(COMPILE) -Wno-error -c $<
 
 ##libQFmgl_la_LDFLAGS=	-version-info 1:0:0
 ##libQFmgl_la_SOURCES=	in_win.c vid_common_sw.c vid_mgl.c
@@ -48,3 +48,6 @@ libQFtdfx_la_SOURCES=	in_svgalib.c vid_common_gl.c vid_3dfxsvga.c
 ##libQFwgl_la_SOURCES=	in_win.c vid_wgl.c
 
 LIBLIST =	$(lib_LTLIBRARIES) @LIBRARY_SEARCH_PATH@
+
+# Kill the temp files, hopefully.
+CLEANFILES  = *.i *.s $(YACCLEX_CLEANFILES)
