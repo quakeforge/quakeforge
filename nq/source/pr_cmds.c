@@ -42,7 +42,7 @@
 #include "msg.h"
 #include "server.h"
 
-#define	RETURN_EDICT(p,e) (((int *)p->pr_globals)[OFS_RETURN] = EDICT_TO_PROG(p, e))
+#define	RETURN_EDICT(p,e) (p->pr_globals[OFS_RETURN].int_var = EDICT_TO_PROG(p, e))
 
 /*
 ===============================================================================
