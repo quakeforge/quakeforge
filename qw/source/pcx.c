@@ -154,7 +154,7 @@ EncodePCX (byte * data, int width, int height,
 	byte	*pack;
 
 	if (!(pcx = Hunk_TempAlloc (width * height * 2 + 1000))) {
-		Con_Printf ("WritePCXfile: not enough memory\n");
+		Con_Printf ("EncodePCX: not enough memory\n");
 		return 0;
 	}
 
