@@ -262,7 +262,7 @@ SV_Error (const char *error, va_list argptr)
 
 	if (con_module) {
 		con_module->functions->console->pC_Print (error, argptr);
-		con_module->functions->console->pC_Print ("\n", 0);
+		con_module->functions->console->pC_Print ("\n", argptr);
 	} else {
 		Sys_Print (stderr, error, argptr);
 	}
