@@ -454,18 +454,22 @@ Team_ParseChat (const char *string)
 	char *s;
 	int i;
 
-	s = strchr(string, ':') + 1;
+	if (!cl_freply->value)
+		return;
+
+	s = strchr(string, ':');
+	if (!(s = strchr(string, ':')))
+		return;
+	s++;
 	while (isspace(*s))
 		s++;	
 
-	if (s && cl_freply->value) {
-		for (i = 0; f_replies[i].name; i++) {
-			if (!strncmp(f_replies[i].name, s, strlen(f_replies[i].name)) && cl_freply->value) {
-				while (*s && !isspace(*s))
-					s++;
-				Cbuf_AddText(f_replies[i].func(s));
-				f_replies[i].lasttime = realtime;
-			}
+	for (i = 0; f_replies[i].name; i++) {
+		if (!strncmp(f_replies[i].name, s, strlen(f_replies[i].name)) && cl_freply->value) {
+			while (*s && !isspace(*s))
+				s++;
+			Cbuf_AddText(f_replies[i].func(s));
+			f_replies[i].lasttime = realtime;
 		}
 	}
 }
