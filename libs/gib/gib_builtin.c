@@ -236,9 +236,10 @@ GIB_Return_f (void)
 		if (GIB_Argc () == 1)
 			return;
 		if (!sp->up || // Nothing above us on the stack
-		  GIB_DATA(sp->up)->type != GIB_BUFFER_PROXY || // No proxy buffer created
+		  sp->up->interpreter != &gib_interp || // Not a GIB buffer
+		  GIB_DATA(sp->up)->type != GIB_BUFFER_PROXY || // Not a proxy buffer
 		  !sp->up->up ||  // Nothing above proxy buffer on the stack
-		  sp->up->up->interpreter != &gib_interp || // Not a GIB buffer
+		  sp->up->up->interpreter != &gib_interp || // Not a GIB buffer to return to
 		  !GIB_DATA(sp->up->up)->ret.waiting) // Buffer doesn't want a return value
 			Sys_Printf("Warning: unwanted return value discarded.\n"); // Not a serious error
 		else {
@@ -395,9 +396,7 @@ GIB_For_f (void)
 			ifs = " \n\r\t";
 		dstring_append (GIB_DATA(sub)->loop_data, ifs, strlen(ifs)+1);
 		// Store pointers to data
-		ll = GIB_DATA(sub)->loop_data->str;
-		while (isspace ((byte) *ll))
-			ll++;
+		for (ll = GIB_DATA(sub)->loop_data->str; *ll && strchr (ifs, *ll); ll++);
 		GIB_DATA(sub)->loop_list_p = ll; // List to iterate through
 		GIB_DATA(sub)->loop_var_p = GIB_DATA(sub)->loop_data->str + strlen(GIB_Argv(3))+1; // Var to use
 		GIB_DATA(sub)->loop_ifs_p = GIB_DATA(sub)->loop_var_p + strlen(GIB_Argv(1))+1; // Internal field separator
@@ -599,7 +598,7 @@ GIB_Thread_Kill_f (void)
 		unsigned long int id = strtoul (GIB_Argv(1), 0, 10);
 		thread = GIB_Thread_Find (id);
 		if (!thread) {
-			Cbuf_Error ("thread", "thread.kill: thread %ul does not exist.", id);
+			Cbuf_Error ("thread", "thread.kill: thread %lu does not exist.", id);
 			return;
 		}
 		for (cur = thread->cbuf; cur; cur = cur->down) {

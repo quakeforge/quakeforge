@@ -184,12 +184,14 @@ Cbuf_Execute_Stack (cbuf_t *cbuf)
 				sp = sp->down;
 				continue;
 			} else if (sp->state == CBUF_STATE_ERROR)
-				break;
+				goto ERROR;
 			else
 				return;
 		}		
 		sp = sp->up;
 	}
+	return;
+ERROR:
 	dstring_clearstr (cbuf->buf);
 	dstring_clearstr (cbuf->line);
 	if (cbuf->down) {

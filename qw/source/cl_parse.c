@@ -1305,12 +1305,12 @@ CL_ParseServerMessage (void)
 				if (s[strlen (s) - 1] == '\n') {
 					if (stuffbuf && stuffbuf->str[0]) {
 						Con_DPrintf ("stufftext: %s%s\n", stuffbuf->str, s);
-						Cbuf_AddText (cl_cbuf, stuffbuf->str);
+						Cbuf_AddText (cl_stbuf, stuffbuf->str);
 						dstring_clearstr (stuffbuf);
 					} else {
 						Con_DPrintf ("stufftext: %s\n", s);
 					}
-					Cbuf_AddText (cl_cbuf, s);
+					Cbuf_AddText (cl_stbuf, s);
 				} else {
 					Con_DPrintf ("partial stufftext: %s\n", s);
 					if (!stuffbuf)
@@ -1325,7 +1325,7 @@ CL_ParseServerMessage (void)
 
 			case svc_serverdata:
 				// make sure any stuffed commands are done
-				Cbuf_Execute (cl_cbuf);
+				Cbuf_Execute_Stack (cl_stbuf);
 				CL_ParseServerData ();
 				vid.recalc_refdef = true;	// leave full screen intermission
 				break;

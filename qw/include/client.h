@@ -348,7 +348,7 @@ extern char	*server_version;	// version of server we connected to
 extern	double		realtime;
 
 extern struct cbuf_s *cl_cbuf;
-
+extern struct cbuf_s *cl_stbuf;
 
 void Cvar_Info (struct cvar_s *var);
 

@@ -119,6 +119,7 @@ static plugin_list_t client_plugin_list[] = {
 qboolean    noclip_anglehack;			// remnant from old quake
 
 cbuf_t     *cl_cbuf;
+cbuf_t     *cl_stbuf;
 
 cvar_t     *fs_globalcfg;
 cvar_t     *fs_usercfg;
@@ -1515,6 +1516,7 @@ Host_Frame (float time)
 
 	// process console commands
 	Cbuf_Execute_Stack (cl_cbuf);
+	Cbuf_Execute_Stack (cl_stbuf);
 
 	// fetch results from server
 	CL_ReadPackets ();
@@ -1657,6 +1659,7 @@ void
 Host_Init (void)
 {
 	cl_cbuf = Cbuf_New (&id_interp);
+	cl_stbuf = Cbuf_New (&id_interp);
 
 	Cvar_Init_Hash ();
 	Cmd_Init_Hash ();
