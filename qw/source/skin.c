@@ -68,7 +68,6 @@ static int         fullfb;
 int         skin_textures;
 int         skin_fb_textures;
 
-
 static const char *
 skin_get_key (void *_skin, void *unused)
 {
@@ -86,9 +85,9 @@ skin_get_key (void *_skin, void *unused)
 void
 Skin_Find (player_info_t *sc)
 {
-	skin_t		*skin;
-	char		name[128];
-	const char	*s = NULL;
+	skin_t     *skin;
+	char        name[128];
+	const char *s = NULL;
 
 	if (allskins[0]) {
 		strncpy (name, allskins, sizeof (name));
@@ -114,7 +113,8 @@ Skin_Find (player_info_t *sc)
 		return;
 	}
 
-	if (numskins == MAX_CACHED_SKINS) {	// ran out of spots, so flush everything
+	if (numskins == MAX_CACHED_SKINS) {
+		// ran out of spots, so flush everything
 		Skin_Flush ();
 		return;
 	}
@@ -128,7 +128,6 @@ Skin_Find (player_info_t *sc)
 
 	Hash_Add (skin_hash, skin);
 }
-
 
 /*
 	Skin_Cache
@@ -247,7 +246,8 @@ Skin_Init_Textures (int base)
 void
 Skin_Init (void)
 {
-	int i;
+	int         i;
+
 	skin_hash = Hash_NewTable (1021, skin_get_key, 0, 0);
 	Skin_Init_Translation ();
 	for (i = 0, fullfb = 0; i < 320*200; i++)
@@ -261,7 +261,6 @@ Skin_Init_Cvars (void)
 	baseskin = Cvar_Get ("baseskin", "base", CVAR_NONE, NULL,
 						 "default base skin name");
 }
-
 
 int
 Skin_FbPercent (const char *skin_name)

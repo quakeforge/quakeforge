@@ -37,7 +37,6 @@ static const char rcsid[] =
 # include <strings.h>
 #endif
 
-#include "compat.h"
 #include "QF/console.h"
 #include "QF/cvar.h"
 #include "QF/hash.h"
@@ -48,6 +47,8 @@ static const char rcsid[] =
 #include "QF/texture.h"
 
 #include "client.h"
+#include "compat.h"
+#include "skin_stencil.h"
 
 #define MAX_TEMP_SKINS 64	//XXX dynamic?
 
@@ -57,11 +58,11 @@ cvar_t     *baseskin;
 char        allskins[128];
 
 skin_t      skin_cache[MAX_CACHED_SKINS];
-hashtab_t  *skin_hash;
-int         numskins;
-
-skin_t      temp_skins[MAX_TEMP_SKINS];
-int         num_temp_skins;
+static hashtab_t  *skin_hash;
+static int         numskins;
+static skin_t      temp_skins[MAX_TEMP_SKINS];
+static int         num_temp_skins;
+static int         fullfb;
 
 int         skin_textures;
 int         skin_fb_textures;
@@ -84,13 +85,13 @@ void
 Skin_Find (player_info_t *sc)
 {
 	skin_t     *skin;
-	char        name[128], *s;
+	char        name[128];
+	const char *s = NULL;
 
-	if (allskins[0])
+	if (allskins[0]) {
 		strncpy (name, allskins, sizeof (name));
-	else {
-		s = Info_ValueForKey (sc->userinfo, "skin");
-		if (s && s[0])
+	} else {
+		if ((s = sc->skinname->value) && s[0])
 			strncpy (name, s, sizeof (name));
 		else
 			strncpy (name, baseskin->string, sizeof (name));
@@ -98,6 +99,9 @@ Skin_Find (player_info_t *sc)
 
 	if (strstr (name, "..") || *name == '.')
 		strcpy (name, "base");
+
+	if (!allskins[0] && (!s || !strcaseequal (name, s)))
+		Info_SetValueForKey (sc->userinfo, "skin", name, 1);
 
 	COM_StripExtension (name, name);
 
@@ -108,8 +112,8 @@ Skin_Find (player_info_t *sc)
 		return;
 	}
 
-	if (numskins == MAX_CACHED_SKINS) {	// ran out of spots, so flush
-										// everything
+	if (numskins == MAX_CACHED_SKINS) {
+		// ran out of spots, so flush everything
 		Skin_Flush ();
 		return;
 	}
@@ -139,7 +143,7 @@ Skin_Cache (skin_t *skin)
 	tex_t      *tex;
 	int         pixels;
 	byte       *ipix, *opix;
-	int         i;
+	int         i, numfb;
 
 #if 0 //XXX qw only atm
 	if (cls.downloadtype == dl_skin)		// use base until downloaded
@@ -194,6 +198,10 @@ Skin_Cache (skin_t *skin)
 
 	skin->failedload = false;
 
+	for (i = 0,numfb = 0; i < 320*200; i++)
+		if (skin_stencil[i] && out->data[i] >= 256 - 32)
+			numfb++;
+	skin->numfb = numfb;
 	return out;
 }
 
@@ -240,8 +248,12 @@ Skin_Init_Textures (int base)
 void
 Skin_Init (void)
 {
+	int         i;
+
 	skin_hash = Hash_NewTable (1021, skin_get_key, 0, 0);
 	Skin_Init_Translation ();
+	for (i = 0, fullfb = 0; i < 320*200; i++)
+		fullfb += skin_stencil[i];
 }
 
 
@@ -250,4 +262,21 @@ Skin_Init_Cvars (void)
 {
 	baseskin = Cvar_Get ("baseskin", "base", CVAR_NONE, NULL,
 						 "default base skin name");
+}
+
+int
+Skin_FbPercent (const char *skin_name)
+{
+	int         i, totalfb = 0;
+	skin_t     *skin = 0;
+
+	if (skin_name) {
+		skin = Hash_Find (skin_hash, skin_name);
+		if (skin)
+			return skin->numfb * 1000 / fullfb;
+		return -1;
+	}
+	for (i = 0; i < numskins; i++)
+		totalfb += skin_cache[i].numfb;
+	return totalfb * 1000 / (numskins * fullfb);
 }
