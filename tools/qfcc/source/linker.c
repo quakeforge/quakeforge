@@ -162,42 +162,9 @@ Xgroup_add(reloc)	// relocgroup_add_relocs
 Xgroup_add(func)	// funcgroup_add_funcs
 
 static void __attribute__ ((format (printf, 2, 3)))
-def_error (qfo_def_t *def, const char *fmt, ...)
-{
-	va_list     args;
-	static dstring_t *string;
-
-	if (!string)
-		string = dstring_new ();
-
-	va_start (args, fmt);
-	dvsprintf (string, fmt, args);
-	va_end (args);
-
-	pr.source_file = def->file;
-	pr.source_line = def->line;
-	pr.strings = strings;
-	error (0, "%s", string->str);
-}
-
+def_error (qfo_def_t *def, const char *fmt, ...);
 static void __attribute__ ((format (printf, 2, 3)))
-def_warning (qfo_def_t *def, const char *fmt, ...)
-{
-	va_list     args;
-	static dstring_t *string;
-
-	if (!string)
-		string = dstring_new ();
-
-	va_start (args, fmt);
-	dvsprintf (string, fmt, args);
-	va_end (args);
-
-	pr.source_file = def->file;
-	pr.source_line = def->line;
-	pr.strings = strings;
-	warning (0, "%s", string->str);
-}
+def_warning (qfo_def_t *def, const char *fmt, ...);
 
 static defref_t *
 get_defref (qfo_def_t *def, defgroup_t *defgroup)
@@ -899,4 +866,42 @@ linker_add_path (const char *path)
 	p->path = path;
 	*path_tail = p;
 	path_tail = &p->next;
+}
+
+static void
+def_error (qfo_def_t *def, const char *fmt, ...)
+{
+	va_list     args;
+	static dstring_t *string;
+
+	if (!string)
+		string = dstring_new ();
+
+	va_start (args, fmt);
+	dvsprintf (string, fmt, args);
+	va_end (args);
+
+	pr.source_file = def->file;
+	pr.source_line = def->line;
+	pr.strings = strings;
+	error (0, "%s", string->str);
+}
+
+static void
+def_warning (qfo_def_t *def, const char *fmt, ...)
+{
+	va_list     args;
+	static dstring_t *string;
+
+	if (!string)
+		string = dstring_new ();
+
+	va_start (args, fmt);
+	dvsprintf (string, fmt, args);
+	va_end (args);
+
+	pr.source_file = def->file;
+	pr.source_line = def->line;
+	pr.strings = strings;
+	warning (0, "%s", string->str);
 }
