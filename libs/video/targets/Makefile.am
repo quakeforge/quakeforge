@@ -10,7 +10,7 @@ endif
 
 lib_LTLIBRARIES= @JOY_TARGETS@
 
-noinst_LTLIBRARIES= @VID_TARGETS@ 
+noinst_LTLIBRARIES= @VID_TARGETS@ @vid_libs@
 
 EXTRA_LTLIBRARIES= \
 	libQFjs.la libQFfbdev.la libQFglx.la libQFsvga.la libQFtdfx.la \
