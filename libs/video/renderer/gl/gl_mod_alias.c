@@ -468,8 +468,7 @@ R_DrawAliasModel (entity_t *e, qboolean cull)
 	if (cull && R_CullBox (mins, maxs)) 
 		return;
 
-	VectorCopy (e->origin, r_entorigin);
-	VectorSubtract (r_origin, r_entorigin, modelorg);
+	VectorSubtract (r_origin, e->origin, modelorg);
 
 	if (clmodel->fullbright) {
 		shadelight = 1.0;	// make certain models full brightness always

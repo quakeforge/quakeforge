@@ -468,7 +468,18 @@ R_Mirror (void)
 	qfglColor4ubv (color_white);
 	s = r_worldentity.model->textures[mirrortexturenum]->texturechain;
 	for (; s; s = s->texturechain) {
-		texture_t  *tex = R_TextureAnimation (s);
+		texture_t  *tex;
+		if (!s->texinfo->texture->anim_total)
+			tex = s->texinfo->texture;
+		else
+			tex = R_TextureAnimation (s);
+
+// FIXME: if this is needed, then include header for fullbright_polys
+//		if ( tex->gl_fb_texturenum > 0) {
+//			s->polys->fb_chain = fullbright_polys[tex->gl_fb_texturenum];
+//			fullbright_polys[tex->gl_fb_texturenum] = s->polys;
+//		}
+
 		qfglBindTexture (GL_TEXTURE_2D, tex->gl_texturenum);
 		R_RenderBrushPoly (s);
 	}

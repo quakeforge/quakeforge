@@ -324,9 +324,6 @@ R_TextureAnimation (msurface_t *surf)
 			base = base->alternate_anims;
 	}
 
-	if (!base->anim_total)
-		goto found;
-
 	relative = (int) (r_realtime * 10) % base->anim_total;
 
 	count = 0;
@@ -336,11 +333,6 @@ R_TextureAnimation (msurface_t *surf)
 			Sys_Error ("R_TextureAnimation: broken cycle");
 		if (++count > 100)
 			Sys_Error ("R_TextureAnimation: infinite cycle");
-	}
-found:
-	if (base->gl_fb_texturenum > 0) {
-		surf->polys->fb_chain = fullbright_polys[base->gl_fb_texturenum];
-		fullbright_polys[base->gl_fb_texturenum] = surf->polys;
 	}
 
 	return base;
@@ -380,8 +372,16 @@ R_DrawMultitexturePoly (msurface_t *s)
 {
 	float      *v;
 	int         maps, i;
-	texture_t  *texture = R_TextureAnimation (s);
-
+	texture_t  *texture;
+	
+	if (!s->texinfo->texture->anim_total)
+		texture = s->texinfo->texture;
+	else
+		texture = R_TextureAnimation (s);
+	if ( texture->gl_fb_texturenum > 0) {
+		s->polys->fb_chain = fullbright_polys[texture->gl_fb_texturenum];
+		fullbright_polys[texture->gl_fb_texturenum] = s->polys;
+	}
 	c_brush_polys++;
 
 	i = s->lightmaptexturenum;
@@ -707,7 +707,15 @@ R_DrawBrushModel (entity_t *e)
 			} else if (gl_mtex_active) {
 				R_DrawMultitexturePoly (psurf);
 			} else {
-				texture_t  *tex = R_TextureAnimation (psurf);
+				texture_t  *tex;
+				if (!psurf->texinfo->texture->anim_total)
+					tex = psurf->texinfo->texture;
+				else
+					tex = R_TextureAnimation (psurf);
+				if ( tex->gl_fb_texturenum > 0) {
+					psurf->polys->fb_chain = fullbright_polys[tex->gl_fb_texturenum];
+					fullbright_polys[tex->gl_fb_texturenum] = psurf->polys;
+				}
 				qfglBindTexture (GL_TEXTURE_2D, tex->gl_texturenum);
 				R_RenderBrushPoly (psurf);
 			}
@@ -789,7 +797,15 @@ R_RecursiveWorldNode (mnode_t *node)
 			} else if (gl_mtex_active) {
 				R_DrawMultitexturePoly (surf);
 			} else {
-				texture_t  *tex = R_TextureAnimation (surf);
+				texture_t  *tex;
+				if (!surf->texinfo->texture->anim_total)
+					tex = surf->texinfo->texture;
+				else 
+					tex = R_TextureAnimation (surf);
+				if (tex->gl_fb_texturenum > 0) {
+					surf->polys->fb_chain = fullbright_polys[tex->gl_fb_texturenum];
+					fullbright_polys[tex->gl_fb_texturenum] = surf->polys;
+				}
 				CHAIN_SURF (surf, tex->texturechain);
 			}
 		}
