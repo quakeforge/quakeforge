@@ -798,6 +798,46 @@ linker_add_lib (const char *libname)
 	return 0;
 }
 
+static void
+undefined_def (qfo_def_t *def)
+{
+	qfo_def_t   line_def;
+	int         i;
+	qfo_reloc_t *reloc = relocs.relocs + def->relocs;
+
+	for (i = 0; i < def->num_relocs; i++, reloc++) {
+		if (reloc->type == rel_op_a_def || reloc->type == rel_op_b_def
+			|| reloc->type == rel_op_c_def) {
+			qfo_func_t *func = funcs.funcs;
+			qfo_func_t *best = func;
+			int         best_dist = reloc->ofs - func->code;
+			pr_lineno_t *line;
+
+			while (best_dist && func - funcs.funcs < funcs.num_funcs) {
+				if (func->code <= reloc->ofs) {
+					if (best_dist < 0 || reloc->ofs - func->code < best_dist) {
+						best = func;
+						best_dist = reloc->ofs - func->code;
+					}
+				}
+				func++;
+			}
+			line = lines.lines + best->line_info;
+			line_def.file = best->file;
+			line_def.line = best->line;
+			if (!line->line && line->fa.func == best - funcs.funcs) {
+				while (line - lines.lines < lines.num_lines - 1 && line[1].line
+					   && line[1].fa.addr <= reloc->ofs)
+					line++;
+				line_def.line = line->line + best->line;
+			}
+			def_error (&line_def, "undefined symbol %s", STRING (def->name));
+		} else {
+			def_error (def, "undefined symbol %s", STRING (def->name));
+		}
+	}
+}
+
 qfo_t *
 linker_finish (void)
 {
@@ -833,7 +873,7 @@ linker_finish (void)
 		undef_defs = (defref_t **) Hash_GetList (extern_defs);
 		for (defref = undef_defs; *defref; defref++) {
 			qfo_def_t  *def = deref_def (*defref, &global_defs);
-			def_error (def, "undefined symbol %s", STRING (def->name));
+			undefined_def (def);
 		}
 		free (undef_defs);
 		if (pr.error_count)
