@@ -1999,6 +1999,21 @@ PF_Checkextension (progs_t *pr)
 }
 
 void
+PF_checkfunction (progs_t *pr)
+{
+	char *name = G_STRING (pr, OFS_PARM0);
+	int i;
+
+	for (i = 0; i < pr->numbuiltins; i++) {
+		if (pr->builtins[i].name && strequal (pr->builtins[i].name, name)) {
+			G_FUNCTION (pr, OFS_RETURN) = i;
+			return;
+		}
+	}
+	G_FUNCTION (pr, OFS_RETURN) = 0;
+}
+
+void
 SV_PR_Cmds_Init ()
 {
 	PR_AddBuiltin (&sv_pr_state, "makevectors", PF_makevectors, 1);	// void(entity e) makevectors = #1
@@ -2120,4 +2135,5 @@ SV_PR_Cmds_Init ()
 	PR_AddBuiltin (&sv_pr_state, "cfwrite", PF_cfwrite, 106);	// float (float desc, string buf) cfwrite = #106
 	PR_AddBuiltin (&sv_pr_state, "cfeof", PF_cfeof, 107);	// float (float desc) cfeof = #107
 	PR_AddBuiltin (&sv_pr_state, "cfquota", PF_cfquota, 108);	// float () cfquota = #108
+	PR_AddBuiltin (&sv_pr_state, "checkfunction", PF_checkfunction, 109);	// function (string name) checkfunction = #109
 };
