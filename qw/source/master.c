@@ -66,6 +66,78 @@ static const char rcsid[] =
 
 #include "protocol.h"
 
+#ifdef HAVE_SYS_UIO_H
+static int
+qf_sendmsg (int sock, void *data, size_t len, struct msghdr *msghdr)
+{
+	struct iovec iovec = {data, len};
+	msghdr->msg_iov = &iovec;
+	msghdr->msg_iovlen = 1;
+	return sendmsg (sock, msghdr, 0);
+}
+
+static int
+qf_recvmsg (int sock, void *data, size_t len, struct msghdr *msghdr)
+{
+	struct iovec iovec = {data, len};
+	msghdr->msg_iov = &iovec;
+	msghdr->msg_iovlen = 1;
+	return recvmsg (sock, msghdr, 0);
+}
+
+static int
+qf_initsocket (int sock)
+{
+	int ip_pktinfo = 1;
+	if (setsockopt (sock, SOL_IP, IP_PKTINFO, &ip_pktinfo,
+					sizeof (ip_pktinfo)) == -1) {
+		perror ("setsockopt");
+		return -1;
+	}
+	return 0;
+}
+
+#define MSGHDR	\
+	char ancillary[CMSG_SPACE (sizeof (struct in_pktinfo))];	\
+	struct sockaddr_in recvaddr;								\
+	struct msghdr msghdr = {									\
+		&recvaddr,												\
+		sizeof (recvaddr),										\
+		0, 0,													\
+		ancillary,												\
+		sizeof (ancillary),										\
+		0														\
+	}
+
+typedef struct msghdr msghdr_t;
+
+#else
+static int
+qf_sendmsg (int sock, void *data, size_t len, struct sockaddr_in *addr)
+{
+	return sendto (sock, data, len, 0, (struct sockaddr *)addr, sizeof (*addr));
+}
+
+static int
+qf_recvmsg (int sock, void *data, size_t len, struct sockaddr_in *addr)
+{
+	size_t      addr_len;
+	return recvfrom (sock, data, len, 0, (struct sockaddr *)addr, &addr_len);
+}
+
+static int
+qf_initsocket (int sock)
+{
+	return 0;
+}
+
+#define MSGHDR	 struct sockaddr_in msghdr
+#define recvaddr msghdr
+
+typedef struct sockaddr_in msghdr_t;
+
+#endif
+
 #define MASTER_TIMEOUT 300
 #define SLIST_MULTIPLE 1
 
@@ -173,20 +245,10 @@ QW_HeartShutdown (struct sockaddr_in *addr, server_t *servers,
 	}
 }
 
-#ifdef HAVE_SYS_UIO_H
 void
-QW_SendHearts (int sock, struct msghdr *msghdr, server_t *servers,
-			   int serverlen) 
-#else
-void
-QW_SendHearts (int sock, struct sockaddr_in *addr, server_t *servers,
-			   int serverlen) 
-#endif
+QW_SendHearts (int sock, msghdr_t *msghdr, server_t *servers, int serverlen) 
 {
 	unsigned char *out;
-#ifdef HAVE_SYS_UIO_H
-	struct iovec iovec;
-#endif
 	int count, cpos;
 	int i;
 
@@ -218,39 +280,17 @@ QW_SendHearts (int sock, struct sockaddr_in *addr, server_t *servers,
 			++cpos;
 		}
 	}
-#ifdef HAVE_SYS_UIO_H
-	iovec.iov_base = out;
-	iovec.iov_len = (count + 1) * 6;
-	msghdr->msg_iov = &iovec;
-	msghdr->msg_iovlen = 1;
-	sendmsg (sock, msghdr, 0);
-#else
-	sendto (sock, out, (count + 1) * 6, 0,
-			(struct sockaddr *)addr, sizeof (*addr));
-#endif
+	qf_sendmsg (sock, out, (count + 1) * 6, msghdr);
 	free (out);
 }
 
-#ifdef HAVE_SYS_UIO_H
 void
-QW_Pong (int sock, struct msghdr *msghdr)
-#else
-void
-QW_Pong (int sock, struct sockaddr_in *addr)
-#endif
+QW_Pong (int sock, msghdr_t *msghdr)
 {
-	// connectionless pa cket
+	// connectionless packet
 	char data[6] = {0xFF, 0xFF, 0xFF, 0xFF, A2A_ACK, 0};
-#ifdef HAVE_SYS_UIO_H
-	struct iovec iovec = {data, sizeof (data)};
-	msghdr->msg_iov = &iovec;
-	msghdr->msg_iovlen = 1;
-	sendmsg (sock, msghdr, 0);
-#else
-	sendto (sock, data, sizeof (data), 0,
-			(struct sockaddr *)addr, sizeof (*addr));
-#endif
 	//printf ("Ping\n");
+	qf_sendmsg (sock, data, sizeof (data), msghdr);
 }
 
 int serverlen = SLIST_MULTIPLE;
@@ -272,16 +312,8 @@ QW_Master (struct sockaddr_in *addr)
 		return;
 	}
 
-#ifdef HAVE_SYS_UIO_H
-	{
-		int ip_pktinfo = 1;
-		if (setsockopt (sock, SOL_IP, IP_PKTINFO, &ip_pktinfo,
-						sizeof (ip_pktinfo)) == -1) {
-			perror ("setsockopt");
-			return;
-		}
-	}
-#endif
+	if (qf_initsocket (sock) == -1)
+		return;
 
 	if (bind (sock, (struct sockaddr *) addr, sizeof (struct sockaddr_in))) {
 		printf ("bind failed\n");
@@ -289,35 +321,15 @@ QW_Master (struct sockaddr_in *addr)
 	}
    
 	while (1) {
-		struct sockaddr_in recvaddr;
 		int size;
 		char buf[31];
-#ifdef HAVE_SYS_UIO_H
-		struct iovec iovec = {buf, sizeof (buf) - 1};
-		char ancillary[CMSG_SPACE (sizeof (struct in_pktinfo))];
-		struct msghdr msghdr = {
-			&recvaddr, 
-			sizeof (recvaddr),
-			&iovec,
-			1,
-			ancillary,
-			sizeof (ancillary),
-			0
-		};
-#else
-		size_t recvaddrlen = sizeof (recvaddr);
-#endif
+		MSGHDR;
 
 		buf[30] = '\0'; // a sentinal for string ops
 
-#ifdef HAVE_SYS_UIO_H
-		size = recvmsg (sock, &msghdr, 0);
-#else
-		size = recvfrom (sock, buf, sizeof (buf) - 1, 0,
-						 (struct sockaddr *)&recvaddr, &recvaddrlen);
-#endif
+		size = qf_recvmsg (sock, buf, sizeof (buf) - 1, &msghdr);
 		if (size == -1) {
-			printf ("recvfrom failed\n");
+			perror ("qf_recvmsg failed\n");
 			continue;
 		}
 #if 0
@@ -345,11 +357,7 @@ QW_Master (struct sockaddr_in *addr)
 		QW_TimeoutHearts (servers, serverlen);
 		switch (buf[0]) {
 			case S2C_CHALLENGE:
-#ifdef HAVE_SYS_UIO_H
 				QW_SendHearts (sock, &msghdr, servers, serverlen);
-#else
-				QW_SendHearts (sock, &recvaddr, servers, serverlen);
-#endif
 				break;
 			case S2M_HEARTBEAT:
 				serverlen = QW_AddHeartbeat (&servers, serverlen,
@@ -359,11 +367,7 @@ QW_Master (struct sockaddr_in *addr)
 				QW_HeartShutdown (&recvaddr, servers, serverlen);
 				break;
 			case A2A_PING:
-#ifdef HAVE_SYS_UIO_H
 				QW_Pong (sock, &msghdr);
-#else
-				QW_Pong (sock, &recvaddr);
-#endif
 				break;
 			default:
 				printf ("Unknown 0x%x\n", buf[0]);
