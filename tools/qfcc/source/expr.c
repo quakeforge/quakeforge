@@ -1060,6 +1060,7 @@ binary_expr (int op, expr_t *e1, expr_t *e2)
 			new.type = ev_pointer;
 			type = new.aux_type = e1->e.expr.type;
 			e1->e.expr.type = PR_FindType (&new);
+			e1->e.expr.op = '&';
 		}
 	}
 	if (!type)

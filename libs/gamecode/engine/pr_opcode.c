@@ -91,6 +91,7 @@ opcode_t    pr_opcodes[] = {
 	{".", "load.fld", OP_LOAD_FLD, false, ev_entity, ev_field, ev_field, PROG_ID_VERSION},
 	{".", "load.fnc", OP_LOAD_FNC, false, ev_entity, ev_field, ev_func, PROG_ID_VERSION},
 	{".", "load.i",   OP_LOAD_I,   false, ev_entity, ev_field, ev_integer, PROG_VERSION},
+	{".", "load.p",   OP_LOAD_P,   false, ev_entity, ev_field, ev_pointer, PROG_VERSION},
 
 	{".", "loadb.f",   OP_LOADB_F,   false, ev_pointer, ev_integer, ev_float, PROG_VERSION},
 	{".", "loadb.v",   OP_LOADB_V,   false, ev_pointer, ev_integer, ev_vector, PROG_VERSION},
@@ -110,7 +111,7 @@ opcode_t    pr_opcodes[] = {
 	{".", "loadbi.i",   OP_LOADBI_I,   false, ev_pointer, ev_short, ev_integer, PROG_VERSION},
 	{".", "loadbi.p",   OP_LOADBI_P,   false, ev_pointer, ev_short, ev_pointer, PROG_VERSION},
 
-	{".", "address", OP_ADDRESS, false, ev_entity, ev_field, ev_pointer, PROG_ID_VERSION},
+	{"&", "address", OP_ADDRESS, false, ev_entity, ev_field, ev_pointer, PROG_ID_VERSION},
 
 	{"&", "address.f",   OP_ADDRESS_F,   false, ev_float, ev_void, ev_pointer, PROG_VERSION},
 	{"&", "address.v",   OP_ADDRESS_V,   false, ev_vector, ev_void, ev_pointer, PROG_VERSION},

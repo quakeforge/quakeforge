@@ -517,6 +517,7 @@ PR_ExecuteProgram (progs_t * pr, func_t fnum)
 			case OP_LOAD_S:
 			case OP_LOAD_FNC:
 			case OP_LOAD_I:
+			case OP_LOAD_P:
 				if (pr_boundscheck->int_val
 					&& (OPA.entity_var < 0 || OPA.entity_var >=
 						pr->pr_edictareasize)) {
