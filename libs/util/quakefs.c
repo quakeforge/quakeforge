@@ -317,7 +317,7 @@ qfs_inherit (plitem_t *plist, plitem_t *gdpl, gamedir_t *gamedir,
 			return;
 		}
 		qfs_set_var (vars, "gamedir", base->data);
-		Hash_Add (dirs, base->data);
+		Hash_Add (dirs, strdup (base->data));
 		qfs_get_gd_params (gdpl, gamedir, path, vars);
 		qfs_inherit (plist, gdpl, gamedir, path, dirs, vars);
 	} else if (base->type == QFArray) {
@@ -333,7 +333,7 @@ qfs_inherit (plitem_t *plist, plitem_t *gdpl, gamedir_t *gamedir,
 				continue;
 			}
 			qfs_set_var (vars, "gamedir", base->data);
-			Hash_Add (dirs, base->data);
+			Hash_Add (dirs, strdup (base->data));
 			qfs_get_gd_params (gdpl, gamedir, path, vars);
 			qfs_inherit (plist, gdpl, gamedir, path, dirs, vars);
 		}
@@ -367,12 +367,12 @@ qfs_find_gamedir (const char *name, hashtab_t *dirs)
 		dictkey_t **list = (dictkey_t **) Hash_GetList (qfs_gd_plist->data);
 		dictkey_t **l;
 		for (l = list; *l; l++)
-			;
+			puts((*l)->key);
 		qsort (list, l - list, sizeof (char *), qfs_compare);
 		while (l-- != list) {
 			if (!fnmatch ((*l)->key, name, 0)) {
 				gdpl = (*l)->value;
-				Hash_Add (dirs, (*l)->key);
+				Hash_Add (dirs, strdup ((*l)->key));
 				break;
 			}
 		}
