@@ -433,6 +433,7 @@ init_types (void)
 	type = type_Class.aux_type = new_struct (0);
 	type->type = ev_class;
 	type->class = &class_Class;
+	class_Class.super_class = get_class ("Object", 1);	//FIXME evil hack
 	class_Class.ivars = type_Class.aux_type;
 	new_struct_field (type, &type_Class, "class_pointer", vis_public);
 	new_struct_field (type, &type_Class, "super_class", vis_public);
@@ -449,7 +450,7 @@ init_types (void)
 	new_struct_field (type, &type_pointer, "gc_object_type", vis_public);
 	chain_type (&type_Class);
 
-	type = type_Protocol.aux_type = new_struct ("Protocol");
+	type = type_Protocol.aux_type = new_struct (0);
 	type->type = ev_class;
 	type->class = &class_Protocol;
 	class_Protocol.ivars = type_Protocol.aux_type;
