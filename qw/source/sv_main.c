@@ -69,6 +69,7 @@ static const char rcsid[] =
 #include "QF/cmd.h"
 #include "QF/console.h"
 #include "QF/cvar.h"
+#include "QF/dstring.h"
 #include "QF/model.h"
 #include "QF/msg.h"
 #include "QF/plugin.h"
@@ -244,19 +245,25 @@ SV_Shutdown (void)
 void
 SV_Error (const char *error, va_list argptr)
 {
-	static char string[1024];
+	dstring_t  *string;
 	static qboolean inerror = false;
 
 	if (inerror)
 		return;
 
+	string = dstring_new ();
+
 	inerror = true;
 
-	vsnprintf (string, sizeof (string), error, argptr);
+	dvsprintf (string, error, argptr);
+	dstring_insertstr (string, "server crashed: ", 0);
+	dstring_appendstr (string, "\n");
+	SV_FinalMessage (string->str);
 
-	SV_FinalMessage (va ("server crashed: %s\n", string));
-
-	Sys_Print (stderr, error, argptr);
+	if (con_module)
+		con_module->functions->console->pC_Print (error, argptr);
+	else
+		Sys_Print (stderr, error, argptr);
 }
 
 /*
