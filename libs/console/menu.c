@@ -335,6 +335,8 @@ Menu_Init (void)
 	menu_pr_state.allocate_progs_mem = menu_allocate_progs_mem;
 	menu_pr_state.free_progs_mem = menu_free_progs_mem;
 
+	PR_Resources_Init (&menu_pr_state);
+
 	menu_hash = Hash_NewTable (61, menu_get_key, menu_free, 0);
 
 	PR_AddBuiltin (&menu_pr_state, "Menu_Begin", bi_Menu_Begin, -1);

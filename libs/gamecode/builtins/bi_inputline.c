@@ -31,45 +31,136 @@ static const char rcsid[] =
 # include "config.h"
 #endif
 
+#include <stdlib.h>
 #ifdef HAVE_STRING_H
-# include "string.h"
+# include <string.h>
 #endif
 #ifdef HAVE_STRINGS_H
-# include "strings.h"
+# include <strings.h>
 #endif
 
 #include "QF/console.h"
+#include "QF/draw.h"
 #include "QF/progs.h"
 #include "QF/zone.h"
+
+typedef struct {
+	inputline_t **lines;
+	int         max_lines;
+} il_resources_t;
+
+//FIXME need to robustify the interface to avoid segfaults caused by errant
+//progs
 
 static void
 bi_InputLine_Create (progs_t *pr)
 {
+	il_resources_t *res = PR_Resources_Find (pr, "InputLine");
+	inputline_t **line = 0;
+	int         i;
+	int         lines = G_INT (pr, OFS_PARM0);
+	int         width = G_INT (pr, OFS_PARM1);
+	int         prompt = G_INT (pr, OFS_PARM2);
+	pr_type_t  *handle;
+
+	for (i = 0; i < res->max_lines; i++)
+		if (!res->lines[i]) {
+			line = &res->lines[i];
+			break;
+		}
+	if (!line) {
+		G_INT (pr, OFS_RETURN) = 0;
+		return;
+	}
+	*line = Con_CreateInputLine (lines, width, prompt);
+	if (!*line) {
+		G_INT (pr, OFS_RETURN) = 0;
+		return;
+	}
+	handle = PR_Zone_Malloc (pr, sizeof (inputline_t *));
+	*(inputline_t**)handle = *line;
+	G_INT (pr, OFS_RETURN) = handle - pr->pr_globals;
 }
 
 static void
 bi_InputLine_Destroy (progs_t *pr)
 {
+	il_resources_t *res = PR_Resources_Find (pr, "InputLine");
+	int         i;
+	pr_type_t  *handle = pr->pr_globals + G_INT (pr, OFS_PARM0);
+	inputline_t *line = *(inputline_t **)handle;
+
+	for (i = 0; i < res->max_lines; i++)
+		if (res->lines[i] == line) {
+			Con_DestroyInputLine (line);
+			res->lines = 0;
+			PR_Zone_Free (pr, handle);
+		}
 }
 
 static void
 bi_InputLine_Clear (progs_t *pr)
 {
+	pr_type_t  *handle = pr->pr_globals + G_INT (pr, OFS_PARM0);
+	inputline_t *line = *(inputline_t **)handle;
+
+	Con_ClearTyping (line);
 }
 
 static void
 bi_InputLine_Process (progs_t *pr)
 {
+	pr_type_t  *handle = pr->pr_globals + G_INT (pr, OFS_PARM0);
+	inputline_t *line = *(inputline_t **)handle;
+	int         ch = G_INT (pr, OFS_PARM1);
+
+	Con_ProcessInputLine (line, ch);
 }
 
 static void
 bi_InputLine_Draw (progs_t *pr)
 {
+	pr_type_t  *handle = pr->pr_globals + G_INT (pr, OFS_PARM0);
+	inputline_t *il = *(inputline_t **)handle;
+	int         x = G_INT (pr, OFS_PARM1);
+	int         y = G_INT (pr, OFS_PARM2);
+	int         cursor = G_INT (pr, OFS_PARM3);
+	const char *s = il->lines[il->edit_line] + il->scroll;
+
+	if (il->scroll) {
+		Draw_Character (x, y, '<' | 0x80);
+		Draw_nString (x + 8, y, s + 1, il->width - 2);
+	} else {
+		Draw_nString (x, y, s, il->width - 1);
+	}
+	if (cursor)
+		Draw_Character (x + ((il->linepos - il->scroll) << 3), y,
+						10 + ((int) (*pr->time * 4) & 1));
+	if (strlen (s) >= il->width)
+		Draw_Character (x + ((il->width - 1) << 3), y, '>' | 0x80);
+}
+
+static void
+bi_il_clear (progs_t *pr, void *data)
+{
+	il_resources_t *res = (il_resources_t *)data;
+	int         i;
+
+	for (i = 0; i < res->max_lines; i++)
+		if (res->lines[i]) {
+			Con_DestroyInputLine (res->lines[i]);
+			res->lines[i] = 0;
+		}
 }
 
 void
 InputLine_Progs_Init (progs_t *pr)
 {
+	il_resources_t *res = malloc (sizeof (il_resources_t));
+	res->max_lines = 64;
+	res->lines = calloc (sizeof (inputline_t *), res->max_lines);
+
+	PR_Resources_Register (pr, "InputLine", res, bi_il_clear);
 	PR_AddBuiltin (pr, "InputLine_Create", bi_InputLine_Create, -1);
 	PR_AddBuiltin (pr, "InputLine_Destroy", bi_InputLine_Destroy, -1);
 	PR_AddBuiltin (pr, "InputLine_Clear", bi_InputLine_Clear, -1);
