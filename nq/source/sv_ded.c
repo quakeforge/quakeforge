@@ -35,70 +35,251 @@ static const char rcsid[] =
 #include <stdarg.h>
 
 #include "QF/cvar.h"
-#include "QF/host.h"
 #include "QF/keys.h"
+#include "QF/sys.h"
 
 #include "client.h"
+#include "host.h"
 
-int         m_return_state;
-qboolean    m_return_onerror;
-char        m_return_reason[32];
-enum { m_none, m_main, m_singleplayer, m_load, m_save, m_multiplayer, m_setup,
-	   m_net, m_options, m_video, m_keys, m_help, m_quit, m_serialconfig,
-	   m_modemconfig, m_lanconfig, m_gameoptions, m_search, m_slist
-} m_state;
-
-keydest_t   key_dest;
-client_static_t cls;
 client_state_t cl;
-vec3_t      vright, vup, vleft, vpn;
+client_static_t cls;
+
+keydest_t   key_dest = key_game;
+
 float       scr_centertime_off;
 
+cvar_t     *cl_name;
+cvar_t     *cl_writecfg;
+cvar_t     *chase_active;
+
+int         fps_count;
+
+qboolean    scr_disabled_for_loading;
+
+byte       *vid_colormap;
+
+vec3_t      vpn, vright, vup;
+
+qboolean    r_active;
+qboolean    r_force_fullscreen;
+double      r_frametime;
+qboolean    r_inhibit_viewmodel;
+vec3_t      r_origin;
+qboolean    r_paused;
+entity_t   *r_view_model;
 
 void
-Con_Printf (char *fmt, ...)
-{
-	va_list     args;
-
-	va_start (args, fmt);
-	vprintf (fmt, args);
-	va_end (args);
-}
-
-void
-Con_DPrintf (char *fmt, ...)
-{
-	va_list     args;
-
-	if (!developer->int_val)
-		return;
-
-	va_start (args, fmt);
-	vprintf (fmt, args);
-	va_end (args);
-}
-
-void
-SCR_UpdateScreen (double realtime)
+CL_UpdateScreen (double realtime)
 {
 }
 
 void
-SCR_BeginLoadingPlaque (void)
+Cmd_ForwardToServer (void)
 {
 }
 
 void
-SCR_EndLoadingPlaque (void)
+CDAudio_Init (void)
 {
 }
 
 void
-Draw_BeginDisc (void)
+CDAudio_Shutdown (void)
 {
 }
 
 void
-Draw_EndDisc (void)
+CDAudio_Update (void)
+{
+}
+
+void
+CL_Disconnect (void)
+{
+}
+
+void
+CL_Disconnect_f (void)
+{
+}
+
+void
+CL_EstablishConnection (const char *host)
+{
+}
+
+void
+CL_Init (void)
+{
+}
+
+void
+CL_InitCvars (void)
+{
+}
+
+void
+CL_NextDemo (void)
+{
+}
+
+int
+CL_ReadFromServer (void)
+{
+	return 0;
+}
+
+void
+CL_SendCmd (void)
+{
+}
+
+void
+CL_SetState (cactive_t state)
+{
+}
+
+void
+CL_StopPlayback (void)
+{
+}
+
+void
+Chase_Init_Cvars (void)
+{
+}
+
+void
+D_FlushCaches (void)
+{
+}
+
+void
+Draw_Init (void)
+{
+}
+
+void
+Host_Skin_Init (void)
+{
+}
+
+void
+Host_Skin_Init_Cvars (void)
+{
+}
+
+void
+IN_Commands (void)
+{
+}
+
+void
+IN_Init (void)
+{
+}
+
+void
+IN_Init_Cvars (void)
+{
+}
+
+void
+IN_SendKeyEvents (void)
+{
+}
+
+void
+IN_Shutdown (void)
+{
+}
+
+void
+Key_Init (void)
+{
+}
+
+void
+Key_Init_Cvars (void)
+{
+}
+
+void
+Key_WriteBindings (VFile *f)
+{
+}
+
+void
+R_DecayLights (double frametime)
+{
+}
+
+void
+R_Init (void)
+{
+}
+
+void
+R_Init_Cvars (void)
+{
+}
+
+void
+R_Particles_Init_Cvars (void)
+{
+}
+
+void
+SCR_Init (void)
+{
+}
+
+void
+S_Init (void)
+{
+}
+
+void
+S_Init_Cvars (void)
+{
+}
+
+void
+S_Shutdown (void)
+{
+}
+
+void
+S_Update (vec3_t origin, vec3_t v_forward, vec3_t v_right, vec3_t v_up)
+{
+}
+
+void
+Sbar_Init (void)
+{
+}
+
+void
+VID_Init (unsigned char *palette)
+{
+}
+
+void
+VID_Init_Cvars (void)
+{
+}
+
+void
+VID_Shutdown (void)
+{
+}
+
+void
+V_Init (void)
+{
+}
+
+void
+V_Init_Cvars (void)
 {
 }

@@ -1295,7 +1295,7 @@ AC_ARG_WITH(servers,
 	servers=all
 )
 if test "$servers" = "all"; then
-	ENABLE_NQ_SERVER=no		# doesn't work yet
+	ENABLE_NQ_SERVER=yes
 	ENABLE_QW_MASTER=yes
 	ENABLE_QW_SERVER=yes
 else

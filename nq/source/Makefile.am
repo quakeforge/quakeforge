@@ -50,7 +50,7 @@ libasm_la_SOURCES= $(asm_src)
 
 noinst_LTLIBRARIES= libqfnet.la $(asm)
 
-common_sources=	game.c host_skin.c skin.c world.c com.c
+common_sources=	game.c world.c com.c
 
 common_ldflags= -export-dynamic
 
@@ -63,19 +63,30 @@ EXTRA_libqfnet_la_SOURCES= \
 		net_wipx.c
 
 client_LIBFILES= \
+		$(top_builddir)/libs/video/targets/libQFjs.la \
 		$(top_builddir)/libs/audio/libQFcd.la \
-		$(top_builddir)/libs/audio/libQFsound.la \
-		$(top_builddir)/libs/util/libQFutil.la \
+		$(top_builddir)/libs/audio/libQFsound.la
+
+server_LIBFILES= \
+		$(top_builddir)/libs/models/libQFmodels.la \
+		$(top_builddir)/libs/console/libQFconsole.la
+
+common_LIBFILES= \
+		$(asm) \
+		libqfnet.la \
 		$(top_builddir)/libs/gamecode/engine/libQFgamecode.la \
 		$(top_builddir)/libs/gamecode/builtins/libQFgamecode_builtins.la \
 		$(top_builddir)/libs/gib/libQFgib.la \
-		$(top_builddir)/libs/video/targets/libQFjs.la
+		$(top_builddir)/libs/util/libQFutil.la
 
-client_LIBS=	$(client_LIBFILES) libasm.la libqfnet.la $(NET_LIBS)
-client_LIB_DEPS=$(client_LIBFILES) libasm.la libqfnet.la
+client_LIBS=	$(client_LIBFILES) $(common_LIBFILES) $(NET_LIBS)
+client_LIB_DEPS=$(client_LIBFILES) $(common_LIBFILES)
+
+server_LIBS=	$(server_LIBFILES) $(common_LIBFILES) $(NET_LIBS)
+server_LIB_DEPS=$(server_LIBFILES) $(common_LIBFILES)
 
 client_sources=	cl_cam.c cl_cmd.c cl_demo.c cl_input.c cl_main.c cl_screen.c \
-		cl_parse.c cl_tent.c cl_view.c \
+		cl_parse.c cl_tent.c cl_view.c host_skin.c skin.c \
 		console.c locs.c sbar.c
 
 server_sources= host.c host_cmd.c pr_cmds.c sv_cvar.c sv_main.c \
@@ -199,11 +210,11 @@ nq_wgl_DEPENDENCIES=	$(top_builddir)/libs/video/renderer/libQFrenderer_gl.la \
 			$(client_LIB_DEPS)
 
 # Dedicated Server
-ded_sources=	sys_unixd.c sv_ded.c
+ded_sources=	sys_unixd.c sv_ded.c sv_model.c
 
 nq_server_SOURCES=	$(common_sources) $(server_sources) $(ded_sources)
-nq_server_LDADD=	libqfnet.la libasm.la
-nq_server_DEPENDENCIES=	libqfnet.la libasm.la
+nq_server_LDADD=	$(server_LIBS)
+nq_server_DEPENDENCIES=	$(server_LIB_DEPSS)
 
 # Stuff that doesn't get linked into an executable NEEDS to be mentioned here,
 # or it won't be distributed with 'make dist'

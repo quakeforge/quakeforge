@@ -57,6 +57,7 @@ static const char rcsid[] =
 #include <sys/types.h>
 #include <sys/wait.h>
 
+#include "QF/cvar.h"
 #include "QF/qargs.h"
 #include "QF/qtypes.h"
 #include "QF/sys.h"
@@ -125,7 +126,7 @@ Sys_FileRead (int handle, void *dest, int count)
 }
 
 void
-Sys_DebugLog (char *file, char *fmt, ...)
+Sys_DebugLog (const char *file, const char *fmt, ...)
 {
 	va_list     argptr;
 	static char data[1024];
@@ -155,7 +156,7 @@ Sys_Init (void)
 #endif
 }
 
-char *
+const char *
 Sys_ConsoleInput (void)
 {
 	static char text[256];
@@ -195,11 +196,11 @@ Sys_LowFPPrecision (void)
 #endif
 
 int
-main (int argc, char *argv[])
+main (int argc, const char **argv)
 {
 	double      time, oldtime;
 	quakeparms_t parms;
-	char       *newargv[256];
+	const char *newargv[256];
 	int         j;
 
 	signal (SIGFPE, SIG_IGN);
