@@ -410,13 +410,19 @@ case "$target_os" in
 	;;
 esac	
 
+AC_ARG_ENABLE(vorbis,
+[  --disable-vorbis         disable ogg vorbis support],
+)
+
 HAVE_VORBIS=no
-AM_PATH_OGG(HAVE_OGG=yes, HAVE_OGG=no)
-if test $HAVE_OGG = yes; then
-	AM_PATH_VORBIS(HAVE_VORBIS=yes, HAVE_VORBIS=no)
-	if test $HAVE_VORBIS = yes; then
-		AC_DEFINE(HAVE_VORBIS, 1, [define this if you have ogg/vorbis libs])
-	fi
+if test "x$enable_vorbis" != "xno"; then
+  AM_PATH_OGG(HAVE_OGG=yes, HAVE_OGG=no)
+  if test $HAVE_OGG = yes; then
+    AM_PATH_VORBIS(HAVE_VORBIS=yes, HAVE_VORBIS=no)
+    if test $HAVE_VORBIS = yes; then
+      AC_DEFINE(HAVE_VORBIS, 1, [define this if you have ogg/vorbis libs])
+    fi
+  fi
 fi
 
 AC_ARG_ENABLE(zlib,
