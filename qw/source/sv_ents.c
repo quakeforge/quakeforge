@@ -99,7 +99,7 @@ SV_AddToFatPVS (vec3_t org, mnode_t *node)
 	Calculates a PVS that is the inclusive or of all leafs within 8 pixels
 	of the given point.
 */
-static byte		*
+static byte *
 SV_FatPVS (vec3_t org)
 {
 	fatbytes = (sv.worldmodel->numleafs + 31) >> 3;
@@ -457,12 +457,15 @@ SV_WritePlayersToClient (client_t *client, edict_t *clent, byte *pvs,
 			if (cl->spectator)
 				continue;
 
-			// ignore if not touching a PV leaf
-			for (i = 0; i < ent->num_leafs; i++)
-				if (pvs[ent->leafnums[i] >> 3] & (1 << (ent->leafnums[i] & 7)))
-					break;
-			if (i == ent->num_leafs)
-				continue;				// not visible
+			if (pvs) {
+				// ignore if not touching a PV leaf
+				for (i = 0; i < ent->num_leafs; i++)
+					if (pvs[ent->leafnums[i] >> 3]
+						& (1 << (ent->leafnums[i] & 7)))
+						break;
+				if (i == ent->num_leafs)
+					continue;				// not visible
+			}
 		}
 
 		pflags = PF_MSEC | PF_COMMAND;
@@ -606,7 +609,7 @@ SV_WritePlayersToClient (client_t *client, edict_t *clent, byte *pvs,
 void
 SV_WriteEntitiesToClient (client_t *client, sizebuf_t *msg, qboolean recorder)
 {
-	byte	   *pvs;
+	byte	   *pvs = 0;
 	int			e, i, num_edicts, mpe_moaned = 0;
 	int         max_packet_entities = MAX_PACKET_ENTITIES;
 	vec3_t		org;
@@ -620,11 +623,10 @@ SV_WriteEntitiesToClient (client_t *client, sizebuf_t *msg, qboolean recorder)
 
 	// find the client's PVS
 	clent = client->edict;
-	pvs = 0;
 	if (!recorder) {
 		VectorAdd (SVvector (clent, origin), SVvector (clent, view_ofs), org);
 		pvs = SV_FatPVS (org);
-	} else {
+	} else if (!sv_demoNoVis->int_val) {
 		client_t   *cl;
 
 		max_packet_entities = MAX_DEMO_PACKET_ENTITIES;
@@ -668,7 +670,7 @@ SV_WriteEntitiesToClient (client_t *client, sizebuf_t *msg, qboolean recorder)
 			|| !*PR_GetString (&sv_pr_state, SVstring (ent, model)))
 			continue;
 
-		if (!sv_demoNoVis->int_val || !recorder) {
+		if (pvs) {
 			// ignore if not touching a PV leaf
 			for (i = 0; i < ent->num_leafs; i++)
 				if (pvs[ent->leafnums[i] >> 3] & (1 << (ent->leafnums[i] & 7)))

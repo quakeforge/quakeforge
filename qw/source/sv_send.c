@@ -829,11 +829,9 @@ SV_SendDemoMessage (void)
 	if (!sv.demorecording)
 		return;
 
-	if (sv_demoPings->value) {
-		if (sv.time - demo.pingtime > sv_demoPings->value) {
-			SV_DemoPings ();
-			demo.pingtime = sv.time;
-		}
+	if (sv_demoPings->value && sv.time - demo.pingtime > sv_demoPings->value) {
+		SV_DemoPings ();
+		demo.pingtime = sv.time;
 	}
 
 
@@ -866,7 +864,7 @@ SV_SendDemoMessage (void)
 	msg.overflowed = false;
 	
 	for (i = 0, c = svs.clients; i < MAX_CLIENTS; i++, c++) {
-		if (c->state != cs_spawned)
+		if (c->state != cs_spawned && c->state != cs_server)
 			continue;	// datagrams only go to spawned
 
 		if (c->spectator)
@@ -914,6 +912,8 @@ SV_SendDemoMessage (void)
 	demo.frames[demo.parsecount & DEMO_FRAMES_MASK].time = demo.time = sv.time;
 
 	// that's a backup of 3sec in 20fps, should be enough
+	// FIXME make this framerate dependent.
+	// eg. sv_fps->int_val * sv_packetdelay->float_val
 	if (demo.parsecount - demo.lastwritten > 60) {
 		SV_DemoWritePackets (1);
 	}
