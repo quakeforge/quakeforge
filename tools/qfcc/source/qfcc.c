@@ -667,7 +667,7 @@ PR_PrintFunction (def_t *def)
 				d->name ? d->name : "<temp>",
 				d->ofs, d->type->type, pr_type_size[d->type->type]);
 		for (r = d->refs; r; r = r->next)
-			printf (" %d", r->statement - statements);
+			printf (" %ld", (long)(r->statement - statements));
 		printf ("\n");
 	}
 }
@@ -886,7 +886,7 @@ main (int argc, char **argv)
 {
 	char		*src;
 	char		filename[1024];
-	long int 	crc;
+	int 		crc;
 	double		start, stop;
 
 	start = Sys_DoubleTime ();

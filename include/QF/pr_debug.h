@@ -33,19 +33,19 @@
 #define __pr_debug_h
 
 typedef struct pr_auxfunction_s {
-	unsigned long function;		// function def this aux info is for
-	unsigned long source_line;	// first source line for this function
-	unsigned long line_info;	// index to first lineno entry
-	unsigned long local_defs;	// index to the first local def
-	unsigned long num_locals;	// number of local defs
+	unsigned int function;		// function def this aux info is for
+	unsigned int source_line;	// first source line for this function
+	unsigned int line_info;	// index to first lineno entry
+	unsigned int local_defs;	// index to the first local def
+	unsigned int num_locals;	// number of local defs
 } pr_auxfunction_t;
 
 typedef struct pr_lineno_s {
 	union {
-		unsigned long func;		// (line==0) index of function aux info
-		unsigned long addr;		// (line!=0) dstatement_t address
+		unsigned int func;		// (line==0) index of function aux info
+		unsigned int addr;		// (line!=0) dstatement_t address
 	} fa;
-	unsigned long line;
+	unsigned int line;
 } pr_lineno_t;
 
 #define PROG_DEBUG_VERSION 0x00001001	// MMmmmRRR 0.001.001 (hex)
@@ -54,12 +54,12 @@ typedef struct pr_debug_header_s {
 	int				version;
 	unsigned short	crc;		// of the progs.dat this progs.sym file is for
 	unsigned short	you_tell_me_and_we_will_both_know;
-	unsigned long	auxfunctions;
-	unsigned long	num_auxfunctions;
-	unsigned long	linenos;
-	unsigned long	num_linenos;
-	unsigned long	locals;
-	unsigned long	num_locals;
+	unsigned int	auxfunctions;
+	unsigned int	num_auxfunctions;
+	unsigned int	linenos;
+	unsigned int	num_linenos;
+	unsigned int	locals;
+	unsigned int	num_locals;
 } pr_debug_header_t;
 
 #endif//__pr_debug_h

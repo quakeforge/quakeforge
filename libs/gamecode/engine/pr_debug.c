@@ -260,7 +260,7 @@ PR_Get_Lineno_Func (progs_t *pr, pr_lineno_t *lineno)
 	return &pr->auxfunctions[lineno->fa.func];
 }
 
-unsigned long
+unsigned int
 PR_Get_Lineno_Addr (progs_t *pr, pr_lineno_t *lineno)
 {
 	pr_auxfunction_t *f;
@@ -271,7 +271,7 @@ PR_Get_Lineno_Addr (progs_t *pr, pr_lineno_t *lineno)
 	return pr->pr_functions[f->function].first_statement;
 }
 
-unsigned long
+unsigned int
 PR_Get_Lineno_Line (progs_t *pr, pr_lineno_t *lineno)
 {
 	pr_auxfunction_t *f;
@@ -283,7 +283,7 @@ PR_Get_Lineno_Line (progs_t *pr, pr_lineno_t *lineno)
 }
 
 pr_lineno_t *
-PR_Find_Lineno (progs_t *pr, unsigned long addr)
+PR_Find_Lineno (progs_t *pr, unsigned int addr)
 {
 	int				i;
 	pr_lineno_t	   *lineno = 0;
@@ -311,11 +311,11 @@ PR_Get_Source_File (progs_t *pr, pr_lineno_t *lineno)
 }
 
 const char *
-PR_Get_Source_Line (progs_t *pr, unsigned long addr)
+PR_Get_Source_Line (progs_t *pr, unsigned int addr)
 {
 	char			   *str;
 	const char		   *fname;
-	unsigned long		line;
+	unsigned int		line;
 	file_t			   *file;
 	pr_auxfunction_t   *func;
 
@@ -332,13 +332,13 @@ PR_Get_Source_Line (progs_t *pr, unsigned long addr)
 	file = PR_Load_Source_File (pr, fname);
 
 	str = Hunk_TempAlloc (strlen (fname) + 12);
-	sprintf (str, "%s:%ld", fname, line);
+	sprintf (str, "%s:%d", fname, line);
 
 	if (!file || line > file->num_lines)
 		return str;
 
 	str = Hunk_TempAlloc (strlen (str) + file->lines[line - 1].len + 2);
-	sprintf (str, "%s:%ld:%.*s", fname, line,
+	sprintf (str, "%s:%d:%.*s", fname, line,
 			 (int)file->lines[line - 1].len, file->lines[line - 1].text);
 	return str;
 }
