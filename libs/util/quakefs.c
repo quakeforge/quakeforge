@@ -592,7 +592,7 @@ _COM_FOpenFile (const char *filename, VFile **gzfile, char *foundname, int zip)
 // make sure they're not trying to do wierd stuff with our private files
 	if (contains_updir(filename)) {
 		Con_Printf ("FindFile: %s: attempt to escape directory tree!\n", filename);
-		return -1;
+		goto error;
 	}
 
 //
@@ -648,7 +648,7 @@ _COM_FOpenFile (const char *filename, VFile **gzfile, char *foundname, int zip)
 	}
 
 	Con_DPrintf ("FindFile: can't find %s\n", filename);
-
+error:
 	*gzfile = NULL;
 	com_filesize = -1;
 	return -1;
