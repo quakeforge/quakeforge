@@ -60,11 +60,13 @@ typedef struct cmdalias_s {
 cmdalias_t *cmd_alias;
 cmd_source_t cmd_source;
 dstring_t *cmd_buffer;
+dstring_t *cmd_argbuf;
 qboolean cmd_wait = false;
 int cmd_argc;
 int cmd_maxargc = 0;
 dstring_t **cmd_argv = 0;
-const char **cmd_args = 0;
+int *cmd_args = 0;
+int *cmd_argspace = 0;
 
 
 cvar_t     *cmd_warncmd;
@@ -97,6 +99,7 @@ byte        cmd_text_buf[8192];
 void Cbuf_Init (void) {
 
 	cmd_buffer = dstring_newstr ();
+	cmd_argbuf = dstring_newstr ();
 }
 
 
@@ -319,7 +322,7 @@ Cmd_Alias_f (void)
 		alias->next = *a;
 		*a = alias;
 	}
-
+	printf("Aliasing %s to %s\n", Cmd_Argv(1), Cmd_Args(1));
 	// copy the rest of the command line
 	cmd = malloc (strlen (Cmd_Args (1)) + 2);// can never be longer
 	if (!cmd)
@@ -400,15 +403,17 @@ Cmd_Argv (int arg)
 const char       *
 Cmd_Args (int start)
 {
-	if (start >= cmd_argc || !cmd_args[start])
+	if (start >= cmd_argc)
 		return "";
-	return cmd_args[start];
+	return cmd_argbuf->str + cmd_args[start];
 }
 
 int Cmd_GetToken (const char *str) {
 	int i, squote, dquote;
 	
 	for (i = 0, squote = 0, dquote = 0; i <= strlen(str); i++) {
+		if (!strncmp(str+i, "//", 2) && !dquote && !squote) // When we hit a comment, just stop
+				return 0;
 		if (str[i] == 0) {
 				if (dquote) { // We never found another quote, backtrack
 					for (; str[i] != '"'; i--);
@@ -514,7 +519,7 @@ void Cmd_ProcessTags (dstring_t *dstr) {
 }
 	
 void Cmd_TokenizeString (const char *text) {
-	int i = 0, len = 0, quotes = 0;
+	int i = 0, n, len = 0, quotes = 0, space;
 	const char *str = text;
 	
 	cmd_argc = 0;
@@ -522,8 +527,11 @@ void Cmd_TokenizeString (const char *text) {
 	tag_gold = 0;
 	tag_special = 0;
 	while (strlen(str + i)) {
-		while (isspace(str[i]))
+		space = 0;
+		while (isspace(str[i])) {
 			i++;
+			space++;
+		}
 		len = Cmd_GetToken (str + i);
 		if (!len)
 			return;
@@ -532,15 +540,18 @@ void Cmd_TokenizeString (const char *text) {
 			cmd_argv = realloc(cmd_argv, sizeof(dstring_t *)*cmd_argc);
 			if (!cmd_argv)
 				Sys_Error ("Cmd_TokenizeString:  Failed to reallocate memory.\n");
-			cmd_args = realloc(cmd_args, sizeof(char *)*cmd_argc);
+			cmd_args = realloc(cmd_args, sizeof(int)*cmd_argc);
 			if (!cmd_args)
+				Sys_Error ("Cmd_TokenizeString:  Failed to reallocate memory.\n");
+			cmd_argspace = realloc(cmd_argspace, sizeof(int)*cmd_argc);
+			if (!cmd_argspace)
 				Sys_Error ("Cmd_TokenizeString:  Failed to reallocate memory.\n");
 			cmd_argv[cmd_argc-1] = dstring_newstr ();
 			cmd_maxargc++;
 		}
 		dstring_clearstr(cmd_argv[cmd_argc-1]);
 		/* Remove surrounding quotes or double quotes */
-		cmd_args[cmd_argc-1] = str+i;
+		cmd_argspace[cmd_argc-1] = space;
 		quotes = 0;
 		if ((str[i] == '\'' && str[i+len] == '\'') || (str[i] == '"' && str[i+len] == '"')) {
 			i++;
@@ -550,6 +561,14 @@ void Cmd_TokenizeString (const char *text) {
 		dstring_insert(cmd_argv[cmd_argc-1], str + i, len, 0);
 		Cmd_ProcessTags(cmd_argv[cmd_argc-1]);
 		i += len + quotes; /* If we ended on a quote, skip it */
+	}
+	/* Now we must reconstruct cmd_args */
+	dstring_clearstr (cmd_argbuf);
+	for (i = 0; i < cmd_argc; i++) {
+		for (n = 0; n < cmd_argspace[i]; n++)
+			dstring_appendstr (cmd_argbuf," ");
+		cmd_args[i] = strlen(cmd_argbuf->str);
+		dstring_appendstr (cmd_argbuf, cmd_argv[i]->str);
 	}
 }
 
