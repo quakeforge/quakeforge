@@ -176,13 +176,10 @@ swap_bsp (bsp_t *bsp, int todisk)
 }
 
 bsp_t *
-LoadBSPFile (QFile *file, int size)
+LoadBSPMem (void *mem, int size)
 {
-	dheader_t  *header;
+	dheader_t  *header = mem;
 	bsp_t      *bsp;
-
-	header = malloc (size);
-	Qread (file, header, size);
 
 	if (LittleLong (header->version) != BSPVERSION)
 		Sys_Error ("version %i, not %i", LittleLong (header->version),
@@ -232,9 +229,21 @@ do { \
 	SET_LUMP (LUMP_ENTITIES, entdata);
 	SET_LUMP (LUMP_TEXTURES, texdata);
 
-	free (header);
 
 	swap_bsp (bsp, 0);
+	return bsp;
+}
+
+bsp_t *
+LoadBSPFile (QFile *file, int size)
+{
+	void       *buf;
+	bsp_t      *bsp;
+
+	buf = malloc (size);
+	Qread (file, buf, size);
+	bsp = LoadBSPMem (buf, size);
+	free (buf);
 	return bsp;
 }
 

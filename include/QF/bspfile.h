@@ -279,6 +279,7 @@ typedef struct bsp_s {
 	int			*surfedges;
 } bsp_t;
 
+bsp_t *LoadBSPMem (void *mem, int size);
 bsp_t *LoadBSPFile (QFile *file, int size);
 void WriteBSPFile (bsp_t *bsp, QFile *file);
 bsp_t *BSP_New (void);
