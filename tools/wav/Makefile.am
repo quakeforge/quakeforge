@@ -1,0 +1,17 @@
+AUTOMAKE_OPTIONS= foreign
+
+WAV_LIBS=@WAV_LIBS@
+WAV_DEPS=@WAV_DEPS@
+WAV_INCS=@WAV_INCS@
+
+INCLUDES= -I$(top_srcdir)/include $(WAV_INCS)
+
+bin_PROGRAMS=	wav
+
+#man_MANS=	wav.1
+
+wav_SOURCES=	wav.c
+wav_LDADD=	$(WAV_LIBS)
+wav_DEPENDENCIES= $(WAV_DEPS)
+
+EXTRA_DIST=

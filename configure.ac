@@ -1870,6 +1870,13 @@ AC_SUBST(PAK_LIBS)
 AC_SUBST(PAK_DEPS)
 AC_SUBST(PAK_INCS)
 
+WAV_DEPS='$(top_builddir)/libs/util/libQFutil.la'
+WAV_LIBS="${WAV_DEPS} "'$(WIN32_LIBS)'
+WAV_INCS=""
+AC_SUBST(WAV_LIBS)
+AC_SUBST(WAV_DEPS)
+AC_SUBST(WAV_INCS)
+
 AC_DEFINE_UNQUOTED(PATH_SEPARATOR, '/', [Define this to your operating system's path separator character])
 AC_DEFINE_UNQUOTED(CPP_NAME, "$CPP_NAME", [Define this to the command line for the C preprocessor])
 
@@ -1921,13 +1928,13 @@ AC_OUTPUT(
 	libs/video/renderer/sw32/Makefile
 	libs/video/targets/Makefile
 
-	qw/Makefile
-	qw/include/Makefile
-	qw/source/Makefile
-	
 	nq/Makefile
 	nq/include/Makefile
 	nq/source/Makefile
+
+	qw/Makefile
+	qw/include/Makefile
+	qw/source/Makefile
 
 	tools/Makefile
 	tools/pak/Makefile
@@ -1941,6 +1948,7 @@ AC_OUTPUT(
 	tools/qfprogs/source/Makefile
 	tools/qwaq/Makefile
 	tools/qwaq/progs.src
+	tools/wav/Makefile
 
 	cs-code/Makefile
 
