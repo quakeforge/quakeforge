@@ -206,6 +206,12 @@ Cmd_FreeStack (cmd_buffer_t *stack) {
 	}
 }
 		
+void
+Cmd_Return (const char *value) {
+	dstring_clearstr (cmd_activebuffer->retval);
+	dstring_appendstr (cmd_activebuffer->retval, value);
+	cmd_activebuffer->returning = true;
+}
 
 /*void
 Cmd_FreeBuffer (cmd_buffer_t *del)
@@ -282,9 +288,10 @@ void
 Cmd_Wait_f (void)
 {
 	cmd_buffer_t *cur;
-	if (!cmd_activebuffer->imperative)
+	if (!cmd_activebuffer->imperative) {
 		for (cur = cmd_activebuffer; cur; cur = cur->prev)
 			cur->wait = true;
+	}
 }
 
 void
@@ -524,7 +531,8 @@ Cmd_ExecuteSubroutine (cmd_buffer_t *buffer)
 	// Inherit some flags from the current buffer
 	
 	buffer->imperative = cmd_activebuffer->imperative;
-	
+	if (cmd_activebuffer->next)
+		Cmd_FreeStack (cmd_activebuffer->next);
 	cmd_activebuffer->next = buffer;
 	buffer->prev = cmd_activebuffer;
 	Cbuf_ExecuteBuffer (buffer);
@@ -881,7 +889,7 @@ Cmd_EndBrace (const char *str)
 int
 Cmd_GetToken (const char *str, qboolean legacy)
 {
-	int         i;
+	int         i, ret;
 
 	if (!legacy) {
 		if (*str == '\'')
@@ -893,9 +901,35 @@ Cmd_GetToken (const char *str, qboolean legacy)
 	}
 	if (*str == '\"')
 		return Cmd_EndDoubleQuote (str);
-	for (i = 0; i < strlen (str); i++)
+	for (i = 0; i < strlen (str); i++) {
 		if (isspace ((byte)str[i]))
 			break;
+		if (!legacy) {
+			if (str[i] == '\'') {
+				ret = Cmd_EndSingleQuote (str+i);
+				if (ret < 0)
+					return ret;
+				i += ret;
+				continue;
+			}
+			if (str[i] == '{') {
+				ret = Cmd_EndBrace (str+i);
+				if (ret < 0)
+					return ret;
+				i += ret;
+				continue;
+			}
+			if (str[i] == '}')
+				return -1;
+		}
+		if (str[i] == '\"') {
+			ret = Cmd_EndDoubleQuote (str+i);
+			if (ret < 0)
+				return ret;	
+			i += ret;
+			continue;
+		}
+	}
 	return i;
 }
 
@@ -1086,7 +1120,7 @@ Cmd_ProcessEmbedded (dstring_t * dstr)
 {
 	int		i, n, braces = 0, ret = 0;
 	cmd_buffer_t *temp;
-	dstring_t *command;
+	dstring_t *command, *retval;
 	
 	command = dstring_newstr ();
 	for (i = 0; i < strlen(dstr->str); i++) {
@@ -1113,18 +1147,22 @@ Cmd_ProcessEmbedded (dstring_t * dstr)
 			temp->locals = cmd_activebuffer->locals;
 			Cbuf_InsertTextTo (temp, command->str);
 			Cbuf_ExecuteBuffer (temp);
+			retval = 0;
 			if (!cmd_error) {
 				dstring_snip(dstr, i, n +1);
-				if (temp->next && temp->next->returning) {
-					dstring_insertstr (dstr, temp->next->retval->str, i);
-					i += strlen(temp->next->retval->str) - 1;
-				}
+				if (temp->returning) // Top buffer returned a value (likely a builtin function)
+					retval = temp->retval;
+				else if (temp->next && temp->next->returning) // Next buffer returned a value (an alias or config file)
+					retval = temp->next->retval;
 				else {
 					Cmd_Error ("GIB:  Embedded command expression resulted in no return value.\n");
 					ret = -1;
 					Cmd_FreeStack (temp);
 					break;
 				}
+				dstring_insertstr (dstr, retval->str, i);
+				i += strlen(retval->str) - 1;
+
 			}
 			Cmd_FreeStack (temp);
 		}
@@ -1847,6 +1885,16 @@ Cmd_Backtrace_f (void)
 	Sys_Printf ("%s", cmd_backtrace->str);
 }
 
+/* Useful builtin functions */
+
+void
+Cmd_Randint_f (void) {
+	int low, high;
+	low = atoi(Cmd_Argv(1));
+	high = atoi(Cmd_Argv(2));
+	Cmd_Return (va("%i", (int)(low+(float)rand()/(float)RAND_MAX*(float)(high-low+1))));
+}
+
 void
 Cmd_Hash_Stats_f (void)
 {
@@ -1925,6 +1973,9 @@ Cmd_Init (void)
 	Cmd_AddCommand ("return", Cmd_Return_f, "Return a value to calling buffer.");
 	Cmd_AddCommand ("lset", Cmd_Lset_f, "Sets the value of a local variable (not cvar).");
 	Cmd_AddCommand ("backtrace", Cmd_Backtrace_f, "Show a description of the last GIB error and a backtrace.");
+
+	Cmd_AddCommand ("randint", Cmd_Randint_f, "Returns a random integer between $1 and $2");
+
 	//Cmd_AddCommand ("cmd_hash_stats", Cmd_Hash_Stats_f, "Display statistics "
 	//				"alias and command hash tables");
 	cmd_warncmd = Cvar_Get ("cmd_warncmd", "0", CVAR_NONE, NULL, "Toggles the "

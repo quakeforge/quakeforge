@@ -185,6 +185,9 @@ void Cmd_Exec_File (const char *path);
 extern char	*com_token;
 const char *COM_Parse (const char *data);
 
+// Returns a value to GIB so that it can be picked up for embedded commands
+void	Cmd_Return (const char *value);
+
 extern struct cvar_s *cmd_warncmd;
 
 extern cmd_buffer_t *cmd_legacybuffer; // Allow access to the legacy buffer as an alternate console buffer
