@@ -341,30 +341,34 @@ class_finish (class_type_t *class_type)
 int
 class_access (class_type_t *current_class, class_t *class)
 {
-	if (!current_class)
-		return 1;
-	if (current_class->is_class)
-		return current_class->c.class != class;
-	return current_class->c.category->class != class;
+	class_t    *cur;
+	if (current_class) {
+		if (current_class->is_class)
+			cur = current_class->c.class;
+		else
+			cur = current_class->c.category->class;
+		if (cur == class)
+			return vis_private;
+		cur = cur->super_class;
+		while (cur) {
+			if (cur == class)
+				return vis_protected;
+			cur = cur->super_class;
+		}
+	}
+	return vis_public;
 }
 
 struct_field_t *
-class_find_ivar (class_t *class, int protected, const char *name)
+class_find_ivar (class_t *class, int vis, const char *name)
 {
 	struct_field_t *ivar;
 	class_t    *c;
 
-	ivar = struct_find_field (class->ivars, name);
-	if (ivar) {
-		if (protected && ivar->visibility != vis_public)
-			goto access_error;
-		return ivar;
-	}
-	for (c = class->super_class; c; c = c->super_class) {
+	for (c = class; c; c = c->super_class) {
 		ivar = struct_find_field (c->ivars, name);
 		if (ivar) {
-			if (ivar->visibility == vis_private
-					|| (protected && ivar->visibility == vis_protected))
+			if (ivar->visibility < (visibility_type) vis)
 				goto access_error;
 			return ivar;
 		}
