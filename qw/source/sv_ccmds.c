@@ -68,7 +68,7 @@ match_char (char a, char b)
 	b = tolower (sys_char_map[(byte)b]);
 
 	if (a == b || (sv_leetnickmatch->int_val
-			&& ((a == '1' && b == 'i') || (a == 'i' && b == '1')
+		&& (   (a == '1' && b == 'i') || (a == 'i' && b == '1')
 			|| (a == '1' && b == 'l') || (a == 'l' && b == '1')
 			|| (a == '3' && b == 'e') || (a == 'e' && b == '3')
 			|| (a == '4' && b == 'a') || (a == 'a' && b == '4')
