@@ -62,76 +62,89 @@ typedef enum {
 @extern BOOL (id object) object_is_instance;
 @extern BOOL (id object) object_is_meta_class;
 
-@interface Object
+@protocol Object // FIXME -- qfcc doesn't like calling this protocol "Object"!
+- (Class) class;
+- (Class) superclass;
+- (BOOL) isEqual: (id)anObject;
+- (BOOL) isKindOfClass: (Class)aClass;
+- (BOOL) isMemberOfClass: (Class)aClass;
+#if 0
+- (BOOL) isProxy;
+#endif	// proxies
+- (unsigned) hash;
+- (id) self;
+- (string) description;
+
+- (id) performSelector: (SEL)aSelector;
+- (id) performSelector: (SEL)aSelector
+			withObject: (id)anObject;
+- (id) performSelector: (SEL)aSelector
+			withObject: (id)anObject
+			withObject: (id)anotherObject;
+- (BOOL) respondsToSelector: (SEL)aSelector;
+- (BOOL) conformsToProtocol: (Protocol)aProtocol;
+
+- (id) retain;
+#if 0
+- (id) autorelease;
+#endif	// autorelease pools
+- (/*oneway*/ void) release;
+- (/*unsigned*/integer) retainCount;
+@end
+
+@protocol Copying
+- copy;
+@end
+
+@protocol MutableCopying
+- mutableCopy;
+@end
+
+@interface Object <Object>
 {
-	Class	isa;
+	Class		isa;
+	integer	retainCount;
 }
 
-+initialize;
--init;
++ (id) alloc;
++ (id) new;
++ (Class) class;
++ (string) description;
++ (void) initialize;
++ (IMP) instanceMethodForSelector: (SEL)aSelector;
+#if 0
++ (MethodSignature) instanceMethodSignatureForSelector: (SEL)aSelector;
+#endif	// invocations
++ (BOOL) instancesRespondToSelector: (SEL)aSelector;
++ (BOOL) respondsToSelector: (SEL)aSelector;
++ (BOOL) conformsToProtocol: (Protocol)aProtocol;
++ (BOOL) isKindOfClass: (Class)aClass;
++ (void) poseAsClass: (Class)aClass;
++ (Class) superclass;
 
-+new;
-+alloc;
--free;
--copy;
--shallowCopy;
--deepen;
--deepCopy;
+- (id) init;
+- (void) dealloc;
+- (void) doesNotRecognizeSelector: (SEL)aSelector;
+#if 0
+- (void) forwardInvocation: (Invocation)anInvocation;
+#endif	// invocations
+#if 0
+- (BOOL) isProxy;
+#endif	// proxies
+- (IMP) methodForSelector: (SEL)aSelector;
+#if 0
+- (MethodSignature) methodSignatureForSelector: (SEL)aSelector;
+#endif	// invocations
 
--(Class)class;
--(Class)superClass;
--(Class)metaClass;
--(string)name;
+- (id) copy;
+- (id) mutableCopy;
 
--self;
--(integer)hash;
--(BOOL)isEqual:anObject;
--(integer)compare:anotherObject;
+@end
 
--(BOOL)isMetaClass;
--(BOOL)isClass;
--(BOOL)isInstance;
+@interface Object (error)
 
--(BOOL)isKindOf:(Class)aClassObject;
--(BOOL)isMemberOf:(Class)aClassObject;
--(BOOL)isKindOfClassNamed:(string)aClassName;
--(BOOL)isMemberOfClassNamed:(string)aClassName;
+- (void) error: (string)formatString, ...;
 
-+(BOOL)instancesRespondTo:(SEL)aSel;
--(BOOL)respondsTo:(SEL)aSel;
-
-+(BOOL)conformsTo:(Protocol)aProtocol;
--(BOOL)conformsTo:(Protocol)aProtocol;
-
-+(IMP)instanceMethodFor:(SEL)aSel;
--(IMP)methodFor:(SEL)aSel;
-//+(struct objc_method_description *)descriptionForInstanceMethod:(SEL)aSel;
-//-(struct objc_method_description *)descriptionForMethod:(SEL)aSel;
-
--perform:(SEL)aSel;
--perform:(SEL)aSel with:anObject;
--perform:(SEL)aSel with:anObject1 with:anObject2;
-
-//-(retval_t)forward:(SEL)aSel :(arglist_t)argFrame;
-//-(retval_t)performv:(SEL)aSel :(arglist_t)argFrame;
-
-+poseAs:(Class)aClassObject;
--(Class)transmuteClassTo:(Class)aClassObject;
-
--subclassResponsibility:(SEL)aSel;
--notImplemented:(SEL)aSel;
--shouldNotImplement:(SEL)aSel;
-
--doesNotRecognize:(SEL)aSel;
--error:(string)aString, ...;
-
-//+(integer)version;
-//+setVersion:(integer)aVersion;
-//+(integer)streamVersion: (TypedStream*)aStream;
-
-//-read: (TypedStream*)aStream;
-//-write: (TypedStream*)aStream;
-//-awake;
 @end
 
 #endif //__ruamoko_Object_h

@@ -31,6 +31,11 @@ integer	deathmatch;
 		ent = [[GameEntity alloc] init];
 		self.bodies[i] = ent.ent;
 	}
+#if 0
+	for (i = 0; i < MAX_BODIES; i++) {
+		self.bodies[i] = [[[GameEntity alloc] init] ent];
+	}
+#endif
 }
 
 - (void) addEntity: (GameEntity)ent

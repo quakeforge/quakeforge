@@ -1,4 +1,5 @@
 #include "Object.h"
+#include "AutoreleasePool.h"
 
 void (obj_module_t [] msg) __obj_exec_class = #0;
 void (id object, integer code, string fmt, ...) obj_error = #0;
@@ -59,251 +60,258 @@ BOOL (id object) object_is_class = #0;
 BOOL (id object) object_is_instance = #0;
 BOOL (id object) object_is_meta_class = #0;
 
+@implementation Object (error)
+
+- (void) error: (string)aString, ... = #0;
+
+@end
+
 @implementation Object
-+initialize
+
++ (void) initialize
 {
-	return self;
+#if 0
+	allocDebug = localinfo ("AllocDebug");
+	autoreleaseClass = [AutoreleasePool class];
+	autoreleaseSelector = @selector(addObject:);
+	autoreleaseIMP = [autoreleaseClass methodForSelector: autoreleaseSelector];
+#endif
+	return;
 }
 
--init
-{
-	return self;
-}
-
-+new
-{
-	return [[self alloc] init];
-}
-
-+alloc
++ (id) alloc
 {
 	return class_create_instance (self);
 }
 
--free
-{
-	return object_dispose (self);
-}
-
--copy
-{
-	return [[self shallowCopy] deepen];
-}
-
--shallowCopy
-{
-	return object_copy (self);
-}
-
--deepen
++ (Class) class
 {
 	return self;
 }
 
--deepCopy
++ (Class) superclass
 {
-	return [self copy];
+	return class_get_super_class (self);
 }
 
--(Class)class
++ (string) description
+{
+	return class_get_class_name (self);
+}
+
++ (id) new
+{
+	return [[self alloc] init];
+}
+
++ (BOOL) isKindOfClass: (Class)aClass
+{
+	if (aClass == [Object class])
+		return YES;
+	return NO;
+}
+
++ (BOOL) conformsToProtocol: (Protocol)aProtocol = #0;
+
++ (BOOL) instancesRespondToSelector: (SEL)aSelector
+{
+	return class_get_instance_method (self, aSelector) != NIL;
+}
+
++ (BOOL) respondsToSelector: (SEL)aSelector
+{
+	return (class_get_class_method (self, aSelector) != NIL);
+}
+
+/*
+	Returns a pointer to the function providing the instance method that is
+	used to	respond to messages with the selector held in aSelector.
+*/
++ (IMP) instanceMethodForSelector: (SEL)aSelector
+{
+	if (!aSelector)
+		return NIL;
+
+	return method_get_imp (class_get_instance_method (self, aSelector));
+}
+
++ (void) poseAsClass: (Class)aClass
+{
+	class_pose_as (self, aClass);
+}
+
+/*
+	INSTANCE METHODS
+*/
+
+- (id) init
+{
+	retainCount = 1;
+
+	return self;
+}
+
+- (void) dealloc
+{
+	object_dispose (self);
+}
+
+- (Class) class
 {
 	return object_get_class (self);
 }
 
--(Class)superClass
+- (Class) superclass
 {
 	return object_get_super_class (self);
 }
 
--(Class)metaClass
-{
-	return object_get_meta_class (self);
-}
-
--(string)name
+- (string) description
 {
 	return object_get_class_name (self);
 }
 
--self
+- (id) self
 {
 	return self;
 }
 
--(integer)hash = #0;	// can't cast pointer to integer
+- (unsigned) hash = #0;	// can't cast pointer to integer
 
--(BOOL)isEqual:anObject
+- (BOOL) isEqual: (id)anObject
 {
 	return self == anObject;
 }
 
--(integer)compare:anotherObject = #0;	// can only == or != pointers
-
--(BOOL)isMetaClass
+- (BOOL) isKindOfClass: (Class)aClass
 {
-	return NO;
-}
+	local Class	class;
 
--(BOOL)isClass
-{
-	return object_is_class (self);
-}
-
--(BOOL)isInstance
-{
-	return object_is_instance (self);
-}
-
--(BOOL)isKindOf:(Class)aClassObject
-{
-	local Class class;
-
-	for (class = self.isa; class; class = class_get_super_class (class))
-		if (class == aClassObject)
+	for (class = [self class]; class; class = class_get_super_class (class))
+		if (class == aClass)
 			return YES;
 	return NO;
 }
 
--(BOOL)isMemberOf:(Class)aClassObject
+- (BOOL) isMemberOfClass: (Class)aClass
 {
-	return self.isa == aClassObject;
+	return ([self class] == aClass);
 }
 
--(BOOL)isKindOfClassNamed:(string)aClassName
+- (BOOL) respondsToSelector: (SEL)aSelector
 {
-	local Class class;
-	if (aClassName)
-		for (class = self.isa; class; class = class_get_super_class (class))
-			if (class_get_class_name (class) == aClassName)
-				return YES;
-	return NO;
+	return (class_get_instance_method ([self class], aSelector) != NIL);
 }
 
--(BOOL)isMemberOfClassNamed:(string)aClassName
+- (BOOL) conformsToProtocol: (Protocol)aProtocol
 {
-	local Class class;
-	if (aClassName)
-		for (class = self.isa; class; class = class_get_super_class (class))
-			if (class_get_class_name (class) == aClassName)
-				return YES;
-	return aClassName && class_get_class_name (self.isa) == aClassName;
+	return [[self class] conformsToProtocol: aProtocol];
 }
 
-+(BOOL)instancesRespondTo:(SEL)aSel
+/*
+	Returns a pointer to the function providing the method used to respond to
+	aSelector. If "self" is an instance, an instance method is returned. If
+	it's a class, a class method is returned.
+*/
+- (IMP) methodForSelector: (SEL)aSelector
 {
-	return class_get_instance_method (self, aSel) != NIL;
-}
+	local Class	myClass = [self class];
 
--(BOOL)respondsTo:(SEL)aSel
-{
-	return (object_is_instance (self)
-			? class_get_instance_method (self.isa, aSel)
-			: class_get_class_method (self.isa, aSel)) != NIL;
-}
+	if (!aSelector)
+		return NIL;
 
-+(BOOL)conformsTo:(Protocol)aProtocol = #0;
--(BOOL)conformsTo:(Protocol)aProtocol
-{
-	return [[self class] conformsTo:aProtocol];
-}
-
-+(IMP)instanceMethodFor:(SEL)aSel
-{
-	return method_get_imp (class_get_instance_method (self, aSel));
-}
-
--(IMP)methodFor:(SEL)aSel
-{
 	return method_get_imp (object_is_instance (self)
-						   ? class_get_instance_method (self.isa, aSel)
-						   : class_get_class_method (self.isa, aSel));
+						   ? class_get_instance_method (myClass, aSelector)
+						   : class_get_class_method (myClass, aSelector));
 }
 
 //+(struct objc_method_description *)descriptionForInstanceMethod:(SEL)aSel = #0;
 //-(struct objc_method_description *)descriptionForMethod:(SEL)aSel = #0;
 
--perform:(SEL)aSel
+- (id) performSelector: (SEL)aSelector
 {
-	local IMP msg = obj_msg_lookup (self, aSel);
+	local IMP msg;
 
-	if (!msg)
-		return [self error:"invalid selector passed to %s",
-				sel_get_name (_cmd)];
-	return msg (self, aSel);
+	if (!aSelector || !(msg = obj_msg_lookup (self, aSelector)))
+		return [self error: "invalid selector passed to %s",
+					sel_get_name (_cmd)];
+
+	return msg (self, aSelector);
 }
 
--perform:(SEL)aSel with:anObject
+- (id) performSelector: (SEL)aSelector withObject: (id)anObject
 {
-	local IMP msg = obj_msg_lookup (self, aSel);
+	local IMP msg;
 
-	if (!msg)
-		return [self error:"invalid selector passed to %s",
-				sel_get_name (_cmd)];
-	return msg (self, aSel, anObject);
+	if (!aSelector || !(msg = obj_msg_lookup (self, aSelector)))
+		return [self error: "invalid selector passed to %s",
+					sel_get_name (_cmd)];
+
+	return msg (self, aSelector, anObject);
 }
 
--perform:(SEL)aSel with:anObject1 with:anObject2
+- (id) performSelector: (SEL)aSelector
+			withObject: (id)anObject
+			withObject: (id)anotherObject
 {
-	local IMP msg = obj_msg_lookup (self, aSel);
+	local IMP msg;
 
-	if (!msg)
-		return [self error:"invalid selector passed to %s",
-				sel_get_name (_cmd)];
-	return msg (self, aSel, anObject1, anObject2);
+	if (!aSelector || !(msg = obj_msg_lookup (self, aSelector)))
+		return [self error: "invalid selector passed to %s",
+					sel_get_name (_cmd)];
+
+	return msg (self, aSelector, anObject, anotherObject);
 }
 
-//-(retval_t)forward:(SEL)aSel :(arglist_t)argFrame = #0;
-//-(retval_t)performv:(SEL)aSel :(arglist_t)argFrame = #0;
-
-+poseAs:(Class)aClassObject
+- (void) doesNotRecognizeSelector: (SEL)aSelector
 {
-	return class_pose_as (self, aClassObject);
+	[self error: "%s does not recognize %s",
+		object_get_class_name (self),
+		sel_get_name (aSelector)];
 }
 
--(Class)transmuteClassTo:(Class)aClassObject
+/*
+	MEMORY MANAGEMENT
+
+	These methods handle the manual garbage collection scheme.
+*/
+- (id) retain
 {
-	if (object_is_instance (self))
-		if (class_is_class (aClassObject))
-			if (class_get_instance_size (aClassObject) == class_get_instance_size (isa))
-				if ([self isKindOf:aClassObject]) {
-					local Class old_isa = isa;
-					isa = aClassObject;
-					return old_isa;
-				}
-	return NIL;
+	retainCount = [self retainCount] + 1;
+	return self;
 }
 
--subclassResponsibility:(SEL)aSel
+- (/*oneway*/ void) release
 {
-	return [self error:"subclass should override %s",
-			sel_get_name(aSel)];
+	if ([self retainCount] == 1)	// don't let retain count actually reach zero
+		[self dealloc];
+	else
+		retainCount--;
 }
 
--notImplemented:(SEL)aSel
+- (id) autorelease
 {
-	return [self error:"methos %s not implemented",
-			sel_get_name(aSel)];
+	
 }
 
--shouldNotImplement:(SEL)aSel
+- (integer) retainCount
 {
-	return [self error:"%s should not implement %s",
-				object_get_class_name (self), sel_get_name(aSel)];
+	return retainCount;
+}
+/*
+	CONVENIENCE METHODS
+
+	These methods exist only so that certain methods always work.
+*/
+
+- (id) copy
+{
+	return self;
 }
 
--doesNotRecognize:(SEL)aSel
+- (id) mutableCopy
 {
-	return [self error:"%s does not recognize %s",
-				object_get_class_name (self), sel_get_name(aSel)];
+	return self;
 }
 
--error:(string)aString, ... = #0;
-
-//+(integer)version = #0;
-//+setVersion:(integer)aVersion = #0;
-//+(integer)streamVersion: (TypedStream*)aStream = #0;
-
-//-read: (TypedStream*)aStream = #0;
-//-write: (TypedStream*)aStream = #0;
-//-awake = #0;
 @end

@@ -22,4 +22,4 @@ typedef _hashtab_t [] hashtab_t;
 @extern (void [][]) () Hash_GetList;
 @extern void () Hash_Stats;
 
-#endif __ruamoko_hash_h
+#endif	// __ruamoko_hash_h

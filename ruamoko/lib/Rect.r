@@ -20,8 +20,8 @@
 	if (!self || !anOrigin || !aSize)
 		return NIL;
 
-	origin = [anOrigin copy];
-	size = [aSize copy];
+	origin = [anOrigin retain];
+	size = [aSize retain];
 
 	return self;
 }
@@ -64,9 +64,9 @@
 		return;
 
 	if (origin)
-		[origin free];
+		[origin release];
 
-	origin = [aPoint copy];
+	origin = [aPoint retain];
 }
 
 - (void) setSize: (Size)aSize
@@ -75,9 +75,9 @@
 		return;
 
 	if (size)
-		[size free];
+		[size release];
 
-	size = [aSize copy];
+	size = [aSize retain];
 }
 
 - (void) setRect: (Rect)aRect
