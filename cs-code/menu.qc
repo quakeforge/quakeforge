@@ -470,7 +470,16 @@ void () main_menu =
 	Menu_Cursor (spinner);
 	if (do_single_player)
 		single_player_menu ();
-	multi_player_menu ();
+	switch (gametype ()) {
+	case "netquake":
+		multi_player_menu ();
+		break;
+	case "quakeworld":
+		server_list_menu ();
+		break;
+	default:
+		break;
+	}
 	options_menu ();
 	help_menu ();
 	Menu_Item (54, 112, "", quit_f, 0);
