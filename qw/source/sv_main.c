@@ -364,7 +364,9 @@ SV_DropClient (client_t *drop)
 		Qclose (drop->upload);
 		drop->upload = NULL;
 	}
-	*drop->uploadfn = 0;
+	if (drop->uploadfn)
+		dstring_delete (drop->uploadfn);
+	drop->uploadfn = 0;
 
 	drop->state = cs_zombie;			// become free in a few seconds
 	drop->connection_started = realtime;	// for zombie timeout
@@ -1523,12 +1525,11 @@ SV_WriteIP_f (void)
 	QFile      *f;
 	const char *type;
 
-	snprintf (name, sizeof (name), "%s/%s/listip.cfg", fs_userpath->string,
-			  qfs_gamedir->dir.def);
+	snprintf (name, sizeof (name), "%s/listip.cfg", qfs_gamedir->dir.def);
 
 	SV_Printf ("Writing IP Filters to %s.\n", name);
 
-	f = Qopen (name, "wb");
+	f = QFS_Open (name, "wb");
 	if (!f) {
 		SV_Printf ("Couldn't open %s\n", name);
 		return;

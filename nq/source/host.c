@@ -729,7 +729,7 @@ Host_InitVCR (quakeparms_t *parms)
 		if (com_argc != 2)
 			Sys_Error ("No other parameters allowed with -playback");
 
-		vcrFile = Qopen ("quake.vcr", "rbz");
+		vcrFile = QFS_Open ("quake.vcr", "rbz");
 		if (!vcrFile)
 			Sys_Error ("playback file not found");
 
@@ -757,7 +757,7 @@ Host_InitVCR (quakeparms_t *parms)
 	}
 
 	if ((n = COM_CheckParm ("-record")) != 0) {
-		vcrFile = Qopen ("quake.vcr", "wb");
+		vcrFile = QFS_Open ("quake.vcr", "wb");
 
 		i = VCR_SIGNATURE;
 		Qwrite (vcrFile, &i, sizeof (int));

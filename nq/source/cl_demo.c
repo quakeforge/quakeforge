@@ -1,4 +1,3 @@
-
 /*
 	cl_demo.c
 
@@ -253,7 +252,8 @@ CL_Record_f (void)
 	} else
 		track = -1;
 
-	snprintf (name, sizeof (name), "%s/%s", qfs_gamedir->dir.def, Cmd_Argv (1));
+	snprintf (name, sizeof (name), "%s/%s",
+			  qfs_gamedir->dir.def, Cmd_Argv (1));
 
 // start the map up
 //

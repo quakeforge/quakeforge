@@ -592,7 +592,7 @@ SV_NextUpload (void)
 {
 	int		percent, size;
 
-	if (!*host_client->uploadfn) {
+	if (!host_client->uploadfn) {
 		SV_ClientPrintf (1, host_client, PRINT_HIGH, "Upload denied\n");
 		ClientReliableWrite_Begin (host_client, svc_stufftext, 8);
 		ClientReliableWrite_String (host_client, "stopul");
@@ -608,20 +608,21 @@ SV_NextUpload (void)
 	percent = MSG_ReadByte (net_message);
 
 	if (!host_client->upload) {
-		host_client->upload = Qopen (host_client->uploadfn, "wb");
+		host_client->upload = QFS_Open (host_client->uploadfn->str, "wb");
 		if (!host_client->upload) {
-			SV_Printf ("Can't create %s\n", host_client->uploadfn);
+			SV_Printf ("Can't create %s\n", host_client->uploadfn->str);
 			ClientReliableWrite_Begin (host_client, svc_stufftext, 8);
 			ClientReliableWrite_String (host_client, "stopul");
-			*host_client->uploadfn = 0;
+			dstring_delete (host_client->uploadfn);
+			host_client->uploadfn = 0;
 			return;
 		}
-		SV_Printf ("Receiving %s from %d...\n", host_client->uploadfn,
+		SV_Printf ("Receiving %s from %d...\n", host_client->uploadfn->str,
 					host_client->userid);
 		if (host_client->remote_snap)
 			OutofBandPrintf (host_client->snap_from,
 							 "Server receiving %s from %d...\n",
-							 host_client->uploadfn, host_client->userid);
+							 host_client->uploadfn->str, host_client->userid);
 	}
 
 	Qwrite (host_client->upload, net_message->message->data +
@@ -637,19 +638,21 @@ SV_NextUpload (void)
 		Qclose (host_client->upload);
 		host_client->upload = NULL;
 
-		SV_Printf ("%s upload completed.\n", host_client->uploadfn);
+		SV_Printf ("%s upload completed.\n", host_client->uploadfn->str);
 
 		if (host_client->remote_snap) {
 			char	*p;
 
-			if ((p = strchr (host_client->uploadfn, '/')) != NULL)
+			if ((p = strchr (host_client->uploadfn->str, '/')) != NULL)
 				p++;
 			else
-				p = host_client->uploadfn;
+				p = host_client->uploadfn->str;
 			OutofBandPrintf (host_client->snap_from, "%s upload completed.\n"
 							 "To download, enter:\ndownload %s\n",
-							 host_client->uploadfn, p);
+							 host_client->uploadfn->str, p);
 		}
+		dstring_delete (host_client->uploadfn);
+		host_client->uploadfn = 0;
 	}
 
 }
@@ -1149,8 +1152,9 @@ SV_ShowServerinfo_f (void *unused)
 static void
 SV_NoSnap_f (void *unused)
 {
-	if (*host_client->uploadfn) {
-		*host_client->uploadfn = 0;
+	if (host_client->uploadfn) {
+		dstring_delete (host_client->uploadfn);
+		host_client->uploadfn = 0;
 		SV_BroadcastPrintf (PRINT_HIGH, "%s refused remote screenshot\n",
 							host_client->name);
 	}

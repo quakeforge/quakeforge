@@ -203,9 +203,9 @@ locs_save (const char *filename, qboolean gz)
 			snprintf (locfile, sizeof (locfile), "%s.gz", filename);
 		else
 			strcpy (locfile, filename);
-		locfd = Qopen (locfile, "z9w+");
+		locfd = QFS_Open (locfile, "z9w+");
 	} else
-		locfd = Qopen (filename, "w+");
+		locfd = QFS_Open (filename, "w+");
 	if (locfd == 0) {
 		Con_Printf ("ERROR: Unable to open %s\n", filename);
 		return;

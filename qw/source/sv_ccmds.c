@@ -44,6 +44,7 @@ static __attribute__ ((unused)) const char rcsid[] =
 #include "QF/cmd.h"
 #include "QF/console.h"
 #include "QF/cvar.h"
+#include "QF/dstring.h"
 #include "QF/msg.h"
 #include "QF/qargs.h"
 #include "QF/qendian.h"
@@ -199,7 +200,7 @@ SV_Quit_f (void)
 static void
 SV_Fraglogfile_f (void)
 {
-	char        name[MAX_OSPATH];
+	dstring_t  *name;
 
 	if (sv_fraglogfile) {
 		SV_Printf ("Frag file logging off.\n");
@@ -207,13 +208,16 @@ SV_Fraglogfile_f (void)
 		sv_fraglogfile = NULL;
 		return;
 	}
-	if (!QFS_NextFilename (name, "frag_", ".log")) {
+	name = dstring_new ();
+	if (!QFS_NextFilename (name,
+						   va ("%s/frag_", qfs_gamedir->dir.def), ".log")) {
 		SV_Printf ("Can't open any logfiles.\n");
 		sv_fraglogfile = NULL;
-		return;
+	} else {
+		SV_Printf ("Logging frags to %s.\n", name->str);
+		sv_fraglogfile = QFS_WOpen (name->str, 0);
 	}
-
-	SV_Printf ("Logging frags to %s.\n", name);
+	dstring_delete (name);
 }
 
 /*
@@ -1053,8 +1057,6 @@ SV_Floodprotmsg_f (void)
 static void
 SV_Snap (int uid)
 {
-	char        pcxname[80];
-	char        checkname[MAX_OSPATH];
 	client_t   *cl;
 	int         i;
 
@@ -1069,25 +1071,17 @@ SV_Snap (int uid)
 		return;
 	}
 
-	snprintf (pcxname, sizeof (pcxname), "%d-00.pcx", uid);
+	if (!cl->uploadfn)
+		cl->uploadfn = dstring_new ();
 
-	snprintf (checkname, sizeof (checkname), "%s/%s/snap", fs_userpath->string,
-			  qfs_gamedir->dir.def);
-	QFS_CreatePath (va ("%s/dummy", checkname));
-
-	for (i = 0; i <= 99; i++) {
-		pcxname[strlen (pcxname) - 6] = i / 10 + '0';
-		pcxname[strlen (pcxname) - 5] = i % 10 + '0';
-		snprintf (checkname, sizeof (checkname), "%s/%s/snap/%s",
-				  fs_userpath->string, qfs_gamedir->dir.def, pcxname);
-		if (Sys_FileTime (checkname) == -1)
-			break;						// file doesn't exist
-	}
-	if (i == 100) {
+	if (!QFS_NextFilename (cl->uploadfn,
+						   va ("%s/snap/%d-", qfs_gamedir->dir.def, uid),
+						   ".pcx")) {
 		SV_Printf ("Snap: Couldn't create a file, clean some out.\n");
+		dstring_delete (cl->uploadfn);
+		cl->uploadfn = 0;
 		return;
 	}
-	strcpy (cl->uploadfn, checkname);
 
 	memcpy (&cl->snap_from, &net_from, sizeof (net_from));
 	if (sv_redirected != RD_NONE)

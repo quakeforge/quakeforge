@@ -244,7 +244,7 @@ sv_logfile_f (cvar_t *var)
 		} else {
 			flags = nva ("a");
 		}
-		log_file = Qopen (va ("%s/%s", fs_userpath->string, fname), flags);
+		log_file = QFS_Open (fname, flags);
 		free (flags);
 		free (fname);
 	}

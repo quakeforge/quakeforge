@@ -42,11 +42,6 @@ static __attribute__ ((unused)) const char rcsid[] =
 #ifdef HAVE_STRINGS_H
 # include <strings.h>
 #endif
-#ifdef HAVE_IO_H
-# include <io.h>
-#else
-# include <pwd.h>
-#endif
 #ifdef HAVE_UNISTD_H
 # include <unistd.h>
 #endif
@@ -85,58 +80,16 @@ struct QFile_s {
 };
 
 
-void
-Qexpand_squiggle (const char *path, char *dest)
-{
-	char       *home;
-
-#ifndef _WIN32
-	struct passwd *pwd_ent;
-#endif
-
-	if (strncmp (path, "~/", 2) != 0) {
-		strcpy (dest, path);
-		return;
-	}
-
-#ifdef _WIN32
-	// LordHavoc: first check HOME to duplicate previous version behavior
-	// (also handy if someone wants it elsewhere than their windows directory)
-	home = getenv ("HOME");
-	if (!home || !home[0])
-		home = getenv ("WINDIR");
-#else
-	if ((pwd_ent = getpwuid (getuid ()))) {
-		home = pwd_ent->pw_dir;
-	} else
-		home = getenv ("HOME");
-#endif
-
-	if (home) {
-		strcpy (dest, home);
-		strncat (dest, path + 1, MAX_OSPATH - strlen (dest));
-		// skip leading ~
-	} else
-		strcpy (dest, path);
-}
-
 int
 Qrename (const char *old, const char *new)
 {
-	char        e_old[PATH_MAX];
-	char        e_new[PATH_MAX];
-
-	Qexpand_squiggle (old, e_old);
-	Qexpand_squiggle (new, e_new);
-	return rename (e_old, e_new);
+	return rename (old, new);
 }
 
 int
 Qremove (const char *path)
 {
-	char e_path[PATH_MAX];
-	Qexpand_squiggle (path, e_path);
-	return remove (e_path);
+	return remove (path);
 }
 
 int
@@ -184,10 +137,6 @@ Qopen (const char *path, const char *mode)
 	int         reading = 0;
 	int         zip = 0;
 	int         size = -1;
-	char        e_path[PATH_MAX];
-
-	Qexpand_squiggle (path, e_path);
-	path = e_path;
 
 	for (p = m; *mode && p - m < ((int) sizeof (m) - 1); mode++) {
 		if (*mode == 'z') {

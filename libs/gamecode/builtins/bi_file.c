@@ -162,8 +162,7 @@ bi_File_Open (progs_t *pr)
 	if (do_write && !file_writeable (path))
 		goto error;
 
-	*file = Qopen (va ("%s/%s/%s", fs_userpath->string,
-					   qfs_gamedir->dir.def, path), mode);
+	*file = QFS_Open (va ("%s/%s", qfs_gamedir->dir.def, path), mode);
 	if (!*file)
 		goto error;
 	R_INT (pr) = (file - res->handles) + 1;

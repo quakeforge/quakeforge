@@ -483,15 +483,13 @@ Sys_DebugLog (const char *file, const char *fmt, ...)
 	int         fd;
 	char        path[PATH_MAX];
 
-	Qexpand_squiggle (file, path);
-
 	if (!data)
 		data = dstring_newstr ();
 
 	va_start (args, fmt);
 	dvsprintf (data, fmt, args);
 	va_end (args);
-	fd = open (path, O_WRONLY | O_CREAT | O_APPEND, 0666);
+	fd = open (path, O_WRONLY | O_CREAT | O_APPEND, 0644);
 	write (fd, data->str, data->size - 1);
 	close (fd);
 }

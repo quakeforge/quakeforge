@@ -32,7 +32,6 @@
 
 typedef struct QFile_s QFile;
 
-void Qexpand_squiggle(const char *path, char *dest);
 int Qrename(const char *old, const char *new);
 int Qremove(const char *path);
 int Qfilesize (QFile *file);

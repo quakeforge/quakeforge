@@ -43,12 +43,14 @@ static __attribute__ ((unused)) const char rcsid[] =
 #include "QF/console.h"
 #include "QF/cvar.h"
 #include "QF/draw.h"
+#include "QF/dstring.h"
 #include "QF/pcx.h"
 #include "QF/quakefs.h"
 #include "QF/render.h"
 #include "QF/screen.h"
 #include "QF/sys.h"
 #include "QF/texture.h"
+#include "QF/va.h"
 
 #include "compat.h"
 #include "r_cvar.h"
@@ -243,39 +245,42 @@ SCR_ScreenShot (int width, int height)
 void
 SCR_ScreenShot_f (void)
 {
-	char        pcxname[MAX_OSPATH];
+	dstring_t  *pcxname = dstring_new ();
 	pcx_t      *pcx;
 	int         pcx_len;
 
 	// find a file name to save it to 
-	if (!QFS_NextFilename (pcxname, "qf", ".pcx")) {
+	if (!QFS_NextFilename (pcxname,
+						   va ("%s/qf", qfs_gamedir->dir.def), ".pcx")) {
 		Con_Printf ("SCR_ScreenShot_f: Couldn't create a PCX");
-		return;
+	} else {
+		// enable direct drawing of console to back buffer
+		D_EnableBackBufferAccess ();
+
+		// save the pcx file
+		switch(r_pixbytes) {
+		case 1:
+			pcx = EncodePCX (vid.buffer, vid.width, vid.height, vid.rowbytes,
+							 vid.basepal, false, &pcx_len);
+			break;
+		case 2:
+			Con_Printf("SCR_ScreenShot_f: FIXME - add 16bit support\n");
+			break;
+		case 4:
+			Con_Printf("SCR_ScreenShot_f: FIXME - add 32bit support\n");
+			break;
+		default:
+			Sys_Error("SCR_ScreenShot_f: unsupported r_pixbytes %i", r_pixbytes);
+		}
+
+		// for adapters that can't stay mapped in for linear writes all the time
+		D_DisableBackBufferAccess ();
+
+		QFS_WriteFile (pcxname->str, pcx, pcx_len);
+
+		Con_Printf ("Wrote %s\n", pcxname->str);
 	}
-
-	// enable direct drawing of console to back buffer
-	D_EnableBackBufferAccess ();
-
-	// save the pcx file
-	switch(r_pixbytes) {
-	case 1:
-		pcx = EncodePCX (vid.buffer, vid.width, vid.height, vid.rowbytes,
-						 vid.basepal, false, &pcx_len);
-		break;
-	case 2:
-		Con_Printf("SCR_ScreenShot_f: FIXME - add 16bit support\n");
-		break;
-	case 4:
-		Con_Printf("SCR_ScreenShot_f: FIXME - add 32bit support\n");
-		break;
-	default:
-		Sys_Error("SCR_ScreenShot_f: unsupported r_pixbytes %i", r_pixbytes);
-	}
-
-	// for adapters that can't stay mapped in for linear writes all the time
-	D_DisableBackBufferAccess ();
-
-	Con_Printf ("Wrote %s\n", pcxname);
+	dstring_delete (pcxname);
 }
 
 /*

@@ -219,7 +219,7 @@ typedef struct client_s
 	qboolean		upgradewarn;		// did we warn him?
 
 	QFile			*upload;
-	char			uploadfn[MAX_QPATH];
+	struct dstring_s *uploadfn;
 	netadr_t		snap_from;
 	qboolean		remote_snap;
  

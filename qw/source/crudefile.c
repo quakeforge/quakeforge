@@ -144,7 +144,7 @@ CF_BuildQuota (void)
 
 	if (!path)
 		path = dstring_new ();
-	dsprintf (path, "%s/%s/%s", fs_userpath->string, qfs_gamedir->dir.def, CF_DIR);
+	dsprintf (path, "%s/%s/%s", qfs_userpath, qfs_gamedir->dir.def, CF_DIR);
 
 	dir = opendir (path->str);
 	if (!dir)
@@ -227,8 +227,7 @@ CF_Open (const char *path, const char *mode)
 		return -1;
 	}
 
-	dsprintf (fullpath, "%s/%s/%s/%s", fs_userpath->string,
-			  qfs_gamedir->dir.def, CF_DIR, path);
+	dsprintf (fullpath, "%s/%s/%s", qfs_gamedir->dir.def, CF_DIR, path);
 
 	j = fullpath->str + strlen (fullpath->str) - strlen (path);
 	for (i = 0; path[i]; i++, j++) // strcpy, but force lowercase
@@ -245,7 +244,7 @@ CF_Open (const char *path, const char *mode)
 	else
 		oldsize = 0;
 
-	file = Qopen (fullpath->str, mode);
+	file = QFS_Open (fullpath->str, mode);
 	if (file) {
 		if (cf_openfiles >= cf_filepcount) {
 			cf_filepcount++;

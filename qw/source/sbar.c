@@ -1069,15 +1069,11 @@ Sbar_LogFrags (void)
 	player_info_t *s = NULL;
 	const char *t = NULL;
 	time_t      tt = time (NULL);
-	char        e_path[MAX_OSPATH];
 
 	if (!cl_fraglog->int_val)
 		return;
 
-	memset (&e_path, 0, MAX_OSPATH);
-    Qexpand_squiggle (fs_userpath->string, e_path);
-
-	if ((file = Qopen (va ("%s/%s", e_path, fs_fraglog->string), "a")) == NULL)
+	if ((file = QFS_Open (fs_fraglog->string, "a")) == NULL)
 		return;
 
 	t = ctime (&tt);

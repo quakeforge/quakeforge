@@ -61,37 +61,46 @@ typedef struct gamedir_s {
 extern searchpath_t *qfs_searchpaths;
 extern gamedir_t *qfs_gamedir;
 
-extern struct cvar_s *fs_userpath;
 extern struct cvar_s *fs_sharepath;
+extern struct cvar_s *fs_userpath;
+
+extern const char *qfs_userpath;
 
 extern int file_from_pak;
 extern int qfs_filesize;
 
 struct cache_user_s;
+struct dstring_s;
 
-char *QFS_CompressPath (const char *pth);
+void QFS_Init (const char *game);
+
+void QFS_Gamedir (const char *dir);
+
+QFile *QFS_Open (const char *path, const char *mode);
+QFile *QFS_WOpen (const char *path, int zip);
 void QFS_WriteFile (const char *filename, void *data, int len);
 void QFS_WriteBuffers (const char *filename, int count, ...);
-struct dstring_s;
-int _QFS_FOpenFile (const char *filename, QFile **gzfile, struct dstring_s *foundname, int zip);
+
+int _QFS_FOpenFile (const char *filename, QFile **gzfile,
+					struct dstring_s *foundname, int zip);
 int QFS_FOpenFile (const char *filename, QFile **gzfile);
-void QFS_FileBase (const char *in, char *out);
-void QFS_DefaultExtension (char *path, const char *extension);
-const char *QFS_SkipPath (const char *pathname);
-void QFS_StripExtension (const char *in, char *out);
-int QFS_NextFilename (char *filename, const char *prefix, const char *ext);
-const char *QFS_FileExtension (const char *in);
-
-QFile *QFS_WOpen (const char *path, int zip);
-int QFS_Rename (const char *old, const char *new);
-
 byte *QFS_LoadFile (const char *path, int usehunk);
 byte *QFS_LoadStackFile (const char *path, void *buffer, int bufsize);
 byte *QFS_LoadTempFile (const char *path);
 byte *QFS_LoadHunkFile (const char *path);
 void QFS_LoadCacheFile (const char *path, struct cache_user_s *cu);
+
 void QFS_CreatePath (const char *path);
-void QFS_Gamedir (const char *dir);
-void QFS_Init (const char *game);
+int QFS_Rename (const char *old, const char *new);
+int QFS_Remove (const char *path);
+int QFS_NextFilename (struct dstring_s *filename, const char *prefix,
+					  const char *ext);
+
+void QFS_FileBase (const char *in, char *out);
+void QFS_DefaultExtension (char *path, const char *extension);
+void QFS_StripExtension (const char *in, char *out);
+char *QFS_CompressPath (const char *pth);
+const char *QFS_SkipPath (const char *pathname);
+const char *QFS_FileExtension (const char *in);
 
 #endif // __quakefs_h

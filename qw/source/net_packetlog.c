@@ -173,11 +173,8 @@ static void Net_LogPrintf (const char *fmt, ...) __attribute__ ((format (printf,
 static int
 Net_LogStart (const char *fname)
 {
-	char        e_path[MAX_OSPATH];
-
-	Qexpand_squiggle (fs_userpath->string, e_path);
 	Con_Printf ("Opening packet logfile: %s\n", fname);
-	Net_PacketLog = Qopen (va ("%s/%s", e_path, fname), "at");
+	Net_PacketLog = QFS_Open (fname, "at");
 	if (!Net_PacketLog)
 		return -1;
 	return 0;
@@ -929,11 +926,8 @@ Net_PacketLog_Zap_f (void)
 		Qseek (Net_PacketLog, 0, 0);
 		Qwrite (Net_PacketLog, 0, 0);
 	} else {
-		char        e_path[MAX_OSPATH];
-
-		Qexpand_squiggle (fs_userpath->string, e_path);
 		Con_Printf ("Deleting packet logfile: %s\n", "qfpacket.log");
-		unlink (va ("%s/%s", e_path, "qfpacket.log"));
+		QFS_Remove ("qfpacket.log");
 	}
 }
 

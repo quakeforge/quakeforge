@@ -40,6 +40,11 @@ static __attribute__ ((unused)) const char rcsid[] =
 #ifdef HAVE_UNISTD_H
 # include <unistd.h>
 #endif
+#ifdef HAVE_IO_H
+# include <io.h>
+#else
+# include <pwd.h>
+#endif
 
 #include <ctype.h>
 #include <dirent.h>
@@ -117,6 +122,8 @@ int fnmatch (const char *__pattern, const char *__string, int __flags);
 cvar_t     *fs_userpath;
 cvar_t     *fs_sharepath;
 cvar_t     *fs_dirconf;
+
+const char *qfs_userpath;
 
 int         qfs_filesize;
 
@@ -571,9 +578,7 @@ QFS_WriteFile (const char *filename, void *data, int len)
 	char        name[MAX_OSPATH];
 	QFile      *f;
 
-	snprintf (name, sizeof (name), "%s/%s", qfs_gamedir->dir.def, filename);
-
-	f = QFS_WOpen (name, 0);
+	f = QFS_WOpen (filename, 0);
 	if (!f) {
 		Sys_Error ("Error opening %s", filename);
 	}
@@ -591,20 +596,17 @@ QFS_WriteFile (const char *filename, void *data, int len)
 void
 QFS_WriteBuffers (const char *filename, int count, ...)
 {
-	char        name[MAX_OSPATH];
 	va_list     args;
 	QFile      *f;
 
 	va_start (args, count);
 
-	snprintf (name, sizeof (name), "%s/%s", qfs_gamedir->dir.def, filename);
-
-	f = QFS_WOpen (name, 0);
+	f = QFS_WOpen (filename, 0);
 	if (!f) {
 		Sys_Error ("Error opening %s", filename);
 	}
 
-	Sys_Printf ("QFS_WriteBuffers: %s\n", name);
+	Sys_Printf ("QFS_WriteBuffers: %s\n", filename);
 	while (count--) {
 		void       *data = va_arg (args, void *);
 		int         len = va_arg (args, int);
@@ -625,8 +627,6 @@ QFS_CreatePath (const char *path)
 {
 	char       *ofs;
 	char        e_path[MAX_OSPATH];
-
-	Qexpand_squiggle (path, e_path);
 
 	for (ofs = e_path + 1; *ofs; ofs++) {
 		if (*ofs == '/') {				// create the directory
@@ -1086,10 +1086,6 @@ static void
 QFS_AddDirectory (const char *dir)
 {
 	searchpath_t *search;
-	char        e_dir[MAX_OSPATH];
-
-	Qexpand_squiggle (dir, e_dir);
-	dir = e_dir;
 
 	// add the directory to the search path
 	search = calloc (1, sizeof (searchpath_t));
@@ -1111,7 +1107,7 @@ QFS_AddGameDirectory (const char *dir)
 
 	if (strcmp (fs_sharepath->string, fs_userpath->string) != 0)
 		QFS_AddDirectory (va ("%s/%s", fs_sharepath->string, dir));
-	QFS_AddDirectory (va ("%s/%s", fs_userpath->string, dir));
+	QFS_AddDirectory (va ("%s/%s", qfs_userpath, dir));
 }
 
 /*
@@ -1129,6 +1125,38 @@ QFS_Gamedir (const char *dir)
 	Cache_Flush ();
 }
 
+static char *
+expand_squiggle (const char *path)
+{
+	char       *home;
+
+#ifndef _WIN32
+	struct passwd *pwd_ent;
+#endif
+
+	if (strncmp (path, "~/", 2) != 0) {
+		return strdup (path);
+	}
+
+#ifdef _WIN32
+	// LordHavoc: first check HOME to duplicate previous version behavior
+	// (also handy if someone wants it elsewhere than their windows directory)
+	home = getenv ("HOME");
+	if (!home || !home[0])
+		home = getenv ("WINDIR");
+#else
+	if ((pwd_ent = getpwuid (getuid ()))) {
+		home = pwd_ent->pw_dir;
+	} else
+		home = getenv ("HOME");
+#endif
+
+	if (home)
+		return nva ("%s%s", home, path + 1);	// skip leading ~
+
+	return strdup (path);
+}
+
 void
 QFS_Init (const char *game)
 {
@@ -1143,6 +1171,8 @@ QFS_Init (const char *game)
 							"full path to gamedir.conf FIXME");
 
 	Cmd_AddCommand ("path", QFS_Path_f, "Show what paths Quake is using");
+
+	qfs_userpath = expand_squiggle (fs_userpath->string);
 
 	qfs_load_config ();
 
@@ -1225,46 +1255,47 @@ QFS_DefaultExtension (char *path, const char *extension)
 }
 
 int
-QFS_NextFilename (char *filename, const char *prefix, const char *ext)
+QFS_NextFilename (dstring_t *filename, const char *prefix, const char *ext)
 {
 	char       *digits;
-	char        checkname[MAX_OSPATH], exp[MAX_OSPATH];
 	int         i;
 
-	strncpy (filename, prefix, MAX_OSPATH - 4);
-	filename[MAX_OSPATH - 4] = 0;
-	digits = filename + strlen (filename);
-	strcat (filename, "000");
-	strncat (filename, ext, MAX_OSPATH - strlen (filename));
-	Qexpand_squiggle (fs_userpath->string, exp);
+	dsprintf (filename, "%s0000%s", prefix, ext);
+	digits = filename->str + strlen (prefix);
 	
-	for (i = 0; i <= 999; i++) {
-		digits[0] = i / 100 + '0';
+	for (i = 0; i <= 9999; i++) {
+		digits[0] = i / 1000 + '0';
+		digits[1] = i / 100 % 10 + '0';
 		digits[1] = i / 10 % 10 + '0';
 		digits[2] = i % 10 + '0';
-		snprintf (checkname, sizeof (checkname),
-				  "%s/%s/%s", exp, qfs_gamedir->dir.def,
-				  filename);
-		if (Sys_FileTime (checkname) == -1)
+		if (Sys_FileTime (va ("%s/%s/%s", qfs_userpath, qfs_gamedir->dir.def,
+							  filename->str)) == -1)
 			return 1;					// file doesn't exist
 	}
 	return 0;
 }
 
 QFile *
-QFS_WOpen (const char *path, int zip)
+QFS_Open (const char *path, const char *mode)
 {
 	dstring_t  *full_path = dstring_new ();
 	QFile      *file;
-	char        mode[4] = "wb\000\000";
 
-	if (zip)
-		mode[2] = bound (1, zip, 9) + '0';
-	dsprintf (full_path, "%s/%s", fs_userpath->string, path);
+	dsprintf (full_path, "%s/%s", qfs_userpath, path);
 	QFS_CreatePath (full_path->str);
 	file = Qopen (full_path->str, mode);
 	dstring_delete (full_path);
 	return file;
+}
+
+QFile *
+QFS_WOpen (const char *path, int zip)
+{
+	char        mode[4] = "wb\000\000";
+
+	if (zip)
+		mode[2] = bound (1, zip, 9) + '0';
+	return QFS_Open (path, mode);
 }
 
 int
@@ -1274,11 +1305,23 @@ QFS_Rename (const char *old, const char *new)
 	dstring_t  *full_new = dstring_new ();
 	int         ret;
 
-	dsprintf (full_old, "%s/%s", fs_userpath->string, old);
-	dsprintf (full_new, "%s/%s", fs_userpath->string, new);
+	dsprintf (full_old, "%s/%s", qfs_userpath, old);
+	dsprintf (full_new, "%s/%s", qfs_userpath, new);
 	QFS_CreatePath (full_new->str);
 	ret = Qrename (full_old->str, full_new->str);
 	dstring_delete (full_old);
 	dstring_delete (full_new);
+	return ret;
+}
+
+int
+QFS_Remove (const char *path)
+{
+	dstring_t  *full_path = dstring_new ();
+	int         ret;
+
+	dsprintf (full_path, "%s/%s", qfs_userpath, path);
+	ret = Qremove (full_path->str);
+	dstring_delete (full_path);
 	return ret;
 }

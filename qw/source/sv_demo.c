@@ -591,11 +591,12 @@ SV_Stop (int reason)
 		if (demo.disk)
 			Qclose (demo.file);
 
-		sprintf (path, "%s/%s/%s/%s", fs_userpath->string, qfs_gamedir->dir.def, demo.path->str, demo.name->str);
-		unlink (path);
+		sprintf (path, "%s/%s/%s", qfs_gamedir->dir.def, demo.path->str,
+				 demo.name->str);
+		QFS_Remove (path);
 
 		strcpy (path + strlen (path) - 3, "txt");
-		unlink (path);
+		QFS_Remove (path);
 
 		demo.file = NULL;
 		sv.demorecording = false;
@@ -825,7 +826,7 @@ SV_Record (char *name)
 	demo.datagram.maxsize = sizeof (demo.datagram_data);
 	demo.datagram.data = demo.datagram_data;
 
-	demo.file = Qopen (name, "wb");
+	demo.file = QFS_Open (name, "wb");
 	if (!demo.file) {
 		Con_Printf ("ERROR: couldn't open %s\n", name);
 		return;
@@ -854,7 +855,7 @@ SV_Record (char *name)
 	if (sv_demotxt->int_val) {
 		QFile      *f;
 
-		f = Qopen (path, "w+t");
+		f = QFS_Open (path, "w+t");
 		if (f != NULL) {
 			char        buf[2000];
 			char        date[20];
@@ -1100,11 +1101,9 @@ SV_Record_f (void)
 	if (sv.demorecording)
 		SV_Stop_f ();
 
-	dsprintf (name, "%s/%s/%s/%s%s%s", fs_userpath->string, qfs_gamedir->dir.def, sv_demoDir->string,
+	dsprintf (name, "%s/%s/%s%s%s", qfs_gamedir->dir.def, sv_demoDir->string,
 			  sv_demoPrefix->string, SV_CleanName (Cmd_Argv (1)),
 			  sv_demoSuffix->string);
-
-	QFS_CreatePath (name->str);
 
 	// open the demo file
 	name->size += 4;
@@ -1221,7 +1220,7 @@ SV_EasyRecord_f (void)
 	}
 
 	// Make sure the filename doesn't contain illegal characters
-	dsprintf (name2, "%s/%s/%s/%s%s%s", fs_userpath->string,
+	dsprintf (name2, "%s/%s/%s%s%s", 
 			  qfs_gamedir->dir.def, sv_demoDir->string,
 			  sv_demoPrefix->string, SV_CleanName (name->str),
 			  sv_demoSuffix->string);
@@ -1232,8 +1231,8 @@ SV_EasyRecord_f (void)
 	name->size += 4;
 	dstring_adjust (name);
 	QFS_DefaultExtension (name->str, ".mvd");
-	if ((f = Qopen (name->str, "rb")) == 0)
-		f = Qopen (va ("%s.gz", name->str), "rb");
+	if ((f = QFS_Open (name->str, "rb")) == 0)
+		f = QFS_Open (va ("%s.gz", name->str), "rb");
 
 	if (f) {
 		i = 1;
@@ -1243,8 +1242,8 @@ SV_EasyRecord_f (void)
 			name->size += 4;
 			dstring_adjust (name);
 			QFS_DefaultExtension (name->str, ".mvd");
-			if ((f = Qopen (name->str, "rb")) == 0)
-				f = Qopen (va ("%s.gz", name->str), "rb");
+			if ((f = QFS_Open (name->str, "rb")) == 0)
+				f = QFS_Open (va ("%s.gz", name->str), "rb");
 			i++;
 		} while (f);
 	}
@@ -1254,363 +1253,6 @@ SV_EasyRecord_f (void)
 
 	dstring_delete (name);
 	dstring_delete (name2);
-}
-
-static void
-SV_DemoList_f (void)
-{
-/*
-	float       f;
-	int         i, j, show;
-	dir_t       dir;
-	file_t     *list;
-
-	Con_Printf ("content of %s/%s/%s/ *.mvd\n", fs_userpath->string, qfs_gamedir->dir.def, sv_demoDir->string);
-	dir = Sys_listdir (va ("%s/%s/%s", fs_userpath->string, qfs_gamedir->dir.def, sv_demoDir->string), ".mvd");
-	list = dir.files;
-	if (!list->name[0]) {
-		Con_Printf ("no demos\n");
-	}
-
-	for (i = 1; list->name[0]; i++, list++) {
-		for (j = 1; j < Cmd_Argc (); j++)
-			if (strstr (list->name, Cmd_Argv (j)) == NULL)
-				break;
-		show = Cmd_Argc () == j;
-
-		if (show) {
-			if (sv.demorecording && !strcmp (list->name, demo.name->str))
-				Con_Printf ("*%d: %s %dk\n", i, list->name, demo.size / 1024);
-			else
-				Con_Printf ("%d: %s %dk\n", i, list->name, list->size / 1024);
-		}
-	}
-
-	if (sv.demorecording)
-		dir.size += demo.size;
-
-	Con_Printf ("\ndirectory size: %.1fMB\n", (float) dir.size / (1024 * 1024));
-	if (sv_demoMaxDirSize->int_val) {
-		f = (sv_demoMaxDirSize->int_val * 1024 - dir.size) / (1024 * 1024);
-		if (f < 0)
-			f = 0;
-		Con_Printf ("space available: %.1fMB\n", f);
-	}
-*/
-}
-
-static char       *
-SV_DemoNum (int num)
-{
-/*
-	file_t     *list;
-	dir_t       dir;
-
-	dir = Sys_listdir (va ("%s/%s/%s", fs_userpath->string, qfs_gamedir->dir.def, sv_demoDir->string), ".mvd");
-	list = dir.files;
-
-	if (num <= 0)
-		return NULL;
-
-	num--;
-
-	while (list->name[0] && num) {
-		list++;
-		num--;
-	};
-
-	if (list->name[0])
-		return list->name;
-*/
-	return NULL;
-}
-
-static char       *
-SV_DemoName2Txt (char *name)
-{
-	char        s[MAX_OSPATH];
-
-	if (!name)
-		return NULL;
-
-	strcpy (s, name);
-
-	if (strstr (s, ".mvd.gz") != NULL)
-		strcpy (s + strlen (s) - 6, "txt");
-	else
-		strcpy (s + strlen (s) - 3, "txt");
-
-	return va ("%s", s);
-}
-
-static char       *
-SV_DemoTxTNum (int num)
-{
-	return SV_DemoName2Txt (SV_DemoNum (num));
-}
-
-static void
-SV_DemoRemove_f (void)
-{
-	dstring_t  *name = dstring_newstr ();
-	const char *ptr;
-	char        path[MAX_OSPATH];
-
-	if (Cmd_Argc () != 2) {
-		Con_Printf ("rmdemo <demoname> - removes the demo\n"
-					 "rmdemo *<token>   - removes demo with <token> in "
-					 "the name\n"
-					 "rmdemo *          - removes all demos\n");
-		return;
-	}
-
-	ptr = Cmd_Argv (1);
-/*
-	if (*ptr == '*') {
-		dir_t       dir;
-		file_t     *list;
-		int         i;
-
-		// remove all demos with specified token
-		ptr++;
-
-		dir =
-			Sys_listdir (va ("%s/%s/%s", fs_userpath->string, qfs_gamedir->dir.def, sv_demoDir->string), ".mvd");
-		list = dir.files;
-		for (i = 0; list->name[0]; list++) {
-			if (strstr (list->name, ptr)) {
-				if (sv.demorecording && !strcmp (list->name, demo.name->str))
-					SV_Stop_f ();
-
-				// stop recording first;
-				sprintf (path, "%s/%s/%s/%s", fs_userpath->string, qfs_gamedir->dir.def, sv_demoDir->string,
-						 list->name);
-				if (!unlink (path)) {
-					Con_Printf ("removing %s...\n", list->name);
-					i++;
-				}
-
-				unlink (SV_DemoName2Txt (path));
-			}
-		}
-
-		if (i) {
-			Con_Printf ("%d demos removed\n", i);
-		} else {
-			Con_Printf ("no matching found\n");
-		}
-
-		return;
-	}
-*/
-	dsprintf (name, "%s", Cmd_Argv (1));
-	QFS_DefaultExtension (name->str, ".mvd");
-
-	sprintf (path, "%s/%s/%s/%s", fs_userpath->string, qfs_gamedir->dir.def, sv_demoDir->string, name->str);
-
-	if (sv.demorecording && !strcmp (name->str, demo.name->str))
-		SV_Stop_f ();
-
-	if (!unlink (path)) {
-		Con_Printf ("demo %s succesfully removed\n", name->str);
-/*
-		if (*sv_ondemoremove->string) {
-			extern redirect_t sv_redirected;
-			int         old = sv_redirected;
-			// this script is called always from the console
-			sv_redirected = RD_NONE;	
-
-			Cmd_TokenizeString (va ("script %s \"%s\" \"%s\"",
-									sv_ondemoremove->string,
-									sv_demoDir->string, name->str));
-			SV_Script_f ();
-
-			sv_redirected = old;
-		}
-*/
-	} else
-		Con_Printf ("unable to remove demo %s\n", name->str);
-
-	unlink (SV_DemoName2Txt (path));
-}
-
-static void
-SV_DemoRemoveNum_f (void)
-{
-	int         num;
-	const char *val, *name;
-	char        path[MAX_OSPATH];
-
-	if (Cmd_Argc () != 2) {
-		Con_Printf ("rmdemonum <#>\n");
-		return;
-	}
-
-	val = Cmd_Argv (1);
-	if ((num = atoi (val)) == 0 && val[0] != '0') {
-		Con_Printf ("rmdemonum <#>\n");
-		return;
-	}
-
-	name = SV_DemoNum (num);
-
-	if (name != NULL) {
-		if (sv.demorecording && !strcmp (name, demo.name->str))
-			SV_Stop_f ();
-
-		sprintf (path, "%s/%s/%s/%s", fs_userpath->string, qfs_gamedir->dir.def, sv_demoDir->string, name);
-		if (!unlink (path)) {
-			Con_Printf ("demo %s succesfully removed\n", name);
-/*
-			if (*sv_ondemoremove->string) {
-				extern redirect_t sv_redirected;
-				int         old = sv_redirected;
-				// this script is called always from the console
-				sv_redirected = RD_NONE;	
-
-				Cmd_TokenizeString (va ("script %s \"%s\" \"%s\"",
-										sv_ondemoremove->string,
-										sv_demoDir->string, name));
-				SV_Script_f ();
-
-				sv_redirected = old;
-			}
-*/
-		} else
-			Con_Printf ("unable to remove demo %s\n", name);
-
-		unlink (SV_DemoName2Txt (path));
-	} else
-		Con_Printf ("invalid demo num\n");
-}
-
-static void
-SV_DemoInfoAdd_f (void)
-{
-	const char *name = 0, *args;
-	char        path[MAX_OSPATH];
-	QFile      *f;
-
-	if (Cmd_Argc () < 3) {
-		Con_Printf ("usage:demoInfoAdd <demonum> <info string>\n"
-					"<demonum> = * for currently recorded demo\n");
-		return;
-	}
-
-	if (!strcmp (Cmd_Argv (1), "*")) {
-		if (!sv.demorecording) {
-			Con_Printf ("Not recording demo!\n");
-			return;
-		}
-
-		sprintf (path, "%s/%s/%s/%s", fs_userpath->string, qfs_gamedir->dir.def, demo.path->str,
-				 SV_DemoName2Txt (demo.name->str));
-	} else {
-		name = SV_DemoTxTNum (atoi (Cmd_Argv (1)));
-
-		if (!name) {
-			Con_Printf ("invalid demo num\n");
-			return;
-		}
-
-		sprintf (path, "%s/%s/%s/%s", fs_userpath->string, qfs_gamedir->dir.def, sv_demoDir->string, name);
-	}
-
-	if ((f = Qopen (path, "a+t")) == NULL) {
-		Con_Printf ("faild to open the file\n");
-		return;
-	}
-	// skip demonum
-	args = Cmd_Args (1);
-	while (*args > 32)
-		args++;
-	while (*args && *args <= 32)
-		args++;
-
-	Qwrite (f, args, strlen (args));
-	Qwrite (f, "\n", 1);
-	Qflush (f);
-	Qclose (f);
-}
-
-static void
-SV_DemoInfoRemove_f (void)
-{
-	char       *name = 0, path[MAX_OSPATH];
-
-	if (Cmd_Argc () < 2) {
-		Con_Printf ("usage:demoInfoRemove <demonum>\n"
-					"<demonum> = * for currently recorded demo\n");
-		return;
-	}
-
-	if (!strcmp (Cmd_Argv (1), "*")) {
-		if (!sv.demorecording) {
-			Con_Printf ("Not recording demo!\n");
-			return;
-		}
-
-		sprintf (path, "%s/%s/%s/%s", fs_userpath->string, qfs_gamedir->dir.def, demo.path->str,
-				 SV_DemoName2Txt (demo.name->str));
-	} else {
-		name = SV_DemoTxTNum (atoi (Cmd_Argv (1)));
-
-		if (!name) {
-			Con_Printf ("invalid demo num\n");
-			return;
-		}
-
-		sprintf (path, "%s/%s/%s/%s", fs_userpath->string, qfs_gamedir->dir.def, sv_demoDir->string, name);
-	}
-
-	if (unlink (path))
-		Con_Printf ("failed to remove the file\n");
-	else
-		Con_Printf ("file removed\n");
-}
-
-static void
-SV_DemoInfo_f (void)
-{
-	const char *buf;
-	QFile      *f = NULL;
-	char       *name = 0, path[MAX_OSPATH];
-
-	if (Cmd_Argc () < 2) {
-		Con_Printf ("usage:demoinfo <demonum>\n"
-					"<demonum> = * for currently recorded demo\n");
-		return;
-	}
-
-	if (!strcmp (Cmd_Argv (1), "*")) {
-		if (!sv.demorecording) {
-			Con_Printf ("Not recording demo!\n");
-			return;
-		}
-
-		sprintf (path, "%s/%s/%s/%s", fs_userpath->string, qfs_gamedir->dir.def, demo.path->str,
-				 SV_DemoName2Txt (demo.name->str));
-	} else {
-		name = SV_DemoTxTNum (atoi (Cmd_Argv (1)));
-
-		if (!name) {
-			Con_Printf ("invalid demo num\n");
-			return;
-		}
-
-		sprintf (path, "%s/%s/%s/%s", fs_userpath->string, qfs_gamedir->dir.def, sv_demoDir->string, name);
-	}
-
-	if ((f = Qopen (path, "rt")) == NULL) {
-		Con_Printf ("(empty)\n");
-		return;
-	}
-
-	while ((buf = Qgetline (f))) {
-		Con_Printf ("%s", buf);
-	}
-
-	Qclose (f);
 }
 
 void
@@ -1663,10 +1305,4 @@ Demo_Init (void)
 	Cmd_AddCommand ("easyrecord", SV_EasyRecord_f, "FIXME");
 	Cmd_AddCommand ("stop", SV_Stop_f, "FIXME");
 	Cmd_AddCommand ("cancel", SV_Cancel_f, "FIXME");
-	Cmd_AddCommand ("demolist", SV_DemoList_f, "FIXME");
-	Cmd_AddCommand ("rmdemo", SV_DemoRemove_f, "FIXME");
-	Cmd_AddCommand ("rmdemonum", SV_DemoRemoveNum_f, "FIXME");
-	Cmd_AddCommand ("demoInfoAdd", SV_DemoInfoAdd_f, "FIXME");
-	Cmd_AddCommand ("demoInfoRemove", SV_DemoInfoRemove_f, "FIXME");
-	Cmd_AddCommand ("demoInfo", SV_DemoInfo_f, "FIXME");
 }

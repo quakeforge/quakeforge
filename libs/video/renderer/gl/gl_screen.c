@@ -43,12 +43,14 @@ static __attribute__ ((unused)) const char rcsid[] =
 #include "QF/console.h"
 #include "QF/cvar.h"
 #include "QF/draw.h"
+#include "QF/dstring.h"
 #include "QF/quakefs.h"
 #include "QF/render.h"
 #include "QF/screen.h"
 #include "QF/sys.h"
 #include "QF/texture.h"
 #include "QF/tga.h"
+#include "QF/va.h"
 #include "QF/GL/defines.h"
 #include "QF/GL/funcs.h"
 #include "QF/GL/qf_rmain.h"
@@ -195,20 +197,22 @@ void
 SCR_ScreenShot_f (void)
 {
 	byte       *buffer;
-	char        pcxname[MAX_OSPATH];
+	dstring_t  *pcxname = dstring_new ();
 
 	// find a file name to save it to 
-	if (!QFS_NextFilename (pcxname, "qf", ".tga")) {
+	if (!QFS_NextFilename (pcxname,
+						   va ("%s/qf", qfs_gamedir->dir.def), ".tga")) {
 		Con_Printf ("SCR_ScreenShot_f: Couldn't create a TGA file\n");
-		return;
+	} else {
+		buffer = malloc (glwidth * glheight * 3);
+		SYS_CHECKMEM (buffer);
+		qfglReadPixels (glx, gly, glwidth, glheight, GL_BGR_EXT,
+						GL_UNSIGNED_BYTE, buffer);
+		WriteTGAfile (pcxname->str, buffer, glwidth, glheight);
+		free (buffer);
+		Con_Printf ("Wrote %s\n", pcxname->str);
 	}
-	buffer = malloc (glwidth * glheight * 3);
-	SYS_CHECKMEM (buffer);
-	qfglReadPixels (glx, gly, glwidth, glheight, GL_BGR_EXT, GL_UNSIGNED_BYTE,
-				  buffer);
-	WriteTGAfile (pcxname, buffer, glwidth, glheight);
-	free (buffer);
-	Con_Printf ("Wrote %s\n", pcxname);
+	dstring_delete (pcxname);
 }
 
 static void

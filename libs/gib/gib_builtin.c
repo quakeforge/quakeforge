@@ -756,7 +756,7 @@ GIB_File_Transform_Path_Null (dstring_t * path)
 static int
 GIB_File_Transform_Path_Secure (dstring_t * path)
 {
-	char       *s, e_dir[MAX_OSPATH];
+	char       *s;
 
 	for (s = strchr (path->str, '\\'); s; s = strchr (s, '\\'))
 		*s = '/';
@@ -766,8 +766,7 @@ GIB_File_Transform_Path_Secure (dstring_t * path)
 	dstring_insertstr (path, 0, "/");
 	dstring_insertstr (path, 0, qfs_gamedir->dir.def);
 	dstring_insertstr (path, 0, "/");
-	Qexpand_squiggle (fs_userpath->string, e_dir);
-	dstring_insertstr (path, 0, e_dir);
+	dstring_insertstr (path, 0, qfs_userpath);
 	return 0;
 }
 
@@ -822,7 +821,8 @@ GIB_File_Write_f (void)
 	}
 
 	path = GIB_Argv (1);
-	QFS_WriteFile (path, GIB_Argv(2), GIB_Argd(2)->size-1);
+	QFS_WriteFile (va ("%s/%s", qfs_gamedir->dir.def, path),
+				   GIB_Argv(2), GIB_Argd(2)->size-1);
 }
 
 static void

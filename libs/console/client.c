@@ -391,7 +391,7 @@ C_Print (const char *fmt, va_list args)
 
 	// log all messages to file
 	if (con_debuglog)
-		Sys_DebugLog (va ("%s/%s/qconsole.log", fs_userpath->string,
+		Sys_DebugLog (va ("%s/%s/qconsole.log", qfs_userpath,
 					  qfs_gamedir->dir.def), "%s", buffer->str);
 
 	if (!con_initialized)

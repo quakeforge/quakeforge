@@ -305,12 +305,10 @@ SL_SaveF (QFile *f, server_entry_t *start)
 void
 SL_Shutdown (void)
 {
-	char        e_path[MAX_OSPATH];
 	QFile      *f;
 	
 	if (fav_slist) {
-		Qexpand_squiggle (fs_userpath->string, e_path);
-		if ((f = Qopen (va ("%s/servers.txt", e_path), "w"))) {
+		if ((f = QFS_Open ("servers.txt", "w"))) {
 			SL_SaveF (f, fav_slist);
 			Qclose (f);
 		}
@@ -631,19 +629,11 @@ SL_LoadF (QFile *f, server_entry_t *start)
 void
 SL_Init (void)
 {
-	char        e_path[MAX_OSPATH];
 	QFile      *servlist;
 
-	Qexpand_squiggle (fs_userpath->string, e_path);
-	if ((servlist = Qopen (va ("%s/servers.txt", e_path), "r"))) {
+	if ((servlist = QFS_Open ("servers.txt", "r"))) {
 		slist = SL_LoadF (servlist, slist);
 		Qclose (servlist);
-	} else {
-		Qexpand_squiggle (fs_sharepath->string, e_path);
-		if ((servlist = Qopen (va ("%s/servers.txt", e_path), "r"))) {
-			slist = SL_LoadF (servlist, slist);
-			Qclose (servlist);
-		}
 	}
 	fav_slist = slist;
 	all_slist = NULL;

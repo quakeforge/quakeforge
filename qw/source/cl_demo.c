@@ -848,7 +848,8 @@ CL_ReRecord_f (void)
 	if (cls.demorecording)
 		CL_Stop_f ();
 
-	snprintf (name, sizeof (name), "%s/%s", qfs_gamedir->dir.def, Cmd_Argv (1));
+	snprintf (name, sizeof (name), "%s/%s",
+			  qfs_gamedir->dir.def, Cmd_Argv (1));
 
 	// open the demo file
 	QFS_DefaultExtension (name, ".qwd");
@@ -1075,7 +1076,6 @@ CL_TimeFrames_AddTimestamp (void)
 static void
 CL_TimeFrames_DumpLog (void)
 {
-	char		e_path[MAX_OSPATH];
 	const char *filename = "timeframes.txt";
 	int			i;
 	long		frame;
@@ -1084,9 +1084,8 @@ CL_TimeFrames_DumpLog (void)
 	if (cl_timeframes_isactive == 0)
 		return;
 
-	Qexpand_squiggle (fs_userpath->string, e_path);
 	Con_Printf ("Dumping Timed Frames log: %s\n", filename);
-	outputfile = Qopen (va ("%s/%s", e_path, filename), "w");
+	outputfile = QFS_Open (filename, "w");
 	if (!outputfile) {
 		Con_Printf ("Could not open: %s\n", filename);
 		return;
