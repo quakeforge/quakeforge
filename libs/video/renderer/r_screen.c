@@ -128,7 +128,6 @@ qboolean    scr_skipupdate;
 qboolean    block_drawing;
 
 /* CENTER PRINTING */
-
 char        scr_centerstring[1024];
 float       scr_centertime_start;		// for slow victory printing
 float       scr_centertime_off;
