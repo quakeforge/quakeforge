@@ -433,7 +433,6 @@ init_types (void)
 	type = type_Class.aux_type = new_struct (0);
 	type->type = ev_class;
 	type->class = &class_Class;
-	class_Class.super_class = get_class ("Object", 1);	//FIXME evil hack
 	class_Class.ivars = type_Class.aux_type;
 	new_struct_field (type, &type_Class, "class_pointer", vis_public);
 	new_struct_field (type, &type_Class, "super_class", vis_public);

@@ -34,6 +34,7 @@ static const char rcsid[] =
 #include <QF/hash.h>
 #include <QF/sys.h>
 #include "qfcc.h"
+#include "class.h"
 #include "struct.h"
 #include "type.h"
 #include "qc-parse.h"
@@ -302,6 +303,8 @@ type_or_name (char *token)
 	}
 	keyword = Hash_Find (keyword_tab, token);
 	if (keyword) {
+		if (token[0] == '@' && !class_Class.super_class)
+			class_init ();
 		yylval.type = keyword->type;
 		return keyword->value;
 	}

@@ -63,6 +63,12 @@ protocol_get_key (void *protocol, void *unused)
 	return ((protocol_t *) protocol)->name;
 }
 
+void
+class_init (void)
+{
+	class_Class.super_class = get_class ("Object", 1);
+}
+
 class_t *
 get_class (const char *name, int create)
 {

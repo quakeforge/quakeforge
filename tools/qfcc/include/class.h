@@ -55,6 +55,7 @@ struct method_s;
 struct protocol_s;
 struct type_s;
 
+void class_init (void);
 class_t *get_class (const char *name, int create);
 void class_add_methods (class_t *class, struct methodlist_s *methods);
 void class_add_protocol_methods (class_t *class, expr_t *protocols);
