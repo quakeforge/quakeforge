@@ -35,6 +35,8 @@
 
 int 			pr_source_line;
 
+char			pr_parm_names[MAX_PARMS][MAX_NAME];
+
 char			*pr_file_p;
 char			*pr_line_start;		// start of current source line
 
@@ -300,5 +302,3 @@ PR_FindType (type_t *type)
 	check->def = def;
 	return check;
 }
-
-char	pr_parm_names[MAX_PARMS][MAX_NAME];
