@@ -65,16 +65,16 @@ void        S_StopAllSoundsC (void);
 // Internal sound data & structures
 // =======================================================================
 
-channel_t   channels[MAX_CHANNELS];
-int         total_channels;
+extern channel_t   channels[MAX_CHANNELS];
+extern int         total_channels;
 extern double host_frametime; // From host.h
 
 int         snd_blocked = 0;
 static qboolean snd_ambient = 1;
-qboolean    snd_initialized = false;
+extern qboolean    snd_initialized;
 
 // pointer should go away
-volatile dma_t *shm = 0;
+extern volatile dma_t *shm;
 volatile dma_t sn;
 
 vec3_t      listener_origin;
@@ -84,7 +84,7 @@ vec3_t      listener_up;
 vec_t       sound_nominal_clip_dist = 1000.0;
 
 int         soundtime;					// sample PAIRS
-int         paintedtime;				// sample PAIRS
+extern int         paintedtime;				// sample PAIRS
 
 
 #define	MAX_SFX		512
@@ -98,8 +98,8 @@ int         desired_bits = 16;
 
 int         sound_started = 0;
 
-cvar_t     *bgmvolume;
-cvar_t     *volume;
+extern cvar_t     *bgmvolume;
+extern cvar_t     *volume;
 
 cvar_t     *snd_device;
 cvar_t     *snd_rate;
@@ -107,12 +107,12 @@ cvar_t     *snd_bits;
 cvar_t     *snd_stereo;
 cvar_t     *nosound;
 cvar_t     *precache;
-cvar_t     *loadas8bit;
+extern cvar_t     *loadas8bit;
 cvar_t     *ambient_level;
 cvar_t     *ambient_fade;
 cvar_t     *snd_noextraupdate;
 cvar_t     *snd_show;
-cvar_t     *snd_interp;
+extern cvar_t     *snd_interp;
 cvar_t     *snd_phasesep;
 cvar_t     *snd_volumesep;
 cvar_t     *_snd_mixahead;
