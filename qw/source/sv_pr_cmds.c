@@ -644,7 +644,8 @@ PF_findradius (progs_t *pr)
 {
 	edict_t    *ent, *chain;
 	float       rad;
-	float      *eorigin, *emins, *emaxs, *org;
+	//float      *eorigin;
+	float      *emins, *emaxs, *org;
 	int         i, j;
 	vec3_t      eorg;
 
@@ -660,11 +661,14 @@ PF_findradius (progs_t *pr)
 			continue;
 		if (SVfloat (ent, solid) == SOLID_NOT)
 			continue;
-		eorigin = SVvector (ent, origin);
-		emins = SVvector (ent, mins);
-		emaxs = SVvector (ent, maxs);
+		//eorigin = SVvector (ent, origin);
+		//emins = SVvector (ent, mins);
+		//emaxs = SVvector (ent, maxs);
+		emins = SVvector (ent, absmin);
+		emaxs = SVvector (ent, absmax);
 		for (j = 0; j < 3; j++)
-			eorg[j] = org[j] - eorigin[j] - 0.5 * (emins[j] + emaxs[j]);
+			eorg[j] = org[j] - 0.5 * (emins[j] + emaxs[j]);
+			//eorg[j] = org[j] - eorigin[j] - 0.5 * (emins[j] + emaxs[j]);
 		if (DotProduct (eorg, eorg) > rad)
 			continue;
 
