@@ -1,0 +1,4 @@
+<some_dude> declare -x FX_GLIDE_SWAPINTERVAL=0 <-- DISABLES VSYNC FOR VIDEO CARDS
+<some_dude> KEEP THAT somewhere
+<some_dude> ;)
+<some_dude> for v3 cards
