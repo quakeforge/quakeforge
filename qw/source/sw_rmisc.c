@@ -43,9 +43,7 @@
 #include "render.h"
 #include "sbar.h"
 
-qboolean    allowskybox;				// whether or not to allow skyboxes
-
-										// --KB
+qboolean    allowskybox;			// whether or not to allow skyboxes --KB
 
 
 void
@@ -139,8 +137,8 @@ R_LineGraph (int x, int y, int h)
 
 // FIXME: should be disabled on no-buffer adapters, or should be in the driver
 
-//  x += r_refdef.vrect.x;
-//  y += r_refdef.vrect.y;
+//	x += r_refdef.vrect.x;
+//	y += r_refdef.vrect.y;
 
 	dest = vid.buffer + vid.rowbytes * y + x;
 
@@ -160,7 +158,7 @@ R_LineGraph (int x, int y, int h)
 
 	for (i = 0; i < h; i++, dest -= vid.rowbytes) {
 		dest[0] = color;
-//      *(dest-vid.rowbytes) = 0x30;
+//		*(dest-vid.rowbytes) = 0x30;
 	}
 #if 0
 	for (; i < s; i++, dest -= vid.rowbytes * 2) {
@@ -170,14 +168,16 @@ R_LineGraph (int x, int y, int h)
 #endif
 }
 
+
+#define MAX_TIMINGS 100
+extern float mouse_x, mouse_y;
+int          graphval;
+
 /*
 	R_TimeGraph
 
 	Performance monitoring tool
 */
-#define	MAX_TIMINGS		100
-extern float mouse_x, mouse_y;
-int         graphval;
 void
 R_TimeGraph (void)
 {
@@ -190,13 +190,13 @@ R_TimeGraph (void)
 	r_time2 = Sys_DoubleTime ();
 
 	a = (r_time2 - r_time1) / 0.01;
-//a = fabs(mouse_y * 0.05);
-//a = (int)((r_refdef.vieworg[2] + 1024)/1)%(int)r_graphheight->value;
-//a = (int)((pmove.velocity[2] + 500)/10);
-//a = fabs(velocity[0])/20;
-//a = ((int)fabs(origin[0])/8)%20;
-//a = (cl.idealpitch + 30)/5;
-//a = (int)(cl.simangles[YAW] * 64/360) & 63;
+//	a = fabs(mouse_y * 0.05);
+//	a = (int)((r_refdef.vieworg[2] + 1024)/1)%(int)r_graphheight->value;
+//	a = (int)((pmove.velocity[2] + 500)/10);
+//	a = fabs(velocity[0])/20;
+//	a = ((int)fabs(origin[0])/8)%20;
+//	a = (cl.idealpitch + 30)/5;
+//	a = (int)(cl.simangles[YAW] * 64/360) & 63;
 	a = graphval;
 
 	r_timings[timex] = a;
@@ -333,7 +333,7 @@ WarpPalette (void)
 	basecolor[1] = 80;
 	basecolor[2] = 50;
 
-// pull the colors halfway to bright brown
+	// pull the colors halfway to bright brown
 	for (i = 0; i < 256; i++) {
 		for (j = 0; j < 3; j++) {
 			newpalette[i * 3 + j] =
@@ -368,7 +368,6 @@ R_TransformFrustum (void)
 
 
 #ifndef USE_INTEL_ASM
-
 void
 TransformVector (vec3_t in, vec3_t out)
 {
@@ -376,7 +375,6 @@ TransformVector (vec3_t in, vec3_t out)
 	out[1] = DotProduct (in, vup);
 	out[2] = DotProduct (in, vpn);
 }
-
 #endif
 
 
@@ -410,7 +408,7 @@ R_SetUpFrustumIndexes (void)
 			}
 		}
 
-		// FIXME: do just once at start
+// FIXME: do just once at start
 		pfrustum_indexes[i] = pindex;
 		pindex += 6;
 	}
@@ -528,10 +526,10 @@ R_SetupFrame (void)
 
 		r_viewchanged = false;
 	}
-// start off with just the four screen edge clip planes
+	// start off with just the four screen edge clip planes
 	R_TransformFrustum ();
 
-// save base values
+	// save base values
 	VectorCopy (vpn, base_vpn);
 	VectorCopy (vright, base_vright);
 	VectorCopy (vup, base_vup);
@@ -543,7 +541,7 @@ R_SetupFrame (void)
 
 	r_cache_thrash = false;
 
-// clear frame counts
+	// clear frame counts
 	c_faceclip = 0;
 	d_spanpixcount = 0;
 	r_polycount = 0;

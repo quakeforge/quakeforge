@@ -1,5 +1,5 @@
 /*
-	cl_trans.c
+	sw_skin.c
 
 	(description)
 
@@ -41,6 +41,7 @@
 
 #include "render.h"
 
+
 void
 Skin_Set_Translate (int top, int bottom, byte *dest)
 {
@@ -69,15 +70,18 @@ Skin_Set_Translate (int top, int bottom, byte *dest)
 	}
 }
 
+
 void
 Skin_Do_Translation (skin_t *player_skin, int slot)
 {
 }
 
+
 void
 Skin_Init_Translation (void)
 {
 }
+
 
 void
 Skin_Process (skin_t *skin, struct tex_s *tex)

@@ -40,9 +40,8 @@
 #include "r_local.h"
 #include "render.h"
 
-#define LIGHT_MIN	5					// lowest light value we'll allow, to 
-										// avoid the
-							// need for inner-loop light clamping
+#define LIGHT_MIN	5	// lowest light value we'll allow, to
+						// avoid the need for inner-loop light clamping
 
 mtriangle_t *ptriangles;
 affinetridesc_t r_affinetridesc;
@@ -90,7 +89,6 @@ float       r_avertexnormals[NUMVERTEXNORMALS][3] = {
 };
 
 void        R_AliasTransformAndProjectFinalVerts (finalvert_t *fv,
-
 												  stvert_t *pstverts);
 void        R_AliasSetUpTransform (int trivial_accept);
 void        R_AliasTransformVector (vec3_t in, vec3_t out);
@@ -99,9 +97,6 @@ void        R_AliasTransformFinalVert (finalvert_t *fv, auxvert_t *av,
 void        R_AliasProjectFinalVert (finalvert_t *fv, auxvert_t *av);
 
 
-/*
-	R_AliasCheckBBox
-*/
 qboolean
 R_AliasCheckBBox (void)
 {
@@ -115,8 +110,7 @@ R_AliasCheckBBox (void)
 	unsigned int anyclip, allclip;
 	int         minz;
 
-// expand, rotate, and translate points into worldspace
-
+	// expand, rotate, and translate points into worldspace
 	currententity->trivial_accept = 0;
 	pmodel = currententity->model;
 	pahdr = Mod_Extradata (pmodel);
@@ -124,7 +118,7 @@ R_AliasCheckBBox (void)
 
 	R_AliasSetUpTransform (0);
 
-// construct the base bounding box for this frame
+	// construct the base bounding box for this frame
 	frame = currententity->frame;
 // TODO: don't repeat this check when drawing?
 	if ((frame >= pmdl->numframes) || (frame < 0)) {
@@ -134,19 +128,19 @@ R_AliasCheckBBox (void)
 
 	pframedesc = &pahdr->frames[frame];
 
-// x worldspace coordinates
+	// x worldspace coordinates
 	basepts[0][0] = basepts[1][0] = basepts[2][0] = basepts[3][0] =
 		(float) pframedesc->bboxmin.v[0];
 	basepts[4][0] = basepts[5][0] = basepts[6][0] = basepts[7][0] =
 		(float) pframedesc->bboxmax.v[0];
 
-// y worldspace coordinates
+	// y worldspace coordinates
 	basepts[0][1] = basepts[3][1] = basepts[5][1] = basepts[6][1] =
 		(float) pframedesc->bboxmin.v[1];
 	basepts[1][1] = basepts[2][1] = basepts[4][1] = basepts[7][1] =
 		(float) pframedesc->bboxmax.v[1];
 
-// z worldspace coordinates
+	// z worldspace coordinates
 	basepts[0][2] = basepts[1][2] = basepts[4][2] = basepts[5][2] =
 		(float) pframedesc->bboxmin.v[2];
 	basepts[2][2] = basepts[3][2] = basepts[6][2] = basepts[7][2] =
@@ -171,7 +165,6 @@ R_AliasCheckBBox (void)
 		}
 	}
 
-
 	if (zfullyclipped) {
 		return false;					// everything was near-z-clipped
 	}
@@ -180,8 +173,7 @@ R_AliasCheckBBox (void)
 
 	if (zclipped) {
 		// organize points by edges, use edges to get new points (possible
-		// trivial
-		// reject)
+		// trivial reject)
 		for (i = 0; i < 12; i++) {
 			// edge endpoints
 			pv0 = &viewpts[aedges[i].index0];
@@ -203,7 +195,7 @@ R_AliasCheckBBox (void)
 			}
 		}
 	}
-// project the vertices that remain after clipping
+	// project the vertices that remain after clipping
 	anyclip = 0;
 	allclip = ALIAS_XY_CLIP_MASK;
 
@@ -249,9 +241,6 @@ R_AliasCheckBBox (void)
 }
 
 
-/*
-	R_AliasTransformVector
-*/
 void
 R_AliasTransformVector (vec3_t in, vec3_t out)
 {
@@ -299,9 +288,7 @@ R_AliasPreparePoints (void)
 		}
 	}
 
-//
-// clip and draw all triangles
-//
+	// clip and draw all triangles
 	r_affinetridesc.numtriangles = 1;
 
 	ptri = (mtriangle_t *) ((byte *) paliashdr + paliashdr->triangles);
@@ -326,9 +313,6 @@ R_AliasPreparePoints (void)
 }
 
 
-/*
-	R_AliasSetUpTransform
-*/
 void
 R_AliasSetUpTransform (int trivial_accept)
 {
@@ -376,9 +360,9 @@ R_AliasSetUpTransform (int trivial_accept)
 	VectorInverse (viewmatrix[1]);
 	VectorCopy (vpn, viewmatrix[2]);
 
-//  viewmatrix[0][3] = 0;
-//  viewmatrix[1][3] = 0;
-//  viewmatrix[2][3] = 0;
+//	viewmatrix[0][3] = 0;
+//	viewmatrix[1][3] = 0;
+//	viewmatrix[2][3] = 0;
 
 	R_ConcatTransforms (viewmatrix, rotationmatrix, aliastransform);
 
@@ -400,9 +384,6 @@ R_AliasSetUpTransform (int trivial_accept)
 }
 
 
-/*
-	R_AliasTransformFinalVert
-*/
 void
 R_AliasTransformFinalVert (finalvert_t *fv, auxvert_t *av,
 						   trivertx_t *pverts, stvert_t *pstverts)
@@ -422,7 +403,7 @@ R_AliasTransformFinalVert (finalvert_t *fv, auxvert_t *av,
 
 	fv->flags = pstverts->onseam;
 
-// lighting
+	// lighting
 	plightnormal = r_avertexnormals[pverts->lightnormalindex];
 	lightcos = DotProduct (plightnormal, r_plightvec);
 	temp = r_ambientlight;
@@ -431,8 +412,7 @@ R_AliasTransformFinalVert (finalvert_t *fv, auxvert_t *av,
 		temp += (int) (r_shadelight * lightcos);
 
 		// clamp; because we limited the minimum ambient and shading light,
-		// we
-		// don't have to clamp low light, just bright
+		// we don't have to clamp low light, just bright
 		if (temp < 0)
 			temp = 0;
 	}
@@ -442,10 +422,6 @@ R_AliasTransformFinalVert (finalvert_t *fv, auxvert_t *av,
 
 
 #ifndef USE_INTEL_ASM
-
-/*
-	R_AliasTransformAndProjectFinalVerts
-*/
 void
 R_AliasTransformAndProjectFinalVerts (finalvert_t *fv, stvert_t *pstverts)
 {
@@ -462,8 +438,7 @@ R_AliasTransformAndProjectFinalVerts (finalvert_t *fv, stvert_t *pstverts)
 
 		// x, y, and z are scaled down by 1/2**31 in the transform, so 1/z is
 		// scaled up by 1/2**31, and the scaling cancels out for x and y in
-		// the
-		// projection
+		// the projection
 		fv->v[5] = zi;
 
 		fv->v[0] = ((DotProduct (pverts->v, aliastransform[0]) +
@@ -493,19 +468,15 @@ R_AliasTransformAndProjectFinalVerts (finalvert_t *fv, stvert_t *pstverts)
 		fv->v[4] = temp;
 	}
 }
-
 #endif
 
 
-/*
-	R_AliasProjectFinalVert
-*/
 void
 R_AliasProjectFinalVert (finalvert_t *fv, auxvert_t *av)
 {
 	float       zi;
 
-// project points
+	// project points
 	zi = 1.0 / av->fv[2];
 
 	fv->v[5] = zi * ziscale;
@@ -515,9 +486,6 @@ R_AliasProjectFinalVert (finalvert_t *fv, auxvert_t *av)
 }
 
 
-/*
-	R_AliasPrepareUnclippedPoints
-*/
 void
 R_AliasPrepareUnclippedPoints (void)
 {
@@ -542,9 +510,7 @@ R_AliasPrepareUnclippedPoints (void)
 	D_PolysetDraw ();
 }
 
-/*
-	R_AliasSetupSkin
-*/
+
 void
 R_AliasSetupSkin (void)
 {
@@ -607,15 +573,13 @@ R_AliasSetupSkin (void)
 	}
 }
 
-/*
-	R_AliasSetupLighting
-*/
+
 void
 R_AliasSetupLighting (alight_t *plighting)
 {
 
-// guarantee that no vertex will ever be lit below LIGHT_MIN, so we don't have
-// to clamp off the bottom
+	// guarantee that no vertex will ever be lit below LIGHT_MIN, so we don't
+	// have to clamp off the bottom
 	r_ambientlight = plighting->ambientlight;
 
 	if (r_ambientlight < LIGHT_MIN)
@@ -633,11 +597,12 @@ R_AliasSetupLighting (alight_t *plighting)
 
 	r_shadelight *= VID_GRADES;
 
-// rotate the lighting vector into the model's frame of reference
+	// rotate the lighting vector into the model's frame of reference
 	r_plightvec[0] = DotProduct (plighting->plightvec, alias_forward);
 	r_plightvec[1] = -DotProduct (plighting->plightvec, alias_right);
 	r_plightvec[2] = DotProduct (plighting->plightvec, alias_up);
 }
+
 
 /*
 	R_AliasSetupFrame
@@ -672,10 +637,8 @@ R_AliasSetupFrame (void)
 
 	time = cl.time + currententity->syncbase;
 
-//
-// when loading in Mod_LoadAliasGroup, we guaranteed all interval values
-// are positive, so we don't have to worry about division by 0
-//
+	// when loading in Mod_LoadAliasGroup, we guaranteed all interval values
+	// are positive, so we don't have to worry about division by 0
 	targettime = time - ((int) (time / fullinterval)) * fullinterval;
 
 	for (i = 0; i < (numframes - 1); i++) {
@@ -688,9 +651,6 @@ R_AliasSetupFrame (void)
 }
 
 
-/*
-	R_AliasDrawModel
-*/
 void
 R_AliasDrawModel (alight_t *plighting)
 {
@@ -700,7 +660,7 @@ R_AliasDrawModel (alight_t *plighting)
 
 	r_amodels_drawn++;
 
-// cache align
+	// cache align
 	pfinalverts = (finalvert_t *)
 		(((long) &finalverts[0] + CACHE_SIZE - 1) & ~(CACHE_SIZE - 1));
 	pauxverts = &auxverts[0];

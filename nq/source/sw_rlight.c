@@ -36,17 +36,13 @@
 int         r_dlightframecount;
 
 
-/*
-	R_AnimateLight
-*/
 void
 R_AnimateLight (void)
 {
 	int         i, j, k;
 
-//
-// light animations
-// 'm' is normal light, 'a' is no light, 'z' is double bright
+	// light animations
+	// 'm' is normal light, 'a' is no light, 'z' is double bright
 	i = (int) (cl.time * 10);
 	for (j = 0; j < MAX_LIGHTSTYLES; j++) {
 		if (!cl_lightstyle[j].length) {
@@ -65,9 +61,7 @@ R_AnimateLight (void)
 	DYNAMIC LIGHTS
 */
 
-/*
-	R_MarkLights
-*/
+
 void
 R_MarkLights (vec3_t lightorigin, dlight_t *light, int bit, mnode_t *node)
 {
@@ -90,7 +84,7 @@ R_MarkLights (vec3_t lightorigin, dlight_t *light, int bit, mnode_t *node)
 		R_MarkLights (lightorigin, light, bit, node->children[1]);
 		return;
 	}
-// mark the polygons
+	// mark the polygons
 	surf = cl.worldmodel->surfaces + node->firstsurface;
 	for (i = 0; i < node->numsurfaces; i++, surf++) {
 		if (surf->dlightframe != r_dlightframecount) {
@@ -105,9 +99,6 @@ R_MarkLights (vec3_t lightorigin, dlight_t *light, int bit, mnode_t *node)
 }
 
 
-/*
-	R_PushDlights
-*/
 void
 R_PushDlights (vec3_t entorigin)
 {
@@ -132,6 +123,7 @@ R_PushDlights (vec3_t entorigin)
 	LIGHT SAMPLING
 */
 
+
 int
 RecursiveLightPoint (mnode_t *node, vec3_t start, vec3_t end)
 {
@@ -151,8 +143,7 @@ RecursiveLightPoint (mnode_t *node, vec3_t start, vec3_t end)
 	if (node->contents < 0)
 		return -1;						// didn't hit anything
 
-// calculate mid point
-
+	// calculate mid point
 // FIXME: optimize for axial
 	plane = node->plane;
 	front = DotProduct (start, plane->normal) - plane->dist;
@@ -167,7 +158,7 @@ RecursiveLightPoint (mnode_t *node, vec3_t start, vec3_t end)
 	mid[1] = start[1] + (end[1] - start[1]) * frac;
 	mid[2] = start[2] + (end[2] - start[2]) * frac;
 
-// go down front side   
+	// go down front side   
 	r = RecursiveLightPoint (node->children[side], start, mid);
 	if (r >= 0)
 		return r;						// hit something
@@ -175,7 +166,7 @@ RecursiveLightPoint (mnode_t *node, vec3_t start, vec3_t end)
 	if ((back < 0) == side)
 		return -1;						// didn't hit anything
 
-// check for impact on this node
+	// check for impact on this node
 
 	surf = cl.worldmodel->surfaces + node->firstsurface;
 	for (i = 0; i < node->numsurfaces; i++, surf++) {
@@ -222,9 +213,10 @@ RecursiveLightPoint (mnode_t *node, vec3_t start, vec3_t end)
 		return r;
 	}
 
-// go down back side
+	// go down back side
 	return RecursiveLightPoint (node->children[!side], mid, end);
 }
+
 
 int
 R_LightPoint (vec3_t p)

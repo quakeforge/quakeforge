@@ -47,8 +47,6 @@ zpointdesc_t r_zpointdesc;
 
 polydesc_t  r_polydesc;
 
-
-
 clipplane_t *entity_clipplanes;
 clipplane_t view_clipplanes[4];
 clipplane_t world_clipplanes[16];
@@ -80,9 +78,6 @@ qboolean    r_lastvertvalid;
 
 #ifndef USE_INTEL_ASM
 
-/*
-	R_EmitEdge
-*/
 void
 R_EmitEdge (mvertex_t *pv0, mvertex_t *pv1)
 {
@@ -132,7 +127,7 @@ R_EmitEdge (mvertex_t *pv0, mvertex_t *pv1)
 
 	world = &pv1->position[0];
 
-// transform and project
+	// transform and project
 	VectorSubtract (world, modelorg, local);
 	TransformVector (local, transformed);
 
@@ -161,7 +156,7 @@ R_EmitEdge (mvertex_t *pv0, mvertex_t *pv1)
 	if (lzi0 > r_nearzi)				// for mipmap finding
 		r_nearzi = lzi0;
 
-// for right edges, all we want is the effect on 1/z
+	// for right edges, all we want is the effect on 1/z
 	if (r_nearzionly)
 		return;
 
@@ -169,8 +164,7 @@ R_EmitEdge (mvertex_t *pv0, mvertex_t *pv1)
 
 	r_ceilv1 = (int) ceil (r_v1);
 
-
-// create the edge
+	// create the edge
 	if (ceilv0 == r_ceilv1) {
 		// we cache unclipped horizontal edges as fully clipped
 		if (cacheoffset != 0x7FFFFFFF) {
@@ -214,19 +208,17 @@ R_EmitEdge (mvertex_t *pv0, mvertex_t *pv1)
 	edge->u_step = u_step * 0x100000;
 	edge->u = u * 0x100000 + 0xFFFFF;
 
-// we need to do this to avoid stepping off the edges if a very nearly
-// horizontal edge is less than epsilon above a scan, and numeric error causes
-// it to incorrectly extend to the scan, and the extension of the line goes off
-// the edge of the screen
+	// we need to do this to avoid stepping off the edges if a very nearly
+	// horizontal edge is less than epsilon above a scan, and numeric error
+	// causes it to incorrectly extend to the scan, and the extension of the
+	// line goes off the edge of the screen
 // FIXME: is this actually needed?
 	if (edge->u < r_refdef.vrect_x_adj_shift20)
 		edge->u = r_refdef.vrect_x_adj_shift20;
 	if (edge->u > r_refdef.vrectright_adj_shift20)
 		edge->u = r_refdef.vrectright_adj_shift20;
 
-//
-// sort the edge in normally
-//
+	// sort the edge in normally
 	u_check = edge->u;
 	if (edge->surfs[0])
 		u_check++;						// sort trailers after leaders
@@ -247,9 +239,6 @@ R_EmitEdge (mvertex_t *pv0, mvertex_t *pv1)
 }
 
 
-/*
-	R_ClipEdge
-*/
 void
 R_ClipEdge (mvertex_t *pv0, mvertex_t *pv1, clipplane_t *clip)
 {
@@ -327,16 +316,13 @@ R_ClipEdge (mvertex_t *pv0, mvertex_t *pv1, clipplane_t *clip)
 			}
 		} while ((clip = clip->next) != NULL);
 	}
-// add the edge
+	// add the edge
 	R_EmitEdge (pv0, pv1);
 }
 
 #endif // !USE_INTEL_ASM
 
 
-/*
-	R_EmitCachedEdge
-*/
 void
 R_EmitCachedEdge (void)
 {
@@ -356,9 +342,6 @@ R_EmitCachedEdge (void)
 }
 
 
-/*
-	R_RenderFace
-*/
 void
 R_RenderFace (msurface_t *fa, int clipflags)
 {
@@ -370,12 +353,12 @@ R_RenderFace (msurface_t *fa, int clipflags)
 	medge_t    *pedges, tedge;
 	clipplane_t *pclip;
 
-// skip out if no more surfs
+	// skip out if no more surfs
 	if ((surface_p) >= surf_max) {
 		r_outofsurfaces++;
 		return;
 	}
-// ditto if not enough edges left, or switch to auxedges if possible
+	// ditto if not enough edges left, or switch to auxedges if possible
 	if ((edge_p + fa->numedges + 4) >= edge_max) {
 		r_outofedges += fa->numedges;
 		return;
@@ -383,7 +366,7 @@ R_RenderFace (msurface_t *fa, int clipflags)
 
 	c_faceclip++;
 
-// set up clip planes
+	// set up clip planes
 	pclip = NULL;
 
 	for (i = 3, mask = 0x08; i >= 0; i--, mask >>= 1) {
@@ -393,7 +376,7 @@ R_RenderFace (msurface_t *fa, int clipflags)
 		}
 	}
 
-// push the edges through
+	// push the edges through
 	r_emitted = 0;
 	r_nearzi = 0;
 	r_nearzionly = false;
@@ -479,7 +462,7 @@ R_RenderFace (msurface_t *fa, int clipflags)
 		}
 	}
 
-// if there was a clip off the left edge, add that edge too
+	// if there was a clip off the left edge, add that edge too
 // FIXME: faster to do in screen space?
 // FIXME: share clipped edges?
 	if (makeleftedge) {
@@ -487,14 +470,14 @@ R_RenderFace (msurface_t *fa, int clipflags)
 		r_lastvertvalid = false;
 		R_ClipEdge (&r_leftexit, &r_leftenter, pclip->next);
 	}
-// if there was a clip off the right edge, get the right r_nearzi
+	// if there was a clip off the right edge, get the right r_nearzi
 	if (makerightedge) {
 		r_pedge = &tedge;
 		r_lastvertvalid = false;
 		r_nearzionly = true;
 		R_ClipEdge (&r_rightexit, &r_rightenter, view_clipplanes[1].next);
 	}
-// if no edges made it out, return without posting the surface
+	// if no edges made it out, return without posting the surface
 	if (!r_emitted)
 		return;
 
@@ -525,9 +508,6 @@ R_RenderFace (msurface_t *fa, int clipflags)
 }
 
 
-/*
-	R_RenderBmodelFace
-*/
 void
 R_RenderBmodelFace (bedge_t *pedges, msurface_t *psurf)
 {
@@ -539,12 +519,12 @@ R_RenderBmodelFace (bedge_t *pedges, msurface_t *psurf)
 	medge_t     tedge;
 	clipplane_t *pclip;
 
-// skip out if no more surfs
+	// skip out if no more surfs
 	if (surface_p >= surf_max) {
 		r_outofsurfaces++;
 		return;
 	}
-// ditto if not enough edges left, or switch to auxedges if possible
+	// ditto if not enough edges left, or switch to auxedges if possible
 	if ((edge_p + psurf->numedges + 4) >= edge_max) {
 		r_outofedges += psurf->numedges;
 		return;
@@ -552,10 +532,10 @@ R_RenderBmodelFace (bedge_t *pedges, msurface_t *psurf)
 
 	c_faceclip++;
 
-// this is a dummy to give the caching mechanism someplace to write to
+	// this is a dummy to give the caching mechanism someplace to write to
 	r_pedge = &tedge;
 
-// set up clip planes
+	// set up clip planes
 	pclip = NULL;
 
 	for (i = 3, mask = 0x08; i >= 0; i--, mask >>= 1) {
@@ -565,7 +545,7 @@ R_RenderBmodelFace (bedge_t *pedges, msurface_t *psurf)
 		}
 	}
 
-// push the edges through
+	// push the edges through
 	r_emitted = 0;
 	r_nearzi = 0;
 	r_nearzionly = false;
@@ -584,20 +564,20 @@ R_RenderBmodelFace (bedge_t *pedges, msurface_t *psurf)
 			makerightedge = true;
 	}
 
-// if there was a clip off the left edge, add that edge too
+	// if there was a clip off the left edge, add that edge too
 // FIXME: faster to do in screen space?
 // FIXME: share clipped edges?
 	if (makeleftedge) {
 		r_pedge = &tedge;
 		R_ClipEdge (&r_leftexit, &r_leftenter, pclip->next);
 	}
-// if there was a clip off the right edge, get the right r_nearzi
+	// if there was a clip off the right edge, get the right r_nearzi
 	if (makerightedge) {
 		r_pedge = &tedge;
 		r_nearzionly = true;
 		R_ClipEdge (&r_rightexit, &r_rightenter, view_clipplanes[1].next);
 	}
-// if no edges made it out, return without posting the surface
+	// if no edges made it out, return without posting the surface
 	if (!r_emitted)
 		return;
 
@@ -628,9 +608,6 @@ R_RenderBmodelFace (bedge_t *pedges, msurface_t *psurf)
 }
 
 
-/*
-	R_RenderPoly
-*/
 void
 R_RenderPoly (msurface_t *fa, int clipflags)
 {
@@ -651,7 +628,7 @@ R_RenderPoly (msurface_t *fa, int clipflags)
 
 	s_axis = t_axis = 0;				// keep compiler happy
 
-// set up clip planes
+	// set up clip planes
 	pclip = NULL;
 
 	for (i = 3, mask = 0x08; i >= 0; i--, mask >>= 1) {
@@ -661,7 +638,7 @@ R_RenderPoly (msurface_t *fa, int clipflags)
 		}
 	}
 
-// reconstruct the polygon
+	// reconstruct the polygon
 // FIXME: these should be precalculated and loaded off disk
 	pedges = currententity->model->edges;
 	lnumverts = fa->numedges;
@@ -679,7 +656,7 @@ R_RenderPoly (msurface_t *fa, int clipflags)
 		}
 	}
 
-// clip the polygon, done if not visible
+	// clip the polygon, done if not visible
 	while (pclip) {
 		lastvert = lnumverts - 1;
 		lastdist = DotProduct (verts[vertpage][lastvert].position,
@@ -728,25 +705,25 @@ R_RenderPoly (msurface_t *fa, int clipflags)
 		pclip = pclip->next;
 	}
 
-// transform and project, remembering the z values at the vertices and
-// r_nearzi, and extract the s and t coordinates at the vertices
+	// transform and project, remembering the z values at the vertices and
+	// r_nearzi, and extract the s and t coordinates at the vertices
 	pplane = fa->plane;
 	switch (pplane->type) {
-		case PLANE_X:
-		case PLANE_ANYX:
-			s_axis = 1;
-			t_axis = 2;
-			break;
-		case PLANE_Y:
-		case PLANE_ANYY:
-			s_axis = 0;
-			t_axis = 2;
-			break;
-		case PLANE_Z:
-		case PLANE_ANYZ:
-			s_axis = 0;
-			t_axis = 1;
-			break;
+	case PLANE_X:
+	case PLANE_ANYX:
+		s_axis = 1;
+		t_axis = 2;
+		break;
+	case PLANE_Y:
+	case PLANE_ANYY:
+		s_axis = 0;
+		t_axis = 2;
+		break;
+	case PLANE_Z:
+	case PLANE_ANYZ:
+		s_axis = 0;
+		t_axis = 1;
+		break;
 	}
 
 	r_nearzi = 0;
@@ -786,21 +763,18 @@ R_RenderPoly (msurface_t *fa, int clipflags)
 		pverts[i].t = verts[vertpage][i].position[t_axis];
 	}
 
-// build the polygon descriptor, including fa, r_nearzi, and u, v, s, t, and z
-// for each vertex
+	// build the polygon descriptor, including fa, r_nearzi, and u, v, s, t,
+	// and z for each vertex
 	r_polydesc.numverts = lnumverts;
 	r_polydesc.nearzi = r_nearzi;
 	r_polydesc.pcurrentface = fa;
 	r_polydesc.pverts = pverts;
 
-// draw the polygon
+	// draw the polygon
 	D_DrawPoly ();
 }
 
 
-/*
-	R_ZDrawSubmodelPolys
-*/
 void
 R_ZDrawSubmodelPolys (model_t *pmodel)
 {

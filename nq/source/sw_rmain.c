@@ -85,17 +85,13 @@ byte       *r_stack_start;
 
 qboolean    r_fov_greater_than_90;
 
-//
 // view origin
-//
 vec3_t      vup, base_vup;
 vec3_t      vpn, base_vpn;
 vec3_t      vright, base_vright;
 vec3_t      r_origin;
 
-//
 // screen size info
-//
 refdef_t    r_refdef;
 float       xcenter, ycenter;
 float       xscale, yscale;
@@ -112,11 +108,8 @@ float       xOrigin, yOrigin;
 
 mplane_t    screenedge[4];
 
-//
 // refresh flags
-//
 int         r_framecount = 1;			// so frame counts initialized to 0
-
 										// don't match
 int         r_visframecount;
 int         d_spanpixcount;
@@ -132,10 +125,8 @@ int        *pfrustum_indexes[4];
 int         r_frustum_indexes[4 * 6];
 
 int         reinit_surfcache = 1;		// if 1, surface cache is currently
-
-										// empty and
-								// must be reinitialized for current cache
-								// size
+										// empty and must be reinitialized
+										// for current cache size
 
 mleaf_t    *r_viewleaf, *r_oldviewleaf;
 
@@ -155,16 +146,13 @@ extern cvar_t *scr_fov;
 void        R_NetGraph (void);
 void        R_ZGraph (void);
 
-/*
-	R_Textures_Init
-*/
 void
 R_Textures_Init (void)
 {
 	int         x, y, m;
 	byte       *dest;
 
-// create a simple checkerboard texture for the default
+	// create a simple checkerboard texture for the default
 	r_notexture_mip =
 		Hunk_AllocName (sizeof (texture_t) + 16 * 16 + 8 * 8 + 4 * 4 + 2 * 2,
 						"notexture");
@@ -188,11 +176,9 @@ R_Textures_Init (void)
 	}
 }
 
-void        R_LoadSky_f (void);
 
-/*
-	R_Init
-*/
+void R_LoadSky_f (void);
+
 void
 R_Init (void)
 {
@@ -203,8 +189,10 @@ R_Init (void)
 
 	R_InitTurb ();
 
-	Cmd_AddCommand ("timerefresh", R_TimeRefresh_f, "Tests the current refresh rate for the current location");
-	Cmd_AddCommand ("pointfile", R_ReadPointFile_f, "Load a pointfile to determine map leaks");
+	Cmd_AddCommand ("timerefresh", R_TimeRefresh_f, "Tests the current "
+					"refresh rate for the current location");
+	Cmd_AddCommand ("pointfile", R_ReadPointFile_f, "Load a pointfile to "
+					"determine map leaks");
 	Cmd_AddCommand ("loadsky", R_LoadSky_f, "Load a skybox");
 
 	Cvar_SetValue (r_maxedges, (float) NUMSTACKEDGES);
@@ -231,15 +219,13 @@ R_Init (void)
 	D_Init ();
 }
 
-/*
-	R_NewMap
-*/
+
 void
 R_NewMap (void)
 {
 	int         i;
 
-// clear out efrags in case the level hasn't been reloaded
+	// clear out efrags in case the level hasn't been reloaded
 // FIXME: is this one short?
 	for (i = 0; i < cl.worldmodel->numleafs; i++)
 		cl.worldmodel->leafs[i].efrags = NULL;
@@ -286,9 +272,6 @@ R_NewMap (void)
 }
 
 
-/*
-	R_SetVrect
-*/
 void
 R_SetVrect (vrect_t *pvrectin, vrect_t *pvrect, int lineadj)
 {
@@ -420,26 +403,26 @@ R_ViewChanged (vrect_t *pvrect, int lineadj, float aspect)
 	xscaleshrink = (r_refdef.vrect.width - 6) / r_refdef.horizontalFieldOfView;
 	yscaleshrink = xscaleshrink * pixelAspect;
 
-// left side clip
+	// left side clip
 	screenedge[0].normal[0] = -1.0 / (xOrigin * r_refdef.horizontalFieldOfView);
 	screenedge[0].normal[1] = 0;
 	screenedge[0].normal[2] = 1;
 	screenedge[0].type = PLANE_ANYZ;
 
-// right side clip
+	// right side clip
 	screenedge[1].normal[0] =
 		1.0 / ((1.0 - xOrigin) * r_refdef.horizontalFieldOfView);
 	screenedge[1].normal[1] = 0;
 	screenedge[1].normal[2] = 1;
 	screenedge[1].type = PLANE_ANYZ;
 
-// top side clip
+	// top side clip
 	screenedge[2].normal[0] = 0;
 	screenedge[2].normal[1] = -1.0 / (yOrigin * verticalFieldOfView);
 	screenedge[2].normal[2] = 1;
 	screenedge[2].type = PLANE_ANYZ;
 
-// bottom side clip
+	// bottom side clip
 	screenedge[3].normal[0] = 0;
 	screenedge[3].normal[1] = 1.0 / ((1.0 - yOrigin) * verticalFieldOfView);
 	screenedge[3].normal[2] = 1;
@@ -477,9 +460,6 @@ R_ViewChanged (vrect_t *pvrect, int lineadj, float aspect)
 }
 
 
-/*
-	R_MarkLeaves
-*/
 void
 R_MarkLeaves (void)
 {
@@ -508,11 +488,7 @@ R_MarkLeaves (void)
 	}
 }
 
- /*
- =============
- R_ShowNearestLoc
- =============
- */
+
 static void
 R_ShowNearestLoc (void)
 {
@@ -535,9 +511,7 @@ R_ShowNearestLoc (void)
 	}
 }
 			
-/*
-	R_DrawEntitiesOnList
-*/
+
 void
 R_DrawEntitiesOnList (void)
 {
@@ -577,8 +551,7 @@ R_DrawEntitiesOnList (void)
 				VectorSubtract (r_origin, r_entorigin, modelorg);
 
 				// see if the bounding box lets us trivially reject, also
-				// sets
-				// trivial accept status
+				// sets trivial accept status
 				if (R_AliasCheckBBox ()) {
 					j = R_LightPoint (currententity->origin);
 
@@ -615,9 +588,7 @@ R_DrawEntitiesOnList (void)
 	}
 }
 
-/*
-	R_DrawViewModel
-*/
+
 void
 R_DrawViewModel (void)
 {
@@ -659,7 +630,7 @@ R_DrawViewModel (void)
 	r_viewlighting.ambientlight = j;
 	r_viewlighting.shadelight = j;
 
-// add dynamic lights       
+	// add dynamic lights       
 	for (lnum = 0; lnum < MAX_DLIGHTS; lnum++) {
 		dl = &cl_dlights[lnum];
 		if (!dl->radius)
@@ -675,7 +646,7 @@ R_DrawViewModel (void)
 			r_viewlighting.ambientlight += add;
 	}
 
-// clamp lighting so it doesn't overbright as much
+	// clamp lighting so it doesn't overbright as much
 	if (r_viewlighting.ambientlight > 128)
 		r_viewlighting.ambientlight = 128;
 	if (r_viewlighting.ambientlight + r_viewlighting.shadelight > 192)
@@ -687,9 +658,6 @@ R_DrawViewModel (void)
 }
 
 
-/*
-	R_BmodelCheckBBox
-*/
 int
 R_BmodelCheckBBox (model_t *clmodel, float *minmaxs)
 {
@@ -714,9 +682,8 @@ R_BmodelCheckBBox (model_t *clmodel, float *minmaxs)
 	} else {
 		for (i = 0; i < 4; i++) {
 			// generate accept and reject points
-			// FIXME: do with fast look-ups or integer tests based on the
-			// sign bit
-			// of the floating point values
+// FIXME: do with fast look-ups or integer tests based on the
+// sign bit of the floating point values
 
 			pindex = pfrustum_indexes[i];
 
@@ -746,9 +713,6 @@ R_BmodelCheckBBox (model_t *clmodel, float *minmaxs)
 }
 
 
-/*
-	R_DrawBEntitiesOnList
-*/
 void
 R_DrawBEntitiesOnList (void)
 {
@@ -773,8 +737,7 @@ R_DrawBEntitiesOnList (void)
 				clmodel = currententity->model;
 
 				// see if the bounding box lets us trivially reject, also
-				// sets
-				// trivial accept status
+				// sets trivial accept status
 				for (j = 0; j < 3; j++) {
 					minmaxs[j] = currententity->origin[j] + clmodel->mins[j];
 					minmaxs[3 + j] = currententity->origin[j] +
@@ -786,12 +749,12 @@ R_DrawBEntitiesOnList (void)
 				if (clipflags != BMODEL_FULLY_CLIPPED) {
 					VectorCopy (currententity->origin, r_entorigin);
 					VectorSubtract (r_origin, r_entorigin, modelorg);
-					// FIXME: is this needed?
+// FIXME: is this needed?
 					VectorCopy (modelorg, r_worldmodelorg);
 
 					r_pcurrentvertbase = clmodel->vertexes;
 
-					// FIXME: stop transforming twice
+// FIXME: stop transforming twice
 					R_RotateBmodel ();
 
 					// calculate dynamic lighting for bmodel if it's not an
@@ -811,10 +774,8 @@ R_DrawBEntitiesOnList (void)
 						}
 					}
 					// if the driver wants polygons, deliver those.
-					// Z-buffering is on
-					// at this point, so no clipping to the world tree is
-					// needed, just
-					// frustum clipping
+					// Z-buffering is on at this point, so no clipping to the
+					// world tree is needed, just frustum clipping
 					if (r_drawpolys | r_drawculledpolys) {
 						R_ZDrawSubmodelPolys (clmodel);
 					} else {
@@ -837,10 +798,8 @@ R_DrawBEntitiesOnList (void)
 								R_DrawSolidClippedSubmodelPolygons (clmodel);
 							} else {
 								// falls entirely in one leaf, so we just put 
-								// all the
-								// edges in the edge list and let 1/z sorting 
-								// handle
-								// drawing order
+								// all the edges in the edge list and let 1/z
+								// sorting handle drawing order
 								R_DrawSubmodelPolygons (clmodel, clipflags);
 							}
 
@@ -849,7 +808,7 @@ R_DrawBEntitiesOnList (void)
 					}
 
 					// put back world rotation and frustum clipping     
-					// FIXME: R_RotateBmodel should just work off base_vxx
+// FIXME: R_RotateBmodel should just work off base_vxx
 					VectorCopy (base_vpn, vpn);
 					VectorCopy (base_vup, vup);
 					VectorCopy (base_vright, vright);
@@ -869,17 +828,12 @@ R_DrawBEntitiesOnList (void)
 }
 
 
-/*
-	R_EdgeDrawing
-*/
 void
 R_EdgeDrawing (void)
 {
 	edge_t      ledges[NUMSTACKEDGES +
-
 					   ((CACHE_SIZE - 1) / sizeof (edge_t)) + 1];
 	surf_t      lsurfs[NUMSTACKSURFACES +
-
 					   ((CACHE_SIZE - 1) / sizeof (surf_t)) + 1];
 
 	if (auxedges) {
@@ -910,8 +864,8 @@ R_EdgeDrawing (void)
 	if (r_drawculledpolys)
 		R_ScanEdges ();
 
-// only the world can be drawn back to front with no z reads or compares, just
-// z writes, so have the driver turn z compares on now
+	// only the world can be drawn back to front with no z reads or compares,
+	// just z writes, so have the driver turn z compares on now
 	D_TurnZOn ();
 
 	if (r_dspeeds->int_val) {
@@ -928,8 +882,7 @@ R_EdgeDrawing (void)
 
 	if (!r_dspeeds->int_val) {
 		VID_UnlockBuffer ();
-		S_ExtraUpdate ();				// don't let sound get messed up if
-										// going slow
+		S_ExtraUpdate ();		// don't let sound get messed up if going slow
 		VID_LockBuffer ();
 	}
 
@@ -957,8 +910,7 @@ R_RenderView_ (void)
 
 	R_SetupFrame ();
 
-	R_MarkLeaves ();					// done here so we know if we're in
-										// water
+	R_MarkLeaves ();				// done here so we know if we're in water
 
 // make FDIV fast. This reduces timing precision after we've been running for a
 // while, so we don't do it globally.  This also sets chop mode, and we do it
@@ -971,8 +923,7 @@ R_RenderView_ (void)
 
 	if (!r_dspeeds->int_val) {
 		VID_UnlockBuffer ();
-		S_ExtraUpdate ();				// don't let sound get messed up if
-										// going slow
+		S_ExtraUpdate ();		// don't let sound get messed up if going slow
 		VID_LockBuffer ();
 	}
 
@@ -980,8 +931,7 @@ R_RenderView_ (void)
 
 	if (!r_dspeeds->int_val) {
 		VID_UnlockBuffer ();
-		S_ExtraUpdate ();				// don't let sound get messed up if
-										// going slow
+		S_ExtraUpdate ();		// don't let sound get messed up if going slow
 		VID_LockBuffer ();
 	}
 
@@ -1032,9 +982,10 @@ R_RenderView_ (void)
 	if (r_reportedgeout->int_val && r_outofedges)
 		Con_Printf ("Short roughly %d edges\n", r_outofedges * 2 / 3);
 
-// back to high floating-point precision
+	// back to high floating-point precision
 	Sys_HighFPPrecision ();
 }
+
 
 void
 R_RenderView (void)
@@ -1058,9 +1009,7 @@ R_RenderView (void)
 	R_RenderView_ ();
 }
 
-/*
-	R_InitTurb
-*/
+
 void
 R_InitTurb (void)
 {

@@ -53,14 +53,17 @@ int         r_numparticles;
 
 vec3_t      r_pright, r_pup, r_ppn;
 
+
 /*
 	R_MaxParticlesCheck
-Misty-chan: EXTREME heavy lifting and bugfixing thanks goes out to taniwha - I built this, and he got it working :)
+
+	Misty-chan: EXTREME heavy lifting and bugfixing thanks goes out to taniwha
+				- I built this, and he got it working :)
 */
 void
 R_MaxParticlesCheck (cvar_t *var)
 {
-	// Do not use 0 in this! sw doesn't grok 0 and it's going to segfault if we do!
+	// Do not use 0 in this! sw doesn't grok 0 and it'll segfault if we do!
 	r_numparticles = max(var->int_val, 1);
         
 	/*
@@ -83,7 +86,7 @@ R_Particles_Init_Cvars (void)
 {
 	// Does a callback to R_MaxParticleCheck when the cvar changes. Neat trick.
 	Cvar_Get ("cl_max_particles", "2048", CVAR_ARCHIVE, R_MaxParticlesCheck,
-					"Maximum amount of particles to display. No maximum, minimum is 1.");
+			  "Maximum amount of particles to display. No maximum, minimum is 1.");
 }
 
 

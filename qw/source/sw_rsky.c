@@ -50,12 +50,10 @@ int         r_skydirect;				// not used?
 
 byte        bottomsky[128 * 131];
 byte        bottommask[128 * 131];
-byte        newsky[128 * 256];			// newsky and topsky both pack in
-
-										// here, 128 bytes
-							// of newsky on the left of each scan, 128 bytes
-							// of topsky on the right, because the low-level
-							// drawers need 256-byte scan widths
+byte        newsky[128 * 256];	// newsky and topsky both pack in here, 128 
+								// bytes of newsky on the left of each scan,
+								// 128 bytes of topsky on the right, because
+								// the low-level drawers need 256-byte widths
 
 
 /*
@@ -93,9 +91,6 @@ R_InitSky (texture_t *mt)
 }
 
 
-/*
-	R_MakeSky
-*/
 void
 R_MakeSky (void)
 {
@@ -121,7 +116,6 @@ R_MakeSky (void)
 
 // FIXME: clean this up
 #if UNALIGNED_OK
-
 		for (x = 0; x < SKYSIZE; x += 4) {
 			ofs = baseofs + ((x + xshift) & SKYMASK);
 
@@ -133,9 +127,7 @@ R_MakeSky (void)
 
 			pnewsky++;
 		}
-
 #else
-
 		for (x = 0; x < SKYSIZE; x++) {
 			ofs = baseofs + ((x + xshift) & SKYMASK);
 
@@ -144,9 +136,7 @@ R_MakeSky (void)
 				*(byte *) & bottomsky[ofs];
 			pnewsky = (unsigned int *) ((byte *) pnewsky + 1);
 		}
-
 #endif
-
 		pnewsky += 128 / sizeof (unsigned int);
 	}
 
@@ -154,9 +144,6 @@ R_MakeSky (void)
 }
 
 
-/*
-	R_GenSkyTile
-*/
 void
 R_GenSkyTile (void *pdest)
 {
@@ -177,7 +164,6 @@ R_GenSkyTile (void *pdest)
 
 // FIXME: clean this up
 #if UNALIGNED_OK
-
 		for (x = 0; x < SKYSIZE; x += 4) {
 			ofs = baseofs + ((x + xshift) & SKYMASK);
 
@@ -190,9 +176,7 @@ R_GenSkyTile (void *pdest)
 			pnewsky++;
 			pd++;
 		}
-
 #else
-
 		for (x = 0; x < SKYSIZE; x++) {
 			ofs = baseofs + ((x + xshift) & SKYMASK);
 
@@ -202,17 +186,12 @@ R_GenSkyTile (void *pdest)
 			pnewsky = (unsigned int *) ((byte *) pnewsky + 1);
 			pd = (unsigned int *) ((byte *) pd + 1);
 		}
-
 #endif
-
 		pnewsky += 128 / sizeof (unsigned int);
 	}
 }
 
 
-/*
-	R_GenSkyTile16
-*/
 void
 R_GenSkyTile16 (void *pdest)
 {
@@ -248,9 +227,6 @@ R_GenSkyTile16 (void *pdest)
 }
 
 
-/*
-	R_SetSkyFrame
-*/
 void
 R_SetSkyFrame (void)
 {
@@ -266,7 +242,6 @@ R_SetSkyFrame (void)
 	temp = SKYSIZE * s1 * s2;
 
 	skytime = cl.time - ((int) (cl.time / temp) * temp);
-
 
 	r_skymade = 0;
 }

@@ -39,16 +39,12 @@ static auxvert_t av[8];
 
 void        R_AliasProjectFinalVert (finalvert_t *fv, auxvert_t *av);
 void        R_Alias_clip_top (finalvert_t *pfv0, finalvert_t *pfv1,
-
 							  finalvert_t *out);
 void        R_Alias_clip_bottom (finalvert_t *pfv0, finalvert_t *pfv1,
-
 								 finalvert_t *out);
 void        R_Alias_clip_left (finalvert_t *pfv0, finalvert_t *pfv1,
-
 							   finalvert_t *out);
 void        R_Alias_clip_right (finalvert_t *pfv0, finalvert_t *pfv1,
-
 								finalvert_t *out);
 
 
@@ -228,9 +224,6 @@ R_AliasClip (finalvert_t *in, finalvert_t *out, int flag, int count,
 }
 
 
-/*
-	R_AliasClipTriangle
-*/
 void
 R_AliasClipTriangle (mtriangle_t *ptri)
 {
@@ -238,7 +231,7 @@ R_AliasClipTriangle (mtriangle_t *ptri)
 	mtriangle_t mtri;
 	unsigned int clipflags;
 
-// copy vertexes and fix seam texture coordinates
+	// copy vertexes and fix seam texture coordinates
 	if (ptri->facesfront) {
 		fv[0][0] = pfinalverts[ptri->vertindex[0]];
 		fv[0][1] = pfinalverts[ptri->vertindex[1]];
@@ -252,7 +245,7 @@ R_AliasClipTriangle (mtriangle_t *ptri)
 		}
 	}
 
-// clip
+	// clip
 	clipflags = fv[0][0].flags | fv[0][1].flags | fv[0][2].flags;
 
 	if (clipflags & ALIAS_Z_CLIP) {
@@ -320,7 +313,7 @@ R_AliasClipTriangle (mtriangle_t *ptri)
 		fv[pingpong][i].flags = 0;
 	}
 
-// draw triangles
+	// draw triangles
 	mtri.facesfront = ptri->facesfront;
 	r_affinetridesc.ptriangles = &mtri;
 	r_affinetridesc.pfinalverts = fv[pingpong];

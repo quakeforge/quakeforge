@@ -54,14 +54,17 @@ int         r_numparticles;
 vec3_t      r_pright, r_pup, r_ppn;
 cvar_t      *r_particles;
 
+
 /*
 	R_MaxParticlesCheck
-Misty-chan: EXTREME heavy lifting and bugfixing thanks goes out to taniwha - I built this, and he got it working :)
+
+	Misty-chan: EXTREME heavy lifting and bugfixing thanks goes out to taniwha
+				- I built this, and he got it working :)
 */
 void
 R_MaxParticlesCheck (cvar_t *var)
 {
-	// Do not use 0 in this! sw doesn't grok 0 and it's going to segfault if we do!
+	// Do not use 0 in this! sw doesn't grok 0 and it'll segfault if we do!
 	r_numparticles = max(var->int_val, 1);
         
 	/*
@@ -78,21 +81,17 @@ R_MaxParticlesCheck (cvar_t *var)
 	R_ClearParticles ();
 }
 
-/*
-R_Particles_Init_Cvars
-*/
 
 void
 R_Particles_Init_Cvars (void)
 {
 	// Does a callback to R_MaxParticleCheck when the cvar changes. Neat trick.
 	Cvar_Get ("cl_max_particles", "2048", CVAR_ARCHIVE, R_MaxParticlesCheck,
-					"Maximum amount of particles to display. No maximum, minimum is 1.");
+			  "Maximum amount of particles to display. No maximum, minimum "
+			  "is 1.");
 }
 
-/*
-	R_ClearParticles
-*/
+
 void
 R_ClearParticles (void)
 {
@@ -156,6 +155,7 @@ R_ReadPointFile_f (void)
 	Con_Printf ("%i points read\n", c);
 }
 
+
 void
 R_RunSpikeEffect (vec3_t pos, byte type)
 {
@@ -174,6 +174,7 @@ R_RunSpikeEffect (vec3_t pos, byte type)
 			break;
 	}
 }
+
 
 void
 R_RunPuffEffect (vec3_t pos, byte type, byte cnt)
@@ -194,9 +195,7 @@ R_RunPuffEffect (vec3_t pos, byte type, byte cnt)
 	}
 }
 
-/*
-	R_ParticleExplosion
-*/
+
 void
 R_ParticleExplosion (vec3_t org)
 {
@@ -233,9 +232,7 @@ R_ParticleExplosion (vec3_t org)
 	}
 }
 
-/*
-	R_BlobExplosion
-*/
+
 void
 R_BlobExplosion (vec3_t org)
 {
@@ -273,9 +270,7 @@ R_BlobExplosion (vec3_t org)
 	}
 }
 
-/*
-	R_RunParticleEffect
-*/
+
 void
 R_RunParticleEffect (vec3_t org, int color, int count)
 {
@@ -312,9 +307,6 @@ R_RunParticleEffect (vec3_t org, int color, int count)
 }
 
 
-/*
-	R_LavaSplash
-*/
 void
 R_LavaSplash (vec3_t org)
 {
@@ -354,9 +346,7 @@ R_LavaSplash (vec3_t org)
 			}
 }
 
-/*
-	R_TeleportSplash
-*/
+
 void
 R_TeleportSplash (vec3_t org)
 {
@@ -395,6 +385,7 @@ R_TeleportSplash (vec3_t org)
 				VectorScale (dir, vel, p->vel);
 			}
 }
+
 
 void
 R_RocketTrail (int type, entity_t *ent)
@@ -479,9 +470,6 @@ R_RocketTrail (int type, entity_t *ent)
 }
 
 
-/*
-	R_DrawParticles
-*/
 void
 R_DrawParticles (void)
 {
