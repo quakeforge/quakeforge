@@ -92,7 +92,7 @@ GetFileSpace (int size)
 	return buf;
 }
 
-void
+void *
 LightThread (void *junk)
 {
 	int i;
@@ -102,7 +102,7 @@ LightThread (void *junk)
 		i = bspfileface++;
 		UNLOCK;
 		if (i >= bsp->numfaces)
-			return;
+			return 0;
 
 		LightFace (i);
 	}

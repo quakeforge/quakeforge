@@ -29,7 +29,11 @@
 #ifndef __threads_h
 #define __threads_h
 
-#ifdef __alpha
+#ifdef HAVE_CONFIG_H
+# include "config.h"
+#endif
+
+#ifdef HAVE_PTHREAD_H
 #include <pthread.h>
 extern pthread_mutex_t *my_mutex;
 #define	LOCK	pthread_mutex_lock (my_mutex)
@@ -41,7 +45,7 @@ extern pthread_mutex_t *my_mutex;
 
 extern int numthreads;
 
-typedef void (threadfunc_t) (void *);
+typedef void *(threadfunc_t) (void *);
 
 void InitThreads (void);
 void RunThreadsOn (threadfunc_t func);
