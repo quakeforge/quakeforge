@@ -42,66 +42,29 @@ understand.
 .SH OPTIONS
 \fBqfcc\fP takes the following arguments:
 .TP
-.B \-s, \-\-source DIR
-look for progs.src in DIR instead of the current directory.
+.B \-C, \-\-code OPTION,...
+Set code generation options. See \fBCODE GENERATION OPTIONS\fP for details.
 .TP
-.B \-q, \-\-quiet
-Inhibit some of qfcc's normal output.
+.B \-c
+Compile only, do not link. Can be used in either progs.src or separate
+compilation modes.
 .TP
-.B \-v, \-\-verbose
-Display more output than usual.
-.TP
-.B \-g
-Generate debugging info. Synonym for \fB\-\-code debug\fP.
-.TP
-.B \-o, \-\0output\-file FILE
-Specify output file name.
-.TP
-.B \-P, \-\-progs\-src FILE
-File to use instead of progs.src
+.B \-D, \-\-define SYMBOL[=VAL],...
+Define symbols for the preprocessor, if it is in use.
 .TP
 .B \-F, \-\-files
 Generate files.dat. This list is created by checking the parameters to the
 precache_* functions.
 .TP
-.B \-t, \-\-traditional
-Use traditional QuakeC syntax, semantics and "bugs". Also implies v6only.
-.TP
-.B \-p, \-\-strip\-path NUM
-Strip NUM leading path elements from file names. eg. -p 3 will strip the
-../../.. from ../../../src/foo.r when embedding the source file name in the
-output code.
-.TP
-.B \-C, \-\-code OPTION,...
-Set code generation options. See \fBCODE GENERATION OPTIONS\fP for details.
-.TP
-.B \-W, \-\-warn OPTION,...
-Set warning options. See \fBWARNING OPTIONS\fP for details.
-.TP
-.B \-N, \-\-notice OPTION,...
-Set notice options. See \fBNOTICE OPTIONS\fP for details.
+.B \-g
+Generate debugging info. Synonym for \fB\-\-code debug\fP.
 .TP
 .B \-h, \-\-help
 Show summary of options.
 .TP
-.B \-V, \-\-version
-Show the version of qfcc.
-.TP
-.B \-S, \-\-save\-temps
-Do not delete temporary files.
-.TP
-.B \-D, \-\-define SYMBOL[=VAL],...
-Define symbols for the preprocessor, if it is in use.
-.TP
 .B \-I, \-\-include DIR,...
 Add DIR to the list of directories for the preprocessor to search when looking
 for include files.
-.TP
-.B \-U, \-\-undefine SYMBOL,...
-Undefine preprocessor symbols, if the preprocessor is in use.
-.TP
-.B \-\-cpp CPPSPEC
-\fBcpp\fP execution command line. See \fBCPP NAME\fP for details.
 .TP
 .B \-L DIR
 Add DIR to the search path used for -l.
@@ -111,18 +74,55 @@ Add libLIB.a to the list of libraries to be used for resolving undefined
 symbols. \fBqfcc\fP's libraries are really \fBpak\fP files of \fBqfcc\fP
 object files built using the \fBpak\fP utility.
 .TP
-.B \-c
-Compile only, do not link. Can be used in either progs.src or separate
-compilation modes.
+.B \-N, \-\-notice OPTION,...
+Set notice options. See \fBNOTICE OPTIONS\fP for details.
+.TP
+.B \-o, \-\0output\-file FILE
+Specify output file name.
+.TP
+.B \-P, \-\-progs\-src FILE
+File to use instead of progs.src
+.TP
+.B \-p, \-\-strip\-path NUM
+Strip NUM leading path elements from file names. eg. -p 3 will strip the
+../../.. from ../../../src/foo.r when embedding the source file name in the
+output code.
+.TP
+.B \-q, \-\-quiet
+Inhibit some of qfcc's normal output.
 .TP
 .B \-r
 Incremental linking. Generate a larger object file from other object files
 and libraries.
 .TP
+.B \-S, \-\-save\-temps
+Do not delete temporary files.
+.TP
+.B \-s, \-\-source DIR
+look for progs.src in DIR instead of the current directory.
+.TP
+.B \-t, \-\-traditional
+Use traditional QuakeC syntax, semantics and "bugs". Also implies v6only.
+.TP
+.B \-U, \-\-undefine SYMBOL,...
+Undefine preprocessor symbols, if the preprocessor is in use.
+.TP
+.B \-V, \-\-version
+Show the version of qfcc.
+.TP
+.B \-v, \-\-verbose
+Display more output than usual.
+.TP
+.B \-W, \-\-warn OPTION,...
+Set warning options. See \fBWARNING OPTIONS\fP for details.
+.TP
 .B \-z
 Compress object files when writing them. This is especially useful when
 creating libraries, especially if using the object oriented features, but can
 be quite slow.
+.TP
+.B \-\-cpp CPPSPEC
+\fBcpp\fP execution command line. See \fBCPP NAME\fP for details.
 .SH "CODE GENERATION OPTIONS"
 Code generation options are processed in the order of their appearance on the
 command line. Unsupported options are ignored. The following options are
