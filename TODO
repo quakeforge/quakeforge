@@ -39,6 +39,7 @@ o  doublesize modes (eg, render in 320x240 but display in 640x480)
 ?  delta compression for protocol
 ?  transmit nails as source/direction/speed/time rather than direction/location, to improve delta compression
 ?  custom particle explosions (doable via csqc)
+?  server should shutdown cleanly when it recieves SIGTERM and SIGHUP
 
 These are explained better in doc/ideas/rhamph.txt:
 ?  portal vis system
