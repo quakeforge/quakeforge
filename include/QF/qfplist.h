@@ -78,6 +78,8 @@ struct plbinary_s {
 };
 typedef struct plbinary_s	plbinary_t;
 
+struct hashtab_s;
+
 plitem_t *PL_GetPropertyList (const char *);
 plitem_t *PL_ObjectForKey (struct hashtab_s *, const char *);
 void PL_FreeItem (struct plitem_s *);
