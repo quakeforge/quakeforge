@@ -110,7 +110,7 @@ unsigned int	InvalidEnum, InvalidValue, InvalidOperation, OutOfMemory,
 extern void (*R_DrawSpriteModel) (struct entity_s *ent);
 
 
-unsigned int
+static unsigned int
 R_TestErrors (unsigned int numerous)
 {
 	switch (qfglGetError ()) {
@@ -150,7 +150,7 @@ R_TestErrors (unsigned int numerous)
 	return numerous;
 }
 
-void
+static void
 R_DisplayErrors (void)
 {
 	if (InvalidEnum)
@@ -169,7 +169,7 @@ R_DisplayErrors (void)
 		printf ("%d Unknown OpenGL errors!\n", Unknown);
 }
 
-void
+static void
 R_ClearErrors (void)
 {
 	InvalidEnum = 0;
