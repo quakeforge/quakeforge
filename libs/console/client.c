@@ -308,9 +308,9 @@ C_ExecLine (const char *line)
 static void
 C_Say (const char *line)
 {
-	Cbuf_AddText ("say \"");
-	Cbuf_AddText (line);
-	Cbuf_AddText ("\"\n");
+	Cbuf_AddTextTo (cmd_legacybuffer, "say \"");
+	Cbuf_AddTextTo (cmd_legacybuffer, line);
+	Cbuf_AddTextTo (cmd_legacybuffer, "\"\n");
 	key_dest = key_game;
 	game_target = IMT_0;
 }
@@ -318,9 +318,9 @@ C_Say (const char *line)
 static void
 C_SayTeam (const char *line)
 {
-	Cbuf_AddText ("say_team \"");
-	Cbuf_AddText (line);
-	Cbuf_AddText ("\"\n");
+	Cbuf_AddTextTo (cmd_legacybuffer, "say_team \"");
+	Cbuf_AddTextTo (cmd_legacybuffer, line);
+	Cbuf_AddTextTo (cmd_legacybuffer, "\"\n");
 	key_dest = key_game;
 	game_target = IMT_0;
 }

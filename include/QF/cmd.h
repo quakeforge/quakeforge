@@ -36,21 +36,33 @@ typedef struct cmd_localvar_s {
 	struct dstring_s *key, *value;
 } cmd_localvar_t;
 
+typedef struct cmd_token_s {
+	struct dstring_s *original, *processed; // Token before and after processing
+	unsigned int state; // Will be used later
+} cmd_token_t;
+
 typedef struct cmd_buffer_s {
+	// Data
 	struct dstring_s *buffer; // Actual text
-	qboolean wait; // Execution stopped until next frame
-	qboolean legacy; // Backwards compatible with old command buffer style
-	qboolean ownvars; // Buffer has its own private local variables
-	qboolean loop; // Buffer is in a loop
 	unsigned int argc, maxargc; // Number of args, number of args allocated
-	struct dstring_s **argv; // Array of processed tokens
-	struct dstring_s **argu; // Array of unprocessed tokens
+	struct cmd_token_s **argv; // Tokens
 	struct dstring_s *realline; // Actual command being processed
-	struct dstring_s *line; // Tokenized and reassembled command
+	struct dstring_s *line; // Reassembled line
 	struct dstring_s *looptext; // If a looping buffer, the text we are looping on
-	int *args; // Array of positions of each token in above string
+	struct dstring_s *retval; // Return value
+	unsigned int *args; // Array of positions of each token in composite line
 	struct hashtab_s *locals; // Local variables
-	struct cmd_buffer_s *prev, *next; // Next buffer in the stack
+	
+	// Flags	
+	qboolean imperative; // Execution cannot be paused
+	qboolean wait; // Execution paused until next frame
+	qboolean legacy; // Backwards compatible with old console buffer
+	qboolean ownvars; // Buffer has its own private local variables
+	qboolean loop; // Buffer loops itself
+	qboolean returning; // Buffer is returning a value
+	
+	// Stack
+	struct cmd_buffer_s *prev, *next; // Neighboring buffers in stack
 } cmd_buffer_t;
 
 //===========================================================================
@@ -142,6 +154,7 @@ const char	*Cmd_CompleteAlias (const char *partial);
 int		Cmd_Argc (void);
 const char	*Cmd_Argv (int arg);
 const char	*Cmd_Args (int start);
+const char	*Cmd_Argu (int arg);
 // The functions that execute commands get their parameters with these
 // functions. Cmd_Argv () will return an empty string, not a NULL
 // if arg > argc, so string operations are always safe.
