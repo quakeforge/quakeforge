@@ -147,7 +147,7 @@ R_AddDynamicLights (msurface_t *surf)
 	smax = (surf->extents[0] >> 4) + 1;
 	tmax = (surf->extents[1] >> 4) + 1;
 
-	for (lnum = 0; lnum < MAX_DLIGHTS; lnum++) {
+	for (lnum = 0; lnum < r_maxdlights; lnum++) {
 		if (!(surf->dlightbits & (1 << lnum)))
 			continue;					// not lit by this light
 
@@ -236,7 +236,7 @@ R_BuildLightMap (msurface_t *surf, byte * dest, int stride)
 
 	// add all the lightmaps
 	if (lightmap) {
-		for (maps = 0; maps < MAXLIGHTMAPS && surf->styles[maps] != 255;
+		for (maps = 0; maps < r_maxdlights && surf->styles[maps] != 255;
 			 maps++) {
 			scale = d_lightstylevalue[surf->styles[maps]];
 			surf->cached_light[maps] = scale;	// 8.8 fraction
@@ -676,7 +676,7 @@ R_DrawBrushModel (entity_t *e)
 	if (clmodel->firstmodelsurface != 0 && r_dlight_lightmap->int_val) {
 		vec3_t      lightorigin;
 
-		for (k = 0; k < MAX_DLIGHTS; k++) {
+		for (k = 0; k < r_maxdlights; k++) {
 			if ((r_dlights[k].die < r_realtime) || (!r_dlights[k].radius))
 				continue;
 

@@ -86,6 +86,7 @@ cvar_t     *r_aliastransbase;
 cvar_t     *r_ambient;
 cvar_t     *r_clearcolor;
 cvar_t     *r_dlight_lightmap;
+cvar_t	   *r_dlight_max;
 cvar_t     *r_drawentities;
 cvar_t     *r_drawexplosions; // DESPAIR
 cvar_t     *r_drawflat;
@@ -128,10 +129,11 @@ cvar_t     *scr_showram;
 cvar_t     *scr_showturtle;
 cvar_t     *scr_viewsize;
 
-extern short	r_maxparticles;
-extern cvar_t  *gl_sky_divide;		// FIXME
+extern unsigned int  r_maxparticles;
+extern cvar_t       *gl_sky_divide;		// FIXME
 
 extern void R_MaxParticlesCheck (cvar_t *var);
+extern void R_MaxDlightsCheck (cvar_t *var);
 
 
 static void
@@ -257,6 +259,8 @@ R_Init_Cvars (void)
 	r_dlight_lightmap = Cvar_Get ("r_dlight_lightmap", "1", CVAR_ARCHIVE,
 								  NULL, "Set to 1 for high quality dynamic "
 								  "lighting.");
+	r_dlight_max = Cvar_Get ("r_dlight_max", "32", CVAR_ARCHIVE,
+							 R_MaxDlightsCheck, "Number of dynamic lights.");
 	r_drawentities = Cvar_Get ("r_drawentities", "1", CVAR_NONE, NULL,
 							   "Toggles drawing of entities (almost "
 							   "everything but the world)");

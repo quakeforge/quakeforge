@@ -126,7 +126,7 @@ R_RenderDlights (void)
 	qfglShadeModel (GL_SMOOTH);
 
 	l = r_dlights;
-	for (i = 0; i < MAX_DLIGHTS; i++, l++) {
+	for (i = 0; i < r_maxdlights; i++, l++) {
 		if (l->die < r_realtime || !l->radius)
 			continue;
 		R_RenderDlight (l);

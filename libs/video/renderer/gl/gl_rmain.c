@@ -194,7 +194,7 @@ R_DrawSpriteModel (entity_t *e)
 		AngleVectors (currententity->angles, v_forward, v_right, v_up);
 		up = v_up;
 		right = v_right;
-	} else {							// normal sprite
+	} else {								// normal sprite
 		up = vup;
 		right = vright;
 	}
@@ -298,7 +298,6 @@ GL_DrawAliasFrame (vert_order_t *vo, qboolean fb)
 
 	if (modelalpha != 1.0)
 		qfglDepthMask (GL_TRUE);
-
 }
 
 extern vec3_t lightspot;
@@ -575,7 +574,7 @@ R_DrawAliasModel (entity_t *e, qboolean cull)
 	if (e == r_view_model)
 		shadelight = max (shadelight, 24);
 
-	for (lnum = 0; lnum < MAX_DLIGHTS; lnum++) {
+	for (lnum = 0; lnum < r_maxdlights; lnum++) {
 		if (r_dlights[lnum].die >= r_realtime) {
 			VectorSubtract (currententity->origin, r_dlights[lnum].origin,
 							dist);
@@ -828,17 +827,14 @@ static void
 R_SetFrustum (void)
 {
 	int         i;
-
 	if (r_refdef.fov_x == 90) {
 		// front side is visible
-
 		VectorAdd (vpn, vright, frustum[0].normal);
 		VectorSubtract (vpn, vright, frustum[1].normal);
 
 		VectorAdd (vpn, vup, frustum[2].normal);
 		VectorSubtract (vpn, vup, frustum[3].normal);
 	} else {
-
 		// rotate VPN right by FOV_X/2 degrees
 		RotatePointAroundVector (frustum[0].normal, vup, vpn,
 								 -(90 - r_refdef.fov_x / 2));

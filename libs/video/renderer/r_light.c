@@ -43,12 +43,33 @@ static const char rcsid[] =
 #include "QF/cvar.h"
 #include "QF/render.h"
 
+#include "compat.h"
 #include "r_cvar.h"
 #include "r_local.h"
 #include "r_shared.h"
 
-dlight_t    r_dlights[MAX_DLIGHTS];
+dlight_t    *r_dlights;
 lightstyle_t r_lightstyle[MAX_LIGHTSTYLES];
+
+unsigned int r_maxdlights;
+
+
+void
+R_MaxDlightsCheck (cvar_t *var)
+{
+	// FIXME: 1 minimum should be 0, if it doesn't require excess testing in
+	// *_rsurf.c
+	if (r_dynamic)
+		r_maxdlights = max(var->int_val * r_dynamic->int_val, 1);
+	else
+		r_maxdlights = max(var->int_val, 1);
+
+	free (r_dlights);
+
+	r_dlights = (dlight_t *) calloc (r_maxdlights, sizeof (dlight_t));
+
+	R_ClearDlights();
+}
 
 void
 R_AnimateLight (void)
@@ -283,7 +304,7 @@ R_PushDlights (vec3_t entorigin)
 
 	l = r_dlights;
 
-	for (i = 0; i < MAX_DLIGHTS; i++, l++) {
+	for (i = 0; i < r_maxdlights; i++, l++) {
 		if (l->die < r_realtime || !l->radius)
 			continue;
 		VectorSubtract (l->origin, entorigin, lightorigin);
@@ -416,7 +437,7 @@ R_AllocDlight (int key)
 	// first look for an exact key match
 	if (key) {
 		dl = r_dlights;
-		for (i = 0; i < MAX_DLIGHTS; i++, dl++) {
+		for (i = 0; i < r_maxdlights; i++, dl++) {
 			if (dl->key == key) {
 				memset (dl, 0, sizeof (*dl));
 				dl->key = key;
@@ -427,7 +448,7 @@ R_AllocDlight (int key)
 	}
 	// then look for anything else
 	dl = r_dlights;
-	for (i = 0; i < MAX_DLIGHTS; i++, dl++) {
+	for (i = 0; i < r_maxdlights; i++, dl++) {
 		if (dl->die < r_realtime) {
 			memset (dl, 0, sizeof (*dl));
 			dl->key = key;
@@ -449,7 +470,7 @@ R_DecayLights (double frametime)
 	dlight_t   *dl;
 
 	dl = r_dlights;
-	for (i = 0; i < MAX_DLIGHTS; i++, dl++) {
+	for (i = 0; i < r_maxdlights; i++, dl++) {
 		if (dl->die < r_realtime || !dl->radius)
 			continue;
 

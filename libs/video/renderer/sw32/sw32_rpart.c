@@ -50,7 +50,7 @@ int			ramp3[8] = { 0x6d, 0x6b, 6, 5, 4, 3 };
 
 vec3_t      r_pright, r_pup, r_ppn;
 
-extern short		r_maxparticles;
+extern unsigned int	r_maxparticles;
 extern particle_t  *active_particles, *free_particles, *particles;
 
 

@@ -519,7 +519,7 @@ R_DrawEntitiesOnList (void)
 
 					lighting.plightvec = lightvec;
 
-					for (lnum = 0; lnum < MAX_DLIGHTS; lnum++) {
+					for (lnum = 0; lnum < r_maxdlights; lnum++) {
 						if (r_dlights[lnum].die >= r_realtime) {
 							VectorSubtract (currententity->origin,
 											r_dlights[lnum].origin, dist);
@@ -581,7 +581,7 @@ R_DrawViewModel (void)
 	r_viewlighting.shadelight = j;
 
 	// add dynamic lights       
-	for (lnum = 0; lnum < MAX_DLIGHTS; lnum++) {
+	for (lnum = 0; lnum < r_maxdlights; lnum++) {
 		dl = &r_dlights[lnum];
 		if (!dl->radius)
 			continue;
@@ -708,7 +708,7 @@ R_DrawBEntitiesOnList (void)
 					if (clmodel->firstmodelsurface != 0) {
 						vec3_t      lightorigin;
 
-						for (k = 0; k < MAX_DLIGHTS; k++) {
+						for (k = 0; k < r_maxdlights; k++) {
 							if ((r_dlights[k].die < r_realtime) ||
 								(!r_dlights[k].radius)) continue;
 

@@ -107,7 +107,7 @@ R_AddDynamicLights (void)
 	tmax = (surf->extents[1] >> 4) + 1;
 	tex = surf->texinfo;
 
-	for (lnum = 0; lnum < MAX_DLIGHTS; lnum++) {
+	for (lnum = 0; lnum < r_maxdlights; lnum++) {
 		if (!(surf->dlightbits & (1 << lnum)))
 			continue;					// not lit by this light
 
