@@ -115,7 +115,7 @@ SND_LoadOgg (QFile *file, sfx_t *sfx, cache_allocator_t allocator)
 		}
 	}
 	if (sample_start != -1)
-		samples = sample_count;
+		samples = sample_start + sample_count;
 	size = samples * vi->channels * 2;
 	if (developer->int_val) {
 		Sys_Printf ("\nBitstream is %d channel, %ldHz\n",
