@@ -86,7 +86,7 @@ etype_t     qc_types[] = {
 	ev_field,							// ex_field
 	ev_func,							// ex_func
 	ev_pointer,							// ex_pointer
-	ev_quat,						// ex_quaternion
+	ev_quat,							// ex_quaternion
 	ev_integer,							// ex_integer
 	ev_uinteger,						// ex_uinteger
 	ev_short,							// ex_short
@@ -1796,10 +1796,12 @@ bitnot_expr:
 				case ex_float:
 					e->e.float_val = ~(int) e->e.float_val;
 					return e;
+				case ex_quaternion:
+					QuatConj (e->e.float_val, e->e.float_val);
+					return e;
 				case ex_nil:
 				case ex_string:
 				case ex_vector:
-				case ex_quaternion:
 				case ex_entity:
 				case ex_field:
 				case ex_func:
