@@ -119,3 +119,12 @@ string(entity thething) GetEnemyName =
 
 	return "unknown stuff";
 };
+void () assign =
+{
+	local float foo;
+	local float bar;
+
+	foo = bar;
+	foo = bar = 1;
+	foo = bar = bar + 1;
+};
