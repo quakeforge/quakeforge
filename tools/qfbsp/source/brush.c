@@ -73,11 +73,11 @@ CheckFace (face_t *f)
 		d = DotProduct (p1, planes[f->planenum].normal)
 			- planes[f->planenum].dist;
 
+		//XXX point off plane autofix
 		if (d < -ON_EPSILON || d > ON_EPSILON)
-			Sys_Error ("CheckFace: point off plane");
-#if 0	//XXX point off plane autofix
+			printf ("CheckFace: point off plane: %g @ (%g %g %g)\n", d,
+					p1[0], p1[1], p1[2]);
 		VectorMultSub (p1, d, planes[f->planenum].normal, p1);
-#endif
 
 		// check the edge isn't degenerate
 		p2 = f->points->points[j];
@@ -174,14 +174,17 @@ NormalizePlane (plane_t *dp)
 
 	if (dp->normal[0] == 1.0) {
 		dp->type = PLANE_X;
+		dp->normal[1] = dp->normal[2] = 0.0;
 		return;
 	}
 	if (dp->normal[1] == 1.0) {
 		dp->type = PLANE_Y;
+		dp->normal[0] = dp->normal[2] = 0.0;
 		return;
 	}
 	if (dp->normal[2] == 1.0) {
 		dp->type = PLANE_Z;
+		dp->normal[0] = dp->normal[1] = 0.0;
 		return;
 	}
 
@@ -230,9 +233,6 @@ FindPlane (plane_t *dplane, int *side)
 		VectorSubtract (dp->normal, pl.normal, t);
 		dot = DotProduct (dp->normal, pl.normal);
 		if (dot > 1.0 - ANGLEEPSILON 
-			&& fabs(t[0]) < DISTEPSILON * DISTEPSILON
-			&& fabs(t[1]) < DISTEPSILON * DISTEPSILON
-			&& fabs(t[2]) < DISTEPSILON * DISTEPSILON
 			&& fabs(dp->dist - pl.dist) < DISTEPSILON) {	// regular match
 			return i;
 		}
