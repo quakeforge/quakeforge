@@ -673,7 +673,7 @@ SV_UpdateToReliableMessages (void)
 	// check for changes to be sent over the reliable streams
 	for (i = 0, host_client = svs.clients; i < svs.maxclients;
 		 i++, host_client++) {
-		if (host_client->old_frags != SVfloat (host_client->edict, frags)) {
+		if (host_client->old_frags != (int) SVfloat (host_client->edict, frags)) {
 			for (j = 0, client = svs.clients; j < svs.maxclients; j++,
 					 client++) {
 				if (!client->active)
