@@ -483,8 +483,16 @@ CL_LinkPacketEntities (void)
 
 		// set frame
 		(*ent)->frame = s1->frame;
+
 		if ((*ent)->visframe != r_framecount - 1) {
 			(*ent)->pose1 = (*ent)->pose2 = -1;
+
+			// No trail if new this frame
+			VectorCopy (s1->origin, (*ent)->origin);
+			VectorCopy ((*ent)->origin, (*ent)->old_origin);
+		} else {
+			VectorCopy ((*ent)->origin, (*ent)->old_origin);
+			VectorCopy (s1->origin, (*ent)->origin);
 		}
 		(*ent)->visframe = r_framecount;
 
@@ -496,9 +504,6 @@ CL_LinkPacketEntities (void)
 			VectorCopy(s1->angles, (*ent)->angles);
 		}
 
-		VectorCopy ((*ent)->origin, (*ent)->old_origin);
-		VectorCopy (s1->origin, (*ent)->origin);
-
 		// add automatic particle trails
 		if (!model->flags)
 			continue;
@@ -509,13 +514,6 @@ CL_LinkPacketEntities (void)
 			VectorCopy (r_firecolor->vec, dl->color);
 			dl->radius = 200;
 			dl->die = cl.time + 0.1;
-		}
-
-		// No trail if too far.
-		if (VectorDistance_fast((*ent)->old_origin, (*ent)->origin) >
-				(256*256)) {
-			VectorCopy ((*ent)->origin, (*ent)->old_origin);
-			continue;
 		}
 
 		if (model->flags & EF_ROCKET)
