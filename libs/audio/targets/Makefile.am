@@ -5,44 +5,62 @@ libdir = @PLUGINDIR@
 lib_LTLIBRARIES = @SND_PLUGIN_TARGETS@
 EXTRA_LTLIBRARIES = libsound_sdl.la libsound_alsa0_5.la libsound_alsa0_9.la libsound_oss.la libsound_sgi.la libsound_sun.la libsound_win.la libsound_null.la libsound_disk.la
 
-common_sound_files= snd_dma.c snd_mem.c snd_mix.c snd_mixa.S
+if ASM_ARCH
+ASM = libasm.la
+else
+ASM =
+endif
+
+noinst_LTLIBRARIES = $(ASM)
+
+libasm_la_SOURCES = snd_mixa.S
+
+common_sound_files= snd_dma.c snd_mem.c snd_mix.c
 
 libsound_sdl_la_LDFLAGS= -version-info 1:0:0 $(SDL_LIBS)
+libsound_sdl_la_LIBADD = $(ASM)
 libsound_sdl_la_SOURCES= $(common_sound_files) snd_sdl.c
 libsound_sdl.la: $(libsound_sdl_la_OBJECTS) $(libsound_sdl_la_DEPENDENCIES)
 	$(LINK) -rpath $(pluginpath) $(libsound_sdl_la_LDFLAGS) $(libsound_sdl_la_OBJECTS) $(libsound_sdl_la_LIBADD) $(LIBS)
 
 libsound_alsa0_5_la_LDFLAGS= -version-info 1:0:0 $(ALSA_LIBS)
+libsound_alsa0_5_la_LIBADD = $(ASM)
 libsound_alsa0_5_la_SOURCES= $(common_sound_files) snd_alsa_0_5.c
 libsound_alsa0_5.la: $(libsound_alsa0_5_la_OBJECTS) $(libsound_alsa0_5_la_DEPENDENCIES)
 	$(LINK) -rpath $(pluginpath) $(libsound_alsa0_5_la_LDFLAGS) $(libsound_alsa0_5_la_OBJECTS) $(libsound_alsa0_5_la_LIBADD) $(LIBS)
 
 libsound_alsa0_9_la_LDFLAGS= -version-info 1:0:0 $(ALSA_LIBS)
+libsound_alsa0_9_la_LIBADD = $(ASM)
 libsound_alsa0_9_la_SOURCES= $(common_sound_files) snd_alsa_0_9.c
 libsound_alsa0_9.la: $(libsound_alsa0_9_la_OBJECTS) $(libsound_alsa0_9_la_DEPENDENCIES)
 	$(LINK) -rpath $(pluginpath) $(libsound_alsa0_9_la_LDFLAGS) $(libsound_alsa0_9_la_OBJECTS) $(libsound_alsa0_9_la_LIBADD) $(LIBS)
 
 libsound_oss_la_LDFLAGS= -version-info 1:0:0 $(OSS_LIBS) $(OSS_LIBS)
+libsound_oss_la_LIBADD = $(ASM)
 libsound_oss_la_SOURCES= $(common_sound_files) snd_oss.c
 libsound_oss.la: $(libsound_oss_la_OBJECTS) $(libsound_oss_la_DEPENDENCIES)
 	$(LINK) -rpath $(pluginpath) $(libsound_oss_la_LDFLAGS) $(libsound_oss_la_OBJECTS) $(libsound_oss_la_LIBADD) $(LIBS)
 
 libsound_sgi_la_LDFLAGS= -version-info 1:0:0 $(SGISND_LIBS)
+libsound_sgi_la_LIBADD = $(ASM)
 libsound_sgi_la_SOURCES= $(common_sound_files) snd_sgi.c
 libsound_sgi.la: $(libsound_sgi_la_OBJECTS) $(libsound_sgi_la_DEPENDENCIES)
 	$(LINK) -rpath $(pluginpath) $(libsound_sgi_la_LDFLAGS) $(libsound_sgi_la_OBJECTS) $(libsound_sgi_la_LIBADD) $(LIBS)
 
 libsound_sun_la_LDFLAGS= -version-info 1:0:0 $(SUN_LIBS)
+libsound_sun_la_LIBADD = $(ASM)
 libsound_sun_la_SOURCES= $(common_sound_files) snd_sun.c
 libsound_sun.la: $(libsound_sun_la_OBJECTS) $(libsound_sun_la_DEPENDENCIES)
 	$(LINK) -rpath $(pluginpath) $(libsound_sun_la_LDFLAGS) $(libsound_sun_la_OBJECTS) $(libsound_sun_la_LIBADD) $(LIBS)
 
 libsound_win_la_LDFLAGS= -version-info 1:0:0 $(WIN_LIBS)
+libsound_win_la_LIBADD = $(ASM)
 libsound_win_la_SOURCES= $(common_sound_files) snd_win.c
 libsound_win.la: $(libsound_win_la_OBJECTS) $(libsound_win_la_DEPENDENCIES)
 	$(LINK) -rpath $(pluginpath) $(libsound_win_la_LDFLAGS) $(libsound_win_la_OBJECTS) $(libsound_win_la_LIBADD) $(LIBS)
 
 libsound_disk_la_LDFLAGS= -version-info 1:0:0
+libsound_disk_la_LIBADD = $(ASM)
 libsound_disk_la_SOURCES= $(common_sound_files) snd_disk.c
 libsound_disk.la: $(libsound_disk_la_OBJECTS) $(libsound_disk_la_DEPENDENCIES)
 	$(LINK) -rpath $(pluginpath) $(libsound_disk_la_LDFLAGS) $(libsound_disk_la_OBJECTS) $(libsound_disk_la_LIBADD) $(LIBS)

@@ -8,10 +8,21 @@ else
 fnmatch_SRC =
 endif
 
+if ASM_ARCH
+ASM = libasm.la
+else
+ASM =
+endif
+
+noinst_LTLIBRARIES = $(ASM)
+
+libasm_la_SOURCES = math.S
+
 libQFutil_la_LDFLAGS = -version-info 1:0:0 $(Z_LIBS) $(DL_LIBS)
+libQFutil_la_LIBADD = $(ASM)
 libQFutil_la_SOURCES = \
 	checksum.c cmd.c console.c con_print.c crc.c cvar.c hash.c \
-	info.c link.c math.S \
+	info.c link.c \
 	mathlib.c \
 	mdfour.c msg.c pcx.c plugin.c qargs.c qendian.c qfplist.c quakefs.c \
 	quakeio.c sizebuf.c sys.c sys_error.c tga.c va.c ver_check.c wad.c \

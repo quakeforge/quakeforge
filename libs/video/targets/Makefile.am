@@ -3,6 +3,16 @@ INCLUDES= -I$(top_srcdir)/include $(GGI_CFLAGS) $(MGL_CFLAGS) $(SDL_CFLAGS) $(SV
 lib_LTLIBRARIES =	@VID_TARGETS@
 EXTRA_LTLIBRARIES = libQFjs.la libQFfbdev.la libQFsvga.la libQFx11.la libQFglx.la libQFsdl.la libQFsgl.la libQFtdfx.la libQFwgl.la libQFmgl.la
 
+if ASM_ARCH
+ASM = libasm.la
+else
+ASM =
+endif
+
+noinst_LTLIBRARIES = $(ASM)
+
+libasm_la_SOURCES = d_copy.S 
+
 libQFjs_la_LDFLAGS=	-version-info 1:0:0
 
 if JOYTYPE_LINUX
@@ -60,7 +70,8 @@ libQFsgl.la: $(libQFsgl_la_OBJECTS) $(libQFsgl_la_DEPENDENCIES)
 
 
 libQFsvga_la_LDFLAGS=	-version-info 1:0:0
-libQFsvga_la_SOURCES=	d_copy.S in_common.c in_svgalib.c vid.c vid_common_sw.c \
+libQFsvga_la_LIBADD=$(ASM)
+libQFsvga_la_SOURCES=	in_common.c in_svgalib.c vid.c vid_common_sw.c \
 			vid_svgalib.c
 libQFsvga.la: $(libQFsvga_la_OBJECTS) $(libQFsvga_la_DEPENDENCIES)
 	$(LINK) -rpath $(libdir) $(libQFsvga_la_LDFLAGS) $(libQFsvga_la_OBJECTS) $(libQFsvga_la_LIBADD) $(LIBS)

@@ -38,11 +38,17 @@ bin_PROGRAMS =	@NQ_TARGETS@
 EXTRA_PROGRAMS= nq-3dfx nq-fbdev nq-glx nq-mgl nq-sdl \
 		nq-sgl nq-svga nq-wgl nq-x11 nq-server
 
-noinst_LIBRARIES= libqfnet.a
+if ASM_ARCH
+ASM = libasm.la
+else
+ASM =
+endif
 
-common_ASM=	sys_ia32.S worlda.S
+noinst_LTLIBRARIES= libqfnet.la $(ASM)
 
-common_SOURCES=	game.c host_skin.c skin.c world.c com.c $(common_ASM)
+libasm_la_SOURCES = sys_ia32.S worlda.S
+
+common_SOURCES=	game.c host_skin.c skin.c world.c com.c
 
 common_ldflags= -export-dynamic
 
@@ -54,10 +60,10 @@ qfsys_SRC=	sys_unix.c
 endif
 
 # ... Networking
-libqfnet_a_SOURCES=	net_bsd.c net_dgrm.c net_loop.c \
+libqfnet_la_SOURCES=	net_bsd.c net_dgrm.c net_loop.c \
 			net_main.c net_udp.c net_vcr.c
 
-EXTRA_libqfnet_a_SOURCES= net_dos.c net_bw.c net_ipx.c net_mp.c net_ser.c \
+EXTRA_libqfnet_la_SOURCES= net_dos.c net_bw.c net_ipx.c net_mp.c net_ser.c \
 			net_win.c net_wins.c net_wipx.c
 
 qf_client_LIBS= $(top_builddir)/libs/video/targets/libQFjs.la \
@@ -67,8 +73,8 @@ qf_client_LIBS= $(top_builddir)/libs/video/targets/libQFjs.la \
 		$(top_builddir)/libs/audio/libQFsound.la \
 		$(top_builddir)/libs/util/libQFutil.la
 
-client_LIBS=	-L. -lqfnet $(qf_client_LIBS) $(NET_LIBS)
-client_LIB_DEPS=	libqfnet.a $(qf_client_LIBS)
+client_LIBS=	-L. -lqfnet $(ASM) $(qf_client_LIBS) $(NET_LIBS)
+client_LIB_DEPS=	libqfnet.a $(ASM) $(qf_client_LIBS)
 
 client_SOURCES=	cl_cam.c cl_cmd.c cl_demo.c cl_input.c cl_main.c cl_screen.c \
 		cl_parse.c cl_tent.c \
@@ -153,8 +159,8 @@ nq_wgl_DEPENDENCIES=../../libs/video/renderer/libQFrenderer_gl.la ../../libs/mod
 ded_SOURCES=	sys_unixd.c sv_ded.c
 
 nq_server_SOURCES=	$(common_SOURCES) $(server_SOURCES) $(ded_SOURCES)
-nq_server_LDADD=	libqfnet.a
-nq_server_DEPENDENCIES=	libqfnet.a
+nq_server_LDADD=	libqfnet.a $(ASM)
+nq_server_DEPENDENCIES=	libqfnet.a $(ASM)
 
 # Stuff that doesn't get linked into an executable NEEDS to be mentioned here,
 # or it won't be distributed with 'make dist'

@@ -735,6 +735,7 @@ case "${host}" in
 		;;
 	*) AC_MSG_RESULT(no)
 esac
+AM_CONDITIONAL(ASM_ARCH, test "$ASM_ARCH" = "yes")
 
 dnl ==================================================================
 dnl Checks for sound
