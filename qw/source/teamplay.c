@@ -24,7 +24,7 @@
 		Boston, MA  02111-1307, USA
 
 */
-static const char rcsid[] = 
+static const char rcsid[] =
 	"$Id$";
 
 #ifdef HAVE_CONFIG_H
@@ -334,9 +334,9 @@ void
 locs_loc (void)
 {
 	char            locfile[MAX_OSPATH];
-	char           *mapname; 
+	char           *mapname;
 	const char     *desc = NULL;
-	
+
 	// FIXME: need to check to ensure you are actually in the game and alive.
 	if (Cmd_Argc () == 1) {
 		Con_Printf ("loc <add|delete|rename|move|save|zsave> [<description>] "
@@ -352,11 +352,11 @@ locs_loc (void)
 	map_to_loc (cl.worldmodel->name,mapname);
 	snprintf (locfile, sizeof (locfile), "%s/%s", com_gamedir, mapname);
 	free(mapname);
-	
+
 	if (strcasecmp (Cmd_Argv(1),"save") == 0) {
 		if (Cmd_Argc () == 2) {
 			locs_save (locfile, false);
-		} else 
+		} else
 			Con_Printf ("loc save :saves locs from memory into a .loc file\n");
 	}
 
@@ -366,7 +366,7 @@ locs_loc (void)
 		} else
 			Con_Printf ("loc save :saves locs from memory into a .loc file\n");
 	}
-	
+
 	if (strcasecmp (Cmd_Argv(1),"add") == 0) {
 		if (Cmd_Argc () >= 3)
 			locs_mark (cl.simorg,desc);
@@ -383,14 +383,14 @@ locs_loc (void)
 			Con_Printf ("loc rename <description> :changes the description of "
 					    "the nearest location marker\n");
 	}
-	
+
 	if (strcasecmp (Cmd_Argv(1),"delete") == 0) {
 		if (Cmd_Argc () == 2)
 			locs_del (cl.simorg);
 		else
 			Con_Printf ("loc delete :removes nearest location marker\n");
 	}
-	
+
 	if (strcasecmp (Cmd_Argv(1),"move") == 0) {
 		if (Cmd_Argc () == 2)
 			locs_edit (cl.simorg,NULL);
@@ -453,13 +453,12 @@ Team_F_Skins (char *args)
 		return ("say \"Skin not currently loaded.\"");
 }
 
-freply_t f_replies[] = {
+static freply_t f_replies[] = {
 	{"f_version", Team_F_Version, 0},
 	{"f_skins", Team_F_Skins, 0},
-	{0, 0}
 };
 
-void 
+void
 Team_ParseChat (const char *string)
 {
 	char *s;
@@ -473,18 +472,20 @@ Team_ParseChat (const char *string)
 		return;
 	s++;
 	while (isspace((byte) *s))
-		s++;	
+		s++;
 
-	for (i = 0; f_replies[i].name; i++) {
-		if (!strncmp(f_replies[i].name, s, strlen(f_replies[i].name)) && cl_freply->value) {
+	for (i = 0; sizeof (f_replies) / sizeof (f_replies[0]); i++) {
+		if (!strncmp(f_replies[i].name, s, strlen(f_replies[i].name))
+			&& realtime - f_replies[i].lasttime >= cl_freply->value) {
 			while (*s && !isspace((byte) *s))
 				s++;
 			Cbuf_AddText(cl_cbuf, f_replies[i].func(s));
+			Cbuf_AddText(cl_cbuf, "\n");
 			f_replies[i].lasttime = realtime;
 		}
 	}
 }
-	
+
 void
 Team_ResetTimers (void)
 {
