@@ -442,6 +442,41 @@ int Cmd_GetToken (const char *str) {
 
 int tag_gold = 0;
 int tag_shift = 0;
+int tag_special = 0;
+
+struct stable_s {char a, b;} stable1[] =
+{
+//	{'\\',0x0D}, // Fake message
+	{'[', 0x90}, // Gold braces
+	{']', 0x91},
+	{'(', 0x80}, // Scroll bar characters
+	{'=', 0x81},
+	{')', 0x82},
+	{'|', 0x83},
+	{'<', 0x9D}, // Vertical line characters
+	{'-', 0x9E},
+	{'>', 0x9F},
+	{'.', 0x8E}, // Gold dot
+	{',', 0x0E}, // White dot
+	{'G', 0x86}, // Ocrana leds from ocrana.wad
+	{'R', 0x87},
+	{'Y', 0x88},
+	{'B', 0x89},
+	{'a', 0x7F}, // White arrow
+	{'A', 0x8D}, // Brown arrow
+//	{'0', 0x92}, // Gold numbers
+//	{'1', 0x93},
+//	{'2', 0x94},
+//	{'3', 0x95},
+//	{'4', 0x96},
+//	{'5', 0x97},
+//	{'6', 0x98},
+//	{'7', 0x99},
+//	{'8', 0x9A},
+//	{'9', 0x9B},
+//	{'n', '\n'}, // Newline!
+	{0, 0}
+};
 
 void Cmd_ProcessTags (dstring_t *dstr) {
 	int close = 0, i, n, c;
@@ -455,10 +490,12 @@ void Cmd_ProcessTags (dstring_t *dstr) {
 					return;
 			if (str[i+1] == '/')
 				close = 1;
-			if (!strncmp(str+i+close+1, "gold", 4))
+			if (!strncmp(str+i+close+1, "g", 1))
 				tag_gold = tag_gold > 0 && close ? tag_gold - 1 : tag_gold + 1;
-			if (!strncmp(str+i+close+1, "shift", 5))
+			if (!strncmp(str+i+close+1, "b", 1))
 				tag_shift = tag_shift > 0 && close ? tag_shift - 1 : tag_shift + 1;
+			if (!strncmp(str+i+close+1, "s", 1))
+				tag_special = tag_special > 0 && close ? tag_special - 1 : tag_special + 1;
 			dstring_snip(dstr, i, n+1);
 			i--;
 			continue;
@@ -467,6 +504,10 @@ void Cmd_ProcessTags (dstring_t *dstr) {
 
 		if (tag_gold && c >='0' && c <= '9')
 				c = (str[i] += (146 - '0'));
+		if (tag_special)
+				for (n = 0; stable1[n].a; n++)
+					if (c == stable1[n].a)
+						c = str[i] = stable1[n].b;
 		if (tag_shift && c < 128)
 				c = (str[i] += 128);
 	}
@@ -479,6 +520,7 @@ void Cmd_TokenizeString (const char *text) {
 	cmd_argc = 0;
 	tag_shift = 0;
 	tag_gold = 0;
+	tag_special = 0;
 	while (strlen(str + i)) {
 		while (isspace(str[i]))
 			i++;
@@ -1071,39 +1113,7 @@ skipwhite:
 	return data;
 }
 
-struct stable_s {char a, b;} stable1[] =
-{
-	{'\\',0x0D}, // Fake message
-	{'[', 0x90}, // Gold braces
-	{']', 0x91},
-	{'(', 0x80}, // Scroll bar characters
-	{'=', 0x81},
-	{')', 0x82},
-	{'|', 0x83},
-	{'<', 0x9D}, // Vertical line characters
-	{'-', 0X9E},
-	{'>', 0x9F},
-	{'.', 0x8E}, // Gold dot
-	{',', 0x0E}, // White dot
-	{'G', 0x86}, // Ocrana leds from ocrana.wad
-	{'R', 0x87},
-	{'Y', 0x88},
-	{'B', 0x89},
-	{'a', 0x7F}, // White arrow
-	{'A', 0x8D}, // Brown arrow
-	{'0', 0x92}, // Gold numbers
-	{'1', 0x93},
-	{'2', 0x94},
-	{'3', 0x95},
-	{'4', 0x96},
-	{'5', 0x97},
-	{'6', 0x98},
-	{'7', 0x99},
-	{'8', 0x9A},
-	{'9', 0x9B},
-	{'n', '\n'}, // Newline!
-	{0, 0}
-};
+
 	
 
 void Cmd_ParseSpecial (char *s)
