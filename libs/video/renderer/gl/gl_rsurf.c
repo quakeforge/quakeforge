@@ -118,11 +118,6 @@ R_RecursiveLightUpdate (mnode_t *node)
 			 c--, surf++) surf->cached_dlight = true;
 }
 
-/*
-  R_AddDynamicLights
-
-  LordHavoc: completely rewrote this, relies on 64bit integer math...
-*/
 void
 R_AddDynamicLights (msurface_t *surf)
 {
@@ -255,32 +250,37 @@ R_BuildLightMap (msurface_t *surf, byte * dest, int stride)
 	case 4:
 		for (i = 0; i < tmax; i++, dest += stride) {
 			for (j = 0; j < smax; j++) {
-				dest[0] = bound(0, bl[0] >> shift, 255);
-				dest[1] = bound(0, bl[1] >> shift, 255);
-				dest[2] = bound(0, bl[2] >> shift, 255);
-				dest[3] = 255;
-				dest += lightmap_bytes;
-				bl += 3;
+				*dest++ = bound (0, *bl >> shift, 255);
+				bl++;
+				*dest++ = bound (0, *bl >> shift, 255);
+				bl++;
+				*dest++ = bound (0, *bl >> shift, 255);
+				bl++;
+				*dest++ = 255;
+				bl++;
 			}
 		}
 		break;
 	case 3:
 		for (i = 0; i < tmax; i++, dest += stride) {
 			for (j = 0; j < smax; j++) {
-				dest[0] = bound(0, bl[0] >> shift, 255);
-				dest[1] = bound(0, bl[1] >> shift, 255);
-				dest[2] = bound(0, bl[2] >> shift, 255);
-				dest += lightmap_bytes;
-				bl += 3;
+				*dest++ = bound (0, *bl >> shift, 255);
+				bl++;
+				*dest++ = bound (0, *bl >> shift, 255);
+				bl++;
+				*dest++ = bound (0, *bl >> shift, 255);
+				bl++;
 			}
 		}
 		break;
 	case 1:
 		for (i = 0; i < tmax; i++, dest += stride) {
 			for (j = 0; j < smax; j++) {
-				t2 = (bl[0] + bl[1] + bl[2]) / 3;
+				t2 = *bl++;
+				t2 += *bl++;
+				t2 += *bl++;
+				t2 /= 3;
 				*dest++ = bound (0, t2 >> shift, 255);
-				bl += 3;
 			}
 		}
 		break;
