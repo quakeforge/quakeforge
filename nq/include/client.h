@@ -129,6 +129,10 @@ ca_disconnected, 	// full screen console with no connection
 ca_connected		// valid netcon, talking to a server
 } cactive_t;
 
+// FIXME: A grotesque (temporary) hack.  They're not the same thing to QW.
+#define ca_active ca_connected
+
+
 //
 // the client_static_t structure is persistant through an arbitrary number
 // of server connections
