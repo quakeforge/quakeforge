@@ -1488,7 +1488,7 @@ Host_Frame (float time)
 	// update audio
 	if (cls.state == ca_active) {
 		S_Update (r_origin, vpn, vright, vup);
-		R_DecayLights ();
+		R_DecayLights (host_frametime);
 	} else
 		S_Update (vec3_origin, vec3_origin, vec3_origin, vec3_origin);
 

@@ -892,7 +892,6 @@ SCR_UpdateScreen (double realtime)
 	}
 #endif
 
-	r_frametime = min (realtime - r_realtime, 5); // bound to 0.2 fps
 	r_realtime = realtime;
 
 	scr_copytop = 0;

@@ -185,7 +185,7 @@ void R_ClearEnts (void);
 struct entity_s **R_NewEntity (void);
 
 dlight_t *R_AllocDlight (int key);
-void R_DecayLights (void);
+void R_DecayLights (double frametime);
 void R_ClearDlights (void);
 
 #endif // __render_h

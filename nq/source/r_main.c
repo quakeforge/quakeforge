@@ -3,7 +3,6 @@
 #include "r_local.h"
 
 double r_realtime;
-double r_frametime;
 dlight_t    r_dlights[MAX_DLIGHTS];
 
 dlight_t *
@@ -42,7 +41,7 @@ R_AllocDlight (int key)
 }
 
 void
-R_DecayLights (void)
+R_DecayLights (double frametime)
 {
 	int         i;
 	dlight_t   *dl;
@@ -52,7 +51,7 @@ R_DecayLights (void)
 		if (dl->die < r_realtime || !dl->radius)
 			continue;
 
-		dl->radius -= r_frametime * dl->decay;
+		dl->radius -= frametime * dl->decay;
 		if (dl->radius < 0)
 			dl->radius = 0;
 	}

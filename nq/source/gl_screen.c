@@ -884,7 +884,6 @@ SCR_UpdateScreen (double realtime)
 	if (block_drawing)
 		return;
 
-	r_frametime = min (realtime - r_realtime, 5); // bound to 0.2 fps
 	r_realtime = realtime;
 
 	vid.numpages = 2 + gl_triplebuffer->int_val;
