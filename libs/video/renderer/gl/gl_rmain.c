@@ -323,8 +323,8 @@ R_DrawViewModel (void)
 
 	R_DrawAliasModel (currententity);
 	qfglColor3ubv (color_white);
-	if (gl_mtex_active_tmus) { // FIXME: Ugly, but faster than cleaning up in
-							   // every R_DrawAliasModel()!
+	if (gl_mtex_active_tmus >= 2) { // FIXME: Ugly, but faster than cleaning
+									// up in every R_DrawAliasModel()!
 		qglActiveTexture (gl_mtex_enum + 1);
 		qfglEnable (GL_TEXTURE_2D);
 		if (gl_combine_capable && gl_doublebright->int_val) {
