@@ -672,3 +672,11 @@ VID_SetGamma (double gamma)
 {
 	return false; //FIXME
 }
+
+#ifdef i386
+void
+outb (unsigned char val, unsigned short port)
+{
+	asm ("outb %b0, %w1" : :"a"(val), "d"(port));
+}
+#endif
