@@ -39,11 +39,11 @@
 #include "gui/Rect.h"
 #include "gui/Slider.h"
 
-Slider gamma_slider;
-Slider viewsize_slider;
+RangeSlider gamma_range;
+RangeSlider viewsize_range;
 RangeSlider mouse_amp_range;
-Slider volume_slider;
-Slider bgmvolume_slider;
+RangeSlider volume_range;
+RangeSlider bgmvolume_range;
 
 /*
 	some definitions of border values for different things
@@ -81,7 +81,6 @@ Slider bgmvolume_slider;
 integer (string text, integer key) 
 CB_video_options =
 {
-	local float		val;
 	local integer	selected_crosshair;
 
 	switch (text) {
@@ -109,19 +108,16 @@ CB_video_options =
 	}
 	switch (text) {
 		case "gamma":
-			val = cvar ("vid_gamma");
-			val = min_max_cnt (MIN_GAMMA, MAX_GAMMA, GAMMA_STEP, val, 
-							   (key == QFK_RIGHT) && (key != QFK_LEFT));
-			cvar_set("vid_gamma", ftos (val));
-			[gamma_slider setIndex:to_percentage (MIN_GAMMA, MAX_GAMMA, val)];
+			if ((key == QFK_RIGHT) && (key != QFK_LEFT))
+				[gamma_range inc];
+			else
+				[gamma_range dec];
 			break;
 		case "viewsize":
-			val = cvar ("viewsize");
-			val = min_max_cnt (MIN_VIEWSIZE, MAX_VIEWSIZE, VIEWSIZE_STEP, val, 
-							   (key == QFK_RIGHT) && (key != QFK_LEFT));
-			cvar_set ("viewsize", ftos (val));
-			[viewsize_slider setIndex:to_percentage (MIN_VIEWSIZE,
-													 MAX_VIEWSIZE, val)];
+			if ((key == QFK_RIGHT) && (key != QFK_LEFT))
+				[viewsize_range inc];
+			else
+				[viewsize_range dec];
 			break;
 	}
 	return 0;
@@ -151,17 +147,11 @@ DRAW_video_options =
 				   cvar ("hud_time") ? "On" : "Off");
 	bar_pad = y + 90;
 
-	Draw_String (x + 70, bar_pad + 10, "Gamma:");
-	[gamma_slider setBasePos:x y:y];
-	[gamma_slider draw];
-	Draw_String (x + 118 + (15 + 4)*8 , bar_pad + 10,
-				 ftos (cvar ("vid_gamma")));
+	[gamma_range setBasePos:x y:y];
+	[gamma_range draw];
 
-	Draw_String (x + 70, bar_pad + 20, "Viewsize:");
-	[viewsize_slider setBasePos:x y:y];
-	[viewsize_slider draw];
-	Draw_String (x + 142 + (12 + 4) * 8 , bar_pad + 20,
-				 ftos (cvar ("viewsize")));
+	[viewsize_range setBasePos:x y:y];
+	[viewsize_range draw];
 
 	opt_cursor  (x + 62, y + (Menu_GetIndex () * 10) + 60);
 	return 1;
@@ -182,16 +172,11 @@ MENU_video_options =
 	Menu_FadeScreen (1);
 	Menu_Draw (DRAW_video_options);
 
-	rect = [[Rect alloc] initWithComponents:126 :100 :17 * 8 :8];
-	gamma_slider = [[Slider alloc] initWithBounds:rect size:100];
-	[gamma_slider setIndex: to_percentage (MIN_GAMMA, MAX_GAMMA,
-											   cvar("vid_gamma"))];
-	rect.origin.x = 150;
+	rect = [[Rect alloc] initWithComponents:70 :100 :224 :8];
+	gamma_range = [[RangeSlider alloc] initWithBounds:rect title:"Gamma:" sliderWidth:17 * 8 :[[CvarRange alloc] initWithCvar:"vid_gamma" min:MIN_GAMMA max:MAX_GAMMA step:GAMMA_STEP]];
+
 	rect.origin.y += 10;
-	rect.size.width = 14 * 8;
-	viewsize_slider = [[Slider alloc] initWithBounds:rect size:100];
-	[viewsize_slider setIndex: to_percentage (MIN_VIEWSIZE, MAX_VIEWSIZE,
-											   cvar("viewsize"))];
+	viewsize_range = [[RangeSlider alloc] initWithBounds:rect title:"Viewsize:" sliderWidth:14 * 8 :[[CvarRange alloc] initWithCvar:"viewsize" min:MIN_VIEWSIZE max:MAX_VIEWSIZE step:VIEWSIZE_STEP]];
 	[rect dealloc];
 	
 	Menu_Item (54, 60, "fullscreen", CB_video_options, 0);
@@ -218,22 +203,20 @@ MENU_video_options =
 integer (string text, integer key) 
 CB_audio_options =
 {
-	local float volume;
-	local Slider slider;
+	local RangeSlider range;
 
 	if(!(key == QFK_RIGHT || key == QFK_LEFT )) {
 		return 0;
 	}
 	if (text == "volume")
-		slider = volume_slider;
+		range = volume_range;
 	else
-		slider = bgmvolume_slider;
+		range = bgmvolume_range;
 
-	volume = cvar (text);
-	volume = min_max_cnt (MIN_VOLUME, MAX_VOLUME, VOLUME_STEP, volume, 
-						  (key == QFK_RIGHT) && (key != QFK_LEFT));
-	cvar_set (text, ftos (volume));
-	[slider setIndex: to_percentage (MIN_VOLUME, MAX_VOLUME, volume)];
+	if ((key == QFK_RIGHT) && (key != QFK_LEFT))
+		[range inc];
+	else
+		[range dec];
 
 	return 0;
 };
@@ -255,15 +238,11 @@ DRAW_audio_options =
 	Draw_String	(x + 54, y + 50, "-----");
 	bar_pad = y + 50;
 
-	Draw_String (x + 70, bar_pad + 10, "Volume:");
-	[volume_slider setBasePos:x y:y];
-	[volume_slider draw];
-	Draw_String (x + 126 + (15 + 4)*8 , bar_pad + 10, ftos(cvar("volume")));
+	[volume_range setBasePos:x y:y];
+	[volume_range draw];
 
-	Draw_String (x + 70, bar_pad + 18, "Music :");
-	[bgmvolume_slider setBasePos:x y:y];
-	[bgmvolume_slider draw];
-	Draw_String (x + 126 + (15 + 4)*8 , bar_pad + 18, ftos(cvar("bgmvolume")));
+	[bgmvolume_range setBasePos:x y:y];
+	[bgmvolume_range draw];
 
 	opt_cursor  (x + 62, y + (Menu_GetIndex() * 10) + 60);
 	return 1;
@@ -284,14 +263,10 @@ MENU_audio_options =
 	Menu_FadeScreen (1);
 	Menu_Draw (DRAW_audio_options);
 
-	rect = [[Rect alloc] initWithComponents:134 :60 :17 * 8 :8];
-	volume_slider = [[Slider alloc] initWithBounds:rect size:100];
-	[volume_slider setIndex: to_percentage (MIN_VOLUME, MAX_VOLUME,
-											cvar("volume"))];
+	rect = [[Rect alloc] initWithComponents:70 :60 :17 * 8 :8];
+	volume_range = [[RangeSlider alloc] initWithBounds:rect title:"Volume:" sliderWidth:14 * 8 :[[CvarRange alloc] initWithCvar:"volume" min:MIN_VOLUME max:MAX_VOLUME step:VOLUME_STEP]];
 	rect.origin.y += 8;
-	bgmvolume_slider = [[Slider alloc] initWithBounds:rect size:100];
-	[bgmvolume_slider setIndex: to_percentage (MIN_VOLUME, MAX_VOLUME,
-											   cvar("bgmvolume"))];
+	bgmvolume_range = [[RangeSlider alloc] initWithBounds:rect title:"Music :" sliderWidth:14 * 8 :[[CvarRange alloc] initWithCvar:"bgmvolume" min:MIN_VOLUME max:MAX_VOLUME step:VOLUME_STEP]];
 	[rect dealloc];
 	
 	bar_pad = 0;
