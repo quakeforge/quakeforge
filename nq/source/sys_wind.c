@@ -31,13 +31,14 @@ static const char rcsid[] =
 # include "config.h"
 #endif
 
-#include <sys\types.h>
-#include <sys\timeb.h>
+#include <sys/types.h>
+#include <sys/timeb.h>
+#include <conio.h>
 
 #include "QF/cvar.h"
 #include "QF/qargs.h"
 #include "QF/sys.h"
-// #include "client.h"
+
 #include "game.h"
 #include "host.h"
 #include "winquake.h"
@@ -80,9 +81,6 @@ Sys_ConsoleInput (void)
 {
 	static char text[256];
 	static int  len;
-	INPUT_RECORD recs[1024];
-	int         count;
-	int         i;
 	int         c;
 
 	// read a line out
@@ -117,7 +115,7 @@ shutdown (void)
 {
 }
 
-static void
+void
 Sys_Init (void)
 {
 }
