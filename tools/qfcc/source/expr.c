@@ -1636,9 +1636,9 @@ address_expr (expr_t *e1, expr_t *e2, type_t *t)
 				}
 				break;
 			}
-			return error (e, "invalid type for unary &");
+			return error (e1, "invalid type for unary &");
 		default:
-			return error (e, "invalid type for unary &");
+			return error (e1, "invalid type for unary &");
 	}
 	if (e2) {
 		if (e->type == ex_pointer && e2->type == ex_short) {
