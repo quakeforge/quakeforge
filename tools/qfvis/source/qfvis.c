@@ -452,7 +452,7 @@ PlaneCompare (plane_t *p1, plane_t *p2)
 }
 
 sep_t	*
-Findpassages (winding_t *source, winding_t *pass)
+FindPassages (winding_t *source, winding_t *pass)
 {
 	double		length;
 	float		d;
@@ -587,7 +587,7 @@ CalcPassages (void)
 
 				count2++;
 
-				sep = Findpassages (p1->winding, p2->winding);
+				sep = FindPassages (p1->winding, p2->winding);
 				if (!sep) {
 					count_sep++;
 					sep = malloc (sizeof (*sep));
