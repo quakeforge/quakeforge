@@ -615,21 +615,30 @@ byte        extscantokey[128] = {
 
 	Map from windows to quake keynums
 */
-int
-MapKey (int key)
+void
+MapKey (int key, int *k, int *u)
 {
 	int         extended;
 
 	extended = (key >> 24) & 1;
 
 	key = (key >> 16) & 255;
-	if (key > 127)
-		return 0;
+	if (key > 127) {
+		*u = *k = 0;
+		return;
+	}
 
 	if (extended)
-		return extscantokey[key];
+		key = extscantokey[key];
 	else
-		return scantokey[key];
+		key = scantokey[key];
+	if (key >= 0 && key <= 255)
+		*u = key;
+	else
+		*u = 0;
+	if (key >= 'A' && key <= 'Z')
+		key += 'a' - 'A';
+	*k = key;
 }
 
 /*
@@ -713,6 +722,7 @@ MainWndProc (HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 {
 	LONG        lRet = 1;
 	int         fActive, fMinimized, temp;
+	int         key, unicode;
 	extern unsigned int uiWheelMessage;
 
 	if (uMsg == uiWheelMessage)
@@ -734,12 +744,14 @@ MainWndProc (HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 
 	case WM_KEYDOWN:
 	case WM_SYSKEYDOWN:
-		Key_Event (MapKey (lParam), -1, true);
+		MapKey (lParam, &key, &unicode);
+		Key_Event (key, unicode, true);
 		break;
 
 	case WM_KEYUP:
 	case WM_SYSKEYUP:
-		Key_Event (MapKey (lParam), -1, false);
+		MapKey (lParam, &key, &unicode);
+		Key_Event (key, unicode, false);
 		break;
 
 	case WM_SYSCHAR:
