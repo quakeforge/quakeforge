@@ -740,6 +740,22 @@ CL_SetInfo_f (void)
 		Cmd_ForwardToServer ();
 }
 
+void
+CL_GetInfo_f (void)
+{
+	const char *str;
+	
+	if (Cmd_Argc () != 2) {
+			Cmd_Error ("getinfo: invalid number of arguments\n");
+			return;
+	}
+	str = Info_ValueForKey(cls.userinfo, Cmd_Argv(1));
+	if (str)
+			Cmd_Return (str);
+	else
+			Cmd_Return ("");
+}
+
 /*
 	CL_Packet_f
 
@@ -1205,6 +1221,7 @@ CL_Init (void)
 					"that Quake should switch to upon a backpack pickup.\n "
 					"w_switch - Determines the highest weapon that Quake "
 					"should switch to upon a weapon pickup.");
+	Cmd_AddCommand ("getinfo", CL_GetInfo_f, "Returns the value of client info key $1");
 	Cmd_AddCommand ("fullinfo", CL_FullInfo_f, "Used by GameSpy and Qlist to "
 					"set setinfo variables");
 	Cmd_AddCommand ("fullserverinfo", CL_FullServerinfo_f, "Used by GameSpy "
