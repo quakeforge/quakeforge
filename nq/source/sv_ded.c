@@ -35,19 +35,24 @@ static __attribute__ ((unused)) const char rcsid[] =
 #include <stdarg.h>
 
 #include "QF/cdaudio.h"
+#include "QF/cmd.h"
+#include "QF/console.h"
 #include "QF/csqc.h"
 #include "QF/cvar.h"
 #include "QF/draw.h"
 #include "QF/keys.h"
+#include "QF/msg.h"
 #include "QF/plugin.h"
 #include "QF/screen.h"
 #include "QF/sys.h"
 
 #include "chase.h"
 #include "client.h"
+#include "compat.h"
 #include "host.h"
 #include "r_dynamic.h"
 #include "sbar.h"
+#include "server.h"
 #include "view.h"
 
 client_state_t cl;
@@ -129,6 +134,40 @@ CL_Init_Entity (entity_t *ent)
 {
 }
 
+static void
+color_f (void)
+{
+	int         top, bottom;
+	char        playercolor;
+
+	if (Cmd_Argc () <= 1) {
+		Con_Printf ("\"color\" is \"%d %d\"\n", (host_client->colors) >> 4,
+					(host_client->colors) & 0x0f);
+		Con_Printf ("color <0-13> [0-13]\n");
+		return;
+	}
+
+	if (Cmd_Argc () == 2)
+		top = bottom = atoi (Cmd_Argv (1));
+	else {
+		top = atoi (Cmd_Argv (1));
+		bottom = atoi (Cmd_Argv (2));
+	}
+
+	top = min (top & 15, 13);
+	bottom = min (bottom & 15, 13);
+
+	playercolor = top * 16 + bottom;
+
+	host_client->colors = playercolor;
+	SVfloat (host_client->edict, team) = bottom + 1;
+
+	// send notification to all clients
+	MSG_WriteByte (&sv.reliable_datagram, svc_updatecolors);
+	MSG_WriteByte (&sv.reliable_datagram, host_client - svs.clients);
+	MSG_WriteByte (&sv.reliable_datagram, host_client->colors);
+}
+
 void
 CL_InitCvars (void)
 {
@@ -138,6 +177,11 @@ CL_InitCvars (void)
 							 "How much your screen tilts when strafing");
 	cl_rollspeed = Cvar_Get ("cl_rollspeed", "200", CVAR_NONE, NULL,
 							 "How quickly you straighten out after strafing");
+
+	Cmd_AddCommand ("color", color_f, "The pant and shirt color (color shirt "
+					"pants) Note that if only shirt color is given, pants "
+					"will match");
+
 }
 
 void

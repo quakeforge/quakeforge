@@ -63,7 +63,6 @@ cvar_t     *cl_color;
 static void
 Host_Color_f (void)
 {
-	// just for quake compatability...
 	int         top, bottom;
 	char        playercolor;
 
