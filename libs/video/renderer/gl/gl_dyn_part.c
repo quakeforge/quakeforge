@@ -101,9 +101,9 @@ particle_new_random (ptype_t type, int texnum, vec3_t org, int org_fuzz,
 
 	for (j = 0; j < 3; j++) {
 		if (org_fuzz)
-			porg[j] = qfrandom (2.0 * org_fuzz) - org_fuzz + org[j];
+			porg[j] = qfrandom (org_fuzz * 2) - org_fuzz + org[j];
 		if (vel_fuzz)
-			pvel[j] = qfrandom (2.0 * vel_fuzz) - vel_fuzz;
+			pvel[j] = qfrandom (vel_fuzz * 2) - vel_fuzz;
 	}
 	return particle_new (type, texnum, porg, scale, pvel, die, color, alpha);
 }
@@ -440,7 +440,7 @@ R_RocketTrail (entity_t *ent)
 
 	while (len > 0) {
 		pscalenext = 1.5 + qfrandom (1.5);
-		dist = (pscale + pscalenext) * 1.3;
+		dist = (pscale + pscalenext) * 3.0;
 
 		VectorScale (vec, min(dist, len), subtract);
 		VectorAdd (ent->old_origin, subtract, ent->old_origin);

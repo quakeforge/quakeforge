@@ -110,8 +110,7 @@ int         d_lightstylevalue[256];		// 8.8 fraction of base light value
 vec3_t		shadecolor;					// Ender (Extend) Colormod
 float		modelalpha;					// Ender (Extend) Alpha
 
-void        R_MarkLeaves (void);
-
+void R_MarkLeaves (void);
 //qboolean R_CullBlocked (vec3_t mins, vec3_t maxs, vec3_t org);
 
 
@@ -135,9 +134,9 @@ R_RotateForEntity (entity_t *e)
 static mspriteframe_t *
 R_GetSpriteFrame (entity_t *currententity)
 {
-	float           fullinterval, targettime, time;
-	float          *pintervals;
-	int             frame, numframes, i;
+	float			fullinterval, targettime, time;
+	float		   *pintervals;
+	int				frame, numframes, i;
 	msprite_t      *psprite;
 	mspriteframe_t *pspriteframe;
 	mspritegroup_t *pspritegroup;
@@ -161,8 +160,7 @@ R_GetSpriteFrame (entity_t *currententity)
 		time = r_realtime + currententity->syncbase;
 
 		// when loading in Mod_LoadSpriteGroup, we guaranteed all interval
-		// values
-		// are positive, so we don't have to worry about division by 0
+		// values are positive, so we don't have to worry about division by 0
 		targettime = time - ((int) (time / fullinterval)) * fullinterval;
 
 		for (i = 0; i < (numframes - 1); i++) {
@@ -179,10 +177,10 @@ R_GetSpriteFrame (entity_t *currententity)
 static void
 R_DrawSpriteModel (entity_t *e)
 {
-	float      *up, *right;
-	msprite_t  *psprite;
-	mspriteframe_t *frame;
-	vec3_t      point, v_forward, v_right, v_up;
+	float			*up, *right;
+	msprite_t		*psprite;
+	mspriteframe_t	*frame;
+	vec3_t			 point, v_forward, v_right, v_up;
 
 	// don't even bother culling, because it's just a single
 	// polygon without a surface cache
@@ -232,7 +230,7 @@ R_DrawSpriteModel (entity_t *e)
 
 #define NUMVERTEXNORMALS	162
 
-float       r_avertexnormals[NUMVERTEXNORMALS][3] = {
+float		r_avertexnormals[NUMVERTEXNORMALS][3] = {
 #include "anorms.h"
 };
 
@@ -242,18 +240,18 @@ float   r_avertexnormal_dots[SHADEDOT_QUANT][256] =
 	#include "anorm_dots.h"
 		;
 
-float       shadelight;
-float      *shadedots = r_avertexnormal_dots[0];
-int         lastposenum, lastposenum0;
-vec3_t      shadevector;
+float		shadelight;
+float	   *shadedots = r_avertexnormal_dots[0];
+int			lastposenum, lastposenum0;
+vec3_t		shadevector;
 
 static void
 GL_DrawAliasFrame (vert_order_t *vo, qboolean fb)
 {
-	float           color[4];
-	float           l;
-	int             count;
-	int            *order;
+	float			l;
+	float			color[4];
+	int				count;
+	int			   *order;
 	blended_vert_t *verts;
 
 	verts = vo->verts;
@@ -313,10 +311,10 @@ extern vec3_t lightspot;
 static void
 GL_DrawAliasShadow (aliashdr_t *paliashdr, int posenum)
 {
-	float       height, lheight;
-	int         count;
-	int        *order;
-	vec3_t      point;
+	float		height, lheight;
+	int			count;
+	int		   *order;
+	vec3_t		point;
 	trivertx_t *verts;
 
 	lheight = currententity->origin[2] - lightspot[2];
@@ -375,9 +373,9 @@ void
 GL_DrawAliasBlendedShadow (aliashdr_t *paliashdr, int pose1, int pose2,
 						   entity_t *e)
 {
-	float       blend, height, lheight, lerp;
-	int         count;
-	int 	   *order;
+	float		blend, height, lheight, lerp;
+	int			count;
+	int		   *order;
 	trivertx_t *verts1, *verts2;
 	vec3_t		point1, point2;
 
@@ -442,9 +440,9 @@ GL_DrawAliasBlendedShadow (aliashdr_t *paliashdr, int pose1, int pose2,
 vert_order_t *
 GL_GetAliasFrameVerts (int frame, aliashdr_t *paliashdr, entity_t *e)
 {
-	float       interval;
-	int         count, numposes, pose, i;
-	trivertx_t *verts;
+	float		  interval;
+	int			  count, numposes, pose, i;
+	trivertx_t	 *verts;
 	vert_order_t *vo;
 
 	if ((frame >= paliashdr->mdl.numframes) || (frame < 0)) {
@@ -539,13 +537,13 @@ GL_GetAliasFrameVerts (int frame, aliashdr_t *paliashdr, entity_t *e)
 static void
 R_DrawAliasModel (entity_t *e, qboolean cull)
 {
-	float       add, an;
-	int         anim, lnum, skinnum, texture;
-	int         fb_texture = 0;
-	aliashdr_t *paliashdr;
-	model_t    *clmodel;
-	qboolean	modelIsFullbright = false;
-	vec3_t      dist, mins, maxs;
+	float		  add, an;
+	int			  anim, lnum, skinnum, texture;
+	int			  fb_texture = 0;
+	aliashdr_t	 *paliashdr;
+	model_t		 *clmodel;
+	qboolean	  modelIsFullbright = false;
+	vec3_t		  dist, mins, maxs;
 	vert_order_t *vo;
 
 	clmodel = currententity->model;
@@ -559,7 +557,7 @@ R_DrawAliasModel (entity_t *e, qboolean cull)
 	/*
 	if (cull && R_CullBlocked(mins, maxs, currententity->origin))
 		return;
-		*/
+	*/
 
 	// FIXME: shadecolor is supposed to be the lighting for the model, not
 	// just colormod
@@ -606,9 +604,9 @@ R_DrawAliasModel (entity_t *e, qboolean cull)
 	shadedots = r_avertexnormal_dots[(int) (e->angles[1] *
 											(SHADEDOT_QUANT / 360.0)) &
 									 (SHADEDOT_QUANT - 1)];
-	shadelight /= 200.0;
+	shadelight *= 0.005;
 
-	an = e->angles[1] / 180 * M_PI;
+	an = e->angles[1] * (M_PI / 180);
 	shadevector[0] = cos (-an);
 	shadevector[1] = sin (-an);
 	shadevector[2] = 1;
@@ -717,9 +715,9 @@ R_DrawAliasModel (entity_t *e, qboolean cull)
 static void
 R_ShowNearestLoc (void)
 {
-	dlight_t	*dl;
-	location_t	*nearloc;
-	vec3_t		 trueloc;
+	dlight_t   *dl;
+	location_t *nearloc;
+	vec3_t		trueloc;
 
 	if (r_drawentities->int_val)
 		return;
@@ -748,7 +746,7 @@ R_ShowNearestLoc (void)
 static void
 R_DrawEntitiesOnList (void)
 {
-	int         i;
+	int		i;
 
 	if (!r_drawentities->int_val) {
 		R_ShowNearestLoc();
@@ -812,7 +810,7 @@ R_DrawViewModel (void)
 inline static int
 SignbitsForPlane (mplane_t *out)
 {
-	int         bits, j;
+	int		bits, j;
 
 	// for fast box on planeside test
 
@@ -888,7 +886,7 @@ R_SetupFrame (void)
 static void
 MYgluPerspective (GLdouble fovy, GLdouble aspect, GLdouble zNear, GLdouble zFar)
 {
-	GLdouble    xmin, xmax, ymin, ymax;
+	GLdouble		xmin, xmax, ymin, ymax;
 
 	ymax = zNear * tan (fovy * M_PI / 360.0);
 	ymin = -ymax;
@@ -1014,9 +1012,9 @@ void R_RenderBrushPoly (msurface_t *fa);
 void
 R_Mirror (void)
 {
-	float        d;
-	entity_t   **ent;
-	msurface_t  *s;
+	float		d;
+	entity_t  **ent;
+	msurface_t *s;
 
 	if (!mirror)
 		return;
@@ -1117,9 +1115,9 @@ R_RenderView (void)
 qboolean
 R_CullBlocked (vec3_t mins, vec3_t maxs, vec3_t org)
 {
-	float   rad;
-	static struct trace_t  trace;
-	vec3_t  point;
+	float		rad;
+	static struct trace_t	trace;
+	vec3_t		point;
 
 	if (!gl_occlusion->int_val)
 		return false;

@@ -62,7 +62,7 @@ R_InitBubble ()
 	bub_cos = bubble_costable;
 
 	for (i = 32; i >= 0; i--) {
-		a = i / 32.0 * M_PI * 2;
+		a = i * (M_PI / 16.0);
 		*bub_sin++ = sin (a);
 		*bub_cos++ = cos (a);
 	}

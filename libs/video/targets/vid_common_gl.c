@@ -45,19 +45,18 @@
 # include "winquake.h"
 #endif
 
-#include "compat.h"
 #include "QF/console.h"
 #include "QF/cvar.h"
 #include "QF/input.h"
 #include "QF/qargs.h"
+#include "QF/sys.h"
 #include "QF/vfs.h"
 #include "QF/vid.h"
-#include "QF/sys.h"
-
+#include "QF/GL/defines.h"
 #include "QF/GL/extensions.h"
 #include "QF/GL/funcs.h"
-#include "QF/GL/defines.h"
 
+#include "compat.h"
 #include "sbar.h"
 
 #define WARP_WIDTH              320
@@ -68,14 +67,10 @@ unsigned char d_15to8table[65536];
 
 cvar_t     *vid_mode;
 cvar_t     *gl_multitexture;
-extern byte gammatable[256];
-extern qboolean GLF_Init ();
 
 QF_glActiveTextureARB   qglActiveTexture = NULL;
 QF_glMultiTexCoord2fARB qglMultiTexCoord2f = NULL;
 int gl_filter_min = GL_LINEAR_MIPMAP_NEAREST, gl_filter_max = GL_LINEAR;
-
-/*-----------------------------------------------------------------------*/
 
 int         texture_extension_number = 1;
 float       gldepthmin, gldepthmax;
@@ -94,13 +89,17 @@ qboolean			is8bit = false;
 
 cvar_t	*vid_use8bit;
 
-/*-----------------------------------------------------------------------*/
+extern byte			gammatable[256];
+extern qboolean		GLF_Init ();
+
 
 void
 GL_Common_Init_Cvars (void)
 {
-	vid_use8bit = Cvar_Get ("vid_use8bit", "0", CVAR_ROM, NULL,	"Use 8-bit shared palettes.");
-	gl_multitexture = Cvar_Get ("gl_multitexture", "0", CVAR_ARCHIVE, NULL, "Use multitexture when available");
+	vid_use8bit = Cvar_Get ("vid_use8bit", "0", CVAR_ROM, NULL,	"Use 8-bit "
+							"shared palettes.");
+	gl_multitexture = Cvar_Get ("gl_multitexture", "0", CVAR_ARCHIVE, NULL,
+								"Use multitexture when available");
 }
 
 /*
@@ -124,7 +123,8 @@ CheckMultiTextureExtensions (void)
 		qfglGetIntegerv (GL_MAX_TEXTURE_UNITS_ARB, &max_texture_units);
 		if (max_texture_units >= 2) {
 			Con_Printf ("enabled, %d TMUs.\n", max_texture_units);
-			qglMultiTexCoord2f = QFGL_ExtensionAddress ("glMultiTexCoord2fARB");
+			qglMultiTexCoord2f = QFGL_ExtensionAddress
+				("glMultiTexCoord2fARB");
 			qglActiveTexture = QFGL_ExtensionAddress ("glActiveTextureARB");
 			gl_mtex_enum = GL_TEXTURE0_ARB;
 			gl_mtex_capable = true;
@@ -140,21 +140,17 @@ void
 VID_SetPalette (unsigned char *palette)
 {
 	byte       *pal;
-	unsigned int r, g, b;
-	unsigned int v;
-	int         r1, g1, b1;
-	int         k;
-	unsigned short i;
-	unsigned int *table;
-	VFile      *f;
 	char        s[255];
 	float       dist, bestdist;
+	int         r1, g1, b1, k;
+	unsigned int r, g, b, v;
+	unsigned short i;
+	unsigned int *table;
 	static qboolean palflag = false;
+	VFile      *f;
 
-//
-// 8 8 8 encoding
-//
-//  Con_Printf("Converting 8to24\n");
+	// 8 8 8 encoding
+//	Con_Printf("Converting 8to24\n");
 
 	pal = palette;
 	table = d_8to24table;
@@ -186,10 +182,10 @@ VID_SetPalette (unsigned char *palette)
 	} else {
 		for (i = 0; i < (1 << 15); i++) {
 			/* Maps
-				000000000000000
-				000000000011111 = Red  = 0x1F
-				000001111100000 = Blue = 0x03E0 
-				111110000000000 = Grn  = 0x7C00
+			   000000000000000
+			   000000000011111 = Red  = 0x1F
+			   000001111100000 = Blue = 0x03E0 
+			   111110000000000 = Grn  = 0x7C00
 			*/
 			r = ((i & 0x1F) << 3) + 4;
 			g = ((i & 0x03E0) >> 2) + 4;
@@ -265,9 +261,6 @@ GL_Init_Common (void)
 	CheckMultiTextureExtensions ();
 }
 
-/*
-	GL_BeginRendering
-*/
 void
 GL_BeginRendering (int *x, int *y, int *width, int *height)
 {
@@ -281,7 +274,6 @@ VID_Is8bit (void)
 {
 	return is8bit;
 }
-
 
 #ifdef GL_SHARED_TEXTURE_PALETTE_EXT
 void
@@ -300,7 +292,8 @@ Tdfx_Init8bitPalette (void)
 		GLubyte     table[256][4];
 		QF_gl3DfxSetPaletteEXT qgl3DfxSetPaletteEXT = NULL;
 
-		if (!(qgl3DfxSetPaletteEXT = QFGL_ExtensionAddress ("gl3DfxSetPaletteEXT"))) {
+		if (!(qgl3DfxSetPaletteEXT = QFGL_ExtensionAddress
+			  ("gl3DfxSetPaletteEXT"))) {
 			Con_Printf ("3DFX_set_global_palette not found.\n");
 			return;
 		}
@@ -324,14 +317,14 @@ Tdfx_Init8bitPalette (void)
 }
 
 /*
- * The GL_EXT_shared_texture_palette seems like an idea which is 
- * /almost/ a good idea, but seems to be severely broken with many
- * drivers, as such it is disabled.
- *
- * It should be noted, that a palette object extension as suggested by
- * the GL_EXT_shared_texture_palette spec might be a very good idea in
- * general.
- */
+  The GL_EXT_shared_texture_palette seems like an idea which is 
+  /almost/ a good idea, but seems to be severely broken with many
+  drivers, as such it is disabled.
+  
+  It should be noted, that a palette object extension as suggested by
+  the GL_EXT_shared_texture_palette spec might be a very good idea in
+  general.
+*/
 void
 Shared_Init8bitPalette (void)
 {
