@@ -93,14 +93,8 @@ build_skin_8 (byte * original, int tinwidth, int tinheight,
 	for (i = 0; i < scaled_height; i++, out += scaled_width) {
 		inrow = original + inwidth * (i * tinheight / scaled_height);
 		frac = fracstep >> 1;
-		for (j = 0; j < scaled_width; j += 4) {
+		for (j = 0; j < scaled_width; j++) {
 			out[j] = translate[inrow[frac >> 16]];
-			frac += fracstep;
-			out[j + 1] = translate[inrow[frac >> 16]];
-			frac += fracstep;
-			out[j + 2] = translate[inrow[frac >> 16]];
-			frac += fracstep;
-			out[j + 3] = translate[inrow[frac >> 16]];
 			frac += fracstep;
 		}
 	}
@@ -126,14 +120,8 @@ build_skin_32 (byte * original, int tinwidth, int tinheight,
 	for (i = 0; i < scaled_height; i++, out += scaled_width) {
 		inrow = original + inwidth * (i * tinheight / scaled_height);
 		frac = fracstep >> 1;
-		for (j = 0; j < scaled_width; j += 4) {
+		for (j = 0; j < scaled_width; j++) {
 			out[j] = translate32[inrow[frac >> 16]];
-			frac += fracstep;
-			out[j + 1] = translate32[inrow[frac >> 16]];
-			frac += fracstep;
-			out[j + 2] = translate32[inrow[frac >> 16]];
-			frac += fracstep;
-			out[j + 3] = translate32[inrow[frac >> 16]];
 			frac += fracstep;
 		}
 	}
