@@ -32,11 +32,13 @@
 
 #include <math.h>
 
+#include "QF/console.h"
+#include "QF/cvar.h"
+#include "QF/keys.h"
+
 #include "bothdefs.h"
 #include "cl_ents.h"
 #include "client.h"
-#include "QF/console.h"
-#include "QF/cvar.h"
 #include "pmove.h"
 
 cvar_t     *cl_nopred;
@@ -140,6 +142,7 @@ CL_PredictMove (void)
 										// stage
 		VID_SetCaption (cls.servername);
 		cls.state = ca_active;
+		key_dest = key_game;
 	}
 
 	if (cl_nopred->int_val) {

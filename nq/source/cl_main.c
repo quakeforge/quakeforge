@@ -36,6 +36,7 @@
 #include "QF/console.h"
 #include "QF/cvar.h"
 #include "QF/input.h"
+#include "QF/keys.h"
 #include "QF/msg.h"
 #include "QF/screen.h"
 #include "QF/va.h"
@@ -278,6 +279,7 @@ CL_EstablishConnection (char *host)
 	cls.state = ca_connected;
 	cls.signon = 0;						// need all the signon messages
 										// before playing
+	key_dest = key_game;
 }
 
 

@@ -46,6 +46,7 @@
 #include "QF/sys.h"
 #include "QF/console.h"
 #include "QF/cmd.h"
+#include "QF/keys.h"
 
 void        CL_FinishTimeDemo (void);
 
@@ -307,6 +308,7 @@ CL_PlayDemo_f (void)
 	cls.demoplayback = true;
 	cls.state = ca_connected;
 	cls.forcetrack = 0;
+	key_dest = key_game;
 
 	while ((c = Qgetc (cls.demofile)) != '\n')
 		if (c == '-')
