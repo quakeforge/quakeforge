@@ -267,7 +267,7 @@ FlushEntityPacket (void)
 	// read it all, but ignore it
 	while (1) {
 		word = (unsigned short) MSG_ReadShort (net_message);
-		if (net_message->badread) {			// something didn't parse right...
+		if (net_message->badread) {		// something didn't parse right...
 			Host_Error ("msg_badread in packetentities");
 			return;
 		}
@@ -329,12 +329,12 @@ CL_ParsePacketEntities (qboolean delta)
 
 	while (1) {
 		word = (unsigned short) MSG_ReadShort (net_message);
-		if (net_message->badread) {			// something didn't parse right...
+		if (net_message->badread) {		// something didn't parse right...
 			Host_Error ("msg_badread in packetentities");
 			return;
 		}
 
-		if (!word) {	// copy rest of ents from old packet
+		if (!word) {					// copy rest of ents from old packet
 			while (oldindex < oldp->num_entities) {	
 				if (newindex >= MAX_PACKET_ENTITIES)
 					Host_Error ("CL_ParsePacketEntities: newindex == "
@@ -366,7 +366,7 @@ CL_ParsePacketEntities (qboolean delta)
 				oldp->entities[oldindex].number;
 		}
 
-		if (newnum < oldnum) {			// new from baseline
+		if (newnum < oldnum) {						// new from baseline
 			if (word & U_REMOVE) {
 				if (full) {
 					cl.validsequence = 0;
@@ -386,12 +386,12 @@ CL_ParsePacketEntities (qboolean delta)
 			continue;
 		}
 
-		if (newnum == oldnum) {			// delta from previous
+		if (newnum == oldnum) {					// delta from previous
 			if (full) {
 				cl.validsequence = 0;
 				Con_Printf ("WARNING: delta on full update");
 			}
-			if (word & U_REMOVE) {	// Clear the entity
+			if (word & U_REMOVE) {				// Clear the entity
 				entity_t	*ent = &cl_packet_ents[newnum];
 				memset (ent, 0, sizeof (entity_t));
 				oldindex++;
@@ -512,7 +512,7 @@ CL_LinkPacketEntities (void)
 		}
 		(*ent)->visframe = r_framecount;
 
-		if (model->flags & EF_ROTATE) { // rotate binary objects locally
+		if (model->flags & EF_ROTATE) {		// rotate binary objects locally
 			(*ent)->angles[0] = 0;
 			(*ent)->angles[1] = anglemod (100 * cl.time);
 			(*ent)->angles[2] = 0;
@@ -548,7 +548,7 @@ CL_LinkPacketEntities (void)
 	}
 }
 
-/* PROJECTILE PARSING / LINKING */
+// PROJECTILE PARSING / LINKING ===============================================
 
 void
 CL_ClearProjectiles (void)
@@ -817,19 +817,10 @@ CL_LinkPlayers (void)
 		if (ent->efrag)
 			R_RemoveEfrags (ent);
 		if (state->messagenum != cl.parsecount)
-			continue;					// not present this frame
+			continue;							// not present this frame
 
 		if (!info->name[0])
 			continue;
-
-		// the player object never gets added
-		if (j == cl.playernum) {
-			if (!Cam_DrawPlayer (-1))	// XXX
-				continue;
-		} else {
-			if (!Cam_DrawPlayer (j))
-				continue;
-		}
 
 		// spawn light flashes, even ones coming from invisible objects
 		if (j == cl.playernum) {
@@ -839,6 +830,15 @@ CL_LinkPlayers (void)
 			VectorCopy (state->origin, org);
 		CL_NewDlight (j, org, state->effects, state->glow_size,
 					  state->glow_color);
+
+		// the player object never gets added
+		if (j == cl.playernum) {
+			if (!Cam_DrawPlayer (-1))			// XXX
+				continue;
+		} else {
+			if (!Cam_DrawPlayer (j))
+				continue;
+		}
 
 		if (!state->modelindex)
 			continue;
