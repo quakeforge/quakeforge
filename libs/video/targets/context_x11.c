@@ -91,9 +91,10 @@ static Atom aWMDelete = 0;
 static XF86VidModeModeInfo **vidmodes;
 static int	nummodes;
 static int	original_mode = 0;
+static double  x_gamma;
+static qboolean vidmode_avail = false;
 #endif
 
-static qboolean	vidmode_avail = false;
 static qboolean	vidmode_active = false;
 
 cvar_t		*vid_fullscreen;
@@ -101,7 +102,6 @@ cvar_t		*vid_system_gamma;
 qboolean	vid_gamma_avail;
 qboolean	vid_fullscreen_active;
 static qboolean    vid_context_created = false;
-static double	x_gamma;
 
 static int	xss_timeout;
 static int	xss_interval;
