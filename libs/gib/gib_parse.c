@@ -320,7 +320,7 @@ GIB_Parse_Tokens (const char *program, unsigned int *i, unsigned int pofs,
 			}
 			// Check for array splitting
 			// Concatenating this onto something else is non-sensical
-			if (cur->delim == ' ' && str[0] == '@' && !cat) {
+			if (cur->delim == ' ' && (str[0] == '@' || str[0] == '%') && !cat) {
 				cur->flags |= TREE_SPLIT;
 			}
 			// We can handle escape characters now
