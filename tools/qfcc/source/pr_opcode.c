@@ -117,10 +117,7 @@ PR_Opcode_Find (const char *name, def_t *var_a, def_t *var_b, def_t *var_c)
 		op.type_a = var_a->type->type;
 		op.type_b = var_b->type->type;
 		op.type_c = var_c->type->type;
-		if (op.type_c == ev_void)
-			tab = &opcode_type_table_ab;
-		else
-			tab = &opcode_type_table_abc;
+		tab = &opcode_type_table_abc;
 	} else if (var_a && var_b) {
 		op.type_a = var_a->type->type;
 		op.type_b = var_b->type->type;

@@ -71,8 +71,10 @@ emit_statement (int sline, opcode_t *op, def_t *var_a, def_t *var_b, def_t *var_
 	statement->b = var_b ? var_b->ofs : 0;
 	if (op->type_c == ev_void || op->right_associative) {
 		// ifs, gotos, and assignments don't need vars allocated
-		var_c = NULL;
-		statement->c = 0;
+		if (op->type_c == ev_void) {
+			var_c = NULL;
+			statement->c = 0;
+		}
 		ret = var_a;
 	} else {	// allocate result space
 		if (!var_c) {
@@ -154,7 +156,7 @@ emit_function_call (expr_t *e, def_t *dest)
 def_t *
 emit_assign_expr (expr_t *e)
 {
-	def_t	*def_a, *def_b;
+	def_t	*def_a, *def_b, *def_c;
 	opcode_t *op;
 	expr_t *e1 = e->e.expr.e1;
 	expr_t *e2 = e->e.expr.e2;
@@ -163,30 +165,40 @@ emit_assign_expr (expr_t *e)
 		e1->e.temp.users--;
 		return 0;
 	}
-	def_a = emit_sub_expr (e1, 0);
-	if (def_a->type->type == ev_pointer) {
-		def_b = emit_sub_expr (e2, 0);
-		op = PR_Opcode_Find ("=", def_b, def_a, &def_void);
-		emit_statement (e->line, op, def_b, def_a, 0);
+	if (e1->type == ex_expr && e1->e.expr.op == '.'
+		&& extract_type (e1->e.expr.e1) == ev_pointer) {
+		def_a = emit_sub_expr (e2, 0);
+		def_c = emit_sub_expr (e1->e.expr.e2, 0);
+		def_b = emit_sub_expr (e1->e.expr.e1, 0);
+		op = PR_Opcode_Find ("=", def_a, def_b, def_c);
+		emit_statement (e->line, op, def_a, def_b, def_c);
 	} else {
-		if (def_a->constant) {
-			if (options.code.cow) {
-				int size = pr_type_size [def_a->type->type];
-				int ofs = PR_NewLocation (def_a->type);
-
-				memcpy (pr_globals + ofs, pr_globals + def_a->ofs, size);
-				def_a->ofs = ofs;
-				def_a->constant = 0;
-				if (options.warnings.cow)
-					warning (e1, "assignment to constant %s (Moooooooo!)", def_a->name);
-			} else {
-				error (e1, "assignment to constant %s", def_a->name);
-			}
-		}
-		def_b = emit_sub_expr (e2, def_a);
-		if (def_b != def_a) {
+		def_a = emit_sub_expr (e1, 0);
+		if (def_a->type->type == ev_pointer) {
+			def_b = emit_sub_expr (e2, 0);
 			op = PR_Opcode_Find ("=", def_b, def_a, &def_void);
 			emit_statement (e->line, op, def_b, def_a, 0);
+		} else {
+			if (def_a->constant) {
+				if (options.code.cow) {
+					int size = pr_type_size [def_a->type->type];
+					int ofs = PR_NewLocation (def_a->type);
+
+					memcpy (pr_globals + ofs, pr_globals + def_a->ofs, size);
+					def_a->ofs = ofs;
+					def_a->constant = 0;
+					if (options.warnings.cow)
+						warning (e1, "assignment to constant %s (Moooooooo!)",
+								 def_a->name);
+				} else {
+					error (e1, "assignment to constant %s", def_a->name);
+				}
+			}
+			def_b = emit_sub_expr (e2, def_a);
+			if (def_b != def_a) {
+				op = PR_Opcode_Find ("=", def_b, def_a, &def_void);
+				emit_statement (e->line, op, def_b, def_a, 0);
+			}
 		}
 	}
 	if (def_a->type->type != ev_pointer)

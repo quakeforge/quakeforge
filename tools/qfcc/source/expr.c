@@ -988,14 +988,13 @@ type_mismatch:
 		type = &type_float;
 	}
 	if (op == '=' && e1->type == ex_expr && e1->e.expr.op == '.') {
-		if (t1 == &type_entity) {
+		if (get_type(e1->e.expr.e1) == &type_entity) {
 			type_t      new;
 
 			memset (&new, 0, sizeof (new));
 			new.type = ev_pointer;
 			type = new.aux_type = e1->e.expr.type;
 			e1->e.expr.type = PR_FindType (&new);
-		} else {
 		}
 	}
 	if (!type)
