@@ -170,7 +170,7 @@ R_AddDynamicLights_1 (msurface_t *surf)
 	}
 }
 
-static inline void
+static void
 R_AddDynamicLights_3 (msurface_t *surf)
 {
 	float			dist;
