@@ -7,6 +7,8 @@ Changes from 0.5.4
       vid_conheight -> con_height
     o demo_speed no longer affects console scrolling or cursor blink rate
     o save game loading fixed
+    o FPS display now updated every 0.2 seconds and displays to the tenth of
+      an fps
 
 Changes from 0.5.3
     o CRITICAL: exploitable buffer overflow in qw-server fixed
