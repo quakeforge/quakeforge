@@ -104,6 +104,7 @@ cvar_t		*vid_fullscreen;
 cvar_t		*vid_system_gamma;
 qboolean	vid_fullscreen_active;
 static qboolean    vid_context_created = false;
+static int  window_x, window_y, window_saved;
 
 cvar_t		*sys_backtrace;
 cvar_t		*sys_dump_core;
@@ -383,15 +384,27 @@ void X11_UpdateFullscreen (cvar_t *fullscreen)
 	if (!fullscreen->int_val) {
 		X11_RestoreVidMode ();
 	} else {
+		if (X11_GetWindowCoords (&window_x, &window_y))
+			window_saved = 1;
 		X11_SetVidMode (scr_width, scr_height);
 	}
 
 	XUnmapWindow (x_disp, x_win);
+	X11_ProcessEvent ();	//FIXME should do proper event parsing.
 	attr.override_redirect = vidmode_active != 0;
 	XChangeWindowAttributes (x_disp, x_win, mask, &attr);
-	XMoveWindow(x_disp, x_win, 0, 0);
 	XMapWindow (x_disp, x_win);
+	X11_ProcessEvent ();	//FIXME should do proper event parsing.
+	if (vidmode_active) {
+		XMoveWindow(x_disp, x_win, 0, 0);
+	} else if (window_saved) {
+		XMoveWindow(x_disp, x_win, window_x, window_y);
+		window_saved = 0;
+	}
+	X11_ProcessEvent ();	//FIXME should do proper event parsing.
 	XRaiseWindow (x_disp, x_win);
+	X11_ProcessEvent ();	//FIXME should do proper event parsing.
+	XWarpPointer (x_disp, None, x_win, 0, 0, 0, 0, 0, 0);
 
 	if (vidmode_active) {
 		X11_ForceViewPort ();
@@ -527,35 +540,43 @@ X11_SetCaption (const char *text)
 		XStoreName (x_disp, x_win, text);
 }
 
+qboolean
+X11_GetWindowCoords (int *ax, int *ay)
+{
+#ifdef HAVE_VIDMODE
+	Window      theroot, scrap;
+	int         x, y;
+	unsigned int width, height, bdwidth, depth;
+
+	if ((XGetGeometry (x_disp, x_win, &theroot, &x, &y, &width, &height,
+					   &bdwidth, &depth) == False)) {
+		Con_Printf ("XGetWindowAttributes failed in X11_GetWindowCoords.\n");
+		return true;
+	} else {
+		XTranslateCoordinates (x_disp,x_win,theroot, -bdwidth, -bdwidth,
+							   ax, ay, &scrap);
+		Con_DPrintf ("Window coords =  %dx%d (%d,%d)\n", *ax, *ay,
+					 width, height);
+		return false;
+	}
+#endif
+	return false;
+}
+
 void
 X11_ForceViewPort (void)
 {
-#ifdef HAVE_VIDMODE
-	if (vidmode_avail && vid_context_created) {
-		Window      theroot, scrap;
-		int         x, y, ax, ay;
-		unsigned int width, height, bdwidth, depth;
+	int         ax, ay;
 
-		if ((XGetGeometry (x_disp, x_win, &theroot, &x, &y, &width, &height,
-						   &bdwidth, &depth) == False)) {
-			Con_DPrintf ("XGetWindowAttributes failed in vid_center.\n");
-		} else {
-			XTranslateCoordinates (x_disp,x_win,theroot, -bdwidth, -bdwidth,
-								   &ax, &ay, &scrap);
-			Con_DPrintf ("Setting viewport to %dx%d (%d,%d)\n", ax, ay,
-						 width, height);
-			XF86VidModeSetViewPort (x_disp, x_screen, ax, ay);
-		}
-	} else {
+	if (!vidmode_avail  || !vid_context_created)
+		return;
+
+	if (!X11_GetWindowCoords (&ax, &ay)) {
 		/* "icky kludge code" */
-		XWarpPointer(x_disp,x_win,x_win,0,0,0,0, 0,0);
-		XWarpPointer(x_disp,x_win,x_win,0,0,0,0, scr_width,scr_height);
+		XWarpPointer (x_disp, None, x_win, 0, 0, 0, 0, scr_width, scr_height);
+		XWarpPointer (x_disp, None, x_win, 0, 0, 0, 0, 0, 0);
 	}
-#else
-	/* "icky kludge code" */
-	XWarpPointer(x_disp,x_win,x_win,0,0,0,0, 0,0);
-	XWarpPointer(x_disp,x_win,x_win,0,0,0,0, scr_width,scr_height);
-#endif
+	XF86VidModeSetViewPort (x_disp, x_screen, ax, ay);
 }
 
 double

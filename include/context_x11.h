@@ -70,5 +70,6 @@ void X11_RestoreVidMode (void);
 void X11_SetCaption (const char *);
 void X11_SetScreenSaver (void);
 void X11_SetVidMode (int, int);
+qboolean X11_GetWindowCoords (int *ax, int *ay);
 
 #endif	// __context_x11_h_
