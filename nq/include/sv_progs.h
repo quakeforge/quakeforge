@@ -182,7 +182,7 @@ typedef struct
 
 extern sv_fields_t sv_fields;
 
-#if 1
+#if TYPECHECK_PROGS
 #define SVFIELD(e,f,t) E_var (e, PR_AccessField (&sv_pr_state, #f, ev_##t, __FILE__, __LINE__), t)
 #else
 #define SVFIELD(e,f,t) E_var (e, sv_fields.f, t)

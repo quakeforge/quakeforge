@@ -1152,6 +1152,12 @@ AC_ARG_ENABLE(optimize,
 	optimize=yes
 )
 
+AC_ARG_ENABLE(typecheck-progs,
+	[  --disable-typecheck-progs disable type checking on progs field access])
+if test "x$enable_typecheck_progs" != xno; then
+	AC_DEFINE(TYPECHECK_PROGS)
+fi
+
 AC_ARG_WITH(amd,
 	[  --with-amd              Optimize for AMD processors instead of Intel],
 	HAVE_AMD="yes",

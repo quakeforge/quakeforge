@@ -130,5 +130,8 @@
 /* Define this if you have _mkdir */
 #undef HAVE__mkdir
 
+/* Define this if you want progs typechecking */
+#undef TYPECHECK_PROGS
+
 @BOTTOM@
 #endif // __config_h_
