@@ -107,11 +107,11 @@ I_OGGMus_Eject (void)
 static int
 I_OGGMus_GetAudioDiskInfo (void)
 {
-	Sys_Printf ("Entering I_OGGMus_GetAudioDiskInfo\n");
 	/* read the track list, parse it a bit, map it into a list */
 	int         size = -1;
 	char       *buffile = NULL;
 
+	Sys_Printf ("Entering I_OGGMus_GetAudioDiskInfo\n");
 	ogglistvalid = false;
 
 	if (oggfile == NULL) {
@@ -286,9 +286,9 @@ I_OGGMus_Info (void)
 static void
 I_OGG_f (void)
 {
-	Sys_Printf ("Entering I_OGG_f\n");
 	const char *command;
 
+	Sys_Printf ("Entering I_OGG_f\n");
 	if (Cmd_Argc () < 2)
 		return;
 
