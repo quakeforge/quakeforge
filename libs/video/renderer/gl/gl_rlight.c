@@ -351,7 +351,8 @@ R_MarkLights (vec3_t lightorigin, dlight_t *light, int bit, model_t *model)
 	mleaf_t   *pvsleaf = Mod_PointInLeaf (lightorigin, model);
 
 	if (!pvsleaf->compressed_vis) {
-		R_RecursiveMarkLights (lightorigin, light, bit, model->nodes);
+		mnode_t *node = model->nodes + model->hulls[0].firstclipnode;
+		R_RecursiveMarkLights (lightorigin, light, bit, node);
 	} else {
 		float   radius = light->radius;
 		vec3_t  mins, maxs;
@@ -405,6 +406,7 @@ R_PushDlights (vec3_t entorigin)
 {
 	int         i;
 	dlight_t   *l;
+	vec3_t      lightorigin;
 
 	if (!gl_dlight_lightmap->int_val)
 		return;
@@ -414,7 +416,8 @@ R_PushDlights (vec3_t entorigin)
 	for (i = 0; i < MAX_DLIGHTS; i++, l++) {
 		if (l->die < r_realtime || !l->radius)
 			continue;
-		R_MarkLights (l->origin, l, 1 << i, r_worldentity.model);
+		VectorSubtract (l->origin, entorigin, lightorigin);
+		R_MarkLights (lightorigin, l, 1 << i, r_worldentity.model);
 	}
 }
 
