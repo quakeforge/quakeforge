@@ -92,5 +92,5 @@ main ()
 	read_result = (float*)PR_GetGlobalPointer (&progs, "read_result");
 	main_func = PR_GetFunctionIndex (&progs, "main");
 	PR_ExecuteProgram (&progs, main_func);
-	return 0;
+	return G_FLOAT (&progs, OFS_RETURN);
 }
