@@ -646,7 +646,7 @@ PF_findradius (progs_t *pr)
 		emins = SVvector (ent, mins);
 		emaxs = SVvector (ent, maxs);
 		for (j = 0; j < 3; j++)
-			eorg[j] = org[j] - eorigin[j] - 0.5 * (emins[j] + emaxs[j]);
+			eorg[j] = org[j] - eorigin[j] - 0.5 * (emins[j] - emaxs[j]);
 		if (DotProduct (eorg, eorg) > rad)
 			continue;
 
@@ -1366,7 +1366,8 @@ PF_logfrag (progs_t *pr)
 		int u1, u2;
 		
 		type1[1] = type2[1] = 0;
-		if (e1 < 1 || e1 > MAX_CLIENTS) {
+		if (e1 < 1 || e1 > MAX_CLIENTS || 
+			svs.clients[e1 - 1].state == cs_server) {
 			type1[0] = 'e';
 			u1 = e1;
 		} else {
@@ -1374,7 +1375,8 @@ PF_logfrag (progs_t *pr)
 			u1 = svs.clients[e1 - 1].userid;
 		}
 
-		if (e2 < 1 || e2 > MAX_CLIENTS) {
+		if (e2 < 1 || e2 > MAX_CLIENTS ||
+			svs.clients[e1 - 1].state == cs_server) {
 			type2[0] = 'e';
 			u2 = e2;
 		} else {
