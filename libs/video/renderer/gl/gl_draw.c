@@ -363,7 +363,6 @@ Draw_Init (void)
 static inline void
 flush_text (void)
 {
-	qfglFinish ();
 	qfglBindTexture (GL_TEXTURE_2D, char_texture);
 	qfglDrawElements (GL_QUADS, tVAcount, GL_UNSIGNED_INT, tVAindices);
 	tVAcount = 0;
