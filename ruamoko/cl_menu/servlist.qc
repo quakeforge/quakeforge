@@ -1,6 +1,6 @@
 #include "menu.h"
 #include "draw.h"
-#include "inputline.h"
+#include "InputLine.h"
 #include "options_util.h"
 #include "controls_o.h"
 #include "client_menu.h"

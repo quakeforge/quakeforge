@@ -1,5 +1,5 @@
-#ifndef __ruamoko_object_h
-#define __ruamoko_object_h
+#ifndef __ruamoko_Object_h
+#define __ruamoko_Object_h
 
 typedef enum {
 	NO,
@@ -134,4 +134,4 @@ typedef enum {
 //-awake;
 @end
 
-#endif//__ruamoko_object_h
+#endif //__ruamoko_Object_h

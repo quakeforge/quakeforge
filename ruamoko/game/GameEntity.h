@@ -1,7 +1,7 @@
-#ifndef __gameent_h
-#define __gameent_h
+#ifndef __GameEntity_h
+#define __GameEntity_h
 
-#include "entity.h"
+#include "Entity.h"
 
 @extern .vector angles;
 @extern .float modelindex;
@@ -16,8 +16,10 @@
 @extern .float flags;
 @extern .vector v_angle;
 
-@interface GameEntity : Entity
--(BOOL)takeDamage:weapon :inflictor :attacker :(float)damage;
+@interface GameEntity: Entity
+
+- (BOOL) takeDamage: weapon :inflictor :attacker : (float)damage;
+
 @end
 
-#endif//__gameent_h
+#endif	//__GameEntity_h

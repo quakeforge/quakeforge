@@ -33,7 +33,7 @@
 #include "draw.h"
 #include "cvar.h"
 #include "key.h"
-#include "inputline.h"
+#include "InputLine.h"
 #include "controls_o.h"
 #include "options_util.h"
 

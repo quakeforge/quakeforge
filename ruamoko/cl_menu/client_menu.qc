@@ -3,7 +3,7 @@
 #include "cmd.h"
 #include "draw.h"
 #include "key.h"
-#include "inputline.h"
+#include "InputLine.h"
 #include "string.h"
 #include "../include/string.h"
 #include "math.h"

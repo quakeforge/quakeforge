@@ -1,9 +1,9 @@
-#ifndef __ruamoko_inputline_h
-#define __ruamoko_inputline_h
+#ifndef __ruamoko_InputLine_h
+#define __ruamoko_InputLine_h
 
-#include "point.h"
+#include "Rect.h"
 
-#define OLD_API		//FIXME update the input line api
+#define OLD_API		// FIXME update the input line api
 
 struct _inputline_t = {};	// opaque type :)
 typedef _inputline_t [] inputline_t;
@@ -22,18 +22,24 @@ typedef _inputline_t [] inputline_t;
 @extern void (inputline_t il, string str) InputLine_SetText;
 @extern string (inputline_t il) InputLine_GetText;
 
-@interface InputLine : Object
+@interface InputLine: Object
 {
-	Point at;
-	inputline_t il;
+	Rect		frame;
+	inputline_t	il;
 }
--free;
--initAt:(Point)p HistoryLines:(integer)l LineSize:(integer)s PromptChar:(integer)prompt;
--setWidth:(integer)visibleWidth;
--process:(integer)key;
--draw:(BOOL)cursor;
--setText:(string)text;
--(string)getText;
+
+- (id) initWithBounds: (Rect)aRect promptCharacter: (integer)char;
+//-initAt:(Point)p HistoryLines:(integer)l LineSize:(integer)s PromptChar:(integer)prompt;
+- (void) free;
+
+- (void) setWidth: (integer)width;
+- (void) draw: (BOOL)cursor;
+
+- (void) processInput: (integer)key;
+
+- (id) setText: (string)text;
+- (string) text;
+
 @end
 
-#endif//__ruamoko_inputline_h
+#endif //__ruamoko_inputline_h

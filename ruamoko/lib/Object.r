@@ -1,4 +1,4 @@
-#include "object.h"
+#include "Object.h"
 
 void (obj_module_t [] msg) __obj_exec_class = #0;
 void (id object, integer code, string fmt, ...) obj_error = #0;

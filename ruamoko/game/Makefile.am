@@ -12,7 +12,7 @@ STRIP=$(shell echo `echo -n $(srcdir)/ | sed -e 's/[^/]//g' | wc -c`)
 
 pkgdata_DATA= game.dat
 
-game_src= axe.r gameent.r tempent.r world.r
+game_src= Axe.r GameEntity.r World.r tempent.r
 
 %.qfo: %.r
 	$(QFCC) $(QCFLAGS) $(QCPPFLAGS) -p $(STRIP) -c -o $@ $<

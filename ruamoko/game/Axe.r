@@ -1,41 +1,43 @@
-#include "axe.h"
-#include "gameent.h"
 #include "math.h"
 #include "physics.h"
 #include "qw_message.h"
 #include "sound.h"
+
 #include "tempent.h"
-#include "world.h"
+
+#include "GameEntity.h"
+#include "World.h"
+#include "Axe.h"
 
 @implementation Axe
 
--init
+- (id) init
 {
 	[super init];
 	damage = (deathmatch > 3) ? 75.0 : 20.0;
 	return self;
 }
 
--setOwner:(Entity)o
+- (void) setOwner: (Entity) o
 {
 	owner = o;
-	return self;
 }
 
--fire
+- (void) fire
 {
-	local entity s = [owner ent];
-	local vector org, source;
+	local entity	s = [owner ent];
+	local vector	org, source;
 
 	makevectors (s.v_angle);
 	source = s.origin + '0 0 16';
+
 	traceline (source, source + v_forward * 64, NO, s);
 	if (trace_fraction == 1.0)
-		return self;
+		return;
 
 	org = trace_endpos - v_forward * 4;
 
-	if ([trace_ent.@this takeDamage:self inflictor:s attacker:s :damage])
+	if ([trace_ent.@this takeDamage: self inflictor: s attacker: s : damage])
 		SpawnBlood (org, 20);
 	else {
 		sound (s, CHAN_WEAPON, "player/axhit2.wav", 1, ATTN_NORM);
@@ -48,7 +50,6 @@
 		WriteCoord (MSG_MULTICAST, org_z);
 		multicast (org, MULTICAST_PVS);
 	}
-	return self;
 }
 
 @end

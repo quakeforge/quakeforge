@@ -1,4 +1,4 @@
-#include "inputline.h"
+#include "InputLine.h"
 
 inputline_t (integer lines, integer size, integer prompt) InputLine_Create = #0;
 void (inputline_t il, void [] data) InputLine_SetUserData = 0;
@@ -16,50 +16,49 @@ string (inputline_t il) InputLine_GetText = #0;
 
 @implementation InputLine
 
--free
+- (id) initWithBounds: (Rect)aRect promptCharacter: (integer)char
 {
-	[at free];
+	id (self) = [super init];
+	id (frame) = [aRect copy];
+
+	il = InputLine_Create (frame.size.height, frame.size.width, char);
+	InputLine_SetUserData (il, frame);
+
+	return self;
+}
+
+- (void) free
+{
+	[frame free];
 	InputLine_Destroy (il);
-	return [super free];
+	[super free];
 }
 
--initAt:(Point)p HistoryLines:(integer)l LineSize:(integer)s PromptChar:(integer)prompt
+- (void) setWidth: (integer)visibleWidth
 {
-	[super init];
-	id(at) = [[Point alloc] initWithPoint:p];
-	il = InputLine_Create (l, s, prompt);
-	InputLine_SetUserData (il, at);
-	return self;
+	InputLine_SetWidth (il, width);
 }
 
--setWidth:(integer)visibleWidth
-{
-	InputLine_SetWidth (il, visibleWidth);
-	return self;
-}
-
--process:(integer)key
+- (void) processInput: (integer)key
 {
 	InputLine_Process (il, key);
-	return self;
 }
 
--draw:(BOOL)cursor
+- (void) draw: (BOOL)cursor
 {
 #ifdef OLD_API
-	InputLine_Draw (il, at.x, at.y, cursor);
+	InputLine_Draw (il, frame.origin.x, frame.origin.y, cursor);
 #else
 	InputLine_Draw (il, cursor);
 #endif
 }
 
--setText:(string)text
+- (void) setText: (string)text
 {
 	InputLine_SetText (il, text);
-	return self;
 }
 
--(string)getText
+- (string) text
 {
 	return InputLine_GetText (il);
 }

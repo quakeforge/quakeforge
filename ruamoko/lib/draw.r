@@ -61,11 +61,6 @@ void (integer x, integer y, integer width, integer lines) text_box =
 
 @implementation QPic
 
--initName:(string)n
-{
-	return [self initName:n Centered:NO];
-}
-
 -initName:(string)n Centered:(BOOL)c
 {
 	[super init];
@@ -74,6 +69,11 @@ void (integer x, integer y, integer width, integer lines) text_box =
 	size.width = pic.width;
 	size.height = pic.height;
 	return self;
+}
+
+-initName:(string)n
+{
+	return [self initName:n Centered:NO];
 }
 
 -draw:(integer)x :(integer)y

@@ -1,4 +1,4 @@
-#include "gameent.h"
+#include "GameEntity.h"
 
 .vector angles;
 .float modelindex;
@@ -14,7 +14,8 @@
 .vector v_angle;
 
 @implementation GameEntity
--(BOOL)takeDamage:weapon :inflictor :attacker :damage
+
+- (BOOL) takeDamage: weapon : inflictor : attacker : damage
 {
 	return NO;
 }
