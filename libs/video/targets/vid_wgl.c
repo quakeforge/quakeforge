@@ -550,7 +550,7 @@ VID_NumModes (void)
 	return nummodes;
 }
 
-static vmode_t		*
+static vmode_t *
 VID_GetModePtr (int modenum)
 {
 	if ((modenum >= 0) && (modenum < nummodes))
@@ -559,7 +559,7 @@ VID_GetModePtr (int modenum)
 		return &badmode;
 }
 
-static char		*
+static char *
 VID_GetModeDescription (int mode)
 {
 	char		*pinfo;
@@ -819,9 +819,6 @@ VID_Init (unsigned char *palette)
 
 	hIcon = LoadIcon (global_hInstance, MAKEINTRESOURCE (IDI_ICON1));
 
-// FIXME: If you put these back, remember commctrl.h
-//	InitCommonControls ();
-
 	VID_InitDIB (global_hInstance);
 	basenummodes = nummodes = 1;
 
@@ -1031,20 +1028,6 @@ void
 VID_Init_Cvars ()
 {
 }
-
-// Video menu stuff ======================================
-
-typedef struct {
-	int			modenum;
-	char	   *desc;
-	int			iscur;
-} modedesc_t;
-
-#define MAX_COLUMN_SIZE		9
-#define MODE_AREA_HEIGHT	(MAX_COLUMN_SIZE + 2)
-#define MAX_MODEDESCS		(MAX_COLUMN_SIZE*3)
-
-//static modedesc_t modedescs[MAX_MODEDESCS];
 
 void
 VID_SetCaption (const char *text)
