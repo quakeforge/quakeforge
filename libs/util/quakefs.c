@@ -629,12 +629,7 @@ QFS_WriteBuffers (const char *filename, int count, ...)
 	va_end (args);
 }
 
-/*
-	QFS_CreatePath
-
-	Only used for CopyFile and download
-*/
-void
+int
 QFS_CreatePath (const char *path)
 {
 	char       *ofs;
@@ -644,10 +639,12 @@ QFS_CreatePath (const char *path)
 	for (ofs = e_path + 1; *ofs; ofs++) {
 		if (*ofs == '/') {				// create the directory
 			*ofs = 0;
-			Sys_mkdir (e_path);
+			if (Sys_mkdir (e_path) == -1)
+				return -1;
 			*ofs = '/';
 		}
 	}
+	return 0;
 }
 
 static QFile *
@@ -1319,7 +1316,7 @@ QFile *
 QFS_Open (const char *path, const char *mode)
 {
 	dstring_t  *full_path = dstring_new ();
-	QFile      *file;
+	QFile      *file = 0;
 	const char *m;
 	char       *cpath;
 	int         write = 0;
@@ -1327,7 +1324,6 @@ QFS_Open (const char *path, const char *mode)
 	cpath = QFS_CompressPath (path);
 	if (contains_updir (cpath, 0)) {
 		errno = EACCES;
-		file = 0;
 	} else {
 		dsprintf (full_path, "%s/%s", qfs_userpath, cpath);
 		Sys_DPrintf ("QFS_Open: %s %s\n", full_path->str, mode);
@@ -1335,9 +1331,11 @@ QFS_Open (const char *path, const char *mode)
 			if (*m == 'w' || *m == '+' || *m == 'a')
 				write = 1;
 		if (write)
-			QFS_CreatePath (full_path->str);
+			if (QFS_CreatePath (full_path->str) == -1)
+				goto done;
 		file = Qopen (full_path->str, mode);
 	}
+done:
 	dstring_delete (full_path);
 	free (cpath);
 	return file;
@@ -1364,8 +1362,8 @@ QFS_Rename (const char *old, const char *new)
 
 	dsprintf (full_old, "%s/%s", qfs_userpath, old);
 	dsprintf (full_new, "%s/%s", qfs_userpath, new);
-	QFS_CreatePath (full_new->str);
-	ret = Qrename (full_old->str, full_new->str);
+	if ((ret = QFS_CreatePath (full_new->str)) != -1)
+		ret = Qrename (full_old->str, full_new->str);
 	dstring_delete (full_old);
 	dstring_delete (full_new);
 	return ret;

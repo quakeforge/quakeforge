@@ -46,6 +46,7 @@ static __attribute__ ((unused)) const char rcsid[] =
 #include <stdlib.h>
 
 #include <QF/qtypes.h>
+#include <QF/quakefs.h>
 #include <QF/wadfile.h>
 
 #include "wad.h"
@@ -147,6 +148,33 @@ decode_args (int argc, char **argv)
 	return optind;
 }
 
+static int
+wad_extract (wad_t *wad, lumpinfo_t *pf)
+{
+	const char *name = pf->name;
+	size_t      count;
+	int         len;
+	QFile      *file;
+	char        buffer[16384];
+
+	if (QFS_CreatePath (name) == -1)
+		return -1;
+	if (!(file = Qopen (name, "wb")))
+		return -1;
+	Qseek (wad->handle, pf->filepos, SEEK_SET);
+	len = pf->size;
+	while (len) {
+		count = len;
+		if (count > sizeof (buffer))
+			count = sizeof (buffer);
+		count = Qread (wad->handle, buffer, count);
+		Qwrite (file, buffer, count);
+		len -= count;
+	}
+	Qclose (file);
+	return 0;
+}
+
 int
 main (int argc, char **argv)
 {
@@ -203,11 +231,18 @@ main (int argc, char **argv)
 				return 1;
 			}
 			for (i = 0; i < wad->numlumps; i++) {
+				if (options.verbosity >= 2)
+					printf ("%6d ", wad->lumps[i].filepos);
+				if (options.verbosity >= 3)
+					printf ("%6d ", wad->lumps[i].disksize);
 				if (options.verbosity >= 1)
 					printf ("%6d ", wad->lumps[i].size);
 				if (options.verbosity >= 0)
-					printf ("%3d %s\n", wad->lumps[i].type,
-							wad->lumps[i].name);
+					printf ("%3d ", wad->lumps[i].type);
+				if (options.verbosity >= 3)
+					printf ("%02x ", wad->lumps[i].compression);
+				if (options.verbosity >= 0)
+					printf ("%s\n", wad->lumps[i].name);
 			}
 			wad_close (wad);
 			break;

@@ -145,27 +145,28 @@ Sys_MaskFPUExceptions (void)
 }
 #endif
 
-void
+int
 Sys_mkdir (const char *path)
 {
 #ifdef HAVE_MKDIR
 # ifdef _WIN32
 	if (mkdir (path) == 0)
-		return;
+		return 0;
 # else
 	if (mkdir (path, 0777) == 0)
-		return;
+		return 0;
 # endif
 #else
 # ifdef HAVE__MKDIR
 	if (_mkdir (path) == 0)
-		return;
+		return 0;
 # else
 #  error do not know how to make directories
 # endif
 #endif
 	if (errno != EEXIST)
-		Sys_Error ("mkdir %s: %s", path, strerror (errno));
+		return -1;
+	return 0;
 }
 
 int

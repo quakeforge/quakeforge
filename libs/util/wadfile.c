@@ -316,56 +316,6 @@ wad_add_data (wad_t *wad, const char *lumpname, byte type, const void *data,
 	return 0;
 }
 
-static int
-make_parents (const char *_path)
-{
-	char       *path;
-	char       *d, *p, t;
-
-	path = (char *) alloca (strlen (_path) + 1);
-	strcpy (path, _path);
-	for (p = path; *p && (d = strchr (p, '/')); p = d + 1) {
-		t = *d;
-		*d = 0;
-#ifdef _WIN32
-		if (mkdir (path) < 0)
-#else
-		if (mkdir (path, 0777) < 0)
-#endif
-			if (errno != EEXIST)
-				return -1;
-		*d = t;
-	}
-	return 0;
-}
-
-int
-wad_extract (wad_t *wad, lumpinfo_t *pf)
-{
-	const char *name = pf->name;
-	size_t      count;
-	int         len;
-	QFile      *file;
-	char        buffer[16384];
-
-	if (make_parents (name) == -1)
-		return -1;
-	if (!(file = Qopen (name, "wb")))
-		return -1;
-	Qseek (wad->handle, pf->filepos, SEEK_SET);
-	len = pf->size;
-	while (len) {
-		count = len;
-		if (count > sizeof (buffer))
-			count = sizeof (buffer);
-		count = Qread (wad->handle, buffer, count);
-		Qwrite (file, buffer, count);
-		len -= count;
-	}
-	Qclose (file);
-	return 0;
-}
-
 lumpinfo_t *
 wad_find_lump (wad_t *wad, const char *lumpname)
 {

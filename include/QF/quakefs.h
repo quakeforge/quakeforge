@@ -100,7 +100,7 @@ byte *QFS_LoadTempFile (const char *path);
 byte *QFS_LoadHunkFile (const char *path);
 void QFS_LoadCacheFile (const char *path, struct cache_user_s *cu);
 
-void QFS_CreatePath (const char *path);
+int QFS_CreatePath (const char *path);
 int QFS_Rename (const char *old, const char *new);
 int QFS_Remove (const char *path);
 int QFS_NextFilename (struct dstring_s *filename, const char *prefix,

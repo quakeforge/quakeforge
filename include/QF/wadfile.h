@@ -96,7 +96,6 @@ int wad_add (wad_t *wad, const char *filename, const char *lumpname,
 			 byte type);
 int wad_add_data (wad_t *wad, const char *lumpname, byte type,
 				  const void *data, int bytes);
-int wad_extract (wad_t *wad, lumpinfo_t *pf);
 lumpinfo_t *wad_find_lump (wad_t *wad, const char *filename);
 
 #endif//__QF_wadfile_h
