@@ -77,6 +77,8 @@ Mod_LoadExternalTextures (model_t *mod)
 	for (i = 0; i < mod->numtextures; i++)
 	{
 		tx = mod->textures[i];
+		if (!tx)
+			continue;
 		length = strlen (tx->name) - 1;
 
 		// backslash at the end of texture name indicates external texture
