@@ -194,7 +194,7 @@ dstring_clearstr (dstring_t *dstr)
 static int
 _dvsprintf (dstring_t *dstr, int offs, const char *fmt, va_list args)
 {
-	int         size, rsize;
+	int         size;
 
 #ifdef VA_LIST_IS_ARRAY
 	va_list     tmp_args;
@@ -203,15 +203,22 @@ _dvsprintf (dstring_t *dstr, int offs, const char *fmt, va_list args)
 
 	if (!dstr->truesize)
 		dstring_clearstr (dstr); // Make it a string
-	// +1 for null
-	rsize = (size = vsnprintf (dstr->str + offs, dstr->truesize - offs, fmt, args)) + offs + 1;
-	dstr->size = rsize;
-	if (rsize > dstr->truesize) {
+	// Some vsnprintf implementations return -1 on truncation
+	while ((size = vsnprintf (dstr->str + offs, dstr->truesize - offs, fmt, args)) == -1) {
+		dstr->size = dstr->truesize + 1024;
 		dstring_adjust (dstr);
 #ifdef VA_LIST_IS_ARRAY
 		VA_COPY (args, tmp_args);
 #endif
-		vsnprintf (dstr->str + offs, dstr->size - offs, fmt, args);
+	}
+	dstr->size = size + offs + 1;
+	// "Proper" implementations return the required size 
+	if (dstr->size > dstr->truesize) {
+		dstring_adjust (dstr);
+#ifdef VA_LIST_IS_ARRAY
+		VA_COPY (args, tmp_args);
+#endif
+		vsnprintf (dstr->str + offs, dstr->truesize - offs, fmt, args);
 	}
 	return size;
 }
