@@ -233,8 +233,7 @@ Qdopen (int fd, const char *mode)
 	int         zip = 0;
 
 #ifdef WIN32
-	if (file->file)
-		setmode (_fileno (file->file), O_BINARY);
+	setmode (fd, O_BINARY);
 #endif
 	for (p = m; *mode && p - m < (sizeof (m) - 1); mode++) {
 		if (*mode == 'z') {
