@@ -370,10 +370,10 @@ R_LavaSplash (vec3_t org)
 	if (!r_particles->int_val)
 		return;
 
-	for (i = -16; i < 16; i++) {
-		for (j = -16; j < 16; j++) {
-			dir[0] = j * 8 + (rand () & 7);
-			dir[1] = i * 8 + (rand () & 7);
+	for (i = -8; i < 8; i++) {
+		for (j = -8; j < 8; j++) {
+			dir[0] = j * 16 + (rand () & 7);
+			dir[1] = i * 16 + (rand () & 7);
 			dir[2] = 256;
 
 			porg[0] = org[0] + dir[0];
@@ -383,9 +383,9 @@ R_LavaSplash (vec3_t org)
 			VectorNormalize (dir);
 			vel = 50 + (rand () & 63);
 			VectorScale (dir, vel, pvel);
-			particle_new (pt_grav, part_tex_dot, porg, 1.5, pvel,
+			particle_new (pt_grav, part_tex_dot, porg, 7, pvel,
 						  (cl.time + 2 + (rand () & 31) * 0.02),
-						  (224 + (rand () & 7)), 255);
+						  (224 + (rand () & 7)), 193);
 		}
 	}
 }
