@@ -863,11 +863,14 @@ Key_In_Bind_f (void)
 void
 Key_Unbind_f (void)
 {
+	const char *key;
+
 	if (Cmd_Argc () != 2) {
 		Con_Printf ("unbind <key> : remove commands from a key\n");
 		return;
 	}
-	Key_In_Unbind (in_bind_kgt->string, Cmd_Argv (1));
+	key = OK_TranslateKeyName (Cmd_Argv (1));
+	Key_In_Unbind (in_bind_kgt->string, key);
 }
 
 void
