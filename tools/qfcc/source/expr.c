@@ -2455,7 +2455,7 @@ message_expr (expr_t *receiver, keywordarg_t *message)
 	expr_t     *selector = selector_expr (message);
 	expr_t     *call;
 	keywordarg_t *m;
-	int         super = 0;
+	int         super = 0, class_msg = 0;
 	type_t     *rec_type;
 	class_t    *class;
 	method_t   *method;
@@ -2474,6 +2474,8 @@ message_expr (expr_t *receiver, keywordarg_t *message)
 			class = current_class->c.category->class;
 		rec_type = class->type;
 	} else {
+		if (receiver->type == ex_name && get_class (receiver->e.string_val, 0))
+			class_msg = 1;
 		rec_type = get_type (receiver);
 
 		if (receiver->type == ex_error)
@@ -2486,7 +2488,7 @@ message_expr (expr_t *receiver, keywordarg_t *message)
 		class = rec_type->aux_type->class;
 	}
 	if (rec_type != &type_id) {
-		method = class_message_response (class, selector);
+		method = class_message_response (class, class_msg, selector);
 		if (method)
 			rec_type = method->type->aux_type;
 	}

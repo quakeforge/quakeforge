@@ -420,7 +420,7 @@ class_find_method (class_type_t *class_type, method_t *method)
 }
 
 method_t *
-class_message_response (class_t *class, expr_t *sel)
+class_message_response (class_t *class, int class_msg, expr_t *sel)
 {
 	pr_sel_t   *selector;
 	char       *sel_name;
@@ -449,7 +449,8 @@ class_message_response (class_t *class, expr_t *sel)
 		}
 		c = c->super_class;
 	}
-	warning (sel, "%s does not respond to %s", class->name, sel_name);
+	warning (sel, "%s does not respond to %c%s", class->name,
+			 class_msg ? '+' : '-', sel_name);
 	return 0;
 }
 
