@@ -139,7 +139,8 @@ VID_Init (unsigned char *palette)
 	GL_Pre_Init ();
 
 	qfglXSwapBuffers = QFGL_ProcAddress (libgl_handle, "glXSwapBuffers", true);
-	qfglXChooseVisual = QFGL_ProcAddress (libgl_handle, "glXChooseVisual", true);
+	qfglXChooseVisual = QFGL_ProcAddress (libgl_handle, "glXChooseVisual",
+										  true);
 	qfglXCreateContext = QFGL_ProcAddress (libgl_handle, "glXCreateContext",
 										 true);
 	qfglXMakeCurrent = QFGL_ProcAddress (libgl_handle, "glXMakeCurrent", true);

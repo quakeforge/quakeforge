@@ -45,9 +45,11 @@ static const char rcsid[] =
 # include <execinfo.h>
 #endif
 
+#include <errno.h>
+#include <limits.h>
 #include <signal.h>
-#include <stdlib.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 #include <sys/ipc.h>
 #include <sys/shm.h>
@@ -56,23 +58,22 @@ static const char rcsid[] =
 #include <X11/Xatom.h>
 #include <X11/keysym.h>
 #include <X11/extensions/XShm.h>
-#include <errno.h>
-#include <limits.h>
 
 #ifdef HAVE_VIDMODE
 # include <X11/extensions/xf86vmode.h>
 #endif
 
 #include "QF/console.h"
-#include "context_x11.h"
 #include "QF/cvar.h"
-#include "dga_check.h"
 #include "QF/input.h"
 #include "QF/qargs.h"
 #include "QF/qtypes.h"
 #include "QF/sys.h"
 #include "QF/va.h"
 #include "QF/vid.h"
+
+#include "context_x11.h"
+#include "dga_check.h"
 
 static void (*event_handlers[LASTEvent]) (XEvent *);
 qboolean	oktodraw = false;
@@ -113,6 +114,7 @@ static int	xss_timeout;
 static int	xss_interval;
 static int	xss_blanking;
 static int	xss_exposures;
+
 
 void
 dump_core_callback (cvar_t *sys_dump_core)
@@ -216,7 +218,6 @@ dump_backtrace ()
 #endif
 }
 
-
 static void
 TragicDeath (int sig)
 {
@@ -262,7 +263,7 @@ X11_OpenDisplay (void)
 		signal (SIGTRAP, TragicDeath);
 		signal (SIGIOT, TragicDeath);
 		signal (SIGBUS, TragicDeath);
-//		signal(SIGFPE, TragicDeath);
+//		signal (SIGFPE, TragicDeath);
 		signal (SIGSEGV, TragicDeath);
 		signal (SIGTERM, TragicDeath);
 
@@ -323,52 +324,55 @@ X11_CreateNullCursor (void)
 }
 
 
-void X11_ForceMove (int x, int y) {
-   int          nx, ny;
+void
+X11_ForceMove (int x, int y)
+{
+	int		nx, ny;
 
-   if (!vid_context_created) return;
+	if (!vid_context_created)
+		return;
 
-   XMoveWindow (x_disp, x_win, x, y);
-   XFlush(x_disp);
-   while (1) {
-	   XEvent ev;
-	   XMaskEvent(x_disp,StructureNotifyMask,&ev);
-	   if (ev.type==ConfigureNotify) {
-		   nx=ev.xconfigure.x;
-		   ny=ev.xconfigure.y;
-		   X11_ProcessEventProxy(&ev);
-		   break;
-	   }
-	   X11_ProcessEventProxy(&ev);
-   }
-		   //X11_GetWindowCoords (&nx, &ny);
-   nx -= x;
-   ny -= y;
-   if (nx == 0 || ny == 0) {
-      return;
-   }
-   x -= nx;
-   y -= ny;
+	XMoveWindow (x_disp, x_win, x, y);
+	XFlush(x_disp);
+	while (1) {
+		XEvent ev;
+		XMaskEvent(x_disp,StructureNotifyMask,&ev);
+		if (ev.type==ConfigureNotify) {
+			nx=ev.xconfigure.x;
+			ny=ev.xconfigure.y;
+			X11_ProcessEventProxy(&ev);
+			break;
+		}
+		X11_ProcessEventProxy(&ev);
+	}
+	//X11_GetWindowCoords (&nx, &ny);
+	nx -= x;
+	ny -= y;
+	if (nx == 0 || ny == 0) {
+		return;
+	}
+	x -= nx;
+	y -= ny;
 
 #if 0 // hopefully this isn't needed!  enable if it is.
-   if (x < 1 - vid.width)
-	   x=0;
-   if (y < 1 - vid.height)
-	   y=0;
+	if (x < 1 - vid.width)
+		x=0;
+	if (y < 1 - vid.height)
+		y=0;
 #endif
 
-   XMoveWindow (x_disp, x_win, x, y);
-   XSync (x_disp, false);
-	 /*this is the best we can do. */
-   while (1) {
-	   XEvent ev;
-	   XMaskEvent(x_disp,StructureNotifyMask,&ev);
-	   if (ev.type==ConfigureNotify) {
-		   X11_ProcessEventProxy(&ev);
-		   break;
-	   }
-	   X11_ProcessEventProxy(&ev);
-   }
+	XMoveWindow (x_disp, x_win, x, y);
+	XSync (x_disp, false);
+	/* this is the best we can do. */
+	while (1) {
+		XEvent ev;
+		XMaskEvent(x_disp,StructureNotifyMask,&ev);
+		if (ev.type==ConfigureNotify) {
+			X11_ProcessEventProxy(&ev);
+			break;
+		}
+		X11_ProcessEventProxy(&ev);
+	}
 }
 
 void
@@ -392,7 +396,6 @@ X11_SetVidMode (int width, int height)
 	}
 
 	if (vid_fullscreen->int_val && vidmode_avail) {
-
 		int 				i, dotclock;
 		int 				best_mode = 0;
 		qboolean			found_mode = false;
@@ -419,14 +422,16 @@ X11_SetVidMode (int width, int height)
 		}
 
 		if (found_mode) {
-			Con_DPrintf ("VID: Chose video mode: %dx%d\n", vid.width, vid.height);
+			Con_DPrintf ("VID: Chose video mode: %dx%d\n", vid.width,
+						 vid.height);
 
 			XF86VidModeSwitchToMode (x_disp, x_screen, vidmodes[best_mode]);
 			X11_ForceViewPort ();
 			vidmode_active = true;
 			X11_SetScreenSaver ();
 		} else {
-			Con_Printf ("VID: Mode %dx%d can't go fullscreen.\n", vid.width, vid.height);
+			Con_Printf ("VID: Mode %dx%d can't go fullscreen.\n", vid.width,
+						vid.height);
 			vid_gamma_avail = vidmode_avail = vidmode_active = false;
 		}
 	}
@@ -435,9 +440,8 @@ X11_SetVidMode (int width, int height)
 
 void X11_UpdateFullscreen (cvar_t *fullscreen)
 {
-	if (!vid_context_created) {
+	if (!vid_context_created)
 		return;
-	}
 
 	if (!fullscreen->int_val) {
 		X11_RestoreVidMode ();
@@ -481,8 +485,13 @@ X11_Init_Cvars (void)
 							   "Toggles fullscreen game mode");
 	vid_system_gamma = Cvar_Get ("vid_system_gamma", "1", CVAR_ARCHIVE, NULL,
 								 "Use system gamma control if available");
-	sys_dump_core = Cvar_Get ("sys_dump_core", "0", CVAR_NONE, dump_core_callback, "Dump core on Tragic Death.  Be sure to check 'ulimit -c'");
-	sys_backtrace = Cvar_Get ("sys_backtrace", "0", CVAR_NONE, backtrace_callback, "Dump a backtrace on Tragic Death.  Value is the max number of times to dump core incase of recursive shutdown");
+	sys_dump_core = Cvar_Get ("sys_dump_core", "0", CVAR_NONE,
+							  dump_core_callback, "Dump core on Tragic Death. "
+							  "Be sure to check 'ulimit -c'");
+	sys_backtrace = Cvar_Get ("sys_backtrace", "0", CVAR_NONE,
+							  backtrace_callback, "Dump a backtrace on Tragic "
+							  "Death. Value is the max number of times to "
+							  "dump core incase of recursive shutdown");
 }
    
 void
@@ -500,9 +509,8 @@ X11_CreateWindow (int width, int height)
 	attr.event_mask = X_MASK;
 	mask = CWBackPixel | CWColormap | CWEventMask;
 
-	x_win = XCreateWindow (x_disp, x_root, 0, 0, width, height,
-						   0, x_visinfo->depth, InputOutput,
-						   x_vis, mask, &attr);
+	x_win = XCreateWindow (x_disp, x_root, 0, 0, width, height, 0,
+						   x_visinfo->depth, InputOutput, x_vis, mask, &attr);
 
 	// Set window size hints
 	SizeHints = XAllocSizeHints ();
@@ -572,6 +580,7 @@ void
 X11_GrabKeyboardBool(qboolean yes)
 {
 	static qboolean is_grabbed=false;
+
 	if (yes) {
 		if (!is_grabbed) {
 			if (XGrabKeyboard (x_disp, x_win, 1, 
@@ -591,7 +600,6 @@ X11_GrabKeyboardBool(qboolean yes)
 void
 X11_GrabKeyboard (void)
 {
-	
 	XGrabKeyboard (x_disp, x_win, 1, GrabModeAsync, GrabModeAsync,
 				   CurrentTime);
 	XSetInputFocus(x_disp,x_win, RevertToPointerRoot,CurrentTime);
@@ -601,6 +609,7 @@ void
 X11_GrabMouseBool(qboolean yes)
 {
 	static qboolean is_grabbed=false;
+
 	if (yes) {
 		if (!is_grabbed) {
 			if (XGrabPointer (x_disp, x_win, True, MOUSE_MASK,
@@ -636,13 +645,10 @@ X11_UngrabKeyboard (void)
 	XUngrabKeyboard (x_disp, CurrentTime);
 }
 
-
 void
 X11_Grabber(qboolean grab)
 {
-#if 0
-	static qboolean is_grabbed=false;
-#endif
+//	static qboolean is_grabbed=false;
 
 	if (!vid_context_created) {
 		Con_Printf("No video context to grab to!\n");

@@ -79,7 +79,6 @@ static const char rcsid[] =
 #include "context_x11.h"
 #include "dga_check.h"
 
-
 static Colormap x_cmap;
 static GC		x_gc;
 
@@ -106,7 +105,6 @@ static PIXEL24	st2d_8to24table[256];
 static int		shiftmask_fl = 0;
 static long 	r_shift, g_shift, b_shift;
 static unsigned long r_mask, g_mask, b_mask;
-
 
 
 static void
@@ -269,7 +267,7 @@ st3_fixup (XImage * framebuf, int x, int y, int width, int height)
 				} while (--n > 0);
 		}
 
-//		for(xi = (x+width-1); xi >= x; xi--) {
+//		for (xi = x + width - 1; xi >= x; xi--) {
 //			dest[xi] = st2d_8to16table[src[xi]];
 //		}
 	}
