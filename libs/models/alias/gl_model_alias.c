@@ -110,8 +110,8 @@ Mod_FloodFillSkin (byte * skin, int skinwidth, int skinheight)
 	inpt = (inpt + 1) & FLOODFILL_FIFO_MASK;
 
 	while (outpt != inpt) {
-		byte   *pos = &skin[x + skinwidth * y];
 		int		x = fifo[outpt].x, y = fifo[outpt].y, fdc = filledcolor;
+		byte   *pos = &skin[x + skinwidth * y];
 
 		outpt = (outpt + 1) & FLOODFILL_FIFO_MASK;
 
