@@ -86,9 +86,7 @@ static byte vid_current_palette[768];
 
 static int  fbdev_inited = 0;
 static int  fbdev_backgrounded = 0;
-static int  UseDisplay = 1;
 
-static cvar_t *vid_mode;
 static cvar_t *vid_redrawfull;
 static cvar_t *vid_waitforrefresh;
 
@@ -150,33 +148,6 @@ D_EndDirectRect (int x, int y, int width, int height)
 	}
 }
 
-static void
-VID_DescribeMode_f (void)
-{
-	const char *modestr;
-	struct VideoMode *vmode;
-
-	modestr = Cmd_Argv(1);
-	vmode = FindVideoMode(modestr);
-	if (!vmode) {
-		Con_Printf ("Invalid video mode: %s!\n", modestr);
-		return;
-	}
-	Con_Printf ("%s: %d x %d - %d bpp - %5.3f Hz\n", vmode->name,
-			vmode->xres, vmode->yres, vmode->depth, vmode->vrate);
-}
-
-static void
-VID_DescribeModes_f (void)
-{
-	struct VideoMode *vmode;
-
-	for (vmode = VideoModes; vmode; vmode = vmode->next) {
-		Con_Printf ("%s: %d x %d - %d bpp - %5.3f Hz\n", vmode->name,
-				vmode->xres, vmode->yres, vmode->depth, vmode->vrate);
-	}
-}
-
 static int
 VID_NumModes (void)
 {
@@ -187,12 +158,6 @@ VID_NumModes (void)
 		i++;
 
 	return i;
-}
-
-static void
-VID_NumModes_f (void)
-{
-	Con_Printf ("%d modes\n", VID_NumModes ());
 }
 
 static void
@@ -212,17 +177,6 @@ VID_fbset_f (void)
 }
 
 static void
-VID_Debug_f (void)
-{
-	Con_Printf ("mode: %s\n", current_mode.name);
-	Con_Printf ("height x width: %d x %d\n", current_mode.xres,
-				current_mode.yres);
-	Con_Printf ("bpp: %d\n", current_mode.depth);
-	Con_Printf ("vrate: %5.3f\n", current_mode.vrate);
-	Con_Printf ("vid.aspect: %f\n", vid.aspect);
-}
-
-static void
 VID_InitModes (void)
 {
 	ReadModeDB();
@@ -230,20 +184,15 @@ VID_InitModes (void)
 }
 
 static const char *
-get_mode (char *name, int width, int height, int depth)
+get_mode (int width, int height, int depth)
 {
 	struct VideoMode *vmode;
 
 	for (vmode = VideoModes; vmode; vmode = vmode->next) {
-		if (name) {
-			if (!strcmp(vmode->name, name))
-				return name;
-		} else {
-			if (vmode->xres == width
-			    && vmode->yres == height
-			    && vmode->depth == depth)
-				return vmode->name;
-		}
+		if (vmode->xres == width
+			&& vmode->yres == height
+			&& vmode->depth == depth)
+			return vmode->name;
 	}
 
 	Sys_Printf ("Mode %dx%d (%d bits) not supported\n",
@@ -274,10 +223,8 @@ VID_Shutdown (void)
 	}
 	close(fb_fd);
 
-	if (UseDisplay) {
-		ioctl(tty_fd, KDSETMODE, KD_TEXT);
-		write(tty_fd, "\033]R", 3);	/* reset palette */
-	}
+	ioctl(tty_fd, KDSETMODE, KD_TEXT);
+	write(tty_fd, "\033]R", 3);	/* reset palette */
 
 	fbdev_inited = 0;
 }
@@ -318,9 +265,7 @@ VID_SetPalette (byte * palette)
 			*tpb++ = (*palette++) << 8;
 		}
 
-		if (UseDisplay) {
-			loadpalette(tmppalr, tmppalg, tmppalb);
-		}
+		loadpalette(tmppalr, tmppalg, tmppalb);
 	}
 }
 
@@ -335,13 +280,11 @@ VID_SetMode (const char *name, unsigned char *palette)
 
 	vmode = FindVideoMode(name);
 	if (!vmode) {
-		Cvar_Set (vid_mode, current_mode.name);
 		// Con_Printf ("No such video mode: %s\n", name);
 		return 0;
 	}
 
 	current_mode = *vmode;
-	Cvar_Set (vid_mode, current_mode.name);
 	strncpy(current_name, current_mode.name, sizeof(current_name)-1);
 	current_name[31] = 0;
 	vid.width = vmode->xres;
@@ -444,7 +387,6 @@ fb_switch_init (void)
 void
 VID_Init (unsigned char *palette)
 {
-	int w, h, d;
 	struct VideoMode *vmode;
 	const char *modestr;
 	char *fbname;
@@ -454,74 +396,46 @@ VID_Init (unsigned char *palette)
 	if (fbdev_inited)
 		return;
 
-	if (UseDisplay) {
-		fbname = getenv("FRAMEBUFFER");
-		if (!fbname)
-			fbname = "/dev/fb0";
+	fbname = getenv("FRAMEBUFFER");
+	if (!fbname)
+		fbname = "/dev/fb0";
 
-		fb_fd = open(fbname, O_RDWR);
-		if (fb_fd < 0)
-			Sys_Error ("failed to open fb device");
+	fb_fd = open(fbname, O_RDWR);
+	if (fb_fd < 0)
+		Sys_Error ("failed to open fb device");
 
-		if (ioctl(fb_fd, FBIOGET_VSCREENINFO, &orig_var))
-			Sys_Error ("failed to get var screen info");
+	if (ioctl(fb_fd, FBIOGET_VSCREENINFO, &orig_var))
+		Sys_Error ("failed to get var screen info");
 
-		fb_switch_init();
+	fb_switch_init();
 
-		VID_InitModes ();
+	VID_InitModes ();
 
-		Cmd_AddCommand ("vid_nummodes", VID_NumModes_f, "No Description");
-		Cmd_AddCommand ("vid_describemode", VID_DescribeMode_f,
-						"No Description");
-		Cmd_AddCommand ("vid_describemodes", VID_DescribeModes_f,
-						"No Description");
-		Cmd_AddCommand ("vid_debug", VID_Debug_f, "No Description");
-		Cmd_AddCommand ("vid_fbset", VID_fbset_f, "No Description");
+	Cmd_AddCommand ("vid_fbset", VID_fbset_f, "No Description");
 
-		/* Interpret command-line params */
-		w = h = d = 0;
-		if (getenv ("GFBDEVMODE")) {
-			modestr = get_mode (getenv ("GFBDEVMODE"), w, h, d);
-		} else if (COM_CheckParm ("-mode")) {
-			modestr = get_mode (com_argv[COM_CheckParm ("-mode") + 1], w, h,
-								d);
-		} else if (COM_CheckParm ("-w") || COM_CheckParm ("-h")
-				   || COM_CheckParm ("-d")) {
-			if (COM_CheckParm ("-w")) {
-				w = atoi (com_argv[COM_CheckParm ("-w") + 1]);
-			}
-			if (COM_CheckParm ("-h")) {
-				h = atoi (com_argv[COM_CheckParm ("-h") + 1]);
-			}
-			if (COM_CheckParm ("-d")) {
-				d = atoi (com_argv[COM_CheckParm ("-d") + 1]);
-			}
-			modestr = get_mode (0, w, h, d);
-		} else {
-			modestr = "640x480-60";
-		}
+	/* Interpret command-line params */
+	VID_GetWindowSize (320, 200);
 
-		/* Set vid parameters */
-		vmode = FindVideoMode(modestr);
-		if (!vmode)
-			Sys_Error("no video mode %s", modestr);
-		current_mode = *vmode;
-		ioctl(tty_fd, KDSETMODE, KD_GRAPHICS);
-		VID_SetMode (current_mode.name, palette);
-		Con_CheckResize (); // Now that we have a window size, fix console
+	modestr = get_mode (vid.width, vid.height, 8);
 
-		VID_InitGamma (palette);
-		VID_SetPalette (vid.palette);
+	/* Set vid parameters */
+	vmode = FindVideoMode(modestr);
+	if (!vmode)
+		Sys_Error("no video mode %s", modestr);
+	current_mode = *vmode;
+	ioctl(tty_fd, KDSETMODE, KD_GRAPHICS);
+	VID_SetMode (current_mode.name, palette);
+	Con_CheckResize (); // Now that we have a window size, fix console
 
-		vid.initialized = true;
-	}
+	VID_InitGamma (palette);
+	VID_SetPalette (vid.palette);
+
+	vid.initialized = true;
 }
 
 void
 VID_Init_Cvars ()
 {
-	vid_mode = Cvar_Get ("vid_mode", "0", CVAR_NONE, NULL,
-			"Sets the video mode");
 	vid_redrawfull = Cvar_Get ("vid_redrawfull", "0", CVAR_NONE, NULL,
 				"Redraw entire screen each frame instead of just dirty areas");
 	vid_waitforrefresh = Cvar_Get ("vid_waitforrefresh", "0", CVAR_ARCHIVE,
@@ -576,10 +490,6 @@ VID_Update (vrect_t *rects)
 			}
 			rects = rects->pnext;
 		}
-	}
-
-	if (current_mode.name && strcmp(vid_mode->string, current_mode.name)) {
-		VID_SetMode (vid_mode->string, vid_current_palette);
 	}
 }
 
