@@ -4,7 +4,6 @@
 	(description)
 
 	Copyright (C) 1996-1997  Id Software, Inc.
-	Copyright (C) 1999,2000  Nelson Rush.
 	Copyright (C) 2000       Marcus Sundberg [mackan@stacken.kth.se]
 	Copyright (C) 1999,2000  contributors of the QuakeForge project
 	Please see the file "AUTHORS" for a list of contributors

@@ -57,11 +57,13 @@ S_Init (void)
 void
 S_Init_Cvars (void)
 {
-	volume = Cvar_Get ("volume", "0.7", CVAR_ARCHIVE, 0, "Volume level of sounds");
+	volume = Cvar_Get ("volume", "0.7", CVAR_ARCHIVE, NULL,
+			"Volume level of sounds");
 	loadas8bit =
-		Cvar_Get ("loadas8bit", "0", CVAR_NONE, 0, "Load samples as 8-bit");
-	bgmvolume = Cvar_Get ("bgmvolume", "1", CVAR_ARCHIVE, 0, "CD music volume");
-        snd_interp = Cvar_Get ("snd_interp", "1", CVAR_ARCHIVE, 0,
+		Cvar_Get ("loadas8bit", "0", CVAR_NONE, NULL, "Load samples as 8-bit");
+	bgmvolume = Cvar_Get ("bgmvolume", "1", CVAR_ARCHIVE, NULL,
+			"CD music volume");
+        snd_interp = Cvar_Get ("snd_interp", "1", CVAR_ARCHIVE, NULL,
                                   "control sample interpolation");
 }
 

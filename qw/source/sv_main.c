@@ -1515,38 +1515,52 @@ SV_InitLocal (void)
 	maxspectators = Cvar_Get ("maxspectators", "8", CVAR_SERVERINFO, Cvar_Info, 
 		"Sets how many spectators can connect to your server. The maxclients value takes precidence over this value so this"
 		" value should always be equal-to or less-then the maxclients value");
-	hostname = Cvar_Get ("hostname", "unnamed", CVAR_SERVERINFO, Cvar_Info, "Report or sets the server name");
+	hostname = Cvar_Get ("hostname", "unnamed", CVAR_SERVERINFO, Cvar_Info,
+			"Report or sets the server name");
 	deathmatch = Cvar_Get ("deathmatch", "1", CVAR_SERVERINFO, Cvar_Info, 
 		"Sets the rules for weapon and item respawning. "
 		"1 Does not leave weapons on the map. You can pickup weapons and items and they will respawn,"
 		"2 Leaves weapons on the map. You can only pick up a weapon once. Picked up items will not respawn,"
 		"3 Leaves weapons on the map. You can only pick up a weapon once. Picked up items will respawn.");
-	spawn = Cvar_Get ("spawn", "0", CVAR_SERVERINFO, Cvar_Info, "Spawn the player entity");
-	watervis = Cvar_Get ("watervis", "0", CVAR_SERVERINFO, Cvar_Info, "Toggle the use of r_watervis by OpenGL clients");
+	spawn = Cvar_Get ("spawn", "0", CVAR_SERVERINFO, Cvar_Info,
+			"Spawn the player entity");
+	watervis = Cvar_Get ("watervis", "0", CVAR_SERVERINFO, Cvar_Info,
+			"Toggle the use of r_watervis by OpenGL clients");
 
 	timeout = Cvar_Get ("timeout", "65", CVAR_NONE, NULL, 
 		"Sets the amount of time in seconds before a client is considered disconnected if the server does not receive a packet");
 	zombietime = Cvar_Get ("zombietime", "2", CVAR_NONE, NULL, 
 		"The number of seconds that the server will keep the character of a player on the map who seems to have disconnected");
 
-	sv_maxvelocity = Cvar_Get ("sv_maxvelocity", "2000", CVAR_NONE, NULL, "Sets the maximum velocity an object can travel");
-	sv_gravity = Cvar_Get ("sv_gravity", "800", CVAR_NONE, NULL, "Sets the global value for the amount of gravity");
+	sv_maxvelocity = Cvar_Get ("sv_maxvelocity", "2000", CVAR_NONE, NULL,
+			"Sets the maximum velocity an object can travel");
+	sv_gravity = Cvar_Get ("sv_gravity", "800", CVAR_NONE, NULL,
+			"Sets the global value for the amount of gravity");
 	sv_stopspeed = Cvar_Get ("sv_stopspeed", "100", CVAR_NONE, NULL, 
 		"Sets the value that determines how fast the player should come to a complete stop");
-	sv_maxspeed = Cvar_Get ("sv_maxspeed", "320", CVAR_NONE, NULL, "Sets the maximum speed a player can move");
+	sv_maxspeed = Cvar_Get ("sv_maxspeed", "320", CVAR_NONE, NULL,
+			"Sets the maximum speed a player can move");
 	sv_spectatormaxspeed =
-		Cvar_Get ("sv_spectatormaxspeed", "500", CVAR_NONE, NULL, "Sets the maximum speed a spectator can move");
-	sv_accelerate = Cvar_Get ("sv_accelerate", "10", CVAR_NONE, NULL, "Sets the acceleration value for the players");
-	sv_airaccelerate = Cvar_Get ("sv_airaccelerate", "0.7", CVAR_NONE, NULL, "Sets how quickly the players accelerate in air");
+		Cvar_Get ("sv_spectatormaxspeed", "500", CVAR_NONE, NULL,
+				"Sets the maximum speed a spectator can move");
+	sv_accelerate = Cvar_Get ("sv_accelerate", "10", CVAR_NONE, NULL,
+			"Sets the acceleration value for the players");
+	sv_airaccelerate = Cvar_Get ("sv_airaccelerate", "0.7", CVAR_NONE, NULL,
+			"Sets how quickly the players accelerate in air");
 	sv_wateraccelerate =
-		Cvar_Get ("sv_wateraccelerate", "10", CVAR_NONE, NULL, "Sets the water acceleration value");
-	sv_friction = Cvar_Get ("sv_friction", "4", CVAR_NONE, NULL, "Sets the friction value for the players");
-	sv_waterfriction = Cvar_Get ("sv_waterfriction", "4", CVAR_NONE, NULL, "Sets the water friction value");
+		Cvar_Get ("sv_wateraccelerate", "10", CVAR_NONE, NULL,
+				"Sets the water acceleration value");
+	sv_friction = Cvar_Get ("sv_friction", "4", CVAR_NONE, NULL,
+			"Sets the friction value for the players");
+	sv_waterfriction = Cvar_Get ("sv_waterfriction", "4", CVAR_NONE, NULL,
+			"Sets the water friction value");
 
-	sv_aim = Cvar_Get ("sv_aim", "2", CVAR_NONE, NULL, "Sets the value for auto-aiming leniency");
+	sv_aim = Cvar_Get ("sv_aim", "2", CVAR_NONE, NULL,
+			"Sets the value for auto-aiming leniency");
 
 	sv_timekick =
-		Cvar_Get ("sv_timekick", "3", CVAR_SERVERINFO, Cvar_Info, "Time cheat protection");
+		Cvar_Get ("sv_timekick", "3", CVAR_SERVERINFO, Cvar_Info,
+				"Time cheat protection");
 	sv_timekick_fuzz =
 		Cvar_Get ("sv_timekick_fuzz", "15", CVAR_NONE, NULL,
 				  "Time cheat \"fuzz factor\"");
@@ -1559,7 +1573,8 @@ SV_InitLocal (void)
 				  "Minimum QF version on client");
 
 	sv_maxrate =
-		Cvar_Get ("sv_maxrate", "0", CVAR_SERVERINFO, Cvar_Info, "Maximum allowable rate");
+		Cvar_Get ("sv_maxrate", "0", CVAR_SERVERINFO, Cvar_Info,
+				"Maximum allowable rate");
 
 	sv_allow_log =
 		Cvar_Get ("sv_allow_log", "1", CVAR_NONE, NULL, "Allow remote logging");
@@ -1585,22 +1600,29 @@ SV_InitLocal (void)
 		"0 Only IP addresses on the Ban list will be allowed onto the server, "
 		"1 Only IP addresses NOT on the Ban list will be allowed onto the server");
 
-	allow_download = Cvar_Get ("allow_download", "1", CVAR_NONE, NULL, "Toggle if clients can download game data from the server");
+	allow_download = Cvar_Get ("allow_download", "1", CVAR_NONE, NULL,
+			"Toggle if clients can download game data from the server");
 	allow_download_skins =
-		Cvar_Get ("allow_download_skins", "1", CVAR_NONE, NULL, "Toggle if clients can download skins from the server");
+		Cvar_Get ("allow_download_skins", "1", CVAR_NONE, NULL,
+				"Toggle if clients can download skins from the server");
 	allow_download_models =
-		Cvar_Get ("allow_download_models", "1", CVAR_NONE, NULL, "Toggle if clients can download models from the server");
+		Cvar_Get ("allow_download_models", "1", CVAR_NONE, NULL,
+				"Toggle if clients can download models from the server");
 	allow_download_sounds =
-		Cvar_Get ("allow_download_sounds", "1", CVAR_NONE, NULL, "Toggle if clients can download sounds from the server");
+		Cvar_Get ("allow_download_sounds", "1", CVAR_NONE, NULL,
+				"Toggle if clients can download sounds from the server");
 	allow_download_maps =
-		Cvar_Get ("allow_download_maps", "1", CVAR_NONE, NULL, "Toggle if clients can download maps from the server");
+		Cvar_Get ("allow_download_maps", "1", CVAR_NONE, NULL,
+				"Toggle if clients can download maps from the server");
 
-	sv_highchars = Cvar_Get ("sv_highchars", "1", CVAR_NONE, NULL, "Toggle the use of high character color names for players");
+	sv_highchars = Cvar_Get ("sv_highchars", "1", CVAR_NONE, NULL,
+			"Toggle the use of high character color names for players");
 
 	sv_phs = Cvar_Get ("sv_phs", "1", CVAR_NONE, NULL,
 	"Possibly Hearable Set. If set to zero, the server calculates sound hearability in realtime");
 	 
-	pausable = Cvar_Get ("pausable", "1", CVAR_NONE, NULL, "Toggle if server can be paused 1 is on, 0 is off");
+	pausable = Cvar_Get ("pausable", "1", CVAR_NONE, NULL,
+			"Toggle if server can be paused 1 is on, 0 is off");
 
 	// DoS protection
 	Cmd_AddCommand ("netdosexpire", SV_netDoSexpire_f, "FIXME: part of DoS protection obviously, but I don't know what it does. No Description");

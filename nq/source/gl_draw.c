@@ -418,7 +418,7 @@ Draw_Init (void)
 	gl_nobind = Cvar_Get ("gl_nobind", "0", CVAR_NONE, NULL,
 						  "whether or not to inhibit texture binding");
 	gl_max_size = Cvar_Get ("gl_max_size", "1024", CVAR_NONE, NULL, "None");
-	gl_picmip = Cvar_Get ("gl_picmip", "0", CVAR_NONE, 0, "None");
+	gl_picmip = Cvar_Get ("gl_picmip", "0", CVAR_NONE, NULL, "None");
 
 	// Console effects  --KB
 	gl_constretch = Cvar_Get ("gl_constretch", "0", CVAR_ARCHIVE, NULL,

@@ -325,9 +325,10 @@ Draw_Init_Cvars (void)
 							"alpha value for the console background");
 	gl_conspin = Cvar_Get ("gl_conspin", "0", CVAR_ARCHIVE, NULL,
 						   "speed at which the console spins");
-	gl_lightmap_components = Cvar_Get ("gl_lightmap_components", "4", CVAR_ROM, 0, "Lightmap texture components. 1 is greyscale, 3 is RGB, 4 is RGBA.");
-	cl_verstring = Cvar_Get ("cl_verstring", PROGRAM " " VERSION, CVAR_NONE, NULL,
-							 "Client version string");
+	gl_lightmap_components = Cvar_Get ("gl_lightmap_components", "4", CVAR_ROM,
+			NULL, "Lightmap texture components. 1 is greyscale, 3 is RGB, 4 is RGBA.");
+	cl_verstring = Cvar_Get ("cl_verstring", PROGRAM " " VERSION, CVAR_NONE,
+			NULL, "Client version string");
 }
 
 

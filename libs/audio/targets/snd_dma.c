@@ -275,46 +275,50 @@ S_Init (void)
 void
 S_Init_Cvars (void)
 {
-	snd_device = Cvar_Get ("snd_device", "", CVAR_ROM, 0,
+	snd_device = Cvar_Get ("snd_device", "", CVAR_ROM, NULL,
 						   "sound device. \"\" is system default");
-	snd_rate = Cvar_Get ("snd_rate", "0", CVAR_ROM, 0,
+	snd_rate = Cvar_Get ("snd_rate", "0", CVAR_ROM, NULL,
 						 "sound playback rate. 0 is system default");
-	snd_bits = Cvar_Get ("snd_bits", "0", CVAR_ROM, 0,
+	snd_bits = Cvar_Get ("snd_bits", "0", CVAR_ROM, NULL,
 						 "sound sample depth. 0 is system default");
-	snd_stereo = Cvar_Get ("snd_stereo", "1", CVAR_ROM, 0,
+	snd_stereo = Cvar_Get ("snd_stereo", "1", CVAR_ROM, NULL,
 						   "sound stereo output");
-	nosound = Cvar_Get ("nosound", "0", CVAR_NONE, 0, "Set to turn sound off");
+	nosound = Cvar_Get ("nosound", "0", CVAR_NONE, NULL,
+			"Set to turn sound off");
 	volume =
-		Cvar_Get ("volume", "0.7", CVAR_ARCHIVE, 0,
+		Cvar_Get ("volume", "0.7", CVAR_ARCHIVE, NULL,
 				  "Set the volume for sound playback");
 	precache =
-		Cvar_Get ("precache", "1", CVAR_NONE, 0, "Toggle the use of a precache");
+		Cvar_Get ("precache", "1", CVAR_NONE, NULL,
+				"Toggle the use of a precache");
 	loadas8bit =
-		Cvar_Get ("loadas8bit", "0", CVAR_NONE, 0,
+		Cvar_Get ("loadas8bit", "0", CVAR_NONE, NULL,
 				  "Toggles if sounds are loaded as 8-bit samples");
-	bgmvolume = Cvar_Get ("bgmvolume", "1", CVAR_ARCHIVE, 0, "Volume of CD music");
+	bgmvolume = Cvar_Get ("bgmvolume", "1", CVAR_ARCHIVE, NULL,
+			"Volume of CD music");
 	ambient_level =
-		Cvar_Get ("ambient_level", "0.3", CVAR_NONE, 0, "Ambient sounds' volume");
+		Cvar_Get ("ambient_level", "0.3", CVAR_NONE, NULL,
+				"Ambient sounds' volume");
 	ambient_fade =
-		Cvar_Get ("ambient_fade", "100", CVAR_NONE, 0,
+		Cvar_Get ("ambient_fade", "100", CVAR_NONE, NULL,
 				  "How quickly ambient sounds fade in or out");
 	snd_noextraupdate =
-		Cvar_Get ("snd_noextraupdate", "0", CVAR_NONE, 0,
+		Cvar_Get ("snd_noextraupdate", "0", CVAR_NONE, NULL,
 				  "Toggles the correct value display in host_speeds. Usually messes up sound playback when in effect");
 	snd_show =
-		Cvar_Get ("snd_show", "0", CVAR_NONE, 0,
+		Cvar_Get ("snd_show", "0", CVAR_NONE, NULL,
 				  "Toggles the display of sounds currently being played");
 	snd_interp =
-		Cvar_Get ("snd_interp", "1", CVAR_ARCHIVE, 0,
+		Cvar_Get ("snd_interp", "1", CVAR_ARCHIVE, NULL,
 				  "control sample interpolation");
 	snd_phasesep =
-		Cvar_Get ("snd_phasesep", "0.0", CVAR_ARCHIVE, 0,
+		Cvar_Get ("snd_phasesep", "0.0", CVAR_ARCHIVE, NULL,
 				  "max stereo phase separation in ms. 0.6 is for 20cm head");
 	snd_volumesep =
-		Cvar_Get ("snd_volumesep", "1.0", CVAR_ARCHIVE, 0,
+		Cvar_Get ("snd_volumesep", "1.0", CVAR_ARCHIVE, NULL,
 				  "max stereo volume separation in ms. 1.0 is max");
 	_snd_mixahead =
-		Cvar_Get ("_snd_mixahead", "0.1", CVAR_ARCHIVE, 0,
+		Cvar_Get ("_snd_mixahead", "0.1", CVAR_ARCHIVE, NULL,
 				  "Delay time for sounds");
 }
 

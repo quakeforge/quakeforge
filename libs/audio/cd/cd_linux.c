@@ -429,8 +429,7 @@ CDAudio_Init (void)
 #endif
 
 	mus_cddevice = Cvar_Get("mus_cddevice", "/dev/cdrom", CVAR_NONE,
-			Mus_CDChange,
-			"device to use for CD music");
+			Mus_CDChange, "device to use for CD music");
 
 	Cmd_AddCommand ("cd", CD_f, "Control the CD player.\n"
 		"Commands:\n"

@@ -1575,8 +1575,8 @@ Host_Init (void)
 	// would have been nice if Cmd_Exec_f could have been used, but it
 	// only reads from within the quake file system, and changing that is
 	// probably Not A Good Thing (tm).
-	fs_globalcfg = Cvar_Get ("fs_globalcfg", FS_GLOBALCFG,
-							 CVAR_ROM, NULL, "global configuration file");
+	fs_globalcfg = Cvar_Get ("fs_globalcfg", FS_GLOBALCFG, CVAR_ROM, NULL,
+			"global configuration file");
 	Cmd_Exec_File (fs_globalcfg->string);
 	Cbuf_Execute_Sets ();
 
@@ -1584,8 +1584,8 @@ Host_Init (void)
 	Cmd_StuffCmds_f ();
 	Cbuf_Execute_Sets ();
 
-	fs_usercfg = Cvar_Get ("fs_usercfg", FS_USERCFG,
-						   CVAR_ROM, NULL, "user configuration file");
+	fs_usercfg = Cvar_Get ("fs_usercfg", FS_USERCFG, CVAR_ROM, NULL,
+			"user configuration file");
 	Cmd_Exec_File (fs_usercfg->string);
 	Cbuf_Execute_Sets ();
 
