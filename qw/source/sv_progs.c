@@ -131,56 +131,31 @@ SV_LoadProgs (void)
 	sv_globals.self = sv_pr_state.globals.self;
 	sv_globals.time = sv_pr_state.globals.time;
 
-	(void *) sv_globals.other = 
-		&sv_pr_state.pr_globals[PR_FindGlobal (&sv_pr_state, "other")->ofs];
-	(void *) sv_globals.world =
-		&sv_pr_state.pr_globals[PR_FindGlobal (&sv_pr_state, "world")->ofs];
-	(void *) sv_globals.frametime =
-		&sv_pr_state.pr_globals[PR_FindGlobal (&sv_pr_state, "frametime")->ofs];
-	(void *) sv_globals.newmis =
-		&sv_pr_state.pr_globals[PR_FindGlobal (&sv_pr_state, "newmis")->ofs];
-	(void *) sv_globals.force_retouch =
-		&sv_pr_state.pr_globals[PR_FindGlobal (&sv_pr_state, "force_retouch")->ofs];
-	(void *) sv_globals.mapname =
-		&sv_pr_state.pr_globals[PR_FindGlobal (&sv_pr_state, "mapname")->ofs];
-	(void *) sv_globals.serverflags =
-		&sv_pr_state.pr_globals[PR_FindGlobal (&sv_pr_state, "serverflags")->ofs];
-	(void *) sv_globals.total_secrets =
-		&sv_pr_state.pr_globals[PR_FindGlobal (&sv_pr_state, "total_secrets")->ofs];
-	(void *) sv_globals.total_monsters =
-		&sv_pr_state.pr_globals[PR_FindGlobal (&sv_pr_state, "total_monsters")->ofs];
-	(void *) sv_globals.found_secrets =
-		&sv_pr_state.pr_globals[PR_FindGlobal (&sv_pr_state, "found_secrets")->ofs];
-	(void *) sv_globals.killed_monsters =
-		&sv_pr_state.pr_globals[PR_FindGlobal (&sv_pr_state, "killed_monsters")->ofs];
-	(void *) sv_globals.parms =
-		&sv_pr_state.pr_globals[PR_FindGlobal (&sv_pr_state, "parm1")->ofs];
-	(void *) sv_globals.v_forward =
-		&sv_pr_state.pr_globals[PR_FindGlobal (&sv_pr_state, "v_forward")->ofs];
-	(void *) sv_globals.v_up =
-		&sv_pr_state.pr_globals[PR_FindGlobal (&sv_pr_state, "v_up")->ofs];
-	(void *) sv_globals.v_right =
-		&sv_pr_state.pr_globals[PR_FindGlobal (&sv_pr_state, "v_right")->ofs];
-	(void *) sv_globals.trace_allsolid =
-		&sv_pr_state.pr_globals[PR_FindGlobal (&sv_pr_state, "trace_allsolid")->ofs];
-	(void *) sv_globals.trace_startsolid =
-		&sv_pr_state.pr_globals[PR_FindGlobal (&sv_pr_state, "trace_startsolid")->ofs];
-	(void *) sv_globals.trace_fraction =
-		&sv_pr_state.pr_globals[PR_FindGlobal (&sv_pr_state, "trace_fraction")->ofs];
-	(void *) sv_globals.trace_endpos =
-		&sv_pr_state.pr_globals[PR_FindGlobal (&sv_pr_state, "trace_endpos")->ofs];
-	(void *) sv_globals.trace_plane_normal =
-		&sv_pr_state.pr_globals[PR_FindGlobal (&sv_pr_state, "trace_plane_normal")->ofs];
-	(void *) sv_globals.trace_plane_dist =
-		&sv_pr_state.pr_globals[PR_FindGlobal (&sv_pr_state, "trace_plane_dist")->ofs];
-	(void *) sv_globals.trace_ent =
-		&sv_pr_state.pr_globals[PR_FindGlobal (&sv_pr_state, "trace_ent")->ofs];
-	(void *) sv_globals.trace_inopen =
-		&sv_pr_state.pr_globals[PR_FindGlobal (&sv_pr_state, "trace_inopen")->ofs];
-	(void *) sv_globals.trace_inwater =
-		&sv_pr_state.pr_globals[PR_FindGlobal (&sv_pr_state, "trace_inwater")->ofs];
-	(void *) sv_globals.msg_entity =
-		&sv_pr_state.pr_globals[PR_FindGlobal (&sv_pr_state, "msg_entity")->ofs];
+	(void *) sv_globals.other = PR_GetGlobalPointer (&sv_pr_state, "other");
+	(void *) sv_globals.world = PR_GetGlobalPointer (&sv_pr_state, "world");
+	(void *) sv_globals.frametime = PR_GetGlobalPointer (&sv_pr_state, "frametime");
+	(void *) sv_globals.newmis = PR_GetGlobalPointer (&sv_pr_state, "newmis");
+	(void *) sv_globals.force_retouch = PR_GetGlobalPointer (&sv_pr_state, "force_retouch");
+	(void *) sv_globals.mapname = PR_GetGlobalPointer (&sv_pr_state, "mapname");
+	(void *) sv_globals.serverflags = PR_GetGlobalPointer (&sv_pr_state, "serverflags");
+	(void *) sv_globals.total_secrets = PR_GetGlobalPointer (&sv_pr_state, "total_secrets");
+	(void *) sv_globals.total_monsters = PR_GetGlobalPointer (&sv_pr_state, "total_monsters");
+	(void *) sv_globals.found_secrets = PR_GetGlobalPointer (&sv_pr_state, "found_secrets");
+	(void *) sv_globals.killed_monsters = PR_GetGlobalPointer (&sv_pr_state, "killed_monsters");
+	(void *) sv_globals.parms = PR_GetGlobalPointer (&sv_pr_state, "parm1");
+	(void *) sv_globals.v_forward = PR_GetGlobalPointer (&sv_pr_state, "v_forward");
+	(void *) sv_globals.v_up = PR_GetGlobalPointer (&sv_pr_state, "v_up");
+	(void *) sv_globals.v_right = PR_GetGlobalPointer (&sv_pr_state, "v_right");
+	(void *) sv_globals.trace_allsolid = PR_GetGlobalPointer (&sv_pr_state, "trace_allsolid");
+	(void *) sv_globals.trace_startsolid = PR_GetGlobalPointer (&sv_pr_state, "trace_startsolid");
+	(void *) sv_globals.trace_fraction = PR_GetGlobalPointer (&sv_pr_state, "trace_fraction");
+	(void *) sv_globals.trace_endpos = PR_GetGlobalPointer (&sv_pr_state, "trace_endpos");
+	(void *) sv_globals.trace_plane_normal = PR_GetGlobalPointer (&sv_pr_state, "trace_plane_normal");
+	(void *) sv_globals.trace_plane_dist = PR_GetGlobalPointer (&sv_pr_state, "trace_plane_dist");
+	(void *) sv_globals.trace_ent = PR_GetGlobalPointer (&sv_pr_state, "trace_ent");
+	(void *) sv_globals.trace_inopen = PR_GetGlobalPointer (&sv_pr_state, "trace_inopen");
+	(void *) sv_globals.trace_inwater = PR_GetGlobalPointer (&sv_pr_state, "trace_inwater");
+	(void *) sv_globals.msg_entity = PR_GetGlobalPointer (&sv_pr_state, "msg_entity");
 
 	sv_funcs.main =
 		ED_FindFunction (&sv_pr_state, "main") - sv_pr_state.pr_functions;
