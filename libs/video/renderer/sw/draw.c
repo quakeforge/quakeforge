@@ -372,8 +372,8 @@ void
 Draw_SubPic (int x, int y, qpic_t *pic, int srcx, int srcy, int width,
 			 int height)
 {
-	byte       *dest, *source;
-	int         v;
+	byte       *dest, *source, tbyte;
+	int         u, v;
 
 	if ((x < 0) ||
 		(x + width > vid.width) || (y < 0) || (y + height > vid.height)) {
@@ -384,10 +384,38 @@ Draw_SubPic (int x, int y, qpic_t *pic, int srcx, int srcy, int width,
 
 	dest = vid.buffer + y * vid.rowbytes + x;
 
-	for (v = 0; v < height; v++) {
-		memcpy (dest, source, width);
-		dest += vid.rowbytes;
-		source += pic->width;
+	if (width & 7) {			// general
+		for (v = 0; v < height; v++) {
+			for (u = 0; u < width; u++)
+				if ((tbyte = source[u]) != TRANSPARENT_COLOR)
+					dest[u] = tbyte;
+
+			dest += vid.rowbytes;
+			source += pic->width;
+		}
+	} else {						// unwound
+		for (v = 0; v < height; v++) {
+			for (u = 0; u < width; u += 8) {
+				if ((tbyte = source[u]) != TRANSPARENT_COLOR)
+					dest[u] = tbyte;
+				if ((tbyte = source[u + 1]) != TRANSPARENT_COLOR)
+					dest[u + 1] = tbyte;
+				if ((tbyte = source[u + 2]) != TRANSPARENT_COLOR)
+					dest[u + 2] = tbyte;
+				if ((tbyte = source[u + 3]) != TRANSPARENT_COLOR)
+					dest[u + 3] = tbyte;
+				if ((tbyte = source[u + 4]) != TRANSPARENT_COLOR)
+					dest[u + 4] = tbyte;
+				if ((tbyte = source[u + 5]) != TRANSPARENT_COLOR)
+					dest[u + 5] = tbyte;
+				if ((tbyte = source[u + 6]) != TRANSPARENT_COLOR)
+					dest[u + 6] = tbyte;
+				if ((tbyte = source[u + 7]) != TRANSPARENT_COLOR)
+					dest[u + 7] = tbyte;
+			}
+			dest += vid.rowbytes;
+			source += pic->width;
+		}
 	}
 }
 
