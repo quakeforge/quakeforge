@@ -3,7 +3,7 @@ pkgincludedir=	$(includedir)/QF/ruamoko
 nobase_pkginclude_HEADERS= \
 	crudefile.h debug.h entities.h infokey.h math.h message.h nq_message.h \
 	physics.h qfile.h qfs.h qw_message.h qw_physics.h qw_sys.h server.h \
-	sound.h string.h system.h \
+	sound.h script.h string.h system.h \
 	\
 	draw.h key.h \
 	\

@@ -17,16 +17,16 @@ typedef struct list_bucket_s list_bucket_t;
 	return self;
 }
 
-- (void) free
+- (void) dealloc
 {
 	local list_bucket_t [] e, t = NIL; //FIXME t uninitialized
 
 	for (e = head; e; e = t) {
 		t = e.next;
-		[e.obj free];
+		[e.obj release];
 		obj_free (e);
 	}
-	[super free];
+	[super dealloc];
 }
 
 - (id) getItemAt: (integer) index
