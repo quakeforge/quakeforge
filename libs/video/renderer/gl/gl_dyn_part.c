@@ -77,6 +77,7 @@ particle_new (ptype_t type, int texnum, const vec3_t org, float scale,
 	particle_t *part;
 
 /*
+	// Uncomment this for particle debugging!
 	if (numparticles >= r_maxparticles) {
 		Sys_Error  ("FAILED PARTICLE ALLOC!");
 		return NULL;
@@ -205,9 +206,7 @@ R_ReadPointFile_f (void)
 void
 R_ParticleExplosion_QF (const vec3_t org)
 {
-/*
-	R_NewExplosion (org);
-*/
+//	R_NewExplosion (org);
 	if (numparticles >= r_maxparticles)
 		return;
 	particle_new_random (pt_smokecloud, part_tex_smoke, org, 4, 30, 8,
@@ -726,9 +725,9 @@ R_VoorTrail_QF (entity_t *ent)
 }
 
 void
-R_GlowTrail_QF (entity_t *ent)
+R_GlowTrail_QF (entity_t *ent, int glow_color)
 {
-	float		maxlen;
+	float		maxlen, origlen, percent;
 	float		dist = 3.0, len = 0.0;
 	int			rnd;
 	vec3_t		org, subtract, vec;
@@ -738,17 +737,19 @@ R_GlowTrail_QF (entity_t *ent)
 
 	VectorSubtract (ent->origin, ent->old_origin, vec);
 	maxlen = VectorNormalize (vec);
+	origlen = r_frametime / maxlen;
 	VectorScale (vec, (maxlen - dist), subtract);
 
 	while (len < maxlen) {
+		percent = len * origlen;
+
 		rnd = rand ();
 		org[0] = ent->old_origin[0] + ((rnd >> 12) & 7) * (5.0/7.0) - 2.5;
 		org[1] = ent->old_origin[1] + ((rnd >> 9) & 7) * (5.0/7.0) - 2.5;
 		org[2] = ent->old_origin[2] + ((rnd >> 6) & 7) * (5.0/7.0) - 2.5;
 
-//		Need glow_color in entity?
-//		particle_new (pt_smoke, part_tex_dot, org, 1.0, vec3_origin,
-//					  r_realtime + 2.0, ent->glow_color, 1.0, 0.0);
+		particle_new (pt_smoke, part_tex_dot, org, 1.0, vec3_origin,
+					  r_realtime + 2.0 - percent * 0.2, glow_color, 1.0, 0.0);
 		if (numparticles >= r_maxparticles)
 			break;
 		len += dist;
