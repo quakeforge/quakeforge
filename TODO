@@ -12,6 +12,7 @@ I  Client side QuakeC.
 I  mingw cross compiling
 I  merge nq and qw code bases
 W  fix skybox/dome vis problems (workable solution found, needs new renderer)
+o  ogg support
 o  It's possible to stick on some obtuse-angled corners qwsv 2.3x didn't
 o  better server control of certain cvars
 o  triggers (f_respawn, f_death, f_took; cl_triggers)
