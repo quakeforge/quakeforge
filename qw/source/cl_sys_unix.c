@@ -195,7 +195,7 @@ main (int c, char **v)
 	host_parms.argc = com_argc;
 	host_parms.argv = com_argv;
 
-	host_parms.memsize = 8 * 1024 * 1024;	// 8MB default heap
+	host_parms.memsize = 16 * 1024 * 1024;	// 16MB default heap
 
 	j = COM_CheckParm ("-mem");
 	if (j)
