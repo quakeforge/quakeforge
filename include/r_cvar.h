@@ -13,7 +13,6 @@ extern struct cvar_s     *d_mipscale;
 
 extern struct cvar_s     *gl_affinemodels;
 extern struct cvar_s     *gl_clear;
-extern struct cvar_s     *gl_conalpha;
 extern struct cvar_s     *gl_conspin;
 extern struct cvar_s     *gl_constretch;
 extern struct cvar_s     *gl_dlight_polyblend;

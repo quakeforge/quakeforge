@@ -1765,18 +1765,18 @@ Host_Init (void)
 
 	Con_Printf ("\nClient version %s (build %04d)\n\n", VERSION,
 				build_number ());
-
 	Con_Printf ("\x80\x81\x81\x82 %s initialized \x80\x81\x81\x82\n", PROGRAM);
+
 	CL_UpdateScreen (realtime);
 	Con_NewMap ();							// force the menus to be loaded
 	CL_UpdateScreen (realtime);
-
 	CL_UpdateScreen (realtime);
 
-	Cbuf_AddText (cl_cbuf,
-				  "echo Type connect <internet address> or use a server "
-				  "browser to connect to a game.\n");
-	Cbuf_AddText (cl_cbuf, "cmd_warncmd 1\n");
+	if (connect_time == -1 {
+		Cbuf_AddText (cl_cbuf, "echo Type connect <internet address> or use a "
+					  "server browser to connect to a game.\n");
+	}
+	Cbuf_AddText (cl_cbuf, "set cmd_warncmd 1\n");
 }
 
 void

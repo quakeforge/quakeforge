@@ -25,3 +25,13 @@ function::export ln
 // QuakeForge		qwcl
 ln "in_mouse_amp"	"sensitivity"
 ln "in_grab"		"_windowed_mouse"
+ln "con_alpha"		"gl_conalpha"
+ln "con_width"		"vid_conwidth"
+ln "con_height"		"vid_conheight"
+
+// QuakeForge		Old QuakeForge
+ln "hud_fps"		"show_fps"
+ln "hud_time"		"shot_time"
+ln "hud_ping"		"show_ping"
+ln "hud_pl"		"show_pl"
+ln "hud_scoreboard_uid"	"show_scoreuid"
