@@ -201,7 +201,16 @@ preprocess_file (const char *filename)
 		}
 
 		{
-			int		status = spawnvp (_P_WAIT, cpp_argv[0], (char **)cpp_argv);
+			int		status;
+
+			if (options.verbosity > 1) {
+				const char **a;
+				for (a = cpp_argv; *a; a++)
+					printf ("%s ", *a);
+				puts("");
+			}
+
+			status = spawnvp (_P_WAIT, cpp_argv[0], (char **)cpp_argv);
 
 			if (status) {
 				fprintf (stderr, "%s: cpp returned error code %d\n",
