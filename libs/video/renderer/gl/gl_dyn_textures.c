@@ -36,14 +36,12 @@ static const char rcsid[] =
 #include "QF/qtypes.h"
 #include "QF/GL/defines.h"
 #include "QF/GL/funcs.h"
+#include "QF/GL/qf_noisetextures.h"
 #include "QF/GL/qf_vid.h"
 
 int         part_tex_dot;
 int         part_tex_smoke;
 int         part_tex_spark;
-
-extern void noise_diamondsquare(unsigned char *noise, int size);
-extern void noise_plasma(unsigned char *noise, int size);
 
 
 static void
@@ -58,7 +56,7 @@ GDT_InitDotParticleTexture (void)
 		for (y = 0; y < 16; y++) {
 			dy = y - 8;
 			d = 255 - 4 * (dx2 + (dy * dy));
-			if (d<=0) {
+			if (d <= 0) {
 				d = 0;
 				data[y][x][0] = 0;
 			} else
@@ -82,14 +80,14 @@ GDT_InitSparkParticleTexture (void)
 	int         x, y, dx2, dy, d;
 
 	for (x = 0; x < 16; x++) {
-		dx2 = 8 - abs(x - 8);
+		dx2 = 8 - abs (x - 8);
 		dx2 *= dx2;
 		for (y = 0; y < 16; y++) {
-			dy = 8 - abs(y - 8);
+			dy = 8 - abs (y - 8);
 			d = 3 * (dx2 + dy * dy) - 100;
-			if (d>255)
+			if (d > 255)
 				d = 255;
-			if (d<1) {
+			if (d < 1) {
 				d = 0;
 				data[y][x][0] = 0;
 			} else
@@ -115,20 +113,20 @@ GDT_InitSmokeParticleTexture (void)
 	int         x, y, c;
 
 	noise_plasma (&noise1[0][0], 32);
-	noise_diamondsquare (&noise2[0][0], 32);
+	noise_diamondsquare (&noise2[0][0], 32, 4);
 	for (y = 0; y < 32; y++)
 	{
 		dy2 = y - 16;
 		dy2 *= dy2;
 		for (x = 0; x < 32; x++) {
 			dx = x - 16;
-			c = 255 - (dx*dx + dy2);
+			c = 255 - (dx * dx + dy2);
 			if (c < 1)
 				c = 0;
 			d = (noise1[y][x] + noise2[y][x]) / 2;
 			if (d > 0) {
 				data[y][x][0] = 255;
-				data[y][x][1] = (d * c)/255;
+				data[y][x][1] = (d * c) / 255;
 			} else {
 				data[y][x][0] = 255;
 				data[y][x][1] = 0;

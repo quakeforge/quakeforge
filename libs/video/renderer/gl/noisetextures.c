@@ -44,45 +44,60 @@ static const char rcsid[] =
 #include <stdlib.h>
 
 #include "QF/mathlib.h"
+#include "QF/sys.h"
+
+#include "compat.h"
 
 
 void
-noise_diamondsquare (unsigned char *noise, int size)
+noise_diamondsquare (unsigned char *noise, unsigned int size,
+					 unsigned int startgrid)
 {
-	int         amplitude, max, min, g, g2, x, y;
-	int         size1 = size - 1;
+	int         amplitude, max, min;
+	int			size1 = size - 1;
 	int        *noisebuf;
+	unsigned int	gridpower, sizepower, g, g2, x, y;
 
 #define n(x, y) noisebuf[((y) & size1) * size + ((x) & size1)]
-	noisebuf = calloc (size * size, sizeof (int));
 
-	amplitude = 32767;
-	g2 = size;
-	n (0, 0) = 0;
-	for (; (g = g2 >> 1) >= 1; g2 >>= 1) {
-		// subdivide, diamond-square algorythm (really this has little
-		// to do with squares)
-		// diamond
+	for (sizepower = 0;(1 << sizepower) < size;sizepower++);
+	if (size != (1 << sizepower))
+		Sys_Error("fractalnoise: size must be power of 2\n");
+
+	for (gridpower = 0;(1 << gridpower) < startgrid;gridpower++);
+	if (startgrid != (1 << gridpower))
+		Sys_Error("fractalnoise: grid must be power of 2\n");
+
+	startgrid = bound(0, startgrid, size);
+	amplitude = 0xFFFF; // this gets halved before use
+	noisebuf = calloc (size * size, sizeof (int));
+	memset(noisebuf, 0, size * size * sizeof(int));
+
+	for (g2 = startgrid; g2; g2 >>= 1) {
+		// Brownian Motion
+		amplitude >>= 1;
 		for (y = 0; y < size; y += g2)
 			for (x = 0; x < size; x += g2)
-				n (x + g, y + g) =
-					(n (x, y) + n (x + g2, y) + n (x, y + g2) +
-					 n (x + g2, y + g2)) >> 2;
-		// square
-		for (y = 0; y < size; y += g2)
-			for (x = 0; x < size; x += g2) {
-				n (x + g, y) =
-					(n (x, y) + n (x + g2, y) + n (x + g, y - g) +
-					 n (x + g, y + g)) >> 2;
-				n (x, y + g) =
-					(n (x, y) + n (x, y + g2) + n (x - g, y + g) +
-					 n (x + g, y + g)) >> 2;
+				n (x,y) += (rand () & amplitude);
+
+		g = g2 >> 1;
+		if (g) {
+			// subdivide, diamond-square algorithm
+			// diamond
+			for (y = 0; y < size; y += g2)
+				for (x = 0; x < size; x += g2)
+					n (x + g, y + g) =
+						(n (x, y) + n (x + g2, y) + n (x, y + g2) +
+						 n (x + g2, y + g2)) >> 2;
+			// square
+			for (y = 0; y < size; y += g2)
+				for (x = 0; x < size; x += g2) {
+					n (x + g, y) = (n (x, y) + n (x + g2, y) +
+									n (x + g, y - g) + n (x + g, y + g)) >> 2;
+					n (x, y + g) = (n (x, y) + n (x, y + g2) +
+									n (x - g, y + g) + n (x + g, y + g)) >> 2;
 			}
-		// Brownian motion ( at every smaller level, random behavior )
-		amplitude >>= 1;
-		for (y = 0; y < size; y += g)
-			for (x = 0; x < size; x += g)
-				n (x, y) += (rand () & amplitude);
+		}
 	}
 	// find range of noise values
 	min = max = 0;
@@ -94,10 +109,11 @@ noise_diamondsquare (unsigned char *noise, int size)
 				max = n (x, y);
 		}
 	max -= min;
+	max++;
 	// normalize noise and copy to output
 	for (y = 0; y < size; y++)
 		for (x = 0; x < size; x++)
-			*noise++ = (n (x, y) - min) * 255 / max;
+			*noise++ = (unsigned char) (((n (x, y) - min) * 256) / max);
 	free (noisebuf);
 	#undef n
 }
@@ -105,7 +121,7 @@ noise_diamondsquare (unsigned char *noise, int size)
 void
 noise_plasma (unsigned char *noise, int size)
 {
-	int   a, b, c, d, i, j, k;
+	unsigned int   a, b, c, d, i, j, k;
 
 	if (128 >= size)
 		d = 64 / size;
