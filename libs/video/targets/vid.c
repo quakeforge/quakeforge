@@ -54,6 +54,7 @@ byte		gammatable[256];
 cvar_t	   *vid_gamma;
 cvar_t	   *vid_system_gamma;
 cvar_t     *vid_conwidth;
+cvar_t     *vid_conheight;
 qboolean	vid_gamma_avail;		// hardware gamma availability
 
 unsigned int	d_8to24table[256];
@@ -69,7 +70,7 @@ cvar_t     *vid_fullscreen;
 void
 VID_GetWindowSize (int def_w, int def_h)
 {
-	int pnum;
+	int pnum, conheight;
 
 	vid_width = Cvar_Get ("vid_width", va ("%d", def_w), CVAR_NONE, NULL,
 			"screen width");
@@ -124,6 +125,18 @@ VID_GetWindowSize (int def_w, int def_h)
 	}
 	Cvar_SetFlags (vid_conwidth, vid_conwidth->flags | CVAR_ROM);
 	vid.conwidth = vid_conwidth->int_val;
+	
+	conheight = ((vid.conwidth & 0xFFF8) * 3) / 4;
+	vid_conheight = Cvar_Get ("vid_conheight", va ("%d", conheight), CVAR_NONE,
+							 NULL, "console effective height (GL only)");
+	if ((pnum = COM_CheckParm ("-conheight"))) {
+		if (pnum >= com_argc - 1)
+			Sys_Error ("VID: -conheight <width>");
+		Cvar_Set (vid_conheight, com_argv[pnum + 1]);
+	}
+	Cvar_SetFlags (vid_conheight, vid_conheight->flags | CVAR_ROM);
+	vid.conheight = vid_conheight->int_val;
+
 }
 
 /* GAMMA FUNCTIONS */
