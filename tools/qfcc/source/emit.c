@@ -215,6 +215,7 @@ emit_sub_expr (expr_t *e, def_t *dest)
 					emit_expr (e);
 				break;
 			}
+		case ex_nil:
 		case ex_label:
 			error (e, "internal error");
 			abort ();
@@ -476,6 +477,9 @@ emit_expr (expr_t *e)
 		case ex_integer:
 			warning (e, "Ignoring useless expression");
 			break;
+		case ex_nil:
+			error (e, "internal error");
+			abort ();
 	}
 	PR_FreeTempDefs ();
 }
