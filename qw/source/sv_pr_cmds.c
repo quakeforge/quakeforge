@@ -1688,6 +1688,11 @@ PF_setinfokey (progs_t *pr)
 	} else if (e1 <= MAX_CLIENTS) {
 		Info_SetValueForKey (svs.clients[e1 - 1].userinfo, key, value,
 							 MAX_INFO_STRING);
+		MSG_WriteByte (&sv.reliable_datagram, svc_setinfo);
+		MSG_WriteByte (&sv.reliable_datagram, e1 - 1);
+		MSG_WriteString (&sv.reliable_datagram, key);
+		MSG_WriteString (&sv.reliable_datagram,
+						 Info_ValueForKey (host_client->userinfo, key));
 	}
 }
 
