@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 
+import os
 import re
 import string
 from pprint import *
@@ -190,3 +191,4 @@ f.write (progs_dat + '\n\n')
 for l in qcc_list:
 	f.write(l + '\n')
 f.close ()
+os.execlp ("qfcc", "qfcc")
