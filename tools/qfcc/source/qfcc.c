@@ -32,6 +32,7 @@
 #endif
 #include <QF/crc.h>
 #include <QF/qendian.h>
+#include <QF/sys.h>
 
 #include "qfcc.h"
 
@@ -741,7 +742,7 @@ main (int argc, char **argv)
 	int 	p, crc;
 	double	start, stop;
 
-	start = I_FloatTime ();
+	start = Sys_DoubleTime ();
 
 	myargc = argc;
 	myargv = argv;
@@ -814,7 +815,7 @@ Options: \n\
 	// write files.dat
 	WriteFiles ();
 
-	stop = I_FloatTime ();
-	printf ("Compilation time: %i seconds.\n", (int) (stop - start));
+	stop = Sys_DoubleTime ();
+	printf ("Compilation time: %.3f seconds.\n", (stop - start));
 	return 0;
 }

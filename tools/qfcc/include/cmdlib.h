@@ -49,8 +49,6 @@ extern char **myargv;
 
 int filelength (FILE *f);
 
-double I_FloatTime (void);
-
 void	Error (char *error, ...);
 int		CheckParm (char *check);
 
