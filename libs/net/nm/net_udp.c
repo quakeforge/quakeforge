@@ -78,10 +78,12 @@ static __attribute__ ((unused)) const char rcsid[] =
 #include <stdlib.h>
 #include <sys/types.h>
 
+#include "QF/console.h"
 #include "QF/cvar.h"
+#include "QF/dstring.h"
 #include "QF/qargs.h"
 #include "QF/sys.h"
-#include "QF/console.h"
+#include "QF/va.h"
 
 #include "compat.h"
 #include "netmain.h"
@@ -248,13 +250,12 @@ UDP_CloseSocket (int socket)
 static int
 PartialIPAddress (const char *in, struct qsockaddr *hostaddr)
 {
-	char        buff[256];		//FIXME: overflow
+	char       *buff;
 	char       *b;
 	int         addr, mask, num, port, run;
 
-	buff[0] = '.';
+	buff = nva (".%s", in);
 	b = buff;
-	strcpy (buff + 1, in);
 	if (buff[1] == '.')
 		b++;
 
@@ -267,12 +268,12 @@ PartialIPAddress (const char *in, struct qsockaddr *hostaddr)
 		while (!(*b < '0' || *b > '9')) {
 			num = num * 10 + *b++ - '0';
 			if (++run > 3)
-				return -1;
+				goto error;
 		}
 		if ((*b < '0' || *b > '9') && *b != '.' && *b != ':' && *b != 0)
-			return -1;
+			goto error;
 		if (num < 0 || num > 255)
-			return -1;
+			goto error;
 		mask <<= 8;
 		addr = (addr << 8) + num;
 	}
@@ -288,7 +289,11 @@ PartialIPAddress (const char *in, struct qsockaddr *hostaddr)
 	((struct sockaddr_in *) hostaddr)->sin_addr.s_addr =
 		(myAddr & htonl (mask)) | htonl (addr);
 
+	free (buff);
 	return 0;
+error:
+	free (buff);
+	return -1;
 }
 
 int
@@ -374,17 +379,20 @@ UDP_Write (int socket, byte * buf, int len, struct qsockaddr *addr)
 	return ret;
 }
 
-const char       *
+const char *
 UDP_AddrToString (struct qsockaddr *addr)
 {
-	static char buffer[22];		//FIXME: overflow
+	static dstring_t *buffer;
 	int         haddr;
 
+	if (!buffer)
+		buffer = dstring_new ();
+
 	haddr = ntohl (((struct sockaddr_in *) addr)->sin_addr.s_addr);
-	snprintf (buffer, sizeof (buffer), "%d.%d.%d.%d:%d", (haddr >> 24) & 0xff,
+	dsprintf (buffer, "%d.%d.%d.%d:%d", (haddr >> 24) & 0xff,
 			  (haddr >> 16) & 0xff, (haddr >> 8) & 0xff, haddr & 0xff,
 			  ntohs (((struct sockaddr_in *) addr)->sin_port));
-	return buffer;
+	return buffer->str;
 }
 
 int

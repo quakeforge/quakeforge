@@ -251,7 +251,7 @@ CL_Version_f (void)
 static void
 CL_SendConnectPacket (void)
 {
-	char        data[2048];		//FIXME: overflow
+	dstring_t  *data;
 	double      t1, t2;
 
 // JACK: Fixed bug where DNS lookups would cause two connects real fast
@@ -277,10 +277,12 @@ CL_SendConnectPacket (void)
 
 	cls.qport = qport->int_val;
 
-	snprintf (data, sizeof (data), "%c%c%c%cconnect %i %i %i \"%s\"\n",
+	data = dstring_new ();
+	dsprintf (data, "%c%c%c%cconnect %i %i %i \"%s\"\n",
 			  255, 255, 255, 255, PROTOCOL_VERSION, cls.qport, cls.challenge,
 			  Info_MakeString (cls.userinfo, 0));
-	Netchan_SendPacket (strlen (data), data, cls.server_addr);
+	Netchan_SendPacket (strlen (data->str), data->str, cls.server_addr);
+	dstring_delete (data);
 }
 
 /*
@@ -291,7 +293,7 @@ CL_SendConnectPacket (void)
 static void
 CL_CheckForResend (void)
 {
-	char        data[2048];		//FIXME: overflow
+	static const char *getchallenge = "\377\377\377\377getchallenge\n";
 	double      t1, t2;
 
 	if (connect_time == -1)
@@ -316,9 +318,8 @@ CL_CheckForResend (void)
 
 	VID_SetCaption (va ("Connecting to %s", cls.servername));
 	Con_Printf ("Connecting to %s...\n", cls.servername);
-	snprintf (data, sizeof (data), "%c%c%c%cgetchallenge\n", 255, 255, 255,
-			  255);
-	Netchan_SendPacket (strlen (data), data, cls.server_addr);
+	Netchan_SendPacket (strlen (getchallenge), (void *) getchallenge,
+						cls.server_addr);
 }
 
 void
@@ -355,11 +356,14 @@ CL_Connect_f (void)
 static void
 CL_Rcon_f (void)
 {
-	char        message[1024];		//FIXME: overflow
+	static dstring_t *message;
 	netadr_t    to;
 
-	snprintf (message, sizeof (message), "\377\377\377\377rcon %s %s",
-			  rcon_password->string, Cmd_Args (1));
+	if (!message)
+		message = dstring_new ();
+
+	dsprintf (message, "\377\377\377\377rcon %s %s", rcon_password->string,
+			  Cmd_Args (1));
 
 	if (cls.state >= ca_connected)
 		to = cls.netchan.remote_address;
@@ -374,7 +378,7 @@ CL_Rcon_f (void)
 			to.port = BigShort (27500);
 	}
 
-	Netchan_SendPacket (strlen (message) + 1, message, to);
+	Netchan_SendPacket (strlen (message->str) + 1, message->str, to);
 }
 
 void
@@ -624,8 +628,6 @@ CL_FullServerinfo_f (void)
 static void
 CL_AddQFInfoKeys (void)
 {
-	char        cap[100] = "";			// max of 98 or so flags		//FIXME: overflow
-
 	// set the capabilities info. single char flags (possibly with modifiers)
 	// defined capabilities (* = not implemented):
 	// z   client can accept gzipped files.
@@ -635,10 +637,12 @@ CL_AddQFInfoKeys (void)
 	// i    * irc
 	// p    pogo stick control
 	// t    team messages
-	strncpy (cap, "pt", sizeof (cap));
+	static const char *cap = "pt"
 #ifdef HAVE_ZLIB
-	strncat (cap, "z", sizeof (cap) - strlen (cap) - 1);
+		"z"
 #endif
+		;
+
 	Info_SetValueForStarKey (cls.userinfo, "*cap", cap, 0);
 	Info_SetValueForStarKey (cls.userinfo, "*qf_version", VERSION, 0);
 	Info_SetValueForStarKey (cls.userinfo, "*qsg_version", QW_QSG_VERSION, 0);
@@ -730,7 +734,7 @@ CL_SetInfo_f (void)
 static void
 CL_Packet_f (void)
 {
-	char        send[2048];		//FIXME: overflow
+	char       *send;
 	char       *out;
 	const char *in;
 	int         i, l;
@@ -747,6 +751,7 @@ CL_Packet_f (void)
 	}
 
 	in = Cmd_Argv (2);
+	send = malloc (strlen (in) + 4 + 1);
 	out = send + 4;
 	send[0] = send[1] = send[2] = send[3] = 0xff;
 
@@ -761,6 +766,7 @@ CL_Packet_f (void)
 	*out = 0;
 
 	Netchan_SendPacket (out - send, send, adr);
+	free (send);
 }
 
 /*
@@ -771,8 +777,6 @@ CL_Packet_f (void)
 void
 CL_NextDemo (void)
 {
-	char        str[1024];		//FIXME: overflow
-
 	if (cls.demonum == -1)
 		return;							// don't play demos
 
@@ -784,8 +788,7 @@ CL_NextDemo (void)
 		}
 	}
 
-	snprintf (str, sizeof (str), "playdemo %s\n", cls.demos[cls.demonum]);
-	Cbuf_InsertText (cl_cbuf, str);
+	Cbuf_InsertText (cl_cbuf, va ("playdemo %s\n", cls.demos[cls.demonum]));
 	cls.demonum++;
 }
 
@@ -878,7 +881,7 @@ CL_ConnectionlessPacket (void)
 	}
 	// remote command from gui front end
 	if (c == A2C_CLIENT_COMMAND) {
-		char        cmdtext[2048];		//FIXME: overflow
+		char       *cmdtext;
 		int         len;
 
 		Con_Printf ("client command\n");
@@ -892,8 +895,8 @@ CL_ConnectionlessPacket (void)
 		}
 		s = MSG_ReadString (net_message);
 
-		strncpy (cmdtext, s, sizeof (cmdtext) - 1);
-		cmdtext[sizeof (cmdtext) - 1] = 0;
+		cmdtext = alloca (strlen (s) + 1);
+		strcpy (cmdtext, s);
 
 		s = MSG_ReadString (net_message);
 
@@ -1128,12 +1131,9 @@ CL_SetState (cactive_t state)
 void
 CL_Init (void)
 {
-	char        st[80];		//FIXME: overflow
-
 	CL_SetState (ca_disconnected);
 
-	snprintf (st, sizeof (st), "%s", QW_VERSION);
-	Info_SetValueForStarKey (cls.userinfo, "*ver", st, 0);
+	Info_SetValueForStarKey (cls.userinfo, "*ver", QW_VERSION, 0);
 
 	CL_Input_Init ();
 	CL_Ents_Init ();
@@ -1337,14 +1337,17 @@ CL_Init_Cvars (void)
 void
 Host_EndGame (const char *message, ...)
 {
-	char        string[1024];		//FIXME: overflow
+	static dstring_t *str;
 	va_list     argptr;
 
+	if (!str)
+		str = dstring_new ();
+
 	va_start (argptr, message);
-	vsnprintf (string, sizeof (string), message, argptr);
+	dvsprintf (str, message, argptr);
 	va_end (argptr);
 	Con_Printf ("\n===========================\n");
-	Con_Printf ("Host_EndGame: %s\n", string);
+	Con_Printf ("Host_EndGame: %s\n", str->str);
 	Con_Printf ("===========================\n\n");
 
 	CL_Disconnect ();
@@ -1360,29 +1363,33 @@ Host_EndGame (const char *message, ...)
 void
 Host_Error (const char *error, ...)
 {
-	char        string[1024];		//FIXME: overflow
+	static dstring_t *str;
 	static qboolean inerror = false;
 	va_list     argptr;
 
 	if (inerror)
 		Sys_Error ("Host_Error: recursively entered");
+
+	if (!str)
+		str = dstring_new ();
+
 	inerror = true;
 
 	va_start (argptr, error);
-	Con_Printf ("Host_Error: ");
-	Con_Print (error, argptr);
+	dvsprintf (str, error, argptr);
 	va_end (argptr);
+
+	Con_Printf ("Host_Error: %s", str->str);
 
 	CL_Disconnect ();
 	cls.demonum = -1;
 
 	inerror = false;
 
-// FIXME
 	if (host_initialized) {
 		longjmp (host_abort, 1);
 	} else {
-		Sys_Error ("Host_Error: %s", string);
+		Sys_Error ("Host_Error: %s", str->str);
 	}
 }
 

@@ -133,11 +133,12 @@ QFile *
 Qopen (const char *path, const char *mode)
 {
 	QFile      *file;
-	char        m[80], *p;		//FIXME: overflow
+	char       *m, *p;
 	int         reading = 0;
 	int         zip = 0;
 	int         size = -1;
 
+	m = alloca (strlen (mode) + 1);
 	for (p = m; *mode && p - m < ((int) sizeof (m) - 1); mode++) {
 		if (*mode == 'z') {
 			zip = 1;
@@ -191,9 +192,10 @@ QFile *
 Qdopen (int fd, const char *mode)
 {
 	QFile      *file;
-	char        m[80], *p;		//FIXME: overflow
+	char       *m, *p;
 	int         zip = 0;
 
+	m = alloca (strlen (mode) + 1);
 #ifdef WIN32
 	setmode (fd, O_BINARY);
 #endif

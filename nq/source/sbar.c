@@ -334,9 +334,12 @@ draw_fill (view_t *view, int x, int y, int w, int h, int col)
 static void
 draw_num (view_t *view, int x, int y, int num, int digits, int color)
 {
-	char        str[12];		//FIXME: overflow
+	char        str[12];
 	char       *ptr;
 	int         l, frame;
+
+	if (num > 999999999)
+		num = 999999999;
 
 	l = snprintf (str, sizeof (str), "%d", num);
 	ptr = str;
@@ -360,9 +363,12 @@ draw_num (view_t *view, int x, int y, int num, int digits, int color)
 static inline void
 draw_smallnum (view_t *view, int x, int y, int n, int packed, int colored)
 {
-	char        num[4];		//FIXME: overflow
+	char        num[4];
 
 	packed = packed != 0;				// ensure 0 or 1
+
+	if (n > 999)
+		n = 999;
 
 	snprintf (num, sizeof (num), "%3d", n);
 	if (colored) {
@@ -422,7 +428,7 @@ Sbar_SortFrags (void)
 static void
 draw_solo (view_t *view)
 {
-	char        str[80];		//FIXME: overflow
+	char        str[80];
 	int         minutes, seconds, tens, units;
 	int         l;
 
@@ -583,7 +589,6 @@ draw_frags (view_t *view)
 	int         i, k, l, p = -1;
 	int         top, bottom;
 	int         x;
-	char        num[12];		//FIXME: overflow
 	scoreboard_t *s;
 
 	if (cl.maxclients == 1)
@@ -611,12 +616,7 @@ draw_frags (view_t *view)
 		draw_fill (view, x + 4, 1, 28, 4, top);
 		draw_fill (view, x + 4, 5, 28, 3, bottom);
 
-		// draw number
-		snprintf (num, sizeof (num), "%3i", s->frags);
-
-		draw_character (view, x + 6, 0, num[0]);
-		draw_character (view, x + 14, 0, num[1]);
-		draw_character (view, x + 22, 0, num[2]);
+		draw_smallnum (view, x + 6, 0, s->frags, 0, 0);
 
 		if (k == cl.viewentity - 1)
 			p = i;
@@ -1047,8 +1047,7 @@ Sbar_DeathmatchOverlay (view_t *view)
 {
 	int         i, k, l;
 	int         top, bottom;
-	int         x, y, f;
-	char        num[12];		//FIXME: overflow
+	int         x, y;
 	scoreboard_t *s;
 
 	scr_copyeverything = 1;
@@ -1079,11 +1078,7 @@ Sbar_DeathmatchOverlay (view_t *view)
 		draw_fill (view, x, y, 40, 4, top);
 		draw_fill (view, x, y + 4, 40, 4, bottom);
 
-		// draw number
-		f = s->frags;
-		snprintf (num, sizeof (num), "%3i", f);
-
-		draw_nstring (view, x + 12, y, num, 3);
+		draw_smallnum (view, x + 12, y, s->frags, 0, 0);
 
 		if (k == cl.viewentity - 1)
 			draw_character (view, x - 4, y, 12);
@@ -1120,7 +1115,6 @@ draw_time (view_t *view)
 static void
 draw_fps (view_t *view)
 {
-	char          st[80];		//FIXME: overflow
 	double        t;
 	static double lastframetime;
 	static int    lastfps;
@@ -1131,8 +1125,7 @@ draw_fps (view_t *view)
 		fps_count = 0;
 		lastframetime = t;
 	}
-	snprintf (st, sizeof (st), "%3d FPS", lastfps);
-	draw_string (view, 8, 8, st);
+	draw_smallnum (view, 8, 8, lastfps, 0, 0);
 }
 
 static void

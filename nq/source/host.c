@@ -129,19 +129,22 @@ cvar_t     *temp1;
 void
 Host_EndGame (const char *message, ...)
 {
-	char        string[1024];		//FIXME: overflow
+	static dstring_t *str;
 	va_list     argptr;
 
+	if (!str)
+		str = dstring_new ();
+
 	va_start (argptr, message);
-	vsnprintf (string, sizeof (string), message, argptr);
+	dvsprintf (str, message, argptr);
 	va_end (argptr);
-	Con_DPrintf ("Host_EndGame: %s\n", string);
+	Con_DPrintf ("Host_EndGame: %s\n", str->str);
 
 	if (sv.active)
 		Host_ShutdownServer (false);
 
 	if (cls.state == ca_dedicated)
-		Sys_Error ("Host_EndGame: %s", string);	// dedicated servers exit
+		Sys_Error ("Host_EndGame: %s", str->str);	// dedicated servers exit
 
 	if (cls.demonum != -1)
 		CL_NextDemo ();
@@ -159,27 +162,31 @@ Host_EndGame (const char *message, ...)
 void
 Host_Error (const char *error, ...)
 {
-	char        string[1024];		//FIXME: overflow
+	static dstring_t *str;
 	static qboolean inerror = false;
 	va_list     argptr;
 
 	if (inerror)
 		Sys_Error ("Host_Error: recursively entered");
+
+	if (!str)
+		str = dstring_new ();
+
 	inerror = true;
 
 //	SCR_EndLoadingPlaque ();						// reenable screen updates
 
 	va_start (argptr, error);
-	vsnprintf (string, sizeof (string), error, argptr);
+	dvsprintf (str, error, argptr);
 	va_end (argptr);
 
 	if (sv.active)
 		Host_ShutdownServer (false);
 
 	if (cls.state == ca_dedicated)
-		Sys_Error ("Host_Error: %s", string);		// dedicated servers exit
+		Sys_Error ("Host_Error: %s", str->str);		// dedicated servers exit
 
-	Con_Printf ("Host_Error: %s\n", string);
+	Con_Printf ("Host_Error: %s\n", str->str);
 
 	CL_Disconnect ();
 	cls.demonum = -1;
@@ -303,15 +310,18 @@ Host_WriteConfiguration (void)
 void
 SV_ClientPrintf (const char *fmt, ...)
 {
-	char        string[1024];		//FIXME: overflow
+	static dstring_t *str;
 	va_list     argptr;
 
+	if (!str)
+		str = dstring_new ();
+
 	va_start (argptr, fmt);
-	vsnprintf (string, sizeof (string), fmt, argptr);
+	dvsprintf (str, fmt, argptr);
 	va_end (argptr);
 
 	MSG_WriteByte (&host_client->message, svc_print);
-	MSG_WriteString (&host_client->message, string);
+	MSG_WriteString (&host_client->message, str->str);
 }
 
 /*
@@ -322,18 +332,21 @@ SV_ClientPrintf (const char *fmt, ...)
 void
 SV_BroadcastPrintf (const char *fmt, ...)
 {
-	char        string[1024];		//FIXME: overflow
+	static dstring_t *str;
 	int         i;
 	va_list     argptr;
 
+	if (!str)
+		str = dstring_new ();
+
 	va_start (argptr, fmt);
-	vsnprintf (string, sizeof (string), fmt, argptr);
+	dvsprintf (str, fmt, argptr);
 	va_end (argptr);
 
 	for (i = 0; i < svs.maxclients; i++)
 		if (svs.clients[i].active && svs.clients[i].spawned) {
 			MSG_WriteByte (&svs.clients[i].message, svc_print);
-			MSG_WriteString (&svs.clients[i].message, string);
+			MSG_WriteString (&svs.clients[i].message, str->str);
 		}
 }
 
@@ -345,15 +358,18 @@ SV_BroadcastPrintf (const char *fmt, ...)
 void
 Host_ClientCommands (const char *fmt, ...)
 {
-	char        string[1024];		//FIXME: overflow
+	static dstring_t *str;
 	va_list     argptr;
 
+	if (!str)
+		str = dstring_new ();
+
 	va_start (argptr, fmt);
-	vsnprintf (string, sizeof (string), fmt, argptr);
+	dvsprintf (str, fmt, argptr);
 	va_end (argptr);
 
 	MSG_WriteByte (&host_client->message, svc_stufftext);
-	MSG_WriteString (&host_client->message, string);
+	MSG_WriteString (&host_client->message, str->str);
 }
 
 /*

@@ -50,7 +50,7 @@ static __attribute__ ((unused)) const char rcsid[] =
 #include "compat.h"
 
 model_t    *loadmodel;
-char        loadname[32];				// for hunk tags
+char       *loadname;					// for hunk tags
 
 #define	MAX_MOD_KNOWN	512
 model_t     mod_known[MAX_MOD_KNOWN];
@@ -157,7 +157,9 @@ Mod_RealLoadModel (model_t *mod, qboolean crash, cache_allocator_t allocator)
 	}
 
 	// allocate a new model
-	QFS_FileBase (mod->name, loadname);
+	if (loadname)
+		free (loadname);
+	loadname = QFS_FileBase (mod->name);
 
 	loadmodel = mod;
 

@@ -157,7 +157,7 @@ SV_Match_User (const char *substr)
 static void
 SV_SetMaster_f (void)
 {
-	char        data[2];		//FIXME: overflow
+	char        data[2];
 	int         i;
 
 	memset (&master_adr, 0, sizeof (master_adr));

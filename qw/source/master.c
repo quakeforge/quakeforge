@@ -336,7 +336,7 @@ QW_Master (struct sockaddr_in *addr)
    
 	while (1) {
 		int size;
-		char buf[31];		//FIXME: overflow
+		char buf[31];
 		MSGHDR;
 
 		buf[30] = '\0'; // a sentinal for string ops

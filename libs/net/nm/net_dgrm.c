@@ -122,21 +122,6 @@ struct {
 //extern char m_return_reason[32];
 
 
-#ifdef DEBUG
-char       *
-StrAddr (struct qsockaddr *addr)
-{
-	static char buf[34];		//FIXME: overflow
-	byte       *p = (byte *) addr;
-	int         n;
-
-	for (n = 0; n < 16; n++)
-		snprintf (buf + n * 2, sizeof (buf + n * 2), "%02x", *p++);
-	return buf;
-}
-#endif
-
-
 #ifdef BAN_TEST
 unsigned long banAddr = 0x00000000;
 unsigned long banMask = 0xffffffff;
@@ -198,16 +183,6 @@ Datagram_SendMessage (qsocket_t * sock, sizebuf_t *data)
 	unsigned int dataLen;
 	unsigned int eom;
 
-#ifdef DEBUG
-	if (data->cursize == 0)
-		Sys_Error ("Datagram_SendMessage: zero length message");
-
-	if (data->cursize > NET_MAXMESSAGE)
-		Sys_Error ("Datagram_SendMessage: message too big %u", data->cursize);
-
-	if (sock->canSend == false)
-		Sys_Error ("SendMessage: called with canSend == false");
-#endif
 
 	memcpy (sock->sendMessage, data->data, data->cursize);
 	sock->sendMessageLength = data->cursize;
@@ -323,15 +298,6 @@ Datagram_SendUnreliableMessage (qsocket_t * sock, sizebuf_t *data)
 {
 	int         packetLen;
 
-#ifdef DEBUG
-	if (data->cursize == 0)
-		Sys_Error ("Datagram_SendUnreliableMessage: zero length message");
-
-	if (data->cursize > MAX_DATAGRAM)
-		Sys_Error ("Datagram_SendUnreliableMessage: message too big %u",
-				   data->cursize);
-#endif
-
 	packetLen = NET_HEADERSIZE + data->cursize;
 
 	packetBuffer.length = BigLong (packetLen | NETFLAG_UNRELIABLE);
@@ -378,11 +344,6 @@ Datagram_GetMessage (qsocket_t * sock)
 		}
 
 		if (sfunc.AddrCompare (&readaddr, &sock->addr) != 0) {
-#ifdef DEBUG
-			Con_DPrintf ("Forged packet received\n");
-			Con_DPrintf ("Expected: %s\n", StrAddr (&sock->addr));
-			Con_DPrintf ("Received: %s\n", StrAddr (&readaddr));
-#endif
 			continue;
 		}
 
@@ -1324,12 +1285,6 @@ _Datagram_Connect (const char *host)
 			if (ret > 0) {
 				// is it from the right place?
 				if (sfunc.AddrCompare (&readaddr, &sendaddr) != 0) {
-#ifdef DEBUG
-					Con_Printf ("wrong reply address\n");
-					Con_Printf ("Expected: %s\n", StrAddr (&sendaddr));
-					Con_Printf ("Received: %s\n", StrAddr (&readaddr));
-					CL_UpdateScreen (cl.time);
-#endif
 					ret = 0;
 					continue;
 				}

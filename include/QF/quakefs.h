@@ -96,7 +96,7 @@ int QFS_Remove (const char *path);
 int QFS_NextFilename (struct dstring_s *filename, const char *prefix,
 					  const char *ext);
 
-void QFS_FileBase (const char *in, char *out);
+char *QFS_FileBase (const char *in);
 void QFS_DefaultExtension (char *path, const char *extension);
 void QFS_StripExtension (const char *in, char *out);
 char *QFS_CompressPath (const char *pth);

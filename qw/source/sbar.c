@@ -348,9 +348,12 @@ draw_fill (view_t *view, int x, int y, int w, int h, int col)
 static void
 draw_num (view_t *view, int x, int y, int num, int digits, int color)
 {
-	char        str[12];		//FIXME: overflow
+	char        str[12];
 	char       *ptr;
 	int         l, frame;
+
+	if (num > 999999999)
+		num = 999999999;
 
 	l = snprintf (str, sizeof (str), "%d", num);
 	ptr = str;
@@ -483,7 +486,7 @@ Sbar_ColorForMap (int m)
 static void
 draw_solo (view_t *view)
 {
-	char        str[80];		//FIXME: overflow
+	char        str[80];
 	int         minutes, seconds;
 
 	draw_pic (view, 0, 0, sb_scorebar); 
@@ -495,16 +498,38 @@ draw_solo (view_t *view)
 }
 
 static inline void
+draw_smallnum (view_t *view, int x, int y, int n, int packed, int colored)
+{
+	char        num[4];
+
+	packed = packed != 0;				// ensure 0 or 1
+
+	if (n > 999)
+		n = 999;
+
+	snprintf (num, sizeof (num), "%3d", n);
+	if (colored) {
+		if (num[0] != ' ')
+			num[0] = 18 + num[0] - '0';
+		if (num[1] != ' ')
+			num[1] = 18 + num[1] - '0';
+		if (num[2] != ' ')
+			num[2] = 18 + num[2] - '0';
+	}
+	draw_character (view, x + packed, y, num[0]);
+	draw_character (view, x + 8, y, num[1]);
+	draw_character (view, x + 16 - packed, y, num[2]);
+}
+
+static inline void
 dmo_ping (view_t *view, int x, int y, player_info_t *s)
 {
-	char		num[12];		//FIXME: overflow
 	int         p;
 
 	p = s->ping;
 	if (p < 0 || p > 999)
 		p = 999;
-	snprintf (num, sizeof (num), "%4i", p);
-	draw_string (view, x, y, num);
+	draw_smallnum (view, x + 8, y, p, 0, 0);
 }
 
 static inline void
@@ -521,16 +546,11 @@ dmo_uid (view_t *view, int x, int y, player_info_t *s)
 static inline void
 dmo_pl (view_t *view, int x, int y, player_info_t *s)
 {
-	char		num[12];		//FIXME: overflow
 	int         p;
 
 	// draw pl
 	p = s->pl;
-	snprintf (num, sizeof (num), "%3i", p);
-	if (p > 25)
-		draw_altstring (view, x, y, num);
-	else
-		draw_string (view, x, y, num);
+	draw_smallnum (view, x, y, p, 0, p > 25);
 }
 
 static inline int
@@ -555,7 +575,7 @@ calc_fph (int frags, int total)
 static inline void
 dmo_main (view_t *view, int x, int y, player_info_t *s, int is_client)
 {
-	char		num[12];		//FIXME: overflow
+	char		num[12];
 	int			fph, minutes, total, top, bottom, f;
 
 	// get time
@@ -663,7 +683,7 @@ draw_weapons_hud (view_t *view)
 static void
 draw_ammo_sbar (view_t *view)
 {
-	char        num[6];		//FIXME: overflow
+	char        num[12];		//FIXME: overflow
 	int         i;
 
 	// ammo counts
@@ -684,7 +704,7 @@ draw_ammo_sbar (view_t *view)
 static void
 draw_ammo_hud (view_t *view)
 {
-	char        num[6];		//FIXME: overflow
+	char        num[12];		//FIXME: overflow
 	int         i;
 
 	// ammo counts
@@ -758,7 +778,6 @@ draw_frags (view_t *view)
 	int         i, k, l, p = -1;
 	int         top, bottom;
 	int         x;
-	char        num[12];		//FIXME: overflow
 	player_info_t *s;
 
 	Sbar_SortFrags (false);
@@ -786,12 +805,7 @@ draw_frags (view_t *view)
 		draw_fill (view, x + 4, 1, 28, 4, top);
 		draw_fill (view, x + 4, 5, 28, 3, bottom);
 
-		// draw number
-		snprintf (num, sizeof (num), "%3i", s->frags);
-
-		draw_character (view, x + 6, 0, num[0]);
-		draw_character (view, x + 14, 0, num[1]);
-		draw_character (view, x + 22, 0, num[2]);
+		draw_smallnum (view, x + 6, 0, s->frags, 0, 0);
 
 		if (k == cl.playernum)
 			p = i;
@@ -843,7 +857,7 @@ draw_face (view_t *view)
 static void
 draw_spectator (view_t *view)
 {
-	char        st[512];		//FIXME: overflow
+	char        st[512];
 
 	if (autocam != CAM_TRACK) {
 		draw_string (view, 160 - 7 * 8, 4, "SPECTATOR MODE");
@@ -1060,10 +1074,9 @@ Sbar_TeamOverlay (view_t *view)
 void
 Sbar_LogFrags (void)
 {
-	char        num[512];		//FIXME: overflow
-	char        conv[512];		//FIXME: overflow
-	char        conv2[512];		//FIXME: overflow
-	char       *cp = NULL;
+	char       *name;
+	char       *team;
+	byte       *cp = NULL;
 	QFile      *file = NULL;
 	int         minutes, fph, total, d, f, i, k, l, p;
 	player_info_t *s = NULL;
@@ -1080,12 +1093,8 @@ Sbar_LogFrags (void)
 	if (t)
 		Qwrite (file, t, strlen (t));
 
-	Qwrite (file, cls.servername, strlen (cls.servername));
-	Qwrite (file, "\n", 1);
-	Qwrite (file, cl.worldmodel->name, strlen (cl.worldmodel->name));
-	Qwrite (file, " ", 1);
-	Qwrite (file, cl.levelname, strlen (cl.levelname));
-	Qwrite (file, "\n", 1);
+	Qprintf (file, "%s\n%s %s\n", cls.servername, cl.worldmodel->name,
+			 cl.levelname);
 
 	// scores   
 	Sbar_SortFrags (true);
@@ -1123,29 +1132,29 @@ Sbar_LogFrags (void)
 
 		fph = calc_fph (f, total);
 
-		memset (&conv, 0, 512);
-		for (cp = (unsigned char *) s->name, d = 0; *cp; cp++, d++)
-			conv[d] = sys_char_map[(unsigned int) *cp];
+		name = malloc (strlen (s->name) + 1);
+		for (cp = s->name, d = 0; *cp; cp++, d++)
+			name[d] = sys_char_map[*cp];
+		name[d] = 0;
 		
 		if (s->spectator) {
-			snprintf (num, sizeof (num), "%-3i%% %s (spectator)", s->pl,
-					  (char *) &conv);
+			Qprintf (file, "%-3i%% %s (spectator)", s->pl, name);
 		} else {
 			if (cl.teamplay) {
-				memset (&conv2, 0, 512);
-				for (cp = (unsigned char *) s->team->value, d = 0; *cp; cp++,
-						 d++)
-					conv2[d] = sys_char_map[(unsigned int) *cp];
+				team = malloc (strlen (s->team->value) + 1);
+				for (cp = (byte *) s->team->value, d = 0; *cp; cp++, d++)
+					team[d] = sys_char_map[*cp];
+				team[d] = 0;
 
-				snprintf (num, sizeof (num), "%-3i%% %-3i %-4i %-3i    "
-						  "%-4s %s", s->pl, fph, minutes, f, (char *) &conv2,
-						  (char *) &conv);
+				Qprintf (file, "%-3i%% %-3i %-4i %-3i    %-4s %s",
+						 s->pl, fph, minutes, f, team, name);
+				free (team);
 			} else {
-				snprintf (num, sizeof (num), "%-3i%% %-3i %-4i %-3i   %s",
-						  s->pl, fph, minutes, f, (char *) &conv);
+				Qprintf (file, "%-3i%% %-3i %-4i %-3i   %s",
+						  s->pl, fph, minutes, f, name);
 			}
 		}
-		Qwrite (file, num, strlen (num));
+		free (name);
 		Qwrite (file, "\n\n", 1);
 	}
 	
@@ -1553,13 +1562,7 @@ draw_miniteam (view_t *view)
 	if (!cl.teamplay)
 		return;
 	Sbar_SortTeams ();
-/*
-	// draw separator
-	x += 208;
-	if (hud_sbar_separator->int_val)
-		for (y = vid.height - sb_lines; y < (int) vid.height - 6; y += 2)
-			Draw_Character (x, y, 14);
-*/
+
 	x = 0;
 	y = 0;
 	for (i = 0; i < scoreboardteams && y <= view->ylen; i++) {

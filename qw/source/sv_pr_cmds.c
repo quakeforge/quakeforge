@@ -1409,7 +1409,6 @@ void
 PF_infokey (progs_t *pr)
 {
 	const char *key, *value;
-	static char ov[256];		//FIXME: overflow
 	edict_t    *e;
 	int         e1;
 
@@ -1430,15 +1429,12 @@ PF_infokey (progs_t *pr)
 	} else if (e1 > 0 && e1 <= MAX_CLIENTS
 			   && svs.clients[e1 - 1].userinfo) {
 		if (!strcmp (key, "ip"))
-			value =
-				strcpy (ov,
-						NET_BaseAdrToString (svs.clients[e1 - 1].netchan.
-											 remote_address));
+			value = NET_BaseAdrToString (svs.clients[e1 - 1].netchan.
+										 remote_address);
 		else if (!strcmp (key, "ping")) {
 			int         ping = SV_CalcPing (&svs.clients[e1 - 1]);
 
-			snprintf (ov, sizeof (ov), "%d", ping);
-			value = ov;
+			value = va ("%d", ping);
 		} else
 			value = Info_ValueForKey (svs.clients[e1 - 1].userinfo, key);
 	} else
@@ -1538,7 +1534,7 @@ PF_setinfokey (progs_t *pr)
 	int         e1 = NUM_FOR_EDICT (pr, edict);
 	const char *key = P_GSTRING (pr, 1);
 	const char *value = P_GSTRING (pr, 2);
-	char		oldval[MAX_INFO_STRING];		//FIXME: overflow
+	char       *oldval = 0;
 
 	if (e1 == 0) {
 		if (*value)
@@ -1547,7 +1543,9 @@ PF_setinfokey (progs_t *pr)
 		else
 			Info_RemoveKey (localinfo, key);
 	} else if (e1 <= MAX_CLIENTS) {
-		strcpy(oldval, Info_ValueForKey (svs.clients[e1 - 1].userinfo, key));
+		if (sv_setinfo_e->func)
+			oldval = strdup (Info_ValueForKey (svs.clients[e1 - 1].userinfo,
+											   key));
 		Info_SetValueForKey (svs.clients[e1 - 1].userinfo, key, value,
 							 !sv_highchars->int_val);
 		SV_ExtractFromUserinfo (&svs.clients[e1 - 1]);
@@ -1559,6 +1557,8 @@ PF_setinfokey (progs_t *pr)
 								key, oldval,
 								Info_ValueForKey (svs.clients[e1 - 1].userinfo,
 												  key));
+		if (oldval)
+			free (oldval);
 
 		if (Info_FilterForKey (key, client_info_filters)) {
 			MSG_WriteByte (&sv.reliable_datagram, svc_setinfo);

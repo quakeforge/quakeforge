@@ -529,10 +529,11 @@ no_config:
 	qfs_gd_plist = PL_GetPropertyList (qfs_default_dirconf);
 }
 
-void
-QFS_FileBase (const char *in, char *out)
+char *
+QFS_FileBase (const char *in)
 {
 	const char *slash, *dot, *s;
+	char       *out;
 
 	slash = in;
 	dot = NULL;
@@ -547,12 +548,11 @@ QFS_FileBase (const char *in, char *out)
 	if (dot == NULL)
 		dot = s;
 	if (dot - slash < 2)
-		strcpy (out, "?model?");
-	else {
-		while (slash < dot)
-			*out++ = *slash++;
-		*out++ = 0;
-	}
+		return strdup ("?model?");
+	out = malloc (dot - slash + 1);
+	strncpy (out, slash, dot - slash);
+	out [dot - slash] = 0;
+	return out;
 }
 
 
@@ -751,7 +751,7 @@ static int
 open_file (searchpath_t *search, const char *filename, QFile **gzfile,
 		   dstring_t *foundname, int zip)
 {
-	char        netpath[MAX_OSPATH];		//FIXME: overflow
+	char       *netpath;
 
 	file_from_pak = 0;
 
@@ -782,19 +782,21 @@ open_file (searchpath_t *search, const char *filename, QFile **gzfile,
 					   (int) sizeof (netpath), search->filename,
 					   (int) sizeof (netpath), filename);
 		// check a file in the directory tree
-		snprintf (netpath, sizeof (netpath), "%s/%s", search->filename,
-				  filename);
+		netpath = nva ("%s/%s", search->filename, filename);
 
 		if (foundname) {
 			dstring_clearstr (foundname);
 			dstring_appendstr (foundname, filename);
 		}
-		if (Sys_FileTime (netpath) == -1)
+		if (Sys_FileTime (netpath) == -1) {
+			free (netpath);
 			return -1;
+		}
 
 		Sys_DPrintf ("FindFile: %s\n", netpath);
 
 		*gzfile = QFS_OpenRead (netpath, -1, -1, zip);
+		free (netpath);
 		return qfs_filesize;
 	}
 
@@ -808,10 +810,10 @@ _QFS_FOpenFile (const char *filename, QFile **gzfile,
 	searchpath_t *search;
 	char       *path;
 #ifdef HAVE_VORBIS
-	char        oggfilename[MAX_OSPATH];		//FIXME: overflow
+	char       *oggfilename;
 #endif
 #ifdef HAVE_ZLIB
-	char        gzfilename[MAX_OSPATH];		//FIXME: overflow
+	char       *gzfilename;
 #endif
 
 	// make sure they're not trying to do weird stuff with our private files
@@ -823,14 +825,16 @@ _QFS_FOpenFile (const char *filename, QFile **gzfile,
 
 #ifdef HAVE_VORBIS
 	if (strequal (".wav", QFS_FileExtension (path))) {
+		oggfilename = alloca (strlen (path) + 1);
 		QFS_StripExtension (path, oggfilename);
 		strncat (oggfilename, ".ogg",
 				 sizeof (oggfilename) - strlen (oggfilename) - 1);
 	} else {
-		oggfilename[0] = 0;
+		oggfilename = 0;
 	}
 #endif
 #ifdef HAVE_ZLIB
+	gzfilename = alloca (strlen (path) + 3 + 1);
 	snprintf (gzfilename, sizeof (gzfilename), "%s.gz", path);
 #endif
 
@@ -838,7 +842,7 @@ _QFS_FOpenFile (const char *filename, QFile **gzfile,
 	for (search = qfs_searchpaths; search; search = search->next) {
 #ifdef HAVE_VORBIS
 		//NOTE gzipped oggs not supported
-		if (oggfilename[0]
+		if (oggfilename
 			&& open_file (search, oggfilename, gzfile, foundname, false) != -1)
 			goto ok;
 #endif
@@ -882,7 +886,7 @@ QFS_LoadFile (const char *path, int usehunk)
 {
 	QFile      *h;
 	byte       *buf = NULL;
-	char        base[32];		//FIXME: overflow
+	char       *base;
 	int         len;
 
 	// look for it in the filesystem or pack files
@@ -891,7 +895,7 @@ QFS_LoadFile (const char *path, int usehunk)
 		return NULL;
 
 	// extract the filename base name for hunk tag
-	QFS_FileBase (path, base);
+	base = QFS_FileBase (path);
 
 	if (usehunk == 1)
 		buf = Hunk_AllocName (len + 1, base);
@@ -915,6 +919,8 @@ QFS_LoadFile (const char *path, int usehunk)
 	buf[len] = 0;
 	Qread (h, buf, len);
 	Qclose (h);
+
+	free (base);
 
 	return buf;
 }
