@@ -59,7 +59,7 @@ static const char rcsid[] =
 int			ramp[8] = { 0x6f, 0x6d, 0x6b, 0x69, 0x67, 0x65, 0x63, 0x61 };
 
 extern int			part_tex_dot, part_tex_smoke, part_tex_spark;
-extern unsigned int	r_maxparticles, numparticles;
+extern short		r_maxparticles, numparticles;
 extern particle_t  *particles, **freeparticles;
 
 
@@ -86,6 +86,9 @@ particle_new (ptype_t type, int texnum, vec3_t org, float scale, vec3_t vel,
 	part->alpha = alpha;
 	part->tex = texnum;
 	part->scale = scale;
+	if (numparticles > r_maxparticles)
+		Sys_Error ("%s: numparticles > r_maxparticles: %d, %d\n", __func__,
+				   numparticles, r_maxparticles);
 
 	return part;
 }
@@ -355,6 +358,9 @@ R_RunSpikeEffect (vec3_t org, particle_effect_t type)
 		default:
 			break;
 	}
+	if (numparticles > r_maxparticles)
+		Sys_Error ("%s: numparticles > r_maxparticles: %d, %d\n", __func__,
+				   numparticles, r_maxparticles);
 }
 
 void
@@ -716,6 +722,9 @@ R_DrawParticles (void)
 
 	if (!r_particles->int_val)
 		return;
+	if (numparticles > r_maxparticles)
+		Sys_Error ("%s:%d: numparticles > r_maxparticles: %d, %d\n", __func__,
+				   __LINE__, numparticles, r_maxparticles);
 
 	// LordHavoc: particles should not affect zbuffer
 	qfglDepthMask (GL_FALSE);
@@ -835,6 +844,9 @@ R_DrawParticles (void)
 		}
 	}
 	k = 0;
+	if (numparticles > r_maxparticles)
+		Sys_Error ("%s:%d: numparticles > r_maxparticles: %d, %d\n", __func__,
+				   __LINE__, numparticles, r_maxparticles);
 	while (maxparticle >= activeparticles) {
 		*freeparticles[k++] = particles[maxparticle--];
 		while (maxparticle >= activeparticles && 
@@ -845,4 +857,7 @@ R_DrawParticles (void)
 
 	qfglColor3ubv (color_white);
 	qfglDepthMask (GL_TRUE);
+	if (numparticles > r_maxparticles)
+		Sys_Error ("%s:%d: numparticles > r_maxparticles: %d, %d\n", __func__,
+				   __LINE__, numparticles, r_maxparticles);
 }
