@@ -134,6 +134,15 @@ JOY_Move (void)
 				if (joy_axes[i].current)
 					viewdelta.position[1] += joy_axes[i].current * mult_joy;
 				break;
+// Futureproofing
+			case 6:
+				if (joy_axes[i].current)
+					viewdelta.angles[ROLL] += joy_axes[i].current * mult_joy;
+				break;
+			case -6:
+				if (joy_axes[i].current)
+					viewdelta.angles[ROLL] -= joy_axes[i].current * mult_joy;
+				break;
 			default:
 				break;
 		}
