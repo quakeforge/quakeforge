@@ -365,7 +365,6 @@ RecursiveLightPoint (mnode_t *node, vec3_t start, vec3_t end)
 		lightmap = surf->samples;
 		r = 0;
 		if (lightmap) {
-
 			lightmap += dt * ((surf->extents[0] >> 4) + 1) + ds;
 
 			for (maps = 0; maps < MAXLIGHTMAPS && surf->styles[maps] != 255;

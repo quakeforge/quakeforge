@@ -117,7 +117,6 @@ void R_MarkLeaves (void);
 void
 glrmain_init (void)
 {
-	// LordHavoc: place for gl_rmain setup code
 }
 
 inline void

@@ -57,7 +57,7 @@
 static particle_t *particles, **freeparticles;
 static short r_numparticles, numparticles;
 
-int         ramp[8] = { 0x6d, 0x6b, 0x06, 0x05, 0x04, 0x03, 0x02, 0x01 };
+int			ramp[8] = { 0x6f, 0x6d, 0x6b, 0x69, 0x67, 0x65, 0x63, 0x61 };
 
 extern int  part_tex_dot;
 extern int  part_tex_spark;
@@ -109,38 +109,35 @@ particle_new_random (ptype_t type, int texnum, vec3_t org, int org_fuzz,
 }
 
 /*
-	R_MaxParticlesCheck
+  R_MaxParticlesCheck
 
-	Misty-chan: Dynamically change the maximum amount of particles on the fly.
-	Thanks to a LOT of help from Taniwha, Deek, Mercury, Lordhavoc, and
-	lots of others.
+  Misty-chan: Dynamically change the maximum amount of particles on the fly.
+  Thanks to a LOT of help from Taniwha, Deek, Mercury, Lordhavoc, and lots of
+  others.
 */
 void
 R_MaxParticlesCheck (cvar_t *var)
 {
 /*
-	Catchall. If the user changed the setting to a number less than zero
-	*or* if we had a wacky cfg get past the init code check, this will
-	make sure we don't have problems. Also note that grabbing the
-	var->int_val is IMPORTANT:
+	Catchall. If the user changed the setting to a number less than zero *or*
+	if we had a wacky cfg get past the init code check, this will make sure we
+	don't have problems. Also note that grabbing the var->int_val is IMPORTANT:
 
-	Prevents a segfault since if we grabbed the int_val of
-	cl_max_particles we'd sig11 right here at startup.
+	Prevents a segfault since if we grabbed the int_val of cl_max_particles
+	we'd sig11 right here at startup.
 */
 	r_numparticles = max(var->int_val, 0);
 
 /*
-	Be very careful the next time we do something like this.
-	calloc/free are IMPORTANT and the compiler doesn't know when we
-	do bad things with them.
+	Be very careful the next time we do something like this. calloc/free are
+	IMPORTANT and the compiler doesn't know when we do bad things with them.
 */
 	free (particles);
 	free (freeparticles);
 
-	particles = (particle_t *)
-		calloc (r_numparticles, sizeof (particle_t));
+	particles = (particle_t *) calloc (r_numparticles, sizeof (particle_t));
 	freeparticles = (particle_t **)
-		calloc (r_numparticles, sizeof (particle_t*));			
+		calloc (r_numparticles, sizeof (particle_t *));
 
 	R_ClearParticles();
 }
@@ -249,12 +246,12 @@ R_BlobExplosion (vec3_t org)
 
 	for (i = 0; i < 512; i++) {
 		particle_new_random (pt_blob, part_tex_dot, org, 12, 2, 256,
-							 (r_realtime + 1 + (rand () & 8) * 0.05),
+							 (r_realtime + 1 + (rand () & 7) * 0.05),
 							 (66 + rand () % 6), 255);
 	}
 	for (i = 0; i < 512; i++) {
 		particle_new_random (pt_blob2, part_tex_dot, org, 12, 2, 256,
-							 (r_realtime + 1 + (rand () & 8) * 0.05),
+							 (r_realtime + 1 + (rand () & 7) * 0.05),
 							 (150 + rand () % 6), 255);
 	}
 }
@@ -262,13 +259,13 @@ R_BlobExplosion (vec3_t org)
 static void
 R_RunSparkEffect (vec3_t org, int count, int ofuzz)
 {
-	particle_new (pt_smokecloud, part_tex_smoke[rand () & 7], org, 
-				  ofuzz * 0.08, vec3_origin, r_realtime + 99, 
-				  12 + (rand () & 3), 96);
+	particle_new (pt_smokecloud, part_tex_smoke[rand () & 7], org,
+				  ofuzz * 0.08, vec3_origin, r_realtime + 9,
+				  12 + (rand () & 3), 64 + (rand () & 31));
 	while (count--)
 		particle_new_random (pt_fallfadespark, part_tex_spark, org,
 							 ofuzz * .75, 1, 96, r_realtime + 5,
-							 ramp[rand () % 6], rand () % 255);
+							 ramp[rand () & 7], 255);
 }
 
 inline static void
