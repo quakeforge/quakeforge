@@ -977,19 +977,19 @@ AC_DEFINE_UNQUOTED(FS_USERPATH, "$userpath")
 AC_ARG_WITH(plugin-path,
 [  --with-plugin-path=DIR  Use DIR for loading plugins, defaults to
                           \${libdir}/quakeforge],
-pluginpath=$withval, pluginpath="auto")
+plugindir=$withval, plugindir="auto")
 
 PLUGINDIR="$libdir/$PACKAGE"
-if test "x$pluginpath" = "xauto" -o "x$pluginpath" = "xyes" -o "x$pluginpath" = "x"; then
-	eval pluginpath="$PLUGINDIR"
-elif test "x$pluginpath" = xno; then
-	pluginpath="."
+if test "x$plugindir" = "xauto" -o "x$plugindir" = "xyes" -o "x$plugindir" = "x"; then
+	eval plugindir="$PLUGINDIR"
+elif test "x$plugindir" = xno; then
+	plugindir="."
 else
-	PLUGINDIR=$pluginpath
-	eval pluginpath="$PLUGINDIR"
+	PLUGINDIR=$plugindir
+	eval plugindir="$PLUGINDIR"
 fi
-AC_DEFINE_UNQUOTED(FS_PLUGINPATH, "$pluginpath")
-AC_SUBST(pluginpath)
+AC_DEFINE_UNQUOTED(FS_PLUGINPATH, "$plugindir")
+AC_SUBST(plugindir)
 AC_SUBST(PLUGINDIR)
 
 dnl CFLAGS for release and devel versions
@@ -1274,6 +1274,7 @@ CD_TARGETS=""
 SND_PLUGIN_TARGETS="libsnd_output_disk.la"
 SND_REND_TARGETS=""
 SND_TARGETS=""
+VID_MODEL_TARGETS=""
 VID_REND_TARGETS=""
 VID_TARGETS=""
 VID_TARGETS_NOINST=""
@@ -1369,12 +1370,15 @@ fi
 
 if test "x$BUILD_SW" = xyes; then
 	VID_REND_TARGETS="$VID_REND_TARGETS libQFrenderer_sw.la"
+	VID_MODEL_TARGETS="$VID_MODEL_TARGETS libQFmodels_sw.la"
 fi
 if test "x$BUILD_SW32" = xyes; then
 	VID_REND_TARGETS="$VID_REND_TARGETS libQFrenderer_sw32.la"
+	VID_MODEL_TARGETS="$VID_MODEL_TARGETS libQFmodels_sw32.la"
 fi
 if test "x$BUILD_GL" = xyes; then
 	VID_REND_TARGETS="$VID_REND_TARGETS libQFrenderer_gl.la"
+	VID_MODEL_TARGETS="$VID_MODEL_TARGETS libQFmodels_gl.la"
 fi
 
 AC_SUBST(CAN_BUILD_GL)
@@ -1433,6 +1437,7 @@ AC_SUBST(CD_TARGETS)
 AC_SUBST(SND_PLUGIN_TARGETS)
 AC_SUBST(SND_REND_TARGETS)
 AC_SUBST(SND_TARGETS)
+AC_SUBST(VID_MODEL_TARGETS)
 AC_SUBST(VID_REND_TARGETS)
 AC_SUBST(VID_TARGETS)
 AC_SUBST(VID_TARGETS_NOINST)
@@ -1526,7 +1531,7 @@ AC_MSG_RESULT([
 
 	Shared game data directory: $sharepath
 	Per-user game data directory: $userpath
-	Plugin load directory: $pluginpath
+	Plugin load directory: $plugindir
 	Global configuration file: $globalconf
 	User configuration file: $userconf
 ])

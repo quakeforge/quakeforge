@@ -28,4 +28,4 @@ else
 	exit 1
 fi
 
-aclocal && autoheader && libtoolize --automake && automake --add-missing && autoconf
+libtoolize --automake && automake --add-missing && aclocal && autoheader && autoconf
