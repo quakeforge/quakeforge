@@ -1122,28 +1122,35 @@ Force_CenterView_f (void)
 void
 CL_SetState (cactive_t state)
 {
+	cactive_t   old_state = cls.state;
 	cls.state = state;
-	if (cls.state == ca_active) {
-		r_active = true;
-		game_target = IMT_0;
-		key_dest = key_game;
-		IN_ClearStates ();
-		if (con_module)
-			con_module->data->console->force_commandline = 0;
+	if (old_state != state) {
+		if (old_state == ca_active) {
+			// leaving active state
+			r_active = false;
+			game_target = IMT_CONSOLE;
+			key_dest = key_console;
+			IN_ClearStates ();
+			if (con_module)
+				con_module->data->console->force_commandline = 1;
+			if (con_module)
+				con_module->data->console->force_commandline = 0;
 
-		// Auto demo recorder starts here
-		if(cl_autorecord->int_val && !cls.demoplayback && !cls.demorecording)
-			CL_Record (0);					// FIXME: might want a cvar here
-	} else {
-		r_active = false;
-		game_target = IMT_CONSOLE;
-		key_dest = key_console;
-		if (con_module)
-			con_module->data->console->force_commandline = 1;
+			// Auto demo recorder starts here
+			if(cl_autorecord->int_val && !cls.demoplayback
+				&& !cls.demorecording)
+				CL_Record (0);
+		} else if (state == ca_active) {
+			// entering active state
+			r_active = true;
+			game_target = IMT_0;
+			key_dest = key_game;
+			IN_ClearStates ();
 
-		// Auto demo recorder stops here
-		if(cl_autorecord->int_val && cls.demorecording)
-			CL_Stop_f ();
+			// Auto demo recorder stops here
+			if(cl_autorecord->int_val && cls.demorecording)
+				CL_Stop_f ();
+		}
 	}
 }
 
