@@ -898,6 +898,72 @@ Cache_Profile (void)
 				" %d per allocation\n", total, count, total / count);
 }
 
+/*
+	Qalloc and friends
+*/
+
+size_t (*Qalloc_callback) (size_t size);
+
+void *
+Qalloc (void *ptr, size_t size, unsigned modes)
+{
+	void *mem;
+
+	if (modes & ~(_QA_MODEMASK | QA_ZEROED))
+		Sys_Error ("Qalloc: bad modes field: %u\n", modes);
+
+	if (size) {
+		do {
+			if (ptr) {
+				if (modes & QA_ZEROED)
+					Sys_Error ("Qalloc: Zeroing reallocated memory not yet supported\n");
+				else
+					mem = realloc (ptr, size);
+			} else {
+				if (modes & QA_ZEROED)
+					mem = calloc (size, 1);
+				else
+					mem = malloc (size);
+			}
+		} while ((modes & _QA_MODEMASK) != QA_EARLYFAIL && !mem && Qalloc_callback (size));
+
+		if (!mem && (modes & _QA_MODEMASK) == QA_NOFAIL)
+			Sys_Error ("Qalloc: could not allocate %d bytes!\n", size);
+
+		return mem;
+	} else {
+		if (!ptr)
+			Sys_Error ("Qalloc: can't free a NULL pointers!\n");
+		free (ptr);
+		return 0;
+	}
+}
+
+void *
+Qmalloc (size_t size)
+{
+	return Qalloc (0, size, QA_NOFAIL);
+}
+
+void *
+Qcalloc (size_t nmemb, size_t size)
+{
+	return Qalloc (0, nmemb * size, QA_NOFAIL | QA_ZEROED);
+}
+
+void *
+Qrealloc (void *ptr, size_t size)
+{
+	return Qalloc (ptr, size, QA_NOFAIL);
+}
+
+void 
+Qfree (void *ptr)
+{
+	Qalloc (ptr, 0, QA_NOFAIL);
+}
+
+
 //============================================================================
 
 void

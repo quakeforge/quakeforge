@@ -137,4 +137,22 @@ void *Cache_Alloc (cache_user_t *c, int size, const char *name);
 
 void Cache_Report (void);
 
+/* Modes, pick one */
+#define QA_NOFAIL       1
+#define QA_LATEFAIL     2
+#define QA_EARLYFAIL    3
+
+#define _QA_MODEMASK    3
+
+/* Flags, OR them with the mode */
+#define QA_ZEROED       4
+
+extern size_t (*Qalloc_callback) (size_t size);
+
+void *Qalloc (void *ptr, size_t size, unsigned modes);
+void *Qmalloc (size_t size);
+void *Qcalloc (size_t nmemb, size_t size);
+void *Qrealloc (void *ptr, size_t size);
+void Qfree (void *ptr);
+
 #endif // __zone_h
