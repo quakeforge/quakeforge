@@ -39,7 +39,7 @@
 
 #include "host.h"
 #include "netchan.h"
-#include "protocol.h"
+#include "qw/protocol.h"
 
 #define	QW_SERVER
 

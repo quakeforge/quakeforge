@@ -71,7 +71,7 @@ static __attribute__ ((unused)) const char rcsid[] =
 #include <getopt.h>
 #include <stdarg.h>
 
-#include "protocol.h"
+#include "qw/protocol.h"
 
 static void __attribute__ ((format (printf, 1, 2)))
 ma_log (const char *fmt, ...);

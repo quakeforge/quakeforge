@@ -37,6 +37,10 @@
 typedef struct server_s {
 	const char *name;
 	const char *address;
+	int         qport;
+	struct info_s *info;
+	struct connection_s *con;
+	netadr_t    adr;
 	netchan_t   netchan;
 } server_t;
 

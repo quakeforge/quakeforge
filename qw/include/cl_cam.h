@@ -34,7 +34,7 @@
 // headers they might need
 
 
-#include "protocol.h"
+#include "qw/protocol.h"
 
 #define CAM_NONE	0
 #define CAM_TRACK	1

@@ -58,7 +58,7 @@ Client_Init (void)
 }
 
 static void
-client_handler (void *object)
+client_handler (connection_t *con, void *object)
 {
 	client_t   *cl = (client_t *) object;
 	byte        d[1];

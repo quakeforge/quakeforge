@@ -37,12 +37,13 @@
 typedef struct connection_s {
 	netadr_t    address;
 	void       *object;
-	void      (*handler) (void *obj);
+	void      (*handler) (struct connection_s *con, void *obj);
 } connection_t;
 
 void Connection_Init (void);
-void Connection_Add (netadr_t *address, void *object, void (*handler)(void*));
-void Connection_Del (netadr_t *address);
+connection_t *Connection_Add (netadr_t *address, void *object,
+							  void (*handler)(connection_t *, void *));
+void Connection_Del (connection_t *con);
 connection_t *Connection_Find (netadr_t *address);
 
 #endif//__connection_h

@@ -58,6 +58,8 @@ static __attribute__ ((unused)) const char rcsid[] =
 #include "QF/va.h"
 #include "QF/zone.h"
 
+#include "qw/protocol.h"
+
 #include "client.h"
 #include "compat.h"
 #include "connection.h"
@@ -65,12 +67,6 @@ static __attribute__ ((unused)) const char rcsid[] =
 #include "server.h"
 
 #define PORT_QTV 27501
-#define A2A_PING			'k'
-#define A2A_ACK				'l'
-#define A2C_PRINT			'n'
-#define S2C_CHALLENGE		'c'
-#define S2C_CONNECTION		'j'
-#define PROTOCOL_VERSION	28
 
 typedef enum {
 	RD_NONE,
@@ -357,6 +353,17 @@ qtv_client_connect (void)
 }
 
 static void
+qtv_server_packet (void)
+{
+	connection_t *con;
+
+	if (!(con = Connection_Find (&net_from)))
+		return;
+	if (con->handler)
+		con->handler (con, con->object);
+}
+
+static void
 qtv_connectionless_packet (void)
 {
 	const char *cmd, *str;
@@ -369,8 +376,7 @@ qtv_connectionless_packet (void)
 	cmd_args = qtv_args;
 
 	cmd = qtv_args->argv[0]->str;
-	if (!strcmp (cmd, "ping")
-		|| (cmd[0] == A2A_PING && (cmd[1] == 0 || cmd[1] == '\n'))) {
+	if (!strcmp (cmd, "ping")) {
 		qtv_ping ();
 	} else if (!strcmp (cmd, "status")) {
 		qtv_status ();
@@ -378,7 +384,23 @@ qtv_connectionless_packet (void)
 		qtv_getchallenge ();
 	} else if (!strcmp (cmd, "connect")) {
 		qtv_client_connect ();
+	} else if (cmd[0]) {
+		switch (cmd[0]) {
+			default:
+				goto bad_packet;
+			case A2C_PRINT:
+				Con_Printf ("%s", MSG_ReadString (net_message));
+				break;
+			case A2A_PING:
+				qtv_ping ();
+				break;
+			case S2C_CHALLENGE:
+			case S2C_CONNECTION:
+				qtv_server_packet ();
+				break;
+		}
 	} else {
+bad_packet:
 		Con_Printf ("bad connectionless packet from %s:\n%s\n",
 					NET_AdrToString (net_from), str);
 	}
@@ -390,13 +412,11 @@ qtv_read_packets (void)
 	connection_t *con;
 
 	while (NET_GetPacket ()) {
-		if (*(int *) net_message->message->data == -1) {
+		if ((con = Connection_Find (&net_from))) {
+			con->handler (con, con->object);
+		} else if (*(int *) net_message->message->data == -1) {
 			qtv_connectionless_packet ();
-			continue;
 		}
-
-		if ((con = Connection_Find (&net_from)))
-			con->handler (con->object);
 	}
 }
 

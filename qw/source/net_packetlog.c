@@ -57,7 +57,7 @@ static __attribute__ ((unused)) const char rcsid[] =
 
 #include "compat.h"
 #include "netchan.h"
-#include "protocol.h"
+#include "qw/protocol.h"
 #include "server.h"
 
 cvar_t     *net_packetlog;
@@ -818,7 +818,7 @@ Parse_Client_Packet (int has_sequence)
 			Net_LogPrintf ("\nSeq: %ld Ack: %ld ", seq1 & 0x7FFFFFFF,
 						   seq2 & 0x7FFFFFFF);
 
-			Net_LogPrintf ("QP: %u\n", MSG_ReadShort (&packet));
+			Net_LogPrintf ("QP: %u\n", MSG_ReadShort (&packet) & 0xFFFF);
 		}
 
 		while (1) {

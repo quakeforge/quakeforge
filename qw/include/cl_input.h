@@ -31,7 +31,7 @@
 
 #include "QF/input.h"
 
-#include "protocol.h"
+#include "qw/protocol.h"
 
 void CL_Input_Init (void);
 void CL_Input_Init_Cvars (void);

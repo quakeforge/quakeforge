@@ -30,7 +30,7 @@
 #define _CL_DEMO_H
 
 #include "QF/qtypes.h"
-#include "protocol.h"
+#include "qw/protocol.h"
 
 void CL_StopPlayback (void);
 qboolean CL_GetMessage (void);

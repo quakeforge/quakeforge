@@ -35,7 +35,7 @@
 #include "QF/zone.h"
 
 #include "netchan.h"
-#include "protocol.h"
+#include "qw/protocol.h"
 #include "r_local.h"
 #include "QF/render.h"
 

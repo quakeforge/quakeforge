@@ -57,8 +57,11 @@ static unsigned long
 connection_get_hash (void *_c, void *unused)
 {
 	connection_t *c = (connection_t *) _c;
+	unsigned long hash;
 
-	return Hash_Buffer (c->address.ip, sizeof (c->address.ip));
+	hash = Hash_Buffer (c->address.ip, sizeof (c->address.ip));
+	hash ^= c->address.port;
+	return hash;
 }
 
 static int
@@ -67,7 +70,7 @@ connection_compare (void *_c1, void *_c2, void *unused)
 	connection_t *c1 = (connection_t *) _c1;
 	connection_t *c2 = (connection_t *) _c2;
 
-	return NET_CompareBaseAdr (c1->address, c2->address);
+	return NET_CompareAdr (c1->address, c2->address);
 }
 
 void
@@ -77,8 +80,9 @@ Connection_Init (void)
 	Hash_SetHashCompare (connections, connection_get_hash, connection_compare);
 }
 
-void
-Connection_Add (netadr_t *address, void *object, void (*handler)(void*))
+connection_t *
+Connection_Add (netadr_t *address, void *object,
+				void (*handler)(connection_t *, void *))
 {
 	connection_t *con;
 
@@ -89,15 +93,13 @@ Connection_Add (netadr_t *address, void *object, void (*handler)(void*))
 	if (Hash_FindElement (connections, con))
 		Sys_Error ("duplicate connection");
 	Hash_AddElement (connections, con);
+	return con;
 }
 
 void
-Connection_Del (netadr_t *address)
+Connection_Del (connection_t *con)
 {
-	connection_t con;
-
-	con.address = *address;
-	Hash_DelElement (connections, &con);
+	Hash_DelElement (connections, con);
 }
 
 connection_t *

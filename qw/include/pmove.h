@@ -29,7 +29,7 @@
 #ifndef _PMOVE_H
 #define _PMOVE_H
 
-#include "protocol.h"
+#include "qw/protocol.h"
 #include "QF/mathlib.h"
 #include "QF/model.h"
 
