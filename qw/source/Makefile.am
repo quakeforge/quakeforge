@@ -41,17 +41,10 @@ EXTRA_PROGRAMS= qw-client-3dfx qw-client-fbdev \
 
 noinst_LIBRARIES= libqfnet.a
 
-if PACKETLOG
-packetlogger = net_packetlog.c
-endif
-
-if ASM_ARCH
-math_ASM = sys_x86.S
-endif
 common_SOURCES= buildnum.c com.c \
 	game.c model.c model_brush.c msg_ucmd.c \
 	pmove.c pmovetst.c \
-	$(math_ASM) $(packetlogger)
+	sys_x86.S net_packetlog.c
 
 # ... Network type
 if NETTYPE_IPV6
@@ -70,14 +63,10 @@ else
 syssv_SRC=	sv_sys_unix.c
 endif
 
-if ASM_ARCH
-world_ASM=	worlda.S
-endif
-
 server_SOURCES=	sv_ccmds.c sv_cvar.c \
 		sv_ents.c sv_init.c sv_main.c sv_misc.c sv_model.c \
 		sv_move.c sv_nchan.c sv_phys.c sv_pr_cmds.c sv_progs.c sv_send.c \
-		sv_user.c world.c $(world_ASM) $(syssv_SRC)
+		sv_user.c world.c worlda.S $(syssv_SRC)
 
 qw_server_SOURCES=	$(common_SOURCES) $(server_SOURCES)
 qw_server_LDADD= 	$(top_builddir)/libs/util/libQFutil.la \
@@ -104,31 +93,25 @@ CLIENT_LIB_DEPS=	libqfnet.a
 CLIENT_POST_LIBS=$(top_builddir)/libs/video/targets/libQFjs.la
 # libQFjs is seperate because it needs to be linked after when building statically
 
-if ASM_ARCH
-client_ASM=	cl_math.S
-endif
-
 client_SOURCES= cl_cam.c cl_cmd.c cl_cvar.c cl_demo.c cl_ents.c cl_input.c \
 	cl_main.c cl_misc.c cl_parse.c cl_pred.c cl_slist.c cl_tent.c \
 	console.c keys.c locs.c model_alias.c model_sprite.c nonintel.c \
-	pcx.c r_efrag.c r_view.c sbar.c skin.c teamplay.c tga.c wad.c $(client_ASM) $(syscl_SRC)
+	pcx.c r_efrag.c r_view.c sbar.c skin.c teamplay.c tga.c wad.c cl_math.S $(syscl_SRC)
 
 # Software-rendering clients
 #
 # ... Common stuff
-if ASM_ARCH
-soft_ASM=	d_draw.S d_draw16.S d_parta.S d_polysa.S d_scana.S d_spr8.S \
-		d_varsa.S sw_raclipa.S sw_raliasa.S sw_rdrawa.S sw_redgea.S sw_rvarsa.S \
-		surf16.S surf8.S
-endif
 
 soft_SOURCES=	d_edge.c d_fill.c d_init.c d_modech.c \
 		d_part.c d_polyse.c d_scan.c d_sky.c d_sprite.c d_surf.c \
 		d_vars.c d_zpoint.c draw.c sw_raclip.c sw_ralias.c sw_rbsp.c \
 		sw_rdraw.c sw_redge.c sw_rlight.c sw_rmain.c sw_rmisc.c \
-		sw_rpart.c sw_rsky.c sw_rsprite.c sw_rsurf.c sw_rvars.c sw_skin.c sw_view.c \
-		screen.c $(soft_ASM) sw_model_alias.c sw_model_brush.c \
-		sw_model_sprite.c
+		sw_rpart.c sw_rsky.c sw_rsprite.c sw_rsurf.c sw_rvars.c sw_skin.c \
+		sw_view.c screen.c sw_model_alias.c sw_model_brush.c \
+		sw_model_sprite.c \
+		d_draw.S d_draw16.S d_parta.S d_polysa.S d_scana.S d_spr8.S \
+		d_varsa.S sw_raclipa.S sw_raliasa.S sw_rdrawa.S sw_redgea.S \
+		sw_rvarsa.S surf16.S surf8.S
 
 # ... Linux FBDev
 qw_client_fbdev_SOURCES= $(common_SOURCES) $(client_SOURCES) $(soft_SOURCES)

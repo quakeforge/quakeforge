@@ -730,7 +730,6 @@ case "${host}" in
 		;;
 	*) AC_MSG_RESULT(no)
 esac
-AM_CONDITIONAL(ASM_ARCH, test "$ASM_ARCH")
 
 dnl ==================================================================
 dnl Checks for sound
@@ -1185,8 +1184,6 @@ if test "x$packetlog" = xyes; then
 else
 	AC_MSG_RESULT(no)
 fi
-
-AM_CONDITIONAL(PACKETLOG, test "x$packetlog" = "xyes")
 
 dnl CFLAGS for release and devel versions
 AC_ARG_ENABLE(profile,

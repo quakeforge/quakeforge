@@ -29,6 +29,9 @@
 */
 
 // FIXME: we did support Quake1 protocol too...
+
+#ifdef PACKET_LOGGING
+
 #define QUAKEWORLD
 
 #ifdef HAVE_CONFIG_H
@@ -977,3 +980,4 @@ Net_Log_Init (void)
 	return 0;
 }
 
+#endif // PACKET_LOGGING

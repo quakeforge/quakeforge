@@ -40,13 +40,11 @@ EXTRA_PROGRAMS= nq-3dfx nq-fbdev nq-glx nq-mgl nq-sdl \
 
 noinst_LIBRARIES= libqfnet.a
 
-#if ASM_ARCH
 math_ASM= 	cl_math.S
 soft_ASM=	d_draw.S d_draw16.S d_parta.S d_polysa.S d_scana.S d_spr8.S \
 		d_varsa.S sw_raclipa.S sw_raliasa.S sw_rdrawa.S sw_redgea.S sw_rvarsa.S \
 		surf16.S surf8.S
 common_ASM=	sys_ia32.S worlda.S $(math_ASM)
-#endif
 
 common_SOURCES= game.c wad.c world.c \
 		model.c model_alias.c model_brush.c model_sprite.c \
