@@ -186,7 +186,7 @@ float       turbsin[] = {
 void
 EmitWaterPolys (msurface_t *fa)
 {
-	float       os, ot, s, t;
+	float		os, ot, s, t;
 	float      *v;
 	int         i;
 	glpoly_t   *p;
@@ -197,22 +197,19 @@ EmitWaterPolys (msurface_t *fa)
 		for (i = 0, v = p->verts[0]; i < p->numverts; i++, v += VERTEXSIZE) {
 			os = v[3];
 			ot = v[4];
+			s = (os + turbsin[(int) ((ot * 0.125 + r_realtime) *
+										 TURBSCALE) & 255]) * (1.0 / 64.0);
 
-			s = (os + turbsin[(int) ((ot * 0.125 + r_realtime) * TURBSCALE) &
-							 255]) * (1.0 / 64.0);
-
-			t = (ot + turbsin[(int) ((os * 0.125 + r_realtime) * TURBSCALE) &
-							 255]) * (1.0 / 64.0);
-
+			t = (ot + turbsin[(int) ((os * 0.125 + r_realtime) *
+										 TURBSCALE) & 255]) * (1.0 / 64.0);
 			qfglTexCoord2f (s, t);
 
 			VectorCopy (v, nv);
-			nv[2] += r_waterripple->value
-				* turbsin[(int) ((v[3] * 0.125 + r_realtime) * TURBSCALE) &
-						  255]
-				* turbsin[(int) ((v[4] * 0.125 + r_realtime) * TURBSCALE) &
-						  255] * (1.0 / 64.0);
-
+			nv[2] += r_waterripple->value *
+				turbsin[(int) ((v[3] * 0.125 + r_realtime) * TURBSCALE) &
+						255] *
+				turbsin[(int) ((v[4] * 0.125 + r_realtime) * TURBSCALE) &
+						255] * (1.0 / 64.0);
 			qfglVertex3fv (nv);
 		}
 		qfglEnd ();
