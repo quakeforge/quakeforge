@@ -531,14 +531,21 @@ void
 X11_ForceViewPort (void)
 {
 #ifdef HAVE_VIDMODE
-	int         x, y;
-
 	if (vidmode_avail && vid_context_created) {
-		do {
-			XF86VidModeSetViewPort (x_disp, x_screen, 0, 0);
-			usleep (50);
-			XF86VidModeGetViewPort (x_disp, x_screen, &x, &y);
-		} while (x || y);
+		Window      theroot, scrap;
+		int         x, y, ax, ay;
+		unsigned int width, height, bdwidth, depth;
+
+		if ((XGetGeometry (x_disp, x_win, &theroot, &x, &y, &width, &height,
+						   &bdwidth, &depth) == False)) {
+			Con_DPrintf ("XGetWindowAttributes failed in vid_center.\n");
+		} else {
+			XTranslateCoordinates (x_disp,x_win,theroot, -bdwidth, -bdwidth,
+								   &ax, &ay, &scrap);
+			Con_DPrintf ("Setting viewport to %dx%d (%d,%d)\n", ax, ay,
+						 width, height);
+			XF86VidModeSetViewPort (x_disp, x_screen, ax, ay);
+		}
 	} else {
 		/* "icky kludge code" */
 		XWarpPointer(x_disp,x_win,x_win,0,0,0,0, 0,0);
