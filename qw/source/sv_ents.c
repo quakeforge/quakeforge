@@ -543,7 +543,7 @@ void
 SV_WriteEntitiesToClient (client_t *client, sizebuf_t *msg)
 {
 	byte	   *pvs;
-	int			e, i, num_edicts;
+	int			e, i, num_edicts, mpe_moaned = 0;
 	vec3_t		org;
 	client_frame_t *frame;
 	edict_t	   *clent, *ent;
@@ -592,8 +592,14 @@ SV_WriteEntitiesToClient (client_t *client, sizebuf_t *msg)
 			continue;					// added to the special update list
 
 		// add to the packetentities
-		if (pack->num_entities == MAX_PACKET_ENTITIES)
+		if (pack->num_entities == MAX_PACKET_ENTITIES) {
+			if (!mpe_moaned) {
+				Con_Printf ("hit MAX_PACKET_ENTITIES for client %d\n",
+							client->userid);
+				mpe_moaned = 1;
+			}
 			continue;					// all full
+		}
 
 		state = &pack->entities[pack->num_entities];
 		pack->num_entities++;
