@@ -278,12 +278,14 @@ GIB_Domain_Clear_f (void)
 		Hash_FlushTable (GIB_Domain_Get (GIB_Argv (2)));
 }
 
+static gib_tree_t fakeip = {0,0,0,0,0,0,0,0};
+
 static void
 GIB_Return_f (void)
 {
 	cbuf_t     *sp = cbuf_active->up;
 
-	GIB_DATA (cbuf_active)->done = true;
+	GIB_DATA (cbuf_active)->ip = &fakeip;
 
 	if (GIB_Argc () > 1 && sp && sp->interpreter == &gib_interp
 		&& GIB_DATA (sp)->waitret) {

@@ -48,7 +48,7 @@ typedef struct gib_buffer_data_s {
 	struct gib_script_s *script;
 	struct gib_tree_s *program, *ip;
 	struct dstring_s *arg_composite;
-	qboolean done, waitret;
+	qboolean waitret;
 	struct gib_sstack_s {
 		struct gib_dsarray_s {
 			struct dstring_s **dstrs;
