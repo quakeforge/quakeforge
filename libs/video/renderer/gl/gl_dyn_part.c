@@ -169,11 +169,12 @@ R_ParticleExplosion (vec3_t org)
 /*
 	R_NewExplosion (org);
 */
-	particle_new_random (pt_smokecloud, part_tex_smoke, org, 4,
-					30, 8, r_realtime + 5, 
-					(rand () & 7) + 8,
-					128 + (rand () & 63));
+	particle_new_random (pt_smokecloud, part_tex_smoke, org, 4, 30, 8,
+						 r_realtime + 5.0,
+						 (rand () & 7) + 8,
+						 128 + (rand () & 63));
 }
+
 void
 R_ParticleExplosion2 (vec3_t org, int colorStart, int colorLength)
 {
@@ -187,8 +188,8 @@ R_ParticleExplosion2 (vec3_t org, int colorStart, int colorLength)
 
 	for (i = 0; i < j; i++) {
 		particle_new_random (pt_blob, part_tex_dot, org, 16, 2, 256,
-					(r_realtime + 0.3),
-					(colorStart + (colorMod % colorLength)),
+					r_realtime + 0.3,
+					colorStart + (colorMod % colorLength),
 					255);
 		colorMod++;
 	}
@@ -207,13 +208,13 @@ R_BlobExplosion (vec3_t org)
 
 	for (i = 0; i < j / 2; i++) {
 		particle_new_random (pt_blob, part_tex_dot, org, 12, 2, 256,
-							 (r_realtime + 1 + (rand () & 7) * 0.05),
-							 (66 + rand () % 6), 255);
+							 r_realtime + 1.0 + (rand () & 7) * 0.05,
+							 66 + rand () % 6, 255);
 	}
 	for (i = 0; i < j / 2; i++) {
 		particle_new_random (pt_blob2, part_tex_dot, org, 12, 2, 256,
-							 (r_realtime + 1 + (rand () & 7) * 0.05),
-							 (150 + rand () % 6), 255);
+							 r_realtime + 1.0 + (rand () & 7) * 0.05,
+							 150 + rand () % 6, 255);
 	}
 }
 
@@ -686,7 +687,6 @@ R_DrawParticles (void)
 					bloodcloud_alpha, bloodcloud_scale, fallfadespark_alpha,
 					fire_alpha, fire_scale, smoke_alpha, smoke_scale,
 					smokecloud_alpha, smokecloud_org, smokecloud_scale;
-
 	int				activeparticles, maxparticle, j, k;
 	particle_t	   *part;
 	vec3_t			up_scale, right_scale, up_right_scale, down_right_scale;
@@ -765,7 +765,8 @@ R_DrawParticles (void)
 				part->vel[2] -= grav;
 				break;
 			case pt_blob2:
-				VectorMA (part->vel, dvel, part->vel, part->vel);
+				part->vel[0] -= part->vel[0] * dvel;
+				part->vel[1] -= part->vel[1] * dvel;
 				part->vel[2] -= grav;
 				break;
 			case pt_grav:
@@ -775,7 +776,7 @@ R_DrawParticles (void)
 				if ((part->alpha -= smoke_alpha) < 1)
 					part->die = -1;
 				part->scale += smoke_scale;
-//				part->org[2] += smokecloud_org - grav;
+//				part->org[2] += smokecloud_org;
 				break;
 			case pt_smokecloud:
 				if ((part->alpha -= smokecloud_alpha) < 1)
