@@ -45,7 +45,6 @@ const char  rcsid[] =
 #include <errno.h>
 
 #include "QF/cvar.h"
-#include "QF/quakeio.h"
 #include "QF/quakefs.h"
 #include "QF/zone.h"
 #include "QF/va.h"
@@ -888,7 +887,7 @@ GIB_File_Move_f (void)
 	}
 	path1 = GIB_Argv (1);
 	path2 = GIB_Argv (2);
-	if (Qrename (path1, path2))
+	if (QFS_Rename (path1, path2))
 		GIB_Error ("file", "%s: could not move %s to %s: %s", GIB_Argv (0),
 				   path1, path2, strerror (errno));
 }
@@ -908,7 +907,7 @@ GIB_File_Delete_f (void)
 		return;
 	}
 	path = GIB_Argv (1);
-	if (Qremove (path))
+	if (QFS_Remove (path))
 		GIB_Error ("file", "%s: could not delete %s: %s", GIB_Argv (0), path,
 				   strerror (errno));
 }
