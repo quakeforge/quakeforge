@@ -162,11 +162,11 @@ GIB_Function_Prepare_Args (cbuf_t * cbuf, dstring_t ** args, unsigned int argc)
 	memset (var->array + 1, 0, (argc - 1) * sizeof (dstring_t *));
 	var->size = argc;
 	for (i = 0; i < argc; i++) {
-		if (var->array[i])
-			dstring_clearstr (var->array[i]);
+		if (var->array[i].value)
+			dstring_clearstr (var->array[i].value);
 		else
-			var->array[i] = dstring_newstr ();
-		dstring_appendstr (var->array[i], args[i]->str);
+			var->array[i].value = dstring_newstr ();
+		dstring_appendstr (var->array[i].value, args[i]->str);
 	}
 }
 

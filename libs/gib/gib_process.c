@@ -51,72 +51,6 @@ const char  rcsid[] = "$Id$";
 
 #include "exp.h"
 
-static int
-GIB_Process_Variable (dstring_t * token, unsigned int *i)
-{
-	hashtab_t  *one = GIB_DATA (cbuf_active)->locals, *two =
-		GIB_DATA (cbuf_active)->globals;
-	unsigned int n = *i, j, k, start = *i, index = 0, len, len2;
-	gib_var_t  *var = 0;
-	cvar_t     *cvar;
-	char        c;
-	const char *str;
-
-	(*i)++;
-	if (token->str[*i] == '{') {
-		if ((c = GIB_Parse_Match_Brace (token->str, i))) {
-			GIB_Error ("Parse", "Could not find match for %c.", c);
-			return -1;
-		}
-		n += 2;
-		len = 1;
-	} else {
-		for (; isalnum ((byte) token->str[*i]) || token->str[*i] == '_';
-			 (*i)++);
-		if (token->str[*i] == '[') {
-			if ((c = GIB_Parse_Match_Index (token->str, i))) {
-				GIB_Error ("Parse", "Could not find match for %c.", c);
-				return -1;
-			} else
-				(*i)++;
-		}
-		n++;
-		len = 0;
-	}
-	c = token->str[*i];
-	token->str[*i] = 0;
-
-	for (k = n; token->str[n]; n++)
-		if (token->str[n] == '$' || token->str[n] == '#')
-			if (GIB_Process_Variable (token, &n))
-				return -1;
-	index = 0;
-	if (n && token->str[n - 1] == ']')
-		for (j = n - 1; j; j--)
-			if (token->str[j] == '[') {
-				index = atoi (token->str + j + 1);
-				token->str[j] = 0;
-			}
-	if ((var = GIB_Var_Get (one, two, token->str + k)) && index < var->size
-		&& var->array[index]) {
-		if (token->str[start] == '#')
-			str = va ("%u", var->size - index);
-		else
-			str = var->array[index]->str;
-	} else if (token->str[start] == '#')
-		str = "0";
-	else if ((cvar = Cvar_FindVar (token->str + k)))
-		str = cvar->string;
-	else
-		str = "";
-	token->str[n] = c;
-	len += n - start;
-	len2 = strlen (str);
-	dstring_replace (token, start, len, str, len2);
-	*i = start + len2 - 1;
-	return 0;
-}
-
 int
 GIB_Process_Math (struct dstring_s *token, unsigned int i)
 {
@@ -169,22 +103,28 @@ GIB_Process_Embedded (gib_tree_t * node, cbuf_args_t * args)
 			GIB_Buffer_Pop_Sstack (cbuf_active);
 		} else if (cur->flags & TREE_P_EMBED) {
 			n = args->argv[args->argc - 1]->size - 1;
-			if (cur->delim == '$')
-				dstring_appendstr (args->argv[args->argc - 1], "${");
-			else
-				dstring_appendstr (args->argv[args->argc - 1], "#{");
 			dstring_appendstr (args->argv[args->argc - 1], cur->str);
-			dstring_appendstr (args->argv[args->argc - 1], "}");
-			if (GIB_Process_Variable (args->argv[args->argc - 1], &n))
-				return -1;
-		} else
-			if ((var =
-				 GIB_Var_Get_Complex (&GIB_DATA (cbuf_active)->locals,
+			var = GIB_Var_Get_Very_Complex (&GIB_DATA (cbuf_active)->locals,
+									&GIB_DATA (cbuf_active)->globals,
+									args->argv[args->argc - 1], n, &index, false);
+			cvar = Cvar_FindVar (args->argv[args->argc - 1]->str);
+			args->argv[args->argc - 1]->size = n+1;
+			args->argv[args->argc - 1]->str[n] = 0;
+			if (var) {
+				if (cur->delim == '#')
+					dasprintf (args->argv[args->argc - 1], "%u", var->size);
+				else
+					dstring_appendstr (args->argv[args->argc - 1], var->array[index].value->str);
+			} else if (cur->delim == '#')
+				dstring_appendstr (args->argv[args->argc - 1], "0");
+			else if (cvar)
+				dstring_appendstr (args->argv[args->argc - 1], cvar->string);
+		} else if ((var = GIB_Var_Get_Complex (&GIB_DATA (cbuf_active)->locals,
 									  &GIB_DATA (cbuf_active)->globals,
 									  (char *) cur->str, &index, false))) {
 			if (cur->delim == '$')
 				dstring_appendstr (args->argv[args->argc - 1],
-								   var->array[index]->str);
+								   var->array[index].value->str);
 			else
 				dasprintf (args->argv[args->argc - 1], "%u", var->size - index);
 		} else if (cur->delim == '#')

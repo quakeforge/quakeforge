@@ -80,7 +80,7 @@ GIB_Execute_Split_Array (cbuf_t * cbuf)
 {
 	gib_var_t  *var;
 	unsigned int i;
-	int         start = 0, end = 0;
+	int         start = 0, end = (int) ((unsigned int) ~0 >> 1);
 	char       *c, *str = cbuf->args->argv[cbuf->args->argc - 1]->str + 1;
 	void       *m = cbuf->args->argm[cbuf->args->argc - 1];
 
@@ -93,16 +93,12 @@ GIB_Execute_Split_Array (cbuf_t * cbuf)
 				if ((c = strchr (str + i + 1, ':'))) {
 					if (c[1] != ']')
 						end = atoi (c + 1);
-					else
-						end = (int) ((unsigned int) ~0 >> 1);
 				} else
 					end = start + 1;
 				break;
 			}
 	cbuf->args->argc--;
-	if (!
-		(var =
-		 GIB_Var_Get_Complex (&GIB_DATA (cbuf)->locals,
+	if (!(var = GIB_Var_Get_Complex (&GIB_DATA (cbuf)->locals,
 							  &GIB_DATA (cbuf)->globals, str, &i, false)))
 		return;
 	if (end < 0)
@@ -116,8 +112,8 @@ GIB_Execute_Split_Array (cbuf_t * cbuf)
 	} else if (start >= var->size || start >= end)
 		return;
 	for (i = start; i < end; i++) {
-		if (var->array[i])
-			Cbuf_ArgsAdd (cbuf->args, var->array[i]->str);
+		if (var->array[i].value)
+			Cbuf_ArgsAdd (cbuf->args, var->array[i].value->str);
 		else
 			Cbuf_ArgsAdd (cbuf->args, "");
 		cbuf->args->argm[cbuf->args->argc - 1] = m;
@@ -174,8 +170,8 @@ GIB_Execute_For_Next (cbuf_t * cbuf)
 		GIB_Var_Get_Complex (&GIB_DATA (cbuf)->locals,
 							 &GIB_DATA (cbuf)->globals, array->dstrs[0]->str,
 							 &index, true);
-	dstring_clearstr (var->array[index]);
-	dstring_appendstr (var->array[index], array->dstrs[array->size]->str);
+	dstring_clearstr (var->array[index].value);
+	dstring_appendstr (var->array[index].value, array->dstrs[array->size]->str);
 	return 1;
 }
 
@@ -195,10 +191,9 @@ GIB_Execute (cbuf_t * cbuf)
 		if (GIB_Execute_Prepare_Line (cbuf, g->ip))
 			return;
 		if (g->ip->flags & TREE_COND) {
-			cond =
-				g->ip->flags & TREE_NOT ? atoi (cbuf->args->argv[1]->
-												str) : !atoi (cbuf->args->
-															  argv[1]->str);
+			cond =	g->ip->flags & TREE_NOT ? 
+				atoi (cbuf->args->argv[1]->str) :
+				!atoi (cbuf->args->argv[1]->str);
 			if (cond)
 				g->ip = g->ip->jump;
 		} else if (g->ip->flags & TREE_FORNEXT) {

@@ -101,6 +101,7 @@ GIB_Buffer_Reset (struct cbuf_s *cbuf)
 		free (g->script);
 	}
 	g->script = 0;
+	g->program = 0;
 	g->stack.p = 0;
 	g->waitret = g->done = false;
 

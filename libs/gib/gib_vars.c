@@ -39,7 +39,9 @@ const char  rcsid[] = "$Id$";
 #include <stdlib.h>
 
 #include "QF/dstring.h"
+#include "QF/va.h"
 #include "QF/hash.h"
+#include "QF/cvar.h"
 #include "QF/gib_vars.h"
 #include "QF/gib_buffer.h"
 #include "QF/gib_parse.h"
@@ -69,9 +71,13 @@ GIB_Var_Free (void *ele, void *ptr)
 	unsigned int i;
 	gib_var_t  *l = (gib_var_t *) ele;
 
-	for (i = 0; i < l->size; i++)
-		if (l->array[i])
-			dstring_delete (l->array[i]);
+	for (i = 0; i < l->size; i++) {
+		if (l->array[i].value)
+			dstring_delete (l->array[i].value);
+		if (l->array[i].leaves)
+			Hash_DelTable (l->array[i].leaves);
+	}
+	free (l->array);
 	free ((void *) l->key);
 	free (l);
 }
@@ -89,48 +95,127 @@ GIB_Var_Get (hashtab_t * first, hashtab_t * second, const char *key)
 		return 0;
 }
 
-/* Modifies key but restores it before returning */
+/* Destroys key! */
 gib_var_t *
 GIB_Var_Get_Complex (hashtab_t ** first, hashtab_t ** second, char *key,
 					 unsigned int *ind, qboolean create)
 {
-	unsigned int i, index;
-	qboolean    fix = false;
+	static hashtab_t *zero = 0;
+	unsigned int i, n, index, len, start;
 	gib_var_t  *var;
 
-	i = strlen (key);
-	index = 0;
-	if (i && key[i - 1] == ']')
-		for (i--; i; i--)
-			if (key[i] == '[') {
-				index = atoi (key + i + 1);
-				key[i] = 0;
-				fix = true;
-				break;
+	len = strlen(key);
+	for (start = i = 0; i <= len; i++) {
+		if (key[i] == '.' || key[i] == 0) {
+			index = 0;
+			key[i] = 0;
+			if (i && key[i - 1] == ']')
+				for (n = i - 1; n; n--)
+					if (key[n] == '[') {
+						index = atoi (key + n + 1);
+						key[n] = 0;
+						break;
+					}
+			if (!(var = GIB_Var_Get (*first, *second, key+start))) {
+				if (create) {
+					var = GIB_Var_New (key+start);
+					if (!*first)
+						*first = Hash_NewTable (256, GIB_Var_Get_Key, GIB_Var_Free, 0);
+					Hash_Add (*first, var);
+				} else
+					return 0;
 			}
-	if (!(var = GIB_Var_Get (*first, *second, key))) {
-		if (create) {
-			var = GIB_Var_New (key);
-			if (!*first)
-				*first = Hash_NewTable (256, GIB_Var_Get_Key, GIB_Var_Free, 0);
-			Hash_Add (*first, var);
-		} else
-			return 0;
+			if (index >= var->size) {
+				if (create) {
+					var->array =
+						realloc (var->array, (index + 1) * sizeof (struct gib_varray_s *));
+					memset (var->array + var->size, 0,
+						(index + 1 - var->size) * sizeof (struct gib_varray_s *));
+					var->size = index + 1;
+				} else
+					return 0;
+			}
+			second = &zero;
+			first = &var->array[index].leaves;
+			start = i+1;
+		}
 	}
-	if (fix)
-		key[i] = '[';
-	if (index >= var->size) {
-		if (create) {
-			var->array =
-				realloc (var->array, (index + 1) * sizeof (dstring_t *));
-			memset (var->array + var->size, 0,
-					(index + 1 - var->size) * sizeof (dstring_t *));
-			var->size = index + 1;
-		} else
-			return 0;
+	if (!var->array[index].value)
+		var->array[index].value = dstring_newstr ();
+	*ind = index;
+	return var;
+}
+
+gib_var_t *
+GIB_Var_Get_Very_Complex (hashtab_t ** first, hashtab_t ** second, dstring_t *key, unsigned int start,
+					 unsigned int *ind, qboolean create)
+{
+	static hashtab_t *zero = 0;
+	hashtab_t *one = *first, *two = *second;
+	unsigned int i, index, index2, n;
+	gib_var_t  *var;
+	cvar_t *cvar;
+	char c, *str;
+	qboolean done = false;
+	
+	for (i = start; !done; i++) {
+		if (key->str[i] == '.' || key->str[i] == 0) {
+			index = 0;
+			if (!key->str[i])
+				done = true;
+			key->str[i] = 0;
+			if (i && key->str[i - 1] == ']')
+				for (n = i-1; n; n--)
+					if (key->str[n] == '[') {
+						index = atoi (key->str + n + 1);
+						key->str[n] = 0;
+						break;
+					}
+			if (!(var = GIB_Var_Get (*first, *second, key->str+start))) {
+				if (create) {
+					var = GIB_Var_New (key->str+start);
+					if (!*first)
+						*first = Hash_NewTable (256, GIB_Var_Get_Key, GIB_Var_Free, 0);
+					Hash_Add (*first, var);
+				} else
+					return 0;
+			}
+			if (index >= var->size) {
+				if (create) {
+					var->array =
+						realloc (var->array, (index + 1) * sizeof (struct gib_varray_s));
+					memset (var->array + var->size, 0,
+						(index + 1 - var->size) * sizeof (struct gib_varray_s));
+					var->size = index + 1;
+				} else
+					return 0;
+			}
+			second = &zero;
+			first = &var->array[index].leaves;
+			start = i+1;
+		} else if (key->str[i] == '$' || key->str[i] == '#') {
+			n = i;
+			if (GIB_Parse_Match_Var (key->str, &i))
+				return 0;
+			c = key->str[i];
+			key->str[i+(c != '}')] = 0;
+			if ((var = GIB_Var_Get_Very_Complex (&one, &two, key, n+1+(c == '}'), &index2, create))) {
+				if (key->str[n] == '#')
+					str = va("%u", var->size);
+				else
+					str = var->array[index2].value->str;
+				dstring_replace (key, n, i-n, str, strlen (str));
+			} else if (key->str[n] == '#')
+				dstring_replace (key, n, i-n, "0", 1);
+			else if ((cvar = Cvar_FindVar (key->str+n+1+(c == '}'))))
+				dstring_replace (key, n, i-n, cvar->string, strlen (cvar->string));
+			else
+				dstring_snip (key, n, n-i);
+		}
+			
 	}
-	if (!var->array[index])
-		var->array[index] = dstring_newstr ();
+	if (!var->array[index].value)
+		var->array[index].value = dstring_newstr ();
 	*ind = index;
 	return var;
 }
@@ -144,23 +229,26 @@ GIB_Var_Assign (gib_var_t * var, unsigned int index, dstring_t ** values,
 	// Now, expand the array to the correct size
 	len = numv + index;
 	if (len >= var->size) {
-		var->array = realloc (var->array, len * sizeof (dstring_t *));
+		var->array = realloc (var->array, len * sizeof (struct gib_varray_s));
 		memset (var->array + var->size, 0,
-				(len - var->size) * sizeof (dstring_t *));
+				(len - var->size) * sizeof (struct gib_varray_s));
 		var->size = len;
 	} else if (len < var->size) {
-		for (i = len; i < var->size; i++)
-			if (var->array[i])
-				dstring_delete (var->array[i]);
-		var->array = realloc (var->array, len * sizeof (dstring_t *));
+		for (i = len; i < var->size; i++) {
+			if (var->array[i].value)
+				dstring_delete (var->array[i].value);
+			if (var->array[i].leaves)
+				Hash_DelTable (var->array[i].leaves);
+		}
+		var->array = realloc (var->array, len * sizeof (struct gib_varray_s));
 	}
 	var->size = len;
 	for (i = 0; i < numv; i++) {
-		if (var->array[i + index])
-			dstring_clearstr (var->array[i + index]);
+		if (var->array[i + index].value)
+			dstring_clearstr (var->array[i + index].value);
 		else
-			var->array[i + index] = dstring_newstr ();
-		dstring_appendstr (var->array[i + index], values[i]->str);
+			var->array[i + index].value = dstring_newstr ();
+		dstring_appendstr (var->array[i + index].value, values[i]->str);
 	}
 }
 

@@ -38,7 +38,6 @@ typedef struct gib_thread_s {
 	unsigned long int id;
 	struct cbuf_s *cbuf;
 	struct gib_thread_s *prev, *next;
-	qboolean trash;
 } gib_thread_t;
 
 typedef struct gib_event_s {

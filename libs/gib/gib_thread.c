@@ -117,11 +117,12 @@ GIB_Thread_Execute (void)
 
 	for (cur = gib_threads; cur; cur = tmp) {
 		tmp = cur->next;
-		if (cur->trash) {
+		if (GIB_DATA(cur->cbuf)->program)
+			Cbuf_Execute_Stack (cur->cbuf);
+		else {
 			GIB_Thread_Remove (cur);
 			GIB_Thread_Delete (cur);
-		} else
-			Cbuf_Execute_Stack (cur->cbuf);
+		}			
 	}
 }
 

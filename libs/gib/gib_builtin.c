@@ -197,19 +197,20 @@ static void
 GIB_Local_f (void)
 {
 	gib_var_t  *var;
-	unsigned int index;
-	hashtab_t  *zero = 0;
+	unsigned int index, i;
+	static hashtab_t  *zero = 0;
 
 	if (GIB_Argc () < 2)
-		GIB_USAGE ("var [= value1 value2 ...]");
-	else {
-		var =
-			GIB_Var_Get_Complex (&GIB_DATA (cbuf_active)->locals, &zero,
+		GIB_USAGE ("var [= value1 value2 ...] || var [var2 var3 ...]");
+	else if (!strcmp (GIB_Argv(2), "=")) {
+		var = GIB_Var_Get_Complex (&GIB_DATA (cbuf_active)->locals, &zero,
 								 GIB_Argv (1), &index, true);
 		if (GIB_Argc () >= 3)
 			GIB_Var_Assign (var, index, cbuf_active->args->argv + 3,
 							GIB_Argc () - 3);
-	}
+	} else for (i = 1; i < GIB_Argc(); i++)
+		var = GIB_Var_Get_Complex (&GIB_DATA (cbuf_active)->locals, &zero,
+								 GIB_Argv (1), &index, true);
 }
 
 
@@ -217,18 +218,45 @@ static void
 GIB_Global_f (void)
 {
 	gib_var_t  *var;
-	unsigned int index;
-	hashtab_t  *zero = 0;
+	unsigned int index, i;
+	static hashtab_t  *zero = 0;
 
 	if (GIB_Argc () < 2)
-		GIB_USAGE ("var [= value1 value2 ...]");
-	else {
-		var =
-			GIB_Var_Get_Complex (&GIB_DATA (cbuf_active)->globals, &zero,
+		GIB_USAGE ("var [= value1 value2 ...] || var [var2 var3 ...]");
+	else if (!strcmp (GIB_Argv(2), "=")) {
+		var = GIB_Var_Get_Complex (&GIB_DATA (cbuf_active)->globals, &zero,
 								 GIB_Argv (1), &index, true);
 		if (GIB_Argc () >= 3)
 			GIB_Var_Assign (var, index, cbuf_active->args->argv + 3,
 							GIB_Argc () - 3);
+	} else for (i = 1; i < GIB_Argc(); i++)
+		var = GIB_Var_Get_Complex (&GIB_DATA (cbuf_active)->globals, &zero,
+								 GIB_Argv (1), &index, true);						 
+}
+
+static void
+GIB_Global_Delete_f (void)
+{
+	gib_var_t *var;
+	unsigned int index, i;
+	hashtab_t *source;
+	static hashtab_t  *zero = 0;
+	char *c;
+	
+	if (GIB_Argc () < 2)
+		GIB_USAGE ("var [var2 var2 ...]");
+	else for (i = 1; i < GIB_Argc(); i++) {
+		if ((c = strrchr (GIB_Argv(i), '.'))) {
+			*(c++) = 0;
+			if (!(var = GIB_Var_Get_Complex (&GIB_DATA (cbuf_active)->globals, &zero,
+								 GIB_Argv (i), &index, false)))
+				continue;
+			source = var->array[index].leaves;
+		} else {
+			c = GIB_Argv(i);
+			source = GIB_DATA(cbuf_active)->globals;
+		}
+		Hash_Free (source, Hash_Del (source, c));
 	}
 }
 
@@ -598,13 +626,12 @@ GIB_Thread_Kill_f (void)
 					   id);
 			return;
 		}
-		thread->trash = true;
 		// Set error condition on the top of the stack so the thread will exit
-		// if currently running
+		// We can't simply nuke the thread, as it would cause the stack walker
+		// to segfault if a thread kills itself.
 		for (cur = thread->cbuf;
 			 cur->down && cur->down->state != CBUF_STATE_JUNK; cur = cur->down);
 		cur->state = CBUF_STATE_ERROR;
-		GIB_DATA (cur)->done = true;
 	}
 }
 
@@ -884,6 +911,7 @@ GIB_Builtin_Init (qboolean sandbox)
 	GIB_Builtin_Add ("function::export", GIB_Function_Export_f);
 	GIB_Builtin_Add ("local", GIB_Local_f);
 	GIB_Builtin_Add ("global", GIB_Global_f);
+	GIB_Builtin_Add ("global::delete", GIB_Global_Delete_f);
 	GIB_Builtin_Add ("domain", GIB_Domain_f);
 	GIB_Builtin_Add ("domain::clear", GIB_Domain_Clear_f);
 	GIB_Builtin_Add ("return", GIB_Return_f);
