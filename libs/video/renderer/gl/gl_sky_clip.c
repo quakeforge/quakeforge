@@ -233,28 +233,40 @@ set_vertex (struct box_def *box, int face, int ind, vec3_t v)
 	VectorAdd (v, r_refdef.vieworg, box->face[face].poly.verts[ind]);
 	switch (face) {
 		case 0:
-			box->face[face].poly.verts[ind][3] = (1024 - v[1] + 4) / BOX_WIDTH;
-			box->face[face].poly.verts[ind][4] = (1024 - v[2] + 4) / BOX_WIDTH;
+			box->face[face].poly.verts[ind][3] = (1024 - v[1] + 4) *
+				(1 / BOX_WIDTH);
+			box->face[face].poly.verts[ind][4] = (1024 - v[2] + 4) *
+				(1 / BOX_WIDTH);
 			break;
 		case 1:
-			box->face[face].poly.verts[ind][3] = (1024 + v[0] + 4) / BOX_WIDTH;
-			box->face[face].poly.verts[ind][4] = (1024 - v[2] + 4) / BOX_WIDTH;
+			box->face[face].poly.verts[ind][3] = (1024 + v[0] + 4) *
+				(1 / BOX_WIDTH);
+			box->face[face].poly.verts[ind][4] = (1024 - v[2] + 4) *
+				(1 / BOX_WIDTH);
 			break;
 		case 2:
-			box->face[face].poly.verts[ind][3] = (1024 + v[0] + 4) / BOX_WIDTH;
-			box->face[face].poly.verts[ind][4] = (1024 + v[1] + 4) / BOX_WIDTH;
+			box->face[face].poly.verts[ind][3] = (1024 + v[0] + 4) *
+				(1 / BOX_WIDTH);
+			box->face[face].poly.verts[ind][4] = (1024 + v[1] + 4) *
+				(1 / BOX_WIDTH);
 			break;
 		case 3:
-			box->face[face].poly.verts[ind][3] = (1024 + v[1] + 4) / BOX_WIDTH;
-			box->face[face].poly.verts[ind][4] = (1024 - v[2] + 4) / BOX_WIDTH;
+			box->face[face].poly.verts[ind][3] = (1024 + v[1] + 4) *
+				(1 / BOX_WIDTH);
+			box->face[face].poly.verts[ind][4] = (1024 - v[2] + 4) *
+				(1 / BOX_WIDTH);
 			break;
 		case 4:
-			box->face[face].poly.verts[ind][3] = (1024 - v[0] + 4) / BOX_WIDTH;
-			box->face[face].poly.verts[ind][4] = (1024 - v[2] + 4) / BOX_WIDTH;
+			box->face[face].poly.verts[ind][3] = (1024 - v[0] + 4) *
+				(1 / BOX_WIDTH);
+			box->face[face].poly.verts[ind][4] = (1024 - v[2] + 4) *
+				(1 / BOX_WIDTH);
 			break;
 		case 5:
-			box->face[face].poly.verts[ind][3] = (1024 + v[0] + 4) / BOX_WIDTH;
-			box->face[face].poly.verts[ind][4] = (1024 - v[1] + 4) / BOX_WIDTH;
+			box->face[face].poly.verts[ind][3] = (1024 + v[0] + 4) *
+				(1 / BOX_WIDTH);
+			box->face[face].poly.verts[ind][4] = (1024 - v[1] + 4) *
+				(1 / BOX_WIDTH);
 			break;
 	}
 }
@@ -288,7 +300,8 @@ insert_cube_vertices (struct box_def *box, struct visit_def visit, int count,
 
 #ifdef __BORLANDC__
 // This is fix for borland alloca "feature" which fails to restore stack
-// correcly if calling function doesn't have any references to local variables.
+// correctly if calling function doesn't have any references to local
+// variables.
         char dummy[5];
 
         dummy[0]=0;
@@ -304,13 +317,12 @@ insert_cube_vertices (struct box_def *box, struct visit_def visit, int count,
 
 	if (ind == box->face[face].poly.numverts) {
 		// the vertex the sky poly left this cube fase through is very
-		// conveniently the last vertex of the face poly. this means we
-		// can just append the vetexen
+		// conveniently the last vertex of the face poly. this means we can
+		// just append the vetexen
 		for (i = 0; i < count; i++)
 			add_vertex (box, face, *v[i]);
 	} else {
-		// we have to insert the cube vertices into the face poly
-		// vertex list
+		// we have to insert the cube vertices into the face poly vertex list
 		glpoly_t   *p = &box->face[face].poly;
 		int         c = p->numverts - ind;
 		const int   vert_size = sizeof (p->verts[0]);
@@ -413,8 +425,7 @@ process_corners (struct box_def *box)
 				int         sum, diff;
 				vec3_t      v[4];
 
-				sum =
-					visit[0].face + visit[1].face + visit[2].face +
+				sum = visit[0].face + visit[1].face + visit[2].face +
 					visit[3].face;
 				diff = visit[1].face - visit[0].face;
 				sum %= 3;
@@ -474,7 +485,6 @@ process_corners (struct box_def *box)
 				insert_cube_vertices (box, visit[i], 1, v);
 				insert_cube_vertices (box, visit[(i + 1) % 5], 1, v);
 				insert_cube_vertices (box, visit[(i + 4) % 5], 1, v);
-
 			} else {
 				// 3 vertices
 				unsigned int sel =
@@ -731,7 +741,7 @@ R_DrawSkyChain (msurface_t *sky_chain)
 	} else if (gl_sky_clip->int_val == 2) {
 		float       speedscale;
 
-		speedscale = r_realtime*8;
+		speedscale = r_realtime * 8;
 		speedscale -= (int)speedscale & ~127 ;
 
 		qfglBindTexture (GL_TEXTURE_2D, solidskytexture);
@@ -743,7 +753,7 @@ R_DrawSkyChain (msurface_t *sky_chain)
 		if (gl_skymultipass->int_val) {
 			sc = sky_chain;
 
-			speedscale = r_realtime*16;
+			speedscale = r_realtime * 16;
 			speedscale -= (int)speedscale & ~127 ;
 
 			qfglBindTexture (GL_TEXTURE_2D, alphaskytexture);
