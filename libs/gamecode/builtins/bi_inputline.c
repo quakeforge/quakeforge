@@ -52,6 +52,25 @@ typedef struct {
 //FIXME need to robustify the interface to avoid segfaults caused by errant
 //progs
 
+static inputline_t *
+get_inputline (progs_t *pr, int arg, const char *func)
+{
+	pr_type_t  *handle;
+	inputline_t *line;
+
+	if (arg <= ((pr_type_t *) pr->zone - pr->pr_globals)
+		|| arg >= (pr->zone_size / sizeof (pr_type_t)))
+		PR_RunError (pr, "%s: Invalid inputline_t", func);
+
+	handle = pr->pr_globals + arg;
+
+	line = *(inputline_t **)handle;
+	if (!line)
+		PR_RunError (pr, "Invalid inputline_t");
+
+	return line;
+}
+
 static void
 bi_InputLine_Create (progs_t *pr)
 {
@@ -85,8 +104,8 @@ bi_InputLine_Create (progs_t *pr)
 static void
 bi_InputLine_SetWidth (progs_t *pr)
 {
-	pr_type_t  *handle = pr->pr_globals + G_INT (pr, OFS_PARM0);
-	inputline_t *line = *(inputline_t **)handle;
+	inputline_t *line = get_inputline (pr, G_INT (pr, OFS_PARM0),
+									   "InputLine_SetWidth");
 	int         width = G_INT (pr, OFS_PARM1);
 
 	line->width = width;
@@ -96,9 +115,20 @@ static void
 bi_InputLine_Destroy (progs_t *pr)
 {
 	il_resources_t *res = PR_Resources_Find (pr, "InputLine");
+	pr_type_t  *handle;
+	int         arg = G_INT (pr, OFS_PARM0);
 	int         i;
-	pr_type_t  *handle = pr->pr_globals + G_INT (pr, OFS_PARM0);
-	inputline_t *line = *(inputline_t **)handle;
+	inputline_t *line;
+
+	if (arg <= ((pr_type_t *) pr->zone - pr->pr_globals)
+		|| arg >= (pr->zone_size / sizeof (pr_type_t)))
+		PR_RunError (pr, "InputLine_Destroy: Invalid inputline_t");
+
+	handle = pr->pr_globals + arg;
+
+	line = *(inputline_t **)handle;
+	if (!line)
+		PR_RunError (pr, "InputLine_Destroy: Invalid inputline_t");
 
 	for (i = 0; i < res->max_lines; i++)
 		if (res->lines[i] == line) {
@@ -111,8 +141,8 @@ bi_InputLine_Destroy (progs_t *pr)
 static void
 bi_InputLine_Clear (progs_t *pr)
 {
-	pr_type_t  *handle = pr->pr_globals + G_INT (pr, OFS_PARM0);
-	inputline_t *line = *(inputline_t **)handle;
+	inputline_t *line = get_inputline (pr, G_INT (pr, OFS_PARM0),
+									   "InputLine_Clear");
 
 	Con_ClearTyping (line);
 }
@@ -120,8 +150,8 @@ bi_InputLine_Clear (progs_t *pr)
 static void
 bi_InputLine_Process (progs_t *pr)
 {
-	pr_type_t  *handle = pr->pr_globals + G_INT (pr, OFS_PARM0);
-	inputline_t *line = *(inputline_t **)handle;
+	inputline_t *line = get_inputline (pr, G_INT (pr, OFS_PARM0),
+									   "InputLine_Process");
 	int         ch = G_INT (pr, OFS_PARM1);
 
 	Con_ProcessInputLine (line, ch);
@@ -135,8 +165,8 @@ bi_InputLine_Process (progs_t *pr)
 static void
 bi_InputLine_SetText (progs_t *pr)
 {
-	pr_type_t   *handle = pr->pr_globals + G_INT (pr, OFS_PARM0);
-	inputline_t *il = *(inputline_t **)handle;
+	inputline_t *il = get_inputline (pr, G_INT (pr, OFS_PARM0),
+									 "InputLine_SetText");
 	const char  *str = G_STRING (pr, OFS_PARM1);
 
 	/* this was segfault trap:
@@ -154,8 +184,8 @@ bi_InputLine_SetText (progs_t *pr)
 static void
 bi_InputLine_GetText (progs_t *pr)
 {
-	pr_type_t   *handle = pr->pr_globals + G_INT (pr, OFS_PARM0);
-	inputline_t *il = *(inputline_t **)handle;
+	inputline_t *il = get_inputline (pr, G_INT (pr, OFS_PARM0),
+									 "InputLine_GetText");
 
 	RETURN_STRING(pr, il->lines[il->edit_line]+1);
 }
@@ -163,8 +193,8 @@ bi_InputLine_GetText (progs_t *pr)
 static void
 bi_InputLine_Draw (progs_t *pr)
 {
-	pr_type_t  *handle = pr->pr_globals + G_INT (pr, OFS_PARM0);
-	inputline_t *il = *(inputline_t **)handle;
+	inputline_t *il = get_inputline (pr, G_INT (pr, OFS_PARM0),
+									 "InputLine_Draw");
 	int         x = G_INT (pr, OFS_PARM1);
 	int         y = G_INT (pr, OFS_PARM2);
 	int         cursor = G_INT (pr, OFS_PARM3);
