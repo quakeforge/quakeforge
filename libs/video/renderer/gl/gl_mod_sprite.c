@@ -124,6 +124,7 @@ R_DrawSpriteModel (entity_t *e)
 	qfglBegin (GL_QUADS);
 
 	VectorCopy (e->colormod, color);
+	color[3] = e->colormod[3];
 	qfglColor4fv (color);
 
 	qfglTexCoord2f (0, 1);
