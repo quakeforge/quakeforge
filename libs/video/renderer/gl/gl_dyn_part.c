@@ -393,10 +393,10 @@ R_LavaSplash (vec3_t org)
 	if (!r_particles->int_val)
 		return;
 
-	for (i = -8; i < 8; i++) {
-		for (j = -8; j < 8; j++) {
-			dir[0] = j * 16 + (rand () & 7);
-			dir[1] = i * 16 + (rand () & 7);
+	for (i = -128; i < 128; i+=16) {
+		for (j = -128; j < 128; j+=16) {
+			dir[0] = j + (rand () & 7);
+			dir[1] = i + (rand () & 7);
 			dir[2] = 256;
 
 			porg[0] = org[0] + dir[0];
@@ -511,6 +511,33 @@ R_RocketTrail (int type, entity_t *ent)
 				}
 				ptype = pt_grav;
 				break;
+			case 3:					// green tracer
+			case 5:					// flame tracer
+			{
+				static int  tracercount;
+
+				dist = 3;
+				pdie = r_realtime + 0.5;
+//				ptype = pt_static; // DESPAIR
+				ptype = pt_fire;
+				ptex = part_tex_smoke[rand () & 7];
+				pscale = lhrandom (1, 2);
+				if (type == 3)
+					pcolor = 52 + ((tracercount & 4) << 1);
+				else
+					pcolor = 234;
+
+				tracercount++;
+
+				VectorCopy (ent->old_origin, porg);
+				if (tracercount & 1) {
+					pvel[0] = 30 * vec[1];
+					pvel[1] = 30 * -vec[0];
+				} else {
+					pvel[0] = 30 * -vec[1];
+					pvel[1] = 30 * vec[0];
+				}
+				break;
 			case 6:					// voor trail
 // Use smoke ring effects here, once merged with nq? --Despair
 				dist = 3;
@@ -521,31 +548,6 @@ R_RocketTrail (int type, entity_t *ent)
 				for (j = 0; j < 3; j++)
 					porg[j] = ent->old_origin[j] + lhrandom (-8, 8);
 				break;
-			case 3:
-			case 5:					// tracer
-				{
-					static int  tracercount;
-
-					dist = 3;
-					pdie = r_realtime + 0.5;
-					ptype = pt_static;
-					pscale = lhrandom (1.5, 3);
-					if (type == 3)
-						pcolor = 52 + ((tracercount & 4) << 1);
-					else
-						pcolor = 230 + ((tracercount & 4) << 1);
-
-					tracercount++;
-
-					VectorCopy (ent->old_origin, porg);
-					if (tracercount & 1) {
-						pvel[0] = 30 * vec[1];
-						pvel[1] = 30 * -vec[0];
-					} else {
-						pvel[0] = 30 * -vec[1];
-						pvel[1] = 30 * vec[0];
-					}
-					break;
 				}
 		}
 
@@ -726,6 +728,11 @@ R_DrawParticles (void)
 				if ((part->alpha -= r_frametime * 256) < 1)
 					part->die = -1;
 				part->vel[2] -= fast_grav;
+				break;
+			case pt_fire:
+				if ((part->alpha -= r_frametime * 32) < 1)
+					part->die = -1;
+				part->scale -= r_frametime * 2;
 				break;
 			default:
 				Con_DPrintf ("unhandled particle type %d\n", part->type);
