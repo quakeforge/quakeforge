@@ -43,7 +43,6 @@ static const char rcsid[] =
 
 #include <limits.h>
 
-#include "compat.h"
 #include "QF/console.h"
 #include "QF/locs.h"
 #include "QF/qtypes.h"
@@ -51,6 +50,7 @@ static const char rcsid[] =
 #include "QF/sys.h"
 
 #include "client.h"
+#include "compat.h"
 
 #define LOCATION_BLOCK	128				// 128 locations per block.
 
