@@ -80,26 +80,29 @@ while 1:
 	else:
 		entity.spawnflags = 0
 for ent in entity_list:
-	if ent.classname[:5] == "item_":
-		item = ent.classname[5:]
-		if item == "weapon":
-			# officially depricated but some maps use it
-			big = (ent.spawnflags & 8) != 0
-			if ent.spawnflags & 4:
-				items["rockets"][big] += 1
-			elif ent.spawnflags & 2:
-				items["spikes"][big] += 1
-			elif ent.spawnflags & 1:
-				items["shells"][big] += 1
-		elif item[:9] == "artifact_":
-			artifact = item[9:]
-			artifacts[artifact] += 1
-		else:
-			big = ent.spawnflags & 3
-			items[item][big] += 1
-	elif ent.classname[:7] == "weapon_":
-		weapon = ent.classname[7:]
-		weapons[weapon] += 1
+	try:
+		if ent.classname[:5] == "item_":
+			item = ent.classname[5:]
+			if item == "weapon":
+				# officially depricated but some maps use it
+				big = (ent.spawnflags & 8) != 0
+				if ent.spawnflags & 4:
+					items["rockets"][big] += 1
+				elif ent.spawnflags & 2:
+					items["spikes"][big] += 1
+				elif ent.spawnflags & 1:
+					items["shells"][big] += 1
+			elif item[:9] == "artifact_":
+				artifact = item[9:]
+				artifacts[artifact] += 1
+			else:
+				big = ent.spawnflags & 3
+				items[item][big] += 1
+		elif ent.classname[:7] == "weapon_":
+			weapon = ent.classname[7:]
+			weapons[weapon] += 1
+	except KeyError:
+		pass	# ignore unknown items/weapons
 
 print "Lightning Gun    :", weapons["lightning"]
 print "6 cells          :", items["cells"][0]
