@@ -38,6 +38,7 @@
 
 //#define outportb  loutportb
 
+
 void
 loutportb (int port, int val)
 {
@@ -45,11 +46,7 @@ loutportb (int port, int val)
 	getch ();
 }
 
-/*
-================
-VideoRegisterSet
-================
-*/
+
 void
 VideoRegisterSet (int *pregset)
 {

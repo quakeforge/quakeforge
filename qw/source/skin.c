@@ -47,7 +47,7 @@
 
 #include "client.h"
 
-extern cvar_t *noskins; //XXX FIXME, this shouldn't be here?
+extern cvar_t *noskins; // XXX FIXME, this shouldn't be here?
 
 cvar_t     *baseskin;
 cvar_t     *skin;
@@ -60,12 +60,14 @@ skin_t      skin_cache[MAX_CACHED_SKINS];
 hashtab_t  *skin_hash;
 int         numskins;
 
+
 static char *
 skin_get_key (void *_skin, void *unused)
 {
 	skin_t *skin = (skin_t*)_skin;
 	return skin->name;
 }
+
 
 /*
 	Skin_Find
@@ -188,6 +190,7 @@ Skin_Cache (skin_t *skin)
 	return out;
 }
 
+
 void
 Skin_Flush (void)
 {
@@ -201,12 +204,14 @@ Skin_Flush (void)
 	Hash_FlushTable (skin_hash);
 }
 
+
 void
 Skin_Init (void)
 {
 	skin_hash = Hash_NewTable (1021, skin_get_key, 0, 0);
 	Skin_Init_Translation ();
 }
+
 
 void
 Skin_Init_Cvars (void)
