@@ -631,9 +631,9 @@ MipColor (int r, int g, int b)
 	for (i = 0; i < 256; i++) {
 		static int	j;
 		j = i * 3;
-		r1 = vid_basepal[j] - r;
-		g1 = vid_basepal[j + 1] - g;
-		b1 = vid_basepal[j + 2] - b;
+		r1 = vid.palette[j] - r;
+		g1 = vid.palette[j + 1] - g;
+		b1 = vid.palette[j + 2] - b;
 		dist = r1 * r1 + g1 * g1 + b1 * b1;
 		if (dist < bestdist) {
 			bestdist = dist;

@@ -424,9 +424,9 @@ CL_ParseTEnt (void)
 			dl->die = cl.time + 0.5;
 			dl->decay = 300;
 			colorStart = (colorStart + (rand() % colorLength)) * 3;
-			dl->color[0] = vid_basepal[colorStart] * (1.0 / 255.0);
-			dl->color[1] = vid_basepal[colorStart + 1] * (1.0 / 255.0);
-			dl->color[2] = vid_basepal[colorStart + 2] * (1.0 / 255.0);
+			dl->color[0] = vid.palette[colorStart] * (1.0 / 255.0);
+			dl->color[1] = vid.palette[colorStart + 1] * (1.0 / 255.0);
+			dl->color[2] = vid.palette[colorStart + 2] * (1.0 / 255.0);
 			break;
 
 		case TE_EXPLOSION3:				// Nehahra colored light explosion

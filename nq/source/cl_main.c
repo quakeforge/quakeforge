@@ -399,7 +399,7 @@ SetPal (int i)
 	old = i;
 
 	if (i == 0)
-		VID_SetPalette (vid_basepal);
+		VID_SetPalette (vid.palette);
 	else if (i == 1) {
 		for (c = 0; c < 768; c += 3) {
 			pal[c] = 0;

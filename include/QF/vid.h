@@ -35,7 +35,6 @@
 #define VID_GRADES	(1 << VID_CBITS)
 
 struct cvar_s;
-extern byte   *vid_basepal;
 extern byte   *vid_colormap;
 extern unsigned char d_15to8table[65536];
 
@@ -55,6 +54,7 @@ typedef struct {
 	void			*buffer;		// invisible buffer
 	short			*zbuffer;
 	void			*surfcache;
+	byte            *palette;		// 256 * 3
 	byte			*colormap8;		// 256 * VID_GRADES size
 	unsigned short	*colormap16;	// 256 * VID_GRADES size
 	unsigned int	*colormap32;	// 256 * VID_GRADES size

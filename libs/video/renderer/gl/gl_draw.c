@@ -737,7 +737,7 @@ void
 Draw_Fill (int x, int y, int w, int h, int c)
 {
 	qfglDisable (GL_TEXTURE_2D);
-	qfglColor3ubv (vid_basepal + c * 3);
+	qfglColor3ubv (vid.palette + c * 3);
 
 	qfglBegin (GL_QUADS);
 

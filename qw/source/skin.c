@@ -171,7 +171,7 @@ Skin_Cache (skin_t *skin)
 			return NULL;
 		}
 	}
-	tex = LoadPCX (file, 0, vid_basepal);
+	tex = LoadPCX (file, 0, vid.palette);
 	Qclose (file);
 
 	if (!tex || tex->width > 320 || tex->height > 200) {
@@ -187,7 +187,7 @@ Skin_Cache (skin_t *skin)
 	opix = out->data;
 	out->width = 320;
 	out->height = 200;
-	out->palette = tex->palette; //FIXME assumes 0 or vid_basepal
+	out->palette = tex->palette; //FIXME assumes 0 or vid.palette
 	memset (opix, 0, pixels);
 	for (i = 0, ipix = tex->data; i < tex->height;
 	     i++, opix += 320, ipix += tex->width)

@@ -200,7 +200,7 @@ int         host_framecount;
 
 int         host_hunklevel;
 
-byte       *vid_basepal;
+byte       *host_basepal;
 byte       *vid_colormap;
 
 cvar_t     *host_speeds;
@@ -1776,14 +1776,14 @@ Host_Init (void)
 
 	Con_Printf ("%4.1f megabyte heap.\n", cl_mem_size->value);
 
-	vid_basepal = (byte *) COM_LoadHunkFile ("gfx/palette.lmp");
-	if (!vid_basepal)
+	host_basepal = (byte *) COM_LoadHunkFile ("gfx/palette.lmp");
+	if (!host_basepal)
 		Sys_Error ("Couldn't load gfx/palette.lmp");
 	vid_colormap = (byte *) COM_LoadHunkFile ("gfx/colormap.lmp");
 	if (!vid_colormap)
 		Sys_Error ("Couldn't load gfx/colormap.lmp");
 
-	VID_Init (vid_basepal);
+	VID_Init (host_basepal);
 	Draw_Init ();
 	SCR_Init ();
 	R_Init ();
@@ -1845,7 +1845,7 @@ Host_Shutdown (void)
 	NET_Shutdown ();
 	S_Shutdown ();
 	IN_Shutdown ();
-	if (vid_basepal)
+	if (host_basepal)
 		VID_Shutdown ();
 }
 

@@ -354,7 +354,7 @@ SCR_ApplyBlend (void) // Used to be V_UpdatePalette
 	switch(r_pixbytes) {
 	case 1:
 	{
-		basepal = vid_basepal;
+		basepal = vid.palette;
 		newpal = pal;
 
 		for (i = 0; i < 256; i++) {
@@ -668,7 +668,7 @@ SCR_ScreenShot_f (void)
 	switch(r_pixbytes) {
 	case 1:
 		pcx = EncodePCX (vid.buffer, vid.width, vid.height, vid.rowbytes,
-						 vid_basepal, false, &pcx_len);
+						 vid.palette, false, &pcx_len);
 		break;
 	case 2:
 		Con_Printf("SCR_ScreenShot_f: FIXME - add 16bit support\n");
@@ -706,9 +706,9 @@ MipColor (int r, int g, int b)
 	bestdist = 256 * 256 * 3;
 
 	for (i = 0; i < 256; i++) {
-		r1 = vid_basepal[i * 3] - r;
-		g1 = vid_basepal[i * 3 + 1] - g;
-		b1 = vid_basepal[i * 3 + 2] - b;
+		r1 = vid.palette[i * 3] - r;
+		g1 = vid.palette[i * 3 + 1] - g;
+		b1 = vid.palette[i * 3 + 2] - b;
 		dist = r1 * r1 + g1 * g1 + b1 * b1;
 		if (dist < bestdist) {
 			bestdist = dist;

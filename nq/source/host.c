@@ -98,7 +98,7 @@ client_t   *host_client;				// current client
 
 jmp_buf		host_abortserver;
 
-byte       *vid_basepal;
+byte       *host_basepal;
 
 cvar_t     *fs_globalcfg;
 cvar_t     *fs_usercfg;
@@ -951,14 +951,14 @@ Host_Init (void)
 	Con_Printf ("%4.1f megabyte heap\n", host_mem_size->value);
 
 	if (cls.state != ca_dedicated) {
-		vid_basepal = (byte *) COM_LoadHunkFile ("gfx/palette.lmp");
-		if (!vid_basepal)
+		host_basepal = (byte *) COM_LoadHunkFile ("gfx/palette.lmp");
+		if (!host_basepal)
 			Sys_Error ("Couldn't load gfx/palette.lmp");
 		vid_colormap = (byte *) COM_LoadHunkFile ("gfx/colormap.lmp");
 		if (!vid_colormap)
 			Sys_Error ("Couldn't load gfx/colormap.lmp");
 
-		VID_Init (vid_basepal);
+		VID_Init (host_basepal);
 		Draw_Init ();
 		SCR_Init ();
 		R_Init ();

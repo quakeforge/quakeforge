@@ -350,7 +350,7 @@ SCR_ApplyBlend (void)		// Used to be V_UpdatePalette
 	int         r, g, b, i;
 	byte       *basepal, *newpal;
 	byte        pal[768];
-	basepal = vid_basepal;
+	basepal = vid.palette;
 	newpal = pal;
 
 	for (i = 0; i < 256; i++) {
@@ -619,9 +619,9 @@ SCR_ScreenShot (int width, int height)
 			for ( /* */ ; dy < dey; dy++) {
 				src = vid.buffer + (vid.rowbytes * dy) + dx;
 				for (nx = dx; nx < dex; nx++) {
-					r += vid_basepal[*src * 3];
-					g += vid_basepal[*src * 3 + 1];
-					b += vid_basepal[*src * 3 + 2];
+					r += vid.palette[*src * 3];
+					g += vid.palette[*src * 3 + 1];
+					b += vid.palette[*src * 3 + 2];
 					src++;
 					count++;
 				}
@@ -656,7 +656,7 @@ SCR_ScreenShot_f (void)
 
 	// save the pcx file
 	pcx = EncodePCX (vid.buffer, vid.width, vid.height, vid.rowbytes,
-					 vid_basepal, false, &pcx_len);
+					 vid.palette, false, &pcx_len);
 	COM_WriteFile (pcxname, pcx, pcx_len);
 
 
@@ -686,9 +686,9 @@ MipColor (int r, int g, int b)
 	bestdist = 256 * 256 * 3;
 
 	for (i = 0; i < 256; i++) {
-		r1 = vid_basepal[i * 3] - r;
-		g1 = vid_basepal[i * 3 + 1] - g;
-		b1 = vid_basepal[i * 3 + 2] - b;
+		r1 = vid.palette[i * 3] - r;
+		g1 = vid.palette[i * 3 + 1] - g;
+		b1 = vid.palette[i * 3 + 2] - b;
 		dist = r1 * r1 + g1 * g1 + b1 * b1;
 		if (dist < bestdist) {
 			bestdist = dist;

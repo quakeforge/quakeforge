@@ -172,7 +172,7 @@ WarpPalette (void)
 	for (i = 0; i < 256; i++) {
 		for (j = 0; j < 3; j++) {
 			newpalette[i * 3 + j] =
-				(vid_basepal[i * 3 + j] + basecolor[j]) / 2;
+				(vid.palette[i * 3 + j] + basecolor[j]) / 2;
 		}
 	}
 

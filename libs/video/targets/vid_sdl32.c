@@ -149,9 +149,9 @@ VID_Init (unsigned char *palette)
 	vid.aspect = ((float) vid.height / (float) vid.width) * (320.0 / 240.0);
 	vid.numpages = 1;
 	if (vid_colormap)
-		VID_MakeColormaps(256 - vid_colormap[16384], vid_basepal);
+		VID_MakeColormaps(256 - vid_colormap[16384], vid.palette);
 	else
-		VID_MakeColormaps(224, vid_basepal);
+		VID_MakeColormaps(224, vid.palette);
 	VGA_pagebase = vid.buffer = rendersurface->pixels;
 	VGA_rowbytes = vid.rowbytes = rendersurface->pitch;
 	vid.conbuffer = vid.buffer;

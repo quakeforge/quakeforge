@@ -153,7 +153,7 @@ VID_UpdateGamma (cvar_t *vid_gamma)
 		VID_BuildGammaTable (gamma);
 		if (vid.initialized) {
 			for (i = 0; i < sizeof (pal); i++)
-				pal[i] = gammatable[vid_basepal[i]];
+				pal[i] = gammatable[vid.palette[i]];
 			VID_SetPalette (pal); // update with the new palette
 		}
 	}
@@ -170,6 +170,7 @@ VID_InitGamma (unsigned char *pal)
 	int 	i;
 	double	gamma = 1.45;
 
+	vid.palette = pal;
 	if ((i = COM_CheckParm ("-gamma"))) {
 		gamma = atof (com_argv[i + 1]);
 	}
