@@ -527,14 +527,24 @@ int (*GIB_File_Transform_Path) (dstring_t *path) = NULL;
 int
 GIB_File_Transform_Path_Null (dstring_t *path)
 {
+	char *s;
+	
+	// Convert backslash to forward slash
+	while ((s = strchr (path->str, '\\')))
+		*s = '/';
 	return 0;
 }
 
 int
 GIB_File_Transform_Path_Secure (dstring_t *path)
 {
+		char *s;
+	
+		while ((s = strchr (path->str, '\\')))
+			*s = '/';
 		if (Sys_PathType (path->str) != PATHTYPE_RELATIVE_BELOW)
 			return -1;
+		dstring_insertstr (path, 0, "/");
 		dstring_insertstr (path, 0, com_gamedir);
 		return 0;
 }
@@ -618,29 +628,32 @@ GIB_File_Find_f (void)
 {
 	DIR        *directory;
 	struct dirent *entry;
-	char       *path;
+	char       *path, *glob, *s;
 	const char *ifs;
 	dstring_t  *list;
 
-	if (GIB_Argc () < 2 || GIB_Argc () > 3) {
+	if (GIB_Argc () != 2) {
 		Cbuf_Error ("syntax",
 		  "file::find: invalid syntax\n"
-		  "usage: file::find glob [path]");
+		  "usage: file::find path_and_glob");
 		return;
 	}
-	if (GIB_Argc () == 3) {
-		if (!*GIB_Argv(2)) {
-			Cbuf_Error ("file",
-			  "file::find: null path provided");
-			return;
-		}
-		if (GIB_File_Transform_Path (GIB_Argd(2))) {
-			Cbuf_Error ("access", 
-			  "file::find: access to %s denied", GIB_Argv(2));
-			return;
-		}
+	if (GIB_File_Transform_Path (GIB_Argd(1))) {
+		Cbuf_Error ("access", 
+		  "file::find: access to %s denied", GIB_Argv(1));
+		return;
 	}
-	path = GIB_Argv(2);
+	path = GIB_Argv(1);
+	s = strrchr (path, '/');
+	if (!s) { // No slash in path
+		glob = path; // The glob is the entire argument
+		path = "."; // The path is the current directory
+	} else {
+		*s = 0; // Split the string at the final slash
+		glob = s+1;
+		if (!*path) // If we now have a null path...
+			path = "/"; // we wanted the filesystem root in unix
+	}
 	directory = opendir (path);
 	if (!directory) {
 		Cbuf_Error ("file",
@@ -649,12 +662,12 @@ GIB_File_Find_f (void)
 	}
 	list = dstring_newstr ();
 	if (!(ifs = GIB_Var_Get_Local (cbuf_active, "ifs")))
-			ifs = " ";
+			ifs = "\n"; // Newlines don't appear in filenames and are part of the default ifs
 	while ((entry = readdir (directory))) {
 		if (strcmp (entry->d_name, ".") &&
-		   strcmp (entry->d_name, "..") &&
-		   !fnmatch (GIB_Argv (1), entry->d_name, 0)) {
-			dstring_appendstr (list, ifs);
+		  strcmp (entry->d_name, "..") &&
+		  !fnmatch (glob, entry->d_name, 0)) {
+			dstring_appendsubstr (list, ifs, 1);
 			dstring_appendstr (list, entry->d_name);
 		}
 	}
@@ -744,7 +757,7 @@ GIB_Range_f (void)
 			ifs = " ";
 	dstr = dstring_newstr ();
 	for (i = atof(GIB_Argv(1)); inc < 0 ? i >= limit : i <= limit; i += inc)
-		dstring_appendstr (dstr, va("%s%.10g", ifs, i));
+		dasprintf(dstr, "%.1s%.10g", ifs, i);
 	GIB_Return (dstr->str[0] ? dstr->str+1 : "");
 	dstring_delete (dstr);
 }
