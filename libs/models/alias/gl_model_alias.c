@@ -297,3 +297,12 @@ Mod_LoadAliasGroup (void *pin, int *posenum, maliasframedesc_t *frame)
 	}
 	return ptemp;
 }
+
+void
+Mod_FinalizeAliasModel (model_t *m, aliashdr_t *hdr)
+{
+	if (strequal (m->name, "progs/eyes.mdl")) {
+		hdr->mdl.scale_origin[2] -= (22 + 8);
+		VectorScale (hdr->mdl.scale, 2, hdr->mdl.scale);
+	}
+}

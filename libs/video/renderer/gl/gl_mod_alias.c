@@ -387,7 +387,6 @@ R_DrawAliasModel (entity_t *e, qboolean cull)
 	int			  fb_texture = 0;
 	aliashdr_t	 *paliashdr;
 	model_t		 *clmodel;
-	qboolean	  modelIsFullbright = false;
 	vec3_t		  dist, mins, maxs;
 	vert_order_t *vo;
 
@@ -409,9 +408,7 @@ R_DrawAliasModel (entity_t *e, qboolean cull)
 	VectorCopy (e->origin, r_entorigin);
 	VectorSubtract (r_origin, r_entorigin, modelorg);
 
-	if (strnequal (clmodel->name, "progs/flame", 11)
-		|| strnequal (clmodel->name, "progs/bolt", 10)) {
-		modelIsFullbright = true;
+	if (clmodel->fullbright) {
 		shadelight = 1.0;	// make certain models full brightness always
 	} else {
 		// get lighting information
@@ -436,9 +433,8 @@ R_DrawAliasModel (entity_t *e, qboolean cull)
 		shadelight = min (shadelight, 100); // was 200
 
 		// never allow players to go totally black
-		if (strequal (clmodel->name, "progs/player.mdl")) {
-			shadelight = max (shadelight, 8);
-		}
+		shadelight = max (shadelight, clmodel->min_light);
+
 		shadelight *= 0.005;
 
 		shadedots = r_avertexnormal_dots[(int) (e->angles[1] *
@@ -459,20 +455,11 @@ R_DrawAliasModel (entity_t *e, qboolean cull)
 	qfglPushMatrix ();
 	R_RotateForEntity (e);
 
-	if (strequal (clmodel->name, "progs/eyes.mdl")) {
-		qfglTranslatef (paliashdr->mdl.scale_origin[0],
-						paliashdr->mdl.scale_origin[1],
-						paliashdr->mdl.scale_origin[2] - (22 + 8));
-		// double size of eyes, since they are really hard to see in GL
-		qfglScalef (paliashdr->mdl.scale[0] * 2, paliashdr->mdl.scale[1] * 2,
-				  paliashdr->mdl.scale[2] * 2);
-	} else {
-		qfglTranslatef (paliashdr->mdl.scale_origin[0],
-						paliashdr->mdl.scale_origin[1],
-						paliashdr->mdl.scale_origin[2]);
-		qfglScalef (paliashdr->mdl.scale[0], paliashdr->mdl.scale[1],
-					paliashdr->mdl.scale[2]);
-	}
+	qfglTranslatef (paliashdr->mdl.scale_origin[0],
+					paliashdr->mdl.scale_origin[1],
+					paliashdr->mdl.scale_origin[2]);
+	qfglScalef (paliashdr->mdl.scale[0], paliashdr->mdl.scale[1],
+				paliashdr->mdl.scale[2]);
 
 	anim = (int) (r_realtime * 10) & 3;
 
@@ -483,7 +470,7 @@ R_DrawAliasModel (entity_t *e, qboolean cull)
 	}
 
 	texture = paliashdr->gl_texturenum[skinnum][anim];
-	if (gl_fb_models->int_val && !modelIsFullbright)
+	if (gl_fb_models->int_val && !clmodel->fullbright)
 		fb_texture = paliashdr->gl_fb_texturenum[skinnum][anim];
 
 	// we can't dynamically colormap textures, so they are cached
@@ -519,16 +506,14 @@ R_DrawAliasModel (entity_t *e, qboolean cull)
 
 	if (r_shadows->int_val) {
 		// torches, grenades, and lightning bolts do not have shadows
-		if (modelIsFullbright)
-			return;
-		if (strequal (clmodel->name, "progs/grenade.mdl"))
+		if (!clmodel->shadow_alpha)
 			return;
 
 		qfglPushMatrix ();
 		R_RotateForEntity (e);
 
 		qfglDisable (GL_TEXTURE_2D);
-		color_black[3] = 128;
+		color_black[3] = (clmodel->shadow_alpha + 1) / 2;
 		qfglColor4ubv (color_black);
 
 		if (gl_lerp_anim->int_val) {

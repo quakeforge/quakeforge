@@ -48,6 +48,8 @@ static const char rcsid[] =
 #include "QF/sys.h"
 #include "QF/vfs.h"
 
+#include "compat.h"
+
 void        Mod_LoadAliasModel (model_t *mod, void *buf, cache_allocator_t allocator);
 void        Mod_LoadSpriteModel (model_t *mod, void *buf);
 void        Mod_LoadBrushModel (model_t *mod, void *buf);
@@ -189,6 +191,23 @@ Mod_RealLoadModel (model_t *mod, qboolean crash, cache_allocator_t allocator)
 	loadmodel = mod;
 
 	// fill it in
+	if (strequal (mod->name, "progs/grenade.mdl")) {
+		mod->shadow_alpha = 0;
+	} else {
+		mod->shadow_alpha = 255;
+	}
+	if (strnequal (mod->name, "progs/flame", 11)
+		|| strnequal (mod->name, "progs/bolt", 10)) {
+		mod->fullbright = 1;
+		mod->shadow_alpha = 0;
+	} else {
+		mod->fullbright = 0;
+	}
+	if (strequal (mod->name, "progs/player.mdl")) {
+		mod->min_light = 8;
+	} else {
+		mod->min_light = 0;
+	}
 
 	// call the apropriate loader
 	mod->needload = false;

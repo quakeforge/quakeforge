@@ -379,21 +379,20 @@ typedef struct model_s
 	
 	int			flags;
 
-//
+// lighting info
+	float		min_light;
+	byte		shadow_alpha;	// 255 = 1.0
+	byte		fullbright;
+
 // volume occupied by the model graphics
-//		
 	vec3_t		mins, maxs;
 	float		radius;
 
-//
 // solid volume for clipping 
-//
 	qboolean	clipbox;
 	vec3_t		clipmins, clipmaxs;
 
-//
 // brush model
-//
 	int			firstmodelsurface, nummodelsurfaces;
 
 	int			numsubmodels;
@@ -441,9 +440,7 @@ typedef struct model_s
 	unsigned int	checksum;
 	unsigned int	checksum2;
 
-//
 // additional model data
-//
 	cache_user_t	cache;		// only access through Mod_Extradata
 
 } model_t;
@@ -468,8 +465,9 @@ void    *Mod_LoadAliasFrame (void *pin, int *posenum, maliasframedesc_t *frame);
 void    *Mod_LoadAliasGroup (void *pin, int *posenum, maliasframedesc_t *frame);
 void    *Mod_LoadAllSkins (int numskins, daliasskintype_t *pskintype,
 						   int *pskinindex);
-void     GL_MakeAliasModelDisplayLists (model_t *m, aliashdr_t *hdr, void *_m,
-										int _s);
+void     Mod_MakeAliasModelDisplayLists (model_t *m, aliashdr_t *hdr, void *_m,
+										 int _s);
+void	 Mod_FinalizeAliasModel (model_t *m, aliashdr_t *hdr);
 
 
 

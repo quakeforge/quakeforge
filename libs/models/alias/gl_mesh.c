@@ -342,7 +342,7 @@ BuildTris (void)
 }
 
 void
-GL_MakeAliasModelDisplayLists (model_t *m, aliashdr_t *hdr, void *_m, int _s)
+Mod_MakeAliasModelDisplayLists (model_t *m, aliashdr_t *hdr, void *_m, int _s)
 {
 	int         i, j;
 	int        *cmds;

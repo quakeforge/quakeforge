@@ -205,7 +205,9 @@ Mod_LoadAliasModel (model_t *mod, void *buffer, cache_allocator_t allocator)
 	mod->maxs[0] = mod->maxs[1] = mod->maxs[2] = 16;
 
 	// build the draw lists
-	GL_MakeAliasModelDisplayLists (mod, pheader, buffer, com_filesize);
+	Mod_MakeAliasModelDisplayLists (mod, pheader, buffer, com_filesize);
+
+	Mod_FinalizeAliasModel (mod, pheader);
 
 	// move the complete, relocatable alias model to the cache
 	end = Hunk_LowMark ();
