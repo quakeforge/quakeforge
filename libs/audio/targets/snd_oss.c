@@ -196,6 +196,55 @@ SNDDMA_Init (void)
 	shm->samples = info.fragstotal * info.fragsize / (shm->samplebits / 8);
 	shm->submission_chunk = 1;
 
+	tmp = 0;
+	if (shm->channels == 2)
+		tmp = 1;
+	rc = ioctl (audio_fd, SNDCTL_DSP_STEREO, &tmp);
+	if (rc < 0) {
+		perror (snd_dev);
+		Sys_Printf ("Could not set %s to stereo=%d", snd_dev, shm->channels);
+		close (audio_fd);
+		return 0;
+	}
+
+	if (tmp)
+		shm->channels = 2;
+	else
+		shm->channels = 1;
+
+	rc = ioctl (audio_fd, SNDCTL_DSP_SPEED, &shm->speed);
+	if (rc < 0) {
+		perror (snd_dev);
+		Sys_Printf ("Could not set %s speed to %d", snd_dev, shm->speed);
+		close (audio_fd);
+		return 0;
+	}
+
+	if (shm->samplebits == 16) {
+		rc = AFMT_S16_LE;
+		rc = ioctl (audio_fd, SNDCTL_DSP_SETFMT, &rc);
+		if (rc < 0) {
+			perror (snd_dev);
+			Sys_Printf ("Could not support 16-bit data.  Try 8-bit.\n");
+			close (audio_fd);
+			return 0;
+		}
+	} else if (shm->samplebits == 8) {
+		rc = AFMT_U8;
+		rc = ioctl (audio_fd, SNDCTL_DSP_SETFMT, &rc);
+		if (rc < 0) {
+			perror (snd_dev);
+			Sys_Printf ("Could not support 8-bit data.\n");
+			close (audio_fd);
+			return 0;
+		}
+	} else {
+		perror (snd_dev);
+		Sys_Printf ("%d-bit sound not supported.", shm->samplebits);
+		close (audio_fd);
+		return 0;
+	}
+    
 	if (mmaped_io) {
 		// memory map the dma buffer
 		shm->buffer = (unsigned char *) mmap
@@ -215,65 +264,6 @@ SNDDMA_Init (void)
 			close (audio_fd);
 			return 0;
 		}
-	}
-
-	tmp = 0;
-	if (shm->channels == 2)
-		tmp = 1;
-	rc = ioctl (audio_fd, SNDCTL_DSP_STEREO, &tmp);
-	if (rc < 0) {
-		perror (snd_dev);
-		Sys_Printf ("Could not set %s to stereo=%d", snd_dev, shm->channels);
-		if (mmaped_io)
-			munmap (shm->buffer, shm->samples * shm->samplebits / 8);
-		close (audio_fd);
-		return 0;
-	}
-
-	if (tmp)
-		shm->channels = 2;
-	else
-		shm->channels = 1;
-
-	rc = ioctl (audio_fd, SNDCTL_DSP_SPEED, &shm->speed);
-	if (rc < 0) {
-		perror (snd_dev);
-		Sys_Printf ("Could not set %s speed to %d", snd_dev, shm->speed);
-		if (mmaped_io)
-			munmap (shm->buffer, shm->samples * shm->samplebits / 8);
-		close (audio_fd);
-		return 0;
-	}
-
-	if (shm->samplebits == 16) {
-		rc = AFMT_S16_LE;
-		rc = ioctl (audio_fd, SNDCTL_DSP_SETFMT, &rc);
-		if (rc < 0) {
-			perror (snd_dev);
-			Sys_Printf ("Could not support 16-bit data.  Try 8-bit.\n");
-			if (mmaped_io)
-				munmap (shm->buffer, shm->samples * shm->samplebits / 8);
-			close (audio_fd);
-			return 0;
-		}
-	} else if (shm->samplebits == 8) {
-		rc = AFMT_U8;
-		rc = ioctl (audio_fd, SNDCTL_DSP_SETFMT, &rc);
-		if (rc < 0) {
-			perror (snd_dev);
-			Sys_Printf ("Could not support 8-bit data.\n");
-			if (mmaped_io)
-				munmap (shm->buffer, shm->samples * shm->samplebits / 8);
-			close (audio_fd);
-			return 0;
-		}
-	} else {
-		perror (snd_dev);
-		Sys_Printf ("%d-bit sound not supported.", shm->samplebits);
-		if (mmaped_io)
-			munmap (shm->buffer, shm->samples * shm->samplebits / 8);
-		close (audio_fd);
-		return 0;
 	}
 
 	// toggle the trigger & start her up
