@@ -513,6 +513,10 @@ define_def (const char *name, etype_t basic_type, const char *full_type, int v)
 	d.name = strpool_addstr (strings, name);
 	d.ofs = data->size;
 	d.flags = QFOD_GLOBAL;
+	if (basic_type == ev_field) {
+		d.relocs = relocs.num_relocs;
+		d.num_relocs = 1;
+	}
 	defspace_adddata (data, &val, 1);
 	defgroup_add_defs (&global_defs, &d, 1);
 	process_def (global_defs.defs + global_defs.num_defs - 1);
