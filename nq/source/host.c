@@ -87,7 +87,6 @@ client_t   *host_client;				// current client
 jmp_buf     host_abortserver;
 
 byte       *vid_basepal;
-byte       *host_colormap;
 
 cvar_t     *fs_globalcfg;
 
@@ -971,8 +970,8 @@ Host_Init (quakeparms_t *parms)
 		// color 
 		// to 
 		// black
-		host_colormap = (byte *) COM_LoadHunkFile ("gfx/colormap.lmp");
-		if (!host_colormap)
+		vid_colormap = (byte *) COM_LoadHunkFile ("gfx/colormap.lmp");
+		if (!vid_colormap)
 			Sys_Error ("Couldn't load gfx/colormap.lmp");
 
 		VID_Init (vid_basepal);

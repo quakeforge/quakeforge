@@ -70,6 +70,12 @@ D_Init (void)
 	r_recursiveaffinetriangles = true;
 	r_pixbytes = 1;
 	r_aliasuvscale = 1.0;
+
+	vid.surf_cache_size = D_SurfaceCacheForRes;
+	vid.flush_caches = D_FlushCaches;
+	vid.init_caches = D_InitCaches;
+
+	VID_InitBuffers ();
 }
 
 

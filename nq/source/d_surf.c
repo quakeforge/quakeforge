@@ -122,6 +122,8 @@ D_InitCaches (void *buffer, int size)
 	sc_base->owner = NULL;
 	sc_base->size = sc_size;
 
+	d_pzbuffer = vid.zbuffer;
+
 	D_ClearCacheGuard ();
 }
 
