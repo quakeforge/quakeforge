@@ -357,8 +357,8 @@ do_op_string (int op, expr_t *e1, expr_t *e2)
 	char *buf;
 	char *s1, *s2;
 
-	s1 = e1->e.string_val;
-	s2 = e2->e.string_val;
+	s1 = e1->e.string_val ? e1->e.string_val : "";
+	s2 = e2->e.string_val ? e2->e.string_val : "";
 	
 	switch (op) {
 		case '+':
@@ -619,7 +619,7 @@ field_expr (expr_t *e1, expr_t *e2)
 	return e;
 }
 
-static expr_t *
+expr_t *
 test_expr (expr_t *e, int test)
 {
 	expr_t *new = 0;
@@ -669,7 +669,12 @@ test_expr (expr_t *e, int test)
 			new->type = ex_quaternion;
 			break;
 	}
-	return binary_expr (NE, e, new);
+	new->line = e->line;
+	new->file = e->file;
+	new = binary_expr (NE, e, new);
+	new->line = e->line;
+	new->file = e->file;
+	return new;
 }
 
 void
@@ -932,9 +937,9 @@ function_expr (expr_t *e1, expr_t *e2)
 		if (err)
 			return err;
 	} else {
-		for (e = e2; e; e = e->next)
-			if (e->type == ex_integer)
-				warning (e, "passing integer consant into ... function");
+		//for (e = e2; e; e = e->next)
+		//	if (e->type == ex_integer)
+		//		warning (e, "passing integer consant into ... function");
 	}
 	e = new_binary_expr ('c', e1, e2);
 	e->e.expr.type = ftype->aux_type;

@@ -178,6 +178,12 @@ PR_ReuseConstant (expr_t *expr, def_t *def)
 		pointer_imm_defs = Hash_NewTable (16381, int_imm_get_key, 0, "pointer");
 		quaternion_imm_defs = Hash_NewTable (16381, quaternion_imm_get_key, 0, 0);
 		integer_imm_defs = Hash_NewTable (16381, int_imm_get_key, 0, "integer");
+
+		Hash_Add (string_imm_defs, PR_NewDef (&type_string, ".imm", 0));
+		Hash_Add (float_imm_defs, PR_NewDef (&type_float, ".imm", 0));
+		Hash_Add (entity_imm_defs, PR_NewDef (&type_entity, ".imm", 0));
+		Hash_Add (pointer_imm_defs, PR_NewDef (&type_pointer, ".imm", 0));
+		Hash_Add (integer_imm_defs, PR_NewDef (&type_integer, ".imm", 0));
 	}
 	switch (e.type) {
 		case ex_entity:
@@ -214,7 +220,7 @@ PR_ReuseConstant (expr_t *expr, def_t *def)
 			type = &type_float;
 			break;
 		case ex_string:
-			r = e.e.string_val;
+			r = e.e.string_val ? e.e.string_val : "";
 			tab = string_imm_defs;
 			type = &type_string;
 			break;
@@ -266,7 +272,7 @@ PR_ReuseConstant (expr_t *expr, def_t *def)
 	cn->initialized = 1;
 	// copy the immediate to the global area
 	if (e.type == ex_string)
-		e.e.integer_val = CopyString (e.e.string_val);
+		e.e.integer_val = CopyString (r);
 
 	memcpy (pr_globals + cn->ofs, &e.e, 4 * type_size[type->type]);
 

@@ -331,13 +331,13 @@ statement
 
 			$$ = new_block_expr ();
 
-			e = new_binary_expr ('n', $3, l2);
+			e = new_binary_expr ('n', test_expr ($3, 1), l2);
 			e->line = $3->line;
 			e->file = $3->file;
 			append_expr ($$, e);
 			append_expr ($$, l1);
 			append_expr ($$, $5);
-			e = new_binary_expr ('i', $3, l1);
+			e = new_binary_expr ('i', test_expr ($3, 1), l1);
 			e->line = $3->line;
 			e->file = $3->file;
 			append_expr ($$, e);
@@ -351,7 +351,7 @@ statement
 
 			append_expr ($$, l1);
 			append_expr ($$, $2);
-			append_expr ($$, new_binary_expr ('i', $5, l1));
+			append_expr ($$, new_binary_expr ('i', test_expr ($5, 1), l1));
 		}
 	| LOCAL type
 		{
@@ -370,7 +370,7 @@ statement
 
 			$$ = new_block_expr ();
 
-			e = new_binary_expr ('n', $3, l1);
+			e = new_binary_expr ('n', test_expr ($3, 1), l1);
 			e->line = $3->line;
 			e->file = $3->file;
 			append_expr ($$, e);
@@ -385,7 +385,7 @@ statement
 
 			$$ = new_block_expr ();
 
-			e = new_binary_expr ('n', $3, l1);
+			e = new_binary_expr ('n', test_expr ($3, 1), l1);
 			e->line = $3->line;
 			e->file = $3->file;
 			append_expr ($$, e);
@@ -407,11 +407,11 @@ statement
 			$$ = new_block_expr ();
 
 			append_expr ($$, $3);
-			append_expr ($$, new_binary_expr ('n', $5, l2));
+			append_expr ($$, new_binary_expr ('n', test_expr ($5, 1), l2));
 			append_expr ($$, l1);
 			append_expr ($$, $9);
 			append_expr ($$, $7);
-			append_expr ($$, new_binary_expr ('i', $5, l1));
+			append_expr ($$, new_binary_expr ('i', test_expr ($5, 1), l1));
 			append_expr ($$, l2);
 		}
 	| expr ';'
