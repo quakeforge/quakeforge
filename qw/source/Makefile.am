@@ -50,8 +50,8 @@ if ASM_ARCH
 math_ASM = math.S sys_x86.S
 endif
 common_SOURCES= buildnum.c com.c \
-	info.c link.c mathlib.c model.c model_brush.c \
-	msg.c pmove.c pmovetst.c qargs.c qendian.c quakefs.c quakeio.c \
+	mathlib.c model.c model_brush.c msg_ucmd.c \
+	pmove.c pmovetst.c quakefs.c quakeio.c \
 	$(math_ASM) $(packetlogger)
 
 #

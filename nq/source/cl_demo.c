@@ -90,14 +90,14 @@ void CL_WriteDemoMessage (void)
 	int		i;
 	float	f;
 
-	len = LittleLong (net_message.cursize);
+	len = LittleLong (net_message->message->cursize);
 	Qwrite (cls.demofile, &len, 4);
 	for (i=0 ; i<3 ; i++)
 	{
 		f = LittleFloat (cl.viewangles[i]);
 		Qwrite (cls.demofile, &f, 4);
 	}
-	Qwrite (cls.demofile, net_message.data, net_message.cursize);
+	Qwrite (cls.demofile, net_message->message->data, net_message->message->cursize);
 	Qflush (cls.demofile);
 }
 
@@ -135,7 +135,7 @@ int CL_GetMessage (void)
 		}
 		
 	// get the next message
-		Qread (cls.demofile, &net_message.cursize, 4);
+		Qread (cls.demofile, &net_message->message->cursize, 4);
 		VectorCopy (cl.mviewangles[0], cl.mviewangles[1]);
 		for (i=0 ; i<3 ; i++)
 		{
@@ -143,11 +143,11 @@ int CL_GetMessage (void)
 			cl.mviewangles[0][i] = LittleFloat (f);
 		}
 		
-		net_message.cursize = LittleLong (net_message.cursize);
-		if (net_message.cursize > MAX_MSGLEN)
+		net_message->message->cursize = LittleLong (net_message->message->cursize);
+		if (net_message->message->cursize > MAX_MSGLEN)
 			Sys_Error ("Demo message > MAX_MSGLEN");
-		r = Qread (cls.demofile, net_message.data, net_message.cursize);
-		if (r != net_message.cursize)
+		r = Qread (cls.demofile, net_message->message->data, net_message->message->cursize);
+		if (r != net_message->message->cursize)
 		{
 			CL_StopPlayback ();
 			return 0;
@@ -164,7 +164,7 @@ int CL_GetMessage (void)
 			return r;
 	
 	// discard nop keepalive message
-		if (net_message.cursize == 1 && net_message.data[0] == svc_nop)
+		if (net_message->message->cursize == 1 && net_message->message->data[0] == svc_nop)
 			Con_Printf ("<-- server to client keepalive\n");
 		else
 			break;
@@ -196,8 +196,8 @@ void CL_Stop_f (void)
 	}
 
 // write a disconnect message to the demo file
-	SZ_Clear (&net_message);
-	MSG_WriteByte (&net_message, svc_disconnect);
+	SZ_Clear (net_message->message);
+	MSG_WriteByte (net_message->message, svc_disconnect);
 	CL_WriteDemoMessage ();
 
 // finish up

@@ -221,16 +221,16 @@ SV_FinalMessage (char *message)
 	int         i;
 	client_t   *cl;
 
-	SZ_Clear (&net_message);
-	MSG_WriteByte (&net_message, svc_print);
-	MSG_WriteByte (&net_message, PRINT_HIGH);
-	MSG_WriteString (&net_message, message);
-	MSG_WriteByte (&net_message, svc_disconnect);
+	SZ_Clear (net_message->message);
+	MSG_WriteByte (net_message->message, svc_print);
+	MSG_WriteByte (net_message->message, PRINT_HIGH);
+	MSG_WriteString (net_message->message, message);
+	MSG_WriteByte (net_message->message, svc_disconnect);
 
 	for (i = 0, cl = svs.clients; i < MAX_CLIENTS; i++, cl++)
 		if (cl->state >= cs_spawned)
-			Netchan_Transmit (&cl->netchan, net_message.cursize,
-							  net_message.data);
+			Netchan_Transmit (&cl->netchan, net_message->message->cursize,
+							  net_message->message->data);
 }
 
 /*
@@ -889,7 +889,7 @@ SVC_RemoteCommand (void)
 
 	if (!Rcon_Validate ()) {
 		Con_Printf ("Bad rcon from %s:\n%s\n", NET_AdrToString (net_from),
-					net_message.data + 4);
+					net_message->message->data + 4);
 
 		SV_BeginRedirect (RD_PACKET);
 
@@ -932,10 +932,10 @@ SV_ConnectionlessPacket (void)
 	char       *s;
 	char       *c;
 
-	MSG_BeginReading ();
-	MSG_ReadLong ();					// skip the -1 marker
+	MSG_BeginReading (net_message);
+	MSG_ReadLong (net_message);					// skip the -1 marker
 
-	s = MSG_ReadStringLine ();
+	s = MSG_ReadStringLine (net_message);
 
 	Cmd_TokenizeString (s);
 
@@ -1270,21 +1270,21 @@ SV_ReadPackets (void)
 			continue;
 		}
 		// check for connectionless packet (0xffffffff) first
-		if (*(int *) net_message.data == -1) {
+		if (*(int *) net_message->message->data == -1) {
 			SV_ConnectionlessPacket ();
 			continue;
 		}
 
-		if (net_message.cursize < 11) {
+		if (net_message->message->cursize < 11) {
 			Con_Printf ("%s: Runt packet\n", NET_AdrToString (net_from));
 			continue;
 		}
 		// read the qport out of the message so we can fix up
 		// stupid address translating routers
-		MSG_BeginReading ();
-		MSG_ReadLong ();				// sequence number
-		MSG_ReadLong ();				// sequence number
-		qport = MSG_ReadShort () & 0xffff;
+		MSG_BeginReading (net_message);
+		MSG_ReadLong (net_message);				// sequence number
+		MSG_ReadLong (net_message);				// sequence number
+		qport = MSG_ReadShort (net_message) & 0xffff;
 
 		// check for packets from connected clients
 		for (i = 0, cl = svs.clients; i < MAX_CLIENTS; i++, cl++) {

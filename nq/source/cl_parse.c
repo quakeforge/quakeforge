@@ -132,20 +132,20 @@ void CL_ParseStartSoundPacket(void)
     float 	attenuation;  
  	int		i;
 	           
-    field_mask = MSG_ReadByte(); 
+    field_mask = MSG_ReadByte(net_message); 
 
     if (field_mask & SND_VOLUME)
-		volume = MSG_ReadByte ();
+		volume = MSG_ReadByte (net_message);
 	else
 		volume = DEFAULT_SOUND_PACKET_VOLUME;
 	
     if (field_mask & SND_ATTENUATION)
-		attenuation = MSG_ReadByte () / 64.0;
+		attenuation = MSG_ReadByte (net_message) / 64.0;
 	else
 		attenuation = DEFAULT_SOUND_PACKET_ATTENUATION;
 	
-	channel = MSG_ReadShort ();
-	sound_num = MSG_ReadByte ();
+	channel = MSG_ReadShort (net_message);
+	sound_num = MSG_ReadByte (net_message);
 
 	ent = channel >> 3;
 	channel &= 7;
@@ -154,7 +154,7 @@ void CL_ParseStartSoundPacket(void)
 		Host_Error ("CL_ParseStartSoundPacket: ent = %i", ent);
 	
 	for (i=0 ; i<3 ; i++)
-		pos[i] = MSG_ReadCoord ();
+		pos[i] = MSG_ReadCoord (net_message);
  
     S_StartSound (ent, channel, cl.sound_precache[sound_num], pos, volume/255.0, attenuation);
 }       
@@ -181,8 +181,8 @@ void CL_KeepaliveMessage (void)
 		return;
 
 // read messages from server, should just be nops
-	old = net_message;
-	memcpy (olddata, net_message.data, net_message.cursize);
+	old = *net_message->message;
+	memcpy (olddata, net_message->message->data, net_message->message->cursize);
 	
 	do
 	{
@@ -197,14 +197,14 @@ void CL_KeepaliveMessage (void)
 			Host_Error ("CL_KeepaliveMessage: received a message");
 			break;
 		case 2:
-			if (MSG_ReadByte() != svc_nop)
+			if (MSG_ReadByte(net_message) != svc_nop)
 				Host_Error ("CL_KeepaliveMessage: datagram wasn't a nop");
 			break;
 		}
 	} while (ret);
 
-	net_message = old;
-	memcpy (net_message.data, olddata, net_message.cursize);
+	*net_message->message = old;
+	memcpy (net_message->message->data, olddata, net_message->message->cursize);
 
 // check time
 	time = Sys_DoubleTime ();
@@ -240,7 +240,7 @@ void CL_ParseServerInfo (void)
 	CL_ClearState ();
 
 // parse protocol version number
-	i = MSG_ReadLong ();
+	i = MSG_ReadLong (net_message);
 	if (i != PROTOCOL_VERSION)
 	{
 		Con_Printf ("Server returned version %i, not %i", i, PROTOCOL_VERSION);
@@ -248,7 +248,7 @@ void CL_ParseServerInfo (void)
 	}
 
 // parse maxclients
-	cl.maxclients = MSG_ReadByte ();
+	cl.maxclients = MSG_ReadByte (net_message);
 	if (cl.maxclients < 1 || cl.maxclients > MAX_SCOREBOARD)
 	{
 		Con_Printf("Bad maxclients (%u) from server\n", cl.maxclients);
@@ -257,10 +257,10 @@ void CL_ParseServerInfo (void)
 	cl.scores = Hunk_AllocName (cl.maxclients*sizeof(*cl.scores), "scores");
 
 // parse gametype
-	cl.gametype = MSG_ReadByte ();
+	cl.gametype = MSG_ReadByte (net_message);
 
 // parse signon message
-	str = MSG_ReadString ();
+	str = MSG_ReadString (net_message);
 	strncpy (cl.levelname, str, sizeof(cl.levelname)-1);
 
 // seperate the printfs so the server message can have a color
@@ -277,7 +277,7 @@ void CL_ParseServerInfo (void)
 	memset (cl.model_precache, 0, sizeof(cl.model_precache));
 	for (nummodels=1 ; ; nummodels++)
 	{
-		str = MSG_ReadString ();
+		str = MSG_ReadString (net_message);
 		if (!str[0])
 			break;
 		if (nummodels==MAX_MODELS)
@@ -293,7 +293,7 @@ void CL_ParseServerInfo (void)
 	memset (cl.sound_precache, 0, sizeof(cl.sound_precache));
 	for (numsounds=1 ; ; numsounds++)
 	{
-		str = MSG_ReadString ();
+		str = MSG_ReadString (net_message);
 		if (!str[0])
 			break;
 		if (numsounds==MAX_SOUNDS)
@@ -369,14 +369,14 @@ void CL_ParseUpdate (int bits)
 
 	if (bits & U_MOREBITS)
 	{
-		i = MSG_ReadByte ();
+		i = MSG_ReadByte (net_message);
 		bits |= (i<<8);
 	}
 
 	if (bits & U_LONGENTITY)	
-		num = MSG_ReadShort ();
+		num = MSG_ReadShort (net_message);
 	else
-		num = MSG_ReadByte ();
+		num = MSG_ReadByte (net_message);
 
 	ent = CL_EntityNum (num);
 
@@ -393,7 +393,7 @@ if (bits&(1<<i))
 	
 	if (bits & U_MODEL)
 	{
-		modnum = MSG_ReadByte ();
+		modnum = MSG_ReadByte (net_message);
 		if (modnum >= MAX_MODELS)
 			Host_Error ("CL_ParseModel: bad modnum");
 	}
@@ -420,12 +420,12 @@ if (bits&(1<<i))
 	}
 	
 	if (bits & U_FRAME)
-		ent->frame = MSG_ReadByte ();
+		ent->frame = MSG_ReadByte (net_message);
 	else
 		ent->frame = ent->baseline.frame;
 
 	if (bits & U_COLORMAP)
-		i = MSG_ReadByte();
+		i = MSG_ReadByte(net_message);
 	else
 		i = ent->baseline.colormap;
 	if (!i)
@@ -438,7 +438,7 @@ if (bits&(1<<i))
 	}
 
 	if (bits & U_SKIN)
-		skin = MSG_ReadByte();
+		skin = MSG_ReadByte(net_message);
 	else
 		skin = ent->baseline.skin;
 	if (skin != ent->skinnum) {
@@ -448,7 +448,7 @@ if (bits&(1<<i))
 	}
 
 	if (bits & U_EFFECTS)
-		ent->effects = MSG_ReadByte();
+		ent->effects = MSG_ReadByte(net_message);
 	else
 		ent->effects = ent->baseline.effects;
 
@@ -457,29 +457,29 @@ if (bits&(1<<i))
 	VectorCopy (ent->msg_angles[0], ent->msg_angles[1]);
 
 	if (bits & U_ORIGIN1)
-		ent->msg_origins[0][0] = MSG_ReadCoord ();
+		ent->msg_origins[0][0] = MSG_ReadCoord (net_message);
 	else
 		ent->msg_origins[0][0] = ent->baseline.origin[0];
 	if (bits & U_ANGLE1)
-		ent->msg_angles[0][0] = MSG_ReadAngle();
+		ent->msg_angles[0][0] = MSG_ReadAngle(net_message);
 	else
 		ent->msg_angles[0][0] = ent->baseline.angles[0];
 
 	if (bits & U_ORIGIN2)
-		ent->msg_origins[0][1] = MSG_ReadCoord ();
+		ent->msg_origins[0][1] = MSG_ReadCoord (net_message);
 	else
 		ent->msg_origins[0][1] = ent->baseline.origin[1];
 	if (bits & U_ANGLE2)
-		ent->msg_angles[0][1] = MSG_ReadAngle();
+		ent->msg_angles[0][1] = MSG_ReadAngle(net_message);
 	else
 		ent->msg_angles[0][1] = ent->baseline.angles[1];
 
 	if (bits & U_ORIGIN3)
-		ent->msg_origins[0][2] = MSG_ReadCoord ();
+		ent->msg_origins[0][2] = MSG_ReadCoord (net_message);
 	else
 		ent->msg_origins[0][2] = ent->baseline.origin[2];
 	if (bits & U_ANGLE3)
-		ent->msg_angles[0][2] = MSG_ReadAngle();
+		ent->msg_angles[0][2] = MSG_ReadAngle(net_message);
 	else
 		ent->msg_angles[0][2] = ent->baseline.angles[2];
 
@@ -505,14 +505,14 @@ void CL_ParseBaseline (entity_t *ent)
 {
 	int			i;
 	
-	ent->baseline.modelindex = MSG_ReadByte ();
-	ent->baseline.frame = MSG_ReadByte ();
-	ent->baseline.colormap = MSG_ReadByte();
-	ent->baseline.skin = MSG_ReadByte();
+	ent->baseline.modelindex = MSG_ReadByte (net_message);
+	ent->baseline.frame = MSG_ReadByte (net_message);
+	ent->baseline.colormap = MSG_ReadByte(net_message);
+	ent->baseline.skin = MSG_ReadByte(net_message);
 	for (i=0 ; i<3 ; i++)
 	{
-		ent->baseline.origin[i] = MSG_ReadCoord ();
-		ent->baseline.angles[i] = MSG_ReadAngle ();
+		ent->baseline.origin[i] = MSG_ReadCoord (net_message);
+		ent->baseline.angles[i] = MSG_ReadAngle (net_message);
 	}
 }
 
@@ -529,12 +529,12 @@ void CL_ParseClientdata (int bits)
 	int		i, j;
 	
 	if (bits & SU_VIEWHEIGHT)
-		cl.viewheight = MSG_ReadChar ();
+		cl.viewheight = MSG_ReadChar (net_message);
 	else
 		cl.viewheight = DEFAULT_VIEWHEIGHT;
 
 	if (bits & SU_IDEALPITCH)
-		cl.idealpitch = MSG_ReadChar ();
+		cl.idealpitch = MSG_ReadChar (net_message);
 	else
 		cl.idealpitch = 0;
 	
@@ -542,17 +542,17 @@ void CL_ParseClientdata (int bits)
 	for (i=0 ; i<3 ; i++)
 	{
 		if (bits & (SU_PUNCH1<<i) )
-			cl.punchangle[i] = MSG_ReadChar();
+			cl.punchangle[i] = MSG_ReadChar(net_message);
 		else
 			cl.punchangle[i] = 0;
 		if (bits & (SU_VELOCITY1<<i) )
-			cl.mvelocity[0][i] = MSG_ReadChar()*16;
+			cl.mvelocity[0][i] = MSG_ReadChar(net_message)*16;
 		else
 			cl.mvelocity[0][i] = 0;
 	}
 
 // [always sent]	if (bits & SU_ITEMS)
-		i = MSG_ReadLong ();
+		i = MSG_ReadLong (net_message);
 
 	if (cl.items != i)
 	{	// set flash times
@@ -567,12 +567,12 @@ void CL_ParseClientdata (int bits)
 	cl.inwater = (bits & SU_INWATER) != 0;
 
 	if (bits & SU_WEAPONFRAME)
-		cl.stats[STAT_WEAPONFRAME] = MSG_ReadByte ();
+		cl.stats[STAT_WEAPONFRAME] = MSG_ReadByte (net_message);
 	else
 		cl.stats[STAT_WEAPONFRAME] = 0;
 
 	if (bits & SU_ARMOR)
-		i = MSG_ReadByte ();
+		i = MSG_ReadByte (net_message);
 	else
 		i = 0;
 	if (cl.stats[STAT_ARMOR] != i)
@@ -582,7 +582,7 @@ void CL_ParseClientdata (int bits)
 	}
 
 	if (bits & SU_WEAPON)
-		i = MSG_ReadByte ();
+		i = MSG_ReadByte (net_message);
 	else
 		i = 0;
 	if (cl.stats[STAT_WEAPON] != i)
@@ -591,14 +591,14 @@ void CL_ParseClientdata (int bits)
 		Sbar_Changed ();
 	}
 	
-	i = MSG_ReadShort ();
+	i = MSG_ReadShort (net_message);
 	if (cl.stats[STAT_HEALTH] != i)
 	{
 		cl.stats[STAT_HEALTH] = i;
 		Sbar_Changed ();
 	}
 
-	i = MSG_ReadByte ();
+	i = MSG_ReadByte (net_message);
 	if (cl.stats[STAT_AMMO] != i)
 	{
 		cl.stats[STAT_AMMO] = i;
@@ -607,7 +607,7 @@ void CL_ParseClientdata (int bits)
 
 	for (i=0 ; i<4 ; i++)
 	{
-		j = MSG_ReadByte ();
+		j = MSG_ReadByte (net_message);
 		if (cl.stats[STAT_SHELLS+i] != j)
 		{
 			cl.stats[STAT_SHELLS+i] = j;
@@ -615,7 +615,7 @@ void CL_ParseClientdata (int bits)
 		}
 	}
 
-	i = MSG_ReadByte ();
+	i = MSG_ReadByte (net_message);
 
 	if (standard_quake)
 	{
@@ -712,16 +712,16 @@ void CL_ParseStaticSound (void)
 	int			i;
 	
 	for (i=0 ; i<3 ; i++)
-		org[i] = MSG_ReadCoord ();
-	sound_num = MSG_ReadByte ();
-	vol = MSG_ReadByte ();
-	atten = MSG_ReadByte ();
+		org[i] = MSG_ReadCoord (net_message);
+	sound_num = MSG_ReadByte (net_message);
+	vol = MSG_ReadByte (net_message);
+	atten = MSG_ReadByte (net_message);
 	
 	S_StaticSound (cl.sound_precache[sound_num], org, vol, atten);
 }
 
 
-#define SHOWNET(x) if(cl_shownet->int_val==2)Con_Printf ("%3i:%s\n", msg_readcount-1, x);
+#define SHOWNET(x) if(cl_shownet->int_val==2)Con_Printf ("%3i:%s\n", net_message->readcount-1, x);
 
 /*
 =====================
@@ -737,7 +737,7 @@ void CL_ParseServerMessage (void)
 // if recording demos, copy the message out
 //
 	if (cl_shownet->int_val == 1)
-		Con_Printf ("%i ",net_message.cursize);
+		Con_Printf ("%i ",net_message->message->cursize);
 	else if (cl_shownet->int_val == 2)
 		Con_Printf ("------------------\n");
 	
@@ -745,14 +745,14 @@ void CL_ParseServerMessage (void)
 //
 // parse the message
 //
-	MSG_BeginReading ();
+	MSG_BeginReading (net_message);
 	
 	while (1)
 	{
-		if (msg_badread)
+		if (net_message->badread)
 			Host_Error ("CL_ParseServerMessage: Bad server message");
 
-		cmd = MSG_ReadByte ();
+		cmd = MSG_ReadByte (net_message);
 
 		if (cmd == -1)
 		{
@@ -783,16 +783,16 @@ void CL_ParseServerMessage (void)
 			
 		case svc_time:
 			cl.mtime[1] = cl.mtime[0];
-			cl.mtime[0] = MSG_ReadFloat ();			
+			cl.mtime[0] = MSG_ReadFloat (net_message);			
 			break;
 			
 		case svc_clientdata:
-			i = MSG_ReadShort ();
+			i = MSG_ReadShort (net_message);
 			CL_ParseClientdata (i);
 			break;
 		
 		case svc_version:
-			i = MSG_ReadLong ();
+			i = MSG_ReadLong (net_message);
 			if (i != PROTOCOL_VERSION)
 				Host_Error ("CL_ParseServerMessage: Server is protocol %i instead of %i\n", i, PROTOCOL_VERSION);
 			break;
@@ -801,15 +801,15 @@ void CL_ParseServerMessage (void)
 			Host_EndGame ("Server disconnected\n");
 
 		case svc_print:
-			Con_Printf ("%s", MSG_ReadString ());
+			Con_Printf ("%s", MSG_ReadString (net_message));
 			break;
 			
 		case svc_centerprint:
-			SCR_CenterPrint (MSG_ReadString ());
+			SCR_CenterPrint (MSG_ReadString (net_message));
 			break;
 			
 		case svc_stufftext:
-			Cbuf_AddText (MSG_ReadString ());
+			Cbuf_AddText (MSG_ReadString (net_message));
 			break;
 			
 		case svc_damage:
@@ -823,18 +823,18 @@ void CL_ParseServerMessage (void)
 			
 		case svc_setangle:
 			for (i=0 ; i<3 ; i++)
-				cl.viewangles[i] = MSG_ReadAngle ();
+				cl.viewangles[i] = MSG_ReadAngle (net_message);
 			break;
 			
 		case svc_setview:
-			cl.viewentity = MSG_ReadShort ();
+			cl.viewentity = MSG_ReadShort (net_message);
 			break;
 					
 		case svc_lightstyle:
-			i = MSG_ReadByte ();
+			i = MSG_ReadByte (net_message);
 			if (i >= MAX_LIGHTSTYLES)
 				Sys_Error ("svc_lightstyle > MAX_LIGHTSTYLES");
-			strcpy (cl_lightstyle[i].map,  MSG_ReadString());
+			strcpy (cl_lightstyle[i].map,  MSG_ReadString(net_message));
 			cl_lightstyle[i].length = strlen(cl_lightstyle[i].map);
 			break;
 			
@@ -843,32 +843,32 @@ void CL_ParseServerMessage (void)
 			break;
 			
 		case svc_stopsound:
-			i = MSG_ReadShort();
+			i = MSG_ReadShort(net_message);
 			S_StopSound(i>>3, i&7);
 			break;
 		
 		case svc_updatename:
 			Sbar_Changed ();
-			i = MSG_ReadByte ();
+			i = MSG_ReadByte (net_message);
 			if (i >= cl.maxclients)
 				Host_Error ("CL_ParseServerMessage: svc_updatename > MAX_SCOREBOARD");
-			strcpy (cl.scores[i].name, MSG_ReadString ());
+			strcpy (cl.scores[i].name, MSG_ReadString (net_message));
 			break;
 			
 		case svc_updatefrags:
 			Sbar_Changed ();
-			i = MSG_ReadByte ();
+			i = MSG_ReadByte (net_message);
 			if (i >= cl.maxclients)
 				Host_Error ("CL_ParseServerMessage: svc_updatefrags > MAX_SCOREBOARD");
-			cl.scores[i].frags = MSG_ReadShort ();
+			cl.scores[i].frags = MSG_ReadShort (net_message);
 			break;			
 
 		case svc_updatecolors:
 			Sbar_Changed ();
-			i = MSG_ReadByte ();
+			i = MSG_ReadByte (net_message);
 			if (i >= cl.maxclients)
 				Host_Error ("CL_ParseServerMessage: svc_updatecolors > MAX_SCOREBOARD");
-			cl.scores[i].colors = MSG_ReadByte ();
+			cl.scores[i].colors = MSG_ReadByte (net_message);
 			CL_NewTranslation (i);
 			break;
 			
@@ -877,7 +877,7 @@ void CL_ParseServerMessage (void)
 			break;
 
 		case svc_spawnbaseline:
-			i = MSG_ReadShort ();
+			i = MSG_ReadShort (net_message);
 			// must use CL_EntityNum() to force cl.num_entities up
 			CL_ParseBaseline (CL_EntityNum(i));
 			break;
@@ -890,7 +890,7 @@ void CL_ParseServerMessage (void)
 
 		case svc_setpause:
 			{
-				cl.paused = MSG_ReadByte ();
+				cl.paused = MSG_ReadByte (net_message);
 
 				if (cl.paused)
 				{
@@ -908,7 +908,7 @@ void CL_ParseServerMessage (void)
 			break;
 			
 		case svc_signonnum:
-			i = MSG_ReadByte ();
+			i = MSG_ReadByte (net_message);
 			if (i <= cls.signon)
 				Host_Error ("Received signon %i when at %i", i, cls.signon);
 			cls.signon = i;
@@ -924,10 +924,10 @@ void CL_ParseServerMessage (void)
 			break;
 
 		case svc_updatestat:
-			i = MSG_ReadByte ();
+			i = MSG_ReadByte (net_message);
 			if (i < 0 || i >= MAX_CL_STATS)
 				Sys_Error ("svc_updatestat: %i is invalid", i);
-			cl.stats[i] = MSG_ReadLong ();;
+			cl.stats[i] = MSG_ReadLong (net_message);;
 			break;
 			
 		case svc_spawnstaticsound:
@@ -935,8 +935,8 @@ void CL_ParseServerMessage (void)
 			break;
 
 		case svc_cdtrack:
-			cl.cdtrack = MSG_ReadByte ();
-			cl.looptrack = MSG_ReadByte ();
+			cl.cdtrack = MSG_ReadByte (net_message);
+			cl.looptrack = MSG_ReadByte (net_message);
 			if ( (cls.demoplayback || cls.demorecording) && (cls.forcetrack != -1) )
 				CDAudio_Play ((byte)cls.forcetrack, true);
 			else
@@ -953,14 +953,14 @@ void CL_ParseServerMessage (void)
 			cl.intermission = 2;
 			cl.completed_time = cl.time;
 			vid.recalc_refdef = true;	// go to full screen
-			SCR_CenterPrint (MSG_ReadString ());			
+			SCR_CenterPrint (MSG_ReadString (net_message));			
 			break;
 
 		case svc_cutscene:
 			cl.intermission = 3;
 			cl.completed_time = cl.time;
 			vid.recalc_refdef = true;	// go to full screen
-			SCR_CenterPrint (MSG_ReadString ());			
+			SCR_CenterPrint (MSG_ReadString (net_message));			
 			break;
 
 		case svc_sellscreen:

@@ -854,10 +854,10 @@ CL_ConnectionlessPacket (void)
 	char       *s;
 	int         c;
 
-	MSG_BeginReading ();
-	MSG_ReadLong ();					// skip the -1
+	MSG_BeginReading (net_message);
+	MSG_ReadLong (net_message);					// skip the -1
 
-	c = MSG_ReadByte ();
+	c = MSG_ReadByte (net_message);
 	if (!cls.demoplayback)
 		Con_Printf ("%s: ", NET_AdrToString (net_from));
 //  Con_DPrintf ("%s", net_message.data + 5);
@@ -889,12 +889,12 @@ CL_ConnectionlessPacket (void)
 			Con_Printf ("Command packet from remote host.  Ignored.\n");
 			return;
 		}
-		s = MSG_ReadString ();
+		s = MSG_ReadString (net_message);
 
 		strncpy (cmdtext, s, sizeof (cmdtext) - 1);
 		cmdtext[sizeof (cmdtext) - 1] = 0;
 
-		s = MSG_ReadString ();
+		s = MSG_ReadString (net_message);
 
 		while (*s && isspace ((int) *s))
 			s++;
@@ -931,7 +931,7 @@ CL_ConnectionlessPacket (void)
 	if (c == A2C_PRINT) {
 		netadr_t addy;
 		server_entry_t *temp;
-		s = MSG_ReadString ();
+		s = MSG_ReadString (net_message);
 		for (temp = slist; temp; temp = temp->next)
 			if (temp->waitstatus)
 			{
@@ -976,7 +976,7 @@ CL_ConnectionlessPacket (void)
 	if (c == S2C_CHALLENGE) {
 		Con_Printf ("challenge\n");
 
-		s = MSG_ReadString ();
+		s = MSG_ReadString (net_message);
 		cls.challenge = atoi (s);
 		if (strstr (s, "QF"))
 			CL_AddQFInfoKeys ();
@@ -1001,7 +1001,7 @@ CL_PingPacket (void)
 {
 	server_entry_t *temp;
 	netadr_t addy;
-	MSG_ReadByte ();;
+	MSG_ReadByte (net_message);;
 	for (temp = slist; temp; temp = temp->next)
 		if (temp->pingsent && !temp->pongback) {
 			NET_StringToAdr (temp->server, &addy);
@@ -1027,16 +1027,16 @@ CL_ReadPackets (void)
 		// 
 		// remote command packet
 		//
-		if (*(int *) net_message.data == -1) {
+		if (*(int *) net_message->message->data == -1) {
 			CL_ConnectionlessPacket ();
 			continue;
 		}
-		if (*(char *) net_message.data == A2A_ACK)
+		if (*(char *) net_message->message->data == A2A_ACK)
 		{
 			CL_PingPacket ();
 			continue;
 		}
-		if (net_message.cursize < 8) {
+		if (net_message->message->cursize < 8) {
 			Con_Printf ("%s: Runt packet\n", NET_AdrToString (net_from));
 			continue;
 		}

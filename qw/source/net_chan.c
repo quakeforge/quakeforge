@@ -350,13 +350,13 @@ Netchan_Process (netchan_t *chan)
 	}
 
 // get sequence numbers     
-	MSG_BeginReading ();
-	sequence = MSG_ReadLong ();
-	sequence_ack = MSG_ReadLong ();
+	MSG_BeginReading (net_message);
+	sequence = MSG_ReadLong (net_message);
+	sequence_ack = MSG_ReadLong (net_message);
 
 	// read the qport if we are a server
 	if (is_server)
-		qport = MSG_ReadShort ();
+		qport = MSG_ReadShort (net_message);
 
 	reliable_message = sequence >> 31;
 	reliable_ack = sequence_ack >> 31;
@@ -366,7 +366,7 @@ Netchan_Process (netchan_t *chan)
 
 	if (showpackets->int_val)
 		Con_Printf ("<-- s=%i(%i) a=%i(%i) %i\n", sequence, reliable_message,
-					sequence_ack, reliable_ack, net_message.cursize);
+					sequence_ack, reliable_ack, net_message->message->cursize);
 
 // get a rate estimation
 #if 0

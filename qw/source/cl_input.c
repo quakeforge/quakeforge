@@ -48,6 +48,7 @@
 #include "input.h"
 #include "keys.h"
 #include "msg.h"
+#include "msg_ucmd.h"
 #include "teamplay.h"
 #include "view.h"
 

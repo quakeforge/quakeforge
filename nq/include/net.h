@@ -277,7 +277,7 @@ qboolean IsID(struct qsockaddr *addr);
 //============================================================================
 
 extern	double		net_time;
-extern	sizebuf_t	net_message;
+extern	struct msg_s *net_message;
 extern	int			net_activeconnections;
 
 void		NET_Init (void);

@@ -37,6 +37,7 @@
 #endif
 
 #include "msg.h"
+#include "msg_ucmd.h"
 #include "server.h"
 #include "sys.h"
 

@@ -246,14 +246,14 @@ CL_GetDemoMessage (void)
 
 		case dem_read:
 			// get the next message
-			Qread (cls.demofile, &net_message.cursize, 4);
-			net_message.cursize = LittleLong (net_message.cursize);
-			// Con_Printf("read: %ld bytes\n", net_message.cursize);
-			if (net_message.cursize > MAX_MSGLEN)
+			Qread (cls.demofile, &net_message->message->cursize, 4);
+			net_message->message->cursize = LittleLong (net_message->message->cursize);
+			// Con_Printf("read: %ld bytes\n", net_message->message->cursize);
+			if (net_message->message->cursize > MAX_MSGLEN)
 //          Sys_Error ("Demo message > MAX_MSGLEN");
 				Host_EndGame ("Demo message > MAX_MSGLEN");
-			r = Qread (cls.demofile, net_message.data, net_message.cursize);
-			if (r != net_message.cursize) {
+			r = Qread (cls.demofile, net_message->message->data, net_message->message->cursize);
+			if (r != net_message->message->cursize) {
 				CL_StopPlayback ();
 				return 0;
 			}
@@ -289,7 +289,7 @@ CL_GetMessage (void)
 	if (!NET_GetPacket ())
 		return false;
 
-	CL_WriteDemoMessage (&net_message);
+	CL_WriteDemoMessage (net_message->message);
 
 	return true;
 }
@@ -308,11 +308,11 @@ CL_Stop_f (void)
 		return;
 	}
 // write a disconnect message to the demo file
-	SZ_Clear (&net_message);
-	MSG_WriteLong (&net_message, -1);	// -1 sequence means out of band
-	MSG_WriteByte (&net_message, svc_disconnect);
-	MSG_WriteString (&net_message, "EndOfDemo");
-	CL_WriteDemoMessage (&net_message);
+	SZ_Clear (net_message->message);
+	MSG_WriteLong (net_message->message, -1);	// -1 sequence means out of band
+	MSG_WriteByte (net_message->message, svc_disconnect);
+	MSG_WriteString (net_message->message, "EndOfDemo");
+	CL_WriteDemoMessage (net_message->message);
 
 // finish up
 	Qclose (cls.demofile);

@@ -69,6 +69,7 @@
 #endif
 
 #include "console.h"
+#include "msg.h"
 #include "net.h"
 #include "sys.h"
 #include "qargs.h"
@@ -94,8 +95,11 @@
 netadr_t    net_local_adr;
 
 netadr_t    net_from;
-sizebuf_t   net_message;
 int         net_socket;
+
+static sizebuf_t _net_message_message;
+static msg_t _net_message = {0, 0, &_net_message_message};
+msg_t      *net_message = &_net_message;
 
 extern qboolean is_server;
 
@@ -296,14 +300,14 @@ NET_GetPacket (void)
 		return false;
 	}
 
-	net_message.cursize = ret;
+	_net_message_message.cursize = ret;
 	if (ret == sizeof (net_message_buffer)) {
 		Con_Printf ("Oversize packet from %s\n", NET_AdrToString (net_from));
 		return false;
 	}
 
 #ifdef PACKET_LOGGING
-        Log_Incoming_Packet(net_message_buffer,net_message.cursize);
+        Log_Incoming_Packet(net_message_buffer,_net_message_message.cursize);
 #endif
 	return ret;
 }
@@ -432,8 +436,8 @@ NET_Init (int port)
 	// 
 	// init the message buffer
 	// 
-	net_message.maxsize = sizeof (net_message_buffer);
-	net_message.data = net_message_buffer;
+	_net_message_message.maxsize = sizeof (net_message_buffer);
+	_net_message_message.data = net_message_buffer;
 
 	// 
 	// determine my name & address

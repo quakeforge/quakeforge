@@ -172,15 +172,15 @@ CL_ParseBeam (model_t *m)
 	beam_t     *b;
 	int         i;
 
-	ent = MSG_ReadShort ();
+	ent = MSG_ReadShort (net_message);
 
-	start[0] = MSG_ReadCoord ();
-	start[1] = MSG_ReadCoord ();
-	start[2] = MSG_ReadCoord ();
+	start[0] = MSG_ReadCoord (net_message);
+	start[1] = MSG_ReadCoord (net_message);
+	start[2] = MSG_ReadCoord (net_message);
 
-	end[0] = MSG_ReadCoord ();
-	end[1] = MSG_ReadCoord ();
-	end[2] = MSG_ReadCoord ();
+	end[0] = MSG_ReadCoord (net_message);
+	end[1] = MSG_ReadCoord (net_message);
+	end[2] = MSG_ReadCoord (net_message);
 
 	// override any beam with the same entity
 	for (i = 0, b = cl_beams; i < MAX_BEAMS; i++, b++)
@@ -219,30 +219,30 @@ CL_ParseTEnt (void)
 	explosion_t *ex;
 	int         cnt = -1;
 
-	type = MSG_ReadByte ();
+	type = MSG_ReadByte (net_message);
 	switch (type) {
 		case TE_WIZSPIKE:				// spike hitting wall
-			pos[0] = MSG_ReadCoord ();
-			pos[1] = MSG_ReadCoord ();
-			pos[2] = MSG_ReadCoord ();
+			pos[0] = MSG_ReadCoord (net_message);
+			pos[1] = MSG_ReadCoord (net_message);
+			pos[2] = MSG_ReadCoord (net_message);
 			R_RunSpikeEffect (pos, type);
 			// R_RunParticleEffect (pos, 20, 30);
 			S_StartSound (-1, 0, cl_sfx_wizhit, pos, 1, 1);
 			break;
 
 		case TE_KNIGHTSPIKE:			// spike hitting wall
-			pos[0] = MSG_ReadCoord ();
-			pos[1] = MSG_ReadCoord ();
-			pos[2] = MSG_ReadCoord ();
+			pos[0] = MSG_ReadCoord (net_message);
+			pos[1] = MSG_ReadCoord (net_message);
+			pos[2] = MSG_ReadCoord (net_message);
 			R_RunSpikeEffect (pos, type);
 			// R_RunParticleEffect (pos, 226, 20);
 			S_StartSound (-1, 0, cl_sfx_knighthit, pos, 1, 1);
 			break;
 
 		case TE_SPIKE:					// spike hitting wall
-			pos[0] = MSG_ReadCoord ();
-			pos[1] = MSG_ReadCoord ();
-			pos[2] = MSG_ReadCoord ();
+			pos[0] = MSG_ReadCoord (net_message);
+			pos[1] = MSG_ReadCoord (net_message);
+			pos[2] = MSG_ReadCoord (net_message);
 			R_RunSpikeEffect (pos, type);
 			// R_RunParticleEffect (pos, 0, 10);
 
@@ -259,9 +259,9 @@ CL_ParseTEnt (void)
 			}
 			break;
 		case TE_SUPERSPIKE:			// super spike hitting wall
-			pos[0] = MSG_ReadCoord ();
-			pos[1] = MSG_ReadCoord ();
-			pos[2] = MSG_ReadCoord ();
+			pos[0] = MSG_ReadCoord (net_message);
+			pos[1] = MSG_ReadCoord (net_message);
+			pos[2] = MSG_ReadCoord (net_message);
 			R_RunSpikeEffect (pos, type);
 			// R_RunParticleEffect (pos, 0, 20);
 
@@ -280,9 +280,9 @@ CL_ParseTEnt (void)
 
 		case TE_EXPLOSION:				// rocket explosion
 			// particles
-			pos[0] = MSG_ReadCoord ();
-			pos[1] = MSG_ReadCoord ();
-			pos[2] = MSG_ReadCoord ();
+			pos[0] = MSG_ReadCoord (net_message);
+			pos[1] = MSG_ReadCoord (net_message);
+			pos[2] = MSG_ReadCoord (net_message);
 			R_ParticleExplosion (pos);
 
 			// light
@@ -306,9 +306,9 @@ CL_ParseTEnt (void)
 			break;
 
 		case TE_TAREXPLOSION:			// tarbaby explosion
-			pos[0] = MSG_ReadCoord ();
-			pos[1] = MSG_ReadCoord ();
-			pos[2] = MSG_ReadCoord ();
+			pos[0] = MSG_ReadCoord (net_message);
+			pos[1] = MSG_ReadCoord (net_message);
+			pos[2] = MSG_ReadCoord (net_message);
 			R_BlobExplosion (pos);
 
 			S_StartSound (-1, 0, cl_sfx_r_exp3, pos, 1, 1);
@@ -327,26 +327,26 @@ CL_ParseTEnt (void)
 			break;
 
 		case TE_LAVASPLASH:
-			pos[0] = MSG_ReadCoord ();
-			pos[1] = MSG_ReadCoord ();
-			pos[2] = MSG_ReadCoord ();
+			pos[0] = MSG_ReadCoord (net_message);
+			pos[1] = MSG_ReadCoord (net_message);
+			pos[2] = MSG_ReadCoord (net_message);
 			R_LavaSplash (pos);
 			break;
 
 		case TE_TELEPORT:
-			pos[0] = MSG_ReadCoord ();
-			pos[1] = MSG_ReadCoord ();
-			pos[2] = MSG_ReadCoord ();
+			pos[0] = MSG_ReadCoord (net_message);
+			pos[1] = MSG_ReadCoord (net_message);
+			pos[2] = MSG_ReadCoord (net_message);
 			R_TeleportSplash (pos);
 			break;
 
 		case TE_GUNSHOT:				// bullet hitting wall
 		case TE_BLOOD:					// bullets hitting body
-			cnt = MSG_ReadByte ();
+			cnt = MSG_ReadByte (net_message);
 		case TE_LIGHTNINGBLOOD:		// lightning hitting body
-			pos[0] = MSG_ReadCoord ();
-			pos[1] = MSG_ReadCoord ();
-			pos[2] = MSG_ReadCoord ();
+			pos[0] = MSG_ReadCoord (net_message);
+			pos[1] = MSG_ReadCoord (net_message);
+			pos[2] = MSG_ReadCoord (net_message);
 			R_RunPuffEffect (pos, type, cnt);
 			// R_RunParticleEffect (pos, 0, 20*cnt);
 			break;

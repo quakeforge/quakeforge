@@ -48,7 +48,7 @@ typedef struct
 
 extern	netadr_t	net_local_adr;
 extern	netadr_t	net_from;		// address of who sent the packet
-extern	sizebuf_t	net_message;
+extern	struct msg_s *net_message;
 
 extern	cvar_t	*hostname;
 

@@ -33,6 +33,7 @@
 #include <string.h>
 
 #include "cmd.h"
+#include "msg.h"
 #include "net.h"
 #include "net_vcr.h"
 #include "qargs.h"
@@ -74,7 +75,9 @@ PollProcedure	slistSendProcedure = {NULL, 0.0, Slist_Send};
 PollProcedure	slistPollProcedure = {NULL, 0.0, Slist_Poll};
 
 
-sizebuf_t		net_message;
+static sizebuf_t _net_message_message;
+static msg_t _net_message = {0, 0, &_net_message_message};
+msg_t      *net_message = &_net_message;
 int				net_activeconnections = 0;
 
 int messagesSent = 0;
@@ -597,9 +600,9 @@ int	NET_GetMessage (qsocket_t *sock)
 			vcrGetMessage.op = VCR_OP_GETMESSAGE;
 			vcrGetMessage.session = (long)sock;
 			vcrGetMessage.ret = ret;
-			vcrGetMessage.len = net_message.cursize;
+			vcrGetMessage.len = _net_message_message.cursize;
 			Sys_FileWrite (vcrFile, &vcrGetMessage, 24);
-			Sys_FileWrite (vcrFile, net_message.data, net_message.cursize);
+			Sys_FileWrite (vcrFile, _net_message_message.data, _net_message_message.cursize);
 		}
 	}
 	else
@@ -863,7 +866,7 @@ void NET_Init (void)
 	}
 
 	// allocate space for network message buffer
-	SZ_Alloc (&net_message, NET_MAXMESSAGE);
+	SZ_Alloc (&_net_message_message, NET_MAXMESSAGE);
 
 	net_messagetimeout = Cvar_Get("net_messagetimeout", "300", CVAR_NONE, "None");
 	hostname = Cvar_Get("hostname", "UNNAMED", CVAR_NONE, "None");

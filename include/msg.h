@@ -30,8 +30,6 @@
 
 #include "sizebuf.h"
 
-extern struct usercmd_s nullcmd;
-
 void MSG_WriteChar (sizebuf_t *sb, int c);
 void MSG_WriteByte (sizebuf_t *sb, int c);
 void MSG_WriteShort (sizebuf_t *sb, int c);
@@ -41,24 +39,25 @@ void MSG_WriteString (sizebuf_t *sb, char *s);
 void MSG_WriteCoord (sizebuf_t *sb, float f);
 void MSG_WriteAngle (sizebuf_t *sb, float f);
 void MSG_WriteAngle16 (sizebuf_t *sb, float f);
-void MSG_WriteDeltaUsercmd (sizebuf_t *sb, struct usercmd_s *from, struct usercmd_s *cmd);
 
-extern	int			msg_readcount;
-extern	qboolean	msg_badread;		// set if a read goes beyond end of message
+typedef struct msg_s {
+	int readcount;
+	qboolean badread;		// set if a read goes beyond end of message
+	sizebuf_t *message;
+} msg_t;
 
-void MSG_BeginReading (void);
-int MSG_GetReadCount(void);
-int MSG_ReadChar (void);
-int MSG_ReadByte (void);
-int MSG_ReadShort (void);
-int MSG_ReadLong (void);
-float MSG_ReadFloat (void);
-char *MSG_ReadString (void);
-char *MSG_ReadStringLine (void);
+void MSG_BeginReading (msg_t *msg);
+int MSG_GetReadCount(msg_t *msg);
+int MSG_ReadChar (msg_t *msg);
+int MSG_ReadByte (msg_t *msg);
+int MSG_ReadShort (msg_t *msg);
+int MSG_ReadLong (msg_t *msg);
+float MSG_ReadFloat (msg_t *msg);
+char *MSG_ReadString (msg_t *msg);
+char *MSG_ReadStringLine (msg_t *msg);
 
-float MSG_ReadCoord (void);
-float MSG_ReadAngle (void);
-float MSG_ReadAngle16 (void);
-void MSG_ReadDeltaUsercmd (struct usercmd_s *from, struct usercmd_s *cmd);
+float MSG_ReadCoord (msg_t *msg);
+float MSG_ReadAngle (msg_t *msg);
+float MSG_ReadAngle16 (msg_t *msg);
 
 #endif

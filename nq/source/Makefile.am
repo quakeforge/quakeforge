@@ -51,8 +51,8 @@ common_ASM=	sys_ia32.S worlda.S $(math_ASM)
 
 common_SOURCES= mathlib.c wad.c world.c \
 		model.c model_alias.c model_brush.c model_sprite.c \
-		msg.c qendian.c qargs.c quakefs.c \
-		quakeio.c link.c com.c \
+		quakefs.c \
+		quakeio.c com.c \
 		$(common_ASM)
 
 #

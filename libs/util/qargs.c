@@ -43,15 +43,11 @@
 #include <stdlib.h>
 #include <assert.h>
 
-#include "client.h"
-#include "commdef.h"
 #include "console.h"
 #include "cmd.h"
 #include "crc.h"
 #include "qtypes.h"
 #include "sys.h"
-
-usercmd_t   nullcmd;					// guarenteed to be zero
 
 static char **largv;
 static char *argvdummy = " ";

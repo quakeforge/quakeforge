@@ -45,6 +45,7 @@
 #include "d_iface.h"
 #include "host.h"
 #include "msg.h"
+#include "msg_ucmd.h"
 #include "pmove.h"
 #include "r_dynamic.h"
 #include "view.h"
@@ -209,7 +210,7 @@ CL_ParseDelta (entity_state_t *from, entity_state_t *to, int bits)
 	bits &= ~511;
 
 	if (bits & U_MOREBITS) {			// read in the low order bits
-		i = MSG_ReadByte ();
+		i = MSG_ReadByte (net_message);
 		bits |= i;
 	}
 	// count the bits for net profiling
@@ -220,64 +221,64 @@ CL_ParseDelta (entity_state_t *from, entity_state_t *to, int bits)
 	// LordHavoc: Endy neglected to mark this as being part of the QSG
 	// version 2 stuff...
 	if (bits & U_EXTEND1) {
-		bits |= MSG_ReadByte () << 16;
+		bits |= MSG_ReadByte (net_message) << 16;
 		if (bits & U_EXTEND2)
-			bits |= MSG_ReadByte () << 24;
+			bits |= MSG_ReadByte (net_message) << 24;
 	}
 
 	to->flags = bits;
 
 	if (bits & U_MODEL)
-		to->modelindex = MSG_ReadByte ();
+		to->modelindex = MSG_ReadByte (net_message);
 
 	if (bits & U_FRAME)
-		to->frame = MSG_ReadByte ();
+		to->frame = MSG_ReadByte (net_message);
 
 	if (bits & U_COLORMAP)
-		to->colormap = MSG_ReadByte ();
+		to->colormap = MSG_ReadByte (net_message);
 
 	if (bits & U_SKIN)
-		to->skinnum = MSG_ReadByte ();
+		to->skinnum = MSG_ReadByte (net_message);
 
 	if (bits & U_EFFECTS)
-		to->effects = MSG_ReadByte ();
+		to->effects = MSG_ReadByte (net_message);
 
 	if (bits & U_ORIGIN1)
-		to->origin[0] = MSG_ReadCoord ();
+		to->origin[0] = MSG_ReadCoord (net_message);
 
 	if (bits & U_ANGLE1)
-		to->angles[0] = MSG_ReadAngle ();
+		to->angles[0] = MSG_ReadAngle (net_message);
 
 	if (bits & U_ORIGIN2)
-		to->origin[1] = MSG_ReadCoord ();
+		to->origin[1] = MSG_ReadCoord (net_message);
 
 	if (bits & U_ANGLE2)
-		to->angles[1] = MSG_ReadAngle ();
+		to->angles[1] = MSG_ReadAngle (net_message);
 
 	if (bits & U_ORIGIN3)
-		to->origin[2] = MSG_ReadCoord ();
+		to->origin[2] = MSG_ReadCoord (net_message);
 
 	if (bits & U_ANGLE3)
-		to->angles[2] = MSG_ReadAngle ();
+		to->angles[2] = MSG_ReadAngle (net_message);
 
 	// LordHavoc: Endy neglected to mark this as being part of the QSG
 	// version 2 stuff...
 	// rearranged it and implemented missing effects
 // Ender (QSG - Begin)
 	if (bits & U_ALPHA)
-		to->alpha = MSG_ReadByte ();
+		to->alpha = MSG_ReadByte (net_message);
 	if (bits & U_SCALE)
-		to->scale = MSG_ReadByte ();
+		to->scale = MSG_ReadByte (net_message);
 	if (bits & U_EFFECTS2)
-		to->effects = (to->effects & 0xFF) | (MSG_ReadByte () << 8);
+		to->effects = (to->effects & 0xFF) | (MSG_ReadByte (net_message) << 8);
 	if (bits & U_GLOWSIZE)
-		to->glowsize = MSG_ReadByte ();
+		to->glowsize = MSG_ReadByte (net_message);
 	if (bits & U_GLOWCOLOR)
-		to->glowcolor = MSG_ReadByte ();
+		to->glowcolor = MSG_ReadByte (net_message);
 	if (bits & U_COLORMOD)
-		to->colormod = MSG_ReadByte ();
+		to->colormod = MSG_ReadByte (net_message);
 	if (bits & U_FRAME2)
-		to->frame = (to->frame & 0xFF) | (MSG_ReadByte () << 8);
+		to->frame = (to->frame & 0xFF) | (MSG_ReadByte (net_message) << 8);
 // Ender (QSG - End)
 
 	if (bits & U_SOLID) {
@@ -312,8 +313,8 @@ FlushEntityPacket (void)
 
 	// read it all, but ignore it
 	while (1) {
-		word = (unsigned short) MSG_ReadShort ();
-		if (msg_badread) {				// something didn't parse right...
+		word = (unsigned short) MSG_ReadShort (net_message);
+		if (net_message->badread) {				// something didn't parse right...
 			Host_EndGame ("msg_badread in packetentities");
 			return;
 		}
@@ -346,7 +347,7 @@ CL_ParsePacketEntities (qboolean delta)
 	cl.frames[newpacket].invalid = false;
 
 	if (delta) {
-		from = MSG_ReadByte ();
+		from = MSG_ReadByte (net_message);
 
 		oldpacket = cl.frames[newpacket].delta_sequence;
 
@@ -376,8 +377,8 @@ CL_ParsePacketEntities (qboolean delta)
 	newp->num_entities = 0;
 
 	while (1) {
-		word = (unsigned short) MSG_ReadShort ();
-		if (msg_badread) {				// something didn't parse right...
+		word = (unsigned short) MSG_ReadShort (net_message);
+		if (net_message->badread) {				// something didn't parse right...
 			Host_EndGame ("msg_badread in packetentities");
 			return;
 		}
@@ -618,10 +619,10 @@ CL_ParseProjectiles (void)
 	byte        bits[6];
 	projectile_t *pr;
 
-	c = MSG_ReadByte ();
+	c = MSG_ReadByte (net_message);
 	for (i = 0; i < c; i++) {
 		for (j = 0; j < 6; j++)
-			bits[j] = MSG_ReadByte ();
+			bits[j] = MSG_ReadByte (net_message);
 
 		if (cl_num_projectiles == MAX_PROJECTILES)
 			continue;
@@ -690,7 +691,7 @@ CL_ParsePlayerinfo (void)
 	int         num;
 	int         i;
 
-	num = MSG_ReadByte ();
+	num = MSG_ReadByte (net_message);
 	if (num > MAX_CLIENTS)
 //		Sys_Error ("CL_ParsePlayerinfo: bad num");
 		Host_EndGame ("CL_ParsePlayerinfo: bad num");
@@ -698,20 +699,20 @@ CL_ParsePlayerinfo (void)
 	state = &cl.frames[parsecountmod].playerstate[num];
 
 	state->number = num;
-	flags = state->flags = MSG_ReadShort ();
+	flags = state->flags = MSG_ReadShort (net_message);
 
 	state->messagenum = cl.parsecount;
-	state->origin[0] = MSG_ReadCoord ();
-	state->origin[1] = MSG_ReadCoord ();
-	state->origin[2] = MSG_ReadCoord ();
+	state->origin[0] = MSG_ReadCoord (net_message);
+	state->origin[1] = MSG_ReadCoord (net_message);
+	state->origin[2] = MSG_ReadCoord (net_message);
 
-	state->frame = MSG_ReadByte ();
+	state->frame = MSG_ReadByte (net_message);
 
 	// the other player's last move was likely some time
 	// before the packet was sent out, so accurately track
 	// the exact time it was valid at
 	if (flags & PF_MSEC) {
-		msec = MSG_ReadByte ();
+		msec = MSG_ReadByte (net_message);
 		state->state_time = parsecounttime - msec * 0.001;
 	} else
 		state->state_time = parsecounttime;
@@ -721,27 +722,27 @@ CL_ParsePlayerinfo (void)
 
 	for (i = 0; i < 3; i++) {
 		if (flags & (PF_VELOCITY1 << i))
-			state->velocity[i] = MSG_ReadShort ();
+			state->velocity[i] = MSG_ReadShort (net_message);
 		else
 			state->velocity[i] = 0;
 	}
 	if (flags & PF_MODEL)
-		state->modelindex = MSG_ReadByte ();
+		state->modelindex = MSG_ReadByte (net_message);
 	else
 		state->modelindex = cl_playerindex;
 
 	if (flags & PF_SKINNUM)
-		state->skinnum = MSG_ReadByte ();
+		state->skinnum = MSG_ReadByte (net_message);
 	else
 		state->skinnum = 0;
 
 	if (flags & PF_EFFECTS)
-		state->effects = MSG_ReadByte ();
+		state->effects = MSG_ReadByte (net_message);
 	else
 		state->effects = 0;
 
 	if (flags & PF_WEAPONFRAME)
-		state->weaponframe = MSG_ReadByte ();
+		state->weaponframe = MSG_ReadByte (net_message);
 	else
 		state->weaponframe = 0;
 

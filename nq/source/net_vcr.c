@@ -30,6 +30,7 @@
 # include "config.h"
 #endif
 
+#include "msg.h"
 #include "net.h"
 #include "net_vcr.h"
 #include "sys.h"
@@ -101,8 +102,8 @@ int VCR_GetMessage (qsocket_t *sock)
 		return ret;
 	}
 
-	Sys_FileRead(vcrFile, &net_message.cursize, sizeof(int));
-	Sys_FileRead(vcrFile, net_message.data, net_message.cursize);
+	Sys_FileRead(vcrFile, &net_message->message->cursize, sizeof(int));
+	Sys_FileRead(vcrFile, net_message->message->data, net_message->message->cursize);
 
 	VCR_ReadNext ();
 

@@ -46,6 +46,7 @@
 #include "cmd.h"
 #include "cvar.h"
 #include "msg.h"
+#include "msg_ucmd.h"
 #include "pmove.h"
 #include "quakefs.h"
 #include "server.h"
@@ -600,14 +601,14 @@ SV_NextUpload (void)
 		ClientReliableWrite_String (host_client, "stopul");
 
 		// suck out rest of packet
-		size = MSG_ReadShort ();
-		MSG_ReadByte ();
-		msg_readcount += size;
+		size = MSG_ReadShort (net_message);
+		MSG_ReadByte (net_message);
+		net_message->readcount += size;
 		return;
 	}
 
-	size = MSG_ReadShort ();
-	percent = MSG_ReadByte ();
+	size = MSG_ReadShort (net_message);
+	percent = MSG_ReadByte (net_message);
 
 	if (!host_client->upload) {
 		host_client->upload = Qopen (host_client->uploadfn, "wb");
@@ -626,8 +627,8 @@ SV_NextUpload (void)
 							 host_client->uploadfn, host_client->userid);
 	}
 
-	Qwrite (host_client->upload, net_message.data + msg_readcount, size);
-	msg_readcount += size;
+	Qwrite (host_client->upload, net_message->message->data + net_message->readcount, size);
+	net_message->readcount += size;
 
 	Con_DPrintf ("UPLOAD: %d received\n", size);
 
@@ -1653,13 +1654,13 @@ SV_ExecuteClientMessage (client_t *cl)
 	cl->localtime = sv.time;
 	cl->delta_sequence = -1;			// no delta unless requested
 	while (1) {
-		if (msg_badread) {
+		if (net_message->badread) {
 			Con_Printf ("SV_ReadClientMessage: badread\n");
 			SV_DropClient (cl);
 			return;
 		}
 
-		c = MSG_ReadByte ();
+		c = MSG_ReadByte (net_message);
 		if (c == -1)
 			return;						// Ender: Patched :)
 
@@ -1673,7 +1674,7 @@ SV_ExecuteClientMessage (client_t *cl)
 				break;
 
 			case clc_delta:
-				cl->delta_sequence = MSG_ReadByte ();
+				cl->delta_sequence = MSG_ReadByte (net_message);
 				break;
 
 			case clc_move:
@@ -1682,11 +1683,11 @@ SV_ExecuteClientMessage (client_t *cl)
 
 				move_issued = true;
 
-				checksumIndex = MSG_GetReadCount ();
-				checksum = (byte) MSG_ReadByte ();
+				checksumIndex = MSG_GetReadCount (net_message);
+				checksum = (byte) MSG_ReadByte (net_message);
 
 				// read loss percentage
-				cl->lossage = MSG_ReadByte ();
+				cl->lossage = MSG_ReadByte (net_message);
 
 				MSG_ReadDeltaUsercmd (&nullcmd, &oldest);
 				MSG_ReadDeltaUsercmd (&oldest, &oldcmd);
@@ -1697,9 +1698,9 @@ SV_ExecuteClientMessage (client_t *cl)
 
 				// if the checksum fails, ignore the rest of the packet
 				calculatedChecksum =
-					COM_BlockSequenceCRCByte (net_message.data + checksumIndex +
+					COM_BlockSequenceCRCByte (net_message->message->data + checksumIndex +
 											  1,
-											  MSG_GetReadCount () -
+											  MSG_GetReadCount (net_message) -
 											  checksumIndex - 1, seq_hash);
 
 				if (calculatedChecksum != checksum) {
@@ -1734,14 +1735,14 @@ SV_ExecuteClientMessage (client_t *cl)
 
 
 			case clc_stringcmd:
-				s = MSG_ReadString ();
+				s = MSG_ReadString (net_message);
 				SV_ExecuteUserCommand (s);
 				break;
 
 			case clc_tmove:
-				o[0] = MSG_ReadCoord ();
-				o[1] = MSG_ReadCoord ();
-				o[2] = MSG_ReadCoord ();
+				o[0] = MSG_ReadCoord (net_message);
+				o[1] = MSG_ReadCoord (net_message);
+				o[2] = MSG_ReadCoord (net_message);
 				// only allowed by spectators
 				if (host_client->spectator) {
 					VectorCopy (o, sv_player->v.v.origin);

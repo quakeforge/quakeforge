@@ -30,6 +30,7 @@
 # include "config.h"
 #endif
 
+#include "msg.h"
 #include "net.h"
 #include "net_loop.h"
 #include "client.h"
@@ -150,8 +151,8 @@ int Loop_GetMessage (qsocket_t *sock)
 	ret = sock->receiveMessage[0];
 	length = sock->receiveMessage[1] + (sock->receiveMessage[2] << 8);
 	// alignment byte skipped here
-	SZ_Clear (&net_message);
-	SZ_Write (&net_message, &sock->receiveMessage[4], length);
+	SZ_Clear (net_message->message);
+	SZ_Write (net_message->message, &sock->receiveMessage[4], length);
 
 	length = IntAlign(length + 4);
 	sock->receiveMessageLength -= length;
