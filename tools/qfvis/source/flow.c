@@ -73,7 +73,6 @@ CheckStack (leaf_t *leaf, threaddata_t *thread)
 {
     pstack_t	*p;
 	
-
     for (p = thread->pstack_head.next; p; p = p->next)
 		if (p->leaf == leaf)
 			fprintf (stderr, "CheckStack: leaf recursion");
@@ -95,23 +94,22 @@ CheckStack (leaf_t *leaf, threaddata_t *thread)
 */
 winding_t	*
 ClipToSeperators (winding_t *source, winding_t *pass, winding_t *target, 
-qboolean flipclip)
+				  qboolean flipclip)
 {
-    int			i, j, k, l;
-    plane_t		plane;
-    vec3_t		v1, v2;
     float		d;
-    vec_t		length;
+    int			i, j, k, l;
     int			counts[3];
     qboolean	fliptest;
-	
+    plane_t		plane;
+    vec3_t		v1, v2;
+    vec_t		length;
 
 	// check all combinations       
     for (i = 0; i < source->numpoints; i++) {
 		l = (i + 1) % source->numpoints;
 		VectorSubtract (source->points[l], source->points[i], v1);
 
-		// fing a vertex of pass that makes a plane that puts all of the
+		// find a vertex of pass that makes a plane that puts all of the
 		// vertexes of pass on the front side and all of the vertexes of
 		// source on the back side
 		for (j = 0; j < pass->numpoints; j++) {
@@ -212,15 +210,14 @@ void
 RecursiveLeafFlow (int leafnum, threaddata_t *thread, pstack_t *prevstack)
 {
 	int			i, j;
+    leaf_t		*leaf;
+    long		*test, *might, *vis;
+    qboolean	more;
     pstack_t	stack;
     portal_t	*p;
     plane_t		backplane;
     winding_t	*source, *target;
-    leaf_t		*leaf;
-    long		*test, *might, *vis;
-    qboolean	more;
 	
-
     c_chains++;
 
     leaf = &leafs[leafnum];
@@ -360,7 +357,6 @@ void
 PortalFlow (portal_t *p)
 {
     threaddata_t	data;
-	
 
     if (p->status != stat_working)
 		fprintf (stderr, "PortalFlow: reflowed");
@@ -393,7 +389,6 @@ SimpleFlood (portal_t *srcportal, int leafnum)
     int			i;
     leaf_t		*leaf;
     portal_t	*p;
-	
 
     if (srcportal->mightsee[leafnum >> 3] & (1 << (leafnum & 7)))
 		return;
@@ -417,7 +412,6 @@ BasePortalVis (void)
 	float		d;
     portal_t	*tp, *p;
     winding_t	*winding;
-	
 
     for (i = 0, p = portals; i < numportals * 2; i++, p++) {
 		p->mightsee = malloc (bitbytes);
@@ -429,7 +423,7 @@ BasePortalVis (void)
 		for (j = 0, tp = portals; j < numportals * 2; j++, tp++) {
 			if (j == i)
 				continue;
-			
+
 			winding = tp->winding;
 			for (k = 0; k < winding->numpoints; k++) {
 				d = DotProduct (winding->points[k],
@@ -459,4 +453,3 @@ BasePortalVis (void)
 		p->nummightsee = c_leafsee;
     }
 }
-

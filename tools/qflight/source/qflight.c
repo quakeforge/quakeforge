@@ -30,7 +30,6 @@ static const char rcsid[] =
 #ifdef HAVE_CONFIG_H
 # include "config.h"
 #endif
-
 #ifdef HAVE_UNISTD_H
 # include <unistd.h>
 #endif
@@ -80,25 +79,24 @@ float minlights[MAX_MAP_FACES];
 byte	*
 GetFileSpace (int size)
 {
-    byte *buf;
+	byte *buf;
 
-    LOCK;
-    file_p = (byte *) (((long) file_p + 3) & ~3);
-    buf = file_p;
-    file_p += size;
-    UNLOCK;
-    if (file_p > file_end)
+	LOCK;
+	file_p = (byte *) (((long) file_p + 3) & ~3);
+	buf = file_p;
+	file_p += size;
+	UNLOCK;
+	if (file_p > file_end)
 		fprintf (stderr, "GetFileSpace: overrun");
-    return buf;
+	return buf;
 }
-
 
 void
 LightThread (void *junk)
 {
-    int i;
+	int i;
 
-    while (1) {
+	while (1) {
 		LOCK;
 		i = bspfileface++;
 		UNLOCK;
@@ -106,18 +104,18 @@ LightThread (void *junk)
 			return;
 
 		LightFace (i);
-    }
+	}
 }
 
 void
 LightWorld (void)
 {
-    filebase = file_p = dlightdata;
-    file_end = filebase + MAX_MAP_LIGHTING;
+	filebase = file_p = dlightdata;
+	file_end = filebase + MAX_MAP_LIGHTING;
 
-    RunThreadsOn (LightThread);
+	RunThreadsOn (LightThread);
 
-    lightdatasize = file_p - filebase;
+	lightdatasize = file_p - filebase;
 
 	if (options.verbosity >= 0)
 		printf ("lightdatasize: %i\n", lightdatasize);
@@ -126,38 +124,38 @@ LightWorld (void)
 int
 main (int argc, char **argv)
 {
-    double      start, stop;
-	
+	double      start, stop;
+
 	start = Sys_DoubleTime ();
-	
+
 	this_program = argv[0];
-	
+
 	DecodeArgs (argc, argv);	
 
 	if (!bspfile) {
 		fprintf (stderr, "%s: no bsp file specified.\n", this_program);
 		usage (1);
 	}
-	
+
     InitThreads ();
 
 	COM_StripExtension (bspfile, bspfile);
 	COM_DefaultExtension (bspfile, ".bsp");
-	
-    LoadBSPFile (bspfile);
-    LoadEntities ();
 
-    MakeTnodes (&dmodels[0]);
+	LoadBSPFile (bspfile);
+	LoadEntities ();
 
-    LightWorld ();
+	MakeTnodes (&dmodels[0]);
 
-    WriteEntitiesToString ();
-    WriteBSPFile (bspfile);
+	LightWorld ();
+
+	WriteEntitiesToString ();
+	WriteBSPFile (bspfile);
 
 	stop = Sys_DoubleTime ();
 	
 	if (options.verbosity >= 0)
 		printf ("%5.1f seconds elapsed\n", stop - start);
 
-    return 0;
+	return 0;
 }

@@ -36,7 +36,6 @@ static const char rcsid[] =
 #ifdef HAVE_STRINGS_H
 # include <strings.h>
 #endif
-
 #include <getopt.h>
 #include <errno.h>
 #include <stdlib.h>
@@ -77,16 +76,17 @@ usage (int status)
 {
 	printf ("%s - QuakeForge light tool\n", this_program);
 	printf ("Usage: %s [options] bspfile\n", this_program);
-	printf ("Options:\n"
-"    -q, --quiet               Inhibit usual output\n"
-"    -v, --verbose             Display more output than usual\n"
-"    -h, --help                Display this help and exit\n"
-"    -V, --version             Output version information and exit\n"
-"    -t, --threads [num]       Number of threads to use\n"
-"    -e, --extra               Apply extra sampling\n"
-"    -d, --distance [scale]    Scale distance\n"
-"    -r, --range [scale]       Scale range\n"
-"    -f, --file [bspfile]      BSP file\n\n");
+	printf (
+		"Options:\n"
+		"    -q, --quiet               Inhibit usual output\n"
+		"    -v, --verbose             Display more output than usual\n"
+		"    -h, --help                Display this help and exit\n"
+		"    -V, --version             Output version information and exit\n"
+		"    -t, --threads [num]       Number of threads to use\n"
+		"    -e, --extra               Apply extra sampling\n"
+		"    -d, --distance [scale]    Scale distance\n"
+		"    -r, --range [scale]       Scale range\n"
+		"    -f, --file [bspfile]      BSP file\n\n");
 	exit (status);
 }
 

@@ -30,7 +30,6 @@ static const char rcsid[] =
 #ifdef HAVE_CONFIG_H
 # include "config.h"
 #endif
-
 #include <getopt.h>
 #include <stdlib.h>
 #ifdef HAVE_UNISTD_H
@@ -69,15 +68,13 @@ static const char rcsid[] =
 void
 SurfaceBBox (dface_t *s, vec3_t mins, vec3_t maxs)
 {
-    int i, j;
-    int e;
-    int vi;
-    float *v;
+	int vi, e, i, j;
+	float *v;
 
-    mins[0] = mins[1] = 999999;
-    maxs[0] = maxs[1] = -99999;
+	mins[0] = mins[1] = 999999;
+	maxs[0] = maxs[1] = -99999;
 
-    for (i = 0; i < s->numedges; i++) {
+	for (i = 0; i < s->numedges; i++) {
 		e = dsurfedges[s->firstedge + i];
 		if (e >= 0)
 			vi = dedges[e].v[0];
@@ -91,26 +88,23 @@ SurfaceBBox (dface_t *s, vec3_t mins, vec3_t maxs)
 			if (v[j] > maxs[j])
 				maxs[j] = v[j];
 		}	
-    }
+	}
 }
 
 void
 CalcAmbientSounds (void)
 {
-    int i, j, k, l;
-    dleaf_t *leaf, *hit;
-    byte *vis;
-    dface_t *surf;
-    vec3_t mins, maxs;
-    float d, maxd;
-    int ambient_type;
-    texinfo_t *info;
-    miptex_t *miptex;
-    int ofs;
-    float dists[NUM_AMBIENTS];
-    float vol;
+	byte		*vis;
+	dface_t		*surf;
+	dleaf_t		*leaf, *hit;
+	float		 maxd, vol, d;
+	float		 dists[NUM_AMBIENTS];
+	int			 ambient_type, ofs, i, j, k, l;
+	vec3_t		 mins, maxs;
+	texinfo_t	*info;
+	miptex_t	*miptex;
 
-    for (i = 0; i < portalleafs; i++) {
+	for (i = 0; i < portalleafs; i++) {
 		leaf = &dleafs[i + 1];
 
 		// clear ambients
@@ -122,7 +116,7 @@ CalcAmbientSounds (void)
 		for (j = 0; j < portalleafs; j++) {
 			if (!(vis[j >> 3] & (1 << (j & 7))))
 				continue;
-	
+
 			// check this leaf for sound textures
 			hit = &dleafs[j + 1];
 
@@ -175,5 +169,5 @@ CalcAmbientSounds (void)
 			}
 			leaf->ambient_level[j] = vol * 255;
 		}
-    }
+	}
 }

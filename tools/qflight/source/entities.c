@@ -74,27 +74,26 @@ char lighttargets[32][64];
 int
 LightStyleForTargetname (char *targetname, qboolean alloc)
 {
-    int		i;
-	
-    for (i = 0; i < numlighttargets; i++)
+	int		i;
+
+	for (i = 0; i < numlighttargets; i++)
 		if (!strcmp (lighttargets[i], targetname))
 			return 32 + i;
-		
-    if (!alloc)
+
+	if (!alloc)
 		return -1;
-	
-    strcpy (lighttargets[i], targetname);
-    numlighttargets++;
-    return numlighttargets - 1 + 32;
+
+	strcpy (lighttargets[i], targetname);
+	numlighttargets++;
+	return numlighttargets - 1 + 32;
 }
 
 void
 MatchTargets (void)
 {
-    int			i, j;
+	int			i, j;
 
-	
-    for (i = 0; i < num_entities; i++) {
+	for (i = 0; i < num_entities; i++) {
 		if (!entities[i].target[0])
 			continue;
 
@@ -118,26 +117,26 @@ MatchTargets (void)
 			sprintf (s, "%i", entities[i].style);
 			SetKeyValue (&entities[i], "style", s);
 		}
-    }
+	}
 }
 
 void
 LoadEntities (void)
 {
-    const char	*data;
-    entity_t	*entity;
-    char		key[64];
-    epair_t		*epair;
-    double		vec[3];
-    int			i;
-	
-    data = dentdata;
+	const char	*data;
+	char		key[64];
+	double		vec[3];
+	entity_t	*entity;
+	epair_t		*epair;
+	int			i;
+
+	data = dentdata;
 
 	// start parsing
-    num_entities = 0;
+	num_entities = 0;
 
 	// go through all the entities
-    while (1) {
+	while (1) {
 		// parse the opening brace      
 		data = COM_Parse (data);
 		if (!data)
@@ -188,7 +187,7 @@ LoadEntities (void)
 				// scan into doubles, then assign
 				// which makes it vec_t size independent
 				if (sscanf (com_token, "%lf %lf %lf",
-						&vec[0], &vec[1], &vec[2]) != 3)
+							&vec[0], &vec[1], &vec[2]) != 3)
 					fprintf (stderr, "LoadEntities: not 3 values for origin");
 				for (i = 0; i < 3; i++)
 					entity->origin[i] = vec[i];
@@ -218,23 +217,23 @@ LoadEntities (void)
 				SetKeyValue (entity, "style", s);
 			}
 		}
-    }
+	}
 
 	if (options.verbosity >= 0)
 		printf ("%d entities read\n", num_entities);
 
-    MatchTargets ();
+	MatchTargets ();
 }
 
 char	*
 ValueForKey (entity_t *ent, char *key)
 {
-    epair_t		*ep;
+	epair_t		*ep;
 	
-    for (ep = ent->epairs; ep; ep = ep->next)
+	for (ep = ent->epairs; ep; ep = ep->next)
 		if (!strcmp (ep->key, key))
 			return ep->value;
-    return "";
+	return "";
 }
 
 void
@@ -242,52 +241,52 @@ SetKeyValue (entity_t *ent, char *key, char *value)
 {
 	epair_t		*ep;
 
-    for (ep = ent->epairs; ep; ep = ep->next)
+	for (ep = ent->epairs; ep; ep = ep->next)
 		if (!strcmp (ep->key, key)) {
 			strcpy (ep->value, value);
 			return;
 		}
-    ep = malloc (sizeof (*ep));
-    ep->next = ent->epairs;
-    ent->epairs = ep;
-    strcpy (ep->key, key);
-    strcpy (ep->value, value);
+	ep = malloc (sizeof (*ep));
+	ep->next = ent->epairs;
+	ent->epairs = ep;
+	strcpy (ep->key, key);
+	strcpy (ep->value, value);
 }
 
 float
 FloatForKey (entity_t *ent, char *key)
 {
-    char		*k;
+	char		*k;
 
 	k = ValueForKey (ent, key);
-    return atof (k);
+	return atof (k);
 }
 
 void
 GetVectorForKey (entity_t *ent, char *key, vec3_t vec)
 {
-    char		*k;
+	char		*k;
 
-    k = ValueForKey (ent, key);
-    sscanf (k, "%f %f %f", &vec[0], &vec[1], &vec[2]);
+	k = ValueForKey (ent, key);
+	sscanf (k, "%f %f %f", &vec[0], &vec[1], &vec[2]);
 }
 
 void
 WriteEntitiesToString (void)
 {
-    char		*buf, *end;
-    char		line[128];
-    epair_t		*ep;
-    int			i;
+	char		*buf, *end;
+	char		line[128];
+	epair_t		*ep;
+	int			i;
 
-    buf = dentdata;
-    end = buf;
-    *end = 0;
+	buf = dentdata;
+	end = buf;
+	*end = 0;
 
 	if (options.verbosity >= 0)
 		printf ("%i switchable light styles\n", numlighttargets);
 
-    for (i = 0; i < num_entities; i++) {
+	for (i = 0; i < num_entities; i++) {
 		ep = entities[i].epairs;
 		if (!ep)
 			continue;		// ent got removed
@@ -305,6 +304,6 @@ WriteEntitiesToString (void)
 
 		if (end > buf + MAX_MAP_ENTSTRING)
 			fprintf (stderr, "Entity text too long");
-    }
-    entdatasize = end - buf + 1;
+	}
+	entdatasize = end - buf + 1;
 }

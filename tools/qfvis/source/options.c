@@ -30,7 +30,6 @@ static const char rcsid[] =
 #ifdef HAVE_CONFIG_H
 # include "config.h"
 #endif
-
 #ifdef HAVE_STRING_H
 # include <string.h>
 #endif
@@ -68,22 +67,22 @@ static const char *short_options =
 	"f:"	// file
 	;
 
+
 void
 usage (int status)
 {
 	printf ("%s - QuakeForge PVS/PHS generation tool\n", this_program);
 	printf ("Usage: %s [options]\n", this_program);
 	printf (
-"Options:\n"
-"    -q, --quiet               Inhibit usual output\n"
-"    -v, --verbose             Display more output than usual\n"
-"    -h, --help                Display this help and exit\n"
-"    -V, --version             Output version information and exit\n"
-"    -t, --threads [num]       Number of threads to use\n"
-"    -m, --minimal             Perform minimal vis'ing\n"
-"    -l, --level [level]       Vis level to perform\n"
-"    -f, --file [bspfile]      BSP file to vis\n\n"	
-	);
+		"Options:\n"
+		"    -q, --quiet               Inhibit usual output\n"
+		"    -v, --verbose             Display more output than usual\n"
+		"    -h, --help                Display this help and exit\n"
+		"    -V, --version             Output version information and exit\n"
+		"    -t, --threads [num]       Number of threads to use\n"
+		"    -m, --minimal             Perform minimal vis'ing\n"
+		"    -l, --level [level]       Vis level to perform\n"
+		"    -f, --file [bspfile]      BSP file to vis\n\n");
 	exit (status);
 }
 

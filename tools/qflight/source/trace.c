@@ -30,7 +30,6 @@ static const char rcsid[] =
 #ifdef HAVE_CONFIG_H
 # include "config.h"
 #endif
-
 #ifdef HAVE_UNISTD_H
 # include <unistd.h>
 #endif
@@ -54,17 +53,17 @@ static const char rcsid[] =
 #include "light.h"
 
 typedef struct {
-    int type;
-    vec3_t normal;
-    float dist;
-    int children[2];
-    int pad;
+	int type;
+	vec3_t normal;
+	float dist;
+	int children[2];
+	int pad;
 } tnode_t;
 
 typedef struct {
-    vec3_t backpt;
-    int side;
-    int node;
+	vec3_t backpt;
+	int side;
+	int node;
 } tracestack_t;
 
 tnode_t *tnodes, *tnode_p;
@@ -85,29 +84,28 @@ by recursive subdivision of the line by the BSP tree.
 void
 MakeTnode (int nodenum)
 {
-    tnode_t		*t;
-    dplane_t	*plane;
-    int			i;
-    dnode_t		*node;
-	
+	dnode_t		*node;
+	dplane_t	*plane;
+	int			i;
+	tnode_t		*t;
 
-    t = tnode_p++;
+	t = tnode_p++;
 
-    node = dnodes + nodenum;
-    plane = dplanes + node->planenum;
+	node = dnodes + nodenum;
+	plane = dplanes + node->planenum;
 
-    t->type = plane->type;
-    VectorCopy (plane->normal, t->normal);
-    t->dist = plane->dist;
+	t->type = plane->type;
+	VectorCopy (plane->normal, t->normal);
+	t->dist = plane->dist;
 
-    for (i = 0; i < 2; i++) {
+	for (i = 0; i < 2; i++) {
 		if (node->children[i] < 0)
 			t->children[i] = dleafs[-node->children[i] - 1].contents;
 		else {
 			t->children[i] = tnode_p - tnodes;
 			MakeTnode (node->children[i]);
 		}
-    }
+	}
 }
 
 /*
@@ -118,34 +116,31 @@ MakeTnode (int nodenum)
 void
 MakeTnodes (dmodel_t *bm)
 {
-    tnode_p = tnodes = malloc (numnodes * sizeof (tnode_t));
+	tnode_p = tnodes = malloc (numnodes * sizeof (tnode_t));
 
-    MakeTnode (0);
+	MakeTnode (0);
 }
 
 qboolean
 TestLine (vec3_t start, vec3_t stop)
 {
-    int			node;
-    float		front, back;
-    tracestack_t *tstack_p;
-    int			side;
-    float		frontx, fronty, frontz, backx, backy, backz;
-    tracestack_t tracestack[64];
-    tnode_t		*tnode;
-	
+	float		front, back, frontx, fronty, frontz, backx, backy, backz;
+	int			node, side;
+	tracestack_t *tstack_p;
+	tracestack_t tracestack[64];
+	tnode_t		*tnode;
 
-    frontx = start[0];
-    fronty = start[1];
-    frontz = start[2];
-    backx = stop[0];
-    backy = stop[1];
-    backz = stop[2];
+	frontx = start[0];
+	fronty = start[1];
+	frontz = start[2];
+	backx = stop[0];
+	backy = stop[1];
+	backz = stop[2];
 
-    tstack_p = tracestack;
-    node = 0;
+	tstack_p = tracestack;
+	node = 0;
 
-    while (1) {
+	while (1) {
 		while (node < 0 && node != CONTENTS_SOLID) {
 			// pop up the stack for a back side
 			tstack_p--;
@@ -194,19 +189,17 @@ TestLine (vec3_t start, vec3_t stop)
 				break;
 		}
 
-		if (front > -ON_EPSILON && back > -ON_EPSILON)
-//			if (front > 0 && back > 0)
-			{
-				node = tnode->children[0];
-				continue;
-			}
+		if (front > -ON_EPSILON && back > -ON_EPSILON) {
+//		if (front > 0 && back > 0) {
+			node = tnode->children[0];
+			continue;
+		}
 
-		if (front < ON_EPSILON && back < ON_EPSILON)
-//			if (front <= 0 && back <= 0)
-			{
-				node = tnode->children[1];
-				continue;
-			}
+		if (front < ON_EPSILON && back < ON_EPSILON) {
+//		if (front <= 0 && back <= 0) {
+			node = tnode->children[1];
+			continue;
+		}
 
 		side = front < 0;
 
@@ -225,6 +218,5 @@ TestLine (vec3_t start, vec3_t stop)
 		backz = frontz + front * (backz - frontz);
 
 		node = tnode->children[side];
-    }
+	}
 }
-

@@ -51,9 +51,9 @@ typedef struct {
 } plane_t;
 
 typedef struct {
-    qboolean	original;	// don't free, it's part of the portal
-    int			numpoints;
-    vec3_t		points[8];	// variable sized
+	qboolean	original;	// don't free, it's part of the portal
+	int			numpoints;
+	vec3_t		points[8];	// variable sized
 } winding_t;
 
 typedef enum { 
@@ -65,44 +65,44 @@ typedef enum {
 typedef struct {
 	plane_t		plane;		// normal pointing into neighbor
 	int			leaf;		// neighbor
-    winding_t	*winding;
-    vstatus_t	status;
-    byte		*visbits;
-    byte		*mightsee;
-    int			nummightsee;
-    int			numcansee;
+	winding_t	*winding;
+	vstatus_t	status;
+	byte		*visbits;
+	byte		*mightsee;
+	int			nummightsee;
+	int			numcansee;
 } portal_t;
 
 typedef struct seperating_plane_s {
-    struct seperating_plane_s *next;
-    plane_t		plane;		// from portal is on positive side
+	struct seperating_plane_s *next;
+	plane_t		plane;		// from portal is on positive side
 } sep_t;
 
 typedef struct passage_s {
-    struct passage_s *next;
-    int			from, to;	// leaf numbers
-    sep_t		*planes;
+	struct passage_s *next;
+	int			from, to;	// leaf numbers
+	sep_t		*planes;
 } passage_t;
 
 typedef struct leaf_s {
-    int			numportals;
-    passage_t	*passages;
-    portal_t	*portals[MAX_PORTALS_ON_LEAF];
+	int			numportals;
+	passage_t	*passages;
+	portal_t	*portals[MAX_PORTALS_ON_LEAF];
 } leaf_t;
 
 typedef struct pstack_s {
-    struct pstack_s *next;
-    leaf_t		*leaf;
-    portal_t	*portal;	// portal exiting
-    winding_t	*source, *pass;
-    plane_t		portalplane;
-    byte		*mightsee;	// bit string
+	struct pstack_s *next;
+	leaf_t		*leaf;
+	portal_t	*portal;	// portal exiting
+	winding_t	*source, *pass;
+	plane_t		portalplane;
+	byte		*mightsee;	// bit string
 } pstack_t;
 
 typedef struct {
-    byte		*leafvis;	// bit string
-    portal_t	*base;
-    pstack_t	pstack_head;
+	byte		*leafvis;	// bit string
+	portal_t	*base;
+	pstack_t	pstack_head;
 } threaddata_t;
 
 extern int numportals;
@@ -134,4 +134,3 @@ void PortalFlow (portal_t *portal);
 void CalcAmbientSounds (void);
 
 #endif// __vis_h
-
