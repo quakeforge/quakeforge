@@ -67,12 +67,11 @@ int modestate; // FIXME: just to avoid cross-compile errors - remove later
 #define    BASEWIDTH    320
 #define    BASEHEIGHT   200
 
-int         VGA_width, VGA_height, VGA_rowbytes, VGA_bufferrowbytes = 0;
 byte       *VGA_pagebase;
+int         VGA_width, VGA_height, VGA_rowbytes, VGA_bufferrowbytes = 0;
 
-static SDL_Surface *screen = NULL;
 static SDL_Surface *rendersurface = NULL;
-
+static SDL_Surface *screen = NULL;
 
 
 void

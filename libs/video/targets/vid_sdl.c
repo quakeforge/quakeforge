@@ -58,17 +58,17 @@ HWND 		mainwindow;
 
 // static float oldin_grab = 0;
 
-
 int modestate; // FIXME: just to avoid cross-compile errors - remove later
 
 // The original defaults
 #define    BASEWIDTH    320
 #define    BASEHEIGHT   200
 
-int         VGA_width, VGA_height, VGA_rowbytes, VGA_bufferrowbytes = 0;
 byte       *VGA_pagebase;
+int         VGA_width, VGA_height, VGA_rowbytes, VGA_bufferrowbytes = 0;
 
 static SDL_Surface *screen = NULL;
+
 
 void
 VID_SetPalette (unsigned char *palette)
@@ -137,8 +137,8 @@ VID_Init (unsigned char *palette)
         // FIXME: EVIL thing - but needed for win32 until
         // SDL_sound works better - without this DirectSound fails.
 
-//        SDL_GetWMInfo(&info);
-//        mainwindow=info.window;
+//		SDL_GetWMInfo(&info);
+//		mainwindow=info.window;
         mainwindow=GetActiveWindow();
 #endif
 

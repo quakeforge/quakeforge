@@ -64,11 +64,11 @@ HWND 		mainwindow;
 #define	WARP_WIDTH	320
 #define	WARP_HEIGHT	200
 
-
 int         VID_options_items = 1;
 int         modestate;
 
 static SDL_Surface *screen = NULL;
+
 
 void
 VID_SDL_GammaCheck (void)
@@ -172,8 +172,7 @@ VID_Init (unsigned char *palette)
 		// Don't annoy Mesa/3dfx folks
 #ifndef WIN32
 		// FIXME: Maybe this could be put in a different spot, but I don't
-		// know where.
-		// Anyway, it's to work around a 3Dfx Glide bug.
+		// know where. Anyway, it's to work around a 3Dfx Glide bug.
 		SDL_ShowCursor (0);
 		SDL_WM_GrabInput (SDL_GRAB_ON);
 		setenv ("MESA_GLX_FX", "fullscreen", 1);
@@ -223,8 +222,8 @@ VID_Init (unsigned char *palette)
         // FIXME: EVIL thing - but needed for win32 until
         // SDL_sound works better - without this DirectSound fails.
 
-//        SDL_GetWMInfo(&info);
-//        mainwindow=info.window;
+//		SDL_GetWMInfo(&info);
+//		mainwindow=info.window;
         mainwindow=GetActiveWindow();
 #endif
 
