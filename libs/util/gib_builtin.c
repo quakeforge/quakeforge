@@ -351,6 +351,7 @@ GIB_For_f (void)
 					"usage: for variable in list {program}"
 					);
 	} else if (GIB_Argv (3)[0]) {
+		char *ll;
 		cbuf_t *sub = Cbuf_New (&gib_interp);
 		GIB_DATA(sub)->type = GIB_BUFFER_LOOP;
 		GIB_DATA(sub)->locals = GIB_DATA(cbuf_active)->locals;
@@ -362,7 +363,10 @@ GIB_For_f (void)
 		sub->up = cbuf_active;
 		dstring_appendstr (GIB_DATA(sub)->loop_data, GIB_Argv(3));
 		dstring_append (GIB_DATA(sub)->loop_data, GIB_Argv(1), strlen(GIB_Argv(1))+1);
-		GIB_DATA(sub)->loop_list_p = GIB_DATA(sub)->loop_data->str;
+		ll = GIB_DATA(sub)->loop_data->str;
+		while (isspace ((byte) *ll))
+			ll++;
+		GIB_DATA(sub)->loop_list_p = ll;
 		GIB_DATA(sub)->loop_var_p = GIB_DATA(sub)->loop_data->str + strlen(GIB_Argv(3))+1;
 		dstring_appendstr (GIB_DATA(sub)->loop_program, "__for;");
 		dstring_appendstr (GIB_DATA(sub)->loop_program, GIB_Argv(4));

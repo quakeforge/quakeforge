@@ -213,18 +213,24 @@ void
 Cbuf_Error (const char *class, const char *fmt, ...)
 {
 	dstring_t *message = dstring_newstr();
+	char *n;
 	va_list args;
 	
 	va_start (args, fmt);
 	dvsprintf (message, fmt, args);
 	va_end (args);
+	if ((n = strchr (cbuf_active->line->str, '\n')))
+		*n = 0;
 	Sys_Printf ( 
-				"Error in command buffer execution\n"
-				"---------------------------------\n"
+				"-----------------------------------\n"
+				"|Error in command buffer execution|\n"
+				"-----------------------------------\n"
 				"Type: %s\n"
-				"Description: %s\n",
+				"%s\n"
+				"Near/on line: %s\n",
 				class,
-				message->str
+				message->str,
+				cbuf_active->line->str
 				);
 	cbuf_active->state = CBUF_STATE_ERROR;
 	dstring_clearstr (cbuf_active->buf);

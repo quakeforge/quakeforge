@@ -86,12 +86,14 @@ GIB_Escaped (const char *str, int i)
 char
 GIB_Parse_Match_Dquote (const char *str, unsigned int *i)
 {
+	unsigned int n = *i;
 	for ((*i)++; str[*i]; (*i)++) {
 		if (str[*i] == '\n')
 			return '\"'; // Newlines should never occur inside quotes, EVER
 		else if (str[*i] == '\"' && !GIB_Escaped (str, *i))
 			return 0;
 	}
+	*i = n;
 	return '\"';
 }
 
@@ -109,6 +111,7 @@ char
 GIB_Parse_Match_Brace (const char *str, unsigned int *i)
 {
 	char c;
+	unsigned int n = *i;
 	for ((*i)++; str[*i]; (*i)++) {
 		if (str[*i] == '\"') {
 			if ((c = GIB_Parse_Match_Dquote (str, i)))
@@ -119,6 +122,7 @@ GIB_Parse_Match_Brace (const char *str, unsigned int *i)
 		} else if (str[*i] == '}')
 				return 0;
 	}
+	*i = n;
 	return '{';
 }
 
@@ -136,6 +140,7 @@ char
 GIB_Parse_Match_Paren (const char *str, unsigned int *i)
 {
 	char c;
+	unsigned int n = *i;
 	for ((*i)++; str[*i]; (*i)++) {
 		if (str[*i] == '(') {
 			if ((c = GIB_Parse_Match_Paren (str, i)))
@@ -143,8 +148,9 @@ GIB_Parse_Match_Paren (const char *str, unsigned int *i)
 		} else if (str[*i] == ')')
 			return 0;
 		else if (str[*i] == '\n') // Newlines in math == bad
-			return '(';
+			break;
 	}
+	*i = n;
 	return '(';
 }
 
@@ -162,6 +168,7 @@ char
 GIB_Parse_Match_Backtick (const char *str, unsigned int *i)
 {
 	char c;
+	unsigned int n = *i;
 	for ((*i)++; str[*i]; (*i)++) {
 		if (str[*i] == '`')
 			return 0;
@@ -170,16 +177,19 @@ GIB_Parse_Match_Backtick (const char *str, unsigned int *i)
 				return c;
 		}
 	}
+	*i = n;
 	return '`';
 }
 
 char
 GIB_Parse_Match_Index (const char *str, unsigned int *i)
 {
+	unsigned int n = *i;
 	for ((*i)++; str[*i]; (*i)++) {
 		if (str[*i] == ']')
 			return 0;
 	}
+	*i = n;
 	return '[';
 }
 
@@ -193,7 +203,7 @@ GIB_Parse_Match_Index (const char *str, unsigned int *i)
 void
 GIB_Parse_Extract_Line (struct cbuf_s *cbuf)
 {
-	int i;
+	unsigned int i;
 	char c;
 	dstring_t *dstr = cbuf->buf;
 	
@@ -204,20 +214,14 @@ GIB_Parse_Extract_Line (struct cbuf_s *cbuf)
 	
 	for (i = 0; dstr->str[i]; i++) {
 		if (dstr->str[i] == '{') {
-			if ((c = GIB_Parse_Match_Brace (dstr->str, &i))) {
-				Cbuf_Error ("parse", "Could not find matching %c", c);
-				return;
-			}
+			if ((c = GIB_Parse_Match_Brace (dstr->str, &i)))
+				goto PARSE_ERROR;
 		} else if (dstr->str[i] == '\"') {
-			if ((c = GIB_Parse_Match_Dquote (dstr->str, &i))) {
-				Cbuf_Error ("parse", "Could not find matching %c", c);
-				return;
-			}
+			if ((c = GIB_Parse_Match_Dquote (dstr->str, &i)))
+				goto PARSE_ERROR;
 		} else if (dstr->str[i] == '`') {
-			if ((c = GIB_Parse_Match_Backtick (dstr->str, &i))) {
-				Cbuf_Error ("parse", "Could not find matching %c", c);
-				return;
-			}
+			if ((c = GIB_Parse_Match_Backtick (dstr->str, &i)))
+				goto PARSE_ERROR;
 		} else if (dstr->str[i] == '\n' || dstr->str[i] == ';')
 			break;
 		else if (dstr->str[i] == '/' && dstr->str[i+1] == '/') {
@@ -247,6 +251,15 @@ GIB_Parse_Extract_Line (struct cbuf_s *cbuf)
 		Cbuf_AddText (cbuf, GIB_DATA(cbuf)->loop_program->str);
 
 	return;
+
+PARSE_ERROR: // Extract out the line where the parse error occurred
+
+	for (; i && dstr->str[i] != '\n'; i--);
+	if (dstr->str[i] == '\n')
+		i++;
+	dstring_clearstr (cbuf->line);
+	dstring_appendstr (cbuf->line, dstr->str+i);
+	Cbuf_Error ("parse", "Could not find match for %c.", c);
 }
 
 /*
