@@ -154,8 +154,9 @@ cvar_t     *hostname;
 VFile      *sv_logfile;
 VFile      *sv_fraglogfile;
 
-cvar_t     *sv_gc;
-int         sv_gc_count = 0;
+cvar_t     *pr_gc;
+cvar_t     *pr_gc_interval;
+int         pr_gc_count = 0;
 
 void        SV_AcceptClient (netadr_t adr, int userid, char *userinfo);
 void        Master_Shutdown (void);
@@ -1481,19 +1482,22 @@ SV_CheckVars (void)
 /*
 	SV_GarbageCollect
 
-	Run string GC on progs every sv_gc frames
+	Run string GC on progs every pr_gc_interval frames
 */
 void
 SV_GarbageCollect ()
 {
-	if (sv_gc->int_val > 0)	{
-		sv_gc_count++;
-		if (sv_gc_count >= sv_gc->int_val) {
-			sv_gc_count = 0;
+	if (pr_gc->int_val == 1
+		|| (pr_gc->int_val == 2 && sv_pr_state.progs->version == PROG_VERSION)) {
+		pr_gc_count++;
+		if (pr_gc_count >= pr_gc_interval->int_val) {
+			pr_gc_count = 0;
 			PR_GarbageCollect (&sv_pr_state);
 		}
-	} else { // Make sure the count gets reset if the gc is disabled.  I could use a callback, but I'm lazy
-		sv_gc_count = 0;
+	} else {
+		// Make sure the count gets reset if the gc is disabled.  I
+		// could use a callback, but I'm lazy
+		pr_gc_count = 0;
 	}
 }
 
@@ -1715,7 +1719,8 @@ SV_InitLocal (void)
 	pausable = Cvar_Get ("pausable", "1", CVAR_NONE, NULL,
 			"Toggle if server can be paused 1 is on, 0 is off");
 
-	sv_gc = Cvar_Get ("sv_gc", "0", CVAR_NONE, NULL, "Number of frames to wait before running string GC.  0 disables.");
+	pr_gc = Cvar_Get ("pr_gc", "2", CVAR_NONE, NULL, "Enable/disable the garbage collector.  0 is off, 1 is on, 2 is auto (on for newer qfcc progs, off otherwise)");
+	pr_gc_interval = Cvar_Get ("pr_gc_interval", "50", CVAR_NONE, NULL, "Number of frames to wait before running string garbage collector.");
 
 	// DoS protection
 	Cmd_AddCommand ("netdosexpire", SV_netDoSexpire_f, "FIXME: part of DoS protection obviously, but I don't know what it does. No Description");
