@@ -42,6 +42,7 @@
 #include "QF/console.h"
 #include "QF/keys.h"
 #include "QF/msg.h"
+#include "QF/plugin.h"
 #include "QF/qargs.h"
 #include "QF/sys.h"
 #include "QF/va.h"
@@ -923,6 +924,8 @@ Host_Init (quakeparms_t *parms)
 
 	Cmd_StuffCmds_f ();
 	Cbuf_Execute_Sets ();
+
+	PI_Init ();
 
 	V_Init ();
 	S_Init_Cvars ();

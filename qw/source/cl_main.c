@@ -84,6 +84,7 @@
 #include "QF/msg.h"
 #include "net.h"
 #include "pmove.h"
+#include "QF/plugin.h"
 #include "QF/qendian.h"
 #include "QF/quakefs.h"
 #include "QF/qargs.h"
@@ -1600,6 +1601,8 @@ Host_Init (void)
 	// execute +set again to override the config file
 	Cmd_StuffCmds_f ();
 	Cbuf_Execute_Sets ();
+
+	PI_Init ();
 
 	CL_Cam_Init_Cvars ();
 	CL_Input_Init_Cvars ();

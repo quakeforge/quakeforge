@@ -48,6 +48,7 @@
 #include "net.h"
 #include "QF/msg.h"
 #include "pmove.h"
+#include "QF/plugin.h"
 #include "QF/qargs.h"
 #include "QF/quakefs.h"
 #include "server.h"
@@ -1931,6 +1932,7 @@ SV_Init (void)
 	Cmd_StuffCmds_f ();
 	Cbuf_Execute_Sets ();
 
+	PI_Init ();
 
 	COM_Filesystem_Init_Cvars ();
 	Game_Init_Cvars ();
