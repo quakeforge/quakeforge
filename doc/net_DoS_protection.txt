@@ -1,0 +1,49 @@
+
+SV_NETDOSPROTECT 0/1 
+Used to turn on/off Denial Of Service protections. Makes it more 
+difficult to use quakeworld servers to conduct DoS attacks against 
+other sites.
+
+NETDOSVALUES
+Tells server how many of specified kind of requests (per IP addr) 
+are allowed during time defined with NETDOSEXPIRE.
+Possible request types:
+<FLOOD_PING> <FLOOD_LOG> <FLOOD_CONNECT> <FLOOD_STATUS> <FLOOD_RCON> <FLOOD_BAN>
+
+NETDOSEXPIRE
+Tells server how much time must pass before request counter expires
+and gets set to zero.
+
+
+
+NETDOSVALUES <FLOOD_PING> <FLOOD_LOG> <FLOOD_CONNECT> <FLOOD_STATUS> <FLOOD_RCON> <FLOOD_BAN>
+NETDOSEXPIRE <FLOOD_PING> <FLOOD_LOG> <FLOOD_CONNECT> <FLOOD_STATUS> <FLOOD_RCON> <FLOOD_BAN>
+
+defaults are:
+
+NETDOSVALUES 12 1 3 1 1 1 1
+NETDOSEXPIRE 1  1 2 0.9 1 5
+
+meaning :
+maximum of 12 PINGS are allowed in 1 second
+maximum of 1 LOG request / second
+maximum of 2 connect requests / 3 seconds
+maximum of 1 status request / 0.9 seconds
+maximum of 1 rcon command / 1 second
+maximum of 1 request from banned IP / 5 second
+
+Examples
+if server receives 15 ping requests under 1 second, it will allow 12 requests
+and drop 3 without response.
+
+Other commands:
+
+sv_allow_log
+Allow/disallow remote LOG requests
+
+sv_allow_status
+Allow/disallow remote status requests
+
+sv_allow_ping 
+Allow/disallow remote pings
+

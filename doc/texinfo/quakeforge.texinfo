@@ -1,0 +1,195 @@
+\input texinfo @c -*-texinfo-*-
+@c %**start of header
+@setfilename quakeforge.info
+@settitle 3D game engine based on id Software's Quake engine
+@finalout
+@setchapternewpage odd
+@c %**end of header
+
+@set VERSION 0.1.0
+
+@ifinfo
+This file documents the @code{quakeforge} command which 3D game engine based on id Software's Quake engine
+
+Copyright (C) 2000 The QuakeForge Project
+
+Permission is granted to make and distribute verbatim copies of
+this manual provided the copyright notice and this permission notice
+are preserved on all copies.
+
+@ignore
+Permission is granted to process this file through TeX and print the
+results, provided the printed document carries copying permission
+notice identical to this one except for the removal of this paragraph
+(this paragraph not being relevant to the printed manual).
+
+@end ignore
+Permission is granted to copy and distribute modified versions of this
+manual under the conditions for verbatim copying, provided that the entire
+resulting derived work is distributed under the terms of a permission
+notice identical to this one.
+
+Permission is granted to copy and distribute translations of this manual
+into another language, under the above conditions for modified versions,
+except that this permission notice may be stated in a translation approved
+by the Foundation.
+@end ifinfo
+
+@titlepage
+@title quakeforge
+@subtitle 3D game engine based on id Software's Quake engine
+@subtitle for quakeforge Version @value{VERSION}
+@author by The QuakeForge Project
+
+@page
+@vskip 0pt plus 1filll
+Copyright @copyright{} 2000 The QuakeForge Project
+
+Permission is granted to make and distribute verbatim copies of
+this manual provided the copyright notice and this permission notice
+are preserved on all copies.
+
+Permission is granted to copy and distribute modified versions of this
+manual under the conditions for verbatim copying, provided that the entire
+resulting derived work is distributed under the terms of a permission
+notice identical to this one.
+
+Permission is granted to copy and distribute translations of this manual
+into another language, under the above conditions for modified versions,
+except that this permission notice may be stated in a translation approved
+by the Foundation.
+@end titlepage
+
+@c All the nodes can be updated using the EMACS command
+@c texinfo-every-node-update, which is normally bound to C-c C-u C-e.
+@node Top, Instructions, (dir), (dir)
+
+@ifinfo
+This file documents the @code{quakeforge} command to 3D game engine based on id Software's Quake engine.
+@end ifinfo
+
+@c All the menus can be updated with the EMACS command
+@c texinfo-all-menus-update, which is normally bound to C-c C-u C-a.
+@menu
+* Instructions::                How to read this manual. 
+* Copying::                     How you can copy and share @code{quakeforge}.
+* Overview::                    Preliminary information.
+* Sample::                      Sample output from @code{quakeforge}.
+* Invoking quakeforge::             How to run @code{quakeforge}.
+* Problems::                    Reporting bugs.
+* Concept Index::               Index of concepts.
+@end menu
+
+@node Instructions, Copying, Top, Top
+@chapter How to Read This Manual
+
+@cindex reading
+@cindex manual, how to read
+@cindex how to read
+To read this manual, begin at the beginning, reading from left to right
+and top to bottom, until you get to the end.  Then stop.  You may pause
+for a beer anywhere in the middle as well, if you wish.  (Please note,
+however, that The King strongly advises against heavy use of
+prescription pharmaceuticals, based on his extensive personal and
+professional experience.)
+
+@node Copying, Overview, Instructions, Top
+@include gpl.texinfo
+
+@node Overview, Sample, Copying, Top
+@chapter Overview
+@cindex greetings
+@cindex overview
+
+The GNU @code{quakeforge} program produces a familiar, friendly greeting.
+It allows nonprogrammers to use a classic computer science tool which
+would otherwise be unavailable to them.  Because it is protected by the
+GNU General Public License, users are free to share and change it.
+
+GNU @code{quakeforge} was written by The QuakeForge Project.
+
+@node Sample, Invoking quakeforge, Overview, Top
+@chapter Sample Output
+@cindex sample
+
+Here are some realistic examples of running @code{quakeforge}.
+
+This is the output of the command @samp{quakeforge}:
+
+@example
+hello, world!
+@end example
+
+This is the output of the command @samp{quakeforge --help}:
+
+@example
+3D game engine based on id Software's Quake engine
+Usage: quakeforge [options]
+  -h, --help                    Print a summary of the options
+  -v, --version                 Print the version number
+@end example
+
+@node Invoking quakeforge, Problems, Sample, Top
+@chapter Invoking @code{quakeforge}
+@cindex invoking
+@cindex version
+@cindex options
+@cindex usage
+@cindex help
+@cindex getting help
+
+The format for running the @code{quakeforge} program is:
+
+@example
+quakeforge @var{option} @dots{}
+@end example
+
+@code{quakeforge} supports the following options:
+
+@table @samp
+@item --interactive
+@itemx -i
+Prompt for confirmation.
+
+@item --quiet
+@item --silent
+@itemx -q
+Inhibit usual output.
+
+@item --verbose
+Print more information.
+
+@item --help
+@itemx -h
+Print an informative help message describing the options and then exit.
+
+@item --version
+@itemx -v
+Print the version number of @code{quakeforge} on the standard error output
+and then exit.
+@end table
+
+@node Problems, Concept Index, Invoking quakeforge, Top
+@chapter Reporting Bugs
+@cindex bugs
+@cindex problems
+
+If you find a bug in @code{quakeforge}, please send electronic mail to
+@w{@samp{quake-devel@@lists.sourceforge.net}}.  Include the version number, which you can find by
+running @w{@samp{quakeforge --version}}.  Also include in your message the
+output that the program produced and the output you expected.@refill
+
+If you have other questions, comments or suggestions about
+@code{quakeforge}, contact the author via electronic mail to
+@w{@samp{quake-devel@@lists.sourceforge.net}}.  The author will try to help you out, although he
+may not have time to fix your problems.
+
+@node Concept Index,  , Problems, Top
+@unnumbered Concept Index
+
+@cindex tail recursion
+@printindex cp
+
+@shortcontents
+@contents
+@bye
