@@ -38,11 +38,12 @@
 #include "QF/quakefs.h"
 #include "QF/sound.h"
 
-#include "protocol.h"
 #include "net.h"
+#include "protocol.h"
 #include "r_local.h"
 #include "render.h"
 #include "game.h"
+
 
 typedef struct usercmd_s
 {
@@ -75,32 +76,38 @@ typedef struct
 #define	NAME_LENGTH	64
 
 
-//
-// client_state_t should hold all pieces of the client state
-//
+/*
+  client_state_t should hold all pieces of the client state
+*/
 
 #define	SIGNONS		4			// signon messages to receive before connected
 
-#define	MAX_EFRAGS		640
-
-#define	MAX_MAPSTRING	2048
 #define	MAX_DEMOS		8
 #define	MAX_DEMONAME	16
+#define	MAX_EFRAGS		640
+#define	MAX_MAPSTRING	2048
 
 typedef enum {
-ca_dedicated, 		// a dedicated server with no ability to start a client
-ca_disconnected, 	// full screen console with no connection
-ca_connected		// valid netcon, talking to a server
+	ca_dedicated, 		// a dedicated server with no ability to start a client
+	ca_disconnected, 	// full screen console with no connection
+	ca_connected		// valid netcon, talking to a server
 } cactive_t;
+
+typedef enum {
+	dl_none,
+	dl_model,
+	dl_sound,
+	dl_skin,
+	dl_single
+} dltype_t;		// download type
 
 // FIXME: A grotesque (temporary) hack.  They're not the same thing to QW.
 #define ca_active ca_connected
 
-
-//
-// the client_static_t structure is persistant through an arbitrary number
-// of server connections
-//
+/*
+  the client_static_t structure is persistant through an arbitrary number
+  of server connections
+*/
 typedef struct
 {
 	cactive_t	state;
@@ -108,6 +115,14 @@ typedef struct
 // personalization data sent to server	
 	char		mapstring[MAX_QPATH];
 	char		spawnparms[MAX_MAPSTRING];	// to restart a level
+
+// file transfer from server
+	QFile	   *download;
+	char		downloadtempname[MAX_OSPATH];
+	char		downloadname[MAX_OSPATH];
+	int			downloadnumber;
+	dltype_t	downloadtype;
+	int			downloadpercent;
 
 // demo loop control
 	int			demonum;		// -1 = don't play demos
@@ -124,7 +139,6 @@ typedef struct
 	int			td_startframe;		// host_framecount at start
 	float		td_starttime;		// realtime at second frame of timedemo
 
-
 // connection information
 	int			signon;			// 0 to SIGNONS
 	struct qsocket_s	*netcon;
@@ -134,10 +148,10 @@ typedef struct
 
 extern client_static_t	cls;
 
-//
-// the client_state_t structure is wiped completely at every
-// server signon
-//
+/*
+  the client_state_t structure is wiped completely at every
+  server signon
+*/
 typedef struct
 {
 	int			movemessages;	// since connecting to this server
@@ -195,9 +209,8 @@ typedef struct
 
 	float		last_received_message;	// (realtime) for net trouble icon
 
-//
-// information that is static for the entire time connected to a server
-//
+/* information that is static for the entire time connected to a server */
+
 	struct model_s		*model_precache[MAX_MODELS];
 	struct sfx_s		*sound_precache[MAX_SOUNDS];
 
@@ -219,17 +232,16 @@ typedef struct
 	scoreboard_t	*scores;		// [cl.maxclients]
 
 #ifdef QUAKE2
-// light level at player's position including dlights
-// this is sent back to the server each frame
-// architectually ugly but it works
+// light level at player's position including dlights this is sent back to the
+// server each frame architectually ugly but it works
 	int			light_level;
 #endif
 } client_state_t;
 
 
-//
-// cvars
-//
+/*
+  cvars
+*/
 extern cvar_t	*cl_name;
 extern cvar_t	*cl_color;
 
@@ -275,11 +287,10 @@ extern	entity_t		cl_static_entities[MAX_STATIC_ENTITIES];
 extern	lightstyle_t	cl_lightstyle[MAX_LIGHTSTYLES];
 extern	dlight_t		cl_dlights[MAX_DLIGHTS];
 
-//=============================================================================
 
-//
-// cl_main
-//
+/*
+  cl_main
+*/
 dlight_t *CL_AllocDlight (int key);
 void	CL_DecayLights (void);
 
@@ -300,10 +311,10 @@ void CL_NextDemo (void);
 extern	int				cl_numvisedicts;
 extern	entity_t		*cl_visedicts[MAX_VISEDICTS];
 
-//
-// cl_input
-//
 
+/*
+  cl_input
+*/
 void CL_InitInput (void);
 void CL_SendCmd (void);
 void CL_SendMove (usercmd_t *cmd);
@@ -313,14 +324,14 @@ void CL_UpdateTEnts (void);
 
 void CL_ClearState (void);
 
-
 int  CL_ReadFromServer (void);
 void CL_WriteToServer (usercmd_t *cmd);
 void CL_BaseMove (usercmd_t *cmd);
 
-//
-// cl_demo.c
-//
+
+/*
+  cl_demo.c
+*/
 void CL_StopPlayback (void);
 int CL_GetMessage (void);
 
@@ -329,15 +340,17 @@ void CL_Record_f (void);
 void CL_PlayDemo_f (void);
 void CL_TimeDemo_f (void);
 
-//
-// cl_parse.c
-//
+
+/*
+  cl_parse.c
+*/
 void CL_ParseServerMessage (void);
 void CL_NewTranslation (int slot);
 
-//
-// view
-//
+
+/*
+  view
+*/
 void V_StartPitchDrift (void);
 void V_StopPitchDrift (void);
 
@@ -348,9 +361,9 @@ void V_ParseDamage (void);
 void V_SetContentsColor (int contents);
 
 
-//
-// cl_tent
-//
+/*
+  cl_tent
+*/
 void CL_TEnts_Init (void);
 void CL_ClearEnts (void);
 void CL_ClearTEnts (void);
@@ -358,6 +371,9 @@ void CL_Init_Entity (struct entity_s *ent);
 struct entity_s **CL_NewTempEntity (void);
 void CL_ParseTEnt (void);
 void CL_SignonReply (void);
+
+
+extern	double			realtime;
 
 void Cvar_Info (struct cvar_s *var);
 

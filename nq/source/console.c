@@ -39,6 +39,7 @@
 #include <stdarg.h>
 
 #include "QF/cmd.h"
+#include "QF/compat.h"
 #include "QF/console.h"
 #include "QF/draw.h"
 #include "QF/input.h"
@@ -49,7 +50,6 @@
 #include "QF/va.h"
 
 #include "client.h"
-#include "host.h"
 
 int         con_ormask;
 console_t   con_main;
@@ -60,7 +60,6 @@ int         con_linewidth;				// characters across screen
 int         con_totallines;				// total lines in console scrollback
 
 float       con_cursorspeed = 4;
-
 
 cvar_t     *con_notifytime;				// seconds
 
@@ -74,12 +73,13 @@ int         con_notifylines;			// scan lines to clear for notify lines
 qboolean    con_debuglog;
 
 #define		MAXCMDLINE	256
+
 extern char key_lines[32][MAXCMDLINE];
 extern int  edit_line;
 extern int  key_linepos;
 
-
 qboolean    con_initialized;
+
 
 void
 Key_ClearTyping (void)
@@ -88,9 +88,7 @@ Key_ClearTyping (void)
 	key_linepos = 1;
 }
 
-/*
-	Con_ToggleConsole_f
-*/
+
 void
 Con_ToggleConsole_f (void)
 {
@@ -105,9 +103,7 @@ Con_ToggleConsole_f (void)
 	Con_ClearNotify ();
 }
 
-/*
-	Con_ToggleChat_f
-*/
+
 void
 Con_ToggleChat_f (void)
 {
@@ -122,9 +118,7 @@ Con_ToggleChat_f (void)
 	Con_ClearNotify ();
 }
 
-/*
-	Con_Clear_f
-*/
+
 void
 Con_Clear_f (void)
 {
@@ -136,9 +130,6 @@ Con_Clear_f (void)
 }
 
 
-/*
-	Con_ClearNotify
-*/
 void
 Con_ClearNotify (void)
 {
@@ -149,9 +140,6 @@ Con_ClearNotify (void)
 }
 
 
-/*
-	Con_MessageMode_f
-*/
 void
 Con_MessageMode_f (void)
 {
@@ -161,9 +149,7 @@ Con_MessageMode_f (void)
 	key_dest = key_message;
 }
 
-/*
-	Con_MessageMode2_f
-*/
+
 void
 Con_MessageMode2_f (void)
 {
@@ -173,9 +159,7 @@ Con_MessageMode2_f (void)
 	key_dest = key_message;
 }
 
-/*
-	Con_Resize
-*/
+
 void
 Con_Resize (console_t *con)
 {
@@ -239,9 +223,6 @@ Con_CheckResize (void)
 }
 
 
-/*
-	Con_Init
-*/
 void
 Con_Init (void)
 {
@@ -253,9 +234,7 @@ Con_Init (void)
 
 	Con_Printf ("Console initialized.\n");
 
-//
-// register our commands
-//
+	// register our commands
 	Cmd_AddCommand ("toggleconsole", Con_ToggleConsole_f,
 					"Toggle the console up and down");
 	Cmd_AddCommand ("togglechat", Con_ToggleChat_f,
@@ -268,6 +247,7 @@ Con_Init (void)
 	con_initialized = true;
 }
 
+
 void
 Con_Init_Cvars (void)
 {
@@ -277,9 +257,6 @@ Con_Init_Cvars (void)
 }
 
 
-/*
-	Con_Linefeed
-*/
 void
 Con_Linefeed (void)
 {
@@ -292,6 +269,7 @@ Con_Linefeed (void)
 	memset (&con->text[(con->current % con_totallines) * con_linewidth],
 			' ', con_linewidth);
 }
+
 
 /*
 	Con_Print
@@ -323,7 +301,6 @@ Con_Print (char *txt)
 		txt++;
 	} else
 		mask = 0;
-
 
 	while ((c = *txt)) {
 		// count word length
@@ -392,24 +369,23 @@ Con_DrawInput (void)
 	char        temp[MAXCMDLINE];
 
 	if (key_dest != key_console && cls.state == ca_active)
-		return;							// don't draw anything (always draw
-	// if not active)
+		return;				// don't draw anything (always draw if not active)
 
 	text = strcpy (temp, key_lines[edit_line]);
 
-// fill out remainder with spaces
+	// fill out remainder with spaces
 	for (i = strlen (text); i < MAXCMDLINE; i++)
 		text[i] = ' ';
 
-// add the cursor frame
+	// add the cursor frame
 	if ((int) (realtime * con_cursorspeed) & 1)
 		text[key_linepos] = 11;
 
-//  prestep if horizontally scrolling
+	//  prestep if horizontally scrolling
 	if (key_linepos >= con_linewidth)
 		text += 1 + key_linepos - con_linewidth;
 
-// draw it
+	// draw it
 	y = con_vislines - 22;
 
 	for (i = 0; i < con_linewidth; i++)
@@ -453,7 +429,6 @@ Con_DrawNotify (void)
 		v += 8;
 	}
 
-
 	if (key_dest == key_message) {
 		clearnotify = 0;
 		scr_copytop = 1;
@@ -483,6 +458,7 @@ Con_DrawNotify (void)
 		con_notifylines = v;
 }
 
+
 /*
 	Con_DrawConsole
 
@@ -499,18 +475,18 @@ Con_DrawConsole (int lines)
 	if (lines <= 0)
 		return;
 
-// draw the background
+	// draw the background
 	Draw_ConsoleBackground (lines);
 
-// draw the text
+	// draw the text
 	con_vislines = lines;
 
-// changed to line things up better
+	// changed to line things up better
 	rows = (lines - 22) >> 3;			// rows of text to draw
 
 	y = lines - 30;
 
-// draw from the bottom up
+	// draw from the bottom up
 	if (con->display != con->current) {
 		// draw arrows to show the buffer is backscrolled
 		for (x = 0; x < con_linewidth; x += 4)
@@ -533,12 +509,53 @@ Con_DrawConsole (int lines)
 			Draw_Character8 ((x + 1) << 3, y, text[x]);
 	}
 
-// draw the input prompt, user text, and cursor if desired
+	// draw the input prompt, user text, and cursor if desired
 	Con_DrawInput ();
 }
+
 
 void
 Con_DrawDownload (int lines)
 {
-}
+	int         i, j, x, y, n;
+	char       *text;
+	char        dlbar[1024];
 
+    if (!cls.download)
+        return;
+
+	text = COM_SkipPath(cls.downloadname); 
+ 
+    x = con_linewidth - ((con_linewidth * 7) / 40); 
+    y = x - strlen (text) - 8; 
+    i = con_linewidth / 3; 
+    if (strlen (text) > i) { 
+        y = x - i - 11; 
+        strncpy (dlbar, text, i); 
+        dlbar[i] = 0; 
+        strncat (dlbar, "...", sizeof (dlbar) - strlen (dlbar)); 
+    } else 
+        strncpy (dlbar, text, sizeof (dlbar));
+	strncat (dlbar, ": ", sizeof (dlbar) - strlen (dlbar)); 
+	i = strlen (dlbar);
+	dlbar[i++] = '\x80';
+	// where's the dot go?
+	if (cls.downloadpercent == 0)
+		n = 0;
+	else
+		n = y * cls.downloadpercent / 100;
+	for (j = 0; j < y; j++)
+		if (j == n)
+			dlbar[i++] = '\x83';
+		else
+			dlbar[i++] = '\x81';
+	dlbar[i++] = '\x82';
+	dlbar[i] = 0;
+
+    snprintf (dlbar + strlen (dlbar), sizeof (dlbar) - strlen (dlbar),
+			  " %02d%%", cls.downloadpercent);
+	// draw it
+	y = lines - 22 + 8;
+	for (i = 0; i < strlen (dlbar); i++)
+		Draw_Character8 ((i + 1) << 3, y, dlbar[i]);
+}

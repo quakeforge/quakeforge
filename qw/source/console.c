@@ -61,7 +61,6 @@ int         con_totallines;				// total lines in console scrollback
 
 float       con_cursorspeed = 4;
 
-
 cvar_t     *con_notifytime;				// seconds
 
 #define	NUM_CON_TIMES 4
@@ -74,10 +73,10 @@ int         con_notifylines;			// scan lines to clear for notify lines
 qboolean    con_debuglog;
 
 #define		MAXCMDLINE	256
+
 extern char key_lines[32][MAXCMDLINE];
 extern int  edit_line;
 extern int  key_linepos;
-
 
 qboolean    con_initialized;
 
@@ -235,9 +234,7 @@ Con_Init (void)
 
 	Con_Printf ("Console initialized.\n");
 
-//
-// register our commands
-//
+	// register our commands
 	Cmd_AddCommand ("toggleconsole", Con_ToggleConsole_f,
 					"Toggle the console up and down");
 	Cmd_AddCommand ("togglechat", Con_ToggleChat_f,
@@ -304,7 +301,6 @@ Con_Print (char *txt)
 		txt++;
 	} else
 		mask = 0;
-
 
 	while ((c = *txt)) {
 		// count word length
@@ -373,24 +369,23 @@ Con_DrawInput (void)
 	char        temp[MAXCMDLINE];
 
 	if (key_dest != key_console && cls.state == ca_active)
-		return;							// don't draw anything (always draw
-	// if not active)
+		return;				// don't draw anything (always draw if not active)
 
 	text = strcpy (temp, key_lines[edit_line]);
 
-// fill out remainder with spaces
+	// fill out remainder with spaces
 	for (i = strlen (text); i < MAXCMDLINE; i++)
 		text[i] = ' ';
 
-// add the cursor frame
+	// add the cursor frame
 	if ((int) (realtime * con_cursorspeed) & 1)
 		text[key_linepos] = 11;
 
-//  prestep if horizontally scrolling
+	//  prestep if horizontally scrolling
 	if (key_linepos >= con_linewidth)
 		text += 1 + key_linepos - con_linewidth;
 
-// draw it
+	// draw it
 	y = con_vislines - 22;
 
 	for (i = 0; i < con_linewidth; i++)
@@ -433,7 +428,6 @@ Con_DrawNotify (void)
 
 		v += 8;
 	}
-
 
 	if (key_dest == key_message) {
 		clearnotify = 0;
@@ -481,18 +475,18 @@ Con_DrawConsole (int lines)
 	if (lines <= 0)
 		return;
 
-// draw the background
+	// draw the background
 	Draw_ConsoleBackground (lines);
 
-// draw the text
+	// draw the text
 	con_vislines = lines;
 
-// changed to line things up better
+	// changed to line things up better
 	rows = (lines - 22) >> 3;			// rows of text to draw
 
 	y = lines - 30;
 
-// draw from the bottom up
+	// draw from the bottom up
 	if (con->display != con->current) {
 		// draw arrows to show the buffer is backscrolled
 		for (x = 0; x < con_linewidth; x += 4)
@@ -515,7 +509,7 @@ Con_DrawConsole (int lines)
 			Draw_Character8 ((x + 1) << 3, y, text[x]);
 	}
 
-// draw the input prompt, user text, and cursor if desired
+	// draw the input prompt, user text, and cursor if desired
 	Con_DrawInput ();
 }
 
@@ -565,4 +559,3 @@ Con_DrawDownload (int lines)
 	for (i = 0; i < strlen (dlbar); i++)
 		Draw_Character8 ((i + 1) << 3, y, dlbar[i]);
 }
-

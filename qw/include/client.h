@@ -39,8 +39,11 @@
 #include "r_local.h"
 #include "render.h"
 
-// player_state_t is the information needed by a player entity
-// to do move prediction and to generate a drawable entity
+
+/*
+  player_state_t is the information needed by a player entity
+  to do move prediction and to generate a drawable entity
+*/
 typedef struct player_state_s {
 	int			messagenum;		// all player's won't be updated each frame
 
@@ -68,6 +71,7 @@ typedef struct player_state_s {
 
 #undef MAX_SCOREBOARDNAME
 #define	MAX_SCOREBOARDNAME	16
+
 typedef struct player_info_s
 {
 	int		userid;
@@ -102,17 +106,15 @@ typedef struct
 
 	// received from server
 	double		receivedtime;	// time message was received, or -1
-	player_state_t	playerstate[MAX_CLIENTS];	// message received that reflects performing
-							// the usercmd
+	player_state_t	playerstate[MAX_CLIENTS];	// message received that
+												// reflects performing the
+												// usercmd
 	packet_entities_t	packet_entities;
 	qboolean	invalid;		// true if the packet_entities delta was invalid
 } frame_t;
 
 
-//
 // client_state_t should hold all pieces of the client state
-//
-
 typedef struct
 {
 	int		length;
@@ -120,18 +122,17 @@ typedef struct
 } lightstyle_t;
 
 
-
-#define	MAX_EFRAGS		512
-
 #define	MAX_DEMOS		8
 #define	MAX_DEMONAME	16
+#define	MAX_EFRAGS		512
+
 
 typedef enum {
-ca_disconnected, 	// full screen console with no connection
-ca_demostart,		// starting up a demo
-ca_connected,		// netchan_t established, waiting for svc_serverdata
-ca_onserver,		// processing data lists, donwloading, etc
-ca_active			// everything is in, so frames can be rendered
+	ca_disconnected, 	// full screen console with no connection
+	ca_demostart,		// starting up a demo
+	ca_connected,		// netchan_t established, waiting for svc_serverdata
+	ca_onserver,		// processing data lists, donwloading, etc
+	ca_active			// everything is in, so frames can be rendered
 } cactive_t;
 
 typedef enum {
@@ -142,10 +143,10 @@ typedef enum {
 	dl_single
 } dltype_t;		// download type
 
-//
-// the client_static_t structure is persistant through an arbitrary number
-// of server connections
-//
+/*
+  the client_static_t structure is persistant through an arbitrary number
+  of server connections
+*/
 typedef struct
 {
 // connection information
@@ -161,7 +162,8 @@ typedef struct
 
 	int			qport;
 
-	QFile		*download;		// file transfer from server
+// file transfer from server
+	QFile		*download;
 	char		downloadtempname[MAX_OSPATH];
 	char		downloadname[MAX_OSPATH];
 	int			downloadnumber;
@@ -189,10 +191,9 @@ typedef struct
 
 extern client_static_t	cls;
 
-//
-// the client_state_t structure is wiped completely at every
-// server signon
-//
+/*
+  the client_state_t structure is wiped completely at every server signon
+*/
 typedef struct
 {
 	int			servercount;	// server identification for prespawns
@@ -224,9 +225,8 @@ typedef struct
 	cshift_t	cshifts[NUM_CSHIFTS];	// color shifts for damage, powerups
 	cshift_t	prev_cshifts[NUM_CSHIFTS];	// and content types
 
-// the client maintains its own idea of view angles, which are
-// sent to the server each frame.  And only reset at level change
-// and teleport times
+// the client maintains its own idea of view angles, which are sent to the
+// server each frame.  And only reset at level change and teleport times
 	vec3_t		viewangles;
 
 // the client simulates or interpolates movement to get these values
@@ -252,9 +252,8 @@ typedef struct
 	int			intermission;	// don't change view angle, full screen, etc
 	int			completed_time;	// latched ffrom time at intermission start
 	
-//
-// information that is static for the entire time connected to a server
-//
+/* information that is static for the entire time connected to a server */
+
 	char		model_name[MAX_MODELS][MAX_QPATH];
 	char		sound_name[MAX_SOUNDS][MAX_QPATH];
 
@@ -281,9 +280,9 @@ typedef struct
 } client_state_t;
 
 
-//
-// cvars
-//
+/*
+  cvars
+*/
 extern  struct cvar_s	*cl_warncmd;
 extern	struct cvar_s	*cl_upspeed;
 extern	struct cvar_s	*cl_forwardspeed;
@@ -328,8 +327,6 @@ extern	qboolean	nomaster;
 extern char	*server_version;	// version of server we connected to
 
 extern	double		realtime;
-
-//=============================================================================
 
 
 void Cvar_Info (struct cvar_s *var);
