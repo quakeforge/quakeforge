@@ -1797,7 +1797,7 @@ bitnot_expr:
 					e->e.float_val = ~(int) e->e.float_val;
 					return e;
 				case ex_quaternion:
-					QuatConj (e->e.float_val, e->e.float_val);
+					QuatConj (e->e.quaternion_val, e->e.quaternion_val);
 					return e;
 				case ex_nil:
 				case ex_string:
