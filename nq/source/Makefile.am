@@ -26,9 +26,9 @@
 #
 #	$Id$
 #
+
 AUTOMAKE_OPTIONS=	foreign
 
-#
 # Stuff that is common to both client and server
 #
 INCLUDES=	-I$(top_srcdir)/include -I$(top_srcdir)/nq/include $(MGL_CFLAGS) $(SDL_CFLAGS) $(SVGA_CFLAGS) $(X_CFLAGS) $(GLX_CFLAGS) $(TDFXGL_CFLAGS)
@@ -53,18 +53,14 @@ common_SOURCES= game.c wad.c world.c \
 		com.c \
 		$(common_ASM)
 
-#
 # ... System type
-#
 if SYSTYPE_WIN32
 qfsys_SRC=	sys_win.c fnmatch.c
 else
 qfsys_SRC=	sys_unix.c
 endif
 
-#
 # ... Networking
-#
 libqfnet_a_SOURCES=	net_bsd.c net_dgrm.c net_loop.c \
 			net_main.c net_udp.c net_vcr.c
 
@@ -90,12 +86,9 @@ server_SOURCES= host.c host_cmd.c \
 
 combined_SOURCES= $(common_SOURCES) $(client_SOURCES) $(server_SOURCES) $(qfsys_SRC)
 
-#
 # Software-rendering targets
 #
 # ... Common stuff
-#
-
 soft_SOURCES=	d_edge.c d_fill.c d_init.c d_modech.c d_part.c d_polyse.c \
 		d_scan.c d_sky.c d_sprite.c d_surf.c d_vars.c d_zpoint.c \
 		draw.c sw_raclip.c sw_ralias.c sw_rbsp.c sw_rdraw.c sw_redge.c sw_refrag.c \
@@ -103,116 +96,69 @@ soft_SOURCES=	d_edge.c d_fill.c d_init.c d_modech.c d_part.c d_polyse.c \
 		sw_rsurf.c sw_rvars.c screen.c sw_model_alias.c sw_model_brush.c \
 		sw_model_sprite.c sw_view.c $(soft_ASM)
 
-#
 # ... Linux FBDev
-#
-YFLAGS = -d
-fbdev_SOURCES=      fbset.c fbset_modes_y.y fbset_modes_l.l vid_fbdev.c in_fbdev.c
-YACCLEX_CLEANFILES= fbset_modes_y.c fbset_modes_y.h fbset_modes_y.tab.h fbset_modes_l.c
-EXTRA_nq_fbdev_SOURCES=fbset_modes_y.h
-
-fbset_modes_y.o: fbset_modes_y.c
-	$(COMPILE) -Wno-error -c fbset_modes_y.c
-fbset_modes_l.o: fbset_modes_l.c
-	$(COMPILE) -Wno-error -c fbset_modes_l.c
-
-nq_fbdev_SOURCES= $(combined_SOURCES) $(soft_SOURCES) $(fbdev_SOURCES)
-nq_fbdev_LDADD= $(client_LIBS)
+nq_fbdev_SOURCES= $(combined_SOURCES) $(soft_SOURCES)
+nq_fbdev_LDADD= $(client_LIBS) ../../libs/video/targets/libQFfbdev.la
 nq_fbdev_DEPENDENCIES= $(client_LIB_DEPS)
 
-#
 # ... SciTech MGL
-#
-mgl_SOURCES=		vid_mgl.c in_win.c
-
-nq_mgl_SOURCES=	$(combined_SOURCES) $(soft_SOURCES) $(mgl_SOURCES)
-nq_mgl_LDADD=	$(client_LIBS) $(MGL_LIBS)
+nq_mgl_SOURCES=	$(combined_SOURCES) $(soft_SOURCES)
+nq_mgl_LDADD=	$(client_LIBS) $(MGL_LIBS) ../../libs/video/targets/libQFmgl.la
 nq_mgl_DEPENDENCIES=$(client_LIB_DEPS)
 
-#
 # ... Sam Lantinga's Simple DirectMedia Layer, version 1.0 and higher
-#
-sdl_SOURCES=		vid_sdl.c in_sdl.c
-
-nq_sdl_SOURCES=	$(combined_SOURCES) $(soft_SOURCES) $(sdl_SOURCES)
-nq_sdl_LDADD=	$(client_LIBS) $(SDL_LIBS)
+nq_sdl_SOURCES=	$(combined_SOURCES) $(soft_SOURCES)
+nq_sdl_LDADD=	$(client_LIBS) $(SDL_LIBS) ../../libs/video/targets/libQFsdl.la
 nq_sdl_DEPENDENCIES=$(client_LIB_DEPS)
 
-#
 # ... Linux SVGAlib
-#
-svga_SOURCES=		d_copy.S vid_svgalib.c in_svgalib.c
-
-nq_svga_SOURCES=	$(combined_SOURCES) $(soft_SOURCES) $(svga_SOURCES)
-nq_svga_LDADD=	$(client_LIBS) $(SVGA_LIBS)
+nq_svga_SOURCES=	$(combined_SOURCES) $(soft_SOURCES)
+nq_svga_LDADD=	$(client_LIBS) $(SVGA_LIBS) ../../libs/video/targets/libQFsvga.la
 nq_svga_DEPENDENCIES=$(client_LIB_DEPS)
 
-#
 # ... X11
-#
-x11_SOURCES=		in_x11.c context_x11.c dga_check.c
-
-nq_x11_SOURCES=	$(combined_SOURCES) $(soft_SOURCES) $(x11_SOURCES) vid_x11.c
-nq_x11_LDADD=	$(client_LIBS) $(X_PRE_LIBS) $(VIDMODE_LIBS) $(DGA_LIBS) $(X_LIBS) -lX11 $(X_EXTRA_LIBS) $(X_SHM_LIB)
+nq_x11_SOURCES=	$(combined_SOURCES) $(soft_SOURCES)
+nq_x11_LDADD=	$(client_LIBS) $(X_PRE_LIBS) $(VIDMODE_LIBS) $(DGA_LIBS) $(X_LIBS) -lX11 $(X_EXTRA_LIBS) $(X_SHM_LIB) ../../libs/video/targets/libQFx11.la
 nq_x11_DEPENDENCIES=$(client_LIB_DEPS)
 
 
-#
 # OpenGL-using targets
-#
 # ... Common stuff
-#
 ogl_SOURCES=	gl_draw.c gl_mesh.c gl_part.c gl_refrag.c gl_rlight.c \
 		gl_rmain.c gl_rmisc.c gl_rsurf.c gl_screen.c gl_view.c \
 		gl_warp.c gl_model_alias.c gl_model_brush.c gl_model_fullbright.c \
 		gl_model_sprite.c
 
-#
 # ... 3Dfx Voodoo 1 and 2 SVGAlib-based console GL
-#
-tdfx_SOURCES=	vid_3dfxsvga.c vid_common_gl.c in_svgalib.c
-
-nq_3dfx_SOURCES=	$(combined_SOURCES) $(ogl_SOURCES) $(tdfx_SOURCES)
-nq_3dfx_LDADD=	$(client_LIBS) $(TDFXGL_LIBS) $(SVGA_LIBS) $(DL_LIBS)
+nq_3dfx_SOURCES=	$(combined_SOURCES) $(ogl_SOURCES)
+nq_3dfx_LDADD=	$(client_LIBS) $(TDFXGL_LIBS) $(SVGA_LIBS) $(DL_LIBS) ../../libs/video/targets/libQFtdfx.la
 nq_3dfx_DEPENDENCIES=$(client_LIB_DEPS)
 
-#
 # ... OpenGL in X Window
-#
-glx_SOURCES=	vid_glx.c vid_common_gl.c $(x11_SOURCES)
-
-nq_glx_SOURCES=	$(combined_SOURCES) $(ogl_SOURCES) $(glx_SOURCES)
-nq_glx_LDADD=	$(client_LIBS) $(GLX_LIBS) $(X_PRE_LIBS) $(VIDMODE_LIBS) $(DGA_LIBS) $(X_LIBS) -lX11 $(X_EXTRA_LIBS) $(DL_LIBS)
-nq_glx_DEPENDENCIES=$(client_LIB_DEPS)
+nq_glx_SOURCES=	$(combined_SOURCES) $(ogl_SOURCES)
+nq_glx_LDADD=	$(client_LIBS) $(GLX_LIBS) $(X_PRE_LIBS) $(VIDMODE_LIBS) $(DGA_LIBS) $(X_LIBS) -lX11 $(X_EXTRA_LIBS) $(DL_LIBS) ../../libs/video/targets/libQFglx.la
+nq_glx_DEPENDENCIES= $(client_LIB_DEPS)
 
 #
-# ... Sam Lantinga's Simple DirectMedia Layer, version 1.1 and higher, in GL mode
-#
-sgl_SOURCES=	vid_sgl.c vid_common_gl.c in_sdl.c
+# ... Simple Directmedia Layer, version 1.1 and higher, in GL mode
+nq_sgl_SOURCES=	$(combined_SOURCES) $(ogl_SOURCES)
+nq_sgl_LDADD=	$(client_LIBS) $(X_LIBS) $(SDL_LIBS) $(GLX_LIBS) $(DL_LIBS) ../../libs/video/targets/libQFsgl.la
+nq_sgl_DEPENDENCIES= $(client_LIB_DEPS)
 
-nq_sgl_SOURCES=	$(combined_SOURCES) $(ogl_SOURCES) $(sgl_SOURCES)
-nq_sgl_LDADD=	$(client_LIBS) $(X_LIBS) $(SDL_LIBS) $(GLX_LIBS) $(DL_LIBS)
-nq_sgl_DEPENDENCIES=$(client_LIB_DEPS)
 
-#
-# SGI/Microsoft WGL (Windows OpenGL)
-#
+# ... SGI/Microsoft WGL (Windows OpenGL)
 wgl_SOURCES=	vid_wgl.c conproc.c
+nq_wgl_SOURCES=	$(combined_SOURCES) $(ogl_SOURCES)
+nq_wgl_LDADD=	$(client_LIBS) $(GLX_LIBS) ../../libs/video/targets/libQFwgl.la -lgdi32 -lcomctl32
+nq_wgl_DEPENDENCIES= $(client_LIB_DEPS)
 
-nq_wgl_SOURCES=	$(combined_SOURCES) $(ogl_SOURCES) $(wgl_SOURCES) in_win.c
-nq_wgl_LDADD=	$(client_LIBS) $(GLX_LIBS) -lgdi32 -lcomctl32
-nq_wgl_DEPENDENCIES=$(client_LIB_DEPS)
+# Dedicated Server
+ded_SOURCES=	sys_unixd.c sv_ded.c
 
-#
-# dedicated server
-#
-ded_SOURCES=sys_unixd.c sv_ded.c
+nq_server_SOURCES=	$(common_SOURCES) $(server_SOURCES) $(ded_SOURCES)
+nq_server_LDADD=	libqfnet.a
+nq_server_DEPENDENCIES=	libqfnet.a
 
-nq_server_SOURCES=$(common_SOURCES) $(server_SOURCES) $(ded_SOURCES)
-nq_server_LDADD= libqfnet.a
-nq_server_DEPENDENCIES=libqfnet.a
-
-#
 # Stuff that doesn't get linked into an executable NEEDS to be mentioned here,
 # or it won't be distributed with 'make dist'
 #
