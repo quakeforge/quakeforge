@@ -1,7 +1,7 @@
 /*
 	gl_rlight.c
 
-	(description)
+	@description@
 
 	Copyright (C) 1996-1997  Id Software, Inc.
 
@@ -116,8 +116,8 @@ R_RenderDlight (dlight_t *light)
 	bub_sin = bubble_sintable;
 	bub_cos = bubble_costable;
 	rad = light->radius * 0.35;
-	VectorSubtract (light->origin, r_origin, v);
 
+	VectorSubtract (light->origin, r_origin, v);
 	if (Length (v) < rad) {				// view is inside the dlight
 		return;
 	}
@@ -126,7 +126,7 @@ R_RenderDlight (dlight_t *light)
 
 	if (lighthalf)
 		glColor3f (light->color[0] * 0.5, light->color[1] * 0.5,
-			   light->color[2] * 0.5);
+				   light->color[2] * 0.5);
 	else
 		glColor3fv (light->color);
 
@@ -405,8 +405,8 @@ loc0:
 #endif
 
 /*
-		R_PushDlights
- */
+	R_PushDlights
+*/
 void
 R_PushDlights (vec3_t entorigin)
 {

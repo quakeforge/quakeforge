@@ -39,9 +39,7 @@ int         r_dlightframecount;
 
 
 /*
-==================
-R_AnimateLight
-==================
+	R_AnimateLight
 */
 void
 R_AnimateLight (void)
@@ -65,11 +63,7 @@ R_AnimateLight (void)
 }
 
 /*
-=============================================================================
-
-DYNAMIC LIGHTS BLEND RENDERING
-
-=============================================================================
+	DYNAMIC LIGHTS BLEND RENDERING
 */
 
 void
@@ -110,8 +104,6 @@ void
 R_RenderDlight (dlight_t *light)
 {
 	int         i, j;
-
-//  float   a;
 	vec3_t      v;
 	float       rad;
 	float      *bub_sin, *bub_cos;
@@ -142,7 +134,7 @@ R_RenderDlight (dlight_t *light)
 //      a = i/16.0 * M_PI*2;
 		for (j = 0; j < 3; j++)
 			v[j] = light->origin[j] + (vright[j] * (*bub_cos) +
-									   +vup[j] * (*bub_sin)) * rad;
+						   vup[j] * (*bub_sin)) * rad;
 		bub_sin += 2;
 		bub_cos += 2;
 		glVertex3fv (v);
@@ -151,9 +143,7 @@ R_RenderDlight (dlight_t *light)
 }
 
 /*
-=============
-R_RenderDlights
-=============
+	R_RenderDlights
 */
 void
 R_RenderDlights (void)
@@ -183,22 +173,16 @@ R_RenderDlights (void)
 	glDisable (GL_BLEND);
 	glEnable (GL_TEXTURE_2D);
 	glBlendFunc (GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-	glDepthMask (1);
+	glDepthMask (GL_TRUE);
 }
 
 
 /*
-=============================================================================
-
-DYNAMIC LIGHTS
-
-=============================================================================
+	DYNAMIC LIGHTS
 */
 
 /*
-=============
-R_MarkLights
-=============
+	R_MarkLights
 */
 // LordHavoc: heavily modified, to eliminate unnecessary texture uploads,
 //            and support bmodel lighting better
@@ -212,7 +196,7 @@ R_MarkLights (vec3_t lightorigin, dlight_t *light, int bit, mnode_t *node)
 	int         i, j, s, t;
 	vec3_t      impact;
 
-  loc0:
+loc0:
 	if (node->contents < 0)
 		return;
 
@@ -310,9 +294,7 @@ R_MarkLights (vec3_t lightorigin, dlight_t *light, int bit, mnode_t *node)
 
 
 /*
-=============
-R_PushDlights
-=============
+	R_PushDlights
 */
 void
 R_PushDlights (vec3_t entorigin)
@@ -338,11 +320,7 @@ R_PushDlights (vec3_t entorigin)
 
 
 /*
-=============================================================================
-
-LIGHT SAMPLING
-
-=============================================================================
+	LIGHT SAMPLING
 */
 
 mplane_t   *lightplane;
@@ -361,7 +339,7 @@ RecursiveLightPoint (mnode_t *node, vec3_t start, vec3_t end)
 	int         i;
 	mtexinfo_t *tex;
 	byte       *lightmap;
-	unsigned    scale;
+	unsigned int scale;
 	int         maps;
 
 	if (node->contents < 0)
@@ -389,7 +367,7 @@ RecursiveLightPoint (mnode_t *node, vec3_t start, vec3_t end)
 		return r;						// hit something
 
 	if ((back < 0) == side)
-		return -1;						// didn't hit anuthing
+		return -1;						// didn't hit anything
 
 // check for impact on this node
 	VectorCopy (mid, lightspot);
