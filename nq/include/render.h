@@ -43,13 +43,11 @@
 typedef struct entity_s
 {
 	qboolean				forcelink;		// model changed
-
-	int						keynum; // FIXME: hack to match qw
 	int						update_type;
-
 	entity_state_t			baseline;		// to fill in defaults in updates
-
 	double					msgtime;		// time of last update
+
+	int						keynum; // for matching entities in different frames
 	vec3_t					origin;
 	vec3_t					old_origin;
 	vec3_t					angles;
@@ -60,14 +58,14 @@ typedef struct entity_s
 	byte					*colormap;
 	int						skinnum;		// for Alias models
 
+	struct player_info_s	*scoreboard;	// identify player
+
 	float					syncbase;		// for client-side animations
 
 	struct efrag_s			*efrag;			// linked list of efrags
 	int						visframe;		// last frame this entity was
 											// found in an active leaf
 	int						effects;		// light, particals, etc
-	int						dlightframe;	// dynamic lighting
-	int						dlightbits;
 
 	float					colormod[3];	// color tint for model
 	float					alpha;			// opacity (alpha) of the model

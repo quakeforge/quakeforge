@@ -34,20 +34,18 @@
 #include "QF/model.h"
 #include "QF/vid.h"
 
-// now we know why (struct model_s *) is used here instead of model_t
-// damn circular reference ! same with player_info_s -- yan
-
 #define	TOP_RANGE		16			// soldier uniform colors
 #define	BOTTOM_RANGE	96
 
 
-// LordHavoc: reindented this after 'Endy was here', also added scale.
 typedef struct entity_s
 {
 	int						keynum; // for matching entities in different frames
 	vec3_t					origin;
 	vec3_t					old_origin;
 	vec3_t					angles;
+	vec3_t					msg_origins[2];	// last two updates (0 is newest)
+	vec3_t					msg_angles[2];	// last two updates (0 is newest)
 	struct model_s			*model;			// NULL = no model
 	int						frame;
 	byte					*colormap;
