@@ -222,7 +222,11 @@ R_DrawViewModel (void)
 
 	// hack the depth range to prevent view model from poking into walls
 	qfglDepthRange (gldepthmin, gldepthmin + 0.3 * (gldepthmax - gldepthmin));
+	if (gl_affinemodels->int_val)
+		qfglHint (GL_PERSPECTIVE_CORRECTION_HINT, GL_NICEST);
 	R_DrawAliasModel (currententity, false);
+	if (gl_affinemodels->int_val)
+		qfglHint (GL_PERSPECTIVE_CORRECTION_HINT, GL_DONT_CARE);
 	qfglDepthRange (gldepthmin, gldepthmax);
 	qfglColor3ubv (color_white);
 }
