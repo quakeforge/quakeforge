@@ -575,7 +575,6 @@ QFS_Path_f (void)
 void
 QFS_WriteFile (const char *filename, void *data, int len)
 {
-	char        name[MAX_OSPATH];
 	QFile      *f;
 
 	f = QFS_WOpen (filename, 0);
@@ -583,7 +582,6 @@ QFS_WriteFile (const char *filename, void *data, int len)
 		Sys_Error ("Error opening %s", filename);
 	}
 
-	Sys_Printf ("QFS_WriteFile: %s\n", name);
 	Qwrite (f, data, len);
 	Qclose (f);
 }
@@ -626,8 +624,9 @@ void
 QFS_CreatePath (const char *path)
 {
 	char       *ofs;
-	char        e_path[MAX_OSPATH];
+	char       *e_path = alloca (strlen (path) + 1);
 
+	strcpy (e_path, path);
 	for (ofs = e_path + 1; *ofs; ofs++) {
 		if (*ofs == '/') {				// create the directory
 			*ofs = 0;
@@ -1282,6 +1281,7 @@ QFS_Open (const char *path, const char *mode)
 	QFile      *file;
 
 	dsprintf (full_path, "%s/%s", qfs_userpath, path);
+	Sys_DPrintf ("QFS_Open: %s %s\n", full_path->str, mode);
 	QFS_CreatePath (full_path->str);
 	file = Qopen (full_path->str, mode);
 	dstring_delete (full_path);
