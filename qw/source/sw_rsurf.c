@@ -309,8 +309,8 @@ R_DrawSurfaceBlock8_mip0 (void)
 	prowdest = prowdestbase;
 
 	for (v = 0; v < r_numvblocks; v++) {
-// FIXME: make these locals?
-// FIXME: use delta rather than both right and left, like ASM?
+		// FIXME: make these locals?
+		// FIXME: use delta rather than both right and left, like ASM?
 		lightleft = r_lightptr[0];
 		lightright = r_lightptr[1];
 		r_lightptr += r_lightwidth;
@@ -352,8 +352,8 @@ R_DrawSurfaceBlock8_mip1 (void)
 	prowdest = prowdestbase;
 
 	for (v = 0; v < r_numvblocks; v++) {
-./ FIXME: make these locals?
-// FIXME: use delta rather than both right and left, like ASM?
+		// FIXME: make these locals?
+		// FIXME: use delta rather than both right and left, like ASM?
 		lightleft = r_lightptr[0];
 		lightright = r_lightptr[1];
 		r_lightptr += r_lightwidth;
@@ -395,8 +395,8 @@ R_DrawSurfaceBlock8_mip2 (void)
 	prowdest = prowdestbase;
 
 	for (v = 0; v < r_numvblocks; v++) {
-// FIXME: make these locals?
-// FIXME: use delta rather than both right and left, like ASM?
+		// FIXME: make these locals?
+		// FIXME: use delta rather than both right and left, like ASM?
 		lightleft = r_lightptr[0];
 		lightright = r_lightptr[1];
 		r_lightptr += r_lightwidth;
@@ -438,8 +438,8 @@ R_DrawSurfaceBlock8_mip3 (void)
 	prowdest = prowdestbase;
 
 	for (v = 0; v < r_numvblocks; v++) {
-// FIXME: make these locals?
-// FIXME: use delta rather than both right and left, like ASM?
+		// FIXME: make these locals?
+		// FIXME: use delta rather than both right and left, like ASM?
 		lightleft = r_lightptr[0];
 		lightright = r_lightptr[1];
 		r_lightptr += r_lightwidth;

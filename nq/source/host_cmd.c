@@ -1073,57 +1073,6 @@ Host_Tell_f (void)
 	host_client = save;
 }
 
-
-/*
-==================
-Host_Color_f
-==================
-*/
-void
-Host_Color_f (void)
-{
-	int         top, bottom;
-	int         playercolor;
-
-	if (Cmd_Argc () == 1) {
-		Con_Printf ("\"color\" is \"%i %i\"\n", (cl_color->int_val) >> 4,
-					(cl_color->int_val) & 0x0f);
-		Con_Printf ("color <0-13> [0-13]\n");
-		return;
-	}
-
-	if (Cmd_Argc () == 2)
-		top = bottom = atoi (Cmd_Argv (1));
-	else {
-		top = atoi (Cmd_Argv (1));
-		bottom = atoi (Cmd_Argv (2));
-	}
-
-	top &= 15;
-	if (top > 13)
-		top = 13;
-	bottom &= 15;
-	if (bottom > 13)
-		bottom = 13;
-
-	playercolor = top * 16 + bottom;
-
-	if (cmd_source == src_command) {
-		Cvar_SetValue (cl_color, playercolor);
-		if (cls.state == ca_connected)
-			Cmd_ForwardToServer ();
-		return;
-	}
-
-	host_client->colors = playercolor;
-	SVFIELD (host_client->edict, team, float) = bottom + 1;
-
-// send notification to all clients
-	MSG_WriteByte (&sv.reliable_datagram, svc_updatecolors);
-	MSG_WriteByte (&sv.reliable_datagram, host_client - svs.clients);
-	MSG_WriteByte (&sv.reliable_datagram, host_client->colors);
-}
-
 /*
 ==================
 Host_Kill_f
@@ -1819,7 +1768,6 @@ Host_InitCommands (void)
 	Cmd_AddCommand ("say", Host_Say_f, "No Description");
 	Cmd_AddCommand ("say_team", Host_Say_Team_f, "No Description");
 	Cmd_AddCommand ("tell", Host_Tell_f, "No Description");
-	Cmd_AddCommand ("color", Host_Color_f, "No Description");
 	Cmd_AddCommand ("kill", Host_Kill_f, "No Description");
 	Cmd_AddCommand ("pause", Host_Pause_f, "No Description");
 	Cmd_AddCommand ("spawn", Host_Spawn_f, "No Description");

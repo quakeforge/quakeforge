@@ -46,11 +46,9 @@ cvar_t     *r_ambient;
 cvar_t     *r_clearcolor;
 cvar_t     *r_drawentities;
 cvar_t     *r_drawflat;
-cvar_t     *r_draworder;
 cvar_t     *r_drawviewmodel;
 cvar_t     *r_dspeeds;
 cvar_t     *r_dynamic;
-cvar_t     *r_fullbright;
 cvar_t     *r_graphheight;
 cvar_t     *r_maxedges;
 cvar_t     *r_maxsurfs;
@@ -202,15 +200,12 @@ R_Init_Cvars (void)
 							   "everything but the world)");
 	r_drawflat = Cvar_Get ("r_drawflat", "0", CVAR_NONE, NULL,
 						   "Toggles the drawing of textures");
-	r_draworder = Cvar_Get ("r_draworder", "0", CVAR_NONE, NULL,
-							"Toggles drawing order");
 	r_drawviewmodel = Cvar_Get ("r_drawviewmodel", "1", CVAR_NONE, NULL,
 								"Toggles view model drawing (your weapons)");
 	r_dspeeds = Cvar_Get ("r_dspeeds", "0", CVAR_NONE, NULL,
 						  "Toggles the display of drawing speed information");
 	r_dynamic = Cvar_Get ("r_dynamic", "1", CVAR_NONE, NULL,
 						  "Set to 0 to disable lightmap changes");
-	r_fullbright = Cvar_Get ("r_fullbright", "0", CVAR_NONE, NULL, "None");
 	r_graphheight = Cvar_Get ("r_graphheight", "10", CVAR_NONE, NULL,
 							  "Set the number of lines displayed in the "
 							  "various graphs");

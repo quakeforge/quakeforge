@@ -55,7 +55,6 @@ byte       *vid_colormap;
 
 // these two are not intended to be set directly
 cvar_t     *cl_name;
-cvar_t     *cl_color;
 
 cvar_t     *writecfg;
 

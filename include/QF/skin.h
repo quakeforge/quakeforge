@@ -49,6 +49,7 @@ extern byte player_8bit_texels[320 * 200];
 extern skin_t   skin_cache[MAX_CACHED_SKINS];
 struct tex_s;
 struct player_info_s;
+struct model_s;
 
 void	Skin_Find (struct player_info_s *sc);
 struct tex_s *Skin_Cache (skin_t *skin);
@@ -58,6 +59,7 @@ void	Skin_Init_Cvars (void);
 void	Skin_Init_Translation (void);
 void	Skin_Set_Translate (int top, int bottom, byte *dest);
 void	Skin_Do_Translation (skin_t *player_skin, int slot);
+void	Skin_Do_Translation_Model (struct model_s *model, int skinnum, int slot);
 void	Skin_Process (skin_t *skin, struct tex_s *);
 
 #endif

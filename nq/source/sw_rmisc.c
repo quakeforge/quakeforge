@@ -49,12 +49,6 @@ qboolean    allowskybox;			// whether or not to allow skyboxes --KB
 void
 R_CheckVariables (void)
 {
-	static int  oldbright;
-
-	if (r_fullbright->int_val != oldbright) {
-		oldbright = r_fullbright->int_val;
-		D_FlushCaches ();				// so all lighting changes
-	}
 }
 
 
@@ -430,7 +424,6 @@ R_SetupFrame (void)
 	float       w, h;
 
 	// don't allow cheats in multiplayer
-	Cvar_SetValue (r_draworder, 0);
 	Cvar_SetValue (r_ambient, 0);
 	Cvar_SetValue (r_drawflat, 0);
 
@@ -453,9 +446,6 @@ R_SetupFrame (void)
 	}
 
 	r_refdef.ambientlight = max (r_ambient->value, 0);
-
-	if (!sv.active)
-		Cvar_SetValue (r_draworder, 0);	// don't let cheaters look behind walls
 
 	R_CheckVariables ();
 
@@ -560,10 +550,4 @@ R_SetupFrame (void)
 	r_outofedges = 0;
 
 	D_SetupFrame ();
-}
-
-
-void
-R_TranslatePlayerSkin (int playernum)
-{
 }

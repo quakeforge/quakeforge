@@ -423,7 +423,6 @@ R_SetupFrame (void)
 	float       w, h;
 
 	// don't allow cheats in multiplayer
-	Cvar_SetValue (r_draworder, 0);
 	Cvar_SetValue (r_ambient, 0);
 	Cvar_SetValue (r_drawflat, 0);
 
@@ -446,8 +445,6 @@ R_SetupFrame (void)
 	}
 
 	r_refdef.ambientlight = max (r_ambient->value, 0);
-
-	Cvar_SetValue (r_draworder, 0);
 
 	R_CheckVariables ();
 

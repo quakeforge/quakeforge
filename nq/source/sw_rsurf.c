@@ -56,9 +56,8 @@ void        R_DrawSurfaceBlock8_mip2 (void);
 void        R_DrawSurfaceBlock8_mip3 (void);
 
 static void (*surfmiptable[4]) (void) = {
-	R_DrawSurfaceBlock8_mip0,
-		R_DrawSurfaceBlock8_mip1,
-		R_DrawSurfaceBlock8_mip2, R_DrawSurfaceBlock8_mip3};
+	R_DrawSurfaceBlock8_mip0, R_DrawSurfaceBlock8_mip1,
+	R_DrawSurfaceBlock8_mip2, R_DrawSurfaceBlock8_mip3};
 
 unsigned int blocklights[18 * 18];
 
@@ -148,7 +147,7 @@ R_BuildLightMap (void)
 	size = smax * tmax;
 	lightmap = surf->samples;
 
-	if (r_fullbright->int_val || !cl.worldmodel->lightdata) {
+	if (!cl.worldmodel->lightdata) {
 		for (i = 0; i < size; i++)
 			blocklights[i] = 0;
 		return;
@@ -186,7 +185,7 @@ R_BuildLightMap (void)
 
 	Returns the proper texture for a given time and base texture
 */
-texture_t  *
+texture_t *
 R_TextureAnimation (texture_t *base)
 {
 	int         reletive;
@@ -353,8 +352,8 @@ R_DrawSurfaceBlock8_mip1 (void)
 	prowdest = prowdestbase;
 
 	for (v = 0; v < r_numvblocks; v++) {
-// FIXME: make these locals?
-// FIXME: use delta rather than both right and left, like ASM?
+		// FIXME: make these locals?
+		// FIXME: use delta rather than both right and left, like ASM?
 		lightleft = r_lightptr[0];
 		lightright = r_lightptr[1];
 		r_lightptr += r_lightwidth;
@@ -396,8 +395,8 @@ R_DrawSurfaceBlock8_mip2 (void)
 	prowdest = prowdestbase;
 
 	for (v = 0; v < r_numvblocks; v++) {
-// FIXME: make these locals?
-// FIXME: use delta rather than both right and left, like ASM?
+		// FIXME: make these locals?
+		// FIXME: use delta rather than both right and left, like ASM?
 		lightleft = r_lightptr[0];
 		lightright = r_lightptr[1];
 		r_lightptr += r_lightwidth;
@@ -439,8 +438,8 @@ R_DrawSurfaceBlock8_mip3 (void)
 	prowdest = prowdestbase;
 
 	for (v = 0; v < r_numvblocks; v++) {
-// FIXME: make these locals?
-// FIXME: use delta rather than both right and left, like ASM?
+		// FIXME: make these locals?
+		// FIXME: use delta rather than both right and left, like ASM?
 		lightleft = r_lightptr[0];
 		lightright = r_lightptr[1];
 		r_lightptr += r_lightwidth;

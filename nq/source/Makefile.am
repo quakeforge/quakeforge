@@ -46,7 +46,7 @@ soft_ASM=	d_draw.S d_draw16.S d_parta.S d_polysa.S d_scana.S d_spr8.S \
 		surf16.S surf8.S
 common_ASM=	sys_ia32.S worlda.S $(math_ASM)
 
-common_SOURCES= game.c wad.c world.c com.c $(common_ASM)
+common_SOURCES= game.c host_skin.c skin.c wad.c world.c com.c $(common_ASM)
 
 # ... System type
 if SYSTYPE_WIN32
@@ -87,9 +87,9 @@ combined_SOURCES=	$(common_SOURCES) $(client_SOURCES) $(server_SOURCES) \
 # ... Common stuff
 soft_SOURCES=	d_edge.c d_fill.c d_init.c d_modech.c d_part.c d_polyse.c \
 		d_scan.c d_sky.c d_sprite.c d_surf.c d_vars.c d_zpoint.c \
-		draw.c sw_raclip.c sw_ralias.c sw_rbsp.c sw_rdraw.c sw_redge.c \
-		sw_rlight.c sw_rmain.c sw_rmisc.c sw_rpart.c sw_rsky.c sw_rsprite.c \
-		sw_rsurf.c sw_rvars.c screen.c \
+		draw.c screen.c sw_raclip.c sw_ralias.c sw_rbsp.c sw_rdraw.c \
+		sw_redge.c sw_rlight.c sw_rmain.c sw_rmisc.c sw_rpart.c sw_rsky.c \
+		sw_rsprite.c sw_rsurf.c sw_rvars.c sw_skin.c \
 		sw_view.c $(soft_ASM)
 
 # ... Linux FBDev
@@ -123,7 +123,7 @@ nq_x11_DEPENDENCIES=$(client_LIB_DEPS)
 ogl_SOURCES=	noisetextures.c gl_textures.c gl_draw.c gl_dyn_fires.c	\
 		gl_dyn_part.c gl_dyn_textures.c \
 		gl_rlight.c gl_rmain.c gl_rmisc.c gl_rsurf.c \
-		gl_screen.c gl_sky.c gl_sky_clip.c gl_view.c gl_warp.c
+		gl_screen.c gl_skin.c gl_sky.c gl_sky_clip.c gl_view.c gl_warp.c
 
 # ... 3Dfx Voodoo 1 and 2 SVGAlib-based console GL
 nq_3dfx_SOURCES=	$(combined_SOURCES) $(ogl_SOURCES)

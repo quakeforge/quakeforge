@@ -128,15 +128,9 @@ R_BeginEdgeFrame (void)
 	surfaces[1].flags = SURF_DRAWBACKGROUND;
 
 	// put the background behind everything in the world
-	if (r_draworder->int_val) {
-		pdrawfunc = R_GenerateSpansBackward;
-		surfaces[1].key = 0;
-		r_currentkey = 1;
-	} else {
-		pdrawfunc = R_GenerateSpans;
-		surfaces[1].key = 0x7FFFFFFF;
-		r_currentkey = 0;
-	}
+	pdrawfunc = R_GenerateSpans;
+	surfaces[1].key = 0x7FFFFFFF;
+	r_currentkey = 0;
 
 // FIXME: set with memset
 	for (v = r_refdef.vrect.y; v < r_refdef.vrectbottom; v++) {

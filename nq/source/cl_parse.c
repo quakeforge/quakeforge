@@ -397,7 +397,7 @@ CL_ParseUpdate (int bits)
 			forcelink = true;			// hack to make null model players
 		// work
 		if (num > 0 && num <= cl.maxclients)
-			R_TranslatePlayerSkin (num - 1);
+			CL_NewTranslation (num - 1);
 	}
 
 	if (bits & U_FRAME)
@@ -424,7 +424,7 @@ CL_ParseUpdate (int bits)
 	if (skin != ent->skinnum) {
 		ent->skinnum = skin;
 		if (num > 0 && num <= cl.maxclients)
-			R_TranslatePlayerSkin (num - 1);
+			CL_NewTranslation (num - 1);
 	}
 
 	if (bits & U_EFFECTS)
@@ -593,39 +593,6 @@ CL_ParseClientdata (int bits)
 			cl.stats[STAT_ACTIVEWEAPON] = (1 << i);
 			Sbar_Changed ();
 		}
-	}
-}
-
-
-void
-CL_NewTranslation (int slot)
-{
-	int         i, j;
-	int         top, bottom;
-	byte       *dest, *source;
-
-	if (slot > cl.maxclients)
-		Sys_Error ("CL_NewTranslation: slot > cl.maxclients");
-	dest = cl.scores[slot].translations;
-	source = vid.colormap;
-	memcpy (dest, vid.colormap, sizeof (cl.scores[slot].translations));
-	top = cl.scores[slot].colors & 0xf0;
-	bottom = (cl.scores[slot].colors & 15) << 4;
-	R_TranslatePlayerSkin (slot);
-
-	for (i = 0; i < VID_GRADES; i++, dest += 256, source += 256) {
-		if (top < 128)					// the artists made some backwards
-			// ranges.  sigh.
-			memcpy (dest + TOP_RANGE, source + top, 16);
-		else
-			for (j = 0; j < 16; j++)
-				dest[TOP_RANGE + j] = source[top + 15 - j];
-
-		if (bottom < 128)
-			memcpy (dest + BOTTOM_RANGE, source + bottom, 16);
-		else
-			for (j = 0; j < 16; j++)
-				dest[BOTTOM_RANGE + j] = source[bottom + 15 - j];
 	}
 }
 

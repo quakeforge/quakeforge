@@ -57,6 +57,8 @@
 
 extern void R_Particles_Init_Cvars (void);
 extern void R_Init_Cvars (void);
+extern void Host_Skin_Init (void);
+extern void Host_Skin_Init_Cvars (void);
 
 /*
 
@@ -861,7 +863,6 @@ Host_Init (quakeparms_t *parms)
 	Cmd_Init_Hash ();
 	Memory_Init (parms->membase, parms->memsize);
 	Cvar_Init ();
-	CL_InitCvars ();
 
 	Cbuf_Init ();
 	Cmd_Init ();
@@ -879,6 +880,7 @@ Host_Init (quakeparms_t *parms)
 	Cmd_Exec_File (fs_globalcfg->string);
 	Cbuf_Execute_Sets ();
 
+	CL_InitCvars ();
 	IN_Init_Cvars ();
 	VID_Init_Cvars ();
 	S_Init_Cvars ();
@@ -889,6 +891,7 @@ Host_Init (quakeparms_t *parms)
 	R_Init_Cvars ();
 	R_Particles_Init_Cvars ();
 	Mod_Init_Cvars ();
+	Host_Skin_Init_Cvars ();
 
 	Cmd_StuffCmds_f ();
 	Cbuf_Execute_Sets ();
@@ -920,6 +923,7 @@ Host_Init (quakeparms_t *parms)
 	Mod_Init ();
 	NET_Init ();
 	SV_Init ();
+	Host_Skin_Init ();
 
 	Con_Printf ("Exe: " __TIME__ " " __DATE__ "\n");
 	Con_Printf ("%4.1f megabyte heap\n", parms->memsize / (1024 * 1024.0));

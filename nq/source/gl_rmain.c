@@ -926,9 +926,6 @@ R_SetFrustum (void)
 void
 R_SetupFrame (void)
 {
-	// don't allow cheats in multiplayer
-	Cvar_SetValue (r_fullbright, 0);
-
 	R_AnimateLight ();
 
 	r_framecount++;
