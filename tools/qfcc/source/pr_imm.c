@@ -77,7 +77,7 @@ int_imm_get_key (void *_def, void *_str)
 	def_t      *def = (def_t*)_def;
 	static char rep[60];
 	char       *str = (char*)_str;
-	sprintf (rep, "\001%s:%08X", str, G_INT(def->ofs));
+	sprintf (rep, "\001%s:%08X\001", str, G_INT(def->ofs));
 	return rep;
 }
 
