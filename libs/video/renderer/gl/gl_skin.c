@@ -40,9 +40,9 @@ static __attribute__ ((unused)) const char rcsid[] =
 
 #include "QF/console.h"
 #include "QF/cvar.h"
+#include "QF/image.h"
 #include "QF/render.h"
 #include "QF/skin.h"
-#include "QF/texture.h"
 #include "QF/GL/defines.h"
 #include "QF/GL/funcs.h"
 #include "QF/GL/qf_textures.h"

@@ -38,17 +38,17 @@ static __attribute__ ((unused)) const char rcsid[] =
 # include <strings.h>
 #endif
 
-#include "png.h"
+#include <png.h>
 
+#include "QF/image.h"
+#include "QF/png.h"
 #include "QF/qendian.h"
 #include "QF/qtypes.h"
 #include "QF/quakefs.h"
 #include "QF/sys.h"
-#include "QF/texture.h"
 #include "QF/zone.h"
 
 #include "compat.h"
-#include "QF/png.h"
 
 typedef unsigned char	uch;
 typedef unsigned short	ush;

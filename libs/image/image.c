@@ -43,7 +43,6 @@ static __attribute__ ((unused)) const char rcsid[] =
 #include "QF/pcx.h"
 #include "QF/png.h"
 #include "QF/quakefs.h"
-#include "QF/texture.h"
 #include "QF/tga.h"
 
 tex_t *

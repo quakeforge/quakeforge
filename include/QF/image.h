@@ -34,6 +34,22 @@
 
 #include "QF/quakeio.h"
 
-struct tex_s *LoadImage (const char *imageFile);
+// could not use texture_t as that is used for models.
+typedef struct tex_s {
+	int				width;
+	int				height;
+	int				format;
+	unsigned char  *palette;					// 0 = 32 bit, otherwise 8
+	unsigned char	data[4];					// variable length
+} tex_t;
+
+#define tex_palette 0
+#define tex_l GL_LUMINANCE
+#define tex_a GL_ALPHA
+#define tex_la 2
+#define tex_rgb 3
+#define tex_rgba 4
+
+tex_t *LoadImage (const char *imageFile);
 
 #endif//__QF_image_h

@@ -43,9 +43,9 @@ static __attribute__ ((unused)) const char rcsid[] =
 #include "QF/console.h"
 #include "QF/cvar.h"
 #include "QF/draw.h"
+#include "QF/image.h"
 #include "QF/pcx.h"
 #include "QF/screen.h"
-#include "QF/texture.h"
 
 #include "client.h"
 #include "r_cvar.h"

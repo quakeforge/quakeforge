@@ -48,7 +48,6 @@ static __attribute__ ((unused)) const char rcsid[] =
 #include "QF/qendian.h"
 #include "QF/quakefs.h"
 #include "QF/sys.h"
-#include "QF/texture.h"
 #include "QF/va.h"
 #include "QF/vid.h"
 #include "QF/GL/qf_textures.h"

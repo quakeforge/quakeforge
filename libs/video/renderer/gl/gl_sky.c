@@ -43,7 +43,6 @@ static __attribute__ ((unused)) const char rcsid[] =
 #include "QF/image.h"
 #include "QF/quakefs.h"
 #include "QF/render.h"
-#include "QF/texture.h"
 #include "QF/va.h"
 #include "QF/vid.h"
 #include "QF/GL/defines.h"

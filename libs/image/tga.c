@@ -40,10 +40,10 @@ static __attribute__ ((unused)) const char rcsid[] =
 
 #include <stdlib.h>
 
+#include "QF/image.h"
 #include "QF/qendian.h"
 #include "QF/quakefs.h"
 #include "QF/sys.h"
-#include "QF/texture.h"
 #include "QF/tga.h"
 #include "QF/zone.h"
 #include "QF/GL/defines.h"
