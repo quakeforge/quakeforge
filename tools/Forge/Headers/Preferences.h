@@ -3,8 +3,7 @@
 
 	Preferences class definition for Forge
 
-	Copyright (C) 1996 Id Software, Inc.
-	Copyright (C) 2001 Jeff Teunissen <deek@quakeforge.net>
+	Copyright (C) 2001 Jeff Teunissen <deek@d2dc.net>
 
 	This program is free software; you can redistribute it and/or
 	modify it under the terms of the GNU General Public License as
@@ -89,3 +88,5 @@
 + (void) savePreferencesToDefaults: (NSDictionary *) dict;
 
 @end
+
+extern Preferences	*prefs;

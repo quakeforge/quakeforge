@@ -1,18 +1,35 @@
+/*
+	Forge.h
 
-extern id	quakeed_i;
+	Main controller object class definitions
 
-extern BOOL	filter_light, filter_path, filter_entities;
-extern BOOL	filter_clip_brushes, filter_water_brushes, filter_world;
+	Copyright (C) 2001 Jeff Teunissen <deek@d2dc.net>
 
-extern UserPath	*upath;
+	This program is free software; you can redistribute it and/or
+	modify it under the terms of the GNU General Public License as
+	published by the Free Software Foundation; either version 2 of
+	the License, or (at your option) any later version.
 
-extern	id	g_cmd_out_i;
+	This program is distributed in the hope that it will be useful,
+	but WITHOUT ANY WARRANTY; without even the implied warranty of
+	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
 
-double I_FloatTime (void);
+	See the GNU General Public License for more details.
 
-void NopSound (void);
+	You should have received a copy of the GNU General Public
+	License along with this program; if not, write to:
 
-void qprintf (char *fmt, ...);		// prints text to cmd_out_i
+		Free Software Foundation, Inc.
+		59 Temple Place - Suite 330
+		Boston, MA  02111-1307, USA
+
+	$Id$
+*/
+#ifdef HAVE_CONFIG_H
+# include "Config.h"
+#endif
+
+#import <AppKit/NSWindow.h>
 
 @interface Forge: NSWindow
 {
@@ -99,4 +116,17 @@ void qprintf (char *fmt, ...);		// prints text to cmd_out_i
 - (BOOL) showNames;
 
 @end
+
+extern Forge	*forge;
+
+extern BOOL	filter_light, filter_path, filter_entities;
+extern BOOL	filter_clip_brushes, filter_water_brushes, filter_world;
+
+extern	id	g_cmd_out_i;
+
+double I_FloatTime (void);
+
+void NopSound (void);
+
+void qprintf (char *fmt, ...);		// prints text to cmd_out_i
 

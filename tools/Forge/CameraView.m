@@ -1,22 +1,61 @@
-#import "qedefs.h"
+/*
+	CameraView.m
 
-id		cameraview_i;
-BOOL	timedrawing = 0;
+	Camera view object
+
+	Copyright (C) 2001 Jeff Teunissen <deek@d2dc.net>
+
+	This program is free software; you can redistribute it and/or
+	modify it under the terms of the GNU General Public License
+	as published by the Free Software Foundation; either version 2
+	of the License, or (at your option) any later version.
+
+	This program is distributed in the hope that it will be useful,
+	but WITHOUT ANY WARRANTY; without even the implied warranty of
+	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+
+	See the GNU General Public License for more details.
+
+	You should have received a copy of the GNU General Public License
+	along with this program; if not, write to:
+
+		Free Software Foundation, Inc.
+		59 Temple Place - Suite 330
+		Boston, MA  02111-1307, USA
+
+	$Id$
+*/
+
+#include "Config.h"
+
+#import <Foundation/NSGeometry.h>
+#import <Foundation/NSObject.h>
+
+#import "CameraView.h"
+#import "Forge.h"
+#import "Map.h"
+#import "UserPath.h"
+#import "ZView.h"
+
+#import "render.h"
+
+CameraView	*cameraView;
+BOOL		timeDrawing = 0;
 
 @implementation CameraView
 
 /*
-==================
-initFrame:
-==================
+	(id) initWithFrame: (NSRect)
+
+	Given a frame, set up our view.
 */
-- initWithFrame: (NSRect) frameRect
+- (id) initWithFrame: (NSRect) frameRect
 {
 	int		size;
 	
 	[super initWithFrame: frameRect];
 	
-	cameraview_i = self;
+	cameraView = self;
 	
 	angles[0] = angles[1] = angles[2] = 0.0;
 	
@@ -28,7 +67,7 @@ initFrame:
 	
 	move = 16;
 	
-	bounds = [self bounds];
+	bounds = frameRect;
 	size = bounds.size.width * bounds.size.height;
 	zbuffer = malloc (size*4);
 	imagebuffer = malloc (size*4);
@@ -72,7 +111,7 @@ initFrame:
 {
 	sb_floor_dir = 1;
 	sb_floor_dist = 99999;
-	[map_i makeObjectsPerformSelector: @selector(feetToFloor)];
+	[map makeObjectsPerformSelector: @selector(feetToFloor)];
 	if (sb_floor_dist == 99999)
 	{
 		qprintf ("already on top floor");
@@ -80,7 +119,7 @@ initFrame:
 	}
 	qprintf ("up floor");
 	origin[2] += sb_floor_dist;
-	[quakeed_i updateCamera];
+	[forge updateCamera];
 	return self;
 }
 
@@ -88,7 +127,7 @@ initFrame:
 {
 	sb_floor_dir = -1;
 	sb_floor_dist = -99999;
-	[map_i makeAllPerform: @selector(feetToFloor)];
+	[map makeAllPerform: @selector(feetToFloor)];
 	if (sb_floor_dist == -99999)
 	{
 		qprintf ("already on bottom floor");
@@ -96,7 +135,7 @@ initFrame:
 	}
 	qprintf ("down floor");
 	origin[2] += sb_floor_dist;
-	[quakeed_i updateCamera];
+	[forge updateCamera];
 	return self;
 }
 
@@ -119,7 +158,7 @@ homeView
 	
 	[self matrixFromAngles];
 
-	[quakeed_i updateAll];
+	[forge updateAll];
 
 	qprintf ("homed view angle");
 	
@@ -129,7 +168,7 @@ homeView
 - drawMode: (NSMatrix) sender
 {
 	drawmode = [sender selectedColumn];
-	[quakeed_i updateCamera];
+	[forge updateCamera];
 	return self;
 }
 
@@ -137,7 +176,7 @@ homeView
 {
 	drawmode = mode;
 	[mode_radio_i selectCellAtRow: 0 column: mode];
-	[quakeed_i updateCamera];
+	[forge updateCamera];
 	return self;
 }
 
@@ -223,7 +262,7 @@ float	mid_x, mid_y;
 float	topscale = (240.0/3)/160;
 float	bottomscale = (240.0*2/3)/160;
 
-extern	plane_t	frustum[5];
+//extern	plane_t	frustum[5];
 
 void MakeCampt (vec3_t in, campt_t *pt)
 {
@@ -267,7 +306,7 @@ void CameraMoveto(vec3_t p)
 {
 	campt_t	*pt;
 	
-	if (upath->numberOfPoints > 2048)
+	if (userPath->numberOfPoints > 2048)
 		lineflush ();
 		
 	pt = &campts[cam_cur];
@@ -275,7 +314,7 @@ void CameraMoveto(vec3_t p)
 	MakeCampt (p,pt);
 	if (!pt->clipflags)
 	{	// onscreen, so move there immediately
-		UPmoveto (upath, pt->screen[0], pt->screen[1]);
+		UPmoveto (userPath, pt->screen[0], pt->screen[1]);
 	}
 }
 
@@ -283,7 +322,7 @@ void ClipLine (vec3_t p1, vec3_t p2, int planenum)
 {
 	float	d, d2, frac;
 	vec3_t	new;
-	plane_t	*pl;
+	mplane_t	*pl;
 	float	scale;
 	
 	if (planenum == 5)
@@ -291,12 +330,12 @@ void ClipLine (vec3_t p1, vec3_t p2, int planenum)
 		scale = mid_x/p1[2];
 		new[0] = mid_x + p1[0]*scale;
 		new[1] = mid_y + p1[1]*scale;
-		UPmoveto (upath, new[0], new[1]);
+		UPmoveto (userPath, new[0], new[1]);
 		
 		scale = mid_x/p2[2];
 		new[0] = mid_x + p2[0]*scale;
 		new[1] = mid_y + p2[1]*scale;
-		UPlineto (upath, new[0], new[1]);
+		UPlineto (userPath, new[0], new[1]);
 		return;
 	}
 
@@ -349,8 +388,8 @@ void CameraLineto(vec3_t p)
 	if (! bits )
 	{
 		c_on++;
-	UPmoveto (upath, p1->screen[0], p1->screen[1]);
-		UPlineto (upath, p2->screen[0], p2->screen[1]);
+	UPmoveto (userPath, p1->screen[0], p1->screen[1]);
+		UPlineto (userPath, p2->screen[0], p2->screen[1]);
 		return;		// entirely on screen
 	}
 	
@@ -391,7 +430,7 @@ drawSolid
 //
 // render the setbrushes
 //	
-	[map_i makeAllPerform: @selector(CameraRenderSelf)];
+	[map makeAllPerform: @selector(CameraRenderSelf)];
 
 //
 // display the output
@@ -445,7 +484,7 @@ drawWire
 	
 // draw all entities
 	linestart (0,0,0);
-	[map_i makeUnselectedPerform: @selector(CameraDrawSelf)];
+	[map makeUnselectedPerform: @selector(CameraDrawSelf)];
 	lineflush ();
 
 	return self;
@@ -460,7 +499,7 @@ drawSelf
 {
 	static float	drawtime;	// static to shut up compiler warning
 
-	if (timedrawing)
+	if (timeDrawing)
 		drawtime = I_FloatTime ();
 
 	if (drawmode == dr_texture || drawmode == dr_flat)
@@ -468,7 +507,7 @@ drawSelf
 	else
 		[self drawWire: rects];
 
-	if (timedrawing) {
+	if (timeDrawing) {
 //		NSPing ();
 		drawtime = I_FloatTime() - drawtime;
 		printf ("CameraView drawtime: %5.3f\n", drawtime);
@@ -591,7 +630,7 @@ modalMoveLoop
 		//
 		if ([event modifierFlags] & NSShiftKeyMask)
 		{
-			ent = [quakemap_i selectedEntity];
+			ent = [quakemap selectedEntity];
 			if (ent)
 			{
 				[ent origin: temp];
@@ -607,7 +646,7 @@ modalMoveLoop
 					
 drawentry:
 		// instance draw new frame
-		[quakeed_i newinstance];
+		[forge newinstance];
 		[self display];
 		
 		event = [NSApp nextEventMatchingMask: eventMask
@@ -656,7 +695,7 @@ XYmouseDown
 		movemod[2] = 0;
 	}
 	
-	[self modalMoveLoop: pt : movemod : xyview_i];
+	[self modalMoveLoop: pt : movemod : xyView];
 	
 	return YES;
 }
@@ -679,7 +718,7 @@ ZmouseDown
 	movemod[1] = 0;
 	movemod[2] = 1;
 	
-	[self modalMoveLoop: pt : movemod : zview_i];
+	[self modalMoveLoop: pt : movemod : zView];
 
 	return YES;
 }
@@ -719,7 +758,7 @@ viewDrag:
 		[self matrixFromAngles];
 		
 drawentry:
-		[quakeed_i newinstance];
+		[forge newinstance];
 		[self display];
 
 		event = [NSApp nextEventMatchingMask: eventMask
@@ -772,20 +811,20 @@ mouseDown
 
 	// bare click to select a texture
 	if (!flags) {
-		[map_i getTextureRay: p1 : p2];
+		[map getTextureRay: p1 : p2];
 		return;
 	}
 	
 	// shift click to select / deselect a brush from the world
 	if (flags == NSShiftKeyMask) {
-		[map_i selectRay: p1 : p2 : NO];
+		[map selectRay: p1 : p2 : NO];
 		return;
 	}
 
 
 	// cmd-shift click to set a target/targetname entity connection
 	if (flags == (NSShiftKeyMask | NSCommandKeyMask)) {
-		[map_i entityConnect: p1 : p2];
+		[map entityConnect: p1 : p2];
 		return;
 	}
 
@@ -796,8 +835,8 @@ mouseDown
 			NopSound ();
 			return;
 		}		
-		[map_i setTextureRay: p1 : p2 : YES];
-		[quakeed_i updateAll];
+		[map setTextureRay: p1 : p2 : YES];
+		[forge updateAll];
 		return;
 	}
 		
@@ -808,8 +847,8 @@ mouseDown
 			NopSound ();
 			return;
 		}
-		[map_i setTextureRay: p1 : p2 : NO];
-		[quakeed_i updateAll];
+		[map setTextureRay: p1 : p2 : NO];
+		[forge updateAll];
 		return;
 	}
 
@@ -874,62 +913,62 @@ keyDown
 		case 'A':
 			angles[0] += M_PI/8;
 			[self matrixFromAngles];
-			[quakeed_i updateCamera];
+			[forge updateCamera];
 			return;
 
 		case 'z':
 		case 'Z':
 			angles[0] -= M_PI/8;
 			[self matrixFromAngles];
-			[quakeed_i updateCamera];
+			[forge updateCamera];
 			return;
 
 		case NSRightArrowFunctionKey:
 			angles[1] -= M_PI*move/(64*2);
 			[self matrixFromAngles];
-			[quakeed_i updateCamera];
+			[forge updateCamera];
 			break;
 
 		case NSLeftArrowFunctionKey:
 			angles[1] += M_PI*move/(64*2);
 			[self matrixFromAngles];
-			[quakeed_i updateCamera];
+			[forge updateCamera];
 			break;
 
 		case NSUpArrowFunctionKey:
 			origin[0] += move*cos(angles[1]);
 			origin[1] += move*sin(angles[1]);
-			[quakeed_i updateCamera];
+			[forge updateCamera];
 			break;
 
 		case NSDownArrowFunctionKey:
 			origin[0] -= move*cos(angles[1]);
 			origin[1] -= move*sin(angles[1]);
-			[quakeed_i updateCamera];
+			[forge updateCamera];
 			break;
 
 		case '.':
 			origin[0] += move*cos(angles[1]-M_PI_2);
 			origin[1] += move*sin(angles[1]-M_PI_2);
-			[quakeed_i updateCamera];
+			[forge updateCamera];
 			break;
 
 		case ',':
 			origin[0] -= move*cos(angles[1]-M_PI_2);
 			origin[1] -= move*sin(angles[1]-M_PI_2);
-			[quakeed_i updateCamera];
+			[forge updateCamera];
 			break;
 
 		case 'd':
 		case 'D':
 			origin[2] += move;
-			[quakeed_i updateCamera];
+			[forge updateCamera];
 			break;
 
 		case 'c':
 		case 'C':
 			origin[2] -= move;
-			[quakeed_i updateCamera];
+			[forge updateCamera];
 			break;
 	}
     return;

@@ -1,14 +1,56 @@
+/*
+	Clipper.h
 
-#include "qedefs.h"
+	Clipping plane class
 
-id	clipper_i;
+	Copyright (C) 2001 Jeff Teunissen <deek@d2dc.net>
+
+	This program is free software; you can redistribute it and/or
+	modify it under the terms of the GNU General Public License as
+	published by the Free Software Foundation; either version 2 of
+	the License, or (at your option) any later version.
+
+	This program is distributed in the hope that it will be useful,
+	but WITHOUT ANY WARRANTY; without even the implied warranty of
+	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+
+	See the GNU General Public License for more details.
+
+	You should have received a copy of the GNU General Public
+	License along with this program; if not, write to:
+
+		Free Software Foundation, Inc.
+		59 Temple Place - Suite 330
+		Boston, MA  02111-1307, USA
+
+	$Id$
+*/
+#ifdef HAVE_CONFIG_H
+# include "Config.h"
+#endif
+
+#include <QF/mathlib.h>
+#include <QF/bspfile.h>
+
+#import <AppKit/NSGraphics.h>
+#import <AppKit/DPSOperators.h>
+
+#import "CameraView.h"
+#import "Clipper.h"
+#import "Forge.h"
+#import "Map.h"
+#import "SetBrush.h"
+#import "XYView.h"
+#import "ZView.h"
+
+Clipper 		*clipper;
 
 @implementation Clipper
 
 - init
 {
 	[super init];
-	clipper_i = self;
+	clipper = self;
 	return self;	
 }
 
@@ -37,7 +79,7 @@ id	clipper_i;
 			VectorCopy (temp, pos[2]);
 			break;
 		default:
-			qprintf ("no clip plane");
+			NSLog (@"No clipping plane");
 			NSBeep ();
 	}
 	return self;
@@ -70,7 +112,7 @@ id	clipper_i;
 	if ( !norm[0] && !norm[1] && !norm[2] )
 		return NO;
 	
-	[texturepalette_i getTextureDef: &f->texture];
+	[texturepalette_i setTextureDef: &f->texture];
 
 	return YES;
 }
@@ -85,18 +127,18 @@ XYClick
 	int		i;
 	vec3_t	new;
 		
-	new[0] = [xyview_i snapToGrid: pt.x];
-	new[1] = [xyview_i snapToGrid: pt.y];
-	new[2] = [map_i currentMinZ];
+	new[0] = [xyView snapToGrid: pt.x];
+	new[1] = [xyView snapToGrid: pt.y];
+	new[2] = [map currentMinZ];
 
 	// see if a point is already there
 	for (i=0 ; i<num ; i++) {
 		if (new[0] == pos[i][0] && new[1] == pos[i][1]) {
-			if (pos[i][2] == [map_i currentMinZ])
-				pos[i][2] = [map_i currentMaxZ];
+			if (pos[i][2] == [map currentMinZ])
+				pos[i][2] = [map currentMaxZ];
 			else
-				pos[i][2] = [map_i currentMinZ];
-			[quakeed_i updateAll];
+				pos[i][2] = [map currentMinZ];
+			[forge updateAll];
 			return self;
 		}
 	}
@@ -108,7 +150,7 @@ XYClick
 	VectorCopy (new, pos[num]);
 	num++;
 
-	[quakeed_i updateAll];
+	[forge updateAll];
 	
 	return self;
 }
@@ -138,21 +180,20 @@ XYDrag
 
 - carve
 {
-	[map_i makeSelectedPerform: @selector(carveByClipper)];
+	[map makeSelectedPerform: @selector(carveByClipper)];
 	num = 0;
 	return self;
 }
 
 
-- cameraDrawSelf
+- (void) cameraDrawSelf
 {
 	vec3_t		mid;
 	int			i;
 	
-	linecolor (1,0.5,0);
+	linecolor (1, 0.5, 0);
 
-	for (i=0 ; i<num ; i++)
-	{
+	for (i = 0; i < num; i++) {
 		VectorCopy (pos[i], mid);
 		mid[0] -= 8;
 		mid[1] -= 8;
@@ -170,49 +211,47 @@ XYDrag
 		CameraLineto (mid);
 	}
 	
-	return self;
+	return;
 }
 
-- XYDrawSelf
+- (void) xyDrawSelf
 {
 	int		i;
 	char	text[8];
 	
-	PSsetrgbcolor (1,0.5,0);
-	PSselectfont("Helvetica-Medium",10/[xyview_i currentScale]);
-	PSrotate(0);
+	PSsetrgbcolor (1, 0.5, 0);
+	PSselectfont ("Helvetica-Medium", 10 / [xyView currentScale]);
+	PSrotate (0);
 
-	for (i=0 ; i<num ; i++)
-	{
-		PSmoveto (pos[i][0]-4, pos[i][1]-4);
+	for (i = 0; i < num; i++) {
+		PSmoveto (pos[i][0] - 4, pos[i][1] - 4);
 		sprintf (text, "%i", i);
 		PSshow (text);
 		PSstroke ();
-		PSarc ( pos[i][0], pos[i][1], 10, 0, 360);
+		PSarc (pos[i][0], pos[i][1], 10, 0, 360);
 		PSstroke ();
 	}
-	return self;
+	return;
 }
 
-- ZDrawSelf
+- (void) zDrawSelf
 {
 	int		i;
 	char	text[8];
 	
-	PSsetrgbcolor (1,0.5,0);
-	PSselectfont("Helvetica-Medium",10/[zview_i currentScale]);
-	PSrotate(0);
+	PSsetrgbcolor (1, 0.5, 0);
+	PSselectfont ("Helvetica-Medium", 10 / [zView currentScale]);
+	PSrotate (0);
 
-	for (i=0 ; i<num ; i++)
-	{
-		PSmoveto (-28+i*8 - 4, pos[i][2]-4);
+	for (i = 0; i < num; i++) {
+		PSmoveto ((-28 + (i * 8)) - 4, pos[i][2] - 4);
 		sprintf (text, "%i", i);
 		PSshow (text);
 		PSstroke ();
-		PSarc ( -28+i*8, pos[i][2], 10, 0, 360);
+		PSarc ((-28 + (i * 8)), pos[i][2], 10, 0, 360);
 		PSstroke ();
 	}
-	return self;
+	return;
 }
 
 @end

@@ -10,8 +10,8 @@
 #include <sys/types.h>
 #include <signal.h>
 
-extern	Preferences 	*prefs;
-
+extern Preferences 	*prefs;
+extern Project		*project;
 
 id		quakeed_i;
 id		entclasses_i;
@@ -75,7 +75,7 @@ void DisplayCmdOutput (void)
 
 	output = [NSString stringWithContentsOfFile: commandOutput];
 	unlink ([commandOutput cString]);
-	[project_i addToOutput: output];
+	[project addToOutput: output];
 	[output release];
 
 	if ([prefs objectForKey: ShowBSPOutput])
@@ -379,7 +379,7 @@ App delegate methods
 	g_cmd_out_i = cmd_out_i;	// for qprintf
 
 	prefs = [Preferences sharedInstance];
-	[project_i initProject];
+	[project initProject];
 
 	[xyview_i setModeRadio: xy_drawmode_i];	// because xy view is inside
 											// scrollview and can't be
@@ -445,7 +445,7 @@ App delegate methods
 
 - (void) openProject: (id) sender
 {
-	[project_i	openProject];
+	[project	openProject];
 	return;
 }
 
@@ -660,7 +660,7 @@ saveBSP
 //
 // write the command to the bsp host
 //	
-	destdir = [project_i finalMapDirectory];
+	destdir = [project finalMapDirectory];
 
 	bsppath = [[destdir
 					stringByAppendingString: @"/"]
@@ -672,8 +672,8 @@ saveBSP
 
 	NSLog (@"system: %s", expandedcmd);
 	
-	[project_i addToOutput: @"\n\n========= BUSY =========\n\n"];
-	[project_i addToOutput: expandedcmd];
+	[project addToOutput: @"\n\n========= BUSY =========\n\n"];
+	[project addToOutput: expandedcmd];
 
 	if ([prefs objectForKey: ShowBSPOutput])
 		[inspcontrol_i changeInspectorTo:i_output];
@@ -703,31 +703,31 @@ saveBSP
 
 - (void) BSP_Full: (id) sender
 {
-	[self saveBSP: [project_i fullVisCommand] dialog: NO];
+	[self saveBSP: [project fullVisCommand] dialog: NO];
 	return;
 }
 
 - (void) BSP_FastVis: (id) sender
 {
-	[self saveBSP: [project_i fastVisCommand] dialog: NO];
+	[self saveBSP: [project fastVisCommand] dialog: NO];
 	return;
 }
 
 - (void) BSP_NoVis: (id) sender
 {
-	[self saveBSP: [project_i noVisCommand] dialog: NO];
+	[self saveBSP: [project noVisCommand] dialog: NO];
 	return;
 }
 
 - (void) BSP_relight: (id) sender
 {
-	[self saveBSP: [project_i relightCommand] dialog: NO];
+	[self saveBSP: [project relightCommand] dialog: NO];
 	return;
 }
 
 - (void) BSP_entities: (id) sender
 {
-	[self saveBSP: [project_i entitiesCommand] dialog: NO];
+	[self saveBSP: [project entitiesCommand] dialog: NO];
 	return;
 }
 
@@ -740,7 +740,7 @@ saveBSP
 	
 	kill (bsppid, 9);
 //	CheckCmdDone (cmdte, 0, NULL);
-	[project_i addToOutput: @"\n\n========= STOPPED =========\n\n"];
+	[project addToOutput: @"\n\n========= STOPPED =========\n\n"];
 	
 	return;
 }
@@ -781,7 +781,7 @@ open
 	id	fileTypes = [NSArray arrayWithObject: @"map"];
 
 	if ([openPanel
-			runModalForDirectory: [project_i mapDirectory]
+			runModalForDirectory: [project mapDirectory]
 			file: @""
 			types: fileTypes] != NSOKButton)
 		return;
@@ -829,7 +829,7 @@ save:
 	dir = [[filename lastPathComponent] stringByDeletingPathExtension];
 	
 	[panel_i setRequiredFileType: @"map"];
-	if ([panel_i runModalForDirectory: [project_i mapDirectory] file: dir] != NSOKButton)
+	if ([panel_i runModalForDirectory: [project mapDirectory] file: dir] != NSOKButton)
 		return;
 	
 	[filename setString: [panel_i filename]];

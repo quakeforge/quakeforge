@@ -1,5 +1,8 @@
 
 #include "qedefs.h"
+#import "Project.h"
+
+extern Project	*project;
 
 id	map_i;
 
@@ -200,7 +203,8 @@ readMapFile
 */
 - (void) readMapFile: (NSString *) fname
 {
-	char	*dat, *cl;
+	NSString	*dat;
+	char	*cl;
 	id		new;
 	id		ent;
 	int		i, c;
@@ -211,8 +215,8 @@ readMapFile
 	
 	NSLog (@"loading %s\n", fname);
 
-	LoadFile ((char *) [fname cString], (void **) &dat);
-	StartTokenParsing (dat);
+	LoadFile ((char *) [fname lossyCString], (void **) &dat);
+	StartTokenParsing ((char *) [dat lossyCString]);
 
 	do {
 		new = [[Entity alloc] initFromTokens];
@@ -228,13 +232,12 @@ readMapFile
 	[self addSelected];
 		
 	// load the apropriate texture wad
-	dat = [currentEntity valueForQKey: "wad"];
-	if (dat && dat[0]) {
-		if (dat[0] == '/') {	// remove old style fullpaths
-			[currentEntity removeKeyPair: "wad"];
+	if ((dat = [currentEntity objectForKey: @"wad"])) {
+		if ([dat hasPrefix: @"/"]) {	// remove old style fullpaths
+			[currentEntity removeObjectForKey: @"wad"];
 		} else {
-			if (strcmp ([texturepalette_i currentWad], dat) )
-				[project_i 	setTextureWad: dat];
+			if (!([[texturepalette_i currentWad] isEqualToString: dat]))
+				[project setTextureWad: dat];
 		}
 	}
 
@@ -588,7 +591,7 @@ setTextureRay
 		return self;
 	}
 	
-	[texturepalette_i getTextureDef: &td];
+	[texturepalette_i setTextureDef: &td];
 	
 	[quakeed_i disableFlushWindow];
 	if (allsides)

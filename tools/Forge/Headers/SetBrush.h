@@ -1,25 +1,52 @@
+/*
+	SetBrush.h
 
+	SetBrush class definition for Forge
+
+	Copyright (C) 2001 Jeff Teunissen <deek@d2dc.net>
+
+	This program is free software; you can redistribute it and/or
+	modify it under the terms of the GNU General Public License as
+	published by the Free Software Foundation; either version 2 of
+	the License, or (at your option) any later version.
+
+	This program is distributed in the hope that it will be useful,
+	but WITHOUT ANY WARRANTY; without even the implied warranty of
+	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+
+	See the GNU General Public License for more details.
+
+	You should have received a copy of the GNU General Public
+	License along with this program; if not, write to:
+
+		Free Software Foundation, Inc.
+		59 Temple Place - Suite 330
+		Boston, MA  02111-1307, USA
+
+	$Id$
+*/
+#ifdef HAVE_CONFIG_H
+# include "Config.h"
+#endif
+
+#import "TexturePalette.h"
+#import "XYView.h"
 
 #define		MAX_FACES		16
 
-typedef float	vec5_t[5];
-
-typedef struct
-{
+typedef struct {
 	int		numpoints;
 	vec5_t	points[8];			// variable sized
 } winding_t;
 
 #define MAX_POINTS_ON_WINDING	64
 
-typedef struct
-{
+typedef struct {
 	vec3_t		normal;
 	float		dist;
 } plane_t;
 
-typedef struct
-{
+typedef struct {
 // implicit rep
 	vec3_t			planepts[3];
 	texturedef_t	texture;
@@ -41,11 +68,10 @@ typedef struct
 
 
 winding_t *ClipWinding (winding_t *in, plane_t *split);
-winding_t	*CopyWinding (winding_t *w);
+winding_t *CopyWinding (winding_t *w);
 winding_t *NewWinding (int points);
 
-
-@interface SetBrush : NSObject <NSCopying>
+@interface SetBrush: NSObject <NSCopying>
 {
 	BOOL		regioned;		// not active
 	BOOL		selected;

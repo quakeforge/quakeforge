@@ -8,13 +8,13 @@
 
 #import "Preferences.h"
 
-id	project_i;
+Project *	project;
 
 @implementation Project
 
 - init
 {
-	project_i = self;
+	project = self;
 
 	return self;
 }

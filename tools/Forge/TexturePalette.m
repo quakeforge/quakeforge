@@ -1,16 +1,16 @@
 
+#import "Preferences.h"
+
 #import "qedefs.h"
 
 id	texturepalette_i;
-
 
 #define	TYP_MIPTEX	67
 
 int					tex_count;
 qtexture_t 			qtextures[MAX_TEXTURES];
 
-typedef struct
-{
+typedef struct {
 	char		name[16];
 	unsigned	width, height;
 	unsigned	offsets[4];		// four mip maps stored
@@ -18,63 +18,52 @@ typedef struct
 
 unsigned	tex_palette[256];
 
-unsigned badtex_d[] = 
-{
-0xffff,0xffff,0xffff,0xffff,0xffff,0xffff,0xffff,0xffff,
-0,0,0,0,0,0,0,0,
-0xffff,0xffff,0xffff,0xffff,0xffff,0xffff,0xffff,0xffff,
-0,0,0,0,0,0,0,0,
-0xffff,0xffff,0xffff,0xffff,0xffff,0xffff,0xffff,0xffff,
-0,0,0,0,0,0,0,0,
-0xffff,0xffff,0xffff,0xffff,0xffff,0xffff,0xffff,0xffff,
-0,0,0,0,0,0,0,0,
-0xffff,0xffff,0xffff,0xffff,0xffff,0xffff,0xffff,0xffff,
-0,0,0,0,0,0,0,0,
-0xffff,0xffff,0xffff,0xffff,0xffff,0xffff,0xffff,0xffff,
-0,0,0,0,0,0,0,0,
-0xffff,0xffff,0xffff,0xffff,0xffff,0xffff,0xffff,0xffff,
-0,0,0,0,0,0,0,0,
-0xffff,0xffff,0xffff,0xffff,0xffff,0xffff,0xffff,0xffff,
-0,0,0,0,0,0,0,0,
+unsigned int	badtex_d[] = {
+	0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0, 0, 0, 0, 0, 0, 0, 0,
+	0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0, 0, 0, 0, 0, 0, 0, 0,
+	0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0, 0, 0, 0, 0, 0, 0, 0,
+	0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0, 0, 0, 0, 0, 0, 0, 0,
+	0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0, 0, 0, 0, 0, 0, 0, 0,
+	0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0, 0, 0, 0, 0, 0, 0, 0,
+	0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0, 0, 0, 0, 0, 0, 0, 0,
+	0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0, 0, 0, 0, 0, 0, 0, 0,
 
-0,0,0,0,0,0,0,0,
-0xffff,0xffff,0xffff,0xffff,0xffff,0xffff,0xffff,0xffff,
-0,0,0,0,0,0,0,0,
-0xffff,0xffff,0xffff,0xffff,0xffff,0xffff,0xffff,0xffff,
-0,0,0,0,0,0,0,0,
-0xffff,0xffff,0xffff,0xffff,0xffff,0xffff,0xffff,0xffff,
-0,0,0,0,0,0,0,0,
-0xffff,0xffff,0xffff,0xffff,0xffff,0xffff,0xffff,0xffff,
-0,0,0,0,0,0,0,0,
-0xffff,0xffff,0xffff,0xffff,0xffff,0xffff,0xffff,0xffff,
-0,0,0,0,0,0,0,0,
-0xffff,0xffff,0xffff,0xffff,0xffff,0xffff,0xffff,0xffff,
-0,0,0,0,0,0,0,0,
-0xffff,0xffff,0xffff,0xffff,0xffff,0xffff,0xffff,0xffff,
-0,0,0,0,0,0,0,0,
-0xffff,0xffff,0xffff,0xffff,0xffff,0xffff,0xffff,0xffff
+	0, 0, 0, 0, 0, 0, 0, 0, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff,
+	0, 0, 0, 0, 0, 0, 0, 0, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff,
+	0, 0, 0, 0, 0, 0, 0, 0, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff,
+	0, 0, 0, 0, 0, 0, 0, 0, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff,
+	0, 0, 0, 0, 0, 0, 0, 0, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff,
+	0, 0, 0, 0, 0, 0, 0, 0, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff,
+	0, 0, 0, 0, 0, 0, 0, 0, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff,
+	0, 0, 0, 0, 0, 0, 0, 0, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff
 };
 
-qtexture_t	badtex = {"notexture",16,16,NULL, badtex_d, {0,0,255,255}};
+qtexture_t	badtex = {
+	@"notexture",
+	{16.0, 16.0},
+	nil,
+	badtex_d,
+	{{0, 0, 255, 255}}
+};
 
 /*
 ==============
 TEX_InitPalette
 ==============
 */
-void TEX_InitPalette (byte *pal)
+void
+TEX_InitPalette (byte *pal)
 {
 	int		r,g,b,v;
 	int		i;
 
-	for (i=0 ; i<256 ; i++)
-	{
+	for (i = 0; i < 256; i++) {
 		r = pal[0];
 		g = pal[1];
 		b = pal[2];
 		pal += 3;
 		
-		v = (r<<24) + (g<<16) + (b<<8) + 255;
+		v = (r << 24) + (g << 16) + (b << 8) + 255;
 		v = BigLong (v);
 		
 		tex_palette[i] = v;
@@ -83,11 +72,10 @@ void TEX_InitPalette (byte *pal)
 
 
 /*
-=================
-TEX_ImageFromMiptex
-=================
+	TEX_ImageFromMiptex
 */
-void TEX_ImageFromMiptex (miptex_t *qtex)
+void
+TEX_ImageFromMiptex (miptex_t *qtex)
 {
 	NSBitmapImageRep	*bm;
 	byte		*source;
@@ -108,29 +96,28 @@ void TEX_ImageFromMiptex (miptex_t *qtex)
 			hasAlpha:		NO
 			isPlanar:		NO 
 			colorSpaceName:	NSCalibratedRGBColorSpace 
-			bytesPerRow:	width*4
+			bytesPerRow:	width * 4
 			bitsPerPixel:	32];
 	
-	dest = (unsigned *)[bm bitmapData];
-	count = width*height;
+	dest = (unsigned *) [bm bitmapData];
+	count = width * height;
 	source = (byte *)qtex + LittleLong(qtex->offsets[0]);
 	
 	q = &qtextures[tex_count];
 	tex_count++;
 	
-	q->width = width;
-	q->height = height;
+	q->size.width = width;
+	q->size.height = height;
 	q->rep = bm;
 	q->data = dest;
 
 	tr = tg = tb = 0;
 	
-	for (i=0 ; i<count ; i++)
-	{
+	for (i = 0; i < count; i++) {
 		dest[i] = tex_palette[source[i]];
-		tr += ((pixel32_t *)&dest[i])->chan[0];
-		tg += ((pixel32_t *)&dest[i])->chan[1];
-		tb += ((pixel32_t *)&dest[i])->chan[2];
+		tr += ((pixel32_t *) &dest[i])->chan[0];
+		tg += ((pixel32_t *) &dest[i])->chan[1];
+		tb += ((pixel32_t *) &dest[i])->chan[2];
 	}
 	
 	q->flatcolor.chan[0] = tr / count;
@@ -141,16 +128,14 @@ void TEX_ImageFromMiptex (miptex_t *qtex)
 
 //=============================================================================
 
-typedef struct
-{
+typedef struct {
 	char		identification[4];		// should be WAD2 or 2DAW
 	int			numlumps;
 	int			infotableofs;
 } wadinfo_t;
 
 
-typedef struct
-{
+typedef struct {
 	int			filepos;
 	int			disksize;
 	int			size;					// uncompressed
@@ -165,11 +150,12 @@ typedef struct
 TEX_InitFromWad
 =================
 */
-void	TEX_InitFromWad (char *path)
+void
+TEX_InitFromWad (NSString *path)
 {
 	int			i;
-	char		local[1024];
-	char		newpath[1024];
+	NSString	*local;
+	NSString	*newpath;
 	byte		*wadfile;
 	wadinfo_t	*wadinfo;
 	lumpinfo_t	*lumpinfo;
@@ -178,17 +164,15 @@ void	TEX_InitFromWad (char *path)
 	
 	start = I_FloatTime ();
 	
-	strcpy(newpath, [preferences_i getProjectPath]);
-	strcat(newpath,"/");
-	strcat(newpath, path);
+	newpath = [[prefs objectForKey: ProjectPath] stringByAppendingPathComponent: path];
 	
-// free any textures
-	for (i=0 ; i<tex_count ; i++)
-		[qtextures[i].rep dealloc];
+	// free any textures
+	for (i = 0; i < tex_count; i++)
+		[qtextures[i].rep release];
 	tex_count = 0;
 
-// try and use the cached wadfile	
-	sprintf (local, "/qcache%s", newpath);	
+	// try and use the cached wadfile
+	local = [NSString initWithFormat: @"/qcache%@", newpath];
 
 	Sys_UpdateFile (local, newpath);
 	
@@ -204,8 +188,7 @@ void	TEX_InitFromWad (char *path)
 	numlumps = LittleLong (wadinfo->numlumps);
 	lumpinfo = (lumpinfo_t *)(wadfile + LittleLong (wadinfo->infotableofs));
 	
-	if (strcmp (lumpinfo->name, "PALETTE"))
-	{
+	if (strcmp (lumpinfo->name, "PALETTE"))	{
 		unlink (local);
 		Error ("TEX_InitFromWad: %s doesn't have palette as 0",path);
 	}
@@ -213,8 +196,7 @@ void	TEX_InitFromWad (char *path)
 	TEX_InitPalette (wadfile + LittleLong(lumpinfo->filepos));
 
 	lumpinfo++;	
-	for (i=1 ; i<numlumps ; i++, lumpinfo++)
-	{
+	for (i=1 ; i<numlumps ; i++, lumpinfo++) {
 		if (lumpinfo->type != TYP_MIPTEX)
 			Error ("TEX_InitFromWad: %s is not a miptex!",lumpinfo->name);
 		CleanupName (lumpinfo->name,qtextures[tex_count].name);

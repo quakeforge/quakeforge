@@ -114,7 +114,6 @@ Forge_OBJC_FILES= \
 	PopScrollView.m \
 	Preferences.m \
 	Project.m \
-	SetBrush.m \
 	TexturePalette.m \
 	TextureView.m \
 	Things.m \
@@ -124,13 +123,13 @@ Forge_OBJC_FILES= \
 	ZView.m \
 	misc.m \
 	render.m
+#	SetBrush.m \
 
 #
 # C files
 #
 Forge_C_FILES= \
-	cmdlib.c \
-	mathlib.c
+	cmdlib.c
 
 -include GNUmakefile.preamble
 -include GNUmakefile.local

@@ -30,6 +30,8 @@
 
 #import "Preferences.h"
 
+id	prefs;
+
 static NSDictionary *defaultValues (void) {
     static NSDictionary *dict = nil;
     if (!dict) {
@@ -59,8 +61,13 @@ static Preferences	*sharedInstance = nil;
 + (void) saveDefaults
 {
 	if (sharedInstance) {
-		[Preferences savePreferencesToDefaults: [sharedInstance preferences]];
+		[self savePreferencesToDefaults: [sharedInstance preferences]];
 	}
+}
+
+- (void) saveDefaults: (id) sender
+{
+	[[self class] saveDefaults];
 }
 
 - (void) loadDefaults
@@ -74,7 +81,7 @@ static Preferences	*sharedInstance = nil;
 
 + (Preferences *) sharedInstance
 {
-    return (sharedInstance ? sharedInstance : [[self alloc] init]);
+	return (sharedInstance ? sharedInstance : [[self alloc] init]);
 }
 
 - (id) init
@@ -86,6 +93,12 @@ static Preferences	*sharedInstance = nil;
 		currentValues = [[[self class] preferencesFromDefaults] copyWithZone:[self zone]];
 		[self discardDisplayedValues];
 		sharedInstance = self;
+		prefs = sharedInstance;
+		[[NSNotificationCenter defaultCenter]
+			addObserver: self
+			selector: @selector(saveDefaults:)
+			name: @"NSApplicationWillTerminateNotification"
+			object: nil];
 	}
 	return sharedInstance;
 }

@@ -1,15 +1,37 @@
-#import <AppKit/AppKit.h>
-#import "mathlib.h"
+/*
+	CameraView.h
+
+	Perspective viwer class definitions
+
+	Copyright (C) 2001 Jeff Teunissen <deek@d2dc.net>
+
+	This program is free software; you can redistribute it and/or
+	modify it under the terms of the GNU General Public License as
+	published by the Free Software Foundation; either version 2 of
+	the License, or (at your option) any later version.
+
+	This program is distributed in the hope that it will be useful,
+	but WITHOUT ANY WARRANTY; without even the implied warranty of
+	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+
+	See the GNU General Public License for more details.
+
+	You should have received a copy of the GNU General Public
+	License along with this program; if not, write to:
+
+		Free Software Foundation, Inc.
+		59 Temple Place - Suite 330
+		Boston, MA  02111-1307, USA
+
+	$Id$
+*/
+#ifdef HAVE_CONFIG_H
+# include "Config.h"
+#endif
+
+#include <QF/mathlib.h>
+
 #import "SetBrush.h"
-
-extern id cameraview_i;
-
-extern	byte	renderlist[1024*1024*4];
-
-void CameraMoveto (vec3_t p);
-void CameraLineto (vec3_t p);
-
-extern	BOOL	timedrawing;
 
 @interface CameraView:  NSView
 {
@@ -50,7 +72,7 @@ extern	BOOL	timedrawing;
 - drawMode: (NSMatrix) sender;
 - setDrawMode: (drawmode_t) mode;
 
-- homeView: sender;
+- (id) homeView: (id) sender;
 
 - XYDrawSelf;						// for drawing viewpoint in XY view
 - ZDrawSelf;						// for drawing viewpoint in XY view
@@ -62,3 +84,9 @@ extern	BOOL	timedrawing;
 
 @end
 
+extern CameraView	*cameraView;
+extern byte 		renderList[1024*1024*4];
+extern	BOOL		timeDrawing;
+
+void CameraMoveto (vec3_t p);
+void CameraLineto (vec3_t p);

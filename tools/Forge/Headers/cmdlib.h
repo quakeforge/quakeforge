@@ -101,7 +101,6 @@ extern	qboolean	com_eof;
 
 char *copystring(char *s);
 
-
 void CRC_Init(unsigned short *crcvalue);
 void CRC_ProcessByte(unsigned short *crcvalue, byte data);
 unsigned short CRC_Value(unsigned short crcvalue);
@@ -111,6 +110,5 @@ void CopyFile (char *from, char *to);
 
 extern	qboolean		archive;
 extern	char			archivedir[1024];
-
 
 #endif

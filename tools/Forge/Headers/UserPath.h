@@ -45,6 +45,8 @@ typedef struct _UP {
     BOOL            ping;
 } UserPath;
 
+extern UserPath *userPath;
+
 /* UserPath functions */
 NSZone *userPathZone();
 UserPath *newUserPath();

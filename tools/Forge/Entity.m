@@ -1,5 +1,5 @@
 
-#include "qedefs.h"
+#import "Entity.h"
 
 @implementation Entity
 
@@ -374,7 +374,7 @@ int	nument;
 	if (![self count] && esize == esize_model)
 	{
 		printf ("WARNING:Entity with no brushes and esize_model\n"); 
-		[texturepalette_i getTextureDef: &td];
+		[texturepalette_i setTextureDef: &td];
 		for (i=0 ; i<3 ; i++)
 		{
 			emins[i] = org[i] - 8;

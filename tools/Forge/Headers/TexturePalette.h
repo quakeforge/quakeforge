@@ -1,7 +1,43 @@
+/*
+	TexturePalette.h
+
+	Texture Palette handling for Forge
+
+	Copyright (C) 2001 Jeff Teunissen <deek@d2dc.net>
+
+	This program is free software; you can redistribute it and/or
+	modify it under the terms of the GNU General Public License as
+	published by the Free Software Foundation; either version 2 of
+	the License, or (at your option) any later version.
+
+	This program is distributed in the hope that it will be useful,
+	but WITHOUT ANY WARRANTY; without even the implied warranty of
+	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+
+	See the GNU General Public License for more details.
+
+	You should have received a copy of the GNU General Public
+	License along with this program; if not, write to:
+
+		Free Software Foundation, Inc.
+		59 Temple Place - Suite 330
+		Boston, MA  02111-1307, USA
+
+	$Id$
+*/
+#ifdef HAVE_CONFIG_H
+# include "Config.h"
+#endif
+
+#import <Foundation/NSGeometry.h>
+#import <Foundation/NSString.h>
+#import <Foundation/NSObject.h>
+
+#import <AppKit/NSBitmapImageRep.h>
 
 typedef union pixel32_u {
-	byte		chan[4];
-	unsigned	p;
+	byte			chan[4];
+	unsigned int	p;
 } pixel32_t;
 
 
@@ -13,25 +49,23 @@ typedef struct texturedef_s {
 } texturedef_t;
 
 typedef struct qtexture_s {
-	char		name[16];
-
-	int			width;
-	int			height;
+	NSString			*name;
+	NSSize				size;
 	NSBitmapImageRep	*rep;
-	void		*data;
-	pixel32_t	flatcolor;
+	void				*data;
+	pixel32_t			flatcolor;
 } qtexture_t;
 
 #define	MAX_TEXTURES	1024
 
-extern	int					tex_count;
+extern	int				tex_count;
 extern	qtexture_t 		qtextures[MAX_TEXTURES];
 
-void	TEX_InitFromWad (char *path);
-qtexture_t *TEX_ForName (char *name);
+void	TEX_InitFromWad (NSString *path);
+qtexture_t *TEX_ForName (NSString *name);
 
 typedef struct {
-	id		image;		// NXImage
+	id		image;		// NSImage
 	NSRect	r;
 	char	*name;
 	int		index;
@@ -43,7 +77,7 @@ typedef struct {
 
 extern	id texturepalette_i;
 
-@interface TexturePalette:Object
+@interface TexturePalette: NSObject
 {
 	char	currentwad[1024];
 	id	textureList_i;

@@ -1,58 +1,51 @@
 #import "qedefs.h"
+#import "SetBrush.h"
 
 @implementation SetBrush
 
 /*
-==================
-textureAxisFromPlane
-==================
+	textureAxisFromPlane
 */
 #if 1
-vec3_t	baseaxis[18] =
-{
-{0,0,1}, {1,0,0}, {0,-1,0},			// floor
-{0,0,-1}, {1,0,0}, {0,-1,0},		// ceiling
-{1,0,0}, {0,1,0}, {0,0,-1},			// west wall
-{-1,0,0}, {0,1,0}, {0,0,-1},		// east wall
-{0,1,0}, {1,0,0}, {0,0,-1},			// south wall
-{0,-1,0}, {1,0,0}, {0,0,-1}			// north wall
+vec3_t	baseaxis[18] = {
+	{0, 0, 1}, {1, 0, 0}, {0,-1, 0},	// floor
+	{0, 0,-1}, {1, 0, 0}, {0,-1, 0},	// ceiling
+	{1, 0, 0}, {0, 1, 0}, {0, 0,-1},	// west wall
+	{-1,0, 0}, {0, 1, 0}, {0, 0,-1},	// east wall
+	{0, 1, 0}, {1, 0, 0}, {0, 0,-1},	// south wall
+	{0,-1, 0}, {1, 0, 0}, {0, 0,-1}		// north wall
 };
 #else
-vec3_t	baseaxis[18] =
-{
-{0,0,1}, {1,0,0}, {0,-1,0},			// floor
-{0,0,-1}, {1,0,0}, {0,1,0},			// ceiling
-{1,0,0}, {0,1,0}, {0,0,-1},			// west wall
-{-1,0,0}, {0,-1,0}, {0,0,-1},		// east wall
-{0,1,0}, {-1,0,0}, {0,0,-1},		// south wall
-{0,-1,0}, {1,0,0}, {0,0,-1}			// north wall
+vec3_t	baseaxis[18] = {
+	{0, 0, 1}, {1, 0, 0}, {0,-1, 0},	// floor
+	{0, 0,-1}, {1, 0, 0}, {0, 1, 0},	// ceiling
+	{1, 0, 0}, {0, 1, 0}, {0, 0,-1},	// west wall
+	{-1,0, 0}, {0,-1, 0}, {0, 0,-1},	// east wall
+	{0, 1, 0}, {-1,0, 0}, {0, 0,-1},	// south wall
+	{0,-1, 0}, {1, 0, 0}, {0, 0,-1}		// north wall
 };
 #endif
 
-
-float TextureAxisFromPlane(plane_t *pln, float *xv, float *yv)
+float
+TextureAxisFromPlane (plane_t *pln, float *xv, float *yv)
 {
-	int		bestaxis;
-	float	dot,best;
+	int		bestaxis = 0;
+	float	best = 0;
+	float	dot;
 	int		i;
 	
-	best = 0;
-	bestaxis = 0;
-	
-	for (i=0 ; i<6 ; i++)
-	{
-		dot = DotProduct (pln->normal, baseaxis[i*3]);
-		if (dot > best)
-		{
+	for (i = 0; i < 6; i++) {
+		dot = DotProduct (pln->normal, baseaxis[i * 3]);
+		if (dot > best) {
 			best = dot;
 			bestaxis = i;
 		}
 	}
 	
-	VectorCopy (baseaxis[bestaxis*3+1], xv);
-	VectorCopy (baseaxis[bestaxis*3+2], yv);
+	VectorCopy (baseaxis[bestaxis * 3 + 1], xv);
+	VectorCopy (baseaxis[bestaxis * 3 + 2], yv);
 	
-	return lightaxis[bestaxis>>1];
+	return lightaxis[bestaxis >> 1];
 }
 
 #define	BOGUS_RANGE	18000
@@ -621,12 +614,12 @@ initOwner:::
 	return self;
 }
 
-- copyWithZone:(NSZone *)zone
+- mutableCopyWithZone: (NSZone *) zone
 {
 	id	new;
 	
 	[self freeWindings];
-	new = [super copyWithZone: zone];
+		new = [[self class] copyWithZone: zone];
 	
 	[self calcWindings];
 	[new calcWindings];
