@@ -39,8 +39,7 @@ extern float modelalpha;
 extern vec3_t shadecolor;
 extern vec3_t lightspot;
 
-void R_RotateForEntity (struct entity_s *e);
-void R_TestErrors (int numerous);
 void glrmain_init (void);
+void R_RotateForEntity (struct entity_s *e);
 
 #endif // __QF_GL_rmain_h
