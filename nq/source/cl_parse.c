@@ -400,8 +400,8 @@ CL_ParseUpdate (int bits)
 				ent->syncbase = 0.0;
 		} else
 			forcelink = true;		// hack to make null model players work
-		if (num > 0 && num <= cl.maxclients)
-			CL_NewTranslation (num - 1);
+		//XXX if (num > 0 && num <= cl.maxclients)
+		//XXX 	CL_NewTranslation (num - 1);
 	}
 
 	if (bits & U_FRAME)
@@ -427,8 +427,8 @@ CL_ParseUpdate (int bits)
 		skin = ent->baseline->skin;
 	if (skin != ent->skinnum) {
 		ent->skinnum = skin;
-		if (num > 0 && num <= cl.maxclients)
-			CL_NewTranslation (num - 1);
+		//XXX if (num > 0 && num <= cl.maxclients)
+		//XXX 	CL_NewTranslation (num - 1);
 	}
 
 	if (bits & U_EFFECTS)
@@ -803,7 +803,7 @@ CL_ParseServerMessage (void)
 					Host_Error
 						("CL_ParseServerMessage: svc_updatecolors > MAX_SCOREBOARD");
 				cl.scores[i].colors = MSG_ReadByte (net_message);
-				CL_NewTranslation (i);
+				//XXX CL_NewTranslation (i);
 				break;
 
 			case svc_particle:

@@ -40,10 +40,12 @@
 #include "QF/console.h"
 #include "QF/msg.h"
 #include "QF/render.h"
+#include "QF/skin.h"
 
 #include "cl_cam.h"
 #include "cl_ents.h"
 #include "cl_main.h"
+#include "cl_parse.h"
 #include "cl_pred.h"
 #include "cl_tent.h"
 #include "d_iface.h"
@@ -452,6 +454,18 @@ CL_LinkPacketEntities (void)
 			(*ent)->scoreboard = NULL;
 		}
 
+		if ((*ent)->scoreboard && !(*ent)->scoreboard->skin)
+			Skin_Find ((*ent)->scoreboard);
+		if ((*ent)->scoreboard && (*ent)->scoreboard->skin) {
+			(*ent)->skin = Skin_NewTempSkin ();
+			if ((*ent)->skin) {
+				i = s1->colormap - 1;
+				CL_NewTranslation (i, (*ent)->skin);
+			}
+		} else {
+			(*ent)->skin = NULL;
+		}
+
 		// LordHavoc: cleaned up Endy's coding style, and fixed Endy's bugs
 		// Ender: Extend (Colormod) [QSG - Begin]
 		// N.B: All messy code below is the sole fault of LordHavoc and
@@ -599,6 +613,7 @@ CL_LinkProjectiles (void)
 		(*ent)->frame = 0;
 		(*ent)->colormap = vid.colormap;
 		(*ent)->scoreboard = NULL;
+		(*ent)->skin = NULL;
 		// LordHavoc: Endy had neglected to do this as part of the QSG
 		// VERSION 2 stuff
 		(*ent)->glow_size = 0;
@@ -829,6 +844,17 @@ CL_LinkPlayers (void)
 		else
 			(*ent)->scoreboard = NULL;
 
+		if ((*ent)->scoreboard && !(*ent)->scoreboard->skin)
+			Skin_Find ((*ent)->scoreboard);
+		if ((*ent)->scoreboard && (*ent)->scoreboard->skin) {
+			(*ent)->skin = Skin_NewTempSkin ();
+			if ((*ent)->skin) {
+				CL_NewTranslation (j, (*ent)->skin);
+			}
+		} else {
+			(*ent)->skin = NULL;
+		}
+
 		// LordHavoc: more QSG VERSION 2 stuff, FIXME: players don't have
 		// extend stuff
 		(*ent)->glow_size = 0;
@@ -1031,6 +1057,7 @@ CL_EmitEntities (void)
 		return;
 
 	R_ClearEnts ();
+	Skin_ClearTempSkins ();
 
 	CL_LinkPlayers ();
 	CL_LinkPacketEntities ();

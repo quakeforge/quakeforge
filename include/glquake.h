@@ -91,8 +91,6 @@ extern	int	cnttextures[2];
 extern	int	particletexture;
 extern	int	netgraphtexture;
 extern	int	netgraphtexture;	// netgraph texture
-extern	int	playertextures;
-extern	int	player_fb_textures;
 
 extern	int	skytexturenum;		// index in cl.loadmodel, not gl texture object
 

@@ -33,10 +33,13 @@
 
 #define NET_TIMINGS 256
 #define NET_TIMINGSMASK 255
+
+struct skin_s;
+
 extern int	packet_latency[NET_TIMINGS];
 int CL_CalcNet (void);
 void CL_ParseServerMessage (void);
-void CL_NewTranslation (int slot);
+void CL_NewTranslation (int slot, struct skin_s *skin);
 qboolean	CL_CheckOrDownloadFile (char *filename);
 qboolean CL_IsUploading(void);
 void CL_NextUpload(void);

@@ -51,7 +51,6 @@
 #include "QF/sys.h"
 #include "QF/vid.h"
 
-#include "client.h"
 #include "glquake.h"
 #include "r_cvar.h"
 #include "r_dynamic.h"
@@ -72,9 +71,6 @@ int         c_brush_polys, c_alias_polys;
 
 qboolean    envmap;						// true during envmap command capture
 
-
-int         playertextures;				// up to 16 color translated skins
-int         player_fb_textures;			// up to 128 skin fullbright maps
 
 int         mirrortexturenum;			// quake texturenum, not gltexturenum
 qboolean    mirror;
@@ -595,7 +591,6 @@ R_SetupAliasBlendedFrame (int frame, aliashdr_t *paliashdr, entity_t *e, qboolea
 static void
 R_DrawAliasModel (entity_t *e)
 {
-	int         i;
 	int         lnum;
 	vec3_t      dist;
 	float       add;
@@ -710,10 +705,13 @@ R_DrawAliasModel (entity_t *e)
 
 	// we can't dynamically colormap textures, so they are cached
 	// seperately for the players.  Heads are just uncolored.
-	if (currententity->colormap != vid.colormap && !gl_nocolors->int_val) {
-		i = currententity - cl_entities;
-		if (i >= 1 && i <= cl.maxclients)
-			texture = playertextures - 1 + i;
+	if (currententity->skin && !gl_nocolors->int_val) {
+		skin_t *skin = currententity->skin;
+
+		texture = skin->texture;
+		if (gl_fb_models->int_val) {
+			fb_texture = skin->fb_texture;
+		}
 	}
 
 	glBindTexture (GL_TEXTURE_2D, texture);

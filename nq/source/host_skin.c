@@ -120,7 +120,7 @@ Host_Skin_Init_Cvars (void)
 
 
 void
-CL_NewTranslation (int slot)
+CL_NewTranslation (int slot, skin_t *skin)
 {
 	scoreboard_t *player;
 	int         top, bottom;
@@ -139,5 +139,8 @@ CL_NewTranslation (int slot)
 	skinnum = cl_entities[1 + slot].skinnum;
 
 	Skin_Set_Translate (top, bottom, dest);
-	Skin_Do_Translation_Model (model, skinnum, slot);
+	memset (skin, 0, sizeof (*skin));
+	skin->texture = skin_textures + slot; //FIXME
+	skin->data.texels = 0; //FIXME
+	Skin_Do_Translation_Model (model, skinnum, slot, skin);
 }

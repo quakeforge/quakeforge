@@ -970,7 +970,7 @@ CL_ProcessUserInfo (int slot, player_info_t *player)
 		Skin_Find (player);
 
 	Sbar_Changed ();
-	CL_NewTranslation (slot);
+	//XXX CL_NewTranslation (slot);
 }
 
 

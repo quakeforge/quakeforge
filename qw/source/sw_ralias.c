@@ -36,7 +36,6 @@
 #include "QF/sys.h"
 #include "QF/texture.h"
 
-#include "client.h"
 #include "d_ifacea.h"
 #include "r_local.h"
 
@@ -560,16 +559,14 @@ R_AliasSetupSkin (void)
 	r_affinetridesc.seamfixupX16 = (a_skinwidth >> 1) << 16;
 	r_affinetridesc.skinheight = pmdl->skinheight;
 
-	if (currententity->scoreboard) {
+	if (currententity->skin) {
 		tex_t      *base;
 
-		if (!currententity->scoreboard->skin)
-			Skin_Find (currententity->scoreboard);
-		base = Skin_Cache (currententity->scoreboard->skin);
+		base = currententity->skin->data.texels;
 		if (base) {
 			r_affinetridesc.pskin = base->data;
-			r_affinetridesc.skinwidth = 320;
-			r_affinetridesc.skinheight = 200;
+			r_affinetridesc.skinwidth = base->width;
+			r_affinetridesc.skinheight = base->height;
 		}
 	}
 }
@@ -689,7 +686,7 @@ R_AliasDrawModel (alight_t *plighting)
 
 	acolormap = currententity->colormap;
 
-	if (currententity != &cl.viewent)
+	if (currententity != r_view_model)
 		ziscale = (float) 0x8000 *(float) 0x10000;
 	else
 		ziscale = (float) 0x8000 *(float) 0x10000 *3.0;

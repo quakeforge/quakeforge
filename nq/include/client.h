@@ -327,8 +327,9 @@ void CL_TimeDemo_f (void);
 /*
   cl_parse.c
 */
+struct skin_s;
 void CL_ParseServerMessage (void);
-void CL_NewTranslation (int slot);
+void CL_NewTranslation (int slot, struct skin_s *skin);
 
 
 /*

@@ -158,10 +158,7 @@ R_Init (void)
 	netgraphtexture = texture_extension_number;
 	texture_extension_number++;
 
-	playertextures = texture_extension_number;
-	texture_extension_number += MAX_CLIENTS;
-	player_fb_textures = texture_extension_number;
-	texture_extension_number += MAX_CACHED_SKINS;
+	texture_extension_number = Skin_Init_Textures (texture_extension_number);
 
 	glEnableClientState (GL_COLOR_ARRAY);
 	glEnableClientState (GL_VERTEX_ARRAY);

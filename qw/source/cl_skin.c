@@ -193,7 +193,7 @@ CL_Skin_Init_Cvars (void)
 
 
 void
-CL_NewTranslation (int slot)
+CL_NewTranslation (int slot, skin_t *skin)
 {
 	player_info_t *player;
 	char        s[512];
@@ -219,6 +219,13 @@ CL_NewTranslation (int slot)
 							player->translations);
 		if (!player->skin)
 			Skin_Find (player);
-		Skin_Do_Translation (player->skin, slot);
+		memcpy (skin, player->skin, sizeof (*skin));
+		skin->texture = skin_textures + slot; //FIXME
+		skin->data.texels = Skin_Cache(player->skin); //FIXME the breaks cache ownership
+		Skin_Do_Translation (player->skin, slot, skin);
+	} else {
+		memcpy (skin, player->skin, sizeof (*skin));
+		skin->texture = skin_textures + slot; //FIXME
+		skin->data.texels = Skin_Cache(player->skin); //FIXME the breaks cache ownership
 	}
 }

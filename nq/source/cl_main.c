@@ -37,7 +37,9 @@
 #include "QF/input.h"
 #include "QF/keys.h"
 #include "QF/msg.h"
+#include "QF/render.h"
 #include "QF/screen.h"
+#include "QF/skin.h"
 #include "QF/va.h"
 
 #include "client.h"
@@ -45,7 +47,6 @@
 #include "host.h"
 #include "host.h"
 #include "r_dynamic.h"
-#include "QF/render.h"
 #include "server.h"
 
 byte       *vid_colormap;
@@ -571,6 +572,12 @@ CL_RelinkEntities (void)
 
 		}
 
+		if (i <= cl.maxclients) {
+			ent->skin = Skin_NewTempSkin ();
+			if (ent->skin)
+				CL_NewTranslation (i - 1, ent->skin);
+		}
+
 		// rotate binary objects locally
 		if (ent->model->flags & EF_ROTATE)
 			ent->angles[1] = bobjrotate;
@@ -692,6 +699,7 @@ CL_ReadFromServer (void)
 		Con_Printf ("\n");
 
 	R_ClearEnts ();
+	Skin_ClearTempSkins ();
 
 	CL_RelinkEntities ();
 	CL_UpdateTEnts ();

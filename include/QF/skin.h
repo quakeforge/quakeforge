@@ -41,12 +41,19 @@ typedef struct skin_s
 {
 	char		name[16];
 	qboolean	failedload;		// the name isn't a valid skin
-	cache_user_t	cache;
+	union {
+		cache_user_t	cache;
+		struct tex_s	*texels;
+	} data;
+	int         texture;
 	int         fb_texture;
 } skin_t;
 
 extern byte player_8bit_texels[320 * 200];
 extern skin_t   skin_cache[MAX_CACHED_SKINS];
+extern int skin_textures;
+extern int skin_fb_textures;
+
 struct tex_s;
 struct player_info_s;
 struct model_s;
@@ -54,12 +61,16 @@ struct model_s;
 void	Skin_Find (struct player_info_s *sc);
 struct tex_s *Skin_Cache (skin_t *skin);
 void	Skin_Flush (void);
+int		Skin_Init_Textures (int base);
 void	Skin_Init (void);
 void	Skin_Init_Cvars (void);
 void	Skin_Init_Translation (void);
 void	Skin_Set_Translate (int top, int bottom, byte *dest);
-void	Skin_Do_Translation (skin_t *player_skin, int slot);
-void	Skin_Do_Translation_Model (struct model_s *model, int skinnum, int slot);
+void	Skin_Do_Translation (skin_t *player_skin, int slot, skin_t *skin);
+void	Skin_Do_Translation_Model (struct model_s *model, int skinnum, int slot, skin_t *skin);
 void	Skin_Process (skin_t *skin, struct tex_s *);
+
+skin_t	*Skin_NewTempSkin (void);
+void	Skin_ClearTempSkins (void);
 
 #endif

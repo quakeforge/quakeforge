@@ -163,31 +163,30 @@ build_skin (int texnum, byte *ptexels, int width, int height,
 }
 
 void
-Skin_Do_Translation (skin_t *player_skin, int slot)
+Skin_Do_Translation (skin_t *player_skin, int slot, skin_t *skin)
 {
-	int         texnum;
+	int         texnum = skin->texture;
 	int         inwidth, inheight;
 	byte       *original;
-	tex_t      *skin;
+	tex_t      *skin_texels;
 
-	if ((skin = (tex_t*)Skin_Cache (player_skin)) != NULL) {
+	if ((skin_texels = (tex_t*)Skin_Cache (player_skin)) != NULL) {
 		// skin data width
 		inwidth = 320;
 		inheight = 200;
-		original = skin->data;
+		original = skin_texels->data;
 	} else {
 		original = player_8bit_texels;
 		inwidth = 296;
 		inheight = 194;
 	}
-	texnum = playertextures + slot;
 	build_skin (texnum, original, inwidth, inheight, 296, 194, false);
 }
 
 void
-Skin_Do_Translation_Model (model_t *model, int skinnum, int slot)
+Skin_Do_Translation_Model (model_t *model, int skinnum, int slot, skin_t *skin)
 {
-	int         texnum;
+	int         texnum = skin->texture;
 	int         inwidth, inheight;
 	aliashdr_t *paliashdr;
 	byte       *original;
@@ -211,7 +210,6 @@ Skin_Do_Translation_Model (model_t *model, int skinnum, int slot)
 	inwidth = paliashdr->mdl.skinwidth;
 	inheight = paliashdr->mdl.skinheight;
 
-	texnum = playertextures + slot;
 	build_skin (texnum, original, inwidth, inheight, inwidth, inheight, false);
 }
 
@@ -233,8 +231,8 @@ Skin_Process (skin_t *skin, tex_t *tex)
 	byte *ptexels = Hunk_TempAlloc (pixels);
 
 	if (Mod_CalcFullbright (tex->data, ptexels, pixels)) {
-		skin->fb_texture = player_fb_textures + (skin - skin_cache);
+		skin->fb_texture = skin_fb_textures + (skin - skin_cache);
 		build_skin (skin->fb_texture, ptexels, tex->width, tex->height,
 					296, 194, true);
+		}
 	}
-}

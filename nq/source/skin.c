@@ -47,6 +47,8 @@
 
 #include "client.h"
 
+#define MAX_TEMP_SKINS 64	//XXX dynamic?
+
 extern cvar_t *noskins; // XXX FIXME, this shouldn't be here?
 
 cvar_t     *baseskin;
@@ -60,6 +62,11 @@ skin_t      skin_cache[MAX_CACHED_SKINS];
 hashtab_t  *skin_hash;
 int         numskins;
 
+skin_t      temp_skins[MAX_TEMP_SKINS];
+int         num_temp_skins;
+
+int         skin_textures;
+int         skin_fb_textures;
 
 static char *
 skin_get_key (void *_skin, void *unused)
@@ -120,7 +127,6 @@ Skin_Find (player_info_t *sc)
 }
 #endif
 
-
 /*
 	Skin_Cache
 
@@ -148,7 +154,7 @@ Skin_Cache (skin_t *skin)
 	if (skin->failedload)
 		return NULL;
 
-	out = Cache_Check (&skin->cache);
+	out = Cache_Check (&skin->data.cache);
 	if (out)
 		return out;
 
@@ -174,7 +180,7 @@ Skin_Cache (skin_t *skin)
 	}
 	pixels = 320 * 200;
 
-	out = Cache_Alloc (&skin->cache, sizeof (tex_t) + pixels, skin->name);
+	out = Cache_Alloc (&skin->data.cache, sizeof (tex_t) + pixels, skin->name);
 	if (!out)
 		Sys_Error ("Skin_Cache: couldn't allocate");
 	opix = out->data;
@@ -200,12 +206,38 @@ Skin_Flush (void)
 	int         i;
 
 	for (i = 0; i < numskins; i++) {
-		if (skin_cache[i].cache.data)
-			Cache_Free (&skin_cache[i].cache);
+		if (skin_cache[i].data.cache.data)
+			Cache_Free (&skin_cache[i].data.cache);
 	}
 	numskins = 0;
 	Hash_FlushTable (skin_hash);
 }
+
+skin_t *
+Skin_NewTempSkin (void)
+{
+	if (num_temp_skins == MAX_TEMP_SKINS)
+		return 0;	// ran out
+	return &temp_skins[num_temp_skins++];
+}
+
+void
+Skin_ClearTempSkins (void)
+{
+	num_temp_skins = 0;
+}
+
+
+int
+Skin_Init_Textures (int base)
+{
+	skin_textures = base;
+	base += MAX_TEMP_SKINS;
+	skin_fb_textures = base;
+	base += MAX_TEMP_SKINS;
+	return base;
+}
+
 
 void
 Skin_Init (void)
