@@ -33,5 +33,6 @@
 #define __type_h
 
 struct type_s *pointer_type (struct type_s *aux);
+void print_type (struct type_s *type);
 
 #endif//__type_h

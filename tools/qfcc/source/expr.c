@@ -1431,9 +1431,12 @@ function_expr (expr_t *e1, expr_t *e2)
 				t = ftype->parm_types[i - 1];
 				e->type = expr_types[t->type];
 			}
-			if (t != ftype->parm_types[i - 1])
+			if (t != ftype->parm_types[i - 1]) {
+				print_type (ftype->parm_types[i - 1]); puts("");
+				print_type (t); puts("");
 				err = error (e, "type mismatch for parameter %d of %s",
 							 i, e1->e.def->name);
+			}
 		} else {
 			if (e->type == ex_integer && options.warnings.vararg_integer)
 				warning (e, "passing integer consant into ... function");

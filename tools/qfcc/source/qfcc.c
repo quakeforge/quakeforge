@@ -66,10 +66,12 @@ static const char rcsid[] =
 options_t   options;
 
 char       *sourcedir;
+char       *progs_src;
 const char *this_program;
 
 static struct option const long_options[] = {
 	{"source", required_argument, 0, 's'},
+	{"progs-src", required_argument, 0, 'P'},
 	{"save-temps", no_argument, 0, 'S'},
 	{"quiet", no_argument, 0, 'q'},
 	{"verbose", no_argument, 0, 'v'},
@@ -730,8 +732,10 @@ DecodeArgs (int argc, char **argv)
 	options.verbosity = 0;
 
 	sourcedir = ".";
+	progs_src = "progs.src";
 
 	while ((c = getopt_long (argc, argv, "s:"	// source dir
+										 "P:"	// progs.src name
 										 "q"	// quiet
 										 "v"	// verbose
 										 "g"	// debug
@@ -756,6 +760,9 @@ DecodeArgs (int argc, char **argv)
 				break;
 			case 's':					// src dir
 				sourcedir = strdup (optarg);
+				break;
+			case 'P':					// progs-src
+				progs_src = strdup (optarg);
 				break;
 			case 'q':					// quiet
 				options.verbosity -= 1;
@@ -921,12 +928,15 @@ main (int argc, char **argv)
 	if (strcmp (sourcedir, ".")) {
 		printf ("Source directory: %s\n", sourcedir);
 	}
+	if (strcmp (progs_src, "progs.src")) {
+		printf ("progs.src: %s\n", progs_src);
+	}
 
 	PR_Opcode_Init_Tables ();
 
 	InitData ();
 
-	snprintf (filename, sizeof (filename), "%s/progs.src", sourcedir);
+	snprintf (filename, sizeof (filename), "%s/%s", sourcedir, progs_src);
 	LoadFile (filename, (void *) &src);
 
 	if (!(src = Parse (src)))
