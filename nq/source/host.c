@@ -866,10 +866,6 @@ Host_Init (quakeparms_t *parms)
 	Cbuf_Init ();
 	Cmd_Init ();
 
-	GIB_Init ();
-
-	Game_Init ();
-
 	// execute +set as early as possible
 	Cmd_StuffCmds_f ();
 	Cbuf_Execute_Sets ();
@@ -901,6 +897,10 @@ Host_Init (quakeparms_t *parms)
 
 	V_Init ();
 	COM_Init ();
+
+	GIB_Init ();
+
+	Game_Init ();
 
 	// reparse the command line for + commands other than set
 	// (sets still done, but it doesn't matter)
