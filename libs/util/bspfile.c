@@ -235,25 +235,27 @@ WriteBSPFile (bsp_t *bsp, QFile *file)
 	dheader_t  *header;
 	byte       *data;
 
-	size = sizeof (dheader_t);
-	size += bsp->nummodels * sizeof (dmodel_t);
-	size += bsp->visdatasize;
-	size += bsp->lightdatasize;
-	size += bsp->texdatasize;
-	size += bsp->entdatasize;
-	size += bsp->numleafs * sizeof (dleaf_t);
-	size += bsp->numplanes * sizeof (dplane_t);
-	size += bsp->numvertexes * sizeof (dvertex_t);
-	size += bsp->numnodes * sizeof (dnode_t);
-	size += bsp->numtexinfo * sizeof (texinfo_t);
-	size += bsp->numfaces * sizeof (dface_t);
-	size += bsp->numclipnodes * sizeof (dclipnode_t);
-	size += bsp->numedges * sizeof (dedge_t);
-	size += bsp->nummarksurfaces * sizeof (unsigned short);
-	size += bsp->numsurfedges * sizeof (int);
+#define ROUND(x) (((x) + 3) & ~3)
+
+	size = ROUND (sizeof (dheader_t));
+	size += ROUND (bsp->nummodels * sizeof (dmodel_t));
+	size += ROUND (bsp->visdatasize);
+	size += ROUND (bsp->lightdatasize);
+	size += ROUND (bsp->texdatasize);
+	size += ROUND (bsp->entdatasize);
+	size += ROUND (bsp->numleafs * sizeof (dleaf_t));
+	size += ROUND (bsp->numplanes * sizeof (dplane_t));
+	size += ROUND (bsp->numvertexes * sizeof (dvertex_t));
+	size += ROUND (bsp->numnodes * sizeof (dnode_t));
+	size += ROUND (bsp->numtexinfo * sizeof (texinfo_t));
+	size += ROUND (bsp->numfaces * sizeof (dface_t));
+	size += ROUND (bsp->numclipnodes * sizeof (dclipnode_t));
+	size += ROUND (bsp->numedges * sizeof (dedge_t));
+	size += ROUND (bsp->nummarksurfaces * sizeof (unsigned short));
+	size += ROUND (bsp->numsurfedges * sizeof (int));
 
 	header = malloc (size);
-	memset (header, 0, sizeof (dheader_t));
+	memset (header, 0, size);
 
 	swap_bsp (bsp, 1);
 
@@ -264,7 +266,7 @@ do { \
 	header->lumps[l].fileofs = LittleLong (data - (byte *) header); \
 	header->lumps[l].filelen = LittleLong (bsp->num##n); \
 	memcpy (data, bsp->n, bsp->num##n); \
-	data += bsp->num##n; \
+	data += ROUND (bsp->num##n); \
 } while (0)
 
 	header->version = LittleLong (BSPVERSION);
@@ -289,7 +291,7 @@ do { \
 	header->lumps[l].fileofs = LittleLong (data - (byte *) header); \
 	header->lumps[l].filelen = LittleLong (bsp->n##size); \
 	memcpy (data, bsp->n, bsp->n##size); \
-	data += bsp->n##size; \
+	data += ROUND (bsp->n##size); \
 } while (0)
 
 	SET_LUMP (LUMP_LIGHTING, lightdata);
