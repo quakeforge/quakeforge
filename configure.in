@@ -1440,6 +1440,8 @@ AC_OUTPUT(
 	libs/audio/targets/Makefile
 	libs/gamecode/Makefile
 	libs/util/Makefile
+	libs/video/Makefile
+	libs/video/targets/Makefile
 
 	qw/Makefile
 	qw/quakeforge.lsm

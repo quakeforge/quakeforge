@@ -69,6 +69,7 @@ extern int  global_dx, global_dy;
 // globals
 //
 
+cvar_t     *m_filter;
 cvar_t     *_windowed_mouse;
 int         x_root, y_root;
 int         x_root_old, y_root_old;
@@ -199,7 +200,7 @@ IN_Commands (void)
 //
 
 void
-IN_Move (usercmd_t *cmd)
+IN_Move (void)
 {
 	static int  last_dx, last_dy;
 	static long long last_movement;
@@ -250,24 +251,17 @@ IN_Move (usercmd_t *cmd)
 	}
 	// add mouse X/Y movement to cmd
 	if ((in_strafe.state & 1) || (lookstrafe->int_val && (in_mlook.state & 1)))
-		cmd->sidemove += m_side->value * dx;
+		viewdelta.position[0] += dx;
 	else
-		cl.viewangles[YAW] -= m_yaw->value * dx;
-
-	if (in_mlook.state & 1)
-		V_StopPitchDrift ();
+		viewdelta.angles[YAW] -= dx;
 
 	if ((in_mlook.state & 1) && !(in_strafe.state & 1)) {
-		cl.viewangles[PITCH] += m_pitch->value * dy;
-		if (cl.viewangles[PITCH] > 80)
-			cl.viewangles[PITCH] = 80;
-		if (cl.viewangles[PITCH] < -70)
-			cl.viewangles[PITCH] = -70;
+		viewdelta.angles[PITCH] += dy;
 	} else {
 		if ((in_strafe.state & 1) && noclip_anglehack)
-			cmd->upmove -= m_forward->value * dy;
+			viewdelta.position[1] -= dy;
 		else
-			cmd->forwardmove -= m_forward->value * dy;
+			viewdelta.position[2] -= dy;
 	}
 }
 

@@ -432,9 +432,9 @@ IN_SendKeyEvents (void)
 
 
 void
-IN_Move (usercmd_t *cmd)
+IN_Move (void)
 {
-	JOY_Move (cmd);
+	JOY_Move ();
 
 	if (!mouse_avail)
 		return;
@@ -451,21 +451,17 @@ IN_Move (usercmd_t *cmd)
 	mouse_y *= sensitivity->value;
 
 	if ((in_strafe.state & 1) || (lookstrafe->int_val && freelook))
-		cmd->sidemove += m_side->value * mouse_x;
+		viewdelta.position[0] += mouse_x;
 	else
-		cl.viewangles[YAW] -= m_yaw->value * mouse_x;
-
-	if (freelook)
-		V_StopPitchDrift ();
+		viewdelta.angles[YAW] -= mouse_x;
 
 	if (freelook && !(in_strafe.state & 1)) {
-		cl.viewangles[PITCH] += m_pitch->value * mouse_y;
-		cl.viewangles[PITCH] = bound (-70, cl.viewangles[PITCH], 80);
+		viewdelta.angles[PITCH] += mouse_y;
 	} else {
 		if ((in_strafe.state & 1) && noclip_anglehack)
-			cmd->upmove -= m_forward->value * mouse_y;
+			viewdelta.position[1] -= mouse_y;
 		else
-			cmd->forwardmove -= m_forward->value * mouse_y;
+			viewdelta.position[2] -= mouse_y;
 	}
 	mouse_x = mouse_y = 0.0;
 }

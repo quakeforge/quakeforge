@@ -52,6 +52,7 @@
 HWND        mainwindow;
 #endif
 
+cvar_t     *m_filter;
 cvar_t     *_windowed_mouse;
 int         old_windowed_mouse;
 
@@ -61,6 +62,7 @@ int         modestate;					// FIXME: just to avoid cross-comp.
 
 static qboolean mouse_avail;
 static float mouse_x, mouse_y;
+static float old_mouse_x, old_mouse_y;
 static int  mouse_oldbuttonstate = 0;
 
 extern viddef_t vid;					// global video state
@@ -359,8 +361,7 @@ IN_Init_Cvars (void)
 	_windowed_mouse =
 		Cvar_Get ("_windowed_mouse", "0", CVAR_ARCHIVE, NULL,
 				  "If set to 1, quake will grab the mouse in X");
-	// m_filter = Cvar_Get ("m_filter", "0", CVAR_ARCHIVE, NULL,
-	// 		"Toggle mouse input filtering");
+	m_filter = Cvar_Get ("m_filter", "0", CVAR_ARCHIVE, NULL, "Toggle mouse input filtering");
 }
 
 void
@@ -394,42 +395,35 @@ IN_Frame (void)
 }
 
 void
-IN_Move (usercmd_t *cmd)
+IN_Move (void)
 {
-	JOY_Move (cmd);
+	JOY_Move ();
 
 	if (!mouse_avail)
 		return;
 
-/* from vid_sdl.c
 	if (m_filter->value) {
 		mouse_x = (mouse_x + old_mouse_x) * 0.5;
 		mouse_y = (mouse_y + old_mouse_y) * 0.5;
 	}
-
 	old_mouse_x = mouse_x; 
 	old_mouse_y = mouse_y; 
-*/
 
 	mouse_x *= sensitivity->value;
 	mouse_y *= sensitivity->value;
 
 	if ((in_strafe.state & 1) || (lookstrafe->value && (in_mlook.state & 1)))
-		cmd->sidemove += m_side->value * mouse_x;
+		viewdelta.position[0] += mouse_x;
 	else
-		cl.viewangles[YAW] -= m_yaw->value * mouse_x;
-
-	if (freelook)
-		V_StopPitchDrift ();
+		viewdelta.angles[YAW] -= mouse_x;
 
 	if (freelook && !(in_strafe.state & 1)) {
-		cl.viewangles[PITCH] =
-			bound (-70, cl.viewangles[PITCH] + (m_pitch->value * mouse_y), 80);
+		viewdelta.angles[PITCH] += mouse_y;
 	} else {
 		if ((in_strafe.state & 1) && noclip_anglehack)
-			cmd->upmove -= m_forward->value * mouse_y;
+			viewdelta.position[1] -= mouse_y;
 		else
-			cmd->forwardmove -= m_forward->value * mouse_y;
+			viewdelta.position[2] -= mouse_y;
 	}
 	mouse_x = mouse_y = 0.0;
 }

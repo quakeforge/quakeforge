@@ -34,9 +34,11 @@
 
 #include "QF/msg.h"
 #include "host.h"
-#include "QF/console.h"
 #include "client.h"
 #include "QF/cmd.h"
+#include "QF/console.h"
+#include "QF/compat.h"
+#include "QF/input.h"
 
 /*
 ===============================================================================
@@ -512,6 +514,25 @@ CL_BaseMove (usercmd_t *cmd)
 #ifdef QUAKE2
 	cmd->lightlevel = cl.light_level;
 #endif
+
+	if (freelook)
+		V_StopPitchDrift ();
+
+	viewdelta.angles[0] = viewdelta.angles[1] = viewdelta.angles[2] = 0;
+	viewdelta.position[0] = viewdelta.position[1] = viewdelta.position[2] = 0;
+
+	IN_Move ();
+
+	cmd->forwardmove += viewdelta.position[2] * m_forward->value;
+	cmd->sidemove += viewdelta.position[0] * m_side->value;
+	cmd->upmove += viewdelta.position[1];
+	cl.viewangles[PITCH] += viewdelta.angles[PITCH] * m_pitch->value;
+	cl.viewangles[YAW] += viewdelta.angles[YAW] * m_yaw->value;
+	cl.viewangles[ROLL] += viewdelta.angles[ROLL];
+
+	if (freelook && !(in_strafe.state & 1)) {
+		cl.viewangles[PITCH] = bound (-70, cl.viewangles[PITCH], 80);
+	}
 }
 
 

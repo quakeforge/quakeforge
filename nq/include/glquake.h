@@ -224,6 +224,7 @@ extern	mplane_t	*mirror_plane;
 extern	float	r_world_matrix[16];
 
 extern float bubble_sintable[], bubble_costable[];
+extern float v_blend[4];
 
 extern	const char *gl_vendor;
 extern	const char *gl_renderer;

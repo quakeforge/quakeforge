@@ -31,11 +31,26 @@
 # include "config.h"
 #endif
 
-#include "view.h"
 #include "client.h"
-#include "host.h"
 #include "QF/console.h"
 #include "QF/compat.h"
+#include "glquake.h"
+#include "host.h"
+#include "view.h"
+
+extern byte        gammatable[256];
+
+extern qboolean    V_CheckGamma (void);
+
+extern void        V_CalcIntermissionRefdef (void);
+extern void        V_CalcPowerupCshift (void);
+extern void        V_CalcRefdef (void);
+
+extern cvar_t     *crosshair;
+extern cvar_t     *gl_cshiftpercent;
+extern cvar_t     *scr_ofsx;
+extern cvar_t     *scr_ofsy;
+extern cvar_t     *scr_ofsz;
 
 byte        ramps[3][256];
 float       v_blend[4];					// rgba 0.0 - 1.0

@@ -38,7 +38,7 @@ bin_PROGRAMS =	@NQ_TARGETS@
 EXTRA_PROGRAMS= nq-3dfx nq-fbdev nq-glx nq-mgl nq-sdl \
 		nq-sgl nq-svga nq-wgl nq-x11 nq-server
 
-noinst_LIBRARIES= libqfjs.a libqfnet.a
+noinst_LIBRARIES= libqfsys.a libqfnet.a
 
 #if ASM_ARCH
 math_ASM= 	cl_math.S
@@ -63,18 +63,6 @@ qfsys_SRC=	sys_unix.c
 endif
 
 #
-# ... Joystick
-#
-if JOYTYPE_LINUX
-libqfjs_a_SOURCES=	joy_linux.c
-endif
-if JOYTYPE_NULL
-libqfjs_a_SOURCES=	joy_null.c
-endif
-libqfjs_a_CFLAGS=      $(JOY_CFLAGS)
-EXTRA_libqfjs_a_SOURCES= joy_linux.c joy_null.c
-
-#
 # ... Networking
 #
 libqfnet_a_SOURCES=	net_bsd.c net_dgrm.c net_loop.c \
@@ -87,8 +75,9 @@ client_LIBS=	$(top_builddir)/libs/gamecode/libQFgamecode.la \
 		$(top_builddir)/libs/util/libQFutil.la \
 		$(top_builddir)/libs/audio/cd/libQFcd.la \
 		$(top_builddir)/libs/audio/targets/libQFsound.la \
-		-L. -lqfjs -lqfnet $(SOUND_LIBS) $(NET_LIBS)
-client_LIB_DEPS= libqfjs.a libqfnet.a
+		$(top_builddir)/libs/video/targets/libQFjs.la \
+		-L. -lqfsys -lqfnet $(SOUND_LIBS) $(NET_LIBS)
+client_LIB_DEPS= libqfsys.a libqfnet.a
 
 client_SOURCES= cl_cam.c cl_cmd.c cl_demo.c cl_input.c cl_main.c cl_parse.c \
 		cl_tent.c console.c keys.c sbar.c r_part.c r_view.c \

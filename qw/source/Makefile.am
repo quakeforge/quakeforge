@@ -40,7 +40,7 @@ EXTRA_PROGRAMS= qw-client-3dfx qw-client-fbdev \
 		qw-client-sgl qw-client-svga qw-client-wgl \
 		qw-client-x11 qw-server
 
-noinst_LIBRARIES= libqfjs.a libqfnet.a
+noinst_LIBRARIES= libqfnet.a
 #libqfsys_cl.a libqfsys_sv.a
 
 if PACKETLOG
@@ -102,28 +102,14 @@ else
 syscl_SRC=	cl_sys_unix.c
 endif
 
-#
-# ... Joystick
-#
-if JOYTYPE_LINUX
-libqfjs_a_SOURCES=	joy_linux.c
-endif
-if JOYTYPE_WIN32
-libqfjs_a_SOURCES=	joy_win.c
-endif
-if JOYTYPE_NULL
-libqfjs_a_SOURCES=	joy_null.c
-endif
-libqfjs_a_CFLAGS=	$(JOY_CFLAGS)
-EXTRA_libqfjs_a_SOURCES= joy_linux.c joy_win.c joy_null.c
-
 CLIENT_LIBS=		$(top_builddir)/libs/util/libQFutil.la \
 			$(top_builddir)/libs/gamecode/libQFgamecode.la \
 			$(top_builddir)/libs/audio/cd/libQFcd.la \
 			$(top_builddir)/libs/audio/targets/libQFsound.la \
-			-L. -lqfnet -lqfjs \
-			$(SOUND_LIBS) $(NET_LIBS) $(JOY_LIBS)
-CLIENT_LIB_DEPS=	libqfnet.a libqfjs.a
+			$(top_builddir)/libs/video/targets/libQFjs.la \
+			-L. -lqfnet \
+			$(SOUND_LIBS) $(NET_LIBS)
+CLIENT_LIB_DEPS=	libqfnet.a
 
 if ASM_ARCH
 client_ASM=	cl_math.S

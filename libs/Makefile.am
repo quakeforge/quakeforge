@@ -1,4 +1,4 @@
-SUBDIRS=	audio gamecode util
+SUBDIRS=	audio gamecode util video
 
 clean-local:
 	rm -f *.a

@@ -31,13 +31,26 @@
 # include "config.h"
 #endif
 
+#include "client.h"
 #include "QF/compat.h"
+#include "QF/console.h"
+#include "draw.h"
+#include "host.h"
 #include "view.h"
 #include "vid.h"
-#include "QF/console.h"
-#include "host.h"
-#include "client.h"
-#include "draw.h"
+
+extern byte        gammatable[256];
+
+extern qboolean    V_CheckGamma (void);
+
+extern void        V_CalcIntermissionRefdef (void);
+extern void        V_CalcPowerupCshift (void);
+extern void        V_CalcRefdef (void);
+
+extern cvar_t     *crosshair;
+extern cvar_t     *scr_ofsx;
+extern cvar_t     *scr_ofsy;
+extern cvar_t     *scr_ofsz;
 
 /*
 	V_UpdatePalette

@@ -124,7 +124,7 @@ extern void JOY_Command(void);
 extern void JOY_Init_Cvars(void);
 extern void JOY_Init (void);
 extern void JOY_AdvancedUpdate_f (void);
-extern void JOY_Move (usercmd_t *cmd);
+extern void JOY_Move (void);
 
 /*
 	Force_CenterView_f
@@ -482,7 +482,7 @@ IN_MouseEvent (int mstate)
 	IN_MouseMove
 */
 void
-IN_MouseMove (usercmd_t *cmd)
+IN_MouseMove (void)
 {
 	int         mx, my;
 
@@ -587,21 +587,17 @@ IN_MouseMove (usercmd_t *cmd)
 
 // add mouse X/Y movement to cmd
 	if ((in_strafe.state & 1) || (lookstrafe->int_val && freelook))
-		cmd->sidemove += m_side->value * mouse_x;
+		viewdelta.position[0] += mouse_x;
 	else
-		cl.viewangles[YAW] -= m_yaw->value * mouse_x;
-
-	if (freelook)
-		V_StopPitchDrift ();
+		viewdelta.angles[YAW] -= mouse_x;
 
 	if (freelook && !(in_strafe.state & 1)) {
-		cl.viewangles[PITCH] += m_pitch->value * mouse_y;
-		cl.viewangles[PITCH] = bound (-70, cl.viewangles[PITCH], 80);
+		viewdelta.angles[PITCH] += mouse_y;
 	} else {
 		if ((in_strafe.state & 1) && noclip_anglehack)
-			cmd->upmove -= m_forward->value * mouse_y;
+			viewdelta.position[1] -= mouse_y;
 		else
-			cmd->forwardmove -= m_forward->value * mouse_y;
+			viewdelta.position[2] -= mouse_y;
 	}
 
 // if the mouse has moved, force it to the center, so there's room to move
@@ -619,8 +615,8 @@ IN_Move (usercmd_t *cmd)
 {
 
 	if (ActiveApp && !Minimized) {
-		IN_MouseMove (cmd);
-		JOY_Move (cmd);
+		IN_MouseMove ();
+		JOY_Move ();
 	}
 }
 

@@ -37,11 +37,10 @@
 
 #include "QF/compat.h"
 #include "QF/console.h"
-#include "client.h"
 #include "QF/cvar.h"
+#include "QF/input.h"
 #include "QF/keys.h"
-#include "protocol.h"
-#include "view.h"
+#include "QF/mathlib.h"
 
 #define JOY_MAX_AXES	6
 #define JOY_MAX_BUTTONS 16
@@ -119,44 +118,41 @@ JOY_Command (void)
 }
 
 void
-JOY_Move (usercmd_t *cmd)
+JOY_Move (void)
 {
 	int         i;
 
 	if (!joy_active || !joy_enable->int_val)
 		return;
 
-	Cvar_SetValue (joy_sensitivity, bound (1, joy_sensitivity->value, 25));
+	Cvar_SetValue (joy_sensitivity, max (0.01, joy_sensitivity->value));
 	for (i = 0; i < JOY_MAX_AXES; i++) {
 		switch (joy_axes[i].axis->int_val) {
 			case 1:
-				cl.viewangles[YAW] -=
-					m_yaw->value * (float) (joy_axes[i].current /
-											(201 -
-											 (joy_sensitivity->value * 4)));
+				viewdelta.angles[YAW] -=
+					(float) (joy_axes[i].current /
+						 (201 -
+						  (joy_sensitivity->value * 4)));
 				break;
 			case 2:
-				cmd->forwardmove -=
-					m_forward->value * (float) (joy_axes[i].current /
-												(201 -
-												 (joy_sensitivity->value * 4)));
+				viewdelta.position[2] -=
+					(float) (joy_axes[i].current /
+						  (201 -
+						   (joy_sensitivity->value * 4)));
 				break;
 			case 3:
-				cmd->sidemove +=
-					m_side->value * (float) (joy_axes[i].current /
-											 (201 -
-											  (joy_sensitivity->value * 4)));
+				viewdelta.position[0] +=
+					(float) (joy_axes[i].current /
+						 (201 -
+						  (joy_sensitivity->value * 4)));
 				break;
 			case 4:
 				if (joy_axes[i].current) {
-					V_StopPitchDrift ();
-					cl.viewangles[PITCH] -=
-						m_pitch->value * (float) (joy_axes[i].current /
-												  (201 -
-												   (joy_sensitivity->value *
-													4)));
-					cl.viewangles[PITCH] =
-						bound (-70, cl.viewangles[PITCH], 80);
+					viewdelta.angles[PITCH] -=
+						(float) (joy_axes[i].current /
+							 (201 -
+							  (joy_sensitivity->value *
+							   4)));
 				}
 				break;
 		}
@@ -199,19 +195,19 @@ JOY_Init_Cvars (void)
 	int         i;
 
 	joy_device =
-		Cvar_Get ("joy_device", "/dev/js0", CVAR_NONE | CVAR_ROM, NULL,
+		Cvar_Get ("joy_device", "/dev/js0", CVAR_NONE | CVAR_ROM, 0,
 				  "Joystick device");
 	joy_enable =
-		Cvar_Get ("joy_enable", "1", CVAR_NONE | CVAR_ARCHIVE, NULL,
+		Cvar_Get ("joy_enable", "1", CVAR_NONE | CVAR_ARCHIVE, 0,
 				  "Joystick enable flag");
 	joy_sensitivity =
-		Cvar_Get ("joy_sensitivity", "1", CVAR_NONE | CVAR_ARCHIVE, NULL,
+		Cvar_Get ("joy_sensitivity", "1", CVAR_NONE | CVAR_ARCHIVE, 0,
 				  "Joystick sensitivity");
 
 	for (i = 0; i < JOY_MAX_AXES; i++) {
 		joy_axes[i].axis = Cvar_Get (joy_axes[i].var.name,
 									 joy_axes[i].var.string,
-									 CVAR_ARCHIVE, NULL, "Set joystick axes");
+									 CVAR_ARCHIVE, 0, "Set joystick axes");
 	}
 }
 

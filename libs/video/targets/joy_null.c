@@ -32,7 +32,6 @@
 
 #include "QF/console.h"
 #include "QF/cvar.h"
-#include "protocol.h"
 #include "QF/qtypes.h"
 
 // Joystick variables and structures
@@ -49,7 +48,7 @@ JOY_Command (void)
 }
 
 void
-JOY_Move (usercmd_t *cmd)
+JOY_Move (void)
 {
 }
 
@@ -63,13 +62,13 @@ void
 JOY_Init_Cvars (void)
 {
 	joy_device =
-		Cvar_Get ("joy_device", "none", CVAR_NONE | CVAR_ROM, NULL,
+		Cvar_Get ("joy_device", "none", CVAR_NONE | CVAR_ROM, 0,
 				  "Joystick device");
 	joy_enable =
-		Cvar_Get ("joy_enable", "1", CVAR_NONE | CVAR_ARCHIVE, NULL,
+		Cvar_Get ("joy_enable", "1", CVAR_NONE | CVAR_ARCHIVE, 0,
 				  "Joystick enable flag");
 	joy_sensitivity =
-		Cvar_Get ("joy_sensitivity", "1", CVAR_NONE | CVAR_ARCHIVE, NULL,
+		Cvar_Get ("joy_sensitivity", "1", CVAR_NONE | CVAR_ARCHIVE, 0,
 				  "Joystick sensitivity");
 }
 

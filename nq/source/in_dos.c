@@ -275,7 +275,7 @@ IN_Move
 ===========
 */
 void
-IN_MouseMove (usercmd_t *cmd)
+IN_MouseMove (void)
 {
 	int         mx, my;
 
@@ -306,20 +306,13 @@ IN_MouseMove (usercmd_t *cmd)
 	else
 		cl.viewangles[YAW] -= m_yaw->value * mouse_x;
 
-	if (in_mlook.state & 1)
-		V_StopPitchDrift ();
-
 	if ((in_mlook.state & 1) && !(in_strafe.state & 1)) {
-		cl.viewangles[PITCH] += m_pitch->value * mouse_y;
-		if (cl.viewangles[PITCH] > 80)
-			cl.viewangles[PITCH] = 80;
-		if (cl.viewangles[PITCH] < -70)
-			cl.viewangles[PITCH] = -70;
+		viewdelta.angles[PITCH] += mouse_y;
 	} else {
 		if ((in_strafe.state & 1) && noclip_anglehack)
-			cmd->upmove -= m_forward->value * mouse_y;
+			viewdelta.position[1] -= mouse_y;
 		else
-			cmd->forwardmove -= m_forward->value * mouse_y;
+			viewdelta.position[2] -= mouse_y;
 	}
 }
 
@@ -329,7 +322,7 @@ IN_JoyMove
 ===========
 */
 void
-IN_JoyMove (usercmd_t *cmd)
+IN_JoyMove (void)
 {
 	float       speed, aspeed;
 
@@ -383,10 +376,10 @@ IN_Move
 ===========
 */
 void
-IN_Move (usercmd_t *cmd)
+IN_Move (void)
 {
-	IN_MouseMove (cmd);
-	IN_JoyMove (cmd);
+	IN_MouseMove ();
+	IN_JoyMove ();
 	IN_ExternalMove (cmd);
 }
 

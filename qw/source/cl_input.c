@@ -43,6 +43,7 @@
 #include "cl_parse.h"
 #include "client.h"
 #include "QF/cmd.h"
+#include "QF/compat.h"
 #include "QF/console.h"
 #include "host.h"
 #include "QF/input.h"
@@ -516,6 +517,25 @@ CL_BaseMove (usercmd_t *cmd)
 		cmd->sidemove *= cl_movespeedkey->value;
 		cmd->upmove *= cl_movespeedkey->value;
 	}
+
+	if (freelook)
+		V_StopPitchDrift ();
+
+	viewdelta.angles[0] = viewdelta.angles[1] = viewdelta.angles[2] = 0;
+	viewdelta.position[0] = viewdelta.position[1] = viewdelta.position[2] = 0;
+
+	IN_Move ();
+
+	cmd->forwardmove += viewdelta.position[2] * m_forward->value;
+	cmd->sidemove += viewdelta.position[0] * m_side->value;
+	cmd->upmove += viewdelta.position[1];
+	cl.viewangles[PITCH] += viewdelta.angles[PITCH] * m_pitch->value;
+	cl.viewangles[YAW] += viewdelta.angles[YAW] * m_yaw->value;
+	cl.viewangles[ROLL] += viewdelta.angles[ROLL];
+
+	if (freelook && !(in_strafe.state & 1)) {
+		cl.viewangles[PITCH] = bound (-70, cl.viewangles[PITCH], 80);
+	}
 }
 
 int
@@ -616,7 +636,7 @@ CL_SendCmd (void)
 	CL_BaseMove (cmd);
 
 	// allow mice or other external controllers to add to the move
-	IN_Move (cmd);
+	IN_Move (); // FIXME: was cmd, should it even exist at all?
 
 	// if we are spectator, try autocam
 	if (cl.spectator)

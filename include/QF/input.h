@@ -29,9 +29,12 @@
 #ifndef _INPUT_H
 #define _INPUT_H
 
-#include "client.h"
-#include "protocol.h"
 #include "QF/cvar.h"
+
+struct {
+	vec3_t angles;
+	vec3_t position;
+} viewdelta;
 
 #define freelook (in_mlook.state&1 || cl_freelook->int_val)
 
@@ -46,7 +49,7 @@ void IN_Commands (void);
 void IN_SendKeyEvents (void);
 // Perform Key_Event () callbacks until the input que is empty
 
-void IN_Move (usercmd_t *cmd);
+void IN_Move (void); // FIXME: was cmduser_t?
 // add additional movement on top of the keyboard move cmd
 
 void IN_ModeChanged (void);

@@ -53,14 +53,14 @@ extern qboolean joy_active; 		// Joystick in use?
 void JOY_Command (void);
 
 /*
-	JOY_Move (usercmd_t *)
+	JOY_Move (usercmd_t *) // FIXME: Not anymore!
 
 	Use this function to process joystick movements to move the player around.
 
 	You should exit this function immediately if either joy_active or
 	joy_enable->int_val are zero.
 */
-void JOY_Move (usercmd_t *);
+void JOY_Move (void);
 
 /*
 	JOY_Init ()

@@ -40,8 +40,6 @@
 #include <dinput.h>
 #undef byte
 
-#include "cl_input.h"
-#include "client.h"
 #include "QF/cmd.h"
 #include "QF/compat.h"
 #include "QF/console.h"
@@ -49,9 +47,7 @@
 #include "host.h"
 #include "QF/input.h"
 #include "QF/keys.h"
-#include "protocol.h"
 #include "QF/qargs.h"
-#include "view.h"
 
 // Joystick variables and structures
 cvar_t     *joy_device;					// Joystick device name
@@ -129,7 +125,7 @@ DWORD joy_numbuttons;
 //
 void JOY_AdvancedUpdate_f (void);
 void JOY_StartupJoystick (void);
-void JOY_Move (usercmd_t *cmd);
+void JOY_Move (void);
 void JOY_Init_Cvars(void);
 
 PDWORD RawValuePointer (int axis);
@@ -221,7 +217,7 @@ JOY_Command (void)
 }
 
 void
-JOY_Move (usercmd_t *cmd)
+JOY_Move (void)
 {
 	float       speed, aspeed;
 	float       fAxisValue, fTemp;
@@ -286,15 +282,14 @@ JOY_Move (usercmd_t *cmd)
 						// only absolute control support here (joy_advanced
 						// is false)
 						if (m_pitch->value < 0.0) {
-							cl.viewangles[PITCH] -=
+							viewdelta.angles[PITCH] -=
 								(fAxisValue * joy_pitchsensitivity->value) *
 								aspeed * cl_pitchspeed->value;
 						} else {
-							cl.viewangles[PITCH] +=
+							viewdelta.angles[PITCH] +=
 								(fAxisValue * joy_pitchsensitivity->value) *
 								aspeed * cl_pitchspeed->value;
 						}
-						V_StopPitchDrift ();
 					} else {
 						// no pitch movement
 						// disable pitch return-to-center unless requested by 
@@ -308,7 +303,7 @@ JOY_Move (usercmd_t *cmd)
 				} else {
 					// user wants forward control to be forward control
 					if (fabs (fAxisValue) > joy_forwardthreshold->value) {
-						cmd->forwardmove +=
+						viewdelta.position[0] +=
 							(fAxisValue * joy_forwardsensitivity->value) *
 							speed * cl_forwardspeed->value;
 					}
@@ -317,7 +312,7 @@ JOY_Move (usercmd_t *cmd)
 
 			case AxisSide:
 				if (fabs (fAxisValue) > joy_sidethreshold->value) {
-					cmd->sidemove +=
+					viewdelta.position[1] +=
 						(fAxisValue * joy_sidesensitivity->value) * speed *
 						cl_sidespeed->value;
 				}
@@ -327,7 +322,7 @@ JOY_Move (usercmd_t *cmd)
 				if ((in_strafe.state & 1) || (lookstrafe->int_val && freelook)) {
 					// user wants turn control to become side control
 					if (fabs (fAxisValue) > joy_sidethreshold->value) {
-						cmd->sidemove -=
+						viewdelta.position[0] -=
 							(fAxisValue * joy_sidesensitivity->value) * speed *
 							cl_sidespeed->value;
 					}
@@ -335,11 +330,11 @@ JOY_Move (usercmd_t *cmd)
 					// user wants turn control to be turn control
 					if (fabs (fAxisValue) > joy_yawthreshold->value) {
 						if (dwControlMap[i] == JOY_ABSOLUTE_AXIS) {
-							cl.viewangles[YAW] +=
+							viewdelta.angles[YAW] +=
 								(fAxisValue * joy_yawsensitivity->value) *
 								aspeed * cl_yawspeed->value;
 						} else {
-							cl.viewangles[YAW] +=
+							viewdelta.angles[YAW] +=
 								(fAxisValue * joy_yawsensitivity->value) *
 								speed * 180.0;
 						}
@@ -353,15 +348,14 @@ JOY_Move (usercmd_t *cmd)
 						// pitch movement detected and pitch movement desired 
 						// by user
 						if (dwControlMap[i] == JOY_ABSOLUTE_AXIS) {
-							cl.viewangles[PITCH] +=
+							viewdelta.angles[PITCH] +=
 								(fAxisValue * joy_pitchsensitivity->value) *
 								aspeed * cl_pitchspeed->value;
 						} else {
-							cl.viewangles[PITCH] +=
+							viewdelta.angles[PITCH] +=
 								(fAxisValue * joy_pitchsensitivity->value) *
 								speed * 180.0;
 						}
-						V_StopPitchDrift ();
 					} else {
 						// no pitch movement
 						// disable pitch return-to-center unless requested by 
@@ -379,9 +373,6 @@ JOY_Move (usercmd_t *cmd)
 				break;
 		}
 	}
-
-	// bounds check pitch
-	cl.viewangles[PITCH] = bound (-70, cl.viewangles[PITCH], 80);
 }
 
 void
@@ -555,66 +546,54 @@ void
 JOY_Init_Cvars(void)
 {
 	joy_device =
-		Cvar_Get ("joy_device", "none", CVAR_NONE | CVAR_ROM, NULL,
+		Cvar_Get ("joy_device", "none", CVAR_NONE | CVAR_ROM, 0,
 				  "Joystick device");
 	joy_enable =
-		Cvar_Get ("joy_enable", "1", CVAR_NONE | CVAR_ARCHIVE, NULL,
+		Cvar_Get ("joy_enable", "1", CVAR_NONE | CVAR_ARCHIVE, 0,
 				  "Joystick enable flag");
 	joy_sensitivity =
-		Cvar_Get ("joy_sensitivity", "1", CVAR_NONE | CVAR_ARCHIVE, NULL,
+		Cvar_Get ("joy_sensitivity", "1", CVAR_NONE | CVAR_ARCHIVE, 0,
 				  "Joystick sensitivity");
 
 	// joystick variables
 
 	in_joystick = 
-		Cvar_Get ("joystick", "0", CVAR_ARCHIVE, NULL, "FIXME: No Description");
+		Cvar_Get ("joystick", "0", CVAR_ARCHIVE, 0, "FIXME: No Description");
 	joy_name = 
-		Cvar_Get ("joyname", "joystick", CVAR_NONE, NULL,
-				"FIXME: No Description");
+		Cvar_Get ("joyname", "joystick", CVAR_NONE, 0, "FIXME: No Description");
 	joy_advanced = 
-		Cvar_Get ("joyadvanced", "0", CVAR_NONE, NULL, "FIXME: No Description");
+		Cvar_Get ("joyadvanced", "0", CVAR_NONE, 0, "FIXME: No Description");
 	joy_advaxisx = 
-		Cvar_Get ("joyadvaxisx", "0", CVAR_NONE, NULL, "FIXME: No Description");
+		Cvar_Get ("joyadvaxisx", "0", CVAR_NONE, 0, "FIXME: No Description");
 	joy_advaxisy = 
-		Cvar_Get ("joyadvaxisy", "0", CVAR_NONE, NULL, "FIXME: No Description");
+		Cvar_Get ("joyadvaxisy", "0", CVAR_NONE, 0, "FIXME: No Description");
 	joy_advaxisz = 
-		Cvar_Get ("joyadvaxisz", "0", CVAR_NONE, NULL, "FIXME: No Description");
+		Cvar_Get ("joyadvaxisz", "0", CVAR_NONE, 0, "FIXME: No Description");
 	joy_advaxisr = 
-		Cvar_Get ("joyadvaxisr", "0", CVAR_NONE, NULL, "FIXME: No Description");
+		Cvar_Get ("joyadvaxisr", "0", CVAR_NONE, 0, "FIXME: No Description");
 	joy_advaxisu = 
-		Cvar_Get ("joyadvaxisu", "0", CVAR_NONE, NULL, "FIXME: No Description");
+		Cvar_Get ("joyadvaxisu", "0", CVAR_NONE, 0, "FIXME: No Description");
 	joy_advaxisv = 
-		Cvar_Get ("joyadvaxisv", "0", CVAR_NONE, NULL, "FIXME: No Description");
+		Cvar_Get ("joyadvaxisv", "0", CVAR_NONE, 0, "FIXME: No Description");
 	joy_forwardthreshold =
-		Cvar_Get ("joyforwardthreshold", "0.15", CVAR_NONE, NULL,
-				"FIXME: No Description");
+		Cvar_Get ("joyforwardthreshold", "0.15", CVAR_NONE, 0, "FIXME: No Description");
 	joy_sidethreshold =
-		Cvar_Get ("joysidethreshold", "0.15", CVAR_NONE, NULL,
-				"FIXME: No Description");
+		Cvar_Get ("joysidethreshold", "0.15", CVAR_NONE, 0, "FIXME: No Description");
 	joy_pitchthreshold =
-		Cvar_Get ("joypitchthreshold", "0.15", CVAR_NONE, NULL,
-				"FIXME: No Description");
-	joy_yawthreshold = Cvar_Get ("joyyawthreshold", "0.15", CVAR_NONE, NULL,
-			"FIXME: No Description");
+		Cvar_Get ("joypitchthreshold", "0.15", CVAR_NONE, 0, "FIXME: No Description");
+	joy_yawthreshold = Cvar_Get ("joyyawthreshold", "0.15", CVAR_NONE, 0, "FIXME: No Description");
 	joy_forwardsensitivity =
-		Cvar_Get ("joyforwardsensitivity", "-1.0", CVAR_NONE, NULL,
-				"FIXME: No Description");
+		Cvar_Get ("joyforwardsensitivity", "-1.0", CVAR_NONE, 0, "FIXME: No Description");
 	joy_sidesensitivity =
-		Cvar_Get ("joysidesensitivity", "-1.0", CVAR_NONE, NULL,
-				"FIXME: No Description");
+		Cvar_Get ("joysidesensitivity", "-1.0", CVAR_NONE, 0, "FIXME: No Description");
 	joy_pitchsensitivity =
-		Cvar_Get ("joypitchsensitivity", "1.0", CVAR_NONE, NULL,
-				"FIXME: No Description");
+		Cvar_Get ("joypitchsensitivity", "1.0", CVAR_NONE, 0, "FIXME: No Description");
 	joy_yawsensitivity =
-		Cvar_Get ("joyyawsensitivity", "-1.0", CVAR_NONE, NULL,
-				"FIXME: No Description");
-	joy_wwhack1 = Cvar_Get ("joywwhack1", "0.0", CVAR_NONE, NULL,
-			"FIXME: No Description");
-	joy_wwhack2 = Cvar_Get ("joywwhack2", "0.0", CVAR_NONE, NULL,
-			"FIXME: No Description");
+		Cvar_Get ("joyyawsensitivity", "-1.0", CVAR_NONE, 0, "FIXME: No Description");
+	joy_wwhack1 = Cvar_Get ("joywwhack1", "0.0", CVAR_NONE, 0, "FIXME: No Description");
+	joy_wwhack2 = Cvar_Get ("joywwhack2", "0.0", CVAR_NONE, 0, "FIXME: No Description");
 
-        joy_debug = Cvar_Get ("joy_debug", "0.0", CVAR_NONE, NULL,
-				"FIXME: No Description");
+        joy_debug = Cvar_Get ("joy_debug", "0.0", CVAR_NONE, 0, "FIXME: No Description");
 
 	return;
 }

@@ -53,7 +53,7 @@ IN_Commands (void)
 }
 
 void
-IN_Move (usercmd_t *cmd)
+IN_Move (null)
 {
 }
 
