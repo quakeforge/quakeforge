@@ -281,7 +281,7 @@ R_Init_Cvars (void)
 	r_graphheight = Cvar_Get ("r_graphheight", "32", CVAR_NONE, NULL,
 							  "Set the number of lines displayed in the "
 							  "various graphs");
-	r_lightmap_components = Cvar_Get ("r_lightmap_components", "4", CVAR_ROM,
+	r_lightmap_components = Cvar_Get ("r_lightmap_components", "3", CVAR_ROM,
 									  NULL, "Lightmap texture components. 1 "
 									  "is greyscale, 3 is RGB, 4 is RGBA.");
 	r_maxedges = Cvar_Get ("r_maxedges", "0", CVAR_NONE, NULL,
