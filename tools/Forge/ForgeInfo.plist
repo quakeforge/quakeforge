@@ -1,0 +1,12 @@
+{
+    ApplicationDescription = "A map editor for QuakeForge";
+    ApplicationIcon = "Images/Forge.tiff";
+    ApplicationName = Forge;
+    ApplicationRelease = 0.1;
+    Authors = "Jeff Teunissen and Bill Currie";
+    Copyright = "Copyright (C) 2001 Jeff Teunissen <deek@quakeforge.net>, Bill Currie <taniwha@quakeforge.net>";
+    CopyrightDescription = "Released under the GNU General Public License";
+    FullVersionID = 0.1;
+    NOTE = "Automatically generated!";
+    URL = "";
+}

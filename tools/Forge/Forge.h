@@ -1,10 +1,10 @@
 
-extern	id	quakeed_i;
+extern id	quakeed_i;
 
-extern	BOOL	filter_light, filter_path, filter_entities;
-extern	BOOL	filter_clip_brushes, filter_water_brushes, filter_world;
+extern BOOL	filter_light, filter_path, filter_entities;
+extern BOOL	filter_clip_brushes, filter_water_brushes, filter_world;
 
-extern	UserPath	*upath;
+extern UserPath	*upath;
 
 extern	id	g_cmd_out_i;
 
@@ -14,7 +14,7 @@ void NopSound (void);
 
 void qprintf (char *fmt, ...);		// prints text to cmd_out_i
 
-@interface QuakeEd: NSWindow
+@interface Forge: NSWindow
 {
 	BOOL	dirty;
 	char	filename[1024];		// full path with .map extension

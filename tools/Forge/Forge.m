@@ -1,5 +1,9 @@
-
 #import "qedefs.h"
+
+#import <Foundation/Foundation.h>
+#import <AppKit/AppKit.h>
+
+#import "Forge.h"
 
 id	quakeed_i;
 id	entclasses_i;
@@ -26,7 +30,7 @@ char	*leakcmd = "rsh satan \"/LocalApps/qbsp -mark -notjunc $1 $2\"";
 
 void NopSound (void)
 {
-	NXBeep ();
+	NSBeep ();
 }
 
 UserPath	*upath;
@@ -71,7 +75,7 @@ void DisplayCmdOutput (void)
 
 	[preferences_i playBspSound];		
 	
-	NXPing ();
+	NSPing ();
 }
 
 /*
@@ -96,7 +100,7 @@ void CheckCmdDone(DPSTimedEntry tag, double now, void *userData)
 
 //============================================================================
 
-@implementation QuakeEd
+@implementation Forge
 
 /*
 ===============
