@@ -11,9 +11,11 @@ ID		[a-zA-Z_][a-zA-Z_0-9]*
 
 %%
 
-{DIGIT}+"."{DIGIT}*
+{DIGIT}+"."{DIGIT}* return VALUE;
 
-{ID}
+{ID}	return NAME
+
+\"(\.|[^"])*\"
 
 "!"|"("|")"|"{"|"}"|"."|"*"|"/"|"&"|"|"|"+"|"-"|"="|"["|"]"	return yytext[0];
 
