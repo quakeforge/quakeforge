@@ -250,7 +250,7 @@ Con_Skyboxlist_f (void)
 	for (i = 0; i < skyboxlist->count; i++) {
 		if (strlen(skyboxlist->list[i]) > strlen(sb_endings[0]) && strcmp(skyboxlist->list[i] + strlen(skyboxlist->list[i]) - strlen(sb_endings[0]), sb_endings[0]) == 0) {
 			strncpy(basename, skyboxlist->list[i], sizeof(basename));
-			basename[sizeof(basename) - 1] = 0;
+			basename[strlen(skyboxlist->list[i]) - strlen(sb_endings[0])] = 0;
 			c = 0;
 			for (j = 1; sb_endings[j]; j++) {
 				b = 0;
