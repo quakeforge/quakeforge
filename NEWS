@@ -12,7 +12,8 @@ Changes from 0.3.0
         * Ogg Vorbis compression for sound effect samples (streamed ogg support
           is planned).
         * Menu system re-written in QuakeC/Ruamoko
-        * Curses console for servers in *nix.
+        * Curses console for servers in Unix.
+        * New keybinding system.
 
     o Progs engine enhancements.
         * Fully modular. Mod/Server-independant, allowing for
@@ -146,3 +147,11 @@ Changes from 0.3.0
         * 16 bit vertex alias model format.
         * Improved software gamma that more closely resembles hardware gamma.
         * Countless speed improvements.
+
+Known problems in 0.5.2:
+    o Doesn't work with 3dfx cards in MS Windows due to vertex array use.
+    o SDL clients don't reliably support fullscreen mode in MS Windows
+    o MS Windows support in general is sorely under-tested.
+    o Starting an SDL client (-sdl, -sgl or -sdl32) in fullscreen mode
+      and then going windowed requires in_grab to be toggled from 0 to 1
+      and back to 0 before the mouse will be released.
