@@ -54,6 +54,7 @@ char *dstring_freeze (dstring_t *dstr);
 // String-specific functions
 dstring_t *dstring_newstr (void);
 void dstring_copystr (dstring_t *dstr, const char *str);
+void dstring_copysubstr (dstring_t *dstr, const char *str, unsigned int len);
 void dstring_appendstr (dstring_t *dstr, const char *str);
 void dstring_appendsubstr (dstring_t *dstr, const char *str, unsigned int len);
 void dstring_insertstr (dstring_t *dstr, unsigned int pos, const char *str);

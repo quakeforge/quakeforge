@@ -166,23 +166,37 @@ dstring_copystr (dstring_t *dstr, const char *str)
 }
 
 void
+dstring_copysubstr (dstring_t *dstr, const char *str, unsigned int len)
+{
+	len = strnlen (str, len);
+
+	dstr->size = len + 1;
+	dstring_adjust (dstr);
+	strncpy (dstr->str, str, len);
+	dstr->str[len] = 0;
+}
+
+void
 dstring_appendstr (dstring_t *dstr, const char *str)
 {
-	dstr->size += strlen (str);
+	unsigned int pos = strnlen (dstr->str, dstr->size);
+	unsigned int len = strlen (str);
+
+	dstr->size = pos + len + 1;
 	dstring_adjust (dstr);
-	strcat (dstr->str, str);
+	strcpy (dstr->str + pos, str);
 }
 
 void
 dstring_appendsubstr (dstring_t *dstr, const char *str, unsigned int len)
 {
-	unsigned int l = strlen (str);
+	unsigned int pos = strnlen (dstr->str, dstr->size);
 
-	if (len > l)
-		len = l;
-	dstr->size += len;
+	len = strnlen (str, len);
+	dstr->size = pos + len + 1;
 	dstring_adjust (dstr);
-	strncat (dstr->str, str, len);
+	strncpy (dstr->str + pos, str, len);
+	dstr->str[pos + len] = 0;
 }
 
 void
@@ -196,10 +210,8 @@ void
 dstring_insertsubstr (dstring_t *dstr, unsigned int pos, const char *str,
 					  unsigned int len)
 {
-	unsigned int l = strlen (str);
+	len = strnlen (str, len);
 
-	if (len > l)
-		len = l;
 	dstring_insert (dstr, pos, str, len);
 }
 

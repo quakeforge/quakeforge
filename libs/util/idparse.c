@@ -97,11 +97,8 @@ COM_Parse (const char *data)
 	int         c;
 	int         i;
 
-	if (!_com_token) {
+	if (!_com_token)
 		_com_token = dstring_newstr ();
-	} else {
-		dstring_clearstr (_com_token);
-	}
 	com_token = _com_token->str;
 	
 	if (!data)
@@ -123,7 +120,7 @@ skipwhite:
 		while (1) {
 			c = data[i++];
 			if (c == '"' || !c) {
-				dstring_insert (_com_token, 0, data, i - 1);
+				dstring_copysubstr (_com_token, data, i - 1);
 				goto done;
 			}
 		}
@@ -132,7 +129,7 @@ skipwhite:
 	do {
 		i++;
 	} while (data[i] && !isspace ((byte) data[i]));
-	dstring_insert (_com_token, 0, data, i);
+	dstring_copysubstr (_com_token, data, i);
 done:
 	com_token = _com_token->str;
 	return data + i;

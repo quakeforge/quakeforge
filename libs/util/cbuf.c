@@ -88,8 +88,7 @@ Cbuf_ArgsAdd (cbuf_args_t *args, const char *arg)
 			args->args[i] = 0;
 		}
 	}
-	dstring_clearstr (args->argv[args->argc]);
-	dstring_appendstr (args->argv[args->argc], arg);
+	dstring_copystr (args->argv[args->argc], arg);
 	args->argc++;
 }
 
