@@ -110,7 +110,7 @@ typedef struct {
 
 %token	LOCAL RETURN WHILE DO IF ELSE FOR BREAK CONTINUE ELIPSIS NIL
 %token	IFBE IFB IFAE IFA
-%token	SWITCH CASE DEFAULT STRUCT
+%token	SWITCH CASE DEFAULT STRUCT ENUM
 %token	<type> TYPE
 
 %type	<type>	type opt_func func_parms array_decl
@@ -120,7 +120,7 @@ typedef struct {
 %type	<def>	func_def_item func_def_list
 %type	<expr>	const opt_expr expr arg_list element_list element_list1 element
 %type	<expr>	statement statements statement_block
-%type	<expr>	break_label continue_label
+%type	<expr>	break_label continue_label enum_list enum
 %type	<function> begin_function
 %type	<def_list> save_inits
 %type	<switch_block> switch_block
@@ -160,6 +160,8 @@ def
 	  { current_type = build_type ($1, $4); } func_def_list
 	| STRUCT NAME
 	  { struct_type = new_struct ($2); } '=' '{' struct_defs '}'
+	| ENUM '{' enum_list opt_comma '}'
+	  { process_enum ($3); }
 	;
 
 struct_defs
@@ -174,6 +176,34 @@ struct_def
 	  { current_type = build_type ($1, $4); } struct_def_list
 	| opt_field TYPE { current_type = $2; } func_parms
 	  { current_type = build_type ($1, $4); } struct_def_list
+	;
+
+enum_list
+	: enum
+	| enum_list ',' enum
+		{
+			if ($3) {
+				$3->next = $1;
+				$$ = $3;
+			} else {
+				$$ = $1;
+			}
+		}
+	;
+
+enum
+	: NAME { $$ = new_name_expr ($1); }
+	| NAME '=' expr
+		{
+			$$ = 0;
+			if ($3->type < ex_string) {
+				error ($3, "non-constant initializer");
+			} else if ($3->type != ex_integer) {
+				error ($3, "invalid initializer type");
+			} else {
+				$$ = new_binary_expr ('=', new_name_expr ($1), $3);
+			}
+		}
 	;
 
 opt_field
@@ -251,7 +281,7 @@ var_def_item
 	: def_name opt_var_initializer
 		{
 			$$ = $1;
-			if (!$$->scope && $$->type->type != ev_func)
+			if ($$ && !$$->scope && $$->type->type != ev_func)
 				PR_DefInitialized ($$);
 		}
 	;
@@ -758,12 +788,7 @@ expr
 	| '&' expr %prec UNARY		{ $$ = address_expr ($2, 0, 0); }
 	| INCOP expr				{ $$ = incop_expr ($1, $2, 0); }
 	| expr INCOP				{ $$ = incop_expr ($2, $1, 1); }
-	| NAME
-		{
-			$$ = new_expr ();
-			$$->type = ex_name;
-			$$->e.string_val = $1;
-		}
+	| NAME						{ $$ = new_name_expr ($1); }
 	| const						{ $$ = $1; }
 	| '(' expr ')'				{ $$ = $2; $$->paren = 1; }
 	;

@@ -31,6 +31,7 @@ static const char rcsid[] =
 	"$Id$";
 
 #include <QF/hash.h>
+#include <QF/sys.h>
 
 #include "qfcc.h"
 #include "struct.h"
@@ -40,7 +41,13 @@ typedef struct {
 	type_t     *type;
 } struct_t;
 
+typedef struct {
+	const char *name;
+	expr_t      value;
+} enum_t;
+
 static hashtab_t *structs;
+static hashtab_t *enums;
 
 static const char *
 structs_get_key (void *s, void *unused)
@@ -52,6 +59,12 @@ static const char *
 struct_field_get_key (void *f, void *unused)
 {
 	return ((struct_field_t *) f)->name;
+}
+
+static const char *
+enums_get_key (void *e, void *unused)
+{
+	return ((enum_t *) e)->name;
 }
 
 struct_field_t *
@@ -115,4 +128,61 @@ find_struct (const char *name)
 	if (strct)
 		return strct->type;
 	return 0;
+}
+
+void
+process_enum (expr_t *enm)
+{
+	expr_t     *e = enm;
+	expr_t     *c_enum = 0;
+	int         enum_val = 0;
+
+	if (!enums) {
+		enums = Hash_NewTable (16381, enums_get_key, 0, 0);
+	}
+	while (e) {
+		expr_t     *t = e->next;
+		e->next = c_enum;
+		c_enum = e;
+		e = t;
+	}
+	for (e = c_enum; e; e = e->next) {
+		expr_t     *name = e;
+		expr_t     *val = 0;
+		enum_t     *new_enum;
+
+		if (name->type == ex_expr) {
+			val = name->e.expr.e2;
+			name = name->e.expr.e1;
+		}
+		if ((structs && find_struct (name->e.string_val))
+			|| get_enum (name->e.string_val)
+			|| PR_GetDef (NULL, name->e.string_val, 0, 0)) {
+			error (name, "%s redeclared", name->e.string_val);
+			continue;
+		}
+		if (val)
+			enum_val = val->e.integer_val;
+		new_enum = malloc (sizeof (enum_t));
+		if (!new_enum)
+			Sys_Error ("out of memory");
+		new_enum->name = name->e.string_val;
+		new_enum->value.type = ex_integer;
+		new_enum->value.e.integer_val = enum_val++;
+		Hash_Add (enums, new_enum);
+		//printf ("%s = %d\n", new_enum->name, new_enum->value.e.integer_val);
+	}
+}
+
+expr_t *
+get_enum (const char *name)
+{
+	enum_t     *e;
+
+	if (!enums)
+		return 0;
+	e = (enum_t *) Hash_Find (enums, name);
+	if (!e)
+		return 0;
+	return &e->value;
 }

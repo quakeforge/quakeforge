@@ -241,6 +241,7 @@ static keyword_t keywords[] = {
 	{"default",		DEFAULT, 0,					PROG_ID_VERSION},
 	{"NIL",			NIL,	0,					PROG_ID_VERSION},
 	{"struct",		STRUCT, 0,					PROG_VERSION},
+	{"enum",		ENUM,	0,					PROG_ID_VERSION},
 };
 
 static const char *

@@ -45,4 +45,7 @@ struct_field_t *struct_find_field (struct type_s *strct, const char *name);
 struct type_s *new_struct (const char *name);
 struct type_s *find_struct (const char *name);
 
+void process_enum (struct expr_s *enm);
+expr_t *get_enum (const char *name);
+
 #endif//__struct_h

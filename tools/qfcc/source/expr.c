@@ -103,14 +103,22 @@ void
 convert_name (expr_t *e)
 {
 	if (e->type == ex_name) {
-		const char * name = e->e.string_val;
+		const char *name = e->e.string_val;
+		def_t      *d = PR_GetDef (NULL, name, pr_scope, 0);
+		expr_t     *enm;
 
-		e->type = ex_def;
-		e->e.def = PR_GetDef (NULL, name, pr_scope, false);
-		if (!e->e.def) {
-			error (e, "Undeclared variable \"%s\".", name);
-			e->e.def = &def_float;
+		if (d) {
+			e->type = ex_def;
+			e->e.def = d;
+			return;
 		}
+		enm = get_enum (name);
+		if (enm) {
+			e->type = ex_integer;
+			e->e.integer_val = enm->e.integer_val;
+			return;
+		}
+		error (e, "Undeclared variable \"%s\".", name);
 	}
 }
 
@@ -415,6 +423,15 @@ new_bind_expr (expr_t *e1, expr_t *e2)
 	e->e.expr.op = 'b';
 	e->e.expr.e1 = e1;
 	e->e.expr.e2 = e2;
+	return e;
+}
+
+expr_t *
+new_name_expr (const char *name)
+{
+	expr_t     *e = new_expr ();
+	e->type = ex_name;
+	e->e.string_val = name;
 	return e;
 }
 

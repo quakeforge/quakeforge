@@ -26,6 +26,7 @@ static const char rcsid[] =
 #include <QF/sys.h>
 
 #include "qfcc.h"
+#include "struct.h"
 
 typedef struct locref_s {
 	struct locref_s *next;
@@ -59,6 +60,10 @@ check_for_name (type_t *type, const char *name, def_t *scope, int *allocate)
 
 	if (!defs_by_name) {
 		defs_by_name = Hash_NewTable (16381, defs_get_key, 0, &defs_by_name);
+	}
+	if (!scope && (find_struct (name) || get_enum (name))) {
+		error (0, "%s redeclared", name);
+		return 0;
 	}
 	// see if the name is already in use
 	def = (def_t *) Hash_Find (defs_by_name, name);
