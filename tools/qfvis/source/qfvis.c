@@ -646,7 +646,8 @@ LoadPortals (char *name)
 	bitbytes = ((portalleafs + 63) & ~63) >> 3;
 	bitlongs = bitbytes / sizeof (long);
 
-	// each file portal is split into two memory portals
+	// each file portal is split into two memory portals, one for each
+	// direction
 	portals = calloc (2 * numportals, sizeof (portal_t));
 
 	leafs = calloc (portalleafs, sizeof (leaf_t));

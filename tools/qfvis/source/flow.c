@@ -78,7 +78,7 @@ CheckStack (leaf_t *leaf, threaddata_t *thread)
 }
 
 /*
-	ClipToSeperators
+	ClipToSeparators
 
 	Source, pass, and target are an ordering of portals.
 
@@ -92,7 +92,7 @@ CheckStack (leaf_t *leaf, threaddata_t *thread)
 	then flipclip should be set.
 */
 winding_t	*
-ClipToSeperators (winding_t *source, winding_t *pass, winding_t *target, 
+ClipToSeparators (winding_t *source, winding_t *pass, winding_t *target, 
 				  qboolean flipclip)
 {
     float		d;
@@ -193,7 +193,7 @@ ClipToSeperators (winding_t *source, winding_t *pass, winding_t *target,
 			target = ClipWinding (target, &plane, false);
 			if (!target)
 				return NULL;	// target is not visible
-			break;				//XXX is this correct? big speedup
+			//break;				//XXX is this correct? big speedup
 		}
     }
     return target;
@@ -306,7 +306,7 @@ RecursiveLeafFlow (int leafnum, threaddata_t *thread, pstack_t *prevstack)
 		c_portaltest++;
 
 		if (options.level > 0) {
-			target = ClipToSeperators (source, prevstack->pass, target, false);
+			target = ClipToSeparators (source, prevstack->pass, target, false);
 			if (!target) {
 				FreeWinding (source);
 				continue;
@@ -314,7 +314,7 @@ RecursiveLeafFlow (int leafnum, threaddata_t *thread, pstack_t *prevstack)
 		}
 
 		if (options.level > 1) {
-			target = ClipToSeperators (prevstack->pass, source, target, true);
+			target = ClipToSeparators (prevstack->pass, source, target, true);
 			if (!target) {
 				FreeWinding (source);
 				continue;
@@ -322,7 +322,7 @@ RecursiveLeafFlow (int leafnum, threaddata_t *thread, pstack_t *prevstack)
 		}
 
 		if (options.level > 2) {
-			source = ClipToSeperators (target, prevstack->pass, source, false);
+			source = ClipToSeparators (target, prevstack->pass, source, false);
 			if (!source) {
 				FreeWinding (target);
 				continue;
@@ -330,7 +330,7 @@ RecursiveLeafFlow (int leafnum, threaddata_t *thread, pstack_t *prevstack)
 		}
 
 		if (options.level > 3) {
-			source = ClipToSeperators (prevstack->pass, target, source, true);
+			source = ClipToSeparators (prevstack->pass, target, source, true);
 			if (!source) {
 				FreeWinding (target);
 				continue;
