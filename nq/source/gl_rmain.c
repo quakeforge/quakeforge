@@ -188,25 +188,6 @@ GL_CheckGamma (unsigned char *pal)
 }
 
 
-/*
-=================
-R_CullBox
-
-Returns true if the box is completely outside the frustom
-=================
-*/
-qboolean
-R_CullBox (vec3_t mins, vec3_t maxs)
-{
-	int         i;
-
-	for (i = 0; i < 4; i++)
-		if (BoxOnPlaneSide (mins, maxs, &frustum[i]) == 2)
-			return true;
-	return false;
-}
-
-
 void
 R_RotateForEntity (entity_t *e)
 {
