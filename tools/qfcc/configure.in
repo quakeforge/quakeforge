@@ -81,7 +81,7 @@ AC_TRY_COMPILE(
 )
 
 AC_ARG_WITH(qf,
-[  --with-qf=DIR         location of QF libs and headers (prefix)],
+[  --with-qf=DIR           location of QF libs and headers (prefix)],
 	if test "x$withval" != xyes ; then
 		LIBS="$LIBS -L${withval}/lib"
 		INCLUDES="$INCLUDES -I${withval}/include"
@@ -98,12 +98,12 @@ if test "x$HAVE_QF" != xno; then
 fi
 
 AC_ARG_ENABLE(new-parser,
-	[  --enable-new-parser         enable the new parser. not yet fully functional])
+	[  --disable-new-parser    disable the new parser.])
 
-if test "x$enable_new_parser" = "xyes"; then
+if test "x$enable_new_parser" != "xno"; then
 	AC_DEFINE(NEW_PARSER)
 fi
-AM_CONDITIONAL(NEW_PARSER, test "x$enable_new_parser" = "xyes")
+AM_CONDITIONAL(NEW_PARSER, test "x$enable_new_parser" != "xno")
 
 if test "x$HAVE_QF" = xno; then
 	echo '***'
