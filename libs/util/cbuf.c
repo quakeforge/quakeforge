@@ -143,8 +143,12 @@ Cbuf_PushStack (cbuf_interpreter_t *interp)
 	cbuf_t *new;
 	if (cbuf_active->down) {
 		new = cbuf_active->down;
+		if (new->interpreter != interp) {
+			new->interpreter->destruct (new);
+			new->interpreter = interp;
+			new->interpreter->construct (new);
+		}
 		Cbuf_Reset (new);
-		new->state = CBUF_STATE_NORMAL;
 	} else
 		new = Cbuf_New (interp);
 	cbuf_active->down = new;
