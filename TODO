@@ -46,6 +46,8 @@ M  software targets should mix color at 16/16 or 24/32 color
 ?  client-only commands (rejected if done via a server stuffcmd)
 X  ~/.quakeforgerc should support all commands, not just set and setrom
 o  clean up TODO ;)
+o  add a U_PHYSICAL field to entities.  it should include a solid bit,
+   a rotated bbox bit, and mins/maxs for the bbos
 
 These are explained better in doc/ideas/rhamph.txt:
 ?  portal vis system

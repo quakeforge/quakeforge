@@ -143,21 +143,12 @@ SV_EmitNailUpdate (sizebuf_t *msg)
 	NET_SVC_Nails_Emit (&block, msg);
 }
 
-/*
-	SV_WriteDelta
-
-	Writes part of a packetentities message.
-	Can delta from either a baseline or a previous packet_entity
-*/
-void
-SV_WriteDelta (entity_state_t *from, entity_state_t *to, sizebuf_t *msg,
-			   qboolean force, int stdver)
+unsigned int
+SV_EntityState_Diff (entity_state_t *from, entity_state_t *to)
 {
-	int         bits, i;
-	float       miss;
-
-	// send an update
-	bits = 0;
+	int				i;
+	float			miss;
+	unsigned int	bits = 0;
 
 	for (i = 0; i < 3; i++) {
 		miss = to->origin[i] - from->origin[i];
@@ -191,7 +182,7 @@ SV_WriteDelta (entity_state_t *from, entity_state_t *to, sizebuf_t *msg,
 
 	// LordHavoc: cleaned up Endy's coding style, and added missing effects
 // Ender (QSG - Begin)
-	if (stdver > 1) {
+//	if (stdver > 1) {
 		if (to->alpha != from->alpha)
 			bits |= U_ALPHA;
 
@@ -206,19 +197,43 @@ SV_WriteDelta (entity_state_t *from, entity_state_t *to, sizebuf_t *msg,
 
 		if (to->colormod != from->colormod)
 			bits |= U_COLORMOD;
-	}
+//	}
 
-	if (bits >= 16777216)
+//	if (bits >= 16777216)
+	if (bits & U_GROUP_EXTEND2)
 		bits |= U_EXTEND2;
 
-	if (bits >= 65536)
+//	if (bits >= 65536)
+	if (bits & U_GROUP_EXTEND1)
 		bits |= U_EXTEND1;
 // Ender (QSG - End)
-	if (bits & 511)
+
+//	if (bits & 511)
+	if (bits & U_GROUP_MOREBITS)
 		bits |= U_MOREBITS;
 
 	if (to->flags & U_SOLID)
 		bits |= U_SOLID;
+
+	return bits;
+}
+
+/*
+	SV_WriteDelta
+
+	Writes part of a packetentities message.
+	Can delta from either a baseline or a previous packet_entity
+*/
+void
+SV_WriteDelta (entity_state_t *from, entity_state_t *to, sizebuf_t *msg,
+			   qboolean force, int stdver)
+{
+	unsigned int	bits;
+
+	// send an update
+	bits = SV_EntityState_Diff (from, to);
+	if (stdver <= 1)
+		bits &= U_VERSION_ID; // use old the original fields, no extensions
 
 	// write the message
 	if (!to->number)
@@ -228,10 +243,7 @@ SV_WriteDelta (entity_state_t *from, entity_state_t *to, sizebuf_t *msg,
 
 	if (!bits && !force)
 		return;							// nothing to send!
-	i = to->number | (bits & ~511);
-	if (i & U_REMOVE)
-		Sys_Error ("U_REMOVE");
-	MSG_WriteShort (msg, i);
+	MSG_WriteShort (msg, to->number | (bits & ~511));
 
 	if (bits & U_MOREBITS)
 		MSG_WriteByte (msg, bits & 255);
@@ -290,70 +302,108 @@ SV_WriteDelta (entity_state_t *from, entity_state_t *to, sizebuf_t *msg,
 /*
 	SV_EmitPacketEntities
 
-	Writes a delta update of a packet_entities_t to the message.
+	Writes an update of a packet_entities_t to the message.
 */
 void
 SV_EmitPacketEntities (client_t *client, packet_entities_t *to, sizebuf_t *msg)
 {
-	int         newindex, oldindex, newnum, oldnum, oldmax;
-	edict_t    *ent;
-	client_frame_t *fromframe;
+	int         index;
+	entity_state_t *baseline;
+	net_svc_packetentities_t block;
+
+	block.numwords = block.numdeltas = to->num_entities;
+
+	for (index = 0; index < to->num_entities; index++) {
+		baseline = EDICT_NUM (&sv_pr_state,
+							  to->entities[index].number)->data;
+		block.deltas[index] = to->entities[index];
+		block.deltas[index].flags =
+			SV_EntityState_Diff (baseline, &to->entities[index]);
+
+		// check if it's a client that doesn't support QSG2
+		if (client->stdver <= 1)
+			block.deltas[index].flags &= U_VERSION_ID;
+
+		block.words[index] = to->entities[index].number |
+							 (block.deltas[index].flags & ~511);
+	}
+
+	block.words[index] = 0;
+	MSG_WriteByte (msg, svc_packetentities);
+	NET_SVC_PacketEntities_Emit (&block, msg);
+}
+
+/*
+	SV_EmitDeltaPacketEntities
+
+	Writes a delta update of a packet_entities_t to the message.
+*/
+void
+SV_EmitDeltaPacketEntities (client_t *client, packet_entities_t *to,
+							sizebuf_t *msg)
+{
+	int         newindex, oldindex, newnum, oldnum;
+	int			word;
+	entity_state_t *baseline;
 	packet_entities_t *from;
+	net_svc_deltapacketentities_t block;
 
 	// this is the frame that we are going to delta update from
-	if (client->delta_sequence != -1) {
-		fromframe = &client->frames[client->delta_sequence & UPDATE_MASK];
-		from = &fromframe->entities;
-		oldmax = from->num_entities;
+	from = &client->frames[client->delta_sequence & UPDATE_MASK].entities;
 
-		MSG_WriteByte (msg, svc_deltapacketentities);
-		MSG_WriteByte (msg, client->delta_sequence);
-	} else {
-		oldmax = 0;						// no delta update
-		from = NULL;
+	block.from = client->delta_sequence;
 
-		MSG_WriteByte (msg, svc_packetentities);
-	}
-
-	newindex = 0;
-	oldindex = 0;
 //	SV_Printf ("---%i to %i ----\n", client->delta_sequence & UPDATE_MASK,
 //			   client->netchan.outgoing_sequence & UPDATE_MASK);
-	while (newindex < to->num_entities || oldindex < oldmax) {
-		newnum =
-			newindex >= to->num_entities ? 9999 :
-			to->entities[newindex].number;
-		oldnum = oldindex >= oldmax ? 9999 : from->entities[oldindex].number;
+	for (newindex = 0, oldindex = 0, word = 0;
+		 newindex < to->num_entities || oldindex < from->num_entities;
+		 word++) {
+		newnum = newindex >= to->num_entities ?
+				 9999 : to->entities[newindex].number;
+		oldnum = oldindex >= from->num_entities ?
+				 9999 : from->entities[oldindex].number;
 
-		if (newnum == oldnum) {			// delta update from old position
+		if (newnum == oldnum) {		// delta update from old position
 //			SV_Printf ("delta %i\n", newnum);
-			SV_WriteDelta (&from->entities[oldindex], &to->entities[newindex],
-						   msg, false, client->stdver);
+			block.deltas[newindex] = to->entities[newindex];
+			block.deltas[newindex].flags =
+				SV_EntityState_Diff (&from->entities[oldindex],
+									 &to->entities[newindex]);
+
+			// check if it's a client that doesn't support QSG2
+			if (client->stdver <= 1)
+				block.deltas[newindex].flags &= U_VERSION_ID;
+
+			block.words[word] = newnum | (block.deltas[newindex].flags & ~511);
+
 			oldindex++;
 			newindex++;
-			continue;
-		}
-
-		if (newnum < oldnum) {			// this is a new entity, send it from 
-										// the baseline
-			ent = EDICT_NUM (&sv_pr_state, newnum);
+		} else if (newnum < oldnum) {	// this is a new entity, send
+										// it from the baseline
+			baseline = EDICT_NUM (&sv_pr_state, newnum)->data;
 //			SV_Printf ("baseline %i\n", newnum);
-			SV_WriteDelta (ent->data, &to->entities[newindex], msg, true,
-						   client->stdver);
-			newindex++;
-			continue;
-		}
+			block.deltas[newindex] = to->entities[newindex];
+			block.deltas[newindex].flags =
+				SV_EntityState_Diff (baseline, &to->entities[newindex]);
 
-		if (newnum > oldnum) {			// the old entity isn't present in
-										// the new message
+			// check if it's a client that doesn't support QSG2
+			if (client->stdver <= 1)
+				block.deltas[newindex].flags &= U_VERSION_ID;
+
+			block.words[word] = newnum | (block.deltas[newindex].flags & ~511);
+
+			newindex++;
+		} else if (newnum > oldnum) {	// the old entity isn't
+										// present in the new message
 //			SV_Printf ("remove %i\n", oldnum);
-			MSG_WriteShort (msg, oldnum | U_REMOVE);
+			block.words[word] = oldnum | U_REMOVE;
 			oldindex++;
-			continue;
 		}
 	}
 
-	MSG_WriteShort (msg, 0);			// end of packetentities
+	block.words[word] = 0;
+	MSG_WriteByte (msg, svc_deltapacketentities);
+	NET_SVC_DeltaPacketEntities_Emit (&block, msg);
 }
 
 void
@@ -560,8 +610,10 @@ SV_WriteEntitiesToClient (client_t *client, sizebuf_t *msg)
 
 	// encode the packet entities as a delta from the
 	// last packetentities acknowledged by the client
-
-	SV_EmitPacketEntities (client, pack, msg);
+	if (client->delta_sequence != -1)
+		SV_EmitDeltaPacketEntities (client, pack, msg);
+	else
+		SV_EmitPacketEntities (client, pack, msg);
 
 	// now add the specialized nail update
 	SV_EmitNailUpdate (msg);

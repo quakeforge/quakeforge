@@ -707,6 +707,65 @@ NET_SVC_Soundlist_Parse (net_svc_soundlist_t *block, msg_t *msg)
 
 // this is a sub-block, not a real block
 void
+NET_SVC_Delta_Emit (entity_state_t *es, unsigned int bits, sizebuf_t *buf)
+{
+	// bytes of bits: [EXT2][EXT1][ORIG][MORE]
+	bits = es->flags;
+
+	if (bits & U_MOREBITS)
+		MSG_WriteByte (buf, bits & 255);
+	if (bits & U_EXTEND1) {
+		MSG_WriteByte (buf, (bits >> 16) & 255);
+		if (bits & U_EXTEND2)
+			MSG_WriteByte (buf, (bits >> 24) & 255);
+	}
+
+	if (bits & U_MODEL)
+		MSG_WriteByte (buf, es->modelindex);
+	if (bits & U_FRAME)
+		MSG_WriteByte (buf, es->frame);
+	if (bits & U_COLORMAP)
+		MSG_WriteByte (buf, es->colormap);
+	if (bits & U_SKIN)
+		MSG_WriteByte (buf, es->skinnum);
+	if (bits & U_EFFECTS)
+		MSG_WriteByte (buf, es->effects);
+
+	if (bits & U_ORIGIN1)
+		MSG_WriteCoord (buf, es->origin[0]);
+	if (bits & U_ANGLE1)
+		MSG_WriteAngle (buf, es->angles[0]);
+	if (bits & U_ORIGIN2)
+		MSG_WriteCoord (buf, es->origin[1]);
+	if (bits & U_ANGLE2)
+		MSG_WriteAngle (buf, es->angles[1]);
+	if (bits & U_ORIGIN3)
+		MSG_WriteCoord (buf, es->origin[2]);
+	if (bits & U_ANGLE3)
+		MSG_WriteAngle (buf, es->angles[2]);
+
+	if (bits & U_ALPHA)
+		MSG_WriteByte (buf, es->alpha);
+	if (bits & U_SCALE)
+		MSG_WriteByte (buf, es->scale);
+	if (bits & U_EFFECTS2)
+		MSG_WriteByte (buf, es->effects >> 8);
+	if (bits & U_GLOWSIZE)
+		MSG_WriteByte (buf, es->glow_size);
+	if (bits & U_GLOWCOLOR)
+		MSG_WriteByte (buf, es->glow_color);
+	if (bits & U_COLORMOD)
+		MSG_WriteByte (buf, es->colormod);
+	if (bits & U_FRAME2)
+		MSG_WriteByte (buf, es->frame >> 8);
+
+	if (bits & U_SOLID) {
+		// FIXME
+	}
+}
+
+// this is a sub-block, not a real block
+void
 NET_SVC_Delta_Parse (entity_state_t *es, unsigned int bits, msg_t *msg)
 {
 	// bytes of bits: [EXT2][EXT1][ORIG][MORE]
@@ -778,6 +837,29 @@ NET_SVC_Delta_Parse (entity_state_t *es, unsigned int bits, msg_t *msg)
 	}
 }
 
+net_status_t
+NET_SVC_PacketEntities_Emit (net_svc_packetentities_t *block, sizebuf_t *buf)
+{
+	int				word, delta;
+	unsigned short	bits;
+
+	for (word = 0, delta = 0; !buf->overflowed; word++) {
+		if (word > MAX_PACKET_ENTITIES * 2)
+			return NET_ERROR;
+		bits = block->words[word];
+		MSG_WriteShort (buf, bits);
+		if (!bits)
+			break;
+		if (!(bits & U_REMOVE)) {
+			if (delta >= MAX_PACKET_ENTITIES)
+				return NET_ERROR;
+			NET_SVC_Delta_Emit (&block->deltas[delta], bits, buf);
+			delta++;
+		}
+	}
+
+	return buf->overflowed;
+}
 
 net_status_t
 NET_SVC_PacketEntities_Parse (net_svc_packetentities_t *block, msg_t *msg)
@@ -786,7 +868,7 @@ NET_SVC_PacketEntities_Parse (net_svc_packetentities_t *block, msg_t *msg)
 	unsigned short	bits;
 
 	for (word = 0, delta = 0; !msg->badread; word++) {
-		if (word >= MAX_PACKET_ENTITIES * 2)
+		if (word > MAX_PACKET_ENTITIES * 2)
 			return NET_ERROR;
 		bits = (unsigned short) MSG_ReadShort (msg);
 		block->words[word] = bits;
@@ -807,6 +889,32 @@ NET_SVC_PacketEntities_Parse (net_svc_packetentities_t *block, msg_t *msg)
 }
 
 net_status_t
+NET_SVC_DeltaPacketEntities_Emit (net_svc_deltapacketentities_t *block,
+								  sizebuf_t *buf)
+{
+	int				word, delta;
+	unsigned short	bits;
+
+	MSG_WriteByte (buf, block->from);
+	for (word = 0, delta = 0; !buf->overflowed; word++) {
+		if (word > MAX_PACKET_ENTITIES * 2)
+			return NET_ERROR;
+		bits = block->words[word];
+		MSG_WriteShort (buf, bits);
+		if (!bits)
+			break;
+		if (!(bits & U_REMOVE)) {
+			if (delta >= MAX_PACKET_ENTITIES)
+				return NET_ERROR;
+			NET_SVC_Delta_Emit (&block->deltas[delta], bits, buf);
+			delta++;
+		}
+	}
+
+	return buf->overflowed;
+}
+
+net_status_t
 NET_SVC_DeltaPacketEntities_Parse (net_svc_deltapacketentities_t *block,
 								   msg_t *msg)
 {
@@ -815,7 +923,7 @@ NET_SVC_DeltaPacketEntities_Parse (net_svc_deltapacketentities_t *block,
 
 	block->from = MSG_ReadByte (msg);
 	for (word = 0, delta = 0; !msg->badread; word++) {
-		if (word >= MAX_PACKET_ENTITIES * 2)
+		if (word > MAX_PACKET_ENTITIES * 2)
 			return NET_ERROR;
 		bits = (unsigned short) MSG_ReadShort (msg);
 		block->words[word] = bits;

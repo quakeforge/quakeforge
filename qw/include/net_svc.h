@@ -245,9 +245,13 @@ net_status_t NET_SVC_Modellist_Parse (net_svc_modellist_t *block, msg_t *msg);
 net_status_t NET_SVC_Soundlist_Emit (net_svc_soundlist_t *block,
 									 sizebuf_t *buf);
 net_status_t NET_SVC_Soundlist_Parse (net_svc_soundlist_t *block, msg_t *msg);
+net_status_t NET_SVC_PacketEntities_Emit (net_svc_packetentities_t *block,
+										  sizebuf_t *buf);
 net_status_t NET_SVC_PacketEntities_Parse (net_svc_packetentities_t *block,
-									   msg_t *msg);
+										   msg_t *msg);
+net_status_t NET_SVC_DeltaPacketEntities_Emit (net_svc_deltapacketentities_t *block,
+											   sizebuf_t *buf);
 net_status_t NET_SVC_DeltaPacketEntities_Parse (net_svc_deltapacketentities_t *block,
-											msg_t *msg);
+												msg_t *msg);
 
 #endif // NET_SVC_H

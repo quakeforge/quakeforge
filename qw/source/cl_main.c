@@ -1335,8 +1335,9 @@ Host_NetError (const char *message, ...)
 
 	va_start (argptr, message);
 	Host_EndGame (message, argptr);
-	Sys_Printf ("Please report this to quake-devel@lists.sourceforge.net, "
-				"including the packet log printed out above\n");
+	Con_Printf ("%s", "Please report this to "
+				"quake-devel@lists.sourceforge.net, including the "
+				"packet log printed out above\n");
 	va_end (argptr);
 }
 

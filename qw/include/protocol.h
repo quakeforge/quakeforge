@@ -214,6 +214,22 @@
 #define U_UNUSED30	(1<<30) // future expansion
 #define U_EXTEND3	(1<<31) // another byte to follow, future expansion
 
+
+#define U_GROUP_ORIG (U_ORIGIN1 | U_ORIGIN2 | U_ORIGIN3 | \
+					  U_ANGLE2 | U_FRAME | U_REMOVE | U_MOREBITS)
+#define U_GROUP_MOREBITS (U_ANGLE1 | U_ANGLE3 | U_MODEL | \
+						  U_COLORMAP | U_SKIN | U_EFFECTS | \
+						  U_SOLID | U_EXTEND1)
+#define U_GROUP_EXTEND1 (U_ALPHA | U_SCALE | U_EFFECTS2 | \
+						 U_GLOWSIZE | U_GLOWCOLOR | U_COLORMOD | \
+						 U_EXTEND2)
+#define U_GROUP_EXTEND2 (U_GLOWTRAIL | U_VIEWMODEL | U_FRAME2)
+// I skip the UNISED and EXTEND3 bits because although they exist in
+// QSG2, they're not usable
+
+#define U_VERSION_ID ((U_GROUP_ORIG | U_GROUP_MOREBITS) & ~U_EXTEND1)
+#define U_VERSION_QSG2 (U_VERSION_ID | U_EXTEND1 | U_GROUP_EXTEND1 | \
+						U_GROUP_EFFECTS2)
 //==============================================
 
 // a sound with no channel is a local only sound
