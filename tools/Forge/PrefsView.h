@@ -46,7 +46,7 @@
 
 - (NSString *) buttonCaption;
 - (NSImage *) buttonImage;
-- (SEL) buttonSelector;
+- (SEL) buttonAction;
 - (NSView *) view;
 
 @end

@@ -146,7 +146,7 @@ static const char rcsid[] =
 	[button setImage: [aController buttonImage]];
 	[button setImagePosition: NSImageAbove];
 	[button setTarget: aController];
-	[button setAction: [aController buttonSelector]];
+	[button setAction: [aController buttonAction]];
 	[prefsViewList addColumnWithCells: [NSArray arrayWithObject: button]];
 	[prefsViewList sizeToCells];
 	[prefsViewList setNeedsDisplay: YES];
