@@ -198,6 +198,8 @@ main (int argc, char **argv)
 	dstring_replace (litfile, e - litfile->str, -1, ".lit", 5);
 
 	f = Qopen (bspfile, "rbz");
+	if (!f)
+		Sys_Error ("could not open %s for reading", bspfile);
 	bsp = LoadBSPFile (f, Qfilesize (f));
 	Qclose (f);
 	LoadEntities ();
@@ -209,12 +211,16 @@ main (int argc, char **argv)
 	WriteEntitiesToString ();
 
 	f = Qopen (bspfile, "wb");
+	if (!f)
+		Sys_Error ("could not open %s for writing", bspfile);
 	WriteBSPFile (bsp, f);
 	Qclose (f);
 
 	dstring_insert (rgblightdata, 0, "QLIT\x01\x00\x00\x00", 8);
 
 	f = Qopen (litfile->str, "wb");
+	if (!f)
+		Sys_Error ("could not open %s for writing", litfile->str);
 	Qwrite (f, rgblightdata->str, rgblightdata->size);
 	Qclose (f);
 
