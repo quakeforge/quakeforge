@@ -546,7 +546,7 @@ Cmd_TokenizeString (const char *text)
 			return;
 
 		if (cmd_argc < MAX_ARGS) {
-			if (argv_idx + strlen (com_token) + 1 > 1024) {
+			if (argv_idx + strlen (com_token) + 1 > MAX_COM_TOKEN) {
 				Con_Printf ("Cmd_TokenizeString: overflow\n");
 				return;
 			}
