@@ -62,11 +62,11 @@ extern void VID_Init8bitPalette (void);
 extern void (*vid_menudrawfn) (void);
 extern void (*vid_menukeyfn) (int);
 
-HGLRC (*qf_wglCreateContext) (HDC);
-BOOL (*qf_wglDeleteContext) (HGLRC);
-HGLRC (*qf_wglGetCurrentContext) (void);
-HDC (*qf_wglGetCurrentDC) (void);
-BOOL (*qf_wglMakeCurrent) (HDC, HGLRC);
+HGLRC (GLAPIENTRY *qf_wglCreateContext) (HDC);
+BOOL (GLAPIENTRY *qf_wglDeleteContext) (HGLRC);
+HGLRC (GLAPIENTRY *qf_wglGetCurrentContext) (void);
+HDC (GLAPIENTRY *qf_wglGetCurrentDC) (void);
+BOOL (GLAPIENTRY *qf_wglMakeCurrent) (HDC, HGLRC);
 
 #define MAX_MODE_LIST	30
 #define VID_ROW_SIZE	3
