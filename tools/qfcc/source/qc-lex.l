@@ -17,6 +17,8 @@ int do_grab (char *token);
 
 void add_frame_macro (char *token);
 
+char *make_string (char *token);
+
 extern YYSTYPE yylval;
 
 %}
@@ -62,10 +64,7 @@ m		([\-+]?)
 {ID}	return type_or_name(yytext);
 
 \"(\\.|[^"])*\"		{
-						int len = strlen (yytext) - 2;
-						yylval.string_val = malloc (len + 1);
-						strncpy (yylval.string_val, yytext + 1, len);
-						yylval.string_val[len] = 0;
+						yylval.string_val = make_string (yytext);
 						return STRING_VAL;
 					}
 
@@ -255,4 +254,16 @@ clear_frame_macros (void)
 	frame_number = 0;
 	if (frame_tab)
 		Hash_FlushTable (frame_tab);
+}
+
+char *
+make_string (char *token)
+{
+	char *str;
+
+	pr_file_p = token + 1;
+	PR_LexString ();
+	str = malloc (pr_token_len + 1);
+	memcpy (str, pr_token, pr_token_len + 1);
+	return str;
 }

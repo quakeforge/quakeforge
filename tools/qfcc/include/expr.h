@@ -1,4 +1,5 @@
 typedef enum {
+	ex_label,
 	ex_expr,	// binary expression
 	ex_uexpr,	// unary expression
 	ex_def,
@@ -9,10 +10,17 @@ typedef enum {
 	ex_quaternion,
 } expr_type;
 
+typedef struct {
+	statref_t	*refs;
+	dstatement_t *statement;
+	char *name;
+} label_t;
+
 typedef struct expr_s {
 	struct expr_s *next;
 	expr_type	type;
 	union {
+		label_t *label;
 		struct {
 			int		op;
 			type_t	*type;

@@ -8,11 +8,13 @@
 #include "qc-parse.h"
 
 void yyerror (const char*);
+extern function_t *current_func;
 
 static etype_t qc_types[] = {
-	ev_void,
-	ev_void,
-	ev_void,
+	ev_void,	// ex_label
+	ev_void,	// ex_expr
+	ev_void,	// ex_uexpr
+	ev_void,	// ex_def
 	ev_void,	// FIXME ex_int
 	ev_float,	// ex_float
 	ev_string,	// ex_string
@@ -35,6 +37,7 @@ static etype_t
 get_type (expr_t *e)
 {
 	switch (e->type) {
+		case ex_label:
 		case ex_quaternion: //FIXME
 			return ev_void;
 		case ex_expr:
@@ -65,13 +68,14 @@ expr_t *
 label_expr (void)
 {
 	static int label = 0;
+	int lnum = ++label;
+	const char *fname = current_func->def->name;
 
 	expr_t *l = new_expr ();
-	l->type = ex_uexpr;
-	l->e.expr.op = 'l';
-	l->e.expr.e1 = new_expr ();
-	l->e.expr.e1->type = ex_int;
-	l->e.expr.e1->e.int_val = label++;
+	l->type = ex_label;
+	l->e.label = calloc (1, sizeof (label_t));
+	l->e.label->name = malloc (1 + strlen (fname) + 1 + ceil (log10 (lnum)) + 1);
+	sprintf (l->e.label->name, "$%s_%d", fname, lnum);
 	return l;
 }
 
@@ -84,6 +88,9 @@ print_expr (expr_t *e)
 		return;
 	}
 	switch (e->type) {
+		case ex_label:
+			printf ("%s", e->e.label->name);
+			break;
 		case ex_expr:
 			print_expr (e->e.expr.e1);
 			if (e->e.expr.op == 'c') {
@@ -434,6 +441,8 @@ unary_expr (int op, expr_t *e)
 	switch (op) {
 		case '-':
 			switch (e->type) {
+				case ex_label:
+					abort ();
 				case ex_uexpr:
 					if (e->e.expr.op == '-')
 						return e->e.expr.e1;
@@ -472,6 +481,8 @@ unary_expr (int op, expr_t *e)
 			break;
 		case '!':
 			switch (e->type) {
+				case ex_label:
+					abort ();
 				case ex_uexpr:
 				case ex_expr:
 				case ex_def:

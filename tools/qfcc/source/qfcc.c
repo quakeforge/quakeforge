@@ -915,6 +915,7 @@ Options: \n\
 		printf ("compiling %s\n", filename);
 
 		yyin = fopen (filename, "rt");
+		s_file = ReuseString (filename);
 		lineno = 1;
 		clear_frame_macros ();
 		if (yyparse ()) {

@@ -41,6 +41,7 @@ char			*pr_line_start;		// start of current source line
 int 			pr_bracelevel;
 
 char			pr_token[2048];
+int				pr_token_len;
 token_type_t	pr_token_type;
 type_t			*pr_immediate_type;
 eval_t			pr_immediate;
@@ -157,12 +158,11 @@ void
 PR_LexString (void)
 {
 	int         c;
-	int         len;
 	int			i;
 	int			mask;
 	int			boldnext;
 
-	len = 0;
+	pr_token_len = 0;
 	mask = 0x00;
 	boldnext = 0;
 
@@ -253,7 +253,7 @@ PR_LexString (void)
 					break;
 			}
 		} else if (c == '\"') {
-			pr_token[len] = 0;
+			pr_token[pr_token_len] = 0;
 			pr_token_type = tt_immediate;
 			pr_immediate_type = &type_string;
 			strcpy (pr_immediate_string, pr_token);
@@ -263,8 +263,8 @@ PR_LexString (void)
 			c = c ^ 0x80;
 		boldnext = 0;
 		c = c ^ mask;
-		pr_token[len] = c;
-		len++;
+		pr_token[pr_token_len] = c;
+		pr_token_len++;
 	} while (1);
 }
 

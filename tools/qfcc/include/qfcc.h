@@ -412,6 +412,7 @@ typedef enum {
 } token_type_t;
 
 extern	char		pr_token[2048];
+extern	int			pr_token_len;
 extern	token_type_t	pr_token_type;
 extern	type_t		*pr_immediate_type;
 extern	eval_t		pr_immediate;
@@ -419,6 +420,7 @@ extern	eval_t		pr_immediate;
 void PR_PrintStatement (dstatement_t *s);
 
 void PR_Lex (void);
+void PR_LexString (void);
 // reads the next token into pr_token and classifies its type
 
 type_t *PR_ParseType (void);

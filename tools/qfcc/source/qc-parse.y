@@ -76,6 +76,7 @@ typedef struct {
 type_t	*current_type;
 def_t	*current_def;
 def_t	param_scope;
+function_t *current_func;
 
 %}
 
@@ -252,7 +253,7 @@ opt_initializer
 begin_function
 	: /*empty*/
 		{
-			$$ = new_function ();
+			$$ = current_func = new_function ();
 			$$->def = current_def;
 			$$->code = numstatements;
 			pr_scope = current_def;
