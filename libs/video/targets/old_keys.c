@@ -213,7 +213,7 @@ old_keyname_t   old_keynames[] = {
 hashtab_t  *old_key_table;
 
 static const char *
-get_key (void *_ok, void *unused)
+ok_get_key (void *_ok, void *unused)
 {
 	old_keyname_t *ok = (old_keyname_t *)_ok;
 	return ok->old_name;
@@ -224,7 +224,7 @@ OK_Init (void)
 {
 	old_keyname_t *ok;
 
-	old_key_table = Hash_NewTable (1021, get_key, 0, 0);
+	old_key_table = Hash_NewTable (1021, ok_get_key, 0, 0);
 	for (ok = old_keynames; ok->old_name; ok++)
 		Hash_Add (old_key_table, ok);
 }

@@ -66,7 +66,7 @@ cvar_t     *fs_pluginpath;
 hashtab_t  *registered_plugins;
 
 static const char *
-get_key (void *pl, void *unused)
+plugin_get_key (void *pl, void *unused)
 {
 	return ((plugin_list_t *)pl)->name;
 }
@@ -88,7 +88,7 @@ void
 PI_Init (void)
 {
 	PI_InitCvars ();
-	registered_plugins = Hash_NewTable (253, get_key, 0, 0);
+	registered_plugins = Hash_NewTable (253, plugin_get_key, 0, 0);
 }
 
 void

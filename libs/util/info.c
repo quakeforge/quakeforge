@@ -185,7 +185,7 @@ Info_Print (info_t *info)
 }
 
 static const char *
-get_key (void *k, void *unused)
+info_get_key (void *k, void *unused)
 {
 	return ((info_key_t *)k)->key;
 }
@@ -207,7 +207,7 @@ Info_ParseString (const char *s, int maxsize)
 	char       *key, *value, *end;
 
 	info = malloc (sizeof (info_t));
-	info->tab = Hash_NewTable (61, get_key, free_key, 0);
+	info->tab = Hash_NewTable (61, info_get_key, free_key, 0);
 	info->maxsize = maxsize;
 	info->cursize = 0;
 

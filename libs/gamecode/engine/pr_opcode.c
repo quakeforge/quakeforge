@@ -203,7 +203,7 @@ opcode_t    pr_opcodes[] = {
 
 
 static const char *
-get_key (void *_op, void *unused)
+opcode_get_key (void *_op, void *unused)
 {
 	static char		rep[4];
 	char		   *r = rep;
@@ -223,7 +223,7 @@ PR_Opcode (short opcode)
 	opcode_t	op;
 
 	op.opcode = opcode;
-	strcpy (rep, get_key (&op, 0));
+	strcpy (rep, opcode_get_key (&op, 0));
 	return Hash_Find (opcode_table, rep);
 }
 
@@ -232,7 +232,7 @@ PR_Opcode_Init (void)
 {
 	opcode_t   *op;
 
-	opcode_table = Hash_NewTable (1021, get_key, 0, 0);
+	opcode_table = Hash_NewTable (1021, opcode_get_key, 0, 0);
 
 	for (op = pr_opcodes; op->name; op++) {
 		Hash_Add (opcode_table, op);
