@@ -11,7 +11,7 @@ EXEEXT=
 plugin_PROGRAMS=	@SND_PLUGIN_TARGETS@
 noinst_PROGRAMS=	@SND_PLUGIN_STATIC@
 EXTRA_PROGRAMS= \
-	snd_output_sdl.la snd_output_alsa.la \
+	snd_output_sdl.la snd_output_alsa.la snd_output_alsa0_9.la\
 	snd_output_oss.la snd_output_sgi.la snd_output_sun.la \
 	snd_output_win.la snd_output_dx.la snd_output_disk.la
 
@@ -24,6 +24,11 @@ snd_output_alsa_la_LDFLAGS=	$(plugin_ldflags)
 snd_output_alsa_la_LDADD=
 snd_output_alsa_la_CFLAGS=	$(ALSA_CFLAGS)
 snd_output_alsa_la_SOURCES=	snd_alsa.c
+
+snd_output_alsa0_9_la_LDFLAGS=	$(plugin_ldflags)
+snd_output_alsa0_9_la_LDADD=
+snd_output_alsa0_9_la_CFLAGS=	$(ALSA_CFLAGS)
+snd_output_alsa0_9_la_SOURCES=	snd_alsa_0_9.c
 
 snd_output_oss_la_LDFLAGS=	$(plugin_ldflags)
 snd_output_oss_la_LDADD=	$(OSS_LIBS)
