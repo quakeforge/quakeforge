@@ -159,7 +159,7 @@ static builtin_t builtins[] = {
 void
 RUA_Cmd_Init (progs_t *pr, int secure)
 {
-	cmd_resources_t *res = malloc (sizeof (cmd_resources_t));
+	cmd_resources_t *res = calloc (1, sizeof (cmd_resources_t));
 
 	res->cmds = 0;
 	PR_Resources_Register (pr, "Cmd", res, bi_cmd_clear);

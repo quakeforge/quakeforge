@@ -54,7 +54,7 @@ void RUA_Script_Init (progs_t *pr, int secure);
 void RUA_String_Init (struct progs_s *pr, int secure);
 
 void RUA_QFile_Init (struct progs_s *pr, int secure);
-QFile **QFile_AllocHandle (struct progs_s *pr, qfile_resources_t *res);
+int QFile_AllocHandle (struct progs_s *pr, QFile *file);
 
 void RUA_QFS_Init (struct progs_s *pr, int secure);
 

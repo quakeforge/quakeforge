@@ -99,16 +99,16 @@ bi_QFS_LoadFile (progs_t *pr)
 static void
 bi_QFS_OpenFile (progs_t *pr)
 {
-	qfile_resources_t *res = PR_Resources_Find (pr, "QFile");
-	QFile     **file = QFile_AllocHandle (pr, res);
+	QFile      *file;
 	const char *filename = P_GSTRING (pr, 0);
 
-	QFS_FOpenFile (filename, file);
-	if (!*file) {
-		RETURN_POINTER (pr, 0);
+	QFS_FOpenFile (filename, &file);
+	if (!file) {
+		R_INT (pr) = 0;
 		return;
 	}
-	R_INT (pr) = (file - res->handles) + 1;
+	if (!(R_INT (pr) = QFile_AllocHandle (pr, file)))
+		Qclose (file);
 }
 
 static void
@@ -136,9 +136,9 @@ bi_QFS_Filelist (progs_t *pr)
 	list = PR_Zone_Malloc (pr, sizeof (list) + filelist->count * 4);
 	list->count = filelist->count;
 	strings = (string_t *) list + 1;
-	list->list = POINTER_TO_PROG (pr, strings);
+	list->list = PR_SetPointer (pr, strings);
 	for (i = 0; i < filelist->count; i++)
-		strings[i] = PR_SetString (pr, filelist->list[i]);
+		strings[i] = PR_SetTempString (pr, filelist->list[i]);
 	RETURN_POINTER (pr, list);
 }
 
