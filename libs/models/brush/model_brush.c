@@ -177,7 +177,7 @@ Mod_LoadTextures (lump_t *l)
 		memcpy (tx + 1, mt + 1, pixels);
 
 		if (!strncmp (mt->name, "sky", 3))
-			R_InitSky (tx);
+			loadmodel->skytexture = tx;
 		else {
 			Mod_ProcessTexture (mt, tx);
 		}

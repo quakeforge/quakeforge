@@ -193,8 +193,10 @@ R_NewMap (model_t *worldmodel, struct model_s **models, int num_models)
 		tex = r_worldentity.model->textures[i];
 		if (!tex)
 			continue;
-		if (!strncmp (tex->name, "sky", 3))
+		if (!strncmp (tex->name, "sky", 3)) {
 			skytexturenum = i;
+			R_InitSky (tex);
+		}
 		if (!strncmp (tex->name, "window02_1", 10))
 			mirrortexturenum = i;
 		tex->texturechain = NULL;

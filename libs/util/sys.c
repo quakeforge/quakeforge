@@ -504,7 +504,7 @@ Sys_DebugLog (const char *file, const char *fmt, ...)
 }
 
 int
-Sys_CheckInput (int idle, int net_socket)
+Sys_CheckInput (int idle, unsigned int net_socket)
 {
 	fd_set      fdset;
 	int         res;

@@ -119,7 +119,7 @@ QFGL_LoadLibrary (void)
 
 	if (!(handle = LoadLibrary (gl_driver->string)))
 		Sys_Error ("Couldn't load OpenGL library %s!", gl_driver->string);
-	(FARPROC) glGetProcAddress = GetProcAddress (handle, "wglGetProcAddress");
+	glGetProcAddress = (void *(WINAPI *)(const char*)) GetProcAddress (handle, "wglGetProcAddress");
 	return handle;
 }
 
@@ -452,7 +452,7 @@ void
 VID_Init (unsigned char *palette)
 {
 	BOOL		stat;
-	int			bpp, vid_mode;
+	WORD		bpp, vid_mode;
 	HDC			hdc;
 	HGLRC		baseRC;
 	DWORD		lasterror;

@@ -166,7 +166,7 @@ _JOY_Read (void)
 void
 JOY_Read (void)
 {
-	int         i;
+	DWORD       i;
 	DWORD       buttonstate, povstate;
 
 	if (!joy_found) {
