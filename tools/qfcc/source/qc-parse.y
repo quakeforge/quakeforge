@@ -1237,21 +1237,22 @@ methoddef
 			$2 = class_find_method (current_class, $2);
 		}
 	  opt_state_expr
+		{ $<op>$ = current_storage; }
 		{
 			$$ = $2->def = method_def (current_class, $2);
 			current_params = $2->params;
 		}
-	  begin_function statement_block end_function
+	  begin_function statement_block { $<op>$ = $<op>5; } end_function
 		{
-			$2->func = $6;
-			build_function ($6);
+			$2->func = $7;
+			build_function ($7);
 			if ($4) {
-				$4->next = $7;
-				emit_function ($6, $4);
+				$4->next = $8;
+				emit_function ($7, $4);
 			} else {
-				emit_function ($6, $7);
+				emit_function ($7, $8);
 			}
-			finish_function ($6);
+			finish_function ($7);
 		}
 	| '+' methoddecl '=' '#' const ';'
 		{
@@ -1267,21 +1268,22 @@ methoddef
 			$2 = class_find_method (current_class, $2);
 		}
 	  opt_state_expr
+		{ $<op>$ = current_storage; }
 		{
 			$$ = $2->def = method_def (current_class, $2);
 			current_params = $2->params;
 		}
-	  begin_function statement_block end_function
+	  begin_function statement_block { $<op>$ = $<op>5; } end_function
 		{
-			$2->func = $6;
-			build_function ($6);
+			$2->func = $7;
+			build_function ($7);
 			if ($4) {
-				$4->next = $7;
-				emit_function ($6, $4);
+				$4->next = $8;
+				emit_function ($7, $4);
 			} else {
-				emit_function ($6, $7);
+				emit_function ($7, $8);
 			}
-			finish_function ($6);
+			finish_function ($7);
 		}
 	| '-' methoddecl '=' '#' const ';'
 		{
