@@ -592,16 +592,14 @@ Con_CompleteCommandLine (void)
 		return;
 	
 	if (c + v + a == 1) {
-		char **l;
 		if (c)
-			l = Cmd_CompleteBuildList(s);
+			list[0] = Cmd_CompleteBuildList(s);
 		else if (v)
-			l = Cvar_CompleteBuildList(s);
+			list[0] = Cvar_CompleteBuildList(s);
 		else
-			l = Cmd_CompleteAliasBuildList(s);
-		cmd = *l;
+			list[0] = Cmd_CompleteAliasBuildList(s);
+		cmd = *list[0];
 		cmd_len = strlen (cmd);
-		free (l);
 	} else {
 		if (c)
 			cmd = *(list[0] = Cmd_CompleteBuildList(s));
@@ -635,19 +633,16 @@ Con_CompleteCommandLine (void)
 		if (c) {
 			Con_Printf("%i possible command%s\n", c, (c > 1) ? "s: " : ":");
 			Con_DisplayList(list[0], con_linewidth);
-			free(list[0]);
 		}
 		
 		if (v) {
 			Con_Printf("%i possible variable%s\n", v, (v > 1) ? "s: " : ":");
 			Con_DisplayList(list[1], con_linewidth);
-			free(list[1]);
 		}
 		
 		if (a) {
 			Con_Printf("%i possible aliases%s\n", a, (a > 1) ? "s: " : ":");
 			Con_DisplayList(list[2], con_linewidth);
-			free(list[2]);
 		}
 	}
 	
