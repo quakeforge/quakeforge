@@ -867,8 +867,8 @@ main (int argc, char **argv)
 	dstring_appendstr (portalfile, ".prt");
 	LoadPortals (portalfile->str);
 
-//	uncompressed = malloc (bitbytes * portalleafs);
-//	memset (uncompressed, 0, bitbytes * portalleafs);
+	uncompressed = malloc (bitbytes * portalleafs);
+	memset (uncompressed, 0, bitbytes * portalleafs);
 
 	CalcVis ();
 
