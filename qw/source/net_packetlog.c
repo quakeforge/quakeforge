@@ -175,6 +175,8 @@ char       *clc_string[] = {
 
 QFile      *Net_PacketLog;
 
+char      **Net_sound_precache;
+
 /*
 	NET_LogPrintf
 
@@ -491,9 +493,7 @@ Parse_Server_Packet ()
 									   (float) MSG_ReadByte (net_message) / 64.0);
 					ii = MSG_ReadByte (net_message);
 
-					// FIXME: well, cl. for client :-)
-//                                        Net_LogPrintf ("%d (%s) ", ii, sv.sound_precache[ii]);
-                                        Net_LogPrintf ("%d (%s) ", ii);
+					Net_LogPrintf ("%d (%s) ", ii, Net_sound_precache[ii]);
 					Net_LogPrintf ("Pos: ");
 					for (ii = 0; ii < 3; ii++)
 						Net_LogPrintf ("%f ", MSG_ReadCoord (net_message));
@@ -961,8 +961,10 @@ Parse_Client_Packet (void)
 }
 
 int
-Net_Log_Init (void)
+Net_Log_Init (char **sound_precache)
 {
+	Net_sound_precache = sound_precache;
+
 	netlogger =
 		Cvar_Get ("net_logger", "1", CVAR_NONE, NULL, "Packet logging/parsing");
 

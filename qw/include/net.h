@@ -132,7 +132,7 @@ qboolean Netchan_CanPacket (netchan_t *chan);
 qboolean Netchan_CanReliable (netchan_t *chan);
 
 #ifdef PACKET_LOGGING
-extern int Net_Log_Init (void);
+extern int Net_Log_Init (char **sound_precache);
 extern void Log_Incoming_Packet (char *p, int len);
 extern void Log_Outgoing_Packet (char *p, int len);
 extern void Net_LogStop (void);

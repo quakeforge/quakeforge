@@ -1127,7 +1127,14 @@ CL_Init (void)
 
 	PI_Init ();
 #ifdef PACKET_LOGGING
-	Net_Log_Init ();
+	{
+		static char *sound_precache[MAX_MODELS];
+		int i;
+
+		for (i = 0; i < MAX_MODELS; i++)
+			sound_precache[i] = cl.sound_name[i];
+		Net_Log_Init (sound_precache);
+	}
 #endif
 	CL_Input_Init ();
 	CL_Ents_Init ();
