@@ -1188,7 +1188,6 @@ SV_EasyRecord_f (void)
 	dstring_t  *name = dstring_newstr ();
 	dstring_t  *name2 = dstring_newstr ();
 	int         i;
-	QFile      *f;
 
 	if (Cmd_Argc () > 2) {
 		Con_Printf ("easyrecord [demoname]\n");
