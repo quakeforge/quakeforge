@@ -53,7 +53,7 @@ sv_fields_t sv_fields;
 progs_t	    sv_pr_state;
 cvar_t     *r_skyname;
 cvar_t     *sv_progs;
-cvar_t     *pr_checkextentions;
+cvar_t     *pr_checkextensions;
 cvar_t     *sv_old_entity_free;
 
 func_t	EndFrame;
@@ -382,7 +382,7 @@ SV_Progs_Init_Cvars (void)
 	sv_progs = Cvar_Get ("sv_progs", "qwprogs.dat", CVAR_NONE, NULL,
 						 "Allows selectable game progs if you have several "
 						 "of them in the gamedir");
-	pr_checkextentions = Cvar_Get ("sv_progs", "1", CVAR_ROM, NULL,
+	pr_checkextensions = Cvar_Get ("pr_checkextensions", "1", CVAR_ROM, NULL,
 								   "indicate the presence of the "
 								   "checkextentions qc function");
 	sv_old_entity_free = Cvar_Get ("sv_old_entity_free", "0", CVAR_NONE, NULL,
