@@ -39,11 +39,16 @@
 #include "gui/Rect.h"
 #include "gui/Slider.h"
 
-RangeSlider gamma_range;
-RangeSlider viewsize_range;
-RangeSlider mouse_amp_range;
-RangeSlider volume_range;
-RangeSlider bgmvolume_range;
+CvarToggleView fullscreen_view;
+CvarToggleView crosshair_view;
+CvarToggleView fps_view;
+CvarToggleView time_view;
+
+CvarRangeView gamma_view;
+CvarRangeView viewsize_view;
+CvarRangeView mouse_amp_view;
+CvarRangeView volume_view;
+CvarRangeView bgmvolume_view;
 
 /*
 	some definitions of border values for different things
@@ -85,7 +90,7 @@ CB_video_options =
 
 	switch (text) {
 		case "fullscreen":
-			Cbuf_AddText ("toggle vid_fullscreen\n");
+			[fullscreen_view toggle];
 			break;
 		case "crosshair":
 			selected_crosshair = (integer) cvar ("crosshair");
@@ -96,28 +101,22 @@ CB_video_options =
 			cvar_set ("crosshair", itos (selected_crosshair));
 			break;
 		case "fps":
-			Cbuf_AddText ("toggle hud_fps\n");
+			[fps_view toggle];
 			break;
 		case "time":
-			Cbuf_AddText ("toggle hud_time\n");
+			[time_view toggle];
 			break;
-	}
-
-	if(!(key == QFK_RIGHT || key == QFK_LEFT )) {
-		return 0;
-	}
-	switch (text) {
 		case "gamma":
-			if ((key == QFK_RIGHT) && (key != QFK_LEFT))
-				[gamma_range inc];
-			else
-				[gamma_range dec];
+			if (key == QFK_RIGHT)
+				[gamma_view inc];
+			else if (key == QFK_LEFT)
+				[gamma_view dec];
 			break;
 		case "viewsize":
-			if ((key == QFK_RIGHT) && (key != QFK_LEFT))
-				[viewsize_range inc];
-			else
-				[viewsize_range dec];
+			if (key == QFK_RIGHT)
+				[viewsize_view inc];
+			else if (key == QFK_LEFT)
+				[viewsize_view dec];
 			break;
 	}
 	return 0;
@@ -131,27 +130,26 @@ CB_video_options =
 integer (integer x, integer y) 
 DRAW_video_options = 
 {
-	local integer	bar_pad, spacing = 120;
+	local integer	spacing = 120;
+
+	[fullscreen_view setBasePos:x y:y];
+	[fps_view setBasePos:x y:y];
+	[time_view setBasePos:x y:y];
+	[gamma_view setBasePos:x y:y];
+	[viewsize_view setBasePos:x y:y];
 
 	Draw_Pic (x + 16, y + 4, Draw_CachePic ("gfx/qplaque.lmp", 1));
 	Draw_CenterPic (x + 160, y + 4, Draw_CachePic ("gfx/p_option.lmp", 1));
 	Draw_String	(x + 54, y + 40, "Video");
 	Draw_String	(x + 54, y + 50, "-----");
-	draw_val_item (x + 70, y + 60, spacing, "Fullscreen", 
-				   cvar ("vid_fullscreen") ? "On" : "Off");
+
+	[fullscreen_view draw];
 	draw_val_item (x + 70, y + 70, spacing, "Crosshair",
 				   ftos (cvar ("crosshair")));
-	draw_val_item (x + 70, y + 80, spacing, "Show fps", 
-				   cvar ("hud_fps") ? "On" : "Off");
-	draw_val_item (x + 70, y + 90, spacing, "Show time", 
-				   cvar ("hud_time") ? "On" : "Off");
-	bar_pad = y + 90;
-
-	[gamma_range setBasePos:x y:y];
-	[gamma_range draw];
-
-	[viewsize_range setBasePos:x y:y];
-	[viewsize_range draw];
+	[fps_view draw];
+	[time_view draw];
+	[gamma_view draw];
+	[viewsize_view draw];
 
 	opt_cursor  (x + 62, y + (Menu_GetIndex () * 10) + 60);
 	return 1;
@@ -172,11 +170,26 @@ MENU_video_options =
 	Menu_FadeScreen (1);
 	Menu_Draw (DRAW_video_options);
 
-	rect = [[Rect alloc] initWithComponents:70 :100 :224 :8];
-	gamma_range = [[RangeSlider alloc] initWithBounds:rect title:"Gamma:" sliderWidth:17 * 8 :[[CvarRange alloc] initWithCvar:"vid_gamma" min:MIN_GAMMA max:MAX_GAMMA step:GAMMA_STEP]];
+	rect = [[Rect alloc] initWithComponents:70 :60 :224 :8];
+	fullscreen_view = [[CvarToggleView alloc] initWithBounds:rect title:"Fullscreen" :[[CvarToggle alloc] initWithCvar:"vid_fullscreen"]];
 
 	rect.origin.y += 10;
-	viewsize_range = [[RangeSlider alloc] initWithBounds:rect title:"Viewsize:" sliderWidth:14 * 8 :[[CvarRange alloc] initWithCvar:"viewsize" min:MIN_VIEWSIZE max:MAX_VIEWSIZE step:VIEWSIZE_STEP]];
+	//crosshair_view = [[CvarToggleView alloc] initWithBounds:rect title:"Crosshair" :[[CvarToggle alloc] initWithCvar:"crosshair"]];
+
+
+	rect.origin.y += 10;
+	fps_view = [[CvarToggleView alloc] initWithBounds:rect title:"Show FPS" :[[CvarToggle alloc] initWithCvar:"hud_fps"]];
+
+
+	rect.origin.y += 10;
+	time_view = [[CvarToggleView alloc] initWithBounds:rect title:"Show time" :[[CvarToggle alloc] initWithCvar:"hud_time"]];
+
+
+	rect.origin.y += 10;
+	gamma_view = [[CvarRangeView alloc] initWithBounds:rect title:"Gamma:" sliderWidth:17 * 8 :[[CvarRange alloc] initWithCvar:"vid_gamma" min:MIN_GAMMA max:MAX_GAMMA step:GAMMA_STEP]];
+
+	rect.origin.y += 10;
+	viewsize_view = [[CvarRangeView alloc] initWithBounds:rect title:"Viewsize:" sliderWidth:14 * 8 :[[CvarRange alloc] initWithCvar:"viewsize" min:MIN_VIEWSIZE max:MAX_VIEWSIZE step:VIEWSIZE_STEP]];
 	[rect dealloc];
 	
 	Menu_Item (54, 60, "fullscreen", CB_video_options, 0);
@@ -203,15 +216,15 @@ MENU_video_options =
 integer (string text, integer key) 
 CB_audio_options =
 {
-	local RangeSlider range;
+	local CvarRangeView range;
 
 	if(!(key == QFK_RIGHT || key == QFK_LEFT )) {
 		return 0;
 	}
 	if (text == "volume")
-		range = volume_range;
+		range = volume_view;
 	else
-		range = bgmvolume_range;
+		range = bgmvolume_view;
 
 	if ((key == QFK_RIGHT) && (key != QFK_LEFT))
 		[range inc];
@@ -229,7 +242,6 @@ CB_audio_options =
 integer (integer x, integer y) 
 DRAW_audio_options = 
 {
-	local string tmp = ftos (cvar ("crosshair"));
 	local integer bar_pad, spacing = 120;
 
 	Draw_Pic (x + 16, y + 4, Draw_CachePic ("gfx/qplaque.lmp", 1));
@@ -238,11 +250,11 @@ DRAW_audio_options =
 	Draw_String	(x + 54, y + 50, "-----");
 	bar_pad = y + 50;
 
-	[volume_range setBasePos:x y:y];
-	[volume_range draw];
+	[volume_view setBasePos:x y:y];
+	[volume_view draw];
 
-	[bgmvolume_range setBasePos:x y:y];
-	[bgmvolume_range draw];
+	[bgmvolume_view setBasePos:x y:y];
+	[bgmvolume_view draw];
 
 	opt_cursor  (x + 62, y + (Menu_GetIndex() * 10) + 60);
 	return 1;
@@ -264,9 +276,9 @@ MENU_audio_options =
 	Menu_Draw (DRAW_audio_options);
 
 	rect = [[Rect alloc] initWithComponents:70 :60 :17 * 8 :8];
-	volume_range = [[RangeSlider alloc] initWithBounds:rect title:"Volume:" sliderWidth:14 * 8 :[[CvarRange alloc] initWithCvar:"volume" min:MIN_VOLUME max:MAX_VOLUME step:VOLUME_STEP]];
+	volume_view = [[CvarRangeView alloc] initWithBounds:rect title:"Volume:" sliderWidth:14 * 8 :[[CvarRange alloc] initWithCvar:"volume" min:MIN_VOLUME max:MAX_VOLUME step:VOLUME_STEP]];
 	rect.origin.y += 8;
-	bgmvolume_range = [[RangeSlider alloc] initWithBounds:rect title:"Music :" sliderWidth:14 * 8 :[[CvarRange alloc] initWithCvar:"bgmvolume" min:MIN_VOLUME max:MAX_VOLUME step:VOLUME_STEP]];
+	bgmvolume_view = [[CvarRangeView alloc] initWithBounds:rect title:"Music :" sliderWidth:14 * 8 :[[CvarRange alloc] initWithCvar:"bgmvolume" min:MIN_VOLUME max:MAX_VOLUME step:VOLUME_STEP]];
 	[rect dealloc];
 	
 	bar_pad = 0;
@@ -330,9 +342,9 @@ CB_control_options =
 	switch (text) {
 		case "mouseamp":
 			if ((key == QFK_RIGHT) && (key != QFK_LEFT))
-				[mouse_amp_range inc];
+				[mouse_amp_view inc];
 			else
-				[mouse_amp_range dec];
+				[mouse_amp_view dec];
 			break;
 	}
 	return 0;
@@ -362,8 +374,8 @@ DRAW_control_options =
 				   cvar ("m_pitch") < 0 ?  "On" : "Off");
 	bar_pad = y + 90;
 
-	[mouse_amp_range setBasePos:x y:y];
-	[mouse_amp_range draw];
+	[mouse_amp_view setBasePos:x y:y];
+	[mouse_amp_view draw];
 
 	draw_val_item (x + 70, y + 110, spacing, "Freelook",
 				   cvar("freelook") ? "On" : "Off");
@@ -390,7 +402,7 @@ MENU_control_options =
 	Menu_CenterPic (160, 4, "gfx/p_option.lmp");
 
 	Menu_Draw (DRAW_control_options);
-	mouse_amp_range = [[RangeSlider alloc] initWithBounds:[[Rect alloc] initWithComponents:70 :100 :232 :8] title:"Mouse amp:" sliderWidth:14 * 8 :[[CvarRange alloc] initWithCvar:"in_mouse_amp" min:MIN_MOUSE_AMP max:MAX_MOUSE_AMP step:MOUSE_AMP_STEP]];
+	mouse_amp_view = [[CvarRangeView alloc] initWithBounds:[[Rect alloc] initWithComponents:70 :100 :232 :8] title:"Mouse amp:" sliderWidth:14 * 8 :[[CvarRange alloc] initWithCvar:"in_mouse_amp" min:MIN_MOUSE_AMP max:MAX_MOUSE_AMP step:MOUSE_AMP_STEP]];
 
 	MENU_control_binding ();
 

@@ -6,6 +6,25 @@
 @class Text;
 @class Slider;
 
+@interface CvarToggle : Object
+{
+	string name;
+}
+-(id)initWithCvar:(string)cvname;
+-(void)toggle;
+-(BOOL)value;
+@end
+
+@interface CvarToggleView : Group
+{
+	Text title;
+	Text value;
+	CvarToggle toggle;
+}
+-(id)initWithBounds:(Rect)aRect title:(string)_title :(CvarToggle)_toggle;
+-(void)toggle;
+@end
+
 @interface CvarRange : Object
 {
 	string name;
@@ -18,7 +37,7 @@
 -(integer)percentage;
 @end
 
-@interface RangeSlider : Group
+@interface CvarRangeView : Group
 {
 	Text title;
 	Text value;

@@ -24,6 +24,7 @@
         Boston, MA  02111-1307, USA
 */
 
+#include "cvar.h"
 #include "draw.h"
 #include "system.h"
 #include "string.h"
@@ -33,10 +34,78 @@
 #include "gui/Slider.h"
 #include "options_util.h"
 
+void ()traceon=#0;
+void ()traceoff=#0;
+
+@implementation CvarToggle
+
+-(id)initWithCvar:(string)cvname
+{
+	self = [super init];
+	name = str_new ();
+	str_copy (name, cvname);
+
+	return self;
+}
+
+-(void)toggle
+{
+	Cvar_Toggle (name);
+}
+
+-(BOOL)value
+{
+	return cvar (name);
+}
+
+@end
+
+@implementation CvarToggleView
+
+-(void)update
+{
+	[value setText:[toggle value] ? "On" : "Off"];
+}
+
+-(id)initWithBounds:(Rect)aRect title:(string)_title :(CvarToggle)_toggle
+{
+	local Rect rect;
+
+	self = [super initWithBounds:aRect];
+
+	toggle = _toggle;
+	
+	rect = [[Rect alloc] initWithComponents:0 :0 :strlen (_title) * 8 :8];
+	title = [[Text alloc] initWithBounds:rect text:_title];
+
+	rect.size.width = 3 * 8;
+	rect.origin.x = xlen - rect.size.width;
+	value = [[Text alloc] initWithBounds:rect];
+
+	[self addView:title];
+	[self addView:value];
+
+	[self update];
+
+	return self;
+}
+
+-(void)toggle
+{
+traceon();
+	[toggle toggle];
+	[self update];
+traceoff();
+}
+
+@end
+
 @implementation CvarRange
 
 -(id)initWithCvar:(string)cvname min:(float)_min max:(float)_max step:(float)_step
 {
+	self = [super init];
+
 	name = str_new ();
 	str_copy (name, cvname);
 	min = _min;
@@ -72,7 +141,7 @@
 
 @end
 
-@implementation RangeSlider
+@implementation CvarRangeView
 
 -(void)update
 {
