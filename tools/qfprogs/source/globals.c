@@ -108,9 +108,9 @@ dump_fields (progs_t *pr)
 void
 dump_functions (progs_t *pr)
 {
-	int i;
+	int         i, j;
 	const char *name;
-	int         start;
+	int         start, count;
 	char       *comment;
 
 	for (i = 0; i < pr->progs->numfunctions; i++) {
@@ -126,6 +126,13 @@ dump_functions (progs_t *pr)
 		else
 			comment = va (" = #%d", -start);
 
-		printf ("%s%s\n", name, comment);
+		printf ("%s%s: %d", name, comment, func->numparms);
+		if (func->numparms < 0)
+			count = -func->numparms - 1;
+		else
+			count = func->numparms;
+		for (j = 0; j < count; j++)
+			printf (" %d", func->parm_size[j]);
+		puts ("");
 	}
 }
