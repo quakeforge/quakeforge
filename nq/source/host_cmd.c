@@ -231,6 +231,23 @@ Host_Ping_f (void)
 
 // SERVER TRANSITIONS =========================================================
 
+static const char *
+nice_time (float time)
+{
+	int         t = time + 0.5;
+
+	if (t < 60) {
+		return va ("%ds", t);
+	} else if (t < 3600) {
+		return va ("%dm%02ds", t / 60, t % 60);
+	} else if (t < 86400) {
+		return va ("%dh%02dm%02ds", t / 3600, (t / 60) % 60, t % 60);
+	} else {
+		return va ("%dd%02dh%02dm%02ds",
+				   t / 86400, (t / 3600) % 24, (t / 60) % 60, t % 60);
+	}
+}
+
 /*
   Host_Map_f
 
@@ -254,7 +271,7 @@ Host_Map_f (void)
 		return;
 	}
 	if (Cmd_Argc () == 1) {
-		Con_Printf ("map is %s\n", sv.name);
+		Con_Printf ("map is %s (%s)\n", sv.name, nice_time (sv.time));
 		return;
 	}
 

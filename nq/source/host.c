@@ -993,10 +993,17 @@ Host_Init (void)
 	Con_Printf ("\nVersion %s (build %04d)\n\n", VERSION,
 				build_number ());
 
-	Con_Printf ("\x80\x81\x81\x82 %s Initialized\x80\x81\x81\x82\n", PROGRAM);
+	Con_Printf ("\x80\x81\x81\x82 %s initialized\x80\x81\x81\x82\n", PROGRAM);
 	CL_UpdateScreen (cl.time);
 
-	Con_NewMap ();
+	if (isDedicated) {
+		if (!sv.active)
+			Cmd_ExecuteString ("map start", src_command);
+		if (!sv.active)
+			Sys_Error ("Could not initialize server");
+	} else {
+		Con_NewMap ();
+	}
 
 	CL_UpdateScreen (cl.time);
 }

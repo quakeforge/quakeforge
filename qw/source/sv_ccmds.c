@@ -474,6 +474,7 @@ SV_Status_f (void)
 	pak = (float) svs.stats.latched_packets / STATFRAMES;
 
 	SV_Printf ("net address      : %s\n", NET_AdrToString (net_local_adr));
+	SV_Printf ("uptime           : %s\n", nice_time (Sys_DoubleTime ()));
 	SV_Printf ("cpu utilization  : %3i%% (%3i%%)\n", (int) cpu, (int)demo);
 	SV_Printf ("avg response time: %i ms\n", (int) avg);
 	SV_Printf ("packets/frame    : %5.2f\n", pak);

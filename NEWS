@@ -9,6 +9,9 @@ Changes from 0.5.2
         * sv_maxrate changes now take effect immediately rather than when
           clients (re)connect or change their rate
         * segfault when using "snd_output null" fixed
+        * qw server "status" command now gives the server's uptime
+        * "map" will display the amount of time the current map has been active
+        * nq-server will now auto-load the start map if none is specified
 
     o qfcc enhancements.
         * @argc and @argv deprecated in favor of @args.count and @args.list
