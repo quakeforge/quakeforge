@@ -98,6 +98,7 @@ static view_t *console_view;
 static view_t *say_view;
 static view_t *notify_view;
 static view_t *menu_view;
+static view_t *hud_view;
 
 static qboolean con_initialized;
 
@@ -742,6 +743,18 @@ C_NewMap (void)
 }
 
 static void
+C_GIB_HUD_Show_f (void)
+{
+	hud_view->visible = 1;
+}
+
+static void
+C_GIB_HUD_Hide_f (void)
+{
+	hud_view->visible = 0;
+}
+
+static void
 C_Init (void)
 {
 	view_t     *view;
@@ -763,9 +776,11 @@ C_Init (void)
 	say_view     = view_new (0, 0, 320, 8, grav_northwest);
 	notify_view  = view_new (0, 8, 320, 32, grav_northwest);
 	menu_view    = view_new (0, 0, 320, 200, grav_center);
+	hud_view     = view_new (0, 0, vid.conwidth, vid.conheight, grav_northeast);
 
 	view_add (con_data.view, say_view);
 	view_add (con_data.view, notify_view);
+	view_add (con_data.view, hud_view);
 	view_add (con_data.view, console_view);
 	view_add (con_data.view, menu_view);
 
@@ -782,6 +797,9 @@ C_Init (void)
 
 	menu_view->draw = Menu_Draw;
 	menu_view->visible = 0;
+
+	hud_view->draw = Menu_Draw_Hud;
+	hud_view->visible = 0;
 
 	view = view_new (0, 0, 320, 170, grav_northwest);
 	view->draw = draw_console_text;
@@ -841,7 +859,9 @@ C_Init (void)
 					
 	// register GIB builtins
 	GIB_Builtin_Add ("print::center", C_GIB_Print_Center_f);
-	
+	GIB_Builtin_Add ("HUD::show", C_GIB_HUD_Show_f);
+	GIB_Builtin_Add ("HUD::hide", C_GIB_HUD_Hide_f);
+
 	con_initialized = true;
 }
 

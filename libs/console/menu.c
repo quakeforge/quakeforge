@@ -83,6 +83,7 @@ static menu_item_t *menu;
 static hashtab_t *menu_hash;
 static func_t   menu_init;
 static func_t   menu_quit;
+static func_t   menu_draw_hud;
 static const char *top_menu;
 
 static int
@@ -94,6 +95,9 @@ menu_resolve_globals (void)
 	if (!(f = ED_FindFunction (&menu_pr_state, sym = "menu_init")))
 		goto error;
 	menu_init = (func_t)(f - menu_pr_state.pr_functions);
+	if (!(f = ED_FindFunction (&menu_pr_state, sym = "menu_draw_hud")))
+		goto error;
+	menu_draw_hud = (func_t)(f - menu_pr_state.pr_functions);
 	return 1;
 error:
 	Con_Printf ("%s: undefined function %s\n", menu_pr_state.progs_name, sym);
@@ -461,6 +465,7 @@ Menu_Init (void)
 	Cmd_AddCommand ("togglemenu", togglemenu_f,
 					"Toggle the display of the menu");
 	Cmd_AddCommand ("quit", quit_f, "Exit the program");
+
 }
 
 void
@@ -559,6 +564,12 @@ Menu_Draw (view_t *view)
 		Draw_Character (x + item->x, y + item->y,
 						12 + ((int) (*con_data.realtime * 4) & 1));
 	}
+}
+
+void
+Menu_Draw_Hud (view_t *view)
+{
+	PR_ExecuteProgram (&menu_pr_state, menu_draw_hud);
 }
 
 void

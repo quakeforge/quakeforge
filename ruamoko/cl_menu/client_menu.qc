@@ -13,6 +13,7 @@
 #include "servlist.h"
 #include "system.h"
 #include "debug.h"
+#include "HUD.h"
 #include "client_menu.h"
 
 //FIXME shouldn't need these
@@ -483,16 +484,6 @@ void () main_menu =
 	Menu_End ();
 };
 
-void (integer argc, string [] argv) gib_hello_world =
-{
-	GIB_Return ("Hello, world!");
-};
-
-void () gib_menu =
-{
-	GIB_Builtin_Add ("Ruamoko::helloWorld", gib_hello_world);
-};
-
 void () menu_init =
 {
 	lanConfig_port_il = [[InputLine alloc] initWithBounds:[[Rect alloc] initWithComponents:126 :lanConfig_cursor_table[0] :8 :4] promptCharacter:' '];
@@ -513,7 +504,9 @@ void () menu_init =
 	quit_menu ();
 	load_menu ();
 	save_menu ();
-	gib_menu ();
+
 	Menu_TopMenu ("main");
 	Menu_SetQuit (quit);
+
+	HUD_Init ();
 };
