@@ -520,8 +520,8 @@ SV_WriteEntitiesToClient (client_t *client, sizebuf_t *msg)
 			continue;
 
 		// ignore ents without visible models
-		if (!SVfloat (ent, modelindex) || !*PR_GetString
-			(&sv_pr_state, SVstring (ent, model)))
+		if (!SVfloat (ent, modelindex)
+			|| !*PR_GetString (&sv_pr_state, SVstring (ent, model)))
 			continue;
 
 		// ignore if not touching a PV leaf
