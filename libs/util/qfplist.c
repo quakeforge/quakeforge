@@ -144,12 +144,12 @@ PL_Free (plitem_t *item)
 }
 
 plitem_t *
-PL_ObjectForKey (plitem_t *item, const char *key)
+PL_ObjectForKey (plitem_t *dict, const char *key)
 {
-	hashtab_t  *table = (hashtab_t *) item->data;
+	hashtab_t  *table = (hashtab_t *) dict->data;
 	dictkey_t  *k;
 
-	if (item->type != QFDictionary)
+	if (dict->type != QFDictionary)
 		return NULL;
 
 	k = (dictkey_t *) Hash_Find (table, key);
@@ -219,45 +219,45 @@ PL_D_AddObject (plitem_t *dict, plitem_t *key, plitem_t *value)
 }
 
 qboolean
-PL_A_InsertObjectAtIndex (plitem_t *array_item, plitem_t *item, int index)
+PL_A_InsertObjectAtIndex (plitem_t *array, plitem_t *item, int index)
 {
-	plarray_t  *array;
+	plarray_t  *arr;
 
-	if (array_item->type != QFArray)
+	if (array->type != QFArray)
 		return false;
 
-	array = (plarray_t *)array_item->data;
+	arr = (plarray_t *)array->data;
 
-	if (array->numvals == array->maxvals) {
-		int         size = (array->maxvals + 128) * sizeof (plitem_t *);
-		plitem_t  **tmp = realloc (array->values, size);
+	if (arr->numvals == arr->maxvals) {
+		int         size = (arr->maxvals + 128) * sizeof (plitem_t *);
+		plitem_t  **tmp = realloc (arr->values, size);
 
 		if (!tmp)
 			return false;
 
-		array->maxvals += 128;
-		array->values = tmp;
-		memset (array->values + array->numvals, 0,
-				(array->maxvals - array->numvals) * sizeof (plitem_t *));
+		arr->maxvals += 128;
+		arr->values = tmp;
+		memset (arr->values + arr->numvals, 0,
+				(arr->maxvals - arr->numvals) * sizeof (plitem_t *));
 	}
 
 	if (index == -1)
-		index = array->numvals;
+		index = arr->numvals;
 
-	if (index < 0 || index > array->numvals)
+	if (index < 0 || index > arr->numvals)
 		return false;
 
-	memmove (array->values + index + 1, array->values + index,
-			 (array->numvals - index) * sizeof (plitem_t *));
-	array->values[index] = item;
-	array->numvals++;
+	memmove (arr->values + index + 1, arr->values + index,
+			 (arr->numvals - index) * sizeof (plitem_t *));
+	arr->values[index] = item;
+	arr->numvals++;
 	return true;
 }
 
 qboolean
-PL_A_AddObject (plitem_t *array_item, plitem_t *item)
+PL_A_AddObject (plitem_t *array, plitem_t *item)
 {
-	return PL_A_InsertObjectAtIndex (array_item, item, -1);
+	return PL_A_InsertObjectAtIndex (array, item, -1);
 }
 
 static qboolean

@@ -133,11 +133,11 @@ plitem_t *PL_GetPropertyList (const char *);
 plitem_t *PL_ObjectForKey (plitem_t *, const char *);
 
 /**
-	\fn plitem_t *PL_ObjectAtIndex (plitem_t *array, int idx)
+	\fn plitem_t *PL_ObjectAtIndex (plitem_t *array, int index)
 	\brief Retrieve a value from an array object.
 
 	\param array	The array to get the value from
-	\param idx		The index within the array to retrieve
+	\param index	The index within the array to retrieve
 
 	\return	You are NOT responsible for freeing the returned object. It will
 	be destroyed when its container is.
@@ -159,11 +159,12 @@ plitem_t *PL_D_AllKeys (plitem_t *);
 /**
 	\fn qboolean PL_D_AddObject (plitem_t *dict, plitem_t *key, plitem_t *value)
 	\fn qboolean PL_A_AddObject (plitem_t *array, plitem_t *item)
-	\fn qboolean PL_A_InsertObjectAtIndex (plitem_t *array, plitem_t *item, int ind)
+	\fn qboolean PL_A_InsertObjectAtIndex (plitem_t *array, plitem_t *item, int index)
 
-	\param dict The dictionary to add the key/value pair to
 	\param array The array to add the item to
+	\param dict The dictionary to add the key/value pair to
 	\param item The item to be added to the array
+	\param index The location at which to insert the item into the array
 	\param key The key of the key/value pair to be added to the dictionary
 	\param value The value of the key/value pair to be added to the dictionary
 
@@ -173,7 +174,7 @@ plitem_t *PL_D_AllKeys (plitem_t *);
 */
 qboolean PL_D_AddObject (plitem_t *, plitem_t *, plitem_t *);
 qboolean PL_A_AddObject (plitem_t *, plitem_t *);
-qboolean PL_A_InsertObjectAtIndex (plitem_t *, plitem_t *, int ind);
+qboolean PL_A_InsertObjectAtIndex (plitem_t *, plitem_t *, int);
 //@}
 
 plitem_t *PL_NewDictionary (void);
