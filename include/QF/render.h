@@ -32,11 +32,13 @@
 #include "QF/cvar.h"
 #include "QF/mathlib.h"
 #include "QF/model.h"
+#include "QF/qdefs.h" // FIXME
 #include "QF/vid.h"
 
 // dynamic lights ===========================================================
 
 #define MAX_DLIGHTS     32
+
 typedef struct dlight_s
 {
 	int     key;                // so entities can reuse same entry
@@ -48,7 +50,16 @@ typedef struct dlight_s
 	float   color[3];           // Don't use alpha  --KB
 } dlight_t;
 
+// FIXME client_state_t should hold all pieces of the client state
+typedef struct
+{
+	int		length;
+	char	map[MAX_STYLESTRING];
+} lightstyle_t;
+
 extern  dlight_t        r_dlights[MAX_DLIGHTS];
+
+extern  lightstyle_t    r_lightstyle[MAX_LIGHTSTYLES];
 
 //===============
 

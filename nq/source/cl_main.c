@@ -88,7 +88,6 @@ entity_t    cl_entities[MAX_EDICTS];
 entity_state_t    cl_baselines[MAX_EDICTS];
 entity_t    cl_static_entities[MAX_STATIC_ENTITIES];
 entity_state_t    cl_static_entity_baselines[MAX_STATIC_ENTITIES];
-lightstyle_t cl_lightstyle[MAX_LIGHTSTYLES];
 
 
 void
@@ -169,7 +168,7 @@ CL_ClearState (void)
 	// clear other arrays   
 	memset (cl_entities, 0, sizeof (cl_entities));
 	memset (cl_baselines, 0, sizeof (cl_baselines));
-	memset (cl_lightstyle, 0, sizeof (cl_lightstyle));
+	memset (r_lightstyle, 0, sizeof (r_lightstyle));
 
 	CL_ClearTEnts ();
 

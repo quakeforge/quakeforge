@@ -1209,8 +1209,8 @@ CL_ParseServerMessage (void)
 				if (i >= MAX_LIGHTSTYLES)
 //					Sys_Error ("svc_lightstyle > MAX_LIGHTSTYLES");
 					Host_EndGame ("svc_lightstyle > MAX_LIGHTSTYLES");
-				strcpy (cl_lightstyle[i].map, MSG_ReadString (net_message));
-				cl_lightstyle[i].length = strlen (cl_lightstyle[i].map);
+				strcpy (r_lightstyle[i].map, MSG_ReadString (net_message));
+				r_lightstyle[i].length = strlen (r_lightstyle[i].map);
 				break;
 
 			case svc_sound:

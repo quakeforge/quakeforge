@@ -10,6 +10,8 @@ double      r_realtime;
 dlight_t    r_dlights[MAX_DLIGHTS];
 entity_t   *r_view_model;
 entity_t   *r_player_entity;
+lightstyle_t r_lightstyle[MAX_LIGHTSTYLES];
+
 
 dlight_t *
 R_AllocDlight (int key)
@@ -46,6 +48,7 @@ R_AllocDlight (int key)
 	return dl;
 }
 
+
 void
 R_DecayLights (double frametime)
 {
@@ -62,6 +65,7 @@ R_DecayLights (double frametime)
 			dl->radius = 0;
 	}
 }
+
 
 void
 R_ClearDlights (void)

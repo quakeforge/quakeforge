@@ -41,6 +41,7 @@
 #include "QF/cmd.h"
 #include "QF/console.h"
 #include "QF/draw.h"
+#include "QF/quakefs.h"
 #include "QF/screen.h"
 #include "QF/sys.h"
 #include "QF/vid.h"
@@ -134,7 +135,7 @@ Draw_CachePic (char *path, qboolean alpha)
 	qpic_t     *dat;
 	glpic_t    *gl;
 
-	// First, check and see if its cached..
+	// First, check if its cached..
 	for (pic = cachepics, i = 0; i < numcachepics; pic++, i++)
 		if ((!strcmp (path, pic->name)) && !pic->dirty)
 			return &pic->pic;

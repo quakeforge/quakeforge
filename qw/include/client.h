@@ -114,14 +114,6 @@ typedef struct
 } frame_t;
 
 
-// client_state_t should hold all pieces of the client state
-typedef struct
-{
-	int		length;
-	char	map[MAX_STYLESTRING];
-} lightstyle_t;
-
-
 #define	MAX_DEMOS		8
 #define	MAX_DEMONAME	16
 
@@ -317,7 +309,6 @@ extern	client_state_t	cl;
 // FIXME, allocate dynamically
 extern	entity_state_t	cl_baselines[MAX_EDICTS];
 extern	entity_t		cl_static_entities[MAX_STATIC_ENTITIES];
-extern	lightstyle_t	cl_lightstyle[MAX_LIGHTSTYLES];
 
 extern	qboolean	nomaster;
 extern char	*server_version;	// version of server we connected to

@@ -1,7 +1,7 @@
 /*
 	qdefs.h
 
-	(description)
+	ewww. this whole thing is a giant FIXME
 
 	Copyright (C) 1996-1997  Id Software, Inc.
 	Copyright (C) 1999,2000  contributors of the QuakeForge project

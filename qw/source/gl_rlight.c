@@ -39,7 +39,8 @@
 #include <math.h>
 #include <stdio.h>
 
-#include "client.h"
+#include "QF/render.h"
+
 #include "glquake.h"
 #include "r_shared.h"
 
@@ -53,12 +54,12 @@ R_AnimateLight (void)
 // 'm' is normal light, 'a' is no light, 'z' is double bright
 	i = (int) (r_realtime * 10);
 	for (j = 0; j < MAX_LIGHTSTYLES; j++) {
-		if (!cl_lightstyle[j].length) {
+		if (!r_lightstyle[j].length) {
 			d_lightstylevalue[j] = 256;
 			continue;
 		}
-		k = i % cl_lightstyle[j].length;
-		k = cl_lightstyle[j].map[k] - 'a';
+		k = i % r_lightstyle[j].length;
+		k = r_lightstyle[j].map[k] - 'a';
 		k = k * 22;
 		d_lightstylevalue[j] = k;
 	}

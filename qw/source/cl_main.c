@@ -165,7 +165,6 @@ client_state_t cl;
 entity_state_t cl_baselines[MAX_EDICTS];
 efrag_t     cl_efrags[MAX_EFRAGS];
 entity_t    cl_static_entities[MAX_STATIC_ENTITIES];
-lightstyle_t cl_lightstyle[MAX_LIGHTSTYLES];
 
 double      connect_time = -1;			// for connection retransmits
 
@@ -420,7 +419,7 @@ CL_ClearState (void)
 
 // clear other arrays   
 	memset (cl_efrags, 0, sizeof (cl_efrags));
-	memset (cl_lightstyle, 0, sizeof (cl_lightstyle));
+	memset (r_lightstyle, 0, sizeof (r_lightstyle));
 }
 
 
