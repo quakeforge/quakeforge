@@ -34,23 +34,35 @@
 
 typedef struct epair_s {
 	struct epair_s *next;
-	char key[MAX_KEY];
-	char value[MAX_VALUE];
+	const char *key;
+	const char *value;
 } epair_t;
 
 typedef struct entity_s {
-	char	classname[64];
-	vec3_t	origin;
-	float	angle;
-	int		light;
-	int		style;
-	char	target[32];
-	char	targetname[32];
+	const char *classname;
+	vec3_t      origin;
+	float       angle;
+	int         light;
+	// LordHavoc: added falloff (smaller fractions = bigger light area),
+	// color, and lightradius (also subbrightness to implement lightradius)
+	vec_t       falloff;
+	vec_t       lightradius;
+	vec_t       subbrightness;
+	vec_t       lightoffset;
+	vec3_t      color;
+	vec3_t      spotdir;
+	vec_t       spotcone;
+	unsigned short visbyte, visbit;		// which byte and bit to look at in
+										// the visdata for the leaf this light
+										// is in
+	int         style;
+	const char *target;
+	const char *targetname;
 	struct epair_s *epairs;
 	struct entity_s *targetent;
 } entity_t;
 
-extern entity_t entities[MAX_MAP_ENTITIES];
+extern entity_t *entities;
 extern int num_entities;
 
 const char *ValueForKey (entity_t *ent, const char *key);

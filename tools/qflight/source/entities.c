@@ -60,8 +60,9 @@ static __attribute__ ((unused)) const char rcsid[] =
 #include "entities.h"
 #include "options.h"
 
-entity_t entities[MAX_MAP_ENTITIES];
+entity_t *entities;
 int num_entities;
+static int max_entities;
 
 /*
 	ENTITY FILE PARSING
@@ -74,7 +75,7 @@ char lighttargets[32][64];
 
 
 static int
-LightStyleForTargetname (char *targetname, qboolean alloc)
+LightStyleForTargetname (const char *targetname, qboolean alloc)
 {
 	int		i;
 
@@ -125,17 +126,17 @@ MatchTargets (void)
 void
 LoadEntities (void)
 {
-	const char	*data;
-	char		key[64];
-	double		vec[3];
-	entity_t	*entity;
-	epair_t		*epair;
-	int			i;
+	const char *data;
+	const char *key;
+	double      vec[3];
+	entity_t   *entity;
+	epair_t    *epair;
 
 	data = bsp->entdata;
 
 	// start parsing
-	num_entities = 0;
+	max_entities = num_entities = 0;
+	entities = 0;
 
 	// go through all the entities
 	while (1) {
@@ -147,8 +148,10 @@ LoadEntities (void)
 			fprintf (stderr, "LoadEntities: found %s when expecting {",
 					 com_token);
 
-		if (num_entities == MAX_MAP_ENTITIES)
-			fprintf (stderr, "LoadEntities: MAX_MAP_ENTITIES");
+		if (num_entities == max_entities) {
+			max_entities += 128;
+			entities = realloc (entities, max_entities * sizeof (entity_t));
+		}
 		entity = &entities[num_entities];
 		num_entities++;
 
@@ -162,7 +165,7 @@ LoadEntities (void)
 				fprintf (stderr, "LoadEntities: EOF without closing brace");
 			if (!strcmp (com_token, "}"))
 				break;
-			strcpy (key, com_token);
+			key = strdup (com_token);
 
 			// parse value
 			data = COM_Parse (data);
@@ -172,27 +175,25 @@ LoadEntities (void)
 			if (c == '}')
 				fprintf (stderr, "LoadEntities: closing brace without data");
 
-			epair = malloc (sizeof (epair_t));
-			memset (epair, 0, sizeof (epair));
-			strcpy (epair->key, key);
-			strcpy (epair->value, com_token);
+			epair = calloc (1, sizeof (epair_t));
+			epair->key = key;
+			epair->value = strdup (com_token);
 			epair->next = entity->epairs;
 			entity->epairs = epair;
 
 			if (!strcmp (key, "classname"))
-				strcpy (entity->classname, com_token);
+				entity->classname = epair->value;
 			else if (!strcmp (key, "target"))
-				strcpy (entity->target, com_token);
+				entity->target = epair->value;
 			else if (!strcmp (key, "targetname"))
-				strcpy (entity->targetname, com_token);
+				entity->targetname = epair->value;
 			else if (!strcmp (key, "origin")) {   		
 				// scan into doubles, then assign
 				// which makes it vec_t size independent
 				if (sscanf (com_token, "%lf %lf %lf",
 							&vec[0], &vec[1], &vec[2]) != 3)
 					fprintf (stderr, "LoadEntities: not 3 values for origin");
-				for (i = 0; i < 3; i++)
-					entity->origin[i] = vec[i];
+				VectorCopy (vec, entity->origin);
 			} else if (!strncmp (key, "light", 5) || !strcmp (key, "_light")) {
 				entity->light = atof(com_token);
 			} else if (!strcmp (key, "style")) {
@@ -245,14 +246,14 @@ SetKeyValue (entity_t *ent, const char *key, const char *value)
 
 	for (ep = ent->epairs; ep; ep = ep->next)
 		if (!strcmp (ep->key, key)) {
-			strcpy (ep->value, value);
+			ep->value = strdup (value);
 			return;
 		}
 	ep = malloc (sizeof (*ep));
 	ep->next = ent->epairs;
 	ent->epairs = ep;
-	strcpy (ep->key, key);
-	strcpy (ep->value, value);
+	ep->key = strdup (key);
+	ep->value = strdup (value);
 }
 
 float
