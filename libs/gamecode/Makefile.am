@@ -1,3 +1,5 @@
+INCLUDES= -I$(top_srcdir)/include
+
 lib_LTLIBRARIES = libQFgamecode.la
 
 libQFgamecode_la_LDFLAGS = -version-info 1:0:0
