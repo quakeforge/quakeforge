@@ -249,7 +249,7 @@ Chase_Update (void)
 
 	// check for walls between player and camera
 	TraceLine (r_refdef.vieworg, camera_origin, stop);
-	if (Length (stop) != 0)
+	if (VectorLength (stop) != 0)
 		for (i = 0; i < 3; i++)
 			camera_origin[i] = stop[i] + forward[i] * 8;
 
