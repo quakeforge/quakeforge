@@ -251,12 +251,7 @@ SND_PickChannel (int entnum, int entchannel)
 			&& channels[ch_idx].sfx)
 			continue;
 
-		if (channels[ch_idx].end < paintedtime) {
-			first_to_die = ch_idx;
-			break;
-		}
-
-		if (channels[ch_idx].end - paintedtime < life_left) {
+		if (paintedtime + life_left > channels[ch_idx].end) {
 			life_left = channels[ch_idx].end - paintedtime;
 			first_to_die = ch_idx;
 		}
