@@ -200,7 +200,7 @@ param
 
 opt_initializer
 	: /*empty*/
-	| '=' signed_const
+	| '=' expr
 		{
 			if (pr_scope) {
 				expr_t *e = new_expr ();
@@ -208,7 +208,10 @@ opt_initializer
 				e->e.def = current_def;
 				append_expr (local_expr, binary_expr ('=', e, $2));
 			} else {
-				current_def = PR_ReuseConstant ($2,  current_def);
+				if ($2->type >= ex_string)
+					current_def = PR_ReuseConstant ($2,  current_def);
+				else
+					error ($2, "non-constant expression used for initializer");
 			}
 		}
 	| '=' '#' const
