@@ -122,7 +122,6 @@ show_help ()
 	printf ("                      default is 0\n");
 	printf ("    -n                negative image (black on white\n");
 	printf ("    -r                write raw data, rather than bmp file\n");
-	// printf(" -u write uncompressed bmp\n");
 
 	return;
 }
@@ -534,10 +533,6 @@ main (int argc, char *argv[])
 	ledges = bsp->surfedges;
 
 	/* Precalc stuff if we're removing edges - - - - - - - - - - - */
-	/* 
-	   typedef struct edge_extra_t { int num_face_ref; int
-	   ref_faces[MAX_REF_FACES]; vertex_t ref_faces_normal[MAX_REF_FACES]; }
-	   edge_extra_t; */
 
 	if (options.edgeremove) {
 		printf ("Precalc edge removal stuff...\n");
@@ -568,10 +563,8 @@ main (int argc, char *argv[])
 			vect.Z = 0.0;
 			while (vect.X == 0.0 && vect.Y == 0.0 && vect.Z == 0.0
 				   && k < (facelist[i].numedges + j)) {
-				/* If the first 2 are parællel edges, go with the next one */
+				/* If the first 2 are parallel edges, go with the next one */
 				k++;
-				/* 
-				   if (i == (numfaces-1)) k=0; */
 
 				if (ledges[j] > 0) {
 					v0.X =
@@ -623,9 +616,8 @@ main (int argc, char *argv[])
 
 				/* Okay, it's not the REAL area, but i'm lazy, and since a lot
 				   of mapmakers use rectangles anyways... */
-				area =
-					(int) (sqrt (v0.X * v0.X + v0.Y * v0.Y + v0.Z * v0.Z) *
-						   sqrt (v1.X * v1.X + v1.Y * v1.Y + v1.Z * v1.Z));
+				area = (int) (sqrt (v0.X * v0.X + v0.Y * v0.Y + v0.Z * v0.Z) *
+							  sqrt (v1.X * v1.X + v1.Y * v1.Y + v1.Z * v1.Z));
 			}							/* while */
 
 			/* reduce cross product to a unit vector */
@@ -633,9 +625,6 @@ main (int argc, char *argv[])
 				(float)
 				sqrt ((double)
 					  (vect.X * vect.X + vect.Y * vect.Y + vect.Z * vect.Z));
-			// printf("%4ld - (%8.3f, %8.3f, %8.3f) X (%8.3f, %8.3f, %8.3f) =
-			// (%8.3f, %8.3f, %8.3f) -> ",i,v0.X, v0.Y, v0.Z, v1.X, v1.Y, v1.Z, 
-			// vect.X, vect.Y, vect.Z);
 			if (tempf > 0.0) {
 				vect.X = vect.X / tempf;
 				vect.Y = vect.Y / tempf;
@@ -647,16 +636,10 @@ main (int argc, char *argv[])
 				vect.Z = 0.0;
 			}
 
-			// printf("(%8.3f, %8.3f, %8.3f)\n",vect.X, vect.Y, vect.Z);
-
 			/* Now go put ref in all edges... */
-			/* printf("<id=%ld|num=%ld>",facelist[i].firstedge,
-			   facelist[i].numedges); */
 			for (j = 0; j < facelist[i].numedges; j++) {
 				k = j + facelist[i].firstedge;
 				x = edge_extra[abs ((int) ledges[k])].num_face_ref;
-				/* 
-				   printf("e%d(le%ld)",abs((int)ledges[k]),k); */
 				if (edge_extra[abs ((int) ledges[k])].num_face_ref <
 					MAX_REF_FACES) {
 					x++;
@@ -684,9 +667,6 @@ main (int argc, char *argv[])
 	printf ("Collecting min/max\n");
 	/* Collect min and max */
 	for (i = 0; i < bsp->numvertexes; i++) {
-		/* DEBUG - print vertices */
-		// printf("vertex %ld: (%f, %f, %f)\n", i, vertexlist[i].X,
-		// vertexlist[i].Y, vertexlist[i].Z);
 
 		/* Ugly hack - flip stuff around for different camera angles */
 		switch (options.camera_axis) {
@@ -846,41 +826,18 @@ main (int argc, char *argv[])
 	k = 0;
 	drawcol = (options.edgeremove) ? 64 : 32;
 	for (i = 0; i < bsp->numedges; i++) {
-		/* 
-		   fprintf(stderr, "Edge %ld: vertex %d (%f, %f, %f) -> %d (%f, %f,
-		   %f)\n", i, edgelist[i].v[0], vertexlist[edgelist[i].v[0]].X,
-		   vertexlist[edgelist[i].v[0]].Y,
-		   vertexlist[edgelist[i].v[0]].Z, edgelist[i].v[1],
-		   vertexlist[edgelist[i].v[1]].X,
-		   vertexlist[edgelist[i].v[1]].Y,
-		   vertexlist[edgelist[i].v[1]].Z); */
 		/* Do a check on this line ... see if we keep this line or not */
-		/* 
-		   fprintf(stderr,"edge %ld is referenced by %ld
-		   faces\n",i,edge_extra[i].num_face_ref); */
 
 		/* run through all referenced faces */
 
 		/* ICK ... do I want to check area of all faces? */
 		usearea = MAXINT;
 		if (options.edgeremove) {
-			// fprintf(stderr,"Edge %ld -
-			// ref=%ld",i,edge_extra[i].num_face_ref);
 			if (edge_extra[i].num_face_ref > 1) {
 				tempf = 1.0;
 				/* dot products of all referenced faces */
 				for (j = 0; j < edge_extra[i].num_face_ref - 1; j = j + 2) {
 					/* dot product */
-
-					/* 
-					   fprintf(stderr,". (%8.3f,%8.3f,%8.3f) .
-					   (%8.3f,%8.3f,%8.3f)",
-					   edge_extra[i].ref_faces_normal[j].X,
-					   edge_extra[i].ref_faces_normal[j].Y,
-					   edge_extra[i].ref_faces_normal[j].Z,
-					   edge_extra[i].ref_faces_normal[j+1].X,
-					   edge_extra[i].ref_faces_normal[j+1].Y,
-					   edge_extra[i].ref_faces_normal[j+1].Z); */
 
 					tempf =
 						tempf * (edge_extra[i].ref_faces_normal[j].X *
@@ -899,7 +856,6 @@ main (int argc, char *argv[])
 			} else {
 				tempf = 0.0;
 			}
-			// fprintf(stderr," = %8.3f\n",tempf);
 		} else {
 			tempf = 0.0;
 		}
@@ -1026,10 +982,7 @@ main (int argc, char *argv[])
 	Qclose (outfile);
 
 	/* Close, done! */
-	free (vertexlist);
-	free (edgelist);
-	free (ledges);
-	free (facelist);
+
 	free (image->image);
 	free (image);
 	if (options.edgeremove) {
