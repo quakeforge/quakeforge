@@ -73,7 +73,7 @@ QW_AddHeartbeat (server_t **servers_p, int slen, struct sockaddr_in *addr, char 
 	int sequence, players;
 
 	sequence = atoi (buf + 2);
-	players = atoi (buf + strlen (buf + 2) + 1);
+	players = atoi (strchr (buf + 2, '\n') + 1);
 
 	for (i = 0; i < slen; i++) {
 		if (servers[i].addr.sin_addr.s_addr == addr->sin_addr.s_addr
