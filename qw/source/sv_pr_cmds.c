@@ -1805,6 +1805,88 @@ PF_setinfokey (progs_t *pr)
 }
 
 
+#define MAX_PF_HULLS 64		// FIXME make dynamic?
+static int pf_hull_list_inited;
+static hull_t *pf_free_hulls;
+static dclipnode_t pf_clipnodes[MAX_PF_HULLS][6];
+static mplane_t pf_planes[MAX_PF_HULLS][6];
+hull_t pf_hull_list[MAX_PF_HULLS];
+
+static void
+PF_getboxhull (progs_t *pr)
+{
+	hull_t  *hull = pf_free_hulls;
+
+	if (!pf_hull_list_inited) {
+		int     i;
+		pf_hull_list_inited = 1;
+		for (i = 0; i < MAX_PF_HULLS - 1; i++)
+			pf_hull_list[i].clipnodes = (dclipnode_t*)&pf_hull_list[i + 1];
+		pf_hull_list[i].clipnodes = 0;
+		pf_free_hulls = pf_hull_list;
+	}
+
+	if (hull) {
+		pf_free_hulls = (hull_t*)hull->clipnodes;
+		SV_InitHull (hull, pf_clipnodes[hull - pf_hull_list],
+					 pf_planes[hull - pf_hull_list]);
+	}
+	G_INT (pr, OFS_RETURN) = (hull - pf_hull_list) + 1;
+}
+
+static void
+PF_freeboxhull (progs_t *pr)
+{
+	int      h = G_INT (pr, OFS_PARM0);
+	hull_t  *hull = &pf_hull_list[h];
+
+	if (h < 1 || h > MAX_PF_HULLS
+		|| hull->clipnodes != pf_clipnodes[h]
+		|| hull->planes != pf_planes[h])
+		PR_RunError (pr, "PF_freeboxhull: invalid box hull handle\n");
+	hull->clipnodes = (dclipnode_t*)pf_free_hulls;
+	hull->planes = 0;
+	pf_free_hulls = hull;
+}
+
+static void
+PF_rotate_bbox (progs_t *pr)
+{
+	int      h = G_INT (pr, OFS_PARM0);
+	float   *angles = G_VECTOR (pr, OFS_PARM1);
+	float   *mins = G_VECTOR (pr, OFS_PARM2);
+	float   *maxs = G_VECTOR (pr, OFS_PARM3);
+	vec3_t   f, r, u;
+	hull_t  *hull = &pf_hull_list[h];
+
+	AngleVectors (angles, f, r, u);
+
+	hull->planes[0].dist = DotProduct (f, maxs);
+	hull->planes[0].type = 4;
+	VectorCopy (f, hull->planes[0].normal);
+
+	hull->planes[1].dist = DotProduct (f, mins);
+	hull->planes[1].type = 4;
+	VectorCopy (f, hull->planes[1].normal);
+
+	hull->planes[2].dist = DotProduct (r, maxs);
+	hull->planes[2].type = 4;
+	VectorCopy (r, hull->planes[2].normal);
+
+	hull->planes[3].dist = DotProduct (r, mins);
+	hull->planes[3].type = 4;
+	VectorCopy (r, hull->planes[3].normal);
+
+	hull->planes[4].dist = DotProduct (u, maxs);
+	hull->planes[4].type = 4;
+	VectorCopy (u, hull->planes[4].normal);
+
+	hull->planes[5].dist = DotProduct (u, mins);
+	hull->planes[5].type = 4;
+	VectorCopy (u, hull->planes[5].normal);
+}
+
+
 void
 PF_Fixme (progs_t *pr)
 {
@@ -1924,9 +2006,9 @@ builtin_t   sv_builtins[] = {
 	PF_Fixme,			// 92
 	PF_Fixme,			// 93
 	PF_Fixme,			// 94
-	PF_Fixme,			// 95
-	PF_Fixme,			// 96
-	PF_Fixme,			// 97
+	PF_getboxhull,		// integer () getboxhull = #95
+	PF_freeboxhull,		// void (integer hull) freeboxhull = #96
+	PF_rotate_bbox,		// void (integer hull, vector angles, vector mins, vector maxs) rotate_bbox = #97
 	PF_checkmove,		// void (vector start, vector mins, vector maxs, vector end, float type, entity passent) checkmove = #98
 	PF_Checkextension,	// = #99
 	PF_strlen,			// = #100

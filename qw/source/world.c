@@ -79,37 +79,42 @@ static mplane_t box_planes[6];
 
 
 /*
-	SV_InitBoxHull
+	SV_InitHull SV_InitBoxHull
 
 	Set up the planes and clipnodes so that the six floats of a bounding box
 	can just be stored out and get a proper hull_t structure.
 */
 void
-SV_InitBoxHull (void)
+SV_InitHull (hull_t *hull, dclipnode_t *clipnodes, mplane_t *planes)
 {
 	int			i;
 	int			side;
 
-	box_hull.clipnodes = box_clipnodes;
-	box_hull.planes = box_planes;
-	box_hull.firstclipnode = 0;
-	box_hull.lastclipnode = 5;
+	hull->clipnodes = clipnodes;
+	hull->planes = planes;
+	hull->firstclipnode = 0;
+	hull->lastclipnode = 5;
 
 	for (i = 0; i < 6; i++) {
-		box_clipnodes[i].planenum = i;
+		hull->clipnodes[i].planenum = i;
 
 		side = i & 1;
 
-		box_clipnodes[i].children[side] = CONTENTS_EMPTY;
+		hull->clipnodes[i].children[side] = CONTENTS_EMPTY;
 		if (i != 5)
-			box_clipnodes[i].children[side ^ 1] = i + 1;
+			hull->clipnodes[i].children[side ^ 1] = i + 1;
 		else
-			box_clipnodes[i].children[side ^ 1] = CONTENTS_SOLID;
+			hull->clipnodes[i].children[side ^ 1] = CONTENTS_SOLID;
 
-		box_planes[i].type = i >> 1;
-		box_planes[i].normal[i >> 1] = 1;
+		hull->planes[i].type = i >> 1;
+		hull->planes[i].normal[i >> 1] = 1;
 	}
+}
 
+void
+SV_InitBoxHull (void)
+{
+	SV_InitHull (&box_hull, box_clipnodes, box_planes);
 }
 
 
@@ -628,28 +633,26 @@ SV_ClipMoveToEntity (edict_t *touched, edict_t *mover, vec3_t start,
 	VectorCopy (end, trace.endpos);
 
 	if (sv_fields.rotated_bbox != -1
-		&& (SVFIELD (mover, rotated_bbox, integer)
-			|| SVFIELD (touched, rotated_bbox, integer))) {
-		// get the hull
-		// get relative start and end locations
-		// rotate hull(?) and start/end locations
-		// run the hull check
-		// unrotate the trace
+		&& SVFIELD (touched, rotated_bbox, integer)) {
+		// keep things simple for now, only test against touched
+		extern hull_t pf_hull_list[];
+		hull = &pf_hull_list[SVFIELD (touched, rotated_bbox, integer) - 1];
+		VectorCopy (SVFIELD (touched, origin, vector), offset);
 	} else {
 		// get the clipping hull
 		hull = SV_HullForEntity (touched, mins, maxs, offset);
-
-		VectorSubtract (start, offset, start_l);
-		VectorSubtract (end, offset, end_l);
-
-		// trace a line through the apropriate clipping hull
-		SV_RecursiveHullCheck (hull, hull->firstclipnode, 0, 1, start_l, end_l,
-							   &trace);
-
-		// fix trace up by the offset
-		if (trace.fraction != 1)
-			VectorAdd (trace.endpos, offset, trace.endpos);
 	}
+
+	VectorSubtract (start, offset, start_l);
+	VectorSubtract (end, offset, end_l);
+
+	// trace a line through the apropriate clipping hull
+	SV_RecursiveHullCheck (hull, hull->firstclipnode, 0, 1, start_l, end_l,
+						   &trace);
+
+	// fix trace up by the offset
+	if (trace.fraction != 1)
+		VectorAdd (trace.endpos, offset, trace.endpos);
 
 	// did we clip the move?
 	if (trace.fraction < 1 || trace.startsolid)
