@@ -539,13 +539,21 @@ R_WizTrail_QF (entity_t *ent)
 		p->next = active_particles;
 		active_particles = p;
 
-		VectorCopy (vec3_origin, p->vel);
-
 		p->die = r_realtime + 0.5;
 		p->type = pt_static;
 		p->color = 52 + ((tracercount & 4) << 1);
 
 		tracercount++;
+
+		VectorCopy (ent->old_origin, p->org);
+		if (tracercount & 1) {
+			p->vel[0] = 30.0 * vec[1];
+			p->vel[1] = 30.0 * -vec[0];
+		} else {
+			p->vel[0] = 30.0 * -vec[1];
+			p->vel[1] = 30.0 * vec[0];
+		}
+		p->vel[2] = 0.0;
 
 		VectorAdd (ent->old_origin, vec, ent->old_origin);
 	}
@@ -576,8 +584,6 @@ R_FlameTrail_QF (entity_t *ent)
 		p->next = active_particles;
 		active_particles = p;
 
-		VectorCopy (vec3_origin, p->vel);
-
 		p->die = r_realtime + 0.5;
 		p->type = pt_static;
 		p->color = 230 + ((tracercount & 4) << 1);
@@ -592,6 +598,7 @@ R_FlameTrail_QF (entity_t *ent)
 			p->vel[0] = 30 * -vec[1];
 			p->vel[1] = 30 * vec[0];
 		}
+		p->vel[2] = 0.0;
 
 		VectorAdd (ent->old_origin, vec, ent->old_origin);
 	}
