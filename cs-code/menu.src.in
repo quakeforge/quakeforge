@@ -22,3 +22,4 @@ menu.dat
 @srcdir@/options.qc
 @srcdir@/servlist.qc
 @srcdir@/menu.qc
+@srcdir@/object.r

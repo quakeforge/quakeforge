@@ -22,7 +22,7 @@ menu_src= \
 	cbuf_def.qc cmd_def.qc controls_o.qc cvar_def.qc draw_def.qc file_def.qc \
 	game_def.qc inputline_def.qc inputline_util.qc key_defs.qc menu.qc \
 	menu_def.qc menu_pics.qc menu_util.qc options.qc options_util.qc \
-	servlist.qc string_def.qc stringh_def.qc
+	servlist.qc string_def.qc stringh_def.qc object.r
 
 menu.dat$(GZ): menu.src $(menu_src)
 	$(QFCC) $(QCFLAGS) $(QCPPFLAGS) -p $(STRIP) -P $<
