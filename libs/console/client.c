@@ -384,17 +384,17 @@ C_Print (const char *fmt, va_list args)
 	int         mask, size, c, l, y;
 	static int  buffer_size, cr;
 
-	size = vsnprintf (buffer, buffer_size, fmt, args);
-	while (size < 0 || size + 1 > buffer_size) {
+	size = vsnprintf (buffer, buffer_size, fmt, args) + 1;	// +1 for nul
+	while (size < 0 || size > buffer_size) {
 		if (size > 0)
-			buffer_size = (size + 1 + 1024) % 1024; // 1k multiples
+			buffer_size = (size + 1024) % 1024; // 1k multiples
 		else
 			buffer_size += 1024;
 		buffer = realloc (buffer, buffer_size);
 		if (!buffer)
 			Sys_Error ("console: could not allocate %d bytes\n",
 					   buffer_size);
-		size = vsnprintf (buffer, buffer_size, fmt, args);
+		size = vsnprintf (buffer, buffer_size, fmt, args) + 1;
 	}
 
 	// log all messages to file
