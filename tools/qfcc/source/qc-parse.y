@@ -113,6 +113,7 @@ typedef struct {
 %token	<type> TYPE
 
 %type	<type>	type maybe_func
+%type	<integer_val> opt_field
 %type	<def>	param param_list def_item def_list def_name
 %type	<expr>	const opt_expr expr arg_list
 %type	<expr>	statement statements statement_block
@@ -157,26 +158,27 @@ def
 	;
 
 type
-	: TYPE
-		{
-			current_type = $1;
-		}
-	  maybe_func
-	  	{
-			$$ = $3 ? $3 : $1;
-		}
-	| '.' TYPE
+	: opt_field TYPE
 		{
 			current_type = $2;
 		}
 	  maybe_func
-		{
-			type_t new;
-			memset (&new, 0, sizeof (new));
-			new.type = ev_field;
-			new.aux_type = $4 ? $4 : $2;
-			$$ = PR_FindType (&new);
+	  	{
+			if ($1) {
+				type_t new;
+				memset (&new, 0, sizeof (new));
+				new.type = ev_field;
+				new.aux_type = $4 ? $4 : $2;
+				$$ = PR_FindType (&new);
+			} else {
+				$$ = $4 ? $4 : $2;
+			}
 		}
+	;
+
+opt_field
+	: /* empty */ { $$ = 0; }
+	| '.' { $$ = 1; }
 	;
 
 maybe_func
