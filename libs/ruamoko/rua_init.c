@@ -37,6 +37,8 @@ static __attribute__ ((unused)) const char rcsid[] =
 #include "rua_internal.h"
 
 static void (*init_funcs[])(progs_t *, int) = {
+	RUA_Obj_Init,			// done early (for the heck of it at this stage)
+
 	RUA_Cbuf_Init,
 	RUA_Cmd_Init,
 	RUA_Cvar_Init,

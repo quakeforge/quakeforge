@@ -449,8 +449,6 @@ Menu_Init (void)
 
 	PR_RegisterBuiltins (&menu_pr_state, builtins);
 
-	PR_Obj_Progs_Init (&menu_pr_state);
-
 	RUA_Init (&menu_pr_state, 1);
 
 	InputLine_Progs_Init (&menu_pr_state);

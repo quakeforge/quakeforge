@@ -235,13 +235,8 @@ int PR_ResolveGlobals (progs_t *pr);
 
 typedef int pr_load_func_t (progs_t *);
 void PR_AddLoadFunc (progs_t *pr, pr_load_func_t *func);
+void PR_AddLoadFinishFunc (progs_t *pr, pr_load_func_t *func);
 int PR_RunLoadFuncs (progs_t *pr);
-
-//
-// PR Obj stuff
-//
-void PR_Obj_Progs_Init (progs_t *pr);
-int PR_InitRuntime (progs_t *pr);
 
 //
 // PR Strings stuff
@@ -345,6 +340,11 @@ struct progs_s {
 	int         num_load_funcs;
 	int         max_load_funcs;
 	pr_load_func_t **load_funcs;
+
+	// cleared each load
+	int         num_load_finish_funcs;
+	int         max_load_finish_funcs;
+	pr_load_func_t **load_finish_funcs;
 
 	struct dstring_mem_s *ds_mem;
 	strref_t   *free_string_refs;

@@ -280,6 +280,20 @@ PR_AddLoadFunc (progs_t *pr, int (*func)(progs_t *))
 	pr->load_funcs[pr->num_load_funcs++] = func;
 }
 
+void
+PR_AddLoadFinishFunc (progs_t *pr, int (*func)(progs_t *))
+{
+	if (pr->num_load_finish_funcs == pr->max_load_finish_funcs) {
+		int       n;
+		pr->max_load_finish_funcs += 8;
+		n = pr->max_load_finish_funcs;
+		pr->load_finish_funcs = realloc (pr->load_finish_funcs,
+										 n * sizeof (pr_load_func_t *));
+		SYS_CHECKMEM (pr->load_finish_funcs);
+	}
+	pr->load_finish_funcs[pr->num_load_finish_funcs++] = func;
+}
+
 static int (*load_funcs[])(progs_t *) = {
 	PR_RelocateBuiltins,
 	PR_ResolveGlobals,
@@ -288,19 +302,41 @@ static int (*load_funcs[])(progs_t *) = {
 	PR_LoadDebug,
 };
 
+static int
+pr_run_ctors (progs_t *pr)
+{
+	int         fnum;
+	dfunction_t *func;
+
+	for (fnum = 0; fnum < pr->progs->numfunctions; fnum++) {
+		func = pr->pr_functions + fnum;
+		if (strequal (PR_GetString (pr, func->s_name), ".ctor"))
+			PR_ExecuteProgram (pr, fnum);
+	}
+	return 1;
+}
+
 int
 PR_RunLoadFuncs (progs_t *pr)
 {
 	int         i;
 
 	for (i = 0; i < sizeof (load_funcs) / sizeof (load_funcs[0]); i++)
-		if (!load_funcs[i](pr))
+		if (!load_funcs[i] (pr))
 			return 0;
 
 	for (i = 0; i < pr->num_load_funcs; i++)
-		if (!pr->load_funcs[i](pr))
+		if (!pr->load_funcs[i] (pr))
 			return 0;
-	return PR_InitRuntime (pr);
+
+	if (!pr_run_ctors (pr))
+		return 0;
+
+	while (pr->num_load_finish_funcs)
+		if (!pr->load_finish_funcs[--pr->num_load_finish_funcs] (pr))
+			return 0;
+
+	return 1;
 }
 
 /*

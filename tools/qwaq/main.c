@@ -40,6 +40,7 @@ static __attribute__ ((unused)) const char rcsid[] =
 #include <QF/cvar.h>
 #include <QF/progs.h>
 #include <QF/quakefs.h>
+#include "QF/ruamoko.h"
 #include <QF/sys.h>
 #include "QF/va.h"
 #include <QF/zone.h>
@@ -123,7 +124,7 @@ init_qf (void)
 
 	PR_Init_Cvars ();
 	PR_Init ();
-	PR_Obj_Progs_Init (&pr);
+	RUA_Init (&pr, 0);
 	BI_Init (&pr);
 }
 

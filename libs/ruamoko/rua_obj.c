@@ -1,5 +1,5 @@
 /*
-	pr_obj.c
+	rua_obj.c
 
 	Progs Obj runtime support
 
@@ -49,6 +49,7 @@ static __attribute__ ((unused)) const char rcsid[] =
 #include "QF/sys.h"
 
 #include "compat.h"
+#include "rua_internal.h"
 
 static void
 call_function (progs_t *pr, func_t func)
@@ -206,7 +207,7 @@ finish_category (progs_t *pr, pr_category_t *category)
 }
 
 static void
-pr___obj_exec_class (progs_t *pr)
+rua___obj_exec_class (progs_t *pr)
 {
 	pr_module_t *module = &P_STRUCT (pr, pr_module_t, 0);
 	pr_symtab_t *symtab;
@@ -334,7 +335,7 @@ obj_verror (progs_t *pr, pr_id_t *object, int code, const char *fmt, int count,
 }
 
 static void
-pr_obj_error (progs_t *pr)
+rua_obj_error (progs_t *pr)
 {
 	pr_id_t    *object = &P_STRUCT (pr, pr_id_t, 0);
 	int         code = P_INT (pr, 1);
@@ -346,7 +347,7 @@ pr_obj_error (progs_t *pr)
 }
 
 static void
-pr_obj_verror (progs_t *pr)
+rua_obj_verror (progs_t *pr)
 {
 	pr_id_t    *object = &P_STRUCT (pr, pr_id_t, 0);
 	int         code = P_INT (pr, 1);
@@ -358,7 +359,7 @@ pr_obj_verror (progs_t *pr)
 }
 
 static void
-pr_obj_set_error_handler (progs_t *pr)
+rua_obj_set_error_handler (progs_t *pr)
 {
 	//func_t      func = P_INT (pr, 0);
 	//arglist
@@ -367,7 +368,7 @@ pr_obj_set_error_handler (progs_t *pr)
 }
 
 static void
-pr_obj_msg_lookup (progs_t *pr)
+rua_obj_msg_lookup (progs_t *pr)
 {
 	pr_id_t    *receiver = &P_STRUCT (pr, pr_id_t, 0);
 	pr_sel_t   *op = &P_STRUCT (pr, pr_sel_t, 1);
@@ -376,7 +377,7 @@ pr_obj_msg_lookup (progs_t *pr)
 }
 
 static void
-pr_obj_msg_lookup_super (progs_t *pr)
+rua_obj_msg_lookup_super (progs_t *pr)
 {
 	pr_super_t *super = &P_STRUCT (pr, pr_super_t, 0);
 	pr_sel_t   *_cmd = &P_STRUCT (pr, pr_sel_t, 1);
@@ -385,7 +386,7 @@ pr_obj_msg_lookup_super (progs_t *pr)
 }
 
 static void
-pr_obj_msg_sendv (progs_t *pr)
+rua_obj_msg_sendv (progs_t *pr)
 {
 	pr_id_t    *receiver = &P_STRUCT (pr, pr_id_t, 0);
 	pr_sel_t   *op = &P_STRUCT (pr, pr_sel_t, 1);
@@ -404,7 +405,7 @@ pr_obj_msg_sendv (progs_t *pr)
 }
 
 static void
-pr_obj_malloc (progs_t *pr)
+rua_obj_malloc (progs_t *pr)
 {
 	int         size = P_INT (pr, 0) * sizeof (pr_type_t);
 	void       *mem = PR_Zone_Malloc (pr, size);
@@ -413,7 +414,7 @@ pr_obj_malloc (progs_t *pr)
 }
 
 static void
-pr_obj_atomic_malloc (progs_t *pr)
+rua_obj_atomic_malloc (progs_t *pr)
 {
 	int         size = P_INT (pr, 0) * sizeof (pr_type_t);
 	void       *mem = PR_Zone_Malloc (pr, size);
@@ -422,7 +423,7 @@ pr_obj_atomic_malloc (progs_t *pr)
 }
 
 static void
-pr_obj_valloc (progs_t *pr)
+rua_obj_valloc (progs_t *pr)
 {
 	int         size = P_INT (pr, 0) * sizeof (pr_type_t);
 	void       *mem = PR_Zone_Malloc (pr, size);
@@ -431,7 +432,7 @@ pr_obj_valloc (progs_t *pr)
 }
 
 static void
-pr_obj_realloc (progs_t *pr)
+rua_obj_realloc (progs_t *pr)
 {
 	void       *mem = (void*)P_GPOINTER (pr, 0);
 	int         size = P_INT (pr, 1) * sizeof (pr_type_t);
@@ -441,7 +442,7 @@ pr_obj_realloc (progs_t *pr)
 }
 
 static void
-pr_obj_calloc (progs_t *pr)
+rua_obj_calloc (progs_t *pr)
 {
 	int         size = P_INT (pr, 0) * sizeof (pr_type_t);
 	void       *mem = PR_Zone_Malloc (pr, size);
@@ -451,7 +452,7 @@ pr_obj_calloc (progs_t *pr)
 }
 
 static void
-pr_obj_free (progs_t *pr)
+rua_obj_free (progs_t *pr)
 {
 	void       *mem = (void*)P_GPOINTER (pr, 0);
 
@@ -459,14 +460,14 @@ pr_obj_free (progs_t *pr)
 }
 
 static void
-pr_obj_get_uninstalled_dtable (progs_t *pr)
+rua_obj_get_uninstalled_dtable (progs_t *pr)
 {
 	//XXX
 	PR_RunError (pr, "%s, not implemented", __FUNCTION__);
 }
 
 static void
-pr_obj_msgSend (progs_t *pr)
+rua_obj_msgSend (progs_t *pr)
 {
 	pr_id_t    *self = &P_STRUCT (pr, pr_id_t, 0);
 	pr_sel_t   *_cmd = &P_STRUCT (pr, pr_sel_t, 1);
@@ -488,7 +489,7 @@ pr_obj_msgSend (progs_t *pr)
 }
 
 static void
-pr_obj_msgSend_super (progs_t *pr)
+rua_obj_msgSend_super (progs_t *pr)
 {
 	pr_super_t *super = &P_STRUCT (pr, pr_super_t, 0);
 	pr_sel_t   *_cmd = &P_STRUCT (pr, pr_sel_t, 1);
@@ -506,7 +507,7 @@ pr_obj_msgSend_super (progs_t *pr)
 }
 
 static void
-pr_obj_get_class (progs_t *pr)
+rua_obj_get_class (progs_t *pr)
 {
 	const char *name = P_GSTRING (pr, 0);
 	pr_class_t *class;
@@ -518,7 +519,7 @@ pr_obj_get_class (progs_t *pr)
 }
 
 static void
-pr_obj_lookup_class (progs_t *pr)
+rua_obj_lookup_class (progs_t *pr)
 {
 	const char *name = P_GSTRING (pr, 0);
 	pr_class_t *class;
@@ -528,7 +529,7 @@ pr_obj_lookup_class (progs_t *pr)
 }
 
 static void
-pr_obj_next_class (progs_t *pr)
+rua_obj_next_class (progs_t *pr)
 {
 	//XXX
 	PR_RunError (pr, "%s, not implemented", __FUNCTION__);
@@ -537,21 +538,21 @@ pr_obj_next_class (progs_t *pr)
 //====================================================================
 
 static void
-pr_sel_get_name (progs_t *pr)
+rua_sel_get_name (progs_t *pr)
 {
 	pr_sel_t   *sel = &P_STRUCT (pr, pr_sel_t, 0);
 	R_INT (pr) = sel->sel_id;
 }
 
 static void
-pr_sel_get_type (progs_t *pr)
+rua_sel_get_type (progs_t *pr)
 {
 	pr_sel_t   *sel = &P_STRUCT (pr, pr_sel_t, 0);
 	R_INT (pr) = sel->sel_types;
 }
 
 static void
-pr_sel_get_uid (progs_t *pr)
+rua_sel_get_uid (progs_t *pr)
 {
 	const char *name = P_GSTRING (pr, 0);
 	pr_sel_t   *sel = Hash_Find (pr->selectors, name);
@@ -559,7 +560,7 @@ pr_sel_get_uid (progs_t *pr)
 }
 
 static void
-pr_sel_register_name (progs_t *pr)
+rua_sel_register_name (progs_t *pr)
 {
 	//const char *name = P_GSTRING (pr, 0);
 	//XXX
@@ -567,7 +568,7 @@ pr_sel_register_name (progs_t *pr)
 }
 
 static void
-pr_sel_is_mapped (progs_t *pr)
+rua_sel_is_mapped (progs_t *pr)
 {
 	//pr_sel_t   *sel = &P_STRUCT (pr, pr_sel_t, 0);
 	//XXX
@@ -577,7 +578,7 @@ pr_sel_is_mapped (progs_t *pr)
 //====================================================================
 
 static void
-pr_class_get_class_method (progs_t *pr)
+rua_class_get_class_method (progs_t *pr)
 {
 	pr_class_t *class = &P_STRUCT (pr, pr_class_t, 0);
 	pr_sel_t   *aSel = &P_STRUCT (pr, pr_sel_t, 1);
@@ -588,7 +589,7 @@ pr_class_get_class_method (progs_t *pr)
 }
 
 static void
-pr_class_get_instance_method (progs_t *pr)
+rua_class_get_instance_method (progs_t *pr)
 {
 	pr_class_t *class = &P_STRUCT (pr, pr_class_t, 0);
 	pr_sel_t   *aSel = &P_STRUCT (pr, pr_sel_t, 1);
@@ -599,7 +600,7 @@ pr_class_get_instance_method (progs_t *pr)
 #define CLASSOF(x) (&G_STRUCT (pr, pr_class_t, (x)->class_pointer))
 
 static void
-pr_class_pose_as (progs_t *pr)
+rua_class_pose_as (progs_t *pr)
 {
 	pr_class_t *impostor = &P_STRUCT (pr, pr_class_t, 0);
 	pr_class_t *superclass = &P_STRUCT (pr, pr_class_t, 1);
@@ -644,7 +645,7 @@ class_create_instance (progs_t *pr, pr_class_t *class)
 }
 
 static void
-pr_class_create_instance (progs_t *pr)
+rua_class_create_instance (progs_t *pr)
 {
 	pr_class_t *class = &P_STRUCT (pr, pr_class_t, 0);
 	pr_id_t    *id = class_create_instance (pr, class);
@@ -653,7 +654,7 @@ pr_class_create_instance (progs_t *pr)
 }
 
 static void
-pr_class_get_class_name (progs_t *pr)
+rua_class_get_class_name (progs_t *pr)
 {
 	pr_class_t *class = &P_STRUCT (pr, pr_class_t, 0);
 	R_INT (pr) = PR_CLS_ISCLASS (class) ? class->name
@@ -661,49 +662,49 @@ pr_class_get_class_name (progs_t *pr)
 }
 
 static void
-pr_class_get_instance_size (progs_t *pr)
+rua_class_get_instance_size (progs_t *pr)
 {
 	pr_class_t *class = &P_STRUCT (pr, pr_class_t, 0);
 	R_INT (pr) = PR_CLS_ISCLASS (class) ? class->instance_size : 0;
 }
 
 static void
-pr_class_get_meta_class (progs_t *pr)
+rua_class_get_meta_class (progs_t *pr)
 {
 	pr_class_t *class = &P_STRUCT (pr, pr_class_t, 0);
 	R_INT (pr) = PR_CLS_ISCLASS (class) ? class->class_pointer : 0;
 }
 
 static void
-pr_class_get_super_class (progs_t *pr)
+rua_class_get_super_class (progs_t *pr)
 {
 	pr_class_t *class = &P_STRUCT (pr, pr_class_t, 0);
 	R_INT (pr) = PR_CLS_ISCLASS (class) ? class->super_class : 0;
 }
 
 static void
-pr_class_get_version (progs_t *pr)
+rua_class_get_version (progs_t *pr)
 {
 	pr_class_t *class = &P_STRUCT (pr, pr_class_t, 0);
 	R_INT (pr) = PR_CLS_ISCLASS (class) ? class->version : -1;
 }
 
 static void
-pr_class_is_class (progs_t *pr)
+rua_class_is_class (progs_t *pr)
 {
 	pr_class_t *class = &P_STRUCT (pr, pr_class_t, 0);
 	R_INT (pr) = PR_CLS_ISCLASS (class);
 }
 
 static void
-pr_class_is_meta_class (progs_t *pr)
+rua_class_is_meta_class (progs_t *pr)
 {
 	pr_class_t *class = &P_STRUCT (pr, pr_class_t, 0);
 	R_INT (pr) = PR_CLS_ISMETA (class);
 }
 
 static void
-pr_class_set_version (progs_t *pr)
+rua_class_set_version (progs_t *pr)
 {
 	pr_class_t *class = &P_STRUCT (pr, pr_class_t, 0);
 	if (PR_CLS_ISCLASS (class))
@@ -711,14 +712,14 @@ pr_class_set_version (progs_t *pr)
 }
 
 static void
-pr_class_get_gc_object_type (progs_t *pr)
+rua_class_get_gc_object_type (progs_t *pr)
 {
 	pr_class_t *class = &P_STRUCT (pr, pr_class_t, 0);
 	R_INT (pr) = PR_CLS_ISCLASS (class) ? class->gc_object_type : 0;
 }
 
 static void
-pr_class_ivar_set_gcinvisible (progs_t *pr)
+rua_class_ivar_set_gcinvisible (progs_t *pr)
 {
 	//pr_class_t *impostor = &P_STRUCT (pr, pr_class_t, 0);
 	//const char *ivarname = P_GSTRING (pr, 1);
@@ -730,7 +731,7 @@ pr_class_ivar_set_gcinvisible (progs_t *pr)
 //====================================================================
 
 static void
-pr_method_get_imp (progs_t *pr)
+rua_method_get_imp (progs_t *pr)
 {
 	pr_method_t *method = &P_STRUCT (pr, pr_method_t, 0);
 
@@ -738,7 +739,7 @@ pr_method_get_imp (progs_t *pr)
 }
 
 static void
-pr_get_imp (progs_t *pr)
+rua_get_imp (progs_t *pr)
 {
 	//pr_class_t *class = &P_STRUCT (pr, pr_class_t, 0);
 	//pr_sel_t   *sel = &P_STRUCT (pr, pr_sel_t, 1);
@@ -749,14 +750,14 @@ pr_get_imp (progs_t *pr)
 //====================================================================
 
 static void
-pr_object_dispose (progs_t *pr)
+rua_object_dispose (progs_t *pr)
 {
 	pr_id_t    *object = &P_STRUCT (pr, pr_id_t, 0);
 	PR_Zone_Free (pr, object);
 }
 
 static void
-pr_object_copy (progs_t *pr)
+rua_object_copy (progs_t *pr)
 {
 	pr_id_t    *object = &P_STRUCT (pr, pr_id_t, 0);
 	pr_class_t *class = &G_STRUCT (pr, pr_class_t, object->class_pointer);
@@ -768,7 +769,7 @@ pr_object_copy (progs_t *pr)
 }
 
 static void
-pr_object_get_class (progs_t *pr)
+rua_object_get_class (progs_t *pr)
 {
 	pr_id_t    *object = &P_STRUCT (pr, pr_id_t, 0);
 	pr_class_t *class;
@@ -788,7 +789,7 @@ pr_object_get_class (progs_t *pr)
 }
 
 static void
-pr_object_get_super_class (progs_t *pr)
+rua_object_get_super_class (progs_t *pr)
 {
 	pr_id_t    *object = &P_STRUCT (pr, pr_id_t, 0);
 	pr_class_t *class;
@@ -808,7 +809,7 @@ pr_object_get_super_class (progs_t *pr)
 }
 
 static void
-pr_object_get_meta_class (progs_t *pr)
+rua_object_get_meta_class (progs_t *pr)
 {
 	pr_id_t    *object = &P_STRUCT (pr, pr_id_t, 0);
 	pr_class_t *class;
@@ -828,7 +829,7 @@ pr_object_get_meta_class (progs_t *pr)
 }
 
 static void
-pr_object_get_class_name (progs_t *pr)
+rua_object_get_class_name (progs_t *pr)
 {
 	pr_id_t    *object = &P_STRUCT (pr, pr_id_t, 0);
 	pr_class_t *class;
@@ -848,7 +849,7 @@ pr_object_get_class_name (progs_t *pr)
 }
 
 static void
-pr_object_is_class (progs_t *pr)
+rua_object_is_class (progs_t *pr)
 {
 	pr_id_t    *object = &P_STRUCT (pr, pr_id_t, 0);
 
@@ -860,7 +861,7 @@ pr_object_is_class (progs_t *pr)
 }
 
 static void
-pr_object_is_instance (progs_t *pr)
+rua_object_is_instance (progs_t *pr)
 {
 	pr_id_t    *object = &P_STRUCT (pr, pr_id_t, 0);
 
@@ -868,7 +869,7 @@ pr_object_is_instance (progs_t *pr)
 }
 
 static void
-pr_object_is_meta_class (progs_t *pr)
+rua_object_is_meta_class (progs_t *pr)
 {
 	pr_id_t    *object = &P_STRUCT (pr, pr_id_t, 0);
 
@@ -882,13 +883,13 @@ pr_object_is_meta_class (progs_t *pr)
 //====================================================================
 
 static void
-pr__i_Object__hash (progs_t *pr)
+rua__i_Object__hash (progs_t *pr)
 {
 	R_INT (pr) = P_INT (pr, 0);
 }
 
 static void
-pr__i_Object_error_error_ (progs_t *pr)
+rua__i_Object_error_error_ (progs_t *pr)
 {
 	pr_id_t    *self = &P_STRUCT (pr, pr_id_t, 0);
 	const char *fmt = P_GSTRING (pr, 2);
@@ -903,7 +904,7 @@ pr__i_Object_error_error_ (progs_t *pr)
 }
 
 static void
-pr__c_Object__conformsToProtocol_ (progs_t *pr)
+rua__c_Object__conformsToProtocol_ (progs_t *pr)
 {
 	//pr_id_t    *object = &P_STRUCT (pr, pr_id_t, 0);
 	//pr_protocol_t *proto = &P_STRUCT (pr, pr_protocol_t, 2);
@@ -915,106 +916,73 @@ pr__c_Object__conformsToProtocol_ (progs_t *pr)
 //====================================================================
 
 static builtin_t obj_methods [] = {
-	{"__obj_exec_class",			pr___obj_exec_class,			-1},
+	{"__obj_exec_class",			rua___obj_exec_class,			-1},
 
-	{"obj_error",					pr_obj_error,					-1},
-	{"obj_verror",					pr_obj_verror,					-1},
-	{"obj_set_error_handler",		pr_obj_set_error_handler,		-1},
-	{"obj_msg_lookup",				pr_obj_msg_lookup,				-1},
-	{"obj_msg_lookup_super",		pr_obj_msg_lookup_super,		-1},
-	{"obj_msg_sendv",				pr_obj_msg_sendv,				-1},
-	{"obj_malloc",					pr_obj_malloc,					-1},
-	{"obj_atomic_malloc",			pr_obj_atomic_malloc,			-1},
-	{"obj_valloc",					pr_obj_valloc,					-1},
-	{"obj_realloc",					pr_obj_realloc,					-1},
-	{"obj_calloc",					pr_obj_calloc,					-1},
-	{"obj_free",					pr_obj_free,					-1},
-	{"obj_get_uninstalled_dtable",	pr_obj_get_uninstalled_dtable,	-1},
-	{"obj_msgSend",					pr_obj_msgSend,					-1},
-	{"obj_msgSend_super",			pr_obj_msgSend_super,			-1},
+	{"obj_error",					rua_obj_error,					-1},
+	{"obj_verror",					rua_obj_verror,					-1},
+	{"obj_set_error_handler",		rua_obj_set_error_handler,		-1},
+	{"obj_msg_lookup",				rua_obj_msg_lookup,				-1},
+	{"obj_msg_lookup_super",		rua_obj_msg_lookup_super,		-1},
+	{"obj_msg_sendv",				rua_obj_msg_sendv,				-1},
+	{"obj_malloc",					rua_obj_malloc,					-1},
+	{"obj_atomic_malloc",			rua_obj_atomic_malloc,			-1},
+	{"obj_valloc",					rua_obj_valloc,					-1},
+	{"obj_realloc",					rua_obj_realloc,				-1},
+	{"obj_calloc",					rua_obj_calloc,					-1},
+	{"obj_free",					rua_obj_free,					-1},
+	{"obj_get_uninstalled_dtable",	rua_obj_get_uninstalled_dtable,	-1},
+	{"obj_msgSend",					rua_obj_msgSend,				-1},
+	{"obj_msgSend_super",			rua_obj_msgSend_super,			-1},
 	
-	{"obj_get_class",				pr_obj_get_class,				-1},
-	{"obj_lookup_class",			pr_obj_lookup_class,			-1},
-	{"obj_next_class",				pr_obj_next_class,				-1},
+	{"obj_get_class",				rua_obj_get_class,				-1},
+	{"obj_lookup_class",			rua_obj_lookup_class,			-1},
+	{"obj_next_class",				rua_obj_next_class,				-1},
 
-	{"sel_get_name",				pr_sel_get_name,				-1},
-	{"sel_get_type",				pr_sel_get_type,				-1},
-	{"sel_get_uid",					pr_sel_get_uid,					-1},
-	{"sel_register_name",			pr_sel_register_name,			-1},
-	{"sel_is_mapped",				pr_sel_is_mapped,				-1},
+	{"sel_get_name",				rua_sel_get_name,				-1},
+	{"sel_get_type",				rua_sel_get_type,				-1},
+	{"sel_get_uid",					rua_sel_get_uid,				-1},
+	{"sel_register_name",			rua_sel_register_name,			-1},
+	{"sel_is_mapped",				rua_sel_is_mapped,				-1},
 
-	{"class_get_class_method",		pr_class_get_class_method,		-1},
-	{"class_get_instance_method",	pr_class_get_instance_method,	-1},
-	{"class_pose_as",				pr_class_pose_as,				-1},
-	{"class_create_instance",		pr_class_create_instance,		-1},
-	{"class_get_class_name",		pr_class_get_class_name,		-1},
-	{"class_get_instance_size",		pr_class_get_instance_size,		-1},
-	{"class_get_meta_class",		pr_class_get_meta_class,		-1},
-	{"class_get_super_class",		pr_class_get_super_class,		-1},
-	{"class_get_version",			pr_class_get_version,			-1},
-	{"class_is_class",				pr_class_is_class,				-1},
-	{"class_is_meta_class",			pr_class_is_meta_class,			-1},
-	{"class_set_version",			pr_class_set_version,			-1},
-	{"class_get_gc_object_type",	pr_class_get_gc_object_type,	-1},
-	{"class_ivar_set_gcinvisible",	pr_class_ivar_set_gcinvisible,	-1},
+	{"class_get_class_method",		rua_class_get_class_method,		-1},
+	{"class_get_instance_method",	rua_class_get_instance_method,	-1},
+	{"class_pose_as",				rua_class_pose_as,				-1},
+	{"class_create_instance",		rua_class_create_instance,		-1},
+	{"class_get_class_name",		rua_class_get_class_name,		-1},
+	{"class_get_instance_size",		rua_class_get_instance_size,	-1},
+	{"class_get_meta_class",		rua_class_get_meta_class,		-1},
+	{"class_get_super_class",		rua_class_get_super_class,		-1},
+	{"class_get_version",			rua_class_get_version,			-1},
+	{"class_is_class",				rua_class_is_class,				-1},
+	{"class_is_meta_class",			rua_class_is_meta_class,		-1},
+	{"class_set_version",			rua_class_set_version,			-1},
+	{"class_get_gc_object_type",	rua_class_get_gc_object_type,	-1},
+	{"class_ivar_set_gcinvisible",	rua_class_ivar_set_gcinvisible,	-1},
 
-	{"method_get_imp",				pr_method_get_imp,				-1},
-	{"get_imp",						pr_get_imp,						-1},
+	{"method_get_imp",				rua_method_get_imp,				-1},
+	{"get_imp",						rua_get_imp,					-1},
 
-	{"object_copy",					pr_object_copy,					-1},
-	{"object_dispose",				pr_object_dispose,				-1},
-	{"object_get_class",			pr_object_get_class,			-1},
-	{"object_get_class_name",		pr_object_get_class_name,		-1},
-	{"object_get_meta_class",		pr_object_get_meta_class,		-1},
-	{"object_get_super_class",		pr_object_get_super_class,		-1},
-	{"object_is_class",				pr_object_is_class,				-1},
-	{"object_is_instance",			pr_object_is_instance,			-1},
-	{"object_is_meta_class",		pr_object_is_meta_class,		-1},
+	{"object_copy",					rua_object_copy,				-1},
+	{"object_dispose",				rua_object_dispose,				-1},
+	{"object_get_class",			rua_object_get_class,			-1},
+	{"object_get_class_name",		rua_object_get_class_name,		-1},
+	{"object_get_meta_class",		rua_object_get_meta_class,		-1},
+	{"object_get_super_class",		rua_object_get_super_class,		-1},
+	{"object_is_class",				rua_object_is_class,			-1},
+	{"object_is_instance",			rua_object_is_instance,			-1},
+	{"object_is_meta_class",		rua_object_is_meta_class,		-1},
 
-	{"_i_Object__hash",				pr__i_Object__hash,				-1},
-	{"_i_Object_error_error_",		pr__i_Object_error_error_,		-1},
-	{"_c_Object__conformsToProtocol_", pr__c_Object__conformsToProtocol_, -1},
+	{"_i_Object__hash",				rua__i_Object__hash,			-1},
+	{"_i_Object_error_error_",		rua__i_Object_error_error_,		-1},
+	{"_c_Object__conformsToProtocol_", rua__c_Object__conformsToProtocol_, -1},
 	{0}
 };
 
-void
-PR_Obj_Progs_Init (progs_t *pr)
+static int
+rua_init_finish (progs_t *pr)
 {
-	PR_RegisterBuiltins (pr, obj_methods);
-}
-
-int
-PR_InitRuntime (progs_t *pr)
-{
-	int         fnum;
 	pr_class_t **class_list, **class;
 	pr_category_t **category_list, **category;
-
-	if (!pr->selectors)
-		pr->selectors = Hash_NewTable (1021, selector_get_key, 0, pr);
-	else
-		Hash_FlushTable (pr->selectors);
-
-	if (!pr->classes)
-		pr->classes = Hash_NewTable (1021, class_get_key, 0, pr);
-	else
-		Hash_FlushTable (pr->classes);
-
-	if (!pr->categories) {
-		pr->categories = Hash_NewTable (1021, 0, 0, pr);
-		Hash_SetHashCompare (pr->categories,
-							 category_get_hash, category_compare);
-	} else {
-		Hash_FlushTable (pr->categories);
-	}
-
-	pr->fields.this = ED_GetFieldIndex (pr, ".this");
-	for (fnum = 0; fnum < pr->progs->numfunctions; fnum++) {
-		if (strequal (PR_GetString (pr, pr->pr_functions[fnum].s_name),
-					  ".ctor")) {
-			PR_ExecuteProgram (pr, fnum);
-		}
-	}
 
 	class_list = (pr_class_t **) Hash_GetList (pr->classes);
 	if (*class_list) {
@@ -1038,4 +1006,39 @@ PR_InitRuntime (progs_t *pr)
 	}
 	free (category_list);
 	return 1;
+}
+
+static int
+rua_init_runtime (progs_t *pr)
+{
+	if (!pr->selectors)
+		pr->selectors = Hash_NewTable (1021, selector_get_key, 0, pr);
+	else
+		Hash_FlushTable (pr->selectors);
+
+	if (!pr->classes)
+		pr->classes = Hash_NewTable (1021, class_get_key, 0, pr);
+	else
+		Hash_FlushTable (pr->classes);
+
+	if (!pr->categories) {
+		pr->categories = Hash_NewTable (1021, 0, 0, pr);
+		Hash_SetHashCompare (pr->categories,
+							 category_get_hash, category_compare);
+	} else {
+		Hash_FlushTable (pr->categories);
+	}
+
+	pr->fields.this = ED_GetFieldIndex (pr, ".this");
+
+	PR_AddLoadFinishFunc (pr, rua_init_finish);
+	return 1;
+}
+
+void
+RUA_Obj_Init (progs_t *pr, int secure)
+{
+	PR_RegisterBuiltins (pr, obj_methods);
+
+	PR_AddLoadFunc (pr, rua_init_runtime);
 }

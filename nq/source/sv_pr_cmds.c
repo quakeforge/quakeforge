@@ -1412,7 +1412,6 @@ static builtin_t builtins[] = {
 void
 SV_PR_Cmds_Init ()
 {
-	PR_Obj_Progs_Init (&sv_pr_state);
 	RUA_Init (&sv_pr_state, 1);
 
 	PR_Cmds_Init (&sv_pr_state);

@@ -2008,7 +2008,6 @@ SV_PR_Cmds_Init ()
 {
 	builtin_t  *bi;
 
-	PR_Obj_Progs_Init (&sv_pr_state);
 	RUA_Init (&sv_pr_state, 1);
 
 	PR_Cmds_Init (&sv_pr_state);
