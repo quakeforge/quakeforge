@@ -171,8 +171,7 @@ NET_AdrIsLoopback (netadr_t a)
 qboolean
 NET_CompareBaseAdr (netadr_t a, netadr_t b)
 {
-	if (a.ip[0] == b.ip[0] && a.ip[1] == b.ip[1] && a.ip[2] == b.ip[2]
-		&& a.ip[3] == b.ip[3])
+	if (memcmp (a.ip, b.ip, sizeof (a.ip)) == 0)
 		return true;
 	return false;
 }
@@ -180,8 +179,7 @@ NET_CompareBaseAdr (netadr_t a, netadr_t b)
 qboolean
 NET_CompareAdr (netadr_t a, netadr_t b)
 {
-	if (a.ip[0] == b.ip[0] && a.ip[1] == b.ip[1] && a.ip[2] == b.ip[2]
-		&& a.ip[3] == b.ip[3] && a.port == b.port)
+	if (memcmp (a.ip, b.ip, sizeof (a.ip)) == 0 && a.port == b.port)
 		return true;
 	return false;
 }
