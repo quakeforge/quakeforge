@@ -51,6 +51,7 @@ static const char rcsid[] =
 #include <X11/Xlib.h>
 #include <X11/keysym.h>
 #include <X11/Xutil.h>
+#include <X11/Xatom.h>
 
 #ifdef HAVE_DGA
 # include <X11/extensions/XShm.h>
@@ -127,32 +128,47 @@ in_dga_f (cvar_t *var)
 static void
 in_paste_buffer_f (void)
 {
-	char       *bytes, *p;
-	int         num_bytes;
+	Atom        property;
 
-	if (Cmd_Argc () >= 2) {
-		const char *val;
-		char       *end;
-		int         buffer;
-
-		val = Cmd_Argv (1);
-		buffer = strtol (val, &end, 10);
-		if (end == val || buffer < 0 || buffer > 7) {
-			Sys_Printf ("invalid buffer number");
-			return;
-		}
-		bytes = XFetchBuffer (x_disp, &num_bytes, buffer);
-	} else {
-		bytes = XFetchBytes (x_disp, &num_bytes);
-	}
-	if (!num_bytes)
+	if (XGetSelectionOwner (x_disp, XA_PRIMARY) == None)
 		return;
+	property = XInternAtom (x_disp, "GETCLIPBOARDDATA_PROP", False);
+	//FIXME shouldn't use CurrentTime but rather the timestamp of the event
+	//triggering this (timestamp of the last event?)
+	XConvertSelection (x_disp, XA_PRIMARY, XA_STRING, property, x_win,
+					   CurrentTime);
+	XFlush (x_disp);
+}
+
+static void
+selection_notify (XEvent * event)
+{
+	unsigned char *data, *p;
+	unsigned long num_bytes;
+	unsigned long tmp, len;
+	int         format;
+	Atom        type, property;
+
+	if ((property = event->xselection.property) == None)
+		return;
+
+	XGetWindowProperty (x_disp, x_win, property, 0, 0, False, AnyPropertyType,
+						&type, &format, &len, &num_bytes, &data);
+	if (num_bytes <= 0)
+		return;
+	if (XGetWindowProperty (x_disp, x_win, property, 0, num_bytes, True,
+							AnyPropertyType, &type, &format, &len,
+							&tmp, &data) != Success) {
+		XFree (data);	//FIXME is this correct for his instance?
+		return;
+	}
+
 	// get bytes to keys.c
-	for (p = bytes; num_bytes && *p; p++, num_bytes--) {
+	for (p = data; num_bytes && *p; p++, num_bytes--) {
 		Key_Event (QFK_UNKNOWN, *p, 1);
 		Key_Event (QFK_UNKNOWN, 0, 0);
 	}
-	XFree (bytes);
+	XFree (data);
 }
 
 static void
@@ -574,6 +590,7 @@ IN_LL_Init (void)
 	X11_AddEvent (KeyRelease, &event_key);
 	X11_AddEvent (FocusIn, &event_focusin);
 	X11_AddEvent (FocusOut, &event_focusout);
+	X11_AddEvent (SelectionNotify, &selection_notify);
 
 	if (!COM_CheckParm ("-nomouse")) {
 		dga_avail = VID_CheckDGA (x_disp, NULL, NULL, NULL);
