@@ -178,21 +178,20 @@ void
 extract_line (dstring_t *buffer, dstring_t *line)
 {
 	int i, squotes = 0, dquotes = 0;
-	char *text = buffer->str;
 	
-	for (i = 0; text[i]; i++) {
-		if (text[i] == '\'' && !escaped(text,i) && !dquotes)
+	for (i = 0; buffer->str[i]; i++) {
+		if (buffer->str[i] == '\'' && !escaped(buffer->str,i) && !dquotes)
 			squotes^=1;
-		if (text[i] == '"' && !escaped(text,i) && !squotes)
+		if (buffer->str[i] == '"' && !escaped(buffer->str,i) && !squotes)
 			dquotes^=1;
-		if (text[i] == ';' && !escaped(text,i) && !squotes && !dquotes)
+		if (buffer->str[i] == ';' && !escaped(buffer->str,i) && !squotes && !dquotes)
 			break;
-		if (text[i] == '\n' || text[i] == '\r')
+		if (buffer->str[i] == '\n' || buffer->str[i] == '\r')
 			break;
 	}
 	if (i)
 		dstring_insert (line, buffer->str, i, 0);
-	if (text[i])
+	if (buffer->str[i])
 		dstring_snip (buffer, 0, i + 1);
 	else // We've hit the end of the buffer, just clear it
 		dstring_clearstr (buffer); 
@@ -521,12 +520,12 @@ int Cmd_GetToken (const char *str) {
 			else // End of string, this token is done
 				break;
 		}
-		else if (str[i] == '\'' && (!i || str[i-1] != '\\') && !dquote) {
+		else if (str[i] == '\'' && !escaped(str,i) && !dquote) {
 			if (i) // If not at start of string, we must be at the end of a token
 				break;
 			squote = 1;
 		}
-		else if (str[i] == '"' && (!i || str[i-1] != '\\') && !squote) {
+		else if (str[i] == '"' && !escaped(str,i) && !squote) {
 			if (i) // Start new token
 				break;
 			dquote = 1;
@@ -592,17 +591,16 @@ void
 Cmd_ProcessTags (dstring_t *dstr)
 {
 	int close = 0, ignore = 0, i, n, c;
-	char *str = dstr->str;
 	
-	for (i = 0; i < strlen(str); i++) {
-		if (str[i] == '<' && (!i || str[i-1] != '\\')) {
+	for (i = 0; i < strlen(dstr->str); i++) {
+		if (dstr->str[i] == '<' && !escaped(dstr->str,i)){
 			close = 0;
-			for (n = 1; str[i+n] != '>' || str[i+n-1] == '\\'; n++)
-				if (str[n] == 0)
+			for (n = 1; dstr->str[i+n] != '>' || escaped(dstr->str, i+n); n++)
+				if (dstr->str[n] == 0)
 					return;
-			if (str[i+1] == '/')
+			if (dstr->str[i+1] == '/')
 				close = 1;
-			if (!strncmp(str+i+close+1, "i", 1)) {
+			if (!strncmp(dstr->str+i+close+1, "i", 1)) {
 				if (ignore && !close) // If we are ignoring, ignore a non close
 					continue;
 				else if (close && ignore) // If we are closing, turn off ignore
@@ -612,9 +610,9 @@ Cmd_ProcessTags (dstring_t *dstr)
 			}					
 			else if (ignore) // If ignore isn't being changed and we are ignore, go on
 				continue;
-			else if (!strncmp(str+i+close+1, "b", 1))
+			else if (!strncmp(dstr->str+i+close+1, "b", 1))
 				tag_shift = close ? tag_shift - 1 : tag_shift + 1;
-			else if (!strncmp(str+i+close+1, "s", 1))
+			else if (!strncmp(dstr->str+i+close+1, "s", 1))
 				tag_special = close ? tag_special - 1 : tag_special + 1;
 			if (tag_shift < 0)
 				tag_shift = 0;
@@ -624,17 +622,17 @@ Cmd_ProcessTags (dstring_t *dstr)
 			i--;
 			continue;
 		}
-		c = str[i];	
+		c = dstr->str[i];	
 		/* This ignores escape characters, unless it is itself escaped */
-		if (c == '\\' && (!i || str[i-1] != '\\'))
+		if (c == '\\' && (!i || dstr->str[i-1] != '\\'))
 			continue;
 		if (tag_special) {
 			for (n = 0; stable1[n].a; n++)
 				if (c == stable1[n].a)
-					c = str[i] = stable1[n].b;
+					c = dstr->str[i] = stable1[n].b;
 		}
 		if (tag_shift && c < 128)
-			c = (str[i] += 128);
+			c = (dstr->str[i] += 128);
 	}
 }
 	
@@ -649,26 +647,26 @@ Cmd_ProcessTags (dstring_t *dstr)
 void
 Cmd_ProcessVariables (dstring_t *dstr)
 {
-	char *str = dstr->str;
 	dstring_t *varname;
 	cvar_t *var;
 	int i, n;
 	
 	varname = dstring_newstr ();
 	
-	for (i = 0; i < strlen(str); i++) {
-		if (str[i] == '$' && str[i+1] == '{' && (!i || str[i-1] != '\\')) {
-			for (n = 0; str[i+n] != '}'; n++)
-				if (!str[i+n])
+	for (i = 0; i < strlen(dstr->str); i++) {
+		if (dstr->str[i] == '$' && dstr->str[i+1] == '{' && !escaped(dstr->str,i)) {
+			for (n = 0; dstr->str[i+n] != '}'; n++)
+				if (!dstr->str[i+n])
 					return; // Open curly braces, give up
 			/* Copy text between braces into a buffer */
 			dstring_clearstr (varname);
-			dstring_insert (varname, str+i+2, n-2, 0);
+			dstring_insert (varname, dstr->str+i+2, n-2, 0);
 			var = 0;
 			var = Cvar_FindVar(varname->str);
+			dstring_snip (dstr, i, n+1); // Nuke it, even if no match is found
 			if (var) {// Do we have a match?
-				dstring_snip (dstr, i, n+1); // Nuke it
 				dstring_insertstr (dstr, var->string, i); // Stick in the value of variable
+				i += strlen(var->string) - 1;
 			}
 		}
 	}
@@ -689,15 +687,14 @@ Cmd_ProcessVariables (dstring_t *dstr)
 void
 Cmd_ProcessEscapes (dstring_t *dstr) {
 	int i;
-	char *str = dstr->str;
 	
-	for (i = 0; i < strlen(str); i++) {
-		if (str[i] == '\\' && str[i+1]) {
+	for (i = 0; i < strlen(dstr->str); i++) {
+		if (dstr->str[i] == '\\' && dstr->str[i+1]) {
 			dstring_snip(dstr, i, 1);
-			if (str[i] == '\\')
+			if (dstr->str[i] == '\\')
 				i++;
-			if (str[i] == 'n')
-				str[i] = '\n';
+			if (dstr->str[i] == 'n')
+				dstr->str[i] = '\n';
 			i--;
 		}
 	}
@@ -712,20 +709,23 @@ Cmd_ProcessEscapes (dstring_t *dstr) {
 void Cmd_ProcessPercents (dstring_t *dstr) {
 	int i, n;
 	long int num;
-	char *str = dstr->str;
 	
-	for (i = 0; i < strlen(str); i++) {
-		if (str[i] == '%') {
-			if (str[i+1] == '%') {
+	Sys_DPrintf("Cmd_ProcessPercents:  Received line:  %s\n", dstr->str);
+	
+	for (i = 0; i < strlen(dstr->str); i++) {
+		if (dstr->str[i] == '%') {
+			if (dstr->str[i+1] == '%') {
 				dstring_snip (dstr, i, 1);
 				continue;
 			}
-			for (n = 1; isdigit(str[i+n]); n++);
+			for (n = 1; isdigit(dstr->str[i+n]); n++);
 			if (n < 2)
 				continue;
-			num = strtol(str+i+1, 0, 10);
+			num = strtol(dstr->str+i+1, 0, 10);
 			dstring_snip (dstr, i, n);
 			dstring_insertstr (dstr, Cmd_Argv(num), i);
+			Sys_DPrintf("Cmd_ProcessPercents:  Replaced %%%i with %s\n", (int)num, Cmd_Argv(num));
+			Sys_DPrintf("Cmd_ProcessPercents:  New line: %s\n", dstr->str);
 		}
 	}
 }				
@@ -756,6 +756,8 @@ Cmd_TokenizeString (const char *text, qboolean filter)
 	const char *str = text;
 	
 	cmd_argc = 0;
+	
+	Sys_DPrintf("Cmd_TokenizeString:  Received line:  %s\n", text);
 	
 	/* Turn off tags at the beginning of a command.
 	This causes tags to continue past token boundaries. */
@@ -811,6 +813,7 @@ Cmd_TokenizeString (const char *text, qboolean filter)
 		cmd_args[i] = strlen(cmd_argbuf->str);
 		dstring_appendstr (cmd_argbuf, cmd_argv[i]->str);
 	}
+	Sys_DPrintf("Cmd_TokenizeString:  Reconstructed line: %s\n", cmd_argbuf->str);
 }
 
 void
@@ -1070,7 +1073,6 @@ Cmd_ExecuteString (const char *text, cmd_source_t src)
 	a = (cmdalias_t*)Hash_Find (cmd_alias_hash, cmd_argv[0]->str);
 	if (a) {
 		dstring_t *temp = dstring_newstr ();
-		dstring_appendstr (temp, "\n");
 		dstring_appendstr (temp, a->value);
 		Cmd_ProcessPercents (temp);
 		Cbuf_InsertText (temp->str);
