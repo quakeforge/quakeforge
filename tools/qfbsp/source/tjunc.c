@@ -50,6 +50,7 @@ typedef struct wedge_s {
 int         numwedges, numwverts;
 int         tjuncs;
 int         tjuncfaces;
+int         degenerdges;
 
 #define	MAXWVERTS	0x20000
 #define	MAXWEDGES	0x10000
@@ -99,34 +100,38 @@ HashVec (vec3_t vec)
 	return h;
 }
 
-static void
+static qboolean
 CanonicalVector (vec3_t vec)
 {
-	_VectorNormalize (vec);
+	vec_t       len = _VectorNormalize (vec);
+
+	if (len < EQUAL_EPSILON)
+		return false;
+
 	if (vec[0] > EQUAL_EPSILON)
-		return;
+		return true;
 	else if (vec[0] < -EQUAL_EPSILON) {
 		VectorNegate (vec, vec);
-		return;
+		return true;
 	} else
 		vec[0] = 0;
 
 	if (vec[1] > EQUAL_EPSILON)
-		return;
+		return true;
 	else if (vec[1] < -EQUAL_EPSILON) {
 		VectorNegate (vec, vec);
-		return;
+		return true;
 	} else
 		vec[1] = 0;
 
 	if (vec[2] > EQUAL_EPSILON)
-		return;
+		return true;
 	else if (vec[2] < -EQUAL_EPSILON) {
 		VectorNegate (vec, vec);
-		return;
+		return true;
 	} else
 		vec[2] = 0;
-	Sys_Error ("CanonicalVector: degenerate");
+	return false;
 }
 
 static wedge_t    *
@@ -138,7 +143,11 @@ FindEdge (vec3_t p1, vec3_t p2, vec_t *t1, vec_t *t2)
 	wedge_t    *w;
 
 	VectorSubtract (p2, p1, dir);
-	CanonicalVector (dir);
+
+	if (!CanonicalVector (dir)) {
+		degenerdges++;
+		return 0;
+	}
 
 	*t1 = DotProduct (p1, dir);
 	*t2 = DotProduct (p2, dir);
@@ -228,9 +237,10 @@ AddEdge (vec3_t p1, vec3_t p2)
 	wedge_t    *w;
 	vec_t       t1, t2;
 
-	w = FindEdge (p1, p2, &t1, &t2);
-	AddVert (w, t1);
-	AddVert (w, t2);
+	if ((w = FindEdge (p1, p2, &t1, &t2))) {
+		AddVert (w, t1);
+		AddVert (w, t2);
+	}
 }
 
 static void
@@ -259,7 +269,8 @@ FixFaceEdges (face_t *f)
 	for (i = 0; i < fp->numpoints; i++) {
 		j = (i + 1) % fp->numpoints;
 
-		w = FindEdge (fp->points[i], fp->points[j], &t1, &t2);
+		if (!(w = FindEdge (fp->points[i], fp->points[j], &t1, &t2)))
+			continue;
 
 		for (v = w->head.next; v->t < t1 + T_EPSILON; v = v->next) {
 		}
@@ -356,9 +367,11 @@ tjunc (node_t *headnode)
 
 	// add extra vertexes on edges where needed
 	tjuncs = tjuncfaces = 0;
+	degenerdges = 0;
 
 	tjunc_fix_r (headnode);
 
+	qprintf ("%i degenerate edges\n", degenerdges);
 	qprintf ("%i edges added by tjunctions\n", tjuncs);
 	qprintf ("%i faces added by tjunctions\n", tjuncfaces);
 }

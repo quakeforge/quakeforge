@@ -472,22 +472,6 @@ DividePlane (surface_t *in, plane_t *split, surface_t **front,
 	CalcSurfaceInfo (in);
 }
 
-static void
-DivideNodeBounds (node_t *node, plane_t *split)
-{
-	VectorCopy (node->mins, node->children[0]->mins);
-	VectorCopy (node->mins, node->children[1]->mins);
-	VectorCopy (node->maxs, node->children[0]->maxs);
-	VectorCopy (node->maxs, node->children[1]->maxs);
-
-	// OPTIMIZE: sloping cuts can give a better bbox than this...
-	if (split->type > 2)
-		return;
-
-	node->children[0]->mins[split->type] =
-		node->children[1]->maxs[split->type] = split->dist;
-}
-
 /*
 	LinkConvexFaces
 
@@ -617,8 +601,6 @@ PartitionSurfaces (surface_t *surfaces, node_t *node)
 	node->planenum = split->planenum;
 
 	splitplane = &planes[split->planenum];
-
-	DivideNodeBounds (node, splitplane);
 
 	// multiple surfaces, so split all the polysurfaces into front and back
 	// lists

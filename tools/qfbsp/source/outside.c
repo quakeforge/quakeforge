@@ -30,21 +30,16 @@ static __attribute__ ((unused)) const char rcsid[] =
 
 int         outleafs;
 
-static node_t     *
+static node_t *
 PointInLeaf (node_t *node, vec3_t point)
 {
 	vec_t       d;
 
-	if (node->contents)
-		return node;
-
-	d = DotProduct (planes[node->planenum].normal, point)
-		- planes[node->planenum].dist;
-
-	if (d > 0)
-		return PointInLeaf (node->children[0], point);
-
-	return PointInLeaf (node->children[1], point);
+	while (!node->contents) {
+		d = DotProduct (planes[node->planenum].normal, point);
+		node = node->children[d <= planes[node->planenum].dist];
+	}
+	return node;
 }
 
 static void

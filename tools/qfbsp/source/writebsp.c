@@ -473,6 +473,7 @@ BeginBSPFile (void)
 
 	// leaf 0 is common solid with no faces
 	leaf.contents = CONTENTS_SOLID;
+	leaf.visofs = -1;
 	BSP_AddLeaf (bsp, &leaf);
 
 	firstface = 0;
