@@ -838,8 +838,6 @@ IN_LL_Ungrab_Input (void)
 void
 IN_LL_Init (void)
 {
-	JOY_Init ();
-
 	/* Enable UNICODE translation for keyboard input */
 	SDL_EnableUNICODE(1);
 
