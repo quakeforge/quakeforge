@@ -2038,8 +2038,12 @@ array_expr (expr_t *array, expr_t *index)
 	if (array_type->type == ev_array) {
 		e = address_expr (array, index, array_type->aux_type);
 	} else {
-		e = new_binary_expr ('.', array, index);
-		e->e.expr.type = pointer_type (array_type->aux_type);
+		if (index->type != ex_short || index->e.integer_val) {
+			e = new_binary_expr ('.', array, index);
+			e->e.expr.type = pointer_type (array_type->aux_type);
+		} else {
+			e = array;
+		}
 	}
 	e = unary_expr ('.', e);
 	return e;
