@@ -1,8 +1,7 @@
-
 /*
 	cl_parse.c
 
-	@description@
+	parse a message received from the server
 
 	Copyright (C) 1996-1997  Id Software, Inc.
 
@@ -37,56 +36,54 @@
 # include <strings.h>
 #endif
 
-#include "client.h"
-#include "host.h"
 #include "QF/cdaudio.h"
 #include "QF/cmd.h"
 #include "QF/console.h"
 #include "QF/msg.h"
 #include "QF/sys.h"
-#include "sbar.h"
 #include "QF/screen.h"
-#include "server.h"
 #include "QF/sound.h" // FIXME: DEFAULT_SOUND_PACKET_*
-#include "game.h"
 #include "QF/input.h"
 
+#include "client.h"
+#include "host.h"
+#include "sbar.h"
+#include "server.h"
+#include "game.h"
 
 char       *svc_strings[] = {
 	"svc_bad",
 	"svc_nop",
 	"svc_disconnect",
 	"svc_updatestat",
-	"svc_version",						// [long] server version
-	"svc_setview",						// [short] entity number
-	"svc_sound",						// <see code>
-	"svc_time",							// [float] server time
-	"svc_print",						// [string] null terminated string
-	"svc_stufftext",					// [string] stuffed into client's
-	// console buffer
-	// the string should be \n terminated
-	"svc_setangle",						// [vec3] set the view angle to this
-	// absolute value
+	"svc_version",				// [long] server version
+	"svc_setview",				// [short] entity number
+	"svc_sound",				// <see code>
+	"svc_time",					// [float] server time
+	"svc_print",				// [string] null terminated string
+	"svc_stufftext",			// [string] stuffed into client's console
+								// buffer the string should be \n terminated
+	"svc_setangle",				// [vec3] set view angle to this absolute value
 
-	"svc_serverinfo",					// [long] version
-	// [string] signon string
-	// [string]..[0]model cache [string]...[0]sounds cache
-	// [string]..[0]item cache
-	"svc_lightstyle",					// [byte] [string]
-	"svc_updatename",					// [byte] [string]
-	"svc_updatefrags",					// [byte] [short]
-	"svc_clientdata",					// <shortbits + data>
-	"svc_stopsound",					// <see code>
-	"svc_updatecolors",					// [byte] [byte]
-	"svc_particle",						// [vec3] <variable>
-	"svc_damage",						// [byte] impact [byte] blood [vec3]
-	// from
+	"svc_serverinfo",			// [long] version
+								// [string] signon string
+								// [string]..[0]model cache
+								// [string]...[0]sounds cache
+								// [string]..[0]item cache
+	"svc_lightstyle",			// [byte] [string]
+	"svc_updatename",			// [byte] [string]
+	"svc_updatefrags",			// [byte] [short]
+	"svc_clientdata",			// <shortbits + data>
+	"svc_stopsound",			// <see code>
+	"svc_updatecolors",			// [byte] [byte]
+	"svc_particle",				// [vec3] <variable>
+	"svc_damage",				// [byte] impact [byte] blood [vec3] from
 
 	"svc_spawnstatic",
 	"OBSOLETE svc_spawnbinary",
 	"svc_spawnbaseline",
 
-	"svc_temp_entity",					// <variable>
+	"svc_temp_entity",			// <variable>
 	"svc_setpause",
 	"svc_signonnum",
 	"svc_centerprint",
@@ -94,8 +91,8 @@ char       *svc_strings[] = {
 	"svc_foundsecret",
 	"svc_spawnstaticsound",
 	"svc_intermission",
-	"svc_finale",						// [string] music [string] text
-	"svc_cdtrack",						// [byte] track [byte] looptrack
+	"svc_finale",				// [string] music [string] text
+	"svc_cdtrack",				// [byte] track [byte] looptrack
 	"svc_sellscreen",
 	"svc_cutscene"
 };
@@ -182,7 +179,7 @@ CL_KeepaliveMessage (void)
 	if (cls.demoplayback)
 		return;
 
-// read messages from server, should just be nops
+	// read messages from server, should just be nops
 	old = *net_message->message;
 	memcpy (olddata, net_message->message->data, net_message->message->cursize);
 
@@ -206,19 +203,20 @@ CL_KeepaliveMessage (void)
 	*net_message->message = old;
 	memcpy (net_message->message->data, olddata, net_message->message->cursize);
 
-// check time
+	// check time
 	time = Sys_DoubleTime ();
 	if (time - lastmsg < 5)
 		return;
 	lastmsg = time;
 
-// write out a nop
+	// write out a nop
 	Con_Printf ("--> client to server keepalive\n");
 
 	MSG_WriteByte (&cls.message, clc_nop);
 	NET_SendMessage (cls.netcon, &cls.message);
 	SZ_Clear (&cls.message);
 }
+
 
 struct model_s **snd_worldmodel = &cl.worldmodel;
 
@@ -234,8 +232,7 @@ CL_ParseServerInfo (void)
 
 	Con_DPrintf ("Serverinfo packet received.\n");
 
-// wipe the client_state_t struct
-//
+	// wipe the client_state_t struct
 	CL_ClearState ();
 
 	// parse protocol version number
@@ -244,7 +241,7 @@ CL_ParseServerInfo (void)
 		Con_Printf ("Server returned version %i, not %i", i, PROTOCOL_VERSION);
 		return;
 	}
-// parse maxclients
+	// parse maxclients
 	cl.maxclients = MSG_ReadByte (net_message);
 	if (cl.maxclients < 1 || cl.maxclients > MAX_SCOREBOARD) {
 		Con_Printf ("Bad maxclients (%u) from server\n", cl.maxclients);
@@ -252,23 +249,22 @@ CL_ParseServerInfo (void)
 	}
 	cl.scores = Hunk_AllocName (cl.maxclients * sizeof (*cl.scores), "scores");
 
-// parse gametype
+	// parse gametype
 	cl.gametype = MSG_ReadByte (net_message);
 
-// parse signon message
+	// parse signon message
 	str = MSG_ReadString (net_message);
 	strncpy (cl.levelname, str, sizeof (cl.levelname) - 1);
 
-// seperate the printfs so the server message can have a color
-	Con_Printf
-		("\n\n\35\36\36\36\36\36\36\36\36\36\36\36\36\36\36\36\36\36\36\36\36\36\36\36\36\36\36\36\36\36\36\36\36\36\36\36\37\n\n");
+	// seperate the printfs so the server message can have a color
+	Con_Printf ("\n\n\35\36\36\36\36\36\36\36\36\36\36\36\36\36\36\36\36\36\36\36\36\36\36\36\36\36\36\36\36\36\36\36\36\36\36\36\37\n\n");
 	Con_Printf ("%c%s\n", 2, str);
 
 // first we go through and touch all of the precache data that still
 // happens to be in the cache, so precaching something else doesn't
 // needlessly purge it
 
-// precache models
+	// precache models
 	memset (cl.model_precache, 0, sizeof (cl.model_precache));
 	for (nummodels = 1;; nummodels++) {
 		str = MSG_ReadString (net_message);
@@ -282,7 +278,7 @@ CL_ParseServerInfo (void)
 		Mod_TouchModel (str);
 	}
 
-// precache sounds
+	// precache sounds
 	memset (cl.sound_precache, 0, sizeof (cl.sound_precache));
 	for (numsounds = 1;; numsounds++) {
 		str = MSG_ReadString (net_message);
@@ -296,7 +292,7 @@ CL_ParseServerInfo (void)
 		S_TouchSound (str);
 	}
 
-// now we try to load everything else until a cache allocation fails
+	// now we try to load everything else until a cache allocation fails
 
 	for (i = 1; i < nummodels; i++) {
 		cl.model_precache[i] = Mod_ForName (model_precache[i], false);
@@ -314,8 +310,7 @@ CL_ParseServerInfo (void)
 	}
 	S_EndPrecaching ();
 
-
-// local state
+	// local state
 	cl_entities[0].model = cl.worldmodel = cl.model_precache[1];
 
 	R_NewMap ();
@@ -376,7 +371,7 @@ CL_ParseUpdate (int bits)
 		forcelink = false;
 
 	if (forcelink) {
-		//FIXME do this right (ie, protocol support)
+//FIXME do this right (ie, protocol support)
 		ent->alpha = 1;
 		ent->scale = 1;
 		ent->glow_color = 254;
@@ -441,7 +436,7 @@ CL_ParseUpdate (int bits)
 	else
 		ent->effects = ent->baseline->effects;
 
-// shift the known values for interpolation
+	// shift the known values for interpolation
 	VectorCopy (ent->msg_origins[0], ent->msg_origins[1]);
 	VectorCopy (ent->msg_angles[0], ent->msg_angles[1]);
 
@@ -540,7 +535,7 @@ CL_ParseClientdata (int bits)
 			cl.mvelocity[0][i] = 0;
 	}
 
-// [always sent]    if (bits & SU_ITEMS)
+	// [always sent]    if (bits & SU_ITEMS)
 	i = MSG_ReadLong (net_message);
 
 	if (cl.stats[STAT_ITEMS] != i) {				// set flash times
@@ -626,7 +621,7 @@ CL_ParseStatic (void)
 	cl.num_statics++;
 	CL_ParseBaseline (ent);
 
-// copy it to the current state
+	// copy it to the current state
 	ent->model = cl.model_precache[ent->baseline->modelindex];
 	ent->frame = ent->baseline->frame;
 	ent->colormap = vid.colormap;
@@ -667,14 +662,14 @@ CL_ParseStaticSound (void)
 
 int snd_viewentity;
 
+
 void
 CL_ParseServerMessage (void)
 {
 	int         cmd;
 	int         i;
 
-// if recording demos, copy the message out
-//
+	// if recording demos, copy the message out
 	if (cl_shownet->int_val == 1)
 		Con_Printf ("%i ", net_message->message->cursize);
 	else if (cl_shownet->int_val == 2)
@@ -682,8 +677,7 @@ CL_ParseServerMessage (void)
 
 	cl.onground = false;				// unless the server says otherwise 
 
-// parse the message
-//
+	// parse the message
 	MSG_BeginReading (net_message);
 
 	while (1) {

@@ -29,18 +29,17 @@
 #ifdef HAVE_CONFIG_H
 # include "config.h"
 #endif
-
 #ifdef HAVE_STRING_H
-#include <string.h>
+# include <string.h>
 #endif
 #ifdef HAVE_STRINGS_H
-#include <strings.h>
+# include <strings.h>
 #endif
 #ifdef HAVE_ERRNO_H
-#include <errno.h>
+# include <errno.h>
 #endif
 #ifdef HAVE_UNISTD_H
-#include <unistd.h>
+# include <unistd.h>
 #endif
 
 #include "QF/cdaudio.h"
@@ -74,33 +73,30 @@ char       *svc_strings[] = {
 	"svc_nop",
 	"svc_disconnect",
 	"svc_updatestat",
-	"svc_version",						// [long] server version
-	"svc_setview",						// [short] entity number
-	"svc_sound",						// <see code>
-	"svc_time",							// [float] server time
-	"svc_print",						// [string] null terminated string
-	"svc_stufftext",					// [string] stuffed into client's
-										// console buffer
-	// the string should be \n terminated
-	"svc_setangle",						// [vec3] set the view angle to this
-										// absolute value
+	"svc_version",				// [long] server version
+	"svc_setview",				// [short] entity number
+	"svc_sound",				// <see code>
+	"svc_time",					// [float] server time
+	"svc_print",				// [string] null terminated string
+	"svc_stufftext",			// [string] stuffed into client's console
+								// buffer the string should be \n terminated
+	"svc_setangle",				// [vec3] set view angle to this absolute value
 
-	"svc_serverdata",					// [long] version ...
-	"svc_lightstyle",					// [byte] [string]
-	"svc_updatename",					// [byte] [string]
-	"svc_updatefrags",					// [byte] [short]
-	"svc_clientdata",					// <shortbits + data>
-	"svc_stopsound",					// <see code>
-	"svc_updatecolors",					// [byte] [byte]
-	"svc_particle",						// [vec3] <variable>
-	"svc_damage",						// [byte] impact [byte] blood [vec3]
-										// from
+	"svc_serverdata",			// [long] version ...
+	"svc_lightstyle",			// [byte] [string]
+	"svc_updatename",			// [byte] [string]
+	"svc_updatefrags",			// [byte] [short]
+	"svc_clientdata",			// <shortbits + data>
+	"svc_stopsound",			// <see code>
+	"svc_updatecolors",			// [byte] [byte]
+	"svc_particle",				// [vec3] <variable>
+	"svc_damage",				// [byte] impact [byte] blood [vec3] from
 
 	"svc_spawnstatic",
 	"OBSOLETE svc_spawnbinary",
 	"svc_spawnbaseline",
 
-	"svc_temp_entity",					// <variable>
+	"svc_temp_entity",			// <variable>
 	"svc_setpause",
 	"svc_signonnum",
 	"svc_centerprint",
@@ -158,9 +154,8 @@ double      parsecounttime;
 int         cl_spikeindex, cl_playerindex, cl_flagindex;
 int         cl_h_playerindex, cl_gib1index, cl_gib2index, cl_gib3index;
 
-//=============================================================================
-
 int         packet_latency[NET_TIMINGS];
+
 
 int
 CL_CalcNet (void)
@@ -192,7 +187,6 @@ CL_CalcNet (void)
 	return lost * 100 / NET_TIMINGS;
 }
 
-//=============================================================================
 
 /*
 	CL_CheckOrDownloadFile
@@ -249,10 +243,10 @@ CL_CheckOrDownloadFile (char *filename)
 	return false;
 }
 
+
 struct model_s **snd_worldmodel = &cl.worldmodel;
-/*
-	Model_NextDownload
-*/
+
+
 void
 Model_NextDownload (void)
 {
@@ -314,9 +308,7 @@ Model_NextDownload (void)
 						 cl.worldmodel->checksum2));
 }
 
-/*
-	Sound_NextDownload
-*/
+
 void
 Sound_NextDownload (void)
 {
@@ -356,9 +348,6 @@ Sound_NextDownload (void)
 }
 
 
-/*
-	CL_RequestNextDownload
-*/
 void
 CL_RequestNextDownload (void)
 {
@@ -379,6 +368,7 @@ CL_RequestNextDownload (void)
 			Con_DPrintf ("Unknown download type.\n");
 	}
 }
+
 
 /*
 	CL_ParseDownload
@@ -457,7 +447,7 @@ CL_ParseDownload (void)
 	net_message->readcount += size;
 
 	if (percent != 100) {
-// change display routines by zoid
+		// change display routines by zoid
 		// request next block
 #if 0
 		Con_Printf (".");
@@ -467,8 +457,8 @@ CL_ParseDownload (void)
 		}
 #endif
 		if (percent != cls.downloadpercent)
-			VID_SetCaption (va
-							("Downloading %s %d%%", cls.downloadname, percent));
+			VID_SetCaption (va ("Downloading %s %d%%", cls.downloadname,
+								percent));
 		cls.downloadpercent = percent;
 
 		MSG_WriteByte (&cls.netchan.message, clc_stringcmd);
@@ -511,9 +501,11 @@ CL_ParseDownload (void)
 	}
 }
 
+
 static byte *upload_data;
 static int  upload_pos;
 static int  upload_size;
+
 
 void
 CL_NextUpload (void)
@@ -573,6 +565,7 @@ CL_StartUpload (byte * data, int size)
 	CL_NextUpload ();
 }
 
+
 qboolean
 CL_IsUploading (void)
 {
@@ -580,6 +573,7 @@ CL_IsUploading (void)
 		return true;
 	return false;
 }
+
 
 void
 CL_StopUpload (void)
@@ -589,9 +583,11 @@ CL_StopUpload (void)
 	upload_data = NULL;
 }
 
+
 /*
 	SERVER CONNECTING MESSAGES
 */
+
 
 void Draw_ClearCache (void);
 
@@ -601,9 +597,7 @@ void CL_ClearBaselines (void);		// LordHavoc: BIG BUG-FIX!
 // (pending merge of nq and qw client_stat_t's)
 int snd_viewentity;
 
-/*
-	CL_ParseServerData
-*/
+
 void
 CL_ParseServerData (void)
 {
@@ -614,13 +608,12 @@ CL_ParseServerData (void)
 	int         protover;
 
 	Con_DPrintf ("Serverdata packet received.\n");
-//
-// wipe the client_state_t struct
-//
+
+	// wipe the client_state_t struct
 	CL_ClearState ();
 
-// parse protocol version number
-// allow 2.2 and 2.29 demos to play
+	// parse protocol version number
+	// allow 2.2 and 2.29 demos to play
 	protover = MSG_ReadLong (net_message);
 	if (protover != PROTOCOL_VERSION &&
 		!(cls.demoplayback
@@ -664,7 +657,7 @@ CL_ParseServerData (void)
 		cl.playernum &= ~128;
 	}
 
-	// FIXME: evil hack so NQ and QW can share sound code
+// FIXME: evil hack so NQ and QW can share sound code
 	cl.viewentity = cl.playernum + 1;
 	snd_viewentity = cl.playernum + 1;
 
@@ -685,8 +678,7 @@ CL_ParseServerData (void)
 	movevars.entgravity = MSG_ReadFloat (net_message);
 
 	// seperate the printfs so the server message can have a color
-	Con_Printf
-		("\n\n\35\36\36\36\36\36\36\36\36\36\36\36\36\36\36\36\36\36\36\36\36\36\36\36\36\36\36\36\36\36\36\36\36\36\36\36\37\n\n");
+	Con_Printf ("\n\n\35\36\36\36\36\36\36\36\36\36\36\36\36\36\36\36\36\36\36\36\36\36\36\36\36\36\36\36\36\36\36\36\36\36\36\36\37\n\n");
 	Con_Printf ("%c%s\n", 2, str);
 
 	// ask for the sound list next
@@ -700,6 +692,7 @@ CL_ParseServerData (void)
 
 	CL_ClearBaselines ();
 }
+
 
 // LordHavoc: BIG BUG-FIX!  Clear baselines each time it connects...
 void
@@ -717,9 +710,7 @@ CL_ClearBaselines (void)
 	}
 }
 
-/*
-	CL_ParseSoundlist
-*/
+
 void
 CL_ParseSoundlist (void)
 {
@@ -727,8 +718,8 @@ CL_ParseSoundlist (void)
 	char       *str;
 	int         n;
 
-// precache sounds
-//  memset (cl.sound_precache, 0, sizeof(cl.sound_precache));
+	// precache sounds
+//	memset (cl.sound_precache, 0, sizeof(cl.sound_precache));
 
 	numsounds = MSG_ReadByte (net_message);
 
@@ -756,9 +747,7 @@ CL_ParseSoundlist (void)
 	Sound_NextDownload ();
 }
 
-/*
-	CL_ParseModellist
-*/
+
 void
 CL_ParseModellist (void)
 {
@@ -766,7 +755,7 @@ CL_ParseModellist (void)
 	char       *str;
 	int         n;
 
-// precache models and note certain default indexes
+	// precache models and note certain default indexes
 	nummodels = MSG_ReadByte (net_message);
 
 	for (;;) {
@@ -784,7 +773,7 @@ CL_ParseModellist (void)
 			cl_playerindex = nummodels;
 		else if (!strcmp (cl.model_name[nummodels], "progs/flag.mdl"))
 			cl_flagindex = nummodels;
-		// for deadbodyfilter &gibfilter
+		// for deadbodyfilter & gibfilter
 		else if (!strcmp (cl.model_name[nummodels], "progs/h_player.mdl"))
 			cl_h_playerindex = nummodels;
 		else if (!strcmp (cl.model_name[nummodels], "progs/gib1.mdl"))
@@ -809,9 +798,7 @@ CL_ParseModellist (void)
 	Model_NextDownload ();
 }
 
-/*
-	CL_ParseBaseline
-*/
+
 void
 CL_ParseBaseline (entity_state_t *es)
 {
@@ -833,7 +820,6 @@ CL_ParseBaseline (entity_state_t *es)
 	es->glow_size = 0;
 	es->colormod = 255;
 }
-
 
 
 /*
@@ -866,9 +852,7 @@ CL_ParseStatic (void)
 	R_AddEfrags (ent);
 }
 
-/*
-	CL_ParseStaticSound
-*/
+
 void
 CL_ParseStaticSound (void)
 {
@@ -886,14 +870,11 @@ CL_ParseStaticSound (void)
 }
 
 
-
 /*
 	ACTION MESSAGES
 */
 
-/*
-	CL_ParseStartSoundPacket
-*/
+
 void
 CL_ParseStartSoundPacket (void)
 {
@@ -944,7 +925,7 @@ CL_ParseClientdata (void)
 	float       latency;
 	frame_t    *frame;
 
-// calculate simulated time of message
+	// calculate simulated time of message
 	oldparsecountmod = parsecountmod;
 
 	i = cls.netchan.incoming_acknowledged;
@@ -956,23 +937,21 @@ CL_ParseClientdata (void)
 
 	frame->receivedtime = realtime;
 
-// calculate latency
+	// calculate latency
 	latency = frame->receivedtime - frame->senttime;
 
 	if (latency < 0 || latency > 1.0) {
-//      Con_Printf ("Odd latency: %5.2f\n", latency);
+//		Con_Printf ("Odd latency: %5.2f\n", latency);
 	} else {
 		// drift the average latency towards the observed latency
 		if (latency < cls.latency)
 			cls.latency = latency;
 		else
-			cls.latency += 0.001;		// drift up, so correction are needed
+			cls.latency += 0.001;		// drift up, so correction is needed
 	}
 }
 
-/*
-	CL_UpdateUserinfo
-*/
+
 void
 CL_ProcessUserInfo (int slot, player_info_t *player)
 {
@@ -994,9 +973,7 @@ CL_ProcessUserInfo (int slot, player_info_t *player)
 	CL_NewTranslation (slot);
 }
 
-/*
-	CL_UpdateUserinfo
-*/
+
 void
 CL_UpdateUserinfo (void)
 {
@@ -1016,9 +993,7 @@ CL_UpdateUserinfo (void)
 	CL_ProcessUserInfo (slot, player);
 }
 
-/*
-	CL_SetInfo
-*/
+
 void
 CL_SetInfo (void)
 {
@@ -1045,9 +1020,7 @@ CL_SetInfo (void)
 	CL_ProcessUserInfo (slot, player);
 }
 
-/*
-	CL_ServerInfo
-*/
+
 void
 CL_ServerInfo (void)
 {
@@ -1064,16 +1037,14 @@ CL_ServerInfo (void)
 	Info_SetValueForKey (cl.serverinfo, key, value, MAX_SERVERINFO_STRING);
 }
 
-/*
-	CL_SetStat
-*/
+
 void
 CL_SetStat (int stat, int value)
 {
 	int         j;
 
 	if (stat < 0 || stat >= MAX_CL_STATS)
-//      Sys_Error ("CL_SetStat: %i is invalid", stat);
+//		Sys_Error ("CL_SetStat: %i is invalid", stat);
 		Host_EndGame ("CL_SetStat: %i is invalid", stat);
 
 	Sbar_Changed ();
@@ -1094,9 +1065,7 @@ CL_SetStat (int stat, int value)
 	cl.stats[stat] = value;
 }
 
-/*
-	CL_MuzzleFlash
-*/
+
 void
 CL_MuzzleFlash (void)
 {
@@ -1128,10 +1097,9 @@ CL_MuzzleFlash (void)
 
 #define SHOWNET(x) if (cl_shownet->int_val == 2) Con_Printf ("%3i:%s\n", net_message->readcount-1, x);
 
-/*
-	CL_ParseServerMessage
-*/
 int         received_framecount;
+
+
 void
 CL_ParseServerMessage (void)
 {
@@ -1143,9 +1111,7 @@ CL_ParseServerMessage (void)
 	cl.last_servermessage = realtime;
 	CL_ClearProjectiles ();
 
-//
-// if recording demos, copy the message out
-//
+	// if recording demos, copy the message out
 	if (cl_shownet->int_val == 1)
 		Con_Printf ("%i ", net_message->message->cursize);
 	else if (cl_shownet->int_val == 2)
@@ -1154,9 +1120,7 @@ CL_ParseServerMessage (void)
 
 	CL_ParseClientdata ();
 
-//
-// parse the message
-//
+	// parse the message
 	while (1) {
 		if (net_message->badread) {
 			Host_EndGame ("CL_ParseServerMessage: Bad server message");
@@ -1166,7 +1130,7 @@ CL_ParseServerMessage (void)
 		cmd = MSG_ReadByte (net_message);
 
 		if (cmd == -1) {
-			net_message->readcount++;			// so the EOM showner has the right
+			net_message->readcount++;	// so the EOM showner has the right
 										// value
 			SHOWNET ("END OF MESSAGE");
 			break;
@@ -1182,7 +1146,7 @@ CL_ParseServerMessage (void)
 				break;
 
 			case svc_nop:
-//          Con_Printf ("svc_nop\n");
+//				Con_Printf ("svc_nop\n");
 				break;
 
 			case svc_disconnect:
@@ -1237,13 +1201,13 @@ CL_ParseServerMessage (void)
 			case svc_setangle:
 				for (i = 0; i < 3; i++)
 					cl.viewangles[i] = MSG_ReadAngle (net_message);
-//          cl.viewangles[PITCH] = cl.viewangles[ROLL] = 0;
+//				cl.viewangles[PITCH] = cl.viewangles[ROLL] = 0;
 				break;
 
 			case svc_lightstyle:
 				i = MSG_ReadByte (net_message);
 				if (i >= MAX_LIGHTSTYLES)
-//              Sys_Error ("svc_lightstyle > MAX_LIGHTSTYLES");
+//					Sys_Error ("svc_lightstyle > MAX_LIGHTSTYLES");
 					Host_EndGame ("svc_lightstyle > MAX_LIGHTSTYLES");
 				strcpy (cl_lightstyle[i].map, MSG_ReadString (net_message));
 				cl_lightstyle[i].length = strlen (cl_lightstyle[i].map);
