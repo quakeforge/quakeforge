@@ -137,9 +137,9 @@ C_Init (void)
 		intrflush (stdscr, FALSE);
 
 		getmaxyx (stdscr, screen_y, screen_x);
-		output = subwin (stdscr, screen_y - 2, screen_x, 0, 0);
-		status = subwin (stdscr, 1, screen_x, screen_y - 2, 0);
-		input  = subwin (stdscr, 1, screen_x, screen_y - 1, 0);
+		output = newwin (screen_y - 2, screen_x, 0, 0);
+		status = newwin (1, screen_x, screen_y - 2, 0);
+		input  = newwin (1, screen_x, screen_y - 1, 0);
 
 		init_pair (1, COLOR_YELLOW, COLOR_BLACK);
 		init_pair (2, COLOR_GREEN, COLOR_BLACK);
@@ -229,7 +229,8 @@ C_ProcessInput (void)
 {
 #ifdef HAVE_CURSES_H
 	if (use_curses) {
-		int         ch = wgetch (input), i;
+		int         ch;
+		int         i;
 		const char *text;
 
 		if (interrupted) {
@@ -238,12 +239,14 @@ C_ProcessInput (void)
 			interrupted = 0;
 			if (ioctl (fileno (stdout), TIOCGWINSZ, &size) == 0) {
 				resizeterm (size.ws_row, size.ws_col);
-				wrefresh (curscr);
 				getmaxyx (stdscr, screen_y, screen_x);
 				con_linewidth = screen_x;
+				wrefresh (curscr);
 			}
+			return;
 		}
 
+		ch = wgetch (input);
 		switch (ch) {
 			case KEY_ENTER:
 			case '\n':
@@ -286,10 +289,9 @@ C_ProcessInput (void)
 				break;
 			default:
 				if (ch < 0 || ch >= 256)
-					ch = 0;
+					return;
 		}
-		if (ch)
-			Con_ProcessInputLine (input_line, ch);
+		Con_ProcessInputLine (input_line, ch);
 		i = input_line->linepos - 1;
 		if (input_line->scroll > i)
 			input_line->scroll = i;
