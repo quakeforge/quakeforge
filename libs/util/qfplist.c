@@ -195,7 +195,9 @@ PL_A_InsertObjectAtIndex (plitem_t *array_item, plitem_t *item, int index)
 	array = (plarray_t *)array_item->data;
 
 	if (array->numvals == array->maxvals) {
-		plitem_t  **tmp = realloc (array->values, array->maxvals + 128);
+		int         size = (array->maxvals + 128) * sizeof (plitem_t *);
+		plitem_t  **tmp = realloc (array->values, size);
+
 		if (!tmp)
 			return NULL;
 		array->maxvals += 128;
