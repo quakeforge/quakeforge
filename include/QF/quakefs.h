@@ -58,6 +58,7 @@ struct cache_user_s;
 extern char	com_gamedir[MAX_OSPATH];
 extern char	gamedirfile[MAX_OSPATH];
 
+char *COM_CompressPath (const char *pth);
 void COM_WriteFile (const char *filename, void *data, int len);
 void COM_WriteBuffers (const char *filename, int count, ...);
 
