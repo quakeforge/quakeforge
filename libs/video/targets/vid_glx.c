@@ -90,6 +90,8 @@ Bool (* qfglXMakeCurrent) (Display *dpy, GLXDrawable drawable, GLXContext ctx);
 
 // ============================================================================
 
+static int use_gl_procaddress;
+
 #if defined(HAVE_DLOPEN)
 
 void * (* glGetProcAddress) (const char *symbol) = NULL;
@@ -99,7 +101,7 @@ QFGL_GetProcAddress (void *handle, const char *name)
 {
 	void       *glfunc = NULL;
 
-	if (glGetProcAddress)
+	if (use_gl_procaddress && glGetProcAddress)
 		glfunc = glGetProcAddress (name);
 	if (!glfunc)
 		glfunc = dlsym (handle, name);
@@ -190,6 +192,8 @@ VID_Init (unsigned char *palette)
 	qfglXCreateContext = QFGL_ProcAddress (libgl_handle, "glXCreateContext",
 										 true);
 	qfglXMakeCurrent = QFGL_ProcAddress (libgl_handle, "glXMakeCurrent", true);
+
+	use_gl_procaddress = 1;
 
 	Cmd_AddCommand ("vid_center", VID_Center_f, "Center the view port on the "
 					"quake window in a virtual desktop.\n");
