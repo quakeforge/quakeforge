@@ -145,6 +145,7 @@ wav_stream_open (sfx_t *_sfx)
 	stream = calloc (1, sizeof (sfxstream_t) + size);
 	memcpy (stream->buffer.data + size, "\xde\xad\xbe\xef", 4);
 
+	sfx->name = _sfx->name;
 	sfx->data = stream;
 	sfx->wavinfo = SND_CacheWavinfo;
 	sfx->touch = sfx->retain = SND_StreamRetain;
