@@ -125,68 +125,6 @@ R_TextureAnimation (msurface_t *surf)
 
 // BRUSH MODELS ===============================================================
 
-#if 0
-static void
-R_DrawMultitexturePoly (msurface_t *s)
-{
-	float      *v;
-	int         maps, i;
-	texture_t  *texture;
-	
-	if (!s->texinfo->texture->anim_total)
-		texture = s->texinfo->texture;
-	else
-		texture = R_TextureAnimation (s);
-	if ( texture->gl_fb_texturenum > 0) {
-		s->polys->fb_chain = fullbright_polys[texture->gl_fb_texturenum];
-		fullbright_polys[texture->gl_fb_texturenum] = s->polys;
-	}
-	c_brush_polys++;
-
-	i = s->lightmaptexturenum;
-
-	// Binds world to texture env 0
-	qglActiveTexture (gl_mtex_enum + 0);
-	qfglBindTexture (GL_TEXTURE_2D, texture->gl_texturenum);
-	qfglTexEnvf (GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_REPLACE);
-	qfglEnable (GL_TEXTURE_2D);
-	// Binds lightmap to texenv 1
-	qglActiveTexture (gl_mtex_enum + 1);
-	qfglBindTexture (GL_TEXTURE_2D, lightmap_textures + i);
-	qfglTexEnvf (GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
-	qfglEnable (GL_TEXTURE_2D);
-
-	// check for lightmap modification
-	if (r_dynamic->int_val) {
-		for (maps = 0; maps < MAXLIGHTMAPS && s->styles[maps] != 255; maps++)
-			if (d_lightstylevalue[s->styles[maps]] != s->cached_light[maps])
-				goto dynamic;
-
-		if ((s->dlightframe == r_framecount) || s->cached_dlight)	{
-		  dynamic:
-			R_BuildLightMap (s);
-			GL_UploadLightmap (i, s->light_s, s->light_t,
-							   (s->extents[0] >> 4) + 1,
-							   (s->extents[1] >> 4) + 1);
-		}
-	}
-
-	qfglBegin (GL_POLYGON);
-	v = s->polys->verts[0];
-	for (i = 0; i < s->polys->numverts; i++, v += VERTEXSIZE) {
-		qglMultiTexCoord2f (gl_mtex_enum + 0, v[3], v[4]);
-		qglMultiTexCoord2f (gl_mtex_enum + 1, v[5], v[6]);
-		qfglVertex3fv (v);
-	}
-	qfglEnd ();
-	qfglDisable (GL_TEXTURE_2D);
-	qglActiveTexture (gl_mtex_enum + 0);
-	qfglEnable (GL_TEXTURE_2D);
-
-	qfglTexEnvf (GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
-}
-#endif
-
 static void
 R_RenderFullbrights (void)
 {
@@ -428,10 +366,6 @@ R_DrawBrushModel (entity_t *e)
 // FIXME: add modelalpha support for sky brushes
 				CHAIN_SURF (psurf, sky_chain);
 				return;
-#if 0
-			} else if (gl_mtex_active) {
-				R_DrawMultitexturePoly (psurf);
-#endif
 			} else {
 				texture_t  *tex;
 
@@ -452,10 +386,7 @@ R_DrawBrushModel (entity_t *e)
 		}
 	}
 
-#if 0
-	if (!gl_mtex_active)
-#endif
-		R_BlendLightmaps ();
+	R_BlendLightmaps ();
 
 	if (gl_fb_bmodels->int_val)
 		R_RenderFullbrights ();
@@ -520,10 +451,6 @@ R_RecursiveWorldNode (mnode_t *node)
 					CHAIN_SURF_B2F (surf, waterchain);
 			} else if (surf->flags & SURF_DRAWSKY) {
 				CHAIN_SURF (surf, sky_chain);
-#if 0
-			} else if (gl_mtex_active) {
-				R_DrawMultitexturePoly (surf);
-#endif
 			} else {
 				texture_t  *tex;
 				if (!surf->texinfo->texture->anim_total)
@@ -569,10 +496,7 @@ R_DrawWorld (void)
 
 	DrawTextureChains ();
 
-#if 0
-	if (!gl_mtex_active)
-#endif
-		R_BlendLightmaps ();
+	R_BlendLightmaps ();
 
 	if (gl_fb_bmodels->int_val)
 		R_RenderFullbrights ();

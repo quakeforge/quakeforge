@@ -364,7 +364,18 @@ static inline void
 flush_text (void)
 {
 	qfglBindTexture (GL_TEXTURE_2D, char_texture);
-	qfglDrawElements (GL_QUADS, tVAcount, GL_UNSIGNED_INT, tVAindices);
+	if (0) {
+		qfglDrawElements (GL_QUADS, tVAcount, GL_UNSIGNED_INT, tVAindices);
+	} else {
+		int         i;
+
+		qfglBegin (GL_QUADS);
+		for (i = 0; i < tVAcount; i++) {
+			qfglTexCoord2fv (textCoords + tVAindices[i] * 2);
+			qfglVertex2fv (textVertices + tVAindices[i] * 2);
+		}
+		qfglEnd ();
+	}
 	tVAcount = 0;
 	tV = textVertices;
 	tC = textCoords;
