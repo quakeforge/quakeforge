@@ -38,179 +38,72 @@ static const char rcsid[] =
 #include "QF/plugin.h"
 #include "QF/sound.h"
 
-// =======================================================================
-// Various variables also defined in snd_dma.c
-// FIXME - should be put in one place
-// =======================================================================
-
-static cvar_t  *bgmvolume;
-static cvar_t  *volume;
-static cvar_t  *snd_interp;
-static cvar_t  *snd_loadas8bit;
-
-static plugin_t           plugin_info;
-static plugin_data_t      plugin_info_data;
-static plugin_funcs_t     plugin_info_funcs;
-static general_data_t     plugin_info_general_data;
-static general_funcs_t    plugin_info_general_funcs;
-static sound_data_t       plugin_info_sound_data;
-static sound_funcs_t      plugin_info_sound_funcs;
-
-static void SND_Init_Cvars (void);
-
+static plugin_t				plugin_info;
+static plugin_data_t		plugin_info_data;
+static plugin_funcs_t		plugin_info_funcs;
+static general_data_t		plugin_info_general_data;
+static general_funcs_t		plugin_info_general_funcs;
+static snd_output_data_t	plugin_info_snd_output_data;
+static snd_output_funcs_t	plugin_info_snd_output_funcs;
 
 static void
-SND_Init (void)
-{
-	SND_Init_Cvars ();
-}
-
-static void
-SND_Init_Cvars (void)
-{
-	bgmvolume = Cvar_Get ("bgmvolume", "1", CVAR_ARCHIVE, NULL,
-						  "CD music volume");
-	volume = Cvar_Get ("volume", "0.7", CVAR_ARCHIVE, NULL,
-					   "Volume level of sounds");
-	snd_loadas8bit = Cvar_Get ("snd_loadas8bit", "0", CVAR_NONE, NULL,
-							   "Toggles loading sounds as 8-bit samples");
-	snd_interp = Cvar_Get ("snd_interp", "1", CVAR_ARCHIVE, NULL,
-						   "control sample interpolation");
-}
-
-static void
-SND_AmbientOff (void)
+SNDDMA_Init (void)
 {
 }
 
 static void
-SND_AmbientOn (void)
+SNDDMA_Shutdown (void)
 {
 }
 
 static void
-SND_Shutdown (void)
+SNDDMA_BlockSound (void)
+{
+}
+
+static int
+SNDDMA_GetDMAPos (void)
+{
+	return 0;
+}
+
+static void
+SNDDMA_Submit (void)
 {
 }
 
 static void
-SND_TouchSound (const char *sample)
-{
-}
-
-static void
-SND_ClearBuffer (void)
-{
-}
-
-static void
-SND_StaticSound (sfx_t *sfx, vec3_t origin, float vol, float attenuation)
-{
-}
-
-static void
-SND_StartSound (int entnum, int entchannel, sfx_t *sfx, vec3_t origin,
-				float fvol, float attenuation)
-{
-}
-
-static void
-SND_StopSound (int entnum, int entchannel)
-{
-}
-
-static sfx_t      *
-SND_PrecacheSound (const char *sample)
-{
-	return NULL;
-}
-
-static void
-SND_ClearPrecache (void)
-{
-}
-
-static void
-SND_Update (vec3_t origin, vec3_t v_forward, vec3_t v_right, vec3_t v_up)
-{
-}
-
-static void
-SND_StopAllSounds (qboolean clear)
-{
-}
-
-static void
-SND_BeginPrecaching (void)
-{
-}
-
-static void
-SND_EndPrecaching (void)
-{
-}
-
-static void
-SND_ExtraUpdate (void)
-{
-}
-
-static void
-SND_LocalSound (const char *s)
-{
-}
-
-static void
-SND_BlockSound (void)
-{
-}
-
-static void
-SND_UnblockSound (void)
+SNDDMA_UnblockSound (void)
 {
 }
 
 QFPLUGIN plugin_t *
 PLUGIN_INFO(snd_output, null) (void) {
-	plugin_info.type = qfp_sound;
+	plugin_info.type = qfp_snd_output;
 	plugin_info.api_version = QFPLUGIN_VERSION;
 	plugin_info.plugin_version = "0.1";
-	plugin_info.description = "ALSA 0.5.x digital output";
+	plugin_info.description = "Null sound output driver";
 	plugin_info.copyright = "Copyright (C) 1996-1997 id Software, Inc.\n"
-		"Copyright (C) 1999,2000,2001  contributors of the QuakeForge "
-		"project\n"
+		"Copyright (C) 1999,2000,2001  contributors of the QuakeForge project\n"
 		"Please see the file \"AUTHORS\" for a list of contributors";
 	plugin_info.functions = &plugin_info_funcs;
 	plugin_info.data = &plugin_info_data;
 
 	plugin_info_data.general = &plugin_info_general_data;
 	plugin_info_data.input = NULL;
-	plugin_info_data.sound = &plugin_info_sound_data;
+	plugin_info_data.snd_output = &plugin_info_snd_output_data;
 
 	plugin_info_funcs.general = &plugin_info_general_funcs;
 	plugin_info_funcs.input = NULL;
-	plugin_info_funcs.sound = &plugin_info_sound_funcs;
+	plugin_info_funcs.snd_output = &plugin_info_snd_output_funcs;
 
-	plugin_info_general_funcs.p_Init = SND_Init;
-	plugin_info_general_funcs.p_Shutdown = SND_Shutdown;
+	plugin_info_general_funcs.p_Init = SNDDMA_Init;
+	plugin_info_general_funcs.p_Shutdown = SNDDMA_Shutdown;
 
-	plugin_info_sound_funcs.pS_AmbientOff = SND_AmbientOff;
-	plugin_info_sound_funcs.pS_AmbientOn = SND_AmbientOn;
-	plugin_info_sound_funcs.pS_TouchSound = SND_TouchSound;
-	plugin_info_sound_funcs.pS_ClearBuffer = SND_ClearBuffer;
-	plugin_info_sound_funcs.pS_StaticSound = SND_StaticSound;
-	plugin_info_sound_funcs.pS_StartSound = SND_StartSound;
-	plugin_info_sound_funcs.pS_StopSound = SND_StopSound;
-	plugin_info_sound_funcs.pS_PrecacheSound = SND_PrecacheSound;
-	plugin_info_sound_funcs.pS_ClearPrecache = SND_ClearPrecache;
-	plugin_info_sound_funcs.pS_Update = SND_Update;
-	plugin_info_sound_funcs.pS_StopAllSounds = SND_StopAllSounds;
-	plugin_info_sound_funcs.pS_BeginPrecaching = SND_BeginPrecaching;
-	plugin_info_sound_funcs.pS_EndPrecaching = SND_EndPrecaching;
-	plugin_info_sound_funcs.pS_ExtraUpdate = SND_ExtraUpdate;
-	plugin_info_sound_funcs.pS_LocalSound = SND_LocalSound;
-	plugin_info_sound_funcs.pS_BlockSound = SND_BlockSound;
-	plugin_info_sound_funcs.pS_UnblockSound = SND_UnblockSound;
+	plugin_info_snd_output_funcs.pS_O_BlockSound = SNDDMA_BlockSound;
+	plugin_info_snd_output_funcs.pS_O_GetDMAPos = SNDDMA_GetDMAPos;
+	plugin_info_snd_output_funcs.pS_O_Submit = SNDDMA_Submit;
+	plugin_info_snd_output_funcs.pS_O_UnblockSound = SNDDMA_UnblockSound;
 
 	return &plugin_info;
 }

@@ -768,7 +768,7 @@ fi
 AC_SUBST(ALSA_LIBS)
 AC_SUBST(HAVE_ALSA)
 
-SOUND_TYPES="$SOUND_TYPES DISK"
+SOUND_TYPES="$SOUND_TYPES NULL DISK"
 
 dnl MME
 if test "x$ac_cv_header_mme_mmsystem_h" = "xyes" -a \
@@ -1545,7 +1545,7 @@ CAN_BUILD_SW32=no
 CAN_BUILD_SW=no
 
 CD_TARGETS=""
-SND_PLUGIN_TARGETS="snd_output_disk.la"
+SND_PLUGIN_TARGETS="snd_output_disk.la snd_output_null.la"
 SND_REND_TARGETS=""
 SND_TARGETS=""
 VID_MODEL_TARGETS=""
