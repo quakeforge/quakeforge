@@ -106,6 +106,7 @@ void R_MarkLeaves (void);
 void R_DrawAliasModel (entity_t *e, qboolean cull);
 void R_DrawSpriteModel (entity_t *e);
 
+
 void
 glrmain_init (void)
 {
@@ -193,8 +194,8 @@ R_DrawEntitiesOnList (void)
 
 		R_DrawAliasModel (currententity, true);
 	}
-	qfglColor3ubv (color_white);
 
+	qfglColor3ubv (color_white);
 	qfglEnable (GL_ALPHA_TEST);
 	for (i = 0; i < r_numvisedicts; i++) {
 		if (r_visedicts[i]->model->type != mod_sprite)
@@ -522,9 +523,9 @@ R_CullBlocked (vec3_t mins, vec3_t maxs, vec3_t org)
 			return false;
 	}
 
-	rad = sqrt((maxs[0] - org[0]) * (maxs[0] - org[0]) +
-			(maxs[1] - org[1]) * (maxs[1] - org[1]) +
-			(maxs[2] - org[2]) * (maxs[2] - org[2]));
+	rad = sqrt ((maxs[0] - org[0]) * (maxs[0] - org[0]) +
+				(maxs[1] - org[1]) * (maxs[1] - org[1]) +
+				(maxs[2] - org[2]) * (maxs[2] - org[2]));
 
 	// Check a few points on the bounding sphere to catch rotating objects
 	// Raise the origin a bit to catch droptofloor models

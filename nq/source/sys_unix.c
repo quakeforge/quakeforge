@@ -62,6 +62,7 @@ static const char rcsid[] =
 
 qboolean    isDedicated = false;
 
+
 void
 Sys_Init (void)
 {

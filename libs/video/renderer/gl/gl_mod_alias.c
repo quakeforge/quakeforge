@@ -75,8 +75,6 @@ typedef struct {
 	int        *order;
 } vert_order_t;
 
-
-
 float		r_avertexnormals[NUMVERTEXNORMALS][3] = {
 #include "anorms.h"
 };
@@ -91,6 +89,7 @@ float		shadelight;
 float	   *shadedots = r_avertexnormal_dots[0];
 int			lastposenum, lastposenum0;
 vec3_t		shadevector;
+
 
 static void
 GL_DrawAliasFrame (vert_order_t *vo, qboolean fb)
@@ -397,13 +396,13 @@ R_DrawAliasModel (entity_t *e, qboolean cull)
 	VectorAdd (currententity->origin, clmodel->mins, mins);
 	VectorAdd (currententity->origin, clmodel->maxs, maxs);
 
-	if (cull && R_CullBox (mins, maxs))
-		return;
-
-	/*
-	if (cull && R_CullBlocked(mins, maxs, currententity->origin))
-		return;
-	*/
+	if (cull)
+	{
+		if (R_CullBox (mins, maxs))
+			return;
+//		if (R_CullBlocked(mins, maxs, currententity->origin))
+//			return;
+	}
 
 	// FIXME: shadecolor is supposed to be the lighting for the model, not
 	// just colormod
