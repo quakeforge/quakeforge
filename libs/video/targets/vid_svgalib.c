@@ -380,7 +380,7 @@ VID_Init (unsigned char *palette)
 	/* Interpret command-line params */
 	VID_GetWindowSize (320, 200);
 
-	current_mode = get_mode (vid.width, vid.height, 0);
+	current_mode = get_mode (vid.width, vid.height, 8);
 
 	/* Set vid parameters */
 	VID_SetMode (current_mode, palette);
