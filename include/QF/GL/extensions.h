@@ -33,11 +33,18 @@
 #include "QF/GL/defines.h"
 #include "QF/GL/types.h"
 
-#ifdef _WIN32
-# include <windows.h>
-# define GLAPIENTRY WINAPI
-#else
-# define GLAPIENTRY
+// Define GLAPIENTRY to a useful value
+#ifndef GLAPIENTRY
+# ifdef _WIN32
+#  include <windows.h>
+#  define GLAPIENTRY WINAPI
+# else
+#  ifdef APIENTRY
+#   define GLAPIENTRY APIENTRY
+#  else
+#   define GLAPIENTRY
+#  endif
+# endif
 #endif
 
 // OpenGL numbers for extensions we use or want to use

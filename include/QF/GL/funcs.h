@@ -33,6 +33,10 @@
 #include "QF/GL/types.h"
 #include "QF/qtypes.h"
 
+#ifdef _WIN32
+# include <windows.h>
+#endif
+
 #define QFGL_NEED(ret, name, args)	extern ret (GLAPIENTRY * qf##name) args
 #include "QF/GL/qf_funcs_list.h"
 #undef QFGL_NEED
