@@ -218,7 +218,7 @@ CL_Prediction_Init_Cvars (void)
 {
 	cl_predict = Cvar_Get ("cl_predict", "1", CVAR_NONE, NULL,
 						  "Set to enable client prediction");
-	cl_predict_static = Cvar_Get ("cl_predict_static", "0", CVAR_NONE, NULL,
+	cl_predict_static = Cvar_Get ("cl_predict_static", "1", CVAR_NONE, NULL,
 							  "Set to enable static player prediction");
 	cl_pushlatency = Cvar_Get ("pushlatency", "-999", CVAR_NONE, NULL,
 							   "How much prediction should the client make");
