@@ -831,7 +831,7 @@ main (int argc, char *argv[])
 		/* run through all referenced faces */
 
 		/* ICK ... do I want to check area of all faces? */
-		usearea = MAXINT;
+		usearea = INT_MAX;
 		if (options.edgeremove) {
 			if (edge_extra[i].num_face_ref > 1) {
 				tempf = 1.0;
