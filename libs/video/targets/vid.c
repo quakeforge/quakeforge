@@ -199,8 +199,3 @@ VID_InitGamma (unsigned char *pal)
 
 	VID_BuildGammaTable (vid_gamma->value);
 }
-
-void
-VID_HandlePause (qboolean paused)
-{
-}

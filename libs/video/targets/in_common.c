@@ -183,11 +183,6 @@ IN_Init_Cvars (void)
 }
 
 void
-IN_HandlePause (qboolean paused)
-{
-}
-
-void
 IN_ClearStates (void)
 {
 	IN_LL_ClearStates ();

@@ -58,11 +58,6 @@ void IN_SendKeyEvents (void);
 void IN_Move (void); // FIXME: was cmduser_t?
 // add additional movement on top of the keyboard move cmd
 
-void IN_ModeChanged (void);
-// called whenever screen dimensions change
-
-void IN_HandlePause (qboolean paused);
-
 extern struct cvar_s		*in_grab;
 extern struct cvar_s		*in_amp;
 extern struct cvar_s		*in_pre_amp;

@@ -115,9 +115,6 @@ void VID_Update (vrect_t *rects);
 // or not
 // int VID_SetMode (int modenum, unsigned char *palette);
 
-// called only on Win32, when pause happens, so the mouse can be released
-void VID_HandlePause (qboolean pause);
-
 void VID_InitBuffers (void);
 void VID_LockBuffer (void);
 void VID_UnlockBuffer (void);

@@ -901,11 +901,7 @@ CL_ParseServerMessage (void)
 
 				if (cl.paused) {
 					CDAudio_Pause ();
-					IN_HandlePause (true);
-					VID_HandlePause (true);
 				} else {
-					VID_HandlePause (false);
-					IN_HandlePause (false);
 					CDAudio_Resume ();
 				}
 			}

@@ -39,14 +39,12 @@ typedef void (QFPLUGIN *P_IN_Commands) (void);
 typedef void (QFPLUGIN *P_IN_SendKeyEvents) (void);
 typedef void (QFPLUGIN *P_IN_Move) (void);
 typedef void (QFPLUGIN *P_IN_ModeChanged) (void);
-typedef void (QFPLUGIN *P_IN_HandlePause) (qboolean paused);
 
 typedef struct input_funcs_s {
 	P_IN_Commands 		pIN_Commands;
 	P_IN_SendKeyEvents	pIN_SendKeyEvents;
 	P_IN_Move			pIN_Move;
 	P_IN_ModeChanged 	pIN_ModeChanged;
-	P_IN_HandlePause	pIN_HandlePause;
 } input_funcs_t;
 
 typedef struct input_data_s {
