@@ -54,7 +54,7 @@ static const char rcsid[] =
 #include "sbar.h"
 
 void
-SCR_DrawNet (int swap)
+SCR_DrawNet (void)
 {
 	if (cls.netchan.outgoing_sequence - cls.netchan.incoming_acknowledged <
 		UPDATE_BACKUP - 1)
@@ -66,14 +66,14 @@ SCR_DrawNet (int swap)
 }
 
 void
-CL_NetStats (int swap)
+CL_NetStats (void)
 {
 	int x, y;
 	if (!show_ping->int_val && !show_pl->int_val)
 		return;
 	if (cls.state != ca_active)
 		return;
-	x = swap ? vid.width - 104 : 0;
+	x = hudswap ? vid.width - 104 : 0;
 	y = vid.height - sb_lines - 16;
 	// request new ping times every two second
 	if (realtime - cl.last_ping_request > 2) {
@@ -86,7 +86,7 @@ CL_NetStats (int swap)
 		ping = bound (0, ping, 999);
 		Draw_String (x, y, va ("%3d ms", ping));
 		x+= 48;
-	} else if (swap) {
+	} else if (hudswap) {
 		x += 56;
 	}
 	if (show_ping->int_val && show_pl->int_val) {
@@ -124,7 +124,7 @@ void
 CL_UpdateScreen (double realtime)
 {
 	V_PrepBlend ();
-	SCR_UpdateScreen (realtime, scr_funcs, cl_hudswap->int_val);
+	SCR_UpdateScreen (realtime, scr_funcs);
 }
 
 void

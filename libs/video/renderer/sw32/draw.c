@@ -358,7 +358,7 @@ Draw_Pixel (int x, int y, byte color)
 
 
 void
-Draw_Crosshair (int swap)
+Draw_Crosshair (void)
 {
 	int         x, y;
 	byte        c = crosshaircolor->int_val;

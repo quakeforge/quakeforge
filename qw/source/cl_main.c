@@ -184,6 +184,7 @@ double      connect_time = -1;			// for connection retransmits
 quakeparms_t host_parms;
 qboolean    host_initialized;			// true if into command execution
 qboolean    nomaster;
+qboolean	hudswap;
 
 double      host_frametime;
 double      realtime;					// without any filtering or bounding
@@ -1075,6 +1076,15 @@ CL_Download_f (void)
 }
 
 void
+cl_hudswap_f (cvar_t *var)
+{
+	if (cl_hudswap)
+		hudswap = cl_hudswap->int_val;
+	else
+		hudswap = 0;
+}
+
+void
 Force_CenterView_f (void)
 {
 	cl.viewangles[PITCH] = 0;
@@ -1237,7 +1247,7 @@ CL_Init_Cvars (void)
 						"status bar mode");
 	cl_sbar_separator = Cvar_Get ("cl_sbar_separator", "0", CVAR_ARCHIVE, NULL,
 								  "turns on status bar separator");
-	cl_hudswap = Cvar_Get ("cl_hudswap", "0", CVAR_ARCHIVE, NULL,
+	cl_hudswap = Cvar_Get ("cl_hudswap", "0", CVAR_ARCHIVE, cl_hudswap_f,
 						   "new HUD on left side?");
 	cl_maxfps = Cvar_Get ("cl_maxfps", "0", CVAR_ARCHIVE, NULL,
 						  "maximum frames rendered in one second. 0 == 32");

@@ -335,7 +335,7 @@ extern	double		realtime;
 
 void Cvar_Info (struct cvar_s *var);
 
-void CL_NetGraph (int swap);
+void CL_NetGraph (void);
 void CL_UpdateScreen (double realtime);
 
 void CL_SetState (cactive_t state);

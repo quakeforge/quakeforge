@@ -162,7 +162,7 @@ Sbar_Changed (void)
 
 	Draw a texture.
 */
-void
+static inline void
 Sbar_DrawPic (int x, int y, qpic_t *pic)
 {
 	if (sbar_centered)
@@ -178,7 +178,7 @@ Sbar_DrawPic (int x, int y, qpic_t *pic)
 
 	Draw a _portion_ of a texture.
 */
-void
+static inline void
 Sbar_DrawSubPic (int x, int y, qpic_t *pic, int srcx, int srcy, int width,
 				 int height)
 {
@@ -197,7 +197,7 @@ Sbar_DrawSubPic (int x, int y, qpic_t *pic, int srcx, int srcy, int width,
 
 	Draw a transparent pic?
 */
-void
+static inline void
 Sbar_DrawTransPic (int x, int y, qpic_t *pic)
 {
 	if (sbar_centered)
@@ -213,7 +213,7 @@ Sbar_DrawTransPic (int x, int y, qpic_t *pic)
 
 	Draw one solid graphics character
 */
-void
+static inline void
 Sbar_DrawCharacter (int x, int y, int num)
 {
 	if (sbar_centered)
@@ -229,7 +229,7 @@ Sbar_DrawCharacter (int x, int y, int num)
 
 	Draw a string
 */
-void
+static inline void
 Sbar_DrawString (int x, int y, char *str)
 {
 	if (sbar_centered)
@@ -438,7 +438,7 @@ Sbar_DrawInventory (void)
 
 			if (headsup) {
 				if (i || vid.height > 200)
-					Sbar_DrawSubPic ((cl_hudswap->int_val) ? 0
+					Sbar_DrawSubPic (hudswap ? 0
 									 : (vid.width - 24), -68 - (7 - i) * 16,
 									 sb_weapons[flashon][i], 0, 0, 24, 16);
 			} else {
@@ -514,19 +514,19 @@ Sbar_DrawInventory (void)
 	for (i = 0; i < 4; i++) {
 		snprintf (num, sizeof (num), "%3i", cl.stats[STAT_SHELLS + i]);
 		if (headsup) {
-			Sbar_DrawSubPic ((cl_hudswap->int_val) ? 0 : (vid.width - 42),
+			Sbar_DrawSubPic (hudswap ? 0 : (vid.width - 42),
 							 -24 - (4 - i) * 11, sb_ibar, 3 + (i * 48), 0, 42,
 							 11);
 			if (num[0] != ' ')
-				Sbar_DrawCharacter ((cl_hudswap->int_val) ? 3
+				Sbar_DrawCharacter (hudswap ? 3
 									: (vid.width - 39), -24 - (4 - i) * 11,
 									18 + num[0] - '0');
 			if (num[1] != ' ')
-				Sbar_DrawCharacter ((cl_hudswap->int_val) ? 11
+				Sbar_DrawCharacter (hudswap ? 11
 									: (vid.width - 31), -24 - (4 - i) * 11,
 									18 + num[1] - '0');
 			if (num[2] != ' ')
-				Sbar_DrawCharacter ((cl_hudswap->int_val) ? 19
+				Sbar_DrawCharacter (hudswap ? 19
 									: (vid.width - 23), -24 - (4 - i) * 11,
 									18 + num[2] - '0');
 		} else {
@@ -833,7 +833,7 @@ Sbar_DrawNormal (void)
 
 
 void
-Sbar_Draw (int swap)
+Sbar_Draw (void)
 {
 	if (hipnotic || rogue) {
 		if (!cl_sbar->int_val) {

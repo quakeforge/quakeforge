@@ -217,7 +217,7 @@ SCR_DrawCenterString (void)
 }
 
 void
-SCR_CheckDrawCenterString (int swap)
+SCR_CheckDrawCenterString (void)
 {
 	scr_copytop = 1;
 	if (scr_center_lines > scr_erase_lines)
@@ -363,7 +363,7 @@ SCR_Init (void)
 }
 
 void
-SCR_DrawRam (int swap)
+SCR_DrawRam (void)
 {
 	if (!scr_showram->int_val)
 		return;
@@ -375,7 +375,7 @@ SCR_DrawRam (int swap)
 }
 
 void
-SCR_DrawTurtle (int swap)
+SCR_DrawTurtle (void)
 {
 	static int  count;
 
@@ -396,7 +396,7 @@ SCR_DrawTurtle (int swap)
 
 
 void
-SCR_DrawFPS (int swap)
+SCR_DrawFPS (void)
 {
 	char          st[80];
 	double        t;
@@ -427,7 +427,7 @@ SCR_DrawFPS (int swap)
 		i = 80;
 	}
 
-	x = swap ? vid.width - ((strlen (st) * 8) + i) : i;
+	x = hudswap ? vid.width - ((strlen (st) * 8) + i) : i;
 	y = vid.height - sb_lines - 8;
 	Draw_String (x, y, st);
 }
@@ -439,7 +439,7 @@ SCR_DrawFPS (int swap)
 	Written by Misty, rewritten by Deek.
 */
 void
-SCR_DrawTime (int swap)
+SCR_DrawTime (void)
 {
 	char		st[80];
 	char	   *timefmt = NULL;
@@ -463,13 +463,13 @@ SCR_DrawTime (int swap)
 	strftime (st, sizeof (st), timefmt, local);
 
 	// Print it at far left/right of screen
-	x = swap ? (vid.width - ((strlen (st) * 8) + 8)) : 8;
+	x = hudswap ? (vid.width - ((strlen (st) * 8) + 8)) : 8;
 	y = vid.height - (sb_lines + 8);
 	Draw_String (x, y, st);
 }
 
 void
-SCR_DrawPause (int swap)
+SCR_DrawPause (void)
 {
 	qpic_t     *pic;
 
@@ -517,7 +517,7 @@ SCR_SetUpToDrawConsole (void)
 }
 
 void
-SCR_DrawConsole (int swap)
+SCR_DrawConsole (void)
 {
 	if (scr_con_current) {
 		scr_copyeverything = 1;
@@ -771,7 +771,7 @@ int		oldviewsize = 0;
 	needs almost the entire 256k of stack space!
 */
 void
-SCR_UpdateScreen (double realtime, SCR_Func *scr_funcs, int swap)
+SCR_UpdateScreen (double realtime, SCR_Func *scr_funcs)
 {
 	double      time1 = 0, time2;
 
@@ -851,10 +851,10 @@ SCR_UpdateScreen (double realtime, SCR_Func *scr_funcs, int swap)
 	} else if (r_force_fullscreen /*FIXME better test*/ == 2 &&
 			   key_dest == key_game) {
 		Sbar_FinaleOverlay ();
-		SCR_CheckDrawCenterString (swap);
+		SCR_CheckDrawCenterString ();
 	} else {
 		while (*scr_funcs) {
-			(*scr_funcs)(swap);
+			(*scr_funcs)();
 			scr_funcs++;
 		}
 	}

@@ -42,7 +42,7 @@ void Draw_TextBox (int x, int y, int width, int lines, byte alpha);
 void Draw_TransPic (int x, int y, qpic_t *pic);
 void Draw_TransPicTranslate (int x, int y, qpic_t *pic, byte *translation);
 void Draw_ConsoleBackground (int lines);
-void Draw_Crosshair(int swap);
+void Draw_Crosshair (void);
 void Draw_BeginDisc (void);
 void Draw_EndDisc (void);
 void Draw_TileClear (int x, int y, int w, int h);

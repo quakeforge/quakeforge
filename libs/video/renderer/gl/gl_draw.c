@@ -386,7 +386,7 @@ Draw_AltString (int x, int y, const char *str)
 }
 
 void
-Draw_Crosshair (int swap)
+Draw_Crosshair (void)
 {
 	unsigned char *pColor;
 	int            x, y;

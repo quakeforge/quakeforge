@@ -51,6 +51,6 @@ void V_Register (void);
 void V_SetContentsColor (int contents);
 void V_CalcBlend (void);
 
-extern float v_blend[4];
+extern float	v_blend[4];
 
 #endif // __view_h_

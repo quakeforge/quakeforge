@@ -247,7 +247,7 @@ Sbar_Init (void)
 }
 
 // drawing routines are reletive to the status bar location
-void
+static inline void
 Sbar_DrawPic (int x, int y, qpic_t *pic)
 {
 	Draw_Pic (x, y + (vid.height - SBAR_HEIGHT), pic);
@@ -258,7 +258,7 @@ Sbar_DrawPic (int x, int y, qpic_t *pic)
 
 	JACK: Draws a portion of the picture in the status bar.
 */
-void
+static inline void
 Sbar_DrawSubPic (int x, int y, qpic_t *pic, int srcx, int srcy, int width,
 				 int height)
 {
@@ -266,7 +266,7 @@ Sbar_DrawSubPic (int x, int y, qpic_t *pic, int srcx, int srcy, int width,
 				 height);
 }
 
-void
+static inline void
 Sbar_DrawTransPic (int x, int y, qpic_t *pic)
 {
 	Draw_Pic (x, y + (vid.height - SBAR_HEIGHT),
@@ -278,13 +278,13 @@ Sbar_DrawTransPic (int x, int y, qpic_t *pic)
 
 	Draws one solid graphics character
 */
-void
+static inline void
 Sbar_DrawCharacter (int x, int y, int num)
 {
 	Draw_Character (x + 4, y + vid.height - SBAR_HEIGHT, num);
 }
 
-void
+static inline void
 Sbar_DrawString (int x, int y, char *str)
 {
 	Draw_String (x, y + vid.height - SBAR_HEIGHT, str);
@@ -366,7 +366,8 @@ Sbar_SortFrags (qboolean includespec)
 	// sort by frags
 	scoreboardlines = 0;
 	for (i = 0; i < MAX_CLIENTS; i++) {
-		if (cl.players[i].name[0] && (!cl.players[i].spectator || includespec)) {
+		if (cl.players[i].name[0] && (!cl.players[i].spectator ||
+									  includespec)) {
 			fragsort[scoreboardlines] = i;
 			scoreboardlines++;
 			if (cl.players[i].spectator)
@@ -477,10 +478,9 @@ Sbar_DrawInventory (void)
 	char        num[6];
 	float       time;
 	int         flashon, i;
-	qboolean    headsup, hudswap;
+	qboolean    headsup;
 
 	headsup = !(cl_sbar->int_val || scr_viewsize->int_val < 100);
-	hudswap = cl_hudswap->int_val;
 
 	if (!headsup)
 		Sbar_DrawPic (0, -24, sb_ibar);
@@ -501,7 +501,7 @@ Sbar_DrawInventory (void)
 
 			if (headsup) {
 				if (i || vid.height > 200)
-					Sbar_DrawSubPic ((hudswap) ? 0 : (vid.width - 24),
+					Sbar_DrawSubPic (hudswap ? 0 : (vid.width - 24),
 									 -68 - (7 - i) * 16,
 									 sb_weapons[flashon][i], 0, 0, 24, 16);
 
@@ -519,7 +519,7 @@ Sbar_DrawInventory (void)
 		snprintf (num, sizeof (num), "%3i", min (cl.stats[STAT_SHELLS + i],
 												 999));
 		if (headsup) {
-#define HUD_X(dist)		((hudswap) ? dist : (vid.width - (42 - dist)))
+#define HUD_X(dist)		(hudswap ? dist : (vid.width - (42 - dist)))
 #define HUD_Y(n)		(-24 - (4 - n) * 11)
 			Sbar_DrawSubPic (HUD_X (0), HUD_Y (i), sb_ibar,
 							 3 + (i * 48), 0, 42, 11);
@@ -699,7 +699,7 @@ Sbar_DrawNormal (void)
 }
 
 void
-Sbar_Draw (int swap)
+Sbar_Draw (void)
 {
 	char        st[512];
 	qboolean    headsup;

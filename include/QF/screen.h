@@ -35,9 +35,9 @@
 void SCR_Init_Cvars (void);
 void SCR_Init (void);
 
-typedef void (*SCR_Func)(int);
+typedef void (*SCR_Func)(void);
 // scr_funcs is a null terminated array
-void SCR_UpdateScreen (double realtime, SCR_Func *scr_funcs, int swap);
+void SCR_UpdateScreen (double realtime, SCR_Func *scr_funcs);
 void SCR_UpdateWholeScreen (void);
 
 void SCR_SizeUp (void);
@@ -48,29 +48,30 @@ void SCR_CenterPrint (const char *str);
 void SCR_BeginLoadingPlaque (void);
 void SCR_EndLoadingPlaque (void);
 
-void SCR_DrawRam (int swap);
-void SCR_DrawFPS (int swap);
-void SCR_DrawTime (int swap);
-void SCR_DrawTurtle (int swap);
-void SCR_DrawPause (int swap);
-void SCR_CheckDrawCenterString (int swap);
-void SCR_DrawConsole (int swap);
+void SCR_DrawRam (void);
+void SCR_DrawFPS (void);
+void SCR_DrawTime (void);
+void SCR_DrawTurtle (void);
+void SCR_DrawPause (void);
+void SCR_CheckDrawCenterString (void);
+void SCR_DrawConsole (void);
 
 struct tex_s *SCR_ScreenShot (int width, int height);
 void SCR_DrawStringToSnap (const char *s, struct tex_s *tex, int x, int y);
 int MipColor (int r, int g, int b);
 int SCR_ModalMessage (const char *text);
 
-extern	float		scr_con_current;
-extern	float		scr_centertime_off;
-extern	float		scr_conlines;		// lines of console to display
+extern float		scr_con_current;
+extern float		scr_centertime_off;
+extern float		scr_conlines;		// lines of console to display
 
-extern	int			scr_fullupdate;	// set to 0 to force full redraw
-extern	int			sb_lines;
+extern int			scr_fullupdate;	// set to 0 to force full redraw
+extern int			sb_lines;
 
-extern	int			clearnotify;	// set to 0 whenever notify text is drawn
-extern	qboolean	scr_disabled_for_loading;
-extern	qboolean	scr_skipupdate;
+extern int			clearnotify;	// set to 0 whenever notify text is drawn
+extern qboolean		scr_disabled_for_loading;
+extern qboolean		scr_skipupdate;
+extern qboolean		hudswap;
 
 extern struct cvar_s		*scr_viewsize;
 extern struct cvar_s		*scr_fov;
@@ -78,10 +79,10 @@ extern struct cvar_s		*scr_viewsize;
 extern struct cvar_s		*scr_consize;
 
 // only the refresh window will be updated unless these variables are flagged 
-extern	int			scr_copytop;
-extern	int			scr_copyeverything;
+extern int			scr_copytop;
+extern int			scr_copyeverything;
 
-extern qboolean        block_drawing;
+extern qboolean		block_drawing;
 
 extern struct qpic_s *scr_ram;
 extern struct qpic_s *scr_net;

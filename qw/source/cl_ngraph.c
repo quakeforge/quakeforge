@@ -40,6 +40,7 @@ static const char rcsid[] =
 #include "QF/cvar.h"
 #include "QF/draw.h"
 #include "QF/render.h"
+#include "QF/screen.h"
 
 #include "compat.h"
 #include "cl_parse.h"
@@ -49,7 +50,7 @@ static const char rcsid[] =
 
 
 void
-CL_NetGraph (int swap)
+CL_NetGraph (void)
 {
 	char        st[80];
 	int         lost, a, l, x, y, h, i;
@@ -59,7 +60,7 @@ CL_NetGraph (int swap)
 
 	a = 0; // shut up gcc
 
-	x = swap ? vid.width - (NET_TIMINGS + 16): 0;
+	x = hudswap ? vid.width - (NET_TIMINGS + 16): 0;
 	y = vid.height - sb_lines - 24 - r_graphheight->int_val - 1;
 
 	h = r_graphheight->int_val % 8;
@@ -68,7 +69,7 @@ CL_NetGraph (int swap)
 				  r_netgraph_alpha->value * 255);
 
 	lost = CL_CalcNet ();
-	x = swap ? vid.width - (NET_TIMINGS + 8) : 8;
+	x = hudswap ? vid.width - (NET_TIMINGS + 8) : 8;
 	y = vid.height - sb_lines - 9;
 
 	l = NET_TIMINGS;
@@ -86,7 +87,7 @@ CL_NetGraph (int swap)
 
 	y = vid.height - sb_lines - 24 - r_graphheight->int_val + 7;
 	snprintf (st, sizeof (st), "%3i%% packet loss", lost);
-	if (swap) {
+	if (hudswap) {
 		Draw_String (vid.width - ((strlen (st) * 8) + 8), y, st);
 	} else {
 		Draw_String (8, y, st);

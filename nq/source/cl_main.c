@@ -80,6 +80,7 @@ cvar_t     *show_fps;
 cvar_t     *show_time;
 
 int         fps_count;
+qboolean	hudswap;
 
 client_static_t cls;
 client_state_t cl;
@@ -95,6 +96,15 @@ CL_Sbar_f (cvar_t *var)
 {   
 	vid.recalc_refdef = true;
 	r_lineadj = var->int_val ? sb_lines : 0;
+}
+
+void
+cl_hudswap_f (cvar_t *var)
+{
+	if (cl_hudswap)
+        hudswap = cl_hudswap->int_val;
+	else
+		hudswap = 0;
 }
 
 void
@@ -135,7 +145,7 @@ CL_InitCvars (void)
 						  "linear motion interpolation");
 	cl_sbar = Cvar_Get ("cl_sbar", "0", CVAR_ARCHIVE, CL_Sbar_f,
 						"status bar mode");
-	cl_hudswap = Cvar_Get ("cl_hudswap", "0", CVAR_ARCHIVE, NULL,
+	cl_hudswap = Cvar_Get ("cl_hudswap", "0", CVAR_ARCHIVE, cl_hudswap_f,
 						   "new HUD on left side?");
 	lookspring = Cvar_Get ("lookspring", "0", CVAR_ARCHIVE, NULL, "Snap view "
 						   "to center when moving and no mlook/klook");
