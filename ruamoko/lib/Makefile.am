@@ -24,7 +24,7 @@ libr_a_SOURCES=\
 libr_a_AR=$(PAK) -cf
 
 libgui_a_SOURCES=\
-		inputline.r point.r
+		draw.r inputline.r point.r
 libgui_a_AR=$(PAK) -cf
 
 CLEANFILES	= *.qfo
