@@ -56,14 +56,14 @@ static __attribute__ ((unused)) const char rcsid[] =
 */
 
 typedef struct {
-	vec3_t      boxmins, boxmaxs;		// enclose the test object along
+	vec3_t       boxmins, boxmaxs;		// enclose the test object along
 										// entire move
-	const float      *mins, *maxs;			// size of the moving object
-	vec3_t      mins2, maxs2;			// size when clipping against
+	const float *mins, *maxs;			// size of the moving object
+	vec3_t       mins2, maxs2;			// size when clipping against
 										// monsters
-	const float      *start, *end;
-	trace_t     trace;
-	int         type;
+	const float *start, *end;
+	trace_t      trace;
+	int          type;
 	edict_t    *passedict;
 } moveclip_t;
 
@@ -106,7 +106,7 @@ SV_InitHull (hull_t *hull, dclipnode_t *clipnodes, mplane_t *planes)
 	}
 }
 
-static void
+static inline void
 SV_InitBoxHull (void)
 {
 	SV_InitHull (&box_hull, box_clipnodes, box_planes);
@@ -118,7 +118,7 @@ SV_InitBoxHull (void)
 	To keep everything totally uniform, bounding boxes are turned into small
 	BSP trees instead of being compared directly.
 */
-static hull_t *
+static inline hull_t *
 SV_HullForBox (const vec3_t mins, const vec3_t maxs)
 {
 	box_planes[0].dist = maxs[0];
@@ -248,7 +248,6 @@ SV_ClearWorld (void)
 link_t        **sv_link_next;
 link_t        **sv_link_prev;
 
-
 void
 SV_UnlinkEdict (edict_t *ent)
 {
@@ -262,12 +261,11 @@ SV_UnlinkEdict (edict_t *ent)
 	ent->area.prev = ent->area.next = NULL;
 }
 
-
 static void
 SV_TouchLinks (edict_t *ent, areanode_t *node)
 {
-	edict_t    *touch;
 	int         old_self, old_other;
+	edict_t    *touch;
 	link_t     *l, *next;
 
 	// touch linked edicts
@@ -308,7 +306,6 @@ SV_TouchLinks (edict_t *ent, areanode_t *node)
 	if (SVvector (ent, absmin)[node->axis] < node->dist)
 		SV_TouchLinks (ent, node->children[1]);
 }
-
 
 static void
 SV_FindTouchedLeafs (edict_t *ent, mnode_t *node)
@@ -356,7 +353,6 @@ SV_LinkEdict (edict_t *ent, qboolean touch_triggers)
 
 	if (ent == sv.edicts)
 		return;							// don't add the world
-
 	if (ent->free)
 		return;
 
@@ -421,9 +417,9 @@ SV_LinkEdict (edict_t *ent, qboolean touch_triggers)
 int
 SV_HullPointContents (hull_t *hull, int num, const vec3_t p)
 {
+	float        d;
 	dclipnode_t *node;
-	float       d;
-	mplane_t   *plane;
+	mplane_t    *plane;
 
 	while (num >= 0) {
 		if (num < hull->firstclipnode || num > hull->lastclipnode)
@@ -482,7 +478,6 @@ SV_TestEntityPosition (edict_t *ent)
 
 	if (trace.startsolid)
 		return sv.edicts;
-
 	return NULL;
 }
 
@@ -769,7 +764,6 @@ SV_Move (const vec3_t start, const vec3_t mins, const vec3_t maxs,
 
 	return clip.trace;
 }
-
 
 edict_t *
 SV_TestPlayerPosition (edict_t *ent, const vec3_t origin)

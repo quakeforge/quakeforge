@@ -51,7 +51,6 @@ static dclipnode_t box_clipnodes[6];
 static mplane_t box_planes[6];
 
 
-
 /*
 	PM_InitBoxHull
 
@@ -91,7 +90,7 @@ PM_InitBoxHull (void)
 	To keep everything totally uniform, bounding boxes are turned into small
 	BSP trees instead of being compared directly.
 */
-static hull_t *
+static inline hull_t *
 PM_HullForBox (const vec3_t mins, const vec3_t maxs)
 {
 	box_planes[0].dist = maxs[0];
@@ -107,9 +106,9 @@ PM_HullForBox (const vec3_t mins, const vec3_t maxs)
 inline int
 PM_HullPointContents (hull_t *hull, int num, const vec3_t p)
 {
+	float		 d;
 	dclipnode_t *node;
-	float       d;
-	mplane_t   *plane;
+	mplane_t	*plane;
 
 	while (num >= 0) {
 		node = hull->clipnodes + num;
@@ -131,10 +130,10 @@ PM_HullPointContents (hull_t *hull, int num, const vec3_t p)
 int
 PM_PointContents (const vec3_t p)
 {
-	dclipnode_t *node;
 	float       d;
-	hull_t     *hull;
 	int         num;
+	dclipnode_t *node;
+	hull_t     *hull;
 	mplane_t   *plane;
 
 	hull = &pmove.physents[0].model->hulls[0];
@@ -181,9 +180,9 @@ fill_trace (hull_t *hull, int num, int side,
 			const vec3_t p1, const vec3_t p2, float p1f, float p2f,
 			float t1, float t2, pmtrace_t *trace)
 {
-	mplane_t	*plane;
 	float        frac;
 	int          i;
+	mplane_t	*plane;
 
 	// the other side of the node is solid, this is the impact point
 	// put the crosspoint DIST_EPSILON pixels on the near side to guarantee
@@ -235,12 +234,10 @@ qboolean
 PM_RecursiveHullCheck (hull_t *hull, int num, float p1f, float p2f,
 					   const vec3_t p1, const vec3_t p2, pmtrace_t *trace)
 {
-	int         front, back;
+	int         front, back, side;
 	dclipnode_t *node;
-	float		t1, t2, midf;
-	int			side;
-	vec3_t      mid;
-	vec3_t      _p1;
+	float		midf, t1, t2;
+	vec3_t      mid, _p1;
 
 	while (1) {
 		while (num >= 0) {
