@@ -37,10 +37,12 @@
 #endif
 
 #include "QF/crc.h"
-#include "compat.h"
+#include "QF/cvar.h"
 #include "QF/msg.h"
 #include "QF/va.h"
 #include "QF/vfs.h"
+
+#include "compat.h"
 #include "server.h"
 #include "sv_progs.h"
 #include "world.h"
@@ -341,7 +343,7 @@ SV_SpawnServer (const char *server)
 	// which determines how big each edict is
 	SV_LoadProgs ();
 	Info_SetValueForStarKey (svs.info, "*progs", va ("%i", sv_pr_state.crc),
-							 MAX_SERVERINFO_STRING);
+							 MAX_SERVERINFO_STRING, !sv_highchars->int_val);
 
 	// allocate edicts
 	sv.edicts = PR_InitEdicts (&sv_pr_state, MAX_EDICTS);
@@ -436,6 +438,7 @@ SV_SpawnServer (const char *server)
 	SV_CreateBaseline ();
 	sv.signon_buffer_size[sv.num_signon_buffers - 1] = sv.signon.cursize;
 
-	Info_SetValueForKey (svs.info, "map", sv.name, MAX_SERVERINFO_STRING);
+	Info_SetValueForKey (svs.info, "map", sv.name, MAX_SERVERINFO_STRING,
+						 !sv_highchars->int_val);
 	Con_DPrintf ("Server spawned.\n");
 }

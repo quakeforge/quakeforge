@@ -39,8 +39,8 @@
 const char *Info_ValueForKey (const char *s, const char *key);
 void Info_RemoveKey (char *s, const char *key);
 void Info_RemovePrefixedKeys (char *start, char prefix);
-void Info_SetValueForKey (char *s, const char *key, const char *value, size_t maxsize);
-void Info_SetValueForStarKey (char *s, const char *key, const char *value, size_t maxsize);
+void Info_SetValueForKey (char *s, const char *key, const char *value, size_t maxsize, int flags);
+void Info_SetValueForStarKey (char *s, const char *key, const char *value, size_t maxsize, int flags);
 void Info_Print (const char *s);
 qboolean Info_Validate (const char *s);
 

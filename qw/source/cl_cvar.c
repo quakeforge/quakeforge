@@ -30,17 +30,21 @@
 # include "config.h"
 #endif
 
-#include "client.h"
 #include "QF/cvar.h"
 #include "QF/msg.h"
 #include "QF/va.h"
+
+#include "client.h"
+#include "compat.h"
 
 void
 Cvar_Info (cvar_t *var)
 {
 	if (var->flags & CVAR_USERINFO) {
 		Info_SetValueForKey (cls.userinfo, var->name, var->string,
-							 MAX_INFO_STRING);
+							 MAX_INFO_STRING,
+							 ((!strequal(var->name, "name"))
+							  |(strequal(var->name, "team") << 1)));
 		if (cls.state >= ca_connected) {
 			MSG_WriteByte (&cls.netchan.message, clc_stringcmd);
 			MSG_WriteString (&cls.netchan.message,

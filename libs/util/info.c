@@ -182,11 +182,11 @@ Info_RemovePrefixedKeys (char *start, char prefix)
 
 
 void
-Info_SetValueForStarKey (char *s, const char *key, const char *value, size_t maxsize)
+Info_SetValueForStarKey (char *s, const char *key, const char *value, size_t maxsize, int flags)
 {
 	char        newstr[1024];
 	const char *v;
-	int         c, is_name, is_team;
+	int         c;
 
 	if (strstr (key, "\\") || strstr (value, "\\")) {
 		Con_Printf ("Can't use keys or values with a \\\n");
@@ -225,17 +225,15 @@ Info_SetValueForStarKey (char *s, const char *key, const char *value, size_t max
 	// only copy ascii values
 	s += strlen (s);
 	v = newstr;
-	is_name = strcaseequal (key, "name");
-	is_team = strcaseequal (key, "team");
 	while (*v) {
 		c = (unsigned char) *v++;
 		// client only allows highbits on name
-		if (!is_name) {
+		if (flags & 1) {
 			c &= 127;
 			if (c < 32 || c > 127)
 				continue;
 			// auto lowercase team
-			if (is_team)
+			if (flags & 2)
 				c = tolower (c);
 		}
 		if (c > 13)
@@ -245,14 +243,14 @@ Info_SetValueForStarKey (char *s, const char *key, const char *value, size_t max
 }
 
 void
-Info_SetValueForKey (char *s, const char *key, const char *value, size_t maxsize)
+Info_SetValueForKey (char *s, const char *key, const char *value, size_t maxsize, int flags)
 {
 	if (key[0] == '*') {
 		Con_Printf ("Can't set * keys\n");
 		return;
 	}
 
-	Info_SetValueForStarKey (s, key, value, maxsize);
+	Info_SetValueForStarKey (s, key, value, maxsize, flags);
 }
 
 void

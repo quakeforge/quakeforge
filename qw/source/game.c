@@ -82,7 +82,7 @@ SV_Gamedir_f (void)
 
 	if (is_server) {
 		Info_SetValueForStarKey (svs_info, "*gamedir", dir,
-								 MAX_SERVERINFO_STRING);
+								 MAX_SERVERINFO_STRING, 0);
 	}
 }
 

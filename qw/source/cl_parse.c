@@ -300,7 +300,7 @@ Model_NextDownload (void)
 		if (info_key && cl_model_crcs->int_val) {
 			aliashdr_t *ahdr = (aliashdr_t *) Mod_Extradata (cl.model_precache[i]);
 			Info_SetValueForKey (cls.userinfo, info_key, va ("%d", ahdr->crc),
-								 MAX_INFO_STRING);
+								 MAX_INFO_STRING, 0);
 			MSG_WriteByte (&cls.netchan.message, clc_stringcmd);
 			SZ_Print (&cls.netchan.message, va ("setinfo %s %d", info_key, ahdr->crc));
 		}
@@ -1038,7 +1038,9 @@ CL_SetInfo (void)
 
 	Con_DPrintf ("SETINFO %s: %s=%s\n", player->name, key, value);
 
-	Info_SetValueForKey (player->userinfo, key, value, MAX_INFO_STRING);
+	Info_SetValueForKey (player->userinfo, key, value, MAX_INFO_STRING,
+						 (!strequal (key, "name"))
+						 | (strequal (key, "team") << 1));
 
 	CL_ProcessUserInfo (slot, player);
 }
@@ -1057,7 +1059,7 @@ CL_ServerInfo (void)
 
 	Con_DPrintf ("SERVERINFO: %s=%s\n", key, value);
 
-	Info_SetValueForKey (cl.serverinfo, key, value, MAX_SERVERINFO_STRING);
+	Info_SetValueForKey (cl.serverinfo, key, value, MAX_SERVERINFO_STRING, 0);
 }
 
 

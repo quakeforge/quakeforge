@@ -1792,10 +1792,11 @@ PF_setinfokey (progs_t *pr)
 	const char *value = G_STRING (pr, OFS_PARM2);
 
 	if (e1 == 0) {
-		Info_SetValueForKey (localinfo, key, value, MAX_LOCALINFO_STRING);
+		Info_SetValueForKey (localinfo, key, value, MAX_LOCALINFO_STRING,
+							 !sv_highchars->int_val);
 	} else if (e1 <= MAX_CLIENTS) {
 		Info_SetValueForKey (svs.clients[e1 - 1].userinfo, key, value,
-							 MAX_INFO_STRING);
+							 MAX_INFO_STRING, !sv_highchars->int_val);
 		SV_ExtractFromUserinfo (&svs.clients[e1 - 1]);
 		MSG_WriteByte (&sv.reliable_datagram, svc_setinfo);
 		MSG_WriteByte (&sv.reliable_datagram, e1 - 1);

@@ -1116,7 +1116,7 @@ SV_SetInfo_f (void)
 
 		strcpy (oldval, Info_ValueForKey (host_client->userinfo, Cmd_Argv (1)));
 		Info_SetValueForKey (host_client->userinfo, Cmd_Argv (1), Cmd_Argv (2),
-							 MAX_INFO_STRING);
+							 MAX_INFO_STRING, !sv_highchars->int_val);
 		if (strequal
 			(Info_ValueForKey (host_client->userinfo, Cmd_Argv (1)), oldval))
 			return;								// key hasn't changed
