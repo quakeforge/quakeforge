@@ -114,7 +114,7 @@ SV_New_f (void *unused)
 
 	if (host_client->state == cs_spawned)
 		return;
-SV_Printf ("SV_New_f\n");
+
 	host_client->state = cs_connected;
 	host_client->connection_started = realtime;
 
