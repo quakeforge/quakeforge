@@ -304,9 +304,11 @@ class_message_response (class_t *class, expr_t *sel)
 	selector = &G_STRUCT (pr_sel_t, sel->e.pointer.val);
 	sel_name = strings + selector->sel_id;
 	while (c) {
-		for (m = c->methods->head; m; m = m->next) {
-			if (strcmp (sel_name, m->name) == 0)
-				return m;
+		if (c->methods) {
+			for (m = c->methods->head; m; m = m->next) {
+				if (strcmp (sel_name, m->name) == 0)
+					return m;
+			}
 		}
 		c = c->super_class;
 	}
