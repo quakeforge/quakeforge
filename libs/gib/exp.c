@@ -41,7 +41,7 @@ optable_t   optable[] = {
 	{"^", OP_BitXor, 2},
 	{"**", OP_Exp, 2},
 	{"/", OP_Div, 2},
-	{"-", OP_Negate, 1},
+	{"neg", OP_Negate, 1},
 	{"*", OP_Mult, 2},
 	{"+", OP_Add, 2},
 	{"-", OP_Sub, 2},
@@ -286,9 +286,6 @@ EXP_ParseString (char *str)
 					i -= (m - strlen (op->str) + 1);
 					new = EXP_NewToken ();
 					new->generic.type = TOKEN_OP;
-					if (*(op->str) == '-')	// HACK HACK HACK
-						op = optable + 6;	// Always assume subtraction for -
-											// initially
 					new->op.op = op;
 					new->generic.prev = cur;
 					new->generic.next = 0;
@@ -469,13 +466,12 @@ EXP_Validate (token * chain)
 			new->generic.type = TOKEN_OP;
 			new->op.op = EXP_FindOpByStr ("*");
 			EXP_InsertTokenAfter (cur, new);
-		} else
-			if ((cur->generic.type == TOKEN_OP
+		} else if ((cur->generic.type == TOKEN_OP
 				 || cur->generic.type == TOKEN_OPAREN)
 				&& cur->generic.next->generic.type == TOKEN_OP) {
 			if (cur->generic.next->op.op->func == OP_Sub)	/* Stupid hack for
 															   negation */
-				cur->generic.next->op.op = optable + 3;
+				cur->generic.next->op.op = EXP_FindOpByStr ("neg");
 			else if (cur->generic.next->op.op->operands == 2)
 				return EXP_Error (EXP_E_SYNTAX,
 								  va
