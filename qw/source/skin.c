@@ -59,16 +59,15 @@ cvar_t     *baseskin;
 char        allskins[128];
 
 skin_t      skin_cache[MAX_CACHED_SKINS];
-hashtab_t  *skin_hash;
-int         numskins;
-
-skin_t      temp_skins[MAX_TEMP_SKINS];
-int         num_temp_skins;
+static hashtab_t  *skin_hash;
+static int         numskins;
+static skin_t      temp_skins[MAX_TEMP_SKINS];
+static int         num_temp_skins;
+static int         fullfb;
 
 int         skin_textures;
 int         skin_fb_textures;
 
-int         fullfb;
 
 static const char *
 skin_get_key (void *_skin, void *unused)
@@ -261,4 +260,22 @@ Skin_Init_Cvars (void)
 {
 	baseskin = Cvar_Get ("baseskin", "base", CVAR_NONE, NULL,
 						 "default base skin name");
+}
+
+
+int
+Skin_FbPercent (const char *skin_name)
+{
+	int         i, totalfb = 0;
+	skin_t     *skin = 0;
+
+	if (skin_name) {
+		skin = Hash_Find (skin_hash, skin_name);
+		if (skin)
+			return skin->numfb * 1000 / fullfb;
+		return -1;
+	}
+	for (i = 0; i < numskins; i++)
+		totalfb += skin_cache[i].numfb;
+	return totalfb * 1000 / (numskins * fullfb);
 }

@@ -414,30 +414,22 @@ Team_F_Version (char *args)
 char *
 Team_F_Skins (char *args)
 {
-	int totalfb, i, l;
-	skin_t *skin;
+	int totalfb, l;
 
 	while(isspace(*args))
 		args++;
 	for (l = 0;args[l] && !isspace(args[l]);l++);
 
 	if (l == 0) {
-		for (i = 0, totalfb = 0; i < numskins; i++)
-			totalfb += skin_cache[i].numfb;
-		return va("say Average percent fullbright for all loaded skins is %.1f", (float)totalfb/(float)(numskins * fullfb)*100.0);
+		totalfb = Skin_FbPercent (0);
+		return va("say Average percent fullbright for all loaded skins is %d.%d%%", totalfb / 10, totalfb % 10);
 	}
 
-	for (i = 0, skin = 0; i < numskins; i++) {
-		if (!strncmp(skin_cache[i].name, args, l)) {
-			skin = &skin_cache[i];
-			break;
-		}
-	}
+	totalfb = Skin_FbPercent (args);
 
-	if (skin)
-		return va("say \"Skin %s is %.1f%% fullbright\"",
-			skin->name,
-			(float)skin->numfb/(float)fullfb*100.0);
+	if (totalfb >= 0)
+		return va("say \"Skin %s is %d.%d%% fullbright\"",
+			args, totalfb / 10, totalfb % 10);
 	else
 		return ("say \"Skin not currently loaded.\"");
 }

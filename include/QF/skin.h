@@ -54,8 +54,6 @@ extern byte player_8bit_texels[320 * 200];
 extern skin_t   skin_cache[MAX_CACHED_SKINS];
 extern int skin_textures;
 extern int skin_fb_textures;
-extern int numskins;
-extern int fullfb;
 
 struct tex_s;
 struct tex_s *Skin_Cache (skin_t *skin);
@@ -76,6 +74,8 @@ void	Skin_Process (skin_t *skin, struct tex_s *);
 
 skin_t	*Skin_NewTempSkin (void);
 void	Skin_ClearTempSkins (void);
+
+int		Skin_FbPercent (const char *skin_name); // * 10
 
 extern char allskins[128];
 
