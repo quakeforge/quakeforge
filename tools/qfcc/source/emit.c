@@ -104,8 +104,7 @@ emit_function_call (expr_t *e, def_t *dest)
 		}
 	}
 	ind = count;
-	for (; ind > 0; ind--) {
-		ind--;
+	while (ind-- > 0) {
 		arg = args[ind];
 		parm = def_parms[ind];
 		parm.type = arg->type;
