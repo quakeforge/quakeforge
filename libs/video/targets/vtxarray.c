@@ -164,7 +164,8 @@ qfgl_ColorPointer (GLint size, GLenum type, GLsizei stride, const GLvoid *ptr)
 			return;
 	}
 	color_pointer = ptr;
-	color_stride = stride + size * bytes;
+//	color_stride = stride + size * bytes;
+	color_stride = stride ? stride : size * bytes;
 	color_func = *color_functions[size - 3][index];
 }
 
