@@ -17,6 +17,7 @@ etype_t qc_types[] = {
 	ev_void,		// ex_expr
 	ev_void,		// ex_uexpr
 	ev_void,		// ex_def
+	ev_void,		// ex_temp
 
 	ev_string,		// ex_string
 	ev_float,		// ex_float
@@ -73,13 +74,18 @@ get_type (expr_t *e)
 {
 	switch (e->type) {
 		case ex_label:
-		case ex_block:
 			return ev_type_count;		// something went very wrong
+		case ex_block:
+			if (e->e.block.result)
+				return get_type (e->e.block.result);
+			return ev_void;
 		case ex_expr:
 		case ex_uexpr:
 			return e->e.expr.type->type;
 		case ex_def:
 			return e->e.def->type->type;
+		case ex_temp:
+			return e->e.temp.type->type;
 		case ex_integer:
 			if (options.version == PROG_ID_VERSION) {
 				e->type = ex_float;
@@ -251,6 +257,16 @@ new_unary_expr (int op, expr_t *e1)
 }
 
 expr_t *
+new_temp_def_expr (type_t *type)
+{
+	expr_t *e = new_expr ();
+
+	e->type = ex_temp;
+	e->e.temp.type = type;
+	return e;
+}
+
+expr_t *
 append_expr (expr_t *block, expr_t *e)
 {
 	if (block->type != ex_block)
@@ -278,6 +294,10 @@ print_expr (expr_t *e)
 			printf ("%s", e->e.label.name);
 			break;
 		case ex_block:
+			if (e->e.block.result) {
+				print_expr (e->e.block.result);
+				printf ("=");
+			}
 			printf ("{\n");
 			for (e = e->e.block.head; e; e = e->next) {
 				print_expr (e);
@@ -308,6 +328,10 @@ print_expr (expr_t *e)
 			break;
 		case ex_def:
 			printf ("%s", e->e.def->name);
+			break;
+		case ex_temp:
+			print_expr (e->e.temp.expr);
+			printf ("@");
 			break;
 		case ex_string:
 			printf ("\"%s\"", e->e.string_val);
@@ -820,14 +844,17 @@ unary_expr (int op, expr_t *e)
 		case '-':
 			switch (e->type) {
 				case ex_label:
-				case ex_block:
 					error (e, "internal error");
 					abort ();
 				case ex_uexpr:
 					if (e->e.expr.op == '-')
 						return e->e.expr.e1;
+				case ex_block:
+					if (!e->e.block.result)
+						return error (e, "invalid type for unary -");
 				case ex_expr:
 				case ex_def:
+				case ex_temp:
 					{
 						expr_t *n = new_unary_expr (op, e);
 						n->e.expr.type = (e->type == ex_def)
@@ -863,11 +890,14 @@ unary_expr (int op, expr_t *e)
 		case '!':
 			switch (e->type) {
 				case ex_label:
-				case ex_block:
 					abort ();
+				case ex_block:
+					if (!e->e.block.result)
+						return error (e, "invalid type for unary -");
 				case ex_uexpr:
 				case ex_expr:
 				case ex_def:
+				case ex_temp:
 					{
 						expr_t *n = new_unary_expr (op, e);
 						if (options.version > PROG_ID_VERSION)
@@ -911,13 +941,16 @@ unary_expr (int op, expr_t *e)
 		case '~':
 			switch (e->type) {
 				case ex_label:
-				case ex_block:
 					abort ();
 				case ex_uexpr:
 					if (e->e.expr.op == '~')
 						return e->e.expr.e1;
+				case ex_block:
+					if (!e->e.block.result)
+						return error (e, "invalid type for unary -");
 				case ex_expr:
 				case ex_def:
+				case ex_temp:
 					{
 						expr_t *n = new_unary_expr (op, e);
 						type_t *t = e->type == ex_expr ? e->e.expr.type
@@ -1057,4 +1090,29 @@ return_expr (function_t *f, expr_t *e)
 							f->def->name);
 	}
 	return new_unary_expr ('r', e);
+}
+
+expr_t *
+conditional_expr (expr_t *cond, expr_t *e1, expr_t *e2)
+{
+	expr_t    *block = new_block_expr ();
+	type_t    *type1 = types[get_type (e1)];
+	type_t    *type2 = types[get_type (e2)];
+	expr_t    *tlabel = new_label_expr ();
+	expr_t    *elabel = new_label_expr ();
+
+	block->e.block.result = (type1 == type2) ? new_temp_def_expr (type1) : 0;
+	append_expr (block, new_binary_expr ('i', test_expr (cond, 1), tlabel));
+	if (block->e.block.result)
+		append_expr (block, new_binary_expr ('=', block->e.block.result, e2));
+	else
+		append_expr (block, e2);
+	append_expr (block, new_unary_expr ('g', elabel));
+	append_expr (block, tlabel);
+	if (block->e.block.result)
+		append_expr (block, new_binary_expr ('=', block->e.block.result, e1));
+	else
+		append_expr (block, e1);
+	append_expr (block, elabel);
+	return block;
 }

@@ -4,6 +4,7 @@ typedef enum {
 	ex_expr,	// binary expression
 	ex_uexpr,	// unary expression
 	ex_def,
+	ex_temp,	// temporary variable
 
 	ex_string,
 	ex_float,
@@ -25,7 +26,15 @@ typedef struct {
 typedef struct {
 	struct expr_s *head;
 	struct expr_s **tail;
+	struct expr_s *result;
 } block_t;
+
+typedef struct {
+	struct expr_s *expr;
+	def_t		*def;
+	type_t		*type;
+	int			users;
+} temp_t;
 
 typedef struct expr_s {
 	struct expr_s *next;
@@ -43,6 +52,7 @@ typedef struct expr_s {
 			struct expr_s *e2;
 		}		expr;
 		def_t	*def;
+		temp_t	temp;
 
 		char	*string_val;
 		float	float_val;
@@ -67,6 +77,7 @@ expr_t *new_label_expr (void);
 expr_t *new_block_expr (void);
 expr_t *new_binary_expr (int op, expr_t *e1, expr_t *e2);
 expr_t *new_unary_expr (int op, expr_t *e1);
+expr_t *new_temp_def_expr (type_t *type);
 
 expr_t *append_expr (expr_t *block, expr_t *e);
 
@@ -80,6 +91,7 @@ expr_t *asx_expr (int op, expr_t *e1, expr_t *e2);
 expr_t *unary_expr (int op, expr_t *e);
 expr_t *function_expr (expr_t *e1, expr_t *e2);
 expr_t *return_expr (function_t *f, expr_t *e);
+expr_t *conditional_expr (expr_t *cond, expr_t *e1, expr_t *e2);
 
 def_t *emit_statement (int line, opcode_t *op, def_t *var_a, def_t *var_b, def_t *var_c);
 void emit_expr (expr_t *e);

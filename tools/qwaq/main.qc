@@ -53,6 +53,7 @@ float () main =
 	return foo;*/
 	traceon ();
 	boing (boing (1, 2), boing (3, 4));
+	boing (boing (0, 2), boing (3, -3));
 	return 0;
 };
 
@@ -94,7 +95,7 @@ void () blarg =
 
 float (float a, float b) boing =
 {
-	return a + b;
+	return a ? a + b : b;
 };
 
 float (float baz) test_int =

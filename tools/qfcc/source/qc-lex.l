@@ -95,7 +95,7 @@ m		([\-+]?)
 						s_file = ReuseString (pr_immediate_string);
 					}
 
-[!(){}.*/&|^~+\-=\[\];,#%]	return yytext[0];
+[!(){}.*/&|^~+\-=\[\];,#%?:]	return yytext[0];
 
 "..."	return ELIPSIS;
 

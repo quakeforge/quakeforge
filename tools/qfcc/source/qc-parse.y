@@ -46,6 +46,7 @@ typedef struct {
 }
 
 %right	'=' ASADD ASSUB ASMUL ASDIV ASAND ASOR ASXOR ASMOD ASSHL ASSHR
+%right	'?' ':'
 %left	OR AND
 %left	EQ NE LE GE LT GT
 %left	SHL SHR
@@ -440,41 +441,42 @@ opt_expr
 		}
 
 expr
-	: expr '=' expr			{ $$ = binary_expr ('=', $1, $3); }
-	| expr ASADD expr		{ $$ = asx_expr (ASADD, $1, $3); }
-	| expr ASSUB expr		{ $$ = asx_expr (ASSUB, $1, $3); }
-	| expr ASMUL expr		{ $$ = asx_expr (ASMUL, $1, $3); }
-	| expr ASDIV expr		{ $$ = asx_expr (ASDIV, $1, $3); }
-	| expr ASAND expr		{ $$ = asx_expr (ASAND, $1, $3); }
-	| expr ASOR expr		{ $$ = asx_expr (ASOR, $1, $3); }
-	| expr ASXOR expr		{ $$ = asx_expr (ASXOR, $1, $3); }
-	| expr ASMOD expr		{ $$ = asx_expr (ASMOD, $1, $3); }
-	| expr ASSHL expr		{ $$ = asx_expr (ASSHL, $1, $3); }
-	| expr ASSHR expr		{ $$ = asx_expr (ASSHR, $1, $3); }
-	| expr AND expr			{ $$ = binary_expr (AND, $1, $3); }
-	| expr OR expr			{ $$ = binary_expr (OR,  $1, $3); }
-	| expr EQ expr			{ $$ = binary_expr (EQ,  $1, $3); }
-	| expr NE expr			{ $$ = binary_expr (NE,  $1, $3); }
-	| expr LE expr			{ $$ = binary_expr (LE,  $1, $3); }
-	| expr GE expr			{ $$ = binary_expr (GE,  $1, $3); }
-	| expr LT expr			{ $$ = binary_expr (LT,  $1, $3); }
-	| expr GT expr			{ $$ = binary_expr (GT,  $1, $3); }
-	| expr SHL expr			{ $$ = binary_expr (SHL, $1, $3); }
-	| expr SHR expr			{ $$ = binary_expr (SHR, $1, $3); }
-	| expr '+' expr			{ $$ = binary_expr ('+', $1, $3); }
-	| expr '-' expr			{ $$ = binary_expr ('-', $1, $3); }
-	| expr '*' expr			{ $$ = binary_expr ('*', $1, $3); }
-	| expr '/' expr			{ $$ = binary_expr ('/', $1, $3); }
-	| expr '&' expr			{ $$ = binary_expr ('&', $1, $3); }
-	| expr '|' expr			{ $$ = binary_expr ('|', $1, $3); }
-	| expr '^' expr			{ $$ = binary_expr ('^', $1, $3); }
-	| expr '%' expr			{ $$ = binary_expr ('%', $1, $3); }
-	| expr '(' arg_list ')'	{ $$ = function_expr ($1, $3); }
-	| expr '(' ')'			{ $$ = function_expr ($1, 0); }
-	| expr '.' expr			{ $$ = binary_expr ('.', $1, $3); }
-	| '-' expr %prec '!'	{ $$ = unary_expr ('-', $2); }
-	| '!' expr				{ $$ = unary_expr ('!', $2); }
-	| '~' expr				{ $$ = unary_expr ('~', $2); }
+	: expr '=' expr				{ $$ = binary_expr ('=', $1, $3); }
+	| expr ASADD expr			{ $$ = asx_expr (ASADD, $1, $3); }
+	| expr ASSUB expr			{ $$ = asx_expr (ASSUB, $1, $3); }
+	| expr ASMUL expr			{ $$ = asx_expr (ASMUL, $1, $3); }
+	| expr ASDIV expr			{ $$ = asx_expr (ASDIV, $1, $3); }
+	| expr ASAND expr			{ $$ = asx_expr (ASAND, $1, $3); }
+	| expr ASOR expr			{ $$ = asx_expr (ASOR, $1, $3); }
+	| expr ASXOR expr			{ $$ = asx_expr (ASXOR, $1, $3); }
+	| expr ASMOD expr			{ $$ = asx_expr (ASMOD, $1, $3); }
+	| expr ASSHL expr			{ $$ = asx_expr (ASSHL, $1, $3); }
+	| expr ASSHR expr			{ $$ = asx_expr (ASSHR, $1, $3); }
+	| expr '?' expr ':' expr 	{ $$ = conditional_expr ($1, $3, $5); }
+	| expr AND expr				{ $$ = binary_expr (AND, $1, $3); }
+	| expr OR expr				{ $$ = binary_expr (OR,  $1, $3); }
+	| expr EQ expr				{ $$ = binary_expr (EQ,  $1, $3); }
+	| expr NE expr				{ $$ = binary_expr (NE,  $1, $3); }
+	| expr LE expr				{ $$ = binary_expr (LE,  $1, $3); }
+	| expr GE expr				{ $$ = binary_expr (GE,  $1, $3); }
+	| expr LT expr				{ $$ = binary_expr (LT,  $1, $3); }
+	| expr GT expr				{ $$ = binary_expr (GT,  $1, $3); }
+	| expr SHL expr				{ $$ = binary_expr (SHL, $1, $3); }
+	| expr SHR expr				{ $$ = binary_expr (SHR, $1, $3); }
+	| expr '+' expr				{ $$ = binary_expr ('+', $1, $3); }
+	| expr '-' expr				{ $$ = binary_expr ('-', $1, $3); }
+	| expr '*' expr				{ $$ = binary_expr ('*', $1, $3); }
+	| expr '/' expr				{ $$ = binary_expr ('/', $1, $3); }
+	| expr '&' expr				{ $$ = binary_expr ('&', $1, $3); }
+	| expr '|' expr				{ $$ = binary_expr ('|', $1, $3); }
+	| expr '^' expr				{ $$ = binary_expr ('^', $1, $3); }
+	| expr '%' expr				{ $$ = binary_expr ('%', $1, $3); }
+	| expr '(' arg_list ')'		{ $$ = function_expr ($1, $3); }
+	| expr '(' ')'				{ $$ = function_expr ($1, 0); }
+	| expr '.' expr				{ $$ = binary_expr ('.', $1, $3); }
+	| '-' expr %prec '!'		{ $$ = unary_expr ('-', $2); }
+	| '!' expr					{ $$ = unary_expr ('!', $2); }
+	| '~' expr					{ $$ = unary_expr ('~', $2); }
 	| NAME
 		{
 			$$ = new_expr ();
@@ -485,8 +487,8 @@ expr
 				$$->e.def = &def_float;
 			}
 		}
-	| const			{ $$ = $1; }
-	| '(' expr ')'	{ $$ = $2; $$->paren = 1; }
+	| const						{ $$ = $1; }
+	| '(' expr ')'				{ $$ = $2; $$->paren = 1; }
 	;
 
 arg_list

@@ -169,8 +169,14 @@ emit_sub_expr (expr_t *e, def_t *dest)
 	int priority;
 
 	switch (e->type) {
-		case ex_label:
 		case ex_block:
+			if (e->e.block.result) {
+				expr_t *res = e->e.block.result;
+				for (e = e->e.block.head; e; e = e->next)
+					emit_expr (e);
+				return emit_sub_expr (res, 0);
+			}
+		case ex_label:
 			error (e, "internal error");
 			abort ();
 		case ex_expr:
@@ -293,6 +299,10 @@ emit_sub_expr (expr_t *e, def_t *dest)
 			return emit_statement (e->line, op, def_a, def_b, dest);
 		case ex_def:
 			return e->e.def;
+		case ex_temp:
+			if (!e->e.temp.def)
+				e->e.temp.def = PR_GetTempDef (e->e.temp.type, pr_scope);
+			return e->e.temp.def;
 		case ex_string:
 		case ex_float:
 		case ex_vector:
@@ -383,6 +393,7 @@ emit_expr (expr_t *e)
 			}
 			break;
 		case ex_def:
+		case ex_temp:
 		case ex_string:
 		case ex_float:
 		case ex_vector:
