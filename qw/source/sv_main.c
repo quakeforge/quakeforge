@@ -706,7 +706,7 @@ SVC_GetChallenge (void)
 	}
 
 	if (sv_extensions->int_val) {
-		extended = " QF";
+		extended = " QF qtv";
 	}
 
 	// send it to the client
@@ -775,7 +775,13 @@ SVC_DirectConnect (void)
 	if (CheckForFlood (FLOOD_CONNECT))
 		return;
 
-	version = atoi (Cmd_Argv (1));
+	s = Cmd_Argv (1);
+	if (!strcmp (s, "qtv")) {
+		SV_Printf ("QTV proxy connection: %s\n", s);
+		return;
+	}
+
+	version = atoi (s);
 	if (version != PROTOCOL_VERSION) {
 		Netchan_OutOfBandPrint (net_from, "%c\nServer is version %s.\n",
 								A2C_PRINT, QW_VERSION);
