@@ -42,7 +42,6 @@ static const char rcsid[] =
 
 
 unsigned short d_8to16table[256];
-unsigned int d_8to24table[256];
 unsigned char d_15to8table[65536];
 
 

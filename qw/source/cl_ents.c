@@ -88,7 +88,8 @@ CL_ClearEnts ()
 }
 
 void
-CL_NewDlight (int key, vec3_t org, int effects)
+CL_NewDlight (int key, vec3_t org, int effects, byte glow_size,
+			  byte glow_color)
 {
 	float		radius;
 	dlight_t   *dl;
@@ -97,36 +98,58 @@ CL_NewDlight (int key, vec3_t org, int effects)
 	static vec3_t blue = {0.05, 0.05, 0.5};
 	static vec3_t purple = {0.5, 0.05, 0.5};
 
-	if (!(effects & (EF_BLUE | EF_RED | EF_BRIGHTLIGHT | EF_DIMLIGHT)))
-		return;
+	if (!(effects & (EF_BLUE | EF_RED | EF_BRIGHTLIGHT | EF_DIMLIGHT))) {
+		if (!glow_size)
+			return;
+	}
 
 	dl = R_AllocDlight (key);
 	if (!dl)
 		return;
 	VectorCopy (org, dl->origin);
-	radius = 200 + (rand () & 31);
-	if (effects & EF_BRIGHTLIGHT) {
-		radius += 200;
-		dl->origin[2] += 16;
+
+	if (effects & (EF_BLUE | EF_RED | EF_BRIGHTLIGHT | EF_DIMLIGHT)) {
+		radius = 200 + (rand () & 31);
+		if (effects & EF_BRIGHTLIGHT) {
+			radius += 200;
+			dl->origin[2] += 16;
+		}
+		if (effects & EF_DIMLIGHT)
+			if (effects & ~EF_DIMLIGHT)
+				radius -= 100;
+		dl->radius = radius;
+		dl->die = cl.time + 0.1; // FIXME: killing a merged dlight is bad?
+		switch (effects & (EF_RED | EF_BLUE)) {
+			case EF_RED | EF_BLUE:
+				VectorCopy (purple, dl->color);
+				break;
+			case EF_RED:
+				VectorCopy (red, dl->color);
+				break;
+			case EF_BLUE:
+				VectorCopy (blue, dl->color);
+				break;
+			default:
+				VectorCopy (normal, dl->color);
+				break;
+		}
 	}
-	if (effects & EF_DIMLIGHT)
-		if (effects & ~EF_DIMLIGHT)
-			radius -= 100;
-	dl->radius = radius;
-	dl->die = cl.time + 0.1;
-	switch (effects & (EF_RED | EF_BLUE)) {
-		case EF_RED | EF_BLUE:
-			VectorCopy (purple, dl->color);
-			break;
-		case EF_RED:
-			VectorCopy (red, dl->color);
-			break;
-		case EF_BLUE:
-			VectorCopy (blue, dl->color);
-			break;
-		default:
-			VectorCopy (normal, dl->color);
-			break;
+
+	if (glow_size) {
+		dl->radius += glow_size < 128 ? glow_size * 8.0 :
+			(glow_size - 256) * 8.0;
+		if (glow_color) {
+			if (glow_color == 255) {
+				dl->color[0] = dl->color[1] = dl->color[2] = 1.0;
+			} else {
+				unsigned char	*tempcolor;
+
+				tempcolor = (byte *) &d_8to24table[glow_color];
+				dl->color[0] = tempcolor[0] / 255.0;
+				dl->color[1] = tempcolor[1] / 255.0;
+				dl->color[2] = tempcolor[2] / 255.0;
+			}
+		}
 	}
 }
 
@@ -411,7 +434,8 @@ CL_LinkPacketEntities (void)
 		s1 = &pack->entities[pnum];
 
 		// spawn light flashes, even ones coming from invisible objects
-		CL_NewDlight (s1->number, s1->origin, s1->effects);
+		CL_NewDlight (s1->number, s1->origin, s1->effects, s1->glow_size,
+					  s1->glow_color);
 
 		// if set to invisible, skip
 		if (!s1->modelindex)
@@ -477,9 +501,6 @@ CL_LinkPacketEntities (void)
 		}
 		(*ent)->colormod[3] = s1->alpha / 255.0;
 		(*ent)->scale = s1->scale / 16.0;
-		(*ent)->glow_size =	s1->glow_size < 128 ? s1->glow_size * 8.0 :
-			(s1->glow_size - 256) * 8.0;
-		(*ent)->glow_color = s1->glow_color;
 		// Ender: Extend (Colormod) [QSG - End]
 
 		// set skin
@@ -516,7 +537,7 @@ CL_LinkPacketEntities (void)
 			dl = R_AllocDlight (-s1->number);
 			if (dl) {
 				VectorCopy ((*ent)->origin, dl->origin);
-				dl->radius = 200;
+				dl->radius = 200.0;
 				dl->die = cl.time + 0.1;
 				VectorCopy (r_firecolor->vec, dl->color);
 			}
@@ -742,7 +763,6 @@ CL_LinkPlayers (void)
 {
 	double			playertime;
 	int				msec, oldphysent, i, j;
-	//entity_t	  **_ent;
 	entity_t	   *ent;
 	frame_t		   *frame;
 	player_info_t  *info;
@@ -767,17 +787,6 @@ CL_LinkPlayers (void)
 		if (!info->name[0])
 			continue;
 
-		// spawn light flashes, even ones coming from invisible objects
-		if (j == cl.playernum) {
-			VectorCopy (cl.simorg, org);
-			r_player_entity = &cl_player_ents[j];
-		} else
-			VectorCopy (state->origin, org);
-
-		CL_NewDlight (j, org, state->effects); //FIXME:
-		// appearently, this should be j+1, but that seems nasty for some
-		// things (due to lack of lights?), so I'm leaving this as is for now.
-
 		// the player object never gets added
 		if (j == cl.playernum) {
 			if (!Cam_DrawPlayer (-1))	// XXX
@@ -786,6 +795,14 @@ CL_LinkPlayers (void)
 			if (!Cam_DrawPlayer (j))
 				continue;
 		}
+
+		// spawn light flashes, even ones coming from invisible objects
+		if (j == cl.playernum) {
+			VectorCopy (cl.simorg, org);
+			r_player_entity = &cl_player_ents[j];
+		} else
+			VectorCopy (state->origin, org);
+		CL_NewDlight (j, org, state->effects, 0, 255);
 
 		if (!state->modelindex)
 			continue;
@@ -818,9 +835,7 @@ CL_LinkPlayers (void)
 		{
 			ent->angles[PITCH] = -cl.viewangles[PITCH] / 3;
 			ent->angles[YAW] = cl.viewangles[YAW];
-		}
-		else
-		{
+		} else {
 			ent->angles[PITCH] = -state->viewangles[PITCH] / 3;
 			ent->angles[YAW] = state->viewangles[YAW];
 		}
@@ -847,13 +862,18 @@ CL_LinkPlayers (void)
 			ent->skin = NULL;
 		}
 
-		// LordHavoc: more QSG VERSION 2 stuff, FIXME: players don't have
-		// extend stuff
-		ent->colormod[0] = ent->colormod[1] = ent->colormod[2] =
-			ent->colormod[3] = 1.0;
-		ent->scale = 1.0;
-		ent->glow_size = 0.0;
-		ent->glow_color = 254;
+		// QSG2
+		if (state->colormod == 255) {
+			ent->colormod[0] = ent->colormod[1] = ent->colormod[2] = 1.0;
+		} else {
+			ent->colormod[0] = (float) ((state->colormod >> 5) & 7) *
+				(1.0 / 7.0);
+			ent->colormod[1] = (float) ((state->colormod >> 2) & 7) *
+				(1.0 / 7.0);
+			ent->colormod[2] = (float) (state->colormod & 3) * (1.0 / 3.0);
+		}
+		ent->colormod[3] = state->alpha / 255.0;
+		ent->scale = state->scale / 16.0;
 
 		if (state->effects & EF_FLAG1)
 			CL_AddFlagModels (ent, 0, j);
@@ -960,11 +980,11 @@ CL_SetUpPlayerPrediction (qboolean dopred)
 			msec = 500 * (playertime - state->state_time);
 			if (msec <= 0 || !dopred) {
 				VectorCopy (state->origin, pplayer->origin);
-				// Con_DPrintf ("nopredict\n");
+//				Con_DPrintf ("nopredict\n");
 			} else {
 				// predict players movement
 				state->command.msec = msec = min (msec, 255);
-				// Con_DPrintf ("predict: %i\n", msec);
+//				Con_DPrintf ("predict: %i\n", msec);
 
 				CL_PredictUsercmd (state, &exact, &state->command, false);
 				VectorCopy (exact.origin, pplayer->origin);

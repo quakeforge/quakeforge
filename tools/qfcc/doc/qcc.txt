@@ -190,7 +190,7 @@ function that has been executed.
 
 afunc ( 4, bfunc(1,2,3));
 will fail because there is a shared parameter marshaling area, which will
-cause the 1 from bfunc to overwrite the 4 allready placed in parm0.  When
+cause the 1 from bfunc to overwrite the 4 already placed in parm0.  When
 a function is called, it copies the parms from the globals into it's
 privately scoped variables, so there is no collision when calling another
 function.

@@ -812,7 +812,7 @@ SVC_DirectConnect (void)
 	} else
 		newcl->userinfo = userinfo;
 
-	// if there is allready a slot for this ip, drop it
+	// if there is already a slot for this ip, drop it
 	for (i = 0, cl = svs.clients; i < MAX_CLIENTS; i++, cl++) {
 		if (cl->state == cs_free)
 			continue;

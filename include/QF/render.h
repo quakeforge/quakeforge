@@ -85,8 +85,6 @@ typedef struct entity_s
 											// found in an active leaf
 	float					colormod[4];	// color tint and alpha for model
 	float					scale;			// size scaler of the model
-	float					glow_size;		// how big the glow is (can be negative)
-	byte					glow_color;		// color of glow (paletted)
 
 	// FIXME: could turn these into a union
 	int						trivial_accept;

@@ -510,7 +510,7 @@ int         loadsize;
 	COM_LoadFile
 
 	Filename are relative to the quake directory.
-	Allways appends a 0 byte to the loaded data.
+	Always appends a 0 byte to the loaded data.
 */
 byte       *
 COM_LoadFile (const char *path, int usehunk)

@@ -83,7 +83,7 @@ startup (void)
 
 	// allocate named semaphore on client so front end can tell if it's alive
 
-	// mutex will fail if semephore allready exists
+	// mutex will fail if semaphore already exists
 	qwclsemaphore = CreateMutex (NULL, /* Security attributes */
 								 0,	/* owner */
 								 "qwcl"); /* Semaphore name */

@@ -43,19 +43,21 @@ static const char rcsid[] =
 #include "compat.h"
 #include "view.h"
 
-
 /* Software and hardware gamma support */
 byte		gammatable[256];
-cvar_t		*vid_gamma;
-cvar_t		*vid_system_gamma;
+cvar_t	   *vid_gamma;
+cvar_t	   *vid_system_gamma;
 qboolean	vid_gamma_avail;		// hardware gamma availability
+
+unsigned int	d_8to24table[256];
 
 /* Screen size */
 int 		scr_width, scr_height;
-cvar_t		*vid_width;
-cvar_t		*vid_height;
+cvar_t	   *vid_width;
+cvar_t	   *vid_height;
 
 cvar_t     *vid_fullscreen;
+
 
 void
 VID_GetWindowSize (int def_w, int def_h)

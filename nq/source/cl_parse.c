@@ -365,13 +365,10 @@ CL_ParseUpdate (int bits)
 	else
 		forcelink = false;
 
-	if (forcelink) {
-// FIXME: do this right (ie, protocol support)
-		ent->colormod[0] = ent->colormod[1] = ent->colormod[2] = 
+	if (forcelink) {		// FIXME: do this right (ie, protocol support)
+		ent->colormod[0] = ent->colormod[1] = ent->colormod[2] =
 			ent->colormod[3] = 1.0;
 		ent->scale = 1.0;
-		ent->glow_size = 0.0;
-		ent->glow_color = 254;
 	}
 
 	state->msgtime = cl.mtime[0];
@@ -626,13 +623,10 @@ CL_ParseStatic (void)
 	ent->frame = state.baseline.frame;
 	ent->colormap = vid.colormap8;
 	ent->skinnum = state.baseline.skin;
-//FIXME ent->effects = state.baseline.effects;
-//FIXME need to get colormod from baseline
+// FIXME: need to get colormod from baseline
 	ent->colormod[0] = ent->colormod[1] = ent->colormod[2] = 1.0;
 	ent->colormod[3] = state.baseline.alpha / 255.0;
 	ent->scale = state.baseline.scale / 16.0;
-	ent->glow_size = state.baseline.glow_size;
-	ent->glow_color = state.baseline.glow_color;
 
 	R_AddEfrags (ent);
 }

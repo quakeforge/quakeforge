@@ -59,7 +59,6 @@ static const char rcsid[] =
 #define WARP_HEIGHT             200
 
 unsigned char	d_15to8table[65536];
-unsigned int	d_8to24table[256];
 
 QF_glActiveTextureARB		qglActiveTexture = NULL;
 QF_glMultiTexCoord2fARB		qglMultiTexCoord2f = NULL;

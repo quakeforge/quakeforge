@@ -67,6 +67,13 @@ typedef struct player_state_s {
 	float		waterjumptime;
 	int			onground;		// -1 = in air, else pmove entity number
 	int			oldbuttons;
+
+	// QSG2
+	byte		alpha;
+	byte		scale;
+	byte		glow_size;
+	byte		glow_color;
+	byte		colormod;
 } player_state_t;
 
 #undef MAX_SCOREBOARDNAME
