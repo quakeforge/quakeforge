@@ -420,6 +420,8 @@ Menu_KeyEvent (knum_t key, short unicode, qboolean down)
 		if (G_INT (&menu_pr_state, OFS_RETURN))
 			return;
 	}
+	if (!menu->items)
+		return;
 	switch (key) {
 		case QFK_DOWN:
 		case QFM_WHEEL_DOWN:
