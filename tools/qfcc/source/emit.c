@@ -102,6 +102,9 @@ add_statement_ref (def_t *def, dstatement_t *st, reloc_type type)
 	if (def) {
 		reloc_t    *ref = new_reloc (st - pr.code->code, type);
 
+		if (def->alias)
+			def = def->alias;
+
 		ref->next = def->refs;
 		def->refs = ref;
 
@@ -118,7 +121,7 @@ emit_statement (expr_t *e, opcode_t *op, def_t *var_a, def_t *var_b,
 	def_t      *ret;
 
 	if (!op) {
-		error (e, "ice ice baby\n");
+		error (e, "ice ice baby");
 		abort ();
 	}
 	if (options.code.debug) {
@@ -197,7 +200,8 @@ static def_t *
 emit_function_call (expr_t *e, def_t *dest)
 {
 	def_t      *func = emit_sub_expr (e->e.expr.e1, 0);
-	def_t       parm;
+	def_t      *parm;
+	def_t      *ret;
 	def_t      *arg;
 	expr_t     *earg;
 	opcode_t   *op;
@@ -208,32 +212,31 @@ emit_function_call (expr_t *e, def_t *dest)
 	ind = count;
 	for (earg = e->e.expr.e2; earg; earg = earg->next) {
 		ind--;
-		parm = def_parms[ind];
-		parm.type = get_type (earg);
-		if (parm.type->type == ev_struct) {
-			expr_t     *a = assign_expr (new_def_expr (&parm), earg);
+		parm = emit_sub_expr (new_param_expr (get_type (earg), ind), 0);
+		if (parm->type->type == ev_struct) {
+			expr_t     *a = assign_expr (new_def_expr (parm), earg);
 			a->line = e->line;
 			a->file = e->file;
 			emit_expr (a);
 		} else {
-			arg = emit_sub_expr (earg, &parm);
-			if (arg != &parm) {
-				op = opcode_find ("=", arg, &parm, &def_void);
-				emit_statement (e, op, arg, &parm, 0);
+			arg = emit_sub_expr (earg, parm);
+			if (arg != parm) {
+				op = opcode_find ("=", arg->type, arg->type, &type_void);
+				emit_statement (e, op, arg, parm, 0);
 			}
 		}
 	}
-	op = opcode_find (va ("<CALL%d>", count), &def_function, &def_void,
-						 &def_void);
+	op = opcode_find (va ("<CALL%d>", count), &type_function, &type_void,
+						 &type_void);
 	emit_statement (e, op, func, 0, 0);
 
-	def_ret.type = func->type->aux_type;
+	ret = emit_sub_expr (new_ret_expr (func->type->aux_type), 0);
 	if (dest) {
-		op = opcode_find ("=", dest, &def_ret, &def_void);
-		emit_statement (e, op, &def_ret, dest, 0);
+		op = opcode_find ("=", dest->type, ret->type, &type_void);
+		emit_statement (e, op, ret, dest, 0);
 		return dest;
 	} else {
-		return &def_ret;
+		return ret;
 	}
 }
 
@@ -273,7 +276,7 @@ emit_assign_expr (int oper, expr_t *e)
 		}
 		def_b = emit_sub_expr (e2, def_a);
 		if (def_b != def_a) {
-			op = opcode_find (operator, def_b, def_a, &def_void);
+			op = opcode_find (operator, def_b->type, def_a->type, &type_void);
 			emit_statement (e, op, def_b, def_a, 0);
 		}
 		return def_a;
@@ -285,11 +288,11 @@ emit_assign_expr (int oper, expr_t *e)
 			&& e1->e.expr.e1->type < ex_string) {
 			def_a = emit_sub_expr (e1->e.expr.e1, 0);
 			def_c = emit_sub_expr (e1->e.expr.e2, 0);
-			op = opcode_find (operator, def_b, def_a, def_c);
+			op = opcode_find (operator, def_b->type, def_a->type, def_c->type);
 		} else {
 			def_a = emit_sub_expr (e1, 0);
 			def_c = 0;
-			op = opcode_find (operator, def_b, def_a, &def_void);
+			op = opcode_find (operator, def_b->type, def_a->type, &type_void);
 		}
 		emit_statement (e, op, def_b, def_a, def_c);
 		return def_b;
@@ -348,7 +351,7 @@ emit_move_expr (expr_t *e)
 	}
 	size = emit_sub_expr (size_expr, 0);
 
-	op = opcode_find ("<MOVE>", src, size, dst);
+	op = opcode_find ("<MOVE>", src->type, size->type, dst->type);
 	return emit_statement (e, op, src, size, dst);
 }
 
@@ -360,7 +363,7 @@ emit_address_expr (expr_t *e)
 
 	def_a = emit_sub_expr (e->e.expr.e1, 0);
 	def_b = emit_sub_expr (e->e.expr.e2, 0);
-	op = opcode_find ("&", def_a, def_b, 0);
+	op = opcode_find ("&", def_a->type, def_b->type, 0);
 	d = emit_statement (e, op, def_a, def_b, 0);
 	return d;
 }
@@ -375,18 +378,20 @@ emit_deref_expr (expr_t *e, def_t *dest)
 
 	e = e->e.expr.e1;
 	if (e->type == ex_pointer) {
-		if (e->e.pointer.val >= 0 && e->e.pointer.val < 65536) {
+		if (e->e.pointer.def) {
+			d = new_def (e->e.pointer.type, 0, current_scope);
+			d->local = e->e.pointer.def->local;
+			d->ofs = e->e.pointer.def->ofs;
+			d->alias = e->e.pointer.def;
+		} else if (e->e.pointer.val >= 0 && e->e.pointer.val < 65536) {
 			d = new_def (e->e.pointer.type, 0, current_scope);
 			d->ofs = e->e.pointer.val;
 		} else {
 			d = ReuseConstant (e, 0);
 			zero.type = ex_short;
 			z = emit_sub_expr (&zero, 0);
-			op = opcode_find (".", d, z, dest);
+			op = opcode_find (".", d->type, z->type, dest->type);
 			d = emit_statement (e, op, d, z, dest);
-		}
-		if (e->e.pointer.def) {
-			d->local = e->e.pointer.def->local;
 		}
 		return d;
 	}
@@ -406,7 +411,7 @@ emit_deref_expr (expr_t *e, def_t *dest)
 	if (dest && d != dest) {
 		zero.type = ex_short;
 		z = emit_sub_expr (&zero, 0);
-		op = opcode_find (".", d, z, dest);
+		op = opcode_find (".", d->type, z->type, dest->type);
 		d = emit_statement (e, op, d, z, dest);
 	} else {
 		if (!d->name)
@@ -474,7 +479,8 @@ emit_sub_expr (expr_t *e, def_t *dest)
 				dest = get_tempdef (e->e.expr.type, current_scope);
 				dest->users += 2;
 			}
-			op = opcode_find (operator, def_a, def_b, dest);
+			op = opcode_find (operator, def_a->type, def_b->type,
+							  e->e.expr.type);
 			d = emit_statement (e, op, def_a, def_b, dest);
 			break;
 		case ex_uexpr:
@@ -538,7 +544,8 @@ emit_sub_expr (expr_t *e, def_t *dest)
 				default:
 					abort ();
 			}
-			op = opcode_find (operator, def_a, def_b, dest);
+			op = opcode_find (operator, def_a->type, def_b->type,
+							  dest ? dest->type : 0);
 			d = emit_statement (e, op, def_a, def_b, dest);
 			break;
 		case ex_def:

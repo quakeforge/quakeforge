@@ -108,20 +108,20 @@ compare (void *_opa, void *_opb, void *_tab)
 }
 
 opcode_t *
-opcode_find (const char *name, def_t *var_a, def_t *var_b, def_t *var_c)
+opcode_find (const char *name, type_t *type_a, type_t *type_b, type_t *type_c)
 {
 	opcode_t    op;
 	hashtab_t **tab;
 
 	op.name = name;
-	if (var_a && var_b && var_c) {
-		op.type_a = var_a->type->type;
-		op.type_b = var_b->type->type;
-		op.type_c = var_c->type->type;
+	if (type_a && type_b && type_c) {
+		op.type_a = type_a->type;
+		op.type_b = type_b->type;
+		op.type_c = type_c->type;
 		tab = &opcode_type_table_abc;
-	} else if (var_a && var_b) {
-		op.type_a = var_a->type->type;
-		op.type_b = var_b->type->type;
+	} else if (type_a && type_b) {
+		op.type_a = type_a->type;
+		op.type_b = type_b->type;
 		tab = &opcode_type_table_ab;
 	} else {
 		tab = 0;

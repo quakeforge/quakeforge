@@ -668,6 +668,29 @@ new_this_expr (void)
 	return new_def_expr (def);
 }
 
+static expr_t *
+param_expr (const char *name, type_t *type)
+{
+	def_t      *def = get_def (type_param, name, pr.scope, st_extern);;
+	expr_t     *def_expr;
+
+	def_initialized (def);
+	def_expr = new_def_expr (def);
+	return unary_expr ('.', address_expr (def_expr, 0, type));
+}
+
+expr_t *
+new_ret_expr (type_t *type)
+{
+	return param_expr (".return", type);
+}
+
+expr_t *
+new_param_expr (type_t *type, int num)
+{
+	return param_expr (va (".param_%d", num), type);
+}
+
 expr_t *
 new_move_expr (expr_t *e1, expr_t *e2, type_t *type)
 {
@@ -1436,7 +1459,7 @@ binary_expr (int op, expr_t *e1, expr_t *e2)
 
 	if (e1->type == ex_block && e1->e.block.is_call
 		&& e2->type == ex_block && e2->e.block.is_call && e1->e.block.result) {
-		e = new_temp_def_expr (e1->e.block.result->e.def->type);
+		e = new_temp_def_expr (get_type (e1->e.block.result));
 		inc_users (e);					// for the block itself
 		e1 = assign_expr (e, e1);
 	}
@@ -1950,10 +1973,7 @@ function_expr (expr_t *e1, expr_t *e2)
 	e->e.expr.type = ftype->aux_type;
 	append_expr (call, e);
 	if (ftype->aux_type != &type_void) {
-		expr_t     *ret = new_def_expr (new_def (ftype->aux_type, 0, 0));
-
-		ret->e.def->ofs = def_ret.ofs;
-		call->e.block.result = ret;
+		call->e.block.result = new_ret_expr (ftype->aux_type);
 	}
 	return call;
 }
@@ -2490,7 +2510,7 @@ message_expr (expr_t *receiver, keywordarg_t *message)
 	if (call->type == ex_error)
 		return receiver;
 
-	call->e.block.result->e.def->type = rec_type;
+	call->e.block.result = new_ret_expr (rec_type);
 	return call;
 }
 

@@ -89,6 +89,26 @@ typedef union defref_s {
 	union defref_s *next;
 } defref_t;
 
+typedef struct builtin_sym_s {
+	const char *name;
+	etype_t     basic_type;
+	const char *full_type;
+	int         size;
+} builtin_sym_t;
+
+static builtin_sym_t builtin_symbols[] = {
+	{".zero",		ev_struct,	"{-*fEFv(v)^viI}",	1},
+	{".return",		ev_struct,	"{-*fVEFv(v)^viI}", 3},
+	{".param_0",	ev_struct,	"{-*fVEFv(v)^viI}", 3},
+	{".param_1",	ev_struct,	"{-*fVEFv(v)^viI}", 3},
+	{".param_2",	ev_struct,	"{-*fVEFv(v)^viI}", 3},
+	{".param_3",	ev_struct,	"{-*fVEFv(v)^viI}", 3},
+	{".param_4",	ev_struct,	"{-*fVEFv(v)^viI}", 3},
+	{".param_5",	ev_struct,	"{-*fVEFv(v)^viI}", 3},
+	{".param_6",	ev_struct,	"{-*fVEFv(v)^viI}", 3},
+	{".param_7",	ev_struct,	"{-*fVEFv(v)^viI}", 3},
+};
+
 static defref_t *free_defrefs;
 
 static hashtab_t *extern_defs;
@@ -272,8 +292,16 @@ process_def (qfo_def_t *def)
 		if (!def->num_relocs)
 			return;
 		if ((_d = Hash_Find (defined_defs, STRING (def->name)))) {
-			def->ofs = deref_def (_d, &global_defs)->ofs;
-			def->flags = deref_def (_d, &global_defs)->flags;
+			d = deref_def (_d, &global_defs);
+			if (d->full_type != def->full_type) {
+				def_error (def, "type mismatch `%s' `%s'",
+						   TYPE_STRING (def->full_type),
+						   TYPE_STRING (d->full_type));
+				def_error (d, "previous definition");
+				return;
+			}
+			def->ofs = d->ofs;
+			def->flags = d->flags;
 			Hash_Add (defined_defs, get_defref (def, &global_defs));
 		} else {
 			Hash_Add (extern_defs, get_defref (def, &global_defs));
@@ -628,12 +656,13 @@ merge_defgroups (void)
 }
 
 static void
-define_def (const char *name, etype_t basic_type, const char *full_type, int v)
+define_def (const char *name, etype_t basic_type, const char *full_type,
+			int size, int v)
 {
 	qfo_def_t   d;
-	pr_type_t   val;
+	pr_type_t  *val = calloc (size, sizeof (pr_type_t));
 	
-	val.integer_var = v;
+	val->integer_var = v;
 
 	memset (&d, 0, sizeof (d));
 	d.basic_type = basic_type;
@@ -645,7 +674,7 @@ define_def (const char *name, etype_t basic_type, const char *full_type, int v)
 		d.relocs = relocs.num_relocs;
 		d.num_relocs = 1;
 	}
-	defspace_adddata (data, &val, 1);
+	defspace_adddata (data, val, size);
 	defgroup_add_defs (&global_defs, &d, 1);
 	process_def (global_defs.defs + global_defs.num_defs - 1);
 	if (basic_type == ev_field) {
@@ -655,11 +684,14 @@ define_def (const char *name, etype_t basic_type, const char *full_type, int v)
 		relocgroup_add_relocs (&relocs, &rel, 1);
 		process_field (def);
 	}
+	free (val);
 }
 
 void
 linker_begin (void)
 {
+	size_t      i;
+
 	extern_defs = Hash_NewTable (16381, defs_get_key, 0, &global_defs);
 	defined_defs = Hash_NewTable (16381, defs_get_key, 0, &global_defs);
 	field_defs = Hash_NewTable (16381, defs_get_key, 0, &fields);
@@ -671,6 +703,15 @@ linker_begin (void)
 	type_strings = strpool_new ();
 
 	pr.strings = strings;
+	if (!options.partial_link) {
+		for (i = 0;
+			 i < sizeof (builtin_symbols) / sizeof (builtin_symbols[0]);
+			 i++) {
+			define_def (builtin_symbols[i].name, builtin_symbols[i].basic_type,
+						builtin_symbols[i].full_type, builtin_symbols[i].size,
+						0);
+		}
+	}
 }
 
 static void
@@ -806,11 +847,11 @@ linker_finish (void)
 					if (d->basic_type == ev_entity)
 						def_warning (d, "@self and self used together");
 				}
-				define_def (".self", ev_entity, "E", 0);
+				define_def (".self", ev_entity, "E", 1, 0);
 				did_self = 1;
 			} else if (strcmp (name, ".this") == 0 && !did_this) {
 				entity_base = 0;
-				define_def (".this", ev_field, "F@", entity->size);
+				define_def (".this", ev_field, "F@", 1, entity->size);
 				defspace_adddata (entity, 0, 1);
 				did_this = 1;
 			}

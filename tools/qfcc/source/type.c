@@ -92,6 +92,8 @@ type_t     *type_category;
 type_t     *type_ivar;
 type_t     *type_module;
 type_t      type_va_list;
+type_t     *type_param;
+type_t     *type_zero;
 
 type_t     *vector_struct;
 
@@ -367,7 +369,11 @@ _encode_type (dstring_t *encoding, type_t *type, int level)
 				dstring_appendstr (encoding, type->class->name);
 			}
 			if (level < 2) {
-				dstring_appendstr (encoding, "=");
+				if (type->type == ev_struct
+					&& ((struct_t *)type->class)->is_union)
+					dstring_appendstr (encoding, "-");
+				else
+					dstring_appendstr (encoding, "=");
 				for (field = type->struct_head; field; field = field->next)
 					_encode_type (encoding, field->type, level + 1);
 			}
@@ -449,7 +455,7 @@ _parse_type (const char **str)
 		case '{':
 			new.type = ev_struct;
 			name = dstring_newstr ();
-			for (s = *str; *s && *s != '=' && *s !='}'; s++)
+			for (s = *str; *s && *s != '='  && *s != '-' && *s !='}'; s++)
 				;
 			if (!*s)
 				return 0;
@@ -459,7 +465,7 @@ _parse_type (const char **str)
 				new.aux_type = find_struct (name->str);
 			if (new.aux_type) {
 				dstring_delete (name);
-				if (**str == '=') {
+				if (**str == '=' || **str == '-') {
 					(*str)++;
 					while (**str && **str != '}')
 						_parse_type (str);
@@ -469,13 +475,15 @@ _parse_type (const char **str)
 				(*str)++;
 				return new.aux_type;
 			}
-			if (**str != '=') {
+			if (**str != '=' && **str != '-') {
 				dstring_delete (name);
 				return 0;
 			}
-			(*str)++;
 			new.aux_type = new_struct (*name->str ? name->str : 0);
+			if (**str == '-')
+				((struct_t *) new.aux_type->class)->is_union = 1;
 			dstring_delete (name);
+			(*str)++;
 			while (**str && **str != '}')
 				new_struct_field (new.aux_type, _parse_type (str), 0,
 								  vis_public);
@@ -586,6 +594,27 @@ init_types (void)
 {
 	type_t     *type;
 
+	type = type_zero = new_union (0);
+	new_struct_field (type, &type_string,   "string_val",   vis_public);
+	new_struct_field (type, &type_float,    "float_val",    vis_public);
+	new_struct_field (type, &type_entity,   "entity_val",   vis_public);
+	new_struct_field (type, &type_field,    "field_val",    vis_public);
+	new_struct_field (type, &type_function, "func_val",     vis_public);
+	new_struct_field (type, &type_pointer,  "pointer_val",  vis_public);
+	new_struct_field (type, &type_integer,  "integer_val",  vis_public);
+	new_struct_field (type, &type_uinteger, "uinteger_val", vis_public);
+
+	type = type_param = new_union (0);
+	new_struct_field (type, &type_string,   "string_val",   vis_public);
+	new_struct_field (type, &type_float,    "float_val",    vis_public);
+	new_struct_field (type, &type_vector,   "vector_val",   vis_public);
+	new_struct_field (type, &type_entity,   "entity_val",   vis_public);
+	new_struct_field (type, &type_field,    "field_val",    vis_public);
+	new_struct_field (type, &type_function, "func_val",     vis_public);
+	new_struct_field (type, &type_pointer,  "pointer_val",  vis_public);
+	new_struct_field (type, &type_integer,  "integer_val",  vis_public);
+	new_struct_field (type, &type_uinteger, "uinteger_val", vis_public);
+
 	if (options.traditional)
 		return;
 
@@ -651,17 +680,8 @@ init_types (void)
 
 	init_struct (malloc (sizeof (struct_t)), &type_va_list, 0);
 	new_struct_field (&type_va_list, &type_integer, "count", vis_public);
-	type = new_union (0);
-	new_struct_field (type, &type_string,   "string_val",   vis_public);
-	new_struct_field (type, &type_float,    "float_val",    vis_public);
-	new_struct_field (type, &type_vector,   "vector_val",   vis_public);
-	new_struct_field (type, &type_entity,   "entity_val",   vis_public);
-	new_struct_field (type, &type_field,    "field_val",    vis_public);
-	new_struct_field (type, &type_function, "func_val",     vis_public);
-	new_struct_field (type, &type_pointer,  "pointer_val",  vis_public);
-	new_struct_field (type, &type_integer,  "integer_val",  vis_public);
-	new_struct_field (type, &type_uinteger, "uinteger_val", vis_public);
-	new_struct_field (&type_va_list, pointer_type (type), "list", vis_public);
+	new_struct_field (&type_va_list, pointer_type (type_param), "list",
+					  vis_public);
 #if 0
 	type = type_module = new_struct ("obj_module_t");
 	new_struct_field (type, &type_integer, "version", vis_public);
@@ -683,6 +703,9 @@ chain_initial_types (void)
 	chain_type (&type_function);
 	chain_type (&type_pointer);
 	chain_type (&type_floatfield);
+
+	chain_type (type_param);
+	chain_type (type_zero);
 
 	if (options.traditional)
 		return;

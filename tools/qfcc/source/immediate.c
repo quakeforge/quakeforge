@@ -221,6 +221,16 @@ ReuseConstant (expr_t *expr, def_t *def)
 	}
 	memcpy (&search.i, &e.e, sizeof (search.i));
 	imm = (immediate_t *) Hash_FindElement (tab, &search);
+	if (imm && strcmp (imm->def->name, ".zero") == 0) {
+		if (def) {
+			imm = 0;	//FIXME do full def aliasing
+		} else {
+			expr_t     *e = new_def_expr (imm->def);
+			e = address_expr (e, 0, type);
+			e = unary_expr ('.', e);
+			return emit_sub_expr (e, 0);
+		}
+	}
 	if (imm) {
 		cn = imm->def;
 		if (def) {
@@ -335,8 +345,7 @@ clear_immediates (void)
 	}
 
 	imm = calloc (1, sizeof (immediate_t));
-	imm->def = new_def (&type_void, ".imm", pr.scope);
-	imm->def->initialized = imm->def->constant = 1;
+	imm->def = get_def (type_zero, ".zero", pr.scope, st_extern);
 
 	Hash_AddElement (string_imm_defs, imm);
 	Hash_AddElement (float_imm_defs, imm);

@@ -155,6 +155,8 @@ expr_t *constant_expr (expr_t *var);
 expr_t *new_bind_expr (expr_t *e1, expr_t *e2);
 expr_t *new_self_expr (void);
 expr_t *new_this_expr (void);
+expr_t *new_ret_expr (struct type_s *type);
+expr_t *new_param_expr (struct type_s *type, int num);
 expr_t *new_move_expr (expr_t *e1, expr_t *e2, struct type_s *type);
 
 void inc_users (expr_t *e);

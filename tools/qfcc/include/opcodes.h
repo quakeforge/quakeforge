@@ -45,10 +45,10 @@ extern struct opcode_s *op_goto;
 extern struct opcode_s *op_jump;
 extern struct opcode_s *op_jumpb;
 
-struct def_s;
+struct type_s;
 
-struct opcode_s *opcode_find (const char *name, struct def_s *var_a,
-							  struct def_s *var_b, struct def_s *var_c);
+struct opcode_s *opcode_find (const char *name, struct type_s *type_a,
+							  struct type_s *type_b, struct type_s *type_c);
 void opcode_init (void);
 
 #endif//__opcodes_h

@@ -65,6 +65,7 @@ typedef struct def_s {
 	struct scope_s	*scope;			// scope the var was defined in
 	struct defspace_s *space;
 	struct def_s	*parent;		// vector/quaternion member
+	struct def_s    *alias;			// def for which this is an alias
 
 	int              obj_def;		// index to def in qfo defs
 
@@ -105,7 +106,6 @@ typedef enum {
 	st_local
 } storage_class_t;
 
-extern	def_t	def_ret, def_parms[MAX_PARMS];
 extern	def_t	def_void;
 extern	def_t	def_function;
 

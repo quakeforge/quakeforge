@@ -140,8 +140,6 @@ fix_backslash (char *path)
 static void
 InitData (void)
 {
-	int         i;
-
 	if (pr.code) {
 		codespace_delete (pr.code);
 		strpool_delete (pr.strings);
@@ -163,10 +161,6 @@ InitData (void)
 
 	numglobaldefs = 1;
 	numfielddefs = 1;
-
-	def_ret.ofs = OFS_RETURN;
-	for (i = 0; i < MAX_PARMS; i++)
-		def_parms[i].ofs = OFS_PARM0 + 3 * i;
 }
 
 
@@ -185,6 +179,8 @@ WriteData (int crc)
 
 	for (def = pr.scope->head; def; def = def->def_next) {
 		if (def->local || !def->name)
+			continue;
+		if (options.traditional && *def->name == '.')
 			continue;
 		if (def->type->type == ev_func) {
 		} else if (def->type->type == ev_field) {
@@ -342,14 +338,27 @@ WriteData (int crc)
 	return 0;
 }
 
-
 static void
 begin_compilation (void)
 {
-	pr.near_data->size = RESERVED_OFS;
 	pr.func_tail = &pr.func_head;
 
 	pr.error_count = 0;
+}
+
+static void
+setup_param_block (void)
+{
+	def_initialized (get_def (type_zero, ".zero", pr.scope, st_global));
+	def_initialized (get_def (type_param, ".return", pr.scope, st_global));
+	def_initialized (get_def (type_param, ".param_0", pr.scope, st_global));
+	def_initialized (get_def (type_param, ".param_1", pr.scope, st_global));
+	def_initialized (get_def (type_param, ".param_2", pr.scope, st_global));
+	def_initialized (get_def (type_param, ".param_3", pr.scope, st_global));
+	def_initialized (get_def (type_param, ".param_4", pr.scope, st_global));
+	def_initialized (get_def (type_param, ".param_5", pr.scope, st_global));
+	def_initialized (get_def (type_param, ".param_6", pr.scope, st_global));
+	def_initialized (get_def (type_param, ".param_7", pr.scope, st_global));
 }
 
 static qboolean
@@ -669,6 +678,9 @@ progs_src_compile (void)
 	chain_initial_types ();
 
 	begin_compilation ();
+
+	if (!options.compile)
+		setup_param_block ();
 
 	// compile all the files
 	while ((src = COM_Parse (src))) {

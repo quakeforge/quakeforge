@@ -229,6 +229,8 @@ WriteProgdefs (const char *filename)
 			break;
 		if (!d->ofs)
 			continue;
+		if (!d->name || *d->name == '.' || !*d->name)
+			continue;
 
 		switch (d->type->type) {
 			case ev_float:
