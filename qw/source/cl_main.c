@@ -45,6 +45,9 @@ static const char rcsid[] =
 #ifdef HAVE_NETINET_IN_H
 # include <netinet/in.h>
 #endif
+#ifdef HAVE_UNISTD_H
+# include <unistd.h>
+#endif
 #ifdef HAVE_WINSOCK_H
 # include <winsock.h>
 #endif
@@ -141,6 +144,7 @@ cvar_t     *cl_sbar;
 cvar_t     *cl_sbar_separator;
 cvar_t     *cl_hudswap;
 cvar_t     *cl_maxfps;
+cvar_t     *cl_usleep;
 
 cvar_t     *cl_cshift_bonus;
 cvar_t     *cl_cshift_contents;
@@ -174,7 +178,7 @@ cvar_t     *rate;
 cvar_t     *noaim;
 cvar_t     *msg;
 
-
+static int  cl_usleep_cache;
 
 client_static_t cls;
 client_state_t cl;
@@ -1202,6 +1206,12 @@ CL_Init (void)
 					"server info");
 }
 
+static void
+cl_usleep_f (cvar_t *var)
+{
+	cl_usleep_cache = var->int_val;
+}
+
 void
 CL_Init_Cvars (void)
 {
@@ -1318,6 +1328,10 @@ CL_Init_Cvars (void)
 					  "Auto aim off switch. Set to 1 to turn off.");
 	cl_port = Cvar_Get ("cl_port", PORT_CLIENT, CVAR_NONE, Cvar_Info,
 						"UDP Port for client to use.");
+	cl_usleep = Cvar_Get ("cl_usleep", "0", CVAR_ARCHIVE, cl_usleep_f,
+						  "Turn this on to save cpu when fps limited. "
+						  "May affect frame rate adversely depending on "
+						  "local machine/os conditions");
 }
 
 /*
@@ -1459,6 +1473,10 @@ Host_Frame (float time)
 
 	// decide the simulation time
 	if ((sleeptime = Host_SimulationTime (time)) != 0) {
+#ifdef HAVE_USLEEP
+		if (cl_usleep_cache && sleeptime > 0.002) // minimum sleep time
+			usleep ((unsigned long)(sleeptime * 1000000 / 2));
+#endif
 		return;					// framerate is too high
 	}
 
