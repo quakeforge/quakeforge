@@ -1,7 +1,7 @@
 /*
 	d_local.h
 
-	@description@
+	Private rasterization driver defs
 
 	Copyright (C) 1996-1997  Id Software, Inc.
 
@@ -26,6 +26,8 @@
 	$Id$
 */
 
+#ifndef _D_LOCAL_H
+#define _D_LOCAL_H
 
 #include "r_shared.h"
 
@@ -49,8 +51,8 @@ typedef struct surfcache_s
 	int					lightadj[MAXLIGHTMAPS]; // checked for strobe flush
 	int					dlight;
 	int					size;		// including header
-	unsigned			width;
-	unsigned			height;		// DEBUG only needed for debug
+	unsigned int		width;
+	unsigned int		height;		// DEBUG only needed for debug
 	float				mipscale;
 	struct texture_s	*texture;	// checked for animating textures
 	byte				data[4];	// width*height elements
@@ -74,8 +76,8 @@ extern float	d_sdivzstepu, d_tdivzstepu, d_zistepu;
 extern float	d_sdivzstepv, d_tdivzstepv, d_zistepv;
 extern float	d_sdivzorigin, d_tdivzorigin, d_ziorigin;
 
-fixed16_t	sadjust, tadjust;
-fixed16_t	bbextents, bbextentt;
+extern fixed16_t       sadjust, tadjust;
+extern fixed16_t       bbextents, bbextentt;
 
 
 void D_DrawSpans8 (espan_t *pspans);
@@ -117,3 +119,4 @@ extern float	d_scalemip[3];
 
 extern void (*d_drawspans) (espan_t *pspan);
 
+#endif	// _D_LOCAL_H
