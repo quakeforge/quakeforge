@@ -519,16 +519,16 @@ SV_WriteClientdataToMessage (client_t *client, sizebuf_t *msg)
 
 	// a fixangle might get lost in a dropped packet.  Oh well.
 	if (SVfloat (ent, fixangle)) {
+		vec_t      *angles = SVvector (ent, angles);
 		MSG_WriteByte (msg, svc_setangle);
-		MSG_WriteAngleV (msg, SVvector (ent, angles));
-		VectorCopy (SVvector (ent, angles), demo.angles[clnum]);
+		MSG_WriteAngleV (msg, angles);
 		SVfloat (ent, fixangle) = 0;
 		demo.fixangle[clnum] = true;
 
 		if (sv.demorecording) {
 			MSG_WriteByte (&demo.datagram, svc_setangle);
 			MSG_WriteByte (&demo.datagram, clnum);
-			MSG_WriteAngleV (&demo.datagram, demo.angles[clnum]);
+			MSG_WriteAngleV (&demo.datagram, angles);
 		}
 	}
 }
@@ -856,12 +856,6 @@ SV_SendDemoMessage (void)
 		SZ_Clear (&demo.datagram);
 		return;
 	}
-
-	msg.data = buf;
-	msg.maxsize = sizeof (buf);
-	msg.cursize = 0;
-	msg.allowoverflow = true;
-	msg.overflowed = false;
 	
 	for (i = 0, c = svs.clients; i < MAX_CLIENTS; i++, c++) {
 		if (c->state != cs_spawned && c->state != cs_server)
@@ -892,7 +886,12 @@ SV_SendDemoMessage (void)
 	// send over all the objects that are in the PVS
 	// this will include clients, a packetentities, and
 	// possibly a nails update
+	msg.data = buf;
+	msg.maxsize = sizeof (buf);
 	msg.cursize = 0;
+	msg.allowoverflow = true;
+	msg.overflowed = false;
+
 	if (!demo.recorder.delta_sequence)
 		demo.recorder.delta_sequence = -1;
 	SV_WriteEntitiesToClient (&demo.recorder, &msg, true);
@@ -911,7 +910,7 @@ SV_SendDemoMessage (void)
 	demo.recorder.netchan.incoming_sequence++;
 	demo.frames[demo.parsecount & DEMO_FRAMES_MASK].time = demo.time = sv.time;
 
-	// that's a backup of 3sec in 20fps, should be enough
+	// that's a backup of 3sec at 20fps, should be enough
 	// FIXME make this framerate dependent.
 	// eg. sv_fps->int_val * sv_packetdelay->float_val
 	if (demo.parsecount - demo.lastwritten > 60) {

@@ -26,13 +26,13 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 #include "server.h"
 
-typedef struct {
+typedef struct dbuffer_s {
 	byte       *data;
 	int         start, end, last;
 	int         maxsize;
 } dbuffer_t;
 
-typedef struct {
+typedef struct header_s {
 	byte        type;
 	byte        full;
 	int         to;
@@ -40,7 +40,7 @@ typedef struct {
 	byte        data[1];				// gcc doesn't allow [] (?)
 } header_t;
 
-typedef struct {
+typedef struct demoinfo_s {
 	vec3_t      origin;
 	vec3_t      angles;
 	int         weaponframe;
@@ -49,7 +49,7 @@ typedef struct {
 	int         effects;
 } demoinfo_t;
 
-typedef struct {
+typedef struct demo_client_s {
 	demoinfo_t  info;
 	float       sec;
 	int         parsecount;
@@ -60,13 +60,13 @@ typedef struct {
 	int         frame;
 } demo_client_t;
 
-typedef struct {
+typedef struct demobuf_s {
 	sizebuf_t   sz;
 	int         bufsize;
 	header_t   *h;
 } demobuf_t;
 
-typedef struct {
+typedef struct demo_frame_s {
 	demo_client_t clients[MAX_CLIENTS];
 	double      time;
 	demobuf_t   buf;
@@ -75,33 +75,38 @@ typedef struct {
 #define DEMO_FRAMES 64
 #define DEMO_FRAMES_MASK (DEMO_FRAMES - 1)
 
-typedef struct {
+typedef struct demo_s {
 	QFile      *file;
 
 	demobuf_t  *dbuf;
+
 	dbuffer_t   dbuffer;
+	byte        buffer[20 * MAX_MSGLEN];
+
 	sizebuf_t   datagram;
 	byte        datagram_data[MAX_DATAGRAM];
+
 	int         lastto;
 	int         lasttype;
 	double      time, pingtime;
-	int         stats[MAX_CLIENTS][MAX_CL_STATS];	// ouch!
+
 	client_t    recorder;
+	int         stats[MAX_CLIENTS][MAX_CL_STATS];	// ouch!
 	qboolean    fixangle[MAX_CLIENTS];
 	float       fixangletime[MAX_CLIENTS];
-	vec3_t      angles[MAX_CLIENTS];
-	struct dstring_s *name;
-	struct dstring_s *text;
+	demoinfo_t  info[MAX_CLIENTS];
+	demo_frame_t frames[DEMO_FRAMES];
+
 	int         parsecount;
 	int         lastwritten;
-	demo_frame_t frames[DEMO_FRAMES];
-	demoinfo_t  info[MAX_CLIENTS];
+
 	int         size;
 	qboolean    disk;
 	void       *dest;
 	byte       *mfile;
-	byte        buffer[20 * MAX_MSGLEN];
-	int         bufsize;
+	struct dstring_s *name;
+	struct dstring_s *text;
+
 	int         forceFrame;
 } demo_t;
 
