@@ -36,14 +36,7 @@
 #include "QF/console.h"
 #include "QF/render.h"
 
-#include "client.h"
 #include "r_local.h"
-
-#define MAX_PARTICLES			2048	// default max # of particles at one
-										// time
-#define ABSOLUTE_MIN_PARTICLES	512		// no fewer than this no matter
-										// what's
-										// on the command line
 
 particle_t *active_particles, *free_particles;
 
@@ -76,7 +69,7 @@ R_DarkFieldParticles (entity_t *ent)
 				p->next = active_particles;
 				active_particles = p;
 
-				p->die = cl.time + 0.2 + (rand () & 7) * 0.02;
+				p->die = r_realtime + 0.2 + (rand () & 7) * 0.02;
 				p->color = 150 + rand () % 6;
 				p->type = pt_slowgrav;
 
@@ -98,11 +91,8 @@ R_DarkFieldParticles (entity_t *ent)
 
 #define NUMVERTEXNORMALS	162
 extern float r_avertexnormals[NUMVERTEXNORMALS][3];
-vec3_t      avelocities[NUMVERTEXNORMALS];
-float       beamlength = 16;
-vec3_t      avelocity = { 23, 7, 3 };
-float       partstep = 0.01;
-float       timescale = 0.01;
+static vec3_t      avelocities[NUMVERTEXNORMALS];
+static float       beamlength = 16;
 
 void
 R_EntityParticles (entity_t *ent)
@@ -125,13 +115,13 @@ R_EntityParticles (entity_t *ent)
 
 
 	for (i = 0; i < NUMVERTEXNORMALS; i++) {
-		angle = cl.time * avelocities[i][0];
+		angle = r_realtime * avelocities[i][0];
 		sy = sin (angle);
 		cy = cos (angle);
-		angle = cl.time * avelocities[i][1];
+		angle = r_realtime * avelocities[i][1];
 		sp = sin (angle);
 		cp = cos (angle);
-		angle = cl.time * avelocities[i][2];
+		angle = r_realtime * avelocities[i][2];
 		sr = sin (angle);
 		cr = cos (angle);
 
@@ -146,7 +136,7 @@ R_EntityParticles (entity_t *ent)
 		p->next = active_particles;
 		active_particles = p;
 
-		p->die = cl.time + 0.01;
+		p->die = r_realtime + 0.01;
 		p->color = 0x6f;
 		p->type = pt_explode;
 
