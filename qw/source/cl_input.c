@@ -651,7 +651,7 @@ void
 CL_SendCmd (void)
 {
 	byte			data[128];
-	int				checksumIndex, lost, seq_hash, i;
+	int				checksumIndex, lost, seq_hash, frame;
 	qboolean		dontdrop; // FIXME: needed without cl_c2sImpulseBackup?
 	sizebuf_t		buf;
 	usercmd_t	   *cmd, *oldcmd;
@@ -660,10 +660,10 @@ CL_SendCmd (void)
 		return;							// sendcmds come from the demo
 
 	// save this command off for prediction
-	i = cls.netchan.outgoing_sequence & UPDATE_MASK;
-	cmd = &cl.frames[i].cmd;
-	cl.frames[i].senttime = realtime;
-	cl.frames[i].receivedtime = -1;		// we haven't gotten a reply yet
+	frame = cls.netchan.outgoing_sequence & UPDATE_MASK;
+	cmd = &cl.frames[frame].cmd;
+	cl.frames[frame].senttime = realtime;
+	cl.frames[frame].receivedtime = -1;	// we haven't gotten a reply yet
 
 //	seq_hash = (cls.netchan.outgoing_sequence & 0xffff) ; // ^ QW_CHECK_HASH;
 	seq_hash = cls.netchan.outgoing_sequence;
@@ -697,22 +697,22 @@ CL_SendCmd (void)
 
 	dontdrop = false;
 
-	i = (cls.netchan.outgoing_sequence - 2) & UPDATE_MASK;
-	cmd = &cl.frames[i].cmd;
+	frame = (cls.netchan.outgoing_sequence - 2) & UPDATE_MASK;
+	cmd = &cl.frames[frame].cmd;
 	if (cl_spamimpulse->int_val >= 2)
 		dontdrop = dontdrop || cmd->impulse;
 	MSG_WriteDeltaUsercmd (&buf, &nullcmd, cmd);
 	oldcmd = cmd;
 
-	i = (cls.netchan.outgoing_sequence - 1) & UPDATE_MASK;
-	cmd = &cl.frames[i].cmd;
+	frame = (cls.netchan.outgoing_sequence - 1) & UPDATE_MASK;
+	cmd = &cl.frames[frame].cmd;
 	if (cl_spamimpulse->int_val >= 3)
 		dontdrop = dontdrop || cmd->impulse;
 	MSG_WriteDeltaUsercmd (&buf, oldcmd, cmd);
 	oldcmd = cmd;
 
-	i = (cls.netchan.outgoing_sequence) & UPDATE_MASK;
-	cmd = &cl.frames[i].cmd;
+	frame = (cls.netchan.outgoing_sequence) & UPDATE_MASK;
+	cmd = &cl.frames[frame].cmd;
 	if (cl_spamimpulse->int_val >= 1)
 		dontdrop = dontdrop || cmd->impulse;
 	MSG_WriteDeltaUsercmd (&buf, oldcmd, cmd);
@@ -726,15 +726,14 @@ CL_SendCmd (void)
 	if (cls.netchan.outgoing_sequence - cl.validsequence >= UPDATE_BACKUP - 1)
 		cl.validsequence = 0;
 
-	if (cl.validsequence && !cl_nodelta->int_val && cls.state == ca_active &&
-		!cls.demorecording) {
-		cl.frames[cls.netchan.outgoing_sequence & UPDATE_MASK].delta_sequence =
-			cl.validsequence;
+	if (cl.validsequence && !cl_nodelta->int_val && cls.state == ca_active
+		&& !cls.demorecording) {
+		cl.frames[frame].delta_sequence = cl.validsequence;
 		MSG_WriteByte (&buf, clc_delta);
 		MSG_WriteByte (&buf, cl.validsequence & 255);
-	} else
-		cl.frames[cls.netchan.outgoing_sequence & UPDATE_MASK].delta_sequence =
-			-1;
+	} else {
+		cl.frames[frame].delta_sequence = -1;
+	}
 
 	if (cls.demorecording)
 		CL_WriteDemoCmd (cmd);
