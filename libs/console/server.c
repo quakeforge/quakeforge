@@ -95,7 +95,6 @@ static const byte attr_map[256] = {
 	1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
 	1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
 };
-#endif
 
 
 static void
@@ -105,6 +104,7 @@ C_ExecLine (const char *line)
 		line++;
 	Cbuf_AddText (line);
 }
+#endif
 
 
 static void
