@@ -23,9 +23,9 @@ if test "$1" = "clean"; then
 fi
 # Check libtoolize version, fix for Debian/Woody
 if test -z `which glibtoolize` ; then
-	libtoolize=glibtoolize
-else
 	libtoolize=libtoolize
+else
+	libtoolize=glibtoolize
 fi
 lt=`which $libtoolize`
 if test -n "$lt" ; then
