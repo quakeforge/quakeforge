@@ -34,9 +34,29 @@
 #endif
 
 #ifdef _WIN32
+# include <windows.h>
+# undef EWOULDBLOCK
+# define EWOULDBLOCK	WSAEWOULDBLOCK
+#endif
+
+#ifdef _WIN32
 # ifdef HAVE_IPV6
 #  include <winsock2.h>
+#  define _DEF_BYTE_
+#  undef IP_MULTICAST_IF
+#  undef IP_MULTICAST_TTL
+#  undef IP_MULTICAST_LOOP
+#  undef IP_ADD_MEMBERSHIP
+#  undef IP_DROP_MEMBERSHIP
+#  define ip_mreq ip_mreq_icky_hack
 #  include <ws2tcpip.h>
+#  undef ip_mreq
+#  ifndef WINSOCK_API_LINKAGE
+#   define WINSOCK_API_LINKAGE
+#  endif
+#  ifndef _WINSOCK2API_
+#   define _WINSOCK2API_
+#  endif
 #  include <tpipv6.h>
 #  define  _WINSOCKAPI_
 #  define HAVE_SOCKLEN_T
@@ -48,12 +68,6 @@
 
 /* Sun's model_t in sys/model.h conflicts w/ Quake's model_t */
 #define model_t quakeforgemodel_t
-
-#ifdef _WIN32
-# include <windows.h>
-# undef EWOULDBLOCK
-# define EWOULDBLOCK	WSAEWOULDBLOCK
-#endif
 
 #ifndef _WIN32
 # include <unistd.h>
@@ -94,10 +108,11 @@
 
 #include "QF/console.h"
 #include "QF/msg.h"
-#include "net.h"
 #include "QF/qargs.h"
 #include "QF/qtypes.h"
 #include "QF/sys.h"
+
+#include "net.h"
 
 #ifndef MAXHOSTNAMELEN
 # define MAXHOSTNAMELEN	512

@@ -68,13 +68,13 @@
 # include <libc.h>
 #endif
 
-#include "compat.h"
 #include "QF/console.h"
 #include "QF/cvar.h"
 #include "QF/msg.h"
 #include "QF/sys.h"
 #include "QF/qargs.h"
 
+#include "compat.h"
 #include "net.h"
 
 #ifdef _WIN32
