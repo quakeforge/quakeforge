@@ -1,6 +1,6 @@
 #!/bin/sh -e
 
-update-alternatives --install /usr/share/games/quake/QFplugins/snd_output_default.so quakeforge-audio-default /usr/share/games/quake/QFplugins/snd_output_oss.so 90
+update-alternatives --install /usr/lib/quakeforge/plugins/snd_output_default.so quakeforge-audio-default /usr/lib/quakeforge/plugins/snd_output_oss.so 90
 
 #DEBHELPER#
 
