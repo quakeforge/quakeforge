@@ -594,8 +594,8 @@ SV_WriteEntitiesToClient (client_t *client, sizebuf_t *msg)
 		// add to the packetentities
 		if (pack->num_entities == MAX_PACKET_ENTITIES) {
 			if (!mpe_moaned) {
-				Con_Printf ("hit MAX_PACKET_ENTITIES for client %d\n",
-							client->userid);
+				Con_DPrintf ("hit MAX_PACKET_ENTITIES for client %d\n",
+							 client->userid);
 				mpe_moaned = 1;
 			}
 			continue;					// all full
