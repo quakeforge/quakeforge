@@ -79,7 +79,7 @@ CDAudio_Update (void)
 }
 
 
-static void
+void
 CD_f (void)
 {
 	if (cdmodule)
