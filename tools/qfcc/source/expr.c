@@ -1181,6 +1181,7 @@ field_expr (expr_t *e1, expr_t *e2)
 	t1 = get_type (e1);
 	switch (t1->type) {
 		case ev_struct:
+			check_initialized (e1);
 			if (e2->type != ex_name)
 				return error (e2, "structure field name expected");
 			field = struct_find_field (t1, e2->e.string_val);
@@ -1192,6 +1193,7 @@ field_expr (expr_t *e1, expr_t *e2)
 			e = unary_expr ('.', address_expr (e1, e2, field->type));
 			return e;
 		case ev_pointer:
+			check_initialized (e1);
 			switch (t1->aux_type->type) {
 				case ev_struct:
 					if (e2->type == ex_name) {
@@ -1243,6 +1245,7 @@ field_expr (expr_t *e1, expr_t *e2)
 			}
 			break;
 		case ev_entity:
+			check_initialized (e1);
 			t2 = get_type (e2);
 			if (e2->type == ex_error)
 				return e2;
@@ -1281,6 +1284,11 @@ field_expr (expr_t *e1, expr_t *e2)
 								i = e1->e.pointer.val;
 								e->e.pointer.val = i + field->offset;
 								e->e.pointer.type = field->type;
+								return unary_expr ('.', e);
+							} else if (extract_type (e1->e.expr.e1)
+									   == ev_pointer) {
+								e = new_integer_expr (field->offset);
+								e = address_expr (e1, e, field->type);
 								return unary_expr ('.', e);
 							}
 						}
@@ -1416,7 +1424,6 @@ binary_expr (int op, expr_t *e1, expr_t *e2)
 		return e2;
 
 	convert_name (e1);
-	check_initialized (e1);
 
 	if (e1->type == ex_block && e1->e.block.is_call
 		&& e2->type == ex_block && e2->e.block.is_call && e1->e.block.result) {
@@ -1427,6 +1434,7 @@ binary_expr (int op, expr_t *e1, expr_t *e2)
 
 	if (op == '.')
 		return field_expr (e1, e2);
+	check_initialized (e1);
 
 	convert_name (e2);
 	check_initialized (e2);
