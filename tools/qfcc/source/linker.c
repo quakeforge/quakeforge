@@ -48,6 +48,7 @@ static const char rcsid[] =
 #include <stdlib.h>
 #include <stdarg.h>
 #include <fcntl.h>
+#include <errno.h>
 
 #include "QF/dstring.h"
 #include "QF/hash.h"
@@ -643,8 +644,11 @@ linker_add_lib (const char *libname)
 	int         i, j;
 	int         did_something;
 
-	if (!pack)
+	if (!pack) {
+		if (errno)
+			perror (libname);
 		return 1;
+	}
 	do {
 		did_something = 0;
 		for (i = 0; i < pack->numfiles; i++) {

@@ -2402,7 +2402,7 @@ message_expr (expr_t *receiver, keywordarg_t *message)
 expr_t *
 sizeof_expr (expr_t *expr, struct type_s *type)
 {
-	if (!((!expr) ^ (!expr))) {
+	if (!((!expr) ^ (!type))) {
 		error (0, "internal error");
 		abort ();
 	}

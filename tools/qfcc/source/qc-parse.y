@@ -119,8 +119,8 @@ expr_t *argv_expr (void);
 %left	SHL SHR %left	'+' '-'
 %left	'*' '/' '&' '|' '^' '%'
 %right	<op> UNARY INCOP
-%right	'(' '['
-%left	'.'
+%left	HYPERUNARY
+%left	'.' '(' '['
 
 %token	<string_val> CLASS_NAME NAME STRING_VAL
 %token	<integer_val> INT_VAL
@@ -142,10 +142,11 @@ expr_t *argv_expr (void);
 %type	<param>	param param_list
 %type	<def>	def_name
 %type	<def>	def_item def_list
-%type	<expr>	const opt_expr expr arg_list element_list element_list1 element
+%type	<expr>	const opt_expr expr element_list element_list1 element
 %type	<expr>	string_val opt_state_expr array_decl
 %type	<expr>	statement statements statement_block
 %type	<expr>	break_label continue_label enum_list enum
+%type	<expr>	unary_expr primary cast_expr opt_arg_list arg_list
 %type	<function> begin_function
 %type	<def_list> save_inits
 %type	<switch_block> switch_block
@@ -163,7 +164,7 @@ expr_t *argv_expr (void);
 %type	<methodlist> methodprotolist methodprotolist2
 %type	<type>	ivar_decl_list
 
-%expect 3	// statement : if | if else, class_name : maybe_class | category_name : maybe_class '(' maybe_class ')', type_name : TYPE | expr : TYPE '(' expr ')'
+%expect 3
 
 %{
 
@@ -284,6 +285,10 @@ type
 			current_params = $2;
 			$$ = parse_params ($1, $2);
 		}
+	;
+
+non_field_type
+	: '(' type ')' { $$ = $2; }
 	| non_field_type array_decl
 		{
 			if ($2)
@@ -291,10 +296,6 @@ type
 			else
 				$$ = pointer_type ($1);
 		}
-	;
-
-non_field_type
-	: '(' type ')' { $$ = $2; }
 	| type_name { $$ = $1; }
 	;
 
@@ -790,8 +791,42 @@ opt_expr
 		}
 	;
 
+unary_expr
+	: primary
+	| '+' cast_expr %prec UNARY	{ $$ = $2; }
+	| '-' cast_expr %prec UNARY	{ $$ = unary_expr ('-', $2); }
+	| '!' cast_expr %prec UNARY	{ $$ = unary_expr ('!', $2); }
+	| '~' cast_expr %prec UNARY	{ $$ = unary_expr ('~', $2); }
+	| '&' cast_expr %prec UNARY	{ $$ = address_expr ($2, 0, 0); }
+	| SIZEOF unary_expr	%prec UNARY 		{ $$ = sizeof_expr ($2, 0); }
+	| SIZEOF '(' non_field_type ')'	 %prec HYPERUNARY	{ $$ = sizeof_expr (0, $3); }
+	;
+
+primary
+	: NAME						{ $$ = new_name_expr ($1); }
+	| ARGS						{ $$ = new_name_expr (".args"); }
+	| ARGC						{ $$ = argc_expr (); }
+	| ARGV						{ $$ = argv_expr (); }
+	| SELF						{ $$ = new_self_expr (); }
+	| THIS						{ $$ = new_this_expr (); }
+	| const						{ $$ = $1; }
+	| '(' expr ')'				{ $$ = $2; $$->paren = 1; }
+	| primary '(' opt_arg_list ')' { $$ = function_expr ($1, $3); }
+	| primary '[' expr ']'		{ $$ = array_expr ($1, $3); }
+	| primary '.' primary		{ $$ = binary_expr ('.', $1, $3); }
+	| INCOP primary				{ $$ = incop_expr ($1, $2, 0); }
+	| primary INCOP				{ $$ = incop_expr ($2, $1, 1); }
+	| obj_expr					{ $$ = $1; }
+	;
+
+cast_expr
+	: unary_expr
+	| '(' non_field_type ')' cast_expr %prec UNARY	{ $$ = cast_expr ($2, $4); }
+	;
+
 expr
-	: expr '=' expr				{ $$ = assign_expr ($1, $3); }
+	: cast_expr
+	| expr '=' expr				{ $$ = assign_expr ($1, $3); }
 	| expr ASX expr				{ $$ = asx_expr ($2, $1, $3); }
 	| expr '?' expr ':' expr 	{ $$ = conditional_expr ($1, $3, $5); }
 	| expr AND expr				{ $$ = binary_expr (AND, $1, $3); }
@@ -812,29 +847,11 @@ expr
 	| expr '|' expr				{ $$ = binary_expr ('|', $1, $3); }
 	| expr '^' expr				{ $$ = binary_expr ('^', $1, $3); }
 	| expr '%' expr				{ $$ = binary_expr ('%', $1, $3); }
-	| expr '(' arg_list ')'		{ $$ = function_expr ($1, $3); }
-	| expr '(' ')'				{ $$ = function_expr ($1, 0); }
-	| TYPE '(' expr ')'			{ $$ = cast_expr ($1, $3); }
-	| expr '[' expr ']'			{ $$ = array_expr ($1, $3); }
-	| expr '.' expr				{ $$ = binary_expr ('.', $1, $3); }
-	| '+' expr %prec UNARY		{ $$ = $2; }
-	| '-' expr %prec UNARY		{ $$ = unary_expr ('-', $2); }
-	| '!' expr %prec UNARY		{ $$ = unary_expr ('!', $2); }
-	| '~' expr %prec UNARY		{ $$ = unary_expr ('~', $2); }
-	| '&' expr %prec UNARY		{ $$ = address_expr ($2, 0, 0); }
-	| INCOP expr				{ $$ = incop_expr ($1, $2, 0); }
-	| expr INCOP				{ $$ = incop_expr ($2, $1, 1); }
-	| obj_expr					{ $$ = $1; }
-	| NAME						{ $$ = new_name_expr ($1); }
-	| ARGS						{ $$ = new_name_expr (".args"); }
-	| ARGC						{ $$ = argc_expr (); }
-	| ARGV						{ $$ = argv_expr (); }
-	| SELF						{ $$ = new_self_expr (); }
-	| THIS						{ $$ = new_this_expr (); }
-	| SIZEOF '(' expr ')'		{ $$ = sizeof_expr ($3, 0); }
-	| SIZEOF '(' type ')'		{ $$ = sizeof_expr (0, $3); }
-	| const						{ $$ = $1; }
-	| '(' expr ')'				{ $$ = $2; $$->paren = 1; }
+	;
+
+opt_arg_list
+	: /* emtpy */				{ $$ = 0; }
+	| arg_list					{ $$ = $1; }
 	;
 
 arg_list
