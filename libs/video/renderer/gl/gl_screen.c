@@ -808,11 +808,9 @@ SCR_UpdateScreen (double realtime, SCR_Func *scr_funcs)
 		SCR_CalcRefdef ();
 
 	// do 3D refresh drawing, and then update the screen
-
-	SCR_SetUpToDrawConsole ();
-
 	V_RenderView ();
 
+	SCR_SetUpToDrawConsole ();
 	GL_Set2D ();
 
 	// also makes polyblend apply to whole screen
