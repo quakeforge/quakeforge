@@ -54,21 +54,6 @@
 						BUILT-IN FUNCTIONS
 */
 
-const char *
-PF_VarString (progs_t *pr, int first)
-{
-	int         i;
-	int         len;
-	char       *out;
-
-	for (len = 0, i = first; i < pr->pr_argc; i++)
-		len += strlen (G_STRING (pr, (OFS_PARM0 + i * 3)));
-	out = Hunk_TempAlloc (len + 1);
-	for (i = first; i < pr->pr_argc; i++)
-		strcat (out, G_STRING (pr, (OFS_PARM0 + i * 3)));
-	return out;
-}
-
 
 /*
 	PF_error
@@ -357,132 +342,6 @@ PF_centerprint (progs_t *pr)
 
 
 /*
-	PF_normalize
-
-	vector normalize(vector)
-*/
-void
-PF_normalize (progs_t *pr)
-{
-	float      *value1;
-	vec3_t      newvalue;
-	float       new;
-
-	value1 = G_VECTOR (pr, OFS_PARM0);
-
-	new = value1[0] * value1[0] + value1[1] * value1[1] + value1[2] * value1[2];
-	new = sqrt (new);
-
-	if (new == 0)
-		newvalue[0] = newvalue[1] = newvalue[2] = 0;
-	else {
-		new = 1 / new;
-		newvalue[0] = value1[0] * new;
-		newvalue[1] = value1[1] * new;
-		newvalue[2] = value1[2] * new;
-	}
-
-	VectorCopy (newvalue, G_VECTOR (pr, OFS_RETURN));
-}
-
-/*
-	PF_vlen
-
-	scalar vlen(vector)
-*/
-void
-PF_vlen (progs_t *pr)
-{
-	float      *value1;
-	float       new;
-
-	value1 = G_VECTOR (pr, OFS_PARM0);
-
-	new = value1[0] * value1[0] + value1[1] * value1[1] + value1[2] * value1[2];
-	new = sqrt (new);
-
-	G_FLOAT (pr, OFS_RETURN) = new;
-}
-
-/*
-	PF_vectoyaw
-
-	float vectoyaw(vector)
-*/
-void
-PF_vectoyaw (progs_t *pr)
-{
-	float      *value1;
-	float       yaw;
-
-	value1 = G_VECTOR (pr, OFS_PARM0);
-
-	if (value1[1] == 0 && value1[0] == 0)
-		yaw = 0;
-	else {
-		yaw = (int) (atan2 (value1[1], value1[0]) * 180 / M_PI);
-		if (yaw < 0)
-			yaw += 360;
-	}
-
-	G_FLOAT (pr, OFS_RETURN) = yaw;
-}
-
-
-/*
-	PF_vectoangles
-
-	vector vectoangles(vector)
-*/
-void
-PF_vectoangles (progs_t *pr)
-{
-	float      *value1;
-	float       forward;
-	float       yaw, pitch;
-
-	value1 = G_VECTOR (pr, OFS_PARM0);
-
-	if (value1[1] == 0 && value1[0] == 0) {
-		yaw = 0;
-		if (value1[2] > 0)
-			pitch = 90;
-		else
-			pitch = 270;
-	} else {
-		yaw = (int) (atan2 (value1[1], value1[0]) * 180 / M_PI);
-		if (yaw < 0)
-			yaw += 360;
-
-		forward = sqrt (value1[0] * value1[0] + value1[1] * value1[1]);
-		pitch = (int) (atan2 (value1[2], forward) * 180 / M_PI);
-		if (pitch < 0)
-			pitch += 360;
-	}
-
-	G_FLOAT (pr, OFS_RETURN + 0) = pitch;
-	G_FLOAT (pr, OFS_RETURN + 1) = yaw;
-	G_FLOAT (pr, OFS_RETURN + 2) = 0;
-}
-
-/*
-	PF_Random
-
-	Returns a number from 0<= num < 1
-
-	random()
-*/
-void
-PF_random (progs_t *pr)
-{
-	float       num;
-
-	num = (rand () & 0x7fff) / ((float) 0x7fff);
-
-	G_FLOAT (pr, OFS_RETURN) = num;
-}
-
-/*
 	PF_particle
 
 	particle(origin, color, count)
@@ -580,18 +439,6 @@ PF_sound (progs_t *pr)
 	SV_StartSound (entity, channel, sample, volume, attenuation);
 }
 
-/*
-	PF_break
-
-	break()
-*/
-void
-PF_break (progs_t *pr)
-{
-	Con_Printf ("break statement\n");
-	*(int *) -4 = 0;					// dump to debugger
-//  PR_RunError ("break statement");
-}
 
 /*
 	PF_traceline
@@ -905,50 +752,6 @@ PF_findradius (progs_t *pr)
 }
 
 
-/*
-	PF_dprint
-*/
-void
-PF_dprint (progs_t *pr)
-{
-	Con_DPrintf ("%s", PF_VarString (pr, 0));
-}
-
-char        pr_string_temp[128];
-
-void
-PF_ftos (progs_t *pr)
-{
-	float       v;
-
-	v = G_FLOAT (pr, OFS_PARM0);
-
-	if (v == (int) v)
-		snprintf (pr_string_temp, sizeof (pr_string_temp), "%d", (int) v);
-	else
-		snprintf (pr_string_temp, sizeof (pr_string_temp), "%5.1f", v);
-	G_INT (pr, OFS_RETURN) = PR_SetString (pr, pr_string_temp);
-}
-
-void
-PF_fabs (progs_t *pr)
-{
-	float       v;
-
-	v = G_FLOAT (pr, OFS_PARM0);
-	G_FLOAT (pr, OFS_RETURN) = fabs (v);
-}
-
-void
-PF_vtos (progs_t *pr)
-{
-	snprintf (pr_string_temp, sizeof (pr_string_temp),
-			  "'%5.1f %5.1f %5.1f'", G_VECTOR (pr, OFS_PARM0)[0], G_VECTOR (pr,
-																			OFS_PARM0)
-			  [1], G_VECTOR (pr, OFS_PARM0)[2]);
-	G_INT (pr, OFS_RETURN) = PR_SetString (pr, pr_string_temp);
-}
-
 #ifdef QUAKE2
 void
 PF_etos (progs_t *pr)
@@ -977,84 +780,6 @@ PF_Remove (progs_t *pr)
 	ED_Free (pr, ed);
 }
 
-
-// entity (entity start, .string field, string match) find = #5;
-void
-PF_Find (progs_t *pr)
-#ifdef QUAKE2
-{
-	int         e;
-	int         f;
-	const char       *s, *t;
-	edict_t    *ed;
-	edict_t    *first;
-	edict_t    *second;
-	edict_t    *last;
-
-	first = second = last = (edict_t *) sv.edicts;
-	e = G_EDICTNUM (pr, OFS_PARM0);
-	f = G_INT (pr, OFS_PARM1);
-	s = G_STRING (pr, OFS_PARM2);
-	if (!s)
-		PR_RunError (pr, "PF_Find: bad search string");
-
-	for (e++; e < sv.num_edicts; e++) {
-		ed = EDICT_NUM (pr, e);
-		if (ed->free)
-			continue;
-		t = E_STRING (pr, ed, f);
-		if (!t)
-			continue;
-		if (!strcmp (t, s)) {
-			if (first == (edict_t *) sv.edicts)
-				first = ed;
-			else if (second == (edict_t *) sv.edicts)
-				second = ed;
-			SVentity (ed, chain) = EDICT_TO_PROG (pr, last);
-			last = ed;
-		}
-	}
-
-	if (first != last) {
-		if (last != second)
-			SVentity (first, chain) = SVentity (last, chain);
-		else
-			SVentity (first, chain) = EDICT_TO_PROG (pr, last);
-		SVentity (last, chain) = EDICT_TO_PROG (pr, (edict_t *) sv.edicts);
-		if (second && second != last)
-			SVentity (second, chain) = EDICT_TO_PROG (pr, last);
-	}
-	RETURN_EDICT (pr, first);
-}
-#else
-{
-	int         e;
-	int         f;
-	const char       *s, *t;
-	edict_t    *ed;
-
-	e = G_EDICTNUM (pr, OFS_PARM0);
-	f = G_INT (pr, OFS_PARM1);
-	s = G_STRING (pr, OFS_PARM2);
-	if (!s)
-		PR_RunError (pr, "PF_Find: bad search string");
-
-	for (e++; e < sv.num_edicts; e++) {
-		ed = EDICT_NUM (pr, e);
-		if (ed->free)
-			continue;
-		t = E_STRING (pr, ed, f);
-		if (!t)
-			continue;
-		if (!strcmp (t, s)) {
-			RETURN_EDICT (pr, ed);
-			return;
-		}
-	}
-
-	RETURN_EDICT (pr, sv.edicts);
-}
-#endif
 
 void
 PR_CheckEmptyString (progs_t *pr, const char *s)
@@ -1828,57 +1553,39 @@ PF_checkextension (progs_t *pr)
 void
 SV_PR_Cmds_Init ()
 {
+	PR_Cmds_Init (&sv_pr_state);
+
 	PR_AddBuiltin (&sv_pr_state, "makevectors", PF_makevectors, 1);	// void(entity e) makevectors = #1
 	PR_AddBuiltin (&sv_pr_state, "setorigin", PF_setorigin, 2);	// void(entity e, vector o) setorigin = #2
 	PR_AddBuiltin (&sv_pr_state, "setmodel", PF_setmodel, 3);	// void(entity e, string m) setmodel = #3
 	PR_AddBuiltin (&sv_pr_state, "setsize", PF_setsize, 4);	// void(entity e, vector min, vector max) setsize = #4
 	PR_AddBuiltin (&sv_pr_state, "fixme", PF_Fixme, 5);	// void(entity e, vector min, vector max) setabssize = #5
-	PR_AddBuiltin (&sv_pr_state, "break", PF_break, 6);	// void() break = #6
-	PR_AddBuiltin (&sv_pr_state, "random", PF_random, 7);	// float() random = #7
 	PR_AddBuiltin (&sv_pr_state, "sound", PF_sound, 8);	// void(entity e, float chan, string samp) sound = #8
-	PR_AddBuiltin (&sv_pr_state, "normalize", PF_normalize, 9);	// vector(vector v) normalize = #9
 	PR_AddBuiltin (&sv_pr_state, "error", PF_error, 10);	// void(string e) error = #10
 	PR_AddBuiltin (&sv_pr_state, "objerror", PF_objerror, 11);	// void(string e) objerror = #11
-	PR_AddBuiltin (&sv_pr_state, "vlen", PF_vlen, 12);	// float(vector v) vlen = #12
-	PR_AddBuiltin (&sv_pr_state, "vectoyaw", PF_vectoyaw, 13);	// float(vector v) vectoyaw = #13
 	PR_AddBuiltin (&sv_pr_state, "spawn", PF_Spawn, 14);	// entity() spawn = #14
 	PR_AddBuiltin (&sv_pr_state, "remove", PF_Remove, 15);	// void(entity e) remove = #15
 	PR_AddBuiltin (&sv_pr_state, "traceline", PF_traceline, 16);	// float(vector v1, vector v2, float tryents) traceline = #16
 	PR_AddBuiltin (&sv_pr_state, "checkclient", PF_checkclient, 17);	// entity() clientlist = #17
-	PR_AddBuiltin (&sv_pr_state, "find", PF_Find, 18);	// entity(entity start, .string fld, string match) find = #18
 	PR_AddBuiltin (&sv_pr_state, "precache_sound", PF_precache_sound, 19);	// void(string s) precache_sound = #19
 	PR_AddBuiltin (&sv_pr_state, "precache_model", PF_precache_model, 20);	// void(string s) precache_model = #20
 	PR_AddBuiltin (&sv_pr_state, "stuffcmd", PF_stuffcmd, 21);	// void(entity client, string s) stuffcmd = #21
 	PR_AddBuiltin (&sv_pr_state, "findradius", PF_findradius, 22);	// entity(vector org, float rad) findradius = #22
 	PR_AddBuiltin (&sv_pr_state, "bprint", PF_bprint, 23);	// void(string s) bprint = #23
 	PR_AddBuiltin (&sv_pr_state, "sprint", PF_sprint, 24);	// void(entity client, string s) sprint = #24
-	PR_AddBuiltin (&sv_pr_state, "dprint", PF_dprint, 25);	// void(string s) dprint = #25
-	PR_AddBuiltin (&sv_pr_state, "ftos", PF_ftos, 26);	// void(string s) ftos = #26
-	PR_AddBuiltin (&sv_pr_state, "vtos", PF_vtos, 27);	// void(string s) vtos = #27
-	PR_AddBuiltin (&sv_pr_state, "coredump", PF_coredump, 28);	// void() coredump = #28
-	PR_AddBuiltin (&sv_pr_state, "traceon", PF_traceon, 29);	// void() traceon = #29
-	PR_AddBuiltin (&sv_pr_state, "traceoff", PF_traceoff, 30);	// void() traceoff = #30
-	PR_AddBuiltin (&sv_pr_state, "eprint", PF_eprint, 31);	// void(entity e) = #31 debug print an entire entity
 	PR_AddBuiltin (&sv_pr_state, "walkmove", PF_walkmove, 32);	// float(float yaw, float dist) walkmove = #32
 	// 33
 	PR_AddBuiltin (&sv_pr_state, "droptofloor", PF_droptofloor, 34);	// float() droptofloor = #34
 	PR_AddBuiltin (&sv_pr_state, "lightstyle", PF_lightstyle, 35);	// void(float style, string value) lightstyle = #35
-	PR_AddBuiltin (&sv_pr_state, "rint", PF_rint, 36);	// float(float v) rint = #36
-	PR_AddBuiltin (&sv_pr_state, "floor", PF_floor, 37);	// float(float v) floor = #37
-	PR_AddBuiltin (&sv_pr_state, "ceil", PF_ceil, 38);	// float(float v) ceil = #38
 	// 39
 	PR_AddBuiltin (&sv_pr_state, "checkbottom", PF_checkbottom, 40);	// float(entity e) checkbottom = #40
 	PR_AddBuiltin (&sv_pr_state, "pointcontents", PF_pointcontents, 41);	// float(vector v) pointcontents = #41
 	// 42
-	PR_AddBuiltin (&sv_pr_state, "fabs", PF_fabs, 43);	// float(float f) fabs = #43
 	PR_AddBuiltin (&sv_pr_state, "aim", PF_aim, 44);	// vector(entity e, float speed) aim = #44
-	PR_AddBuiltin (&sv_pr_state, "cvar", PF_cvar, 45);	// float(string s) cvar = #45
 	PR_AddBuiltin (&sv_pr_state, "localcmd", PF_localcmd, 46);	// void(string s) localcmd = #46
-	PR_AddBuiltin (&sv_pr_state, "nextent", PF_nextent, 47);	// entity(entity e) nextent = #47
 	PR_AddBuiltin (&sv_pr_state, "particle", PF_particle, 48);
 	PR_AddBuiltin (&sv_pr_state, "changeyaw", PF_changeyaw, 49);	// void() ChangeYaw = #49
 	// 50
-	PR_AddBuiltin (&sv_pr_state, "vectoangles", PF_vectoangles, 51);	// vector(vector v) vectoangles = #51
 
 	PR_AddBuiltin (&sv_pr_state, "writebyte", PF_WriteByte, 52);	// void(float to, float f) WriteByte = #52
 	PR_AddBuiltin (&sv_pr_state, "writechar", PF_WriteChar, 53);	// void(float to, float f) WriteChar = #53
@@ -1906,7 +1613,6 @@ SV_PR_Cmds_Init ()
 	PR_AddBuiltin (&sv_pr_state, "changelevel", PF_changelevel, 70);	// void(string s) changelevel = #70
 	// 71
 
-	PR_AddBuiltin (&sv_pr_state, "cvar_set", PF_cvar_set, 72);	// void(string var, string val) cvar_set = #72
 	PR_AddBuiltin (&sv_pr_state, "centerprint", PF_centerprint, 73);	// void(...) centerprint = #73
 
 	PR_AddBuiltin (&sv_pr_state, "ambientsound", PF_ambientsound, 74);	// void(vector pos, string samp, float vol, float atten) ambientsound = #74

@@ -192,7 +192,7 @@ extern struct cvar_s *pr_debug;
 // PR Cmds stuff
 //
 
-void PR_Cmds_Init (void);
+void PR_Cmds_Init (progs_t *pr);
 
 //============================================================================
 

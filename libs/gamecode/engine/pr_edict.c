@@ -1380,7 +1380,6 @@ PR_Init (void)
 {
 	PR_Opcode_Init ();
 	PR_Debug_Init ();
-	PR_Cmds_Init ();
 }
 
 #define PR_AUTOBUILTIN 120
