@@ -65,12 +65,16 @@ case "$host_os" in
 			AS="$CC"
 			AR="$host_cpu_$host_os-ar"
 			RANLIB="$host_cpu-$host_os-ranlib"
-			case "$target" in
-				*mingw32)
+                        endian="little"
+		fi
+		if test "$host" != "$target"; then
+			case "$target_os" in
+				mingw32*)
 					mingw=yes
-					CFLAGS="$CFLAGS -mno-cygwin -mwindows"
-					CFLAGS="$CFLAGS -I\$(top_srcdir)/include/win32"
-					CFLAGS="$CFLAGS -I\$(top_srcdir)/include/win32/resources"
+					CPPFLAGS="$CPPFLAGS -mno-cygwin -mwindows"
+					CPPFLAGS="$CPPFLAGS -I\$(top_srcdir)/include/win32"
+					CPPFLAGS="$CPPFLAGS -I\$(top_srcdir)/include/win32/resources"
+					LDFLAGS="$LDFLAGS -mno-cygwin -mwindows"
 					endian="little"
 				;;
 			esac
