@@ -902,6 +902,7 @@ CL_LinkPlayers (void)
 		} else {
 			ent->skin = NULL;
 		}
+
 		if (state->effects & EF_FLAG1)
 			CL_AddFlagModels (ent, 0, j);
 		else if (state->effects & EF_FLAG2)
