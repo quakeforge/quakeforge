@@ -218,7 +218,7 @@ setup_data (void)
 		for (var = pr.far_data->data;
 			 var - pr.far_data->data < pr.far_data->size; var++)
 			var->integer_var = LittleLong (var->integer_var);
-	for (line = linenos; line - linenos < num_linenos; line++) {
+	for (line = pr.linenos; line - pr.linenos < pr.num_linenos; line++) {
 		line->fa.addr = LittleLong (line->fa.addr);
 		line->line    = LittleLong (line->line);
 	}
@@ -253,7 +253,7 @@ qfo_from_progs (pr_info_t *pr)
 	qfo_add_relocs (qfo, relocs, num_relocs);
 	qfo_add_defs (qfo, defs, num_defs);
 	qfo_add_funcs (qfo, funcs, num_funcs);
-	qfo_add_lines (qfo, linenos, num_linenos);
+	qfo_add_lines (qfo, pr->linenos, pr->num_linenos);
 	qfo_add_types (qfo, types->strings, types->size);
 	qfo->entity_fields = pr->entity_data->size;
 
@@ -501,6 +501,14 @@ qfo_to_progs (qfo_t *qfo, pr_info_t *pr)
 		pd->file = qd->file;
 		pd->line = qd->line;
 	}
+	pr->scope->tail = &pr->scope->head;
+	for (i = 0, pd = pr->scope->head; i < pr->scope->num_defs; i++, pd++) {
+		if ((*pr->scope->tail)->local) {
+			*pr->scope->tail = 0;
+			break;
+		}
+		pr->scope->tail = &(*pr->scope->tail)->def_next;
+	}
 
 	pr->num_functions = qfo->num_funcs + 1;
 	pr->func_head = calloc (qfo->num_funcs, sizeof (function_t));
@@ -510,14 +518,14 @@ qfo_to_progs (qfo_t *qfo, pr_info_t *pr)
 		*pr->func_tail = pf;
 		pr->func_tail = &pf->next;
 		pf->aux = new_auxfunction ();
-		pf->aux->function = i;
+		pf->aux->function = i + 1;
 		pf->aux->source_line = qf->line;
 		pf->aux->line_info = qf->line_info;
 		pf->aux->local_defs = qf->local_defs;
 		pf->aux->num_locals = qf->num_local_defs;
 		pf->builtin = qf->builtin;
 		pf->code = qf->code;
-		pf->function_num = i;
+		pf->function_num = i + 1;
 		pf->s_file = qf->file;
 		pf->s_name = qf->name;
 		pf->file_line = qf->line;
@@ -533,6 +541,12 @@ qfo_to_progs (qfo_t *qfo, pr_info_t *pr)
 			pf->refs = relocs + qf->relocs;
 			pf->refs[qf->num_relocs - 1].next = 0;
 		}
+	}
+	pr->num_linenos = pr->linenos_size = qfo->num_lines;
+	if (pr->num_linenos) {
+		pr->linenos = malloc (pr->num_linenos * sizeof (pr_lineno_t));
+		memcpy (pr->linenos, qfo->lines,
+				pr->num_linenos * sizeof (pr_lineno_t));
 	}
 	pr->entity_data = init_space (qfo->entity_fields, 0);
 	return 0;
