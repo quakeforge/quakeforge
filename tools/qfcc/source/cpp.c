@@ -227,7 +227,7 @@ preprocess_file (const char *filename)
 			//	printf ("%s ", *a);
 			//puts("");
 			execvp (cpp_argv[0], (char **)cpp_argv);
-			fprintf (stderr, "Child shouldn't reach here\n");
+			perror (cpp_argv[0]);
 			exit (1);
 		} else {
 			// give parental guidance (or bury it in the back yard)
