@@ -40,6 +40,12 @@
 
 #define MAX_GAMEDIR_CALLBACKS 128	// most QFS_GamedirCallback calls.
 
+typedef struct filelist_s {
+	char      **list;
+	int         count;
+	int         size;
+} filelist_t;
+
 typedef struct searchpath_s {
 	char        filename[MAX_OSPATH];
 	struct pack_s *pack;	// only one of filename / pack will be used
@@ -108,6 +114,10 @@ const char *QFS_SkipPath (const char *pathname);
 const char *QFS_FileExtension (const char *in);
 
 void QFS_GamedirCallback (gamedir_callback_t *);
+
+filelist_t *QFS_FilelistNew (void);
+void QFS_FilelistFill (filelist_t *list, const char *path, const char *ext);
+void QFS_FilelistFree (filelist_t *list);
 
 // FIXME: This is here temporarily until fs_usercfg gets sorted out
 char *expand_squiggle (const char *path);

@@ -86,55 +86,6 @@ static __attribute__ ((unused)) const char rcsid[] =
 int         fnmatch (const char *__pattern, const char *__string, int __flags);
 #endif
 
-struct filelist {
-	char      **list;
-	int         count;
-	int         size;
-};
-
-static struct filelist *
-filelist_new (void)
-{
-	return calloc (1, sizeof (struct filelist));
-}
-
-static void
-filelist_free (struct filelist *filelist)
-{
-	int         i;
-
-	for (i = 0; i < filelist->count; i++)
-		free (filelist->list[i]);
-	free (filelist->list);
-	free (filelist);
-}
-
-static void
-filelist_add_file (struct filelist *filelist, char *fname, const char *ext)
-{
-	char      **new_list;
-	char      *s;
-
-	while ((s = strchr(fname, '/')))
-		fname = s+1;
-
-	if (filelist->count == filelist->size) {
-		filelist->size += 32;
-		new_list = realloc (filelist->list, filelist->size * sizeof (char *));
-
-		if (!new_list) {
-			filelist->size -= 32;
-			return;
-		}
-		filelist->list = new_list;
-	}
-	fname = strdup (fname);
-	
-	if (ext && (s = strstr(fname, va(".%s", ext))))
-		*s = 0;
-	filelist->list[filelist->count++] = fname;
-}
-
 static int
 filelist_cmp (const void *_a, const void *_b)
 {
@@ -145,7 +96,7 @@ filelist_cmp (const void *_a, const void *_b)
 }
 
 static void
-filelist_print (struct filelist *filelist)
+filelist_print (filelist_t *filelist)
 {
 	int         i;
 	const char **list;
@@ -164,65 +115,26 @@ filelist_print (struct filelist *filelist)
 	}
 }
 
-/*
-	filelist_fill
-
-	Fills a list with files of a specific extension.
-*/
-static void
-filelist_fill (struct filelist *filelist, const char *path, const char *ext)
-{
-	searchpath_t *search;
-	DIR        *dir_ptr;
-	struct dirent *dirent;
-	char        buf[MAX_OSPATH];
-
-	for (search = qfs_searchpaths; search != NULL; search = search->next) {
-		if (search->pack) {
-			int         i;
-			pack_t     *pak = search->pack;
-
-			for (i = 0; i < pak->numfiles; i++) {
-				char       *name = pak->files[i].name;
-
-				if (!fnmatch (va("%s*.%s", path, ext), name, FNM_PATHNAME)
-					|| !fnmatch (va("%s*.%s.gz", path, ext), name, FNM_PATHNAME))
-					filelist_add_file (filelist, name, ext);
-			}
-		} else {
-			snprintf (buf, sizeof (buf), "%s/%s", search->filename, path);
-			dir_ptr = opendir (buf);
-			if (!dir_ptr)
-				continue;
-			while ((dirent = readdir (dir_ptr)))
-				if (!fnmatch (va("*.%s", ext), dirent->d_name, 0)
-					|| !fnmatch (va("*.%s.gz", ext), dirent->d_name, 0))
-					filelist_add_file (filelist, dirent->d_name, ext);
-			closedir (dir_ptr);
-		}
-	}
-}
-
 void
 Con_Maplist_f (void)
 {
-	struct filelist *maplist = filelist_new ();
+	filelist_t *maplist = QFS_FilelistNew ();
 	
-	filelist_fill (maplist, "maps/", "bsp");
+	QFS_FilelistFill (maplist, "maps/", "bsp");
 	
 	filelist_print (maplist);
-	filelist_free (maplist);
+	QFS_FilelistFree (maplist);
 }
 
 void
 Con_Skinlist_f (void)
 {
-	struct filelist *skinlist = filelist_new ();
+	filelist_t *skinlist = QFS_FilelistNew ();
 	
-	filelist_fill (skinlist, "skins/", "pcx");
+	QFS_FilelistFill (skinlist, "skins/", "pcx");
 
 	filelist_print (skinlist);
-	filelist_free (skinlist);
+	QFS_FilelistFree (skinlist);
 }
 
 const char *sb_endings[] = {
@@ -241,11 +153,11 @@ Con_Skyboxlist_f (void)
 	int i, j, k, c, b;
 	char basename[256];
 
-	struct filelist *skyboxlist = filelist_new ();
-	struct filelist *cutlist = filelist_new ();
+	filelist_t *skyboxlist = QFS_FilelistNew ();
+	filelist_t *cutlist = QFS_FilelistNew ();
 
-	filelist_fill(skyboxlist, "env/", "tga");
-	filelist_fill(skyboxlist, "env/", "pcx");
+	QFS_FilelistFill (skyboxlist, "env/", "tga");
+	QFS_FilelistFill (skyboxlist, "env/", "pcx");
 
 	for (i = 0; i < skyboxlist->count; i++) {
 		if (strlen(skyboxlist->list[i]) > strlen(sb_endings[0]) && strcmp(skyboxlist->list[i] + strlen(skyboxlist->list[i]) - strlen(sb_endings[0]), sb_endings[0]) == 0) {
@@ -264,23 +176,23 @@ Con_Skyboxlist_f (void)
 				
 			}
 			if (c == 5)
-				filelist_add_file(cutlist, basename, 0);
+				QFS_FilelistFill (cutlist, basename, 0);
 		}
 	}
-	filelist_print(cutlist);
-	filelist_free(cutlist);
-	filelist_free(skyboxlist);
+	filelist_print (cutlist);
+	QFS_FilelistFree (cutlist);
+	QFS_FilelistFree (skyboxlist);
 }
 
 void
 Con_Demolist_QWD_f (void)
 {
-	struct filelist *demolist = filelist_new ();
+	filelist_t *demolist = QFS_FilelistNew ();
 	
-	filelist_fill(demolist, "", "qwd");
+	QFS_FilelistFill (demolist, "", "qwd");
 	
-	filelist_print(demolist);
-	filelist_free(demolist);
+	filelist_print (demolist);
+	QFS_FilelistFree (demolist);
 	
 	return;
 }
@@ -288,12 +200,12 @@ Con_Demolist_QWD_f (void)
 void
 Con_Demolist_DEM_f (void)
 {
-	struct filelist *demolist = filelist_new ();
+	filelist_t *demolist = QFS_FilelistNew ();
 	
-	filelist_fill(demolist, "", "dem");
+	QFS_FilelistFill (demolist, "", "dem");
 
-	filelist_print(demolist);
-	filelist_free(demolist);
+	filelist_print (demolist);
+	QFS_FilelistFree (demolist);
 
 	return;
 }
