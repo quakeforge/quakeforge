@@ -35,6 +35,7 @@ typedef enum {
 	ev_field,
 	ev_func,
 	ev_pointer,
+	ev_quaternion,
 	
 	ev_type_count		// not a type, gives number of types
 } etype_t;
