@@ -132,16 +132,15 @@ COM_extract_line (cbuf_t *cbuf)
 	for (i = 0; i < len; i++) {
 		if (text[i] == '"')
 			quotes++;
-		if (!(quotes & 1)) {
+		if (!(quotes & 1)) {		// don't break if inside a quoted string
 			if (text[i] == ';')
-				// don't break if inside a quoted string
 				break;
 			if (text[i] == '/' && text[i + 1] == '/') {
 				int         j = i;
 				while (j < len && text[j] != '\n' && text[j] != '\r')
 					j++;
 				dstring_snip (cbuf->buf, i, j - i);
-				len -= j - i;
+				break;
 			}
 		}
 		if (text[i] == '\n' || text[i] == '\r')
