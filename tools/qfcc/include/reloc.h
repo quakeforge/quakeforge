@@ -51,6 +51,8 @@ typedef struct reloc_s {
 	struct reloc_s *next;
 	int			ofs;
 	reloc_type	type;
+	int			line;
+	string_t	file;
 } reloc_t;
 
 struct statement_s;

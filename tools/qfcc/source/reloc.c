@@ -100,9 +100,10 @@ relocate_refs (reloc_t *refs, int ofs)
 					pr.code->code[refs->ofs].c = o;
 				break;
 			case rel_def_op:
-				if (ofs >= pr.code->size)
-					error (0, "invalid statement offset");
-				else
+				if (ofs > pr.code->size) {
+					error (0, "invalid statement offset: %d >= %d, %d",
+						   ofs, pr.code->size, refs->ofs);
+				} else
 					G_INT (refs->ofs) = ofs;
 				break;
 			case rel_def_def:
@@ -126,6 +127,8 @@ new_reloc (int ofs, reloc_type type)
 	ALLOC (16384, reloc_t, refs, ref);
 	ref->ofs = ofs;
 	ref->type = type;
+	ref->line = pr.source_line;
+	ref->file = pr.source_file;
 	return ref;
 }
 
