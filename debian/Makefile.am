@@ -11,4 +11,6 @@ EXTRA_DIST=	changelog control copyright rules \
 		quakeforge-svga.suid quakeforge-svga.undocumented \
 		quakeforge-x11.undocumented \
 		quakeforge-servers.undocumented \
-		quakeforge.conf
+		quakeforge.conf \
+		quakeforge-common.shlibs quakeforge-libs-gl.shlibs \
+		quakeforge-libs-sw.shlibs
