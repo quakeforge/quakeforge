@@ -224,87 +224,6 @@ extract_type (expr_t *e)
 	return ev_type_count;
 }
 
-expr_t *
-error (expr_t *e, const char *fmt, ...)
-{
-	va_list     args;
-	string_t    file = pr.source_file;
-	int         line = pr.source_line;
-
-	va_start (args, fmt);
-	if (e) {
-		file = e->file;
-		line = e->line;
-	}
-	fprintf (stderr, "%s:%d: ", G_GETSTR (file), line);
-	vfprintf (stderr, fmt, args);
-	fputs ("\n", stderr);
-	va_end (args);
-	pr.error_count++;
-
-	if (e) {
-		e->type = ex_error;
-	}
-	return e;
-}
-
-static void
-_warning (expr_t *e, const char *fmt, va_list args)
-{
-	string_t    file = pr.source_file;
-	int         line = pr.source_line;
-
-	if (options.warnings.promote) {
-		options.warnings.promote = 0;	// only want to do this once
-		fprintf (stderr, "%s: warnings treated as errors\n", "qfcc");
-		pr.error_count++;
-	}
-
-	if (e) {
-		file = e->file;
-		line = e->line;
-	}
-	fprintf (stderr, "%s:%d: warning: ", G_GETSTR (file), line);
-	vfprintf (stderr, fmt, args);
-	fputs ("\n", stderr);
-}
-
-void
-warning (expr_t *e, const char *fmt, ...)
-{
-	va_list     args;
-
-	va_start (args, fmt);
-	_warning (e, fmt, args);
-	va_end (args);
-}
-
-void
-notice (expr_t *e, const char *fmt, ...)
-{
-	va_list     args;
-
-	if (options.notices.silent)
-		return;
-
-	va_start (args, fmt);
-	if (options.notices.promote) {
-		_warning (e, fmt, args);
-	} else {
-		string_t    file = pr.source_file;
-		int         line = pr.source_line;
-
-		if (e) {
-			file = e->file;
-			line = e->line;
-		}
-		fprintf (stderr, "%s:%d: notice: ", G_GETSTR (file), line);
-		vfprintf (stderr, fmt, args);
-		fputs ("\n", stderr);
-	}
-	va_end (args);
-}
-
 const char *
 get_op_string (int op)
 {
@@ -2527,4 +2446,85 @@ sizeof_expr (expr_t *expr, struct type_s *type)
 		type = get_type (expr);
 	expr = new_integer_expr (type_size (type));
 	return expr;
+}
+
+static void
+_warning (expr_t *e, const char *fmt, va_list args)
+{
+	string_t    file = pr.source_file;
+	int         line = pr.source_line;
+
+	if (options.warnings.promote) {
+		options.warnings.promote = 0;	// only want to do this once
+		fprintf (stderr, "%s: warnings treated as errors\n", "qfcc");
+		pr.error_count++;
+	}
+
+	if (e) {
+		file = e->file;
+		line = e->line;
+	}
+	fprintf (stderr, "%s:%d: warning: ", G_GETSTR (file), line);
+	vfprintf (stderr, fmt, args);
+	fputs ("\n", stderr);
+}
+
+void
+notice (expr_t *e, const char *fmt, ...)
+{
+	va_list     args;
+
+	if (options.notices.silent)
+		return;
+
+	va_start (args, fmt);
+	if (options.notices.promote) {
+		_warning (e, fmt, args);
+	} else {
+		string_t    file = pr.source_file;
+		int         line = pr.source_line;
+
+		if (e) {
+			file = e->file;
+			line = e->line;
+		}
+		fprintf (stderr, "%s:%d: notice: ", G_GETSTR (file), line);
+		vfprintf (stderr, fmt, args);
+		fputs ("\n", stderr);
+	}
+	va_end (args);
+}
+
+void
+warning (expr_t *e, const char *fmt, ...)
+{
+	va_list     args;
+
+	va_start (args, fmt);
+	_warning (e, fmt, args);
+	va_end (args);
+}
+
+expr_t *
+error (expr_t *e, const char *fmt, ...)
+{
+	va_list     args;
+	string_t    file = pr.source_file;
+	int         line = pr.source_line;
+
+	va_start (args, fmt);
+	if (e) {
+		file = e->file;
+		line = e->line;
+	}
+	fprintf (stderr, "%s:%d: ", G_GETSTR (file), line);
+	vfprintf (stderr, fmt, args);
+	fputs ("\n", stderr);
+	va_end (args);
+	pr.error_count++;
+
+	if (e) {
+		e->type = ex_error;
+	}
+	return e;
 }
