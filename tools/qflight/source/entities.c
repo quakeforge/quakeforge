@@ -51,6 +51,7 @@ static __attribute__ ((unused)) const char rcsid[] =
 #include "QF/dstring.h"
 #include "QF/idparse.h"
 #include "QF/mathlib.h"
+#include "QF/qfplist.h"
 #include "QF/qtypes.h"
 #include "QF/quakefs.h"
 #include "QF/sys.h"
@@ -59,6 +60,7 @@ static __attribute__ ((unused)) const char rcsid[] =
 #include "threads.h"
 #include "entities.h"
 #include "options.h"
+#include "properties.h"
 
 entity_t *entities;
 int num_entities;
@@ -168,12 +170,11 @@ LoadEntities (void)
 	const char *data;
 	const char *key;
 	double      vec[4];
-	double      temp, color2[3];
 	entity_t   *entity;
 	epair_t    *epair;
-	int         i;
 	float       cutoff_range;
 	float       intensity;
+	plitem_t   *dict;
 
 	data = bsp->entdata;
 
@@ -200,11 +201,13 @@ LoadEntities (void)
 
 		memset (entity, 0, sizeof (*entity));
 		entity->color[0] = entity->color[1] = entity->color[2] = 1.0f;
-		color2[0] = color2[1] = color2[2] = 1.0f;
+		VectorCopy (entity->color, entity->color2);
 		entity->falloff = DEFAULTFALLOFF * DEFAULTFALLOFF;
 		entity->lightradius = 0;
 		entity->lightoffset = LIGHTDISTBIAS;
 		entity->attenuation = options.attenuation;
+
+		dict = PL_NewDictionary ();
 
 		// go through all the keys in this entity
 		while (1) {
@@ -232,6 +235,9 @@ LoadEntities (void)
 			epair->next = entity->epairs;
 			entity->epairs = epair;
 
+			PL_D_AddObject (dict, PL_NewString (key),
+							PL_NewString (com_token));
+
 			if (!strcmp (key, "classname"))
 				entity->classname = epair->value;
 			else if (!strcmp (key, "target"))
@@ -244,93 +250,9 @@ LoadEntities (void)
 				if (sscanf (com_token, "%lf %lf %lf",
 							&vec[0], &vec[1], &vec[2]) != 3)
 					fprintf (stderr, "LoadEntities: not 3 values for origin");
-				VectorCopy (vec, entity->origin);
-			} else if (!strncmp (key, "light", 5) || !strcmp (key, "_light")) {
-				i = sscanf (com_token, "%lf %lf %lf %lf",
-							&vec[0], &vec[1], &vec[2], &vec[3]);
-				switch (i) {
-					case 4:		// HalfLife light
-						entity->light = vec[3];
-						entity->color[0] = vec[0] * (1.0f / 255.0f);
-						entity->color[1] = vec[1] * (1.0f / 255.0f);
-						entity->color[2] = vec[2] * (1.0f / 255.0f);
-						break;
-					case 3:
-						entity->light = 1;
-						entity->color[0] = vec[0];
-						entity->color[1] = vec[1];
-						entity->color[2] = vec[2];
-						break;
-					case 1:
-						entity->light = vec[0];
-						entity->color[0] = 1.0f;
-						entity->color[1] = 1.0f;
-						entity->color[2] = 1.0f;
-						break;
-					default:
-						Sys_Error ("LoadEntities: _light (or light) key must "
-								   "be 1 (Quake), 4 (HalfLife), or 3 (HLight) "
-								   "values, \"%s\" is not valid\n", com_token);
-				}
-			} else if (!strcmp (key, "wait")) {
-				entity->falloff = atof (com_token);
-				entity->falloff *= entity->falloff;		// presquared
-			} else if (!strcmp (key, "_lightradius")) {
-				entity->lightradius = atof (com_token);
-			} else if (!strcmp (key, "style")) {
-				entity->style = atof (com_token);
-				if ((unsigned) entity->style > 254)
-					fprintf (stderr, "Bad light style %i (must be 0-254)",
-							 entity->style);
-			} else if (!strcmp (key, "angle")) {
-				entity->angle = atof(com_token);
-			} else if (!strcmp (key, "color") || !strcmp (key, "_color")) {
-				if (sscanf (com_token, "%lf %lf %lf",
-							&vec[0], &vec[1], &vec[2]) != 3)
-					Sys_Error ("LoadEntities: not 3 values for color");
-				// scale the color to have at least one component at 1.0
-				temp = vec[0];
-				if (vec[1] > temp)
-					temp = vec[1];
-				if (vec[2] > temp)
-					temp = vec[2];
-				if (temp != 0.0)
-					temp = 1.0 / temp;
-				VectorScale (vec, temp, color2);
+				else
+					VectorCopy (vec, entity->origin);
 			}
-			// Open Quartz - new keys
-			else if (!strcmp(key, "_attenuation")) {
-				if (!strcmp(com_token, "linear"))
-					entity->attenuation = LIGHT_LINEAR;
-				else if (!strcmp(com_token, "radius"))
-					entity->attenuation = LIGHT_RADIUS;
-				else if (!strcmp(com_token, "inverse"))
-					entity->attenuation = LIGHT_INVERSE;
-				else if (!strcmp(com_token, "realistic"))
-					entity->attenuation = LIGHT_REALISTIC;
-				else if (!strcmp(com_token, "none"))
-					entity->attenuation = LIGHT_NO_ATTEN;
-				else if (!strcmp(com_token, "havoc"))
-					entity->attenuation = LIGHT_LH;
-				else
-					entity->attenuation = atoi (com_token);
-			} else if (!strcmp(key, "_radius"))
-				entity->radius = atof (com_token);
-			else if (!strcmp(key, "_noise"))
-				entity->noise = atof (com_token);
-			else if (!strcmp(key, "_noisetype")) {
-				if (!strcmp(com_token, "random"))
-					entity->noisetype = NOISE_RANDOM;
-				else if (!strcmp(com_token, "smooth"))
-					entity->noisetype = NOISE_SMOOTH;
-				else if (!strcmp(com_token, "perlin"))
-					entity->noisetype = NOISE_PERLIN;
-				else
-					entity->noisetype = atoi (com_token);
-			} else if (!strcmp(key, "_persistence"))
-				entity->persistence = atof (com_token);
-			else if (!strcmp(key, "_resolution"))
-				entity->resolution = atof (com_token);
 		}
 
 		if (entity->targetname)
@@ -338,6 +260,7 @@ LoadEntities (void)
 
 		// all fields have been parsed
 		if (entity->classname && !strncmp (entity->classname, "light", 5)) {
+			set_properties (entity, dict);
 			if (!entity->light)
 				entity->light = DEFAULTLIGHTLEVEL;
 			if (!entity->noise)
@@ -345,16 +268,17 @@ LoadEntities (void)
 			if (!entity->persistence)
 				entity->persistence = 1;
 		}
+		PL_Free (dict);
 
 		if (entity->light) {
 			// convert to subtraction to the brightness for the whole light,
 			// so it will fade nicely, rather than being clipped off
-			VectorScale (color2,
+			VectorScale (entity->color2,
 						 entity->light * 16384.0 * options.globallightscale,
-						 color2);
-			entity->color[0] *= color2[0];
-			entity->color[1] *= color2[1];
-			entity->color[2] *= color2[2];
+						 entity->color2);
+			entity->color[0] *= entity->color2[0];
+			entity->color[1] *= entity->color2[1];
+			entity->color[2] *= entity->color2[2];
 
 			if (entity->lightradius)
 				entity->subbrightness = 1.0 / (entity->lightradius

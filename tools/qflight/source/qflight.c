@@ -60,6 +60,7 @@ static __attribute__ ((unused)) const char rcsid[] =
 #include "threads.h"
 #include "entities.h"
 #include "options.h"
+#include "properties.h"
 
 options_t	options;
 bsp_t *bsp;
@@ -198,6 +199,9 @@ main (int argc, char **argv)
 	dstring_copystr (litfile, bspfile);
 	e = strrchr (litfile->str, '.');
 	dstring_replace (litfile, e - litfile->str, -1, ".lit", 5);
+
+	if (options.properties_filename)
+		LoadProperties (options.properties_filename);
 
 	f = Qopen (bspfile, "rbz");
 	if (!f)

@@ -47,6 +47,7 @@ static __attribute__ ((unused)) const char rcsid[] =
 
 #include "entities.h"
 #include "options.h"
+#include "properties.h"
 
 const char *this_program;
 
@@ -56,6 +57,7 @@ static struct option const long_options[] = {
 	{"help", no_argument, 0, 'h'},
 	{"version", no_argument, 0, 'V'},
 	{"threads", required_argument, 0, 't'},
+	{"properties", required_argument, 0, 'P'},
 	{"attenuation", required_argument, 0, 'a'},
 	{"noise", required_argument, 0, 'n'},
 	{"cutoff", required_argument, 0, 'c'},
@@ -80,6 +82,7 @@ static const char *short_options =
 	"e:"	// extra sampling
 	"d:"	// scale distance
 	"r:"	// scale range
+	"P:"	// properties file
 	"f:"
 	;
 
@@ -103,6 +106,7 @@ usage (int status)
 		"                              havoc\n"
 		"    -n, --noise [factor]      Scale noise. 0 (default) to disable\n"
 		"    -c, --cutoff [scale]      Scale cutoff. 0 to disable\n"
+		"    -P, --properties [file]   Properties file\n"
 		"    -f, --file [bspfile]      BSP file\n\n");
 	exit (status);
 }
@@ -148,23 +152,8 @@ DecodeArgs (int argc, char **argv)
 					usage (1);
 				break;
 			case 'a':
-				if (!strcmp(optarg, "linear"))
-					options.attenuation = LIGHT_LINEAR;
-				else if (!strcmp(optarg, "radius"))
-					options.attenuation = LIGHT_RADIUS;
-				else if (!strcmp(optarg, "inverse"))
-					options.attenuation = LIGHT_INVERSE;
-				else if (!strcmp(optarg, "realistic"))
-					options.attenuation = LIGHT_REALISTIC;
-				else if (!strcmp(optarg, "none"))
-					options.attenuation = LIGHT_NO_ATTEN;
-				else if (!strcmp(optarg, "havoc"))
-					options.attenuation = LIGHT_LH;
-				else {
-					options.attenuation = strtol (optarg, &eptr, 10);
-					if (eptr == optarg || *eptr)
-						usage (1);
-				}
+				if ((options.attenuation = parse_attenuation (optarg)) == -1)
+					usage (1);
 				break;
 			case 'n':					// noise
 				options.noise = strtod (optarg, &eptr);
@@ -196,6 +185,9 @@ DecodeArgs (int argc, char **argv)
 				break;
 			case 'f':
 				bspfile = strdup (optarg);
+				break;
+			case 'P':
+				options.properties_filename = strdup (optarg);
 				break;
 			default:
 				usage (1);

@@ -44,6 +44,7 @@ typedef struct {
 	vec_t       noise;
 	vec_t       cutoff;
 	const char *lightsfilename;
+	const char *properties_filename;
 } options_t;
 
 extern options_t options;

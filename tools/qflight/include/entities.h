@@ -63,7 +63,7 @@ typedef struct entity_s {
 	vec_t       lightradius;
 	vec_t       subbrightness;
 	vec_t       lightoffset;
-	vec3_t      color;
+	vec3_t      color, color2;
 	vec3_t      spotdir;
 	vec_t       spotcone;
 	unsigned short visbyte, visbit;		// which byte and bit to look at in
