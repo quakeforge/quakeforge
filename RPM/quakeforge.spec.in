@@ -400,7 +400,7 @@ rm -rf $RPM_BUILD_ROOT
 
 %if "%{HAVE_ALSA}"=="'yes'"
 %files alsa
-%attr(-,root,root)	%{_prefix}/lib/quakeforge/snd_output_alsa0_9.so*
+%attr(-,root,root)	%{_prefix}/lib/quakeforge/snd_output_alsa.so*
 %endif
 
 %if "%{HAVE_OSS}"=="'yes'"
