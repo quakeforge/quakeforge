@@ -65,12 +65,14 @@
 
 static int         audio_fd;
 static int         snd_inited;
+static int         mmaped_io = 0;
 static const char *snd_dev = "/dev/dsp";
 volatile dma_t sn;
 cvar_t     *snd_stereo;
 cvar_t     *snd_rate;
 cvar_t     *snd_device;
 cvar_t     *snd_bits;
+cvar_t     *snd_oss_mmaped;
 
 static int  tryrates[] = { 11025, 22050, 22051, 44100, 8000 };
 
@@ -93,6 +95,8 @@ SNDDMA_Init_Cvars (void)
 						   "sound device. \"\" is system default");
 	snd_bits = Cvar_Get ("snd_bits", "0", CVAR_ROM, NULL,
 						 "sound sample depth. 0 is system default");
+	snd_oss_mmaped = Cvar_Get ("snd_oss_mmaped", "1", CVAR_ROM, NULL,
+							   "mmaped io");
 }
 
 qboolean
@@ -107,6 +111,7 @@ SNDDMA_Init (void)
 	int         retries = 3;
 
 	snd_inited = 0;
+	mmaped_io = snd_oss_mmaped->int_val;
 
 	// open snd_dev, confirm capability to mmap, and get size of dma buffer
 	if (snd_device->string[0])
@@ -190,17 +195,26 @@ SNDDMA_Init (void)
 	shm->samples = info.fragstotal * info.fragsize / (shm->samplebits / 8);
 	shm->submission_chunk = 1;
 
-	// memory map the dma buffer
-	shm->buffer = (unsigned char *) mmap (NULL, info.fragstotal
-										  * info.fragsize,
-										  PROT_WRITE, // was also | PROT_READ
+	if (mmaped_io) {
+		// memory map the dma buffer
+		shm->buffer = (unsigned char *) mmap (NULL, info.fragstotal
+											  * info.fragsize,
+											  PROT_WRITE, // was also | PROT_READ
 										  MAP_FILE | MAP_SHARED, audio_fd, 0);
-
-	if (shm->buffer == MAP_FAILED) {
-		perror (snd_dev);
-		Con_Printf ("Could not mmap %s\n", snd_dev);
-		close (audio_fd);
-		return 0;
+	
+		if (shm->buffer == MAP_FAILED) {
+			perror (snd_dev);
+			Con_Printf ("Could not mmap %s\n", snd_dev);
+			close (audio_fd);
+			return 0;
+		}
+	} else {
+		shm->buffer = malloc (shm->samples * (shm->samplebits / 8) * 2);
+		if (!shm->buffer) {
+			Con_Printf ("SNDDMA_Init: memory allocation failure\n");
+			close (audio_fd);
+			return 0;
+		}
 	}
 
 	tmp = 0;
@@ -316,9 +330,24 @@ SNDDMA_Shutdown (void)
 
 	Send sound to device if buffer isn't really the dma buffer
 */
+#define BITSIZE (shm->samplebits / 8)
+#define BYTES (samples / BITSIZE)
 void
 SNDDMA_Submit (void)
 {
+	int samples;
+	if (snd_inited && !mmaped_io) {
+		samples = *plugin_info_snd_output_data.paintedtime
+			- *plugin_info_snd_output_data.soundtime;
+
+		if (shm->samplepos + BYTES <= shm->samples)
+			write (audio_fd, shm->buffer + BYTES, samples);
+		else {
+			write (audio_fd, shm->buffer + BYTES, shm->samples - shm->samplepos);
+			write (audio_fd, shm->buffer, BYTES - (shm->samples - shm->samplepos));
+		}
+		*plugin_info_snd_output_data.soundtime += samples;
+	}
 }
 
 void
