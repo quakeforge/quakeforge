@@ -205,7 +205,7 @@ VID_NumModes_f (void)
 	Con_Printf ("%d modes\n", VID_NumModes ());
 }
 
-int VID_SetMode (char *name, unsigned char *palette);
+int VID_SetMode (const char *name, unsigned char *palette);
 
 extern void fbset_main (int argc, const char **argv);
 
