@@ -1,6 +1,6 @@
 libQFcd 1 quakeforge-common (>= 0.5.4)
 libQFconsole 1 quakeforge-common (>= 0.5.4)
-libQFcsqc 1 quakeforge-common (>= 0.5.4)
+libQFruamoko 1 quakeforge-common (>= 0.5.4)
 libQFgamecode 1 quakeforge-common (>= 0.5.4)
 libQFgamecode_builtins 1 quakeforge-common (>= 0.5.4)
 libQFgib 1 quakeforge-common (>= 0.5.4)

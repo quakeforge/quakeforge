@@ -89,7 +89,7 @@ install: build
 		etc/quakeforge.conf \
 		usr/lib/libQFcd.so.* \
 		usr/lib/libQFconsole.so.* \
-		usr/lib/libQFcsqc.so.* \
+		usr/lib/libQFruamoko.so.* \
 		usr/lib/libQFgamecode.so.* \
 		usr/lib/libQFgamecode_builtins.so.* \
 		usr/lib/libQFgib.so.* \
@@ -112,8 +112,8 @@ install: build
 		usr/lib/libQFcd.so \
 		usr/lib/libQFconsole.*a \
 		usr/lib/libQFconsole.so \
-		usr/lib/libQFcsqc.*a \
-		usr/lib/libQFcsqc.so \
+		usr/lib/libQFruamoko.*a \
+		usr/lib/libQFruamoko.so \
 		usr/lib/libQFgamecode.*a \
 		usr/lib/libQFgamecode.so \
 		usr/lib/libQFgamecode_builtins.*a \
