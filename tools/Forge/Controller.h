@@ -38,9 +38,13 @@
 #import <AppKit/NSNibDeclarations.h>
 
 #import "BundleController.h"
+#import "PrefsController.h"
 
 @interface Controller: NSObject <BundleDelegate>
 {
+	IBOutlet BundleController	*bundleController;
+	IBOutlet PrefsController	*prefsController;
+	IBOutlet id					window;
 }
 
 // App delegate methods
@@ -62,7 +66,7 @@
 - (IBAction) infoPanel: (id) sender;
 - (IBAction) open: (id) sender;
 - (IBAction) openProject: (id) sender;
-- (IBAction) saveAll: (id) sender;
+- (IBAction) saveProject: (id) sender;
 - (IBAction) showPreferencesPanel: (id) sender;
 
 @end

@@ -71,7 +71,6 @@ Forge_HEADERS= \
 	Config.h \
 	BundleController.h \
 	Controller.h \
-	PrefsPanel.h \
 	PrefsController.h
 
 #
@@ -80,7 +79,6 @@ Forge_HEADERS= \
 Forge_OBJC_FILES= \
 	BundleController.m \
 	Controller.m \
-	PrefsPanel.m \
 	PrefsController.m \
 	main.m
 

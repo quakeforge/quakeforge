@@ -37,6 +37,8 @@ static const char rcsid[] =
 #import <Foundation/NSDebug.h>
 #import <Foundation/NSFileManager.h>
 #import <Foundation/NSPathUtilities.h>
+#import <Foundation/NSUserDefaults.h>
+
 #import <AppKit/NSPanel.h>
 
 #import "BundleController.h"

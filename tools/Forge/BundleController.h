@@ -36,6 +36,7 @@
 #import <Foundation/NSBundle.h>
 #import <Foundation/NSObject.h>
 
+#import "PrefsController.h"
 #import "PrefsView.h"
 
 /*
@@ -52,6 +53,7 @@
 /*
 	Methods for bundles to call
 */
+- (PrefsController *) prefsController;
 - (BOOL) registerPrefsController: (id <PrefsViewController>) aPrefsController;
 #if 0
 - (BOOL) registerFileSubmenu: (NSMenu *) aMenu;

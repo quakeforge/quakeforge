@@ -33,10 +33,13 @@ static const char rcsid[] =
 # include "Config.h"
 #endif
 
+#import <Foundation/NSDebug.h>
+#import <Foundation/NSUserDefaults.h>
+
 #import <AppKit/NSApplication.h>
+#import <AppKit/NSWindow.h>
 
 #import "PrefsController.h"
-#import "PrefsPanel.h"
 #import "PrefsView.h"
 
 @implementation PrefsController
@@ -51,32 +54,43 @@ static NSMutableArray	*prefsViews = nil;
 
 - (id) init
 {
-	PrefsPanel		*prefsPanel;
-
 	if (sharedInstance) {
 		[self dealloc];
 	} else {
-		[super init];
+		self = [super init];
 		sharedInstance = self;
 
 		prefsViews = [[[NSMutableArray alloc] initWithCapacity: 5] retain];
-
-		prefsPanel = [[PrefsPanel alloc]
-						initWithContentRect: NSMakeRect (250, 250, 516, 385)
-						styleMask: NSTitledWindowMask
-								 | NSMiniaturizableWindowMask
-								 | NSClosableWindowMask
-						backing: NSBackingStoreRetained
-						defer: NO
-					  ];
-		[prefsPanel setTitle: [NSString stringWithFormat: @"%@ %@", _(@"Forge"), _(@"Preferences")]];
-
-		[super initWithWindow: prefsPanel];
-		[prefsPanel initUI];
-		[prefsPanel setDelegate: self];
-		[prefsPanel release];
 	}
 	return sharedInstance;	
+}
+
+- (void) awakeFromNib
+{
+	NSButtonCell	*prototype;
+
+	// keep the window out of the menu until it's seen
+	[window setExcludedFromWindowsMenu: YES];
+
+	if (iconList)
+		return;
+
+	/* Prototype button for the matrix */
+	prototype = [[[NSButtonCell alloc] init] autorelease];
+	[prototype setButtonType: NSPushOnPushOffButton];
+	[prototype setImagePosition: NSImageOverlaps];
+
+	/* What is the matrix? */
+	iconList = [[NSMatrix alloc] initWithFrame: NSMakeRect (0, 0, 64, 64)];
+	[iconList setCellSize: NSMakeSize (64, 64)];
+	[iconList setMode: NSRadioModeMatrix];
+	[iconList setPrototype: prototype];
+	[iconList setTarget: self];
+	[iconList setAction: @selector(cellWasClicked:)];
+
+	[scrollView setHasHorizontalScroller: YES];
+	[scrollView setHasVerticalScroller: NO];
+	[scrollView setDocumentView: iconList];
 }
 
 - (void) dealloc
@@ -93,14 +107,15 @@ static NSMutableArray	*prefsViews = nil;
 
 - (void) orderFrontPreferencesPanel: (id) sender
 {
-	[[self window] makeKeyAndOrderFront: self];
+	[window setExcludedFromWindowsMenu: NO];
+	[window makeKeyAndOrderFront: self];
 	return;
 }
 
 - (void) savePreferencesAndCloseWindow: (id) sender
 {
 	[self savePreferences: self];
-	[[self window] close];
+	[window close];
 }
 
 - (void) savePreferences: (id) sender
@@ -142,18 +157,31 @@ static NSMutableArray	*prefsViews = nil;
 	[[NSUserDefaults standardUserDefaults] synchronize];
 }
 
-- (void) addPrefsViewController: (id <PrefsViewController>) controller;
+- (void) addPrefsViewController: (id <PrefsViewController>) aController;
 {
-	PrefsPanel		*prefsPanel;
+	NSButtonCell	*button = [[NSButtonCell alloc] init];
 
-	prefsPanel = (PrefsPanel *) [self window];
-
-	if (! [prefsViews containsObject: controller]) {
-		[prefsViews addObject: controller];
-		[controller autorelease];
+	if (! [prefsViews containsObject: aController]) {
+		[prefsViews addObject: aController];
+		[aController autorelease];
 	}
 
-	[prefsPanel addPrefsViewButton: controller];
+	[button setTitle: [aController buttonCaption]];
+	[button setFont: [NSFont systemFontOfSize: 9]];
+	[button setImage: [aController buttonImage]];
+	[button setImagePosition: NSImageAbove];
+	[button setTarget: aController];
+	[button setAction: [aController buttonAction]];
+
+	[iconList addColumnWithCells: [NSArray arrayWithObject: button]];
+	[iconList sizeToCells];
+	[iconList setNeedsDisplay: YES];
+//	[prefsPanel addPrefsViewButton: controller];
+}
+
+- (NSBox *) prefsViewBox
+{
+	return box;
 }
 
 @end

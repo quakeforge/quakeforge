@@ -33,8 +33,11 @@ static const char rcsid[] =
 # include "Config.h"
 #endif
 
+#import <Foundation/NSDebug.h>
+
 #import <AppKit/NSApplication.h>
 #import <AppKit/NSMenu.h>
+
 #import "Controller.h"
 #import "PrefsController.h"
 
@@ -98,7 +101,7 @@ static const char rcsid[] =
 	NSLog (@"This _would_ open a project, but it doesn't.");
 }
 
-- (void) saveAll: (id) sender;
+- (void) saveProject: (id) sender;
 {
 	NSLog (@"This _would_ save, but it doesn't.");
 }
@@ -106,7 +109,7 @@ static const char rcsid[] =
 - (void) showPreferencesPanel: (id) sender;
 {
 	NSDebugLog (@"Showing Preferences panel...");
-	[[PrefsController sharedPrefsController] orderFrontPreferencesPanel: self];
+	[prefsController orderFrontPreferencesPanel: self];
 }
 
 /*
@@ -120,6 +123,7 @@ static const char rcsid[] =
 */
 - (void) applicationDidFinishLaunching: (NSNotification *) not;
 {
+	[bundleController loadBundles];
 }
 
 /*
@@ -130,149 +134,18 @@ static const char rcsid[] =
 - (void) applicationWillFinishLaunching: (NSNotification *) not;
 {
 	NSMenu	*menu = [NSApp mainMenu];
-	NSMenu	*info;
-	NSMenu	*project;
-	NSMenu	*file;
-	NSMenu	*edit;
-	NSMenu	*windows;
-	NSMenu	*services;
-
-	[menu addItemWithTitle: _(@"Info")		action: NULL	keyEquivalent: @""];
-	[menu addItemWithTitle: _(@"Project")	action: NULL	keyEquivalent: @""];
-	[menu addItemWithTitle: _(@"File")		action: NULL	keyEquivalent: @""];
-	[menu addItemWithTitle: _(@"Edit")		action: NULL	keyEquivalent: @""];
-	[menu addItemWithTitle: _(@"Windows")	action: NULL	keyEquivalent: @""];
-	[menu addItemWithTitle: _(@"Services")	action: NULL	keyEquivalent: @""];
-
-	[menu addItemWithTitle: _(@"Hide")		action: @selector(hide:)	keyEquivalent: @"h"];
-	[menu addItemWithTitle: _(@"Quit")		action: @selector(terminate:)	keyEquivalent: @"q"];
-
-	/*
-		Info
-	*/
-	NSDebugLog (@"Info");
-	info = [[[NSMenu alloc] init] autorelease];
-	[menu setSubmenu: info	forItem: [menu itemWithTitle: _(@"Info")]];
-
-	[info addItemWithTitle: _(@"Info Panel...")
-					action: @selector (orderFrontStandardAboutPanel:)
-			 keyEquivalent: @""];
-	[info addItemWithTitle: _(@"Preferences...")
-					action: @selector (showPreferencesPanel:)
-			 keyEquivalent: @""];
-	[info addItemWithTitle: _(@"Help")
-					action: @selector (orderFrontHelpPanel:)
-			 keyEquivalent: @"?"];
-
-	/*
-		Project
-	*/
-	NSDebugLog (@"Project");
-	project = [[[NSMenu alloc] init] autorelease];
-	[menu setSubmenu: project	forItem: [menu itemWithTitle: _(@"Project")]];
-
-	[project addItemWithTitle: _(@"Open...")
-					   action: @selector (openProject:)
-				keyEquivalent: @"o"];
-	[project addItemWithTitle: _(@"New")
-					   action: @selector (createNewProject:)
-				keyEquivalent: @"n"];
-	[project addItemWithTitle: _(@"Save...")
-					   action: @selector (saveProject:)
-				keyEquivalent: @"s"];
-	[project addItemWithTitle: _(@"Save As...")
-					   action: @selector (saveProjectAs:)
-				keyEquivalent: @"S"];
-	[project addItemWithTitle: _(@"Close")
-					   action: @selector (closeProject:)
-				keyEquivalent: @""];
-
-	/*
-		File
-	*/
-	NSDebugLog (@"File");
-	file = [[[NSMenu alloc] init] autorelease];
-	[menu setSubmenu: file	forItem: [menu itemWithTitle: _(@"File")]];
-
-	[file addItemWithTitle: _(@"Add File...")
-					action: @selector (addFileToProject:)
-			 keyEquivalent: @"a"];
-	[file addItemWithTitle: _(@"Add New File...")
-					action: @selector (addNewFileToProject:)
-			 keyEquivalent: @"N"];
-	[file addItemWithTitle: _(@"Save File")
-					action: @selector (saveFile:)
-			 keyEquivalent: @"f"];
-	[file addItemWithTitle: _(@"Revert to Saved")
-					action: @selector (revertToSaved:)
-			 keyEquivalent: @""];
-	[file addItemWithTitle: _(@"Close")
-					action: @selector (close:)
-			 keyEquivalent: @""];
-
-	/*
-		Edit
-	*/
-	NSDebugLog (@"Edit");
-	edit = [[[NSMenu alloc] init] autorelease];
-	[menu setSubmenu: edit forItem: [menu itemWithTitle: _(@"Edit")]];
-	
-	[edit addItemWithTitle: _(@"Undo")
-					action: @selector (undo:)
-			 keyEquivalent: @"z"];
-	[edit addItemWithTitle: _(@"Redo")
-					action: @selector (redo:)
-			 keyEquivalent: @"Z"];
-	[edit addItemWithTitle: _(@"Cut")
-					action: @selector (cut:)
-			 keyEquivalent: @"x"];
-	[edit addItemWithTitle: _(@"Copy")
-					action: @selector (copy:)
-			 keyEquivalent: @"c"];
-	[edit addItemWithTitle: _(@"Paste")
-					action: @selector (paste:)
-			 keyEquivalent: @"v"];
-	[edit addItemWithTitle: _(@"Delete")
-					action: @selector (delete:)
-			 keyEquivalent: @""];
-	[edit addItemWithTitle: _(@"Select All")
-					action: @selector (selectAll:)
-			 keyEquivalent: @"a"];
 
 	/*
 		Windows
 	*/
 	NSDebugLog (@"Windows");
-	windows = [[[NSMenu alloc] init] autorelease];
-	[menu setSubmenu: windows forItem: [menu itemWithTitle: _(@"Windows")]];
-
-	[windows addItemWithTitle: _(@"Close Window")
-					action: @selector (performClose:)
-			 keyEquivalent: @"w"];
-	[windows addItemWithTitle: _(@"Miniaturize Window")
-					action: @selector (performMiniaturize:)
-			 keyEquivalent: @"m"];
-	[windows addItemWithTitle: _(@"Arrange in Front")
-					action: @selector (arrangeInFront:)
-			 keyEquivalent: @""];
-
-	[NSApp setWindowsMenu: windows];
+	[NSApp setWindowsMenu: [[menu itemWithTitle: _(@"Windows")] submenu]];
 
 	/*
 		Services
 	*/
 	NSDebugLog (@"Services");
-	services = [[[NSMenu alloc] init] autorelease];
-
-	[NSApp setServicesMenu: services];
-	[menu setSubmenu: services	forItem: [menu itemWithTitle: _(@"Services")]];
-
-	{	// yeah, yeah, shaddap
-		id	controller = [[BundleController alloc] init];
-
-		[controller setDelegate: self];
-		[controller loadBundles];
-	}
+	[NSApp setServicesMenu: [[menu itemWithTitle: _(@"Services")] submenu]];
 }
 
 /*
@@ -281,6 +154,13 @@ static const char rcsid[] =
 	We're about to die, but AppKit is giving us a chance to clean up
 */
 - (void) applicationWillTerminate: (NSNotification *) not;
+{
+}
+
+/******
+	Nib awakening
+******/
+- (void) awakeFromNib
 {
 }
 
@@ -315,12 +195,17 @@ static const char rcsid[] =
 	[[(id <ForgeBundle>) [aBundle principalClass] alloc] initWithOwner: self];
 }
 
+- (PrefsController *) prefsController;
+{
+	return prefsController;
+}
+
 - (BOOL) registerPrefsController: (id <PrefsViewController>) aPrefsController
 {
 	if (!aPrefsController)
 		return NO;
 
-	[[PrefsController sharedPrefsController] addPrefsViewController: aPrefsController];
+	[prefsController addPrefsViewController: aPrefsController];
 	return YES;
 }
 

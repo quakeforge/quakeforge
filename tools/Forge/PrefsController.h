@@ -31,12 +31,23 @@
 # include "Config.h"
 #endif
 
-#import <AppKit/NSWindowController.h>
+#import <Foundation/NSObject.h>
+
+#import <AppKit/NSBox.h>
+#import <AppKit/NSMatrix.h>
+#import <AppKit/NSScrollView.h>
+#import <AppKit/NSNibDeclarations.h>
 
 #import "PrefsView.h"
 
-@interface PrefsController: NSWindowController
+@interface PrefsController: NSObject
 {
+	IBOutlet NSBox			*box;
+	IBOutlet NSMatrix		*iconList;
+	IBOutlet NSScrollView	*scrollView;
+	IBOutlet id				owner;
+
+	IBOutlet NSWindow		*window;
 }
 
 + (PrefsController *) sharedPrefsController;
@@ -60,4 +71,5 @@
 - (void) loadPreferences: (id) sender;
 - (void) resetToDefaults: (id) sender;
 
+- (NSBox *) prefsViewBox;
 @end

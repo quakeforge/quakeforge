@@ -1,5 +1,5 @@
 /*
-	MainPrefsController.m
+	MainPrefs.m
 
 	Controller class for this bundle
 
@@ -34,14 +34,17 @@ static const char rcsid[] =
 # include "Config.h"
 #endif
 
+#import <Foundation/NSDebug.h>
+#import <Foundation/NSPathUtilities.h>
+#import <Foundation/NSUserDefaults.h>
+#import <Foundation/NSValue.h>
+
 #import <AppKit/NSButton.h>
 #import <AppKit/NSNibLoading.h>
 #import <AppKit/NSOpenPanel.h>
 
-#import "PrefsPanel.h"
 #import "PrefsController.h"
 #import "MainPrefs.h"
-#import "MainPrefsView.h"
 
 @interface MainPrefs (Private)
 
@@ -174,21 +177,12 @@ static id <BundleDelegate>	owner = nil;
 		self = [super init];
 		owner = anOwner;
 		[owner registerPrefsController: self];
-		if (![NSBundle loadNibNamed: @"MainPrefs" owner: self]) {
-			NSLog (@"MainPrefs: Could not load nib \"MainPrefs\", using compiled-in version");
-			view = [[MainPrefsView alloc] initWithOwner: self andFrame: PrefsRect];
+		if (![NSBundle loadNibNamed: @"MainPrefs" owner: self])
+			return nil;
 
-			// hook up to our outlet(s)
-			projectPathField = [view projectPathField];
-			bundlesFromUserButton = [view bundlesFromUserButton];
-			bundlesFromLocalButton = [view bundlesFromLocalButton];
-			bundlesFromNetworkButton = [view bundlesFromNetworkButton];
-			bundlesFromSystemButton = [view bundlesFromSystemButton];
-		} else {
-			// window can be any size, as long as it's 486x228 :)
-			view = [window contentView];
-		}
-		[view retain];
+		// window can be any size, as long as it's 486x228 :)
+		view = [[window contentView] retain];
+		[window setExcludedFromWindowsMenu: YES];
 
 		[self loadPrefs: self];
 
@@ -223,7 +217,7 @@ static id <BundleDelegate>	owner = nil;
 
 - (void) showView: (id) sender;
 {
-	[[(PrefsPanel *)[[PrefsController sharedPrefsController] window] prefsViewBox] setContentView: view];
+	[[[owner prefsController] prefsViewBox] setContentView: view];
 	[view setNeedsDisplay: YES];
 }
 

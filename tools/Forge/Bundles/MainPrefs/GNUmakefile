@@ -5,17 +5,16 @@ BUNDLE_EXTENSION=	.forgeb
 #
 # We don't install this bundle, it goes inside the app.
 #
-#BUNDLE_INSTALL_DIR=	$(GNUSTEP_LOCAL_ROOT)/Library/Forge
+BUNDLE_INSTALL_DIR=	none
+MainPrefs_STANDARD_INSTALL= no
 
 MainPrefs_RESOURCE_FILES= \
 	MainPrefs.gorm
 
 MainPrefs_OBJC_FILES=	\
-	MainPrefsView.m \
 	MainPrefs.m
 
 MainPrefs_HEADERS= \
-	MainPrefsView.h \
 	MainPrefs.h
 
 MainPrefs_PRINCIPAL_CLASS= \
