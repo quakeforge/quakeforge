@@ -51,7 +51,7 @@ R_AnimateLight (void)
 
 // light animations
 // 'm' is normal light, 'a' is no light, 'z' is double bright
-	i = (int) (cl.time * 10);
+	i = (int) (r_realtime * 10);
 	for (j = 0; j < MAX_LIGHTSTYLES; j++) {
 		if (!cl_lightstyle[j].length) {
 			d_lightstylevalue[j] = 256;
@@ -169,7 +169,7 @@ R_RenderDlights (void)
 
 	l = cl_dlights;
 	for (i = 0; i < MAX_DLIGHTS; i++, l++) {
-		if (l->die < cl.time || !l->radius)
+		if (l->die < r_realtime || !l->radius)
 			continue;
 		R_RenderDlight (l);
 	}
@@ -294,7 +294,7 @@ R_PushDlights (vec3_t entorigin)
 	l = cl_dlights;
 
 	for (i = 0; i < MAX_DLIGHTS; i++, l++) {
-		if (l->die < cl.time || !l->radius)
+		if (l->die < r_realtime || !l->radius)
 			continue;
 		VectorSubtract (l->origin, entorigin, lightorigin);
 		R_MarkLights (lightorigin, l, 1 << i, cl.worldmodel->nodes);

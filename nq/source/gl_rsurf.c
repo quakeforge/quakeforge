@@ -51,7 +51,6 @@
 
 qboolean	r_cache_thrash;
 
-extern double realtime;
 int			skytexturenum;
 
 extern vec3_t shadecolor;				// Ender (Extend) Colormod
@@ -335,7 +334,7 @@ R_TextureAnimation (texture_t *base)
 	if (!base->anim_total)
 		return base;
 
-	relative = (int) (cl.time * 10) % base->anim_total;
+	relative = (int) (r_realtime * 10) % base->anim_total;
 
 	count = 0;
 	while (base->anim_min > relative || base->anim_max <= relative) {
@@ -723,7 +722,7 @@ R_DrawBrushModel (entity_t *e)
 		vec3_t      lightorigin;
 
 		for (k = 0; k < MAX_DLIGHTS; k++) {
-			if ((cl_dlights[k].die < cl.time) || (!cl_dlights[k].radius))
+			if ((cl_dlights[k].die < r_realtime) || (!cl_dlights[k].radius))
 				continue;
 
 			VectorSubtract (cl_dlights[k].origin, e->origin, lightorigin);

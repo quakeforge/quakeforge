@@ -151,7 +151,7 @@ R_GetSpriteFrame (entity_t *currententity)
 		numframes = pspritegroup->numframes;
 		fullinterval = pintervals[numframes - 1];
 
-		time = cl.time + currententity->syncbase;
+		time = r_realtime + currententity->syncbase;
 
 		// when loading in Mod_LoadSpriteGroup, we guaranteed all interval
 		// values
@@ -466,7 +466,7 @@ GL_DrawAliasBlendedShadow (aliashdr_t *paliashdr, int pose1, int pose2, entity_t
 	int 		*order, count;
 	float       height, lheight, blend;
 
-	blend = (cl.time - e->frame_start_time) / e->frame_interval;
+	blend = (r_realtime - e->frame_start_time) / e->frame_interval;
 	blend = min (blend, 1);
 	lerp = 1 - blend;
 
@@ -535,7 +535,7 @@ R_SetupAliasFrame (int frame, aliashdr_t *paliashdr, qboolean fb)
 
 	if (numposes > 1) {
 		interval = paliashdr->frames[frame].interval;
-		pose += (int) (cl.time / interval) % numposes;
+		pose += (int) (r_realtime / interval) % numposes;
 	}
 
 	GL_DrawAliasFrame (paliashdr, pose, fb);
@@ -558,7 +558,7 @@ R_SetupAliasBlendedFrame (int frame, aliashdr_t *paliashdr, entity_t *e, qboolea
 
 	if (numposes > 1) {
 		e->frame_interval = paliashdr->frames[frame].interval;
-		pose += (int) (cl.time / e->frame_interval) % numposes;
+		pose += (int) (r_realtime / e->frame_interval) % numposes;
 	} else {
 		/*
 			One tenth of a second is good for most Quake animations. If the
@@ -572,7 +572,7 @@ R_SetupAliasBlendedFrame (int frame, aliashdr_t *paliashdr, entity_t *e, qboolea
 	}
 
 	if (e->pose2 != pose) {
-		e->frame_start_time = cl.time;
+		e->frame_start_time = r_realtime;
 		if (e->pose2 == -1) {
 			e->pose1 = pose;
 		} else {
@@ -581,7 +581,7 @@ R_SetupAliasBlendedFrame (int frame, aliashdr_t *paliashdr, entity_t *e, qboolea
 		e->pose2 = pose;
 		blend = 0;
 	} else {
-		blend = (cl.time - e->frame_start_time) / e->frame_interval;
+		blend = (r_realtime - e->frame_start_time) / e->frame_interval;
 	}
 
 	// wierd things start happening if blend passes 1
@@ -639,7 +639,7 @@ R_DrawAliasModel (entity_t *e)
 		shadelight = max (shadelight, 24);
 
 	for (lnum = 0; lnum < MAX_DLIGHTS; lnum++) {
-		if (cl_dlights[lnum].die >= cl.time) {
+		if (cl_dlights[lnum].die >= r_realtime) {
 			VectorSubtract (currententity->origin, cl_dlights[lnum].origin,
 							dist);
 			add = (cl_dlights[lnum].radius * cl_dlights[lnum].radius * 8) /
@@ -696,7 +696,7 @@ R_DrawAliasModel (entity_t *e)
 				  paliashdr->mdl.scale[2]);
 	}
 
-	anim = (int) (cl.time * 10) & 3;
+	anim = (int) (r_realtime * 10) & 3;
 
 	skinnum = currententity->skinnum;
 	if ((skinnum >= paliashdr->mdl.numskins) || (skinnum < 0)) {
@@ -790,7 +790,7 @@ R_ShowNearestLoc (void)
 		dl = CL_AllocDlight (4096);
 		VectorCopy (nearloc->loc, dl->origin);
 		dl->radius = 200;
-		dl->die = cl.time + 0.1;
+		dl->die = r_realtime + 0.1;
 		dl->color[0] = 0;
 		dl->color[1] = 1;
 		dl->color[2] = 0;
@@ -1117,7 +1117,6 @@ R_Mirror (void)
 
 	R_RenderScene ();
 	R_DrawWaterSurfaces ();
-
 
 	gldepthmin = 0;
 	gldepthmax = 1;//XXX 0.5;

@@ -34,8 +34,8 @@
 #include "QF/sys.h"
 
 #include "glquake.h"
+#include "r_shared.h"
 
-extern double realtime;
 extern model_t *loadmodel;
 
 extern qboolean lighthalf;
@@ -212,18 +212,18 @@ EmitWaterPolys (msurface_t *fa)
 			os = v[3];
 			ot = v[4];
 
-			s = os + turbsin[(int) ((ot * 0.125 + realtime) * TURBSCALE) & 255];
+			s = os + turbsin[(int) ((ot * 0.125 + r_realtime) * TURBSCALE) & 255];
 			s *= (1.0 / 64);
 
-			t = ot + turbsin[(int) ((os * 0.125 + realtime) * TURBSCALE) & 255];
+			t = ot + turbsin[(int) ((os * 0.125 + r_realtime) * TURBSCALE) & 255];
 			t *= (1.0 / 64);
 
 			glTexCoord2f (s, t);
 
 			VectorCopy (v, nv);
 			nv[2] += r_waterripple->value
-				* turbsin[(int) ((v[3] * 0.125 + realtime) * TURBSCALE) & 255]
-				* turbsin[(int) ((v[4] * 0.125 + realtime) * TURBSCALE) & 255]
+				* turbsin[(int) ((v[3] * 0.125 + r_realtime) * TURBSCALE) & 255]
+				* turbsin[(int) ((v[4] * 0.125 + r_realtime) * TURBSCALE) & 255]
 				* (1.0 / 64.0);
 
 			glVertex3fv (nv);

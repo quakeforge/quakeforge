@@ -39,9 +39,9 @@
 #include <math.h>
 
 #include "QF/console.h"
+#include "QF/render.h"
 #include "QF/sys.h"
 
-#include "client.h"
 #include "r_local.h"
 
 static int  clip_current;
@@ -256,7 +256,7 @@ R_GetSpriteframe (msprite_t *psprite)
 		numframes = pspritegroup->numframes;
 		fullinterval = pintervals[numframes - 1];
 
-		time = cl.time + currententity->syncbase;
+		time = r_realtime + currententity->syncbase;
 
 		// when loading in Mod_LoadSpriteGroup, we guaranteed all interval
 		// values are positive, so we don't have to worry about division by 0

@@ -1481,7 +1481,7 @@ Host_Frame (float time)
 	if (host_speeds->int_val)
 		time1 = Sys_DoubleTime ();
 
-	SCR_UpdateScreen ();
+	SCR_UpdateScreen (realtime);
 
 	if (host_speeds->int_val)
 		time2 = Sys_DoubleTime ();
@@ -1676,7 +1676,7 @@ Host_Init (void)
 
 	Con_Printf ("€‚ %s initialized €‚\n", PROGRAM);
 
-	SCR_UpdateScreen ();
+	SCR_UpdateScreen (realtime);
 }
 
 

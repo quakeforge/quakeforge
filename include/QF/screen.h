@@ -36,7 +36,7 @@
 void SCR_Init_Cvars (void);
 void SCR_Init (void);
 
-void SCR_UpdateScreen (void);
+void SCR_UpdateScreen (double realtime);
 void SCR_UpdateWholeScreen (void);
 
 void SCR_SizeUp (void);

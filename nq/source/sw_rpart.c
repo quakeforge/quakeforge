@@ -211,7 +211,7 @@ R_ParticleExplosion (vec3_t org)
 		p->next = active_particles;
 		active_particles = p;
 
-		p->die = cl.time + 5;
+		p->die = r_realtime + 5;
 		p->color = ramp1[0];
 		p->ramp = rand () & 3;
 		if (i & 1) {
@@ -247,7 +247,7 @@ R_ParticleExplosion2 (vec3_t org, int colorStart, int colorLength)
 		p->next = active_particles;
 		active_particles = p;
 
-		p->die = cl.time + 0.3;
+		p->die = r_realtime + 0.3;
 		p->color = colorStart + (colorMod % colorLength);
 		colorMod++;
 
@@ -278,7 +278,7 @@ R_BlobExplosion (vec3_t org)
 		p->next = active_particles;
 		active_particles = p;
 
-		p->die = cl.time + 1 + (rand () & 8) * 0.05;
+		p->die = r_realtime + 1 + (rand () & 8) * 0.05;
 
 		if (i & 1) {
 			p->type = pt_blob;
@@ -324,7 +324,7 @@ R_RunParticleEffect (vec3_t org, int color, int count)
 		p->next = active_particles;
 		active_particles = p;
 
-		p->die = cl.time + 0.1 * (rand () % 5);
+		p->die = r_realtime + 0.1 * (rand () % 5);
 		p->color = (color & ~7) + (rand () & 7);
 		p->type = pt_grav;
 		for (j = 0; j < 3; j++) {
@@ -356,7 +356,7 @@ R_LavaSplash (vec3_t org)
 				p->next = active_particles;
 				active_particles = p;
 
-				p->die = cl.time + 2 + (rand () & 31) * 0.02;
+				p->die = r_realtime + 2 + (rand () & 31) * 0.02;
 				p->color = 224 + (rand () & 7);
 				p->type = pt_grav;
 
@@ -396,7 +396,7 @@ R_TeleportSplash (vec3_t org)
 				p->next = active_particles;
 				active_particles = p;
 
-				p->die = cl.time + 0.2 + (rand () & 7) * 0.02;
+				p->die = r_realtime + 0.2 + (rand () & 7) * 0.02;
 				p->color = 7 + (rand () & 7);
 				p->type = pt_grav;
 
@@ -439,7 +439,7 @@ R_RocketTrail (int type, entity_t *ent)
 		active_particles = p;
 
 		VectorCopy (vec3_origin, p->vel);
-		p->die = cl.time + 2;
+		p->die = r_realtime + 2;
 
 		if (type == 4) {				// slight blood
 			p->type = pt_slowgrav;
@@ -455,7 +455,7 @@ R_RocketTrail (int type, entity_t *ent)
 		} else if (type == 6) {			// voor trail
 			p->color = 9 * 16 + 8 + (rand () & 3);
 			p->type = pt_static;
-			p->die = cl.time + 0.3;
+			p->die = r_realtime + 0.3;
 			for (j = 0; j < 3; j++)
 				p->org[j] = ent->old_origin[j] + ((rand () & 15) - 8);
 		} else if (type == 1) {			// smoke smoke
@@ -473,7 +473,7 @@ R_RocketTrail (int type, entity_t *ent)
 		} else if (type == 3 || type == 5) {	// tracer
 			static int  tracercount;
 
-			p->die = cl.time + 0.5;
+			p->die = r_realtime + 0.5;
 			p->type = pt_static;
 			if (type == 3)
 				p->color = 52 + ((tracercount & 4) << 1);
@@ -523,7 +523,7 @@ R_DrawParticles (void)
 	dvel = 4 * frametime;
 
 	for (particle = &active_particles; *particle;) {
-		if ((*particle)->die < cl.time) {
+		if ((*particle)->die < r_realtime) {
 			p = (*particle)->next;
 			(*particle)->next = free_particles;
 			free_particles = (*particle);

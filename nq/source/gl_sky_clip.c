@@ -39,6 +39,7 @@
 #include <stdarg.h>
 
 #include "QF/console.h"
+#include "QF/render.h"
 #include "QF/sys.h"
 
 #include "client.h"

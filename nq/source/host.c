@@ -705,7 +705,7 @@ _Host_Frame (float time)
 	if (host_speeds->int_val)
 		time1 = Sys_DoubleTime ();
 
-	SCR_UpdateScreen ();
+	SCR_UpdateScreen (realtime);
 
 	if (host_speeds->int_val)
 		time2 = Sys_DoubleTime ();
@@ -1001,7 +1001,7 @@ Host_Init (quakeparms_t *parms)
 
 	Sys_Printf ("========Quake Initialized=========\n");
 
-	SCR_UpdateScreen ();
+	SCR_UpdateScreen (realtime);
 }
 
 

@@ -166,7 +166,7 @@ SCR_CenterPrint (char *str)
 {
 	strncpy (scr_centerstring, str, sizeof (scr_centerstring) - 1);
 	scr_centertime_off = scr_centertime->value;
-	scr_centertime_start = cl.time;
+	scr_centertime_start = r_realtime;
 
 	// count the number of lines for centering
 	scr_center_lines = 1;
@@ -189,7 +189,7 @@ SCR_DrawCenterString (void)
 
 	// the finale prints the characters one at a time
 	if (cl.intermission)
-		remaining = scr_printspeed->value * (cl.time - scr_centertime_start);
+		remaining = scr_printspeed->value * (r_realtime - scr_centertime_start);
 	else
 		remaining = 9999;
 
@@ -874,7 +874,7 @@ extern cvar_t	*brightness;
 	needs almost the entire 256k of stack space!
 */
 void
-SCR_UpdateScreen (void)
+SCR_UpdateScreen (double realtime)
 {
 	double      time1 = 0, time2;
 	float       f;
@@ -882,13 +882,15 @@ SCR_UpdateScreen (void)
 	if (block_drawing)
 		return;
 
+	r_realtime = realtime;
+
 	vid.numpages = 2 + gl_triplebuffer->int_val;
 
 	scr_copytop = 0;
 	scr_copyeverything = 0;
 
 	if (scr_disabled_for_loading) {
-		if (realtime - scr_disabled_time > 60) {
+		if (r_realtime - scr_disabled_time > 60) {
 			scr_disabled_for_loading = false;
 			Con_Printf ("load failed.\n");
 		} else {

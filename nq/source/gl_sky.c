@@ -39,14 +39,14 @@
 #include "QF/compat.h"
 #include "QF/console.h"
 #include "QF/quakefs.h"
+#include "QF/render.h"
 #include "QF/tga.h"
 #include "QF/vid.h"
 
 #include "glquake.h"
-#include "QF/render.h"
+#include "r_shared.h"
 #include "view.h"
 
-extern double realtime;
 extern model_t *loadmodel;
 
 extern int  skytexturenum;
@@ -240,7 +240,7 @@ R_DrawSkyDome (void)
 	domescale[0] = 512;
 	domescale[1] = 512;
 	domescale[2] = 128;
-	speedscale = realtime * 8;
+	speedscale = r_realtime * 8;
 	speedscale -= (int) speedscale & ~127;
 	R_DrawSkyLayer (speedscale);
 	glEnable (GL_BLEND);
@@ -251,7 +251,7 @@ R_DrawSkyDome (void)
 		domescale[0] = 512;
 		domescale[1] = 512;
 		domescale[2] = 128;
-		speedscale = realtime * 16;
+		speedscale = r_realtime * 16;
 		speedscale -= (int) speedscale & ~127;
 		R_DrawSkyLayer (speedscale);
 	}

@@ -40,9 +40,10 @@
 
 #include "QF/cmd.h"
 #include "QF/console.h"
+#include "QF/render.h"
 
-#include "client.h"
 #include "glquake.h"
+#include "r_shared.h"
 
 #define MAX_FIRES				128		// rocket flames
 
@@ -77,7 +78,7 @@ R_AddFire (vec3_t start, vec3_t end, entity_t *ent)
 		VectorCopy (end, f->origin);
 		VectorCopy (start, f->owner);
 		f->size = 10;
-		f->die = cl.time + 0.5;
+		f->die = r_realtime + 0.5;
 		f->decay = 1;
 		VectorCopy (r_firecolor->vec, f->color);
 	}
@@ -109,7 +110,7 @@ R_AllocFire (int key)
 
 	f = r_fires;						// no match, look for a free spot
 	for (i = 0; i < MAX_FIRES; i++, f++) {
-		if (f->die < cl.time) {
+		if (f->die < r_realtime) {
 			memset (f, 0, sizeof (*f));
 			f->key = key;
 			return f;
@@ -197,7 +198,7 @@ R_UpdateFires (void)
 
 	f = r_fires;
 	for (i = 0; i < MAX_FIRES; i++, f++) {
-		if (f->die < cl.time || !f->size)
+		if (f->die < r_realtime || !f->size)
 			continue;
 		f->size += f->decay;
 		R_DrawFire (f);

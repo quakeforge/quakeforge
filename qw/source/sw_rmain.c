@@ -469,7 +469,7 @@ R_ShowNearestLoc (void)
 		dl = CL_AllocDlight (4096);
 		VectorCopy (nearloc->loc, dl->origin);
 		dl->radius = 200;
-		dl->die = cl.time + 0.1;
+		dl->die = r_realtime + 0.1;
 		dl->color[1]=1;
 		
 		VectorCopy(nearloc->loc,trueloc);
@@ -520,7 +520,7 @@ R_DrawEntitiesOnList (void)
 					lighting.plightvec = lightvec;
 
 					for (lnum = 0; lnum < MAX_DLIGHTS; lnum++) {
-						if (cl_dlights[lnum].die >= cl.time) {
+						if (cl_dlights[lnum].die >= r_realtime) {
 							VectorSubtract (currententity->origin,
 											cl_dlights[lnum].origin, dist);
 							add = cl_dlights[lnum].radius - Length (dist);
@@ -594,7 +594,7 @@ R_DrawViewModel (void)
 			continue;
 		if (!dl->radius)
 			continue;
-		if (dl->die < cl.time)
+		if (dl->die < r_realtime)
 			continue;
 
 		VectorSubtract (currententity->origin, dl->origin, dist);
@@ -720,7 +720,7 @@ R_DrawBEntitiesOnList (void)
 						vec3_t      lightorigin;
 
 						for (k = 0; k < MAX_DLIGHTS; k++) {
-							if ((cl_dlights[k].die < cl.time) ||
+							if ((cl_dlights[k].die < r_realtime) ||
 								(!cl_dlights[k].radius)) continue;
 
 							VectorSubtract (cl_dlights[k].origin,

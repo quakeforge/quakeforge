@@ -32,11 +32,11 @@
 
 #include "QF/compat.h"
 #include "QF/console.h"
+#include "QF/render.h"
 #include "QF/skin.h"
 #include "QF/texture.h"
 
 #include "glquake.h"
-#include "QF/render.h"
 
 static byte translate[256];
 static unsigned int translate32[256];

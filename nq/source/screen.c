@@ -448,7 +448,7 @@ SCR_DrawNet (void)
 {
 //	if (cls.netchan.outgoing_sequence - cls.netchan.incoming_acknowledged <
 //		UPDATE_BACKUP - 1)
-	if (realtime - cl.last_received_message < 0.3)
+	if (r_realtime - cl.last_received_message < 0.3)
 		return;
 	if (cls.demoplayback)
 		return;
@@ -873,7 +873,7 @@ SCR_DrawNotifyString (void)
 	needs almost the entire 256k of stack space!
 */
 void
-SCR_UpdateScreen (void)
+SCR_UpdateScreen (double realtime)
 {
 	static int  oldscr_viewsize;
 	vrect_t     vrect;
@@ -892,6 +892,8 @@ SCR_UpdateScreen (void)
 			return;
 	}
 #endif
+
+	r_realtime = realtime;
 
 	scr_copytop = 0;
 	scr_copyeverything = 0;
@@ -1017,8 +1019,8 @@ SCR_UpdateScreen (void)
 
 
 void
-SCR_UpdateWholeScreen (void)
+SCR_UpdateWholeScreen (double realtime)
 {
 	scr_fullupdate = 0;
-	SCR_UpdateScreen ();
+	SCR_UpdateScreen (realtime);
 }

@@ -30,7 +30,6 @@
 # include "config.h"
 #endif
 
-#include "client.h"
 #include "r_local.h"
 
 
@@ -241,7 +240,7 @@ R_SetSkyFrame (void)
 	s2 = iskyspeed2 / g;
 	temp = SKYSIZE * s1 * s2;
 
-	skytime = cl.time - ((int) (cl.time / temp) * temp);
+	skytime = r_realtime - ((int) (r_realtime / temp) * temp);
 
 	r_skymade = 0;
 }

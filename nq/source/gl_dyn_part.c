@@ -176,7 +176,7 @@ R_ReadPointFile_f (void)
 	int         c;
 	char        name[MAX_OSPATH], *mapname, *t1;
 
-	mapname = strdup (cl.worldmodel->name);
+	mapname = strdup (r_worldentity.model->name);
 	if (!mapname)
 		Sys_Error ("Can't duplicate mapname!");
 	t1 = strrchr (mapname, '.');
@@ -223,7 +223,7 @@ R_ParticleExplosion (vec3_t org)
 		return;
 
 	particle_new_random (pt_smokecloud, part_tex_smoke[rand () & 7], org, 4, 30,
-						 8, cl.time + 5, (rand () & 7) + 8,
+						 8, r_realtime + 5, (rand () & 7) + 8,
 						 128 + (rand () & 63));
 }
 
@@ -238,7 +238,7 @@ R_ParticleExplosion2 (vec3_t org, int colorStart, int colorLength)
 		return;
 	
 	for (i = 0; i < 512; i++) {
-		particle_new_random (pt_blob, part_tex_dot, org, 16, 2, 256, (cl.time + 0.3), (colorStart + (colorMod % colorLength)), 255);
+		particle_new_random (pt_blob, part_tex_dot, org, 16, 2, 256, (r_realtime + 0.3), (colorStart + (colorMod % colorLength)), 255);
 		colorMod++;
 	}
 }
@@ -254,12 +254,12 @@ R_BlobExplosion (vec3_t org)
 
 	for (i = 0; i < 512; i++) {
 		particle_new_random (pt_blob, part_tex_dot, org, 12, 2, 256,
-							 (cl.time + 1 + (rand () & 8) * 0.05),
+							 (r_realtime + 1 + (rand () & 8) * 0.05),
 							 (66 + rand () % 6), 255);
 	}
 	for (i = 0; i < 512; i++) {
 		particle_new_random (pt_blob2, part_tex_dot, org, 12, 2, 256,
-							 (cl.time + 1 + (rand () & 8) * 0.05),
+							 (r_realtime + 1 + (rand () & 8) * 0.05),
 							 (150 + rand () % 6), 255);
 	}
 }
@@ -272,11 +272,11 @@ R_RunSparkEffect (vec3_t org, int count, int ofuzz)
 		return;
 
 	particle_new (pt_smokecloud, part_tex_smoke[rand () & 7], org, 
-				  (ofuzz / 8) * .75, vec3_origin, cl.time + 99, 
+				  (ofuzz / 8) * .75, vec3_origin, r_realtime + 99, 
 				  12 + (rand () & 3), 96, vec3_origin, vec3_origin);
 	while (count--)
 		particle_new_random (pt_fallfadespark, part_tex_spark, org, ofuzz * .75,
-							 1, 96, cl.time + 5, ramp[rand () % 6], 
+							 1, 96, r_realtime + 5, ramp[rand () % 6], 
 							 lhrandom (0, 255));
 }
 
@@ -306,7 +306,7 @@ R_BloodPuff (vec3_t org, int count)
 		return;
 
 	particle_new (pt_bloodcloud, part_tex_smoke[rand () & 7], org, 9,
-				  vec3_origin, cl.time + 99, 68 + (rand () & 3), 128,
+				  vec3_origin, r_realtime + 99, 68 + (rand () & 3), 128,
 				  vec3_origin, vec3_origin);
 }
 
@@ -352,7 +352,7 @@ R_RunParticleEffect (vec3_t org, int color, int count)
 			porg[j] = org[j] + scale * ((rand () & 15) - 8);
 		}
 		particle_new (pt_grav, part_tex_dot, porg, 1.5, vec3_origin,
-					  (cl.time + 0.1 * (rand () % 5)),
+					  (r_realtime + 0.1 * (rand () % 5)),
 					  (color & ~7) + (rand () & 7), 255, vec3_origin, vec3_origin);
 	}
 }
@@ -402,7 +402,7 @@ R_LavaSplash (vec3_t org)
 			vel = 50 + (rand () & 63);
 			VectorScale (dir, vel, pvel);
 			particle_new (pt_grav, part_tex_dot, porg, 3, pvel,
-						  (cl.time + 2 + (rand () & 31) * 0.02),
+						  (r_realtime + 2 + (rand () & 31) * 0.02),
 						  (224 + (rand () & 7)), 193, vec3_origin, vec3_origin);
 		}
 	}
@@ -434,7 +434,7 @@ R_TeleportSplash (vec3_t org)
 				vel = 50 + (rand () & 63);
 				VectorScale (dir, vel, pvel);
 				particle_new (pt_grav, part_tex_spark, porg, 0.6, pvel,
-							  (cl.time + 0.2 + (rand () & 7) * 0.02),
+							  (r_realtime + 0.2 + (rand () & 7) * 0.02),
 							  (7 + (rand () & 7)), 255, vec3_origin, vec3_origin);
 			}
 }
@@ -463,7 +463,7 @@ R_RocketTrail (int type, entity_t *ent)
 		VectorCopy (vec3_origin, up);
 		VectorCopy (vec3_origin, right);
 		VectorCopy (vec3_origin, pvel);
-		pdie = cl.time + 2;
+		pdie = r_realtime + 2;
 		ptype = pt_static;
 		ptex = part_tex_dot;
 		palpha = 255;
@@ -473,7 +473,7 @@ R_RocketTrail (int type, entity_t *ent)
 
 		switch (type) {
 			case 0:					// rocket trail
-				pdie = cl.time + 60;
+				pdie = r_realtime + 60;
 //				ptype = pt_smokering; // Mercury's Rings
 				ptype = pt_smoke;
 				pscale = lhrandom (6, 8);
@@ -512,7 +512,7 @@ R_RocketTrail (int type, entity_t *ent)
 				pcolor = 9 * 16 + 8 + (rand () & 3);
 				ptype = pt_static;
 				pscale = lhrandom (.75, 1.5);
-				pdie = cl.time + 0.3;
+				pdie = r_realtime + 0.3;
 				for (j = 0; j < 3; j++)
 					porg[j] = ent->old_origin[j] + lhrandom (-8, 8);
 				break;
@@ -522,7 +522,7 @@ R_RocketTrail (int type, entity_t *ent)
 					static int  tracercount;
 
 					dist = 3;
-					pdie = cl.time + 0.5;
+					pdie = r_realtime + 0.5;
 					ptype = pt_static;
 					pscale = lhrandom (1.5, 3);
 					if (type == 3)
@@ -592,7 +592,7 @@ R_DrawParticles (void)
 		// LordHavoc: this is probably no longer necessary, as it is
 		// checked at the end, but could still happen on weird particle
 		// effects, left for safety...
-		if (part->die <= cl.time) {
+		if (part->die <= r_realtime) {
 			freeparticles[j++] = part;
 			continue;
 		}
@@ -735,14 +735,14 @@ R_DrawParticles (void)
 		// LordHavoc: immediate removal of unnecessary particles (must
 		// be done to ensure compactor below operates properly in all
 		// cases)
-		if (part->die <= cl.time)
+		if (part->die <= r_realtime)
 			freeparticles[j++] = part;
 	}
 	k = 0;
 	while (maxparticle >= activeparticles) {
 		*freeparticles[k++] = particles[maxparticle--];
 		while (maxparticle >= activeparticles && 
-				particles[maxparticle].die <= cl.time)
+				particles[maxparticle].die <= r_realtime)
 			maxparticle--;
 	}
 	numparticles = activeparticles;
