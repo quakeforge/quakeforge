@@ -65,21 +65,28 @@ R_MaxParticlesCheck (cvar_t *var)
 	Prevents a segfault since if we grabbed the int_val of cl_max_particles
 	we'd sig11 right here at startup.
 */
-	if (r_particles)
-		r_maxparticles = max(var->int_val * r_particles->int_val, 0);
+	if (r_particles && r_particles->int_val)
+		r_maxparticles = var->int_val;
 	else
-		r_maxparticles = max(var->int_val, 0);
+		r_maxparticles = 0;
 
 /*
 	Be very careful the next time we do something like this. calloc/free are
 	IMPORTANT and the compiler doesn't know when we do bad things with them.
 */
-	free (particles);
-	free (freeparticles);
+	if (particles)
+		free (particles);
+	if (freeparticles)
+		free (freeparticles);
 
-	particles = (particle_t *) calloc (r_maxparticles, sizeof (particle_t));
-	freeparticles = (particle_t **) calloc (r_maxparticles,
-											sizeof (particle_t *));
+	particles = 0;
+	freeparticles = 0;
+
+	if (r_maxparticles) {
+		particles = (particle_t *) calloc (r_maxparticles, sizeof (particle_t));
+		freeparticles = (particle_t **) calloc (r_maxparticles,
+												sizeof (particle_t *));
+	}
 
 	R_ClearParticles();
 }

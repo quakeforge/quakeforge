@@ -141,8 +141,11 @@ r_particles_f (cvar_t *var)
 {
 	if (!var->int_val)
 		R_ClearParticles ();
+	r_maxparticles = 0;
+	if (var->int_val && cl_max_particles)
+		r_maxparticles = cl_max_particles->int_val;
 	if (cl_max_particles)
-		r_maxparticles = var->int_val * cl_max_particles->int_val;
+		R_MaxParticlesCheck (cl_max_particles);
 }
 
 void
