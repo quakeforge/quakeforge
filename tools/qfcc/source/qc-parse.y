@@ -10,7 +10,7 @@ extern int pr_source_line;
 void
 yyerror (const char *s)
 {
-	fprintf (stderr, "%s:%d, %s %s\n", strings + s_file, pr_source_line, yytext, s);
+	error (0, "%s %s\n", strings + s_file, pr_source_line, yytext, s);
 }
 
 int yylex (void);
@@ -180,8 +180,7 @@ param_list
 	| param_list ',' param
 		{
 			if ($3->next) {
-				yyerror ("parameter redeclared");
-				yyerror ($3->name);
+				error (0, "parameter redeclared: %s", $3->name);
 				$$ = $1;
 			} else {
 				$3->next = $1;
@@ -213,10 +212,10 @@ opt_initializer
 	| '=' '#' const
 		{
 			if (current_type->type != ev_func) {
-				yyerror ("note a function");
+				error (0, "%s is not a function");
 			} else {
 				if ($3->type != ex_int && $3->type != ex_float) {
-					yyerror ("invalid constant for = #");
+					error (0, "invalid constant for = #");
 				} else {
 					function_t	*f;
 
@@ -480,7 +479,7 @@ parse_params (def_t *parms)
 		for (p = parms; p; p = p->next, new.num_parms++)
 			;
 		if (new.num_parms > MAX_PARMS) {
-			yyerror ("too many params");
+			error (0, "too many params");
 			return current_type;
 		}
 		i = 1;

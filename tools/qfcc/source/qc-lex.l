@@ -6,8 +6,6 @@
 
 #define YY_NO_UNPUT
 
-void error (char*s){fprintf(stderr,"%s:%d: %s\n",strings+s_file,pr_source_line,s);}
-
 int type_or_name (char *token);
 
 int do_grab (char *token);
@@ -40,7 +38,7 @@ m		([\-+]?)
 							while (c == '*')
 								c = input ();
 							if (c == EOF)
-								error ("EOF in comment");
+								error (0, "EOF in comment");
 							if (c == '\n')
 								pr_source_line++;
 						} while (c != '/' && c != EOF);
@@ -129,7 +127,7 @@ m		([\-+]?)
 
 <*>{s}*				/* skip */
 
-<*>.				error ("all your typo are belong to us");
+<*>.				error (0, "all your typo are belong to us");
 
 %%
 

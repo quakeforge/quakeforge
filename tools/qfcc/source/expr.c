@@ -7,7 +7,6 @@
 #include "scope.h"
 #include "qc-parse.h"
 
-void yyerror (const char*);
 extern function_t *current_func;
 
 static etype_t qc_types[] = {
@@ -69,6 +68,48 @@ get_type (expr_t *e)
 			return qc_types[e->type];
 	}
 	return ev_void;
+}
+
+expr_t *
+error (expr_t *e, const char *fmt, ...)
+{
+	va_list     args;
+	string_t file = s_file;
+	int line = pr_source_line;
+	
+	va_start (args, fmt);
+	if (e) {
+		file = e->file;
+		line = e->line;
+	}
+	fprintf (stderr, "%s:%d: ", strings + file, line);
+	vfprintf (stderr, fmt, args);
+	fputs ("\n", stderr);
+	if (e) {
+		e = new_expr ();
+		e->type = ex_int;
+	}
+	va_end (args);
+	pr_error_count++;
+	return e;
+}
+
+void
+warning (expr_t *e, const char *fmt, ...)
+{
+	va_list     args;
+	string_t file = s_file;
+	int line = pr_source_line;
+	
+	va_start (args, fmt);
+	if (e) {
+		file = e->file;
+		line = e->line;
+	}
+	fprintf (stderr, "%s:%d: warning:", strings + file, line);
+	vfprintf (stderr, fmt, args);
+	fputs ("\n", stderr);
+	va_end (args);
 }
 
 expr_t *
@@ -261,8 +302,7 @@ do_op_string (int op, expr_t *e1, expr_t *e2)
 			e1->e.int_val = strcmp (s1, s2) != 0;
 			break;
 		default:
-			yyerror ("invalid operand for string");
-			return 0;
+			return error (e1, "invalid operand for string");
 	}
 	return e1;
 }
@@ -325,8 +365,7 @@ do_op_float (int op, expr_t *e1, expr_t *e2)
 			e1->e.int_val = f1 != f2;
 			break;
 		default:
-			yyerror ("invalid operand for string");
-			return 0;
+			return error (e1, "invalid operand for string");
 	}
 	return e1;
 }
@@ -363,8 +402,7 @@ do_op_vector (int op, expr_t *e1, expr_t *e2)
 							|| (v1[2] != v2[2]);
 			break;
 		default:
-			yyerror ("invalid operand for string");
-			return 0;
+			return error (e1, "invalid operand for string");
 	}
 	return e1;
 }
@@ -372,8 +410,7 @@ do_op_vector (int op, expr_t *e1, expr_t *e2)
 static expr_t *
 do_op_huh (int op, expr_t *e1, expr_t *e2)
 {
-	yyerror ("funny constant");
-	return 0;
+	return error (e1, "funny constant");
 }
 
 static expr_t *(*do_op[]) (int op, expr_t *e1, expr_t *e2) = {
@@ -399,11 +436,9 @@ binary_const (int op, expr_t *e1, expr_t *e2)
 	if (t1 == t2) {
 		return do_op[t1](op, e1, e2);
 	} else {
-		yyerror ("type missmatch for");
-		fprintf (stderr, "%d (%c)\n", op, (op > ' ' && op < 127) ? op : ' ');
-		return 0;
+		return error (e1, "type missmatch for %d (%c)",
+					  op, (op > ' ' && op < 127) ? op : ' ');
 	}
-	return 0;
 }
 
 static expr_t *
@@ -416,8 +451,7 @@ field_expr (expr_t *e1, expr_t *e2)
 	t2 = get_type (e2);
 
 	if (t1 != ev_entity || t2 != ev_field) {
-		yyerror ("type missmatch for .");
-		return 0;
+		return error (e1, "type missmatch for .");
 	}
 
 	e = new_binary_expr ('.', e1, e2);
@@ -440,14 +474,13 @@ binary_expr (int op, expr_t *e1, expr_t *e2)
 
 	if ((op == '&' || op == '|')
 		&& e1->type == ex_uexpr && e1->e.expr.op == '!' && !e1->paren) {
-		fprintf (stderr, "%s:%d: warning: ambiguous logic. Suggest explicit parentheses with expressions involving ! and %c\n",
-				 strings + e1->file, e1->line, op);
+		warning (e1, "ambiguous logic. Suggest explicit parentheses with expressions involving ! and %c", op);
 	}
 
 	t1 = get_type (e1);
 	t2 = get_type (e2);
 	if (t1 == ev_void || t2 == ev_void) {
-		yyerror ("internal error");
+		error (e1, "internal error");
 		abort ();
 	}
 
@@ -489,9 +522,7 @@ binary_expr (int op, expr_t *e1, expr_t *e2)
 				}
 			default:
 type_mismatch:
-				yyerror ("type missmatch");
-				fprintf (stderr, "%d %d\n", t1, t2);
-				return 0;
+				return error (e1, "type missmatch %d %d", t1, t2);
 		}
 	}
 }
@@ -524,7 +555,7 @@ unary_expr (int op, expr_t *e)
 					e->e.float_val *= -1;
 					return e;
 				case ex_string:
-					return 0;		// FIXME
+					return error (e, "invalid type for unary -");
 				case ex_vector:
 					e->e.vector_val[0] *= -1;
 					e->e.vector_val[1] *= -1;
@@ -580,7 +611,7 @@ unary_expr (int op, expr_t *e)
 		default:
 			abort ();
 	}
-	yyerror ("internal error");
+	error (e, "internal error");
 	abort ();
 }
 
@@ -595,9 +626,7 @@ function_expr (expr_t *e1, expr_t *e2)
 	t1 = get_type (e1);
 
 	if (t1 != ev_func) {
-		yyerror ("called object is not a function");
-		fprintf (stderr, "%d\n", t1);
-		return 0;
+		return error (e1, "called object is not a function %d", t1);
 	}
 
 	ftype = e1->type == ex_def
@@ -607,16 +636,13 @@ function_expr (expr_t *e1, expr_t *e2)
 	for (e = e2; e; e = e->next)
 		parm_count++;
 	if (parm_count > 8) {
-		yyerror ("more than 8 paramters");
-		return 0;
+		return error (e1, "more than 8 paramters");
 	}
 	if (ftype->num_parms != -1) {
 		if (parm_count > ftype->num_parms) {
-			yyerror ("too many arguments");
-			return 0;
+			return error (e1, "too many arguments");
 		} else if (parm_count < ftype->num_parms) {
-			yyerror ("too few arguments");
-			return 0;
+			return error (e1, "too few arguments");
 		}
 	}
 	e = new_binary_expr ('c', e1, e2);
@@ -739,8 +765,7 @@ emit_assign_expr (expr_t *e)
 				def_a->ofs = ofs;
 				def_a->initialized = 0;
 			} else {
-				fprintf (stderr, "%s:%d: assignment to constant %s\n",
-						 strings + e->file, e->line, def_a->name);
+				error (e1, "assignment to constant %s", def_a->name);
 			}
 		}
 		if (e2->type == ex_expr) {
@@ -927,9 +952,8 @@ emit_expr (expr_t *e)
 					emit_statement (op_state, def_a, def_b, 0);
 					break;
 				default:
-					fprintf (stderr,
-							 "%s:%d: warning: unused expression ignored\n",
-							 strings + e->file, e->line);
+					warning (e, "unused expression ignored");
+					break;
 			}
 			break;
 		case ex_uexpr:
@@ -944,9 +968,7 @@ emit_expr (expr_t *e)
 					emit_branch (op_goto, 0, e->e.expr.e1);
 					break;
 				default:
-					fprintf (stderr,
-							 "%s:%d: warning: unused expression ignored\n",
-							 strings + e->file, e->line);
+					warning (e, "unused expression ignored");
 					emit_expr (e->e.expr.e1);
 					break;
 			}
@@ -957,8 +979,7 @@ emit_expr (expr_t *e)
 		case ex_string:
 		case ex_vector:
 		case ex_quaternion:
-			fprintf (stderr, "%s:%d: warning: unused expression ignored\n",
-					 strings + e->file, e->line);
+			warning (e, "unused expression ignored");
 			break;
 	}
 	PR_FreeTempDefs ();
