@@ -243,6 +243,19 @@ bi_Menu_SelectMenu (progs_t *pr)
 	const char *name = G_STRING (pr, OFS_PARM0);
 
 	menu = Hash_Find (menu_hash, name);
+	if (menu) {
+		key_dest = key_menu;
+		game_target = IMT_CONSOLE;
+	} else {
+		Con_Printf ("no menu \"%s\"\n", name);
+		if (con_data.force_commandline) {
+			key_dest = key_console;
+			game_target = IMT_CONSOLE;
+		} else {
+			key_dest = key_game;
+			game_target = IMT_0;
+		}
+	}
 }
 
 static void
