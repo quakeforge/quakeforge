@@ -104,7 +104,7 @@ Mod_FindName (char *name)
 	model_t    *mod;
 
 	if (!name[0])
-		Sys_Error ("Mod_ForName: NULL name");
+		Sys_Error ("Mod_FindName: NULL name");
 
 //
 // search the currently loaded models
@@ -152,7 +152,7 @@ Mod_LoadModel (model_t *mod, qboolean crash)
 											sizeof (stackbuf));
 	if (!buf) {
 		if (crash)
-			Sys_Error ("Mod_NumForName: %s not found", mod->name);
+			Sys_Error ("Mod_LoadModel: %s not found", mod->name);
 		return NULL;
 	}
 //
@@ -204,7 +204,7 @@ Mod_ForName (char *name, qboolean crash)
 }
 
 /*
-	Mod_Init
+	Mod_Extradata
 
 	Caches the data if needed
 */

@@ -205,7 +205,8 @@ Mod_LoadAliasFrame (void *pin, maliasframedesc_t *frame)
 
 	strcpy (frame->name, pdaliasframe->name);
 
-	for (i = 0; i < 3; i++) {	// byte values, don't worry about endianness
+	for (i = 0; i < 3; i++) {
+		// byte values, don't worry about endianness
 		frame->bboxmin.v[i] = pdaliasframe->bboxmin.v[i];
 		frame->bboxmax.v[i] = pdaliasframe->bboxmax.v[i];
 	}

@@ -117,8 +117,7 @@ Mod_FloodFillSkin (byte * skin, int skinwidth, int skinheight)
 	// can't fill to filled color or to transparent color (used as visited
 	// marker)
 	if ((fillcolor == filledcolor) || (fillcolor == 255)) {
-		// printf( "not filling skin from %d to %d\n", fillcolor, filledcolor 
-		// );
+		//printf ("not filling skin from %d to %d\n", fillcolor, filledcolor);
 		return;
 	}
 
@@ -155,8 +154,12 @@ Mod_LoadSkin (byte * skin, int skinsize, int snum, int gnum, qboolean group)
 	Mod_FloodFillSkin (skin, pheader->mdl.skinwidth, pheader->mdl.skinheight);
 	// save 8 bit texels for the player model to remap
 	if (!strcmp (loadmodel->name, "progs/player.mdl")) {
+		byte       *texels;
 		if (skinsize > sizeof (player_8bit_texels))
 			Sys_Error ("Player skin too large");
+		texels = Hunk_AllocName (skinsize, loadname);
+		pheader->texels[snum] = texels - (byte *) pheader;
+		memcpy (texels, skin, skinsize);
 		memcpy (player_8bit_texels, skin, skinsize);
 	}
 
@@ -256,7 +259,8 @@ Mod_LoadAliasFrame (void *pin, maliasframedesc_t *frame)
 	frame->firstpose = posenum;
 	frame->numposes = 1;
 
-	for (i = 0; i < 3; i++) {	// byte values, don't worry about endianness
+	for (i = 0; i < 3; i++) {
+		// byte values, don't worry about endianness
 		frame->bboxmin.v[i] = pdaliasframe->bboxmin.v[i];
 		frame->bboxmax.v[i] = pdaliasframe->bboxmax.v[i];
 	}
