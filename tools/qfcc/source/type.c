@@ -57,12 +57,6 @@ static __attribute__ ((unused)) const char rcsid[] =
 #include "struct.h"
 #include "type.h"
 
-typedef struct typedef_s {
-	struct typedef_s *next;
-	const char *name;
-	type_t     *type;
-} typedef_t;
-
 // simple types.  function types are dynamically allocated
 type_t      type_void = { ev_void, "void" };
 type_t      type_string = { ev_string, "string" };
@@ -192,17 +186,12 @@ new_typedef (const char *name, type_t *type)
 	Hash_Add (typedef_hash, td);
 }
 
-type_t *
+typedef_t *
 get_typedef (const char *name)
 {
-	typedef_t  *td;
-
 	if (!typedef_hash)
 		return 0;
-	td = Hash_Find (typedef_hash, name);
-	if (!td)
-		return 0;
-	return td->type;
+	return Hash_Find (typedef_hash, name);
 }
 
 type_t *

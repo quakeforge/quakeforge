@@ -48,6 +48,12 @@ typedef struct type_s {
 	} s;
 } type_t;
 
+typedef struct typedef_s {
+	struct typedef_s *next;
+	const char *name;
+	type_t     *type;
+} typedef_t;
+
 extern	type_t	type_void;
 extern	type_t	type_string;
 extern	type_t	type_float;
@@ -86,7 +92,7 @@ struct dstring_s;
 type_t *new_type (void);
 type_t *find_type (type_t *new);
 void new_typedef (const char *name, type_t *type);
-type_t *get_typedef (const char *name);
+typedef_t *get_typedef (const char *name);
 type_t *field_type (type_t *aux);
 type_t *pointer_type (type_t *aux);
 type_t *array_type (type_t *aux, int size);

@@ -356,7 +356,7 @@ type_or_name (char *token)
 {
 	static hashtab_t *keyword_tab;
 	keyword_t  *keyword;
-	type_t     *type;
+	typedef_t  *typename;
 	class_t    *class;
 
 	if (!keyword_tab) {
@@ -378,9 +378,9 @@ type_or_name (char *token)
 	if (token[0] == '@') {
 		return '@';
 	}
-	if ((type = get_typedef (token))) {
-		yylval.type = type;
-		return TYPE;
+	if ((typename = get_typedef (token))) {
+		yylval.typename = typename;
+		return TYPE_NAME;
 	}
 	if ((class = get_class (token, 0))) {
 		yylval.string_val = save_string (token);
