@@ -178,6 +178,9 @@ PR_Opcode_Init_Tables (void)
 	for (op = pr_opcodes; op->name; op++) {
 		if (op->min_version > options.version)
 			continue;
+		if (options.version == PROG_ID_VERSION
+			&& op->type_c == ev_integer)
+			op->type_c = ev_float;
 		Hash_Add (opcode_priority_table, op);
 		Hash_Add (opcode_priority_type_table_ab, op);
 		Hash_Add (opcode_priority_type_table_abc, op);

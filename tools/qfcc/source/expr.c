@@ -731,10 +731,14 @@ type_mismatch:
 	} else {
 		type = types[t1];
 	}
-	if ((op >= OR && op <= GT) || op == '>' || op == '<')
-		type = &type_integer;
-	else if (op == '*' && t1 == ev_vector && t2 == ev_vector)
+	if ((op >= OR && op <= GT) || op == '>' || op == '<') {
+		if (options.version > PROG_ID_VERSION)
+			type = &type_integer;
+		else
+			type = &type_float;
+	} else if (op == '*' && t1 == ev_vector && t2 == ev_vector) {
 		type = &type_float;
+	}
 	if (op == '=' && e1->type == ex_expr && e1->e.expr.op == '.') {
 		e1->e.expr.type = &type_pointer;
 	}
@@ -803,7 +807,10 @@ unary_expr (int op, expr_t *e)
 				case ex_def:
 					{
 						expr_t *n = new_unary_expr (op, e);
-						n->e.expr.type = &type_integer;
+						if (options.version > PROG_ID_VERSION)
+							n->e.expr.type = &type_integer;
+						else
+							n->e.expr.type = &type_float;
 						return n;
 					}
 				case ex_integer:
