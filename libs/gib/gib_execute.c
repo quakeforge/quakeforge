@@ -195,7 +195,7 @@ GIB_Execute (cbuf_t * cbuf)
 	gib_buffer_data_t *g = GIB_DATA (cbuf);
 	gib_builtin_t *b;
 	gib_function_t *f;
-	int         cond;
+	double cond;
 
 	if (!g->program)
 		return;
@@ -206,8 +206,8 @@ GIB_Execute (cbuf_t * cbuf)
 			return;
 		if (g->ip->flags & TREE_COND) {
 			cond =	g->ip->flags & TREE_NOT ? 
-				atoi (cbuf->args->argv[1]->str) :
-				!atoi (cbuf->args->argv[1]->str);
+				atof (cbuf->args->argv[1]->str) :
+				!atof (cbuf->args->argv[1]->str);
 			if (cond)
 				g->ip = g->ip->jump;
 		} else if (g->ip->flags & TREE_FORNEXT) {
