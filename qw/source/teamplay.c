@@ -423,7 +423,7 @@ Locs_Init (void)
 {
 	Cmd_AddCommand ("loc", locs_loc, "Location marker editing commands: 'loc "
 					"help' for more");
-	GIB_Builtin_Add ("loc::get", Locs_Loc_Get, GIB_BUILTIN_NORMAL);
+	GIB_Builtin_Add ("loc::get", Locs_Loc_Get);
 }
 
 static const char *

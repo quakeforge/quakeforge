@@ -864,7 +864,7 @@ Key_Init (cbuf_t *cb)
 					"RECOGNIZED key-press. If the key pressed produces no "
 					"output, " PROGRAM " does not recognise that key.");
 
-	GIB_Builtin_Add ("bind::get", Key_GIB_Bind_Get_f, GIB_BUILTIN_NORMAL);
+	GIB_Builtin_Add ("bind::get", Key_GIB_Bind_Get_f);
 
 }
 
