@@ -46,13 +46,13 @@ asm=
 endif
 
 noinst_LIBRARIES= @qw_libs@ $(asm)
-EXTRA_LIBRARIES=libasm.a libclient.a libcommon.a libnet.a libsdl.a libserver.a
+EXTRA_LIBRARIES=libasm.a libqw_client.a libqw_common.a libqw_net.a libqw_sdl.a libqw_server.a
 
 
 libasm_a_SOURCES= worlda.S
-libcommon_a_SOURCES= com.c game.c msg_ucmd.c pmove.c pmovetst.c net_packetlog.c
-libsdl_a_SOURCES=cl_sys_sdl.c
-libsdl_a_CFLAGS=$(SDL_CFLAGS)
+libqw_common_a_SOURCES= com.c game.c msg_ucmd.c pmove.c pmovetst.c net_packetlog.c
+libqw_sdl_a_SOURCES=cl_sys_sdl.c
+libqw_sdl_a_CFLAGS=$(SDL_CFLAGS)
 
 common_ldflags= -export-dynamic
 
@@ -64,8 +64,8 @@ ipvX_src= $(ipv6_src)
 else
 ipvX_src= $(ipv4_src)
 endif
-libnet_a_SOURCES=	net_chan.c $(ipvX_src)
-EXTRA_libnet_a_SOURCES= $(ipv4_src) $(ipv6_src)
+libqw_net_a_SOURCES=	net_chan.c $(ipvX_src)
+EXTRA_libqw_net_a_SOURCES= $(ipv4_src) $(ipv6_src)
 
 # Server builds
 #
@@ -78,7 +78,7 @@ endif
 
 EXTRA_DIST=sv_sys_win.c sv_sys_unix.c
 
-libserver_a_SOURCES= \
+libqw_server_a_SOURCES= \
 		crudefile.c sv_ccmds.c sv_demo.c sv_ents.c sv_init.c sv_main.c \
 		sv_move.c sv_nchan.c sv_phys.c sv_pr_cmds.c sv_progs.c sv_send.c \
 		sv_user.c world.c $(syssv_SRC)
@@ -94,9 +94,9 @@ qf_server_LIBS= \
 		$(top_builddir)/libs/gib/libQFgib.la
 
 qw_server_SOURCES=	sv_model.c 
-qw_server_LDADD=	libserver.a libcommon.a libnet.a libasm.a $(qf_server_LIBS) $(NET_LIBS) $(DL_LIBS) $(CURSES_LIBS)
+qw_server_LDADD=	libqw_server.a libqw_common.a libqw_net.a libasm.a $(qf_server_LIBS) $(NET_LIBS) $(DL_LIBS) $(CURSES_LIBS)
 qw_server_LDFLAGS=	$(common_ldflags)
-qw_server_DEPENDENCIES=	libcommon.a libserver.a libnet.a libasm.a $(qf_server_LIBS)
+qw_server_DEPENDENCIES=	libqw_common.a libqw_server.a libqw_net.a libasm.a $(qf_server_LIBS)
 
 qw_master_SOURCES=	master.c
 qw_master_LDADD=	$(top_builddir)/libs/util/libQFutil.la $(NET_LIBS)
@@ -116,10 +116,10 @@ qf_client_LIBS= \
 		$(top_builddir)/libs/util/libQFutil.la \
 		$(top_builddir)/libs/gib/libQFgib.la
 
-client_LIBS= libnet.a libasm.a $(qf_client_LIBS)
-client_libs= libclient.a libcommon.a
+client_LIBS= libqw_net.a libasm.a $(qf_client_LIBS)
+client_libs= libqw_client.a libqw_common.a
 
-libclient_a_SOURCES= \
+libqw_client_a_SOURCES= \
 		cl_cam.c cl_cmd.c cl_cvar.c cl_demo.c cl_ents.c cl_input.c \
 		cl_main.c cl_ngraph.c cl_parse.c cl_pred.c \
 		cl_screen.c cl_skin.c cl_slist.c cl_tent.c cl_view.c \
@@ -157,20 +157,20 @@ qw_client_mgl_DEPENDENCIES= $(qw_client_mgl_libs)
 
 # ... Simple DirectMedia Layer, version 1.2 and higher
 qw_client_sdl_libs= \
-			libsdl.a \
+			libqw_sdl.a \
 			$(client_libs) \
 			$(cl_plugin_LIBS) \
 			$(soft_LIBS) \
 			$(top_builddir)/libs/video/targets/libQFsdl.la \
 			$(client_LIBS)
 qw_client_sdl_SOURCES=sdl_link.c
-qw_client_sdl_LDADD= libsdl.a $(qw_client_sdl_libs) $(SDL_LIBS) $(NET_LIBS)
+qw_client_sdl_LDADD= libqw_sdl.a $(qw_client_sdl_libs) $(SDL_LIBS) $(NET_LIBS)
 qw_client_sdl_LDFLAGS=  $(common_ldflags)
-qw_client_sdl_DEPENDENCIES= libsdl.a $(qw_client_sdl_libs)
+qw_client_sdl_DEPENDENCIES= libqw_sdl.a $(qw_client_sdl_libs)
 
 # ... 32-bit software, SDL
 qw_client_sdl32_libs= \
-			libsdl.a \
+			libqw_sdl.a \
 			$(client_libs) \
 			$(cl_plugin_LIBS) \
 			$(top_builddir)/libs/video/renderer/libQFrenderer_sw32.la \
@@ -178,9 +178,9 @@ qw_client_sdl32_libs= \
 			$(top_builddir)/libs/video/targets/libQFsdl32.la \
 			$(client_LIBS)
 qw_client_sdl32_SOURCES=sdl_link.c
-qw_client_sdl32_LDADD= libsdl.a $(qw_client_sdl32_libs) $(SDL_LIBS) $(NET_LIBS)
+qw_client_sdl32_LDADD= libqw_sdl.a $(qw_client_sdl32_libs) $(SDL_LIBS) $(NET_LIBS)
 qw_client_sdl32_LDFLAGS=$(common_ldflags)
-qw_client_sdl32_DEPENDENCIES= libsdl.a $(qw_client_sdl32_libs)
+qw_client_sdl32_DEPENDENCIES= libqw_sdl.a $(qw_client_sdl32_libs)
 
 # ... Linux SVGAlib
 qw_client_svga_libs= \
@@ -242,7 +242,7 @@ qw_client_3dfx_DEPENDENCIES= $(qw_client_3dfx_libs)
 
 # ... Simple DirectMedia Layer, version 1.2 and higher, in GL mode
 qw_client_sgl_libs= \
-			libsdl.a \
+			libqw_sdl.a \
 			$(client_libs) \
 			$(cl_plugin_LIBS) \
 			$(opengl_LIBS) \

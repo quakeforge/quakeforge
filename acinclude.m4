@@ -1129,7 +1129,7 @@ else
 fi
 for qfn_lib in $2; do
 	if eval test x'"${$1_need_'$qfn_lib'}"' = xyes; then
-		qfn_tmp="${$1_libs} lib$qfn_lib.$qfn_ext"
+		qfn_tmp="${$1_libs} lib$1_$qfn_lib.$qfn_ext"
 		eval '$1_libs="$qfn_tmp"'
 	fi
 done

@@ -45,12 +45,12 @@ asm=
 endif
 
 noinst_LIBRARIES= @nq_libs@ $(asm)
-EXTRA_LIBRARIES=libasm.a libclient.a libcommon.a libnet.a libsdl.a libserver.a
+EXTRA_LIBRARIES=libasm.a libnq_client.a libnq_common.a libnq_net.a libnq_sdl.a libnq_server.a
 
 libasm_a_SOURCES=	worlda.S
-libcommon_a_SOURCES=game.c locs.c world.c com.c
-libsdl_a_SOURCES=	sys_sdl.c
-libsdl_a_CFLAGS=	$(SDL_CFLAGS)
+libnq_common_a_SOURCES=game.c locs.c world.c com.c
+libnq_sdl_a_SOURCES=	sys_sdl.c
+libnq_sdl_a_CFLAGS=	$(SDL_CFLAGS)
 
 common_ldflags= -export-dynamic
 
@@ -60,9 +60,9 @@ net_sources= net_win.c net_wins.c
 else
 net_sources= net_bsd.c net_udp.c
 endif
-libnet_a_SOURCES= net_dgrm.c net_loop.c net_main.c net_vcr.c $(net_sources)
+libnq_net_a_SOURCES= net_dgrm.c net_loop.c net_main.c net_vcr.c $(net_sources)
 
-EXTRA_libnet_a_SOURCES= \
+EXTRA_libnq_net_a_SOURCES= \
 		net_dos.c net_bw.c net_bsd.c net_ipx.c net_mp.c net_win.c net_wins.c \
 		net_wipx.c net_udp.c
 
@@ -82,7 +82,7 @@ server_LIBFILES= \
 
 common_LIBFILES= \
 		libasm.a \
-		libnet.a \
+		libnq_net.a \
 		$(top_builddir)/libs/console/libQFconsole.la \
 		$(top_builddir)/libs/gamecode/builtins/libQFgamecode_builtins.la \
 		$(top_builddir)/libs/gamecode/engine/libQFgamecode.la \
@@ -94,17 +94,17 @@ client_LIBS=	$(client_LIBFILES) $(common_LIBFILES)
 server_LIBS=	$(server_LIBFILES) $(common_LIBFILES) $(NET_LIBS)
 server_LIB_DEPS=$(server_LIBFILES) $(common_LIBFILES)
 
-libclient_a_SOURCES= \
+libnq_client_a_SOURCES= \
 		cl_cam.c cl_cmd.c cl_demo.c cl_input.c cl_main.c cl_screen.c \
 		cl_parse.c cl_tent.c cl_view.c host_skin.c skin.c \
 		sbar.c
 
-libserver_a_SOURCES= \
+libnq_server_a_SOURCES= \
 		host.c host_cmd.c pr_cmds.c sv_cvar.c sv_main.c \
 		sv_move.c sv_cl_phys.c sv_phys.c sv_progs.c sv_user.c
 
-client_libs= libserver.a libclient.a libcommon.a
-server_libs = libserver.a libcommon.a
+client_libs= libnq_server.a libnq_client.a libnq_common.a
+server_libs = libnq_server.a libnq_common.a
 
 # Software-rendering targets
 
@@ -138,7 +138,7 @@ nq_mgl_DEPENDENCIES=	$(nq_mgl_libs)
 
 # ... SDL, version 1.2 and higher
 nq_sdl_libs=  \
-			libsdl.a \
+			libnq_sdl.a \
 			$(client_libs) \
 			$(cl_plugin_LIBS) \
 			$(soft_QFLIBS) \
@@ -151,7 +151,7 @@ nq_sdl_DEPENDENCIES=	$(nq_sdl_libs)
 
 # ... 32-bit software, SDL
 nq_sdl32_libs=  \
-			libsdl.a \
+			libnq_sdl.a \
 			$(client_libs) \
 			$(cl_plugin_LIBS) \
 			$(top_builddir)/libs/video/renderer/libQFrenderer_sw32.la \
@@ -223,7 +223,7 @@ nq_glx_DEPENDENCIES=	$(nq_glx_libs)
 
 # ... Simple Directmedia Layer, version 1.2 and higher, in GL mode
 nq_sgl_libs=  \
-			libsdl.a \
+			libnq_sdl.a \
 			$(client_libs) \
 			$(cl_plugin_LIBS) \
 			$(opengl_QFLIBS) \
