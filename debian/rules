@@ -7,7 +7,23 @@
 # This is the debhelper compatibility version to use.
 export DH_COMPAT=2
 
-tmp	:= $(shell pwd)/debian/tmp
+PACKAGE := quakeforge
+common	:= $(PACKAGE)-common
+dev	:= $(PACKAGE)-dev
+gllib	:= $(PACKAGE)-libs-gl
+swlib	:= $(PACKAGE)-libs-sw
+glx	:= $(PACKAGE)-glx
+sdl	:= $(PACKAGE)-sdl
+servers	:= $(PACKAGE)-servers
+sgl	:= $(PACKAGE)-sgl
+svga	:= $(PACKAGE)-svga
+x11	:= $(PACKAGE)-x11
+
+alsa	:= $(PACKAGE)-alsa
+oss	:= $(PACKAGE)-oss
+
+build	:= $(shell pwd)/debian/tmp
+tmp	:= debian/tmp
 
 ifeq ($(DEB_BUILD_GNU_TYPE),)
 RETARGET=
@@ -23,43 +39,167 @@ configure-stamp:
 	./configure --prefix=/usr $(RETARGET) --bindir=/usr/games \
 		    --mandir=\$${prefix}/share/man \
 		    --infodir=\$${prefix}/share/info \
-#		    --with-3dfx=GL
+		    --with-plugin-path=/usr/lib/quakeforge \
+		    --with-clients=glx,sdl,sgl,svga,x11 \
+		    --with-servers=master,nq,qw
 
-	touch configure-stamp
+	touch $@
 
-build: configure-stamp build-stamp
+build: configure-stamp changelog-stamp build-stamp
 build-stamp:
 	dh_testdir
-
-	# Add here commands to compile the package.
-	[ -d CVS ] && $(MAKE) changelog
 	$(MAKE)
+	touch $@
 
-	touch build-stamp
-
+changelog-stamp:
+	dh_testdir
+	# Add here commands to build the changelog
+	[ -d CVS ] && $(MAKE) changelog
+	touch $@
+	
 clean:
 	dh_testdir
 	dh_testroot
-	rm -f build-stamp configure-stamp
+	rm -f build-stamp configure-stamp changelog-stamp
 
 	# Add here commands to clean up after the build process.
 	-$(MAKE) distclean
 
 	dh_clean
 
-install:
+install: DH_OPTIONS=
 install: build
 	dh_testdir
 	dh_testroot
 	dh_clean -k
-	dh_installdirs
 
 	# Add here commands to install the package into debian/tmp.
-	$(MAKE) DESTDIR=$(tmp) install
-	mkdir $(tmp)/etc
-	cp debian/quakeforge.conf $(tmp)/etc
+	$(MAKE) DESTDIR=$(build) install
+	install -m644 -D debian/quakeforge.conf $(build)/etc/quakeforge.conf
 
-	dh_movefiles
+	# quakeforge-common
+	find $(tmp)/etc ! -type d | sed -e "s:^$(tmp)::" > debian/$(common).conffiles
+	dh_movefiles -p$(common) --sourcedir=$(tmp) \
+		etc/quakeforge.conf \
+		usr/lib/libQFcd.so.* \
+		usr/lib/libQFconsole.so.* \
+		usr/lib/libQFgamecode.so.* \
+		usr/lib/libQFgamecode_builtins.so.* \
+		usr/lib/libQFgib.so.* \
+		usr/lib/libQFjs.so.* \
+		usr/lib/libQFmodels.so.* \
+		usr/lib/libQFsound.so.* \
+		usr/lib/libQFutil.so.* \
+		usr/lib/quakeforge/libcd_null.so.* \
+		usr/lib/quakeforge/libsnd_output_disk.so.* \
+		usr/lib/quakeforge/libsnd_render_default.so.*
+	dh_installdocs -p$(common) NEWS TODO
+	dh_installchangelogs -p$(common) ChangeLog
+
+	# quakeforge-dev
+	dh_movefiles -p$(dev) --sourcedir=$(tmp) \
+		usr/lib/libQFcd.*a \
+		usr/lib/libQFcd.so \
+		usr/lib/libQFconsole.*a \
+		usr/lib/libQFconsole.so \
+		usr/lib/libQFgamecode.*a \
+		usr/lib/libQFgamecode.so \
+		usr/lib/libQFgib.*a \
+		usr/lib/libQFgib.so \
+		usr/lib/libQFjs.*a \
+		usr/lib/libQFjs.so \
+		usr/lib/libQFmodels.*a \
+		usr/lib/libQFmodels.so \
+		usr/lib/libQFsound.*a \
+		usr/lib/libQFsound.so \
+		usr/lib/libQFutil.*a \
+		usr/lib/libQFutil.so \
+		usr/include/QF/GL/*.h \
+		usr/include/QF/plugin/*.h \
+		usr/include/QF/*.h \
+		usr/include/*.h
+	install -d -m755 debian/$(dev)/usr/share/doc
+	ln -s $(common) debian/$(dev)/usr/share/doc/$(dev)
+
+	# quakeforge-libs-gl
+	dh_movefiles -p$(gllib) --sourcedir=$(tmp) \
+		usr/lib/libQFmodels_gl.so.* \
+		usr/lib/libQFrenderer_gl.so.*
+	install -d -m755 debian/$(gllib)/usr/share/doc
+	ln -s $(common) debian/$(gllib)/usr/share/doc/$(gllib)
+
+	# quakeforge-libs-sw
+	dh_movefiles -p$(swlib) --sourcedir=$(tmp) \
+		usr/lib/libQFmodels_sw.so.* \
+		usr/lib/libQFrenderer_sw.so.*
+	install -d -m755 debian/$(swlib)/usr/share/doc
+	ln -s $(common) debian/$(swlib)/usr/share/doc/$(swlib)
+
+	# quakeforge-servers
+	dh_movefiles -p$(servers) --sourcedir=$(tmp) \
+		usr/games/qw-master \
+		usr/games/qw-server \
+		usr/games/nq-server \
+		usr/lib/quakeforge/libconsole_server.so.*
+	install -d -m755 debian/$(servers)/usr/share/doc
+	ln -s $(common) debian/$(servers)/usr/share/doc/$(servers)
+
+	# quakeforge-glx
+	dh_movefiles -p$(glx) --sourcedir=$(tmp) \
+		usr/games/nq-glx \
+		usr/games/qw-client-glx \
+		usr/lib/libQFglx.so.*
+	install -d -m755 debian/$(glx)/usr/share/doc
+	ln -s $(common) debian/$(glx)/usr/share/doc/$(glx)
+
+	# quakeforge-sdl
+	dh_movefiles -p$(sdl) --sourcedir=$(tmp) \
+		usr/games/nq-sdl \
+		usr/games/qw-client-sdl \
+		usr/lib/libQFsdl.so.*
+	install -d -m755 debian/$(sdl)/usr/share/doc
+	ln -s $(common) debian/$(sdl)/usr/share/doc/$(sdl)
+
+	# quakeforge-sgl
+	dh_movefiles -p$(sgl) --sourcedir=$(tmp) \
+		usr/games/nq-sgl \
+		usr/games/qw-client-sgl \
+		usr/lib/libQFsgl.so.*
+	install -d -m755 debian/$(sgl)/usr/share/doc
+	ln -s $(common) debian/$(sgl)/usr/share/doc/$(sgl)
+
+	# quakeforge-svga
+	dh_movefiles -p$(svga) --sourcedir=$(tmp) \
+		usr/games/nq-svga \
+		usr/games/qw-client-svga
+	install -d -m755 debian/$(svga)/usr/share/doc
+	ln -s $(common) debian/$(svga)/usr/share/doc/$(svga)
+
+	# quakeforge-x11
+	dh_movefiles -p$(x11) --sourcedir=$(tmp) \
+		usr/games/nq-x11 \
+		usr/games/qw-client-x11 \
+		usr/lib/libQFx11.so.*
+	install -d -m755 debian/$(x11)/usr/share/doc
+	ln -s $(common) debian/$(x11)/usr/share/doc/$(x11)
+
+	# quakeforge-alsa
+	dh_movefiles -p$(alsa) --sourcedir=$(tmp) \
+		usr/lib/quakeforge/libsnd_output_alsa0_9.so.*
+	install -d -m755 debian/$(alsa)/usr/share/doc
+	ln -s $(common) debian/$(alsa)/usr/share/doc/$(alsa)
+
+	# quakeforge-oss
+	dh_movefiles -p$(oss) --sourcedir=$(tmp) \
+		usr/lib/quakeforge/libsnd_output_oss.so.*
+	install -d -m755 debian/$(oss)/usr/share/doc
+	ln -s $(common) debian/$(oss)/usr/share/doc/$(oss)
+
+	# quakeforge
+	find $(tmp) -type d -empty | xargs -r rmdir -p --ignore-fail-on-non-empty
+	dh_movefiles -p$(PACKAGE) --sourcedir=$(tmp)
+	install -d -m755 debian/$(PACKAGE)/usr/share/doc
+	ln -s $(common) debian/$(PACKAGE)/usr/share/doc/$(PACKAGE)
 
 # Build architecture-independent files here.
 # Pass -i to all debhelper commands in this target to reduce clutter.
@@ -74,11 +214,9 @@ binary-arch: build install
 	dh_testversion 2
 	dh_testdir
 	dh_testroot
-	dh_installdocs
 	dh_installexamples
 	dh_installmenu
 	dh_undocumented
-	dh_installchangelogs
 	dh_strip
 	dh_link
 	dh_compress
@@ -86,7 +224,6 @@ binary-arch: build install
 	dh_makeshlibs
 	# You may want to make some executables suid here.
 	chmod 4755 debian/quakeforge-svga/usr/games/qw-client-svga debian/quakeforge-svga/usr/games/nq-svga
-	-chmod 4755 debian/quakeforge-3dfx/usr/games/qw-client-3dfx debian/quakeforge-3dfx/usr/games/nq-3dfx
 	dh_installdeb
 	dh_shlibdeps
 	dh_gencontrol

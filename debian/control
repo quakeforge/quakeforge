@@ -7,9 +7,9 @@ Build-Depends: automake, autoconf, libtool, bison, flex, debhelper, libsdl1.2-de
 
 Package: quakeforge
 Architecture: any
-Depends: quake-game, quakeforge-common, quakeforge-client
+Depends: quakeforge-common, quakeforge-client, quake-game
 Suggests: quakeforge-server
-Description: QuakeForge 3D game engine - Fake package
+Description: 3D game engine - Fake package
  QuakeForge is a source port of Quake and QuakeWorld, the successors to id
  Software's very popular DOOM series. Its primary development goal is to
  remain compatible with the original games released by id Software while
@@ -19,7 +19,7 @@ Description: QuakeForge 3D game engine - Fake package
 
 Package: quakeforge-common
 Architecture: any
-Depends: ${shlibs:Depends}, quake-game
+Depends: quake-game, ${shlibs:Depends}
 Description: QuakeForge 3D game engine - common files
  QuakeForge is a source port of Quake and QuakeWorld, the successors to id
  Software's very popular DOOM series. Its primary development goal is to
@@ -29,10 +29,22 @@ Description: QuakeForge 3D game engine - common files
  This package contains files and shared libraries common to all QuakeForge
  packages.
 
+Package: quakeforge-dev
+Architecture: any
+Depends: quakeforge-common
+Description: QuakeForge 3D game engine - development files
+ QuakeForge is a source port of Quake and QuakeWorld, the successors to id
+ Software's very popular DOOM series. Its primary development goal is to
+ remain compatible with the original games released by id Software while
+ adding portability and optional extensions to enhance gameplay.
+ .
+ This package contains headers and static libraries for the development of
+ utilities and applications for QuakeForge.
+
 Package: quakeforge-sdl
 Architecture: i386
 Conflicts: quake-sdl
-Depends: ${shlibs:Depends}, quake-game
+Depends: quake-game, ${shlibs:Depends}
 Provides: quakeforge-client
 Suggests: joystick
 Description: QuakeForge 3D game engine - SDL client
@@ -47,7 +59,7 @@ Description: QuakeForge 3D game engine - SDL client
 Package: quakeforge-svga
 Architecture: i386
 Conflicts: quake-svga
-Depends: ${shlibs:Depends}, quake-game
+Depends: quake-game, ${shlibs:Depends}
 Provides: quakeforge-client
 Suggests: joystick
 Description: QuakeForge 3D game engine - SVGAlib client
@@ -62,7 +74,7 @@ Description: QuakeForge 3D game engine - SVGAlib client
 Package: quakeforge-x11
 Architecture: any
 Conflicts: quake-x11
-Depends: ${shlibs:Depends}, quake-game
+Depends: quake-game, ${shlibs:Depends}
 Provides: quakeforge-client
 Suggests: joystick
 Description: QuakeForge 3D game engine - X11 client
@@ -77,7 +89,7 @@ Description: QuakeForge 3D game engine - X11 client
 Package: quakeforge-glx
 Architecture: any
 Conflicts: quake-gl
-Depends: ${shlibs:Depends}, libgl1, quake-game
+Depends: quake-game, libgl1, ${shlibs:Depends}
 Provides: quakeforge-client
 Suggests: joystick
 Description: QuakeForge 3D game engine - GLX Client
@@ -92,7 +104,7 @@ Description: QuakeForge 3D game engine - GLX Client
 Package: quakeforge-sgl
 Architecture: any
 Conflicts: quake-sdl
-Depends: ${shlibs:Depends}, quake-game
+Depends: quake-game, libgl1, ${shlibs:Depends}
 Provides: quakeforge-client
 Suggests: joystick
 Description: QuakeForge 3D game engine - SDL-GL client
@@ -104,20 +116,22 @@ Description: QuakeForge 3D game engine - SDL-GL client
  This package contains the SDL-GL versions of the QuakeForge client and
  standalone engine.
 
-Package: quakeforge-server
+Package: quakeforge-servers
 Architecture: any
-Depends: ${shlibs:Depends}, quake-game
-Description: QuakeForge 3D game engine - Server
+Depends: quake-game, ${shlibs:Depends}
+Provides: quakeforge-server
+Description: QuakeForge 3D game engine - Servers
  QuakeForge is a source port of Quake and QuakeWorld, the successors to id
  Software's very popular DOOM series. Its primary development goal is to
  remain compatible with the original games released by id Software while
  adding portability and optional extensions to enhance gameplay.
  .
- This package contains the QuakeWorld-compatible dedicated server.
+ This package contains both the QuakeWorld-compatible and NetQuake-compatible
+ dedicated servers, as well as a simple QuakeWorld-compatible master server.
 
 Package: quakeforge-libs-sw
 Architecture: any
-Depends: ${shlibs:Depends}
+Depends: quakeforge-common, ${shlibs:Depends}
 Description: QuakeForge 3D game engine - Software renderer libraries
  QuakeForge is a source port of Quake and QuakeWorld, the successors to id
  Software's very popular DOOM series. Its primary development goal is to
@@ -129,7 +143,7 @@ Description: QuakeForge 3D game engine - Software renderer libraries
 
 Package: quakeforge-libs-gl
 Architecture: any
-Depends: ${shlibs:Depends}
+Depends: quakeforge-common, ${shlibs:Depends}
 Description: QuakeForge 3D game engine - OpenGL renderer libraries
  QuakeForge is a source port of Quake and QuakeWorld, the successors to id
  Software's very popular DOOM series. Its primary development goal is to
@@ -141,7 +155,7 @@ Description: QuakeForge 3D game engine - OpenGL renderer libraries
 
 Package: quakeforge-oss
 Architecture: any
-Depends: ${shlibs:Depends}
+Depends: quakeforge-common, ${shlibs:Depends}
 Description: OSS digital audio output plugin for QuakeForge
  The OSS plugin for QuakeForge provides digital audio output (using OSS/Linux,
  OSS/Free, or kernel sound) for QuakeForge targets that contain clients.
@@ -152,7 +166,7 @@ Description: OSS digital audio output plugin for QuakeForge
 
 Package: quakeforge-alsa
 Architecture: any
-Depends: ${shlibs:Depends}
+Depends: quakeforge-common, ${shlibs:Depends}
 Description: ALSA 0.9 digital audio output plugin for QuakeForge
  The ALSA 0.9 plugin for QuakeForge provides digital audio output for QuakeForge
  targets that contain clients.
