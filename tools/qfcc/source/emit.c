@@ -515,7 +515,7 @@ emit_sub_expr (expr_t *e, def_t *dest)
 			d = ReuseConstant (e, 0);
 			break;
 		case ex_short:
-			d = new_def (&type_short, 0, current_scope);
+			d = new_def (&type_short, 0, 0);
 			d->ofs = e->e.short_val;
 			d->absolute = 1;
 			d->users = 1;
