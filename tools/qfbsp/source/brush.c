@@ -224,8 +224,13 @@ FindPlane (plane_t *dplane, int *side)
 
 	dp = planes;
 	for (i = 0; i < numbrushplanes; i++, dp++) {
+		vec3_t t;
+		VectorSubtract (dp->normal, pl.normal, t);
 		dot = DotProduct (dp->normal, pl.normal);
 		if (dot > 1.0 - ANGLEEPSILON 
+			&& fabs(t[0]) < DISTEPSILON * DISTEPSILON
+			&& fabs(t[1]) < DISTEPSILON * DISTEPSILON
+			&& fabs(t[2]) < DISTEPSILON * DISTEPSILON
 			&& fabs(dp->dist - pl.dist) < DISTEPSILON) {	// regular match
 			return i;
 		}
