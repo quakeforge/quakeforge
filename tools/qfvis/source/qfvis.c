@@ -269,8 +269,12 @@ GetNextPortal (void)
 		}
 	}
 
-	if (p)
+	if (p) {
+		static int  count;
+		printf ("%5d / %5d  %d\r", count++, numportals * 2, p->nummightsee);
+		fflush (stdout);
 		p->status = stat_selected;
+	}
 
 	UNLOCK;
 
