@@ -1017,7 +1017,7 @@ PF_changeyaw (progs_t *pr)
 #define	MSG_ALL			2				// reliable to all
 #define	MSG_INIT		3				// write to the init string
 
-static sizebuf_t  *
+static sizebuf_t *
 WriteDest (progs_t *pr)
 {
 	int         entnum;
@@ -1048,6 +1048,18 @@ WriteDest (progs_t *pr)
 	}
 
 	return NULL;
+}
+
+// void (float to, ...) WriteBytes
+static void
+PF_WriteBytes (progs_t *pr)
+{
+	int         i;
+	sizebuf_t  *msg = WriteDest (pr);
+
+	for (i = 1; i < pr->pr_argc; i++) {
+		MSG_WriteByte (msg, P_FLOAT (pr, i));
+	}
 }
 
 // void (float to, float f) WriteByte
@@ -1090,6 +1102,24 @@ void
 PF_WriteCoord (progs_t *pr)
 {
 	MSG_WriteCoord (WriteDest (pr), P_FLOAT (pr, 1));
+}
+
+// void (float to, vector v) WriteAngleV
+static void
+PF_WriteAngleV (progs_t *pr)
+{
+	float      *ang = P_VECTOR (pr, 1);
+
+	MSG_WriteAngleV (WriteDest (pr), ang);
+}
+
+// void (float to, vector v) WriteCoordV
+static void
+PF_WriteCoordV (progs_t *pr)
+{
+	float      *ang = P_VECTOR (pr, 1);
+
+	MSG_WriteCoordV (WriteDest (pr), ang);
 }
 
 // void (float to, string s) WriteString
@@ -1383,11 +1413,14 @@ static builtin_t builtins[] = {
 	{"particle",			PF_particle,			48},
 	{"changeyaw",			PF_changeyaw,			49},
 	{"writebyte",			PF_WriteByte,			52},
+	{"WriteBytes",			PF_WriteBytes,			-1},
 	{"writechar",			PF_WriteChar,			53},
 	{"writeshort",			PF_WriteShort,			54},
 	{"writelong",			PF_WriteLong,			55},
 	{"writecoord",			PF_WriteCoord,			56},
 	{"writeangle",			PF_WriteAngle,			57},
+	{"WriteCoordV",			PF_WriteCoordV,			-1},
+	{"WriteAngleV",			PF_WriteAngleV,			-1},
 	{"writestring",			PF_WriteString,			58},
 	{"writeentity",			PF_WriteEntity,			59},
 	{"movetogoal",			SV_MoveToGoal,			67},
