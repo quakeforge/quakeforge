@@ -31,8 +31,9 @@
 #endif
 
 #include "QF/cvar.h"
-#include "glquake.h"
 #include "QF/sys.h"
+
+#include "glquake.h"
 
 extern double realtime;
 extern model_t *loadmodel;
@@ -42,6 +43,7 @@ extern qboolean lighthalf;
 msurface_t *warpface;
 
 extern cvar_t *gl_subdivide_size;
+
 
 void
 BoundPoly (int numverts, float *verts, vec3_t mins, vec3_t maxs)
@@ -60,6 +62,7 @@ BoundPoly (int numverts, float *verts, vec3_t mins, vec3_t maxs)
 				maxs[j] = *v;
 		}
 }
+
 
 void
 SubdividePolygon (int numverts, float *verts)
@@ -144,6 +147,7 @@ SubdividePolygon (int numverts, float *verts)
 	}
 }
 
+
 /*
 	GL_SubdivideSurface
 
@@ -183,11 +187,11 @@ GL_SubdivideSurface (msurface_t *fa)
 //=========================================================
 
 
-
 // speed up sin calculations - Ed
 float       turbsin[] = {
-#	include "gl_warp_sin.h"
+#	include "QF/gl_warp_sin.h"
 };
+
 
 #define TURBSCALE (256.0 / (2 * M_PI))
 
