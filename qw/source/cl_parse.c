@@ -1342,7 +1342,7 @@ CL_ParseServerMessage (void)
 					automatic fraglogging (by elmex)
 					XXX: Should this _really_ called here?  
 				*/
-				Sbar_LogFrags(); 
+				if(!cls.demoplayback) Sbar_LogFrags(); 
 				break;
 
 			case svc_finale:

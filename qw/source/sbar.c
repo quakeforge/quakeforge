@@ -250,9 +250,9 @@ Sbar_Init (void)
 	cl_showscoresuid = Cvar_Get ("cl_showscoresuid", "0", CVAR_NONE, NULL,
 								 "show uid instead of ping on scores");
 
-	fs_fraglog = Cvar_Get ("fs_fraglog", "qw-scores.log", CVAR_NONE, NULL,
+	fs_fraglog = Cvar_Get ("fs_fraglog", "qw-scores.log", CVAR_ARCHIVE, NULL,
 								 "filename of the automatic frag-log");
-	cl_fraglog = Cvar_Get ("cl_fraglog", "0", CVAR_NONE, NULL,
+	cl_fraglog = Cvar_Get ("cl_fraglog", "0", CVAR_ARCHIVE, NULL,
 								 "automatic fraglogging, non-zero value will switch it on");
 }
 
