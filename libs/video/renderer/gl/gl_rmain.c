@@ -133,15 +133,13 @@ R_RotateForEntity (entity_t *e)
 }
 
 static mspriteframe_t *
-R_GetSpriteFrame (entity_t *currententity)
+R_GetSpriteFrame (entity_t *currententity, msprite_t *psprite)
 {
-	msprite_t  *psprite;
 	mspritegroup_t *pspritegroup;
 	mspriteframe_t *pspriteframe;
 	int         i, numframes, frame;
 	float      *pintervals, fullinterval, targettime, time;
 
-	psprite = currententity->model->cache.data;
 	frame = currententity->frame;
 
 	if ((frame >= psprite->numframes) || (frame < 0)) {
@@ -186,8 +184,8 @@ R_DrawSpriteModel (entity_t *e)
 
 	// don't even bother culling, because it's just a single
 	// polygon without a surface cache
-	frame = R_GetSpriteFrame (e);
-	psprite = currententity->model->cache.data;
+	psprite = Cache_Get (&currententity->model->cache);
+	frame = R_GetSpriteFrame (e, psprite);
 
 	if (psprite->type == SPR_ORIENTED) {	// bullet marks on walls
 		AngleVectors (currententity->angles, v_forward, v_right, v_up);
@@ -226,6 +224,8 @@ R_DrawSpriteModel (entity_t *e)
 	qfglEnd ();
 
 	qfglDisable (GL_ALPHA_TEST);
+
+	Cache_Release (&currententity->model->cache);
 }
 
 /*

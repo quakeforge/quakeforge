@@ -49,7 +49,7 @@
 #include "QF/vfs.h"
 
 void        Mod_LoadAliasModel (model_t *mod, void *buf, cache_allocator_t allocator);
-void        Mod_LoadSpriteModel (model_t *mod, void *buf);
+void        Mod_LoadSpriteModel (model_t *mod, void *buf, cache_allocator_t allocator);
 void        Mod_LoadBrushModel (model_t *mod, void *buf);
 model_t	*Mod_RealLoadModel (model_t *mod, qboolean crash, cache_allocator_t allocator);
 void		Mod_CallbackLoad (void *object, cache_allocator_t allocator);
@@ -160,12 +160,14 @@ model_t    *
 Mod_LoadModel (model_t *mod, qboolean crash)
 {
 	if (!mod->needload) {
-		if (mod->type == mod_alias) {
+		if (mod->type == mod_alias || mod->type == mod_sprite) {
 			if (Cache_Check (&mod->cache))
 				return mod;
 		} else
 			return mod;					// not cached at all
 	}
+	if (Cache_Check (&mod->cache))
+		Cache_Free (&mod->cache);
 	return Mod_RealLoadModel (mod, crash, Cache_Alloc);
 }
 
@@ -201,7 +203,7 @@ Mod_RealLoadModel (model_t *mod, qboolean crash, cache_allocator_t allocator)
 			break;
 
 		case IDSPRITEHEADER:
-			Mod_LoadSpriteModel (mod, buf);
+			Mod_LoadSpriteModel (mod, buf, allocator);
 			break;
 
 		default:
@@ -220,8 +222,8 @@ Mod_RealLoadModel (model_t *mod, qboolean crash, cache_allocator_t allocator)
 void
 Mod_CallbackLoad (void *object, cache_allocator_t allocator)
 {
-	if (((model_t *)object)->type != mod_alias)
-		Sys_Error ("Mod_CallbackLoad for non-alias model?  FIXME!\n");
+	if (((model_t *)object)->type == mod_brush)
+		Sys_Error ("Mod_CallbackLoad for mod_brush not yet supported.  FIXME!\n");
 	// FIXME: do we want crash set to true?
 	Mod_RealLoadModel (object, true, allocator);
 }
@@ -263,6 +265,6 @@ Mod_Print (void)
 
 	Con_Printf ("Cached models:\n");
 	for (i = 0, mod = mod_known; i < mod_numknown; i++, mod++) {
-		Con_Printf ("%8p : %s\n", mod->cache.data, mod->name);
+		Con_Printf ("%8p : %s\n", Cache_Check (&mod->cache), mod->name);
 	}
 }

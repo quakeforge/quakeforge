@@ -282,7 +282,7 @@ R_DrawSprite (void)
 	vec3_t      tvec;
 	float       dot, angle, sr, cr;
 
-	psprite = currententity->model->cache.data;
+	psprite = Cache_Get (&currententity->model->cache);
 
 	r_spritedesc.pspriteframe = R_GetSpriteframe (psprite);
 
@@ -378,4 +378,6 @@ R_DrawSprite (void)
 	R_RotateSprite (psprite->beamlength);
 
 	R_SetupAndDrawSprite ();
+
+	Cache_Release (&currententity->model->cache);
 }
