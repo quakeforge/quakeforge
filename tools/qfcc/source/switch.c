@@ -326,7 +326,7 @@ build_switch (expr_t *sw, case_node_t *tree, int op, expr_t *sw_val,
 		for (i = 0; i <= high - low; i++) {
 			reloc_t    *ref;
 
-			ref = new_reloc (G_INT (def->ofs) + i, rel_def_op);
+			ref = new_reloc (def->ofs + i, rel_def_op);
 			ref->next = tree->labels[i]->e.label.refs;
 			tree->labels[i]->e.label.refs = ref;
 		}

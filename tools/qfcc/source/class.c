@@ -188,10 +188,9 @@ class_begin (class_type_t *class_type)
 		EMIT_STRING (pr_category->category_name, category->name);
 		EMIT_STRING (pr_category->class_name, class->name);
 		EMIT_DEF (pr_category->protocols,
-				emit_protocol_list (category->protocols,
-					va ("%s_%s",
-						class->name,
-						category->name)));
+				  emit_protocol_list (category->protocols,
+									  va ("%s_%s", class->name,
+										  category->name)));
 	} else {
 		def_t      *meta_def;
 		pr_class_t *meta;
