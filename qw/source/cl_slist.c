@@ -698,7 +698,7 @@ SL_CheckStatus (const char *cs_from, const char *cs_data)
 			if (strcmp (cs_from, temp->server) == 0)
 			{
 				int i;
-				char *data = Hunk_TempAlloc (strlen (cs_data) + 1);
+				char *data = strdup (cs_data);
 				strcpy (data, cs_data);
 				for (i = 0; i < strlen(data); i++)
 					if (data[i] == '\n') {
@@ -717,6 +717,7 @@ SL_CheckStatus (const char *cs_from, const char *cs_data)
 					temp->desc = realloc(temp->desc, strlen(data) + 1);
 					strcpy(temp->desc, data);
 				}
+				free (data);
 				return (1);
 			}
 		}		
