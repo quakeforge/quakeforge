@@ -242,6 +242,7 @@ Skin_Process (skin_t *skin, tex_t *tex)
 	int pixels = tex->width * tex->height;
 	byte *ptexels = Hunk_TempAlloc (pixels);
 
+	skin->fb_texture = 0;
 	if (Mod_CalcFullbright (tex->data, ptexels, pixels)) {
 		skin->fb_texture = skin_fb_textures + (skin - skin_cache);
 		build_skin (skin->fb_texture, ptexels, tex->width, tex->height,
