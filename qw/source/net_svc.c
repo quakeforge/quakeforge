@@ -312,7 +312,8 @@ NET_SVC_Playerinfo_Parse (net_svc_playerinfo_t *block, msg_t *msg)
 
 	if (block->flags & PF_MODEL)
 		block->modelindex = MSG_ReadByte (msg);
-	// FIXME: handle else
+	else
+		block->modelindex = 0; // suboptimal, but oh well
 
 	if (block->flags & PF_SKINNUM)
 		block->skinnum = MSG_ReadByte (msg);
@@ -356,6 +357,9 @@ NET_SVC_Nails_Parse (net_svc_nails_t *block, msg_t *msg)
 		block->nails[i].angles[1] = 360 * bits[5] / 256;
 		block->nails[i].angles[2] = 0;
 	}
+
+	if (block->numnails > MAX_PROJECTILES)
+		block->numnails = MAX_PROJECTILES;
 
 	return msg->badread;
 }

@@ -252,7 +252,10 @@ V_ParseDamage (void)
 	vec3_t		forward, right, up;
 	net_svc_damage_t damage;
 
-	NET_SVC_Damage_Parse (&damage, net_message);
+	if (NET_SVC_Damage_Parse (&damage, net_message)) {
+		Host_NetError ("V_ParseDamage: Bad Read\n");
+		return;
+	}
 
 	count = damage.blood * 0.5 + damage.armor * 0.5;
 	if (count < 10)

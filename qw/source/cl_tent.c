@@ -50,6 +50,7 @@ static const char rcsid[] =
 #include "cl_main.h"
 #include "cl_tent.h"
 #include "client.h"
+#include "host.h"
 #include "net_svc.h"
 #include "r_dynamic.h"
 
@@ -188,6 +189,12 @@ CL_ParseBeam (net_svc_tempentity_t *tempentity, model_t *m)
 	beam_t     *b;
 	int         i;
 
+	if (tempentity->beamentity >= MAX_EDICTS) {
+		Host_NetError ("CL_ParseBeam: beamentity %i >= MAX_EDICTS",
+					   tempentity->beamentity);
+		return;
+	}
+
 	// override any beam with the same entity
 	for (i = 0, b = cl_beams; i < MAX_BEAMS; i++, b++)
 		if (b->entity == tempentity->beamentity) {
@@ -222,7 +229,10 @@ CL_ParseTEnt (void)
 	int          rnd;
 	net_svc_tempentity_t tempentity;
 
-	NET_SVC_TempEntity_Parse (&tempentity, net_message);
+	if (NET_SVC_TempEntity_Parse (&tempentity, net_message)) {
+		Host_NetError ("CL_ParseTEnt: Bad Read\n");
+		return;
+	}
 
 	switch (tempentity.type) {
 		case TE_WIZSPIKE:				// spike hitting wall
@@ -365,7 +375,7 @@ CL_ParseTEnt (void)
 			break;
 
 		default:
-			Sys_Error ("CL_ParseTEnt: bad tempentity.type");
+			Sys_Error ("CL_ParseTEnt: bad tempentity.type %i", tempentity.type);
 	}
 }
 

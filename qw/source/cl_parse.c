@@ -408,11 +408,13 @@ CL_ParseDownload (void)
 	int         r;
 	net_svc_download_t download;
 
-	NET_SVC_Download_Parse (&download, net_message);
-
-	if (cls.demoplayback) {
-		return;							// not in demo playback
+	if (NET_SVC_Download_Parse (&download, net_message)) {
+		Host_NetError ("CL_ParseDownload: Bad Read\n");
+		return;
 	}
+
+	if (cls.demoplayback)
+		return;							// not in demo playback
 
 	if (download.size == -1) {
 		Con_Printf ("File not found.\n");
@@ -426,13 +428,11 @@ CL_ParseDownload (void)
 	}
 
 	if (download.size == -2) {
-		const char *newname = download.name;
-
-		if (strncmp (newname, cls.downloadname, strlen (cls.downloadname))
-			|| strstr (newname + strlen (cls.downloadname), "/")) {
-			Con_Printf
-				("WARNING: server tried to give a strange new name: %s\n",
-				 newname);
+		// don't compare past the end of cls.downloadname due to gz support
+		if (strncmp (download.name, cls.downloadname, strlen (cls.downloadname))
+			|| strstr (download.name + strlen (cls.downloadname), "/")) {
+			Con_Printf ("WARNING: server tried to give a strange new "
+						"name: %s\n", download.name);
 			CL_RequestNextDownload ();
 			return;
 		}
@@ -440,13 +440,15 @@ CL_ParseDownload (void)
 			Qclose (cls.download);
 			unlink (cls.downloadname);
 		}
-		strncpy (cls.downloadname, newname, sizeof (cls.downloadname));
+		strncpy (cls.downloadname, download.name,
+				 sizeof (cls.downloadname) - 1);
 		Con_Printf ("downloading to %s\n", cls.downloadname);
 		return;
 	}
 
 	if (download.size <= 0) {
 		Host_NetError ("Bad download block, size %d", download.size);
+		return;
 	}
 
 	// open the file if not opened yet
@@ -609,7 +611,10 @@ CL_ParsePrint (void)
 	char			tmpstring[2048];
 	net_svc_print_t	print;
 
-	NET_SVC_Print_Parse (&print, net_message);
+	if (NET_SVC_Print_Parse (&print, net_message)) {
+		Host_NetError ("CL_ParsePrint: Bad Read\n");
+		return;
+	}
 	string = print.message;
 
 	if (print.level == PRINT_CHAT) {
@@ -645,7 +650,6 @@ void
 CL_ParseServerData (void)
 {
 	char        fn[MAX_OSPATH];
-	const char *str;
 	int         protover;
 	qboolean    cflag = false;
 	net_svc_serverdata_t serverdata;
@@ -654,7 +658,10 @@ CL_ParseServerData (void)
 
 	Con_DPrintf ("Serverdata packet received.\n");
 
-	NET_SVC_ServerData_Parse (&serverdata, net_message);
+	if (NET_SVC_ServerData_Parse (&serverdata, net_message)) {
+		Host_NetError ("CL_ParseServerData: Bad Read\n");
+		return;
+	}
 
 	// wipe the client_state_t struct
 	CL_ClearState ();
@@ -672,16 +679,14 @@ CL_ParseServerData (void)
 	cl.servercount = serverdata.servercount;
 
 	// game directory
-	str = serverdata.gamedir;
-
-	if (!strequal (gamedirfile, str)) {
+	if (!strequal (gamedirfile, serverdata.gamedir)) {
 		// save current config
 		Host_WriteConfiguration ();
 		cflag = true;
 		Draw_ClearCache ();
 	}
 
-	COM_Gamedir (str);
+	COM_Gamedir (serverdata.gamedir);
 
 	// ZOID--run the autoexec.cfg in the gamedir
 	// if it exists
@@ -701,14 +706,18 @@ CL_ParseServerData (void)
 	// parse player slot
 	cl.playernum = serverdata.playernum;
 	cl.spectator = serverdata.spectator;
+	if (cl.playernum >= MAX_CLIENTS) {
+		Host_NetError ("CL_ParseServerData: playernum %d >= MAX_CLIENTS",
+					   cl.playernum);
+		return;
+	}
 
 // FIXME: evil hack so NQ and QW can share sound code
 	cl.viewentity = cl.playernum + 1;
 	snd_viewentity = cl.playernum + 1;
 
 	// get the full level name
-	str = serverdata.levelname;
-	strncpy (cl.levelname, str, sizeof (cl.levelname) - 1);
+	strncpy (cl.levelname, serverdata.levelname, sizeof (cl.levelname) - 1);
 
 	// get the movevars
 	memcpy (&movevars, &serverdata.movevars, sizeof (movevars));
@@ -716,7 +725,7 @@ CL_ParseServerData (void)
 	// seperate the printfs so the server message can have a color
 	Con_Printf ("\n\n\35\36\36\36\36\36\36\36\36\36\36\36\36\36\36\36\36\36\36"
 				"\36\36\36\36\36\36\36\36\36\36\36\36\36\36\36\36\36\37\n\n");
-	Con_Printf ("%c%s\n", 2, str);
+	Con_Printf ("%c%s\n", 2, serverdata.levelname);
 
 	// ask for the sound list next
 	memset (cl.sound_name, 0, sizeof (cl.sound_name));
@@ -754,15 +763,20 @@ CL_ParseSoundlist (void)
 	net_svc_soundlist_t soundlist;
 
 	// precache sounds
-	NET_SVC_Soundlist_Parse (&soundlist, net_message);
+	if (NET_SVC_Soundlist_Parse (&soundlist, net_message)) {
+		Host_NetError ("CL_ParseSoundlist: Bad Read\n");
+		return;
+	}
 
 	for (i = 0, numsounds = soundlist.startsound;; i++) {
 		str = soundlist.sounds[i];
 		if (!str[0])
 			break;
 		numsounds++;
-		if (numsounds == MAX_SOUNDS)
-			Host_NetError ("Server sent too many sound_precache");
+		if (numsounds >= MAX_SOUNDS) {
+			Host_NetError ("CL_ParseSoundlist: too many sounds");
+			return;
+		}
 		strcpy (cl.sound_name[numsounds], str);
 	}
 
@@ -787,15 +801,20 @@ CL_ParseModellist (void)
 	net_svc_modellist_t modellist;
 
 	// precache models and note certain default indexes
-	NET_SVC_Modellist_Parse (&modellist, net_message);
+	if (NET_SVC_Modellist_Parse (&modellist, net_message)) {
+		Host_NetError ("CL_ParseModellist: Bad Read\n");
+		return;
+	}
 
 	for (i = 0, nummodels = modellist.startmodel;; i++) {
 		str = modellist.models[i];
 		if (!str[0])
 			break;
 		nummodels++;
-		if (nummodels == MAX_MODELS)
-			Host_NetError ("Server sent too many model_precache");
+		if (nummodels >= MAX_MODELS) {
+			Host_NetError ("CL_ParseModellist: too many models");
+			return;
+		}
 		strncpy (cl.model_name[nummodels], str, MAX_QPATH - 1);
 		cl.model_name[nummodels][MAX_QPATH - 1] = '\0';
 
@@ -835,7 +854,21 @@ CL_ParseSpawnBaseline ()
 	entity_state_t *es;
 	net_svc_spawnbaseline_t block;
 
-	NET_SVC_SpawnBaseline_Parse (&block, net_message);
+	if (NET_SVC_SpawnBaseline_Parse (&block, net_message)) {
+		Host_NetError ("CL_ParseSpawnBaseline: Bad Read\n");
+		return;
+	}
+
+	if (block.num >= MAX_EDICTS) {
+		Host_NetError ("CL_ParseSpawnBaseline: num %i >= MAX_EDICTS",
+					   block.num);
+		return;
+	}
+	if (block.modelindex >= MAX_MODELS) {
+		Host_NetError ("CL_ParseSpawnBaseline: modelindex %i >= MAX_MODELS",
+					   block.modelindex);
+		return;
+	}
 
 	es = &cl_baselines[block.num];
 
@@ -867,10 +900,21 @@ CL_ParseStatic (void)
 	entity_t   *ent;
 	net_svc_spawnstatic_t block;
 
-	NET_SVC_SpawnStatic_Parse (&block, net_message);
+	if (NET_SVC_SpawnStatic_Parse (&block, net_message)) {
+		Host_NetError ("CL_ParseStatic: Bad Read\n");
+		return;
+	}
 
-	if (cl.num_statics >= MAX_STATIC_ENTITIES)
+	if (block.modelindex >= MAX_MODELS) {
+		Host_NetError ("CL_ParseStatic: modelindex %i >= MAX_MODELS",
+					   block.modelindex);
+		return;
+	}
+
+	if (cl.num_statics >= MAX_STATIC_ENTITIES) {
 		Host_NetError ("Too many static entities");
+		return;
+	}
 	ent = &cl_static_entities[cl.num_statics++];
 	CL_Init_Entity (ent);
 
@@ -890,7 +934,10 @@ CL_ParseStaticSound (void)
 {
 	net_svc_spawnstaticsound_t block;
 
-	NET_SVC_SpawnStaticSound_Parse (&block, net_message);
+	if (NET_SVC_SpawnStaticSound_Parse (&block, net_message)) {
+		Host_NetError ("CL_ParseStaticSound: Bad Read\n");
+		return;
+	}
 
 	S_StaticSound (cl.sound_precache[block.sound_num], block.position,
 				   block.volume, block.attenuation);
@@ -903,10 +950,20 @@ CL_ParseStartSoundPacket (void)
 {
 	net_svc_sound_t sound;
 
-	NET_SVC_Sound_Parse (&sound, net_message);
+	if (NET_SVC_Sound_Parse (&sound, net_message)) {
+		Host_NetError ("CL_ParseStartSoundPacket: Bad Read\n");
+		return;
+	}
 
-	if (sound.entity > MAX_EDICTS)
+	if (sound.entity >= MAX_EDICTS) {
 		Host_NetError ("CL_ParseStartSoundPacket: ent = %i", sound.entity);
+		return;
+	}
+	if (sound.sound_num >= MAX_SOUNDS) {
+		Host_NetError ("CL_ParseStartSoundPacket: sound_num = %i",
+					   sound.sound_num);
+		return;
+	}
 
 	S_StartSound (sound.entity, sound.channel,
 				  cl.sound_precache[sound.sound_num], sound.position,
@@ -978,11 +1035,16 @@ CL_ParseUpdateUserInfo (void)
 	player_info_t *player;
 	net_svc_updateuserinfo_t updateuserinfo;
 
-	NET_SVC_UpdateUserInfo_Parse (&updateuserinfo, net_message);
+	if (NET_SVC_UpdateUserInfo_Parse (&updateuserinfo, net_message)) {
+		Host_NetError ("CL_ParseUpdateUserInfo: Bad Read\n");
+		return;
+	}
 
-	if (updateuserinfo.slot >= MAX_CLIENTS)
-		Host_NetError ("CL_ParseServerMessage: svc_updateuserinfo > "
-					   "MAX_SCOREBOARD");
+	if (updateuserinfo.slot >= MAX_CLIENTS) {
+		Host_NetError ("CL_ParseUpdateUserInfo: slot %i >= MAX_CLIENTS",
+					   updateuserinfo.slot);
+		return;
+	}
 
 	player = &cl.players[updateuserinfo.slot];
 	player->userid = updateuserinfo.userid;
@@ -999,10 +1061,15 @@ CL_SetInfo (void)
 	player_info_t  *player;
 	net_svc_setinfo_t setinfo;
 
-	NET_SVC_SetInfo_Parse (&setinfo, net_message);
+	if (NET_SVC_SetInfo_Parse (&setinfo, net_message)) {
+		Host_NetError ("CL_SetInfo: Bad Read\n");
+		return;
+	}
 
-	if (setinfo.slot >= MAX_CLIENTS)
-		Host_NetError ("CL_ParseServerMessage: svc_setinfo > MAX_SCOREBOARD");
+	if (setinfo.slot >= MAX_CLIENTS) {
+		Host_NetError ("CL_SetInfo: slot %i >= MAX_CLIENTS", setinfo.slot);
+		return;
+	}
 
 	player = &cl.players[setinfo.slot];
 
@@ -1022,7 +1089,10 @@ CL_ServerInfo (void)
 {
 	net_svc_serverinfo_t block;
 
-	NET_SVC_ServerInfo_Parse (&block, net_message);
+	if (NET_SVC_ServerInfo_Parse (&block, net_message)) {
+		Host_NetError ("CL_ServerInfo: Bad Read\n");
+		return;
+	}
 
 	Con_DPrintf ("SERVERINFO: %s=%s\n", block.key, block.value);
 

@@ -338,8 +338,8 @@ CL_ParsePacketEntities (void)
 		}
 
 		if (index >= MAX_PACKET_ENTITIES) {
-			Host_NetError ("CL_ParsePacketEntities: index == "
-						   "MAX_PACKET_ENTITIES");
+			Host_NetError ("CL_ParsePacketEntities: index %i >= "
+						   "MAX_PACKET_ENTITIES", index);
 			return;
 		}
 
@@ -350,6 +350,11 @@ CL_ParsePacketEntities (void)
 							 &newp->entities[index],
 							 block.vars[index].state.flags);
 		newp->entities[index].number = block.vars[index].state.number;
+		if (newp->entities[index].modelindex >= MAX_MODELS) {
+			Host_NetError ("CL_ParsePacketEntities: modelindex %i >= "
+						   "MAX_MODELS", newp->entities[index].modelindex);
+			return;
+		}
 		continue;
 	}
 
@@ -386,7 +391,7 @@ CL_ParseDeltaPacketEntities ()
 	oldpacket = cl.frames[newpacket].delta_sequence;
 
 	if ((from & UPDATE_MASK) != (oldpacket & UPDATE_MASK))
-		Con_DPrintf ("WARNING: from mismatch\n");
+		Con_DPrintf ("CL_ParseDeltaPacketEntities: WARNING: from mismatch\n");
 
 	full = false;
 	if (oldpacket != -1) {
@@ -410,16 +415,11 @@ CL_ParseDeltaPacketEntities ()
 
 	for (i = 0;; i++) {
 		word = block.vars[i].word;
-		if (net_message->badread) {			// something didn't parse right...
-			Host_NetError ("msg_badread in packetentities");
-			return;
-		}
-
 		if (!word) {	// copy rest of ents from old packet
 			while (oldindex < oldp->num_entities) {	
 //				Con_Printf ("copy %i\n", oldp->entities[oldindex].number);
 				if (newindex >= MAX_PACKET_ENTITIES) {
-					Host_NetError ("CL_ParseDeltaPacketEntities: newindex == "
+					Host_NetError ("CL_ParseDeltaPacketEntities: newindex >= "
 								   "MAX_PACKET_ENTITIES (1st)");
 					return;
 				}
@@ -436,13 +436,14 @@ CL_ParseDeltaPacketEntities ()
 		while (newnum > oldnum) {
 //		if (newnum > oldnum) {
 			if (full) {
-				Con_Printf ("WARNING: oldcopy on full update");
+				Con_Printf ("CL_ParseDeltaPacketEntities: WARNING: "
+							"oldcopy on full update");
 				return;
 			}
 //			Con_Printf ("copy %i\n", oldnum);
 			// copy one of the old entities over to the new packet unchanged
 			if (newindex >= MAX_PACKET_ENTITIES) {
-				Host_NetError ("CL_ParseDeltaPacketEntities: newindex == "
+				Host_NetError ("CL_ParseDeltaPacketEntities: newindex >= "
 							   "MAX_PACKET_ENTITIES (2nd)");
 				return;
 			}
@@ -458,14 +459,15 @@ CL_ParseDeltaPacketEntities ()
 			if (word & U_REMOVE) {
 				if (full) {
 					cl.validsequence = 0;
-					Con_Printf ("WARNING: U_REMOVE on full update\n");
+					Con_Printf ("CL_ParseDeltaPacketEntities: "
+								"WARNING: U_REMOVE on full update\n");
 					return;
 				}
 				continue;
 			}
 
 			if (newindex >= MAX_PACKET_ENTITIES) {
-				Host_NetError ("CL_ParseDeltaPacketEntities: newindex == "
+				Host_NetError ("CL_ParseDeltaPacketEntities: newindex >= "
 							   "MAX_PACKET_ENTITIES (3rd)");
 				return;
 			}
@@ -476,6 +478,12 @@ CL_ParseDeltaPacketEntities ()
 								 &newp->entities[newindex],
 								 block.vars[i].state.flags);
 			newp->entities[newindex].number = block.vars[i].state.number;
+			if (newp->entities[newindex].modelindex >= MAX_MODELS) {
+				Host_NetError ("CL_ParsePacketEntities: modelindex %i >= "
+							   "MAX_MODELS",
+							   newp->entities[newindex].modelindex);
+				return;
+			}
 			newindex++;
 			continue;
 		}
@@ -499,6 +507,13 @@ CL_ParseDeltaPacketEntities ()
 								 &newp->entities[newindex],
 								 block.vars[i].state.flags);
 			newp->entities[newindex].number = block.vars[i].state.number;
+			if (newp->entities[newindex].modelindex >= MAX_MODELS) {
+				Host_NetError ("CL_ParsePacketEntities: modelindex %i >= "
+							   "MAX_MODELS",
+							   newp->entities[newindex].modelindex);
+				return;
+			}
+
 			newindex++;
 			oldindex++;
 		}
@@ -686,7 +701,10 @@ CL_ParseProjectiles (void)
 	projectile_t *pr;
 	net_svc_nails_t block;
 
-	NET_SVC_Nails_Parse (&block, net_message);
+	if (NET_SVC_Nails_Parse (&block, net_message)) {
+		Host_NetError ("CL_ParseProjectiles: Bad Read\n");
+		return;
+	}
 
 	for (i = 0; i < block.numnails; i++) {
 		if (cl_num_projectiles == MAX_PROJECTILES)
@@ -742,11 +760,21 @@ CL_ParsePlayerinfo (void)
 	player_state_t *state;
 	net_svc_playerinfo_t block;
 
-	NET_SVC_Playerinfo_Parse (&block, net_message);
+	if (NET_SVC_Playerinfo_Parse (&block, net_message)) {
+		Host_NetError ("CL_ParsePlayerinfo: Bad Read\n");
+		return;
+	}
 
-	if (block.playernum > MAX_CLIENTS)
-//		Sys_Error ("CL_ParsePlayerinfo: bad block.playernum");
-		Host_NetError ("CL_ParsePlayerinfo: bad block.playernum");
+	if (block.playernum >= MAX_CLIENTS) {
+		Host_NetError ("CL_ParsePlayerinfo: playernum %i >= MAX_CLIENTS",
+					   block.playernum);
+		return;
+	}
+	if (block.modelindex >= MAX_MODELS) {
+		Host_NetError ("CL_ParsePlayerinfo: modelindex %i >= MAX_MODELS",
+					   block.modelindex);
+		return;
+	}
 
 	state = &cl.frames[parsecountmod].playerstate[block.playernum];
 
