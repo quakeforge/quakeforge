@@ -577,16 +577,19 @@ void
 CL_ParseProjectiles (void)
 {
 	byte		bits[6];
-	int			i, c, j;
+	int			i, c, d, j;
 	entity_t   *pr;
 
 	c = MSG_ReadByte (net_message);
-	for (i = 0; i < c; i++) {
+
+	if ((cl_num_projectiles + c) >= MAX_PROJECTILES)
+		d = MAX_PROJECTILES - cl_num_projectiles;
+	else
+		d = c;
+
+	for (i = 0; i < d; i++) {
 		for (j = 0; j < 6; j++)
 			bits[j] = MSG_ReadByte (net_message);
-
-		if (cl_num_projectiles == MAX_PROJECTILES)
-			continue;
 
 		pr = &cl_projectiles[cl_num_projectiles];
 		cl_num_projectiles++;
@@ -598,6 +601,12 @@ CL_ParseProjectiles (void)
 		pr->origin[2] = ((bits[3] + ((bits[4] & 15) << 8)) << 1) - 4096;
 		pr->angles[0] = (bits[4] >> 4) * (360.0 / 16.0);
 		pr->angles[1] = bits[5] * (360.0 / 256.0);
+	}
+
+	if (d < c) {
+		c = (c - d) * 6;
+		for (i = 0; i < c; i++)
+			MSG_ReadByte (net_message);
 	}
 }
 
@@ -741,36 +750,36 @@ CL_AddFlagModels (entity_t *ent, int team, int key)
 	if (ent->frame >= 29 && ent->frame <= 40) {
 		if (ent->frame >= 29 && ent->frame <= 34) {	// axpain
 			if (ent->frame == 29)
-				f += 2.0;
+				f = 16.0;
 			else if (ent->frame == 30)
-				f += 8.0;
+				f = 22.0;
 			else if (ent->frame == 31)
-				f += 12.0;
+				f = 26.0;
 			else if (ent->frame == 32)
-				f += 11.0;
+				f = 25.0;
 			else if (ent->frame == 33)
-				f += 10.0;
+				f = 24.0;
 			else if (ent->frame == 34)
-				f += 4.0;
+				f = 18.0;
 		} else if (ent->frame >= 35 && ent->frame <= 40) {	// pain
 			if (ent->frame == 35)
-				f += 2.0;
+				f = 16.0;
 			else if (ent->frame == 36)
-				f += 10.0;
+				f = 24.0;
 			else if (ent->frame == 37)
-				f += 10.0;
+				f = 24.0;
 			else if (ent->frame == 38)
-				f += 8.0;
+				f = 22.0;
 			else if (ent->frame == 39)
-				f += 4.0;
+				f = 18.0;
 			else if (ent->frame == 40)
-				f += 2.0;
+				f = 16.0;
 		}
 	} else if (ent->frame >= 103 && ent->frame <= 118) {
 		if (ent->frame >= 103 && ent->frame <= 106)		// 103-104 nailattack
-			f += 6.0;									// 105-106 light
+			f = 20.0;									// 105-106 light
 		else if (ent->frame >= 107 && ent->frame <= 118)
-			f += 7.0;			// 107-112 rocketattack    112-118 shotattack
+			f = 21.0;			// 107-112 rocketattack    112-118 shotattack
 	}
 
 	newent = R_NewEntity ();
