@@ -1,7 +1,7 @@
 /*
 	game.c
 
-	game specific support (notably hipnotic, rogue and abyss)
+	game specific support
 
 	Copyright (C) 1996-1997  Id Software, Inc.
 	Copyright (C) 1999,2000  contributors of the QuakeForge project
@@ -31,11 +31,59 @@
 #ifdef HAVE_CONFIG_H
 # include <config.h>
 #endif
+#ifdef HAVE_STRING_H
+# include <string.h>
+#endif
+#ifdef HAVE_STRINGS_H
+# include <strings.h>
+#endif
+
+#include "QF/cmd.h"
+#include "QF/console.h"
+#include "QF/info.h"
 #include "QF/qargs.h"
 #include "QF/quakefs.h"
 #include "game.h"
+#include "server.h"
 
-qboolean standard_quake = false;
+extern qboolean is_server;
+
+/*
+	SV_Gamedir_f
+
+	Sets the gamedir and path to a different directory.
+*/
+
+void
+SV_Gamedir_f (void)
+{
+	char       *dir;
+
+	if (Cmd_Argc () == 1) {
+		Con_Printf ("Current gamedir: %s\n", gamedirfile);
+		return;
+	}
+
+	if (Cmd_Argc () != 2) {
+		Con_Printf ("Usage: gamedir <newdir>\n");
+		return;
+	}
+
+	dir = Cmd_Argv (1);
+
+	if (strstr (dir, "..") || strstr (dir, "/")
+		|| strstr (dir, "\\") || strstr (dir, ":")) {
+		Con_Printf ("Gamedir should be a single filename, not a path\n");
+		return;
+	}
+
+	COM_Gamedir (dir);
+
+	if (is_server) {
+		Info_SetValueForStarKey (svs_info, "*gamedir", dir,
+								 MAX_SERVERINFO_STRING);
+	}
+}
 
 /*
     Game_Init
@@ -43,18 +91,6 @@ qboolean standard_quake = false;
 void
 Game_Init (void)
 {
-	int     i;
-	// FIXME: make this dependant on QF metadata in the mission packs
-	standard_quake = true;
-	if ((i = COM_CheckParm ("-hipnotic"))) {
-		COM_CreateGameDirectory ("hipnotic");
-		standard_quake = false;
-	}
-	if ((i = COM_CheckParm ("-rogue"))) {
-		COM_CreateGameDirectory ("rogue");
-		standard_quake = false;
-	}
-	if ((i = COM_CheckParm ("-abyss"))) {
-		COM_CreateGameDirectory ("abyss");
-	}
+	Cmd_AddCommand ("gamedir", SV_Gamedir_f,
+					"Specifies the directory to be used while playing.");
 }

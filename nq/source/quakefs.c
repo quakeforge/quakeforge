@@ -65,17 +65,15 @@
 #include "QF/compat.h"
 #include "QF/console.h"
 #include "QF/cvar.h"
-#include "draw.h"
 #include "QF/hash.h"
-#include "host.h"
 #include "QF/info.h"
 #include "QF/qargs.h"
 #include "QF/qendian.h"
 #include "QF/qtypes.h"
 #include "QF/quakefs.h"
-#include "server.h"
 #include "QF/sys.h"
 #include "QF/va.h"
+#include "QF/zone.h"
 
 #ifndef HAVE_FNMATCH_PROTO
 int         fnmatch (const char *__pattern, const char *__string, int __flags);
@@ -679,10 +677,8 @@ COM_LoadFile (char *path, int usehunk)
 		Sys_Error ("COM_LoadFile: not enough space for %s", path);
 
 	((byte *) buf)[len] = 0;
-	Draw_BeginDisc ();
 	Qread (h, buf, len);
 	Qclose (h);
-	Draw_EndDisc ();
 
 	return buf;
 }
@@ -941,12 +937,6 @@ COM_AddDirectory (char *dir)
 void
 COM_AddGameDirectory (char *dir)
 {
-	// FIXME: make this dependant on QF metadata in the mission packs
-	if (strequal (dir, "hipnotic") || strequal (dir, "rogue"))
-		standard_quake = false;
-	else
-		standard_quake = true;
-
 	Con_DPrintf ("COM_AddGameDirectory (\"%s/%s\")\n",
 				 fs_sharepath->string, dir);
 
@@ -1030,15 +1020,6 @@ COM_Filesystem_Init (void)
 			where = strtok (NULL, ",");
 		}
 		free (gamedirs);
-	}
-	if ((i = COM_CheckParm ("-hipnotic"))) {
-		COM_CreateGameDirectory ("hipnotic");
-	}
-	if ((i = COM_CheckParm ("-rogue"))) {
-		COM_CreateGameDirectory ("rogue");
-	}
-	if ((i = COM_CheckParm ("-abyss"))) {
-		COM_CreateGameDirectory ("abyss");
 	}
 	// any set gamedirs will be freed up to here
 	com_base_searchpaths = com_searchpaths;

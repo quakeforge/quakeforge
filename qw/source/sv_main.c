@@ -43,6 +43,7 @@
 #include "buildnum.h"
 #include "QF/cmd.h"
 #include "QF/compat.h"
+#include "game.h"
 #include "model.h"
 #include "net.h"
 #include "QF/msg.h"
@@ -1926,6 +1927,7 @@ SV_Init (void)
 	Cmd_StuffCmds_f ();
 	Cbuf_Execute_Sets ();
 
+	COM_Filesystem_Init ();
 	COM_Init ();
 
 	PR_Init ();

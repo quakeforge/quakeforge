@@ -76,6 +76,7 @@
 #include "QF/console.h"
 #include "QF/cvar.h"
 #include "draw.h"
+#include "game.h"
 #include "host.h"
 #include "input.h"
 #include "QF/keys.h"
@@ -1602,6 +1603,8 @@ Host_Init (void)
 
 	cl_Cmd_Init ();
 	V_Init ();
+	COM_Filesystem_Init ();
+	Game_Init ();
 	COM_Init ();
 
 	NET_Init (PORT_CLIENT);

@@ -73,5 +73,6 @@ void COM_Filesystem_Init (void);
 void COM_Filesystem_Init_Cvars (void);
 void COM_Path_f (void);
 void COM_Maplist_f (void);
+void COM_CreateGameDirectory (char *gamename);
 
 #endif // __quakefs_h

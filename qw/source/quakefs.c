@@ -62,27 +62,22 @@
 #include <limits.h>
 
 #include "QF/cmd.h"
-#include "commdef.h"
 #include "QF/compat.h"
 #include "QF/console.h"
 #include "QF/cvar.h"
-#include "draw.h"
 #include "QF/hash.h"
 #include "QF/info.h"
 #include "QF/qargs.h"
 #include "QF/qendian.h"
 #include "QF/qtypes.h"
 #include "QF/quakefs.h"
-#include "server.h"
 #include "QF/sys.h"
 #include "QF/va.h"
+#include "QF/zone.h"
 
 #ifndef HAVE_FNMATCH_PROTO
 int         fnmatch (const char *__pattern, const char *__string, int __flags);
 #endif
-
-
-extern qboolean is_server;
 
 
 /*
@@ -683,14 +678,8 @@ COM_LoadFile (char *path, int usehunk)
 		Sys_Error ("COM_LoadFile: not enough space for %s", path);
 
 	((byte *) buf)[len] = 0;
-	if (!is_server) {
-		Draw_BeginDisc ();
-	}
 	Qread (h, buf, len);
 	Qclose (h);
-	if (!is_server) {
-		Draw_EndDisc ();
-	}
 
 	return buf;
 }
@@ -1003,43 +992,6 @@ COM_Gamedir (char *dir)
 }
 
 /*
-	SV_Gamedir_f
-
-	Sets the gamedir and path to a different directory.
-*/
-
-void
-COM_Gamedir_f (void)
-{
-	char       *dir;
-
-	if (Cmd_Argc () == 1) {
-		Con_Printf ("Current gamedir: %s\n", gamedirfile);
-		return;
-	}
-
-	if (Cmd_Argc () != 2) {
-		Con_Printf ("Usage: gamedir <newdir>\n");
-		return;
-	}
-
-	dir = Cmd_Argv (1);
-
-	if (strstr (dir, "..") || strstr (dir, "/")
-		|| strstr (dir, "\\") || strstr (dir, ":")) {
-		Con_Printf ("Gamedir should be a single filename, not a path\n");
-		return;
-	}
-
-	COM_Gamedir (dir);
-
-	if (is_server) {
-		Info_SetValueForStarKey (svs_info, "*gamedir", dir,
-								 MAX_SERVERINFO_STRING);
-	}
-}
-
-/*
 	COM_CreateGameDirectory
 */
 void
@@ -1057,9 +1009,6 @@ void
 COM_Filesystem_Init (void)
 {
 	int         i;
-
-	Cmd_AddCommand ("gamedir", COM_Gamedir_f,
-					"Specifies the directory to be used while playing.");
 
 	// start up with basegame->string by default
 	COM_CreateGameDirectory (fs_basegame->string);

@@ -1,7 +1,7 @@
 /*
-	game.c
+	game.h
 
-	game specific support (notably hipnotic, rogue and abyss)
+	(description)
 
 	Copyright (C) 1996-1997  Id Software, Inc.
 	Copyright (C) 1999,2000  contributors of the QuakeForge project
@@ -28,33 +28,15 @@
 	$Id$
 */
 
-#ifdef HAVE_CONFIG_H
-# include <config.h>
-#endif
-#include "QF/qargs.h"
-#include "QF/quakefs.h"
-#include "game.h"
+#ifndef __game_h
+#define __game_h
 
-qboolean standard_quake = false;
+#include "QF/qtypes.h"
+#include "QF/cvar.h"
+#include "QF/qdefs.h"
 
-/*
-    Game_Init
-*/
-void
-Game_Init (void)
-{
-	int     i;
-	// FIXME: make this dependant on QF metadata in the mission packs
-	standard_quake = true;
-	if ((i = COM_CheckParm ("-hipnotic"))) {
-		COM_CreateGameDirectory ("hipnotic");
-		standard_quake = false;
-	}
-	if ((i = COM_CheckParm ("-rogue"))) {
-		COM_CreateGameDirectory ("rogue");
-		standard_quake = false;
-	}
-	if ((i = COM_CheckParm ("-abyss"))) {
-		COM_CreateGameDirectory ("abyss");
-	}
-}
+extern cvar_t		*registered;
+
+void Game_Init (void);
+
+#endif // __game_h

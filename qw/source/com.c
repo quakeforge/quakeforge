@@ -87,7 +87,6 @@ COM_Init (void)
 {
 	Cmd_AddCommand ("path", COM_Path_f, "Show what paths Quake is using");
 
-	COM_Filesystem_Init ();
 	COM_CheckRegistered ();
 }
 
