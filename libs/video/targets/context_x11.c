@@ -40,6 +40,10 @@
 # include <unistd.h>
 #endif
 
+#ifdef HAVE_EXECINFO_H
+# include <execinfo.h>
+#endif
+
 #include <signal.h>
 #include <stdlib.h>
 #include <stdio.h>
@@ -101,6 +105,7 @@ cvar_t		*vid_system_gamma;
 qboolean	vid_fullscreen_active;
 static qboolean    vid_context_created = false;
 
+cvar_t		*sys_backtrace;
 cvar_t		*sys_dump_core;
 
 static int	xss_timeout;
@@ -114,6 +119,15 @@ dump_core_callback (cvar_t *sys_dump_core)
 #ifndef HAVE_UNISTD_H
 	if (sys_dump_core->int_val)
 		Con_Printf ("support for dumping core has not been compiled in!\n");
+#endif
+}
+
+void
+backtrace_callback (cvar_t *sys_backtrace)
+{
+#ifndef HAVE_EXECINFO_H
+	if (sys_backtrace->int_val)
+		Con_Printf ("support for printing backtraces has not been compiled in!\n");
 #endif
 }
 
@@ -173,6 +187,23 @@ X11_ProcessEvents (void)
 // ========================================================================
 // Tragic death handler
 // ========================================================================
+void
+dump_backtrace ()
+{
+#ifdef HAVE_EXECINFO_H
+#define MAXDEPTH 30
+	static int count = 0; // don't wanna do this too many times
+	void *array[MAXDEPTH];
+	size_t size;
+	if (sys_backtrace && (count < sys_backtrace->int_val)) {
+		count++;
+		size = backtrace (array, MAXDEPTH);
+		fflush (stderr);
+		backtrace_symbols_fd (array, size, STDERR_FILENO);
+	}
+#endif
+}
+
 
 static void
 TragicDeath (int sig)
@@ -181,6 +212,7 @@ TragicDeath (int sig)
 	if (sys_dump_core && sys_dump_core->int_val == 1) { // paranoid check that is NOT needed at time of writing (cvar init happens before rest of init)
 		if (fork()) {
 			printf ("Received signal %d, dumping core and exiting...\n", sig);
+			dump_backtrace ();
 			Sys_Quit ();
 		} else {
 			signal (SIGABRT, SIG_IGN); // is xlib setting a handler on us?
@@ -189,6 +221,7 @@ TragicDeath (int sig)
 	} else {
 #endif
 		printf ("Received signal %d, exiting...\n", sig);
+		dump_backtrace ();
 		Sys_Quit ();
 		abort();	// Hopefully not an infinite loop. // never reached
 #ifdef HAVE_UNISTD_H
@@ -368,6 +401,7 @@ X11_Init_Cvars (void)
 	vid_system_gamma = Cvar_Get ("vid_system_gamma", "1", CVAR_ARCHIVE, NULL,
 								 "Use system gamma control if available");
 	sys_dump_core = Cvar_Get ("sys_dump_core", "0", CVAR_NONE, dump_core_callback, "Dump core on Tragic Death.  Be sure to check 'ulimit -c'");
+	sys_backtrace = Cvar_Get ("sys_backtrace", "0", CVAR_NONE, backtrace_callback, "Dump a backtrace on Tragic Death.  Value is the max number of times to dump core incase of recursive shutdown");
 }
 
 void

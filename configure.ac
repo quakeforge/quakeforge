@@ -94,7 +94,7 @@ AC_HEADER_SYS_WAIT
 AC_CHECK_HEADERS(
 	arpa/inet.h asm/io.h assert.h conio.h ctype.h ddraw.h dinput.h \
 	direct.h dirent.h dlfcn.h dmedia/audio.h dmedia/cdaudio.h dpmi.h \
-	dsound.h errno.h fcntl.h fnmatch.h glide/sst1vid.h io.h \
+	dsound.h errno.h execinfo.h fcntl.h fnmatch.h glide/sst1vid.h io.h \
 	libc.h limits.h linux/cdrom.h linux/joystick.h linux/soundcard.h \
 	machine/soundcard.h malloc.h math.h mgraph.h _mingw.h netdb.h \
 	netinet/in.h pwd.h rpc/types.h setjmp.h signal.h stdarg.h stdio.h \
