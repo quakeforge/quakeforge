@@ -35,6 +35,8 @@ static __attribute__ ((unused)) const char rcsid[] =
 	"$Id$";
 
 #ifndef USE_INTEL_ASM
+#include "r_local.h"
+
 void
 R_HighFPPrecision (void)
 {

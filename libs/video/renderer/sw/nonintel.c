@@ -36,9 +36,9 @@ static __attribute__ ((unused)) const char rcsid[] =
 #endif
 
 #ifndef USE_INTEL_ASM
+#include "r_local.h"
 
 int         r_bmodelactive;
-
 
 void
 R_SurfPatch (void)
@@ -46,11 +46,9 @@ R_SurfPatch (void)
 	// we only patch code on Intel
 }
 
-
 void
 R_SurfacePatch (void)
 {
 	// we only patch code on Intel
 }
-
 #endif // !USE_INTEL_ASM
