@@ -197,10 +197,6 @@ const char	*Cmd_Argsu (int arg);
 // if arg > argc, so string operations are always safe.
 
 
-int Cmd_CheckParm (const char *parm);
-// Returns the position (1 to argc-1) in the command's argument list
-// where the given parameter apears, or 0 if not present
-
 int Cmd_Process (void);
 // Processes all parsed tokens according to the type of buffer
 // and the settings of each token

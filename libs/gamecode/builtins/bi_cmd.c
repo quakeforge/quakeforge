@@ -154,7 +154,6 @@ bi_Cmd_Return (progs_t *pr)
 	Cmd_Return (P_STRING (pr, 0));
 }
 
-//Cmd_CheckParm
 //Cmd_TokenizeString
 //Cmd_ExecuteString
 //Cmd_ForwardToServer
