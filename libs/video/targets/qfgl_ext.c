@@ -85,10 +85,9 @@ QFGL_ProcAddress (void *handle, const char *name, qboolean crit)
 
 	if (crit) {
 		if (strncmp ("fxMesa", name, 6) == 0) {
-			Con_DPrintf ("This is a console-only client. It requires a "
-						 "mesa-glide compatable library.\n");
-			Con_DPrintf ("If you are trying to run OpenGL QuakeForge in X, "
-						 "please use a -glx or -sgl target.\n");
+			Con_Printf ("This target requires a special version of Mesa with "
+						"support for Glide and SVGAlib.\n");
+			Con_Printf ("If you are in X, try using a GLX or SGL target.\n");
 		}
 		Sys_Error ("Couldn't load critical OpenGL function %s, exiting...",
 				   name);
