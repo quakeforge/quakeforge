@@ -143,6 +143,7 @@ typedef void (*builtin_proc) (progs_t *pr);
 typedef struct {
 	const char *name;
 	builtin_proc proc;
+	int first_statement;
 } builtin_t;
 
 ddef_t *PR_FindGlobal (progs_t *pr, const char *name);
@@ -277,7 +278,7 @@ struct progs_s {
 	int				(*prune_edict)(progs_t *pr, edict_t *ent);
 	void			(*free_edict)(progs_t *pr, edict_t *ent);
 
-	builtin_t		*builtins;
+	builtin_t		**builtins;
 	int				numbuiltins;
 
 	// debug info

@@ -1287,35 +1287,39 @@ PR_AddBuiltin (progs_t *pr, const char *name, builtin_proc builtin, int num)
 {
 	int i;
 
+	if (!pr->builtin_hash)
+		pr->builtin_hash = Hash_NewTable (1021, builtin_get_key, 0, pr);
+
 	if (pr->numbuiltins == 0) {
-		pr->builtins = calloc (PR_AUTOBUILTIN, sizeof (builtin_t));
+		pr->builtins = calloc (PR_AUTOBUILTIN, sizeof (builtin_t*));
 		pr->numbuiltins = PR_AUTOBUILTIN;
 		if (!pr->builtins)
 			PR_Error (pr, "PR_AddBuiltin: memory allocation error!\n");
-		pr->builtin_hash = Hash_NewTable (1021, builtin_get_key, 0, pr);
 	}
 
 	if (num < 0) {
 		for (i = PR_AUTOBUILTIN;
-			 i < pr->numbuiltins && pr->builtins[i].proc; i++)
+			 i < pr->numbuiltins && pr->builtins[i]; i++)
 			;
 		if (i >= pr->numbuiltins) {
 			pr->numbuiltins++;
 			pr->builtins = realloc (pr->builtins,
-									pr->numbuiltins * sizeof (builtin_t));
+									pr->numbuiltins * sizeof (builtin_t*));
 			if (!pr->builtins)
 				PR_Error (pr, "PR_AddBuiltin: memory allocation error!\n");
 		}
 	} else {
 		if (num >= PR_AUTOBUILTIN || num == 0)
 			PR_Error (pr, "PR_AddBuiltin: invalid builtin number.\n");
-		if (pr->builtins[num].proc)
+		if (pr->builtins[num])
 			PR_Error (pr, "PR_AddBuiltin: builtin number already exists.\n");
 		i = num;
 	}
-	pr->builtins[i].proc = builtin;
-	pr->builtins[i].name = name;
-	Hash_Add (pr->builtin_hash, &pr->builtins[i]);
+	pr->builtins[i] = malloc (sizeof (builtin_t));
+	pr->builtins[i]->proc = builtin;
+	pr->builtins[i]->name = name;
+	pr->builtins[i]->first_statement = i;
+	Hash_Add (pr->builtin_hash, pr->builtins[i]);
 }
 
 builtin_t *
@@ -1405,7 +1409,7 @@ PR_RelocateBuiltins (progs_t *pr)
 						pr->progs_name, bi_name);
 			return 0;
 		}
-		func->first_statement = -(bi - pr->builtins);
+		func->first_statement = -bi->first_statement;
 	}
 	return 1;
 }
