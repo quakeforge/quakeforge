@@ -237,7 +237,6 @@ build_switch (expr_t *sw, case_node_t  *tree, int op, expr_t *sw_val,
 		branch->line = sw_val->line;
 		branch->file = sw_val->file;
 		append_expr (sw, branch);
-		temp->e.temp.users--;
 		return;
 	}
 
@@ -277,7 +276,9 @@ build_switch (expr_t *sw, case_node_t  *tree, int op, expr_t *sw_val,
 			if (tree->right)
 				append_expr (sw, high_label);
 		}
-		build_switch (sw, tree->right, op, sw_val, temp, default_label);
+		if (tree->right || !tree->left) {
+			build_switch (sw, tree->right, op, sw_val, temp, default_label);
+		}
 	} else {
 		expr_t     *utemp = new_temp_def_expr (&type_uinteger);
 		int         low = tree->low->e.integer_val;
