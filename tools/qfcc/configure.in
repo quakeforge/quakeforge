@@ -80,7 +80,7 @@ QF_DEPS=""
 if test "x$QF_LIBS" = xauto; then
 	qf_dir=`cd ${srcdir}/../..; pwd`
 	if test -r ${qf_dir}/libs/util/qfplist.c; then
-		QF_LIBS="-L ${qf_dir}/libs/util"
+		QF_LIBS="-L ${qf_dir}/libs"
 		QF_DEPS="${qf_dir}/libs/libqfutil.a"
 	else
 		QF_LIBS=''
