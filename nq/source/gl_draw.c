@@ -374,7 +374,7 @@ static void Draw_TextureMode_f (void)
 
 	for (i=0 ; i< 6 ; i++)
 	{
-		if (!stricmp (modes[i].name, Cmd_Argv(1) ) )
+		if (!strcasecmp (modes[i].name, Cmd_Argv(1) ) )
 			break;
 	}
 	if (i == 6)
