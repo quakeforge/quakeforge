@@ -442,18 +442,28 @@ static void
 SV_Kick_f (void)
 {
 	client_t   *cl;
+	int         argc = Cmd_Argc ();
+	const char *reason;
 
-	if (Cmd_Argc () != 2) {
+	if (argc < 2) {
 		SV_Printf ("usage: kick <name/userid>\n");
 		return;
 	}
 	if (!(cl = SV_Match_User (Cmd_Argv (1))))
 		return;
 
-	SV_BroadcastPrintf (PRINT_HIGH, "%s was kicked\n", cl->name);
 	// print directly, because the dropped client won't get the
 	// SV_BroadcastPrintf message
-	SV_ClientPrintf (1, cl, PRINT_HIGH, "You were kicked from the game\n");
+	if (argc > 2) {
+		reason = Cmd_Args (2);
+		SV_BroadcastPrintf (PRINT_HIGH, "%s was kicked: %s\n", cl->name,
+							reason);
+		SV_ClientPrintf (1, cl, PRINT_HIGH,
+						 "You were kicked from the game: %s\n", reason);
+	} else {
+		SV_BroadcastPrintf (PRINT_HIGH, "%s was kicked\n", cl->name);
+		SV_ClientPrintf (1, cl, PRINT_HIGH, "You were kicked from the game\n");
+	}
 	SV_DropClient (cl);
 }
 
@@ -662,24 +672,39 @@ SV_Mute_f (void)
 static void
 SV_Ban_f (void)
 {
-	double      mins = 30.0;
-	client_t    *cl;
+	double      mins = 30.0, m;
+	client_t   *cl;
+	char       *e;
+	const char *a, *reason;
+	int         argc = Cmd_Argc (), argr = 2;
 
-	if (Cmd_Argc () != 2 && Cmd_Argc () != 3) {
-		SV_Printf ("usage: ban <name/userid> [minutes]\n"
+	if (argc < 2) {
+		SV_Printf ("usage: ban <name/userid> [minutes] [reason]\n"
 				   "       (default = 30, 0 = permanent).\n");
 		return;
 	}
 	if (!(cl = SV_Match_User (Cmd_Argv (1))))
 		return;
-	if (Cmd_Argc () == 3) {
-		mins = atof (Cmd_Argv (2));
-		if (mins < 0.0 || mins > 1000000.0)				// bout 2 yrs
-			mins = 0.0;
+	if (argc >= 3) {
+		a = Cmd_Argv (2);
+		m = strtod (a, &e);
+		if (e != a) {
+			argr++;
+			mins = m;
+			if (mins < 0.0 || mins > 1000000.0)			// bout 2 yrs
+				mins = 0.0;
+		}
 	}
-	SV_BroadcastPrintf (PRINT_HIGH, "Admin Banned user %s %s\n",
-						cl->name, mins ? va ("for %.1f minutes", mins)
-									   : "permanently");
+	if (argc > argr) {
+		reason = Cmd_Args (argr);
+		SV_BroadcastPrintf (PRINT_HIGH, "Admin Banned user %s %s: %s\n",
+							cl->name, mins ? va ("for %.1f minutes", mins)
+										   : "permanently", reason);
+	} else {
+		SV_BroadcastPrintf (PRINT_HIGH, "Admin Banned user %s %s\n",
+							cl->name, mins ? va ("for %.1f minutes", mins)
+										   : "permanently");
+	}
 	SV_DropClient (cl);
 	Cmd_ExecuteString (va ("addip %s %f",
 						   NET_BaseAdrToString (cl->netchan.remote_address),
