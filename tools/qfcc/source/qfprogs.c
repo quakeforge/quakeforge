@@ -293,10 +293,12 @@ convert_qfo (void)
 						break;
 				}
 			}
+			progs.entityfields += pr_type_size[ddef.type];
 			ddef.ofs = G_INT (&pr, ddef.ofs);
 			pr.pr_fielddefs[progs.numfielddefs++] = ddef;
 		}
 	}
+	pr.pr_edict_size = progs.entityfields * 4;
 
 	progs.numfunctions = qfo->num_funcs;
 	pr.pr_functions = calloc (qfo->num_funcs, sizeof (dfunction_t));
