@@ -162,8 +162,8 @@ opcode_t    pr_opcodes[] = {
 static const char *
 get_key (void *_op, void *unused)
 {
-	char		   *r = rep;
 	static char		rep[4];
+	char		   *r = rep;
 	opcode_t	   *op = (opcode_t *)_op;
 
 	*r++ = (op->opcode & 0x7f) + 2;

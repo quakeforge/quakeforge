@@ -554,10 +554,10 @@ PF_sprintf (progs_t *pr)
 	char   *format;
 	char   *c; // current
 	char   *out = 0;
+	char	new_format[INT_WIDTH * 2 + 9]; // "%0-+ #." and conversion
 	int		fmt_alternate, fmt_leadzero, fmt_leftjust, fmt_minwidth,
 			fmt_precision, fmt_signed, fmt_space, looping, new_format_i, ret;
-	int		cur_arg = 3, out_max = 32, out_size = 0;
-	char	new_format[INT_WIDTH * 2 + 9]; // "%0-+ #." and conversion
+	int		curarg = 3, out_max = 32, out_size = 0;
 
 	format = G_STRING (pr, OFS_PARM0);
 	c = format;
