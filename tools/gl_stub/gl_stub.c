@@ -61,7 +61,7 @@ glXGetProcAddressARB (const GLubyte *procName)
 	static int  called;
 	gl_stub_t  *stub;
 	gl_stub_t   key;
-puts(procName);
+
 	if (!called) {
 		char       *glstub_trace;
 
