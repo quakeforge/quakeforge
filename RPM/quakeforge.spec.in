@@ -104,6 +104,18 @@ remain compatible with the original games released by id Software while
 adding portability and optional extensions to enhance gameplay.
 %endif
 
+%if "%{HAVE_SDL}"=="'yes'"
+%package sdl32
+Summary:	QuakeForge 3D game engine - SDL client
+Group:		Amusements/Games
+#Requires:
+%description sdl32
+QuakeForge is a source port of Quake and QuakeWorld, the successors to id
+Software's very popular DOOM series. Its primary development goal is to
+remain compatible with the original games released by id Software while
+adding portability and optional extensions to enhance gameplay.
+%endif
+
 %if "%{HAVE_SGL}"=="'yes'"
 %package sgl
 Summary:	QuakeForge 3D game engine - SDL-GL client
@@ -276,12 +288,15 @@ rm -rf $RPM_BUILD_ROOT
 %attr(-,root,root) %{_prefix}/lib/quakeforge/libcd_null.so
 %attr(-,root,root) %{_prefix}/lib/quakeforge/libcd_null.so.1
 %attr(-,root,root) %{_prefix}/lib/quakeforge/libcd_null.so.1.0.0
-%attr(-,root,root) %{_prefix}/lib/quakeforge/libsound_disk.so
-%attr(-,root,root) %{_prefix}/lib/quakeforge/libsound_disk.so.1
-%attr(-,root,root) %{_prefix}/lib/quakeforge/libsound_disk.so.1.0.0
-%attr(-,root,root) %{_prefix}/lib/quakeforge/libsound_null.so
-%attr(-,root,root) %{_prefix}/lib/quakeforge/libsound_null.so.1
-%attr(-,root,root) %{_prefix}/lib/quakeforge/libsound_null.so.1.0.0
+%attr(-,root,root) %{_prefix}/lib/quakeforge/libsnd_output_disk.so
+%attr(-,root,root) %{_prefix}/lib/quakeforge/libsnd_output_disk.so.1
+%attr(-,root,root) %{_prefix}/lib/quakeforge/libsnd_output_disk.so.1.0.0
+%attr(-,root,root) %{_prefix}/lib/quakeforge/libsnd_output_null.so
+%attr(-,root,root) %{_prefix}/lib/quakeforge/libsnd_output_null.so.1
+%attr(-,root,root) %{_prefix}/lib/quakeforge/libsnd_output_null.so.1.0.0
+%attr(-,root,root) %{_prefix}/lib/quakeforge/libsnd_render_default.so
+%attr(-,root,root) %{_prefix}/lib/quakeforge/libsnd_render_default.so.1
+%attr(-,root,root) %{_prefix}/lib/quakeforge/libsnd_render_default.so.1.0.0
 
 %if "%{HAVE_SERVER}"=="'yes'"
 %files server
@@ -313,6 +328,12 @@ rm -rf $RPM_BUILD_ROOT
 %attr(-,root,root)	%{_prefix}/bin/nq-sdl
 %endif
 
+%if "%{HAVE_SDL}"=="'yes'"
+%files sdl32
+%attr(-,root,root)	%{_prefix}/bin/qw-client-sdl32
+%attr(-,root,root)	%{_prefix}/bin/nq-sdl32
+%endif
+
 %if "%{HAVE_SGL}"=="'yes'"
 %files sgl
 %attr(-,root,root)	%{_prefix}/bin/qw-client-sgl
@@ -333,23 +354,23 @@ rm -rf $RPM_BUILD_ROOT
 
 %if "%{HAVE_ALSA}"=="'yes'"
 %files snd-alsa
-%attr(-,root,root)	%{_prefix}/lib/quakeforge/libsound_alsa0_9.so
-%attr(-,root,root)	%{_prefix}/lib/quakeforge/libsound_alsa0_9.so.1
-%attr(-,root,root)	%{_prefix}/lib/quakeforge/libsound_alsa0_9.so.1.0.0
+%attr(-,root,root)	%{_prefix}/lib/quakeforge/libsnd_output_alsa0_9.so
+%attr(-,root,root)	%{_prefix}/lib/quakeforge/libsnd_output_alsa0_9.so.1
+%attr(-,root,root)	%{_prefix}/lib/quakeforge/libsnd_output_alsa0_9.so.1.0.0
 %endif
 
 %if "%{HAVE_OSS}"=="'yes'"
 %files snd-oss
-%attr(-,root,root)	%{_prefix}/lib/quakeforge/libsound_oss.so
-%attr(-,root,root)	%{_prefix}/lib/quakeforge/libsound_oss.so.1
-%attr(-,root,root)	%{_prefix}/lib/quakeforge/libsound_oss.so.1.0.0
+%attr(-,root,root)	%{_prefix}/lib/quakeforge/libsnd_output_oss.so
+%attr(-,root,root)	%{_prefix}/lib/quakeforge/libsnd_output_oss.so.1
+%attr(-,root,root)	%{_prefix}/lib/quakeforge/libsnd_output_oss.so.1.0.0
 %endif
 
 %if "%{HAVE_SDL}"=="'yes'"
 %files snd-sdl
-%attr(-,root,root)	%{_prefix}/lib/quakeforge/libsound_sdl.so
-%attr(-,root,root)	%{_prefix}/lib/quakeforge/libsound_sdl.so.1
-%attr(-,root,root)	%{_prefix}/lib/quakeforge/libsound_sdl.so.1.0.0
+%attr(-,root,root)	%{_prefix}/lib/quakeforge/libsnd_output_sdl.so
+%attr(-,root,root)	%{_prefix}/lib/quakeforge/libsnd_output_sdl.so.1
+%attr(-,root,root)	%{_prefix}/lib/quakeforge/libsnd_output_sdl.so.1.0.0
 %endif
 
 %if "%{BUILD_GL}"=="'yes'"
@@ -366,6 +387,12 @@ rm -rf $RPM_BUILD_ROOT
 %attr(-,root,root)	%{_prefix}/lib/libQFmodels_sw.so.1.0.0
 %attr(-,root,root)	%{_prefix}/lib/libQFrenderer_sw.so.1
 %attr(-,root,root)	%{_prefix}/lib/libQFrenderer_sw.so.1.0.0
+%if "%{HAVE_SDL}"=="'yes'"
+%attr(-,root,root)	%{_prefix}/lib/libQFmodels_sw32.so.1
+%attr(-,root,root)	%{_prefix}/lib/libQFmodels_sw32.so.1.0.0
+%attr(-,root,root)	%{_prefix}/lib/libQFrenderer_sw32.so.1
+%attr(-,root,root)	%{_prefix}/lib/libQFrenderer_sw32.so.1.0.0
+%endif
 %endif
 
 %files devel
@@ -397,7 +424,22 @@ rm -rf $RPM_BUILD_ROOT
 %attr(-,root,root)	%{_prefix}/lib/libQFmodels.a
 %attr(-,root,root)	%{_prefix}/lib/libQFmodels.la
 %attr(-,root,root)	%{_prefix}/lib/libQFmodels.so
+%if "%{BUILD_GL}"=="'yes'"
+%attr(-,root,root)	%{_prefix}/lib/libQFrenderer_gl.a
+%attr(-,root,root)	%{_prefix}/lib/libQFrenderer_gl.la
+%attr(-,root,root)	%{_prefix}/lib/libQFrenderer_gl.so
+%endif
+%if "%{BUILD_SW}"=="'yes'"
+%attr(-,root,root)	%{_prefix}/lib/libQFrenderer_sw.a
+%attr(-,root,root)	%{_prefix}/lib/libQFrenderer_sw.la
+%attr(-,root,root)	%{_prefix}/lib/libQFrenderer_sw.so
+%endif
 %if "%{HAVE_SDL}"=="'yes'"
+%if "%{BUILD_SW}"=="'yes'"
+%attr(-,root,root)	%{_prefix}/lib/libQFrenderer_sw32.a
+%attr(-,root,root)	%{_prefix}/lib/libQFrenderer_sw32.la
+%attr(-,root,root)	%{_prefix}/lib/libQFrenderer_sw32.so
+%endif
 %attr(-,root,root)	%{_prefix}/lib/libQFsdl.a
 %attr(-,root,root)	%{_prefix}/lib/libQFsdl.la
 %attr(-,root,root)	%{_prefix}/lib/libQFsdl.so
