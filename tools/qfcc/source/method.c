@@ -297,7 +297,7 @@ emit_methods (methodlist_t *_methods, const char *name, int instance)
 	for (i = 0; i < count; i++)
 		new_struct_field (method_list, type_Method.aux_type, 0, vis_public);
 	methods_def = get_def (method_list, va ("_OBJ_%s_METHODS_%s", type, name),
-							 pr.scope, 1);
+						   pr.scope, 1);
 	methods_def->initialized = methods_def->constant = 1;
 	methods = &G_STRUCT (pr_method_list_t, methods_def->ofs);
 	methods->method_next = 0;

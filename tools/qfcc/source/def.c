@@ -82,7 +82,7 @@ check_for_name (type_t *type, const char *name, scope_t *scope, int allocate)
 	}
 	if (!name)
 		return 0;
-	if (!scope && (find_struct (name) || get_enum (name))) {
+	if (scope->type == sc_static && (find_struct (name) || get_enum (name))) {
 		error (0, "%s redeclared", name);
 		return 0;
 	}
@@ -207,7 +207,7 @@ get_def (type_t *type, const char *name, scope_t *scope, int allocate)
 		size = type_size  (type->aux_type);
 		scope->space->size += type->num_parms * size;
 
-		if (scope->parent) {
+		if (scope->type != sc_static) {
 			expr_t     *e1 = new_expr ();
 			expr_t     *e2 = new_expr ();
 

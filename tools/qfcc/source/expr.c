@@ -141,7 +141,7 @@ convert_name (expr_t *e)
 		}
 		d = get_def (NULL, name, current_scope, 0);
 		if (d) {
-			if (!d->scope) {
+			if (d->scope->type == sc_static) {
 				new = class_ivar_expr (current_class, name);
 				if (new)
 					goto convert;
@@ -569,7 +569,7 @@ print_expr (expr_t *e)
 		case ex_def:
 			if (e->e.def->name)
 				printf ("%s", e->e.def->name);
-			if (e->e.def->scope) {
+			if (e->e.def->scope->type != sc_static) {
 				printf ("<%d>", e->e.def->ofs);
 			} else {
 				printf ("[%d]", e->e.def->ofs);
@@ -1790,7 +1790,7 @@ address_expr (expr_t *e1, expr_t *e2, type_t *t)
 		case ex_def:
 			type = e1->e.def->type;
 			if (type->type == ev_struct) {
-				int         abs = !e1->e.def->scope;
+				int         abs = e1->e.def->scope->type == sc_static;
 				def_t      *def = e1->e.def;
 
 				e = e1;

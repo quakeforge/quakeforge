@@ -153,7 +153,7 @@ WriteData (int crc)
 
 		if (!def->constant
 			&& def->type->type != ev_func
-			&& def->type->type != ev_field && def->scope == NULL)
+			&& def->type->type != ev_field && def->scope->type == sc_static)
 			dd->type |= DEF_SAVEGLOBAL;
 		dd->s_name = ReuseString (def->name);
 		dd->ofs = def->ofs;
@@ -322,7 +322,8 @@ finish_compilation (void)
 	// check to make sure all functions prototyped have code
 	if (options.warnings.undefined_function)
 		for (d = pr.scope->head; d; d = d->def_next) {
-			if (d->type->type == ev_func && !d->scope) {	// function args ok
+			if (d->type->type == ev_func && d->scope->type == sc_static) {
+				// function args ok
 				if (d->used) {
 					if (!d->initialized) {
 						warning (0, "function %s was called but not defined\n",
