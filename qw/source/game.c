@@ -59,7 +59,7 @@ SV_Gamedir_f (void)
 	const char *dir;
 
 	if (Cmd_Argc () == 1) {
-		Con_Printf ("Current gamedir: %s\n", qfs_gamedir_file);
+		Con_Printf ("Current gamedir: %s\n", qfs_gamedir->gamedir);
 		return;
 	}
 

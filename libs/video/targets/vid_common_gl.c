@@ -243,9 +243,8 @@ VID_SetPalette (unsigned char *palette)
 			}
 			d_15to8table[i] = k;
 		}
-		snprintf (s, sizeof (s), "%s/glquake/15to8.pal", qfs_gamedir_path);
-		QFS_CreatePath (s);
-		if ((f = Qopen (s, "wb")) != NULL) {
+		snprintf (s, sizeof (s), "%s/glquake/15to8.pal", qfs_gamedir->dir.def);
+		if ((f = QFS_WOpen (s, 0)) != NULL) {
 			Qwrite (f, d_15to8table, 1 << 15);
 			Qclose (f);
 		}

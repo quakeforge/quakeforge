@@ -431,13 +431,9 @@ Mod_MakeAliasModelDisplayLists (model_t *m, aliashdr_t *hdr, void *_m, int _s, i
 
 		if (do_cache) {
 			// save out the cached version
-			snprintf (fullpath, sizeof (fullpath), "%s/%s", qfs_gamedir_path,
-					  cache);
-			f = Qopen (fullpath, "wbz9");
-			if (!f) {
-				QFS_CreatePath (fullpath);
-				f = Qopen (fullpath, "wb");
-			}
+			snprintf (fullpath, sizeof (fullpath), "%s/%s",
+					  qfs_gamedir->dir.def, cache);
+			f = QFS_WOpen (fullpath, 9);
 
 			if (f) {
 				struct mdfour md;

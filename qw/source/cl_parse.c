@@ -324,7 +324,7 @@ Model_NextDownload (void)
 						"downloaded.\n\n", cl.model_name[i]);
 			Con_Printf ("You may need to download or purchase a %s client "
 						"pack in order to play on this server.\n\n",
-						qfs_gamedir_file);
+						qfs_gamedir->gamedir);
 			CL_Disconnect ();
 			return;
 		}
@@ -489,18 +489,14 @@ CL_ParseDownload (void)
 	}
 	// open the file if not opened yet
 	if (!cls.download) {
-		if (!qfs_gamedir->skinpath
-			|| !*qfs_gamedir->skinpath
-			|| strncmp (cls.downloadtempname, "skins/", 6))
-			snprintf (name, sizeof (name), "%s/%s", qfs_gamedir_path,
+		if (strncmp (cls.downloadtempname, "skins/", 6))
+			snprintf (name, sizeof (name), "%s/%s", qfs_gamedir->dir.def,
 					  cls.downloadtempname);
 		else
-			snprintf (name, sizeof (name), "%s/%s/%s", fs_userpath->string,
-					  qfs_gamedir->skinpath, cls.downloadtempname);
+			snprintf (name, sizeof (name), "%s/%s", qfs_gamedir->dir.skins,
+					  cls.downloadtempname + 6);
 
-		QFS_CreatePath (name);
-
-		cls.download = Qopen (name, "wb");
+		cls.download = QFS_WOpen (name, 0);
 		if (!cls.download) {
 			cls.downloadname[0] = 0;
 			net_message->readcount += size;
@@ -532,20 +528,18 @@ CL_ParseDownload (void)
 
 		// rename the temp file to it's final name
 		if (strcmp (cls.downloadtempname, cls.downloadname)) {
-			if (!qfs_gamedir->skinpath
-				|| !*qfs_gamedir->skinpath
-				|| strncmp (cls.downloadtempname, "skins/", 6)) {
-				snprintf (oldn, sizeof (oldn), "%s/%s", qfs_gamedir_path,
+			if (strncmp (cls.downloadtempname, "skins/", 6)) {
+				snprintf (oldn, sizeof (oldn), "%s/%s", qfs_gamedir->dir.def,
 						  cls.downloadtempname);
-				snprintf (newn, sizeof (newn), "%s/%s", qfs_gamedir_path,
+				snprintf (newn, sizeof (newn), "%s/%s", qfs_gamedir->dir.def,
 						  cls.downloadname);
 			} else {
-				snprintf (oldn, sizeof (oldn), "%s/%s/%s", fs_userpath->string,
-						  qfs_gamedir->skinpath, cls.downloadtempname);
-				snprintf (newn, sizeof (newn), "%s/%s/%s", fs_userpath->string,
-						  qfs_gamedir->skinpath, cls.downloadname);
+				snprintf (oldn, sizeof (oldn), "%s/%s", qfs_gamedir->dir.skins,
+						  cls.downloadtempname + 6);
+				snprintf (newn, sizeof (newn), "%s/%s", qfs_gamedir->dir.skins,
+						  cls.downloadname + 6);
 			}
-			r = Qrename (oldn, newn);
+			r = QFS_Rename (oldn, newn);
 			if (r)
 				Con_Printf ("failed to rename, %s.\n", strerror (errno));
 		}
@@ -679,7 +673,7 @@ CL_ParseServerData (void)
 	// game directory
 	str = MSG_ReadString (net_message);
 
-	if (!strequal (qfs_gamedir_file, str)) {
+	if (!strequal (qfs_gamedir->gamedir, str)) {
 		// save current config
 		Host_WriteConfiguration ();
 		cflag = true;

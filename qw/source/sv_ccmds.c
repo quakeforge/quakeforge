@@ -200,7 +200,6 @@ static void
 SV_Fraglogfile_f (void)
 {
 	char        name[MAX_OSPATH];
-	int         i;
 
 	if (sv_fraglogfile) {
 		SV_Printf ("Frag file logging off.\n");
@@ -208,19 +207,7 @@ SV_Fraglogfile_f (void)
 		sv_fraglogfile = NULL;
 		return;
 	}
-	// find an unused name
-	for (i = 0; i < 1000; i++) {
-		snprintf (name, sizeof (name), "%s/frag_%i.log", qfs_gamedir_path, i);
-		sv_fraglogfile = Qopen (name, "r");
-		if (!sv_fraglogfile) {			// can't read it, so create this one
-			sv_fraglogfile = Qopen (name, "w");
-			if (!sv_fraglogfile)
-				i = 1000;				// give error
-			break;
-		}
-		Qclose (sv_fraglogfile);
-	}
-	if (i == 1000) {
+	if (!QFS_NextFilename (name, "frag_", ".log")) {
 		SV_Printf ("Can't open any logfiles.\n");
 		sv_fraglogfile = NULL;
 		return;
@@ -1070,14 +1057,15 @@ SV_Snap (int uid)
 
 	snprintf (pcxname, sizeof (pcxname), "%d-00.pcx", uid);
 
-	snprintf (checkname, sizeof (checkname), "%s/snap", qfs_gamedir_path);
+	snprintf (checkname, sizeof (checkname), "%s/%s/snap", fs_userpath->string,
+			  qfs_gamedir->dir.def);
 	QFS_CreatePath (va ("%s/dummy", checkname));
 
 	for (i = 0; i <= 99; i++) {
 		pcxname[strlen (pcxname) - 6] = i / 10 + '0';
 		pcxname[strlen (pcxname) - 5] = i % 10 + '0';
-		snprintf (checkname, sizeof (checkname), "%s/snap/%s",
-				  qfs_gamedir_path, pcxname);
+		snprintf (checkname, sizeof (checkname), "%s/%s/snap/%s",
+				  fs_userpath->string, qfs_gamedir->dir.def, pcxname);
 		if (Sys_FileTime (checkname) == -1)
 			break;						// file doesn't exist
 	}

@@ -46,9 +46,11 @@ static __attribute__ ((unused)) const char rcsid[] =
 #include <sys/stat.h>
 
 #include "QF/console.h"
+#include "QF/dstring.h"
 #include "QF/sys.h"
 #include "QF/cvar.h"
 #include "QF/quakefs.h"
+#include "QF/va.h"
 #include "QF/zone.h"
 
 #include "compat.h"
@@ -136,30 +138,22 @@ CF_GetFileSize (const char *path)
 static void
 CF_BuildQuota (void)
 {
-	char *file, *path;
+	static dstring_t *path;
 	struct dirent *i;
 	DIR *dir;
 
-	path = Hunk_TempAlloc (strlen (qfs_gamedir_path) + 1 + strlen (CF_DIR) + 256 +
-						   1);
 	if (!path)
-		return;
+		path = dstring_new ();
+	dsprintf (path, "%s/%s/%s", fs_userpath->string, qfs_gamedir->dir.def, CF_DIR);
 
-	strcpy(path, qfs_gamedir_path);
-	strcpy(path + strlen(path), "/");
-	strcpy(path + strlen(path), CF_DIR);
-
-	dir = opendir (path);
+	dir = opendir (path->str);
 	if (!dir)
 		return;
-
-	file = path + strlen(path);
 
 	cf_cursize = 0;
 
 	while ((i = readdir(dir))) {
-		strcpy (file, i->d_name);
-		cf_cursize += CF_GetFileSize (path);
+		cf_cursize += CF_GetFileSize (va ("%s/%s", path->str, i->d_name));
 	}
 	closedir (dir);
 }
@@ -207,7 +201,8 @@ CF_CloseAllFiles ()
 int
 CF_Open (const char *path, const char *mode)
 {
-	char *fullpath, *j;
+	char *j;
+	dstring_t *fullpath = dstring_new ();
 	int desc, oldsize, i;
 	QFile *file;
 
@@ -232,31 +227,25 @@ CF_Open (const char *path, const char *mode)
 		return -1;
 	}
 
-	fullpath = malloc(strlen(qfs_gamedir_path) + 1 + strlen(CF_DIR)
-					  + strlen(path) + 1);
-	if (!fullpath) {
-		return -1;
-	}
+	dsprintf (fullpath, "%s/%s/%s/%s", fs_userpath->string,
+			  qfs_gamedir->dir.def, CF_DIR, path);
 
-	strcpy(fullpath, qfs_gamedir_path);
-	strcpy(fullpath + strlen(fullpath), "/");
-	strcpy(fullpath + strlen(fullpath), CF_DIR);
-	j = fullpath + strlen(fullpath);
+	j = fullpath->str + strlen(fullpath->str) - strlen (path);
 	for (i = 0; path[i]; i++, j++) // strcpy, but force lowercase
 		*j = tolower(path[i]);
 	*j = '\0';
 
-	if (CF_AlreadyOpen(fullpath, mode[0])) {
-		free (fullpath);
+	if (CF_AlreadyOpen(fullpath->str, mode[0])) {
+		dstring_delete (fullpath);
 		return -1;
 	}
 
 	if (mode[0] == 'w')
-		oldsize = CF_GetFileSize (fullpath);
+		oldsize = CF_GetFileSize (fullpath->str);
 	else
 		oldsize = 0;
 
-	file = Qopen (fullpath, mode);
+	file = Qopen (fullpath->str, mode);
 	if (file) {
 		if (cf_openfiles >= cf_filepcount) {
 			cf_filepcount++;
@@ -269,7 +258,7 @@ CF_Open (const char *path, const char *mode)
 
 		for (desc = 0; cf_filep[desc].file; desc++)
 			;
-		cf_filep[desc].path = fullpath;
+		cf_filep[desc].path = fullpath->str;
 		cf_filep[desc].file = file;
 		cf_filep[desc].buf = 0;
 		cf_filep[desc].size = 0;

@@ -250,9 +250,10 @@ Condump_f (void)
 		Con_Printf ("invalid character in filename\n");
 		return;
 	}
-	snprintf (name, sizeof (name), "%s/%s.txt", qfs_gamedir_path, Cmd_Argv (1));
+	snprintf (name, sizeof (name), "%s/%s.txt", qfs_gamedir->dir.def,
+			  Cmd_Argv (1));
 
-	if (!(file = Qopen (name, "wt"))) {
+	if (!(file = QFS_WOpen (name, 0))) {
 		Con_Printf ("could not open %s for writing: %s\n", name,
 					strerror (errno));
 		return;
@@ -452,8 +453,8 @@ C_Print (const char *fmt, va_list args)
 
 	// log all messages to file
 	if (con_debuglog)
-		Sys_DebugLog (va ("%s/qconsole.log", qfs_gamedir_path),
-					  "%s", buffer->str);
+		Sys_DebugLog (va ("%s/%s/qconsole.log", fs_userpath->string,
+					  qfs_gamedir->dir.def), "%s", buffer->str);
 
 	if (!con_initialized)
 		return;
@@ -809,9 +810,9 @@ C_NewMap (void)
 {
 	static char old_gamedir[MAX_OSPATH];
 
-	if (!strequal (old_gamedir, qfs_gamedir_path))
+	if (!strequal (old_gamedir, qfs_gamedir->gamedir))
 		Menu_Load ();
-	strcpy (old_gamedir, qfs_gamedir_path);
+	strcpy (old_gamedir, qfs_gamedir->gamedir);
 }
 
 static general_funcs_t plugin_info_general_funcs = {

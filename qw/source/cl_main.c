@@ -1072,13 +1072,11 @@ CL_Download_f (void)
 	}
 
 	snprintf (cls.downloadname, sizeof (cls.downloadname), "%s/%s",
-			  qfs_gamedir_path, Cmd_Argv (1));
-
-	QFS_CreatePath (cls.downloadname);
+			  qfs_gamedir->dir.def, Cmd_Argv (1));
 
 	strncpy (cls.downloadtempname, cls.downloadname,
 			 sizeof (cls.downloadtempname));
-	cls.download = Qopen (cls.downloadname, "wb");
+	cls.download = QFS_WOpen (cls.downloadname, 0);
 	if (cls.download) {
 		cls.downloadtype = dl_single;
 
@@ -1413,10 +1411,9 @@ Host_WriteConfiguration (void)
 	QFile      *f;
 
 	if (host_initialized && cl_writecfg->int_val) {
-		char       *path = va ("%s/config.cfg", qfs_gamedir_path);
+		char       *path = va ("%s/config.cfg", qfs_gamedir->dir.def);
 
-		QFS_CreatePath (path);
-		f = Qopen (path, "w");
+		f = QFS_WOpen (path, 0);
 		if (!f) {
 			Con_Printf ("Couldn't write config.cfg.\n");
 			return;

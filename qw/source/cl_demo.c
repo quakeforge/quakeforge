@@ -539,23 +539,22 @@ CL_Record (const char *argv1)
 			if (mapname[k] == '.')
 				mapname[k] = '\0';
 
-		snprintf (name, sizeof (name), "%s/%s-%s", qfs_gamedir_path,
+		snprintf (name, sizeof (name), "%s/%s-%s", qfs_gamedir->dir.def,
 				  timestring, mapname);
 	} else {
-		snprintf (name, sizeof (name), "%s/%s", qfs_gamedir_path, argv1);
+		snprintf (name, sizeof (name), "%s/%s", qfs_gamedir->dir.def, argv1);
 	}
 
 	// open the demo file
 #ifdef HAVE_ZLIB
 	if (demo_gzip->int_val) {
 		QFS_DefaultExtension (name, ".qwd.gz");
-		cls.demofile = Qopen (name, va ("wbz%d",
-										bound (1, demo_gzip->int_val, 9)));
+		cls.demofile = QFS_WOpen (name, demo_gzip->int_val);
 	} else
 #endif
 	{
 		QFS_DefaultExtension (name, ".qwd");
-		cls.demofile = Qopen (name, "wb");
+		cls.demofile = QFS_WOpen (name, 0);
 	}
 	if (!cls.demofile) {
 		Con_Printf ("ERROR: couldn't open.\n");
@@ -577,7 +576,7 @@ CL_Record (const char *argv1)
 	MSG_WriteByte (&buf, svc_serverdata);
 	MSG_WriteLong (&buf, PROTOCOL_VERSION);
 	MSG_WriteLong (&buf, cl.servercount);
-	MSG_WriteString (&buf, qfs_gamedir_file);
+	MSG_WriteString (&buf, qfs_gamedir->gamedir);
 
 	if (cl.spectator)
 		MSG_WriteByte (&buf, cl.playernum | 128);
@@ -844,12 +843,12 @@ CL_ReRecord_f (void)
 	if (cls.demorecording)
 		CL_Stop_f ();
 
-	snprintf (name, sizeof (name), "%s/%s", qfs_gamedir_path, Cmd_Argv (1));
+	snprintf (name, sizeof (name), "%s/%s", qfs_gamedir->dir.def, Cmd_Argv (1));
 
 	// open the demo file
 	QFS_DefaultExtension (name, ".qwd");
 
-	cls.demofile = Qopen (name, "wb");
+	cls.demofile = QFS_WOpen (name, 0);
 	if (!cls.demofile) {
 		Con_Printf ("ERROR: couldn't open.\n");
 		return;

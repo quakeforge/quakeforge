@@ -253,7 +253,7 @@ CL_Record_f (void)
 	} else
 		track = -1;
 
-	snprintf (name, sizeof (name), "%s/%s", qfs_gamedir_path, Cmd_Argv (1));
+	snprintf (name, sizeof (name), "%s/%s", qfs_gamedir->dir.def, Cmd_Argv (1));
 
 // start the map up
 //
@@ -265,13 +265,12 @@ CL_Record_f (void)
 #ifdef HAVE_ZLIB
 	if (demo_gzip->int_val) {
 		QFS_DefaultExtension (name, ".dem.gz");
-		cls.demofile = Qopen (name, va ("wbz%d",
-										bound (1, demo_gzip->int_val, 9)));
+		cls.demofile = QFS_WOpen (name, demo_gzip->int_val);
 	} else
 #endif
 	{
 		QFS_DefaultExtension (name, ".dem");
-		cls.demofile = Qopen (name, "wb");
+		cls.demofile = QFS_WOpen (name, 0);
 	}
 
 	if (!cls.demofile) {

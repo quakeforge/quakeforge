@@ -54,6 +54,7 @@ int         fnmatch (const char *__pattern, const char *__string, int __flags);
 #endif
 
 #include "QF/csqc.h"
+#include "QF/cvar.h"
 #include "QF/progs.h"
 #include "QF/quakefs.h"
 #include "QF/va.h"
@@ -158,7 +159,8 @@ bi_File_Open (progs_t *pr)
 		goto error;
 	if (do_write && !file_writeable (path))
 		goto error;
-	R_INT (pr) = QFile_open (pr, va ("%s/%s", qfs_gamedir_path, path), mode);
+	R_INT (pr) = QFile_open (pr, va ("%s/%s/%s", fs_userpath->string,
+							 qfs_gamedir->dir.def, path), mode);
 	free (path);
 	return;
 error:

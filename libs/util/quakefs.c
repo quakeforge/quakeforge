@@ -118,9 +118,6 @@ cvar_t     *fs_userpath;
 cvar_t     *fs_sharepath;
 cvar_t     *fs_dirconf;
 
-char        qfs_gamedir_file[MAX_OSPATH];
-
-char        qfs_gamedir_path[MAX_OSPATH];
 int         qfs_filesize;
 
 searchpath_t *qfs_searchpaths;
@@ -282,8 +279,14 @@ qfs_get_gd_params (plitem_t *gdpl, gamedir_t *gamedir, dstring_t *path,
 	}
 	if (!gamedir->gamecode && (p = PL_ObjectForKey (gdpl, "GameCode")))
 		gamedir->gamecode = qfs_var_subst (p->data, vars);
-	if (!gamedir->skinpath && (p = PL_ObjectForKey (gdpl, "SkinPath")))
-		gamedir->skinpath = qfs_var_subst (p->data, vars);
+	if (!gamedir->dir.skins && (p = PL_ObjectForKey (gdpl, "SkinPath")))
+		gamedir->dir.skins = qfs_var_subst (p->data, vars);
+	if (!gamedir->dir.progs && (p = PL_ObjectForKey (gdpl, "ProgPath")))
+		gamedir->dir.progs = qfs_var_subst (p->data, vars);
+	if (!gamedir->dir.sound && (p = PL_ObjectForKey (gdpl, "SoundPath")))
+		gamedir->dir.sound = qfs_var_subst (p->data, vars);
+	if (!gamedir->dir.maps && (p = PL_ObjectForKey (gdpl, "MapPath")))
+		gamedir->dir.maps = qfs_var_subst (p->data, vars);
 }
 
 static void
@@ -396,12 +399,22 @@ qfs_build_gamedir (const char **list)
 	if (qfs_gamedir) {
 		if (qfs_gamedir->name)
 			free ((char *)qfs_gamedir->name);
+		if (qfs_gamedir->gamedir)
+			free ((char *)qfs_gamedir->gamedir);
 		if (qfs_gamedir->path)
 			free ((char *)qfs_gamedir->path);
 		if (qfs_gamedir->gamecode)
 			free ((char *)qfs_gamedir->gamecode);
-		if (qfs_gamedir->skinpath)
-			free ((char *)qfs_gamedir->skinpath);
+		if (qfs_gamedir->dir.def)
+			free ((char *)qfs_gamedir->dir.def);
+		if (qfs_gamedir->dir.skins)
+			free ((char *)qfs_gamedir->dir.skins);
+		if (qfs_gamedir->dir.progs)
+			free ((char *)qfs_gamedir->dir.progs);
+		if (qfs_gamedir->dir.sound)
+			free ((char *)qfs_gamedir->dir.sound);
+		if (qfs_gamedir->dir.maps)
+			free ((char *)qfs_gamedir->dir.maps);
 		free (qfs_gamedir);
 	}
 
@@ -432,18 +445,39 @@ qfs_build_gamedir (const char **list)
 			continue;
 		}
 		Hash_Add (dirs, (void *) name);
-		if (!j)
+		if (!j) {
 			gamedir->name = strdup (name);
+			gamedir->gamedir = strdup (list[j]);
+		}
 		qfs_set_var (vars, "gamedir", dir);
 		qfs_get_gd_params (gdpl, gamedir, path, vars);
 		qfs_inherit (qfs_gd_plist, gdpl, gamedir, path, dirs, vars);
 	}
 	gamedir->path = path->str;
+
+	for (dir = gamedir->path; *dir && *dir != ':'; dir++)
+		;
+	gamedir->dir.def = nva ("%.*s", (int) (dir - gamedir->path),
+							gamedir->path);
+	if (!gamedir->dir.skins)
+		gamedir->dir.skins = nva ("%s/skins", gamedir->dir.def);
+	if (!gamedir->dir.progs)
+		gamedir->dir.progs = nva ("%s/progs", gamedir->dir.def);
+	if (!gamedir->dir.sound)
+		gamedir->dir.sound = nva ("%s/sound", gamedir->dir.def);
+	if (!gamedir->dir.maps)
+		gamedir->dir.maps = nva ("%s/maps", gamedir->dir.def);
+
 	qfs_gamedir = gamedir;
 	Sys_DPrintf ("%s\n", qfs_gamedir->name);
-	Sys_DPrintf ("    %s\n", qfs_gamedir->path);
-	Sys_DPrintf ("    %s\n", qfs_gamedir->gamecode);
-	Sys_DPrintf ("    %s\n", qfs_gamedir->skinpath);
+	Sys_DPrintf ("    gamedir : %s\n", qfs_gamedir->gamedir);
+	Sys_DPrintf ("    path    : %s\n", qfs_gamedir->path);
+	Sys_DPrintf ("    gamecode: %s\n", qfs_gamedir->gamecode);
+	Sys_DPrintf ("    def     : %s\n", qfs_gamedir->dir.def);
+	Sys_DPrintf ("    skins   : %s\n", qfs_gamedir->dir.skins);
+	Sys_DPrintf ("    progs   : %s\n", qfs_gamedir->dir.progs);
+	Sys_DPrintf ("    sound   : %s\n", qfs_gamedir->dir.sound);
+	Sys_DPrintf ("    maps    : %s\n", qfs_gamedir->dir.maps);
 	qfs_process_path (qfs_gamedir->path, dir);
 	free (path);
 	Hash_DelTable (dirs);
@@ -534,14 +568,11 @@ QFS_WriteFile (const char *filename, void *data, int len)
 	char        name[MAX_OSPATH];
 	QFile      *f;
 
-	snprintf (name, sizeof (name), "%s/%s", qfs_gamedir_path, filename);
+	snprintf (name, sizeof (name), "%s/%s", qfs_gamedir->dir.def, filename);
 
-	f = Qopen (name, "wb");
+	f = QFS_WOpen (name, 0);
 	if (!f) {
-		Sys_mkdir (qfs_gamedir_path);
-		f = Qopen (name, "wb");
-		if (!f)
-			Sys_Error ("Error opening %s", filename);
+		Sys_Error ("Error opening %s", filename);
 	}
 
 	Sys_Printf ("QFS_WriteFile: %s\n", name);
@@ -563,14 +594,11 @@ QFS_WriteBuffers (const char *filename, int count, ...)
 
 	va_start (args, count);
 
-	snprintf (name, sizeof (name), "%s/%s", qfs_gamedir_path, filename);
+	snprintf (name, sizeof (name), "%s/%s", qfs_gamedir->dir.def, filename);
 
-	f = Qopen (name, "wb");
+	f = QFS_WOpen (name, 0);
 	if (!f) {
-		Sys_mkdir (qfs_gamedir_path);
-		f = Qopen (name, "wb");
-		if (!f)
-			Sys_Error ("Error opening %s", filename);
+		Sys_Error ("Error opening %s", filename);
 	}
 
 	Sys_Printf ("QFS_WriteBuffers: %s\n", name);
@@ -1043,26 +1071,17 @@ QFS_LoadGameDirectory (const char *dir)
 /*
 	QFS_AddDirectory
 
-	Sets qfs_gamedir_path, adds the directory to the head of the path,
-	then loads and adds pak1.pak pak2.pak ...
+	Adds the directory to the head of the path, then loads and adds pak0.pak
+	pak1.pak ...
 */
 static void
 QFS_AddDirectory (const char *dir)
 {
 	searchpath_t *search;
-	char       *p;
 	char        e_dir[MAX_OSPATH];
 
 	Qexpand_squiggle (dir, e_dir);
 	dir = e_dir;
-
-	if ((p = strrchr (dir, '/')) != NULL) {
-		strcpy (qfs_gamedir_file, ++p);
-		strcpy (qfs_gamedir_path, dir);
-	} else {
-		strcpy (qfs_gamedir_file, dir);
-		strcpy (qfs_gamedir_path, va ("%s/%s", fs_userpath->string, dir));
-	}
 
 	// add the directory to the search path
 	search = calloc (1, sizeof (searchpath_t));
@@ -1222,10 +1241,43 @@ QFS_NextFilename (char *filename, const char *prefix, const char *ext)
 		digits[0] = i / 100 + '0';
 		digits[1] = i / 10 % 10 + '0';
 		digits[2] = i % 10 + '0';
-		snprintf (checkname, sizeof (checkname), "%s/%s", qfs_gamedir_path,
+		snprintf (checkname, sizeof (checkname),
+				  "%s/%s/%s", fs_userpath->string, qfs_gamedir->dir.def,
 				  filename);
 		if (Sys_FileTime (checkname) == -1)
 			return 1;					// file doesn't exist
 	}
 	return 0;
+}
+
+QFile *
+QFS_WOpen (const char *path, int zip)
+{
+	dstring_t  *full_path = dstring_new ();
+	QFile      *file;
+	char        mode[4] = "wb\000\000";
+
+	if (zip)
+		mode[2] = bound (1, zip, 9);
+	dsprintf (full_path, "%s/%s", fs_userpath->string, path);
+	QFS_CreatePath (full_path->str);
+	file = Qopen (full_path->str, mode);
+	dstring_delete (full_path);
+	return file;
+}
+
+int
+QFS_Rename (const char *old, const char *new)
+{
+	dstring_t  *full_old = dstring_new ();
+	dstring_t  *full_new = dstring_new ();
+	int         ret;
+
+	dsprintf (full_old, "%s/%s", fs_userpath->string, old);
+	dsprintf (full_new, "%s/%s", fs_userpath->string, new);
+	QFS_CreatePath (full_new->str);
+	ret = Qrename (full_old->str, full_new->str);
+	dstring_delete (full_old);
+	dstring_delete (full_new);
+	return ret;
 }

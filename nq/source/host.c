@@ -285,8 +285,8 @@ Host_WriteConfiguration (void)
 	// dedicated servers initialize the host but don't parse and set the
 	// config.cfg cvars
 	if (host_initialized && !isDedicated && cl_writecfg->int_val) {
-		char       *path = va ("%s/config.cfg", qfs_gamedir_path);
-		f = Qopen (path, "w");
+		char       *path = va ("%s/config.cfg", qfs_gamedir->dir.def);
+		f = QFS_WOpen (path, 0);
 		if (!f) {
 			Con_Printf ("Couldn't write config.cfg.\n");
 			return;

@@ -46,9 +46,16 @@ typedef struct searchpath_s {
 
 typedef struct gamedir_s {
 	const char *name;
+	const char *gamedir;
 	const char *path;
 	const char *gamecode;
-	const char *skinpath;
+	struct {
+		const char *def;
+		const char *skins;
+		const char *progs;
+		const char *sound;
+		const char *maps;
+	} dir;
 } gamedir_t;
 
 extern searchpath_t *qfs_searchpaths;
@@ -59,9 +66,6 @@ extern struct cvar_s *fs_sharepath;
 
 extern int file_from_pak;
 extern int qfs_filesize;
-
-extern char	qfs_gamedir_path[MAX_OSPATH];
-extern char	qfs_gamedir_file[MAX_OSPATH];
 
 struct cache_user_s;
 
@@ -78,7 +82,8 @@ void QFS_StripExtension (const char *in, char *out);
 int QFS_NextFilename (char *filename, const char *prefix, const char *ext);
 const char *QFS_FileExtension (const char *in);
 
-
+QFile *QFS_WOpen (const char *path, int zip);
+int QFS_Rename (const char *old, const char *new);
 
 byte *QFS_LoadFile (const char *path, int usehunk);
 byte *QFS_LoadStackFile (const char *path, void *buffer, int bufsize);

@@ -465,11 +465,11 @@ Host_Savegame_f (void)
 		}
 	}
 
-	snprintf (name, sizeof (name), "%s/%s", qfs_gamedir_path, Cmd_Argv (1));
+	snprintf (name, sizeof (name), "%s/%s", qfs_gamedir->dir.def, Cmd_Argv (1));
 	QFS_DefaultExtension (name, ".sav");
 
 	Con_Printf ("Saving game to %s...\n", name);
-	f = Qopen (name, "w");
+	f = QFS_WOpen (name, 0);
 	if (!f) {
 		Con_Printf ("ERROR: couldn't open.\n");
 		return;
@@ -528,7 +528,8 @@ Host_Loadgame_f (void)
 
 	cls.demonum = -1;					// stop demo loop in case this fails
 
-	snprintf (name, sizeof (name), "%s/%s", qfs_gamedir_path, Cmd_Argv (1));
+	snprintf (name, sizeof (name), "%s/%s/%s", fs_userpath->string,
+			  qfs_gamedir->dir.def, Cmd_Argv (1));
 	QFS_DefaultExtension (name, ".sav");
 
 	// we can't call SCR_BeginLoadingPlaque, because too much stack space has
