@@ -37,6 +37,7 @@ static const char rcsid[] =
 #include <winsock.h>
 
 #include "QF/cvar.h"
+#include "QF/info.h"
 #include "QF/qargs.h"
 #include "QF/sys.h"
 
@@ -46,7 +47,7 @@ static const char rcsid[] =
 qboolean    is_server = true;
 qboolean    WinNT;
 server_static_t svs;
-char       *svs_info = svs.info;
+info_t    **svs_info = &svs.info;
 
 
 void
