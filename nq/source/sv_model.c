@@ -48,13 +48,11 @@ Mod_LoadLighting (lump_t *l)
 void
 Mod_LoadAliasModel (model_t *mod, void *buf)
 {
-	//Mod_LoadBrushModel (mod, buf);
 }
 
 void
 Mod_LoadSpriteModel (model_t *mod, void *buf)
 {
-	//Mod_LoadBrushModel (mod, buf);
 }
 
 void
