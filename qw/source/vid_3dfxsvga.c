@@ -44,6 +44,7 @@
 #include <glide/sst1vid.h>
 #include <sys/signal.h>
 
+#include "QF/compat.h"
 #include "QF/console.h"
 #include "glquake.h"
 #include "host.h"
