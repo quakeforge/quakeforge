@@ -1,4 +1,4 @@
-INCLUDES= -I$(top_srcdir)/include
+INCLUDES= -I$(top_srcdir)/include $(SOUND_CFLAGS)
 
 lib_LTLIBRARIES = @SND_TARGETS@
 EXTRA_LTLIBRARIES = libQFsound.la

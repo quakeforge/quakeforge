@@ -32,11 +32,13 @@
 
 #include <SDL_audio.h>
 #include <SDL_byteorder.h>
+#include <stdlib.h>
 
 #include "QF/cmd.h"
 #include "QF/console.h"
 #include "QF/qargs.h"
 #include "QF/sound.h"
+#include "QF/sys.h"
 
 static dma_t the_shm;
 static int  snd_inited;
@@ -47,11 +49,27 @@ extern int  desired_bits;
 static void
 paint_audio (void *unused, Uint8 * stream, int len)
 {
+	int streamsamples;
+	int sampleposbytes;
+	int samplesbytes;
+
 	if (shm) {
-		shm->buffer = stream;
-		shm->samplepos += len / (shm->samplebits / 8);
-		// Check for samplepos overflow?
-		S_PaintChannels (shm->samplepos);
+		streamsamples = len / (shm->samplebits / 8);
+		sampleposbytes = shm->samplepos * (shm->samplebits / 8);
+		samplesbytes = shm->samples * (shm->samplebits / 8);
+
+		shm->samplepos += streamsamples;
+		if (shm->samplepos >= shm->samples)
+			shm->samplepos -= shm->samples;
+		S_PaintChannels (soundtime + streamsamples);
+
+		if (shm->samplepos + streamsamples <= shm->samples)
+			memcpy (stream, shm->buffer + sampleposbytes, len);
+		else {
+			memcpy (stream, shm->buffer + sampleposbytes, samplesbytes - sampleposbytes);
+			memcpy (stream + samplesbytes - sampleposbytes, shm->buffer, len - (samplesbytes - sampleposbytes));
+		}
+		soundtime += streamsamples;
 	}
 }
 
@@ -113,6 +131,7 @@ SNDDMA_Init (void)
 			memcpy (&obtained, &desired, sizeof (desired));
 			break;
 	}
+	SDL_LockAudio();
 	SDL_PauseAudio (0);
 
 	/* Fill the audio DMA information block */
@@ -121,10 +140,14 @@ SNDDMA_Init (void)
 	shm->samplebits = (obtained.format & 0xFF);
 	shm->speed = obtained.freq;
 	shm->channels = obtained.channels;
-	shm->samples = obtained.samples * shm->channels;
+	shm->samples = obtained.samples * 4;
 	shm->samplepos = 0;
 	shm->submission_chunk = 1;
-	shm->buffer = NULL;
+	shm->buffer = calloc(shm->samples * (shm->samplebits / 8), 1);
+	if (!shm->buffer)
+	{
+		Sys_Error ("Failed to allocate buffer for sound!\n");
+	}
 
 	snd_inited = 1;
 	return 1;
@@ -140,8 +163,11 @@ void
 SNDDMA_Shutdown (void)
 {
 	if (snd_inited) {
+		SDL_PauseAudio (1);
+		SDL_UnlockAudio ();
 		SDL_CloseAudio ();
 		snd_inited = 0;
+		shm = NULL;
 	}
 }
 
@@ -155,4 +181,6 @@ SNDDMA_Shutdown (void)
 void
 SNDDMA_Submit (void)
 {
+	SDL_UnlockAudio();
+	SDL_LockAudio();
 }
