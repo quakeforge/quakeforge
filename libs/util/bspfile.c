@@ -50,49 +50,49 @@ static const char rcsid[] =
 #include "QF/sys.h"
 
 int			nummodels;
-dmodel_t	dmodels[MAX_MAP_MODELS];
+dmodel_t	*dmodels;
 
 int			visdatasize;
-byte		dvisdata[MAX_MAP_VISIBILITY];
+byte		*dvisdata;
 
 int			lightdatasize;
-byte		dlightdata[MAX_MAP_LIGHTING];
+byte		*dlightdata;
 
 int			texdatasize;
-byte		dtexdata[MAX_MAP_MIPTEX]; // (dmiptexlump_t)
+byte		*dtexdata;
 
 int			entdatasize;
-char		dentdata[MAX_MAP_ENTSTRING];
+char		*dentdata;
 
 int			numleafs;
-dleaf_t		dleafs[MAX_MAP_LEAFS];
+dleaf_t		*dleafs;
 
 int			numplanes;
-dplane_t	dplanes[MAX_MAP_PLANES];
+dplane_t	*dplanes;
 
 int			numvertexes;
-dvertex_t	dvertexes[MAX_MAP_VERTS];
+dvertex_t	*dvertexes;
 
 int			numnodes;
-dnode_t		dnodes[MAX_MAP_NODES];
+dnode_t		*dnodes;
 
 int			numtexinfo;
-texinfo_t	texinfo[MAX_MAP_TEXINFO];
+texinfo_t	*texinfo;
 
 int			numfaces;
-dface_t		dfaces[MAX_MAP_FACES];
+dface_t		*dfaces;
 
 int			numclipnodes;
-dclipnode_t	dclipnodes[MAX_MAP_CLIPNODES];
+dclipnode_t	*dclipnodes;
 
 int			numedges;
-dedge_t		dedges[MAX_MAP_EDGES];
+dedge_t		*dedges;
 
 int			nummarksurfaces;
-unsigned short		dmarksurfaces[MAX_MAP_MARKSURFACES];
+unsigned short		*dmarksurfaces;
 
 int			numsurfedges;
-int			dsurfedges[MAX_MAP_SURFEDGES];
+int			*dsurfedges;
 
 dheader_t		*header;
 dheader_t		 outheader;
@@ -234,7 +234,7 @@ AddLump (int lumpnum, void *data, int len)
 }
 
 static int
-CopyLump (int lump, void *dest, int size)
+CopyLump (int lump, void **dest, int size)
 {
 	int		length, ofs;
 
@@ -244,7 +244,10 @@ CopyLump (int lump, void *dest, int size)
 	if (length % size)
 		Sys_Error ("LoadBSPFile: odd lump size");
 	
-	memcpy (dest, (byte *) header + ofs, length);
+	*dest = malloc (length);
+	if (!dest)
+		Sys_Error ("LoadBSPFile: out of memory");
+	memcpy (*dest, (byte *) header + ofs, length);
 
 	return length / size;
 }
@@ -265,25 +268,25 @@ LoadBSPFile (const char *filename)
 
 	if (header->version != BSPVERSION)
 		Sys_Error ("%s is version %i, not %i", filename, i, BSPVERSION);
-
-	nummodels = CopyLump (LUMP_MODELS, dmodels, sizeof (dmodel_t));
-	numvertexes = CopyLump (LUMP_VERTEXES, dvertexes, sizeof (dvertex_t));
-	numplanes = CopyLump (LUMP_PLANES, dplanes, sizeof (dplane_t));
-	numleafs = CopyLump (LUMP_LEAFS, dleafs, sizeof (dleaf_t));
-	numnodes = CopyLump (LUMP_NODES, dnodes, sizeof (dnode_t));
-	numtexinfo = CopyLump (LUMP_TEXINFO, texinfo, sizeof (texinfo_t));
-	numclipnodes = CopyLump (LUMP_CLIPNODES, dclipnodes, sizeof (dclipnode_t));
-	numfaces = CopyLump (LUMP_FACES, dfaces, sizeof (dface_t));
-	nummarksurfaces = CopyLump (LUMP_MARKSURFACES, dmarksurfaces,
+//FIXME casting to (void**) isn't really portable :(
+	nummodels = CopyLump (LUMP_MODELS, (void **)&dmodels, sizeof (dmodel_t));
+	numvertexes = CopyLump (LUMP_VERTEXES, (void **)&dvertexes, sizeof (dvertex_t));
+	numplanes = CopyLump (LUMP_PLANES, (void **)&dplanes, sizeof (dplane_t));
+	numleafs = CopyLump (LUMP_LEAFS, (void **)&dleafs, sizeof (dleaf_t));
+	numnodes = CopyLump (LUMP_NODES, (void **)&dnodes, sizeof (dnode_t));
+	numtexinfo = CopyLump (LUMP_TEXINFO, (void **)&texinfo, sizeof (texinfo_t));
+	numclipnodes = CopyLump (LUMP_CLIPNODES, (void **)&dclipnodes, sizeof (dclipnode_t));
+	numfaces = CopyLump (LUMP_FACES, (void **)&dfaces, sizeof (dface_t));
+	nummarksurfaces = CopyLump (LUMP_MARKSURFACES, (void **)&dmarksurfaces,
 								sizeof (dmarksurfaces[0]));
-	numsurfedges = CopyLump (LUMP_SURFEDGES, dsurfedges,
+	numsurfedges = CopyLump (LUMP_SURFEDGES, (void **)&dsurfedges,
 							 sizeof (dsurfedges[0]));
-	numedges = CopyLump (LUMP_EDGES, dedges, sizeof (dedge_t));
+	numedges = CopyLump (LUMP_EDGES, (void **)&dedges, sizeof (dedge_t));
 
-	texdatasize = CopyLump (LUMP_TEXTURES, dtexdata, 1);
-	visdatasize = CopyLump (LUMP_VISIBILITY, dvisdata, 1);
-	lightdatasize = CopyLump (LUMP_LIGHTING, dlightdata, 1);
-	entdatasize = CopyLump (LUMP_ENTITIES, dentdata, 1);
+	texdatasize = CopyLump (LUMP_TEXTURES, (void **)&dtexdata, 1);
+	visdatasize = CopyLump (LUMP_VISIBILITY, (void **)&dvisdata, 1);
+	lightdatasize = CopyLump (LUMP_LIGHTING, (void **)&dlightdata, 1);
+	entdatasize = CopyLump (LUMP_ENTITIES, (void **)&dentdata, 1);
 
 	free (header);
 		

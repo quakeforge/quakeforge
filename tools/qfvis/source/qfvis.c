@@ -370,7 +370,7 @@ void *LeafThread (void *thread)
 
 		PortalFlow (portal);
 
-		if (options.verbosity >= 0)
+		if (options.verbosity > 0)
 			printf ("portal:%4i  mightsee:%4i  cansee:%4i\n", 
 						(int) (portal - portals), 
 						portal->nummightsee, 
@@ -449,7 +449,7 @@ LeafFlow (int leafnum)
 			numvis++;
 
 	// compress the bit string
-    if (options.verbosity >= 0)
+    if (options.verbosity > 0)
 		printf ("leaf %4i : %4i visible\n", leafnum, numvis);
     totalvis += numvis;
 
@@ -524,7 +524,7 @@ CalcPortalVis (void)
 	LeafThread (0);
 #endif
 
-    if (options.verbosity >= 0) {
+    if (options.verbosity > 0) {
 		printf ("portalcheck: %i  portaltest: %i  portalpass: %i\n",
 				c_portalcheck, c_portaltest, c_portalpass);
 		printf ("c_vistest: %i  c_mighttest: %i\n", c_vistest, c_mighttest);

@@ -234,49 +234,49 @@ typedef struct {
 // the utilities get to be lazy and just use large static arrays
 
 extern	int			nummodels;
-extern	dmodel_t	dmodels[MAX_MAP_MODELS];
+extern	dmodel_t	*dmodels;
 
 extern	int			visdatasize;
-extern	byte		dvisdata[MAX_MAP_VISIBILITY];
+extern	byte		*dvisdata;
 
 extern	int			lightdatasize;
-extern	byte		dlightdata[MAX_MAP_LIGHTING];
+extern	byte		*dlightdata;
 
 extern	int			texdatasize;
-extern	byte		dtexdata[MAX_MAP_MIPTEX]; // (dmiptexlump_t)
+extern	byte		*dtexdata; // (dmiptexlump_t)
 
 extern	int			entdatasize;
-extern	char		dentdata[MAX_MAP_ENTSTRING];
+extern	char		*dentdata;
 
 extern	int			numleafs;
-extern	dleaf_t		dleafs[MAX_MAP_LEAFS];
+extern	dleaf_t		*dleafs;
 
 extern	int			numplanes;
-extern	dplane_t	dplanes[MAX_MAP_PLANES];
+extern	dplane_t	*dplanes;
 
 extern	int			numvertexes;
-extern	dvertex_t	dvertexes[MAX_MAP_VERTS];
+extern	dvertex_t	*dvertexes;
 
 extern	int			numnodes;
-extern	dnode_t		dnodes[MAX_MAP_NODES];
+extern	dnode_t		*dnodes;
 
 extern	int			numtexinfo;
-extern	texinfo_t	texinfo[MAX_MAP_TEXINFO];
+extern	texinfo_t	*texinfo;
 
 extern	int			numfaces;
-extern	dface_t		dfaces[MAX_MAP_FACES];
+extern	dface_t		*dfaces;
 
 extern	int			numclipnodes;
-extern	dclipnode_t	dclipnodes[MAX_MAP_CLIPNODES];
+extern	dclipnode_t	*dclipnodes;
 
 extern	int			numedges;
-extern	dedge_t		dedges[MAX_MAP_EDGES];
+extern	dedge_t		*dedges;
 
 extern	int			nummarksurfaces;
-extern	unsigned short	dmarksurfaces[MAX_MAP_MARKSURFACES];
+extern	unsigned short	*dmarksurfaces;
 
 extern	int			numsurfedges;
-extern	int			dsurfedges[MAX_MAP_SURFEDGES];
+extern	int			*dsurfedges;
 
 void DecompressVis (byte *in, byte *decompressed);
 int CompressVis (byte *vis, byte *dest);
