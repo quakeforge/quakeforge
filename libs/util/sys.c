@@ -330,7 +330,7 @@ Sys_Error (const char *error, ...)
 	va_end (argptr);
 
 #ifdef WIN32
-	MessageBox (NULL, text, "Error", 0 /* MB_OK */ );
+	MessageBox (NULL, string, "Error", 0 /* MB_OK */ );
 #endif
 	fprintf (stderr, "Fatal error: %s\n", string);
 
