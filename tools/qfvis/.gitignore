@@ -1,0 +1,5 @@
+.vimrc
+.deps
+Makefile.in
+Makefile
+qfvis.1
