@@ -304,23 +304,28 @@ static inline void
 check_global (progs_t *pr, dstatement_t *st, opcode_t *op, etype_t type,
 			  unsigned short operand)
 {
+	const char *msg;
+
 	switch (type) {
 		case ev_short:
 			break;
 		case ev_void:
-			//FIXME need better "not used flags"
-			if (operand && st->op != OP_RETURN && st->op != OP_DONE)
-				PR_Error (pr, "PR_Check_Opcodes: non-zero global index in "
-						  "void operand (statement %ld: %s)\n",
-						  (long)(st - pr->pr_statements), op->opname);
+			if (operand) {
+				msg = "non-zero global index in void operand";
+				goto error;
+			}
 			break;
 		default:
-			if (operand >= pr->progs->numglobals)
-				PR_Error (pr, "PR_Check_Opcodes: out of bounds global index "
-						  "(statement %ld: %s)\n",
-						  (long)(st - pr->pr_statements), op->opname);
+			if (operand >= pr->progs->numglobals) {
+				msg = "out of bounds global index";
+				goto error;
+			}
 			break;
 	}
+	return;
+error:
+	PR_Error (pr, "PR_Check_Opcodes: %s (statement %ld: %s)\n", msg,
+			  (long)(st - pr->pr_statements), op->opname);
 }
 
 void
@@ -348,6 +353,12 @@ PR_Check_Opcodes (progs_t *pr)
 				break;
 			case OP_GOTO:
 				check_branch (pr, st, op, st->a);
+				break;
+			case OP_DONE:
+			case OP_RETURN:
+				check_global (pr, st, op, ev_integer, st->a);
+				check_global (pr, st, op, ev_void, st->b);
+				check_global (pr, st, op, ev_void, st->c);
 				break;
 			default:
 				check_global (pr, st, op, op->type_a, st->a);
