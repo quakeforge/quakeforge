@@ -41,11 +41,6 @@ static const char rcsid[] =
 # include <strings.h>
 #endif
 
-#ifdef _WIN32
-// must be BEFORE include gl/gl.h
-# include "winquake.h"
-#endif
-
 #include "QF/console.h"
 #include "QF/cvar.h"
 #include "QF/input.h"

@@ -43,11 +43,7 @@ static const char rcsid[] =
 
 #include "compat.h"
 
-#ifdef _WIN32
-# include "winquake.h"
-#else
-# define DWORD	unsigned long
-#endif
+#include "winquake.h"
 
 #define	PAINTBUFFER_SIZE	512
 portable_samplepair_t paintbuffer[PAINTBUFFER_SIZE * 2];
@@ -89,7 +85,7 @@ void
 SND_TransferStereo16 (int endtime)
 {
 	int			lpaintedtime, lpos;
-	DWORD	   *pbuf;
+	unsigned long *pbuf;
 
 	snd_vol = volume->value * 256;
 
@@ -109,7 +105,7 @@ SND_TransferStereo16 (int endtime)
 #endif
 #endif
 	{
-		pbuf = (DWORD *) shm->buffer;
+		pbuf = (unsigned long *) shm->buffer;
 	}
 
 	while (lpaintedtime < endtime) {
@@ -144,7 +140,7 @@ SND_TransferPaintBuffer (int endtime)
 {
 	int			count, out_idx, out_mask, snd_vol, step, val;
 	int		   *p;
-	DWORD	   *pbuf;
+	unsigned long *pbuf;
 
 	if (shm->samplebits == 16 && shm->channels == 2) {
 		SND_TransferStereo16 (endtime);
@@ -170,7 +166,7 @@ SND_TransferPaintBuffer (int endtime)
 #endif
 #endif
 	{
-		pbuf = (DWORD *) shm->buffer;
+		pbuf = (unsigned long *) shm->buffer;
 	}
 
 	if (shm->samplebits == 16) {

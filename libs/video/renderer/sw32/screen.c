@@ -845,15 +845,6 @@ SCR_UpdateScreen (double realtime, SCR_Func *scr_funcs, int swap)
 	if (scr_disabled_for_loading)
 		return;
 
-#ifdef _WIN32
-	{									// don't suck up any cpu if minimized
-		extern qboolean Minimized;
-
-		if (Minimized)
-			return;
-	}
-#endif
-
 	r_realtime = realtime;
 
 	scr_copytop = 0;

@@ -39,9 +39,7 @@ static const char rcsid[] =
 
 #include <stdlib.h>
 
-#ifdef _WIN32
-# include "winquake.h"
-#endif
+#include "winquake.h"
 
 #include "QF/cmd.h"
 #include "QF/cvar.h"
@@ -171,9 +169,7 @@ SND_Startup (void)
 		rc = S_O_Init ();
 
 		if (!rc) {
-#ifndef	_WIN32
 			Sys_Printf ("S_Startup: S_O_Init failed.\n");
-#endif
 			sound_started = 0;
 			return;
 		}

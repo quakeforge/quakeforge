@@ -56,7 +56,7 @@ static const char rcsid[] =
 # endif
 #endif
 
-#ifdef WIN32
+#ifdef HAVE_IO_H
 # include <io.h>
 #endif
 

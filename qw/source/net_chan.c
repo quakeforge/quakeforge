@@ -30,12 +30,8 @@ static const char rcsid[] =
 #ifdef HAVE_CONFIG_H
 # include "config.h"
 #endif
-#ifndef _WIN32
-# ifdef HAVE_UNISTD_H
+#ifdef HAVE_UNISTD_H
 #  include <unistd.h>
-# endif
-#else
-# include <windows.h>
 #endif
 #ifdef HAVE_STRING_H
 # include <string.h>
@@ -116,11 +112,7 @@ Netchan_Init (void)
 	int         port;
 
 	// pick a port value that should be nice and random
-#ifdef _WIN32
-	port = ((int) (timeGetTime () * 1000) * time (NULL)) & 0xffff;
-#else
-	port = ((int) (getpid () + getuid () * 1000) * time (NULL)) & 0xffff;
-#endif
+	port = rand () * (65536.0 / RAND_MAX);
 
 	Cvar_SetValue (qport, port);
 }
@@ -132,11 +124,11 @@ Netchan_Init_Cvars (void)
 							"Show all network packets");
 	showdrop = Cvar_Get ("showdrop", "0", CVAR_NONE, NULL, "Toggle the "
 						 "display of how many packets you are dropping");
-        qport = Cvar_Get ("qport", "0", CVAR_NONE, NULL, "The internal port "
-						  "number for the game networking code. Useful for "
-						  "clients who use multiple connections through one "
-						  "IP address (NAT/IP-MASQ) because default port is "
-						  "random.");
+	qport = Cvar_Get ("qport", "0", CVAR_NONE, NULL, "The internal port "
+					  "number for the game networking code. Useful for "
+					  "clients who use multiple connections through one "
+					  "IP address (NAT/IP-MASQ) because default port is "
+					  "random.");
 }
 
 /*

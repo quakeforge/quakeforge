@@ -189,55 +189,6 @@ R_MakeSky (void)
 	default:
 		Sys_Error("R_MakeSky: unsupported r_pixbytes %i\n", r_pixbytes);
 	}
-	/*
-	int         x, y;
-	int         ofs, baseofs;
-	int         xshift, yshift;
-	unsigned int *pnewsky;
-	static int  xlast = -1, ylast = -1;
-
-	xshift = skytime * skyspeed;
-	yshift = skytime * skyspeed;
-
-	if ((xshift == xlast) && (yshift == ylast))
-		return;
-
-	xlast = xshift;
-	ylast = yshift;
-
-	pnewsky = (unsigned int *) &newsky[0];
-
-	for (y = 0; y < SKYSIZE; y++) {
-		baseofs = ((y + yshift) & SKYMASK) * 131;
-
-// FIXME: clean this up
-#if UNALIGNED_OK
-		for (x = 0; x < SKYSIZE; x += 4) {
-			ofs = baseofs + ((x + xshift) & SKYMASK);
-
-			// PORT: unaligned dword access to bottommask and bottomsky
-
-			*pnewsky = (*(pnewsky + (128 / sizeof (unsigned int))) &
-						*(unsigned int *) &bottommask[ofs]) |
-				*(unsigned int *) &bottomsky[ofs];
-
-			pnewsky++;
-		}
-#else
-		for (x = 0; x < SKYSIZE; x++) {
-			ofs = baseofs + ((x + xshift) & SKYMASK);
-
-			*(byte *) pnewsky = (*((byte *) pnewsky + 128) &
-								 *(byte *) & bottommask[ofs]) |
-				*(byte *) & bottomsky[ofs];
-			pnewsky = (unsigned int *) ((byte *) pnewsky + 1);
-		}
-#endif
-
-		pnewsky += 128 / sizeof (unsigned int);
-	}
-	*/
-
 	r_skymade = 1;
 }
 

@@ -46,12 +46,6 @@ static const char rcsid[] =
 
 #include "compat.h"
 
-#ifdef WIN32
-// FIXME: this is evil...
-# include <windows.h>
-HWND        mainwindow;
-#endif
-
 cvar_t	*m_filter;
 cvar_t	*in_grab;
 

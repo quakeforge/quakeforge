@@ -136,9 +136,6 @@ main (int argc, const char **argv)
 
 	host_parms.memsize = 8 * 1024 * 1024;
 
-	if ((t = COM_CheckParm ("-heapsize")) != 0 && t + 1 < com_argc)
-		host_parms.memsize = atoi (com_argv[t + 1]) * 1024;
-
 	if ((t = COM_CheckParm ("-mem")) != 0 && t + 1 < com_argc)
 		host_parms.memsize = atoi (com_argv[t + 1]) * 1024 * 1024;
 

@@ -366,11 +366,11 @@ WinMain (HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine,
 	if (host_parms.memsize > MAXIMUM_WIN_MEMORY)
 		host_parms.memsize = MAXIMUM_WIN_MEMORY;
 
-	if (COM_CheckParm ("-heapsize")) {
-		t = COM_CheckParm ("-heapsize") + 1;
+	if (COM_CheckParm ("-mem")) {
+		t = COM_CheckParm ("-mem") + 1;
 
 		if (t < com_argc)
-			host_parms.memsize = atoi (com_argv[t]) * 1024;
+			host_parms.memsize = atoi (com_argv[t]) * 1024 * 1024;
 	}
 
 	host_parms.membase = malloc (host_parms.memsize);

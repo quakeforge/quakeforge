@@ -77,9 +77,6 @@ int         noconinput;
 
 #ifdef _WIN32
 # include "winquake.h"
-// FIXME: minimized is not currently supported under SDL
-qboolean    Minimized = false;
-void        MaskExceptions (void);
 #endif
 
 void
@@ -89,9 +86,6 @@ Sys_Init (void)
 	OSVERSIONINFO vinfo;
 #endif
 #ifdef USE_INTEL_ASM
-#ifdef _WIN32
-	MaskExceptions ();
-#endif
 	Sys_SetFPCW ();
 #endif
 
