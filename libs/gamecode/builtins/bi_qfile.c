@@ -284,7 +284,7 @@ QFile_Progs_Init (progs_t *pr, int secure)
 {
 	qfile_resources_t *res = calloc (sizeof (qfile_resources_t), 1);
 
-	PR_Resources_Register (pr, "Qfile", res, bi_qfile_clear);
+	PR_Resources_Register (pr, "QFile", res, bi_qfile_clear);
 	if (secure) {
 		PR_AddBuiltin (pr, "Qrename", secured, -1);
 		PR_AddBuiltin (pr, "Qremove", secured, -1);
