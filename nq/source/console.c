@@ -643,3 +643,8 @@ void
 Con_ProcessInput (void)
 {
 }
+
+void
+Con_Shutdown (void)
+{
+}

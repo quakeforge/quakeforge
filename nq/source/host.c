@@ -1030,4 +1030,5 @@ Host_Shutdown (void)
 		IN_Shutdown ();
 		VID_Shutdown ();
 	}
+	Con_Shutdown ();
 }
