@@ -47,6 +47,7 @@ static __attribute__ ((unused)) const char rcsid[] =
 #include <getopt.h>
 #include <errno.h>
 #include <stdlib.h>
+#include <ctype.h>
 #ifdef HAVE_PTHREAD_H
 # include <pthread.h>
 #endif
@@ -651,19 +652,21 @@ CalcPassages (void)
 static void
 LoadPortals (char *name)
 {
-	char        magic[80];
-	FILE       *f;
+	const char *line;
+	char       *err;
+	QFile      *f;
 	int         clusternums[2];
-	int         numpoints, i, j;
+	int         numpoints, i, j, k;
+	int         read_leafs = 0;
 	cluster_t  *cluster;
 	plane_t     plane;
 	portal_t   *portal;
 	winding_t  *winding;
 
 	if (!strcmp (name, "-"))
-		f = stdin;
+		f = Qdopen (0, "rt"); // create a QFile of stdin
 	else {
-		f = fopen (name, "r");
+		f = Qopen (name, "r");
 		if (!f) {
 			printf ("LoadPortals: couldn't read %s\n", name);
 			printf ("No vising performed.\n");
@@ -671,11 +674,30 @@ LoadPortals (char *name)
 		}
 	}
 
-	if (fscanf (f, "%79s\n%i\n%i\n%i\n", magic, &portalclusters, &numportals,
-				&numrealleafs) != 4)
-		Sys_Error ("LoadPortals: failed to read header");
-	if (strcmp (magic, PORTALFILE))
+	line = Qgetline (f);
+
+	if (line && !strcmp (line, PORTALFILE "\n")) {
+		line = Qgetline (f);
+		if (!line || sscanf (line, "%i\n", &portalclusters) != 1)
+			Sys_Error ("LoadPortals: failed to read header");
+		line = Qgetline (f);
+		if (!line || sscanf (line, "%i\n", &numportals) != 1)
+			Sys_Error ("LoadPortals: failed to read header");
+		numrealleafs = portalclusters;
+	} else if ((line && !strcmp (line, PORTALFILE_AM "\n"))) {
+		line = Qgetline (f);
+		if (!line || sscanf (line, "%i\n", &portalclusters) != 1)
+			Sys_Error ("LoadPortals: failed to read header");
+		line = Qgetline (f);
+		if (!line || sscanf (line, "%i\n", &numportals) != 1)
+			Sys_Error ("LoadPortals: failed to read header");
+		line = Qgetline (f);
+		if (!line || sscanf (line, "%i\n", &numrealleafs) != 1)
+			Sys_Error ("LoadPortals: failed to read header");
+		read_leafs = 1;
+	} else {
 		Sys_Error ("LoadPortals: not a portal file");
+	}
 
 	if (options.verbosity >= 0) {
 		printf ("%4i portalclusters\n", portalclusters);
@@ -697,9 +719,21 @@ LoadPortals (char *name)
 	originalvismapsize = numrealleafs * ((numrealleafs + 7) / 8);
 
 	for (i = 0, portal = portals; i < numportals; i++) {
-		if (fscanf (f, "%i %i %i ", &numpoints, &clusternums[0],
-					&clusternums[1]) != 3)
+		line = Qgetline (f);
+		if (!line)
 			Sys_Error ("LoadPortals: reading portal %i", i);
+
+		numpoints = strtol (line, &err, 10);
+		if (err == line)
+			Sys_Error ("LoadPortals: reading portal %i", i);
+		line = err;
+		for (j = 0; j < 2; j++) {
+			clusternums[j] = strtol (line, &err, 10);
+			if (err == line)
+				Sys_Error ("LoadPortals: reading portal %i", i);
+			line = err;
+		}
+
 		if (numpoints > MAX_POINTS_ON_WINDING)
 			Sys_Error ("LoadPortals: portal %i has too many points", i);
 		if ((unsigned) clusternums[0] > (unsigned) portalclusters
@@ -711,18 +745,24 @@ LoadPortals (char *name)
 		winding->numpoints = numpoints;
 
 		for (j = 0; j < numpoints; j++) {
-			double v[3];
-			int k;
-
-			// scanf into double, then assign to vec_t
-			if (fscanf (f, "(%lf %lf %lf ) ", &v[0], &v[1], &v[2]) != 3)
+			// (%ld %ld %ld)
+			while (isspace (*line))
+				line++;
+			if (*line++ != '(')
 				Sys_Error ("LoadPortals: reading portal %i", i);
 
-			for (k = 0; k < 3; k++)		
-				winding->points[j][k] = v[k];
+			for (k = 0; k < 3; k++) {
+				winding->points[j][k] = strtod (line, &err);
+				if (err == line)
+					Sys_Error ("LoadPortals: reading portal %i", i);
+				line = err;
+			}
+
+			while (isspace (*line))
+				line++;
+			if (*line++ != ')')
+				Sys_Error ("LoadPortals: reading portal %i", i);
 		}
-	
-		fscanf (f, "\n");
 
 		// calc plane
 		PlaneFromWinding (winding, &plane);
@@ -754,10 +794,17 @@ LoadPortals (char *name)
 	}
 
 	leafcluster = calloc (numrealleafs, sizeof (int));
-	for (i = 0; i < numrealleafs; i++)
-		if (fscanf (f, "%i\n", &leafcluster[i]) != 1)
-			Sys_Error ("LoadPortals: parse error in leaf->cluster mappings");
-	fclose (f);
+	if (read_leafs) {
+		for (i = 0; i < numrealleafs; i++)
+			line = Qgetline (f);
+			if (sscanf (line, "%i\n", &leafcluster[i]) != 1)
+				Sys_Error ("LoadPortals: parse error in leaf->cluster "
+						   "mappings");
+	} else {
+		for (i = 0; i < numrealleafs; i++)
+			leafcluster[i] = i;
+	}
+	Qclose (f);
 }
 
 int
