@@ -89,4 +89,6 @@ struct def_s *emit_methods (methodlist_t *methods, const char *name,
 
 void clear_selectors (void);
 
+struct expr_s *method_check_params (method_t *method, struct expr_s *args);
+
 #endif//__method_h

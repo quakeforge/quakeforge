@@ -55,6 +55,7 @@ static __attribute__ ((unused)) const char rcsid[] =
 #include "emit.h"
 #include "immediate.h"
 #include "method.h"
+#include "options.h"
 #include "reloc.h"
 #include "strpool.h"
 #include "struct.h"
@@ -382,4 +383,56 @@ clear_selectors (void)
 		Hash_FlushTable (sel_def_hash);
 	if (known_methods)
 		Hash_FlushTable (known_methods);
+}
+
+expr_t *
+method_check_params (method_t *method, expr_t *args)
+{
+	int         i, count, parm_count;
+	expr_t     *a, **arg_list, *err = 0;
+	type_t     *mtype = method->type;
+
+	if (mtype->num_parms == -1)
+		return 0;
+
+	for (count = 0, a = args; a; a = a->next)
+		count++;
+
+	if (count > MAX_PARMS)
+		return error (args, "more than %d parameters", MAX_PARMS);
+
+	if (mtype->num_parms >= 0)
+		parm_count = mtype->num_parms;
+	else
+		parm_count = -mtype->num_parms - 1;
+
+	if (count < parm_count)
+		return error (args, "too few arguments");
+	if (mtype->num_parms >= 0 && count > mtype->num_parms)
+		return error (args, "too many arguments");
+
+	arg_list = malloc (count * sizeof (expr_t *));
+	for (i = count - 1, a = args; a; a = a->next)
+		arg_list[i--] = a;
+	for (i = 2; i < count; i++) {
+		expr_t     *e = arg_list[i];
+		type_t     *t = get_type (e);
+ 
+		if (mtype->parm_types[i] == &type_float && e->type == ex_integer) {
+			convert_int (e);
+			t = &type_float;
+		}
+		if (i < parm_count) {
+			if (e->type != ex_nil)
+				if (!type_assignable (mtype->parm_types[i], t)) {
+					err = error (e, "type mismatch for parameter %d of %s",
+								 i - 1, method->name);
+				}
+		} else {
+			if (e->type == ex_integer && options.warnings.vararg_integer)
+				warning (e, "passing integer consant into ... function");
+		}
+	}
+	free (arg_list);
+	return err;
 }
