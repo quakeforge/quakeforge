@@ -369,6 +369,7 @@ RECURSIVE              = YES
 
 EXCLUDE                = qc-lex.c qc-parse.c qc-parse.h
 EXCLUDE               += fbset_modes_l.c fbset_modes_y.c fbset_modes_y.h
+EXCLUDE				  += @top_srcdir@/tools/Forge
 
 # The EXCLUDE_SYMLINKS tag can be used select whether or not files or directories 
 # that are symbolic links (a Unix filesystem feature) are excluded from the input.
