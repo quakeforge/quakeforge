@@ -43,15 +43,12 @@
 #include "glquake.h"
 #include "r_shared.h"
 
-/*
-	R_AnimateLight
-*/
+
 void
 R_AnimateLight (void)
 {
 	int         i, j, k;
 
-//
 // light animations
 // 'm' is normal light, 'a' is no light, 'z' is double bright
 	i = (int) (cl.time * 10);
@@ -67,9 +64,11 @@ R_AnimateLight (void)
 	}
 }
 
+
 /*
 	DYNAMIC LIGHTS BLEND RENDERING
 */
+
 
 void
 AddLightBlend (float r, float g, float b, float a2)
@@ -85,6 +84,7 @@ AddLightBlend (float r, float g, float b, float a2)
 	v_blend[2] = v_blend[2] * (1 - a2) + b * a2;
 //Con_Printf("AddLightBlend(): %4.2f %4.2f %4.2f %4.6f\n", v_blend[0], v_blend[1], v_blend[2], v_blend[3]);
 }
+
 
 float       bubble_sintable[33], bubble_costable[33];
 
@@ -104,6 +104,7 @@ R_InitBubble ()
 		*bub_cos++ = cos (a);
 	}
 }
+
 
 void
 R_RenderDlight (dlight_t *light)
@@ -151,9 +152,7 @@ R_RenderDlight (dlight_t *light)
 	glEnd ();
 }
 
-/*
-	R_RenderDlights
-*/
+
 void
 R_RenderDlights (void)
 {
@@ -188,9 +187,7 @@ R_RenderDlights (void)
 	DYNAMIC LIGHTS
 */
 
-/*
-	R_MarkLights
-*/
+
 // LordHavoc: heavily modified, to eliminate unnecessary texture uploads,
 //            and support bmodel lighting better
 void
@@ -283,9 +280,7 @@ loc0:
 	}
 }
 
-/*
-	R_PushDlights
-*/
+
 void
 R_PushDlights (vec3_t entorigin)
 {
@@ -409,6 +404,7 @@ RecursiveLightPoint (mnode_t *node, vec3_t start, vec3_t end)
 // go down back side
 	return RecursiveLightPoint (node->children[!side], mid, end);
 }
+
 
 int
 R_LightPoint (vec3_t p)
