@@ -507,61 +507,6 @@ X11_RestoreVidMode (void)
 #endif
 }
 
-static void
-X11_GrabKeyboard (qboolean yes)
-{
-	static qboolean is_grabbed = false;
-
-	if (yes) {
-		if (!is_grabbed) {
-			if (XGrabKeyboard (x_disp, x_win, 1, GrabModeAsync, GrabModeAsync,
-							   CurrentTime) == GrabSuccess) {
-				is_grabbed = true;
-				XSetInputFocus (x_disp, x_win, RevertToPointerRoot,
-								CurrentTime);
-			}
-		} 
-	} else {
-		XUngrabKeyboard (x_disp, CurrentTime);
-		is_grabbed = false;
-	}
-}
-
-static void
-X11_GrabMouse (qboolean yes)
-{
-	static qboolean is_grabbed = false;
-
-	if (yes) {
-		if (!is_grabbed) {
-			if (XGrabPointer (x_disp, x_win, True, MOUSE_MASK, GrabModeAsync,
-							  GrabModeAsync, x_win, None,
-							  CurrentTime) == GrabSuccess) {
-				is_grabbed = true;
-			}
-		}
-		return;
-	}
-
-	XUngrabPointer (x_disp, CurrentTime);
-	is_grabbed = false;
-	XWarpPointer (x_disp, x_win, x_win, 0, 0, 0, 0, vid.width / 2,
-				  vid.height / 2);
-}
-
-void
-X11_Grabber (qboolean grab)
-{
-	if (!vid_context_created) {
-		Con_Printf ("No video context to grab to!\n");
-		return;
-	}
-	X11_GrabMouse (grab);
-	X11_GrabKeyboard (grab);
-
-	XSync (x_disp, false);
-}
-
 void
 X11_SetCaption (const char *text)
 {

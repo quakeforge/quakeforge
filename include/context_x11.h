@@ -59,7 +59,6 @@ void X11_CloseDisplay (void);
 void X11_CreateNullCursor (void);
 void X11_CreateWindow (int, int);
 void X11_ForceViewPort (void);
-void X11_Grabber(qboolean);
 void X11_Init_Cvars (void);
 void X11_OpenDisplay (void);
 void X11_ProcessEvent (void);

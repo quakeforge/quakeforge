@@ -553,6 +553,31 @@ event_motion (XEvent *event)
 	}
 }
 
+static void
+grab_error (int code, const char *device)
+{
+	const char *reason;
+
+	switch (code) {
+		case AlreadyGrabbed:
+			reason = "already grabbed";
+			break;
+		case GrabNotViewable:
+			reason = "grab not viewable";
+			break;
+		case GrabFrozen:
+			reason = "grab frozen";
+			break;
+		case GrabInvalidTime:
+			reason = "grab invalid time";
+			break;
+		default:
+			reason = "unknown reason";
+			break;
+	}
+	Con_Printf ("failed to grab %s: %s", device, reason);
+}
+
 void
 IN_LL_Grab_Input (int grab)
 {
@@ -567,12 +592,30 @@ IN_LL_Grab_Input (int grab)
 	if ((input_grabbed && grab) || (!input_grabbed && !grab))
 		return;
 
-	input_grabbed = grab;
-	X11_Grabber (grab);
-	if (in_dga->int_val) {
-		if (grab)
+	if (grab) {
+		int         ret;
+
+		ret = XGrabPointer (x_disp, x_win, True, MOUSE_MASK, GrabModeAsync,
+							GrabModeAsync, x_win, None, CurrentTime);
+		if (ret != GrabSuccess) {
+			grab_error (ret, "mouse");
+			return;
+		}
+		ret = XGrabKeyboard (x_disp, x_win, 1, GrabModeAsync, GrabModeAsync,
+							 CurrentTime);
+		if (ret != GrabSuccess) {
+			XUngrabPointer (x_disp, CurrentTime);
+			grab_error (ret, "keyboard");
+			return;
+		}
+		input_grabbed = 1;
+		if (in_dga)
 			dga_on ();
-		else
+	} else {
+		XUngrabPointer (x_disp, CurrentTime);
+		XUngrabKeyboard (x_disp, CurrentTime);
+		input_grabbed = 0;
+		if (in_dga)
 			dga_off ();
 	}
 }
