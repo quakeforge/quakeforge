@@ -58,7 +58,7 @@ noise_diamondsquare (unsigned char *noise, unsigned int size,
 	int        *noisebuf;
 	unsigned int	gridpower, sizepower, g, g2, x, y;
 
-#define n(x, y) noisebuf[((y) & size1) * size + ((x) & size1)]
+#define n(x, y) noisebuf[(((y) & size1) << sizepower) + ((x) & size1)]
 
 	for (sizepower = 0; (1 << sizepower) < size; sizepower++);
 	if (size != (1 << sizepower))
