@@ -217,7 +217,8 @@ try_open (int rw)
 		tmp = 1;
 	rc = ioctl (audio_fd, SNDCTL_DSP_STEREO, &tmp);
 	if (rc < 0) {
-		Sys_Printf ("Could not set %s to stereo=%d: %s\n", snd_dev, shm->channels, strerror (errno));
+		Sys_Printf ("Could not set %s to stereo=%d: %s\n", snd_dev,
+					shm->channels, strerror (errno));
 		close (audio_fd);
 		return 0;
 	}
@@ -229,7 +230,8 @@ try_open (int rw)
 
 	rc = ioctl (audio_fd, SNDCTL_DSP_SPEED, &shm->speed);
 	if (rc < 0) {
-		Sys_Printf ("Could not set %s speed to %d: %s\n", snd_dev, shm->speed, strerror (errno));
+		Sys_Printf ("Could not set %s speed to %d: %s\n", snd_dev, shm->speed,
+					strerror (errno));
 		close (audio_fd);
 		return 0;
 	}
@@ -238,7 +240,8 @@ try_open (int rw)
 		rc = AFMT_S16_LE;
 		rc = ioctl (audio_fd, SNDCTL_DSP_SETFMT, &rc);
 		if (rc < 0) {
-			Sys_Printf ("Could not support 16-bit data.  Try 8-bit. %s\n", strerror (errno));
+			Sys_Printf ("Could not support 16-bit data.  Try 8-bit. %s\n",
+						strerror (errno));
 			close (audio_fd);
 			return 0;
 		}
@@ -246,12 +249,14 @@ try_open (int rw)
 		rc = AFMT_U8;
 		rc = ioctl (audio_fd, SNDCTL_DSP_SETFMT, &rc);
 		if (rc < 0) {
-			Sys_Printf ("Could not support 8-bit data. %s\n", strerror (errno));
+			Sys_Printf ("Could not support 8-bit data. %s\n",
+						strerror (errno));
 			close (audio_fd);
 			return 0;
 		}
 	} else {
-		Sys_Printf ("%d-bit sound not supported. %s", shm->samplebits, strerror (errno));
+		Sys_Printf ("%d-bit sound not supported. %s", shm->samplebits,
+					strerror (errno));
 		close (audio_fd);
 		return 0;
 	}
