@@ -514,6 +514,126 @@ SV_Status_f (void)
 	SV_Printf ("\n");
 }
 
+#define MAXPENALTY 10.0
+
+void
+SV_Cuff_f (void)
+{
+	int         i, uid;
+	double      mins = 0.5;
+	qboolean    all = false, done = false;
+	client_t    *cl;
+	char        text[1024];
+
+	if (Cmd_Argc() != 2 && Cmd_Argc() != 3) {
+		SV_Printf ("usage: cuff <name/userid/ALL> [minutes]\n"
+				   "       (default = 0.5, 0 = cancel cuff).\n");
+		return;
+	}
+
+	if (strequal (Cmd_Argv(1), "ALL")) {
+		all = true;
+	} else {
+		if (SV_Match_User (Cmd_Argv(1), &uid)) {
+			if (!uid)
+				return;
+		} else {
+			uid = atoi(Cmd_Argv(1));	// assume userid
+		}
+	}
+	if (Cmd_Argc() == 3) {
+		mins = atof(Cmd_Argv(2));
+		if (mins < 0.0 || mins > MAXPENALTY)
+			mins = MAXPENALTY;
+	}
+	for (i = 0, cl = svs.clients; i < MAX_CLIENTS; i++, cl++) {
+		if (!cl->state)
+			continue;
+		if (all || (cl->userid == uid)) {
+			cl->cuff_time = realtime + mins*60.0;
+			done = true;
+			if (mins) {
+				sprintf(text,
+						"You are cuffed for %.1f minutes\n\n"
+						"reconnecting won't help...\n", mins);
+				ClientReliableWrite_Begin(cl,svc_centerprint, 2+strlen(text));
+				ClientReliableWrite_String (cl, text);
+			}
+			if (!all)
+				break;
+		}
+	}
+	if (done) {
+		if (mins)
+			SV_BroadcastPrintf (PRINT_HIGH, "%s cuffed for %.1f minutes.\n",
+								all? "All Users" : cl->name, mins);
+		else
+			SV_BroadcastPrintf (PRINT_HIGH, "%s un-cuffed.\n",
+								all? "All Users" : cl->name);
+	} else {
+		SV_Printf (all? "No users\n" : "Couldn't find user %s\n", Cmd_Argv(1));
+	}
+}
+
+
+void
+SV_Mute_f (void)
+{
+	int         i, uid;
+	double      mins = 0.5;
+	qboolean    all = false, done = false;
+	client_t    *cl;
+	char        text[1024];
+
+	if (Cmd_Argc() != 2 && Cmd_Argc() != 3) {
+		SV_Printf ("usage: mute <name/userid/ALL> [minutes]\n"
+				   "       (default = 0.5, 0 = cancel mute).\n");
+		return;
+	}
+	if (strequal(Cmd_Argv(1),"ALL")) {
+		all = true;
+	} else {
+		if (SV_Match_User (Cmd_Argv(1), &uid)) {
+			if (!uid)
+				return;
+		} else {
+			uid = atoi(Cmd_Argv(1));
+		}
+	}
+	if (Cmd_Argc() == 3) {
+		mins = atof(Cmd_Argv(2));
+		if (mins < 0.0 || mins > MAXPENALTY)
+			mins = MAXPENALTY;
+	}
+	for (i = 0, cl = svs.clients; i < MAX_CLIENTS; i++, cl++) {
+		if (!cl->state)
+			continue;
+		if (all || (cl->userid == uid)) {
+			cl->lockedtill = realtime + mins*60.0;
+			done = true;
+			if (mins) {
+				sprintf(text, "You are muted for %.1f minutes\n\n"
+						"reconnecting won't help...\n", mins);
+				ClientReliableWrite_Begin(cl,svc_centerprint, 2+strlen(text));
+				ClientReliableWrite_String (cl, text);
+			}
+			if (!all)
+				break;
+		}
+	}
+	if (done) {
+		if (mins)
+			SV_BroadcastPrintf (PRINT_HIGH, "%s muted for %.1f minutes.\n",
+								all? "All Users" : cl->name, mins);
+		else
+			SV_BroadcastPrintf (PRINT_HIGH, "%s allowed to speak.\n",
+								all? "All Users" : cl->name);
+	} else {
+		SV_Printf (all? "No users\n" : "Couldn't find user %s\n",
+				   Cmd_Argv(1));
+	}
+}
+
 void
 SV_Tell (const char *prefix)
 {
@@ -557,6 +677,47 @@ SV_Tell (const char *prefix)
 		}
 	}
 	SV_Printf ("Couldn't find user %s\n", Cmd_Argv(1));
+}
+
+void
+SV_Ban_f (void)
+{
+	int         i, uid;
+	double      mins = 30.0;
+	client_t    *cl;
+
+	if (Cmd_Argc() != 2 && Cmd_Argc() != 3) {
+		SV_Printf ("usage: ban <name/userid> [minutes]\n"
+				   "       (default = 30, 0 = permanent).\n");
+		return;
+	}
+	if (SV_Match_User(Cmd_Argv(1), &uid)) {
+		if (!uid)
+			return;
+	} else {
+		uid = atoi(Cmd_Argv(1));
+	}
+	if (Cmd_Argc() == 3) {
+		mins = atof(Cmd_Argv(2));
+		if (mins<0.0 || mins > 1000000.0)				// bout 2 yrs
+			mins = 0.0;
+	}
+	for (i = 0, cl = svs.clients; i < MAX_CLIENTS; i++, cl++) {
+		if (!cl->state)
+			continue;
+		if (cl->userid == uid) {
+			SV_BroadcastPrintf (PRINT_HIGH, "Admin Banned user %s %s\n",
+								cl->name, mins ? va("for %.1f minutes",mins)
+											   : "permanently");
+			SV_DropClient (cl);
+			Cmd_ExecuteString (
+					va ("addip %s %f",
+					    NET_BaseAdrToString(cl->netchan.remote_address), mins),
+					src_command);
+			return;
+		}
+	}
+	Con_Printf ("Couldn't find user %s\n", Cmd_Argv(1));
 }
 
 void
@@ -1004,9 +1165,11 @@ SV_InitOperatorCommands (void)
 	Cmd_AddCommand ("tell", SV_Tell_f, "Say something to a specific user on "
 					"the server. Will show up as the name 'Console' (or "
 					"'Admin') in game");
-	//XXX Cmd_AddCommand ("ban", SV_Ban_f);
-	//XXX Cmd_AddCommand ("cuff", SV_Cuff_f);
-	//XXX Cmd_AddCommand ("mute", SV_Mute_f);
+	Cmd_AddCommand ("ban", SV_Ban_f, "ban a player for a specified time");
+	Cmd_AddCommand ("cuff", SV_Cuff_f, "\"hand-cuff\" a player for a "
+					"specified time");
+	Cmd_AddCommand ("mute", SV_Mute_f, "silience a player for a specified "
+					"time");
 
 	cl_warncmd = Cvar_Get ("cl_warncmd", "1", CVAR_NONE, NULL, "Toggles the "
 						   "display of error messages for unknown commands"); 

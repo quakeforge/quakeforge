@@ -249,6 +249,9 @@ SV_FinalMessage (const char *message)
 void
 SV_DropClient (client_t *drop)
 {
+	SV_SavePenaltyFilter (drop, ft_mute, drop->lockedtill);
+	SV_SavePenaltyFilter (drop, ft_cuff, drop->cuff_time);
+
 	// add the disconnect
 	MSG_WriteByte (&drop->netchan.message, svc_disconnect);
 
@@ -830,7 +833,7 @@ SVC_DirectConnect (void)
 	for (i = 0; i < 10; i++)
 		newcl->whensaid[i] = 0.0;
 	newcl->whensaidhead = 0;
-	newcl->lockedtill = 0;
+	newcl->lockedtill = SV_RestorePenaltyFilter(newcl, ft_mute);
 
 	// call the progs to get default spawn parms for the new client
 	PR_ExecuteProgram (&sv_pr_state, sv_funcs.SetNewParms);
@@ -848,6 +851,7 @@ SVC_DirectConnect (void)
 	newcl->msec_cheating = 0;
 	newcl->last_check = -1;
 
+	newcl->cuff_time = SV_RestorePenaltyFilter(newcl, ft_cuff);
 }
 
 int
@@ -1045,6 +1049,7 @@ SV_ConnectionlessPacket (void)
 typedef struct {
 	unsigned int mask;
 	unsigned int compare;
+	double       time;
 } ipfilter_t;
 
 #define	MAX_IPFILTERS	1024
@@ -1052,6 +1057,7 @@ typedef struct {
 cvar_t     *filterban;
 int         numipfilters;
 ipfilter_t  ipfilters[MAX_IPFILTERS];
+filtertype_t filttypes[MAX_IPFILTERS];
 
 qboolean
 StringToFilter (const char *s, ipfilter_t * f)
@@ -1089,6 +1095,26 @@ StringToFilter (const char *s, ipfilter_t * f)
 	f->compare = *(unsigned int *) b;
 
 	return true;
+}
+
+void
+CleanIPlist (void)
+{
+	int         i, j;
+
+	for (i=0 ; i<numipfilters ; i++) {
+		 if (ipfilters[i].time && (ipfilters[i].time < realtime))
+			 ipfilters[i].compare = 0xffffffff;
+		 if (ipfilters[i].compare == 0xffffffff) {
+			 for (j=i+1 ; j<numipfilters ; j++) {
+				 ipfilters[j - 1] = ipfilters[j];
+				 filttypes[j - 1] = filttypes[j];
+			 }
+			 numipfilters--;
+			 i--;
+			 Sys_Printf ("CleanIPlist: an IP filter removed.\n");
+		 }
+	}
 }
 
 void
@@ -1228,7 +1254,7 @@ SV_netDoSvalues_f (void)
 }
 
 void
-SV_SendBan (void)
+SV_SendBan (double till)
 {
 	char        data[128];
 
@@ -1237,25 +1263,89 @@ SV_SendBan (void)
 
 	data[0] = data[1] = data[2] = data[3] = 0xff;
 	data[4] = A2C_PRINT;
-	data[5] = 0;
-	strncat (data, "\nbanned.\n", sizeof (data) - strlen (data));
+
+	if (till) {
+		snprintf (data + 5, sizeof (data) - 5,
+				  "\nbanned for %.1f more minutes.\n", (till - realtime)/60.0);
+	} else {
+		snprintf (data + 5, sizeof (data) - 5, "\nbanned permanently.\n");
+	}
 
 	NET_SendPacket (strlen (data), data, net_from);
 }
 
 qboolean
-SV_FilterPacket (void)
+SV_FilterPacket (double *until)
 {
 	int         i;
 	unsigned int in;
 
 	in = *(unsigned int *) net_from.ip;
 
-	for (i = 0; i < numipfilters; i++)
-		if ((in & ipfilters[i].mask) == ipfilters[i].compare)
-			return filterban->int_val;
+	for (i = 0; i < numipfilters; i++) {
+		if (filttypes[i] != ft_ban)
+			continue;
+		if ((in & ipfilters[i].mask) == ipfilters[i].compare) {
+			if (!ipfilters[i].time) {
+				// normal ban
+				return filterban->int_val;
+			} else if (ipfilters[i].time > realtime) {
+				*until = ipfilters[i].time;
+				return true;	// banned no matter what
+			} else {
+				// time expired, set free
+				ipfilters[i].compare = 0xffffffff;
+			}
+		}
+	}
+	return !filterban->int_val;
+}
 
-	return !filterban->int_val;			// FIXME eh?
+void
+SV_SavePenaltyFilter (client_t *cl, filtertype_t type, double pentime)
+{
+	int         i;
+	unsigned int ip;
+
+	ip = *(unsigned int *) cl->netchan.remote_address.ip;
+
+	// delete any existing penalty filter of same type
+	for (i=0 ; i<numipfilters; i++) {
+		if ( type == filttypes[i] && ip == ipfilters[i].compare ) {
+			ipfilters[i].compare = 0xffffffff;
+			break;
+		}
+	}
+	CleanIPlist();
+	// save a new penalty
+	if ( pentime < realtime )   // no point
+		return;
+	Con_Printf ("Penalty saved for user=%d\n",cl->userid);
+	ipfilters[numipfilters].mask = 0;
+	ipfilters[numipfilters].compare = ip;
+	ipfilters[numipfilters].time = pentime;
+	filttypes[numipfilters] = type;
+	numipfilters++;
+	return;
+}
+
+double
+SV_RestorePenaltyFilter (client_t *cl, filtertype_t type)
+{
+	int         i;
+	unsigned int ip;
+
+	ip = * (unsigned int *) cl->netchan.remote_address.ip;
+
+	CleanIPlist ();
+	// search for existing penalty filter of same type
+	for (i=0 ; i<numipfilters; i++) {
+		if (type == filttypes[i] && ip == ipfilters[i].compare) {
+			Sys_Printf("Penalty restored for user=%d\n",cl->userid);
+			return ipfilters[i].time;
+		}
+	}
+	return 0.0;
 }
 
 void
@@ -1264,11 +1354,12 @@ SV_ReadPackets (void)
 	client_t   *cl;
 	int         qport, i;
 	qboolean    good;
+	double      until;
 
 	good = false;
 	while (NET_GetPacket ()) {
-		if (SV_FilterPacket ()) {
-			SV_SendBan ();				// tell them we aren't listening...
+		if (SV_FilterPacket (&until)) {
+			SV_SendBan (until);			// tell them we aren't listening...
 			continue;
 		}
 		// check for connectionless packet (0xffffffff) first

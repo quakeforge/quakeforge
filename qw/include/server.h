@@ -135,6 +135,12 @@ typedef struct
 #define MAX_BACK_BUFFERS	8
 #define MAX_STUFFTEXT		512
 
+typedef enum {
+	ft_ban,
+	ft_mute,		// mute penalty save over disconnect
+	ft_cuff,		// cuff penatly save over disconnect
+} filtertype_t;
+
 typedef struct client_s
 {
 	sv_client_state_t	state;
@@ -215,7 +221,8 @@ typedef struct client_s
 	netchan_t		netchan;
 	int				msecs, msec_cheating;
 	double			last_check;
-        int                     stdver;
+	double			cuff_time;
+	int				stdver;
 } client_t;
 
 // a client can leave the server in one of four ways:
@@ -422,6 +429,10 @@ void Con_DPrintf (const char *fmt, ...) __attribute__((format(printf,1,2)));
 //
 // sv_main.c
 //
+
+void SV_SavePenaltyFilter (client_t *cl, filtertype_t type, double pentime);
+double SV_RestorePenaltyFilter (client_t *cl, filtertype_t type);
+
 void SV_Shutdown (void);
 void SV_Frame (float time);
 void SV_FinalMessage (const char *message);
