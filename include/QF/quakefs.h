@@ -64,7 +64,6 @@ void COM_WriteBuffers (const char *filename, int count, ...);
 int _COM_FOpenFile (const char *filename, QFile **gzfile, char *foundname, int zip);
 int COM_FOpenFile (const char *filename, QFile **gzfile);
 void COM_CloseFile (QFile *h);
-int COM_filelength (QFile *f);
 void COM_FileBase (const char *in, char *out);
 void COM_DefaultExtension (char *path, char *extension);
 const char *COM_SkipPath (const char *pathname);

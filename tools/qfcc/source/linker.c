@@ -648,16 +648,13 @@ linker_add_lib (const char *libname)
 	do {
 		did_something = 0;
 		for (i = 0; i < pack->numfiles; i++) {
-			int         fd;
 			QFile      *f;
 			qfo_t      *qfo;
 
-			fd = open (libname, O_RDONLY);
-			lseek (fd, pack->files[i].filepos, SEEK_SET);
-			f = Qdopen (fd, "rbz");
+			f = Qsubopen (libname, pack->files[i].filepos,
+						  pack->files[i].filelen, 1);
 			qfo = qfo_read (f);
 			Qclose (f);
-			close (fd);
 
 			if (!qfo)
 				return 1;

@@ -78,6 +78,7 @@ struct QFile_s {
 	gzFile *gzfile;
 #endif
 	off_t size;
+	off_t start;
 };
 
 
@@ -133,6 +134,35 @@ Qfilesize (QFile *file)
 	return file->size;
 }
 
+static int
+check_file (int fd, int offs, int len, int *zip)
+{
+	unsigned char id[2], len_bytes[4];
+
+	if (offs < 0 || len < 0) {
+		// normal file
+		offs = 0;
+		len = lseek (fd, 0, SEEK_END);
+		lseek (fd, 0, SEEK_SET);
+	}
+	if (*zip) {
+		lseek (fd, offs, SEEK_SET);
+		read (fd, id, 2);
+		if (id[0] == 0x1f && id[1] == 0x8b) {
+			lseek (fd, offs + len - 4, SEEK_SET);
+			read (fd, len_bytes, 4);
+			len = ((len_bytes[3] << 24)
+				   | (len_bytes[2] << 16)
+				   | (len_bytes[1] << 8)
+				   | (len_bytes[0]));
+		} else {
+			*zip = 0;
+		}
+	}
+	lseek (fd, offs, SEEK_SET);
+	return len;
+}
+
 QFile *
 Qopen (const char *path, const char *mode)
 {
@@ -166,21 +196,7 @@ Qopen (const char *path, const char *mode)
 	if (reading) {
 		int         fd = open (path, O_RDONLY);
 		if (fd != -1) {
-			size = lseek (fd, 0, SEEK_END);
-			lseek (fd, 0, SEEK_SET);
-#ifdef HAVE_ZLIB
-			if (zip) {
-				byte        id[2];
-
-				read (fd, id, 2);
-				if (id[0] == 0x1f && id[1] == 0x8b) {
-					lseek (fd, -4, SEEK_END);
-					read (fd, &size, 4);
-					size = LittleLong (size);
-				}
-				lseek (fd, 0, SEEK_SET);
-			}
-#endif
+			size = check_file (fd, -1, -1, &zip);
 			close (fd);
 		}
 	}
@@ -215,6 +231,10 @@ Qdopen (int fd, const char *mode)
 	char        m[80], *p;
 	int         zip = 0;
 
+#ifdef WIN32
+	if (file->file)
+		setmode (_fileno (file->file), O_BINARY);
+#endif
 	for (p = m; *mode && p - m < (sizeof (m) - 1); mode++) {
 		if (*mode == 'z') {
 			zip = 1;
@@ -244,10 +264,25 @@ Qdopen (int fd, const char *mode)
 			return 0;
 		}
 	}
+	return file;
+}
+
+QFile *
+Qsubopen (const char *path, int offs, int len, int zip)
+{
+	int         fd = open (path, O_RDONLY);
+	QFile      *file;
+
+	if (fd == -1)
+		return 0;
 #ifdef WIN32
-	if (file->file)
-		setmode (_fileno (file->file), O_BINARY);
+	setmode (fd, O_BINARY);
 #endif
+
+	len = check_file (fd, offs, len, &zip);
+	file = Qdopen (fd, zip ? "rbz" : "rb");
+	file->size = len;
+	file->start = offs;
 	return file;
 }
 
@@ -372,11 +407,14 @@ Qputc (QFile *file, int c)
 int
 Qseek (QFile *file, long offset, int whence)
 {
-	if (file->file)
-		return fseek (file->file, offset, whence);
+	if (file->file) {
+		return fseek (file->file, file->start + offset, whence);
+	}
 #ifdef HAVE_ZLIB
-	else
+	else {
+		// libz seems to keep track of the true start position itself
 		return gzseek (file->gzfile, offset, whence);
+	}
 #else
 	return -1;
 #endif

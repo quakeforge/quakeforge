@@ -151,20 +151,6 @@ COM_FileBase (const char *in, char *out)
 	}
 }
 
-
-int
-COM_filelength (QFile *f)
-{
-	int         end, pos;
-
-	pos = Qtell (f);
-	Qseek (f, 0, SEEK_END);
-	end = Qtell (f);
-	Qseek (f, pos, SEEK_SET);
-
-	return end;
-}
-
 int
 COM_FileOpenRead (char *path, QFile **hndl)
 {
@@ -177,7 +163,7 @@ COM_FileOpenRead (char *path, QFile **hndl)
 	}
 	*hndl = f;
 
-	return COM_filelength (f);
+	return Qfilesize (f);
 }
 
 QFile *
@@ -228,7 +214,7 @@ LoadFile (const char *filename, void **bufferptr)
 	QFile		*f;
 
 	f = COM_SafeOpenRead (filename);
-	length = COM_filelength (f);
+	length = Qfilesize (f);
 	buffer = malloc (length + 1);
 	SYS_CHECKMEM (buffer);
 	((char *) buffer)[length] = 0;
@@ -377,41 +363,21 @@ COM_CopyFile (char *netpath, char *cachepath)
 QFile      *
 COM_OpenRead (const char *path, int offs, int len, int zip)
 {
-	unsigned char id[2], len_bytes[4];
-	int         fd = open (path, O_RDONLY);
+	QFile      *file;
 
-	if (fd == -1) {
+	if (offs < 0 || len < 0)
+		file = Qopen (path, zip ? "rbz" : "rb");
+	else
+		file = Qsubopen (path, offs, len, zip);
+
+	if (!file) {
 		Sys_Error ("Couldn't open %s", path);
 		return 0;
 	}
-#ifdef WIN32
-	setmode (fd, O_BINARY);
-#endif
-	if (offs < 0 || len < 0) {
-		// normal file
-		offs = 0;
-		len = lseek (fd, 0, SEEK_END);
-		lseek (fd, 0, SEEK_SET);
-	}
-	lseek (fd, offs, SEEK_SET);
-	if (zip) {
-		read (fd, id, 2);
-		if (id[0] == 0x1f && id[1] == 0x8b) {
-			lseek (fd, offs + len - 4, SEEK_SET);
-			read (fd, len_bytes, 4);
-			len = ((len_bytes[3] << 24)
-				   | (len_bytes[2] << 16)
-				   | (len_bytes[1] << 8)
-				   | (len_bytes[0]));
-		}
-	}
-	lseek (fd, offs, SEEK_SET);
-	com_filesize = len;
 
-	if (zip)
-		return Qdopen (fd, "rbz");
-	else
-		return Qdopen (fd, "rb");
+	com_filesize = Qfilesize (file);
+
+	return file;
 }
 
 char *

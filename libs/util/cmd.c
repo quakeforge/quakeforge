@@ -620,7 +620,7 @@ Cmd_Exec_File (cbuf_t *cbuf, const char *path)
 	if (!path || !*path)
 		return;
 	if ((file = Qopen (path, "r")) != NULL) {
-		len = COM_filelength (file);
+		len = Qfilesize (file);
 		f = (char *) malloc (len + 1);
 		if (f) {
 			f[len] = 0;

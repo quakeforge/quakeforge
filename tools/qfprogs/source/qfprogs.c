@@ -87,28 +87,14 @@ static hashtab_t *func_tab;
 static QFile *
 open_file (const char *path, int *len)
 {
-	int         fd = open (path, O_RDONLY);
-	unsigned char id[2];
-	unsigned char len_bytes[4];
+	QFile      *file = Qopen (path, "rbz");
 
-	if (fd == -1) {
+	if (!file) {
 		perror (path);
 		return 0;
 	}
-	read (fd, id, 2);
-	if (id[0] == 0x1f && id[1] == 0x8b) {
-		lseek (fd, -4, SEEK_END);
-		read (fd, len_bytes, 4);
-		*len = ((len_bytes[3] << 24)
-				| (len_bytes[2] << 16)
-				| (len_bytes[1] << 8)
-				| (len_bytes[0]));
-	} else {
-		*len = lseek (fd, 0, SEEK_END);
-	}
-	lseek (fd, 0, SEEK_SET);
-
-	return Qdopen (fd, "rbz");
+	*len = Qfilesize (file);
+	return file;
 }
 
 static void *

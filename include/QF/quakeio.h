@@ -41,6 +41,7 @@ int Qrename(const char *old, const char *new);
 int Qfilesize (QFile *file);
 QFile *Qopen(const char *path, const char *mode);
 QFile *Qdopen(int fd, const char *mode);
+QFile *Qsubopen (const char *path, int offs, int len, int zip);
 void Qclose(QFile *file);
 int Qread(QFile *file, void *buf, int count);
 int Qwrite(QFile *file, const void *buf, int count);
