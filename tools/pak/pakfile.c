@@ -220,7 +220,11 @@ make_parents (const char *_path)
 	for (p = path; *p && (d = strchr (p, '/')); p = d + 1) {
 		t = *d;
 		*d = 0;
+#ifdef WIN32
+		if (mkdir (path) < 0)
+#else
 		if (mkdir (path, 0777) < 0)
+#endif
 			if (errno != EEXIST)
 				return -1;
 		*d = t;
