@@ -1021,8 +1021,10 @@ SV_PTrack_f (void *unused)
 	}
 
 	i = atoi (Cmd_Argv (1));
-	if (i < 0 || i >= MAX_CLIENTS || svs.clients[i].state != cs_spawned ||
-		svs.clients[i].spectator) {
+	if (i < 0 || i >= MAX_CLIENTS
+		|| (svs.clients[i].state != cs_spawned
+			&& svs.clients[i].state != cs_server)
+		|| svs.clients[i].spectator) {
 		SV_ClientPrintf (1, host_client, PRINT_HIGH,
 						 "Invalid client to track\n");
 		host_client->spec_track = 0;
