@@ -30,5 +30,5 @@ qwaq_DEPENDENCIES= $(QWAQ_DEPS)
 qwaq.dat: progs.src $(qwaq_dat_src) $(top_srcdir)/ruamoko/lib/Object.r
 	$(QFCC) $(QCFLAGS) -I$(top_srcdir)/ruamoko/include
 
-EXTRA_DIST=$(qwaq_dat_src)
+EXTRA_DIST=$(qwaq_dat_src) qwaq.h
 CLEANFILES= *.dat *.sym
