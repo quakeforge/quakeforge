@@ -2,16 +2,16 @@ void (integer x, integer y, integer width, integer lines) text_box;
 
 integer () servlist_favorates_draw =
 {
-	Draw_Pic        (16, 4, "gfx/qplaque.lmp");
-	Draw_CenterPic (160, 4, "gfx/p_multi.lmp");
+	Draw_Pic        (16, 4, qplaque_pic);
+	Draw_CenterPic (160, 4, p_multi_pic);
 	Draw_String     (54,  40, "Under Construction");
 	return 1;
 };
 
 integer () servlist_all_draw =
 {
-	Draw_Pic        (16, 4, "gfx/qplaque.lmp");
-	Draw_CenterPic (160, 4, "gfx/p_multi.lmp");
+	Draw_Pic        (16, 4, qplaque_pic);
+	Draw_CenterPic (160, 4, p_multi_pic);
 	Draw_String     (54,  40, "Under Construction");
 	return 1;
 };
@@ -24,8 +24,8 @@ inputline_t input_active;
 
 integer () servlist_filter_draw =
 {
-    Draw_Pic (16, 4, "gfx/qplaque.lmp");
-	Draw_CenterPic (160, 4, "gfx/p_multi.lmp");
+    Draw_Pic (16, 4, qplaque_pic);
+	Draw_CenterPic (160, 4, p_multi_pic);
 	Draw_String	(62, 40, "Max Ping........:");
 	text_box (206, 32, 4, 1);
 	InputLine_Draw (serv_maxping, 206, 40, 1);

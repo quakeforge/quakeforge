@@ -92,7 +92,7 @@ integer () load_draw =
 {
 	local integer i;
 
-	Draw_CenterPic (160, 4, "gfx/p_load.lmp");
+	Draw_CenterPic (160, 4, p_load_pic);
 	for (i=0 ; i< MAX_SAVEGAMES; i++)
 		Draw_String (16, 32 + 8 * i, filenames[i]);
 	Draw_Character (8, 32 + load_cursor * 8, 12 + (integer (time * 4) & 1));
@@ -103,7 +103,7 @@ integer () save_draw =
 {
 	local integer i;
 
-	Draw_CenterPic (160, 4, "gfx/p_save.lmp");
+	Draw_CenterPic (160, 4, p_save_pic);
 	for (i=0 ; i< MAX_SAVEGAMES; i++)
 		Draw_String (16, 32 + 8 * i, filenames[i]);
 	Draw_Character (8, 32 + save_cursor * 8, 12 + (integer (time * 4) & 1));
@@ -429,6 +429,8 @@ void () main_menu =
 
 void () menu_init =
 {
+	load_menu_pics ();
+
 	lanConfig_port_il = InputLine_Create (4, 8, ' ');
 	InputLine_SetWidth (lanConfig_port_il, 10);
 	lanConfig_join_il = InputLine_Create (4, 24, ' ');

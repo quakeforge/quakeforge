@@ -36,18 +36,46 @@ static const char rcsid[] =
 #include "QF/progs.h"
 #include "QF/render.h"
 
+static qpic_t *
+get_qpic (progs_t *pr, int arg, const char *func)
+{
+	qpic_t     *pic;
+
+	if (arg <= ((pr_type_t *) pr->zone - pr->pr_globals)
+		|| arg >= (pr->zone_size / sizeof (pr_type_t)))
+		PR_RunError (pr, "%s: Invalid qpic_t", func);
+
+	memcpy (&pic, ((qpic_t *)(pr->pr_globals + arg))->data, sizeof (qpic_t *));
+	return pic;
+}
+
+static void
+bi_Draw_CachePic (progs_t *pr)
+{
+	const char *path = G_STRING (pr, OFS_PARM0);
+	int         alpha = G_INT (pr, OFS_PARM1);
+	qpic_t     *pic = Draw_CachePic (path, alpha);
+	qpic_t     *qpic;
+
+	if (!pic) {
+		Con_DPrintf ("can't load %s\n", path);
+		G_INT (pr, OFS_RETURN) = 0;
+		return;
+	}
+	qpic = PR_Zone_Malloc (pr, sizeof (qpic_t) - 4 + sizeof (qpic_t *));
+	qpic->width = pic->width;
+	qpic->height = pic->height;
+	memcpy (qpic->data, &pic, sizeof (qpic_t *));
+	G_INT (pr, OFS_RETURN) = (pr_type_t *)qpic - pr->pr_globals;
+}
+
 static void
 bi_Draw_Pic (progs_t *pr)
 {
 	int         x = G_INT (pr, OFS_PARM0);
 	int         y = G_INT (pr, OFS_PARM1);
-	const char *path = G_STRING (pr, OFS_PARM2);
-	qpic_t     *pic = Draw_CachePic (path, 1);
+	qpic_t     *pic = get_qpic (pr, G_INT (pr, OFS_PARM2), "Draw_Pic");
 
-	if (!pic) {
-		Con_DPrintf ("can't load %s\n", path);
-		return;
-	}
 	Draw_Pic (x, y, pic);
 }
 
@@ -56,13 +84,8 @@ bi_Draw_CenterPic (progs_t *pr)
 {
 	int         x = G_INT (pr, OFS_PARM0);
 	int         y = G_INT (pr, OFS_PARM1);
-	const char *path = G_STRING (pr, OFS_PARM2);
-	qpic_t     *pic = Draw_CachePic (path, 1);
+	qpic_t     *pic = get_qpic (pr, G_INT (pr, OFS_PARM2), "Draw_CenterPic");
 
-	if (!pic) {
-		Con_DPrintf ("can't load %s\n", path);
-		return;
-	}
 	Draw_Pic (x - pic->width / 2, y, pic);
 }
 
@@ -128,6 +151,7 @@ bi_Draw_Fill (progs_t *pr)
 void
 R_Progs_Init (progs_t *pr)
 {
+	PR_AddBuiltin (pr, "Draw_CachePic", bi_Draw_CachePic, -1);
 	PR_AddBuiltin (pr, "Draw_Pic", bi_Draw_Pic, -1);
 	PR_AddBuiltin (pr, "Draw_CenterPic", bi_Draw_CenterPic, -1);
 	PR_AddBuiltin (pr, "Draw_Character", bi_Draw_Character, -1);
