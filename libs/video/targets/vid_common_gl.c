@@ -297,7 +297,6 @@ VID_Is8bit (void)
 	return is8bit;
 }
 
-#ifdef GL_SHARED_TEXTURE_PALETTE_EXT
 void
 Tdfx_Init8bitPalette (void)
 {
@@ -382,17 +381,14 @@ Shared_Init8bitPalette (void)
 		Con_Printf ("\n    GL_EXT_shared_texture_palette not found.");
 	}
 }
-#endif
 
 void
 VID_Init8bitPalette (void)
 {
 	Con_Printf ("Checking for 8-bit extension: ");
 	if (vid_use8bit->int_val) {
-#ifdef GL_SHARED_TEXTURE_PALETTE_EXT
 		Tdfx_Init8bitPalette ();
 		Shared_Init8bitPalette ();
-#endif
 		if (!is8bit) {
 			Con_Printf ("\n  8-bit extension not found.\n");
 		}
