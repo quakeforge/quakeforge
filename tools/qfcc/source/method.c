@@ -174,6 +174,21 @@ method_def (class_type_t *class_type, method_t *method)
 	return def;
 }
 
+void
+method_set_param_names (method_t *dst, method_t *src)
+{
+	param_t    *dp, *sp;
+
+	for (dp = dst->params, sp = src->params; dp && sp;
+		 dp = dp->next, sp = sp->next) {
+		dp->name = sp->name;
+	}
+	if (dp || sp) {
+		error (0, "internal compiler error: missmatched method params");
+		abort ();
+	}
+}
+
 methodlist_t *
 new_methodlist (void)
 {
