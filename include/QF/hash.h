@@ -32,19 +32,7 @@
 
 #include <stdlib.h> // should be sys/types.h, but bc is stupid
 
-typedef struct hashlink_s {
-	struct hashlink_s *next;
-	struct hashlink_s **prev;
-	void *data;
-} hashlink_t;
-
-typedef struct hashtab_s {
-	size_t tab_size;
-	void *user_data;
-	const char *(*get_key)(void*,void*);
-	void (*free_ele)(void*,void*);
-	hashlink_t *tab[1];				// variable size
-} hashtab_t;
+typedef struct hashtab_s hashtab_t;
 
 hashtab_t *Hash_NewTable (int tsize, const char *(*gk)(void*,void*),
 						  void (*f)(void*,void*), void *ud);

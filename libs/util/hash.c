@@ -37,8 +37,24 @@
 # include <strings.h>
 #endif
 
-#include "compat.h"
 #include "QF/hash.h"
+
+#include "compat.h"
+
+struct hashlink_s {
+	struct hashlink_s *next;
+	struct hashlink_s **prev;
+	void *data;
+};
+
+struct hashtab_s {
+	size_t tab_size;
+	void *user_data;
+	const char *(*get_key)(void*,void*);
+	void (*free_ele)(void*,void*);
+	struct hashlink_s *tab[1];             // variable size
+};
+
 
 static unsigned long
 hash (const char *str)
@@ -96,7 +112,7 @@ Hash_FlushTable (hashtab_t *tab)
 
 	for (i = 0; i < tab->tab_size; i++) {
 		while (tab->tab[i]) {
-			hashlink_t *t = tab->tab[i]->next;
+			struct hashlink_s *t = tab->tab[i]->next;
 			if (tab->free_ele)
 				tab->free_ele (tab->tab[i]->data, tab->user_data);
 			free (tab->tab[i]);
@@ -110,7 +126,7 @@ Hash_Add (hashtab_t *tab, void *ele)
 {
 	unsigned long h = hash (tab->get_key(ele, tab->user_data));
 	size_t ind = h % tab->tab_size;
-	hashlink_t *lnk = malloc (sizeof (hashlink_t));
+	struct hashlink_s *lnk = malloc (sizeof (struct hashlink_s));
 
 	if (!lnk)
 		return -1;
@@ -128,7 +144,7 @@ Hash_Find (hashtab_t *tab, const char *key)
 {
 	unsigned long h = hash (key);
 	size_t ind = h % tab->tab_size;
-	hashlink_t *lnk = tab->tab[ind];
+	struct hashlink_s *lnk = tab->tab[ind];
 
 	while (lnk) {
 		if (strequal (key, tab->get_key (lnk->data, tab->user_data)))
@@ -143,7 +159,7 @@ Hash_Del (hashtab_t *tab, const char *key)
 {
 	unsigned long h = hash (key);
 	size_t ind = h % tab->tab_size;
-	hashlink_t *lnk = tab->tab[ind];
+	struct hashlink_s *lnk = tab->tab[ind];
 
 	while (lnk) {
 		if (strequal (key, tab->get_key (lnk->data, tab->user_data))) {
