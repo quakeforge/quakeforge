@@ -84,21 +84,31 @@ Mod_LoadExternalTextures (model_t *mod)
 		if (!tx)
 			continue;
 
-		// replace special flag characters with underscores
-		if (tx->name[0] == '*') { // FIXME: translate to # or _?
-		 	filename = va ("maps/#%s.tga", tx->name + 1);
-		} else {
-		 	filename = va ("maps/%s.tga", tx->name);
-		}
-		QFS_FOpenFile (filename, &f);
-
-		if (!f) {
-			if (tx->name[0] == '*') {
-				filename = va ("textures/#%s.tga", tx->name + 1);
-			} else {
-				filename = va ("textures/%s.tga", tx->name);
-			}
+		// FIXME: replace special flag characters with # or _?
+		if (tx->name[0] == '*') {
+			filename = va ("textures/%.*s/#%s.tga", strlen (mod->name + 5) - 4,
+						   mod->name + 5, tx->name + 1);
 			QFS_FOpenFile (filename, &f);
+			if (!f) {
+				filename = va ("textures/#%s.tga", tx->name + 1);
+				QFS_FOpenFile (filename, &f);
+			}
+			if (!f) {
+				filename = va ("maps/#%s.tga", tx->name + 1);
+				QFS_FOpenFile (filename, &f);
+			}
+		} else {
+			filename = va ("textures/%.*s/%s.tga", strlen (mod->name +5) -4,
+						   mod->name + 5, tx->name);
+			QFS_FOpenFile (filename, &f);
+			if (!f) {
+				filename = va ("textures/%s.tga", tx->name);
+				QFS_FOpenFile (filename, &f);
+			}
+			if (!f) {
+				filename = va ("maps/%s.tga", tx->name);
+				QFS_FOpenFile (filename, &f);
+			}
 		}
 
 		if (f) {
