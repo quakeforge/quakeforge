@@ -371,8 +371,13 @@ flush_text (void)
 }
 
 static inline void
-queue_character (int x, int y, float frow, float fcol)
+queue_character (int x, int y, int num)
 {
+	float		frow, fcol;
+
+	frow = (num >> 4) * CELL_SIZE;
+	fcol = (num & 15) * CELL_SIZE;
+
 	*tC++ = fcol;
 	*tC++ = frow;
 	*tC++ = fcol + CELL_SIZE;
@@ -389,7 +394,12 @@ queue_character (int x, int y, float frow, float fcol)
 	*tV++ = y + 8;
 	*tV++ = x;
 	*tV++ = y + 8;
-	tVAcount += 4;
+}
+
+static inline void
+tVA_increment (void)
+{
+	tVAcount +=4;
 	if (tVAcount + 4 > tVAsize)
 		flush_text ();
 }
@@ -404,8 +414,6 @@ queue_character (int x, int y, float frow, float fcol)
 void
 Draw_Character (int x, int y, unsigned int num)
 {
-	float       frow, fcol;
-
 	if (num == 32)
 		return;							// space
 	if (y <= -8)
@@ -413,17 +421,14 @@ Draw_Character (int x, int y, unsigned int num)
 
 	num &= 255;
 
-	frow = (num >> 4) * CELL_SIZE;
-	fcol = (num & 15) * CELL_SIZE;
-
-	queue_character (x, y, frow, fcol);
+	queue_character (x, y, num);
+	tVA_increment ();
 }
 
 void
 Draw_String (int x, int y, const char *str)
 {
 	unsigned char	num;
-	float       	frow, fcol;
 
 	if (!str || !str[0])
 		return;
@@ -432,10 +437,8 @@ Draw_String (int x, int y, const char *str)
 
 	while (*str) {
 		if ((num = *str++) != 32) {		// Don't render spaces
-			frow = (num >> 4) * CELL_SIZE;
-			fcol = (num & 15) * CELL_SIZE;
-
-			queue_character (x, y, frow, fcol);
+			queue_character (x, y, num);
+			tVA_increment ();
 		}
 		x += 8;
 	}
@@ -444,9 +447,8 @@ Draw_String (int x, int y, const char *str)
 void
 Draw_nString (int x, int y, const char *str, int count)
 {
-	unsigned char   num;
-	float           frow, fcol;
-	
+	unsigned char	num;
+
 	if (!str || !str[0])
 		return;
 	if (y <= -8)
@@ -454,10 +456,8 @@ Draw_nString (int x, int y, const char *str, int count)
 
 	while (count-- && *str) {
 		if ((num = *str++) != 32) {		// Don't render spaces
-			frow = (num >> 4) * CELL_SIZE;
-			fcol = (num & 15) * CELL_SIZE;
-
-			queue_character (x, y, frow, fcol);
+			queue_character (x, y, num);
+			tVA_increment ();
 		}
 		x += 8;
 	}
@@ -467,7 +467,6 @@ void
 Draw_AltString (int x, int y, const char *str)
 {
 	unsigned char	num;
-	float       	frow, fcol;
 
 	if (!str || !str[0])
 		return;
@@ -477,10 +476,8 @@ Draw_AltString (int x, int y, const char *str)
 	while (*str) {
 		if ((num = *str++ | 0x80) != (0x80 | 32)) // Don't render spaces
 		{
-			frow = (num >> 4) * CELL_SIZE;
-			fcol = (num & 15) * CELL_SIZE;
-
-			queue_character (x, y, frow, fcol);
+			queue_character (x, y, num);
+			tVA_increment ();
 		}
 		x += 8;
 	}
