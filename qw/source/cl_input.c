@@ -647,6 +647,21 @@ pps_check (int dontdrop)
 	}
 }
 
+static inline void
+build_cmd (usercmd_t *cmd)
+{
+	// get basic movement from keyboard, mouse, etc
+	CL_BaseMove (cmd);
+
+	// if we are spectator, try autocam
+	if (cl.spectator)
+		Cam_Track (cmd);
+
+	CL_FinishMove (cmd);
+
+	Cam_FinishMove (cmd);
+}
+
 void
 CL_SendCmd (void)
 {
@@ -668,16 +683,7 @@ CL_SendCmd (void)
 //	seq_hash = (cls.netchan.outgoing_sequence & 0xffff) ; // ^ QW_CHECK_HASH;
 	seq_hash = cls.netchan.outgoing_sequence;
 
-	// get basic movement from keyboard, mouse, etc
-	CL_BaseMove (cmd);
-
-	// if we are spectator, try autocam
-	if (cl.spectator)
-		Cam_Track (cmd);
-
-	CL_FinishMove (cmd);
-
-	Cam_FinishMove (cmd);
+	build_cmd (cmd);
 
 	// send this and the previous cmds in the message, so
 	// if the last packet was dropped, it can be recovered
