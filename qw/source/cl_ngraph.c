@@ -65,8 +65,9 @@ CL_NetGraph (void)
 
 	h = r_graphheight->int_val % 8;
 
-	Draw_TextBox (x, y, NET_TIMINGS / 8, r_graphheight->int_val / 8 + 1,
-				  r_netgraph_alpha->value * 255);
+	if (r_netgraph_box->int_val)
+		Draw_TextBox (x, y, NET_TIMINGS / 8, r_graphheight->int_val / 8 + 1,
+					  r_netgraph_alpha->value * 255);
 
 	lost = CL_CalcNet ();
 	x = hudswap ? vid.width - (NET_TIMINGS + 8) : 8;
