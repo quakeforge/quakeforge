@@ -1,7 +1,7 @@
 /*
 	wad.c
 
-	@description@
+	(description)
 
 	Copyright (C) 1996-1997  Id Software, Inc.
 
@@ -31,9 +31,9 @@
 #endif
 
 #include "QF/qendian.h"
-#include "QF/wad.h"
-#include "QF/sys.h"
 #include "QF/quakefs.h"
+#include "QF/sys.h"
+#include "QF/wad.h"
 
 int         wad_numlumps;
 lumpinfo_t *wad_lumps;
@@ -41,22 +41,20 @@ byte       *wad_base;
 
 void        SwapPic (qpic_t *pic);
 
-/*
-==================
-W_CleanupName
 
-Lowercases name and pads with spaces and a terminating 0 to the length of
-lumpinfo_t->name.
-Used so lumpname lookups can proceed rapidly by comparing 4 chars at a time
-Space padding is so names can be printed nicely in tables.
-Can safely be performed in place.
-==================
+/*
+	W_CleanupName
+
+	Lowercases name and pads with spaces and a terminating 0 to the length of
+	lumpinfo_t->name. Used so lumpname lookups can proceed rapidly by
+	comparing 4 chars at a time Space padding is so names can be printed
+	nicely in tables. Can safely be performed in place.
 */
 void
 W_CleanupName (char *in, char *out)
 {
-	int         i;
-	int         c;
+	int			i;
+	int			c;
 
 	for (i = 0; i < 16; i++) {
 		c = in[i];
@@ -73,19 +71,13 @@ W_CleanupName (char *in, char *out)
 }
 
 
-
-/*
-====================
-W_LoadWadFile
-====================
-*/
 void
 W_LoadWadFile (char *filename)
 {
 	lumpinfo_t *lump_p;
 	wadinfo_t  *header;
-	unsigned    i;
-	int         infotableofs;
+	unsigned int i;
+	int			infotableofs;
 
 	wad_base = COM_LoadHunkFile (filename);
 	if (!wad_base)
@@ -95,7 +87,8 @@ W_LoadWadFile (char *filename)
 
 	if (header->identification[0] != 'W'
 		|| header->identification[1] != 'A'
-		|| header->identification[2] != 'D' || header->identification[3] != '2')
+		|| header->identification[2] != 'D'
+		|| header->identification[3] != '2')
 		Sys_Error ("Wad file %s doesn't have WAD2 id\n", filename);
 
 	wad_numlumps = LittleLong (header->numlumps);
@@ -112,11 +105,6 @@ W_LoadWadFile (char *filename)
 }
 
 
-/*
-=============
-W_GetLumpinfo
-=============
-*/
 lumpinfo_t *
 W_GetLumpinfo (char *name)
 {
@@ -135,7 +123,8 @@ W_GetLumpinfo (char *name)
 	return NULL;
 }
 
-void       *
+
+void *
 W_GetLumpName (char *name)
 {
 	lumpinfo_t *lump;
@@ -145,7 +134,8 @@ W_GetLumpName (char *name)
 	return (void *) (wad_base + lump->filepos);
 }
 
-void       *
+
+void *
 W_GetLumpNum (int num)
 {
 	lumpinfo_t *lump;
@@ -158,13 +148,11 @@ W_GetLumpNum (int num)
 	return (void *) (wad_base + lump->filepos);
 }
 
+
 /*
-=============================================================================
-
-automatic byte swapping
-
-=============================================================================
+  automatic byte swapping
 */
+
 
 void
 SwapPic (qpic_t *pic)
