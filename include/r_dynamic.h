@@ -31,12 +31,23 @@
 
 #include "QF/mathlib.h"
 
+typedef enum {
+    PE_UNKNOWN,
+    PE_GUNSHOT,
+    PE_BLOOD,
+    PE_LIGHTNINGBLOOD,
+    PE_SPIKE,
+    PE_SUPERSPIKE,
+    PE_KNIGHTSPIKE,
+    PE_WIZSPIKE,
+} particle_effect_t;
+
 void R_ParseParticleEffect (void);
 struct entity_s;
 void R_RocketTrail (int type, struct entity_s *ent);
 void R_RunParticleEffect (vec3_t org, int color, int count);
-void R_RunPuffEffect (vec3_t org, byte type, byte count);
-void R_RunSpikeEffect (vec3_t org, byte type);
+void R_RunPuffEffect (vec3_t org, particle_effect_t type, byte count);
+void R_RunSpikeEffect (vec3_t org, particle_effect_t type);
 
 #ifdef QUAKE2
 void R_DarkFieldParticles (entity_t *ent);

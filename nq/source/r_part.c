@@ -34,10 +34,10 @@
 #include "QF/qargs.h"
 #include "QF/compat.h"
 #include "QF/console.h"
+#include "QF/render.h"
 
 #include "client.h"
 #include "r_local.h"
-#include "QF/render.h"
 
 #define MAX_PARTICLES			2048	// default max # of particles at one
 										// time

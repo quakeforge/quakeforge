@@ -42,14 +42,14 @@
 #include "QF/compat.h"
 #include "QF/console.h"
 #include "QF/qargs.h"
+#include "QF/quakefs.h"
+#include "QF/render.h"
 #include "QF/sys.h"
 #include "QF/varrays.h"
 
-#include "client.h"
 #include "glquake.h"
-#include "host.h"
 #include "r_dynamic.h"
-#include "QF/render.h"
+#include "r_shared.h"
 
 static particle_t *particles, **freeparticles;
 static short r_numparticles, numparticles;
@@ -312,20 +312,22 @@ R_BloodPuff (vec3_t org, int count)
 
 
 void
-R_RunPuffEffect (vec3_t org, byte type, byte count)
+R_RunPuffEffect (vec3_t org, particle_effect_t type, byte count)
 {
 	if (!r_particles->int_val)
 		return;
 
 	switch (type) {
-		case TE_GUNSHOT:
+		case PE_GUNSHOT:
 			R_RunGunshotEffect (org, count);
 			break;
-		case TE_BLOOD:
+		case PE_BLOOD:
 			R_BloodPuff (org, count);
 			break;
-		case TE_LIGHTNINGBLOOD:
+		case PE_LIGHTNINGBLOOD:
 			R_BloodPuff (org, 5 + (rand () & 1));
+			break;
+		default:
 			break;
 	}
 }
@@ -359,20 +361,22 @@ R_RunParticleEffect (vec3_t org, int color, int count)
 
 
 void
-R_RunSpikeEffect (vec3_t org, byte type)
+R_RunSpikeEffect (vec3_t org, particle_effect_t type)
 {
 	switch (type) {
-		case TE_SPIKE:
+		case PE_SPIKE:
 			R_RunSparkEffect (org, 5, 8);
 			break;
-		case TE_SUPERSPIKE:
+		case PE_SUPERSPIKE:
 			R_RunSparkEffect (org, 10, 8);
 			break;
-		case TE_KNIGHTSPIKE:
+		case PE_KNIGHTSPIKE:
 			R_RunSparkEffect (org, 10, 8);
 			break;
-		case TE_WIZSPIKE:
+		case PE_WIZSPIKE:
 			R_RunSparkEffect (org, 15, 16);
+			break;
+		default:
 			break;
 	}
 }
@@ -579,8 +583,8 @@ R_DrawParticles (void)
 	varray[2].texcoord[0] = 1; varray[2].texcoord[1] = 0;
 	varray[3].texcoord[0] = 1; varray[3].texcoord[1] = 1;
 
-	grav = (fast_grav = host_frametime * 800) * 0.05;
-	dvel = 4 * host_frametime;
+	grav = (fast_grav = r_frametime * 800) * 0.05;
+	dvel = 4 * r_frametime;
 
 	minparticledist = DotProduct (r_refdef.vieworg, vpn) + 32.0f;
 
@@ -665,7 +669,7 @@ R_DrawParticles (void)
 		}
 
 		for (i = 0; i < 3; i++)
-			part->org[i] += part->vel[i] * host_frametime;
+			part->org[i] += part->vel[i] * r_frametime;
 
 		switch (part->type) {
 			case pt_static:
@@ -684,47 +688,47 @@ R_DrawParticles (void)
 				part->vel[2] -= grav;
 				break;
 			case pt_smoke:
-				if ((part->alpha -= host_frametime * 90) < 1)
+				if ((part->alpha -= r_frametime * 90) < 1)
 					part->die = -1;
-				part->scale += host_frametime * 6;
-//				part->org[2] += host_frametime * 30;
+				part->scale += r_frametime * 6;
+//				part->org[2] += r_frametime * 30;
 				break;
 			case pt_smokering:
-				if ((part->alpha -= host_frametime * 130) < 1)
+				if ((part->alpha -= r_frametime * 130) < 1)
 					part->die = -1;
-				part->scale += host_frametime * 10;
-//				part->org[2] += host_frametime * 30;
+				part->scale += r_frametime * 10;
+//				part->org[2] += r_frametime * 30;
 				break;
 			case pt_smokecloud:
-				if ((part->alpha -= host_frametime * 128) < 1)
+				if ((part->alpha -= r_frametime * 128) < 1)
 				{
 					part->die = -1;
 					break;
 				}
-				part->scale += host_frametime * 60;
-				part->org[2] += host_frametime * 30;
+				part->scale += r_frametime * 60;
+				part->org[2] += r_frametime * 30;
 				break;
 			case pt_bloodcloud:
-				if ((part->alpha -= host_frametime * 64) < 1)
+				if ((part->alpha -= r_frametime * 64) < 1)
 				{
 					part->die = -1;
 					break;
 				}
-				part->scale += host_frametime * 4;
+				part->scale += r_frametime * 4;
 				part->vel[2] -= grav;
 				break;
 			case pt_fadespark:
-				if ((part->alpha -= host_frametime * 256) < 1)
+				if ((part->alpha -= r_frametime * 256) < 1)
 					part->die = -1;
 				part->vel[2] -= grav;
 				break;
 			case pt_fadespark2:
-				if ((part->alpha -= host_frametime * 512) < 1)
+				if ((part->alpha -= r_frametime * 512) < 1)
 					part->die = -1;
 				part->vel[2] -= grav;
 				break;
 			case pt_fallfadespark:
-				if ((part->alpha -= host_frametime * 256) < 1)
+				if ((part->alpha -= r_frametime * 256) < 1)
 					part->die = -1;
 				part->vel[2] -= fast_grav;
 				break;

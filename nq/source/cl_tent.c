@@ -84,6 +84,26 @@ sfx_t      *cl_sfx_imp;
 sfx_t      *cl_sfx_rail;
 #endif
 
+static const particle_effect_t prot_to_rend[]={
+	PE_SPIKE,				// TE_SPIKE
+	PE_SUPERSPIKE,			// TE_SUPERSPIKE
+	PE_GUNSHOT,				// TE_GUNSHOT
+	PE_UNKNOWN,				// TE_EXPLOSION
+	PE_UNKNOWN,				// TE_TAREXPLOSION
+	PE_UNKNOWN,				// TE_LIGHTNING1
+	PE_UNKNOWN,				// TE_LIGHTNING2
+	PE_WIZSPIKE,			// TE_WIZSPIKE
+	PE_KNIGHTSPIKE,			// TE_KNIGHTSPIKE
+	PE_UNKNOWN,				// TE_LIGHTNING3
+	PE_UNKNOWN,				// TE_LAVASPLASH
+	PE_UNKNOWN,				// TE_TELEPORT
+	PE_BLOOD,				// TE_BLOOD
+	PE_LIGHTNINGBLOOD,		// TE_LIGHTNINGBLOOD
+	PE_UNKNOWN,				// TE_IMPLOSION
+	PE_UNKNOWN,				// TE_RAILTRAIL
+	PE_UNKNOWN,				// TE_EXPLOSION2
+	PE_UNKNOWN,				// TE_BEAM
+};
 
 void
 CL_TEnts_Init (void)
@@ -229,7 +249,7 @@ CL_ParseTEnt (void)
 			pos[0] = MSG_ReadCoord (net_message);
 			pos[1] = MSG_ReadCoord (net_message);
 			pos[2] = MSG_ReadCoord (net_message);
-			R_RunSpikeEffect (pos, type);
+			R_RunSpikeEffect (pos, prot_to_rend[type]);
 			S_StartSound (-1, 0, cl_sfx_wizhit, pos, 1, 1);
 			break;
 
@@ -237,7 +257,7 @@ CL_ParseTEnt (void)
 			pos[0] = MSG_ReadCoord (net_message);
 			pos[1] = MSG_ReadCoord (net_message);
 			pos[2] = MSG_ReadCoord (net_message);
-			R_RunSpikeEffect (pos, type);
+			R_RunSpikeEffect (pos, prot_to_rend[type]);
 			S_StartSound (-1, 0, cl_sfx_knighthit, pos, 1, 1);
 			break;
 
@@ -245,7 +265,7 @@ CL_ParseTEnt (void)
 			pos[0] = MSG_ReadCoord (net_message);
 			pos[1] = MSG_ReadCoord (net_message);
 			pos[2] = MSG_ReadCoord (net_message);
-			R_RunSpikeEffect (pos, type);
+			R_RunSpikeEffect (pos, prot_to_rend[type]);
 
 			if (rand () % 5)
 				S_StartSound (-1, 0, cl_sfx_tink1, pos, 1, 1);
@@ -264,7 +284,7 @@ CL_ParseTEnt (void)
 			pos[0] = MSG_ReadCoord (net_message);
 			pos[1] = MSG_ReadCoord (net_message);
 			pos[2] = MSG_ReadCoord (net_message);
-			R_RunSpikeEffect (pos, type);
+			R_RunSpikeEffect (pos, prot_to_rend[type]);
 
 			if (rand () % 5)
 				S_StartSound (-1, 0, cl_sfx_tink1, pos, 1, 1);
@@ -377,7 +397,7 @@ CL_ParseTEnt (void)
 			pos[0] = MSG_ReadCoord (net_message);
 			pos[1] = MSG_ReadCoord (net_message);
 			pos[2] = MSG_ReadCoord (net_message);
-			R_RunPuffEffect (pos, type, cnt);
+			R_RunPuffEffect (pos, prot_to_rend[type], cnt);
 			break;
 
 #ifdef QUAKE2

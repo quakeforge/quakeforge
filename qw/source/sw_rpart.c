@@ -36,9 +36,8 @@
 #include "QF/console.h"
 #include "QF/qargs.h"
 #include "QF/quakefs.h"
+#include "QF/render.h"
 
-#include "client.h"
-#include "host.h"
 #include "r_cvar.h"
 #include "r_dynamic.h"
 #include "r_local.h"
@@ -155,40 +154,44 @@ R_ReadPointFile_f (void)
 
 
 void
-R_RunSpikeEffect (vec3_t pos, byte type)
+R_RunSpikeEffect (vec3_t pos, particle_effect_t type)
 {
 	switch (type) {
-		case TE_WIZSPIKE:
+		case PE_WIZSPIKE:
 			R_RunParticleEffect (pos, 20, 30);
 			break;
-		case TE_KNIGHTSPIKE:
+		case PE_KNIGHTSPIKE:
 			R_RunParticleEffect (pos, 226, 20);
 			break;
-		case TE_SPIKE:
+		case PE_SPIKE:
 			R_RunParticleEffect (pos, 0, 10);
 			break;
-		case TE_SUPERSPIKE:
+		case PE_SUPERSPIKE:
 			R_RunParticleEffect (pos, 0, 20);
+			break;
+		default:
 			break;
 	}
 }
 
 
 void
-R_RunPuffEffect (vec3_t pos, byte type, byte cnt)
+R_RunPuffEffect (vec3_t pos, particle_effect_t type, byte cnt)
 {
 	if (!r_particles->int_val)
 		return;
 
 	switch (type) {
-		case TE_GUNSHOT:
+		case PE_GUNSHOT:
 			R_RunParticleEffect (pos, 0, 20 * cnt);
 			break;
-		case TE_BLOOD:
+		case PE_BLOOD:
 			R_RunParticleEffect (pos, 73, 20 * cnt);
 			break;
-		case TE_LIGHTNINGBLOOD:
+		case PE_LIGHTNINGBLOOD:
 			R_RunParticleEffect (pos, 225, 50);
+			break;
+		default:
 			break;
 	}
 }
@@ -515,7 +518,7 @@ R_DrawParticles (void)
 	VectorScale (vup, yscaleshrink, r_pup);
 	VectorCopy (vpn, r_ppn);
 
-	frametime = host_frametime;
+	frametime = r_frametime;
 	time3 = frametime * 15;
 	time2 = frametime * 10;				// 15;
 	time1 = frametime * 5;
