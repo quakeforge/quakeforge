@@ -412,9 +412,12 @@ case "$target_os" in
 	;;
 esac	
 
-AM_PATH_VORBIS(HAVE_VORBIS=yes, HAVE_VOBIS=no)
-if test $HAVE_VORBIS = yes; then
-	AC_DEFINE(HAVE_VORBIS, 1, [define this if you have ogg/vorbis libs])
+AM_PATH_OGG(HAVE_OGG=yes, HAVE_OGG=no)
+if test $HAVE_OGG = yes; then
+	AM_PATH_VORBIS(HAVE_VORBIS=yes, HAVE_VORBIS=no)
+	if test $HAVE_VORBIS = yes; then
+		AC_DEFINE(HAVE_VORBIS, 1, [define this if you have ogg/vorbis libs])
+	fi
 fi
 
 AC_ARG_ENABLE(zlib,

@@ -75,7 +75,7 @@ void * (* glGetProcAddress) (const char *symbol) = NULL; // FIXME
 
 // the following is to avoid other compiler errors
 #ifdef _WIN32
-void * (* getProcAddress) (HINSTANCE, LPCSTR);
+FARPROC (WINAPI *getProcAddress) (HINSTANCE, LPCSTR);
 #else
 void * (* getProcAddress) (void *, const char *); 
 #endif
