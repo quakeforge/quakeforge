@@ -278,7 +278,7 @@ Host_WriteConfiguration (void)
 
 	// dedicated servers initialize the host but don't parse and set the
 	// config.cfg cvars
-	if (cl_writecfg->int_val && (host_initialized & !isDedicated)) {
+	if (!isDedicated && cl_writecfg->int_val && host_initialized) {
 		char       *path = va ("%s/config.cfg", com_gamedir);
 		f = Qopen (path, "w");
 		if (!f) {
@@ -988,7 +988,7 @@ Host_Init (quakeparms_t *parms)
 	Cmd_Exec_File (fs_usercfg->string);
 	// reparse the command line for + commands other than set
 	// (sets still done, but it doesn't matter)
-	if (cl_quakerc->int_val && check_quakerc ())
+	if (isDedicated || (cl_quakerc->int_val && check_quakerc ()))
 		Cmd_StuffCmds_f ();
 
 	Hunk_AllocName (0, "-HOST_HUNKLEVEL-");
