@@ -140,17 +140,17 @@ AC_HEADER_STDC
 AC_HEADER_MAJOR
 AC_HEADER_SYS_WAIT
 AC_CHECK_HEADERS(
-	alloca.h alsa/asoundlib.h \
-	arpa/inet.h asm/io.h assert.h conio.h ctype.h ddraw.h dinput.h \
-	direct.h dirent.h dlfcn.h dmedia/audio.h dmedia/cdaudio.h dpmi.h \
-	dsound.h errno.h execinfo.h fcntl.h io.h  libc.h limits.h linux/cdrom.h \
-	linux/joystick.h linux/soundcard.h machine/soundcard.h malloc.h math.h \
-	mgraph.h _mingw.h netdb.h  netinet/in.h process.h pwd.h rpc/types.h \
-	setjmp.h signal.h stdarg.h stdio.h stdlib.h string.h strings.h \
-	sys/asoundlib.h sys/audioio.h sys/filio.h sys/ioctl.h sys/io.h sys/ipc.h \
-	sys/mman.h sys/param.h sys/poll.h sys/shm.h sys/signal.h sys/socket.h \
-	sys/soundcard.h sys/stat.h sys/time.h sys/types.h sys/uio.h termios.h \
-	time.h unistd.h vgakeyboard.h vgamouse.h windows.h winsock.h
+	alloca.h alsa/asoundlib.h arpa/inet.h asm/io.h assert.h conio.h \
+	ctype.h ddraw.h dinput.h direct.h dirent.h dlfcn.h dmedia/audio.h \
+	dmedia/cdaudio.h dpmi.h dsound.h errno.h execinfo.h fcntl.h io.h \
+	libc.h limits.h linux/cdrom.h linux/joystick.h linux/soundcard.h \
+	machine/soundcard.h malloc.h math.h mgraph.h _mingw.h netdb.h \
+	netinet/in.h process.h pwd.h rpc/types.h setjmp.h signal.h stdarg.h \
+	stdio.h stdlib.h string.h strings.h sys/asoundlib.h sys/audioio.h \
+	sys/filio.h sys/ioctl.h sys/io.h sys/ipc.h sys/mman.h sys/param.h \
+	sys/poll.h sys/shm.h sys/signal.h sys/socket.h sys/soundcard.h \
+	sys/stat.h sys/time.h sys/types.h sys/uio.h termios.h time.h unistd.h \
+	vgakeyboard.h vgamouse.h windows.h winsock.h
 )
 if test "x$mingw" = xyes; then
 	AC_MSG_CHECKING(for fnmatch.h)
@@ -339,11 +339,10 @@ AC_FUNC_VPRINTF
 AC_FUNC_VA_COPY
 AC_FUNC__VA_COPY
 AC_CHECK_FUNCS(
-	access _access \
-	gethostname gethostbyname connect gettimeofday getwd mkdir _mkdir \
-	ftime _ftime fcntl stat putenv select socket strerror strcasestr strnlen \
-	strstr snprintf _snprintf vsnprintf _vsnprintf strsep dlopen getaddrinfo \
-	getnameinfo mprotect
+	access _access gethostname gethostbyname connect gettimeofday getwd \
+	mkdir _mkdir ftime _ftime fcntl stat putenv select socket strerror \
+	strcasestr strnlen strstr snprintf _snprintf vsnprintf _vsnprintf \
+	strsep dlopen getaddrinfo getnameinfo mprotect
 )
 
 DL_LIBS=""
@@ -411,6 +410,7 @@ case "$target_os" in
 	;;
 esac	
 
+HAVE_VORBIS=no
 AM_PATH_OGG(HAVE_OGG=yes, HAVE_OGG=no)
 if test $HAVE_OGG = yes; then
 	AM_PATH_VORBIS(HAVE_VORBIS=yes, HAVE_VORBIS=no)
