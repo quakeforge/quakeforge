@@ -3,6 +3,7 @@
 #include <QF/cmd.h>
 #include <QF/cvar.h>
 #include <QF/progs.h>
+#include <QF/vfs.h>
 #include <QF/sys.h>
 #include <QF/zone.h>
 
@@ -38,7 +39,15 @@ main ()
 	Cbuf_Init ();
 	Cmd_Init ();
 
+	Cvar_Get ("pr_debug", "1", 0, 0, 0);
+	Cvar_Get ("fs_basegame", ".", 0, 0, 0);
+	Cvar_Get ("fs_userpath", ".", 0, 0, 0);
+	Cvar_Get ("fs_sharepath", ".", 0, 0, 0);
+	Cvar_Get ("developer", "1", 0, 0, 0);
+
 	PR_Init_Cvars ();
+	COM_Filesystem_Init_Cvars ();
+	COM_Filesystem_Init ();
 	PR_Init ();
 	BI_Init (&progs);
 
