@@ -201,6 +201,7 @@ Sys_PathType (const char *path)
 	free (comp);
 	return type;
 }
+
 /*
 	Sys_SetPrintf
 
@@ -339,12 +340,20 @@ Sys_MakeCodeWriteable (unsigned long startaddr, unsigned long length)
 # ifdef HAVE_MPROTECT
 	int         r;
 	unsigned long endaddr = startaddr + length;
+#  ifdef HAVE_UNISTD_H
+	long		psize = sysconf (_SC_PAGESIZE);
 
-#  ifdef HAVE_GETPAGESIZE
+	startaddr &= ~(psize - 1);
+	endaddr = (endaddr + psize - 1) & ~(psize -1);
+#  else
+#   ifdef HAVE_GETPAGESIZE
 	int         psize = getpagesize ();
 
 	startaddr &= ~(psize - 1);
 	endaddr = (endaddr + psize - 1) & ~(psize - 1);
+#   else
+#    error Unknown page size
+#   endif
 #  endif
 
 	r = mprotect ((char *) startaddr, endaddr - startaddr,
