@@ -459,6 +459,8 @@ Menu_Draw (void)
 void
 Menu_KeyEvent (knum_t key, short unicode, qboolean down)
 {
+	menu_item_t *item;
+
 	if (!menu)
 		return;
 	if (menu->keyevent) {
@@ -470,10 +472,11 @@ Menu_KeyEvent (knum_t key, short unicode, qboolean down)
 			return;
 	} else if (menu->items && menu->items[menu->cur_item]->func
 			   && menu->items[menu->cur_item]->allkeys) {
-		G_INT (&menu_pr_state, OFS_PARM0) = key;
-		G_INT (&menu_pr_state, OFS_PARM1) = unicode;
-		G_INT (&menu_pr_state, OFS_PARM2) = down;
-		PR_ExecuteProgram (&menu_pr_state, menu->items[menu->cur_item]->func);
+		item = menu->items[menu->cur_item];
+		G_INT (&menu_pr_state, OFS_PARM0) =
+			PR_SetString (&menu_pr_state, item->text);
+		G_INT (&menu_pr_state, OFS_PARM1) = key;
+		PR_ExecuteProgram (&menu_pr_state, item->func);
 		if (G_INT (&menu_pr_state, OFS_RETURN))
 			return;
 	}
@@ -493,7 +496,7 @@ Menu_KeyEvent (knum_t key, short unicode, qboolean down)
 		case QFK_RETURN:
 		case QFM_BUTTON1:
 			{
-				menu_item_t *item = menu->items[menu->cur_item];
+				item = menu->items[menu->cur_item];
 				if (item->func) {
 					G_INT (&menu_pr_state, OFS_PARM0) =
 						PR_SetString (&menu_pr_state, item->text);
