@@ -115,6 +115,7 @@ integer (string text, integer key) save_f =
 
 void () load_save_f =
 {
+	scan_saves ();
 	if (Cmd_Argv (0) == "menu_load")
 		Menu_SelectMenu ("load");
 	else
