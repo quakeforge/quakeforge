@@ -45,6 +45,7 @@
 #include "chase.h"
 #include "host.h"
 #include "host.h"
+#include "r_dynamic.h"
 #include "render.h"
 #include "server.h"
 

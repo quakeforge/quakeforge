@@ -26,12 +26,12 @@
 	$Id$
 */
 
-#ifndef _RENDER_H
-#define _RENDER_H
+#ifndef __render_h
+#define __render_h
 
+#include "QF/cvar.h"
 #include "QF/mathlib.h"
 #include "QF/model.h"
-#include "QF/cvar.h"
 #include "QF/vid.h"
 
 // now we know why (struct model_s *) is used here instead of model_t
@@ -47,38 +47,37 @@ typedef struct entity_s
 	int						keynum; // for matching entities in different frames
 	vec3_t					origin;
 	vec3_t					old_origin;
-	vec3_t					angles; 
-	struct model_s			*model; // NULL = no model
+	vec3_t					angles;
+	struct model_s			*model;			// NULL = no model
 	int						frame;
 	byte					*colormap;
-	int						skinnum; // for Alias models
+	int						skinnum;		// for Alias models
 
-	struct player_info_s	*scoreboard; // identify player
+	struct player_info_s	*scoreboard;	// identify player
 
-	float					syncbase;
+	float					syncbase;		// for client-side animations
 
-	struct efrag_s			*efrag; // linked list of efrags (FIXME)
-	int						visframe; // last frame this entity was found in an
-									  // active leaf, only used for static objects
+	struct efrag_s			*efrag;			// linked list of efrags
+	int						visframe;		// last frame this entity was
+											// found in an active leaf
 
-	float					colormod[3]; // color tint for model
-	float					alpha; // opacity (alpha) of the model
-	float					scale; // size scaler of the model
-	float					glow_size; // how big the glow is (can be negative)
-	byte					glow_color; // color of glow (paletted)
+	float					colormod[3];	// color tint for model
+	float					alpha;			// opacity (alpha) of the model
+	float					scale;			// size scaler of the model
+	float					glow_size;		// how big the glow is (can be negative)
+	byte					glow_color;		// color of glow (paletted)
 
-	// FIXME: could turn these into a union
+// FIXME: could turn these into a union
 	int						trivial_accept;
 	struct mnode_s			*topnode; // for bmodels, first world node that
 									  // splits bmodel, or NULL if not split
 
 	// Animation interpolation
-    float                   frame_start_time;
-    float                   frame_interval;
-    int                     pose1; 
-    int                     pose2;
+	float                   frame_start_time;
+	float                   frame_interval;
+	int						pose1;
+	int						pose2;
 } entity_t;
-
 
 // !!! if this is changed, it must be changed in asm_draw.h too !!!
 typedef struct
@@ -107,7 +106,7 @@ typedef struct
 	vec3_t		viewangles;
 
 	float		fov_x, fov_y;
-	
+
 	int			ambientlight;
 } refdef_t;
 
@@ -123,8 +122,7 @@ extern vec3_t	r_origin, vpn, vright, vup;
 
 extern	struct texture_s	*r_notexture_mip;
 
-extern	entity_t	r_worldentity;
-
+extern entity_t r_worldentity;
 
 void R_Init (void);
 void R_Init_Cvars (void);
@@ -152,7 +150,7 @@ extern	int		reinit_surfcache;	// if 1, surface cache is currently empty
 extern qboolean	r_cache_thrash;	// set if thrashing the surface cache
 
 void *D_SurfaceCacheAddress (void);
-int	D_SurfaceCacheForRes (int width, int height);
+int D_SurfaceCacheForRes (int width, int height);
 void D_FlushCaches (void);
 void D_DeleteSurfaceCache (void);
 void D_InitCaches (void *buffer, int size);
@@ -160,4 +158,4 @@ void R_SetVrect (vrect_t *pvrect, vrect_t *pvrectin, int lineadj);
 
 void R_LoadSkys (const char *);
 
-#endif // _RENDER_H
+#endif // __render_h

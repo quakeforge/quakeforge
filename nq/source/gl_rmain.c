@@ -1079,6 +1079,7 @@ R_RenderScene (void)
 	R_RenderDlights ();
 }
 
+void R_RenderBrushPoly (msurface_t *fa);
 void
 R_Mirror (void)
 {

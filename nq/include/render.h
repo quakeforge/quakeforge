@@ -31,11 +31,10 @@
 
 #include "QF/cvar.h"
 #include "QF/mathlib.h"
+#include "QF/model.h"
 #include "QF/vid.h"
 
 #include "protocol.h"
-
-#define	MAXCLIPPLANES	11
 
 #define	TOP_RANGE		16			// soldier uniform colors
 #define	BOTTOM_RANGE	96
@@ -51,33 +50,41 @@ typedef struct entity_s
 	entity_state_t			baseline;		// to fill in defaults in updates
 
 	double					msgtime;		// time of last update
-	vec3_t					msg_origins[2];	// last two updates (0 is newest)
 	vec3_t					origin;
 	vec3_t					old_origin;
-	vec3_t					msg_angles[2];	// last two updates (0 is newest)
 	vec3_t					angles;
+	vec3_t					msg_origins[2];	// last two updates (0 is newest)
+	vec3_t					msg_angles[2];	// last two updates (0 is newest)
 	struct model_s			*model;			// NULL = no model
-	struct efrag_s			*efrag;			// linked list of efrags
 	int						frame;
-	float					syncbase;		// for client-side animations
 	byte					*colormap;
-	int						effects;		// light, particals, etc
 	int						skinnum;		// for Alias models
+
+	float					syncbase;		// for client-side animations
+
+	struct efrag_s			*efrag;			// linked list of efrags
 	int						visframe;		// last frame this entity was
 											// found in an active leaf
+	int						effects;		// light, particals, etc
 	int						dlightframe;	// dynamic lighting
 	int						dlightbits;
-	
+
+	float					colormod[3];	// color tint for model
+	float					alpha;			// opacity (alpha) of the model
+	float					scale;			// size scaler of the model
+	float					glow_size;		// how big the glow is (can be negative)
+	byte					glow_color;		// color of glow (paletted)
+
 // FIXME: could turn these into a union
 	int						trivial_accept;
-	struct mnode_s			*topnode;	// for bmodels, first world node that
-										// splits bmodel, or NULL if not split
+	struct mnode_s			*topnode; // for bmodels, first world node that
+									  // splits bmodel, or NULL if not split
 
 	// Animation interpolation
 	float                   frame_start_time;
 	float                   frame_interval;
-	int                     pose1;
-	int                     pose2;
+	int						pose1;
+	int						pose2;
 } entity_t;
 
 // !!! if this is changed, it must be changed in asm_draw.h too !!!
@@ -105,7 +112,7 @@ typedef struct
 
 	vec3_t		vieworg;
 	vec3_t		viewangles;
-	
+
 	float		fov_x, fov_y;
 
 	int			ambientlight;
@@ -126,6 +133,7 @@ extern	struct texture_s	*r_notexture_mip;
 extern entity_t r_worldentity;
 
 void R_Init (void);
+void R_Init_Cvars (void);
 void R_InitEfrags (void);
 void R_InitSky (struct texture_s *mt);	// called at level load
 void R_Textures_Init (void);
@@ -138,22 +146,6 @@ void R_RemoveEfrags (entity_t *ent);
 
 void R_NewMap (void);
 
-
-struct entity_s;
-void R_RocketTrail (int type, struct entity_s *ent);
-void R_RunParticleEffect (vec3_t org, int color, int count);
-void R_RunPuffEffect (vec3_t org, byte type, byte count);
-void R_RunSpikeEffect (vec3_t org, byte type);
-
-#ifdef QUAKE2
-void R_DarkFieldParticles (entity_t *ent);
-#endif
-void R_EntityParticles (entity_t *ent);
-void R_BlobExplosion (vec3_t org);
-void R_ParticleExplosion (vec3_t org);
-void R_ParticleExplosion2 (vec3_t org, int colorStart, int colorLength);
-void R_LavaSplash (vec3_t org);
-void R_TeleportSplash (vec3_t org);
 
 // LordHavoc: relative bmodel lighting
 void R_PushDlights (vec3_t entorigin);
@@ -172,14 +164,6 @@ void D_DeleteSurfaceCache (void);
 void D_InitCaches (void *buffer, int size);
 void R_SetVrect (vrect_t *pvrect, vrect_t *pvrectin, int lineadj);
 
-void R_DrawBrushModel (entity_t *e);
-void R_DrawWorld (void);
-void R_RenderDlights (void);
-
-struct msurface_s;
-void R_RenderBrushPoly (struct msurface_s *fa);
-
-void R_TranslatePlayerSkin (int playernum);
-void R_AddFire (vec3_t, vec3_t, entity_t *ent);
+void R_LoadSkys (const char *);
 
 #endif // __render_h
