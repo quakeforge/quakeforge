@@ -573,7 +573,7 @@ separate_compile (void)
 		f = output_file->str + strlen (output_file->str);
 		while (f >= output_file->str && *f != '.' && *f != '/')
 			f--;
-		if (*f == '.') {
+		if (f >= output_file->str && *f == '.') {
 			output_file->size -= strlen (f);
 			dstring_appendstr (extension, f);
 			*f = 0;
