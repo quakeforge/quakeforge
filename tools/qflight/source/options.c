@@ -99,7 +99,8 @@ usage (int status)
 int
 DecodeArgs (int argc, char **argv)
 {
-	int		c;
+	int         c;
+	char       *eptr;
 
 	memset (&options, 0, sizeof (options));
 	options.verbosity = 0;
@@ -129,17 +130,25 @@ DecodeArgs (int argc, char **argv)
 				exit (0);
 				break;
 			case 't':					// threads
-				options.threads = atoi (optarg);
+				options.threads = strtol (optarg, &eptr, 10);
+				if (eptr == optarg || *eptr)
+					usage (1);
 				break;
 			case 'e':					// extra
-				options.extrabit = atoi (optarg);
+				options.extrabit = strtol (optarg, &eptr, 10);
+				if (eptr == optarg || *eptr)
+					usage (1);
 				options.extrabit = bound (0, options.extrabit, 2);
 				break;
 			case 'd':					// scale distance
-				options.distance = atof (optarg);
+				options.distance = strtod (optarg, &eptr);
+				if (eptr == optarg || *eptr)
+					usage (1);
 				break;
 			case 'r':					// scale range
-				options.range = atof (optarg);
+				options.range = strtod (optarg, &eptr);
+				if (eptr == optarg || *eptr)
+					usage (1);
 				break;
 			case 'f':
 				bspfile = strdup (optarg);
