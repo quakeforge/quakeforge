@@ -246,12 +246,20 @@ output_file (const char *ext)
 {
 	char       *name;
 
-	name = malloc (strlen (options.bspfile) + strlen (ext) + 1);
-	QFS_StripExtension (options.bspfile, name);
-	if (strcmp (QFS_FileExtension (options.bspfile), ".gz") == 0) {
-		QFS_StripExtension (name, name);
+	if (options.output_file) {
+		if (strcmp (options.output_file, "-") == 0)
+			return options.output_file;
+		name = malloc (strlen (options.output_file) + strlen (ext) + 1);
+		strcpy (name, options.output_file);
+		QFS_DefaultExtension (name, ext);
+	} else {
+		name = malloc (strlen (options.bspfile) + strlen (ext) + 1);
+		QFS_StripExtension (options.bspfile, name);
+		if (strcmp (QFS_FileExtension (options.bspfile), ".gz") == 0) {
+			QFS_StripExtension (name, name);
+		}
+		strcat (name, ext);
 	}
-	strcat (name, ext);
 	return name;
 }
 
@@ -342,7 +350,7 @@ extract_textures (void)
 	dmiptexlump_t *miptexlump = (dmiptexlump_t *) bsp->texdata;
 	miptex_t   *miptex;
 	int         i, mtsize, pixels;
-	char       *wadfile = malloc (strlen (options.bspfile) + 5);
+	char       *wadfile;
 	wad_t      *wad;
 
 	wadfile = output_file (".wad");
@@ -371,7 +379,7 @@ extract_textures (void)
 void
 extract_entities (void)
 {
-	char       *entfile = malloc (strlen (options.bspfile) + 5);
+	char       *entfile;
 	int         i;
 	QFile      *ef;
 
@@ -381,7 +389,10 @@ extract_entities (void)
 		if (bsp->entdata[i - 1])
 			break;
 
-	ef = Qopen (entfile, "wt");
+	if (strcmp (entfile, "-") == 0)
+		ef = Qdopen (1, "wt");
+	else
+		ef = Qopen (entfile, "wt");
 	Qwrite (ef, bsp->entdata, i);
 	Qclose (ef);
 }

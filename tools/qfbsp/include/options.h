@@ -51,6 +51,7 @@ typedef struct {
 	char		*portfile;
 	char		*pointfile;
 	char		*hullfile;
+	char		*output_file;
 	const char	*wadpath;
 } options_t;
 

@@ -78,6 +78,7 @@ static const char *short_options =
 	"f"		// nofill
 	"c"		// noclip
 	"e"		// onlyents
+	"o:"	// outputfile
 	"p"		// portal
 	"u"		// usehulls
 	"H:"	// hullnum
@@ -154,6 +155,9 @@ DecodeArgs (int argc, char **argv)
 				break;
 			case 'e':					// onlyents
 				options.onlyents = true;
+				break;
+			case 'o':
+				options.output_file = strdup (optarg);
 				break;
 			case 'p':					// portal
 				options.extract = true;
