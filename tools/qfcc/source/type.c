@@ -613,6 +613,18 @@ init_types (void)
 	new_struct_field (strct, &type_integer,  "integer_val",  vis_public);
 	new_struct_field (strct, &type_uinteger, "uinteger_val", vis_public);
 
+	strct = calloc (sizeof (struct_t), 1);
+	init_struct (strct, &type_param, str_union, 0);
+	new_struct_field (strct, &type_string,   "string_val",   vis_public);
+	new_struct_field (strct, &type_float,    "float_val",    vis_public);
+	new_struct_field (strct, &type_vector,   "vector_val",   vis_public);
+	new_struct_field (strct, &type_entity,   "entity_val",   vis_public);
+	new_struct_field (strct, &type_field,    "field_val",    vis_public);
+	new_struct_field (strct, &type_function, "func_val",     vis_public);
+	new_struct_field (strct, &type_pointer,  "pointer_val",  vis_public);
+	new_struct_field (strct, &type_integer,  "integer_val",  vis_public);
+	new_struct_field (strct, &type_uinteger, "uinteger_val", vis_public);
+
 	if (options.traditional)
 		return;
 
