@@ -321,8 +321,8 @@ IN_InitKeyboard (void)
 	scantokey[1][52] = '>';
 	scantokey[1][53] = '?';
 
-	scantokey[1][7] = 30;
-	scantokey[1][12] = 31;
+	scantokey[2][7] = 30;
+	scantokey[2][12] = 31;
 	scantokey[2][16] = 'q' - 96;
 	scantokey[2][17] = 'w' - 96;
 	scantokey[2][18] = 'e' - 96;
