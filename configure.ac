@@ -204,8 +204,8 @@ AH_VERBATIM([HAVE___ATTRIBUTE__],
 
 AC_MSG_CHECKING(for __builtin_expect)
 AC_TRY_COMPILE(
-	[int i;],
-	[if (__builtin_expect (i == 20, 0)) i = 0;],
+	[long (*foo) (long, long) = __builtin_expect;],
+	[],
 	AC_DEFINE(HAVE___BUILTIN_EXPECT)
 	AC_MSG_RESULT(yes),
 	AC_MSG_RESULT(no)
