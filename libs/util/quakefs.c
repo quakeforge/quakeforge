@@ -1048,7 +1048,7 @@ COM_Filesystem_Init_Cvars (void)
 /*
 	COM_SkipPath
 */
-char       *
+char *
 COM_SkipPath (char *pathname)
 {
 	char       *last;
@@ -1076,7 +1076,7 @@ COM_StripExtension (char *in, char *out)
 /*
 	COM_FileExtension
 */
-char       *
+char *
 COM_FileExtension (char *in)
 {
 	static char exten[8];
