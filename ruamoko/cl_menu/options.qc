@@ -34,6 +34,7 @@
 #include "cvar.h"
 #include "key.h"
 #include "InputLine.h"
+#include "Rect.h"
 #include "controls_o.h"
 #include "options_util.h"
 

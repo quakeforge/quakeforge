@@ -4,6 +4,7 @@
 #include "draw.h"
 #include "key.h"
 #include "InputLine.h"
+#include "Rect.h"
 #include "string.h"
 #include "../include/string.h"
 #include "math.h"
