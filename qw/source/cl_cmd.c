@@ -71,7 +71,7 @@ Cmd_ForwardToServer (void)
 			!strcasecmp (Cmd_Argv (0), "say_team")) {
 			char       *s;
 
-			s = Team_ParseSay (Cmd_Args ());
+			s = Team_ParseSay (Cmd_Args (1));
 			if (*s && *s < 32 && *s != 10) {
 				// otherwise the server would eat leading characters
 				// less than 32 or greater than 127
@@ -83,7 +83,7 @@ Cmd_ForwardToServer (void)
 			return;
 		}
 
-		SZ_Print (&cls.netchan.message, Cmd_Args ());
+		SZ_Print (&cls.netchan.message, Cmd_Args (1));
 	}
 }
 
@@ -107,7 +107,7 @@ Cmd_ForwardToServer_f (void)
 
 	if (Cmd_Argc () > 1) {
 		MSG_WriteByte (&cls.netchan.message, clc_stringcmd);
-		SZ_Print (&cls.netchan.message, Cmd_Args ());
+		SZ_Print (&cls.netchan.message, Cmd_Args (1));
 	}
 }
 

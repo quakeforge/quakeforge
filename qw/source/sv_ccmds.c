@@ -59,6 +59,46 @@ char        fp_msg[255] = { 0 };
 extern cvar_t *cl_warncmd;
 extern redirect_t sv_redirected;
 
+qboolean
+SV_Match_User (const char *substr, int *uidp)
+{
+	int         i, j;
+	int         count = 0;
+	char       *str;
+	client_t   *cl;
+
+	if (!substr[0]) {
+		*uidp = 0;
+		Con_Printf ("Too many matches, ignoring command!\n");
+		return false;
+	}
+	for (i = 0, cl = svs.clients; i < MAX_CLIENTS; i++, cl++) {
+		if (!cl->state)
+			continue;
+		str = strchr (cl->name, substr[0]);
+		while (str) {
+			for (j = 0; substr[j] && str[j]; j++)
+				if (sys_char_map[(byte)substr[j]] != sys_char_map[(byte)str[j]])
+					break;
+			if (!substr[j]) {		// found a match;
+				*uidp = cl->userid;
+				count++;
+				Con_Printf ("User %04d matches with name: %s\n",
+							*uidp, cl->name);
+				str = 0;
+			} else {
+				str = strchr (str + 1, substr[0]);
+			}
+		}
+	}
+	if (count > 1) {
+		*uidp = 0;
+		Con_Printf ("Too many matches, ignoring command!\n");
+	}
+	if (count)
+		return true;
+	return false;
+}
 
 /*
 	OPERATOR CONSOLE ONLY COMMANDS
@@ -367,7 +407,16 @@ SV_Kick_f (void)
 	client_t   *cl;
 	int         uid;
 
-	uid = atoi (Cmd_Argv (1));
+	if (Cmd_Argc () != 2) {
+		Con_Printf ("usage: kick <name/userid>\n");
+		return;
+	}
+	if (SV_Match_User (Cmd_Argv(1), &uid)) {
+		if (!uid)
+			return;
+	} else {
+		uid = atoi (Cmd_Argv (1));
+	}
 
 	for (i = 0, cl = svs.clients; i < MAX_CLIENTS; i++, cl++) {
 		if (!cl->state)
@@ -485,6 +534,51 @@ SV_Status_f (void)
 }
 
 void
+SV_Tell (const char *prefix)
+{
+	int         i;
+	int         uid;
+	client_t   *cl;
+	char       *p;
+	char        text[512];
+
+	if (Cmd_Argc () < 3) {
+		Con_Printf ("usage: tell <name/userid> <text...>\n");
+		return;
+	}
+	if (SV_Match_User (Cmd_Argv(1), &uid)) {
+		if (!uid)
+			return;
+	} else {
+		uid = atoi (Cmd_Argv(1));
+	}
+
+	p = Cmd_Args (2);
+	if (*p == '"') {
+		p++;
+		p[strlen (p) - 1] = 0;
+	}
+	// construct  "[PRIVATE] Console> "
+	sprintf (text, "[\xd0\xd2\xc9\xd6\xc1\xd4\xc5] %s\x8d ", prefix);
+	i = strlen (text);
+	strncat (text, p, sizeof (text) - 1 - i);
+	text[sizeof (text) - 1] = 0;
+	for (; text[i];)
+		text[i++] |= 0x80; // non-bold text
+	for (i = 0, cl = svs.clients; i < MAX_CLIENTS; i++, cl++) {
+		if (!cl->state)
+			continue;
+		if (cl->userid == uid) {
+			SV_ClientPrintf(cl, PRINT_CHAT, "\n"); // bell
+			SV_ClientPrintf(cl, PRINT_HIGH, "%s\n", text);
+			SV_ClientPrintf(cl, PRINT_CHAT, "%s", ""); // bell
+			return;
+		}
+	}
+	Con_Printf ("Couldn't find user %s\n", Cmd_Argv(1));
+}
+
+void
 SV_ConSay (const char *prefix)
 {
 	client_t   *client;
@@ -495,7 +589,7 @@ SV_ConSay (const char *prefix)
 	if (Cmd_Argc () < 2)
 		return;
 
-	p = Cmd_Args ();
+	p = Cmd_Args (1);
 	if (*p == '"') {
 		p++;
 		p[strlen (p) - 1] = 0;
@@ -514,6 +608,18 @@ SV_ConSay (const char *prefix)
 		if (*prefix != 'I')		// beep, except for Info says
 			SV_ClientPrintf(client, PRINT_CHAT, "%s", "");
 	}
+}
+
+/*
+	SV_Tell_f
+*/
+void
+SV_Tell_f (void)
+{
+	if (rcon_from_user)
+		SV_Tell("Admin");
+	else
+		SV_Tell("Console");
 }
 
 /*
@@ -901,12 +1007,12 @@ SV_InitOperatorCommands (void)
 
 	Cmd_AddCommand ("maplist", COM_Maplist_f, "List all maps on the server");
 
-	Cmd_AddCommand ("say", SV_ConSay_f, "Say something to everyone on the server, will show up as the name 'Console' (or 'Admin') in game");
-	Cmd_AddCommand ("sayinfo", SV_ConSay_Info_f, "Say something to everyone on the server, will show up as the name 'Info' in game");
+	Cmd_AddCommand ("say", SV_ConSay_f, "Say something to everyone on the server. Will show up as the name 'Console' (or 'Admin') in game");
+	Cmd_AddCommand ("sayinfo", SV_ConSay_Info_f, "Say something to everyone on the server. Will show up as the name 'Info' in game");
+	Cmd_AddCommand ("tell", SV_Tell_f, "Say something to a specific user on the server. Will show up as the name 'Console' (or 'Admin') in game");
+	//XXX Cmd_AddCommand ("ban", SV_Ban_f);
 	//XXX Cmd_AddCommand ("cuff", SV_Cuff_f);
 	//XXX Cmd_AddCommand ("mute", SV_Mute_f);
-	//XXX Cmd_AddCommand ("tell", SV_Tell_f);
-	//XXX Cmd_AddCommand ("ban", SV_Ban_f);
 
 	cl_warncmd =
 		Cvar_Get ("cl_warncmd", "1", CVAR_NONE, NULL,

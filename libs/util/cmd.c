@@ -409,7 +409,7 @@ Cmd_Alias_f (void)
 	}
 
 // copy the rest of the command line
-	cmd = malloc (strlen (Cmd_Args ()) + 2);// can never be longer
+	cmd = malloc (strlen (Cmd_Args (1)) + 2);// can never be longer
 	cmd[0] = 0;							// start out with a null string
 	c = Cmd_Argc ();
 	for (i = 2; i < c; i++) {
@@ -468,7 +468,7 @@ typedef struct cmd_function_s {
 static int  cmd_argc;
 static char *cmd_argv[MAX_ARGS];
 static char *cmd_null_string = "";
-static char *cmd_args = NULL;
+static char *cmd_args[MAX_ARGS];
 
 
 
@@ -500,11 +500,11 @@ Cmd_Argv (int arg)
 	Returns a single string containing argv(1) to argv(argc()-1)
 */
 char       *
-Cmd_Args (void)
+Cmd_Args (int start)
 {
-	if (!cmd_args)
+    	if (start >= cmd_argc || !cmd_args[start])
 		return "";
-	return cmd_args;
+	return cmd_args[start];
 }
 
 
@@ -522,7 +522,7 @@ Cmd_TokenizeString (char *text)
 	argv_idx = 0;
 
 	cmd_argc = 0;
-	cmd_args = NULL;
+	memset (cmd_args, 0, sizeof (cmd_args));
 
 	while (1) {
 // skip whitespace up to a /n
@@ -539,8 +539,8 @@ Cmd_TokenizeString (char *text)
 		if (!*text)
 			return;
 
-		if (cmd_argc == 1)
-			cmd_args = text;
+		if (cmd_argc < MAX_ARGS)
+		    cmd_args[cmd_argc] = text;
 
 		text = COM_Parse (text);
 		if (!text)

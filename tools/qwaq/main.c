@@ -75,7 +75,6 @@ main ()
 			printf (" %d", func->parm_size[j]);
 		printf ("\n");
 	}
-#if 0
 	printf ("\n");
 	for (i = 0; i < progs.progs->numglobaldefs; i++) {
 		ddef_t *def = &progs.pr_globaldefs[i];
@@ -83,6 +82,7 @@ main ()
 		printf ("%s %d %d %s\n", type_name[def->type & ~DEF_SAVEGLOBAL], (def->type & DEF_SAVEGLOBAL) != 0, def->ofs, PR_GetString (&progs, def->s_name));
 	}
 	printf ("\n");
+#if 0
 	for (i = 0; i < progs.progs->numfielddefs; i++) {
 		ddef_t *def = &progs.pr_fielddefs[i];
 

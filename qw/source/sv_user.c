@@ -810,7 +810,7 @@ SV_Say (qboolean team)
 		host_client->whensaid[host_client->whensaidhead] = realtime;
 	}
 
-	p = Cmd_Args ();
+	p = Cmd_Args (1);
 
 	if (*p == '"') {
 		p++;
@@ -843,7 +843,6 @@ SV_Say (qboolean team)
 		SV_ClientPrintf (client, PRINT_CHAT, "%s", text);
 	}
 }
-
 
 /*
 	SV_Say_f

@@ -361,7 +361,7 @@ locs_loc (void)
 		return;
 	}
 	if (Cmd_Argc () >= 3)
-		desc = Cmd_Args () + strlen(Cmd_Argv(1)) + 1;
+		desc = Cmd_Args (2);
 	mapname = malloc(sizeof(cl.worldmodel->name));
 	if (!mapname)
 		Sys_Error ("Can't duplicate mapname!");

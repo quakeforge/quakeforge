@@ -926,7 +926,7 @@ Host_Name_f (void)
 	if (Cmd_Argc () == 2)
 		newName = Cmd_Argv (1);
 	else
-		newName = Cmd_Args ();
+		newName = Cmd_Args (1);
 	newName[15] = 0;
 
 	if (cmd_source == src_command) {
@@ -985,7 +985,7 @@ Host_Say (qboolean teamonly)
 
 	save = host_client;
 
-	p = Cmd_Args ();
+	p = Cmd_Args (1);
 // remove quotes if present
 	if (*p == '"') {
 		p++;
@@ -1052,7 +1052,7 @@ Host_Tell_f (void)
 	strcpy (text, host_client->name);
 	strcat (text, ": ");
 
-	p = Cmd_Args ();
+	p = Cmd_Args (1);
 
 // remove quotes if present
 	if (*p == '"') {
@@ -1367,7 +1367,7 @@ Host_Kick_f (void)
 			return;
 
 		if (Cmd_Argc () > 2) {
-			message = COM_Parse (Cmd_Args ());
+			message = COM_Parse (Cmd_Args (1));
 			if (byNumber) {
 				message++;				// skip the #
 				while (*message == ' ')	// skip white space

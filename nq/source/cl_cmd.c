@@ -64,7 +64,7 @@ Cmd_ForwardToServer (void)
 		SZ_Print (&cls.message, " ");
 	}
 	if (Cmd_Argc () > 1)
-		SZ_Print (&cls.message, Cmd_Args ());
+		SZ_Print (&cls.message, Cmd_Args (1));
 	else
 		SZ_Print (&cls.message, "\n");
 }
