@@ -80,8 +80,9 @@ extern qboolean lighthalf;
 
 extern cvar_t *cl_max_particles;
 
-extern int  part_tex_smoke[8];
 extern int  part_tex_dot;
+extern int  part_tex_spark;
+extern int  part_tex_smoke[8];
 
 int         ramp[8] = { 0x6d, 0x6b, 0x06, 0x05, 0x04, 0x03, 0x02, 0x01 };
 
@@ -282,7 +283,7 @@ R_RunSparkEffect (vec3_t org, int count, int ofuzz)
 				  (ofuzz / 8) * .75, vec3_origin, cl.time + 99, 
 				  12 + (rand () & 3), 96);
 	while (count--)
-		particle_new_random (pt_fallfadespark, part_tex_dot, org, ofuzz * .75, 
+		particle_new_random (pt_fallfadespark, part_tex_spark, org, ofuzz * .75, 
 							 1, 96, cl.time + 5, ramp[rand () % 6], 
 							 lhrandom (0, 255));
 }
@@ -444,7 +445,7 @@ R_TeleportSplash (vec3_t org)
 				VectorNormalize (dir);
 				vel = 50 + (rand () & 63);
 				VectorScale (dir, vel, pvel);
-				particle_new (pt_grav, part_tex_dot, porg, 0.6, pvel,
+				particle_new (pt_grav, part_tex_spark, porg, 0.6, pvel,
 							  (cl.time + 0.2 + (rand () & 7) * 0.02),
 							  (7 + (rand () & 7)), 255);
 			}

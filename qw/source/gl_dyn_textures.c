@@ -38,15 +38,18 @@ extern void noise_diamondsquare(unsigned char *noise, int size);
 extern void noise_plasma(unsigned char *noise, int size);
 
 static void GDT_InitDotParticleTexture (void);
+static void GDT_InitSparkParticleTexture (void);
 static void GDT_InitSmokeParticleTexture (void);
 
-int         part_tex_smoke[8];
 int         part_tex_dot;
+int         part_tex_spark;
+int         part_tex_smoke[8];
 
 void
 GDT_Init (void)
 {
 	GDT_InitDotParticleTexture ();
+	GDT_InitSparkParticleTexture ();
 	GDT_InitSmokeParticleTexture ();
 }
 
@@ -56,18 +59,12 @@ GDT_InitDotParticleTexture (void)
 	int         x, y, dx2, dy, d;
 	byte        data[16][16][2];
 
-	//
-	// particle texture
-	//
-	part_tex_dot = texture_extension_number++;
-	glBindTexture (GL_TEXTURE_2D, part_tex_dot);
-
 	for (x = 0; x < 16; x++) {
 		dx2 = x - 8;
 		dx2 *= dx2;
 		for (y = 0; y < 16; y++) {
 			dy = y - 8;
-			d = 255 - 4 * (dx2 + dy * dy);
+			d = 255 - 4 * (dx2 + (dy * dy));
 			if (d<=0) {
 				d = 0;
 				data[y][x][0] = 0;
@@ -77,12 +74,46 @@ GDT_InitDotParticleTexture (void)
 			data[y][x][1] = (byte) d;
 		}
 	}
-	glTexImage2D (GL_TEXTURE_2D, 0, 2, 16, 16, 0, GL_LUMINANCE_ALPHA,
-				  GL_UNSIGNED_BYTE, data);
-
+	part_tex_dot = texture_extension_number++;
+	glBindTexture (GL_TEXTURE_2D, part_tex_dot);
 	glTexParameterf (GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 	glTexParameterf (GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+	glTexImage2D (GL_TEXTURE_2D, 0, 2, 16, 16, 0, GL_LUMINANCE_ALPHA,
+		      GL_UNSIGNED_BYTE, data);
 }
+
+
+static void
+GDT_InitSparkParticleTexture (void)
+{
+	int         x, y, dx2, dy, d;
+	byte        data[16][16][2];
+
+	for (x = 0; x < 16; x++) {
+		dx2 = 8 - abs(x - 8);
+		dx2 *= dx2;
+		for (y = 0; y < 16; y++) {
+			dy = 8 - abs(y - 8);
+			d = 3 * (dx2 + dy * dy) - 100;
+			if (d>255)
+				d = 255;
+			if (d<1) {
+				d = 0;
+				data[y][x][0] = 0;
+			} else
+				data[y][x][0] = 255;
+
+			data[y][x][1] = (byte) d;
+		}
+	}
+	part_tex_spark = texture_extension_number++;
+	glBindTexture (GL_TEXTURE_2D, part_tex_spark);
+	glTexParameterf (GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+	glTexParameterf (GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+	glTexImage2D (GL_TEXTURE_2D, 0, 2, 16, 16, 0, GL_LUMINANCE_ALPHA,
+		      GL_UNSIGNED_BYTE, data);
+}
+
 
 static void
 GDT_InitSmokeParticleTexture (void)
