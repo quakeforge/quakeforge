@@ -431,7 +431,7 @@ PLUGIN_INFO(snd_output, alsa)
 	plugin_info.type = qfp_snd_output;
 	plugin_info.api_version = QFPLUGIN_VERSION;
 	plugin_info.plugin_version = "0.1";
-	plugin_info.description = "ALSA 0.9.x digital output";
+	plugin_info.description = "ALSA digital output";
 	plugin_info.copyright = "Copyright (C) 1996-1997 id Software, Inc.\n"
 		"Copyright (C) 1999,2000,2001  contributors of the QuakeForge "
 		"project\n"
