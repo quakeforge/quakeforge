@@ -102,3 +102,80 @@ o         |               \--- x11
 o         \--- world              3D layout engine (includes objects)
                                   Talks to the sound and video renderers
                                   to output frames
+
+
+Old Menu Structure (for reference when replacing it)
+
+Single Player
+    New Game
+    Load
+    Save
+Multiplayer
+    Join A Game
+        Modem
+        Direct connection
+        IPX
+        TCP/IP
+            Address                 (unchangable)
+            Port                    [editbox]
+            Search for local games
+            Join game at            [editbox]
+    New Game
+        Modem
+        Direct connection
+        IPX
+        TCP/IP
+            Address  (unchangable)
+            Port     [editbox]
+            OK
+                Begin game
+                Max players
+                Game type
+                Skill
+                Frag limit
+                Time limit
+
+                Episode
+                Level
+    Setup
+        Hostname        [editbox]
+        Your name       [editbox]
+        Shirt color
+        Pants color
+        Accept changes
+Options
+    Customize controls
+        Attack
+        Change weapon
+        Jump / Swim up
+        Walk forward
+        Backpedal
+        Turn left
+        Turn right
+        Run
+        Step left
+        Step right
+        Sidestep
+        Look up
+        Look down
+        Center view
+        Mouse look
+        Keyboard look
+        Swim up
+        Swim down
+    Go to console
+    Reset to defaults
+    Screen size      [slider]
+    Brightness       [slider]
+    Contrast         [slider]
+    Mouse speed      [slider]
+    CD music volume  [slider]
+    Sound volume     [slider]
+    Always run       [on/off]
+    Invert mouse     [on/off]
+    Lookspring       [on/off]
+    Lookstrafe       [on/off]  <--- WTF came up with this?
+
+    Use mouse        [on/off]
+Help/Ordering
+Quit
