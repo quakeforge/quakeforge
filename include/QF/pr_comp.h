@@ -270,7 +270,7 @@ opcode_t *PR_Opcode (short opcode);
 void PR_Opcode_Init (void);
 
 typedef struct statement_s {
-	unsigned short	op;
+	pr_opcode_e		op:16;
 	unsigned short	a,b,c;
 } dstatement_t;
 
