@@ -3,14 +3,14 @@ quakeforge (0.5.4-1) frozen unstable; urgency=high
   * New release. fixes exploitable buffer overflow in qw-server
   * add previous changlog entry :P
 
- -- Bill Currie <bill@taniwha.org> Thu, 17 Jul 2003 16:30:40 -0600
+ -- Bill Currie <bill@taniwha.org>  Thu, 17 Jul 2003 16:30:40 -0600
 
 quakeforge (0.5.3-1) frozen unstable; urgency=low
 
   * New Release.
   * add the menu file as the problems for it in 0.5.2 have been fixed
 
- -- Bill Currie <bill@taniwha.org> Wed, 09 Jul 2003 15:43:00 -0600
+ -- Bill Currie <bill@taniwha.org>  Wed, 09 Jul 2003 15:43:00 -0600
 
 quakeforge (0.5.2-1.1) frozen unstable; urgency=low
 
