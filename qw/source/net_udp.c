@@ -115,7 +115,7 @@ NetadrToSockadr (netadr_t *a, struct sockaddr_in *s)
 	memset (s, 0, sizeof (*s));
 	s->sin_family = AF_INET;
 
-	*(int *) &s->sin_addr = *(int *) &a->ip;
+	memcpy (&s->sin_addr, &a->ip, 4);
 	s->sin_port = a->port;
 }
 
@@ -282,7 +282,7 @@ NET_GetPacket (void)
 	// Check for malformed packets
 	if (is_server && ntohs(net_from.port)<1024) {
 		Con_Printf ("Warning: Packet from %s dropped: Bad port\n",
-				NET_AdrToString (net_from));
+					NET_AdrToString (net_from));
 		return false;
 	}
 
