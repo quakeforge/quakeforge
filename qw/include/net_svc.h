@@ -69,6 +69,17 @@ typedef struct net_svc_sound_s
 	int			entity;
 } net_svc_sound_t;
 
+typedef struct net_svc_tempentity_s
+{
+	byte		type;
+	vec3_t		position;
+	byte		gunshotcount; // gunshot sparks
+	byte		colorstart; // palette start (I think?)
+	byte		colorlength; // palette length
+	vec3_t		beamend; // beam endpos
+	short		beamentity; // beam entity
+} net_svc_tempentity_t;
+
 typedef struct net_svc_updateuserinfo_s
 {
 	byte		slot;
@@ -110,6 +121,8 @@ qboolean NET_SVC_Damage_Parse (net_svc_damage_t *damage, msg_t *message);
 qboolean NET_SVC_ServerData_Parse (net_svc_serverdata_t *serverdata,
 								   msg_t *message);
 qboolean NET_SVC_Sound_Parse (net_svc_sound_t *sound, msg_t *message);
+qboolean NET_SVC_TempEntity_Parse (net_svc_tempentity_t *tempentity,
+								   msg_t *message);
 qboolean NET_SVC_UpdateUserInfo_Parse (net_svc_updateuserinfo_t *updateuserinfo,
 									   msg_t *message);
 qboolean NET_SVC_SetInfo_Parse (net_svc_setinfo_t *setinfo, msg_t *message);

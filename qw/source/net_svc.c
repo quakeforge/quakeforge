@@ -103,15 +103,15 @@ NET_SVC_ServerData_Parse (net_svc_serverdata_t *serverdata, msg_t *message)
 qboolean
 NET_SVC_Sound_Parse (net_svc_sound_t *sound, msg_t *message)
 {
-	int i;
+	int i, header;
 
-	sound->channel = MSG_ReadShort (message);
-	if (sound->channel & SND_VOLUME)
+	header = MSG_ReadShort (message);
+	if (header & SND_VOLUME)
 		sound->volume = MSG_ReadByte (message) / 255.0;
 	else
 		sound->volume = DEFAULT_SOUND_PACKET_VOLUME / 255.0;
 
-	if (sound->channel & SND_ATTENUATION)
+	if (header & SND_ATTENUATION)
 		sound->attenuation = MSG_ReadByte (message) / 64.0;
 	else
 		sound->attenuation = DEFAULT_SOUND_PACKET_ATTENUATION;
@@ -121,8 +121,54 @@ NET_SVC_Sound_Parse (net_svc_sound_t *sound, msg_t *message)
 	for (i = 0; i < 3; i++)
 		sound->position[i] = MSG_ReadCoord (message);
 
-	sound->entity = (sound->channel >> 3) & 1023;
-	sound->channel &= 7;
+	sound->entity = (header >> 3) & 1023;
+	sound->channel = header & 7;
+
+	return message->badread;
+}
+
+qboolean
+NET_SVC_TempEntity_Parse (net_svc_tempentity_t *tempentity, msg_t *message)
+{
+	int i;
+
+	tempentity->type = MSG_ReadByte (message);
+	switch (tempentity->type) {
+		case TE_WIZSPIKE:
+		case TE_KNIGHTSPIKE:
+		case TE_SPIKE:
+		case TE_SUPERSPIKE:
+		case TE_EXPLOSION:
+		case TE_TAREXPLOSION:
+		case TE_LAVASPLASH:
+		case TE_TELEPORT:
+		case TE_LIGHTNINGBLOOD:
+			for (i = 0; i < 3; i++)
+				tempentity->position[i] = MSG_ReadCoord (message);
+			break;
+		case TE_LIGHTNING1:
+		case TE_LIGHTNING2:
+		case TE_LIGHTNING3:
+		case TE_BEAM:
+			tempentity->beamentity = MSG_ReadShort (message);
+			for (i = 0; i < 3; i++)
+				tempentity->position[i] = MSG_ReadCoord (message);
+			for (i = 0; i < 3; i++)
+				tempentity->beamend[i] = MSG_ReadCoord (message);
+			break;
+		case TE_EXPLOSION2:
+			for (i = 0; i < 3; i++)
+				tempentity->position[i] = MSG_ReadCoord (message);
+			tempentity->colorstart = MSG_ReadByte (message);
+			tempentity->colorlength = MSG_ReadByte (message);
+			break;
+		case TE_GUNSHOT:
+		case TE_BLOOD:
+			tempentity->gunshotcount = MSG_ReadByte (message);
+			for (i = 0; i < 3; i++)
+				tempentity->position[i] = MSG_ReadCoord (message);
+			break;
+	}
 
 	return message->badread;
 }
