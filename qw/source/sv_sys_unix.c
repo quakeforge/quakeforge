@@ -63,11 +63,62 @@ qboolean    stdin_ready;
 server_static_t svs;
 info_t    **svs_info = &svs.info;
 
+#ifdef __alpha__
+static inline unsigned long
+rdfpcr(void)
+{
+	unsigned long tmp, ret;
+
+#if defined(__alpha_cix__) || defined(__alpha_fix__)
+	__asm__ __volatile__ (
+		"ftoit $f0,%0\n\t"
+		"mf_fpcr $f0\n\t"
+		"ftoit $f0,%1\n\t"
+		"itoft %0,$f0"
+		: "=r"(tmp), "=r"(ret));
+#else
+	__asm__ __volatile__ (
+		"stt $f0,%0\n\t"
+		"mf_fpcr $f0\n\t"
+		"stt $f0,%1\n\t"
+		"ldt $f0,%0"
+		: "=m"(tmp), "=m"(ret));
+#endif
+
+	return ret;
+}
+
+static inline void
+wrfpcr(unsigned long val)
+{
+	unsigned long tmp;
+
+#if defined(__alpha_cix__) || defined(__alpha_fix__)
+	__asm__ __volatile__ (
+		"ftoit $f0,%0\n\t"
+		"itoft %1,$f0\n\t"
+		"mt_fpcr $f0\n\t"
+		"itoft %0,$f0"
+		: "=&r"(tmp) : "r"(val));
+#else
+	__asm__ __volatile__ (
+		"stt $f0,%0\n\t"
+		"ldt $f0,%1\n\t"
+		"mt_fpcr $f0\n\t"
+		"ldt $f0,%0"
+		: "=m"(tmp) : "m"(val));
+#endif
+}
+#endif
+
 void
 Sys_Init (void)
 {
 #ifdef USE_INTEL_ASM
 	Sys_SetFPCW ();
+#endif
+#ifdef __alpha__
+	wrfpcr (rdfpcr () | 1L << 47);
 #endif
 }
 
