@@ -658,11 +658,13 @@ _Host_Frame (float time)
 		return;							// don't run too fast, or packets
 	// will flood out
 
-// get new key events
-	IN_SendKeyEvents ();
+	if (cls.state != ca_dedicated) {
+	// get new key events
+		IN_SendKeyEvents ();
 
-// allow mice or other external controllers to add commands
-	IN_Commands ();
+	// allow mice or other external controllers to add commands
+		IN_Commands ();
+	}
 
 // process console commands
 	Cbuf_Execute ();

@@ -176,7 +176,7 @@ main (int c, const char *v[])
 
 	double      time, oldtime, newtime;
 	quakeparms_t parms;
-	extern int  vcrFile;
+	extern VFile *vcrFile;
 	extern int  recording;
 	int         j;
 
@@ -221,7 +221,7 @@ main (int c, const char *v[])
 		time = newtime - oldtime;
 
 		if (cls.state == ca_dedicated) {	// play vcrfiles at max speed
-			if (time < sys_ticrate->value && (vcrFile == -1 || recording)) {
+			if (time < sys_ticrate->value && (!vcrFile || recording)) {
 				usleep (1);
 				continue;				// not time to run a server only tic
 				// yet
