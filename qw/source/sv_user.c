@@ -848,7 +848,7 @@ SV_Say (qboolean team)
 	SV_Printf ("%s", text->str);
 
 	for (j = 0, client = svs.clients; j < MAX_CLIENTS; j++, client++) {
-		if (client->state < cs_connected)	// Clients connecting can hear.
+		if (client->state < cs_connected)	// Clients connecting can hear. //FIXME record to mvd?
 			continue;
 		if (host_client->spectator && !sv_spectalk->int_val)
 			if (!client->spectator)

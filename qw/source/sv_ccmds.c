@@ -750,9 +750,11 @@ SV_ConSay (const char *prefix, client_t *client)
 		text->str[j++] |= 0x80;				// non-bold text
 
 	if (client) {
-		SV_ClientPrintf (1, client, PRINT_CHAT, "\n"); // bell
-		SV_ClientPrintf (1, client, PRINT_HIGH, "%s\n", text->str);
-		SV_ClientPrintf (1, client, PRINT_CHAT, "%s", ""); // bell
+		if (client->state >= cs_zombie) {
+			SV_ClientPrintf (1, client, PRINT_CHAT, "\n"); // bell
+			SV_ClientPrintf (1, client, PRINT_HIGH, "%s\n", text->str);
+			SV_ClientPrintf (1, client, PRINT_CHAT, "%s", ""); // bell
+		}
 	} else {
 		for (j = 0, client = svs.clients; j < MAX_CLIENTS; j++, client++) {
 			if (client->state < cs_zombie)

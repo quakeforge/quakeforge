@@ -331,7 +331,7 @@ SV_DropClient (client_t *drop)
 	// add the disconnect
 	MSG_WriteByte (&drop->netchan.message, svc_disconnect);
 
-	if (drop->state == cs_spawned) {
+	if (drop->state == cs_spawned) {//FIXME cs_server?
 		if (!drop->spectator) {
 			// call the prog function for removing a client
 			// this will set the body to a dead frame, among other things

@@ -354,7 +354,6 @@ SV_DemoWritePackets (int num)
 				if (flags & (DF_ANGLES << j))
 					MSG_WriteAngle16 (&msg, angles[j]);
 
-
 			if (flags & DF_MODEL)
 				MSG_WriteByte (&msg, cl->info.model);
 
@@ -729,7 +728,8 @@ SV_PrintTeams (void)
 
 	// count teams and players
 	for (i = 0; i < MAX_CLIENTS; i++) {
-		if (svs.clients[i].state != cs_spawned)
+		if (svs.clients[i].state != cs_spawned
+			&& svs.clients[i].state != cs_server)
 			continue;
 		if (svs.clients[i].spectator)
 			continue;

@@ -254,7 +254,7 @@ PF_sprint (progs_t *pr)
 
 	client = &svs.clients[entnum - 1];
 
-	if (client->state == cs_server)
+	if (client->state == cs_server) //FIXME record to mvd?
 		return;
 
 	s = PF_VarString (pr, 2);
@@ -286,7 +286,7 @@ PF_centerprint (progs_t *pr)
 
 	cl = &svs.clients[entnum - 1];
 
-	if (cl->state == cs_server)
+	if (cl->state == cs_server) //FIXME record to mvd?
 		return;
 
 	s = PF_VarString (pr, 1);
@@ -580,7 +580,7 @@ PF_stuffcmd (progs_t *pr)
 
 	cl = &svs.clients[entnum - 1];
 
-	if (cl->state == cs_server)
+	if (cl->state == cs_server) //FIXME record to mvd?
 		return;
 
 	str = P_GSTRING (pr, 1);
@@ -1898,6 +1898,7 @@ PR_SV_UserCmd (progs_t *pr)
 	VectorCopy (P_VECTOR (pr, 3), &ucmd.forwardmove); //FIXME right order?
 	ucmd.buttons = P_INT (pr, 4);
 	ucmd.impulse = P_INT (pr, 5);
+	cl->localtime = sv.time;
 	SV_PreRunCmd ();
 	SV_RunCmd (&ucmd, 0);
 	SV_PostRunCmd ();

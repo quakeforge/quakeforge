@@ -101,7 +101,7 @@ SV_FlushRedirect (void)
 
 		if (sv_redirected > RD_MOD) {
 			cl = svs.clients + sv_redirected - RD_MOD - 1;
-			if (cl->state != cs_spawned)
+			if (cl->state != cs_spawned) //FIXME record to mvd?
 				count = 0;
 		} else {
 			cl = host_client;
@@ -846,7 +846,7 @@ SV_SendDemoMessage (void)
 	demo.forceFrame = 0;
 
 	for (i = 0, c = svs.clients ; i<MAX_CLIENTS ; i++, c++) {
-		if (c->state != cs_spawned)
+		if (c->state != cs_spawned && c->state != cs_server)
 			continue;	// datagrams only go to spawned
 
 		cls |= 1 << i;
@@ -1007,7 +1007,7 @@ SV_BroadcastPrintf (int level, const char *fmt, ...)
 	for (i = 0, cl = svs.clients; i < MAX_CLIENTS; i++, cl++) {
 		if (level < cl->messagelevel)
 			continue;
-		if (cl->state < cs_zombie)
+		if (cl->state < cs_zombie)	//FIXME record to mvd
 			continue;
 
 		SV_PrintToClient (cl, level, string);
