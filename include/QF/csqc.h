@@ -69,6 +69,4 @@ void QFS_Progs_Init (struct progs_s *pr);
 
 void String_Progs_Init (struct progs_s *pr);
 
-void StringHash_Progs_Init (struct progs_s *pr);
-
 #endif//__QF_csqc_h

@@ -87,4 +87,9 @@
 	return item;
 }
 
+- (integer) count
+{
+	return count;
+}
+
 @end

@@ -31,7 +31,7 @@ EXTRA_DATA= $(menu_data)
 menu_src= \
 	client_menu.qc controls_o.qc \
 	inputline_util.qc menu.r options.qc \
-	options_util.qc servlist.qc string.r stringh.r
+	options_util.qc servlist.qc string.r
 
 %.qfo: %.r
 	$(QFCC) $(QCFLAGS) $(QCPPFLAGS) -c -o $@ $<
@@ -48,5 +48,5 @@ menu.dat$(GZ): $(menu_obj) $(QFCC_DEP) ../lib/libgui.a ../lib/libcsqc.a ../lib/l
 EXTRA_DIST= $(menu_src) \
 	client_menu.h controls_o.h \
 	menu.h options.h \
-	options_util.h servlist.h string.h stringh.h
+	options_util.h servlist.h string.h
 CLEANFILES= *.dat *.sym *.gz *.qfo

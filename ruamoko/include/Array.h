@@ -17,6 +17,7 @@
 - (void) addItem: (void []) item;
 - (void []) removeItemAt: (integer) index;
 - (void []) insertItemAt: (integer) index item:(void []) item;
+- (integer) count;
 @end
 
 #endif//__ruamoko_Array_h
