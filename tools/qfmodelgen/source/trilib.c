@@ -17,9 +17,7 @@
     See file, 'COPYING', for details.
 */
 
-//
 // trilib.c: library for loading triangles from an Alias triangle file
-//
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -32,7 +30,6 @@
 #include "trilib.h"
 
 // on disk representation of a face
-
 
 #define	FLOAT_START	99999.0
 #define	FLOAT_END	-FLOAT_START
@@ -58,103 +55,97 @@ typedef struct {
 } tf_triangle;
 
 
-void ByteSwapTri (tf_triangle *tri)
+void
+ByteSwapTri (tf_triangle *tri)
 {
 	int		i;
 	
-	for (i=0 ; i<sizeof(tf_triangle)/4 ; i++)
-	{
-		((int *)tri)[i] = BigLong (((int *)tri)[i]);
+	for (i = 0; i < sizeof (tf_triangle) / 4; i++) {
+		((int *) tri)[i] = BigLong (((int *) tri)[i]);
 	}
 }
 
-void LoadTriangleList (char *filename, triangle_t **pptri, int *numtriangles)
+void
+LoadTriangleList (char *filename, triangle_t **pptri, int *numtriangles)
 {
 	QFile       *input;
-	float       start;
 	char        name[256], tex[256];
-	int         i, count, magic;
+	float       start, t;
+	int         count, exitpattern, iLevel, magic, i;
 	tf_triangle	tri;
 	triangle_t	*ptri;
-	int			iLevel;
-	int			exitpattern;
-	float		t;
-
 
 	t = -FLOAT_START;
-	*((unsigned char *)&exitpattern + 0) = *((unsigned char *)&t + 3);
-	*((unsigned char *)&exitpattern + 1) = *((unsigned char *)&t + 2);
-	*((unsigned char *)&exitpattern + 2) = *((unsigned char *)&t + 1);
-	*((unsigned char *)&exitpattern + 3) = *((unsigned char *)&t + 0);
+	*((unsigned char *) &exitpattern + 0) = *((unsigned char *) &t + 3);
+	*((unsigned char *) &exitpattern + 1) = *((unsigned char *) &t + 2);
+	*((unsigned char *) &exitpattern + 2) = *((unsigned char *) &t + 1);
+	*((unsigned char *) &exitpattern + 3) = *((unsigned char *) &t + 0);
 
 	if ((input = Qopen(filename, "rb")) == 0) {
-		fprintf(stderr,"reader: could not open file '%s'\n", filename);
-		exit(0);
+		fprintf (stderr,"reader: could not open file '%s'\n", filename);
+		exit (0);
 	}
 
 	iLevel = 0;
 
 	Qread(input, &magic, sizeof(int));
-	if (BigLong(magic) != MAGIC) {
-		fprintf(stderr,"File is not a Alias object separated triangle file, magic number is wrong.\n");
-		exit(0);
+	if (BigLong (magic) != MAGIC) {
+		fprintf (stderr,"File is not a Alias object separated triangle file, "
+				 "magic number is wrong.\n");
+		exit (0);
 	}
 
-	ptri = malloc (MAXTRIANGLES * sizeof(triangle_t));
+	ptri = malloc (MAXTRIANGLES * sizeof (triangle_t));
 
 	*pptri = ptri;
 
 	while (Qeof(input) == 0) {
-		Qread(input, &start,  sizeof(float));
-		*(int *)&start = BigLong(*(int *)&start);
-		if (*(int *)&start != exitpattern)
-		{
+		Qread(input, &start,  sizeof (float));
+		*(int *) &start = BigLong (*(int *) &start);
+		if (*(int *) &start != exitpattern) {
 			if (start == FLOAT_START) {
-				/* Start of an object or group of objects. */
+				// Start of an object or group of objects.
 				i = -1;
 				do {
-					/* There are probably better ways to read a string from */
-					/* a file, but this does allow you to do error checking */
-					/* (which I'm not doing) on a per character basis.      */
-					++i;
-					Qread(input, &(name[i]), sizeof( char ));
-				} while( name[i] != '\0' );
-	
-	//			indent();
-	//			fprintf(stdout,"OBJECT START: %s\n",name);
-				Qread(input, &count, sizeof(int));
-				count = BigLong(count);
+					// There are probably better ways to read a string from
+					// a file, but this does allow you to do error checking
+					// (which I'm not doing) on a per character basis.
+					i++;
+					Qread(input, &(name[i]), sizeof (char));
+				} while (name[i] != '\0');
+
+//				indent ();
+//				fprintf(stdout,"OBJECT START: %s\n",name);
+				Qread (input, &count, sizeof (int));
+				count = BigLong (count);
 				++iLevel;
 				if (count != 0) {
-	//				indent();
-	
-	//				fprintf(stdout,"NUMBER OF TRIANGLES: %d\n",count);
-	
+//					indent();
+//					fprintf (stdout, "NUMBER OF TRIANGLES: %d\n", count);
 					i = -1;
 					do {
-						++i;
-						Qread(input, &(tex[i]), sizeof( char ));
-					} while( tex[i] != '\0' );
-	
-	//				indent();
-	//				fprintf(stdout,"  Object texture name: '%s'\n",tex);
+						i++;
+						Qread (input, &(tex[i]), sizeof (char));
+					} while (tex[i] != '\0');
+
+//					indent();
+//					fprintf(stdout,"  Object texture name: '%s'\n",tex);
 				}
-	
+
 				/* Else (count == 0) this is the start of a group, and */
 				/* no texture name is present. */
-			}
-			else if (start == FLOAT_END) {
+			} else if (start == FLOAT_END) {
 				/* End of an object or group. Yes, the name should be */
 				/* obvious from context, but it is in here just to be */
 				/* safe and to provide a little extra information for */
 				/* those who do not wish to write a recursive reader. */
 				/* Mia culpa. */
-				--iLevel;
+				iLevel--;
 				i = -1;
 				do {
-					++i;
-					Qread(input, &(name[i]), sizeof( char ));
-				} while( name[i] != '\0' );
+					i++;
+					Qread (input, &(name[i]), sizeof (char));
+				} while (name[i] != '\0');
 	
 	//			indent();
 	//			fprintf(stdout,"OBJECT END: %s\n",name);
@@ -162,20 +153,16 @@ void LoadTriangleList (char *filename, triangle_t **pptri, int *numtriangles)
 			}
 		}
 
-//
 // read the triangles
-//		
 		for (i = 0; i < count; ++i) {
 			int		j;
 
-			Qread(input, &tri, sizeof(tf_triangle));
+			Qread (input, &tri, sizeof (tf_triangle));
 			ByteSwapTri (&tri);
-			for (j=0 ; j<3 ; j++)
-			{
+			for (j = 0; j < 3; j++) {
 				int		k;
 
-				for (k=0 ; k<3 ; k++)
-				{
+				for (k = 0; k < 3; k++) {
 					ptri->verts[j][k] = tri.pt[j].p.v[k];
 				}
 			}
@@ -191,4 +178,3 @@ void LoadTriangleList (char *filename, triangle_t **pptri, int *numtriangles)
 
 	Qclose (input);
 }
-
