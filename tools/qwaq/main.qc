@@ -79,61 +79,6 @@ void () eek =
 	traceoff();
 };
 
-.string classname;
-.string netname;
-float (entity tester) IsBuilding =
-{
-	if (
-		tester.classname == "building_sentrygun" ||
-		tester.classname == "building_sentrygun_base" ||
-		tester.classname == "building_tesla" ||
-		tester.classname == "building_dispenser" ||
-		tester.classname == "building_camera" ||
-		tester.classname == "building_arawana" ||
-		tester.classname == "building_teleporter"||
-		tester.classname == "building_fieldgen"||
-		tester.classname == "building_sensor"
-	)
-		return 1;
-	return 0;
-};
-float(entity thing) IsMonster =
-{
-	if (thing.classname=="monster_shambler")
-		return 1;
-	if (thing.classname=="monster_demon1")
-		return 1;
-	if (thing.classname=="monster_wizard")
-		return 1;
-	if (thing.classname=="monster_army")
-		return 1;
-
-	if (thing.classname=="monster_knight")
-		return 1;
-	if (thing.classname=="monster_hknight")
-		return 1;
-
-	return 0;
-};
-string(entity thething) GetEnemyName =
-{
-	if (thething.classname == "player")
-		return thething.netname;
-
-	if (IsMonster(thething))
-		return "";
-
-	if (IsBuilding(thething))
-		return "";
-
-	if (thething.classname == "grenade" && thething.netname == "land_mine")
-		return "land mine";
-
-	if (thething.classname != "")
-		return thething.classname;
-
-	return "unknown stuff";
-};
 void () assign =
 {
 	local float foo;
