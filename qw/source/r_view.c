@@ -272,10 +272,12 @@ V_CheckGamma (void)
 {
 	static float	oldgamma;
 
-	if (oldgamma == vid_gamma->value)
-		return false;
+	if (vid_gamma) {		// might get called before vid_gamma gets set
+		if (oldgamma == vid_gamma->value)
+			return false;
 
-	oldgamma = vid_gamma->value;
+		oldgamma = vid_gamma->value;
+	}
 
 	vid.recalc_refdef = 1;	// force a surface cache flush
 
