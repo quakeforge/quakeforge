@@ -26,7 +26,6 @@
 */
 
 static const char rcsid[] =
-
 	"$Id$";
 
 #include <stdlib.h>
