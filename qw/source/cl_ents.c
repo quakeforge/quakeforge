@@ -179,9 +179,11 @@ CL_ParseDelta (entity_state_t *from, entity_state_t *to, int bits)
 		bits |= i;
 	}
 	// count the bits for net profiling
-//	for (i=0 ; i<16 ; i++)
-//		if (bits&(1<<i))
-//			bitcounts[i]++;
+#if 0
+	for (i=0 ; i<16 ; i++)
+		if (bits&(1<<i))
+			bitcounts[i]++;
+#endif
 
 	// LordHavoc: Endy neglected to mark this as being part of the QSG
 	// version 2 stuff...
@@ -594,8 +596,8 @@ CL_ParseProjectiles (void)
 		pr->origin[0] = ((bits[0] + ((bits[1] & 15) << 8)) << 1) - 4096;
 		pr->origin[1] = (((bits[1] >> 4) + (bits[2] << 4)) << 1) - 4096;
 		pr->origin[2] = ((bits[3] + ((bits[4] & 15) << 8)) << 1) - 4096;
-		pr->angles[0] = 360 * (bits[4] >> 4) / 16;
-		pr->angles[1] = 360 * bits[5] / 256;
+		pr->angles[0] = (bits[4] >> 4) * (360.0 / 16.0);
+		pr->angles[1] = bits[5] * (360.0 / 256.0);
 	}
 }
 
@@ -735,44 +737,40 @@ CL_AddFlagModels (entity_t *ent, int team, int key)
 	if (cl_flagindex == -1)
 		return;
 
-	f = 14;
+	f = 14.0;
 	if (ent->frame >= 29 && ent->frame <= 40) {
 		if (ent->frame >= 29 && ent->frame <= 34) {	// axpain
 			if (ent->frame == 29)
-				f = f + 2;
+				f += 2.0;
 			else if (ent->frame == 30)
-				f = f + 8;
+				f += 8.0;
 			else if (ent->frame == 31)
-				f = f + 12;
+				f += 12.0;
 			else if (ent->frame == 32)
-				f = f + 11;
+				f += 11.0;
 			else if (ent->frame == 33)
-				f = f + 10;
+				f += 10.0;
 			else if (ent->frame == 34)
-				f = f + 4;
+				f += 4.0;
 		} else if (ent->frame >= 35 && ent->frame <= 40) {	// pain
 			if (ent->frame == 35)
-				f = f + 2;
+				f += 2.0;
 			else if (ent->frame == 36)
-				f = f + 10;
+				f += 10.0;
 			else if (ent->frame == 37)
-				f = f + 10;
+				f += 10.0;
 			else if (ent->frame == 38)
-				f = f + 8;
+				f += 8.0;
 			else if (ent->frame == 39)
-				f = f + 4;
+				f += 4.0;
 			else if (ent->frame == 40)
-				f = f + 2;
+				f += 2.0;
 		}
 	} else if (ent->frame >= 103 && ent->frame <= 118) {
-		if (ent->frame >= 103 && ent->frame <= 104)
-			f = f + 6;					// nailattack
-		else if (ent->frame >= 105 && ent->frame <= 106)
-			f = f + 6;					// light 
-		else if (ent->frame >= 107 && ent->frame <= 112)
-			f = f + 7;					// rocketattack
-		else if (ent->frame >= 112 && ent->frame <= 118)
-			f = f + 7;					// shotattack
+		if (ent->frame >= 103 && ent->frame <= 106)		// 103-104 nailattack
+			f += 6.0;									// 105-106 light
+		else if (ent->frame >= 107 && ent->frame <= 118)
+			f += 7.0;			// 107-112 rocketattack    112-118 shotattack
 	}
 
 	newent = R_NewEntity ();
@@ -785,12 +783,11 @@ CL_AddFlagModels (entity_t *ent, int team, int key)
 	AngleVectors (ent->angles, v_forward, v_right, v_up);
 	v_forward[2] = -v_forward[2];		// reverse z component
 	for (i = 0; i < 3; i++)
-		(*newent)->origin[i] = ent->origin[i] - f * v_forward[i] + 22 *
-			v_right[i];
-	(*newent)->origin[2] -= 16;
-
-	VectorCopy (ent->angles, (*newent)->angles)
-		(*newent)->angles[2] -= 45;
+		(*newent)->origin[i] = ent->origin[i] - f * v_forward[i] +
+			22.0 * v_right[i];
+	(*newent)->origin[2] -= 16.0;
+	VectorCopy (ent->angles, (*newent)->angles);
+	(*newent)->angles[2] -= 45.0;
 }
 
 /*
@@ -859,7 +856,7 @@ CL_LinkPlayers (void)
 		msec = 500 * (playertime - state->state_time);
 		if (msec <= 0 || (!cl_predict_players->int_val)) {
 			VectorCopy (state->origin, ent->origin);
-		} else {	// predict players movement
+		} else {									// predict players movement
 			state->command.msec = msec = min (msec, 255);
 
 			oldphysent = pmove.numphysent;
@@ -872,14 +869,13 @@ CL_LinkPlayers (void)
 		// angles
 		if (j == cl.playernum)
 		{
-			ent->angles[PITCH] = -cl.viewangles[PITCH] / 3;
+			ent->angles[PITCH] = -cl.viewangles[PITCH] / 3.0;
 			ent->angles[YAW] = cl.viewangles[YAW];
 		} else {
-			ent->angles[PITCH] = -state->viewangles[PITCH] / 3;
+			ent->angles[PITCH] = -state->viewangles[PITCH] / 3.0;
 			ent->angles[YAW] = state->viewangles[YAW];
 		}
-		ent->angles[ROLL] = 0;
-		ent->angles[ROLL] = V_CalcRoll (ent->angles, state->velocity) * 4;
+		ent->angles[ROLL] = V_CalcRoll (ent->angles, state->velocity) * 4.0;
 
 		ent->model = cl.model_precache[state->modelindex];
 		ent->frame = state->frame;
