@@ -329,6 +329,7 @@ SNDDMA_Submit (void)
 
 	nframes = count / shm->channels;
 
+	qfsnd_pcm_avail_update (pcm);
 	qfsnd_pcm_mmap_begin (pcm, &areas, &offset, &nframes);
 
 	state = qfsnd_pcm_state (pcm);
