@@ -538,13 +538,13 @@ Parse_Server_Packet ()
 #ifdef QUAKEWORLD
 					Net_LogPrintf ("**QW OBSOLETE**");
 #else
-					Net_LogPrintf ("%d %s", MSG_ReadByte (&packet), MSG_ReadString ());
+					Net_LogPrintf ("%d ", MSG_ReadByte (&packet));
+					Net_LogPrintf ("%s", MSG_ReadString ());
 #endif
 					break;
 				case svc_updatefrags:
-					Net_LogPrintf ("player: %d frags: %d", MSG_ReadByte
-								   (&packet),
-								   MSG_ReadShort (&packet));
+					Net_LogPrintf ("player: %d ", MSG_ReadByte (&packet));
+					Net_LogPrintf ("frags: %d", MSG_ReadShort (&packet));
 					break;
 				case svc_clientdata:
 #ifdef QUAKEWORLD
@@ -559,8 +559,8 @@ Parse_Server_Packet ()
 #ifdef QUAKEWORLD
 					Net_LogPrintf ("**QW OBSOLETE**");
 #else
-					Net_LogPrintf ("%d %d", MSG_ReadByte (&packet),
-								   MSG_ReadByte ());
+					Net_LogPrintf ("%d ", MSG_ReadByte (&packet));
+					Net_LogPrintf ("%d", MSG_ReadByte ());
 #endif
 					break;
 				case svc_particle:
@@ -578,20 +578,22 @@ Parse_Server_Packet ()
 
 				case svc_damage:
 					// FIXME: parse damage
-					Net_LogPrintf ("armor: %d health: %d", MSG_ReadByte
-								   (&packet), MSG_ReadByte (&packet));
-					Net_LogPrintf (" from %f,%f,%f", MSG_ReadCoord (&packet),
-								   MSG_ReadCoord (&packet), MSG_ReadCoord
-								   (&packet));
+					Net_LogPrintf ("armor: %d ", MSG_ReadByte (&packet));
+					Net_LogPrintf ("health: %d from", MSG_ReadByte (&packet));
+					for (i = 0; i < 3; i++)
+						Net_LogPrintf ("%f%s", MSG_ReadCoord (&packet),
+									   i < 2 ? "," : "");
 					break;
 				case svc_spawnstatic:
 					Net_LogPrintf ("Model: %d", MSG_ReadByte (&packet));
-					Net_LogPrintf (" Frame: %d Color: %d Skin: %",
-								   MSG_ReadByte (&packet), MSG_ReadByte
-								   (&packet), MSG_ReadByte (&packet));
-					for (i = 0; i < 3; i++)
-						Net_LogPrintf ("%d: %f %f", i + 1, MSG_ReadCoord
-									   (&packet), MSG_ReadAngle (&packet));
+					Net_LogPrintf (" Frame: %d ", MSG_ReadByte (&packet));
+					Net_LogPrintf ("Color: %d ", MSG_ReadByte (&packet));
+					Net_LogPrintf ("Skin: %d", MSG_ReadByte (&packet));
+					for (i = 0; i < 3; i++) {
+						Net_LogPrintf ("%d: %f ", i + 1,
+									   MSG_ReadCoord (&packet));
+						Net_LogPrintf ("%f", MSG_ReadAngle (&packet));
+					}
 					break;
 				case svc_spawnbinary:
 					Net_LogPrintf ("**OBSOLETE**");
@@ -619,30 +621,32 @@ Parse_Server_Packet ()
 						case 10:
 						case 11:
 						case 13:
-							Net_LogPrintf (" origin %f %f %f", MSG_ReadCoord
-										   (&packet), MSG_ReadCoord (&packet),
-										   MSG_ReadCoord (&packet));
+							Net_LogPrintf (" origin");
+							for (i = 0; i < 3; i++)
+								Net_LogPrintf (" %f", MSG_ReadCoord (&packet));
 							break;
 						case 5:
 						case 6:
 						case 9:
 							Net_LogPrintf (" created by %d", MSG_ReadShort
 										   (&packet));
-							Net_LogPrintf (" origin: %f,%f,%f", MSG_ReadCoord
-										   (&packet), MSG_ReadCoord (&packet),
-										   MSG_ReadCoord (&packet));
-							Net_LogPrintf (" trace endpos: %f,%f,%f",
-										   MSG_ReadCoord (&packet),
-										   MSG_ReadCoord (&packet),
-										   MSG_ReadCoord (&packet));
+							Net_LogPrintf (" origin:");
+							for (i = 0; i < 3; i++)
+								Net_LogPrintf ("%c%f", i ? ',' : ' ',
+											   MSG_ReadCoord (&packet));
+							Net_LogPrintf (" trace endpos:");
+							for (i = 0; i < 3; i++)
+								Net_LogPrintf ("%c%f", i ? ',' : ' ',
+											   MSG_ReadCoord (&packet));
 							break;
 						case 2:
 						case 12:
 							Net_LogPrintf (" count: %d", MSG_ReadByte
 										   (&packet));
-							printf (" origin: %f,%f,%f", MSG_ReadCoord
-									(&packet), MSG_ReadCoord (&packet),
-									MSG_ReadCoord (&packet));
+							Net_LogPrintf (" origin:");
+							for (i = 0; i < 3; i++)
+								Net_LogPrintf ("%c%f", i ? ',' : ' ',
+											   MSG_ReadCoord (&packet));
 							break;
 						default:
 							Net_LogPrintf (" unknown value %d for tempentity",
@@ -669,12 +673,12 @@ Parse_Server_Packet ()
 				case svc_foundsecret:
 					break;
 				case svc_spawnstaticsound:
-					Net_LogPrintf ("pos %f,%f,%f", MSG_ReadCoord (&packet),
-								   MSG_ReadCoord (&packet), MSG_ReadCoord
-								   (&packet));
-					Net_LogPrintf ("%d %d %d", MSG_ReadByte (&packet),
-								   MSG_ReadByte (&packet),
-								   MSG_ReadByte (&packet));
+					Net_LogPrintf ("pos");
+					for (i = 0; i < 3; i++)
+						Net_LogPrintf ("%c%f", i ? ',' : ' ',
+									   MSG_ReadCoord (&packet));
+					for (i = 0; i < 3; i++)
+						Net_LogPrintf (" %d", MSG_ReadByte (&packet));
 					break;
 				case svc_intermission:
 					for (i = 0; i < 3; i++)
@@ -729,9 +733,10 @@ Parse_Server_Packet ()
 					Net_LogPrintf ("\n\tPlayer: %d", MSG_ReadByte (&packet));
 					mask1 = MSG_ReadShort (&packet);
 					Net_LogPrintf (" Mask1: %d", mask1);
-					Net_LogPrintf (" Origin: %f,%f,%f", MSG_ReadCoord
-								   (&packet), MSG_ReadCoord (&packet),
-								   MSG_ReadCoord (&packet));
+					Net_LogPrintf (" Origin:");
+					for (i = 0; i < 3; i++)
+						Net_LogPrintf ("%c%f", i ? ',' : ' ',
+									   MSG_ReadCoord (&packet));
 					Net_LogPrintf (" Frame: %d", MSG_ReadByte (&packet));
 
 					if (mask1 & PF_MSEC)
@@ -860,12 +865,12 @@ Parse_Server_Packet ()
 					Net_LogPrintf ("Value: %s", MSG_ReadString (&packet));
 					break;
 				case svc_serverinfo:
-					Net_LogPrintf ("Name: %s Value: %s", MSG_ReadString
-								   (&packet), MSG_ReadString (&packet));
+					Net_LogPrintf ("Name: %s ", MSG_ReadString (&packet));
+					Net_LogPrintf ("Value: %s", MSG_ReadString (&packet));
 					break;
 				case svc_updatepl:
-					Net_LogPrintf ("Player: %d Ploss: %d", MSG_ReadByte
-								   (&packet), MSG_ReadByte (&packet));
+					Net_LogPrintf ("Player: %d ", MSG_ReadByte (&packet));
+					Net_LogPrintf ("Ploss: %d", MSG_ReadByte (&packet));
 					break;
 				default:
 					Net_LogPrintf ("**UNKNOWN**: [%d]", c);
