@@ -34,8 +34,8 @@ global mult
 global zoomed
 
 // clamp returns the second argument clamped
-// between the first and second 
-function clamp {
+// between the first and third
+function zoom::clamp {
 	if ($args[2] < $args[1]) {
 		return $args[1]
 	} else if ($args[2] > $args[3]) {
@@ -88,18 +88,18 @@ function zoom::toggle {
 }
 
 function zoom::increase {
-	if (!$zoomed) {
+	ifnot $zoomed {
 		return
 	}
-	mult = `clamp $min ($mult*$step) $max`
+	mult = `zoom::clamp $min ($mult*$step) $max`
 	zoom::adjust
 }
 
 function zoom::decrease {
-	if (!$zoomed) {
+	ifnot $zoomed {
 		return
 	}
-	mult = `clamp $min ($mult/$step) $max`
+	mult = `zoom::clamp $min ($mult/$step) $max`
 	zoom::adjust
 }
 

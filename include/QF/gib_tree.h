@@ -33,16 +33,15 @@
 #define __GIB_TREE_H
 
 #define TREE_NORMAL		0	// Normal node
-#define TREE_PERM		1	// Permanent (part of a function)
-#define TREE_CONCAT		2	// Concatenate to previous
-#define TREE_EMBED	4	// Embedded command (expect return value)
-#define TREE_P_EMBED	8	// Embedded stuff needs to be processed
-#define TREE_P_MATH		16	// Math needs be evaluated
-#define TREE_ASPLIT		32	// Token is the name of an array that should be split
-#define TREE_FUNC 		64	// Node is the first in a function
-#define TREE_COND		128 // Conditional jump (if or while command)
-#define TREE_END	256 // Node ends a loop or conditional
-#define TREE_FORNEXT		512 // For loop is starting again
+#define TREE_CONCAT		1	// Concatenate to previous
+#define TREE_EMBED	2	// Embedded command (expect return value)
+#define TREE_P_EMBED	4	// Embedded stuff needs to be processed
+#define TREE_ASPLIT		8	// Token is the name of an array that should be split
+#define TREE_FUNC 		16	// Node is the first in a function
+#define TREE_COND		32 // Conditional jump (if or while command)
+#define TREE_NOT		64
+#define TREE_END	128 // Node ends a loop or conditional
+#define TREE_FORNEXT		256 // For loop is starting again
 
 typedef struct gib_tree_s {
 	const char *str;

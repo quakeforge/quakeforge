@@ -93,16 +93,18 @@ GIB_Execute_Split_Array (cbuf_t *cbuf)
 				break;
 			}
 	cbuf->args->argc--;
-	if (!(var = GIB_Var_Get_Complex (&GIB_DATA(cbuf)->locals, &gib_globals, str, &i, false)))
+	if (!(var = GIB_Var_Get_Complex (&GIB_DATA(cbuf)->locals, &GIB_DATA(cbuf)->globals, str, &i, false)))
 		return;
-	while (start < 0)
-		start += var->size-1;
-	while (end < 0)
+	if (end < 1)
 		end += var->size;
-	if (start >= var->size)
-		return;
-	if (end >= var->size || !end)
+	else if (end > var->size)
 		end = var->size;
+	if (start < 0) {
+		start += var->size;
+		if (start < 0)
+			start = 0;
+	} else if (start >= var->size || start >= end)
+		return;
 	for (i = start; i < end; i++) {
 		if (var->array[i])
 			Cbuf_ArgsAdd (cbuf->args, var->array[i]->str);
@@ -137,7 +139,7 @@ GIB_Execute_Prepare_Line (cbuf_t *cbuf, gib_tree_t *line)
 				Cbuf_ArgsAdd (args, cur->str);
 			args->argm[args->argc-1] = cur;
 		}
-		if (cur->flags & TREE_P_MATH && GIB_Process_Math (args->argv[args->argc-1], pos))
+		if (cur->delim == '(' && GIB_Process_Math (args->argv[args->argc-1], pos))
 			return -1;
 		if (cur->flags & TREE_ASPLIT)
 			GIB_Execute_Split_Array (cbuf);
@@ -168,6 +170,7 @@ GIB_Execute (cbuf_t *cbuf)
 	gib_buffer_data_t *g = GIB_DATA (cbuf);
 	gib_builtin_t *b;
 	gib_function_t *f;
+	int cond;
 	
 	if (!g->program)
 		return;
@@ -177,7 +180,8 @@ GIB_Execute (cbuf_t *cbuf)
 		if (GIB_Execute_Prepare_Line (cbuf, g->ip))
 			return;
 		if (g->ip->flags & TREE_COND) {
-			if (!atoi(cbuf->args->argv[1]->str))
+			cond = g->ip->flags & TREE_NOT ? atoi (cbuf->args->argv[1]->str) : !atoi (cbuf->args->argv[1]->str);
+			if (cond)
 				g->ip = g->ip->jump;
 		} else if (g->ip->flags & TREE_FORNEXT) {
 			if (GIB_Execute_For_Next (cbuf))

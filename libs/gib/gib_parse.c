@@ -289,11 +289,8 @@ GIB_Parse_Tokens (const char *program, unsigned int *i, unsigned int flags, gib_
 		// We can handle escape characters now
 		} else if (cur->delim == '\"')
 			GIB_Process_Escapes (str);
-		
 		cur->str = str;
-		// Set proper flags for GIB_Execute_Prepare_Line
-		if (cur->delim == '(')
-			cur->flags |= TREE_P_MATH; 
+
 		if (cat) {
 			cur->flags |= TREE_CONCAT;
 			cat = false;
@@ -320,7 +317,7 @@ GIB_Parse_Semantic_Preprocess (gib_tree_t *line)
 {
 	gib_tree_t *p, *start = line;
 	unsigned int flags = line->flags;
-	while (!strcmp (line->children->str, "if")) {
+	while (!strcmp (line->children->str, "if") || !strcmp (line->children->str, "ifnot")) {
 		// Sanity checking
 		if (!line->children->next || !line->children->next->next || !line->children->next->next->children || line->flags & TREE_EMBED) {
 			gib_parse_error = true;
@@ -328,6 +325,8 @@ GIB_Parse_Semantic_Preprocess (gib_tree_t *line)
 		}
 		// Set conditional flag
 		line->flags |= TREE_COND;
+		if (line->children->str[2])
+			line->flags |= TREE_NOT;
 		// Save our spot
 		p = line;
 		// Move subprogram inline

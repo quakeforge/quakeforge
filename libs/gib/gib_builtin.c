@@ -359,14 +359,16 @@ GIB_Slice_f (void)
 		len = strlen (GIB_Argv(1));
 		start = atoi (GIB_Argv(2));
 		end = atoi (GIB_Argv(3));
-		while (start < 0)
-			start += len-1;
-		while (end < 0)
+		if (end < 1)
 			end += len;
-		if (start >= len)
-			return;
-		if (end > len || !end)
+		else if (end > len)
 			end = len;
+		if (start < 0) {
+			start += len;
+			if (start < 0)
+				start = 0;
+		} else if (start >= len || start >= end)
+			return;
 		if ((ret = GIB_Return (0)))
 			dstring_appendsubstr (ret, GIB_Argv(1)+start, end-start);
 	}
