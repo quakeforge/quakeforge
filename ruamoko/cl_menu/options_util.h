@@ -6,11 +6,14 @@
 @class Text;
 @class Slider;
 
-@interface CvarToggle : Object
+@interface CvarObject : Object
 {
 	string name;
 }
 -(id)initWithCvar:(string)cvname;
+@end
+
+@interface CvarToggle : CvarObject
 -(void)toggle;
 -(BOOL)value;
 @end
@@ -25,9 +28,23 @@
 -(void)toggle;
 @end
 
-@interface CvarRange : Object
+@interface CvarColor : CvarObject
+-(void)next;
+-(void)prev;
+-(integer)value;
+@end
+
+@interface CvarColorView : View
 {
-	string name;
+	CvarColor color;
+}
+-(id)initWithBounds:(Rect)aRect :(CvarColor)_color;
+-(void)next;
+-(void)prev;
+@end
+
+@interface CvarRange : CvarObject
+{
 	float min, max, step;
 }
 -(id)initWithCvar:(string)cvname min:(float)_min max:(float)_max step:(float)_step;

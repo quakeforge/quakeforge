@@ -34,16 +34,28 @@
 #include "gui/Slider.h"
 #include "options_util.h"
 
-@implementation CvarToggle
-
--(id)initWithCvar:(string)cvname
+@implementation CvarObject
+-(id)init
 {
 	self = [super init];
 	name = str_new ();
-	str_copy (name, cvname);
-
 	return self;
 }
+
+-(id)initWithCvar:(string)cvname
+{
+	self = [self init];
+	str_copy (name, cvname);
+	return self;
+}
+
+-(void)dealloc
+{
+	str_free (name);
+}
+@end
+
+@implementation CvarToggle
 
 -(void)toggle
 {
@@ -93,6 +105,56 @@
 	[self update];
 }
 
+@end
+
+@implementation CvarColor
+-(void)next
+{
+	local float val = cvar (name);
+	val = min_max_cnt (0, 13, 1, val, 1);
+	cvar_set (name, ftos (val));
+}
+
+-(void)prev
+{
+	local float val = cvar (name);
+	val = min_max_cnt (0, 13, 1, val, 0);
+	cvar_set (name, ftos (val));
+}
+
+-(integer)value
+{
+	return (integer) cvar (name);
+}
+@end
+
+@implementation CvarColorView
+-(id)initWithBounds:(Rect)aRect :(CvarColor)_color
+{
+	self = [self initWithBounds:aRect];
+	color = _color;
+	return self;
+}
+
+-(void)next
+{
+	[color next];
+}
+
+-(void)prev
+{
+	[color prev];
+}
+
+-(void)draw
+{
+	local integer xl;
+	xl = xlen / 8 - 2;
+	text_box (xabs, yabs, xl, ylen / 8 - 2);
+	xl = (xl + 1) & ~1;		// text_box only does multiples of 2
+	Draw_Fill (xabs + 8, yabs + 8, xl * 8, ylen - 16,
+			   [color value] * 16 + 8);
+}
 @end
 
 @implementation CvarRange

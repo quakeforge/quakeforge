@@ -64,6 +64,16 @@ Group audio_options;
 CvarRangeView volume_view;
 CvarRangeView bgmvolume_view;
 
+Group player_options;
+// input for playername and teamname
+InputLine player_config_plname_il;
+InputLine player_config_tname_il;
+CvarColorView topcolor_view;
+CvarColorView bottomcolor_view;
+
+// this holds active inputline pointer
+InputLine player_config_iactive;
+
 Group network_options;
 // input for playername
 InputLine network_config_rate_il;
@@ -564,12 +574,6 @@ MENU_feature_options =
 string playername_cvar; // name of the cvar holding playername (gametype dependend)
 string teamname_cvar; // name of the cvar holding teamname (MAY ? gametype dependend)
 
-// input for playername and teamname
-InputLine player_config_plname_il;
-InputLine player_config_tname_il;
-
-// this holds active inputline pointer
-InputLine player_config_iactive;
 
 // Y padding for the player config
 #define PLAYER_CONF_Y_PAD 60
@@ -597,8 +601,6 @@ string [NUM_PLAYERCONFIG_CMDS] player_config_vals = {
 integer (integer key, integer unicode, integer down) 
 KEYEV_player_options =
 {
-	local float		colortmp;
-
 	switch (key) {
 		case QFK_DOWN:
 		case QFM_WHEEL_DOWN:
@@ -641,16 +643,16 @@ KEYEV_player_options =
 
 	switch (player_config_vals[player_config_cursor]) {
 		case "topcolor":
-			colortmp = cvar ("topcolor");
-			colortmp = min_max_cnt (MIN_COLOR, MAX_COLOR, COLOR_STEP, colortmp,
-									(key == QFK_RIGHT) && (key != QFK_LEFT));
-			cvar_set ("topcolor", ftos (colortmp));
+			if (key == QFK_RIGHT)
+				[topcolor_view next];
+			else if (key == QFK_LEFT)
+				[topcolor_view prev];
 			break;
 		case "bottomcolor":
-			colortmp = cvar ("bottomcolor");
-			colortmp = min_max_cnt (MIN_COLOR, MAX_COLOR, COLOR_STEP, colortmp,
-									(key == QFK_RIGHT) && (key != QFK_LEFT));
-			cvar_set ("bottomcolor", ftos (colortmp));
+			if (key == QFK_RIGHT)
+				[bottomcolor_view next];
+			else if (key == QFK_LEFT)
+				[bottomcolor_view prev];
 			break;
 	}
 
@@ -667,36 +669,17 @@ DRAW_player_options =
 {
 	local integer	cursor_pad = 0, spacing = 120;
 
-	Draw_Pic (x + 16, y + 4, Draw_CachePic ("gfx/qplaque.lmp", 1));
-	Draw_CenterPic (x + 160, y + 4, Draw_CachePic ("gfx/p_option.lmp", 1));
-	Draw_String (x + 54, y + 40, "Player");
-	Draw_String (x + 54, y + 50, "--------");
-
-
-	Draw_String (x + 70, y + PLAYER_CONF_Y_PAD + 8, "Name..:");
-	[player_config_plname_il setBasePos:x y:y];
 	[player_config_plname_il cursor: player_config_iactive == player_config_plname_il];
-	[player_config_plname_il draw];
-
-	Draw_String (x + 70, y + PLAYER_CONF_Y_PAD + 20 + 8, "Team..:");
-	[player_config_tname_il setBasePos:x y:y];
 	[player_config_tname_il cursor: player_config_iactive == player_config_tname_il];
-	[player_config_tname_il draw];
-	
 
-	draw_val_item (x + 70, y + PLAYER_CONF_Y_PAD + 45, spacing, "Top color", 
-				   "   " + ftos (cvar ("topcolor"))); 
-	draw_val_item (x + 70, y + PLAYER_CONF_Y_PAD + 60, spacing,
-				   "Bottom color", "   " + ftos (cvar ("bottomcolor"))); 
+	[player_options setBasePos:x y:y];
+	[player_options draw];
 
-	// Draw nice color boxes
-	text_box (x + 192, y + PLAYER_CONF_Y_PAD + 45 - 8, 1, 1);
-	Draw_Fill (x + 200, y + PLAYER_CONF_Y_PAD + 45, 16, 8,
-			   (integer) cvar ("topcolor") * 16 + 8);
+//	draw_val_item (x + 70, y + PLAYER_CONF_Y_PAD + 45, spacing, "Top color", 
+//				   "   " + ftos (cvar ("topcolor"))); 
+//	draw_val_item (x + 70, y + PLAYER_CONF_Y_PAD + 60, spacing,
+//				   "Bottom color", "   " + ftos (cvar ("bottomcolor"))); 
 
-	text_box (x + 192, y + PLAYER_CONF_Y_PAD + 60 - 8, 1, 1);
-	Draw_Fill (x + 200, y + PLAYER_CONF_Y_PAD + 60, 16, 8,
-			   (integer) cvar ("bottomcolor") * 16 + 8);
 
 	opt_cursor  (x + 62, y + player_config_cursor_tbl[player_config_cursor]);
 	return 1;
@@ -731,11 +714,62 @@ CB_ME_player_options =
 void () 
 MENU_player_options =
 {
+	local Rect rect;
+	local id view;
+
+	player_options = [[Group alloc] initWithComponents:0 :0 :320 :200];
+
+	view = [[Pic alloc] initWithComponents:16 :4 :0 :0];
+	[view setPic:"gfx/qplaque.lmp"];
+	[player_options addView:view];
+
+	view = [[CenterPic alloc] initWithComponents:160 :4 :0 :0];
+	[view setPic:"gfx/p_option.lmp"];
+	[player_options addView:view];
+
+	view = [[Text alloc] initWithComponents:54 :40 :48 :8];
+	[view setText:"Player"];
+	[player_options addView:view];
+
+	view = [[Text alloc] initWithComponents:54 :50 :48 :8];
+	[view setText:"------"];
+	[player_options addView:view];
+
+	view = [[Text alloc] initWithComponents:70 :PLAYER_CONF_Y_PAD + 8 :32 :8];
+	[view setText:"Name"];
+	[player_options addView:view];
+
+	view = [[Text alloc] initWithComponents:70 :PLAYER_CONF_Y_PAD + 20 :32 :8];
+	[view setText:"Team"];
+	[player_options addView:view];
+
+	view = [[Text alloc] initWithComponents:70 :PLAYER_CONF_Y_PAD + 45 :88 :8];
+	[view setText:"Shirt color"];
+	[player_options addView:view];
+
+	view = [[Text alloc] initWithComponents:70 :PLAYER_CONF_Y_PAD + 60 :88 :8];
+	[view setText:"Pants color"];
+	[player_options addView:view];
+
 	player_config_plname_il = [[InputLineBox alloc] initWithBounds:[[Rect alloc] initWithComponents:120 :PLAYER_CONF_Y_PAD :18 :4] promptCharacter:' '];
 	[player_config_plname_il setWidth:18];
+	[player_options addView:player_config_plname_il];
+
 	player_config_tname_il = [[InputLineBox alloc] initWithBounds:[[Rect alloc] initWithComponents:120 :PLAYER_CONF_Y_PAD + 20 :7 :4] promptCharacter:' '];
 	[player_config_tname_il setWidth:7];
+	[player_options addView:player_config_tname_il];
+
 	player_config_iactive = NIL;
+
+	rect = [[Rect alloc] initWithComponents:192 :PLAYER_CONF_Y_PAD + 37 :24 :24];
+	topcolor_view = [[CvarColorView alloc] initWithBounds:rect :[[CvarColor alloc] initWithCvar:"topcolor"]];
+	[player_options addView:topcolor_view];
+
+	rect.origin.y = PLAYER_CONF_Y_PAD + 52;
+	bottomcolor_view = [[CvarColorView alloc] initWithBounds:rect :[[CvarColor alloc] initWithCvar:"bottomcolor"]];
+	[player_options addView:bottomcolor_view];
+
+	[rect dealloc];
 
 	Menu_Begin (54, 80, "Player");
 	Menu_FadeScreen (1);
