@@ -126,7 +126,11 @@ qf_sendmsg (int sock, void *data, size_t len, struct sockaddr_in *addr)
 static int
 qf_recvmsg (int sock, void *data, size_t len, struct sockaddr_in *addr)
 {
-	size_t      addr_len = sizeof (*addr);
+#ifdef HAVE_SOCKLEN_T
+	socklen_t   addr_len = sizeof (*addr);
+#else
+	int         addr_len = sizeof (*addr);
+#endif
 	return recvfrom (sock, data, len, 0, (struct sockaddr *)addr, &addr_len);
 }
 
