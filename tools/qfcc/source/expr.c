@@ -851,7 +851,7 @@ emit_expr (expr_t *e)
 				default:
 					fprintf (stderr,
 							 "%s:%d: warning: unused expression ignored\n",
-							 strings + e->file, e->line, e->e.expr.op);
+							 strings + e->file, e->line);
 			}
 			break;
 		case ex_uexpr:
