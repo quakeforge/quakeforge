@@ -268,4 +268,5 @@ GIB_Execute (cbuf_t * cbuf)
 	}
 	g->ip = 0;
 	GIB_Tree_Unref (&g->program);
+	g->program = 0;
 }
