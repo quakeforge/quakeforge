@@ -182,6 +182,8 @@ void Cvar_Info (cvar_t *var);
 void
 Cvar_Set (cvar_t *var, char *value)
 {
+	int     changed;
+
 	if (!var)
 		return;
 
@@ -190,6 +192,7 @@ Cvar_Set (cvar_t *var, char *value)
 		return;
 	}
 
+	changed = strequal (var->string, value);
 	free (var->string);					// free the old value string
 
 	var->string = strdup (value);
@@ -197,7 +200,8 @@ Cvar_Set (cvar_t *var, char *value)
 	var->int_val = atoi (var->string);
 	sscanf (var->string, "%f %f %f", &var->vec[0], &var->vec[1], &var->vec[2]);
 
-	Cvar_Info (var);
+	if (changed)
+		Cvar_Info (var);
 }
 
 
@@ -209,9 +213,12 @@ Cvar_Set (cvar_t *var, char *value)
 void
 Cvar_SetROM (cvar_t *var, char *value)
 {
+	int     changed;
+
 	if (!var)
 		return;
 
+	changed = strequal (var->string, value);
 	free (var->string);					// free the old value string
 
 	var->string = strdup (value);
@@ -219,7 +226,8 @@ Cvar_SetROM (cvar_t *var, char *value)
 	var->int_val = atoi (var->string);
 	sscanf (var->string, "%f %f %f", &var->vec[0], &var->vec[1], &var->vec[2]);
 
-	Cvar_Info (var);
+	if (changed)
+		Cvar_Info (var);
 }
 
 /*

@@ -883,6 +883,8 @@ void Host_Init (quakeparms_t *parms)
 	com_argc = parms->argc;
 	com_argv = parms->argv;
 
+	Cvar_Init_Hash ();
+	Cmd_Init_Hash ();
 	Memory_Init (parms->membase, parms->memsize);
 	Cvar_Init ();
 	CL_InitCvars ();

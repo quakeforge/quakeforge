@@ -1,9 +1,13 @@
-/*
-	va.c
 
-	varargs printf function
+/*
+	cvar.c
+
+	dynamic variable tracking
 
 	Copyright (C) 1996-1997  Id Software, Inc.
+	Copyright (C) 1999,2000  Nelson Rush.
+	Copyright (C) 1999,2000  contributors of the QuakeForge project
+	Please see the file "AUTHORS" for a list of contributors
 
 	This program is free software; you can redistribute it and/or
 	modify it under the terms of the GNU General Public License
@@ -27,30 +31,18 @@
 */
 
 #ifdef HAVE_CONFIG_H
-# include "config.h"
+# include <config.h>
 #endif
 
-#include <stdio.h>
-#include <stdarg.h>
+#include "cvar.h"
+#include "server.h"
 
-#include "qtypes.h"
-
-/*
-	va
-
-	does a varargs printf into a temp buffer, so I don't need to have
-	varargs versions of all text functions.
-	FIXME: make this buffer size safe someday
-*/
-char       *
-va (char *format, ...)
+void
+Cvar_Info (cvar_t *var)
 {
-	va_list     argptr;
-	static char string[1024];
-
-	va_start (argptr, format);
-	vsnprintf (string, sizeof (string), format, argptr);
-	va_end (argptr);
-
-	return string;
+	if (var->flags & CVAR_SERVERINFO) {
+		if (sv.active)
+			SV_BroadcastPrintf ("\"%s\" changed to \"%s\"\n",
+								var->name, var->string);
+	}
 }

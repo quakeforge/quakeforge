@@ -110,7 +110,7 @@ Cmd_ForwardToServer_f (void)
 }
 
 /*
-	Cmd_Init
+	cl_Cmd_Init
 */
 void
 cl_Cmd_Init (void)
