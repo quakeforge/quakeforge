@@ -125,9 +125,6 @@ read_samples (sfxbuffer_t *buffer, int count)
 		sfxstream_t *stream = (sfxstream_t *) sfx->data;
 		wavinfo_t  *info = &stream->wavinfo;
 
-		if (count <= 0)
-			Sys_Error ("read_samples: count <= 0");
-
 		stepscale = (float) info->rate / shm->speed;	// usually 0.5, 1, or 2
 
 		samples = count * stepscale;
@@ -166,8 +163,6 @@ SND_StreamAdvance (sfxbuffer_t *buffer, int count)
 			headpos = sfx->length;
 		else
 			headpos -= sfx->length - sfx->loopstart;
-		if (headpos > sfx->length)
-			Sys_Error ("huh");
 	}
 
 	if (samples < count) {
@@ -549,7 +544,7 @@ SND_ResampleStereo (sfxbuffer_t *sc, byte *data, int length)
 	{
 		byte       *x = sc->data + sc->length * outwidth * 2;
 		if (memcmp (x, "\xde\xad\xbe\xef", 4))
-			Sys_Error ("SND_ResampleMono screwed the pooch %02x%02x%02x%02x",
+			Sys_Error ("SND_ResampleStereo screwed the pooch %02x%02x%02x%02x",
 					   x[0], x[1], x[2], x[3]);
 	}
 }
