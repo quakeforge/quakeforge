@@ -659,9 +659,9 @@ emit_branch (opcode_t *op, expr_t *e, expr_t *l)
 	statref_t *ref;
 	def_t *def = 0;
 
-	st = &statements[numstatements];
 	if (e)
 		def = emit_sub_expr (e, 0);
+	st = &statements[numstatements];
 	emit_statement (op, def, 0, 0);
 	if (l->e.label.statement) {
 		if (op == op_goto)
@@ -842,10 +842,30 @@ emit_expr (expr_t *e)
 	def_t *def;
 	def_t *def_a;
 	def_t *def_b;
+	statref_t *ref;
+	label_t *label;
 	//opcode_t *op;
 
 	switch (e->type) {
 		case ex_label:
+			label = &e->e.label;
+			label->statement = &statements[numstatements];
+			for (ref = label->refs; ref; ref = ref->next) {
+				printf ("%d\n", ref->statement->op);
+				switch (ref->field) {
+					case 0:
+						ref->statement->a = label->statement - ref->statement;
+						break;
+					case 1:
+						ref->statement->b = label->statement - ref->statement;
+						break;
+					case 2:
+						ref->statement->c = label->statement - ref->statement;
+						break;
+					default:
+						abort();
+				}
+			}
 			break;
 		case ex_block:
 			for (e = e->e.block.head; e; e = e->next)
