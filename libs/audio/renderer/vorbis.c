@@ -298,6 +298,7 @@ vorbis_stream_open (sfx_t *_sfx)
 
 	stream->buffer.length = samples;
 	stream->buffer.advance = SND_StreamAdvance;
+	stream->buffer.setpos = SND_StreamSetPos;
 	stream->buffer.sfx = sfx;
 
 	stream->resample (&stream->buffer, 0, 0, 0);	// get sfx setup properly

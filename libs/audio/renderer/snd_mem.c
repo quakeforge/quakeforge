@@ -156,16 +156,77 @@ read_samples (sfxbuffer_t *buffer, int count, void *prev)
 	}
 }
 
+static void
+fill_buffer (sfx_t *sfx, sfxstream_t *stream, sfxbuffer_t *buffer,
+			 wavinfo_t *info, unsigned int headpos)
+{
+	void       *prev;
+	unsigned int samples;
+	unsigned int loop_samples = 0;
+
+	// find out how many samples can be read into the buffer
+	samples = buffer->tail - buffer->head - SAMPLE_GAP;
+	if (buffer->tail <= buffer->head)
+		samples += buffer->length;
+
+	if (headpos + samples > sfx->length) {
+		if (sfx->loopstart == (unsigned int)-1) {
+			samples = sfx->length - headpos;
+		} else {
+			loop_samples = headpos + samples - sfx->length;
+			samples -= loop_samples;
+		}
+	}
+	if (samples) {
+		if (buffer->head != buffer->tail) {
+			int         s = buffer->head - 1;
+			if (!buffer->head)
+				s += buffer->length;
+			prev = buffer->data + s * buffer->bps;
+		} else {
+			prev = 0;
+		}
+		read_samples (buffer, samples, prev);
+	}
+	if (loop_samples) {
+		if (buffer->head != buffer->tail) {
+			int         s = buffer->head - 1;
+			if (!buffer->head)
+				s += buffer->length;
+			prev = buffer->data + s * buffer->bps;
+		} else {
+			prev = 0;
+		}
+		stream->seek (stream->file, info->loopstart, info);
+		read_samples (buffer, loop_samples, prev);
+	}
+}
+
+void
+SND_StreamSetPos (sfxbuffer_t *buffer, unsigned int pos)
+{
+	float       stepscale;
+	sfx_t      *sfx = buffer->sfx;
+	sfxstream_t *stream = (sfxstream_t *) sfx->data;
+	wavinfo_t  *info = &stream->wavinfo;
+
+	stepscale = (float) info->rate / shm->speed;	// usually 0.5, 1, or 2
+
+	buffer->head = buffer->tail = 0;
+	buffer->pos = pos;
+	stream->pos = pos;
+	stream->seek (stream->file, buffer->pos * stepscale, info);
+	fill_buffer (sfx, stream, buffer, info, pos);
+}
+
 void
 SND_StreamAdvance (sfxbuffer_t *buffer, unsigned int count)
 {
 	float       stepscale;
 	unsigned int headpos, samples;
-	unsigned int loop_samples = 0;
 	sfx_t      *sfx = buffer->sfx;
 	sfxstream_t *stream = (sfxstream_t *) sfx->data;
 	wavinfo_t  *info = &stream->wavinfo;
-	void       *prev;
 
 	stream->pos += count;
 	count = (stream->pos - buffer->pos) & ~255;
@@ -223,43 +284,7 @@ SND_StreamAdvance (sfxbuffer_t *buffer, unsigned int count)
 		if (buffer->tail >= buffer->length)
 			buffer->tail -= buffer->length;
 	}
-
-	// find out how many samples can be read into the buffer
-	samples = buffer->tail - buffer->head - SAMPLE_GAP;
-	if (buffer->tail <= buffer->head)
-		samples += buffer->length;
-
-	if (headpos + samples > sfx->length) {
-		if (sfx->loopstart == (unsigned int)-1) {
-			samples = sfx->length - headpos;
-		} else {
-			loop_samples = headpos + samples - sfx->length;
-			samples -= loop_samples;
-		}
-	}
-	if (samples) {
-		if (buffer->head != buffer->tail) {
-			int         s = buffer->head - 1;
-			if (!buffer->head)
-				s += buffer->length;
-			prev = buffer->data + s * buffer->bps;
-		} else {
-			prev = 0;
-		}
-		read_samples (buffer, samples, prev);
-	}
-	if (loop_samples) {
-		if (buffer->head != buffer->tail) {
-			int         s = buffer->head - 1;
-			if (!buffer->head)
-				s += buffer->length;
-			prev = buffer->data + s * buffer->bps;
-		} else {
-			prev = 0;
-		}
-		stream->seek (stream->file, info->loopstart, info);
-		read_samples (buffer, loop_samples, prev);
-	}
+	fill_buffer (sfx, stream, buffer, info, headpos);
 }
 
 void

@@ -423,11 +423,9 @@ SND_PaintChannelFrom8 (channel_t *ch, sfxbuffer_t *sc, int count)
 	unsigned int pos;
 	byte       *samps;
 
+	if (ch->pos < sc->pos)
+		sc->setpos (sc, ch->pos);
 	pos = (ch->pos - sc->pos + sc->tail) % sc->length;
-	if (pos < 0) {		// FIXME need a better way to handle shared streams
-		pos = sc->tail;
-		ch->pos = sc->pos;
-	}
 	samps = sc->data + pos;
 
 	if (pos + count > sc->length) {
@@ -446,11 +444,9 @@ SND_PaintChannelFrom16 (channel_t *ch, sfxbuffer_t *sc, int count)
 	unsigned int pos;
 	short      *samps;
 
+	if (ch->pos < sc->pos)
+		sc->setpos (sc, ch->pos);
 	pos = (ch->pos - sc->pos + sc->tail) % sc->length;
-	if (pos < 0) {		// FIXME need a better way to handle shared streams
-		pos = sc->tail;
-		ch->pos = sc->pos;
-	}
 	samps = (short *) sc->data + pos;
 
 	if (pos + count > sc->length) {
@@ -469,11 +465,9 @@ SND_PaintChannelStereo8 (channel_t *ch, sfxbuffer_t *sc, int count)
 	unsigned int pos;
 	short      *samps;
 
+	if (ch->pos < sc->pos)
+		sc->setpos (sc, ch->pos);
 	pos = (ch->pos - sc->pos + sc->tail) % sc->length;
-	if (pos < 0) {		// FIXME need a better way to handle shared streams
-		pos = sc->tail;
-		ch->pos = sc->pos;
-	}
 	samps = (short *) sc->data + pos;
 
 	if (pos + count > sc->length) {
@@ -492,11 +486,9 @@ SND_PaintChannelStereo16 (channel_t *ch, sfxbuffer_t *sc, int count)
 	unsigned int pos;
 	int        *samps;
 
+	if (ch->pos < sc->pos)
+		sc->setpos (sc, ch->pos);
 	pos = (ch->pos - sc->pos + sc->tail) % sc->length;
-	if (pos < 0) {		// FIXME need a better way to handle shared streams
-		pos = sc->tail;
-		ch->pos = sc->pos;
-	}
 	samps = (int *) sc->data + pos;
 
 	if (pos + count > sc->length) {

@@ -60,6 +60,7 @@ struct sfxbuffer_s {
 	unsigned int bps;			// bytes per sample: 1 2 4 usually
 	void        (*paint) (channel_t *ch, sfxbuffer_t *buffer, int count);
 	void        (*advance) (sfxbuffer_t *buffer, unsigned int count);
+	void        (*setpos) (sfxbuffer_t *buffer, unsigned int pos);
 	sfx_t      *sfx;
 	byte        data[4];
 };
@@ -147,6 +148,7 @@ void SND_CacheRelease (sfx_t *sfx);
 sfxbuffer_t *SND_StreamRetain (sfx_t *sfx);
 void SND_StreamRelease (sfx_t *sfx);
 void SND_StreamAdvance (sfxbuffer_t *buffer, unsigned int count);
+void SND_StreamSetPos (sfxbuffer_t *buffer, unsigned int pos);
 
 void SND_WriteLinearBlastStereo16 (void);
 void SND_PaintChannelFrom8 (channel_t *ch, sfxbuffer_t *sc, int count);
