@@ -920,11 +920,20 @@ statement
 			expr_t     *tl = new_label_expr ();
 			expr_t     *fl = break_label;
 			expr_t     *l1 = 0;
+			expr_t     *t;
 			int         line = pr.source_line;
 			string_t    file = pr.source_file;
 
-			pr.source_line = $7->line;
-			pr.source_file = $7->file;
+			if ($9)
+				t = $9;
+			else if ($7)
+				t = $7;
+			else if ($5)
+				t = $5;
+			else
+				t = continue_label;
+			pr.source_line = t->line;
+			pr.source_file = t->file;
 
 			restore_local_inits ($11);
 			free_local_inits ($11);
@@ -950,6 +959,7 @@ statement
 					append_expr ($$, $7);
 				}
 			} else {
+				append_expr ($$, new_unary_expr ('g', tl));
 				append_expr ($$, fl);
 			}
 			break_label = $2;
