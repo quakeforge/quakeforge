@@ -194,7 +194,7 @@ main (int argc, char **argv)
 				while (optind < argc) {
 					pf = pack_find_file (pack, argv[optind]);
 					if (!pf) {
-						fprintf (stderr, "could not file %s\n", argv[optind]);
+						fprintf (stderr, "could not find %s\n", argv[optind]);
 						continue;
 					}
 					if (options.verbosity > 0)
