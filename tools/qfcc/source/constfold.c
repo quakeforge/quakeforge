@@ -874,7 +874,7 @@ do_op_struct (int op, expr_t *e, expr_t *e1, expr_t *e2)
 {
 	type_t     *type;
 
-	if (op != '=' && op != 'b')
+	if (op != '=' && op != 'b' && op != 'M')
 		return error (e1, "invalid operand for struct");
 	if ((type = get_type (e1)) != get_type (e2))
 		return type_mismatch (e1, e2, op);
