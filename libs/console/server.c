@@ -194,7 +194,7 @@ C_Print (const char *fmt, va_list args)
 
 		txt = buffer;
 
-		while ((ch = *txt++)) {
+		while ((ch = (byte)*txt++)) {
 			ch = sys_char_map[ch] | attr_table[attr_map[ch]];
 			waddch (output, ch);
 		}
@@ -202,7 +202,15 @@ C_Print (const char *fmt, va_list args)
 		wrefresh (output);
 	} else
 #endif
-		vfprintf (stdout, fmt, args);
+	{
+		char        msg[4096];
+		unsigned char *p;
+
+		vsnprintf (msg, sizeof (msg), fmt, args);
+		for (p = (unsigned char *) msg; *p; p++)
+			putc (sys_char_map[*p], stdout);
+		fflush (stdout);
+	}
 }
 
 static void
