@@ -278,8 +278,6 @@ rm -rf $RPM_BUILD_ROOT
 %attr(-,root,root) %{_prefix}/lib/libQFgamecode_builtins.so.1.0.0
 %attr(-,root,root) %{_prefix}/lib/libQFgib.so.1
 %attr(-,root,root) %{_prefix}/lib/libQFgib.so.1.0.0
-%attr(-,root,root) %{_prefix}/lib/libQFjs.so.1
-%attr(-,root,root) %{_prefix}/lib/libQFjs.so.1.0.0
 %attr(-,root,root) %{_prefix}/lib/libQFmodels.so.1
 %attr(-,root,root) %{_prefix}/lib/libQFmodels.so.1.0.0
 %attr(-,root,root) %{_prefix}/lib/libQFsound.so.1
@@ -310,40 +308,30 @@ rm -rf $RPM_BUILD_ROOT
 %files fbdev
 %attr(-,root,root)	%{_prefix}/bin/qw-client-fbdev
 %attr(-,root,root)	%{_prefix}/bin/nq-fbdev
-%attr(-,root,root)	%{_prefix}/lib/libQFfbdev.so.1
-%attr(-,root,root)	%{_prefix}/lib/libQFfbdev.so.1.0.0
 %endif
 
 %if "%{HAVE_X11}"=="'yes'"
 %files glx
 %attr(-,root,root)	%{_prefix}/bin/qw-client-glx
 %attr(-,root,root)	%{_prefix}/bin/nq-glx
-%attr(-,root,root)	%{_prefix}/lib/libQFglx.so.1
-%attr(-,root,root)	%{_prefix}/lib/libQFglx.so.1.0.0
 %endif
 
 %if "%{HAVE_SDL}"=="'yes'"
 %files sdl
 %attr(-,root,root)	%{_prefix}/bin/qw-client-sdl
 %attr(-,root,root)	%{_prefix}/bin/nq-sdl
-%attr(-,root,root)	%{_prefix}/lib/libQFsdl.so.1
-%attr(-,root,root)	%{_prefix}/lib/libQFsdl.so.1.0.0
 %endif
 
 %if "%{HAVE_SDL}"=="'yes'"
 %files sdl32
 %attr(-,root,root)	%{_prefix}/bin/qw-client-sdl32
 %attr(-,root,root)	%{_prefix}/bin/nq-sdl32
-%attr(-,root,root)	%{_prefix}/lib/libQFsdl32.so.1
-%attr(-,root,root)	%{_prefix}/lib/libQFsdl32.so.1.0.0
 %endif
 
 %if "%{HAVE_SDL}"=="'yes'"
 %files sgl
 %attr(-,root,root)	%{_prefix}/bin/qw-client-sgl
 %attr(-,root,root)	%{_prefix}/bin/nq-sgl
-%attr(-,root,root)	%{_prefix}/lib/libQFsgl.so.1
-%attr(-,root,root)	%{_prefix}/lib/libQFsgl.so.1.0.0
 %endif
 
 %if "%{HAVE_SVGA}"=="'yes'"
@@ -356,8 +344,6 @@ rm -rf $RPM_BUILD_ROOT
 %files x11
 %attr(-,root,root)	%{_prefix}/bin/qw-client-x11
 %attr(-,root,root)	%{_prefix}/bin/nq-x11
-%attr(-,root,root)	%{_prefix}/lib/libQFx11.so.1
-%attr(-,root,root)	%{_prefix}/lib/libQFx11.so.1.0.0
 %endif
 
 %if "%{HAVE_ALSA}"=="'yes'"
@@ -417,14 +403,6 @@ rm -rf $RPM_BUILD_ROOT
 %attr(-,root,root)	%{_prefix}/lib/libQFgib.a
 %attr(-,root,root)	%{_prefix}/lib/libQFgib.la
 %attr(-,root,root)	%{_prefix}/lib/libQFgib.so
-%if "%{HAVE_X11}"=="'yes'"
-%attr(-,root,root)	%{_prefix}/lib/libQFglx.a
-%attr(-,root,root)	%{_prefix}/lib/libQFglx.la
-%attr(-,root,root)	%{_prefix}/lib/libQFglx.so
-%endif
-%attr(-,root,root)	%{_prefix}/lib/libQFjs.a
-%attr(-,root,root)	%{_prefix}/lib/libQFjs.la
-%attr(-,root,root)	%{_prefix}/lib/libQFjs.so
 %attr(-,root,root)	%{_prefix}/lib/libQFmodels.a
 %attr(-,root,root)	%{_prefix}/lib/libQFmodels.la
 %attr(-,root,root)	%{_prefix}/lib/libQFmodels.so
@@ -439,14 +417,6 @@ rm -rf $RPM_BUILD_ROOT
 %attr(-,root,root)	%{_prefix}/lib/libQFrenderer_sw32.la
 %attr(-,root,root)	%{_prefix}/lib/libQFrenderer_sw32.so
 %endif
-%attr(-,root,root)	%{_prefix}/lib/libQFsdl.a
-%attr(-,root,root)	%{_prefix}/lib/libQFsdl.la
-%attr(-,root,root)	%{_prefix}/lib/libQFsdl.so
-%endif
-%if "%{HAVE_SDL}"=="'yes'"
-%attr(-,root,root)	%{_prefix}/lib/libQFsgl.a
-%attr(-,root,root)	%{_prefix}/lib/libQFsgl.la
-%attr(-,root,root)	%{_prefix}/lib/libQFsgl.so
 %endif
 %attr(-,root,root)	%{_prefix}/lib/libQFsound.a
 %attr(-,root,root)	%{_prefix}/lib/libQFsound.la
@@ -454,11 +424,6 @@ rm -rf $RPM_BUILD_ROOT
 %attr(-,root,root)	%{_prefix}/lib/libQFutil.a
 %attr(-,root,root)	%{_prefix}/lib/libQFutil.la
 %attr(-,root,root)	%{_prefix}/lib/libQFutil.so
-%if "%{HAVE_X11}"=="'yes'"
-%attr(-,root,root)	%{_prefix}/lib/libQFx11.a
-%attr(-,root,root)	%{_prefix}/lib/libQFx11.la
-%attr(-,root,root)	%{_prefix}/lib/libQFx11.so
-%endif
 %attr(-,root,root)	%{_prefix}/include/QF/GL/defines.h
 %attr(-,root,root)	%{_prefix}/include/QF/GL/extensions.h
 %attr(-,root,root)	%{_prefix}/include/QF/GL/funcs.h
