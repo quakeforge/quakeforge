@@ -33,11 +33,9 @@ cvar_t     *gl_max_size;
 cvar_t     *gl_nocolors;
 cvar_t     *gl_picmip;
 cvar_t     *gl_playermip;
-cvar_t     *gl_polyblend; // FIXME
 cvar_t     *gl_reporttjunctions;
 cvar_t     *gl_sky_clip;
 cvar_t     *gl_skymultipass;
-cvar_t     *gl_smoothmodels; // FIXME
 cvar_t     *gl_texsort;
 cvar_t     *gl_triplebuffer;
 
@@ -54,11 +52,12 @@ cvar_t     *r_dspeeds;
 cvar_t     *r_dynamic;
 cvar_t     *r_fullbright;
 cvar_t     *r_graphheight;
-cvar_t     *r_lightmap;
 cvar_t     *r_maxedges;
 cvar_t     *r_maxsurfs;
 cvar_t     *r_mirroralpha;
 cvar_t     *r_netgraph;
+cvar_t     *r_netgraph_alpha;
+cvar_t     *r_netgraph_box;
 cvar_t     *r_norefresh;
 cvar_t     *r_novis;
 cvar_t     *r_numedges;
@@ -135,7 +134,7 @@ R_Init_Cvars (void)
 	gl_conspin = Cvar_Get ("gl_conspin", "0", CVAR_ARCHIVE, NULL,
 						   "speed at which the console spins");
 	gl_constretch = Cvar_Get ("gl_constretch", "0", CVAR_ARCHIVE, NULL,
-							  "whether slide the console or stretch it");
+							  "toggle console between slide and stretch");
 	gl_cull = Cvar_Get ("gl_cull", "1", CVAR_NONE, NULL, "None");
     gl_dlight_lightmap = Cvar_Get ("gl_dlight_lightmap", "1", CVAR_ARCHIVE,
 								   NULL, "Set to 1 for high quality dynamic "
@@ -178,69 +177,103 @@ R_Init_Cvars (void)
 	gl_sky_divide = Cvar_Get ("gl_sky_divide", "1", CVAR_ARCHIVE, NULL,
 							  "subdivide sky polys");
 	gl_skymultipass = Cvar_Get ("gl_skymultipass", "1", CVAR_NONE, NULL,
-								"controls wether the skydome is single or "
+								"controls whether the skydome is single or "
 								"double pass");
-	gl_smoothmodels = Cvar_Get ("gl_smoothmodels", "1", CVAR_NONE, NULL,
-								"None");
 	gl_texsort = Cvar_Get ("gl_texsort", "1", CVAR_NONE, NULL, "None");
 	gl_triplebuffer = Cvar_Get ("gl_triplebuffer", "1", CVAR_ARCHIVE, NULL,
 								"Set to 1 by default. Fixes status bar "
 								"flicker on some hardware");
-	r_aliasstats = Cvar_Get ("r_polymodelstats", "0", CVAR_NONE, NULL, "None");
+	r_aliasstats = Cvar_Get ("r_polymodelstats", "0", CVAR_NONE, NULL,
+							 "Toggles the displays of number of polygon "
+							 "models current being viewed");
 	r_aliastransadj = Cvar_Get ("r_aliastransadj", "100", CVAR_NONE, NULL,
-								"None");
+								"Determines how much of an alias model is "
+								"clipped away and how much is viewable.");
 	r_aliastransbase = Cvar_Get ("r_aliastransbase", "200", CVAR_NONE, NULL,
-								 "None");
-	r_ambient = Cvar_Get ("r_ambient", "0", CVAR_NONE, NULL, "None");
-	r_clearcolor = Cvar_Get ("r_clearcolor", "2", CVAR_NONE, NULL, "None");
-	r_drawentities = Cvar_Get ("r_drawentities", "1", CVAR_NONE, NULL, "None");
-	r_drawflat = Cvar_Get ("r_drawflat", "0", CVAR_NONE, NULL, "None");
-	r_draworder = Cvar_Get ("r_draworder", "0", CVAR_NONE, NULL, "None");
-	r_drawviewmodel = Cvar_Get ("r_drawviewmodel", "1", CVAR_NONE, NULL, "None");
-	r_dspeeds = Cvar_Get ("r_dspeeds", "0", CVAR_NONE, NULL, "None");
-	r_dynamic = Cvar_Get ("r_dynamic", "1", CVAR_NONE, NULL, "None");
+								 "Determines how much of an alias model is "
+								 "clipped away and how much is viewable");
+	r_ambient = Cvar_Get ("r_ambient", "0", CVAR_NONE, NULL,
+						  "Determines the ambient lighting for a level");
+	r_clearcolor = Cvar_Get ("r_clearcolor", "2", CVAR_NONE, NULL,
+							 "This sets the color for areas outside of the "
+							 "current map");
+	r_drawentities = Cvar_Get ("r_drawentities", "1", CVAR_NONE, NULL,
+							   "Toggles drawing of entities (almost "
+							   "everything but the world)");
+	r_drawflat = Cvar_Get ("r_drawflat", "0", CVAR_NONE, NULL,
+						   "Toggles the drawing of textures");
+	r_draworder = Cvar_Get ("r_draworder", "0", CVAR_NONE, NULL,
+							"Toggles drawing order");
+	r_drawviewmodel = Cvar_Get ("r_drawviewmodel", "1", CVAR_NONE, NULL,
+								"Toggles view model drawing (your weapons)");
+	r_dspeeds = Cvar_Get ("r_dspeeds", "0", CVAR_NONE, NULL,
+						  "Toggles the display of drawing speed information");
+	r_dynamic = Cvar_Get ("r_dynamic", "1", CVAR_NONE, NULL,
+						  "Set to 0 to disable lightmap changes");
 	r_fullbright = Cvar_Get ("r_fullbright", "0", CVAR_NONE, NULL, "None");
-	r_graphheight = Cvar_Get ("r_graphheight", "10", CVAR_NONE, NULL, "None");
-	r_lightmap = Cvar_Get ("r_lightmap", "0", CVAR_NONE, NULL, "None");
-	r_maxedges = Cvar_Get ("r_maxedges", "0", CVAR_NONE, NULL, "None");
-	r_maxsurfs = Cvar_Get ("r_maxsurfs", "0", CVAR_NONE, NULL, "None");
+	r_graphheight = Cvar_Get ("r_graphheight", "10", CVAR_NONE, NULL,
+							  "Set the number of lines displayed in the "
+							  "various graphs");
+	r_maxedges = Cvar_Get ("r_maxedges", "0", CVAR_NONE, NULL,
+						   "Sets the maximum number of edges");
+	r_maxsurfs = Cvar_Get ("r_maxsurfs", "0", CVAR_NONE, NULL,
+						   "Sets the maximum number of surfaces");
 	r_mirroralpha = Cvar_Get ("r_mirroralpha", "1", CVAR_NONE, NULL, "None");
-	r_netgraph = Cvar_Get ("r_netgraph", "0", CVAR_NONE, NULL, "None");
-	r_norefresh = Cvar_Get ("r_norefresh", "0", CVAR_NONE, NULL, "None");
-	r_novis = Cvar_Get ("r_novis", "0", CVAR_NONE, NULL, "None");
-	r_numedges = Cvar_Get ("r_numedges", "0", CVAR_NONE, NULL, "None");
-	r_numsurfs = Cvar_Get ("r_numsurfs", "0", CVAR_NONE, NULL, "None");
+	r_netgraph = Cvar_Get ("r_netgraph", "0", CVAR_NONE, NULL, "Toggle the "
+						   "display of a graph showing network performance");
+	r_netgraph_alpha = Cvar_Get ("r_netgraph_alpha", "0.5", CVAR_ARCHIVE,
+								 NULL, "Net graph translucency");
+	r_netgraph_box = Cvar_Get ("r_netgraph_box", "1", CVAR_ARCHIVE, NULL, 
+							   "Draw box around net graph");
+	r_norefresh = Cvar_Get ("r_norefresh", "0", CVAR_NONE, NULL,
+							"Set to 1 to disable display refresh");
+	r_novis = Cvar_Get ("r_novis", "0", CVAR_NONE, NULL, "Set to 1 to enable "
+						"runtime visibility checking (SLOW)");
+	r_numedges = Cvar_Get ("r_numedges", "0", CVAR_NONE, NULL,
+						   "Toggles the displaying of number of edges "
+						   "currently being viewed");
+	r_numsurfs = Cvar_Get ("r_numsurfs", "0", CVAR_NONE, NULL,
+						   "Toggles the displaying of number of surfaces "
+						   "currently being viewed");
 	r_particles = Cvar_Get ("r_particles", "1", CVAR_ARCHIVE, NULL,
 							"whether or not to draw particles");
 	r_reportedgeout = Cvar_Get ("r_reportedgeout", "0", CVAR_NONE, NULL,
-								"None");
+								"Toggle the display of how many edges were "
+								"not displayed");
 	r_reportsurfout = Cvar_Get ("r_reportsurfout", "0", CVAR_NONE, NULL,
-								"None");
-	r_shadows = Cvar_Get ("r_shadows", "0", CVAR_NONE, NULL, "None");
+								"Toggle the display of how many surfaces "
+								"were not displayed");
+	r_shadows = Cvar_Get ("r_shadows", "0", CVAR_NONE, NULL,
+						  "Set to 1 to enable shadows for entities");
 	r_skyname = Cvar_Get ("r_skyname", "none", CVAR_NONE, NULL,
 						  "name of the current skybox");
-	r_speeds = Cvar_Get ("r_speeds", "0", CVAR_NONE, NULL, "None");
-	r_timegraph = Cvar_Get ("r_timegraph", "0", CVAR_NONE, NULL, "None");
-	r_wateralpha = Cvar_Get ("r_wateralpha", "1", CVAR_NONE, NULL, "None");
-	r_waterripple = Cvar_Get ("r_waterripple", "0", CVAR_NONE, NULL, "None");
-	r_waterwarp = Cvar_Get ("r_waterwarp", "1", CVAR_NONE, NULL, "None");
-	scr_centertime = Cvar_Get ("scr_centertime", "2", CVAR_NONE, NULL,
-							   "How long in seconds the screen hints are "
-							   "displayed on the screen");
+	r_speeds = Cvar_Get ("r_speeds", "0", CVAR_NONE, NULL, "Display drawing "
+						 "time and statistics of what is being viewed");
+	r_timegraph = Cvar_Get ("r_timegraph", "0", CVAR_NONE, NULL,
+							"Toggle the display of a performance graph");
+	r_wateralpha = Cvar_Get ("r_wateralpha", "1", CVAR_NONE, NULL,
+							 "Determine the opacity of liquids. 1 = solid, "
+							 "0 = transparent, otherwise translucent.");
+	r_waterripple = Cvar_Get ("r_waterripple", "0", CVAR_NONE, NULL,
+							  "Set to make liquids ripple, try setting to 5");
+	r_waterwarp = Cvar_Get ("r_waterwarp", "1", CVAR_NONE, NULL,
+							"Toggles whether surfaces are warped in liquid.");
+	scr_centertime = Cvar_Get ("scr_centertime", "2", CVAR_NONE, NULL, "How "
+							   "long in seconds screen hints are displayed");
 	scr_consize = Cvar_Get ("scr_consize", "0.5", CVAR_ARCHIVE, NULL,
 							"fraction of the screen the console covers when "
 							"down");
 	scr_conspeed = Cvar_Get ("scr_conspeed", "300", CVAR_NONE, NULL, "How "
 							 "quickly the console screen scrolls up and down");
-	scr_fov = Cvar_Get ("fov", "90", CVAR_NONE, NULL, "field of view. 90 is "
-						"normal, smaller numbers zoom");
+	scr_fov = Cvar_Get ("fov", "90", CVAR_NONE, NULL, "Your field of view in "
+						"degrees. Smaller than 90 zooms in.");
 	scr_printspeed = Cvar_Get ("scr_printspeed", "8", CVAR_NONE, NULL,
 							   "How fast the text is displayed at the end of "
 							   "the single player episodes");
 	scr_showpause = Cvar_Get ("showpause", "1", CVAR_NONE, NULL,
 							  "Toggles display of pause graphic");
 	scr_showram = Cvar_Get ("showram", "1", CVAR_NONE, NULL,
-							"Show ram icon when low on ram in game");
+							"Show RAM icon when low on ram in game");
 	scr_showturtle = Cvar_Get ("showturtle", "0", CVAR_NONE, NULL,
 							   "Show turtle icon when fps is lower than 10");
 	scr_viewsize = Cvar_Get ("viewsize", "100", CVAR_ARCHIVE, NULL,

@@ -125,7 +125,7 @@ R_Init_Cvars (void)
 	gl_conspin = Cvar_Get ("gl_conspin", "0", CVAR_ARCHIVE, NULL,
 						   "speed at which the console spins");
 	gl_constretch = Cvar_Get ("gl_constretch", "0", CVAR_ARCHIVE, NULL,
-							  "whether slide the console or stretch it");
+							  "toggle console slide or stretch");
 	gl_dlight_lightmap = Cvar_Get ("gl_dlight_lightmap", "1", CVAR_ARCHIVE,
 								   NULL, "Set to 1 for high quality dynamic "
 								   "lighting.");
@@ -200,7 +200,7 @@ R_Init_Cvars (void)
 							  "Set the number of lines displayed in the "
 							  "various graphs");
 	r_maxedges = Cvar_Get ("r_maxedges", "0", CVAR_NONE, NULL,
-						   "Sets the maximum number of surfaces");
+						   "Sets the maximum number of edges");
 	r_maxsurfs = Cvar_Get ("r_maxsurfs", "0", CVAR_NONE, NULL,
 						   "Sets the maximum number of surfaces");
 	r_netgraph = Cvar_Get ("r_netgraph", "0", CVAR_NONE, NULL,
@@ -212,8 +212,8 @@ R_Init_Cvars (void)
 							   "Draw box around net graph");
 	r_norefresh = Cvar_Get ("r_norefresh", "0", CVAR_NONE, NULL,
 							"Set to 1 to disable display refresh");
-	r_novis = Cvar_Get ("r_novis", "0", CVAR_NONE, NULL,
-						"Set to 1 to enable runtime visibility checking (SLOW)");
+	r_novis = Cvar_Get ("r_novis", "0", CVAR_NONE, NULL, "Set to 1 to enable "
+						"runtime visibility checking (SLOW)");
 	r_numedges = Cvar_Get ("r_numedges", "0", CVAR_NONE, NULL,
 						   "Toggles the displaying of number of edges "
 						   "currently being viewed");
@@ -223,7 +223,7 @@ R_Init_Cvars (void)
 	r_particles = Cvar_Get ("r_particles", "1", CVAR_ARCHIVE, NULL,
 							"Toggles drawing of particles.");
 	r_reportedgeout = Cvar_Get ("r_reportedgeout", "0", CVAR_NONE, NULL,
-								"Toggle the display of how many edges where "
+								"Toggle the display of how many edges were "
 								"not displayed");
 	r_reportsurfout = Cvar_Get ("r_reportsurfout", "0", CVAR_NONE, NULL,
 								"Toggle the display of how many surfaces "
@@ -232,9 +232,8 @@ R_Init_Cvars (void)
 						  "Set to 1 to enable shadows for entities");
 	r_skyname = Cvar_Get ("r_skyname", "none", CVAR_NONE, NULL,
 						  "name of the current skybox");
-	r_speeds = Cvar_Get ("r_speeds", "0", CVAR_NONE, NULL,
-						 "Display drawing time and statistics of what is "
-						 "being viewed");
+	r_speeds = Cvar_Get ("r_speeds", "0", CVAR_NONE, NULL, "Display drawing "
+						 "time and statistics of what is being viewed");
 	r_timegraph = Cvar_Get ("r_timegraph", "0", CVAR_NONE, NULL,
 							"Toggle the display of a performance graph");
 	r_wateralpha = Cvar_Get ("r_wateralpha", "1", CVAR_NONE, NULL,
@@ -247,15 +246,15 @@ R_Init_Cvars (void)
 	r_zgraph = Cvar_Get ("r_zgraph", "0", CVAR_NONE, NULL,
 						 "Toggle the graph that reports the changes of "
 						 "z-axis position");
-	scr_centertime = Cvar_Get ("scr_centertime", "2", CVAR_NONE, NULL,
-							   "How long in seconds screen hints are displayed");
+	scr_centertime = Cvar_Get ("scr_centertime", "2", CVAR_NONE, NULL, "How "
+							   "long in seconds screen hints are displayed");
 	scr_consize = Cvar_Get ("scr_consize", "0.5", CVAR_ARCHIVE, NULL,
-							"Fraction of the screen the console covers when down");
+							"Fraction of the screen the console covers when "
+							"down");
 	scr_conspeed = Cvar_Get ("scr_conspeed", "300", CVAR_NONE, NULL,
 							 "How quickly console scrolls up or down");
-	scr_fov = Cvar_Get ("fov", "90", CVAR_NONE, NULL,
-						"Your point of view in degrees. Smaller than 90 "
-						"zooms in.");
+	scr_fov = Cvar_Get ("fov", "90", CVAR_NONE, NULL, "Your field of view in "
+						"degrees. Smaller than 90 zooms in.");
 	scr_printspeed = Cvar_Get ("scr_printspeed", "8", CVAR_NONE, NULL,
 							   "How fast the text is displayed at the end of "
 							   "the single player episodes");

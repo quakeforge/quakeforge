@@ -926,7 +926,6 @@ R_SetupFrame (void)
 {
 	// don't allow cheats in multiplayer
 	Cvar_SetValue (r_fullbright, 0);
-	Cvar_SetValue (r_lightmap, 0);
 
 	R_AnimateLight ();
 
