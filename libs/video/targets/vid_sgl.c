@@ -136,7 +136,7 @@ VID_Init (unsigned char *palette)
 		vid.conheight = max (atoi (com_argv[i + 1]), 200);
 
 	// Check if we want fullscreen
-	if (vid_fullscreen->value) {
+	if (vid_fullscreen->int_val) {
 		flags |= SDL_FULLSCREEN;
 
 #ifndef WIN32		// Don't annoy Mesa/3dfx folks
