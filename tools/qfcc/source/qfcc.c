@@ -36,6 +36,12 @@ static const char rcsid[] =
 #ifdef HAVE_SYS_TYPES_H
 # include <sys/types.h>
 #endif
+#ifdef HAVE_SYS_STAT_H
+# include <sys/stat.h>
+#endif
+#ifdef HAVE_FCNTL_H
+# include <fcntl.h>
+#endif
 #ifdef HAVE_SYS_WAIT_H
 # include <sys/wait.h>
 #endif
@@ -64,6 +70,7 @@ const char *this_program;
 
 static struct option const long_options[] = {
 	{"source", required_argument, 0, 's'},
+	{"save-temps", no_argument, 0, 'S'},
 	{"quiet", no_argument, 0, 'q'},
 	{"verbose", no_argument, 0, 'v'},
 	{"code", required_argument, 0, 'C'},
@@ -691,6 +698,7 @@ usage (int status)
 			"    -h, --help                Display this help and exit\n"
 			"    -V, --version             Output version information and exit\n\n"
 #ifdef USE_CPP
+			"    -S, --save-temps          Do not delete temporary files\n"
 			"    -D, --define SYMBOL[=VAL],...  Define symbols for the preprocessor\n"
 			"    -I, --include DIR,...          Set directories for the preprocessor \n"
 			"                                   to search for #includes\n"
@@ -715,6 +723,8 @@ DecodeArgs (int argc, char **argv)
 	options.code.cpp = true;
 	options.code.progsversion = PROG_VERSION;
 	options.warnings.uninited_variable = true;
+
+	options.save_temps = false;
 	options.verbosity = 0;
 
 	sourcedir = ".";
@@ -728,6 +738,7 @@ DecodeArgs (int argc, char **argv)
 										 "h"	// help
 										 "V"	// version
 #ifdef USE_CPP
+										 "S"	// save temps
 										 "D:"	// define
 										 "I:"	// set includes
 										 "U:"	// undefine
@@ -751,7 +762,7 @@ DecodeArgs (int argc, char **argv)
 				options.verbosity += 1;
 				break;
 			case 'g':					// debug
-				options.code.debug = 1;
+				options.code.debug = true;
 				break;
 			case 'C':{					// code options
 					char       *opts = strdup (optarg);
@@ -831,6 +842,9 @@ DecodeArgs (int argc, char **argv)
 				}
 				break;
 #ifdef USE_CPP
+			case 'S':					// save temps
+				options.save_temps = true;
+				break;
 			case 'D':{					// defines for cpp
 					char       *opts = strdup (optarg);
 					char       *temp = strtok (opts, ",");
@@ -946,7 +960,7 @@ main (int argc, char **argv)
 #ifdef USE_CPP
 # ifndef _WIN32
 		pid_t       pid;
-		int         tempfd;
+		int         tempfd = 0;
 # endif
 		char       *temp1;
 		char       *temp2 = strrchr (argv[0], PATH_SEPARATOR);
@@ -968,35 +982,52 @@ main (int argc, char **argv)
 
 #ifdef USE_CPP
 		if (options.code.cpp) {
-			temp1 = getenv ("TMPDIR");
-			if ((!temp1) || (!temp1[0])) {
-				temp1 = getenv ("TEMP");
+			if (options.save_temps) {
+				char	*basename = strdup (filename);
+				char	*temp;
+			
+				temp = strrchr (basename, '.');
+			
+				if (temp)
+					*temp = '\0';	// ignore the rest of the string
+
+				snprintf (tempname, sizeof (tempname), "%s.p", basename);
+				free (basename);
+			} else {
+				temp1 = getenv ("TMPDIR");
 				if ((!temp1) || (!temp1[0])) {
-					temp1 = "/tmp";
+					temp1 = getenv ("TEMP");
+					if ((!temp1) || (!temp1[0])) {
+						temp1 = "/tmp";
+					}
 				}
+
+				snprintf (tempname, sizeof (tempname), "%s%c%sXXXXXX", temp1,
+						  PATH_SEPARATOR, temp2 ? temp2 + 1 : argv[0]);
 			}
 
-			snprintf (tempname, sizeof (tempname), "%s%c%sXXXXXX", temp1,
-					  PATH_SEPARATOR, temp2 ? temp2 + 1 : argv[0]);
-
 # ifdef _WIN32
-
-			mktemp (tempname);
+			if (!options.save_temps)
+				mktemp (tempname);
 			yyin = fopen (tempname, "wt");
 			fclose (yyin);
 
 			{
-				int         status = spawnvp (_P_WAIT, "cpp", cpp_argv);
+				int		status = spawnvp (_P_WAIT, "cpp", cpp_argv);
 
 				if (status) {
-					fprintf (stderr, "cpp returned error code %d", status);
+					fprintf (stderr, "%s: cpp returned error code %d\n",
+							filename,
+							status);
 					exit (1);
 				}
 			}
 
 			yyin = fopen (tempname, "rt");
 # else
-			tempfd = mkstemp (tempname);
+			if (!options.save_temps)
+				tempfd = mkstemp (tempname);
+
 			if ((pid = fork ()) == -1) {
 				perror ("fork");
 				return 1;
@@ -1008,7 +1039,7 @@ main (int argc, char **argv)
 				cpp_argv[cpp_argc++] = filename;
 
 				execvp ("cpp", cpp_argv);
-				printf ("Child shouldn't reach here\n");
+				fprintf (stderr, "Child shouldn't reach here\n");
 				exit (1);
 			} else {
 				// give parental guidance (or bury it in the back yard)
@@ -1021,23 +1052,27 @@ main (int argc, char **argv)
 						perror ("wait");
 						exit (1);
 					}
-					printf ("*** Uhh, dude, the wrong child (%d) just died.\n"
-							"*** Don't ask me, I can't figure it out either.\n",
+					fprintf (stderr, "%s: The wrong child (%d) died. Don't ask me, I don't know either.\n",
+							this_program,
 							rc);
 					exit (1);
 				}
 				if (WIFEXITED (status)) {
 					if (WEXITSTATUS (status)) {
-						printf ("cpp returned error code %d",
+						fprintf (stderr, "%s: cpp returned error code %d\n",
+								filename,
 								WEXITSTATUS (status));
 						exit (1);
 					}
 				} else {
-					printf ("cpp returned prematurely.");
+					fprintf (stderr, "%s: cpp returned prematurely.\n", filename);
 					exit (1);
 				}
 			}
-			yyin = fdopen (tempfd, "r+t");
+			if (options.save_temps)
+				yyin = fopen (tempname, "rt");
+			else
+				yyin = fdopen (tempfd, "r+t");
 # endif
 		} else {
 			yyin = fopen (filename, "rt");
@@ -1051,7 +1086,7 @@ main (int argc, char **argv)
 		error = yyparse () || pr_error_count;
 		fclose (yyin);
 #ifdef USE_CPP
-		if (options.code.cpp) {
+		if (options.code.cpp && (!options.save_temps)) {
 			if (unlink (tempname)) {
 				perror ("unlink");
 				exit (1);

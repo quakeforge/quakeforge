@@ -593,6 +593,7 @@ typedef struct {
 	warn_options_t	warnings;		// Warning options
 
 	int				verbosity;		// 0=silent, goes up to 2 currently
+	qboolean		save_temps;		// save temporary files
 } options_t;
 
 extern options_t options;
