@@ -16,11 +16,6 @@
 #include "gui/InputLine.h"
 #include "gui/Rect.h"
 
-//FIXME shouldn't need these
-entity self;
-.float nextthink;
-.float frame;
-.void () think;
 float () random = #7;
 
 string [6] dot_name = {
@@ -512,4 +507,8 @@ void () menu_init =
 	Menu_TopMenu ("main");
 	Menu_SetQuit (quit);
 
+};
+
+void () menu_draw_hud =
+{
 };
