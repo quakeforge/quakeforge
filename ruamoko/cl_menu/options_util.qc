@@ -41,35 +41,6 @@ opt_cursor =
 };
 
 /*
-	draw_perc_bar
-
-	Draws a percentage bar by giving its size (in chars),
-	x and y position and the percentage from 0 to 100
-*/
-void (integer x, integer y, integer size, integer perc_val)
-draw_perc_bar =
-{
-	local float		perc;
-	local integer	i;
-
-	if (perc_val > 100) {
-		perc_val = 100;
-	} else if (perc_val < 0) {
-		perc_val = 0;
-	}
-
-	perc = (float) perc_val / (100 / (float) size);
-
-	/* 128, 129, 130 and 131 are special characters for scrollbars */
-	Draw_Character (x, y, 128);								// draw beginning
-	for (i = 0; i <= size; i++) {
-		Draw_Character (x + ((i + 1) * 8), y, 129);			// draw the borders
-	}
-	Draw_Character (x + ((i + 1) * 8), y, 130);				// draw last char
-    Draw_Character (x + (((integer) perc + 1) * 8), y, 131);	// draw slider
-};
-
-/*
 	draw_item
  
 	Draws a item with a specific spacing between label and value to

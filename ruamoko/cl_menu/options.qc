@@ -39,6 +39,9 @@
 #include "gui/Rect.h"
 #include "gui/Slider.h"
 
+Slider gamma_slider;
+Slider viewsize_slider;
+Slider mouse_amp_slider;
 Slider volume_slider;
 Slider bgmvolume_slider;
 
@@ -110,12 +113,15 @@ CB_video_options =
 			val = min_max_cnt (MIN_GAMMA, MAX_GAMMA, GAMMA_STEP, val, 
 							   (key == QFK_RIGHT) && (key != QFK_LEFT));
 			cvar_set("vid_gamma", ftos (val));
+			[gamma_slider setIndex:to_percentage (MIN_GAMMA, MAX_GAMMA, val)];
 			break;
 		case "viewsize":
 			val = cvar ("viewsize");
 			val = min_max_cnt (MIN_VIEWSIZE, MAX_VIEWSIZE, VIEWSIZE_STEP, val, 
 							   (key == QFK_RIGHT) && (key != QFK_LEFT));
 			cvar_set ("viewsize", ftos (val));
+			[viewsize_slider setIndex:to_percentage (MIN_VIEWSIZE,
+													 MAX_VIEWSIZE, val)];
 			break;
 	}
 	return 0;
@@ -146,16 +152,14 @@ DRAW_video_options =
 	bar_pad = y + 90;
 
 	Draw_String (x + 70, bar_pad + 10, "Gamma:");
-	draw_perc_bar (x + 118,  bar_pad + 10, 15, 
-				   to_percentage (MIN_GAMMA, MAX_GAMMA,
-				   				  cvar ("vid_gamma")));
+	[gamma_slider setBasePos:x y:y];
+	[gamma_slider draw];
 	Draw_String (x + 118 + (15 + 4)*8 , bar_pad + 10,
 				 ftos (cvar ("vid_gamma")));
 
 	Draw_String (x + 70, bar_pad + 20, "Viewsize:");
-	draw_perc_bar  (x + 142,  bar_pad + 20, 12,
-					to_percentage (MIN_VIEWSIZE, MAX_VIEWSIZE,
-								   cvar ("viewsize")));
+	[viewsize_slider setBasePos:x y:y];
+	[viewsize_slider draw];
 	Draw_String (x + 142 + (12 + 4) * 8 , bar_pad + 20,
 				 ftos (cvar ("viewsize")));
 
@@ -172,10 +176,23 @@ void ()
 MENU_video_options =
 {
 	local integer	bar_pad;
+	local Rect rect;
 
 	Menu_Begin (54, 50, "Video");
 	Menu_FadeScreen (1);
 	Menu_Draw (DRAW_video_options);
+
+	rect = [[Rect alloc] initWithComponents:126 :100 :17 * 8 :8];
+	gamma_slider = [[Slider alloc] initWithBounds:rect size:100];
+	[gamma_slider setIndex: to_percentage (MIN_GAMMA, MAX_GAMMA,
+											   cvar("vid_gamma"))];
+	rect.origin.x = 150;
+	rect.origin.y += 10;
+	rect.size.width = 14 * 8;
+	viewsize_slider = [[Slider alloc] initWithBounds:rect size:100];
+	[viewsize_slider setIndex: to_percentage (MIN_VIEWSIZE, MAX_VIEWSIZE,
+											   cvar("viewsize"))];
+	[rect dealloc];
 	
 	Menu_Item (54, 60, "fullscreen", CB_video_options, 0);
 	Menu_Item (54, 70, "crosshair", CB_video_options, 0);
@@ -267,7 +284,7 @@ MENU_audio_options =
 	Menu_FadeScreen (1);
 	Menu_Draw (DRAW_audio_options);
 
-	rect = [[Rect alloc] initWithComponents:126 :60 :15 * 8 :8];
+	rect = [[Rect alloc] initWithComponents:134 :60 :17 * 8 :8];
 	volume_slider = [[Slider alloc] initWithBounds:rect size:100];
 	[volume_slider setIndex: to_percentage (MIN_VOLUME, MAX_VOLUME,
 											cvar("volume"))];
@@ -343,6 +360,8 @@ CB_control_options =
 			val = min_max_cnt(MIN_MOUSE_AMP, MAX_MOUSE_AMP, MOUSE_AMP_STEP, val,
 				(key == QFK_RIGHT) && (key != QFK_LEFT));
 			cvar_set("in_mouse_amp", ftos(val));
+			[mouse_amp_slider setIndex:to_percentage (MIN_MOUSE_AMP,
+													  MAX_MOUSE_AMP, val)];
 			break;
 	}
 	return 0;
@@ -373,9 +392,8 @@ DRAW_control_options =
 	bar_pad = y + 90;
 
 	Draw_String (x + 70, bar_pad + 10, "Mouse amp:");
-	draw_perc_bar (x + 150, bar_pad + 10, 12,
-				   to_percentage (MIN_MOUSE_AMP, MAX_MOUSE_AMP,
-								  cvar("in_mouse_amp")));
+	[mouse_amp_slider setBasePos:x y:y];
+	[mouse_amp_slider draw];
 	Draw_String (x + 150 + (12 + 4) * 8 , bar_pad + 10,
 				 ftos (cvar ("in_mouse_amp")));
 
@@ -404,6 +422,9 @@ MENU_control_options =
 	Menu_CenterPic (160, 4, "gfx/p_option.lmp");
 
 	Menu_Draw (DRAW_control_options);
+	mouse_amp_slider = [[Slider alloc] initWithBounds:[[Rect alloc] initWithComponents:158 :100 :14 * 8 :8] size:100];
+	[mouse_amp_slider setIndex: to_percentage (MIN_MOUSE_AMP, MAX_MOUSE_AMP,
+											   cvar("in_mouse_amp"))];
 
 	MENU_control_binding ();
 
