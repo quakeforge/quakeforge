@@ -1686,7 +1686,6 @@ Host_Init (void)
 
 	S_Init ();
 
-	CL_SetState (ca_disconnected);
 	Sbar_Init ();
 	CL_Skin_Init ();
 	CL_Init ();
@@ -1698,14 +1697,12 @@ Host_Init (void)
 
 	S_Init ();
 
-	CL_SetState (ca_disconnected);
 	CDAudio_Init ();
 	Sbar_Init ();
 	CL_Skin_Init ();
 	CL_Init ();
 	IN_Init ();
 #endif
-	CL_SetState (ca_disconnected);
 
 	Cbuf_InsertText ("exec quake.rc\n");
 	Cmd_Exec_File (fs_usercfg->string);
@@ -1723,6 +1720,8 @@ Host_Init (void)
 	host_hunklevel = Hunk_LowMark ();
 
 	host_initialized = true;
+
+	CL_SetState (ca_disconnected);
 
 	Con_Printf ("\nClient version %s (build %04d)\n\n", VERSION,
 				build_number ());
