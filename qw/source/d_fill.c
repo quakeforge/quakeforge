@@ -33,9 +33,6 @@
 #include "d_iface.h"
 
 
-/*
-	D_FillRect
-*/
 void
 D_FillRect (vrect_t *rect, int color)
 {

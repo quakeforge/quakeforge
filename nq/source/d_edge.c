@@ -46,12 +46,7 @@ extern void R_TransformFrustum (void);
 
 vec3_t      transformed_modelorg;
 
-/*
-==============
-D_DrawPoly
 
-==============
-*/
 void
 D_DrawPoly (void)
 {
@@ -59,11 +54,6 @@ D_DrawPoly (void)
 }
 
 
-/*
-=============
-D_MipLevelForScale
-=============
-*/
 int
 D_MipLevelForScale (float scale)
 {
@@ -85,14 +75,7 @@ D_MipLevelForScale (float scale)
 }
 
 
-/*
-==============
-D_DrawSolidSurface
-==============
-*/
-
 // FIXME: clean this up
-
 void
 D_DrawSolidSurface (surf_t *surf, int color)
 {
@@ -125,11 +108,6 @@ D_DrawSolidSurface (surf_t *surf, int color)
 }
 
 
-/*
-==============
-D_CalcGradients
-==============
-*/
 void
 D_CalcGradients (msurface_t *pface)
 {
@@ -169,19 +147,12 @@ D_CalcGradients (msurface_t *pface)
 		((pface->texturemins[1] << 16) >> miplevel)
 		+ pface->texinfo->vecs[1][3] * t;
 
-//
-// -1 (-epsilon) so we never wander off the edge of the texture
-//
+	// -1 (-epsilon) so we never wander off the edge of the texture
 	bbextents = ((pface->extents[0] << 16) >> miplevel) - 1;
 	bbextentt = ((pface->extents[1] << 16) >> miplevel) - 1;
 }
 
 
-/*
-==============
-D_DrawSurfaces
-==============
-*/
 void
 D_DrawSurfaces (void)
 {
@@ -248,17 +219,13 @@ D_DrawSurfaces (void)
 					// FIXME: we don't want to do all this for every polygon!
 					// TODO: store once at start of frame
 					currententity = s->entity;	// FIXME: make this passed in 
-												// 
-					// 
-					// to
-					// R_RotateBmodel ()
+												// to R_RotateBmodel ()
 					VectorSubtract (r_origin, currententity->origin,
 									local_modelorg);
 					TransformVector (local_modelorg, transformed_modelorg);
 
 					R_RotateBmodel ();	// FIXME: don't mess with the
-					// frustum,
-					// make entity passed in
+										// frustum, make entity passed in
 				}
 
 				D_CalcGradients (pface);
@@ -266,11 +233,10 @@ D_DrawSurfaces (void)
 				D_DrawZSpans (s->spans);
 
 				if (s->insubmodel) {
-					// 
 					// restore the old drawing state
 					// FIXME: we don't want to do this every time!
 					// TODO: speed up
-					// 
+
 					currententity = &cl_entities[0];
 					VectorCopy (world_transformed_modelorg,
 								transformed_modelorg);
@@ -285,17 +251,13 @@ D_DrawSurfaces (void)
 					// FIXME: we don't want to do all this for every polygon!
 					// TODO: store once at start of frame
 					currententity = s->entity;	// FIXME: make this passed in 
-												// 
-					// 
-					// to
-					// R_RotateBmodel ()
+												// to R_RotateBmodel ()
 					VectorSubtract (r_origin, currententity->origin,
 									local_modelorg);
 					TransformVector (local_modelorg, transformed_modelorg);
 
 					R_RotateBmodel ();	// FIXME: don't mess with the
-					// frustum,
-					// make entity passed in
+										// frustum, make entity passed in
 				}
 
 				pface = s->data;
@@ -315,11 +277,10 @@ D_DrawSurfaces (void)
 				D_DrawZSpans (s->spans);
 
 				if (s->insubmodel) {
-					// 
 					// restore the old drawing state
 					// FIXME: we don't want to do this every time!
 					// TODO: speed up
-					// 
+
 					currententity = &cl_entities[0];
 					VectorCopy (world_transformed_modelorg,
 								transformed_modelorg);

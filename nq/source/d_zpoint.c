@@ -33,11 +33,6 @@
 #include "d_local.h"
 
 
-/*
-=====================
-D_DrawZPoint
-=====================
-*/
 void
 D_DrawZPoint (void)
 {

@@ -48,7 +48,6 @@ D_StartParticles (void)
 
 
 #ifndef USE_INTEL_ASM
-
 void
 D_DrawParticle (particle_t *pparticle)
 {
@@ -58,7 +57,7 @@ D_DrawParticle (particle_t *pparticle)
 	short      *pz;
 	int         i, izi, pix, count, u, v;
 
-// transform point
+	// transform point
 	VectorSubtract (pparticle->org, r_origin, local);
 
 	transformed[0] = DotProduct (local, r_pright);
@@ -68,8 +67,8 @@ D_DrawParticle (particle_t *pparticle)
 	if (transformed[2] < PARTICLE_Z_CLIP)
 		return;
 
-// project the point
-// FIXME: preadjust xcenter and ycenter
+	// project the point
+	// FIXME: preadjust xcenter and ycenter
 	zi = 1.0 / transformed[2];
 	u = (int) (xcenter + zi * transformed[0] + 0.5);
 	v = (int) (ycenter - zi * transformed[1] + 0.5);
@@ -91,9 +90,8 @@ D_DrawParticle (particle_t *pparticle)
 		pix = d_pix_max;
 
 	switch (pix) {
-		case 1:
+	case 1:
 		count = 1 << d_y_aspect_shift;
-
 		for (; count; count--, pz += d_zwidth, pdest += screenwidth) {
 			if (pz[0] <= izi) {
 				pz[0] = izi;
@@ -102,9 +100,8 @@ D_DrawParticle (particle_t *pparticle)
 		}
 		break;
 
-		case 2:
+	case 2:
 		count = 2 << d_y_aspect_shift;
-
 		for (; count; count--, pz += d_zwidth, pdest += screenwidth) {
 			if (pz[0] <= izi) {
 				pz[0] = izi;
@@ -118,9 +115,8 @@ D_DrawParticle (particle_t *pparticle)
 		}
 		break;
 
-		case 3:
+	case 3:
 		count = 3 << d_y_aspect_shift;
-
 		for (; count; count--, pz += d_zwidth, pdest += screenwidth) {
 			if (pz[0] <= izi) {
 				pz[0] = izi;
@@ -139,9 +135,8 @@ D_DrawParticle (particle_t *pparticle)
 		}
 		break;
 
-		case 4:
+	case 4:
 		count = 4 << d_y_aspect_shift;
-
 		for (; count; count--, pz += d_zwidth, pdest += screenwidth) {
 			if (pz[0] <= izi) {
 				pz[0] = izi;
@@ -165,9 +160,8 @@ D_DrawParticle (particle_t *pparticle)
 		}
 		break;
 
-		default:
+	default:
 		count = pix << d_y_aspect_shift;
-
 		for (; count; count--, pz += d_zwidth, pdest += screenwidth) {
 			for (i = 0; i < pix; i++) {
 				if (pz[i] <= izi) {
@@ -179,5 +173,4 @@ D_DrawParticle (particle_t *pparticle)
 		break;
 	}
 }
-
 #endif // !USE_INTEL_ASM

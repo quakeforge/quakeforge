@@ -37,13 +37,8 @@ static int  sprite_height;
 static int  minindex, maxindex;
 static sspan_t *sprite_spans;
 
-#ifndef	USE_INTEL_ASM
 
-/*
-=====================
-D_SpriteDrawSpans
-=====================
-*/
+#ifndef	USE_INTEL_ASM
 void
 D_SpriteDrawSpans (sspan_t *pspan)
 {
@@ -121,28 +116,24 @@ D_SpriteDrawSpans (sspan_t *pspan)
 				if (snext > bbextents)
 					snext = bbextents;
 				else if (snext < 8)
-					snext = 8;			// prevent round-off error on <0
-				// steps from
-				// from causing overstepping & running off the
-				// edge of the texture
+					snext = 8;			// prevent round-off error on <0 steps
+										// from causing overstepping & running
+										// off the edge of the texture
 
 				tnext = (int) (tdivz * z) + tadjust;
 				if (tnext > bbextentt)
 					tnext = bbextentt;
 				else if (tnext < 8)
 					tnext = 8;			// guard against round-off error on
-				// <0 steps
+										// <0 steps
 
 				sstep = (snext - s) >> 3;
 				tstep = (tnext - t) >> 3;
 			} else {
-				// calculate s/z, t/z, zi->fixed s and t at last pixel in
-				// span (so
-				// can't step off polygon), clamp, calculate s and t steps
-				// across
-				// span by division, biasing steps low so we don't run off
-				// the
-				// texture
+				// calculate s/z, t/z, zi->fixed s and t at last pixel in span
+				// (so can't step off polygon), clamp, calculate s and t steps
+				// across span by division, biasing steps low so we don't run
+				// off the texture
 				spancountminus1 = (float) (spancount - 1);
 				sdivz += d_sdivzstepu * spancountminus1;
 				tdivz += d_tdivzstepu * spancountminus1;
@@ -152,17 +143,16 @@ D_SpriteDrawSpans (sspan_t *pspan)
 				if (snext > bbextents)
 					snext = bbextents;
 				else if (snext < 8)
-					snext = 8;			// prevent round-off error on <0
-				// steps from
-				// from causing overstepping & running off the
-				// edge of the texture
+					snext = 8;			// prevent round-off error on <0 steps
+										// from causing overstepping & running
+										// off the edge of the texture
 
 				tnext = (int) (tdivz * z) + tadjust;
 				if (tnext > bbextentt)
 					tnext = bbextentt;
 				else if (tnext < 8)
 					tnext = 8;			// guard against round-off error on
-				// <0 steps
+										// <0 steps
 
 				if (spancount > 1) {
 					sstep = (snext - s) / (spancount - 1);
@@ -196,15 +186,9 @@ D_SpriteDrawSpans (sspan_t *pspan)
 
 	} while (pspan->count != DS_SPAN_LIST_END);
 }
-
 #endif
 
 
-/*
-=====================
-D_SpriteScanLeftEdge
-=====================
-*/
 void
 D_SpriteScanLeftEdge (void)
 {
@@ -260,11 +244,6 @@ D_SpriteScanLeftEdge (void)
 }
 
 
-/*
-=====================
-D_SpriteScanRightEdge
-=====================
-*/
 void
 D_SpriteScanRightEdge (void)
 {
@@ -340,11 +319,6 @@ D_SpriteScanRightEdge (void)
 }
 
 
-/*
-=====================
-D_SpriteCalculateGradients
-=====================
-*/
 void
 D_SpriteCalculateGradients (void)
 {
@@ -381,17 +355,12 @@ D_SpriteCalculateGradients (void)
 	tadjust = ((fixed16_t) (DotProduct (p_temp1, p_taxis) * 0x10000 + 0.5)) -
 		(-(sprite_height >> 1) << 16);
 
-// -1 (-epsilon) so we never wander off the edge of the texture
+	// -1 (-epsilon) so we never wander off the edge of the texture
 	bbextents = (cachewidth << 16) - 1;
 	bbextentt = (sprite_height << 16) - 1;
 }
 
 
-/*
-=====================
-D_DrawSprite
-=====================
-*/
 void
 D_DrawSprite (void)
 {
@@ -402,8 +371,8 @@ D_DrawSprite (void)
 
 	sprite_spans = spans;
 
-// find the top and bottom vertices, and make sure there's at least one scan to
-// draw
+	// find the top and bottom vertices, and make sure there's at least one
+	// scan to draw
 	ymin = 999999.9;
 	ymax = -999999.9;
 	pverts = r_spritedesc.pverts;
@@ -432,8 +401,8 @@ D_DrawSprite (void)
 	sprite_height = r_spritedesc.pspriteframe->height;
 	cacheblock = (byte *) & r_spritedesc.pspriteframe->pixels[0];
 
-// copy the first vertex to the last vertex, so we don't have to deal with
-// wrapping
+	// copy the first vertex to the last vertex, so we don't have to deal with
+	// wrapping
 	nump = r_spritedesc.nump;
 	pverts = r_spritedesc.pverts;
 	pverts[nump] = pverts[0];

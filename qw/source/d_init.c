@@ -53,9 +53,6 @@ extern int  d_aflatcolor;
 void        (*d_drawspans) (espan_t *pspan);
 
 
-/*
-	D_Init
-*/
 void
 D_Init (void)
 {
@@ -74,9 +71,7 @@ D_Init (void)
 	VID_InitBuffers ();
 }
 
-/*
-	D_CopyRects
-*/
+
 void
 D_CopyRects (vrect_t *prects, int transparent)
 {
@@ -92,9 +87,6 @@ D_CopyRects (vrect_t *prects, int transparent)
 }
 
 
-/*
-	D_EnableBackBufferAccess
-*/
 void
 D_EnableBackBufferAccess (void)
 {
@@ -103,9 +95,6 @@ D_EnableBackBufferAccess (void)
 }
 
 
-/*
-	D_TurnZOn
-*/
 void
 D_TurnZOn (void)
 {
@@ -113,9 +102,6 @@ D_TurnZOn (void)
 }
 
 
-/*
-	D_DisableBackBufferAccess
-*/
 void
 D_DisableBackBufferAccess (void)
 {
@@ -123,9 +109,6 @@ D_DisableBackBufferAccess (void)
 }
 
 
-/*
-	D_SetupFrame
-*/
 void
 D_SetupFrame (void)
 {
@@ -162,14 +145,9 @@ D_SetupFrame (void)
 }
 
 
-/*
-	D_UpdateRects
-*/
 void
 D_UpdateRects (vrect_t *prect)
 {
-
-// the software driver draws these directly to the vid buffer
-
+	// the software driver draws these directly to the vid buffer
 	UNUSED (prect);
 }

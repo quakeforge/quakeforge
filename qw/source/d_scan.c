@@ -95,10 +95,6 @@ D_WarpScreen (void)
 
 
 #ifndef USE_INTEL_ASM
-
-/*
-	D_DrawTurbulent8Span
-*/
 void
 D_DrawTurbulent8Span (void)
 {
@@ -116,12 +112,9 @@ D_DrawTurbulent8Span (void)
 		r_turb_t += r_turb_tstep;
 	} while (--r_turb_spancount > 0);
 }
-
 #endif // !USE_INTEL_ASM
 
-/*
-	Turbulent8
-*/
+
 void
 Turbulent8 (espan_t *pspan)
 {
@@ -205,12 +198,9 @@ Turbulent8 (espan_t *pspan)
 				r_turb_tstep = (tnext - r_turb_t) >> 4;
 			} else {
 				// calculate s/z, t/z, zi->fixed s and t at last pixel in
-				// span (so
-				// can't step off polygon), clamp, calculate s and t steps
-				// across
-				// span by division, biasing steps low so we don't run off
-				// the
-				// texture
+				// span (so can't step off polygon), clamp, calculate s and t
+				// steps across span by division, biasing steps low so we
+				// don't run off the texture
 				spancountminus1 = (float) (r_turb_spancount - 1);
 				sdivz += d_sdivzstepu * spancountminus1;
 				tdivz += d_tdivzstepu * spancountminus1;
@@ -220,10 +210,9 @@ Turbulent8 (espan_t *pspan)
 				if (snext > bbextents)
 					snext = bbextents;
 				else if (snext < 16)
-					snext = 16;			// prevent round-off error on <0
-										// steps from
-				// from causing overstepping & running off the
-				// edge of the texture
+					snext = 16;			// prevent round-off error on <0 steps
+										// from causing overstepping & running
+										// off the edge of the texture
 
 				tnext = (int) (tdivz * z) + tadjust;
 				if (tnext > bbextentt)
@@ -253,10 +242,6 @@ Turbulent8 (espan_t *pspan)
 
 
 #ifndef USE_INTEL_ASM
-
-/*
-	D_DrawSpans8
-*/
 void
 D_DrawSpans8 (espan_t *pspan)
 {
@@ -338,13 +323,10 @@ D_DrawSpans8 (espan_t *pspan)
 				sstep = (snext - s) >> 3;
 				tstep = (tnext - t) >> 3;
 			} else {
-				// calculate s/z, t/z, zi->fixed s and t at last pixel in
-				// span (so
-				// can't step off polygon), clamp, calculate s and t steps
-				// across
-				// span by division, biasing steps low so we don't run off
-				// the
-				// texture
+				// calculate s/z, t/z, zi->fixed s and t at last pixel in span
+				// (so can't step off polygon), clamp, calculate s and t steps
+				// across span by division, biasing steps low so we don't run
+				// off the texture
 				spancountminus1 = (float) (spancount - 1);
 				sdivz += d_sdivzstepu * spancountminus1;
 				tdivz += d_tdivzstepu * spancountminus1;
@@ -354,10 +336,9 @@ D_DrawSpans8 (espan_t *pspan)
 				if (snext > bbextents)
 					snext = bbextents;
 				else if (snext < 8)
-					snext = 8;			// prevent round-off error on <0
-										// steps from
-				// from causing overstepping & running off the
-				// edge of the texture
+					snext = 8;			// prevent round-off error on <0 steps
+										// from from causing overstepping &
+										// running off the edge of the texture
 
 				tnext = (int) (tdivz * z) + tadjust;
 				if (tnext > bbextentt)
@@ -385,15 +366,10 @@ D_DrawSpans8 (espan_t *pspan)
 
 	} while ((pspan = pspan->pnext) != NULL);
 }
-
 #endif
 
 
 #ifndef USE_INTEL_ASM
-
-/*
-	D_DrawZSpans
-*/
 void
 D_DrawZSpans (espan_t *pspan)
 {
@@ -443,5 +419,4 @@ D_DrawZSpans (espan_t *pspan)
 
 	} while ((pspan = pspan->pnext) != NULL);
 }
-
 #endif
