@@ -114,10 +114,11 @@ gl_max_size_f (cvar_t *var)
 
 	// Check driver's max texture size
 	qfglGetIntegerv (GL_MAX_TEXTURE_SIZE, &texSize);
+
 	if (var->int_val < 1)
 		Cvar_SetValue (var, texSize);
 	else
-		Cvar_SetValue (var, bound (1, var->int_val, texSize));	
+		Cvar_SetValue (var, bound (1, var->int_val, texSize));
 }
 
 static void
@@ -146,7 +147,7 @@ gl_tessellate_f (cvar_t * var)
 		tess = 0;
 		if (var)
 			Con_Printf ("TruForm (GL_ATI_pn_triangles) is not supported by "
-						"your hardware and/or drivers.");
+						"your hardware and/or drivers.\n");
 	}
 }
 
