@@ -67,6 +67,8 @@ functable_t functable[] = {
 	{"asin", Func_Asin, 1},
 	{"acos", Func_Acos, 1},
 	{"atan", Func_Atan, 1},
+	{"rand", Func_Rand, 2},
+	{"trunc", Func_Trunc, 1},
 	{"", 0, 0}
 };
 

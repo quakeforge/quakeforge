@@ -19,7 +19,10 @@
 
 */
 
+#define _ISOC99_SOURCE
+
 #include <math.h>
+#include <stdlib.h>
 
 #include "ops.h"
 
@@ -183,4 +186,16 @@ double
 Func_Abs (double *oplist, unsigned int numops)
 {
 	return fabs (oplist[0]);
+}
+
+double
+Func_Rand (double *oplist, unsigned int numops)
+{
+	return rand () * (oplist[1] - oplist[0]) / (RAND_MAX + 1.0) + oplist[0];
+}
+
+double
+Func_Trunc (double *oplist, unsigned int numops)
+{
+	return (double) ((long int) oplist[0]);
 }

@@ -910,17 +910,6 @@ GIB_Print_f (void)
 	Sys_Printf ("%s", GIB_Argv (1));
 }
 
-static void
-GIB_Random_f (void)
-{
-	dstring_t  *ret;
-
-	if (GIB_Argc () != 1)
-		GIB_USAGE ("");
-	else if ((ret = GIB_Return (0)))
-		dsprintf (ret, "%.10g", (double) rand () / (double) RAND_MAX);
-}
-
 void
 GIB_Builtin_Init (qboolean sandbox)
 {
@@ -963,5 +952,4 @@ GIB_Builtin_Init (qboolean sandbox)
 	GIB_Builtin_Add ("file::delete", GIB_File_Delete_f);
 	GIB_Builtin_Add ("range", GIB_Range_f);
 	GIB_Builtin_Add ("print", GIB_Print_f);
-	GIB_Builtin_Add ("random", GIB_Random_f);
 }
