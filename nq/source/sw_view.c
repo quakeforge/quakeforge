@@ -91,7 +91,7 @@ V_UpdatePalette (void)
 	if (cl.cshifts[CSHIFT_BONUS].percent < 0)
 		cl.cshifts[CSHIFT_BONUS].percent = 0;
 
-	if (!new)
+	if (!new && !vid.recalc_refdef)
 		return;
 
 	basepal = vid_basepal;
