@@ -829,7 +829,6 @@ trace_glGetIntegerv (GLenum pname, GLint * params)
 {
 	TRACE;
 	switch (pname) {
-	TRACE;
 		case GL_MAX_TEXTURE_SIZE:
 			*params = 512;
 			break;
