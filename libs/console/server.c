@@ -153,6 +153,7 @@ C_Init (void)
 		leaveok (status, TRUE);
 
 		scrollok (input, FALSE);
+		leaveok (input, FALSE);
 		nodelay (input, TRUE);
 		keypad (input, TRUE);
 
@@ -215,6 +216,7 @@ C_Print (const char *fmt, va_list args)
 		}
 		touchwin (stdscr);
 		wrefresh (output);
+		wrefresh (input);
 	} else
 #endif
 	{
