@@ -2,7 +2,7 @@
 
 void (obj_module_t [] msg) __obj_exec_class = #0;
 void (id object, integer code, string fmt, ...) obj_error = #0;
-void (id object, integer code, string fmt, ...) obj_verror = #0;//FIXME not ...
+void (id object, integer code, string fmt, ...) obj_verror = #0; // FIXME not ...
 //obj_error_handler (objc_error_handler func) obj_set_error_handler = #0;
 IMP (id receiver, SEL op) obj_msg_lookup = #0;
 IMP (id receiver, SEL op) obj_msg_lookup_super = #0;
@@ -281,7 +281,7 @@ BOOL (id object) object_is_meta_class = #0;
 
 -notImplemented:(SEL)aSel
 {
-	return [self error:"methos %s not implemented",
+	return [self error:"method %s not implemented",
 			sel_get_name(aSel)];
 }
 
