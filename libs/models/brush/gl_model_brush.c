@@ -48,12 +48,7 @@ static const char rcsid[] =
 
 #include "compat.h"
 
-int         Mod_Fullbright (byte * skin, int width, int height, char *name);
-
-
-
 const int   mod_lightmap_bytes = 3;
-
 
 void
 Mod_ProcessTexture (miptex_t *mt, texture_t *tx)

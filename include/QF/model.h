@@ -460,6 +460,8 @@ model_t	*Mod_FindName (const char *name);
 void	Mod_ProcessTexture(miptex_t *mt, texture_t *tx);
 void	Mod_LoadLighting (lump_t *l);
 int     Mod_CalcFullbright (byte *in, byte *out, int pixels);
+int     Mod_Fullbright (byte * skin, int width, int height, char *name);
+
 
 void    *Mod_LoadAliasFrame (void *pin, int *posenum, maliasframedesc_t *frame);
 void    *Mod_LoadAliasGroup (void *pin, int *posenum, maliasframedesc_t *frame);

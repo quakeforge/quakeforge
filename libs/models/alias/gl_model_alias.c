@@ -135,13 +135,11 @@ Mod_FloodFillSkin (byte * skin, int skinwidth, int skinheight)
 	}
 }
 
-int         Mod_Fullbright (byte * skin, int width, int height, char *name);
-
 void       *
 Mod_LoadSkin (byte * skin, int skinsize, int snum, int gnum, qboolean group)
 {
 	char        name[32];
-	int         fbtexnum;
+	int         fbtexnum = 0;
 
 	Mod_FloodFillSkin (skin, pheader->mdl.skinwidth, pheader->mdl.skinheight);
 	// save 8 bit texels for the player model to remap
@@ -161,9 +159,9 @@ Mod_LoadSkin (byte * skin, int skinsize, int snum, int gnum, qboolean group)
 	} else {
 		snprintf (name, sizeof (name), "fb_%s_%i", loadmodel->name, snum);
 	}
-	fbtexnum =
-		Mod_Fullbright (skin + 1, pheader->mdl.skinwidth,
-						pheader->mdl.skinheight, name);
+	if (!loadmodel->fullbright)
+		fbtexnum = Mod_Fullbright (skin + 1, pheader->mdl.skinwidth,
+								   pheader->mdl.skinheight, name);
 	if ((loadmodel->hasfullbrights = (fbtexnum))) {
 		pheader->gl_fb_texturenum[snum][gnum] = fbtexnum;
 	}
