@@ -133,7 +133,10 @@ UDP_Init (void)
 	// determine my name & address
 	gethostname (buff, MAXHOSTNAMELEN);
 	local = gethostbyname (buff);
-	myAddr = *(int *) local->h_addr_list[0];
+	if (local)
+		myAddr = *(int *) local->h_addr_list[0];
+	else
+		myAddr = 0;
 
 	// if the quake hostname isn't set, set it to the machine name
 	if (strcmp (hostname->string, "UNNAMED") == 0) {
