@@ -72,7 +72,7 @@ int Sys_TimeID (void);
 void Sys_LowFPPrecision (void);
 void Sys_HighFPPrecision (void);
 void Sys_SetFPCW (void);
-void MaskExseptions (void);
+void MaskExceptions (void);
 
 // send text to the console
 
