@@ -174,16 +174,16 @@ Resize (old_console_t *con)
 	if (width < 1) {					// video hasn't been initialized yet
 		width = 38;
 		con_linewidth = width;
-		say_team_line->width = con_linewidth - 9;
-		say_line->width = con_linewidth - 4;
+		say_team_line->width = con_linewidth - 10;
+		say_line->width = con_linewidth - 5;
 		input_line->width = con_linewidth;
 		con_totallines = CON_TEXTSIZE / con_linewidth;
 		memset (con->text, ' ', CON_TEXTSIZE);
 	} else {
 		oldwidth = con_linewidth;
 		con_linewidth = width;
-		say_team_line->width = con_linewidth - 9;
-		say_line->width = con_linewidth - 4;
+		say_team_line->width = con_linewidth - 10;
+		say_line->width = con_linewidth - 5;
 		input_line->width = con_linewidth;
 		oldtotallines = con_totallines;
 		con_totallines = CON_TEXTSIZE / con_linewidth;
@@ -318,14 +318,14 @@ C_Init (void)
 	say_line = Con_CreateInputLine (32, MAXCMDLINE, ' ');
 	say_line->complete = 0;
 	say_line->enter = C_Say;
-	say_line->width = con_linewidth - 4;
+	say_line->width = con_linewidth - 5;
 	say_line->user_data = 0;
 	say_line->draw = 0;//C_DrawInput;
 
 	say_team_line = Con_CreateInputLine (32, MAXCMDLINE, ' ');
 	say_team_line->complete = 0;
 	say_team_line->enter = C_SayTeam;
-	say_team_line->width = con_linewidth - 9;
+	say_team_line->width = con_linewidth - 10;
 	say_team_line->user_data = 0;
 	say_team_line->draw = 0;//C_DrawInput;
 
@@ -525,6 +525,7 @@ DrawNotify (void)
 	int			skip, i, v, x;
 	char	   *text, *s;
 	float		time;
+	inputline_t *il;
 
 	v = 0;
 	for (i = con->current - NUM_CON_TIMES + 1; i <= con->current; i++) {
@@ -552,21 +553,28 @@ DrawNotify (void)
 		if (chat_team) {
 			Draw_String (8, v, "say_team:");
 			skip = 11;
-			text = say_team_line->lines[say_team_line->edit_line]
-					 + say_team_line->scroll;
+			il = say_team_line;
 		} else {
 			Draw_String (8, v, "say:");
 			skip = 5;
-			text = say_line->lines[say_line->edit_line]
-					 + say_line->scroll;
+			il = say_line;
 		}
+		text = il->lines[il->edit_line] + il->scroll;
 
 		s = text;
 		x = 0;
-		Draw_String (skip << 3, v, s);
-		Draw_Character ((strlen(s) + skip) << 3, v,
+		if (il->scroll) {
+			Draw_Character (skip << 3, v, '<' | 0x80);
+			Draw_nString ((skip + 1) << 3, v, s + 1, con_linewidth - skip - 2);
+		} else {
+			Draw_nString (skip << 3, v, s, con_linewidth - skip - 1);
+		}
+		i = il->linepos - il->scroll + skip;
+		Draw_Character (i << 3, v,
 						10 + ((int) (*con_data.realtime
 									 * con_cursorspeed) & 1));
+		if (strlen (s) - il->scroll + skip > con_linewidth - 1)
+			Draw_Character ((con_linewidth - 1) << 3, v, '>' | 0x80);
 		v += 8;
 	}
 
