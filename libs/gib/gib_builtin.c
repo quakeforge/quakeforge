@@ -551,7 +551,7 @@ GIB_Regex_Match_f (void)
 							REG_EXTENDED |
 							GIB_Regex_Translate_Options (GIB_Argv (3)))))
 		GIB_Error ("regex", "%s: %s", GIB_Argv (0), GIB_Regex_Error ());
-	else if (regexec (reg, GIB_Argv (1), 0, 0, 0))
+	else if (regexec (reg, GIB_Argv (1), 0, 0, GIB_Regex_Translate_Runtime_Options (GIB_Argv (3))))
 		GIB_Return ("0");
 	else
 		GIB_Return ("1");
@@ -584,7 +584,7 @@ GIB_Regex_Replace_f (void)
 			   && match[0].rm_eo)
 			ofs +=
 				GIB_Regex_Apply_Match (match, GIB_Argd (1), ofs, GIB_Argv (4));
-	else if (!regexec (reg, GIB_Argv (1), 10, match, 0) && match[0].rm_eo)
+	else if (!regexec (reg, GIB_Argv (1), 10, match, GIB_Regex_Translate_Runtime_Options (GIB_Argv (3))) && match[0].rm_eo)
 		GIB_Regex_Apply_Match (match, GIB_Argd (1), 0, GIB_Argv (4));
 	GIB_Return (GIB_Argv (1));
 }
@@ -610,7 +610,7 @@ GIB_Regex_Extract_f (void)
 							REG_EXTENDED |
 							GIB_Regex_Translate_Options (GIB_Argv (3)))))
 		GIB_Error ("regex", "%s: %s", GIB_Argv (0), GIB_Regex_Error ());
-	else if (!regexec (reg, GIB_Argv (1), 32, match, 0) && match[0].rm_eo) {
+	else if (!regexec (reg, GIB_Argv (1), 32, match, GIB_Regex_Translate_Runtime_Options (GIB_Argv (3))) && match[0].rm_eo) {
 		dsprintf (GIB_Return (0), "%lu", (unsigned long) match[0].rm_eo);
 		for (i = 0; i < 32; i++) {
 			if (match[i].rm_so != -1) {
@@ -659,6 +659,58 @@ GIB_Text_Brown_f (void)
 
 		for (i = 0; i < dstr->size-1; i++)
 			str[i] = str[i] | 0x80;
+	}
+}
+
+/*
+static void
+GIB_Text_To_Gold_f (void)
+{
+	if (GIB_Argc () != 2)
+		GIB_USAGE ("text");
+	else if (GIB_CanReturn ()) {
+		dstring_t *dstr;
+		char *str;
+
+		dstr = GIB_Return (0);
+		dstring_copystr (dstr, GIB_Argv(1));
+
+		for (str = dstr->str; *str; str++) {
+			switch (*str) {
+*/
+
+static void
+GIB_Text_To_Decimal_f (void)
+{
+	if (GIB_Argc () != 2)
+		GIB_USAGE ("text");
+	else if (GIB_CanReturn ()) {
+		char *str;
+
+		for (str = GIB_Argv(1); *str; str++)
+			dsprintf (GIB_Return (0), "%i", (int) *str);
+	}
+}
+
+static void
+GIB_Text_From_Decimal_f (void)
+{
+	if (GIB_Argc () < 2)
+		GIB_USAGE ("num1 [...]");
+	else if (GIB_CanReturn ()) {
+		unsigned int i;
+		dstring_t *dstr;
+		char *str;
+
+		dstr = GIB_Return (0);
+		dstr->size = GIB_Argc();
+		dstring_adjust (dstr);
+
+		str = dstr->str;
+
+		for (i = 1; i < GIB_Argc(); i++, str++)
+			*str = (char) atoi (GIB_Argv(i));
+		*str = 0;
 	}
 }
 
@@ -996,8 +1048,10 @@ GIB_Builtin_Init (qboolean sandbox)
 	GIB_Builtin_Add ("regex::match", GIB_Regex_Match_f);
 	GIB_Builtin_Add ("regex::replace", GIB_Regex_Replace_f);
 	GIB_Builtin_Add ("regex::extract", GIB_Regex_Extract_f);
-	GIB_Builtin_Add ("text::white", GIB_Text_White_f);
-	GIB_Builtin_Add ("text::brown", GIB_Text_Brown_f);
+	GIB_Builtin_Add ("text::toWhite", GIB_Text_White_f);
+	GIB_Builtin_Add ("text::toBrown", GIB_Text_Brown_f);
+	GIB_Builtin_Add ("text::toDecimal", GIB_Text_To_Decimal_f);
+	GIB_Builtin_Add ("text::fromDecimal", GIB_Text_From_Decimal_f);
 	GIB_Builtin_Add ("thread::create", GIB_Thread_Create_f);
 	GIB_Builtin_Add ("thread::kill", GIB_Thread_Kill_f);
 	GIB_Builtin_Add ("thread::getList", GIB_Thread_List_f);

@@ -42,4 +42,5 @@ void GIB_Regex_Init (void);
 regex_t *GIB_Regex_Compile (const char *regex, int cflags);
 const char *GIB_Regex_Error (void);
 int GIB_Regex_Translate_Options (const char *opstr);
+int GIB_Regex_Translate_Runtime_Options (const char *opstr);
 unsigned int GIB_Regex_Apply_Match (regmatch_t match[10], dstring_t *dstr, unsigned int ofs, const char *replace);
