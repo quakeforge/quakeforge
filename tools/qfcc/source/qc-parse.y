@@ -36,6 +36,7 @@ typedef struct {
 	char	*string_val;
 	float	vector_val[3];
 	float	quaternion_val[4];
+	estatement_t *statement;
 }
 
 %left	OR AND
@@ -56,7 +57,8 @@ typedef struct {
 
 %type	<type>	type
 %type	<def>	param param_list def_item def_list def_name
-%type	<expr>	const expr arg_list
+%type	<expr>	const expr arg_list opt_initializer opt_definition
+%type	<statement>	statement statements statement_block
 
 %expect 1
 
@@ -99,19 +101,14 @@ type
 
 def_list
 	: def_list ',' def_item
-		{
-			if ($3->next) {
-				$$ = $1;
-			} else {
-				$3->next = $1;
-				$$ = $3;
-			}
-		}
 	| def_item
 	;
 
 def_item
-	: def_name opt_initializer { $$ = $1; }
+	: def_name opt_initializer
+		{
+			$$ = $1;
+		}
 	| '('
 		{
 			$<scope>$.scope = pr_scope;
@@ -206,20 +203,41 @@ param
 
 opt_initializer
 	: /*empty*/
+		{
+			$$ = 0;
+		}
 	| '=' const
+		{
+			$$ = $2;
+		}
 	;
 
 opt_definition
 	: /*empty*/
+		{
+			$$ = 0;
+		}
 	| '=' '#' const
 		{
-			if ($3->type != ex_int && $3->type != ex_float)
+			if ($3->type != ex_int && $3->type != ex_float) {
 				yyerror ("invalid constant for = #");
-			else {
+				$$ = 0;
+			} else {
+				$$ = $3;
 			}
 		}
 	| '=' begin_function statement_block end_function
+		{
+			$$ = new_expr ();
+			$$->type = ex_statement;
+			$$->e.statement = $3;
+		}
 	| '=' '[' expr ',' expr ']' begin_function statement_block end_function
+		{
+			$$ = new_expr ();
+			$$->type = ex_statement;
+			$$->e.statement = $8;
+		}
 	;
 
 begin_function
@@ -238,56 +256,73 @@ end_function
 
 statement_block
 	: '{' statements '}'
+		{
+			$$ = $2;
+		}
 	;
 
 statements
 	: /*empty*/
+		{
+			$$ = 0;
+		}
 	| statements statement
+		{
+/*			if ($1) {
+				estatement_t *s = $1;
+				while (s->next)
+					s = s->next;
+				s->next = $2;
+				$$ = $1;
+			} else { 
+				$$ = $2;
+			}*/
+		}
 	;
 
 statement
-	: ';'
-	| statement_block
-	| RETURN expr ';'
-	| RETURN ';'
-	| WHILE '(' expr ')' statement
-	| DO statement WHILE '(' expr ')' ';'
-	| LOCAL type def_list ';'
-	| IF '(' expr ')' statement
-	| IF '(' expr ')' statement ELSE statement
-	| FOR '(' expr ';' expr ';' expr ')' statement
+	: ';' {}
+	| statement_block { $$ = $1; }
+	| RETURN expr ';' {}
+	| RETURN ';' {}
+	| WHILE '(' expr ')' statement {}
+	| DO statement WHILE '(' expr ')' ';' {}
+	| LOCAL type def_list ';' {}
+	| IF '(' expr ')' statement {}
+	| IF '(' expr ')' statement ELSE statement {}
+	| FOR '(' expr ';' expr ';' expr ')' statement {}
 	| expr ';' {}
 	;
 
 expr
-	: expr AND expr
-	| expr OR expr
-	| expr '=' expr
-	| expr EQ expr
-	| expr NE expr
-	| expr LE expr
-	| expr GE expr
-	| expr LT expr
-	| expr GT expr
-	| expr '+' expr
-	| expr '-' expr
-	| expr '*' expr
-	| expr '/' expr
-	| expr '&' expr
-	| expr '|' expr
-	| expr '.' expr
+	: expr AND expr	{ $$ = binary_expr (AND, $1, $3); }
+	| expr OR expr	{ $$ = binary_expr (OR,  $1, $3); }
+	| expr '=' expr	{ $$ = binary_expr ('.', $1, $3); }
+	| expr EQ expr	{ $$ = binary_expr (EQ,  $1, $3); }
+	| expr NE expr	{ $$ = binary_expr (NE,  $1, $3); }
+	| expr LE expr	{ $$ = binary_expr (LE,  $1, $3); }
+	| expr GE expr	{ $$ = binary_expr (GE,  $1, $3); }
+	| expr LT expr	{ $$ = binary_expr (LT,  $1, $3); }
+	| expr GT expr	{ $$ = binary_expr (GT,  $1, $3); }
+	| expr '+' expr	{ $$ = binary_expr ('+', $1, $3); }
+	| expr '-' expr	{ $$ = binary_expr ('-', $1, $3); }
+	| expr '*' expr	{ $$ = binary_expr ('*', $1, $3); }
+	| expr '/' expr	{ $$ = binary_expr ('/', $1, $3); }
+	| expr '&' expr	{ $$ = binary_expr ('&', $1, $3); }
+	| expr '|' expr	{ $$ = binary_expr ('!', $1, $3); }
+	| expr '.' expr	{ $$ = binary_expr ('.', $1, $3); }
 	| expr '(' arg_list ')'
 	| expr '(' ')'
-	| '-' expr {}
-	| '!' expr {}
+	| '-' expr		{ $$ = unary_expr ('-', $2); }
+	| '!' expr		{ $$ = unary_expr ('!', $2); }
 	| NAME
 		{
 			$$ = new_expr ();
 			$$->type = ex_def;
 			$$->e.def = PR_GetDef (NULL, $1, pr_scope, false);
 		}
-	| const
-	| '(' expr ')' { $$ = $2; }
+	| const			{ $$ = $1; }
+	| '(' expr ')'	{ $$ = $2; }
 	;
 
 arg_list
