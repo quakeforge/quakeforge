@@ -1689,8 +1689,7 @@ function_expr (expr_t *e1, expr_t *e2)
 	for (i = 0; i < arg_expr_count - 1; i++) {
 		append_expr (call, assign_expr (arg_exprs[i][1], arg_exprs[i][0]));
 		e = arg_exprs[i][1];
-		if (e->type == ex_expr && e->e.expr.op == 'b')
-			inc_users (e);
+		inc_users (e);
 	}
 	if (arg_expr_count) {
 		e = new_bind_expr (arg_exprs[arg_expr_count - 1][0],
