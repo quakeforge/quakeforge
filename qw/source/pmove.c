@@ -137,7 +137,7 @@ PM_FlyMove (void)
 
 		if (trace.startsolid || trace.allsolid) {	// entity is trapped in
 													// another solid
-			VectorCopy (vec3_origin, pmove.velocity);
+			VectorZero (pmove.velocity);
 			return 3;
 		}
 
@@ -164,7 +164,7 @@ PM_FlyMove (void)
 
 		// cliped to another plane
 		if (numplanes >= MAX_CLIP_PLANES) {	// this shouldn't really happen
-			VectorCopy (vec3_origin, pmove.velocity);
+			VectorZero (pmove.velocity);
 			break;
 		}
 
@@ -187,7 +187,7 @@ PM_FlyMove (void)
 		} else {						// go along the crease
 			if (numplanes != 2) {
 //				Con_Printf ("clip velocity, numplanes == %i\n",numplanes);
-				VectorCopy (vec3_origin, pmove.velocity);
+				VectorZero (pmove.velocity);
 				break;
 			}
 			CrossProduct (planes[0], planes[1], dir);
@@ -198,7 +198,7 @@ PM_FlyMove (void)
 		// if original velocity is against the original velocity, stop dead
 		// to avoid tiny occilations in sloping corners
 		if (DotProduct (pmove.velocity, primal_velocity) <= 0) {
-			VectorCopy (vec3_origin, pmove.velocity);
+			VectorZero (pmove.velocity);
 			break;
 		}
 	}
@@ -351,13 +351,14 @@ PM_Friction (void)
 
 	vel = pmove.velocity;
 
-	speed = sqrt (vel[0] * vel[0] + vel[1] * vel[1] + vel[2] * vel[2]);
+	speed = DotProduct (vel, vel);
 	if (speed < 1) {
 		vel[0] = 0;
 		vel[1] = 0;
 		return;
 	}
 
+	speed = sqrt (speed);
 	friction = movevars.friction;
 
 	// if the leading edge is over a dropoff, increase friction
@@ -494,7 +495,7 @@ PM_AirMove (void)
 {
 	float       fmove, smove, wishspeed;
 	int         i;
-	vec3_t      original, wishdir, wishvel;
+	vec3_t      wishdir, wishvel;
 
 	fmove = pmove.cmd.forwardmove;
 	smove = pmove.cmd.sidemove;
@@ -533,12 +534,15 @@ PM_AirMove (void)
 		// add gravity
 		pmove.velocity[2] -= movevars.entgravity * movevars.gravity *
 			frametime;
-
+#if 0
+		PM_FlyMove ();
+#else
 		if (!PM_FlyMove ()) {
 			// the move didn't get blocked
 			PM_CategorizePosition ();
 			if (onground != -1)			// but we're on ground now
 			{
+				vec3_t      original;
 				// This is a hack to fix the jumping bug
 				VectorCopy (pmove.origin, original);
 				// Calculate correct velocity
@@ -550,6 +554,7 @@ PM_AirMove (void)
 				VectorCopy (original, pmove.origin);
 			}
 		}
+#endif
 	}
 }
 
@@ -735,10 +740,11 @@ SpectatorMove (void)
 	vec3_t      wishdir, wishvel;
 
 	// friction
-	speed = Length (pmove.velocity);
+	speed = DotProduct (pmove.velocity, pmove.velocity);
 	if (speed < 1) {
-		VectorCopy (vec3_origin, pmove.velocity)
+		VectorZero (pmove.velocity)
 	} else {
+		speed = sqrt (speed);
 		drop = 0;
 
 		friction = movevars.friction * 1.5;	// extra friction

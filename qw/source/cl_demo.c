@@ -207,9 +207,8 @@ CL_GetDemoMessage (void)
 			cls.td_startframe = host_framecount;
 		}
 		realtime = demotime;			// warp
-	} else if (!cl.paused && cls.state >= ca_onserver) {	// always grab
-															// until fully
-															// connected
+	} else if (!cl.paused && cls.state >= ca_onserver) {
+		// always grab until fully connected
 		if (realtime + 1.0 < demotime) {
 			// too far back
 			realtime = demotime - 1.0;
@@ -753,6 +752,7 @@ CL_PlayDemo_f (void)
 	CL_SetState (ca_demostart);
 	Netchan_Setup (&cls.netchan, net_from, 0);
 	realtime = 0;
+	demotime_cached = 0;
 }
 
 void
