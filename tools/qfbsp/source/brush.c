@@ -391,7 +391,7 @@ CreateBrushFaces (void)
 
 		for (j = 0; j < w->numpoints; j++) {
 			for (k = 0; k < 3; k++) {
-				r = (int) (w->points[j][k] + 0.5);
+				r = RINT (w->points[j][k]);
 				if (fabs (w->points[j][k] - r) < ZERO_EPSILON)
 					f->pts[j][k] = r;
 				else
@@ -453,7 +453,7 @@ AddBrushPlane (plane_t *plane)
 
 	for (i = 0; i < numbrushfaces; i++) {
 		pl = &faces[i].plane;
-		if (VectorCompare (pl->normal, plane->normal)
+		if (_VectorCompare (pl->normal, plane->normal)
 			&& fabs (pl->dist - plane->dist) < ON_EPSILON)
 			return;
 	}
@@ -484,11 +484,11 @@ TestAddPlane (plane_t *plane)
 // see if the plane has allready been added
 	for (i = 0; i < numbrushfaces; i++) {
 		pl = &faces[i].plane;
-		if (VectorCompare (plane->normal, pl->normal)
+		if (_VectorCompare (plane->normal, pl->normal)
 			&& fabs (plane->dist - pl->dist) < ON_EPSILON)
 			return;
 		VectorSubtract (vec3_origin, plane->normal, inv);
-		if (VectorCompare (inv, pl->normal)
+		if (_VectorCompare (inv, pl->normal)
 			&& fabs (plane->dist + pl->dist) < ON_EPSILON) return;
 	}
 
@@ -536,7 +536,7 @@ AddHullPoint (vec3_t p, int hullnum)
 	vec_t	   *c;
 
 	for (i = 0; i < num_hull_points; i++)
-		if (VectorCompare (p, hull_points[i]))
+		if (_VectorCompare (p, hull_points[i]))
 			return i;
 
 	VectorCopy (p, hull_points[num_hull_points]);

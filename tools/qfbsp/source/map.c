@@ -327,7 +327,7 @@ ParseBrush (void)
 		}
 
 		CrossProduct (t1, t2, f->plane.normal);
-		if (VectorCompare (f->plane.normal, vec3_origin)) {
+		if (_VectorCompare (f->plane.normal, vec3_origin)) {
 			printf ("WARNING: brush plane with no normal\n");
 			b->faces = f->next;
 			free (f);

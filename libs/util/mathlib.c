@@ -337,7 +337,7 @@ _VectorCompare (const vec3_t v1, const vec3_t v2)
 	int         i;
 
 	for (i = 0; i < 3; i++)
-		if (v1[i] != v2[i])
+		if (fabs (v1[i] - v2[i]) > EQUAL_EPSILON)
 			return 0;
 
 	return 1;

@@ -265,7 +265,7 @@ HealEdges (int e1, int e2)
 					bsp->vertexes[ed->v[0]].point, v2);
 	VectorNormalize (v2);
 
-	if (!VectorCompare (v1, v2))
+	if (!_VectorCompare (v1, v2))
 		Sys_Error ("HealEdges: edges not colinear");
 
 	edgemapping[e2] = e1;

@@ -285,5 +285,3 @@ struct brush_s *AllocBrush (void);
 //=============================================================================
 
 extern bsp_t *bsp;
-
-#define EQUAL_EPSILON 0.001

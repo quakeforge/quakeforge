@@ -48,7 +48,7 @@ CheckColinear (face_t *f)
 		VectorSubtract (f->pts[j], f->pts[i], v2);
 		VectorNormalize (v2);
 
-		if (VectorCompare (v1, v2))
+		if (_VectorCompare (v1, v2))
 			Sys_Error ("Colinear edge");
 	}
 

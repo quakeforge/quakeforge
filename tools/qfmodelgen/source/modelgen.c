@@ -515,9 +515,9 @@ Cmd_Base (void)
 // run through all the base triangles, storing each unique vertex in the base
 // vertex list and setting the indirect triangles to point to the base vertices
 	for (i = 0; i < model.numtris; i++) {
-		if (VectorCompare (ptri[i].verts[0], ptri[i].verts[1])
-			|| VectorCompare (ptri[i].verts[1], ptri[i].verts[2])
-			|| VectorCompare (ptri[i].verts[2], ptri[i].verts[0])) {
+		if (_VectorCompare (ptri[i].verts[0], ptri[i].verts[1])
+			|| _VectorCompare (ptri[i].verts[1], ptri[i].verts[2])
+			|| _VectorCompare (ptri[i].verts[2], ptri[i].verts[0])) {
 			degeneratetris++;
 			degenerate[i] = 1;
 		} else {
@@ -526,7 +526,7 @@ Cmd_Base (void)
 
 		for (j = 0; j < 3; j++) {
 			for (k=0 ; k<model.numverts ; k++)
-				if (VectorCompare (ptri[i].verts[j], baseverts[k]))
+				if (_VectorCompare (ptri[i].verts[j], baseverts[k]))
 					break;	// this vertex is already in the base vertex list
 
 			if (k == model.numverts) {

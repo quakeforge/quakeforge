@@ -116,6 +116,7 @@ RecursiveFillOutside (node_t *l, qboolean fill)
 {
 	portal_t   *p;
 	int         s;
+	qboolean    res = false;
 
 	if (l->contents == CONTENTS_SOLID || l->contents == CONTENTS_SKY)
 		return false;
@@ -124,8 +125,12 @@ RecursiveFillOutside (node_t *l, qboolean fill)
 		return false;
 
 	if (l->occupied) {
+		vec_t      *v;
 		hit_occupied = l->occupied;
-		return true;
+		v = entities[hit_occupied].origin;
+		qprintf ("reached occupant at: (%4.0f,%4.0f,%4.0f) %s\n", v[0], v[1],
+				 v[2], ValueForKey (&entities[hit_occupied], "classname"));
+		res = true;
 	}
 
 	l->valid = valid;
@@ -144,12 +149,12 @@ RecursiveFillOutside (node_t *l, qboolean fill)
 				MarkLeakTrail (p);
 				DrawLeaf (l, 2);
 			}
-			return true;
+			res = true;
 		}
 		p = p->next[!s];
 	}
 
-	return false;
+	return res;
 }
 
 void
@@ -190,7 +195,7 @@ FillOutside (node_t *node)
 
 	inside = false;
 	for (i = 1; i < num_entities; i++) {
-		if (!VectorCompare (entities[i].origin, vec3_origin)) {
+		if (!_VectorCompare (entities[i].origin, vec3_origin)) {
 			if (PlaceOccupant (i, entities[i].origin, node))
 				inside = true;
 		}

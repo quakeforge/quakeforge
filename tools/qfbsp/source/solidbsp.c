@@ -343,7 +343,7 @@ DividePlane (surface_t *in, plane_t *split, surface_t **front,
 	inplane = &planes[in->planenum];
 
 // parallel case is easy
-	if (VectorCompare (inplane->normal, split->normal)) {
+	if (_VectorCompare (inplane->normal, split->normal)) {
 // check for exactly on node
 		if (inplane->dist == split->dist) {	// divide the facets to the front 
 											// and back sides

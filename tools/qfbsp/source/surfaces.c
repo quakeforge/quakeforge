@@ -251,8 +251,8 @@ GetVertex (vec3_t in, int planenum)
 	dvertex_t   v;
 
 	for (i = 0; i < 3; i++) {
-		if (fabs (in[i] - (int) (in[i] + 0.5)) < 0.001)
-			vert[i] = (int) (in[i] + 0.5);
+		if (fabs (in[i] - RINT (in[i])) < 0.001)
+			vert[i] = RINT (in[i]);
 		else
 			vert[i] = in[i];
 	}

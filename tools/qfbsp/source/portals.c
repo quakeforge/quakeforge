@@ -403,8 +403,8 @@ int         num_visportals;
 void
 WriteFloat (FILE *f, vec_t v)
 {
-	if (fabs (v - (int) (v + 0.5)) < 0.001)
-		fprintf (f, "%i ", (int) (v + 0.5));
+	if (fabs (v - RINT (v)) < 0.001)
+		fprintf (f, "%i ", (int) RINT (v));
 	else
 		fprintf (f, "%f ", v);
 }

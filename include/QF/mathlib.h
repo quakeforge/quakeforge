@@ -39,6 +39,9 @@
 extern int		nanmask;
 extern const vec3_t	vec3_origin;
 
+#define EQUAL_EPSILON 0.001
+#define RINT(x) (floor ((x) + 0.5))
+
 #define IS_NAN(x) (((*(int *)&x)&nanmask)==nanmask)
 
 #define DotProduct(a,b) ((a)[0]*(b)[0]+(a)[1]*(b)[1]+(a)[2]*(b)[2])
@@ -84,7 +87,7 @@ extern const vec3_t	vec3_origin;
 vec_t _DotProduct (const vec3_t v1, const vec3_t v2);
 void _VectorAdd (const vec3_t veca, const vec3_t vecb, vec3_t out);
 void _VectorCopy (const vec3_t in, vec3_t out);
-int _VectorCompare (const vec3_t v1, const vec3_t v2);
+int _VectorCompare (const vec3_t v1, const vec3_t v2);	// uses EQUAL_EPSILON
 //vec_t _VectorLength (vec3_t v);
 void _VectorMA (const vec3_t veca, float scale, const vec3_t vecb,
 				vec3_t vecc);
