@@ -67,6 +67,7 @@ static const char rcsid[] =
 #include <limits.h>
 
 #include "QF/cmd.h"
+#include "QF/console.h"	//FIXME maplist really shouldn't be in here
 #include "QF/cvar.h"
 #include "QF/hash.h"
 #include "QF/qargs.h"
@@ -279,7 +280,9 @@ maplist_add_map (struct maplist *maplist, char *fname)
 		}
 		maplist->list = new_list;
 	}
-	maplist->list[maplist->count++] = strdup (fname);
+	fname = strdup (fname);
+	*strstr (fname, ".bsp") = 0;
+	maplist->list[maplist->count++] = fname;
 }
 
 static int
@@ -287,34 +290,25 @@ maplist_cmp (const void *_a, const void *_b)
 {
 	char       *a = *(char **) _a;
 	char       *b = *(char **) _b;
-	int         al = strstr (a, ".bsp") - a;
-	int         bl = strstr (b, ".bsp") - b;
-	int         cmp = strncmp (a, b, min (al, bl));
 
-	if (cmp == 0)
-		return al - bl;
-	return cmp;
+	return strcmp (a, b);
 }
 
 static void
 maplist_print (struct maplist *maplist)
 {
 	int         i;
-	char       *end;
-	char       *name;
+	const char **list;
 
 	if (maplist->count) {
 		qsort (maplist->list, maplist->count, sizeof (char *), maplist_cmp);
 
-		for (i = 0; i < maplist->count - 1; i++) {
-			name = maplist->list[i];
-			end = strstr (name, ".bsp");
-			Sys_Printf ("%-8.*s%c", end - name, name,
-						((i + 1) % 4) ? ' ' : '\n');
-		}
-		name = maplist->list[i];
-		end = strstr (name, ".bsp");
-		Sys_Printf ("%-9.*s\n", end - name, name);
+		list = (const char **)malloc (maplist->count + 1);
+		list[maplist->count] = 0;
+		for (i = 0; i < maplist->count; i++)
+			list[i] = maplist->list[i];
+		Con_DisplayList (list, con_linewidth);
+		free (list);
 	}
 }
 
