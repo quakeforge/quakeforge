@@ -158,6 +158,8 @@ SND_LoadOgg (QFile *file, sfx_t *sfx, cache_allocator_t allocator)
 #include "QF/sys.h"
 #include "QF/quakeio.h"
 
+#include "snd_render.h"
+
 sfxcache_t *
 SND_LoadOgg (QFile *file, sfx_t *sfx, cache_allocator_t allocator)
 {
