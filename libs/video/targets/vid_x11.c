@@ -209,23 +209,6 @@ xlib_rgb24 (int r, int g, int b)
 }
 
 static void
-st1_fixup (XImage *framebuf, int x, int y, int width, int height)
-{
-	int         yi;
-	unsigned char *src;
-	PIXEL8     *dest;
-
-	if (x < 0 || y < 0)
-		return;
-
-	for (yi = y; yi < (y + height); yi++) {
-		src = &((byte *)vid.buffer)[yi * vid.width];
-		dest = (PIXEL8 *) &framebuf->data[yi * framebuf->bytes_per_line];
-		memcpy (dest, src, width);
-	}
-}
-
-static void
 st2_fixup (XImage *framebuf, int x, int y, int width, int height)
 {
 	int 		xi, yi;
@@ -384,13 +367,19 @@ x11_init_buffers (void)
 	else
 		ResetFrameBuffer ();
 
+	current_framebuffer = 0;
+
 	vid.direct = 0;
 	vid.rowbytes = vid.width;
-	if (vid.buffer)
-		free (vid.buffer);
-	vid.buffer = calloc (vid.width, vid.height);
-	if (!vid.buffer)
-		Sys_Error ("Not enough memory for video mode");
+	if (x_visinfo->depth != 8) {
+		if (vid.buffer)
+			free (vid.buffer);
+		vid.buffer = calloc (vid.width, vid.height);
+		if (!vid.buffer)
+			Sys_Error ("Not enough memory for video mode");
+	} else {
+		vid.buffer = x_framebuffer[current_framebuffer]->data;
+	}
 	vid.conbuffer = vid.buffer;
 
 	vid.conwidth = vid.width;
@@ -398,8 +387,6 @@ x11_init_buffers (void)
 	vid.conrowbytes = vid.rowbytes;
 
 	vid.aspect = ((float) vid.height / (float) vid.width) * (320.0 / 240.0);
-
-	current_framebuffer = 0;
 }
 
 static void
@@ -644,10 +631,6 @@ VID_Update (vrect_t *rects)
 
 	while (rects) {
 		switch (x_visinfo->depth) {
-			case 8:
-				st1_fixup (x_framebuffer[current_framebuffer],
-						   rects->x, rects->y, rects->width, rects->height);
-				break;
 			case 16:
 				st2_fixup (x_framebuffer[current_framebuffer],
 						   rects->x, rects->y, rects->width, rects->height);
