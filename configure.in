@@ -646,13 +646,19 @@ AC_SUBST(GLX_CFLAGS)
 AC_SUBST(GLX_LIBS)
 
 dnl SDL/SDL-GL checks
-AM_PATH_SDL(1.0.1, HAVE_SDL=yes, HAVE_SDL=no)
+AC_ARG_ENABLE(sdl,
+[  --disable-sdl           disable checking for SDL],
+)
 
-if test "x$HAVE_SDL" != xno; then
-	AM_CHECK_SGL(1.1.1, HAVE_SGL=yes, HAVE_SGL=no)
+if test "x$enable_sdl" != xno; then
+	AM_PATH_SDL(1.0.1, HAVE_SDL=yes, HAVE_SDL=no)
+
+	if test "x$HAVE_SDL" != xno; then
+		AM_CHECK_SGL(1.1.1, HAVE_SGL=yes, HAVE_SGL=no)
+	fi
+	AC_SUBST(HAVE_SDL)
+	AC_SUBST(HAVE_SGL)
 fi
-AC_SUBST(HAVE_SDL)
-AC_SUBST(HAVE_SGL)
 
 # 3Dfx stuff..
 
