@@ -80,7 +80,6 @@ case_label_expr (switch_block_t *switch_block, expr_t *value)
 	if (value)
 		convert_name (value);
 	if (value && value->type < ex_string) {
-		print_expr (value);puts("");
 		error (value, "non-constant case value");
 		free (cl);
 		return 0;
