@@ -2,6 +2,7 @@
 
 import os
 import re
+import sys
 import string
 from pprint import *
 
@@ -194,8 +195,9 @@ f.write (progs_dat + '\n\n')
 for l in qcc_list:
 	f.write(l + '\n')
 f.close ()
+args = ["qfcc"] + sys.argv[1:]
 if not os.fork():
-	os.execlp ("qfcc", "qfcc")
+	os.execvp ("qfcc", args)
 else:
 	os.wait()
 for l in qcc_list:
