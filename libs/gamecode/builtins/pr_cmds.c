@@ -298,7 +298,7 @@ PF_Find (progs_t *pr)
 	f = P_INT (pr, 1);
 	field_def = ED_FieldAtOfs (pr, f);
 	if (!field_def)
-		PR_RunError (pr, "PF_Find: bad search field");
+		PR_RunError (pr, "PF_Find: bad search field: %d", f);
 	type = field_def->type & ~DEF_SAVEGLOBAL;
 
 	if (type == ev_string) {
