@@ -424,13 +424,13 @@ PR_PrintStatement (progs_t * pr, dstatement_t *s)
 		case OP_IFA:
 			ofs = (short) s->b;
 
-			Sys_Printf ("%s branch %i (%i)",
+			Sys_Printf ("%s branch %i (%04x)",
 					PR_GlobalString (pr, s->a, ev_integer)->str, ofs, addr + ofs);
 			break;
 
 		case OP_GOTO:
 			ofs = (short) s->a;
-			Sys_Printf ("branch %i (%i)", ofs, addr + ofs);
+			Sys_Printf ("branch %i (%04x)", ofs, addr + ofs);
 			break;
 
 		case OP_RETURN:

@@ -304,7 +304,8 @@ PR_GlobalString (progs_t *pr, int ofs, etype_t type)
 			else
 				dsprintf (line, "%s", s);
 		} else if (strequal(name, "?"))
-			dsprintf (line, "[$%x]", ofs);
+			dsprintf (line, "[$%x](%08x)", ofs,
+					  pr->pr_globals[ofs].integer_var);
 		else {
 			if (type == ev_func)
 				dsprintf (line, "%s%s", name, oi);
