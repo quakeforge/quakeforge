@@ -695,10 +695,16 @@ emit_function_call (expr_t *e, def_t *dest)
 		emit_statement (op, arg, &def_parms[ind], 0);
 	}
 	op = PR_Opcode_Find (va ("<CALL%d>", count), -1, &def_function,  &def_void, &def_void);
-	emit_statement (op, func, 0, dest);
+	emit_statement (op, func, 0, 0);
 
 	def_ret.type = func->type->aux_type;
-	return &def_ret;
+	if (dest) {
+		op = PR_Opcode_Find ("=", 5, dest, &def_ret, &def_ret);
+		emit_statement (op, &def_ret, dest, 0);
+		return dest;
+	} else {
+		return &def_ret;
+	}
 }
 
 def_t *
