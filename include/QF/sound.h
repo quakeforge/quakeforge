@@ -196,7 +196,7 @@ extern volatile dma_t *shm;
 extern volatile dma_t sn;
 extern vec_t sound_nominal_clip_dist;
 
-extern	struct cvar_s *loadas8bit;
+extern	struct cvar_s *snd_loadas8bit;
 extern	struct cvar_s *bgmvolume;
 extern	struct cvar_s *volume;
 

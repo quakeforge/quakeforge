@@ -79,7 +79,7 @@ SND_ResampleSfx (sfx_t *sfx, int inrate, int inwidth, byte * data)
 	outcount = sc->length / stepscale;
 
 	sc->speed = shm->speed;
-	if (loadas8bit->int_val)
+	if (snd_loadas8bit->int_val)
 		sc->width = 1;
 	else
 		sc->width = 2;
@@ -206,7 +206,7 @@ SND_LoadSound (sfx_t *s)
 	stepscale = (float) info.rate / shm->speed;
 	len = info.samples / stepscale;
 
-	if (loadas8bit->int_val) {
+	if (snd_loadas8bit->int_val) {
 		len = len * info.channels;
 	} else {
 		len = len * 2 * info.channels;

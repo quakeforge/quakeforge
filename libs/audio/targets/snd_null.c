@@ -40,7 +40,7 @@
 extern channel_t       channels[MAX_CHANNELS];
 extern int             total_channels;
 extern volatile dma_t *shm;
-extern cvar_t         *loadas8bit;
+extern cvar_t         *snd_loadas8bit;
 extern int             paintedtime;				// sample PAIRS
 extern qboolean        snd_initialized;
 
@@ -67,14 +67,14 @@ SND_Init (void)
 void
 SND_Init_Cvars (void)
 {
-	volume = Cvar_Get ("volume", "0.7", CVAR_ARCHIVE, NULL,
-			"Volume level of sounds");
-	loadas8bit =
-		Cvar_Get ("loadas8bit", "0", CVAR_NONE, NULL, "Load samples as 8-bit");
 	bgmvolume = Cvar_Get ("bgmvolume", "1", CVAR_ARCHIVE, NULL,
-			"CD music volume");
-        snd_interp = Cvar_Get ("snd_interp", "1", CVAR_ARCHIVE, NULL,
-                                  "control sample interpolation");
+						  "CD music volume");
+	volume = Cvar_Get ("volume", "0.7", CVAR_ARCHIVE, NULL,
+					   "Volume level of sounds");
+	snd_loadas8bit = Cvar_Get ("snd_loadas8bit", "0", CVAR_NONE, NULL,
+							   "Toggles loading sounds as 8-bit samples");
+	snd_interp = Cvar_Get ("snd_interp", "1", CVAR_ARCHIVE, NULL,
+						   "control sample interpolation");
 }
 
 void
