@@ -288,7 +288,7 @@ ED_ParseEpair (progs_t *pr, pr_type_t *base, ddef_t *key, const char *s)
 	ED_ParseEdict
 
 	Parses an edict out of the given string, returning the new position
-	ed should be a properly initialized empty edict.
+	ent should be a properly initialized empty edict.
 	Used for initial level load and for savegames.
 */
 const char *
@@ -438,7 +438,7 @@ ED_LoadFromFile (progs_t *pr, const char *data)
 	*pr->globals.time = *(pr)->time;
 
 	while (1) {	// parse ents
-		// parse the opening brace  
+		// parse the opening brace
 		data = COM_Parse (data);
 		if (!data)
 			break;
