@@ -211,7 +211,8 @@ void
 PF_break (progs_t *pr)
 {
 	Sys_Printf ("break statement\n");
-	*(int *) -4 = 0;					// dump to debugger
+	//*(int *) -4 = 0;					// dump to debugger
+	PR_DumpState (pr);
 //  PR_RunError (pr, "break statement");
 }
 
