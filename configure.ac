@@ -189,6 +189,17 @@ AC_STRUCT_ST_BLKSIZE
 AC_HEADER_TIME
 AC_STRUCT_TM
 
+if test "$ac_cv_header_unistd_h" = yes; then
+AC_MSG_CHECKING(for _SC_PAGESIZE)
+AC_TRY_COMPILE(
+	[#include <unistd.h>],
+	[int foo = _SC_PAGESIZE;],
+	AC_DEFINE(HAVE__SC_PAGESIZE,1,[Define this if you have _SC_PAGESIZE])
+	AC_MSG_RESULT(yes),
+	AC_MSG_RESULT(no)
+)
+fi
+
 AC_MSG_CHECKING(for __attribute__)
 AC_TRY_COMPILE(
 	[static __attribute__ ((unused)) const char *foo = "bar";],

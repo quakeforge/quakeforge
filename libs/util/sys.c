@@ -340,7 +340,7 @@ Sys_MakeCodeWriteable (unsigned long startaddr, unsigned long length)
 # ifdef HAVE_MPROTECT
 	int         r;
 	unsigned long endaddr = startaddr + length;
-#  ifdef HAVE_UNISTD_H
+#  ifdef HAVE__SC_PAGESIZE
 	long		psize = sysconf (_SC_PAGESIZE);
 
 	startaddr &= ~(psize - 1);
