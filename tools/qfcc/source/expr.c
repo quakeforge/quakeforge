@@ -49,12 +49,14 @@ static const char rcsid[] =
 #include "qfcc.h"
 #include "class.h"
 #include "def.h"
+#include "emit.h"
 #include "expr.h"
 #include "function.h"
 #include "idstuff.h"
 #include "immediate.h"
 #include "method.h"
 #include "options.h"
+#include "reloc.h"
 #include "strpool.h"
 #include "struct.h"
 #include "type.h"
@@ -2080,7 +2082,7 @@ init_elements (def_t *def, expr_t *eles)
 				g += type_size (def->type->aux_type);
 			} else {
 				if (e->type == ex_string) {
-					g->string_var = ReuseString (e->e.string_val);
+					EMIT_STRING (g->string_var, e->e.string_val);
 				} else {
 					memcpy (g, &e->e, type_size (get_type (e)) * 4);
 				}
