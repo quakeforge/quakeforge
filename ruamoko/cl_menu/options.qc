@@ -43,7 +43,7 @@
 
 Group video_options;
 CvarToggleView fullscreen_view;
-CvarToggleView crosshair_view;
+CrosshairView crosshair_view;
 CvarToggleView fps_view;
 CvarToggleView time_view;
 CvarRangeView gamma_view;
@@ -116,19 +116,12 @@ InputLine network_config_iactive;
 integer (string text, integer key) 
 CB_video_options =
 {
-	local integer	selected_crosshair;
-
 	switch (text) {
 		case "fullscreen":
 			[fullscreen_view toggle];
 			break;
 		case "crosshair":
-			selected_crosshair = (integer) cvar ("crosshair");
-			selected_crosshair++;
-			if (selected_crosshair >= 3) {
-			    selected_crosshair = 0;
-			}
-			cvar_set ("crosshair", itos (selected_crosshair));
+			[crosshair_view next];
 			break;
 		case "fps":
 			[fps_view toggle];
@@ -162,24 +155,8 @@ DRAW_video_options =
 {
 	local integer	spacing = 120;
 
-	[fullscreen_view setBasePos:x y:y];
-	[fps_view setBasePos:x y:y];
-	[time_view setBasePos:x y:y];
-	[gamma_view setBasePos:x y:y];
-	[viewsize_view setBasePos:x y:y];
-
-	Draw_Pic (x + 16, y + 4, Draw_CachePic ("gfx/qplaque.lmp", 1));
-	Draw_CenterPic (x + 160, y + 4, Draw_CachePic ("gfx/p_option.lmp", 1));
-	Draw_String	(x + 54, y + 40, "Video");
-	Draw_String	(x + 54, y + 50, "-----");
-
-	[fullscreen_view draw];
-	draw_val_item (x + 70, y + 70, spacing, "Crosshair",
-				   ftos (cvar ("crosshair")));
-	[fps_view draw];
-	[time_view draw];
-	[gamma_view draw];
-	[viewsize_view draw];
+	[video_options setBasePos:x y:y];
+	[video_options draw];
 
 	opt_cursor  (x + 62, y + (Menu_GetIndex () * 10) + 60);
 	return 1;
@@ -194,32 +171,63 @@ void ()
 MENU_video_options =
 {
 	local integer	bar_pad;
-	local Rect rect;
+	local Rect rect, r;
+	local id view;
 
 	Menu_Begin (54, 50, "Video");
 	Menu_FadeScreen (1);
 	Menu_Draw (DRAW_video_options);
 
+	video_options = [[Group alloc] initWithComponents:0 :0 :320 :200];
+
+	view = [[Pic alloc] initWithComponents:16 :4 :0 :0];
+	[view setPic:"gfx/qplaque.lmp"];
+	[video_options addView:view];
+
+	view = [[CenterPic alloc] initWithComponents:160 :4 :0 :0];
+	[view setPic:"gfx/p_option.lmp"];
+	[video_options addView:view];
+
+	view = [[Text alloc] initWithComponents:54 :40 :40 :8];
+	[view setText:"Video"];
+	[video_options addView:view];
+
+	view = [[Text alloc] initWithComponents:54 :50 :40 :8];
+	[view setText:"-----"];
+	[video_options addView:view];
+
 	rect = [[Rect alloc] initWithComponents:70 :60 :224 :8];
 	fullscreen_view = [[CvarToggleView alloc] initWithBounds:rect title:"Fullscreen" :[[CvarToggle alloc] initWithCvar:"vid_fullscreen"]];
+	[video_options addView:fullscreen_view];
 
 	rect.origin.y += 10;
-	//crosshair_view = [[CvarToggleView alloc] initWithBounds:rect title:"Crosshair" :[[CvarToggle alloc] initWithCvar:"crosshair"]];
-
+	view = [[Text alloc] initWithBounds:rect];
+	[view setText:"Crosshair"];
+	[video_options addView:view];
+	r = [[Rect alloc] initWithComponents: 0 :rect.origin.y - 3 :14 :14];
+	r.origin.x = rect.origin.x + rect.size.width - 24 - r.size.width;
+	crosshair_view = [[CrosshairView alloc] initWithBounds:r :[[CrosshairCvar alloc] initWithCvar:"crosshair"]];
+	[r dealloc];
+	[video_options addView:crosshair_view];
 
 	rect.origin.y += 10;
 	fps_view = [[CvarToggleView alloc] initWithBounds:rect title:"Show FPS" :[[CvarToggle alloc] initWithCvar:"hud_fps"]];
+	[video_options addView:fps_view];
 
 
 	rect.origin.y += 10;
 	time_view = [[CvarToggleView alloc] initWithBounds:rect title:"Show time" :[[CvarToggle alloc] initWithCvar:"hud_time"]];
+	[video_options addView:time_view];
 
 
 	rect.origin.y += 10;
 	gamma_view = [[CvarRangeView alloc] initWithBounds:rect title:"Gamma:" sliderWidth:17 * 8 :[[CvarRange alloc] initWithCvar:"vid_gamma" min:MIN_GAMMA max:MAX_GAMMA step:GAMMA_STEP]];
+	[video_options addView:gamma_view];
 
 	rect.origin.y += 10;
 	viewsize_view = [[CvarRangeView alloc] initWithBounds:rect title:"Viewsize:" sliderWidth:14 * 8 :[[CvarRange alloc] initWithCvar:"viewsize" min:MIN_VIEWSIZE max:MAX_VIEWSIZE step:VIEWSIZE_STEP]];
+	[video_options addView:viewsize_view];
+
 	[rect dealloc];
 	
 	Menu_Item (54, 60, "fullscreen", CB_video_options, 0);

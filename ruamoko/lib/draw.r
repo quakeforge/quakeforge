@@ -11,6 +11,7 @@ void (integer x, integer y, string text) Draw_String = #0;
 void (integer x, integer y, string text, integer n) Draw_nString = #0;
 void (integer x, integer y, string text) Draw_AltString = #0;
 void (integer x, integer y, integer w, integer h, integer c) Draw_Fill = #0;
+void (integer ch, integer x, integer y) Draw_Crosshair = #0;
 
 void (integer x, integer y, integer width, integer lines) text_box =
 {

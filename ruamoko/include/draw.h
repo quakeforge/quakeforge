@@ -20,6 +20,7 @@ typedef struct _qpic_t [] qpic_t;
 @extern void (integer x, integer y, string text, integer n) Draw_nString;
 @extern void (integer x, integer y, string text) Draw_AltString;
 @extern void (integer x, integer y, integer w, integer h, integer c) Draw_Fill;
+@extern void (integer ch, integer x, integer y) Draw_Crosshair;
 @extern void (integer x, integer y, integer width, integer lines) text_box;
 
 @interface QPic : Object

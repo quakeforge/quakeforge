@@ -66,6 +66,20 @@
 -(void)dec;
 @end
 
+@interface CrosshairCvar : CvarObject
+-(void) next;
+-(integer) crosshair;
+@end
+
+@interface CrosshairView : View
+{
+	CrosshairCvar crosshair;
+}
+-(id)initWithBounds:(Rect)aRect :(CrosshairCvar)_crosshair;
+-(void) next;
+@end
+
+
 @extern void (integer x, integer y) opt_cursor;
 @extern void (integer x, integer y, integer spacing, string spacechar, string label, string valstr) draw_item;
 @extern void (integer x, integer y, integer spacing, string label, string valstr) draw_val_item;

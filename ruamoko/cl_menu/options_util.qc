@@ -250,6 +250,43 @@
 
 @end
 
+@implementation CrosshairCvar
+-(void) next
+{
+	local integer val = cvar (name);
+	cvar_set (name, itos ((val + 1) % 4));
+}
+
+-(integer) crosshair
+{
+	return cvar (name);
+}
+@end
+
+@implementation CrosshairView
+{
+	CrosshairCvar crosshair;
+}
+
+-(id)initWithBounds:(Rect)aRect :(CrosshairCvar)_crosshair
+{
+	self = [self initWithBounds:aRect];
+	crosshair = _crosshair;
+	return self;
+}
+
+-(void) next
+{
+	[crosshair next];
+}
+
+-(void) draw
+{
+	Draw_Fill (xabs, yabs, xlen, ylen, 0);
+	Draw_Crosshair ([crosshair crosshair], xabs + xlen / 2, yabs + ylen / 2);
+}
+@end
+
 /*
 	opt_cursor
 
