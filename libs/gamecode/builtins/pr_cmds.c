@@ -55,6 +55,7 @@
 
 #define	RETURN_EDICT(p, e) ((p)->pr_globals[OFS_RETURN].integer_var = EDICT_TO_PROG(p, e))
 #define	RETURN_STRING(p, s) ((p)->pr_globals[OFS_RETURN].integer_var = PR_SetString((p), s))
+#define RETURN_VECTOR(p, v) (VectorCopy (v, G_VECTOR (p, OFS_RETURN)))
 
 /* BUILT-IN FUNCTIONS */
 
@@ -272,37 +273,6 @@ PF_cvar_set (progs_t *pr)
 	Cvar_Set (var, val);
 }
 
-#ifdef FLT_MAX_10_EXP
-# define MAX_FLOAT_STRING (FLT_MAX_10_EXP + 8)
-#else
-# define MAX_FLOAT_STRING 128
-#endif
-
-void
-PF_ftos (progs_t *pr)
-{
-	char		string[MAX_FLOAT_STRING];
-	float		v;
-	int			i;						// 1999-07-25 FTOS fix by Maddes
-
-	v = G_FLOAT (pr, OFS_PARM0);
-
-	if (v == (int) v)
-		snprintf (string, sizeof (string), "%d", (int) v);
-	else
-// 1999-07-25 FTOS fix by Maddes  start
-	{
-		snprintf (string, sizeof (string), "%1.6f", v);
-		for (i = strlen (string) - 1;
-			 i > 0 && string[i] == '0' && string[i - 1] != '.';
-			 i--) {
-			string[i] = 0;
-		}
-	}
-// 1999-07-25 FTOS fix by Maddes  end
-	G_INT (pr, OFS_RETURN) = PR_SetString (pr, string);
-}
-
 void
 PF_fabs (progs_t *pr)
 {
@@ -310,17 +280,6 @@ PF_fabs (progs_t *pr)
 
 	v = G_FLOAT (pr, OFS_PARM0);
 	G_FLOAT (pr, OFS_RETURN) = fabs (v);
-}
-
-void
-PF_vtos (progs_t *pr)
-{
-	char string[MAX_FLOAT_STRING * 3 + 5];
-	snprintf (string, sizeof (string), "'%5.1f %5.1f %5.1f'",
-			  G_VECTOR (pr, OFS_PARM0)[0],
-			  G_VECTOR (pr, OFS_PARM0)[1],
-			  G_VECTOR (pr, OFS_PARM0)[2]);
-	G_INT (pr, OFS_RETURN) = PR_SetString (pr, string);
 }
 
 // entity (entity start, .string field, string match) find = #5;
@@ -465,19 +424,129 @@ PF_nextent (progs_t *pr)
 	}
 }
 
+// we assume that ints are smaller than floats
+#ifdef FLT_MAX_10_EXP
+# define STRING_BUF (FLT_MAX_10_EXP + 8)
+#else
+# define STRING_BUF 128
+#endif
+
+/*
+	PF_ftoi
+
+	integer (float f) ftoi
+*/
+void
+PF_ftoi (progs_t *pr)
+{
+	G_INT (pr, OFS_RETURN) = G_FLOAT (pr, OFS_PARM0);
+}
+
+/*
+	PF_ftos
+
+	string (float f) ftos
+*/
+void
+PF_ftos (progs_t *pr)
+{
+	char	string[STRING_BUF];
+	int		i;
+
+	// trimming 0s idea thanks to Maddes
+	i = snprintf (string, sizeof (string), "%1.6f", G_FLOAT (pr, OFS_PARM0)) - 1;
+	for (; i > 0; i--) {
+		if (string[i] == '0')
+			string[i] = '\0';
+		else if (string[i] == '.') {
+			string[i] = '\0';
+			break;
+		} else
+			break;
+	}
+
+	RETURN_STRING (pr, string);
+}
+
+/*
+	PF_itof
+
+	float (integer i) itof
+*/
+void
+PF_itof (progs_t *pr)
+{
+	G_FLOAT (pr, OFS_RETURN) = G_INT (pr, OFS_PARM0);
+}
+
+/*
+	PF_itos
+
+	string (integer i) itos
+*/
+void
+PF_itos (progs_t *pr)
+{
+	char string[STRING_BUF];
+
+	snprintf (string, sizeof (string), "%d", G_INT (pr, OFS_PARM0));
+
+	RETURN_STRING (pr, string);
+}
+
 /*
 	PF_stof
 
-	float(string s) stof
+	float (string s) stof
 */
 void
 PF_stof (progs_t *pr)
 {
-	const char		*s;
+	G_FLOAT (pr, OFS_RETURN) = atof (G_STRING (pr, OFS_PARM0));
+}
 
-	s = G_STRING (pr, OFS_PARM0);
+/*
+	PF_stoi
 
-	G_FLOAT (pr, OFS_RETURN) = atof (s);
+	integer (string s) stoi
+*/
+void
+PF_stoi (progs_t *pr)
+{
+	G_INT (pr, OFS_RETURN) = atoi (G_STRING (pr, OFS_PARM0));
+}
+
+/*
+	PF_stov
+
+	vector (string s) stov
+*/
+void
+PF_stov (progs_t *pr)
+{
+	float v[3] = {0, 0, 0};
+
+	sscanf (G_STRING (pr, OFS_PARM0), "'%f %f %f'", v, v + 1, v + 2);
+
+	RETURN_VECTOR (pr, v);
+}
+
+/*
+	PF_vtos
+
+	string (vector v) vtos
+*/
+void
+PF_vtos (progs_t *pr)
+{
+	char string[STRING_BUF * 3 + 5];
+
+	snprintf (string, sizeof (string), "'%5.1f %5.1f %5.1f'",
+			  G_VECTOR (pr, OFS_PARM0)[0],
+			  G_VECTOR (pr, OFS_PARM0)[1],
+			  G_VECTOR (pr, OFS_PARM0)[2]);
+
+	RETURN_STRING (pr, string);
 }
 
 /*
@@ -557,7 +626,8 @@ PF_sprintf (progs_t *pr)
 	char   *out = 0;
 	char	new_format[INT_WIDTH * 2 + 9]; // "%0-+ #." and conversion
 	int		fmt_alternate, fmt_leadzero, fmt_leftjust, fmt_minwidth,
-			fmt_precision, fmt_signed, fmt_space, looping, new_format_i, ret;
+			fmt_precision, fmt_signed, fmt_space, fmt_type, looping,
+			new_format_i, ret;
 	int		curarg = 3, out_max = 32, out_size = 0;
 
 	format = G_STRING (pr, OFS_PARM0);
@@ -572,6 +642,7 @@ PF_sprintf (progs_t *pr)
 			c++;
 			if (curarg > MAX_ARG)
 				goto maxargs;
+
 			// flags
 			looping = 1;
 			fmt_leadzero = 0;
@@ -579,16 +650,19 @@ PF_sprintf (progs_t *pr)
 			fmt_signed = 0;
 			fmt_space = 0;
 			fmt_alternate = 0;
-			while (looping)
-				switch (*c++) {
+			while (looping) {
+				switch (*c) {
 					case '0':	fmt_leadzero = 1; break;
 					case '-':	fmt_leftjust = 1; break;
 					case '+':	fmt_signed = 1; break;
 					case ' ':	fmt_space = 1; break;
 					case '#':	fmt_alternate = 1; break;
 					case '\0':	goto endofstring;
-					default:	looping = 0; c--; break;
+					default:	looping = 0; continue;
 				}
+				c++;
+			}
+
 			// minimum field width
 			fmt_minwidth = 0;
 			if (*c >= '1' && *c <= '9')
@@ -601,11 +675,12 @@ PF_sprintf (progs_t *pr)
 				fmt_minwidth = G_INT (pr, OFS_PARM0 + curarg);
 				curarg += 3;
 			}
+
 			// precision
-			fmt_precision = 6;
+			fmt_precision = -1;
 			if (*c == '.') {
 				c++;
-				if (*c >= '1' && *c <= '9') {
+				if (*c >= '0' && *c <= '9') {
 					fmt_precision = 0;
 					while (*c >= '0' && *c <= '9') {
 						fmt_precision *= 10;
@@ -620,7 +695,17 @@ PF_sprintf (progs_t *pr)
 			if (!*c)
 				goto endofstring;
 			// length?  Nope, not in QC
-			// conversion
+			fmt_type = *c++;
+
+			// some preperation
+			if (fmt_precision < 0)
+				switch (fmt_type) {
+					case 'i': fmt_precision = 0; break;
+					case 'f': fmt_precision = 6; break;
+					case 'v': fmt_precision = 1; break;
+				}
+
+			// built the format string
 			new_format_i = 0;
 			new_format[new_format_i++] = '%';
 			if (fmt_leadzero) new_format[new_format_i++] = '0';
@@ -641,14 +726,15 @@ PF_sprintf (progs_t *pr)
 										   "%d", fmt_precision))
 				>= sizeof (new_format))
 				PR_Error (pr, "PF_sprintf: new_format overflowed?!");
-			switch (*c) {
+			switch (fmt_type) {
 				case 'i': new_format[new_format_i++] = 'd'; break;
-				case 'f': new_format[new_format_i++] = 'f'; break;
+				case 'f':
 				case 'v': new_format[new_format_i++] = 'f'; break;
 				default: PR_Error (pr, "PF_sprintf: unknown type '%c'!", *c);
 			}
 			new_format[new_format_i++] = '\0';
-			switch (*c) {
+
+			switch (fmt_type) {
 				case 'i':
 					while ((ret = snprintf (&out[out_size], out_max - out_size,
 											new_format,
@@ -703,7 +789,6 @@ PF_sprintf (progs_t *pr)
 					break;
 				}
 			}
-			c++;
 		} else if (*c == '%' && *(c + 1) == 's') {
 			char *s;
 			if (curarg > MAX_ARG)
@@ -775,8 +860,6 @@ PR_Cmds_Init (progs_t *pr)
 	PR_AddBuiltin (pr, "vectoyaw", PF_vectoyaw, 13);	// float (vector v) vectoyaw
 	PR_AddBuiltin (pr, "find", PF_Find, 18);	// entity (entity start, .(...) fld, ... match) find
 	PR_AddBuiltin (pr, "dprint", PF_dprint, 25);  // void (string s) dprint
-	PR_AddBuiltin (pr, "ftos", PF_ftos, 26);	// void (string s) ftos
-	PR_AddBuiltin (pr, "vtos", PF_vtos, 27);	// void (string s) vtos
 	PR_AddBuiltin (pr, "coredump", PF_coredump, 28);	// void () coredump
 	PR_AddBuiltin (pr, "traceon", PF_traceon, 29);	// void () traceon
 	PR_AddBuiltin (pr, "traceoff", PF_traceoff, 30);	// void () traceoff
@@ -793,8 +876,16 @@ PR_Cmds_Init (progs_t *pr)
 	PR_AddBuiltin (pr, "vectoangles", PF_vectoangles, 51); // vector (vector v) vectoangles
 	PR_AddBuiltin (pr, "cvar_set", PF_cvar_set, 72);	// void (string var, string val) cvar_set
 
-	PR_AddBuiltin (pr, "stof", PF_stof, 81);	// float (string s) stof
 	PR_AddBuiltin (pr, "strlen", PF_strlen, 100);	// float (string s) strlen
 	PR_AddBuiltin (pr, "charcount", PF_charcount, 101);	// float (string goal, string s) charcount
 	PR_AddBuiltin (pr, "sprintf", PF_sprintf, 109); // string (...) sprintf
+
+	PR_AddBuiltin (pr, "ftos", PF_ftos, 26);	// string (float f) ftos
+	PR_AddBuiltin (pr, "ftoi", PF_ftoi, 110);	// integer (float f) ftoi
+	PR_AddBuiltin (pr, "itof", PF_itof, 111);	// float (integer i) itof
+	PR_AddBuiltin (pr, "itos", PF_itos, 112);	// string (integer i) itos
+	PR_AddBuiltin (pr, "stof", PF_stof, 81);	// float (string s) stof
+	PR_AddBuiltin (pr, "stoi", PF_stoi, 113);	// integer (string s) stoi
+	PR_AddBuiltin (pr, "stov", PF_stov, 114);	// vector (string s) stov
+	PR_AddBuiltin (pr, "vtos", PF_vtos, 27);	// string (vector v) vtos
 };

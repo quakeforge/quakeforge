@@ -118,11 +118,13 @@ SV_EndRedirect (void)
 
 	Handles cursor positioning, line wrapping, etc
 */
+// FIXME: the msg variables need to be renamed/cleaned up
 void
 SV_Print (const char *fmt, va_list args)
 {
 	static int  pending = 0;			// partial line being printed
-	char        msg[MAXPRINTMSG];
+	char		premsg[MAXPRINTMSG];
+	unsigned char msg[MAXPRINTMSG];
 	char        msg2[MAXPRINTMSG];
 	char        msg3[MAXPRINTMSG];
 
@@ -130,7 +132,43 @@ SV_Print (const char *fmt, va_list args)
 	struct tm  *local = NULL;
 	qboolean    timestamps = false;
 
-	vsnprintf (msg, sizeof (msg), fmt, args);
+	unsigned char *in, *out;
+
+	vsnprintf (premsg, sizeof (premsg), fmt, args);
+	in = premsg;
+	out = msg;
+
+	// expand FFnickFF to nick <userid>
+	do {
+		switch (*in) {
+			case 0xFF: {
+				char *end = strchr (in + 1, 0xFF);
+				int userid = 0;
+				int len;
+				int i;
+
+				if (!*end)
+					end = in + strlen (in);
+				*end = '\0';
+				for (i = 0; i < MAX_CLIENTS; i++) {
+					if (!svs.clients[i].state)
+						continue;
+					if (!strcmp (svs.clients[i].name, in + 1)) {
+						userid = svs.clients[i].userid;
+						break;
+					}
+				}
+				len = snprintf (out, sizeof (msg) - (out - msg),
+								"%s <%d>", in + 1, userid);
+				out += len;
+				in = end + 1;
+				break;
+			}
+			default:
+				*out++ = *in++;
+		}
+	} while (sizeof (msg) - (out - msg) > 0 && *in);
+	*out = '\0';
 
 	if (sv_redirected) {				// Add to redirected message
 		if (strlen (msg) + strlen (outputbuf) > sizeof (outputbuf) - 1)
@@ -179,9 +217,33 @@ SV_Printf (const char *fmt, ...)
 static void
 SV_PrintToClient (client_t *cl, int level, const char *string)
 {
-	ClientReliableWrite_Begin (cl, svc_print, strlen (string) + 3);
+	static unsigned char *buffer;
+	const unsigned char *a;
+	unsigned char *b;
+	int size;
+	static int buffer_size;
+
+	size = strlen (string) + 1;
+	if (strlen (string) > buffer_size) {
+		buffer_size = (size + 1023) & ~1023; // 1k multiples
+		if (buffer)
+			free (buffer);
+		buffer = malloc (buffer_size);
+		if (!buffer)
+			Sys_Error ("SV_PrintToClient: could not allocate %d bytes\n",
+					   buffer_size);
+	}
+
+	a = string;
+	b = buffer;
+	// strip 0xFFs
+	while ((*b = *a++))
+		if (*b != 0xFF)
+			b++;
+
+	ClientReliableWrite_Begin (cl, svc_print, strlen (buffer) + 3);
 	ClientReliableWrite_Byte (cl, level);
-	ClientReliableWrite_String (cl, string);
+	ClientReliableWrite_String (cl, buffer);
 }
 
 /*
