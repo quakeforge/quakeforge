@@ -97,9 +97,6 @@ SV_WriteDemoMessage (sizebuf_t *msg, int type, int to, float time)
 	byte        c;
 	static double prevtime;
 
-	if (!sv.demorecording)
-		return;
-
 	msec = (time - prevtime) * 1000;
 	prevtime += msec * 0.001;
 	if (msec > 255)
@@ -256,9 +253,6 @@ SV_DemoWritePackets (int num)
 	byte        msg_buf[MAX_MSGLEN];
 	demoinfo_t *demoinfo;
 
-	if (!sv.demorecording)
-		return;
-
 	msg.data = msg_buf;
 	msg.maxsize = sizeof (msg_buf);
 
@@ -293,7 +287,7 @@ SV_DemoWritePackets (int num)
 					break;				// disconnected?
 				if (nextcl->fixangle)
 					break;				// respawned, or walked into
-				// teleport, do not interpolate!
+										// teleport, do not interpolate!
 				if (!(nextcl->flags & DF_DEAD) && (cl->flags & DF_DEAD))
 					break;				// respawned, do not interpolate
 
@@ -382,10 +376,10 @@ SV_DemoWritePackets (int num)
 		}
 
 		// this goes first to reduce demo size a bit
-		SV_DemoWriteToDisk (demo.lasttype, demo.lastto, (float) time);
-		SV_DemoWriteToDisk (0, 0, (float) time);	// now goes the rest
+		SV_DemoWriteToDisk (demo.lasttype, demo.lastto, time);
+		SV_DemoWriteToDisk (0, 0, time);			// now goes the rest
 		if (msg.cursize)
-			SV_WriteDemoMessage (&msg, dem_all, 0, (float) time);
+			SV_WriteDemoMessage (&msg, dem_all, 0, time);
 	}
 
 	if (demo.lastwritten > demo.parsecount)
@@ -703,8 +697,6 @@ SV_WriteSetDemoMessage (void)
 {
 	int         len;
 	byte        c;
-
-//  Con_Printf ("write: %ld bytes, %4.4f\n", msg->cursize, realtime);
 
 	c = 0;
 	demo.size += DWRITE (&c, sizeof (c), demo.dest);

@@ -757,15 +757,17 @@ SV_ConSay (const char *prefix, client_t *client)
 		for (j = 0, client = svs.clients; j < MAX_CLIENTS; j++, client++) {
 			if (client->state < cs_zombie)
 				continue;
-			SV_ClientPrintf (1, client, PRINT_HIGH, "%s\n", text->str);
+			SV_ClientPrintf (0, client, PRINT_HIGH, "%s\n", text->str);
 			if (*prefix != 'I')		// beep, except for Info says
 				SV_ClientPrintf (0, client, PRINT_CHAT, "%s", "");
 		}
 		if (sv.demorecording) {
 			DemoWrite_Begin (dem_all, 0, strlen (text->str) + 3);
 			MSG_WriteByte (&demo.dbuf->sz, svc_print);
-			MSG_WriteByte (&demo.dbuf->sz, PRINT_CHAT);
+			MSG_WriteByte (&demo.dbuf->sz, PRINT_HIGH);
 			MSG_WriteString (&demo.dbuf->sz, text->str);
+			MSG_WriteByte (&demo.dbuf->sz, PRINT_CHAT);
+			MSG_WriteString (&demo.dbuf->sz, "");
 		}
 	}
 }

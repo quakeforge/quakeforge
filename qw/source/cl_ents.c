@@ -40,6 +40,7 @@ static __attribute__ ((unused)) const char rcsid[] =
 
 #include "QF/console.h"
 #include "QF/cvar.h"
+#include "QF/locs.h"
 #include "QF/msg.h"
 #include "QF/render.h"
 #include "QF/skin.h"
@@ -1143,6 +1144,27 @@ CL_EmitEntities (void)
 	CL_LinkPacketEntities ();
 	CL_LinkProjectiles ();
 	CL_UpdateTEnts ();
+
+	if (!r_drawentities->int_val) {
+		dlight_t   *dl;
+		location_t *nearloc;
+		vec3_t      trueloc;
+
+		nearloc = locs_find (r_origin);
+		if (nearloc) {
+			dl = R_AllocDlight (4096);
+			if (dl) {
+				VectorCopy (nearloc->loc, dl->origin);
+				dl->radius = 200;
+				dl->die = r_realtime + 0.1;
+				dl->color[0] = 0;
+				dl->color[1] = 1;
+				dl->color[2] = 0;
+			}
+			VectorCopy (nearloc->loc, trueloc);
+			R_WizSpikeEffect (trueloc);
+		}
+	}
 }
 
 void
