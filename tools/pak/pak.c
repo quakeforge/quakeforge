@@ -61,7 +61,7 @@ main (int argc, char **argv)
 			}
 			for (i = 0; i < pack->numfiles; i++) {
 				if (verbose)
-					fprintf (stderr, "%s\n", pack->files[i].name);
+					printf ("%s\n", pack->files[i].name);
 				pack_extract (pack, &pack->files[i]);
 			}
 			pack_close (pack);
@@ -90,7 +90,7 @@ main (int argc, char **argv)
 			pack->pad = pad;
 			while (optind < argc) {
 				if (verbose)
-					fprintf (stderr, "%s\n", argv[optind]);
+					printf ("%s\n", argv[optind]);
 				pack_add (pack, argv[optind++]);
 			}
 			pack_close (pack);
