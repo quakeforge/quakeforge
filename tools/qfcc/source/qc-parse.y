@@ -77,6 +77,7 @@ type_t	*current_type;
 def_t	*current_def;
 def_t	param_scope;
 function_t *current_func;
+expr_t	*local_expr;
 
 %}
 
@@ -202,9 +203,10 @@ opt_initializer
 	| '=' signed_const
 		{
 			if (pr_scope) {
-				def_t *imm = PR_ReuseConstant ($2, 0);
-				opcode_t *op = PR_Opcode_Find ("=", 5, imm, imm, current_def);
-				emit_statement (pr_source_line, op, imm, current_def, 0);
+				expr_t *e = new_expr ();
+				e->type = ex_def;
+				e->e.def = current_def;
+				append_expr (local_expr, new_binary_expr ('=', e, $2));
 			} else {
 				current_def = PR_ReuseConstant ($2,  current_def);
 			}
@@ -325,13 +327,20 @@ statement
 		{
 			expr_t *l1 = new_label_expr ();
 			expr_t *l2 = new_label_expr ();
+			expr_t *e;
 
 			$$ = new_block_expr ();
 
-			append_expr ($$, new_binary_expr ('n', $3, l2));
+			e = new_binary_expr ('n', $3, l2);
+			e->line = $3->line;
+			e->file = $3->file;
+			append_expr ($$, e);
 			append_expr ($$, l1);
 			append_expr ($$, $5);
-			append_expr ($$, new_binary_expr ('i', $3, l1));
+			e = new_binary_expr ('i', $3, l1);
+			e->line = $3->line;
+			e->file = $3->file;
+			append_expr ($$, e);
 			append_expr ($$, l2);
 		}
 	| DO statement WHILE '(' expr ')' ';'
@@ -347,15 +356,24 @@ statement
 	| LOCAL type
 		{
 			current_type = $2;
+			local_expr = new_block_expr ();
 		}
-	  def_list ';' { $$ = 0; }
+	  def_list ';'
+		{
+			$$ = local_expr;
+			local_expr = 0;
+		}
 	| IF '(' expr ')' statement
 		{
 			expr_t *l1 = new_label_expr ();
+			expr_t *e;
 
 			$$ = new_block_expr ();
 
-			append_expr ($$, new_binary_expr ('n', $3, l1));
+			e = new_binary_expr ('n', $3, l1);
+			e->line = $3->line;
+			e->file = $3->file;
+			append_expr ($$, e);
 			append_expr ($$, $5);
 			append_expr ($$, l1);
 		}
@@ -363,12 +381,20 @@ statement
 		{
 			expr_t *l1 = new_label_expr ();
 			expr_t *l2 = new_label_expr ();
+			expr_t *e;
 
 			$$ = new_block_expr ();
 
-			append_expr ($$, new_binary_expr ('n', $3, l1));
+			e = new_binary_expr ('n', $3, l1);
+			e->line = $3->line;
+			e->file = $3->file;
+			append_expr ($$, e);
+
 			append_expr ($$, $5);
-			append_expr ($$, new_unary_expr ('g', l2));
+
+			e = new_unary_expr ('g', l2);
+			append_expr ($$, e);
+
 			append_expr ($$, l1);
 			append_expr ($$, $7);
 			append_expr ($$, l2);
