@@ -266,7 +266,7 @@ new_def (type_t *type, const char *name, scope_t *scope)
 
 	def->return_addr = __builtin_return_address (0);
 
-	def->name = name;
+	def->name = name ? save_string (name) : 0;
 	def->type = type;
 
 	def->scope = scope;
