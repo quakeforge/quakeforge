@@ -451,8 +451,6 @@ expr
 	| expr ASMOD expr		{ $$ = asx_expr (ASMOD, $1, $3); }
 	| expr ASSHL expr		{ $$ = asx_expr (ASSHL, $1, $3); }
 	| expr ASSHR expr		{ $$ = asx_expr (ASSHR, $1, $3); }
-	| expr SHL expr			{ $$ = binary_expr (SHL, $1, $3); }
-	| expr SHR expr			{ $$ = binary_expr (SHR, $1, $3); }
 	| expr AND expr			{ $$ = binary_expr (AND, $1, $3); }
 	| expr OR expr			{ $$ = binary_expr (OR,  $1, $3); }
 	| expr EQ expr			{ $$ = binary_expr (EQ,  $1, $3); }
@@ -461,6 +459,8 @@ expr
 	| expr GE expr			{ $$ = binary_expr (GE,  $1, $3); }
 	| expr LT expr			{ $$ = binary_expr (LT,  $1, $3); }
 	| expr GT expr			{ $$ = binary_expr (GT,  $1, $3); }
+	| expr SHL expr			{ $$ = binary_expr (SHL, $1, $3); }
+	| expr SHR expr			{ $$ = binary_expr (SHR, $1, $3); }
 	| expr '+' expr			{ $$ = binary_expr ('+', $1, $3); }
 	| expr '-' expr			{ $$ = binary_expr ('-', $1, $3); }
 	| expr '*' expr			{ $$ = binary_expr ('*', $1, $3); }
