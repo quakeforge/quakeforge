@@ -35,8 +35,9 @@
 #define SKY_TEX 2000	// Quake 2 environment sky
 
 extern qboolean skyloaded;
+extern vec5_t skyvec[6][4];
 
 void R_DrawSky (void);
-void R_DrawSkyChain (msurface_t *s);
+void R_DrawSkyChain (const msurface_t *s);
 
 #endif // __QF_GL_sky_h

@@ -65,7 +65,7 @@ QFGL_DONT_NEED (void, glColor3i, (GLint red, GLint green, GLint blue));
 QFGL_DONT_NEED (void, glColor3iv, (const GLint * v));
 QFGL_DONT_NEED (void, glColor3s, (GLshort red, GLshort green, GLshort blue));
 QFGL_DONT_NEED (void, glColor3sv, (const GLshort * v));
-QFGL_DONT_NEED (void, glColor3ub, (GLubyte red, GLubyte green, GLubyte blue));
+QFGL_NEED (void, glColor3ub, (GLubyte red, GLubyte green, GLubyte blue));
 QFGL_NEED (void, glColor3ubv, (const GLubyte * v));
 QFGL_DONT_NEED (void, glColor3ui, (GLuint red, GLuint green, GLuint blue));
 QFGL_DONT_NEED (void, glColor3uiv, (const GLuint * v));

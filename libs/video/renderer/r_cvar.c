@@ -75,6 +75,7 @@ cvar_t     *gl_picmip;
 cvar_t     *gl_playermip;
 cvar_t     *gl_reporttjunctions;
 cvar_t     *gl_sky_clip;
+cvar_t     *gl_sky_debug;
 cvar_t     *gl_skymultipass;
 cvar_t     *gl_texsort;
 cvar_t     *gl_triplebuffer;
@@ -225,6 +226,8 @@ R_Init_Cvars (void)
 									NULL, "None");
 	gl_sky_clip = Cvar_Get ("gl_sky_clip", "2", CVAR_ARCHIVE, NULL,
 							"controls amount of sky overdraw");
+	gl_sky_debug = Cvar_Get ("gl_sky_debug", "0", CVAR_NONE, NULL,
+							 "debugging `info' for sky clipping");
 	gl_sky_divide = Cvar_Get ("gl_sky_divide", "1", CVAR_ARCHIVE, NULL,
 							  "subdivide sky polys");
 	gl_skymultipass = Cvar_Get ("gl_skymultipass", "1", CVAR_ARCHIVE, NULL,

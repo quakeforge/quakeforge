@@ -171,7 +171,8 @@ determine_face (vec3_t v)
 		        v.n
 */
 static int
-find_intersect (int face1, vec3_t x1, int face2, vec3_t x2, vec3_t y)
+find_intersect (int face1, const vec3_t x1, int face2, const vec3_t x2,
+				vec3_t y)
 {
 	int         axis;
 	vec3_t      n;						// normal to the plane formed by the
@@ -225,7 +226,7 @@ find_cube_vertex (int face1, int face2, int face3, vec3_t v)
 	(wish I could find a cleaner way of calculating s and t).
 */
 static void
-set_vertex (struct box_def *box, int face, int ind, vec3_t v)
+set_vertex (struct box_def *box, int face, int ind, const vec3_t v)
 {
 	VectorCopy (v, box->face[face].poly.verts[ind]);
 	VectorAdd (v, r_refdef.vieworg, box->face[face].poly.verts[ind]);
@@ -263,7 +264,7 @@ set_vertex (struct box_def *box, int face, int ind, vec3_t v)
 	append a vertex to the poly vertex list.
 */
 static void
-add_vertex (struct box_def *box, int face, vec3_t v)
+add_vertex (struct box_def *box, int face, const vec3_t v)
 {
 	set_vertex (box, face, box->face[face].poly.numverts++, v);
 }
@@ -329,8 +330,8 @@ insert_cube_vertices (struct box_def *box, struct visit_def visit, int count,
 	enter/leave purposes).
 */
 static void
-cross_cube_edge (struct box_def *box, int face1, vec3_t v1, int face2,
-				 vec3_t v2)
+cross_cube_edge (struct box_def *box, int face1, const vec3_t v1, int face2,
+				 const vec3_t v2)
 {
 	int         axis;
 	int         face = -1;
@@ -569,7 +570,7 @@ process_corners (struct box_def *box)
 	draws all faces of the cube with 3 or more vertices.
 */
 static void
-render_box (struct box_def *box)
+render_box (const struct box_def *box)
 {
 	int         i, j;
 
@@ -587,7 +588,7 @@ render_box (struct box_def *box)
 }
 
 void
-R_DrawSkyBoxPoly (glpoly_t *poly)
+R_DrawSkyBoxPoly (const glpoly_t *poly)
 {
 	int         i;
 	struct box_def box;
@@ -645,7 +646,7 @@ R_DrawSkyBoxPoly (glpoly_t *poly)
 }
 
 void
-EmitSkyPolys (float speedscale, msurface_t *fa)
+EmitSkyPolys (float speedscale, const msurface_t *fa)
 {
 	float       length, s, t;
 	float      *v;
@@ -676,7 +677,7 @@ EmitSkyPolys (float speedscale, msurface_t *fa)
 }
 
 static inline void
-draw_poly (glpoly_t *poly)
+draw_poly (const glpoly_t *poly)
 {
 	int         i;
 
@@ -688,9 +689,9 @@ draw_poly (glpoly_t *poly)
 }
 
 static void
-draw_black_sky_polys (msurface_t *sky_chain)
+draw_black_sky_polys (const msurface_t *sky_chain)
 {
-	msurface_t *sc = sky_chain;
+	const msurface_t *sc = sky_chain;
 
 	qfglDisable (GL_BLEND);
 	qfglDisable (GL_TEXTURE_2D);
@@ -710,9 +711,9 @@ draw_black_sky_polys (msurface_t *sky_chain)
 }
 
 static void
-draw_skybox_sky_polys (msurface_t *sky_chain)
+draw_skybox_sky_polys (const msurface_t *sky_chain)
 {
-	msurface_t *sc = sky_chain;
+	const msurface_t *sc = sky_chain;
 
 	qfglDepthMask (GL_FALSE);
 	qfglDisable (GL_DEPTH_TEST);
@@ -730,16 +731,16 @@ draw_skybox_sky_polys (msurface_t *sky_chain)
 }
 
 static void
-draw_skydome_sky_polys (msurface_t *sky_chain)
+draw_skydome_sky_polys (const msurface_t *sky_chain)
 {
 	// this function is not yet implemented so just draw black
 	draw_black_sky_polys (sky_chain);
 }
 
 static void
-draw_id_sky_polys (msurface_t *sky_chain)
+draw_id_sky_polys (const msurface_t *sky_chain)
 {
-	msurface_t *sc = sky_chain;
+	const msurface_t *sc = sky_chain;
 	float       speedscale;
 
 	speedscale = r_realtime / 16;
@@ -766,9 +767,9 @@ draw_id_sky_polys (msurface_t *sky_chain)
 }
 
 static void
-draw_z_sky_polys (msurface_t *sky_chain)
+draw_z_sky_polys (const msurface_t *sky_chain)
 {
-	msurface_t *sc = sky_chain;
+	const msurface_t *sc = sky_chain;
 
 	qfglColorMask (GL_FALSE, GL_FALSE, GL_FALSE, GL_FALSE);
 	qfglDisable (GL_BLEND);
@@ -790,7 +791,7 @@ draw_z_sky_polys (msurface_t *sky_chain)
 }
 
 void
-R_DrawSkyChain (msurface_t *sky_chain)
+R_DrawSkyChain (const msurface_t *sky_chain)
 {
 	if (gl_sky_clip->int_val > 2) {
 		draw_black_sky_polys (sky_chain);
@@ -808,64 +809,73 @@ R_DrawSkyChain (msurface_t *sky_chain)
 		return; // XXX not properly implemented
 	}
 	draw_z_sky_polys (sky_chain);
-#if 0
-	qfglDisable (GL_TEXTURE_2D);
-	sc = sky_chain;
-	qfglColor3ubv (255, 255, 255);
-	while (sc) {
-		glpoly_t   *p = sc->polys;
 
-		while (p) {
-			int         i;
+	if (gl_sky_debug->int_val) {
+		const msurface_t *sc;
 
-			qfglBegin (GL_LINE_LOOP);
-			for (i = 0; i < p->numverts; i++) {
-				qfglVertex3fv (p->verts[i]);
+		qfglDisable (GL_TEXTURE_2D);
+		if (gl_sky_debug->int_val & 1) {
+			sc = sky_chain;
+			qfglColor3ub (255, 255, 255);
+			while (sc) {
+				glpoly_t   *p = sc->polys;
+
+				while (p) {
+					int         i;
+
+					qfglBegin (GL_LINE_LOOP);
+					for (i = 0; i < p->numverts; i++) {
+						qfglVertex3fv (p->verts[i]);
+					}
+					qfglEnd ();
+					p = p->next;
+				}
+				sc = sc->texturechain;
 			}
-			qfglEnd ();
-			p = p->next;
 		}
-		sc = sc->texturechain;
-	}
-	sc = sky_chain;
-	qfglColor3ubv (0, 255, 0);
-	qfglBegin (GL_POINTS);
-	while (sc) {
-		glpoly_t   *p = sc->polys;
+		if (gl_sky_debug->int_val & 2) {
+			sc = sky_chain;
+			qfglColor3ub (0, 255, 0);
+			qfglBegin (GL_POINTS);
+			while (sc) {
+				glpoly_t   *p = sc->polys;
 
-		while (p) {
-			int         i;
-			vec3_t      x, c = { 0, 0, 0 };
+				while (p) {
+					int         i;
+					vec3_t      x, c = { 0, 0, 0 };
 
-			for (i = 0; i < p->numverts; i++) {
-				VectorSubtract (p->verts[i], r_refdef.vieworg, x);
-				VectorAdd (x, c, c);
-			}
-			VectorScale (c, 1.0 / p->numverts, c);
-			VectorAdd (c, r_refdef.vieworg, c);
-			qfglVertex3fv (c);
-			p = p->next;
-		}
-		sc = sc->texturechain;
-	}
-	qfglEnd ();
-	if (skyloaded) {
-		int         i, j;
-
-		qfglColor3ubv (255, 0, 0);
-		for (i = 0; i < 6; i++) {
-			vec3_t      v;
-
-			qfglBegin (GL_LINE_LOOP);
-			for (j = 0; j < 4; j++) {
-				VectorScale (&skyvec[i][j][2], 1.0 / 128.0, v);
-				VectorAdd (v, r_refdef.vieworg, v);
-				qfglVertex3fv (v);
+					for (i = 0; i < p->numverts; i++) {
+						VectorSubtract (p->verts[i], r_refdef.vieworg, x);
+						VectorAdd (x, c, c);
+					}
+					VectorScale (c, 1.0 / p->numverts, c);
+					VectorAdd (c, r_refdef.vieworg, c);
+					qfglVertex3fv (c);
+					p = p->next;
+				}
+				sc = sc->texturechain;
 			}
 			qfglEnd ();
 		}
+		if (gl_sky_debug->int_val & 4) {
+			if (skyloaded) {
+				int         i, j;
+
+				qfglColor3ub (255, 0, 0);
+				for (i = 0; i < 6; i++) {
+					vec3_t      v;
+
+					qfglBegin (GL_LINE_LOOP);
+					for (j = 0; j < 4; j++) {
+						VectorScale (&skyvec[i][j][2], 1.0 / 128.0, v);
+						VectorAdd (v, r_refdef.vieworg, v);
+						qfglVertex3fv (v);
+					}
+					qfglEnd ();
+				}
+			}
+		}
+		qfglColor3ubv (color_white);
+		qfglEnable (GL_TEXTURE_2D);
 	}
-	qfglColor3ubv (color_white);
-	qfglEnable (GL_TEXTURE_2D);
-#endif
 }

@@ -34,6 +34,7 @@ extern struct cvar_s     *gl_picmip;
 extern struct cvar_s     *gl_playermip;
 extern struct cvar_s     *gl_reporttjunctions;
 extern struct cvar_s     *gl_sky_clip;
+extern struct cvar_s     *gl_sky_debug;
 extern struct cvar_s     *gl_sky_divide;
 extern struct cvar_s     *gl_skymultipass;
 extern struct cvar_s     *gl_texsort;
