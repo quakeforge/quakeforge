@@ -1052,6 +1052,28 @@ R_Clear (void)
 }
 
 
+void
+R_RenderScene (void)
+{
+	R_SetupFrame ();
+
+	R_SetFrustum ();
+
+	R_SetupGL ();
+
+	R_PushDlights (vec3_origin);
+
+	R_MarkLeaves ();			// done here so we know if we're in water
+
+	R_DrawWorld ();				// adds static entities to the list
+
+	S_ExtraUpdate ();			// don't let sound get messed up if going slow
+
+	R_DrawEntitiesOnList ();
+
+	R_RenderDlights ();
+}
+
 /*
 	R_RenderView
 
@@ -1071,23 +1093,7 @@ R_RenderView (void)
 	R_Clear ();
 
 	// render normal view
-	R_SetupFrame ();
-
-	R_SetFrustum ();
-
-	R_SetupGL ();
-
-	R_PushDlights (vec3_origin);
-
-	R_MarkLeaves ();			// done here so we know if we're in water
-
-	R_DrawWorld ();				// adds static entities to the list
-
-	S_ExtraUpdate ();			// don't let sound get messed up if going slow
-
-	R_DrawEntitiesOnList ();
-
-	R_RenderDlights ();
+	R_RenderScene ();
 
 	R_DrawWaterSurfaces ();
 
