@@ -208,8 +208,8 @@ PM_RecursiveHullCheck (hull_t *hull, int num, float p1f, float p2f, vec3_t p1,
 		goto loc0;
 	}
 	side = (t1 < 0);
-	//frac = bound (0, t1 / (t1 - t2), 1);	// use this if below causes probs
 	frac = t1 / (t1 - t2);
+	//frac = bound (0, frac, 1); // is this needed?
 
 	midf = p1f + (p2f - p1f) * frac;
 	for (i = 0; i < 3; i++)
@@ -221,15 +221,15 @@ PM_RecursiveHullCheck (hull_t *hull, int num, float p1f, float p2f, vec3_t p1,
 		return false;
 
 #ifdef PARANOID
-	if (PM_HullPointContents (pm_hullmodel, mid, node->children[side]) ==
-		CONTENTS_SOLID) {
+	if (PM_HullPointContents (hull, mid, node->children[side])
+		== CONTENTS_SOLID) {
 		Con_Printf ("mid PointInHullSolid\n");
 		return false;
 	}
 #endif
 
-	if (PM_HullPointContents (hull, node->children[side ^ 1],
-							  mid) != CONTENTS_SOLID) {
+	if (PM_HullPointContents (hull, node->children[side ^ 1], mid)
+		!= CONTENTS_SOLID) {
 		// go past the node
 		return PM_RecursiveHullCheck (hull, node->children[side ^ 1], midf,
 									  p2f, mid, p2, trace);
@@ -238,9 +238,7 @@ PM_RecursiveHullCheck (hull_t *hull, int num, float p1f, float p2f, vec3_t p1,
 	if (trace->allsolid)
 		return false;					// never got out of the solid area
 
-	//==================
 	// the other side of the node is solid, this is the impact point
-	//==================
 	if (!side) {
 		VectorCopy (plane->normal, trace->plane.normal);
 		trace->plane.dist = plane->dist;
@@ -253,8 +251,8 @@ PM_RecursiveHullCheck (hull_t *hull, int num, float p1f, float p2f, vec3_t p1,
 	}
 
 #if 0	//XXX I don't think this is needed any more, but leave it in for now
-	while (PM_HullPointContents (hull, hull->firstclipnode,
-								 mid) == CONTENTS_SOLID) {
+	while (PM_HullPointContents (hull, hull->firstclipnode, mid)
+		   == CONTENTS_SOLID) {
 		// shouldn't really happen, but does occasionally
 		frac -= 0.1;
 		if (frac < 0) {
@@ -271,9 +269,10 @@ PM_RecursiveHullCheck (hull_t *hull, int num, float p1f, float p2f, vec3_t p1,
 	// put the crosspoint DIST_EPSILON pixels on the near side to guarantee
 	// mid is on the correct side of the plane
 	if (side)
-		frac = bound (0, (t1 + DIST_EPSILON) / (t1 - t2), 1);
+		frac = (t1 + DIST_EPSILON) / (t1 - t2);
 	else
-		frac = bound (0, (t1 - DIST_EPSILON) / (t1 - t2), 1);
+		frac = (t1 - DIST_EPSILON) / (t1 - t2);
+	frac = bound (0, frac, 1);
 
 	midf = p1f + (p2f - p1f) * frac;
 	for (i = 0; i < 3; i++)

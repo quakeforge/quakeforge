@@ -43,6 +43,7 @@ static const char rcsid[] =
 #include "QF/console.h"
 #include "QF/crc.h"
 
+#include "compat.h"
 #include "server.h"
 #include "sv_progs.h"
 #include "world.h"
@@ -414,8 +415,8 @@ int
 SV_HullPointContents (hull_t *hull, int num, vec3_t p)
 {
 	dclipnode_t *node;
-	float		 d;
-	mplane_t    *plane;
+	float       d;
+	mplane_t   *plane;
 
 	while (num >= 0) {
 		if (num < hull->firstclipnode || num > hull->lastclipnode)
@@ -506,9 +507,6 @@ SV_RecursiveHullCheck (hull_t *hull, int num, float p1f, float p2f, vec3_t p1,
 		return true;					// empty
 	}
 
-	if (num < hull->firstclipnode || num > hull->lastclipnode)
-		SV_Error ("SV_RecursiveHullCheck: bad node number");
-
 	// find the point distances
 	node = hull->clipnodes + num;
 	plane = hull->planes + node->planenum;
@@ -521,44 +519,28 @@ SV_RecursiveHullCheck (hull_t *hull, int num, float p1f, float p2f, vec3_t p1,
 		t2 = DotProduct (plane->normal, p2) - plane->dist;
 	}
 
-#if 1
 	if (t1 >= 0 && t2 >= 0)
 		return SV_RecursiveHullCheck (hull, node->children[0], p1f, p2f, p1,
 									  p2, trace);
 	if (t1 < 0 && t2 < 0)
 		return SV_RecursiveHullCheck (hull, node->children[1], p1f, p2f, p1,
 									  p2, trace);
-#else
-	if ((t1 >= DIST_EPSILON && t2 >= DIST_EPSILON) || (t2 > t1 && t1 >= 0))
-		return SV_RecursiveHullCheck (hull, node->children[0], p1f, p2f, p1,
-									  p2, trace);
-	if ((t1 <= -DIST_EPSILON && t2 <= -DIST_EPSILON) || (t2 < t1 && t1 <= 0))
-		return SV_RecursiveHullCheck (hull, node->children[1], p1f, p2f, p1,
-									  p2, trace);
-#endif
 
-	// put the crosspoint DIST_EPSILON pixels on the near side
-	if (t1 < 0)
-		frac = (t1 + DIST_EPSILON) / (t1 - t2);
-	else
-		frac = (t1 - DIST_EPSILON) / (t1 - t2);
-	if (frac < 0)
-		frac = 0;
-	if (frac > 1)
-		frac = 1;
+	side = (t1 < 0);
+	frac = t1 / (t1 - t2);
+	//frac = bound (0, frac, 1); // is this needed?
 
 	midf = p1f + (p2f - p1f) * frac;
 	for (i = 0; i < 3; i++)
 		mid[i] = p1[i] + frac * (p2[i] - p1[i]);
 
-	side = (t1 < 0);
-
 	// move up to the node
-	if (!SV_RecursiveHullCheck
-		(hull, node->children[side], p1f, midf, p1, mid, trace)) return false;
+	if (!SV_RecursiveHullCheck (hull, node->children[side],
+								p1f, midf, p1, mid, trace))
+		return false;
 
 #ifdef PARANOID
-	if (SV_HullPointContents (sv_hullmodel, mid, node->children[side])
+	if (SV_HullPointContents (hull, mid, node->children[side])
 		== CONTENTS_SOLID) {
 		SV_Printf ("mid PointInHullSolid\n");
 		return false;
@@ -566,10 +548,11 @@ SV_RecursiveHullCheck (hull_t *hull, int num, float p1f, float p2f, vec3_t p1,
 #endif
 
 	if (SV_HullPointContents (hull, node->children[side ^ 1], mid)
-		!= CONTENTS_SOLID)
+		!= CONTENTS_SOLID) {
 		// go past the node
 		return SV_RecursiveHullCheck (hull, node->children[side ^ 1], midf,
 									  p2f, mid, p2, trace);
+	}
 
 	if (trace->allsolid)
 		return false;					// never got out of the solid area
@@ -579,13 +562,17 @@ SV_RecursiveHullCheck (hull_t *hull, int num, float p1f, float p2f, vec3_t p1,
 		VectorCopy (plane->normal, trace->plane.normal);
 		trace->plane.dist = plane->dist;
 	} else {
-		VectorSubtract (vec3_origin, plane->normal, trace->plane.normal);
+		// invert plane paramterers
+		trace->plane.normal[0] = -plane->normal[0];
+		trace->plane.normal[1] = -plane->normal[1];
+		trace->plane.normal[2] = -plane->normal[2];
 		trace->plane.dist = -plane->dist;
 	}
 
+#if 0 //XXX I don't think this is needed any more, but leave it in for now
 	while (SV_HullPointContents (hull, hull->firstclipnode, mid)
-		   == CONTENTS_SOLID) {			// shouldn't really happen, but does
-										// occasionally
+		   == CONTENTS_SOLID) {
+		// shouldn't really happen, but does occasionally
 		frac -= 0.1;
 		if (frac < 0) {
 			trace->fraction = midf;
@@ -597,6 +584,18 @@ SV_RecursiveHullCheck (hull_t *hull, int num, float p1f, float p2f, vec3_t p1,
 		for (i = 0; i < 3; i++)
 			mid[i] = p1[i] + frac * (p2[i] - p1[i]);
 	}
+#endif
+	// put the crosspoint DIST_EPSILON pixels on the near side to guarantee
+	// mid is on the correct side of the plane
+	if (side)
+		frac = (t1 + DIST_EPSILON) / (t1 - t2);
+	else
+		frac = (t1 - DIST_EPSILON) / (t1 - t2);
+	frac = bound (0, frac, 1);
+
+	midf = p1f + (p2f - p1f) * frac;
+	for (i = 0; i < 3; i++)
+		mid[i] = p1[i] + frac * (p2[i] - p1[i]);
 
 	trace->fraction = midf;
 	VectorCopy (mid, trace->endpos);
