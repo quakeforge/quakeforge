@@ -1761,14 +1761,14 @@ Host_Init (void)
 	Hunk_AllocName (0, "-HOST_HUNKLEVEL-");
 	host_hunklevel = Hunk_LowMark ();
 
-	host_initialized = true;
-
 	Con_Printf ("\nClient version %s (build %04d)\n\n", VERSION,
 				build_number ());
 	Con_Printf ("\x80\x81\x81\x82 %s initialized \x80\x81\x81\x82\n", PROGRAM);
 
 	// make sure all + commands have been executed
 	Cbuf_Execute_Stack (cl_cbuf);
+
+	host_initialized = true;
 
 	CL_UpdateScreen (realtime);
 	Con_NewMap ();							// force the menus to be loaded

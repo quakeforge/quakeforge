@@ -991,13 +991,16 @@ Host_Init (void)
 	Hunk_AllocName (0, "-HOST_HUNKLEVEL-");
 	host_hunklevel = Hunk_LowMark ();
 
-	host_initialized = true;
-
 	Con_Printf ("\nVersion %s (build %04d)\n\n", VERSION,
 				build_number ());
 
 	Con_Printf ("\x80\x81\x81\x82 %s initialized\x80\x81\x81\x82\n", PROGRAM);
 	CL_UpdateScreen (cl.time);
+
+	// make sure all + commands have been executed
+	Cbuf_Execute_Stack (cl_cbuf);
+
+	host_initialized = true;
 
 	if (isDedicated) {
 		if (!sv.active)
