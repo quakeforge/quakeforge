@@ -127,6 +127,5 @@ void SV_Stop (int reason);
 void DemoSetMsgBuf (demobuf_t *prev, demobuf_t *cur);
 void Demo_Init (void);
 void SV_DemoPings (void);
-void SV_WriteDemoMessage (sizebuf_t *msg, int type, int to, float time);
 
 #endif//__sv_demo_h
