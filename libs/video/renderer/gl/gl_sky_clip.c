@@ -811,13 +811,16 @@ R_DrawSkyChain (const msurface_t *sky_chain)
 		if (gl_sky_clip->int_val) {
 			draw_skybox_sky_polys (sky_chain);
 		}
+		draw_z_sky_polys (sky_chain);
 	} else if (gl_sky_clip->int_val == 2) {
 		draw_id_sky_polys (sky_chain);
 	} else if (gl_sky_clip->int_val) {
+		// XXX not properly implemented
 		draw_skydome_sky_polys (sky_chain);
-		return; // XXX not properly implemented
+		//draw_z_sky_polys (sky_chain);
+	} else {
+		draw_z_sky_polys (sky_chain);
 	}
-	draw_z_sky_polys (sky_chain);
 
 	if (gl_sky_debug->int_val) {
 		const msurface_t *sc;
