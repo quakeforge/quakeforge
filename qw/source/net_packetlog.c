@@ -961,7 +961,7 @@ int
 Net_Log_Init (void)
 {
 	netlogger =
-		Cvar_Get ("net_logger", "1", CVAR_NONE, "Packet logging/parsing");
+		Cvar_Get ("net_logger", "1", CVAR_NONE, 0, "Packet logging/parsing");
 
 // 0 = no logging
 // 1 = hex dump only
@@ -970,7 +970,7 @@ Net_Log_Init (void)
 // 4 = parse/hexdump, skip movement/empty messages
 
 	netloglevel =
-		Cvar_Get ("net_loglevel", "2", CVAR_NONE, "Packet logging/parsing");
+		Cvar_Get ("net_loglevel", "2", CVAR_NONE, 0, "Packet logging/parsing");
 
 	Net_LogStart ("qfpacket.log");
 	return 0;

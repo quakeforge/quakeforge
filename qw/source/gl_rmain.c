@@ -156,7 +156,7 @@ GL_CheckBrightness (unsigned char *pal)
 	int         i, inf;
 	float       brightness;
 
-	brighten = Cvar_Get ("brighten", "1", CVAR_NONE,
+	brighten = Cvar_Get ("brighten", "1", CVAR_NONE, 0,
 						 "Palette hack equivalent to brightness");
 
 	if ((i = COM_CheckParm ("-brighten"))) {

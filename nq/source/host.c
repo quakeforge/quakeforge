@@ -241,25 +241,25 @@ Host_InitLocal (void)
 	Host_InitCommands ();
 
 	host_framerate =
-		Cvar_Get ("host_framerate", "0", CVAR_NONE, "set for slow motion");
+		Cvar_Get ("host_framerate", "0", CVAR_NONE, 0, "set for slow motion");
 	host_speeds =
-		Cvar_Get ("host_speeds", "0", CVAR_NONE, "set for running times");
+		Cvar_Get ("host_speeds", "0", CVAR_NONE, 0, "set for running times");
 
-	sys_ticrate = Cvar_Get ("sys_ticrate", "0.05", CVAR_NONE, "None");
-	serverprofile = Cvar_Get ("serverprofile", "0", CVAR_NONE, "None");
+	sys_ticrate = Cvar_Get ("sys_ticrate", "0.05", CVAR_NONE, 0, "None");
+	serverprofile = Cvar_Get ("serverprofile", "0", CVAR_NONE, 0, "None");
 
-	fraglimit = Cvar_Get ("fraglimit", "0", CVAR_SERVERINFO, "None");
-	timelimit = Cvar_Get ("timelimit", "0", CVAR_SERVERINFO, "None");
-	teamplay = Cvar_Get ("teamplay", "0", CVAR_SERVERINFO, "None");
-	samelevel = Cvar_Get ("samelevel", "0", CVAR_NONE, "None");
-	noexit = Cvar_Get ("noexit", "0", CVAR_SERVERINFO, "None");
-	skill = Cvar_Get ("skill", "1", CVAR_NONE, "0 - 3");
-	deathmatch = Cvar_Get ("deathmatch", "0", CVAR_NONE, "0, 1, or 2");
-	coop = Cvar_Get ("coop", "0", CVAR_NONE, "0 or 1");
+	fraglimit = Cvar_Get ("fraglimit", "0", CVAR_SERVERINFO, Cvar_Info, "None");
+	timelimit = Cvar_Get ("timelimit", "0", CVAR_SERVERINFO, Cvar_Info, "None");
+	teamplay = Cvar_Get ("teamplay", "0", CVAR_SERVERINFO, Cvar_Info, "None");
+	samelevel = Cvar_Get ("samelevel", "0", CVAR_NONE, 0, "None");
+	noexit = Cvar_Get ("noexit", "0", CVAR_SERVERINFO, Cvar_Info, "None");
+	skill = Cvar_Get ("skill", "1", CVAR_NONE, 0, "0 - 3");
+	deathmatch = Cvar_Get ("deathmatch", "0", CVAR_NONE, 0, "0, 1, or 2");
+	coop = Cvar_Get ("coop", "0", CVAR_NONE, 0, "0 or 1");
 
-	pausable = Cvar_Get ("pausable", "1", CVAR_NONE, "None");
+	pausable = Cvar_Get ("pausable", "1", CVAR_NONE, 0, "None");
 
-	temp1 = Cvar_Get ("temp1", "0", CVAR_NONE, "None");
+	temp1 = Cvar_Get ("temp1", "0", CVAR_NONE, 0, "None");
 
 	Host_FindMaxClients ();
 
@@ -912,7 +912,7 @@ Host_Init (quakeparms_t *parms)
 	// only reads from within the quake file system, and changing that is
 	// probably Not A Good Thing (tm).
 	fs_globalcfg = Cvar_Get ("fs_globalcfg", FS_GLOBALCFG,
-							 CVAR_ROM, "global configuration file");
+							 CVAR_ROM, 0, "global configuration file");
 	Cmd_Exec_File (fs_globalcfg->string);
 	Cbuf_Execute_Sets ();
 

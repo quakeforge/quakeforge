@@ -357,6 +357,6 @@ extern	qboolean	allowskybox;
 //=============================================================================
 
 
-
+void Cvar_Info (struct cvar_s *var);
 
 #endif // _CLIENT_H

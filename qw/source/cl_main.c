@@ -1197,105 +1197,105 @@ CL_Init_Cvars (void)
 {
 	// LordHavoc: some people like it asking on quit, others don't...
 	confirm_quit =
-		Cvar_Get ("confirm_quit", "1", CVAR_ARCHIVE, "confirm quit command");
-	cl_allow_cmd_pkt = Cvar_Get ("cl_allow_cmd_pkt", "1", CVAR_NONE,
+		Cvar_Get ("confirm_quit", "1", CVAR_ARCHIVE, 0, "confirm quit command");
+	cl_allow_cmd_pkt = Cvar_Get ("cl_allow_cmd_pkt", "1", CVAR_NONE, 0,
 								 "enables packets from the likes of gamespy");
-	show_fps = Cvar_Get ("show_fps", "0", CVAR_NONE,
+	show_fps = Cvar_Get ("show_fps", "0", CVAR_NONE, 0,
 						 "display realtime frames per second");
 	// Misty: I like to be able to see the time when I play
-	show_time = Cvar_Get ("show_time", "0", CVAR_NONE,
+	show_time = Cvar_Get ("show_time", "0", CVAR_NONE, 0,
 						  "display the current time");
-	host_speeds = Cvar_Get ("host_speeds", "0", CVAR_NONE,
+	host_speeds = Cvar_Get ("host_speeds", "0", CVAR_NONE, 0,
 							"display host processing times");
-	cl_demospeed = Cvar_Get ("cl_demospeed", "1.0", CVAR_NONE,
+	cl_demospeed = Cvar_Get ("cl_demospeed", "1.0", CVAR_NONE, 0,
 							 "adjust demo playback speed. 1.0 = normal, < 1 slow-mo, > 1 timelaps");
 	// Misty: Turn on or off screen filling colors for powerups among other things. 
-	cl_cshift_bonus = Cvar_Get ("cl_cshift_bonus", "1", CVAR_ARCHIVE,
+	cl_cshift_bonus = Cvar_Get ("cl_cshift_bonus", "1", CVAR_ARCHIVE, 0,
 							"Show bonus flash on item pickup");
-	cl_cshift_contents = Cvar_Get ("cl_cshift_content", "1", CVAR_ARCHIVE,
+	cl_cshift_contents = Cvar_Get ("cl_cshift_content", "1", CVAR_ARCHIVE, 0,
 							"Shift view colors for contents (water, slime, etc)");
-	cl_cshift_damage = Cvar_Get ("cl_cshift_damage", "1", CVAR_ARCHIVE,
+	cl_cshift_damage = Cvar_Get ("cl_cshift_damage", "1", CVAR_ARCHIVE, 0,
 							"Shift view colors on damage");
-	cl_cshift_powerup = Cvar_Get ("cl_cshift_powerup", "1", CVAR_ARCHIVE,
+	cl_cshift_powerup = Cvar_Get ("cl_cshift_powerup", "1", CVAR_ARCHIVE, 0,
 							"Shift view colors for powerups");
-	cl_autoexec = Cvar_Get ("cl_autoexec", "0", CVAR_ROM,
+	cl_autoexec = Cvar_Get ("cl_autoexec", "0", CVAR_ROM, 0,
 							"exec autoexec.cfg on gamedir change");
-	cl_warncmd = Cvar_Get ("cl_warncmd", "0", CVAR_NONE,
+	cl_warncmd = Cvar_Get ("cl_warncmd", "0", CVAR_NONE, 0,
 						   "inform when execing a command");
-	cl_upspeed = Cvar_Get ("cl_upspeed", "200", CVAR_NONE,
+	cl_upspeed = Cvar_Get ("cl_upspeed", "200", CVAR_NONE, 0,
 						   "swim/fly up/down speed");
-	cl_forwardspeed = Cvar_Get ("cl_forwardspeed", "200", CVAR_ARCHIVE,
+	cl_forwardspeed = Cvar_Get ("cl_forwardspeed", "200", CVAR_ARCHIVE, 0,
 								"forward speed");
-	cl_backspeed = Cvar_Get ("cl_backspeed", "200", CVAR_ARCHIVE,
+	cl_backspeed = Cvar_Get ("cl_backspeed", "200", CVAR_ARCHIVE, 0,
 							 "backward speed");
-	cl_sidespeed = Cvar_Get ("cl_sidespeed", "350", CVAR_NONE, "strafe speed");
-	cl_movespeedkey = Cvar_Get ("cl_movespeedkey", "2.0", CVAR_NONE,
+	cl_sidespeed = Cvar_Get ("cl_sidespeed", "350", CVAR_NONE, 0, "strafe speed");
+	cl_movespeedkey = Cvar_Get ("cl_movespeedkey", "2.0", CVAR_NONE, 0,
 								"move `run' speed multiplier");
-	cl_yawspeed = Cvar_Get ("cl_yawspeed", "140", CVAR_NONE, "turning speed");
-	cl_pitchspeed = Cvar_Get ("cl_pitchspeed", "150", CVAR_NONE,
+	cl_yawspeed = Cvar_Get ("cl_yawspeed", "140", CVAR_NONE, 0, "turning speed");
+	cl_pitchspeed = Cvar_Get ("cl_pitchspeed", "150", CVAR_NONE, 0,
 							  "look up/down speed");
-	cl_anglespeedkey = Cvar_Get ("cl_anglespeedkey", "1.5", CVAR_NONE,
+	cl_anglespeedkey = Cvar_Get ("cl_anglespeedkey", "1.5", CVAR_NONE, 0,
 								 "turn `run' speed multiplier");
-	cl_shownet = Cvar_Get ("cl_shownet", "0", CVAR_NONE,
+	cl_shownet = Cvar_Get ("cl_shownet", "0", CVAR_NONE, 0,
 						   "show network packets. 0=off, 1=basic, 2=verbose");
-	cl_sbar = Cvar_Get ("cl_sbar", "0", CVAR_ARCHIVE, "status bar mode");
-	cl_sbar_separator = Cvar_Get ("cl_sbar_separator", "0", CVAR_ARCHIVE,
+	cl_sbar = Cvar_Get ("cl_sbar", "0", CVAR_ARCHIVE, 0, "status bar mode");
+	cl_sbar_separator = Cvar_Get ("cl_sbar_separator", "0", CVAR_ARCHIVE, 0,
 								  "turns on status bar separator");
-	cl_hudswap = Cvar_Get ("cl_hudswap", "0", CVAR_ARCHIVE,
+	cl_hudswap = Cvar_Get ("cl_hudswap", "0", CVAR_ARCHIVE, 0,
 						   "new HUD on left side?");
-	cl_maxfps = Cvar_Get ("cl_maxfps", "0", CVAR_ARCHIVE,
+	cl_maxfps = Cvar_Get ("cl_maxfps", "0", CVAR_ARCHIVE, 0,
 						  "maximum frames rendered in one second. 0 == 32");
-	cl_timeout = Cvar_Get ("cl_timeout", "60", CVAR_ARCHIVE,
+	cl_timeout = Cvar_Get ("cl_timeout", "60", CVAR_ARCHIVE, 0,
 						   "server connection timeout (since last packet received)");
-	lookspring = Cvar_Get ("lookspring", "0", CVAR_ARCHIVE,
+	lookspring = Cvar_Get ("lookspring", "0", CVAR_ARCHIVE, 0,
 						   "Snap view to center when moving and no mlook/klook");
-	lookstrafe = Cvar_Get ("lookstrafe", "0", CVAR_ARCHIVE,
+	lookstrafe = Cvar_Get ("lookstrafe", "0", CVAR_ARCHIVE, 0,
 						   "when mlook/klook on player will strafe");
-	sensitivity = Cvar_Get ("sensitivity", "3", CVAR_ARCHIVE,
+	sensitivity = Cvar_Get ("sensitivity", "3", CVAR_ARCHIVE, 0,
 							"mouse sensitivity multiplier");
-	cl_freelook = Cvar_Get ("freelook", "0", CVAR_ARCHIVE, "force +mlook");
+	cl_freelook = Cvar_Get ("freelook", "0", CVAR_ARCHIVE, 0, "force +mlook");
 
-	m_pitch = Cvar_Get ("m_pitch", "0.022", CVAR_ARCHIVE,
+	m_pitch = Cvar_Get ("m_pitch", "0.022", CVAR_ARCHIVE, 0,
 						"mouse pitch (up/down) multipier");
-	m_yaw = Cvar_Get ("m_yaw", "0.022", CVAR_NONE,
+	m_yaw = Cvar_Get ("m_yaw", "0.022", CVAR_NONE, 0,
 					  "mouse yaw (left/right) multiplier");
-	m_forward = Cvar_Get ("m_forward", "1", CVAR_NONE,
+	m_forward = Cvar_Get ("m_forward", "1", CVAR_NONE, 0,
 						  "mouse forward/back speed");
-	m_side = Cvar_Get ("m_side", "0.8", CVAR_NONE, "mouse strafe speed");
+	m_side = Cvar_Get ("m_side", "0.8", CVAR_NONE, 0, "mouse strafe speed");
 
-	rcon_password = Cvar_Get ("rcon_password", "", CVAR_NONE,
+	rcon_password = Cvar_Get ("rcon_password", "", CVAR_NONE, 0,
 							  "remote control password");
-	rcon_address = Cvar_Get ("rcon_address", "", CVAR_NONE,
+	rcon_address = Cvar_Get ("rcon_address", "", CVAR_NONE, 0,
 							 "server IP address when client not connected - for sending rcon commands");
 
-	cl_writecfg = Cvar_Get ("cl_writecfg", "1", CVAR_NONE, "write config files?");
+	cl_writecfg = Cvar_Get ("cl_writecfg", "1", CVAR_NONE, 0, "write config files?");
 
-	cl_predict_players2 = Cvar_Get ("cl_predict_players2", "1", CVAR_NONE,
+	cl_predict_players2 = Cvar_Get ("cl_predict_players2", "1", CVAR_NONE, 0,
 									"If this and cl_predict_players is 0, no player prediction is done");
-	cl_predict_players = Cvar_Get ("cl_predict_players", "1", CVAR_NONE,
+	cl_predict_players = Cvar_Get ("cl_predict_players", "1", CVAR_NONE, 0,
 								   "If this and cl_predict_players2 is 0, no player prediction is done");
-	cl_solid_players = Cvar_Get ("cl_solid_players", "1", CVAR_NONE,
+	cl_solid_players = Cvar_Get ("cl_solid_players", "1", CVAR_NONE, 0,
 								 "Are players solid? If off, you can walk through them with difficulty");
 
-	localid = Cvar_Get ("localid", "", CVAR_NONE,
+	localid = Cvar_Get ("localid", "", CVAR_NONE, 0,
 						"FIXME: This has something to do with client authentication. No Description");
 
 	// 
 	// info mirrors
 	// 
-	name = Cvar_Get ("name", "unnamed", CVAR_ARCHIVE | CVAR_USERINFO,
+	name = Cvar_Get ("name", "unnamed", CVAR_ARCHIVE | CVAR_USERINFO, Cvar_Info,
 					 "Player name");
-	password = Cvar_Get ("password", "", CVAR_USERINFO, "Server password");
-	spectator = Cvar_Get ("spectator", "", CVAR_USERINFO,
+	password = Cvar_Get ("password", "", CVAR_USERINFO, Cvar_Info, "Server password");
+	spectator = Cvar_Get ("spectator", "", CVAR_USERINFO, Cvar_Info,
 						  "Set to 1 before connecting to become a spectator");
-	team = Cvar_Get ("team", "", CVAR_ARCHIVE | CVAR_USERINFO,
+	team = Cvar_Get ("team", "", CVAR_ARCHIVE | CVAR_USERINFO, Cvar_Info,
 					 "Team player is on.");
-	rate = Cvar_Get ("rate", "2500", CVAR_ARCHIVE | CVAR_USERINFO,
+	rate = Cvar_Get ("rate", "2500", CVAR_ARCHIVE | CVAR_USERINFO, Cvar_Info,
 					 "Amount of bytes per second server will send/download to you");
-	msg = Cvar_Get ("msg", "1", CVAR_ARCHIVE | CVAR_USERINFO, "Determines the type of messages reported 0 is maximum, 4 is none");
-	noaim = Cvar_Get ("noaim", "0", CVAR_ARCHIVE | CVAR_USERINFO,
+	msg = Cvar_Get ("msg", "1", CVAR_ARCHIVE | CVAR_USERINFO, Cvar_Info, "Determines the type of messages reported 0 is maximum, 4 is none");
+	noaim = Cvar_Get ("noaim", "0", CVAR_ARCHIVE | CVAR_USERINFO, Cvar_Info,
 					  "Auto aim off switch. Set to 1 to turn off.");
-	cl_max_particles = Cvar_Get ("cl_max_particles", "2048", CVAR_ARCHIVE,
+	cl_max_particles = Cvar_Get ("cl_max_particles", "2048", CVAR_ARCHIVE, 0,
 						  "Maximum amount of particles to display");
 }
 
@@ -1560,7 +1560,7 @@ Host_Init (void)
 	// only reads from within the quake file system, and changing that is
 	// probably Not A Good Thing (tm).
 	fs_globalcfg = Cvar_Get ("fs_globalcfg", FS_GLOBALCFG,
-							 CVAR_ROM, "global configuration file");
+							 CVAR_ROM, 0, "global configuration file");
 	Cmd_Exec_File (fs_globalcfg->string);
 	Cbuf_Execute_Sets ();
 
@@ -1569,7 +1569,7 @@ Host_Init (void)
 	Cbuf_Execute_Sets ();
 
 	fs_usercfg = Cvar_Get ("fs_usercfg", FS_USERCFG,
-						   CVAR_ROM, "user configuration file");
+						   CVAR_ROM, 0, "user configuration file");
 	Cmd_Exec_File (fs_usercfg->string);
 	Cbuf_Execute_Sets ();
 

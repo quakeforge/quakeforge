@@ -384,21 +384,21 @@ SCR_SizeDown_f (void)
 void
 SCR_Init_Cvars (void)
 {
-	scr_fov = Cvar_Get ("fov", "90", CVAR_NONE, "Your point of view in degrees. Smaller than 90 zooms in.");
-	scr_viewsize = Cvar_Get ("viewsize", "100", CVAR_ARCHIVE, "Set the screen size 30 minimum, 120 maximum");
-	scr_conspeed = Cvar_Get ("scr_conspeed", "300", CVAR_NONE, "How quickly console scrolls up or down");
-	scr_consize = Cvar_Get ("scr_consize", "0.5", CVAR_ARCHIVE, "fraction of the screen the console covers when down");
-	scr_showram = Cvar_Get ("showram", "1", CVAR_NONE, "Show RAM icon if game is running low on memory");
-	scr_showturtle = Cvar_Get ("showturtle", "0", CVAR_NONE, "Show a turtle icon if your fps is slower than 10");
-	scr_showpause = Cvar_Get ("showpause", "1", CVAR_NONE, "Toggles display of pause graphic");
-	scr_centertime = Cvar_Get ("scr_centertime", "2", CVAR_NONE, "How long in seconds screen hints are displayed");
-	scr_printspeed = Cvar_Get ("scr_printspeed", "8", CVAR_NONE, "How fast the text is displayed at the end of the single player episodes");
-	gl_triplebuffer = Cvar_Get ("gl_triplebuffer", "1", CVAR_ARCHIVE, "Set to 1 by default. Fixes status bar flicker on some hardware");
+	scr_fov = Cvar_Get ("fov", "90", CVAR_NONE, 0, "Your point of view in degrees. Smaller than 90 zooms in.");
+	scr_viewsize = Cvar_Get ("viewsize", "100", CVAR_ARCHIVE, 0, "Set the screen size 30 minimum, 120 maximum");
+	scr_conspeed = Cvar_Get ("scr_conspeed", "300", CVAR_NONE, 0, "How quickly console scrolls up or down");
+	scr_consize = Cvar_Get ("scr_consize", "0.5", CVAR_ARCHIVE, 0, "fraction of the screen the console covers when down");
+	scr_showram = Cvar_Get ("showram", "1", CVAR_NONE, 0, "Show RAM icon if game is running low on memory");
+	scr_showturtle = Cvar_Get ("showturtle", "0", CVAR_NONE, 0, "Show a turtle icon if your fps is slower than 10");
+	scr_showpause = Cvar_Get ("showpause", "1", CVAR_NONE, 0, "Toggles display of pause graphic");
+	scr_centertime = Cvar_Get ("scr_centertime", "2", CVAR_NONE, 0, "How long in seconds screen hints are displayed");
+	scr_printspeed = Cvar_Get ("scr_printspeed", "8", CVAR_NONE, 0, "How fast the text is displayed at the end of the single player episodes");
+	gl_triplebuffer = Cvar_Get ("gl_triplebuffer", "1", CVAR_ARCHIVE, 0, "Set to 1 by default. Fixes status bar flicker on some hardware");
 
-	crosshaircolor = Cvar_Get ("crosshaircolor", "79", CVAR_ARCHIVE, "Color of the new crosshair");
-	crosshair = Cvar_Get ("crosshair", "0", CVAR_ARCHIVE, "Crosshair type. 0 off, 1 old without color, 2 new with colors");
-	cl_crossx = Cvar_Get ("cl_crossx", "0", CVAR_ARCHIVE, "Sets the position of the crosshair on the X-axis.");
-	cl_crossy = Cvar_Get ("cl_crossy", "0", CVAR_ARCHIVE, "Sets the position of the crosshair on the Y-axis.");
+	crosshaircolor = Cvar_Get ("crosshaircolor", "79", CVAR_ARCHIVE, 0, "Color of the new crosshair");
+	crosshair = Cvar_Get ("crosshair", "0", CVAR_ARCHIVE, 0, "Crosshair type. 0 off, 1 old without color, 2 new with colors");
+	cl_crossx = Cvar_Get ("cl_crossx", "0", CVAR_ARCHIVE, 0, "Sets the position of the crosshair on the X-axis.");
+	cl_crossy = Cvar_Get ("cl_crossy", "0", CVAR_ARCHIVE, 0, "Sets the position of the crosshair on the Y-axis.");
 }
 
 void

@@ -37,6 +37,8 @@
 #include "game.h"
 #include "QF/cmd.h"
 
+void Cvar_Info (struct cvar_s *var);
+
 cvar_t     *registered;
 cvar_t     *cmdline;
 int         static_registered = 1;
@@ -80,8 +82,8 @@ COM_Init
 void
 COM_Init ()
 {
-	registered = Cvar_Get ("registered", "0", CVAR_NONE, "None");
-	cmdline = Cvar_Get ("cmdline", "0", CVAR_SERVERINFO, "None");
+	registered = Cvar_Get ("registered", "0", CVAR_NONE, 0, "None");
+	cmdline = Cvar_Get ("cmdline", "0", CVAR_SERVERINFO, Cvar_Info, "None");
 	Cmd_AddCommand ("path", COM_Path_f, "No Description");
 
 	COM_Filesystem_Init_Cvars ();

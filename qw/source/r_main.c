@@ -267,31 +267,31 @@ R_Init_Cvars (void)
 {
 	D_Init_Cvars ();
 
-	r_draworder = Cvar_Get ("r_draworder", "0", CVAR_NONE, "Toggles drawing order");
-	r_speeds = Cvar_Get ("r_speeds", "0", CVAR_NONE, "Toggles the displaying of drawing time and"
+	r_draworder = Cvar_Get ("r_draworder", "0", CVAR_NONE, 0, "Toggles drawing order");
+	r_speeds = Cvar_Get ("r_speeds", "0", CVAR_NONE, 0, "Toggles the displaying of drawing time and"
 		"statistics of what is currently being viewed");
-	r_timegraph = Cvar_Get ("r_timegraph", "0", CVAR_NONE, "Toggle the display of a performance graph");
-	r_netgraph = Cvar_Get ("r_netgraph", "0", CVAR_NONE, "Toggle the display of a graph showing network performance");
-	r_zgraph = Cvar_Get ("r_zgraph", "0", CVAR_NONE, "Toggle the graph that reports the changes of z-axis position");
-	r_graphheight = Cvar_Get ("r_graphheight", "32", CVAR_NONE, "Set the number of lines displayed in the various graphs");
-	r_drawflat = Cvar_Get ("r_drawflat", "0", CVAR_NONE, "Toggles the drawing of textures");
-	r_ambient = Cvar_Get ("r_ambient", "0", CVAR_NONE, "Determines the ambient lighting for a level");
-	r_clearcolor = Cvar_Get ("r_clearcolor", "2", CVAR_NONE, "This sets the color for areas outside of the current map");
-	r_waterwarp = Cvar_Get ("r_waterwarp", "1", CVAR_NONE, "Toggles whether surfaces are warped in a liquid.");
-	r_drawentities = Cvar_Get ("r_drawentities", "1", CVAR_NONE, "Toggles the drawing of entities.");
-	r_drawviewmodel = Cvar_Get ("r_drawviewmodel", "1", CVAR_ARCHIVE, "Toggles the drawing of your weapon");
-	r_particles = Cvar_Get ("r_particles", "1", CVAR_ARCHIVE, "Toggles drawing of particles.");
-	r_aliasstats = Cvar_Get ("r_polymodelstats", "0", CVAR_NONE, "Toggles the displays of number of polygon models current being viewed");
-	r_dspeeds = Cvar_Get ("r_dspeeds", "0", CVAR_NONE, "Toggles the display of drawing speed information");
-	r_reportsurfout = Cvar_Get ("r_reportsurfout", "0", CVAR_NONE, "Toggle the display of how many surfaces where not displayed");
-	r_maxsurfs = Cvar_Get ("r_maxsurfs", "0", CVAR_NONE, "Sets the maximum number of surfaces");
-	r_numsurfs = Cvar_Get ("r_numsurfs", "0", CVAR_NONE, "Toggles the displaying of number of surfaces currently being viewed");
-	r_reportedgeout = Cvar_Get ("r_reportedgeout", "0", CVAR_NONE, "Toggle the display of how many edges where not displayed");
-	r_maxedges = Cvar_Get ("r_maxedges", "0", CVAR_NONE, "Sets the maximum number of surfaces");
-	r_numedges = Cvar_Get ("r_numedges", "0", CVAR_NONE, "Toggles the displaying of number of edges currently being viewed");
-	r_aliastransbase = Cvar_Get ("r_aliastransbase", "200", CVAR_NONE, "Determines how much of an alias model is clipped away and how much is viewable");
-	r_aliastransadj = Cvar_Get ("r_aliastransadj", "100", CVAR_NONE, "Determines how much of an alias model is clipped away and how much is viewable.");
-	gl_sky_divide = Cvar_Get ("gl_sky_divide", "1", CVAR_ARCHIVE,
+	r_timegraph = Cvar_Get ("r_timegraph", "0", CVAR_NONE, 0, "Toggle the display of a performance graph");
+	r_netgraph = Cvar_Get ("r_netgraph", "0", CVAR_NONE, 0, "Toggle the display of a graph showing network performance");
+	r_zgraph = Cvar_Get ("r_zgraph", "0", CVAR_NONE, 0, "Toggle the graph that reports the changes of z-axis position");
+	r_graphheight = Cvar_Get ("r_graphheight", "32", CVAR_NONE, 0, "Set the number of lines displayed in the various graphs");
+	r_drawflat = Cvar_Get ("r_drawflat", "0", CVAR_NONE, 0, "Toggles the drawing of textures");
+	r_ambient = Cvar_Get ("r_ambient", "0", CVAR_NONE, 0, "Determines the ambient lighting for a level");
+	r_clearcolor = Cvar_Get ("r_clearcolor", "2", CVAR_NONE, 0, "This sets the color for areas outside of the current map");
+	r_waterwarp = Cvar_Get ("r_waterwarp", "1", CVAR_NONE, 0, "Toggles whether surfaces are warped in a liquid.");
+	r_drawentities = Cvar_Get ("r_drawentities", "1", CVAR_NONE, 0, "Toggles the drawing of entities.");
+	r_drawviewmodel = Cvar_Get ("r_drawviewmodel", "1", CVAR_ARCHIVE, 0, "Toggles the drawing of your weapon");
+	r_particles = Cvar_Get ("r_particles", "1", CVAR_ARCHIVE, 0, "Toggles drawing of particles.");
+	r_aliasstats = Cvar_Get ("r_polymodelstats", "0", CVAR_NONE, 0, "Toggles the displays of number of polygon models current being viewed");
+	r_dspeeds = Cvar_Get ("r_dspeeds", "0", CVAR_NONE, 0, "Toggles the display of drawing speed information");
+	r_reportsurfout = Cvar_Get ("r_reportsurfout", "0", CVAR_NONE, 0, "Toggle the display of how many surfaces where not displayed");
+	r_maxsurfs = Cvar_Get ("r_maxsurfs", "0", CVAR_NONE, 0, "Sets the maximum number of surfaces");
+	r_numsurfs = Cvar_Get ("r_numsurfs", "0", CVAR_NONE, 0, "Toggles the displaying of number of surfaces currently being viewed");
+	r_reportedgeout = Cvar_Get ("r_reportedgeout", "0", CVAR_NONE, 0, "Toggle the display of how many edges where not displayed");
+	r_maxedges = Cvar_Get ("r_maxedges", "0", CVAR_NONE, 0, "Sets the maximum number of surfaces");
+	r_numedges = Cvar_Get ("r_numedges", "0", CVAR_NONE, 0, "Toggles the displaying of number of edges currently being viewed");
+	r_aliastransbase = Cvar_Get ("r_aliastransbase", "200", CVAR_NONE, 0, "Determines how much of an alias model is clipped away and how much is viewable");
+	r_aliastransadj = Cvar_Get ("r_aliastransadj", "100", CVAR_NONE, 0, "Determines how much of an alias model is clipped away and how much is viewable.");
+	gl_sky_divide = Cvar_Get ("gl_sky_divide", "1", CVAR_ARCHIVE, 0,
 		"subdivide sky polys");
 }
 

@@ -732,7 +732,7 @@ CL_Input_Init (void)
 void
 CL_Input_Init_Cvars (void)
 {
-	cl_nodelta = Cvar_Get ("cl_nodelta", "0", CVAR_NONE, "disable player delta compression."
+	cl_nodelta = Cvar_Get ("cl_nodelta", "0", CVAR_NONE, 0, "disable player delta compression."
 	"set to 1 if you have a poor ISP and get a lot of U_REMOVE warnings.");
 }
 

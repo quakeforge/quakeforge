@@ -332,11 +332,11 @@ void
 Team_Init_Cvars (void)
 {
 	cl_deadbodyfilter =
-		Cvar_Get ("cl_deadbodyfilter", "0", CVAR_NONE,
+		Cvar_Get ("cl_deadbodyfilter", "0", CVAR_NONE, 0,
 				  "Hide dead player models");
-	cl_gibfilter = Cvar_Get ("cl_gibfilter", "0", CVAR_NONE, "Hide gibs");
-	cl_parsesay = Cvar_Get ("cl_parsesay", "0", CVAR_NONE, "Use .loc files to find your present location when you put %l in messages");
-	cl_nofake = Cvar_Get ("cl_nofake", "0", CVAR_NONE, "Unhide fake messages");
+	cl_gibfilter = Cvar_Get ("cl_gibfilter", "0", CVAR_NONE, 0, "Hide gibs");
+	cl_parsesay = Cvar_Get ("cl_parsesay", "0", CVAR_NONE, 0, "Use .loc files to find your present location when you put %l in messages");
+	cl_nofake = Cvar_Get ("cl_nofake", "0", CVAR_NONE, 0, "Unhide fake messages");
 }
 
 /*

@@ -877,7 +877,7 @@ SV_InitOperatorCommands (void)
 	Cmd_AddCommand ("maplist", COM_Maplist_f, "List all maps on the server");
 
 	cl_warncmd =
-		Cvar_Get ("cl_warncmd", "1", CVAR_NONE, "Toggles the display of error messages for unknown commands"); 
+		Cvar_Get ("cl_warncmd", "1", CVAR_NONE, 0, "Toggles the display of error messages for unknown commands"); 
 																			// poor 
 																			// description
 }

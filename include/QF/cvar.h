@@ -37,6 +37,7 @@ typedef struct cvar_s
 	char    *name;
 	char    *string;
 	int	flags;
+	void	(*callback)(struct cvar_s *var);
 	char 	*description;	// for "help" command
 	float	value;
 	int		int_val;
@@ -73,7 +74,8 @@ typedef struct cvar_alias_s
 
 // Returns the Cvar if found, creates it with value if not.  Description and
 // flags are always updated.
-cvar_t	*Cvar_Get (char *name, char *value, int cvarflags, char *description);
+cvar_t	*Cvar_Get (char *name, char *value, int cvarflags,
+				   void (*callback)(cvar_t*), char *description);
 
 cvar_t	*Cvar_FindAlias (char *alias_name);
 

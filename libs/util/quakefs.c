@@ -1037,11 +1037,11 @@ COM_Filesystem_Init (void)
 void
 COM_Filesystem_Init_Cvars (void)
 {
-	fs_sharepath = Cvar_Get ("fs_sharepath", FS_SHAREPATH, CVAR_ROM,
+	fs_sharepath = Cvar_Get ("fs_sharepath", FS_SHAREPATH, CVAR_ROM, 0,
 							 "location of shared (read only) game directories");
-	fs_userpath = Cvar_Get ("fs_userpath", FS_USERPATH, CVAR_ROM,
+	fs_userpath = Cvar_Get ("fs_userpath", FS_USERPATH, CVAR_ROM, 0,
 							"location of your game directories");
-	fs_basegame = Cvar_Get ("fs_basegame", "id1", CVAR_ROM,
+	fs_basegame = Cvar_Get ("fs_basegame", "id1", CVAR_ROM, 0,
 							"game to use by default");
 }
 

@@ -176,8 +176,6 @@ Cvar_CompleteVariable (char *partial)
 }
 
 
-void Cvar_Info (cvar_t *var);
-
 /*
 	Cvar_Set
 */
@@ -202,8 +200,8 @@ Cvar_Set (cvar_t *var, char *value)
 	var->int_val = atoi (var->string);
 	sscanf (var->string, "%f %f %f", &var->vec[0], &var->vec[1], &var->vec[2]);
 
-	if (changed)
-		Cvar_Info (var);
+	if (changed && var->callback)
+		var->callback (var);
 }
 
 
@@ -228,8 +226,8 @@ Cvar_SetROM (cvar_t *var, char *value)
 	var->int_val = atoi (var->string);
 	sscanf (var->string, "%f %f %f", &var->vec[0], &var->vec[1], &var->vec[2]);
 
-	if (changed)
-		Cvar_Info (var);
+	if (changed && var->callback)
+		var->callback (var);
 }
 
 /*
@@ -318,7 +316,7 @@ Cvar_Set_f (void)
 			Cvar_Set (var, value);
 		}
 	} else {
-		var = Cvar_Get (var_name, value, CVAR_USER_CREATED,
+		var = Cvar_Get (var_name, value, CVAR_USER_CREATED, 0,
 						"User-created cvar");
 	}
 }
@@ -349,7 +347,7 @@ Cvar_Setrom_f (void)
 			Cvar_SetFlags (var, var->flags | CVAR_ROM);
 		}
 	} else {
-		var = Cvar_Get (var_name, value, CVAR_USER_CREATED | CVAR_ROM,
+		var = Cvar_Get (var_name, value, CVAR_USER_CREATED | CVAR_ROM, 0,
 						"User-created READ-ONLY Cvar");
 	}
 }
@@ -462,7 +460,7 @@ Cvar_Init_Hash (void)
 void
 Cvar_Init (void)
 {
-	developer = Cvar_Get ("developer", "0", 0, "set to enable extra debugging information");
+	developer = Cvar_Get ("developer", "0", CVAR_NONE, 0, "set to enable extra debugging information");
 
 	Cmd_AddCommand ("set", Cvar_Set_f, "Set the selected variable, useful on the command line (+set variablename setting)");
 	Cmd_AddCommand ("setrom", Cvar_Setrom_f, "Set the selected variable and make it read only, useful on the command line.\n"
@@ -499,7 +497,8 @@ Cvar_Shutdown (void)
 
 
 cvar_t *
-Cvar_Get (char *name, char *string, int cvarflags, char *description)
+Cvar_Get (char *name, char *string, int cvarflags, void (*callback)(cvar_t*),
+		  char *description)
 {
 
 	cvar_t     *var;
@@ -517,6 +516,7 @@ Cvar_Get (char *name, char *string, int cvarflags, char *description)
 		var->name = strdup (name);
 		var->string = strdup (string);
 		var->flags = cvarflags;
+		var->callback = callback;
 		var->description = description;
 		var->value = atof (var->string);
 		var->int_val = atoi (var->string);
@@ -533,9 +533,11 @@ Cvar_Get (char *name, char *string, int cvarflags, char *description)
 		// Cvar does exist, so we update the flags and return.
 		var->flags &= ~CVAR_USER_CREATED;
 		var->flags |= cvarflags;
+		var->callback = callback;
 		var->description = description;
 	}
-	Cvar_Info (var);
+	if (var->callback)
+		var->callback (var);
 
 	return var;
 }

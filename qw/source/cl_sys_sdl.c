@@ -230,7 +230,7 @@ Sys_Sleep (void)
 void
 Sys_Init_Cvars (void)
 {
-	sys_nostdout = Cvar_Get ("sys_nostdout", "0", CVAR_NONE, "Set to disable std out");
+	sys_nostdout = Cvar_Get ("sys_nostdout", "0", CVAR_NONE, 0, "Set to disable std out");
 	if (COM_CheckParm ("-nostdout"))
 		Cvar_Set (sys_nostdout, "1");
 }

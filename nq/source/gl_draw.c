@@ -415,32 +415,32 @@ Draw_Init (void)
 	int         i;
 
 	// LordHavoc: lighting mode
-	gl_lightmode = Cvar_Get ("gl_lightmode", "0", CVAR_ARCHIVE,
+	gl_lightmode = Cvar_Get ("gl_lightmode", "0", CVAR_ARCHIVE, 0,
 							 "Lighting mode (0 = GLQuake style, 1 = new style)");
-	gl_nobind = Cvar_Get ("gl_nobind", "0", CVAR_NONE,
+	gl_nobind = Cvar_Get ("gl_nobind", "0", CVAR_NONE, 0,
 						  "whether or not to inhibit texture binding");
-	gl_max_size = Cvar_Get ("gl_max_size", "1024", CVAR_NONE, "None");	// CVAR_FIXME 
+	gl_max_size = Cvar_Get ("gl_max_size", "1024", CVAR_NONE, 0, "None");	// CVAR_FIXME 
 																		// 
 	// 
 	// -
 	// set 
 	// a
 	// description
-	gl_picmip = Cvar_Get ("gl_picmip", "0", CVAR_NONE, "None");	// CVAR_FIXME 
+	gl_picmip = Cvar_Get ("gl_picmip", "0", CVAR_NONE, 0, "None");	// CVAR_FIXME 
 																// 
 	// 
 	// - set a
 	// description
 
 	// Console effects  --KB
-	gl_constretch = Cvar_Get ("gl_constretch", "0", CVAR_ARCHIVE,
+	gl_constretch = Cvar_Get ("gl_constretch", "0", CVAR_ARCHIVE, 0,
 							  "whether slide the console or stretch it");
-	gl_conalpha = Cvar_Get ("gl_conalpha", "0.6", CVAR_ARCHIVE,
+	gl_conalpha = Cvar_Get ("gl_conalpha", "0.6", CVAR_ARCHIVE, 0,
 							"alpha value for the console background");
-	gl_conspin = Cvar_Get ("gl_conspin", "0", CVAR_ARCHIVE,
+	gl_conspin = Cvar_Get ("gl_conspin", "0", CVAR_ARCHIVE, 0,
 						   "speed at which the console spins");
 
-	cl_verstring = Cvar_Get ("cl_verstring", PROGRAM " " VERSION, CVAR_NONE,
+	cl_verstring = Cvar_Get ("cl_verstring", PROGRAM " " VERSION, CVAR_NONE, 0,
 							 "client version string");
 
 	// 3dfx can only handle 256 wide textures

@@ -299,4 +299,6 @@ void SV_LoadProgs (void);
 void SV_Progs_Init (void);
 void SV_Progs_Init_Cvars (void);
 
+void Cvar_Info (struct cvar_s *var);
+
 #endif // __server_h

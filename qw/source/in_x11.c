@@ -550,9 +550,9 @@ void
 IN_Init_Cvars (void)
 {
 	JOY_Init_Cvars ();
-	_windowed_mouse = Cvar_Get ("_windowed_mouse", "0", CVAR_ARCHIVE, "With this set to 1, quake will grab the mouse from X");
-	m_filter = Cvar_Get ("m_filter", "0", CVAR_ARCHIVE, "Toggle mouse input filtering.");
-	in_dga = Cvar_Get ("in_dga", "1", CVAR_ARCHIVE, "DGA Input support");
-	in_dga_mouseaccel = Cvar_Get ("in_dga_mouseaccel", "1", CVAR_ARCHIVE,
+	_windowed_mouse = Cvar_Get ("_windowed_mouse", "0", CVAR_ARCHIVE, 0, "With this set to 1, quake will grab the mouse from X");
+	m_filter = Cvar_Get ("m_filter", "0", CVAR_ARCHIVE, 0, "Toggle mouse input filtering.");
+	in_dga = Cvar_Get ("in_dga", "1", CVAR_ARCHIVE, 0, "DGA Input support");
+	in_dga_mouseaccel = Cvar_Get ("in_dga_mouseaccel", "1", CVAR_ARCHIVE, 0,
 								  "DGA Mouse accelleration multiplier");
 }

@@ -228,7 +228,7 @@ VID_Init (unsigned char *palette)
 void
 VID_Init_Cvars ()
 {
-	vid_fullscreen = Cvar_Get ("vid_fullscreen", "0", CVAR_ROM, "Toggles fullscreen mode");
+	vid_fullscreen = Cvar_Get ("vid_fullscreen", "0", CVAR_ROM, 0, "Toggles fullscreen mode");
 }
 
 void

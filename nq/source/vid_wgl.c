@@ -1764,7 +1764,7 @@ VID_Init (unsigned char *palette)
 void
 VID_Init_Cvars ()
 {
-	_windowed_mouse = Cvar_Get ("_windowed_mouse", "0", CVAR_ARCHIVE, "None");
+	_windowed_mouse = Cvar_Get ("_windowed_mouse", "0", CVAR_ARCHIVE, 0, "None");
 }
 
 

@@ -89,59 +89,59 @@ void
 CL_InitCvars (void)
 {
 	show_fps =
-		Cvar_Get ("show_fps", "0", CVAR_NONE,
+		Cvar_Get ("show_fps", "0", CVAR_NONE, 0,
 				  "display realtime frames per second");
 	// Misty: I like to be able to see the time when I play
-	show_time = Cvar_Get ("show_time", "0", CVAR_NONE,
+	show_time = Cvar_Get ("show_time", "0", CVAR_NONE, 0,
 						  "display the current time");
 	cl_warncmd =
-		Cvar_Get ("cl_warncmd", "0", CVAR_NONE,
+		Cvar_Get ("cl_warncmd", "0", CVAR_NONE, 0,
 				  "inform when execing a command");
-	cl_name = Cvar_Get ("_cl_name", "player", CVAR_ARCHIVE, "Player name");
-	cl_color = Cvar_Get ("_cl_color", "0", CVAR_ARCHIVE, "Player color");
+	cl_name = Cvar_Get ("_cl_name", "player", CVAR_ARCHIVE, 0, "Player name");
+	cl_color = Cvar_Get ("_cl_color", "0", CVAR_ARCHIVE, 0, "Player color");
 	cl_upspeed =
-		Cvar_Get ("cl_upspeed", "200", CVAR_NONE, "swim/fly up/down speed");
+		Cvar_Get ("cl_upspeed", "200", CVAR_NONE, 0, "swim/fly up/down speed");
 	cl_forwardspeed =
-		Cvar_Get ("cl_forwardspeed", "200", CVAR_ARCHIVE, "forward speed");
+		Cvar_Get ("cl_forwardspeed", "200", CVAR_ARCHIVE, 0, "forward speed");
 	cl_backspeed =
-		Cvar_Get ("cl_backspeed", "200", CVAR_ARCHIVE, "backward speed");
-	cl_sidespeed = Cvar_Get ("cl_sidespeed", "350", CVAR_NONE, "strafe speed");
+		Cvar_Get ("cl_backspeed", "200", CVAR_ARCHIVE, 0, "backward speed");
+	cl_sidespeed = Cvar_Get ("cl_sidespeed", "350", CVAR_NONE, 0, "strafe speed");
 	cl_movespeedkey =
-		Cvar_Get ("cl_movespeedkey", "2.0", CVAR_NONE,
+		Cvar_Get ("cl_movespeedkey", "2.0", CVAR_NONE, 0,
 				  "move `run' speed multiplier");
-	cl_yawspeed = Cvar_Get ("cl_yawspeed", "140", CVAR_NONE, "turning speed");
+	cl_yawspeed = Cvar_Get ("cl_yawspeed", "140", CVAR_NONE, 0, "turning speed");
 	cl_pitchspeed =
-		Cvar_Get ("cl_pitchspeed", "150", CVAR_NONE, "look up/down speed");
+		Cvar_Get ("cl_pitchspeed", "150", CVAR_NONE, 0, "look up/down speed");
 	cl_anglespeedkey =
-		Cvar_Get ("cl_anglespeedkey", "1.5", CVAR_NONE,
+		Cvar_Get ("cl_anglespeedkey", "1.5", CVAR_NONE, 0,
 				  "turn `run' speed multiplier");
 	cl_shownet =
-		Cvar_Get ("cl_shownet", "0", CVAR_NONE,
+		Cvar_Get ("cl_shownet", "0", CVAR_NONE, 0,
 				  "show network packets. 0=off, 1=basic, 2=verbose");
 	cl_nolerp =
-		Cvar_Get ("cl_nolerp", "0", CVAR_NONE, "linear motion interpolation");
-	cl_sbar = Cvar_Get ("cl_sbar", "0", CVAR_ARCHIVE, "status bar mode");
+		Cvar_Get ("cl_nolerp", "0", CVAR_NONE, 0, "linear motion interpolation");
+	cl_sbar = Cvar_Get ("cl_sbar", "0", CVAR_ARCHIVE, 0, "status bar mode");
 	cl_hudswap =
-		Cvar_Get ("cl_hudswap", "0", CVAR_ARCHIVE, "new HUD on left side?");
-	cl_freelook = Cvar_Get ("freelook", "0", CVAR_ARCHIVE, "force +mlook");
+		Cvar_Get ("cl_hudswap", "0", CVAR_ARCHIVE, 0, "new HUD on left side?");
+	cl_freelook = Cvar_Get ("freelook", "0", CVAR_ARCHIVE, 0, "force +mlook");
 	lookspring =
-		Cvar_Get ("lookspring", "0", CVAR_ARCHIVE,
+		Cvar_Get ("lookspring", "0", CVAR_ARCHIVE, 0,
 				  "Snap view to center when moving and no mlook/klook");
 	lookstrafe =
-		Cvar_Get ("lookstrafe", "0", CVAR_ARCHIVE,
+		Cvar_Get ("lookstrafe", "0", CVAR_ARCHIVE, 0,
 				  "when mlook/klook on player will strafe");
 	sensitivity =
-		Cvar_Get ("sensitivity", "3", CVAR_ARCHIVE,
+		Cvar_Get ("sensitivity", "3", CVAR_ARCHIVE, 0,
 				  "mouse sensitivity multiplier");
 	m_pitch =
-		Cvar_Get ("m_pitch", "0.022", CVAR_ARCHIVE,
+		Cvar_Get ("m_pitch", "0.022", CVAR_ARCHIVE, 0,
 				  "mouse pitch (up/down) multipier");
 	m_yaw =
-		Cvar_Get ("m_yaw", "0.022", CVAR_ARCHIVE,
+		Cvar_Get ("m_yaw", "0.022", CVAR_ARCHIVE, 0,
 				  "mouse yaw (left/right) multipiler");
 	m_forward =
-		Cvar_Get ("m_forward", "1", CVAR_ARCHIVE, "mouse forward/back speed");
-	m_side = Cvar_Get ("m_side", "0.8", CVAR_ARCHIVE, "mouse strafe speed");
+		Cvar_Get ("m_forward", "1", CVAR_ARCHIVE, 0, "mouse forward/back speed");
+	m_side = Cvar_Get ("m_side", "0.8", CVAR_ARCHIVE, 0, "mouse strafe speed");
 }
 
 /*

@@ -349,14 +349,14 @@ SCR_Init
 void
 SCR_Init (void)
 {
-	scr_fov = Cvar_Get ("fov", "90", CVAR_NONE, "10 - 170");
-	scr_viewsize = Cvar_Get ("viewsize", "100", CVAR_ARCHIVE, "None");
-	scr_conspeed = Cvar_Get ("scr_conspeed", "300", CVAR_NONE, "None");
-	scr_showram = Cvar_Get ("showram", "1", CVAR_NONE, "None");
-	scr_showturtle = Cvar_Get ("showturtle", "0", CVAR_NONE, "None");
-	scr_showpause = Cvar_Get ("showpause", "1", CVAR_NONE, "None");
-	scr_centertime = Cvar_Get ("scr_centertime", "2", CVAR_NONE, "None");
-	scr_printspeed = Cvar_Get ("scr_printspeed", "8", CVAR_NONE, "None");
+	scr_fov = Cvar_Get ("fov", "90", CVAR_NONE, 0, "10 - 170");
+	scr_viewsize = Cvar_Get ("viewsize", "100", CVAR_ARCHIVE, 0, "None");
+	scr_conspeed = Cvar_Get ("scr_conspeed", "300", CVAR_NONE, 0, "None");
+	scr_showram = Cvar_Get ("showram", "1", CVAR_NONE, 0, "None");
+	scr_showturtle = Cvar_Get ("showturtle", "0", CVAR_NONE, 0, "None");
+	scr_showpause = Cvar_Get ("showpause", "1", CVAR_NONE, 0, "None");
+	scr_centertime = Cvar_Get ("scr_centertime", "2", CVAR_NONE, 0, "None");
+	scr_printspeed = Cvar_Get ("scr_printspeed", "8", CVAR_NONE, 0, "None");
 
 //
 // register our commands

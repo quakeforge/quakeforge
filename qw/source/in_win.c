@@ -424,7 +424,7 @@ void
 IN_Init_Cvars (void)
 {
 	// mouse variables
-	m_filter = Cvar_Get ("m_filter", "0", CVAR_NONE, "Toggle mouse input filtering.");
+	m_filter = Cvar_Get ("m_filter", "0", CVAR_NONE, 0, "Toggle mouse input filtering.");
 
         JOY_Init_Cvars();
 }

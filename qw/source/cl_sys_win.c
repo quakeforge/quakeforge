@@ -163,7 +163,7 @@ Sys_MakeCodeWriteable (unsigned long startaddr, unsigned long length)
 void
 Sys_Init_Cvars (void)
 {
-	sys_nostdout = Cvar_Get ("sys_nostdout", "1", CVAR_NONE, "unset to enable std out - windows does NOT support this");
+	sys_nostdout = Cvar_Get ("sys_nostdout", "1", CVAR_NONE, 0, "unset to enable std out - windows does NOT support this");
 }
 
 void

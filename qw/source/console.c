@@ -271,7 +271,7 @@ void
 Con_Init_Cvars (void)
 {
 	con_notifytime =
-		Cvar_Get ("con_notifytime", "3", CVAR_NONE,
+		Cvar_Get ("con_notifytime", "3", CVAR_NONE, 0,
 				  "How long in seconds messages are displayed on screen");
 }
 

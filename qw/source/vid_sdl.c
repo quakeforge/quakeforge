@@ -195,7 +195,7 @@ void
 VID_Init_Cvars ()
 {
 	vid_fullscreen =
-		Cvar_Get ("vid_fullscreen", "0", CVAR_ROM,
+		Cvar_Get ("vid_fullscreen", "0", CVAR_ROM, 0,
 				  "Toggles fullscreen game mode");
 }
 

@@ -625,10 +625,10 @@ VID_Init (unsigned char *palette)
 void
 VID_Init_Cvars ()
 {
-	vid_mode = Cvar_Get ("vid_mode", "0", CVAR_NONE, "Sets the video mode");
-	vid_redrawfull = Cvar_Get ("vid_redrawfull", "0", CVAR_NONE,
+	vid_mode = Cvar_Get ("vid_mode", "0", CVAR_NONE, 0, "Sets the video mode");
+	vid_redrawfull = Cvar_Get ("vid_redrawfull", "0", CVAR_NONE, 0,
 				"Redraw entire screen each frame instead of just dirty areas");
-	vid_waitforrefresh = Cvar_Get ("vid_waitforrefresh", "0", CVAR_ARCHIVE,
+	vid_waitforrefresh = Cvar_Get ("vid_waitforrefresh", "0", CVAR_ARCHIVE, 0,
 				"Wait for vertical retrace before drawing next frame");
 }
 

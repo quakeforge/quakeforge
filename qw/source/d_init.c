@@ -70,9 +70,9 @@ D_Init (void)
 void
 D_Init_Cvars (void)
 {
-	d_subdiv16 = Cvar_Get ("d_subdiv16", "1", CVAR_NONE, "Set to enable extreme perspective correction");
-	d_mipcap = Cvar_Get ("d_mipcap", "0", CVAR_NONE, "Detail level. 0 is highest, 3 is lowest.");
-	d_mipscale = Cvar_Get ("d_mipscale", "1", CVAR_NONE, "Detail level of objects. 0 is highest, 3 is lowest.");
+	d_subdiv16 = Cvar_Get ("d_subdiv16", "1", CVAR_NONE, 0, "Set to enable extreme perspective correction");
+	d_mipcap = Cvar_Get ("d_mipcap", "0", CVAR_NONE, 0, "Detail level. 0 is highest, 3 is lowest.");
+	d_mipscale = Cvar_Get ("d_mipscale", "1", CVAR_NONE, 0, "Detail level of objects. 0 is highest, 3 is lowest.");
 }
 
 /*

@@ -408,4 +408,6 @@ void V_SetContentsColor (int contents);
 void CL_InitTEnts (void);
 void CL_SignonReply (void);
 
+void Cvar_Info (struct cvar_s *var);
+
 #endif // __client_h

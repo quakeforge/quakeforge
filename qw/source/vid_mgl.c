@@ -2073,21 +2073,21 @@ VID_Init (unsigned char *palette)
 void
 VID_Init_Cvars ()
 {
-	vid_mode = Cvar_Get ("vid_mode", "0", CVAR_NONE, "Set the video mode");
-	vid_nopageflip = Cvar_Get ("vid_nopageflip", "0", CVAR_ARCHIVE, "Toggles the use of page flipping");
+	vid_mode = Cvar_Get ("vid_mode", "0", CVAR_NONE, 0, "Set the video mode");
+	vid_nopageflip = Cvar_Get ("vid_nopageflip", "0", CVAR_ARCHIVE, 0, "Toggles the use of page flipping");
 	_vid_default_mode_win =
-		Cvar_Get ("_vid_default_mode_win", "3", CVAR_ARCHIVE, "Default windowed video mode");
-	vid_config_x = Cvar_Get ("vid_config_x", "800", CVAR_ARCHIVE, "Maximum x-axis screen size");
-	vid_config_y = Cvar_Get ("vid_config_y", "600", CVAR_ARCHIVE, "Maximum y-axis screen size");
-	vid_stretch_by_2 = Cvar_Get ("vid_stretch_by_2", "1", CVAR_ARCHIVE, "Stretch the pixles by a two fold to acheive proper view");
-	_windowed_mouse = Cvar_Get ("_windowed_mouse", "0", CVAR_ARCHIVE, "Have quake grab the mouse from X when you play");
+		Cvar_Get ("_vid_default_mode_win", "3", CVAR_ARCHIVE, 0, "Default windowed video mode");
+	vid_config_x = Cvar_Get ("vid_config_x", "800", CVAR_ARCHIVE, 0, "Maximum x-axis screen size");
+	vid_config_y = Cvar_Get ("vid_config_y", "600", CVAR_ARCHIVE, 0, "Maximum y-axis screen size");
+	vid_stretch_by_2 = Cvar_Get ("vid_stretch_by_2", "1", CVAR_ARCHIVE, 0, "Stretch the pixles by a two fold to acheive proper view");
+	_windowed_mouse = Cvar_Get ("_windowed_mouse", "0", CVAR_ARCHIVE, 0, "Have quake grab the mouse from X when you play");
 	vid_fullscreen_mode =
-		Cvar_Get ("vid_fullscreen_mode", "3", CVAR_ARCHIVE, "Set the full screen video mode.");
+		Cvar_Get ("vid_fullscreen_mode", "3", CVAR_ARCHIVE, 0, "Set the full screen video mode.");
 	vid_windowed_mode =
-		Cvar_Get ("vid_windowed_mode", "0", CVAR_ARCHIVE, "Set the windowed video mode");
-	block_switch = Cvar_Get ("block_switch", "0", CVAR_ARCHIVE, "If set, won't allow you to task switch while playing");
-	vid_window_x = Cvar_Get ("vid_window_x", "0", CVAR_ARCHIVE, "The x-axis location of the window, if windowed");
-	vid_window_y = Cvar_Get ("vid_window_y", "0", CVAR_ARCHIVE, "The y-axis location of the window, if windowed");
+		Cvar_Get ("vid_windowed_mode", "0", CVAR_ARCHIVE, 0, "Set the windowed video mode");
+	block_switch = Cvar_Get ("block_switch", "0", CVAR_ARCHIVE, 0, "If set, won't allow you to task switch while playing");
+	vid_window_x = Cvar_Get ("vid_window_x", "0", CVAR_ARCHIVE, 0, "The x-axis location of the window, if windowed");
+	vid_window_y = Cvar_Get ("vid_window_y", "0", CVAR_ARCHIVE, 0, "The y-axis location of the window, if windowed");
 }
 
 

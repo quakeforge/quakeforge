@@ -62,9 +62,9 @@ D_Init (void)
 
 	r_skydirect = 1;
 
-	d_subdiv16 = Cvar_Get ("d_subdiv16", "1", CVAR_NONE, "None");
-	d_mipcap = Cvar_Get ("d_mipcap", "0", CVAR_NONE, "None");
-	d_mipscale = Cvar_Get ("d_mipscale", "1", CVAR_NONE, "None");
+	d_subdiv16 = Cvar_Get ("d_subdiv16", "1", CVAR_NONE, 0, "None");
+	d_mipcap = Cvar_Get ("d_mipcap", "0", CVAR_NONE, 0, "None");
+	d_mipscale = Cvar_Get ("d_mipscale", "1", CVAR_NONE, 0, "None");
 
 	r_drawpolys = false;
 	r_worldpolysbacktofront = false;

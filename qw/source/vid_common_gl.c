@@ -344,7 +344,7 @@ void
 VID_Init8bitPalette (void)
 {
 	vid_use8bit =
-		Cvar_Get ("vid_use8bit", "0", CVAR_ROM, "Use 8-bit shared palettes.");
+		Cvar_Get ("vid_use8bit", "0", CVAR_ROM, 0, "Use 8-bit shared palettes.");
 
 	Con_Printf ("Checking for 8-bit extension: ");
 	if (vid_use8bit->int_val) {

@@ -377,7 +377,7 @@ VID_Init8bitPalette (void)
 		Con_Printf ("disabled.\n");
 		return;
 	}
-	vid_use8bit = Cvar_Get ("vid_use8bit", "0", CVAR_ROM,
+	vid_use8bit = Cvar_Get ("vid_use8bit", "0", CVAR_ROM, 0,
 							"Whether to use Shared Palettes.");
 	if (vid_use8bit->value) {
 #ifdef HAVE_TDFXGL

@@ -358,9 +358,9 @@ IN_Init_Cvars (void)
 	JOY_Init_Cvars ();
 
 	_windowed_mouse =
-		Cvar_Get ("_windowed_mouse", "0", CVAR_ARCHIVE,
+		Cvar_Get ("_windowed_mouse", "0", CVAR_ARCHIVE, 0,
 				  "If set to 1, quake will grab the mouse in X");
-	// m_filter = Cvar_Get ("m_filter", "0", CVAR_ARCHIVE, "Toggle mouse
+	// m_filter = Cvar_Get ("m_filter", "0", CVAR_ARCHIVE, 0, "Toggle mouse
 	// input filtering");
 }
 
