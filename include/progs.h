@@ -181,6 +181,11 @@ typedef struct {
 
 struct progs_s {
 	dprograms_t		*progs;
+
+	struct hashtab_s *function_hash;
+	struct hashtab_s *global_hash;
+	struct hashtab_s *field_hash;
+
 	dfunction_t		*pr_functions;
 	char			*pr_strings;
 	int				pr_stringsize;

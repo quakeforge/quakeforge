@@ -821,7 +821,7 @@ Cmd_CmdList_f (void)
 }
 
 static void
-cmd_alias_free (void *_a)
+cmd_alias_free (void *_a, void *unused)
 {
 	cmdalias_t *a = (cmdalias_t*)_a;
 	free (a->value);
@@ -829,14 +829,14 @@ cmd_alias_free (void *_a)
 }
 
 static char *
-cmd_alias_get_key (void *_a)
+cmd_alias_get_key (void *_a, void *unused)
 {
 	cmdalias_t *a = (cmdalias_t*)_a;
 	return a->name;
 }
 
 static char *
-cmd_get_key (void *c)
+cmd_get_key (void *c, void *unused)
 {
 	cmd_function_t *cmd = (cmd_function_t*)c;
 	return cmd->name;
@@ -851,8 +851,8 @@ cmd_get_key (void *c)
 void
 Cmd_Init_Hash (void)
 {
-	cmd_hash = Hash_NewTable (1021, cmd_get_key, 0);
-	cmd_alias_hash = Hash_NewTable (1021, cmd_alias_get_key, cmd_alias_free);
+	cmd_hash = Hash_NewTable (1021, cmd_get_key, 0, 0);
+	cmd_alias_hash = Hash_NewTable (1021, cmd_alias_get_key, cmd_alias_free, 0);
 }
 
 /*

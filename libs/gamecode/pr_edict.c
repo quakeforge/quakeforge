@@ -40,6 +40,7 @@
 #include "console.h"
 #include "crc.h"
 #include "cvar.h"
+#include "hash.h"
 #include "progs.h"
 #include "qdefs.h"
 #include "qendian.h"
@@ -188,15 +189,7 @@ ED_FieldAtOfs (progs_t * pr, int ofs)
 ddef_t     *
 ED_FindField (progs_t * pr, char *name)
 {
-	ddef_t     *def;
-	int         i;
-
-	for (i = 0; i < pr->progs->numfielddefs; i++) {
-		def = &pr->pr_fielddefs[i];
-		if (!strcmp (PR_GetString (pr, def->s_name), name))
-			return def;
-	}
-	return NULL;
+	return  Hash_Find (pr->field_hash, name);
 }
 
 int
@@ -216,15 +209,7 @@ ED_GetFieldIndex (progs_t *pr, char *name)
 ddef_t     *
 PR_FindGlobal (progs_t * pr, const char *name)
 {
-	ddef_t     *def;
-	int         i;
-
-	for (i = 0; i < pr->progs->numglobaldefs; i++) {
-		def = &pr->pr_globaldefs[i];
-		if (!strcmp (PR_GetString (pr, def->s_name), name))
-			return def;
-	}
-	return NULL;
+	return  Hash_Find (pr->global_hash, name);
 }
 
 eval_t *
@@ -245,15 +230,7 @@ PR_GetGlobalPointer (progs_t *pr, const char *name)
 dfunction_t *
 ED_FindFunction (progs_t * pr, char *name)
 {
-	dfunction_t *func;
-	int         i;
-
-	for (i = 0; i < pr->progs->numfunctions; i++) {
-		func = &pr->pr_functions[i];
-		if (!strcmp (PR_GetString (pr, func->s_name), name))
-			return func;
-	}
-	return NULL;
+	return  Hash_Find (pr->function_hash, name);
 }
 
 eval_t     *
@@ -940,6 +917,22 @@ ED_LoadFromFile (progs_t * pr, char *data)
 	Con_DPrintf ("%i entities inhibited\n", inhibit);
 }
 
+static char *
+function_get_key (void *f, void *_pr)
+{
+	progs_t *pr = (progs_t*)_pr;
+	dfunction_t *func = (dfunction_t*)f;
+	return PR_GetString (pr, func->s_name);
+}
+
+static char *
+var_get_key (void *d, void *_pr)
+{
+	progs_t *pr = (progs_t*)_pr;
+	ddef_t *def = (ddef_t*)d;
+	return PR_GetString (pr, def->s_name);
+}
+
 /*
 	PR_LoadProgs
 */
@@ -992,6 +985,22 @@ PR_LoadProgs (progs_t * pr, char *progsname)
 
 	pr->pr_edictareasize = 0;
 
+	if (pr->function_hash) {
+		Hash_FlushTable (pr->function_hash);
+	} else {
+		pr->function_hash = Hash_NewTable (1021, function_get_key, 0, pr);
+	}
+	if (pr->global_hash) {
+		Hash_FlushTable (pr->global_hash);
+	} else {
+		pr->global_hash = Hash_NewTable (1021, var_get_key, 0, pr);
+	}
+	if (pr->field_hash) {
+		Hash_FlushTable (pr->field_hash);
+	} else {
+		pr->field_hash = Hash_NewTable (1021, var_get_key, 0, pr);
+	}
+
 // byte swap the lumps
 	for (i = 0; i < pr->progs->numstatements; i++) {
 		pr->pr_statements[i].op = LittleShort (pr->pr_statements[i].op);
@@ -1010,12 +1019,14 @@ PR_LoadProgs (progs_t * pr, char *progsname)
 		pr->pr_functions[i].numparms =
 			LittleLong (pr->pr_functions[i].numparms);
 		pr->pr_functions[i].locals = LittleLong (pr->pr_functions[i].locals);
+		Hash_Add (pr->function_hash, &pr->pr_functions[i]);
 	}
 
 	for (i = 0; i < pr->progs->numglobaldefs; i++) {
 		pr->pr_globaldefs[i].type = LittleShort (pr->pr_globaldefs[i].type);
 		pr->pr_globaldefs[i].ofs = LittleShort (pr->pr_globaldefs[i].ofs);
 		pr->pr_globaldefs[i].s_name = LittleLong (pr->pr_globaldefs[i].s_name);
+		Hash_Add (pr->global_hash, &pr->pr_globaldefs[i]);
 	}
 
 	for (i = 0; i < pr->progs->numfielddefs; i++) {
@@ -1024,6 +1035,7 @@ PR_LoadProgs (progs_t * pr, char *progsname)
 			PR_Error (pr, "PR_LoadProgs: pr_fielddefs[i].type & DEF_SAVEGLOBAL");
 		pr->pr_fielddefs[i].ofs = LittleShort (pr->pr_fielddefs[i].ofs);
 		pr->pr_fielddefs[i].s_name = LittleLong (pr->pr_fielddefs[i].s_name);
+		Hash_Add (pr->field_hash, &pr->pr_fielddefs[i]);
 	}
 
 	for (i = 0; i < pr->progs->numglobals; i++)

@@ -40,13 +40,16 @@ typedef struct hashlink_s {
 
 typedef struct hashtab_s {
 	size_t tab_size;
-	char *(*get_key)(void*);
-	void (*free_ele)(void*);
+	void *user_data;
+	char *(*get_key)(void*,void*);
+	void (*free_ele)(void*,void*);
 	hashlink_t *tab[ZERO_LENGTH_ARRAY];
 } hashtab_t;
 
-hashtab_t *Hash_NewTable (int tsize, char *(*gk)(void*), void (*f)(void*));
+hashtab_t *Hash_NewTable (int tsize, char *(*gk)(void*,void*),
+						  void (*f)(void*,void*), void *ud);
 void Hash_DelTable (hashtab_t *tab);
+void Hash_FlushTable (hashtab_t *tab);
 int Hash_Add (hashtab_t *tab, void *ele);
 void *Hash_Find (hashtab_t *tab, const char *key);
 int Hash_Del (hashtab_t *tab, const char *key);

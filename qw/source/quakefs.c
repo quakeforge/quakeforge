@@ -729,7 +729,7 @@ COM_LoadStackFile (char *path, void *buffer, int bufsize)
 }
 
 static char *
-pack_get_key (void *_p)
+pack_get_key (void *_p, void *unused)
 {
 	packfile_t *p = (packfile_t *) _p;
 
@@ -772,7 +772,7 @@ COM_LoadPackFile (char *packfile)
 		Sys_Error ("%s has %i files", packfile, numpackfiles);
 
 	newfiles = calloc (1, numpackfiles * sizeof (packfile_t));
-	hash = Hash_NewTable (1021, pack_get_key, 0);
+	hash = Hash_NewTable (1021, pack_get_key, 0, 0);
 
 	Qseek (packhandle, header.dirofs, SEEK_SET);
 	Qread (packhandle, info, header.dirlen);

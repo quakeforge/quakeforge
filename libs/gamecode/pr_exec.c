@@ -965,7 +965,7 @@ char       *
 PR_GetString (progs_t * pr, int num)
 {
 	if (num < 0) {
-		Con_DPrintf("GET:%d == %s\n", num, pr->pr_strtbl[-num]);
+		//Con_DPrintf("GET:%d == %s\n", num, pr->pr_strtbl[-num]);
 		return pr->pr_strtbl[-num];
 	}
 	return pr->pr_strings + num;

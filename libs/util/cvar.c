@@ -420,7 +420,7 @@ Cvar_CvarList_f (void)
 }
 
 static void
-cvar_free (void *c)
+cvar_free (void *c, void *unused)
 {
 	cvar_t *cvar = (cvar_t*)c;
 	free (cvar->name);
@@ -429,14 +429,14 @@ cvar_free (void *c)
 }
 
 static char *
-cvar_get_key (void *c)
+cvar_get_key (void *c, void *unused)
 {
 	cvar_t *cvar = (cvar_t*)c;
 	return cvar->name;
 }
 
 static void
-calias_free (void *c)
+calias_free (void *c, void *unused)
 {
 	cvar_alias_t *calias = (cvar_alias_t*)c;
 	free (calias->name);
@@ -444,7 +444,7 @@ calias_free (void *c)
 }
 
 static char *
-calias_get_key (void *c)
+calias_get_key (void *c, void *unused)
 {
 	cvar_alias_t *calias = (cvar_alias_t*)c;
 	return calias->name;
@@ -453,8 +453,8 @@ calias_get_key (void *c)
 void
 Cvar_Init_Hash (void)
 {
-	cvar_hash = Hash_NewTable (1021, cvar_get_key, cvar_free);
-	calias_hash = Hash_NewTable (1021, calias_get_key, calias_free);
+	cvar_hash = Hash_NewTable (1021, cvar_get_key, cvar_free, 0);
+	calias_hash = Hash_NewTable (1021, calias_get_key, calias_free, 0);
 }
 
 void

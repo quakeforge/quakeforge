@@ -53,12 +53,14 @@ hash (const char *str)
 }
 
 hashtab_t *
-Hash_NewTable (int tsize, char *(*gk)(void*), void (*f)(void*))
+Hash_NewTable (int tsize, char *(*gk)(void*,void*), void (*f)(void*,void*),
+			   void *ud)
 {
 	hashtab_t *tab = calloc (1, (size_t)&((hashtab_t*)0)->tab[tsize]);
 	if (!tab)
 		return 0;
 	tab->tab_size = tsize;
+	tab->user_data = ud;
 	tab->get_key = gk;
 	tab->free_ele = f;
 	return tab;
@@ -67,24 +69,30 @@ Hash_NewTable (int tsize, char *(*gk)(void*), void (*f)(void*))
 void
 Hash_DelTable (hashtab_t *tab)
 {
+	Hash_FlushTable (tab);
+	free (tab);
+}
+
+void
+Hash_FlushTable (hashtab_t *tab)
+{
 	int i;
 
 	for (i = 0; i < tab->tab_size; i++) {
 		while (tab->tab[i]) {
 			hashlink_t *t = tab->tab[i]->next;
 			if (tab->free_ele)
-				tab->free_ele (&tab->tab[i]->data);
+				tab->free_ele (&tab->tab[i]->data, tab->user_data);
 			free (tab->tab[i]);
 			tab->tab[i] = t;
 		}
 	}
-	free (tab);
 }
 
 int
 Hash_Add (hashtab_t *tab, void *ele)
 {
-	unsigned long h = hash (tab->get_key(ele));
+	unsigned long h = hash (tab->get_key(ele, tab->user_data));
 	size_t ind = h % tab->tab_size;
 	hashlink_t *lnk = malloc (sizeof (hashlink_t));
 
@@ -107,7 +115,7 @@ Hash_Find (hashtab_t *tab, const char *key)
 	hashlink_t *lnk = tab->tab[ind];
 
 	while (lnk) {
-		if (strequal (key, tab->get_key (lnk->data)))
+		if (strequal (key, tab->get_key (lnk->data, tab->user_data)))
 			return lnk->data;
 		lnk = lnk->next;
 	}
@@ -122,7 +130,7 @@ Hash_Del (hashtab_t *tab, const char *key)
 	hashlink_t *lnk = tab->tab[ind];
 
 	while (lnk) {
-		if (strequal (key, tab->get_key (lnk->data))) {
+		if (strequal (key, tab->get_key (lnk->data, tab->user_data))) {
 			if (lnk->next)
 				lnk->next->prev = lnk->prev;
 			*lnk->prev = lnk->next;
