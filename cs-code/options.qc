@@ -219,10 +219,7 @@ integer () options_controls_draw =
 	Draw_String     (70,  60, "Bindings");
 
 	draw_val_item   (70,  70, spacing, "Grab mouse", get_cvar_state ("in_grab"));
-	tmp = "On";
-	if(cvar("cl_forwardspeed") < 400) {
-		tmp = "Off";
-	}
+	tmp = cvar("cl_forwardspeed") < 400 ? "Off" : "On";
 	draw_val_item   (70,  80, spacing, "Auto run", tmp);
 	draw_val_item   (70,  90, spacing, "Freelook", get_cvar_state ("freelook"));
 	bar_pad = 90;
@@ -231,12 +228,7 @@ integer () options_controls_draw =
 	draw_perc_bar  (150,  bar_pad + 10, 12, to_percentage (MIN_MOUSE_AMP, MAX_MOUSE_AMP, cvar("in_mouse_amp")));
 	Draw_String (150 + (12 + 4)*8 , bar_pad + 10, ftos(cvar("in_mouse_amp")));
 	
-	tmp = "Off";
-	if(cvar("m_pitch") < 0)
-	{
-		tmp = "On";
-	}
-	
+	tmp = cvar("m_pitch") < 0 ? "On" : "Off";
 	draw_val_item (70, 110, spacing, "Mouse Invert", tmp);
 
 	opt_cursor  (62, (Menu_GetIndex() * 10) + 60 + cursor_pad);
