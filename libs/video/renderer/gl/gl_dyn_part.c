@@ -1393,9 +1393,9 @@ R_DrawParticles (void)
 			VectorSubtract (right_scale, up_scale, down_right_scale);
 
 			VectorAdd (part->org, down_right_scale, VA[0].vertex);
-			VectorSubtract (part->org, up_right_scale,   VA[1].vertex);
+			VectorSubtract (part->org, up_right_scale, VA[1].vertex);
 			VectorSubtract (part->org, down_right_scale, VA[2].vertex);
-			VectorAdd (part->org, up_right_scale,   VA[3].vertex);
+			VectorAdd (part->org, up_right_scale, VA[3].vertex);
 
 			VA += 4;
 			vacount += 4;
