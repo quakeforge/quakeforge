@@ -919,10 +919,18 @@ COM_CreateGameDirectory (char *gamename)
 }
 
 /*
-	COM_InitFilesystem
+	COM_Filesystem_Init_Cvars
 */
 void
-COM_InitFilesystem ( void )
+COM_Filesystem_Init_Cvars (void)
+{
+}
+
+/*
+	COM_Filesystem_Init
+*/
+void
+COM_Filesystem_Init ( void )
 {
 	int i;
 

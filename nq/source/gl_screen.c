@@ -608,9 +608,7 @@ void SCR_SetUpToDrawConsole (void)
 		return;		// never a console with loading plaque
 		
 // decide on the height of the console
-	con_forcedup = !cl.worldmodel || cls.signon != SIGNONS;
-
-	if (con_forcedup)
+	if (!cl.worldmodel || cls.signon != SIGNONS)
 	{
 		scr_conlines = vid.height;		// full screen
 		scr_con_current = scr_conlines;
@@ -850,7 +848,7 @@ int SCR_ModalMessage (char *text)
 
 	do
 	{
-		key_count = -1;		// wait for a key down and up
+		//key_count = -1;		// wait for a key down and up
 		IN_SendKeyEvents ();
 	} while (key_lastpress != 'y' && key_lastpress != 'n' && key_lastpress != K_ESCAPE);
 
