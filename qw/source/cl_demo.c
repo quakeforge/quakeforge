@@ -264,10 +264,9 @@ CL_GetDemoMessage (void)
 			net_message->message->cursize = LittleLong
 				(net_message->message->cursize);
 //			Con_Printf("read: %ld bytes\n", net_message->message->cursize);
-			if (net_message->message->cursize > MAX_MSGLEN)
-//				Sys_Error ("Demo message > MAX_MSGLEN");
-				Host_Error ("Demo message > MAX_MSGLEN: %d/%d",
-							net_message->message->cursize, MAX_MSGLEN);
+			if (net_message->message->cursize > MAX_MSGLEN + 8) //+8 for header
+				Host_Error ("Demo message > MAX_MSGLEN + 8: %d/%d",
+							net_message->message->cursize, MAX_MSGLEN + 8);
 			r = Qread (cls.demofile, net_message->message->data,
 					   net_message->message->cursize);
 			if (r != net_message->message->cursize) {
@@ -406,7 +405,8 @@ CL_WriteSetDemoMessage (void)
 void
 CL_Record_f (void)
 {
-	char		buf_data[MAX_MSGLEN], name[MAX_OSPATH];
+	char		buf_data[MAX_MSGLEN + 10];	// + 10 for header
+	char        name[MAX_OSPATH];
 	char	   *s;
 	int			c, n, i, j;
 	int			seq = 1;
