@@ -164,15 +164,6 @@ void R_SetSkyFrame (void);
 void R_DrawSurfaceBlock (void);
 texture_t *R_TextureAnimation (msurface_t *surf);
 
-#ifdef USE_INTEL_ASM
-
-void R_DrawSurfaceBlock8_mip0 (void);
-void R_DrawSurfaceBlock8_mip1 (void);
-void R_DrawSurfaceBlock8_mip2 (void);
-void R_DrawSurfaceBlock8_mip3 (void);
-
-#endif
-
 void R_GenSkyTile (void *pdest);
 void R_SurfPatch (void);
 void R_DrawSubmodelPolygons (model_t *pmodel, int clipflags);
@@ -366,6 +357,10 @@ void R_DrawSurfaceBlock_mip0 (void);
 void R_DrawSurfaceBlock_mip1 (void);
 void R_DrawSurfaceBlock_mip2 (void);
 void R_DrawSurfaceBlock_mip3 (void);
+void R_DrawSurfaceBlock8_mip0 (void);
+void R_DrawSurfaceBlock8_mip1 (void);
+void R_DrawSurfaceBlock8_mip2 (void);
+void R_DrawSurfaceBlock8_mip3 (void);
 void R_DrawSurfaceBlock16_mip0 (void);
 void R_DrawSurfaceBlock16_mip1 (void);
 void R_DrawSurfaceBlock16_mip2 (void);
