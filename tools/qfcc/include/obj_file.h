@@ -132,8 +132,13 @@ typedef struct qfo_s {
 #define QFO_POINTER(q, t,o)	((t *)((q)->data + o))
 #define QFO_STRUCT(q, t,o)	(*QFO_POINTER (q, t, o))
 
-int write_obj_file (const char *filename);
-qfo_t *read_obj_file (const char *filename);
+struct pr_info_s;
+
+qfo_t *qfo_from_progs (struct pr_info_s *pr);
+int qfo_write (qfo_t *qfo, const char *filename);
+qfo_t *qfo_read (const char *filename);
+int qfo_to_progs (qfo_t *qfo, struct pr_info_s *pr);
+
 qfo_t *qfo_new (void);
 void qfo_add_code (qfo_t *qfo, dstatement_t *code, int code_size);
 void qfo_add_data (qfo_t *qfo, pr_type_t *data, int data_size);
@@ -142,6 +147,7 @@ void qfo_add_strings (qfo_t *qfo, const char *strings, int strings_size);
 void qfo_add_relocs (qfo_t *qfo, qfo_reloc_t *relocs, int num_relocs);
 void qfo_add_defs (qfo_t *qfo, qfo_def_t *defs, int num_defs);
 void qfo_add_functions (qfo_t *qfo, qfo_function_t *functions, int num_functions);
+void qfo_add_lines (qfo_t *qfo, pr_lineno_t *lines, int num_lines);
 void qfo_add_types (qfo_t *qfo, const char *types, int types_size);
 void qfo_delete (qfo_t *qfo);
 

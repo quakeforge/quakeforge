@@ -170,9 +170,9 @@ setup_data (void)
 	pr_type_t  *var;
 	pr_lineno_t *line;
 
-	for (d = pr.scope->head; d; d = d->def_next)
-		write_def (d, def++, &reloc);
-	for (f = pr.func_head; f; f = f->next) {
+	for (d = pr.scope->head; d; d = d->def_next, def++)
+		write_def (d, def, &reloc);
+	for (f = pr.func_head; f; f = f->next, func++) {
 		func->name           = LittleLong (f->s_name);
 		func->file           = LittleLong (f->s_file);
 		func->line           = LittleLong (f->def->line);
@@ -219,71 +219,87 @@ setup_data (void)
 	}
 }
 
-int
-write_obj_file (const char *filename)
+qfo_t *
+qfo_from_progs (pr_info_t *pr)
 {
-	qfo_header_t hdr;
-	VFile      *file;
+	qfo_t      *qfo;
 
 	types = strpool_new ();
 	allocate_stuff ();
 	setup_data ();
 
-	file = Qopen (filename, "wbz9");
+	pr->strings->size = RUP (pr->strings->size, 4);
+	types->size = RUP (types->size, 4);
 
-	pr.strings->size = (pr.strings->size + 3) & ~3;
-	types->size = (types->size + 3) & ~3;
-
-	memset (&hdr, 0, sizeof (hdr));
-
-	memcpy (hdr.qfo, QFO, sizeof (hdr.qfo));
-	hdr.version       = LittleLong (QFO_VERSION);
-	hdr.code_size     = LittleLong (pr.code->size);
-	hdr.data_size     = LittleLong (pr.near_data->size);
-	if (pr.far_data) {
-		hdr.far_data_size = LittleLong (pr.far_data->size);
-	}
-	hdr.strings_size  = LittleLong (pr.strings->size);
-	hdr.num_relocs    = LittleLong (num_relocs);
-	hdr.num_defs      = LittleLong (num_defs);
-	hdr.num_functions = LittleLong (num_functions);
-	hdr.num_lines     = LittleLong (num_linenos);
-	hdr.types_size    = LittleLong (types->size);
-
-	Qwrite (file, &hdr, sizeof (hdr));
-	if (pr.code->size)
-		Qwrite (file, pr.code->code, pr.code->size * sizeof (dstatement_t));
-	if (pr.near_data->size)
-		Qwrite (file, pr.near_data->data,
-				pr.near_data->size * sizeof (pr_type_t));
-	if (pr.far_data && pr.far_data->size) {
-		Qwrite (file, pr.far_data->data,
-				pr.far_data->size * sizeof (pr_type_t));
-	}
-	if (pr.strings->size)
-		Qwrite (file, pr.strings->strings, pr.strings->size);
-	if (num_relocs)
-		Qwrite (file, relocs, num_relocs * sizeof (qfo_reloc_t));
-	if (num_defs)
-		Qwrite (file, defs, num_defs * sizeof (qfo_def_t));
-	if (num_functions)
-		Qwrite (file, functions, num_functions * sizeof (qfo_function_t));
-	if (num_linenos)
-		Qwrite (file, linenos, num_linenos * sizeof (pr_lineno_t));
-	if (types->size)
-		Qwrite (file, types->strings, types->size);
-
-	Qclose (file);
+	qfo = qfo_new ();
+	qfo_add_code (qfo, pr->code->code, pr->code->size);
+	qfo_add_data (qfo, pr->near_data->data, pr->near_data->size);
+	if (pr->far_data)
+		qfo_add_far_data (qfo, pr->far_data->data, pr->far_data->size);
+	qfo_add_strings (qfo, pr->strings->strings, pr->strings->size);
+	qfo_add_relocs (qfo, relocs, num_relocs);
+	qfo_add_defs (qfo, defs, num_defs);
+	qfo_add_functions (qfo, functions, num_functions);
+	qfo_add_lines (qfo, linenos, num_linenos);
+	qfo_add_types (qfo, types->strings, types->size);
 
 	free (defs);
 	free (relocs);
 	free (functions);
 	strpool_delete (types);
+	return qfo;
+}
+
+int
+qfo_write (qfo_t *qfo, const char *filename)
+{
+	qfo_header_t hdr;
+	VFile      *file;
+
+	file = Qopen (filename, "wbz9");
+
+	memset (&hdr, 0, sizeof (hdr));
+
+	memcpy (hdr.qfo, QFO, sizeof (hdr.qfo));
+	hdr.version       = LittleLong (QFO_VERSION);
+	hdr.code_size     = LittleLong (qfo->code_size);
+	hdr.data_size     = LittleLong (qfo->data_size);
+	hdr.far_data_size = LittleLong (qfo->far_data_size);
+	hdr.strings_size  = LittleLong (qfo->strings_size);
+	hdr.num_relocs    = LittleLong (qfo->num_relocs);
+	hdr.num_defs      = LittleLong (qfo->num_defs);
+	hdr.num_functions = LittleLong (qfo->num_functions);
+	hdr.num_lines     = LittleLong (qfo->num_lines);
+	hdr.types_size    = LittleLong (qfo->types_size);
+
+	Qwrite (file, &hdr, sizeof (hdr));
+	if (qfo->code_size)
+		Qwrite (file, qfo->code, qfo->code_size * sizeof (dstatement_t));
+	if (qfo->data_size)
+		Qwrite (file, qfo->data, qfo->data_size * sizeof (pr_type_t));
+	if (qfo->far_data_size)
+		Qwrite (file, qfo->far_data, qfo->far_data_size * sizeof (pr_type_t));
+	if (qfo->strings_size)
+		Qwrite (file, qfo->strings, qfo->strings_size);
+	if (qfo->num_relocs)
+		Qwrite (file, qfo->relocs, qfo->num_relocs * sizeof (qfo_reloc_t));
+	if (qfo->num_defs)
+		Qwrite (file, qfo->defs, qfo->num_defs * sizeof (qfo_def_t));
+	if (qfo->num_functions)
+		Qwrite (file, qfo->functions,
+				qfo->num_functions * sizeof (qfo_function_t));
+	if (qfo->num_lines)
+		Qwrite (file, qfo->lines, qfo->num_lines * sizeof (pr_lineno_t));
+	if (qfo->types_size)
+		Qwrite (file, qfo->types, qfo->types_size);
+
+	Qclose (file);
+
 	return 0;
 }
 
 qfo_t *
-read_obj_file (const char *filename)
+qfo_read (const char *filename)
 {
 	VFile      *file;
 	qfo_header_t hdr;
@@ -510,6 +526,7 @@ void
 qfo_add_code (qfo_t *qfo, dstatement_t *code, int code_size)
 {
 	qfo->code = malloc (code_size * sizeof (dstatement_t));
+	qfo->code_size = code_size;
 	memcpy (qfo->code, code, code_size * sizeof (dstatement_t));
 }
 
@@ -517,6 +534,7 @@ void
 qfo_add_data (qfo_t *qfo, pr_type_t *data, int data_size)
 {
 	qfo->data = malloc (data_size * sizeof (pr_type_t));
+	qfo->data_size = data_size;
 	memcpy (qfo->data, data, data_size * sizeof (pr_type_t));
 }
 
@@ -524,6 +542,7 @@ void
 qfo_add_far_data (qfo_t *qfo, pr_type_t *far_data, int far_data_size)
 {
 	qfo->far_data = malloc (far_data_size * sizeof (pr_type_t));
+	qfo->far_data_size = far_data_size;
 	memcpy (qfo->far_data, far_data, far_data_size * sizeof (pr_type_t));
 }
 
@@ -531,6 +550,7 @@ void
 qfo_add_strings (qfo_t *qfo, const char *strings, int strings_size)
 {
 	qfo->strings = malloc (strings_size);
+	qfo->strings_size = strings_size;
 	memcpy (qfo->strings, strings, strings_size);
 }
 
@@ -538,6 +558,7 @@ void
 qfo_add_relocs (qfo_t *qfo, qfo_reloc_t *relocs, int num_relocs)
 {
 	qfo->relocs = malloc (num_relocs * sizeof (qfo_reloc_t));
+	qfo->num_relocs = num_relocs;
 	memcpy (qfo->relocs, relocs, num_relocs * sizeof (qfo_reloc_t));
 }
 
@@ -545,6 +566,7 @@ void
 qfo_add_defs (qfo_t *qfo, qfo_def_t *defs, int num_defs)
 {
 	qfo->defs = malloc (num_defs * sizeof (qfo_def_t));
+	qfo->num_defs = num_defs;
 	memcpy (qfo->defs, defs, num_defs * sizeof (qfo_def_t));
 }
 
@@ -552,13 +574,23 @@ void
 qfo_add_functions (qfo_t *qfo, qfo_function_t *functions, int num_functions)
 {
 	qfo->functions = malloc (num_functions * sizeof (qfo_function_t));
+	qfo->num_functions = num_functions;
 	memcpy (qfo->functions, functions, num_functions * sizeof (qfo_function_t));
+}
+
+void
+qfo_add_lines (qfo_t *qfo, pr_lineno_t *lines, int num_lines)
+{
+	qfo->lines = malloc (num_lines * sizeof (pr_lineno_t));
+	qfo->num_lines = num_lines;
+	memcpy (qfo->lines, lines, num_lines * sizeof (pr_lineno_t));
 }
 
 void
 qfo_add_types (qfo_t *qfo, const char *types, int types_size)
 {
 	qfo->types = malloc (types_size);
+	qfo->types_size = types_size;
 	memcpy (qfo->types, types, types_size);
 }
 
@@ -581,6 +613,8 @@ qfo_delete (qfo_t *qfo)
 		free (qfo->defs);
 	if (qfo->functions)
 		free (qfo->functions);
+	if (qfo->lines)
+		free (qfo->lines);
 	if (qfo->types)
 		free (qfo->types);
 	free (qfo);

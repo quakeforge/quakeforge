@@ -488,8 +488,11 @@ compile_to_obj (const char *file, const char *obj)
 			exit (1);
 		}
 	}
-	if (!err)
-		write_obj_file (obj);
+	if (!err) {
+		qfo_t      *qfo = qfo_from_progs (&pr);
+		err = qfo_write (qfo, obj);
+		qfo_delete (qfo);
+	}
 	return err;
 }
 
@@ -615,7 +618,9 @@ progs_src_compile (void)
 	}
 
 	if (options.compile) {
-		write_obj_file (options.output_file);
+		qfo_t      *qfo = qfo_from_progs (&pr);
+		qfo_write (qfo, options.output_file);
+		qfo_delete (qfo);
 	} else {
 		if (!finish_compilation ()) {
 			fprintf (stderr, "compilation errors\n");

@@ -75,12 +75,18 @@ static struct {
 	int         num_funcs;
 	int         max_funcs;
 } funcs;
+static struct {
+	pr_lineno_t *lines;
+	int         num_lines;
+	int         max_lines;
+} lines;
 static int      code_base;
 static int      data_base;
 static int      far_data_base;
 static int      reloc_base;
 static int      def_base;
 static int      func_base;
+static int      line_base;
 
 static const char *
 defs_get_key (void *_def, void *unused)
@@ -219,7 +225,31 @@ add_funcs (qfo_t *qfo)
 			func->def += def_base;
 		if (func->local_defs)
 			func->local_defs += def_base;
+		if (func->line_info)
+			func->line_info += line_base;
 		func->relocs += reloc_base;
+	}
+}
+
+static void
+add_lines (qfo_t *qfo)
+{
+	int         i;
+
+	if (lines.num_lines + qfo->num_lines > lines.max_lines) {
+		lines.max_lines = RUP (lines.num_lines + qfo->num_lines, 16384);
+		lines.lines = realloc (lines.lines,
+							   lines.max_lines * sizeof (pr_lineno_t));
+	}
+	lines.num_lines += qfo->num_lines;
+	memcpy (lines.lines + line_base, qfo->lines,
+			qfo->num_lines * sizeof (pr_lineno_t));
+	for (i = line_base; i < lines.num_lines; i++) {
+		pr_lineno_t *line = lines.lines + i;
+		if (line->line)
+			line->fa.addr += code_base;
+		else
+			line->fa.func += func_base;
 	}
 }
 
@@ -283,7 +313,7 @@ linker_add_object_file (const char *filename)
 {
 	qfo_t      *qfo;
 
-	qfo = read_obj_file (filename);
+	qfo = qfo_read (filename);
 	if (!qfo)
 		return;  
 
@@ -295,6 +325,7 @@ linker_add_object_file (const char *filename)
 	reloc_base = relocs.num_relocs;
 	def_base = defs.num_defs;
 	func_base = funcs.num_funcs;
+	line_base = lines.num_lines;
 
 	codespace_addcode (code, qfo->code, qfo->code_size);
 	defspace_adddata (data, qfo->data, qfo->data_size);
@@ -303,6 +334,7 @@ linker_add_object_file (const char *filename)
 	add_relocs (qfo);
 	add_defs (qfo);
 	add_funcs (qfo);
+	add_lines (qfo);
 
 	fixup_relocs (qfo);
 	
