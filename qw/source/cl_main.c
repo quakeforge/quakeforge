@@ -1822,6 +1822,9 @@ Host_Init (void)
 	CL_Skin_Init ();
 	Locs_Init ();
 
+	CL_UpdateScreen (realtime);
+	CL_UpdateScreen (realtime);
+
 	if (cl_quakerc->int_val)
 		Cbuf_InsertText (cl_cbuf, "exec quake.rc\n");
 	Cmd_Exec_File (cl_cbuf, fs_usercfg->string);
@@ -1839,7 +1842,9 @@ Host_Init (void)
 				build_number ());
 
 	Con_Printf ("\x80\x81\x81\x82 %s initialized \x80\x81\x81\x82\n", PROGRAM);
+	CL_UpdateScreen (realtime);
 	Con_NewMap ();							// force the menus to be loaded
+	CL_UpdateScreen (realtime);
 
 	CL_UpdateScreen (realtime);
 

@@ -974,6 +974,9 @@ Host_Init (void)
 	}
 	Host_Skin_Init ();
 
+	CL_UpdateScreen (cl.time);
+	CL_UpdateScreen (cl.time);
+
 	if (!isDedicated && cl_quakerc->int_val)
 		Cbuf_InsertText (host_cbuf, "exec quake.rc\n");
 	Cmd_Exec_File (host_cbuf, fs_usercfg->string);
@@ -991,6 +994,8 @@ Host_Init (void)
 				build_number ());
 
 	Con_Printf ("\x80\x81\x81\x82 %s Initialized\x80\x81\x81\x82\n", PROGRAM);
+	CL_UpdateScreen (cl.time);
+
 	Con_NewMap ();
 
 	CL_UpdateScreen (cl.time);
