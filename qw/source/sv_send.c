@@ -120,6 +120,7 @@ SV_FlushRedirect (void)
 			ClientReliableWrite_Begin (cl, svc_print, bytes + 3);
 			ClientReliableWrite_Byte (cl, PRINT_HIGH);
 			ClientReliableWrite_SZ (cl, p, bytes);
+			ClientReliableWrite_Byte (cl, 0);
 			p += bytes;
 			count -= bytes;
 		}
