@@ -211,9 +211,12 @@ this document uptodate and to make it complete.
   o Enable mouselook
    - Put '+mlook' into ~/.quakeforgerc or autoexec.cfg
 
-  o Keep the mouse stay in the window
+  o Make the mouse stay in the window
     - Set in_grab to 1, that will grab the mouse. (I recommend to make a bind 
     to "toggle in_grab" for make the options toggleable)
+
+  o Invert mouse (reverse mouse control over pitch)
+    - Set m_pitch to -0.022. Default is 0.022.
 
 4.4 Misc
 --------
