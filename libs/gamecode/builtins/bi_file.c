@@ -30,7 +30,7 @@ static const char rcsid[] =
 #ifdef HAVE_CONFIG_H
 # include "config.h"
 #endif
-
+#include <stdlib.h>
 #ifdef HAVE_STRING_H
 # include <string.h>
 #endif
@@ -119,8 +119,8 @@ bi_File_Open (progs_t *pr)
 {
 	const char *pth = P_STRING (pr, 0);
 	const char *mode = P_STRING (pr, 1);
-	char       *path= Hunk_TempAlloc (strlen (pth) + 1);
-	char       *p, *d;
+	char       *path;
+	char       *p;
 	int         h;
 	int         do_write = 0;
 	int         do_read = 0;
@@ -146,45 +146,7 @@ bi_File_Open (progs_t *pr)
 			do_read |= 1;
 	}
 
-	for (d = path; *pth; d++, pth++) {
-		if (*pth == '\\')
-			*d = '/';
-		else
-			*d = *pth;
-	}
-	*d = 0;
-
-	p = path;
-	while (*p) {
-		if (p[0] == '.') {
-			if (p[1] == '.') {
-				if (p[2] == '/' || p[2] == 0) {
-					d = p;
-					if (d > path)
-						d--;
-					while (d > path && d[-1] != '/')
-						d--;
-					if (d == path
-						&& d[0] == '.' && d[1] == '.'
-						&& (d[2] == '/' || d[2] == '0')) {
-						p += 2 + (p[2] == '/');
-						continue;
-					}
-					strcpy (d, p + 2 + (p[2] == '/'));
-					p = d + (d != path);
-				}
-			} else if (p[1] == '/') {
-				strcpy (p, p + 2);
-				continue;
-			} else if (p[1] == 0) {
-				p[0] = 0;
-			}
-		}
-		while (*p && *p != '/')
-			p++;
-		if (*p == '/')
-			p++;
-	}
+	path = COM_CompressPath (pth);
 	//printf ("'%s'  '%s'\n", P_STRING (pr, 0), path);
 	if (!path[0])
 		goto error;
@@ -204,9 +166,11 @@ bi_File_Open (progs_t *pr)
 		goto error;
 	if (!(handles[h] = Qopen (va ("%s/%s", com_gamedir, path), mode)))
 		goto error;
+	free (path);
 	R_INT (pr) = h + 1;
 	return;
 error:
+	free (path);
 	R_INT (pr) = 0;
 }
 
