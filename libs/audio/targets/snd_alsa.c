@@ -335,7 +335,7 @@ SNDDMA_Init (void)
 	Sys_Printf ("%5d samplebits\n", sn.samplebits);
 	Sys_Printf ("%5d submission_chunk\n", sn.submission_chunk);
 	Sys_Printf ("%5d speed\n", sn.speed);
-	Sys_Printf ("0x%x dma buffer\n", (int) sn.buffer);
+	Sys_Printf ("0x%lx dma buffer\n", (long) sn.buffer);
 
 	snd_inited = 1;
 	return &sn;
