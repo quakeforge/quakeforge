@@ -168,6 +168,12 @@ void GL_Bind (int texnum);
 #define    TEXTURE0_SGIS                               0x835E
 #define    TEXTURE1_SGIS                               0x835F
 
+#ifndef APIENTRY
+# ifndef _WIN32
+#  define APIENTRY /* */
+# endif
+#endif
+
 typedef void (APIENTRY *lpMTexFUNC) (GLenum, GLfloat, GLfloat);
 typedef void (APIENTRY *lpSelTexFUNC) (GLenum);
 extern lpMTexFUNC qglMTexCoord2fSGIS;
