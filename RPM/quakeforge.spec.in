@@ -305,6 +305,7 @@ rm -rf $RPM_BUILD_ROOT
 %attr(-,root,root) %{_prefix}/lib/libQFruamoko.so.*
 %attr(-,root,root) %{_prefix}/lib/libQFsound.so.*
 %attr(-,root,root) %{_prefix}/lib/libQFutil.so.*
+%attr(-,root,root) %{_prefix}/lib/quakeforge/cd_file.so*
 %attr(-,root,root) %{_prefix}/lib/quakeforge/cd_linux.so*
 %attr(-,root,root) %{_prefix}/lib/quakeforge/console_client.so*
 %attr(-,root,root) %{_prefix}/lib/quakeforge/snd_output_disk.so*
