@@ -56,12 +56,12 @@
 - (void) applicationWillTerminate: (NSNotification *) not;
 
 // Action methods
-- (void) createNew: (id) sender;
-- (void) createNewProject: (id) sender;
-- (void) infoPanel: (id) sender;
-- (void) open: (id) sender;
-- (void) openProject: (id) sender;
-- (void) saveAll: (id) sender;
-- (void) showPreferencesPanel: (id) sender;
+- (IBAction void) createNew: (id) sender;
+- (IBAction void) createNewProject: (id) sender;
+- (IBAction void) infoPanel: (id) sender;
+- (IBAction void) open: (id) sender;
+- (IBAction void) openProject: (id) sender;
+- (IBAction void) saveAll: (id) sender;
+- (IBAction void) showPreferencesPanel: (id) sender;
 
 @end

@@ -244,6 +244,7 @@ static const char rcsid[] =
 	*/
 	NSDebugLog (@"Windows");
 	windows = [[[NSMenu alloc] init] autorelease];
+	[menu setSubmenu: windows forItem: [menu itemWithTitle: _(@"Windows")]];
 
 	[windows addItemWithTitle: _(@"Close Window")
 					action: @selector (performClose:)
