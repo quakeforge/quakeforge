@@ -696,6 +696,8 @@ PR_ExecuteProgram (progs_t * pr, func_t fnum)
 				else if (&R_INT (pr) != &OPA.integer_var)
 					memcpy (&R_INT (pr), &OPA,
 							pr->pr_param_size * sizeof (OPA));
+				pr->pr_xfunction->profile += profile - startprofile;
+				startprofile = profile;
 				PR_LeaveFunction (pr);
 				st = pr->pr_statements + pr->pr_xstatement;
 				if (pr->pr_depth == exitdepth) {
