@@ -86,6 +86,11 @@ VID_SetPalette (unsigned char *palette)
 	SDL_SetColors (screen, colors, 0, 256);
 }
 
+static void
+do_screen_buffer (void)
+{
+}
+
 void
 VID_Init (unsigned char *palette)
 {
@@ -117,6 +122,7 @@ VID_Init (unsigned char *palette)
 	vid.numpages = 1;
 	vid.colormap8 = vid_colormap;
 	vid.fullbright = 256 - LittleLong (*((int *) vid.colormap8 + 2048));
+	vid.do_screen_buffer = do_screen_buffer;
 	VGA_pagebase = vid.buffer = screen->pixels;
 	VGA_rowbytes = vid.rowbytes = screen->pitch;
 	vid.conbuffer = vid.buffer;
