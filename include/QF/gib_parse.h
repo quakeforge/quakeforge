@@ -34,6 +34,7 @@ inline qboolean GIB_Escaped (const char *str, int i);
 char GIB_Parse_Match_Brace (const char *str, unsigned int *i);
 char GIB_Parse_Match_Backtick (const char *str, unsigned int *i);
 char GIB_Parse_Match_Index (const char *str, unsigned int *i);
+char GIB_Parse_Match_Paren (const char *str, unsigned int *i);
 
 void GIB_Parse_Strip_Comments (struct cbuf_s *cbuf);
 void GIB_Parse_Extract_Line (struct cbuf_s *cbuf);
