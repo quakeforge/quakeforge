@@ -32,6 +32,7 @@ static const char rcsid[] =
 	"$Id$";
 
 #include "qfcc.h"
+#include "QF/hash.h"
 
 #define YYDEBUG 1
 #define YYERROR_VERBOSE 1
@@ -56,8 +57,8 @@ void finish_function (function_t *f);
 void emit_function (function_t *f, expr_t *e);
 void build_scope (function_t *f, def_t *func);
 
-def_t **save_local_inits (def_t *scope);
-void restore_local_inits (def_t **def_list);
+hashtab_t *save_local_inits (def_t *scope);
+void restore_local_inits (hashtab_t *def_list);
 
 typedef struct {
 	type_t	*type;
@@ -68,17 +69,17 @@ typedef struct {
 %}
 
 %union {
-	int		op;
-	scope_t	scope;
-	def_t	*def;
-	def_t	**def_list;
-	type_t	*type;
-	expr_t	*expr;
-	int		integer_val;
-	float	float_val;
-	char	*string_val;
-	float	vector_val[3];
-	float	quaternion_val[4];
+	int			op;
+	scope_t		scope;
+	def_t		*def;
+	struct hashtab_s	*def_list;
+	type_t		*type;
+	expr_t		*expr;
+	int			integer_val;
+	float		float_val;
+	char		*string_val;
+	float		vector_val[3];
+	float		quaternion_val[4];
 	function_t *function;
 }
 
@@ -716,8 +717,8 @@ emit_function (function_t *f, expr_t *e)
 
 	pr_scope = f->def;
 	while (e) {
-		print_expr (e);
-		puts("");
+		//print_expr (e);
+		//puts("");
 
 		emit_expr (e);
 		e = e->next;
@@ -730,13 +731,13 @@ emit_function (function_t *f, expr_t *e)
 	//puts ("");
 }
 
-def_t **
+hashtab_t *
 save_local_inits (def_t *scope)
 {
 	return 0;
 }
 
 void
-restore_local_inits (def_t **def_list)
+restore_local_inits (hashtab_t *def_list)
 {
 }
