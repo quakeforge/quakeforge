@@ -37,6 +37,9 @@ static __attribute__ ((unused)) const char rcsid[] =
 #ifdef HAVE_STRINGS_H
 # include <strings.h>
 #endif
+#ifdef HAVE_STDLIB_H
+# include <stdlib.h>
+#endif
 
 #include <math.h>
 
@@ -326,11 +329,11 @@ R_ViewChanged (vrect_t *pvrect, int lineadj, float aspect)
 	r_refdef.aliasvrectbottom = r_refdef.aliasvrect.y +
 		r_refdef.aliasvrect.height;
 
-	pixelAspect = aspect;
+	pixelAspect = (float)r_refdef.vrect.height/(float)r_refdef.vrect.width;
 	xOrigin = r_refdef.xOrigin;
 	yOrigin = r_refdef.yOrigin;
 
-	screenAspect = r_refdef.vrect.width * pixelAspect / r_refdef.vrect.height;
+	screenAspect = 1.0;
 	// 320*200 1.0 pixelAspect = 1.6 screenAspect
 	// 320*240 1.0 pixelAspect = 1.3333 screenAspect
 	// proper 320*200 pixelAspect = 0.8333333
@@ -742,7 +745,7 @@ R_DrawBEntitiesOnList (void)
 								r_clipflags = clipflags;
 								R_DrawSolidClippedSubmodelPolygons (clmodel);
 							} else {
-								// falls entirely in one leaf, so we just put 
+								// falls entirely in one leaf, so we just put
 								// all the edges in the edge list and let 1/z
 								// sorting handle drawing order
 								R_DrawSubmodelPolygons (clmodel, clipflags);
@@ -930,6 +933,8 @@ R_RenderView_ (void)
 	R_HighFPPrecision ();
 }
 
+static void R_RenderViewFishEye (void);
+
 void
 R_RenderView (void)
 {
@@ -949,7 +954,10 @@ R_RenderView (void)
 	if ((long) (&r_warpbuffer) & 3)
 		Sys_Error ("Globals are missaligned");
 
-	R_RenderView_ ();
+	if (!scr_fisheye->int_val)
+		R_RenderView_ ();
+	else
+		R_RenderViewFishEye ();
 }
 
 void
@@ -962,4 +970,290 @@ R_InitTurb (void)
 		intsintable[i] = AMP2 + sin (i * 3.14159 * 2 / CYCLE) * AMP2;
 		// AMP2 not 20
 	}
+}
+
+#define BOX_FRONT  0
+#define BOX_BEHIND 2
+#define BOX_LEFT   3
+#define BOX_RIGHT  1
+#define BOX_TOP    4
+#define BOX_BOTTOM 5
+
+#define DEG(x) (x / M_PI * 180.0)
+#define RAD(x) (x * M_PI / 180.0)
+
+struct my_coords
+{
+	double x, y, z;
+};
+
+struct my_angles
+{
+	double yaw, pitch, roll;
+};
+
+static void
+x_rot (struct my_coords *c, double pitch)
+{
+	double nx, ny, nz;
+
+	nx = c->x;
+	ny = (c->y * cos(pitch)) - (c->z * sin(pitch));
+	nz = (c->y * sin(pitch)) + (c->z * cos(pitch));
+
+	c->x = nx; c->y = ny; c->z = nz;
+}
+
+static void
+y_rot (struct my_coords *c, double yaw)
+{
+	double nx, ny, nz;
+
+	nx = (c->x * cos(yaw)) - (c->z * sin(yaw));
+	ny = c->y;
+	nz = (c->x * sin(yaw)) + (c->z * cos(yaw));
+
+	c->x = nx; c->y = ny; c->z = nz;
+}
+
+static void
+z_rot (struct my_coords *c, double roll)
+{
+	double nx, ny, nz;
+
+	nx = (c->x * cos(roll)) - (c->y * sin(roll));
+	ny = (c->x * sin(roll)) + (c->y * cos(roll));
+	nz = c->z;
+
+	c->x = nx; c->y = ny; c->z = nz;
+}
+
+static void
+my_get_angles (struct my_coords *in_o, struct my_coords *in_u, struct my_angles *a)
+{
+	double rad_yaw, rad_pitch;
+	struct my_coords o, u;
+
+	a->pitch = 0.0;
+	a->yaw = 0.0;
+	a->roll = 0.0;
+
+	// make a copy of the coords
+	o.x = in_o->x; o.y = in_o->y; o.z = in_o->z;
+	u.x = in_u->x; u.y = in_u->y; u.z = in_u->z;
+
+	// special case when looking straight up or down
+	if ((o.x == 0.0) && (o.z == 0.0)) {
+		a->yaw   = 0.0;
+		if (o.y > 0.0) { a->pitch = -90.0; a->roll = 180.0 - DEG(atan2(u.x, u.z)); } // down
+		else           { a->pitch =  90.0; a->roll = DEG(atan2(u.x, u.z)); } // up
+		return;
+	}
+
+	// get yaw angle and then rotate o and u so that yaw = 0
+	rad_yaw = atan2 (-o.x, o.z);
+	a->yaw  = DEG (rad_yaw);
+
+	y_rot (&o, -rad_yaw);
+	y_rot (&u, -rad_yaw);
+
+	// get pitch and then rotate o and u so that pitch = 0
+	rad_pitch = atan2 (-o.y, o.z);
+	a->pitch  = DEG (rad_pitch);
+
+	x_rot (&o, -rad_pitch);
+	x_rot (&u, -rad_pitch);
+
+	// get roll
+	a->roll = DEG (-atan2(u.x, u.y));
+}
+
+static void
+get_ypr (double yaw, double pitch, double roll, int side, struct my_angles *a)
+{
+	struct my_coords o, u;
+
+	// get 'o' (observer) and 'u' ('this_way_up') depending on box side
+	switch(side) {
+		case BOX_FRONT:
+			o.x =  0.0; o.y =  0.0; o.z =  1.0;
+			u.x =  0.0; u.y =  1.0; u.z =  0.0;
+			break;
+		case BOX_BEHIND:
+			o.x =  0.0; o.y =  0.0; o.z = -1.0;
+			u.x =  0.0; u.y =  1.0; u.z =  0.0;
+			break;
+		case BOX_LEFT:
+			o.x = -1.0; o.y =  0.0; o.z =  0.0;
+			u.x = -1.0; u.y =  1.0; u.z =  0.0;
+			break;
+		case BOX_RIGHT:
+			o.x =  1.0; o.y =  0.0; o.z =  0.0;
+			u.x =  0.0; u.y =  1.0; u.z =  0.0;
+			break;
+		case BOX_TOP:
+			o.x =  0.0; o.y = -1.0; o.z =  0.0;
+			u.x =  0.0; u.y =  0.0; u.z = -1.0;
+			break;
+		case BOX_BOTTOM:
+			o.x =  0.0; o.y =  1.0; o.z =  0.0;
+			u.x =  0.0; u.y =  0.0; u.z = -1.0;
+			break;
+	}
+	z_rot (&o, roll); z_rot (&u, roll);
+	x_rot (&o, pitch); x_rot (&u, pitch);
+	y_rot (&o, yaw); y_rot (&u, yaw);
+
+	my_get_angles (&o, &u, a);
+
+	// normalise angles
+	while (a->yaw   <   0.0) a->yaw   += 360.0;
+	while (a->yaw   > 360.0) a->yaw   -= 360.0;
+	while (a->pitch <   0.0) a->pitch += 360.0;
+	while (a->pitch > 360.0) a->pitch -= 360.0;
+	while (a->roll  <   0.0) a->roll  += 360.0;
+	while (a->roll  > 360.0) a->roll  -= 360.0;
+}
+
+static void
+fisheyelookuptable (byte **buf, int width, int height, byte *scrp, double fov)
+{
+	int x, y;
+
+	for (y = 0; y < height; y++) {
+		for (x = 0; x < width; x++) {
+			double dx = x-width/2;
+			double dy = -(y-height/2);
+			double yaw = sqrt(dx*dx+dy*dy)*fov/((double)width);
+			double roll = -atan2(dy, dx);
+			double sx = sin(yaw) * cos(roll);
+			double sy = sin(yaw) * sin(roll);
+			double sz = cos(yaw);
+
+			// determine which side of the box we need
+			double abs_x = fabs(sx);
+			double abs_y = fabs(sy);
+			double abs_z = fabs(sz);
+			int side;
+			double xs = 0, ys = 0;
+			if (abs_x > abs_y) {
+				if (abs_x > abs_z) { side = ((sx > 0.0) ? BOX_RIGHT : BOX_LEFT);   }
+				else               { side = ((sz > 0.0) ? BOX_FRONT : BOX_BEHIND); }
+			} else {
+				if (abs_y > abs_z) { side = ((sy > 0.0) ? BOX_TOP   : BOX_BOTTOM); }
+				else               { side = ((sz > 0.0) ? BOX_FRONT : BOX_BEHIND); }
+			}
+
+			#define RC(x) ((x / 2.06) + 0.5)
+			#define R2(x) ((x / 2.03) + 0.5)
+
+			// scale up our vector [x,y,z] to the box
+			switch(side) {
+				case BOX_FRONT:  xs = RC( sx /  sz); ys = R2( sy /  sz); break;
+				case BOX_BEHIND: xs = RC(-sx / -sz); ys = R2( sy / -sz); break;
+				case BOX_LEFT:   xs = RC( sz / -sx); ys = R2( sy / -sx); break;
+				case BOX_RIGHT:  xs = RC(-sz /  sx); ys = R2( sy /  sx); break;
+				case BOX_TOP:    xs = RC( sx /  sy); ys = R2( sz / -sy); break; //bot
+				case BOX_BOTTOM: xs = RC(-sx /  sy); ys = R2( sz / -sy); break; //top??
+			}
+
+			if (xs <  0.0) xs = 0.0;
+			if (xs >= 1.0) xs = 0.999;
+			if (ys <  0.0) ys = 0.0;
+			if (ys >= 1.0) ys = 0.999;
+			*buf++ = scrp+(((int)(xs*(double)width))+
+						   ((int)(ys*(double)height))*width)+
+						   side*width*height;
+		}
+	}
+}
+
+static void
+rendercopy (void *dest)
+{
+	void *p = vid.buffer;
+	// XXX
+	vid.buffer = dest;
+	R_RenderView_ ();
+	vid.buffer = p;
+}
+
+static void
+renderside (byte* bufs, double yaw, double pitch, double roll, int side)
+{
+	struct my_angles a;
+
+	get_ypr (RAD(yaw), RAD(pitch), RAD(roll), side, &a);
+	if (side == BOX_RIGHT) { a.roll = -a.roll; a.pitch = -a.pitch; }
+	if (side == BOX_LEFT)  { a.roll = -a.roll; a.pitch = -a.pitch; }
+	if (side == BOX_TOP)   { a.yaw += 180.0; a.pitch = 180.0 - a.pitch; }
+	r_refdef.viewangles[YAW] = a.yaw;
+	r_refdef.viewangles[PITCH] = a.pitch;
+	r_refdef.viewangles[ROLL] = a.roll;
+	rendercopy (bufs);
+}
+
+static void
+renderlookup (byte **offs, byte* bufs)
+{
+	byte *p = (byte*)vid.buffer;
+	int x, y;
+	for (y = 0; y < vid.height; y++) {
+		for (x = 0; x < vid.width; x++, offs++)
+		    p[x] = **offs;
+		p += vid.rowbytes;
+	}
+}
+
+static void
+R_RenderViewFishEye (void)
+{
+	int width = vid.width; //r_refdef.vrect.width;
+	int height = vid.height; //r_refdef.vrect.height;
+	int scrsize = width*height;
+	int fov = scr_ffov->int_val;
+	int views = scr_fviews->int_val;
+	double yaw = r_refdef.viewangles[YAW];
+	double pitch = r_refdef.viewangles[PITCH];
+	double roll = 0; //r_refdef.viewangles[ROLL];
+	static int pwidth = -1;
+	static int pheight = -1;
+	static int pfov = -1;
+	static int pviews = -1;
+	static byte *scrbufs = NULL;
+	static byte **offs = NULL;
+
+	if (fov < 1) fov = 1;
+
+	if (pwidth != width || pheight != height || pfov != fov) {
+		if (scrbufs) free (scrbufs);
+		if (offs) free (offs);
+		scrbufs = malloc (scrsize*6); // front|right|back|left|top|bottom
+		SYS_CHECKMEM (scrbufs);
+		offs = malloc (scrsize*sizeof(byte*));
+		SYS_CHECKMEM (offs);
+		pwidth = width;
+		pheight = height;
+		pfov = fov;
+		fisheyelookuptable (offs, width, height, scrbufs, ((double)fov)*M_PI/180.0);
+	}
+
+	if (views != pviews) {
+		pviews = views;
+		memset (scrbufs, 0, scrsize*6);
+	}
+
+	switch (views) {
+		case 6:  renderside (scrbufs+scrsize*2, yaw, pitch, roll, BOX_BEHIND);
+		case 5:  renderside (scrbufs+scrsize*5, yaw, pitch, roll, BOX_BOTTOM);
+		case 4:  renderside (scrbufs+scrsize*4, yaw, pitch, roll, BOX_TOP);
+		case 3:  renderside (scrbufs+scrsize*3, yaw, pitch, roll, BOX_LEFT);
+		case 2:  renderside (scrbufs+scrsize,   yaw, pitch, roll, BOX_RIGHT);
+		default: renderside (scrbufs,           yaw, pitch, roll, BOX_FRONT);
+	}
+
+	r_refdef.viewangles[YAW] = yaw;
+	r_refdef.viewangles[PITCH] = pitch;
+	r_refdef.viewangles[ROLL] = roll;
+	renderlookup (offs, scrbufs);
 }

@@ -131,6 +131,9 @@ cvar_t     *scr_centertime;
 cvar_t     *scr_consize;
 cvar_t     *scr_conspeed;
 cvar_t     *scr_fov;
+cvar_t     *scr_fisheye;
+cvar_t     *scr_fviews;
+cvar_t     *scr_ffov;
 cvar_t     *scr_printspeed;
 cvar_t     *scr_showpause;
 cvar_t     *scr_showram;
@@ -191,6 +194,24 @@ r_particles_nearclip_f (cvar_t *var)
 {
 	Cvar_SetValue (r_particles_nearclip, bound (r_nearclip->value, var->value,
 												r_farclip->value));
+}
+
+static void
+scr_fisheye_f (cvar_t *var)
+{
+	if (var->int_val)
+		Cvar_Set (scr_fov, "90");
+}
+
+static void
+scr_ffov_f (cvar_t *var)
+{
+	if (var->value < 130)
+		Cvar_Set (scr_fviews, "3");
+	else if (var->value < 220)
+		Cvar_Set (scr_fviews, "5");
+	else
+		Cvar_Set (scr_fviews, "6");
 }
 
 void
@@ -355,7 +376,7 @@ R_Init_Cvars (void)
 							"Toggles drawing of particles.");
 	r_particles_max = Cvar_Get ("r_particles_max", "2048", CVAR_ARCHIVE,
 								r_particles_max_f, "Maximum amount of "
-								"particles to display. No maximum, minimum " 
+								"particles to display. No maximum, minimum "
 								"is 0.");
 	r_particles_nearclip = Cvar_Get ("r_particles_nearclip", "32",
 									 CVAR_ARCHIVE, r_particles_nearclip_f,
@@ -396,7 +417,14 @@ R_Init_Cvars (void)
 	scr_conspeed = Cvar_Get ("scr_conspeed", "300", CVAR_NONE, NULL,
 							 "How quickly the console scrolls up or down");
 	scr_fov = Cvar_Get ("fov", "90", CVAR_NONE, NULL, "Your field of view in "
-						"degrees. Smaller than 90 zooms in.");
+						"degrees. Smaller than 90 zooms in. Don't touch in "
+						"fisheye mode, use ffov instead.");
+	scr_fisheye = Cvar_Get ("fisheye", "0", CVAR_NONE, scr_fisheye_f,
+							"Toggles fisheye mode.");
+	scr_fviews = Cvar_Get ("fviews", "6", CVAR_NONE, NULL, "The number of "
+						   "fisheye views.");
+	scr_ffov = Cvar_Get ("ffov", "180", CVAR_NONE, scr_ffov_f, "Your field of "
+						 "view in degrees in fisheye mode.");
 	scr_printspeed = Cvar_Get ("scr_printspeed", "8", CVAR_NONE, NULL,
 							   "How fast the text is displayed at the end of "
 							   "the single player episodes");
