@@ -227,7 +227,6 @@ process_field (qfo_def_t *def)
 	field_def = fields.defs + fields.num_defs - 1;
 	field_def->ofs = var->integer_var + entity_base;
 	Hash_Add (field_defs, field_def);
-	printf ("%s %d\n", strings->strings + field_def->name, field_def->ofs);
 }
 
 static void
