@@ -33,6 +33,7 @@
 #ifndef __obj_file_h
 #define __obj_file_h
 
+#define QFO			"QFO"
 #define QFO_VERSION 0x00001001		// MMmmmRRR 0.001.001 (hex)
 
 typedef struct qfo_header_s {
@@ -70,14 +71,16 @@ typedef struct qfo_def_s {
 	int         refs;
 	int         num_refs;
 
-	unsigned    initialized:1;
-	unsigned    constant:1;
-	unsigned    global:1;
-	unsigned    absolute:1;
+	unsigned    flags;
 
 	string_t    file;
 	int         line;
 } qfo_def_t;
+
+#define QFOD_INITIALIZED	(1u<<0)
+#define QFOD_CONSTANT		(1u<<1)
+#define QFOD_GLOBAL			(1u<<2)
+#define QFOD_ABSOLUTE		(1u<<3)
 
 typedef struct qfo_function_s {
 	string_t    name;
