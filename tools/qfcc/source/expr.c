@@ -2512,7 +2512,8 @@ super_expr (class_type_t *class_type)
 	class_type_t _class_type;
 
 	if (!class_type)
-		return error (0, "`super' used outside of class implementation");
+		return error (new_expr (),
+					  "`super' used outside of class implementation");
 
 	if (class_type->is_class)
 		class = class_type->c.class;
@@ -2520,7 +2521,7 @@ super_expr (class_type_t *class_type)
 		class = class_type->c.category->class;
 
 	if (!class->super_class)
-		return error (0, "%s has no super class", class->name);
+		return error (new_expr (), "%s has no super class", class->name);
 
 	super_d = get_def (type_Super.aux_type, ".super", current_func->scope,
 					   st_local);

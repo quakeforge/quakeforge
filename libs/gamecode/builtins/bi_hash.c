@@ -131,7 +131,7 @@ bi_Hash_NewTable (progs_t *pr)
 static void
 bi_Hash_SetHashCompare (progs_t *pr)
 {
-	bi_hashtab_t *ht = &G_STRUCT (pr, bi_hashtab_t, 0);
+	bi_hashtab_t *ht = &P_STRUCT (pr, bi_hashtab_t, 0);
 	unsigned long (*gh)(void*,void*);
 	int         (*cmp)(void*,void*,void*);
 
@@ -145,7 +145,7 @@ bi_Hash_SetHashCompare (progs_t *pr)
 static void
 bi_Hash_DelTable (progs_t *pr)
 {
-	bi_hashtab_t *ht = &G_STRUCT (pr, bi_hashtab_t, 0);
+	bi_hashtab_t *ht = &P_STRUCT (pr, bi_hashtab_t, 0);
 
 	Hash_DelTable (ht->tab);
 	*ht->prev = ht->next;
@@ -155,7 +155,7 @@ bi_Hash_DelTable (progs_t *pr)
 static void
 bi_Hash_FlushTable (progs_t *pr)
 {
-	bi_hashtab_t *ht = &G_STRUCT (pr, bi_hashtab_t, 0);
+	bi_hashtab_t *ht = &P_STRUCT (pr, bi_hashtab_t, 0);
 
 	Hash_FlushTable (ht->tab);
 }
@@ -163,7 +163,7 @@ bi_Hash_FlushTable (progs_t *pr)
 static void
 bi_Hash_Add (progs_t *pr)
 {
-	bi_hashtab_t *ht = &G_STRUCT (pr, bi_hashtab_t, 0);
+	bi_hashtab_t *ht = &P_STRUCT (pr, bi_hashtab_t, 0);
 
 	R_INT (pr) = Hash_Add (ht->tab, (void *) (long) P_INT (pr, 1));
 }
@@ -171,15 +171,15 @@ bi_Hash_Add (progs_t *pr)
 static void
 bi_Hash_AddElement (progs_t *pr)
 {
-	bi_hashtab_t *ht = &G_STRUCT (pr, bi_hashtab_t, 0);
+	bi_hashtab_t *ht = &P_STRUCT (pr, bi_hashtab_t, 0);
 
-	R_INT (pr) = Hash_Add (ht->tab, (void *) (long) P_INT (pr, 1));
+	R_INT (pr) = Hash_AddElement (ht->tab, (void *) (long) P_INT (pr, 1));
 }
 
 static void
 bi_Hash_Find (progs_t *pr)
 {
-	bi_hashtab_t *ht = &G_STRUCT (pr, bi_hashtab_t, 0);
+	bi_hashtab_t *ht = &P_STRUCT (pr, bi_hashtab_t, 0);
 
 	R_INT (pr) = (long) Hash_Find (ht->tab, P_GSTRING (pr, 1));
 }
@@ -187,7 +187,7 @@ bi_Hash_Find (progs_t *pr)
 static void
 bi_Hash_FindElement (progs_t *pr)
 {
-	bi_hashtab_t *ht = &G_STRUCT (pr, bi_hashtab_t, 0);
+	bi_hashtab_t *ht = &P_STRUCT (pr, bi_hashtab_t, 0);
 
 	R_INT (pr) = (long) Hash_FindElement (ht->tab,
 										  (void *) (long) P_INT (pr, 1));
@@ -196,7 +196,7 @@ bi_Hash_FindElement (progs_t *pr)
 static void
 bi_Hash_FindList (progs_t *pr)
 {
-	bi_hashtab_t *ht = &G_STRUCT (pr, bi_hashtab_t, 0);
+	bi_hashtab_t *ht = &P_STRUCT (pr, bi_hashtab_t, 0);
 	void      **list, **l;
 	pr_type_t  *pr_list;
 	int         count;
@@ -214,7 +214,7 @@ bi_Hash_FindList (progs_t *pr)
 static void
 bi_Hash_FindElementList (progs_t *pr)
 {
-	bi_hashtab_t *ht = &G_STRUCT (pr, bi_hashtab_t, 0);
+	bi_hashtab_t *ht = &P_STRUCT (pr, bi_hashtab_t, 0);
 	void      **list, **l;
 	pr_type_t  *pr_list;
 	int         count;
@@ -232,7 +232,7 @@ bi_Hash_FindElementList (progs_t *pr)
 static void
 bi_Hash_Del (progs_t *pr)
 {
-	bi_hashtab_t *ht = &G_STRUCT (pr, bi_hashtab_t, 0);
+	bi_hashtab_t *ht = &P_STRUCT (pr, bi_hashtab_t, 0);
 
 	R_INT (pr) = (long) Hash_Del (ht->tab, P_GSTRING (pr, 1));
 }
@@ -240,7 +240,7 @@ bi_Hash_Del (progs_t *pr)
 static void
 bi_Hash_DelElement (progs_t *pr)
 {
-	bi_hashtab_t *ht = &G_STRUCT (pr, bi_hashtab_t, 0);
+	bi_hashtab_t *ht = &P_STRUCT (pr, bi_hashtab_t, 0);
 
 	R_INT (pr) = (long) Hash_DelElement (ht->tab,
 										 (void *) (long) P_INT (pr, 1));
@@ -249,7 +249,7 @@ bi_Hash_DelElement (progs_t *pr)
 static void
 bi_Hash_Free (progs_t *pr)
 {
-	bi_hashtab_t *ht = &G_STRUCT (pr, bi_hashtab_t, 0);
+	bi_hashtab_t *ht = &P_STRUCT (pr, bi_hashtab_t, 0);
 
 	Hash_Free (ht->tab, (void *) (long) P_INT (pr, 1));
 }
@@ -269,7 +269,7 @@ bi_Hash_Buffer (progs_t *pr)
 static void
 bi_Hash_GetList (progs_t *pr)
 {
-	bi_hashtab_t *ht = &G_STRUCT (pr, bi_hashtab_t, 0);
+	bi_hashtab_t *ht = &P_STRUCT (pr, bi_hashtab_t, 0);
 	void      **list, **l;
 	pr_type_t  *pr_list;
 	int         count;
@@ -287,7 +287,7 @@ bi_Hash_GetList (progs_t *pr)
 static void
 bi_Hash_Stats (progs_t *pr)
 {
-	bi_hashtab_t *ht = &G_STRUCT (pr, bi_hashtab_t, 0);
+	bi_hashtab_t *ht = &P_STRUCT (pr, bi_hashtab_t, 0);
 
 	Hash_Stats (ht->tab);
 }

@@ -806,8 +806,9 @@ undefined_def (qfo_def_t *def)
 	qfo_reloc_t *reloc = relocs.relocs + def->relocs;
 
 	for (i = 0; i < def->num_relocs; i++, reloc++) {
-		if (reloc->type == rel_op_a_def || reloc->type == rel_op_b_def
-			|| reloc->type == rel_op_c_def) {
+		if ((reloc->type == rel_op_a_def || reloc->type == rel_op_b_def
+			 || reloc->type == rel_op_c_def)
+			&& lines.lines) {
 			qfo_func_t *func = funcs.funcs;
 			qfo_func_t *best = func;
 			int         best_dist = reloc->ofs - func->code;
