@@ -617,6 +617,7 @@ new_bind_expr (expr_t *e1, expr_t *e2)
 	e->e.expr.op = 'b';
 	e->e.expr.e1 = e1;
 	e->e.expr.e2 = e2;
+	e->e.expr.type = get_type (e2);
 	return e;
 }
 
