@@ -447,6 +447,7 @@ _parse_type (const char **str)
 		case 's':
 			return &type_short;
 		case '{':
+			new.type = ev_struct;
 			name = dstring_newstr ();
 			for (s = *str; *s && *s != '=' && *s !='}'; s++)
 				;
@@ -479,8 +480,10 @@ _parse_type (const char **str)
 								  vis_public);
 			if (**str != '}')
 				return 0;
+			(*str)++;
 			return new.aux_type;
 		case '[':
+			new.type = ev_array;
 			while (isdigit ((byte)**str)) {
 				new.num_parms *= 10;
 				new.num_parms += *(*str)++ - '0';
