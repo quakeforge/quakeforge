@@ -154,7 +154,7 @@ expr_t *argv_expr (void);
 
 %type	<type>	type non_field_type type_name def simple_def struct_def
 %type	<type>	struct_def_item ivar_decl ivar_declarator def_item def_list
-%type	<type>	struct_def_list ivars
+%type	<type>	struct_def_list ivars func_type non_func_type
 %type	<param> function_decl
 %type	<param>	param param_list
 %type	<def>	def_name opt_initializer methoddef var_initializer
@@ -181,8 +181,6 @@ expr_t *argv_expr (void);
 %type	<methodlist> methodprotolist methodprotolist2
 %type	<strct>	ivar_decl_list
 
-%expect 4
-
 %{
 
 function_t *current_func;
@@ -197,35 +195,38 @@ struct_t *current_struct;
 visibility_type current_visibility;
 struct_t *current_ivars;
 scope_t *current_scope;
-storage_class_t current_storage;
+storage_class_t current_storage = st_global;
 
 int      element_flag;
 
 %}
 
+%expect 4
+
 %%
 
 defs
 	: /* empty */
-	| defs {if (current_class) PARSE_ERROR;} def ';'
+	| defs {if (current_class) PARSE_ERROR;} def
 	| defs obj_def
 	;
 
 def
-	: type { current_storage = st_global; $$ = $1; } def_list { }
-	| storage_class type { $$ = $2; } def_list { }
-	| storage_class '{' simple_defs '}' { }
+	: simple_def { }
+	| storage_class simple_def { current_storage = st_global; }
+	| storage_class '{' simple_defs '}' ';'
+	  { current_storage = st_global; }
 	| STRUCT NAME
-	  { current_struct = new_struct ($2); } '=' '{' struct_defs '}' { }
+	  { current_struct = new_struct ($2); } '=' '{' struct_defs '}' ';' { }
 	| UNION NAME
-	  { current_struct = new_union ($2); } '=' '{' struct_defs '}' { }
-	| STRUCT NAME			{ decl_struct ($2); }
-	| UNION NAME			{ decl_union ($2); }
-	| ENUM '{' enum_list opt_comma '}'
+	  { current_struct = new_union ($2); } '=' '{' struct_defs '}' ';' { }
+	| STRUCT NAME ';'			{ decl_struct ($2); }
+	| UNION NAME ';'			{ decl_union ($2); }
+	| ENUM '{' enum_list opt_comma '}' ';'
 	  { process_enum ($3); }
-	| TYPEDEF type NAME
+	| TYPEDEF type NAME ';'
 	  { new_typedef ($3, $2); }
-	| TYPEDEF ENUM '{' enum_list opt_comma '}' NAME
+	| TYPEDEF ENUM '{' enum_list opt_comma '}' NAME ';'
 		{
 			process_enum ($4);
 			new_typedef ($7, &type_integer);
@@ -234,11 +235,12 @@ def
 
 simple_defs
 	: /* empty */
-	| simple_defs simple_def ';'
+	| simple_defs simple_def
 	;
 
 simple_def
-	: type { $$ = $1; } def_list { }
+	: non_func_type { $$ = $1; } def_list ';' { }
+	| func_type { $$ = $1; } def_list ';' { }
 	;
 
 storage_class
@@ -296,9 +298,17 @@ enum
 	;
 
 type
+	: non_func_type
+	| func_type
+	;
+
+non_func_type
 	: '.' type { $$ = field_type ($2); }
 	| non_field_type { $$ = $1; }
-	| non_field_type function_decl
+	;
+
+func_type
+	: non_field_type function_decl
 		{
 			current_params = $2;
 			$$ = parse_params ($1, $2);
@@ -456,17 +466,17 @@ var_initializer
 			$3 = constant_expr ($3);
 			build_builtin_function ($<def>0, $3);
 		}
-	| '=' opt_state_expr { $$ = $<def>0; }
-	  begin_function statement_block end_function
+	| '=' opt_state_expr { $<op>$ = current_storage; } { $$ = $<def>0; }
+	  begin_function statement_block { $<op>$ = $<op>3; } end_function
 		{
-			build_function ($4);
+			build_function ($5);
 			if ($2) {
-				$2->next = $5;
-				emit_function ($4, $2);
+				$2->next = $6;
+				emit_function ($5, $2);
 			} else {
-				emit_function ($4, $5);
+				emit_function ($5, $6);
 			}
-			finish_function ($4);
+			finish_function ($5);
 		}
 	;
 
@@ -554,6 +564,7 @@ begin_function
 			}
 			build_scope ($$, $<def>0, current_params);
 			current_scope = $$->scope;
+			current_storage = st_local;
 		}
 	;
 
@@ -562,6 +573,7 @@ end_function
 		{
 			current_scope = current_scope->parent;
 			current_func = 0;
+			current_storage = $<op>0;
 		}
 	;
 
@@ -716,7 +728,6 @@ statement
 		}
 	| LOCAL type
 		{
-			current_storage = st_local;
 			$<type>$ = $2;
 			local_expr = new_block_expr ();
 		}
