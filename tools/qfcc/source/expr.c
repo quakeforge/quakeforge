@@ -1331,15 +1331,8 @@ unary_expr (int op, expr_t *e)
 		case '.':
 			if (extract_type (e) != ev_pointer)
 				return error (e, "invalid type for unary .");
-			//if (e->type == ex_expr && e->e.expr.op == '&'
-			//	&& (extract_type (e->e.expr.e1) == ev_entity
-			//		|| extract_type (e->e.expr.e1) == ev_pointer)) {
-			//	e->e.expr.op = '.';
-			//	e->e.expr.type = e->e.expr.type->aux_type;
-			//} else {
-				e = new_unary_expr ('.', e);
-				e->e.expr.type = get_type (e->e.expr.e1)->aux_type;
-			//}
+			e = new_unary_expr ('.', e);
+			e->e.expr.type = get_type (e->e.expr.e1)->aux_type;
 			return e;
 	}
 	error (e, "internal error");
@@ -1683,7 +1676,7 @@ assign_expr (expr_t *e1, expr_t *e2)
 	convert_name (e1);
 	if (e1->type == ex_def)
 		PR_DefInitialized (e1->e.def);
-	//XXX func = func
+	//XXX func = func ???
 	convert_name (e2);
 	check_initialized (e2);
 	t1 = get_type (e1);
