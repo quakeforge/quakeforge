@@ -350,6 +350,8 @@ DecodeArgs (int argc, char **argv)
 				options.save_temps = true;
 				break;
 			case 'D':{					// defines for cpp
+					add_cpp_def (nva ("%s%s", "-D", optarg));
+#if 0
 					char       *opts = strdup (optarg);
 					char       *temp = strtok (opts, ",");
 
@@ -358,9 +360,12 @@ DecodeArgs (int argc, char **argv)
 						temp = strtok (NULL, ",");
 					}
 					free (opts);
+#endif
 				}
 				break;
 			case 'I':{					// includes
+					add_cpp_def (nva ("%s%s", "-I", optarg));
+#if 0
 					char       *opts = strdup (optarg);
 					char       *temp = strtok (opts, ",");
 
@@ -369,9 +374,12 @@ DecodeArgs (int argc, char **argv)
 						temp = strtok (NULL, ",");
 					}
 					free (opts);
+#endif
 				}
 				break;
 			case 'U':{					// undefines
+					add_cpp_def (nva ("%s%s", "-U", optarg));
+#if 0
 					char       *opts = strdup (optarg);
 					char       *temp = strtok (opts, ",");
 
@@ -380,6 +388,7 @@ DecodeArgs (int argc, char **argv)
 						temp = strtok (NULL, ",");
 					}
 					free (opts);
+#endif
 				}
 				break;
 			case 'M':
