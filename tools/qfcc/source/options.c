@@ -257,7 +257,6 @@ DecodeArgs (int argc, char **argv)
 							options.code.debug = false;
 						} else if (!(strcasecmp (temp, "v6only"))) {
 							options.code.progsversion = PROG_ID_VERSION;
-							add_cpp_def ("-D__VERSION6__=1");
 						} else if (!(strcasecmp (temp, "no-v6only"))) {
 							options.code.progsversion = PROG_VERSION;
 						}
@@ -387,6 +386,8 @@ DecodeArgs (int argc, char **argv)
 				usage (1);
 		}
 	}
+	if (options.code.progsversion == PROG_ID_VERSION)
+		add_cpp_def ("-D__VERSION6__=1");
 
 	// add the default paths
 	add_cpp_def (nva ("-I%s", QFCC_INCLUDE_PATH));
