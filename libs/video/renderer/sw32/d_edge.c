@@ -36,7 +36,6 @@
 
 #include "d_local.h"
 #include "r_local.h"
-//#include "vid.h"  // DESPAIR
 
 static int	miplevel;
 

@@ -37,7 +37,6 @@
 #include "compat.h"
 #include "d_local.h"
 #include "r_local.h"
-//#include "vid.h" // DESPAIR
 
 byte       *r_turb_pbase;
 void       *r_turb_pdest;
@@ -47,7 +46,7 @@ int         r_turb_spancount;
 
 void        D_DrawTurbulentSpan (void);
 
-extern float *d_zitable; // DESPAIR
+extern float *d_zitable;
 
 
 /*
@@ -857,7 +856,7 @@ D_DrawZSpans (espan_t *pspan)
 		// big-endian (results in swapped depth pairs), and is tuned more for
 		// x86, PowerPC compilers can probably do a good job with raw loop
 		// unrolling if it is even necessary...
-		if (bigendien) // DESPAIR: was bigendian. this correct?
+		if (bigendien)
 		{
 			do
 			{

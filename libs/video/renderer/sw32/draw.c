@@ -43,12 +43,7 @@
 #include "QF/sys.h"
 #include "QF/vfs.h" 
 
-//#include "client.h" DESPAIR
-//#include "quakefs.h"
-//#include "vid.h"
-
 #include "d_iface.h"
-//#include "r_cvar.h"
 
 typedef struct {
 	vrect_t     rect;

@@ -43,7 +43,6 @@
 #include "QF/cvar.h"
 #include "QF/draw.h"
 #include "QF/keys.h"
-//#include "QF/menu.h"
 #include "QF/pcx.h"
 #include "QF/render.h" 
 #include "QF/screen.h" 
@@ -52,14 +51,11 @@
 #include "QF/vfs.h"
 #include "QF/vid.h"
 
-//#include "cl_parse.h" DESPAIR
-//#include "client.h"
 #include "compat.h"
 #include "d_iface.h"
 #include "r_cvar.h"
 #include "r_local.h"
 #include "sbar.h"
-//#include "skin.h"
 #include "view.h"
 
 /*
@@ -371,14 +367,6 @@ SCR_ApplyBlend (void)
 	byte	   *basepal, *newpal;
 	byte		pal[768];
 
-/* DESPAIR
-	qboolean	force, new;
-
-	force = V_CheckGamma ();
-	if (!new && !force && r_pixbytes == 1)
-		return;
-*/
-
 	switch(r_pixbytes) {
 	case 1:
 	{
@@ -501,7 +489,7 @@ SCR_Init (void)
 	Cmd_AddCommand ("screenshot", SCR_ScreenShot_f, "Take a screenshot and "
 					"write it as qfxxx.tga in the current directory");
 	Cmd_AddCommand ("snap", SCR_RSShot_f, "Take a screenshot and upload it "
-					"to the server"); // DESPAIR
+					"to the server");
 	Cmd_AddCommand ("sizeup", SCR_SizeUp_f, "Increase the size of the screen");
 	Cmd_AddCommand ("sizedown", SCR_SizeDown_f, "Decrease the size of the "
 					"screen");
@@ -544,20 +532,6 @@ SCR_DrawTurtle (int swap)
 
 	Draw_Pic (scr_vrect.x, scr_vrect.y, scr_turtle);
 }
-
-/* DESPAIR
-void
-SCR_DrawNet (void)
-{
-	if (cls.netchan.outgoing_sequence - cls.netchan.incoming_acknowledged <
-		UPDATE_BACKUP - 1)
-		return;
-	if (cls.demoplayback)
-		return;
-
-	Draw_Pic (scr_vrect.x + 64, scr_vrect.y, scr_net);
-}
-*/
 
 extern cvar_t *show_fps;
 extern cvar_t *show_time;

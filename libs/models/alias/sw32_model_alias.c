@@ -43,15 +43,13 @@
 #include "QF/qendian.h"
 #include "QF/sys.h"
 
-//#include "checksum.h"
 #include "d_iface.h"
-//#include "server.h" // DESPAIR
 
 extern char loadname[];
 extern model_t *loadmodel;
 
 /*
-	ALIAS MODELS
+  ALIAS MODELS
 */
 
 extern aliashdr_t *pheader;

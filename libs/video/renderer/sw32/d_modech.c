@@ -31,7 +31,6 @@
 #endif
 
 #include "QF/render.h"
-// #include "QF/sys.h" // DESPAIR 
 
 #include "d_local.h"
 

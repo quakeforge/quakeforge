@@ -31,12 +31,10 @@
 # include "config.h"
 #endif
 
-//#include "QF/render.h"
 #include "QF/sys.h"
 
 #include "r_local.h"
 #include "d_local.h"
-//#include "vid.h" // DESPAIR
 
 // TODO: put in span spilling to shrink list size
 // !!! if this is changed, it must be changed in d_polysa.s too !!!

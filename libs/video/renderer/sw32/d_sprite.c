@@ -34,13 +34,12 @@
 #include "QF/sys.h"
 
 #include "d_local.h"
-// #include "vid.h" // DESPAIR
 
 static int  sprite_height;
 static int  minindex, maxindex;
 static sspan_t *sprite_spans;
 
-extern float *d_zitable; // DESPAIR
+extern float *d_zitable;
 
 
 void

@@ -33,7 +33,6 @@
 #include "QF/sys.h"
 
 #include "d_local.h"
-// #include "vid.h" // DESPAIR
 
 
 void

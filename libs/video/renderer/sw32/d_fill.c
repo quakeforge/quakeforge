@@ -33,7 +33,6 @@
 #include "QF/sys.h"
 
 #include "d_iface.h"
-// #include "vid.h" DESPAIR
 
 
 void

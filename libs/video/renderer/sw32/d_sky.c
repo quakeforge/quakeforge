@@ -35,7 +35,6 @@
 
 #include "d_local.h"
 #include "r_local.h"
-// #include "vid.h" // DESPAIR
 
 #define SKY_SPAN_SHIFT	5
 #define SKY_SPAN_MAX	(1 << SKY_SPAN_SHIFT)
