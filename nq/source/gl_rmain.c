@@ -1059,8 +1059,28 @@ R_Clear (void)
 	glDepthRange (gldepthmin, gldepthmax);
 }
 
+void
+R_RenderScene (void)
+{
+	R_SetupFrame ();
 
-#if 0 // !!! FIXME, Zoid, mirror is disabled for now
+	R_SetFrustum ();
+
+	R_SetupGL ();
+
+	R_PushDlights (vec3_origin);
+
+	R_MarkLeaves ();			// done here so we know if we're in water
+
+	R_DrawWorld ();				// adds static entities to the list
+
+	S_ExtraUpdate ();			// don't let sound get messed up if going slow
+
+	R_DrawEntitiesOnList ();
+
+	R_RenderDlights ();
+}
+
 void
 R_Mirror (void)
 {
@@ -1101,7 +1121,7 @@ R_Mirror (void)
 
 
 	gldepthmin = 0;
-	gldepthmax = 0.5;
+	gldepthmax = 1;//XXX 0.5;
 	glDepthRange (gldepthmin, gldepthmax);
 	glDepthFunc (GL_LEQUAL);
 
@@ -1123,7 +1143,6 @@ R_Mirror (void)
 	cl.worldmodel->textures[mirrortexturenum]->texturechain = NULL;
 	glColor4f (1, 1, 1, 1);
 }
-#endif
 
 
 /*
@@ -1147,23 +1166,7 @@ R_RenderView (void)
 	R_Clear ();
 
 	// render normal view
-	R_SetupFrame ();
-
-	R_SetFrustum ();
-
-	R_SetupGL ();
-
-	R_PushDlights (vec3_origin);
-
-	R_MarkLeaves ();			// done here so we know if we're in water
-
-	R_DrawWorld ();				// adds static entities to the list
-
-	S_ExtraUpdate ();			// don't let sound get messed up if going slow
-
-	R_DrawEntitiesOnList ();
-
-	R_RenderDlights ();
+	R_RenderScene ();
 
 	R_DrawWaterSurfaces ();
 
@@ -1174,5 +1177,5 @@ R_RenderView (void)
 	R_DrawViewModel ();
 
 	// render mirror view
-//	R_Mirror ();
+	R_Mirror ();
 }
