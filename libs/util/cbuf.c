@@ -42,6 +42,7 @@ static const char rcsid[] =
 
 #include <stdlib.h>
 
+#include "QF/sys.h"
 #include "QF/cbuf.h"
 #include "QF/cmd.h"
 #include "QF/dstring.h"
@@ -200,3 +201,26 @@ Cbuf_Execute_Sets (cbuf_t *cbuf)
 			Cmd_Command (args);
 	}
 }
+
+void
+Cbuf_Error (const char *class, const char *fmt, ...)
+{
+	dstring_t *message = dstring_newstr();
+	va_list args;
+	
+	va_start (args, fmt);
+	dvsprintf (message, fmt, args);
+	va_end (args);
+	Sys_Printf ( 
+				"Error in command buffer execution\n"
+				"---------------------------------\n"
+				"Type: %s\n"
+				"Description: %s\n",
+				class,
+				message->str
+				);
+	cbuf_active->state = CBUF_STATE_ERROR;
+	dstring_clearstr (cbuf_active->buf);
+	dstring_delete (message);
+}
+

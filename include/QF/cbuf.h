@@ -32,6 +32,8 @@
 #ifndef __QF_cbuf_h
 #define __QF_cbuf_h
 
+#include <stdarg.h>
+
 #include "QF/qtypes.h"
 
 typedef struct cbuf_args_s {
@@ -73,10 +75,12 @@ cbuf_t * Cbuf_New (
 		void (*construct) (struct cbuf_s *cbuf),
 		void (*destruct) (struct cbuf_s *cbuf)
 		);
+
 void Cbuf_Delete (cbuf_t *cbuf);
 void Cbuf_AddText (cbuf_t *cbuf, const char *text);
 void Cbuf_InsertText (cbuf_t *cbuf, const char *text);
 void Cbuf_Execute (cbuf_t *cbuf);
 void Cbuf_Execute_Sets (cbuf_t *cbuf);
+void Cbuf_Error (const char *class, const char *fmt, ...);
 
 #endif//__QF_cbuf_h

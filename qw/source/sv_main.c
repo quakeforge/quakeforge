@@ -68,6 +68,8 @@ static const char rcsid[] =
 
 #include "QF/cbuf.h"
 #include "QF/idparse.h"
+#include "QF/gib_parse.h"
+#include "QF/gib_buffer.h"
 #include "QF/cmd.h"
 #include "QF/console.h"
 #include "QF/cvar.h"
@@ -2406,7 +2408,8 @@ SV_Init (void)
 //	COM_AddParm ("-game");
 //	COM_AddParm ("qw");
 
-	sv_cbuf = Cbuf_New (COM_extract_line, COM_parse_line, NULL, NULL);
+	sv_cbuf = Cbuf_New (GIB_Parse_Extract_Line, GIB_Parse_Tokenize_Line,
+				 GIB_Buffer_Construct, GIB_Buffer_Destruct);
 	sv_args = Cbuf_ArgsNew ();
 
 	Sys_RegisterShutdown (SV_Shutdown);
