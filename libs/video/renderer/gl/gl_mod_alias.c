@@ -329,16 +329,15 @@ GL_GetAliasFrameVerts16 (int frame, aliashdr_t *paliashdr, entity_t *e)
 		verts1 = verts + e->pose1 * count;
 		verts2 = verts + e->pose2 * count;
 
-		if (!blend) {
+		if (blend == 0.0) {
 			verts = verts1;
-		} else if (blend == 1) {
+		} else if (blend == 1.0) {
 			verts = verts2;
 		} else {
 			for (i = 0, vo_v = vo->verts; i < count;
 				 i++, vo_v++, verts1++, verts2++) {
-				VectorScale (verts1->v, 1.0 / 256.0, v1);
-				VectorScale (verts2->v, 1.0 / 256.0, v2);
 				VectorBlend (v1, v2, blend, vo_v->vert);
+				VectorScale (vo_v->vert, 1.0 / 256.0, vo_v->vert);
 				vo_v->lightdot =
 					shadedots[verts1->lightnormalindex] * (1.0 - blend)
 					+ shadedots[verts2->lightnormalindex] * blend;
@@ -423,9 +422,9 @@ GL_GetAliasFrameVerts (int frame, aliashdr_t *paliashdr, entity_t *e)
 		verts1 = verts + e->pose1 * count;
 		verts2 = verts + e->pose2 * count;
 
-		if (!blend) {
+		if (blend == 1.0) {
 			verts = verts1;
-		} else if (blend == 1) {
+		} else if (blend == 1.0) {
 			verts = verts2;
 		} else {
 			for (i = 0, vo_v = vo->verts; i < count;
