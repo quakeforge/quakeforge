@@ -51,6 +51,8 @@ CvarRangeView viewsize_view;
 
 Group control_options;			// not done
 CvarToggleView grab_mouse_view;
+CvarToggleView invert_mouse_view;
+CvarToggleView autorun_view;
 CvarToggleView freelook_view;
 CvarToggleView lookspring_view;
 CvarToggleView lookstrafe_view;
@@ -350,13 +352,7 @@ CB_control_options =
 			[grab_mouse_view toggle];
 			break;
 		case "autorun":
-			if(Cvar_GetFloat ("cl_forwardspeed") < 400) {
-				Cvar_SetFloat ("cl_forwardspeed", 400);
-				Cvar_SetFloat ("cl_backspeed", 400);
-			} else {
-				Cvar_SetFloat ("cl_forwardspeed", 200);
-				Cvar_SetFloat ("cl_backspeed", 200);
-			}
+			[autorun_view toggle];
 			break;
 		case "freelook":
 			[freelook_view toggle];
@@ -368,11 +364,7 @@ CB_control_options =
 			[lookstrafe_view toggle];
 			break;
 		case "m_pitch":
-			if(Cvar_GetFloat ("m_pitch") < 0) {
-				Cvar_SetFloat ("m_pitch", 0.022);
-			} else {
-				Cvar_SetFloat ("m_pitch", -0.022);
-			}
+			[invert_mouse_view toggle];
 			break;
 		case "mouseamp":
 			if (key == QFK_RIGHT)
@@ -392,8 +384,6 @@ CB_control_options =
 integer (integer x, integer y) 
 DRAW_control_options = 
 {
-	local integer	cursor_pad = 0, spacing = 120, bar_pad;
-
 	Draw_Pic (x + 16, y + 4,  Draw_CachePic ("gfx/qplaque.lmp", 1));
 	Draw_CenterPic (x + 160, y + 4,  Draw_CachePic ("gfx/p_option.lmp", 1));
 	Draw_String	(x + 54, y + 40, "Controls");
@@ -401,27 +391,22 @@ DRAW_control_options =
 	Draw_String (x + 70, y + 60, "Bindings");
 
 	[grab_mouse_view setBasePos:x y:y];
-	[grab_mouse_view draw];
-
-	draw_val_item (x + 70, y + 80, spacing, "Auto run",
-				   Cvar_GetFloat  ("cl_forwardspeed") < 400 ? "Off" : "On");
-	draw_val_item (x + 70, y + 90, spacing, "Mouse Invert",
-				   Cvar_GetFloat  ("m_pitch") < 0 ?  "On" : "Off");
-	bar_pad = y + 90;
-
 	[mouse_amp_view setBasePos:x y:y];
-	[mouse_amp_view draw];
-
+	[invert_mouse_view setBasePos:x y:y];
+	[autorun_view setBasePos:x y:y];
 	[freelook_view setBasePos:x y:y];
-	[freelook_view draw];
-
 	[lookspring_view setBasePos:x y:y];
-	[lookspring_view draw];
-
 	[lookstrafe_view setBasePos:x y:y];
+
+	[grab_mouse_view draw];
+	[mouse_amp_view draw];
+	[invert_mouse_view draw];
+	[autorun_view draw];
+	[freelook_view draw];
+	[lookspring_view draw];
 	[lookstrafe_view draw];
 
-	opt_cursor (x + 62, y + (Menu_GetIndex () * 10) + 60 + cursor_pad);
+	opt_cursor (x + 62, y + (Menu_GetIndex () * 10) + 60);
 
 	return 1;
 };
@@ -446,8 +431,10 @@ MENU_control_options =
 	grab_mouse_view = [[CvarToggleView alloc] initWithBounds:rect title:"Grab mouse" :[[CvarToggle alloc] initWithCvar:"in_grab"]];
 
 	rect.origin.y += 10;
+	autorun_view = [[CvarToggleView alloc] initWithBounds:rect title:"Auto run" :[[RunToggle alloc] init]];
 
 	rect.origin.y += 10;
+	invert_mouse_view = [[CvarToggleView alloc] initWithBounds:rect title:"Mouse Invert" :[[MouseToggle alloc] init]];
 
 	rect.origin.y += 10;
 	rect.size.width += 8;

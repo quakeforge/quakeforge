@@ -18,6 +18,12 @@
 -(BOOL)value;
 @end
 
+@interface MouseToggle : CvarObject
+@end
+
+@interface RunToggle : CvarObject
+@end
+
 @interface CvarToggleView : Group
 {
 	Text title;

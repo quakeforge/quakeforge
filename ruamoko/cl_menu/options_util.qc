@@ -56,7 +56,6 @@
 @end
 
 @implementation CvarToggle
-
 -(void)toggle
 {
 	Cvar_Toggle (name);
@@ -66,7 +65,40 @@
 {
 	return Cvar_GetInteger (name);
 }
+@end
 
+@implementation MouseToggle
+-(void)toggle
+{
+	if (Cvar_GetFloat ("m_pitch") < 0) {
+		Cvar_SetFloat ("m_pitch", 0.022);
+	} else {
+		Cvar_SetFloat ("m_pitch", -0.022);
+	}
+}
+
+-(BOOL)value
+{
+	return Cvar_GetFloat ("m_pitch") < 0;
+}
+@end
+
+@implementation RunToggle
+-(void)toggle
+{
+	if (Cvar_GetFloat ("cl_forwardspeed") < 400) {
+		Cvar_SetFloat ("cl_forwardspeed", 400);
+		Cvar_SetFloat ("cl_backspeed", 400);
+	} else {
+		Cvar_SetFloat ("cl_forwardspeed", 200);
+		Cvar_SetFloat ("cl_backspeed", 200);
+	}
+}
+
+-(BOOL)value
+{
+	return Cvar_GetFloat  ("cl_forwardspeed") >= 400;
+}
 @end
 
 @implementation CvarToggleView
