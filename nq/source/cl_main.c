@@ -241,7 +241,7 @@ CL_Disconnect (void)
 		SZ_Clear (&cls.message);
 		NET_Close (cls.netcon);
 
-		cls.state = ca_disconnected;
+		CL_SetState (ca_disconnected);
 		if (sv.active)
 			Host_ShutdownServer (false);
 	}
@@ -282,7 +282,7 @@ CL_EstablishConnection (const char *host)
 	Con_DPrintf ("CL_EstablishConnection: connected to %s\n", host);
 
 	cls.demonum = -1;					// not in the demo loop now
-	cls.state = ca_connected;
+	CL_SetState (ca_connected);
 	cls.signon = 0;						// need all the signon messages
 										// before playing
 	key_dest = key_game;
@@ -749,6 +749,22 @@ CL_SendCmd (void)
 		Host_Error ("CL_WriteToServer: lost server connection");
 
 	SZ_Clear (&cls.message);
+}
+
+
+void
+CL_SetState (cactive_t state)
+{
+	cls.state = state;
+	if (cls.state == ca_active) {
+		r_active = true;
+		game_target = IMT_DEFAULT;
+		key_dest = key_game;
+	} else {
+		r_active = false;
+		game_target = IMT_CONSOLE;
+		key_dest = key_console;
+	}
 }
 
 

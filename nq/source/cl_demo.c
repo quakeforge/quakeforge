@@ -75,7 +75,7 @@ CL_StopPlayback (void)
 	Qclose (cls.demofile);
 	cls.demoplayback = false;
 	cls.demofile = NULL;
-	cls.state = ca_disconnected;
+	CL_SetState (ca_disconnected);
 
 	if (cls.timedemo)
 		CL_FinishTimeDemo ();
@@ -306,7 +306,7 @@ CL_PlayDemo_f (void)
 	}
 
 	cls.demoplayback = true;
-	cls.state = ca_connected;
+	CL_SetState (ca_connected);
 	cls.forcetrack = 0;
 	key_dest = key_game;
 	game_target = IMT_DEFAULT;

@@ -362,4 +362,6 @@ void Cvar_Info (struct cvar_s *var);
 
 void CL_UpdateScreen (double realtime);
 
+void CL_SetState (cactive_t state);
+
 #endif // __client_h
