@@ -300,7 +300,7 @@ SV_Progs_Init (void)
 	Cmd_AddCommand ("edictcount", ED_Count_f,
 					"Display summary information on the edicts in the game.");
 	Cmd_AddCommand ("profile", PR_Profile_f,
-					"FIXME: Report information about QuakeC Stuff (???) No Description");
+					"FIXME: Report information about QuakeC Stuff (\?\?\?) No Description");
 }
 
 void

@@ -80,8 +80,8 @@ Host_Color_f (void)
 		bottom = atoi (Cmd_Argv (2));
 	}
 
-	top = min (top &= 15, 13);
-	bottom = min (bottom &= 15, 13);
+	top = min (top & 15, 13);
+	bottom = min (bottom & 15, 13);
 
 	playercolor = top * 16 + bottom;
 
