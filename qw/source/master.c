@@ -173,12 +173,20 @@ QW_HeartShutdown (struct sockaddr_in *addr, server_t *servers,
 	}
 }
 
+#ifdef HAVE_SYS_UIO_H
 void
 QW_SendHearts (int sock, struct msghdr *msghdr, server_t *servers,
 			   int serverlen) 
+#else
+void
+QW_SendHearts (int sock, struct sockaddr_in *addr, server_t *servers,
+			   int serverlen) 
+#endif
 {
 	unsigned char *out;
+#ifdef HAVE_SYS_UIO_H
 	struct iovec iovec;
+#endif
 	int count, cpos;
 	int i;
 
@@ -210,24 +218,39 @@ QW_SendHearts (int sock, struct msghdr *msghdr, server_t *servers,
 			++cpos;
 		}
 	}
+#ifdef HAVE_SYS_UIO_H
 	iovec.iov_base = out;
 	iovec.iov_len = (count + 1) * 6;
 	msghdr->msg_iov = &iovec;
 	msghdr->msg_iovlen = 1;
 	sendmsg (sock, msghdr, 0);
+#else
+	sendto (sock, out, (count + 1) * 6, 0,
+			(struct sockaddr *)addr, sizeof (*addr));
+#endif
 	free (out);
 }
 
+#ifdef HAVE_SYS_UIO_H
 void
 QW_Pong (int sock, struct msghdr *msghdr)
+#else
+void
+QW_Pong (int sock, struct sockaddr_in *addr)
+#endif
 {
 	// connectionless pa cket
 	char data[6] = {0xFF, 0xFF, 0xFF, 0xFF, A2A_ACK, 0};
+#ifdef HAVE_SYS_UIO_H
 	struct iovec iovec = {data, sizeof (data)};
-	//printf ("Ping\n");
 	msghdr->msg_iov = &iovec;
 	msghdr->msg_iovlen = 1;
 	sendmsg (sock, msghdr, 0);
+#else
+	sendto (sock, data, sizeof (data), 0,
+			(struct sockaddr *)addr, sizeof (*addr));
+#endif
+	//printf ("Ping\n");
 }
 
 int serverlen = SLIST_MULTIPLE;
@@ -237,7 +260,6 @@ void
 QW_Master (struct sockaddr_in *addr)
 {
 	int sock;
-	int ip_pktinfo = 1;
 
 	if (!servers) {
 		printf ("initial malloc failed\n");
@@ -250,11 +272,16 @@ QW_Master (struct sockaddr_in *addr)
 		return;
 	}
 
-	if (setsockopt (sock, SOL_IP, IP_PKTINFO, &ip_pktinfo, sizeof (ip_pktinfo))
-		== -1) {
-		perror ("setsockopt");
-		return;
+#ifdef HAVE_SYS_UIO_H
+	{
+		int ip_pktinfo = 1;
+		if (setsockopt (sock, SOL_IP, IP_PKTINFO, &ip_pktinfo,
+						sizeof (ip_pktinfo)) == -1) {
+			perror ("setsockopt");
+			return;
+		}
 	}
+#endif
 
 	if (bind (sock, (struct sockaddr *) addr, sizeof (struct sockaddr_in))) {
 		printf ("bind failed\n");
@@ -262,9 +289,11 @@ QW_Master (struct sockaddr_in *addr)
 	}
    
 	while (1) {
-		char buf[31];
-		struct iovec iovec = {buf, sizeof (buf) - 1};
 		struct sockaddr_in recvaddr;
+		int size;
+		char buf[31];
+#ifdef HAVE_SYS_UIO_H
+		struct iovec iovec = {buf, sizeof (buf) - 1};
 		char ancillary[CMSG_SPACE (sizeof (struct in_pktinfo))];
 		struct msghdr msghdr = {
 			&recvaddr, 
@@ -275,11 +304,18 @@ QW_Master (struct sockaddr_in *addr)
 			sizeof (ancillary),
 			0
 		};
-		int size;
+#else
+		size_t recvaddrlen = sizeof (recvaddr);
+#endif
 
 		buf[30] = '\0'; // a sentinal for string ops
 
+#ifdef HAVE_SYS_UIO_H
 		size = recvmsg (sock, &msghdr, 0);
+#else
+		size = recvfrom (sock, buf, sizeof (buf) - 1, 0,
+						 (struct sockaddr *)&recvaddr, &recvaddrlen);
+#endif
 		if (size == -1) {
 			printf ("recvfrom failed\n");
 			continue;
@@ -309,7 +345,11 @@ QW_Master (struct sockaddr_in *addr)
 		QW_TimeoutHearts (servers, serverlen);
 		switch (buf[0]) {
 			case S2C_CHALLENGE:
+#ifdef HAVE_SYS_UIO_H
 				QW_SendHearts (sock, &msghdr, servers, serverlen);
+#else
+				QW_SendHearts (sock, &recvaddr, servers, serverlen);
+#endif
 				break;
 			case S2M_HEARTBEAT:
 				serverlen = QW_AddHeartbeat (&servers, serverlen,
@@ -319,7 +359,11 @@ QW_Master (struct sockaddr_in *addr)
 				QW_HeartShutdown (&recvaddr, servers, serverlen);
 				break;
 			case A2A_PING:
+#ifdef HAVE_SYS_UIO_H
 				QW_Pong (sock, &msghdr);
+#else
+				QW_Pong (sock, &recvaddr);
+#endif
 				break;
 			default:
 				printf ("Unknown 0x%x\n", buf[0]);
@@ -399,7 +443,6 @@ int
 main (int argc, char **argv)
 {
 	struct sockaddr_in addr;
-	short port = htons (PORT_MASTER);
 	int c;
 
 	if (!net_init ())
@@ -407,20 +450,29 @@ main (int argc, char **argv)
 
 	servers = calloc (sizeof (server_t), serverlen);
 
-	while ((c = getopt (argc, argv, "p:f:")) != -1) {
+	addr.sin_family = AF_INET;
+	addr.sin_addr.s_addr = INADDR_ANY;
+	addr.sin_port = htons (PORT_MASTER);
+
+	while ((c = getopt (argc, argv, "b:p:f:")) != -1) {
 		switch (c) {
-			case 'p':
-				port = htons (atoi (optarg));
+			case 'b':
+				c = inet_addr (optarg);
+				if (c == -1) {
+					fprintf (stderr, "bad bind address %s\n", optarg);
+					return 1;
+				}
+				addr.sin_addr.s_addr = c;
 				break;
 			case 'f':
 				read_hosts (optarg);
 				break;
+			case 'p':
+				addr.sin_port = htons (atoi (optarg));
+				break;
 		}
 	}
 
-	addr.sin_family = AF_INET;
-	addr.sin_addr.s_addr = INADDR_ANY;
-	addr.sin_port = port;
 	QW_Master (&addr);
 	return 0;
 }
