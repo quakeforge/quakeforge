@@ -88,10 +88,14 @@ Con_ToggleConsole_f (void)
 	Key_ClearTyping ();
 
 	if (key_dest == key_console) {
-		if (cls.state == ca_active)
+		if (cls.state == ca_active) {
 			key_dest = key_game;
-	} else
+			game_target = IMT_DEFAULT;
+		}
+	} else {
 		key_dest = key_console;
+		game_target = IMT_CONSOLE;
+	}
 
 	Con_ClearNotify ();
 }
