@@ -1044,7 +1044,6 @@ SV_ConnectionlessPacket (void)
 	s = MSG_ReadString (net_message);
 
 	Cmd_TokenizeString (s, true);
-	//Cmd_Process ();
 
 	c = Cmd_Argv (0);
 
