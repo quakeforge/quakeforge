@@ -107,7 +107,9 @@ imm_compare (void *_imm1, void *_imm2, void *_tab)
 	hashtab_t  **tab = (hashtab_t **) _tab;
 
 	if (tab == &string_imm_defs) {
-		return !strcmp (imm1->i.string_val, imm2->i.string_val);
+		return (imm1->i.string_val == imm2->i.string_val
+				|| (imm1->i.string_val && imm2->i.string_val
+					&& !strcmp (imm1->i.string_val, imm2->i.string_val)));
 	} else if (tab == &float_imm_defs) {
 		return imm1->i.float_val == imm2->i.float_val;
 	} else if (tab == &vector_imm_defs) {
