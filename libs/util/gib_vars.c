@@ -161,3 +161,26 @@ GIB_Var_Get_Global (const char *key)
 	else
 		return 0;
 }
+
+void
+GIB_Var_Free_Global (const char *key)
+{
+	char *p, *k;
+	gib_var_t *root;
+	void *del;
+	k = strdup (key);
+	if ((p = strrchr (k, '.'))) {
+		*p = 0;
+		if ((root = GIB_Var_Get_R (gib_globals, k))) {
+			del = Hash_Del (root->subvars, p+1);
+			if (del)
+				GIB_Var_Free (del, 0);
+		}
+	} else {
+		del = Hash_Del (gib_globals, k);
+		if (del)
+			GIB_Var_Free (del, 0);
+	}
+	free (k);
+}
+		

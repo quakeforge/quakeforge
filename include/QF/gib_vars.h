@@ -45,4 +45,4 @@ const char *GIB_Var_Get_Local (cbuf_t *cbuf, const char *key);
 const char *GIB_Var_Get_Global (const char *key);
 const char *GIB_Var_Get_Key (void *ele, void *ptr);
 void GIB_Var_Free (void *ele, void *ptr);
-
+void GIB_Var_Free_Global (const char *key);

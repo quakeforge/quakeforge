@@ -199,6 +199,16 @@ GIB_Global_f (void)
 }
 
 void
+GIB_Global_Delete_f (void)
+{
+	if (GIB_Argc () != 2)
+		Cbuf_Error ("syntax",
+					"global.delete: invalid syntax\n"
+					"usage: global.delete variable");
+	GIB_Var_Free_Global (GIB_Argv(1));
+}
+
+void
 GIB_Return_f (void)
 {
 	cbuf_t *sp;
@@ -767,6 +777,7 @@ GIB_Builtin_Init (void)
 	GIB_Builtin_Add ("export", GIB_Export_f, GIB_BUILTIN_NORMAL);
 	GIB_Builtin_Add ("local", GIB_Local_f, GIB_BUILTIN_NORMAL);
 	GIB_Builtin_Add ("global", GIB_Global_f, GIB_BUILTIN_NORMAL);
+	GIB_Builtin_Add ("global.delete", GIB_Global_Delete_f, GIB_BUILTIN_NORMAL);
 	GIB_Builtin_Add ("return", GIB_Return_f, GIB_BUILTIN_NORMAL);
 	GIB_Builtin_Add ("if", GIB_If_f, GIB_BUILTIN_FIRSTONLY);
 	GIB_Builtin_Add ("ifnot", GIB_If_f, GIB_BUILTIN_FIRSTONLY);

@@ -90,6 +90,9 @@ function custom.load.menu {
 	oldi = `function.get item`
 	function "menu" ${custom.load.menu_f}
 	function "item" ${custom.load.item_f}
+	// Clear out old junk
+	global.delete custom.menu
+	global.delete custom.item
 	custom.menu.size = 0
 	exec "custom/", $1, ".menu"
 	function "menu" $oldm
