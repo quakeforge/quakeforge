@@ -306,7 +306,10 @@ Sys_DoubleTime (void)
 	static double start_time;
 
 	gettimeofday (&tp, &tzp);
-	now = tp.tv_sec + tp.tv_usec / 1e6;
+
+	tp.tv_usec /= 1000;			// lose some precision, we don't need it
+
+	now = tp.tv_sec + tp.tv_usec / 1000.0;
 
 	if (first) {
 		first = false;
