@@ -319,7 +319,7 @@ qtv_status (void)
 	qtv_end_redirect ();
 }
 
-static void
+void
 qtv_connectionless_packet (void)
 {
 	const char *cmd, *str;
@@ -343,7 +343,7 @@ qtv_connectionless_packet (void)
 			default:
 				goto bad_packet;
 			case A2C_PRINT:
-				Con_Printf ("%s", MSG_ReadString (net_message));
+				Con_Printf ("%s", str + 1);
 				break;
 			case A2A_PING:
 				qtv_ping ();

@@ -48,6 +48,7 @@ static __attribute__ ((unused)) const char rcsid[] =
 #include "QF/console.h"
 #include "QF/dstring.h"
 #include "QF/hash.h"
+#include "QF/idparse.h"
 #include "QF/info.h"
 #include "QF/msg.h"
 #include "QF/qendian.h"
@@ -57,6 +58,7 @@ static __attribute__ ((unused)) const char rcsid[] =
 #include "qw/protocol.h"
 
 #include "connection.h"
+#include "qtv.h"
 #include "server.h"
 
 static hashtab_t *servers;
@@ -71,9 +73,10 @@ static void
 server_free (void *_sv, void *unused)
 {
 	server_t   *sv = (server_t *) _sv;
-	static byte final[6] = {clc_stringcmd, 'd', 'r', 'o', 'p', 0};
+	static byte final[] = {clc_stringcmd, 'd', 'r', 'o', 'p', 0};
 
-	Netchan_Transmit (&sv->netchan, 6, final);
+	if (sv->connected)
+		Netchan_Transmit (&sv->netchan, sizeof (final), final);
 	Connection_Del (sv->con);
 }
 
@@ -87,10 +90,14 @@ static void
 server_handler (connection_t *con, void *object)
 {
 	server_t   *sv = (server_t *) object;
-	byte        d[1] = { clc_nop };
+	byte        d = clc_nop;
 
+	if (*(int *) net_message->message->data == -1)
+		return;
+	if (!Netchan_Process (&sv->netchan))
+		return;
 	Con_Printf ("hi\n");
-	Netchan_Transmit (&sv->netchan, 1, d);
+	Netchan_Transmit (&sv->netchan, 1, &d);
 }
 
 static inline const char *
@@ -106,6 +113,10 @@ expect_packet (qmsg_t *msg, int type)
 		return 0;
 	}
 	str = MSG_ReadString (net_message);
+	if (str[0] == A2C_PRINT) {
+		Con_Printf ("%s", str + 1);
+		return 0;
+	}
 	if (str[0] != type) {
 		Con_Printf ("unexpected connectionless packet type: %s\n", str);
 		return 0;
@@ -126,6 +137,7 @@ server_connect (connection_t *con, void *object)
 	Con_Printf ("connection from %s\n", sv->name);
 	Netchan_Setup (&sv->netchan, con->address, sv->qport, NC_SEND_QPORT);
 	sv->netchan.outgoing_sequence = 1;
+	sv->connected = 1;
 	MSG_WriteByte (msg, clc_stringcmd);
 	MSG_WriteString (msg, "new");
 	Netchan_Transmit (&sv->netchan, 0, 0);
@@ -136,19 +148,40 @@ static void
 server_challenge (connection_t *con, void *object)
 {
 	server_t   *sv = (server_t *) object;
-	const char *str;
-	int         challenge;
+	const char *str, *qtv = 0;
+	int         challenge, i;
 	dstring_t  *data;
 
 	if (!(str = expect_packet (net_message, S2C_CHALLENGE)))
 		return;
 
-	challenge = atoi (str + 1);
-	Con_Printf ("%d %s\n", challenge, Cmd_Argv (1));
+	COM_TokenizeString (str + 1, qtv_args);
+	cmd_args = qtv_args;
+	challenge = atoi (Cmd_Argv (0));
+
+	for (i = 1; i < Cmd_Argc (); i++) {
+		str = Cmd_Argv (i);
+		if (!strcmp ("QF", str)) {
+			Con_Printf ("QuakeForge server detected\n");
+		} else if (!strcmp ("qtv", str)) {
+			Con_Printf ("QTV capable server\n");
+			qtv = str;
+		} else {
+			Con_Printf ("%s\n", str);
+		}
+	}
+
+	if (!qtv) {
+		Con_Printf ("%s can't handle qtv.\n", sv->name);
+		Hash_Del (servers, sv->name);
+		Hash_Free (servers, sv);
+		return;
+	}
+
 
 	data = dstring_new ();
-	dsprintf (data, "%c%c%c%cconnect %i %i %i \"%s\"\n", 255, 255, 255, 255,
-			  PROTOCOL_VERSION, sv->qport, challenge,
+	dsprintf (data, "%c%c%c%cconnect %s %i %i \"%s\"\n", 255, 255, 255, 255,
+			  qtv, sv->qport, challenge,
 			  Info_MakeString (sv->info, 0));
 	Netchan_SendPacket (strlen (data->str), data->str, net_from);
 	dstring_delete (data);
