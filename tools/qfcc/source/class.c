@@ -162,7 +162,6 @@ class_add_protocol_methods (class_t *class, expr_t *protocols)
 		copy_methods (class->methods, p->methods);
 		while (*m) {
 			(*m)->params->type = class->type;
-			printf("%s\n", (*m)->name);
 			m = &(*m)->next;
 		}
 	}
