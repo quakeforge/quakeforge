@@ -157,7 +157,7 @@ opcode_t    pr_opcodes[] = {
 	{"<", "lt.i", OP_LT_I, 4, false, ev_integer, ev_integer, ev_integer, PROG_VERSION},
 	{"&&", "and.i", OP_AND_I, 6, false, ev_integer, ev_integer, ev_integer, PROG_VERSION},
 	{"||", "or.i", OP_OR_I, 6, false, ev_integer, ev_integer, ev_integer, PROG_VERSION},
-	{"!", "not.i", OP_NOT_I, -1, false, ev_integer, ev_integer, ev_integer, PROG_VERSION},
+	{"!", "not.i", OP_NOT_I, -1, false, ev_integer, ev_void, ev_integer, PROG_VERSION},
 	{"==", "eq.i", OP_EQ_I, 4, false, ev_integer, ev_integer, ev_integer, PROG_VERSION},
 	{"!=", "ne.i", OP_NE_I, 4, false, ev_integer, ev_integer, ev_integer, PROG_VERSION},
 	{"=", "store.i", OP_STORE_I, 5, true, ev_integer, ev_integer, ev_void, PROG_VERSION},
