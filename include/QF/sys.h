@@ -35,6 +35,8 @@
 
 extern	struct cvar_s	*sys_nostdout;
 
+extern const char sys_char_map[256];
+
 int	Sys_FileTime (const char *path);
 void Sys_mkdir (const char *path);
 

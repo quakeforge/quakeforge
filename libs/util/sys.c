@@ -66,7 +66,7 @@ cvar_t     *sys_nostdout;
 static sys_printf_t sys_printf_function = Sys_StdPrintf;
 
 /* The translation table between the graphical font and plain ASCII  --KB */
-static char qfont_table[256] = {
+const char sys_char_map[256] = {
 	'\0', '#', '#', '#', '#', '.', '#', '#',
 	'#', 9, 10, '#', ' ', 13, '.', '.',
 	'[', ']', '0', '1', '2', '3', '4', '5',
@@ -173,7 +173,7 @@ Sys_StdPrintf (const char *fmt, va_list args)
 
 	/* translate to ASCII instead of printing [xx]  --KB */
 	for (p = (unsigned char *) msg; *p; p++)
-		putc (qfont_table[*p], stdout);
+		putc (sys_char_map[*p], stdout);
 
 	fflush (stdout);
 }
