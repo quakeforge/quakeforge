@@ -229,7 +229,7 @@ SND_LoadOgg (QFile *file, sfx_t *sfx, char *realname)
 		free (realname);
 		return;
 	}
-	if (ov_pcm_total (&vf, -1) < 3 * shm->speed) {
+	if (ov_pcm_total (&vf, -1) < 8 * shm->speed) {
 		sfxblock_t *block = calloc (1, sizeof (sfxblock_t));
 		ov_clear (&vf);
 		sfx->data = block;
