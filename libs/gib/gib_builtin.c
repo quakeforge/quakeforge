@@ -772,7 +772,7 @@ GIB_Random_f (void)
 	if (GIB_Argc() != 1)
 		GIB_USAGE ("");
 	else if ((ret = GIB_Return (0)))
-		dsprintf (ret, "%.10g", (double) random()/(double) RAND_MAX);
+		dsprintf (ret, "%.10g", (double) rand ()/(double) RAND_MAX);
 }
 
 void
