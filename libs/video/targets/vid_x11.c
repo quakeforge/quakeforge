@@ -301,8 +301,7 @@ ResetFrameBuffer (void)
 		pwidth = 4;
 	mem = ((vid.width * pwidth + 7) & ~7) * vid.height;
 	buf = malloc (mem);
-	if (!buf)
-		Sys_Error ("ResetFrameBuffer: Memory Allocation Failure");
+	SYS_CHECKMEM (buf);
 
 	// allocate new screen buffer
 	x_framebuffer[0] = XCreateImage (x_disp, x_vis, x_visinfo->depth,

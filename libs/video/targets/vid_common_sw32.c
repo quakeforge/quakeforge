@@ -197,8 +197,7 @@ VID_MakeColormaps (int fullbrights, byte *pal)
 	vid.colormap8 = malloc (256*VID_GRADES * sizeof (byte));
 	vid.colormap16 = malloc (256*VID_GRADES * sizeof (short));
 	vid.colormap32 = malloc (256*VID_GRADES * sizeof (int));
-	if (!vid.colormap8 || !vid.colormap16 || !vid.colormap32)
-		Sys_Error ("VID_MakeColormaps: Memory Allocation Failure");
+	SYS_CHECKMEM (vid.colormap8 && vid.colormap16 && vid.colormap32);
 	VID_MakeColormap8(vid.colormap8, pal);
 	VID_MakeColormap16(vid.colormap16, pal);
 	VID_MakeColormap32(vid.colormap32, pal);

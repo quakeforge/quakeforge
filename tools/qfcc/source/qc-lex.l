@@ -376,8 +376,7 @@ void
 add_frame_macro (char *token)
 {
 	frame_t *frame = malloc (sizeof (frame_t));
-	if (!frame)
-		Sys_Error ("add_frame_macro: Memory Allocation Failure");
+	SYS_CHECKMEM (frame);
 
 	frame->name = strdup (token);
 	frame->num = frame_number++;
@@ -403,8 +402,7 @@ make_string (char *token)
 	int         quote;
 
 	s = str = malloc (strlen (token) + 1);
-	if (!str)
-		Sys_Error ("make_string: Memory Allocation Failure");
+	SYS_CHECKMEM (str);
 
 	mask = 0x00;
 	boldnext = 0;

@@ -224,8 +224,7 @@ LoadFile (char *filename, void **bufferptr)
 	f = SafeOpenRead (filename);
 	length = FileLength (f);
 	buffer = malloc (length + 1);
-	if (!buffer)
-		Sys_Error ("LoadFile: Memory Allocation Failure");
+	SYS_CHECKMEM (buffer);
 	((char *) buffer)[length] = 0;
 	SafeRead (f, buffer, length);
 	fclose (f);

@@ -149,15 +149,11 @@ LoadTGA (VFile *fin)
 	switch (targa->pixel_size) {
 		case 24:
 			tex = Hunk_TempAlloc (field_offset (tex_t, data[numPixels * 3]));
-			if (!tex)
-				Sys_Error ("LoadTGA: Memory Allocation Failure");
 			tex->format = tex_rgb;
 			break;
 		default:
 		case 32:
 			tex = Hunk_TempAlloc (field_offset (tex_t, data[numPixels * 4]));
-			if (!tex)
-				Sys_Error ("LoadTGA: Memory Allocation Failure");
 			tex->format = tex_rgba;
 			break;
 	}

@@ -407,8 +407,7 @@ AddVideoMode (const struct VideoMode *vmode)
 		Die("%s:%d: Duplicate mode name `%s'\n", Opt_modedb, line,
 			vmode->name);
     vmode2 = malloc(sizeof(struct VideoMode));
-	if (!vmode2)
-		Sys_Error ("AddVideoMode: Memory Allocation Failure");
+	SYS_CHECKMEM (vmode2);
     *vmode2 = *vmode;
     if (!FillScanRates(vmode2))
 		Die("%s:%d: Bad video mode `%s'\n", Opt_modedb, line, vmode2->name);

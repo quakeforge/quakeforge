@@ -97,8 +97,7 @@ locs_add (const vec3_t location, const char *name)
 	num = locations_count - 1;
 
 	locations[num] = malloc (sizeof (location_t));
-	if (!locations[num])
-		Sys_Error ("locs_add: Memory Allocation Failure");
+	SYS_CHECKMEM (locations[num]);
 
 	locations[num]->loc[0] = location[0];
 	locations[num]->loc[1] = location[1];

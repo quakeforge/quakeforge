@@ -121,8 +121,7 @@ find_type (type_t *type)
 
 	// allocate a new one
 	check = malloc (sizeof (*check));
-	if (!check)
-		Sys_Error ("find_type: Memory Allocation Failure");
+	SYS_CHECKMEM (check);
 	*check = *type;
 
 	chain_type (check);

@@ -216,8 +216,7 @@ Cvar_CompleteBuildList (const char *partial)
 
 	len = strlen(partial);
 	buf = malloc(sizeofbuf + sizeof (char *));
-	if (!buf)
-		Sys_Error ("Cvar_CompleteBuildList: Memory Allocation Failure");
+	SYS_CHECKMEM (buf);
 	// Loop through the alias list and print all matches
 	for (cvar = cvar_vars; cvar; cvar = cvar->next)
 		if (!strncasecmp(partial, cvar->name, len))
