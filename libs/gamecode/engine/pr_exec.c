@@ -247,7 +247,7 @@ PR_ExecuteProgram (progs_t * pr, func_t fnum)
 {
 	int				exitdepth, profile, startprofile;
 	unsigned int    pointer;
-	dfunction_t	   *f, *newf;
+	dfunction_t	   *f;
 	dstatement_t   *st;
 	edict_t		   *ed;
 	pr_type_t	   *ptr;
@@ -700,17 +700,12 @@ PR_ExecuteProgram (progs_t * pr, func_t fnum)
 				pr->pr_argc = st->op - OP_CALL0;
 				if (!OPA.func_var)
 					PR_RunError (pr, "NULL function");
-				newf = &pr->pr_functions[OPA.func_var];
-				if (newf->first_statement < 0) {
-					// negative statements are built in functions
-					int         i = -newf->first_statement;
-
-					if (i >= pr->numbuiltins || !pr->builtins[i]
-						|| !pr->builtins[i]->proc)
-						PR_RunError (pr, "Bad builtin call number");
-					pr->builtins[i]->proc (pr);
+				f = &pr->pr_functions[OPA.func_var];
+				// negative statements are built in functions
+				if (f->first_statement < 0) {
+					((bfunction_t *) f)->func (pr);
 				} else {
-					PR_EnterFunction (pr, newf);
+					PR_EnterFunction (pr, f);
 				}
 				st = pr->pr_statements + pr->pr_xstatement;
 				break;

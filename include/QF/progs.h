@@ -185,6 +185,11 @@ typedef struct {
 	int         binum;
 } builtin_t;
 
+typedef struct {
+	int         first_statement;
+	builtin_proc func;
+} bfunction_t;
+
 ddef_t *PR_FindGlobal (progs_t *pr, const char *name);
 ddef_t *ED_GlobalAtOfs (progs_t *pr, int ofs);
 
