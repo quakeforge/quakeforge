@@ -39,6 +39,7 @@ common_ldflags= -export-dynamic
 
 qtv_LIBS= \
 		$(SERVER_PLUGIN_STATIC_LIBS) \
+		$(top_builddir)/libs/qw/libqw.a \
 		$(top_builddir)/libs/net/libnet_chan.la \
 		$(top_builddir)/libs/console/libQFconsole.la \
 		$(top_builddir)/libs/util/libQFutil.la

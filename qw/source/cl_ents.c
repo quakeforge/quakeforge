@@ -44,6 +44,8 @@ static __attribute__ ((unused)) const char rcsid[] =
 #include "QF/render.h"
 #include "QF/skin.h"
 
+#include "qw/msg_ucmd.h"
+
 #include "cl_cam.h"
 #include "cl_ents.h"
 #include "cl_main.h"
@@ -53,7 +55,6 @@ static __attribute__ ((unused)) const char rcsid[] =
 #include "compat.h"
 #include "d_iface.h"
 #include "host.h"
-#include "msg_ucmd.h"
 #include "pmove.h"
 #include "r_cvar.h"
 #include "r_dynamic.h"

@@ -48,6 +48,8 @@ static __attribute__ ((unused)) const char rcsid[] =
 #include "QF/teamplay.h"
 #include "QF/va.h"
 
+#include "qw/msg_ucmd.h"
+
 #include "cl_cam.h"
 #include "cl_demo.h"
 #include "cl_input.h"
@@ -55,7 +57,6 @@ static __attribute__ ((unused)) const char rcsid[] =
 #include "client.h"
 #include "compat.h"
 #include "host.h"
-#include "msg_ucmd.h"
 #include "view.h"
 
 cvar_t     *cl_nodelta;

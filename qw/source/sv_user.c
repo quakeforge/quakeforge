@@ -56,9 +56,10 @@ static __attribute__ ((unused)) const char rcsid[] =
 #include "QF/sys.h"
 #include "QF/va.h"
 
+#include "qw/msg_ucmd.h"
+
 #include "bothdefs.h"
 #include "compat.h"
-#include "msg_ucmd.h"
 #include "pmove.h"
 #include "server.h"
 #include "sv_demo.h"

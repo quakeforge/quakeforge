@@ -64,15 +64,8 @@ static __attribute__ ((unused)) const char rcsid[] =
 #include "compat.h"
 #include "connection.h"
 #include "netchan.h"
+#include "qtv.h"
 #include "server.h"
-
-#define PORT_QTV 27501
-
-typedef enum {
-	RD_NONE,
-	RD_CLIENT,
-	RD_PACKET,
-} redirect_t;
 
 SERVER_PLUGIN_PROTOS
 static plugin_list_t server_plugin_list[] = {
@@ -84,11 +77,11 @@ double realtime;
 cbuf_t     *qtv_cbuf;
 cbuf_args_t *qtv_args;
 
-cvar_t     *qtv_console_plugin;
-cvar_t     *qtv_port;
-cvar_t     *qtv_mem_size;
-cvar_t     *fs_globalcfg;
-cvar_t     *fs_usercfg;
+static cvar_t  *qtv_console_plugin;
+static cvar_t  *qtv_port;
+static cvar_t  *qtv_mem_size;
+static cvar_t  *fs_globalcfg;
+static cvar_t  *fs_usercfg;
 
 redirect_t  qtv_redirected;
 dstring_t   outputbuf = {&dstring_default_mem};
@@ -126,7 +119,17 @@ qtv_print (const char *fmt, va_list args)
 	}
 }
 
-static void
+void
+qtv_printf (const char *fmt, ...)
+{
+	va_list     argptr;
+
+	va_start (argptr, fmt);
+	qtv_print (fmt, argptr);
+	va_end (argptr);
+}
+
+void
 qtv_flush_redirect (void)
 {
 	char        send[8000 + 6];
@@ -153,18 +156,39 @@ qtv_flush_redirect (void)
 			p += bytes;
 			count -= bytes;
 		}
+	} else if (qtv_redirected == RD_CLIENT) {
+#if 0
+		p = outputbuf.str;
+		while (count) {
+			// +/- 3 for svc_print, PRINT_HIGH and nul byte
+			// min of 4 because we don't want to send an effectively empty
+			// message
+			bytes = ClientReliableCheckSize (cl, count + 3, 4) - 3;
+			// if writing another packet would overflow the client, just drop
+			// the rest of the data. getting rudely disconnected would be much
+			// more annoying than losing the tail end of the output
+			if (bytes <= 0)
+				break;
+			ClientReliableWrite_Begin (cl, svc_print, bytes + 3);
+			ClientReliableWrite_Byte (cl, PRINT_HIGH);
+			ClientReliableWrite_SZ (cl, p, bytes);
+			ClientReliableWrite_Byte (cl, 0);
+			p += bytes;
+			count -= bytes;
+		}
+#endif
 	}
 	dstring_clear (&outputbuf);
 }
 
-static void
+void
 qtv_begin_redirect (redirect_t rd)
 {
 	qtv_redirected = rd;
 	dstring_clear (&outputbuf);
 }
 
-static void
+void
 qtv_end_redirect (void)
 {
 	qtv_flush_redirect ();
@@ -270,6 +294,7 @@ qtv_init (void)
 
 	qtv_net_init ();
 	Server_Init ();
+	Client_Init ();
 
 	Cmd_AddCommand ("quit", qtv_quit_f, "Shut down qtv");
 
@@ -292,77 +317,6 @@ qtv_status (void)
 	qtv_end_redirect ();
 }
 
-typedef struct {
-	int         challenge;
-	double      time;
-} challenge_t;
-
-static void
-qtv_getchallenge (void)
-{
-	challenge_t *ch;
-	connection_t *con;
-
-	if ((con = Connection_Find (&net_from))) {
-		if (con->handler)
-			return;
-		ch = con->object;
-	} else {
-		ch = malloc (sizeof (challenge_t));
-	}
-	ch->challenge = (rand () << 16) ^ rand ();
-	ch->time = Sys_DoubleTime ();
-	if (!con)
-		Connection_Add (&net_from, ch, 0);
-	Netchan_OutOfBandPrint (net_from, "%c%i QF", S2C_CHALLENGE, ch->challenge);
-}
-
-static void
-qtv_client_connect (void)
-{
-	info_t     *userinfo;
-	int         version, qport, challenge;
-	connection_t *con;
-	challenge_t *ch;
-
-	version = atoi (Cmd_Argv (1));
-	if (version != PROTOCOL_VERSION) {
-		Netchan_OutOfBandPrint (net_from, "%c\nServer is version %s.\n",
-								A2C_PRINT, QW_VERSION);
-		Con_Printf ("* rejected connect from version %i\n", version);
-		return;
-	}
-	qport = atoi (Cmd_Argv (2));
-	challenge = atoi (Cmd_Argv (3));
-	if (!(con = Connection_Find (&net_from)) || con->handler
-		|| (ch = con->object)->challenge != challenge) {
-		Netchan_OutOfBandPrint (net_from, "%c\nBad challenge.\n",
-								A2C_PRINT);
-		return;
-	}
-	free (con->object);
-	userinfo = Info_ParseString (Cmd_Argv (4), 0, 0);
-	if (!userinfo) {
-		Netchan_OutOfBandPrint (net_from, "%c\nInvalid userinfo string.\n",
-								A2C_PRINT);
-		return;
-	}
-
-	Client_Connect (con, qport, userinfo);
-	Netchan_OutOfBandPrint (net_from, "%c", S2C_CONNECTION);
-}
-
-static void
-qtv_server_packet (void)
-{
-	connection_t *con;
-
-	if (!(con = Connection_Find (&net_from)))
-		return;
-	if (con->handler)
-		con->handler (con, con->object);
-}
-
 static void
 qtv_connectionless_packet (void)
 {
@@ -381,9 +335,7 @@ qtv_connectionless_packet (void)
 	} else if (!strcmp (cmd, "status")) {
 		qtv_status ();
 	} else if (!strcmp (cmd, "getchallenge")) {
-		qtv_getchallenge ();
-	} else if (!strcmp (cmd, "connect")) {
-		qtv_client_connect ();
+		Client_NewConnection ();
 	} else if (cmd[0]) {
 		switch (cmd[0]) {
 			default:
@@ -393,10 +345,6 @@ qtv_connectionless_packet (void)
 				break;
 			case A2A_PING:
 				qtv_ping ();
-				break;
-			case S2C_CHALLENGE:
-			case S2C_CONNECTION:
-				qtv_server_packet ();
 				break;
 		}
 	} else {

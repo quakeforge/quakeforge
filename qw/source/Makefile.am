@@ -51,7 +51,7 @@ EXTRA_LIBRARIES=libasm.a libqw_client.a libqw_common.a libqw_sdl.a libqw_server.
 
 libasm_a_SOURCES= worlda.S
 libasm_la_CCASFLAGS=@PREFER_NON_PIC@
-libqw_common_a_SOURCES= com.c game.c msg_ucmd.c pmove.c pmovetst.c net_packetlog.c
+libqw_common_a_SOURCES= com.c game.c pmove.c pmovetst.c net_packetlog.c
 libqw_sdl_a_SOURCES=cl_sys_sdl.c
 libqw_sdl_a_CFLAGS=$(SDL_CFLAGS)
 
@@ -75,6 +75,7 @@ libqw_server_a_SOURCES= \
 
 qw_server_LIBS= \
 		$(SERVER_PLUGIN_STATIC_LIBS) \
+		$(top_builddir)/libs/qw/libqw.a \
 		$(top_builddir)/libs/net/libnet_chan.la \
 		$(top_builddir)/libs/ruamoko/libQFruamoko.la \
 		$(top_builddir)/libs/models/libQFmodels.la \
@@ -99,6 +100,7 @@ cl_plugin_LIBS= \
 		$(top_builddir)/libs/ruamoko/libQFruamoko.la
 
 qw_client_LIBS= \
+		$(top_builddir)/libs/qw/libqw.a \
 		$(top_builddir)/libs/net/libnet_chan.la \
 		$(top_builddir)/libs/console/libQFconsole.la \
 		$(top_builddir)/libs/video/targets/libQFjs.la \

@@ -2183,6 +2183,7 @@ AC_OUTPUT(
 	libs/net/nc/Makefile
 	libs/net/nm/Makefile
 	libs/object/Makefile
+	libs/qw/Makefile
 	libs/ruamoko/Makefile
 	libs/util/Makefile
 	libs/video/Makefile

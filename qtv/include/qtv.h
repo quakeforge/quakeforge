@@ -29,24 +29,25 @@
 	$Id$
 */
 
-#ifndef __client_h
-#define __client_h
+#ifndef __qtv_h
+#define __qtv_h
 
-#include "netchan.h"
+#define PORT_QTV 27501
 
-typedef struct client_s {
-	struct info_s *userinfo;
-	struct connection_s *con;
-	int         drop;
-	netchan_t   netchan;
-} client_t;
+typedef enum {
+	RD_NONE,
+	RD_CLIENT,
+	RD_PACKET,
+} redirect_t;
 
-typedef struct challenge_s {
-	int         challenge;
-	double      time;
-} challenge_t;
+extern double realtime;
 
-void Client_Init (void);
-void Client_NewConnection (void);
+extern cbuf_t *qtv_cbuf;
+extern cbuf_args_t *qtv_args;
 
-#endif//__client_h
+void qtv_printf (const char *fmt, ...) __attribute__((format(printf,1,2)));
+void qtv_begin_redirect (redirect_t rd);
+void qtv_end_redirect (void);
+void qtv_flush_redirect (void);
+
+#endif//__qtv_h
