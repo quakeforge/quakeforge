@@ -66,7 +66,7 @@ int         type_size[8] = {
 	sizeof (void *) / 4
 };
 
-char       *type_name[8] = {
+char       *type_name[ev_type_count] = {
 	"void",
 	"string",
 	"float",
@@ -75,6 +75,8 @@ char       *type_name[8] = {
 	"field",
 	"function",
 	"pointer",
+	"quaternion",
+	"integer",
 };
 
 ddef_t     *ED_FieldAtOfs (progs_t * pr, int ofs);
@@ -376,10 +378,19 @@ PR_ValueString (progs_t * pr, etype_t type, pr_type_t *val)
 			break;
 		case ev_vector:
 			snprintf (line, sizeof (line), "'%5.1f %5.1f %5.1f'",
-					  val->vector_var[0], val->vector_var[1], val->vector_var[2]);
+					  val->vector_var[0], val->vector_var[1],
+					  val->vector_var[2]);
 			break;
 		case ev_pointer:
 			strcpy (line, "pointer");
+			break;
+		case ev_quaternion:
+			snprintf (line, sizeof (line), "'%5.1f %5.1f %5.1f %5.1f'",
+					  val->vector_var[0], val->vector_var[1],
+					  val->vector_var[2], val->vector_var[3]);
+			break;
+		case ev_integer:
+			snprintf (line, sizeof (line), "%d", val->integer_var);
 			break;
 		default:
 			snprintf (line, sizeof (line), "bad type %i", type);
@@ -1224,6 +1235,24 @@ PR_LoadProgs (progs_t * pr, const char *progsname)
 			case OP_LOAD_S:
 			case OP_LOAD_FNC:
 			case OP_LOAD_V:
+			case OP_ADD_I:
+			case OP_SUB_I:
+			case OP_MUL_I:
+			case OP_DIV_I:
+			case OP_BITAND_I:
+			case OP_BITOR_I:
+			case OP_GE_I:
+			case OP_LE_I:
+			case OP_GT_I:
+			case OP_LT_I:
+			case OP_AND_I:
+			case OP_OR_I:
+			case OP_NOT_I:
+			case OP_EQ_I:
+			case OP_NE_I:
+			case OP_LOAD_I:
+			case OP_CONV_IF:
+			case OP_CONV_FI:
 				if ((unsigned short) st->a >= pr->progs->numglobals
 					|| (unsigned short) st->b >= pr->progs->numglobals
 					|| (unsigned short) st->c >= pr->progs->numglobals)
@@ -1257,6 +1286,8 @@ PR_LoadProgs (progs_t * pr, const char *progsname)
 			case OP_STATE:
 			case OP_STOREP_V:
 			case OP_STORE_V:
+			case OP_STORE_I:
+			case OP_STOREP_I:
 				if ((unsigned short) st->a >= pr->progs->numglobals
 					|| (unsigned short) st->b >= pr->progs->numglobals)
 					PR_Error

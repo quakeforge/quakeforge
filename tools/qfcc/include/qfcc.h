@@ -318,7 +318,7 @@ typedef union eval_s
 	union eval_s		*ptr;
 } eval_t;	
 
-extern	int		type_size[8];
+extern	int		type_size[ev_type_count];
 extern	def_t	*def_for_type[8];
 
 extern	type_t	type_void;

@@ -88,11 +88,8 @@ get_type (expr_t *e)
 		case ex_func:
 		case ex_pointer:
 		case ex_quaternion:
+		case ex_integer:
 			return qc_types[e->type];
-		case ex_integer: //FIXME int should stay int, at least until code generation
-			e->type = ex_float;
-			e->e.float_val = e->e.int_val;
-			return ev_float;
 	}
 	return ev_void;
 }
@@ -144,62 +141,62 @@ warning (expr_t *e, const char *fmt, ...)
 	va_end (args);
 }
 
+const char *
+get_op_string (int op)
+{
+	switch (op) {
+		case OR:
+			return "||";
+		case AND:
+			return "&&";
+		case EQ:
+			return "==";
+		case NE:
+			return "!=";
+		case LE:
+			return "<=";
+		case GE:
+			return ">=";
+		case LT:
+			return "<";
+		case GT:
+			return ">";
+		case '=':
+			return "=";
+		case '+':
+			return "+";
+		case '-':
+			return "-";
+		case '*':
+			return "*";
+		case '/':
+			return "/";
+		case '&':
+			return "&";
+		case '|':
+			return "|";
+		case '!':
+			return "!";
+		case '(':
+			return "(";
+		case '.':
+			return ".";
+		default:
+			return "unknown";
+	}
+}
+
 expr_t *
 type_mismatch (expr_t *e1, expr_t *e2, int op)
 {
 	etype_t t1, t2;
-	char opname[4];
 
 	t1 = get_type (e1);
 	t2 = get_type (e2);
 
-	switch (op) {
-		case OR:
-			opname[0] = '|';
-			opname[1] = '|';
-			opname[2] = 0;
-			break;
-		case AND:
-			opname[0] = '&';
-			opname[1] = '&';
-			opname[2] = 0;
-			break;
-		case EQ:
-			opname[0] = '=';
-			opname[1] = '=';
-			opname[2] = 0;
-			break;
-		case NE:
-			opname[0] = '!';
-			opname[1] = '=';
-			opname[2] = 0;
-			break;
-		case LE:
-			opname[0] = '<';
-			opname[1] = '=';
-			opname[2] = 0;
-			break;
-		case GE:
-			opname[0] = '>';
-			opname[1] = '=';
-			opname[2] = 0;
-			break;
-		case LT:
-			opname[0] = '<';
-			opname[1] = 0;
-			break;
-		case GT:
-			opname[0] = '>';
-			opname[1] = 0;
-			break;
-		default:
-			opname[0] = op;
-			opname[1] = 0;
-			break;
-	}
 
 	return error (e1, "type mismatch: %s %s %s",
-				  type_names[t1], opname, type_names[t2]);
+				  type_names[t1], get_op_string (op), type_names[t2]);
 }
 
 expr_t *
@@ -348,7 +345,7 @@ print_expr (expr_t *e)
 		case ex_func:
 		case ex_pointer:
 		case ex_integer:
-			printf ("%d", e->e.int_val);
+			printf ("%d", e->e.integer_val);
 			break;
 	}
 }
@@ -373,27 +370,27 @@ do_op_string (int op, expr_t *e1, expr_t *e2)
 			break;
 		case LT:
 			e1->type = ex_integer;
-			e1->e.int_val = strcmp (s1, s2) < 0;
+			e1->e.integer_val = strcmp (s1, s2) < 0;
 			break;
 		case GT:
 			e1->type = ex_integer;
-			e1->e.int_val = strcmp (s1, s2) > 0;
+			e1->e.integer_val = strcmp (s1, s2) > 0;
 			break;
 		case LE:
 			e1->type = ex_integer;
-			e1->e.int_val = strcmp (s1, s2) <= 0;
+			e1->e.integer_val = strcmp (s1, s2) <= 0;
 			break;
 		case GE:
 			e1->type = ex_integer;
-			e1->e.int_val = strcmp (s1, s2) >= 0;
+			e1->e.integer_val = strcmp (s1, s2) >= 0;
 			break;
 		case EQ:
 			e1->type = ex_integer;
-			e1->e.int_val = strcmp (s1, s2) == 0;
+			e1->e.integer_val = strcmp (s1, s2) == 0;
 			break;
 		case NE:
 			e1->type = ex_integer;
-			e1->e.int_val = strcmp (s1, s2) != 0;
+			e1->e.integer_val = strcmp (s1, s2) != 0;
 			break;
 		default:
 			return error (e1, "invalid operand for string");
@@ -429,34 +426,36 @@ do_op_float (int op, expr_t *e1, expr_t *e2)
 			e1->e.float_val = (int)f1 | (int)f2;
 			break;
 		case AND:
-			e1->e.float_val = f1 && f2;
+			e1->type = ex_integer;
+			e1->e.integer_val = f1 && f2;
 			break;
 		case OR:
-			e1->e.float_val += f1 || f2;
+			e1->type = ex_integer;
+			e1->e.integer_val = f1 || f2;
 			break;
 		case LT:
 			e1->type = ex_integer;
-			e1->e.int_val = f1 < f2;
+			e1->e.integer_val = f1 < f2;
 			break;
 		case GT:
 			e1->type = ex_integer;
-			e1->e.int_val = f1 > f2;
+			e1->e.integer_val = f1 > f2;
 			break;
 		case LE:
 			e1->type = ex_integer;
-			e1->e.int_val = f1 <= f2;
+			e1->e.integer_val = f1 <= f2;
 			break;
 		case GE:
 			e1->type = ex_integer;
-			e1->e.int_val = f1 >= f2;
+			e1->e.integer_val = f1 >= f2;
 			break;
 		case EQ:
 			e1->type = ex_integer;
-			e1->e.int_val = f1 == f2;
+			e1->e.integer_val = f1 == f2;
 			break;
 		case NE:
 			e1->type = ex_integer;
-			e1->e.int_val = f1 != f2;
+			e1->e.integer_val = f1 != f2;
 			break;
 		default:
 			return error (e1, "invalid operand for string");
@@ -485,15 +484,79 @@ do_op_vector (int op, expr_t *e1, expr_t *e2)
 			break;
 		case EQ:
 			e1->type = ex_integer;
-			e1->e.int_val = (v1[0] == v2[0])
+			e1->e.integer_val = (v1[0] == v2[0])
 							&& (v1[1] == v2[1])
 							&& (v1[2] == v2[2]);
 			break;
 		case NE:
 			e1->type = ex_integer;
-			e1->e.int_val = (v1[0] == v2[0])
+			e1->e.integer_val = (v1[0] == v2[0])
 							|| (v1[1] != v2[1])
 							|| (v1[2] != v2[2]);
+			break;
+		default:
+			return error (e1, "invalid operand for string");
+	}
+	return e1;
+}
+
+static expr_t *
+do_op_integer (int op, expr_t *e1, expr_t *e2)
+{
+	int i1, i2;
+
+	i1 = e1->e.integer_val;
+	i2 = e2->e.integer_val;
+	printf ("%d %s %d\n", i1, get_op_string (op), i2);
+	
+	switch (op) {
+		case '+':
+			e1->e.integer_val += i2;
+			break;
+		case '-':
+			e1->e.integer_val -= i2;
+			break;
+		case '*':
+			e1->e.integer_val *= i2;
+			break;
+		case '/':
+			e1->e.integer_val /= i2;
+			break;
+		case '&':
+			e1->e.integer_val = i1 & i2;
+			break;
+		case '|':
+			e1->e.integer_val = i1 | i2;
+			break;
+		case AND:
+			e1->e.integer_val = i1 && i2;
+			break;
+		case OR:
+			e1->e.integer_val = i1 || i2;
+			break;
+		case LT:
+			e1->type = ex_integer;
+			e1->e.integer_val = i1 < i2;
+			break;
+		case GT:
+			e1->type = ex_integer;
+			e1->e.integer_val = i1 > i2;
+			break;
+		case LE:
+			e1->type = ex_integer;
+			e1->e.integer_val = i1 <= i2;
+			break;
+		case GE:
+			e1->type = ex_integer;
+			e1->e.integer_val = i1 >= i2;
+			break;
+		case EQ:
+			e1->type = ex_integer;
+			e1->e.integer_val = i1 == i2;
+			break;
+		case NE:
+			e1->type = ex_integer;
+			e1->e.integer_val = i1 != i2;
 			break;
 		default:
 			return error (e1, "invalid operand for string");
@@ -516,6 +579,8 @@ static expr_t *(*do_op[]) (int op, expr_t *e1, expr_t *e2) = {
 	do_op_huh,
 	do_op_huh,
 	do_op_huh,
+	do_op_huh,
+	do_op_integer,
 };
 
 static expr_t *
@@ -563,7 +628,6 @@ test_expr (expr_t *e, int test)
 		return unary_expr ('!', e);
 
 	switch (get_type (e)) {
-		case ev_integer://FIXME just return e when int opcodes are supported
 		case ev_type_count:
 		case ev_void:
 			error (e, "internal error");
@@ -572,6 +636,7 @@ test_expr (expr_t *e, int test)
 			new = new_expr ();
 			new->type = ex_string;
 			break;
+		case ev_integer:
 		case ev_float:
 			return e;
 		case ev_vector:
@@ -633,7 +698,7 @@ binary_expr (int op, expr_t *e1, expr_t *e2)
 	if (t1 == t2) {
 		expr_t *e = new_binary_expr (op, e1, e2);
 		if ((op >= OR && op <= GT) || (op == '*' && t1 == ev_vector))
-			e->e.expr.type = &type_float;
+			e->e.expr.type = &type_integer;
 		else
 			e->e.expr.type = types[t1];
 		if (op == '=' && e1->type == ex_expr && e1->e.expr.op == '.') {
@@ -646,6 +711,12 @@ binary_expr (int op, expr_t *e1, expr_t *e2)
 				if (t2 == ev_vector) {
 					expr_t *e = new_binary_expr (op, e1, e2);
 					e->e.expr.type = &type_vector;
+					return e;
+				} else if (e2->type == ex_integer) {
+					expr_t *e = new_binary_expr (op, e1, e2);
+					e->e.expr.type = &type_float;
+					e2->type = ex_float;
+					e2->e.float_val = e2->e.integer_val;
 					return e;
 				} else {
 					goto type_mismatch;
@@ -695,7 +766,7 @@ unary_expr (int op, expr_t *e)
 						return n;
 					}
 				case ex_integer:
-					e->e.int_val *= -1;
+					e->e.integer_val *= -1;
 					return e;
 				case ex_float:
 					e->e.float_val *= -1;
@@ -733,24 +804,24 @@ unary_expr (int op, expr_t *e)
 						return n;
 					}
 				case ex_integer:
-					e->e.int_val = !e->e.int_val;
+					e->e.integer_val = !e->e.integer_val;
 					return e;
 				case ex_float:
-					e->e.int_val = !e->e.float_val;
+					e->e.integer_val = !e->e.float_val;
 					e->type = ex_integer;
 					return e;
 				case ex_string:
-					e->e.int_val = !e->e.string_val || !e->e.string_val[0];
+					e->e.integer_val = !e->e.string_val || !e->e.string_val[0];
 					e->type = ex_integer;
 					return e;
 				case ex_vector:
-					e->e.int_val = !e->e.vector_val[0]
+					e->e.integer_val = !e->e.vector_val[0]
 									&& !e->e.vector_val[1]
 									&& !e->e.vector_val[2];
 					e->type = ex_integer;
 					return e;
 				case ex_quaternion:
-					e->e.int_val = !e->e.quaternion_val[0]
+					e->e.integer_val = !e->e.quaternion_val[0]
 									&& !e->e.quaternion_val[1]
 									&& !e->e.quaternion_val[2]
 									&& !e->e.quaternion_val[3];
@@ -830,6 +901,13 @@ emit_statement (int sline, opcode_t *op, def_t *var_a, def_t *var_b, def_t *var_
 	dstatement_t    *statement;
 	def_t			*ret;
 
+	if (!op) {
+		expr_t e;
+		e.line = sline;
+		e.file = s_file;
+		error (&e, "ice ice baby\n");
+		abort ();
+	}
 	if (options.debug) {
 		int				line = sline - lineno_base;
 

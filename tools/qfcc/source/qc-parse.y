@@ -37,7 +37,7 @@ typedef struct {
 	def_t	*def;
 	type_t	*type;
 	expr_t	*expr;
-	int		int_val;
+	int		integer_val;
 	float	float_val;
 	char	*string_val;
 	float	vector_val[3];
@@ -55,7 +55,7 @@ typedef struct {
 %left	'.'
 
 %token	<string_val> NAME STRING_VAL
-%token	<int_val> INT_VAL
+%token	<integer_val> INT_VAL
 %token	<float_val> FLOAT_VAL
 %token	<vector_val> VECTOR_VAL
 %token	<quaternion_val> QUATERNION_VAL
@@ -206,7 +206,7 @@ opt_initializer
 				expr_t *e = new_expr ();
 				e->type = ex_def;
 				e->e.def = current_def;
-				append_expr (local_expr, new_binary_expr ('=', e, $2));
+				append_expr (local_expr, binary_expr ('=', e, $2));
 			} else {
 				current_def = PR_ReuseConstant ($2,  current_def);
 			}
@@ -223,7 +223,7 @@ opt_initializer
 
 					f = new_function ();
 					f->builtin = $3->type == ex_integer
-								 ? $3->e.int_val : (int)$3->e.float_val;
+								 ? $3->e.integer_val : (int)$3->e.float_val;
 					f->def = current_def;
 					build_function (f);
 					finish_function (f);
@@ -501,7 +501,7 @@ const
 		{
 			$$ = new_expr ();
 			$$->type = ex_integer;
-			$$->e.int_val = $1;
+			$$->e.integer_val = $1;
 		}
 	;
 

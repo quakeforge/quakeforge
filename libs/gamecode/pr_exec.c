@@ -621,8 +621,6 @@ PR_ExecuteProgram (progs_t * pr, func_t fnum)
 				ed->v[pr->fields.frame].float_var = OPA.float_var;
 				ed->v[pr->fields.think].func_var = OPB.func_var;
 				break;
-// LordHavoc: to be enabled when Progs version 7 (or whatever it will be numbered) is finalized
-/*
 			case OP_ADD_I:
 				OPC.integer_var = OPA.integer_var + OPB.integer_var;
 				break;
@@ -632,6 +630,7 @@ PR_ExecuteProgram (progs_t * pr, func_t fnum)
 			case OP_MUL_I:
 				OPC.integer_var = OPA.integer_var * OPB.integer_var;
 				break;
+/*
 			case OP_DIV_VF:
 				{
 					float       temp = 1.0f / OPB.float_var;
@@ -641,6 +640,7 @@ PR_ExecuteProgram (progs_t * pr, func_t fnum)
 					OPC.vector_var[2] = temp * OPA.vector_var[2];
 				}
 				break;
+*/
 			case OP_DIV_I:
 				OPC.integer_var = OPA.integer_var / OPB.integer_var;
 				break;
@@ -657,31 +657,31 @@ PR_ExecuteProgram (progs_t * pr, func_t fnum)
 				OPC.integer_var = OPA.integer_var | OPB.integer_var;
 				break;
 			case OP_GE_I:
-				OPC.float_var = OPA.integer_var >= OPB.integer_var;
+				OPC.integer_var = OPA.integer_var >= OPB.integer_var;
 				break;
 			case OP_LE_I:
-				OPC.float_var = OPA.integer_var <= OPB.integer_var;
+				OPC.integer_var = OPA.integer_var <= OPB.integer_var;
 				break;
 			case OP_GT_I:
-				OPC.float_var = OPA.integer_var > OPB.integer_var;
+				OPC.integer_var = OPA.integer_var > OPB.integer_var;
 				break;
 			case OP_LT_I:
-				OPC.float_var = OPA.integer_var < OPB.integer_var;
+				OPC.integer_var = OPA.integer_var < OPB.integer_var;
 				break;
 			case OP_AND_I:
-				OPC.float_var = OPA.integer_var && OPB.integer_var;
+				OPC.integer_var = OPA.integer_var && OPB.integer_var;
 				break;
 			case OP_OR_I:
-				OPC.float_var = OPA.integer_var || OPB.integer_var;
+				OPC.integer_var = OPA.integer_var || OPB.integer_var;
 				break;
 			case OP_NOT_I:
-				OPC.float_var = !OPA.integer_var;
+				OPC.integer_var = !OPA.integer_var;
 				break;
 			case OP_EQ_I:
-				OPC.float_var = OPA.integer_var == OPB.integer_var;
+				OPC.integer_var = OPA.integer_var == OPB.integer_var;
 				break;
 			case OP_NE_I:
-				OPC.float_var = OPA.integer_var != OPB.integer_var;
+				OPC.integer_var = OPA.integer_var != OPB.integer_var;
 				break;
 			case OP_STORE_I:
 				OPB.integer_var = OPA.integer_var;
@@ -702,7 +702,7 @@ PR_ExecuteProgram (progs_t * pr, func_t fnum)
 						(pr, "Progs attempted to write to an engine edict field\n");
 					return;
 				}
-				ptr = (eval_t *) ((byte *) *pr->edicts + OPB.integer_var);
+				ptr = (pr_type_t*)((int)*pr->edicts + OPB.integer_var);
 				ptr->integer_var = OPA.integer_var;
 				break;
 			case OP_LOAD_I:
@@ -721,9 +721,11 @@ PR_ExecuteProgram (progs_t * pr, func_t fnum)
 					return;
 				}
 				ed = PROG_TO_EDICT (pr, OPA.entity_var);
-				OPC.integer_var = ((eval_t *) ((int *) &ed->v + OPB.integer_var))->integer_var;
+				OPC.integer_var = ed->v[OPB.integer_var].integer_var;
 				break;
 
+// LordHavoc: to be enabled when Progs version 7 (or whatever it will be numbered) is finalized
+/*
 			case OP_GSTOREP_I:
 			case OP_GSTOREP_F:
 			case OP_GSTOREP_ENT:

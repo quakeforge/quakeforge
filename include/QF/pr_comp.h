@@ -137,6 +137,28 @@ typedef enum {
 	OP_GE_S,
 	OP_LT_S,
 	OP_GT_S,
+
+	OP_ADD_I,
+	OP_SUB_I,
+	OP_MUL_I,
+	OP_DIV_I,
+	OP_BITAND_I,
+	OP_BITOR_I,
+	OP_GE_I,
+	OP_LE_I,
+	OP_GT_I,
+	OP_LT_I,
+	OP_AND_I,
+	OP_OR_I,
+	OP_NOT_I,
+	OP_EQ_I,
+	OP_NE_I,
+	OP_STORE_I,
+	OP_STOREP_I,
+	OP_LOAD_I,
+
+	OP_CONV_IF,
+	OP_CONV_FI,
 } pr_opcode_e;
 
 typedef struct

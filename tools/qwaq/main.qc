@@ -14,7 +14,7 @@ void () eek;
 float () main =
 {
 	local float messed_or;
-	local float handle;
+	local integer handle;
 	local string buffer;
 
 	traceon();
@@ -45,7 +45,7 @@ float () baz =
 void (float x) test =
 {
 	local string str;
-	local float urk = 0;
+	local integer urk = 0;
 
 	if (urk) {
 		urk = foo || snafu;
@@ -68,6 +68,11 @@ void () blarg =
 	}
 };
 
+float (float baz) test_int =
+{
+	return baz;
+};
+
 .entity owner;
 entity sent;
 void () eek =
@@ -76,6 +81,7 @@ void () eek =
 	if (sent && sent.owner != self )
 		self.origin = '0 0 0';
 	self.origin = self.origin + '1 2 3';
+	test_int (1);
 	traceoff();
 };
 
@@ -87,6 +93,6 @@ void () assign =
 	foo = bar;
 	foo = bar = 1;
 	foo = bar = bar + 1;
-	foo = self.nextthink = self.nextthink + 1;
-	self.frame = self.nextthink = self.nextthink + 1;
+	foo = self.nextthink = self.nextthink + 1.0;
+	self.frame = self.nextthink = self.nextthink + 1.0;
 };

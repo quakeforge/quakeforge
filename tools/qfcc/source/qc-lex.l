@@ -47,7 +47,7 @@ m		([\-+]?)
 "//".*	/* nothing to do */
 
 {DIGIT}+			{
-						yylval.int_val = atoi (yytext);
+						yylval.integer_val = atoi (yytext);
 						return INT_VAL;
 					}
 
@@ -144,18 +144,20 @@ typedef struct {
 } keyword_t;
 
 static keyword_t keywords[] = {
-	{"float",	TYPE,	&type_float	},
-	{"vector",	TYPE,	&type_vector},
-	{"entity",	TYPE,	&type_entity},
-	{"string",	TYPE,	&type_string},
-	{"void",	TYPE,	&type_void	},
-	{"local",	LOCAL,	0			},
-	{"return",	RETURN,	0			},
-	{"while",	WHILE,	0			},
-	{"do",		DO,		0			},
-	{"if",		IF,		0			},
-	{"else",	ELSE,	0			},
-	{"for",		FOR,	0			},
+	{"void",		TYPE,	&type_void		},
+	{"float",		TYPE,	&type_float		},
+	{"string",		TYPE,	&type_string	},
+	{"vector",		TYPE,	&type_vector	},
+	{"entity",		TYPE,	&type_entity	},
+	{"quaternion",	TYPE,	&type_quaternion},
+	{"integer",		TYPE,	&type_integer	},
+	{"local",		LOCAL,	0				},
+	{"return",		RETURN,	0				},
+	{"while",		WHILE,	0				},
+	{"do",			DO,		0				},
+	{"if",			IF,		0				},
+	{"else",		ELSE,	0				},
+	{"for",			FOR,	0				},
 };
 
 static const char *
@@ -240,7 +242,7 @@ do_grab (char *token)
 		return -grab_other;
 	frame = Hash_Find (frame_tab, token);
 	if (frame) {
-		yylval.int_val = frame->num;
+		yylval.integer_val = frame->num;
 		return INT_VAL;
 	}
 	return 0;

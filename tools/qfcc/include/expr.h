@@ -52,7 +52,7 @@ typedef struct expr_s {
 		int		func_val;
 		int		pointer_val;
 		float	quaternion_val[4];
-		int		int_val;
+		int		integer_val;
 	} e;
 } expr_t;
 

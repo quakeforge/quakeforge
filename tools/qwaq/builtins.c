@@ -8,10 +8,10 @@
 #include <QF/progs.h>
 #include <QF/zone.h>
 
-#define RETURN_EDICT(p, e) ((p)->pr_globals[OFS_RETURN].int_var = EDICT_TO_PROG(p, e))
-#define RETURN_STRING(p, s) ((p)->pr_globals[OFS_RETURN].int_var = PR_SetString((p), s))
+#define RETURN_EDICT(p, e) ((p)->pr_globals[OFS_RETURN].integer_var = EDICT_TO_PROG(p, e))
+#define RETURN_STRING(p, s) ((p)->pr_globals[OFS_RETURN].integer_var = PR_SetString((p), s))
 
-float *read_result;	//FIXME: eww
+int *read_result;	//FIXME: eww
 
 static void 
 bi_fixme (progs_t *pr)
@@ -37,37 +37,37 @@ bi_GarbageCollect (progs_t *pr)
 static void
 bi_errno (progs_t *pr)
 {
-	G_FLOAT (pr, OFS_RETURN) = errno;
+	G_INT (pr, OFS_RETURN) = errno;
 }
 
 static void
-bi_strerror (progs_t *pr)	// FIXME: make INT when qc int
+bi_strerror (progs_t *pr)
 {
-	int err = G_FLOAT (pr, OFS_PARM0);
+	int err = G_INT (pr, OFS_PARM0);
 	RETURN_STRING (pr, strerror (err));
 }
 
 static void
-bi_open (progs_t *pr)	// FIXME: make INT when qc int
+bi_open (progs_t *pr)
 {
 	char *path = G_STRING (pr, OFS_PARM0);
-	int flags = G_FLOAT (pr, OFS_PARM1);
-	int mode = G_FLOAT (pr, OFS_PARM2);
+	int flags = G_INT (pr, OFS_PARM1);
+	int mode = G_INT (pr, OFS_PARM2);
 	G_INT (pr, OFS_RETURN) = open (path, flags, mode);
 }
 
 static void
-bi_close (progs_t *pr)	// FIXME: make INT when qc int
+bi_close (progs_t *pr)
 {
 	int handle = G_INT (pr, OFS_PARM0);
-	G_FLOAT (pr, OFS_RETURN) = close (handle);
+	G_INT (pr, OFS_RETURN) = close (handle);
 }
 
 static void
-bi_read (progs_t *pr)	// FIXME: make INT when qc int
+bi_read (progs_t *pr)
 {
 	int handle = G_INT (pr, OFS_PARM0);
-	int count = G_FLOAT (pr, OFS_PARM1);
+	int count = G_INT (pr, OFS_PARM1);
 	int res;
 	char *buffer;
 
@@ -81,23 +81,23 @@ bi_read (progs_t *pr)	// FIXME: make INT when qc int
 }
 
 static void
-bi_write (progs_t *pr)	// FIXME: make INT when qc int
+bi_write (progs_t *pr)
 {
 	int handle = G_INT (pr, OFS_PARM0);
 	char *buffer = G_STRING (pr, OFS_PARM1);
-	int count = G_FLOAT (pr, OFS_PARM2);
+	int count = G_INT (pr, OFS_PARM2);
 
-	G_FLOAT (pr, OFS_RETURN) = write (handle, buffer, count);
+	G_INT (pr, OFS_RETURN) = write (handle, buffer, count);
 }
 
 static void
-bi_seek (progs_t *pr)	// FIXME: make INT when qc int
+bi_seek (progs_t *pr)
 {
 	int handle = G_INT (pr, OFS_PARM0);
-	int pos = G_FLOAT (pr, OFS_PARM1);
-	int whence = G_FLOAT (pr, OFS_PARM2);
+	int pos = G_INT (pr, OFS_PARM1);
+	int whence = G_INT (pr, OFS_PARM2);
 
-	G_FLOAT (pr, OFS_RETURN) = lseek (handle, pos, whence);
+	G_INT (pr, OFS_RETURN) = lseek (handle, pos, whence);
 }
 
 static void

@@ -32,6 +32,7 @@ static hashtab_t  *field_imm_defs;
 static hashtab_t  *func_imm_defs;
 static hashtab_t  *pointer_imm_defs;
 static hashtab_t  *quaternion_imm_defs;
+static hashtab_t  *integer_imm_defs;
 
 static const char *
 string_imm_get_key (void *_def, void *unused)
@@ -176,32 +177,39 @@ PR_ReuseConstant (expr_t *expr, def_t *def)
 		func_imm_defs = Hash_NewTable (16381, int_imm_get_key, 0, "func");
 		pointer_imm_defs = Hash_NewTable (16381, int_imm_get_key, 0, "pointer");
 		quaternion_imm_defs = Hash_NewTable (16381, quaternion_imm_get_key, 0, 0);
+		integer_imm_defs = Hash_NewTable (16381, int_imm_get_key, 0, "integer");
 	}
 	switch (e.type) {
 		case ex_entity:
-			sprintf (rep, "\001entity:%08X\001", e.e.int_val);
+			sprintf (rep, "\001entity:%08X\001", e.e.integer_val);
 			tab = float_imm_defs;
 			type = &type_entity;
 			break;
 		case ex_field:
-			sprintf (rep, "\001field:%08X\001", e.e.int_val);
+			sprintf (rep, "\001field:%08X\001", e.e.integer_val);
 			tab = float_imm_defs;
 			type = &type_field;
 			break;
 		case ex_func:
-			sprintf (rep, "\001func:%08X\001", e.e.int_val);
+			sprintf (rep, "\001func:%08X\001", e.e.integer_val);
 			tab = float_imm_defs;
 			type = &type_function;
 			break;
 		case ex_pointer:
-			sprintf (rep, "\001pointer:%08X\001", e.e.int_val);
+			sprintf (rep, "\001pointer:%08X\001", e.e.integer_val);
 			tab = pointer_imm_defs;
 			type = &type_pointer;
 			break;
 		case ex_integer:
-			e.e.float_val = e.e.int_val; //FIXME want ints rather than floats
+			if (!def || def->type != &type_float) {
+				sprintf (rep, "\001integer:%08X\001", e.e.integer_val);
+				tab = integer_imm_defs;
+				type = &type_integer;
+				break;
+			}
+			e.e.float_val = e.e.integer_val;
 		case ex_float:
-			sprintf (rep, "\001float:%08X\001", e.e.int_val);
+			sprintf (rep, "\001float:%08X\001", e.e.integer_val);
 			tab = float_imm_defs;
 			type = &type_float;
 			break;
@@ -258,7 +266,7 @@ PR_ReuseConstant (expr_t *expr, def_t *def)
 	cn->initialized = 1;
 	// copy the immediate to the global area
 	if (e.type == ex_string)
-		e.e.int_val = CopyString (e.e.string_val);
+		e.e.integer_val = CopyString (e.e.string_val);
 
 	memcpy (pr_globals + cn->ofs, &e.e, 4 * type_size[type->type]);
 

@@ -22,7 +22,7 @@ void BI_Init (progs_t *progs);
 extern char *type_name[];
 extern cvar_t *developer;
 
-extern float *read_result; //FIXME: eww
+extern int *read_result; //FIXME: eww
 
 int
 main ()
@@ -101,7 +101,7 @@ main ()
 	}
 	printf ("\n");
 #endif
-	read_result = (float*)PR_GetGlobalPointer (&progs, "read_result");
+	read_result = (int*)PR_GetGlobalPointer (&progs, "read_result");
 	main_func = PR_GetFunctionIndex (&progs, "main");
 	PR_ExecuteProgram (&progs, main_func);
 	return G_FLOAT (&progs, OFS_RETURN);
