@@ -222,8 +222,6 @@ ReuseConstant (expr_t *expr, def_t *def)
 	memcpy (&search.i, &e.e, sizeof (search.i));
 	imm = (immediate_t *) Hash_FindElement (tab, &search);
 	if (imm) {
-		if (imm->i.integer_val != e.e.integer_val)
-			notice (&e, "%08x %08x", imm->i.integer_val, e.e.integer_val);
 		cn = imm->def;
 		if (def) {
 			free_location (def);
