@@ -61,6 +61,7 @@ static struct option const long_options[] = {
 	{"hullnum",		required_argument,	0, 'H'},
 	{"subdivide",	required_argument,	0, 's'},	
 	{"wadpath",		required_argument,	0, 'w'},
+	{"watervis",	no_argument,		0, 'W'},
 	{NULL, 0, NULL, 0}
 };
 
@@ -78,6 +79,7 @@ static const char *short_options =
 	"H:"	// hullnum
 	"s:"	// subdivide
 	"w:"	// wadpath
+	"W"		// watervis
 	;
 
 
@@ -99,8 +101,10 @@ usage (int status)
 		"    -u, --usehulls            Use the existing hull files\n"
 		"    -H, --hullnum [num]\n"
 		"    -s, --subdivide [size]\n"
-		"    -w, --wadpath [path]      semicolon sparated set of dirs to \n"
-		"                              search for texture wads\n");
+		"    -w, --wadpath [path]      semicolon sparated set of dirs to\n"
+		"                              search for texture wads\n"
+		"    -W, --watervis            allow transparent liquid surfaces\n"
+	);
 	exit (status);
 }
 
@@ -155,6 +159,9 @@ DecodeArgs (int argc, char **argv)
 				break;
 			case 'w':					// wadpath
 				options.wadpath = optarg;
+				break;
+			case 'W':					// watervis
+				options.watervis = true;
 				break;
 			default:
 				usage (1);

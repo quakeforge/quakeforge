@@ -39,6 +39,7 @@ typedef struct {
 	qboolean	noclip;
 	qboolean	onlyents;
 	qboolean	usehulls;
+	qboolean	watervis;
 	int			hullnum;
 	int			subdivide_size;
 	char		*mapfile;

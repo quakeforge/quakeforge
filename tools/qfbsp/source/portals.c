@@ -330,7 +330,6 @@ int         num_visleafs;				// leafs the player can be in
 int         num_visportals;
 int         num_realleafs;
 
-//FIXME make work with transparent water
 static int
 HasContents (node_t *n, int cont)
 {
@@ -363,6 +362,10 @@ SameContents (node_t *n1, node_t *n2)
 {
 	if (n1->contents == CONTENTS_SOLID || n2->contents == CONTENTS_SOLID)
 		return 0;
+	if (n1->contents == CONTENTS_SKY || n2->contents == CONTENTS_SKY)
+		return 0;
+	if (options.watervis)	//FIXME be more picky?
+		return 1;
 	if (n1->detail && n2->detail)
 		ShareContents (n1, n2);
 	if (n1->detail)
