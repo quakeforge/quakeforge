@@ -28,8 +28,15 @@
 
 - (void) setBasePos: (integer) x y: (integer) y
 {
-	xabs = xpos + x;
-	yabs = ypos + y;
+	local Point point = [[Point alloc] initWithComponents:x :y];
+	[self setBasePos:point];
+	[point dealloc];
+}
+
+- (void) setBasePos: (Point)pos
+{
+	xabs = xpos + pos.x;
+	yabs = ypos + pos.y;
 }
 
 -(void) draw

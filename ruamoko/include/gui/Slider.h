@@ -1,5 +1,5 @@
-#ifndef __ruamoko_Slider_h
-#define __ruamoko_Slider_h
+#ifndef __ruamoko_gui_Slider_h
+#define __ruamoko_gui_Slider_h
 
 #include "View.h"
 
@@ -16,4 +16,4 @@
 
 @end
 
-#endif //__ruamoko_Slider_h
+#endif //__ruamoko_gui_Slider_h

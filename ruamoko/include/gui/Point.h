@@ -1,5 +1,5 @@
-#ifndef __ruamoko_Point_h
-#define __ruamoko_Point_h
+#ifndef __ruamoko_gui_Point_h
+#define __ruamoko_gui_Point_h
 
 #include "Object.h"
 
@@ -23,4 +23,4 @@
 - (void) setPoint: (Point)aPoint;
 @end
 
-#endif //__ruamoko_Point_h
+#endif //__ruamoko_gui_Point_h

@@ -11,7 +11,7 @@
 }
 - (id) init;
 - (id) initWithIncrement: (integer) inc;
-- (void) free;
+- (void) dealloc;
 - (id) getItemAt: (integer) index;
 - (void) setItemAt: (integer) index item:(id) item;
 - (void) addItem: (id) item;

@@ -1,6 +1,24 @@
 #ifndef __options_util_h
 #define __options_util_h
 
+#include "gui/Group.h"
+
+@class Text;
+@class Slider;
+
+@interface CvarRange : Group
+{
+	Text title;
+	Text value;
+	Slider slider;
+	string name;
+	float min, max, step;
+}
+-(id)initWithBounds:(Rect)aRect title:(string)_title cvar:(string)cvname min:(float)_min max:(float)_max step:(float)_step;
+-(void)inc;
+-(void)dec;
+@end
+
 @extern void (integer x, integer y) opt_cursor;
 @extern void (integer x, integer y, integer spacing, string spacechar, string label, string valstr) draw_item;
 @extern void (integer x, integer y, integer spacing, string label, string valstr) draw_val_item;

@@ -1,7 +1,7 @@
-#ifndef __ruamoko_InputLine_h
-#define __ruamoko_InputLine_h
+#ifndef __ruamoko_gui_InputLine_h
+#define __ruamoko_gui_InputLine_h
 
-#include "Object.h"
+#include "View.h"
 
 struct _inputline_t = {};	// opaque type :)
 typedef struct _inputline_t [] inputline_t;
@@ -23,8 +23,9 @@ struct il_data_t = {
 };
 
 @class Rect;
+@class Point;
 
-@interface InputLine: Object
+@interface InputLine: View
 {
 	struct il_data_t   control;
 	inputline_t	il;
@@ -34,7 +35,7 @@ struct il_data_t = {
 //-initAt:(Point)p HistoryLines:(integer)l LineSize:(integer)s PromptChar:(integer)prompt;
 - (void) free;
 
-- (void) setBasePos: (integer) x y: (integer) y;
+- (void) setBasePos: (Point)pos;
 - (void) setWidth: (integer)width;
 - (void) draw: (BOOL)cursor;
 
@@ -45,4 +46,4 @@ struct il_data_t = {
 
 @end
 
-#endif //__ruamoko_inputline_h
+#endif //__ruamoko_gui_InputLine_h

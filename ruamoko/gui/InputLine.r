@@ -33,10 +33,11 @@ string (inputline_t il) InputLine_GetText = #0;
 	[super free];
 }
 
-- (void) setBasePos: (integer) x y: (integer) y
+- (void) setBasePos: (Point)pos
 {
-	control.xbase = x;
-	control.ybase = y;
+	[super setBasePos:pos];
+	control.xbase = pos.x;
+	control.ybase = pos.y;
 }
 
 - (void) setWidth: (integer)visibleWidth

@@ -39,9 +39,12 @@
 #include "gui/Rect.h"
 #include "gui/Slider.h"
 
+void () traceon = #29;
+void () traceoff = #30;
+
 Slider gamma_slider;
 Slider viewsize_slider;
-Slider mouse_amp_slider;
+CvarRange mouse_amp_range;
 Slider volume_slider;
 Slider bgmvolume_slider;
 
@@ -313,8 +316,6 @@ MENU_audio_options =
 integer (string text, integer key) 
 CB_control_options =
 {
-	local float val;
-
 	switch (text) {
 	    case "in_grab":	    
 			Cbuf_AddText ("toggle in_grab\n");
@@ -356,12 +357,10 @@ CB_control_options =
 	}
 	switch (text) {
 		case "mouseamp":
-			val = cvar("in_mouse_amp");
-			val = min_max_cnt(MIN_MOUSE_AMP, MAX_MOUSE_AMP, MOUSE_AMP_STEP, val,
-				(key == QFK_RIGHT) && (key != QFK_LEFT));
-			cvar_set("in_mouse_amp", ftos(val));
-			[mouse_amp_slider setIndex:to_percentage (MIN_MOUSE_AMP,
-													  MAX_MOUSE_AMP, val)];
+			if ((key == QFK_RIGHT) && (key != QFK_LEFT))
+				[mouse_amp_range inc];
+			else
+				[mouse_amp_range dec];
 			break;
 	}
 	return 0;
@@ -391,11 +390,10 @@ DRAW_control_options =
 				   cvar ("m_pitch") < 0 ?  "On" : "Off");
 	bar_pad = y + 90;
 
-	Draw_String (x + 70, bar_pad + 10, "Mouse amp:");
-	[mouse_amp_slider setBasePos:x y:y];
-	[mouse_amp_slider draw];
-	Draw_String (x + 150 + (12 + 4) * 8 , bar_pad + 10,
-				 ftos (cvar ("in_mouse_amp")));
+	traceon ();
+	[mouse_amp_range setBasePos:x y:y];
+	traceoff ();
+	[mouse_amp_range draw];
 
 	draw_val_item (x + 70, y + 110, spacing, "Freelook",
 				   cvar("freelook") ? "On" : "Off");
@@ -422,9 +420,9 @@ MENU_control_options =
 	Menu_CenterPic (160, 4, "gfx/p_option.lmp");
 
 	Menu_Draw (DRAW_control_options);
-	mouse_amp_slider = [[Slider alloc] initWithBounds:[[Rect alloc] initWithComponents:158 :100 :14 * 8 :8] size:100];
-	[mouse_amp_slider setIndex: to_percentage (MIN_MOUSE_AMP, MAX_MOUSE_AMP,
-											   cvar("in_mouse_amp"))];
+	traceon ();
+	mouse_amp_range = [[CvarRange alloc] initWithBounds:[[Rect alloc] initWithComponents:70 :100 :232 :8] title:"Mouse amp:" cvar:"in_mouse_amp" min:MIN_MOUSE_AMP max:MAX_MOUSE_AMP step:MOUSE_AMP_STEP];
+	traceoff ();
 
 	MENU_control_binding ();
 

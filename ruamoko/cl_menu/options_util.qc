@@ -28,6 +28,70 @@
 #include "system.h"
 #include "string.h"
 
+#include "gui/Text.h"
+#include "gui/Rect.h"
+#include "gui/Slider.h"
+#include "options_util.h"
+
+@implementation CvarRange
+
+-(void)update
+{
+	local float val = cvar (name);
+	[slider setIndex: to_percentage(min, max, val)];
+	[value setText:ftos (val)];
+}
+
+-(id)initWithBounds:(Rect)aRect title:(string)_title cvar:(string)cvname min:(float)_min max:(float)_max step:(float)_step
+{
+	local Rect rect;
+
+	self = [super initWithBounds:aRect];
+	
+	rect = [[Rect alloc] initWithComponents:0 :0 :(integer)strlen (_title) * 8 :8];
+	title = [[Text alloc] initWithBounds:rect text:_title];
+
+	rect.origin.x += rect.size.width + 8;
+	rect.size.width = ((_max - _min) / _step + 2) * 8 / 2;
+	slider = [[Slider alloc] initWithBounds:rect size:100];
+
+	rect.origin.x += rect.size.width + 8;
+	rect.size.width = xlen - rect.origin.x;
+	value = [[Text alloc] initWithBounds:rect];
+
+	[self addView:title];
+	[self addView:slider];
+	[self addView:value];
+
+	name = str_new ();
+	str_copy (name, cvname);
+	min = _min;
+	max = _max;
+	step = _step;
+
+	[self update];
+
+	return self;
+}
+
+-(void)inc
+{
+	local float val = cvar (name);
+	val = min_max_cnt (min, max, step, val, 1);
+	cvar_set (name, ftos (val));
+	[self update];
+}
+
+-(void)dec
+{
+	local float val = cvar (name);
+	val = min_max_cnt (min, max, step, val, 0);
+	cvar_set (name, ftos (val));
+	[self update];
+}
+
+@end
+
 /*
 	opt_cursor
 

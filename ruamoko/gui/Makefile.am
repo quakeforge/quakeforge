@@ -27,7 +27,7 @@ EXTRA_LIBRARIES= $(gui_libs)
 	$(QFCC) $(QCFLAGS) $(QCPPFLAGS) -c -o $@ $<
 
 libgui_a_SOURCES= \
-	InputLine.r Point.r Rect.r Size.r Slider.r View.r
+	Group.r InputLine.r Point.r Rect.r Size.r Slider.r Text.r View.r
 libgui_a_AR=	$(PAK) -cf
 
 CLEANFILES=	*.qfo *.o

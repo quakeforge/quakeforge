@@ -1,5 +1,5 @@
-#ifndef __ruamoko_Rect_h
-#define __ruamoko_Rect_h
+#ifndef __ruamoko_gui_Rect_h
+#define __ruamoko_gui_Rect_h
 
 #include "Object.h"
 #include "gui/Point.h"
@@ -40,4 +40,4 @@
 
 @end
 
-#endif //__ruamoko_Rect_h
+#endif //__ruamoko_gui_Rect_h
