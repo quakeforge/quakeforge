@@ -177,12 +177,6 @@ typedef struct net_svc_soundlist_s
 	byte		nextsound;
 } net_svc_soundlist_t;
 
-typedef struct net_svc_delta_s
-{
-	unsigned short	word;
-	entity_state_t	state;
-} net_svc_delta_t;
-
 typedef struct net_svc_packetentities_s
 {
 	int				numwords, numdeltas;
