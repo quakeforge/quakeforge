@@ -59,18 +59,11 @@ R_TimeGraph (void)
 
 	r_time2 = Sys_DoubleTime ();
 
-	a = (r_time2 - r_time1) / 0.01;
-//	a = fabs(mouse_y * 0.05);
-//	a = (int)((r_refdef.vieworg[2] + 1024)/1)%(int)r_graphheight->value;
-//	a = (int)((pmove.velocity[2] + 500)/10);
-//	a = fabs(velocity[0])/20;
-//	a = ((int)fabs(origin[0])/8)%20;
-//	a = (cl.idealpitch + 30)/5;
-//	a = (int)(cl.simangles[YAW] * 64/360) & 63;
+//	a = (r_time2 - r_time1) / 0.01;
 	a = graphval;
 
 	r_timings[timex] = a;
-	a = timex;
+//	a = timex;
 
 	l = MAX_TIMINGS;
 	if (l > r_refdef.vrect.width)
@@ -78,7 +71,8 @@ R_TimeGraph (void)
 	x = r_refdef.vrect.width - l;
 	a = timex - l;
 	if (a < 0) {
-		R_LineGraph (x, r_refdef.vrect.height - 2, &r_timings[a + MAX_TIMINGS], -a);
+		R_LineGraph (x, r_refdef.vrect.height - 2,
+					 &r_timings[a + MAX_TIMINGS], -a);
 		x -= a;
 		l += a;
 		a = 0;
@@ -87,7 +81,6 @@ R_TimeGraph (void)
 
 	timex = (timex + 1) % MAX_TIMINGS;
 }
-
 
 void
 R_ZGraph (void)

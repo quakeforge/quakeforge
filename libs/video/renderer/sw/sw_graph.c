@@ -1,5 +1,5 @@
 /*
-	r_misc.c
+	sw_graph.c
 
 	(description)
 
@@ -45,11 +45,8 @@
 void
 R_LineGraph (int x, int y, int *h_vals, int count)
 {
-	int         i;
+	int         h, i, s, color;
 	byte       *dest;
-	int         s;
-	int         color;
-	int         h;
 
 // FIXME: should be disabled on no-buffer adapters, or should be in the driver
 	s = r_graphheight->int_val;

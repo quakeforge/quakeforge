@@ -209,7 +209,7 @@ SCR_DrawCenterString (void)
 				break;
 		x = (vid.width - l * 8) / 2;
 		for (j = 0; j < l; j++, x += 8) {
-			Draw_Character8 (x, y, start[j]);
+			Draw_Character (x, y, start[j]);
 			if (!remaining--)
 				return;
 		}
@@ -440,7 +440,7 @@ SCR_DrawFPS (int swap)
 
 	x = swap ? vid.width - ((strlen (st) * 8) + i) : i;
 	y = vid.height - sb_lines - 8;
-	Draw_String8 (x, y, st);
+	Draw_String (x, y, st);
 }
 
 /*
@@ -477,7 +477,7 @@ SCR_DrawTime (int swap)
 	// Print it at far left/right of screen
 	x = swap ? (vid.width - ((strlen (st) * 8) + 8)) : 8;
 	y = vid.height - (sb_lines + 8);
-	Draw_String8 (x, y, st);
+	Draw_String (x, y, st);
 }
 
 void
@@ -742,7 +742,7 @@ SCR_DrawNotifyString (void)
 				break;
 		x = (vid.width - l * 8) / 2;
 		for (j = 0; j < l; j++, x += 8)
-			Draw_Character8 (x, y, start[j]);
+			Draw_Character (x, y, start[j]);
 
 		y += 8;
 

@@ -37,26 +37,26 @@
 #ifdef HAVE_STRINGS_H
 # include <strings.h>
 #endif
+#ifdef HAVE_DLOPEN
+# include <dlfcn.h>
+#endif
 
 #include <glide/glide.h>
 #include <glide/sst1vid.h>
 #include <sys/signal.h>
 
-#ifdef HAVE_DLOPEN
-# include <dlfcn.h>
-#endif
-
-#include "compat.h"
 #include "QF/console.h"
 #include "QF/cvar.h"
 #include "QF/qargs.h"
 #include "QF/qendian.h"
-#include "sbar.h"
-#include "QF/GL/extensions.h"
-#include "QF/GL/funcs.h"
 #include "QF/sys.h"
 #include "QF/va.h"
 #include "QF/vid.h"
+#include "QF/GL/extensions.h"
+#include "QF/GL/funcs.h"
+
+#include "compat.h"
+#include "sbar.h"
 #include "r_cvar.h"
 
 #define WARP_WIDTH              320
@@ -94,7 +94,6 @@ int         VID_options_items = 0;
 extern void GL_Init_Common (void);
 extern void VID_Init8bitPalette (void);
 
-/*-----------------------------------------------------------------------*/
 
 void
 VID_Shutdown (void)
@@ -127,9 +126,6 @@ InitSig (void)
 	signal (SIGTERM, signal_handler);
 }
 
-/*
-	GL_Init
-*/
 void
 GL_Init (void)
 {
@@ -220,7 +216,6 @@ static int  resolutions[][3] = {
 
 #define NUM_RESOLUTIONS		(sizeof (resolutions) / (sizeof (int) * 3))
 
-
 static int
 findres (int *width, int *height)
 {
@@ -253,7 +248,8 @@ TDFX_BrightenPalette (unsigned char *palette)
 		green = (float) pal[1];
 		blue = (float) pal[2];
 		maxnum = max (red, max (green, blue));
-		somenum = (bound (0.0, (maxnum * tdfx_brighten->value), 255.0) / maxnum);
+		somenum = (bound (0.0, (maxnum * tdfx_brighten->value), 255.0) /
+				   maxnum);
 		pal[0] = (byte) ((somenum * red) + 0.5);
 		pal[1] = (byte) ((somenum * green) + 0.5);
 		pal[2] = (byte) ((somenum * blue) + 0.5);
@@ -269,16 +265,21 @@ VID_Init (unsigned char *palette)
 
 #ifdef HAVE_DLOPEN
 	if (!(libgl_handle = dlopen (gl_libgl->string, RTLD_NOW))) {
-		Sys_Error ("Can't open OpenGL library \"%s\": %s\n", gl_libgl->string, dlerror());
+		Sys_Error ("Can't open OpenGL library \"%s\": %s\n", gl_libgl->string,
+				   dlerror());
 		return;
 	}
 #else
 # error "No dynamic library support. FIXME."
 #endif
-	fxMesaCreateContext = QFGL_ProcAddress (libgl_handle, "fxMesaCreateContext", true);
-	fxMesaDestroyContext = QFGL_ProcAddress (libgl_handle, "fxMesaDestroyContext", true);
-	fxMesaMakeCurrent = QFGL_ProcAddress (libgl_handle, "fxMesaMakeCurrent", true);
-	fxMesaSwapBuffers = QFGL_ProcAddress (libgl_handle, "fxMesaSwapBuffers", true);
+	fxMesaCreateContext = QFGL_ProcAddress (libgl_handle,
+											"fxMesaCreateContext", true);
+	fxMesaDestroyContext = QFGL_ProcAddress (libgl_handle,
+											 "fxMesaDestroyContext", true);
+	fxMesaMakeCurrent = QFGL_ProcAddress (libgl_handle,
+										  "fxMesaMakeCurrent", true);
+	fxMesaSwapBuffers = QFGL_ProcAddress (libgl_handle,
+										  "fxMesaSwapBuffers", true);
 	
 	QFGL_ProcAddress (NULL, NULL, false);
 	VID_GetWindowSize (640, 480);
@@ -286,8 +287,8 @@ VID_Init (unsigned char *palette)
 
 	vid.maxwarpwidth = WARP_WIDTH;
 	vid.maxwarpheight = WARP_HEIGHT;
-	vid.colormap = vid_colormap;
-	vid.fullbright = 256 - LittleLong (*((int *) vid.colormap + 2048));
+	vid.colormap8 = vid_colormap;
+	vid.fullbright = 256 - LittleLong (*((int *) vid.colormap8 + 2048));
 
 	// interpret command-line params
 
@@ -354,8 +355,10 @@ VID_Init (unsigned char *palette)
 void
 VID_Init_Cvars (void)
 {
-	vid_system_gamma = Cvar_Get ("vid_system_gamma", "1", CVAR_ARCHIVE, NULL, "Use system gamma control if available");
-	tdfx_brighten = Cvar_Get ("tdfx_brighten", "0", CVAR_ROM, NULL, "Brighten 3DFX palette");
+	vid_system_gamma = Cvar_Get ("vid_system_gamma", "1", CVAR_ARCHIVE, NULL,
+								 "Use system gamma control if available");
+	tdfx_brighten = Cvar_Get ("tdfx_brighten", "0", CVAR_ROM, NULL,
+							  "Brighten 3DFX palette");
 }
 
 void
@@ -387,4 +390,3 @@ VID_SetGamma (double gamma)
 	grGammaCorrectionValue((float) gamma);
 	return true;
 }
-

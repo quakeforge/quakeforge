@@ -52,7 +52,6 @@
 #include <vga.h>
 
 #include "QF/cmd.h"
-#include "compat.h"
 #include "QF/console.h"
 #include "QF/cvar.h"
 #include "QF/input.h"
@@ -60,6 +59,8 @@
 #include "QF/qendian.h"
 #include "QF/sys.h"
 #include "QF/vid.h"
+
+#include "compat.h"
 
 void        VGA_UpdatePlanarScreen (void *srcbuffer);
 
@@ -79,7 +80,6 @@ static cvar_t *vid_redrawfull;
 static cvar_t *vid_waitforrefresh;
 
 static char *framebuffer_ptr;
-
 
 static byte backingbuf[48 * 24];
 
@@ -146,7 +146,6 @@ D_BeginDirectRect (int x, int y, byte * pbitmap, int width, int height)
 	}
 }
 
-
 void
 D_EndDirectRect (int x, int y, int width, int height)
 {
@@ -199,7 +198,6 @@ D_EndDirectRect (int x, int y, int width, int height)
 	}
 }
 
-
 static void
 VID_DescribeMode_f (void)
 {
@@ -218,7 +216,6 @@ VID_DescribeMode_f (void)
 	}
 }
 
-
 static void
 VID_DescribeModes_f (void)
 {
@@ -235,10 +232,6 @@ VID_DescribeModes_f (void)
 	}
 }
 
-
-/*
-	VID_NumModes
-*/
 static int
 VID_NumModes (void)
 {
@@ -250,13 +243,11 @@ VID_NumModes (void)
 	return (i1);
 }
 
-
 static void
 VID_NumModes_f (void)
 {
 	Con_Printf ("%d modes\n", VID_NumModes ());
 }
-
 
 static void
 VID_Debug_f (void)
@@ -266,7 +257,6 @@ VID_Debug_f (void)
 	Con_Printf ("bpp: %d\n", modes[current_mode].bytesperpixel * 8);
 	Con_Printf ("vid.aspect: %f\n", vid.aspect);
 }
-
 
 static void
 VID_InitModes (void)
@@ -291,7 +281,6 @@ VID_InitModes (void)
 		}
 	}
 }
-
 
 static int
 get_mode (char *name, int width, int height, int depth)
@@ -326,7 +315,6 @@ get_mode (char *name, int width, int height, int depth)
 	return i;
 }
 
-
 void
 VID_Shutdown (void)
 {
@@ -340,7 +328,6 @@ VID_Shutdown (void)
 	}
 	svgalib_inited = 0;
 }
-
 
 void
 VID_SetPalette (byte * palette)
@@ -365,7 +352,6 @@ VID_SetPalette (byte * palette)
 		}
 	}
 }
-
 
 int
 VID_SetMode (int modenum, unsigned char *palette)
@@ -398,8 +384,8 @@ VID_SetMode (int modenum, unsigned char *palette)
 	}
 
 	vid.aspect = ((float) vid.height / (float) vid.width) * (320.0 / 240.0);
-	vid.colormap = (pixel_t *) vid_colormap;
-	vid.fullbright = 256 - LittleLong (*((int *) vid.colormap + 2048));
+	vid.colormap8 = (byte *) vid_colormap;
+	vid.fullbright = 256 - LittleLong (*((int *) vid.colormap8 + 2048));
 	vid.conrowbytes = vid.rowbytes;
 	vid.conwidth = vid.width;
 	vid.conheight = vid.height;
@@ -447,7 +433,6 @@ comefrom_background (void)
 	svgalib_backgrounded = 0;
 }
 
-
 void
 VID_Init (unsigned char *palette)
 {
@@ -475,10 +460,13 @@ VID_Init (unsigned char *palette)
 
 		VID_InitModes ();
 
-		Cmd_AddCommand ("vid_nummodes", VID_NumModes_f, "Reports the total number of video modes available.");
-		Cmd_AddCommand ("vid_describemode", VID_DescribeMode_f, "Report information on specified video mode, default is current.\n"
-			"(vid_describemode (mode))");
-		Cmd_AddCommand ("vid_describemodes", VID_DescribeModes_f, "Report information on all video modes.");
+		Cmd_AddCommand ("vid_nummodes", VID_NumModes_f, "Reports the total "
+						"number of video modes available.");
+		Cmd_AddCommand ("vid_describemode", VID_DescribeMode_f, "Report "
+						"information on specified video mode, default is "
+						"current.\n(vid_describemode (mode))");
+		Cmd_AddCommand ("vid_describemodes", VID_DescribeModes_f, "Report "
+						"information on all video modes.");
 		Cmd_AddCommand ("vid_debug", VID_Debug_f, "FIXME: No Description");
 
 		/* Interpret command-line params */
@@ -527,7 +515,6 @@ VID_Init_Cvars ()
 	vid_system_gamma = Cvar_Get ("vid_system_gamma", "1", CVAR_ARCHIVE, NULL,
 								 "Use system gamma control if available");
 }
-
 
 void
 VID_Update (vrect_t *rects)
@@ -594,7 +581,6 @@ VID_Update (vrect_t *rects)
 	}
 }
 
-
 static int  dither = 0;
 
 void
@@ -608,7 +594,6 @@ VID_DitherOn (void)
 	}
 }
 
-
 void
 VID_DitherOff (void)
 {
@@ -620,10 +605,6 @@ VID_DitherOff (void)
 	}
 }
 
-
-/*
-	VID_ModeInfo
-*/
 char       *
 VID_ModeInfo (int modenum)
 {
@@ -631,21 +612,19 @@ VID_ModeInfo (int modenum)
 	static char modestr[40];
 
 	if (modenum == 0) {
-		snprintf (modestr, sizeof (modestr), "%d x %d, %d bpp",
-				  vid.width, vid.height, modes[current_mode].bytesperpixel * 8);
+		snprintf (modestr, sizeof (modestr), "%d x %d, %d bpp", vid.width,
+				  vid.height, modes[current_mode].bytesperpixel * 8);
 		return (modestr);
 	} else {
 		return (badmodestr);
 	}
 }
 
-
 void
 VID_ExtraOptionDraw (unsigned int options_draw_cursor)
 {
 	/* No extra option menu items yet */
 }
-
 
 void
 VID_ExtraOptionCmd (int option_cursor)

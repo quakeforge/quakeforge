@@ -55,19 +55,20 @@ extern int skin_textures;
 extern int skin_fb_textures;
 
 struct tex_s;
+struct tex_s *Skin_Cache (skin_t *skin);
 struct player_info_s;
 struct model_s;
 
 void	Skin_Find (struct player_info_s *sc);
-struct tex_s *Skin_Cache (skin_t *skin);
 void	Skin_Flush (void);
 int		Skin_Init_Textures (int base);
 void	Skin_Init (void);
 void	Skin_Init_Cvars (void);
 void	Skin_Init_Translation (void);
-void	Skin_Set_Translate (int top, int bottom, byte *dest);
+void	Skin_Set_Translate (int top, int bottom, void *_dest);
 void	Skin_Do_Translation (skin_t *player_skin, int slot, skin_t *skin);
-void	Skin_Do_Translation_Model (struct model_s *model, int skinnum, int slot, skin_t *skin);
+void	Skin_Do_Translation_Model (struct model_s *model, int skinnum,
+								   int slot, skin_t *skin);
 void	Skin_Process (skin_t *skin, struct tex_s *);
 
 skin_t	*Skin_NewTempSkin (void);

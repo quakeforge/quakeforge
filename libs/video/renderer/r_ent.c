@@ -62,7 +62,7 @@ R_Init_Entity (entity_t *ent)
 {
 	memset (ent, 0, sizeof (*ent));
 
-	ent->colormap = vid.colormap;
+	ent->colormap = vid.colormap8;
 	ent->glow_size = 0;
 	ent->glow_color = 254;
 	ent->alpha = 1;

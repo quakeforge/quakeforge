@@ -1,5 +1,5 @@
 /*
-	r_alias.c
+	sw_ralias.c
 
 	routines for setting up to draw alias models
 

@@ -85,8 +85,8 @@ CL_NetGraph (int swap)
 	y = vid.height - sb_lines - 24 - r_graphheight->int_val + 7;
 	snprintf (st, sizeof (st), "%3i%% packet loss", lost);
 	if (swap) {
-		Draw_String8 (vid.width - ((strlen (st) * 8) + 8), y, st);
+		Draw_String (vid.width - ((strlen (st) * 8) + 8), y, st);
 	} else {
-		Draw_String8 (8, y, st);
+		Draw_String (8, y, st);
 	}
 }

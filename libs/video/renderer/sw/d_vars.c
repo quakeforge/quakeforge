@@ -33,7 +33,7 @@
 #include "QF/qtypes.h"
 
 #ifdef PIC
-#undef USE_INTEL_ASM //XXX asm pic hack
+# undef USE_INTEL_ASM //XXX asm pic hack
 #endif
 
 #ifndef USE_INTEL_ASM
@@ -52,9 +52,9 @@ float       d_sdivzorigin, d_tdivzorigin, d_ziorigin;
 
 fixed16_t   sadjust, tadjust, bbextents, bbextentt;
 
-pixel_t    *cacheblock;
+byte       *cacheblock;
 int         cachewidth;
-pixel_t    *d_viewbuffer;
+byte       *d_viewbuffer;
 short      *d_pzbuffer;
 unsigned int d_zrowbytes;
 unsigned int d_zwidth;

@@ -119,7 +119,7 @@ D_DrawTurbulent8Span (void)
 #endif // !USE_INTEL_ASM
 
 void
-Turbulent8 (espan_t *pspan)
+Turbulent (espan_t *pspan)
 {
 	int         count;
 	fixed16_t   snext, tnext;

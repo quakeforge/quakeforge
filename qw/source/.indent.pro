@@ -147,7 +147,6 @@
 -T particle_t
 -T pcx_t
 -T physent_t
--T pixel_t
 -T plane_t
 -T player_info_s
 -T player_info_t

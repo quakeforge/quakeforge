@@ -71,6 +71,4 @@ typedef struct mplane_s {
 	byte    pad[2];
 } mplane_t;
 
-typedef	byte	pixel_t;
-
 #endif // __qtypes_h

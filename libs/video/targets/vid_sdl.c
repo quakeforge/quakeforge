@@ -39,13 +39,14 @@
 #include <stdlib.h>
 #include <SDL.h>
 
-#include "compat.h"
 #include "QF/console.h"
 #include "QF/cvar.h"
 #include "QF/qendian.h"
 #include "QF/sys.h"
 #include "QF/va.h"
 #include "QF/vid.h"
+
+#include "compat.h"
 
 #ifdef WIN32
 /* FIXME: this is evil hack to get full DirectSound support with SDL */
@@ -60,8 +61,8 @@ cvar_t     *vid_fullscreen;
 cvar_t      *vid_system_gamma;
 extern viddef_t vid;					// global video state
 
-int         modestate;					// FIXME: just to avoid cross-comp.
-                                                        // errors - remove later
+int         modestate;					// FIXME: just to avoid cross-compile
+										// errors - remove later
 
 // The original defaults
 #define    BASEWIDTH    320
@@ -118,8 +119,8 @@ VID_Init (unsigned char *palette)
 	VGA_height = vid.conheight = vid.height;
 	vid.aspect = ((float) vid.height / (float) vid.width) * (320.0 / 240.0);
 	vid.numpages = 1;
-	vid.colormap = vid_colormap;
-	vid.fullbright = 256 - LittleLong (*((int *) vid.colormap + 2048));
+	vid.colormap8 = vid_colormap;
+	vid.fullbright = 256 - LittleLong (*((int *) vid.colormap8 + 2048));
 	VGA_pagebase = vid.buffer = screen->pixels;
 	VGA_rowbytes = vid.rowbytes = screen->pitch;
 	vid.conbuffer = vid.buffer;
@@ -132,7 +133,6 @@ VID_Init (unsigned char *palette)
 	// initialize the mouse
 	SDL_ShowCursor (0);
 
-
 #ifdef WIN32
         // FIXME: EVIL thing - but needed for win32 until
         // SDL_sound works better - without this DirectSound fails.
@@ -143,7 +143,6 @@ VID_Init (unsigned char *palette)
 #endif
 
 	vid.initialized = true;
-
 }
 
 void
@@ -201,9 +200,6 @@ VID_Update (vrect_t *rects)
 	SDL_UpdateRects (screen, n, sdlrects);
 }
 
-/*
-	D_BeginDirectRect
-*/
 void
 D_BeginDirectRect (int x, int y, byte * pbitmap, int width, int height)
 {
@@ -222,9 +218,6 @@ D_BeginDirectRect (int x, int y, byte * pbitmap, int width, int height)
 	}
 }
 
-/*
-	D_EndDirectRect
-*/
 void
 D_EndDirectRect (int x, int y, int width, int height)
 {

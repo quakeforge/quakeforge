@@ -52,7 +52,7 @@ static byte translate[256];
 static unsigned int translate32[256];
 
 void
-Skin_Set_Translate (int top, int bottom, byte *dest)
+Skin_Set_Translate (int top, int bottom, void *_dest)
 {
 	int         i;
 

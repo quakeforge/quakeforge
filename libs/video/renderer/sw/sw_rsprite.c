@@ -1,5 +1,5 @@
 /*
-	r_sprite.c
+	sw_rsprite.c
 
 	(description)
 

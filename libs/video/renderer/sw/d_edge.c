@@ -194,7 +194,7 @@ D_DrawSurfaces (void)
 					R_MakeSky ();
 				}
 
-				D_DrawSkyScans8 (s->spans);
+				D_DrawSkyScans (s->spans);
 				D_DrawZSpans (s->spans);
 			} else if (s->flags & SURF_DRAWBACKGROUND) {
 				// set up a gradient for the background surface that places
@@ -209,9 +209,8 @@ D_DrawSurfaces (void)
 			} else if (s->flags & SURF_DRAWTURB) {
 				pface = s->data;
 				miplevel = 0;
-				cacheblock = (pixel_t *)
-					((byte *) pface->texinfo->texture +
-					 pface->texinfo->texture->offsets[0]);
+				cacheblock = ((byte *) pface->texinfo->texture +
+							  pface->texinfo->texture->offsets[0]);
 				cachewidth = 64;
 
 				if (s->insubmodel) {
@@ -229,7 +228,7 @@ D_DrawSurfaces (void)
 
 				D_CalcGradients (pface);
 
-				Turbulent8 (s->spans);
+				Turbulent (s->spans);
 				D_DrawZSpans (s->spans);
 
 				if (s->insubmodel) {
@@ -267,7 +266,7 @@ D_DrawSurfaces (void)
 				// FIXME: make this passed in to D_CacheSurface
 				pcurrentcache = D_CacheSurface (pface, miplevel);
 
-				cacheblock = (pixel_t *) pcurrentcache->data;
+				cacheblock = (byte *) pcurrentcache->data;
 				cachewidth = pcurrentcache->width;
 
 				D_CalcGradients (pface);

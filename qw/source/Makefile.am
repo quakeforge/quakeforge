@@ -35,10 +35,9 @@ INCLUDES=	-I$(top_srcdir)/include -I$(top_srcdir)/qw/include
 bin_PROGRAMS=	@QW_TARGETS@
 GLIDE_LIBS= @GLIDE_LIBS@
 
-EXTRA_PROGRAMS= qw-client-3dfx qw-client-fbdev \
-		qw-client-glx qw-client-mgl qw-client-sdl \
-		qw-client-sgl qw-client-svga qw-client-wgl \
-		qw-client-x11 qw-server
+EXTRA_PROGRAMS= qw-client-3dfx qw-client-fbdev qw-client-glx qw-client-mgl \
+		qw-client-sdl qw-client-sdl32 qw-client-sgl qw-client-svga \
+		qw-client-wgl qw-client-x11 qw-server
 
 if ASM_ARCH
 ASM = libasm.la
@@ -50,9 +49,7 @@ noinst_LTLIBRARIES= libqfnet.la $(ASM)
 
 libasm_la_SOURCES = sys_x86.S worlda.S
 
-common_SOURCES= buildnum.c com.c \
-		game.c msg_ucmd.c \
-		pmove.c pmovetst.c \
+common_SOURCES= buildnum.c com.c game.c msg_ucmd.c pmove.c pmovetst.c \
 		net_packetlog.c
 
 common_ldflags= -export-dynamic
@@ -74,10 +71,10 @@ else
 syssv_SRC=	sv_sys_unix.c
 endif
 
-server_SOURCES= crudefile.c sv_ccmds.c sv_console.c sv_cvar.c \
-		sv_ents.c sv_init.c sv_main.c sv_misc.c \
-		sv_model.c sv_move.c sv_nchan.c sv_phys.c sv_pr_cmds.c \
-		sv_progs.c sv_send.c sv_user.c world.c $(syssv_SRC)
+server_SOURCES= crudefile.c sv_ccmds.c sv_console.c sv_cvar.c sv_ents.c \
+		sv_init.c sv_main.c sv_misc.c sv_model.c sv_move.c \
+		sv_nchan.c sv_phys.c sv_pr_cmds.c sv_progs.c sv_send.c \
+		sv_user.c world.c $(syssv_SRC)
 
 qf_server_LIBS= $(top_builddir)/libs/models/libQFmodels.la \
 		$(top_builddir)/libs/gamecode/engine/libQFgamecode.la \
@@ -118,11 +115,17 @@ qw_client_mgl_LDADD=	../../libs/video/renderer/.libs/libQFrenderer_sw.a ../../li
 qw_client_mgl_LDFLAGS=  $(common_ldflags)
 qw_client_mgl_DEPENDENCIES=../../libs/video/renderer/.libs/libQFrenderer_sw.a ../../libs/models/libQFmodels_sw.la ../../libs/video/targets/libQFmgl.la $(client_LIB_DEPS)
 
-# ... Simple DirectMedia Layer, version 1.0 and higher
+# ... Simple DirectMedia Layer, version 1.2 and higher
 qw_client_sdl_SOURCES=	$(common_SOURCES) $(client_SOURCES) cl_sys_sdl.c
 qw_client_sdl_LDADD=	../../libs/video/renderer/.libs/libQFrenderer_sw.a ../../libs/models/libQFmodels_sw.la ../../libs/video/targets/libQFsdl.la $(client_LIBS) $(SDL_LIBS)
 qw_client_sdl_LDFLAGS=  $(common_ldflags)
 qw_client_sdl_DEPENDENCIES=../../libs/video/renderer/.libs/libQFrenderer_sw.a ../../libs/models/libQFmodels_sw.la ../../libs/video/targets/libQFsdl.la $(client_LIB_DEPS)
+
+# ... Simple DirectMedia Layer, version 1.2 and higher
+qw_client_sdl32_SOURCES= $(common_SOURCES) $(client_SOURCES) cl_sys_sdl.c
+qw_client_sdl32_LDADD=	 ../../libs/video/renderer/.libs/libQFrenderer_sw32.a ../../libs/models/libQFmodels_sw32.la ../../libs/video/targets/libQFsdl32.la $(client_LIBS) $(SDL_LIBS)
+qw_client_sdl32_LDFLAGS= $(common_ldflags)
+qw_client_sdl32_DEPENDENCIES=../../libs/video/renderer/.libs/libQFrenderer_sw32.a ../../libs/models/libQFmodels_sw32.la ../../libs/video/targets/libQFsdl32.la $(client_LIB_DEPS)
 
 # ... Linux SVGAlib
 qw_client_svga_SOURCES= $(common_SOURCES) $(client_SOURCES) cl_sys_unix.c
@@ -151,7 +154,7 @@ qw_client_glx_LDADD=	../../libs/video/renderer/libQFrenderer_gl.la ../../libs/mo
 qw_client_glx_LDFLAGS=  $(common_ldflags)
 qw_client_glx_DEPENDENCIES=../../libs/video/renderer/libQFrenderer_gl.la ../../libs/models/libQFmodels_gl.la ../../libs/video/targets/libQFglx.la $(client_LIB_DEPS)
 
-# ... Simple DirectMedia Layer, version 1.1 and higher, in GL mode
+# ... Simple DirectMedia Layer, version 1.2 and higher, in GL mode
 qw_client_sgl_SOURCES=	$(common_SOURCES) $(client_SOURCES) cl_sys_sdl.c
 qw_client_sgl_LDADD=	../../libs/video/renderer/libQFrenderer_gl.la ../../libs/models/libQFmodels_gl.la ../../libs/video/targets/libQFsgl.la $(client_LIBS) $(SDL_LIBS) $(X_LIBS) $(DL_LIBS)
 qw_client_sgl_LDFLAGS=  $(common_ldflags)

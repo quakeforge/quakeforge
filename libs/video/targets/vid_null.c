@@ -55,8 +55,8 @@ VID_Init (unsigned char *palette)
 	vid.maxwarpheight = vid.height = vid.conheight = BASEHEIGHT;
 	vid.aspect = 1.0;
 	vid.numpages = 1;
-	vid.colormap = vid_colormap;
-	vid.fullbright = 256 - LittleLong (*((int *) vid.colormap + 2048));
+	vid.colormap8 = vid_colormap;
+	vid.fullbright = 256 - LittleLong (*((int *) vid.colormap8 + 2048));
 	vid.buffer = vid.conbuffer = vid_buffer;
 	vid.rowbytes = vid.conrowbytes = BASEWIDTH;
 
@@ -79,18 +79,11 @@ VID_Update (vrect_t *rects)
 {
 }
 
-/*
-	D_BeginDirectRect
-*/
 void
 D_BeginDirectRect (int x, int y, byte * pbitmap, int width, int height)
 {
 }
 
-
-/*
-	D_EndDirectRect
-*/
 void
 D_EndDirectRect (int x, int y, int width, int height)
 {

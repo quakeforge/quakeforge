@@ -1199,7 +1199,7 @@ dnl ==================================================================
 
 AC_ARG_WITH(clients,
 	[  --with-clients=<list>   compile clients in <list>;
-                          3dfx,fbdev,glx,mgl,sdl,sgl,svga,wgl,x11],
+                          3dfx,fbdev,glx,mgl,sdl,sdl32,sgl,svga,wgl,x11],
 	clients="$withval",
 	clients="all"
 )
@@ -1209,6 +1209,7 @@ if test "$clients" = "all"; then
 	ENABLE_GLX=yes
 	ENABLE_MGL=yes
 	ENABLE_SDL=yes
+	ENABLE_SDL32=yes
 	ENABLE_SGL=yes
 	ENABLE_SVGA=yes
 	ENABLE_WGL=yes
@@ -1219,6 +1220,7 @@ else
 	ENABLE_GLX=no
 	ENABLE_MGL=no
 	ENABLE_SDL=no
+	ENABLE_SDL32=no
 	ENABLE_SGL=no
 	ENABLE_SVGA=no
 	ENABLE_WGL=no
@@ -1240,6 +1242,9 @@ else
 				;;
 			sdl)
 				ENABLE_SDL=yes
+				;;
+			sdl32)
+				ENABLE_SDL32=yes
 				;;
 			sgl)
 				ENABLE_SGL=yes
@@ -1274,8 +1279,10 @@ VID_TARGETS=""
 BUILD_SND_RENDERER=no
 BUILD_GL=no
 BUILD_SW=no
+BUILD_SW32=no
 CAN_BUILD_GL=no
 CAN_BUILD_SW=no
+CAN_BUILD_SW32=no
 
 HAVE_3DFX=no
 HAVE_GLX=no
@@ -1330,6 +1337,14 @@ if test "x$HAVE_SDL" = xyes; then
 		BUILD_SW=yes
 	fi
 	CAN_BUILD_SW=yes
+	if test "x$ENABLE_SDL32" = xyes; then
+		QW_TARGETS="$QW_TARGETS qw-client-sdl32\$(EXEEXT)"
+		NQ_TARGETS="$NQ_TARGETS nq-sdl32\$(EXEEXT)"
+		CL_TARGETS="$CL_TARGETS SDL32"
+		VID_TARGETS="$VID_TARGETS libQFsdl32.la"
+		BUILD_SW32=yes
+	fi
+	CAN_BUILD_SW32=yes
 fi
 if test "x$HAVE_SGL" = xyes; then
 	if test "x$ENABLE_SGL" = xyes; then
@@ -1378,6 +1393,7 @@ fi
 
 AC_SUBST(CAN_BUILD_GL)
 AC_SUBST(CAN_BUILD_SW)
+AC_SUBST(CAN_BUILD_SW32)
 
 AC_SUBST(HAVE_3DFX)
 AC_SUBST(HAVE_FBDEV)
@@ -1437,6 +1453,7 @@ AC_SUBST(VID_TARGETS)
 AM_CONDITIONAL(BUILD_SND_RENDERER, test "$BUILD_SND_RENDERER" = "yes")
 AM_CONDITIONAL(BUILD_GL, test "$BUILD_GL" = "yes")
 AM_CONDITIONAL(BUILD_SW, test "$BUILD_SW" = "yes")
+AM_CONDITIONAL(BUILD_SW32, test "$BUILD_SW32" = "yes")
 
 dnl Output files
 AC_OUTPUT(
@@ -1468,6 +1485,7 @@ AC_OUTPUT(
 	libs/video/renderer/Makefile
 	libs/video/renderer/gl/Makefile
 	libs/video/renderer/sw/Makefile
+	libs/video/renderer/sw32/Makefile
 	libs/video/targets/Makefile
 
 	qw/Makefile

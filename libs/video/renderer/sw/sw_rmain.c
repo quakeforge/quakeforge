@@ -173,7 +173,7 @@ R_Init (void)
 
 // TODO: collect 386-specific code in one place
 #ifdef PIC
-#undef USE_INTEL_ASM //XXX asm pic hack
+# undef USE_INTEL_ASM //XXX asm pic hack
 #endif
 
 #ifdef USE_INTEL_ASM
@@ -182,7 +182,6 @@ R_Init (void)
 #endif // USE_INTEL_ASM
 	D_Init ();
 }
-
 
 void
 R_NewMap (model_t *worldmodel, struct model_s **models, int num_models)
@@ -193,7 +192,7 @@ R_NewMap (model_t *worldmodel, struct model_s **models, int num_models)
 	r_worldentity.model = worldmodel;
 
 	// clear out efrags in case the level hasn't been reloaded
-// FIXME: is this one short?
+	// FIXME: is this one short?
 	for (i = 0; i < r_worldentity.model->numleafs; i++)
 		r_worldentity.model->leafs[i].efrags = NULL;
 
@@ -238,7 +237,6 @@ R_NewMap (model_t *worldmodel, struct model_s **models, int num_models)
 	r_viewchanged = false;
 }
 
-
 void
 R_SetVrect (vrect_t *pvrectin, vrect_t *pvrect, int lineadj)
 {
@@ -249,6 +247,7 @@ R_SetVrect (vrect_t *pvrectin, vrect_t *pvrect, int lineadj)
 	if (scr_viewsize->int_val >= 100) {
 		size = 100.0;
 		full = true;
+		lineadj = 0;
 	} else {
 		size = scr_viewsize->int_val;
 	}
@@ -258,8 +257,6 @@ R_SetVrect (vrect_t *pvrectin, vrect_t *pvrect, int lineadj)
 		size = 100.0;
 	}
 	size /= 100.0;
-	if (full)
-		lineadj = 0;
 
 	h = pvrectin->height - lineadj;
 
@@ -276,8 +273,8 @@ R_SetVrect (vrect_t *pvrectin, vrect_t *pvrect, int lineadj)
 	pvrect->width &= ~7;
 	pvrect->height = pvrectin->height * size;
 
-	if (pvrect->height > pvrectin->height - lineadj)
-		pvrect->height = pvrectin->height - lineadj;
+	if (pvrect->height > h)
+		pvrect->height = h;
 
 	pvrect->height &= ~1;
 
@@ -287,7 +284,6 @@ R_SetVrect (vrect_t *pvrectin, vrect_t *pvrect, int lineadj)
 	else
 		pvrect->y = (h - pvrect->height) / 2;
 }
-
 
 /*
 	R_ViewChanged
@@ -324,7 +320,8 @@ R_ViewChanged (vrect_t *pvrect, int lineadj, float aspect)
 	r_refdef.aliasvrect.x = (int) (r_refdef.vrect.x * r_aliasuvscale);
 	r_refdef.aliasvrect.y = (int) (r_refdef.vrect.y * r_aliasuvscale);
 	r_refdef.aliasvrect.width = (int) (r_refdef.vrect.width * r_aliasuvscale);
-	r_refdef.aliasvrect.height = (int) (r_refdef.vrect.height * r_aliasuvscale);
+	r_refdef.aliasvrect.height = (int) (r_refdef.vrect.height *
+										r_aliasuvscale);
 	r_refdef.aliasvrectright = r_refdef.aliasvrect.x +
 		r_refdef.aliasvrect.width;
 	r_refdef.aliasvrectbottom = r_refdef.aliasvrect.y +
@@ -335,9 +332,9 @@ R_ViewChanged (vrect_t *pvrect, int lineadj, float aspect)
 	yOrigin = r_refdef.yOrigin;
 
 	screenAspect = r_refdef.vrect.width * pixelAspect / r_refdef.vrect.height;
-// 320*200 1.0 pixelAspect = 1.6 screenAspect
-// 320*240 1.0 pixelAspect = 1.3333 screenAspect
-// proper 320*200 pixelAspect = 0.8333333
+	// 320*200 1.0 pixelAspect = 1.6 screenAspect
+	// 320*240 1.0 pixelAspect = 1.3333 screenAspect
+	// proper 320*200 pixelAspect = 0.8333333
 
 	verticalFieldOfView = r_refdef.horizontalFieldOfView / screenAspect;
 
@@ -364,7 +361,8 @@ R_ViewChanged (vrect_t *pvrect, int lineadj, float aspect)
 	yscaleshrink = xscaleshrink * pixelAspect;
 
 	// left side clip
-	screenedge[0].normal[0] = -1.0 / (xOrigin * r_refdef.horizontalFieldOfView);
+	screenedge[0].normal[0] = -1.0 / (xOrigin *
+									  r_refdef.horizontalFieldOfView);
 	screenedge[0].normal[1] = 0;
 	screenedge[0].normal[2] = 1;
 	screenedge[0].type = PLANE_ANYZ;
@@ -392,7 +390,8 @@ R_ViewChanged (vrect_t *pvrect, int lineadj, float aspect)
 		VectorNormalize (screenedge[i].normal);
 
 	res_scale = sqrt ((double) (r_refdef.vrect.width * r_refdef.vrect.height) /
-					  (320.0 * 152.0)) * (2.0 / r_refdef.horizontalFieldOfView);
+					  (320.0 * 152.0)) * (2.0 /
+										  r_refdef.horizontalFieldOfView);
 	r_aliastransition = r_aliastransbase->value * res_scale;
 	r_resfudge = r_aliastransadj->value * res_scale;
 
@@ -406,7 +405,7 @@ R_ViewChanged (vrect_t *pvrect, int lineadj, float aspect)
 	if (r_pixbytes == 1) {
 		Sys_MakeCodeWriteable ((long) R_Surf8Start,
 							   (long) R_Surf8End - (long) R_Surf8Start);
-		colormap = vid.colormap;
+		colormap = vid.colormap8;
 		R_Surf8Patch ();
 	} else {
 		Sys_MakeCodeWriteable ((long) R_Surf16Start,
@@ -418,7 +417,6 @@ R_ViewChanged (vrect_t *pvrect, int lineadj, float aspect)
 
 	D_ViewChanged ();
 }
-
 
 void
 R_MarkLeaves (void)
@@ -460,7 +458,6 @@ R_MarkLeaves (void)
 	}
 }
 
-
 static void
 R_ShowNearestLoc (void)
 {
@@ -482,7 +479,6 @@ R_ShowNearestLoc (void)
 		R_RunParticleEffect(trueloc,252,10);
 	}
 }
-			
 
 void
 R_DrawEntitiesOnList (void)
@@ -553,7 +549,6 @@ R_DrawEntitiesOnList (void)
 	}
 }
 
-
 void
 R_DrawViewModel (void)
 {
@@ -614,7 +609,6 @@ R_DrawViewModel (void)
 	R_AliasDrawModel (&r_viewlighting);
 }
 
-
 int
 R_BmodelCheckBBox (model_t *clmodel, float *minmaxs)
 {
@@ -669,7 +663,6 @@ R_BmodelCheckBBox (model_t *clmodel, float *minmaxs)
 	return clipflags;
 }
 
-
 void
 R_DrawBEntitiesOnList (void)
 {
@@ -723,9 +716,10 @@ R_DrawBEntitiesOnList (void)
 								(!r_dlights[k].radius)) continue;
 
 							VectorSubtract (r_dlights[k].origin,
-											currententity->origin, lightorigin);
-							R_RecursiveMarkLights (lightorigin, &r_dlights[k], 1 << k,
-										  clmodel->nodes +
+											currententity->origin,
+											lightorigin);
+							R_RecursiveMarkLights (lightorigin, &r_dlights[k],
+												   1 << k, clmodel->nodes +
 										  clmodel->hulls[0].firstclipnode);
 						}
 					}
@@ -782,7 +776,6 @@ R_DrawBEntitiesOnList (void)
 
 	insubmodel = false;
 }
-
 
 void
 R_EdgeDrawing (void)
@@ -845,7 +838,6 @@ R_EdgeDrawing (void)
 	if (!(r_drawpolys | r_drawculledpolys))
 		R_ScanEdges ();
 }
-
 
 /*
 	R_RenderView
@@ -945,7 +937,6 @@ R_RenderView_ (void)
 	Sys_HighFPPrecision ();
 }
 
-
 void
 R_RenderView (void)
 {
@@ -967,7 +958,6 @@ R_RenderView (void)
 
 	R_RenderView_ ();
 }
-
 
 void
 R_InitTurb (void)

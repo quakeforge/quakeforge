@@ -36,7 +36,6 @@
 # include <strings.h>
 #endif
 
-#include "compat.h"
 #include "QF/console.h"
 #include "QF/cvar.h"
 #include "QF/msg.h"
@@ -49,6 +48,7 @@
 #include "cl_parse.h"
 #include "cl_pred.h"
 #include "cl_tent.h"
+#include "compat.h"
 #include "d_iface.h"
 #include "host.h"
 #include "msg_ucmd.h"
@@ -84,7 +84,6 @@ CL_ClearEnts ()
 	for (i = 0; i < sizeof (cl_player_ents) / sizeof (cl_player_ents[0]); i++)
 		CL_Init_Entity (&cl_player_ents[i]);
 }
-
 
 void
 CL_NewDlight (int key, vec3_t org, int effects)
@@ -125,11 +124,9 @@ CL_NewDlight (int key, vec3_t org, int effects)
 	dl->radius = radius;
 }
 
-
 /*
-	PACKET ENTITY PARSING / LINKING
+  PACKET ENTITY PARSING / LINKING
 */
-
 
 /*
 	CL_ParseDelta
@@ -153,9 +150,9 @@ CL_ParseDelta (entity_state_t *from, entity_state_t *to, int bits)
 		bits |= i;
 	}
 	// count the bits for net profiling
-//        for (i=0 ; i<16 ; i++)
-//                if (bits&(1<<i))
-//                        bitcounts[i]++;
+//	for (i=0 ; i<16 ; i++)
+//		if (bits&(1<<i))
+//			bitcounts[i]++;
 
 	// LordHavoc: Endy neglected to mark this as being part of the QSG
 	// version 2 stuff...
@@ -201,8 +198,7 @@ CL_ParseDelta (entity_state_t *from, entity_state_t *to, int bits)
 		to->angles[2] = MSG_ReadAngle (net_message);
 
 	// LordHavoc: Endy neglected to mark this as being part of the QSG
-	// version 2 stuff...
-	// rearranged it and implemented missing effects
+	// version 2 stuff... rearranged it and implemented missing effects
 // Ender (QSG - Begin)
 	if (bits & U_ALPHA)
 		to->alpha = MSG_ReadByte (net_message);
@@ -238,7 +234,6 @@ CL_ParseDelta (entity_state_t *from, entity_state_t *to, int bits)
 */
 }
 
-
 void
 FlushEntityPacket (void)
 {
@@ -266,7 +261,6 @@ FlushEntityPacket (void)
 		CL_ParseDelta (&olde, &newe, word);
 	}
 }
-
 
 /*
 	CL_ParsePacketEntities
@@ -329,7 +323,8 @@ CL_ParsePacketEntities (qboolean delta)
 			while (oldindex < oldp->num_entities) {	
 //				Con_Printf ("copy %i\n", oldp->entities[oldindex].number);
 				if (newindex >= MAX_PACKET_ENTITIES)
-					Host_EndGame ("CL_ParsePacketEntities: newindex == MAX_PACKET_ENTITIES");
+					Host_EndGame ("CL_ParsePacketEntities: newindex == "
+								  "MAX_PACKET_ENTITIES");
 				newp->entities[newindex] = oldp->entities[oldindex];
 				newindex++;
 				oldindex++;
@@ -337,7 +332,8 @@ CL_ParsePacketEntities (qboolean delta)
 			break;
 		}
 		newnum = word & 511;
-		oldnum = oldindex >= oldp->num_entities ? 9999 : oldp->entities[oldindex].number;
+		oldnum = oldindex >= oldp->num_entities ? 9999 :
+			oldp->entities[oldindex].number;
 
 		while (newnum > oldnum) {
 			if (full) {
@@ -348,11 +344,13 @@ CL_ParsePacketEntities (qboolean delta)
 //			Con_Printf ("copy %i\n", oldnum);
 			// copy one of the old entities over to the new packet unchanged
 			if (newindex >= MAX_PACKET_ENTITIES)
-				Host_EndGame ("CL_ParsePacketEntities: newindex == MAX_PACKET_ENTITIES");
+				Host_EndGame ("CL_ParsePacketEntities: newindex == "
+							  "MAX_PACKET_ENTITIES");
 			newp->entities[newindex] = oldp->entities[oldindex];
 			newindex++;
 			oldindex++;
-			oldnum = oldindex >= oldp->num_entities ? 9999 : oldp->entities[oldindex].number;
+			oldnum = oldindex >= oldp->num_entities ? 9999 :
+				oldp->entities[oldindex].number;
 		}
 
 		if (newnum < oldnum) {			// new from baseline
@@ -368,8 +366,10 @@ CL_ParsePacketEntities (qboolean delta)
 			}
 
 			if (newindex >= MAX_PACKET_ENTITIES)
-				Host_EndGame ("CL_ParsePacketEntities: newindex == MAX_PACKET_ENTITIES");
-			CL_ParseDelta (&cl_baselines[newnum], &newp->entities[newindex], word);
+				Host_EndGame ("CL_ParsePacketEntities: newindex == "
+							  "MAX_PACKET_ENTITIES");
+			CL_ParseDelta (&cl_baselines[newnum], &newp->entities[newindex],
+						   word);
 			newindex++;
 			continue;
 		}
@@ -386,7 +386,8 @@ CL_ParsePacketEntities (qboolean delta)
 				continue;
 			}
 //			Con_Printf ("delta %i\n", newnum);
-			CL_ParseDelta (&oldp->entities[oldindex], &newp->entities[newindex], word);
+			CL_ParseDelta (&oldp->entities[oldindex],
+						   &newp->entities[newindex], word);
 			newindex++;
 			oldindex++;
 		}
@@ -394,7 +395,6 @@ CL_ParsePacketEntities (qboolean delta)
 
 	newp->num_entities = newindex;
 }
-
 
 void
 CL_LinkPacketEntities (void)
@@ -409,7 +409,8 @@ CL_LinkPacketEntities (void)
 	extern int  cl_playerindex;
 	extern int  cl_h_playerindex, cl_gib1index, cl_gib2index, cl_gib3index;
 
-	pack = &cl.frames[cls.netchan.incoming_sequence & UPDATE_MASK].packet_entities;
+	pack = &cl.frames[cls.netchan.incoming_sequence &
+					  UPDATE_MASK].packet_entities;
 
 	for (pnum = 0; pnum < pack->num_entities; pnum++) {
 		s1 = &pack->entities[pnum];
@@ -422,15 +423,15 @@ CL_LinkPacketEntities (void)
 			continue;
 
 		// Hack hack hack
-		if (cl_deadbodyfilter->int_val && s1->modelindex == cl_playerindex
-			&& ((i = s1->frame) == 49 || i == 60 || i == 69 || i == 84
-				|| i == 93 || i == 102))
+		if (cl_deadbodyfilter->int_val && s1->modelindex == cl_playerindex &&
+			((i = s1->frame) == 49 || i == 60 || i == 69 || i == 84 ||
+			 i == 93 || i == 102))
 			continue;
 
 		if (cl_gibfilter->int_val &&
-			(s1->modelindex == cl_h_playerindex
-			 || s1->modelindex == cl_gib1index || s1->modelindex == cl_gib2index
-			 || s1->modelindex == cl_gib3index))
+			(s1->modelindex == cl_h_playerindex || s1->modelindex ==
+			 cl_gib1index || s1->modelindex == cl_gib2index ||
+			 s1->modelindex == cl_gib3index))
 			continue;
 
 		// create a new entity
@@ -450,7 +451,7 @@ CL_LinkPacketEntities (void)
 			(*ent)->colormap = cl.players[s1->colormap - 1].translations;
 			(*ent)->scoreboard = &cl.players[s1->colormap - 1];
 		} else {
-			(*ent)->colormap = vid.colormap;
+			(*ent)->colormap = vid.colormap8;
 			(*ent)->scoreboard = NULL;
 		}
 
@@ -470,16 +471,20 @@ CL_LinkPacketEntities (void)
 		// Ender: Extend (Colormod) [QSG - Begin]
 		// N.B: All messy code below is the sole fault of LordHavoc and
 		// his futile attempts to save bandwidth. :)
-		(*ent)->glow_size =	s1->glow_size < 128 ? s1->glow_size * 8.0 : (s1->glow_size - 256) * 8.0;
+		(*ent)->glow_size =	s1->glow_size < 128 ? s1->glow_size * 8.0 :
+			(s1->glow_size - 256) * 8.0;
 		(*ent)->glow_color = s1->glow_color;
 		(*ent)->alpha = s1->alpha / 255.0;
 		(*ent)->scale = s1->scale / 16.0;
 
 		if (s1->colormod == 255) {
-			(*ent)->colormod[0] = (*ent)->colormod[1] = (*ent)->colormod[2] = 1;
+			(*ent)->colormod[0] = (*ent)->colormod[1] =
+				(*ent)->colormod[2] = 1;
 		} else {
-			(*ent)->colormod[0] = (float) ((s1->colormod >> 5) & 7) * (1.0 / 7.0);
-			(*ent)->colormod[1] = (float) ((s1->colormod >> 2) & 7) * (1.0 / 7.0);
+			(*ent)->colormod[0] = (float) ((s1->colormod >> 5) & 7) * (1.0 /
+																	   7.0);
+			(*ent)->colormod[1] = (float) ((s1->colormod >> 2) & 7) * (1.0 /
+																	   7.0);
 			(*ent)->colormod[2] = (float) (s1->colormod & 3) * (1.0 / 3.0);
 		}
 		// Ender: Extend (Colormod) [QSG - End]
@@ -541,7 +546,6 @@ CL_LinkPacketEntities (void)
 	}
 }
 
-
 /*
 	PROJECTILE PARSING / LINKING
 */
@@ -557,13 +561,11 @@ int         cl_num_projectiles;
 
 extern int  cl_spikeindex;
 
-
 void
 CL_ClearProjectiles (void)
 {
 	cl_num_projectiles = 0;
 }
-
 
 /*
 	CL_ParseProjectiles
@@ -597,7 +599,6 @@ CL_ParseProjectiles (void)
 	}
 }
 
-
 void
 CL_LinkProjectiles (void)
 {
@@ -617,7 +618,7 @@ CL_LinkProjectiles (void)
 		(*ent)->model = cl.model_precache[pr->modelindex];
 		(*ent)->skinnum = 0;
 		(*ent)->frame = 0;
-		(*ent)->colormap = vid.colormap;
+		(*ent)->colormap = vid.colormap8;
 		(*ent)->scoreboard = NULL;
 		(*ent)->skin = NULL;
 		// LordHavoc: Endy had neglected to do this as part of the QSG
@@ -629,7 +630,6 @@ CL_LinkProjectiles (void)
 		(*ent)->colormod[0] = (*ent)->colormod[1] = (*ent)->colormod[2] = 1;
 	}
 }
-
 
 extern int  cl_spikeindex, cl_playerindex, cl_flagindex;
 extern int  parsecountmod;

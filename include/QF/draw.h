@@ -35,7 +35,7 @@ extern qpic_t *draw_disc; // also used on sbar
 
 void Draw_Init (void);
 void Draw_Init_Cvars (void);
-void Draw_Character8 (int x, int y, int num);
+void Draw_Character (int x, int y, int num);
 void Draw_Pic (int x, int y, qpic_t *pic);
 void Draw_SubPic(int x, int y, qpic_t *pic, int srcx, int srcy, int width, int height);
 void Draw_TextBox (int x, int y, int width, int lines);
@@ -48,8 +48,8 @@ void Draw_EndDisc (void);
 void Draw_TileClear (int x, int y, int w, int h);
 void Draw_Fill (int x, int y, int w, int h, int c);
 void Draw_FadeScreen (void);
-void Draw_String8 (int x, int y, const char *str);
-void Draw_AltString8 (int x, int y, const char *str);
+void Draw_String (int x, int y, const char *str);
+void Draw_AltString (int x, int y, const char *str);
 qpic_t *Draw_PicFromWad (const char *name);
 qpic_t *Draw_CachePic (const char *path, qboolean alpha);
 

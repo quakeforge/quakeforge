@@ -202,7 +202,8 @@ R_NewMap (model_t *worldmodel, struct model_s **models, int num_models)
 			continue;
 		if (!strncmp (r_worldentity.model->textures[i]->name, "sky", 3))
 			skytexturenum = i;
-		if (!strncmp (r_worldentity.model->textures[i]->name, "window02_1", 10))
+		if (!strncmp (r_worldentity.model->textures[i]->name,
+					  "window02_1", 10))
 			mirrortexturenum = i;
 		r_worldentity.model->textures[i]->texturechain = NULL;
 	}
@@ -231,7 +232,7 @@ R_TimeRefresh_f (void)
 	start = Sys_DoubleTime ();
 	for (i = 0; i < 128; i++) {
 		GL_BeginRendering (&glx, &gly, &glwidth, &glheight);
-		r_refdef.viewangles[1] = i / 128.0 * 360.0;
+		r_refdef.viewangles[1] = i * (360.0 / 128.0);
 		R_RenderView ();
 		qfglFinish ();
 		GL_EndRendering ();

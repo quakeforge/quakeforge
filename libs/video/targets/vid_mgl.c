@@ -32,21 +32,22 @@
 
 #include <stdlib.h>
 
-#include "cdaudio.h"
 #include "QF/cmd.h"
+#include "QF/cdaudio.h"
 #include "QF/console.h"
-#include "d_local.h"
-#include "draw.h"
-#include "in_win.h"
+#include "QF/draw.h"
 #include "QF/keys.h"
 #include "QF/qargs.h"
 #include "QF/qendian.h"
-#include "resource.h"
-#include "screen.h"
-#include "sound.h"
+#include "QF/screen.h"
+#include "QF/sound.h"
 #include "QF/sys.h"
 #include "QF/va.h"
-#include "wad.h"
+#include "QF/wad.h"
+
+#include "d_local.h"
+#include "in_win.h"
+#include "resource.h"
 #include "winquake.h"
 
 #define	MINIMUM_MEMORY	0x550000
@@ -58,7 +59,8 @@ extern void (*vid_menudrawfn) (void);
 extern void (*vid_menukeyfn) (int);
 
 /* Unused */
-int         VGA_width, VGA_height, VGA_rowbytes, VGA_bufferrowbytes, VGA_planar;
+int			VGA_width, VGA_height, VGA_rowbytes, VGA_bufferrowbytes,
+			VGA_planar;
 byte       *VGA_pagebase;
 
 qboolean    dibonly;
@@ -75,21 +77,19 @@ RECT        WindowRect;
 DWORD       WindowStyle, ExWindowStyle;
 
 int         window_center_x, window_center_y, window_x, window_y, window_width,
-
-	window_height;
+			window_height;
 RECT        window_rect;
 
-static DEVMODE gdevmode;
+static DEVMODE	gdevmode;
 static qboolean startwindowed = 0, windowed_mode_set = 0;
-static int  firstupdate = 1;
+static int		firstupdate = 1;
 static qboolean vid_palettized;
-static int  lockcount;
-static int  vid_fulldib_on_focus_mode;
+static int		lockcount;
+static int		vid_fulldib_on_focus_mode;
 static qboolean force_minimized, in_mode_set, is_mode0x13, force_mode_set;
-static int  vid_stretched, windowed_mouse;
+static int		vid_stretched, windowed_mouse;
 static qboolean palette_changed, syscolchg, vid_mode_set, hide_window,
-
-	pal_is_nostatic;
+				pal_is_nostatic;
 static HICON hIcon;
 
 extern viddef_t vid;					// global video state
@@ -179,9 +179,7 @@ void        VID_MenuKey (int key);
 LONG WINAPI MainWndProc (HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
 void        AppActivate (BOOL fActive, BOOL minimize);
 
-/*
-	VID_RememberWindowPos
-*/
+
 void
 VID_RememberWindowPos (void)
 {
@@ -197,10 +195,6 @@ VID_RememberWindowPos (void)
 	}
 }
 
-
-/*
-	VID_CheckWindowXY
-*/
 void
 VID_CheckWindowXY (void)
 {
@@ -213,10 +207,6 @@ VID_CheckWindowXY (void)
 	}
 }
 
-
-/*
-	VID_UpdateWindowStatus
-*/
 void
 VID_UpdateWindowStatus (void)
 {
@@ -231,32 +221,18 @@ VID_UpdateWindowStatus (void)
 	IN_UpdateClipCursor ();
 }
 
-
-/*
-	ClearAllStates
-*/
 void
 ClearAllStates (void)
 {
 	IN_ClearStates ();
 }
 
-
-/*
-	VID_CheckAdequateMem
-*/
 qboolean
 VID_CheckAdequateMem (int width, int height)
 {
 	return true;
 }
 
-
-/*
-
-	VID_AllocBuffers
-
-*/
 qboolean
 VID_AllocBuffers (int width, int height)
 {
@@ -299,7 +275,6 @@ VID_AllocBuffers (int width, int height)
 	return true;
 }
 
-
 void
 initFatalError (void)
 {
@@ -324,14 +299,13 @@ VID_Suspend (MGLDC * dc, int flags)
 		block_drawing = true;
 	} else if (flags & MGL_REACTIVATE) {
 		IN_SetQuakeMouseState ();
-		// fix the leftover Alt from any Alt-Tab or the like that switched us 
-		// away
+		// fix leftover Alt from any Alt-Tab or the like that switched us away
 		ClearAllStates ();
 		CDAudio_Resume ();
 		in_mode_set = false;
 
 		block_drawing = false;
-//      vid.recalc_refdef = 1;
+//		vid.recalc_refdef = 1;
 		force_mode_set = 1;
 		i = msg_suppress_1;
 		msg_suppress_1 = 1;
@@ -368,8 +342,7 @@ VID_Suspend (MGLDC * dc, int flags)
 										// switched away
 	} else if (flags & MGL_REACTIVATE) {
 		IN_SetQuakeMouseState ();
-		// fix the leftover Alt from any Alt-Tab or the like that switched us 
-		// away
+		// fix leftover Alt from any Alt-Tab or the like that switched us away
 		ClearAllStates ();
 		CDAudio_Resume ();
 		S_UnblockSound ();
@@ -383,8 +356,8 @@ VID_Suspend (MGLDC * dc, int flags)
 
 	return MGL_NO_SUSPEND_APP;
 }
-#endif
 
+#endif
 
 void
 registerAllDispDrivers (void)
@@ -393,11 +366,13 @@ registerAllDispDrivers (void)
 	   that they will still be available even if DirectDraw * is present and
 	   the user has disable the high performance * WinDirect modes. */
 	MGL_registerDriver (MGL_VGA8NAME, VGA8_driver);
-//  MGL_registerDriver(MGL_VGAXNAME,VGAX_driver);
+//	MGL_registerDriver(MGL_VGAXNAME, VGAX_driver);
 
 	/* Register display drivers */
 	if (useWinDirect) {
-//we don't want VESA 1.X drivers        MGL_registerDriver(MGL_SVGA8NAME,SVGA8_driver);
+/* we don't want VESA 1.X drivers
+		MGL_registerDriver(MGL_SVGA8NAME, SVGA8_driver);
+*/
 		MGL_registerDriver (MGL_LINEAR8NAME, LINEAR8_driver);
 
 		if (!COM_CheckParm ("-novbeaf"))
@@ -409,14 +384,12 @@ registerAllDispDrivers (void)
 	}
 }
 
-
 void
 registerAllMemDrivers (void)
 {
 	/* Register memory context drivers */
 	MGL_registerDriver (MGL_PACKED8NAME, PACKED8_driver);
 }
-
 
 void
 VID_InitMGLFull (HINSTANCE hInstance)
@@ -481,10 +454,8 @@ VID_InitMGLFull (HINSTANCE hInstance)
 		}
 
 		// if there's a mode we can stretch by 2 up to, thereby effectively
-		// getting
-		// a lower-res mode than the lowest-res real but still at least
-		// 320x200, that
-		// will be our default mode
+		// getting a lower-res mode than the lowest-res real but still at least
+		// 320x200, that will be our default mode
 		if (lowstretchedres < lowres) {
 			mode = stretchedmode;
 			lowres = lowstretchedres;
@@ -555,21 +526,17 @@ VID_InitMGLFull (HINSTANCE hInstance)
 	MGL_setSuspendAppCallback (VID_Suspend);
 }
 
+/*
+  createDisplayDC
 
+  Returns pointer to the MGL device context to use for the application
+  Initialises the MGL and creates an appropriate display device context to be
+  used by the GUI. This creates and apropriate device context depending on the
+  system being compile for, and should be the only place where system specific
+  code is required.
+*/
 MGLDC      *
 createDisplayDC (int forcemem)
-/****************************************************************************
-*
-* Function:     createDisplayDC
-* Returns:      Pointer to the MGL device context to use for the application
-*
-* Description:  Initialises the MGL and creates an appropriate display
-*               device context to be used by the GUI. This creates and
-*               apropriate device context depending on the system being
-*               compile for, and should be the only place where system
-*               specific code is required.
-*
-****************************************************************************/
 {
 	MGLDC      *dc;
 	pixel_format_t pf;
@@ -599,8 +566,8 @@ createDisplayDC (int forcemem)
 		memdc = NULL;
 	} else {
 		// Set up for blitting from a memory buffer
-		memdc =
-			MGL_createMemoryDC (MGL_sizex (dc) + 1, MGL_sizey (dc) + 1, 8, &pf);
+		memdc = MGL_createMemoryDC (MGL_sizex (dc) + 1, MGL_sizey (dc) + 1, 8,
+									&pf);
 		MGL_makeCurrentDC (memdc);
 	}
 
@@ -627,7 +594,6 @@ createDisplayDC (int forcemem)
 
 	return dc;
 }
-
 
 void
 VID_InitMGLDIB (HINSTANCE hInstance)
@@ -694,7 +660,7 @@ VID_InitMGLDIB (HINSTANCE hInstance)
 	modelist[2].halfscreen = 0;
 	modelist[2].bpp = 8;
 
-// automatically stretch the default mode up if > 640x480 desktop resolution
+	// automatically stretch default mode up if > 640x480 desktop resolution
 	hdc = GetDC (NULL);
 
 	if ((GetDeviceCaps (hdc, HORZRES) > 640)
@@ -713,10 +679,6 @@ VID_InitMGLDIB (HINSTANCE hInstance)
 	DDActive = 0;
 }
 
-
-/*
-	VID_InitFullDIB
-*/
 void
 VID_InitFullDIB (HINSTANCE hInstance)
 {
@@ -726,7 +688,7 @@ VID_InitFullDIB (HINSTANCE hInstance)
 	int         cstretch, istretch, mstretch = 0;
 	BOOL        stat;
 
-// enumerate 8 bpp modes
+	// enumerate 8 bpp modes
 	originalnummodes = nummodes;
 	modenum = 0;
 	lowestres = 99999;
@@ -734,9 +696,9 @@ VID_InitFullDIB (HINSTANCE hInstance)
 	do {
 		stat = EnumDisplaySettings (NULL, modenum, &devmode);
 
-		if ((devmode.dmBitsPerPel == 8) &&
-			(devmode.dmPelsWidth <= MAXWIDTH) &&
-			(devmode.dmPelsHeight <= MAXHEIGHT) && (nummodes < MAX_MODE_LIST)) {
+		if ((devmode.dmBitsPerPel == 8) && (devmode.dmPelsWidth <= MAXWIDTH) &&
+			(devmode.dmPelsHeight <= MAXHEIGHT) &&
+			(nummodes < MAX_MODE_LIST))	{
 			devmode.dmFields = DM_BITSPERPEL | DM_PELSWIDTH | DM_PELSHEIGHT;
 
 			if (ChangeDisplaySettings (&devmode, CDS_TEST | CDS_FULLSCREEN) ==
@@ -764,13 +726,14 @@ VID_InitFullDIB (HINSTANCE hInstance)
 						modelist[nummodes].width >>= 1;
 						modelist[nummodes].halfscreen = 1;
 						snprintf (modelist[nummodes].modedesc,
-								  sizeof (modelist[nummodes].modedesc), "%dx%d",
-								  modelist[nummodes].width,
+								  sizeof (modelist[nummodes].modedesc),
+								  "%dx%d", modelist[nummodes].width,
 								  modelist[nummodes].height);
 					}
 				}
 
-				for (i = originalnummodes, existingmode = 0; i < nummodes; i++) {
+				for (i = originalnummodes, existingmode = 0; i < nummodes;
+					 i++) {
 					if ((modelist[nummodes].width == modelist[i].width) &&
 						(modelist[nummodes].height == modelist[i].height)) {
 						existingmode = 1;
@@ -808,7 +771,8 @@ VID_InitFullDIB (HINSTANCE hInstance)
 				  (devmode.dmPelsWidth <= (MAXWIDTH * 2)) &&
 				  (devmode.dmPelsWidth > (devmode.dmPelsHeight * 2)))) &&
 				(nummodes < MAX_MODE_LIST) && (devmode.dmBitsPerPel > 8)) {
-				devmode.dmFields = DM_BITSPERPEL | DM_PELSWIDTH | DM_PELSHEIGHT;
+				devmode.dmFields = DM_BITSPERPEL | DM_PELSWIDTH |
+					DM_PELSHEIGHT;
 
 				if (ChangeDisplaySettings (&devmode, CDS_TEST | CDS_FULLSCREEN)
 					== DISP_CHANGE_SUCCESSFUL) {
@@ -827,8 +791,7 @@ VID_InitFullDIB (HINSTANCE hInstance)
 							  devmode.dmPelsWidth, devmode.dmPelsHeight);
 
 					// if the width is more than twice the height, reduce it
-					// by half because this
-					// is probably a dual-screen monitor
+					// by half because this is probably a dual-screen monitor
 					if (!COM_CheckParm ("-noadjustaspect")) {
 						if (modelist[nummodes].width >
 							(modelist[nummodes].height * 2)) {
@@ -867,12 +830,12 @@ VID_InitFullDIB (HINSTANCE hInstance)
 			modenum++;
 		} while (stat);
 	}
-// see if there are any low-res modes that aren't being reported
+	// see if there are any low-res modes that aren't being reported
 	numlowresmodes = sizeof (lowresmodes) / sizeof (lowresmodes[0]);
 	bpp = 8;
 	done = 0;
 
-// first make sure the driver doesn't just answer yes to all tests
+	// first make sure the driver doesn't just answer yes to all tests
 	devmode.dmBitsPerPel = 8;
 	devmode.dmPelsWidth = 42;
 	devmode.dmPelsHeight = 37;
@@ -907,7 +870,8 @@ VID_InitFullDIB (HINSTANCE hInstance)
 						  devmode.dmPelsWidth, devmode.dmPelsHeight);
 
 				// we only want the lowest-bpp version of each mode
-				for (i = originalnummodes, existingmode = 0; i < nummodes; i++) {
+				for (i = originalnummodes, existingmode = 0; i < nummodes;
+					 i++) {
 					if ((modelist[nummodes].width == modelist[i].width) &&
 						(modelist[nummodes].height == modelist[i].height) &&
 						(modelist[nummodes].bpp >= modelist[i].bpp)) {
@@ -940,9 +904,9 @@ VID_InitFullDIB (HINSTANCE hInstance)
 		}
 	}
 
-// now add the lowest stretch-by-2 pseudo-modes between 320-wide
-// (inclusive) and lowest real res (not inclusive)
-// don't bother if we have a real VGA mode 0x13 mode
+	// now add the lowest stretch-by-2 pseudo-modes between 320-wide
+	// (inclusive) and lowest real res (not inclusive) don't bother if we have
+	// a real VGA mode 0x13 mode
 	if (!is_mode0x13) {
 		for (i = originalnummodes, cstretch = 0; i < nummodes; i++) {
 			if (((modelist[i].width >> 1) < lowestres) &&
@@ -979,20 +943,12 @@ VID_InitFullDIB (HINSTANCE hInstance)
 		Con_Printf ("No fullscreen DIB modes found\n");
 }
 
-
-/*
-	VID_NumModes
-*/
 int
 VID_NumModes (void)
 {
 	return nummodes;
 }
 
-
-/*
-	VID_GetModePtr
-*/
 vmode_t    *
 VID_GetModePtr (int modenum)
 {
@@ -1003,10 +959,6 @@ VID_GetModePtr (int modenum)
 		return &badmode;
 }
 
-
-/*
-	VID_CheckModedescFixup
-*/
 void
 VID_CheckModedescFixup (int mode)
 {
@@ -1030,10 +982,6 @@ VID_CheckModedescFixup (int mode)
 	}
 }
 
-
-/*
-	VID_GetModeDescriptionMemCheck
-*/
 char       *
 VID_GetModeDescriptionMemCheck (int mode)
 {
@@ -1055,10 +1003,6 @@ VID_GetModeDescriptionMemCheck (int mode)
 	}
 }
 
-
-/*
-	VID_GetModeDescription
-*/
 char       *
 VID_GetModeDescription (int mode)
 {
@@ -1074,7 +1018,6 @@ VID_GetModeDescription (int mode)
 	pinfo = pv->modedesc;
 	return pinfo;
 }
-
 
 /*
 	VID_GetModeDescription2
@@ -1105,9 +1048,7 @@ VID_GetModeDescription2 (int mode)
 	return pinfo;
 }
 
-
 // KJB: Added this to return the mode driver name in description for console
-
 char       *
 VID_GetExtModeDescription (int mode)
 {
@@ -1132,7 +1073,6 @@ VID_GetExtModeDescription (int mode)
 	return pinfo;
 }
 
-
 void
 DestroyDIBWindow (void)
 {
@@ -1147,11 +1087,9 @@ DestroyDIBWindow (void)
 	}
 }
 
-
 void
 DestroyFullscreenWindow (void)
 {
-
 	if (modestate == MS_FULLSCREEN) {
 		// destroy the existing fullscreen mode and DC's
 		if (mgldc)
@@ -1161,8 +1099,6 @@ DestroyFullscreenWindow (void)
 		mgldc = memdc = NULL;
 	}
 }
-
-
 
 void
 DestroyFullDIBWindow (void)
@@ -1178,7 +1114,6 @@ DestroyFullDIBWindow (void)
 		windc = dibdc = NULL;
 	}
 }
-
 
 qboolean
 VID_SetWindowedMode (int modenum)
@@ -1211,7 +1146,7 @@ VID_SetWindowedMode (int modenum)
 		MGL_destroyDC (dibdc);
 	windc = dibdc = NULL;
 
-// KJB: Signal to the MGL that we are going back to windowed mode
+	// KJB: Signal to the MGL that we are going back to windowed mode
 	if (!MGL_changeDisplayMode (grWINDOWED))
 		initFatalError ();
 
@@ -1234,18 +1169,14 @@ VID_SetWindowedMode (int modenum)
 	ExWindowStyle = 0;
 	AdjustWindowRectEx (&WindowRect, WindowStyle, FALSE, 0);
 
-// the first time we're called to set the mode, create the window we'll use
-// for the rest of the session
+	// the first time we're called to set the mode, create the window we'll use
+	// for the rest of the session
 	if (!vid_mode_set) {
-		mainwindow = CreateWindowEx (ExWindowStyle,
-									 "WinQuake",
-									 PROGRAM,
-									 WindowStyle,
-									 0, 0,
+		mainwindow = CreateWindowEx (ExWindowStyle, "WinQuake", PROGRAM,
+									 WindowStyle, 0, 0,
 									 WindowRect.right - WindowRect.left,
 									 WindowRect.bottom - WindowRect.top,
 									 NULL, NULL, global_hInstance, NULL);
-
 		if (!mainwindow)
 			Sys_Error ("Couldn't create DIB window");
 
@@ -1258,9 +1189,7 @@ VID_SetWindowedMode (int modenum)
 		SetWindowLong (mainwindow, GWL_EXSTYLE, ExWindowStyle);
 	}
 
-	if (!SetWindowPos (mainwindow,
-					   NULL,
-					   0, 0,
+	if (!SetWindowPos (mainwindow, NULL, 0, 0,
 					   WindowRect.right - WindowRect.left,
 					   WindowRect.bottom - WindowRect.top,
 					   SWP_NOCOPYBITS | SWP_NOZORDER | SWP_HIDEWINDOW)) {
@@ -1270,7 +1199,7 @@ VID_SetWindowedMode (int modenum)
 	if (hide_window)
 		return true;
 
-// position and show the DIB window
+	// position and show the DIB window
 	VID_CheckWindowXY ();
 	SetWindowPos (mainwindow, NULL, vid_window_x->int_val,
 				  vid_window_y->int_val, 0, 0,
@@ -1320,7 +1249,6 @@ VID_SetWindowedMode (int modenum)
 	return true;
 }
 
-
 qboolean
 VID_SetFullscreenMode (int modenum)
 {
@@ -1356,21 +1284,20 @@ VID_SetFullscreenMode (int modenum)
 
 	vid_stretched = modelist[modenum].stretched;
 
-// needed because we're not getting WM_MOVE messages fullscreen on NT
+	// needed because we're not getting WM_MOVE messages fullscreen on NT
 	window_x = 0;
 	window_y = 0;
 
-// set the large icon, so the Quake icon will show up in the taskbar
+	// set the large icon, so the Quake icon will show up in the taskbar
 	SendMessage (mainwindow, WM_SETICON, (WPARAM) 1, (LPARAM) hIcon);
 	SendMessage (mainwindow, WM_SETICON, (WPARAM) 0, (LPARAM) hIcon);
 
-// shouldn't be needed, but Kendall needs to let us get the activation
-// message for this not to be needed on NT
+	// shouldn't be needed, but Kendall needs to let us get the activation
+	// message for this not to be needed on NT
 	AppActivate (true, false);
 
 	return true;
 }
-
 
 qboolean
 VID_SetFullDIBMode (int modenum)
@@ -1415,7 +1342,8 @@ VID_SetFullDIBMode (int modenum)
 	hdc = GetDC (NULL);
 
 	WindowRect.right = modelist[modenum].width << modelist[modenum].stretched;
-	WindowRect.bottom = modelist[modenum].height << modelist[modenum].stretched;
+	WindowRect.bottom = modelist[modenum].height <<
+		modelist[modenum].stretched;
 
 	ReleaseDC (NULL, hdc);
 
@@ -1429,15 +1357,13 @@ VID_SetFullDIBMode (int modenum)
 	SetWindowLong (mainwindow, GWL_STYLE, WindowStyle | WS_VISIBLE);
 	SetWindowLong (mainwindow, GWL_EXSTYLE, ExWindowStyle);
 
-	if (!SetWindowPos (mainwindow,
-					   NULL,
-					   0, 0,
+	if (!SetWindowPos (mainwindow, NULL, 0, 0,
 					   WindowRect.right - WindowRect.left,
 					   WindowRect.bottom - WindowRect.top,
 					   SWP_NOCOPYBITS | SWP_NOZORDER)) {
 		Sys_Error ("Couldn't resize DIB window");
 	}
-// position and show the DIB window
+	// position and show the DIB window
 	SetWindowPos (mainwindow, HWND_TOPMOST, 0, 0, 0, 0,
 				  SWP_NOSIZE | SWP_SHOWWINDOW | SWP_DRAWFRAME);
 	ShowWindow (mainwindow, SW_SHOWDEFAULT);
@@ -1471,13 +1397,12 @@ VID_SetFullDIBMode (int modenum)
 
 	vid_stretched = modelist[modenum].stretched;
 
-// needed because we're not getting WM_MOVE messages fullscreen on NT
+	// needed because we're not getting WM_MOVE messages fullscreen on NT
 	window_x = 0;
 	window_y = 0;
 
 	return true;
 }
-
 
 void
 VID_RestoreOldMode (int original_mode)
@@ -1490,7 +1415,7 @@ VID_RestoreOldMode (int original_mode)
 	in_mode_set = false;
 	inerror = true;
 
-// make sure mode set happens (video mode changes)
+	// make sure mode set happens (video mode changes)
 	vid_modenum = original_mode - 1;
 
 	if (!VID_SetMode (original_mode, vid_curpal)) {
@@ -1503,7 +1428,6 @@ VID_RestoreOldMode (int original_mode)
 	inerror = false;
 }
 
-
 void
 VID_SetDefaultMode (void)
 {
@@ -1513,7 +1437,6 @@ VID_SetDefaultMode (void)
 
 	IN_DeactivateMouse ();
 }
-
 
 int
 VID_SetMode (int modenum, unsigned char *palette)
@@ -1541,7 +1464,7 @@ VID_SetMode (int modenum, unsigned char *palette)
 	if (!force_mode_set && (modenum == vid_modenum))
 		return true;
 
-// so Con_Printfs don't mess us up by forcing vid and snd updates
+	// so Con_Printfs don't mess us up by forcing vid and snd updates
 	temp = scr_disabled_for_loading;
 	scr_disabled_for_loading = true;
 	in_mode_set = true;
@@ -1630,13 +1553,14 @@ VID_SetMode (int modenum, unsigned char *palette)
 	Sleep (100);
 
 	if (!force_minimized) {
-		SetWindowPos (mainwindow, HWND_TOP, 0, 0, 0, 0,
-					  SWP_DRAWFRAME | SWP_NOMOVE | SWP_NOSIZE | SWP_SHOWWINDOW |
+		SetWindowPos (mainwindow, HWND_TOP, 0, 0, 0, 0, SWP_DRAWFRAME |
+					  SWP_NOMOVE | SWP_NOSIZE | SWP_SHOWWINDOW |
 					  SWP_NOCOPYBITS);
 
 		SetForegroundWindow (mainwindow);
 	}
-// fix the leftover Alt from any Alt-Tab or the like that switched us away
+
+	// fix the leftover Alt from any Alt-Tab or the like that switched us away
 	ClearAllStates ();
 
 	Con_Printf ("Video mode %s initialized\n",
@@ -1653,7 +1577,6 @@ VID_SetMode (int modenum, unsigned char *palette)
 void
 VID_LockBuffer (void)
 {
-
 	if (dibdc)
 		return;
 
@@ -1685,7 +1608,6 @@ VID_LockBuffer (void)
 		screenwidth = vid.rowbytes;
 }
 
-
 void
 VID_UnlockBuffer (void)
 {
@@ -1704,9 +1626,7 @@ VID_UnlockBuffer (void)
 
 // to turn up any unlocked accesses
 	vid.buffer = vid.conbuffer = vid.direct = d_viewbuffer = NULL;
-
 }
-
 
 int
 VID_ForceUnlockedAndReturnState (void)
@@ -1728,11 +1648,9 @@ VID_ForceUnlockedAndReturnState (void)
 	return lk;
 }
 
-
 void
 VID_ForceLockState (int lk)
 {
-
 	if (!dibdc && lk) {
 		lockcount = 0;
 		VID_LockBuffer ();
@@ -1740,7 +1658,6 @@ VID_ForceLockState (int lk)
 
 	lockcount = lk;
 }
-
 
 void
 VID_SetPalette (unsigned char *palette)
@@ -1798,25 +1715,18 @@ VID_SetPalette (unsigned char *palette)
 	memcpy (vid_curpal, palette, sizeof (vid_curpal));
 
 	if (syscolchg) {
-		PostMessage (HWND_BROADCAST, WM_SYSCOLORCHANGE, (WPARAM) 0, (LPARAM) 0);
+		PostMessage (HWND_BROADCAST, WM_SYSCOLORCHANGE, (WPARAM) 0,
+					 (LPARAM) 0);
 		syscolchg = false;
 	}
 }
 
-
-/*
-	VID_DescribeCurrentMode_f
-*/
 void
 VID_DescribeCurrentMode_f (void)
 {
 	Con_Printf ("%s\n", VID_GetExtModeDescription (vid_modenum));
 }
 
-
-/*
-	VID_NumModes_f
-*/
 void
 VID_NumModes_f (void)
 {
@@ -1827,10 +1737,6 @@ VID_NumModes_f (void)
 		Con_Printf ("%d video modes are available\n", nummodes);
 }
 
-
-/*
-	VID_DescribeMode_f
-*/
 void
 VID_DescribeMode_f (void)
 {
@@ -1841,10 +1747,6 @@ VID_DescribeMode_f (void)
 	Con_Printf ("%s\n", VID_GetExtModeDescription (modenum));
 }
 
-
-/*
-	VID_DescribeModes_f
-*/
 void
 VID_DescribeModes_f (void)
 {
@@ -1874,10 +1776,6 @@ VID_DescribeModes_f (void)
 	}
 }
 
-
-/*
-	VID_TestMode_f
-*/
 void
 VID_TestMode_f (void)
 {
@@ -1897,9 +1795,6 @@ VID_TestMode_f (void)
 	}
 }
 
-/*
-	VID_Windowed_f
-*/
 void
 VID_Windowed_f (void)
 {
@@ -1907,10 +1802,6 @@ VID_Windowed_f (void)
 	VID_SetMode (vid_windowed_mode->int_val, vid_curpal);
 }
 
-
-/*
-	VID_Fullscreen_f
-*/
 void
 VID_Fullscreen_f (void)
 {
@@ -1918,24 +1809,15 @@ VID_Fullscreen_f (void)
 	VID_SetMode (vid_fullscreen_mode->int_val, vid_curpal);
 }
 
-/*
-	VID_Minimize_f
-*/
 void
 VID_Minimize_f (void)
 {
-
-// we only support minimizing windows; if you're fullscreen,
-// switch to windowed first
+	// we only support minimizing windows; if you're fullscreen,
+	// switch to windowed first
 	if (modestate == MS_WINDOWED)
 		ShowWindow (mainwindow, SW_MINIMIZE);
 }
 
-
-
-/*
-	VID_ForceMode_f
-*/
 void
 VID_ForceMode_f (void)
 {
@@ -1950,7 +1832,6 @@ VID_ForceMode_f (void)
 	}
 }
 
-
 void
 VID_Init (unsigned char *palette)
 {
@@ -1958,16 +1839,23 @@ VID_Init (unsigned char *palette)
 	int         basenummodes;
 	byte       *ptmp;
 
-	Cmd_AddCommand ("vid_testmode", VID_TestMode_f, "Switch to another video mode temporarily for 5-seconds to test it.\n"
-		"(vid_testmode (mode))");
-	Cmd_AddCommand ("vid_nummodes", VID_NumModes_f, "Reports the total number of video modes available");
-	Cmd_AddCommand ("vid_describecurrentmode", VID_DescribeCurrentMode_f, "Report current video mode.");
-	Cmd_AddCommand ("vid_describemode", VID_DescribeMode_f, "Report information on specified video mode, default is current.\n"
-		"(vid_describemode (mode))");
-	Cmd_AddCommand ("vid_describemodes", VID_DescribeModes_f, "Report information on all video modes.");
-	Cmd_AddCommand ("vid_forcemode", VID_ForceMode_f, "Force QuakeWorld to use a certain video mode. (vid_forcemode (mode))");
+	Cmd_AddCommand ("vid_testmode", VID_TestMode_f, "Switch to another video "
+					"mode temporarily for 5-seconds to test it.\n"
+					"(vid_testmode (mode))");
+	Cmd_AddCommand ("vid_nummodes", VID_NumModes_f, "Reports the total number "
+					"of video modes available");
+	Cmd_AddCommand ("vid_describecurrentmode", VID_DescribeCurrentMode_f,
+					"Report current video mode.");
+	Cmd_AddCommand ("vid_describemode", VID_DescribeMode_f, "Report "
+					"information on specified video mode, default is "
+					"current.\n(vid_describemode (mode))");
+	Cmd_AddCommand ("vid_describemodes", VID_DescribeModes_f, "Report "
+					"information on all video modes.");
+	Cmd_AddCommand ("vid_forcemode", VID_ForceMode_f, "Force QuakeWorld to "
+					"use a certain video mode. (vid_forcemode (mode))");
 	Cmd_AddCommand ("vid_windowed", VID_Windowed_f, "Switch to windowed mode");
-	Cmd_AddCommand ("vid_fullscreen", VID_Fullscreen_f, "Switch to full screen mode");
+	Cmd_AddCommand ("vid_fullscreen", VID_Fullscreen_f, "Switch to full "
+					"screen mode");
 	Cmd_AddCommand ("vid_minimize", VID_Minimize_f, "Minimize windowed Quake");
 
 	if (COM_CheckParm ("-dibonly"))
@@ -1980,23 +1868,23 @@ VID_Init (unsigned char *palette)
 	if (!dibonly)
 		VID_InitMGLFull (global_hInstance);
 
-// if there are no non-windowed modes, or only windowed and mode 0x13, then use
-// fullscreen DIBs as well
-	if (((nummodes == basenummodes) ||
-		 ((nummodes == (basenummodes + 1)) && is_mode0x13)) &&
+	// if there are no non-windowed modes, or only windowed and mode 0x13,
+	// then use fullscreen DIBs as well
+	if (((nummodes == basenummodes) || ((nummodes == (basenummodes + 1)) &&
+										is_mode0x13)) &&
 		!COM_CheckParm ("-nofulldib"))
-	 {
+	{
 		VID_InitFullDIB (global_hInstance);
 	}
 
 	vid.maxwarpwidth = WARP_WIDTH;
 	vid.maxwarpheight = WARP_HEIGHT;
-	vid.colormap = vid_colormap;
-	vid.fullbright = 256 - LittleLong (*((int *) vid.colormap + 2048));
+	vid.colormap8 = vid_colormap;
+	vid.fullbright = 256 - LittleLong (*((int *) vid.colormap8 + 2048));
 	vid_testingmode = 0;
 
-// GDI doesn't let us remap palette index 0, so we'll remap color
-// mappings from that black to another one
+	// GDI doesn't let us remap palette index 0, so we'll remap color
+	// mappings from that black to another one
 	bestmatchmetric = 256 * 256 * 3;
 
 	for (i = 1; i < 256; i++) {
@@ -2015,7 +1903,8 @@ VID_Init (unsigned char *palette)
 		}
 	}
 
-	for (i = 0, ptmp = vid.colormap; i < (1 << (VID_CBITS + 8)); i++, ptmp++) {
+	for (i = 0, ptmp = vid.colormap8; i < (1 << (VID_CBITS + 8));
+		 i++, ptmp++) {
 		if (*ptmp == 0)
 			*ptmp = bestmatch;
 	}
@@ -2034,11 +1923,11 @@ VID_Init (unsigned char *palette)
 // fullscreen so the "hardware already in use" dialog is visible if it
 // gets displayed
 
-// keep the window minimized until we're ready for the first real mode set
+	// keep the window minimized until we're ready for the first real mode set
 	hide_window = true;
 	VID_SetMode (MODE_WINDOWED, palette);
 	hide_window = false;
-//  S_Init ();
+//	S_Init ();
 
 	vid.initialized = true;
 
@@ -2059,28 +1948,39 @@ VID_Init (unsigned char *palette)
 void
 VID_Init_Cvars ()
 {
-	vid_mode = Cvar_Get ("vid_mode", "0", CVAR_NONE, NULL, "Set the video mode");
-	vid_nopageflip = Cvar_Get ("vid_nopageflip", "0", CVAR_ARCHIVE, NULL, "Toggles the use of page flipping");
-	_vid_default_mode_win =
-		Cvar_Get ("_vid_default_mode_win", "3", CVAR_ARCHIVE, NULL, "Default windowed video mode");
-	vid_config_x = Cvar_Get ("vid_config_x", "800", CVAR_ARCHIVE, NULL, "Maximum x-axis screen size");
-	vid_config_y = Cvar_Get ("vid_config_y", "600", CVAR_ARCHIVE, NULL, "Maximum y-axis screen size");
-	vid_stretch_by_2 = Cvar_Get ("vid_stretch_by_2", "1", CVAR_ARCHIVE, NULL, "Stretch the pixles by a two fold to acheive proper view");
-	_windowed_mouse = Cvar_Get ("_windowed_mouse", "0", CVAR_ARCHIVE, NULL, "Have quake grab the mouse from X when you play");
-	vid_fullscreen_mode =
-		Cvar_Get ("vid_fullscreen_mode", "3", CVAR_ARCHIVE, NULL, "Set the full screen video mode.");
-	vid_windowed_mode =
-		Cvar_Get ("vid_windowed_mode", "0", CVAR_ARCHIVE, NULL, "Set the windowed video mode");
-	block_switch = Cvar_Get ("block_switch", "0", CVAR_ARCHIVE, NULL, "If set, won't allow you to task switch while playing");
-	vid_window_x = Cvar_Get ("vid_window_x", "0", CVAR_ARCHIVE, NULL, "The x-axis location of the window, if windowed");
-	vid_window_y = Cvar_Get ("vid_window_y", "0", CVAR_ARCHIVE, NULL, "The y-axis location of the window, if windowed");
+	vid_mode = Cvar_Get ("vid_mode", "0", CVAR_NONE, NULL, "Set the video "
+						 "mode");
+	vid_nopageflip = Cvar_Get ("vid_nopageflip", "0", CVAR_ARCHIVE, NULL,
+							   "Toggles the use of page flipping");
+	_vid_default_mode_win = Cvar_Get ("_vid_default_mode_win", "3",
+									  CVAR_ARCHIVE, NULL, "Default windowed "
+									  "video mode");
+	vid_config_x = Cvar_Get ("vid_config_x", "800", CVAR_ARCHIVE, NULL,
+							 "Maximum x-axis screen size");
+	vid_config_y = Cvar_Get ("vid_config_y", "600", CVAR_ARCHIVE, NULL,
+							 "Maximum y-axis screen size");
+	vid_stretch_by_2 = Cvar_Get ("vid_stretch_by_2", "1", CVAR_ARCHIVE, NULL,
+								 "Stretch the pixles by a two fold to acheive "
+								 "proper view");
+	_windowed_mouse = Cvar_Get ("_windowed_mouse", "0", CVAR_ARCHIVE, NULL,
+								"Have quake grab the mouse from X when you "
+								"play");
+	vid_fullscreen_mode = Cvar_Get ("vid_fullscreen_mode", "3", CVAR_ARCHIVE,
+									NULL, "Set the full screen video mode.");
+	vid_windowed_mode =	Cvar_Get ("vid_windowed_mode", "0", CVAR_ARCHIVE, NULL,
+								  "Set the windowed video mode");
+	block_switch = Cvar_Get ("block_switch", "0", CVAR_ARCHIVE, NULL, "If "
+							 "set, won't allow you to task switch while "
+							 "playing");
+	vid_window_x = Cvar_Get ("vid_window_x", "0", CVAR_ARCHIVE, NULL, "The "
+							 "x-axis location of the window, if windowed");
+	vid_window_y = Cvar_Get ("vid_window_y", "0", CVAR_ARCHIVE, NULL, "The "
+							 "y-axis location of the window, if windowed");
 }
-
 
 void
 VID_Shutdown (void)
 {
-
 #ifdef SPLASH_SCREEN
                 if (hwnd_dialog)
                         DestroyWindow (hwnd_dialog);
@@ -2092,7 +1992,8 @@ VID_Shutdown (void)
 
 		PostMessage (HWND_BROADCAST, WM_PALETTECHANGED, (WPARAM) mainwindow,
 					 (LPARAM) 0);
-		PostMessage (HWND_BROADCAST, WM_SYSCOLORCHANGE, (WPARAM) 0, (LPARAM) 0);
+		PostMessage (HWND_BROADCAST, WM_SYSCOLORCHANGE, (WPARAM) 0,
+					 (LPARAM) 0);
 
 		AppActivate (false, false);
 		DestroyDIBWindow ();
@@ -2109,10 +2010,6 @@ VID_Shutdown (void)
 	}
 }
 
-
-/*
-	FlipScreen
-*/
 void
 FlipScreen (vrect_t *rects)
 {
@@ -2122,18 +2019,14 @@ FlipScreen (vrect_t *rects)
 			if (memdc) {
 				while (rects) {
 					if (vid_stretched) {
-						MGL_stretchBltCoord (mgldc, memdc,
-											 rects->x,
-											 rects->y,
-											 rects->x + rects->width,
+						MGL_stretchBltCoord (mgldc, memdc, rects->x,
+											 rects->y, rects->x + rects->width,
 											 rects->y + rects->height,
-											 rects->x << 1,
-											 rects->y << 1,
+											 rects->x << 1, rects->y << 1,
 											 (rects->x + rects->width) << 1,
 											 (rects->y + rects->height) << 1);
 					} else {
-						MGL_bitBltCoord (mgldc, memdc,
-										 rects->x, rects->y,
+						MGL_bitBltCoord (mgldc, memdc, rects->x, rects->y,
 										 (rects->x + rects->width),
 										 (rects->y + rects->height),
 										 rects->x, rects->y, MGL_REPLACE_MODE);
@@ -2161,16 +2054,14 @@ FlipScreen (vrect_t *rects)
 
 			while (rects) {
 				if (vid_stretched) {
-					MGL_stretchBltCoord (windc, dibdc,
-										 rects->x, rects->y,
+					MGL_stretchBltCoord (windc, dibdc, rects->x, rects->y,
 										 rects->x + rects->width,
 										 rects->y + rects->height,
 										 rects->x << 1, rects->y << 1,
 										 (rects->x + rects->width) << 1,
 										 (rects->y + rects->height) << 1);
 				} else {
-					MGL_bitBltCoord (windc, dibdc,
-									 rects->x, rects->y,
+					MGL_bitBltCoord (windc, dibdc, rects->x, rects->y,
 									 rects->x + rects->width,
 									 rects->y + rects->height, rects->x,
 									 rects->y, MGL_REPLACE_MODE);
@@ -2183,7 +2074,6 @@ FlipScreen (vrect_t *rects)
 		ReleaseDC (mainwindow, hdcScreen);
 	}
 }
-
 
 void
 VID_Update (vrect_t *rects)
@@ -2214,15 +2104,14 @@ VID_Update (vrect_t *rects)
 
 				VID_CheckWindowXY ();
 				SetWindowPos (mainwindow, NULL, vid_window_x->int_val,
-							  vid_window_y->int_val, 0, 0,
-							  SWP_NOSIZE | SWP_NOZORDER | SWP_SHOWWINDOW |
-							  SWP_DRAWFRAME);
+							  vid_window_y->int_val, 0, 0, SWP_NOSIZE |
+							  SWP_NOZORDER | SWP_SHOWWINDOW | SWP_DRAWFRAME);
 			}
 		}
 
 		if ((_vid_default_mode_win->int_val != vid_default) &&
-			(!startwindowed
-			 || (_vid_default_mode_win->int_val < MODE_FULLSCREEN_DEFAULT))) {
+			(!startwindowed || (_vid_default_mode_win->int_val <
+								MODE_FULLSCREEN_DEFAULT))) {
 			firstupdate = 0;
 
 			if (COM_CheckParm ("-resetwinpos")) {
@@ -2256,7 +2145,7 @@ VID_Update (vrect_t *rects)
 		}
 	}
 
-// handle the mouse state when windowed if that's changed
+	// handle the mouse state when windowed if that's changed
 	if (modestate == MS_WINDOWED) {
 		if (!_windowed_mouse->int_val) {
 			if (windowed_mouse) {
@@ -2277,10 +2166,6 @@ VID_Update (vrect_t *rects)
 	}
 }
 
-
-/*
-	D_BeginDirectRect
-*/
 void
 D_BeginDirectRect (int x, int y, byte * pbitmap, int width, int height)
 {
@@ -2360,10 +2245,6 @@ D_BeginDirectRect (int x, int y, byte * pbitmap, int width, int height)
 	}
 }
 
-
-/*
-	D_EndDirectRect
-*/
 void
 D_EndDirectRect (int x, int y, int width, int height)
 {
@@ -2436,7 +2317,6 @@ D_EndDirectRect (int x, int y, int width, int height)
 	}
 }
 
-
 //==========================================================================
 
 byte        scantokey[128] = {
@@ -2451,7 +2331,8 @@ byte        scantokey[128] = {
 	'b', 'n', 'm', ',', '.', '/', K_SHIFT, KP_MULTIPLY,
 	K_ALT, ' ', K_CAPSLOCK, K_F1, K_F2, K_F3, K_F4, K_F5,	// 3
 	K_F6, K_F7, K_F8, K_F9, K_F10, K_PAUSE, K_SCRLCK, KP_HOME,
-	KP_UPARROW, KP_PGUP, KP_MINUS, KP_LEFTARROW, KP_5, KP_RIGHTARROW, KP_PLUS, KP_END,	// 4
+	KP_UPARROW, KP_PGUP, KP_MINUS, KP_LEFTARROW, KP_5, KP_RIGHTARROW, KP_PLUS,
+	KP_END,	// 4
 	KP_DOWNARROW, KP_PGDN, KP_INS, KP_DEL, 0, 0, 0, K_F11,
 	K_F12, 0, 0, 0, 0, 0, 0, 0,			// 5
 	0, 0, 0, 0, 0, 0, 0, 0,
@@ -2481,8 +2362,6 @@ byte        extscantokey[128] = {
 	0, 0, 0, 0, 0, 0, 0, 0
 };
 
-
-
 /*
 	MapKey
 
@@ -2505,19 +2384,15 @@ MapKey (int key)
 		return scantokey[key];
 }
 
-
+/*
+  AppActivate
+  
+  fActive - True if app is activating
+  If the application is activating, then swap the system into SYSPAL_NOSTATIC
+  mode so that our palettes will display correctly.
+*/
 void
 AppActivate (BOOL fActive, BOOL minimize)
-/****************************************************************************
-*
-* Function:     AppActivate
-* Parameters:   fActive - True if app is activating
-*
-* Description:  If the application is activating, then swap the system
-*               into SYSPAL_NOSTATIC mode so that our palettes will display
-*               correctly.
-*
-****************************************************************************/
 {
 	HDC         hdc;
 	int         i, t;
@@ -2525,7 +2400,7 @@ AppActivate (BOOL fActive, BOOL minimize)
 
 	ActiveApp = fActive;
 
-// messy, but it seems to work
+	// messy, but it seems to work
 	if (vid_fulldib_on_focus_mode) {
 		Minimized = minimize;
 
@@ -2567,7 +2442,7 @@ AppActivate (BOOL fActive, BOOL minimize)
 
 		ReleaseDC (NULL, hdc);
 	}
-// enable/disable sound on focus gain/loss
+	// enable/disable sound on focus gain/loss
 	if (!ActiveApp && sound_active) {
 		S_BlockSound ();
 		S_ClearBuffer ();
@@ -2577,7 +2452,7 @@ AppActivate (BOOL fActive, BOOL minimize)
 		S_ClearBuffer ();
 		sound_active = true;
 	}
-// minimize/restore fulldib windows/mouse-capture normal windows on demand
+	// minimize/restore fulldib windows/mouse-capture normal windows on demand
 	if (!in_mode_set) {
 		if (ActiveApp) {
 			if (vid_fulldib_on_focus_mode) {
@@ -2616,8 +2491,7 @@ AppActivate (BOOL fActive, BOOL minimize)
 					force_minimized = false;
 
 					// we never seem to get WM_ACTIVATE inactive from this
-					// mode set, so we'll
-					// do it manually
+					// mode set, so we'll do it manually
 					t = in_mode_set;
 					in_mode_set = true;
 					AppActivate (false, true);
@@ -2626,9 +2500,8 @@ AppActivate (BOOL fActive, BOOL minimize)
 
 				IN_DeactivateMouse ();
 				IN_ShowMouse ();
-			} else if ((modestate == MS_WINDOWED) && _windowed_mouse->int_val	/* && 
-																				   mouseactive 
-																				 */ ) {
+			} else if ((modestate == MS_WINDOWED) && _windowed_mouse->int_val
+					   /* &&  mouseactive */ ) {
 				IN_DeactivateMouse ();
 				IN_ShowMouse ();
 			}
@@ -2636,10 +2509,6 @@ AppActivate (BOOL fActive, BOOL minimize)
 	}
 }
 
-
-/*
-	VID_HandlePause
-*/
 void
 VID_HandlePause (qboolean pause)
 {
@@ -2656,13 +2525,11 @@ VID_HandlePause (qboolean pause)
 #endif
 }
 
-
 /*
-	MAIN WINDOW
+  MAIN WINDOW
 */
 
 LONG        CDAudio_MessageHandler (HWND hWnd, UINT uMsg, WPARAM wParam,
-
 									LPARAM lParam);
 
 /* main window procedure */
@@ -2680,221 +2547,209 @@ MainWndProc (HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 		wParam <<= 16;
 	}
 
-
 	switch (uMsg) {
 		case WM_CREATE:
 			break;
 
 		case WM_SYSCOMMAND:
-
 			// Check for maximize being hit
 			switch (wParam & ~0x0F) {
-				case SC_MAXIMIZE:
-					// if minimized, bring up as a window before going
-					// fullscreen,
-					// so MGL will have the right state to restore
-					if (Minimized) {
-						force_mode_set = true;
-						VID_SetMode (vid_modenum, vid_curpal);
-						force_mode_set = false;
-					}
+			case SC_MAXIMIZE:
+				// if minimized, bring up as a window before going
+				// fullscreen,
+				// so MGL will have the right state to restore
+				if (Minimized) {
+					force_mode_set = true;
+					VID_SetMode (vid_modenum, vid_curpal);
+					force_mode_set = false;
+				}
 
-					VID_SetMode (vid_fullscreen_mode->int_val, vid_curpal);
-					break;
-
-				case SC_SCREENSAVE:
-				case SC_MONITORPOWER:
-					if (modestate != MS_WINDOWED) {
-						// don't call DefWindowProc() because we don't want
-						// to start
-						// the screen saver fullscreen
-						break;
-					}
-					// fall through windowed and allow the screen saver to
-					// start
-
-				default:
-					if (!in_mode_set) {
-						S_BlockSound ();
-						S_ClearBuffer ();
-					}
-
-					lRet = DefWindowProc (hWnd, uMsg, wParam, lParam);
-
-					if (!in_mode_set) {
-						S_UnblockSound ();
-					}
-			}
-			break;
-
-		case WM_MOVE:
-			window_x = (int) LOWORD (lParam);
-			window_y = (int) HIWORD (lParam);
-			VID_UpdateWindowStatus ();
-
-			if ((modestate == MS_WINDOWED) && !in_mode_set && !Minimized)
-				VID_RememberWindowPos ();
-
-			break;
-
-		case WM_SIZE:
-			Minimized = false;
-
-			if (!(wParam & SIZE_RESTORED)) {
-				if (wParam & SIZE_MINIMIZED)
-					Minimized = true;
-			}
-			break;
-
-		case WM_SYSCHAR:
-			// keep Alt-Space from happening
-			break;
-
-		case WM_ACTIVATE:
-			fActive = LOWORD (wParam);
-			fMinimized = (BOOL) HIWORD (wParam);
-			AppActivate (!(fActive == WA_INACTIVE), fMinimized);
-
-			// fix the leftover Alt from any Alt-Tab or the like that
-			// switched us away
-			ClearAllStates ();
-
-			if (!in_mode_set) {
-				if (windc)
-					MGL_activatePalette (windc, true);
-
-				VID_SetPalette (vid_curpal);
-			}
-
-			break;
-
-		case WM_PAINT:
-			hdc = BeginPaint (hWnd, &ps);
-
-			if (!in_mode_set && host_initialized)
-				SCR_UpdateWholeScreen ();
-
-			EndPaint (hWnd, &ps);
-			break;
-
-		case WM_KEYDOWN:
-		case WM_SYSKEYDOWN:
-			if (!in_mode_set)
-				Key_Event (MapKey (lParam), -1, true);
-			break;
-
-		case WM_KEYUP:
-		case WM_SYSKEYUP:
-			if (!in_mode_set)
-				Key_Event (MapKey (lParam), -1, false);
-			break;
-
-			// this is complicated because Win32 seems to pack multiple mouse 
-			// events into
-			// one update sometimes, so we always check all states and look
-			// for events
-		case WM_LBUTTONDOWN:
-		case WM_LBUTTONUP:
-		case WM_RBUTTONDOWN:
-		case WM_RBUTTONUP:
-		case WM_MBUTTONDOWN:
-		case WM_MBUTTONUP:
-		case WM_MOUSEMOVE:
-			if (!in_mode_set) {
-				temp = 0;
-
-				if (wParam & MK_LBUTTON)
-					temp |= 1;
-
-				if (wParam & MK_RBUTTON)
-					temp |= 2;
-
-				if (wParam & MK_MBUTTON)
-					temp |= 4;
-
-				IN_MouseEvent (temp);
-			}
-			break;
-			// JACK: This is the mouse wheel with the Intellimouse
-			// Its delta is either positive or neg, and we generate the
-			// proper
-			// Event.
-		case WM_MOUSEWHEEL:
-			if ((short) HIWORD (wParam) > 0) {
-				Key_Event (K_MWHEELUP, -1, true);
-				Key_Event (K_MWHEELUP, -1, false);
-			} else {
-				Key_Event (K_MWHEELDOWN, -1, true);
-				Key_Event (K_MWHEELDOWN, -1, false);
-			}
-			break;
-			// KJB: Added these new palette functions
-		case WM_PALETTECHANGED:
-			if ((HWND) wParam == hWnd)
+				VID_SetMode (vid_fullscreen_mode->int_val, vid_curpal);
 				break;
-			/* Fall through to WM_QUERYNEWPALETTE */
-		case WM_QUERYNEWPALETTE:
-			hdc = GetDC (NULL);
 
-			if (GetDeviceCaps (hdc, RASTERCAPS) & RC_PALETTE)
-				vid_palettized = true;
-			else
-				vid_palettized = false;
+			case SC_SCREENSAVE:
+			case SC_MONITORPOWER:
+				if (modestate != MS_WINDOWED) {
+					// don't call DefWindowProc() because we don't want
+					// to start the screen saver fullscreen
+					break;
+				}
 
-			ReleaseDC (NULL, hdc);
+			// fall through windowed and allow the screen saver to start
+			default:
+				if (!in_mode_set) {
+					S_BlockSound ();
+					S_ClearBuffer ();
+				}
 
-			scr_fullupdate = 0;
+				lRet = DefWindowProc (hWnd, uMsg, wParam, lParam);
 
-			if (vid.initialized && !in_mode_set && windc
-				&& MGL_activatePalette (windc, false) && !Minimized) {
-				VID_SetPalette (vid_curpal);
-				InvalidateRect (mainwindow, NULL, false);
-
-				// specifically required if WM_QUERYNEWPALETTE realizes a new 
-				// palette
-				lRet = TRUE;
-			}
-			break;
-
-		case WM_DISPLAYCHANGE:
-			if (!in_mode_set && (modestate == MS_WINDOWED)
-				&& !vid_fulldib_on_focus_mode) {
-				force_mode_set = true;
-				VID_SetMode (vid_modenum, vid_curpal);
-				force_mode_set = false;
-			}
-			break;
-
-		case WM_CLOSE:
-			// this causes Close in the right-click task bar menu not to
-			// work, but right
-			// now bad things happen if Close is handled in that case
-			// (garbage and a
-			// crash on Win95)
-			if (!in_mode_set) {
-				if (MessageBox
-					(mainwindow, "Are you sure you want to quit?",
-					 "Confirm Exit",
-					 MB_YESNO | MB_SETFOREGROUND | MB_ICONQUESTION) == IDYES) {
-					Sys_Quit ();
+				if (!in_mode_set) {
+					S_UnblockSound ();
 				}
 			}
 			break;
 
-		case MM_MCINOTIFY:
-			lRet = CDAudio_MessageHandler (hWnd, uMsg, wParam, lParam);
-			break;
+	case WM_MOVE:
+		window_x = (int) LOWORD (lParam);
+		window_y = (int) HIWORD (lParam);
+		VID_UpdateWindowStatus ();
 
-		default:
-			/* pass all unhandled messages to DefWindowProc */
-			lRet = DefWindowProc (hWnd, uMsg, wParam, lParam);
+		if ((modestate == MS_WINDOWED) && !in_mode_set && !Minimized)
+			VID_RememberWindowPos ();
+
+		break;
+
+	case WM_SIZE:
+		Minimized = false;
+
+		if (!(wParam & SIZE_RESTORED)) {
+			if (wParam & SIZE_MINIMIZED)
+				Minimized = true;
+		}
+		break;
+
+	case WM_SYSCHAR:
+		// keep Alt-Space from happening
+		break;
+
+	case WM_ACTIVATE:
+		fActive = LOWORD (wParam);
+		fMinimized = (BOOL) HIWORD (wParam);
+		AppActivate (!(fActive == WA_INACTIVE), fMinimized);
+
+		// fix leftover Alt from any Alt-Tab or the like that switched us away
+		ClearAllStates ();
+
+		if (!in_mode_set) {
+			if (windc)
+				MGL_activatePalette (windc, true);
+
+			VID_SetPalette (vid_curpal);
+		}
+		break;
+
+	case WM_PAINT:
+		hdc = BeginPaint (hWnd, &ps);
+
+		if (!in_mode_set && host_initialized)
+			SCR_UpdateWholeScreen ();
+
+		EndPaint (hWnd, &ps);
+		break;
+
+	case WM_KEYDOWN:
+	case WM_SYSKEYDOWN:
+		if (!in_mode_set)
+			Key_Event (MapKey (lParam), -1, true);
+		break;
+
+	case WM_KEYUP:
+	case WM_SYSKEYUP:
+		if (!in_mode_set)
+			Key_Event (MapKey (lParam), -1, false);
+		break;
+
+	// this is complicated because Win32 seems to pack multiple mouse events
+	// into one update sometimes, so always check all states and look for
+	// events
+	case WM_LBUTTONDOWN:
+	case WM_LBUTTONUP:
+	case WM_RBUTTONDOWN:
+	case WM_RBUTTONUP:
+	case WM_MBUTTONDOWN:
+	case WM_MBUTTONUP:
+	case WM_MOUSEMOVE:
+		if (!in_mode_set) {
+			temp = 0;
+
+			if (wParam & MK_LBUTTON)
+				temp |= 1;
+
+			if (wParam & MK_RBUTTON)
+				temp |= 2;
+
+			if (wParam & MK_MBUTTON)
+				temp |= 4;
+
+			IN_MouseEvent (temp);
+		}
+		break;
+	// JACK: This is the mouse wheel with the Intellimouse
+	// Its delta is either positive or neg, and we generate the proper Event.
+	case WM_MOUSEWHEEL:
+		if ((short) HIWORD (wParam) > 0) {
+			Key_Event (K_MWHEELUP, -1, true);
+			Key_Event (K_MWHEELUP, -1, false);
+		} else {
+				Key_Event (K_MWHEELDOWN, -1, true);
+				Key_Event (K_MWHEELDOWN, -1, false);
+		}
+		break;
+	// KJB: Added these new palette functions
+	case WM_PALETTECHANGED:
+		if ((HWND) wParam == hWnd)
 			break;
+	/* Fall through to WM_QUERYNEWPALETTE */
+	case WM_QUERYNEWPALETTE:
+		hdc = GetDC (NULL);
+
+		if (GetDeviceCaps (hdc, RASTERCAPS) & RC_PALETTE)
+			vid_palettized = true;
+		else
+			vid_palettized = false;
+
+		ReleaseDC (NULL, hdc);
+
+		scr_fullupdate = 0;
+
+		if (vid.initialized && !in_mode_set && windc
+			&& MGL_activatePalette (windc, false) && !Minimized) {
+			VID_SetPalette (vid_curpal);
+			InvalidateRect (mainwindow, NULL, false);
+
+			// specifically required if WM_QUERYNEWPALETTE realizes a new 
+			// palette
+			lRet = TRUE;
+		}
+		break;
+
+	case WM_DISPLAYCHANGE:
+		if (!in_mode_set && (modestate == MS_WINDOWED)
+			&& !vid_fulldib_on_focus_mode) {
+			force_mode_set = true;
+			VID_SetMode (vid_modenum, vid_curpal);
+			force_mode_set = false;
+		}
+		break;
+
+	case WM_CLOSE:
+		// this causes Close in the right-click task bar menu not to work, but
+		// right now bad things happen if Close is handled in that case
+		// (garbage and a crash on Win95)
+		if (!in_mode_set) {
+			if (MessageBox
+				(mainwindow, "Are you sure you want to quit?",
+				 "Confirm Exit",
+				 MB_YESNO | MB_SETFOREGROUND | MB_ICONQUESTION) == IDYES) {
+				Sys_Quit ();
+			}
+		}
+		break;
+
+	case MM_MCINOTIFY:
+		lRet = CDAudio_MessageHandler (hWnd, uMsg, wParam, lParam);
+		break;
+
+	default:
+		/* pass all unhandled messages to DefWindowProc */
+		lRet = DefWindowProc (hWnd, uMsg, wParam, lParam);
+		break;
 	}
 
 	/* return 0 if handled message, 1 if not */
 	return lRet;
 }
-
 
 extern void M_Menu_Options_f (void);
 extern void M_Print (int cx, int cy, char *str);
@@ -2919,9 +2774,6 @@ typedef struct {
 
 static modedesc_t modedescs[MAX_MODEDESCS];
 
-/*
-	VID_MenuDraw
-*/
 void
 VID_MenuDraw (void)
 {
@@ -2992,8 +2844,8 @@ VID_MenuDraw (void)
 		}
 	}
 
-// sort the modes on width (to handle picking up oddball dibonly modes
-// after all the others)
+	// sort the modes on width (to handle picking up oddball dibonly modes
+	// after all the others)
 	for (i = 3; i < (vid_wmodes - 1); i++) {
 		for (j = (i + 1); j < vid_wmodes; j++) {
 			if (modedescs[i].width > modedescs[j].width) {
@@ -3003,7 +2855,6 @@ VID_MenuDraw (void)
 			}
 		}
 	}
-
 
 	M_Print (13 * 8, 36, "Windowed Modes");
 
@@ -3039,7 +2890,7 @@ VID_MenuDraw (void)
 			}
 		}
 	}
-// line cursor
+	// line cursor
 	if (vid_testingmode) {
 		snprintf (temp, sizeof (temp), "TESTING %s", modedescs[vid_line].desc);
 		M_Print (13 * 8, 36 + MODE_AREA_HEIGHT * 8 + 8 * 4, temp);
@@ -3076,10 +2927,6 @@ VID_MenuDraw (void)
 	}
 }
 
-
-/*
-	VID_MenuKey
-*/
 void
 VID_MenuKey (int key)
 {
@@ -3174,8 +3021,8 @@ VID_SetCaption (const char *text)
 	if (text && *text) {
 		char       *temp = strdup (text);
 
-		SetWindowText (mainwindow,
-					   (LPSTR) va ("%s %s: %s", PROGRAM, VERSION, text));
+		SetWindowText (mainwindow, (LPSTR) va ("%s %s: %s", PROGRAM, VERSION,
+											   text));
 		free (temp);
 	} else {
 		SetWindowText (mainwindow, (LPSTR) va ("%s %s", PROGRAM, VERSION));

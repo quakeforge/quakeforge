@@ -32,12 +32,11 @@
 #ifdef HAVE_CONFIG_H
 # include "config.h"
 #endif
-
 #ifdef HAVE_STRING_H
-#include <string.h>
+# include <string.h>
 #endif
 #ifdef HAVE_STRINGS_H
-#include <strings.h>
+# include <strings.h>
 #endif
 
 #include "QF/checksum.h"
@@ -64,6 +63,7 @@ extern mtriangle_t triangles[MAXALIASTRIS];
 // an animating sequence of poses
 extern trivertx_t *poseverts[MAXALIASFRAMES];
 extern int  posenum;
+
 
 void *
 Mod_LoadSkin (byte * skin, int skinsize, int *pskinindex, int snum, int gnum)
@@ -92,9 +92,6 @@ Mod_LoadSkin (byte * skin, int skinsize, int *pskinindex, int snum, int gnum)
 	return skin + skinsize;
 }
 
-/*
-	Mod_LoadAllSkins
-*/
 void *
 Mod_LoadAllSkins (int numskins, daliasskintype_t *pskintype, int *pskinindex)
 {
@@ -112,7 +109,8 @@ Mod_LoadAllSkins (int numskins, daliasskintype_t *pskintype, int *pskinindex)
 		Sys_Error ("Mod_LoadAliasModel: Invalid # of skins: %d\n", numskins);
 
 	skinsize = pheader->mdl.skinwidth * pheader->mdl.skinheight;
-	pskindesc = Hunk_AllocName (numskins * sizeof (maliasskindesc_t), loadname);
+	pskindesc = Hunk_AllocName (numskins * sizeof (maliasskindesc_t),
+								loadname);
 
 	pheader->skindesc = (byte *) pskindesc - (byte *) pheader;
 
@@ -191,9 +189,6 @@ GL_MakeAliasModelDisplayLists (model_t *m, aliashdr_t *hdr, void *_m, int _s)
 	}
 }
 
-/*
-	Mod_LoadAliasFrame
-*/
 void *
 Mod_LoadAliasFrame (void *pin, maliasframedesc_t *frame)
 {
@@ -212,7 +207,8 @@ Mod_LoadAliasFrame (void *pin, maliasframedesc_t *frame)
 	}
 
 	pinframe = (trivertx_t *) (pdaliasframe + 1);
-	pframe = Hunk_AllocName (pheader->mdl.numverts * sizeof (*pframe), loadname);
+	pframe = Hunk_AllocName (pheader->mdl.numverts * sizeof (*pframe),
+							 loadname);
 
 	frame->frame = (byte *) pframe - (byte *) pheader;
 
@@ -232,10 +228,6 @@ Mod_LoadAliasFrame (void *pin, maliasframedesc_t *frame)
 	return (void *) pinframe;
 }
 
-
-/*
-	Mod_LoadAliasGroup
-*/
 void *
 Mod_LoadAliasGroup (void *pin, maliasframedesc_t *frame)
 {

@@ -386,7 +386,7 @@ Con_DrawInput (void)
 	y = con_vislines - 22;
 
 	for (i = 0; i < con_linewidth; i++)
-		Draw_Character8 ((i + 1) << 3, con_vislines - 22, text[i]);
+		Draw_Character ((i + 1) << 3, con_vislines - 22, text[i]);
 }
 
 
@@ -421,7 +421,7 @@ Con_DrawNotify (void)
 		scr_copytop = 1;
 
 		for (x = 0; x < con_linewidth; x++)
-			Draw_Character8 ((x + 1) << 3, v, text[x]);
+			Draw_Character ((x + 1) << 3, v, text[x]);
 
 		v += 8;
 	}
@@ -431,10 +431,10 @@ Con_DrawNotify (void)
 		scr_copytop = 1;
 
 		if (chat_team) {
-			Draw_String8 (8, v, "say_team:");
+			Draw_String (8, v, "say_team:");
 			skip = 11;
 		} else {
-			Draw_String8 (8, v, "say:");
+			Draw_String (8, v, "say:");
 			skip = 5;
 		}
 
@@ -443,11 +443,11 @@ Con_DrawNotify (void)
 			s += chat_bufferlen - ((vid.width >> 3) - (skip + 1));
 		x = 0;
 		while (s[x]) {
-			Draw_Character8 ((x + skip) << 3, v, s[x]);
+			Draw_Character ((x + skip) << 3, v, s[x]);
 			x++;
 		}
-		Draw_Character8 ((x + skip) << 3, v,
-						 10 + ((int) (realtime * con_cursorspeed) & 1));
+		Draw_Character ((x + skip) << 3, v,
+						10 + ((int) (realtime * con_cursorspeed) & 1));
 		v += 8;
 	}
 
@@ -487,7 +487,7 @@ Con_DrawConsole (int lines)
 	if (con->display != con->current) {
 		// draw arrows to show the buffer is backscrolled
 		for (x = 0; x < con_linewidth; x += 4)
-			Draw_Character8 ((x + 1) << 3, y, '^');
+			Draw_Character ((x + 1) << 3, y, '^');
 
 		y -= 8;
 		rows--;
@@ -503,7 +503,7 @@ Con_DrawConsole (int lines)
 		text = con->text + (row % con_totallines) * con_linewidth;
 
 		for (x = 0; x < con_linewidth; x++)
-			Draw_Character8 ((x + 1) << 3, y, text[x]);
+			Draw_Character ((x + 1) << 3, y, text[x]);
 	}
 
 	// draw the input prompt, user text, and cursor if desired
@@ -554,7 +554,7 @@ Con_DrawDownload (int lines)
 	// draw it
 	y = lines - 22 + 8;
 	for (i = 0; i < strlen (dlbar); i++)
-		Draw_Character8 ((i + 1) << 3, y, dlbar[i]);
+		Draw_Character ((i + 1) << 3, y, dlbar[i]);
 }
 
 /*

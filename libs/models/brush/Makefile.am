@@ -12,7 +12,13 @@ else
 BRUSH_SW =
 endif
 
-noinst_LTLIBRARIES = $(BRUSH_GL) $(BRUSH_SW) libbrush.la
+if BUILD_SW32
+BRUSH_SW32 = libbrush_sw32.la
+else
+BRUSH_SW32 =
+endif
+
+noinst_LTLIBRARIES = $(BRUSH_GL) $(BRUSH_SW) $(BRUSH_SW32) libbrush.la
 
 libbrush_la_LDFLAGS = -version-info 1:0:0
 libbrush_la_SOURCES = model_brush.c
@@ -22,3 +28,6 @@ libbrush_gl_la_SOURCES = gl_model_brush.c model_brush.c
 
 libbrush_sw_la_LDFLAGS = -version-info 1:0:0
 libbrush_sw_la_SOURCES = sw_model_brush.c model_brush.c
+
+libbrush_sw32_la_LDFLAGS = -version-info 1:0:0
+libbrush_sw32_la_SOURCES = sw32_model_brush.c model_brush.c

@@ -14,7 +14,13 @@ else
 MODELS_SW =
 endif
 
-lib_LTLIBRARIES = libQFmodels.la $(MODELS_GL) $(MODELS_SW)
+if BUILD_SW32
+MODELS_SW32 = libQFmodels_sw32.la
+else
+MODELS_SW32 =
+endif
+
+lib_LTLIBRARIES = libQFmodels.la $(MODELS_GL) $(MODELS_SW) $(MODELS_SW32)
 
 models_SOURCES = clip_hull.c model.c
 
@@ -33,4 +39,9 @@ libQFmodels_sw_la_LIBADD = alias/libalias_sw.la brush/libbrush_sw.la sprite/libs
 libQFmodels_sw_la_SOURCES = $(models_SOURCES)
 libQFmodels_sw_la_DEPENDENCIES = alias/libalias_sw.la brush/libbrush_sw.la sprite/libsprite_sw.la
 
-LIBLIST = libQFmodels.la libQFmodels_gl.la libQFmodels_sw.la
+libQFmodels_sw32_la_LDFLAGS = -version-info 1:0:0
+libQFmodels_sw32_la_LIBADD = alias/libalias_sw32.la brush/libbrush_sw32.la sprite/libsprite_sw32.la
+libQFmodels_sw32_la_SOURCES = $(models_SOURCES)
+libQFmodels_sw32_la_DEPENDENCIES = alias/libalias_sw32.la brush/libbrush_sw32.la sprite/libsprite_sw32.la
+
+LIBLIST = libQFmodels.la libQFmodels_gl.la libQFmodels_sw.la libQFmodels_sw32.la

@@ -54,10 +54,10 @@
 extern void	R_DrawLine (polyvert_t *polyvert0, polyvert_t *polyvert1);
 
 extern int		cachewidth;
-extern pixel_t	*cacheblock;
+extern byte    *cacheblock;
 extern int		screenwidth;
 
-extern	float	pixelAspect;
+extern float	pixelAspect;
 
 extern int		r_drawnpolycount;
 

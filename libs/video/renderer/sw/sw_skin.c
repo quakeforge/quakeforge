@@ -36,24 +36,26 @@
 # include <strings.h>
 #endif
 
-#include "compat.h"
 #include "QF/model.h"
+#include "QF/render.h"
 #include "QF/skin.h"
 
-#include "QF/render.h"
+#include "compat.h"
 
 
 void
-Skin_Set_Translate (int top, int bottom, byte *dest)
+Skin_Set_Translate (int top, int bottom, void *_dest)
 {
 	int         i, j;
 	byte       *source;
 
+	byte *dest = (byte *) _dest;
+
 	top = bound (0, top, 13) * 16;
 	bottom = bound (0, bottom, 13) * 16;
 
-	source = vid.colormap;
-	memcpy (dest, vid.colormap, VID_GRADES*256);
+	source = vid.colormap8;
+	memcpy (dest, vid.colormap8, VID_GRADES*256);
 
 	for (i = 0; i < VID_GRADES; i++, dest += 256, source += 256) {
 		if (top < 128)				// the artists made some backwards

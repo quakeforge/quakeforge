@@ -111,7 +111,7 @@ CL_EntityNum (int num)
 		if (num >= MAX_EDICTS)
 			Host_Error ("CL_EntityNum: %i is an invalid number", num);
 		while (cl.num_entities <= num) {
-			cl_entities[cl.num_entities].colormap = vid.colormap;
+			cl_entities[cl.num_entities].colormap = vid.colormap8;
 			cl.num_entities++;
 		}
 	}
@@ -415,7 +415,7 @@ CL_ParseUpdate (int bits)
 	else
 		i = ent->baseline->colormap;
 	if (!i)
-		ent->colormap = vid.colormap;
+		ent->colormap = vid.colormap8;
 	else {
 		if (i > cl.maxclients)
 			Sys_Error ("i >= cl.maxclients");
@@ -625,7 +625,7 @@ CL_ParseStatic (void)
 	// copy it to the current state
 	ent->model = cl.model_precache[ent->baseline->modelindex];
 	ent->frame = ent->baseline->frame;
-	ent->colormap = vid.colormap;
+	ent->colormap = vid.colormap8;
 	ent->skinnum = ent->baseline->skin;
 	ent->effects = ent->baseline->effects;
 

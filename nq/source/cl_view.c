@@ -716,7 +716,7 @@ V_CalcRefdef (void)
 
 	view->model = cl.model_precache[cl.stats[STAT_WEAPON]];
 	view->frame = cl.stats[STAT_WEAPONFRAME];
-	view->colormap = vid.colormap;
+	view->colormap = vid.colormap8;
 	// LordHavoc: make gun visible
 	view->alpha = 1;
 	view->colormod[0] = view->colormod[1] = view->colormod[2] = 1;

@@ -1,5 +1,5 @@
 /*
-	r_draw.c
+	sw_r_draw.c
 
 	(description)
 
@@ -30,8 +30,9 @@
 # include "config.h"
 #endif
 
-#include "r_local.h"
 #include "QF/render.h"
+
+#include "r_local.h"
 
 #define MAXLEFTCLIPEDGES		100
 

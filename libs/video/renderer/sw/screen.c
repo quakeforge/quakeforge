@@ -58,52 +58,47 @@
 #include "sbar.h"
 #include "view.h"
 
-
 /*
+  background clear
+  rendering
+  turtle/net/ram icons
+  sbar
+  centerprint / slow centerprint
+  notify lines
+  intermission / finale overlay
+  loading plaque
+  console
+  menu
 
-background clear
-rendering
-turtle/net/ram icons
-sbar
-centerprint / slow centerprint
-notify lines
-intermission / finale overlay
-loading plaque
-console
-menu
-
-required background clears
-required update regions
-
-
-syncronous draw mode or async
-One off screen buffer, with updates either copied or xblited
-Need to double buffer?
+  required background clears
+  required update regions
 
 
-async draw will require the refresh area to be cleared, because it will be
-xblited, but sync draw can just ignore it.
+  syncronous draw mode or async
+  One off screen buffer, with updates either copied or xblited
+  Need to double buffer?
 
-sync
-draw
+  async draw will require the refresh area to be cleared, because it will be
+  xblited, but sync draw can just ignore it.
 
- CenterPrint ()
- SlowPrint ()
- Screen_Update ();
- Con_Printf ();
+  sync
+  draw
 
-net 
-turn off messages option
+  CenterPrint ()
+  SlowPrint ()
+  Screen_Update ();
+  Con_Printf ();
 
-the refresh is always rendered, unless the console is full screen
+  net
+  turn off messages option
 
+  the refresh is always rendered, unless the console is full screen
 
-console is:
+  console is:
 	notify lines
 	half
 	full
 */
-
 
 // only the refresh window will be updated unless these variables are flagged 
 int         scr_copytop;
@@ -175,7 +170,6 @@ SCR_CenterPrint (const char *str)
 	}
 }
 
-
 void
 SCR_DrawCenterString (void)
 {
@@ -187,7 +181,8 @@ SCR_DrawCenterString (void)
 
 	// the finale prints the characters one at a time
 	if (r_force_fullscreen /*FIXME*/)
-		remaining = scr_printspeed->value * (r_realtime - scr_centertime_start);
+		remaining = scr_printspeed->value * (r_realtime -
+											 scr_centertime_start);
 	else
 		remaining = 9999;
 
@@ -206,7 +201,7 @@ SCR_DrawCenterString (void)
 				break;
 		x = (vid.width - l * 8) / 2;
 		for (j = 0; j < l; j++, x += 8) {
-			Draw_Character8 (x, y, start[j]);
+			Draw_Character (x, y, start[j]);
 			if (!remaining--)
 				return;
 		}
@@ -221,7 +216,6 @@ SCR_DrawCenterString (void)
 		start++;						// skip the \n
 	} while (1);
 }
-
 
 void
 SCR_CheckDrawCenterString (int swap)
@@ -240,9 +234,7 @@ SCR_CheckDrawCenterString (int swap)
 	SCR_DrawCenterString ();
 }
 
-
 //=============================================================================
-
 
 float
 CalcFov (float fov_x, float width, float height)
@@ -261,7 +253,6 @@ CalcFov (float fov_x, float width, float height)
 
 	return a;
 }
-
 
 /*
 	SCR_CalcRefdef
@@ -321,8 +312,8 @@ SCR_CalcRefdef (void)
 	}
 
 	r_refdef.vrect.height = vid.height * size + 0.5;
-	if (r_refdef.vrect.height > vid.height - r_lineadj)
-		r_refdef.vrect.height = vid.height - r_lineadj;
+	if (r_refdef.vrect.height > h)
+		r_refdef.vrect.height = h;
 	r_refdef.vrect.x = (vid.width - r_refdef.vrect.width) / 2;
 	if (full)
 		r_refdef.vrect.y = 0;
@@ -353,7 +344,6 @@ SCR_CalcRefdef (void)
 	R_ViewChanged (&vrect, r_lineadj, vid.aspect);
 }
 
-
 extern float v_blend[4];
 
 void
@@ -383,7 +373,6 @@ SCR_ApplyBlend (void)		// Used to be V_UpdatePalette
 	VID_ShiftPalette (pal);
 }
 
-
 /*
 	SCR_SizeUp_f
 
@@ -398,7 +387,6 @@ SCR_SizeUp_f (void)
 	}
 }
 
-
 /*
 	SCR_SizeDown_f
 
@@ -411,9 +399,7 @@ SCR_SizeDown_f (void)
 	vid.recalc_refdef = 1;
 }
 
-
 //============================================================================
-
 
 void
 SCR_Init (void)
@@ -432,7 +418,6 @@ SCR_Init (void)
 	scr_initialized = true;
 }
 
-
 void
 SCR_DrawRam (int swap)
 {
@@ -444,7 +429,6 @@ SCR_DrawRam (int swap)
 
 	Draw_Pic (scr_vrect.x + 32, scr_vrect.y, scr_ram);
 }
-
 
 void
 SCR_DrawTurtle (int swap)
@@ -465,7 +449,6 @@ SCR_DrawTurtle (int swap)
 
 	Draw_Pic (scr_vrect.x, scr_vrect.y, scr_turtle);
 }
-
 
 extern cvar_t *show_fps;
 extern cvar_t *show_time;
@@ -502,9 +485,8 @@ SCR_DrawFPS (int swap)
 	}
 	x = swap ? vid.width - ((strlen (st) * 8) + i) : i;
 	y = vid.height - (sb_lines + 8);
-	Draw_String8 (x, y, st);
+	Draw_String (x, y, st);
 }
-
 
 /*
 	SCR_DrawTime
@@ -540,9 +522,8 @@ SCR_DrawTime (int swap)
 	strftime (st, sizeof (st), timefmt, local);
 	x = swap ? (vid.width - ((strlen (st) * 8) + 8)) : 8;
 	y = vid.height - (sb_lines + 8);
-	Draw_String8 (x, y, st);
+	Draw_String (x, y, st);
 }
-
 
 void
 SCR_DrawPause (int swap)
@@ -560,9 +541,7 @@ SCR_DrawPause (int swap)
 			  (vid.height - 48 - pic->height) / 2, pic);
 }
 
-
 //=============================================================================
-
 
 void
 SCR_SetUpToDrawConsole (void)
@@ -596,7 +575,6 @@ SCR_SetUpToDrawConsole (void)
 		con_notifylines = 0;
 }
 
-
 void
 SCR_DrawConsole (int swap)
 {
@@ -610,7 +588,6 @@ SCR_DrawConsole (int swap)
 			Con_DrawNotify ();			// only draw notify in game
 	}
 }
-
 
 /*
    SCREEN SHOTS
@@ -707,7 +684,6 @@ SCR_ScreenShot_f (void)
 	Con_Printf ("Wrote %s\n", pcxname);
 }
 
-
 /*
 	Find closest color in the palette for named color
 */
@@ -744,7 +720,6 @@ MipColor (int r, int g, int b)
 	return best;
 }
 
-
 // in draw.c
 extern byte *draw_chars;				// 8*8 graphic characters
 
@@ -774,7 +749,6 @@ SCR_DrawCharToSnap (int num, byte * dest, int width)
 
 }
 
-
 void
 SCR_DrawStringToSnap (const char *s, tex_t *tex, int x, int y)
 {
@@ -792,9 +766,7 @@ SCR_DrawStringToSnap (const char *s, tex_t *tex, int x, int y)
 	}
 }
 
-
 //=============================================================================
-
 
 char       *scr_notifystring;
 
@@ -817,7 +789,7 @@ SCR_DrawNotifyString (void)
 				break;
 		x = (vid.width - l * 8) / 2;
 		for (j = 0; j < l; j++, x += 8)
-			Draw_Character8 (x, y, start[j]);
+			Draw_Character (x, y, start[j]);
 
 		y += 8;
 
@@ -830,9 +802,7 @@ SCR_DrawNotifyString (void)
 	} while (1);
 }
 
-
 //=============================================================================
-
 
 /*
 	SCR_UpdateScreen
@@ -876,9 +846,8 @@ SCR_UpdateScreen (double realtime, SCR_Func *scr_funcs, int swap)
 		oldscr_viewsize = scr_viewsize->int_val;
 		vid.recalc_refdef = 1;
 	}
-	//
+
 	// check for vid changes
-	//
 	if (oldfov != scr_fov->int_val) {
 		oldfov = scr_fov->int_val;
 		vid.recalc_refdef = true;
@@ -893,11 +862,10 @@ SCR_UpdateScreen (double realtime, SCR_Func *scr_funcs, int swap)
 		// something changed, so reorder the screen
 		SCR_CalcRefdef ();
 	}
-	//
+
 	// do 3D refresh drawing, and then update the screen
-	//
 	D_EnableBackBufferAccess ();		// of all overlay stuff if drawing
-	// directly
+										// directly
 
 	if (scr_fullupdate++ < vid.numpages) {	// clear the entire screen
 		scr_copyeverything = 1;
@@ -907,19 +875,16 @@ SCR_UpdateScreen (double realtime, SCR_Func *scr_funcs, int swap)
 
 	pconupdate = NULL;
 
-
 	SCR_SetUpToDrawConsole ();
 
-	D_DisableBackBufferAccess ();		// for adapters that can't stay
-	// mapped in
-	// for linear writes all the time
-
+	D_DisableBackBufferAccess ();		// for adapters that can't stay mapped
+										// in for linear writes all the time
 	VID_LockBuffer ();
 	V_RenderView ();
 	VID_UnlockBuffer ();
 
 	D_EnableBackBufferAccess ();		// of all overlay stuff if drawing
-	// directly
+										// directly
 
 	if (r_force_fullscreen /*FIXME*/ == 1 && key_dest == key_game) {
 		Sbar_IntermissionOverlay ();
@@ -933,19 +898,15 @@ SCR_UpdateScreen (double realtime, SCR_Func *scr_funcs, int swap)
 		}
 	}
 
-
-	D_DisableBackBufferAccess ();		// for adapters that can't stay
-	// mapped in
-	// for linear writes all the time
+	D_DisableBackBufferAccess ();		// for adapters that can't stay mapped
+										// in for linear writes all the time
 	if (pconupdate) {
 		D_UpdateRects (pconupdate);
 	}
 
 	SCR_ApplyBlend ();
 
-	//
 	// update one of three areas
-	//
 	if (scr_copyeverything) {
 		vrect.x = 0;
 		vrect.y = 0;

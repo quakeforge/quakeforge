@@ -32,7 +32,6 @@
 
 #include "winquake.h"
 
-#include "QF/GL/funcs.h"
 #include "QF/cdaudio.h"
 #include "QF/cmd.h"
 #include "QF/console.h"
@@ -41,18 +40,19 @@
 #include "QF/keys.h"
 #include "QF/qargs.h"
 #include "QF/qendian.h"
-#include "QF/vfs.h"
 #include "QF/screen.h"
 #include "QF/sound.h"
 #include "QF/sys.h"
 #include "QF/va.h"
+#include "QF/vfs.h"
 #include "QF/vid.h"
+#include "QF/GL/funcs.h"
 
 #include "compat.h"
-#include "sbar.h"
 #include "in_win.h"
 #include "r_cvar.h"
 #include "resource.h"
+#include "sbar.h"
 
 extern void GL_Init_Common (void);
 extern void VID_Init8bitPalette (void);
@@ -167,13 +167,10 @@ void        GL_Init (void);
 cvar_t     *_windowed_mouse;
 cvar_t     *vid_use8bit;
 
-
 int         window_center_x, window_center_y, window_x, window_y, window_width,
-
-	window_height;
+			window_height;
 RECT        window_rect;
 
-// direct draw software compatability stuff
 
 void
 VID_ForceLockState (int lk)
@@ -229,13 +226,13 @@ VID_SetWindowedMode (int modenum)
 
 	// Create the window
 	mainwindow = CreateWindow ("QuakeForge", "GLQuakeWorld",
-		WindowStyle, rect.left, rect.top, width, height, NULL, NULL,
-		global_hInstance, NULL);
+							   WindowStyle, rect.left, rect.top, width, height,
+							   NULL, NULL, global_hInstance, NULL);
 
 	if (!mainwindow)
-                Sys_Error ("Couldn't create DIB window (%lx)\r\n",GetLastError());
+		Sys_Error ("Couldn't create DIB window (%lx)\r\n",GetLastError());
 
-// Center and show the window
+	// Center and show the window
 	CenterWindow (mainwindow, WindowRect.right - WindowRect.left,
 	WindowRect.bottom - WindowRect.top, false);
 
@@ -248,7 +245,7 @@ VID_SetWindowedMode (int modenum)
 // (to avoid flickering when re-sizing the window on the desktop),
 // we clear the window to black when created, otherwise it will be
 // empty while Quake starts up.
-        hdc = GetDC (mainwindow);
+	hdc = GetDC (mainwindow);
 	PatBlt (hdc, 0, 0, WindowRect.right, WindowRect.bottom, BLACKNESS);
         ReleaseDC (mainwindow, hdc);
 
@@ -269,7 +266,6 @@ VID_SetWindowedMode (int modenum)
 	return true;
 }
 
-
 qboolean
 VID_SetFullDIBMode (int modenum)
 {
@@ -289,7 +285,8 @@ VID_SetFullDIBMode (int modenum)
 
 		if (ChangeDisplaySettings (&gdevmode, CDS_FULLSCREEN) !=
 			DISP_CHANGE_SUCCESSFUL)
-                                Sys_Error ("Couldn't set fullscreen DIB mode (%lx)\r\n",GetLastError());
+			Sys_Error ("Couldn't set fullscreen DIB mode (%lx)\r\n",
+					   GetLastError());
 	}
 
 	lastmodestate = modestate;
@@ -308,8 +305,8 @@ VID_SetFullDIBMode (int modenum)
 // until I find way around it, or find some other cause for it
 // this is way to avoid it
 
-        if (COM_CheckParm ("-brokenpopup")) WindowStyle = 0;
-        else WindowStyle = WS_POPUP | WS_CLIPSIBLINGS | WS_CLIPCHILDREN;
+	if (COM_CheckParm ("-brokenpopup")) WindowStyle = 0;
+	else WindowStyle = WS_POPUP | WS_CLIPSIBLINGS | WS_CLIPCHILDREN;
 
 	rect = WindowRect;
 	AdjustWindowRect (&rect, WindowStyle, FALSE);
@@ -323,7 +320,7 @@ VID_SetFullDIBMode (int modenum)
 		global_hInstance, NULL);
 
 	if (!mainwindow)
-                Sys_Error ("Couldn't create DIB window (%lx)\r\n",GetLastError());
+		Sys_Error ("Couldn't create DIB window (%lx)\r\n",GetLastError());
 
 	ShowWindow (mainwindow, SW_SHOWDEFAULT);
 	UpdateWindow (mainwindow);
@@ -345,7 +342,7 @@ VID_SetFullDIBMode (int modenum)
 
 	vid.numpages = 2;
 
-// needed because we're not getting WM_MOVE messages fullscreen on NT
+	// needed because we're not getting WM_MOVE messages fullscreen on NT
 	window_x = 0;
 	window_y = 0;
 
@@ -356,7 +353,6 @@ VID_SetFullDIBMode (int modenum)
 
 	return true;
 }
-
 
 int
 VID_SetMode (int modenum, unsigned char *palette)
@@ -369,7 +365,8 @@ VID_SetMode (int modenum, unsigned char *palette)
 		(!windowed && (modenum < 1)) || (!windowed && (modenum >= nummodes))) {
 		Sys_Error ("Bad video mode\n");
 	}
-// so Con_Printfs don't mess us up by forcing vid and snd updates
+
+	// so Con_Printfs don't mess us up by forcing vid and snd updates
 	temp = scr_disabled_for_loading;
 	scr_disabled_for_loading = true;
 
@@ -430,7 +427,7 @@ VID_SetMode (int modenum, unsigned char *palette)
 
 	SetForegroundWindow (mainwindow);
 
-// fix the leftover Alt from any Alt-Tab or the like that switched us away
+	// fix the leftover Alt from any Alt-Tab or the like that switched us away
 	ClearAllStates ();
 
 	Con_Printf ("Video mode %s initialized.\n",
@@ -443,10 +440,6 @@ VID_SetMode (int modenum, unsigned char *palette)
 	return true;
 }
 
-
-/*
-	VID_UpdateWindowStatus
-*/
 void
 VID_UpdateWindowStatus (void)
 {
@@ -461,9 +454,6 @@ VID_UpdateWindowStatus (void)
 	IN_UpdateClipCursor ();
 }
 
-/*
-	GL_Init
-*/
 void
 GL_Init (void)
 {
@@ -481,7 +471,7 @@ GL_EndRendering (void)
 	if (!scr_skipupdate || block_drawing)
 		SwapBuffers (maindc);
 
-// handle the mouse state when windowed if that's changed
+	// handle the mouse state when windowed if that's changed
 	if (modestate == MS_WINDOWED) {
 		if (!_windowed_mouse->int_val) {
 			if (windowed_mouse) {
@@ -509,7 +499,6 @@ VID_SetDefaultMode (void)
 {
 	IN_DeactivateMouse ();
 }
-
 
 void
 VID_Shutdown (void)
@@ -551,7 +540,6 @@ VID_Shutdown (void)
 	}
 }
 
-
 //==========================================================================
 
 BOOL
@@ -563,7 +551,8 @@ bSetupPixelFormat (HDC hDC)
 	memset(&pfd, 0, sizeof(PIXELFORMATDESCRIPTOR));
 	pfd.nSize      = sizeof(PIXELFORMATDESCRIPTOR); 
 	pfd.nVersion   = 1;
-	pfd.dwFlags    = PFD_DOUBLEBUFFER | PFD_SUPPORT_OPENGL | PFD_DRAW_TO_WINDOW;
+	pfd.dwFlags    = PFD_DOUBLEBUFFER | PFD_SUPPORT_OPENGL |
+		PFD_DRAW_TO_WINDOW;
 	pfd.iPixelType = PFD_TYPE_RGBA;
 
 	if (!modelist[vid_default].bpp) pfd.cColorBits = 16;
@@ -583,7 +572,6 @@ bSetupPixelFormat (HDC hDC)
 	}
 	return TRUE;
 }
-
 
 //==========================================================================
 
@@ -629,8 +617,6 @@ byte        extscantokey[128] = {
 	0, 0, 0, 0, 0, 0, 0, 0
 };
 
-
-
 /*
 	MapKey
 
@@ -653,40 +639,32 @@ MapKey (int key)
 		return scantokey[key];
 }
 
-
 /*
 	MAIN WINDOW
 */
 
-
-/*
-	ClearAllStates
-*/
 void
 ClearAllStates (void)
 {
 	IN_ClearStates ();
 }
 
+/*
+  AppActivate
+
+  fActive - True if app is activating
+  If the application is activating, then swap the system into SYSPAL_NOSTATIC
+  mode so that our palettes will display correctly.
+*/
 void
 AppActivate (BOOL fActive, BOOL minimize)
-/****************************************************************************
-*
-* Function:     AppActivate
-* Parameters:   fActive - True if app is activating
-*
-* Description:  If the application is activating, then swap the system
-*               into SYSPAL_NOSTATIC mode so that our palettes will display
-*               correctly.
-*
-****************************************************************************/
 {
 	static BOOL sound_active;
 
 	ActiveApp = fActive;
 	Minimized = minimize;
 
-// enable/disable sound on focus gain/loss
+	// enable/disable sound on focus gain/loss
 	if (!ActiveApp && sound_active) {
 		S_BlockSound ();
 		sound_active = false;
@@ -705,12 +683,15 @@ AppActivate (BOOL fActive, BOOL minimize)
 				if (ChangeDisplaySettings (&gdevmode, CDS_FULLSCREEN) !=
 					DISP_CHANGE_SUCCESSFUL) {
 					IN_ShowMouse ();
-                                        Sys_Error ("Couldn't set fullscreen DIB mode\n(try upgrading your video drivers)\r\n (%lx)",GetLastError());
+					Sys_Error ("Couldn't set fullscreen DIB mode\n(try "
+							   "upgrading your video drivers)\r\n (%lx)",
+							   GetLastError());
 				}
 				ShowWindow (mainwindow, SW_SHOWNORMAL);
 
 				// Fix for alt-tab bug in NVidia drivers
-				MoveWindow(mainwindow,0,0,gdevmode.dmPelsWidth,gdevmode.dmPelsHeight,false);
+				MoveWindow(mainwindow, 0, 0, gdevmode.dmPelsWidth,
+						   gdevmode.dmPelsHeight, false);
 			}
 		}
 		else if ((modestate == MS_WINDOWED) && _windowed_mouse->int_val
@@ -718,7 +699,6 @@ AppActivate (BOOL fActive, BOOL minimize)
 			IN_ActivateMouse ();
 			IN_HideMouse ();
 		}
-
 	} else {
 		if (modestate == MS_FULLDIB) {
 			IN_DeactivateMouse ();
@@ -734,7 +714,6 @@ AppActivate (BOOL fActive, BOOL minimize)
 	}
 }
 
-
 /* main window procedure */
 LONG WINAPI
 MainWndProc (HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
@@ -747,144 +726,121 @@ MainWndProc (HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 		uMsg = WM_MOUSEWHEEL;
 
 	switch (uMsg) {
-			case WM_KILLFOCUS:
-			if (modestate == MS_FULLDIB)
-				ShowWindow (mainwindow, SW_SHOWMINNOACTIVE);
-			break;
+	case WM_KILLFOCUS:
+		if (modestate == MS_FULLDIB)
+			ShowWindow (mainwindow, SW_SHOWMINNOACTIVE);
+		break;
+	case WM_CREATE:
+		break;
 
-		case WM_CREATE:
-			break;
+	case WM_MOVE:
+		window_x = (int) LOWORD (lParam);
+		window_y = (int) HIWORD (lParam);
+		VID_UpdateWindowStatus ();
+		break;
 
-		case WM_MOVE:
-			window_x = (int) LOWORD (lParam);
-			window_y = (int) HIWORD (lParam);
-			VID_UpdateWindowStatus ();
-			break;
+	case WM_KEYDOWN:
+	case WM_SYSKEYDOWN:
+		Key_Event (MapKey (lParam), -1, true);
+		break;
 
-		case WM_KEYDOWN:
-		case WM_SYSKEYDOWN:
-			Key_Event (MapKey (lParam), -1, true);
-			break;
+	case WM_KEYUP:
+	case WM_SYSKEYUP:
+		Key_Event (MapKey (lParam), -1, false);
+		break;
 
-		case WM_KEYUP:
-		case WM_SYSKEYUP:
-			Key_Event (MapKey (lParam), -1, false);
-			break;
+	case WM_SYSCHAR:
+		// keep Alt-Space from happening
+		break;
 
-		case WM_SYSCHAR:
-			// keep Alt-Space from happening
-			break;
+	// this is complicated because Win32 seems to pack multiple mouse events
+	// into one update sometimes, so we always check all states and look for
+	// events
+	case WM_LBUTTONDOWN:
+	case WM_LBUTTONUP:
+	case WM_RBUTTONDOWN:
+	case WM_RBUTTONUP:
+	case WM_MBUTTONDOWN:
+	case WM_MBUTTONUP:
+	case WM_MOUSEMOVE:
+		temp = 0;
 
-			// this is complicated because Win32 seems to pack multiple mouse 
-			// events into
-			// one update sometimes, so we always check all states and look
-			// for events
-		case WM_LBUTTONDOWN:
-		case WM_LBUTTONUP:
-		case WM_RBUTTONDOWN:
-		case WM_RBUTTONUP:
-		case WM_MBUTTONDOWN:
-		case WM_MBUTTONUP:
-		case WM_MOUSEMOVE:
-			temp = 0;
+		if (wParam & MK_LBUTTON)
+			temp |= 1;
+		if (wParam & MK_RBUTTON)
+			temp |= 2;
+		if (wParam & MK_MBUTTON)
+			temp |= 4;
+		IN_MouseEvent (temp);
 
-			if (wParam & MK_LBUTTON)
-				temp |= 1;
+		break;
 
-			if (wParam & MK_RBUTTON)
-				temp |= 2;
+	// JACK: This is the mouse wheel with the Intellimouse
+	// It's delta is either positive or neg, and we generate the proper Event.
+	case WM_MOUSEWHEEL:
+		if ((short) HIWORD (wParam) > 0) {
+			Key_Event (M_WHEEL_UP, -1, true);
+			Key_Event (M_WHEEL_UP, -1, false);
+		} else {
+			Key_Event (M_WHEEL_DOWN, -1, true);
+			Key_Event (M_WHEEL_DOWN, -1, false);
+		}
+		break;
 
-			if (wParam & MK_MBUTTON)
-				temp |= 4;
+	case WM_SIZE:
+		break;
 
-			IN_MouseEvent (temp);
+	case WM_CLOSE:
+		if (MessageBox
+			(mainwindow, "Are you sure you want to quit?", "Confirm Exit",
+			 MB_YESNO | MB_SETFOREGROUND | MB_ICONQUESTION) == IDYES) {
+			Sys_Quit ();
+		}
+		break;
 
-			break;
+	case WM_ACTIVATE:
+		fActive = LOWORD (wParam);
+		fMinimized = (BOOL) HIWORD (wParam);
+		AppActivate (!(fActive == WA_INACTIVE), fMinimized);
+		// fix leftover Alt from any Alt-Tab or the like that switched us away
+		ClearAllStates ();
+		break;
 
-			// JACK: This is the mouse wheel with the Intellimouse
-			// Its delta is either positive or neg, and we generate the
-			// proper
-			// Event.
-		case WM_MOUSEWHEEL:
-			if ((short) HIWORD (wParam) > 0) {
-				Key_Event (M_WHEEL_UP, -1, true);
-				Key_Event (M_WHEEL_UP, -1, false);
-			} else {
-				Key_Event (M_WHEEL_DOWN, -1, true);
-				Key_Event (M_WHEEL_DOWN, -1, false);
-			}
-			break;
+	case WM_DESTROY:
+		if (mainwindow)
+			DestroyWindow (mainwindow);
+		PostQuitMessage (0);
+		break;
 
-		case WM_SIZE:
-			break;
+	case MM_MCINOTIFY:
+		//FIXME lRet = CDAudio_MessageHandler (hWnd, uMsg, wParam, lParam);
+		break;
 
-		case WM_CLOSE:
-			if (MessageBox
-				(mainwindow, "Are you sure you want to quit?", "Confirm Exit",
-				 MB_YESNO | MB_SETFOREGROUND | MB_ICONQUESTION) == IDYES) {
-				Sys_Quit ();
-			}
-
-			break;
-
-		case WM_ACTIVATE:
-			fActive = LOWORD (wParam);
-			fMinimized = (BOOL) HIWORD (wParam);
-			AppActivate (!(fActive == WA_INACTIVE), fMinimized);
-			// fix the leftover Alt from any Alt-Tab or the like that
-			// switched us away
-			ClearAllStates ();
-
-			break;
-
-		case WM_DESTROY:
-			if (mainwindow)
-				DestroyWindow (mainwindow);
-			PostQuitMessage (0);
-			break;
-
-		case MM_MCINOTIFY:
-			//FIXME lRet = CDAudio_MessageHandler (hWnd, uMsg, wParam, lParam);
-			break;
-
-		default:
-			/* pass all unhandled messages to DefWindowProc */
-			lRet = DefWindowProc (hWnd, uMsg, wParam, lParam);
-			break;
+	default:
+		/* pass all unhandled messages to DefWindowProc */
+		lRet = DefWindowProc (hWnd, uMsg, wParam, lParam);
+		break;
 	}
 
 	/* return 1 if handled message, 0 if not */
 	return lRet;
 }
 
-
-/*
-	VID_NumModes
-*/
 int
 VID_NumModes (void)
 {
 	return nummodes;
 }
 
-
-/*
-	VID_GetModePtr
-*/
 vmode_t    *
 VID_GetModePtr (int modenum)
 {
-
 	if ((modenum >= 0) && (modenum < nummodes))
 		return &modelist[modenum];
 	else
 		return &badmode;
 }
 
-
-/*
-	VID_GetModeDescription
-*/
 char       *
 VID_GetModeDescription (int mode)
 {
@@ -910,7 +866,6 @@ VID_GetModeDescription (int mode)
 
 
 // KJB: Added this to return the mode driver name in description for console
-
 char       *
 VID_GetExtModeDescription (int mode)
 {
@@ -939,34 +894,21 @@ VID_GetExtModeDescription (int mode)
 	return pinfo;
 }
 
-
-/*
-	VID_DescribeCurrentMode_f
-*/
 void
 VID_DescribeCurrentMode_f (void)
 {
 	Con_Printf ("%s\n", VID_GetExtModeDescription (vid_modenum));
 }
 
-
-/*
-	VID_NumModes_f
-*/
 void
 VID_NumModes_f (void)
 {
-
 	if (nummodes == 1)
 		Con_Printf ("%d video mode is available\n", nummodes);
 	else
 		Con_Printf ("%d video modes are available\n", nummodes);
 }
 
-
-/*
-	VID_DescribeMode_f
-*/
 void
 VID_DescribeMode_f (void)
 {
@@ -982,10 +924,6 @@ VID_DescribeMode_f (void)
 	leavecurrentmode = t;
 }
 
-
-/*
-	VID_DescribeModes_f
-*/
 void
 VID_DescribeModes_f (void)
 {
@@ -1007,7 +945,6 @@ VID_DescribeModes_f (void)
 	leavecurrentmode = t;
 }
 
-
 void
 VID_InitDIB (HINSTANCE hInstance)
 {
@@ -1026,7 +963,7 @@ VID_InitDIB (HINSTANCE hInstance)
 	wc.lpszClassName = "QuakeForge";
 
 	if (!RegisterClass (&wc))
-                Sys_Error ("Couldn't register window class (%lx)\r\n",GetLastError());
+		Sys_Error ("Couldn't register window class (%lx)\r\n", GetLastError());
 
 	modelist[0].type = MS_WINDOWED;
 
@@ -1058,10 +995,6 @@ VID_InitDIB (HINSTANCE hInstance)
 	nummodes = 1;
 }
 
-
-/*
-	VID_InitFullDIB
-*/
 void
 VID_InitFullDIB (HINSTANCE hInstance)
 {
@@ -1070,7 +1003,7 @@ VID_InitFullDIB (HINSTANCE hInstance)
 	int         j, bpp, done;
 	BOOL        stat;
 
-// enumerate >8 bpp modes
+	// enumerate >8 bpp modes
 	originalnummodes = nummodes;
 	modenum = 0;
 
@@ -1079,7 +1012,8 @@ VID_InitFullDIB (HINSTANCE hInstance)
 
 		if ((devmode.dmBitsPerPel >= 15) &&
 			(devmode.dmPelsWidth <= MAXWIDTH) &&
-			(devmode.dmPelsHeight <= MAXHEIGHT) && (nummodes < MAX_MODE_LIST)) {
+			(devmode.dmPelsHeight <= MAXHEIGHT) &&
+			(nummodes <	MAX_MODE_LIST)) {
 			devmode.dmFields = DM_BITSPERPEL | DM_PELSWIDTH | DM_PELSHEIGHT;
 
 			if (ChangeDisplaySettings (&devmode, CDS_TEST | CDS_FULLSCREEN) ==
@@ -1098,8 +1032,7 @@ VID_InitFullDIB (HINSTANCE hInstance)
 						  devmode.dmBitsPerPel);
 
 				// if the width is more than twice the height, reduce it by
-				// half because this
-				// is probably a dual-screen monitor
+				// half because this is probably a dual-screen monitor
 				if (!COM_CheckParm ("-noadjustaspect")) {
 					if (modelist[nummodes].width >
 						(modelist[nummodes].height << 1)) {
@@ -1113,7 +1046,8 @@ VID_InitFullDIB (HINSTANCE hInstance)
 					}
 				}
 
-				for (i = originalnummodes, existingmode = 0; i < nummodes; i++) {
+				for (i = originalnummodes, existingmode = 0; i < nummodes;
+					 i++) {
 					if ((modelist[nummodes].width == modelist[i].width) &&
 						(modelist[nummodes].height == modelist[i].height) &&
 						(modelist[nummodes].bpp == modelist[i].bpp)) {
@@ -1131,7 +1065,7 @@ VID_InitFullDIB (HINSTANCE hInstance)
 		modenum++;
 	} while (stat);
 
-// see if there are any low-res modes that aren't being reported
+	// see if there are any low-res modes that aren't being reported
 	numlowresmodes = sizeof (lowresmodes) / sizeof (lowresmodes[0]);
 	bpp = 16;
 	done = 0;
@@ -1158,7 +1092,8 @@ VID_InitFullDIB (HINSTANCE hInstance)
 						  devmode.dmPelsWidth, devmode.dmPelsHeight,
 						  devmode.dmBitsPerPel);
 
-				for (i = originalnummodes, existingmode = 0; i < nummodes; i++) {
+				for (i = originalnummodes, existingmode = 0; i < nummodes;
+					 i++) {
 					if ((modelist[nummodes].width == modelist[i].width) &&
 						(modelist[nummodes].height == modelist[i].height) &&
 						(modelist[nummodes].bpp == modelist[i].bpp)) {
@@ -1191,9 +1126,6 @@ VID_InitFullDIB (HINSTANCE hInstance)
 		Con_Printf ("No fullscreen DIB modes found\n");
 }
 
-/*
-	VID_Init
-*/
 void
 VID_Init (unsigned char *palette)
 {
@@ -1210,24 +1142,33 @@ VID_Init (unsigned char *palette)
 		return;
 	}
 
-	qf_wglCreateContext = QFGL_ProcAddress (libgl_handle, "wglCreateContext", true);
-	qf_wglDeleteContext = QFGL_ProcAddress (libgl_handle, "wglDeleteContext", true);
-	qf_wglGetCurrentContext = QFGL_ProcAddress (libgl_handle, "wglGetCurrentContext", true);
-	qf_wglGetCurrentDC = QFGL_ProcAddress (libgl_handle, "wglGetCurrentDC", true);
-	qf_wglMakeCurrent = QFGL_ProcAddress (libgl_handle, "wglMakeCurrent", true);
+	qf_wglCreateContext = QFGL_ProcAddress (libgl_handle, "wglCreateContext",
+											true);
+	qf_wglDeleteContext = QFGL_ProcAddress (libgl_handle, "wglDeleteContext",
+											true);
+	qf_wglGetCurrentContext = QFGL_ProcAddress (libgl_handle,
+												"wglGetCurrentContext", true);
+	qf_wglGetCurrentDC = QFGL_ProcAddress (libgl_handle, "wglGetCurrentDC",
+										   true);
+	qf_wglMakeCurrent = QFGL_ProcAddress (libgl_handle, "wglMakeCurrent",
+										  true);
 
 	memset (&devmode, 0, sizeof (devmode));
 
-	Cmd_AddCommand ("vid_nummodes", VID_NumModes_f, "Reports the total number of video modes available");
-	Cmd_AddCommand ("vid_describecurrentmode", VID_DescribeCurrentMode_f, "Report current video mode.");
-	Cmd_AddCommand ("vid_describemode", VID_DescribeMode_f, "Report information on specified video mode, default is current.\n"
-		"(vid_describemode (mode))");
-	Cmd_AddCommand ("vid_describemodes", VID_DescribeModes_f, "Report information on all video modes.");
+	Cmd_AddCommand ("vid_nummodes", VID_NumModes_f, "Reports the total number "
+					"of video modes available");
+	Cmd_AddCommand ("vid_describecurrentmode", VID_DescribeCurrentMode_f,
+					"Report current video mode.");
+	Cmd_AddCommand ("vid_describemode", VID_DescribeMode_f, "Report "
+					"information on specified video mode, default is "
+					"current.\n(vid_describemode (mode))");
+	Cmd_AddCommand ("vid_describemodes", VID_DescribeModes_f, "Report "
+					"information on all video modes.");
 
 	hIcon = LoadIcon (global_hInstance, MAKEINTRESOURCE (IDI_ICON1));
 
 // FIXME: If you put these back, remember commctrl.h
-//        InitCommonControls ();
+//	InitCommonControls ();
 
 	VID_InitDIB (global_hInstance);
 	basenummodes = nummodes = 1;
@@ -1280,8 +1221,7 @@ VID_Init (unsigned char *palette)
 				if (COM_CheckParm ("-height"))
 					height = atoi (com_argv[COM_CheckParm ("-height") + 1]);
 
-				// if they want to force it, add the specified mode to the
-				// list
+				// if they want to force it, add the specified mode to the list
 				if (COM_CheckParm ("-force") && (nummodes < MAX_MODE_LIST)) {
 					modelist[nummodes].type = MS_FULLDIB;
 					modelist[nummodes].width = width;
@@ -1298,8 +1238,8 @@ VID_Init (unsigned char *palette)
 
 					for (i = nummodes, existingmode = 0; i < nummodes; i++) {
 						if ((modelist[nummodes].width == modelist[i].width) &&
-							(modelist[nummodes].height == modelist[i].height) &&
-							(modelist[nummodes].bpp == modelist[i].bpp)) {
+							(modelist[nummodes].height == modelist[i].height)
+							&& (modelist[nummodes].bpp == modelist[i].bpp)) {
 							existingmode = 1;
 							break;
 						}
@@ -1314,7 +1254,8 @@ VID_Init (unsigned char *palette)
 
 				do {
 					if (COM_CheckParm ("-height")) {
-						height = atoi (com_argv[COM_CheckParm ("-height") + 1]);
+						height = atoi (com_argv[COM_CheckParm ("-height")
+												+ 1]);
 
 						for (i = 1, vid_default = 0; i < nummodes; i++) {
 							if ((modelist[i].width == width) &&
@@ -1387,8 +1328,8 @@ VID_Init (unsigned char *palette)
 
 	vid.maxwarpwidth = WARP_WIDTH;
 	vid.maxwarpheight = WARP_HEIGHT;
-	vid.colormap = vid_colormap;
-	vid.fullbright = 256 - LittleLong (*((int *) vid.colormap + 2048));
+	vid.colormap8 = vid_colormap;
+	vid.fullbright = 256 - LittleLong (*((int *) vid.colormap8 + 2048));
 
 #ifdef SPLASH_SCREEN
         if(hwnd_dialog)
@@ -1408,7 +1349,9 @@ VID_Init (unsigned char *palette)
 		lasterror=GetLastError();
 		if (maindc && mainwindow)
 			ReleaseDC (mainwindow, maindc);
-		Sys_Error("Could not initialize GL (wglCreateContext failed).\n\nMake sure you in are 65535 color mode, and try running -window. \nError code: (%lx)\r\n",lasterror);
+		Sys_Error("Could not initialize GL (wglCreateContext failed).\n\nMake "
+				  "sure you in are 65535 color mode, and try running -window. "
+				  "\nError code: (%lx)\r\n", lasterror);
 	}
 
 	if (!qf_wglMakeCurrent (maindc, baseRC)) {
@@ -1417,7 +1360,7 @@ VID_Init (unsigned char *palette)
 			qf_wglDeleteContext (baseRC);
                 if (maindc && mainwindow)
        	                ReleaseDC (mainwindow, maindc);
-		Sys_Error ("wglMakeCurrent failed (%lx)\r\n",lasterror);
+		Sys_Error ("wglMakeCurrent failed (%lx)\r\n", lasterror);
 	}
 
 	GL_Init ();
@@ -1442,10 +1385,7 @@ VID_Init_Cvars ()
 {
 }
 
-
-//========================================================
-// Video menu stuff
-//========================================================
+// Video menu stuff ======================================
 
 typedef struct {
 	int         modenum;
@@ -1458,7 +1398,6 @@ typedef struct {
 #define MAX_MODEDESCS		(MAX_COLUMN_SIZE*3)
 
 //static modedesc_t modedescs[MAX_MODEDESCS];
-
 
 void
 VID_SetCaption (const char *text)

@@ -1,5 +1,5 @@
 /*
-	r_misc.c
+	sw_rmisc.c
 
 	(description)
 
@@ -30,21 +30,21 @@
 # include "config.h"
 #endif
 
-#include "compat.h"
-#include "QF/console.h"
 #include "QF/cmd.h"
+#include "QF/console.h"
 #include "QF/cvar.h"
 #include "QF/draw.h"
 #include "QF/render.h"
 #include "QF/sys.h"
 
+#include "compat.h"
 #include "r_local.h"
+
 
 void
 R_CheckVariables (void)
 {
 }
-
 
 /*
 	Show
@@ -62,7 +62,6 @@ Show (void)
 	vr.pnext = NULL;
 	VID_Update (&vr);
 }
-
 
 /*
 	R_TimeRefresh_f
@@ -103,7 +102,6 @@ R_TimeRefresh_f (void)
 	r_refdef.viewangles[1] = startangle;
 }
 
-
 void
 R_LoadSky_f (void)
 {
@@ -114,7 +112,6 @@ R_LoadSky_f (void)
 
 	R_LoadSkys (Cmd_Argv (1));
 }
-
 
 void
 R_PrintTimes (void)
@@ -130,7 +127,6 @@ R_PrintTimes (void)
 				ms, c_faceclip, r_polycount, r_drawnpolycount, c_surf);
 	c_surf = 0;
 }
-
 
 void
 R_PrintDSpeeds (void)
@@ -154,13 +150,11 @@ R_PrintDSpeeds (void)
 				de_time, dv_time);
 }
 
-
 void
 R_PrintAliasStats (void)
 {
 	Con_Printf ("%3i polygon model drawn\n", r_amodels_drawn);
 }
-
 
 void
 WarpPalette (void)
@@ -184,7 +178,6 @@ WarpPalette (void)
 	VID_ShiftPalette (newpalette);
 }
 
-
 void
 R_TransformFrustum (void)
 {
@@ -207,7 +200,7 @@ R_TransformFrustum (void)
 }
 
 #ifdef PIC
-#undef USE_INTEL_ASM //XXX asm pic hack
+# undef USE_INTEL_ASM //XXX asm pic hack
 #endif
 
 #ifndef USE_INTEL_ASM
@@ -220,7 +213,6 @@ TransformVector (vec3_t in, vec3_t out)
 }
 #endif
 
-
 void
 R_TransformPlane (mplane_t *p, float *normal, float *dist)
 {
@@ -231,7 +223,6 @@ R_TransformPlane (mplane_t *p, float *normal, float *dist)
 // TODO: when we have rotating entities, this will need to use the view matrix
 	TransformVector (p->normal, normal);
 }
-
 
 void
 R_SetUpFrustumIndexes (void)
@@ -256,7 +247,6 @@ R_SetUpFrustumIndexes (void)
 		pindex += 6;
 	}
 }
-
 
 void
 R_SetupFrame (void)
@@ -318,7 +308,8 @@ R_SetupFrame (void)
 	r_viewleaf = Mod_PointInLeaf (r_origin, r_worldentity.model);
 
 	r_dowarpold = r_dowarp;
-	r_dowarp = r_waterwarp->int_val && (r_viewleaf->contents <= CONTENTS_WATER);
+	r_dowarp = r_waterwarp->int_val && (r_viewleaf->contents <=
+										CONTENTS_WATER);
 
 	if ((r_dowarp != r_dowarpold) || r_viewchanged) {
 		if (r_dowarp) {

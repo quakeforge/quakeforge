@@ -41,8 +41,6 @@
 
 #include <SDL.h>
 
-#include "compat.h"
-#include "QF/GL/funcs.h"
 #include "QF/console.h"
 #include "QF/cvar.h"
 #include "QF/qargs.h"
@@ -50,7 +48,9 @@
 #include "QF/sys.h"
 #include "QF/va.h"
 #include "QF/vid.h"
+#include "QF/GL/funcs.h"
 
+#include "compat.h"
 #include "sbar.h"
 
 #ifdef WIN32
@@ -72,7 +72,6 @@ int         modestate;
 extern void GL_Init_Common (void);
 extern void VID_Init8bitPalette (void);
 
-/*-----------------------------------------------------------------------*/
 
 void
 VID_SDL_GammaCheck (void)
@@ -135,14 +134,14 @@ VID_Init (unsigned char *palette)
 	Uint32      flags = SDL_OPENGL;
 	int         i;
 
-//        SDL_SysWMinfo info;
+//	SDL_SysWMinfo info;
 
 	VID_GetWindowSize (640, 480);
 
 	vid.maxwarpwidth = WARP_WIDTH;
 	vid.maxwarpheight = WARP_HEIGHT;
-	vid.colormap = vid_colormap;
-	vid.fullbright = 256 - LittleLong (*((int *) vid.colormap + 2048));
+	vid.colormap8 = vid_colormap;
+	vid.fullbright = 256 - LittleLong (*((int *) vid.colormap8 + 2048));
 
 	// Interpret command-line params
 

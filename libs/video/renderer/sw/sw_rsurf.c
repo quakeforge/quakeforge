@@ -1,5 +1,5 @@
 /*
-	r_surf.c
+	sw_rsurf.c
 
 	surface-related refresh code
 
@@ -328,7 +328,7 @@ R_DrawSurfaceBlock8_mip0 (void)
 
 			for (b = 15; b >= 0; b--) {
 				pix = psource[b];
-				prowdest[b] = ((unsigned char *) vid.colormap)
+				prowdest[b] = ((unsigned char *) vid.colormap8)
 					[(light & 0xFF00) + pix];
 				light += lightstep;
 			}
@@ -371,7 +371,7 @@ R_DrawSurfaceBlock8_mip1 (void)
 
 			for (b = 7; b >= 0; b--) {
 				pix = psource[b];
-				prowdest[b] = ((unsigned char *) vid.colormap)
+				prowdest[b] = ((unsigned char *) vid.colormap8)
 					[(light & 0xFF00) + pix];
 				light += lightstep;
 			}
@@ -414,7 +414,7 @@ R_DrawSurfaceBlock8_mip2 (void)
 
 			for (b = 3; b >= 0; b--) {
 				pix = psource[b];
-				prowdest[b] = ((unsigned char *) vid.colormap)
+				prowdest[b] = ((unsigned char *) vid.colormap8)
 					[(light & 0xFF00) + pix];
 				light += lightstep;
 			}
@@ -457,7 +457,7 @@ R_DrawSurfaceBlock8_mip3 (void)
 
 			for (b = 1; b >= 0; b--) {
 				pix = psource[b];
-				prowdest[b] = ((unsigned char *) vid.colormap)
+				prowdest[b] = ((unsigned char *) vid.colormap8)
 					[(light & 0xFF00) + pix];
 				light += lightstep;
 			}
@@ -522,7 +522,7 @@ R_DrawSurfaceBlock16 (void)
 
 
 void
-R_GenTurbTile (pixel_t *pbasetex, void *pdest)
+R_GenTurbTile (byte *pbasetex, void *pdest)
 {
 	int        *turb;
 	int         i, j, s, t;
@@ -542,7 +542,7 @@ R_GenTurbTile (pixel_t *pbasetex, void *pdest)
 
 
 void
-R_GenTurbTile16 (pixel_t *pbasetex, void *pdest)
+R_GenTurbTile16 (byte *pbasetex, void *pdest)
 {
 	int        *turb;
 	int         i, j, s, t;
@@ -566,14 +566,10 @@ R_GenTile (msurface_t *psurf, void *pdest)
 {
 	if (psurf->flags & SURF_DRAWTURB) {
 		if (r_pixbytes == 1) {
-			R_GenTurbTile ((pixel_t *)
-						   
-						   ((byte *) psurf->texinfo->texture +
+			R_GenTurbTile (((byte *) psurf->texinfo->texture +
 							psurf->texinfo->texture->offsets[0]), pdest);
 		} else {
-			R_GenTurbTile16 ((pixel_t *)
-							 
-							 ((byte *) psurf->texinfo->texture +
+			R_GenTurbTile16 (((byte *) psurf->texinfo->texture +
 							  psurf->texinfo->texture->offsets[0]), pdest);
 		}
 	} else if (psurf->flags & SURF_DRAWSKY) {

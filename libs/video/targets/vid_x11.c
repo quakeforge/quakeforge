@@ -50,15 +50,14 @@
 #include <limits.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <sys/ipc.h>
+#include <sys/shm.h>
 #include <sys/time.h>
 #include <sys/types.h>
-
 #include <X11/Xatom.h>
 #include <X11/Xlib.h>
 #include <X11/Xutil.h>
 #include <X11/keysym.h>
-#include <sys/ipc.h>
-#include <sys/shm.h>
 #include <X11/extensions/XShm.h>
 
 #ifdef HAVE_VIDMODE
@@ -66,7 +65,6 @@
 #endif
 
 #include "QF/cmd.h"
-#include "compat.h"
 #include "QF/console.h"
 #include "QF/cvar.h"
 #include "QF/qargs.h"
@@ -76,6 +74,7 @@
 #include "QF/va.h"
 #include "QF/vid.h"
 
+#include "compat.h"
 #include "context_x11.h"
 #include "dga_check.h"
 
@@ -111,6 +110,7 @@ static unsigned long r_mask, g_mask, b_mask;
 cvar_t		*vid_width;
 cvar_t		*vid_height;
 
+
 static void
 shiftmask_init (void)
 {
@@ -129,7 +129,7 @@ shiftmask_init (void)
 	shiftmask_fl = 1;
 }
 
-static      PIXEL16
+static PIXEL16
 xlib_rgb16 (int r, int g, int b)
 {
 	PIXEL16 	p = 0;
@@ -169,7 +169,6 @@ xlib_rgb16 (int r, int g, int b)
 
 	return p;
 }
-
 
 static PIXEL24
 xlib_rgb24 (int r, int g, int b)
@@ -231,7 +230,6 @@ st2_fixup (XImage *framebuf, int x, int y, int width, int height)
 	}
 }
 
-
 static void
 st3_fixup (XImage * framebuf, int x, int y, int width, int height)
 {
@@ -279,25 +277,17 @@ st3_fixup (XImage * framebuf, int x, int y, int width, int height)
 	}
 }
 
-/*
-	D_BeginDirectRect
-*/
 void
 D_BeginDirectRect (int x, int y, byte *pbitmap, int width, int height)
 {
 // direct drawing of the "accessing disk" icon isn't supported
 }
 
-
-/*
-	D_EndDirectRect
-*/
 void
 D_EndDirectRect (int x, int y, int width, int height)
 {
 // direct drawing of the "accessing disk" icon isn't supported
 }
-
 
 static void
 ResetFrameBuffer (void)
@@ -419,7 +409,8 @@ VID_Init (unsigned char *palette)
 	int         num_visuals;
 	int         template_mask;
 
-	Cmd_AddCommand ("vid_center", VID_Center_f, "Center the view port on the quake window in a virtual desktop.\n");
+	Cmd_AddCommand ("vid_center", VID_Center_f, "Center the view port on the "
+					"quake window in a virtual desktop.\n");
 
 	VID_GetWindowSize (320, 200);
 
@@ -428,8 +419,8 @@ VID_Init (unsigned char *palette)
 	Con_CheckResize (); // Now that we have a window size, fix console
 
 	vid.numpages = 2;
-	vid.colormap = vid_colormap;
-	vid.fullbright = 256 - LittleLong (*((int *) vid.colormap + 2048));
+	vid.colormap8 = vid_colormap;
+	vid.fullbright = 256 - LittleLong (*((int *) vid.colormap8 + 2048));
 
 	srandom (getpid ());
 
@@ -454,11 +445,13 @@ VID_Init (unsigned char *palette)
 	}
 
 	// pick a visual -- warn if more than one was available
-	x_visinfo = XGetVisualInfo (x_disp, template_mask, &template, &num_visuals);
+	x_visinfo = XGetVisualInfo (x_disp, template_mask, &template,
+								&num_visuals);
 	x_vis = x_visinfo->visual;
 
 	if (num_visuals > 1) {
-		printf ("Found more than one visual id at depth %d:\n", template.depth);
+		printf ("Found more than one visual id at depth %d:\n",
+				template.depth);
 		for (i = 0; i < num_visuals; i++)
 			printf ("	-visualid %d\n", (int) x_visinfo[i].visualid);
 	} else {
@@ -560,7 +553,6 @@ VID_Init_Cvars ()
 	X11_Init_Cvars ();
 }
 
-
 void
 VID_SetPalette (unsigned char *palette)
 {
@@ -588,7 +580,6 @@ VID_SetPalette (unsigned char *palette)
 		XStoreColors (x_disp, x_cmap, colors, 256);
 	}
 }
-
 
 /*
 	VID_Shutdown
@@ -681,7 +672,6 @@ VID_DitherOn (void)
 		dither = true;
 	}
 }
-
 
 void
 VID_DitherOff (void)

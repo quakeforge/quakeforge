@@ -36,6 +36,9 @@
 #ifdef HAVE_STRINGS_H
 # include <strings.h>
 #endif
+#ifdef HAVE_DLOPEN
+# include <dlfcn.h>
+#endif
 
 #include <X11/Xlib.h>
 #include <X11/keysym.h>
@@ -45,32 +48,26 @@
 # include <X11/extensions/xf86dga.h>
 #endif
 
-#ifdef HAVE_DLOPEN
-# include <dlfcn.h>
-#endif
-
 #include "QF/cmd.h"
-#include "compat.h"
 #include "QF/console.h"
+#include "QF/cvar.h"
 #include "QF/input.h"
 #include "QF/qargs.h"
 #include "QF/qendian.h"
+#include "QF/sys.h"
 #include "QF/va.h"
 #include "QF/vid.h"
 #include "QF/GL/funcs.h"
-#include "QF/sys.h"
 
+#include "compat.h"
 #include "context_x11.h"
 #include "sbar.h"
-#include "QF/cvar.h"
 #include "r_cvar.h"
 
 #define WARP_WIDTH		320
 #define WARP_HEIGHT 	200
 
-/*
-** GLXContext is a pointer to opaque data.
-*/
+/* GLXContext is a pointer to opaque data. */
 typedef struct __GLXcontextRec *GLXContext;
 
 #define GLX_RGBA                4       /* true if RGBA mode */
@@ -97,7 +94,8 @@ const char *gl_vendor;
 const char *gl_renderer;
 const char *gl_version;
 const char *gl_extensions;
-void		*libgl_handle;
+void	   *libgl_handle;
+
 
 void
 VID_Shutdown (void)
@@ -111,9 +109,6 @@ VID_Shutdown (void)
 	X11_CloseDisplay ();
 }
 
-/*
-	GL_Init
-*/
 void
 GL_Init (void)
 {
@@ -149,7 +144,8 @@ VID_Init (unsigned char *palette)
 
 #ifdef HAVE_DLOPEN
 	if (!(libgl_handle = dlopen (gl_libgl->string, RTLD_NOW))) {
-		Sys_Error ("Can't open OpenGL library \"%s\": %s\n", gl_libgl->string, dlerror());
+		Sys_Error ("Can't open OpenGL library \"%s\": %s\n", gl_libgl->string,
+				   dlerror());
 		return;
 	}
 #else
@@ -158,19 +154,21 @@ VID_Init (unsigned char *palette)
 
 	glXSwapBuffers = QFGL_ProcAddress (libgl_handle, "glXSwapBuffers", true);
 	glXChooseVisual = QFGL_ProcAddress (libgl_handle, "glXChooseVisual", true);
-	glXCreateContext = QFGL_ProcAddress (libgl_handle, "glXCreateContext", true);
+	glXCreateContext = QFGL_ProcAddress (libgl_handle, "glXCreateContext",
+										 true);
 	glXMakeCurrent = QFGL_ProcAddress (libgl_handle, "glXMakeCurrent", true);
 	QFGL_ProcAddress (NULL, NULL, false);	// make ProcAddress clear its cache
 
-	Cmd_AddCommand ("vid_center", VID_Center_f, "Center the view port on the quake window in a virtual desktop.\n");
+	Cmd_AddCommand ("vid_center", VID_Center_f, "Center the view port on the "
+					"quake window in a virtual desktop.\n");
 
 	VID_GetWindowSize (640, 480);
 	Con_CheckResize (); // Now that we have a window size, fix console
 
 	vid.maxwarpwidth = WARP_WIDTH;
 	vid.maxwarpheight = WARP_HEIGHT;
-	vid.colormap = vid_colormap;
-	vid.fullbright = 256 - LittleLong (*((int *) vid.colormap + 2048));
+	vid.colormap8 = vid_colormap;
+	vid.fullbright = 256 - LittleLong (*((int *) vid.colormap8 + 2048));
 
 	/* Interpret command-line params */
 
@@ -196,7 +194,8 @@ VID_Init (unsigned char *palette)
 
 	x_visinfo = glXChooseVisual (x_disp, x_screen, attrib);
 	if (!x_visinfo) {
-		Sys_Error ("Error couldn't get an RGB, Double-buffered, Depth visual\n");
+		Sys_Error ("Error couldn't get an RGB, Double-buffered, Depth "
+				   "visual\n");
 	}
 	x_vis = x_visinfo->visual;
 

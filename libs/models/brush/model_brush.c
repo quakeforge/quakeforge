@@ -41,7 +41,6 @@
 
 #include <math.h>
 
-
 #include "QF/checksum.h"
 #include "QF/cvar.h"
 #include "QF/model.h"
@@ -162,8 +161,8 @@ Mod_LoadTextures (lump_t *l)
 	m->nummiptex = LittleLong (m->nummiptex);
 
 	loadmodel->numtextures = m->nummiptex;
-	loadmodel->textures =
-		Hunk_AllocName (m->nummiptex * sizeof (*loadmodel->textures), loadname);
+	loadmodel->textures = Hunk_AllocName (m->nummiptex * sizeof
+										  (*loadmodel->textures), loadname);
 
 	for (i = 0; i < m->nummiptex; i++) {
 		m->dataofs[i] = LittleLong (m->dataofs[i]);

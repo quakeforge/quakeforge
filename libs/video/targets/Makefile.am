@@ -2,7 +2,7 @@ INCLUDES= -I$(top_srcdir)/include $(GGI_CFLAGS) $(MGL_CFLAGS) $(SDL_CFLAGS) $(SV
 
 lib_LTLIBRARIES =	@VID_TARGETS@
 
-EXTRA_LTLIBRARIES = libQFjs.la libQFfbdev.la libQFsvga.la libQFx11.la libQFglx.la libQFsdl.la libQFsgl.la libQFtdfx.la libQFwgl.la libQFmgl.la
+EXTRA_LTLIBRARIES = libQFjs.la libQFfbdev.la libQFsvga.la libQFx11.la libQFglx.la libQFsdl.la libQFsdl32.la libQFsgl.la libQFtdfx.la libQFwgl.la libQFmgl.la
 
 if ASM_ARCH
 ASM = libasm.la
@@ -32,6 +32,7 @@ EXTRA_DIST= joy.c joy_linux.c joy_null.c joy_win.c
 
 in_common_SOURCE=	in_common.c in_event.c keys.c old_keys.c
 
+
 # Linux FBdev
 YFLAGS = -d
 YACCLEX_CLEANFILES=	fbset_modes_y.c fbset_modes_y.h \
@@ -48,59 +49,48 @@ fbset_modes_l.lo: $(srcdir)/fbset_modes_l.c
 	$(LTCOMPILE) -Wno-error -c $<
 
 libQFglx_la_LDFLAGS=	-version-info 1:0:0 $(X_PRE_LIBS) $(VIDMODE_LIBS) $(DGA_LIBS) $(X_LIBS) -lX11 $(X_EXTRA_LIBS)
-libQFglx_la_SOURCES=	$(in_common_SOURCE) in_x11.c vid.c context_x11.c dga_check.c \
-			qfgl_ext.c vid_common_gl.c vid_glx.c
+libQFglx_la_SOURCES=	$(in_common_SOURCE) in_x11.c vid.c context_x11.c dga_check.c qfgl_ext.c vid_common_gl.c vid_glx.c
 libQFglx.la: $(libQFglx_la_OBJECTS) $(libQFglx_la_DEPENDENCIES)
 	$(LINK) -rpath $(libdir) $(libQFglx_la_LDFLAGS) $(libQFglx_la_OBJECTS) $(libQFglx_la_LIBADD) $(LIBS)
-
 
 libQFmgl_la_LDFLAGS=	-version-info 1:0:0
 libQFmgl_la_SOURCES=	$(in_common_SOURCE) in_win.c vid.c vid_common_sw.c vid_mgl.c
 libQFmgl.la: $(libQFmgl_la_OBJECTS) $(libQFmgl_la_DEPENDENCIES)
 	$(LINK) -rpath $(libdir) $(libQFmgl_la_LDFLAGS) $(libQFmgl_la_OBJECTS) $(libQFmgl_la_LIBADD) $(LIBS)
 
-
 libQFsdl_la_LDFLAGS=	-version-info 1:0:0
 libQFsdl_la_SOURCES=	$(in_common_SOURCE) in_sdl.c vid.c vid_common_sw.c vid_sdl.c
 libQFsdl.la: $(libQFsdl_la_OBJECTS) $(libQFsdl_la_DEPENDENCIES)
 	$(LINK) -rpath $(libdir) $(libQFsdl_la_LDFLAGS) $(libQFsdl_la_OBJECTS) $(libQFsdl_la_LIBADD) $(LIBS)
 
-# FIXME: waiting on *view.c merge --DESPAIR
-#libQFsdl32_la_LDFLAGS=	-version-info 1:0:0
-#libQFsdl32_la_SOURCES=	in_common.c in_sdl.c vid.c vid_common_sw.c vid_sdl32.c
-#libQFsdl32.la: $(libQFsdl32_la_OBJECTS) $(libQFsdl32_la_DEPENDENCIES)
-#	$(LINK) -rpath $(libdir) $(libQFsdl32_la_LDFLAGS) $(libQFsdl32_la_OBJECTS) $(libQFsdl32_la_LIBADD) $(LIBS)
-
+libQFsdl32_la_LDFLAGS=	-version-info 1:0:0
+libQFsdl32_la_SOURCES=	in_common.c in_sdl.c vid.c vid_common_sw.c vid_sdl32.c
+libQFsdl32.la: $(libQFsdl32_la_OBJECTS) $(libQFsdl32_la_DEPENDENCIES)
+	$(LINK) -rpath $(libdir) $(libQFsdl32_la_LDFLAGS) $(libQFsdl32_la_OBJECTS) $(libQFsdl32_la_LIBADD) $(LIBS)
 
 libQFsgl_la_LDFLAGS=	-version-info 1:0:0
 libQFsgl_la_SOURCES=	$(in_common_SOURCE) in_sdl.c qfgl_ext.c vid.c vid_common_gl.c vid_sgl.c
 libQFsgl.la: $(libQFsgl_la_OBJECTS) $(libQFsgl_la_DEPENDENCIES)
 	$(LINK) -rpath $(libdir) $(libQFsgl_la_LDFLAGS) $(libQFsgl_la_OBJECTS) $(libQFsgl_la_LIBADD) $(LIBS)
 
-
 libQFsvga_la_LDFLAGS=	-version-info 1:0:0
 libQFsvga_la_LIBADD=$(ASM)
-libQFsvga_la_SOURCES=	$(in_common_SOURCE) in_svgalib.c vid.c vid_common_sw.c \
-			vid_svgalib.c
+libQFsvga_la_SOURCES=	$(in_common_SOURCE) in_svgalib.c vid.c vid_common_sw.c vid_svgalib.c
 libQFsvga.la: $(libQFsvga_la_OBJECTS) $(libQFsvga_la_DEPENDENCIES)
 	$(LINK) -rpath $(libdir) $(libQFsvga_la_LDFLAGS) $(libQFsvga_la_OBJECTS) $(libQFsvga_la_LIBADD) $(LIBS)
-
 
 libQFtdfx_la_LDFLAGS=	-version-info 1:0:0
 libQFtdfx_la_SOURCES=	$(in_common_SOURCE) in_svgalib.c qfgl_ext.c vid.c vid_common_gl.c vid_3dfxsvga.c
 libQFtdfx.la: $(libQFtdfx_la_OBJECTS) $(libQFtdfx_la_DEPENDENCIES)
 	$(LINK) -rpath $(libdir) $(libQFtdfx_la_LDFLAGS) $(libQFtdfx_la_OBJECTS) $(libQFtdfx_la_LIBADD) $(LIBS)
 
-
 libQFwgl_la_LDFLAGS=	-version-info 1:0:0
 libQFwgl_la_SOURCES=	$(in_common_SOURCE) in_win.c qfgl_ext.c vid.c vid_common_gl.c vid_wgl.c
 libQFwgl.la: $(libQFwgl_la_OBJECTS) $(libQFwgl_la_DEPENDENCIES)
 	$(LINK) -rpath $(libdir) $(libQFwgl_la_LDFLAGS) $(libQFwgl_la_OBJECTS) $(libQFwgl_la_LIBADD) $(LIBS)
 
-
 libQFx11_la_LDFLAGS=	-version-info 1:0:0 $(X_PRE_LIBS) $(VIDMODE_LIBS) $(DGA_LIBS) $(X_LIBS) -lX11 $(X_EXTRA_LIBS) $(X_SHM_LIB)
-libQFx11_la_SOURCES=	$(in_common_SOURCE) in_x11.c vid.c context_x11.c dga_check.c \
-			vid_common_sw.c vid_x11.c
+libQFx11_la_SOURCES=	$(in_common_SOURCE) in_x11.c vid.c context_x11.c dga_check.c vid_common_sw.c vid_x11.c
 libQFx11.la: $(libQFx11_la_OBJECTS) $(libQFx11_la_DEPENDENCIES)
 	$(LINK) -rpath $(libdir) $(libQFx11_la_LDFLAGS) $(libQFx11_la_OBJECTS) $(libQFx11_la_LIBADD) $(LIBS)
 

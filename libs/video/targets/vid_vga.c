@@ -329,15 +329,15 @@ VGA_InitMode (viddef_t *lvid, vmode_t * pcurrentmode)
 	if (VGA_pcurmode)
 		VGA_ClearVideoMem (VGA_pcurmode->planar);
 
-// mode 0x13 is the base for all the Mode X-class mode sets
+	// mode 0x13 is the base for all the Mode X-class mode sets
 	regs.h.ah = 0;
 	regs.h.al = 0x13;
 	dos_int86 (0x10);
 
 	VGA_pagebase = (void *) real2ptr (0xa0000);
-	lvid->direct = (pixel_t *) VGA_pagebase;
+	lvid->direct = (byte *) VGA_pagebase;
 
-// set additional registers as needed
+	// set additional registers as needed
 	VideoRegisterSet (pextra->pregset);
 
 	VGA_numpages = 1;

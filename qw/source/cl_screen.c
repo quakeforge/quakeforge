@@ -83,19 +83,19 @@ CL_NetStats (int swap)
 	if (show_ping->int_val) {
 		int ping = cl.players[cl.playernum].ping;
 		ping = bound (0, ping, 999);
-		Draw_String8 (x, y, va ("%3d ms", ping));
+		Draw_String (x, y, va ("%3d ms", ping));
 		x+= 48;
 	} else if (swap) {
 		x += 56;
 	}
 	if (show_ping->int_val && show_pl->int_val) {
-		Draw_String8(x, y, "/");
+		Draw_String(x, y, "/");
 		x += 8;
 	}
 	if (show_pl->int_val) {
 		int lost = CL_CalcNet ();
 		lost = bound (0, lost, 999);
-		Draw_String8 (x, y, va ("%3d pl", lost));
+		Draw_String (x, y, va ("%3d pl", lost));
 	}
 }
 

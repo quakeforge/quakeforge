@@ -35,6 +35,12 @@
 #ifdef HAVE_CONFIG_H
 # include "config.h"
 #endif
+#ifdef HAVE_STRING_H
+# include "string.h"
+#endif
+#ifdef HAVE_STRINGS_H
+# include "strings.h"
+#endif
 #ifdef HAVE_UNISTD_H
 # include <unistd.h>
 #endif
@@ -43,20 +49,19 @@
 #elif defined(HAVE_ASM_IO_H)
 # include <asm/io.h>
 #endif
-#include <stdlib.h>
 
-#include <stdio.h>
-#include <string.h>
-#include <fcntl.h>
-#include <signal.h>
 #include <errno.h>
-#include <sys/stat.h>
-#include <sys/ioctl.h>
-#include <sys/mman.h>
+#include <fcntl.h>
+#include <math.h>
+#include <signal.h>
+#include <stdio.h>
+#include <stdlib.h>
 #include <asm/page.h>
 #include <linux/kd.h>
 #include <linux/vt.h>
-#include <math.h>
+#include <sys/stat.h>
+#include <sys/ioctl.h>
+#include <sys/mman.h>
 
 #include "QF/cmd.h"
 #include "QF/console.h"
@@ -126,7 +131,6 @@ D_BeginDirectRect (int x, int y, byte * pbitmap, int width, int height)
 	}
 }
 
-
 void
 D_EndDirectRect (int x, int y, int width, int height)
 {
@@ -153,7 +157,6 @@ D_EndDirectRect (int x, int y, int width, int height)
 	}
 }
 
-
 static void
 VID_DescribeMode_f (void)
 {
@@ -170,7 +173,6 @@ VID_DescribeMode_f (void)
 			vmode->xres, vmode->yres, vmode->depth, vmode->vrate);
 }
 
-
 static void
 VID_DescribeModes_f (void)
 {
@@ -182,10 +184,6 @@ VID_DescribeModes_f (void)
 	}
 }
 
-
-/*
-	VID_NumModes
-*/
 static int
 VID_NumModes (void)
 {
@@ -197,7 +195,6 @@ VID_NumModes (void)
 
 	return i;
 }
-
 
 static void
 VID_NumModes_f (void)
@@ -229,12 +226,12 @@ static void
 VID_Debug_f (void)
 {
 	Con_Printf ("mode: %s\n", current_mode.name);
-	Con_Printf ("height x width: %d x %d\n", current_mode.xres, current_mode.yres);
+	Con_Printf ("height x width: %d x %d\n", current_mode.xres,
+				current_mode.yres);
 	Con_Printf ("bpp: %d\n", current_mode.depth);
 	Con_Printf ("vrate: %5.3f\n", current_mode.vrate);
 	Con_Printf ("vid.aspect: %f\n", vid.aspect);
 }
-
 
 static void
 VID_InitModes (void)
@@ -242,7 +239,6 @@ VID_InitModes (void)
 	ReadModeDB();
 	num_modes = VID_NumModes();
 }
-
 
 static char *
 get_mode (char *name, int width, int height, int depth)
@@ -266,7 +262,6 @@ get_mode (char *name, int width, int height, int depth)
 
 	return "640x480-60";
 }
-
 
 static unsigned char *fb_map_addr = 0;
 static unsigned long fb_map_length = 0;
@@ -363,9 +358,9 @@ VID_SetMode (const char *name, unsigned char *palette)
 	vid.width = vmode->xres;
 	vid.height = vmode->yres;
 	vid.rowbytes = vmode->xres * (vmode->depth >> 3);
-	vid.aspect = ((float) vid.height / (float) vid.width) * (320.0 / 240.0);
-	vid.colormap = (pixel_t *) vid_colormap;
-	vid.fullbright = 256 - LittleLong (*((int *) vid.colormap + 2048));
+	vid.aspect = ((float) vid.height / (float) vid.width) * (4.0 / 3.0);
+	vid.colormap8 = (byte *) vid_colormap;
+	vid.fullbright = 256 - LittleLong (*((int *) vid.colormap8 + 2048));
 	vid.conrowbytes = vid.rowbytes;
 	vid.conwidth = vid.width;
 	vid.conheight = vid.height;
@@ -392,7 +387,8 @@ VID_SetMode (const char *name, unsigned char *palette)
 	smem_start = (unsigned long)fix.smem_start & PAGE_MASK;
 	smem_offset = (unsigned long)fix.smem_start & ~PAGE_MASK;
 	fb_map_length = (smem_offset+fix.smem_len+~PAGE_MASK) & PAGE_MASK;
-	fb_map_addr = (char *)mmap(0, fb_map_length, PROT_WRITE, MAP_SHARED, fb_fd, 0);
+	fb_map_addr = (char *)mmap(0, fb_map_length, PROT_WRITE, MAP_SHARED,
+							   fb_fd, 0);
 	if (!fb_map_addr)
 		Sys_Error ("This mode isn't hapnin'\n");
 	vid.direct = framebuffer_ptr = fb_map_addr;
@@ -486,8 +482,10 @@ VID_Init (unsigned char *palette)
 		VID_InitModes ();
 
 		Cmd_AddCommand ("vid_nummodes", VID_NumModes_f, "No Description");
-		Cmd_AddCommand ("vid_describemode", VID_DescribeMode_f, "No Description");
-		Cmd_AddCommand ("vid_describemodes", VID_DescribeModes_f, "No Description");
+		Cmd_AddCommand ("vid_describemode", VID_DescribeMode_f,
+						"No Description");
+		Cmd_AddCommand ("vid_describemodes", VID_DescribeModes_f,
+						"No Description");
 		Cmd_AddCommand ("vid_debug", VID_Debug_f, "No Description");
 		Cmd_AddCommand ("vid_fbset", VID_fbset_f, "No Description");
 
@@ -496,7 +494,8 @@ VID_Init (unsigned char *palette)
 		if (getenv ("GFBDEVMODE")) {
 			modestr = get_mode (getenv ("GFBDEVMODE"), w, h, d);
 		} else if (COM_CheckParm ("-mode")) {
-			modestr = get_mode (com_argv[COM_CheckParm ("-mode") + 1], w, h, d);
+			modestr = get_mode (com_argv[COM_CheckParm ("-mode") + 1], w, h,
+								d);
 		} else if (COM_CheckParm ("-w") || COM_CheckParm ("-h")
 				   || COM_CheckParm ("-d")) {
 			if (COM_CheckParm ("-w")) {
@@ -539,7 +538,6 @@ VID_Init_Cvars ()
 	vid_waitforrefresh = Cvar_Get ("vid_waitforrefresh", "0", CVAR_ARCHIVE,
 			NULL, "Wait for vertical retrace before drawing next frame");
 }
-
 
 void
 VID_Update (vrect_t *rects)

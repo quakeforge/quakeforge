@@ -216,10 +216,10 @@ void
 Sbar_DrawCharacter (int x, int y, int num)
 {
 	if (sbar_centered)
-		Draw_Character8 (x + ((vid.width - 320) >> 1) + 4,
-						 y + vid.height - SBAR_HEIGHT, num);
+		Draw_Character (x + ((vid.width - 320) >> 1) + 4,
+						y + vid.height - SBAR_HEIGHT, num);
 	else
-		Draw_Character8 (x + 4, y + vid.height - SBAR_HEIGHT, num);
+		Draw_Character (x + 4, y + vid.height - SBAR_HEIGHT, num);
 }
 
 
@@ -232,10 +232,10 @@ void
 Sbar_DrawString (int x, int y, char *str)
 {
 	if (sbar_centered)
-		Draw_String8 (x + ((vid.width - 320) >> 1),
-					  y + vid.height - SBAR_HEIGHT, str);
+		Draw_String (x + ((vid.width - 320) >> 1),
+					 y + vid.height - SBAR_HEIGHT, str);
 	else
-		Draw_String8 (x, y + vid.height - SBAR_HEIGHT, str);
+		Draw_String (x, y + vid.height - SBAR_HEIGHT, str);
 }
 
 
@@ -952,15 +952,15 @@ Sbar_DeathmatchOverlay (void)
 		f = s->frags;
 		snprintf (num, sizeof (num), "%3i", f);
 
-		Draw_Character8 (x + 8, y, num[0]);
-		Draw_Character8 (x + 16, y, num[1]);
-		Draw_Character8 (x + 24, y, num[2]);
+		Draw_Character (x + 8, y, num[0]);
+		Draw_Character (x + 16, y, num[1]);
+		Draw_Character (x + 24, y, num[2]);
 
 		if (k == cl.viewentity - 1)
-			Draw_Character8 (x - 8, y, 12);
+			Draw_Character (x - 8, y, 12);
 
 		// draw name
-		Draw_String8 (x + 64, y, s->name);
+		Draw_String (x + 64, y, s->name);
 
 		y += 10;
 	}
@@ -1027,16 +1027,16 @@ Sbar_MiniDeathmatchOverlay (void)
 		f = s->frags;
 		snprintf (num, sizeof (num), "%3i", f);
 
-		Draw_Character8 (x + 8, y, num[0]);
-		Draw_Character8 (x + 16, y, num[1]);
-		Draw_Character8 (x + 24, y, num[2]);
+		Draw_Character (x + 8, y, num[0]);
+		Draw_Character (x + 16, y, num[1]);
+		Draw_Character (x + 24, y, num[2]);
 
 		if (k == cl.viewentity - 1) {
-			Draw_Character8 (x, y, 16);
-			Draw_Character8 (x + 32, y, 17);
+			Draw_Character (x, y, 16);
+			Draw_Character (x + 32, y, 17);
 		}
 		// draw name
-		Draw_String8 (x + 48, y, s->name);
+		Draw_String (x + 48, y, s->name);
 
 		y += 8;
 	}

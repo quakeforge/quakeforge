@@ -35,7 +35,7 @@ INCLUDES=	-I$(top_srcdir)/include -I$(top_srcdir)/nq/include
 
 bin_PROGRAMS =	@NQ_TARGETS@
 
-EXTRA_PROGRAMS= nq-3dfx nq-fbdev nq-glx nq-mgl nq-sdl \
+EXTRA_PROGRAMS= nq-3dfx nq-fbdev nq-glx nq-mgl nq-sdl nq-sdl32 \
 		nq-sgl nq-svga nq-wgl nq-x11 nq-server
 
 if ASM_ARCH
@@ -93,11 +93,17 @@ nq_mgl_LDADD=	../../libs/video/renderer/.libs/libQFrenderer_sw.a ../../libs/mode
 nq_mgl_LDFLAGS= $(common_ldflags)
 nq_mgl_DEPENDENCIES=../../libs/video/renderer/.libs/libQFrenderer_sw.a ../../libs/models/libQFmodels_sw.la ../../libs/video/targets/libQFmgl.la $(client_LIB_DEPS)
 
-# ... Sam Lantinga's Simple DirectMedia Layer, version 1.0 and higher
+# ... Sam Lantinga's Simple DirectMedia Layer, version 1.2 and higher
 nq_sdl_SOURCES=	$(combined_SOURCES) sys_sdl.c
 nq_sdl_LDADD=	../../libs/video/renderer/.libs/libQFrenderer_sw.a ../../libs/models/libQFmodels_sw.la ../../libs/video/targets/libQFsdl.la $(client_LIBS) $(SDL_LIBS)
-nq_sgl_LDFLAGS= $(common_ldflags)
+nq_sdl_LDFLAGS= $(common_ldflags)
 nq_sdl_DEPENDENCIES=../../libs/video/renderer/.libs/libQFrenderer_sw.a ../../libs/models/libQFmodels_sw.la ../../libs/video/targets/libQFsdl.la $(client_LIB_DEPS)
+
+# ... Sam Lantinga's Simple DirectMedia Layer, version 1.2 and higher
+nq_sdl32_SOURCES=	$(combined_SOURCES) sys_sdl.c
+nq_sdl32_LDADD=	../../libs/video/renderer/.libs/libQFrenderer_sw32.a ../../libs/models/libQFmodels_sw32.la ../../libs/video/targets/libQFsdl32.la $(client_LIBS) $(SDL_LIBS)
+nq_sdl32_LDFLAGS= $(common_ldflags)
+nq_sdl32_DEPENDENCIES=../../libs/video/renderer/.libs/libQFrenderer_sw32.a ../../libs/models/libQFmodels_sw32.la ../../libs/video/targets/libQFsdl32.la $(client_LIB_DEPS)
 
 # ... Linux SVGAlib
 nq_svga_SOURCES=	$(combined_SOURCES) sys_unix.c
@@ -126,7 +132,7 @@ nq_glx_LDADD=	../../libs/video/renderer/libQFrenderer_gl.la ../../libs/models/li
 nq_glx_LDFLAGS= $(common_ldflags)
 nq_glx_DEPENDENCIES=../../libs/video/renderer/libQFrenderer_gl.la ../../libs/models/libQFmodels_gl.la ../../libs/video/targets/libQFglx.la $(client_LIB_DEPS)
 
-# ... Simple Directmedia Layer, version 1.1 and higher, in GL mode
+# ... Simple Directmedia Layer, version 1.2 and higher, in GL mode
 nq_sgl_SOURCES=	$(combined_SOURCES) sys_sdl.c
 nq_sgl_LDADD=	../../libs/video/renderer/libQFrenderer_gl.la ../../libs/models/libQFmodels_gl.la ../../libs/video/targets/libQFsgl.la $(client_LIBS) $(X_LIBS) $(SDL_LIBS) $(DL_LIBS)
 nq_sgl_LDFLAGS= $(common_ldflags)

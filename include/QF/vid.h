@@ -39,37 +39,38 @@ extern byte   *vid_basepal;
 extern byte   *vid_colormap;
 
 typedef struct vrect_s {
-	int				x,y,width,height;
+	int				 x,y,width,height;
 	struct vrect_s	*pnext;
 } vrect_t;
 
 typedef struct {
-	qboolean		initialized;
-	pixel_t			*buffer;		// invisible buffer
+	qboolean		 initialized;
+	void			*buffer;		// invisible buffer
 	short			*zbuffer;
 	void			*surfcache;
-	pixel_t			*colormap;		// 256 * VID_GRADES size
+	byte			*colormap8;		// 256 * VID_GRADES size
 	unsigned short	*colormap16;	// 256 * VID_GRADES size
-	int				fullbright;		// index of first fullbright color
-	unsigned int	rowbytes;		// may be > width if displayed in a window
-	unsigned int	width;		
-	unsigned int	height;
-	float			aspect;			// width / height -- < 0 is taller than wide
-	int				numpages;
-	qboolean		recalc_refdef;	// if true, recalc vid-based stuff
-	qboolean		cshift_changed;
-	pixel_t			*conbuffer;
-	int				conrowbytes;
-	unsigned int	conwidth;
-	unsigned int	conheight;
-	int				maxwarpwidth;
-	int				maxwarpheight;
-	pixel_t			*direct;		// direct drawing to framebuffer, if not
+	unsigned int	*colormap32;	// 256 * VID_GRADES size
+	int				 fullbright;	// index of first fullbright color
+	unsigned int	 rowbytes;		// may be > width if displayed in a window
+	unsigned int	 width;		
+	unsigned int	 height;
+	float			 aspect;	// width / height -- < 0 is taller than wide
+	int				 numpages;
+	qboolean		 recalc_refdef;	// if true, recalc vid-based stuff
+	qboolean		 cshift_changed;
+	void			*conbuffer;
+	int				 conrowbytes;
+	unsigned int	 conwidth;
+	unsigned int	 conheight;
+	int				 maxwarpwidth;
+	int				 maxwarpheight;
+	byte			*direct;		// direct drawing to framebuffer, if not
 									//  NULL
-	int				(*surf_cache_size)(int width, int height);
-	void			(*flush_caches)(void);
-	void			(*init_caches)(void *cache, int size);
-	void			(*do_screen_buffer)(void);
+	int			   (*surf_cache_size)(int width, int height);
+	void		   (*flush_caches)(void);
+	void		   (*init_caches)(void *cache, int size);
+	void		   (*do_screen_buffer)(void);
 } viddef_t;
 
 extern viddef_t 		vid;				// global video state

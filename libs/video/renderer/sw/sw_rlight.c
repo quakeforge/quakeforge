@@ -55,11 +55,9 @@ R_AnimateLight (void)
 	}
 }
 
-
 /*
 	DYNAMIC LIGHTS
 */
-
 
 void
 R_RecursiveMarkLights (vec3_t lightorigin, dlight_t *light, int bit,
