@@ -3,19 +3,12 @@ AUTOMAKE_OPTIONS= foreign
 
 SUBDIRS=	include source
 
-EXTRA_DIST=	README.WIN newtree.dsw ChangeLog \
-		RPM/build_rpm.in RPM/quakeforge.spec.in \
-		tools/gas2masm/Makefile tools/gas2masm/gas2masm.c \
-		tools/gas2masm/gas2masm.dsp tools/gas2masm/gas2masm.dsw \
-		tools/gas2masm/gas2masm.mak tools/gas2masm/gas2masm.mdp \
-		tools/zpak
-
 NOCONV_DIST=	$(distdir)/include/win32/resources/icon1.ico
 
 changelog::
-	-touch ChangeLog
-	-tools/cvs2cl/cvs2cl.pl -b --utc
-	-rm -f ChangeLog.bak
+	-touch $(top_srcdir)/ChangeLog
+	-$(top_srcdir)/tools/cvs2cl/cvs2cl.pl -b --utc
+	-rm -f $(top_srcdir)/ChangeLog.bak
 
 dist-zip: distdir
 	-chmod -R a+r $(distdir)
