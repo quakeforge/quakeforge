@@ -82,7 +82,7 @@ int method_compare (method_t *m1, method_t *m2);
 keywordarg_t *new_keywordarg (const char *selector, struct expr_s *expr);
 keywordarg_t *copy_keywordargs (const keywordarg_t *kwargs);
 
-struct expr_s *send_message (int super);
+struct expr_s *send_message (method_t *method, int super);
 
 method_t *find_method (const char *sel_name);
 

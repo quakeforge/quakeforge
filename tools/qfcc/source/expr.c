@@ -1780,9 +1780,17 @@ function_expr (expr_t *e1, expr_t *e2)
 	int         arg_expr_count = 0;
 	expr_t     *call;
 	expr_t     *err = 0;
+	const char *func_name = "unknown";
 
 	if (e1->type == ex_error)
 		return e1;
+	if (e1->type == ex_def) {
+		 func_name = e1->e.def->name;
+	} else if (e1->type == ex_uexpr && e1->e.expr.op == 'c') {
+		e = e1->e.expr.e1;
+		if (e->type == ex_def)
+			func_name = e->e.def->name;
+	}
 	for (e = e2; e; e = e->next)
 		convert_name (e);
 	for (e = e2; e; e = e->next) {
@@ -1844,10 +1852,6 @@ function_expr (expr_t *e1, expr_t *e2)
 		type_t     *t = get_type (e);
  
 		check_initialized (e);
-		if (ftype->parm_types[i] == &type_float && e->type == ex_integer) {
-			convert_int (e);
-			t = &type_float;
-		}
 		if (i < parm_count) {
 			if (e->type == ex_nil)
 				convert_nil (e, t = ftype->parm_types[i]);
@@ -1859,8 +1863,9 @@ function_expr (expr_t *e1, expr_t *e2)
 				//print_type (ftype->parm_types[i]); puts ("");
 				//print_type (t); puts ("");
 				err = error (e, "type mismatch for parameter %d of %s",
-							 i + 1, e1->e.def->name);
+							 i + 1, func_name);
 			}
+			t = ftype->parm_types[i];
 		} else {
 			if (e->type == ex_nil)
 				convert_nil (e, t = &type_vector);	//XXX largest param size
@@ -1877,7 +1882,7 @@ function_expr (expr_t *e1, expr_t *e2)
 	call = new_block_expr ();
 	call->e.block.is_call = 1;
 	for (e = e2, i = 0; e; e = e->next, i++) {
-		if (has_function_call (e)) {
+		if (has_function_call (e) || arg_types[i] != get_type (e)) {
 			*a = new_temp_def_expr (arg_types[i]);
 			arg_exprs[arg_expr_count][0] = e;
 			arg_exprs[arg_expr_count][1] = *a;
@@ -2527,7 +2532,7 @@ super_expr (class_type_t *class_type)
 					 binary_expr ('.', e, new_name_expr ("super_class")));
 	append_expr (super_block, e);
 
-	e = address_expr (super, 0, 0);
+	e = address_expr (super, 0, type_id.aux_type);
 	super_block->e.block.result = e;
 	return super_block;
 }
@@ -2590,7 +2595,7 @@ message_expr (expr_t *receiver, keywordarg_t *message)
 		if ((err = method_check_params (method, args)))
 			return err;
 	}
-	call = function_expr (send_message (super), args);
+	call = function_expr (send_message (method, super), args);
 
 	if (call->type == ex_error)
 		return receiver;
