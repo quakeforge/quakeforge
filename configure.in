@@ -689,8 +689,8 @@ if test "x$HAVE_3dfx" != "xno" -a "x$HAVE_SVGA" != "xno" \
 		TDFXGL_NAME="$HAVE_3dfx"
 	fi
 	if test -z "$TDFXGL_NAME"; then
-		TDFXGL_NAME=$OGL_NAME
-		TDFXGL_LIBS=$OGL_LIBS
+		TDFXGL_NAME="$OGL_NAME"
+		TDFXGL_LIBS="$GLIDE_LIBS -l$TDFXGL_NAME"
 	fi
 	HAVE_3dfx=no
         AC_CHECK_LIB($TDFXGL_NAME, fxMesaCreateContext, HAVE_3dfx=yes,,
