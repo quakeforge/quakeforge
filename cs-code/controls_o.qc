@@ -1,4 +1,4 @@
-#define NUM_BINDED_KEYS 19
+#define NUM_BINDED_KEYS 34
 string [NUM_BINDED_KEYS] key_bindings = 
 {
 	"+attack",
@@ -19,7 +19,21 @@ string [NUM_BINDED_KEYS] key_bindings =
 	"+klook",
 	"+moveup",
 	"+movedown",
-	"toggle in_grab"
+#define NUM_BASIC_KEYS 18
+	"pause",
+	"toggle in_grab",
+	"messagemode",
+	"screenshot",
+#define NUM_MISC_KEYS NUM_BASIC_KEYS + 4
+	"impulse 1",
+	"impulse 2",
+	"impulse 3",
+	"impulse 4",
+	"impulse 5",
+	"impulse 6",
+	"impulse 7",
+	"impulse 8"
+#define NUM_WEAPON_KEYS NUM_MISC_KEYS + 9
 };
 string [NUM_BINDED_KEYS] key_bindings_desc;
 
@@ -129,12 +143,39 @@ integer () misc_control_bind_draw =
 	Draw_String		(20, 10, "Backspace/Delete: Del binding");
 	Draw_String     (20, 20, "Enter:            New binding");
 
-	draw_val_item   (20, 40, bind_desc_pad, "Tog. m.-grab", key_bindings_desc[18]);
+	draw_val_item   (20, 40, bind_desc_pad, "Pause game", key_bindings_desc[NUM_BASIC_KEYS]);
+	draw_val_item   (20, 50, bind_desc_pad, "Tog. m.-grab", key_bindings_desc[NUM_BASIC_KEYS + 1]);
+	draw_val_item   (20, 60, bind_desc_pad, "Messagemode", key_bindings_desc[NUM_BASIC_KEYS + 2]);
+	draw_val_item   (20, 70, bind_desc_pad, "Screenshot", key_bindings_desc[NUM_BASIC_KEYS + 3]);
 
 	opt_cursor  (12, (Menu_GetIndex() * 10) + cursor_pad);
 
 	return 1;
 };
+
+integer () weapon_control_bind_draw = 
+{
+	local integer cursor_pad = 40, bind_desc_pad;
+
+	bind_desc_pad = 120;
+
+	Draw_String		(20, 10, "Backspace/Delete: Del binding");
+	Draw_String     (20, 20, "Enter:            New binding");
+
+	draw_val_item   (20, 40, bind_desc_pad, "Axe", key_bindings_desc[NUM_MISC_KEYS]);
+	draw_val_item   (20, 50, bind_desc_pad, "Shotgun", key_bindings_desc[NUM_MISC_KEYS + 1]);
+	draw_val_item   (20, 60, bind_desc_pad, "Super Shotgun", key_bindings_desc[NUM_MISC_KEYS + 2]);
+	draw_val_item   (20, 70, bind_desc_pad, "Nailgun", key_bindings_desc[NUM_MISC_KEYS + 3]);
+	draw_val_item   (20, 80, bind_desc_pad, "Super Nailgun", key_bindings_desc[NUM_MISC_KEYS + 4]);
+	draw_val_item   (20, 90, bind_desc_pad, "Rocket L. ", key_bindings_desc[NUM_MISC_KEYS + 5]);
+	draw_val_item   (20, 100, bind_desc_pad, "Grenade L. ", key_bindings_desc[NUM_MISC_KEYS + 6]);
+	draw_val_item   (20, 110, bind_desc_pad, "Thunderbolt", key_bindings_desc[NUM_MISC_KEYS + 7]);
+
+	opt_cursor  (12, (Menu_GetIndex() * 10) + cursor_pad);
+
+	return 1;
+};
+
 
 void () basic_control_bind_menu =
 {
@@ -144,7 +185,7 @@ void () basic_control_bind_menu =
 	Menu_FadeScreen (1);
 	Menu_Draw (basic_control_bind_draw);
 
-	for (i = 0; i < 18; i++) {
+	for (i = 0; i < NUM_BASIC_KEYS; i++) {
 		Menu_Item (20, 40 + i*10, itos(i), control_bind_f, 1);
 	}
 	Menu_End ();
@@ -158,21 +199,35 @@ void () misc_control_bind_menu =
 	Menu_FadeScreen (1);
 	Menu_Draw (misc_control_bind_draw);
 
-	for (i = 18; i < 19; i++) {
+	for (i = NUM_BASIC_KEYS; i < NUM_MISC_KEYS; i++) {
 		Menu_Item (20, 40 + i*10, itos(i), control_bind_f, 1);
 	}
 	Menu_End ();
 };
 
+void () weapon_control_bind_menu =
+{
+	local integer i;
+
+	Menu_Begin (54, 60, "Weapon bindings");
+	Menu_FadeScreen (1);
+	Menu_Draw (weapon_control_bind_draw);
+
+	for (i = NUM_MISC_KEYS; i < NUM_WEAPON_KEYS; i++) {
+		Menu_Item (20, 40 + i*10, itos(i), control_bind_f, 1);
+	}
+	Menu_End ();
+};
 
 void () control_bind_menu =
 {
-	Menu_Begin (54, 90, "Bindings");
+	Menu_Begin (54, 60, "Bindings");
 	Menu_Pic (16, 4, "gfx/qplaque.lmp");
 	Menu_CenterPic (160, 4, "gfx/p_option.lmp");
 	Menu_FadeScreen (1);
 	basic_control_bind_menu ();
 	misc_control_bind_menu ();
+	weapon_control_bind_menu ();
 	Menu_End ();
 };
 

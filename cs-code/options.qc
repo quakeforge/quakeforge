@@ -2,36 +2,24 @@
 #define MAX_GAMMA 3
 #define GAMMA_STEP 0.1
 
+#define MIN_VIEWSIZE 30
+#define MAX_VIEWSIZE 120
+#define VIEWSIZE_STEP 10
+
+#define MIN_MOUSE_AMP 0
+#define MAX_MOUSE_AMP 60
+#define MOUSE_AMP_STEP 2
+
+#define MIN_VOLUME 0
+#define MAX_VOLUME 1.5
+#define VOLUME_STEP 0.1
 
 //**** VIDEO OPTIONS
-
-integer (string text, integer key) video_gamma_f =
-{
-	local float gamma;
-
-	switch (text) {
-		case "gamma":
-			gamma = cvar("vid_gamma");
-			if(key == QFK_RIGHT) {
-				gamma += GAMMA_STEP;
-			} else if(key == QFK_LEFT) {
-				gamma -= GAMMA_STEP;
-			}
-
-			if(gamma > MAX_GAMMA) {
-				gamma = MIN_GAMMA;
-			} else if(gamma < MIN_GAMMA) {
-				gamma = MAX_GAMMA;
-			}
-			cvar_set("vid_gamma", ftos(gamma));
-			break;
-	}
-	return 0;
-};
 
 integer (string text, integer key) video_options_f =
 {
 	local integer selected_crosshair;
+	local float val;
 
 	switch (text) {
 		case "fullscreen":
@@ -45,35 +33,31 @@ integer (string text, integer key) video_options_f =
 			}
 			cvar_set("crosshair", itos(selected_crosshair));
 			break;
+		case "fps":
+			Cbuf_AddText ("toggle show_fps\n");
+			break;
+		case "time":
+			Cbuf_AddText ("toggle show_time\n");
+			break;
+		case "gamma":
+			val = cvar("vid_gamma");
+			val = min_max_cnt(MIN_GAMMA, MAX_GAMMA, GAMMA_STEP, val, key == QFK_RIGHT);
+			cvar_set("vid_gamma", ftos(val));
+			break;
+		case "viewsize":
+			val = cvar("viewsize");
+			val = min_max_cnt(MIN_VIEWSIZE, MAX_VIEWSIZE, VIEWSIZE_STEP, val, key == QFK_RIGHT);
+			cvar_set("viewsize", ftos(val));
+			break;
 	}
 	return 0;
-};
-
-integer () gamma_to_percentage =
-{
-	local float gamma = cvar("vid_gamma");
-	local integer gam_perc;
-
-	local float max_gamma = (MAX_GAMMA-MIN_GAMMA) * 100;
-	gamma -= MIN_GAMMA;	
-
-	if(gamma > (MAX_GAMMA-MIN_GAMMA)) {
-		gamma = (MAX_GAMMA-MIN_GAMMA);
-	}
-	if(gamma < 0) {
-		gamma = 0;
-	}
-	gamma *= 100;
-
-	gam_perc = ftoi((gamma/max_gamma) * 100);
-
-	return gam_perc;
 };
 
 integer () options_video_draw = 
 {
 	local string tmp = ftos(cvar("crosshair"));
 	local integer spacing = 120;
+	local integer bar_pad;
 
 	Draw_Pic (16, 4, "gfx/qplaque.lmp");
 	Draw_CenterPic (160, 4, "gfx/p_option.lmp");
@@ -81,10 +65,17 @@ integer () options_video_draw =
 	Draw_String	(54,  50, "-----");
 	draw_val_item   (70, 60, spacing, "Fullscreen", get_cvar_state ("vid_fullscreen"));
 	draw_val_item   (70, 70, spacing, "Crosshair", tmp);
+	draw_val_item   (70, 80, spacing, "Show fps", get_cvar_state ("show_fps"));
+	draw_val_item   (70, 90, spacing, "Show time", get_cvar_state ("show_time"));
+	bar_pad = 90;
 
-	Draw_String (70, 80, "Gamma:");
-	draw_perc_bar  (118,  80, 15, gamma_to_percentage());
-	Draw_String (118 + (15 + 4)*8 , 80, ftos(cvar("vid_gamma")));
+	Draw_String (70, bar_pad + 10, "Gamma:");
+	draw_perc_bar  (118,  bar_pad + 10, 15, to_percentage (MIN_GAMMA, MAX_GAMMA, cvar("vid_gamma")));
+	Draw_String (118 + (15 + 4)*8 , bar_pad + 10, ftos(cvar("vid_gamma")));
+
+	Draw_String (70, bar_pad + 20, "Viewsize:");
+	draw_perc_bar  (142,  bar_pad + 20, 12, to_percentage (MIN_VIEWSIZE, MAX_VIEWSIZE, cvar("viewsize")));
+	Draw_String (142 + (12 + 4)*8 , bar_pad + 20, ftos(cvar("viewsize")));
 
 	opt_cursor  (62, (Menu_GetIndex() * 10) + 60);
 	return 1;
@@ -92,25 +83,90 @@ integer () options_video_draw =
 
 void () options_video_menu =
 {
+	local integer bar_pad;
+
 	Menu_Begin (54, 50, "Video");
 	Menu_FadeScreen (1);
 	Menu_Draw (options_video_draw);
 	
 	Menu_Item (54, 60, "fullscreen", video_options_f, 0);
 	Menu_Item (54, 70, "crosshair", video_options_f, 0);
-	Menu_Item (54, 80, "gamma", video_gamma_f, 1);
+	Menu_Item (54, 80, "fps", video_options_f, 0);
+	Menu_Item (54, 80, "time", video_options_f, 0);
+	bar_pad = 90;
+
+	Menu_Item (54, bar_pad + 10, "gamma", video_options_f, 1);
+	Menu_Item (54, bar_pad + 20, "viewsize", video_options_f, 1);
 	Menu_End ();
 };
 
+//**** AUDIO OPTIONS
+
+integer (string text, integer key) audio_volume_f =
+{
+	local float volume;
+
+	volume = cvar("volume");
+	if(key == QFK_RIGHT) {
+		volume += VOLUME_STEP;
+	} else if(key == QFK_LEFT) {
+		volume -= VOLUME_STEP;
+	}
+
+	if(volume > MAX_VOLUME) {
+		volume = MIN_VOLUME;
+	} else if(volume < MIN_VOLUME) {
+		volume = MAX_VOLUME;
+	}
+	cvar_set("volume", ftos(volume));
+	return 0;
+};
+
+integer () options_audio_draw = 
+{
+	local string tmp = ftos(cvar("crosshair"));
+	local integer spacing = 120;
+	local integer bar_pad;
+
+	Draw_Pic (16, 4, "gfx/qplaque.lmp");
+	Draw_CenterPic (160, 4, "gfx/p_option.lmp");
+	Draw_String	(54,  40, "Audio");
+	Draw_String	(54,  50, "-----");
+	bar_pad = 50;
+
+	Draw_String (70, bar_pad + 10, "Volume:");
+	draw_perc_bar  (126,  bar_pad + 10, 15, to_percentage (MIN_VOLUME, MAX_VOLUME, cvar("volume")));
+	Draw_String (126 + (15 + 4)*8 , bar_pad + 10, ftos(cvar("volume")));
+
+	opt_cursor  (62, (Menu_GetIndex() * 10) + 60);
+	return 1;
+};
+
+void () options_audio_menu =
+{
+	local integer bar_pad;
+
+	Menu_Begin (54, 60, "Audio");
+	Menu_FadeScreen (1);
+	Menu_Draw (options_audio_draw);
+	
+	bar_pad = 0;
+	Menu_Item (54, bar_pad + 10, "volume", audio_volume_f, 1);
+	Menu_End ();
+};
 
 //**** CONTROL OPTIONS
 
 integer (string text, integer key) control_options_f =
 {
+	local float val;
+
+	load_keybindings();
+
 	switch (text) {
 	    case "in_grab":	    
 			Cbuf_AddText ("toggle in_grab\n");
-			return 0;
+			break;
 		case "autorun":
 			if(cvar("cl_forwardspeed") < 400) {
 				Cbuf_AddText ("set cl_forwardspeed 400\n");
@@ -119,34 +175,43 @@ integer (string text, integer key) control_options_f =
 				Cbuf_AddText ("set cl_forwardspeed 200\n");
 				Cbuf_AddText ("set cl_backspeed 200\n");
 			}
-			return 0;
+			break;
+		case "freelook":
+			Cbuf_AddText ("toggle freelook\n");
+			break;
+		case "mouseamp":
+			val = cvar("in_mouse_amp");
+			val = min_max_cnt(MIN_MOUSE_AMP, MAX_MOUSE_AMP, MOUSE_AMP_STEP, val, key == QFK_RIGHT);
+			cvar_set("in_mouse_amp", ftos(val));
+			break;
 	}
-};
-
-integer (integer key, integer unicode, integer down) options_controls_keyevent =
-{
-	load_keybindings();
 	return 0;
 };
-
 
 integer () options_controls_draw = 
 {
 	local string tmp;
-	local integer cursor_pad = 0, spacing = 120;
+	local integer cursor_pad = 0, spacing = 120, bar_pad;
 
 
 	Draw_Pic		(16, 4, "gfx/qplaque.lmp");
 	Draw_CenterPic  (160,4, "gfx/p_option.lmp");
 	Draw_String		(54,  40, "Controls");
 	Draw_String		(54,  50, "--------");
-	draw_val_item   (70,  60, spacing, "Grab mouse", get_cvar_state ("in_grab"));
+	Draw_String     (70,  60, "Bindings");
+
+	draw_val_item   (70,  70, spacing, "Grab mouse", get_cvar_state ("in_grab"));
 	tmp = "On";
 	if(cvar("cl_forwardspeed") < 400) {
 		tmp = "Off";
 	}
-	draw_val_item   (70,  70, spacing, "Auto run", tmp);
-	Draw_String     (70,  80, "Bindings");
+	draw_val_item   (70,  80, spacing, "Auto run", tmp);
+	draw_val_item   (70,  90, spacing, "Freelook", get_cvar_state ("freelook"));
+	bar_pad = 90;
+
+	Draw_String (70, bar_pad + 10, "Mouse amp:");
+	draw_perc_bar  (150,  bar_pad + 10, 12, to_percentage (MIN_MOUSE_AMP, MAX_MOUSE_AMP, cvar("in_mouse_amp")));
+	Draw_String (150 + (15 + 4)*8 , bar_pad + 10, ftos(cvar("in_mouse_amp")));
 
 	opt_cursor  (62, (Menu_GetIndex() * 10) + 60 + cursor_pad);
 	return 1;
@@ -158,10 +223,11 @@ void () options_controls_menu =
 	Menu_FadeScreen (1);
 	Menu_CenterPic (160, 4, "gfx/p_option.lmp");
 	Menu_Draw (options_controls_draw);
-	Menu_KeyEvent (options_controls_keyevent);
-	Menu_Item (54, 60, "in_grab", control_options_f, 0);
-	Menu_Item (54, 70, "autorun", control_options_f, 0);
 	control_bind_menu ();
+	Menu_Item (54, 70, "in_grab", control_options_f, 0);
+	Menu_Item (54, 80, "autorun", control_options_f, 0);
+	Menu_Item (54, 90, "freelook", control_options_f, 0);
+	Menu_Item (54, 100, "mouseamp", control_options_f, 1);
 	Menu_End ();
 };
 
@@ -174,6 +240,8 @@ integer (integer key, integer unicode, integer down) options_keyevent =
 	return 0;
 };
 
+//**** MAIN OPTIONS MENU
+
 void () options_menu =
 {
 	Menu_Begin (54, 72, "");
@@ -181,7 +249,8 @@ void () options_menu =
 	Menu_Pic (16, 4, "gfx/qplaque.lmp");
 	Menu_CenterPic (160, 4, "gfx/p_option.lmp");
 	Menu_KeyEvent (options_keyevent);
-	options_video_menu ();
 	options_controls_menu ();
+	options_video_menu ();
+	options_audio_menu ();
 	Menu_End ();
 };
