@@ -128,6 +128,35 @@ new_scope (scope_type type, defspace_t *space, scope_t *parent)
 	return scope;
 }
 
+static const char *vector_component_names[] = {"%s_x", "%s_y", "%s_z"};
+
+static void
+vector_component (def_t *vec, int comp, scope_t *scope)
+{
+	def_t      *d;
+
+	d = new_def (&type_float, va (vector_component_names[comp], vec->name),
+				 scope);
+	d->used = 1;
+	d->parent = vec;
+	d->ofs = vec->ofs + comp;
+	Hash_Add (defs_by_name, d);
+}
+
+static void
+vector_field_component (def_t *vec, int comp, scope_t *scope)
+{
+	def_t      *d;
+
+	d = new_def (&type_floatfield, va (vector_component_names[comp], vec->name),
+				 scope);
+	d->used = 1;				// always `used'
+	d->parent = vec;
+	d->ofs = vec->ofs + comp;
+	G_INT (d->ofs) = G_INT (vec->ofs) + comp;
+	Hash_Add (defs_by_name, d);
+}
+
 /*
 	get_def
 
@@ -157,53 +186,18 @@ get_def (type_t *type, const char *name, scope_t *scope, int allocate)
 		as .origin_x, .origin_y, and .origin_z
 	*/
 	if (type->type == ev_vector && name) {
-		def_t      *d;
-
-		d = new_def (&type_float, va ("%s_x", name), scope);
-		d->used = 1;
-		d->parent = def;
-		d->ofs = def->ofs + 0;
-		Hash_Add (defs_by_name, d);
-
-		d = new_def (&type_float, va ("%s_y", name), scope);
-		d->used = 1;
-		d->parent = def;
-		d->ofs = def->ofs + 1;
-		Hash_Add (defs_by_name, d);
-
-		d = new_def (&type_float, va ("%s_z", name), scope);
-		d->used = 1;
-		d->parent = def;
-		d->ofs = def->ofs + 2;
-		Hash_Add (defs_by_name, d);
+		vector_component (def, 0, scope);
+		vector_component (def, 1, scope);
+		vector_component (def, 2, scope);
 	}
 
 	if (type->type == ev_field) {
 		G_INT (def->ofs) = new_location (type->aux_type, pr.entity_data);
 
 		if (type->aux_type->type == ev_vector) {
-			def_t      *d;
-
-			d = new_def (&type_floatfield, va ("%s_x", name), scope);
-			d->used = 1;				// always `used'
-			d->parent = def;
-			d->ofs = def->ofs + 0;
-			G_INT (d->ofs) = G_INT (def->ofs) + 0;
-			Hash_Add (defs_by_name, d);
-
-			d = new_def (&type_floatfield, va ("%s_y", name), scope);
-			d->used = 1;				// always `used'
-			d->parent = def;
-			d->ofs = def->ofs + 1;
-			G_INT (d->ofs) = G_INT (def->ofs) + 1;
-			Hash_Add (defs_by_name, d);
-
-			d = new_def (&type_floatfield, va ("%s_z", name), scope);
-			d->used = 1;				// always `used'
-			d->parent = def;
-			d->ofs = def->ofs + 2;
-			G_INT (d->ofs) = G_INT (def->ofs) + 2;
-			Hash_Add (defs_by_name, d);
+			vector_field_component (def, 0, scope);
+			vector_field_component (def, 1, scope);
+			vector_field_component (def, 2, scope);
 		}
 	}
 
