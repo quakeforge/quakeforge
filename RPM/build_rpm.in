@@ -6,12 +6,18 @@ srcdir=@srcdir@
 top_srcdir=@top_srcdir@
 top_builddir=..
 
-rm -rf BUILD SPECS RPMS SOURCES SRPMS
-mkdir -p BUILD SPECS RPMS/{noarch,i386,i686} SOURCES SRPMS
+mkdir -p RPMS/{noarch,i386,i686}
 make -C $top_builddir changelog
 make -C $top_builddir dist
-mv $top_builddir/quakeforge-${version}.tar.gz SOURCES
 cat > rpmmacros <<EOF
-%_topdir $PWD
+%_topdir    $PWD
+%_rpmdir    $PWD/RPMS
+%_sourcedir $top_builddir
+%_specdir   $PWD
+%_srcrpmdir $PWD
+%_builddir  $PWD
 EOF
 rpm -ba quakeforge.spec --rcfile $srcdir/rpmrc
+find . -maxdepth 1 -type d -name 'quakeforge-*' -exec rm -rf {} \;
+find RPMS -name '*.rpm' -exec mv {} . \;
+rm -rf RPMS
