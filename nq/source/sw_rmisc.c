@@ -169,9 +169,9 @@ R_LineGraph (int x, int y, int h)
 }
 
 
-#define	MAX_TIMINGS		100
+#define MAX_TIMINGS 100
 extern float mouse_x, mouse_y;
-int         graphval;
+int          graphval;
 
 /*
 	R_TimeGraph
