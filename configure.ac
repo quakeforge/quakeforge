@@ -1916,6 +1916,11 @@ QF_DEPS(QFLIGHT,
 	[$(top_builddir)/libs/util/libQFutil.la],
 	[$(WIN32_LIBS)],
 )
+QF_DEPS(QFMODELGEN,
+	[-I$(top_srcdir)/tools/qfmodelgen/include],
+	[$(top_builddir)/libs/util/libQFutil.la],
+	[$(WIN32_LIBS)],
+)
 QF_DEPS(QFVIS,
 	[-I$(top_srcdir)/tools/qfvis/include],
 	[$(top_builddir)/libs/util/libQFutil.la],
@@ -2019,6 +2024,9 @@ AC_OUTPUT(
 	tools/qflight/Makefile
 	tools/qflight/include/Makefile
 	tools/qflight/source/Makefile
+	tools/qfmodelgen/Makefile
+	tools/qfmodelgen/include/Makefile
+	tools/qfmodelgen/source/Makefile
 	tools/qfprogs/Makefile
 	tools/qfprogs/include/Makefile
 	tools/qfprogs/source/Makefile
