@@ -149,9 +149,22 @@ load_ogg (OggVorbis_File *vf, sfxblock_t *block, cache_allocator_t allocator)
 	sfxbuffer_t *sc = 0;
 	sfx_t      *sfx = block->sfx;
 	int        channels;
-
+	void        (*paint) (channel_t *ch, sfxbuffer_t *buffer, int count);
 
 	get_info (vf, sfx);
+
+	switch (sfx->channels) {
+		case 1:
+			paint = SND_PaintChannelFrom16;
+			break;
+		case 2:
+			paint = SND_PaintChannelStereo16;
+			break;
+		default:
+			Sys_Printf ("%s: unsupported channel count: %d\n",
+						sfx->name, sfx->channels);
+			return 0;
+	}
 
 	channels = sfx->channels;
 
@@ -166,6 +179,8 @@ load_ogg (OggVorbis_File *vf, sfxblock_t *block, cache_allocator_t allocator)
 	if (read_ogg (vf, data, size) < 0)
 		goto bail;
 	SND_ResampleSfx (sfx, sc, data);
+	sc->paint = paint;
+	sc->length = sc->head = sfx->length;
   bail:
 	if (data)
 		free (data);
