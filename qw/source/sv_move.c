@@ -31,15 +31,8 @@ static const char rcsid[] =
 # include "config.h"
 #endif
 
-#include <math.h>
-#include <stdlib.h>
-
-#include "QF/qtypes.h"
-
-#include "pmove.h"
 #include "server.h"
 #include "sv_progs.h"
-#include "sv_pr_cmds.h"
 #include "world.h"
 
 #define	STEPSIZE	18
@@ -66,6 +59,7 @@ SV_CheckBottom (edict_t *ent)
 
 	// if all of the points under the corners are solid world, don't bother
 	// with the tougher checks
+
 	// the corners must be within 16 of the midpoint
 	start[2] = mins[2] - 1;
 	for (x = 0; x <= 1; x++)
@@ -141,11 +135,7 @@ SV_movestep (edict_t *ent, const vec3_t move, qboolean relink)
 			VectorAdd (SVvector (ent, origin), move, neworg);
 			enemy = PROG_TO_EDICT (&sv_pr_state, SVentity (ent, enemy));
 			if (i == 0 && enemy != sv.edicts) {
-				dz =
-					SVvector (ent, origin)[2] -
-					SVvector (PROG_TO_EDICT (&sv_pr_state,
-											 SVentity (ent, enemy)),
-							  origin)[2];
+				dz = SVvector (ent, origin)[2] - SVvector (enemy, origin)[2];
 				if (dz > 40)
 					neworg[2] -= 8;
 				if (dz < 30)
@@ -171,6 +161,7 @@ SV_movestep (edict_t *ent, const vec3_t move, qboolean relink)
 
 		return false;
 	}
+
 	// push down from a step height above the wished position
 	neworg[2] += STEPSIZE;
 	VectorCopy (neworg, end);
@@ -196,7 +187,6 @@ SV_movestep (edict_t *ent, const vec3_t move, qboolean relink)
 			if (relink)
 				SV_LinkEdict (ent, true);
 			SVfloat (ent, flags) = (int) SVfloat (ent, flags) & ~FL_ONGROUND;
-//			SV_Printf ("fall down\n"); 
 			return true;
 		}
 
@@ -218,7 +208,6 @@ SV_movestep (edict_t *ent, const vec3_t move, qboolean relink)
 	}
 
 	if ((int) SVfloat (ent, flags) & FL_PARTIALGROUND) {
-//		SV_Printf ("back on ground\n"); 
 		SVfloat (ent, flags) = (int) SVfloat (ent, flags) & ~FL_PARTIALGROUND;
 	}
 	SVentity (ent, groundentity) = EDICT_TO_PROG (&sv_pr_state, trace.ent);
@@ -238,8 +227,8 @@ SV_movestep (edict_t *ent, const vec3_t move, qboolean relink)
 qboolean
 SV_StepDirection (edict_t *ent, float yaw, float dist)
 {
-	vec3_t      move, oldorigin;
 	float       delta;
+	vec3_t      move, oldorigin;
 
 	SVfloat (ent, ideal_yaw) = yaw;
 	PF_changeyaw (&sv_pr_state);
@@ -267,8 +256,6 @@ SV_StepDirection (edict_t *ent, float yaw, float dist)
 void
 SV_FixCheckBottom (edict_t *ent)
 {
-//	SV_Printf ("SV_FixCheckBottom\n");
-
 	SVfloat (ent, flags) = (int) SVfloat (ent, flags) | FL_PARTIALGROUND;
 }
 
@@ -322,7 +309,6 @@ SV_NewChaseDir (edict_t *actor, edict_t *enemy, float dist)
 		&& SV_StepDirection (actor, d[2], dist)) return;
 
 	/* there is no direct path to the player, so pick another direction */
-
 	if (olddir != DI_NODIR && SV_StepDirection (actor, olddir, dist))
 		return;
 
@@ -367,22 +353,22 @@ SV_MoveToGoal (progs_t *pr)
 	edict_t    *ent, *goal;
 	float       dist;
 
-	ent = PROG_TO_EDICT (&sv_pr_state, *sv_globals.self);
-	goal = PROG_TO_EDICT (&sv_pr_state, SVentity (ent, goalentity));
-	dist = G_FLOAT (&sv_pr_state, OFS_PARM0);
+	ent = PROG_TO_EDICT (pr, *pr->globals.self);
+	goal = PROG_TO_EDICT (pr, SVentity (ent, goalentity));
+	dist = G_FLOAT (pr, OFS_PARM0);
 
 	if (!((int) SVfloat (ent, flags) & (FL_ONGROUND | FL_FLY | FL_SWIM))) {
-		G_FLOAT (&sv_pr_state, OFS_RETURN) = 0;
+		G_FLOAT (pr, OFS_RETURN) = 0;
 		return;
 	}
 	// if the next step hits the enemy, return immediately
-	if (PROG_TO_EDICT (&sv_pr_state, SVentity (ent, enemy)) != sv.edicts
+	if (PROG_TO_EDICT (pr, SVentity (ent, enemy)) != sv.edicts
 		&& SV_CloseEnough (ent, goal, dist))
 		return;
 
 	// bump around...
-	if ((rand () & 3) == 1 || !SV_StepDirection
-		(ent, SVfloat (ent, ideal_yaw), dist)) {
+	if ((rand () & 3) == 1
+		|| !SV_StepDirection (ent, SVfloat (ent, ideal_yaw), dist)) {
 		SV_NewChaseDir (ent, goal, dist);
 	}
 }

@@ -33,6 +33,7 @@
 #define __sv_progs_h
 
 #include "QF/progs.h"
+#include "sv_pr_cmds.h"
 
 typedef struct {
     int        *self;

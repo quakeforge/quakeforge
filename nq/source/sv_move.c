@@ -1,7 +1,7 @@
 /*
 	sv_move.c
 
-	@description@
+	monster movement
 
 	Copyright (C) 1996-1997  Id Software, Inc.
 
@@ -49,10 +49,10 @@ int         c_yes, c_no;
 qboolean
 SV_CheckBottom (edict_t *ent)
 {
-	vec3_t      mins, maxs, start, stop;
-	trace_t     trace;
-	int         x, y;
 	float       mid, bottom;
+	int         x, y;
+	trace_t     trace;
+	vec3_t      mins, maxs, start, stop;
 
 	VectorAdd (SVvector (ent, origin), SVvector (ent, mins), mins);
 	VectorAdd (SVvector (ent, origin), SVvector (ent, maxs), maxs);
@@ -118,11 +118,11 @@ SV_CheckBottom (edict_t *ent)
 qboolean
 SV_movestep (edict_t *ent, const vec3_t move, qboolean relink)
 {
-	int         i;
-	float       dz;
-	vec3_t      oldorg, neworg, end;
-	trace_t     trace;
 	edict_t    *enemy;
+	float       dz;
+	int         i;
+	trace_t     trace;
+	vec3_t      oldorg, neworg, end;
 
 	// try the move 
 	VectorCopy (SVvector (ent, origin), oldorg);
@@ -187,7 +187,6 @@ SV_movestep (edict_t *ent, const vec3_t move, qboolean relink)
 			if (relink)
 				SV_LinkEdict (ent, true);
 			SVfloat (ent, flags) = (int) SVfloat (ent, flags) & ~FL_ONGROUND;
-//			Con_Printf ("fall down\n"); 
 			return true;
 		}
 
@@ -209,7 +208,6 @@ SV_movestep (edict_t *ent, const vec3_t move, qboolean relink)
 	}
 
 	if ((int) SVfloat (ent, flags) & FL_PARTIALGROUND) {
-//		Con_Printf ("back on ground\n"); 
 		SVfloat (ent, flags) = (int) SVfloat (ent, flags) & ~FL_PARTIALGROUND;
 	}
 	SVentity (ent, groundentity) = EDICT_TO_PROG (&sv_pr_state, trace.ent);
@@ -221,10 +219,10 @@ SV_movestep (edict_t *ent, const vec3_t move, qboolean relink)
 }
 
 /*
-  SV_StepDirection
+	SV_StepDirection
 
-  Turns to the movement direction, and walks the current distance if
-  facing it.
+	Turns to the movement direction, and walks the current distance if
+	facing it.
 */
 qboolean
 SV_StepDirection (edict_t *ent, float yaw, float dist)
@@ -258,8 +256,6 @@ SV_StepDirection (edict_t *ent, float yaw, float dist)
 void
 SV_FixCheckBottom (edict_t *ent)
 {
-//	Con_Printf ("SV_FixCheckBottom\n");
-
 	SVfloat (ent, flags) = (int) SVfloat (ent, flags) | FL_PARTIALGROUND;
 }
 
@@ -316,7 +312,7 @@ SV_NewChaseDir (edict_t *actor, edict_t *enemy, float dist)
 	if (olddir != DI_NODIR && SV_StepDirection (actor, olddir, dist))
 		return;
 
-	if (rand () & 1) {			/* randomly determine direction of search */
+	if (rand () & 1) {				// randomly determine direction of search
 		for (tdir = 0; tdir <= 315; tdir += 45)
 			if (tdir != turnaround && SV_StepDirection (actor, tdir, dist))
 				return;
@@ -333,7 +329,6 @@ SV_NewChaseDir (edict_t *actor, edict_t *enemy, float dist)
 
 	// if a bridge was pulled out from underneath a monster, it may not have
 	// a valid standing position at all
-
 	if (!SV_CheckBottom (actor))
 		SV_FixCheckBottom (actor);
 }
@@ -355,8 +350,8 @@ SV_CloseEnough (edict_t *ent, edict_t *goal, float dist)
 void
 SV_MoveToGoal (progs_t *pr)
 {
-	float       dist;
 	edict_t    *ent, *goal;
+	float       dist;
 
 	ent = PROG_TO_EDICT (pr, *pr->globals.self);
 	goal = PROG_TO_EDICT (pr, SVentity (ent, goalentity));
@@ -372,8 +367,8 @@ SV_MoveToGoal (progs_t *pr)
 		return;
 
 	// bump around...
-	if ((rand () & 3) == 1 || !SV_StepDirection (ent, SVfloat
-												 (ent, ideal_yaw), dist)) {
+	if ((rand () & 3) == 1
+		|| !SV_StepDirection (ent, SVfloat (ent, ideal_yaw), dist)) {
 		SV_NewChaseDir (ent, goal, dist);
 	}
 }
