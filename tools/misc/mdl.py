@@ -51,11 +51,12 @@ for i in range (m[11]):
 	model = model[4:]
 	if t==0:
 		if m[1] == 6:
-			f = (t, unpack ("3B B 3B B 16s", model[:24]), [])
+			x = unpack ("3B B 3B B 16s", model[:24])
+			f = (t, ((x[:3], x[3]), (x[4:7], x[7]), x[8]), [])
 			model = model[24:]
 		else:
 			x = unpack ("3B B 3B B", model[:8])
-			f = (t, x, [])
+			f = (t, ((x[:3], x[3]), (x[4:7], x[7])), [])
 			model = model[8:]
 		for j in range(m[9]):
 			x = unpack("3B B", model[:4])
