@@ -819,6 +819,8 @@ Draw_Fill (int x, int y, int w, int h, int c)
 void
 Draw_FadeScreen (void)
 {
+	GL_FlushText (); // Flush text that should be rendered before the menu
+
 	qfglDisable (GL_TEXTURE_2D);
 	qfglColor4ub (0, 0, 0, 179);
 	qfglBegin (GL_QUADS);

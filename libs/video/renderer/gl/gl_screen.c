@@ -816,8 +816,8 @@ SCR_UpdateScreen (double realtime, SCR_Func *scr_funcs)
 	GL_Set2D ();
 
 	// also makes polyblend apply to whole screen
-	qfglDisable (GL_TEXTURE_2D);
 	if (v_blend[3]) {
+		qfglDisable (GL_TEXTURE_2D);
 		qfglBegin (GL_QUADS);
 
 		qfglColor4fv (v_blend);
@@ -828,8 +828,8 @@ SCR_UpdateScreen (double realtime, SCR_Func *scr_funcs)
 
 		qfglEnd ();
 		qfglColor3ubv (color_white);
+		qfglEnable (GL_TEXTURE_2D);
 	}
-	qfglEnable (GL_TEXTURE_2D);
 
 	// draw any areas not covered by the refresh
 	SCR_TileClear ();
@@ -849,7 +849,7 @@ SCR_UpdateScreen (double realtime, SCR_Func *scr_funcs)
 	}
 
 	if (r_speeds->int_val) {
-//      qfglFinish ();
+//		qfglFinish ();
 		time2 = Sys_DoubleTime ();
 		Con_Printf ("%3i ms  %4i wpoly %4i epoly\n",
 					(int) ((time2 - time1) * 1000), c_brush_polys,
