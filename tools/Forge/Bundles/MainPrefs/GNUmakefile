@@ -5,13 +5,18 @@ BUNDLE_EXTENSION=	.forgeb
 BUNDLE_INSTALL_DIR=	$(GNUSTEP_LOCAL_ROOT)/Library/Forge
 
 MainPrefs_OBJC_FILES=	\
-	MainPrefsView.m
+	MainPrefsView.m \
+	MainPrefs.m
 
 MainPrefs_HEADERS= \
-	MainPrefsView.h
+	MainPrefsView.h \
+	MainPrefs.h
 
 MainPrefs_PRINCIPAL_CLASS= \
-	MainPrefsController
+	MainPrefs
+
+#MainPrefs_RESOURCE_FILES= \
+#	Forge.tiff
 
 -include GNUmakefile.preamble
 

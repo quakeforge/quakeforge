@@ -1,12 +1,13 @@
 /*
-	MainPrefsView.m
+	MainPrefs.m
 
-	Forge internal preferences view
+	Controller class for this bundle
 
 	Copyright (C) 2001 Dusk to Dawn Computing, Inc.
+	Additional copyrights here
 
 	Author: Jeff Teunissen <deek@d2dc.net>
-	Date:	17 Nov 2001
+	Date:	24 Nov 2001
 
 	This program is free software; you can redistribute it and/or
 	modify it under the terms of the GNU General Public License as
@@ -26,35 +27,16 @@
 		59 Temple Place - Suite 330
 		Boston, MA  02111-1307, USA
 */
-static const char rcsid[] = 
-	"$Id$";
 
 #ifdef HAVE_CONFIG_H
 # include "Config.h"
 #endif
 
-#import <AppKit/NSBezierPath.h>
-#import <AppKit/NSButton.h>
-#import <AppKit/NSColor.h>
+#import "BundleController.h"
+#import "PrefsView.h"
 
-#import "MainPrefsView.h"
-
-@implementation MainPrefsView
-
-- (id) initWithFrame: (NSRect) frameRect
+@interface MainPrefs: NSObject <PrefsViewController, ForgeBundle>
 {
-	id button;
-
-	if ((self = [super initWithFrame: frameRect])) {
-
-		button = [[NSButton alloc] initWithFrame: NSMakeRect (0, 0, 60, 24)];
-		[button autorelease];
-
-		[button setTitle: @"Default"];
-		[button setTarget: self];
-		[button setAction: @selector(resetToDefaults:)];
-		[self addSubview: button];
-	}
-	return self;
 }
+
 @end
