@@ -461,7 +461,7 @@ CalcSurfaceExtents (msurface_t *s)
 
 		s->texturemins[i] = bmins[i] * 16;
 		s->extents[i] = (bmaxs[i] - bmins[i]) * 16;
-		//FIXME even 512 is really too small, need a saner test
+		// FIXME even 512 is really too small, need a saner test
 		if (!(tex->flags & TEX_SPECIAL) && s->extents[i] > 512)
 			Sys_Error ("Bad surface extents: %x %d", tex->flags,
 					   s->extents[i]);

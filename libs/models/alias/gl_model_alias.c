@@ -1,7 +1,7 @@
 /*
-	gl_model.c
+	gl_model_alias.c
 
-	model loading and caching
+	alias model loading and caching for gl
 
 	Copyright (C) 1996-1997  Id Software, Inc.
 
@@ -58,8 +58,6 @@ byte		player_8bit_texels[320 * 200];
 // a pose is a single set of vertexes.  a frame may be
 // an animating sequence of poses
 
-// =========================================================
-
 typedef struct {
 	short		x, y;
 } floodfill_t;
@@ -112,8 +110,8 @@ Mod_FloodFillSkin (byte * skin, int skinwidth, int skinheight)
 	inpt = (inpt + 1) & FLOODFILL_FIFO_MASK;
 
 	while (outpt != inpt) {
+		byte   *pos = &skin[x + skinwidth * y];
 		int		x = fifo[outpt].x, y = fifo[outpt].y, fdc = filledcolor;
-		byte       *pos = &skin[x + skinwidth * y];
 
 		outpt = (outpt + 1) & FLOODFILL_FIFO_MASK;
 
@@ -269,8 +267,8 @@ Mod_FinalizeAliasModel (model_t *m, aliashdr_t *hdr)
 void
 Mod_LoadExternalSkin (maliasskindesc_t *pskindesc, char *filename)
 {
-	VFile		*f;
 	tex_t		*targa;
+	VFile		*f;
 
 	COM_FOpenFile (filename, &f);
 	if (f)

@@ -1,7 +1,7 @@
 /*
-	gl_model.c
+	gl_model_sprite.c
 
-	model loading and caching
+	gl support routines for sprite model loading and caching
 
 	Copyright (C) 1996-1997  Id Software, Inc.
 
@@ -51,8 +51,8 @@ Mod_SpriteLoadTexture (mspriteframe_t *pspriteframe, int framenum)
 {
 	char        name[64];
 	char        filename[MAX_QPATH + 4];
-	VFile      *f;
 	tex_t      *targa;
+	VFile      *f;
 
 	snprintf (name, sizeof (name), "%s_%i", loadmodel->name, framenum);
 

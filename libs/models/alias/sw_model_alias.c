@@ -1,7 +1,7 @@
 /*
 	sw_model_alias.c
 
-	model loading and caching
+	alias model loading and caching for the software renderer
 
 	Copyright (C) 1996-1997  Id Software, Inc.
 
@@ -47,13 +47,6 @@ static const char rcsid[] =
 #include "compat.h"
 #include "d_iface.h"
 
-
-/*
-	ALIAS MODELS
-*/
-
-
-
 // a pose is a single set of vertexes.  a frame may be
 // an animating sequence of poses
 
@@ -62,7 +55,7 @@ void *
 Mod_LoadSkin (byte *skin, int skinsize, int snum, int gnum,
 			  qboolean group, maliasskindesc_t *skindesc)
 {
-	byte       *pskin;
+	byte		*pskin;
 
 	pskin = Hunk_AllocName (skinsize, loadname);
 	skindesc->skin = (byte *) pskin - (byte *) pheader;
@@ -73,13 +66,13 @@ Mod_LoadSkin (byte *skin, int skinsize, int snum, int gnum,
 }
 
 void
-Mod_MakeAliasModelDisplayLists (model_t *m, aliashdr_t *hdr, void *_m, int _s, int extra)
+Mod_MakeAliasModelDisplayLists (model_t *m, aliashdr_t *hdr, void *_m, int _s,
+								int extra)
 {
-	int         i, j;
-	stvert_t   *pstverts;
+	int			 i, j;
+	int			 numv = hdr->mdl.numverts, numt = hdr->mdl.numtris;
+	stvert_t	*pstverts;
 	mtriangle_t *ptri;
-	int         numv = hdr->mdl.numverts;
-	int         numt = hdr->mdl.numtris;
 
 	pstverts = (stvert_t *) Hunk_AllocName (numv * sizeof (stvert_t),
 											loadname);
@@ -104,11 +97,12 @@ Mod_MakeAliasModelDisplayLists (model_t *m, aliashdr_t *hdr, void *_m, int _s, i
 }
 
 void *
-Mod_LoadAliasFrame (void *pin, int *posenum, maliasframedesc_t *frame, int extra)
+Mod_LoadAliasFrame (void *pin, int *posenum, maliasframedesc_t *frame,
+					int extra)
 {
-	trivertx_t *pframe, *pinframe;
-	int         i, j;
-	daliasframe_t *pdaliasframe;
+	daliasframe_t  *pdaliasframe;
+	int				i, j;
+	trivertx_t	   *pframe, *pinframe;
 
 	pdaliasframe = (daliasframe_t *) pin;
 
@@ -135,7 +129,7 @@ Mod_LoadAliasFrame (void *pin, int *posenum, maliasframedesc_t *frame, int extra
 	frame->frame = (byte *) pframe - (byte *) pheader;
 
 	for (j = 0; j < pheader->mdl.numverts; j++) {
-		int         k;
+		int		k;
 
 		// these are all byte values, so no need to deal with endianness
 		pframe[j].lightnormalindex = pinframe[j].lightnormalindex;
@@ -165,14 +159,15 @@ Mod_LoadAliasFrame (void *pin, int *posenum, maliasframedesc_t *frame, int extra
 }
 
 void *
-Mod_LoadAliasGroup (void *pin, int *posenum, maliasframedesc_t *frame, int extra)
+Mod_LoadAliasGroup (void *pin, int *posenum, maliasframedesc_t *frame,
+					int extra)
 {
-	daliasgroup_t *pingroup;
-	maliasgroup_t *paliasgroup;
-	int         i, numframes;
+	daliasgroup_t	 *pingroup;
 	daliasinterval_t *pin_intervals;
-	float      *poutintervals;
-	void       *ptemp;
+	float			 *poutintervals;
+	int				  i, numframes;
+	maliasgroup_t	 *paliasgroup;
+	void			 *ptemp;
 
 	pingroup = (daliasgroup_t *) pin;
 
@@ -229,4 +224,3 @@ void
 Mod_LoadExternalSkins (model_t *mod)
 {
 }
-

@@ -1,7 +1,7 @@
 /*
 	gl_model_brush.c
 
-	model loading and caching
+	gl support routines for model loading and caching
 
 	Copyright (C) 1996-1997  Id Software, Inc.
 
@@ -71,9 +71,9 @@ Mod_LoadExternalTextures (model_t *mod)
 {
 	char		filename[MAX_QPATH + 8];
 	int			length, i;
-	VFile	   *f;
 	tex_t	   *targa;
 	texture_t  *tx;
+	VFile	   *f;
 
 	for (i = 0; i < mod->numtextures; i++)
 	{

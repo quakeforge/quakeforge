@@ -42,7 +42,7 @@ static const char rcsid[] =
 clip_hull_t *MOD_Alloc_Hull (int nodes, int planes)
 {
 	clip_hull_t *ch;
-	int         size, i;
+	int			 size, i;
 
 	size = sizeof (hull_t);
 	size += sizeof (dclipnode_t) * nodes + sizeof (mplane_t) * planes;

@@ -1,7 +1,7 @@
 /*
 	gl_model_fullbright.c
 
-	model loading and caching
+	fullbright skin handling
 
 	Copyright (C) 1996-1997  Id Software, Inc.
 
@@ -68,18 +68,18 @@ Mod_Fullbright (byte *skin, int width, int height, char *name)
 	int		pixels;
 	int		texnum = 0;
 
-	// Check for fullbright pixels
-
 	pixels = width * height;
 
 //	ptexels = Hunk_Alloc(s);
 	ptexels = malloc (pixels);
 	SYS_CHECKMEM (ptexels);
 
+	// Check for fullbright pixels
 	if (Mod_CalcFullbright (skin, ptexels, pixels)) {
 		Sys_DPrintf ("FB Model ID: '%s'\n", name);
 		texnum = GL_LoadTexture (name, width, height, ptexels, true, true, 1);
 	}
+
 	free (ptexels);
 	return texnum;
 }

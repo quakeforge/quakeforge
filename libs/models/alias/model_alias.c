@@ -1,7 +1,7 @@
 /*
-	gl_model.c
+	model_alias.c
 
-	model loading and caching
+	alias model loading and caching
 
 	Copyright (C) 1996-1997  Id Software, Inc.
 
@@ -136,12 +136,12 @@ Mod_LoadAliasModel (model_t *mod, void *buffer, cache_allocator_t allocator)
 {
 	byte       *p;
 	int         i, j, len, size, version, numframes, start, end, total;
-	mdl_t      *pinmodel, *pmodel;
-	stvert_t   *pinstverts;
 	dtriangle_t *pintriangles;
 	daliasframetype_t *pframetype;
 	daliasskintype_t *pskintype;
+	mdl_t      *pinmodel, *pmodel;
 	unsigned short crc;
+	stvert_t   *pinstverts;
 	void       *mem;
 
 	int extra = 0; // extra precision bytes

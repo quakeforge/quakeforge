@@ -27,10 +27,8 @@
 static const char rcsid[] = 
 	"$Id$";
 
-/*
-  Models are the only shared resource between a client and server running
-  on the same machine.
-*/
+// Models are the only shared resource between a client and server running
+// on the same machine.
 
 #ifdef HAVE_CONFIG_H
 # include "config.h"
@@ -170,8 +168,8 @@ Mod_LoadModel (model_t *mod, qboolean crash)
 model_t *
 Mod_RealLoadModel (model_t *mod, qboolean crash, cache_allocator_t allocator)
 {
+	byte		  stackbuf[1024];		// avoid dirtying the cache heap
 	unsigned int *buf;
-	byte		stackbuf[1024];			// avoid dirtying the cache heap
 
 	// load the file
 	buf = (unsigned int *) COM_LoadStackFile (mod->name, stackbuf,

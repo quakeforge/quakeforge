@@ -1,7 +1,7 @@
 /*
 	sw_model_sprite.c
 
-	model loading and caching
+	sw renderer support routines for sprite model loading and caching
 
 	Copyright (C) 1996-1997  Id Software, Inc.
 

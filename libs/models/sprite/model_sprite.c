@@ -47,8 +47,8 @@ void *
 Mod_LoadSpriteFrame (void *pin, mspriteframe_t **ppframe, int framenum)
 {
 	dspriteframe_t *pinframe;
-	mspriteframe_t *pspriteframe;
 	int				width, height, size, origin[2];
+	mspriteframe_t *pspriteframe;
 
 	pinframe = (dspriteframe_t *) pin;
 

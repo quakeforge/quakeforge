@@ -47,10 +47,7 @@ static const char rcsid[] =
 
 #include "compat.h"
 
-/*
-	ALIAS MODEL DISPLAY LIST GENERATION
-*/
-
+// ALIAS MODEL DISPLAY LIST GENERATION ========================================
 
 model_t    *aliasmodel;
 aliashdr_t *paliashdr;
@@ -58,8 +55,7 @@ aliashdr_t *paliashdr;
 qboolean   *used;
 int         used_size;
 
-// the command list holds counts and s/t values that are valid for
-// every frame
+// the command list holds counts and s/t values that are valid for every frame
 int        *commands;
 int         numcommands;
 int         commands_size;
@@ -76,6 +72,7 @@ int        *stripverts;
 int        *striptris;
 int         stripcount;
 int         strip_size;
+
 
 void
 alloc_used (int size)
@@ -131,10 +128,8 @@ add_strip (int vert, int tri)
 int
 StripLength (int starttri, int startv)
 {
-	int         m1, m2;
-	int         j;
+	int         m1, m2, j, k;
 	mtriangle_t *last, *check;
-	int         k;
 
 	used[starttri] = 2;
 
@@ -191,10 +186,8 @@ done:
 int
 FanLength (int starttri, int startv)
 {
-	int         m1, m2;
-	int         j;
+	int         m1, m2, j, k;
 	mtriangle_t *last, *check;
-	int         k;
 
 	used[starttri] = 2;
 
@@ -246,7 +239,6 @@ FanLength (int starttri, int startv)
 	return stripcount - 2;
 }
 
-
 /*
 	BuildTris
 
@@ -256,13 +248,10 @@ FanLength (int starttri, int startv)
 void
 BuildTris (void)
 {
-	int         i, j, k;
-	int         startv;
-	float       s, t;
-	int         len, bestlen, besttype = 0;
-	int        *bestverts = 0;
-	int        *besttris = 0;
-	int         type;
+	float		s, t;
+	int			bestlen, len, startv, type, i, j, k;
+	int			besttype = 0;
+	int		   *bestverts = 0, *besttris = 0;
 
 	// build tristrips
 	numorder = 0;
@@ -322,8 +311,8 @@ BuildTris (void)
 			s = (s + 0.5) / pheader->mdl.skinwidth;
 			t = (t + 0.5) / pheader->mdl.skinheight;
 
-			add_command (*(int*)&s);
-			add_command (*(int*)&t);
+			add_command (*(int *) &s);
+			add_command (*(int *) &t);
 		}
 	}
 
@@ -344,12 +333,12 @@ BuildTris (void)
 void
 Mod_MakeAliasModelDisplayLists (model_t *m, aliashdr_t *hdr, void *_m, int _s, int extra)
 {
-	int         i, j;
-	int        *cmds;
 	char        cache[MAX_QPATH], fullpath[MAX_OSPATH];
-	VFile      *f;
 	unsigned char model_digest[MDFOUR_DIGEST_BYTES];
 	unsigned char mesh_digest[MDFOUR_DIGEST_BYTES];
+	int         i, j;
+	int        *cmds;
+	VFile      *f;
 	qboolean    remesh = true;
 	qboolean    do_cache = false;
 
@@ -373,12 +362,9 @@ Mod_MakeAliasModelDisplayLists (model_t *m, aliashdr_t *hdr, void *_m, int _s, i
 			unsigned char d1[MDFOUR_DIGEST_BYTES];
 			unsigned char d2[MDFOUR_DIGEST_BYTES];
 			struct mdfour md;
-			int        *c = 0;
-			int         nc = 0;
-			int        *vo = 0;
-			int         no = 0;
-			int			len;
-			int			vers;
+			int			len, vers;
+			int         nc = 0, no = 0;
+			int        *c = 0, *vo = 0;
 
 			memset (d1, 0, sizeof (d1));
 			memset (d2, 0, sizeof (d2));
@@ -444,7 +430,8 @@ Mod_MakeAliasModelDisplayLists (model_t *m, aliashdr_t *hdr, void *_m, int _s, i
 
 		if (do_cache) {
 			// save out the cached version
-			snprintf (fullpath, sizeof (fullpath), "%s/%s", com_gamedir, cache);
+			snprintf (fullpath, sizeof (fullpath), "%s/%s", com_gamedir,
+					  cache);
 			f = Qopen (fullpath, "wbz9");
 			if (!f) {
 				COM_CreatePath (fullpath);
@@ -459,7 +446,8 @@ Mod_MakeAliasModelDisplayLists (model_t *m, aliashdr_t *hdr, void *_m, int _s, i
 				mdfour_begin (&md);
 				mdfour_update (&md, (unsigned char *) &vers, sizeof (int));
 				mdfour_update (&md, (unsigned char *) &len, sizeof (int));
-				mdfour_update (&md, (unsigned char *) &numcommands, sizeof (int));
+				mdfour_update (&md, (unsigned char *) &numcommands,
+							   sizeof (int));
 				mdfour_update (&md, (unsigned char *) &numorder, sizeof (int));
 				mdfour_update (&md, (unsigned char *) commands,
 							   numcommands * sizeof (commands[0]));
@@ -487,7 +475,6 @@ Mod_MakeAliasModelDisplayLists (model_t *m, aliashdr_t *hdr, void *_m, int _s, i
 	cmds = Hunk_Alloc (numcommands * sizeof (int));
 	paliashdr->commands = (byte *) cmds - (byte *) paliashdr;
 	memcpy (cmds, commands, numcommands * sizeof (int));
-
 
 	if (extra) {
 		trivertx16_t *verts;
