@@ -44,20 +44,22 @@ static const char rcsid[] =
 #include "pmove.h"
 
 cvar_t     *cl_predict;
-cvar_t     *cl_predict_static;
 cvar_t     *cl_pushlatency;
 
 
 void
 CL_PredictUsercmd (player_state_t * from, player_state_t * to, usercmd_t *u,
-				   qboolean spectator)
+				   qboolean clientplayer)
 {
 	// Dabb: if there is no movement to start with, don't predict...
-	if (!cl_predict_static->int_val && VectorIsZero (from->velocity)) {
-		VectorCopy (from->origin, to->origin);
-		VectorCopy (u->angles, to->viewangles);
-		VectorCopy (from->velocity, to->velocity);
-		return;
+	// Despair: Not predicting for the client's player is painful.
+	if (!clientplayer) {
+		if (VectorIsZero (from->velocity)) {
+			VectorCopy (from->origin, to->origin);
+			VectorCopy (u->angles, to->viewangles);
+			VectorCopy (from->velocity, to->velocity);
+			return;
+		}
 	}
 
 	// split up very long moves
@@ -68,8 +70,8 @@ CL_PredictUsercmd (player_state_t * from, player_state_t * to, usercmd_t *u,
 		split = *u;
 		split.msec /= 2;
 
-		CL_PredictUsercmd (from, &temp, &split, spectator);
-		CL_PredictUsercmd (&temp, to, &split, spectator);
+		CL_PredictUsercmd (from, &temp, &split, clientplayer);
+		CL_PredictUsercmd (&temp, to, &split, clientplayer);
 		return;
 	}
 
@@ -81,17 +83,17 @@ CL_PredictUsercmd (player_state_t * from, player_state_t * to, usercmd_t *u,
 	pmove.oldbuttons = from->oldbuttons;
 	pmove.waterjumptime = from->waterjumptime;
 	pmove.dead = cl.stats[STAT_HEALTH] <= 0;
-	pmove.spectator = spectator;
+	if (clientplayer)
+		pmove.spectator = cl.spectator;
+	else
+		pmove.spectator = false;
 	pmove.flying = cl.stats[STAT_FLYMODE];
 
 	pmove.cmd = *u;
 
 	PlayerMove ();
-//	for (i=0 ; i<3 ; i++)
-//		pmove.origin[i] = ((int)(pmove.origin[i] * 8)) * 0.125;
 	to->waterjumptime = pmove.waterjumptime;
 	to->oldbuttons = pmove.oldbuttons;	// Tonik
-//	to->oldbuttons = pmove.cmd.buttons;
 	VectorCopy (pmove.origin, to->origin);
 	VectorCopy (pmove.angles, to->viewangles);
 	VectorCopy (pmove.velocity, to->velocity);
@@ -154,6 +156,7 @@ CL_PredictMove (void)
 		return;
 	}
 
+/* FIXME Despair: always predict clientplayer
 	// Dabb: if there is no movement to start with, don't predict...
 	if (!cl_predict_static->int_val
 		&& VectorIsZero (from->playerstate[cl.playernum].velocity)) {
@@ -161,6 +164,7 @@ CL_PredictMove (void)
 		VectorCopy (from->playerstate[cl.playernum].origin, cl.simorg);
 		return;
 	}
+*/
 
 	// predict forward until cl.time <= to->senttime
 	oldphysent = pmove.numphysent;
@@ -173,7 +177,7 @@ CL_PredictMove (void)
 		to = &cl.frames[(cls.netchan.incoming_sequence + i) & UPDATE_MASK];
 		CL_PredictUsercmd (&from->playerstate[cl.playernum],
 						   &to->playerstate[cl.playernum], &to->cmd,
-						   cl.spectator);
+						   true);
 		cl.onground = onground;
 		if (to->senttime >= cl.time)
 			break;
@@ -217,8 +221,6 @@ CL_Prediction_Init_Cvars (void)
 {
 	cl_predict = Cvar_Get ("cl_predict", "1", CVAR_NONE, NULL,
 						  "Set to enable client prediction");
-	cl_predict_static = Cvar_Get ("cl_predict_static", "1", CVAR_NONE, NULL,
-							  "Set to enable static player prediction");
 	cl_pushlatency = Cvar_Get ("pushlatency", "-999", CVAR_NONE, NULL,
 							   "How much prediction should the client make");
 }

@@ -805,6 +805,7 @@ CL_LinkPlayers (void)
 	player_info_t  *info;
 	player_state_t	exact;
 	player_state_t *state;
+	qboolean		clientplayer;
 	vec3_t			org;
 
 	playertime = realtime - cls.latency + 0.02;
@@ -828,19 +829,17 @@ CL_LinkPlayers (void)
 		if (j == cl.playernum) {
 			VectorCopy (cl.simorg, org);
 			r_player_entity = &cl_player_ents[j];
-		} else
+			clientplayer = true;
+		} else {
 			VectorCopy (state->origin, org);
+			clientplayer = false;
+		}
 		CL_NewDlight (j, org, state->effects, state->glow_size,
 					  state->glow_color);
 
-		// the player object never gets added
-		if (j == cl.playernum) {
-			if (!Cam_DrawPlayer (-1))			// XXX
-				continue;
-		} else {
-			if (!Cam_DrawPlayer (j))
-				continue;
-		}
+		// Draw player?
+		if (!Cam_DrawPlayer (j))
+			continue;
 
 		if (!state->modelindex)
 			continue;
@@ -860,7 +859,7 @@ CL_LinkPlayers (void)
 
 			oldphysent = pmove.numphysent;
 			CL_SetSolidPlayers (j);
-			CL_PredictUsercmd (state, &exact, &state->command, false);
+			CL_PredictUsercmd (state, &exact, &state->command, clientplayer);
 			pmove.numphysent = oldphysent;
 			VectorCopy (exact.origin, ent->origin);
 		}

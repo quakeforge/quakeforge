@@ -147,8 +147,7 @@ Cam_DrawViewModel (void)
 qboolean
 Cam_DrawPlayer (int playernum)
 {
-	if (playernum < 0) {
-		// client player
+	if (playernum == cl.playernum) {						// client player
 		if (cl.chase == 0 || chase_active->int_val == 0)
 			return false;
 		if (!cl.spectator)
