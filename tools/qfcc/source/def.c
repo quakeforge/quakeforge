@@ -299,8 +299,6 @@ get_def (type_t *type, const char *name, scope_t *scope,
 			}
 		}
 	}
-	if (storage == st_extern)
-		def_initialized (def);
 
 	return def;
 }
