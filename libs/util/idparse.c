@@ -69,6 +69,13 @@ COM_destruct (cbuf_t *cbuf)
 }
 
 static void
+COM_reset (cbuf_t *cbuf)
+{
+	dstring_clearstr (DATA(cbuf)->buf);
+	dstring_clearstr (DATA(cbuf)->line);
+}
+
+static void
 COM_add (cbuf_t *cbuf, const char *str)
 {
 	dstring_appendstr (DATA(cbuf)->buf, str);
@@ -232,6 +239,7 @@ COM_execute_sets (cbuf_t *cbuf)
 cbuf_interpreter_t id_interp = {
 	COM_construct,
 	COM_destruct,
+	COM_reset,
 	COM_add,
 	COM_insert,
 	COM_execute,

@@ -134,6 +134,16 @@ GIB_Return (const char *str)
 	return 0;
 }
 
+void
+GIB_Error (const char *type, const char *fmt, ...)
+{
+	va_list args;
+	
+	va_start (args, fmt);
+	GIB_Buffer_Error (cbuf_active, type, fmt, args);
+	va_end (args);
+}
+
 /*
 	GIB Builtin functions
 	
@@ -150,14 +160,14 @@ GIB_Function_f (void)
 		// Is the function program already tokenized?
 		if (GIB_Argm (2)->delim != '{') {
 			// Parse on the fly
-			if (!(program = GIB_Parse_Lines (GIB_Argv(2), TREE_NORMAL))) {
+			if (!(program = GIB_Parse_Lines (GIB_Argv(2), 0, TREE_NORMAL))) {
 				// Error!
-				Cbuf_Error ("parse", "Parse error while defining function '%s'.", GIB_Argv(1));
+				GIB_Error ("parse", "Parse error while defining function '%s'.", GIB_Argv(1));
 				return;
 			}
 		} else
 			program = GIB_Argm (2)->children;
-		GIB_Function_Define (GIB_Argv(1), GIB_Argv(2), program, GIB_DATA(cbuf_active)->globals);
+		GIB_Function_Define (GIB_Argv(1), GIB_Argv(2), program, GIB_DATA(cbuf_active)->script, GIB_DATA(cbuf_active)->globals);
 	}
 }			
 
@@ -218,6 +228,15 @@ GIB_Domain_f (void)
 }
 
 static void
+GIB_Domain_Clear_f (void)
+{
+	if (GIB_Argc() != 2)
+		GIB_USAGE ("domain");
+	else
+		Hash_FlushTable (GIB_Domain_Get (GIB_Argv(2)));
+}
+		
+static void
 GIB_Return_f (void)
 {
 	cbuf_t *sp = cbuf_active->up;
@@ -259,7 +278,7 @@ static void
 GIB_Break_f (void)
 {
 	if (!GIB_DATA(cbuf_active)->ip->jump) {
-		Cbuf_Error ("loop", "Break command attempted outside of a loop.");
+		GIB_Error ("loop", "Break command attempted outside of a loop.");
 		return;
 	}
 	if (!GIB_DATA(cbuf_active)->ip->jump->flags & TREE_COND) // In a for loop?
@@ -278,7 +297,7 @@ static void
 GIB_Continue_f (void)
 {
 	if (!GIB_DATA(cbuf_active)->ip->jump) {
-		Cbuf_Error ("loop", "Continue command attempted outside of a loop.");
+		GIB_Error ("loop", "Continue command attempted outside of a loop.");
 		return;
 	}
 	if (GIB_DATA(cbuf_active)->ip->jump->flags & TREE_COND) {
@@ -319,10 +338,15 @@ GIB_Function_Export_f (void)
 		GIB_USAGE ("function1 [function2 function3 ...]");
 	for (i = 1; i < GIB_Argc(); i++) {
 		if (!(f = GIB_Function_Find (GIB_Argv (i))))
-			Cbuf_Error ("function", "function::export: function '%s' not found", GIB_Argv (i));
+			GIB_Error ("function", "%s: function '%s' not found.", GIB_Argv(0), GIB_Argv (i));
 		else if (!f->exported) {
-			Cmd_AddCommand (f->name, GIB_Runexported_f, "Exported GIB function.");
-			f->exported = true;
+			if (Cmd_Exists (f->name)) {
+				GIB_Error ("export", "%s: A console command with the name '%s' already exists.", GIB_Argv(0), GIB_Argv(i));
+				return;
+			} else {
+				Cmd_AddCommand (f->name, GIB_Runexported_f, "Exported GIB function.");
+				f->exported = true;
+			}
 		}
 	}
 }
@@ -374,24 +398,22 @@ GIB_Slice_f (void)
 	}
 }
 
-/*
+
 static void
-GIB_Find_f (void)
+GIB_Slice_Find_f (void)
 {
-	dstring_t *ret;
-	char *haystack, *res;
+	char *res;
 	if (GIB_Argc() != 3) {
 		GIB_USAGE ("haystack needle");
 		return;
-	}
-	haystack = GIB_Argv(1);
-	if ((res = strstr(haystack, GIB_Argv(2)))) {
-		if ((ret = GIB_Return (0)))
-		dsprintf (ret, "%lu", (unsigned long int)(res - haystack));
-	} else
-		GIB_Return ("-1");
+	} else if (!GIB_CanReturn ())
+		return;
+	else if ((res = strstr(GIB_Argv(1), GIB_Argv(2)))) {
+		dsprintf (GIB_Return (0), "%lu", (unsigned long int)(res - GIB_Argv(1)));
+		dsprintf (GIB_Return (0), "%lu", (unsigned long int)(res - GIB_Argv(1))+strlen (GIB_Argv(2)));
+	}			
 }
-*/
+
 
 static void
 GIB_Split_f (void)
@@ -431,7 +453,7 @@ GIB_Regex_Match_f (void)
 	}
 	
 	if (!(reg = GIB_Regex_Compile (GIB_Argv(2), REG_EXTENDED | GIB_Regex_Translate_Options (GIB_Argv(3)))))
-		Cbuf_Error ("regex", "%s: %s", GIB_Argv(0), GIB_Regex_Error ());
+		GIB_Error ("regex", "%s: %s", GIB_Argv(0), GIB_Regex_Error ());
 	else if (regexec(reg, GIB_Argv(1), 0, 0, 0))
 		GIB_Return ("0");
 	else
@@ -454,7 +476,7 @@ GIB_Regex_Replace_f (void)
 	len = strlen (GIB_Argv(4));
 	
 	if (!(reg = GIB_Regex_Compile (GIB_Argv(2), REG_EXTENDED | GIB_Regex_Translate_Options (GIB_Argv(3)))))
-		Cbuf_Error ("regex", "%s: %s", GIB_Argv(0), GIB_Regex_Error ());
+		GIB_Error ("regex", "%s: %s", GIB_Argv(0), GIB_Regex_Error ());
 	else if (strchr(GIB_Argv(3), 'g'))
 		while (!regexec(reg, GIB_Argv(1)+ofs, 10, match, ofs > 0 ? REG_NOTBOL : 0) && match[0].rm_eo)
 			ofs += GIB_Regex_Apply_Match (match, GIB_Argd(1), ofs, GIB_Argv(4));
@@ -468,22 +490,20 @@ GIB_Regex_Extract_f (void)
 {
 	regex_t *reg;
 	regmatch_t *match;
-	dstring_t *ret;
 	int i;
 	char o;
 	
 	if (GIB_Argc() != 4) {
 		GIB_USAGE ("string regex options");
 		return;
-	}
+	} else if (!GIB_CanReturn ())
+		return;
 	match = calloc (32, sizeof(regmatch_t));
 	
 	if (!(reg = GIB_Regex_Compile (GIB_Argv(2), REG_EXTENDED | GIB_Regex_Translate_Options (GIB_Argv(3)))))
-		Cbuf_Error ("regex", "%s: %s", GIB_Argv(0), GIB_Regex_Error ());
+		GIB_Error ("regex", "%s: %s", GIB_Argv(0), GIB_Regex_Error ());
 	else if (!regexec(reg, GIB_Argv(1), 32, match, 0) && match[0].rm_eo) {
-		if (!(ret = GIB_Return(0)))
-			return;
-		dsprintf (ret, "%lu", (unsigned long) match[0].rm_eo);
+		dsprintf (GIB_Return (0), "%lu", (unsigned long) match[0].rm_eo);
 		for (i = 0; i < 32; i++) {
 			if (match[i].rm_so != -1) {
 				o = GIB_Argv(1)[match[i].rm_eo];
@@ -492,26 +512,24 @@ GIB_Regex_Extract_f (void)
 				GIB_Argv(1)[match[i].rm_eo] = o;
 			}
 		}
-	} else
-		GIB_Return ("-1");
+	}
 	free (match);
 }
 
 static void
 GIB_Thread_Create_f (void)
 {
-	dstring_t *ret;
 	gib_function_t *f;
 	if (GIB_Argc() < 2)
 		GIB_USAGE ("function [arg1 arg2 ...]");
 	else if (!(f = GIB_Function_Find (GIB_Argv(1))))
-		Cbuf_Error ("function", "thread::create: no function named '%s' exists.", GIB_Argv(1));
+		GIB_Error ("function", "%s: no function named '%s' exists.", GIB_Argv(0), GIB_Argv(1));
 	else {
 		gib_thread_t *thread = GIB_Thread_New ();
 		GIB_Function_Execute (thread->cbuf, f, cbuf_active->args->argv+1, cbuf_active->args->argc-1);
 		GIB_Thread_Add (thread);
-		if ((ret = GIB_Return (0)))
-			dsprintf (ret, "%lu", thread->id);
+		if (GIB_CanReturn ())
+			dsprintf (GIB_Return(0), "%lu", thread->id);
 	}
 }
 
@@ -522,12 +540,30 @@ GIB_Thread_Kill_f (void)
 		GIB_USAGE ("id");
 	else {
 		gib_thread_t *thread;
+		cbuf_t *cur;
 		unsigned long int id = strtoul (GIB_Argv(1), 0, 10);
 		thread = GIB_Thread_Find (id);
 		if (!thread) {
-			Cbuf_Error ("thread", "thread.kill: thread %lu does not exist.", id);
+			GIB_Error ("thread", "%s: thread %lu does not exist.", GIB_Argv(0), id);
 			return;
 		}
+		thread->trash = true;
+		// Set error condition on the top of the stack so the thread will exit if currently running
+		for (cur = thread->cbuf; cur->down && cur->down->state != CBUF_STATE_JUNK; cur = cur->down);
+		cur->state = CBUF_STATE_ERROR;
+		GIB_DATA(cur)->done = true;
+	}
+}
+
+static void
+GIB_Thread_List_f (void)
+{
+	if (GIB_Argc() != 1)
+		GIB_USAGE ("");
+	else if (GIB_CanReturn()) {
+		gib_thread_t *cur;
+		for (cur = gib_threads; cur; cur = cur->next)
+			dsprintf (GIB_Return (0), "%lu", cur->id);
 	}
 }
 
@@ -538,9 +574,9 @@ GIB_Event_Register_f (void)
 	if (GIB_Argc() != 3)
 		GIB_USAGE ("event function");
 	else if (!(func = GIB_Function_Find (GIB_Argv(2))) && GIB_Argv(2)[0])
-		Cbuf_Error ("function", "Function %s not found.", GIB_Argv(2));
+		GIB_Error ("function", "Function %s not found.", GIB_Argv(2));
 	else if (GIB_Event_Register (GIB_Argv(1), func))
-		Cbuf_Error ("event", "Event %s not found.", GIB_Argv(1));
+		GIB_Error ("event", "Event %s not found.", GIB_Argv(1));
 }
 
 /* File access */
@@ -586,13 +622,13 @@ GIB_File_Read_f (void)
 		return;
 	}
 	if (!*GIB_Argv (1)) {
-		Cbuf_Error ("file",
-		  "file::read: null filename provided");
+		GIB_Error ("file",
+		  "%s: null filename provided", GIB_Argv(0));
 		return;
 	}
 	if (GIB_File_Transform_Path (GIB_Argd(1))) {
-		Cbuf_Error ("access",
-		  "file::read: access to %s denied", GIB_Argv(1));
+		GIB_Error ("access",
+		  "%s: access to %s denied", GIB_Argv(0), GIB_Argv(1));
 		return;
 	}
 	if (!(ret = GIB_Return (0)))
@@ -608,8 +644,8 @@ GIB_File_Read_f (void)
 		Qclose (file);
 	}
 	if (!file) {
-		Cbuf_Error ("file",
-		  "file::read: could not read %s: %s", path, strerror (errno));
+		GIB_Error ("file",
+		  "%s: could not read %s: %s", GIB_Argv(0), path, strerror (errno));
 		return;
 	}
 }
@@ -625,19 +661,19 @@ GIB_File_Write_f (void)
 		return;
 	}
 	if (!*GIB_Argv(1)) {
-		Cbuf_Error ("file",
-		  "file::write: null filename provided");
+		GIB_Error ("file",
+		  "%s: null filename provided", GIB_Argv(0));
 		return;
 	}
 	if (GIB_File_Transform_Path (GIB_Argd(1))) {
-		Cbuf_Error ("access",
-		  "file::write: access to %s denied", GIB_Argv(1));
+		GIB_Error ("access",
+		  "%s: access to %s denied", GIB_Argv(0), GIB_Argv(1));
 		return;
 	}
 	path = GIB_Argv(1);
 	if (!(file = Qopen (path, "w"))) {
-		Cbuf_Error ("file",
-		  "file::write: could not open %s for writing: %s", path, strerror (errno));
+		GIB_Error ("file",
+		  "%s: could not open %s for writing: %s", GIB_Argv(0), path, strerror (errno));
 		return;
 	}
 	Qprintf (file, "%s", GIB_Argv (2));
@@ -657,8 +693,8 @@ GIB_File_Find_f (void)
 		return;
 	}
 	if (GIB_File_Transform_Path (GIB_Argd(1))) {
-		Cbuf_Error ("access", 
-		  "file::find: access to %s denied", GIB_Argv(1));
+		GIB_Error ("access",
+		  "%s: access to %s denied", GIB_Argv(0), GIB_Argv(1));
 		return;
 	}
 	path = GIB_Argv(1);
@@ -674,8 +710,8 @@ GIB_File_Find_f (void)
 	}
 	directory = opendir (path);
 	if (!directory) {
-		Cbuf_Error ("file",
-		  "file.find: could not open directory %s: %s", path, strerror (errno));
+		GIB_Error ("file",
+		  "%s: could not open directory %s: %s", GIB_Argv(0), path, strerror (errno));
 		return;
 	}
 	while ((entry = readdir (directory)))
@@ -694,21 +730,19 @@ GIB_File_Move_f (void)
 		return;
 	}
 	if (GIB_File_Transform_Path (GIB_Argd(1))) {
-		Cbuf_Error ("access",
-		  "file::move: access to %s denied", GIB_Argv(1));
+		GIB_Error ("access",
+		  "%s: access to %s denied", GIB_Argv(0), GIB_Argv(1));
 		return;
 	}
 	if (GIB_File_Transform_Path (GIB_Argd(2))) {
-		Cbuf_Error ("access",
-		  "file::move: access to %s denied", GIB_Argv(2));
+		GIB_Error ("access",
+		  "%s: access to %s denied", GIB_Argv(0), GIB_Argv(2));
 		return;
 	}
 	path1 = GIB_Argv(1);
 	path2 = GIB_Argv(2);
 	if (Qrename (path1, path2))
-		Cbuf_Error ("file",
-		  "file::move: could not move %s to %s: %s",
-	      path1, path2, strerror(errno));
+		GIB_Error ("file", "%s: could not move %s to %s: %s", GIB_Argv(0), path1, path2, strerror(errno));
 }
 
 static void
@@ -721,15 +755,13 @@ GIB_File_Delete_f (void)
 		return;
 	}
 	if (GIB_File_Transform_Path (GIB_Argd(1))) {
-		Cbuf_Error ("access",
-		  "file::delete: access to %s denied", GIB_Argv(1));
+		GIB_Error ("access",
+		  "%s: access to %s denied", GIB_Argv(0), GIB_Argv(1));
 		return;
 	}
 	path = GIB_Argv (1);
 	if (Qremove(path))
-		Cbuf_Error ("file",
-		  "file::delete: could not delete %s: %s",
-	      path, strerror(errno));
+		GIB_Error ("file", "%s: could not delete %s: %s", GIB_Argv(0), path, strerror(errno));
 }
 
 static void
@@ -790,6 +822,7 @@ GIB_Builtin_Init (qboolean sandbox)
 	GIB_Builtin_Add ("local", GIB_Local_f);
 	GIB_Builtin_Add ("global", GIB_Global_f);
 	GIB_Builtin_Add ("domain", GIB_Domain_f);
+	GIB_Builtin_Add ("domain::clear", GIB_Domain_Clear_f);
 	GIB_Builtin_Add ("return", GIB_Return_f);
 	GIB_Builtin_Add ("for", GIB_For_f);
 	GIB_Builtin_Add ("break", GIB_Break_f);
@@ -797,12 +830,14 @@ GIB_Builtin_Init (qboolean sandbox)
 	GIB_Builtin_Add ("length", GIB_Length_f);
 	GIB_Builtin_Add ("equal", GIB_Equal_f);
 	GIB_Builtin_Add ("slice", GIB_Slice_f);
+	GIB_Builtin_Add ("slice::find", GIB_Slice_Find_f);
 	GIB_Builtin_Add ("split", GIB_Split_f);
 	GIB_Builtin_Add ("regex::match", GIB_Regex_Match_f);
 	GIB_Builtin_Add ("regex::replace", GIB_Regex_Replace_f);
 	GIB_Builtin_Add ("regex::extract", GIB_Regex_Extract_f);
 	GIB_Builtin_Add ("thread::create", GIB_Thread_Create_f);
 	GIB_Builtin_Add ("thread::kill", GIB_Thread_Kill_f);
+	GIB_Builtin_Add ("thread::list", GIB_Thread_List_f);
 	GIB_Builtin_Add ("event::register", GIB_Event_Register_f);
 	GIB_Builtin_Add ("file::read", GIB_File_Read_f);
 	GIB_Builtin_Add ("file::write", GIB_File_Write_f);

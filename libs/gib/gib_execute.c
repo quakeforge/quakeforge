@@ -207,23 +207,17 @@ GIB_Execute (cbuf_t *cbuf)
 			else if ((b = GIB_Builtin_Find (cbuf->args->argv[0]->str))) {
 				b->func ();
 			} else if ((f = GIB_Function_Find (cbuf->args->argv[0]->str))) {
-				cbuf_t *new = Cbuf_New (&gib_interp);
-				cbuf->down = new;
-				new->up = cbuf;
-				cbuf->state = CBUF_STATE_STACK;
+				cbuf_t *new = Cbuf_PushStack (&gib_interp);
 				GIB_Function_Execute (new, f, cbuf->args->argv, cbuf->args->argc);
 			} else {
 				GIB_Execute_Generate_Composite (cbuf);
-				Cmd_Command (cbuf->args);
+				if (Cmd_Command (cbuf->args))
+					GIB_Error ("command", "No builtin, function, or console command named '%s' was found.", cbuf->args->argv[0]->str);
 			}
 		}
 		if (!(g->ip = g->ip->next)) // No more commands
-				g->done = true;
+			g->done = true;
 		if (cbuf->state) // Let the stack walker figure out what to do
 			return;
 	}
-	g->done = false;
-	g->program->refs--;
-	GIB_Tree_Free_Recursive (g->program);
-	g->program = g->ip = 0;
 }

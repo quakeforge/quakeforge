@@ -409,9 +409,7 @@ Locs_Loc_Get (void)
 	location_t *location;
 
 	if (GIB_Argc() != 1)
-		Cbuf_Error ("syntax",
-					"loc::get: invalid syntax\n"
-					"usage: loc::get");
+		GIB_USAGE ("");
 	else {
 		location = locs_find (cl.simorg);
 		GIB_Return (location ? location->name : "unknown");

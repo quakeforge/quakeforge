@@ -35,16 +35,18 @@
 #include "QF/dstring.h"
 #include "QF/hash.h"
 #include "QF/gib_tree.h"
+#include "QF/gib_buffer.h"
 
 typedef struct gib_function_s {
 	const char *name;
+	struct gib_script_s *script;
 	struct dstring_s *text;
 	struct gib_tree_s *program;
 	struct hashtab_s *globals;
 	qboolean exported;
 } gib_function_t;
 
-void GIB_Function_Define (const char *name, const char *text, gib_tree_t *program, hashtab_t *globals);
+void GIB_Function_Define (const char *name, const char *text, gib_tree_t *program, gib_script_t *script, hashtab_t *globals);
 gib_function_t *GIB_Function_Find (const char *name);
 void GIB_Function_Prepare_Args (cbuf_t *cbuf, dstring_t **args, unsigned int argc);
 void GIB_Function_Execute (cbuf_t *cbuf, gib_function_t *func, dstring_t **args, unsigned int argc);

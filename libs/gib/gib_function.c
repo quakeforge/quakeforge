@@ -74,6 +74,7 @@ GIB_Function_Get_Key (void *ele, void *ptr)
 {
 	return ((gib_function_t *)ele)->name;
 }
+
 static void
 GIB_Function_Free (void *ele, void *ptr)
 {
@@ -82,6 +83,11 @@ GIB_Function_Free (void *ele, void *ptr)
 	free ((void *)func->name);
 	if (func->program)
 		GIB_Tree_Free_Recursive (func->program);
+	if (func->script && !(--func->script->refs)) {
+		free ((void *)func->script->text);
+		free ((void *)func->script->file);
+		free (func->script);
+	}
 	free (func);
 }
 
@@ -93,20 +99,25 @@ GIB_Function_Free (void *ele, void *ptr)
 	hash if needed.
 */
 void
-GIB_Function_Define (const char *name, const char *text, gib_tree_t *program, hashtab_t *globals)
+GIB_Function_Define (const char *name, const char *text, gib_tree_t *program, gib_script_t *script, hashtab_t *globals)
 {
 	gib_function_t *func;
 	
-	program->refs++;
-	
+	GIB_Tree_Ref (&program);
+	if (script)
+		script->refs++;
 	if (!gib_functions)
 		gib_functions = Hash_NewTable (1024, GIB_Function_Get_Key, GIB_Function_Free, 0);
 
 	func = Hash_Find(gib_functions, name);
 	if (func) {
 		dstring_clearstr (func->text);
-		func->program->refs--;
-		GIB_Tree_Free_Recursive (func->program);
+		GIB_Tree_Unref (&func->program);
+		if (func->script && !(--func->script->refs)) {
+			free ((void *)func->script->text);
+			free ((void *)func->script->file);
+			free (func->script);
+		}
 	} else {
 		func = GIB_Function_New (name);
 		Hash_Add (gib_functions, func);
@@ -114,6 +125,7 @@ GIB_Function_Define (const char *name, const char *text, gib_tree_t *program, ha
 	dstring_appendstr (func->text, text);
 	func->program = program;
 	func->globals = globals;
+	func->script = script;
 }
 
 /*
@@ -162,8 +174,11 @@ GIB_Function_Prepare_Args (cbuf_t *cbuf, dstring_t **args, unsigned int argc)
 void
 GIB_Function_Execute (cbuf_t *cbuf, gib_function_t *func, dstring_t **args, unsigned int argc)
 {
-	func->program->refs++;
+	GIB_Tree_Ref (&func->program);
+	if (func->script)
+		func->script->refs++;
 	GIB_Buffer_Set_Program (cbuf, func->program);
+	GIB_DATA(cbuf)->script = func->script;
 	GIB_DATA(cbuf)->globals = func->globals;
 	GIB_Function_Prepare_Args (cbuf, args, argc);
 }

@@ -681,10 +681,7 @@ Key_GIB_Bind_Get_f (void)
 	int t, k;
 
 	if (GIB_Argc() != 2) {
-		Cbuf_Error ("syntax",
-		            "bind::get: invalid syntax\n"
-		            "usage: bind::get key"
-		           );
+		GIB_USAGE ("key");
 		return;
 	}
 
@@ -693,12 +690,12 @@ Key_GIB_Bind_Get_f (void)
 	key = OK_TranslateKeyName (GIB_Argv (1));
 
 	if ((t = Key_StringToIMTnum (imt)) == -1) {
-		Cbuf_Error ("bind", "bind::get: invalid imt %s", imt);
+		GIB_Error ("bind", "bind::get: invalid imt %s", imt);
 		return;
 	}
 
 	if ((k = Key_StringToKeynum (key)) == -1) {
-		Cbuf_Error ("bind", "bind::get: invalid key %s", key);
+		GIB_Error ("bind", "bind::get: invalid key %s", key);
 		return;
 	}
 	

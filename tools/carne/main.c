@@ -55,6 +55,10 @@ Carne_Execute_Script (const char *path, cbuf_args_t *args)
 			if (f[0] == '#')
 				for (; f[i] != '\n' && f[i+1]; i++);
 			Cbuf_AddText (mbuf, f+i);
+			GIB_DATA(mbuf)->script = malloc (sizeof (gib_script_t));
+			GIB_DATA(mbuf)->script->file = strdup (path);
+			GIB_DATA(mbuf)->script->text = strdup (f);
+			GIB_DATA(mbuf)->script->refs = 1;
 			free (f);
 		}
 		Qclose (file);
@@ -63,8 +67,11 @@ Carne_Execute_Script (const char *path, cbuf_args_t *args)
 		return 1;
 	}
 	
-	//GIB_Parse_Strip_Comments (mbuf);
-	
+	if (gib_parse_error)
+		return 1;
+
+		
+		
 	GIB_Function_Prepare_Args (mbuf, args->argv, args->argc);
 	
 	// Main loop
@@ -90,7 +97,8 @@ Carne_Execute_Stdin (void)
 	while (fgets(linebuf, sizeof(linebuf)-1, stdin)) {
 		GIB_Thread_Execute ();
 		Cbuf_AddText (cbuf, linebuf);
-		Cbuf_Execute_Stack (cbuf);
+		if (!gib_parse_error)
+			Cbuf_Execute_Stack (cbuf);
 		if (carne_done)
 			break;
 	}

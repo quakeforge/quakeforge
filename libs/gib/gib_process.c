@@ -47,6 +47,7 @@ static __attribute__ ((unused)) const char rcsid[] =
 #include "QF/gib_parse.h"
 #include "QF/gib_vars.h"
 #include "QF/gib_process.h"
+#include "QF/gib_builtin.h"
 
 #include "exp.h"
 
@@ -63,7 +64,7 @@ GIB_Process_Variable (dstring_t *token, unsigned int *i)
 	(*i)++;
 	if (token->str[*i] == '{') {
 		if ((c = GIB_Parse_Match_Brace (token->str, i))) {
-			Cbuf_Error ("Parse", "Could not find match for %c.", c);
+			GIB_Error ("Parse", "Could not find match for %c.", c);
 			return -1;
 		}
 		n += 2;
@@ -71,9 +72,10 @@ GIB_Process_Variable (dstring_t *token, unsigned int *i)
 	} else {
 		for (; isalnum((byte) token->str[*i]) || token->str[*i] == '_'; (*i)++);
 		if (token->str[*i] == '[') {
-			if ((c = GIB_Parse_Match_Index (token->str, i)))
+			if ((c = GIB_Parse_Match_Index (token->str, i))) {
+				GIB_Error ("Parse", "Could not find match for %c.", c);
 				return -1;
-			else
+			} else
 				(*i)++;
 		}
 		n++;
@@ -119,7 +121,7 @@ GIB_Process_Math (struct dstring_s *token, unsigned int i)
 	
 	value = EXP_Evaluate (token->str+i);
 	if (EXP_ERROR) {
-		Cbuf_Error ("math", "Expression \"%s\" caused an error:\n%s", token->str, EXP_GetErrorMsg());
+		GIB_Error ("math", "Expression \"%s\" caused an error:\n%s", token->str, EXP_GetErrorMsg());
 		return -1;
 	} else {
 		token->str[i] = 0;

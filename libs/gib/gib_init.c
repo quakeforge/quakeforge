@@ -36,6 +36,8 @@ static __attribute__ ((unused)) const char rcsid[] =
         "$Id$";
 
 #include <string.h>
+#include <stdlib.h>
+
 #include "QF/qtypes.h"
 #include "QF/cbuf.h"
 #include "QF/quakefs.h"
@@ -71,14 +73,14 @@ GIB_Exec_Override_f (void) {
 		Sys_Printf ("execing %s\n", Cmd_Argv (1));
 	if (!strcmp (Cmd_Argv (1) + strlen (Cmd_Argv(1)) - 4, ".gib") || cbuf_active->interpreter == &gib_interp) {
 		// GIB script, put it in a new buffer on the stack
-		cbuf_t *sub = Cbuf_New (&gib_interp);
-		if (cbuf_active->down)
-			Cbuf_DeleteStack (cbuf_active->down);
-		cbuf_active->down = sub;
-		sub->up = cbuf_active;
-		cbuf_active->state = CBUF_STATE_STACK;
+		cbuf_t *sub = Cbuf_PushStack (&gib_interp);
+		GIB_DATA(sub)->script = malloc (sizeof (gib_script_t));
+		GIB_DATA(sub)->script->file = strdup (Cmd_Argv(1));
+		GIB_DATA(sub)->script->text = strdup (f);
+		GIB_DATA(sub)->script->refs = 1;
 		Cbuf_AddText (sub, f);
-		//GIB_Parse_Strip_Comments (sub);
+		if (gib_parse_error && cbuf_active->interpreter == &gib_interp)
+			GIB_Error ("parse", "%s: Parse error while executing %s.", Cmd_Argv(0), Cmd_Argv(1));
 	} else
 		Cbuf_InsertText (cbuf_active, f);
 	Hunk_FreeToLowMark (mark);

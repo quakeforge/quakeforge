@@ -57,7 +57,7 @@ int Cmd_Argc (void);
 const char *Cmd_Argv (int arg);
 const char *Cmd_Args (int start);
 struct cbuf_args_s;
-void Cmd_Command (struct cbuf_args_s *args);
+int Cmd_Command (struct cbuf_args_s *args);
 int Cmd_ExecuteString (const char *text, cmd_source_t src);
 struct cbuf_s;
 void Cmd_StuffCmds (struct cbuf_s *cbuf);

@@ -38,11 +38,12 @@ static __attribute__ ((unused)) const char rcsid[] =
 #include <stdlib.h>
 #include <string.h>
 
+#include "QF/sys.h"
 #include "QF/qtypes.h"
 #include "QF/gib_tree.h"
 
 gib_tree_t *
-GIB_Tree_New (unsigned int flags)
+GIB_Tree_New (gib_tree_flags_t flags)
 {
 	gib_tree_t *new = calloc (1, sizeof (gib_tree_t));
 	new->flags = flags;
@@ -60,13 +61,30 @@ GIB_Tree_Free_Recursive (gib_tree_t *tree)
 		return;
 	for (; tree; tree = n) {
 		n = tree->next;
-		if (tree->children) {
+		if (tree->children)
 			// Parent is about to bite the dust, meaning one less reference
-			tree->children->refs--;
-			GIB_Tree_Free_Recursive (tree->children);
-		}
+			GIB_Tree_Unref (&tree->children);
 		if (tree->str)
 			free((void *) tree->str);
 		free(tree);
 	}
 }
+
+void
+GIB_Tree_Ref (gib_tree_t **tp)
+{
+	(*tp)->refs++;
+	Sys_DPrintf ("Ref: %p %u\n", *tp, (*tp)->refs);
+}
+
+void
+GIB_Tree_Unref (gib_tree_t **tp)
+{
+	Sys_DPrintf ("Unref: %p %u\n", *tp, (*tp)->refs-1);
+	if (!(--(*tp)->refs)) {
+		GIB_Tree_Free_Recursive (*tp);
+		*tp = 0;
+	}
+}
+		
+	

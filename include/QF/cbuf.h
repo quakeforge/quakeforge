@@ -55,7 +55,8 @@ typedef struct cbuf_s {
 		CBUF_STATE_NORMAL = 0, // Normal condition
 		CBUF_STATE_WAIT, // Buffer is stalled until next frame
 		CBUF_STATE_ERROR, // An unrecoverable error occured
-		CBUF_STATE_STACK // A buffer has been added to the stack
+		CBUF_STATE_STACK, // A buffer has been added to the stack
+		CBUF_STATE_JUNK // Buffer can be freed or reused
 	} state;
 	
 	qboolean strict; // Should we tolerate unknown commands?
@@ -67,6 +68,7 @@ typedef struct cbuf_s {
 typedef struct cbuf_interpreter_s {
 	void		(*construct) (struct cbuf_s *cbuf);
 	void		(*destruct) (struct cbuf_s *cbuf);
+	void		(*reset) (struct cbuf_s *cbuf);
 	void		(*add) (struct cbuf_s *cbuf, const char *str);
 	void		(*insert) (struct cbuf_s *cbuf, const char *str);
 	void		(*execute) (struct cbuf_s *cbuf);
@@ -83,12 +85,12 @@ cbuf_t * Cbuf_New (cbuf_interpreter_t *interp);
 
 void Cbuf_Delete (cbuf_t *cbuf);
 void Cbuf_DeleteStack (cbuf_t *stack);
-void Cbuf_PushStack (cbuf_t *new);
+void Cbuf_Reset (cbuf_t *cbuf);
+cbuf_t *Cbuf_PushStack (cbuf_interpreter_t *interp);
 void Cbuf_AddText (cbuf_t *cbuf, const char *text);
 void Cbuf_InsertText (cbuf_t *cbuf, const char *text);
 void Cbuf_Execute (cbuf_t *cbuf);
 void Cbuf_Execute_Stack (cbuf_t *cbuf);
 void Cbuf_Execute_Sets (cbuf_t *cbuf);
-void Cbuf_Error (const char *class, const char *fmt, ...);
 
 #endif//__QF_cbuf_h

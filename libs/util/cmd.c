@@ -106,7 +106,7 @@ Cmd_Args (int start)
 	return cmd_args->args[start];
 }
 
-void
+int
 Cmd_Command (cbuf_args_t *args)
 {
 	cmd_function_t *cmd;
@@ -115,7 +115,7 @@ Cmd_Command (cbuf_args_t *args)
 	//cmd_source = src;
 
 	if (!args->argc)
-		return;							// no tokens
+		return 0;							// no tokens
 
 	// check functions
 	cmd = (cmd_function_t *) Hash_Find (cmd_hash, args->argv[0]->str);
@@ -123,16 +123,16 @@ Cmd_Command (cbuf_args_t *args)
 		if (cmd->function) {
 			cmd->function ();
 		}
-		return;
+		return 0;
 	}
 	// check cvars
 	if (Cvar_Command ())
-		return;
-
+		return 0;
 	if (cbuf_active->strict)
-		Cbuf_Error ("command", "Command '%s' not found.", args->argv[0]->str);
+		return -1;
 	else if (cmd_warncmd->int_val || developer->int_val)
 		Sys_Printf ("Unknown command \"%s\"\n", Cmd_Argv (0));
+	return 0;
 }
 
 /* Registers a command and handler function */

@@ -45,10 +45,13 @@ extern char gib_null_string[];
 #define GIB_Argd(x) ((x) < cbuf_active->args->argc ? cbuf_active->args->argv[(x)] : NULL)
 #define GIB_Argm(x) ((x) < cbuf_active->args->argc ? (gib_tree_t *)cbuf_active->args->argm[(x)] : NULL)
 
-#define GIB_USAGE(x) (Cbuf_Error ("syntax", "%s: invalid syntax\nusage: %s %s", GIB_Argv(0), GIB_Argv(0), (x)))
+#define GIB_USAGE(x) (GIB_Error ("syntax", "%s: invalid syntax\nusage: %s %s", GIB_Argv(0), GIB_Argv(0), (x)))
+
+#define GIB_CanReturn() (GIB_DATA(cbuf_active)->waitret)
 
 void GIB_Arg_Strip_Delim (unsigned int arg);
 dstring_t *GIB_Return (const char *str);
+void GIB_Error (const char *type, const char *fmt, ...);
 void GIB_Builtin_Add (const char *name, void (*func) (void));
 gib_builtin_t *GIB_Builtin_Find (const char *name);
 void GIB_Builtin_Init (qboolean sandbox);

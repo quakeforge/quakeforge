@@ -127,13 +127,28 @@ Cbuf_DeleteStack (cbuf_t *stack)
 }
 
 void
-Cbuf_PushStack (cbuf_t *new)
+Cbuf_Reset (cbuf_t *cbuf)
 {
-	if (cbuf_active->down)
-		Cbuf_DeleteStack (cbuf_active->down);
+	cbuf->resumetime = 0.0;
+	cbuf->args->argc = 0;
+	if (cbuf->interpreter->reset)
+		cbuf->interpreter->reset (cbuf);
+}
+
+cbuf_t *
+Cbuf_PushStack (cbuf_interpreter_t *interp)
+{
+	cbuf_t *new;
+	if (cbuf_active->down) {
+		new = cbuf_active->down;
+		Cbuf_Reset (new);
+		new->state = CBUF_STATE_NORMAL;
+	} else
+		new = Cbuf_New (interp);
 	cbuf_active->down = new;
 	new->up = cbuf_active;
 	cbuf_active->state = CBUF_STATE_STACK;
+	return new;
 }
 
 void
@@ -167,33 +182,27 @@ Cbuf_Execute_Stack (cbuf_t *cbuf)
 		else
 				return;
 	}
-	for (sp = cbuf; sp->down; sp = sp->down);
+	for (sp = cbuf; sp->down && sp->down->state != CBUF_STATE_JUNK; sp = sp->down);
 	while (sp) {
-		if (sp->down) {
-			Cbuf_Delete (sp->down);
-			sp->down = 0;
-		}
 		Cbuf_Execute (sp);
 		if (sp->state) {
 			if (sp->state == CBUF_STATE_STACK) {
 				sp = sp->down;
 				continue;
 			} else if (sp->state == CBUF_STATE_ERROR)
-				goto ERROR;
+				break;
 			else
 				return;
-		}		
+		}
+		sp->state = CBUF_STATE_JUNK;		
 		sp = sp->up;
 	}
-	return;
-ERROR:
+
 	if (cbuf->down) {
 		Cbuf_DeleteStack (cbuf->down);
 		cbuf->down = 0;
 	}
-	// Tear it down and build it back up
-	cbuf->interpreter->destruct (cbuf);
-	cbuf->interpreter->construct (cbuf);
+	Cbuf_Reset (cbuf);
 }
 
 void
@@ -202,24 +211,3 @@ Cbuf_Execute_Sets (cbuf_t *cbuf)
 	cbuf->interpreter->execute_sets (cbuf);
 }
 
-void
-Cbuf_Error (const char *class, const char *fmt, ...)
-{
-	dstring_t *message = dstring_newstr();
-	va_list args;
-	
-	va_start (args, fmt);
-	dvsprintf (message, fmt, args);
-	va_end (args);
-	Sys_Printf ( 
-				"-----------------------------------\n"
-				"|Error in command buffer execution|\n"
-				"-----------------------------------\n"
-				"Type: %s\n\n"
-				"%s\n\n",
-				class,
-				message->str
-				);
-	cbuf_active->state = CBUF_STATE_ERROR;
-	dstring_delete (message);
-}

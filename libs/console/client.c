@@ -345,12 +345,9 @@ static void
 C_GIB_Print_Center_f (void)
 {
 	if (GIB_Argc () != 2) {
-		Cbuf_Error ("syntax",
-		  "print::center: invalid syntax\n"
-		  "usage: print::center text");
-		return;
-	}
-	SCR_CenterPrint (GIB_Argv(1));
+		GIB_USAGE ("text");
+	} else
+		SCR_CenterPrint (GIB_Argv(1));
 }
 
 
