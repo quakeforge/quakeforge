@@ -64,13 +64,12 @@ typedef struct ie_timevaluepair_s {
 
 typedef struct ie_translation_table_s {
 	int maxevents;
-	ie_event_t *events;
+	ie_event_t **events;
 } ie_translation_table_t;
 
 typedef struct ie_translation_index_s {
-	// FIXME: I don't like this organization
-	struct ie_translation_index_s *next;
-	ie_translation_table_t *table;
+	int maxtables;
+	ie_translation_table_t **tables;
 } ie_translation_index_t;
 
 typedef struct ie_translation_data_s {
@@ -91,6 +90,9 @@ void IE_Multiplier_Event (ie_event_t *event, float value);
 
 void IE_CallHandler (ie_handler handler, ie_event_t *event, float value);
 
+ie_translation_table_t *IE_Translation_Table_Create ();
+void IE_Translation_Table_Modify (ie_translation_table_t *table, int offset, ie_event_t *event);
+ie_translation_index_t *IE_Translation_Index_Create ();
 
 /*
 typedef struct {

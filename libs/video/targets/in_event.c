@@ -82,19 +82,58 @@ IE_Translation_Event (ie_event_t *event, float value)
 	ie_translation_data_t *data = event->data.p;
 	ie_translation_index_t *index = data->index;
 	ie_event_t *nextevent = 0;
+	int i;
 
-	while (!nextevent) {
-		if (!index)
-			break;
-		if (index->table->maxevents > data->offset)
-			nextevent = &index->table->events[data->offset];
-		index = index->next;
-	}
+	for (i = 0; !nextevent && i < index->maxtables; i++)
+		if (index->tables[i]->maxevents > data->offset)
+			nextevent = index->tables[i]->events[data->offset];
 	if (!nextevent) // no handler for it
 		return;
 
 	IE_CallHandler (nextevent->handler, nextevent, value);
 }
+
+ie_translation_table_t *
+IE_Translation_Table_Create ()
+{
+	ie_translation_table_t *table;
+
+	table = malloc (sizeof (ie_translation_table_t));
+	if (!table)
+		Sys_Error ("IE_Translation_Table_Create: memory allocation failure");
+
+	table->maxevents = 0;
+	table->events = 0;
+	return table;
+}
+
+void
+IE_Translation_Table_Modify (ie_translation_table_t *table, int offset, ie_event_t *event)
+{
+	if (offset >= table->maxevents) {
+		table->maxevents++;
+		table->events = realloc (table->events, sizeof (ie_translation_table_t *) * table->maxevents);
+		if (!table->events)
+			Sys_Error ("IE_Translation_Table_Modify: memory allocation failure");
+	}
+	table->events[offset] = event;
+}
+
+ie_translation_index_t *
+IE_Translation_Index_Create ()
+{
+	ie_translation_index_t *index;
+
+	index = malloc (sizeof (ie_translation_index_t));
+	if (!index)
+		Sys_Error ("IE_Translation_Index_Create: memory allocation failure");
+
+	index->maxtables = 0;
+	index->tables = 0;
+	return index;
+}
+
+
 
 void
 IE_Multiplier_Event (ie_event_t *event, float value)
