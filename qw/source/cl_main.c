@@ -142,8 +142,6 @@ cvar_t     *cl_predict_players;
 cvar_t     *cl_predict_players2;
 cvar_t     *cl_solid_players;
 
-cvar_t     *cl_max_particles;
-
 cvar_t     *localid;
 
 static qboolean allowremotecmd = true;
@@ -160,6 +158,8 @@ cvar_t     *noaim;
 cvar_t     *msg;
 
 extern cvar_t *cl_hightrack;
+
+extern void R_Particles_Init_Cvars (void);
 
 client_static_t cls;
 client_state_t cl;
@@ -1203,7 +1203,7 @@ CL_Init_Cvars (void)
 	show_fps = Cvar_Get ("show_fps", "0", CVAR_NONE, 0,
 						 "display realtime frames per second");
 	// Misty: I like to be able to see the time when I play
-	show_time = Cvar_Get ("show_time", "0", CVAR_NONE, 0,
+	show_time = Cvar_Get ("show_time", "0", CVAR_ARCHIVE, 0,
 						  "display the current time");
 	host_speeds = Cvar_Get ("host_speeds", "0", CVAR_NONE, 0,
 							"display host processing times");
@@ -1295,8 +1295,8 @@ CL_Init_Cvars (void)
 	msg = Cvar_Get ("msg", "1", CVAR_ARCHIVE | CVAR_USERINFO, Cvar_Info, "Determines the type of messages reported 0 is maximum, 4 is none");
 	noaim = Cvar_Get ("noaim", "0", CVAR_ARCHIVE | CVAR_USERINFO, Cvar_Info,
 					  "Auto aim off switch. Set to 1 to turn off.");
-	cl_max_particles = Cvar_Get ("cl_max_particles", "2048", CVAR_ARCHIVE, 0,
-						  "Maximum amount of particles to display");
+	// Misty-chan: Initialize particles cvars. Seemed like a good place to put to me. Move as you wish!
+	R_Particles_Init_Cvars ();
 }
 
 /*

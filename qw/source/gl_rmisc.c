@@ -59,6 +59,7 @@ extern cvar_t	*gl_lerp_anim;
 
 extern cvar_t	*r_netgraph;
 
+extern void GDT_Init ();
 qboolean	allowskybox;				// allow skyboxes?  --KB
 
 /*
@@ -190,9 +191,9 @@ R_Init (void)
 	Cmd_AddCommand ("loadsky", R_LoadSky_f, "Load a skybox");
 
 	R_InitBubble ();
-
-	R_InitParticles ();
-
+	
+	GDT_Init ();
+	
 	netgraphtexture = texture_extension_number;
 	texture_extension_number++;
 

@@ -40,8 +40,6 @@
 #include "r_dynamic.h"
 #include "r_local.h"
 
-extern cvar_t *cl_max_particles;
-
 int         ramp1[8] = { 0x6f, 0x6d, 0x6b, 0x69, 0x67, 0x65, 0x63, 0x61 };
 int         ramp2[8] = { 0x6f, 0x6e, 0x6d, 0x6c, 0x6b, 0x6a, 0x68, 0x66 };
 int         ramp3[8] = { 0x6d, 0x6b, 6, 5, 4, 3 };
@@ -55,38 +53,53 @@ vec3_t      r_pright, r_pup, r_ppn;
 cvar_t      *r_particles;
 
 /*
-	R_InitParticles
-*/
-void
-R_InitParticles (void)
-{
-	// Misty-chan: Chooses cvar if bigger than zero, otherwise ignore and set variable to zero. Deek showed this to me.
-	r_numparticles = max(cl_max_particles->int_val, 1);
-
-	particles = (particle_t *)
-		Hunk_AllocName (r_numparticles * sizeof (particle_t), "particles");
-}
-
-/*
 	R_MaxParticlesCheck
 */
-/*
-Misty-chan: Disabled until it is fixed
 void
-R_MaxParticlesCheck (void)
+R_MaxParticlesCheck (cvar_t *var)
 {
-	if (cl_max_particles->int_val == r_numparticles || cl_max_particles->int_val < 1)
-	{
-	return;
-	} else {
-		R_ClearParticles();
-		r_numparticles = cl_max_particles->int_val;
-		
-		particles = (particle_t *)
-			Hunk_AllocName (r_numparticles * sizeof (particle_t), "particles");
-		}
+// Misty-chan: disabled as it's still not working. Go ahead, try and fix it please :P
+#if 0
+	// Clear out all the particles. Note this has MASSIVE problems here, it's a lot different than GL that's for sure!
+	R_ClearParticles ();
+	// Do not use 0 in this! sw doesn't grok 0 and it's going to segfault if we do!
+	r_numparticles = max(var->int_val, 1);
+        
+	// Debugging code. will print what the above was set to, and is also useful
+	// for checking if this is accidentally being run all the time. Safe to remove if you fixed this section (!)
+	Con_Printf ("%d", r_numparticles);
+	
+        free (particles);
+                
+        particles = (particle_t *)
+        	calloc (r_numparticles, sizeof (particle_t));
+        
+	// My not so successful attempts to get the sw renderer to work on the fly. ATM this causes segfaults anyway. Be wary!
+	particles[0].next = NULL;
+	free_particles = &particles[0];
+#endif
 }
+
+/*
+R_Particles_Init_Cvars
 */
+
+// Misty-chan: Hackhackhack to get below code to run. Remove if you got R_MaxParticlesCheck working!
+cvar_t      *cl_max_particles;
+
+void
+R_Particles_Init_Cvars (void)
+{
+// Does a callback... Currently which does absolutely NOTHING! Joy.
+cl_max_particles = Cvar_Get ("cl_max_particles", "2048", CVAR_ARCHIVE, R_MaxParticlesCheck,
+					"Maximum amount of particles to display");
+// This is a temporary hack until R_MaxParticlesCheck is fixed and does NOT belong here. Disable if you're trying to fix above code :)
+#if 1
+	r_numparticles = max(cl_max_particles->int_val, 1);
+	particles = (particle_t *)
+		calloc (r_numparticles, sizeof (particle_t));
+#endif
+}
 
 /*
 	R_ClearParticles
@@ -491,10 +504,6 @@ R_DrawParticles (void)
 	float       dvel;
 	float       frametime;
 	
-/*
-Disabled until it is fixed.
-	R_MaxParticlesCheck ();
-*/	
 	D_StartParticles ();
 
 	VectorScale (vright, xscaleshrink, r_pright);
@@ -577,6 +586,5 @@ Disabled until it is fixed.
 			}
 		}
 	}
-
 	D_EndParticles ();
 }

@@ -74,7 +74,6 @@ extern qboolean lighthalf;
 
 extern cvar_t *cl_max_particles;
 
-extern void GDT_Init (void);
 extern int  part_tex_smoke[8];
 extern int  part_tex_dot;
 
@@ -123,50 +122,55 @@ particle_new_random (ptype_t type, int texnum, vec3_t org, int org_fuzz,
 }
 
 /*
-	R_InitParticles
+	R_MaxParticlesCheck
+
+	Misty-chan: Dynamically change the maximum amount of particles on the fly.
+	Thanks to a LOT of help from Taniwha, Deek, Mercury, Lordhavoc, and lots of others.
 */
+
 void
-R_InitParticles (void)
+R_MaxParticlesCheck (cvar_t *var)
 {
-	// Misty-chan: Chooses cvar if bigger than zero, otherwise ignore and set variable to zero. Deek showed this to me.
-	r_numparticles = max(cl_max_particles->int_val, 0);
+	// Clear the particles ala sw so we're at least consistent somewhat. GL doesn't need to do it before the max however.
+	R_ClearParticles();
+
+	/*
+	Catchall. If the user changed the setting to a number less than zero *or* if we had a wacky cfg get past
+	the init code check, this will make sure we don't have problems. Also note that grabbing the var->int_val is IMPORTANT:
+	Prevents a segfault since if we grabbed the int_val of cl_max_particles we'd sig11 right here at startup.
+	*/
+	r_numparticles = max(var->int_val, 0);
+	
+	/*
+	Enable this to see how many particles are ACTUALLY allocated whenever you do a cl_max_particles change
+	Also note it's damned useful for checking for if this thing is running more than it should!
+	Con_Printf ("%d", r_numparticles);
+	*/
+	
+	// Be very careful the next time we do something like this. calloc/free are IMPORTANT
+	// and the compiler doesn't know when we do bad things with them.
+	free (particles);
+	free (freeparticles);
 
 	particles = (particle_t *)
-		Hunk_AllocName (r_numparticles * sizeof (particle_t), "particles");
-
-	// Misty-chan: Note to self, *THIS* is bugged, use our line when we remerge
-	freeparticles = (void *)
-		Hunk_AllocName (r_numparticles * sizeof (particle_t), "particles");
-
-	GDT_Init ();
+		calloc (r_numparticles, sizeof (particle_t));
+	freeparticles = (particle_t **)
+		calloc (r_numparticles, sizeof (particle_t*));			
 }
 
 /*
-	R_MaxParticlesCheck
+R_Particles_Init_Cvars
 */
-/*
-Misty-chan: This entire section is disabled until it can be fixed
+
 void
-R_MaxParticlesCheck (void)
+R_Particles_Init_Cvars (void)
 {
-	if (cl_max_particles->int_val == r_numparticles || cl_max_particles->int_val < 0)
-	{
-		return;
-	} else {
-		R_ClearParticles();
-		r_numparticles = cl_max_particles->int_val;
-		
-		// Misty-chan: Note to self: PLEASE remember to do this section in this order:
-		// R_ClearParticles to disable the particles, then free the memory, then calloc.
-		// then set the variable. Otherwise you'll likely be shot on sight.
-		particles = (particle_t *)
-			Hunk_AllocName (r_numparticles * sizeof (particle_t), "particles");
-
-		freeparticles = (void *)
-			Hunk_AllocName (r_numparticles * sizeof (particle_t), "particles");
-		}
+// Misty-chan: This is a cvar that does callbacks. Whenever it changes, it calls the function
+// R_MaxParticlesCheck and therefore is very nifty.
+	Cvar_Get ("cl_max_particles", "2048", CVAR_ARCHIVE, R_MaxParticlesCheck,
+					"Maximum amount of particles to display");
 }
-*/
+
 /*
 	R_ClearParticles
 */
@@ -556,10 +560,7 @@ R_DrawParticles (void)
 	float       scale;
 	particle_t *part;
 	int         activeparticles, maxparticle, j, k;
-/*
-Disabled until I fix this
-	R_MaxParticlesCheck ();
-*/
+	
 	// LordHavoc: particles should not affect zbuffer
 	glDepthMask (GL_FALSE);
 

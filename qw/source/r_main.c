@@ -251,8 +251,6 @@ R_Init (void)
 	r_refdef.xOrigin = XCENTERING;
 	r_refdef.yOrigin = YCENTERING;
 
-	R_InitParticles ();
-
 // TODO: collect 386-specific code in one place
 #ifdef USE_INTEL_ASM
 	Sys_MakeCodeWriteable ((long) R_EdgeCodeStart,
