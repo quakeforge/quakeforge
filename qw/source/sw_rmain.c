@@ -47,9 +47,7 @@
 #include "QF/sound.h"
 #include "QF/sys.h"
 
-#include "bothdefs.h"
-#include "cl_cam.h"
-#include "cl_main.h"
+#include "d_iface.h"
 #include "r_cvar.h"
 #include "r_dynamic.h"
 #include "r_local.h"
@@ -253,17 +251,15 @@ R_SetVrect (vrect_t *pvrectin, vrect_t *pvrect, int lineadj)
 		size = scr_viewsize->int_val;
 	}
 
-	if (cl.intermission) {
+	if (r_force_fullscreen) {
 		full = true;
 		size = 100.0;
-		lineadj = 0;
 	}
 	size /= 100.0;
+	if (full)
+		lineadj = 0;
 
-	if (!cl_sbar->int_val && full)
-		h = pvrectin->height;
-	else
-		h = pvrectin->height - lineadj;
+	h = pvrectin->height - lineadj;
 
 	if (full) {
 		pvrect->width = pvrectin->width;
@@ -278,13 +274,8 @@ R_SetVrect (vrect_t *pvrectin, vrect_t *pvrect, int lineadj)
 	pvrect->width &= ~7;
 	pvrect->height = pvrectin->height * size;
 
-	if (cl_sbar->int_val || !full) {
-		if (pvrect->height > pvrectin->height - lineadj)
-			pvrect->height = pvrectin->height - lineadj;
-	} else {
-		if (pvrect->height > pvrectin->height)
-			pvrect->height = pvrectin->height;
-	}
+	if (pvrect->height > pvrectin->height - lineadj)
+		pvrect->height = pvrectin->height - lineadj;
 
 	pvrect->height &= ~1;
 
@@ -560,18 +551,12 @@ R_DrawViewModel (void)
 	float       add;
 	dlight_t   *dl;
 
-	if (!r_drawviewmodel->int_val
-		|| !Cam_DrawViewModel ()
+	if (r_inhibit_viewmodel
+		|| !r_drawviewmodel->int_val
 		|| !r_drawentities->int_val)
 		return;
 
-	if (cl.stats[STAT_ITEMS] & IT_INVISIBILITY)
-		return;
-
-	if (cl.stats[STAT_HEALTH] <= 0)
-		return;
-
-	currententity = &cl.viewent;
+	currententity = r_view_model;
 	if (!currententity->model)
 		return;
 

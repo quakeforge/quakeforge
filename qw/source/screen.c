@@ -347,7 +347,7 @@ SCR_CalcRefdef (void)
 	vrect.width = vid.width;
 	vrect.height = vid.height;
 
-	R_SetVrect (&vrect, &scr_vrect, sb_lines);
+	R_SetVrect (&vrect, &scr_vrect, cl_sbar->int_val ? sb_lines : 0);
 
 	// guard against going from one mode to another that's less than half the
 	// vertical resolution
@@ -355,7 +355,7 @@ SCR_CalcRefdef (void)
 		scr_con_current = vid.height;
 
 	// notify the refresh of the change
-	R_ViewChanged (&vrect, sb_lines, vid.aspect);
+	R_ViewChanged (&vrect, cl_sbar->int_val ? sb_lines : 0, vid.aspect);
 }
 
 

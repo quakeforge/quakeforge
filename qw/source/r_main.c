@@ -1,9 +1,13 @@
+#include "QF/qtypes.h"
 #include "QF/render.h"
 
 #include "r_local.h"
 
-double r_realtime;
+qboolean    r_inhibit_viewmodel;
+qboolean    r_force_fullscreen;
+double      r_realtime;
 dlight_t    r_dlights[MAX_DLIGHTS];
+entity_t   *r_view_model;
 
 dlight_t *
 R_AllocDlight (int key)

@@ -35,9 +35,6 @@
 # define UNALIGNED_OK	0
 #endif
 
-// !!! if this is changed, it must be changed in d_ifacea.h too !!!
-#define CACHE_SIZE	32		// used to align key data structures
-
 #define UNUSED(x)	(x = x)	// for pesky compiler / lint warnings
 
 							// Error out if we get less than 4MB

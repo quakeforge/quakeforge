@@ -240,6 +240,8 @@ extern drawsurf_t	r_drawsurf;
 void R_DrawSurface (void);
 void R_GenTile (msurface_t *psurf, void *pdest);
 
+// !!! if this is changed, it must be changed in d_iface.h too !!!
+#define CACHE_SIZE		32		// used to align key data structures
 
 // !!! if this is changed, it must be changed in d_ifacea.h too !!!
 #define TURB_TEX_SIZE	64		// base turbulent texture size

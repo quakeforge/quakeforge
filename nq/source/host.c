@@ -705,6 +705,12 @@ _Host_Frame (float time)
 	if (host_speeds->int_val)
 		time1 = Sys_DoubleTime ();
 
+	r_inhibit_viewmodel = (chase_active->int_val
+						   || (cl.stats[STAT_ITEMS] & IT_INVISIBILITY)
+						   || cl.stats[STAT_HEALTH] <= 0);
+	r_force_fullscreen = cl.intermission;
+	r_view_model = &cl.viewent;
+
 	SCR_UpdateScreen (cl.time);
 
 	if (host_speeds->int_val)

@@ -484,7 +484,7 @@ R_SetupFrame (void)
 				vrect.width = vid.width;
 				vrect.height = vid.height;
 
-				R_ViewChanged (&vrect, sb_lines, vid.aspect);
+				R_ViewChanged (&vrect, cl_sbar->int_val ? sb_lines : 0, vid.aspect);
 			} else {
 				w = vid.width;
 				h = vid.height;
@@ -505,7 +505,7 @@ R_SetupFrame (void)
 				vrect.height = (int) h;
 
 				R_ViewChanged (&vrect,
-							   (int) ((float) sb_lines *
+							   (int) ((float) (cl_sbar->int_val ? sb_lines : 0) *
 									  (h / (float) vid.height)),
 							   vid.aspect * (h / w) * ((float) vid.width /
 													   (float) vid.height));
@@ -516,7 +516,7 @@ R_SetupFrame (void)
 			vrect.width = vid.width;
 			vrect.height = vid.height;
 
-			R_ViewChanged (&vrect, sb_lines, vid.aspect);
+			R_ViewChanged (&vrect, cl_sbar->int_val ? sb_lines : 0, vid.aspect);
 		}
 
 		r_viewchanged = false;

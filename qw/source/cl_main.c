@@ -1480,6 +1480,12 @@ Host_Frame (float time)
 	if (host_speeds->int_val)
 		time1 = Sys_DoubleTime ();
 
+	r_inhibit_viewmodel = (!Cam_DrawViewModel ()
+						   || (cl.stats[STAT_ITEMS] & IT_INVISIBILITY)
+						   || cl.stats[STAT_HEALTH] <= 0);
+	r_force_fullscreen = cl.intermission;
+	r_view_model = &cl.viewent;
+
 	SCR_UpdateScreen (realtime);
 
 	if (host_speeds->int_val)
