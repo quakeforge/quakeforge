@@ -105,10 +105,10 @@ LRightSet:
 .Lpic1:	popl	%ebx
 	addl	$_GLOBAL_OFFSET_TABLE_+[.-.Lpic1],%ebx
 
-	leal	C(snd_scaletable)@GOTOFF(%ebx,%eax),%eax
-	leal	C(snd_scaletable)@GOTOFF(%ebx,%edx),%edx
+	movl	C(snd_scaletable)@GOT(%ebx,%eax),%eax
+	movl	C(snd_scaletable)@GOT(%ebx,%edx),%edx
 
-	leal	C(paintbuffer)@GOTOFF(%ebx),%ebx
+	movl	C(paintbuffer)@GOT(%ebx),%ebx
 #else
 	leal	C(snd_scaletable)(%eax),%eax
 	leal	C(snd_scaletable)(%edx),%edx
