@@ -106,23 +106,16 @@ ClipToSeparators (winding_t *source, winding_t *pass, winding_t *target,
 		for (j = 0; j < pass->numpoints; j++) {
 			VectorSubtract (pass->points[j], source->points[i], v2);
 
-			plane.normal[0] = v1[1] * v2[2] - v1[2] * v2[1];
-			plane.normal[1] = v1[2] * v2[0] - v1[0] * v2[2];
-			plane.normal[2] = v1[0] * v2[1] - v1[1] * v2[0];
+			CrossProduct (v1, v2, plane.normal);
+
+			length = DotProduct (plane.normal, plane.normal);
 
 			// if points don't make a valid plane, skip it
-			length = plane.normal[0] * plane.normal[0] + 
-					 plane.normal[1] * plane.normal[1] + 
-					 plane.normal[2] * plane.normal[2];
-
 			if (length < ON_EPSILON)
 				continue;
 
 			length = 1 / sqrt (length);
-
-			plane.normal[0] *= length;
-			plane.normal[1] *= length;
-			plane.normal[2] *= length;
+			VectorScale (plane.normal, length, plane.normal);
 
 			plane.dist = DotProduct (pass->points[j], plane.normal);
 
@@ -296,6 +289,9 @@ RecursiveLeafFlow (int leafnum, threaddata_t *thread, pstack_t *prevstack)
 		c_portaltest++;
 
 		if (options.level > 0) {
+			// clip target to the image that would be formed by a laser
+			// pointing from the edges of source passing though the corners of
+			// pass
 			target = ClipToSeparators (source, prevstack->pass, target, false);
 			if (!target) {
 				FreeWinding (source);
@@ -304,6 +300,12 @@ RecursiveLeafFlow (int leafnum, threaddata_t *thread, pstack_t *prevstack)
 		}
 
 		if (options.level > 1) {
+			// now pass the laser along the edges of pass from the corners of
+			// source. the resulting image will have a smaller aree. The
+			// resulting shape will be the light image produced by a backlit
+			// source shining past pass. eg, if source and pass are equilateral
+			// triangles rotated 60 (or 180) degrees relative to each other,
+			// parallel and in line, target will wind up being a hexagon.
 			target = ClipToSeparators (prevstack->pass, source, target, true);
 			if (!target) {
 				FreeWinding (source);
@@ -311,6 +313,8 @@ RecursiveLeafFlow (int leafnum, threaddata_t *thread, pstack_t *prevstack)
 			}
 		}
 
+		// now do the same as for levels 1 and 2, but trimming source using 
+		// the trimmed target
 		if (options.level > 2) {
 			source = ClipToSeparators (target, prevstack->pass, source, false);
 			if (!source) {
