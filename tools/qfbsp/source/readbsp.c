@@ -361,6 +361,8 @@ extract_textures (void)
 				  sizeof (default_palette));
 
 	for (i = 0; i < miptexlump->nummiptex; i++) {
+		if (miptexlump->dataofs[i] == -1)
+			continue;
 		miptex = (miptex_t *)(bsp->texdata + miptexlump->dataofs[i]);
 		pixels = miptex->width * miptex->height / 64 * 85;
 		mtsize = sizeof (miptex_t) + pixels;
