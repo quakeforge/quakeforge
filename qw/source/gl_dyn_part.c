@@ -49,7 +49,7 @@
 
 typedef enum {
 	pt_static, pt_grav, pt_blob, pt_blob2,
-	pt_smoke, pt_smokecloud, pt_bloodcloud,
+	pt_smoke, pt_smokering, pt_smokecloud, pt_bloodcloud,
 	pt_fadespark, pt_fadespark2, pt_fallfadespark
 } ptype_t;
 
@@ -178,8 +178,9 @@ R_Particles_Init_Cvars
 void
 R_Particles_Init_Cvars (void)
 {
-// Misty-chan: This is a cvar that does callbacks. Whenever it changes, it calls the function
-// R_MaxParticlesCheck and therefore is very nifty.
+	// Misty-chan: This is a cvar that does callbacks. Whenever it
+	// changes, it calls the function R_MaxParticlesCheck and therefore
+	// is very nifty.
 	Cvar_Get ("cl_max_particles", "2048", CVAR_ARCHIVE, R_MaxParticlesCheck,
 					"Maximum amount of particles to display. No maximum, minimum is 0, although it's best to use r_particles 0 instead.");
 }
@@ -460,8 +461,8 @@ R_TeleportSplash (vec3_t org)
 void
 R_RocketTrail (int type, entity_t *ent)
 {
-	vec3_t      vec;
-	float       len;
+	vec3_t      vec, subtract;
+	float       len, dist;
 	int         j, ptex;
 	ptype_t     ptype;
 	vec3_t      porg, pvel, up, right;
@@ -486,34 +487,34 @@ R_RocketTrail (int type, entity_t *ent)
 		pcolor = 0;
 		pscale = .75;
 		palpha = 255;
+		dist = 1;
 
 		switch (type) {
 			case 0:					// rocket trail
-				pcolor = (rand () & 3) + 12;
-				len -= 4;
-				ptex = part_tex_smoke_ring[rand () & 7];
-				pscale = lhrandom (10, 15);
-				palpha = 48 + (rand () & 31);
-				ptype = pt_smoke;
+				dist = 20;
 				pdie = cl.time + 1;
+				ptype = pt_smokering;
+				pscale = lhrandom (10, 15);
+				pcolor = (rand () & 3) + 12;
+				palpha = 220 + (rand () & 31);
 				VectorVectors(vec, right, up);
 				VectorCopy (ent->old_origin, porg);
+				ptex = part_tex_smoke_ring[rand () & 7];
 				break;
 			case 1:					// grenade trail
-				pcolor = (rand () & 3) + 3;
-				len -= 4;
-				ptex = part_tex_smoke[rand () & 7];
-				pscale = lhrandom (10, 15);
-				palpha = 48 + (rand () & 31);
-				ptype = pt_smoke;
+				dist = 4;
 				pdie = cl.time + 1;
-				VectorVectors(vec, right, up);
+				ptype = pt_smoke;
+				pscale = lhrandom (6, 9);
+				pcolor = (rand () & 3) + 3;
+				palpha = 48 + (rand () & 31);
 				VectorCopy (ent->old_origin, porg);
+				ptex = part_tex_smoke[rand () & 7];
 				break;
 			case 4:					// slight blood
-				len -= 4;
+				dist = 4;
 			case 2:					// blood
-				len -= 4;
+				dist = 4;
 				pcolor = 68 + (rand () & 3);
 				for (j = 0; j < 3; j++) {
 					pvel[j] = (rand () & 15) - 8;
@@ -522,7 +523,7 @@ R_RocketTrail (int type, entity_t *ent)
 				ptype = pt_grav;
 				break;
 			case 6:					// voor trail
-				len -= 3;
+				dist = 3;
 				pcolor = 9 * 16 + 8 + (rand () & 3);
 				ptype = pt_static;
 				pscale = lhrandom (.75, 1.5);
@@ -535,7 +536,7 @@ R_RocketTrail (int type, entity_t *ent)
 				{
 					static int  tracercount;
 
-					len -= 3;
+					dist = 3;
 					pdie = cl.time + 0.5;
 					ptype = pt_static;
 					pscale = lhrandom (1.5, 3);
@@ -558,7 +559,9 @@ R_RocketTrail (int type, entity_t *ent)
 				}
 		}
 
-		VectorAdd (ent->old_origin, vec, ent->old_origin);
+		VectorScale (vec, min(dist, len), subtract);
+		VectorAdd (ent->old_origin, subtract, ent->old_origin);
+		len -= dist;
 
 		particle_new (ptype, ptex, porg, pscale, pvel, pdie, pcolor, palpha, 
 				up, right);
@@ -580,6 +583,7 @@ R_DrawParticles (void)
 	float       scale;
 	particle_t *part;
 	vec3_t		up, right, o_up, o_right;
+	vec3_t		up_scale, right_scale, up_right_scale;
 	int         activeparticles, maxparticle, j, k, vnum;
 	varray_t	vertex_array[4];
 	
@@ -625,11 +629,11 @@ R_DrawParticles (void)
 			alpha = part->alpha;
 
 			if (VectorCompare(part->up, part->right)) {
-				VectorCopy(o_up, up);
-				VectorCopy(o_right, right);
+				memcpy(up, o_up, sizeof(up));
+				memcpy(right, o_right, sizeof(right));
 			} else {
-				VectorCopy(part->up, up);
-				VectorCopy(part->right, right);
+				memcpy(up, part->up, sizeof(up));
+				memcpy(right, part->right, sizeof(right));
 			}
 
 			if (lighthalf) {
@@ -637,7 +641,7 @@ R_DrawParticles (void)
 				vertex_array[0].color[1] = (byte) ((int) at[1] >> 1);
 				vertex_array[0].color[2] = (byte) ((int) at[2] >> 1);
 			} else {
-				VectorCopy(at, vertex_array[0].color);
+				memcpy(vertex_array[0].color, at, 3);
 			}
 			vertex_array[0].color[3] = alpha;
 
@@ -647,18 +651,55 @@ R_DrawParticles (void)
 
 			scale = part->scale;
 
-			vertex_array[0].vertex[0] = 
+			up_scale[0] = up[0] * scale;
+			up_scale[1] = up[1] * scale;
+			up_scale[2] = up[2] * scale;
+
+			right_scale[0] = right[0] * scale;
+			right_scale[1] = right[1] * scale;
+			right_scale[2] = right[2] * scale;
+
+			up_right_scale[0] = (up[0] + right[0]) * scale;
+			up_right_scale[1] = (up[1] + right[1]) * scale;
+			up_right_scale[2] = (up[2] + right[2]) * scale;
+
+			vertex_array[0].vertex[0] = part->org[0] + up_right_scale[0];
+			vertex_array[0].vertex[1] = part->org[1] + up_right_scale[1];
+			vertex_array[0].vertex[2] = part->org[2] + up_right_scale[2];
+
+			vertex_array[1].vertex[0] =
+				part->org[0] + (-up_scale[0]) + right_scale[0];
+			vertex_array[1].vertex[1] =
+				part->org[1] + (-up_scale[1]) + right_scale[1];
+			vertex_array[1].vertex[2] =
+				part->org[2] + (-up_scale[2]) + right_scale[2];
+
+			vertex_array[2].vertex[0] = part->org[0] + -up_right_scale[0];
+			vertex_array[2].vertex[1] = part->org[1] + -up_right_scale[1];
+			vertex_array[2].vertex[2] = part->org[2] + -up_right_scale[2];
+
+			vertex_array[3].vertex[0] =
+				part->org[0] + up_scale[0] + (-right_scale[0]);
+			vertex_array[3].vertex[1] =
+				part->org[1] + up_scale[1] + (-right_scale[1]);
+			vertex_array[3].vertex[2] =
+				part->org[2] + up_scale[2] + (-right_scale[2]);
+			/*
+			*/
+
+			/*
+			vertex_array[0].vertex[0] =
 				(part->org[0] + ((up[0] + right[0]) * scale));
-			vertex_array[0].vertex[1] = 
+			vertex_array[0].vertex[1] =
 				(part->org[1] + ((up[1] + right[1]) * scale));
-			vertex_array[0].vertex[2] = 
+			vertex_array[0].vertex[2] =
 				(part->org[2] + ((up[2] + right[2]) * scale));
 
-			vertex_array[1].vertex[0] = 
+			vertex_array[1].vertex[0] =
 				(part->org[0] + (up[0] * -scale) + (right[0] * scale));
-			vertex_array[1].vertex[1] = 
+			vertex_array[1].vertex[1] =
 				(part->org[1] + (up[1] * -scale) + (right[1] * scale));
-			vertex_array[1].vertex[2] = 
+			vertex_array[1].vertex[2] =
 				(part->org[2] + (up[2] * -scale) + (right[2] * scale));
 
 			vertex_array[2].vertex[0] =
@@ -674,6 +715,8 @@ R_DrawParticles (void)
 				(part->org[1] + (up[1] * scale) + (right[1] * -scale));
 			vertex_array[3].vertex[2] =
 				(part->org[2] + (up[2] * scale) + (right[2] * -scale));
+				*/
+
 
 			glBindTexture (GL_TEXTURE_2D, part->tex);
 			glDrawArrays (GL_QUADS, 0, 4);
@@ -699,6 +742,12 @@ R_DrawParticles (void)
 				part->vel[2] -= grav;
 				break;
 			case pt_smoke:
+				if ((part->alpha -= host_frametime * 90) < 1)
+					part->die = -1;
+				part->scale += host_frametime * 6;
+				part->org[2] += host_frametime * 30;
+				break;
+			case pt_smokering:
 				if ((part->alpha -= host_frametime * 90) < 1)
 					part->die = -1;
 				part->scale += host_frametime * 10;
