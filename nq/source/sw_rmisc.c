@@ -1,7 +1,7 @@
 /*
 	r_misc.c
 
-	@description@
+	(description)
 
 	Copyright (C) 1996-1997  Id Software, Inc.
 
@@ -30,8 +30,11 @@
 # include "config.h"
 #endif
 
-#include "QF/sys.h"
+#include "QF/compat.h"
 #include "QF/console.h"
+#include "QF/cmd.h"
+#include "QF/draw.h"
+#include "QF/sys.h"
 
 #include "host.h"
 #include "r_local.h"
@@ -40,11 +43,11 @@
 #include "server.h"
 #include "view.h"
 
-/*
-===============
-R_CheckVariables
-===============
-*/
+qboolean    allowskybox;				// whether or not to allow skyboxes
+
+										// --KB
+
+
 void
 R_CheckVariables (void)
 {
@@ -58,11 +61,9 @@ R_CheckVariables (void)
 
 
 /*
-============
-Show
+	Show
 
-Debugging use
-============
+	Debugging use
 */
 void
 Show (void)
@@ -78,11 +79,9 @@ Show (void)
 
 
 /*
-====================
-R_TimeRefresh_f
+	R_TimeRefresh_f
 
-For program optimization
-====================
+	For program optimization
 */
 void
 R_TimeRefresh_f (void)
@@ -119,12 +118,22 @@ R_TimeRefresh_f (void)
 }
 
 
-/*
-================
-R_LineGraph
+void
+R_LoadSky_f (void)
+{
+	if (Cmd_Argc () != 2) {
+		Con_Printf ("loadsky <name> : load a skybox\n");
+		return;
+	}
 
-Only called by R_DisplayTime
-================
+	R_LoadSkys (Cmd_Argv (1));
+}
+
+
+/*
+	R_LineGraph
+
+	Only called by R_DisplayTime
 */
 void
 R_LineGraph (int x, int y, int h)
@@ -132,38 +141,49 @@ R_LineGraph (int x, int y, int h)
 	int         i;
 	byte       *dest;
 	int         s;
+	int         color;
 
 // FIXME: should be disabled on no-buffer adapters, or should be in the driver
 
-	x += r_refdef.vrect.x;
-	y += r_refdef.vrect.y;
+//  x += r_refdef.vrect.x;
+//  y += r_refdef.vrect.y;
 
 	dest = vid.buffer + vid.rowbytes * y + x;
 
 	s = r_graphheight->int_val;
 
+	if (h == 10000)
+		color = 0x6f;					// yellow
+	else if (h == 9999)
+		color = 0x4f;					// red
+	else if (h == 9998)
+		color = 0xd0;					// blue
+	else
+		color = 0xff;					// pink
+
 	if (h > s)
 		h = s;
 
-	for (i = 0; i < h; i++, dest -= vid.rowbytes * 2) {
-		dest[0] = 0xff;
-		*(dest - vid.rowbytes) = 0x30;
+	for (i = 0; i < h; i++, dest -= vid.rowbytes) {
+		dest[0] = color;
+//      *(dest-vid.rowbytes) = 0x30;
 	}
+#if 0
 	for (; i < s; i++, dest -= vid.rowbytes * 2) {
 		dest[0] = 0x30;
 		*(dest - vid.rowbytes) = 0x30;
 	}
+#endif
 }
 
 /*
-==============
-R_TimeGraph
+	R_TimeGraph
 
-Performance monitoring tool
-==============
+	Performance monitoring tool
 */
 #define	MAX_TIMINGS		100
 extern float mouse_x, mouse_y;
+int         graphval;
 void
 R_TimeGraph (void)
 {
@@ -178,9 +198,13 @@ R_TimeGraph (void)
 	a = (r_time2 - r_time1) / 0.01;
 //a = fabs(mouse_y * 0.05);
 //a = (int)((r_refdef.vieworg[2] + 1024)/1)%(int)r_graphheight->value;
+//a = (int)((pmove.velocity[2] + 500)/10);
 //a = fabs(velocity[0])/20;
 //a = ((int)fabs(origin[0])/8)%20;
 //a = (cl.idealpitch + 30)/5;
+//a = (int)(cl.simangles[YAW] * 64/360) & 63;
+	a = graphval;
+
 	r_timings[timex] = a;
 	a = timex;
 
@@ -192,7 +216,7 @@ R_TimeGraph (void)
 		R_LineGraph (x, r_refdef.vrect.height - 2, r_timings[a]);
 		if (x == 0)
 			break;						// screen too small to hold entire
-		// thing
+										// thing
 		x--;
 		a--;
 		if (a == -1)
@@ -203,11 +227,63 @@ R_TimeGraph (void)
 }
 
 
-/*
-=============
-R_PrintTimes
-=============
-*/
+void
+R_NetGraph (void)
+{
+#if 0
+	int         a, x, y, h, i;
+	int         lost;
+	char        st[80];
+
+	x = cl_hudswap->int_val ? vid.width - (NET_TIMINGS + 16): 0;
+	y = vid.height - sb_lines - 24 - r_graphheight->int_val - 1;
+
+	h = r_graphheight->int_val % 8;
+
+	Draw_TextBox (x, y, NET_TIMINGS / 8, r_graphheight->int_val / 8 + 1);
+
+	lost = CL_CalcNet ();
+	x = cl_hudswap->int_val ? vid.width - (NET_TIMINGS + 8) : 8;
+	y = vid.height - sb_lines - 9;
+
+	y -= h;
+	for (a = 0; a < NET_TIMINGS; a++) {
+		i = (cls.netchan.outgoing_sequence - a) & NET_TIMINGSMASK;
+		R_LineGraph (x + NET_TIMINGS - 1 - a, y, packet_latency[i]);
+	}
+
+	y -= vid.height - sb_lines - 24 - r_graphheight->int_val + 7;
+	snprintf (st, sizeof (st), "%3i%% packet loss", lost);
+	if (cl_hudswap->int_val) {
+		Draw_String8 (vid.width - ((strlen (st) * 8) + 8), y, st);
+	} else {
+		Draw_String8 (8, y, st);
+	}
+#endif
+}
+
+
+void
+R_ZGraph (void)
+{
+	int         a, x, w, i;
+	static int  height[256];
+
+	if (r_refdef.vrect.width <= 256)
+		w = r_refdef.vrect.width;
+	else
+		w = 256;
+
+	height[r_framecount & 255] = ((int) r_origin[2]) & 31;
+
+	x = 0;
+	for (a = 0; a < w; a++) {
+		i = (r_framecount - a) & 255;
+		R_LineGraph (x + w - 1 - a, r_refdef.vrect.height - 2, height[i]);
+	}
+}
+
+
 void
 R_PrintTimes (void)
 {
@@ -224,11 +300,6 @@ R_PrintTimes (void)
 }
 
 
-/*
-=============
-R_PrintDSpeeds
-=============
-*/
 void
 R_PrintDSpeeds (void)
 {
@@ -252,11 +323,6 @@ R_PrintDSpeeds (void)
 }
 
 
-/*
-=============
-R_PrintAliasStats
-=============
-*/
 void
 R_PrintAliasStats (void)
 {
@@ -287,11 +353,6 @@ WarpPalette (void)
 }
 
 
-/*
-===================
-R_TransformFrustum
-===================
-*/
 void
 R_TransformFrustum (void)
 {
@@ -314,13 +375,8 @@ R_TransformFrustum (void)
 }
 
 
-#ifndef	USE_INTEL_ASM
+#ifndef USE_INTEL_ASM
 
-/*
-================
-TransformVector
-================
-*/
 void
 TransformVector (vec3_t in, vec3_t out)
 {
@@ -332,11 +388,6 @@ TransformVector (vec3_t in, vec3_t out)
 #endif
 
 
-/*
-================
-R_TransformPlane
-================
-*/
 void
 R_TransformPlane (mplane_t *p, float *normal, float *dist)
 {
@@ -349,11 +400,6 @@ R_TransformPlane (mplane_t *p, float *normal, float *dist)
 }
 
 
-/*
-===============
-R_SetUpFrustumIndexes
-===============
-*/
 void
 R_SetUpFrustumIndexes (void)
 {
@@ -379,11 +425,6 @@ R_SetUpFrustumIndexes (void)
 }
 
 
-/*
-===============
-R_SetupFrame
-===============
-*/
 void
 R_SetupFrame (void)
 {
@@ -391,13 +432,10 @@ R_SetupFrame (void)
 	vrect_t     vrect;
 	float       w, h;
 
-// don't allow cheats in multiplayer
-	if (cl.maxclients > 1) {
-		Cvar_Set (r_draworder, "0");
-		Cvar_Set (r_fullbright, "0");
-		Cvar_Set (r_ambient, "0");
-		Cvar_Set (r_drawflat, "0");
-	}
+	// don't allow cheats in multiplayer
+	Cvar_SetValue (r_draworder, 0);
+	Cvar_SetValue (r_ambient, 0);
+	Cvar_SetValue (r_drawflat, 0);
 
 	if (r_numsurfs->int_val) {
 		if ((surface_p - surfaces) > r_maxsurfsseen)
@@ -417,10 +455,7 @@ R_SetupFrame (void)
 					r_numallocatededges, r_maxedgesseen);
 	}
 
-	r_refdef.ambientlight = r_ambient->value;
-
-	if (r_refdef.ambientlight < 0)
-		r_refdef.ambientlight = 0;
+	r_refdef.ambientlight = max (r_ambient->value, 0);
 
 	if (!sv.active)
 		Cvar_SetValue (r_draworder, 0);	// don't let cheaters look behind
@@ -434,7 +469,7 @@ R_SetupFrame (void)
 
 	numbtofpolys = 0;
 
-// debugging
+	// debugging
 #if 0
 	r_refdef.vieworg[0] = 80;
 	r_refdef.vieworg[1] = 64;
@@ -444,13 +479,13 @@ R_SetupFrame (void)
 	r_refdef.viewangles[2] = 0;
 #endif
 
-// build the transformation matrix for the given view angles
+	// build the transformation matrix for the given view angles
 	VectorCopy (r_refdef.vieworg, modelorg);
 	VectorCopy (r_refdef.vieworg, r_origin);
 
 	AngleVectors (r_refdef.viewangles, vpn, vright, vup);
 
-// current viewleaf
+	// current viewleaf
 	r_oldviewleaf = r_viewleaf;
 	r_viewleaf = Mod_PointInLeaf (r_origin, cl.worldmodel);
 
@@ -534,5 +569,4 @@ R_SetupFrame (void)
 void
 R_TranslatePlayerSkin (int playernum)
 {
-	// stub
 }

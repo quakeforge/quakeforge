@@ -1,7 +1,7 @@
 /*
 	r_light.c
 
-	@description@
+	(description)
 
 	Copyright (C) 1996-1997  Id Software, Inc.
 
@@ -37,9 +37,7 @@ int         r_dlightframecount;
 
 
 /*
-==================
-R_AnimateLight
-==================
+	R_AnimateLight
 */
 void
 R_AnimateLight (void)
@@ -64,17 +62,11 @@ R_AnimateLight (void)
 
 
 /*
-=============================================================================
-
-DYNAMIC LIGHTS
-
-=============================================================================
+	DYNAMIC LIGHTS
 */
 
 /*
-=============
-R_MarkLights
-=============
+	R_MarkLights
 */
 void
 R_MarkLights (vec3_t lightorigin, dlight_t *light, int bit, mnode_t *node)
@@ -114,9 +106,7 @@ R_MarkLights (vec3_t lightorigin, dlight_t *light, int bit, mnode_t *node)
 
 
 /*
-=============
-R_PushDlights
-=============
+	R_PushDlights
 */
 void
 R_PushDlights (vec3_t entorigin)
@@ -139,11 +129,7 @@ R_PushDlights (vec3_t entorigin)
 
 
 /*
-=============================================================================
-
-LIGHT SAMPLING
-
-=============================================================================
+	LIGHT SAMPLING
 */
 
 int
@@ -159,7 +145,7 @@ RecursiveLightPoint (mnode_t *node, vec3_t start, vec3_t end)
 	int         i;
 	mtexinfo_t *tex;
 	byte       *lightmap;
-	unsigned    scale;
+	unsigned int scale;
 	int         maps;
 
 	if (node->contents < 0)
@@ -187,7 +173,7 @@ RecursiveLightPoint (mnode_t *node, vec3_t start, vec3_t end)
 		return r;						// hit something
 
 	if ((back < 0) == side)
-		return -1;						// didn't hit anuthing
+		return -1;						// didn't hit anything
 
 // check for impact on this node
 

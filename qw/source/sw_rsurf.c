@@ -58,7 +58,6 @@ void        R_DrawSurfaceBlock8_mip3 (void);
 static void (*surfmiptable[4]) (void) = {
 	R_DrawSurfaceBlock8_mip0,
 		R_DrawSurfaceBlock8_mip1,
-
 		R_DrawSurfaceBlock8_mip2, R_DrawSurfaceBlock8_mip3};
 
 

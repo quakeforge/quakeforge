@@ -500,8 +500,7 @@ R_RecursiveWorldNode (mnode_t *node, int clipflags)
 		}
 
 		pleaf->key = r_currentkey;
-		r_currentkey++;					// all bmodels in a leaf share the
-										// same key
+		r_currentkey++;					// all bmodels in a leaf share the same key
 	} else {
 		// node is just a decision point, so go down the apropriate sides
 

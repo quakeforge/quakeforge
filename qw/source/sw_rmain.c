@@ -38,8 +38,8 @@
 
 #include <math.h>
 
-#include "QF/console.h"
 #include "QF/cmd.h"
+#include "QF/console.h"
 #include "QF/locs.h"
 #include "QF/mathlib.h"
 #include "QF/screen.h"
@@ -299,8 +299,9 @@ R_SetVrect (vrect_t *pvrectin, vrect_t *pvrect, int lineadj)
 	if (scr_viewsize->int_val >= 100) {
 		size = 100.0;
 		full = true;
-	} else
+	} else {
 		size = scr_viewsize->int_val;
+	}
 
 	if (cl.intermission) {
 		full = true;
@@ -314,23 +315,26 @@ R_SetVrect (vrect_t *pvrectin, vrect_t *pvrect, int lineadj)
 	else
 		h = pvrectin->height - lineadj;
 
-//  h = (!cl_sbar->int_val && size==1.0) ? pvrectin->height : (pvrectin->height - lineadj);
-//  h = pvrectin->height - lineadj;
-	if (full)
+	if (full) {
 		pvrect->width = pvrectin->width;
-	else
+	} else {
 		pvrect->width = pvrectin->width * size;
+	}
+
 	if (pvrect->width < 96) {
 		size = 96.0 / pvrectin->width;
 		pvrect->width = 96;				// min for icons
 	}
 	pvrect->width &= ~7;
 	pvrect->height = pvrectin->height * size;
+
 	if (cl_sbar->int_val || !full) {
 		if (pvrect->height > pvrectin->height - lineadj)
 			pvrect->height = pvrectin->height - lineadj;
-	} else if (pvrect->height > pvrectin->height)
-		pvrect->height = pvrectin->height;
+	} else {
+		if (pvrect->height > pvrectin->height)
+			pvrect->height = pvrectin->height;
+	}
 
 	pvrect->height &= ~1;
 

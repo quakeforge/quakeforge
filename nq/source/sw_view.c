@@ -31,31 +31,21 @@
 #endif
 
 #include "QF/compat.h"
-#include "QF/console.h"
-#include "QF/draw.h"
-#include "QF/vid.h"
 
 #include "client.h"
 #include "host.h"
+#include "r_local.h"
 #include "view.h"
 
-extern byte        gammatable[256];
+extern cvar_t   *cl_cshift_powerup;
 
-extern qboolean    V_CheckGamma (void);
+extern byte gammatable[256];
 
-extern void        V_CalcIntermissionRefdef (void);
-extern void        V_CalcRefdef (void);
+qboolean    V_CheckGamma (void);
 
-extern cvar_t     *cl_cshift_powerup;
-extern cvar_t     *crosshair;
-extern cvar_t     *scr_ofsx;
-extern cvar_t     *scr_ofsy;
-extern cvar_t     *scr_ofsz;
-
-
-void
-V_CalcPowerupCshift (void)
-{
+void 
+V_CalcPowerupCshift (void) 
+{ 
 	if (!cl_cshift_powerup->int_val)
 		return;
 
@@ -109,11 +99,12 @@ V_UpdatePalette (void)
 			new = true;
 			cl.prev_cshifts[i].percent = cl.cshifts[i].percent;
 		}
-		for (j = 0; j < 3; j++)
+		for (j = 0; j < 3; j++) {
 			if (cl.cshifts[i].destcolor[j] != cl.prev_cshifts[i].destcolor[j]) {
 				new = true;
 				cl.prev_cshifts[i].destcolor[j] = cl.cshifts[i].destcolor[j];
 			}
+		}
 	}
 
 	// drop the damage value
@@ -140,12 +131,9 @@ V_UpdatePalette (void)
 		basepal += 3;
 
 		for (j = 0; j < NUM_CSHIFTS; j++) {
-			r +=
-				(cl.cshifts[j].percent * (cl.cshifts[j].destcolor[0] - r)) >> 8;
-			g +=
-				(cl.cshifts[j].percent * (cl.cshifts[j].destcolor[1] - g)) >> 8;
-			b +=
-				(cl.cshifts[j].percent * (cl.cshifts[j].destcolor[2] - b)) >> 8;
+			r += (cl.cshifts[j].percent * (cl.cshifts[j].destcolor[0] - r)) >> 8;
+			g += (cl.cshifts[j].percent * (cl.cshifts[j].destcolor[1] - g)) >> 8;
+			b += (cl.cshifts[j].percent * (cl.cshifts[j].destcolor[2] - b)) >> 8;
 		}
 
 		newpal[0] = gammatable[r];
@@ -153,6 +141,5 @@ V_UpdatePalette (void)
 		newpal[2] = gammatable[b];
 		newpal += 3;
 	}
-
 	VID_ShiftPalette (pal);
 }

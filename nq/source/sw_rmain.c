@@ -1,7 +1,7 @@
 /*
 	r_main.c
 
-	@description@
+	(description)
 
 	Copyright (C) 1996-1997  Id Software, Inc.
 
@@ -29,19 +29,30 @@
 #ifdef HAVE_CONFIG_H
 # include "config.h"
 #endif
+#ifdef HAVE_STRING_H
+# include <string.h>
+#endif
+#ifdef HAVE_STRINGS_H
+# include <strings.h>
+#endif
+
+#include <math.h>
 
 #include "QF/cmd.h"
 #include "QF/console.h"
+#include "QF/locs.h"
+#include "QF/mathlib.h"
 #include "QF/screen.h"
+#include "QF/sound.h"
 #include "QF/sys.h"
 
 #include "chase.h"
 #include "client.h"
 #include "r_cvar.h"
+#include "r_dynamic.h"
 #include "r_local.h"
 #include "view.h"
 
-//define    PASSAGES
 
 void       *colormap;
 vec3_t      viewlightvec;
@@ -139,13 +150,13 @@ float       se_time1, se_time2, de_time1, de_time2, dv_time1, dv_time2;
 
 void        R_MarkLeaves (void);
 
-void        CreatePassages (void);
-void        SetVisibilityByPassages (void);
+extern cvar_t *scr_fov;
+
+void        R_NetGraph (void);
+void        R_ZGraph (void);
 
 /*
-==================
-R_Textures_Init
-==================
+	R_Textures_Init
 */
 void
 R_Textures_Init (void)
@@ -177,24 +188,24 @@ R_Textures_Init (void)
 	}
 }
 
+void        R_LoadSky_f (void);
+
 /*
-===============
-R_Init
-===============
+	R_Init
 */
 void
 R_Init (void)
 {
 	int         dummy;
 
-// get stack position so we can guess if we are going to overflow
+	// get stack position so we can guess if we are going to overflow
 	r_stack_start = (byte *) & dummy;
 
 	R_InitTurb ();
 
-	Cmd_AddCommand ("timerefresh", R_TimeRefresh_f, "No Description");
-	Cmd_AddCommand ("pointfile", R_ReadPointFile_f, "No Description");
-
+	Cmd_AddCommand ("timerefresh", R_TimeRefresh_f, "Tests the current refresh rate for the current location");
+	Cmd_AddCommand ("pointfile", R_ReadPointFile_f, "Load a pointfile to determine map leaks");
+	Cmd_AddCommand ("loadsky", R_LoadSky_f, "Load a skybox");
 
 	Cvar_SetValue (r_maxedges, (float) NUMSTACKEDGES);
 	Cvar_SetValue (r_maxsurfs, (float) NUMSTACKSURFACES);
@@ -212,7 +223,7 @@ R_Init (void)
 	R_InitParticles ();
 
 // TODO: collect 386-specific code in one place
-#ifdef	USE_INTEL_ASM
+#ifdef USE_INTEL_ASM
 	Sys_MakeCodeWriteable ((long) R_EdgeCodeStart,
 						   (long) R_EdgeCodeEnd - (long) R_EdgeCodeStart);
 #endif // USE_INTEL_ASM
@@ -221,9 +232,7 @@ R_Init (void)
 }
 
 /*
-===============
-R_NewMap
-===============
+	R_NewMap
 */
 void
 R_NewMap (void)
@@ -274,16 +283,11 @@ R_NewMap (void)
 
 	r_dowarpold = false;
 	r_viewchanged = false;
-#ifdef PASSAGES
-	CreatePassages ();
-#endif
 }
 
 
 /*
-===============
-R_SetVrect
-===============
+	R_SetVrect
 */
 void
 R_SetVrect (vrect_t *pvrectin, vrect_t *pvrect, int lineadj)
@@ -293,7 +297,7 @@ R_SetVrect (vrect_t *pvrectin, vrect_t *pvrect, int lineadj)
 	qboolean    full = false;
 
 	if (scr_viewsize->int_val >= 100) {
-		size = 100;
+		size = 100.0;
 		full = true;
 	} else {
 		size = scr_viewsize->int_val;
@@ -301,10 +305,10 @@ R_SetVrect (vrect_t *pvrectin, vrect_t *pvrect, int lineadj)
 
 	if (cl.intermission) {
 		full = true;
-		size = 100;
+		size = 100.0;
 		lineadj = 0;
 	}
-	size /= 100;
+	size /= 100.0;
 
 	if (!cl_sbar->int_val && full)
 		h = pvrectin->height;
@@ -335,23 +339,18 @@ R_SetVrect (vrect_t *pvrectin, vrect_t *pvrect, int lineadj)
 	pvrect->height &= ~1;
 
 	pvrect->x = (pvrectin->width - pvrect->width) / 2;
-	pvrect->y = (h - pvrect->height) / 2;
-
 	if (full)
 		pvrect->y = 0;
 	else
 		pvrect->y = (h - pvrect->height) / 2;
-
 }
 
 
 /*
-===============
-R_ViewChanged
+	R_ViewChanged
 
-Called every time the vid structure or r_refdef changes.
-Guaranteed to be called before the first refresh
-===============
+	Called every time the vid structure or r_refdef changes.
+	Guaranteed to be called before the first refresh
 */
 void
 R_ViewChanged (vrect_t *pvrect, int lineadj, float aspect)
@@ -460,7 +459,7 @@ R_ViewChanged (vrect_t *pvrect, int lineadj, float aspect)
 		r_fov_greater_than_90 = true;
 
 // TODO: collect 386-specific code in one place
-#ifdef	USE_INTEL_ASM
+#ifdef USE_INTEL_ASM
 	if (r_pixbytes == 1) {
 		Sys_MakeCodeWriteable ((long) R_Surf8Start,
 							   (long) R_Surf8End - (long) R_Surf8Start);
@@ -479,9 +478,7 @@ R_ViewChanged (vrect_t *pvrect, int lineadj, float aspect)
 
 
 /*
-===============
-R_MarkLeaves
-===============
+	R_MarkLeaves
 */
 void
 R_MarkLeaves (void)
@@ -511,11 +508,35 @@ R_MarkLeaves (void)
 	}
 }
 
-
+ /*
+ =============
+ R_ShowNearestLoc
+ =============
+ */
+static void
+R_ShowNearestLoc (void)
+{
+	location_t *nearloc;
+	vec3_t trueloc;
+	dlight_t   *dl;
+	
+	if (r_drawentities->int_val)
+		return;
+	nearloc = locs_find (r_origin);
+	if (nearloc) {
+		dl = CL_AllocDlight (4096);
+		VectorCopy (nearloc->loc, dl->origin);
+		dl->radius = 200;
+		dl->die = cl.time + 0.1;
+		dl->color[1]=1;
+		
+		VectorCopy(nearloc->loc,trueloc);
+		R_RunParticleEffect(trueloc,252,10);
+	}
+}
+			
 /*
-=============
-R_DrawEntitiesOnList
-=============
+	R_DrawEntitiesOnList
 */
 void
 R_DrawEntitiesOnList (void)
@@ -529,8 +550,10 @@ R_DrawEntitiesOnList (void)
 	vec3_t      dist;
 	float       add;
 
-	if (!r_drawentities->int_val)
+	if (!r_drawentities->int_val) {
+		R_ShowNearestLoc();
 		return;
+	}
 
 	for (i = 0; i < cl_numvisedicts; i++) {
 		currententity = cl_visedicts[i];
@@ -544,57 +567,56 @@ R_DrawEntitiesOnList (void)
 
 		switch (currententity->model->type) {
 			case mod_sprite:
-			VectorCopy (currententity->origin, r_entorigin);
-			VectorSubtract (r_origin, r_entorigin, modelorg);
-			R_DrawSprite ();
-			break;
+				VectorCopy (currententity->origin, r_entorigin);
+				VectorSubtract (r_origin, r_entorigin, modelorg);
+				R_DrawSprite ();
+				break;
 
 			case mod_alias:
-			VectorCopy (currententity->origin, r_entorigin);
-			VectorSubtract (r_origin, r_entorigin, modelorg);
+				VectorCopy (currententity->origin, r_entorigin);
+				VectorSubtract (r_origin, r_entorigin, modelorg);
 
-			// see if the bounding box lets us trivially reject, also sets
-			// trivial accept status
-			if (R_AliasCheckBBox ()) {
-				j = R_LightPoint (currententity->origin);
+				// see if the bounding box lets us trivially reject, also
+				// sets
+				// trivial accept status
+				if (R_AliasCheckBBox ()) {
+					j = R_LightPoint (currententity->origin);
 
-				lighting.ambientlight = j;
-				lighting.shadelight = j;
+					lighting.ambientlight = j;
+					lighting.shadelight = j;
 
-				lighting.plightvec = lightvec;
+					lighting.plightvec = lightvec;
 
-				for (lnum = 0; lnum < MAX_DLIGHTS; lnum++) {
-					if (cl_dlights[lnum].die >= cl.time) {
-						VectorSubtract (currententity->origin,
-										cl_dlights[lnum].origin, dist);
-						add = cl_dlights[lnum].radius - Length (dist);
+					for (lnum = 0; lnum < MAX_DLIGHTS; lnum++) {
+						if (cl_dlights[lnum].die >= cl.time) {
+							VectorSubtract (currententity->origin,
+											cl_dlights[lnum].origin, dist);
+							add = cl_dlights[lnum].radius - Length (dist);
 
-						if (add > 0)
-							lighting.ambientlight += add;
+							if (add > 0)
+								lighting.ambientlight += add;
+						}
 					}
+
+					// clamp lighting so it doesn't overbright as much
+					if (lighting.ambientlight > 128)
+						lighting.ambientlight = 128;
+					if (lighting.ambientlight + lighting.shadelight > 192)
+						lighting.shadelight = 192 - lighting.ambientlight;
+
+					R_AliasDrawModel (&lighting);
 				}
 
-				// clamp lighting so it doesn't overbright as much
-				if (lighting.ambientlight > 128)
-					lighting.ambientlight = 128;
-				if (lighting.ambientlight + lighting.shadelight > 192)
-					lighting.shadelight = 192 - lighting.ambientlight;
-
-				R_AliasDrawModel (&lighting);
-			}
-
-			break;
+				break;
 
 			default:
-			break;
+				break;
 		}
 	}
 }
 
 /*
-=============
-R_DrawViewModel
-=============
+	R_DrawViewModel
 */
 void
 R_DrawViewModel (void)
@@ -607,7 +629,8 @@ R_DrawViewModel (void)
 	float       add;
 	dlight_t   *dl;
 
-	if (!r_drawviewmodel->int_val || r_fov_greater_than_90)
+	if (!r_drawviewmodel->int_val
+		|| !r_drawentities->int_val)
 		return;
 
 	if (chase_active->int_val)
@@ -660,18 +683,12 @@ R_DrawViewModel (void)
 
 	r_viewlighting.plightvec = lightvec;
 
-#ifdef QUAKE2
-	cl.light_level = r_viewlighting.ambientlight;
-#endif
-
 	R_AliasDrawModel (&r_viewlighting);
 }
 
 
 /*
-=============
-R_BmodelCheckBBox
-=============
+	R_BmodelCheckBBox
 */
 int
 R_BmodelCheckBBox (model_t *clmodel, float *minmaxs)
@@ -730,9 +747,7 @@ R_BmodelCheckBBox (model_t *clmodel, float *minmaxs)
 
 
 /*
-=============
-R_DrawBEntitiesOnList
-=============
+	R_DrawBEntitiesOnList
 */
 void
 R_DrawBEntitiesOnList (void)
@@ -755,101 +770,98 @@ R_DrawBEntitiesOnList (void)
 		switch (currententity->model->type) {
 			case mod_brush:
 
-			clmodel = currententity->model;
+				clmodel = currententity->model;
 
-			// see if the bounding box lets us trivially reject, also sets
-			// trivial accept status
-			for (j = 0; j < 3; j++) {
-				minmaxs[j] = currententity->origin[j] + clmodel->mins[j];
-				minmaxs[3 + j] = currententity->origin[j] + clmodel->maxs[j];
-			}
-
-			clipflags = R_BmodelCheckBBox (clmodel, minmaxs);
-
-			if (clipflags != BMODEL_FULLY_CLIPPED) {
-				VectorCopy (currententity->origin, r_entorigin);
-				VectorSubtract (r_origin, r_entorigin, modelorg);
-				// FIXME: is this needed?
-				VectorCopy (modelorg, r_worldmodelorg);
-
-				r_pcurrentvertbase = clmodel->vertexes;
-
-				// FIXME: stop transforming twice
-				R_RotateBmodel ();
-
-				// calculate dynamic lighting for bmodel if it's not an
-				// instanced model
-				if (clmodel->firstmodelsurface != 0) {
-					vec3_t      lightorigin;
-
-					for (k = 0; k < MAX_DLIGHTS; k++) {
-						if ((cl_dlights[k].die < cl.time) ||
-							(!cl_dlights[k].radius)) {
-							continue;
-						}
-
-						VectorSubtract (cl_dlights[k].origin,
-										currententity->origin, lightorigin);
-						R_MarkLights (lightorigin, &cl_dlights[k], 1 << k,
-									  clmodel->nodes +
-									  clmodel->hulls[0].firstclipnode);
-					}
-				}
-				// if the driver wants polygons, deliver those. Z-buffering
-				// is on
-				// at this point, so no clipping to the world tree is needed, 
-				// 
-				// 
-				// just
-				// frustum clipping
-				if (r_drawpolys | r_drawculledpolys) {
-					R_ZDrawSubmodelPolys (clmodel);
-				} else {
-					r_pefragtopnode = NULL;
-
-					for (j = 0; j < 3; j++) {
-						r_emins[j] = minmaxs[j];
-						r_emaxs[j] = minmaxs[3 + j];
-					}
-
-					R_SplitEntityOnNode2 (cl.worldmodel->nodes);
-
-					if (r_pefragtopnode) {
-						currententity->topnode = r_pefragtopnode;
-
-						if (r_pefragtopnode->contents >= 0) {
-							// not a leaf; has to be clipped to the world BSP
-							r_clipflags = clipflags;
-							R_DrawSolidClippedSubmodelPolygons (clmodel);
-						} else {
-							// falls entirely in one leaf, so we just put all 
-							// 
-							// 
-							// the
-							// edges in the edge list and let 1/z sorting
-							// handle
-							// drawing order
-							R_DrawSubmodelPolygons (clmodel, clipflags);
-						}
-
-						currententity->topnode = NULL;
-					}
+				// see if the bounding box lets us trivially reject, also
+				// sets
+				// trivial accept status
+				for (j = 0; j < 3; j++) {
+					minmaxs[j] = currententity->origin[j] + clmodel->mins[j];
+					minmaxs[3 + j] = currententity->origin[j] +
+						clmodel->maxs[j];
 				}
 
-				// put back world rotation and frustum clipping     
-				// FIXME: R_RotateBmodel should just work off base_vxx
-				VectorCopy (base_vpn, vpn);
-				VectorCopy (base_vup, vup);
-				VectorCopy (base_vright, vright);
-				VectorCopy (base_modelorg, modelorg);
-				VectorCopy (oldorigin, modelorg);
-				R_TransformFrustum ();
-			}
+				clipflags = R_BmodelCheckBBox (clmodel, minmaxs);
 
-			break;
+				if (clipflags != BMODEL_FULLY_CLIPPED) {
+					VectorCopy (currententity->origin, r_entorigin);
+					VectorSubtract (r_origin, r_entorigin, modelorg);
+					// FIXME: is this needed?
+					VectorCopy (modelorg, r_worldmodelorg);
+
+					r_pcurrentvertbase = clmodel->vertexes;
+
+					// FIXME: stop transforming twice
+					R_RotateBmodel ();
+
+					// calculate dynamic lighting for bmodel if it's not an
+					// instanced model
+					if (clmodel->firstmodelsurface != 0) {
+						vec3_t      lightorigin;
+
+						for (k = 0; k < MAX_DLIGHTS; k++) {
+							if ((cl_dlights[k].die < cl.time) ||
+								(!cl_dlights[k].radius)) continue;
+
+							VectorSubtract (cl_dlights[k].origin,
+											currententity->origin, lightorigin);
+							R_MarkLights (lightorigin, &cl_dlights[k], 1 << k,
+										  clmodel->nodes +
+										  clmodel->hulls[0].firstclipnode);
+						}
+					}
+					// if the driver wants polygons, deliver those.
+					// Z-buffering is on
+					// at this point, so no clipping to the world tree is
+					// needed, just
+					// frustum clipping
+					if (r_drawpolys | r_drawculledpolys) {
+						R_ZDrawSubmodelPolys (clmodel);
+					} else {
+						r_pefragtopnode = NULL;
+
+						for (j = 0; j < 3; j++) {
+							r_emins[j] = minmaxs[j];
+							r_emaxs[j] = minmaxs[3 + j];
+						}
+
+						R_SplitEntityOnNode2 (cl.worldmodel->nodes);
+
+						if (r_pefragtopnode) {
+							currententity->topnode = r_pefragtopnode;
+
+							if (r_pefragtopnode->contents >= 0) {
+								// not a leaf; has to be clipped to the world 
+								// BSP
+								r_clipflags = clipflags;
+								R_DrawSolidClippedSubmodelPolygons (clmodel);
+							} else {
+								// falls entirely in one leaf, so we just put 
+								// all the
+								// edges in the edge list and let 1/z sorting 
+								// handle
+								// drawing order
+								R_DrawSubmodelPolygons (clmodel, clipflags);
+							}
+
+							currententity->topnode = NULL;
+						}
+					}
+
+					// put back world rotation and frustum clipping     
+					// FIXME: R_RotateBmodel should just work off base_vxx
+					VectorCopy (base_vpn, vpn);
+					VectorCopy (base_vup, vup);
+					VectorCopy (base_vright, vright);
+					VectorCopy (base_modelorg, modelorg);
+					VectorCopy (oldorigin, modelorg);
+					R_TransformFrustum ();
+				}
+
+				break;
 
 			default:
-			break;
+				break;
 		}
 	}
 
@@ -858,9 +870,7 @@ R_DrawBEntitiesOnList (void)
 
 
 /*
-================
-R_EdgeDrawing
-================
+	R_EdgeDrawing
 */
 void
 R_EdgeDrawing (void)
@@ -919,7 +929,7 @@ R_EdgeDrawing (void)
 	if (!r_dspeeds->int_val) {
 		VID_UnlockBuffer ();
 		S_ExtraUpdate ();				// don't let sound get messed up if
-		// going slow
+										// going slow
 		VID_LockBuffer ();
 	}
 
@@ -927,14 +937,11 @@ R_EdgeDrawing (void)
 		R_ScanEdges ();
 }
 
-void        R_SetupFrame (void);
 
 /*
-================
-R_RenderView
+	R_RenderView
 
-r_refdef must be set before the first call
-================
+	r_refdef must be set before the first call
 */
 void
 R_RenderView_ (void)
@@ -946,14 +953,12 @@ R_RenderView_ (void)
 	if (r_timegraph->int_val || r_speeds->int_val || r_dspeeds->int_val)
 		r_time1 = Sys_DoubleTime ();
 
+	R_PushDlights (vec3_origin);
+
 	R_SetupFrame ();
 
-#ifdef PASSAGES
-	SetVisibilityByPassages ();
-#else
 	R_MarkLeaves ();					// done here so we know if we're in
-	// water
-#endif
+										// water
 
 // make FDIV fast. This reduces timing precision after we've been running for a
 // while, so we don't do it globally.  This also sets chop mode, and we do it
@@ -967,7 +972,7 @@ R_RenderView_ (void)
 	if (!r_dspeeds->int_val) {
 		VID_UnlockBuffer ();
 		S_ExtraUpdate ();				// don't let sound get messed up if
-		// going slow
+										// going slow
 		VID_LockBuffer ();
 	}
 
@@ -976,7 +981,7 @@ R_RenderView_ (void)
 	if (!r_dspeeds->int_val) {
 		VID_UnlockBuffer ();
 		S_ExtraUpdate ();				// don't let sound get messed up if
-		// going slow
+										// going slow
 		VID_LockBuffer ();
 	}
 
@@ -1054,9 +1059,7 @@ R_RenderView (void)
 }
 
 /*
-================
-R_InitTurb
-================
+	R_InitTurb
 */
 void
 R_InitTurb (void)
@@ -1065,10 +1068,7 @@ R_InitTurb (void)
 
 	for (i = 0; i < (SIN_BUFFER_SIZE); i++) {
 		sintable[i] = AMP + sin (i * 3.14159 * 2 / CYCLE) * AMP;
-		intsintable[i] = AMP2 + sin (i * 3.14159 * 2 / CYCLE) * AMP2;	// AMP2, 
-																		// 
-		// 
-		// not 
-		// 20
+		intsintable[i] = AMP2 + sin (i * 3.14159 * 2 / CYCLE) * AMP2;
+		// AMP2 not 20
 	}
 }

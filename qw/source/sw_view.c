@@ -111,12 +111,12 @@ V_UpdatePalette (void)
 
 	// drop the damage value
 	cl.cshifts[CSHIFT_DAMAGE].percent -= host_frametime * 150;
-	if (cl.cshifts[CSHIFT_DAMAGE].percent <= 0)
+	if (cl.cshifts[CSHIFT_DAMAGE].percent < 0)
 		cl.cshifts[CSHIFT_DAMAGE].percent = 0;
 
 	// drop the bonus value
 	cl.cshifts[CSHIFT_BONUS].percent -= host_frametime * 100;
-	if (cl.cshifts[CSHIFT_BONUS].percent <= 0)
+	if (cl.cshifts[CSHIFT_BONUS].percent < 0)
 		cl.cshifts[CSHIFT_BONUS].percent = 0;
 
 	force = V_CheckGamma ();

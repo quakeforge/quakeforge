@@ -1,7 +1,7 @@
 /*
 	r_vars.c
 
-	@description@
+	global refresh variables
 
 	Copyright (C) 1996-1997  Id Software, Inc.
 
@@ -30,8 +30,7 @@
 # include "config.h"
 #endif
 
-
-#ifndef	USE_INTEL_ASM
+#ifndef USE_INTEL_ASM
 
 // all global and static refresh variables are collected in a contiguous block
 // to avoid cache conflicts.
@@ -45,4 +44,4 @@
 
 int         r_bmodelactive;
 
-#endif // USE_INTEL_ASM
+#endif // !USE_INTEL_ASM

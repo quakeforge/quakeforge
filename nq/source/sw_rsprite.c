@@ -1,8 +1,7 @@
-
 /*
 	r_sprite.c
 
-	@description@
+	(description)
 
 	Copyright (C) 1996-1997  Id Software, Inc.
 
@@ -30,9 +29,17 @@
 #ifdef HAVE_CONFIG_H
 # include "config.h"
 #endif
+#ifdef HAVE_STRING_H
+# include <string.h>
+#endif
+#ifdef HAVE_STRINGS_H
+# include <string.h>
+#endif
 
-#include "QF/sys.h"
+#include <math.h>
+
 #include "QF/console.h"
+#include "QF/sys.h"
 
 #include "client.h"
 #include "r_local.h"
@@ -45,9 +52,7 @@ spritedesc_t r_spritedesc;
 
 
 /*
-================
-R_RotateSprite
-================
+	R_RotateSprite
 */
 void
 R_RotateSprite (float beamlength)
@@ -64,12 +69,10 @@ R_RotateSprite (float beamlength)
 
 
 /*
-=============
-R_ClipSpriteFace
+	R_ClipSpriteFace
 
-Clips the winding at clip_verts[clip_current] and changes clip_current
-Throws out the back side
-==============
+	Clips the winding at clip_verts[clip_current] and changes clip_current
+	Throws out the back side
 */
 int
 R_ClipSpriteFace (int nump, clipplane_t *pclipplane)
@@ -142,12 +145,10 @@ R_ClipSpriteFace (int nump, clipplane_t *pclipplane)
 
 
 /*
-================
-R_SetupAndDrawSprite
-================
+	R_SetupAndDrawSprite
 */
 void
-R_SetupAndDrawSprite ()
+R_SetupAndDrawSprite (void)
 {
 	int         i, nump;
 	float       dot, scale, *pv;
@@ -241,9 +242,7 @@ R_SetupAndDrawSprite ()
 
 
 /*
-================
-R_GetSpriteframe
-================
+	R_GetSpriteframe
 */
 mspriteframe_t *
 R_GetSpriteframe (msprite_t *psprite)
@@ -288,9 +287,7 @@ R_GetSpriteframe (msprite_t *psprite)
 
 
 /*
-================
-R_DrawSprite
-================
+	R_DrawSprite
 */
 void
 R_DrawSprite (void)
@@ -313,8 +310,6 @@ R_DrawSprite (void)
 		// and
 		// r_spritedesc.vright perpendicular to modelorg.
 		// This will not work if the view direction is very close to straight 
-		// 
-		// 
 		// up or
 		// down, because the cross product will be between two nearly
 		// parallel
@@ -326,10 +321,10 @@ R_DrawSprite (void)
 		tvec[2] = -modelorg[2];
 		VectorNormalize (tvec);
 		dot = tvec[2];					// same as DotProduct (tvec,
-		// r_spritedesc.vup) because
+										// r_spritedesc.vup) because
 		// r_spritedesc.vup is 0, 0, 1
 		if ((dot > 0.999848) || (dot < -0.999848))	// cos(1 degree) =
-			// 0.999848
+													// 0.999848
 			return;
 		r_spritedesc.vup[0] = 0;
 		r_spritedesc.vup[1] = 0;
@@ -361,8 +356,6 @@ R_DrawSprite (void)
 		// and
 		// r_spritedesc.vright parallel to the viewplane.
 		// This will not work if the view direction is very close to straight 
-		// 
-		// 
 		// up or
 		// down, because the cross product will be between two nearly
 		// parallel
@@ -370,10 +363,10 @@ R_DrawSprite (void)
 		// draw if
 		// the two vectors are less than 1 degree apart
 		dot = vpn[2];					// same as DotProduct (vpn,
-		// r_spritedesc.vup) because
+										// r_spritedesc.vup) because
 		// r_spritedesc.vup is 0, 0, 1
 		if ((dot > 0.999848) || (dot < -0.999848))	// cos(1 degree) =
-			// 0.999848
+													// 0.999848
 			return;
 		r_spritedesc.vup[0] = 0;
 		r_spritedesc.vup[1] = 0;
@@ -395,8 +388,6 @@ R_DrawSprite (void)
 					  r_spritedesc.vright, r_spritedesc.vup);
 	} else if (psprite->type == SPR_VP_PARALLEL_ORIENTED) {
 		// generate the sprite's axes, parallel to the viewplane, but rotated 
-		// 
-		// 
 		// in
 		// that plane around the center according to the sprite entity's roll
 		// angle. So vpn stays the same, but vright and vup rotate

@@ -1,7 +1,7 @@
 /*
 	r_aclip.c
 
-	@description@
+	clip routines for drawing Alias models directly to the screen
 
 	Copyright (C) 1996-1997  Id Software, Inc.
 
@@ -53,11 +53,9 @@ void        R_Alias_clip_right (finalvert_t *pfv0, finalvert_t *pfv1,
 
 
 /*
-================
-R_Alias_clip_z
+	R_Alias_clip_z
 
-pfv0 is the unclipped vertex, pfv1 is the z-clipped vertex
-================
+	pfv0 is the unclipped vertex, pfv1 is the z-clipped vertex
 */
 void
 R_Alias_clip_z (finalvert_t *pfv0, finalvert_t *pfv1, finalvert_t *out)
@@ -105,7 +103,7 @@ R_Alias_clip_z (finalvert_t *pfv0, finalvert_t *pfv1, finalvert_t *out)
 }
 
 
-#ifndef	USE_INTEL_ASM
+#ifndef USE_INTEL_ASM
 
 void
 R_Alias_clip_left (finalvert_t *pfv0, finalvert_t *pfv1, finalvert_t *out)
@@ -231,16 +229,14 @@ R_AliasClip (finalvert_t *in, finalvert_t *out, int flag, int count,
 
 
 /*
-================
-R_AliasClipTriangle
-================
+	R_AliasClipTriangle
 */
 void
 R_AliasClipTriangle (mtriangle_t *ptri)
 {
 	int         i, k, pingpong;
 	mtriangle_t mtri;
-	unsigned    clipflags;
+	unsigned int clipflags;
 
 // copy vertexes and fix seam texture coordinates
 	if (ptri->facesfront) {

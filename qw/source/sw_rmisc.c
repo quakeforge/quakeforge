@@ -170,7 +170,6 @@ R_LineGraph (int x, int y, int h)
 #endif
 }
 
-
 /*
 	R_TimeGraph
 
@@ -485,8 +484,8 @@ R_SetupFrame (void)
 
 	if ((r_dowarp != r_dowarpold) || r_viewchanged) {
 		if (r_dowarp) {
-			if ((vid.width <= WARP_WIDTH) &&
-				(vid.height <= WARP_HEIGHT)) {
+			if ((vid.width <= WARP_WIDTH)
+				&& (vid.height <= WARP_HEIGHT)) {
 				vrect.x = 0;
 				vrect.y = 0;
 				vrect.width = vid.width;

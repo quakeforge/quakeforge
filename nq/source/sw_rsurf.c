@@ -1,7 +1,7 @@
 /*
 	r_surf.c
 
-	@description@
+	surface-related refresh code
 
 	Copyright (C) 1996-1997  Id Software, Inc.
 
@@ -40,11 +40,11 @@ drawsurf_t  r_drawsurf;
 int         lightleft, sourcesstep, blocksize, sourcetstep;
 int         lightdelta, lightdeltastep;
 int         lightright, lightleftstep, lightrightstep, blockdivshift;
-unsigned    blockdivmask;
+unsigned int blockdivmask;
 void       *prowdestbase;
 unsigned char *pbasesource;
 int         surfrowbytes;				// used by ASM files
-unsigned   *r_lightptr;
+unsigned int *r_lightptr;
 int         r_stepback;
 int         r_lightwidth;
 int         r_numhblocks, r_numvblocks;
@@ -62,12 +62,10 @@ static void (*surfmiptable[4]) (void) = {
 
 
 
-unsigned    blocklights[18 * 18];
+unsigned int blocklights[18 * 18];
 
 /*
-===============
-R_AddDynamicLights
-===============
+	R_AddDynamicLights
 */
 void
 R_AddDynamicLights (void)
@@ -76,7 +74,7 @@ R_AddDynamicLights (void)
 	int         lnum;
 	int         sd, td;
 	float       dist, rad, minlight;
-	vec3_t      impact, local;
+	vec3_t      impact, local, lightorigin;
 	int         s, t;
 	int         i;
 	int         smax, tmax;
@@ -91,8 +89,10 @@ R_AddDynamicLights (void)
 		if (!(surf->dlightbits & (1 << lnum)))
 			continue;					// not lit by this light
 
+		VectorSubtract (cl_dlights[lnum].origin, currententity->origin,
+						lightorigin);
 		rad = cl_dlights[lnum].radius;
-		dist = DotProduct (cl_dlights[lnum].origin, surf->plane->normal) -
+		dist = DotProduct (lightorigin, surf->plane->normal) -
 			surf->plane->dist;
 		rad -= fabs (dist);
 		minlight = cl_dlights[lnum].minlight;
@@ -100,10 +100,8 @@ R_AddDynamicLights (void)
 			continue;
 		minlight = rad - minlight;
 
-		for (i = 0; i < 3; i++) {
-			impact[i] = cl_dlights[lnum].origin[i] -
-				surf->plane->normal[i] * dist;
-		}
+		for (i = 0; i < 3; i++)
+			impact[i] = lightorigin[i] - surf->plane->normal[i] * dist;
 
 		local[0] = DotProduct (impact, tex->vecs[0]) + tex->vecs[0][3];
 		local[1] = DotProduct (impact, tex->vecs[1]) + tex->vecs[1][3];
@@ -124,35 +122,16 @@ R_AddDynamicLights (void)
 				else
 					dist = td + (sd >> 1);
 				if (dist < minlight)
-#ifdef QUAKE2
-				{
-					unsigned    temp;
-
-					temp = (rad - dist) * 256;
-					i = t * smax + s;
-					if (!cl_dlights[lnum].dark)
-						blocklights[i] += temp;
-					else {
-						if (blocklights[i] > temp)
-							blocklights[i] -= temp;
-						else
-							blocklights[i] = 0;
-					}
-				}
-#else
 					blocklights[t * smax + s] += (rad - dist) * 256;
-#endif
 			}
 		}
 	}
 }
 
 /*
-===============
-R_BuildLightMap
+	R_BuildLightMap
 
-Combine and scale multiple lightmaps into the 8.8 format in blocklights
-===============
+	Combine and scale multiple lightmaps into the 8.8 format in blocklights
 */
 void
 R_BuildLightMap (void)
@@ -161,7 +140,7 @@ R_BuildLightMap (void)
 	int         t;
 	int         i, size;
 	byte       *lightmap;
-	unsigned    scale;
+	unsigned int scale;
 	int         maps;
 	msurface_t *surf;
 
@@ -207,11 +186,9 @@ R_BuildLightMap (void)
 
 
 /*
-===============
-R_TextureAnimation
+	R_TextureAnimation
 
-Returns the proper texture for a given time and base texture
-===============
+	Returns the proper texture for a given time and base texture
 */
 texture_t  *
 R_TextureAnimation (texture_t *base)
@@ -243,9 +220,7 @@ R_TextureAnimation (texture_t *base)
 
 
 /*
-===============
-R_DrawSurface
-===============
+	R_DrawSurface
 */
 void
 R_DrawSurface (void)
@@ -332,12 +307,10 @@ R_DrawSurface (void)
 
 //=============================================================================
 
-#ifndef	USE_INTEL_ASM
+#ifndef USE_INTEL_ASM
 
 /*
-================
-R_DrawSurfaceBlock8_mip0
-================
+	R_DrawSurfaceBlock8_mip0
 */
 void
 R_DrawSurfaceBlock8_mip0 (void)
@@ -383,9 +356,7 @@ R_DrawSurfaceBlock8_mip0 (void)
 
 
 /*
-================
-R_DrawSurfaceBlock8_mip1
-================
+	R_DrawSurfaceBlock8_mip1
 */
 void
 R_DrawSurfaceBlock8_mip1 (void)
@@ -431,9 +402,7 @@ R_DrawSurfaceBlock8_mip1 (void)
 
 
 /*
-================
-R_DrawSurfaceBlock8_mip2
-================
+	R_DrawSurfaceBlock8_mip2
 */
 void
 R_DrawSurfaceBlock8_mip2 (void)
@@ -479,9 +448,7 @@ R_DrawSurfaceBlock8_mip2 (void)
 
 
 /*
-================
-R_DrawSurfaceBlock8_mip3
-================
+	R_DrawSurfaceBlock8_mip3
 */
 void
 R_DrawSurfaceBlock8_mip3 (void)
@@ -527,11 +494,9 @@ R_DrawSurfaceBlock8_mip3 (void)
 
 
 /*
-================
-R_DrawSurfaceBlock16
+	R_DrawSurfaceBlock16
 
-FIXME: make this work
-================
+	FIXME: make this work
 */
 void
 R_DrawSurfaceBlock16 (void)
@@ -578,9 +543,7 @@ R_DrawSurfaceBlock16 (void)
 //============================================================================
 
 /*
-================
-R_GenTurbTile
-================
+	R_GenTurbTile
 */
 void
 R_GenTurbTile (pixel_t *pbasetex, void *pdest)
@@ -603,9 +566,7 @@ R_GenTurbTile (pixel_t *pbasetex, void *pdest)
 
 
 /*
-================
-R_GenTurbTile16
-================
+	R_GenTurbTile16
 */
 void
 R_GenTurbTile16 (pixel_t *pbasetex, void *pdest)
@@ -628,9 +589,7 @@ R_GenTurbTile16 (pixel_t *pbasetex, void *pdest)
 
 
 /*
-================
-R_GenTile
-================
+	R_GenTile
 */
 void
 R_GenTile (msurface_t *psurf, void *pdest)
@@ -638,12 +597,12 @@ R_GenTile (msurface_t *psurf, void *pdest)
 	if (psurf->flags & SURF_DRAWTURB) {
 		if (r_pixbytes == 1) {
 			R_GenTurbTile ((pixel_t *)
-
+						   
 						   ((byte *) psurf->texinfo->texture +
 							psurf->texinfo->texture->offsets[0]), pdest);
 		} else {
 			R_GenTurbTile16 ((pixel_t *)
-
+							 
 							 ((byte *) psurf->texinfo->texture +
 							  psurf->texinfo->texture->offsets[0]), pdest);
 		}

@@ -204,10 +204,6 @@ R_InsertNewEdges (edge_t *edgestoadd, edge_t *edgelist)
 	} while ((edgestoadd = next_edge) != NULL);
 }
 
-#endif // !USE_INTEL_ASM
-
-
-#ifndef USE_INTEL_ASM
 
 /*
 	R_RemoveEdges
@@ -222,10 +218,6 @@ R_RemoveEdges (edge_t *pedge)
 	} while ((pedge = pedge->nextremove) != NULL);
 }
 
-#endif // !USE_INTEL_ASM
-
-
-#ifndef USE_INTEL_ASM
 
 /*
 	R_StepActiveU

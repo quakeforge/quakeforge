@@ -1,7 +1,7 @@
 /*
 	r_bsp.c
 
-	@description@
+	(description)
 
 	Copyright (C) 1996-1997  Id Software, Inc.
 
@@ -29,6 +29,8 @@
 #ifdef HAVE_CONFIG_H
 # include "config.h"
 #endif
+
+#include <math.h>
 
 #include "QF/console.h"
 #include "QF/sys.h"
@@ -74,9 +76,7 @@ static qboolean makeclippededge;
 //===========================================================================
 
 /*
-================
-R_EntityRotate
-================
+	R_EntityRotate
 */
 void
 R_EntityRotate (vec3_t vec)
@@ -91,9 +91,7 @@ R_EntityRotate (vec3_t vec)
 
 
 /*
-================
-R_RotateBmodel
-================
+	R_RotateBmodel
 */
 void
 R_RotateBmodel (void)
@@ -171,9 +169,7 @@ R_RotateBmodel (void)
 
 
 /*
-================
-R_RecursiveClipBPoly
-================
+	R_RecursiveClipBPoly
 */
 void
 R_RecursiveClipBPoly (bedge_t *pedges, mnode_t *pnode, msurface_t *psurf)
@@ -323,9 +319,7 @@ R_RecursiveClipBPoly (bedge_t *pedges, mnode_t *pnode, msurface_t *psurf)
 
 
 /*
-================
-R_DrawSolidClippedSubmodelPolygons
-================
+	R_DrawSolidClippedSubmodelPolygons
 */
 void
 R_DrawSolidClippedSubmodelPolygons (model_t *pmodel)
@@ -398,9 +392,7 @@ R_DrawSolidClippedSubmodelPolygons (model_t *pmodel)
 
 
 /*
-================
-R_DrawSubmodelPolygons
-================
+	R_DrawSubmodelPolygons
 */
 void
 R_DrawSubmodelPolygons (model_t *pmodel, int clipflags)
@@ -435,9 +427,7 @@ R_DrawSubmodelPolygons (model_t *pmodel, int clipflags)
 
 
 /*
-================
-R_RecursiveWorldNode
-================
+	R_RecursiveWorldNode
 */
 void
 R_RecursiveWorldNode (mnode_t *node, int clipflags)
@@ -510,8 +500,7 @@ R_RecursiveWorldNode (mnode_t *node, int clipflags)
 		}
 
 		pleaf->key = r_currentkey;
-		r_currentkey++;					// all bmodels in a leaf share the
-		// same key
+		r_currentkey++;				// all bmodels in a leaf share the same key
 	} else {
 		// node is just a decision point, so go down the apropriate sides
 
@@ -520,17 +509,17 @@ R_RecursiveWorldNode (mnode_t *node, int clipflags)
 
 		switch (plane->type) {
 			case PLANE_X:
-			dot = modelorg[0] - plane->dist;
-			break;
+				dot = modelorg[0] - plane->dist;
+				break;
 			case PLANE_Y:
-			dot = modelorg[1] - plane->dist;
-			break;
+				dot = modelorg[1] - plane->dist;
+				break;
 			case PLANE_Z:
-			dot = modelorg[2] - plane->dist;
-			break;
+				dot = modelorg[2] - plane->dist;
+				break;
 			default:
-			dot = DotProduct (modelorg, plane->normal) - plane->dist;
-			break;
+				dot = DotProduct (modelorg, plane->normal) - plane->dist;
+				break;
 		}
 
 		if (dot >= 0)
@@ -603,9 +592,7 @@ R_RecursiveWorldNode (mnode_t *node, int clipflags)
 
 
 /*
-================
-R_RenderWorld
-================
+	R_RenderWorld
 */
 void
 R_RenderWorld (void)
