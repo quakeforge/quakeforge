@@ -15,12 +15,15 @@ void (integer x, integer y, string name) Draw_Pic = #0;
 void (integer x, integer y, string text) Draw_String = #0;
 
 float () random = #0;
+string () gametype = #0;
 
 float time;
 entity self;
 .float nextthink;
 .float frame;
 .void () think;
+
+integer do_single_player;
 
 string [6] dot = {
 	"gfx/menudot1.lmp",
@@ -156,22 +159,22 @@ void () quit_draw =
 
 void () single_player_menu =
 {
-	Menu_Item (54, 32, "", NIL);
+	Menu_Item (54, 32, "", quit_f);
 };
 
 void () multi_player_menu =
 {
-	Menu_Item (54, 52, "", NIL);
+	Menu_Item (54, 52, "", quit_f);
 };
 
 void () options_menu =
 {
-	Menu_Item (54, 72, "", NIL);
+	Menu_Item (54, 72, "", quit_f);
 };
 
 void () help_menu =
 {
-	Menu_Item (54, 92, "", NIL);
+	Menu_Item (54, 92, "", quit_f);
 };
 
 void () main_menu =
@@ -181,8 +184,8 @@ void () main_menu =
 	Menu_CenterPic (160, 4, "gfx/ttl_main.lmp");
 	Menu_Pic (71,32, "gfx/mainmenu.lmp");
 	Menu_Cursor (spinner);
-	//if (do_single_player)
-	//	single_player_menu ();
+	if (do_single_player)
+		single_player_menu ();
 	multi_player_menu ();
 	options_menu ();
 	help_menu ();
@@ -200,6 +203,16 @@ void () quit_menu =
 
 void () menu_init =
 {
+	switch (gametype ()) {
+	case "netquake":
+		do_single_player = 1;
+		break;
+	case "quakeworld":
+		do_single_player = 0;
+		break;
+	default:
+		break;
+	}
 	main_menu ();
 	quit_menu ();
 	Menu_TopMenu ("main");

@@ -1652,6 +1652,8 @@ Host_Init (void)
 
 	PI_Init ();
 
+	pr_gametype = "quakeworld";
+
 	CL_Cam_Init_Cvars ();
 	CL_Input_Init_Cvars ();
 	CL_Skin_Init_Cvars ();

@@ -914,6 +914,8 @@ Host_Init (quakeparms_t *parms)
 
 	Memory_Init (parms->membase, parms->memsize);
 
+	pr_gametype = "netquake";
+
 	PI_Init ();
 
 	Chase_Init_Cvars ();

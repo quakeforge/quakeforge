@@ -348,6 +348,7 @@ SV_LoadProgs (void)
 void
 SV_Progs_Init (void)
 {
+	pr_gametype = "quakeworld";
 	sv_pr_state.edicts = &sv.edicts;
 	sv_pr_state.num_edicts = &sv.num_edicts;
 	sv_pr_state.time = &sv.time;

@@ -58,6 +58,8 @@ static const char rcsid[] =
 #define	RETURN_STRING(p, s) ((p)->pr_globals[OFS_RETURN].integer_var = PR_SetString((p), s))
 #define RETURN_VECTOR(p, v) (VectorCopy (v, G_VECTOR (p, OFS_RETURN)))
 
+const char *pr_gametype = "";
+
 /* BUILT-IN FUNCTIONS */
 
 // FIXME: Hunk_TempAlloc, Sys_Printf, Cvar_*, PR_SetString, PR_RunError, ED_PrintEdicts, PF_traceon, PF_traceoff, ED_PrintNum, PR_FindBuiltin isn't threadsafe/reentrant
@@ -833,6 +835,12 @@ PF_sprintf (progs_t *pr)
 }
 
 void
+PR_gametype (progs_t *pr)
+{
+	RETURN_STRING (pr, pr_gametype);
+}
+
+void
 PR_Cmds_Init (progs_t *pr)
 {
 	PR_AddBuiltin (pr, "break", PF_break, 6); // void () break
@@ -870,4 +878,5 @@ PR_Cmds_Init (progs_t *pr)
 	PR_AddBuiltin (pr, "stoi", PF_stoi, 113);	// integer (string s) stoi
 	PR_AddBuiltin (pr, "stov", PF_stov, 114);	// vector (string s) stov
 	PR_AddBuiltin (pr, "vtos", PF_vtos, 27);	// string (vector v) vtos
+	PR_AddBuiltin (pr, "gametype", PR_gametype, 115);	// string () gametype
 };
