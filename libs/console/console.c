@@ -146,10 +146,10 @@ Con_SetOrMask (int mask)
 }
 
 void
-Con_DrawConsole (int lines)
+Con_DrawConsole (void)
 {
 	if (con_module)
-		con_module->functions->console->pC_DrawConsole (lines);
+		con_module->functions->console->pC_DrawConsole ();
 }
 
 void

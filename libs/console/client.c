@@ -53,6 +53,7 @@ static __attribute__ ((unused)) const char rcsid[] =
 #include "QF/plugin.h"
 #include "QF/qargs.h"
 #include "QF/quakefs.h"
+#include "QF/render.h"
 #include "QF/screen.h"
 #include "QF/sys.h"
 #include "QF/va.h"
@@ -78,6 +79,9 @@ static old_console_t  *con;
 static float       con_cursorspeed = 4;
 
 static cvar_t *con_notifytime;				// seconds
+static cvar_t *con_alpha;
+static cvar_t *con_size;
+static cvar_t *con_speed;
 static cvar_t *cl_chatmode;
 
 #define	NUM_CON_TIMES 4
@@ -660,8 +664,17 @@ draw_console_text (view_t *view)
 static void
 draw_console (view_t *view)
 {
+	byte        alpha;
+
+	if (con_data.force_commandline) {
+		alpha = 255;
+	} else {
+		float       y = vid.height * con_size->value;
+		alpha = 255 * con_alpha->value * view->ylen / y;
+		alpha = min (alpha, 255);
+	}
 	// draw the background
-	Draw_ConsoleBackground (view->ylen);
+	Draw_ConsoleBackground (view->ylen, alpha);
 
 	// draw everything else
 	view_draw (view);
@@ -711,13 +724,39 @@ draw_notify (view_t *view)
 }
 
 static void
-C_DrawConsole (int lines)
+setup_console (void)
 {
-	if (console_view->ylen != lines)
-		view_resize (console_view, console_view->xlen, lines);
+	float       lines;
+
+	if (con_data.force_commandline) {
+		lines = con_data.lines = vid.height;
+	} else if (key_dest == key_console) {
+		lines = vid.height * bound (0.2, con_size->value, 1);
+	} else {
+		lines = 0;
+	}
+
+	if (lines < con_data.lines) {
+		con_data.lines -= max (0.2, con_speed->value) * *con_data.frametime;
+		con_data.lines = max (con_data.lines, lines);
+	} else if (lines > con_data.lines) {
+		con_data.lines += max (0.2, con_speed->value) * *con_data.frametime;
+		con_data.lines = min (con_data.lines, lines);
+	}
+	if (con_data.lines >= vid.height - r_lineadj)
+		scr_copyeverything = 1;
+}
+
+static void
+C_DrawConsole (void)
+{
+	setup_console ();
+
+	if (console_view->ylen != con_data.lines)
+		view_resize (console_view, console_view->xlen, con_data.lines);
 
 	say_view->visible = key_dest == key_message;
-	console_view->visible = lines != 0;
+	console_view->visible = con_data.lines != 0;
 	menu_view->visible = key_dest == key_menu;
 
 	view_draw (con_data.view);
@@ -767,6 +806,14 @@ C_Init (void)
 	cl_chatmode = Cvar_Get ("cl_chatmode", "2", CVAR_NONE, NULL,
 							"Controls when console text will be treated as a "
 							"chat message: 0 - never, 1 - always, 2 - smart");
+
+	con_alpha = Cvar_Get ("con_alpha", "0.6", CVAR_ARCHIVE, NULL,
+						  "alpha value for the console background");
+	con_size = Cvar_Get ("con_size", "0.5", CVAR_ARCHIVE, NULL,
+						 "Fraction of the screen the console covers when "
+						 "down");
+	con_speed = Cvar_Get ("con_speed", "300", CVAR_ARCHIVE, NULL,
+						  "How quickly the console scrolls up or down");
 
 	con_debuglog = COM_CheckParm ("-condebug");
 

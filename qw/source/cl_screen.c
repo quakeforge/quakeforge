@@ -78,7 +78,7 @@ static SCR_Func scr_funcs[] = {
 	SCR_DrawPause,
 	SCR_CheckDrawCenterString,
 	Sbar_Draw,
-	SCR_DrawConsole,
+	Con_DrawConsole,
 	0
 };
 

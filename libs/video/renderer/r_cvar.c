@@ -58,7 +58,6 @@ cvar_t     *d_mipscale;
 
 cvar_t     *gl_affinemodels;
 cvar_t     *gl_clear;
-cvar_t     *gl_conalpha;
 cvar_t     *gl_conspin;
 cvar_t     *gl_constretch;
 cvar_t     *gl_dlight_polyblend;
@@ -127,8 +126,6 @@ cvar_t     *r_waterwarp;
 cvar_t     *r_zgraph;
 
 cvar_t     *scr_centertime;
-cvar_t     *scr_consize;
-cvar_t     *scr_conspeed;
 cvar_t     *scr_fov;
 cvar_t     *scr_fisheye;
 cvar_t     *scr_fviews;
@@ -255,8 +252,6 @@ R_Init_Cvars (void)
 								"set to 1");
 	gl_clear = Cvar_Get ("gl_clear", "0", CVAR_NONE, NULL, "Set to 1 to make "
 						 "background black. Useful for removing HOM effect");
-	gl_conalpha = Cvar_Get ("gl_conalpha", "0.6", CVAR_ARCHIVE, NULL,
-							"alpha value for the console background");
 	gl_conspin = Cvar_Get ("gl_conspin", "0", CVAR_ARCHIVE, NULL,
 						   "speed at which the console spins");
 	gl_constretch = Cvar_Get ("gl_constretch", "0", CVAR_ARCHIVE, NULL,
@@ -425,11 +420,6 @@ R_Init_Cvars (void)
 						 "z-axis position");
 	scr_centertime = Cvar_Get ("scr_centertime", "2", CVAR_NONE, NULL, "How "
 							   "long in seconds screen hints are displayed");
-	scr_consize = Cvar_Get ("scr_consize", "0.5", CVAR_ARCHIVE, NULL,
-							"Fraction of the screen the console covers when "
-							"down");
-	scr_conspeed = Cvar_Get ("scr_conspeed", "300", CVAR_NONE, NULL,
-							 "How quickly the console scrolls up or down");
 	scr_fov = Cvar_Get ("fov", "90", CVAR_NONE, NULL, "Your field of view in "
 						"degrees. Smaller than 90 zooms in. Don't touch in "
 						"fisheye mode, use ffov instead.");

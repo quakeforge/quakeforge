@@ -473,7 +473,7 @@ Draw_TransPicTranslate (int x, int y, qpic_t *pic, byte * translation)
 
 
 void
-Draw_ConsoleBackground (int lines)
+Draw_ConsoleBackground (int lines, byte alpha)
 {
 	int         x, y, v;
 	byte       *src, *dest;

@@ -202,6 +202,10 @@ double      realtime;					// without any filtering or bounding
 double      oldrealtime;				// last frame run
 int         host_framecount;
 
+double      con_frametime;
+double      con_realtime;
+double      oldcon_realtime;
+
 int         host_hunklevel;
 
 byte       *host_basepal;
@@ -1433,6 +1437,8 @@ Host_SimulationTime (float time)
 	float       fps, timedifference;
 	float		timescale = 1.0;
 
+	con_realtime += time;
+
 	if (cls.demoplayback) {
 		timescale = max (0, demo_speed->value);
 		time *= timescale;
@@ -1489,6 +1495,9 @@ Host_Frame (float time)
 	host_frametime = realtime - oldrealtime;
 	oldrealtime = realtime;
 	host_frametime = min (host_frametime, 0.2);
+
+	con_frametime = con_realtime - oldcon_realtime;
+	oldcon_realtime = con_realtime;
 
 	IN_ProcessEvents ();
 
@@ -1725,7 +1734,8 @@ Host_Init (void)
 	if (con_module) {
 		con_module->data->console->dl_name = cls.downloadname;
 		con_module->data->console->dl_percent = &cls.downloadpercent;
-		con_module->data->console->realtime = &realtime;
+		con_module->data->console->realtime = &con_realtime;
+		con_module->data->console->frametime = &con_frametime;
 		con_module->data->console->quit = CL_Quit_f;
 		con_module->data->console->cbuf = cl_cbuf;
 	}

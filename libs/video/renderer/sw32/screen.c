@@ -130,11 +130,6 @@ SCR_CalcRefdef (void)
 
 	R_SetVrect (&vrect, &scr_vrect, r_lineadj);
 
-	// guard against going from one mode to another that's less than half the
-	// vertical resolution
-	if (scr_con_current > vid.height)
-		scr_con_current = vid.height;
-
 	// notify the refresh of the change
 	R_ViewChanged (&vrect, r_lineadj, vid.aspect);
 }

@@ -38,7 +38,7 @@
 typedef void (QFPLUGIN *P_C_Print) (const char *fmt, va_list args);
 typedef void (QFPLUGIN *P_C_ProcessInput) (void);
 typedef void (QFPLUGIN *P_C_KeyEvent) (knum_t key, short unicode, qboolean down);
-typedef void (QFPLUGIN *P_C_DrawConsole) (int lines);
+typedef void (QFPLUGIN *P_C_DrawConsole) (void);
 typedef void (QFPLUGIN *P_C_CheckResize) (void);
 typedef void (QFPLUGIN *P_C_NewMap) (void);
 
@@ -55,11 +55,13 @@ typedef struct console_data_s {
 	const char			*dl_name;
 	int					*dl_percent;
 	double				*realtime;
+	double				*frametime;
 	int					force_commandline;
 	int					ormask;
 	void				(*quit)(void);
 	struct cbuf_s		*cbuf;
 	struct view_s		*view;
+	float				lines;
 } console_data_t;
 
 #endif // __QF_plugin_console_h_

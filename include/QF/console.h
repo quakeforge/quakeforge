@@ -84,7 +84,7 @@ extern struct console_data_s con_data;
 //extern byte *con_chars;
 
 void Con_CheckResize (void);
-void Con_DrawConsole (int lines);
+void Con_DrawConsole (void);
 
 void Con_Print (const char *fmt, va_list args);
 void Con_Printf (const char *fmt, ...) __attribute__((format(printf,1,2)));
@@ -140,5 +140,7 @@ void Menu_Draw_Hud (struct view_s *view);
 void Menu_KeyEvent (knum_t key, short unicode, qboolean down);
 void Menu_Enter (void);
 void Menu_Leave (void);
+
+extern struct cvar_s *con_size;
 
 #endif // __console_h

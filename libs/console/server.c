@@ -460,7 +460,7 @@ C_KeyEvent (knum_t key, short unicode, qboolean down)
 }
 
 static void
-C_DrawConsole (int lines)
+C_DrawConsole (void)
 {
 }
 

@@ -1023,7 +1023,7 @@ Sbar_Draw (void)
 	if ((sb_updates >= vid.numpages) && !headsup)
 		return;
 
-	if (scr_con_current == vid.height)
+	if (con_module && con_module->data->console->lines == vid.height)
 		return;							// console is full screen
 
 	if (cls.state == ca_active

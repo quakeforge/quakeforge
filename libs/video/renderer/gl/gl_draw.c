@@ -670,11 +670,9 @@ Draw_TransPicTranslate (int x, int y, qpic_t *pic, byte * translation)
 	several simple yet very cool GL effects.  --KB
 */
 void
-Draw_ConsoleBackground (int lines)
+Draw_ConsoleBackground (int lines, byte alpha)
 {
-	byte        alpha;
 	float       ofs;
-	int         y;
 	glpic_t    *gl;
 	qpic_t     *conback;
 
@@ -706,14 +704,6 @@ Draw_ConsoleBackground (int lines)
 		ofs = 0;
 	else
 		ofs = (vid.conheight - lines) / (float) vid.conheight;
-
-	y = vid.height * scr_consize->value;
-	if (!r_active || lines > y) {
-		alpha = 255;
-	} else {
-		// set up to draw alpha console
-		alpha = 255 * (gl_conalpha->value * lines) / y;
-	}
 
 	color_0_8[3] = alpha;
 	qfglColor4ubv (color_0_8);

@@ -54,7 +54,6 @@ void SCR_DrawTime (void);
 void SCR_DrawTurtle (void);
 void SCR_DrawPause (void);
 void SCR_CheckDrawCenterString (void);
-void SCR_DrawConsole (void);
 
 struct tex_s *SCR_ScreenShot (int width, int height);
 void SCR_DrawStringToSnap (const char *s, struct tex_s *tex, int x, int y);
@@ -76,7 +75,6 @@ extern qboolean		hudswap;
 extern struct cvar_s		*scr_viewsize;
 extern struct cvar_s		*scr_fov;
 extern struct cvar_s		*scr_viewsize;
-extern struct cvar_s		*scr_consize;
 
 // only the refresh window will be updated unless these variables are flagged 
 extern int			scr_copytop;

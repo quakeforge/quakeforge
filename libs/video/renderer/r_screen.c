@@ -99,9 +99,6 @@ static __attribute__ ((unused)) const char rcsid[] =
 int         scr_copytop;
 int         scr_copyeverything;
 
-float       scr_con_current;
-float       scr_conlines;				// lines of console to display
-
 float       oldfov;
 int         oldsbar;
 
@@ -311,38 +308,8 @@ SCR_DrawPause (void)
 void
 SCR_SetUpToDrawConsole (void)
 {
-	// decide on the height of the console
-	if (!r_active) {
-		scr_conlines = vid.height;		// full screen
-		scr_con_current = scr_conlines;
-	} else if (key_dest == key_console)
-		scr_conlines = vid.height * bound (0.2, scr_consize->value, 1);
-	else
-		scr_conlines = 0;				// none visible
-
-	if (scr_con_current >= vid.height - r_lineadj)
-		scr_copyeverything = 1;
-	if (scr_conlines < scr_con_current) {
-		scr_con_current -= scr_conspeed->value * r_frametime;
-		if (scr_conlines > scr_con_current)
-			scr_con_current = scr_conlines;
-
-	} else if (scr_conlines > scr_con_current) {
-		scr_con_current += scr_conspeed->value * r_frametime;
-		if (scr_conlines < scr_con_current)
-			scr_con_current = scr_conlines;
-	}
-	if (scr_con_current >= vid.height - r_lineadj)
-		scr_copyeverything = 1;
-
 	if (clearconsole++ < vid.numpages)
 		Sbar_Changed ();
-}
-
-void
-SCR_DrawConsole (void)
-{
-	Con_DrawConsole (scr_con_current);
 }
 
 /*

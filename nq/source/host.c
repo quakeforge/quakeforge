@@ -87,6 +87,10 @@ double		host_time;
 double		realtime;					// without any filtering or bounding
 double		oldrealtime;				// last frame run
 
+double      con_frametime;
+double      con_realtime;
+double      oldcon_realtime;
+
 int			host_framecount;
 int			host_hunklevel;
 int			minimum_memory;
@@ -526,6 +530,8 @@ Host_FilterTime (float time)
 	float       timedifference;
 	float       timescale = 1.0;
 
+	con_realtime += time;
+
 	if (cls.demoplayback) {
 		timescale = max (0, demo_speed->value);
 		time *= timescale;
@@ -541,6 +547,9 @@ Host_FilterTime (float time)
 
 	host_frametime = realtime - oldrealtime;
 	oldrealtime = realtime;
+
+	con_frametime = con_realtime - oldcon_realtime;
+	oldcon_realtime = con_realtime;
 
 	if (host_framerate->value > 0)
 		host_frametime = host_framerate->value;
@@ -937,7 +946,8 @@ Host_Init (void)
 	else
 		Con_Init ("client");
 	if (con_module) {
-		con_module->data->console->realtime = &realtime;
+		con_module->data->console->realtime = &con_realtime;
+		con_module->data->console->frametime = &con_frametime;
 		con_module->data->console->quit = Host_Quit_f;
 		con_module->data->console->cbuf = host_cbuf;
 	}
