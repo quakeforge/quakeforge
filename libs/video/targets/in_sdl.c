@@ -49,11 +49,12 @@ static const char rcsid[] =
 
 cvar_t *in_snd_block;
 
+static keydest_t old_key_dest = key_none;
+
 
 static void
 event_focusout (void)
 {
-//	XAutoRepeatOn (x_disp);
 	if (in_snd_block->int_val) {
 		S_BlockSound ();
 		CDAudio_Pause ();
@@ -63,8 +64,6 @@ event_focusout (void)
 static void
 event_focusin (void)
 {
-//	if (key_dest == key_game)
-//		XAutoRepeatOff (x_disp);
 	if (in_snd_block->int_val) {
 		S_UnblockSound ();
 		CDAudio_Resume ();
@@ -79,7 +78,18 @@ IN_LL_SendKeyEvents (void)
 	knum_t		ksym;
 	short		unicode;
 
+
 	while (SDL_PollEvent (&event)) {
+		// Ugly key repeat handling. Should use a key_dest callback...
+		if (old_key_dest != key_dest) {
+			old_key_dest = key_dest;
+			if (key_dest == key_game)
+				SDL_EnableKeyRepeat (0, SDL_DEFAULT_REPEAT_INTERVAL);
+			else
+				SDL_EnableKeyRepeat (SDL_DEFAULT_REPEAT_DELAY,
+									 SDL_DEFAULT_REPEAT_INTERVAL);
+		}
+
 		switch (event.type) {
 			case SDL_ACTIVEEVENT:
 				if (event.active.state == SDL_APPINPUTFOCUS) {
