@@ -59,10 +59,10 @@ inline void
 dstring_adjust (dstring_t *dstr)
 {
 	if (dstr->size > dstr->truesize) {
-		dstr->str = realloc (dstr->str, dstr->size);
+		dstr->truesize = (dstr->size + 1023) & ~1023;
+		dstr->str = realloc (dstr->str, dstr->truesize);
 		if (!dstr->str)
 			Sys_Error ("dstring_adjust:  Failed to reallocate memory.");
-		dstr->truesize = dstr->size;
 	}
 }
 
@@ -191,8 +191,8 @@ dstring_clearstr (dstring_t *dstr)
 # define VA_COPY memcpy (a, b, sizeof (a))
 #endif
 
-int
-dvsprintf (dstring_t *dstr, const char *fmt, va_list args)
+static int
+_dvsprintf (dstring_t *dstr, int offs, const char *fmt, va_list args)
 {
 	int         size;
 
@@ -205,20 +205,28 @@ dvsprintf (dstring_t *dstr, const char *fmt, va_list args)
 		dstr->size = 1024;
 		dstring_adjust (dstr);
 	}
-	size = vsnprintf (dstr->str, dstr->truesize, fmt, args) + 1;  // +1 for nul
+	// +1 for nul
+	size = vsnprintf (dstr->str + offs, dstr->truesize - offs, fmt, args) + 1;
 	while (size <= 0 || size > dstr->truesize) {
 		if (size > 0)
-			dstr->size = (size + 1023) & ~1023;	// 1k multiples
+			dstr->size = (size + offs + 1023) & ~1023;	// 1k multiples
 		else
 			dstr->size = dstr->truesize + 1024;
 		dstring_adjust (dstr);
 #ifdef VA_LIST_IS_ARRAY
 		VA_COPY (args, tmp_args);
 #endif
-		size = vsnprintf (dstr->str, dstr->truesize, fmt, args) + 1;
+		size = vsnprintf (dstr->str + offs, dstr->truesize - offs,
+						  fmt, args) + 1;
 	}
-	dstr->size = size;
+	dstr->size = size + offs;
 	return size - 1;
+}
+
+int
+dvsprintf (dstring_t *dstr, const char *fmt, va_list args)
+{
+	return _dvsprintf (dstr, 0, fmt, args);
 }
 
 int
@@ -228,7 +236,33 @@ dsprintf (dstring_t *dstr, const char *fmt, ...)
 	int         ret;
 
 	va_start (args, fmt);
-	ret = dvsprintf (dstr, fmt, args);
+	ret = _dvsprintf (dstr, 0, fmt, args);
+	va_end (args);
+
+	return ret;
+}
+
+int
+davsprintf (dstring_t *dstr, const char *fmt, va_list args)
+{
+	int         offs = 0;
+
+	if (dstr->size)
+		offs = dstr->size - 1;
+	return _dvsprintf (dstr, offs, fmt, args);
+}
+
+int
+dasprintf (dstring_t *dstr, const char *fmt, ...)
+{
+	va_list     args;
+	int         ret;
+	int         offs = 0;
+
+	if (dstr->size)
+		offs = dstr->size - 1;
+	va_start (args, fmt);
+	ret = _dvsprintf (dstr, offs, fmt, args);
 	va_end (args);
 
 	return ret;

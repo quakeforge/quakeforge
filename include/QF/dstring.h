@@ -62,5 +62,7 @@ void dstring_clearstr (dstring_t *dstr);
 
 int dvsprintf (dstring_t *dstr, const char *fmt, va_list args);
 int dsprintf (dstring_t *dstr, const char *fmt, ...) __attribute__((format(printf,2,3)));
+int davsprintf (dstring_t *dstr, const char *fmt, va_list args);
+int dasprintf (dstring_t *dstr, const char *fmt, ...) __attribute__((format(printf,2,3)));
 
 #endif // __dstring_h
