@@ -367,8 +367,10 @@ ED_Print (progs_t *pr, edict_t *ed)
 	}
 
 	Sys_Printf ("\nEDICT %i:\n", NUM_FOR_BAD_EDICT (pr, ed));
-	for (i = 1; i < pr->progs->numfielddefs; i++) {
+	for (i = 0; i < pr->progs->numfielddefs; i++) {
 		d = &pr->pr_fielddefs[i];
+		if (!d->s_name)					// null field def (probably 1st)
+			continue;
 		name = PR_GetString (pr, d->s_name);
 		if (name[strlen (name) - 2] == '_')
 			continue;					// skip _x, _y, _z vars
