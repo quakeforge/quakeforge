@@ -621,9 +621,9 @@ CB_ME_player_options =
 void () 
 MENU_player_options =
 {
-	id (player_config_plname_il) = [[InputLine alloc] initWithBounds:[[Rect alloc] initWithComponents:120 :PLAYER_CONF_Y_PAD + 8 :18 :4] promptCharacter:' '];
+	player_config_plname_il = [[InputLine alloc] initWithBounds:[[Rect alloc] initWithComponents:120 :PLAYER_CONF_Y_PAD + 8 :18 :4] promptCharacter:' '];
 	[player_config_plname_il setWidth:18];
-	id (player_config_tname_il) = [[InputLine alloc] initWithBounds:[[Rect alloc] initWithComponents:120 :PLAYER_CONF_Y_PAD + 8 + 20 :7 :4] promptCharacter:' '];
+	player_config_tname_il = [[InputLine alloc] initWithBounds:[[Rect alloc] initWithComponents:120 :PLAYER_CONF_Y_PAD + 8 + 20 :7 :4] promptCharacter:' '];
 	[player_config_tname_il setWidth:7];
 	player_config_iactive = NIL;
 
@@ -759,7 +759,7 @@ CB_ME_network_options =
 void () 
 MENU_network_options =
 {
-	id (network_config_rate_il) = [[InputLine alloc] initWithBounds:[[Rect alloc] initWithComponents: 120 :NETWORK_CONF_Y_PAD + 8 :9 :4] promptCharacter:' '];
+	network_config_rate_il = [[InputLine alloc] initWithBounds:[[Rect alloc] initWithComponents: 120 :NETWORK_CONF_Y_PAD + 8 :9 :4] promptCharacter:' '];
 	[network_config_rate_il setWidth:9];
 
 	Menu_Begin (54, 90, "Network");

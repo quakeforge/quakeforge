@@ -31,7 +31,7 @@ string [6] dot_name = {
 
 void (integer x, integer y) spinner =
 {
-	local integer i = integer(time * 10) % 6;
+	local integer i = (integer) (time * 10) % 6;
 	local qpic_t p = Draw_CachePic (dot_name[i], 1);
 
 	Draw_Pic (x, y, p);
@@ -138,7 +138,7 @@ integer () load_draw =
 	Draw_CenterPic (160, 4, Draw_CachePic ("gfx/p_load.lmp", 1));
 	for (i=0 ; i< MAX_SAVEGAMES; i++)
 		Draw_String (16, 32 + 8 * i, filenames[i]);
-	Draw_Character (8, 32 + load_cursor * 8, 12 + (integer (time * 4) & 1));
+	Draw_Character (8, 32 + load_cursor * 8, 12 + (integer) (time * 4) & 1);
 	return 1;
 };
 
@@ -149,7 +149,7 @@ integer () save_draw =
 	Draw_CenterPic (160, 4, Draw_CachePic ("gfx/p_save.lmp", 1));
 	for (i=0 ; i< MAX_SAVEGAMES; i++)
 		Draw_String (16, 32 + 8 * i, filenames[i]);
-	Draw_Character (8, 32 + save_cursor * 8, 12 + (integer (time * 4) & 1));
+	Draw_Character (8, 32 + save_cursor * 8, 12 + (integer) (time * 4) & 1);
 	return 1;
 };
 
@@ -224,7 +224,7 @@ void () save_menu =
 integer () quit =
 {
 	Menu_SelectMenu ("quit");
-	quit_index = integer (random () * 8);
+	quit_index = (integer) (random () * 8);
 	quit_index &= 7;
 	return 0;
 };
@@ -347,7 +347,7 @@ integer () lanconfig_draw =
 	}
 	if (!input_active)
 		Draw_Character (basex - 8, lanConfig_cursor_table[lanConfig_cursor],
-						12 + (integer (time * 4) & 1));
+						12 + (integer) (time * 4) & 1);
 
 	return 0;
 };
@@ -477,9 +477,9 @@ void () main_menu =
 
 void () menu_init =
 {
-	id (lanConfig_port_il) = [[InputLine alloc] initWithBounds:[[Rect alloc] initWithComponents:126 :lanConfig_cursor_table[0] :8 :4] promptCharacter:' '];
+	lanConfig_port_il = [[InputLine alloc] initWithBounds:[[Rect alloc] initWithComponents:126 :lanConfig_cursor_table[0] :8 :4] promptCharacter:' '];
 	[lanConfig_port_il setWidth:10];
-	id (lanConfig_join_il) = [[InputLine alloc] initWithBounds:[[Rect alloc] initWithComponents:70 :lanConfig_cursor_table[2] :24 :4] promptCharacter:' '];
+	lanConfig_join_il = [[InputLine alloc] initWithBounds:[[Rect alloc] initWithComponents:70 :lanConfig_cursor_table[2] :24 :4] promptCharacter:' '];
 	[lanConfig_join_il setWidth:26];
 	switch (gametype ()) {
 	case "netquake":

@@ -22,13 +22,13 @@ integer	deathmatch;
 - (id) init
 {
 	local integer	i;
-	id (self) = [super init];
+	self = [super init];
 
 	self.head = NIL;
 
 	for (i = 0; i < MAX_BODIES; i++) {
 		local GameEntity	ent = NIL;
-		id(ent) = [[GameEntity alloc] init];
+		ent = [[GameEntity alloc] init];
 		self.bodies[i] = ent.ent;
 	}
 }
