@@ -294,6 +294,34 @@ NET_SVC_Playerinfo_Parse (net_svc_playerinfo_t *block, msg_t *msg)
 }
 
 qboolean
+NET_SVC_Nails_Parse (net_svc_nails_t *block, msg_t *msg)
+{
+	int		i, j;
+	byte	bits[6];
+
+	block->numnails = MSG_ReadByte (msg);
+	for (i = 0; i < block->numnails; i++) {
+		for (j = 0; j < 6; j++)
+			bits[j] = MSG_ReadByte (msg);
+
+		if (i >= MAX_PROJECTILES)
+			continue;
+
+		// [48 bits] xyzpy 12 12 12 4 8
+		// format is 12 bits per origin coord, 4 for angles[0],
+		// 8 for angles[1], and 0 for angles[2]
+		block->nails[i].origin[0] = ((bits[0] + ((bits[1] & 15) << 8)) << 1) - 4096;
+		block->nails[i].origin[1] = (((bits[1] >> 4) + (bits[2] << 4)) << 1) - 4096;
+		block->nails[i].origin[2] = ((bits[3] + ((bits[4] & 15) << 8)) << 1) - 4096;
+		block->nails[i].angles[0] = 360 * (bits[4] >> 4) / 16;
+		block->nails[i].angles[1] = 360 * bits[5] / 256;
+		block->nails[i].angles[2] = 0;
+	}
+
+	return msg->badread;
+}
+
+qboolean
 NET_SVC_Soundlist_Parse (net_svc_soundlist_t *block, msg_t *msg)
 {
 	int i;

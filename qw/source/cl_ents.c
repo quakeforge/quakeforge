@@ -43,6 +43,7 @@ static const char rcsid[] =
 #include "QF/render.h"
 #include "QF/skin.h"
 
+#include "bothdefs.h"
 #include "cl_cam.h"
 #include "cl_ents.h"
 #include "cl_main.h"
@@ -550,7 +551,6 @@ typedef struct {
 	entity_t	ent;
 } projectile_t;
 
-#define	MAX_PROJECTILES	32
 projectile_t cl_projectiles[MAX_PROJECTILES];
 int          cl_num_projectiles;
 extern int   cl_spikeindex;
@@ -569,27 +569,22 @@ CL_ClearProjectiles (void)
 void
 CL_ParseProjectiles (void)
 {
-	byte		bits[6];
-	int			i, c, j;
+	int			i;
 	projectile_t *pr;
+	net_svc_nails_t block;
 
-	c = MSG_ReadByte (net_message);
-	for (i = 0; i < c; i++) {
-		for (j = 0; j < 6; j++)
-			bits[j] = MSG_ReadByte (net_message);
+	NET_SVC_Nails_Parse (&block, net_message);
 
+	for (i = 0; i < block.numnails; i++) {
 		if (cl_num_projectiles == MAX_PROJECTILES)
-			continue;
+			break;
 
 		pr = &cl_projectiles[cl_num_projectiles];
 		cl_num_projectiles++;
 
 		pr->modelindex = cl_spikeindex;
-		pr->ent.origin[0] = ((bits[0] + ((bits[1] & 15) << 8)) << 1) - 4096;
-		pr->ent.origin[1] = (((bits[1] >> 4) + (bits[2] << 4)) << 1) - 4096;
-		pr->ent.origin[2] = ((bits[3] + ((bits[4] & 15) << 8)) << 1) - 4096;
-		pr->ent.angles[0] = 360 * (bits[4] >> 4) / 16;
-		pr->ent.angles[1] = 360 * bits[5] / 256;
+		VectorCopy (block.nails[i].origin, pr->ent.origin);
+		VectorCopy (block.nails[i].angles, pr->ent.angles);
 	}
 }
 

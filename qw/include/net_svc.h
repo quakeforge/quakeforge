@@ -131,6 +131,15 @@ typedef struct net_svc_playerinfo_s
 	byte		weaponframe;
 } net_svc_playerinfo_t;
 
+typedef struct net_svc_nails_s
+{
+	byte		numnails;
+	struct {
+		vec3_t	origin;
+		vec3_t	angles;
+	} nails[MAX_PROJECTILES];
+} net_svc_nails_t;
+
 typedef struct net_svc_soundlist_s
 {
 	byte		startsound;
@@ -158,6 +167,7 @@ qboolean NET_SVC_SetInfo_Parse (net_svc_setinfo_t *block, msg_t *msg);
 qboolean NET_SVC_ServerInfo_Parse (net_svc_serverinfo_t *block, msg_t *msg);
 qboolean NET_SVC_Download_Parse (net_svc_download_t *block, msg_t *msg);
 qboolean NET_SVC_Playerinfo_Parse (net_svc_playerinfo_t *block, msg_t *msg);
+qboolean NET_SVC_Nails_Parse (net_svc_nails_t *block, msg_t *msg);
 qboolean NET_SVC_Soundlist_Parse (net_svc_soundlist_t *block, msg_t *msg);
 qboolean NET_SVC_Modellist_Parse (net_svc_modellist_t *block, msg_t *msg);
 
