@@ -117,7 +117,6 @@ m		([\-+]?)
 								yylval.integer_val -= 'a' - 'A';
 							c++;
 						}
-						printf ("%x\n", yylval.integer_val);
 						return INT_VAL;
 					}
 
