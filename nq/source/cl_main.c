@@ -90,7 +90,9 @@ client_state_t cl;
 // FIXME: put these on hunk?
 efrag_t     cl_efrags[MAX_EFRAGS];
 entity_t    cl_entities[MAX_EDICTS];
+entity_state_t    cl_baselines[MAX_EDICTS];
 entity_t    cl_static_entities[MAX_STATIC_ENTITIES];
+entity_state_t    cl_static_entity_baselines[MAX_STATIC_ENTITIES];
 lightstyle_t cl_lightstyle[MAX_LIGHTSTYLES];
 dlight_t    cl_dlights[MAX_DLIGHTS];
 
@@ -174,6 +176,7 @@ CL_ClearState (void)
 	// clear other arrays   
 	memset (cl_efrags, 0, sizeof (cl_efrags));
 	memset (cl_entities, 0, sizeof (cl_entities));
+	memset (cl_baselines, 0, sizeof (cl_baselines));
 	memset (cl_dlights, 0, sizeof (cl_dlights));
 	memset (cl_lightstyle, 0, sizeof (cl_lightstyle));
 
@@ -183,11 +186,12 @@ CL_ClearState (void)
 		cl.free_efrags[i].entnext = &cl.free_efrags[i + 1];
 	cl.free_efrags[i].entnext = NULL;
 	for (i = 0; i < MAX_EDICTS; i++) {
-		cl_entities[i].baseline.alpha = 255;
-		cl_entities[i].baseline.scale = 16;
-		cl_entities[i].baseline.glow_color = 254;
-		cl_entities[i].baseline.glow_size = 0;
-		cl_entities[i].baseline.colormod = 255;
+		cl_entities[i].baseline = &cl_baselines[i];
+		cl_entities[i].baseline->alpha = 255;
+		cl_entities[i].baseline->scale = 16;
+		cl_entities[i].baseline->glow_color = 254;
+		cl_entities[i].baseline->glow_size = 0;
+		cl_entities[i].baseline->colormod = 255;
 	}
 }
 
@@ -798,6 +802,8 @@ CL_SendCmd (void)
 void
 CL_Init (void)
 {
+	int i;
+
 	SZ_Alloc (&cls.message, 1024);
 
 	CL_InitInput ();
@@ -810,4 +816,8 @@ CL_Init (void)
 	Cmd_AddCommand ("playdemo", CL_PlayDemo_f, "No Description");
 	Cmd_AddCommand ("timedemo", CL_TimeDemo_f, "No Description");
 	Cmd_AddCommand ("maplist", COM_Maplist_f, "No Description");
+
+	for (i = 0; i < MAX_STATIC_ENTITIES; i++) {
+		cl_static_entities[i].baseline = &cl_static_entity_baselines[i];
+	}
 }
