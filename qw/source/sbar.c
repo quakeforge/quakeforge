@@ -43,14 +43,17 @@ static __attribute__ ((unused)) const char rcsid[] =
 #include <stdlib.h>
 
 #include "QF/cmd.h"
+#include "QF/console.h"
 #include "QF/cvar.h"
 #include "QF/draw.h"
 #include "QF/msg.h"
+#include "QF/plugin.h"
 #include "QF/quakefs.h"
 #include "QF/screen.h"
+#include "QF/sys.h"
 #include "QF/va.h"
 #include "QF/vid.h"
-#include "QF/sys.h"
+#include "QF/view.h"
 
 #include "bothdefs.h"
 #include "cl_cam.h"
@@ -94,17 +97,34 @@ cvar_t     *cl_fraglog;
 cvar_t     *cl_sbar;
 cvar_t     *cl_sbar_separator;
 
+static view_t *sbar_view;
+static view_t *minifrags_view;
+static view_t *miniteam_view;
+static view_t *inventory_view;
+static view_t *frags_view;
+static view_t *status_view;
+static view_t *solo_view;
+
 static void (*Sbar_Draw_DMO_func) (int l, int y, int skip);
 
 static void
 calc_sb_lines (cvar_t *var)
 {
-	if (var->int_val >= 120)
+	if (var->int_val >= 120) {
 		sb_lines = 0;
-	else if (var->int_val >= 110)
+	} else if (var->int_val >= 110) {
 		sb_lines = 24;
-	else
+		inventory_view->visible = 0;
+	} else {
 		sb_lines = 24 + 16 + 8;
+		inventory_view->visible = 1;
+	}
+	if (sb_lines) {
+		sbar_view->visible = 1;
+		view_resize (sbar_view, sbar_view->xlen, sb_lines);
+	} else {
+		sbar_view->visible = 0;
+	}
 }
 
 static void
@@ -185,113 +205,26 @@ Sbar_Changed (void)
 	sb_updates = 0;						// update next frame
 }
 
-void
-Sbar_Init (void)
+static inline void
+draw_pic (view_t *view, int x, int y, qpic_t *pic)
 {
-	int         i;
-
-	for (i = 0; i < 10; i++) {
-		sb_nums[0][i] = Draw_PicFromWad (va ("num_%i", i));
-		sb_nums[1][i] = Draw_PicFromWad (va ("anum_%i", i));
-	}
-
-	sb_nums[0][10] = Draw_PicFromWad ("num_minus");
-	sb_nums[1][10] = Draw_PicFromWad ("anum_minus");
-
-	sb_colon = Draw_PicFromWad ("num_colon");
-	sb_slash = Draw_PicFromWad ("num_slash");
-
-	sb_weapons[0][0] = Draw_PicFromWad ("inv_shotgun");
-	sb_weapons[0][1] = Draw_PicFromWad ("inv_sshotgun");
-	sb_weapons[0][2] = Draw_PicFromWad ("inv_nailgun");
-	sb_weapons[0][3] = Draw_PicFromWad ("inv_snailgun");
-	sb_weapons[0][4] = Draw_PicFromWad ("inv_rlaunch");
-	sb_weapons[0][5] = Draw_PicFromWad ("inv_srlaunch");
-	sb_weapons[0][6] = Draw_PicFromWad ("inv_lightng");
-
-	sb_weapons[1][0] = Draw_PicFromWad ("inv2_shotgun");
-	sb_weapons[1][1] = Draw_PicFromWad ("inv2_sshotgun");
-	sb_weapons[1][2] = Draw_PicFromWad ("inv2_nailgun");
-	sb_weapons[1][3] = Draw_PicFromWad ("inv2_snailgun");
-	sb_weapons[1][4] = Draw_PicFromWad ("inv2_rlaunch");
-	sb_weapons[1][5] = Draw_PicFromWad ("inv2_srlaunch");
-	sb_weapons[1][6] = Draw_PicFromWad ("inv2_lightng");
-
-	for (i = 0; i < 5; i++) {
-		sb_weapons[2 + i][0] = Draw_PicFromWad (va ("inva%i_shotgun", i + 1));
-		sb_weapons[2 + i][1] = Draw_PicFromWad (va ("inva%i_sshotgun", i + 1));
-		sb_weapons[2 + i][2] = Draw_PicFromWad (va ("inva%i_nailgun", i + 1));
-		sb_weapons[2 + i][3] = Draw_PicFromWad (va ("inva%i_snailgun", i + 1));
-		sb_weapons[2 + i][4] = Draw_PicFromWad (va ("inva%i_rlaunch", i + 1));
-		sb_weapons[2 + i][5] = Draw_PicFromWad (va ("inva%i_srlaunch", i + 1));
-		sb_weapons[2 + i][6] = Draw_PicFromWad (va ("inva%i_lightng", i + 1));
-	}
-
-	sb_ammo[0] = Draw_PicFromWad ("sb_shells");
-	sb_ammo[1] = Draw_PicFromWad ("sb_nails");
-	sb_ammo[2] = Draw_PicFromWad ("sb_rocket");
-	sb_ammo[3] = Draw_PicFromWad ("sb_cells");
-
-	sb_armor[0] = Draw_PicFromWad ("sb_armor1");
-	sb_armor[1] = Draw_PicFromWad ("sb_armor2");
-	sb_armor[2] = Draw_PicFromWad ("sb_armor3");
-
-	sb_items[0] = Draw_PicFromWad ("sb_key1");
-	sb_items[1] = Draw_PicFromWad ("sb_key2");
-	sb_items[2] = Draw_PicFromWad ("sb_invis");
-	sb_items[3] = Draw_PicFromWad ("sb_invuln");
-	sb_items[4] = Draw_PicFromWad ("sb_suit");
-	sb_items[5] = Draw_PicFromWad ("sb_quad");
-
-	sb_sigil[0] = Draw_PicFromWad ("sb_sigil1");
-	sb_sigil[1] = Draw_PicFromWad ("sb_sigil2");
-	sb_sigil[2] = Draw_PicFromWad ("sb_sigil3");
-	sb_sigil[3] = Draw_PicFromWad ("sb_sigil4");
-
-	sb_faces[4][0] = Draw_PicFromWad ("face1");
-	sb_faces[4][1] = Draw_PicFromWad ("face_p1");
-	sb_faces[3][0] = Draw_PicFromWad ("face2");
-	sb_faces[3][1] = Draw_PicFromWad ("face_p2");
-	sb_faces[2][0] = Draw_PicFromWad ("face3");
-	sb_faces[2][1] = Draw_PicFromWad ("face_p3");
-	sb_faces[1][0] = Draw_PicFromWad ("face4");
-	sb_faces[1][1] = Draw_PicFromWad ("face_p4");
-	sb_faces[0][0] = Draw_PicFromWad ("face5");
-	sb_faces[0][1] = Draw_PicFromWad ("face_p5");
-
-	sb_face_invis = Draw_PicFromWad ("face_invis");
-	sb_face_invuln = Draw_PicFromWad ("face_invul2");
-	sb_face_invis_invuln = Draw_PicFromWad ("face_inv2");
-	sb_face_quad = Draw_PicFromWad ("face_quad");
-
-	Cmd_AddCommand ("+showscores", Sbar_ShowScores,
-					"Display information on everyone playing");
-	Cmd_AddCommand ("-showscores", Sbar_DontShowScores,
-					"Stop displaying information on everyone playing");
-	Cmd_AddCommand ("+showteamscores", Sbar_ShowTeamScores,
-					"Display information for your team");
-	Cmd_AddCommand ("-showteamscores", Sbar_DontShowTeamScores,
-					"Stop displaying information for your team");
-
-	sb_sbar = Draw_PicFromWad ("sbar");
-	sb_ibar = Draw_PicFromWad ("ibar");
-	sb_scorebar = Draw_PicFromWad ("scorebar");
-
-	r_viewsize_callback = viewsize_f;
-
-	cl_showscoresuid = Cvar_Get ("cl_showscoresuid", "0", CVAR_NONE,
-								 Sbar_DMO_Init_f, "Set to 1 to show uid "
-								 "instead of ping. Set to 2 to show both.");
-	fs_fraglog = Cvar_Get ("fs_fraglog", "qw-scores.log", CVAR_ARCHIVE, NULL,
-						   "Filename of the automatic frag-log.");
-	cl_fraglog = Cvar_Get ("cl_fraglog", "0", CVAR_ARCHIVE, NULL,
-						   "Automatic fraglogging, non-zero value will switch "
-						   "it on.");
-	cl_sbar = Cvar_Get ("cl_sbar", "0", CVAR_ARCHIVE, cl_sbar_f,
-						"status bar mode");
-	cl_sbar_separator = Cvar_Get ("cl_sbar_separator", "0", CVAR_ARCHIVE, NULL,
-								  "turns on status bar separator");
+	Draw_Pic (view->xabs + x, view->yabs + y, pic);
 }
+
+static inline void
+draw_subpic (view_t *view, int x, int y, qpic_t *pic,
+		     int srcx, int srcy, int width, int height)
+{
+	Draw_SubPic (view->xabs + x, view->yabs + y, pic,
+				 srcx, srcy, width, height);
+}
+
+static inline void
+draw_transpic (view_t *view, int x, int y, qpic_t *pic)
+{
+	Draw_Pic (view->xabs + x, view->yabs + y, pic);
+}
+
 
 // drawing routines are reletive to the status bar location
 static inline void
@@ -300,78 +233,38 @@ Sbar_DrawPic (int x, int y, qpic_t *pic)
 	Draw_Pic (x, y + (vid.height - SBAR_HEIGHT), pic);
 }
 
-/*
-	Sbar_DrawSubPic
-
-	JACK: Draws a portion of the picture in the status bar.
-*/
 static inline void
-Sbar_DrawSubPic (int x, int y, qpic_t *pic, int srcx, int srcy, int width,
-				 int height)
+draw_character (view_t *view, int x, int y, int c)
 {
-	Draw_SubPic (x, y + (vid.height - SBAR_HEIGHT), pic, srcx, srcy, width,
-				 height);
+	Draw_Character (view->xabs + x, view->yabs + y, c);
 }
 
 static inline void
-Sbar_DrawTransPic (int x, int y, qpic_t *pic)
+draw_string (view_t *view, int x, int y, const char *str)
 {
-	Draw_Pic (x, y + (vid.height - SBAR_HEIGHT),
-			  pic);
-}
-
-/*
-	Sbar_DrawCharacter
-
-	Draws one solid graphics character
-*/
-static inline void
-Sbar_DrawCharacter (int x, int y, int num)
-{
-	Draw_Character (x + 4, y + vid.height - SBAR_HEIGHT, num);
+	Draw_String (view->xabs + x, view->yabs + y, str);
 }
 
 static inline void
-Sbar_DrawString (int x, int y, const char *str)
+draw_nstring (view_t *view, int x, int y, const char *str, int n)
 {
-	Draw_String (x, y + vid.height - SBAR_HEIGHT, str);
+	Draw_nString (view->xabs + x, view->yabs + y, str, n);
 }
 
-static int
-Sbar_itoa (int num, char *buf)
+static inline void
+draw_fill (view_t *view, int x, int y, int w, int h, int col)
 {
-	char       *str;
-	int         dig, pow10;
-
-	str = buf;
-
-	if (num < 0) {
-		*str++ = '-';
-		num = -num;
-	}
-
-	for (pow10 = 10; num >= pow10; pow10 *= 10);
-
-	do {
-		pow10 /= 10;
-		dig = num / pow10;
-		*str++ = '0' + dig;
-		num -= dig * pow10;
-	} while (pow10 != 1);
-
-	*str = 0;
-
-	return str - buf;
+	Draw_Fill (view->xabs + x, view->yabs + y, w, h, col);
 }
 
 static void
-Sbar_DrawNum (int x, int y, int num, int digits, int color)
+draw_num (view_t *view, int x, int y, int num, int digits, int color)
 {
 	char        str[12];
 	char       *ptr;
 	int         l, frame;
 
-	l = Sbar_itoa (num, str);
+	l = snprintf (str, sizeof (str), "%d", num);
 	ptr = str;
 	if (l > digits)
 		ptr += (l - digits);
@@ -384,7 +277,7 @@ Sbar_DrawNum (int x, int y, int num, int digits, int color)
 		else
 			frame = *ptr - '0';
 
-		Sbar_DrawTransPic (x, y, sb_nums[color][frame]);
+		draw_transpic (view, x, y, sb_nums[color][frame]);
 		x += 24;
 		ptr++;
 	}
@@ -500,22 +393,20 @@ Sbar_ColorForMap (int m)
 }
 
 static void
-Sbar_SoloScoreboard (void)
+draw_solo (view_t *view)
 {
 	char        str[80];
-	int         minutes, seconds, tens, units;
+	int         minutes, seconds;
 
-	Sbar_DrawPic (0, 0, sb_scorebar);
+	draw_pic (view, 0, 0, sb_scorebar); 
 
-	// time
 	minutes = cl.time / 60;
 	seconds = cl.time - 60 * minutes;
-	tens = seconds / 10;
-	units = seconds - 10 * tens;
-	snprintf (str, sizeof (str), "Time :%3i:%i%i", minutes, tens, units);
-	Sbar_DrawString (184, 4, str);
+	snprintf (str, sizeof (str), "Time :%3i:%02i", minutes, seconds);
+	draw_string (view, 184, 4, str);
 }
 
+/*
 static void
 Sbar_DrawInventory (void)
 {
@@ -610,13 +501,114 @@ Sbar_DrawInventory (void)
 				sb_updates = 0;
 		}
 }
+*/
+
+static int
+calc_flashon (int ind)
+{
+	float       time;
+	int         flashon;
+
+	time = cl.item_gettime[ind];
+	flashon = (int) ((cl.time - time) * 10);
+	if (flashon < 0)
+		flashon = 0;
+	if (flashon >= 10) {
+		if (cl.stats[STAT_ACTIVEWEAPON] == (IT_SHOTGUN << ind))
+			flashon = 1;
+		else
+			flashon = 0;
+	} else
+		flashon = (flashon % 5) + 2;
+	return flashon;
+}
 
 static void
-Sbar_DrawFrags (void)
+draw_weapons (view_t *view)
 {
-	int         i, k, l;
+	int         flashon, i;
+
+	for (i = 0; i < 7; i++) {
+		if (cl.stats[STAT_ITEMS] & (IT_SHOTGUN << i)) {
+			flashon = calc_flashon (i);
+			draw_pic (view, i * 24, 0, sb_weapons[flashon][i]);
+			if (flashon > 1)
+				sb_updates = 0;			// force update to remove flash
+		}
+	}
+}
+
+static void
+draw_ammo (view_t *view)
+{
+	char        num[6];
+	int         i;
+
+	// ammo counts
+#define HUD_X(n, dist)  ((6 * n + dist) * 8 + 2)
+	for (i = 0; i < 4; i++) {
+		snprintf (num, sizeof (num), "%3i", min (cl.stats[STAT_SHELLS + i],
+												 999));
+		if (num[0] != ' ')
+			draw_character (view, HUD_X(i, 1), 0, 18 + num[0] - '0');
+		if (num[1] != ' ')
+			draw_character (view, HUD_X(i, 2), 0, 18 + num[1] - '0');
+		if (num[2] != ' ')
+			draw_character (view, HUD_X(i, 3), 0, 18 + num[2] - '0');
+	}
+#undef HUD_X
+}
+
+static void
+draw_items (view_t *view)
+{
+	float       time;
+	int         flashon = 0, i;
+
+	for (i = 0; i < 6; i++)
+		if (cl.stats[STAT_ITEMS] & (1 << (17 + i))) {
+			time = cl.item_gettime[17 + i];
+			if (time && time > cl.time - 2 && flashon) {	// flash frame
+				sb_updates = 0;
+			} else
+				draw_pic (view, 192 + i * 16, 0, sb_items[i]);
+			if (time && time > cl.time - 2)
+				sb_updates = 0;
+		}
+}
+
+static void
+draw_sigils (view_t *view)
+{
+	float       time;
+	int         flashon = 0, i;
+
+	for (i = 0; i < 4; i++)
+		if (cl.stats[STAT_ITEMS] & (1 << (28 + i))) {
+			time = cl.item_gettime[28 + i];
+			if (time && time > cl.time - 2 && flashon) {	// flash frame
+				sb_updates = 0;
+			} else
+				draw_pic (view, i * 8, 0, sb_sigil[i]);
+			if (time && time > cl.time - 2)
+				sb_updates = 0;
+		}
+}
+
+static void
+draw_inventory (view_t *view)
+{
+	draw_pic (view, 0, 0, sb_ibar);
+
+	view_draw (view);
+}
+
+static void
+draw_frags (view_t *view)
+{
+	int         i, k, l, p = -1;
 	int         top, bottom;
-	int         x, y, f;
+	int         x;
 	char        num[12];
 	player_info_t *s;
 
@@ -625,8 +617,7 @@ Sbar_DrawFrags (void)
 	// draw the text
 	l = scoreboardlines <= 4 ? scoreboardlines : 4;
 
-	x = 23;
-	y = vid.height - SBAR_HEIGHT - 23;
+	x = 0;
 
 	for (i = 0; i < l; i++) {
 		k = fragsort[i];
@@ -643,45 +634,47 @@ Sbar_DrawFrags (void)
 		top = Sbar_ColorForMap (top);
 		bottom = Sbar_ColorForMap (bottom);
 
-		Draw_Fill (x * 8 + 10, y, 28, 4, top);
-		Draw_Fill (x * 8 + 10, y + 4, 28, 3, bottom);
+		draw_fill (view, x + 4, 1, 28, 4, top);
+		draw_fill (view, x + 4, 5, 28, 3, bottom);
 
 		// draw number
-		f = s->frags;
-		snprintf (num, sizeof (num), "%3i", f);
+		snprintf (num, sizeof (num), "%3i", s->frags);
 
-		Sbar_DrawCharacter ((x + 1) * 8, -24, num[0]);
-		Sbar_DrawCharacter ((x + 2) * 8, -24, num[1]);
-		Sbar_DrawCharacter ((x + 3) * 8, -24, num[2]);
+		draw_character (view, x + 6, 0, num[0]);
+		draw_character (view, x + 14, 0, num[1]);
+		draw_character (view, x + 22, 0, num[2]);
 
-		if (k == cl.playernum) {
-			Sbar_DrawCharacter (x * 8 + 2, -24, 16);
-			Sbar_DrawCharacter ((x + 4) * 8 - 4, -24, 17);
-		}
-		x += 4;
+		if (k == cl.playernum)
+			p = i;
+
+		x += 32;
+	}
+	if (p != -1) {
+		draw_character (view, p * 32, 0, 16);
+		draw_character (view, p * 32 + 26, 0, 17);
 	}
 }
 
 static void
-Sbar_DrawFace (void)
+draw_face (view_t *view)
 {
 	int         f, anim;
 
 	if ((cl.stats[STAT_ITEMS] & (IT_INVISIBILITY | IT_INVULNERABILITY))
 		== (IT_INVISIBILITY | IT_INVULNERABILITY)) {
-		Sbar_DrawPic (112, 0, sb_face_invis_invuln);
+		draw_pic (view, 112, 0, sb_face_invis_invuln);
 		return;
 	}
 	if (cl.stats[STAT_ITEMS] & IT_QUAD) {
-		Sbar_DrawPic (112, 0, sb_face_quad);
+		draw_pic (view, 112, 0, sb_face_quad);
 		return;
 	}
 	if (cl.stats[STAT_ITEMS] & IT_INVISIBILITY) {
-		Sbar_DrawPic (112, 0, sb_face_invis);
+		draw_pic (view, 112, 0, sb_face_invis);
 		return;
 	}
 	if (cl.stats[STAT_ITEMS] & IT_INVULNERABILITY) {
-		Sbar_DrawPic (112, 0, sb_face_invuln);
+		draw_pic (view, 112, 0, sb_face_invuln);
 		return;
 	}
 
@@ -695,9 +688,10 @@ Sbar_DrawFace (void)
 		sb_updates = 0;					// make sure the anim gets drawn over
 	} else
 		anim = 0;
-	Sbar_DrawPic (112, 0, sb_faces[f][anim]);
+	draw_pic (view, 112, 0, sb_faces[f][anim]);
 }
 
+/*
 static void
 Sbar_DrawNormal (void)
 {
@@ -737,7 +731,75 @@ Sbar_DrawNormal (void)
 
 	Sbar_DrawNum (248, 0, cl.stats[STAT_AMMO], 3, cl.stats[STAT_AMMO] <= 10);
 }
+*/
+static void
+draw_status (view_t *view)
+{
+	draw_pic (view, 0, 0, sb_sbar);
 
+	// armor
+	if (cl.stats[STAT_ITEMS] & IT_INVULNERABILITY) {
+		draw_num (view, 24, 0, 666, 3, 1);
+	} else {
+		draw_num (view, 24, 0, cl.stats[STAT_ARMOR], 3,
+					  cl.stats[STAT_ARMOR] <= 25);
+		if (cl.stats[STAT_ITEMS] & IT_ARMOR3)
+			draw_pic (view, 0, 0, sb_armor[2]);
+		else if (cl.stats[STAT_ITEMS] & IT_ARMOR2)
+			draw_pic (view, 0, 0, sb_armor[1]);
+		else if (cl.stats[STAT_ITEMS] & IT_ARMOR1)
+			draw_pic (view, 0, 0, sb_armor[0]);
+	}
+
+	// face
+	draw_face (view);
+
+	// health
+	draw_num (view, 136, 0, cl.stats[STAT_HEALTH], 3,
+			  cl.stats[STAT_HEALTH] <= 25);
+
+	// ammo icon
+	if (cl.stats[STAT_ITEMS] & IT_SHELLS)
+		draw_pic (view, 224, 0, sb_ammo[0]);
+	else if (cl.stats[STAT_ITEMS] & IT_NAILS)
+		draw_pic (view, 224, 0, sb_ammo[1]);
+	else if (cl.stats[STAT_ITEMS] & IT_ROCKETS)
+		draw_pic (view, 224, 0, sb_ammo[2]);
+	else if (cl.stats[STAT_ITEMS] & IT_CELLS)
+		draw_pic (view, 224, 0, sb_ammo[3]);
+
+	draw_num (view, 248, 0, cl.stats[STAT_AMMO], 3, cl.stats[STAT_AMMO] <= 10);
+}
+
+static void
+draw_tile (view_t *view)
+{
+	Draw_TileClear (view->xabs, view->yabs, view->xlen, view->ylen);
+}
+
+void
+Sbar_Draw (void)
+{
+	qboolean    headsup;
+
+	sbar_view->visible = 0;
+
+	headsup = !(cl_sbar->int_val || scr_viewsize->int_val < 100);
+	if ((sb_updates >= vid.numpages) && !headsup)
+		return;
+
+	if (scr_con_current == vid.height)
+		return;
+
+	if (!sb_lines)
+		return;
+
+	sbar_view->visible = 1;
+
+	scr_copyeverything = 1;
+	sb_updates++;
+}
+/*
 void
 Sbar_Draw (void)
 {
@@ -807,7 +869,7 @@ Sbar_Draw (void)
 	if (sb_lines > 0)
 		Sbar_MiniDeathmatchOverlay ();
 }
-
+*/
 /*
 	Sbar_TeamOverlay
 
@@ -1629,14 +1691,12 @@ Sbar_DeathmatchOverlay (int start)
 	frags team name
 	displayed to right of status bar if there's room
 */
-void
-Sbar_MiniDeathmatchOverlay (void)
+static void
+draw_minifrags (view_t *view)
 {
 	int         numlines, top, bottom, f, i, k, x, y;
 	char        num[12];
 	player_info_t *s;
-	info_key_t *player_team = cl.players[cl.playernum].team;
-	team_t     *tm;
 
 	if (vid.width < 512 || !sb_lines)
 		return;							// not enuff room
@@ -1653,9 +1713,7 @@ Sbar_MiniDeathmatchOverlay (void)
 		return;							// no one there?
 
 	// draw the text
-	y = (int) vid.height - sb_lines - 1;
-	numlines = sb_lines / 8;
-	if (numlines < 3)
+	if (view->ylen / 8 < 3)
 		return;							// not enough room
 
 	// find us
@@ -1674,9 +1732,10 @@ Sbar_MiniDeathmatchOverlay (void)
 	if (i < 0)
 		i = 0;
 
-	x = 324;
+	x = 4;
+	y = 0;
 
-	for (; i < scoreboardlines && y < (int) vid.height - 8 + 1; i++) {
+	for (; i < scoreboardlines && y < view->ylen - 8 + 1; i++) {
 		k = fragsort[i];
 		s = &cl.players[k];
 		if (!s->name[0])
@@ -1688,8 +1747,8 @@ Sbar_MiniDeathmatchOverlay (void)
 		top = Sbar_ColorForMap (top);
 		bottom = Sbar_ColorForMap (bottom);
 
-		Draw_Fill (x, y + 1, 40, 3, top);
-		Draw_Fill (x, y + 4, 40, 4, bottom);
+		draw_fill (view, x + 2, y + 1, 37, 3, top);
+		draw_fill (view, x + 2, y + 4, 37, 4, bottom);
 
 		// draw number
 		f = s->frags;
@@ -1699,43 +1758,50 @@ Sbar_MiniDeathmatchOverlay (void)
 			snprintf (num, sizeof (num), "\x10%3i\x11", f);
 		}
 
-		Draw_nString (x, y, num, 5);
+		draw_nstring (view, x, y, num, 5);
 
 		// team
 		if (cl.teamplay) {
-			Draw_nString (x + 48, y, s->team->value, 4);
-			Draw_nString (x + 48 + 40, y, s->name, 16);
+			draw_nstring (view, x + 48, y, s->team->value, 4);
+			draw_nstring (view, x + 48 + 40, y, s->name, 16);
 		} else
-			Draw_nString (x + 48, y, s->name, 16);
+			draw_nstring (view, x + 48, y, s->name, 16);
 		y += 8;
 	}
+}
 
-	// draw teams if room
-	if (vid.width < 640 || !cl.teamplay)
+static void
+draw_miniteam (view_t *view)
+{
+	int         i, k, x, y;
+	char        num[12];
+	info_key_t *player_team = cl.players[cl.playernum].team;
+	team_t     *tm;
+
+	if (!cl.teamplay)
 		return;
-
+/*
 	// draw separator
 	x += 208;
 	if (cl_sbar_separator->int_val)
 		for (y = vid.height - sb_lines; y < (int) vid.height - 6; y += 2)
 			Draw_Character (x, y, 14);
-
-	x += 16;
-
-	y = vid.height - sb_lines;
+*/
+	x = 0;
+	y = 0;
 	for (i = 0; i < scoreboardteams && y <= (int) vid.height; i++) {
 		k = teamsort[i];
 		tm = teams + k;
 
 		// draw pings
-		Draw_nString (x, y, tm->team, 4);
+		draw_nstring (view, x, y, tm->team, 4);
 		// draw total
 		snprintf (num, sizeof (num), "%5i", tm->frags);
-		Draw_String (x + 40, y, num);
+		draw_string (view, x + 40, y, num);
 
 		if (player_team && strnequal (player_team->value, tm->team, 16)) {
-			Draw_Character (x - 8, y, 16);
-			Draw_Character (x + 32, y, 17);
+			draw_character (view, x - 8, y, 16);
+			draw_character (view, x + 32, y, 17);
 		}
 
 		y += 8;
@@ -1763,4 +1829,202 @@ Sbar_FinaleOverlay (void)
 
 	pic = Draw_CachePic ("gfx/finale.lmp", true);
 	Draw_Pic ((vid.width - pic->width) / 2, 16, pic);
+}
+
+static void
+init_views (void)
+{
+	view_t     *view;
+
+	if (vid.width < 512) {
+		sbar_view = view_new (0, 0, 320, 48, grav_south);
+
+		frags_view = view_new (0, 0, 130, 8, grav_northeast);
+		frags_view->draw = draw_frags;
+	} else if (vid.width < 640) {
+		sbar_view = view_new (0, 0, 512, 48, grav_south);
+		minifrags_view = view_new (320, 0, 192, 48, grav_southwest);
+		minifrags_view->draw = draw_minifrags;
+		minifrags_view->resize_y = 1;
+
+		view = view_new (0, 0, 192, 48, grav_southeast);
+		view->draw = draw_tile;
+		view->resize_y = 1;
+		view_add (sbar_view, view);
+	} else {
+		sbar_view = view_new (0, 0, 640, 48, grav_south);
+		minifrags_view = view_new (320, 0, 192, 48, grav_southwest);
+		minifrags_view->draw = draw_minifrags;
+		minifrags_view->resize_y = 1;
+		miniteam_view = view_new (0, 0, 96, 48, grav_southeast);
+		miniteam_view->draw = draw_miniteam;
+		miniteam_view->resize_y = 1;
+
+		view = view_new (0, 0, 320, 48, grav_southeast);
+		view->draw = draw_tile;
+		view->resize_y = 1;
+		view_add (sbar_view, view);
+	}
+
+	inventory_view = view_new (0, 0, 320, 24, grav_northwest);
+	inventory_view->draw = draw_inventory;
+
+	view = view_new (0, 0, 32, 16, grav_southwest);
+	view->draw = draw_weapons;
+	view_add (inventory_view, view);
+
+	view = view_new (0, 0, 32, 8, grav_northwest);
+	view->draw = draw_ammo;
+	view_add (inventory_view, view);
+
+	view = view_new (0, 0, 96, 16, grav_southeast);
+	view->draw = draw_items;
+	view_add (inventory_view, view);
+
+	view = view_new (0, 0, 32, 16, grav_southeast);
+	view->draw = draw_sigils;
+	view_add (inventory_view, view);
+
+	if (frags_view)
+		view_add (inventory_view, frags_view);
+
+	status_view = view_new (0, 0, 320, 24, grav_southwest);
+	status_view->draw = draw_status;
+
+	solo_view = view_new (0, 0, 320, 24, grav_southwest);
+	solo_view->draw = draw_solo;
+
+	view_add (sbar_view, inventory_view);
+	view_add (sbar_view, status_view);
+	if (minifrags_view)
+		view_add (sbar_view, minifrags_view);
+	if (miniteam_view)
+		view_add (sbar_view, miniteam_view);
+
+	if (vid.width > 640) {
+		int         l = (vid.width - 640) / 2;
+
+		view = view_new (-l, 0, l, 48, grav_southwest);
+		view->draw = draw_tile;
+		view->resize_y = 1;
+		view_add (sbar_view, view);
+
+		view = view_new (-l, 0, l, 48, grav_southeast);
+		view->draw = draw_tile;
+		view->resize_y = 1;
+		view_add (sbar_view, view);
+	}
+
+	if (con_module)
+		view_insert (con_module->data->console->view, sbar_view, 0);
+}
+
+void
+Sbar_Init (void)
+{
+	int         i;
+
+	init_views ();
+
+	for (i = 0; i < 10; i++) {
+		sb_nums[0][i] = Draw_PicFromWad (va ("num_%i", i));
+		sb_nums[1][i] = Draw_PicFromWad (va ("anum_%i", i));
+	}
+
+	sb_nums[0][10] = Draw_PicFromWad ("num_minus");
+	sb_nums[1][10] = Draw_PicFromWad ("anum_minus");
+
+	sb_colon = Draw_PicFromWad ("num_colon");
+	sb_slash = Draw_PicFromWad ("num_slash");
+
+	sb_weapons[0][0] = Draw_PicFromWad ("inv_shotgun");
+	sb_weapons[0][1] = Draw_PicFromWad ("inv_sshotgun");
+	sb_weapons[0][2] = Draw_PicFromWad ("inv_nailgun");
+	sb_weapons[0][3] = Draw_PicFromWad ("inv_snailgun");
+	sb_weapons[0][4] = Draw_PicFromWad ("inv_rlaunch");
+	sb_weapons[0][5] = Draw_PicFromWad ("inv_srlaunch");
+	sb_weapons[0][6] = Draw_PicFromWad ("inv_lightng");
+
+	sb_weapons[1][0] = Draw_PicFromWad ("inv2_shotgun");
+	sb_weapons[1][1] = Draw_PicFromWad ("inv2_sshotgun");
+	sb_weapons[1][2] = Draw_PicFromWad ("inv2_nailgun");
+	sb_weapons[1][3] = Draw_PicFromWad ("inv2_snailgun");
+	sb_weapons[1][4] = Draw_PicFromWad ("inv2_rlaunch");
+	sb_weapons[1][5] = Draw_PicFromWad ("inv2_srlaunch");
+	sb_weapons[1][6] = Draw_PicFromWad ("inv2_lightng");
+
+	for (i = 0; i < 5; i++) {
+		sb_weapons[2 + i][0] = Draw_PicFromWad (va ("inva%i_shotgun", i + 1));
+		sb_weapons[2 + i][1] = Draw_PicFromWad (va ("inva%i_sshotgun", i + 1));
+		sb_weapons[2 + i][2] = Draw_PicFromWad (va ("inva%i_nailgun", i + 1));
+		sb_weapons[2 + i][3] = Draw_PicFromWad (va ("inva%i_snailgun", i + 1));
+		sb_weapons[2 + i][4] = Draw_PicFromWad (va ("inva%i_rlaunch", i + 1));
+		sb_weapons[2 + i][5] = Draw_PicFromWad (va ("inva%i_srlaunch", i + 1));
+		sb_weapons[2 + i][6] = Draw_PicFromWad (va ("inva%i_lightng", i + 1));
+	}
+
+	sb_ammo[0] = Draw_PicFromWad ("sb_shells");
+	sb_ammo[1] = Draw_PicFromWad ("sb_nails");
+	sb_ammo[2] = Draw_PicFromWad ("sb_rocket");
+	sb_ammo[3] = Draw_PicFromWad ("sb_cells");
+
+	sb_armor[0] = Draw_PicFromWad ("sb_armor1");
+	sb_armor[1] = Draw_PicFromWad ("sb_armor2");
+	sb_armor[2] = Draw_PicFromWad ("sb_armor3");
+
+	sb_items[0] = Draw_PicFromWad ("sb_key1");
+	sb_items[1] = Draw_PicFromWad ("sb_key2");
+	sb_items[2] = Draw_PicFromWad ("sb_invis");
+	sb_items[3] = Draw_PicFromWad ("sb_invuln");
+	sb_items[4] = Draw_PicFromWad ("sb_suit");
+	sb_items[5] = Draw_PicFromWad ("sb_quad");
+
+	sb_sigil[0] = Draw_PicFromWad ("sb_sigil1");
+	sb_sigil[1] = Draw_PicFromWad ("sb_sigil2");
+	sb_sigil[2] = Draw_PicFromWad ("sb_sigil3");
+	sb_sigil[3] = Draw_PicFromWad ("sb_sigil4");
+
+	sb_faces[4][0] = Draw_PicFromWad ("face1");
+	sb_faces[4][1] = Draw_PicFromWad ("face_p1");
+	sb_faces[3][0] = Draw_PicFromWad ("face2");
+	sb_faces[3][1] = Draw_PicFromWad ("face_p2");
+	sb_faces[2][0] = Draw_PicFromWad ("face3");
+	sb_faces[2][1] = Draw_PicFromWad ("face_p3");
+	sb_faces[1][0] = Draw_PicFromWad ("face4");
+	sb_faces[1][1] = Draw_PicFromWad ("face_p4");
+	sb_faces[0][0] = Draw_PicFromWad ("face5");
+	sb_faces[0][1] = Draw_PicFromWad ("face_p5");
+
+	sb_face_invis = Draw_PicFromWad ("face_invis");
+	sb_face_invuln = Draw_PicFromWad ("face_invul2");
+	sb_face_invis_invuln = Draw_PicFromWad ("face_inv2");
+	sb_face_quad = Draw_PicFromWad ("face_quad");
+
+	Cmd_AddCommand ("+showscores", Sbar_ShowScores,
+					"Display information on everyone playing");
+	Cmd_AddCommand ("-showscores", Sbar_DontShowScores,
+					"Stop displaying information on everyone playing");
+	Cmd_AddCommand ("+showteamscores", Sbar_ShowTeamScores,
+					"Display information for your team");
+	Cmd_AddCommand ("-showteamscores", Sbar_DontShowTeamScores,
+					"Stop displaying information for your team");
+
+	sb_sbar = Draw_PicFromWad ("sbar");
+	sb_ibar = Draw_PicFromWad ("ibar");
+	sb_scorebar = Draw_PicFromWad ("scorebar");
+
+	r_viewsize_callback = viewsize_f;
+
+	cl_showscoresuid = Cvar_Get ("cl_showscoresuid", "0", CVAR_NONE,
+								 Sbar_DMO_Init_f, "Set to 1 to show uid "
+								 "instead of ping. Set to 2 to show both.");
+	fs_fraglog = Cvar_Get ("fs_fraglog", "qw-scores.log", CVAR_ARCHIVE, NULL,
+						   "Filename of the automatic frag-log.");
+	cl_fraglog = Cvar_Get ("cl_fraglog", "0", CVAR_ARCHIVE, NULL,
+						   "Automatic fraglogging, non-zero value will switch "
+						   "it on.");
+	cl_sbar = Cvar_Get ("cl_sbar", "0", CVAR_ARCHIVE, cl_sbar_f,
+						"status bar mode");
+	cl_sbar_separator = Cvar_Get ("cl_sbar_separator", "0", CVAR_ARCHIVE, NULL,
+								  "turns on status bar separator");
 }
