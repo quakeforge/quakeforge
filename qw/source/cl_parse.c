@@ -442,8 +442,7 @@ CL_RequestNextDownload (void)
 static void
 CL_ParseDownload (void)
 {
-	byte		name[1024];
-	int			size, percent, r;
+	int         size, percent, r;
 
 	// read the data
 	size = MSG_ReadShort (net_message);
@@ -489,18 +488,33 @@ CL_ParseDownload (void)
 	}
 	// open the file if not opened yet
 	if (!cls.download) {
-		if (strncmp (cls.downloadtempname, "skins/", 6))
-			snprintf (name, sizeof (name), "%s/%s", qfs_gamedir->dir.def,
-					  cls.downloadtempname);
-		else
-			snprintf (name, sizeof (name), "%s/%s", qfs_gamedir->dir.skins,
-					  cls.downloadtempname + 6);
+		dstring_t  *name;
+		const char *path;
+		const char *fname;
 
-		cls.download = QFS_WOpen (name, 0);
+		if (strncmp (cls.downloadtempname, "skins/", 6) == 0) {
+			path = qfs_gamedir->dir.skins;
+			fname = cls.downloadtempname + 6;
+		} else if (strncmp (cls.downloadtempname, "progs/", 6) == 0) {
+			path = qfs_gamedir->dir.progs;
+			fname = cls.downloadtempname + 6;
+		} else if (strncmp (cls.downloadtempname, "sound/", 6) == 0) {
+			path = qfs_gamedir->dir.sound;
+			fname = cls.downloadtempname + 6;
+		} else if (strncmp (cls.downloadtempname, "maps/", 5) == 0) {
+			path = qfs_gamedir->dir.maps;
+			fname = cls.downloadtempname + 5;
+		} else {
+			path = qfs_gamedir->dir.def;
+			fname = cls.downloadtempname;
+		}
+		dsprintf (name, "%s/%s", path, fname);
+
+		cls.download = QFS_WOpen (name->str, 0);
 		if (!cls.download) {
 			cls.downloadname[0] = 0;
 			net_message->readcount += size;
-			Con_Printf ("Failed to open %s\n", cls.downloadtempname);
+			Con_Printf ("Failed to open %s\n", name->str);
 			CL_RequestNextDownload ();
 			return;
 		}
