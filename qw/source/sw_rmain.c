@@ -150,8 +150,6 @@ R_Init (void)
 {
 	int         dummy;
 
-	allowskybox = false;				// server decides this  --KB
-
 	// get stack position so we can guess if we are going to overflow
 	r_stack_start = (byte *) & dummy;
 

@@ -55,7 +55,6 @@
 varray_t2f_c4f_v3f_t varray[MAX_VARRAY_VERTS];
 
 qboolean    VID_Is8bit (void);
-qboolean    allowskybox;				// allow skyboxes?  --KB
 void        R_InitBubble (void);
 
 extern cvar_t	*gl_lerp_anim;
@@ -145,9 +144,6 @@ R_LoadSky_f (void)
 void
 R_Init (void)
 {
-	allowskybox = false;				// server will decide if this is
-										// allowed  --KB
-
 	Cmd_AddCommand ("timerefresh", R_TimeRefresh_f,
 					"Tests the current refresh rate for the current location");
 	Cmd_AddCommand ("envmap", R_Envmap_f, "No Description");

@@ -43,9 +43,6 @@
 #include "render.h"
 #include "sbar.h"
 
-qboolean    allowskybox;			// whether or not to allow skyboxes --KB
-
-
 void
 R_CheckVariables (void)
 {

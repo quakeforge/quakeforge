@@ -610,13 +610,7 @@ CL_FullServerinfo_f (void)
 			Con_Printf ("Invalid standards version: %s", p);
 	}
 	if ((p = Info_ValueForKey (cl.serverinfo, "skybox")) && *p) {
-		if (!strcaseequal (p, "none")) {
-			allowskybox = false;
-		} else {
-			allowskybox = true;
-		}
-	} else {
-		allowskybox = false;
+		//FIXME didn't actually do anything anyway
 	}
 }
 

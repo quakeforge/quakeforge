@@ -327,8 +327,6 @@ extern	dlight_t		cl_dlights[MAX_DLIGHTS];
 extern	qboolean	nomaster;
 extern char	*server_version;	// version of server we connected to
 
-extern	qboolean	allowskybox;
-
 extern	double		realtime;
 
 //=============================================================================

@@ -43,9 +43,6 @@
 #include "server.h"
 #include "view.h"
 
-qboolean    allowskybox;			// whether or not to allow skyboxes --KB
-
-
 void
 R_CheckVariables (void)
 {
