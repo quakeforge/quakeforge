@@ -72,12 +72,83 @@ static const struct option long_options[] = {
 	{NULL, 0, NULL, 0},
 };
 
+void
+dump_defs (qfo_t *qfo)
+{
+	qfo_def_t  *def;
+
+	for (def = qfo->defs; def - qfo->defs < qfo->num_defs; def++) {
+		printf ("%4d %4x %d %s %s %d %d %s:%d\n",
+				def->ofs,
+				def->flags,
+				def->basic_type,
+				qfo->types + def->full_type,
+				qfo->strings + def->name,
+				def->relocs, def->num_relocs,
+				qfo->strings + def->file, def->line);
+		if (def->flags & (QFOD_LOCAL | QFOD_EXTERNAL))
+			continue;
+#if 1
+		if (def->basic_type == ev_string) {
+//				printf ("    %4d %s\n", qfo->data[def->ofs].string_var,
+//						qfo->strings + qfo->data[def->ofs].string_var);
+		} else if (def->basic_type == ev_func) {
+			printf ("    %4d %s\n", qfo->data[def->ofs].func_var,
+					qfo->strings + qfo->functions[qfo->data[def->ofs].func_var].name);
+		} else {
+//				printf ("    %4d\n", qfo->data[def->ofs].integer_var);
+		}
+#endif
+	}
+}
+
+void
+dump_functions (qfo_t *qfo)
+{
+	qfo_function_t *func;
+	int         i;
+	const char *str = qfo->strings;
+
+	for (i = 0; i < qfo->num_functions; i++) {
+		func = qfo->functions + i;
+		printf ("%s %s:%d  %d %d\n",
+				str + func->name, str + func->file, func->line,
+				func->builtin, func->code);
+	}
+}
+
+const char *reloc_names[] = {
+	"none",
+	"op_a_def",
+	"op_b_def",
+	"op_c_def",
+	"op_a_op",
+	"op_b_op",
+	"op_c_op",
+	"def_op",
+	"def_def",
+	"def_func",
+	"def_string",
+};
+
+void
+dump_relocs (qfo_t *qfo)
+{
+	qfo_reloc_t *reloc;
+	int         i;
+
+	for (i = 0; i < qfo->num_relocs; i++) {
+		reloc = qfo->relocs + i;
+		printf ("%5d %-10s %d\n", reloc->ofs, reloc_names[reloc->type],
+				reloc->def);
+	}
+}
+
 int
 main (int argc, char **argv)
 {
 	int         c;
 	qfo_t      *qfo;
-	qfo_def_t  *def;
 
 	while ((c = getopt_long (argc, argv, "", long_options, 0)) != EOF) {
 		switch (c) {
@@ -89,27 +160,9 @@ main (int argc, char **argv)
 		qfo = qfo_read (argv[optind++]);
 		if (!qfo)
 			return 1;
-		for (def = qfo->defs; def - qfo->defs < qfo->num_defs; def++) {
-			printf ("%4d %4x %d %s %s %d %d %s:%d\n",
-					def->ofs,
-					def->flags,
-					def->basic_type,
-					qfo->types + def->full_type,
-					qfo->strings + def->name,
-					def->relocs, def->num_relocs,
-					qfo->strings + def->file, def->line);
-			if (def->flags & (QFOD_LOCAL | QFOD_EXTERNAL))
-				continue;
-			if (def->basic_type == ev_string) {
-				printf ("    %4d %s\n", qfo->data[def->ofs].string_var,
-						qfo->strings + qfo->data[def->ofs].string_var);
-			} else if (def->basic_type == ev_func) {
-				printf ("    %4d %s\n", qfo->data[def->ofs].func_var,
-						qfo->strings + qfo->functions[qfo->data[def->ofs].func_var - 1].name);
-			} else {
-				printf ("    %4d\n", qfo->data[def->ofs].integer_var);
-			}
-		}
+		dump_defs (qfo);
+		dump_functions (qfo);
+		dump_relocs (qfo);
 	}
 	return 0;
 }
