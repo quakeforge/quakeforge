@@ -223,7 +223,7 @@ fixup_def (qfo_t *qfo, qfo_def_t *def, int def_num)
 
 	if ((def->flags & (QFOD_LOCAL | QFOD_ABSOLUTE)))
 		return;
-	if (!def->flags & QFOD_EXTERNAL) {
+	if (!(def->flags & QFOD_EXTERNAL)) {
 		def->ofs += data_base;
 		if (def->basic_type == ev_func && (def->flags & QFOD_INITIALIZED)) {
 			func = funcs.funcs + data->data[def->ofs].func_var - 1 + func_base;
