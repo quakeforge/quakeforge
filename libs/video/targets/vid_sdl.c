@@ -132,6 +132,7 @@ VID_Init (unsigned char *palette)
 	// initialize the mouse
 	SDL_ShowCursor (0);
 
+
 #ifdef WIN32
         // FIXME: EVIL thing - but needed for win32 until
         // SDL_sound works better - without this DirectSound fails.

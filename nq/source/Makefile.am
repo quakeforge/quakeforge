@@ -71,7 +71,7 @@ client_LIB_DEPS=	libqfnet.la $(ASM) $(qf_client_LIBS)
 
 client_SOURCES=	cl_cam.c cl_cmd.c cl_demo.c cl_input.c cl_main.c cl_screen.c \
 		cl_parse.c cl_tent.c cl_view.c \
-		console.c keys.c locs.c sbar.c
+		console.c locs.c sbar.c
 
 server_SOURCES= host.c host_cmd.c pr_cmds.c sv_cvar.c sv_main.c \
 		sv_move.c sv_phys.c sv_progs.c sv_user.c

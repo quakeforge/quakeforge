@@ -170,13 +170,11 @@ JOY_Read (void)
 	buttonstate = ji.dwButtons;
 	for (i = 0; i < joy_numbuttons; i++) {
 		if ((buttonstate & (1 << i)) && !(joy_oldbuttonstate & (1 << i))) {
-			key_index = (i < 4) ? K_JOY1 : K_AUX1;
-			Key_Event (key_index + i, -1, true);
+			Key_Event (J_BUTTON1 + i, 0, true);
 		}
 
 		if (!(buttonstate & (1 << i)) && (joy_oldbuttonstate & (1 << i))) {
-			key_index = (i < 4) ? K_JOY1 : K_AUX1;
-			Key_Event (key_index + i, -1, false);
+			Key_Event (J_BUTTON1 + i, 0, false);
 		}
 	}
 	joy_oldbuttonstate = buttonstate;
@@ -200,11 +198,11 @@ JOY_Read (void)
 		// each change
 		for (i = 0; i < 4; i++) {
 			if ((povstate & (1 << i)) && !(joy_oldpovstate & (1 << i))) {
-				Key_Event (K_AUX29 + i, -1, true);
+				Key_Event (J_BUTTON29 + i, -1, true);
 			}
 
 			if (!(povstate & (1 << i)) && (joy_oldpovstate & (1 << i))) {
-				Key_Event (K_AUX29 + i, -1, false);
+				Key_Event (J_BUTTON29 + i, -1, false);
 			}
 		}
 		joy_oldpovstate = povstate;

@@ -309,6 +309,7 @@ CL_PlayDemo_f (void)
 	cls.state = ca_connected;
 	cls.forcetrack = 0;
 	key_dest = key_game;
+	game_target = KGT_DEFAULT;
 
 	while ((c = Qgetc (cls.demofile)) != '\n')
 		if (c == '-')

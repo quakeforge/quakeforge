@@ -82,6 +82,7 @@ Con_ProcessInput (inputline_t *il, int ch)
 	int         i;
 
 	switch (ch) {
+		/*
 		case K_ENTER:
 			if (il->enter)
 				il->enter (il->lines[il->edit_line] + 1);
@@ -147,6 +148,7 @@ Con_ProcessInput (inputline_t *il, int ch)
 		case K_END:
 			il->linepos = strlen (il->lines[il->edit_line]);
 			break;
+			*/
 		default:
 			if (ch >= ' ' && ch < 256 && ch != 127) {
 				i = strlen (il->lines[il->edit_line]);

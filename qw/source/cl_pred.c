@@ -143,6 +143,7 @@ CL_PredictMove (void)
 		VID_SetCaption (cls.servername);
 		cls.state = ca_active;
 		key_dest = key_game;
+		game_target = KGT_DEFAULT;
 	}
 
 	if (cl_nopred->int_val) {

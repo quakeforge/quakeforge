@@ -109,8 +109,11 @@ Con_ToggleChat_f (void)
 		if (cls.state == ca_active)
 */
 			key_dest = key_game;
-	} else
+			game_target = KGT_DEFAULT;
+	} else {
 		key_dest = key_console;
+		game_target = KGT_CONSOLE;
+	}
 
 	Con_ClearNotify ();
 }

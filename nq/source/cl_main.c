@@ -286,6 +286,7 @@ CL_EstablishConnection (const char *host)
 	cls.signon = 0;						// need all the signon messages
 										// before playing
 	key_dest = key_game;
+	game_target = KGT_DEFAULT;
 }
 
 
