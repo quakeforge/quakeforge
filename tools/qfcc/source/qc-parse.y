@@ -1026,8 +1026,8 @@ classdef
 	  methodprotolist					{ class_add_methods ($2, $10); }
 	  END								{ current_class = 0; }
 	| INTERFACE new_class_name
-	  protocolrefs			{ class_add_protocol_methods ($2, $3); $$ = $2; }
-								{ class_add_ivars ($2, class_new_ivars ($2)); }
+	  protocolrefs					{ class_add_protocol_methods ($2, $3); }
+					{ class_add_ivars ($2, class_new_ivars ($2)); $$ = $2; }
 	  methodprotolist					{ class_add_methods ($2, $6); }
 	  END								{ current_class = 0; }
 	| INTERFACE new_class_with_super
@@ -1037,8 +1037,8 @@ classdef
 	  methodprotolist					{ class_add_methods ($2, $10); }
 	  END								{ current_class = 0; }
 	| INTERFACE new_class_with_super
-	  protocolrefs			{ class_add_protocol_methods ($2, $3); $$ = $2; }
-								{ class_add_ivars ($2, class_new_ivars ($2)); }
+	  protocolrefs					{ class_add_protocol_methods ($2, $3); }
+					{ class_add_ivars ($2, class_new_ivars ($2)); $$ = $2; }
 	  methodprotolist					{ class_add_methods ($2, $6); }
 	  END								{ current_class = 0; }
 	| INTERFACE new_category_name
