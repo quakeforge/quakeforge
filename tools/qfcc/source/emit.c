@@ -157,7 +157,7 @@ emit_statement (expr_t *e, opcode_t *op, def_t *var_a, def_t *var_b,
 		statement->c = var_c->ofs;
 		ret = var_c;
 	}
-#if 1
+#if 0
 	printf ("%s %s(%d) %s(%d) %s(%d)\n", op->opname,
 			var_a ? var_a->name : "", statement->a,
 			var_b ? var_b->name : "", statement->b,
