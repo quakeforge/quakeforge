@@ -102,7 +102,6 @@ vec3_t		shadecolor;					// Ender (Extend) Colormod
 float		modelalpha;					// Ender (Extend) Alpha
 
 void R_MarkLeaves (void);
-
 void R_DrawAliasModel (entity_t *e);
 void R_DrawSpriteModel (entity_t *e);
 
@@ -294,11 +293,11 @@ R_SetupFrame (void)
 
 	c_brush_polys = 0;
 	c_alias_polys = 0;
-
 }
 
 static void
-MYgluPerspective (GLdouble fovy, GLdouble aspect, GLdouble zNear, GLdouble zFar)
+MYgluPerspective (GLdouble fovy, GLdouble aspect, GLdouble zNear,
+				  GLdouble zFar)
 {
 	GLdouble		xmin, xmax, ymin, ymax;
 
