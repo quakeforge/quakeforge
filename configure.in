@@ -1378,17 +1378,16 @@ AC_OUTPUT(
 	doc/texinfo/Makefile
 	doc/man/Makefile
 	include/Makefile
+	include/win32/version.h
 	libs/Makefile
 	libs/util/Makefile
 	qw/include/Makefile
-	qw/include/win32/version.h
 	qw/source/Makefile
 	qw/Makefile
 	qw/quakeforge.lsm
 	Makefile
 	
 	nq/include/Makefile
-	nq/include/win32/version.h
 	nq/source/Makefile
 	nq/Makefile
 	nq/nuq.lsm,
