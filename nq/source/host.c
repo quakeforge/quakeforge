@@ -1008,7 +1008,7 @@ Host_Init (void)
 	Con_Printf ("\nVersion %s (build %04d)\n\n", VERSION,
 				build_number ());
 
-	Con_Printf ("\x80\x81\x81\x82 %s initialized\x80\x81\x81\x82\n", PROGRAM);
+	Con_Printf ("\x80\x81\x81\x82 %s initialized \x80\x81\x81\x82\n", PROGRAM);
 
 	host_initialized = true;
 
