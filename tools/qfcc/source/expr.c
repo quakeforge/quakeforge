@@ -1000,6 +1000,28 @@ unary_expr (int op, expr_t *e)
 	abort ();
 }
 
+int
+has_function_call (expr_t *e)
+{
+	switch (e->type) {
+		case ex_block:
+			for (e = e->e.block.head; e; e = e->next)
+				if (has_function_call (e))
+					return 1;
+			return 0;
+		case ex_expr:
+			if (e->e.expr.op == 'c')
+				return 1;
+			return (has_function_call (e->e.expr.e1)
+					|| has_function_call (e->e.expr.e2));
+		case ex_uexpr:
+			if (e->e.expr.op != 'g')
+				return has_function_call (e->e.expr.e1);
+		default:
+			return 0;
+	}
+}
+
 expr_t *
 function_expr (expr_t *e1, expr_t *e2)
 {
@@ -1082,10 +1104,14 @@ function_expr (expr_t *e1, expr_t *e2)
 
 	call = new_block_expr ();
 	for (e = e2, i = 0; e; e = e->next, i++) {
-		*a = new_temp_def_expr (arg_types[i]);
-		if (i)	// compensate for new_binary_expr and the first arg
-			inc_users(*a);
-		append_expr (call, binary_expr ('=', *a, e));
+		if (has_function_call (e)) {
+			*a = new_temp_def_expr (arg_types[i]);
+			if (i)	// compensate for new_binary_expr and the first arg
+				inc_users(*a);
+			append_expr (call, binary_expr ('=', *a, e));
+		} else {
+			*a = e;
+		}
 		a = &(*a)->next;
 	}
 	e = new_binary_expr ('c', e1, args);
