@@ -164,8 +164,8 @@ main (int argc, const char *argv[])
 			FD_SET (0, &fdset);
 		FD_SET (net_socket, &fdset);
 
-		_timeout.tv_sec = 1;
-		_timeout.tv_usec = 0;
+		_timeout.tv_sec = 0;
+		_timeout.tv_usec = 10000;
 		if (svs.num_clients || !sys_dead_sleep->int_val)
 			timeout = &_timeout;
 
