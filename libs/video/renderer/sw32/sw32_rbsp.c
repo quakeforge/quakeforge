@@ -395,7 +395,168 @@ R_DrawSubmodelPolygons (model_t *pmodel, int clipflags)
 	}
 }
 
+#if 1
+static inline void
+visit_leaf (mleaf_t *leaf)
+{
+	// deal with model fragments in this leaf
+	if (leaf->efrags)
+		R_StoreEfrags (&leaf->efrags);
+	leaf->key = r_currentkey;
+	r_currentkey++;				// all bmodels in a leaf share the same key
+}
 
+static inline int
+get_side (mnode_t *node)
+{
+	// find which side of the node we are on
+	mplane_t   *plane = node->plane;
+
+	if (plane->type < 3)
+		return (modelorg[plane->type] - plane->dist) < 0;
+	return (DotProduct (modelorg, plane->normal) - plane->dist) < 0;
+}
+
+static void
+visit_node (mnode_t *node, int side, int clipflags)
+{
+	int         c;
+	msurface_t *surf;
+
+	// sneaky hack for side = side ? SURF_PLANEBACK : 0;
+	side = (~side + 1) & SURF_PLANEBACK;
+	// draw stuff
+	if ((c = node->numsurfaces)) {
+		surf = r_worldentity.model->surfaces + node->firstsurface;
+		for (; c; c--, surf++) {
+			if (surf->visframe != r_visframecount)
+				continue;
+
+			// side is either 0 or SURF_PLANEBACK
+			if (side ^ (surf->flags & SURF_PLANEBACK))
+				continue;				// wrong side
+
+			if (r_drawpolys) {
+				if (r_worldpolysbacktofront) {
+					if (numbtofpolys < MAX_BTOFPOLYS) {
+						pbtofpolys[numbtofpolys].clipflags = clipflags;
+						pbtofpolys[numbtofpolys].psurf = surf;
+						numbtofpolys++;
+					}
+				} else {
+					R_RenderPoly (surf, clipflags);
+				}
+			} else {
+				R_RenderFace (surf, clipflags);
+			}
+		}
+		// all surfaces on the same node share the same sequence number
+		r_currentkey++;
+	}
+}
+
+static inline int
+test_node (mnode_t *node, int *_clipflags)
+{
+	int         clipflags = *_clipflags;
+	int         i, *pindex;
+	vec3_t      acceptpt, rejectpt;
+	double      d;
+
+	if (node->contents < 0)
+		return 0;
+	if (node->visframe != r_visframecount)
+		return 0;
+	// cull the clipping planes if not trivial accept
+	// FIXME: the compiler is doing a lousy job of optimizing here; it could be
+	// twice as fast in ASM
+	if (clipflags) {
+		for (i = 0; i < 4; i++) {
+			if (!(clipflags & (1 << i)))
+				continue;				// don't need to clip against it
+
+			// generate accept and reject points
+			// FIXME: do with fast look-ups or integer tests based on the
+			// sign bit of the floating point values
+
+			pindex = pfrustum_indexes[i];
+
+			rejectpt[0] = (float) node->minmaxs[pindex[0]];
+			rejectpt[1] = (float) node->minmaxs[pindex[1]];
+			rejectpt[2] = (float) node->minmaxs[pindex[2]];
+
+			d = DotProduct (rejectpt, view_clipplanes[i].normal);
+			d -= view_clipplanes[i].dist;
+
+			if (d <= 0) {
+				*_clipflags = clipflags;
+				return 0;
+			}
+
+			acceptpt[0] = (float) node->minmaxs[pindex[3 + 0]];
+			acceptpt[1] = (float) node->minmaxs[pindex[3 + 1]];
+			acceptpt[2] = (float) node->minmaxs[pindex[3 + 2]];
+
+			d = DotProduct (acceptpt, view_clipplanes[i].normal);
+			d -= view_clipplanes[i].dist;
+			if (d >= 0)
+				clipflags &= ~(1 << i);	// node is entirely on screen
+		}
+	}
+	*_clipflags = clipflags;
+	return 1;
+}
+
+//FIXME no longer recursive: need a new name
+static void
+R_RecursiveWorldNode (mnode_t *node, int clipflags)
+{
+	struct {
+		mnode_t    *node;
+		int         side, clipflags;
+	}          *node_ptr, node_stack[256];
+	mnode_t    *front;
+	int         side;
+
+	node_ptr = node_stack;
+
+	while (1) {
+		while (test_node (node, &clipflags)) {
+			side = get_side (node);
+			front = node->children[side];
+			if (test_node (front, &clipflags)) {
+				if (node_ptr - node_stack
+					== sizeof (node_stack) / sizeof (node_stack[0]))
+					Sys_Error ("node_stack overflow");
+				node_ptr->node = node;
+				node_ptr->side = side;
+				node_ptr->clipflags = clipflags;
+				node_ptr++;
+				node = front;
+				continue;
+			}
+			if (front->contents < 0 && front->contents != CONTENTS_SOLID)
+				visit_leaf ((mleaf_t *) front);
+			visit_node (node, side, clipflags);
+			node = node->children[!side];
+		}
+		if (node->contents < 0 && node->contents != CONTENTS_SOLID)
+			visit_leaf ((mleaf_t *) node);
+		if (node_ptr != node_stack) {
+			node_ptr--;
+			node = node_ptr->node;
+			side = node_ptr->side;
+			clipflags = node_ptr->clipflags;
+			visit_node (node, side, clipflags);
+			node = node->children[!side];
+			continue;
+		}
+		break;
+	}
+	if (node->contents < 0 && node->contents != CONTENTS_SOLID)
+		visit_leaf ((mleaf_t *) node);
+}
+#else
 static void
 R_RecursiveWorldNode (mnode_t *node, int clipflags)
 {
@@ -544,7 +705,7 @@ R_RecursiveWorldNode (mnode_t *node, int clipflags)
 		R_RecursiveWorldNode (node->children[!side], clipflags);
 	}
 }
-
+#endif
 
 void
 R_RenderWorld (void)

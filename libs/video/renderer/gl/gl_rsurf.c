@@ -543,47 +543,33 @@ R_DrawBrushModel (entity_t *e)
 
 // WORLD MODEL ================================================================
 
-static void
-R_RecursiveWorldNode (mnode_t *node)
+static inline void
+visit_leaf (mleaf_t *leaf)
 {
-	double      dot;
-	int         c, side;
-	mleaf_t    *pleaf;
-	mplane_t   *plane;
+	// deal with model fragments in this leaf
+	if (leaf->efrags)
+		R_StoreEfrags (&leaf->efrags);
+}
+
+static inline int
+get_side (mnode_t *node)
+{
+	// find which side of the node we are on
+	mplane_t   *plane = node->plane;
+
+	if (plane->type < 3)
+		return (modelorg[plane->type] - plane->dist) < 0;
+	return (DotProduct (modelorg, plane->normal) - plane->dist) < 0;
+}
+
+static void
+visit_node (mnode_t *node, int side)
+{
+	int         c;
 	msurface_t *surf;
 
-	if (node->contents == CONTENTS_SOLID)
-		return;
-	if (node->visframe != r_visframecount)
-		return;
-
-	if (R_CullBox (node->minmaxs, node->minmaxs + 3))
-		return;
-
-	// if a leaf node, draw stuff
-	if (node->contents < 0) {
-		pleaf = (mleaf_t *) node;
-		// deal with model fragments in this leaf
-		if (pleaf->efrags)
-			R_StoreEfrags (&pleaf->efrags);
-
-		return;
-	}
-	// node is just a decision point, so go down the appropriate sides
-
-	// find which side of the node we are on
-	plane = node->plane;
-	if (plane->type < 3)
-		dot = modelorg[plane->type] - plane->dist;
-	else
-		dot = DotProduct (modelorg, plane->normal) - plane->dist;
-	side = dot < 0;
-
-	// recurse down the children, front side first
-	R_RecursiveWorldNode (node->children[side]);
-
 	// sneaky hack for side = side ? SURF_PLANEBACK : 0;
- 	side = (~side + 1) & SURF_PLANEBACK;
+	side = (~side + 1) & SURF_PLANEBACK;
 	// draw stuff
 	if ((c = node->numsurfaces)) {
 		surf = r_worldentity.model->surfaces + node->firstsurface;
@@ -616,8 +602,66 @@ R_RecursiveWorldNode (mnode_t *node)
 			}
 		}
 	}
-	// recurse down the back side
-	R_RecursiveWorldNode (node->children[!side]);
+}
+
+static inline int
+test_node (mnode_t *node)
+{
+	if (node->contents < 0)
+		return 0;
+	if (node->visframe != r_visframecount)
+		return 0;
+	if (R_CullBox (node->minmaxs, node->minmaxs + 3))
+		return 0;
+	return 1;
+}
+
+//FIXME no longer recursive: need a new name
+static void
+R_RecursiveWorldNode (mnode_t *node)
+{
+	struct {
+		mnode_t    *node;
+		int         side;
+	}          *node_ptr, node_stack[256];
+	mnode_t    *front;
+	int         side;
+
+	node_ptr = node_stack;
+
+	while (1) {
+		while (test_node (node)) {
+			side = get_side (node);
+			front = node->children[side];
+			if (test_node (front)) {
+				if (node_ptr - node_stack
+					== sizeof (node_stack) / sizeof (node_stack[0]))
+					Sys_Error ("node_stack overflow");
+				node_ptr->node = node;
+				node_ptr->side = side;
+				node_ptr++;
+				node = front;
+				continue;
+			}
+			if (front->contents < 0 && front->contents != CONTENTS_SOLID)
+				visit_leaf ((mleaf_t *) front);
+			visit_node (node, side);
+			node = node->children[!side];
+		}
+		if (node->contents < 0 && node->contents != CONTENTS_SOLID)
+			visit_leaf ((mleaf_t *) node);
+		if (node_ptr != node_stack) {
+			node_ptr--;
+			node = node_ptr->node;
+			side = node_ptr->side;
+			visit_node (node, side);
+			node = node->children[!side];
+			continue;
+		}
+		break;
+	}
+	if (node->contents < 0 && node->contents != CONTENTS_SOLID)
+		visit_leaf ((mleaf_t *) node);
 }
 
 void
