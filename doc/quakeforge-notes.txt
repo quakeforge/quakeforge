@@ -1,6 +1,6 @@
 <ol>
 <li>There are no menus in the current code so the <code>ESC</code> key will take you to the console rather than the menus that are AWOL</li>
-<li><code>sensitivity</code> is gone. In it's place are <code>in_amp</code>, <code>in_pre_amp</code>, <code>in_mouse_amp</code> and <code>in_mouse_pre_amp</code>, which all multiply together to give you the old <code>sensitivity</code></li>
+<li><code>sensitivity</code> is gone. In it's place are <code>in_amp</code>, <code>in_pre_amp</code>, <code>in_mouse_amp</code> and <code>in_mouse_pre_amp</code>, which all multiply together to give you the old <code>sensitivity</code> <a href="/doc/sensitivity.png">Here is a schematic.</a></li>
 <li>By default, you will <em>not</em> get any sound output (in fact you will get a warning about being unable to load the <code>null</code> plugin). use <code>+set snd_output <i>plugin</i></code> on the command line. <code><i>plugin</i></code> is one of:
 	<ul>
 		<li><code>alsa0_5</code> For ALSA 0.5.x</li>
