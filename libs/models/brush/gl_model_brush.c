@@ -81,18 +81,23 @@ Mod_LoadExternalTextures (model_t *mod)
 		if (!tx)
 			continue;
 
-		// backslash at the end of texture name indicates external texture
-//		if (tx->name[length] != '\\')
-//			continue;
-
 		// replace special flag characters with underscores
-		if (tx->name[0] == '+' || tx->name[0] == '*') {
+		if (tx->name[0] == '*') {
 		 	filename = va ("maps/_%s.tga", tx->name + 1);
 		} else {
 		 	filename = va ("maps/%s.tga", tx->name);
 		}
-
 		COM_FOpenFile (filename, &f);
+
+		if (!f) {
+			if (tx->name[0] == '*') {
+				filename = va ("textures/_%s.tga", tx->name + 1);
+			} else {
+				filename = va ("textures/%s.tga", tx->name);
+			}
+			COM_FOpenFile (filename, &f);
+		}
+
 		if (f) {
 			targa = LoadTGA (f);
 			Qclose (f);
