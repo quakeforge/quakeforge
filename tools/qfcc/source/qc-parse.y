@@ -8,6 +8,8 @@
 extern char *yytext;
 extern int lineno;
 
+void PR_PrintType(type_t*);
+
 void
 yyerror (const char *s)
 {
@@ -56,9 +58,9 @@ typedef struct {
 %token	LOCAL RETURN WHILE DO IF ELSE FOR ELIPSIS
 %token	<type> TYPE
 
-%type	<type>	type
+%type	<type>	type maybe_func
 %type	<def>	param param_list def_item def_list def_name
-%type	<expr>	const expr arg_list opt_initializer opt_definition
+%type	<expr>	const expr arg_list opt_initializer
 %type	<statement>	statement statements statement_block
 
 %expect 1
@@ -90,25 +92,31 @@ def
 
 type
 	: TYPE
+		{
+			current_type = $1;
+		}
+	  maybe_func
+	  	{
+			$$ = $3 ? $3 : $1;
+		}
 	| '.' TYPE
+		{
+			current_type = $2;
+		}
+	  maybe_func
 		{
 			type_t new;
 			memset (&new, 0, sizeof (new));
 			new.type = ev_field;
-			new.aux_type = $2;
+			new.aux_type = $4 ? $4 : $2;
 			$$ = PR_FindType (&new);
 		}
 	;
 
-def_list
-	: def_list ',' def_item
-	| def_item
-	;
-
-def_item
-	: def_name opt_initializer
+maybe_func
+	: /* empty */
 		{
-			$$ = $1;
+			$$ = 0;
 		}
 	| '('
 		{
@@ -120,54 +128,36 @@ def_item
 		}
 	  param_list
 		{
-			$$ = param_scope.scope_next;
+			$<def>$ = param_scope.scope_next;
+			PR_FlushScope (&param_scope);
 			current_type = $<scope>2.type;
 			param_scope.scope_next = $<scope>2.pscope;
 			pr_scope = $<scope>2.scope;
 		}
 	  ')'
 		{
-			current_type = parse_params ($<def>4);
-		}
-	  def_name
-		{
-			$$ = $7->scope_next;
-			$7->scope_next = $<def>4;
-		}
-	  opt_definition
-	  	{
-			PR_FlushScope ($7);
-			$7->scope_next = $<def>8;
-
-			$$ = $7;
+			$$ = parse_params ($<def>4);
 		}
 	| '(' ')'
 		{
-			current_type = parse_params (0);
-		}
-	  def_name
-		{
-			$$ = $4->scope_next;
-			$4->scope_next = 0;
-		}
-	  opt_definition
-		{
-			$4->scope_next = $<def>5;
-			$$ = $4;
+			$$ = parse_params (0);
 		}
 	| '(' ELIPSIS ')'
 		{
-			current_type = parse_params ((def_t*)1);
+			$$ = parse_params ((def_t*)1);
 		}
-	  def_name
+	;
+	
+
+def_list
+	: def_list ',' def_item
+	| def_item
+	;
+
+def_item
+	: def_name opt_initializer
 		{
-			$$ = $5->scope_next;
-			$5->scope_next = 0;
-		}
-	  opt_definition
-		{
-			$5->scope_next = $<def>6;
-			$$ = $5;
+			$$ = $1;
 		}
 	;
 
@@ -210,13 +200,6 @@ opt_initializer
 	| '=' const
 		{
 			$$ = $2;
-		}
-	;
-
-opt_definition
-	: /*empty*/
-		{
-			$$ = 0;
 		}
 	| '=' '#' const
 		{
