@@ -305,7 +305,7 @@ add_lines (qfo_t *qfo)
 }
 
 static void
-fixup_relocs (qfo_t *qfo)
+fixup_relocs ()
 {
 	qfo_reloc_t *reloc;
 	qfo_def_t  *def;
@@ -450,7 +450,7 @@ linker_finish (void)
 
 	merge_defgroups ();
 
-	fixup_relocs (qfo);
+	fixup_relocs ();
 
 	qfo = qfo_new ();
 	qfo_add_code (qfo, code->code, code->size);
