@@ -222,7 +222,7 @@ write_obj_file (const char *filename)
 	allocate_stuff ();
 	setup_data ();
 
-	file = Qopen (filename, "wb");
+	file = Qopen (filename, "wbz9");
 
 	pr.strofs = (pr.strofs + 3) & ~3;
 
@@ -242,17 +242,25 @@ write_obj_file (const char *filename)
 	hdr.num_lines     = LittleLong (num_linenos);
 
 	Qwrite (file, &hdr, sizeof (hdr));
-	Qwrite (file, pr.statements, pr.num_statements * sizeof (dstatement_t));
-	Qwrite (file, pr.near_data->data, pr.near_data->size * sizeof (pr_type_t));
-	if (pr.far_data) {
+	if (pr.num_statements)
+		Qwrite (file, pr.statements, pr.num_statements * sizeof (dstatement_t));
+	if (pr.near_data->size)
+		Qwrite (file, pr.near_data->data,
+				pr.near_data->size * sizeof (pr_type_t));
+	if (pr.far_data && pr.far_data->size) {
 		Qwrite (file, pr.far_data->data,
 				pr.far_data->size * sizeof (pr_type_t));
 	}
-	Qwrite (file, pr.strings, pr.strofs);
-	Qwrite (file, relocs, num_relocs * sizeof (qfo_reloc_t));
-	Qwrite (file, defs, num_defs * sizeof (qfo_def_t));
-	Qwrite (file, functions, num_functions * sizeof (qfo_function_t));
-	Qwrite (file, linenos, num_linenos * sizeof (pr_lineno_t));
+	if (pr.strofs)
+		Qwrite (file, pr.strings, pr.strofs);
+	if (num_relocs)
+		Qwrite (file, relocs, num_relocs * sizeof (qfo_reloc_t));
+	if (num_defs)
+		Qwrite (file, defs, num_defs * sizeof (qfo_def_t));
+	if (num_functions)
+		Qwrite (file, functions, num_functions * sizeof (qfo_function_t));
+	if (num_linenos)
+		Qwrite (file, linenos, num_linenos * sizeof (pr_lineno_t));
 
 	Qclose (file);
 
