@@ -183,25 +183,6 @@ Sys_FileTime (const char *path)
 	return -1;
 }
 
-enum e_pathtype
-Sys_PathType (const char *path)
-{
-	enum e_pathtype type;
-	char *comp = QFS_CompressPath (path);
-	if (comp[0] == '/'
-#ifdef WIN32
-            || (comp[0] && comp[1] == ':')
-#endif /* WIN32 */
-           )
-		type = PATHTYPE_ABSOLUTE;
-	else if (comp[0] == '.' && comp[1] == '.')
-		type = PATHTYPE_RELATIVE_ABOVE;
-	else
-		type = PATHTYPE_RELATIVE_BELOW;
-	free (comp);
-	return type;
-}
-
 /*
 	Sys_SetPrintf
 

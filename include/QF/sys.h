@@ -42,12 +42,6 @@ extern struct cvar_s *developer;
 
 extern const char sys_char_map[256];
 
-enum e_pathtype {
-	PATHTYPE_ABSOLUTE,
-	PATHTYPE_RELATIVE_ABOVE,
-	PATHTYPE_RELATIVE_BELOW
-};
-
 typedef struct date_s {
 	int         sec;
 	int         min;
@@ -60,7 +54,6 @@ typedef struct date_s {
 
 int	Sys_FileTime (const char *path);
 void Sys_mkdir (const char *path);
-enum e_pathtype Sys_PathType (const char *path);
 
 typedef void (*sys_printf_t) (const char *fmt, va_list args);
 

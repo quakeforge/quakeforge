@@ -749,7 +749,7 @@ GIB_Event_Register_f (void)
 
 /* File access */
 
-int         (*GIB_File_Transform_Path) (dstring_t * path) = NULL;
+static int   (*GIB_File_Transform_Path) (dstring_t * path) = NULL;
 
 static int
 GIB_File_Transform_Path_Null (dstring_t * path)
@@ -769,10 +769,9 @@ GIB_File_Transform_Path_Secure (dstring_t * path)
 
 	for (s = strchr (path->str, '\\'); s; s = strchr (s, '\\'))
 		*s = '/';
-	if (Sys_PathType (path->str) != PATHTYPE_RELATIVE_BELOW)
-		return -1;
 
-	dstring_insertstr (path, 0, "/");
+	if (path->str[0] != '/')
+		dstring_insertstr (path, 0, "/");
 	dstring_insertstr (path, 0, qfs_gamedir->dir.def);
 	dstring_insertstr (path, 0, "/");
 	dstring_insertstr (path, 0, qfs_userpath);
