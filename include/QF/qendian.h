@@ -53,13 +53,21 @@
 
 //============================================================================
 
-extern	qboolean	bigendien;
-extern	short		(*BigShort) (short l);
-extern	short		(*LittleShort) (short l);
-extern	int			(*BigLong) (int l);
-extern	int			(*LittleLong) (int l);
-extern	float		(*BigFloat) (float l);
-extern	float		(*LittleFloat) (float l);
+#ifndef WORDS_BIGENDIAN
+#define BigShort ShortSwap
+#define LittleShort ShortNoSwap
+#define BigLong LongSwap
+#define LittleLong LongNoSwap
+#define BigFloat FloatSwap
+#define LittleFloat FloatNoSwap
+#else
+#define BigShort ShortNoSwap
+#define LittleShort ShortSwap
+#define BigLong LongNoSwap
+#define LittleLong LongSwap
+#define BigFloat FloatNoSwap
+#define LittleFloat FloatSwap
+#endif
 
 short	ShortSwap (short l);
 short	ShortNoSwap (short l);
