@@ -346,8 +346,16 @@ if test "x$ac_cv_func_vsnprintf" = "xno" -a \
 	AC_CHECK_LIB(db,vsnprintf)
 fi
 
-dnl Checks for working -lm
-AC_CHECK_LIB(m, pow,, AC_MSG_ERROR([math library (-lm) appears broken]))
+case "$target_os" in
+	cygwin*)
+	;;
+	mingw32*)
+	;;
+	*)
+		dnl Checks for working -lm
+		AC_CHECK_LIB(m, pow,, AC_MSG_ERROR([math library (-lm) appears broken]))
+	;;
+esac	
 
 AC_ARG_ENABLE(zlib,
 [  --disable-zlib          disable zlib support],
@@ -1210,9 +1218,19 @@ if test "x$GCC" = "xyes"; then
 fi
 
 AS="$CC"
-ASFLAGS="\$(DEFS) \$(CFLAGS) \$(CPPFLAGS) \$(DEFAULT_INCLUDES) \$(INCLUDES)"
+if test "xSYSTYPE" = "xWIN32"; then
+	ASFLAGS="\$(DEFS) \$(CFLAGS) \$(CPPFLAGS) \$(DEFAULT_INCLUDES) \$(INCLUDES) -DWIN32"
+	plugin_LDFLAGS="-no-undefined"
+	plugin_LIBADD="-luser32 -lgdi32 -lwinmm"
+else
+	ASFLAGS="\$(DEFS) \$(CFLAGS) \$(CPPFLAGS) \$(DEFAULT_INCLUDES) \$(INCLUDES)"
+	plugin_LDFLAGS=
+	plugin_LIBADD=
+fi
 AC_SUBST(AS)
 AC_SUBST(ASFLAGS)
+AC_SUBST(plugin_LDFLAGS)
+AC_SUBST(plugin_LIBADD)
 
 dnl ==================================================================
 dnl Make sure we link against a working zlib
