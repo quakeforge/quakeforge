@@ -63,7 +63,7 @@ bi_Draw_CenterPic (progs_t *pr)
 		Con_DPrintf ("can't load %s\n", path);
 		return;
 	}
-	Draw_Pic (x + pic->width / 2, y, pic);
+	Draw_Pic (x - pic->width / 2, y, pic);
 }
 
 static void
