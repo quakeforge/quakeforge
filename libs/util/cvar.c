@@ -434,28 +434,6 @@ Cvar_Toggle_f (void)
 }
 
 void
-Cvar_Help_f (void)
-{
-	const char *var_name;
-	cvar_t     *var;
-
-	if (Cmd_Argc () != 2) {
-		Con_Printf ("usage: help <cvar>\n");
-		return;
-	}
-
-	var_name = Cmd_Argv (1);
-	var = Cvar_FindVar (var_name);
-	if (!var)
-		var = Cvar_FindAlias (var_name);
-	if (var) {
-		Con_Printf ("%s\n", var->description);
-		return;
-	}
-	Con_Printf ("variable not found\n");
-}
-
-void
 Cvar_CvarList_f (void)
 {
 	cvar_t     *var;
@@ -527,7 +505,6 @@ Cvar_Init (void)
 	Cmd_AddCommand ("setrom", Cvar_Setrom_f, "Set the selected variable and make it read only, useful on the command line.\n"
 		"(+setrom variablename setting)");
 	Cmd_AddCommand ("toggle", Cvar_Toggle_f, "Toggle a cvar on or off");
-	Cmd_AddCommand ("help", Cvar_Help_f, "Display quake help");
 	Cmd_AddCommand ("cvarlist", Cvar_CvarList_f, "List all cvars");
 }
 

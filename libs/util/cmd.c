@@ -451,6 +451,7 @@ Cmd_UnAlias_f (void)
 	}
 }
 
+
 /*
 					COMMAND EXECUTION
 */
@@ -957,6 +958,38 @@ Cmd_CmdList_f (void)
 	Con_Printf ("------------\n%d commands\n", i);
 }
 
+void
+Cmd_Help_f (void)
+{
+	const char     *name;
+	cvar_t         *var;
+	cmd_function_t *cmd;
+
+	if (Cmd_Argc () != 2) {
+		Con_Printf ("usage: help <cvar/command>\n");
+		return;
+	}
+
+	name = Cmd_Argv (1);
+
+	for (cmd = cmd_functions; cmd && strcasecmp (name, cmd->name); cmd = cmd->next)
+		;
+	if (cmd) {
+		Con_Printf ("%s\n", cmd->description);
+		return;
+	}
+
+	var = Cvar_FindVar (name);
+	if (!var)
+		var = Cvar_FindAlias (name);
+	if (var) {
+		Con_Printf ("%s\n", var->description);
+		return;
+	}
+
+	Con_Printf ("variable/command not found\n");
+}
+
 static void
 cmd_alias_free (void *_a, void *unused)
 {
@@ -1011,6 +1044,7 @@ Cmd_Init (void)
 	Cmd_AddCommand ("unalias", Cmd_UnAlias_f, "Remove the selected alias");
 	Cmd_AddCommand ("wait", Cmd_Wait_f, "Wait a game tic");
 	Cmd_AddCommand ("cmdlist", Cmd_CmdList_f, "List all commands");
+	Cmd_AddCommand ("help", Cmd_Help_f, "Display help for a command or variable");
 }
 
 
