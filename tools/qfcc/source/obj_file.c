@@ -52,6 +52,7 @@ static __attribute__ ((unused)) const char rcsid[] =
 #include "function.h"
 #include "immediate.h"
 #include "obj_file.h"
+#include "options.h"
 #include "qfcc.h"
 #include "reloc.h"
 #include "strpool.h"
@@ -287,7 +288,7 @@ qfo_write (qfo_t *qfo, const char *filename)
 	qfo_header_t hdr;
 	QFile      *file;
 
-	file = Qopen (filename, "wbz9");
+	file = Qopen (filename, options.gzip ? "wbz9" : "wb");
 	if (!file)
 		return -1;
 

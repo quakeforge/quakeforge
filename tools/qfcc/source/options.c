@@ -105,6 +105,7 @@ static const char *short_options =
 	"U:"	// undefine
 	"N:"	// notice options
 	"M::"
+	"z"		// compress qfo files
 	;
 
 static void
@@ -222,6 +223,9 @@ DecodeArgs (int argc, char **argv)
 				break;
 			case 'r':
 				options.partial_link = true;
+				break;
+			case 'z':
+				options.gzip = true;
 				break;
 			case 'C':{					// code options
 					char       *opts = strdup (optarg);

@@ -57,6 +57,7 @@ static __attribute__ ((unused)) const char rcsid[] =
 #include "qfcc.h"
 #include "type.h"
 
+options_t options;
 int num_linenos;
 pr_lineno_t *linenos;
 pr_info_t pr;
