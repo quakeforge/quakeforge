@@ -548,7 +548,7 @@ SL_Command (void)
 		if (SL_Switch ())
 			Con_Printf("Switched to Server List from Masters\n");
 		else
-			Con_Printf("Switched to Favorate Server List\n");
+			Con_Printf("Switched to Favorite Server List\n");
 	}	
 	else if (strcasecmp(Cmd_Argv(1),"refresh") == 0)
 	{
