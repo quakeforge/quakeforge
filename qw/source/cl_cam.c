@@ -184,7 +184,7 @@ void
 Cam_Lock (int playernum)
 {
 	char		st[40];
-printf ("Cam_Lock: %d\n", playernum);
+
 	snprintf (st, sizeof (st), "ptrack %i", playernum);
 	if (cls.demoplayback2) {
 		memcpy(cl.stats, cl.players[playernum].stats, sizeof (cl.stats));
@@ -450,8 +450,7 @@ Cam_Track (usercmd_t *cmd)
 		VectorCopy (player->viewangles, cl.viewangles);
 		VectorCopy (player->origin, desired_position);
 		if (memcmp (&desired_position, &self->origin,
-					sizeof (desired_position))
-			!= 0) {
+					sizeof (desired_position)) != 0) {
 			MSG_WriteByte (&cls.netchan.message, clc_tmove);
 			MSG_WriteCoordV (&cls.netchan.message, desired_position);
 			// move there locally immediately
@@ -628,7 +627,6 @@ Cam_FinishMove (usercmd_t *cmd)
 		s = &cl.players[i];
 		if (s->name[0] && !s->spectator) {
 			Cam_Lock (i);
-			Con_Printf("tracking %s\n", s->name);
 			ideal_track = i;
 			return;
 		}
