@@ -282,9 +282,7 @@ I_CDAudio_Init (void)
 	Sys_Printf ("CD Audio Initialized.\n");
 }
 
-QFPLUGIN plugin_t *PLUGIN_INFO(cd, sdl) (void);
-QFPLUGIN plugin_t *
-PLUGIN_INFO(cd, sdl) (void)
+PLUGIN_INFO(cd, sdl)
 {
 	plugin_info.type = qfp_cd;
 	plugin_info.api_version = QFPLUGIN_VERSION;

@@ -959,9 +959,7 @@ static plugin_t plugin_info = {
 	&plugin_info_data,
 };
 
-QFPLUGIN plugin_t *PLUGIN_INFO(console, client) (void);
-QFPLUGIN plugin_t *
-PLUGIN_INFO(console, client) (void)
+PLUGIN_INFO(console, client)
 {
 	return &plugin_info;
 }

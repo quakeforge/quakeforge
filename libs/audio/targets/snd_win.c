@@ -345,9 +345,8 @@ SNDDMA_Shutdown (void)
 	FreeSound ();
 }
 
-QFPLUGIN plugin_t *PLUGIN_INFO(snd_output, win) (void);
-QFPLUGIN plugin_t *
-PLUGIN_INFO(snd_output, win) (void) {
+PLUGIN_INFO(snd_output, win)
+{
 	plugin_info.type = qfp_snd_output;
 	plugin_info.api_version = QFPLUGIN_VERSION;
 	plugin_info.plugin_version = "0.1";
@@ -378,4 +377,3 @@ PLUGIN_INFO(snd_output, win) (void) {
 
 	return &plugin_info;
 }
-

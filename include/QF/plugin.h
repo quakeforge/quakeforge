@@ -50,9 +50,9 @@
 #include <QF/plugin/snd_render.h>
 
 #ifdef STATIC_PLUGINS
-#define PLUGIN_INFO(type,name) type##_##name##_PluginInfo
+#define PLUGIN_INFO(type,name) QFPLUGIN plugin_t *type##_##name##_PluginInfo (void); QFPLUGIN plugin_t * type##_##name##_PluginInfo (void)
 #else
-#define PLUGIN_INFO(type,name) PluginInfo
+#define PLUGIN_INFO(type,name) QFPLUGIN plugin_t *PluginInfo (void);QFPLUGIN plugin_t *PluginInfo (void)
 #endif
 
 typedef enum {

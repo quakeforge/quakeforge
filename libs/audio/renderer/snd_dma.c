@@ -1029,9 +1029,7 @@ static plugin_t plugin_info = {
 	&plugin_info_data,
 };
 
-QFPLUGIN plugin_t *PLUGIN_INFO(snd_render, default) (void);
-QFPLUGIN plugin_t *
-PLUGIN_INFO(snd_render, default) (void)
+PLUGIN_INFO(snd_render, default)
 {
 	return &plugin_info;
 }

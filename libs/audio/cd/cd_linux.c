@@ -455,9 +455,7 @@ I_CDAudio_Init (void)
 						  "Volume of CD music");
 }
 
-QFPLUGIN plugin_t *PLUGIN_INFO(cd, linux) (void);
-QFPLUGIN plugin_t *
-PLUGIN_INFO(cd, linux) (void)
+PLUGIN_INFO(cd, linux)
 {
 	plugin_info.type = qfp_cd;
 	plugin_info.api_version = QFPLUGIN_VERSION;
