@@ -40,6 +40,7 @@
 
 #include "QF/console.h"
 #include "QF/cvar.h"
+#include "QF/mathlib.h"
 #include "QF/progs.h"
 #include "QF/sys.h"
 #include "QF/zone.h"
@@ -389,8 +390,7 @@ PR_ExecuteProgram (progs_t * pr, func_t fnum)
 				OPC.integer_var = !OPA.float_var;
 				break;
 			case OP_NOT_V:
-				OPC.integer_var = !OPA.vector_var[0] && !OPA.vector_var[1]
-					&& !OPA.vector_var[2];
+				OPC.integer_var = VectorIsZero (OPA.vector_var);
 				break;
 			case OP_NOT_S:
 				OPC.integer_var = !OPA.string_var ||

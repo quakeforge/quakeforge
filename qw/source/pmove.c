@@ -267,7 +267,7 @@ PM_GroundMove (void)
 	vec3_t      original, originalvel, down, up, downvel;
 
 	pmove.velocity[2] = 0;
-	if (!pmove.velocity[0] && !pmove.velocity[1] && !pmove.velocity[2])
+	if (VectorIsZero (pmove.velocity))
 		return;
 
 	// first try just moving to the destination 

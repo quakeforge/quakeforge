@@ -37,6 +37,7 @@
 #include "QF/keys.h"
 
 #include "bothdefs.h"
+#include "compat.h"
 #include "cl_ents.h"
 #include "client.h"
 #include "pmove.h"
@@ -53,8 +54,7 @@ CL_PredictUsercmd (player_state_t * from, player_state_t * to, usercmd_t *u,
 				   qboolean spectator)
 {
 // Dabb: if there is no movement to start with, don't predict...
-	if(cl_nostatpred->int_val && !from->velocity[0] &&
-	   !from->velocity[1] && !from->velocity[2]) {
+	if(cl_nostatpred->int_val && VectorIsZero (from->velocity)) {
 		VectorCopy (from->origin, to->origin);
 		VectorCopy (u->angles, to->viewangles);
 		VectorCopy (from->velocity, to->velocity);
@@ -113,7 +113,8 @@ CL_PredictMove (void)
 	if (cl.paused)
 		return;
 
-	cl.onground = 0;	// assume on ground unless prediction says different
+	// assume on ground unless prediction says different
+	cl.onground = 0;
 
 	cl.time = realtime - cls.latency - cl_pushlatency->value * 0.001;
 	if (cl.time > realtime)
@@ -135,8 +136,8 @@ CL_PredictMove (void)
 	from = &cl.frames[cls.netchan.incoming_sequence & UPDATE_MASK];
 
 	// we can now render a frame
-	if (cls.state == ca_onserver) {		// first update is the final signon
-										// stage
+	if (cls.state == ca_onserver) {
+		// first update is the final signon stage
 		VID_SetCaption (cls.servername);
 		CL_SetState (ca_active);
 	}
@@ -148,9 +149,8 @@ CL_PredictMove (void)
 	}
 
 	// Dabb: if there is no movement to start with, don't predict...
-	if(cl_nostatpred->int_val && !from->playerstate[cl.playernum].velocity[0]
-	   && !from->playerstate[cl.playernum].velocity[1]
-	   && !from->playerstate[cl.playernum].velocity[2]) {
+	if (cl_nostatpred->int_val
+		&& VectorIsZero (from->playerstate[cl.playernum].velocity)) {
 		VectorCopy (from->playerstate[cl.playernum].velocity, cl.simvel);
 		VectorCopy (from->playerstate[cl.playernum].origin, cl.simorg);
 		return;
@@ -165,8 +165,8 @@ CL_PredictMove (void)
 	for (i = 1; i < UPDATE_BACKUP - 1 && cls.netchan.incoming_sequence + i <
 		 cls.netchan.outgoing_sequence; i++) {
 		to = &cl.frames[(cls.netchan.incoming_sequence + i) & UPDATE_MASK];
-		CL_PredictUsercmd (&from->playerstate[cl.playernum]
-						   , &to->playerstate[cl.playernum], &to->cmd,
+		CL_PredictUsercmd (&from->playerstate[cl.playernum],
+						   &to->playerstate[cl.playernum], &to->cmd,
 						   cl.spectator);
 		cl.onground = onground;
 		if (to->senttime >= cl.time)
@@ -183,19 +183,12 @@ CL_PredictMove (void)
 	// now interpolate some fraction of the final frame
 	if (to->senttime == from->senttime)
 		f = 0;
-	else {
-		f = (cl.time - from->senttime) / (to->senttime - from->senttime);
-
-		if (f < 0)
-			f = 0;
-		if (f > 1)
-			f = 1;
-	}
+	else
+		f = bound(0, (cl.time - from->senttime) / (to->senttime - from->senttime), 1);
 
 	for (i = 0; i < 3; i++)
-		if (fabs
-			(from->playerstate[cl.playernum].origin[i] -
-			 to->playerstate[cl.playernum].origin[i]) > 128) {
+		if (fabs (from->playerstate[cl.playernum].origin[i] -
+				  to->playerstate[cl.playernum].origin[i]) > 128) {
 			// teleported, so don't lerp
 			VectorCopy (to->playerstate[cl.playernum].velocity, cl.simvel);
 			VectorCopy (to->playerstate[cl.playernum].origin, cl.simorg);
