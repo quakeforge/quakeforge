@@ -62,6 +62,7 @@ cmd_source_t cmd_source;
 qboolean    cmd_wait;
 
 cvar_t     *cmd_warncmd;
+cvar_t     *cmd_highchars;
 
 hashtab_t  *cmd_alias_hash;
 hashtab_t  *cmd_hash;
@@ -756,7 +757,7 @@ Cmd_ExpandVariables (const char *data, char *dest)
 	unsigned int c;
 	char        buf[1024];
 	int         i, len;
-	cvar_t     *var, *bestvar;
+	cvar_t      *bestvar;
 	int         quotes = 0;
 
 	len = 0;
@@ -765,24 +766,21 @@ Cmd_ExpandVariables (const char *data, char *dest)
 	while ((c = *data) != 0) {
 		if (c == '"')
 			quotes++;
-		if (c == '$' && !(quotes & 1)) {
-			data++;
-
-			// Copy the text after '$' to a temp buffer
+		if (c == '$' && *(data+1) == '{' && !(quotes & 1)) {
+			data+=2;
+			// Copy the text between the braces to a temp buffer
 			i = 0;
 			buf[0] = 0;
 			bestvar = NULL;
-			while ((c = *data) > 32) {
-				if (c == '$')
-					break;
+			while ((c = *data) != 0 && c != '}') {
 				data++;
 				buf[i++] = c;
 				buf[i] = 0;
-				if ((var = Cvar_FindVar (buf)) != 0)
-					bestvar = var;
 				if (i >= sizeof (buf) - 1)
 					break;
 			}
+			data++;
+			bestvar = Cvar_FindVar(buf);
 
 			if (bestvar) {
 				// check buffer size
@@ -797,10 +795,12 @@ Cmd_ExpandVariables (const char *data, char *dest)
 			} else {
 				// no matching cvar name was found
 				dest[len++] = '$';
-				if (len + strlen (buf) >= 1024 - 1)
+				dest[len++] = '{';
+				if (len + strlen (buf) >= 1024)
 					break;
 				strcpy (&dest[len], buf);
 				len += strlen (buf);
+				dest[len++] = '}';
 			}
 		} else {
 			dest[len] = c;
@@ -829,11 +829,23 @@ Cmd_ExecuteString (const char *text, cmd_source_t src)
 
 	cmd_source = src;
 
+	
 #if 0
 	Cmd_TokenizeString (text);
 #else
-	Cmd_ExpandVariables (text, buf);
-	Cmd_TokenizeString (buf);
+	if (cmd_highchars->value) {
+		char buf2[1024];
+
+		strncpy(buf, text, sizeof(buf) - 1);
+		buf[sizeof(buf)] = 0;
+		Cmd_ParseSpecial (buf);
+		Cmd_ExpandVariables (buf, buf2);
+		Cmd_TokenizeString (buf2);
+	}
+	else {
+		Cmd_ExpandVariables (text, buf);
+		Cmd_TokenizeString (buf);
+	}
 #endif
 
 	// execute the command line
@@ -994,7 +1006,10 @@ Cmd_Init (void)
 	Cmd_AddCommand ("help", Cmd_Help_f, "Display help for a command or "
 					"variable");
 	cmd_warncmd = Cvar_Get ("cmd_warncmd", "0", CVAR_NONE, NULL, "Toggles the "
-							"display of error messages for unknown commands"); 
+							"display of error messages for unknown commands");
+	cmd_highchars = Cvar_Get ("cmd_highchars", "0", CVAR_NONE, NULL, "Toggles availability of special "
+							"characters by proceeding letters by $ or #.  See "
+							"the documentation for details.");
 }
 
 char        com_token[MAX_COM_TOKEN];
@@ -1058,3 +1073,76 @@ skipwhite:
 	com_token[len] = 0;
 	return data;
 }
+
+struct stable_s {char a, b;} stable1[] =
+{
+	{'\\', 13},
+	{'[', 0x90},
+	{']', 0x91},
+	{'(', 0x80},
+	{'=', 0x81},
+	{')', 0x82},
+	{'|', 0x83},
+	{'<', 0x9D},
+	{'-', 0X9E},
+	{'>', 0x9F},
+	{'.', 0x8E},
+	{',', 0x0E},
+	{'B', 0x8B},
+	{'a', 0x7F},
+	{'A', 0x8D},
+	{'0', 0x92},
+	{'1', 0x93},
+	{'2', 0x94},
+	{'3', 0x95},
+	{'4', 0x96},
+	{'5', 0x97},
+	{'6', 0x98},
+	{'7', 0x99},
+	{'8', 0x9A},
+	{'9', 0x9B},
+	{'\'', 0x7E},
+	{'n', '\n'},
+	{0, 0}
+};
+	
+
+void Cmd_ParseSpecial (char *s)
+{
+	char        *d;
+	int         i, i2;
+	char        c = 0;
+
+	i = 0;
+	d = s;
+
+	while (*s) {
+		if ((*s == '\\') && ((s[1] == '#') || (s[1] == '$') || (s[1] == '\\'))) {
+			d[i++] = s[1];
+			s+=2;
+			continue;
+		}
+		if ((*s == '$') && (s[1] != '\0')) {
+			for (i2 = 0; stable1[i2].a; i2++) {
+				if (s[1] == stable1[i2].a) {
+					c = stable1[i2].b;
+					break;
+				}
+			}
+			if (c) {
+				d[i++] = c;
+				s += 2;
+				continue;
+			}
+		}
+		if ((*s == '#') && (s[1] != '\0')) {
+			d[i++] = s[1] ^ 128;
+			s += 2;
+			continue;
+		}
+		d[i++] = *s++;
+	}
+	d[i] = 0;
+	return;
+}
+

@@ -120,7 +120,7 @@ Team_BestWeaponImpulse (void)
 const char       *
 Team_ParseSay (const char *s)
 {
-	char        c, chr, t2[128], t3[128];
+	char        chr, t2[128], t3[128];
 	const char *t1;
 	static char buf[1024];
 	int         i, bracket;
@@ -132,38 +132,7 @@ Team_ParseSay (const char *s)
 	i = 0;
 
 	while (*s && (i <= sizeof (buf))) {
-		if ((*s == '$') && (s[1] != '\0')) {
-			c = 0;
-			switch (s[1]) {
-			case '\\':
-				c = 13;
-				break;				// fake message
-			case '[':
-				c = 0x90;
-				break;				// colored brackets
-			case ']':
-				c = 0x91;
-				break;
-			case 'G':
-				c = 0x86;
-				break;				// ocrana leds
-			case 'R':
-				c = 0x87;
-				break;
-			case 'Y':
-				c = 0x88;
-				break;
-			case 'B':
-				c = 0x89;
-				break;
-			}
-
-			if (c) {
-				buf[i++] = c;
-				s += 2;
-				continue;
-			}
-		} else if ((*s == '%') && (s[1] != '\0')) {
+		if ((*s == '%') && (s[1] != '\0')) {
 			t1 = NULL;
 			memset (t2, '\0', sizeof (t2));
 			memset (t3, '\0', sizeof (t3));

@@ -148,6 +148,8 @@ void Cmd_Exec_File (const char *path);
 extern char		com_token[MAX_COM_TOKEN];
 const char *COM_Parse (const char *data);
 
+void Cmd_ParseSpecial (char *s);
+
 extern struct cvar_s *cmd_warncmd;
 
 #endif // __cmd_h
