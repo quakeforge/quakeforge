@@ -201,7 +201,7 @@ CL_ParseDelta (entity_state_t *from, entity_state_t *to, int bits)
 		// FIXME
 	}
 
-	if (!bits & U_EXTEND1)
+	if (!(bits & U_EXTEND1))
 		return;
 
 	// LordHavoc: Endy neglected to mark this as being part of the QSG
@@ -220,7 +220,7 @@ CL_ParseDelta (entity_state_t *from, entity_state_t *to, int bits)
 	if (bits & U_COLORMOD)
 		to->colormod = MSG_ReadByte (net_message);
 
-	if (!bits & U_EXTEND2)
+	if (!(bits & U_EXTEND2))
 		return;
 
 	if (bits & U_FRAME2)
