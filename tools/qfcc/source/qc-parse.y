@@ -193,7 +193,7 @@ defs
 	;
 
 def
-	: type { current_storage = st_global; current_type = $1; } def_list
+	: type { current_storage = st_global; current_type = $1; } def_list { }
 	| storage_class type { current_type = $2; } def_list
 	| storage_class '{' simple_defs '}'
 	| STRUCT NAME
@@ -217,7 +217,7 @@ simple_defs
 	;
 
 simple_def
-	: type { current_type = $1; } def_list
+	: type { current_type = $1; } def_list { }
 	;
 
 storage_class
@@ -242,7 +242,7 @@ struct_defs
 	;
 
 struct_def
-	: type { current_type = $1; } struct_def_list
+	: type { current_type = $1; } struct_def_list { }
 	;
 
 enum_list
@@ -1057,7 +1057,7 @@ ivar_decls
 	;
 
 ivar_decl
-	: type { current_type = $1; } ivars
+	: type { current_type = $1; } ivars { }
 	;
 
 ivars
