@@ -215,6 +215,8 @@ vector_component (int is_field, def_t *vec, int comp, scope_t *scope,
 		reloc_def_field (d, d->ofs);
 	}
 	Hash_Add (defs_by_name, d);
+	if (is_field)
+		Hash_Add (field_defs, d);
 }
 
 def_t *
