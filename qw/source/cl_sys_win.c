@@ -56,7 +56,7 @@ static const char rcsid[] =
 #include "compat.h"
 #include "host.h"
 #include "net.h"
-#include "resource.h"
+#include "win32/resources/resource.h"
 
 #define MAXIMUM_WIN_MEMORY	0x1000000
 #define MINIMUM_WIN_MEMORY	0x0c00000

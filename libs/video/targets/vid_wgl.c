@@ -52,7 +52,7 @@ static const char rcsid[] =
 #include "compat.h"
 #include "in_win.h"
 #include "r_cvar.h"
-#include "resource.h"
+#include "win32/resources/resource.h"
 #include "sbar.h"
 
 extern const char *gl_renderer;

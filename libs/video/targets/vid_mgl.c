@@ -49,7 +49,7 @@ static const char rcsid[] =
 
 #include "d_local.h"
 #include "in_win.h"
-#include "resource.h"
+#include "win32/resources/resource.h"
 #include "winquake.h"
 
 #define	MINIMUM_MEMORY	0x550000

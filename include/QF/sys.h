@@ -88,10 +88,10 @@ void Sys_PageIn (void *ptr, int size);
 //
 void Sys_DebugLog(const char *file, const char *fmt, ...) __attribute__((format(printf,2,3)));
 
-#define SYS_CHECKMEM(x) 											\
-	do {															\
-		if (!(x))													\
-			Sys_Error ("%s: Failed to allocate memory.", __func__);	\
+#define SYS_CHECKMEM(x) 												\
+	do {																\
+		if (!(x))														\
+			Sys_Error ("%s: Failed to allocate memory.", __FUNCTION__);	\
 	} while (0)
 
 #endif // __sys_h

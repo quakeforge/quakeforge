@@ -37,7 +37,9 @@ static const char rcsid[] =
 #include "QF/console.h"
 #include "QF/cvar.h"
 #include "QF/qargs.h"
+#include "QF/sys.h"
 
+#include "game.h"
 #include "net_wins.h"
 #include "net_wipx.h"
 

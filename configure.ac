@@ -51,7 +51,6 @@ case "$host_os" in
 	mingw32*)
 		mingw=yes
 		CFLAGS="$CFLAGS -I\$(top_srcdir)/include/win32"
-		CFLAGS="$CFLAGS -I\$(top_srcdir)/include/win32/resources"
 		if test "$host" != "$build"; then
 			case "$build_os" in
 				cygwin*)

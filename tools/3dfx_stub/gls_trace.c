@@ -36,7 +36,7 @@
 #include <stdlib.h>
 
 #define TRACE do { \
-	puts (__func__);\
+	puts (__FUNCTION__);\
 } while (0)
 
 void

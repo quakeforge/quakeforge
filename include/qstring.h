@@ -32,6 +32,8 @@
 #include <sys/types.h>
 #include <stdarg.h>
 
+#include "QF/gcc_attr.h"
+
 const char * Q_strcasestr (const char *haystack, const char *needle);
 size_t Q_strnlen (const char *s, size_t maxlen);
 size_t Q_snprintfz (char *dest, size_t size, const char *fmt, ...) __attribute__((format(printf,3,4)));

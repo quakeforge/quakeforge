@@ -33,7 +33,7 @@ static const char rcsid[] =
 
 #include "winquake.h"
 #include "conproc.h"
-#include "resource.h"
+#include "win32/resources/resource.h"
 
 #include "QF/console.h"
 #include "QF/cvar.h"

@@ -37,6 +37,10 @@ static const char rcsid[] =
 # include <strings.h>
 #endif
 
+#ifdef _MSC_VER
+# define _POSIX_
+#endif
+
 #include <limits.h>
 
 #include "compat.h"

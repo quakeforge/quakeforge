@@ -220,7 +220,7 @@ UDP_OpenSocket (int port)
 	return newsocket;
 
   ErrorReturn:
-	close (newsocket);
+	UDP_CloseSocket (newsocket);
 	return -1;
 }
 
