@@ -269,7 +269,7 @@ PR_EnterFunction (progs_t * pr, dfunction_t *f)
 {
 	int         i, j, c, o;
 
-	printf("%s:\n", PR_GetString(pr,f->s_name));
+	//printf("%s:\n", PR_GetString(pr,f->s_name));
 	pr->pr_stack[pr->pr_depth].s = pr->pr_xstatement;
 	pr->pr_stack[pr->pr_depth].f = pr->pr_xfunction;
 	pr->pr_depth++;
@@ -359,7 +359,7 @@ PR_ExecuteProgram (progs_t * pr, func_t fnum)
 	}
 
 	f = &pr->pr_functions[fnum];
-	printf("%s:\n", PR_GetString(pr,f->s_name));
+	//printf("%s:\n", PR_GetString(pr,f->s_name));
 
 	pr->pr_trace = false;
 
@@ -378,7 +378,7 @@ PR_ExecuteProgram (progs_t * pr, func_t fnum)
 			PR_RunError (pr, "runaway loop error");
 		}
 
-		if (1||pr->pr_trace)
+		if (pr->pr_trace)
 			PR_PrintStatement (pr, st);
 
 		switch (st->op) {
@@ -681,6 +681,7 @@ PR_ExecuteProgram (progs_t * pr, func_t fnum)
 				ed->v[pr->fields.nextthink].float_var = *pr->globals.time + 0.1;
 				ed->v[pr->fields.frame].float_var = E_OPA->_float;
 				ed->v[pr->fields.think].func_var = E_OPB->function;
+				printf ("STATE: %d %f %d %s\n", *pr->globals.self, ed->v[pr->fields.nextthink].float_var, (int)ed->v[pr->fields.frame].float_var, PR_GetString(pr,pr->pr_functions[ed->v[pr->fields.think].func_var].s_name));
 				break;
 // LordHavoc: to be enabled when Progs version 7 (or whatever it will be numbered) is finalized
 /*

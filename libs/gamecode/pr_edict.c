@@ -967,6 +967,7 @@ PR_LoadProgs (progs_t * pr, char *progsname)
 		pr->progs->entityfields * 4 + sizeof (edict_t) - sizeof (pr_type_t);
 
 	pr->pr_edictareasize = 0;
+Con_Printf("pr_edict_size: %d\n", pr->pr_edict_size);
 
 // byte swap the lumps
 	for (i = 0; i < pr->progs->numstatements; i++) {
