@@ -1177,7 +1177,7 @@ if test "x$GCC" = "xyes"; then
 fi
 
 AS="$CC"
-ASFLAGS="\$(DEFS) $CFLAGS $CPPFLAGS -I\$(top_srcdir)/include" 
+ASFLAGS="\$(DEFS) $CFLAGS $CPPFLAGS \$(DEFAULT_INCLUDES) \$(INCLUDES)"
 AC_SUBST(AS)
 AC_SUBST(ASFLAGS)
 
