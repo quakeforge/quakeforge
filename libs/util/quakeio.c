@@ -425,8 +425,14 @@ Qseek (QFile *file, long offset, int whence)
 				res = fseek (file->file, offset, whence);
 				break;
 			case SEEK_END:
-				res = fseek (file->file,
-							 file->start + file->size - offset, SEEK_SET);
+				if (file->size == -1) {
+					// we don't know the size (due to writing) so punt and
+					// pass on the request as-is
+					res = fseek (file->file, offset, SEEK_END);
+				} else {
+					res = fseek (file->file,
+								 file->start + file->size - offset, SEEK_SET);
+				}
 				break;
 			default:
 				errno = EINVAL;
