@@ -179,9 +179,9 @@ C_Print (const char *fmt, va_list args)
 	int         size;
 	static int  buffer_size;
 
-	size = vsnprintf (buffer, buffer_size, fmt, args);
-	if (size + 1 > buffer_size) {
-		buffer_size = ((size + 1 + 1024) / 1024) * 1024; // 1k multiples
+	size = vsnprintf (buffer, buffer_size, fmt, args) + 1;	// +1 for nul
+	if (size > buffer_size) {
+		buffer_size = (size + 1023) & ~1023; // 1k multiples
 		buffer = realloc (buffer, buffer_size);
 		if (!buffer)
 			Sys_Error ("console: could not allocate %d bytes\n",
