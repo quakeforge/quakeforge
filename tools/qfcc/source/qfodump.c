@@ -67,6 +67,8 @@ void codespace_addcode (codespace_t *codespace, struct statement_s *code, int si
 type_t *parse_type (const char *str) {return 0;}
 int function_parms (function_t *f, byte *parm_size) {return 0;}
 pr_auxfunction_t *new_auxfunction (void) {return 0;}
+ddef_t *new_local (void) {return 0;}
+void def_to_ddef (def_t *def, ddef_t *ddef, int aux) {}
 
 static const struct option long_options[] = {
 	{NULL, 0, NULL, 0},

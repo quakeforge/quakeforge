@@ -37,6 +37,7 @@ static const char rcsid[] =
 #include "qfcc.h"
 #include "def.h"
 #include "expr.h"
+#include "immediate.h"
 #include "reloc.h"
 #include "strpool.h"
 #include "struct.h"
@@ -479,4 +480,16 @@ clear_defs (void)
 {
 	if (defs_by_name)
 		Hash_FlushTable (defs_by_name);
+}
+
+void
+def_to_ddef (def_t *def, ddef_t *ddef, int aux)
+{
+	type_t     *type = def->type;
+
+	if (aux)
+		type = type->aux_type;
+	ddef->type = type->type;
+	ddef->ofs = def->ofs;
+	ddef->s_name = ReuseString (def->name);
 }

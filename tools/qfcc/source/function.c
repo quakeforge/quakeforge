@@ -230,11 +230,7 @@ finish_function (function_t *f)
 		if (f->scope) {
 			for (def = f->scope->head; def; def = def->def_next) {
 				if (def->name) {
-					ddef_t *d = new_local ();
-					d->type = def->type->type;
-					d->ofs = def->ofs;
-					d->s_name = ReuseString (def->name);
-
+					def_to_ddef (def, new_local (), 0);
 					f->aux->num_locals++;
 				}
 			}

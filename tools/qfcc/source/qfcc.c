@@ -173,23 +173,17 @@ WriteData (int crc)
 			continue;
 		if (def->type->type == ev_func) {
 		} else if (def->type->type == ev_field) {
-			dd = &fields[numfielddefs];
-			numfielddefs++;
-			dd->type = def->type->aux_type->type;
-			dd->s_name = ReuseString (def->name);
+			dd = &fields[numfielddefs++];
+			def_to_ddef (def, dd, 1);
 			dd->ofs = G_INT (def->ofs);
 		}
 
-		dd = &globals[numglobaldefs];
-		numglobaldefs++;
-		dd->type = def->type->type;
-
+		dd = &globals[numglobaldefs++];
+		def_to_ddef (def, dd, 0);
 		if (!def->constant
 			&& def->type->type != ev_func
 			&& def->type->type != ev_field && def->global)
 			dd->type |= DEF_SAVEGLOBAL;
-		dd->s_name = ReuseString (def->name);
-		dd->ofs = def->ofs;
 	}
 
 	pr.strings->size = (pr.strings->size + 3) & ~3;

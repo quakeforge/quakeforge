@@ -521,8 +521,8 @@ qfo_to_progs (qfo_t *qfo, pr_info_t *pr)
 		pf->aux->function = i + 1;
 		pf->aux->source_line = qf->line;
 		pf->aux->line_info = qf->line_info;
-		pf->aux->local_defs = qf->local_defs;
-		pf->aux->num_locals = qf->num_local_defs;
+		pf->aux->local_defs = 0;
+		pf->aux->num_locals = 0;
 		pf->builtin = qf->builtin;
 		pf->code = qf->code;
 		pf->function_num = i + 1;
@@ -536,6 +536,13 @@ qfo_to_progs (qfo_t *qfo, pr_info_t *pr)
 			pf->scope->head = pr->scope->head + qf->local_defs;
 			pf->scope->tail = &pf->scope->head[qf->num_local_defs - 1].def_next;
 			*pf->scope->tail = 0;
+			pf->aux->local_defs = pr->num_locals;
+			for (pd = pf->scope->head; pd; pd = pd->def_next) {
+				if (pd->name) {
+					def_to_ddef (pd, new_local (), 0);
+					pf->aux->num_locals++;
+				}
+			}
 		}
 		if (qf->num_relocs) {
 			pf->refs = relocs + qf->relocs;

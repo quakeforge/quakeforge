@@ -124,4 +124,6 @@ void def_initialized (def_t *d);
 
 void clear_defs (void);
 
+void def_to_ddef (def_t *def, ddef_t *ddef, int aux);
+
 #endif//__def_h
