@@ -41,7 +41,7 @@ extern Visual	*x_vis;
 extern Window	x_root;
 extern Window	x_win;
 extern XVisualInfo *x_visinfo;
-extern double	x_gamma;
+extern vec3_t	x_gamma;
 extern int		x_screen;
 extern int		x_shmeventtype;
 extern Time		x_time;
@@ -50,7 +50,7 @@ extern qboolean oktodraw;
 
 void GetEvent (void);
 
-double X11_GetGamma (void);
+vec3_t *X11_GetGamma (void);
 qboolean X11_AddEvent (int event, void (*event_handler)(XEvent *));
 qboolean X11_RemoveEvent (int event, void (*event_handler)(XEvent *));
 qboolean X11_SetGamma (double);

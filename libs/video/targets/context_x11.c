@@ -97,10 +97,10 @@ Time 		x_time;
 
 #ifdef HAVE_VIDMODE
 static XF86VidModeModeInfo **vidmodes;
-static int	nummodes;
-static int	original_mode = 0;
-static double  x_gamma = -1;
-static qboolean vidmode_avail = false;
+static int		nummodes;
+static int		original_mode = 0;
+static vec3_t	x_gamma = {-1, -1, -1};
+static qboolean	vidmode_avail = false;
 #endif
 
 static qboolean	vidmode_active = false;
@@ -387,8 +387,20 @@ X11_SetVidMode (int width, int height)
 		vidmode_avail = VID_CheckVMode (x_disp, NULL, NULL);
 
 	if (vidmode_avail) {
-		if (x_gamma > 0 || (x_gamma = X11_GetGamma ()))
+		vec3_t	*temp;
+
+		if (x_gamma[0] > 0) {	// already initialized
 			vid_gamma_avail = true;
+		} else {	// do the init
+			temp = X11_GetGamma ();
+			if (temp && temp[0] > 0) {
+				x_gamma[0] = (*temp)[0];
+				x_gamma[1] = (*temp)[1];
+				x_gamma[2] = (*temp)[2];
+				vid_gamma_avail = true;
+				free (temp);
+			}
+		}
 	}
 
 	if (vid_fullscreen->int_val && vidmode_avail) {
@@ -714,21 +726,28 @@ X11_ForceViewPort (void)
 #endif
 }
 
-double
+vec3_t *
 X11_GetGamma (void)
 {
 #ifdef HAVE_VIDMODE
 # ifdef X_XF86VidModeGetGamma
 	XF86VidModeGamma	xgamma;
-	
+	vec3_t				*temp;
+
 	if (vidmode_avail && vid_system_gamma->int_val) {
 		if (XF86VidModeGetGamma (x_disp, x_screen, &xgamma)) {
-			return ((xgamma.red + xgamma.green + xgamma.blue) / 3);
+			if ((temp = malloc (sizeof (vec3_t)))) {
+				(*temp)[0] = xgamma.red;
+				(*temp)[1] = xgamma.green;
+				(*temp)[2] = xgamma.blue;
+				return temp;
+			}
+			return NULL;
 		}
 	}
 # endif
 #endif
-	return -1.0;
+	return NULL;
 }
 
 qboolean
@@ -756,7 +775,9 @@ X11_RestoreGamma (void)
 	XF86VidModeGamma	xgamma;
 
 	if (vid_gamma_avail) {
-		xgamma.red = xgamma.green = xgamma.blue = (float) x_gamma;
+		xgamma.red = x_gamma[0];
+		xgamma.green = x_gamma[1];
+		xgamma.blue = x_gamma[2];
 		XF86VidModeSetGamma (x_disp, x_screen, &xgamma);
 	}
 # endif
