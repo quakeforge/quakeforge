@@ -38,15 +38,17 @@ bin_PROGRAMS=	@NQ_TARGETS@
 EXTRA_PROGRAMS= nq-fbdev nq-glx nq-mgl nq-sdl nq-sdl32 nq-sgl nq-svga nq-3dfx \
 		nq-wgl nq-x11 nq-server
 
-asm_src= sys_ia32.S worlda.S
-
 if ASM_ARCH
-libasm_la_SOURCES= $(asm_src)
+asm= libasm.la
 else
-libasm_la_SOURCES= 
+asm= 
 endif
 
-noinst_LTLIBRARIES= libqfnet.la libasm.la
+asm_src= sys_ia32.S worlda.S
+
+libasm_la_SOURCES= $(asm_src)
+
+noinst_LTLIBRARIES= libqfnet.la $(asm)
 
 common_sources=	game.c world.c com.c
 
