@@ -48,6 +48,9 @@
 #include "QF/hash.h"
 #include "QF/qargs.h"
 
+#define USER_RO_CVAR "User-created READ-ONLY Cvar"
+#define USER_CVAR "User-created cvar"
+
 cvar_t          *developer;
 cvar_t			*cvar_vars;
 char			*cvar_null_string = "";
@@ -316,7 +319,7 @@ Cvar_Set_f (void)
 		}
 	} else {
 		var = Cvar_Get (var_name, value, CVAR_USER_CREATED, NULL,
-						"User-created cvar");
+						USER_CVAR);
 	}
 }
 
@@ -347,7 +350,7 @@ Cvar_Setrom_f (void)
 		}
 	} else {
 		var = Cvar_Get (var_name, value, CVAR_USER_CREATED | CVAR_ROM, NULL,
-						"User-created READ-ONLY Cvar");
+						USER_RO_CVAR);
 	}
 }
 
@@ -533,8 +536,12 @@ Cvar_Get (char *name, char *string, int cvarflags, void (*callback)(cvar_t*),
 		// Cvar does exist, so we update the flags and return.
 		var->flags &= ~CVAR_USER_CREATED;
 		var->flags |= cvarflags;
-		var->callback = callback;
-		var->description = description;
+		if (!var->callback)
+			var->callback = callback;
+		if (!var->description
+			|| strequal (var->description, USER_RO_CVAR)
+			|| strequal (var->description, USER_CVAR))
+			var->description = description;
 	}
 	if (var->callback)
 		var->callback (var);
