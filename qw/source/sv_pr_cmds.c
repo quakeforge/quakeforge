@@ -1855,6 +1855,8 @@ PR_SV_UserCmd (progs_t *pr)
 	SV_PreRunCmd ();
 	SV_RunCmd (&ucmd, 0);
 	SV_PostRunCmd ();
+	cl->lastcmd = ucmd;
+	cl->lastcmd.buttons = 0;	// avoid multiple fires on lag
 }
 
 static void

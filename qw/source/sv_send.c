@@ -579,6 +579,9 @@ SV_SendClientDatagram (client_t *client)
 	// add the client specific data to the datagram
 	SV_WriteClientdataToMessage (client, &msg);
 
+	if (client->state == cs_server)
+		return true;
+
 	// send over all the objects that are in the PVS
 	// this will include clients, a packetentities, and
 	// possibly a nails update
@@ -712,75 +715,77 @@ SV_SendClientMessages (void)
 
 	// build individual updates
 	for (i = 0, c = svs.clients; i < MAX_CLIENTS; i++, c++) {
-		if (c->state < cs_zombie)
-			continue;
+		if (c->state != cs_server) {
+			if (c->state < cs_zombie)
+				continue;
 
-		if (c->drop) {
-			SV_DropClient (c);
-			c->drop = false;
-			continue;
-		}
-		// check to see if we have a backbuf to stick in the reliable
-		if (c->num_backbuf) {
-			// will it fit?
-			if (c->netchan.message.cursize + c->backbuf_size[0] <
-				c->netchan.message.maxsize) {
+			if (c->drop) {
+				SV_DropClient (c);
+				c->drop = false;
+				continue;
+			}
+			// check to see if we have a backbuf to stick in the reliable
+			if (c->num_backbuf) {
+				// will it fit?
+				if (c->netchan.message.cursize + c->backbuf_size[0] <
+					c->netchan.message.maxsize) {
 
-				Con_DPrintf ("%s: backbuf %d bytes\n",
-							 c->name, c->backbuf_size[0]);
+					Con_DPrintf ("%s: backbuf %d bytes\n",
+								 c->name, c->backbuf_size[0]);
 
-				// it'll fit
-				SZ_Write (&c->netchan.message, c->backbuf_data[0],
-						  c->backbuf_size[0]);
+					// it'll fit
+					SZ_Write (&c->netchan.message, c->backbuf_data[0],
+							  c->backbuf_size[0]);
 
-				// move along, move along
-				for (j = 1; j < c->num_backbuf; j++) {
-					memcpy (c->backbuf_data[j - 1], c->backbuf_data[j],
-							c->backbuf_size[j]);
-					c->backbuf_size[j - 1] = c->backbuf_size[j];
-				}
+					// move along, move along
+					for (j = 1; j < c->num_backbuf; j++) {
+						memcpy (c->backbuf_data[j - 1], c->backbuf_data[j],
+								c->backbuf_size[j]);
+						c->backbuf_size[j - 1] = c->backbuf_size[j];
+					}
 
-				c->num_backbuf--;
-				if (c->num_backbuf) {
-					memset (&c->backbuf, 0, sizeof (c->backbuf));
-					c->backbuf.data = c->backbuf_data[c->num_backbuf - 1];
-					c->backbuf.cursize = c->backbuf_size[c->num_backbuf - 1];
-					c->backbuf.maxsize =
-						sizeof (c->backbuf_data[c->num_backbuf - 1]);
+					c->num_backbuf--;
+					if (c->num_backbuf) {
+						memset (&c->backbuf, 0, sizeof (c->backbuf));
+						c->backbuf.data = c->backbuf_data[c->num_backbuf - 1];
+						c->backbuf.cursize = c->backbuf_size[c->num_backbuf - 1];
+						c->backbuf.maxsize =
+							sizeof (c->backbuf_data[c->num_backbuf - 1]);
+					}
 				}
 			}
-		}
-		// if the reliable message overflowed, drop the client
-		if (c->netchan.message.overflowed) {
-			int i;
+			// if the reliable message overflowed, drop the client
+			if (c->netchan.message.overflowed) {
+				int i;
 
-			Analyze_Server_Packet (c->netchan.message.data,
-								   c->netchan.message.cursize, 0);
+				Analyze_Server_Packet (c->netchan.message.data,
+									   c->netchan.message.cursize, 0);
 
-			for (i = 0; i < c->num_backbuf; i++) {
-				Analyze_Server_Packet (c->backbuf_data[i],
-									   c->backbuf_size[i], 0);
+				for (i = 0; i < c->num_backbuf; i++) {
+					Analyze_Server_Packet (c->backbuf_data[i],
+										   c->backbuf_size[i], 0);
+				}
+
+				SZ_Clear (&c->netchan.message);
+				SZ_Clear (&c->datagram);
+				SV_BroadcastPrintf (PRINT_HIGH, "%s overflowed\n", c->name);
+				SV_Printf ("WARNING: reliable overflow for %s\n", c->name);
+				SV_DropClient (c);
+				c->send_message = true;
+				c->netchan.cleartime = 0;	// don't choke this message
 			}
-
-			SZ_Clear (&c->netchan.message);
-			SZ_Clear (&c->datagram);
-			SV_BroadcastPrintf (PRINT_HIGH, "%s overflowed\n", c->name);
-			SV_Printf ("WARNING: reliable overflow for %s\n", c->name);
-			SV_DropClient (c);
-			c->send_message = true;
-			c->netchan.cleartime = 0;	// don't choke this message
-		}
-		// only send messages if the client has sent one
-		// and the bandwidth is not choked
-		if (!c->send_message)
-			continue;
-		c->send_message = false;		// try putting this after choke?
-		if (!sv.paused && !Netchan_CanPacket (&c->netchan)) {
-			c->chokecount++;
-			continue;					// bandwidth choke
+			// only send messages if the client has sent one
+			// and the bandwidth is not choked
+			if (!c->send_message)
+				continue;
+			c->send_message = false;		// try putting this after choke?
+			if (!sv.paused && !Netchan_CanPacket (&c->netchan)) {
+				c->chokecount++;
+				continue;					// bandwidth choke
+			}
 		}
 
-		if (c->state == cs_spawned)
+		if (c->state == cs_spawned || c->state == cs_server)
 			SV_SendClientDatagram (c);
 		else
 			Netchan_Transmit (&c->netchan, 0, NULL);	// just update

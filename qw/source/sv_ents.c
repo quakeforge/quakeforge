@@ -395,7 +395,7 @@ SV_EmitPacketEntities (client_t *client, packet_entities_t *to, sizebuf_t *msg)
 }
 
 static void
-SV_WritePlayersToClient (client_t *client, edict_t *clent, byte * pvs,
+SV_WritePlayersToClient (client_t *client, edict_t *clent, byte *pvs,
 						 sizebuf_t *msg)
 {
 	int			i, j, msec, pflags, qf_bits;
