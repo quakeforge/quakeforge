@@ -1361,7 +1361,11 @@ PF_setinfokey (progs_t *pr)
 	net_svc_setinfo_t block;
 
 	if (e1 == 0) {
-		Info_SetValueForKey (localinfo, key, value, !sv_highchars->int_val);
+		if (*value)
+			Info_SetValueForKey (localinfo, key, value,
+								 !sv_highchars->int_val);
+		else
+			Info_RemoveKey (localinfo, key);
 	} else if (e1 <= MAX_CLIENTS) {
 		Info_SetValueForKey (svs.clients[e1 - 1].userinfo, key, value,
 							 !sv_highchars->int_val);

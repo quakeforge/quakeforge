@@ -901,8 +901,11 @@ SV_Localinfo_f (void)
 		SV_Printf ("Star variables cannot be changed.\n");
 		return;
 	}
-	Info_SetValueForKey (localinfo, Cmd_Argv (1), Cmd_Argv (2),
-						 !sv_highchars->int_val);
+	if (*Cmd_Argv (2))
+		Info_SetValueForKey (localinfo, Cmd_Argv (1), Cmd_Argv (2),
+							 !sv_highchars->int_val);
+	else
+		Info_RemoveKey (localinfo, Cmd_Argv (1));
 }
 
 /*
