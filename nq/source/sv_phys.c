@@ -41,23 +41,26 @@ static const char rcsid[] =
 #include "world.h"
 
 /*
-  pushmove objects do not obey gravity, and do not interact with each other or trigger fields, but block normal movement and push normal objects when they move.
+	pushmove objects do not obey gravity, and do not interact with each
+	other or trigger fields, but block normal movement and push normal
+	objects when they move.
 
-  onground is set for toss objects when they come to a complete rest.  it is set for steping or walking objects 
+	onground is set for toss objects when they come to a complete rest.  it
+	is set for steping or walking objects
 
-  doors, plats, etc are SOLID_BSP, and MOVETYPE_PUSH
-  bonus items are SOLID_TRIGGER touch, and MOVETYPE_TOSS
-  corpses are SOLID_NOT and MOVETYPE_TOSS
-  crates are SOLID_BBOX and MOVETYPE_TOSS
-  walking monsters are SOLID_SLIDEBOX and MOVETYPE_STEP
-  flying/floating monsters are SOLID_SLIDEBOX and MOVETYPE_FLY
+	doors, plats, etc are SOLID_BSP, and MOVETYPE_PUSH
+	bonus items are SOLID_TRIGGER touch, and MOVETYPE_TOSS
+	corpses are SOLID_NOT and MOVETYPE_TOSS
+	crates are SOLID_BBOX and MOVETYPE_TOSS
+	walking monsters are SOLID_SLIDEBOX and MOVETYPE_STEP
+	flying/floating monsters are SOLID_SLIDEBOX and MOVETYPE_FLY
 
-  solid_edge items only clip against bsp models.
+	solid_edge items only clip against bsp models.
 */
 
 cvar_t     *sv_friction;
-cvar_t     *sv_stopspeed;
 cvar_t     *sv_gravity;
+cvar_t     *sv_stopspeed;
 cvar_t     *sv_maxvelocity;
 cvar_t     *sv_nostep;
 
@@ -65,12 +68,11 @@ cvar_t     *sv_nostep;
 
 void        SV_Physics_Toss (edict_t *ent);
 
-
 void
 SV_CheckAllEnts (void)
 {
-	int         e;
 	edict_t    *check;
+	int         e;
 
 	// see if any solid entities are inside the final position
 	check = NEXT_EDICT (&sv_pr_state, sv.edicts);
@@ -138,16 +140,15 @@ SV_RunThink (edict_t *ent)
 	SVfloat (ent, nextthink) = 0;
 	*sv_globals.time = thinktime;
 	*sv_globals.self = EDICT_TO_PROG (&sv_pr_state, ent);
-	*sv_globals.other =
-		EDICT_TO_PROG (&sv_pr_state, sv.edicts);
+	*sv_globals.other = EDICT_TO_PROG (&sv_pr_state, sv.edicts);
 	PR_ExecuteProgram (&sv_pr_state, SVfunc (ent, think));
 	return !ent->free;
 }
 
 /*
-  SV_Impact
+	SV_Impact
 
-  Two entities have touched, so run their touch functions
+	Two entities have touched, so run their touch functions
 */
 void
 SV_Impact (edict_t *e1, edict_t *e2)
@@ -185,8 +186,7 @@ SV_Impact (edict_t *e1, edict_t *e2)
 int
 ClipVelocity (vec3_t in, vec3_t normal, vec3_t out, float overbounce)
 {
-	float       backoff;
-	float       change;
+	float       backoff, change;
 	int         i, blocked;
 
 	blocked = 0;
@@ -222,11 +222,12 @@ ClipVelocity (vec3_t in, vec3_t normal, vec3_t out, float overbounce)
 int
 SV_FlyMove (edict_t *ent, float time, trace_t *steptrace)
 {
-	int         blocked, bumpcount, numbumps, numplanes, i, j;
 	float       d, time_left;
-	vec3_t      dir, end, primal_velocity, original_velocity, new_velocity;
-	vec3_t      planes[MAX_CLIP_PLANES];
+	int         blocked, bumpcount, numbumps, numplanes, i, j;
 	trace_t     trace;
+	vec3_t      dir, end;
+	vec3_t      planes[MAX_CLIP_PLANES];
+	vec3_t      primal_velocity, original_velocity, new_velocity;
 
 	numbumps = 4;
 
@@ -238,13 +239,11 @@ SV_FlyMove (edict_t *ent, float time, trace_t *steptrace)
 	time_left = time;
 
 	for (bumpcount = 0; bumpcount < numbumps; bumpcount++) {
-		if (!SVvector (ent, velocity)[0] && !SVvector (ent, velocity)[1]
-			&& !SVvector (ent, velocity)[2])
+		if (VectorIsZero (SVvector (ent, velocity)))
 			break;
 
-		for (i = 0; i < 3; i++)
-			end[i] = SVvector (ent, origin)[i] + time_left *
-				SVvector (ent, velocity)[i];
+		VectorMA (SVvector (ent, origin), time_left, SVvector (ent, velocity),
+				  end);
 
 		trace = SV_Move (SVvector (ent, origin), SVvector (ent, mins),
 						 SVvector (ent, maxs), end, false, ent);
@@ -280,6 +279,7 @@ SV_FlyMove (edict_t *ent, float time, trace_t *steptrace)
 			if (steptrace)
 				*steptrace = trace;		// save for player extrafriction
 		}
+
 		// run the impact function
 		SV_Impact (ent, trace.ent);
 		if (ent->free)
@@ -312,7 +312,6 @@ SV_FlyMove (edict_t *ent, float time, trace_t *steptrace)
 			VectorCopy (new_velocity, SVvector (ent, velocity));
 		} else {						// go along the crease
 			if (numplanes != 2) {
-//				Con_Printf ("clip velocity, numplanes == %i\n",numplanes);
 				VectorCopy (vec3_origin, SVvector (ent, velocity));
 				return 7;
 			}
@@ -347,18 +346,18 @@ SV_AddGravity (edict_t *ent)
 	SVvector (ent, velocity)[2] -= ent_gravity * sv_gravity->value * host_frametime;
 }
 
-// PUSHMOVE ===================================================================
+/* PUSHMOVE */
 
 /*
-  SV_PushEntity
+	SV_PushEntity
 
-  Does not change the entities velocity at all
+	Does not change the entities velocity at all
 */
 trace_t
 SV_PushEntity (edict_t *ent, vec3_t push)
 {
-	vec3_t      end;
 	trace_t     trace;
+	vec3_t      end;
 
 	VectorAdd (SVvector (ent, origin), push, end);
 
@@ -510,16 +509,15 @@ SV_Physics_Pusher (edict_t *ent)
 		movetime = host_frametime;
 
 	if (movetime) {
-		SV_PushMove (ent, movetime);	// advances SVfloat (ent, ltime)
-										// if not blocked
+		SV_PushMove (ent, movetime);	// advances SVfloat (ent, ltime) if not
+										// blocked
 	}
 
 	if (thinktime > oldltime && thinktime <= SVfloat (ent, ltime)) {
 		SVfloat (ent, nextthink) = 0;
 		*sv_globals.time = sv.time;
 		*sv_globals.self = EDICT_TO_PROG (&sv_pr_state, ent);
-		*sv_globals.other =
-			EDICT_TO_PROG (&sv_pr_state, sv.edicts);
+		*sv_globals.other = EDICT_TO_PROG (&sv_pr_state, sv.edicts);
 		PR_ExecuteProgram (&sv_pr_state, SVfunc (ent, think));
 		if (ent->free)
 			return;
@@ -860,21 +858,22 @@ SV_Physics_Client (edict_t *ent, int num)
 }
 
 /*
-  SV_Physics_None
+	SV_Physics_None
 
-  Non moving objects can only think
+	Non moving objects can only think
 */
 void
 SV_Physics_None (edict_t *ent)
 {
-//	regular thinking
+	// regular thinking
 	SV_RunThink (ent);
+	SV_LinkEdict (ent, false);
 }
 
 /*
-  SV_Physics_Noclip
+	SV_Physics_Noclip
 
-  A moving object that doesn't obey physics
+	A moving object that doesn't obey physics
 */
 void
 SV_Physics_Noclip (edict_t *ent)
@@ -891,7 +890,7 @@ SV_Physics_Noclip (edict_t *ent)
 	SV_LinkEdict (ent, false);
 }
 
-// TOSS / BOUNCE ==============================================================
+/* TOSS / BOUNCE */
 
 void
 SV_CheckWaterTransition (edict_t *ent)
@@ -924,9 +923,9 @@ SV_CheckWaterTransition (edict_t *ent)
 }
 
 /*
-  SV_Physics_Toss
+	SV_Physics_Toss
 
-  Toss, bounce, and fly movement.  When onground, do nothing.
+	Toss, bounce, and fly movement.  When onground, do nothing.
 */
 void
 SV_Physics_Toss (edict_t *ent)
@@ -947,7 +946,8 @@ SV_Physics_Toss (edict_t *ent)
 
 	// add gravity
 	if (SVfloat (ent, movetype) != MOVETYPE_FLY
-		&& SVfloat (ent, movetype) != MOVETYPE_FLYMISSILE) SV_AddGravity (ent);
+		&& SVfloat (ent, movetype) != MOVETYPE_FLYMISSILE)
+		SV_AddGravity (ent);
 
 	// move angles
 	VectorMA (SVvector (ent, angles), host_frametime,
@@ -972,8 +972,7 @@ SV_Physics_Toss (edict_t *ent)
 	// stop if on ground
 	if (trace.plane.normal[2] > 0.7) {
 		if (SVvector (ent, velocity)[2] < 60 || SVfloat (ent, movetype) !=
-			MOVETYPE_BOUNCE)
-		{
+			MOVETYPE_BOUNCE) {
 			SVfloat (ent, flags) = (int) SVfloat (ent, flags) | FL_ONGROUND;
 			SVentity (ent, groundentity) = EDICT_TO_PROG (&sv_pr_state,
 														  trace.ent);
@@ -985,23 +984,23 @@ SV_Physics_Toss (edict_t *ent)
 	SV_CheckWaterTransition (ent);
 }
 
-// STEPPING MOVEMENT ==========================================================
+/* STEPPING MOVEMENT */
 
 /*
-  SV_Physics_Step
+	SV_Physics_Step
 
-  Monsters freefall when they don't have a ground entity, otherwise
-  all movement is done with discrete steps.
+	Monsters freefall when they don't have a ground entity, otherwise
+	all movement is done with discrete steps.
 
-  This is also used for objects that have become still on the ground, but
-  will fall if the floor is pulled out from under them.
+	This is also used for objects that have become still on the ground, but
+	will fall if the floor is pulled out from under them.
 */
 void
 SV_Physics_Step (edict_t *ent)
 {
 	qboolean    hitsound;
 
-	// freefall if not onground
+	// freefall if not on ground
 	if (!((int) SVfloat (ent, flags) & (FL_ONGROUND | FL_FLY | FL_SWIM))) {
 		if (SVvector (ent, velocity)[2] < sv_gravity->value * -0.1)
 			hitsound = true;

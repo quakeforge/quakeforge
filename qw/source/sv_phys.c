@@ -1,7 +1,7 @@
 /*
 	sv_phys.c
 
-	(description)
+	@description@
 
 	Copyright (C) 1996-1997  Id Software, Inc.
 
@@ -80,13 +80,14 @@ SV_CheckAllEnts (void)
 
 	// see if any solid entities are inside the final position
 	check = NEXT_EDICT (&sv_pr_state, sv.edicts);
-	for (e = 1; e < sv.num_edicts; e++, check = NEXT_EDICT (&sv_pr_state,
-															check)) {
+	for (e = 1; e < sv.num_edicts;
+		 e++, check = NEXT_EDICT (&sv_pr_state, check)) {
 		if (check->free)
 			continue;
 		if (SVfloat (check, movetype) == MOVETYPE_PUSH
 			|| SVfloat (check, movetype) == MOVETYPE_NONE
-			|| SVfloat (check, movetype) == MOVETYPE_NOCLIP) continue;
+			|| SVfloat (check, movetype) == MOVETYPE_NOCLIP)
+			continue;
 
 		if (SV_TestEntityPosition (check))
 			SV_Printf ("entity in invalid position\n");
@@ -139,15 +140,13 @@ SV_RunThink (edict_t *ent)
 
 	do {
 		thinktime = SVfloat (ent, nextthink);
-		if (thinktime <= 0)
-			return true;
-		if (thinktime > sv.time + sv_frametime)
+		if (thinktime <= 0 || thinktime > sv.time + sv_frametime)
 			return true;
 
 		if (thinktime < sv.time)
 			thinktime = sv.time;		// don't let things stay in the past.
-		// it is possible to start that way
-		// by a trigger with a local time.
+										// it is possible to start that way
+										// by a trigger with a local time.
 		SVfloat (ent, nextthink) = 0;
 		*sv_globals.time = thinktime;
 		*sv_globals.self = EDICT_TO_PROG (&sv_pr_state, ent);
@@ -165,7 +164,7 @@ SV_RunThink (edict_t *ent)
 	SV_Impact
 
 	Two entities have touched, so run their touch functions
- */
+*/
 void
 SV_Impact (edict_t *e1, edict_t *e2)
 {
@@ -236,7 +235,7 @@ ClipVelocity (vec3_t in, vec3_t normal, vec3_t out, float overbounce)
 int
 SV_FlyMove (edict_t *ent, float time, trace_t *steptrace)
 {
-	float       time_left, d;
+	float       d, time_left;
 	int         blocked, bumpcount, numbumps, numplanes, i, j;
 	trace_t     trace;
 	vec3_t      dir, end;
@@ -253,9 +252,8 @@ SV_FlyMove (edict_t *ent, float time, trace_t *steptrace)
 	time_left = time;
 
 	for (bumpcount = 0; bumpcount < numbumps; bumpcount++) {
-		for (i = 0; i < 3; i++)
-			end[i] = SVvector (ent, origin)[i] + time_left * SVvector
-				(ent, velocity)[i];
+		VectorMA (SVvector (ent, origin), time_left, SVvector (ent, velocity),
+				  end);
 
 		trace = SV_Move (SVvector (ent, origin), SVvector (ent, mins),
 						 SVvector (ent, maxs), end, false, ent);
@@ -325,7 +323,6 @@ SV_FlyMove (edict_t *ent, float time, trace_t *steptrace)
 			VectorCopy (new_velocity, SVvector (ent, velocity));
 		} else {						// go along the crease
 			if (numplanes != 2) {
-//				SV_Printf ("clip velocity, numplanes == %i\n",numplanes);
 				VectorCopy (vec3_origin, SVvector (ent, velocity));
 				return 7;
 			}
@@ -579,12 +576,12 @@ SV_Physics_None (edict_t *ent)
 void
 SV_Physics_Noclip (edict_t *ent)
 {
-// regular thinking
+	// regular thinking
 	if (!SV_RunThink (ent))
 		return;
 
-	VectorMA (SVvector (ent, angles), sv_frametime, SVvector (ent, avelocity),
-			  SVvector (ent, angles));
+	VectorMA (SVvector (ent, angles), sv_frametime,
+			  SVvector (ent, avelocity), SVvector (ent, angles));
 	VectorMA (SVvector (ent, origin), sv_frametime, SVvector (ent, velocity),
 			  SVvector (ent, origin));
 
@@ -599,6 +596,7 @@ SV_CheckWaterTransition (edict_t *ent)
 	int         cont;
 
 	cont = SV_PointContents (SVvector (ent, origin));
+
 	if (!SVfloat (ent, watertype)) {			// just spawned here
 		SVfloat (ent, watertype) = cont;
 		SVfloat (ent, waterlevel) = 1;
@@ -648,12 +646,13 @@ SV_Physics_Toss (edict_t *ent)
 	SV_CheckVelocity (ent);
 
 	// add gravity
-	if (SVfloat (ent, movetype) != MOVETYPE_FLY	&& SVfloat (ent, movetype) !=
-		MOVETYPE_FLYMISSILE) SV_AddGravity (ent, 1.0);
+	if (SVfloat (ent, movetype) != MOVETYPE_FLY
+		&& SVfloat (ent, movetype) != MOVETYPE_FLYMISSILE)
+		SV_AddGravity (ent, 1.0);
 
 	// move angles
-	VectorMA (SVvector (ent, angles), sv_frametime, SVvector (ent, avelocity),
-			  SVvector (ent, angles));
+	VectorMA (SVvector (ent, angles), sv_frametime,
+			  SVvector (ent, avelocity), SVvector (ent, angles));
 
 	// move origin
 	VectorScale (SVvector (ent, velocity), sv_frametime, move);
