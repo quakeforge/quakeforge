@@ -332,7 +332,7 @@ PF_Find (progs_t *pr)
 	ddef_t     *field_def;
 	int			type;
 
-	const char *s, *t; // ev_string
+	const char *s = NULL, *t; // ev_string
 	int i; // ev_vector
 
 	e = G_EDICTNUM (pr, OFS_PARM0);
