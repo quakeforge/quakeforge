@@ -1019,8 +1019,14 @@ if test "x$optimize" = xyes; then
 		if test "x$MORE_CFLAGS" = x; then
 			AC_MSG_RESULT(no)
 		else
-			AC_MSG_RESULT(yes)
+			save_CFLAGS="$CFLAGS"
 			CFLAGS="$CFLAGS $MORE_CFLAGS"
+			AC_TRY_COMPILE(
+				[],
+				[],
+				AC_MSG_RESULT(yes),
+				CFLAGS="$save_CFLAGS"
+			)
 		fi
 	else
 		CFLAGS=-O2
