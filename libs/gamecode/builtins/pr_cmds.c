@@ -593,25 +593,6 @@ PF_charcount (progs_t *pr)
 	G_FLOAT (pr, OFS_RETURN) = count;
 }
 
-void
-PF_checkbuiltin (progs_t *pr)
-{
-	G_FUNCTION (pr, OFS_RETURN) = -PR_FindBuiltin (pr, G_STRING (pr, OFS_PARM0));
-}
-
-void
-PF_getbuiltin (progs_t *pr)
-{
-	const char *name;
-	int			i;
-
-	name = G_STRING (pr, OFS_PARM0);
-	i = PR_FindBuiltin (pr, name);
-	if (!i)
-		PR_RunError (pr, "PF_getfunction: function '%s' not found!\n", name);
-	G_FUNCTION (pr, OFS_RETURN) = -i;
-}
-
 #if (INT_MAX == 2147483647) && (INT_MIN == -2147483648)
 # define INT_WIDTH 11
 #else /* I hope... */

@@ -291,8 +291,7 @@ PR_ExecuteProgram (progs_t * pr, func_t fnum)
 
 	while (1) {
 		st++;
-		if (!pr->no_exec_limit
-			&& ++profile > 1000000) {
+		if (++profile > 1000000 && !pr->no_exec_limit) {
 			pr->pr_xstatement = st - pr->pr_statements;
 			PR_RunError (pr, "runaway loop error");
 		}
@@ -379,7 +378,7 @@ PR_ExecuteProgram (progs_t * pr, func_t fnum)
 			case OP_AND:	// OPA and OPB have to be float for -0.0
 				OPC.integer_var = FNZ (OPA) && FNZ (OPB);
 				break;
-			case OP_OR:	// OPA and OPB have to be float for -0.0
+			case OP_OR:		// OPA and OPB have to be float for -0.0
 				OPC.integer_var = FNZ (OPA) || FNZ (OPB);
 				break;
 			case OP_NOT_F:

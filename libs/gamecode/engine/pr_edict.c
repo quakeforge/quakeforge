@@ -92,16 +92,6 @@ const char *pr_type_name[ev_type_count] = {
 ddef_t     *ED_FieldAtOfs (progs_t * pr, int ofs);
 qboolean    ED_ParseEpair (progs_t * pr, pr_type_t *base, ddef_t *key, const char *s);
 
-#define	MAX_FIELD_LEN	64
-#define GEFV_CACHESIZE	2
-
-typedef struct {
-	ddef_t     *pcache;
-	char        field[MAX_FIELD_LEN];
-} gefv_cache;
-
-static gefv_cache gefvCache[GEFV_CACHESIZE] = { {NULL, ""}, {NULL, ""} };
-
 /*
 	ED_ClearEdict
 
@@ -323,26 +313,10 @@ ED_FindFunction (progs_t * pr, const char *name)
 pr_type_t     *
 GetEdictFieldValue (progs_t * pr, edict_t *ed, const char *field)
 {
-	ddef_t     *def = NULL;
-	int         i;
-	static int  rep = 0;
-
-	for (i = 0; i < GEFV_CACHESIZE; i++) {
-		if (!strcmp (field, gefvCache[i].field)) {
-			def = gefvCache[i].pcache;
-			goto Done;
-		}
-	}
+	ddef_t     *def;
 
 	def = ED_FindField (pr, field);
 
-	if (strlen (field) < MAX_FIELD_LEN) {
-		gefvCache[rep].pcache = def;
-		strcpy (gefvCache[rep].field, field);
-		rep ^= 1;
-	}
-
-  Done:
 	if (!def)
 		return NULL;
 
@@ -1071,6 +1045,13 @@ ED_LoadFromFile (progs_t * pr, const char *data)
 }
 
 static const char *
+builtin_get_key (void *_bi, void *unused)
+{
+	builtin_t *bi = (builtin_t *)_bi;
+	return bi->name;
+}
+
+static const char *
 function_get_key (void *f, void *_pr)
 {
 	progs_t *pr = (progs_t*)_pr;
@@ -1218,18 +1199,12 @@ PR_LoadProgsFile (progs_t * pr, const char *progsname)
 void
 PR_LoadProgs (progs_t * pr, const char *progsname)
 {
-	int         i;
-
 	PR_LoadProgsFile (pr, progsname);
 	if (!pr->progs)
 		return;
 
 	if (!progsname)
 		progsname = "(preloaded)";
-
-// flush the non-C variable lookup cache
-	for (i = 0; i < GEFV_CACHESIZE; i++)
-		gefvCache[i].field[0] = 0;
 
 	if (!(pr->globals.time = (float*)PR_GetGlobalPointer (pr, "time")))
 		PR_Error (pr, "%s: undefined symbol: time", progsname);
@@ -1297,48 +1272,43 @@ PR_Init (void)
 void
 PR_AddBuiltin (progs_t *pr, const char *name, builtin_proc builtin, int num)
 {
-	int i, j;
+	int i;
 
 	if (pr->numbuiltins == 0) {
-		pr->builtins = malloc (PR_AUTOBUILTIN * sizeof (builtin_t));
+		pr->builtins = calloc (PR_AUTOBUILTIN, sizeof (builtin_t));
 		pr->numbuiltins = PR_AUTOBUILTIN;
 		if (!pr->builtins)
 			PR_Error (pr, "PR_AddBuiltin: memory allocation error!\n");
-		for (i = 0; i < pr->numbuiltins; i++) {
-			pr->builtins[i].proc = 0;
-			pr->builtins[i].name = 0;
-		}
+		pr->builtin_hash = Hash_NewTable (1021, builtin_get_key, 0, pr);
 	}
 
 	if (num < 0) {
-		for (i = PR_AUTOBUILTIN; i < pr->numbuiltins && pr->builtins[i].proc; i++)
+		for (i = PR_AUTOBUILTIN;
+			 i < pr->numbuiltins && pr->builtins[i].proc; i++)
 			;
 		if (i >= pr->numbuiltins) {
 			pr->numbuiltins++;
-			pr->builtins = realloc (pr->builtins, pr->numbuiltins * sizeof (builtin_t));
+			pr->builtins = realloc (pr->builtins,
+									pr->numbuiltins * sizeof (builtin_t));
 			if (!pr->builtins)
 				PR_Error (pr, "PR_AddBuiltin: memory allocation error!\n");
 		}
-		j = i;
 	} else {
 		if (num >= PR_AUTOBUILTIN || num == 0)
 			PR_Error (pr, "PR_AddBuiltin: invalid builtin number.\n");
 		if (pr->builtins[num].proc)
 			PR_Error (pr, "PR_AddBuiltin: builtin number already exists.\n");
-		j = num;
+		i = num;
 	}
-	pr->builtins[j].proc = builtin;
-	pr->builtins[j].name = name;
+	pr->builtins[i].proc = builtin;
+	pr->builtins[i].name = name;
+	Hash_Add (pr->builtin_hash, &pr->builtins[i]);
 }
 
-int
+builtin_t *
 PR_FindBuiltin (progs_t *pr, const char *name)
 {
-	int i;
-	for (i = 0; i < pr->numbuiltins; i++)
-		if (pr->builtins[i].name && strequal (pr->builtins[i].name, name))
-			return i;
-	return 0;
+	return (builtin_t *) Hash_Find (pr->builtin_hash, name);
 }
 
 edict_t    *
@@ -1385,7 +1355,7 @@ PR_Error (progs_t *pr, const char *error, ...)
 	vsnprintf (string, sizeof (string), error, argptr);
 	va_end (argptr);
 
-	Sys_Error ("%s", string);
+	Sys_Error ("%s: %s", pr->progs_name, string);
 }
 
 int
@@ -1401,4 +1371,24 @@ PR_AccessField (progs_t *pr, const char *name, etype_t type,
 				  name, pr_type_name[type], pr_type_name[def->type],
 				  file, line);
 	return def->ofs;
+}
+
+void
+PR_RelocateBuiltins (progs_t *pr)
+{
+	int         i;
+	dfunction_t *func;
+	builtin_t  *bi;
+	const char *bi_name;
+
+	for (i = 1; i < pr->progs->numfunctions; i++) {
+		func = pr->pr_functions + i;
+		if (func->first_statement)
+			continue;
+		bi_name = PR_GetString (pr, func->s_name);
+		bi = PR_FindBuiltin (pr, bi_name);
+		if (!bi)
+			PR_Error (pr, "undefined builtin %s", bi_name);
+		func->first_statement = -(bi - pr->builtins);
+	}
 }

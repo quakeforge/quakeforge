@@ -88,8 +88,9 @@ main ()
 	progs.num_edicts = &num_edicts;
 	progs.reserved_edicts = &reserved_edicts;
 	progs.no_exec_limit = 1;
+	progs.progs_name = "qwaq.dat";
 
-	f = fopen ("qwaq.dat", "rb");
+	f = fopen (progs.progs_name, "rb");
 	if (f) {
 		fseek (f, 0, SEEK_END);
 		len = ftell (f);
@@ -99,10 +100,11 @@ main ()
 		fclose (f);
 		com_filesize = len;
 		if (progs.progs)
-			PR_LoadProgs (&progs, 0);
+			PR_LoadProgs (&progs, progs.progs_name);
 	}
 	if (!progs.progs)
 		Sys_Error ("couldn't load %s\n", "qwaq.dat");
+	PR_RelocateBuiltins (&progs);
 
 	*progs.edicts = PR_InitEdicts (&progs, MAX_EDICTS);
 	for (i = 0; i < progs.progs->numstatements; i++) {

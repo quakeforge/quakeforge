@@ -166,7 +166,8 @@ char *PR_GlobalStringNoContents (progs_t *pr, int ofs, etype_t type);
 pr_type_t *GetEdictFieldValue(progs_t *pr, edict_t *ed, const char *field);
 
 void PR_AddBuiltin (progs_t *pr, const char *name, builtin_proc builtin, int num);
-int PR_FindBuiltin (progs_t *pr, const char *name);
+builtin_t *PR_FindBuiltin (progs_t *pr, const char *name);
+void PR_RelocateBuiltins (progs_t *pr);
 
 //
 // PR Strings stuff
@@ -223,6 +224,7 @@ struct progs_s {
 	dprograms_t		*progs;
 	int				progs_size;
 
+	struct hashtab_s *builtin_hash;
 	struct hashtab_s *function_hash;
 	struct hashtab_s *global_hash;
 	struct hashtab_s *field_hash;
