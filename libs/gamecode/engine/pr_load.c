@@ -43,6 +43,7 @@ static __attribute__ ((unused)) const char rcsid[] =
 #include "QF/cmd.h"
 #include "QF/crc.h"
 #include "QF/cvar.h"
+#include "QF/dstring.h"
 #include "QF/hash.h"
 #include "QF/progs.h"
 #include "QF/qdefs.h"
@@ -324,11 +325,11 @@ void
 PR_Error (progs_t *pr, const char *error, ...)
 {
 	va_list     argptr;
-	char        string[1024];
+	dstring_t  *string = dstring_new ();
 
 	va_start (argptr, error);
-	vsnprintf (string, sizeof (string), error, argptr);
+	dvsprintf (string, error, argptr);
 	va_end (argptr);
 
-	Sys_Error ("%s: %s", pr->progs_name, string);
+	Sys_Error ("%s: %s", pr->progs_name, string->str);
 }

@@ -737,7 +737,8 @@ C_NewMap (void)
 		first_time = 0;
 		Menu_Load ();
 	}
-	strcpy (old_gamedir, qfs_gamedir->gamedir);
+	strncpy (old_gamedir, qfs_gamedir->gamedir, sizeof (old_gamedir));
+	old_gamedir[sizeof (old_gamedir) - 1] = 0;
 }
 
 static void

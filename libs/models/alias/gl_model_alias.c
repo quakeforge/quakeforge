@@ -273,18 +273,10 @@ Mod_LoadExternalSkin (maliasskindesc_t *pskindesc, char *filename)
 
 	QFS_FOpenFile (filename, &f);
 	if (!f) {
-		char	filename2[MAX_QPATH + 4];
-		char   *foo = filename2;
-
-		foo = va ("progs/%s", filename);
-		QFS_FOpenFile (foo, &f);
+		QFS_FOpenFile (va ("progs/%s", filename), &f);
 	}
 	if (!f) {
-		char	filename2[MAX_QPATH + 4];
-		char   *foo = filename2;
-
-		foo = va ("textures/%s", filename);
-		QFS_FOpenFile (foo, &f);
+		QFS_FOpenFile (va ("textures/%s", filename), &f);
 	}
 	if (f) {
 		targa = LoadTGA (f);

@@ -42,6 +42,7 @@ static __attribute__ ((unused)) const char rcsid[] =
 #endif
 
 #include "QF/cvar.h"
+#include "QF/dstring.h"
 #include "QF/model.h"
 #include "QF/qendian.h"
 #include "QF/quakefs.h"
@@ -128,23 +129,22 @@ Mod_LoadLighting (lump_t *l)
 {
 	byte        d;
 	byte       *in, *out, *data;
-	char        litfilename[1024];
+	dstring_t  *litfilename = dstring_new ();
 	int         i;
 
 	loadmodel->lightdata = NULL;
 	if (mod_lightmap_bytes > 1) {
 		// LordHavoc: check for a .lit file to load
-		strcpy (litfilename, loadmodel->name);
-		QFS_StripExtension (litfilename, litfilename);
-		strncat (litfilename, ".lit", sizeof (litfilename) -
-				 strlen (litfilename));
-		data = (byte *) QFS_LoadHunkFile (litfilename);
+		dstring_copystr (litfilename, loadmodel->name);
+		QFS_StripExtension (litfilename->str, litfilename->str);
+		dstring_appendstr (litfilename, ".lit");
+		data = (byte *) QFS_LoadHunkFile (litfilename->str);
 		if (data) {
 			if (data[0] == 'Q' && data[1] == 'L' && data[2] == 'I'
 				&& data[3] == 'T') {
 				i = LittleLong (((int *) data)[1]);
 				if (i == 1) {
-					Sys_DPrintf ("%s loaded", litfilename);
+					Sys_DPrintf ("%s loaded", litfilename->str);
 					loadmodel->lightdata = data + 8;
 					return;
 				} else
@@ -154,10 +154,12 @@ Mod_LoadLighting (lump_t *l)
 		}
 	}
 	// LordHavoc: oh well, expand the white lighting data
-	if (!l->filelen)
+	if (!l->filelen) {
+		dstring_delete (litfilename);
 		return;
+	}
 	loadmodel->lightdata = Hunk_AllocName (l->filelen * mod_lightmap_bytes,
-										   litfilename);
+										   litfilename->str);
 	in = mod_base + l->fileofs;
 	out = loadmodel->lightdata;
 
@@ -171,6 +173,7 @@ Mod_LoadLighting (lump_t *l)
 	else
 		for (i = 0; i < l->filelen ; i++)
 			*out++ = gammatable[*in++];
+	dstring_delete (litfilename);
 }
 
 msurface_t *warpface;

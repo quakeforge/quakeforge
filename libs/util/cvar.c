@@ -285,10 +285,7 @@ Cvar_SetROM (cvar_t *var, const char *value)
 void
 Cvar_SetValue (cvar_t *var, float value)
 {
-	char        val[32];
-
-	snprintf (val, sizeof (val), "%g", value);
-	Cvar_Set (var, val);
+	Cvar_Set (var, va ("%g", value));
 }
 
 /*

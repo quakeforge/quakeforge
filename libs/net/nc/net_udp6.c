@@ -102,6 +102,7 @@ static __attribute__ ((unused)) const char rcsid[] =
 #undef model_t
 
 #include "QF/console.h"
+#include "QF/dstring.h"
 #include "QF/msg.h"
 #include "QF/qargs.h"
 #include "QF/qtypes.h"
@@ -246,7 +247,7 @@ NET_BaseAdrToString (netadr_t a)
 qboolean
 NET_StringToAdr (const char *s, netadr_t *a)
 {
-	char        copy[128];
+	static dstring_t *copy;
 	char       *addrs, *space;
 	char       *ports = NULL;
 	int         err;
@@ -256,17 +257,21 @@ NET_StringToAdr (const char *s, netadr_t *a)
 	struct sockaddr_in6 *ss6;
 	struct sockaddr_in *ss4;
 
+	if (!copy)
+		copy = dstring_new ();
+
 	memset (&hints, 0, sizeof (hints));
 	hints.ai_socktype = SOCK_DGRAM;
 	hints.ai_family = PF_UNSPEC;
 
-	strcpy (copy, s);
-	addrs = space = copy;
+	dstring_copystr (copy, s);
+	addrs = space = copy->str;
 	if (*addrs == '[') {
 		addrs++;
 		for (; *space && *space != ']'; space++);
 		if (!*space) {
 			Con_Printf ("NET_StringToAdr: invalid IPv6 address %s\n", s);
+			dstring_delete (copy);
 			return 0;
 		}
 		*space++ = '\0';
@@ -283,6 +288,7 @@ NET_StringToAdr (const char *s, netadr_t *a)
 		// Error
 		Con_Printf ("NET_StringToAdr: string %s:\n%s\n", s,
 					gai_strerror (err));
+		dstring_delete (copy);
 		return 0;
 	}
 
@@ -308,10 +314,12 @@ NET_StringToAdr (const char *s, netadr_t *a)
 		default:
 			Con_Printf ("NET_StringToAdr: string %s:\nprotocol family %d not "
 						"supported\n", s, resultp->ai_family);
+			dstring_delete (copy);
 			return 0;
 	}
 
 	SockadrToNetadr ((struct sockaddr_in6 *) &ss, a);
+	dstring_delete (copy);
 
 	return true;
 }

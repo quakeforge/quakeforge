@@ -46,6 +46,7 @@ static __attribute__ ((unused)) const char rcsid[] =
 
 #include "QF/console.h"
 #include "QF/cvar.h"
+#include "QF/dstring.h"
 #include "QF/msg.h"
 #include "QF/sys.h"
 
@@ -169,14 +170,17 @@ Netchan_OutOfBand (netadr_t adr, int length, byte * data)
 void
 Netchan_OutOfBandPrint (netadr_t adr, const char *format, ...)
 {
-	static char string[8192];			// ?? why static?
+	static dstring_t *string;
 	va_list     argptr;
 
+	if (!string)
+		string = dstring_new ();
+
 	va_start (argptr, format);
-	vsnprintf (string, sizeof (string), format, argptr);
+	dvsprintf (string, format, argptr);
 	va_end (argptr);
 
-	Netchan_OutOfBand (adr, strlen (string), (byte *) string);
+	Netchan_OutOfBand (adr, strlen (string->str), (byte *) string->str);
 }
 
 /*

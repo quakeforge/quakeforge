@@ -44,6 +44,7 @@ static __attribute__ ((unused)) const char rcsid[] =
 
 #include "QF/cmd.h"
 #include "QF/cvar.h"
+#include "QF/dstring.h"
 #include "QF/model.h"
 #include "QF/qargs.h"
 #include "QF/sys.h"
@@ -701,7 +702,7 @@ SND_ExtraUpdate (void)
 static void
 SND_Play (void)
 {
-	char		name[256];
+	dstring_t  *name = dstring_new ();
 	int			i;
 	static int	hash = 345;
 	sfx_t	   *sfx;
@@ -709,25 +710,21 @@ SND_Play (void)
 	i = 1;
 	while (i < Cmd_Argc ()) {
 		if (!strrchr (Cmd_Argv (i), '.')) {
-			if (strlen (Cmd_Argv (i)) + 4 >= MAX_QPATH)
-				Sys_Error ("Sound name too long: %s", Cmd_Argv (i));
-			strcpy (name, Cmd_Argv (i));
-			strncat (name, ".wav", sizeof (name) - strlen (name));
+			dsprintf (name, "%s.wav", Cmd_Argv (i));
 		} else {
-			if (strlen (Cmd_Argv (i)) >= MAX_QPATH)
-				Sys_Error ("Sound name too long: %s", Cmd_Argv (i));
-			strcpy (name, Cmd_Argv (i));
+			dsprintf (name, "%s", Cmd_Argv (i));
 		}
-		sfx = SND_PrecacheSound (name);
+		sfx = SND_PrecacheSound (name->str);
 		SND_StartSound (hash++, 0, sfx, listener_origin, 1.0, 1.0);
 		i++;
 	}
+	dstring_delete (name);
 }
 
 static void
 SND_PlayVol (void)
 {
-	char		name[256];
+	dstring_t  *name = dstring_new ();
 	float		vol;
 	int			i;
 	static int	hash = 543;
@@ -736,20 +733,16 @@ SND_PlayVol (void)
 	i = 1;
 	while (i < Cmd_Argc ()) {
 		if (!strrchr (Cmd_Argv (i), '.')) {
-			if (strlen (Cmd_Argv (i)) + 4 >= MAX_QPATH)
-				Sys_Error ("Sound name too long: %s", Cmd_Argv (i));
-			strcpy (name, Cmd_Argv (i));
-			strncat (name, ".wav", sizeof (name) - strlen (name));
+			dsprintf (name, "%s.wav", Cmd_Argv (i));
 		} else {
-			if (strlen (Cmd_Argv (i)) >= MAX_QPATH)
-				Sys_Error ("Sound name too long: %s", Cmd_Argv (i));
-			strcpy (name, Cmd_Argv (i));
+			dsprintf (name, "%s", Cmd_Argv (i));
 		}
-		sfx = SND_PrecacheSound (name);
+		sfx = SND_PrecacheSound (name->str);
 		vol = atof (Cmd_Argv (i + 1));
 		SND_StartSound (hash++, 0, sfx, listener_origin, vol, 1.0);
 		i += 2;
 	}
+	dstring_delete (name);
 }
 
 static void

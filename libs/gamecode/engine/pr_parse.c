@@ -227,7 +227,7 @@ static qboolean
 ED_ParseEpair (progs_t *pr, pr_type_t *base, ddef_t *key, const char *s)
 {
 	int			i;
-	char		string[128];
+	char		*string;
 	ddef_t		*def;
 	char		*v, *w;
 	pr_type_t	*d;
@@ -245,7 +245,7 @@ ED_ParseEpair (progs_t *pr, pr_type_t *base, ddef_t *key, const char *s)
 			break;
 
 		case ev_vector:
-			strcpy (string, s);
+			string = strdup (s);
 			v = string;
 			w = string;
 			for (i = 0; i < 3; i++) {
@@ -255,6 +255,7 @@ ED_ParseEpair (progs_t *pr, pr_type_t *base, ddef_t *key, const char *s)
 				d->vector_var[i] = atof (w);
 				w = v = v + 1;
 			}
+			free (string);
 			break;
 
 		case ev_entity:
@@ -298,7 +299,7 @@ ED_ParseEdict (progs_t *pr, const char *data, edict_t *ent)
 	ddef_t		*key;
 	qboolean	anglehack;
 	qboolean	init = false;
-	char		keyname[256];
+	dstring_t  *keyname = dstring_new ();
 	const char	*token;
 	int			n;
 
@@ -326,12 +327,12 @@ ED_ParseEdict (progs_t *pr, const char *data, edict_t *ent)
 		if (!strcmp (token, "light"))
 			token = "light_lev";	// hack for single light def
 
-		strcpy (keyname, token);
+		dstring_copystr (keyname, token);
 
 		// another hack to fix heynames with trailing spaces
-		n = strlen (keyname);
-		while (n && keyname[n - 1] == ' ') {
-			keyname[n - 1] = 0;
+		n = strlen (keyname->str);
+		while (n && keyname->str[n - 1] == ' ') {
+			keyname->str[n - 1] = 0;
 			n--;
 		}
 
@@ -347,13 +348,14 @@ ED_ParseEdict (progs_t *pr, const char *data, edict_t *ent)
 
 // keynames with a leading underscore are used for utility comments,
 // and are immediately discarded by quake
-		if (keyname[0] == '_')
+		if (keyname->str[0] == '_')
 			continue;
 
-		key = ED_FindField (pr, keyname);
+		key = ED_FindField (pr, keyname->str);
 		if (!key) {
-			if (!pr->parse_field || !pr->parse_field (pr, keyname, com_token)) {
-				Sys_Printf ("'%s' is not a field\n", keyname);
+			if (!pr->parse_field
+				|| !pr->parse_field (pr, keyname->str, com_token)) {
+				Sys_Printf ("'%s' is not a field\n", keyname->str);
 				continue;
 			}
 		} else {
@@ -372,6 +374,7 @@ ED_ParseEdict (progs_t *pr, const char *data, edict_t *ent)
 	if (!init)
 		ent->free = true;
 
+	dstring_delete (keyname);
 	return data;
 }
 
@@ -381,7 +384,7 @@ ED_ParseEdict (progs_t *pr, const char *data, edict_t *ent)
 void
 ED_ParseGlobals (progs_t *pr, const char *data)
 {
-	char		keyname[64];
+	dstring_t   *keyname = dstring_new ();
 	ddef_t		*key;
 
 	while (1) {
@@ -392,7 +395,7 @@ ED_ParseGlobals (progs_t *pr, const char *data)
 		if (!data)
 			PR_Error (pr, "ED_ParseEntity: EOF without closing brace");
 
-		strcpy (keyname, com_token);
+		dstring_copystr (keyname, com_token);
 
 		// parse value  
 		data = COM_Parse (data);
@@ -402,15 +405,16 @@ ED_ParseGlobals (progs_t *pr, const char *data)
 		if (com_token[0] == '}')
 			PR_Error (pr, "ED_ParseEntity: closing brace without data");
 
-		key = PR_FindGlobal (pr, keyname);
+		key = PR_FindGlobal (pr, keyname->str);
 		if (!key) {
-			Sys_Printf ("'%s' is not a global\n", keyname);
+			Sys_Printf ("'%s' is not a global\n", keyname->str);
 			continue;
 		}
 
 		if (!ED_ParseEpair (pr, pr->pr_globals, key, com_token))
 			PR_Error (pr, "ED_ParseGlobals: parse error");
 	}
+	dstring_delete (keyname);
 }
 
 

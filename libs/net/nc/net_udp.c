@@ -70,6 +70,7 @@ static __attribute__ ((unused)) const char rcsid[] =
 
 #include "QF/console.h"
 #include "QF/cvar.h"
+#include "QF/dstring.h"
 #include "QF/msg.h"
 #include "QF/sys.h"
 #include "QF/qargs.h"
@@ -179,29 +180,32 @@ NET_BaseAdrToString (netadr_t a)
 qboolean
 NET_StringToAdr (const char *s, netadr_t *a)
 {
-	char        copy[128];
+	static dstring_t *copy;
 	char       *colon;
 	struct hostent *h;
 	struct sockaddr_in sadr;
+
+	if (!copy)
+		copy = dstring_new ();
 
 	memset (&sadr, 0, sizeof (sadr));
 	sadr.sin_family = AF_INET;
 
 	sadr.sin_port = 0;
 
-	strcpy (copy, s);
+	dstring_copystr (copy, s);
 	// strip off a trailing :port if present
-	for (colon = copy; *colon; colon++)
+	for (colon = copy->str; *colon; colon++)
 		if (*colon == ':') {
 			*colon = 0;
 			sadr.sin_port = htons ((unsigned short) atoi (colon + 1));
 		}
 
-	if (copy[0] >= '0' && copy[0] <= '9') {
-		int         addr = inet_addr (copy);
+	if (copy->str[0] >= '0' && copy->str[0] <= '9') {
+		int         addr = inet_addr (copy->str);
 		memcpy (&sadr.sin_addr, &addr, 4);
 	} else {
-		if (!(h = gethostbyname (copy)))
+		if (!(h = gethostbyname (copy->str)))
 			return 0;
 		memcpy (&sadr.sin_addr, h->h_addr_list[0], 4);
 	}

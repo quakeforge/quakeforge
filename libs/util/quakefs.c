@@ -874,7 +874,7 @@ int         loadsize;
 	Filename are relative to the quake directory.
 	Always appends a 0 byte to the loaded data.
 */
-byte       *
+byte *
 QFS_LoadFile (const char *path, int usehunk)
 {
 	QFile      *h;

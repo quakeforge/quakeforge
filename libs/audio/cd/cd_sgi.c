@@ -61,7 +61,7 @@ static float cdvolume;
 static byte remap[100];
 static byte playTrack;
 
-static char cd_dev[64] = "/dev/cdrom";
+static char cd_dev[] = "/dev/cdrom";
 
 static CDPLAYER *cdp = NULL;
 static cvar_t *bgmvolume;

@@ -41,6 +41,7 @@ static __attribute__ ((unused)) const char rcsid[] =
 #include <stdio.h>
 
 #include "QF/cvar.h"
+#include "QF/dstring.h"
 #include "QF/mdfour.h"
 #include "QF/model.h"
 #include "QF/quakefs.h"
@@ -336,7 +337,7 @@ BuildTris (void)
 void
 Mod_MakeAliasModelDisplayLists (model_t *m, aliashdr_t *hdr, void *_m, int _s, int extra)
 {
-	char        cache[MAX_QPATH], fullpath[MAX_OSPATH];
+	dstring_t  *cache, *fullpath;
 	unsigned char model_digest[MDFOUR_DIGEST_BYTES];
 	unsigned char mesh_digest[MDFOUR_DIGEST_BYTES];
 	int         i, j;
@@ -348,6 +349,9 @@ Mod_MakeAliasModelDisplayLists (model_t *m, aliashdr_t *hdr, void *_m, int _s, i
 	aliasmodel = m;
 	paliashdr = hdr;
 
+	cache = dstring_new ();
+	fullpath = dstring_new ();
+
 	if (!gl_alias_render_tri->int_val) {
 
 		if (gl_mesh_cache->int_val
@@ -357,12 +361,13 @@ Mod_MakeAliasModelDisplayLists (model_t *m, aliashdr_t *hdr, void *_m, int _s, i
 			mdfour (model_digest, (unsigned char *) _m, _s);
 
 			// look for a cached version
-			strcpy (cache, "glquake/");
+			dstring_copystr (cache, "glquake/");
+			dstring_appendstr (cache, m->name);
 			QFS_StripExtension (m->name + strlen ("progs/"),
-							cache + strlen ("glquake/"));
-			strncat (cache, ".qfms", sizeof (cache) - strlen (cache));
+							cache->str + strlen ("glquake/"));
+			dstring_appendstr (cache, ".qfms");
 
-			QFS_FOpenFile (cache, &f);
+			QFS_FOpenFile (cache->str, &f);
 			if (f) {
 				unsigned char d1[MDFOUR_DIGEST_BYTES];
 				unsigned char d2[MDFOUR_DIGEST_BYTES];
@@ -435,9 +440,8 @@ Mod_MakeAliasModelDisplayLists (model_t *m, aliashdr_t *hdr, void *_m, int _s, i
 
 			if (do_cache) {
 				// save out the cached version
-				snprintf (fullpath, sizeof (fullpath), "%s/%s",
-						  qfs_gamedir->dir.def, cache);
-				f = QFS_WOpen (fullpath, 9);	
+				dsprintf (fullpath, "%s/%s", qfs_gamedir->dir.def, cache->str);
+				f = QFS_WOpen (fullpath->str, 9);	
 
 				if (f) {
 					struct mdfour md;
@@ -530,4 +534,6 @@ Mod_MakeAliasModelDisplayLists (model_t *m, aliashdr_t *hdr, void *_m, int _s, i
 				*verts++ = poseverts[i][vertexorder[j]];
 		}
 	}
+	dstring_delete (cache);
+	dstring_delete (fullpath);
 }
