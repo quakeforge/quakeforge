@@ -130,15 +130,14 @@ AC_CHECK_HEADERS(
 	alsa/asoundlib.h \
 	arpa/inet.h asm/io.h assert.h conio.h ctype.h ddraw.h dinput.h \
 	direct.h dirent.h dlfcn.h dmedia/audio.h dmedia/cdaudio.h dpmi.h \
-	dsound.h errno.h execinfo.h fcntl.h fnmatch.h io.h \
-	libc.h limits.h linux/cdrom.h linux/joystick.h linux/soundcard.h \
-	machine/soundcard.h malloc.h math.h mgraph.h _mingw.h netdb.h \
-	netinet/in.h pwd.h rpc/types.h setjmp.h signal.h stdarg.h stdio.h \
-	stdlib.h string.h strings.h sys/asoundlib.h sys/audioio.h sys/filio.h \
-	sys/ioctl.h sys/io.h sys/ipc.h sys/mman.h sys/param.h sys/poll.h \
-	sys/shm.h sys/signal.h sys/socket.h sys/soundcard.h sys/stat.h \
-	sys/time.h sys/types.h sys/wait.h termios.h time.h unistd.h \
-	vgakeyboard.h vgamouse.h windows.h winsock.h
+	dsound.h errno.h execinfo.h fcntl.h io.h  libc.h limits.h linux/cdrom.h \
+	linux/joystick.h linux/soundcard.h machine/soundcard.h malloc.h math.h \
+	mgraph.h _mingw.h netdb.h  netinet/in.h pwd.h rpc/types.h setjmp.h \
+	signal.h stdarg.h stdio.h stdlib.h string.h strings.h sys/asoundlib.h \
+	sys/audioio.h sys/filio.h sys/ioctl.h sys/io.h sys/ipc.h sys/mman.h \
+	sys/param.h sys/poll.h sys/shm.h sys/signal.h sys/socket.h \
+	sys/soundcard.h sys/stat.h sys/time.h sys/types.h termios.h time.h \
+	unistd.h vgakeyboard.h vgamouse.h windows.h winsock.h
 )
 if test "x$mingw" = xyes; then
 	AC_MSG_CHECKING(for fnmatch.h)
