@@ -91,8 +91,18 @@ AC_PROG_LN_S
 AC_PROG_RANLIB
 AC_LIBTOOL_WIN32_DLL
 AM_PROG_LIBTOOL
+
 AC_PROG_YACC
+if echo $YACC | grep -vq bison; then
+	AC_MSG_ERROR(GNU bison is required but wasn't found)
+fi
+
 AM_PROG_LEX
+if echo $LEX | grep -vq flex; then
+	AC_MSG_ERROR(GNU flex is required but wasn't found)
+fi
+
+
 
 AC_ARG_WITH(cpp,
 [  --with-cpp=CPP          how qfcc should invoke cpp],
