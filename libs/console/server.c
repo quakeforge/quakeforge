@@ -46,8 +46,12 @@ static const char rcsid[] =
 # include <unistd.h>
 #endif
 
-#include <sys/ioctl.h>
-#include <termios.h>
+#ifdef HAVE_SYS_IOCTL_H
+# include <sys/ioctl.h>
+#endif
+#ifdef HAVE_TERMIOS_H
+# include <termios.h>
+#endif
 #include <signal.h>
 #include <stdlib.h>
 

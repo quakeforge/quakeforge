@@ -46,6 +46,9 @@ case "$host_os" in
 		CPPFLAGS="$CPPFLAGS -I\$(top_srcdir)/include/win32/resources"
 		if test $host != $build; then
 			CC=$host_cpu-$host_os-gcc
+			AS=$host_cpu-$host_os-gcc
+			AR=$host_cpu-$host_os-ar
+			RANLIB=$host_cpu-$host_os-ranlib
 			endian="little"
 		fi
 		;;
@@ -59,6 +62,7 @@ AC_PROG_INSTALL
 AC_PROG_CC
 AC_PROG_CPP
 AC_PROG_LN_S
+AC_PROG_RANLIB
 AM_PROG_LIBTOOL
 AC_PROG_YACC
 AM_PROG_LEX
@@ -102,7 +106,7 @@ AC_CHECK_HEADERS(
 	stdlib.h string.h strings.h sys/asoundlib.h sys/audioio.h sys/filio.h \
 	sys/ioctl.h sys/io.h sys/ipc.h sys/mman.h sys/param.h sys/poll.h \
 	sys/shm.h sys/signal.h sys/socket.h sys/soundcard.h sys/stat.h \
-	sys/time.h sys/types.h sys/wait.h time.h unistd.h vga.h \
+	sys/time.h sys/types.h sys/wait.h termios.h time.h unistd.h vga.h \
 	vgakeyboard.h vgamouse.h windows.h winsock.h zlib.h
 )
 if test "x$mingw" = xyes; then
@@ -1450,6 +1454,10 @@ dnl Finalization of CFLAGS, LDFLAGS, and LIBS
 AC_SUBST(CFLAGS)
 AC_SUBST(LDFLAGS)
 AC_SUBST(LIBS)
+
+AC_SUBST(AS)
+AC_SUBST(AR)
+AC_SUBST(RANLIB)
 
 dnl Output files
 AC_OUTPUT(
