@@ -66,7 +66,7 @@ fpenv:
 C(MaskExceptions):
 	got_base(1)
 	fnstenv	got_var(fpenv)
-	orl		$0x3F,fpenv
+	orl		$0x3F,got_var(fpenv)
 	fldenv	got_var(fpenv)
 
 	ret
@@ -74,9 +74,9 @@ C(MaskExceptions):
 #if 0
 .globl C(unmaskexceptions)
 C(unmaskexceptions):
-	fnstenv	fpenv
-	andl		$0xFFFFFFE0,fpenv
-	fldenv	fpenv
+	fnstenv	got_var(fpenv)
+	andl		$0xFFFFFFE0,got_var(fpenv)
+	fldenv	got_var(fpenv)
 
 	ret
 #endif
