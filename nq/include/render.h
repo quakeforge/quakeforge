@@ -71,6 +71,12 @@ typedef struct entity_s
 // FIXME: could turn these into a union
 	int						trivial_accept;
 	struct mnode_s			*topnode;		// for bmodels, first world node that splits bmodel, or NULL if not split
+
+	// Animation interpolation
+	float                   frame_start_time;
+	float                   frame_interval;
+	int                     pose1;
+	int                     pose2;
 } entity_t;
 
 // !!! if this is changed, it must be changed in asm_draw.h too !!!

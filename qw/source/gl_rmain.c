@@ -62,40 +62,40 @@
 
 entity_t	r_worldentity;
 
-vec3_t		modelorg, r_entorigin;
-entity_t	*currententity;
+vec3_t      modelorg, r_entorigin;
+entity_t   *currententity;
 
-int 	r_visframecount;			// bumped when going to a new PVS
-int 	r_framecount;				// used for dlight push checking
+int         r_visframecount;			// bumped when going to a new PVS
+int         r_framecount;				// used for dlight push checking
 
 int 		c_brush_polys, c_alias_polys;
 
-qboolean	envmap;						// true during envmap command capture
+qboolean    envmap;						// true during envmap command capture
 
 
-int 	playertextures;				// up to 16 color translated skins
-int 	player_fb_textures;			// up to 128 skin fullbright maps
+int         playertextures;				// up to 16 color translated skins
+int         player_fb_textures;			// up to 128 skin fullbright maps
 
 // view origin
-vec3_t	vup;
-vec3_t	vpn;
-vec3_t	vright;
-vec3_t	r_origin;
+vec3_t      vup;
+vec3_t      vpn;
+vec3_t      vright;
+vec3_t      r_origin;
 
-float	r_world_matrix[16];
-float	r_base_world_matrix[16];
+float       r_world_matrix[16];
+float       r_base_world_matrix[16];
 
 // screen size info
-refdef_t	r_refdef;
+refdef_t    r_refdef;
 
-mleaf_t *r_viewleaf, *r_oldviewleaf;
+mleaf_t    *r_viewleaf, *r_oldviewleaf;
 
-int 	d_lightstylevalue[256];		// 8.8 fraction of base light value
+int         d_lightstylevalue[256];		// 8.8 fraction of base light value
 
-vec3_t	shadecolor;					// Ender (Extend) Colormod
-float	modelalpha;					// Ender (EXtend) Alpha
+vec3_t		shadecolor;					// Ender (Extend) Colormod
+float		modelalpha;					// Ender (Extend) Alpha
 
-void R_MarkLeaves (void);
+void        R_MarkLeaves (void);
 
 extern cvar_t *scr_fov;
 
@@ -230,17 +230,18 @@ float       r_avertexnormals[NUMVERTEXNORMALS][3] = {
 #include "anorms.h"
 };
 
-vec3_t	shadevector;
-float	shadelight;
+vec3_t      shadevector;
+float       shadelight;
 
 // precalculated dot products for quantized angles
 #define SHADEDOT_QUANT 16
-float	r_avertexnormal_dots[SHADEDOT_QUANT][256] =
+float   r_avertexnormal_dots[SHADEDOT_QUANT][256] =
 	#include "anorm_dots.h"
 		;
 
-float  *shadedots = r_avertexnormal_dots[0];
-int 	lastposenum, lastposenum0;
+float      *shadedots = r_avertexnormal_dots[0];
+
+int         lastposenum, lastposenum0;
 
 
 static void
@@ -589,15 +590,15 @@ R_SetupAliasBlendedFrame (int frame, aliashdr_t *paliashdr, entity_t *e, qboolea
 static void
 R_DrawAliasModel (entity_t *e)
 {
-	int 		i;
-	int 		lnum;
-	vec3_t		dist;
-	float		add;
-	model_t 	*clmodel;
-	vec3_t		mins, maxs;
-	aliashdr_t	*paliashdr;
-	float		an;
-	int 		anim;
+	int         i;
+	int         lnum;
+	vec3_t      dist;
+	float       add;
+	model_t    *clmodel;
+	vec3_t      mins, maxs;
+	aliashdr_t *paliashdr;
+	float       an;
+	int         anim;
 	int         texture;
 	int         fb_texture = 0;
 	int         skinnum;
@@ -625,26 +626,23 @@ R_DrawAliasModel (entity_t *e)
 	VectorCopy (currententity->origin, r_entorigin);
 	VectorSubtract (r_origin, r_entorigin, modelorg);
 
-	// 
 	// get lighting information
-	// 
-
 	shadelight = R_LightPoint (currententity->origin);
 
-	// allways give the gun some light
+	// always give the gun some light
 	if (e == &cl.viewent)
 		shadelight = max (shadelight, 24);
 
 	for (lnum = 0; lnum < MAX_DLIGHTS; lnum++) {
 		if (cl_dlights[lnum].die >= cl.time) {
-			VectorSubtract (currententity->origin,
-							cl_dlights[lnum].origin,
+			VectorSubtract (currententity->origin, cl_dlights[lnum].origin,
 							dist);
-			add = (cl_dlights[lnum].radius * cl_dlights[lnum].radius * 8) / (DotProduct (dist, dist));	// FIXME Deek
+			add =
+				(cl_dlights[lnum].radius * cl_dlights[lnum].radius * 8) /
+				(DotProduct (dist, dist));	// FIXME Deek
 
-			if (add > 0) {
+			if (add > 0)
 				shadelight += add;
-			}
 		}
 	}
 
@@ -673,11 +671,9 @@ R_DrawAliasModel (entity_t *e)
 
 	// locate the proper data
 	paliashdr = (aliashdr_t *) Mod_Extradata (currententity->model);
-
 	c_alias_polys += paliashdr->mdl.numtris;
 
 	// draw all the triangles
-
 	glPushMatrix ();
 	R_RotateForEntity (e);
 
@@ -990,7 +986,9 @@ R_SetupGL (void)
 	x = r_refdef.vrect.x * glwidth / vid.width;
 	x2 = (r_refdef.vrect.x + r_refdef.vrect.width) * glwidth / vid.width;
 	y = (vid.height - r_refdef.vrect.y) * glheight / vid.height;
-	y2 = (vid.height - (r_refdef.vrect.y + r_refdef.vrect.height)) * glheight / vid.height;
+	y2 =
+		(vid.height -
+		 (r_refdef.vrect.y + r_refdef.vrect.height)) * glheight / vid.height;
 
 	// fudge around because of frac screen scale
 	if (x > 0)

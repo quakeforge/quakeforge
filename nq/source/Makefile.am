@@ -74,7 +74,7 @@ client_SOURCES=	cl_cam.c cl_cmd.c cl_demo.c cl_input.c cl_main.c cl_parse.c \
 		cl_tent.c console.c keys.c sbar.c r_cvar.c r_efrag.c r_part.c r_view.c \
 		nonintel.c gib.c gib_instructions.c gib_vars.c \
 		gib_interpret.c gib_modules.c gib_parse.c gib_stack.c \
-		pcx.c tga.c
+		locs.c pcx.c tga.c
 
 server_SOURCES= 	host.c host_cmd.c pr_cmds.c sv_cvar.c sv_main.c \
 			sv_move.c sv_phys.c sv_progs.c sv_user.c

@@ -42,6 +42,7 @@
 
 #include "QF/compat.h"
 #include "QF/console.h"
+#include "QF/locs.h"
 #include "QF/model.h"
 #include "QF/qargs.h"
 #include "QF/sys.h"
@@ -97,8 +98,8 @@ mleaf_t    *r_viewleaf, *r_oldviewleaf;
 
 int         d_lightstylevalue[256];		// 8.8 fraction of base light value
 
-vec3_t		shadecolor;					// Ender (EXtend) Colormod
-float		modelalpha;					// Ender (EXtend) Alpha
+vec3_t		shadecolor;					// Ender (Extend) Colormod
+float		modelalpha;					// Ender (Extend) Alpha
 
 void        R_MarkLeaves (void);
 
@@ -110,9 +111,9 @@ extern qboolean lighthalf;
 
 // LordHavoc: place for gl_rmain setup code
 void
-glrmain_init ()
+glrmain_init (void)
 {
-};
+}
 
 
 void
@@ -226,7 +227,7 @@ R_DrawSpriteModel (entity_t *e)
 
 
 /*
-  ALIAS MODELS
+	ALIAS MODELS
 */
 
 #define NUMVERTEXNORMALS	162
@@ -246,7 +247,7 @@ float   r_avertexnormal_dots[SHADEDOT_QUANT][256] =
 
 float      *shadedots = r_avertexnormal_dots[0];
 
-int         lastposenum;
+int         lastposenum, lastposenum0;
 
 
 static void
@@ -310,8 +311,91 @@ GL_DrawAliasFrame (aliashdr_t *paliashdr, int posenum, qboolean fb)
 }
 
 
+/*
+	GL_DrawAliasBlendedFrame
+
+	Interpolated model drawing
+*/
+void
+GL_DrawAliasBlendedFrame (aliashdr_t *paliashdr, int pose1, int pose2, float blend, qboolean fb)
+{
+	float		light;
+	float 		lerp;
+	trivertx_t	*verts1;
+	trivertx_t	*verts2;
+	int 		*order;
+	int 		count;
+
+	lastposenum0 = pose1;
+	lastposenum = pose2;
+
+	verts1 = (trivertx_t *) ((byte *) paliashdr + paliashdr->posedata);
+	verts2 = verts1;
+
+	verts1 += pose1 * paliashdr->poseverts;
+	verts2 += pose2 * paliashdr->poseverts;
+
+	order = (int *) ((byte *) paliashdr + paliashdr->commands);
+
+	if (modelalpha != 1.0)
+		glDepthMask (GL_FALSE);
+
+	if (fb) {	// don't do this in the loop, it doesn't change
+		if (lighthalf)
+			glColor4f (0.5, 0.5, 0.5, modelalpha);
+		else
+			glColor4f (1, 1, 1, modelalpha);
+	}
+
+	lerp = 1 - blend;
+	while ((count = *order++)) {	// get the vertex count and primitive type
+
+		if (count < 0) {
+			count = -count;
+			glBegin (GL_TRIANGLE_FAN);
+		} else {
+			glBegin (GL_TRIANGLE_STRIP);
+		}
+
+		do {
+			// texture coordinates come from the draw list
+			glTexCoord2f (((float *) order)[0], ((float *) order)[1]);
+			order += 2;
+
+			if (!fb) {
+				// normals and vertexes come from the frame list
+				// blend the light intensity from the two frames together
+				light = shadelight * ((shadedots[verts1->lightnormalindex] * lerp)
+									+ (shadedots[verts2->lightnormalindex] * blend));
+				glColor4f (shadecolor[0] * light, shadecolor[1] * light,
+							shadecolor[2] * light, modelalpha);
+			}
+
+			// blend the vertex positions from each frame together
+			glVertex3f ((verts1->v[0] * lerp) + (verts2->v[0] * blend),
+						(verts1->v[1] * lerp) + (verts2->v[1] * blend),
+						(verts1->v[2] * lerp) + (verts2->v[2] * blend));
+
+			verts1++;
+			verts2++;
+		} while (--count);
+		glEnd ();
+	}
+
+	if (modelalpha != 1.0)
+		glDepthMask (GL_TRUE);
+	glColor3ubv (lighthalf_v);
+
+}
+
+
 extern vec3_t lightspot;
 
+/*
+	GL_DrawAliasShadow
+
+	Standard shadow drawing
+*/
 static void
 GL_DrawAliasShadow (aliashdr_t *paliashdr, int posenum)
 {
@@ -369,6 +453,73 @@ GL_DrawAliasShadow (aliashdr_t *paliashdr, int posenum)
 }
 
 
+/*
+	GL_DrawAliasBlendedShadow
+         
+	Interpolated shadow drawing
+*/
+void
+GL_DrawAliasBlendedShadow (aliashdr_t *paliashdr, int pose1, int pose2, entity_t *e)
+{
+	trivertx_t	*verts1, *verts2;
+	float 		lerp;
+	vec3_t		point1, point2;
+	int 		*order, count;
+	float       height, lheight, blend;
+
+	blend = (cl.time - e->frame_start_time) / e->frame_interval;
+	blend = min (blend, 1);
+	lerp = 1 - blend;
+
+	lheight = e->origin[2] - lightspot[2];
+	height = -lheight + 1.0;
+
+	verts2 = verts1 = (trivertx_t *) ((byte *) paliashdr + paliashdr->posedata);
+
+	verts1 += pose1 * paliashdr->poseverts;
+	verts2 += pose2 * paliashdr->poseverts;
+
+	order = (int *) ((byte *) paliashdr + paliashdr->commands);
+
+	while ((count = *order++)) {
+		// get the vertex count and primitive type
+
+		if (count < 0) {
+			count = -count;
+			glBegin (GL_TRIANGLE_FAN);
+		} else {
+			glBegin (GL_TRIANGLE_STRIP);
+		}
+
+		do {
+			order += 2;
+
+			point1[0] =	verts1->v[0] * paliashdr->mdl.scale[0] + paliashdr->mdl.scale_origin[0];
+			point1[1] =	verts1->v[1] * paliashdr->mdl.scale[1] + paliashdr->mdl.scale_origin[1];
+			point1[2] =	verts1->v[2] * paliashdr->mdl.scale[2] + paliashdr->mdl.scale_origin[2];
+
+			point1[0] -= shadevector[0] * (point1[2] + lheight);
+			point1[1] -= shadevector[1] * (point1[2] + lheight);
+
+			point2[0] =	verts2->v[0] * paliashdr->mdl.scale[0] + paliashdr->mdl.scale_origin[0];
+			point2[1] =	verts2->v[1] * paliashdr->mdl.scale[1] + paliashdr->mdl.scale_origin[1];
+			point2[2] =	verts2->v[2] * paliashdr->mdl.scale[2] + paliashdr->mdl.scale_origin[2];
+
+			point2[0] -= shadevector[0] * (point2[2] + lheight);
+			point2[1] -= shadevector[1] * (point2[2] + lheight);
+
+			glVertex3f ((point1[0] * lerp) + (point2[0] * blend),
+						(point1[1] * lerp) + (point2[1] * blend),
+						height);
+
+			verts1++;
+			verts2++;
+		} while (--count);
+		glEnd ();
+	}
+}
+
+
 static void
 R_SetupAliasFrame (int frame, aliashdr_t *paliashdr, qboolean fb)
 {
@@ -392,6 +543,56 @@ R_SetupAliasFrame (int frame, aliashdr_t *paliashdr, qboolean fb)
 }
 
 
+void
+R_SetupAliasBlendedFrame (int frame, aliashdr_t *paliashdr, entity_t *e, qboolean fb)
+{
+	int 	pose, numposes;
+	float	blend;
+
+	if ((frame >= paliashdr->mdl.numframes) || (frame < 0)) {
+		Con_DPrintf ("R_AliasSetupFrame: no such frame %d\n", frame);
+		frame = 0;
+	}
+
+	pose = paliashdr->frames[frame].firstpose;
+	numposes = paliashdr->frames[frame].numposes;
+
+	if (numposes > 1) {
+		e->frame_interval = paliashdr->frames[frame].interval;
+		pose += (int) (cl.time / e->frame_interval) % numposes;
+	} else {
+		/*
+			One tenth of a second is good for most Quake animations. If the
+			nextthink is longer then the animation is usually meant to pause
+			(e.g. check out the shambler magic animation in shambler.qc).  If
+			its shorter then things will still be smoothed partly, and the
+			jumps will be less noticable because of the shorter time.  So,
+			this is probably a good assumption.
+		*/
+		e->frame_interval = 0.1;
+	}
+
+	if (e->pose2 != pose) {
+		e->frame_start_time = cl.time;
+		if (e->pose2 == -1) {
+			e->pose1 = pose;
+		} else {
+			e->pose1 = e->pose2;
+		}
+		e->pose2 = pose;
+		blend = 0;
+	} else {
+		blend = (cl.time - e->frame_start_time) / e->frame_interval;
+	}
+
+	// wierd things start happening if blend passes 1
+	if (cl.paused || blend > 1)
+		blend = 1;
+
+	GL_DrawAliasBlendedFrame (paliashdr, e->pose1, e->pose2, blend, fb);
+}
+
+
 static void
 R_DrawAliasModel (entity_t *e)
 {
@@ -404,6 +605,10 @@ R_DrawAliasModel (entity_t *e)
 	aliashdr_t *paliashdr;
 	float       an;
 	int         anim;
+	int         texture;
+	int         fb_texture = 0;
+	int         skinnum;
+	qboolean	modelIsFullbright = false;
 
 	clmodel = currententity->model;
 
@@ -420,8 +625,8 @@ R_DrawAliasModel (entity_t *e)
 	shadelight = R_LightPoint (currententity->origin);
 
 	// always give the gun some light
-	if (e == &cl.viewent && shadelight < 24)
-		shadelight = 24;
+	if (e == &cl.viewent)
+		shadelight = max (shadelight, 24);
 
 	for (lnum = 0; lnum < MAX_DLIGHTS; lnum++) {
 		if (cl_dlights[lnum].die >= cl.time) {
@@ -429,33 +634,29 @@ R_DrawAliasModel (entity_t *e)
 							dist);
 			add =
 				(cl_dlights[lnum].radius * cl_dlights[lnum].radius * 8) /
-				(DotProduct (dist, dist));
+				(DotProduct (dist, dist));	// FIXME Deek
 
 			if (add > 0)
 				shadelight += add;
 		}
 	}
 
-	// clamp lighting
-	if (shadelight > 200)
-		shadelight = 200;
+	// clamp lighting so it doesn't overbright as much
+	shadelight = min (shadelight, 200);
 
-	// ZOID: never allow players to go totally black
-	if (!strcmp (clmodel->name, "progs/player.mdl")) {
-		if (shadelight < 8)
-			shadelight = 8;
+	// never allow players to go totally black
+	if (strequal (clmodel->name, "progs/player.mdl")) {
+		shadelight = max (shadelight, 8);
 	}
-		else if (!gl_fb_models->int_val
-				 && (!strcmp (clmodel->name, "progs/flame.mdl")
-					 || !strcmp (clmodel->name, "progs/flame2.mdl"))) {
-		// HACK HACK HACK -- no fullbright colors, so make torches full light
-		shadelight = 200;
+	
+	if (strnequal (clmodel->name, "progs/flame", 11)
+			|| strnequal (clmodel->name, "progs/bolt", 10)) {
+		modelIsFullbright = true;
+		shadelight = 200;	// make certain models full brightness always
 	}
 
-	shadedots =
-		r_avertexnormal_dots[((int) (e->angles[1] * (SHADEDOT_QUANT / 360.0))) &
-							 (SHADEDOT_QUANT - 1)];
-	shadelight = shadelight / 200.0;
+	shadedots = r_avertexnormal_dots[((int) (e->angles[1] * (SHADEDOT_QUANT / 360.0))) & (SHADEDOT_QUANT - 1)];
+	shadelight /= 200.0;
 
 	an = e->angles[1] / 180 * M_PI;
 	shadevector[0] = cos (-an);
@@ -471,15 +672,11 @@ R_DrawAliasModel (entity_t *e)
 	glPushMatrix ();
 	R_RotateForEntity (e);
 
-	// LordHavoc: must be in modulate mode for reasons of lighting as well as 
-	// fullbright support
-	glTexEnvf (GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
-
-	if (!strcmp (clmodel->name, "progs/eyes.mdl")) {
+	if (strequal (clmodel->name, "progs/eyes.mdl")) {
 		glTranslatef (paliashdr->mdl.scale_origin[0],
 					  paliashdr->mdl.scale_origin[1],
 					  paliashdr->mdl.scale_origin[2] - (22 + 8));
-		// double size of eyes, since they are really hard to see in gl
+		// double size of eyes, since they are really hard to see in GL
 		glScalef (paliashdr->mdl.scale[0] * 2, paliashdr->mdl.scale[1] * 2,
 				  paliashdr->mdl.scale[2] * 2);
 	} else {
@@ -491,75 +688,131 @@ R_DrawAliasModel (entity_t *e)
 	}
 
 	anim = (int) (cl.time * 10) & 3;
-	glBindTexture (GL_TEXTURE_2D,
-				   paliashdr->gl_texturenum[currententity->skinnum][anim]);
+
+	skinnum = currententity->skinnum;
+	if ((skinnum >= paliashdr->mdl.numskins) || (skinnum < 0)) {
+		Con_DPrintf ("R_AliasSetupSkin: no such skin # %d\n", skinnum);
+		skinnum = 0;
+	}
+
+	texture = paliashdr->gl_texturenum[skinnum][anim];
+	if (gl_fb_models->int_val && !modelIsFullbright)
+		fb_texture = paliashdr->gl_fb_texturenum[skinnum][anim];
 
 	// we can't dynamically colormap textures, so they are cached
 	// seperately for the players.  Heads are just uncolored.
 	if (currententity->colormap != vid.colormap && !gl_nocolors->int_val) {
 		i = currententity - cl_entities;
-		if (i >= 1 && i <= cl.maxclients	/* && !strcmp
-											   (currententity->model->name,
-											   "progs/player.mdl") */ )
-			glBindTexture (GL_TEXTURE_2D, playertextures - 1 + i);
+		if (i >= 1 && i <= cl.maxclients)
+			texture = playertextures - 1 + i;
 	}
 
-	if (gl_smoothmodels->int_val)
-		glShadeModel (GL_SMOOTH);
+	glBindTexture (GL_TEXTURE_2D, texture);
 
-	if (gl_affinemodels->int_val)
-		glHint (GL_PERSPECTIVE_CORRECTION_HINT, GL_FASTEST);
-
-	R_SetupAliasFrame (currententity->frame, paliashdr, false);
-
-	// This block is GL fullbright support for objects...
-	if (clmodel->hasfullbrights && gl_fb_models->int_val
-		&& paliashdr->gl_fb_texturenum[currententity->skinnum][anim]) {
-		glBlendFunc (GL_ONE, GL_ONE);
-		glEnable (GL_BLEND);
-
-		glBindTexture (GL_TEXTURE_2D,
-					   paliashdr->gl_fb_texturenum[currententity->
-												   skinnum][anim]);
-		R_SetupAliasFrame (currententity->frame, paliashdr, true);
-
-		glDisable (GL_BLEND);
-		glBlendFunc (GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-	}
-
-	glShadeModel (GL_FLAT);
 	if (gl_affinemodels->int_val)
 		glHint (GL_PERSPECTIVE_CORRECTION_HINT, GL_NICEST);
+
+	if (gl_lerp_anim->int_val) {
+		R_SetupAliasBlendedFrame (currententity->frame, paliashdr, currententity, false);
+	} else {
+		R_SetupAliasFrame (currententity->frame, paliashdr, false);
+	}
+
+	// This block is GL fullbright support for objects...
+	if (fb_texture) {
+		glBindTexture (GL_TEXTURE_2D, fb_texture);
+		if (gl_lerp_anim->int_val) {
+			R_SetupAliasBlendedFrame (currententity->frame, paliashdr,
+			                          currententity, true);
+		} else {
+			R_SetupAliasFrame (currententity->frame, paliashdr, true);
+		}
+	}
+
+	if (gl_affinemodels->int_val)
+		glHint (GL_PERSPECTIVE_CORRECTION_HINT, GL_DONT_CARE);
 
 	glPopMatrix ();
 
 	if (r_shadows->int_val) {
+		// torches, grenades, and lightning bolts do not have shadows
+		if (modelIsFullbright)
+			return;
+		if (strequal (clmodel->name, "progs/grenade.mdl"))
+			return;
+
 		glPushMatrix ();
 		R_RotateForEntity (e);
+
 		glDisable (GL_TEXTURE_2D);
 		glColor4f (0, 0, 0, 0.5);
-		GL_DrawAliasShadow (paliashdr, lastposenum);
+
+		if (gl_lerp_anim->int_val) {
+			GL_DrawAliasBlendedShadow (paliashdr, lastposenum0, lastposenum, currententity);
+		} else {
+			GL_DrawAliasShadow (paliashdr, lastposenum);
+		}
+
 		glEnable (GL_TEXTURE_2D);
-		glColor4f (0.5, 0.5, 0.5, 1);
+		glColor3ubv (lighthalf_v);
 		glPopMatrix ();
 	}
-
 }
 
 
+/*
+	R_ShowNearestLoc
+
+	Display the nearest symbolic location (.loc files)
+*/
+static void
+R_ShowNearestLoc (void)
+{
+	location_t	*nearloc;
+	vec3_t		trueloc;
+	dlight_t	*dl;
+
+	if (r_drawentities->int_val)
+		return;
+
+	nearloc = locs_find (r_origin);
+
+	if (nearloc) {
+		dl = CL_AllocDlight (4096);
+		VectorCopy (nearloc->loc, dl->origin);
+		dl->radius = 200;
+		dl->die = cl.time + 0.1;
+		dl->color[0] = 0;
+		dl->color[1] = 1;
+		dl->color[2] = 0;
+
+		VectorCopy (nearloc->loc, trueloc);
+		R_RunSpikeEffect (trueloc, 7);
+	}
+}
+
+
+/*
+	R_DrawEntitiesOnList
+
+	Draw all the entities we have information on.
+*/
 static void
 R_DrawEntitiesOnList (void)
 {
 	int         i;
 
-	if (!r_drawentities->int_val)
+	if (!r_drawentities->int_val) {
+		R_ShowNearestLoc();
 		return;
+	}
 
 	// LordHavoc: split into 3 loops to simplify state changes
 	for (i = 0; i < cl_numvisedicts; i++) {
 		if (cl_visedicts[i]->model->type != mod_brush)
 			continue;
 		currententity = cl_visedicts[i];
+		modelalpha = 1.0;
 
 		R_DrawBrushModel (currententity);
 	}
@@ -568,6 +821,7 @@ R_DrawEntitiesOnList (void)
 		if (cl_visedicts[i]->model->type != mod_alias)
 			continue;
 		currententity = cl_visedicts[i];
+		modelalpha = 1.0;
 
 		if (currententity == &cl_entities[cl.viewentity])
 			currententity->angles[PITCH] *= 0.3;
@@ -579,6 +833,7 @@ R_DrawEntitiesOnList (void)
 		if (cl_visedicts[i]->model->type != mod_sprite)
 			continue;
 		currententity = cl_visedicts[i];
+		modelalpha = 1.0;
 
 		R_DrawSpriteModel (currententity);
 	}
@@ -594,6 +849,8 @@ R_DrawViewModel (void)
 		|| envmap || !r_drawentities->int_val || (cl.items & IT_INVISIBILITY)
 		|| cl.stats[STAT_HEALTH] <= 0 || !currententity->model)
 		return;
+
+	modelalpha = 1.0;
 
 	// hack the depth range to prevent view model from poking into walls
 	glDepthRange (gldepthmin, gldepthmin + 0.3 * (gldepthmax - gldepthmin));
@@ -658,7 +915,7 @@ R_SetFrustum (void)
 void
 R_SetupFrame (void)
 {
-// don't allow cheats in multiplayer
+	// don't allow cheats in multiplayer
 	Cvar_SetValue (r_fullbright, 0);
 	Cvar_SetValue (r_lightmap, 0);
 
@@ -666,12 +923,12 @@ R_SetupFrame (void)
 
 	r_framecount++;
 
-// build the transformation matrix for the given view angles
+	// build the transformation matrix for the given view angles
 	VectorCopy (r_refdef.vieworg, r_origin);
 
 	AngleVectors (r_refdef.viewangles, vpn, vright, vup);
 
-// current viewleaf
+	// current viewleaf
 	r_oldviewleaf = r_viewleaf;
 	r_viewleaf = Mod_PointInLeaf (r_origin, cl.worldmodel);
 
@@ -738,10 +995,6 @@ R_SetupGL (void)
 
 	glViewport (glx + x, gly + y2, w, h);
 	screenaspect = (float) r_refdef.vrect.width / r_refdef.vrect.height;
-//  yfov = 2*atan((float)r_refdef.vrect.height/r_refdef.vrect.width)*180/M_PI;
-//  yfov = (2.0 * tan (scr_fov->value/360*M_PI)) / screenaspect;
-//  yfov = 2*atan((float)r_refdef.vrect.height/r_refdef.vrect.width)*(scr_fov->value*2)/M_PI;
-//  MYgluPerspective (yfov,  screenaspect,  4,  4096);
 	MYgluPerspective (r_refdef.fov_y, screenaspect, 4, 4096);
 
 	if (mirror) {
@@ -772,11 +1025,14 @@ R_SetupGL (void)
 	else
 		glDisable (GL_CULL_FACE);
 
-	glEnable (GL_BLEND);
+	glEnable (GL_CULL_FACE);
 	glDisable (GL_ALPHA_TEST);
 	glAlphaFunc (GL_GREATER, 0.5);
 	glEnable (GL_DEPTH_TEST);
-	glShadeModel (GL_SMOOTH);
+	if (gl_dlight_smooth->int_val)
+		glShadeModel (GL_SMOOTH);
+	else
+		glShadeModel (GL_FLAT);
 }
 
 
