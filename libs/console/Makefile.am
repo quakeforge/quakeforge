@@ -1,7 +1,7 @@
 INCLUDES= -I$(top_srcdir)/include
 
 lib_LTLIBRARIES=	libQFconsole.la
-plugin_LTLIBRARIES=	libconsole_client.la libconsole_server.la
+plugin_LTLIBRARIES= libconsole_server.la #libconsole_client.la
 
 common_sources= complete.c console.c inputline.c list.c
 client_sources= client.c
@@ -10,8 +10,8 @@ server_sources= server.c
 libQFconsole_la_LDFLAGS=	-version-info 1:0:0
 libQFconsole_la_SOURCES=	$(common_sources)
 
-libconsole_client_la_LDFLAGS=	-version-info 1:0:0
-libconsole_client_la_SOURCES=	$(client_sources)
+#libconsole_client_la_LDFLAGS=	-version-info 1:0:0
+#libconsole_client_la_SOURCES=	$(client_sources)
 
 libconsole_server_la_LDFLAGS=	-version-info 1:0:0
 libconsole_server_la_LIBADD=	$(CURSES_LIBS)

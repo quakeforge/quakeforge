@@ -42,7 +42,7 @@ typedef struct
 	int		x;				// offset in current line for next print
 	int		display;		// bottom of console displays this line
 	int		numlines;		// number of non-blank text lines, used for backscroling
-} console_t;
+} old_console_t;
 
 typedef struct inputline_s
 {
@@ -61,9 +61,9 @@ typedef struct inputline_s
 	void	(*draw)(struct inputline_s *); // draw input line to screen
 } inputline_t;
 
-extern	console_t	con_main;
-extern	console_t	con_chat;
-extern	console_t	*con;			// point to either con_main or con_chat
+extern	old_console_t	con_main;
+extern	old_console_t	con_chat;
+extern	old_console_t	*con;		// point to either con_main or con_chat
 
 extern	int			con_ormask;
 

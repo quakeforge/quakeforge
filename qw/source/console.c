@@ -53,9 +53,9 @@ static const char rcsid[] =
 #include "client.h"
 #include "compat.h"
 
-console_t   con_main;
-console_t   con_chat;
-console_t  *con;						// point to either con_main or con_chat
+old_console_t   con_main;
+old_console_t   con_chat;
+old_console_t  *con;					// point to either con_main or con_chat
 
 int         con_ormask;
 int         con_linewidth;				// characters across screen
@@ -154,7 +154,7 @@ Con_MessageMode2_f (void)
 }
 
 void
-Con_Resize (console_t *con)
+Con_Resize (old_console_t *con)
 {
 	char        tbuf[CON_TEXTSIZE];
 	int         i, j, width, oldwidth, oldtotallines, numlines, numchars;
