@@ -238,11 +238,6 @@ draw_transpic (view_t *view, int x, int y, qpic_t *pic)
 
 
 // drawing routines are reletive to the status bar location
-static inline void
-Sbar_DrawPic (int x, int y, qpic_t *pic)
-{
-	Draw_Pic (x, y + (vid.height - SBAR_HEIGHT), pic);
-}
 
 static inline void
 draw_character (view_t *view, int x, int y, int c)
@@ -254,6 +249,12 @@ static inline void
 draw_string (view_t *view, int x, int y, const char *str)
 {
 	Draw_String (view->xabs + x, view->yabs + y, str);
+}
+
+static inline void
+draw_altstring (view_t *view, int x, int y, const char *str)
+{
+	Draw_AltString (view->xabs + x, view->yabs + y, str);
 }
 
 static inline void
@@ -451,7 +452,7 @@ dmo_pl (view_t *view, int x, int y, player_info_t *s)
 	p = s->pl;
 	snprintf (num, sizeof (num), "%3i", p);
 	if (p > 25)
-		Draw_AltString (view->xabs + x, view->yabs + y, num);
+		draw_altstring (view, x, y, num);
 	else
 		draw_string (view, x, y, num);
 }
@@ -1020,7 +1021,7 @@ Sbar_TeamOverlay (view_t *view)
 	// draw the text
 	l = scoreboardlines;
 
-	for (i = 0; i < scoreboardteams && y <= (int) vid.height - 10; i++) {
+	for (i = 0; i < scoreboardteams && y <= view->ylen - 10; i++) {
 		k = teamsort[i];
 		tm = teams + k;
 
@@ -1186,7 +1187,7 @@ Sbar_Draw_DMO_Team_Ping (view_t *view, int l, int y, int skip)
 				 "\x1d\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1f");
 	y += 8;
 
-	for (i = 0; i < l && y <= (int) vid.height - 10; i++) {
+	for (i = 0; i < l && y <= view->ylen - 10; i++) {
 		k = fragsort[i];
 		s = &cl.players[k];
 		if (!s->name[0])
@@ -1225,7 +1226,7 @@ Sbar_Draw_DMO_Team_UID (view_t *view, int l, int y, int skip)
 				 "\x1d\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1f");
 	y += 8;
 
-	for (i = 0; i < l && y <= (int) vid.height - 10; i++) {
+	for (i = 0; i < l && y <= view->ylen - 10; i++) {
 		k = fragsort[i];
 		s = &cl.players[k];
 		if (!s->name[0])
@@ -1265,7 +1266,7 @@ Sbar_Draw_DMO_Team_Ping_UID (view_t *view, int l, int y, int skip)
 				 "\x1d\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1f");
 	y += 8;
 
-	for (i = 0; i < l && y <= (int) vid.height - 10; i++) {
+	for (i = 0; i < l && y <= view->ylen - 10; i++) {
 		k = fragsort[i];
 		s = &cl.players[k];
 		if (!s->name[0])
@@ -1307,7 +1308,7 @@ Sbar_Draw_DMO_Ping (view_t *view, int l, int y, int skip)
 				 "\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1f");
 	y += 8;
 
-	for (i = 0; i < l && y <= (int) vid.height - 10; i++) {
+	for (i = 0; i < l && y <= view->ylen - 10; i++) {
 		k = fragsort[i];
 		s = &cl.players[k];
 		if (!s->name[0])
@@ -1345,7 +1346,7 @@ Sbar_Draw_DMO_UID (view_t *view, int l, int y, int skip)
 				 "\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1f");
 	y += 8;
 
-	for (i = 0; i < l && y <= (int) vid.height - 10; i++) {
+	for (i = 0; i < l && y <= view->ylen - 10; i++) {
 		k = fragsort[i];
 		s = &cl.players[k];
 		if (!s->name[0])
@@ -1383,7 +1384,7 @@ Sbar_Draw_DMO_Ping_UID (view_t *view, int l, int y, int skip)
 				 "\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1f");
 	y += 8;
 
-	for (i = 0; i < l && y <= (int) vid.height - 10; i++) {
+	for (i = 0; i < l && y <= view->ylen - 10; i++) {
 		k = fragsort[i];
 		s = &cl.players[k];
 		if (!s->name[0])
@@ -1476,7 +1477,7 @@ Sbar_DeathmatchOverlay (view_t *view, int start)
 	// func ptr, avoids absurd if testing
 	Sbar_Draw_DMO_func (view, l, y, skip);
 
-	if (y >= (int) vid.height - 10)		// we ran over the screen size, squish
+	if (y >= view->ylen - 10)		// we ran over the screen size, squish
 		largegame = true;
 }
 
@@ -1508,8 +1509,8 @@ draw_minifrags (view_t *view)
 	if (!scoreboardlines)
 		return;							// no one there?
 
-	// draw the text
-	if (view->ylen / 8 < 3)
+	numlines = view->ylen / 8;
+	if (numlines / 8 < 3)
 		return;							// not enough room
 
 	// find us
@@ -1585,7 +1586,7 @@ draw_miniteam (view_t *view)
 */
 	x = 0;
 	y = 0;
-	for (i = 0; i < scoreboardteams && y <= (int) vid.height; i++) {
+	for (i = 0; i < scoreboardteams && y <= view->ylen; i++) {
 		k = teamsort[i];
 		tm = teams + k;
 
