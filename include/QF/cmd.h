@@ -38,7 +38,14 @@ typedef struct cmd_localvar_s {
 
 typedef struct cmd_token_s {
 	struct dstring_s *original, *processed; // Token before and after processing
-	unsigned int state; // Will be used later
+	enum {
+		cmd_original,
+		cmd_process,
+		cmd_done
+	} state;
+	unsigned int pos; // Last position in string (used by Cmd_ProcessEmbedded)
+	unsigned int space; // Amount of white space before token
+	char delim; // Character that delimeted token
 } cmd_token_t;
 
 typedef struct cmd_buffer_s {
@@ -53,13 +60,26 @@ typedef struct cmd_buffer_s {
 	unsigned int *args; // Array of positions of each token in composite line
 	struct hashtab_s *locals; // Local variables
 	
-	// Flags	
-	qboolean imperative; // Execution cannot be paused
+	// Flags
+	qboolean subroutine; // Temporarily stopped so a subroutine can run
 	qboolean wait; // Execution paused until next frame
 	qboolean legacy; // Backwards compatible with old console buffer
 	qboolean ownvars; // Buffer has its own private local variables
 	qboolean loop; // Buffer loops itself
-	qboolean returning; // Buffer is returning a value
+	
+	// Execution position
+	enum {
+		cmd_ready,
+		cmd_tokenized,
+		cmd_processed
+	} position;
+	
+	// Return value status
+	enum {
+		cmd_normal,  // Normal status
+		cmd_waiting, // Waiting for a return value
+		cmd_returned // Return value available
+	} returned;
 	
 	// Stack
 	struct cmd_buffer_s *prev, *next; // Neighboring buffers in stack
@@ -164,11 +184,13 @@ int Cmd_CheckParm (const char *parm);
 // Returns the position (1 to argc-1) in the command's argument list
 // where the given parameter apears, or 0 if not present
 
+int Cmd_Process (void);
 void Cmd_TokenizeString (const char *text, qboolean legacy);
 // Takes a null terminated string.  Does not need to be /n terminated.
 // breaks the string up into arg tokens.
 
-void   Cmd_ExecuteString (const char *text, cmd_source_t src);
+void   Cmd_ExecuteParsed (cmd_source_t src);
+int    Cmd_ExecuteString (const char *text, cmd_source_t src);
 // Parses a single line of text into arguments and tries to execute it.
 // The text can come from the command buffer, a remote client, or stdin.
 
@@ -191,5 +213,6 @@ void	Cmd_Return (const char *value);
 extern struct cvar_s *cmd_warncmd;
 
 extern cmd_buffer_t *cmd_legacybuffer; // Allow access to the legacy buffer as an alternate console buffer
+extern cmd_buffer_t *cmd_keybindbuffer; // Allow access to dedicated key binds command buffer
 
 #endif // __cmd_h

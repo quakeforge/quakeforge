@@ -70,6 +70,7 @@ that needs one should allocate and maintain its own.
 cmd_buffer_t *cmd_consolebuffer;		// Console buffer
 cmd_buffer_t *cmd_legacybuffer;			// Server stuffcmd buffer with
 										// absolute backwards-compatibility
+cmd_buffer_t *cmd_privatebuffer;		// Buffer for internal command execution
 cmd_buffer_t *cmd_activebuffer;			// Buffer currently being executed
 
 cmd_buffer_t *cmd_recycled;	// Recycled buffers
@@ -176,6 +177,8 @@ Cmd_NewBuffer (qboolean ownvars)
 		new->locals = Hash_NewTable (512, Cmd_LocalGetKey, Cmd_LocalFree, 0);
 	new->ownvars = ownvars;
 	new->prev = new->next = 0;
+	new->position = cmd_ready;
+	new->returned = cmd_normal;
 	return new;
 }
 
@@ -190,7 +193,7 @@ void
 Cmd_FreeBuffer (cmd_buffer_t *free) {
 	if (free->ownvars)
 		Hash_DelTable(free->locals); // Local variables are always deadbeef
-	free->wait = free->loop = free->ownvars = free->legacy = free->returning = free->imperative = false;
+	free->wait = free->loop = free->ownvars = free->legacy = free->subroutine = false;
 	dstring_clearstr (free->buffer);
 	dstring_clearstr (free->line);
 	dstring_clearstr (free->realline);
@@ -213,9 +216,11 @@ Cmd_FreeStack (cmd_buffer_t *stack) {
 		
 void
 Cmd_Return (const char *value) {
-	dstring_clearstr (cmd_activebuffer->retval);
-	dstring_appendstr (cmd_activebuffer->retval, value);
-	cmd_activebuffer->returning = true;
+	if (cmd_activebuffer->prev && cmd_activebuffer->prev->returned == cmd_waiting) {
+		dstring_clearstr (cmd_activebuffer->prev->retval);
+		dstring_appendstr (cmd_activebuffer->prev->retval, value);
+		cmd_activebuffer->prev->returned = cmd_returned;
+	}
 }
 
 /*void
@@ -293,10 +298,8 @@ void
 Cmd_Wait_f (void)
 {
 	cmd_buffer_t *cur;
-	if (!cmd_activebuffer->imperative) {
-		for (cur = cmd_activebuffer; cur; cur = cur->prev)
-			cur->wait = true;
-	}
+	for (cur = cmd_activebuffer; cur; cur = cur->prev)
+		cur->wait = true;
 }
 
 void
@@ -328,6 +331,8 @@ Cbuf_Init (void)
 	
 	cmd_legacybuffer = Cmd_NewBuffer (true);
 	cmd_legacybuffer->legacy = true;
+	
+	cmd_privatebuffer = Cmd_NewBuffer (true);
 
 	cmd_activebuffer = cmd_consolebuffer;
 
@@ -447,11 +452,12 @@ Cbuf_ExecuteBuffer (cmd_buffer_t *buffer)
 {
 	dstring_t  *buf = dstring_newstr ();
 	cmd_buffer_t *temp = cmd_activebuffer;	// save old context
+	int ret;
 
 	cmd_activebuffer = buffer;
 	buffer->wait = false;
 	while (1) {
-		if (!strlen(buffer->buffer->str)) {
+		if (!strlen(buffer->buffer->str) && buffer->position == cmd_ready) {
 			if (buffer->loop) {
 				if (cmd_maxloop->value && buffer->loop > cmd_maxloop->value) {
 					Cmd_Error(va("GIB: Loop lasted longer than %i iterations, forcefully terminating.\n",
@@ -464,12 +470,28 @@ Cbuf_ExecuteBuffer (cmd_buffer_t *buffer)
 			else
 				break;
 		}
-		Cbuf_ExtractLine (buffer->buffer, buf, buffer->legacy);
-		Cmd_ExecuteString (buf->str, src_command);
-		if (buffer->wait)
-			break;
-		if (cmd_error)
-			break;
+
+		if (buffer->position == cmd_ready) {
+			Cbuf_ExtractLine (buffer->buffer, buf, buffer->legacy);
+			Cmd_TokenizeString (buf->str, cmd_activebuffer->legacy);
+			if (cmd_error)
+				break;
+			buffer->position = cmd_tokenized;
+		}
+		if (buffer->position == cmd_tokenized) {
+			ret = Cmd_Process ();
+			if (ret < 0)
+				break;
+			buffer->position = cmd_processed;
+		}
+		if (buffer->position == cmd_processed) {
+			Cmd_ExecuteParsed (src_command);
+			if (cmd_error)
+				break;
+			buffer->position = cmd_ready;
+			if (buffer->wait || buffer->subroutine)
+				break;
+		}
 		dstring_clearstr (buf);
 	}
 	dstring_delete (buf);
@@ -479,31 +501,31 @@ Cbuf_ExecuteBuffer (cmd_buffer_t *buffer)
 void
 Cbuf_ExecuteStack (cmd_buffer_t *buffer)
 {
-	qboolean    wait = false;
 	cmd_buffer_t *cur, *temp;
 	
 	cmd_error = false;
 
 	for (cur = buffer; cur->next; cur = cur->next);
-	for (; cur != buffer; cur = temp) {
+	for (;cur; cur = temp) {
 		temp = cur->prev;
 		Cbuf_ExecuteBuffer (cur);
-		if (cur->wait) {
-			wait = true;
+		if (cmd_error || cur->wait)
 			break;
-		} else if (cmd_error)
-			break;
-		else {
+		if (cur->subroutine) { // Something was added to the stack, follow it
+			cur->subroutine = false;
+			temp = cur->next;
+			continue;
+		}
+		if (cur != buffer) {
 			cur->prev->next = 0;
 			Cmd_FreeBuffer (cur);
 		}
 	}
-	if (!wait)
-		Cbuf_ExecuteBuffer (buffer);
 	if (cmd_error) {
-		// If an error occured, nuke the entire stack
+		// If an error occured nuke the stack
 		Cmd_FreeStack (buffer->next);
 		buffer->next = 0;
+		buffer->position = cmd_ready;
 		dstring_clearstr (buffer->buffer);	// And the root buffer
 	}
 }
@@ -533,18 +555,11 @@ Cbuf_Execute (void)
 void
 Cmd_ExecuteSubroutine (cmd_buffer_t *buffer)
 {
-	// Inherit some flags from the current buffer
-	
-	buffer->imperative = cmd_activebuffer->imperative;
-	if (cmd_activebuffer->next)
+	if (cmd_activebuffer->next) // Get rid of anything already there
 		Cmd_FreeStack (cmd_activebuffer->next);
-	cmd_activebuffer->next = buffer;
+	cmd_activebuffer->next = buffer; // Link it in
 	buffer->prev = cmd_activebuffer;
-	Cbuf_ExecuteBuffer (buffer);
-/*	if (!buffer->wait) {
-		Cmd_FreeBuffer (buffer);
-		cmd_activebuffer->next = 0;
-	}*/
+	cmd_activebuffer->subroutine = true; // Signal that a subroutine is beginning
 	return;
 }
 
@@ -808,7 +823,7 @@ Cmd_Argv (int arg)
 {
 	if (arg >= cmd_activebuffer->argc)
 		return "";
-	if (cmd_activebuffer->argv[arg]->state == 1)
+	if (cmd_activebuffer->argv[arg]->state == cmd_done)
 		return cmd_activebuffer->argv[arg]->processed->str;
 	else
 		return cmd_activebuffer->argv[arg]->original->str;
@@ -938,7 +953,7 @@ Cmd_GetToken (const char *str, qboolean legacy)
 }
 
 int Cmd_ProcessVariables (dstring_t * dstr);
-int Cmd_ProcessEmbedded (dstring_t * dstr);
+int Cmd_ProcessEmbedded (cmd_token_t *tok, dstring_t * dstr);
 
 int         tag_shift = 0;
 int         tag_special = 0;
@@ -1064,9 +1079,12 @@ Cmd_ProcessIndex (dstring_t * dstr, int start)
 			dstring_delete (value);
 			return val;
 		}
-		if (!dstr->str[i])
+		if (!dstr->str[i]) {
+			Cmd_Error ("Unmatched bracket in index expression.\n");
 			return -1;
+		}
 	}
+	Cmd_Error ("Reached end of Cmd_ProcessIndex when I shouldn't have.\n");
 	return -1; // Should never get here
 }
 			
@@ -1106,6 +1124,7 @@ Cmd_ProcessVariablesRecursive (dstring_t * dstr, int start)
 				continue;
 			}
 		} else if (!dstr->str[i] && braces) {		// No closing brace
+			Cmd_Error ("Unmatched brace in variable substitution expression.\n");
 			n = -1;
 			break;
 		} else if ((braces && dstr->str[i] == '}' && !escaped (dstr->str, i)) || (!braces && !isalnum((byte)dstr->str[i]) && dstr->str[i] != '_')) {
@@ -1151,51 +1170,49 @@ int
 Cmd_ProcessEmbeddedSingle (dstring_t * dstr, int start)
 {
 	int		n;
-	cmd_buffer_t *temp;
-	dstring_t *command, *retval;
-	
+	dstring_t *command;
+	cmd_buffer_t *sub;
 
 	n = Cmd_EndBrace (dstr->str+start+1)+1;
 	if (n < 0) {
 		Cmd_Error ("GIB:  Unmatched brace in embedded command expression.\n");
-		return n;
+		return -1;
 	}
-	command = dstring_newstr ();
-	dstring_insert (command, dstr->str + start + 2, n - 2, 0);
-	temp = Cmd_NewBuffer (false);
-	temp->imperative = true;
-	temp->locals = cmd_activebuffer->locals;
-	Cbuf_InsertTextTo (temp, command->str);
-	Cbuf_ExecuteBuffer (temp);
-	retval = 0;
-	if (!cmd_error) {
+	if (cmd_activebuffer->returned == cmd_waiting) {
+		Cmd_Error ("Embedded command expression did not result in a return value.\n");
+		return -1;
+	}
+	if (cmd_activebuffer->returned == cmd_returned) {
 		dstring_snip(dstr, start, n+1);
-		if (temp->returning) // Top buffer returned a value (likely a builtin function)
-			retval = temp->retval;
-		else if (temp->next && temp->next->returning) // Next buffer returned a value (an alias or config file)
-			retval = temp->next->retval;
-		else {
-			Cmd_Error ("GIB:  Embedded command expression resulted in no return value.\n");
-			n = -1;
-		}
-		if (retval) {
-			dstring_insertstr (dstr, retval->str, start);
-			n = strlen(retval->str);
-		}
+		dstring_insertstr (dstr, cmd_activebuffer->retval->str, start);
+		n = strlen(cmd_activebuffer->retval->str);
+		cmd_activebuffer->returned = cmd_normal;
+	} else {
+		command = dstring_newstr ();
+		sub = Cmd_NewBuffer (false);
+		sub->locals = cmd_activebuffer->locals;
+		dstring_insert (command, dstr->str + start + 2, n - 2, 0);
+		Cbuf_InsertTextTo (sub, command->str);
+		Cmd_ExecuteSubroutine (sub);
+		cmd_activebuffer->returned = cmd_waiting;
+		n = -2;
+		dstring_delete (command);
 	}
-	Cmd_FreeStack (temp);
-	dstring_delete (command);
 	return n;
 }
 
 int
-Cmd_ProcessEmbedded (dstring_t * dstr)
+Cmd_ProcessEmbedded (cmd_token_t *tok, dstring_t * dstr)
 {
 	int i, n;
 	
-	for (i = 0; i < strlen(dstr->str); i++) {
+	for (i = tok->pos; i < strlen(dstr->str); i++) {
 		if (dstr->str[i] == '~' && dstr->str[i+1] == '{') {
 			n = Cmd_ProcessEmbeddedSingle (dstr, i);
+			if (n == -2) {
+				tok->pos = i;
+				return n;
+			}
 			if (n < 0)
 				return n;
 			else
@@ -1248,6 +1265,7 @@ Cmd_ProcessMath (dstring_t * dstr)
 			}
 			if (paren) {
 				ret = -1;
+				Cmd_Error ("Unmatched parenthesis in math expression.\n");
 				break;
 			}
 			/* Copy text between parentheses into a buffer */
@@ -1307,31 +1325,67 @@ Cmd_ProcessToken (cmd_token_t *token)
 	dstring_appendstr (token->processed, token->original->str);
 	
 	Cmd_ProcessTags (token->processed);
-	res = Cmd_ProcessEmbedded (token->processed);
+	res = Cmd_ProcessEmbedded (token, token->processed);
 	if (res < 0)
 		return res;
 	res = Cmd_ProcessVariables (token->processed);
-	if (res < 0) {
-		Cmd_Error ("Parse error: Unmatched braces in "
-				   "variable substitution expression.\n");
+	if (res < 0)
 		return res;
-	}
 	res = Cmd_ProcessMath (token->processed);
-	if (res == -1) {
-		Cmd_Error ("Parse error:  Unmatched parenthesis\n");
+	if (res < 0)
 		return res;
-	}
-	if (res == -2) {
-		return res;
-	}
 	Cmd_ProcessEscapes (token->processed);
+	return 0;
+}
+
+/*
+	Cmd_Process
+	
+	Processes all tokens that need to be processed
+*/
+
+int
+Cmd_Process (void)
+{
+	int arg, res, i;
+	const char *str;
+	
+	for (arg = 0; arg < cmd_activebuffer->argc; arg++) {
+		if (cmd_activebuffer->argv[arg]->state == cmd_process) {
+			res = Cmd_ProcessToken (cmd_activebuffer->argv[arg]);
+			if (res < 0)
+				return res;
+			cmd_activebuffer->argv[arg]->state = cmd_done;
+		}
+	}
+	dstring_clearstr (cmd_activebuffer->line);
+	for (arg = 0; arg < cmd_activebuffer->argc; arg++) {
+		if (cmd_activebuffer->argv[arg]->state == cmd_done)
+			str = cmd_activebuffer->argv[arg]->processed->str;
+		else
+			str = cmd_activebuffer->argv[arg]->original->str;
+		for (i = 0; i < cmd_activebuffer->argv[arg]->space; i++)
+			dstring_appendstr (cmd_activebuffer->line, " ");
+		cmd_activebuffer->args[arg] = strlen(cmd_activebuffer->line->str);
+		if (cmd_activebuffer->argv[arg]->delim == '\'' ||
+			cmd_activebuffer->argv[arg]->delim == '\"')
+			dstring_appendstr (cmd_activebuffer->line, va("%c", cmd_activebuffer->argv[arg]->delim));
+		if (cmd_activebuffer->argv[arg]->delim == '{')
+			dstring_appendstr (cmd_activebuffer->line, "{");
+		dstring_appendstr (cmd_activebuffer->line, str);
+		if (cmd_activebuffer->argv[arg]->delim == '\'' ||
+			cmd_activebuffer->argv[arg]->delim == '\"')
+			dstring_appendstr (cmd_activebuffer->line, va("%c", cmd_activebuffer->argv[arg]->delim));
+		if (cmd_activebuffer->argv[arg]->delim == '{')
+			dstring_appendstr (cmd_activebuffer->line, "}");
+	}
 	return 0;
 }
 
 void
 Cmd_TokenizeString (const char *text, qboolean legacy)
 {
-	int         i = 0, len = 0, quotes, braces, space, res;
+	int         i = 0, len = 0, quotes, braces, space;
 	const char *str = text;
 	unsigned int cmd_argc = 0;
 	cmd_function_t *cmd;
@@ -1349,7 +1403,7 @@ Cmd_TokenizeString (const char *text, qboolean legacy)
 	dstring_clearstr (cmd_activebuffer->line);
 	while (strlen (str + i)) {
 		if (!legacy && cmd_argc == 1) { // See if command wants unprocessed tokens
-			cmd = (cmd_function_t *) Hash_Find (cmd_hash, cmd_activebuffer->argv[0]->processed->str);
+			cmd = (cmd_function_t *) Hash_Find (cmd_hash, cmd_activebuffer->argv[0]->original->str);
 			if (cmd && cmd->pure)
 				process = false;
 		}
@@ -1358,7 +1412,6 @@ Cmd_TokenizeString (const char *text, qboolean legacy)
 			i++;
 			space++;
 		}
-		dstring_appendsubstr (cmd_activebuffer->line, str + i - space, space);
 		len = Cmd_GetToken (str + i, legacy);
 		if (len < 0) {
 			Cmd_Error ("Parse error:  Unmatched quotes, braces, or "
@@ -1384,9 +1437,10 @@ Cmd_TokenizeString (const char *text, qboolean legacy)
 		/* Remove surrounding quotes or double quotes or braces */
 		quotes = 0;
 		braces = 0;
-		cmd_activebuffer->args[cmd_argc - 1] = strlen (cmd_activebuffer->line->str);
+		cmd_activebuffer->argv[cmd_argc-1]->delim = ' ';
 		if ((str[i] == '\'' && str[i + len] == '\'')
 			|| (str[i] == '"' && str[i + len] == '"')) {
+			cmd_activebuffer->argv[cmd_argc-1]->delim = str[i];
 			dstring_appendsubstr (cmd_activebuffer->line, str + i, 1);
 			dstring_appendsubstr (cmd_activebuffer->line, str + i, 1);
 			i++;
@@ -1397,25 +1451,15 @@ Cmd_TokenizeString (const char *text, qboolean legacy)
 			i++;
 			len -= 1;
 			braces = 1;
+			cmd_activebuffer->argv[cmd_argc-1]->delim = '{';
 		}
 		dstring_insert (cmd_activebuffer->argv[cmd_argc-1]->original, str + i, len, 0);
-		if (!legacy && !braces && process && text[0] != '|') {
-			res = Cmd_ProcessToken (cmd_activebuffer->argv[cmd_argc-1]);
-			if (res < 0) {
-				cmd_activebuffer->argc = 0;
-				return;
-			}
-			cmd_activebuffer->argv[cmd_argc-1]->state = 1;
-			dstring_insertstr (cmd_activebuffer->line,
-				   cmd_activebuffer->argv[cmd_argc-1]->processed->str,
-				   strlen (cmd_activebuffer->line->str) - quotes);
-		}
-		else {
-			cmd_activebuffer->argv[cmd_argc-1]->state = 0;
-			dstring_insertstr (cmd_activebuffer->line,
-				   cmd_activebuffer->argv[cmd_argc-1]->original->str,
-				   strlen (cmd_activebuffer->line->str) - quotes);
-		}		
+		if (!legacy && !braces && process && text[0] != '|')
+			cmd_activebuffer->argv[cmd_argc-1]->state = cmd_process;
+		else
+			cmd_activebuffer->argv[cmd_argc-1]->state = cmd_original;	
+		cmd_activebuffer->argv[cmd_argc-1]->pos = 0;
+		cmd_activebuffer->argv[cmd_argc-1]->space = space;	
 		i += len + quotes + braces;		/* If we ended on a quote or brace,
 										   skip it */
 	}
@@ -1679,19 +1723,17 @@ Cmd_CompleteAliasBuildList (const char *partial)
 }
 
 /*
-	Cmd_ExecuteString
+	Cmd_ExecuteParsed
 
 	A complete command line has been parsed, so try to execute it
 */
 void
-Cmd_ExecuteString (const char *text, cmd_source_t src)
+Cmd_ExecuteParsed (cmd_source_t src)
 {
 	cmd_function_t *cmd;
 	cmdalias_t *a;
 
 	cmd_source = src;
-
-	Cmd_TokenizeString (text, cmd_activebuffer->legacy);
 
 	// execute the command line
 	if (!Cmd_Argc ())
@@ -1738,13 +1780,32 @@ Cmd_ExecuteString (const char *text, cmd_source_t src)
 		for (i = 0; i < Cmd_Argc (); i++)
 			Cmd_SetLocal (sub, va ("%i", i), Cmd_Argv (i), -1);
 		Cmd_SetLocal (sub, "argn", va ("%i", Cmd_Argc ()), -1);
-		// This will handle freeing the buffer for us, leave it alone
 		Cmd_ExecuteSubroutine (sub);
 		return;
 	}
 
 	if (cmd_warncmd->int_val || developer->int_val)
 		Sys_Printf ("Unknown command \"%s\"\n", Cmd_Argv (0));
+}
+
+int Cmd_ExecuteString (const char *text, cmd_source_t src)
+{
+	cmd_buffer_t *old = cmd_activebuffer; // Save context
+	int ret;
+	cmd_activebuffer = cmd_privatebuffer;
+	Cmd_TokenizeString (text, cmd_activebuffer->legacy);
+	if (!Cmd_Argc()) {
+		cmd_activebuffer = old;
+		return -1;
+	}
+	ret = Cmd_Process ();
+	if (ret < 0) {
+		cmd_activebuffer = old;
+		return ret;
+	}
+	Cmd_ExecuteParsed (src);
+	cmd_activebuffer = old;
+	return 0;
 }
 
 /*
@@ -1901,26 +1962,27 @@ Cmd_Break_f (void) {
 
 void
 Cmd_Return_f (void) {
-	if (Cmd_Argc() > 2) {
+	int argc = Cmd_Argc();
+	const char *val = Cmd_Argv(1);
+	cmd_buffer_t *old = cmd_activebuffer; // save context
+	if (argc > 2) {
 		Cmd_Error("GIB:  Invalid return statement.  Return takes either one argument or none.\n");
 		return;
+	}
+	while (cmd_activebuffer->loop) { // We need to get out of any loops
+		dstring_clearstr(cmd_activebuffer->buffer);
+		cmd_activebuffer->loop = false;
+		cmd_activebuffer = cmd_activebuffer->prev;
 	}
 	if (!cmd_activebuffer->prev) {
 		Cmd_Error("GIB:  Return attempted in a root buffer\n");
 		return;
 	}
-	while (cmd_activebuffer->loop) // We need to get out of any loops
-		cmd_activebuffer = cmd_activebuffer->prev;
-	if (cmd_activebuffer->next) {
-		Cmd_FreeStack (cmd_activebuffer->next);
-		cmd_activebuffer->next = 0;
-	}
 	dstring_clearstr (cmd_activebuffer->buffer); // Clear the buffer out no matter what
-	if (Cmd_Argc() == 2) {
-		dstring_clearstr (cmd_activebuffer->retval);
-		dstring_appendstr (cmd_activebuffer->retval, Cmd_Argv(1));
-		cmd_activebuffer->returning = true;
-	}
+	cmd_activebuffer = cmd_activebuffer->prev;
+	if (argc == 2)
+		Cmd_Return (val);
+	cmd_activebuffer = old;
 }
 
 void
