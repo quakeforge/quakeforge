@@ -17,6 +17,7 @@ typedef enum {
 	ex_quaternion,
 	ex_integer,
 	ex_uinteger,
+	ex_short,
 } expr_type;
 
 typedef struct {
@@ -67,6 +68,7 @@ typedef struct expr_s {
 		float	quaternion_val[4];
 		int		integer_val;
 		unsigned int	uinteger_val;
+		short	short_val;
 	} e;
 } expr_t;
 

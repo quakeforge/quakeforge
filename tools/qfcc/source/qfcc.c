@@ -531,7 +531,7 @@ qboolean PR_FinishCompilation (void)
 	}
 
 	for (def = pr.def_head.def_next; def; def = def->def_next) {
-		if (def->scope)
+		if (def->scope || def->absolute)
 			continue;
 		PR_RelocateRefs (def);
 	}
@@ -545,6 +545,8 @@ qboolean PR_FinishCompilation (void)
 		}
 		f->dfunc->parm_start = numpr_globals;
 		for (def = f->def->scope_next; def; def = def->scope_next) {
+			if (def->absolute)
+				continue;
 			def->ofs += numpr_globals;
 			PR_RelocateRefs (def);
 		}

@@ -62,6 +62,7 @@ etype_t     qc_types[] = {
 	ev_quaternion,						// ex_quaternion
 	ev_integer,							// ex_integer
 	ev_uinteger,						// ex_uinteger
+	ev_short,							// ex_short
 };
 
 type_t     *types[] = {
@@ -76,6 +77,7 @@ type_t     *types[] = {
 	&type_quaternion,
 	&type_integer,
 	&type_uinteger,
+	&type_short,
 };
 
 expr_type   expr_types[] = {
@@ -90,6 +92,7 @@ expr_type   expr_types[] = {
 	ex_quaternion,						// ev_quaternion
 	ex_integer,							// ev_integer
 	ex_uinteger,						// ev_uinteger
+	ex_short,							// ev_short
 };
 
 type_t *
@@ -126,6 +129,7 @@ get_type (expr_t *e)
 		case ex_pointer:
 		case ex_quaternion:
 		case ex_uinteger:
+		case ex_short:
 			return types[qc_types[e->type]];
 	}
 	return 0;
@@ -509,6 +513,9 @@ print_expr (expr_t *e)
 		case ex_uinteger:
 			printf ("%d", e->e.uinteger_val);
 			break;
+		case ex_short:
+			printf ("%d", e->e.short_val);
+			break;
 	}
 }
 
@@ -796,7 +803,8 @@ field_expr (expr_t *e1, expr_t *e2)
 	t2 = extract_type (e2);
 
 	if ((t1 != ev_entity || t2 != ev_field)
-		&& (t1 != ev_pointer || (t2 != ev_integer && t2 != ev_uinteger))) {
+		&& (t1 != ev_pointer
+			|| (t2 != ev_integer && t2 != ev_uinteger && t2 != ev_short))) {
 		return error (e1, "type missmatch for .");
 	}
 
@@ -831,6 +839,7 @@ test_expr (expr_t *e, int test)
 			break;
 		case ev_uinteger:
 		case ev_integer:
+		case ev_short:
 			return e;
 		case ev_float:
 			if (options.code.progsversion == PROG_ID_VERSION)
@@ -1042,6 +1051,9 @@ unary_expr (int op, expr_t *e)
 							? e->e.def->type : e->e.expr.type;
 						return n;
 					}
+				case ex_short:
+					e->e.short_val *= -1;
+					return e;
 				case ex_integer:
 				case ex_uinteger:
 					e->e.integer_val *= -1;
@@ -1091,6 +1103,9 @@ unary_expr (int op, expr_t *e)
 					}
 				case ex_nil:
 					return error (e, "invalid type for unary !");
+				case ex_short:
+					e->e.short_val = !e->e.short_val;
+					return e;
 				case ex_integer:
 				case ex_uinteger:
 					e->e.integer_val = !e->e.integer_val;
@@ -1146,6 +1161,9 @@ unary_expr (int op, expr_t *e)
 						n->e.expr.type = t;
 						return n;
 					}
+				case ex_short:
+					e->e.short_val = ~e->e.short_val;
+					return e;
 				case ex_integer:
 				case ex_uinteger:
 					e->e.integer_val = ~e->e.integer_val;
@@ -1410,6 +1428,12 @@ array_expr (expr_t *array, expr_t *index)
 		scale->type = expr_types[index_type->type];
 		scale->e.integer_val = size;
 		index = binary_expr ('*', index, scale);
+	}
+	if ((index->type == ex_integer
+		 && index->e.integer_val < 32768 && index->e.integer_val >= -32768)
+		|| (index->type == ex_uinteger
+			&& index->e.uinteger_val < 32768)) {
+		index->type = ex_short;
 	}
 	return binary_expr ('.', array, index);
 }

@@ -305,9 +305,10 @@ typedef struct def_s {
 	int				constant;	// 1 when a declaration included "= immediate"
 	statref_t		*refs;			// for relocations
 
-	int				freed;			// already freed from the scope
-	int				removed;		// already removed from the symbol table
-	int				used;			// unused local detection
+	unsigned		freed:1;		// already freed from the scope
+	unsigned		removed:1;		// already removed from the symbol table
+	unsigned		used:1;			// unused local detection
+	unsigned		absolute:1;		// don't relocate (for temps for shorts)
 	string_t		file;			// source file
 	int				line;			// source line
 
@@ -357,6 +358,7 @@ extern	type_t	type_floatfield;
 extern	type_t	type_quaternion;
 extern	type_t	type_integer;
 extern	type_t	type_uinteger;
+extern	type_t	type_short;
 
 extern	def_t	def_void;
 extern	def_t	def_string;
@@ -369,6 +371,7 @@ extern	def_t	def_pointer;
 extern	def_t	def_quaternion;
 extern	def_t	def_integer;
 extern	def_t	def_uinteger;
+extern	def_t	def_short;
 
 struct function_s
 {

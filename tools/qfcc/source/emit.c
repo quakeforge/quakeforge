@@ -331,6 +331,11 @@ emit_sub_expr (expr_t *e, def_t *dest)
 		case ex_uinteger:
 			d = PR_ReuseConstant (e, 0);
 			break;
+		case ex_short:
+			d = PR_NewDef (&type_short, 0, pr_scope);
+			d->ofs = e->e.short_val;
+			d->absolute = 1;
+			break;
 	}
 	PR_FreeTempDefs ();
 	return d;
@@ -445,6 +450,7 @@ emit_expr (expr_t *e)
 		case ex_quaternion:
 		case ex_integer:
 		case ex_uinteger:
+		case ex_short:
 			warning (e, "Ignoring useless expression");
 			break;
 		case ex_nil:
