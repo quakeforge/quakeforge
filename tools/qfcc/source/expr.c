@@ -2097,7 +2097,7 @@ address_expr (expr_t *e1, expr_t *e2, type_t *t)
 				e = e1->e.expr.e1;
 				type = get_type (e)->aux_type;
 				if (e->type == ex_expr && e->e.expr.op == '.') {
-					e->e.expr.type = pointer_type (e->e.expr.type);
+					e->e.expr.type = e->e.expr.type;
 					e->e.expr.op = '&';
 				}
 				break;

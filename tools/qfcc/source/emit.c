@@ -338,7 +338,7 @@ emit_move_expr (expr_t *e)
 	src_type = get_type (e2);
 	src = emit_sub_expr (e2, 0);
 	dst = emit_sub_expr (e1, 0);
-	
+
 	if (dst_type->type == ev_struct && src_type->type == ev_struct) {
 		size_expr = new_short_expr (type_size (dst->type));
 	} else if (dst_type->type == ev_struct) {
