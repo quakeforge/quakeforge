@@ -479,7 +479,10 @@ CL_UpdateBeams (void)
 
 	// update lightning
 	for (i = 0, b = cl_beams; i < MAX_BEAMS; i++, b++) {
+		if (!b->endtime)
+			continue;
 		if (!b->model || b->endtime < cl.time) {
+			b->endtime = 0;
 			beam_clear (b);
 			continue;
 		}
