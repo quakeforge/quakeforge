@@ -40,6 +40,7 @@
 
 #include "QF/cmd.h"
 #include "QF/console.h"
+#include "QF/cvar.h"
 #include "QF/qargs.h"
 #include "QF/sys.h"
 #include "QF/zone.h"
@@ -143,8 +144,9 @@ void Z_Free (memzone_t *zone, void *ptr)
 void *Z_Malloc (memzone_t *zone, int size)
 {
 	void	*buf;
-	
-Z_CheckHeap (zone);	// DEBUG
+
+	if (!developer || developer->int_val)
+		Z_CheckHeap (zone);	// DEBUG
 	buf = Z_TagMalloc (zone, size, 1);
 	if (!buf)
 		Sys_Error ("Z_Malloc: failed on allocation of %i bytes",size);
