@@ -124,6 +124,10 @@ ED_Count_f (void)
 void
 PR_Profile_f (void)
 {
+	if (!sv_pr_state.progs) {
+		Con_Printf ("no progs loaded\n");
+		return;
+	}
 	PR_Profile (&sv_pr_state);
 }
 
