@@ -78,7 +78,7 @@
 #define sfxc_speed		8
 #define sfxc_width		12
 #define sfxc_stereo		16
-#define sfxc_size		20
+#define sfxc_bytes		20
 #define sfxc_data		24
 
 // channel_t structure
