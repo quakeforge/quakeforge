@@ -65,7 +65,7 @@ Carne_Execute_Script (const char *path, cbuf_args_t *args)
 	
 	//GIB_Parse_Strip_Comments (mbuf);
 	
-	GIB_Function_Prepare_Args (mbuf, args);
+	GIB_Function_Prepare_Args (mbuf, args->argv, args->argc);
 	
 	// Main loop
 	while (1) {

@@ -53,6 +53,7 @@ typedef struct gib_buffer_data_s {
 
 void GIB_Buffer_Construct (struct cbuf_s *cbuf);
 void GIB_Buffer_Destruct (struct cbuf_s *cbuf);
+void GIB_Buffer_Set_Program (cbuf_t *cbuf, gib_tree_t *program);
 void GIB_Buffer_Add (cbuf_t *cbuf, const char *str);
 void GIB_Buffer_Insert (cbuf_t *cbuf, const char *str);
 void GIB_Buffer_Push_Sstack (struct cbuf_s *cbuf);

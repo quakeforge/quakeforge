@@ -310,7 +310,7 @@ DONE:
 	*embedded = embs;
 	return nodes;
 ERROR:
-	GIB_Tree_Free_Recursive (nodes, true);
+	GIB_Tree_Free_Recursive (nodes);
 	gib_parse_error = true;
 	return 0;
 }
@@ -472,7 +472,7 @@ GIB_Parse_Lines (const char *program, unsigned int flags)
 	}
 	return lines;
 ERROR:
-	GIB_Tree_Free_Recursive (lines, true);
+	GIB_Tree_Free_Recursive (lines);
 	return 0;
 }
 
@@ -570,6 +570,6 @@ GIB_Parse_Embedded (const char *program, unsigned int flags, gib_tree_t **embedd
 	return lines;
 ERROR:
 	gib_parse_error = true;
-	GIB_Tree_Free_Recursive (lines, true);
+	GIB_Tree_Free_Recursive (lines);
 	return 0;
 }

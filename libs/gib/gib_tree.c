@@ -46,6 +46,8 @@ GIB_Tree_New (unsigned int flags)
 {
 	gib_tree_t *new = calloc (1, sizeof (gib_tree_t));
 	new->flags = flags;
+	// All nodes are created for a reason, so start with 1 ref
+	new->refs = 1; 
 	return new;
 }
 
@@ -60,29 +62,19 @@ GIB_Tree_Free (gib_tree_t *tree)
 }
 
 void
-GIB_Tree_Free_Recursive (gib_tree_t *tree, qboolean force)
+GIB_Tree_Free_Recursive (gib_tree_t *tree)
 {
 	gib_tree_t *n;
 
+	if (tree->refs)
+		return;
 	for (; tree; tree = n) {
 		n = tree->next;
-		// Leave perm nodes and their children alone
-		// (creating a temp child of a perm node is illegal)
-		if (tree->flags & TREE_PERM && !force)
-			return;
-		/* Free the children (but not on virtuals, and don't free nested functions EVER) */
-		if (tree->children && !(tree->children->flags & TREE_FUNC))
-			GIB_Tree_Free_Recursive (tree->children, force);
+		if (tree->children) {
+			// Parent is about to bite the dust, meaning one less reference
+			tree->children->refs--;
+			GIB_Tree_Free_Recursive (tree->children);
+		}
 		GIB_Tree_Free (tree);
-	}
-}
-
-void
-GIB_Tree_Add_Flag_Recursive (gib_tree_t *tree, unsigned int flag)
-{
-	for (; tree; tree = tree->next) {
-		tree->flags |= flag;
-		if (tree->children)
-			GIB_Tree_Add_Flag_Recursive (tree->children, flag);
 	}
 }

@@ -48,10 +48,9 @@ typedef struct gib_tree_s {
 	const char *str;
 	char delim;
 	struct gib_tree_s *children, *next, *parent, *jump;
-	unsigned int flags, start, end;
+	unsigned int flags, start, end, refs;
 } gib_tree_t;
 
 gib_tree_t *GIB_Tree_New (unsigned int flags);
-void GIB_Tree_Free_Recursive (gib_tree_t *tree, qboolean force);
-void GIB_Tree_Add_Flag_Recursive (gib_tree_t *tree, unsigned int flag);
+void GIB_Tree_Free_Recursive (gib_tree_t *tree);
 #endif /* __GIB_TREE_H */

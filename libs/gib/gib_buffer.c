@@ -65,8 +65,10 @@ GIB_Buffer_Destruct (struct cbuf_s *cbuf)
 	dstring_delete (g->arg_composite);
 	if (g->locals)
 		Hash_DelTable (g->locals);
-	if (g->program)
-		GIB_Tree_Free_Recursive (g->program, false);
+	if (g->program) {
+		g->program->refs--;
+		GIB_Tree_Free_Recursive (g->program);
+	}
 	for (i = 0; i < g->stack.size; i++) {
 		for (j = 0; j < g->stack.values[i].realsize; j++)
 			dstring_delete (g->stack.values[i].dstrs[j]);
@@ -76,6 +78,12 @@ GIB_Buffer_Destruct (struct cbuf_s *cbuf)
 	if (g->stack.values)
 		free (g->stack.values);
 	free (cbuf->data);
+}
+
+void
+GIB_Buffer_Set_Program (cbuf_t *cbuf, gib_tree_t *program)
+{
+	GIB_DATA(cbuf)->program = program;
 }
 
 void
@@ -104,6 +112,10 @@ GIB_Buffer_Insert (cbuf_t *cbuf, const char *str)
 
 	if ((lines = GIB_Parse_Lines (str, TREE_NORMAL))) {
 		for (cur = lines; cur; cur = cur->next);
+		//if (g->ip) { // This buffer is already running!
+			
+		if (g->program)
+			g->program->refs--;
 		cur->next = g->program;
 		g->program = lines;
 	}

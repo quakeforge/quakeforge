@@ -204,7 +204,7 @@ GIB_Execute (cbuf_t *cbuf)
 				cbuf->down = new;
 				new->up = cbuf;
 				cbuf->state = CBUF_STATE_STACK;
-				GIB_Function_Execute (new, f, cbuf->args);
+				GIB_Function_Execute (new, f, cbuf->args->argv, cbuf->args->argc);
 			} else {
 				GIB_Execute_Generate_Composite (cbuf);
 				Cmd_Command (cbuf->args);
@@ -216,6 +216,7 @@ GIB_Execute (cbuf_t *cbuf)
 			return;
 	}
 	g->done = false;
-	GIB_Tree_Free_Recursive (g->program, false);
+	g->program->refs--;
+	GIB_Tree_Free_Recursive (g->program);
 	g->program = g->ip = 0;
 }

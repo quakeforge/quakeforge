@@ -234,49 +234,6 @@ GIB_Return_f (void)
 		}
 	}
 }
-
-/*
-static void
-GIB_Field_Get_f (void)
-{
-	unsigned int field;
-	char *list, *end;
-	const char *ifs;
-	if (GIB_Argc() < 3 || GIB_Argc() > 4) {
-		GIB_USAGE ("list element [fs]");
-		return;
-	}
-	field = atoi (GIB_Argv(2));
-	
-	if (GIB_Argc() == 4)
-		ifs = GIB_Argv (3);
-	else if (!(ifs = GIB_Var_Get_Local (cbuf_active, "ifs")))
-		ifs = " \t\n\r";
-	if (!*ifs) {
-		if (field < strlen(GIB_Argv(1))) {
-			GIB_Argv(1)[field+1] = 0;
-			GIB_Return (GIB_Argv(1)+field);
-		} else
-			GIB_Return ("");
-		return;
-	}
-	for (list = GIB_Argv(1); *list && strchr(ifs, *list); list++);
-	while (field) {
-		while (!strchr(ifs, *list))
-			list++;
-		while (*list && strchr(ifs, *list))
-			list++;
-		if (!*list) {
-			GIB_Return ("");
-			return;
-		}
-		field--;
-	}
-	for (end = list; !strchr(ifs, *end); end++);
-	*end = 0;
-	GIB_Return (list);
-}
-*/
 	
 static void
 GIB_For_f (void)
@@ -345,7 +302,7 @@ GIB_Runexported_f (void)
 					"The QuakeForge developers.", Cmd_Argv(0));
 	else {
 		cbuf_t *sub = Cbuf_New (&gib_interp);
-		GIB_Function_Execute (sub, f, cbuf_active->args);
+		GIB_Function_Execute (sub, f, cbuf_active->args->argv, cbuf_active->args->argc);
 		cbuf_active->down = sub;
 		sub->up = cbuf_active;
 		cbuf_active->state = CBUF_STATE_STACK;
@@ -371,7 +328,7 @@ GIB_Function_Export_f (void)
 }
 
 static void
-GIB_String_Length_f (void)
+GIB_Length_f (void)
 {
 	dstring_t *ret;
 	if (GIB_Argc() != 2)
@@ -381,7 +338,7 @@ GIB_String_Length_f (void)
 }
 
 static void
-GIB_String_Equal_f (void)
+GIB_Equal_f (void)
 {
 	if (GIB_Argc() != 3)
 		GIB_USAGE ("string1 string2");
@@ -392,7 +349,7 @@ GIB_String_Equal_f (void)
 }
 
 static void
-GIB_String_Sub_f (void)
+GIB_Slice_f (void)
 {
 	dstring_t *ret;
 	int start, end, len;
@@ -415,8 +372,9 @@ GIB_String_Sub_f (void)
 	}
 }
 
+/*
 static void
-GIB_String_Find_f (void)
+GIB_Find_f (void)
 {
 	dstring_t *ret;
 	char *haystack, *res;
@@ -431,7 +389,35 @@ GIB_String_Find_f (void)
 	} else
 		GIB_Return ("-1");
 }
+*/
+
+static void
+GIB_Split_f (void)
+{
+	char *end, *start;
+	const char *ifs;
 	
+	if (GIB_Argc() < 2 || GIB_Argc() > 3) {
+		GIB_USAGE ("string [fs]");
+		return;
+	}
+	
+	ifs = GIB_Argc() == 3 ? GIB_Argv (2) : " \t\r\n";
+
+	end = GIB_Argv(1);
+	while (*end) {
+		for (; strchr(ifs, *end); end++)
+			if (!*end)
+				return;
+		start = end;
+		while (!strchr(ifs, *end))
+			end++;
+		if (*end)
+			*(end++) = 0;
+		GIB_Return (start);			
+	}
+}
+
 static void
 GIB_Regex_Match_f (void)
 {
@@ -513,11 +499,14 @@ static void
 GIB_Thread_Create_f (void)
 {
 	dstring_t *ret;
-	if (GIB_Argc() != 2)
-		GIB_USAGE ("program");
+	gib_function_t *f;
+	if (GIB_Argc() < 2)
+		GIB_USAGE ("function [arg1 arg2 ...]");
+	else if (!(f = GIB_Function_Find (GIB_Argv(1))))
+		Cbuf_Error ("function", "thread::create: no function named '%s' exists.", GIB_Argv(1));
 	else {
 		gib_thread_t *thread = GIB_Thread_New ();
-		Cbuf_AddText (thread->cbuf, GIB_Argv(1));
+		GIB_Function_Execute (thread->cbuf, f, cbuf_active->args->argv+1, cbuf_active->args->argc-1);
 		GIB_Thread_Add (thread);
 		if ((ret = GIB_Return (0)))
 			dsprintf (ret, "%lu", thread->id);
@@ -752,9 +741,10 @@ GIB_Range_f (void)
 	}
 	limit = atof(GIB_Argv(2));
 	start = atof(GIB_Argv(1));
-	if (GIB_Argc () == 4 && (inc = atof(GIB_Argv(3))) == 0.0)
-		return;
-	else
+	if (GIB_Argc () == 4) {
+		if ((inc = atof(GIB_Argv(3))) == 0.0)
+			return;
+	} else
 		inc = limit < start ? -1.0 : 1.0;
 	for (i = atof(GIB_Argv(1)); inc < 0 ? i >= limit : i <= limit; i += inc) {
 		if (!(dstr = GIB_Return(0)))
@@ -802,10 +792,10 @@ GIB_Builtin_Init (qboolean sandbox)
 	GIB_Builtin_Add ("for", GIB_For_f);
 	GIB_Builtin_Add ("break", GIB_Break_f);
 	GIB_Builtin_Add ("continue", GIB_Continue_f);
-	GIB_Builtin_Add ("string::length", GIB_String_Length_f);
-	GIB_Builtin_Add ("string::equal", GIB_String_Equal_f);
-	GIB_Builtin_Add ("string::sub", GIB_String_Sub_f);
-	GIB_Builtin_Add ("string::find", GIB_String_Find_f);
+	GIB_Builtin_Add ("length", GIB_Length_f);
+	GIB_Builtin_Add ("equal", GIB_Equal_f);
+	GIB_Builtin_Add ("slice", GIB_Slice_f);
+	GIB_Builtin_Add ("split", GIB_Split_f);
 	GIB_Builtin_Add ("regex::match", GIB_Regex_Match_f);
 	GIB_Builtin_Add ("regex::replace", GIB_Regex_Replace_f);
 	GIB_Builtin_Add ("regex::extract", GIB_Regex_Extract_f);

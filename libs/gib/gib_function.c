@@ -81,7 +81,7 @@ GIB_Function_Free (void *ele, void *ptr)
 	dstring_delete (func->text);
 	free ((void *)func->name);
 	if (func->program)
-		GIB_Tree_Free_Recursive (func->program, true);
+		GIB_Tree_Free_Recursive (func->program);
 	free (func);
 }
 
@@ -97,12 +97,16 @@ GIB_Function_Define (const char *name, const char *text, gib_tree_t *program, ha
 {
 	gib_function_t *func;
 	
+	program->refs++;
+	
 	if (!gib_functions)
 		gib_functions = Hash_NewTable (1024, GIB_Function_Get_Key, GIB_Function_Free, 0);
+
 	func = Hash_Find(gib_functions, name);
 	if (func) {
 		dstring_clearstr (func->text);
-		GIB_Tree_Free_Recursive (func->program, true);
+		func->program->refs--;
+		GIB_Tree_Free_Recursive (func->program);
 	} else {
 		func = GIB_Function_New (name);
 		Hash_Add (gib_functions, func);
@@ -110,8 +114,6 @@ GIB_Function_Define (const char *name, const char *text, gib_tree_t *program, ha
 	dstring_appendstr (func->text, text);
 	func->program = program;
 	func->globals = globals;
-	GIB_Tree_Add_Flag_Recursive (program, TREE_PERM); // Don't free this, we are using it now
-	program->flags |= TREE_FUNC; // Even when forcing a recursive free, don't free this
 }
 
 /*
@@ -130,26 +132,24 @@ GIB_Function_Find (const char *name)
 }
 
 void
-GIB_Function_Prepare_Args (cbuf_t *cbuf, cbuf_args_t *args)
+GIB_Function_Prepare_Args (cbuf_t *cbuf, dstring_t **args, unsigned int argc)
 {
 	static hashtab_t *zero = 0;
 	unsigned int i;
 	gib_var_t *var;
-	static char argss[] = "args", argcs[] = "argc";
+	static char argss[] = "args";
 
 	var = GIB_Var_Get_Complex (&GIB_DATA(cbuf)->locals, &zero, argss, &i, true);
-	var->array = realloc (var->array, sizeof (dstring_t *) * args->argc);
-	memset (var->array+1, 0, (args->argc-1) * sizeof (dstring_t *));
-	var->size = args->argc;
-	for (i = 0; i < args->argc; i++) {
+	var->array = realloc (var->array, sizeof (dstring_t *) * argc);
+	memset (var->array+1, 0, (argc-1) * sizeof (dstring_t *));
+	var->size = argc;
+	for (i = 0; i < argc; i++) {
 		if (var->array[i])
 			dstring_clearstr(var->array[i]);
 		else
 			var->array[i] = dstring_newstr();
-		dstring_appendstr (var->array[i], args->argv[i]->str);
+		dstring_appendstr (var->array[i], args[i]->str);
 	}
-	var = GIB_Var_Get_Complex (&GIB_DATA(cbuf)->locals, &zero, argcs, &i, true);
-	dsprintf(var->array[0], "%u", args->argc);
 }
 
 /*
@@ -160,9 +160,10 @@ GIB_Function_Prepare_Args (cbuf_t *cbuf, cbuf_args_t *args)
 */
 
 void
-GIB_Function_Execute (cbuf_t *cbuf, gib_function_t *func, cbuf_args_t *args)
+GIB_Function_Execute (cbuf_t *cbuf, gib_function_t *func, dstring_t **args, unsigned int argc)
 {
-	GIB_DATA(cbuf)->program = func->program;
+	func->program->refs++;
+	GIB_Buffer_Set_Program (cbuf, func->program);
 	GIB_DATA(cbuf)->globals = func->globals;
-	GIB_Function_Prepare_Args (cbuf, args);
+	GIB_Function_Prepare_Args (cbuf, args, argc);
 }

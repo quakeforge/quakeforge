@@ -48,32 +48,34 @@ static __attribute__ ((unused)) const char rcsid[] =
 #include "QF/dstring.h"
 #include "QF/hash.h"
 
-gib_thread_t *gib_threads;
+gib_thread_t *gib_threads = 0;
+gib_thread_t **gib_thread_p = &gib_threads;
+
 hashtab_t *gib_events;
+
 static unsigned long int nextid = 0;
 
 void
 GIB_Thread_Add (gib_thread_t *thread)
 {
-	thread->prev = 0;
-	thread->next = gib_threads;
-	if (gib_threads)
-		gib_threads->prev = thread;
-	gib_threads = thread;
+	thread->prev = *gib_thread_p;
+	*gib_thread_p = thread;
+	gib_thread_p = &thread->next;
 }
 
 void
 GIB_Thread_Remove (gib_thread_t *thread) 
 {
-	if (thread == gib_threads) {
-		gib_threads = gib_threads->next;
-		if (gib_threads)
-			gib_threads->prev = 0;
-	} else {
+	if (thread->prev)
 		thread->prev->next = thread->next;
-		if (thread->next)
-			thread->next->prev = thread->prev;
-	}
+	else
+		gib_threads = thread->next;
+	if (thread->next)
+		thread->next->prev = thread->prev;
+	else if (thread->prev)
+		gib_thread_p = &thread->prev->next;
+	else
+		gib_thread_p = &gib_threads;
 }
 
 gib_thread_t *
@@ -111,14 +113,14 @@ GIB_Thread_Execute (void)
 	if (!gib_threads)
 		return;
 	
-	for (cur = gib_threads; cur->next; cur = cur->next);
-	for (; cur; cur = tmp) {
-		tmp = cur->prev;
-		if (!cur->cbuf->down) {
+	for (cur = gib_threads; cur; cur = tmp) {
+		tmp = cur->next;
+		if (GIB_DATA(cur->cbuf)->program)
+			Cbuf_Execute_Stack (cur->cbuf);
+		else {
 			GIB_Thread_Remove (cur);
 			GIB_Thread_Delete (cur);
-		} else
-			Cbuf_Execute_Stack (cur->cbuf);
+		}
 	}
 }
 
@@ -181,7 +183,7 @@ GIB_Event_Callback (gib_event_t *event, unsigned int argc, ...)
 			
 	va_end (ap);
 	
-	GIB_Function_Execute (thread->cbuf, f, args);
+	GIB_Function_Execute (thread->cbuf, f, args->argv, args->argc);
 	GIB_Thread_Add (thread);
 	Cbuf_ArgsDelete (args);
 }
