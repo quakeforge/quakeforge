@@ -396,9 +396,9 @@ WriteMiptex (void)
 	dmiptexlump_t *l;
 	int         i, len, res = -1;
 
-	(const char *)wad_list = ValueForKey (&entities[0], "_wad");
+	wad_list = (char *) ValueForKey (&entities[0], "_wad");
 	if (!wad_list || !wad_list[0]) {
-		(const char *)wad_list = ValueForKey (&entities[0], "wad");
+		wad_list = (char *) ValueForKey (&entities[0], "wad");
 		if (!wad_list || !wad_list[0]) {
 			printf ("WARNING: no wadfile specified\n");
 			bsp->texdatasize = 0;
