@@ -81,6 +81,8 @@ edict_t    *sv_player;
 
 usercmd_t   cmd;
 
+cvar_t     *sv_allowfake;
+
 cvar_t     *cl_rollspeed;
 cvar_t     *cl_rollangle;
 cvar_t     *sv_spectalk;
@@ -759,6 +761,9 @@ SV_Say (qboolean team)
 	if (Cmd_Argc () < 2)
 		return;
 
+	if (host_client->state < cs_connected)
+		return;
+
 	if (team)
 		t1 = Info_ValueForKey (host_client->userinfo, "team");
 
@@ -798,19 +803,22 @@ SV_Say (qboolean team)
 		p[strlen (p) - 1] = 0;
 	}
 
-	for (i = p; *i; i++)
-		if (*i == 13) { // ^M
-			if (sv_kickfake->int_val) {
-				SV_BroadcastPrintf (PRINT_HIGH, "%s was kicked for "
-									"attempting to fake messages\n",
-									host_client->name);
-				SV_ClientPrintf (1, host_client, PRINT_HIGH, "You were kicked "
-								 "for attempting to fake messages\n");
-				SV_DropClient (host_client);
-				return;
-			} else
-				*i = '#';
+	if (!sv_allowfake->int_val || (!team && sv_allowfake->int_val == 2)) {
+		for (i = p; *i; i++) {
+			if (*i == 13) { // ^M
+				if (sv_kickfake->int_val) {
+						SV_BroadcastPrintf (PRINT_HIGH, "%s was kicked for "
+											"attempting to fake messages\n",
+											host_client->name);
+						SV_ClientPrintf (1, host_client, PRINT_HIGH, "You were kicked "
+										 "for attempting to fake messages\n");
+						SV_DropClient (host_client);
+						return;
+				} else
+					*i = '#';
+			}
 		}
+	}
 
 	if (sv_funcs.ChatMessage) {
 		PR_PushFrame (&sv_pr_state);
@@ -1914,6 +1922,9 @@ SV_UserInit (void)
 							 "strafing");
 	cl_rollangle = Cvar_Get ("cl_rollangle", "2", CVAR_NONE, NULL, "How much "
 							 "a player's screen tilts when strafing");
+
+	sv_allowfake = Cvar_Get ("sv_allowfake", "2", CVAR_NONE, NULL, "Allow 'fake' messages (FuhQuake $\\). 1 = " 
+								"always, 2 = only say_team");
 	sv_spectalk = Cvar_Get ("sv_spectalk", "1", CVAR_NONE, NULL, "Toggles "
 							"the ability of spectators to talk to players");
 	sv_mapcheck = Cvar_Get ("sv_mapcheck", "1", CVAR_NONE, NULL, "Toggle the "
@@ -1935,7 +1946,7 @@ SV_UserInit (void)
 	sv_timecheck_decay = Cvar_Get ("sv_timecheck_decay", "2", CVAR_NONE,
 								   NULL, "Rate at which time inaccuracies are "
 								   "\"forgiven\".");
-	sv_kickfake = Cvar_Get ("sv_kickfake", "1", CVAR_NONE, NULL,
+	sv_kickfake = Cvar_Get ("sv_kickfake", "0", CVAR_NONE, NULL,
 							"Kick users sending to send fake talk messages");
 }
 
