@@ -213,6 +213,10 @@ get_op_string (int op)
 		case '.':	return ".";
 		case 'i':	return "<if>";
 		case 'n':	return "<ifnot>";
+		case IFBE:	return "<ifbe>";
+		case IFB:	return "<ifb>";
+		case IFAE:	return "<ifae>";
+		case IFA:	return "<ifa>";
 		case 'g':	return "<goto>";
 		case 'r':	return "<return>";
 		case 'b':	return "<bind>";
@@ -357,6 +361,11 @@ append_expr (expr_t *block, expr_t *e)
 
 	if (!e)
 		return block;
+
+	if (e->next) {
+		error (e, "append_expr: expr loop detected");
+		abort ();
+	}
 
 	*block->e.block.tail = e;
 	block->e.block.tail = &e->next;
@@ -784,6 +793,7 @@ test_expr (expr_t *e, int test)
 			new = new_expr ();
 			new->type = ex_string;
 			break;
+		case ev_uinteger:
 		case ev_integer:
 			return e;
 		case ev_float:
@@ -843,6 +853,11 @@ binary_expr (int op, expr_t *e1, expr_t *e2)
 		check_initialized (e1);
 	check_initialized (e2);
 
+	if (e1->type != ex_block)
+		inc_users (e1);
+	if (e2->type != ex_block)
+		inc_users (e2);
+
 	if (op == '=' && e1->type == ex_def)
 		PR_DefInitialized (e1->e.def);
 
@@ -850,7 +865,6 @@ binary_expr (int op, expr_t *e1, expr_t *e2)
 		&& e2->type == ex_block && e2->e.block.is_call
 		&& e1->e.block.result) {
 		e = new_temp_def_expr (e1->e.block.result->e.def->type);
-		inc_users (e);
 		e1 = binary_expr ('=', e, e1);
 	}
 
@@ -1322,14 +1336,12 @@ incop_expr (int op, expr_t *e, int postop)
 	incop = asx_expr (op, e, one);
 	if (postop) {
 		expr_t     *temp;
-		type_t     *type;
+		type_t     *type = get_type (e);
 		expr_t     *block = new_block_expr ();
 
-		type = e->type == ex_def
-				? e->e.def->type
-				: e->e.expr.type;
 		temp = new_temp_def_expr (type);
 		append_expr (block, binary_expr ('=', temp, e));
+		temp->e.temp.users = 1;
 		append_expr (block, incop);
 		block->e.block.result = temp;
 		return block;

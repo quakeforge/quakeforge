@@ -242,6 +242,8 @@ PR_FreeTempDefs (void)
 			d = *def;
 			*def = d->next;
 
+			if (d->users < 0)
+				printf ("%s:%d: warning: %3d %3d\n", strings + d->file, d->line, d->ofs, d->users);
 			size = type_size[d->type->type];
 			if (d->expr)
 				d->expr->e.temp.def = 0;
@@ -265,7 +267,7 @@ PR_ResetTempDefs (void)
 	}
 
 	for (d = temp_scope.next; d; d = d->next)
-		printf ("%3d %3d\n", d->ofs, d->users);
+		printf ("%s:%d: warning: %3d %3d\n", strings + d->file, d->line, d->ofs, d->users);
 	temp_scope.next = 0;
 }
 

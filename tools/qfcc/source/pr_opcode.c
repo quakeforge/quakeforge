@@ -34,6 +34,10 @@ opcode_t *op_done;
 opcode_t *op_return;
 opcode_t *op_if;
 opcode_t *op_ifnot;
+opcode_t *op_ifbe;
+opcode_t *op_ifb;
+opcode_t *op_ifae;
+opcode_t *op_ifa;
 opcode_t *op_state;
 opcode_t *op_goto;
 
@@ -151,6 +155,14 @@ PR_Opcode_Init_Tables (void)
 			op_if = op;
 		} else if (!strcmp (op->name, "<IFNOT>")) {
 			op_ifnot = op;
+		} else if (!strcmp (op->name, "<IFBE>")) {
+			op_ifbe = op;
+		} else if (!strcmp (op->name, "<IFB>")) {
+			op_ifb = op;
+		} else if (!strcmp (op->name, "<IFAE>")) {
+			op_ifae = op;
+		} else if (!strcmp (op->name, "<IFA>")) {
+			op_ifa = op;
 		} else if (!strcmp (op->name, "<STATE>")) {
 			op_state = op;
 		} else if (!strcmp (op->name, "<GOTO>")) {

@@ -69,7 +69,8 @@ PR_PrintStatement (progs_t * pr, dstatement_t *s)
 	}
 	Sys_Printf ("%-9s ", op->opname);
 
-	if (s->op == OP_IF || s->op == OP_IFNOT)
+	if (s->op == OP_IF || s->op == OP_IFNOT || s->op == OP_IFBE
+		|| s->op == OP_IFB || s->op == OP_IFAE || s->op == OP_IFA)
 		Sys_Printf ("%sbranch %i (%i)",
 					PR_GlobalString (pr, s->a, ev_integer), s->b, addr + s->b);
 	else if (s->op == OP_GOTO) {
@@ -594,9 +595,35 @@ PR_ExecuteProgram (progs_t * pr, func_t fnum)
 				if (OPA.integer_var)
 					st += (short)st->b - 1;		// offset the s++
 				break;
+			case OP_IFBE:
+				if (OPA.integer_var <= 0)
+					st += (short)st->b - 1;		// offset the s++
+				break;
+			case OP_IFB:
+				if (OPA.integer_var < 0)
+					st += (short)st->b - 1;		// offset the s++
+				break;
+			case OP_IFAE:
+				if (OPA.integer_var >= 0)
+					st += (short)st->b - 1;		// offset the s++
+				break;
+			case OP_IFA:
+				if (OPA.integer_var > 0)
+					st += (short)st->b - 1;		// offset the s++
+				break;
 			case OP_GOTO:
 				st += (short)st->a - 1;			// offset the s++
 				break;
+			case OP_JUMP:
+				if (pr_boundscheck->int_val
+					&& (OPA.uinteger_var >= pr->progs->numstatements)) {
+					pr->pr_xstatement = st - pr->pr_statements;
+					PR_RunError (pr, "Invalid jump destination\n");
+					return;
+				}
+				st = &pr->pr_statements[OPA.uinteger_var];
+				break;
+
 			case OP_CALL0:
 			case OP_CALL1:
 			case OP_CALL2:
@@ -690,6 +717,7 @@ PR_ExecuteProgram (progs_t * pr, func_t fnum)
 			case OP_BITNOT_I:
 				OPC.integer_var = ~OPA.integer_var;
 				break;
+
 			case OP_GE_I:
 				OPC.integer_var = OPA.integer_var >= OPB.integer_var;
 				break;
@@ -700,8 +728,21 @@ PR_ExecuteProgram (progs_t * pr, func_t fnum)
 				OPC.integer_var = OPA.integer_var > OPB.integer_var;
 				break;
 			case OP_LT_I:
+				OPC.integer_var = OPA.uinteger_var < OPB.uinteger_var;
+				break;
+			case OP_GE_UI:
+				OPC.integer_var = OPA.uinteger_var >= OPB.uinteger_var;
+				break;
+			case OP_LE_UI:
+				OPC.integer_var = OPA.uinteger_var <= OPB.uinteger_var;
+				break;
+			case OP_GT_UI:
+				OPC.integer_var = OPA.uinteger_var > OPB.uinteger_var;
+				break;
+			case OP_LT_UI:
 				OPC.integer_var = OPA.integer_var < OPB.integer_var;
 				break;
+
 			case OP_AND_I:
 				OPC.integer_var = OPA.integer_var && OPB.integer_var;
 				break;

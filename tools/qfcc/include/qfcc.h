@@ -392,6 +392,10 @@ extern opcode_t *op_done;
 extern opcode_t *op_return;
 extern opcode_t *op_if;
 extern opcode_t *op_ifnot;
+extern opcode_t *op_ifbe;
+extern opcode_t *op_ifb;
+extern opcode_t *op_ifae;
+extern opcode_t *op_ifa;
 extern opcode_t *op_state;
 extern opcode_t *op_goto;
 

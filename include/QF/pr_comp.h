@@ -37,6 +37,7 @@ typedef enum {
 	ev_pointer,
 	ev_quaternion,
 	ev_integer,
+	ev_uinteger,
 	
 	ev_type_count		// not a type, gives number of types
 } etype_t;
@@ -201,6 +202,18 @@ typedef enum {
 	OP_ADDRESS_P,
 
 	OP_LEA,
+
+	OP_IFBE,
+	OP_IFB,
+	OP_IFAE,
+	OP_IFA,
+
+	OP_JUMP,
+
+	OP_LT_UI,
+	OP_GT_UI,
+	OP_LE_UI,
+	OP_GE_UI,
 } pr_opcode_e;
 
 typedef struct

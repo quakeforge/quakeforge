@@ -41,6 +41,7 @@ typedef union pr_type_u {
 	int		entity_var;
 	float	vector_var[1];		// really 3, but this structure must be 32 bits
 	int		integer_var;
+	unsigned int uinteger_var;
 } pr_type_t;
 
 #define	MAX_ENT_LEAFS	16
@@ -123,6 +124,7 @@ int NUM_FOR_BAD_EDICT(progs_t *pr, edict_t *e);
 
 #define	G_FLOAT(p,o)	G_var (p, o, float)
 #define	G_INT(p,o)		G_var (p, o, integer)
+#define	G_UINT(p,o)		G_var (p, o, uinteger)
 #define G_EDICT(p,o)	((edict_t *)(PR_edicts (p) + G_INT (p, o)))
 #define G_EDICTNUM(p,o)	NUM_FOR_EDICT(p, G_EDICT(p, o))
 #define	G_VECTOR(p,o)	G_var (p, o, vector)
@@ -133,6 +135,7 @@ int NUM_FOR_BAD_EDICT(progs_t *pr, edict_t *e);
 
 #define	E_FLOAT(e,o)	E_var (e, o, float)
 #define	E_INT(e,o)		E_var (e, o, integer)
+#define	E_UINT(e,o)		E_var (e, o, uinteger)
 #define	E_VECTOR(e,o)	E_var (e, o, vector)
 #define	E_STRING(p,e,o)	(PR_GetString (p, E_var (e, o, string)))
 

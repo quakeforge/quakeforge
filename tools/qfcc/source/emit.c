@@ -159,6 +159,10 @@ emit_assign_expr (expr_t *e)
 	expr_t *e1 = e->e.expr.e1;
 	expr_t *e2 = e->e.expr.e2;
 
+	if (e1->type == ex_temp && e1->e.temp.users < 2) {
+		e1->e.temp.users--;
+		return 0;
+	}
 	def_a = emit_sub_expr (e1, 0);
 	if (def_a->type->type == ev_pointer) {
 		def_b = emit_sub_expr (e2, 0);
@@ -334,6 +338,18 @@ emit_expr (expr_t *e)
 					break;
 				case 'i':
 					emit_branch (e->line, op_if, e->e.expr.e1, e->e.expr.e2);
+					break;
+				case IFBE:
+					emit_branch (e->line, op_ifbe, e->e.expr.e1, e->e.expr.e2);
+					break;
+				case IFB:
+					emit_branch (e->line, op_ifb, e->e.expr.e1, e->e.expr.e2);
+					break;
+				case IFAE:
+					emit_branch (e->line, op_ifae, e->e.expr.e1, e->e.expr.e2);
+					break;
+				case IFA:
+					emit_branch (e->line, op_ifa, e->e.expr.e1, e->e.expr.e2);
 					break;
 				case 'c':
 					emit_function_call (e, 0);

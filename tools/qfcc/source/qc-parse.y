@@ -108,6 +108,7 @@ typedef struct {
 %token	<quaternion_val> QUATERNION_VAL
 
 %token	LOCAL RETURN WHILE DO IF ELSE FOR BREAK CONTINUE ELIPSIS NIL
+%token	IFBE IFB IFAE IFA
 %token	SWITCH CASE DEFAULT
 %token	<type> TYPE
 

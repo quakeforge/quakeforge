@@ -144,8 +144,12 @@ opcode_t    pr_opcodes[] = {
 	{"!", "not.ent", OP_NOT_ENT, false, ev_entity, ev_void, ev_integer, PROG_ID_VERSION},
 	{"!", "not.fnc", OP_NOT_FNC, false, ev_func, ev_void, ev_integer, PROG_ID_VERSION},
 
-	{"<IF>", "if", OP_IF, false, ev_integer, ev_integer, ev_void, PROG_ID_VERSION},
-	{"<IFNOT>", "ifnot", OP_IFNOT, false, ev_integer, ev_integer, ev_void, PROG_ID_VERSION},
+	{"<IF>", "if", OP_IF, false, ev_integer, ev_void, ev_void, PROG_ID_VERSION},
+	{"<IFNOT>", "ifnot", OP_IFNOT, false, ev_integer, ev_void, ev_void, PROG_ID_VERSION},
+	{"<IFBE>", "ifbe", OP_IFBE, true, ev_integer, ev_integer, ev_void, PROG_VERSION},
+	{"<IFB>", "ifb", OP_IFB, true, ev_integer, ev_integer, ev_void, PROG_VERSION},
+	{"<IFAE>", "ifae", OP_IFAE, true, ev_integer, ev_integer, ev_void, PROG_VERSION},
+	{"<IFA>", "ifa", OP_IFA, true, ev_integer, ev_integer, ev_void, PROG_VERSION},
 
 // calls returns REG_RETURN
 	{"<CALL0>", "call0", OP_CALL0, false, ev_func, ev_void, ev_void, PROG_ID_VERSION},
@@ -160,7 +164,8 @@ opcode_t    pr_opcodes[] = {
 
 	{"<STATE>", "state", OP_STATE, false, ev_float, ev_float, ev_void, PROG_ID_VERSION},
 
-	{"<GOTO>", "goto", OP_GOTO, false, ev_float, ev_void, ev_void, PROG_ID_VERSION},
+	{"<GOTO>", "goto", OP_GOTO, false, ev_integer, ev_void, ev_void, PROG_ID_VERSION},
+	{"<JUMP>", "jump", OP_JUMP, false, ev_integer, ev_void, ev_void, PROG_VERSION},
 
 	{"&&", "and", OP_AND, false, ev_float, ev_float, ev_integer, PROG_ID_VERSION},
 	{"||", "or", OP_OR, false, ev_float, ev_float, ev_integer, PROG_ID_VERSION},
@@ -181,10 +186,17 @@ opcode_t    pr_opcodes[] = {
 	{"%", "mod.f", OP_MOD_F, false, ev_float, ev_float, ev_float, PROG_VERSION},
 	{"&", "bitand.i", OP_BITAND_I, false, ev_integer, ev_integer, ev_integer, PROG_VERSION},
 	{"|", "bitor.i", OP_BITOR_I, false, ev_integer, ev_integer, ev_integer, PROG_VERSION},
+
 	{">=", "ge.i", OP_GE_I, false, ev_integer, ev_integer, ev_integer, PROG_VERSION},
 	{"<=", "le.i", OP_LE_I, false, ev_integer, ev_integer, ev_integer, PROG_VERSION},
 	{">", "gt.i", OP_GT_I, false, ev_integer, ev_integer, ev_integer, PROG_VERSION},
 	{"<", "lt.i", OP_LT_I, false, ev_integer, ev_integer, ev_integer, PROG_VERSION},
+
+	{">=", "ge.ui", OP_GE_UI, false, ev_uinteger, ev_uinteger, ev_integer, PROG_VERSION},
+	{"<=", "le.ui", OP_LE_UI, false, ev_uinteger, ev_uinteger, ev_integer, PROG_VERSION},
+	{">", "gt.ui", OP_GT_UI, false, ev_uinteger, ev_uinteger, ev_integer, PROG_VERSION},
+	{"<", "lt.ui", OP_LT_UI, false, ev_uinteger, ev_uinteger, ev_integer, PROG_VERSION},
+
 	{"&&", "and.i", OP_AND_I, false, ev_integer, ev_integer, ev_integer, PROG_VERSION},
 	{"||", "or.i", OP_OR_I, false, ev_integer, ev_integer, ev_integer, PROG_VERSION},
 	{"!", "not.i", OP_NOT_I, false, ev_integer, ev_void, ev_integer, PROG_VERSION},
