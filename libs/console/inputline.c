@@ -100,7 +100,7 @@ Con_ClearTyping (inputline_t *il, int save)
 void
 Con_ProcessInputLine (inputline_t *il, int ch)
 {
-	int			i;
+	size_t		i;
 	char       *text;
 
 	switch (ch) {
@@ -182,7 +182,7 @@ Con_ProcessInputLine (inputline_t *il, int ch)
 	if (il->scroll < i - (il->width - 2) + 1)
 		il->scroll = i - (il->width - 2) + 1;
 	text = il->lines[il->edit_line] + il->scroll;
-	if ((int)strlen (text + 1) < il->width - 2) {
+	if (strlen (text + 1) < il->width - 2) {
 		text = il->lines[il->edit_line];
 		il->scroll = strlen (text + 1) - (il->width - 2);
 		il->scroll = max (il->scroll, 0);

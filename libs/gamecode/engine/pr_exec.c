@@ -177,7 +177,7 @@ PR_LeaveFunction (progs_t * pr)
 	This gets around the problem of needing to test for -0.0 but denormals
 	causing exceptions (or wrong results for what we need) on the alpha.
 */
-#define FNZ(x) ((x).integer_var && (x).integer_var != 0x80000000)
+#define FNZ(x) ((x).uinteger_var && (x).uinteger_var != 0x80000000u)
 
 
 static int
@@ -225,7 +225,7 @@ void
 PR_ExecuteProgram (progs_t * pr, func_t fnum)
 {
 	int				exitdepth, profile, startprofile;
-	int             pointer;
+	unsigned int    pointer;
 	dfunction_t	   *f, *newf;
 	dstatement_t   *st;
 	edict_t		   *ed;
@@ -454,8 +454,7 @@ PR_ExecuteProgram (progs_t * pr, func_t fnum)
 									 "of bounds edict");
 					if (OPA.entity_var == 0 && pr->null_bad)
 						PR_RunError (pr, "assignment to world entity");
-					if (OPB.integer_var < 0
-						|| OPB.integer_var >= pr->progs->entityfields)
+					if (OPB.uinteger_var >= pr->progs->entityfields)
 						PR_RunError (pr, "Progs attempted to address an "
 									 "invalid field in an edict");
 				}
@@ -485,8 +484,7 @@ PR_ExecuteProgram (progs_t * pr, func_t fnum)
 						|| OPA.entity_var >= pr->pr_edictareasize)
 						PR_RunError (pr, "Progs attempted to read an out of "
 									 "bounds edict number");
-					if (OPB.integer_var < 0
-						|| OPB.integer_var >= pr->progs->entityfields)
+					if (OPB.uinteger_var >= pr->progs->entityfields)
 						PR_RunError (pr, "Progs attempted to read an invalid "
 									 "field in an edict");
 				}
@@ -499,8 +497,7 @@ PR_ExecuteProgram (progs_t * pr, func_t fnum)
 						|| OPA.entity_var >= pr->pr_edictareasize)
 					PR_RunError (pr, "Progs attempted to read an out of "
 								 "bounds edict number");
-					if (OPB.integer_var < 0
-						|| OPB.integer_var + 2 >= pr->progs->entityfields)
+					if (OPB.uinteger_var + 2 >= pr->progs->entityfields)
 					PR_RunError (pr, "Progs attempted to read an invalid "
 								 "field in an edict");
 				}

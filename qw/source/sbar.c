@@ -849,7 +849,7 @@ Sbar_TeamOverlay (void)
 	// draw the text
 	l = scoreboardlines;
 
-	for (i = 0; i < scoreboardteams && y <= vid.height - 10; i++) {
+	for (i = 0; i < scoreboardteams && y <= (int) vid.height - 10; i++) {
 		k = teamsort[i];
 		tm = teams + k;
 
@@ -1035,7 +1035,7 @@ Sbar_Draw_DMO_Team_Ping (int l, int y, int skip)
 				 "\x1d\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1f");
 	y += 8;
 
-	for (i = 0; i < l && y <= vid.height - 10; i++) {
+	for (i = 0; i < l && y <= (int) vid.height - 10; i++) {
 		k = fragsort[i];
 		s = &cl.players[k];
 		if (!s->name[0])
@@ -1121,7 +1121,7 @@ Sbar_Draw_DMO_Team_UID (int l, int y, int skip)
 				 "\x1d\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1f");
 	y += 8;
 
-	for (i = 0; i < l && y <= vid.height - 10; i++) {
+	for (i = 0; i < l && y <= (int) vid.height - 10; i++) {
 		k = fragsort[i];
 		s = &cl.players[k];
 		if (!s->name[0])
@@ -1206,7 +1206,7 @@ Sbar_Draw_DMO_Team_Ping_UID (int l, int y, int skip)
 				 "\x1d\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1f");
 	y += 8;
 
-	for (i = 0; i < l && y <= vid.height - 10; i++) {
+	for (i = 0; i < l && y <= (int) vid.height - 10; i++) {
 		k = fragsort[i];
 		s = &cl.players[k];
 		if (!s->name[0])
@@ -1299,7 +1299,7 @@ Sbar_Draw_DMO_Ping (int l, int y, int skip)
 				 "\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1f");
 	y += 8;
 
-	for (i = 0; i < l && y <= vid.height - 10; i++) {
+	for (i = 0; i < l && y <= (int) vid.height - 10; i++) {
 		k = fragsort[i];
 		s = &cl.players[k];
 		if (!s->name[0])
@@ -1384,7 +1384,7 @@ Sbar_Draw_DMO_UID (int l, int y, int skip)
 				 "\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1f");
 	y += 8;
 
-	for (i = 0; i < l && y <= vid.height - 10; i++) {
+	for (i = 0; i < l && y <= (int) vid.height - 10; i++) {
 		k = fragsort[i];
 		s = &cl.players[k];
 		if (!s->name[0])
@@ -1473,7 +1473,7 @@ Sbar_Draw_DMO_Ping_UID (int l, int y, int skip)
 				 "\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1f");
 	y += 8;
 
-	for (i = 0; i < l && y <= vid.height - 10; i++) {
+	for (i = 0; i < l && y <= (int) vid.height - 10; i++) {
 		k = fragsort[i];
 		s = &cl.players[k];
 		if (!s->name[0])
@@ -1618,7 +1618,7 @@ Sbar_DeathmatchOverlay (int start)
 
 	Sbar_Draw_DMO_func (l, y, skip);	// func ptr, avoids absurd if testing
 
-	if (y >= vid.height - 10)			// we ran over the screen size, squish
+	if (y >= (int) vid.height - 10)		// we ran over the screen size, squish
 		largegame = true;
 }
 
@@ -1653,7 +1653,7 @@ Sbar_MiniDeathmatchOverlay (void)
 		return;							// no one there?
 
 	// draw the text
-	y = vid.height - sb_lines - 1;
+	y = (int) vid.height - sb_lines - 1;
 	numlines = sb_lines / 8;
 	if (numlines < 3)
 		return;							// not enough room
@@ -1676,7 +1676,7 @@ Sbar_MiniDeathmatchOverlay (void)
 
 	x = 324;
 
-	for (; i < scoreboardlines && y < vid.height - 8 + 1; i++) {
+	for (; i < scoreboardlines && y < (int) vid.height - 8 + 1; i++) {
 		k = fragsort[i];
 		s = &cl.players[k];
 		if (!s->name[0])
@@ -1717,13 +1717,13 @@ Sbar_MiniDeathmatchOverlay (void)
 	// draw separator
 	x += 208;
 	if (cl_sbar_separator->int_val)
-		for (y = vid.height - sb_lines; y < vid.height - 6; y += 2)
+		for (y = vid.height - sb_lines; y < (int) vid.height - 6; y += 2)
 			Draw_Character (x, y, 14);
 
 	x += 16;
 
 	y = vid.height - sb_lines;
-	for (i = 0; i < scoreboardteams && y <= vid.height; i++) {
+	for (i = 0; i < scoreboardteams && y <= (int) vid.height; i++) {
 		k = teamsort[i];
 		tm = teams + k;
 

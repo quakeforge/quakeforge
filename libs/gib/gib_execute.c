@@ -81,7 +81,7 @@ GIB_Execute_Split_Var (cbuf_t * cbuf)
 {
 	gib_var_t  *var;
 	unsigned int i;
-	int         start = 0, end = (int) ((unsigned int) ~0 >> 1);
+	unsigned int start = 0, end = ((unsigned int) ~0 >> 1);
 	char       *c, *str = cbuf->args->argv[cbuf->args->argc - 1]->str + 1;
 	void       *m = cbuf->args->argm[cbuf->args->argc - 1];
 
@@ -204,7 +204,7 @@ GIB_Execute (cbuf_t * cbuf)
 	gib_function_t *f;
 	unsigned int index;
 	gib_var_t *var;
-	unsigned int i;
+	int i;
 
 	if (!g->program)
 		return;

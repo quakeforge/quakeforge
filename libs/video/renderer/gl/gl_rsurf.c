@@ -265,7 +265,8 @@ R_DrawBrushModel (entity_t *e)
 {
 	float       dot, radius;
 	float		color[4];
-	int         i, k;
+	int         i;
+	unsigned int k;
 	model_t    *model;
 	mplane_t   *pplane;
 	msurface_t *psurf;
@@ -527,7 +528,7 @@ R_MarkLeaves (void)
 	} else
 		vis = Mod_LeafPVS (r_viewleaf, r_worldentity.model);
 
-	for (i = 0; i < r_worldentity.model->numleafs; i++) {
+	for (i = 0; (int) i < r_worldentity.model->numleafs; i++) {
 		if (vis[i >> 3] & (1 << (i & 7))) {
 			leaf = &r_worldentity.model->leafs[i + 1];
 			if ((c = leaf->nummarksurfaces)) {

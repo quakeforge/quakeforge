@@ -57,7 +57,7 @@ static const char *safeargvs[] =
 	{ "-stdvid", "-nolan", "-nosound", "-nocdaudio", "-nojoy", "-nomouse",
 		"-dibonly" };
 
-#define NUM_SAFE_ARGVS (sizeof(safeargvs)/sizeof(safeargvs[0]))
+#define NUM_SAFE_ARGVS ((int) (sizeof(safeargvs)/sizeof(safeargvs[0])))
 
 int         com_argc;
 const char **com_argv;

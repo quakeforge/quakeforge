@@ -299,7 +299,7 @@ check_branch (progs_t *pr, dstatement_t *st, opcode_t *op, short offset)
 	int         address = st - pr->pr_statements;
 	
 	address += offset;
-	if (address < 0 || address >= pr->progs->numstatements)
+	if (address < 0 || (unsigned int) address >= pr->progs->numstatements)
 		PR_Error (pr, "PR_Check_Opcodes: invalid branch (statement %ld: %s)",
 				  (long)(st - pr->pr_statements), op->opname);
 }
@@ -342,7 +342,7 @@ PR_Check_Opcodes (progs_t *pr)
 	if (!pr_boundscheck->int_val)
 		return;
 	for (st = pr->pr_statements;
-		 st - pr->pr_statements < pr->progs->numstatements;
+		 (unsigned long) (st - pr->pr_statements) < pr->progs->numstatements;
 		 st++) {
 		op = PR_Opcode (st->op);
 		if (!op) {

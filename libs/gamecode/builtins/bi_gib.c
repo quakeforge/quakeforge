@@ -80,7 +80,7 @@ bi_gib_builtin_f (void)
 {
 	bi_gib_builtin_t *builtin = Hash_Find (bi_gib_builtins, GIB_Argv(0));
 	pr_type_t *pr_list;
-	unsigned int i;
+	int i;
 
 	if (!builtin)
 		Sys_Error ("bi_gib_bultin_f: unexpected call %s", GIB_Argv (0));

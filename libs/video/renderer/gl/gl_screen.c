@@ -140,8 +140,10 @@ SCR_ScreenShot (int width, int height)
 	qfglReadPixels (0, 0, vid.width, vid.height, GL_RGB, GL_UNSIGNED_BYTE,
 				    snap);
 
-	w = (vid.width < width) ? vid.width : width;
-	h = (vid.height < height) ? vid.height : height;
+	w = (vid.width < (unsigned int) width) ? vid.width
+										   : (unsigned int) width;
+	h = (vid.height < (unsigned int) height) ? vid.height
+											 : (unsigned int) height;
 
 	fracw = (float) vid.width / (float) w;
 	frach = (float) vid.height / (float) h;

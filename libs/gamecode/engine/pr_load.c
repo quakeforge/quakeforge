@@ -98,7 +98,7 @@ free_progs_mem (progs_t *pr, void *mem)
 void
 PR_LoadProgsFile (progs_t * pr, QFile *file, int size, int edicts, int zone)
 {
-	int         i;
+	unsigned int i;
 	dprograms_t progs;
 
 	pr->progs = 0;
@@ -231,7 +231,7 @@ PR_LoadProgsFile (progs_t * pr, QFile *file, int size, int edicts, int zone)
 		pr->pr_statements[i].c = LittleShort (pr->pr_statements[i].c);
 	}
 
-	for (i = 0; i < pr->progs->numfunctions; i++) {
+	for (i = 0; i < (unsigned int) pr->progs->numfunctions; i++) {
 		pr->pr_functions[i].first_statement =
 			LittleLong (pr->pr_functions[i].first_statement);
 		pr->pr_functions[i].parm_start =

@@ -882,7 +882,7 @@ static reg_errcode_t compile_range (const char **p_ptr, const char *pend, char *
    cast the subscript to translate because some data is declared as
    `char *', to avoid warnings when a string constant is passed.  But
    when we use a character as a subscript we must make it unsigned.  */
-#define TRANSLATE(d) (translate ? translate[(unsigned char) (d)] : (d))
+#define TRANSLATE(d) (translate ? translate[(unsigned char) (d)] : (unsigned char)(d))
 
 
 /* Macros for outputting the compiled pattern into `buffer'.  */
@@ -892,7 +892,7 @@ static reg_errcode_t compile_range (const char **p_ptr, const char *pend, char *
 
 /* Make sure we have at least N more bytes of space in buffer.  */
 #define GET_BUFFER_SPACE(n)						\
-    while (b - bufp->buffer + (n) > bufp->allocated)			\
+    while ((unsigned long)(b - bufp->buffer + (n)) > bufp->allocated) \
       EXTEND_BUFFER ()
 
 /* Make sure we have one more byte of buffer space and then add C to it.  */
@@ -2240,7 +2240,7 @@ compile_range (p_ptr, pend, translate, syntax, b)
      char' -- the range is inclusive, so if `range_end' == 0xff
      (assuming 8-bit characters), we would otherwise go into an infinite
      loop, since all characters <= 0xff.  */
-  for (this_char = range_start; this_char <= range_end; this_char++)
+  for (this_char = range_start; this_char <= (unsigned) range_end; this_char++)
     {
       SET_LIST_BIT (TRANSLATE (this_char));
     }
@@ -2361,7 +2361,7 @@ typedef struct
     char *destination;							\
     /* Must be int, so when we don't save any registers, the arithmetic	\
        of 0 + -1 isn't done as unsigned.  */				\
-    int this_reg;							\
+    unsigned int this_reg;							\
     									\
     DEBUG_STATEMENT (failure_id++);					\
     DEBUG_STATEMENT (nfailure_points_pushed++);				\
@@ -2468,7 +2468,7 @@ typedef struct
 #define POP_FAILURE_POINT(str, pat, low_reg, high_reg, regstart, regend, reg_info)\
 {									\
   DEBUG_STATEMENT (fail_stack_elt_t failure_id;)			\
-  int this_reg;								\
+  unsigned int this_reg;								\
   const unsigned char *string_temp;					\
 									\
   assert (!FAIL_STACK_EMPTY ());					\
@@ -3174,7 +3174,7 @@ re_match_2 (bufp, string1, size1, string2, size2, pos, regs, stop)
      int stop;
 {
   /* General temporaries.  */
-  int mcnt;
+  unsigned int mcnt;
   unsigned char *p1;
 
   /* Just past the end of the corresponding string.  */
@@ -3764,7 +3764,7 @@ re_match_2 (bufp, string1, size1, string2, size2, pos, regs, stop)
                       EVER_MATCHED_SOMETHING (reg_info[*p]) = 0;
                       
 		      /* Restore this and inner groups' (if any) registers.  */
-                      for (r = *p; r < *p + *(p + 1); r++)
+                      for (r = *p; r < (unsigned) (*p + *(p + 1)); r++)
                         {
                           regstart[r] = old_regstart[r];
 
@@ -3833,7 +3833,7 @@ re_match_2 (bufp, string1, size1, string2, size2, pos, regs, stop)
                 
 		/* Want how many consecutive characters we can match in
                    one shot, so, if necessary, adjust the count.  */
-                if (mcnt > dend2 - d2)
+                if (mcnt > (unsigned) (dend2 - d2))
 		  mcnt = dend2 - d2;
                   
 		/* Compare that many; failure if mismatch, else move
@@ -4770,7 +4770,7 @@ regcomp (preg, pattern, cflags)
 
       /* Map uppercase characters to corresponding lowercase ones.  */
       for (i = 0; i < CHAR_SET_SIZE; i++)
-        preg->translate[i] = ISUPPER (i) ? tolower (i) : i;
+        preg->translate[i] = ISUPPER (i) ? (unsigned) tolower (i) : i;
     }
   else
     preg->translate = NULL;
@@ -4890,7 +4890,7 @@ regerror (errcode, preg, errbuf, errbuf_size)
   size_t msg_size;
 
   if (errcode < 0
-      || errcode >= (sizeof (re_error_msg) / sizeof (re_error_msg[0])))
+      || (size_t) errcode >= (sizeof (re_error_msg) / sizeof (re_error_msg[0])))
     /* Only error codes returned by the rest of the code should be passed 
        to this routine.  If we are given anything else, or if other regex
        code generates an invalid error code, then the program has a bug.

@@ -483,7 +483,7 @@ static void
 R_DrawEntitiesOnList (void)
 {
 	int         i, j;
-	int         lnum;
+	unsigned int lnum;
 	alight_t    lighting;
 
 	// FIXME: remove and do real lighting
@@ -554,7 +554,7 @@ R_DrawViewModel (void)
 	// FIXME: remove and do real lighting
 	float       lightvec[3] = { -1, 0, 0 };
 	int         j;
-	int         lnum;
+	unsigned int lnum;
 	vec3_t      dist;
 	float       add;
 	dlight_t   *dl;
@@ -665,7 +665,8 @@ R_BmodelCheckBBox (model_t *clmodel, float *minmaxs)
 static void
 R_DrawBEntitiesOnList (void)
 {
-	int         i, j, k, clipflags;
+	int         i, j, clipflags;
+	unsigned int k;
 	vec3_t      oldorigin;
 	model_t    *clmodel;
 	float       minmaxs[6];
@@ -1197,7 +1198,7 @@ static void
 renderlookup (byte **offs, byte* bufs)
 {
 	byte *p = (byte*)vid.buffer;
-	int x, y;
+	unsigned int x, y;
 	for (y = 0; y < vid.height; y++) {
 		for (x = 0; x < vid.width; x++, offs++)
 		    p[x] = **offs;

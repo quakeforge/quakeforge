@@ -171,7 +171,7 @@ SCR_ApplyBlend (void)		// Used to be V_UpdatePalette
 	break;
 	case 2:
 	{
-		int g1, g2, x, y;
+		unsigned int g1, g2, x, y;
 		unsigned short rramp[32], gramp[64], bramp[32], *temp;
 		for (i = 0; i < 32; i++) {
 			r = i << 3;
@@ -198,7 +198,7 @@ SCR_ApplyBlend (void)		// Used to be V_UpdatePalette
 	break;
 	case 4:
 	{
-		int x, y;
+		unsigned int x, y;
 		byte ramp[256][4], *temp;
 		for (i = 0; i < 256; i++) {
 			r = i;

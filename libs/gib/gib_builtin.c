@@ -214,7 +214,8 @@ static void
 GIB_Local_f (void)
 {
 	gib_var_t  *var;
-	unsigned int index, i;
+	unsigned int index;
+	int i;
 	static hashtab_t  *zero = 0;
 
 	if (GIB_Argc () < 2)
@@ -238,7 +239,8 @@ static void
 GIB_Global_f (void)
 {
 	gib_var_t  *var;
-	unsigned int index, i;
+	unsigned int index;
+	int i;
 	static hashtab_t  *zero = 0;
 
 	if (GIB_Argc () < 2)
@@ -261,7 +263,8 @@ static void
 GIB_Delete_f (void)
 {
 	gib_var_t *var;
-	unsigned int index, i;
+	unsigned int index;
+	int i;
 	hashtab_t *source;
 	char *c;
 	
@@ -312,7 +315,7 @@ GIB_Return_f (void)
 
 	if (GIB_Argc () > 1 && sp && sp->interpreter == &gib_interp
 		&& GIB_DATA (sp)->waitret) {
-		unsigned int i;
+		int i;
 		dstring_t  *dstr;
 
 		for (i = 1; i < GIB_Argc (); i++) {
@@ -327,7 +330,7 @@ static void
 GIB_For_f (void)
 {
 	dstring_t  *dstr;
-	unsigned int i;
+	int i;
 
 	GIB_Buffer_Push_Sstack (cbuf_active);
 	dstr = GIB_Buffer_Dsarray_Get (cbuf_active);
@@ -352,7 +355,7 @@ GIB_Runexported_f (void)
 					"The QuakeForge developers.", Cmd_Argv (0));
 	else {
 		cbuf_t     *sub = Cbuf_PushStack (&gib_interp);
-		unsigned int i;
+		int i;
 
 		args = malloc (sizeof (char *) * Cmd_Argc());
 		for (i = 0; i < Cmd_Argc(); i++)
@@ -422,7 +425,7 @@ GIB_Count_f (void)
 static void
 GIB_Contains_f (void)
 {
-	unsigned int i;
+	int i;
 	if (GIB_Argc () < 2)
 		GIB_USAGE ("needle [straw1 straw2 ...]");
 	else if (GIB_CanReturn())

@@ -698,8 +698,8 @@ LoadPortals (char *name)
 			Sys_Error ("LoadPortals: reading portal %i", i);
 		if (numpoints > MAX_POINTS_ON_WINDING)
 			Sys_Error ("LoadPortals: portal %i has too many points", i);
-		if ((unsigned) clusternums[0] > portalclusters
-			|| (unsigned) clusternums[1] > portalclusters)
+		if ((unsigned) clusternums[0] > (unsigned) portalclusters
+			|| (unsigned) clusternums[1] > (unsigned) portalclusters)
 			Sys_Error ("LoadPortals: reading portal %i", i);
 
 		winding = portal->winding = NewWinding (numpoints);

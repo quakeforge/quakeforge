@@ -906,7 +906,7 @@ CL_ConnectionlessPacket (void)
 			len--;
 
 		if (!allowremotecmd && (!*localid->string ||
-								strlen (localid->string) > len ||
+								(int) strlen (localid->string) > len ||
 								strncmp (localid->string, s, len))) {
 			if (!*localid->string) {
 				Con_Printf ("===========================\n");

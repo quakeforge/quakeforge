@@ -141,7 +141,7 @@ dump_module (progs_t *pr, pr_module_t *module)
 void
 dump_modules (progs_t *pr)
 {
-	int i;
+	unsigned int i;
 
 	for (i = 0; i < pr->progs->numglobaldefs; i++) {
 		ddef_t     *def = &pr->pr_globaldefs[i];

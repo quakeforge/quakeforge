@@ -271,8 +271,8 @@ static void
 SV_PreSpawn_f (ucmd_t *cmd)
 {
 	char *command;
-	int size;
-	unsigned int buf, check;
+	int buf, size;
+	unsigned int check;
 	sizebuf_t  *msg;
 
 	if (host_client->state != cs_connected) {
@@ -1247,7 +1247,7 @@ SV_AddUserCommand (progs_t *pr)
 void
 SV_SetupUserCommands (void)
 {
-	int		i;
+	size_t      i;
 
 	Hash_FlushTable (ucmd_table);
 	for (i = 0; i < sizeof (ucmds) / sizeof (ucmds[0]); i++)

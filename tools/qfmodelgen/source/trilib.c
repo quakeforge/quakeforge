@@ -58,7 +58,7 @@ typedef struct {
 static void
 ByteSwapTri (tf_triangle *tri)
 {
-	int		i;
+	unsigned int i;
 	
 	for (i = 0; i < sizeof (tf_triangle) / 4; i++) {
 		((int *) tri)[i] = BigLong (((int *) tri)[i]);
@@ -101,8 +101,8 @@ LoadTriangleList (char *filename, triangle_t **pptri, int *numtriangles)
 
 	while (Qeof(input) == 0) {
 		Qread(input, &start,  sizeof (float));
-		*(int *) &start = BigLong (*(int *) &start);
-		if (*(int *) &start != exitpattern) {
+		*(int *) (char *) &start = BigLong (*(int *) (char *) &start);
+		if (*(int *) (char *) &start != exitpattern) {
 			if (start == FLOAT_START) {
 				// Start of an object or group of objects.
 				i = -1;

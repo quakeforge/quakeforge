@@ -176,8 +176,9 @@ VID_Init (unsigned char *palette)
 	SDL_Quit ();
 
 success:
-	vid.height = vid.conheight = min (vid.conheight, scr_height);
-	vid.width = vid.conwidth = min (vid.conwidth, scr_width);
+	vid.height = vid.conheight = min (vid.conheight,
+									  (unsigned int) scr_height);
+	vid.width = vid.conwidth = min (vid.conwidth, (unsigned int) scr_width);
 	Con_CheckResize (); // Now that we have a window size, fix console
 
 	vid.aspect = ((float) vid.height / (float) vid.width) * (4.0 / 3.0);

@@ -194,7 +194,7 @@ Hash_DelTable (hashtab_t *tab)
 void
 Hash_FlushTable (hashtab_t *tab)
 {
-	int i;
+	size_t i;
 
 	for (i = 0; i < tab->tab_size; i++) {
 		while (tab->tab[i]) {
@@ -419,7 +419,7 @@ Hash_Stats (hashtab_t *tab)
 {
 	int        *lengths = calloc (tab->tab_size, sizeof (int));
 	int         chains = 0;
-	int         i;
+	size_t      i;
 	int         min_length = tab->num_ele;
 	int         max_length = 0;
 

@@ -57,7 +57,7 @@ R_InitParticles (void)
 void
 R_ClearParticles (void)
 {
-	int         i;
+	unsigned int i;
 
 	free_particles = &particles[0];
 	active_particles = NULL;

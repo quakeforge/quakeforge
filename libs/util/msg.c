@@ -254,7 +254,7 @@ const char *
 MSG_ReadString (msg_t *msg)
 {
 	char   *string;
-	int		len, maxlen;
+	size_t len, maxlen;
 
 	if (msg->badread || msg->readcount + 1 > msg->message->cursize) {
 		msg->badread = true;

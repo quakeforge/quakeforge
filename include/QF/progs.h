@@ -293,7 +293,7 @@ struct progs_s {
 	strref_t		*static_strings;
 	strref_t		**dynamic_strings;
 	strref_t		*free_string_refs;
-	int				dyn_str_size;
+	unsigned int	dyn_str_size;
 	struct hashtab_s *strref_hash;
 	int				num_strings;
 

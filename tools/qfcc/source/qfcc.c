@@ -281,7 +281,7 @@ WriteData (int crc)
 	progs.crc = crc;
 
 	// byte swap the header and write it out
-	for (i = 0; i < sizeof (progs) / 4; i++)
+	for (i = 0; i < (int) sizeof (progs) / 4; i++)
 		((int *) &progs)[i] = LittleLong (((int *) &progs)[i]);
 
 	Qseek (h, 0, SEEK_SET);

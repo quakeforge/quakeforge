@@ -62,7 +62,7 @@ ddef_t     *
 ED_GlobalAtOfs (progs_t * pr, int ofs)
 {
 	ddef_t     *def;
-	int         i;
+	unsigned int i;
 
 	for (i = 0; i < pr->progs->numglobaldefs; i++) {
 		def = &pr->pr_globaldefs[i];
@@ -79,7 +79,7 @@ ddef_t     *
 ED_FieldAtOfs (progs_t * pr, int ofs)
 {
 	ddef_t     *def;
-	int         i;
+	unsigned int i;
 
 	for (i = 0; i < pr->progs->numfielddefs; i++) {
 		def = &pr->pr_fielddefs[i];

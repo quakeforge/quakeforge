@@ -609,7 +609,8 @@ PF_sprintf (progs_t *pr)
 	char	new_format[INT_WIDTH * 2 + 9]; // "%0-+ #." and conversion
 	int		fmt_alternate, fmt_leadzero, fmt_leftjust, fmt_minwidth,
 			fmt_precision, fmt_signed, fmt_space, fmt_type, looping,
-			new_format_i, ret;
+			ret;
+	size_t	new_format_i; 
 	int		curarg = 3, out_max = 32, out_size = 0;
 
 	format = P_STRING (pr, 0);

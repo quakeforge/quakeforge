@@ -80,7 +80,7 @@ static void
 R_AddDynamicLights (void)
 {
 	msurface_t *surf;
-	int         lnum;
+	unsigned int lnum;
 	int         sd, td;
 	float       dist, rad, minlight;
 	vec3_t      impact, local, lightorigin;

@@ -54,7 +54,7 @@ get_cbuf (progs_t *pr, int arg, const char *func)
 		cbuf = res->cbuf;
 	} else {
 		if (arg <= ((pr_type_t *) pr->zone - pr->pr_globals)
-			|| arg >= (pr->zone_size / sizeof (pr_type_t)))
+			|| (size_t) arg >= (pr->zone_size / sizeof (pr_type_t)))
 			PR_RunError (pr, "%s: Invalid cbuf_t", func);
 
 		handle = pr->pr_globals + arg;

@@ -62,7 +62,7 @@ get_inputline (progs_t *pr, int arg, const char *func)
 	inputline_t *line;
 
 	if (arg <= ((pr_type_t *) pr->zone - pr->pr_globals)
-		|| arg >= (pr->zone_size / sizeof (pr_type_t)))
+		|| (size_t) arg >= (pr->zone_size / sizeof (pr_type_t)))
 		PR_RunError (pr, "%s: Invalid inputline_t", func);
 
 	handle = pr->pr_globals + arg;
@@ -137,7 +137,7 @@ bi_InputLine_Destroy (progs_t *pr)
 	inputline_t *line;
 
 	if (arg <= ((pr_type_t *) pr->zone - pr->pr_globals)
-		|| arg >= (pr->zone_size / sizeof (pr_type_t)))
+		|| (size_t) arg >= (pr->zone_size / sizeof (pr_type_t)))
 		PR_RunError (pr, "InputLine_Destroy: Invalid inputline_t");
 
 	handle = pr->pr_globals + arg;

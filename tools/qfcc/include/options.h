@@ -37,7 +37,7 @@
 typedef struct {
 	qboolean	cow;				// Turn constants into variables if written to
 	qboolean	debug;				// Generate debug info for the engine
-	int			progsversion;		// Progs version to generate code for
+	unsigned int progsversion;		// Progs version to generate code for
 } code_options_t;
 
 typedef struct {

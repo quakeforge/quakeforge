@@ -1002,7 +1002,7 @@ Sbar_MiniDeathmatchOverlay (void)
 	i = max (i, 0);
 
 	x = 324;
-	for (; i < scoreboardlines && y < vid.height - 8; i++) {
+	for (; i < scoreboardlines && y < (int) vid.height - 8; i++) {
 		k = fragsort[i];
 		s = &cl.scores[k];
 		if (!s->name[0])

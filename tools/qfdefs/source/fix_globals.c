@@ -45,7 +45,7 @@ static __attribute__ ((unused)) const char rcsid[] =
 
 
 static void
-update_offsets (dprograms_t *pr, int mark, int count)
+update_offsets (dprograms_t *pr, unsigned int mark, int count)
 {
 	if (pr->ofs_statements > mark)
 		pr->ofs_statements += count;

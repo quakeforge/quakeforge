@@ -445,7 +445,7 @@ free_tempdefs (void)
 void
 reset_tempdefs (void)
 {
-	int         i;
+	unsigned int i;
 	def_t      *d;
 
 	for (i = 0; i < sizeof (free_temps) / sizeof (free_temps[0]); i++) {

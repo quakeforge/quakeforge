@@ -109,10 +109,10 @@ static void
 R_AddDynamicLights_1 (msurface_t *surf)
 {
 	float			dist;
-	int				lnum, maxdist, maxdist2, maxdist3, smax, smax_bytes, tmax,
-					grey;
-	unsigned int	td, i, j, s, t;
-	unsigned int	sdtable[18];
+	int				maxdist, maxdist2, maxdist3, smax, smax_bytes, tmax,
+					grey, s, t, td;
+	unsigned int	lnum, i, j;
+	int             sdtable[18];
 	unsigned int   *bl;
 	vec3_t			impact, local;
 
@@ -173,10 +173,10 @@ static void
 R_AddDynamicLights_3 (msurface_t *surf)
 {
 	float			dist;
-	int				lnum, maxdist, maxdist2, maxdist3, smax, smax_bytes, tmax,
-					red, green, blue;
-	unsigned int	td, i, j, s, t;
-	unsigned int	sdtable[18];
+	int				maxdist, maxdist2, maxdist3, smax, smax_bytes, tmax,
+					red, green, blue, s, t, td;
+	unsigned int	lnum, i, j;
+	int             sdtable[18];
 	unsigned int   *bl;
 	vec3_t			impact, local;
 

@@ -62,7 +62,9 @@ static __attribute__ ((unused)) const char rcsid[] =
 #include "sv_progs.h"
 #include "view.h"
 
-static location_t * (* const _locs_find) (const vec3_t target) = locs_find;
+#define U __attribute__ ((unused))
+static U location_t * (* const _locs_find) (const vec3_t target) = locs_find;
+#undef U
 
 
 /*

@@ -372,7 +372,7 @@ Datagram_GetMessage (qsocket_t * sock)
 		if (length == 0)
 			break;
 
-		if (length == -1) {
+		if ((int) length == -1) {
 			Con_Printf ("Read error\n");
 			return -1;
 		}
@@ -562,7 +562,7 @@ Test_Poll (void *unused)
 		len =
 			dfunc.Read (testSocket, net_message->message->data,
 						net_message->message->maxsize, &clientaddr);
-		if (len < sizeof (int))
+		if (len < (int) sizeof (int))
 			break;
 
 		net_message->message->cursize = len;
@@ -572,7 +572,7 @@ Test_Poll (void *unused)
 		MSG_ReadLong (net_message);
 		if (control == -1)
 			break;
-		if ((control & (~NETFLAG_LENGTH_MASK)) != NETFLAG_CTL)
+		if ((control & (~NETFLAG_LENGTH_MASK)) != (int) NETFLAG_CTL)
 			break;
 		if ((control & NETFLAG_LENGTH_MASK) != len)
 			break;
@@ -690,7 +690,7 @@ Test2_Poll (void *unused)
 	len =
 		dfunc.Read (test2Socket, net_message->message->data,
 					net_message->message->maxsize, &clientaddr);
-	if (len < sizeof (int))
+	if (len < (int) sizeof (int))
 		goto Reschedule;
 
 	net_message->message->cursize = len;
@@ -700,7 +700,7 @@ Test2_Poll (void *unused)
 	MSG_ReadLong (net_message);
 	if (control == -1)
 		goto Error;
-	if ((control & (~NETFLAG_LENGTH_MASK)) != NETFLAG_CTL)
+	if ((control & (~NETFLAG_LENGTH_MASK)) != (int) NETFLAG_CTL)
 		goto Error;
 	if ((control & NETFLAG_LENGTH_MASK) != len)
 		goto Error;
@@ -889,7 +889,7 @@ _Datagram_CheckNewConnections (void)
 	len =
 		dfunc.Read (acceptsock, net_message->message->data,
 					net_message->message->maxsize, &clientaddr);
-	if (len < sizeof (int))
+	if (len < (int) sizeof (int))
 		return NULL;
 
 	net_message->message->cursize = len;
@@ -899,7 +899,7 @@ _Datagram_CheckNewConnections (void)
 	MSG_ReadLong (net_message);
 	if (control == -1)
 		return NULL;
-	if ((control & (~NETFLAG_LENGTH_MASK)) != NETFLAG_CTL)
+	if ((control & (~NETFLAG_LENGTH_MASK)) != (int) NETFLAG_CTL)
 		return NULL;
 	if ((control & NETFLAG_LENGTH_MASK) != len)
 		return NULL;
@@ -1183,7 +1183,7 @@ _Datagram_SearchForHosts (qboolean xmit)
 		   (ret =
 			dfunc.Read (dfunc.controlSock, net_message->message->data,
 						net_message->message->maxsize, &readaddr)) > 0) {
-		if (ret < sizeof (int))
+		if (ret < (int) sizeof (int))
 			continue;
 
 		net_message->message->cursize = ret;
@@ -1201,7 +1201,7 @@ _Datagram_SearchForHosts (qboolean xmit)
 		MSG_ReadLong (net_message);
 		if (control == -1)
 			continue;
-		if ((control & (~NETFLAG_LENGTH_MASK)) != NETFLAG_CTL)
+		if ((control & (~NETFLAG_LENGTH_MASK)) != (int) NETFLAG_CTL)
 			continue;
 		if ((control & NETFLAG_LENGTH_MASK) != ret)
 			continue;
@@ -1334,7 +1334,7 @@ _Datagram_Connect (const char *host)
 					continue;
 				}
 
-				if (ret < sizeof (int)) {
+				if (ret < (int) sizeof (int)) {
 					ret = 0;
 					continue;
 				}
@@ -1348,7 +1348,7 @@ _Datagram_Connect (const char *host)
 					ret = 0;
 					continue;
 				}
-				if ((control & (~NETFLAG_LENGTH_MASK)) != NETFLAG_CTL) {
+				if ((control & (~NETFLAG_LENGTH_MASK)) != (int) NETFLAG_CTL) {
 					ret = 0;
 					continue;
 				}

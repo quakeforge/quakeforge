@@ -64,7 +64,7 @@ typedef struct {
 	char *name;
 	char *text;
 	line_t *lines;
-	int num_lines;
+	unsigned int num_lines;
 	progs_t *pr;
 } file_t;
 
@@ -190,7 +190,7 @@ PR_LoadDebug (progs_t *pr)
 {
 	char		*sym_path;
 	const char	*path_end, *sym_file;
-	int			i;
+	unsigned int i;
 	int			start = Hunk_LowMark ();
 	ddef_t	   *def;
 	pr_type_t  *str = 0;
@@ -386,7 +386,7 @@ PR_Get_Source_Line (progs_t *pr, unsigned int addr)
 ddef_t *
 PR_Get_Local_Def (progs_t *pr, int offs)
 {
-	int					i;
+	unsigned int		i;
 	dfunction_t		   *func = pr->pr_xfunction;
 	pr_auxfunction_t   *aux_func;
 

@@ -272,8 +272,8 @@ R_SetupFrame (void)
 
 	if ((r_dowarp != r_dowarpold) || r_viewchanged) {
 		if (r_dowarp) {
-			if ((vid.width <= vid.maxwarpwidth) &&
-				(vid.height <= vid.maxwarpheight)) {
+			if ((vid.width <= (unsigned int) vid.maxwarpwidth) &&
+				(vid.height <= (unsigned int) vid.maxwarpheight)) {
 				vrect.x = 0;
 				vrect.y = 0;
 				vrect.width = vid.width;

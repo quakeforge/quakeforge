@@ -238,8 +238,9 @@ VID_Init (unsigned char *palette)
 
 	qfglXMakeCurrent (x_disp, x_win, ctx);
 
-	vid.height = vid.conheight = min (vid.conheight, scr_height);
-	vid.width = vid.conwidth = min (vid.conwidth, scr_width);
+	vid.height = vid.conheight = min (vid.conheight,
+									  (unsigned int) scr_height);
+	vid.width = vid.conwidth = min (vid.conwidth, (unsigned int) scr_width);
 
 	vid.aspect = ((float) vid.height / (float) vid.width) * (320.0 / 240.0);
 	vid.numpages = 2;

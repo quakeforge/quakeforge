@@ -512,7 +512,8 @@ CL_Record (const char *argv1)
 	char        timestring[20];
 	char        mapname[MAX_OSPATH];
 
-	int         n, i, j, k, l=0;
+	int         n, i, j, l=0;
+	size_t      k;
 	int         seq = 1;
 	entity_t   *ent;
 	entity_state_t *es, blankes;

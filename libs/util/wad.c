@@ -81,7 +81,7 @@ W_LoadWadFile (const char *filename)
 {
 	lumpinfo_t *lump_p;
 	wadinfo_t  *header;
-	unsigned int i;
+	int         i;
 	int			infotableofs;
 
 	wad_base = QFS_LoadHunkFile (filename);

@@ -261,7 +261,7 @@ static riff_d_cue_t *
 read_cue (QFile *f, int len)
 {
 	riff_d_cue_t *cue = malloc (len);
-	int         i;
+	unsigned int i;
 
 	if (!Rread (f, cue, len)) {
 		free (cue);

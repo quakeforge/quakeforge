@@ -60,7 +60,7 @@ static __attribute__ ((unused)) const char rcsid[] =
 void
 disassemble_progs (progs_t *pr)
 {
-	int i;
+	unsigned int i;
 
 	for (i = 0; i < pr->progs->numstatements; i++) {
 		dfunction_t *f = func_find (i);

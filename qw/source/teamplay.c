@@ -128,7 +128,7 @@ Team_ParseSay (const char *s)
 	char        chr, t2[128], t3[128];
 	const char *t1;
 	static char buf[1024];
-	int         i, bracket;
+	size_t      i, bracket;
 	static location_t *location = NULL;
 
 	if (!cl_parsesay->int_val)
@@ -464,7 +464,7 @@ void
 Team_ParseChat (const char *string)
 {
 	char	*s;
-	int		 i;
+	unsigned int i;
 
 	if (!cl_freply->value)
 		return;
@@ -491,7 +491,7 @@ Team_ParseChat (const char *string)
 void
 Team_ResetTimers (void)
 {
-	int		i;
+	unsigned int i;
 
 	for (i = 0; i < sizeof (f_replies) / sizeof (f_replies[0]); i++)
 		f_replies[i].lasttime = realtime - cl_freply->value;

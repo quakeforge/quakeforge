@@ -655,7 +655,7 @@ DisplayVModeInfo (struct VideoMode *vmode)
 static void
 DisplayFBInfo (struct fb_fix_screeninfo *fix)
 {
-    int i;
+    size_t i;
 
     puts("Frame buffer device information:");
     printf("    Name        : %s\n", fix->id);

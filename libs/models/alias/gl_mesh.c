@@ -299,6 +299,7 @@ BuildTris (void)
 			add_command (-(bestlen + 2));
 
 		for (j = 0; j < bestlen + 2; j++) {
+			int         tmp;
 			// emit a vertex into the reorder buffer
 			k = bestverts[j];
 			add_vertex (k);
@@ -311,8 +312,10 @@ BuildTris (void)
 			s = (s + 0.5) / pheader->mdl.skinwidth;
 			t = (t + 0.5) / pheader->mdl.skinheight;
 
-			add_command (*(int *) &s);
-			add_command (*(int *) &t);
+			memcpy (&tmp, &s, 4);
+			add_command (tmp);
+			memcpy (&tmp, &t, 4);
+			add_command (tmp);
 		}
 	}
 

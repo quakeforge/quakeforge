@@ -45,7 +45,7 @@ static __attribute__ ((unused)) const char rcsid[] =
 void
 dump_globals (progs_t *pr)
 {
-	int i;
+	unsigned int i;
 	const char *name;
 	const char *type;
 	int         saveglobal;
@@ -86,7 +86,7 @@ dump_globals (progs_t *pr)
 void
 dump_fields (progs_t *pr)
 {
-	int i;
+	unsigned int i;
 	const char *name;
 	const char *type;
 	int         offset;

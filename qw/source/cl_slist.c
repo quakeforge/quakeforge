@@ -455,7 +455,7 @@ SL_Update (server_entry_t *sldata)
 static void
 SL_Con_Details (server_entry_t *sldata, int slitemno)
 {
-	int i, playercount;
+	unsigned int i, playercount;
 	server_entry_t *cp;
 
 	playercount = 0;
@@ -576,7 +576,7 @@ SL_Command (void)
 void
 MSL_ParseServerList (const char *msl_data)
 {
-	int msl_ptr;
+	unsigned int msl_ptr;
 
 	for (msl_ptr = 0; msl_ptr < strlen (msl_data); msl_ptr = msl_ptr + 6) {
 		slist = SL_Add (slist, va ("%i.%i.%i.%i:%i",
@@ -669,7 +669,7 @@ SL_CheckStatus (const char *cs_from, const char *cs_data)
 	for (temp = slist; temp; temp = temp->next)
 		if (temp->waitstatus) {
 			if (strcmp (cs_from, temp->server) == 0) {
-				int i;
+				unsigned int i;
 				char *data = strdup (cs_data);
 
 				strcpy (data, cs_data);

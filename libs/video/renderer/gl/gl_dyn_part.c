@@ -130,7 +130,8 @@ R_InitParticles (void)
 
 	if (r_maxparticles && r_init) {
 		if (vaelements > 3)
-			pVAsize = min (vaelements - (vaelements % 4), r_maxparticles * 4);
+			pVAsize = min ((unsigned int) (vaelements - (vaelements % 4)),
+						   r_maxparticles * 4);
 		else if (vaelements >= 0)
 			pVAsize = r_maxparticles * 4;
 		else
@@ -335,9 +336,9 @@ static void
 R_RunParticleEffect_QF (const vec3_t org, const vec3_t dir, int color,
 						int count)
 {
-	float			scale;
-	unsigned int	i, j;
-	vec3_t			porg;
+	float       scale;
+	int         i, j;
+	vec3_t      porg;
 
 	if (numparticles >= r_maxparticles)
 		return;
@@ -936,7 +937,7 @@ R_RunParticleEffect_ID (const vec3_t org, const vec3_t dir, int color,
 						int count)
 {
 	float			scale;
-	unsigned int	i, j;
+	int             i, j;
 	vec3_t			porg;
 
 	if (numparticles >= r_maxparticles)
@@ -1311,8 +1312,8 @@ R_DrawParticles (void)
 	float			grav, fast_grav, minparticledist, scale,
 					time_125, time_25, time_40, time_55, time2, time4, time5,
 					time10, time15, time30, time50;
-	int				activeparticles, maxparticle, j, k;
-	unsigned int	vacount;
+	int				activeparticles, maxparticle, j, vacount;
+	unsigned int	k;
 	varray_t2f_c4ub_v3f_t		*VA;
 	particle_t	   *part;
 	vec3_t			up_scale, right_scale, up_right_scale, down_right_scale;

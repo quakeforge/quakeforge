@@ -108,7 +108,7 @@ const char	*pr_type_name[ev_type_count] = {
 void
 ED_ClearEdict (progs_t *pr, edict_t *e, int val)
 {
-	int i;
+	unsigned int i;
 
 	if (NUM_FOR_EDICT(pr,e)<*pr->reserved_edicts)
 		Sys_Printf("clearing reserved edict %d\n", NUM_FOR_EDICT(pr,e));
@@ -296,7 +296,7 @@ PR_GlobalString (progs_t *pr, int ofs, etype_t type)
 			if (type == ev_void)
 				type = def->type;
 			name = PR_GetString (pr, def->s_name);
-			if (type != (def->type & ~DEF_SAVEGLOBAL))
+			if (type != (etype_t) (def->type & ~DEF_SAVEGLOBAL))
 				oi = "?";
 		}
 
@@ -359,7 +359,7 @@ void
 ED_Print (progs_t *pr, edict_t *ed)
 {
 	int			l;
-	int			i;
+	unsigned int i;
 	char		*name;
 	int			type;
 	ddef_t		*d;

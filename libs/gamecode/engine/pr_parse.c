@@ -115,7 +115,8 @@ PR_UglyValueString (progs_t *pr, etype_t type, pr_type_t *val)
 void
 ED_Write (progs_t *pr, QFile *f, edict_t *ed)
 {
-	int			i, j;
+	unsigned int i;
+	int         j;
 	int			type;
 	char		*name;
 	ddef_t		*d;
@@ -164,7 +165,7 @@ void
 ED_WriteGlobals (progs_t *pr, QFile *f)
 {
 	ddef_t		*def;
-	int			i;
+	unsigned int i;
 	char		*name;
 	int			type;
 

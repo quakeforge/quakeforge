@@ -69,9 +69,9 @@ static __attribute__ ((unused)) const char rcsid[] =
 
 byte	   *draw_chars;						// 8*8 graphic characters
 
-int 			tVAsize;
-int			   *tVAindices;
-unsigned int	tVAcount;
+int         tVAsize;
+int        *tVAindices;
+int         tVAcount;
 float	*textVertices, *tV;
 float	*textCoords, *tC;
 

@@ -1260,7 +1260,7 @@ SV_StringToFilter (const char *address, ipfilter_t *f)
 	byte        b[4] = {};
 #endif
 	int			mask = 0;
-	int			i;
+	unsigned int i;
 	char		*s;
 	char		*slash;
 	char		*c;

@@ -44,10 +44,10 @@ main (int argc, char **argv)
 					break;
 				case RIFF_CASE ('c', 'u', 'e', ' '):
 					{
-						riff_cue_t      *cue = (riff_cue_t *)*ck;
-						riff_d_cue_t    *dcue = cue->cue;
+						riff_cue_t  *cue = (riff_cue_t *)*ck;
+						riff_d_cue_t *dcue = cue->cue;
 						riff_d_cue_point_t *cp = dcue->cue_points;
-						int         i;
+						unsigned int i;
 
 						for (i = 0; i < dcue->count; i++)
 							sample_start = cp[i].sample_offset;

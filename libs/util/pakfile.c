@@ -234,7 +234,7 @@ int
 pack_extract (pack_t *pack, dpackfile_t *pf)
 {
 	const char *name = pf->name;
-	int         count;
+	size_t      count;
 	int         len;
 	QFile      *file;
 	char        buffer[16384];

@@ -44,7 +44,7 @@ static __attribute__ ((unused)) const char rcsid[] =
 // FIXME - should be put in one place
 // =======================================================================
 volatile dma_t *shm = 0;
-int             paintedtime;				// sample PAIRS
+unsigned int    paintedtime;				// sample PAIRS
 qboolean        snd_initialized = false;
 
 cvar_t         *snd_loadas8bit;

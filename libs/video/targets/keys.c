@@ -56,7 +56,9 @@ static __attribute__ ((unused)) const char rcsid[] =
 #include "compat.h"
 #include "old_keys.h"
 
-static void (*const key_progs_init)(struct progs_s *) = Key_Progs_Init;
+#define U __attribute__ ((unused))
+static U void (*const key_progs_init)(struct progs_s *) = Key_Progs_Init;
+#undef U
 
 /*  key up events are sent even if in console mode */
 
@@ -471,11 +473,11 @@ Key_StringToIMTnum (const char *str)
   FIXME: handle quote special (general escape sequence?)
 */
 static const char *
-Key_IMTnumToString (const int imtnum)
+Key_IMTnumToString (const imt_t imtnum)
 {
 	imtname_t  *kn;
 
-	if (imtnum == -1)
+	if (imtnum == (imt_t) -1)
 		return "<IMT NOT FOUND>";
 
 	for (kn = imtnames; kn->name; kn++)
@@ -518,7 +520,7 @@ Key_KeynumToString (knum_t keynum)
 {
 	keyname_t  *kn;
 
-	if (keynum == -1)
+	if (keynum == (knum_t) -1)
 		return "<KEY NOT FOUND>";
 
 	for (kn = keynames; kn->name; kn++)
@@ -882,7 +884,7 @@ Key_GetBinding (imt_t imt, knum_t key)
 void
 Key_SetBinding (imt_t target, knum_t keynum, const char *binding)
 {
-	if (keynum == -1)
+	if (keynum == (knum_t) -1)
 		return;
 
 	// free old bindings

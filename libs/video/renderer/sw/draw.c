@@ -212,7 +212,7 @@ Draw_Character (int x, int y, unsigned int num)
 	if (y <= -8)
 		return;							// totally off screen
 
-	if (y > vid.height - 8 || x < 0 || x > vid.width - 8)
+	if (y > (int) vid.height - 8 || x < 0 || x > (int) vid.width - 8)
 		return;
 	if (num < 0 || num > 255)
 		return;
@@ -376,8 +376,8 @@ Draw_SubPic (int x, int y, qpic_t *pic, int srcx, int srcy, int width,
 	byte       *dest, *source, tbyte;
 	int         u, v;
 
-	if ((x < 0) ||
-		(x + width > vid.width) || (y < 0) || (y + height > vid.height)) {
+	if ((x < 0) || (x + width > (int) vid.width)
+		|| (y < 0) || (y + height > (int) vid.height)) {
 		Sys_Error ("Draw_SubPic: bad coordinates");
 	}
 
@@ -493,7 +493,7 @@ Draw_ConsoleBackground (int lines)
 		else {
 			f = 0;
 			fstep = 320 * 0x10000 / vid.conwidth;
-			for (x = 0; x < vid.conwidth; x += 4) {
+			for (x = 0; x < (int) vid.conwidth; x += 4) {
 				dest[x] = src[f >> 16];
 				f += fstep;
 				dest[x + 1] = src[f >> 16];
@@ -621,7 +621,8 @@ Draw_Fill (int x, int y, int w, int h, int c)
 	byte       *dest;
 	int         u, v;
 
-	if (x < 0 || x + w > vid.width || y < 0 || y + h > vid.height) {
+	if (x < 0 || x + w > (int) vid.width
+		|| y < 0 || y + h > (int) vid.height) {
 		Con_Printf ("Bad Draw_Fill(%d, %d, %d, %d, %c)\n", x, y, w, h, c);
 		return;
 	}
@@ -636,7 +637,7 @@ Draw_Fill (int x, int y, int w, int h, int c)
 void
 Draw_FadeScreen (void)
 {
-	int         x, y;
+	unsigned int x, y;
 	byte       *pbuf;
 
 	VID_UnlockBuffer ();
@@ -644,7 +645,7 @@ Draw_FadeScreen (void)
 	VID_LockBuffer ();
 
 	for (y = 0; y < vid.height; y++) {
-		int         t;
+		unsigned int t;
 
 		pbuf = (byte *) (vid.buffer + vid.rowbytes * y);
 		t = (y & 1) << 1;

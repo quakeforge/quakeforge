@@ -852,7 +852,7 @@ Cvar_Info (cvar_t *var)
 
 		if (!sv_highchars || !sv_highchars->int_val) {
 			for (p = info, c = var->string;
-				 *c && (p - info < sizeof (info) - 1);) {
+				 *c && (p - info < (int) sizeof (info) - 1);) {
 				if ((*c & 0x7f) >= 32)
 					*p++ = *c & 0x7f;
 				c++;

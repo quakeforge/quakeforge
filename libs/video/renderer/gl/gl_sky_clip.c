@@ -68,16 +68,6 @@ void *alloca(size_t size);
 /* cube face to sky texture offset conversion */
 static const int skytex_offs[] = { 3, 0, 4, 1, 2, 5 };
 
-/* clockwise loop through the cube faces adjoining the current face */
-static const int face_loop[6][5] = {
-	{1, 2, 4, 5, 1},
-	{0, 5, 3, 2, 0},
-	{0, 1, 3, 4, 0},
-	{1, 5, 4, 2, 1},
-	{0, 2, 3, 5, 0},
-	{0, 4, 3, 1, 0},
-};
-
 /* convert axis and face distance into face */
 static const int faces_table[3][6] = {
 	{-1, 0, 0, -1, 3, 3},

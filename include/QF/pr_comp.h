@@ -266,7 +266,7 @@ typedef struct opcode_s {
 	pr_opcode_e opcode;
 	qboolean	right_associative;
 	etype_t		type_a, type_b, type_c;
-	int			min_version;
+	unsigned int min_version;
 } opcode_t;
 
 extern opcode_t pr_opcodes[];
@@ -322,28 +322,28 @@ typedef struct pr_va_list_s {
 #define	PROG_VERSION	0x00fff002	// MMmmmRRR 0.fff.002 (hex)
 
 typedef struct dprograms_s {
-	int		version;
-	int		crc;			// check of header file
+	unsigned int version;
+	unsigned int crc;			// check of header file
 	
-	int		ofs_statements;
-	int		numstatements;	// statement 0 is an error
+	unsigned int ofs_statements;
+	unsigned int numstatements;	// statement 0 is an error
 
-	int		ofs_globaldefs;
-	int		numglobaldefs;
+	unsigned int ofs_globaldefs;
+	unsigned int numglobaldefs;
 	
-	int		ofs_fielddefs;
-	int		numfielddefs;
+	unsigned int ofs_fielddefs;
+	unsigned int numfielddefs;
 	
-	int		ofs_functions;
-	int		numfunctions;	// function 0 is an empty
+	unsigned int ofs_functions;
+	int         numfunctions;	// function 0 is an empty
 	
-	int		ofs_strings;
-	int		numstrings;		// first string is a null string
+	unsigned int ofs_strings;
+	int         numstrings;		// first string is a null string
 
-	int		ofs_globals;
-	int		numglobals;
+	unsigned int ofs_globals;
+	unsigned int numglobals;
 	
-	int		entityfields;
+	unsigned int entityfields;
 } dprograms_t;
 
 #endif // __pr_comp_h

@@ -144,7 +144,7 @@ Mod_LoadSkin (byte * skin, int skinsize, int snum, int gnum, qboolean group,
 	Mod_FloodFillSkin (pskin, pheader->mdl.skinwidth, pheader->mdl.skinheight);
 	// save 8 bit texels for the player model to remap
 	if (strequal (loadmodel->name, "progs/player.mdl")) {
-		if (skinsize > sizeof (player_8bit_texels))
+		if (skinsize > (int) sizeof (player_8bit_texels))
 			Sys_Error ("Player skin too large");
 		memcpy (player_8bit_texels, pskin, skinsize);
 	}

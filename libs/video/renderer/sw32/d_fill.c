@@ -43,7 +43,7 @@ D_FillRect (vrect_t *rect, int color)
 	{
 	case 1:
 		{
-			int rx, ry, rwidth, rheight;
+			unsigned int rx, ry, rwidth, rheight;
 			byte *dest, pix;
 
 			pix = color;
@@ -81,7 +81,7 @@ D_FillRect (vrect_t *rect, int color)
 		break;
 	case 2:
 		{
-			int rx, ry, rwidth, rheight;
+			unsigned int rx, ry, rwidth, rheight;
 			unsigned short *dest, pix;
 
 			pix = d_8to16table[color];
@@ -120,7 +120,7 @@ D_FillRect (vrect_t *rect, int color)
 		break;
 	case 4:
 		{
-			int rx, ry, rwidth, rheight;
+			unsigned int rx, ry, rwidth, rheight;
 			unsigned int *dest, pix;
 
 			pix = d_8to24table[color];

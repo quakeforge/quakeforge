@@ -969,7 +969,7 @@ static struct {
 void
 PR_Obj_Progs_Init (progs_t *pr)
 {
-	int         i;
+	size_t      i;
 
 	for (i = 0; i < sizeof (obj_methods) / sizeof (obj_methods[0]); i++) {
 		PR_AddBuiltin (pr, obj_methods[i].name, obj_methods[i].func, -1);

@@ -338,14 +338,14 @@ SafeOpenRead (const char *filename)
 void
 SafeRead (QFile *f, void *buffer, int count)
 {
-	if (Qread (f, buffer, count) != (size_t) count)
+	if (Qread (f, buffer, count) != count)
 		Error ("File read failure");
 }
 
 void
 SafeWrite (QFile *f, void *buffer, int count)
 {
-	if (Qwrite (f, buffer, count) != (size_t)count)
+	if (Qwrite (f, buffer, count) != count)
 		Error ("File read failure");
 }
 

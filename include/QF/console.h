@@ -48,13 +48,13 @@ typedef struct inputline_s
 {
 	char	**lines;		// array of lines for input history
 	int		num_lines;		// number of lines in arry. 1 == no history
-	int		line_size;		// space available in each line. includes \0
+	size_t	line_size;		// space available in each line. includes \0
 	char	prompt_char;	// char placed at the beginning of the line
 	int		edit_line;		// current line being edited
 	int		history_line;	// current history line
-	int		linepos;		// cursor position within the current edit line
-	int		scroll;			// beginning of displayed line
-	int		width;			// viewable widht for horizontal scrolling
+	size_t	linepos;		// cursor position within the current edit line
+	size_t	scroll;			// beginning of displayed line
+	size_t	width;			// viewable widht for horizontal scrolling
 	void   *user_data;		// eg: window pointer
 	void	(*complete)(struct inputline_s *); // tab key pressed
 	void	(*enter)(const char *line); // enter key pressed

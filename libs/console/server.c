@@ -191,7 +191,7 @@ static void
 C_DrawInput (inputline_t *il)
 {
 	WINDOW     *win = (WINDOW *) il->user_data;
-	int         i;
+	size_t      i;
 	const char *text;
 
 	text = il->lines[il->edit_line] + il->scroll;

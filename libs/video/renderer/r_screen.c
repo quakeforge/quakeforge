@@ -326,7 +326,7 @@ SCR_DrawFPS (void)
 		i = 80;
 	}
 
-	x = hudswap ? vid.width - ((strlen (st) * 8) + i) : i;
+	x = hudswap ? vid.width - ((strlen (st) * 8) + i) : (unsigned int) i;
 	y = vid.height - sb_lines - 8;
 	Draw_String (x, y, st);
 }

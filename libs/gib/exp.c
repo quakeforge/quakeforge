@@ -117,7 +117,8 @@ EXP_FindIndexByFunc (opfunc func)
 static optable_t *
 EXP_FindOpByStr (const char *str)
 {
-	int         i, len, fi;
+	size_t      i, len;
+	int         fi;
 
 	for (i = 0, len = 0, fi = -1; optable[i].func; i++)
 		if (!strncmp (str, optable[i].str, strlen (optable[i].str))
@@ -134,7 +135,8 @@ EXP_FindOpByStr (const char *str)
 static functable_t *
 EXP_FindFuncByStr (const char *str)
 {
-	int         i, len, fi;
+	size_t      i, len;
+	int         fi;
 
 	for (i = 0, len = 0, fi = -1; functable[i].func; i++)
 		if (!strncmp (str, functable[i].str, strlen (functable[i].str))
@@ -222,7 +224,7 @@ EXP_ParseString (char *str)
 	char        buf[256];
 
 	token      *chain, *new, *cur;
-	int         i, m;
+	size_t      i, m;
 	optable_t  *op;
 	functable_t *func;
 

@@ -511,7 +511,8 @@ Host_Loadgame_f (void)
 	float       time, tfloat;
 	char        str[32768];
 	const char *start;
-	int         i, r;
+	unsigned int i;
+	int         r;
 	edict_t    *ent;
 	int         entnum;
 	int         version;
@@ -725,7 +726,7 @@ Host_Say (qboolean teamonly)
 		snprintf (text, sizeof (text), "%c<%s> ", 1, hostname->string);
 
 	j = sizeof (text) - 2 - strlen (text);	// -2 for /n and null terminator
-	if (strlen (p) > j)
+	if ((int) strlen (p) > j)
 		p[j] = 0;
 
 	strcat (text, p);
@@ -787,7 +788,7 @@ Host_Tell_f (void)
 	}
 	// check length & truncate if necessary
 	j = sizeof (text) - 2 - strlen (text);	// -2 for /n and null terminator
-	if (strlen (p) > j)
+	if ((int) strlen (p) > j)
 		p[j] = 0;
 
 	strcat (text, p);

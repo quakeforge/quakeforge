@@ -78,7 +78,7 @@ entity_t    cl_packet_ents[512];	// FIXME: magic number
 void
 CL_ClearEnts ()
 {
-	int		i;
+	unsigned int i;
 
 	for (i = 0; i < sizeof (cl_packet_ents) / sizeof (cl_packet_ents[0]); i++)
 		CL_Init_Entity (&cl_packet_ents[i]);

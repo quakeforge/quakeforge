@@ -51,7 +51,7 @@ static __attribute__ ((unused)) const char rcsid[] =
 void
 dump_lines (progs_t *pr)
 {
-	int i, line, addr;
+	unsigned int i, line, addr;
 	pr_lineno_t *lineno;
 	pr_auxfunction_t *aux_func = 0;
 	dfunction_t *func = 0;
@@ -68,7 +68,7 @@ dump_lines (progs_t *pr)
 				&& lineno->fa.func < pr->debug->num_auxfunctions)
 				aux_func = pr->auxfunctions + lineno->fa.func;
 			if (aux_func && aux_func->function >= 0
-				&& aux_func->function < pr->progs->numfunctions)
+				&& aux_func->function < (unsigned int) pr->progs->numfunctions)
 				func = pr->pr_functions + aux_func->function;
 		}
 
@@ -77,7 +77,8 @@ dump_lines (progs_t *pr)
 		if (aux_func)
 			line = aux_func->source_line + lineno->line;
 		if (func)
-			addr = lineno->line ? lineno->fa.addr : func->first_statement;
+			addr = lineno->line ? lineno->fa.addr
+								: (unsigned int) func->first_statement;
 		if (aux_func && func)
 			printf (" %05x %s:%d %s+%d", addr, pr->pr_strings + func->s_file,
 					line, pr->pr_strings + func->s_name,

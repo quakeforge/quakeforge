@@ -36,4 +36,4 @@ static __attribute__ ((unused)) const char rcsid[] =
 
 extern int noconinput;
 
-static int *const _noconinput = &noconinput;
+static __attribute__ ((unused)) int *const _noconinput = &noconinput;

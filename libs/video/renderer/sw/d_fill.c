@@ -37,7 +37,7 @@ static __attribute__ ((unused)) const char rcsid[] =
 void
 D_FillRect (vrect_t *rect, int color)
 {
-	int         rx, ry, rwidth, rheight;
+	unsigned int rx, ry, rwidth, rheight;
 	unsigned char *dest;
 	unsigned int *ldest;
 

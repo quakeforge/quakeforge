@@ -283,8 +283,8 @@ typedef struct {
 	const char	*name;
 	int			value;
 	type_t		*type;
-	int			traditional;
-	int			version;
+	unsigned int traditional;
+	unsigned int version;
 } keyword_t;
 
 static keyword_t keywords[] = {
@@ -359,7 +359,7 @@ type_or_name (char *token)
 	class_t    *class;
 
 	if (!keyword_tab) {
-		int i;
+		unsigned int i;
 		keyword_tab = Hash_NewTable (1021, keyword_get_key, 0, 0);
 		for (i = 0; i < sizeof (keywords) / sizeof (keywords[0]); i++)
 			if (keywords[i].traditional >= options.traditional
@@ -429,7 +429,7 @@ do_grab (char *token)
 	frame_t *frame;
 
 	if (!initialized) {
-		int i;
+		unsigned int i;
 
 		initialized = 1;
 		frame_tab = Hash_NewTable (1021, frame_get_key, frame_free, 0);
@@ -642,3 +642,4 @@ make_string (char *token)
 #ifdef YY_FLEX_REALLOC_HACK
 static void *(*const yy_flex_realloc_hack)(void *,yy_size_t) = yy_flex_realloc;
 #endif
+static __attribute__ ((unused)) void (*yyunput_hack)(int, char*) = yyunput;

@@ -599,8 +599,9 @@ void
 R_DrawAliasModel (entity_t *e)
 {
 	float		  add, an, minshade, radius, shade;
-	int			  lnum, texture, i;
+	int			  texture, i;
 	int			  fb_texture = 0;
+	unsigned int  lnum;
 	aliashdr_t	 *paliashdr;
 	model_t		 *model;
 	vec3_t		  dist, scale;

@@ -92,28 +92,6 @@ model_t    *cl_mod_bolt2;
 model_t    *cl_mod_bolt3;
 model_t    *cl_spr_explod;
 
-static const particle_effect_t prot_to_rend[]={
-	PE_SPIKE,				// TE_SPIKE
-	PE_SUPERSPIKE,			// TE_SUPERSPIKE
-	PE_GUNSHOT,				// TE_GUNSHOT
-	PE_UNKNOWN,				// TE_EXPLOSION
-	PE_UNKNOWN,				// TE_TAREXPLOSION
-	PE_UNKNOWN,				// TE_LIGHTNING1
-	PE_UNKNOWN,				// TE_LIGHTNING2
-	PE_WIZSPIKE,			// TE_WIZSPIKE
-	PE_KNIGHTSPIKE,			// TE_KNIGHTSPIKE
-	PE_UNKNOWN,				// TE_LIGHTNING3
-	PE_UNKNOWN,				// TE_LAVASPLASH
-	PE_UNKNOWN,				// TE_TELEPORT
-	PE_BLOOD,				// TE_BLOOD
-	PE_LIGHTNINGBLOOD,		// TE_LIGHTNINGBLOOD
-	PE_UNKNOWN,				// TE_IMPLOSION
-	PE_UNKNOWN,				// TE_RAILTRAIL
-	PE_UNKNOWN,				// TE_EXPLOSION2
-	PE_UNKNOWN,				// TE_BEAM
-};
-
-
 void
 CL_TEnts_Init (void)
 {

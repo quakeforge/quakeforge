@@ -81,9 +81,10 @@ free_string_ref (progs_t *pr, strref_t *sr)
 static int
 string_index (progs_t *pr, strref_t *sr)
 {
-	int		i = sr - pr->static_strings;
+	long        o = (long) (sr - pr->static_strings);
+	unsigned int i;
 
-	if (i >= 0 && i < pr->num_strings)
+	if (o >= 0 && o < pr->num_strings)
 		return sr->string - pr->pr_strings;
 	for (i = 0; i < pr->dyn_str_size; i++) {
 		int d = sr - pr->dynamic_strings[i];
@@ -153,7 +154,8 @@ void
 PR_GarbageCollect (progs_t *pr)
 {
 	char	   *str;
-	int			i, j;
+	unsigned int i;
+	int         j;
 	ddef_t	   *def;
 	strref_t   *sr;
 
@@ -196,9 +198,9 @@ PR_GarbageCollect (progs_t *pr)
 }
 
 static inline char *
-get_string (progs_t *pr, unsigned int num)
+get_string (progs_t *pr, int num)
 {
-	if ((int) num < 0) {
+	if (num < 0) {
 		unsigned int row = ~num / 1024;
 
 		num = ~num % 1024;

@@ -186,7 +186,7 @@ VID_InitModes (void)
 }
 
 static const char *
-get_mode (int width, int height, int depth)
+get_mode (unsigned int width, unsigned int height, unsigned int depth)
 {
 	struct VideoMode *vmode;
 

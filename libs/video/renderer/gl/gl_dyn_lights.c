@@ -116,7 +116,7 @@ R_RenderDlight (dlight_t *light)
 void
 R_RenderDlights (void)
 {
-	int         i;
+	unsigned int i;
 	dlight_t   *l;
 
 	if (!gl_dlight_polyblend->int_val)

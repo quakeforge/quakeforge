@@ -174,7 +174,7 @@ I_CDAudio_Play (int track, qboolean looping)
 			return;
 	}
 
-	if (track < 0 || track >= sizeof (remap)) {
+	if (track < 0 || track >= (int) sizeof (remap)) {
 		Sys_Printf ("CDAudio: invalid track number\n");
 		return;
 	}

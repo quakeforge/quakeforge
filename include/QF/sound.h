@@ -46,8 +46,8 @@ struct sfx_s
 {
 	const char *name;
 
-	int         length;
-	int         loopstart;
+	unsigned int length;
+	unsigned int loopstart;
 
 	void       *data;
 
@@ -111,8 +111,8 @@ void S_EndPrecaching (void);
 
 extern qboolean 		fakedma;
 extern int 			fakedma_updates;
-extern int		paintedtime;
-extern int		soundtime;
+extern unsigned paintedtime;
+extern unsigned soundtime;
 extern vec3_t listener_origin;
 extern vec3_t listener_forward;
 extern vec3_t listener_right;

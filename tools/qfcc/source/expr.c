@@ -2079,7 +2079,7 @@ array_expr (expr_t *array, expr_t *index)
 		return error (index, "invalid array index type");
 	if (array_type->num_parms
 		&& index->type >= ex_integer
-		&& index->e.uinteger_val >= array_type->num_parms)
+		&& index->e.uinteger_val >= (unsigned int) array_type->num_parms)
 			return error (index, "array index out of bounds");
 	size = type_size (array_type->aux_type);
 	if (size > 1) {

@@ -141,11 +141,11 @@ read_samples (sfxbuffer_t *buffer, int count)
 }
 
 void
-SND_StreamAdvance (sfxbuffer_t *buffer, int count)
+SND_StreamAdvance (sfxbuffer_t *buffer, unsigned int count)
 {
 	float       stepscale;
-	int         headpos, samples;
-	int         loop_samples = 0;
+	unsigned int headpos, samples;
+	unsigned int loop_samples = 0;
 	sfx_t      *sfx = buffer->sfx;
 	sfxstream_t *stream = (sfxstream_t *) sfx->data;
 	wavinfo_t  *info = &stream->wavinfo;
@@ -153,14 +153,16 @@ SND_StreamAdvance (sfxbuffer_t *buffer, int count)
 	stepscale = (float) info->rate / shm->speed;	// usually 0.5, 1, or 2
 
 	// find out how many samples the buffer currently holds
-	samples = buffer->head - buffer->tail;
-	if (samples < 0)
-		samples += buffer->length;
+	if (buffer->head < buffer->tail) {
+		samples = buffer->length + buffer->head - buffer->tail;
+	} else {
+		samples = buffer->head - buffer->tail;
+	}
 
 	// find out where head points to in the stream
 	headpos = buffer->pos + samples;
 	if (headpos >= sfx->length) {
-		if (sfx->loopstart == -1)
+		if (sfx->loopstart == (unsigned int)-1)
 			headpos = sfx->length;
 		else
 			headpos -= sfx->length - sfx->loopstart;
@@ -170,7 +172,7 @@ SND_StreamAdvance (sfxbuffer_t *buffer, int count)
 		buffer->head = buffer->tail = 0;
 		buffer->pos += count;
 		if (buffer->pos > sfx->length) {
-			if (sfx->loopstart == -1) {
+			if (sfx->loopstart == (unsigned int)-1) {
 				// reset the buffer and fill it incase it's needed again
 				headpos = buffer->pos = 0;
 			} else {
@@ -183,7 +185,7 @@ SND_StreamAdvance (sfxbuffer_t *buffer, int count)
 	} else {
 		buffer->pos += count;
 		if (buffer->pos >= sfx->length) {
-			if (sfx->loopstart == -1) {
+			if (sfx->loopstart == (unsigned int)-1) {
 				// reset the buffer and fill it incase it's needed again
 				buffer->pos = 0;
 				buffer->head = buffer->tail = 0;
@@ -204,7 +206,7 @@ SND_StreamAdvance (sfxbuffer_t *buffer, int count)
 		samples += buffer->length;
 
 	if (headpos + samples > sfx->length) {
-		if (sfx->loopstart == -1) {
+		if (sfx->loopstart == (unsigned int)-1) {
 			samples = sfx->length - headpos;
 		} else {
 			loop_samples = headpos + samples - sfx->length;
@@ -317,10 +319,10 @@ SND_ResampleMono (sfxbuffer_t *sc, byte *data, int length)
 //printf ("%d %d\n", length, outcount);
 
 	sc->sfx->length = info->samples / stepscale;
-	if (info->loopstart != -1)
+	if (info->loopstart != (unsigned int)-1)
 		sc->sfx->loopstart = info->loopstart / stepscale;
 	else
-		sc->sfx->loopstart = -1;
+		sc->sfx->loopstart = (unsigned int)-1;
 
 	if (snd_loadas8bit->int_val) {
 		outwidth = 1;
@@ -436,10 +438,10 @@ SND_ResampleStereo (sfxbuffer_t *sc, byte *data, int length)
 	outcount = length / stepscale;
 
 	sc->sfx->length = info->samples / stepscale;
-	if (info->loopstart != -1)
+	if (info->loopstart != (unsigned int)-1)
 		sc->sfx->loopstart = info->loopstart / stepscale;
 	else
-		sc->sfx->loopstart = -1;
+		sc->sfx->loopstart = (unsigned int)-1;
 
 	if (snd_loadas8bit->int_val) {
 		outwidth = 1;

@@ -102,7 +102,7 @@ build_skin_8 (byte * original, int tinwidth, int tinheight,
 	//  Improvements should be mirrored in GL_ResampleTexture in gl_textures.c
 	byte        *inrow;
 	byte         pixels[512 * 256], *out;
-	int          i, j;
+	unsigned int i, j;
 	unsigned int frac, fracstep;
 
 	out = pixels;
@@ -128,7 +128,7 @@ build_skin_32 (byte * original, int tinwidth, int tinheight,
 {
 	//  Improvements should be mirrored in GL_ResampleTexture in gl_textures.c
 	byte        *inrow;
-	int          i, j;
+	unsigned int i, j;
 	int          samples = alpha ? gl_alpha_format : gl_solid_format;
 	unsigned int frac, fracstep;
 	unsigned int pixels[512 * 256], *out;

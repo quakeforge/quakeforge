@@ -41,24 +41,24 @@ typedef struct portable_samplepair_s {
 } portable_samplepair_t;
 
 typedef struct wavinfo_s {
-	int		rate;
-	int		width;
-	int		channels;
-	int		loopstart;
-	int		samples;
-	int		dataofs;		// chunk starts this many bytes from file start
-	int     datalen;		// chunk bytes
+	unsigned int rate;
+	unsigned int width;
+	unsigned int channels;
+	unsigned int loopstart;
+	unsigned int samples;
+	unsigned int dataofs;		// chunk starts this many bytes from file start
+	unsigned int datalen;		// chunk bytes
 } wavinfo_t;
 
 typedef struct channel_s channel_t;
 typedef struct sfxbuffer_s sfxbuffer_t;
 struct sfxbuffer_s {
-	int			head;			// ring buffer head position in sampels
-	int         tail;			// ring buffer tail position in sampels
-	int         length;			// length of buffer in samples
-	int         pos;			// position of tail within full stream
+	unsigned int head;			// ring buffer head position in sampels
+	unsigned int tail;			// ring buffer tail position in sampels
+	unsigned int length;		// length of buffer in samples
+	unsigned int pos;			// position of tail within full stream
 	void        (*paint) (channel_t *ch, sfxbuffer_t *buffer, int count);
-	void        (*advance) (sfxbuffer_t *buffer, int count);
+	void        (*advance) (sfxbuffer_t *buffer, unsigned int count);
 	sfx_t      *sfx;
 	byte        data[4];
 };
@@ -85,9 +85,9 @@ struct channel_s {
 	sfx_t	*sfx;			// sfx number
 	int		leftvol;		// 0-255 volume
 	int		rightvol;		// 0-255 volume
-	int		end;			// end time in global paintsamples
-	int	 	pos;			// sample position in sfx
-	int		looping;		// where to loop, -1 = no looping
+	unsigned int end;			// end time in global paintsamples
+	unsigned int pos;			// sample position in sfx
+	unsigned int looping;		// where to loop, -1 = no looping
 	int		entnum;			// to allow overriding a specific sound
 	int		entchannel;		//
 	vec3_t	origin;			// origin of sound effect
@@ -97,7 +97,7 @@ struct channel_s {
 	int	oldphase;	// phase shift between l-r in samples
 };
 
-void SND_PaintChannels(int endtime);
+void SND_PaintChannels(unsigned int endtime);
 void SND_Init (void);
 void SND_Shutdown (void);
 void SND_AmbientOff (void);
@@ -144,7 +144,7 @@ sfxbuffer_t *SND_CacheRetain (sfx_t *sfx);
 void SND_CacheRelease (sfx_t *sfx);
 sfxbuffer_t *SND_StreamRetain (sfx_t *sfx);
 void SND_StreamRelease (sfx_t *sfx);
-void SND_StreamAdvance (sfxbuffer_t *buffer, int count);
+void SND_StreamAdvance (sfxbuffer_t *buffer, unsigned int count);
 
 void SND_WriteLinearBlastStereo16 (void);
 void SND_PaintChannelFrom8 (channel_t *ch, sfxbuffer_t *sc, int count);

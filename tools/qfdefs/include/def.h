@@ -11,11 +11,11 @@ typedef struct {
 
 extern def_t nq_global_defs[];
 extern def_t nq_field_defs[];
-extern int nq_crc;
+extern unsigned int nq_crc;
 
 extern def_t qw_global_defs[];
 extern def_t qw_field_defs[];
-extern int qw_crc;
+extern unsigned int qw_crc;
 
 void Init_Defs (def_t *gtab, def_t *ftab);
 def_t *Find_Global_Def_name (const char *name);

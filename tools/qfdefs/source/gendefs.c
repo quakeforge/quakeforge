@@ -148,7 +148,8 @@ main (int argc, char **argv)
 				if (strncmp ("#define", buf, 7) == 0) {
 					int crc;
 					sscanf (buf, "#define PROGHEADER_CRC %d", &crc);
-					fprintf (out, "\nint %s_crc = %d;\n", argv[1], crc);
+					fprintf (out, "\nunsigned int %s_crc = %d;\n",
+							 argv[1], crc);
 				}
 				break;
 		}

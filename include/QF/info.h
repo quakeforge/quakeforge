@@ -38,7 +38,7 @@
 
 typedef struct info_s {
 	struct hashtab_s	*tab;
-	int					maxsize;
+	size_t				maxsize;
 	int					cursize;
 } info_t;
 

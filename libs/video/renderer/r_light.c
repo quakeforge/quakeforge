@@ -299,7 +299,7 @@ R_MarkLights (const vec3_t lightorigin, dlight_t *light, int bit,
 void
 R_PushDlights (const vec3_t entorigin)
 {
-	int         i;
+	unsigned int i;
 	dlight_t   *l;
 	vec3_t      lightorigin;
 
@@ -483,7 +483,7 @@ R_LightPoint (const vec3_t p)
 dlight_t *
 R_AllocDlight (int key)
 {
-	int         i;
+	unsigned int i;
 	dlight_t   *dl;
 
 	if (!r_maxdlights) {
@@ -522,7 +522,7 @@ R_AllocDlight (int key)
 void
 R_DecayLights (double frametime)
 {
-	int         i;
+	unsigned int i;
 	dlight_t   *dl;
 
 	dl = r_dlights;

@@ -598,7 +598,7 @@ C_KeyEvent (knum_t key, short unicode, qboolean down)
 		}
 		il = input_line;
 	}
-	Con_ProcessInputLine (il, key >= 256 ? key : unicode);
+	Con_ProcessInputLine (il, key >= 256 ? (int) key : unicode);
 }
 
 /* DRAWING */
@@ -744,7 +744,7 @@ DrawDownload (int lines)
 {
 	char		dlbar[1024];
 	const char *text;
-	int			i, j, x, y, n;
+	size_t		i, j, x, y, n;
 
 	if (!con_data.dl_name || !*con_data.dl_name)
 		return;

@@ -68,7 +68,7 @@ vec3_t		listener_right;
 vec3_t		listener_up;
 vec_t		sound_nominal_clip_dist = 1000.0;
 
-int			soundtime;					// sample PAIRS
+unsigned    soundtime;					// sample PAIRS
 
 #define	MAX_SFX		512
 sfx_t	   *known_sfx;					// hunk allocated [MAX_SFX]
@@ -229,7 +229,8 @@ SND_PrecacheSound (const char *name)
 channel_t *
 SND_PickChannel (int entnum, int entchannel)
 {
-	int			ch_idx, first_to_die, life_left;
+	int			ch_idx, first_to_die;
+	unsigned    life_left;
 
 	// Check for replacement sound, or find the best one to replace
 	first_to_die = -1;
@@ -249,6 +250,11 @@ SND_PickChannel (int entnum, int entchannel)
 			&& entnum != *plugin_info_snd_render_data.viewentity
 			&& channels[ch_idx].sfx)
 			continue;
+
+		if (channels[ch_idx].end < paintedtime) {
+			first_to_die = ch_idx;
+			break;
+		}
 
 		if (channels[ch_idx].end - paintedtime < life_left) {
 			life_left = channels[ch_idx].end - paintedtime;
@@ -316,7 +322,8 @@ void
 SND_StartSound (int entnum, int entchannel, sfx_t *sfx, const vec3_t origin,
 				float fvol, float attenuation)
 {
-	int			ch_idx, skip, vol;
+	int			ch_idx, vol;
+	unsigned int skip;
 	channel_t  *target_chan, *check;
 
 	if (!sound_started)
@@ -459,7 +466,7 @@ SND_StaticSound (sfx_t *sfx, const vec3_t origin, float vol,
 	if (!sfx->retain (sfx))
 		return;
 
-	if (sfx->loopstart == -1) {
+	if (sfx->loopstart == (unsigned int)-1) {
 		Sys_Printf ("Sound %s not looped\n", sfx->name);
 		sfx->release (sfx);
 		return;
@@ -559,8 +566,7 @@ SND_GetSoundtime (void)
 static void
 SND_Update_ (void)
 {
-	int				samps;
-	unsigned int	endtime;
+	unsigned int	endtime, samps;
 
 	if (!sound_started || (snd_blocked > 0))
 		return;
