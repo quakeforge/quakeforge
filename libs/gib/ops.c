@@ -19,8 +19,6 @@
 
 */
 
-#define _ISOC99_SOURCE
-
 #include <math.h>
 #include <stdlib.h>
 
@@ -197,5 +195,5 @@ Func_Rand (double *oplist, unsigned int numops)
 double
 Func_Trunc (double *oplist, unsigned int numops)
 {
-	return (double) ((long int) oplist[0]);
+	return oplist[0] < 0.0 ? ceil (oplist[0]) : floor (oplist[0]);
 }
