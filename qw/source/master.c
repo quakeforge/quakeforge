@@ -49,6 +49,9 @@ static const char rcsid[] =
 #ifdef HAVE_WINSOCK_H
 # include <winsock.h>
 #endif
+#ifdef HAVE_NETDB_H
+# include <netdb.h>
+#endif
 
 #include <sys/types.h>
 #include <time.h>
@@ -76,7 +79,7 @@ typedef struct {
 
 int 
 QW_AddHeartbeat (server_t **servers_p, int slen,
-				 struct sockaddr_in *addr, char *buf)
+				 struct sockaddr_in *addr, char *buf, qboolean notimeout)
 {
 	server_t *servers = *servers_p;
 	int freeslot = -1;
@@ -114,14 +117,15 @@ QW_AddHeartbeat (server_t **servers_p, int slen,
 		}
 
 		for (i = slen; i < slen + SLIST_MULTIPLE; i++)
-			newservers[i].updated = 0;
+			memset (&newservers[i], 0, sizeof (newservers[i]));
 
 		freeslot = slen;
 		slen += SLIST_MULTIPLE;
 		*servers_p = newservers;
+		servers = *servers_p;
 	}
 	servers[freeslot].addr = *addr;
-	servers[freeslot].notimeout = false;
+	servers[freeslot].notimeout = notimeout;
 #if 1
 	printf ("Added %s:%d (seq %d, players %d)\n",
 			inet_ntoa (servers[freeslot].addr.sin_addr),
@@ -220,27 +224,22 @@ QW_Pong (int sock, struct sockaddr_in *addr)
 	sendto (sock, data, sizeof (data), 0,
 			(struct sockaddr *) addr, sizeof (struct sockaddr_in));
 }
-      
+
+int serverlen = SLIST_MULTIPLE;
+server_t *servers;
 
 void 
 QW_Master (struct sockaddr_in *addr)
 {
 	int sock;
-	server_t *servers;
-	int serverlen = SLIST_MULTIPLE;
-	int i;
 #ifdef _WIN32
 	WSADATA winsockdata;
 #endif
 
-	servers = malloc (sizeof (server_t) * serverlen);
 	if (!servers) {
 		printf ("initial malloc failed\n");
 		return;
 	}
-
-	for (i = 0; i < serverlen; i++)
-		servers[i].updated = 0;
 
 #ifdef _WIN32
 	i = WSAStartup (MAKEWORD (1, 1), &winsockdata);
@@ -305,7 +304,7 @@ QW_Master (struct sockaddr_in *addr)
 				break;
 			case S2M_HEARTBEAT:
 				serverlen = QW_AddHeartbeat (&servers, serverlen,
-											 &recvaddr, buf);
+											 &recvaddr, buf, false);
 				break;
 			case S2M_SHUTDOWN:
 				QW_HeartShutdown (&recvaddr, servers, serverlen);
@@ -321,6 +320,57 @@ QW_Master (struct sockaddr_in *addr)
 	free (servers);
 }
 
+static int
+make_host_addr (const char *host, int port, struct sockaddr_in *host_addr)
+{
+	struct hostent *host_ent;
+
+	host_ent = gethostbyname (host);
+	if (!host_ent)
+		return -1;
+	host_addr->sin_family = AF_INET;
+	memcpy (&host_addr->sin_addr, host_ent->h_addr_list[0],
+			sizeof (host_addr->sin_addr));
+	host_addr->sin_port = htons (port);
+	return 0;
+}
+
+
+static void
+read_hosts (const char *fname)
+{
+	FILE       *host_file;
+	int         host_port;
+	char        host_name[256];
+	static char *fake_heartbeat = "      ";
+	char       *buf;
+	struct sockaddr_in host_addr;
+
+	host_file = fopen (fname, "rt");
+	if (!host_file) {
+		fprintf (stderr, "could not open `%s'\n", fname);
+		return;
+	}
+	while (fgets (host_name, sizeof (host_name), host_file)) {
+		for (buf = host_name; *buf && !isspace ((byte)*buf) && *buf !=':';
+			 buf++)
+			;
+		if (*buf)
+			*buf++ = 0;
+		if (*buf)
+			host_port = atoi (buf);
+		else
+			host_port = 27500;	//FIXME: magic number (default server port)
+		if (make_host_addr (host_name, host_port, &host_addr) == -1) {
+			fprintf (stderr, "could not resolve `%s', skipping", host_name);
+			continue;
+		}
+		serverlen = QW_AddHeartbeat (&servers, serverlen, &host_addr,
+									 fake_heartbeat, true);
+	}
+	fclose (host_file);
+}
+
 int
 main (int argc, char **argv)
 {
@@ -328,10 +378,18 @@ main (int argc, char **argv)
 	short port = htons (27000);
 #ifndef WIN32 //FIXME
 	int c;
+#endif
 
-	while ((c = getopt (argc, argv, "p:")) != -1) {
-		if (c == 'p') {
-			port = htons (atoi (optarg));
+	servers = calloc (sizeof (server_t), serverlen);
+#ifndef WIN32 //FIXME
+	while ((c = getopt (argc, argv, "p:f:")) != -1) {
+		switch (c) {
+			case 'p':
+				port = htons (atoi (optarg));
+				break;
+			case 'f':
+				read_hosts (optarg);
+				break;
 		}
 	}
 #endif
