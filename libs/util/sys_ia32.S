@@ -103,6 +103,16 @@ single_cw:	.long	0
 full_cw:	.long	0
 cw:			.long	0
 pushed_cw:	.long	0
+.type	ceil_cw,@object
+.type	single_cw,@object
+.type	full_cw,@object
+.type	cw,@object
+.type	pushed_cw,@object
+.size	ceil_cw,4
+.size	single_cw,4
+.size	full_cw,4
+.size	cw,4
+.size	pushed_cw,4
 
 	.text
 
