@@ -515,7 +515,7 @@ decode_truecolor (TargaHeader *targa, tex_t *tex, byte *dataByte)
 
 	switch (targa->pixel_size) {
 		case 24:
-			tex->format = tex_rgb;
+			tex->format = tex_rgba;		// image gets expadned to rgba
 			decode_truecolor_24 (targa, tex, dataByte);
 			break;
 		case 32:
@@ -534,7 +534,7 @@ decode_truecolor_rle (TargaHeader *targa, tex_t *tex, byte *dataByte)
 
 	switch (targa->pixel_size) {
 		case 24:
-			tex->format = tex_rgb;
+			tex->format = tex_rgba;		// image gets expadned to rgba
 			decode_truecolor_24_rle (targa, tex, dataByte);
 			break;
 		case 32:
