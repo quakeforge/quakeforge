@@ -289,9 +289,6 @@ rm -rf $RPM_BUILD_ROOT
 
 %files
 %doc COPYING INSTALL TODO doc/*
-%attr(-,root,root) %dir	%{fs_sharepath}
-%attr(-,root,root) %dir	%{fs_sharepath}/id1
-%attr(-,root,root) %{fs_sharepath}/id1/menu.dat*
 
 %files common
 %attr(-,root,root) /etc/quakeforge.conf
@@ -426,6 +423,8 @@ rm -rf $RPM_BUILD_ROOT
 %attr(-,root,root)	%{_prefix}/man/man1/qfvis.1.gz
 
 %files stub
+%attr(-,root,root) %dir	%{fs_sharepath}
+%attr(-,root,root) %dir	%{fs_sharepath}/id1
 
 %post stub
 if test -f %{fs_sharepath}/id1/pak0.pak; then
