@@ -2108,6 +2108,7 @@ selector_expr (keywordarg_t *selector)
 	dstring_t  *sel_id = dstring_newstr ();
 	dstring_t  *sel_types = dstring_newstr ();
 	expr_t     *sel;
+	selector = (keywordarg_t *) reverse_params ((param_t *) selector);
 	selector_name (sel_id, selector);
 	selector_types (sel_types, selector);
 	//printf ("'%s' '%s'\n", sel_id->str, sel_types->str);
