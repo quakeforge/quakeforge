@@ -34,6 +34,7 @@
 # include <strings.h>
 #endif
 
+#include "QF/cbuf.h"
 #include "QF/cmd.h"
 #include "QF/csqc.h"		//FIXME d'oh, dumb name after all
 #include "QF/cvar.h"
