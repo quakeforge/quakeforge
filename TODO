@@ -20,6 +20,7 @@ o  software PCXs don't work in X11 at least if you're using 16/24/32 color
 o  stateful console (eg, rcon mode, chat mode, normal command mode...)
 o  menu rewrite
 o  scripted hud
+o  doublesize modes (eg, render in 320x240 but display in 640x480)
 ?  more direct intra-team comms (eg, talk to offense or defense directly)
 ?  Draw_Pic and friends need a cleanup in GL at least
 ?  console commands to see a user, ignore talk from them, etc
