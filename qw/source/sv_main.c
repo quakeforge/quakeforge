@@ -27,6 +27,11 @@
 static const char rcsid[] = 
 	"$Id$";
 
+#ifdef __sun
+/* Sun's model_t in sys/model.h conflicts w/ Quake's model_t */
+# define model_t sunmodel_t
+#endif
+
 #ifdef HAVE_CONFIG_H
 # include "config.h"
 #endif
@@ -56,6 +61,10 @@ static const char rcsid[] =
 #include <stdarg.h>
 #include <stdlib.h>
 #include <setjmp.h>
+
+#ifdef __sun
+# undef model_t         // allow qf to use it's model_t
+#endif
 
 #include "QF/cmd.h"
 #include "QF/console.h"
