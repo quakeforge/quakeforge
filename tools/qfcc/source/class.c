@@ -383,11 +383,6 @@ class_ivar_expr (class_type_t *class_type, const char *name)
 	}
 	if (!ivar)
 		return 0;
-	if (ivar->visibility == vis_private) {
-		error (0, "%s.%s is not accessable here",
-			   class->name, name);
-		return 0;
-	}
 	return binary_expr ('.', new_name_expr ("self"), new_name_expr (name));
 }
 
