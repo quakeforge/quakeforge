@@ -1203,7 +1203,7 @@ static void
 call_qc_hook (void *qc_hook)
 {
 	*sv_globals.self = EDICT_TO_PROG (&sv_pr_state, sv_player);
-	PR_ExecuteProgram (&sv_pr_state, (func_t)qc_hook);
+	PR_ExecuteProgram (&sv_pr_state, (func_t) (long) qc_hook);
 }
 
 static const char *
@@ -1300,7 +1300,7 @@ PF_AddUserCommand (progs_t *pr)
 	ucmd_t     *cmd;
 	cmd = SV_AddUserCommand (name, call_qc_hook, 
 							 P_INT (pr, 2) ? UCMD_NO_REDIRECT : 0,
-							 (void *) P_FUNCTION (pr, 1),
+							 (void *) (long) P_FUNCTION (pr, 1),
 							 NULL);
 	
 	if (!cmd)
