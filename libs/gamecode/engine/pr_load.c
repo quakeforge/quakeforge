@@ -75,6 +75,11 @@ allocate_progs_mem (progs_t *pr, int size)
 	return Hunk_AllocName (size, pr->progs_name);
 }
 
+static void
+free_progs_mem (progs_t *pr, void *mem)
+{
+}
+
 void
 PR_LoadProgsFile (progs_t * pr, VFile *file, int size, int edicts, int zone)
 {
@@ -143,6 +148,12 @@ PR_LoadProgsFile (progs_t * pr, VFile *file, int size, int edicts, int zone)
 
 	if (!pr->allocate_progs_mem)
 		pr->allocate_progs_mem = allocate_progs_mem;
+	if (!pr->free_progs_mem)
+		pr->free_progs_mem = free_progs_mem;
+
+	PR_Resources_Clear (pr);
+	if (pr->progs)
+		pr->free_progs_mem (pr, pr->progs);
 	pr->progs = pr->allocate_progs_mem (pr, pr->progs_size + pr->zone_size
 										+ pr->pr_edictareasize);
 	if (!pr->progs)

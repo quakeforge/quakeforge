@@ -64,6 +64,11 @@ typedef struct progs_s progs_t;
 #define PROGS_T
 #endif
 
+#ifndef PR_RESOURCE_T
+typedef struct pr_resource_s pr_resource_t;
+#define PR_RESOURCE_T
+#endif
+
 //============================================================================
 
 void PR_Init (void);
@@ -185,6 +190,17 @@ int PR_SetString(progs_t *pr, const char *s);
 void PR_GarbageCollect (progs_t *pr);
 
 //
+// PR Resources stuff
+//
+
+void
+PR_Resources_Init (progs_t *pr);
+void PR_Resources_Clear (progs_t *pr);
+void PR_Resources_Register (progs_t *pr, const char *name, void *data,
+							void (*clear)(progs_t *, void *));
+void *PR_Resources_Find (progs_t *pr, const char *name);
+
+//
 // PR Zone stuff
 //
 
@@ -299,9 +315,13 @@ struct progs_s {
 	void			(*free_edict)(progs_t *pr, edict_t *ent);
 
 	void			*(*allocate_progs_mem)(progs_t *pr, int size);
+	void			(*free_progs_mem)(progs_t *pr, void *mem);
 
 	builtin_t		**builtins;
 	int				numbuiltins;
+
+	pr_resource_t	*resources;
+	struct hashtab_s *resource_hash;
 
 	// debug info
 	char			*debugfile;

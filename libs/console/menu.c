@@ -322,11 +322,18 @@ menu_allocate_progs_mem (progs_t *pr, int size)
 	return malloc (size);
 }
 
+static void
+menu_free_progs_mem (progs_t *pr, void *mem)
+{
+	free (mem);
+}
+
 void
 Menu_Init (void)
 {
 	menu_pr_state.progs_name = "menu.dat";
 	menu_pr_state.allocate_progs_mem = menu_allocate_progs_mem;
+	menu_pr_state.free_progs_mem = menu_free_progs_mem;
 
 	menu_hash = Hash_NewTable (61, menu_get_key, menu_free, 0);
 
@@ -365,10 +372,6 @@ Menu_Load (void)
 
 	menu_pr_state.time = con_data.realtime;
 
-	if (menu_pr_state.progs) {
-		free (menu_pr_state.progs);
-		menu_pr_state.progs = 0;
-	}
 	Hash_FlushTable (menu_hash);
 	menu = 0;
 	top_menu = 0;
