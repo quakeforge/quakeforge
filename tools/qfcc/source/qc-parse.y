@@ -312,8 +312,14 @@ def_name
 		{
 			int *alloc = &numpr_globals;
 
-			if (pr_scope)
+			if (pr_scope) {
 				alloc = pr_scope->alloc;
+				if (pr_scope->scope && !pr_scope->scope->scope) {
+					def_t      *def = PR_GetDef (0, $1, pr_scope->scope, 0);
+					if (def && def->scope && !def->scope->scope)
+						warning (0, "local %s shadows param %s", $1, def->name);
+				}
+			}
 			$$ = PR_GetDef (current_type, $1, pr_scope, alloc);
 			current_def = $$;
 		}
