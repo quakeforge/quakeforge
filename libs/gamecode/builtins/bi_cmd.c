@@ -90,15 +90,15 @@ bi_Cmd_AddCommand (progs_t *pr)
 {
 	cmd_resources_t *res = PR_Resources_Find (pr, "Cmd");
 	bi_cmd_t   *cmd = malloc (sizeof (bi_cmd_t));
-	char       *name = strdup (G_STRING (pr, OFS_PARM0));
-	func_t      func = G_FUNCTION (pr, OFS_PARM1);
+	char       *name = strdup (P_STRING (pr, 0));
+	func_t      func = P_FUNCTION (pr, 1);
 
 	if (!cmd || !name || !Cmd_AddCommand (name, (void(*)(void))bi_cmd_f, "CSQC command")) {
 		if (name)
 			free (name);
 		if (cmd)
 			free (cmd);
-		G_INT (pr, OFS_RETURN) = 0;
+		R_INT (pr) = 0;
 		return;
 	}
 	cmd->name = name;
@@ -107,7 +107,7 @@ bi_Cmd_AddCommand (progs_t *pr)
 	Hash_Add (bi_cmds, cmd);
 	cmd->next = res->cmds;
 	res->cmds = cmd;
-	G_INT (pr, OFS_RETURN) = 1;
+	R_INT (pr) = 1;
 }
 
 static void
@@ -127,31 +127,31 @@ bi_cmd_clear (progs_t *pr, void *data)
 static void
 bi_Cmd_Argc (progs_t *pr)
 {
-	G_INT (pr, OFS_RETURN) = Cmd_Argc ();
+	R_INT (pr) = Cmd_Argc ();
 }
 
 static void
 bi_Cmd_Argv (progs_t *pr)
 {
-	RETURN_STRING (pr, Cmd_Argv (G_INT (pr, OFS_PARM0)));
+	RETURN_STRING (pr, Cmd_Argv (P_INT (pr, 0)));
 }
 
 static void
 bi_Cmd_Args (progs_t *pr)
 {
-	RETURN_STRING (pr, Cmd_Args (G_INT (pr, OFS_PARM0)));
+	RETURN_STRING (pr, Cmd_Args (P_INT (pr, 0)));
 }
 
 static void
 bi_Cmd_Argu (progs_t *pr)
 {
-	RETURN_STRING (pr, Cmd_Argu (G_INT (pr, OFS_PARM0)));
+	RETURN_STRING (pr, Cmd_Argu (P_INT (pr, 0)));
 }
 
 static void
 bi_Cmd_Return (progs_t *pr)
 {
-	Cmd_Return (G_STRING (pr, OFS_PARM0));
+	Cmd_Return (P_STRING (pr, 0));
 }
 
 //Cmd_CheckParm

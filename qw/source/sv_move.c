@@ -355,10 +355,10 @@ SV_MoveToGoal (progs_t *pr)
 
 	ent = PROG_TO_EDICT (pr, *pr->globals.self);
 	goal = PROG_TO_EDICT (pr, SVentity (ent, goalentity));
-	dist = G_FLOAT (pr, OFS_PARM0);
+	dist = P_FLOAT (pr, 0);
 
 	if (!((int) SVfloat (ent, flags) & (FL_ONGROUND | FL_FLY | FL_SWIM))) {
-		G_FLOAT (pr, OFS_RETURN) = 0;
+		R_FLOAT (pr) = 0;
 		return;
 	}
 	// if the next step hits the enemy, return immediately

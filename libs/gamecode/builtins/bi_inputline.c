@@ -78,9 +78,9 @@ bi_InputLine_Create (progs_t *pr)
 	il_resources_t *res = PR_Resources_Find (pr, "InputLine");
 	inputline_t **line = 0;
 	int         i;
-	int         lines = G_INT (pr, OFS_PARM0);
-	int         size = G_INT (pr, OFS_PARM1);
-	int         prompt = G_INT (pr, OFS_PARM2);
+	int         lines = P_INT (pr, 0);
+	int         size = P_INT (pr, 1);
+	int         prompt = P_INT (pr, 2);
 	pr_type_t  *handle;
 
 	for (i = 0; i < res->max_lines; i++)
@@ -90,26 +90,26 @@ bi_InputLine_Create (progs_t *pr)
 		}
 	if (!line) {
 		Sys_Printf ("out of resources\n");
-		G_INT (pr, OFS_RETURN) = 0;
+		R_INT (pr) = 0;
 		return;
 	}
 	*line = Con_CreateInputLine (lines, size, prompt);
 	if (!*line) {
 		Sys_Printf ("failed to create inputline\n");
-		G_INT (pr, OFS_RETURN) = 0;
+		R_INT (pr) = 0;
 		return;
 	}
 	handle = PR_Zone_Malloc (pr, sizeof (inputline_t *));
 	*(inputline_t**)handle = *line;
-	G_INT (pr, OFS_RETURN) = handle - pr->pr_globals;
+	R_INT (pr) = handle - pr->pr_globals;
 }
 
 static void
 bi_InputLine_SetWidth (progs_t *pr)
 {
-	inputline_t *line = get_inputline (pr, G_INT (pr, OFS_PARM0),
+	inputline_t *line = get_inputline (pr, P_INT (pr, 0),
 									   "InputLine_SetWidth");
-	int         width = G_INT (pr, OFS_PARM1);
+	int         width = P_INT (pr, 1);
 
 	line->width = width;
 }
@@ -119,7 +119,7 @@ bi_InputLine_Destroy (progs_t *pr)
 {
 	il_resources_t *res = PR_Resources_Find (pr, "InputLine");
 	pr_type_t  *handle;
-	int         arg = G_INT (pr, OFS_PARM0);
+	int         arg = P_INT (pr, 0);
 	int         i;
 	inputline_t *line;
 
@@ -144,8 +144,7 @@ bi_InputLine_Destroy (progs_t *pr)
 static void
 bi_InputLine_Clear (progs_t *pr)
 {
-	inputline_t *line = get_inputline (pr, G_INT (pr, OFS_PARM0),
-									   "InputLine_Clear");
+	inputline_t *line = get_inputline (pr, P_INT (pr, 0), "InputLine_Clear");
 
 	Con_ClearTyping (line);
 }
@@ -153,9 +152,8 @@ bi_InputLine_Clear (progs_t *pr)
 static void
 bi_InputLine_Process (progs_t *pr)
 {
-	inputline_t *line = get_inputline (pr, G_INT (pr, OFS_PARM0),
-									   "InputLine_Process");
-	int         ch = G_INT (pr, OFS_PARM1);
+	inputline_t *line = get_inputline (pr, P_INT (pr, 0), "InputLine_Process");
+	int         ch = P_INT (pr, 1);
 
 	Con_ProcessInputLine (line, ch);
 }
@@ -168,9 +166,8 @@ bi_InputLine_Process (progs_t *pr)
 static void
 bi_InputLine_SetText (progs_t *pr)
 {
-	inputline_t *il = get_inputline (pr, G_INT (pr, OFS_PARM0),
-									 "InputLine_SetText");
-	const char  *str = G_STRING (pr, OFS_PARM1);
+	inputline_t *il = get_inputline (pr, P_INT (pr, 0), "InputLine_SetText");
+	const char  *str = P_STRING (pr, 1);
 
 	/* this was segfault trap:
 		 il->lines[il->edit_line][0] is promt character
@@ -187,8 +184,7 @@ bi_InputLine_SetText (progs_t *pr)
 static void
 bi_InputLine_GetText (progs_t *pr)
 {
-	inputline_t *il = get_inputline (pr, G_INT (pr, OFS_PARM0),
-									 "InputLine_GetText");
+	inputline_t *il = get_inputline (pr, P_INT (pr, 0), "InputLine_GetText");
 
 	RETURN_STRING(pr, il->lines[il->edit_line]+1);
 }
@@ -196,11 +192,10 @@ bi_InputLine_GetText (progs_t *pr)
 static void
 bi_InputLine_Draw (progs_t *pr)
 {
-	inputline_t *il = get_inputline (pr, G_INT (pr, OFS_PARM0),
-									 "InputLine_Draw");
-	int         x = G_INT (pr, OFS_PARM1);
-	int         y = G_INT (pr, OFS_PARM2);
-	int         cursor = G_INT (pr, OFS_PARM3);
+	inputline_t *il = get_inputline (pr, P_INT (pr, 0), "InputLine_Draw");
+	int         x = P_INT (pr, 1);
+	int         y = P_INT (pr, 2);
+	int         cursor = P_INT (pr, 3);
 	const char *s = il->lines[il->edit_line] + il->scroll;
 
 	if (il->scroll) {

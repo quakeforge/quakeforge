@@ -134,7 +134,7 @@ int NUM_FOR_BAD_EDICT(progs_t *pr, edict_t *e);
 #define P_INT(p,n)		P_var (p, n, integer)
 #define P_UINT(p,n)		P_var (p, n, uinteger)
 #define P_EDICT(p,n)	((edict_t *)(PR_edicts (p) + P_INT (p, n)))
-#define P_EDICTNUM(p,n)	NUM_FOR_EDICT (p, P_EDICT (p, n));
+#define P_EDICTNUM(p,n)	NUM_FOR_EDICT (p, P_EDICT (p, n))
 #define P_VECTOR(p,n)	P_var (p, n, vector)
 #define P_STRING(p,n)	PR_GetString (p, P_var (p, n, string))
 #define P_FUNCTION(p,n)	P_var (p, n, func)

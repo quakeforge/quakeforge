@@ -140,9 +140,9 @@ menu_add_item (menu_item_t *m, menu_item_t *i)
 static void
 bi_Menu_Begin (progs_t *pr)
 {
-	int         x = G_INT (pr, OFS_PARM0);
-	int         y = G_INT (pr, OFS_PARM1);
-	const char *text = G_STRING (pr, OFS_PARM2);
+	int         x = P_INT (pr, 0);
+	int         y = P_INT (pr, 1);
+	const char *text = P_STRING (pr, 2);
 	menu_item_t *m = calloc (sizeof (menu_item_t), 1);
 
 	m->x = x;
@@ -157,33 +157,33 @@ bi_Menu_Begin (progs_t *pr)
 static void
 bi_Menu_FadeScreen (progs_t *pr)
 {
-	menu->fadescreen = G_INT (pr, OFS_PARM0);
+	menu->fadescreen = P_INT (pr, 0);
 }
 
 static void
 bi_Menu_Draw (progs_t *pr)
 {
-	menu->draw = G_FUNCTION (pr, OFS_PARM0);
+	menu->draw = P_FUNCTION (pr, 0);
 }
 
 static void
 bi_Menu_EnterHook (progs_t *pr)
 {
-	menu->enter_hook = G_FUNCTION (pr, OFS_PARM0);
+	menu->enter_hook = P_FUNCTION (pr, 0);
 }
 
 static void
 bi_Menu_LeaveHook (progs_t *pr)
 {
-	menu->leave_hook = G_FUNCTION (pr, OFS_PARM0);
+	menu->leave_hook = P_FUNCTION (pr, 0);
 }
 
 static void
 bi_Menu_Pic (progs_t *pr)
 {
-	int         x = G_INT (pr, OFS_PARM0);
-	int         y = G_INT (pr, OFS_PARM1);
-	const char *name = G_STRING (pr, OFS_PARM2);
+	int         x = P_INT (pr, 0);
+	int         y = P_INT (pr, 1);
+	const char *name = P_STRING (pr, 2);
 	menu_pic_t *pic = malloc (sizeof (menu_pic_t));
 
 	pic->x = x;
@@ -196,9 +196,9 @@ bi_Menu_Pic (progs_t *pr)
 static void
 bi_Menu_CenterPic (progs_t *pr)
 {
-	int         x = G_INT (pr, OFS_PARM0);
-	int         y = G_INT (pr, OFS_PARM1);
-	const char *name = G_STRING (pr, OFS_PARM2);
+	int         x = P_INT (pr, 0);
+	int         y = P_INT (pr, 1);
+	const char *name = P_STRING (pr, 2);
 	menu_pic_t *pic = malloc (sizeof (menu_pic_t));
 	qpic_t     *qpic = Draw_CachePic (name, 1);
 
@@ -217,11 +217,11 @@ bi_Menu_CenterPic (progs_t *pr)
 static void
 bi_Menu_Item (progs_t *pr)
 {
-	int         x = G_INT (pr, OFS_PARM0);
-	int         y = G_INT (pr, OFS_PARM1);
-	const char *text = G_STRING (pr, OFS_PARM2);
-	func_t      func = G_FUNCTION (pr, OFS_PARM3);
-	int         allkeys = G_INT (pr, OFS_PARM4);
+	int         x = P_INT (pr, 0);
+	int         y = P_INT (pr, 1);
+	const char *text = P_STRING (pr, 2);
+	func_t      func = P_FUNCTION (pr, 3);
+	int         allkeys = P_INT (pr, 4);
 	menu_item_t *mi = calloc (sizeof (menu_item_t), 1);
 
 	mi->x = x;
@@ -236,7 +236,7 @@ bi_Menu_Item (progs_t *pr)
 static void
 bi_Menu_Cursor (progs_t *pr)
 {
-	func_t      func = G_FUNCTION (pr, OFS_PARM0);
+	func_t      func = P_FUNCTION (pr, 0);
 
 	menu->cursor = func;
 }
@@ -244,7 +244,7 @@ bi_Menu_Cursor (progs_t *pr)
 static void
 bi_Menu_KeyEvent (progs_t *pr)
 {
-	func_t      func = G_FUNCTION (pr, OFS_PARM0);
+	func_t      func = P_FUNCTION (pr, 0);
 
 	menu->keyevent = func;
 }
@@ -258,7 +258,7 @@ bi_Menu_End (progs_t *pr)
 static void
 bi_Menu_TopMenu (progs_t *pr)
 {
-	const char *name = G_STRING (pr, OFS_PARM0);
+	const char *name = P_STRING (pr, 0);
 
 	if (top_menu)
 		free ((char*)top_menu);
@@ -268,7 +268,7 @@ bi_Menu_TopMenu (progs_t *pr)
 static void
 bi_Menu_SelectMenu (progs_t *pr)
 {
-	const char *name = G_STRING (pr, OFS_PARM0);
+	const char *name = P_STRING (pr, 0);
 
 	menu = 0;
 	if (name && *name)
@@ -295,7 +295,7 @@ bi_Menu_SelectMenu (progs_t *pr)
 static void
 bi_Menu_SetQuit (progs_t *pr)
 {
-	func_t      func = G_FUNCTION (pr, OFS_PARM0);
+	func_t      func = P_FUNCTION (pr, 0);
 
 	menu_quit = func;
 }
@@ -312,9 +312,9 @@ static void
 bi_Menu_GetIndex (progs_t *pr)
 {
 	if (menu) {
-		G_INT (pr, OFS_RETURN) = menu->cur_item;
+		R_INT (pr) = menu->cur_item;
 	} else {
-		G_INT (pr, OFS_RETURN) = -1;
+		R_INT (pr) = -1;
 	}
 }
 

@@ -36,7 +36,7 @@ static const char rcsid[] =
 static void
 bi_Cbuf_AddText (progs_t *pr)
 {
-	const char *text = G_STRING (pr, OFS_PARM0);
+	const char *text = P_STRING (pr, 0);
 
 	Cbuf_AddText (text);
 }
@@ -44,7 +44,7 @@ bi_Cbuf_AddText (progs_t *pr)
 static void
 bi_Cbuf_InsertText (progs_t *pr)
 {
-	const char *text = G_STRING (pr, OFS_PARM0);
+	const char *text = P_STRING (pr, 0);
 
 	Cbuf_InsertText (text);
 }

@@ -88,7 +88,7 @@ PF_normalize (progs_t *pr)
 	float	   *value1;
 	vec3_t		newvalue;
 
-	value1 = G_VECTOR (pr, OFS_PARM0);
+	value1 = P_VECTOR (pr, 0);
 
 	new = value1[0] * value1[0] + value1[1] * value1[1] + value1[2] *
 		  value1[2];
@@ -103,7 +103,7 @@ PF_normalize (progs_t *pr)
 		newvalue[2] = value1[2] * new;
 	}
 
-	VectorCopy (newvalue, G_VECTOR (pr, OFS_RETURN));
+	VectorCopy (newvalue, R_VECTOR (pr));
 }
 
 /*
@@ -117,13 +117,13 @@ PF_vlen (progs_t *pr)
 	float		new;
 	float	   *value1;
 
-	value1 = G_VECTOR (pr, OFS_PARM0);
+	value1 = P_VECTOR (pr, 0);
 
 	new = value1[0] * value1[0] + value1[1] * value1[1] + value1[2] *
 		  value1[2];
 	new = sqrt (new);
 
-	G_FLOAT (pr, OFS_RETURN) = new;
+	R_FLOAT (pr) = new;
 }
 
 /*
@@ -137,7 +137,7 @@ PF_vectoyaw (progs_t *pr)
 	float		yaw;
 	float	   *value1;
 
-	value1 = G_VECTOR (pr, OFS_PARM0);
+	value1 = P_VECTOR (pr, 0);
 
 	if (value1[1] == 0 && value1[0] == 0)
 		yaw = 0;
@@ -147,7 +147,7 @@ PF_vectoyaw (progs_t *pr)
 			yaw += 360;
 	}
 
-	G_FLOAT (pr, OFS_RETURN) = yaw;
+	R_FLOAT (pr) = yaw;
 }
 
 /*
@@ -161,7 +161,7 @@ PF_vectoangles (progs_t *pr)
 	float		forward, pitch, yaw;
 	float	   *value1;
 
-	value1 = G_VECTOR (pr, OFS_PARM0);
+	value1 = P_VECTOR (pr, 0);
 
 	if (value1[1] == 0 && value1[0] == 0) {
 		yaw = 0;
@@ -180,9 +180,9 @@ PF_vectoangles (progs_t *pr)
 			pitch += 360;
 	}
 
-	G_FLOAT (pr, OFS_RETURN + 0) = pitch;
-	G_FLOAT (pr, OFS_RETURN + 1) = yaw;
-	G_FLOAT (pr, OFS_RETURN + 2) = 0;
+	R_FLOAT (pr + 0) = pitch;
+	R_FLOAT (pr + 1) = yaw;
+	R_FLOAT (pr + 2) = 0;
 }
 
 /*
@@ -199,7 +199,7 @@ PF_random (progs_t *pr)
 
 	num = (rand () & 0x7fff) / ((float) 0x7fff);
 
-	G_FLOAT (pr, OFS_RETURN) = num;
+	R_FLOAT (pr) = num;
 }
 
 /*
@@ -228,7 +228,7 @@ PF_localcmd (progs_t *pr)
 {
 	const char		*str;
 
-	str = G_STRING (pr, OFS_PARM0);
+	str = P_STRING (pr, 0);
 	Cbuf_AddText (str);
 }
 #endif
@@ -243,9 +243,9 @@ PF_cvar (progs_t *pr)
 {
 	const char		*str;
 
-	str = G_STRING (pr, OFS_PARM0);
+	str = P_STRING (pr, 0);
 
-	G_FLOAT (pr, OFS_RETURN) = Cvar_VariableValue (str);
+	R_FLOAT (pr) = Cvar_VariableValue (str);
 }
 
 /*
@@ -259,8 +259,8 @@ PF_cvar_set (progs_t *pr)
 	const char	*var_name, *val;
 	cvar_t		*var;
 
-	var_name = G_STRING (pr, OFS_PARM0);
-	val = G_STRING (pr, OFS_PARM1);
+	var_name = P_STRING (pr, 0);
+	val = P_STRING (pr, 1);
 	var = Cvar_FindVar (var_name);
 	if (!var)
 		var = Cvar_FindAlias (var_name);
@@ -277,8 +277,8 @@ PF_fabs (progs_t *pr)
 {
 	float		v;
 
-	v = G_FLOAT (pr, OFS_PARM0);
-	G_FLOAT (pr, OFS_RETURN) = fabs (v);
+	v = P_FLOAT (pr, 0);
+	R_FLOAT (pr) = fabs (v);
 }
 
 // entity (entity start, .string field, string match) find = #5;
@@ -292,15 +292,15 @@ PF_Find (progs_t *pr)
 	ddef_t	   *field_def;
 	edict_t	   *ed;
 
-	e = G_EDICTNUM (pr, OFS_PARM0);
-	f = G_INT (pr, OFS_PARM1);
+	e = P_EDICTNUM (pr, 0);
+	f = P_INT (pr, 1);
 	field_def = ED_FieldAtOfs (pr, f);
 	if (!field_def)
 		PR_RunError (pr, "PF_Find: bad search field");
 	type = field_def->type & ~DEF_SAVEGLOBAL;
 
 	if (type == ev_string) {
-		s = G_STRING (pr, OFS_PARM2);
+		s = P_STRING (pr, 2);
 		if (!s)
 			PR_RunError (pr, "PF_Find: bad search string");
 	}
@@ -319,19 +319,19 @@ PF_Find (progs_t *pr)
 				RETURN_EDICT (pr, ed);
 				return;
 			case ev_float:
-				if (G_FLOAT (pr, OFS_PARM2) != E_FLOAT (ed, f))
+				if (P_FLOAT (pr, 2) != E_FLOAT (ed, f))
 					continue;
 				RETURN_EDICT (pr, ed);
 				return;
 			case ev_vector:
 				for (i = 0; i <= 2; i++)
-					if (G_FLOAT (pr, OFS_PARM2 + i) != E_FLOAT (ed, f + i))
+					if (P_FLOAT (pr, 2 + i) != E_FLOAT (ed, f + i))
 						continue;
 				RETURN_EDICT (pr, ed);
 				return;
 			case ev_integer:
 			case ev_entity:
-				if (G_INT (pr, OFS_PARM2) != E_INT (ed, f))
+				if (P_INT (pr, 2) != E_INT (ed, f))
 					continue;
 				RETURN_EDICT (pr, ed);
 				return;
@@ -364,7 +364,7 @@ PF_traceoff (progs_t *pr)
 void
 PF_eprint (progs_t *pr)
 {
-	ED_PrintNum (pr, G_EDICTNUM (pr, OFS_PARM0));
+	ED_PrintNum (pr, P_EDICTNUM (pr, 0));
 }
 
 void
@@ -378,23 +378,23 @@ PF_rint (progs_t *pr)
 {
 	float		f;
 
-	f = G_FLOAT (pr, OFS_PARM0);
+	f = P_FLOAT (pr, 0);
 	if (f > 0)
-		G_FLOAT (pr, OFS_RETURN) = (int) (f + 0.5);
+		R_FLOAT (pr) = (int) (f + 0.5);
 	else
-		G_FLOAT (pr, OFS_RETURN) = (int) (f - 0.5);
+		R_FLOAT (pr) = (int) (f - 0.5);
 }
 
 void
 PF_floor (progs_t *pr)
 {
-	G_FLOAT (pr, OFS_RETURN) = floor (G_FLOAT (pr, OFS_PARM0));
+	R_FLOAT (pr) = floor (P_FLOAT (pr, 0));
 }
 
 void
 PF_ceil (progs_t *pr)
 {
-	G_FLOAT (pr, OFS_RETURN) = ceil (G_FLOAT (pr, OFS_PARM0));
+	R_FLOAT (pr) = ceil (P_FLOAT (pr, 0));
 }
 
 /*
@@ -408,7 +408,7 @@ PF_nextent (progs_t *pr)
 	int			i;
 	edict_t	   *ent;
 
-	i = G_EDICTNUM (pr, OFS_PARM0);
+	i = P_EDICTNUM (pr, 0);
 	while (1) {
 		i++;
 		if (i == *pr->num_edicts) {
@@ -438,7 +438,7 @@ PF_nextent (progs_t *pr)
 void
 PF_ftoi (progs_t *pr)
 {
-	G_INT (pr, OFS_RETURN) = G_FLOAT (pr, OFS_PARM0);
+	R_INT (pr) = P_FLOAT (pr, 0);
 }
 
 /*
@@ -453,7 +453,7 @@ PF_ftos (progs_t *pr)
 	int		i;
 
 	// trimming 0s idea thanks to Maddes
-	i = snprintf (string, sizeof (string), "%1.6f", G_FLOAT (pr, OFS_PARM0)) - 1;
+	i = snprintf (string, sizeof (string), "%1.6f", P_FLOAT (pr, 0)) - 1;
 	for (; i > 0; i--) {
 		if (string[i] == '0')
 			string[i] = '\0';
@@ -475,7 +475,7 @@ PF_ftos (progs_t *pr)
 void
 PF_itof (progs_t *pr)
 {
-	G_FLOAT (pr, OFS_RETURN) = G_INT (pr, OFS_PARM0);
+	R_FLOAT (pr) = P_INT (pr, 0);
 }
 
 /*
@@ -488,7 +488,7 @@ PF_itos (progs_t *pr)
 {
 	char string[STRING_BUF];
 
-	snprintf (string, sizeof (string), "%d", G_INT (pr, OFS_PARM0));
+	snprintf (string, sizeof (string), "%d", P_INT (pr, 0));
 
 	RETURN_STRING (pr, string);
 }
@@ -501,7 +501,7 @@ PF_itos (progs_t *pr)
 void
 PF_stof (progs_t *pr)
 {
-	G_FLOAT (pr, OFS_RETURN) = atof (G_STRING (pr, OFS_PARM0));
+	R_FLOAT (pr) = atof (P_STRING (pr, 0));
 }
 
 /*
@@ -512,7 +512,7 @@ PF_stof (progs_t *pr)
 void
 PF_stoi (progs_t *pr)
 {
-	G_INT (pr, OFS_RETURN) = atoi (G_STRING (pr, OFS_PARM0));
+	R_INT (pr) = atoi (P_STRING (pr, 0));
 }
 
 /*
@@ -525,7 +525,7 @@ PF_stov (progs_t *pr)
 {
 	float v[3] = {0, 0, 0};
 
-	sscanf (G_STRING (pr, OFS_PARM0), "'%f %f %f'", v, v + 1, v + 2);
+	sscanf (P_STRING (pr, 0), "'%f %f %f'", v, v + 1, v + 2);
 
 	RETURN_VECTOR (pr, v);
 }
@@ -541,9 +541,9 @@ PF_vtos (progs_t *pr)
 	char string[STRING_BUF * 3 + 5];
 
 	snprintf (string, sizeof (string), "'%5.1f %5.1f %5.1f'",
-			  G_VECTOR (pr, OFS_PARM0)[0],
-			  G_VECTOR (pr, OFS_PARM0)[1],
-			  G_VECTOR (pr, OFS_PARM0)[2]);
+			  P_VECTOR (pr, 0)[0],
+			  P_VECTOR (pr, 0)[1],
+			  P_VECTOR (pr, 0)[2]);
 
 	RETURN_STRING (pr, string);
 }
@@ -558,8 +558,8 @@ PF_strlen (progs_t *pr)
 {
 	const char	*s;
 
-	s = G_STRING (pr, OFS_PARM0);
-	G_FLOAT (pr, OFS_RETURN) = strlen(s);
+	s = P_STRING (pr, 0);
+	R_FLOAT (pr) = strlen(s);
 }
 
 /*
@@ -574,20 +574,20 @@ PF_charcount (progs_t *pr)
 	const char *s;
 	int			count;
 
-	goal = (G_STRING (pr, OFS_PARM0))[0];
+	goal = (P_STRING (pr, 0))[0];
 	if (goal == '\0') {
-		G_FLOAT (pr, OFS_RETURN) = 0;
+		R_FLOAT (pr) = 0;
 		return;
 	}
 
 	count = 0;
-	s = G_STRING (pr, OFS_PARM1);
+	s = P_STRING (pr, 1);
 	while (*s) {
 		if (*s == goal)
 			count++;
 		s++;
 	}
-	G_FLOAT (pr, OFS_RETURN) = count;
+	R_FLOAT (pr) = count;
 }
 
 #if (INT_MAX == 2147483647) && (INT_MIN == -2147483648)
@@ -610,7 +610,7 @@ PF_sprintf (progs_t *pr)
 			new_format_i, ret;
 	int		curarg = 3, out_max = 32, out_size = 0;
 
-	format = G_STRING (pr, OFS_PARM0);
+	format = P_STRING (pr, 0);
 	c = format;
 
 	out = malloc (out_max);
@@ -652,7 +652,7 @@ PF_sprintf (progs_t *pr)
 					c++;
 				}
 			else if (*c == '*') {
-				fmt_minwidth = G_INT (pr, OFS_PARM0 + curarg);
+				fmt_minwidth = P_INT (pr, 0 + curarg);
 				curarg += 3;
 			}
 
@@ -668,7 +668,7 @@ PF_sprintf (progs_t *pr)
 						c++;
 					}
 				} else if (*c == '*') {
-					fmt_precision = G_INT (pr, OFS_PARM0 + curarg);
+					fmt_precision = P_INT (pr, 0 + curarg);
 					curarg += 3;
 				}
 			}
@@ -721,7 +721,7 @@ PF_sprintf (progs_t *pr)
 				case 'i':
 					while ((ret = snprintf (&out[out_size], out_max - out_size,
 											new_format,
-											G_INT (pr, OFS_PARM0 + curarg)))
+											P_INT (pr, 0 + curarg)))
 						   >= out_max - out_size) {
 						char *o;
 						out_max *= 2;
@@ -736,7 +736,7 @@ PF_sprintf (progs_t *pr)
 				case 'f':
 					while ((ret = snprintf (&out[out_size], out_max - out_size,
 											new_format,
-											G_FLOAT (pr, OFS_PARM0 + curarg)))
+											P_FLOAT (pr, 0 + curarg)))
 						   >= out_max - out_size) {
 						char *o;
 						out_max *= 2;
@@ -755,7 +755,7 @@ PF_sprintf (progs_t *pr)
 							goto maxargs;
 						while ((ret = snprintf (&out[out_size],
 												out_max - out_size, new_format,
-												G_FLOAT (pr, OFS_PARM0 +
+												P_FLOAT (pr, 0 +
 														 curarg)))
 							   >= out_max - out_size) {
 							char *o;
@@ -776,7 +776,7 @@ PF_sprintf (progs_t *pr)
 			char *s;
 			if (curarg > MAX_ARG)
 				goto maxargs;
-			s = G_STRING (pr, OFS_PARM0 + curarg);
+			s = P_STRING (pr, 0 + curarg);
 			while ((ret = snprintf (&out[out_size], out_max - out_size, "%s",
 									s))
 				   >= out_max - out_size) {

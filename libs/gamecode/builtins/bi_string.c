@@ -49,9 +49,9 @@ static const char rcsid[] =
 static void
 bi_String_ReplaceChar (progs_t *pr)
 {
-	char        old = G_INT (pr, OFS_PARM0);
-	char        new = G_INT (pr, OFS_PARM1);
-	const char *src = G_STRING (pr, OFS_PARM2);
+	char        old = P_INT (pr, 0);
+	char        new = P_INT (pr, 1);
+	const char *src = P_STRING (pr, 2);
 	const char *s;
 	char       *dst = Hunk_TempAlloc (strlen (src) + 1);
 	char       *d;
@@ -73,9 +73,9 @@ bi_String_ReplaceChar (progs_t *pr)
 static void
 bi_String_Cut (progs_t *pr)
 {
-	char        pos = G_INT (pr, OFS_PARM0);
-	char        len = G_INT (pr, OFS_PARM1);
-	const char *str = G_STRING (pr, OFS_PARM2);
+	char        pos = P_INT (pr, 0);
+	char        len = P_INT (pr, 1);
+	const char *str = P_STRING (pr, 2);
 	char       *dst = Hunk_TempAlloc ((strlen (str) - len) + 1);
 	int			cnt;
 
@@ -96,9 +96,9 @@ bi_String_Cut (progs_t *pr)
 static void
 bi_String_Len (progs_t *pr)
 {
-	const char *str = G_STRING (pr, OFS_PARM0);
+	const char *str = P_STRING (pr, 0);
 
-    G_INT (pr, OFS_RETURN) = strlen(str);
+    R_INT (pr) = strlen(str);
 }
 
 /*
@@ -110,14 +110,14 @@ bi_String_Len (progs_t *pr)
 static void
 bi_String_GetChar (progs_t *pr)
 {   
-    const char *str = G_STRING (pr, OFS_PARM0);
-	int         pos = G_INT (pr, OFS_PARM1);
+    const char *str = P_STRING (pr, 0);
+	int         pos = P_INT (pr, 1);
 	int         ret = 0; 
 
 	if(pos > 0 && pos < strlen(str)) {
 		ret = (int)str[pos];
 	}
-	G_INT (pr, OFS_RETURN) = ret;
+	R_INT (pr) = ret;
 }
 
 

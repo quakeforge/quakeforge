@@ -117,8 +117,8 @@ file_writeable (char *path)
 static void
 bi_File_Open (progs_t *pr)
 {
-	const char *pth = G_STRING (pr, OFS_PARM0);
-	const char *mode = G_STRING (pr, OFS_PARM1);
+	const char *pth = P_STRING (pr, 0);
+	const char *mode = P_STRING (pr, 1);
 	char       *path= Hunk_TempAlloc (strlen (pth) + 1);
 	char       *p, *d;
 	int         h;
@@ -185,7 +185,7 @@ bi_File_Open (progs_t *pr)
 		if (*p == '/')
 			p++;
 	}
-	//printf ("'%s'  '%s'\n", G_STRING (pr, OFS_PARM0), path);
+	//printf ("'%s'  '%s'\n", P_STRING (pr, 0), path);
 	if (!path[0])
 		goto error;
 	if (path[0] == '.' && path[1] == '.' && (path[2] == '/' || path [2] == 0))
@@ -204,16 +204,16 @@ bi_File_Open (progs_t *pr)
 		goto error;
 	if (!(handles[h] = Qopen (va ("%s/%s", com_gamedir, path), mode)))
 		goto error;
-	G_INT (pr, OFS_RETURN) = h + 1;
+	R_INT (pr) = h + 1;
 	return;
 error:
-	G_INT (pr, OFS_RETURN) = 0;
+	R_INT (pr) = 0;
 }
 
 static void
 bi_File_Close (progs_t *pr)
 {
-	int         h = G_INT (pr, OFS_PARM0) - 1;
+	int         h = P_INT (pr, 0) - 1;
 
 	if (h < 0 || h >= MAX_HANDLES || !handles[h])
 		return;
@@ -224,11 +224,11 @@ bi_File_Close (progs_t *pr)
 static void
 bi_File_GetLine (progs_t *pr)
 {
-	int         h = G_INT (pr, OFS_PARM0) - 1;
+	int         h = P_INT (pr, 0) - 1;
 	const char *s;
 
 	if (h < 0 || h >= MAX_HANDLES || !handles[h]) {
-		G_INT (pr, OFS_RETURN) = 0;
+		R_INT (pr) = 0;
 		return;
 	}
 	s = Qgetline (handles[h]);

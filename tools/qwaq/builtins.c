@@ -60,37 +60,37 @@ bi_GarbageCollect (progs_t *pr)
 static void
 bi_errno (progs_t *pr)
 {
-	G_INT (pr, OFS_RETURN) = errno;
+	R_INT (pr) = errno;
 }
 
 static void
 bi_strerror (progs_t *pr)
 {
-	int err = G_INT (pr, OFS_PARM0);
+	int err = P_INT (pr, 0);
 	RETURN_STRING (pr, strerror (err));
 }
 
 static void
 bi_open (progs_t *pr)
 {
-	char *path = G_STRING (pr, OFS_PARM0);
-	int flags = G_INT (pr, OFS_PARM1);
-	int mode = G_INT (pr, OFS_PARM2);
-	G_INT (pr, OFS_RETURN) = open (path, flags, mode);
+	char *path = P_STRING (pr, 0);
+	int flags = P_INT (pr, 1);
+	int mode = P_INT (pr, 2);
+	R_INT (pr) = open (path, flags, mode);
 }
 
 static void
 bi_close (progs_t *pr)
 {
-	int handle = G_INT (pr, OFS_PARM0);
-	G_INT (pr, OFS_RETURN) = close (handle);
+	int handle = P_INT (pr, 0);
+	R_INT (pr) = close (handle);
 }
 
 static void
 bi_read (progs_t *pr)
 {
-	int handle = G_INT (pr, OFS_PARM0);
-	int count = G_INT (pr, OFS_PARM1);
+	int handle = P_INT (pr, 0);
+	int count = P_INT (pr, 1);
 	int res;
 	char *buffer;
 
@@ -106,21 +106,21 @@ bi_read (progs_t *pr)
 static void
 bi_write (progs_t *pr)
 {
-	int handle = G_INT (pr, OFS_PARM0);
-	char *buffer = G_STRING (pr, OFS_PARM1);
-	int count = G_INT (pr, OFS_PARM2);
+	int handle = P_INT (pr, 0);
+	char *buffer = P_STRING (pr, 1);
+	int count = P_INT (pr, 2);
 
-	G_INT (pr, OFS_RETURN) = write (handle, buffer, count);
+	R_INT (pr) = write (handle, buffer, count);
 }
 
 static void
 bi_seek (progs_t *pr)
 {
-	int handle = G_INT (pr, OFS_PARM0);
-	int pos = G_INT (pr, OFS_PARM1);
-	int whence = G_INT (pr, OFS_PARM2);
+	int handle = P_INT (pr, 0);
+	int pos = P_INT (pr, 1);
+	int whence = P_INT (pr, 2);
 
-	G_INT (pr, OFS_RETURN) = lseek (handle, pos, whence);
+	R_INT (pr) = lseek (handle, pos, whence);
 }
 
 static void
@@ -138,7 +138,7 @@ bi_traceoff (progs_t *pr)
 static void
 bi_printf (progs_t *pr)
 {
-	const char *fmt = G_STRING (pr, OFS_PARM0);
+	const char *fmt = P_STRING (pr, 0);
 	char c;
 	int count = 0;
 	float *v;
@@ -147,16 +147,16 @@ bi_printf (progs_t *pr)
 		if (c == '%' && count < 7) {
 			switch (c = *fmt++) {
 				case 'i':
-					fprintf (stdout, "%i", G_INT (pr, OFS_PARM1 + count++ * 3));
+					fprintf (stdout, "%i", P_INT (pr, 1 + count++ * 3));
 					break;
 				case 'f':
-					fprintf (stdout, "%f", G_FLOAT (pr, OFS_PARM1 + count++ * 3));
+					fprintf (stdout, "%f", P_FLOAT (pr, 1 + count++ * 3));
 					break;
 				case 's':
-					fputs (G_STRING (pr, OFS_PARM1 + count++ * 3), stdout);
+					fputs (P_STRING (pr, 1 + count++ * 3), stdout);
 					break;
 				case 'v':
-					v = G_VECTOR (pr, OFS_PARM1 + count++ * 3);
+					v = P_VECTOR (pr, 1 + count++ * 3);
 					fprintf (stdout, "'%f %f %f'", v[0], v[1], v[2]);
 					break;
 				default:

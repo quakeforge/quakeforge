@@ -122,7 +122,7 @@ bi_StringHash_Create (progs_t *pr)
 
 		res->cnt_hashes++; // increase cnt of allocated hashes
 	}
-	G_INT (pr, OFS_RETURN) = hash_id;
+	R_INT (pr) = hash_id;
 }
 
 /*
@@ -134,12 +134,12 @@ static void
 bi_StringHash_Destroy (progs_t *pr)
 {
 	strh_resources_t* res = PR_Resources_Find (pr, "StringHash");
-	int         hash_id = G_INT (pr, OFS_PARM0);
+	int         hash_id = P_INT (pr, 0);
 	str_hash   *sh = NULL;
 	int         i,d;
 
 	if(hash_id >= res->cnt_hashes || hash_id < 0) {
-		G_INT (pr, OFS_RETURN) = 0;
+		R_INT (pr) = 0;
 		return;
 	}
 	sh = res->hashes[hash_id];
@@ -172,7 +172,7 @@ bi_StringHash_Destroy (progs_t *pr)
 	free(sh->elements); // free the list pointer
 	sh->elements = NULL;
 	sh->cnt_elements = 0;
-	G_INT (pr, OFS_RETURN) = 1;
+	R_INT (pr) = 1;
 }
 
 
@@ -188,10 +188,10 @@ static void
 bi_StringHash_Set (progs_t *pr)
 {
 	strh_resources_t* res = PR_Resources_Find (pr, "StringHash");
-	int         hash_id = G_INT (pr, OFS_PARM0);
-	const char *key = G_STRING (pr, OFS_PARM1);
-	const char *val = G_STRING (pr, OFS_PARM2);
-	int         val_id = G_INT (pr, OFS_PARM3);
+	int         hash_id = P_INT (pr, 0);
+	const char *key = P_STRING (pr, 1);
+	const char *val = P_STRING (pr, 2);
+	int         val_id = P_INT (pr, 3);
 	str_hash   *sh = NULL;
 	int         i,found_fl=0;
 
@@ -200,7 +200,7 @@ bi_StringHash_Set (progs_t *pr)
 		(hash_id >= res->cnt_hashes || hash_id < 0) ||
 		(val_id < 0 || val_id >= MAX_SH_VALUES)) 
 	{
-		G_INT (pr, OFS_RETURN) = 0;
+		R_INT (pr) = 0;
 		return;
 	}
 	sh = res->hashes[hash_id];
@@ -236,7 +236,7 @@ bi_StringHash_Set (progs_t *pr)
 
 		sh->cnt_elements++;
 	}
-	G_INT (pr, OFS_RETURN) = 1;
+	R_INT (pr) = 1;
 	return;
 }
 
@@ -253,10 +253,10 @@ static void
 bi_StringHash_SetIdx (progs_t *pr)
 {
 	strh_resources_t* res = PR_Resources_Find (pr, "StringHash");
-	int         hash_id = G_INT (pr, OFS_PARM0);
-	int         idx = G_INT (pr, OFS_PARM1);
-	const char *val = G_STRING (pr, OFS_PARM2);
-	int         val_id = G_INT (pr, OFS_PARM3);
+	int         hash_id = P_INT (pr, 0);
+	int         idx = P_INT (pr, 1);
+	const char *val = P_STRING (pr, 2);
+	int         val_id = P_INT (pr, 3);
 	str_hash   *sh = NULL;
 
 	// validate the hash ID
@@ -264,7 +264,7 @@ bi_StringHash_SetIdx (progs_t *pr)
 		(hash_id >= res->cnt_hashes || hash_id < 0) ||
 		(val_id < 0 || val_id >= MAX_SH_VALUES))
 	{
-		G_INT (pr, OFS_RETURN) = 0;
+		R_INT (pr) = 0;
 		return;
 	}
 	sh = res->hashes[hash_id];
@@ -273,7 +273,7 @@ bi_StringHash_SetIdx (progs_t *pr)
 		if(sh->elements[idx] == NULL)
 			PR_Error(pr, "NULL hash-element found -> not supposed!");
 
-		G_INT (pr, OFS_RETURN) = 0;
+		R_INT (pr) = 0;
 		return;
 	}
 
@@ -283,7 +283,7 @@ bi_StringHash_SetIdx (progs_t *pr)
 	sh->elements[idx]->values[val_id] = strdup(val);
 
 
-	G_INT (pr, OFS_RETURN) = 1;
+	R_INT (pr) = 1;
 	return;
 }
 
@@ -296,9 +296,9 @@ static void
 bi_StringHash_Get (progs_t *pr)
 {
 	strh_resources_t* res = PR_Resources_Find (pr, "StringHash");
-	int         hash_id = G_INT (pr, OFS_PARM0);
-	const char *key = G_STRING (pr, OFS_PARM1);
-	int         val_id = G_INT (pr, OFS_PARM2);
+	int         hash_id = P_INT (pr, 0);
+	const char *key = P_STRING (pr, 1);
+	int         val_id = P_INT (pr, 2);
 	str_hash   *sh = NULL;
 	int         i,found_fl=0;
 	const char *retstr = NULL;
@@ -339,17 +339,17 @@ static void
 bi_StringHash_Length (progs_t *pr)
 {
 	strh_resources_t* res = PR_Resources_Find (pr, "StringHash");
-	int         hash_id = G_INT (pr, OFS_PARM0);
+	int         hash_id = P_INT (pr, 0);
 	str_hash   *sh = NULL;
 
 	// validate the hash ID
 	if(res->hashes == NULL || hash_id >= res->cnt_hashes || hash_id < 0) {
-		G_INT (pr, OFS_RETURN) = 0;
+		R_INT (pr) = 0;
 		return;
 	}
 	sh = res->hashes[hash_id];
 
-	G_INT (pr, OFS_RETURN) = sh->cnt_elements;
+	R_INT (pr) = sh->cnt_elements;
 }
 
 /*
@@ -363,9 +363,9 @@ static void
 bi_StringHash_GetIdx (progs_t *pr)
 {
 	strh_resources_t* res = PR_Resources_Find (pr, "StringHash");
-	int         hash_id = G_INT (pr, OFS_PARM0);
-	int         idx = G_INT (pr, OFS_PARM1);
-	int         val_id = G_INT (pr, OFS_PARM2);
+	int         hash_id = P_INT (pr, 0);
+	int         idx = P_INT (pr, 1);
+	int         val_id = P_INT (pr, 2);
 	str_hash   *sh = NULL;
 	const char       *retstr = NULL;
 

@@ -50,7 +50,7 @@ static const char rcsid[] =
 static void
 bi_Cvar_GetCvarString (progs_t *pr)
 {
-	const char *varname = G_STRING (pr, OFS_PARM0);
+	const char *varname = P_STRING (pr, 0);
 
 	RETURN_STRING (pr, Cvar_VariableString (varname));
 }
