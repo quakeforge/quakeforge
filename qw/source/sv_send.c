@@ -725,8 +725,7 @@ SV_SendClientMessages (void)
 			memset (data, 0, 8);
 			memcpy (data + 8, c->netchan.message.data,
 					c->netchan.message.cursize);
-			Analyze_Server_Packet (c->netchan.message.data,
-								   c->netchan.message.cursize + 8);
+			Analyze_Server_Packet (data, c->netchan.message.cursize + 8);
 
 			SZ_Clear (&c->netchan.message);
 			SZ_Clear (&c->datagram);
