@@ -645,17 +645,20 @@ CL_ParseServerData (void)
 	const char *str;
 	int         protover;
 	qboolean    cflag = false;
+	net_svc_serverdata_t serverdata;
 
 	extern char gamedirfile[MAX_OSPATH];
 
 	Con_DPrintf ("Serverdata packet received.\n");
+
+	NET_SVC_ServerData_Parse (&serverdata, net_message);
 
 	// wipe the client_state_t struct
 	CL_ClearState ();
 
 	// parse protocol version number
 	// allow 2.2 and 2.29 demos to play
-	protover = MSG_ReadLong (net_message);
+	protover = serverdata.protocolversion;
 	if (protover != PROTOCOL_VERSION &&
 		!(cls.demoplayback
 		  && (protover <= 26 && protover >= 28)))
@@ -663,10 +666,10 @@ CL_ParseServerData (void)
 						  "need to upgrade.\nCheck http://www.quakeworld.net/",
 						  protover, PROTOCOL_VERSION);
 
-	cl.servercount = MSG_ReadLong (net_message);
+	cl.servercount = serverdata.servercount;
 
 	// game directory
-	str = MSG_ReadString (net_message);
+	str = serverdata.gamedir;
 
 	if (!strequal (gamedirfile, str)) {
 		// save current config
@@ -691,32 +694,21 @@ CL_ParseServerData (void)
 		snprintf (fn, sizeof (fn), "cmd_warncmd %d\n", cmd_warncmd_val);
 		Cbuf_AddText (fn);
 	}
-	// parse player slot, high bit means spectator
-	cl.playernum = MSG_ReadByte (net_message);
-	if (cl.playernum & 128) {
-		cl.spectator = true;
-		cl.playernum &= ~128;
-	}
+
+	// parse player slot
+	cl.playernum = serverdata.playernum;
+	cl.spectator = serverdata.spectator;
 
 // FIXME: evil hack so NQ and QW can share sound code
 	cl.viewentity = cl.playernum + 1;
 	snd_viewentity = cl.playernum + 1;
 
 	// get the full level name
-	str = MSG_ReadString (net_message);
+	str = serverdata.levelname;
 	strncpy (cl.levelname, str, sizeof (cl.levelname) - 1);
 
 	// get the movevars
-	movevars.gravity = MSG_ReadFloat (net_message);
-	movevars.stopspeed = MSG_ReadFloat (net_message);
-	movevars.maxspeed = MSG_ReadFloat (net_message);
-	movevars.spectatormaxspeed = MSG_ReadFloat (net_message);
-	movevars.accelerate = MSG_ReadFloat (net_message);
-	movevars.airaccelerate = MSG_ReadFloat (net_message);
-	movevars.wateraccelerate = MSG_ReadFloat (net_message);
-	movevars.friction = MSG_ReadFloat (net_message);
-	movevars.waterfriction = MSG_ReadFloat (net_message);
-	movevars.entgravity = MSG_ReadFloat (net_message);
+	memcpy (&movevars, &serverdata.movevars, sizeof (movevars));
 
 	// seperate the printfs so the server message can have a color
 	Con_Printf ("\n\n\35\36\36\36\36\36\36\36\36\36\36\36\36\36\36\36\36\36\36"

@@ -33,12 +33,31 @@
 #include "QF/msg.h"
 
 #include "bothdefs.h"
+#include "pmove.h"
 
 typedef struct net_svc_print_s
 {
 	byte		level;
 	const char *message;
 } net_svc_print_t;
+
+typedef struct net_svc_damage_s
+{
+	byte		armor;
+	byte		blood;
+	vec3_t		from;
+} net_svc_damage_t;
+
+typedef struct net_svc_serverdata_s
+{
+	int			protocolversion;
+	int			servercount;
+	const char *gamedir;
+	byte		playernum;
+	qboolean	spectator;
+	const char *levelname;
+	movevars_t	movevars;
+} net_svc_serverdata_t;
 
 typedef struct net_svc_updateuserinfo_s
 {
@@ -77,6 +96,9 @@ typedef struct net_svc_modellist_s
 } net_svc_modellist_t;
 
 qboolean NET_SVC_Print_Parse (net_svc_print_t *print, msg_t *message);
+qboolean NET_SVC_Damage_Parse (net_svc_damage_t *damage, msg_t *message);
+qboolean NET_SVC_ServerData_Parse (net_svc_serverdata_t *serverdata,
+								   msg_t *message);
 qboolean NET_SVC_UpdateUserInfo_Parse (net_svc_updateuserinfo_t *updateuserinfo,
 									   msg_t *message);
 qboolean NET_SVC_SetInfo_Parse (net_svc_setinfo_t *setinfo, msg_t *message);

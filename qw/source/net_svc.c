@@ -59,6 +59,47 @@ NET_SVC_Print_Parse (net_svc_print_t *print, msg_t *message)
 }
 
 qboolean
+NET_SVC_Damage_Parse (net_svc_damage_t *damage, msg_t *message)
+{
+	int i;
+
+	damage->armor = MSG_ReadByte (message);
+	damage->blood = MSG_ReadByte (message);
+	for (i = 0; i < 3; i++)
+		damage->from[i] = MSG_ReadCoord (message);
+
+	return message->badread;
+}
+
+qboolean
+NET_SVC_ServerData_Parse (net_svc_serverdata_t *serverdata, msg_t *message)
+{
+	serverdata->protocolversion = MSG_ReadLong (message);
+	// I could abort now if the version is wrong, but why bother?
+	serverdata->servercount = MSG_ReadLong (message);
+	serverdata->gamedir = MSG_ReadString (message);
+
+	// high bit means spectator
+	serverdata->playernum = MSG_ReadByte (message);
+	serverdata->spectator = serverdata->playernum >> 7;
+	serverdata->playernum &= ~(1 << 7);
+
+	serverdata->levelname = MSG_ReadString (message);
+	serverdata->movevars.gravity = MSG_ReadFloat (message);
+	serverdata->movevars.stopspeed = MSG_ReadFloat (message);
+	serverdata->movevars.maxspeed = MSG_ReadFloat (message);
+	serverdata->movevars.spectatormaxspeed = MSG_ReadFloat (message);
+	serverdata->movevars.accelerate = MSG_ReadFloat (message);
+	serverdata->movevars.airaccelerate = MSG_ReadFloat (message);
+	serverdata->movevars.wateraccelerate = MSG_ReadFloat (message);
+	serverdata->movevars.friction = MSG_ReadFloat (message);
+	serverdata->movevars.waterfriction = MSG_ReadFloat (message);
+	serverdata->movevars.entgravity = MSG_ReadFloat (message);
+
+	return message->badread;
+}
+
+qboolean
 NET_SVC_UpdateUserInfo_Parse (net_svc_updateuserinfo_t *updateuserinfo,
 							  msg_t *message)
 {
@@ -84,6 +125,7 @@ NET_SVC_Download_Parse (net_svc_download_t *download, msg_t *message)
 {
 	download->size = MSG_ReadShort (message);
 	download->percent = MSG_ReadByte (message);
+	download->name = download->data = 0;
 
 	if (download->size == -2)
 		download->name = MSG_ReadString (message);
@@ -96,7 +138,7 @@ NET_SVC_Download_Parse (net_svc_download_t *download, msg_t *message)
 			// size was beyond the end of the packet
 			message->readcount = message->message->cursize;
 			message->badread = true;
-			download->size = 0; // FIXME: CL_ParseDownload doesn't handle this
+			download->size = 0;
 		}
 	}
 
