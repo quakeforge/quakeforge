@@ -956,7 +956,7 @@ CL_ParseClientdata (void)
 	parsecountmod = i;
 	frame = &cl.frames[i];
 	if (cls.demoplayback2)
-		frame->senttime = realtime - host_frametime;//realtime;
+		frame->senttime = realtime - host_frametime;	//realtime;
 	parsecounttime = cl.frames[i].senttime;
 
 	frame->receivedtime = realtime;

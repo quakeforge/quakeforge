@@ -398,7 +398,7 @@ static void
 SV_WritePlayersToClient (client_t *client, edict_t *clent, byte *pvs,
 						 sizebuf_t *msg)
 {
-	int			i, j, msec, pflags, qf_bits;
+	int			msec, pflags, qf_bits, i, j;
 	client_t   *cl;
 	edict_t	   *ent;
 	usercmd_t	cmd;
