@@ -47,6 +47,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <ctype.h>
 
 #include "protocol.h"
 
@@ -240,15 +241,20 @@ QW_Master (struct sockaddr_in *addr)
 #endif
 
 #if 0
-		printf ("Contents:");
+		printf ("Message Contents: '");
 		{ // so that 'j' isn't unused when commented out
 			int j;
 			for (j = 0; j < size; j++)
-				printf (" %02x", buf[j]);
+				if (isprint (buf[j]))
+					printf ("%c", buf[j]);
+				else {
+					switch (buf[j]) {
+						case '\n': printf ("\\n"); break;
+						case '\0': printf ("\\0"); break;
+						default:   printf ("(%02x)", buf[j]);
+				}
 		}
-		printf ("\n");
-		buf[size] = '\0';
-		printf ("in ascii: '%s'\n", buf);
+		printf ("'\n");
 #endif
 
 		QW_TimeoutHearts (servers, serverlen);
