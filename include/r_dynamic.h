@@ -74,8 +74,8 @@ struct cvar_s;
 void R_MaxParticlesCheck (struct cvar_s *r_particles, 
 						  struct cvar_s *cl_max_particles);
 
-extern short r_maxparticles;
-extern short numparticles;
+extern unsigned int r_maxparticles;
+extern unsigned int numparticles;
 extern struct particle_s *active_particles;
 extern struct particle_s *free_particles;
 extern struct particle_s *particles;

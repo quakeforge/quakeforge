@@ -40,10 +40,9 @@ static const char rcsid[] =
 #include "compat.h"
 #include "r_local.h"
 
-short			r_maxparticles, numparticles;
+unsigned int	r_maxparticles, numparticles;
 particle_t	   *active_particles, *free_particles, *particles, **freeparticles;
 vec3_t			r_pright, r_pup, r_ppn;
-
 
 
 /*
