@@ -3,7 +3,7 @@ AUTOMAKE_OPTIONS= foreign
 
 #FIXME should qf data be installed somewhere other than id1 that gets
 #searched after everything else?
-pkgdatadir=@sharepath@/id1
+pkgdatadir=@sharepath@/QF
 
 QFCC_DEP=$(top_builddir)/tools/qfcc/source/qfcc$(EXEEXT)
 QFCC=$(QFCC_DEP)

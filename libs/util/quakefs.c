@@ -139,7 +139,11 @@ static plitem_t *qfs_gd_plist;
 static const char *qfs_game = "";
 static const char *qfs_default_dirconf =
 	"{"
+	"   QF = {"
+	"       Path = \"QF\";"
+	"   };"
 	"	Quake = {"
+	"		Inherit = QF;"
 	"		Path = \"id1\";"
 	"		GameCode = \"progs.dat\";"
 	"	};"
