@@ -12,11 +12,12 @@
 	Size	size;
 }
 
-- (id) initWithOrigin: (Point)_origin size: (Size)_size;
 - (id) initWithComponents: (integer)x : (integer)y : (integer)w : (integer)h;
+- (id) initWithOrigin: (Point)anOrigin size: (Size)aSize;
 - (id) initWithRect: (Rect)aRect;
 - (id) copy;
 
+#if 0
 - (BOOL) intersectsRect: (Rect)aRect;
 - (BOOL) containsPoint: (Point)aPoint;
 - (BOOL) containsRect: (Rect)aRect;
@@ -28,11 +29,14 @@
 
 - (Rect) insetBySize: (Size)aSize;
 - (Rect) offsetBySize: (Size)aSize;
+#endif
 
 - (Point) origin;
 - (Size) size;
 
+- (void) setOrigin: (Point)aPoint;
 - (void) setSize: (Size)aSize;
+- (void) setRect: (Rect)aRect;
 
 @end
 
