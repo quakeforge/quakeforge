@@ -193,7 +193,7 @@ ClipToSeparators (winding_t *source, winding_t *pass, winding_t *target,
 			target = ClipWinding (target, &plane, false);
 			if (!target)
 				return NULL;	// target is not visible
-			//break;				//XXX is this correct? big speedup
+			break;				//XXX is this correct? big speedup
 		}
     }
     return target;
