@@ -62,6 +62,7 @@ typedef struct menu_item_s {
 	func_t      keyevent;
 	func_t      draw;
 	unsigned    fadescreen:1;
+	unsigned    allkeys:1;
 	const char *text;
 	menu_pic_t *pics;
 } menu_item_t;
@@ -204,6 +205,7 @@ bi_Menu_Item (progs_t *pr)
 	int         y = G_INT (pr, OFS_PARM1);
 	const char *text = G_STRING (pr, OFS_PARM2);
 	func_t      func = G_FUNCTION (pr, OFS_PARM3);
+	int         allkeys = G_INT (pr, OFS_PARM4);
 	menu_item_t *mi = calloc (sizeof (menu_item_t), 1);
 
 	mi->x = x;
@@ -211,6 +213,7 @@ bi_Menu_Item (progs_t *pr)
 	mi->text = strdup (text);
 	mi->func = func;
 	mi->parent = menu;
+	mi->allkeys = allkeys;
 	menu_add_item (menu, mi);
 }
 
@@ -463,6 +466,14 @@ Menu_KeyEvent (knum_t key, short unicode, qboolean down)
 		G_INT (&menu_pr_state, OFS_PARM1) = unicode;
 		G_INT (&menu_pr_state, OFS_PARM2) = down;
 		PR_ExecuteProgram (&menu_pr_state, menu->keyevent);
+		if (G_INT (&menu_pr_state, OFS_RETURN))
+			return;
+	} else if (menu->items && menu->items[menu->cur_item]->func
+			   && menu->items[menu->cur_item]->allkeys) {
+		G_INT (&menu_pr_state, OFS_PARM0) = key;
+		G_INT (&menu_pr_state, OFS_PARM1) = unicode;
+		G_INT (&menu_pr_state, OFS_PARM2) = down;
+		PR_ExecuteProgram (&menu_pr_state, menu->items[menu->cur_item]->func);
 		if (G_INT (&menu_pr_state, OFS_RETURN))
 			return;
 	}

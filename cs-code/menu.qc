@@ -133,16 +133,18 @@ void () scan_saves =
 	}
 };
 
-void (string text, integer key) load_f =
+integer (string text, integer key) load_f =
 {
 	scan_saves ();
 	Menu_SelectMenu ("load");
+	return 0;
 };
 
-void (string text, integer key) save_f =
+integer (string text, integer key) save_f =
 {
 	scan_saves ();
 	Menu_SelectMenu ("save");
+	return 0;
 };
 
 integer () load_draw =
@@ -241,9 +243,10 @@ integer () quit =
 	return 0;
 };
 
-void (string text, integer key) quit_f =
+integer (string text, integer key) quit_f =
 {
 	quit ();
+	return 0;
 };
 
 integer (integer key, integer unicode, integer down) quit_keyevent =
@@ -278,7 +281,7 @@ void () quit_menu =
 	Menu_End ();
 };
 
-void (string text, integer key) sp_start =
+integer (string text, integer key) sp_start =
 {
 	Menu_SelectMenu (NIL);
 	Cbuf_AddText ("disconnect\n");
@@ -290,6 +293,7 @@ void (string text, integer key) sp_start =
 	Cbuf_AddText ("noexit 0\n");
 	Cbuf_AddText ("samelevel 0\n");
 	Cbuf_AddText ("map start\n");
+	return 0;
 };
 
 void () single_player_menu =
@@ -300,9 +304,9 @@ void () single_player_menu =
 	Menu_CenterPic (160, 4, "gfx/ttl_sgl.lmp");
 	Menu_Pic (72, 32, "gfx/sp_menu.lmp");
 	Menu_Cursor (spinner);
-	Menu_Item (54, 32, "", sp_start);
-	Menu_Item (54, 52, "", load_f);
-	Menu_Item (54, 72, "", save_f);
+	Menu_Item (54, 32, "", sp_start, 0);
+	Menu_Item (54, 52, "", load_f, 0);
+	Menu_Item (54, 72, "", save_f, 0);
 	Menu_End ();
 };
 
@@ -443,8 +447,8 @@ void () multi_player_menu =
 	Menu_KeyEvent (multi_player_keyevent);
 	join_menu ();
 	if (do_single_player)
-		Menu_Item (54, 52, "", quit_f);
-	Menu_Item (54, 72, "", quit_f);
+		Menu_Item (54, 52, "", quit_f, 0);
+	Menu_Item (54, 72, "", quit_f, 0);
 	Menu_Cursor (spinner);
 	Menu_End ();
 };
@@ -453,7 +457,7 @@ void () multi_player_menu =
 
 void () help_menu =
 {
-	Menu_Item (54, 92, "", quit_f);
+	Menu_Item (54, 92, "", quit_f, 0);
 };
 
 void () main_menu =
@@ -469,7 +473,7 @@ void () main_menu =
 	multi_player_menu ();
 	options_menu ();
 	help_menu ();
-	Menu_Item (54, 112, "", quit_f);
+	Menu_Item (54, 112, "", quit_f, 0);
 	Menu_End ();
 };
 

@@ -10,7 +10,7 @@ void (integer x, integer y) opt_cursor =
 	Draw_Character (x, y, 12 + (integer (time * 4) & 1));
 };
 
-void (string text, integer key) video_options_f =
+integer (string text, integer key) video_options_f =
 {
 	local integer selected_crosshair;
 	local float gamma;
@@ -44,13 +44,15 @@ void (string text, integer key) video_options_f =
 			cvar_set("vid_gamma", ftos(gamma));
 			break;
 	}
+	return 0;
 };
-void (string text, integer key) control_options_f =
+
+integer (string text, integer key) control_options_f =
 {
 	switch (text) {
 	    case "in_grab":	    
 			Cbuf_AddText ("toggle in_grab\n");
-			return;
+			break;
 		case "autorun":
 			if(cvar("cl_forwardspeed") < 400) {
 				Cbuf_AddText ("set cl_forwardspeed 400\n");
@@ -59,7 +61,7 @@ void (string text, integer key) control_options_f =
 				Cbuf_AddText ("set cl_forwardspeed 200\n");
 				Cbuf_AddText ("set cl_backspeed 200\n");
 			}
-			return;
+			break;
 		case "set_key":
 			if(set_key_flag) {
 				set_key_flag = 0;
@@ -68,6 +70,7 @@ void (string text, integer key) control_options_f =
 			}
 			break;
 	}
+	return 0;
 };
 
 
@@ -212,11 +215,11 @@ void () options_controls_menu =
 	Menu_CenterPic (160, 4, "gfx/p_option.lmp");
 	Menu_Draw (options_controls_draw);
 	Menu_KeyEvent (options_controls_keyevent);
-	Menu_Item (54, 60, "in_grab", control_options_f);
-	Menu_Item (54, 70, "autorun", control_options_f);
-	Menu_Item (54, 90, "set_key", control_options_f);
-	Menu_Item (54, 100, "set_key", control_options_f);
-	Menu_Item (54, 110, "set_key", control_options_f);
+	Menu_Item (54, 60, "in_grab", control_options_f, 0);
+	Menu_Item (54, 70, "autorun", control_options_f, 0);
+	Menu_Item (54, 90, "set_key", control_options_f, 0);
+	Menu_Item (54, 100, "set_key", control_options_f, 0);
+	Menu_Item (54, 110, "set_key", control_options_f, 0);
 	Menu_End ();
 };
 
@@ -256,9 +259,9 @@ void () options_video_menu =
 	Menu_Draw (options_video_draw);
 	Menu_KeyEvent (options_video_keyevent);
 
-	Menu_Item (54, 60, "fullscreen", video_options_f);
-	Menu_Item (54, 70, "crosshair", video_options_f);
-	Menu_Item (54, 80, "gamma", video_options_f);
+	Menu_Item (54, 60, "fullscreen", video_options_f, 0);
+	Menu_Item (54, 70, "crosshair", video_options_f, 0);
+	Menu_Item (54, 80, "gamma", video_options_f, 0);
 	Menu_End ();
 };
 
