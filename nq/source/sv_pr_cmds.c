@@ -1054,11 +1054,12 @@ WriteDest (progs_t *pr)
 static void
 PF_WriteBytes (progs_t *pr)
 {
-	int         i;
+	int         i, p;
 	sizebuf_t  *msg = WriteDest (pr);
 
 	for (i = 1; i < pr->pr_argc; i++) {
-		MSG_WriteByte (msg, P_FLOAT (pr, i));
+		p = P_FLOAT (pr, i);
+		MSG_WriteByte (msg, p);
 	}
 }
 
@@ -1117,9 +1118,9 @@ PF_WriteAngleV (progs_t *pr)
 static void
 PF_WriteCoordV (progs_t *pr)
 {
-	float      *ang = P_VECTOR (pr, 1);
+	float      *coord = P_VECTOR (pr, 1);
 
-	MSG_WriteCoordV (WriteDest (pr), ang);
+	MSG_WriteCoordV (WriteDest (pr), coord);
 }
 
 // void (float to, string s) WriteString
