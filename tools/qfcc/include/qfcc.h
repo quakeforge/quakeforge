@@ -419,7 +419,6 @@ extern	int			pr_source_line;
 extern	def_t	*pr_scope;
 extern	int		pr_error_count;
 
-int PR_GetTypeSize (type_t *type);
 def_t *PR_GetArray (type_t *etype, const char *name, int size, def_t *scope,
 					int *allocate);
 
@@ -439,6 +438,7 @@ void PR_DefInitialized (def_t *d);
 #define	G_VECTOR(o) (&pr_globals[o])
 #define	G_STRING(o) (strings + *(string_t *)&pr_globals[o])
 #define	G_FUNCTION(o) (*(func_t *)&pr_globals[o])
+#define G_STRUCT(t,o)   (*(t *)&pr_globals[o])
 
 extern	string_t	s_file;			// filename for function definition
 

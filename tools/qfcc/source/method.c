@@ -32,11 +32,14 @@ static const char rcsid[] =
 
 #include "QF/dstring.h"
 #include "QF/hash.h"
+#include "QF/pr_obj.h"
+#include "QF/va.h"
 
 #include "qfcc.h"
 
 #include "class.h"
 #include "method.h"
+#include "struct.h"
 #include "type.h"
 
 static def_t   *send_message_def;
@@ -123,6 +126,31 @@ copy_methods (methodlist_t *dst, methodlist_t *src)
 	}
 }
 
+int
+method_compare (method_t *m1, method_t *m2)
+{
+	dstring_t  *s1 = dstring_newstr ();
+	dstring_t  *s2 = dstring_newstr ();
+	dstring_t  *t1 = dstring_newstr ();
+	dstring_t  *t2 = dstring_newstr ();
+	int         res;
+
+	selector_name (s1, (keywordarg_t *)m1->selector);
+	selector_name (s2, (keywordarg_t *)m2->selector);
+	selector_types (t1, (keywordarg_t *)m1->selector);
+	selector_types (t2, (keywordarg_t *)m2->selector);
+
+	res = strcmp (s1->str, s2->str) == 0
+		&& strcmp (t1->str, t2->str) == 0;
+
+	dstring_delete (s1);
+	dstring_delete (s2);
+	dstring_delete (t1);
+	dstring_delete (t2);
+
+	return res;
+}
+
 keywordarg_t *
 new_keywordarg (const char *selector, struct expr_s *expr)
 {
@@ -168,6 +196,7 @@ selector_name (dstring_t *sel_id, keywordarg_t *selector)
 void
 selector_types (dstring_t *sel_types, keywordarg_t *selector)
 {
+	dstring_clearstr (sel_types);
 }
 
 typedef struct {
@@ -227,4 +256,43 @@ selector_def (const char *_sel_id, const char *_sel_types)
 	G_INT (sel_def->def->ofs + 1) = sel_types;
 	Hash_AddElement (sel_def_hash, sel_def);
 	return sel_def->def;
+}
+
+int
+emit_methods (methodlist_t *_methods, const char *name, int instance)
+{
+	const char *type = instance ? "INSTANCE" : "CLASS";
+	method_t   *method;
+	int         i, count;
+	def_t      *methods_def;
+	pr_method_list_t *methods;
+	type_t     *method_list;
+	dstring_t  *tmp = dstring_newstr ();
+
+	for (count = 0, method = _methods->head; method; method = method->next)
+		if (!method->instance == !instance)
+			count++;
+	method_list = new_struct (0);
+	new_struct_field (method_list, &type_pointer, "method_next", vis_public);
+	new_struct_field (method_list, &type_integer, "method_count", vis_public);
+	for (i = 0; i < count; i++)
+		new_struct_field (method_list, type_method, 0, vis_public);
+	methods_def = PR_GetDef (method_list, va ("_OBJ_%s_METHODS_%s", type, name),
+							 0, &numpr_globals);
+	methods = &G_STRUCT (pr_method_list_t, methods_def->ofs);
+	methods->method_next = 0;
+	methods->method_count = count;
+	for (i = 0, method = _methods->head; method; method = method->next) {
+		if (!method->instance != !instance)
+			continue;
+		selector_name (tmp, (keywordarg_t *)method->selector);
+		methods->method_list[i].method_name.sel_id = ReuseString (tmp->str);
+		selector_name (tmp, (keywordarg_t *)method->selector);
+		methods->method_list[i].method_name.sel_types = ReuseString (tmp->str);
+		methods->method_list[i].method_types =
+			methods->method_list[i].method_name.sel_types;
+		methods->method_list[i].method_imp = method->def->ofs;
+	}
+	dstring_delete (tmp);
+	return methods_def->ofs;
 }

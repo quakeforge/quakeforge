@@ -66,6 +66,7 @@ def_t *method_def (struct class_s *class, method_t *method);
 
 methodlist_t *new_methodlist (void);
 void copy_methods (methodlist_t *dst, methodlist_t *src);
+int method_compare (method_t *m1, method_t *m2);
 
 keywordarg_t *new_keywordarg (const char *selector, struct expr_s *expr);
 
@@ -74,5 +75,7 @@ struct expr_s *send_message (void);
 void selector_name (struct dstring_s *sel_id, keywordarg_t *selector);
 void selector_types (struct dstring_s *sel_types, keywordarg_t *selector);
 struct def_s *selector_def (const char *sel_id, const char *sel_types);
+
+int emit_methods (methodlist_t *methods, const char *name, int instance);
 
 #endif//__method_h

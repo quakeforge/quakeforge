@@ -30,11 +30,15 @@
 static const char rcsid[] =
 	"$Id$";
 
+#include <QF/dstring.h>
 #include <QF/hash.h>
+#include <QF/pr_obj.h>
 #include <QF/sys.h>
+#include <QF/va.h>
 
 #include "qfcc.h"
 #include "struct.h"
+#include "type.h"
 
 typedef struct {
 	const char *name;
@@ -80,11 +84,12 @@ new_struct_field (type_t *strct, type_t *type, const char *name,
 	field->name = name;
 	field->type = type;
 	field->offset = strct->num_parms;
-	strct->num_parms += pr_type_size[type->type];
+	strct->num_parms += type_size (type);
 	field->next = 0;
 	*strct->struct_tail = field;
 	strct->struct_tail = &field->next;
-	Hash_Add (strct->struct_fields, field);
+	if (name)
+		Hash_Add (strct->struct_fields, field);
 	return field;
 }
 
@@ -160,6 +165,37 @@ struct_compare_fields (struct type_s *s1, struct type_s *s2)
 		f2 = f2->next;
 	}
 	return !((!f1) ^ !(f2));
+}
+
+int
+emit_struct(type_t *strct, const char *name)
+{
+	struct_field_t *field;
+	int         i, count;
+	def_t      *ivars_def;
+	pr_ivar_list_t *ivars;
+	type_t     *ivar_list;
+	dstring_t  *encoding = dstring_newstr ();
+
+	for (count = 0, field = strct->struct_head; field; field = field->next)
+		count++;
+	ivar_list = new_struct (0);
+	new_struct_field (ivar_list, &type_integer, "ivar_count", vis_public);
+	for (i = 0; i < count; i++)
+		new_struct_field (ivar_list, type_ivar, 0, vis_public);
+	ivars_def = PR_GetDef (ivar_list, va ("_OBJ_INSTANCE_VARIABLES_%s", name),
+						   0, &numpr_globals);
+	ivars = &G_STRUCT (pr_ivar_list_t, ivars_def->ofs);
+	ivars->ivar_count = count;
+	for (i = 0, field = strct->struct_head; field; i++, field = field->next) {
+		encode_type (encoding, field->type);
+		ivars->ivar_list[i].ivar_name = ReuseString (field->name);
+		ivars->ivar_list[i].ivar_type = ReuseString (encoding->str);
+		ivars->ivar_list[i].ivar_offset = field->offset;
+		dstring_clearstr (encoding);
+	}
+	dstring_delete (encoding);
+	return ivars_def->ofs;
 }
 
 void

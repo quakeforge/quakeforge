@@ -51,8 +51,9 @@ extern	type_t	type_Class;
 extern	type_t	type_Protocol;
 extern	type_t	type_SEL;
 extern	type_t	type_IMP;
-extern	type_t	type_method_list;
 extern	type_t	*type_method;
+extern	type_t	*type_category;
+extern	type_t	*type_ivar;
 
 extern	def_t	def_void;
 extern	def_t	def_function;
@@ -65,6 +66,7 @@ type_t *get_typedef (const char *name);
 type_t *pointer_type (type_t *aux);
 void print_type (type_t *type);
 void encode_type (struct dstring_s *encodking, type_t *type);
+int type_size (type_t *type);
 
 void init_types (void);
 

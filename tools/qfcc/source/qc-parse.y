@@ -869,6 +869,8 @@ obj_def
 		{
 			if (!current_class)
 				PARSE_ERROR;
+			else
+				class_finish (current_class);
 			current_class = 0;
 		}
 	;
@@ -1060,41 +1062,47 @@ ivar_declarator
 	;
 
 methoddef
-	: '+'
-	  methoddecl opt_state_expr
+	: '+' methoddecl
 		{
 			$2->instance = 0;
+			$2 = class_find_method (current_class, $2);
+		}
+	  opt_state_expr
+		{
 			current_def = $2->def = method_def (current_class, $2);
 			current_params = $2->params;
 		}
 	  begin_function statement_block end_function
 		{
-			build_function ($5);
-			if ($3) {
-				$3->next = $6;
-				emit_function ($5, $3);
+			build_function ($6);
+			if ($4) {
+				$4->next = $7;
+				emit_function ($6, $4);
 			} else {
-				emit_function ($5, $6);
+				emit_function ($6, $7);
 			}
-			finish_function ($5);
+			finish_function ($6);
 		}
-	| '-'
-	  methoddecl opt_state_expr
+	| '-' methoddecl
 		{
 			$2->instance = 1;
+			$2 = class_find_method (current_class, $2);
+		}
+	  opt_state_expr
+		{
 			current_def = $2->def = method_def (current_class, $2);
 			current_params = $2->params;
 		}
 	  begin_function statement_block end_function
 		{
-			build_function ($5);
-			if ($3) {
-				$3->next = $6;
-				emit_function ($5, $3);
+			build_function ($6);
+			if ($4) {
+				$4->next = $7;
+				emit_function ($6, $4);
 			} else {
-				emit_function ($5, $6);
+				emit_function ($6, $7);
 			}
-			finish_function ($5);
+			finish_function ($6);
 		}
 	;
 

@@ -93,18 +93,10 @@ PR_GetArray (type_t *etype, const char *name, int size, def_t *scope,
 	def = PR_NewDef (type, name, scope);
 	def->ofs = *allocate;
 	def->initialized = def->constant = 1;
-	*allocate += pr_type_size[type->type] * size + 1;
+	*allocate += type_size (type) * size + 1;
 	pr_global_defs[def->ofs] = def;
 	G_INT (def->ofs) = def->ofs + 1;
 	return def;
-}
-
-int
-PR_GetTypeSize (type_t *type)
-{
-	if (type->type == ev_struct)
-		return type->num_parms;
-	return pr_type_size[type->type];
 }
 
 /*
@@ -153,7 +145,7 @@ PR_GetDef (type_t *type, const char *name, def_t *scope, int *allocate)
 		d->used = 1;
 		d->parent = def;
 	} else {
-		*allocate += PR_GetTypeSize(type);
+		*allocate += type_size (type);
 	}
 
 	if (type->type == ev_field) {
@@ -178,16 +170,16 @@ PR_GetDef (type_t *type, const char *name, def_t *scope, int *allocate)
 			d->parent = def;
 		} else if (type->aux_type->type == ev_pointer) {
 			//FIXME I don't think this is right for a field pointer
-			size = PR_GetTypeSize (type->aux_type->aux_type);
+			size = type_size  (type->aux_type->aux_type);
 			pr.size_fields += type->aux_type->num_parms * size;
 		} else {
-			size = PR_GetTypeSize (type->aux_type);
+			size = type_size  (type->aux_type);
 			pr.size_fields += size;
 		}
 	} else if (type->type == ev_pointer && type->num_parms) {
 		int         ofs = *allocate;
 
-		size = PR_GetTypeSize (type->aux_type);
+		size = type_size  (type->aux_type);
 		*allocate += type->num_parms * size;
 
 		if (pr_scope) {

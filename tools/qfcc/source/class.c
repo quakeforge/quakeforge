@@ -32,6 +32,8 @@ static const char rcsid[] =
 
 #include "QF/dstring.h"
 #include "QF/hash.h"
+#include "QF/pr_obj.h"
+#include "QF/va.h"
 
 #include "qfcc.h"
 
@@ -114,6 +116,71 @@ class_add_protocol (class_t *class, protocol_t *protocol)
 	if (!class->protocols)
 		class->protocols = new_protocollist ();
 	add_protocol (class->protocols, protocol);
+}
+
+void
+class_finish (class_t *class)
+{
+	if (class->def)
+		return;
+	if (class->class_name && class->category_name) {
+		def_t      *category_def;
+		pr_category_t *category;
+
+		category_def = PR_GetDef (type_category,
+								  va ("_OBJ_CATEGORY_%s_%s",
+									  class->class_name,
+									  class->category_name),
+								  0, &numpr_globals);
+		category = &G_STRUCT (pr_category_t, category_def->ofs);
+	} else if (class->class_name) {
+		def_t      *meta_def;
+		pr_class_t *meta;
+		pr_class_t *cls;
+		
+		meta_def = PR_GetDef (type_Class.aux_type,
+							  va ("_OBJ_METACLASS_%s", class->class_name),
+							  0, &numpr_globals);
+		meta = &G_STRUCT (pr_class_t, meta_def->ofs);
+		memset (meta, 0, sizeof (*meta));
+		meta->class_pointer  = ReuseString (class->class_name);
+		meta->name = meta->class_pointer;
+		meta->instance_size = type_size (type_Class.aux_type);
+		meta->ivars = emit_struct (type_Class.aux_type, "Class");
+		meta->methods = emit_methods (class->methods, class->class_name, 0);
+		meta->protocols = emit_protocol_list (class->protocols,
+											  class->class_name);
+
+		class->def = PR_GetDef (type_Class.aux_type,
+								va ("_OBJ_METACLASS_%s", class->class_name),
+								0, &numpr_globals);
+		cls = &G_STRUCT (pr_class_t, class->def->ofs);
+		cls->class_pointer = meta_def->ofs;
+		if (class->super_class)
+			cls->super_class = class->super_class->def->ofs;
+		cls->name = meta->name;
+		cls->instance_size = type_size (class->ivars);
+		cls->ivars = emit_struct (class->ivars, class->class_name);
+		cls->methods = emit_methods (class->methods, class->class_name, 1);
+		cls->protocols = meta->protocols;
+	}
+}
+
+method_t *
+class_find_method (class_t *class, method_t *method)
+{
+	method_t   *m;
+	dstring_t  *sel;
+
+	for (m = class->methods->head; m; m = m->next)
+		if (method_compare (method, m))
+			return m;
+	sel = dstring_newstr ();
+	selector_name (sel, (keywordarg_t *)method->selector);
+	warning (0, "method %s not in %s%s", sel->str, class->class_name,
+			 class->category_name ? va (" (%s)", class->category_name) : "");
+	dstring_delete (sel);
+	return method;
 }
 
 static unsigned long
@@ -243,4 +310,51 @@ add_protocol (protocollist_t *protocollist, protocol_t *protocol)
 								  (protocollist->count + 1)
 								  * sizeof (protocollist_t));
 	protocollist->list[protocollist->count++] = protocol;
+}
+
+int
+emit_protocol (protocol_t *protocol)
+{
+	def_t      *proto_def;
+	pr_protocol_t *proto;
+
+	proto_def = PR_GetDef (type_Protocol.aux_type,
+						   va ("_OBJ_PROTOCOL_%s", protocol->name),
+						   0, &numpr_globals);
+	proto = &G_STRUCT (pr_protocol_t, proto_def->ofs);
+	proto->class_pointer = 0;
+	proto->protocol_name = ReuseString (protocol->name);
+	proto->protocol_list =
+		emit_protocol_list (protocol->protocols,
+							va ("PROTOCOL_%s", protocol->name));
+	proto->instance_methods = emit_methods (protocol->methods,
+											protocol->name, 1);
+	proto->class_methods = emit_methods (protocol->methods, protocol->name, 0);
+	return proto_def->ofs;
+}
+
+int
+emit_protocol_list (protocollist_t *protocols, const char *name)
+{
+	def_t      *proto_list_def;
+	type_t     *protocol_list;
+	pr_protocol_list_t *proto_list;
+	int         i;
+
+	if (!protocols)
+		return 0;
+	protocol_list = new_struct (0);
+	new_struct_field (protocol_list, &type_pointer, "next", vis_public);
+	new_struct_field (protocol_list, &type_integer, "count", vis_public);
+	for (i = 0; i < protocols->count; i++)
+		new_struct_field (protocol_list, &type_pointer, 0, vis_public);
+	proto_list_def = PR_GetDef (type_Protocol.aux_type,
+								va ("_OBJ_PROTOCOLS_%s", name),
+								0, &numpr_globals);
+	proto_list = &G_STRUCT (pr_protocol_list_t, proto_list_def->ofs);
+	proto_list->next = 0;
+	proto_list->count = protocols->count;
+	for (i = 0; i < protocols->count; i++)
+		proto_list->list[i] = emit_protocol (protocols->list[i]);
+	return proto_list_def->ofs;
 }

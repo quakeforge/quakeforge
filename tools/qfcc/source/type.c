@@ -39,6 +39,7 @@ static const char rcsid[] =
 #include "qfcc.h"
 #include "function.h"
 #include "struct.h"
+#include "type.h"
 
 typedef struct {
 	const char *name;
@@ -55,7 +56,7 @@ type_t      type_field = { ev_field };
 
 // type_function is a void() function used for state defs
 type_t      type_function = { ev_func, NULL, &type_void };
-type_t      type_pointer = { ev_pointer };
+type_t      type_pointer = { ev_pointer, NULL, &type_void };
 type_t      type_quaternion = { ev_quaternion };
 type_t      type_integer = { ev_integer };
 type_t      type_uinteger = { ev_uinteger };
@@ -67,8 +68,9 @@ type_t      type_Class = { ev_pointer };
 type_t      type_Protocol = { ev_pointer };
 type_t      type_SEL = { ev_pointer };
 type_t      type_IMP = { ev_func, NULL, &type_id, -3, { &type_id, &type_SEL }};
-type_t      type_method_list = { ev_pointer };
 type_t     *type_method;
+type_t     *type_category;
+type_t     *type_ivar;
 
 type_t      type_floatfield = { ev_field, NULL, &type_float };
 
@@ -295,9 +297,11 @@ _encode_type (dstring_t *encoding, type_t *type, int level)
 		case ev_class:
 			dstring_appendstr (encoding, "{");
 			//XXX dstring_appendstr (encoding, name);
-			dstring_appendstr (encoding, "=");
-			for (field = type->struct_head; field; field = field->next)
-				_encode_type (encoding, field->type, level + 1);
+			if (level < 2) {
+				dstring_appendstr (encoding, "=");
+				for (field = type->struct_head; field; field = field->next)
+					_encode_type (encoding, field->type, level + 1);
+			}
 			dstring_appendstr (encoding, "}");
 			break;
 		case ev_sel:
@@ -313,6 +317,42 @@ void
 encode_type (dstring_t *encoding, type_t *type)
 {
 	_encode_type (encoding, type, 0);
+}
+
+int
+type_size (type_t *type)
+{
+	struct_field_t *field;
+	int         size;
+
+	if (!type)
+		return 0;
+	switch (type->type) {
+		case ev_void:
+		case ev_string:
+		case ev_float:
+		case ev_vector:
+		case ev_entity:
+		case ev_field:
+		case ev_func:
+		case ev_pointer:
+		case ev_quaternion:
+		case ev_integer:
+		case ev_uinteger:
+		case ev_short:
+		case ev_sel:
+		case ev_type_count:
+			return pr_type_size[type->type];
+		case ev_struct:
+		case ev_object:
+		case ev_class:
+			for (size = 0, field = type->struct_head;
+				 field;
+				 field = field->next)
+				size += type_size (field->type);
+			return size;
+	}
+	return 0;
 }
 
 void
@@ -341,28 +381,51 @@ init_types (void)
 	new_struct_field (type, &type_string, "sel_types", vis_public);
 	chain_type (&type_SEL);
 
-	type_method = new_struct ("obj_method");
+	type_method = new_struct (0);
 	new_struct_field (type_method, &type_SEL, "method_name", vis_public);
 	new_struct_field (type_method, &type_string, "method_types", vis_public);
 	new_struct_field (type_method, &type_IMP, "method_imp", vis_public);
 	chain_type (type_method);
 
-	type = type_method_list.aux_type = new_struct ("obj_method_list");
-	new_struct_field (type, &type_method_list, "method_next", vis_public);
-	new_struct_field (type, &type_integer, "method_count", vis_public);
-	new_struct_field (type, array_type (type_method, 1),
-					  "method_list", vis_public);
-	chain_type (&type_method_list);
-
 	type = type_Class.aux_type = new_struct ("Class");
+	new_struct_field (type, &type_Class, "class_pointer", vis_public);
 	new_struct_field (type, &type_Class, "super_class", vis_public);
-	new_struct_field (type, &type_Class, "methods", vis_public);
+	new_struct_field (type, &type_string, "name", vis_public);
+	new_struct_field (type, &type_integer, "version", vis_public);
+	new_struct_field (type, &type_integer, "info", vis_public);
+	new_struct_field (type, &type_integer, "instance_size", vis_public);
+	new_struct_field (type, &type_pointer, "ivars", vis_public);
+	new_struct_field (type, &type_pointer, "methods", vis_public);
+	new_struct_field (type, &type_pointer, "dtable", vis_public);
+	new_struct_field (type, &type_pointer, "subclass_list", vis_public);
+	new_struct_field (type, &type_pointer, "sibling_class", vis_public);
+	new_struct_field (type, &type_pointer, "protocols", vis_public);
+	new_struct_field (type, &type_pointer, "gc_object_type", vis_public);
 	chain_type (&type_Class);
 
 	type = type_Protocol.aux_type = new_struct ("Protocol");
+	new_struct_field (type, &type_Class, "class_pointer", vis_public);
+	new_struct_field (type, &type_string, "protocol_name", vis_public);
+	new_struct_field (type, &type_pointer, "protocol_list", vis_public);
+	new_struct_field (type, &type_pointer, "instance_methods", vis_public);
+	new_struct_field (type, &type_pointer, "class_methods", vis_public);
 	chain_type (&type_Protocol);
 
 	type = type_id.aux_type = new_struct ("id");
 	new_struct_field (type, &type_Class, "class_pointer", vis_public);
 	chain_type (&type_id);
+
+	type = type_category = new_struct (0);
+	new_struct_field (type, &type_string, "category_name", vis_public);
+	new_struct_field (type, &type_string, "class_name", vis_public);
+	new_struct_field (type, &type_pointer, "instance_methods", vis_public);
+	new_struct_field (type, &type_pointer, "class_methods", vis_public);
+	new_struct_field (type, &type_pointer, "protocols", vis_public);
+	chain_type (type_category);
+
+	type = type_ivar = new_struct (0);
+	new_struct_field (type, &type_string, "ivar_name", vis_public);
+	new_struct_field (type, &type_string, "ivar_type", vis_public);
+	new_struct_field (type, &type_integer, "ivar_offset", vis_public);
+	chain_type (type_ivar);
 }

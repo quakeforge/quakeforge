@@ -1693,7 +1693,7 @@ array_expr (expr_t *array, expr_t *index)
 		&& index->type >= ex_integer
 		&& index->e.uinteger_val >= array_type->num_parms)
 			return error (index, "array index out of bounds");
-	size = PR_GetTypeSize (array_type->aux_type);
+	size = type_size (array_type->aux_type);
 	if (size > 1) {
 		scale = new_expr ();
 		scale->type = expr_types[index_type->type];
