@@ -51,7 +51,7 @@ fpenv:
 	popl	%edx										;\
 	addl	$C(_GLOBAL_OFFSET_TABLE_)+[.-.Lpic##n],%edx
 
-#define got_var(v) v@GOT(%edx)
+#define got_var(v) v@GOTOFF(%edx)
 
 #define F_BEGIN(name)			\
 .globl C(name)					;\
