@@ -132,7 +132,7 @@ client_LIBS=	-L. -L../../libs -lqfsys -lqfsnd -lqfcd -lqfjs -lqfnet -lqfutil $(S
 client_LIB_DEPS= libqfsys.a libqfsnd.a libqfcd.a libqfjs.a libqfnet.a ../../libs/libqfutil.a
 
 client_SOURCES= cl_cam.c cl_cmd.c cl_demo.c cl_input.c cl_main.c cl_parse.c \
-		cl_tent.c console.c keys.c sbar.c r_part.c r_view.c \
+		cl_tent.c console.c keys.c menu.c sbar.c r_part.c r_view.c \
 		nonintel.c gib.c gib_instructions.c gib_vars.c \
 		gib_interpret.c gib_modules.c gib_parse.c gib_stack.c vid.c
 
