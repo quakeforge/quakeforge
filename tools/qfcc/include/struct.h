@@ -58,7 +58,7 @@ void copy_struct_fields (struct type_s *dst, struct type_s *src);
 int emit_struct (struct type_s *strct, const char *name);
 
 void process_enum (struct expr_s *enm);
-expr_t *get_enum (const char *name);
+struct expr_s *get_enum (const char *name);
 
 void clear_structs (void);
 void clear_enums (void);
