@@ -1105,6 +1105,21 @@ SV_GenerateIPMasks (void)
 	}
 }
 
+// Note: this function is non-reentrant and not threadsafe
+const char *
+SV_PrintIP (byte *ip)
+{
+#ifdef HAVE_IPV6
+	static char buf[INET6_ADDRSTRLEN];
+	if (!inet_ntop (AF_INET6, ip, buf, INET6_ADDRSTRLEN))
+#else
+	static char buf[INET_ADDRSTRLEN];
+	if (!inet_ntop (AF_INET, ip, buf, INET_ADDRSTRLEN))
+#endif
+        Sys_Error ("SV_CleanIPList: inet_ntop_failed.  wtf?\n");
+	return buf;
+}
+
 static inline void
 SV_MaskIPTrim (byte *ip, int mask)
 {
@@ -1188,8 +1203,6 @@ SV_StringToFilter (const char *address, ipfilter_t *f)
 	char		*slash;
 	char		*c;
 
-	Con_Printf ("SV_StringToFilter: '%s'\n", address);
-
 	s = strdup (address);
 	if (!s)
 		Sys_Error ("SV_StringToFilter: memory allocation failure\n");
@@ -1199,7 +1212,7 @@ SV_StringToFilter (const char *address, ipfilter_t *f)
 		char *endptr;
 		*slash = '\0';
 		slash++;
-		if (*slash <= '0' || *slash >= '9' || strchr (slash, '/'))
+		if (*slash < '0' || *slash > '9' || strchr (slash, '/'))
 			goto bad_address;
 		mask = strtol (slash, &endptr, 10);
 		if (!*slash || *endptr)
@@ -1221,9 +1234,7 @@ SV_StringToFilter (const char *address, ipfilter_t *f)
 			if (*c == '.')
 				c++;
 			j = strtol (c, &c, 10);
-			if (j < 0 || j > 255)
-				goto bad_address;
-			if (i >= sizeof (b))
+			if (j < 0 || j > 255 || i >= sizeof (b))
 				goto bad_address;
 			b[i++] = j;
 		} while (*c == '.');
@@ -1280,29 +1291,19 @@ SV_RemoveIPFilter (int i)
 void
 SV_CleanIPList (void)
 {
-	// FIXME: some of this is duplicated from listip
 	int         i;
-	char *type;
+	char		*type;
 
 	for (i = 0; i < numipfilters;) {
 		if (ipfilters[i].time && (ipfilters[i].time < realtime)) {
-#ifdef HAVE_IPV6
-			char buf[INET6_ADDRSTRLEN];
-			if (!inet_ntop (AF_INET6, ipfilters[i].ip, buf, INET6_ADDRSTRLEN))
-				Sys_Error ("SV_CleanIPList: inet_ntop failed.  wtf?\n");
-#else
-			char buf[INET_ADDRSTRLEN];
-			if (!inet_ntop (AF_INET, ipfilters[i].ip, buf, INET_ADDRSTRLEN))
-				Sys_Error ("SV_CleanIPList: inet_ntop_failed.  wtf?\n");
-#endif
 			switch (ipfilters[i].type) {
 				case ft_ban: type = "Ban"; break;
 				case ft_mute: type = "Mute"; break;
 				case ft_cuff: type = "Cuff"; break;
 				default: Sys_Error ("SV_CleanIPList: invalid filter type");
 			}
-			SV_Printf ("SV_CleanIPList: %s for %s/%d removed\n",
-					   type, buf, ipfilters[i].mask);
+			SV_Printf ("SV_CleanIPList: %s for %s/%d removed\n", type,
+					   SV_PrintIP (ipfilters[i].ip), ipfilters[i].mask);
 			SV_RemoveIPFilter (i);
 		} else
 			i++;
@@ -1416,22 +1417,10 @@ SV_ListIP_f (void)
 {
 	int         i;
 	char		*type;
-#ifdef HAVE_IPV6
-	char buf[INET6_ADDRSTRLEN + 1];
-#else
-	char buf[INET_ADDRSTRLEN + 1];
-#endif
 	char		timestr[30];
 
 	SV_Printf ("Filter list:\n");
 	for (i = 0; i < numipfilters; i++) {
-#ifdef HAVE_IPV6
-		if (!inet_ntop (AF_INET6, ipfilters[i].ip, buf, sizeof (buf)))
-#else
-		if (!inet_ntop (AF_INET, ipfilters[i].ip, buf, sizeof (buf)))
-#endif
-			Sys_Error ("SV_CleanIPList: inet_ntop_failed.  wtf?\n");
-
 		switch (ipfilters[i].type) {
 			case ft_ban: type = "Ban:"; break;
 			case ft_mute: type = "Mute:"; break;
@@ -1444,7 +1433,9 @@ SV_ListIP_f (void)
 					  (int) (ipfilters[i].time ? ipfilters[i].time - realtime : 0));
 		else
 			strcpy (timestr, "Permanent");
-		SV_Printf ("%-5s %-10s %s/%u\n", type, timestr, buf, ipfilters[i].mask);
+
+		SV_Printf ("%-5s %-10s %s/%u\n", type, timestr,
+				   SV_PrintIP (ipfilters[i].ip), ipfilters[i].mask);
 	}
 }
 
