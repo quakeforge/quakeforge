@@ -197,11 +197,11 @@ pr___obj_exec_class (progs_t *pr)
 	pr_sel_t   *sel;
 	pointer_t  *ptr;
 	int         i;
-	int          d = developer->int_val;
+	//int         d = developer->int_val;
 
 	if (!module)
 		return;
-	developer->int_val = 1;
+	//developer->int_val = 1;
 	symtab = &G_STRUCT (pr, pr_symtab_t, module->symtab);
 	if (!symtab)
 		return;
@@ -251,7 +251,7 @@ pr___obj_exec_class (progs_t *pr)
 		Hash_AddElement (pr->categories, category);
 		ptr++;
 	}
-	developer->int_val = d;
+	//developer->int_val = d;
 }
 
 //====================================================================
