@@ -77,12 +77,14 @@ float (float baz) test_int =
 entity sent;
 void () eek =
 {
+	local string bop = "";
 	traceon();
 	if (sent && sent.owner != self )
 		self.origin = '0 0 0';
 	self.origin = self.origin + '1 2 3';
 	test_int (1);
-	traceoff();
+	if (bop)
+		traceoff();
 };
 
 void () assign =
