@@ -1,5 +1,6 @@
 %define name	quakeforge
-%define version @RPMVERSION@
+%define version @VERSION@
+%define rpmversion @RPMVERSION@
 %define release 1
 %define builddir $RPM_BUILD_DIR/%{name}-%{version}
 
@@ -18,10 +19,10 @@
 %define fs_sharepath %{_prefix}/share/games/quakeforge
 
 Name:		%{name}
-Version:	%{version}
+Version:	%{rpmversion}
 Release:	%{release}
 Vendor:		The QuakeForge Project 
-Packager:	The QuakeForge Project quake-devel@lists.sourceforge.net
+Packager:	The QuakeForge Project quakeforge-devel@lists.quakeforge.net
 URL:		http://www.quakeforge.net/
 Source:         %{name}-%{version}.tar.gz
 #Patch:		
@@ -69,7 +70,7 @@ utilities and applications for QuakeForge.
 %package sdl
 Summary:	QuakeForge 3D game engine - SDL client
 Group:		Amusements/Games
-Requires:	quakeforge == %{version}, quakeforge-common == %{version}
+Requires:	quakeforge == %{rpmversion}, quakeforge-common == %{rpmversion}
 %description sdl
 QuakeForge is a source port of Quake and QuakeWorld, the successors to id
 Software's very popular DOOM series. Its primary development goal is to
@@ -82,7 +83,7 @@ standalone engine.
 %package sgl
 Summary:	QuakeForge 3D game engine - SDL-GL client
 Group:		Amusements/Games
-Requires:	quakeforge == %{version}
+Requires:	quakeforge == %{rpmversion}
 %description sgl
 QuakeForge is a source port of Quake and QuakeWorld, the successors to id
 Software's very popular DOOM series. Its primary development goal is to
@@ -97,7 +98,7 @@ standalone engine.
 %package svga
 Summary:	QuakeForge 3D game engine - SVGAlib client
 Group:		Amusements/Games
-Requires:	quakeforge == %{version}
+Requires:	quakeforge == %{rpmversion}
 %description svga
 QuakeForge is a source port of Quake and QuakeWorld, the successors to id
 Software's very popular DOOM series. Its primary development goal is to
@@ -112,7 +113,7 @@ standalone engine.
 %package x11
 Summary:	QuakeForge 3D game engine - X11 client
 Group:		Amusements/Games
-Requires:	quakeforge == %{version}
+Requires:	quakeforge == %{rpmversion}
 %description x11
 QuakeForge is a source port of Quake and QuakeWorld, the successors to id
 Software's very popular DOOM series. Its primary development goal is to
@@ -127,7 +128,7 @@ standalone engine.
 %package glx
 Summary:	QuakeForge 3D game engine - glx client
 Group:		Amusements/Games
-Requires:	quakeforge == %{version}, quakeforge-common == %{version}
+Requires:	quakeforge == %{rpmversion}, quakeforge-common == %{rpmversion}
 %description glx
 QuakeForge is a source port of Quake and QuakeWorld, the successors to id
 Software's very popular DOOM series. Its primary development goal is to
@@ -141,7 +142,7 @@ standalone engine.
 %package servers
 Summary:	QuakeForge 3D game engine - Server
 Group:		Amusements/Games
-Requires:	quakeforge == %{version}, quakeforge-common == %{version}
+Requires:	quakeforge == %{rpmversion}, quakeforge-common == %{rpmversion}
 %description servers
 QuakeForge is a source port of Quake and QuakeWorld, the successors to id
 Software's very popular DOOM series. Its primary development goal is to
