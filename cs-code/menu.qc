@@ -14,6 +14,11 @@ void () Menu_Quit = #0;
 void (integer x, integer y, string name) Draw_Pic = #0;
 void (integer x, integer y, string text) Draw_String = #0;
 
+void (string text) Cbuf_AddText = #0;
+void (string text) Cbuf_InsertText = #0;
+void () Cbuf_Execute = #0;
+void () Cbuf_Execute_Sets = #0;
+
 float () random = #0;
 string () gametype = #0;
 
@@ -157,9 +162,28 @@ void () quit_draw =
 	Draw_String (64, 108, quitMessage[quit_index *4 + 3]);
 };
 
+void (string text, integer key) sp_start =
+{
+	Menu_SelectMenu (NIL);
+	Cbuf_AddText ("disconnect\n");
+	Cbuf_AddText ("maxplayers 1\n");
+	Cbuf_AddText ("coop 0\n");
+	Cbuf_AddText ("deathmatch 0\n");
+	Cbuf_AddText ("teamplay 0\n");
+	Cbuf_AddText ("map start\n");
+};
+
 void () single_player_menu =
 {
-	Menu_Item (54, 32, "", quit_f);
+	Menu_Begin (54, 32, "");
+	Menu_Pic (16, 4, "gfx/qplaque.lmp");
+	Menu_CenterPic (160, 4, "gfx/ttl_sgl.lmp");
+	Menu_Pic (72, 32, "gfx/sp_menu.lmp");
+	Menu_Cursor (spinner);
+	Menu_Item (54, 32, "", sp_start);
+	Menu_Item (54, 52, "", quit_f);
+	Menu_Item (54, 72, "", quit_f);
+	Menu_End ();
 };
 
 void () multi_player_menu =

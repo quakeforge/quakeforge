@@ -103,7 +103,8 @@ menu_free (void *_m, void *unused)
 		int         i;
 
 		for (i = 0; i < m->num_items; i++)
-			menu_free (m->items[i], 0);
+			if (m->items[i]->func)
+				menu_free (m->items[i], 0);
 		free (m->items);
 	}
 	while (m->pics) {
@@ -314,6 +315,7 @@ Menu_Init (void)
 	PR_AddBuiltin (&menu_pr_state, "Menu_SetQuit", bi_Menu_SetQuit, -1);
 	PR_AddBuiltin (&menu_pr_state, "Menu_Quit", bi_Menu_Quit, -1);
 
+	Cbuf_Progs_Init (&menu_pr_state);
 	PR_Cmds_Init (&menu_pr_state);
 	R_Progs_Init (&menu_pr_state);
 
