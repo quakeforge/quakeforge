@@ -360,7 +360,7 @@ SV_CalcPing (client_t *cl)
 static int
 make_info_string_filter (const char *key)
 {
-	return *key == '_' || Info_FilterForKey (key, client_info_filters);
+	return *key == '_' || !Info_FilterForKey (key, client_info_filters);
 }
 
 /*
