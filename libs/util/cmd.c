@@ -1510,7 +1510,6 @@ void
 Cmd_ExecuteParsed (cmd_source_t src)
 {
 	cmd_function_t *cmd;
-	cmdalias_t *a;
 
 	cmd_source = src;
 
@@ -1536,20 +1535,7 @@ Cmd_ExecuteParsed (cmd_source_t src)
 	}
 
 	// check alias
-	a = (cmdalias_t *) Hash_Find (cmd_alias_hash, Cmd_Argv (0));
-	if (a) {
-		int i;
-		cmd_buffer_t *sub; // Create a new buffer to execute the alias in
-		sub = Cmd_NewBuffer (true);
-		sub->restricted = a->restricted;
-		sub->legacy = a->legacy;
-		Cbuf_InsertTextTo (sub, a->value);
-		for (i = 0; i < Cmd_Argc (); i++)
-			Cmd_SetLocal (sub, va ("%i", i), Cmd_Argv (i));
-		Cmd_SetLocal (sub, "argn", va ("%i", Cmd_Argc ()));
-		Cbuf_ExecuteSubroutine (sub);
-		return;
-	}
+
 
 	if (cmd_warncmd->int_val || developer->int_val)
 		Sys_Printf ("Unknown command \"%s\"\n", Cmd_Argv (0));
@@ -1584,11 +1570,6 @@ Cmd_AddCommand (const char *cmd_name, xcommand_t function,
 	cmd_function_t *cmd;
 	cmd_function_t **c;
 
-	// fail if the command is a variable name
-	if (Cvar_FindVar (cmd_name)) {
-		Sys_Printf ("Cmd_AddCommand: %s already defined as a var\n", cmd_name);
-		return 0;
-	}
 	// fail if the command already exists
 	cmd = (cmd_function_t *) Hash_Find (cmd_hash, cmd_name);
 	if (cmd) {
@@ -1749,95 +1730,6 @@ Cmd_CompleteBuildList (const char *partial)
 }
 
 /*
-	Cmd_CompleteAlias
-
-	New function for tab-completion system
-	Added by EvilTypeGuy
-	Thanks to Fett erich@heintz.com
-	Thanks to taniwha
-*/
-const char *
-Cmd_CompleteAlias (const char *partial)
-{
-	cmdalias_t *alias;
-	int         len;
-
-	len = strlen (partial);
-
-	if (!len)
-		return NULL;
-
-	// Check functions
-	for (alias = cmd_alias; alias; alias = alias->next)
-		if (!strncasecmp (partial, alias->name, len))
-			return alias->name;
-
-	return NULL;
-}
-
-/*
-	Cmd_CompleteAliasCountPossible
-
-	New function for tab-completion system
-	Added by EvilTypeGuy
-	Thanks to Fett erich@heintz.com
-	Thanks to taniwha
-*/
-int
-Cmd_CompleteAliasCountPossible (const char *partial)
-{
-	cmdalias_t *alias;
-	int         len;
-	int         h;
-
-	h = 0;
-
-	len = strlen (partial);
-
-	if (!len)
-		return 0;
-
-	// Loop through the command list and count all partial matches
-	for (alias = cmd_alias; alias; alias = alias->next)
-		if (!strncasecmp (partial, alias->name, len))
-			h++;
-
-	return h;
-}
-
-/*
-	Cmd_CompleteAliasBuildList
-
-	New function for tab-completion system
-	Added by EvilTypeGuy
-	Thanks to Fett erich@heintz.com
-	Thanks to taniwha
-*/
-const char **
-Cmd_CompleteAliasBuildList (const char *partial)
-{
-	cmdalias_t *alias;
-	int         len = 0;
-	int         bpos = 0;
-	int         sizeofbuf = (Cmd_CompleteAliasCountPossible (partial) + 1) *
-		sizeof (char *);
-	const char **buf;
-
-	len = strlen (partial);
-	buf = malloc (sizeofbuf + sizeof (char *));
-
-	SYS_CHECKMEM (buf);
-	// Loop through the alias list and print all matches
-	for (alias = cmd_alias; alias; alias = alias->next)
-		if (!strncasecmp (partial, alias->name, len))
-			buf[bpos++] = alias->name;
-
-	buf[bpos] = NULL;
-	return buf;
-}
-
-
-/*
 	Cmd_CheckParm
 
 	Returns the position (1 to argc-1) in the command's argument list
@@ -1933,6 +1825,30 @@ cmd_get_key (void *c, void *unused)
 	return cmd->name;
 }
 
+void Cmd_Runalias_f (void)
+{
+	cmdalias_t *a;
+	
+	a = (cmdalias_t *) Hash_Find (cmd_alias_hash, Cmd_Argv (0));
+	
+	if (a) {
+		int i;
+		cmd_buffer_t *sub; // Create a new buffer to execute the alias in
+		sub = Cmd_NewBuffer (true);
+		sub->restricted = a->restricted;
+		sub->legacy = a->legacy;
+		Cbuf_InsertTextTo (sub, a->value);
+		for (i = 0; i < Cmd_Argc (); i++)
+			Cmd_SetLocal (sub, va ("%i", i), Cmd_Argv (i));
+		Cmd_SetLocal (sub, "argn", va ("%i", Cmd_Argc ()));
+		Cbuf_ExecuteSubroutine (sub);
+		return;
+	} else {
+			Sys_Printf ("BUG: No alias found for registered command.  Please report this to the QuakeForge development team.");
+			Cmd_Error ("Fatal bug encountered.  Execution aborted.  Please contact the QuakeForge team.");
+	}
+}
+
 /*
 	Cmd_Alias_f
 
@@ -1962,9 +1878,9 @@ Cmd_Alias_f (void)
 			Sys_Printf("alias \"%s\" {%s}\n", alias->name, alias->value);
 		return;
 	}
-	if (alias) {
+	if (alias)
 		free ((char *) alias->value);
-	} else {
+	else {
 		cmdalias_t **a;
 
 		alias = calloc (1, sizeof (cmdalias_t));
@@ -1976,6 +1892,7 @@ Cmd_Alias_f (void)
 				break;
 		alias->next = *a;
 		*a = alias;
+		Cmd_AddCommand (alias->name, Cmd_Runalias_f, "User-created command.");
 	}
 	// copy the rest of the command line
 	cmd = malloc (strlen (Cmd_Args (1)) + 2);	// can never be longer
@@ -2018,6 +1935,7 @@ Cmd_UnAlias_f (void)
 		free ((char *) alias->name);
 		free ((char *) alias->value);
 		free (alias);
+		Cmd_RemoveCommand (Cmd_Argv(1));
 	} else {
 		Sys_Printf ("Unknown alias \"%s\"\n", s);
 	}

@@ -99,6 +99,9 @@ typedef struct cmd_thread_s {
 	struct cmd_thread_s *prev, *next; // Linked list
 } cmd_thread_t;
 
+typedef struct cmd_event_s {
+	struct dstring_s *name, *command;
+} cmd_event_t;
 //===========================================================================
 
 void	escape (dstring_t * dstr, const char *clist);
@@ -124,7 +127,7 @@ void Cbuf_Init (void);
 void Cbuf_AddTextTo (cmd_buffer_t *buffer, const char *text);
 // adds text to the end of a specific buffer
 void Cbuf_AddText (const char *text);
-// adds text to the end of the active buffer.  By default this is the console bufer
+// adds text to the end of the active buffer.  By default this is the console buffer.
 
 void Cbuf_InsertText (const char *text);
 // inserts text at the beginning of the active buffer, ahead of other commands
@@ -172,8 +175,6 @@ const char 	*Cmd_CompleteCommand (const char *partial);
 // attempts to match a partial command for automatic command line completion
 // returns NULL if nothing fits
 
-int		Cmd_CompleteAliasCountPossible (const char *partial);
-const char	**Cmd_CompleteAliasBuildList (const char *partial);
 int		Cmd_CompleteCountPossible (const char *partial);
 const char	**Cmd_CompleteBuildList (const char *partial);
 const char	*Cmd_CompleteAlias (const char *partial);

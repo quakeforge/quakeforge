@@ -57,7 +57,7 @@ Con_BasicCompleteCommandLine (inputline_t *il)
 {
 	char		   *s;
 	const char	   *cmd = "", **list[3] = {0, 0, 0};
-	int				cmd_len, a, c, i, v;
+	int				cmd_len, c, i, v;
 
 	s = il->lines[il->edit_line] + 1;
 	if (*s == '\\' || *s == '/')
@@ -66,18 +66,15 @@ Con_BasicCompleteCommandLine (inputline_t *il)
 	// Count number of possible matches
 	c = Cmd_CompleteCountPossible(s);
 	v = Cvar_CompleteCountPossible(s);
-	a = Cmd_CompleteAliasCountPossible(s);
 	
-	if (!(c + v + a))	// No possible matches
+	if (!(c + v))	// No possible matches
 		return;
 	
-	if (c + v + a == 1) {
+	if (c + v == 1) {
 		if (c)
 			list[0] = Cmd_CompleteBuildList(s);
-		else if (v)
-			list[0] = Cvar_CompleteBuildList(s);
 		else
-			list[0] = Cmd_CompleteAliasBuildList(s);
+			list[0] = Cvar_CompleteBuildList(s);
 		cmd = *list[0];
 		cmd_len = strlen (cmd);
 	} else {
@@ -85,8 +82,6 @@ Con_BasicCompleteCommandLine (inputline_t *il)
 			cmd = *(list[0] = Cmd_CompleteBuildList(s));
 		if (v)
 			cmd = *(list[1] = Cvar_CompleteBuildList(s));
-		if (a)
-			cmd = *(list[2] = Cmd_CompleteAliasBuildList(s));
 		
 		cmd_len = strlen (s);
 		do {
@@ -119,18 +114,13 @@ Con_BasicCompleteCommandLine (inputline_t *il)
 			Con_Printf("%i possible variable%s\n", v, (v > 1) ? "s: " : ":");
 			Con_DisplayList(list[1], con_linewidth);
 		}
-		
-		if (a) {
-			Con_Printf("%i possible aliases%s\n", a, (a > 1) ? "s: " : ":");
-			Con_DisplayList(list[2], con_linewidth);
-		}
 	}
 	
 	if (cmd) {
 		il->lines[il->edit_line][1] = '/';
 		strncpy(il->lines[il->edit_line] + 2, cmd, cmd_len);
 		il->linepos = cmd_len + 2;
-		if (c + v + a == 1) {
+		if (c + v == 1) {
 			il->lines[il->edit_line][il->linepos] = ' ';
 			il->linepos++;
 		}
