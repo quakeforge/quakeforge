@@ -48,14 +48,12 @@ struct sfx_s
 
 	int         length;
 	int         loopstart;
-	int         speed;
-	int         width;
-	int         channels;
 
 	void       *data;
 
 	struct sfxbuffer_s *(*touch) (sfx_t *sfx);
 	struct sfxbuffer_s *(*retain) (sfx_t *sfx);
+	struct wavinfo_s *(*wavinfo) (sfx_t *sfx);
 	void        (*release) (sfx_t *sfx);
 };
 

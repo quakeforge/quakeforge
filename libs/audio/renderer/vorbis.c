@@ -85,37 +85,45 @@ static ov_callbacks callbacks = {
 	tell_func,
 };
 
-static void
-get_info (OggVorbis_File *vf, sfx_t *sfx)
+static wavinfo_t
+get_info (OggVorbis_File *vf)
 {
+	wavinfo_t   info;
 	vorbis_info *vi;
 	int         sample_start = -1, sample_count = 0;
+	int         samples;
 	char      **ptr;
 
 	vi = ov_info (vf, -1);
-	sfx->length = ov_pcm_total (vf, -1);
-	sfx->channels = vi->channels;
-	sfx->speed = vi->rate;
+	samples = ov_pcm_total (vf, -1);
 
 	for (ptr = ov_comment (vf, -1)->user_comments; *ptr; ptr++) {
 		Sys_DPrintf ("%s\n", *ptr);
 		if (strncmp ("CUEPOINT=", *ptr, 9) == 0) {
 			sscanf (*ptr + 9, "%d %d", &sample_start, &sample_count);
-			break;
 		}
 	}
 
+	if (sample_start != -1)
+		samples = sample_start + sample_count;
+
+	info.rate = vi->rate;
+	info.width = 2;
+	info.channels = vi->channels;
+	info.loopstart = sample_start;
+	info.samples = samples;
+	info.dataofs = 0;
+	info.datalen = samples * 2;
+
 	if (developer->int_val) {
 		Sys_Printf ("\nBitstream is %d channel, %dHz\n",
-					sfx->channels, sfx->speed);
+					info.channels, info.rate);
 		Sys_Printf ("\nDecoded length: %d samples (%d bytes)\n",
-					sfx->length, sfx->length * sfx->channels * 2);
+					info.samples, info.samples * info.channels * 2);
 		Sys_Printf ("Encoded by: %s\n\n", ov_comment (vf, -1)->vendor);
 	}
 
-	if (sample_start != -1)
-		sfx->length = sample_start + sample_count;
-	sfx->loopstart = sample_start;
+	return info;
 }
 
 static int
@@ -144,16 +152,15 @@ read_ogg (OggVorbis_File *vf, byte *buf, int len)
 static sfxbuffer_t *
 load_ogg (OggVorbis_File *vf, sfxblock_t *block, cache_allocator_t allocator)
 {
-	long        size;
 	byte       *data;
 	sfxbuffer_t *sc = 0;
 	sfx_t      *sfx = block->sfx;
-	int        channels;
-	void       (*resample)(sfx_t *, sfxbuffer_t *, byte *, int);
+	void       (*resample)(sfxbuffer_t *, byte *, int);
+	wavinfo_t  info;
 
-	get_info (vf, sfx);
+	info = get_info (vf);
 
-	switch (sfx->channels) {
+	switch (info.channels) {
 		case 1:
 			resample = SND_ResampleMono;
 			break;
@@ -162,23 +169,22 @@ load_ogg (OggVorbis_File *vf, sfxblock_t *block, cache_allocator_t allocator)
 			break;
 		default:
 			Sys_Printf ("%s: unsupported channel count: %d\n",
-						sfx->name, sfx->channels);
+						sfx->name, info.channels);
 			return 0;
 	}
 
-	channels = sfx->channels;
-
-	size = sfx->length * channels * 2;
-
-	data = malloc (size);
+	data = malloc (info.datalen);
 	if (!data)
 		goto bail;
-	sc = SND_GetCache (sfx->length, sfx->speed, 2, channels, block, allocator);
+	sc = SND_GetCache (info.samples, info.rate, info.width, info.channels,
+					   block, allocator);
 	if (!sc)
 		goto bail;
-	if (read_ogg (vf, data, size) < 0)
+	sc->sfx = sfx;
+	if (read_ogg (vf, data, info.datalen) < 0)
 		goto bail;
-	resample (sfx, sc, data, sfx->length);
+	block->wavinfo = info;
+	resample (sc, data, info.samples);
 	sc->length = sc->head = sfx->length;
   bail:
 	if (data)
@@ -208,46 +214,8 @@ ogg_callback_load (void *object, cache_allocator_t allocator)
 }
 
 static void
-vorbis_advance (sfxbuffer_t *buffer, int count)
-{
-}
-
-static void
 stream_ogg (sfx_t *sfx, OggVorbis_File *vf)
 {
-	sfxstream_t *stream;
-	int         length, bytes;
-	void        (*paint) (channel_t *ch, sfxbuffer_t *buffer, int count);
-
-
-	get_info (vf, sfx);
-
-	switch (sfx->channels) {
-		case 1:
-			paint = SND_PaintChannelFrom16;
-			break;
-		case 2:
-			paint = SND_PaintChannelStereo16;
-			break;
-		default:
-			Sys_Printf ("%s: unsupported channel count: %d\n",
-						sfx->name, sfx->channels);
-			return;
-	}
-
-	length = shm->speed * snd_mixahead->value * 3;
-	bytes = sfx->channels * 2 * length;
-
-	stream = calloc (1, sizeof (sfxstream_t) + bytes);
-
-	stream->file = malloc (sizeof (OggVorbis_File));
-	memcpy (stream->file, vf, sizeof (OggVorbis_File));
-
-	stream->buffer.length = length;
-	stream->buffer.paint = paint;
-	stream->buffer.advance = vorbis_advance;
-
-	sfx->data = stream;
 }
 
 void
@@ -265,6 +233,7 @@ SND_LoadOgg (QFile *file, sfx_t *sfx, char *realname)
 		sfxblock_t *block = calloc (1, sizeof (sfxblock_t));
 		ov_clear (&vf);
 		sfx->data = block;
+		sfx->wavinfo = SND_CacheWavinfo;
 		sfx->touch = SND_CacheTouch;
 		sfx->retain = SND_CacheRetain;
 		sfx->release = SND_CacheRelease;

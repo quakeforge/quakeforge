@@ -98,6 +98,18 @@ SND_StreamRelease (sfx_t *sfx)
 {
 }
 
+wavinfo_t *
+SND_CacheWavinfo (sfx_t *sfx)
+{
+	return &((sfxblock_t *) sfx->data)->wavinfo;
+}
+
+wavinfo_t *
+SND_StreamWavinfo (sfx_t *sfx)
+{
+	return &((sfxstream_t *) sfx->data)->wavinfo;
+}
+
 void
 SND_Load (sfx_t *sfx)
 {
@@ -157,23 +169,25 @@ SND_GetCache (long samples, int rate, int inwidth, int channels,
 	width = snd_loadas8bit->int_val ? 1 : 2;
 	stepscale = (float) rate / shm->speed;	// usually 0.5, 1, or 2
 	size = samples / stepscale;
+printf ("%ld %d\n", samples, size);
 	size *= width * channels;
 	sc = allocator (&block->cache, sizeof (sfxbuffer_t) + size, sfx->name);
 	if (!sc)
 		return 0;
-	block->bytes = size;
+	memcpy (sc->data + size, "\xde\xad\xbe\xef", 4);
 	return sc;
 }
 
 void
-SND_ResampleMono (sfx_t *sfx, sfxbuffer_t *sc, byte *data, int length)
+SND_ResampleMono (sfxbuffer_t *sc, byte *data, int length)
 {
 	unsigned char *ib, *ob;
 	int			fracstep, outcount, sample, samplefrac, srcsample, i;
 	float		stepscale;
 	short	   *is, *os;
-	int         inwidth = sfx->width;
-	int         inrate = sfx->speed;
+	wavinfo_t  *info = sc->sfx->wavinfo (sc->sfx);
+	int         inwidth = info->width;
+	int         inrate = info->rate;
 	int         outwidth;
 
 	is = (short *) data;
@@ -184,6 +198,11 @@ SND_ResampleMono (sfx_t *sfx, sfxbuffer_t *sc, byte *data, int length)
 	stepscale = (float) inrate / shm->speed;	// usually 0.5, 1, or 2
 
 	outcount = length / stepscale;
+printf ("%d %d\n", length, outcount);
+
+	sc->sfx->length = outcount;
+	if (info->loopstart != -1)
+		sc->sfx->loopstart = info->loopstart / stepscale;
 
 	if (snd_loadas8bit->int_val) {
 		outwidth = 1;
@@ -263,17 +282,24 @@ SND_ResampleMono (sfx_t *sfx, sfxbuffer_t *sc, byte *data, int length)
 			}
 		}
 	}
+	{
+		byte       *x = sc->data + outcount * outwidth;
+		if (memcmp (x, "\xde\xad\xbe\xef", 4))
+			Sys_Error ("SND_ResampleMono screwed the pooch %02x%02x%02x%02x",
+					   x[0], x[1], x[2], x[3]);
+	}
 }
 
 void
-SND_ResampleStereo (sfx_t *sfx, sfxbuffer_t *sc, byte *data, int length)
+SND_ResampleStereo (sfxbuffer_t *sc, byte *data, int length)
 {
 	int			fracstep, outcount, sl, sr, samplefrac, srcsample, i;
 	float		stepscale;
 	stereo8_t  *ib, *ob;
 	stereo16_t *is, *os;
-	int         inwidth = sfx->width;
-	int         inrate = sfx->speed;
+	wavinfo_t  *info = sc->sfx->wavinfo (sc->sfx);
+	int         inwidth = info->width;
+	int         inrate = info->rate;
 	int         outwidth;
 
 	is = (stereo16_t *) data;
@@ -284,6 +310,10 @@ SND_ResampleStereo (sfx_t *sfx, sfxbuffer_t *sc, byte *data, int length)
 	stepscale = (float) inrate / shm->speed;	// usually 0.5, 1, or 2
 
 	outcount = length / stepscale;
+
+	sc->sfx->length = outcount;
+	if (info->loopstart != -1)
+		sc->sfx->loopstart = info->loopstart / stepscale;
 
 	if (snd_loadas8bit->int_val) {
 		outwidth = 1;

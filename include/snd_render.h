@@ -40,6 +40,16 @@ typedef struct portable_samplepair_s {
 	int right;
 } portable_samplepair_t;
 
+typedef struct wavinfo_s {
+	int		rate;
+	int		width;
+	int		channels;
+	int		loopstart;
+	int		samples;
+	int		dataofs;		// chunk starts this many bytes from file start
+	int     datalen;		// chunk bytes
+} wavinfo_t;
+
 typedef struct channel_s channel_t;
 typedef struct sfxbuffer_s sfxbuffer_t;
 struct sfxbuffer_s {
@@ -49,19 +59,21 @@ struct sfxbuffer_s {
 	int         pos;			// position of tail within full stream
 	void        (*paint) (channel_t *ch, sfxbuffer_t *buffer, int count);
 	void        (*advance) (sfxbuffer_t *buffer, int count);
+	sfx_t      *sfx;
 	byte        data[4];
 };
 
 typedef struct sfxstream_s {
 	sfx_t      *sfx;
 	void       *file;
+	wavinfo_t   wavinfo;
 	sfxbuffer_t buffer;
 } sfxstream_t;
 
 typedef struct sfxblock_s {
 	sfx_t      *sfx;
 	void       *file;
-	int         bytes;
+	wavinfo_t   wavinfo;
 	cache_user_t cache;
 } sfxblock_t;
 
@@ -81,15 +93,6 @@ struct channel_s {
 	int	phase;	// phase shift between l-r in samples
 	int	oldphase;	// phase shift between l-r in samples
 };
-
-typedef struct wavinfo_s {
-	int		rate;
-	int		width;
-	int		channels;
-	int		loopstart;
-	int		samples;
-	int		dataofs;		// chunk starts this many bytes from file start
-} wavinfo_t;
 
 void SND_PaintChannels(int endtime);
 void SND_Init (void);
@@ -115,8 +118,8 @@ void SND_LocalSound (const char *s);
 void SND_BlockSound (void);
 void SND_UnblockSound (void);
 
-void SND_ResampleMono (sfx_t *sfx, sfxbuffer_t *sc, byte *data, int length);
-void SND_ResampleStereo (sfx_t *sfx, sfxbuffer_t *sc, byte *data, int length);
+void SND_ResampleMono (sfxbuffer_t *sc, byte *data, int length);
+void SND_ResampleStereo (sfxbuffer_t *sc, byte *data, int length);
 sfxbuffer_t *SND_GetCache (long samples, int rate, int inwidth, int channels,
 						   sfxblock_t *block, cache_allocator_t allocator);
 
@@ -131,6 +134,8 @@ void SND_CallbackLoad (void *object, cache_allocator_t allocator);
 void SND_LoadOgg (QFile *file, sfx_t *sfx, char *realname);
 void SND_LoadWav (QFile *file, sfx_t *sfx, char *realname);
 
+wavinfo_t *SND_CacheWavinfo (sfx_t *sfx);
+wavinfo_t *SND_StreamWavinfo (sfx_t *sfx);
 sfxbuffer_t *SND_CacheTouch (sfx_t *sfx);
 sfxbuffer_t *SND_CacheRetain (sfx_t *sfx);
 void SND_CacheRelease (sfx_t *sfx);
@@ -142,8 +147,6 @@ void SND_PaintChannelFrom8 (channel_t *ch, sfxbuffer_t *sc, int count);
 void SND_PaintChannelFrom16 (channel_t *ch, sfxbuffer_t *sc, int count);
 void SND_PaintChannelStereo8 (channel_t *ch, sfxbuffer_t *sc, int count);
 void SND_PaintChannelStereo16 (channel_t *ch, sfxbuffer_t *sc, int count);
-
-wavinfo_t GetWavinfo (const char *name, byte *wav, int wavlength);
 
 extern	channel_t   channels[MAX_CHANNELS];
 // 0 to MAX_DYNAMIC_CHANNELS-1	= normal entity sounds

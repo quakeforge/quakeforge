@@ -48,49 +48,44 @@ static __attribute__ ((unused)) const char rcsid[] =
 
 #include "snd_render.h"
 
-typedef struct {
-	const char *name;
-	int         data_start;
-	int         data_length;
-	int         length;
-} wavfile_t;
-
 static void
 wav_callback_load (void *object, cache_allocator_t allocator)
 {
 	sfxblock_t *block = (sfxblock_t *) object;
 	sfx_t      *sfx = block->sfx;
-	wavfile_t  *wavfile = (wavfile_t *) block->file;
+	const char *name = (const char *) block->file;
 	QFile      *file;
 	byte       *data;
 	sfxbuffer_t *buffer;
+	wavinfo_t  *info = &block->wavinfo;
 
-	QFS_FOpenFile (wavfile->name, &file);
+	QFS_FOpenFile (name, &file);
 	if (!file)
 		return; //FIXME Sys_Error?
 
-	Qseek (file, wavfile->data_start, SEEK_SET);
-	data = malloc (wavfile->data_length);
-	Qread (file, data, wavfile->data_length);
+	Qseek (file, info->dataofs, SEEK_SET);
+	data = malloc (info->datalen);
+	Qread (file, data, info->datalen);
 	Qclose (file);
 
-	buffer = SND_GetCache (wavfile->length, sfx->speed, sfx->width,
-						   sfx->channels, block, allocator);
-	if (sfx->channels == 2)
-		SND_ResampleStereo (sfx, buffer, data, wavfile->length);
+	buffer = SND_GetCache (info->samples, info->rate, info->width,
+						   info->channels, block, allocator);
+	buffer->sfx = sfx;
+	if (info->channels == 2)
+		SND_ResampleStereo (buffer, data, info->samples);
 	else
-		SND_ResampleMono (sfx, buffer, data, wavfile->length);
+		SND_ResampleMono (buffer, data, info->samples);
 	buffer->length = buffer->head = sfx->length;
 	free (data);
 }
 
 static void
-stream_wav (sfx_t *sfx, wavfile_t *wavfile)
+stream_wav (sfx_t *sfx, wavinfo_t info)
 {
 }
 
-void
-SND_LoadWav (QFile *file, sfx_t *sfx, char *realname)
+static wavinfo_t
+get_info (QFile *file)
 {
 	riff_t     *riff;
 	riff_d_chunk_t **ck;
@@ -110,13 +105,14 @@ SND_LoadWav (QFile *file, sfx_t *sfx, char *realname)
 	riff_ltxt_t *ltxt;
 	riff_d_ltxt_t *dltxt = 0;
 
-	wavfile_t  *wavfile;
+	wavinfo_t   info;
 
-	int         loop_start = -1, sample_count = -1;
+
+	info.rate = 0;
 
 	if (!(riff = riff_read (file))) {
 		Sys_Printf ("bad riff file\n");
-		return;
+		return info;
 	}
 
 	for (ck = riff->chunks; *ck; ck++) {
@@ -141,7 +137,7 @@ SND_LoadWav (QFile *file, sfx_t *sfx, char *realname)
 						for (lck = list->chunks; *lck; lck++) {
 							RIFF_SWITCH ((*lck)->name) {
 								case RIFF_CASE ('l','t','x','t'):
-									ltxt = (riff_ltxt_t *) *ck;
+									ltxt = (riff_ltxt_t *) *lck;
 									dltxt = &ltxt->ltxt;
 									break;
 							}
@@ -167,39 +163,54 @@ SND_LoadWav (QFile *file, sfx_t *sfx, char *realname)
 		Sys_Printf ("unsupported channel count\n");
 		goto bail;
 	}
-	sfx->width = dfmt->bits_per_sample / 8;
-	sfx->length = data->ck.len / sfx->width;
-	sfx->speed = dfmt->samples_per_sec;
-	sfx->channels = dfmt->channels;
 	
-	wavfile = malloc (sizeof (wavfile_t));
-	wavfile->name = realname;
-	wavfile->data_start = *(int *)data->data;
-	wavfile->data_length = data->ck.len;
-	wavfile->length = sfx->length;
+	info.rate = dfmt->samples_per_sec;
+	info.width = dfmt->bits_per_sample / 8;
+	info.channels = dfmt->channels;
+	if (cp) {
+		info.loopstart = cp->sample_offset;
+		if (dltxt)
+			info.samples = info.loopstart + dltxt->len;
+		else
+			info.samples = data->ck.len / info.width;
+	} else {
+		info.loopstart = -1;
+		info.samples = data->ck.len / info.width;
+	}
+	info.dataofs = *(int *)data->data;
+	info.datalen = data->ck.len;
+
+bail:
+	Qclose (file);
+	riff_free (riff);
+	return info;
+}
+
+void
+SND_LoadWav (QFile *file, sfx_t *sfx, char *realname)
+{
+	wavinfo_t   info;
+
+	info = get_info (file);
+	if (!info.rate)
+		return;
 
 	if (sfx->length < 8 * shm->speed) {
 		sfxblock_t *block = calloc (1, sizeof (sfxblock_t));
 		sfx->data = block;
+		sfx->wavinfo = SND_CacheWavinfo;
 		sfx->touch = SND_CacheTouch;
 		sfx->retain = SND_CacheRetain;
 		sfx->release = SND_CacheRelease;
 		sfx->data = block;
 		block->sfx = sfx;
-		block->file = wavfile;
+		block->file = realname;
+		block->wavinfo = info;
 		Cache_Add (&block->cache, block, wav_callback_load);
 	} else {
 		sfx->touch = sfx->retain = SND_StreamRetain;
 		sfx->release = SND_StreamRelease;
 		free (realname);
-		stream_wav (sfx, wavfile);
+		stream_wav (sfx, info);
 	}
-
-	if (dltxt)
-		sample_count = dltxt->len;
-	if (cp)
-		loop_start = cp->sample_offset;
-bail:
-	Qclose (file);
-	riff_free (riff);
 }
