@@ -133,6 +133,7 @@ cvar_t     *rcon_address;
 
 cvar_t     *cl_writecfg;
 cvar_t     *cl_allow_cmd_pkt;
+cvar_t     *cl_cmd_pkt_adr;
 cvar_t     *cl_paranoid;
 
 cvar_t     *cl_timeout;
@@ -228,7 +229,7 @@ char        modellist_name[] = "modellist %i %i";
 char        soundlist_name[] = "soundlist %i %i";
 
 extern cvar_t *hud_scoreboard_uid;
-
+static netadr_t cl_cmd_packet_address;
 
 static void
 CL_Quit_f (void)
@@ -864,8 +865,13 @@ CL_ConnectionlessPacket (void)
 		if (!cl_allow_cmd_pkt->int_val
 			|| !NET_CompareBaseAdr (net_from, net_local_adr)
 			|| !NET_CompareBaseAdr (net_from, net_loopback_adr)) {
-			Con_Printf ("Command packet from remote host.  Ignored.\n");
-			return;
+			if (cl_cmd_pkt_adr->string[0]
+				&& NET_CompareBaseAdr (net_from, cl_cmd_packet_address)) {
+				allowremotecmd = false; // force password checking
+			} else {
+				Con_Printf ("Command packet from remote host.  Ignored.\n");
+				return;
+			}
 		}
 		s = MSG_ReadString (net_message);
 
@@ -1190,6 +1196,12 @@ cl_usleep_f (cvar_t *var)
 }
 
 static void
+cl_cmd_pkt_adr_f (cvar_t *var)
+{
+	NET_StringToAdr (var->string, &cl_cmd_packet_address);
+}
+
+static void
 CL_Init_Cvars (void)
 {
 	cl_model_crcs = Cvar_Get ("cl_model_crcs", "1", CVAR_ARCHIVE, NULL,
@@ -1199,6 +1211,9 @@ CL_Init_Cvars (void)
 							  "connecting and not connecting on some others.");
 	cl_allow_cmd_pkt = Cvar_Get ("cl_allow_cmd_pkt", "1", CVAR_NONE, NULL,
 								 "enables packets from the likes of gamespy");
+	cl_cmd_pkt_adr = Cvar_Get ("cl_cmd_pkt_adr", "", CVAR_NONE,
+							   cl_cmd_pkt_adr_f,
+							   "allowed address for non-local command packet");
 	cl_paranoid = Cvar_Get ("cl_paranoid", "1", CVAR_NONE, NULL,
 							"print source address of connectionless packets"
 							" even when coming from the server being connected"
