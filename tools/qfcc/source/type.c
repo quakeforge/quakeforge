@@ -90,11 +90,6 @@ type_t     *type_module;
 
 type_t      type_floatfield = { ev_field, NULL, &type_float };
 
-def_t       def_void = { &type_void, "temp" };
-def_t       def_function = { &type_function, "temp" };
-
-def_t       def_ret, def_parms[MAX_PARMS];
-
 static type_t *free_types;
 
 static inline void

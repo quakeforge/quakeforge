@@ -45,6 +45,11 @@ typedef struct locref_s {
 	int         ofs;
 } locref_t;
 
+def_t       def_void = { &type_void, "temp" };
+def_t       def_function = { &type_function, "temp" };
+
+def_t       def_ret, def_parms[MAX_PARMS];
+
 static def_t *free_temps[4];			// indexted by type size
 static def_t temp_scope;
 static def_t *free_defs;

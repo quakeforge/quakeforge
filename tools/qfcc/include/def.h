@@ -38,13 +38,12 @@
 typedef struct def_s {
 	struct type_s	*type;
 	const char		*name;
-	int				locals;
-	int				*alloc;
 	int				ofs;
-	int				initialized;	// for uninit var detection
-	int				constant;	// 1 when a declaration included "= immediate"
+
 	struct reloc_s *refs;			// for relocations
 
+	int				initialized:1;	// for uninit var detection
+	int				constant:1;	// 1 when a declaration included "= immediate"
 	unsigned		freed:1;		// already freed from the scope
 	unsigned		removed:1;		// already removed from the symbol table
 	unsigned		used:1;			// unused local detection
@@ -56,6 +55,8 @@ typedef struct def_s {
 	int				users;			// ref counted temps
 	struct expr_s	*expr;			// temp expr using this def
 
+	int				locals;
+	int				*alloc;
 	struct def_s	*def_next;		// for writing out the global defs list
 	struct def_s	*next;			// general purpose linking
 	struct def_s	*scope_next;	// to facilitate hash table removal
