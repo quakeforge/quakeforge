@@ -535,6 +535,7 @@ SV_WriteClientdataToMessage (client_t *client, sizebuf_t *msg)
 {
 	edict_t    *ent, *other;
 	int         i;
+	net_svc_damage_t block;
 
 	ent = client->edict;
 
@@ -547,13 +548,14 @@ SV_WriteClientdataToMessage (client_t *client, sizebuf_t *msg)
 	// send a damage message if the player got hit this frame
 	if (SVfloat (ent, dmg_take) || SVfloat (ent, dmg_save)) {
 		other = PROG_TO_EDICT (&sv_pr_state, SVentity (ent, dmg_inflictor));
-		MSG_WriteByte (msg, svc_damage);
-		MSG_WriteByte (msg, SVfloat (ent, dmg_save));
-		MSG_WriteByte (msg, SVfloat (ent, dmg_take));
+		block.armor = SVfloat (ent, dmg_save);
+		block.blood = SVfloat (ent, dmg_take);
 		for (i = 0; i < 3; i++)
-			MSG_WriteCoord (msg, SVvector (other, origin)[i] + 0.5 *
+			block.from[i] = SVvector (other, origin)[i] + 0.5 *
 							(SVvector (other, mins)[i] +
-							 SVvector (other, maxs)[i]));
+							 SVvector (other, maxs)[i]);
+		MSG_WriteByte (msg, svc_damage);
+		NET_SVC_Damage_Emit (&block, msg);
 
 		SVfloat (ent, dmg_take) = 0;
 		SVfloat (ent, dmg_save) = 0;

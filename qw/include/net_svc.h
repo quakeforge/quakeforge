@@ -58,7 +58,7 @@ typedef struct net_svc_damage_s
 typedef struct net_svc_serverdata_s
 {
 	int			protocolversion;
-	int			servercount;
+	int			servercount; // FIXME: rename this
 	const char *gamedir;
 	byte		playernum;
 	qboolean	spectator;
@@ -201,7 +201,10 @@ typedef struct net_svc_deltapacketentities_s
 
 net_status_t NET_SVC_Print_Emit (net_svc_print_t *block, sizebuf_t *buf);
 net_status_t NET_SVC_Print_Parse (net_svc_print_t *block, msg_t *msg);
+net_status_t NET_SVC_Damage_Emit (net_svc_damage_t *block, sizebuf_t *buf);
 net_status_t NET_SVC_Damage_Parse (net_svc_damage_t *block, msg_t *msg);
+net_status_t NET_SVC_ServerData_Emit (net_svc_serverdata_t *block,
+									  sizebuf_t *buf);
 net_status_t NET_SVC_ServerData_Parse (net_svc_serverdata_t *block, msg_t *msg);
 net_status_t NET_SVC_Sound_Parse (net_svc_sound_t *block, msg_t *msg);
 net_status_t NET_SVC_SpawnBaseline_Parse (net_svc_spawnbaseline_t *block,

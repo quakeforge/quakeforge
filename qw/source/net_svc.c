@@ -70,6 +70,19 @@ NET_SVC_Print_Parse (net_svc_print_t *block, msg_t *msg)
 }
 
 net_status_t
+NET_SVC_Damage_Emit (net_svc_damage_t *block, sizebuf_t *buf)
+{
+	int i;
+
+	MSG_WriteByte (buf, block->armor);
+	MSG_WriteByte (buf, block->blood);
+	for (i = 0; i < 3; i++)
+		MSG_WriteCoord (buf, block->from[i]);
+
+	return buf->overflowed;
+}
+
+net_status_t
 NET_SVC_Damage_Parse (net_svc_damage_t *block, msg_t *msg)
 {
 	int i;
@@ -80,6 +93,29 @@ NET_SVC_Damage_Parse (net_svc_damage_t *block, msg_t *msg)
 		block->from[i] = MSG_ReadCoord (msg);
 
 	return msg->badread;
+}
+
+net_status_t
+NET_SVC_ServerData_Emit (net_svc_serverdata_t *block, sizebuf_t *buf)
+{
+	MSG_WriteLong (buf, block->protocolversion);
+	MSG_WriteLong (buf, block->servercount);
+	MSG_WriteString (buf, block->gamedir);
+	MSG_WriteByte (buf, block->playernum | (block->spectator ? 128 : 0));
+	MSG_WriteString (buf, block->levelname);
+
+	MSG_WriteFloat (buf, block->movevars.gravity);
+	MSG_WriteFloat (buf, block->movevars.stopspeed);
+	MSG_WriteFloat (buf, block->movevars.maxspeed);
+	MSG_WriteFloat (buf, block->movevars.spectatormaxspeed);
+	MSG_WriteFloat (buf, block->movevars.accelerate);
+	MSG_WriteFloat (buf, block->movevars.airaccelerate);
+	MSG_WriteFloat (buf, block->movevars.wateraccelerate);
+	MSG_WriteFloat (buf, block->movevars.friction);
+	MSG_WriteFloat (buf, block->movevars.waterfriction);
+	MSG_WriteFloat (buf, block->movevars.entgravity);
+
+	return buf->overflowed;
 }
 
 net_status_t

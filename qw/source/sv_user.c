@@ -54,6 +54,7 @@ static const char rcsid[] =
 #include "compat.h"
 #include "bothdefs.h"
 #include "msg_ucmd.h"
+#include "net_svc.h"
 #include "pmove.h"
 #include "server.h"
 #include "sv_progs.h"
@@ -96,7 +97,7 @@ void
 SV_New_f (void)
 {
 	const char *gamedir;
-	int         playernum;
+	net_svc_serverdata_t block;
 
 	if (host_client->state == cs_spawned)
 		return;
@@ -115,37 +116,23 @@ SV_New_f (void)
 //NOTE:  This doesn't go through ClientReliableWrite since it's before the user
 //spawns.  These functions are written to not overflow
 	if (host_client->num_backbuf) {
-		SV_Printf ("WARNING %s: [SV_New] Back buffered (%d0, clearing\n",
+		SV_Printf ("WARNING %s: [SV_New] Back buffered (%d), clearing\n",
 					host_client->name, host_client->netchan.message.cursize);
 		host_client->num_backbuf = 0;
 		SZ_Clear (&host_client->netchan.message);
 	}
+
 	// send the serverdata
+	block.protocolversion = PROTOCOL_VERSION;
+	block.servercount = svs.spawncount;
+	block.gamedir = gamedir;
+	block.playernum = NUM_FOR_EDICT (&sv_pr_state, host_client->edict) - 1;
+	block.spectator = host_client->spectator;
+	block.levelname = PR_GetString (&sv_pr_state,
+									SVstring (sv.edicts, message));
+	block.movevars = movevars;
 	MSG_WriteByte (&host_client->netchan.message, svc_serverdata);
-	MSG_WriteLong (&host_client->netchan.message, PROTOCOL_VERSION);
-	MSG_WriteLong (&host_client->netchan.message, svs.spawncount);
-	MSG_WriteString (&host_client->netchan.message, gamedir);
-
-	playernum = NUM_FOR_EDICT (&sv_pr_state, host_client->edict) - 1;
-	if (host_client->spectator)
-		playernum |= 128;
-	MSG_WriteByte (&host_client->netchan.message, playernum);
-
-	// send full levelname
-	MSG_WriteString (&host_client->netchan.message,
-					 PR_GetString (&sv_pr_state, SVstring (sv.edicts, message)));
-
-	// send the movevars
-	MSG_WriteFloat (&host_client->netchan.message, movevars.gravity);
-	MSG_WriteFloat (&host_client->netchan.message, movevars.stopspeed);
-	MSG_WriteFloat (&host_client->netchan.message, movevars.maxspeed);
-	MSG_WriteFloat (&host_client->netchan.message, movevars.spectatormaxspeed);
-	MSG_WriteFloat (&host_client->netchan.message, movevars.accelerate);
-	MSG_WriteFloat (&host_client->netchan.message, movevars.airaccelerate);
-	MSG_WriteFloat (&host_client->netchan.message, movevars.wateraccelerate);
-	MSG_WriteFloat (&host_client->netchan.message, movevars.friction);
-	MSG_WriteFloat (&host_client->netchan.message, movevars.waterfriction);
-	MSG_WriteFloat (&host_client->netchan.message, movevars.entgravity);
+	NET_SVC_ServerData_Emit (&block, &host_client->netchan.message);
 
 	// send music
 	MSG_WriteByte (&host_client->netchan.message, svc_cdtrack);
