@@ -127,6 +127,7 @@ cvar_t     *cl_timeout;
 
 cvar_t     *cl_shownet;
 cvar_t     *cl_autoexec;
+cvar_t     *cl_quakerc;
 cvar_t     *cl_sbar;
 cvar_t     *cl_sbar_separator;
 cvar_t     *cl_hudswap;
@@ -1182,6 +1183,8 @@ CL_Init_Cvars (void)
 								 "enables packets from the likes of gamespy");
 	cl_autoexec = Cvar_Get ("cl_autoexec", "0", CVAR_ROM, NULL,
 							"exec autoexec.cfg on gamedir change");
+	cl_quakerc = Cvar_Get ("cl_quakerc", "1", CVAR_NONE, NULL,
+						   "exec quake.rc on startup");
 	cl_cshift_bonus = Cvar_Get ("cl_cshift_bonus", "1", CVAR_ARCHIVE, NULL,
 								"Show bonus flash on item pickup");
 	cl_cshift_contents = Cvar_Get ("cl_cshift_content", "1", CVAR_ARCHIVE,
@@ -1666,13 +1669,13 @@ Host_Init (void)
 	IN_Init ();
 #endif
 
-	Cbuf_InsertText ("exec quake.rc\n");
+	if (cl_quakerc->int_val)
+		Cbuf_InsertText ("exec quake.rc\n");
 	Cmd_Exec_File (fs_usercfg->string);
 	// Reparse the command line for + commands.
 	// (Note, no non-base commands exist yet)
-	if (check_quakerc ()) {
+	if (cl_quakerc->int_val && check_quakerc ())
 		Cmd_StuffCmds_f ();
-	}
 
 	Cbuf_AddText ("echo Type connect <internet address> or use a server "
 				  "browser to connect to a game.\n");

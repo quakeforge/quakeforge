@@ -98,6 +98,8 @@ cvar_t     *host_speeds;
 cvar_t     *sys_ticrate;
 cvar_t     *serverprofile;
 
+cvar_t     *cl_quakerc;
+
 cvar_t     *fraglimit;
 cvar_t     *timelimit;
 cvar_t     *teamplay;
@@ -237,6 +239,9 @@ Host_InitLocal (void)
 
 	sys_ticrate = Cvar_Get ("sys_ticrate", "0.05", CVAR_NONE, NULL, "None");
 	serverprofile = Cvar_Get ("serverprofile", "0", CVAR_NONE, NULL, "None");
+
+	cl_quakerc = Cvar_Get ("cl_quakerc", "1", CVAR_NONE, NULL,
+						   "exec quake.rc on startup");
 
 	fraglimit = Cvar_Get ("fraglimit", "0", CVAR_SERVERINFO, Cvar_Info,
 						  "None");
@@ -980,13 +985,13 @@ Host_Init (quakeparms_t *parms)
 	}
 	CL_SetState (ca_disconnected);
 
-	Cbuf_InsertText ("exec quake.rc\n");
+	if (cl_quakerc->int_val)
+		Cbuf_InsertText ("exec quake.rc\n");
 	Cmd_Exec_File (fs_usercfg->string);
 	// reparse the command line for + commands other than set
 	// (sets still done, but it doesn't matter)
-	if (check_quakerc ()) {
+	if (cl_quakerc->int_val && check_quakerc ())
 		Cmd_StuffCmds_f ();
-	}
 
 	Hunk_AllocName (0, "-HOST_HUNKLEVEL-");
 	host_hunklevel = Hunk_LowMark ();
