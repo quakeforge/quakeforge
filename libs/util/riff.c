@@ -43,10 +43,6 @@ static __attribute__ ((unused)) const char rcsid[] =
 #include <stdio.h>
 #include <stdlib.h>
 
-#ifdef _WIN32
-void *alloca(size_t size);
-#endif
-
 #include "QF/dstring.h"
 #include "QF/qendian.h"
 #include "QF/riff.h"

@@ -48,10 +48,6 @@ static __attribute__ ((unused)) const char rcsid[] =
 #include "compat.h"
 #include "snd_render.h"
 
-#ifdef _WIN32
-void *alloca(size_t size);
-#endif
-
 #define SAMPLE_GAP	4
 
 typedef struct {

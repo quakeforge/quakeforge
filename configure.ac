@@ -260,6 +260,41 @@ AC_TRY_LINK(
 )
 AM_CONDITIONAL(BUILD_FNMATCH, test "$BUILD_FNMATCH" = "yes")
 
+AC_MSG_CHECKING(for alloca in stdlib.h)
+AC_TRY_COMPILE(
+	[#include <stdlib.h>],
+	[void *(*foo)(size_t) = alloca;],
+	have_alloca_proto=yes
+	AC_MSG_RESULT(yes),
+	have_alloca_proto=no
+	AC_MSG_RESULT(no)
+)
+
+if test "$have_alloca_proto" = no -a "$ac_cv_header_alloca_h" = yes; then
+	AC_MSG_CHECKING(for alloca in alloca.h)
+	AC_TRY_COMPILE(
+		[#include <stdlib.h>]
+		[#include <alloca.h>],
+		[void *(*foo)(size_t) = alloca;],
+		have_alloca_proto=yes
+		AC_MSG_RESULT(yes),
+		have_alloca_proto=no
+		AC_MSG_RESULT(no)
+	)
+fi
+
+if test "$have_alloca_proto" = yes; then
+	AC_DEFINE(HAVE_ALLOCA_PROTO)
+fi
+AH_VERBATIM([HAVE_ALLOCA_PROTO],
+[/* Define this if alloca is prototyped */
+#undef HAVE_ALLOCA_PROTO
+#ifndef HAVE_ALLOCA_PROTO
+#ifndef QFASM
+void *alloca (int size);
+#endif
+#endif])
+
 AC_MSG_CHECKING(for fnmatch in fnmatch.h)
 AC_TRY_COMPILE(
 	[#include "fnmatch.h"],
@@ -1438,6 +1473,7 @@ else
 	plugin_ldflags=
 	plugin_libadd=
 fi
+ASFLAGS="$ASFLAGS -DQFASM"
 CCASFLAGS="$ASFLAGS"
 CCAS="$AS"
 AC_SUBST(AS)
