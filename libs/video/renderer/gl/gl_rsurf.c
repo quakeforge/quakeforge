@@ -285,16 +285,16 @@ R_BuildLightMap_1 (msurface_t *surf)
 
 	smax = (surf->extents[0] >> 4) + 1;
 	tmax = (surf->extents[1] >> 4) + 1;
-	size = smax * tmax;
+	size = smax * tmax * gl_internalformat;
 
 	// set to full bright if no light data
 	if (!r_worldentity.model->lightdata) {
-		memset (&blocklights[0], 0xff, gl_internalformat * size * sizeof(int));
+		memset (&blocklights[0], 0xff, size * sizeof(int));
 		goto store;
 	}
 
 	// clear to no light
-	memset (&blocklights[0], 0, gl_internalformat * size * sizeof(int));
+	memset (&blocklights[0], 0, size * sizeof(int));
 
 	// add all the lightmaps
 	if (surf->samples) {
@@ -306,7 +306,7 @@ R_BuildLightMap_1 (msurface_t *surf)
 			scale = d_lightstylevalue[surf->styles[maps]];
 			surf->cached_light[maps] = scale;					// 8.8 fraction
 			bl = blocklights;
-			for (i = 0; i < (size * gl_internalformat); i++) {
+			for (i = 0; i < size; i++) {
 				*bl++ += *lightmap++ * scale;
 			}
 		}
@@ -342,16 +342,16 @@ R_BuildLightMap_3 (msurface_t *surf)
 
 	smax = (surf->extents[0] >> 4) + 1;
 	tmax = (surf->extents[1] >> 4) + 1;
-	size = smax * tmax;
+	size = smax * tmax * gl_internalformat;
 
 	// set to full bright if no light data
 	if (!r_worldentity.model->lightdata) {
-		memset (&blocklights[0], 0xff, gl_internalformat * size * sizeof(int));
+		memset (&blocklights[0], 0xff, size * sizeof(int));
 		goto store;
 	}
 
 	// clear to no light
-	memset (&blocklights[0], 0, gl_internalformat * size * sizeof(int));
+	memset (&blocklights[0], 0, size * sizeof(int));
 
 	// add all the lightmaps
 	if (surf->samples) {
@@ -363,7 +363,7 @@ R_BuildLightMap_3 (msurface_t *surf)
 			scale = d_lightstylevalue[surf->styles[maps]];
 			surf->cached_light[maps] = scale;					// 8.8 fraction
 			bl = blocklights;
-			for (i = 0; i < (size * gl_internalformat); i++) {
+			for (i = 0; i < size; i++) {
 				*bl++ += *lightmap++ * scale;
 			}
 		}
@@ -403,16 +403,16 @@ R_BuildLightMap_4 (msurface_t *surf)
 
 	smax = (surf->extents[0] >> 4) + 1;
 	tmax = (surf->extents[1] >> 4) + 1;
-	size = smax * tmax;
+	size = smax * tmax * gl_internalformat;
 
 	// set to full bright if no light data
 	if (!r_worldentity.model->lightdata) {
-		memset (&blocklights[0], 0xff, gl_internalformat * size * sizeof(int));
+		memset (&blocklights[0], 0xff, size * sizeof(int));
 		goto store;
 	}
 
 	// clear to no light
-	memset (&blocklights[0], 0, gl_internalformat * size * sizeof(int));
+	memset (&blocklights[0], 0, size * sizeof(int));
 
 	// add all the lightmaps
 	if (surf->samples) {
@@ -424,7 +424,7 @@ R_BuildLightMap_4 (msurface_t *surf)
 			scale = d_lightstylevalue[surf->styles[maps]];
 			surf->cached_light[maps] = scale;					// 8.8 fraction
 			bl = blocklights;
-			for (i = 0; i < (size * gl_internalformat); i++) {
+			for (i = 0; i < size; i++) {
 				*bl++ += *lightmap++ * scale;
 			}
 		}
