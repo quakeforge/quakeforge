@@ -326,9 +326,6 @@ extern	struct cvar_s	*cl_hudswap;
 
 extern	struct cvar_s	*cl_pitchdriftspeed;
 extern	struct cvar_s	*lookspring;
-extern	struct cvar_s	*lookstrafe;
-extern	struct cvar_s	*sensitivity;
-extern	struct cvar_s	*cl_freelook;
 
 extern	struct cvar_s	*m_pitch;
 extern	struct cvar_s	*m_yaw;

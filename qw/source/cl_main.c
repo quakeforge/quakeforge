@@ -129,9 +129,6 @@ cvar_t     *cl_cshift_damage;
 cvar_t     *cl_cshift_powerup;
 
 cvar_t     *lookspring;
-cvar_t     *lookstrafe;
-cvar_t     *sensitivity;
-cvar_t     *cl_freelook;
 
 cvar_t     *m_pitch;
 cvar_t     *m_yaw;
@@ -1261,13 +1258,6 @@ CL_Init_Cvars (void)
 						   "server connection timeout (since last packet received)");
 	lookspring = Cvar_Get ("lookspring", "0", CVAR_ARCHIVE, NULL,
 						   "Snap view to center when moving and no mlook/klook");
-	lookstrafe = Cvar_Get ("lookstrafe", "0", CVAR_ARCHIVE, NULL,
-						   "when mlook/klook on player will strafe");
-	sensitivity = Cvar_Get ("sensitivity", "3", CVAR_ARCHIVE, NULL,
-							"mouse sensitivity multiplier");
-	cl_freelook = Cvar_Get ("freelook", "0", CVAR_ARCHIVE, NULL,
-			"force +mlook");
-
 	m_pitch = Cvar_Get ("m_pitch", "0.022", CVAR_ARCHIVE, NULL,
 						"mouse pitch (up/down) multipier");
 	m_yaw = Cvar_Get ("m_yaw", "0.022", CVAR_NONE, NULL,

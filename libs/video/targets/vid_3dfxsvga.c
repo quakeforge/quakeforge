@@ -54,6 +54,7 @@
 #include "sbar.h"
 #include "QF/sys.h"
 #include "QF/va.h"
+#include "QF/vid.h"
 
 #define WARP_WIDTH              320
 #define WARP_HEIGHT             200
@@ -85,9 +86,8 @@ void
 signal_handler (int sig)
 {
 	printf ("Received signal %d, exiting...\n", sig);
-	Host_Shutdown ();
+	Sys_Quit ();
 	abort ();
-//  Sys_Quit();
 	exit (0);
 }
 

@@ -147,6 +147,9 @@ IN_Init_Cvars (void)
 			"With this set to 1, quake will grab the mouse from X");
 	m_filter = Cvar_Get ("m_filter", "0", CVAR_ARCHIVE, NULL,
 			"Toggle mouse input filtering.");
+	in_freelook = Cvar_Get ("freelook", "0", CVAR_ARCHIVE, NULL,
+			                        "force +mlook");
+	
 	lookstrafe = Cvar_Get ("lookstrafe", "0", CVAR_ARCHIVE, NULL,
 						   "when mlook/klook on player will strafe");
 	sensitivity = Cvar_Get ("sensitivity", "3", CVAR_ARCHIVE, NULL,
