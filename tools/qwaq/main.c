@@ -81,6 +81,7 @@ main ()
 	COM_Filesystem_Init_Cvars ();
 	COM_Filesystem_Init ();
 	PR_Init ();
+	PR_Obj_Progs_Init (&progs);
 	BI_Init (&progs);
 
 	progs.edicts = &edicts;
@@ -107,6 +108,7 @@ main ()
 	PR_LoadDebug (&progs);
 	PR_Check_Opcodes (&progs);
 	PR_RelocateBuiltins (&progs);
+	PR_InitRuntime (&progs);
 
 	*progs.edicts = PR_InitEdicts (&progs, MAX_EDICTS);
 	for (i = 0; i < progs.progs->numstatements; i++) {

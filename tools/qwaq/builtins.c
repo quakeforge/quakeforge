@@ -174,9 +174,6 @@ bi_printf (progs_t *pr)
 void
 BI_Init (progs_t *progs)
 {
-	progs->builtins = 0;
-	progs->numbuiltins = 0;
-
 	PR_AddBuiltin (progs, "print", bi_print, 1);
 	PR_AddBuiltin (progs, "GarbageCollect", bi_GarbageCollect, 2);
 	PR_AddBuiltin (progs, "errno", bi_errno, 3);

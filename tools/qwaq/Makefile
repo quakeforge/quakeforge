@@ -21,7 +21,7 @@ all: $(EXE) $(EXE).dat
 $(EXE): $(OBJ) $(LIBS)
 	$(CC) $(LDFLAGS) -o $@ $^ ../../d.o/libs/gamecode/engine/.libs/libQFgamecode.a -lQFutil -lz -lm
 
-$(EXE).dat: progs.src *.qc
+$(EXE).dat: progs.src *.qc ../../cs-code/object.r *.r
 	qfcc --warn=error --code=debug
 
 clean:

@@ -3,12 +3,12 @@
 #define NIT_TELEPORTER       131072 //CH Teleporter
 #define PC_ENGINEER_TF_ITEMS NIT_TESLA | NIT_SECURITY_CAMERA | NIT_TELEPORTER
 
-struct foo = {
+struct foo_struct = {
 	integer result;
 	string buffer;
 };
 
-void (foo bar) eek;
+void (foo_struct bar) eek;
 float (float a, float b) boing;
 
 string [6] dot = {
@@ -56,5 +56,8 @@ float () main =
 	close (handle);
 	for (handle = 0; handle < 6; handle++)
 		print (dot[handle] + "\n");
+
+	local id ffoo = [[Foo alloc] init];
+	[ffoo run];
 	return 0;
 };
