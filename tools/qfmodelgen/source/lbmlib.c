@@ -113,15 +113,27 @@ byte    bitplanes[9][BPLANESIZE];       // max size 1024 by 9 bit planes
 =
 = MungeBitPlanes8
 =
-= This destroys the bit plane data!
+= Asm version destroys the bit plane data!
 =
 =================
 */
 
 void MungeBitPlanes8 (int width, byte *dest)
 {
-	*dest=width;	// shut up the compiler warning
-	Error ("MungeBitPlanes8 not rewritten!");
+	int         i, ind = 0;
+	while (width--) {
+		for (i = 0; i < 8; i++) {
+			*dest++ = (((bitplanes[7][ind] << i) & 128) >> 0)
+					 | (((bitplanes[6][ind] << i) & 128) >> 1)
+					 | (((bitplanes[5][ind] << i) & 128) >> 2)
+					 | (((bitplanes[4][ind] << i) & 128) >> 3)
+					 | (((bitplanes[3][ind] << i) & 128) >> 4)
+					 | (((bitplanes[2][ind] << i) & 128) >> 5)
+					 | (((bitplanes[1][ind] << i) & 128) >> 6)
+					 | (((bitplanes[0][ind] << i) & 128) >> 7);
+		}
+		ind++;
+	}
 #if 0
 asm     les     di,[dest]
 asm     mov     si,-1
@@ -160,8 +172,16 @@ done:
 
 void MungeBitPlanes4 (int width, byte *dest)
 {
-	*dest=width;	// shut up the compiler warning
-	Error ("MungeBitPlanes4 not rewritten!");
+	int         i, ind = 0;
+	while (width--) {
+		for (i = 0; i < 8; i++) {
+			*dest++ = (((bitplanes[3][ind] << i) & 128) >> 4)
+					 | (((bitplanes[2][ind] << i) & 128) >> 5)
+					 | (((bitplanes[1][ind] << i) & 128) >> 6)
+					 | (((bitplanes[0][ind] << i) & 128) >> 7);
+		}
+		ind++;
+	}
 #if 0
 
 asm     les     di,[dest]
@@ -194,8 +214,14 @@ done:
 
 void MungeBitPlanes2 (int width, byte *dest)
 {
-	*dest=width;	// shut up the compiler warning
-	Error ("MungeBitPlanes2 not rewritten!");
+	int         i, ind = 0;
+	while (width--) {
+		for (i = 0; i < 8; i++) {
+			*dest++ = (((bitplanes[1][ind] << i) & 128) >> 6)
+					 | (((bitplanes[0][ind] << i) & 128) >> 7);
+		}
+		ind++;
+	}
 #if 0
 asm     les     di,[dest]
 asm     mov     si,-1
@@ -223,8 +249,13 @@ done:
 
 void MungeBitPlanes1 (int width, byte *dest)
 {
-	*dest=width;	// shut up the compiler warning
-	Error ("MungeBitPlanes1 not rewritten!");
+	int         i, ind = 0;
+	while (width--) {
+		for (i = 0; i < 8; i++) {
+			*dest++ = (((bitplanes[0][ind] << i) & 128) >> 7);
+		}
+		ind++;
+	}
 #if 0
 asm     les     di,[dest]
 asm     mov     si,-1
