@@ -511,8 +511,8 @@ separate_compile (void)
 	for (file = source_files; *file; file++) {
 		dstring_clearstr (extension);
 		dstring_clearstr (output_file);
-		dstring_appendstr (output_file, *file);
 
+		dstring_appendstr (output_file, *file);
 		f = output_file->str + strlen (output_file->str);
 		while (f >= output_file->str && *f != '.' && *f != '/')
 			f--;
@@ -521,7 +521,12 @@ separate_compile (void)
 			dstring_appendstr (extension, f);
 			*f = 0;
 		}
-		dstring_appendstr (output_file, ".qfo");
+		if (options.compile && options.output_file) {
+			dstring_clearstr (output_file);
+			dstring_appendstr (output_file, options.output_file);
+		} else {
+			dstring_appendstr (output_file, ".qfo");
+		}
 		if (strncmp (*file, "-l", 2)
 			&& (!strcmp (extension->str, ".r")
 				|| !strcmp (extension->str, ".qc"))) {
