@@ -49,6 +49,7 @@ opcode_t    pr_opcodes[] = {
 
 	{"+", "ADD_F", OP_ADD_F, 3, false, &def_float, &def_float, &def_float},
 	{"+", "ADD_V", OP_ADD_V, 3, false, &def_vector, &def_vector, &def_vector},
+	{"+", "ADD_S", OP_ADD_S, 3, false, &def_string, &def_string, &def_string},
 
 	{"-", "SUB_F", OP_SUB_F, 3, false, &def_float, &def_float, &def_float},
 	{"-", "SUB_V", OP_SUB_V, 3, false, &def_vector, &def_vector, &def_vector},
@@ -124,8 +125,6 @@ opcode_t    pr_opcodes[] = {
 
 	{"&", "BITAND", OP_BITAND, 2, false, &def_float, &def_float, &def_float},
 	{"|", "BITOR", OP_BITOR, 2, false, &def_float, &def_float, &def_float},
-
-	{"+", "ADD_S", OP_ADD_S, 3, false, &def_string, &def_string, &def_string},
 };
 
 /*
