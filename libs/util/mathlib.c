@@ -220,10 +220,9 @@ BoxOnPlaneSide (vec3_t emins, vec3_t emaxs, mplane_t *p)
 	float       dist1, dist2;
 	int         sides;
 
-#if 0									// this is done by the
-										// BOX_ON_PLANE_SIDE macro before
-										// calling this
-	// function
+#if 0		// this is done by the BOX_ON_PLANE_SIDE macro before
+		// calling this function
+
 // fast axial cases
 	if (p->type < 3) {
 		if (p->dist <= emins[p->type])
