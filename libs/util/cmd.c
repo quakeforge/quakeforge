@@ -175,9 +175,9 @@ Cmd_RemoveCommand (const char *name)
 	if (!cmd)
 		return 0;
 	for (c = &cmd_functions; *c; c = &(*c)->next)
-		if ((*c)->next == cmd)
+		if (*c == cmd)
 			break;
-	(*c)->next = cmd->next;
+	*c = cmd->next;
 	free (cmd);
 	return 1;
 }
