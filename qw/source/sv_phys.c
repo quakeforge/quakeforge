@@ -359,7 +359,7 @@ SV_AddGravity (edict_t *ent)
 		ent_gravity = SVfloat (ent, gravity);
 	else
 		ent_gravity = 1.0;
-	SVvector (ent, velocity)[2] -= ent_gravity * movevars.gravity * sv_frametime;
+	SVvector (ent, velocity)[2] -= ent_gravity * sv_gravity->value * sv_frametime;
 }
 
 /* PUSHMOVE */
@@ -713,7 +713,7 @@ SV_Physics_Step (edict_t *ent)
 
 	// freefall if not on ground
 	if (!((int) SVfloat (ent, flags) & (FL_ONGROUND | FL_FLY | FL_SWIM))) {
-		if (SVvector (ent, velocity)[2] < movevars.gravity * -0.1)
+		if (SVvector (ent, velocity)[2] < sv_gravity->value * -0.1)
 			hitsound = true;
 		else
 			hitsound = false;
