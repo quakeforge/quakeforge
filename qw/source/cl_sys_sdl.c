@@ -263,8 +263,3 @@ SDL_main (int c, char **v)
 	}
 
 }
-
-/* FIXME: evil stub for directsound crap */
-IN_Accumulate (void)
-{
-}

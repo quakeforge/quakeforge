@@ -232,16 +232,12 @@ VID_UpdateWindowStatus (void)
 }
 
 
-extern void CL_ClearStates ();
-
 /*
 	ClearAllStates
 */
 void
 ClearAllStates (void)
 {
-	CL_ClearStates ();
-	Key_ClearStates ();
 	IN_ClearStates ();
 }
 

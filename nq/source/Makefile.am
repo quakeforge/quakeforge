@@ -147,7 +147,7 @@ nq_sgl_DEPENDENCIES= $(client_LIB_DEPS)
 
 # ... SGI/Microsoft WGL (Windows OpenGL)
 nq_wgl_SOURCES=	$(combined_SOURCES) $(ogl_SOURCES) conproc.c
-nq_wgl_LDADD=	$(client_LIBS) $(GLX_LIBS) ../../libs/video/targets/libQFwgl.la -lgdi32 -lcomctl32 $(client_POST_LIBS)
+nq_wgl_LDADD=	$(client_LIBS) ../../libs/video/targets/libQFwgl.la $(client_POST_LIBS) $(GLX_LIBS) -lgdi32 -lcomctl32 -lwinmm
 nq_wgl_DEPENDENCIES= $(client_LIB_DEPS)
 
 # Dedicated Server

@@ -493,3 +493,8 @@ IN_LL_Init_Cvars (void)
 								  "DGA Mouse accelleration multiplier");
 }
 
+
+void
+IN_LL_ClearStates (void)
+{
+}

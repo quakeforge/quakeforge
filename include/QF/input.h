@@ -72,5 +72,6 @@ void IN_LL_Init ();
 void IN_LL_Shutdown ();
 void IN_LL_Commands ();
 void IN_LL_SendKeyEvents ();
+void IN_LL_ClearStates ();
 
 #endif // _INPUT_H

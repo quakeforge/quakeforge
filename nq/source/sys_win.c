@@ -443,24 +443,6 @@ Sys_Sleep (void)
 }
 
 
-void
-IN_SendKeyEvents (void)
-{
-	MSG         msg;
-
-	while (PeekMessage (&msg, NULL, 0, 0, PM_NOREMOVE)) {
-		// we always update if there are any event, even if we're paused
-		scr_skipupdate = 0;
-
-		if (!GetMessage (&msg, NULL, 0, 0))
-			Sys_Quit ();
-
-		TranslateMessage (&msg);
-		DispatchMessage (&msg);
-	}
-}
-
-
 /*
 ==============================================================================
 

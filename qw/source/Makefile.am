@@ -183,7 +183,7 @@ qw_client_sgl_DEPENDENCIES= $(CLIENT_LIB_DEPS)
 
 # ... SGI/Microsoft WGL (Windows OpenGL)
 qw_client_wgl_SOURCES=	$(common_SOURCES) $(client_SOURCES) $(ogl_SOURCES)
-qw_client_wgl_LDADD=	$(CLIENT_LIBS) $(GLX_LIBS) ../../libs/video/targets/libQFwgl.la -lgdi32 $(CLIENT_POST_LIBS)
+qw_client_wgl_LDADD=	$(CLIENT_LIBS) ../../libs/video/targets/libQFwgl.la $(CLIENT_POST_LIBS) $(GLX_LIBS) -lgdi32 -lwinmm
 qw_client_wgl_DEPENDENCIES= $(CLIENT_LIB_DEPS)
 
 # Stuff that doesn't get linked into an executable NEEDS to be mentioned here,

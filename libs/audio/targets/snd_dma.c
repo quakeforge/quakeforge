@@ -40,8 +40,6 @@
 
 #ifdef _WIN32
 #include "winquake.h"
-//#include "in_win.h"
-void IN_Accumulate (void);//XXX FIXME
 #endif
 
 #include "QF/cmd.h"
@@ -870,11 +868,6 @@ GetSoundtime (void)
 void
 S_ExtraUpdate (void)
 {
-
-#ifdef _WIN32
-	IN_Accumulate ();
-#endif
-
 	if (snd_noextraupdate->int_val)
 		return;							// don't pollute timings
 	S_Update_ ();

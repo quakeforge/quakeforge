@@ -62,3 +62,8 @@ void
 IN_ModeChanged (void)
 {
 }
+
+void
+IN_LL_ClearStates (void)
+{
+}

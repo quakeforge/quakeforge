@@ -35,12 +35,13 @@
 #include "winquake.h"
 #include <dinput.h>
 
-#include "QF/keys.h"
+#include "QF/cmd.h"
 #include "QF/compat.h"
 #include "QF/console.h"
-#include "QF/qargs.h"
-#include "QF/cmd.h"
 #include "QF/input.h"
+#include "QF/keys.h"
+#include "QF/qargs.h"
+#include "QF/sys.h"
 
 #define DINPUT_BUFFERSIZE           16
 #define iDirectInputCreate(a,b,c,d)	pDirectInputCreate(a,b,c,d)
@@ -60,7 +61,6 @@ static int  mouse_oldbuttonstate;
 static POINT current_pos;
 static float mx_accum, my_accum;
 static qboolean mouseinitialized;
-static cvar_t *m_filter;
 static qboolean restore_spi;
 static int  originalmouseparms[3], newmouseparms[3] = { 0, 0, 1 };
 static qboolean mouseparmsvalid, mouseactivatetoggle;
@@ -395,33 +395,23 @@ IN_StartupMouse (void)
 	IN_Init
 */
 void
-IN_Init (void)
+IN_LL_Init (void)
 {
 	uiWheelMessage = RegisterWindowMessage ("MSWHEEL_ROLLMSG");
 
-
 	IN_StartupMouse ();
-
-        JOY_Init ();
 }
 
 void
-IN_Init_Cvars (void)
+IN_LL_Init_Cvars (void)
 {
-	// mouse variables
-	m_filter = Cvar_Get ("m_filter", "0", CVAR_ARCHIVE, NULL,
-			"Toggle mouse input filtering.");
-	_windowed_mouse = Cvar_Get ("_windowed_mouse", "0", CVAR_ARCHIVE, NULL,
-			"Grab the mouse from X while playing quake");
-
-	JOY_Init_Cvars();
 }
 
 /*
 	IN_Shutdown
 */
 void
-IN_Shutdown (void)
+IN_LL_Shutdown (void)
 {
 
 	IN_DeactivateMouse ();
@@ -468,7 +458,7 @@ IN_MouseEvent (int mstate)
 	IN_MouseMove
 */
 void
-IN_MouseMove (void)
+IN_LL_Commands (void)
 {
 	int         mx, my;
 
@@ -568,47 +558,10 @@ IN_MouseMove (void)
 
 
 /*
-	IN_Move
+	IN_LL_ClearStates
 */
 void
-IN_Move (void)
-{
-
-	if (ActiveApp && !Minimized) {
-		IN_MouseMove ();
-		JOY_Move ();
-	}
-}
-
-
-/*
-	IN_Accumulate
-*/
-void
-IN_Accumulate (void)
-{
-//  int     mx, my;
-//  HDC hdc;
-
-//        if (dinput) return;             // If using dinput we don't probably need this
-
-	if (in_mouse_avail) {
-		GetCursorPos (&current_pos);
-
-		mx_accum += current_pos.x - window_center_x;
-		my_accum += current_pos.y - window_center_y;
-
-		// force the mouse to the center, so there's room to move
-		SetCursorPos (window_center_x, window_center_y);
-	}
-}
-
-
-/*
-	IN_ClearStates
-*/
-void
-IN_ClearStates (void)
+IN_LL_ClearStates (void)
 {
 
 	if (in_mouse_avail) {
@@ -618,12 +571,15 @@ IN_ClearStates (void)
 	}
 }
 
-/*
-	IN_Commands
-*/
 void
-IN_Commands (void)
-{
-        // Joystick
-        JOY_Command();
+IN_LL_SendKeyEvents (void)
+{   
+	MSG         msg;
+
+	while (PeekMessage (&msg, NULL, 0, 0, PM_NOREMOVE)) {
+		if (!GetMessage (&msg, NULL, 0, 0))
+			Sys_Quit ();
+		TranslateMessage (&msg);
+		DispatchMessage (&msg);
+	}
 }

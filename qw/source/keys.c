@@ -909,7 +909,8 @@ Key_ClearStates (void)
 	int         i;
 
 	for (i = 0; i < 256; i++) {
-		keydown[i] = false;
+		if (keydown[i])
+			Key_Event (i, 0, false);
 		key_repeats[i] = false;
 	}
 }

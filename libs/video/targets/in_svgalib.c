@@ -331,3 +331,8 @@ IN_LL_Commands (void)
 		mouse_oldbuttonstate = mouse_buttonstate;
 	}
 }
+
+void
+IN_LL_ClearStates (void)
+{
+}

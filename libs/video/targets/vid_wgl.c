@@ -140,8 +140,6 @@ glvert_t    glv;
 HWND WINAPI InitializeWindow (HINSTANCE hInstance, int nCmdShow);
 LONG	CDAudio_MessageHandler (HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
 
-extern void CL_ClearStates ();
-
 extern viddef_t vid;					// global video state
 
 unsigned int d_8to24table[256];
@@ -170,11 +168,6 @@ int         window_center_x, window_center_y, window_x, window_y, window_width,
 RECT        window_rect;
 
 // direct draw software compatability stuff
-
-void
-VID_HandlePause (qboolean pause)
-{
-}
 
 void
 VID_ForceLockState (int lk)
@@ -671,8 +664,6 @@ MapKey (int key)
 void
 ClearAllStates (void)
 {
-	CL_ClearStates ();
-	Key_ClearStates ();
 	IN_ClearStates ();
 }
 
@@ -1393,6 +1384,7 @@ VID_Init (unsigned char *palette)
 #endif
 
 	GL_CheckBrightness (palette);
+	VID_InitGamma (palette);
 	VID_SetPalette (palette);
 
 	VID_SetMode (vid_default, palette);

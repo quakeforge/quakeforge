@@ -612,3 +612,8 @@ void
 IN_HandlePause (qboolean pause)
 {
 }
+
+void
+IN_LL_ClearStates (void)
+{
+}

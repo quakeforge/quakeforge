@@ -756,23 +756,3 @@ CL_Input_Init_Cvars (void)
 			"disable player delta compression. "
 			"set to 1 if you have a poor ISP and get a lot of U_REMOVE warnings.");
 }
-
-
-extern qboolean keydown[256];
-
-/*
-	CL_ClearStates
-
-	Generate key up event for each key that is down
-*/
-void
-CL_ClearStates (void)
-{
-	int         i;
-
-// send an up event for each key, to make sure the server clears them all
-	for (i = 0; i < 256; i++) {
-		if (keydown[i])
-			Key_Event (i, 0, false);
-	}
-}

@@ -70,7 +70,7 @@ libQFtdfx.la: $(libQFtdfx_la_OBJECTS) $(libQFtdfx_la_DEPENDENCIES)
 
 
 libQFwgl_la_LDFLAGS=	-version-info 1:0:0
-libQFwgl_la_SOURCES=	in_common.c in_win.c qfgl_ext.c vid.c vid_wgl.c
+libQFwgl_la_SOURCES=	in_common.c in_win.c qfgl_ext.c vid.c vid_common_gl.c vid_wgl.c
 libQFwgl.la: $(libQFwgl_la_OBJECTS) $(libQFwgl_la_DEPENDENCIES)
 	$(LINK) -rpath $(libdir) $(libQFwgl_la_LDFLAGS) $(libQFwgl_la_OBJECTS) $(libQFwgl_la_LIBADD) $(LIBS)
 
