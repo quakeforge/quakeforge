@@ -69,6 +69,27 @@ typedef struct net_svc_sound_s
 	int			entity;
 } net_svc_sound_t;
 
+typedef struct net_svc_spawnbaseline_s
+{
+	short		num;
+	byte		modelindex;
+	byte		frame;
+	byte		colormap;
+	byte		skinnum;
+	vec3_t		origin;
+	vec3_t		angles;
+} net_svc_spawnbaseline_t;
+
+typedef struct net_svc_spawnstatic_s
+{
+	byte		modelindex;
+	byte		frame;
+	byte		colormap;
+	byte		skinnum;
+	vec3_t		origin;
+	vec3_t		angles;
+} net_svc_spawnstatic_t;
+
 typedef struct net_svc_tempentity_s
 {
 	byte		type;
@@ -158,6 +179,9 @@ qboolean NET_SVC_Print_Parse (net_svc_print_t *block, msg_t *msg);
 qboolean NET_SVC_Damage_Parse (net_svc_damage_t *block, msg_t *msg);
 qboolean NET_SVC_ServerData_Parse (net_svc_serverdata_t *block, msg_t *msg);
 qboolean NET_SVC_Sound_Parse (net_svc_sound_t *block, msg_t *msg);
+qboolean NET_SVC_SpawnBaseline_Parse (net_svc_spawnbaseline_t *block,
+									  msg_t *msg);
+qboolean NET_SVC_SpawnStatic_Parse (net_svc_spawnstatic_t *block, msg_t *msg);
 qboolean NET_SVC_TempEntity_Parse (net_svc_tempentity_t *block, msg_t *msg);
 qboolean NET_SVC_SpawnStaticSound_Parse (net_svc_spawnstaticsound_t *block,
 										 msg_t *msg);

@@ -129,6 +129,45 @@ NET_SVC_Sound_Parse (net_svc_sound_t *block, msg_t *msg)
 }
 
 qboolean
+NET_SVC_SpawnBaseline_Parse (net_svc_spawnbaseline_t *block, msg_t *msg)
+{
+	int i;
+
+	block->num = MSG_ReadShort (msg);
+	block->modelindex = MSG_ReadByte (msg);
+	block->frame = MSG_ReadByte (msg);
+	block->colormap = MSG_ReadByte (msg);
+	block->skinnum = MSG_ReadByte (msg);
+
+	// these are interlaced?  bad drugs...
+	for (i = 0; i < 3; i ++) {
+		block->origin[i] = MSG_ReadCoord (msg);
+		block->angles[i] = MSG_ReadAngle (msg);
+	}
+
+	return msg->badread;
+}
+
+qboolean
+NET_SVC_SpawnStatic_Parse (net_svc_spawnstatic_t *block, msg_t *msg)
+{
+	int i;
+
+	block->modelindex = MSG_ReadByte (msg);
+	block->frame = MSG_ReadByte (msg);
+	block->colormap = MSG_ReadByte (msg);
+	block->skinnum = MSG_ReadByte (msg);
+
+	// these are interlaced?  bad drugs...
+	for (i = 0; i < 3; i ++) {
+		block->origin[i] = MSG_ReadCoord (msg);
+		block->angles[i] = MSG_ReadAngle (msg);
+	}
+
+	return msg->badread;
+}
+
+qboolean
 NET_SVC_TempEntity_Parse (net_svc_tempentity_t *block, msg_t *msg)
 {
 	int i;

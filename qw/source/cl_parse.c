@@ -827,18 +827,22 @@ CL_ParseModellist (void)
 }
 
 void
-CL_ParseBaseline (entity_state_t *es)
+CL_ParseSpawnBaseline ()
 {
-	int         i;
+	entity_state_t *es;
+	net_svc_spawnbaseline_t block;
 
-	es->modelindex = MSG_ReadByte (net_message);
-	es->frame = MSG_ReadByte (net_message);
-	es->colormap = MSG_ReadByte (net_message);
-	es->skinnum = MSG_ReadByte (net_message);
-	for (i = 0; i < 3; i++) {
-		es->origin[i] = MSG_ReadCoord (net_message);
-		es->angles[i] = MSG_ReadAngle (net_message);
-	}
+	NET_SVC_SpawnBaseline_Parse (&block, net_message);
+
+	es = &cl_baselines[block.num];
+
+	es->modelindex = block.modelindex;
+	es->frame = block.frame;
+	es->colormap = block.colormap;
+	es->skinnum = block.skinnum;
+	VectorCopy (block.origin, es->origin);
+	VectorCopy (block.angles, es->angles);
+
 	// LordHavoc: set up the baseline to account for new effects (alpha,
 	// colormod, etc)
 	es->alpha = 255;
@@ -858,9 +862,9 @@ void
 CL_ParseStatic (void)
 {
 	entity_t   *ent;
-	entity_state_t es;
+	net_svc_spawnstatic_t block;
 
-	CL_ParseBaseline (&es);
+	NET_SVC_SpawnStatic_Parse (&block, net_message);
 
 	if (cl.num_statics >= MAX_STATIC_ENTITIES)
 		Host_EndGame ("Too many static entities");
@@ -868,12 +872,12 @@ CL_ParseStatic (void)
 	CL_Init_Entity (ent);
 
 	// copy it to the current state
-	ent->model = cl.model_precache[es.modelindex];
-	ent->frame = es.frame;
-	ent->skinnum = es.skinnum;
+	ent->model = cl.model_precache[block.modelindex];
+	ent->frame = block.frame;
+	ent->skinnum = block.skinnum;
 
-	VectorCopy (es.origin, ent->origin);
-	VectorCopy (es.angles, ent->angles);
+	VectorCopy (block.origin, ent->origin);
+	VectorCopy (block.angles, ent->angles);
 
 	R_AddEfrags (ent);
 }
@@ -1233,8 +1237,7 @@ CL_ParseServerMessage (void)
 				break;
 
 			case svc_spawnbaseline:
-				i = MSG_ReadShort (net_message);
-				CL_ParseBaseline (&cl_baselines[i]);
+				CL_ParseSpawnBaseline ();
 				break;
 			case svc_spawnstatic:
 				CL_ParseStatic ();
