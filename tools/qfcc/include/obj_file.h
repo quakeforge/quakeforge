@@ -37,7 +37,7 @@
 #include "QF/quakeio.h"
 
 #define QFO			"QFO"
-#define QFO_VERSION 0x00001004		// MMmmmRRR 0.001.004 (hex)
+#define QFO_VERSION 0x00001005		// MMmmmRRR 0.001.005 (hex)
 
 typedef struct qfo_header_s {
 	char        qfo[4];

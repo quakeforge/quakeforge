@@ -447,8 +447,7 @@ class_find_method (class_type_t *class_type, method_t *method)
 method_t *
 class_message_response (class_t *class, int class_msg, expr_t *sel)
 {
-	pr_sel_t   *selector;
-	char       *sel_name;
+	selector_t *selector;
 	method_t   *m;
 	class_t    *c = class;
 	category_t *cat;
@@ -457,33 +456,32 @@ class_message_response (class_t *class, int class_msg, expr_t *sel)
 		error (sel, "not a selector");
 		return 0;
 	}
-	selector = &G_STRUCT (pr_sel_t, POINTER_VAL (sel->e.pointer));
-	sel_name = G_GETSTR (selector->sel_id);
+	selector = get_selector (sel);
 	if (class->type == &type_id) {
-		m = find_method (sel_name);
+		m = find_method (selector->name);
 		if (m)
 			return m;
 		warning (sel, "could not find method for %c%s", class_msg ? '+' : '-',
-				 sel_name);
+				 selector->name);
 		return 0;
 	} else {
 		while (c) {
 			if (c->methods) {
 				for (cat = c->categories; cat; cat = cat->next) {
 					for (m = cat->methods->head; m; m = m->next) {
-						if (strcmp (sel_name, m->name) == 0)
+						if (strcmp (selector->name, m->name) == 0)
 							return m;
 					}
 				}
 				for (m = c->methods->head; m; m = m->next) {
-					if (strcmp (sel_name, m->name) == 0)
+					if (strcmp (selector->name, m->name) == 0)
 						return m;
 				}
 			}
 			c = c->super_class;
 		}
 		warning (sel, "%s does not respond to %c%s", class->name,
-				 class_msg ? '+' : '-', sel_name);
+				 class_msg ? '+' : '-', selector->name);
 	}
 	return 0;
 }
@@ -636,6 +634,7 @@ class_finish_module (void)
 	int         num_classes = 0;
 	int         num_categories = 0;
 	int         i;
+	def_t      *selector_table_def;
 	struct_t   *symtab_type;
 	def_t      *symtab_def;
 	pr_symtab_t *symtab;
@@ -647,6 +646,7 @@ class_finish_module (void)
 	function_t *init_func;
 	expr_t     *init_expr;
 
+	selector_table_def = emit_selectors ();
 	if (class_hash) {
 		classes = (class_t **) Hash_GetList (class_hash);
 		for (cl = classes; *cl; cl++)
@@ -659,11 +659,12 @@ class_finish_module (void)
 			if ((*ca)->def && !(*ca)->def->external)
 				num_categories++;
 	}
-	if (!num_classes && !num_categories)
+	if (!selector_table_def && !num_classes && !num_categories)
 		return;
 	symtab_type = get_struct (0, 1);
 	init_struct (symtab_type, new_type (), str_struct, 0);
 	new_struct_field (symtab_type, &type_integer, "sel_ref_cnt", vis_public);
+	new_struct_field (symtab_type, &type_SEL, "refs", vis_public);
 	new_struct_field (symtab_type, &type_integer, "cls_def_cnt", vis_public);
 	new_struct_field (symtab_type, &type_integer, "cat_def_cnt", vis_public);
 	for (i = 0; i < num_classes + num_categories; i++)
@@ -673,6 +674,10 @@ class_finish_module (void)
 	symtab_def->initialized = symtab_def->constant = 1;
 	symtab_def->nosave = 1;
 	symtab = &G_STRUCT (pr_symtab_t, symtab_def->ofs);
+	if (selector_table_def) {
+		symtab->sel_ref_cnt = selector_table_def->type->num_parms;
+		EMIT_DEF (symtab->refs, selector_table_def);
+	}
 	symtab->cls_def_cnt = num_classes;
 	symtab->cat_def_cnt = num_categories;
 	def_ptr = symtab->defs;
@@ -698,7 +703,7 @@ class_finish_module (void)
 	module_def->nosave = 1;
 	module = &G_STRUCT (pr_module_t, module_def->ofs);
 	module->size = type_size (type_module);
-	EMIT_STRING (module->name, options.output_file);
+	EMIT_STRING (module->name, G_GETSTR (pr.source_file));
 	EMIT_DEF (module->symtab, symtab_def);
 
 	exec_class_def = get_def (&type_obj_exec_class, "__obj_exec_class",

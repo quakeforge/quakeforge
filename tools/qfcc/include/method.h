@@ -46,6 +46,12 @@ typedef struct method_s {
 	char       *types;
 } method_t;
 
+typedef struct selector_s {
+	const char *name;
+	const char *types;
+	int         index;
+} selector_t;
+
 typedef struct methodlist_s {
 	method_t   *head;
 	method_t  **tail;
@@ -82,7 +88,9 @@ method_t *find_method (const char *sel_name);
 
 void selector_name (struct dstring_s *sel_id, keywordarg_t *selector);
 void selector_types (struct dstring_s *sel_types, keywordarg_t *selector);
-struct def_s *selector_def (const char *sel_id, const char *sel_types);
+int selector_index (const char *sel_id, const char *sel_types);
+selector_t *get_selector (struct expr_s *sel);
+struct def_s *emit_selectors(void);
 
 struct def_s *emit_methods (methodlist_t *methods, const char *name,
 							int instance);
@@ -90,5 +98,7 @@ struct def_s *emit_methods (methodlist_t *methods, const char *name,
 void clear_selectors (void);
 
 struct expr_s *method_check_params (method_t *method, struct expr_s *args);
+
+extern struct hashtab_s *known_methods;
 
 #endif//__method_h

@@ -73,6 +73,21 @@ dump_methods (progs_t *pr, pr_method_list_t *methods, int class)
 }
 
 static void
+dump_selector (progs_t *pr, pr_sel_t *sel)
+{
+	const char *sel_name = "<invalid string>";
+	const char *sel_types = "<invalid string>";
+
+	if (PR_StringValid (pr, sel->sel_id))
+		sel_name = PR_GetString (pr, sel->sel_id);
+	if (PR_StringValid (pr, sel->sel_types))
+		sel_types = PR_GetString (pr, sel->sel_types);
+	printf ("        %s\n", sel_name);
+	if (*sel_types)
+		printf ("          %s\n", sel_types);
+}
+
+static void
 dump_class (progs_t *pr, pr_class_t *class)
 {
 	pr_class_t *meta = &G_STRUCT (pr, pr_class_t, class->class_pointer);
@@ -120,6 +135,7 @@ dump_module (progs_t *pr, pr_module_t *module)
 {
 	pr_symtab_t *symtab = &G_STRUCT (pr, pr_symtab_t, module->symtab);
 	pointer_t  *ptr = symtab->defs;
+	pr_sel_t   *sel = &G_STRUCT (pr, pr_sel_t, symtab->refs);
 	int         i;
 	const char *module_name = "<invalid string>";
 
@@ -132,6 +148,8 @@ dump_module (progs_t *pr, pr_module_t *module)
 	}
 	printf ("    %d %d %d\n", symtab->sel_ref_cnt, symtab->cls_def_cnt,
 			symtab->cat_def_cnt);
+	for (i = 0; i < symtab->sel_ref_cnt; i++)
+		dump_selector (pr, sel++);
 	for (i = 0; i < symtab->cls_def_cnt; i++)
 		dump_class (pr, &G_STRUCT (pr, pr_class_t, *ptr++));
 	for (i = 0; i < symtab->cat_def_cnt; i++)

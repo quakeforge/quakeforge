@@ -194,21 +194,28 @@ pr___obj_exec_class (progs_t *pr)
 {
 	pr_module_t *module = &P_STRUCT (pr, pr_module_t, 0);
 	pr_symtab_t *symtab;
+	pr_sel_t   *sel;
 	pointer_t  *ptr;
 	int         i;
-	//int          d = developer->int_val;
+	int          d = developer->int_val;
 
 	if (!module)
 		return;
-	//developer->int_val = 1;
+	developer->int_val = 1;
 	symtab = &G_STRUCT (pr, pr_symtab_t, module->symtab);
 	if (!symtab)
 		return;
-	Sys_DPrintf ("Initializing %s module with symtab @ %d : %d class%s and %d "
-				 "categor%s\n",
+	Sys_DPrintf ("Initializing %s module\n"
+				 "symtab @ %d : %d selector%s, %d class%s and %d categor%s\n",
 				 PR_GetString (pr, module->name), module->symtab,
+				 symtab->sel_ref_cnt, symtab->sel_ref_cnt == 1 ? "" : "s",
 				 symtab->cls_def_cnt, symtab->cls_def_cnt == 1 ? "" : "es",
 				 symtab->cat_def_cnt, symtab->cat_def_cnt == 1 ? "y" : "ies");
+	sel = &G_STRUCT (pr, pr_sel_t, symtab->refs);
+	for (i = 0; i < symtab->sel_ref_cnt; i++) {
+		Sys_DPrintf ("    %s\n", PR_GetString (pr, sel->sel_id));
+		sel++;
+	}
 	ptr = symtab->defs;
 	for (i = 0; i < symtab->cls_def_cnt; i++) {
 		pr_class_t *class = &G_STRUCT (pr, pr_class_t, *ptr);
@@ -244,6 +251,7 @@ pr___obj_exec_class (progs_t *pr)
 		Hash_AddElement (pr->categories, category);
 		ptr++;
 	}
+	developer->int_val = d;
 }
 
 //====================================================================
@@ -516,43 +524,9 @@ pr_sel_get_uid (progs_t *pr)
 }
 
 static void
-pr_sel_get_any_uid (progs_t *pr)
-{
-	//const char *name = P_GSTRING (pr, 0);
-	//XXX
-	PR_RunError (pr, "%s, not implemented", __FUNCTION__);
-}
-
-static void
-pr_sel_get_any_typed_uid (progs_t *pr)
-{
-	//const char *name = P_GSTRING (pr, 0);
-	//XXX
-	PR_RunError (pr, "%s, not implemented", __FUNCTION__);
-}
-
-static void
-pr_sel_get_typed_uid (progs_t *pr)
-{
-	//const char *name = P_GSTRING (pr, 0);
-	//const char *type = P_GSTRING (pr, 1);
-	//XXX
-	PR_RunError (pr, "%s, not implemented", __FUNCTION__);
-}
-
-static void
 pr_sel_register_name (progs_t *pr)
 {
 	//const char *name = P_GSTRING (pr, 0);
-	//XXX
-	PR_RunError (pr, "%s, not implemented", __FUNCTION__);
-}
-
-static void
-pr_sel_register_typed_name (progs_t *pr)
-{
-	//const char *name = P_GSTRING (pr, 0);
-	//const char *type = P_GSTRING (pr, 1);
 	//XXX
 	PR_RunError (pr, "%s, not implemented", __FUNCTION__);
 }
@@ -907,11 +881,7 @@ static struct {
 	{"sel_get_name",			pr_sel_get_name},
 	{"sel_get_type",			pr_sel_get_type},
 	{"sel_get_uid",				pr_sel_get_uid},
-	{"sel_get_any_uid",			pr_sel_get_any_uid},
-	{"sel_get_any_typed_uid",	pr_sel_get_any_typed_uid},
-	{"sel_get_typed_uid",		pr_sel_get_typed_uid},
 	{"sel_register_name",		pr_sel_register_name},
-	{"sel_register_typed_name",	pr_sel_register_typed_name},
 	{"sel_is_mapped",			pr_sel_is_mapped},
 
 	{"class_get_class_method",	pr_class_get_class_method},

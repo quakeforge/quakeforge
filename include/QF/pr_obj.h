@@ -147,6 +147,7 @@ typedef struct pr_ivar_s pr_ivar_t;
 
 typedef struct pr_symtab_s {
 	int         sel_ref_cnt;
+	pointer_t   refs;				// pr_sel_t
 	int         cls_def_cnt;
 	int         cat_def_cnt;
 	pointer_t   defs[1];			// variable array of class pointers then

@@ -156,7 +156,7 @@ new_scope (scope_type type, defspace_t *space, scope_t *parent)
 	return scope;
 }
 
-static void
+void
 set_storage_bits (def_t *def, storage_class_t storage)
 {
 	switch (storage) {

@@ -274,7 +274,7 @@ ReuseConstant (expr_t *expr, def_t *def)
 			break;
 		case ex_pointer:
 			if (e.e.pointer.def)
-				EMIT_DEF (G_INT (cn->ofs), e.e.pointer.def);
+				EMIT_DEF_OFS (G_INT (cn->ofs), e.e.pointer.def);
 			break;
 		default:
 			break;

@@ -63,4 +63,12 @@ void emit_expr (struct expr_s *e);
 			reloc_def_def (d, POINTER_OFS (&(dest)));	\
 	} while (0)
 
+#define EMIT_DEF_OFS(dest,def)								\
+	do {													\
+		def_t      *d = (def);								\
+		(dest) = d ? d->ofs : 0;							\
+		if (d)												\
+			reloc_def_def_ofs (d, POINTER_OFS (&(dest)));	\
+	} while (0)
+
 #endif//__emit_h

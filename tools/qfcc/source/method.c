@@ -266,63 +266,107 @@ selector_types (dstring_t *sel_types, keywordarg_t *selector)
 	dstring_clearstr (sel_types);
 }
 
-typedef struct {
-	string_t    sel_id;
-	string_t    sel_types;
-	def_t      *def;
-} sel_def_t;
-
-static hashtab_t *sel_def_hash;
+static hashtab_t *sel_hash;
+static hashtab_t *sel_index_hash;
+static int sel_index;
 
 static unsigned long
-sel_def_get_hash (void *_sel_def, void *unused)
+sel_get_hash (void *_sel, void *unused)
 {
-	sel_def_t  *sel_def = (sel_def_t*)_sel_def;
+	selector_t *sel = (selector_t *) _sel;
 	unsigned long hash;
 
-	hash = Hash_String (G_GETSTR (sel_def->sel_id))
-		   ^ Hash_String (G_GETSTR (sel_def->sel_types));
+	hash = Hash_String (sel->name) ^ Hash_String (sel->types);
 	return hash;
 }
 
 static int
-sel_def_compare (void *_sd1, void *_sd2, void *unused)
+sel_compare (void *_s1, void *_s2, void *unused)
 {
-	sel_def_t  *sd1 = (sel_def_t*)_sd1;
-	sel_def_t  *sd2 = (sel_def_t*)_sd2;
+	selector_t *s1 = (selector_t *) _s1;
+	selector_t *s2 = (selector_t *) _s2;
 	int         cmp;
 
-	cmp = strcmp (G_GETSTR (sd1->sel_id), G_GETSTR (sd2->sel_id)) == 0;
+	cmp = strcmp (s1->name, s2->name) == 0;
 	if (cmp)
-		cmp = strcmp (G_GETSTR (sd1->sel_types),
-					  G_GETSTR (sd2->sel_types)) == 0;
+		cmp = strcmp (s1->types, s2->types) == 0;
 	return cmp;
 }
 
-def_t *
-selector_def (const char *sel_id, const char *sel_types)
+static unsigned long
+sel_index_get_hash (void *_sel, void *unused)
 {
-	sel_def_t   _sel_def = {ReuseString (sel_id), ReuseString (sel_types), 0};
-	sel_def_t  *sel_def = &_sel_def;
+	selector_t *sel = (selector_t *) _sel;
+	return sel->index;
+}
 
-	if (!sel_def_hash) {
-		sel_def_hash = Hash_NewTable (1021, 0, 0, 0);
-		Hash_SetHashCompare (sel_def_hash, sel_def_get_hash, sel_def_compare);
+static int
+sel_index_compare (void *_s1, void *_s2, void *unused)
+{
+	selector_t *s1 = (selector_t *) _s1;
+	selector_t *s2 = (selector_t *) _s2;
+	return s1->index == s2->index;
+}
+
+int
+selector_index (const char *sel_id, const char *sel_types)
+{
+	selector_t  _sel = {save_string (sel_id), save_string (sel_types), 0};
+	selector_t *sel = &_sel;
+
+	if (!sel_hash) {
+		sel_hash = Hash_NewTable (1021, 0, 0, 0);
+		Hash_SetHashCompare (sel_hash, sel_get_hash, sel_compare);
+		sel_index_hash = Hash_NewTable (1021, 0, 0, 0);
+		Hash_SetHashCompare (sel_index_hash, sel_index_get_hash,
+							 sel_index_compare);
 	}
-	sel_def = Hash_FindElement (sel_def_hash, sel_def);
-	if (sel_def)
-		return sel_def->def;
-	sel_def = malloc (sizeof (sel_def_t));
-	sel_def->def = new_def (type_SEL.aux_type, ".imm", pr.scope);
-	sel_def->def->initialized = sel_def->def->constant = 1;
-	sel_def->def->nosave = 1;
-	sel_def->def->ofs = new_location (type_SEL.aux_type, pr.near_data);
-	EMIT_STRING (G_INT (sel_def->def->ofs), sel_id);
-	EMIT_STRING (G_INT (sel_def->def->ofs + 1), sel_types);
-	sel_def->sel_id = G_INT (sel_def->def->ofs);
-	sel_def->sel_types = G_INT (sel_def->def->ofs + 1);
-	Hash_AddElement (sel_def_hash, sel_def);
-	return sel_def->def;
+	sel = Hash_FindElement (sel_hash, sel);
+	if (sel)
+		return sel->index;
+	sel = malloc (sizeof (selector_t));
+	sel->name = _sel.name;
+	sel->types = _sel.types;
+	sel->index = sel_index++;
+	Hash_AddElement (sel_hash, sel);
+	Hash_AddElement (sel_index_hash, sel);
+	return sel->index;
+}
+
+selector_t *
+get_selector (expr_t *sel)
+{
+	selector_t  _sel = {0, 0, sel->e.pointer.val};
+	_sel.index /= type_size (type_SEL.aux_type);
+	return (selector_t *) Hash_FindElement (sel_index_hash, &_sel);
+}
+
+def_t *
+emit_selectors (void)
+{
+	def_t      *sel_def;
+	type_t     *sel_type;
+	pr_sel_t   *sel;
+	selector_t **selectors, **s;
+	
+	if (!sel_index)
+		return 0;
+
+	sel_type = array_type (type_SEL.aux_type, sel_index);
+	sel_def = get_def (type_SEL.aux_type, "_OBJ_SELECTOR_TABLE", pr.scope,
+					   st_extern);
+	sel_def->type = sel_type;
+	sel_def->ofs = new_location (sel_type, pr.near_data);
+	set_storage_bits (sel_def, st_static);
+	sel = G_POINTER (pr_sel_t, sel_def->ofs);
+	selectors = (selector_t **) Hash_GetList (sel_hash);
+	
+	for (s = selectors; *s; s++) {
+		EMIT_STRING (sel[(*s)->index].sel_id, (*s)->name);
+		EMIT_STRING (sel[(*s)->index].sel_types, (*s)->types);
+	}
+	free (selectors);
+	return sel_def;
 }
 
 def_t *
@@ -379,8 +423,11 @@ emit_methods (methodlist_t *_methods, const char *name, int instance)
 void
 clear_selectors (void)
 {
-	if (sel_def_hash)
-		Hash_FlushTable (sel_def_hash);
+	if (sel_hash) {
+		Hash_FlushTable (sel_hash);
+		Hash_FlushTable (sel_index_hash);
+	}
+	sel_index = 0;
 	if (known_methods)
 		Hash_FlushTable (known_methods);
 }
