@@ -790,7 +790,7 @@ CL_ParseServerMessage (void)
 				break;
 
 			case svc_particle:
-				R_ParseParticleEffect ();
+				CL_ParseParticleEffect ();
 				break;
 
 			case svc_spawnbaseline:

@@ -524,3 +524,30 @@ CL_UpdateTEnts (void)
 	CL_UpdateBeams ();
 	CL_UpdateExplosions ();
 }
+
+
+/*
+	CL_ParseParticleEffect
+
+	Parse an effect out of the server message
+*/
+void
+CL_ParseParticleEffect (void)
+{
+	vec3_t      org, dir;
+	int         i, count, msgcount, color;
+
+	for (i = 0; i < 3; i++)
+		org[i] = MSG_ReadCoord (net_message);
+	for (i = 0; i < 3; i++)
+		dir[i] = MSG_ReadChar (net_message) * (1.0 / 16);
+	msgcount = MSG_ReadByte (net_message);
+	color = MSG_ReadByte (net_message);
+
+	if (msgcount == 255)
+		count = 1024;
+	else
+		count = msgcount;
+
+	R_RunParticleEffect (org, color, count);
+}

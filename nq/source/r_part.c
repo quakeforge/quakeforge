@@ -34,10 +34,10 @@
 #include "QF/qargs.h"
 #include "QF/compat.h"
 #include "QF/console.h"
-#include "QF/msg.h"
 
+#include "client.h"
 #include "r_local.h"
-#include "server.h"
+#include "render.h"
 
 #define MAX_PARTICLES			2048	// default max # of particles at one
 										// time
@@ -52,26 +52,6 @@ int         r_numparticles;
 
 vec3_t      r_pright, r_pup, r_ppn;
 
-
-
-void
-R_InitParticles (void)
-{
-	int         i;
-
-	i = COM_CheckParm ("-particles");
-
-	if (i) {
-		r_numparticles = (int) (atoi (com_argv[i + 1]));
-		if (r_numparticles < ABSOLUTE_MIN_PARTICLES)
-			r_numparticles = ABSOLUTE_MIN_PARTICLES;
-	} else {
-		r_numparticles = MAX_PARTICLES;
-	}
-
-	particles = (particle_t *)
-		Hunk_AllocName (r_numparticles * sizeof (particle_t), "particles");
-}
 
 #ifdef QUAKE2
 void
@@ -180,33 +160,4 @@ R_EntityParticles (entity_t *ent)
 			ent->origin[2] + r_avertexnormals[i][2] * dist +
 			forward[2] * beamlength;
 	}
-}
-
-
-/*
-===============
-R_ParseParticleEffect
-
-Parse an effect out of the server message
-===============
-*/
-void
-R_ParseParticleEffect (void)
-{
-	vec3_t      org, dir;
-	int         i, count, msgcount, color;
-
-	for (i = 0; i < 3; i++)
-		org[i] = MSG_ReadCoord (net_message);
-	for (i = 0; i < 3; i++)
-		dir[i] = MSG_ReadChar (net_message) * (1.0 / 16);
-	msgcount = MSG_ReadByte (net_message);
-	color = MSG_ReadByte (net_message);
-
-	if (msgcount == 255)
-		count = 1024;
-	else
-		count = msgcount;
-
-	R_RunParticleEffect (org, color, count);
 }

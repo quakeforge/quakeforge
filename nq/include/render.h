@@ -139,7 +139,6 @@ void R_RemoveEfrags (entity_t *ent);
 void R_NewMap (void);
 
 
-void R_ParseParticleEffect (void);
 struct entity_s;
 void R_RocketTrail (int type, struct entity_s *ent);
 void R_RunParticleEffect (vec3_t org, int color, int count);

@@ -66,6 +66,7 @@ D_DrawParticle (particle_t *pparticle)
 
 	if (transformed[2] < PARTICLE_Z_CLIP)
 		return;
+
 	// project the point
 	// FIXME: preadjust xcenter and ycenter
 	zi = 1.0 / transformed[2];
