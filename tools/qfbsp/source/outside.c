@@ -251,12 +251,13 @@ FillOutside (node_t *node)
 		leakfile = 0;
 		if (!options.hullnum) {
 			v = entities[hit_occupied].origin;
-			qprintf ("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!\n");
-			qprintf ("reached occupant at: (%4.0f,%4.0f,%4.0f)\n", v[0], v[1],
-					 v[2]);
-			qprintf ("no filling performed\n");
-			qprintf ("leak file written to %s\n", options.pointfile);
-			qprintf ("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!\n");
+			printf ("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!\n");
+			printf ("reached occupant at: (%4.0f,%4.0f,%4.0f) %s\n",
+					v[0], v[1], v[2],
+					ValueForKey (&entities[hit_occupied], "classname"));
+			printf ("no filling performed\n");
+			printf ("leak file written to %s\n", options.pointfile);
+			printf ("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!\n");
 		}
 		// remove faces from filled in leafs
 		ClearOutFaces (node);
