@@ -52,25 +52,24 @@ static struct option const long_options[] = {
 	{"verbose", no_argument, 0, 'v'},
 	{"help", no_argument, 0, 'h'},
 	{"version", no_argument, 0, 'V'},
-	{"threads", no_argument, 0, 't'},
+	{"threads", required_argument, 0, 't'},
 	{"extra", no_argument, 0, 'e'},
-	{"distance", no_argument, 0, 'd'},	
-	{"range", no_argument, 0, 'r'},
-	{"file", no_argument, 0, 'f'},
+	{"distance", required_argument, 0, 'd'},	
+	{"range", required_argument, 0, 'r'},
+	{"file", required_argument, 0, 'f'},
 	{NULL, 0, NULL, 0}
 };
 
 static const char *short_options =
-	"-"		// magic option parsing mode doohicky (must come first)
 	"q"		// quiet
 	"v"		// verbose
 	"h"		// help
 	"V"		// version
-	"t"		// threads
+	"t:"	// threads
 	"e"		// extra sampling
-	"d"		// scale distance
-	"r"		// scale range
-	"f"
+	"d:"	// scale distance
+	"r:"	// scale range
+	"f:"
 	;
 
 void
@@ -85,9 +84,9 @@ usage (int status)
 "    -V, --version             Output version information and exit\n"
 "    -t, --threads [num]       Number of threads to use\n"
 "    -e, --extra               Apply extra sampling\n"
-"    -d, --distance            Scale distance\n"
-"    -r, --range               Scale range\n"
-"    -f, --file                BSP file\n\n");
+"    -d, --distance [scale]    Scale distance\n"
+"    -r, --range [scale]       Scale range\n"
+"    -f, --file [bspfile]      BSP file\n\n");
 	exit (status);
 }
 

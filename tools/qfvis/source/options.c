@@ -81,8 +81,8 @@ usage (int status)
 "    -V, --version             Output version information and exit\n"
 "    -t, --threads [num]       Number of threads to use\n"
 "    -m, --minimal             Perform minimal vis'ing\n"
-"    -l, --level               Inhibit usual output\n"
-"    -f, --file                BSP file to vis\n\n"	
+"    -l, --level [level]       Vis level to perform\n"
+"    -f, --file [bspfile]      BSP file to vis\n\n"	
 	);
 	exit (status);
 }
