@@ -64,7 +64,7 @@ client_LIBFILES= \
 		$(top_builddir)/libs/video/targets/libQFjs.la \
 		$(top_builddir)/libs/audio/libQFcd.la \
 		$(top_builddir)/libs/audio/libQFsound.la \
-		$(top_builddir)/libs/console/maplist.o
+		$(top_builddir)/libs/console/filelist.o
 
 server_LIBFILES= \
 		$(top_builddir)/libs/models/libQFmodels.la \

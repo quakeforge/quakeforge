@@ -1131,6 +1131,9 @@ CL_Init (void)
 	Cmd_AddCommand ("timedemo", CL_TimeDemo_f, "Play a demo as fast as your "
 					"hardware can. Useful for benchmarking.");
 	Cmd_AddCommand ("maplist", Con_Maplist_f, "List maps available");
+	Cmd_AddCommand ("skinlist", Con_Skinlist_f, "List skins available");
+	Cmd_AddCommand ("skyboxlist", Con_Skyboxlist_f, "List skyboxes available");
+	Cmd_AddCommand ("demolist", Con_Demolist_QWD_f, "List demos available");
 	Cmd_AddCommand ("quit", CL_Quit_f, "Exit the program");
 	Cmd_AddCommand ("connect", CL_Connect_f, "Connect to a server 'connect "
 					"hostname:port'");

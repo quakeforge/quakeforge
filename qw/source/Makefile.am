@@ -103,7 +103,7 @@ qf_client_LIBS= \
 		$(top_builddir)/libs/gamecode/builtins/libQFgamecode_builtins.la \
 		$(top_builddir)/libs/audio/libQFcd.la \
 		$(top_builddir)/libs/audio/libQFsound.la \
-		$(top_builddir)/libs/console/maplist.o \
+		$(top_builddir)/libs/console/filelist.o \
 		$(top_builddir)/libs/util/libQFutil.la
 
 client_LIBS= libqfnet.la libasm.la $(qf_client_LIBS) $(NET_LIBS)

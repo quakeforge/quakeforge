@@ -129,5 +129,9 @@ void Con_Shutdown (void);
 void Con_ProcessInput (void);
 
 void Con_Maplist_f (void);
+void Con_Skinlist_f (void);
+void Con_Skyboxlist_f (void);
+void Con_Demolist_QWD_f (void);
+void Con_Demolist_DEM_f (void);
 
 #endif // __console_h
