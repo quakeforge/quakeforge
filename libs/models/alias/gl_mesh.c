@@ -440,7 +440,7 @@ GL_MakeAliasModelDisplayLists (model_t *m, aliashdr_t *hdr, void *_m, int _s)
 	}
 	if (remesh) {
 		// build it from scratch
-		Con_Printf ("meshing %s...\n", m->name);
+		Con_DPrintf ("meshing %s...\n", m->name);
 
 		BuildTris ();					// trifans or lists
 

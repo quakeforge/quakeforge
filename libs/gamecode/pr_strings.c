@@ -83,7 +83,7 @@ string_index (progs_t *pr, strref_t *sr)
 	for (i = 0; i < pr->dyn_str_size; i++) {
 		int d = sr - pr->dynamic_strings[i];
 		if (d >= 0 && d < 1024)
-			return -(i * 1024 + d);
+			return ~(i * 1024 + d);
 	}
 	return 0;
 }
@@ -192,8 +192,8 @@ char *
 PR_GetString (progs_t *pr, int num)
 {
 	if (num < 0) {
-		int row = -num / 1024;
-		num = -num % 1024;
+		int row = ~num / 1024;
+		num = ~num % 1024;
 
 		if (row < 0 || row >= pr->dyn_str_size)
 			return 0;
