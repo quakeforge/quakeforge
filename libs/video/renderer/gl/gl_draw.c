@@ -176,28 +176,35 @@ Draw_PicFromWad (const char *name)
 {
 	glpic_t    *gl;
 	qpic_t     *p;
-	char        filename[MAX_QPATH + 4];
+	char       *filename;
 	QFile      *f;
 	tex_t      *targa;
 
-	p = W_GetLumpName (name);
-	gl = (glpic_t *) p->data;
 
-	snprintf (filename, sizeof (filename), "%s.tga", name);
+
+	filename = strdup (name);
+	if (!strcmp (filename + strlen(filename) - 4, ".lmp"))
+		strcpy (filename + strlen(filename) - 4, ".tga");
 	QFS_FOpenFile (filename, &f);
 	if (f) {
 		targa = LoadTGA (f);
 		Qclose (f);
+		p = malloc (sizeof (qpic_t));
+		p->width = targa->width;
+		p->height = targa->height;
+		gl = (glpic_t *) p->data;
 		if (targa->format < 4)
 			gl->texnum = GL_LoadTexture (name, targa->width,
 				targa->height, targa->data, false, false, 3);
 		else
 			gl->texnum = GL_LoadTexture (name, targa->width,
 				targa->height, targa->data, false, true, 4);
-		return p;
-	}
-	gl->texnum = GL_LoadTexture (name, p->width, p->height,
+	} else {
+		p = W_GetLumpName (name);
+		gl = (glpic_t *) p->data;
+		gl->texnum = GL_LoadTexture (name, p->width, p->height,
 					p->data, false, true, 1);
+	}
 	return p;
 }
 
@@ -218,9 +225,9 @@ Draw_CachePic (const char *path, qboolean alpha)
 	int         i;
 	glpic_t    *gl;
 	qpic_t     *dat;
-	char        filename[MAX_QPATH + 4];
 	QFile      *f;
 	tex_t      *targa;
+	char       *filename;
 
 	// First, check if its cached..
 	for (pic = cachepics, i = 0; i < numcachepics; pic++, i++)
@@ -231,27 +238,12 @@ Draw_CachePic (const char *path, qboolean alpha)
 	if (numcachepics == MAX_CACHED_PICS)
 		Sys_Error ("menu_numcachepics == MAX_CACHED_PICS");
 
-	// Load the picture..
-	dat = (qpic_t *) QFS_LoadTempFile (path);
-	if (!dat)
-		Sys_Error ("Draw_CachePic: failed to load %s", path);
-
-	// Adjust for endian..
-	SwapPic (dat);
-
-	// Ok, the image is here, lets load it up into the cache..
-
-	// First the image name..
-	strncpy (pic->name, path, sizeof (pic->name));
-
-	// Now the width and height.
-	pic->pic.width = dat->width;
-	pic->pic.height = dat->height;
-
-	// Now feed it to the GL stuff and get a texture number..
 	gl = (glpic_t *) pic->pic.data;
 
-	snprintf (filename, sizeof (filename), "%s.tga", path);
+	// Check for a .tga first
+	filename = strdup (path);
+	if (!strcmp (filename + strlen(filename) - 4, ".lmp"))
+		strcpy (filename + strlen(filename) - 4, ".tga");
 	QFS_FOpenFile (filename, &f);
 	if (f) {
 		targa = LoadTGA (f);
@@ -262,10 +254,26 @@ Draw_CachePic (const char *path, qboolean alpha)
 		else
 			gl->texnum = GL_LoadTexture ("", targa->width, targa->height,
 				targa->data, false, alpha, 4);
-	}
-	else
+		pic->pic.width = targa->width;
+		pic->pic.height = targa->height;
+	} else if (!strcmp (path + strlen (path) - 4, ".lmp")) {
+		// Load the picture..
+		dat = (qpic_t *) QFS_LoadTempFile (path);
+		if (!dat)
+			Sys_Error ("Draw_CachePic: failed to load %s", path);
+
+		// Adjust for endian..
+		SwapPic (dat);
+
 		gl->texnum = GL_LoadTexture ("", dat->width, dat->height, dat->data,
 								 false, alpha, 1);
+		pic->pic.width = dat->width;
+		pic->pic.height = dat->height;
+
+	} else
+		Sys_Error ("Draw_CachePic: failed to load %s", path);
+
+	strncpy (pic->name, path, sizeof (pic->name));
 
 	// Now lets mark this cache entry as used..
 	pic->dirty = false;
@@ -275,6 +283,8 @@ Draw_CachePic (const char *path, qboolean alpha)
 	//  for the menu system. Some days I really dislike legacy support..
 	if (!strcmp (path, "gfx/menuplyr.lmp"))
 		memcpy (menuplyr_pixels, dat->data, dat->width * dat->height);
+
+	free (filename);
 
 	// And now we are done, return what was asked for..
 	return &pic->pic;
