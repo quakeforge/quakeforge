@@ -1,0 +1,3 @@
+Run "./cvs2cl.pl --help" to see what this is all about.
+
+Oh, and ignore a-subdir and b-subdir.  They're just test data.

@@ -1,0 +1,22 @@
+#!/bin/bash
+
+if [ $# -eq 0 ]; then
+	echo 'usage: $0 <pakfile> ...'
+	exit 1
+fi
+
+for pakfile in $*; do
+	if [ ! -f ${pakfile} ]; then echo ${pakfile} not found; continue; fi
+	[ "${pakfile#/}" = "${pakfile}" ] && pakfile=`pwd`/${pakfile}
+
+	tmp=/var/tmp/zpak.$$
+
+	mkdir ${tmp}
+	cd ${tmp}
+	pak vxf ${pakfile} | sed -e 's/$/.gz/' > pakfile.lst
+	mv ${pakfile} ${pakfile}.bak
+	gzip -rv9 *
+	pak vcf ${pakfile} `zcat pakfile.lst.gz`
+	cd -
+	rm -rf ${tmp}
+done

@@ -1,0 +1,11 @@
+2000-01-06 00:48  palisade
+
+	* ChangeLog: comesticly fixed AUTHORS added cvs2cl to the tools
+        moved LICENSE to COPYING added TODO
+
+2000-01-03 22:26  knghtbrd
+
+	* COPYING, README, TODO, cvs2cl.pl, mywrap.pl: Added cvs2cl.pl to
+	tools, added a changelog target to the makefile, and removed the
+        ChangeLog.
+
