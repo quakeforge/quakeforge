@@ -46,6 +46,7 @@
 #include "QF/console.h"
 #include "QF/cvar.h"
 #include "QF/input.h"
+#include "QF/joystick.h"
 #include "QF/keys.h"
 #include "QF/qargs.h"
 
@@ -53,10 +54,6 @@
 cvar_t     *joy_device;					// Joystick device name
 cvar_t     *joy_enable;					// Joystick enabling flag
 cvar_t     *joy_sensitivity;			// Joystick sensitivity
-
-qboolean    joy_found = false;
-qboolean    joy_active = false;
-
 
 // joystick defines and variables
 // where should defines be moved?
@@ -124,14 +121,12 @@ DWORD joy_numbuttons;
 //
 //
 void JOY_AdvancedUpdate_f (void);
-void JOY_StartupJoystick (void);
-void JOY_Move (void);
-void JOY_Init_Cvars(void);
+int JOY_StartupJoystick (void);
 
 PDWORD RawValuePointer (int axis);
 
 qboolean
-JOY_Read (void)
+_JOY_Read (void)
 {
 	memset (&ji, 0, sizeof (ji));
 	ji.dwSize = sizeof (ji);
@@ -161,7 +156,7 @@ JOY_Read (void)
 }
 
 void
-JOY_Command (void)
+JOY_Read (void)
 {
 	int         i, key_index;
 	DWORD       buttonstate, povstate;
@@ -216,173 +211,16 @@ JOY_Command (void)
 	}
 }
 
-void
-JOY_Move (void)
+int
+JOY_Open (void)
 {
-	float       fAxisValue, fTemp;
-	int         i;
-	static int lastjoy=0;
-
-	// complete initialization if first time in
-	// this is needed as cvars are not available at initialization time
-	if (!joy_advancedinit || lastjoy!=joy_advanced->int_val) {
-		JOY_AdvancedUpdate_f ();
-		joy_advancedinit = true;
-		lastjoy=joy_advanced->int_val;
-	}
-	// verify joystick is available and that the user wants to use it
-	if (!joy_active || !joy_enable->int_val) {
-		return;
-	}
-	// collect the joystick data, if possible
-	if (!JOY_Read ()) {
-		return;
-	}
-
-	// loop through the axes
-	for (i = 0; i < JOY_MAX_AXES; i++) {
-		// get the floating point zero-centered, potentially-inverted data
-		// for the current axis
-		fAxisValue = (float) *pdwRawValue[i];
-		// move centerpoint to zero
-		fAxisValue -= 32768.0;
-
-		if (joy_wwhack2->int_val) {
-			if (dwAxisMap[i] == AxisTurn) {
-				// this is a special formula for the Logitech WingMan Warrior
-				// y=ax^b; where a = 300 and b = 1.3
-				// also x values are in increments of 800 (so this is
-				// factored out)
-				// then bounds check result to level out excessively high
-				// spin rates
-				fTemp = 300.0 * pow (abs (fAxisValue) / 800.0, 1.3);
-				if (fTemp > 14000.0)
-					fTemp = 14000.0;
-				// restore direction information
-				fAxisValue = (fAxisValue > 0.0) ? fTemp : -fTemp;
-			}
-		}
-		// convert range from -32768..32767 to -1..1 
-		fAxisValue /= 32768.0;
-
-		switch (dwAxisMap[i]) {
-			case AxisForward:
-				
-				if (!joy_advanced->int_val && freelook) {
-					// user wants forward control to become look control
-					if (fabs (fAxisValue) > joy_pitchthreshold->value) {
-						// if mouse invert is on, invert the joystick pitch
-						// value
-						// only absolute control support here (joy_advanced
-						// is false)
-						if (m_pitch->value < 0.0) {
-							viewdelta.angles[PITCH] -=
-								(fAxisValue * joy_pitchsensitivity->value) *
-								aspeed * cl_pitchspeed->value;
-						} else {
-							viewdelta.angles[PITCH] +=
-								(fAxisValue * joy_pitchsensitivity->value) *
-								aspeed * cl_pitchspeed->value;
-						}
-					} else {
-						// no pitch movement
-						// disable pitch return-to-center unless requested by 
-						// user
-						// *** this code can be removed when the lookspring
-						// bug is fixed
-						// *** the bug always has the lookspring feature on
-						if (!lookspring->int_val)
-							V_StopPitchDrift ();
-					}
-				} else {
-					// user wants forward control to be forward control
-					if (fabs (fAxisValue) > joy_forwardthreshold->value) {
-						viewdelta.position[0] +=
-							(fAxisValue * joy_forwardsensitivity->value) *
-							speed * cl_forwardspeed->value;
-					}
-				}
-				break;
-
-			case AxisSide:
-				if (fabs (fAxisValue) > joy_sidethreshold->value) {
-					viewdelta.position[1] +=
-						(fAxisValue * joy_sidesensitivity->value) * speed *
-						cl_sidespeed->value;
-				}
-				break;
-
-			case AxisTurn:
-				if ((in_strafe.state & 1) || (lookstrafe->int_val && freelook)) {
-					// user wants turn control to become side control
-					if (fabs (fAxisValue) > joy_sidethreshold->value) {
-						viewdelta.position[0] -=
-							(fAxisValue * joy_sidesensitivity->value) * speed *
-							cl_sidespeed->value;
-					}
-				} else {
-					// user wants turn control to be turn control
-					if (fabs (fAxisValue) > joy_yawthreshold->value) {
-						if (dwControlMap[i] == JOY_ABSOLUTE_AXIS) {
-							viewdelta.angles[YAW] +=
-								(fAxisValue * joy_yawsensitivity->value) *
-								aspeed * cl_yawspeed->value;
-						} else {
-							viewdelta.angles[YAW] +=
-								(fAxisValue * joy_yawsensitivity->value) *
-								speed * 180.0;
-						}
-					}
-				}
-				break;
-
-			case AxisLook:
-				if (freelook) {
-					if (fabs (fAxisValue) > joy_pitchthreshold->value) {
-						// pitch movement detected and pitch movement desired 
-						// by user
-						if (dwControlMap[i] == JOY_ABSOLUTE_AXIS) {
-							viewdelta.angles[PITCH] +=
-								(fAxisValue * joy_pitchsensitivity->value) *
-								aspeed * cl_pitchspeed->value;
-						} else {
-							viewdelta.angles[PITCH] +=
-								(fAxisValue * joy_pitchsensitivity->value) *
-								speed * 180.0;
-						}
-					} else {
-						// no pitch movement
-						// disable pitch return-to-center unless requested by 
-						// user
-						// *** this code can be removed when the lookspring
-						// bug is fixed
-						// *** the bug always has the lookspring feature on
-						if (!lookspring->int_val)
-							V_StopPitchDrift ();
-					}
-				}
-				break;
-
-			default:
-				break;
-		}
-	}
+	return JOY_StartupJoystick();
+//	Cmd_AddCommand ("joyadvancedupdate", JOY_AdvancedUpdate_f, "FIXME: This appears to update the joystick poll? No Description");
 }
 
 void
-JOY_Init (void)
+JOY_Close (void)
 {
-	JOY_StartupJoystick();
-	Cmd_AddCommand ("joyadvancedupdate", JOY_AdvancedUpdate_f, "FIXME: This appears to update the joystick poll? No Description");
-
-//	Con_DPrintf ("This system does not have joystick support.\n");
-}
-
-void
-JOY_Shutdown (void)
-{
-	joy_active = false;
-	joy_found = false;
 }
 
 /*
@@ -451,7 +289,7 @@ JOY_AdvancedUpdate_f (void)
 /* 
 	IN_StartupJoystick 
 */
-void
+int
 JOY_StartupJoystick (void)
 {
 	int /* i, */ numdevs;
@@ -463,12 +301,12 @@ JOY_StartupJoystick (void)
 
 	// abort startup if user requests no joystick
 	if (COM_CheckParm ("-nojoy"))
-		return;
+		return -1;
 
 	// verify joystick driver is present
 	if ((numdevs = joyGetNumDevs ()) == 0) {
 		Con_Printf ("\njoystick not found -- driver not present\n\n");
-		return;
+		return -1;
 	}
 	// cycle through the joystick ids for the first valid one
 	for (joy_id = 0; joy_id < numdevs; joy_id++) {
@@ -483,7 +321,7 @@ JOY_StartupJoystick (void)
 	// abort startup if we didn't find a valid joystick
 	if (mmr != JOYERR_NOERROR) {
 		Con_Printf ("\njoystick not found -- no valid joysticks (%x)\n\n", mmr);
-		return;
+		return -1;
 	}
 	// get the capabilities of the selected joystick
 	// abort startup if command fails
@@ -492,7 +330,7 @@ JOY_StartupJoystick (void)
 		Con_Printf
 			("\njoystick not found -- invalid joystick capabilities (%x)\n\n",
 			 mmr);
-		return;
+		return -1;
 	}
 	// save the joystick's number of buttons and POV status
 	joy_numbuttons = jc.wNumButtons;
@@ -510,6 +348,7 @@ JOY_StartupJoystick (void)
 	// FIXME: do this right
 	joy_active = true;
 	Con_Printf ("\njoystick detected\n\n");
+	return 0;
 }
 
 /*
@@ -535,7 +374,7 @@ RawValuePointer (int axis)
 	return NULL;
 }
 
-
+#if 0
 void
 JOY_Init_Cvars(void)
 {
@@ -591,4 +430,4 @@ JOY_Init_Cvars(void)
 
 	return;
 }
-
+#endif

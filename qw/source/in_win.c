@@ -611,7 +611,7 @@ IN_MouseMove (void)
 	IN_Move
 */
 void
-IN_Move (usercmd_t *cmd)
+IN_Move (void)
 {
 
 	if (ActiveApp && !Minimized) {
