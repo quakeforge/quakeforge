@@ -358,7 +358,7 @@ fixup_relocs ()
 				data->data[reloc->ofs].integer_var = def->ofs;
 				break;
 			case rel_def_func:
-				data->data[reloc->ofs].integer_var = reloc->def;
+				data->data[reloc->ofs].integer_var = reloc->def + 1;
 				break;
 			case rel_def_string:
 				break;
