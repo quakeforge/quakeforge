@@ -918,8 +918,10 @@ QF_maGiC_VALUE
 fi
 
 dnl Win32
-if test "x$ac_cv_header_windows_h" = "xyes" -a \
-		"x$ac_cv_header_dsound_h" = "xyes"; then
+if test "x$ac_cv_header_windows_h" = "xyes"; then
+	SOUND_TYPES="$SOUND_TYPES Win32"
+	WINSND_LIBS="-lwinmm"
+	if test "x$ac_cv_header_dsound_h" = "xyes"; then
 	AC_EGREP_CPP([QF_maGiC_VALUE],
 		[
 #include <windows.h>
@@ -930,9 +932,9 @@ QF_maGiC_VALUE
 # endif
 #endif
 		],
-		SOUND_TYPES="$SOUND_TYPES Win32"
-		WINSND_LIBS="-lwinmm"
+		SOUND_TYPES="$SOUND_TYPES DirectX"
 	)
+	fi
 fi
 AC_SUBST(WINSND_LIBS)
 
@@ -1782,6 +1784,9 @@ if test -n "$CL_TARGETS"; then
 	fi
 	if test "`echo $SOUND_TYPES | grep Win32`"; then
 		SND_PLUGIN_TARGETS="$SND_PLUGIN_TARGETS snd_output_win.la"
+	fi
+	if test "`echo $SOUND_TYPES | grep DirectX`"; then
+		SND_PLUGIN_TARGETS="$SND_PLUGIN_TARGETS snd_output_dx.la"
 	fi
 	if test "$SOUND_TYPES"; then
 		SND_REND_TARGETS="$SND_REND_TARGETS snd_render_default.la"
