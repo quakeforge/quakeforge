@@ -169,8 +169,14 @@ bi_Menu_CenterPic (progs_t *pr)
 	int         y = G_INT (pr, OFS_PARM1);
 	const char *name = G_STRING (pr, OFS_PARM2);
 	menu_pic_t *pic = malloc (sizeof (menu_pic_t));
+	qpic_t     *qpic = Draw_CachePic (name, 1);
 
-	pic->x = x;
+	if (!qpic) {
+		free (pic);
+		return;
+	}
+
+	pic->x = x - qpic->width / 2;
 	pic->y = y;
 	pic->name = strdup (name);
 	pic->next = menu->pics;
