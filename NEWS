@@ -12,6 +12,8 @@ Changes from 0.5.2
         * qw server "status" command now gives the server's uptime
         * "map" will display the amount of time the current map has been active
         * nq-server will now auto-load the start map if none is specified
+        * streaming for large sound files
+        * support for two channel sound files
 
     o qfcc enhancements.
         * @argc and @argv deprecated in favor of @args.count and @args.list
