@@ -657,8 +657,8 @@ R_CalcAndBlendLightmaps (void)
 		p = lightmap_polys[i];
 		if (!p)
 			continue;
+		qfglBindTexture (GL_TEXTURE_2D, lightmap_textures + i);
 		if (lightmap_modified[i]) {
-			qfglBindTexture (GL_TEXTURE_2D, lightmap_textures + i);
 			GL_UploadLightmap (i);
 			lightmap_modified[i] = false;
 		}
