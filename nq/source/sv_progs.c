@@ -302,6 +302,8 @@ SV_LoadProgs (void)
 	sv_fields.light_level = ED_GetFieldIndex (&sv_pr_state, "light_level");
 	sv_fields.items2 = ED_GetFieldIndex (&sv_pr_state, "items2");
 	sv_fields.pitch_speed = ED_GetFieldIndex (&sv_pr_state, "pitch_speed");
+
+	sv_fields.rotated_bbox = ED_GetFieldIndex (&sv_pr_state, "rotated_bbox");
 }
 
 void

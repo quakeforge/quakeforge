@@ -47,13 +47,9 @@
 #include "world.h"
 
 /*
-
-entities never clip against themselves, or their owner
-
-line of sight checks trace->crosscontent, but bullets don't
-
+	entities never clip against themselves, or their owner
+	line of sight checks trace->crosscontent, but bullets don't
 */
-
 
 typedef struct {
 	vec3_t      boxmins, boxmaxs;		// enclose the test object along
@@ -66,7 +62,6 @@ typedef struct {
 	int         type;
 	edict_t    *passedict;
 } moveclip_t;
-
 
 int         SV_HullPointContents (hull_t *hull, int num, vec3_t p);
 
@@ -464,6 +459,18 @@ SV_HullPointContents (hull_t *hull, int num, vec3_t p)
 int
 SV_PointContents (vec3_t p)
 {
+	int         cont;
+
+	cont = SV_HullPointContents (&sv.worldmodel->hulls[0], 0, p);
+	if (cont <= CONTENTS_CURRENT_0 && cont >= CONTENTS_CURRENT_DOWN)
+		cont = CONTENTS_WATER;
+	return cont;
+}
+
+
+int
+SV_TruePointContents (vec3_t p)
+{
 	return SV_HullPointContents (&sv.worldmodel->hulls[0], 0, p);
 }
 
@@ -471,6 +478,7 @@ SV_PointContents (vec3_t p)
 /*
 	SV_TestEntityPosition
 
+	This could be a lot more efficient...
 	A small wrapper around SV_BoxInSolidEntity that never clips against the
 	supplied entity.
 */
@@ -817,8 +825,8 @@ SV_TestPlayerPosition (edict_t *ent, vec3_t origin)
 {
 	hull_t     *hull;
 	edict_t    *check;
-	vec3_t		boxmins, boxmaxs;
-	vec3_t		offset;
+	vec3_t      boxmins, boxmaxs;
+	vec3_t      offset;
 	int         e;
 
 	// check world first
@@ -858,7 +866,8 @@ SV_TestPlayerPosition (edict_t *ent, vec3_t origin)
 
 		// test the point
 		if (SV_HullPointContents (hull, hull->firstclipnode, offset) !=
-			CONTENTS_EMPTY) return check;
+			CONTENTS_EMPTY)
+			return check;
 	}
 
 	return NULL;

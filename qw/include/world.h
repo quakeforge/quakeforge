@@ -1,7 +1,7 @@
 /*
 	world.h
 
-	(description)
+	@description@
 
 	Copyright (C) 1996-1997  Id Software, Inc.
 
@@ -25,11 +25,11 @@
 
 	$Id$
 */
-// world.h
 
-#ifndef _WORLD_H
-#define _WORLD_H
+#ifndef __world_h
+#define __world_h
 
+#include "QF/link.h"
 #include "QF/mathlib.h"
 #include "QF/model.h"
 
@@ -41,14 +41,15 @@ typedef struct
 
 typedef struct
 {
-	qboolean	allsolid;		// if true, plane is not valid
-	qboolean	startsolid;		// if true, the initial point was in a solid area
+	qboolean	allsolid;	// if true, plane is not valid
+	qboolean	startsolid;	// if true, the initial point was in a solid area
 	qboolean	inopen, inwater;
-	float		fraction;		// time completed, 1.0 = didn't hit anything
-	vec3_t		endpos;			// final position
-	plane_t		plane;			// surface normal at impact
-	edict_t		*ent;			// entity the surface is on
+	float		fraction;	// time completed, 1.0 = didn't hit anything
+	vec3_t		endpos;		// final position
+	plane_t		plane;		// surface normal at impact
+	struct edict_s		*ent;		// entity the surface is on
 } trace_t;
+
 
 #define	MOVE_NORMAL		0
 #define	MOVE_NOMONSTERS	1
@@ -73,24 +74,26 @@ void SV_InitHull (hull_t *hull, dclipnode_t *clipnodes, mplane_t *planes);
 void SV_ClearWorld (void);
 // called after the world model has been loaded, before linking any entities
 
-void SV_UnlinkEdict (edict_t *ent);
+void SV_UnlinkEdict (struct edict_s *ent);
 // call before removing an entity, and before trying to move one,
 // so it doesn't clip against itself
 // flags ent->v.modified
 
-void SV_LinkEdict (edict_t *ent, qboolean touch_triggers);
+void SV_LinkEdict (struct edict_s *ent, qboolean touch_triggers);
 // Needs to be called any time an entity changes origin, mins, maxs, or solid
 // flags ent->v.modified
 // sets ent->v.absmin and ent->v.absmax
 // if touchtriggers, calls prog functions for the intersected triggers
 
 int SV_PointContents (vec3_t p);
+int SV_TruePointContents (vec3_t p);
 // returns the CONTENTS_* value from the world at the given point.
 // does not check any entities at all
+// the non-true version remaps the water current contents to content_water
 
-edict_t	*SV_TestEntityPosition (edict_t *ent);
+struct edict_s	*SV_TestEntityPosition (struct edict_s *ent);
 
-trace_t SV_Move (vec3_t start, vec3_t mins, vec3_t maxs, vec3_t end, int type, edict_t *passedict);
+trace_t SV_Move (vec3_t start, vec3_t mins, vec3_t maxs, vec3_t end, int type, struct edict_s *passedict);
 // mins and maxs are reletive
 
 // if the entire move stays in a solid volume, trace.allsolid will be set
@@ -103,10 +106,9 @@ trace_t SV_Move (vec3_t start, vec3_t mins, vec3_t maxs, vec3_t end, int type, e
 
 // passedict is explicitly excluded from clipping checks (normally NULL)
 
-edict_t	*SV_TestPlayerPosition (edict_t *ent, vec3_t origin);
+struct edict_s	*SV_TestPlayerPosition (struct edict_s *ent, vec3_t origin);
 
 int SV_HullPointContents (hull_t *hull, int num, vec3_t p);
-hull_t *SV_HullForEntity (edict_t *ent, vec3_t mins, vec3_t maxs, vec3_t offset);
+hull_t *SV_HullForEntity (struct edict_s *ent, vec3_t mins, vec3_t maxs, vec3_t offset);
 
-
-#endif // _WORLD_H
+#endif // __world_h

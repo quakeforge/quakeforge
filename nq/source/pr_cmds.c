@@ -36,17 +36,19 @@
 # include <strings.h>
 #endif
 
+#include "QF/clip_hull.h"
 #include "QF/console.h"
-#include "compat.h"
 #include "QF/cvar.h"
 #include "QF/sys.h"
 #include "QF/cmd.h"
 #include "QF/va.h"
-#include "host.h"
-#include "world.h"
 #include "QF/msg.h"
+
+#include "compat.h"
+#include "host.h"
 #include "server.h"
 #include "sv_progs.h"
+#include "world.h"
 
 #define	RETURN_EDICT(p, e) ((p)->pr_globals[OFS_RETURN].integer_var = EDICT_TO_PROG(p, e))
 
@@ -1422,6 +1424,177 @@ PF_sqrt (progs_t *pr)
 
 #endif
 
+
+#define MAX_PF_HULLS 64		// FIXME make dynamic?
+clip_hull_t *pf_hull_list[MAX_PF_HULLS];
+
+static void
+PF_hullpointcontents (progs_t *pr)
+{
+	edict_t    *edict = G_EDICT (pr, OFS_PARM0);
+	float      *mins = G_VECTOR (pr, OFS_PARM1);
+	float      *maxs = G_VECTOR (pr, OFS_PARM2);
+	float      *point = G_VECTOR (pr, OFS_PARM3);
+	hull_t     *hull;
+	vec3_t      offset;
+
+	hull = SV_HullForEntity (edict, mins, maxs, offset);
+	VectorSubtract (point, offset, offset);
+	G_INT (pr, OFS_RETURN) = SV_HullPointContents (hull, 0, offset);
+}
+
+static void
+PF_getboxbounds (progs_t *pr)
+{
+	int         h = G_INT (pr, OFS_PARM0) - 1;
+	clip_hull_t *ch;
+
+	if (h < 0 || h > MAX_PF_HULLS - 1 || !(ch = pf_hull_list[h]))
+		PR_RunError (pr, "PF_freeboxhull: invalid box hull handle\n");
+
+	if (G_INT (pr, OFS_PARM1)) {
+		VectorCopy (ch->maxs, G_VECTOR (pr, OFS_RETURN));
+	} else {
+		VectorCopy (ch->mins, G_VECTOR (pr, OFS_RETURN));
+	}
+}
+
+static void
+PF_getboxhull (progs_t *pr)
+{
+	clip_hull_t *ch = 0;
+	int         i;
+
+	for (i = 0; i < MAX_PF_HULLS; i++) {
+		if (!pf_hull_list[i]) {
+			ch = MOD_Alloc_Hull (6, 6);
+			break;
+		}
+	}
+
+	if (ch) {
+		pf_hull_list[i] = ch;
+		G_INT (pr, OFS_RETURN) = i + 1;
+		for (i = 0; i < MAX_MAP_HULLS; i++)
+			SV_InitHull (ch->hulls[i], ch->hulls[i]->clipnodes,
+						 ch->hulls[i]->planes);
+	} else {
+		G_INT (pr, OFS_RETURN) = 0;
+	}
+}
+
+static void
+PF_freeboxhull (progs_t *pr)
+{
+	int         h = G_INT (pr, OFS_PARM0) - 1;
+	clip_hull_t *ch;
+
+	if (h < 0 || h > MAX_PF_HULLS - 1 || !(ch = pf_hull_list[h]))
+		PR_RunError (pr, "PF_freeboxhull: invalid box hull handle\n");
+	pf_hull_list[h] = 0;
+	MOD_Free_Hull (ch);
+}
+
+static vec_t
+calc_dist (vec3_t p, vec3_t n, vec3_t *offsets)
+{
+	vec_t      d = DotProduct (p, n);
+	vec3_t     s, v;
+	int        i;
+
+	VectorScale (n, d, s);
+	for (i = 0; i < 3; i++)
+		if (s[i] < 0)
+			v[i] = offsets[0][i];
+		else
+			v[i] = offsets[1][i];
+	VectorAdd (p, v, v);
+	return DotProduct (v, n);
+}
+
+static void
+PF_rotate_bbox (progs_t *pr)
+{
+	int         h = G_INT (pr, OFS_PARM0) - 1;
+	float      *dir[3] = {
+					G_VECTOR (pr, OFS_PARM1),
+					G_VECTOR (pr, OFS_PARM2),
+					G_VECTOR (pr, OFS_PARM3),
+				};
+	float      *mi = G_VECTOR (pr, OFS_PARM4);
+	float      *ma = G_VECTOR (pr, OFS_PARM5);
+
+	vec3_t      mins, maxs;
+	float      *verts[6] = {maxs, mins, maxs, mins, maxs, mins};
+
+	vec3_t      offsets[3][2] = {
+					{ {   0,   0,   0 }, {  0,  0,  0} },
+					{ { -16, -16, -32 }, { 16, 16, 24} },
+					{ { -32, -32, -64 }, { 32, 32, 24} },
+				};
+	vec3_t      v[8], d;
+	hull_t     *hull;
+	clip_hull_t *ch;
+	int         i, j;
+	float       l;
+
+	if (h < 0 || h > MAX_PF_HULLS - 1 || !(ch = pf_hull_list[h]))
+		PR_RunError (pr, "PF_freeboxhull: invalid box hull handle\n");
+
+	// set up the rotation matrix. the three orientation vectors form the
+	// columns of the rotation matrix
+	for (i = 0; i < 3; i++) {
+		for (j = 0; j < 3; j++) {
+			ch->axis[i][j] = dir[j][i];
+		}
+	}
+	// rotate the bounding box points
+	for (i = 0; i < 3; i++) {
+		mins[i] = DotProduct (ch->axis[i], mi);
+		maxs[i] = DotProduct (ch->axis[i], ma);
+	}
+	// find all 8 corners of the rotated box
+	VectorCopy (mins, v[0]);
+	VectorCopy (maxs, v[1]);
+	VectorSubtract (maxs, mins, d);
+	for (i = 0; i < 3; i++) {
+		vec3_t      x;
+
+		l = DotProduct (d, dir[i]);
+		VectorScale    (dir[i], l, x);
+		VectorAdd      (mins, x, v[2 + i * 2]);
+		VectorSubtract (maxs, x, v[3 + i * 2]);
+	}
+	// now find the aligned bounding box
+	VectorCopy (v[0], ch->mins);
+	VectorCopy (v[0], ch->maxs);
+	for (i = 0; i < 8; i++) {
+		//Con_Printf ("'%0.1f %0.1f %0.1f'\n", v[i][0], v[i][1], v[i][2]);
+		for (j = 0; j < 3; j++) {
+			ch->mins[j] = min (ch->mins[j], v[i][j]);
+			ch->maxs[j] = max (ch->maxs[j], v[i][j]);
+		}
+	}
+
+	// set up the 3 size based hulls
+	for (j = 0; j < 3; j++) {
+		hull = ch->hulls[j];
+		VectorScale (offsets[j][1], -1, hull->clip_mins);
+		VectorScale (offsets[j][0], -1, hull->clip_maxs);
+		// set up the clip planes
+		for (i = 0; i < 6; i++) {
+			hull->planes[i].dist = calc_dist (verts[i], dir[i / 2], offsets[j]);
+			hull->planes[i].type = 4;
+			VectorCopy (dir[i / 2], hull->planes[i].normal);
+			//Con_Printf ("%f   %f %f %f\n",
+			//			hull->planes[i].dist,
+			//			hull->planes[i].normal[0], hull->planes[i].normal[1],
+			//			hull->planes[i].normal[2]);
+		}
+	}
+}
+
+
 void
 PF_Fixme (progs_t *pr)
 {
@@ -1507,6 +1680,11 @@ SV_PR_Cmds_Init ()
 	PR_AddBuiltin (&sv_pr_state, "precache_file", PF_precache_file, 77);	// string(string s) precache_file2 = #77
 
 	PR_AddBuiltin (&sv_pr_state, "setspawnparms", PF_setspawnparms, 78);	// void(entity e) setspawnparms = #78
+
+	PR_AddBuiltin (&sv_pr_state, "getboxbounds", PF_getboxbounds, 94);  // vector (integer hull, integer max) getboxbounds = #94
+	PR_AddBuiltin (&sv_pr_state, "getboxhull", PF_getboxhull, 95);  // integer () getboxhull = #95
+	PR_AddBuiltin (&sv_pr_state, "freeboxhull", PF_freeboxhull, 96);    // void (integer hull) freeboxhull = #96
+	PR_AddBuiltin (&sv_pr_state, "rotate_bbox", PF_rotate_bbox, 97);    // void (integer hull, vector right, vector forward, vector up, vector mins, vector maxs) rotate_bbox = #97
 
 	PR_AddBuiltin (&sv_pr_state, "checkextension", PF_checkextension, 99);	// = #99
 }

@@ -178,6 +178,8 @@ typedef struct
 	int			pain_finished;		//float
 	int			radsuit_finished;	//float
 	int			speed;				//Float
+
+	int			rotated_bbox;		//int
 } sv_fields_t;
 
 extern sv_fields_t sv_fields;
