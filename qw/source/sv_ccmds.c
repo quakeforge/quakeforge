@@ -103,7 +103,7 @@ SV_Match_User (const char *substr)
 
 	if (!*str) {
 		for (i = 0, cl = svs.clients; i < MAX_CLIENTS; i++, cl++) {
-			if (!cl->state)
+			if (cl->state < cs_zombie)
 				continue;
 			if (cl->userid == uid) {
 				SV_Printf ("User %04d matches with name: %s\n",
@@ -116,7 +116,7 @@ SV_Match_User (const char *substr)
 	}
 
 	for (i = 0, cl = svs.clients; i < MAX_CLIENTS; i++, cl++) {
-		if (!cl->state)
+		if (cl->state < cs_zombie)
 			continue;
 		for (str = cl->name; *str && !match_char (*str, substr[0]); str++)
 			;
@@ -230,7 +230,7 @@ SV_SetPlayer (void)
 	idnum = atoi (Cmd_Argv (1));
 
 	for (i = 0, cl = svs.clients; i < MAX_CLIENTS; i++, cl++) {
-		if (!cl->state)
+		if (cl->state < cs_zombie)
 			continue;
 		if (cl->userid == idnum) {
 			host_client = cl;
@@ -496,6 +496,10 @@ SV_Status_f (void)
 				SV_Printf ("ZOMBIE\n");
 				continue;
 			}
+			if (cl->state == cs_server) {
+				SV_Printf ("SERVER\n");
+				continue;
+			}
 			SV_Printf ("%4i %4i %5.2f\n",
 					   (int) (1000 * cl->netchan.frame_rate),
 					   (int) SV_CalcPing (cl),
@@ -525,6 +529,10 @@ SV_Status_f (void)
 			}
 			if (cl->state == cs_zombie) {
 				SV_Printf ("ZOMBIE\n");
+				continue;
+			}
+			if (cl->state == cs_server) {
+				SV_Printf ("SERVER\n");
 				continue;
 			}
 			SV_Printf ("%4i %4i %3.1f %4i",
@@ -582,7 +590,7 @@ SV_Cuff_f (void)
 	}
 	if (all) {
 		for (i = 0, cl = svs.clients; i < MAX_CLIENTS; i++, cl++) {
-			if (!cl->state)
+			if (cl->state < cs_zombie)
 				continue;
 			cl->cuff_time = realtime + mins*60.0;
 			done = true;
@@ -644,7 +652,7 @@ SV_Mute_f (void)
 	}
 	if (all) {
 		for (i = 0, cl = svs.clients; i < MAX_CLIENTS; i++, cl++) {
-			if (!cl->state)
+			if (cl->state < cs_zombie)
 				continue;
 			cl->lockedtill = realtime + mins*60.0;
 			done = true;
@@ -766,7 +774,7 @@ SV_ConSay (const char *prefix)
 		text[j++] |= 0x80;				// non-bold text
 
 	for (j = 0, client = svs.clients; j < MAX_CLIENTS; j++, client++) {
-		if (client->state != cs_spawned)	// kk just has !client->state
+		if (client->state < cs_zombie)
 			continue;
 		SV_ClientPrintf (1, client, PRINT_HIGH, "%s\n", text);
 		if (*prefix != 'I')		// beep, except for Info says
@@ -1045,7 +1053,7 @@ SV_Snap (int uid)
 	int         i;
 
 	for (i = 0, cl = svs.clients; i < MAX_CLIENTS; i++, cl++) {
-		if (!cl->state)
+		if (cl->state < cs_zombie)
 			continue;
 		if (cl->userid == uid)
 			break;

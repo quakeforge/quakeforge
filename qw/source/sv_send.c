@@ -294,7 +294,7 @@ SV_BroadcastPrintf (int level, const char *fmt, ...)
 	for (i = 0, cl = svs.clients; i < MAX_CLIENTS; i++, cl++) {
 		if (level < cl->messagelevel)
 			continue;
-		if (!cl->state)
+		if (cl->state < cs_zombie)
 			continue;
 
 		SV_PrintToClient (cl, level, string);
@@ -807,7 +807,7 @@ SV_SendClientMessages (void)
 
 	// build individual updates
 	for (i = 0, c = svs.clients; i < MAX_CLIENTS; i++, c++) {
-		if (!c->state)
+		if (c->state < cs_zombie)
 			continue;
 
 		if (c->drop) {
@@ -1012,7 +1012,7 @@ SV_SendMessagesToAll (void)
 	int         i;
 
 	for (i = 0, c = svs.clients; i < MAX_CLIENTS; i++, c++)
-		if (c->state)				// FIXME: should this only send to active?
+		if (c->state < cs_zombie)	// FIXME: should this only send to active?
 			c->send_message = true;
 
 	SV_SendClientMessages ();

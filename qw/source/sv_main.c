@@ -321,7 +321,7 @@ SV_FinalMessage (const char *message)
 	MSG_WriteByte (net_message->message, svc_disconnect);
 
 	for (i = 0, cl = svs.clients; i < MAX_CLIENTS; i++, cl++)
-		if (cl->state >= cs_spawned)
+		if (cl->state >= cs_connected)
 			Netchan_Transmit (&cl->netchan, net_message->message->cursize,
 							  net_message->message->data);
 }
@@ -571,8 +571,7 @@ SVC_Status (void)
 	SV_Printf ("%s\n", Info_MakeString (svs.info, 0));
 	for (i = 0; i < MAX_CLIENTS; i++) {
 		cl = &svs.clients[i];
-		if ((cl->state == cs_connected || cl->state == cs_spawned)
-			&& !cl->spectator) {
+		if ((cl->state >= cs_connected) && !cl->spectator) {
 			top = atoi (Info_ValueForKey (cl->userinfo, "topcolor"));
 			bottom = atoi (Info_ValueForKey (cl->userinfo, "bottomcolor"));
 			top = (top < 0) ? 0 : ((top > 13) ? 13 : top);
@@ -840,7 +839,7 @@ SVC_DirectConnect (void)
 
 	// if there is already a slot for this ip, drop it
 	for (i = 0, cl = svs.clients; i < MAX_CLIENTS; i++, cl++) {
-		if (cl->state == cs_free)
+		if (cl->state < cs_zombie)
 			continue;
 		if (NET_CompareBaseAdr (adr, cl->netchan.remote_address)
 			&& (cl->netchan.qport == qport
@@ -974,7 +973,7 @@ Name_of_sender (void)
 	int         i;
 
 	for (i=0, cl=svs.clients ; i<MAX_CLIENTS ; i++,cl++) {
-		if (cl->state == cs_free)
+		if (cl->state < cs_zombie)
 			continue;
 		if (!NET_CompareBaseAdr(net_from, cl->netchan.remote_address))
 			continue;
@@ -1435,7 +1434,7 @@ SV_AddIP_f (void)
 			const char *typestr;
 			char timestr[1024];
 
-			if (cl->state == cs_free)
+			if (cl->state < cs_zombie)
 				continue;
 
 			if (SV_MaskIPCompare (cl->netchan.remote_address.ip,
@@ -1781,7 +1780,7 @@ SV_ReadPackets (void)
 
 		// check for packets from connected clients
 		for (i = 0, cl = svs.clients; i < MAX_CLIENTS; i++, cl++) {
-			if (cl->state == cs_free)
+			if (cl->state < cs_zombie)
 				continue;
 			if (!NET_CompareBaseAdr (net_from, cl->netchan.remote_address))
 				continue;
@@ -1833,7 +1832,7 @@ SV_CheckTimeouts (void)
 	nclients = 0;
 
 	for (i = 0, cl = svs.clients; i < MAX_CLIENTS; i++, cl++) {
-		if (cl->state == cs_connected || cl->state == cs_spawned) {
+		if (cl->state >= cs_connected) {
 			if (!cl->spectator)
 				nclients++;
 			if (cl->netchan.last_received < droptime) {
@@ -2244,8 +2243,8 @@ Master_Heartbeat (void)
 	// count active users
 	active = 0;
 	for (i = 0; i < MAX_CLIENTS; i++)
-		if (svs.clients[i].state == cs_connected ||
-			svs.clients[i].state == cs_spawned) active++;
+		if (svs.clients[i].state >= cs_connected)
+			active++;
 
 	svs.heartbeat_sequence++;
 	snprintf (string, sizeof (string), "%c\n%i\n%i\n", S2M_HEARTBEAT,
@@ -2362,7 +2361,6 @@ SV_ExtractFromUserinfo (client_t *cl)
 		}
 
 		// finally, report it to all our friends
-//		if (cl->state >= cs_spawned && !cl->spectator)
 		if (*cl->name)
 			SV_BroadcastPrintf (PRINT_HIGH, "%s changed name to %s\n",
 								cl->name, newname);

@@ -456,7 +456,7 @@ SV_Begin_f (ucmd_t *cmd)
 	unsigned int	pmodel = 0, emodel = 0;
 	int				i;
 
-	if (host_client->state == cs_spawned)
+	if (host_client->state != cs_connected)
 		return;							// don't begin again
 
 	host_client->state = cs_spawned;
@@ -946,7 +946,7 @@ SV_TogglePause (const char *msg)
 
 	// send notification to all clients
 	for (i = 0, cl = svs.clients; i < MAX_CLIENTS; i++, cl++) {
-		if (!cl->state)
+		if (cl->state < cs_zombie)
 			continue;
 		ClientReliableWrite_Begin (cl, svc_setpause, 2);
 		ClientReliableWrite_Byte (cl, sv.paused);

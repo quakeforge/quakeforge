@@ -120,6 +120,7 @@ typedef struct
 typedef enum
 {
 	cs_free,		// can be reused for a new connection
+	cs_server,		// client is grabbed by the server for its own purposes
 	cs_zombie,		// client has been disconnected, but don't reuse
 					// connection for a couple seconds
 	cs_connected,	// has been assigned to a client_t, but not in game yet

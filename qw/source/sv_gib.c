@@ -59,7 +59,7 @@ SV_GIB_GetClient (int uid)
 	int i;
 	
 	for (i = 0, cl = svs.clients; i < MAX_CLIENTS; i++, cl++)
-		if (cl->state && cl->userid == uid)
+		if (cl->state >= cs_connected && cl->userid == uid)
 			return cl;
 	return 0;
 }
@@ -74,7 +74,7 @@ SV_GIB_Client_GetList_f (void)
 		GIB_USAGE("");
 	else if (GIB_CanReturn())
 		for (i = 0, cl = svs.clients; i < MAX_CLIENTS; i++, cl++)
-			if (cl->state)
+			if (cl->state  >= cs_connected)
 				dsprintf (GIB_Return(0), "%i", cl->userid);
 }
 
@@ -131,7 +131,7 @@ SV_GIB_Client_Print_All_f (void)
 	if (GIB_Argc() != 2)
 		GIB_USAGE("message");
 	else for (i = 0, cl = svs.clients; i < MAX_CLIENTS; i++, cl++)
-		if (cl->state)
+		if (cl->state  >= cs_connected)
 			SV_ClientPrintf (0, cl, level, "%s", GIB_Argv(1));
 }
 
