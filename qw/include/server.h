@@ -483,7 +483,7 @@ void SV_FlushSignon (void);
 void SV_ProgStartFrame (void);
 void SV_Physics (void);
 void SV_CheckVelocity (struct edict_s *ent);
-void SV_AddGravity (struct edict_s *ent, float scale);
+void SV_AddGravity (struct edict_s *ent);
 qboolean SV_RunThink (struct edict_s *ent);
 void SV_Physics_Toss (struct edict_s *ent);
 void SV_RunNewmis (void);

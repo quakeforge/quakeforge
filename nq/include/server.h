@@ -253,6 +253,13 @@ void SV_AddClientToServer (struct qsocket_s	*ret);
 void SV_ClientPrintf (const char *fmt, ...) __attribute__((format(printf,1,2)));
 void SV_BroadcastPrintf (const char *fmt, ...) __attribute__((format(printf,1,2)));
 
+struct trace_s SV_PushEntity (edict_t *ent, vec3_t push);
+int SV_FlyMove (edict_t *ent, float time, struct trace_s *steptrace);
+void SV_CheckVelocity (edict_t *ent);
+qboolean SV_RunThink (edict_t *ent);
+void SV_AddGravity (edict_t *ent);
+void SV_Physics_Toss (edict_t *ent);
+void SV_Physics_Client (edict_t *ent, int num);
 void SV_Physics (void);
 
 qboolean SV_CheckBottom (edict_t *ent);

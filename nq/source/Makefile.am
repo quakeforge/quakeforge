@@ -97,7 +97,7 @@ client_sources=	cl_cam.c cl_cmd.c cl_demo.c cl_input.c cl_main.c cl_screen.c \
 		locs.c sbar.c
 
 server_sources= host.c host_cmd.c pr_cmds.c sv_cvar.c sv_main.c \
-		sv_move.c sv_phys.c sv_progs.c sv_user.c
+		sv_move.c sv_cl_phys.c sv_phys.c sv_progs.c sv_user.c
 
 combined_sources= \
 		$(common_sources) $(client_sources) $(server_sources)
