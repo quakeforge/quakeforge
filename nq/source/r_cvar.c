@@ -173,6 +173,9 @@ R_Init_Cvars (void)
 	gl_sky_clip = 
         Cvar_Get ("gl_sky_clip", "0", CVAR_ARCHIVE, NULL, 
                   "controls whether sky is drawn first (0) or later (1)"); 
+	gl_sky_divide =
+		Cvar_Get ("gl_sky_divide", "1", CVAR_ARCHIVE, NULL,
+				  "subdivide sky polys");
 	gl_skymultipass = Cvar_Get ("gl_skymultipass", "1", CVAR_NONE, NULL,
 								"controls wether the skydome is single or double pass");
 	gl_smoothmodels = Cvar_Get ("gl_smoothmodels", "1", CVAR_NONE, NULL, "None");
