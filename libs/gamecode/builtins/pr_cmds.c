@@ -580,7 +580,7 @@ PF_sprintf (progs_t *pr)
 	format = G_STRING (pr, OFS_PARM0);
 	c = format;
 
-	out = malloc (out_size);
+	out = malloc (out_max);
 	if (!out)
 		goto mallocerror;
 
