@@ -146,7 +146,6 @@ linker_begin (void)
 	pr.num_statements = 1;
 	pr.statements_size = 16384;
 	pr.statements = calloc (pr.statements_size, sizeof (dstatement_t));
-	pr.statement_linenums = calloc (pr.statements_size, sizeof (int));
 	pr.strings = strpool_new ();
 	pr.num_functions = 1;
 	pr.near_data = new_defspace ();

@@ -51,7 +51,6 @@ typedef struct pr_info_s {
 	struct strpool_s *strings;
 
 	dstatement_t	*statements;
-	int				*statement_linenums;
 	int				num_statements;
 	int				statements_size;
 

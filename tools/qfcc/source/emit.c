@@ -102,12 +102,9 @@ emit_statement (int sline, opcode_t *op, def_t *var_a, def_t *var_b,
 		pr.statements_size += 16384;
 		pr.statements = realloc (pr.statements,
 								 pr.statements_size * sizeof (dstatement_t));
-		pr.statement_linenums = realloc (pr.statement_linenums,
-										 pr.statements_size * sizeof (int));
 	}
 	statement = &pr.statements[pr.num_statements];
 	pr.num_statements++;
-	pr.statement_linenums[statement - pr.statements] = pr.source_line;
 	statement->op = op->opcode;
 	statement->a = var_a ? var_a->ofs : 0;
 	statement->b = var_b ? var_b->ofs : 0;
