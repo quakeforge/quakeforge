@@ -118,7 +118,7 @@ cvar_t     *cl_allow_cmd_pkt;
 
 cvar_t     *cl_timeout;
 
-cvar_t     *cl_shownet;					// can be 0, 1, or 2
+cvar_t     *cl_shownet;
 cvar_t     *cl_autoexec;
 cvar_t     *cl_sbar;
 cvar_t     *cl_sbar_separator;

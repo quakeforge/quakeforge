@@ -56,9 +56,12 @@ byte       *vid_colormap;
 cvar_t     *cl_name;
 cvar_t     *cl_color;
 
+cvar_t     *writecfg;
+
 cvar_t     *cl_shownet;
 cvar_t     *cl_nolerp;
 cvar_t     *cl_sbar;
+cvar_t     *cl_sbar_separator;
 cvar_t     *cl_hudswap;
 
 cvar_t     *cl_cshift_bonus; 
@@ -162,12 +165,12 @@ CL_ClearState (void)
 	if (!sv.active)
 		Host_ClearMemory ();
 
-// wipe the entire cl structure
+	// wipe the entire cl structure
 	memset (&cl, 0, sizeof (cl));
 
 	SZ_Clear (&cls.message);
 
-// clear other arrays   
+	// clear other arrays   
 	memset (cl_efrags, 0, sizeof (cl_efrags));
 	memset (cl_entities, 0, sizeof (cl_entities));
 	memset (cl_dlights, 0, sizeof (cl_dlights));
@@ -175,9 +178,7 @@ CL_ClearState (void)
 	memset (cl_temp_entities, 0, sizeof (cl_temp_entities));
 	memset (cl_beams, 0, sizeof (cl_beams));
 
-//
-// allocate the efrags and chain together into a free list
-//
+	// allocate the efrags and chain together into a free list
 	cl.free_efrags = cl_efrags;
 	for (i = 0; i < MAX_EFRAGS - 1; i++)
 		cl.free_efrags[i].entnext = &cl.free_efrags[i + 1];
@@ -276,7 +277,7 @@ CL_EstablishConnection (char *host)
 	cls.demonum = -1;					// not in the demo loop now
 	cls.state = ca_connected;
 	cls.signon = 0;						// need all the signon messages
-	// before playing
+										// before playing
 }
 
 
@@ -293,32 +294,30 @@ CL_SignonReply (void)
 	Con_DPrintf ("CL_SignonReply: %i\n", cls.signon);
 
 	switch (cls.signon) {
-		case 1:
+	case 1:
 		MSG_WriteByte (&cls.message, clc_stringcmd);
 		MSG_WriteString (&cls.message, "prespawn");
 		break;
 
-		case 2:
+	case 2:
 		MSG_WriteByte (&cls.message, clc_stringcmd);
 		MSG_WriteString (&cls.message, va ("name \"%s\"\n", cl_name->string));
-
 		MSG_WriteByte (&cls.message, clc_stringcmd);
 		MSG_WriteString (&cls.message,
 						 va ("color %i %i\n", (cl_color->int_val) >> 4,
 							 (cl_color->int_val) & 15));
-
 		MSG_WriteByte (&cls.message, clc_stringcmd);
 		snprintf (str, sizeof (str), "spawn %s", cls.spawnparms);
 		MSG_WriteString (&cls.message, str);
 		break;
 
-		case 3:
+	case 3:
 		MSG_WriteByte (&cls.message, clc_stringcmd);
 		MSG_WriteString (&cls.message, "begin");
 		Cache_Report ();				// print remaining memory
 		break;
 
-		case 4:
+	case 4:
 //		SCR_EndLoadingPlaque ();		// allow normal screen updates
 		break;
 	}
@@ -374,11 +373,9 @@ CL_PrintEntities_f (void)
 
 
 /*
-===============
-SetPal
+	SetPal
 
-Debugging tool, just flashes the screen
-===============
+	Debugging tool, just flashes the screen
 */
 void
 SetPal (int i)
@@ -413,13 +410,13 @@ SetPal (int i)
 }
 
 
-dlight_t   *
+dlight_t *
 CL_AllocDlight (int key)
 {
 	int         i;
 	dlight_t   *dl;
 
-// first look for an exact key match
+	// first look for an exact key match
 	if (key) {
 		dl = cl_dlights;
 		for (i = 0; i < MAX_DLIGHTS; i++, dl++) {
@@ -430,7 +427,7 @@ CL_AllocDlight (int key)
 			}
 		}
 	}
-// then look for anything else
+	// then look for anything else
 	dl = cl_dlights;
 	for (i = 0; i < MAX_DLIGHTS; i++, dl++) {
 		if (dl->die < cl.time) {
@@ -460,23 +457,23 @@ CL_NewDlight (int key, float x, float y, float z, float radius, float time,
 	dl->radius = radius;
 	dl->die = cl.time + time;
 	switch (type) {
-		default:
-		case 0:
+	default:
+	case 0:
 		dl->color[0] = 0.4;
 		dl->color[1] = 0.2;
 		dl->color[2] = 0.05;
 		break;
-		case 1:						// blue
+	case 1:						// blue
 		dl->color[0] = 0.05;
 		dl->color[1] = 0.05;
 		dl->color[2] = 0.5;
 		break;
-		case 2:						// red
+	case 2:						// red
 		dl->color[0] = 0.5;
 		dl->color[1] = 0.05;
 		dl->color[2] = 0.05;
 		break;
-		case 3:						// purple
+	case 3:						// purple
 		dl->color[0] = 0.5;
 		dl->color[1] = 0.05;
 		dl->color[2] = 0.5;
@@ -507,12 +504,10 @@ CL_DecayLights (void)
 
 
 /*
-===============
-CL_LerpPoint
+	CL_LerpPoint
 
-Determines the fraction between the last two messages that the objects
-should be put at.
-===============
+	Determines the fraction between the last two messages that the objects
+	should be put at.
 */
 float
 CL_LerpPoint (void)
@@ -531,19 +526,19 @@ CL_LerpPoint (void)
 		f = 0.1;
 	}
 	frac = (cl.time - cl.mtime[1]) / f;
-//Con_Printf ("frac: %f\n",frac);
+//	Con_Printf ("frac: %f\n",frac);
 	if (frac < 0) {
 		if (frac < -0.01) {
 			SetPal (1);
 			cl.time = cl.mtime[1];
-//              Con_Printf ("low frac\n");
+//			Con_Printf ("low frac\n");
 		}
 		frac = 0;
 	} else if (frac > 1) {
 		if (frac > 1.01) {
 			SetPal (2);
 			cl.time = cl.mtime[0];
-//              Con_Printf ("high frac\n");
+//			Con_Printf ("high frac\n");
 		}
 		frac = 1;
 	} else
@@ -564,14 +559,12 @@ CL_RelinkEntities (void)
 	vec3_t      oldorg;
 	dlight_t   *dl;
 
-// determine partial update time    
+	// determine partial update time    
 	frac = CL_LerpPoint ();
 
 	cl_numvisedicts = 0;
 
-//
-// interpolate player info
-//
+	// interpolate player info
 	for (i = 0; i < 3; i++)
 		cl.velocity[i] = cl.mvelocity[1][i] +
 			frac * (cl.mvelocity[0][i] - cl.mvelocity[1][i]);
@@ -590,14 +583,14 @@ CL_RelinkEntities (void)
 
 	bobjrotate = anglemod (100 * cl.time);
 
-// start on the entity after the world
+	// start on the entity after the world
 	for (i = 1, ent = cl_entities + 1; i < cl.num_entities; i++, ent++) {
 		if (!ent->model) {				// empty slot
 			if (ent->forcelink)
 				R_RemoveEfrags (ent);	// just became empty
 			continue;
 		}
-// if the object wasn't included in the last packet, remove it
+		// if the object wasn't included in the last packet, remove it
 		if (ent->msgtime != cl.mtime[0]) {
 			ent->model = NULL;
 			continue;
@@ -605,19 +598,17 @@ CL_RelinkEntities (void)
 
 		VectorCopy (ent->origin, oldorg);
 
-		if (ent->forcelink) {			// the entity was not updated in the
-			// last message
-			// so move to the final spot
+		if (ent->forcelink) {		// the entity was not updated in the
+									// last message so move to the final spot
 			VectorCopy (ent->msg_origins[0], ent->origin);
 			VectorCopy (ent->msg_angles[0], ent->angles);
-		} else {						// if the delta is large, assume a
-			// teleport and don't lerp
+		} else {					// if the delta is large, assume a
+									// teleport and don't lerp
 			f = frac;
 			for (j = 0; j < 3; j++) {
 				delta[j] = ent->msg_origins[0][j] - ent->msg_origins[1][j];
 				if (delta[j] > 100 || delta[j] < -100)
-					f = 1;				// assume a teleportation, not a
-				// motion
+					f = 1;				// assume a teleportation, not a motion
 			}
 
 			// interpolate the origin and angles
@@ -634,7 +625,7 @@ CL_RelinkEntities (void)
 
 		}
 
-// rotate binary objects locally
+		// rotate binary objects locally
 		if (ent->model->flags & EF_ROTATE)
 			ent->angles[1] = bobjrotate;
 
@@ -690,7 +681,6 @@ CL_RelinkEntities (void)
 			dl->die = cl.time + 0.001;
 		}
 #endif
-
 		if (VectorDistance_fast(ent->msg_origins[1], ent->origin) > (256*256))
 			VectorCopy (ent ->origin, ent->msg_origins[1]);
 		if (ent->model->flags & EF_ROCKET) {
@@ -717,7 +707,6 @@ CL_RelinkEntities (void)
 
 		if (i == cl.viewentity && !chase_active->int_val)
 			continue;
-
 #ifdef QUAKE2
 		if (ent->effects & EF_NODRAW)
 			continue;
@@ -727,16 +716,13 @@ CL_RelinkEntities (void)
 			cl_numvisedicts++;
 		}
 	}
-
 }
 
 
 /*
-===============
-CL_ReadFromServer
+	CL_ReadFromServer
 
-Read all incoming data from the server
-===============
+	Read all incoming data from the server
 */
 int
 CL_ReadFromServer (void)
@@ -763,17 +749,11 @@ CL_ReadFromServer (void)
 	CL_RelinkEntities ();
 	CL_UpdateTEnts ();
 
-//
-// bring the links up to date
-//
+	// bring the links up to date
 	return 0;
 }
 
-/*
-=================
-CL_SendCmd
-=================
-*/
+
 void
 CL_SendCmd (void)
 {
@@ -794,7 +774,7 @@ CL_SendCmd (void)
 		SZ_Clear (&cls.message);
 		return;
 	}
-// send the reliable message
+	// send the reliable message
 	if (!cls.message.cursize)
 		return;							// no message at all
 
@@ -809,11 +789,7 @@ CL_SendCmd (void)
 	SZ_Clear (&cls.message);
 }
 
-/*
-=================
-CL_Init
-=================
-*/
+
 void
 CL_Init (void)
 {

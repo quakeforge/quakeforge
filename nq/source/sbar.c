@@ -44,29 +44,23 @@
 #include "client.h"
 #include "server.h"
 
-int         sb_updates;					// if >= vid.numpages, no update
+int         sb_updates;				// if >= vid.numpages, no update needed
 
-										// needed
-
-#define STAT_MINUS		10				// num frame for '-' stats digit
+#define STAT_MINUS		10			// num frame for '-' stats digit
 qpic_t     *sb_nums[2][11];
 qpic_t     *sb_colon, *sb_slash;
 qpic_t     *sb_ibar;
 qpic_t     *sb_sbar;
 qpic_t     *sb_scorebar;
 
-qpic_t     *sb_weapons[7][8];			// 0 is active, 1 is owned, 2-5 are
-
-										// flashes
+qpic_t     *sb_weapons[7][8];		// 0 is active, 1 is owned, 2-5 are flashes
 qpic_t     *sb_ammo[4];
 qpic_t     *sb_sigil[4];
 qpic_t     *sb_armor[3];
 qpic_t     *sb_items[32];
 
-qpic_t     *sb_faces[7][2];				// 0 is gibbed, 1 is dead, 2-6 are
-
-										// alive
-								// 0 is static, 1 is temporary animation
+qpic_t     *sb_faces[7][2];			// 0 is gibbed, 1 is dead, 2-6 are alive
+									// 0 is static, 1 is temporary animation
 qpic_t     *sb_face_invis;
 qpic_t     *sb_face_quad;
 qpic_t     *sb_face_invuln;
@@ -74,28 +68,24 @@ qpic_t     *sb_face_invis_invuln;
 
 qboolean    sb_showscores;
 
-int         sb_lines;					// scan lines to draw
+int         sb_lines;				// scan lines to draw
 
 // FIXME: MISSIONHUD (rsb_*, hsb_*)
 //qpic_t     *rsb_invbar[2];
 //qpic_t     *rsb_weapons[5];
 //qpic_t     *rsb_items[2];
 //qpic_t     *rsb_ammo[3];
-//qpic_t     *rsb_teambord;				// PGM 01/19/97 - team color border
+//qpic_t     *rsb_teambord;			// PGM 01/19/97 - team color border
 
 								// MED 01/04/97 added two more weapons + 3
 								// alternates for grenade launcher
-//qpic_t     *hsb_weapons[7][5];			// 0 is active, 1 is owned, 2-5 are
-
-										// flashes
+//qpic_t     *hsb_weapons[7][5];	// 0 is active, 1 is owned, 2-5 are flashes
 
 								// MED 01/04/97 added array to simplify
 								// weapon parsing
 //int         hipweapons[4] =
 //	{ HIT_LASER_CANNON_BIT, HIT_MJOLNIR_BIT, 4, HIT_PROXIMITY_GUN_BIT };
-//qpic_t     *hsb_items[2];				// MED 01/04/97 added hipnotic items
-
-										// array
+//qpic_t     *hsb_items[2];			// MED 01/04/97 added hipnotic items array
 
 qboolean    headsup;
 qboolean    sbar_centered;
@@ -103,11 +93,6 @@ qboolean    sbar_centered;
 void        Sbar_MiniDeathmatchOverlay (void);
 void        Sbar_DeathmatchOverlay (void);
 
-/*
- *
- *	Status Bar Utility Functions
- *
- */
 
 /*
 	Sbar_ColorForMap
@@ -121,7 +106,6 @@ Sbar_ColorForMap (int m)
 	// return (bound (0, m, 13) * 16) +
 	// 8;
 }
-
 
 
 /*
@@ -138,6 +122,7 @@ Sbar_ShowScores (void)
 	sb_updates = 0;
 }
 
+
 /*
 	Sbar_DontShowScores
 
@@ -151,6 +136,7 @@ Sbar_DontShowScores (void)
 	sb_showscores = false;
 	sb_updates = 0;
 }
+
 
 /*
 	Sbar_Changed
@@ -204,6 +190,7 @@ Sbar_DrawSubPic (int x, int y, qpic_t *pic, int srcx, int srcy, int width,
 		Draw_SubPic (x, y + (vid.height - SBAR_HEIGHT), pic, srcx, srcy, width,
 					 height);
 }
+
 
 /*
 	Sbar_DrawTransPic
@@ -313,10 +300,8 @@ Sbar_DrawNum (int x, int y, int num, int digits, int color)
 	}
 }
 
-//=============================================================================
 
 int         fragsort[MAX_SCOREBOARD];
-
 char        scoreboardtext[MAX_SCOREBOARD][20];
 int         scoreboardtop[MAX_SCOREBOARD];
 int         scoreboardbottom[MAX_SCOREBOARD];
@@ -415,9 +400,6 @@ Sbar_DrawScoreboard (void)
 	if (cl.gametype == GAME_DEATHMATCH)
 		Sbar_DeathmatchOverlay ();
 }
-
-
-//=============================================================================
 
 
 void
@@ -636,9 +618,6 @@ Sbar_DrawInventory (void)
 }
 
 
-//=============================================================================
-
-
 void
 Sbar_DrawFrags (void)
 {
@@ -693,9 +672,6 @@ Sbar_DrawFrags (void)
 		x += 4;
 	}
 }
-
-
-//=============================================================================
 
 
 void
@@ -916,9 +892,6 @@ Sbar_Draw (void)
 		}
 	}
 }
-
-
-//=============================================================================
 
 
 void
@@ -1278,4 +1251,3 @@ Sbar_Init (void)
 //		rsb_ammo[2] = Draw_PicFromWad ("r_ammoplasma");
 //	}
 }
-

@@ -51,29 +51,23 @@
 #include "client.h"
 #include "sbar.h"
 
-int         sb_updates;					// if >= vid.numpages, no update
+int         sb_updates;				// if >= vid.numpages, no update needed
 
-										// needed
-
-#define STAT_MINUS		10				// num frame for '-' stats digit
+#define STAT_MINUS		10			// num frame for '-' stats digit
 qpic_t     *sb_nums[2][11];
 qpic_t     *sb_colon, *sb_slash;
 qpic_t     *sb_ibar;
 qpic_t     *sb_sbar;
 qpic_t     *sb_scorebar;
 
-qpic_t     *sb_weapons[7][8];			// 0 is active, 1 is owned, 2-5 are
-
-										// flashes
+qpic_t     *sb_weapons[7][8];		// 0 is active, 1 is owned, 2-5 are flashes
 qpic_t     *sb_ammo[4];
 qpic_t     *sb_sigil[4];
 qpic_t     *sb_armor[3];
 qpic_t     *sb_items[32];
 
-qpic_t     *sb_faces[7][2];				// 0 is gibbed, 1 is dead, 2-6 are
-
-										// alive
-							// 0 is static, 1 is temporary animation
+qpic_t     *sb_faces[7][2];			// 0 is gibbed, 1 is dead, 2-6 are alive
+									// 0 is static, 1 is temporary animation
 qpic_t     *sb_face_invis;
 qpic_t     *sb_face_quad;
 qpic_t     *sb_face_invuln;
@@ -82,7 +76,7 @@ qpic_t     *sb_face_invis_invuln;
 qboolean    sb_showscores;
 qboolean    sb_showteamscores;
 
-int         sb_lines;					// scan lines to draw
+int         sb_lines;				// scan lines to draw
 
 void        Sbar_DeathmatchOverlay (int start);
 void        Sbar_TeamOverlay (void);
@@ -235,11 +229,14 @@ Sbar_Init (void)
 	sb_face_invis_invuln = Draw_PicFromWad ("face_inv2");
 	sb_face_quad = Draw_PicFromWad ("face_quad");
 
-	Cmd_AddCommand ("+showscores", Sbar_ShowScores, "Display information on everyone playing");
-	Cmd_AddCommand ("-showscores", Sbar_DontShowScores, "Stop displaying information on everyone playing");
-
-	Cmd_AddCommand ("+showteamscores", Sbar_ShowTeamScores, "Display information for your team");
-	Cmd_AddCommand ("-showteamscores", Sbar_DontShowTeamScores, "Stop displaying information for your team");
+	Cmd_AddCommand ("+showscores", Sbar_ShowScores,
+					"Display information on everyone playing");
+	Cmd_AddCommand ("-showscores", Sbar_DontShowScores,
+					"Stop displaying information on everyone playing");
+	Cmd_AddCommand ("+showteamscores", Sbar_ShowTeamScores,
+					"Display information for your team");
+	Cmd_AddCommand ("-showteamscores", Sbar_DontShowTeamScores,
+					"Stop displaying information for your team");
 
 	sb_sbar = Draw_PicFromWad ("sbar");
 	sb_ibar = Draw_PicFromWad ("ibar");
@@ -247,16 +244,11 @@ Sbar_Init (void)
 }
 
 
-//=============================================================================
-
-
 // drawing routines are reletive to the status bar location
-
 void
 Sbar_DrawPic (int x, int y, qpic_t *pic)
 {
-	Draw_Pic (x /* + ((vid.width - 320)>>1) */ , y + (vid.height - SBAR_HEIGHT),
-			  pic);
+	Draw_Pic (x, y + (vid.height - SBAR_HEIGHT), pic);
 }
 
 
@@ -277,7 +269,7 @@ Sbar_DrawSubPic (int x, int y, qpic_t *pic, int srcx, int srcy, int width,
 void
 Sbar_DrawTransPic (int x, int y, qpic_t *pic)
 {
-	Draw_Pic (x /* + ((vid.width - 320)>>1) */ , y + (vid.height - SBAR_HEIGHT),
+	Draw_Pic (x, y + (vid.height - SBAR_HEIGHT),
 			  pic);
 }
 
@@ -290,16 +282,14 @@ Sbar_DrawTransPic (int x, int y, qpic_t *pic)
 void
 Sbar_DrawCharacter (int x, int y, int num)
 {
-	Draw_Character8 (x /* + ((vid.width - 320)>>1) */  + 4,
-					 y + vid.height - SBAR_HEIGHT, num);
+	Draw_Character8 (x + 4, y + vid.height - SBAR_HEIGHT, num);
 }
 
 
 void
 Sbar_DrawString (int x, int y, char *str)
 {
-	Draw_String8 (x /* + ((vid.width - 320)>>1) */ ,
-				  y + vid.height - SBAR_HEIGHT, str);
+	Draw_String8 (x, y + vid.height - SBAR_HEIGHT, str);
 }
 
 
@@ -359,8 +349,6 @@ Sbar_DrawNum (int x, int y, int num, int digits, int color)
 }
 
 
-//=============================================================================
-
 //ZOID: this should be MAX_CLIENTS, not MAX_SCOREBOARD!!
 //int       fragsort[MAX_SCOREBOARD];
 int         fragsort[MAX_CLIENTS];
@@ -381,7 +369,7 @@ Sbar_SortFrags (qboolean includespec)
 {
 	int         i, j, k;
 
-// sort by frags
+	// sort by frags
 	scoreboardlines = 0;
 	for (i = 0; i < MAX_CLIENTS; i++) {
 		if (cl.players[i].name[0] && (!cl.players[i].spectator || includespec)) {
@@ -411,14 +399,14 @@ Sbar_SortTeams (void)
 	int         teamplay;
 	char        t[16 + 1];
 
-// request new ping times every two second
+	// request new ping times every two second
 	scoreboardteams = 0;
 
 	teamplay = atoi (Info_ValueForKey (cl.serverinfo, "teamplay"));
 	if (!teamplay)
 		return;
 
-// sort the teams
+	// sort the teams
 	memset (teams, 0, sizeof (teams));
 	for (i = 0; i < MAX_CLIENTS; i++)
 		teams[i].plow = 999;
@@ -495,9 +483,6 @@ Sbar_SoloScoreboard (void)
 }
 
 
-//=============================================================================
-
-
 void
 Sbar_DrawInventory (void)
 {
@@ -513,7 +498,7 @@ Sbar_DrawInventory (void)
 
 	if (!headsup)
 		Sbar_DrawPic (0, -24, sb_ibar);
-// weapons
+	// weapons
 	for (i = 0; i < 7; i++) {
 		if (cl.stats[STAT_ITEMS] & (IT_SHOTGUN << i)) {
 			time = cl.item_gettime[i];
@@ -536,18 +521,18 @@ Sbar_DrawInventory (void)
 
 			} else
 				Sbar_DrawPic (i * 24, -16, sb_weapons[flashon][i]);
-//          Sbar_DrawSubPic (0,0,20,20,i*24, -16, sb_weapons[flashon][i]);
+//			Sbar_DrawSubPic (0, 0, 20, 20, i*24, -16, sb_weapons[flashon][i]);
 
 			if (flashon > 1)
 				sb_updates = 0;			// force update to remove flash
 		}
 	}
 
-// ammo counts
+	// ammo counts
 	for (i = 0; i < 4; i++) {
 		snprintf (num, sizeof (num), "%3i", cl.stats[STAT_SHELLS + i]);
 		if (headsup) {
-//          Sbar_DrawSubPic(3, -24, sb_ibar, 3, 0, 42,11);
+//			Sbar_DrawSubPic(3, -24, sb_ibar, 3, 0, 42, 11);
 			Sbar_DrawSubPic ((hudswap) ? 0 : (vid.width - 42),
 							 -24 - (4 - i) * 11, sb_ibar, 3 + (i * 48), 0, 42,
 							 11);
@@ -574,7 +559,7 @@ Sbar_DrawInventory (void)
 	}
 
 	flashon = 0;
-// items
+	// items
 	for (i = 0; i < 6; i++)
 		if (cl.stats[STAT_ITEMS] & (1 << (17 + i))) {
 			time = cl.item_gettime[17 + i];
@@ -585,7 +570,7 @@ Sbar_DrawInventory (void)
 			if (time && time > cl.time - 2)
 				sb_updates = 0;
 		}
-// sigils
+	// sigils
 	for (i = 0; i < 4; i++)
 		if (cl.stats[STAT_ITEMS] & (1 << (28 + i))) {
 			time = cl.item_gettime[28 + i];
@@ -599,9 +584,6 @@ Sbar_DrawInventory (void)
 }
 
 
-//=============================================================================
-
-
 void
 Sbar_DrawFrags (void)
 {
@@ -613,11 +595,11 @@ Sbar_DrawFrags (void)
 
 	Sbar_SortFrags (false);
 
-// draw the text
+	// draw the text
 	l = scoreboardlines <= 4 ? scoreboardlines : 4;
 
 	x = 23;
-//  xofs = (vid.width - 320)>>1;
+//	xofs = (vid.width - 320)>>1;
 	y = vid.height - SBAR_HEIGHT - 23;
 
 	for (i = 0; i < l; i++) {
@@ -637,8 +619,8 @@ Sbar_DrawFrags (void)
 		top = Sbar_ColorForMap (top);
 		bottom = Sbar_ColorForMap (bottom);
 
-//      Draw_Fill (xofs + x*8 + 10, y, 28, 4, top);
-//      Draw_Fill (xofs + x*8 + 10, y+4, 28, 3, bottom);
+//		Draw_Fill (xofs + x*8 + 10, y, 28, 4, top);
+//		Draw_Fill (xofs + x*8 + 10, y+4, 28, 3, bottom);
 		Draw_Fill (x * 8 + 10, y, 28, 4, top);
 		Draw_Fill (x * 8 + 10, y + 4, 28, 3, bottom);
 
@@ -657,9 +639,6 @@ Sbar_DrawFrags (void)
 		x += 4;
 	}
 }
-
-
-//=============================================================================
 
 
 void
@@ -705,7 +684,7 @@ Sbar_DrawNormal (void)
 	if (cl_sbar->int_val || scr_viewsize->int_val < 100)
 		Sbar_DrawPic (0, 0, sb_sbar);
 
-// armor
+	// armor
 	if (cl.stats[STAT_ITEMS] & IT_INVULNERABILITY) {
 		Sbar_DrawNum (24, 0, 666, 3, 1);
 		Sbar_DrawPic (0, 0, draw_disc);
@@ -720,14 +699,14 @@ Sbar_DrawNormal (void)
 			Sbar_DrawPic (0, 0, sb_armor[0]);
 	}
 
-// face
+	// face
 	Sbar_DrawFace ();
 
-// health
+	// health
 	Sbar_DrawNum (136, 0, cl.stats[STAT_HEALTH], 3,
 				  cl.stats[STAT_HEALTH] <= 25);
 
-// ammo icon
+	// ammo icon
 	if (cl.stats[STAT_ITEMS] & IT_SHELLS)
 		Sbar_DrawPic (224, 0, sb_ammo[0]);
 	else if (cl.stats[STAT_ITEMS] & IT_NAILS)
@@ -755,18 +734,18 @@ Sbar_Draw (void)
 		return;							// console is full screen
 
 	scr_copyeverything = 1;
-//  scr_fullupdate = 0;
+//	scr_fullupdate = 0;
 
 	sb_updates++;
 
-// top line
+	// top line
 	if (sb_lines > 24) {
 		if (!cl.spectator || autocam == CAM_TRACK)
 			Sbar_DrawInventory ();
 		if (!headsup || vid.width < 512)
 			Sbar_DrawFrags ();
 	}
-// main area
+	// main area
 	if (sb_lines > 0) {
 		if (cl.spectator) {
 			if (autocam != CAM_TRACK) {
@@ -780,7 +759,7 @@ Sbar_Draw (void)
 				else
 					Sbar_DrawNormal ();
 
-//                  Sbar_DrawString (160-14*8+4,4, "SPECTATOR MODE - TRACK CAMERA");
+//				Sbar_DrawString (160-14*8+4,4, "SPECTATOR MODE - TRACK CAMERA");
 				snprintf (st, sizeof (st), "Tracking %-.13s, [JUMP] for next",
 						  cl.players[spec_track].name);
 				Sbar_DrawString (0, -8, st);
@@ -790,7 +769,7 @@ Sbar_Draw (void)
 		else
 			Sbar_DrawNormal ();
 	}
-// main screen deathmatch rankings
+	// main screen deathmatch rankings
 	// if we're dead show team scores in team games
 	if (cl.stats[STAT_HEALTH] <= 0 && !cl.spectator)
 		if (atoi (Info_ValueForKey (cl.serverinfo, "teamplay")) > 0 &&
@@ -810,9 +789,6 @@ Sbar_Draw (void)
 	if (sb_lines > 0)
 		Sbar_MiniDeathmatchOverlay ();
 }
-
-
-//=============================================================================
 
 
 void
@@ -860,7 +836,7 @@ Sbar_TeamOverlay (void)
 	team_t     *tm;
 	int         plow, phigh, pavg;
 
-// request new ping times every two second
+	// request new ping times every two second
 	teamplay = atoi (Info_ValueForKey (cl.serverinfo, "teamplay"));
 
 	if (!teamplay) {
@@ -878,15 +854,16 @@ Sbar_TeamOverlay (void)
 	x = 36;
 	Draw_String8 (x, y, "low/avg/high team total players");
 	y += 8;
-//  Draw_String8 (x, y, "------------ ---- ----- -------");
-	Draw_String8 (x, y,
-				  "\x1d\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1f \x1d\x1e\x1e\x1f \x1d\x1e\x1e\x1e\x1f \x1d\x1e\x1e\x1e\x1e\x1e\x1f");
+//	Draw_String8 (x, y, "------------ ---- ----- -------");
+	Draw_String8 (x, y, "\x1d\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1f "
+				  "\x1d\x1e\x1e\x1f \x1d\x1e\x1e\x1e\x1f "
+				  "\x1d\x1e\x1e\x1e\x1e\x1e\x1f");
 	y += 8;
 
-// sort the teams
+	// sort the teams
 	Sbar_SortTeams ();
 
-// draw the text
+	// draw the text
 	l = scoreboardlines;
 
 	for (i = 0; i < scoreboardteams && y <= vid.height - 10; i++) {
@@ -960,7 +937,7 @@ Sbar_DeathmatchOverlay (int start)
 	if (largegame)
 		skip = 8;
 
-// request new ping times every two second
+	// request new ping times every two second
 	if (realtime - cl.last_ping_request > 2) {
 		cl.last_ping_request = realtime;
 		MSG_WriteByte (&cls.netchan.message, clc_stringcmd);
@@ -976,10 +953,10 @@ Sbar_DeathmatchOverlay (int start)
 		pic = Draw_CachePic ("gfx/ranking.lmp", true);
 		Draw_Pic (160 - pic->width / 2, 0, pic);
 	}
-// scores   
+	// scores   
 	Sbar_SortFrags (true);
 
-// draw the text
+	// draw the text
 	l = scoreboardlines;
 
 	if (start)
@@ -988,21 +965,23 @@ Sbar_DeathmatchOverlay (int start)
 		y = 24;
 	if (teamplay) {
 		x = 4;
-//                            0    40 64   104   152  192 
+//							 0    40 64   104   152  192 
 		Draw_String8 (x, y, "ping pl time frags team name");
 		y += 8;
 //      Draw_String8 ( x , y, "---- -- ---- ----- ---- ----------------");
-		Draw_String8 (x, y,
-					  "\x1d\x1e\x1e\x1f \x1d\x1f \x1d\x1e\x1e\x1f \x1d\x1e\x1e\x1e\x1f \x1d\x1e\x1e\x1f \x1d\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1f");
+		Draw_String8 (x, y, "\x1d\x1e\x1e\x1f \x1d\x1f \x1d\x1e\x1e\x1f "
+					  "\x1d\x1e\x1e\x1e\x1f \x1d\x1e\x1e\x1f \x1d\x1e\x1e"
+					  "\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1f");
 		y += 8;
 	} else {
 		x = 16;
-//                            0    40 64   104   152
+//							 0    40 64   104   152
 		Draw_String8 (x, y, "ping pl time frags name");
 		y += 8;
-//      Draw_String8 ( x , y, "---- -- ---- ----- ----------------");
-		Draw_String8 (x, y,
-					  "\x1d\x1e\x1e\x1f \x1d\x1f \x1d\x1e\x1e\x1f \x1d\x1e\x1e\x1e\x1f \x1d\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1f");
+//		Draw_String8 ( x , y, "---- -- ---- ----- ----------------");
+		Draw_String8 (x, y, "\x1d\x1e\x1e\x1f \x1d\x1f \x1d\x1e\x1e\x1f "
+					  "\x1d\x1e\x1e\x1e\x1f \x1d\x1e\x1e\x1e\x1e\x1e\x1e"
+					  "\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1f");
 		y += 8;
 	}
 
@@ -1086,8 +1065,7 @@ Sbar_DeathmatchOverlay (int start)
 		y += skip;
 	}
 
-	if (y >= vid.height - 10)			// we ran over the screen size,
-										// squish
+	if (y >= vid.height - 10)			// we ran over the screen size, squish
 		largegame = true;
 }
 
@@ -1121,7 +1099,7 @@ Sbar_MiniDeathmatchOverlay (void)
 	scr_copyeverything = 1;
 	scr_fullupdate = 0;
 
-// scores   
+	// scores   
 	Sbar_SortFrags (false);
 	if (vid.width >= 640)
 		Sbar_SortTeams ();
@@ -1129,7 +1107,7 @@ Sbar_MiniDeathmatchOverlay (void)
 	if (!scoreboardlines)
 		return;							// no one there?
 
-// draw the text
+	// draw the text
 	y = vid.height - sb_lines - 1;
 	numlines = sb_lines / 8;
 	if (numlines < 3)
