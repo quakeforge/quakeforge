@@ -44,7 +44,13 @@ typedef enum {
 
 void R_ParseParticleEffect (void);
 struct entity_s;
-void R_RocketTrail (int type, struct entity_s *ent);
+void R_RocketTrail (struct entity_s *ent);
+void R_GrenadeTrail (struct entity_s *ent);
+void R_BloodTrail (struct entity_s *ent);
+void R_SlightBloodTrail (struct entity_s *ent);
+void R_GreenTrail (struct entity_s *ent);
+void R_FlameTrail (struct entity_s *ent);
+void R_VoorTrail (struct entity_s *ent);
 void R_RunParticleEffect (vec3_t org, int color, int count);
 void R_RunPuffEffect (vec3_t org, particle_effect_t type, byte count);
 void R_RunSpikeEffect (vec3_t org, particle_effect_t type);

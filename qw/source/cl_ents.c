@@ -525,19 +525,19 @@ CL_LinkPacketEntities (void)
 		}
 
 		if (model->flags & EF_ROCKET)
-			R_RocketTrail (0, (*ent));
+			R_RocketTrail (*ent);
 		else if (model->flags & EF_GRENADE)
-			R_RocketTrail (1, (*ent));
+			R_GrenadeTrail (*ent);
 		else if (model->flags & EF_GIB)
-			R_RocketTrail (2, (*ent));
+			R_BloodTrail (*ent);
 		else if (model->flags & EF_ZOMGIB)
-			R_RocketTrail (4, (*ent));
+			R_SlightBloodTrail (*ent);
 		else if (model->flags & EF_TRACER)
-			R_RocketTrail (3, (*ent));
+			R_GreenTrail (*ent);
 		else if (model->flags & EF_TRACER2)
-			R_RocketTrail (5, (*ent));
+			R_FlameTrail (*ent);
 		else if (model->flags & EF_TRACER3)
-			R_RocketTrail (6, (*ent));
+			R_VoorTrail (*ent);
 	}
 }
 

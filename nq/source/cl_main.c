@@ -607,19 +607,19 @@ CL_RelinkEntities (void)
 			VectorCopy (r_firecolor->vec, dl->color);
 			dl->radius = 200;
 			dl->die = cl.time + 0.1;
-			R_RocketTrail (0, ent);
+			R_RocketTrail (ent);
 		} else if (ent->model->flags & EF_GRENADE)
-			R_RocketTrail (1, ent);
+			R_GrenadeTrail (ent);
 		else if (ent->model->flags & EF_GIB)
-			R_RocketTrail (2, ent);
+			R_BloodTrail (ent);
 		else if (ent->model->flags & EF_ZOMGIB)
-			R_RocketTrail (4, ent);
+			R_SlightBloodTrail (ent);
 		else if (ent->model->flags & EF_TRACER)
-			R_RocketTrail (3, ent);
+			R_GreenTrail (ent);
 		else if (ent->model->flags & EF_TRACER2)
-			R_RocketTrail (5, ent);
+			R_FlameTrail (ent);
 		else if (ent->model->flags & EF_TRACER3)
-			R_RocketTrail (6, ent);
+			R_VoorTrail (ent);
 
 		ent->forcelink = false;
 
