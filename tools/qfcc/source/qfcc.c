@@ -903,7 +903,7 @@ Options: \n\
 
 	// compile all the files
 	while ((src = COM_Parse (src))) {
-#if 0
+#ifdef NEW_PARSER
 		extern FILE *yyin;
 		int yyparse(void);
 		extern int lineno;
