@@ -69,6 +69,7 @@ vec3_t		listener_up;
 vec_t		sound_nominal_clip_dist = 1000.0;
 
 int			soundtime;					// sample PAIRS
+int			sound_delta;
 
 #define	MAX_SFX		512
 sfx_t	   *known_sfx;					// hunk allocated [MAX_SFX]
@@ -553,7 +554,9 @@ SND_GetSoundtime (void)
 	}
 	oldsamplepos = samplepos;
 
+	sound_delta = soundtime;
 	soundtime = buffers * fullsamples + samplepos / shm->channels;
+	sound_delta = soundtime - sound_delta;
 }
 
 static void

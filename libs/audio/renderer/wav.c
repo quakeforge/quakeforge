@@ -260,7 +260,7 @@ SND_LoadWav (QFile *file, sfx_t *sfx, char *realname)
 		return;
 	}
 
-	if (info.samples / info.rate < 30) {
+	if (info.samples / info.rate < 3) {
 		printf ("cache %s\n", realname);
 		wav_cache (sfx, realname, file, info);
 	} else {

@@ -55,11 +55,11 @@
 #define sc		8+16
 #define count	12+16
 
-.globl C(SND_PaintChannelFrom8)
+.globl C(NOT_SND_PaintChannelFrom8)
 #ifdef PIC
-	.type	C(SND_PaintChannelFrom8),@function
+	.type	C(NOT_SND_PaintChannelFrom8),@function
 #endif
-C(SND_PaintChannelFrom8):
+C(NOT_SND_PaintChannelFrom8):
 	pushl	%esi				// preserve register variables
 	pushl	%edi
 	pushl	%ebx
@@ -179,7 +179,7 @@ LDone:
 	ret
 #ifdef PIC
 .Lfe1:
-	.size	C(SND_PaintChannelFrom8),.Lfe1-C(SND_PaintChannelFrom8)
+	.size	C(NOT_SND_PaintChannelFrom8),.Lfe1-C(NOT_SND_PaintChannelFrom8)
 #endif
 
 //----------------------------------------------------------------------

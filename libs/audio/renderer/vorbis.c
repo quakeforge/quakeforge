@@ -294,7 +294,7 @@ SND_LoadOgg (QFile *file, sfx_t *sfx, char *realname)
 		Sys_Printf ("unsupported number of channels");
 		return;
 	}
-	if (info.samples / info.rate < 30) {
+	if (info.samples / info.rate < 3) {
 		printf ("cache %s\n", realname);
 		vorbis_cache (sfx, realname, &vf, info);
 	} else {
