@@ -618,6 +618,17 @@ R_DrawAliasModel (entity_t *e)
 	if (R_CullBox (mins, maxs))
 		return;
 
+	// FIXME: shadecolor is supposed to be the lighting for the model, not
+	// just colormod
+	shadecolor[0] = 255;//currententity->colormod[0];
+	shadecolor[1] = 255;//currententity->colormod[1];
+	shadecolor[2] = 255;//currententity->colormod[2];
+	if (!lighthalf) {
+		shadecolor[0] *= 2.0;
+		shadecolor[1] *= 2.0;
+		shadecolor[2] *= 2.0;
+	}
+
 	VectorCopy (currententity->origin, r_entorigin);
 	VectorSubtract (r_origin, r_entorigin, modelorg);
 
