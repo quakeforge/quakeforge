@@ -604,12 +604,6 @@ CL_SendMove (usercmd_t *cmd)
 	MSG_WriteByte (&buf, in_impulse);
 	in_impulse = 0;
 
-#ifdef QUAKE2
-// light level
-//
-	MSG_WriteByte (&buf, cmd->lightlevel);
-#endif
-
 // deliver the message
 //
 	if (cls.demoplayback)

@@ -43,7 +43,6 @@ vec3_t      r_pright, r_pup, r_ppn;
 int         r_numparticles;
 
 
-#ifdef QUAKE2
 void
 R_DarkFieldParticles (entity_t *ent)
 {
@@ -82,7 +81,6 @@ R_DarkFieldParticles (entity_t *ent)
 				VectorScale (dir, vel, p->vel);
 			}
 }
-#endif
 
 #define NUMVERTEXNORMALS	162
 extern float		r_avertexnormals[NUMVERTEXNORMALS][3];

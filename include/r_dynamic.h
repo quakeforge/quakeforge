@@ -49,9 +49,7 @@ void R_RunParticleEffect (vec3_t org, int color, int count);
 void R_RunPuffEffect (vec3_t org, particle_effect_t type, byte count);
 void R_RunSpikeEffect (vec3_t org, particle_effect_t type);
 
-#ifdef QUAKE2
 void R_DarkFieldParticles (struct entity_s *ent);
-#endif
 void R_EntityParticles (struct entity_s *ent);
 void R_BlobExplosion (vec3_t org);
 void R_ParticleExplosion (vec3_t org);

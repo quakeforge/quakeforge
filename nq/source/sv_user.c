@@ -437,11 +437,6 @@ SV_ReadClientMove (usercmd_t *move)
 	i = MSG_ReadByte (net_message);
 	if (i)
 		SVfloat (host_client->edict, impulse) = i;
-
-#ifdef QUAKE2
-	// read light level
-	SVfloat (host_client->edict, light_level) = MSG_ReadByte (net_message);
-#endif
 }
 
 /*

@@ -591,10 +591,6 @@ CL_RelinkEntities (void)
 
 		if (ent->effects & EF_BRIGHTFIELD)
 			R_EntityParticles (ent);
-#ifdef QUAKE2
-		if (ent->effects & EF_DARKFIELD)
-			R_DarkFieldParticles (ent);
-#endif
 		if (ent->effects & EF_MUZZLEFLASH) {
 			vec3_t      fv, rv, uv;
 
@@ -626,21 +622,6 @@ CL_RelinkEntities (void)
 		if (ent->effects & EF_DIMLIGHT)
 			CL_NewDlight (i, ent->origin[0], ent->origin[1], ent->origin[2],
 						  200 + (rand () & 31), 0.001, 0);
-#ifdef QUAKE2
-		if (ent->effects & EF_DARKLIGHT) {
-			dl = R_AllocDlight (i);
-			VectorCopy (ent->origin, dl->origin);
-			dl->radius = 200.0 + (rand () & 31);
-			dl->die = cl.time + 0.001;
-			dl->dark = true;
-		}
-		if (ent->effects & EF_LIGHT) {
-			dl = R_AllocDlight (i);
-			VectorCopy (ent->origin, dl->origin);
-			dl->radius = 200;
-			dl->die = cl.time + 0.001;
-		}
-#endif
 		if (VectorDistance_fast(ent->msg_origins[1], ent->origin) > (256*256))
 			VectorCopy (ent ->origin, ent->msg_origins[1]);
 		if (ent->model->flags & EF_ROCKET) {
@@ -668,10 +649,6 @@ CL_RelinkEntities (void)
 		if (i == cl.viewentity && !chase_active->int_val) {
 			continue;
 		}
-#ifdef QUAKE2
-		if (ent->effects & EF_NODRAW)
-			continue;
-#endif
 		if ((_ent = R_NewEntity ()))
 			*_ent = ent;
 	}

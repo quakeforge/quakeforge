@@ -83,10 +83,6 @@ sfx_t      *cl_sfx_ric1;
 sfx_t      *cl_sfx_ric2;
 sfx_t      *cl_sfx_ric3;
 sfx_t      *cl_sfx_r_exp3;
-#ifdef QUAKE2
-sfx_t      *cl_sfx_imp;
-sfx_t      *cl_sfx_rail;
-#endif
 
 model_t    *cl_mod_bolt;
 model_t    *cl_mod_bolt2;
@@ -124,10 +120,6 @@ CL_TEnts_Init (void)
 	cl_sfx_ric2 = S_PrecacheSound ("weapons/ric2.wav");
 	cl_sfx_ric3 = S_PrecacheSound ("weapons/ric3.wav");
 	cl_sfx_r_exp3 = S_PrecacheSound ("weapons/r_exp3.wav");
-#ifdef QUAKE2
-	cl_sfx_imp = S_PrecacheSound ("shambler/sattck1.wav");
-	cl_sfx_rail = S_PrecacheSound ("weapons/lstart.wav");
-#endif
 
 	cl_mod_bolt = Mod_ForName ("progs/bolt.mdl", true);
 	cl_mod_bolt2 = Mod_ForName ("progs/bolt2.mdl", true);
@@ -243,9 +235,6 @@ CL_ParseTEnt (void)
 {
 	byte        type;
 	vec3_t      pos;
-#ifdef QUAKE2
-	vec3_t      endpos;
-#endif
 	dlight_t   *dl;
 	int         rnd;
 	int         colorStart, colorLength;
@@ -403,38 +392,6 @@ CL_ParseTEnt (void)
 			pos[2] = MSG_ReadCoord (net_message);
 			R_RunPuffEffect (pos, prot_to_rend[type], cnt);
 			break;
-
-#ifdef QUAKE2
-		case TE_IMPLOSION:
-			pos[0] = MSG_ReadCoord (net_message);
-			pos[1] = MSG_ReadCoord (net_message);
-			pos[2] = MSG_ReadCoord (net_message);
-			S_StartSound (-1, 0, cl_sfx_imp, pos, 1, 1);
-			break;
-
-		case TE_RAILTRAIL:
-			pos[0] = MSG_ReadCoord (net_message);
-			pos[1] = MSG_ReadCoord (net_message);
-			pos[2] = MSG_ReadCoord (net_message);
-			endpos[0] = MSG_ReadCoord (net_message);
-			endpos[1] = MSG_ReadCoord (net_message);
-			endpos[2] = MSG_ReadCoord (net_message);
-			S_StartSound (-1, 0, cl_sfx_rail, pos, 1, 1);
-			S_StartSound (-1, 1, cl_sfx_r_exp3, endpos, 1, 1);
-	/* Need updating to new Particle API
-			R_RocketTrail (pos, endpos, 0 + 128);
-			R_ParticleExplosion (endpos);
-	 */
-			dl = R_AllocDlight (-1);
-			VectorCopy (endpos, dl->origin);
-			dl->radius = 350;
-			dl->die = cl.time + 0.5;
-			dl->decay = 300;
-			dl->color[0] = 0.86;
-			dl->color[1] = 0.31;
-			dl->color[2] = 0.24;
-			break;
-#endif
 
 		default:
 			Sys_Error ("CL_ParseTEnt: bad type");

@@ -481,37 +481,6 @@ PF_traceline (progs_t *pr)
 }
 
 
-#ifdef QUAKE2
-extern trace_t SV_Trace_Toss (edict_t *ent, edict_t *ignore);
-
-void
-PF_TraceToss (progs_t *pr)
-{
-	trace_t     trace;
-	edict_t    *ent;
-	edict_t    *ignore;
-
-	ent = G_EDICT (pr, OFS_PARM0);
-	ignore = G_EDICT (pr, OFS_PARM1);
-
-	trace = SV_Trace_Toss (ent, ignore);
-
-	*sv_globals.trace_allsolid = trace.allsolid;
-	*sv_globals.trace_startsolid = trace.startsolid;
-	*sv_globals.trace_fraction = trace.fraction;
-	*sv_globals.trace_inwater = trace.inwater;
-	*sv_globals.trace_inopen = trace.inopen;
-	VectorCopy (trace.endpos, *sv_globals.trace_endpos);
-	VectorCopy (trace.plane.normal, *sv_globals.trace_plane_normal);
-	*sv_globals.trace_plane_dist = trace.plane.dist;
-	if (trace.ent)
-		*sv_globals.trace_ent = EDICT_TO_PROG (pr, trace.ent);
-	else
-		*sv_globals.trace_ent = EDICT_TO_PROG (pr, sv.edicts);
-}
-#endif
-
-
 /*
 	PF_checkpos
 
@@ -713,16 +682,6 @@ PF_findradius (progs_t *pr)
 	RETURN_EDICT (pr, chain);
 }
 
-
-#ifdef QUAKE2
-void
-PF_etos (progs_t *pr)
-{
-	snprintf (pr_string_temp, sizeof (pr_string_temp), "entity %i",
-			  G_EDICTNUM (pr, OFS_PARM0));
-	G_INT (pr, OFS_RETURN) = PR_SetString (pr, pr_string_temp);
-}
-#endif
 
 void
 PF_Spawn (progs_t *pr)
@@ -1052,42 +1011,6 @@ PF_changeyaw (progs_t *pr)
 	SVvector (ent, angles)[1] = anglemod (current + move);
 }
 
-#ifdef QUAKE2
-/*
-	PF_changepitch
-*/
-void
-PF_changepitch (progs_t *pr)
-{
-	edict_t    *ent;
-	float       ideal, current, move, speed;
-
-	ent = G_EDICT (pr, OFS_PARM0);
-	current = anglemod (SVvector (ent, angles)[0]);
-	ideal = SVfloat (ent, idealpitch);
-	speed = SVfloat (ent, pitch_speed);
-
-	if (current == ideal)
-		return;
-	move = ideal - current;
-	if (ideal > current) {
-		if (move >= 180)
-			move = move - 360;
-	} else {
-		if (move <= -180)
-			move = move + 360;
-	}
-	if (move > 0) {
-		if (move > speed)
-			move = speed;
-	} else {
-		if (move < -speed)
-			move = -speed;
-	}
-
-	SVvector (ent, angles)[0] = anglemod (current + move);
-}
-#endif
 
 /*
 ===============================================================================
@@ -1240,22 +1163,6 @@ PF_setspawnparms (progs_t *pr)
 void
 PF_changelevel (progs_t *pr)
 {
-#ifdef QUAKE2
-	char       *s1, *s2;
-
-	if (svs.changelevel_issued)
-		return;
-	svs.changelevel_issued = true;
-
-	s1 = G_STRING (pr, OFS_PARM0);
-	s2 = G_STRING (pr, OFS_PARM1);
-
-	if ((int) *sv_globals.
-		serverflags & (SFL_NEW_UNIT | SFL_NEW_EPISODE))
-			Cbuf_AddText (va ("changelevel %s %s\n", s1, s2));
-	else
-		Cbuf_AddText (va ("changelevel2 %s %s\n", s1, s2));
-#else
 	char       *s;
 
 // make sure we don't issue two changelevels
@@ -1265,164 +1172,7 @@ PF_changelevel (progs_t *pr)
 
 	s = G_STRING (pr, OFS_PARM0);
 	Cbuf_AddText (va ("changelevel %s\n", s));
-#endif
 }
-
-
-#ifdef QUAKE2
-
-#define	CONTENT_WATER	-3
-#define CONTENT_SLIME	-4
-#define CONTENT_LAVA	-5
-
-#define FL_IMMUNE_WATER	131072
-#define	FL_IMMUNE_SLIME	262144
-#define FL_IMMUNE_LAVA	524288
-
-#define	CHAN_VOICE	2
-#define	CHAN_BODY	4
-
-#define	ATTN_NORM	1
-
-void
-PF_WaterMove (progs_t *pr)
-{
-	edict_t    *self;
-	int         flags;
-	int         waterlevel;
-	int         watertype;
-	float       drownlevel;
-	float       damage = 0.0;
-
-	self = PROG_TO_EDICT (pr, *sv_globals.self);
-
-	if (SVfloat (self, movetype) == MOVETYPE_NOCLIP) {
-		SVfloat (self, air_finished) = sv.time + 12;
-		G_FLOAT (pr, OFS_RETURN) = damage;
-		return;
-	}
-
-	if (SVfloat (self, health) < 0) {
-		G_FLOAT (pr, OFS_RETURN) = damage;
-		return;
-	}
-
-	if (SVfloat (self, deadflag) == DEAD_NO)
-		drownlevel = 3;
-	else
-		drownlevel = 1;
-
-	flags = (int) SVfloat (self, flags);
-	waterlevel = (int) SVfloat (self, waterlevel);
-	watertype = (int) SVfloat (self, watertype);
-
-	if (!(flags & (FL_IMMUNE_WATER + FL_GODMODE)))
-		if (((flags & FL_SWIM) && (waterlevel < drownlevel))
-			|| (waterlevel >= drownlevel)) {
-			if (SVfloat (self, air_finished) < sv.time)
-				if (SVfloat (self, pain_finished) < sv.time) {
-					SVfloat (self, dmg) = SVfloat (self, dmg) + 2;
-					if (SVfloat (self, dmg) > 15)
-						SVfloat (self, dmg) = 10;
-//                  T_Damage (self, world, world, self.dmg, 0, FALSE);
-					damage = SVfloat (self, dmg);
-					SVfloat (self, pain_finished) = sv.time + 1.0;
-				}
-		} else {
-			if (SVfloat (self, air_finished) < sv.time)
-//              sound (self, CHAN_VOICE, "player/gasp2.wav", 1, ATTN_NORM);
-				SV_StartSound (self, CHAN_VOICE, "player/gasp2.wav", 255,
-							   ATTN_NORM);
-			else if (SVfloat (self, air_finished) < sv.time + 9)
-//              sound (self, CHAN_VOICE, "player/gasp1.wav", 1, ATTN_NORM);
-				SV_StartSound (self, CHAN_VOICE, "player/gasp1.wav", 255,
-							   ATTN_NORM);
-			SVfloat (self, air_finished) = sv.time + 12.0;
-			SVfloat (self, dmg) = 2;
-		}
-
-	if (!waterlevel) {
-		if (flags & FL_INWATER) {
-			// play leave water sound
-//          sound (self, CHAN_BODY, "misc/outwater.wav", 1, ATTN_NORM);
-			SV_StartSound (self, CHAN_BODY, "misc/outwater.wav", 255,
-						   ATTN_NORM);
-			SVfloat (self, flags) = (float) (flags & ~FL_INWATER);
-		}
-		SVfloat (self, air_finished) = sv.time + 12.0;
-		G_FLOAT (pr, OFS_RETURN) = damage;
-		return;
-	}
-
-	if (watertype == CONTENT_LAVA) {	// do damage
-		if (!(flags & (FL_IMMUNE_LAVA + FL_GODMODE)))
-			if (SVfloat (self, dmgtime) < sv.time) {
-				if (SVfloat (self, radsuit_finished) < sv.time)
-					SVfloat (self, dmgtime) = sv.time + 0.2;
-				else
-					SVfloat (self, dmgtime) = sv.time + 1.0;
-//              T_Damage (self, world, world, 10*self.waterlevel, 0, TRUE);
-				damage = (float) (10 * waterlevel);
-			}
-	} else if (watertype == CONTENT_SLIME) {	// do damage
-		if (!(flags & (FL_IMMUNE_SLIME + FL_GODMODE)))
-			if (SVfloat (self, dmgtime) < sv.time
-				&& SVfloat (self, radsuit_finished) < sv.time) {
-				SVfloat (self, dmgtime) = sv.time + 1.0;
-//              T_Damage (self, world, world, 4*self.waterlevel, 0, TRUE);
-				damage = (float) (4 * waterlevel);
-			}
-	}
-
-	if (!(flags & FL_INWATER)) {
-
-// player enter water sound
-		if (watertype == CONTENT_LAVA)
-//          sound (self, CHAN_BODY, "player/inlava.wav", 1, ATTN_NORM);
-			SV_StartSound (self, CHAN_BODY, "player/inlava.wav", 255,
-						   ATTN_NORM);
-		if (watertype == CONTENT_WATER)
-//          sound (self, CHAN_BODY, "player/inh2o.wav", 1, ATTN_NORM);
-			SV_StartSound (self, CHAN_BODY, "player/inh2o.wav", 255, ATTN_NORM);
-		if (watertype == CONTENT_SLIME)
-//          sound (self, CHAN_BODY, "player/slimbrn2.wav", 1, ATTN_NORM);
-			SV_StartSound (self, CHAN_BODY, "player/slimbrn2.wav", 255,
-						   ATTN_NORM);
-
-		SVfloat (self, flags) = (float) (flags | FL_INWATER);
-		SVfloat (self, dmgtime) = 0;
-	}
-
-	if (!(flags & FL_WATERJUMP)) {
-//      self.velocity = self.velocity - 0.8*self.waterlevel*frametime*self.velocity;
-		VectorMA (SVvector (self, velocity),
-				  -0.8 * SVfloat (self, waterlevel) * host_frametime,
-				  SVvector (self, velocity), SVvector (self, velocity));
-	}
-
-	G_FLOAT (pr, OFS_RETURN) = damage;
-}
-
-
-void
-PF_sin (progs_t *pr)
-{
-	G_FLOAT (pr, OFS_RETURN) = sin (G_FLOAT (pr, OFS_PARM0));
-}
-
-void
-PF_cos (progs_t *pr)
-{
-	G_FLOAT (pr, OFS_RETURN) = cos (G_FLOAT (pr, OFS_PARM0));
-}
-
-void
-PF_sqrt (progs_t *pr)
-{
-	G_FLOAT (pr, OFS_RETURN) = sqrt (G_FLOAT (pr, OFS_PARM0));
-}
-
-#endif
 
 
 #define MAX_PF_HULLS 64		// FIXME make dynamic?
@@ -1653,16 +1403,6 @@ SV_PR_Cmds_Init ()
 	PR_AddBuiltin (&sv_pr_state, "writeangle", PF_WriteAngle, 57);	// void(float to, float f) WriteAngle = #57
 	PR_AddBuiltin (&sv_pr_state, "writestring", PF_WriteString, 58);	// void(float to, string s) WriteString = #58
 	PR_AddBuiltin (&sv_pr_state, "writeentity", PF_WriteEntity, 59);	// void(float to, entity s) WriteEntity = #59
-
-#ifdef QUAKE2
-/*	PF_sin,
-	PF_cos,
-	PF_sqrt,
-	PF_changepitch,
-	PF_TraceToss,
-	PF_etos,
-	PF_WaterMove, */
-#endif
 
 	PR_AddBuiltin (&sv_pr_state, "movetogoal", SV_MoveToGoal, 67);		// void(float step) movetogoal = #67
 	PR_AddBuiltin (&sv_pr_state, "precache_file", PF_precache_file, 68);	// string(string s) precache_file = #68

@@ -393,12 +393,6 @@ SV_WriteEntitiesToClient (edict_t *clent, sizebuf_t *msg)
 	// send over all entities (excpet the client) that touch the pvs
 	ent = NEXT_EDICT (&sv_pr_state, sv.edicts);
 	for (e = 1; e < sv.num_edicts; e++, ent = NEXT_EDICT (&sv_pr_state, ent)) {
-#ifdef QUAKE2
-		// don't send if flagged for NODRAW and there are no lighting effects
-		if (SVfloat (ent, effects) == EF_NODRAW)
-			continue;
-#endif
-
 		// ignore if not touching a PV leaf
 		if (ent != clent)				// clent is ALLWAYS sent
 		{
@@ -520,10 +514,7 @@ SV_WriteClientdataToMessage (edict_t *ent, sizebuf_t *msg)
 {
 	int         bits, items, i;
 	edict_t    *other;
-
-#ifndef QUAKE2
 	pr_type_t  *val;
-#endif
 
 	// send a damage message
 	if (SVfloat (ent, dmg_take) || SVfloat (ent, dmg_save)) {
@@ -561,9 +552,6 @@ SV_WriteClientdataToMessage (edict_t *ent, sizebuf_t *msg)
 
 	// stuff the sigil bits into the high bits of items for sbar, or else
 	// mix in items2
-#ifdef QUAKE2
-	items = (int) SVfloat (ent, items) | ((int) SVfloat (ent, items2) << 23);
-#else
 	val = GetEdictFieldValue (&sv_pr_state, ent, "items2");
 
 	if (val)
@@ -571,7 +559,6 @@ SV_WriteClientdataToMessage (edict_t *ent, sizebuf_t *msg)
 	else
 		items = (int) SVfloat (ent, items) | ((int) *sv_globals.serverflags <<
 											  28);
-#endif
 
 	bits |= SU_ITEMS;
 
@@ -886,11 +873,7 @@ SV_SendReconnect (void)
 	NET_SendToAll (&msg, 5);
 
 	if (cls.state != ca_dedicated)
-#ifdef QUAKE2
-		Cbuf_InsertText ("reconnect\n");
-#else
 		Cmd_ExecuteString ("reconnect\n", src_command);
-#endif
 }
 
 /*
@@ -929,13 +912,8 @@ extern float scr_centertime_off;
 
   This is called at the start of each level
 */
-#ifdef QUAKE2
-void
-SV_SpawnServer (const char *server, const char *startspot)
-#else
 void
 SV_SpawnServer (const char *server)
-#endif
 {
 	int         i;
 	edict_t    *ent;
@@ -970,10 +948,6 @@ SV_SpawnServer (const char *server)
 	memset (&sv, 0, sizeof (sv));
 
 	strcpy (sv.name, server);
-#ifdef QUAKE2
-	if (startspot)
-		strcpy (sv.startspot, startspot);
-#endif
 
 	// load progs to get entity field count
 	SV_LoadProgs ();
@@ -1049,10 +1023,6 @@ SV_SpawnServer (const char *server)
 		*sv_globals.deathmatch = deathmatch->int_val;
 
 	*sv_globals.mapname = PR_SetString (&sv_pr_state, sv.name);
-#ifdef QUAKE2
-	*sv_globals.startspot =
-		PR_SetString (&sv_pr_state, sv.startspot);
-#endif
 
 	// serverflags are for cross level information (sigils)
 	*sv_globals.serverflags = svs.serverflags;
