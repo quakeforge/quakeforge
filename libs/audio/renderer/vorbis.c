@@ -263,7 +263,7 @@ vorbis_stream_open (sfx_t *_sfx)
 	QFS_FOpenFile (stream->file, &file);
 	if (!file)
 		return 0;
-
+puts (stream->file);
 	sfx = calloc (1, sizeof (sfx_t));
 	samples = shm->speed * 0.3;
 	size = samples = (samples + 255) & ~255;

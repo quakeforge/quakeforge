@@ -526,8 +526,8 @@ SND_UpdateAmbientSounds (void)
 		if (!ambient_sfx[ambient_channel]) {
 			chan->sfx = 0;
 			continue;
-		}
-		chan->sfx = ambient_sfx[ambient_channel]->open (ambient_sfx[ambient_channel]);
+		} else if (!chan->sfx)
+			chan->sfx = ambient_sfx[ambient_channel]->open (ambient_sfx[ambient_channel]);
 
 		vol = ambient_level->value * l->ambient_sound_level[ambient_channel];
 		if (vol < 8)
