@@ -87,7 +87,7 @@ typedef enum {
 - (id) retain;
 - (id) autorelease;
 - (/*oneway*/ void) release;
-- (/*unsigned*/integer) retainCount;
+- (unsigned) retainCount;
 @end
 
 @protocol Copying

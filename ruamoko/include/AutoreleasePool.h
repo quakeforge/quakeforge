@@ -5,7 +5,7 @@
 
 @interface AutoreleasePool: Object
 {
-	/*unsigned*/integer	count;
+	unsigned	count;
 	id []		array;
 }
 
