@@ -105,7 +105,6 @@ check_onserver (void)
 	// we can now render a frame
 	if (cls.state == ca_onserver) {
 		// first update is the final signon stage
-		VID_SetCaption (cls.servername);
 		CL_SetState (ca_active);
 	}
 }

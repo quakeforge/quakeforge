@@ -1133,6 +1133,17 @@ CL_SetState (cactive_t state)
 			key_dest = key_console;
 			if (con_module)
 				con_module->data->console->force_commandline = 1;
+			// Auto demo recorder stops here
+			if(cl_autorecord->int_val && cls.demorecording)
+				CL_Stop_f ();
+		} else if (state == ca_active) {
+			// entering active state
+			VID_SetCaption (cls.servername);
+			IN_ClearStates ();
+			r_active = true;
+			game_target = IMT_0;
+			key_dest = key_game;
+
 			if (con_module)
 				con_module->data->console->force_commandline = 0;
 
@@ -1140,16 +1151,6 @@ CL_SetState (cactive_t state)
 			if(cl_autorecord->int_val && !cls.demoplayback
 				&& !cls.demorecording)
 				CL_Record (0);
-		} else if (state == ca_active) {
-			// entering active state
-			IN_ClearStates ();
-			r_active = true;
-			game_target = IMT_0;
-			key_dest = key_game;
-
-			// Auto demo recorder stops here
-			if(cl_autorecord->int_val && cls.demorecording)
-				CL_Stop_f ();
 		}
 	}
 }
