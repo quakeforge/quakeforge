@@ -881,7 +881,7 @@ string_val
 	;
 
 obj_def
-	: classdef
+	: classdef					{ }
 	| classdecl
 	| protocoldef
 	| { if (!current_class) PARSE_ERROR; } methoddef
