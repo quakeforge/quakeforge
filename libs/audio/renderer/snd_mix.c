@@ -168,8 +168,8 @@ SND_TransferPaintBuffer (int endtime)
 void
 SND_PaintChannels (unsigned int endtime)
 {
-	unsigned int end, ltime, count;
-	int         i;
+	unsigned int end, ltime;
+	int         i, count;
 	channel_t  *ch;
 	sfxbuffer_t *sc;
 
@@ -214,7 +214,7 @@ SND_PaintChannels (unsigned int endtime)
 
 				// if at end of loop, restart
 				if (ltime >= ch->end) {
-					if (ch->sfx->loopstart >= 0) {
+					if (ch->sfx->loopstart != (unsigned int) -1) {
 						ch->pos = ch->sfx->loopstart;
 						ch->end = ltime + ch->sfx->length - ch->pos;
 					} else {			// channel just stopped

@@ -153,11 +153,9 @@ SND_StreamAdvance (sfxbuffer_t *buffer, unsigned int count)
 	stepscale = (float) info->rate / shm->speed;	// usually 0.5, 1, or 2
 
 	// find out how many samples the buffer currently holds
-	if (buffer->head < buffer->tail) {
-		samples = buffer->length + buffer->head - buffer->tail;
-	} else {
-		samples = buffer->head - buffer->tail;
-	}
+	samples = buffer->head - buffer->tail;
+	if (buffer->head < buffer->tail)
+		samples += buffer->length;
 
 	// find out where head points to in the stream
 	headpos = buffer->pos + samples;
@@ -202,7 +200,7 @@ SND_StreamAdvance (sfxbuffer_t *buffer, unsigned int count)
 
 	// find out how many samples can be read into the buffer
 	samples = buffer->tail - buffer->head - 1;
-	if (samples < 0)
+	if (buffer->tail <= buffer->head)
 		samples += buffer->length;
 
 	if (headpos + samples > sfx->length) {
