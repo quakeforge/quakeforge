@@ -25,209 +25,235 @@
 #include "QF/pr_comp.h"
 
 /*
-
-TODO:
-
-"stopped at 10 errors"
-
-other pointer types for models and clients?
-
-compact string heap?
-
-allways initialize all variables to something safe
-
-the def->type->type arrangement is really silly.
-
-return type checking
-
-parm count type checking
-
-immediate overflow checking
-
-pass the first two parms in call->b and call->c
-
+	TODO:
+	o	"stopped at 10 errors"
+	o	other pointer types for models and clients?
+	o	compact string heap?
+	o	allways initialize all variables to something safe
+	o	the def->type->type arrangement is really silly.
+	o	return type checking
+	o	parm count type checking
+	o	immediate overflow checking
+	o	pass the first two parms in call->b and call->c
 */
 
 /*
 
-comments
---------
-// comments discard text until the end of line
-/ *  * / comments discard all enclosed text (spaced out on this line because this documentation is in a regular C comment block, and typing them in normally causes a parse error)
+	comments
+	--------
+	// comments discard text until the end of line
+	/ *  * / comments discard all enclosed text (spaced out on this line
+	because this documentation is in a regular C comment block, and typing
+	them in normally causes a parse error)
 
-code structure
---------------
-A definition is:
-	<type> <name> [ = <immediate>] {, <name> [ = <immediate>] };
-
-
-types
------
-simple types: void, float, vector, string, or entity
-	float		width, height;
-	string		name;
-	entity		self, other;
-
-vector types:
-	vector		org;	// also creates org_x, org_y, and org_z float defs
-	
-	
-A function type is specified as: 	simpletype ( type name {,type name} )
-The names are ignored except when the function is initialized.	
-	void()		think;
-	entity()	FindTarget;
-	void(vector destination, float speed, void() callback)	SUB_CalcMove;
-	void(...)	dprint;		// variable argument builtin
-
-A field type is specified as:  .type
-	.vector		origin;
-	.string		netname;
-	.void()		think, touch, use;
-	
-
-names
------
-Names are a maximum of 64 characters, must begin with A-Z,a-z, or _, and can continue with those characters or 0-9.
-
-There are two levels of scoping: global, and function.  The parameter list of a function and any vars declared inside a function with the "local" statement are only visible within that function, 
+	code structure
+	--------------
+	A definition is:
+		<type> <name> [ = <immediate>] {, <name> [ = <immediate>] };
 
 
-immediates
-----------
-Float immediates must begin with 0-9 or minus sign.  .5 is illegal.
-	
-A parsing ambiguity is present with negative constants. "a-5" will be parsed as "a", then "-5", causing an error.  Seperate the - from the digits with a space "a - 5" to get the proper behavior.
-	12
-	1.6
-	0.5
-	-100
+	types
+	-----
+	simple types: void, float, vector, string, or entity
+		float		width, height;
+		string		name;
+		entity		self, other;
 
-Vector immediates are three float immediates enclosed in single quotes.
-	'0 0 0'
-	'20.5 -10 0.00001'
-	
-String immediates are characters enclosed in double quotes.  The string cannot contain explicit newlines, but the escape character \n can embed one.  The \" escape can be used to include a quote in the string.
-	"maps/jrwiz1.bsp"
-	"sound/nin/pain.wav"
-	"ouch!\n"
+	vector types:
+		vector		org;	// also creates org_x, org_y, and org_z float defs
+		
+		
+	A function type is specified as: 	simpletype ( type name {,type name} )
+	The names are ignored except when the function is initialized.	
+		void()		think;
+		entity()	FindTarget;
+		void(vector destination, float speed, void() callback)	SUB_CalcMove;
+		void(...)	dprint;		// variable argument builtin
 
-Code immediates are statements enclosed in {} braces.
-statement:
-	{ <multiple statements> }
-	<expression>;
-	local <type> <name> [ = <immediate>] {, <name> [ = <immediate>] };
-	return <expression>;
-	if ( <expression> ) <statement> [ else <statement> ];
-	while ( <expression> ) <statement>;
-	do <statement> while ( <expression> );
-	<function name> ( <function parms> );
-	
-expression:
-	combiations of names and these operators with standard C precedence:
-	"&&", "||", "<=", ">=","==", "!=", "!", "*", "/", "-", "+", "=", ".", "<", ">", "&", "|"
-	Parenthesis can be used to alter order of operation.
-	The & and | operations perform integral bit ops on floats
-	
-A built in function immediate is a number sign followed by an integer.
-	#1
-	#12
+	A field type is specified as:  .type
+		.vector		origin;
+		.string		netname;
+		.void()		think, touch, use;
+		
+
+	names
+	-----
+	Names are a maximum of 64 characters, must begin with A-Z,a-z, or _, and
+	can continue with those characters or 0-9.
+
+	There are two levels of scoping: global, and function.  The parameter list
+	of a function and any vars declared inside a function with the "local"
+	statement are only visible within that function, 
 
 
-compilation
------------
-Source files are processed sequentially without dumping any state, so if a defs file is the first one processed, the definitions will be available to all other files.
+	immediates
+	----------
+	Float immediates must begin with 0-9 or minus sign.  .5 is illegal.
+		
+	A parsing ambiguity is present with negative constants. "a-5" will be
+	parsed as "a", then "-5", causing an error.  Seperate the - from the
+	digits with a space "a - 5" to get the proper behavior.
+		12
+		1.6
+		0.5
+		-100
 
-The language is strongly typed and there are no casts.
+	Vector immediates are three float immediates enclosed in single quotes.
+		'0 0 0'
+		'20.5 -10 0.00001'
+		
+	String immediates are characters enclosed in double quotes.  The string
+	cannot contain explicit newlines, but the escape character \n can embed
+	one.  The \" escape can be used to include a quote in the string.
+		"maps/jrwiz1.bsp"
+		"sound/nin/pain.wav"
+		"ouch!\n"
 
-Anything that is initialized is assumed to be constant, and will have immediates folded into it.  If you change the value, your program will malfunction.  All uninitialized globals will be saved to savegame files.
-
-Functions cannot have more than eight parameters.
-
-Error recovery during compilation is minimal.  It will skip to the next global definition, so you will never see more than one error at a time in a given function.  All compilation aborts after ten error messages.
-
-Names can be defined multiple times until they are defined with an initialization, allowing functions to be prototyped before their definition.
-
-void()	MyFunction;			// the prototype
-
-void()	MyFunction =		// the initialization
-{
-	dprint ("we're here\n");
-};
-
-
-entities and fields
--------------------
-
-
-execution
----------
-Code execution is initiated by C code in quake from two main places:  the timed think routines for periodic control, and the touch function when two objects impact each other.
-
-There are three global variables that are set before beginning code execution:
-	entity	world;		// the server's world object, which holds all global
-						// state for the server, like the deathmatch flags
-						// and the body ques.
-	entity	self;		// the entity the function is executing for
-	entity	other;		// the other object in an impact, not used for thinks
-	float	time;		// the current game time.  Note that because the
-						// entities in the world are simulated sequentially,
-						// time is NOT strictly increasing.  An impact late
-						// in one entity's time slice may set time higher
-						// than the think function of the next entity. 
-						// The difference is limited to 0.1 seconds.
-Execution is also caused by a few uncommon events, like the addition of a new client to an existing server.
-	
-There is a runnaway counter that stops a program if 100000 statements are executed, assuming it is in an infinite loop.
-
-It is acceptable to change the system set global variables.  This is usually done to pose as another entity by changing self and calling a function.
-
-The interpretation is fairly efficient, but it is still over an order of magnitude slower than compiled C code.  All time consuming operations should be made into built in functions.
-
-A profile counter is kept for each function, and incremented for each interpreted instruction inside that function.  The "profile" console command in Quake will dump out the top 10 functions, then clear all the counters.  The "profile all" command will dump sorted stats for every function that has been executed.
+	Code immediates are statements enclosed in {} braces.
+	statement:
+		{ <multiple statements> }
+		<expression>;
+		local <type> <name> [ = <immediate>] {, <name> [ = <immediate>] };
+		return <expression>;
+		if ( <expression> ) <statement> [ else <statement> ];
+		while ( <expression> ) <statement>;
+		do <statement> while ( <expression> );
+		<function name> ( <function parms> );
+		
+	expression:
+		combiations of names and these operators with standard C precedence:
+		"&&", "||", "<=", ">=","==", "!=", "!", "*", "/", "-", "+", "=", ".",
+		"<", ">", "&", "|"
+		Parenthesis can be used to alter order of operation.
+		The & and | operations perform integral bit ops on floats
+		
+	A built in function immediate is a number sign followed by an integer.
+		#1
+		#12
 
 
-afunc ( 4, bfunc(1,2,3));
-will fail because there is a shared parameter marshaling area, which will cause the 1 from bfunc to overwrite the 4 allready placed in parm0.  When a function is called, it copies the parms from the globals into it's privately scoped variables, so there is no collision when calling another function.
+	compilation
+	-----------
+	Source files are processed sequentially without dumping any state, so if a
+	defs file is the first one processed, the definitions will be available to
+	all other files.
 
-total = factorial(3) + factorial(4);
-Will fail because the return value from functions is held in a single global area.  If this really gets on your nerves, tell me and I can work around it at a slight performance and space penalty by allocating a new register for the function call and copying it out.
+	The language is strongly typed and there are no casts.
+
+	Anything that is initialized is assumed to be constant, and will have
+	immediates folded into it.  If you change the value, your program will
+	malfunction.  All uninitialized globals will be saved to savegame files.
+
+	Functions cannot have more than eight parameters.
+
+	Error recovery during compilation is minimal.  It will skip to the next
+	global definition, so you will never see more than one error at a time in
+	a given function.  All compilation aborts after ten error messages.
+
+	Names can be defined multiple times until they are defined with an
+	initialization, allowing functions to be prototyped before their
+	definition.
+
+	void()	MyFunction;			// the prototype
+
+	void()	MyFunction =		// the initialization
+	{
+		dprint ("we're here\n");
+	};
 
 
-built in functions
-------------------
-void(string text)	dprint;
-Prints the string to the server console.
-
-void(entity client, string text)	cprint;
-Prints a message to a specific client.
-
-void(string text)	bprint;
-Broadcast prints a message to all clients on the current server.
-
-entity()	spawn;
-Returns a totally empty entity.  You can manually set everything up, or just set the origin and call one of the existing entity setup functions.
-
-entity(entity start, .string field, string match) find;
-Searches the server entity list beginning at start, looking for an entity that has entity.field = match.  To start at the beginning of the list, pass world.  World is returned when the end of the list is reached.
-
-<FIXME: define all the other functions...>
+	entities and fields
+	-------------------
 
 
-gotchas
--------
+	execution
+	---------
+	Code execution is initiated by C code in quake from two main places:  the
+	timed think routines for periodic control, and the touch function when two
+	objects impact each other.
 
-The && and || operators DO NOT EARLY OUT like C!
+	There are three global variables that are set before beginning code
+	execution:
+		entity	world;		// the server's world object, which holds all
+							// global state for the server, like the
+							// deathmatch flags and the body ques.
+		entity	self;		// the entity the function is executing for
+		entity	other;		// the other object in an impact, not used for
+							// thinks
+		float	time;		// the current game time.  Note that because the
+							// entities in the world are simulated
+							// sequentially, time is NOT strictly increasing.
+							// An impact late in one entity's time slice may
+							// set time higher than the think function of the
+							// next entity.  The difference is limited to 0.1
+							// seconds.
+	Execution is also caused by a few uncommon events, like the addition of a
+	new client to an existing server.
+		
+	There is a runnaway counter that stops a program if 100000 statements are
+	executed, assuming it is in an infinite loop.
 
-Don't confuse single quoted vectors with double quoted strings
+	It is acceptable to change the system set global variables.  This is
+	usually done to pose as another entity by changing self and calling a
+	function.
 
-The function declaration syntax takes a little getting used to.
+	The interpretation is fairly efficient, but it is still over an order of
+	magnitude slower than compiled C code.  All time consuming operations
+	should be made into built in functions.
 
-Don't forget the ; after the trailing brace of a function initialization.
+	A profile counter is kept for each function, and incremented for each
+	interpreted instruction inside that function.  The "profile" console
+	command in Quake will dump out the top 10 functions, then clear all the
+	counters.  The "profile all" command will dump sorted stats for every
+	function that has been executed.
 
-Don't forget the "local" before defining local variables.
 
-There are no ++ / -- operators, or operate/assign operators.
+	afunc ( 4, bfunc(1,2,3));
+	will fail because there is a shared parameter marshaling area, which will
+	cause the 1 from bfunc to overwrite the 4 allready placed in parm0.  When
+	a function is called, it copies the parms from the globals into it's
+	privately scoped variables, so there is no collision when calling another
+	function.
 
+	total = factorial(3) + factorial(4);
+	Will fail because the return value from functions is held in a single
+	global area.  If this really gets on your nerves, tell me and I can work
+	around it at a slight performance and space penalty by allocating a new
+	register for the function call and copying it out.
+
+
+	built in functions
+	------------------
+	void(string text)	dprint;
+	Prints the string to the server console.
+
+	void(entity client, string text)	cprint;
+	Prints a message to a specific client.
+
+	void(string text)	bprint;
+	Broadcast prints a message to all clients on the current server.
+
+	entity()	spawn;
+	Returns a totally empty entity.  You can manually set everything up, or
+	just set the origin and call one of the existing entity setup functions.
+
+	entity(entity start, .string field, string match) find;
+	Searches the server entity list beginning at start, looking for an entity
+	that has entity.field = match.  To start at the beginning of the list,
+	pass world.  World is returned when the end of the list is reached.
+
+	<FIXME: define all the other functions...>
+
+
+	gotchas
+	-------
+	o	The && and || operators DO NOT EARLY OUT like C!
+	o	Don't confuse single quoted vectors with double quoted strings
+	o	The function declaration syntax takes a little getting used to.
+	o	Don't forget the ; after the trailing brace of a function
+		initialization.
+	o	Don't forget the "local" before defining local variables.
+	o	There are no ++ / -- operators, or operate/assign operators.
 */
 
 //=============================================================================
@@ -285,9 +311,24 @@ typedef union eval_s
 extern	int		type_size[8];
 extern	def_t	*def_for_type[8];
 
-extern	type_t	type_void, type_string, type_float, type_vector, type_entity, type_field, type_function, type_pointer, type_floatfield;
+extern	type_t	type_void;
+extern	type_t	type_string;
+extern	type_t	type_float;
+extern	type_t	type_vector;
+extern	type_t	type_entity;
+extern	type_t	type_field;
+extern	type_t	type_function;
+extern	type_t	type_pointer;
+extern	type_t	type_floatfield;
 
-extern	def_t	def_void, def_string, def_float, def_vector, def_entity, def_field, def_function, def_pointer;
+extern	def_t	def_void;
+extern	def_t	def_string;
+extern	def_t	def_float;
+extern	def_t	def_vector;
+extern	def_t	def_entity;
+extern	def_t	def_field;
+extern	def_t	def_function;
+extern	def_t	def_pointer;
 
 struct function_s
 {
@@ -337,7 +378,8 @@ extern opcode_t *op_state;
 extern opcode_t *op_goto;
 
 def_t *PR_Statement (opcode_t *op, def_t *var_a, def_t *var_b);
-opcode_t *PR_Opcode_Find (const char *name, int priority, def_t *var_a, def_t *var_b, def_t *var_c);
+opcode_t *PR_Opcode_Find (const char *name, int priority,
+						  def_t *var_a, def_t *var_b, def_t *var_c);
 opcode_t *PR_Opcode (short opcode);
 void PR_Opcode_Init (void);
 
@@ -346,13 +388,14 @@ void PR_Opcode_Init (void);
 
 extern	qboolean	pr_dumpasm;
 
-extern	def_t		*pr_global_defs[MAX_REGS];	// to find def for a global variable
+extern	def_t		*pr_global_defs[MAX_REGS];	// to find def for a global
+												// variable
 
 typedef enum {
-tt_eof,			// end of file reached
-tt_name, 		// an alphanumeric name token
-tt_punct, 		// code punctuation
-tt_immediate,	// string, float, vector
+	tt_eof,			// end of file reached
+	tt_name, 		// an alphanumeric name token
+	tt_punct, 		// code punctuation
+	tt_immediate,	// string, float, vector
 } token_type_t;
 
 extern	char		pr_token[2048];
@@ -395,7 +438,8 @@ extern	def_t	*pr_scope;
 extern	int		pr_error_count;
 
 void PR_NewLine (void);
-def_t *PR_GetDef (type_t *type, const char *name, def_t *scope, qboolean allocate);
+def_t *PR_GetDef (type_t *type, const char *name, def_t *scope,
+				  qboolean allocate);
 def_t *PR_NewDef (type_t *type, const char *name, def_t *scope);
 def_t *PR_GetTempDef (type_t *type);
 void PR_FreeTempDefs ();
@@ -468,5 +512,3 @@ extern	int			numfiles;
 
 int	CopyString (const char *str);
 int	ReuseString (const char *str);
-
-
