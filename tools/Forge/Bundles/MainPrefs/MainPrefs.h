@@ -37,6 +37,7 @@
 
 @interface MainPrefs: NSObject <PrefsViewController, ForgeBundle>
 {
+	NSView	*view;
 }
 
 @end

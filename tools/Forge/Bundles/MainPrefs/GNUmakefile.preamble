@@ -2,7 +2,7 @@
 ADDITIONAL_CPPFLAGS += 
 
 # Additional flags to pass to the Objective-C compiler
-ADDITIONAL_OBJCFLAGS +=
+ADDITIONAL_OBJCFLAGS += -DUSING_NIBS
 
 # Additional flags to pass to the C compiler
 ADDITIONAL_CFLAGS +=

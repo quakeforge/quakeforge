@@ -35,6 +35,9 @@ static const char rcsid[] =
 #endif
 
 #import <AppKit/NSButton.h>
+#ifdef USING_NIBS
+# import <AppKit/NSNibLoading.h>
+#endif
 
 #import "PrefsPanel.h"
 #import "PrefsController.h"
@@ -44,7 +47,6 @@ static const char rcsid[] =
 @implementation MainPrefs
 
 static MainPrefs			*sharedInstance = nil;
-static NSView				*view = nil;
 static id <BundleDelegate>	owner = nil;
 
 - (id) initWithOwner: (id <BundleDelegate>) anOwner
@@ -56,7 +58,16 @@ static id <BundleDelegate>	owner = nil;
 		owner = anOwner;
 		[owner registerPrefsController: self];
 		
-		view = [[MainPrefsView alloc] initWithFrame: PrefsRect];
+#ifdef USING_NIBS
+		if (![NSBundle loadNibNamed: @"MainPrefsView" owner: self]) {
+			NSLog (@"MainPrefs: Could not load nib \"MainPrefsView\", using compiled version");
+#endif
+			view = [[MainPrefsView alloc] initWithFrame: PrefsRect];
+#ifdef USING_NIBS
+	    }
+#endif
+
+		[view retain];
 		sharedInstance = self;
 	}
 	return sharedInstance;
