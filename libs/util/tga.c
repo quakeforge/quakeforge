@@ -293,8 +293,8 @@ decode_truecolor_32_rle (TargaHeader *targa, tex_t *tex, byte *dataByte)
 struct tex_s *
 LoadTGA (QFile *fin)
 {
-	byte       *dataByte, *pixcol, *pixrow;
-	int         column, row, columns, rows, numPixels, span, targa_mark;
+	byte       *dataByte;
+	int         numPixels, targa_mark;
 	TargaHeader *targa;
 	tex_t      *tex;
 
@@ -317,31 +317,26 @@ LoadTGA (QFile *fin)
 		Sys_Error ("Texture_LoadTGA: Only 32 or 24 bit images supported "
 				   "(no colormaps)");
 
-	columns = targa->width;
-	rows = targa->height;
-	numPixels = columns * rows;
+	numPixels = targa->width * targa->height;
+
+	tex = Hunk_TempAlloc (field_offset (tex_t, data[numPixels * 4]));
+	tex->width = targa->width;
+	tex->height = targa->height;
+	tex->palette = 0;
 
 	switch (targa->pixel_size) {
 		case 24:
-			tex = Hunk_TempAlloc (field_offset (tex_t, data[numPixels * 4]));
 			tex->format = tex_rgb;
 			break;
 		default:
 		case 32:
-			tex = Hunk_TempAlloc (field_offset (tex_t, data[numPixels * 4]));
 			tex->format = tex_rgba;
 			break;
 	}
 
-	tex->width = columns;
-	tex->height = rows;
-	tex->palette = 0;
-
 	// skip TARGA image comment
 	dataByte = (byte *) (targa + 1);
 	dataByte += targa->id_length;
-
-	span = columns * 4; // tex->format
 
 	if (targa->image_type == 2) {	// Uncompressed image
 		switch (targa->pixel_size) {
