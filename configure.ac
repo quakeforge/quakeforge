@@ -1383,17 +1383,21 @@ fi
 AS="$CC"
 if test "x$SYSTYPE" = "xWIN32"; then
 	ASFLAGS="\$(DEFS) \$(CFLAGS) \$(CPPFLAGS) \$(DEFAULT_INCLUDES) \$(INCLUDES) -DWIN32"
-	plugin_LDFLAGS="-no-undefined"
-	plugin_LIBADD="-luser32 -lgdi32 -lwinmm"
+	plugin_ldflags="-no-undefined"
+	plugin_libadd="-luser32 -lgdi32 -lwinmm"
 else
 	ASFLAGS="\$(DEFS) \$(CFLAGS) \$(CPPFLAGS) \$(DEFAULT_INCLUDES) \$(INCLUDES)"
-	plugin_LDFLAGS=
-	plugin_LIBADD=
+	plugin_ldflags=
+	plugin_libadd=
 fi
+CCASFLAGS="$ASFLAGS"
+CCAS="$AS"
 AC_SUBST(AS)
 AC_SUBST(ASFLAGS)
-AC_SUBST(plugin_LDFLAGS)
-AC_SUBST(plugin_LIBADD)
+AC_SUBST(CCAS)
+AC_SUBST(CCASFLAGS)
+AC_SUBST(plugin_ldflags)
+AC_SUBST(plugin_libadd)
 
 dnl ==================================================================
 dnl Make sure we link against a working zlib

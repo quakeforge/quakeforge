@@ -2,6 +2,8 @@ AUTOMAKE_OPTIONS= foreign
 
 INCLUDES= -I$(top_srcdir)/include
 PLUGIN_RPATH= @PLUGIN_RPATH@
+plugin_ldflags= @plugin_ldflags@
+plugin_libadd= @plugin_libadd@
 
 plugin_LTLIBRARIES=	@SND_REND_TARGETS@
 EXTRA_LTLIBRARIES=	libsnd_render_default.la
