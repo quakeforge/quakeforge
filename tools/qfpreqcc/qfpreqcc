@@ -54,7 +54,7 @@ def parse_pragma (pragma, args):
 	if pragma == 'PROGS_DAT':
 		progs_dat = parse_filename (args)
 	elif pragma == 'PROGS_SRC':
-		progs_dat = parse_filename (args)
+		progs_src = parse_filename (args)
 	elif pragma == 'DONT_COMPILE_THIS_FILE':
 		compile_this_file = 0
 	elif pragma == 'COMPILE_THIS_FILE':
@@ -211,7 +211,7 @@ for l in qcc_list:
 f.close ()
 args = sys.argv[1:]
 if not verbose:
-	args = ["--quiet=2"] + args
+	args = ["--quiet"] + args
 args = ["qfcc"] + args
 if not os.fork():
 	os.execvp ("qfcc", args)
