@@ -1,0 +1,26 @@
+Qmalloc/Qfree/Qrealloc implimentation
+- hybrid, has seperate handling for large and small items
+- blocks allocated via mmap
+- block size is configurable, probably between 1 and 8 megs
+- handle small and large items differently, either using an exact
+  cutoff size, or half/a third of the block size
+- large items get their own block, possibly cached
+- small items allocated using a first-fit coalescing algorythm (?)
+- callback for when allocation not enough memory is available, return
+  NULL if callback returns false, trying again if it returns true.
+
+I'm not sure about how distinct small and large items should be, or
+when blocks should be unmapped.
+
+Cache_Alloc/Cache_Free, Cache_Lock/Cache_Unlock
+- opaque cache_user_t used to store pointers to the cache data
+- cache data may be move or removed
+- Cache_Lock prevents data from being move or removed, Cache_Unlock
+  allows it again.
+- Cache_Lock can be called multiple times, Cache_Unlock must be called
+  an equal number of times to unlock it
+- Has a function to attempt to free up space, usable in a callback for
+  Qmalloc, such that Qmalloc can succeed
+- it may use Qmalloc as a backend, or it may use mmap on it's own.
+  I'm undecided.
+
