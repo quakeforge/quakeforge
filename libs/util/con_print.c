@@ -29,59 +29,22 @@
 #ifdef HAVE_CONFIG_H
 # include "config.h"
 #endif
-#ifdef HAVE_STRING_H
-# include <string.h>
-#endif
-#ifdef HAVE_STRINGS_H
-# include <strings.h>
-#endif
 
-#include <stdarg.h>
-
-#include "QF/compat.h"
 #include "QF/console.h"
-#include "QF/cvar.h"
 #include "QF/sys.h"
 
 /*
-	Con_Printf
+	Con_Print
 
 	Handles cursor positioning, line wrapping, etc
-*/
-#define	MAXPRINTMSG	4096
-
-void
-Con_Printf (char *fmt, ...)
-{
-	va_list     argptr;
-	char        msg[MAXPRINTMSG];
-
-	va_start (argptr, fmt);
-	vsnprintf (msg, sizeof (msg), fmt, argptr);
-	va_end (argptr);
-
-	// write it to the scrollable buffer
-	Con_Print (msg);
-}
-
-/*
-	Con_DPrintf
-
-	A Con_Printf that only shows up if the "developer" cvar is set
+	All console printing must go through this in order to be logged to disk
+	If no console is visible, the notify window will pop up.
 */
 void
-Con_DPrintf (char *fmt, ...)
+QFutil_Con_Print (char *txt)
 {
-	va_list     argptr;
-	char        msg[MAXPRINTMSG];
-
-	if (!developer->int_val)
-		return;							// don't confuse non-developers with
-	// techie stuff...
-
-	va_start (argptr, fmt);
-	vsnprintf (msg, sizeof (msg), fmt, argptr);
-	va_end (argptr);
-
-	Con_Print (msg);
+	// echo to debugging console
+	Sys_Printf ("%s", txt);
 }
+
+void Con_Print (char *) __attribute ((weak, alias ("QFutil_Con_Print")));
