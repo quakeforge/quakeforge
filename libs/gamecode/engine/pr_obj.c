@@ -157,13 +157,14 @@ pr___obj_exec_class (progs_t *pr)
 	for (i = 0; i < symtab->cls_def_cnt; i++) {
 		pr_class_t *class = &G_STRUCT (pr, pr_class_t, *ptr);
 		pr_class_t *meta = &G_STRUCT (pr, pr_class_t, class->class_pointer);
-		pr_type_t  *val;
+		pr_class_t *val;
 
 		meta->class_pointer = object_ptr;
 		if (class->super_class) {
 			val = Hash_Find (pr->classes, PR_GetString (pr,
 														class->super_class));
-			meta->super_class = class->super_class = val - pr->pr_globals;
+			meta->super_class = val->class_pointer;
+			class->super_class = POINTER_TO_PROG (pr, val);
 		} else {
 			pointer_t  *ml = &meta->methods;
 			while (*ml)
