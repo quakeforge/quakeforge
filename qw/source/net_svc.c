@@ -51,7 +51,7 @@ static const char rcsid[] =
 #include "msg_ucmd.h" // FIXME
 #include "net_svc.h"
 
-qboolean
+net_status_t
 NET_SVC_Print_Parse (net_svc_print_t *block, msg_t *msg)
 {
 	block->level = MSG_ReadByte (msg);
@@ -60,7 +60,7 @@ NET_SVC_Print_Parse (net_svc_print_t *block, msg_t *msg)
 	return msg->badread;
 }
 
-qboolean
+net_status_t
 NET_SVC_Damage_Parse (net_svc_damage_t *block, msg_t *msg)
 {
 	int i;
@@ -73,7 +73,7 @@ NET_SVC_Damage_Parse (net_svc_damage_t *block, msg_t *msg)
 	return msg->badread;
 }
 
-qboolean
+net_status_t
 NET_SVC_ServerData_Parse (net_svc_serverdata_t *block, msg_t *msg)
 {
 	block->protocolversion = MSG_ReadLong (msg);
@@ -101,7 +101,7 @@ NET_SVC_ServerData_Parse (net_svc_serverdata_t *block, msg_t *msg)
 	return msg->badread;
 }
 
-qboolean
+net_status_t
 NET_SVC_Sound_Parse (net_svc_sound_t *block, msg_t *msg)
 {
 	int i, header;
@@ -128,7 +128,7 @@ NET_SVC_Sound_Parse (net_svc_sound_t *block, msg_t *msg)
 	return msg->badread;
 }
 
-qboolean
+net_status_t
 NET_SVC_SpawnBaseline_Parse (net_svc_spawnbaseline_t *block, msg_t *msg)
 {
 	int i;
@@ -148,7 +148,7 @@ NET_SVC_SpawnBaseline_Parse (net_svc_spawnbaseline_t *block, msg_t *msg)
 	return msg->badread;
 }
 
-qboolean
+net_status_t
 NET_SVC_SpawnStatic_Parse (net_svc_spawnstatic_t *block, msg_t *msg)
 {
 	int i;
@@ -167,7 +167,7 @@ NET_SVC_SpawnStatic_Parse (net_svc_spawnstatic_t *block, msg_t *msg)
 	return msg->badread;
 }
 
-qboolean
+net_status_t
 NET_SVC_TempEntity_Parse (net_svc_tempentity_t *block, msg_t *msg)
 {
 	int i;
@@ -213,7 +213,7 @@ NET_SVC_TempEntity_Parse (net_svc_tempentity_t *block, msg_t *msg)
 	return msg->badread;
 }
 
-qboolean
+net_status_t
 NET_SVC_SpawnStaticSound_Parse (net_svc_spawnstaticsound_t *block,
 								msg_t *msg)
 {
@@ -228,7 +228,7 @@ NET_SVC_SpawnStaticSound_Parse (net_svc_spawnstaticsound_t *block,
 	return msg->badread;
 }
 
-qboolean
+net_status_t
 NET_SVC_UpdateUserInfo_Parse (net_svc_updateuserinfo_t *block,
 							  msg_t *msg)
 {
@@ -239,7 +239,7 @@ NET_SVC_UpdateUserInfo_Parse (net_svc_updateuserinfo_t *block,
 	return msg->badread;
 }
 
-qboolean
+net_status_t
 NET_SVC_SetInfo_Parse (net_svc_setinfo_t *block, msg_t *msg)
 {
 	block->slot = MSG_ReadByte (msg);
@@ -249,7 +249,7 @@ NET_SVC_SetInfo_Parse (net_svc_setinfo_t *block, msg_t *msg)
 	return msg->badread;
 }
 
-qboolean
+net_status_t
 NET_SVC_ServerInfo_Parse (net_svc_serverinfo_t *block, msg_t *msg)
 {
 	block->key = MSG_ReadString (msg);
@@ -258,7 +258,7 @@ NET_SVC_ServerInfo_Parse (net_svc_serverinfo_t *block, msg_t *msg)
 	return msg->badread;
 }
 
-qboolean
+net_status_t
 NET_SVC_Download_Parse (net_svc_download_t *block, msg_t *msg)
 {
 	block->size = MSG_ReadShort (msg);
@@ -283,7 +283,7 @@ NET_SVC_Download_Parse (net_svc_download_t *block, msg_t *msg)
 	return msg->badread;
 }
 
-qboolean
+net_status_t
 NET_SVC_Playerinfo_Parse (net_svc_playerinfo_t *block, msg_t *msg)
 {
 	int i;
@@ -333,7 +333,7 @@ NET_SVC_Playerinfo_Parse (net_svc_playerinfo_t *block, msg_t *msg)
 	return msg->badread;
 }
 
-qboolean
+net_status_t
 NET_SVC_Nails_Parse (net_svc_nails_t *block, msg_t *msg)
 {
 	int		i, j;
@@ -364,7 +364,7 @@ NET_SVC_Nails_Parse (net_svc_nails_t *block, msg_t *msg)
 	return msg->badread;
 }
 
-qboolean
+net_status_t
 NET_SVC_Modellist_Parse (net_svc_modellist_t *block, msg_t *msg)
 {
 	int i;
@@ -384,7 +384,7 @@ NET_SVC_Modellist_Parse (net_svc_modellist_t *block, msg_t *msg)
 	return msg->badread;
 }
 
-qboolean
+net_status_t
 NET_SVC_Soundlist_Parse (net_svc_soundlist_t *block, msg_t *msg)
 {
 	int i;
@@ -478,7 +478,7 @@ NET_SVC_Delta_Parse (entity_state_t *es, unsigned int bits, msg_t *msg)
 }
 
 
-qboolean
+net_status_t
 NET_SVC_PacketEntities_Parse (net_svc_packetentities_t *block, msg_t *msg)
 {
 	int				word, delta;
@@ -486,14 +486,14 @@ NET_SVC_PacketEntities_Parse (net_svc_packetentities_t *block, msg_t *msg)
 
 	for (word = 0, delta = 0; !msg->badread; word++) {
 		if (word >= MAX_PACKET_ENTITIES * 2)
-			return 1; // FIXME: differentiate from short packet
+			return NET_ERROR;
 		bits = (unsigned short) MSG_ReadShort (msg);
 		block->words[word] = bits;
 		if (!bits)
 			break;
 		if (!(bits & U_REMOVE)) {
 			if (delta >= MAX_PACKET_ENTITIES)
-				return 1;
+				return NET_ERROR;
 			NET_SVC_Delta_Parse (&block->deltas[delta], bits, msg);
 			delta++;
 		}
@@ -505,7 +505,7 @@ NET_SVC_PacketEntities_Parse (net_svc_packetentities_t *block, msg_t *msg)
 	return msg->badread;
 }
 
-qboolean
+net_status_t
 NET_SVC_DeltaPacketEntities_Parse (net_svc_deltapacketentities_t *block,
 								   msg_t *msg)
 {
@@ -515,14 +515,14 @@ NET_SVC_DeltaPacketEntities_Parse (net_svc_deltapacketentities_t *block,
 	block->from = MSG_ReadByte (msg);
 	for (word = 0, delta = 0; !msg->badread; word++) {
 		if (word >= MAX_PACKET_ENTITIES * 2)
-			return 1; // FIXME: differentiate from short packet
+			return NET_ERROR;
 		bits = (unsigned short) MSG_ReadShort (msg);
 		block->words[word] = bits;
 		if (!bits)
 			break;
 		if (!(bits & U_REMOVE)) {
 			if (delta >= MAX_PACKET_ENTITIES)
-				return 1;
+				return NET_ERROR;
 			NET_SVC_Delta_Parse (&block->deltas[delta], bits, msg);
 			delta++;
 		}
