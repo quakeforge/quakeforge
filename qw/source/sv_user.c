@@ -1225,6 +1225,25 @@ ucmds_free (void *_c, void *unused)
 	}
 }
 
+// hash and compare functions: user commands are accessed by name but
+// removed by pointer (because they are overridable and multiple commands
+// can be stored under the same command name) so we define a get_hash
+// functions that hashes the key and a compare function that compares the
+// pointer.
+
+static unsigned long
+ucmd_get_hash (void *_a, void *data)
+{
+	ucmd_t *a = (ucmd_t*)_a;
+	return Hash_String (a->name);
+}
+
+static int
+ucmd_compare (void *a, void *b, void *data)
+{
+	return a == b;
+}
+
 /*
 	SV_AddUserCommand
 
@@ -1828,6 +1847,7 @@ void
 SV_UserInit (void)
 {
 	ucmd_table = Hash_NewTable (251, ucmds_getkey, ucmds_free, 0);
+	Hash_SetHashCompare (ucmd_table, ucmd_get_hash, ucmd_compare);
 	PR_AddBuiltin (&sv_pr_state, "SV_AddUserCommand", PF_AddUserCommand, -1);
 	cl_rollspeed = Cvar_Get ("cl_rollspeed", "200", CVAR_NONE, NULL,
 							 "How quickly a player straightens out after "
