@@ -447,21 +447,6 @@ extern	qboolean	pr_dumpasm;
 extern	def_t		*pr_global_defs[MAX_REGS];	// to find def for a global
 												// variable
 
-typedef enum {
-	tt_eof,			// end of file reached
-	tt_name, 		// an alphanumeric name token
-	tt_punct, 		// code punctuation
-	tt_immediate,	// string, float, vector
-} token_type_t;
-
-extern	char		pr_token[2048];
-extern	int			pr_token_len;
-extern	token_type_t	pr_token_type;
-extern	type_t		*pr_immediate_type;
-extern	eval_t		pr_immediate;
-
-void PR_Lex (void);
-void PR_LexString (void);
 // reads the next token into pr_token and classifies its type
 
 type_t *PR_ParseType (void);
@@ -470,14 +455,11 @@ def_t *PR_ParseImmediate (def_t *def);
 def_t *PR_ReuseConstant (expr_t *expr, def_t *def);
 type_t *PR_FindType (type_t *new);
 
-qboolean PR_Check (token_type_t type, const char *string);
-void PR_Expect (token_type_t type, const char *string);
 void PR_ParseError (const char *error, ...)__attribute__((format(printf, 1,2)));
 
 
 extern	jmp_buf		pr_parse_abort;		// longjump with this on parse error
 extern	int			pr_source_line;
-extern	char		*pr_file_p;
 
 void *PR_Malloc (int size);
 

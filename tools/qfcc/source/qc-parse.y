@@ -52,7 +52,6 @@ yyerror (const char *s)
 
 int yylex (void);
 type_t *PR_FindType (type_t *new);
-void PR_PrintType(type_t*);
 
 type_t *parse_params (def_t *parms);
 function_t *new_function (void);
@@ -909,7 +908,6 @@ finish_function (function_t *f)
 void
 emit_function (function_t *f, expr_t *e)
 {
-	//PR_PrintType (f->def->type);
 	//printf (" %s =\n", f->def->name);
 
 	if (f->aux)

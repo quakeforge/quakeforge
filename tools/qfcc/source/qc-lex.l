@@ -121,22 +121,24 @@ m		([\-+]?)
 						return INT_VAL;
 					}
 
-^#{s}+{DIGIT}+{s}+\"(\.|[^"])*\".*$ {
+^#{s}+{DIGIT}+{s}+\"(\.|[^"\n])*\".*$ {
 						char *p;
+						char *s;
 						int line;
 						
-						pr_file_p = yytext + 1;
-						line = strtol (pr_file_p, &p, 10);
-						pr_file_p = p;
-						while (isspace (*pr_file_p))
-							pr_file_p++;
-						if (!*pr_file_p)
+						p = yytext + 1;
+						line = strtol (p, &s, 10);
+						p = s;
+						while (isspace (*p))
+							p++;
+						if (!*p)
 							error (0, "Unexpected end of file");
-						PR_LexString ();		// grab the filename
-						while (*pr_file_p && *pr_file_p != '\n')	// ignore flags
-							pr_file_p++;
+						s = make_string (p);		// grab the filename
+						while (*p && *p != '\n')	// ignore flags
+							p++;
 						pr_source_line = line - 1;
-						s_file = ReuseString (pr_immediate_string);
+						s_file = ReuseString (s);
+						free (s);
 					}
 
 [+\-*/&|^%]=		{
@@ -192,7 +194,7 @@ m		([\-+]?)
 
 <grab_other>[^\r\n]*	/* skip */
 
-<*>\r*\n				{
+<*>\r*\n			{
 						pr_source_line++;
 						BEGIN (INITIAL);
 					}
@@ -359,13 +361,122 @@ clear_frame_macros (void)
 char *
 make_string (char *token)
 {
-	char *str;
+	char       *str, *s;
+	int         c;
+	int         i;
+	int         mask;
+	int         boldnext;
+	int         quote;
 
-	pr_file_p = token;
-	PR_LexString ();
-	str = malloc (pr_token_len + 1);
+	s = str = malloc (strlen (token) + 1);
 	if (!str)
 		Sys_Error ("make_string: Memory Allocation Failure\n");
-	memcpy (str, pr_token, pr_token_len + 1);
+
+	mask = 0x00;
+	boldnext = 0;
+
+	quote = *token++;
+	do {
+		c = *token++;
+		if (!c)
+			error (0, "EOF inside quote");
+		if (c == '\n')
+			error (0, "newline inside quote");
+		if (c == '\\') {				// escape char
+			c = *token++;
+			if (!c)
+				error (0, "EOF inside quote");
+			switch (c) {
+				case '\\':
+					c = '\\';
+					break;
+				case 'n':
+					c = '\n';
+					break;
+				case '"':
+					c = '\"';
+					break;
+				case '\'':
+					c = '\'';
+					break;
+				case '0':
+				case '1':
+				case '2':
+				case '3':
+				case '4':
+				case '5':
+				case '6':
+				case '7':
+					for (i = c = 0; i < 3
+						 && *token >= '0'
+						 && *token <= '7'; i++, token++) {
+						c *= 8;
+						c += *token - '0';
+					}
+					if (!*token)
+						error (0, "EOF inside quote");
+					break;
+				case 'x':
+					c = 0;
+					while (*token && isxdigit (*token)) {
+						c *= 16;
+						if (*token <= '9')
+							c += *token - '0';
+						else if (*token <= 'F')
+							c += *token - 'A' + 10;
+						else
+							c += *token - 'a' + 10;
+						token++;
+					}
+					if (!*token)
+						error (0, "EOF inside quote");
+					break;
+				case 'a':
+					c = '\a';
+					break;
+				case 'b':
+					c = '\b';
+					break;
+				case 'e':
+					c = '\033';
+					break;
+				case 'f':
+					c = '\f';
+					break;
+				case 'r':
+					c = '\r';
+					break;
+				case 't':
+					c = '\t';
+					break;
+				case 'v':
+					c = '\v';
+					break;
+				case '^':
+					if (*token == '\"')
+						error (0, "Unexpected end of string after \\^");
+					boldnext = 1;
+					continue;
+				case '<':
+					mask = 0x80;
+					continue;
+				case '>':
+					mask = 0x00;
+					continue;
+				default:
+					error (0, "Unknown escape char");
+					break;
+			}
+		} else if (c == quote) {
+			*s++ = 0;
+			break;;
+		}
+		if (boldnext)
+			c = c ^ 0x80;
+		boldnext = 0;
+		c = c ^ mask;
+		*s++ = c;
+	} while (1);
+
 	return str;
 }
