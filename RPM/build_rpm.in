@@ -9,7 +9,7 @@ top_srcdir=@top_srcdir@
 top_builddir=..
 
 mkdir -p RPMS/{noarch,i386,i686}
-make -C $top_builddir changelog
+test -d $top_srcdir/CVS && make -C $top_builddir changelog
 make -C $top_builddir dist
 cat > rpmmacros <<EOF
 %_topdir    $PWD
