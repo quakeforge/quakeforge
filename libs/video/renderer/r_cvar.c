@@ -39,11 +39,11 @@
 
 #include "r_dynamic.h"
 
-extern cvar_t *gl_sky_divide;		// FIXME
-
 cvar_t     *cl_crossx;
 cvar_t     *cl_crossy;
+cvar_t	   *cl_max_particles;
 cvar_t     *cl_verstring;
+
 cvar_t     *crosshair;
 cvar_t     *crosshaircolor;
 
@@ -125,11 +125,19 @@ cvar_t     *scr_showram;
 cvar_t     *scr_showturtle;
 cvar_t     *scr_viewsize;
 
+extern short	r_maxparticles;
+extern cvar_t  *gl_sky_divide;		// FIXME
+
+extern void R_MaxParticlesCheck (cvar_t *var);
+
+
 static void
 r_particles_f (cvar_t *var)
 {
 	if (!var->int_val)
 		R_ClearParticles ();
+	if (cl_max_particles)
+		r_maxparticles = var->int_val * cl_max_particles->int_val;
 }
 
 void
@@ -139,6 +147,10 @@ R_Init_Cvars (void)
 						  "Sets the position of the crosshair on the X-axis.");
 	cl_crossy = Cvar_Get ("cl_crossy", "0", CVAR_ARCHIVE, NULL,
 						  "Sets the position of the crosshair on the Y-axis.");
+	cl_max_particles = Cvar_Get ("cl_max_particles", "2048", CVAR_ARCHIVE,
+								 R_MaxParticlesCheck, "Maximum amount of "
+								 "particles to display. No maximum, minimum " 
+								 "is 0.");
 	cl_verstring = Cvar_Get ("cl_verstring", PROGRAM " " VERSION, CVAR_NONE,
 							 NULL, "Client version string");
 	crosshair = Cvar_Get ("crosshair", "0", CVAR_ARCHIVE, NULL, "Crosshair "

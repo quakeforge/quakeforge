@@ -43,48 +43,19 @@
 #include "r_dynamic.h"
 #include "r_local.h"
 
-int         ramp1[8] = { 0x6f, 0x6d, 0x6b, 0x69, 0x67, 0x65, 0x63, 0x61 };
-int         ramp2[8] = { 0x6f, 0x6e, 0x6d, 0x6c, 0x6b, 0x6a, 0x68, 0x66 };
-int         ramp3[8] = { 0x6d, 0x6b, 6, 5, 4, 3 };
+int			ramp1[8] = { 0x6f, 0x6d, 0x6b, 0x69, 0x67, 0x65, 0x63, 0x61 };
+int			ramp2[8] = { 0x6f, 0x6e, 0x6d, 0x6c, 0x6b, 0x6a, 0x68, 0x66 };
+int			ramp3[8] = { 0x6d, 0x6b, 6, 5, 4, 3 };
 
-int         r_maxparticles;
-particle_t *active_particles, *free_particles, *particles;
-vec3_t      r_pright, r_pup, r_ppn;
+vec3_t		r_pright, r_pup, r_ppn;
 
+extern short		r_maxparticles;
+extern particle_t  *active_particles, *free_particles, *particles;
 
-/*
-	R_MaxParticlesCheck
-
-	Misty-chan: EXTREME heavy lifting and bugfixing thanks goes out to taniwha
-				- I built this, and he got it working :)
-*/
-void
-R_MaxParticlesCheck (cvar_t *var)
-{
-	// Do not use 0 in this! sw doesn't grok 0 and it'll segfault if we do!
-	r_maxparticles = max(var->int_val, 1);
-        
-	/*
-	Debugging code. will print what the above was set to, and is also useful
-	for checking if this is accidentally being run all the time.
-	Con_Printf ("%d", r_maxparticles);
-	*/
-	
-	if (particles)
-		free (particles);
-                
-	particles = (particle_t *) calloc (r_maxparticles, sizeof (particle_t));
-        
-	R_ClearParticles ();
-}
 
 void
 R_Particles_Init_Cvars (void)
 {
-	// Does a callback to R_MaxParticleCheck when the cvar changes. Neat trick.
-	Cvar_Get ("cl_max_particles", "2048", CVAR_ARCHIVE, R_MaxParticlesCheck,
-			  "Maximum amount of particles to display. No maximum, minimum "
-			  "is 1.");
 }
 
 void

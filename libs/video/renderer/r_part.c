@@ -32,16 +32,56 @@
 #endif
 
 #include "QF/console.h"
+#include "QF/cvar.h"
 #include "QF/qargs.h"
 #include "QF/render.h"
 
 #include "compat.h"
 #include "r_local.h"
 
-particle_t *active_particles, *free_particles, *particles;
-vec3_t      r_pright, r_pup, r_ppn;
-int         r_maxparticles;
+short			r_maxparticles, numparticles;
+particle_t	   *active_particles, *free_particles, *particles, **freeparticles;
+vec3_t			r_pright, r_pup, r_ppn;
 
+extern cvar_t  *cl_max_particles;
+extern cvar_t  *r_particles;
+
+
+/*
+  R_MaxParticlesCheck
+
+  Misty-chan: Dynamically change the maximum amount of particles on the fly.
+  Thanks to a LOT of help from Taniwha, Deek, Mercury, Lordhavoc, and lots of
+  others.
+*/
+void
+R_MaxParticlesCheck (cvar_t *var)
+{
+/*
+	Catchall. If the user changed the setting to a number less than zero *or*
+	if we had a wacky cfg get past the init code check, this will make sure we
+	don't have problems. Also note that grabbing the var->int_val is IMPORTANT:
+	Prevents a segfault since if we grabbed the int_val of cl_max_particles
+	we'd sig11 right here at startup.
+*/
+	if (r_particles)
+		r_maxparticles = max(var->int_val * r_particles->int_val, 0);
+	else
+		r_maxparticles = max(var->int_val, 0);
+
+/*
+	Be very careful the next time we do something like this. calloc/free are
+	IMPORTANT and the compiler doesn't know when we do bad things with them.
+*/
+	free (particles);
+	free (freeparticles);
+
+	particles = (particle_t *) calloc (r_maxparticles, sizeof (particle_t));
+	freeparticles = (particle_t **) calloc (r_maxparticles,
+											sizeof (particle_t *));
+
+	R_ClearParticles();
+}
 
 void
 R_DarkFieldParticles (entity_t *ent)

@@ -54,16 +54,11 @@
 #include "r_shared.h"
 #include "varrays.h"
 
-static particle_t *particles, **freeparticles;
-static short r_maxparticles, numparticles;
-
 int			ramp[8] = { 0x6f, 0x6d, 0x6b, 0x69, 0x67, 0x65, 0x63, 0x61 };
 
-extern int  part_tex_dot;
-extern int  part_tex_spark;
-extern int  part_tex_smoke[8];
-
-extern cvar_t *cl_max_particles;
+extern int			part_tex_dot, part_tex_spark, part_tex_smoke[8];
+extern short		r_maxparticles, numparticles;
+extern particle_t  *particles, **freeparticles;
 
 
 inline particle_t *
@@ -110,51 +105,9 @@ particle_new_random (ptype_t type, int texnum, vec3_t org, int org_fuzz,
 	return particle_new (type, texnum, porg, scale, pvel, die, color, alpha);
 }
 
-/*
-  R_MaxParticlesCheck
-
-  Misty-chan: Dynamically change the maximum amount of particles on the fly.
-  Thanks to a LOT of help from Taniwha, Deek, Mercury, Lordhavoc, and lots of
-  others.
-*/
-void
-R_MaxParticlesCheck (cvar_t *var)
-{
-/*
-	Catchall. If the user changed the setting to a number less than zero *or*
-	if we had a wacky cfg get past the init code check, this will make sure we
-	don't have problems. Also note that grabbing the var->int_val is IMPORTANT:
-
-	Prevents a segfault since if we grabbed the int_val of cl_max_particles
-	we'd sig11 right here at startup.
-*/
-	r_maxparticles = max(var->int_val, 0);
-
-/*
-	Be very careful the next time we do something like this. calloc/free are
-	IMPORTANT and the compiler doesn't know when we do bad things with them.
-*/
-	free (particles);
-	free (freeparticles);
-
-	particles = (particle_t *) calloc (r_maxparticles, sizeof (particle_t));
-	freeparticles = (particle_t **)
-		calloc (r_maxparticles, sizeof (particle_t *));
-
-	R_ClearParticles();
-}
-
 void
 R_Particles_Init_Cvars (void)
 {
-/*
-	Misty-chan: This is a cvar that does callbacks. Whenever it
-	changes, it calls the function R_MaxParticlesCheck and therefore
-	is very nifty.
-*/
-	Cvar_Get ("cl_max_particles", "2048", CVAR_ARCHIVE, R_MaxParticlesCheck,
-			  "Maximum amount of particles to display. No maximum, minimum "
-			  "is 0, although it's best to use r_particles 0 instead.");
 }
 
 inline void
@@ -216,9 +169,6 @@ R_ParticleExplosion (vec3_t org)
 //	int			i;
 //	int			j = 1024;
 
-	if (!r_particles->int_val)
-		return;
-
 	if (numparticles >= r_maxparticles)
 		return;
 // 	else if (numparticles + j >= r_maxparticles)
@@ -242,9 +192,6 @@ R_ParticleExplosion2 (vec3_t org, int colorStart, int colorLength)
 	int         i;
 	int         colorMod = 0, j = 512;
 
-	if (!r_particles->int_val)
-		return;
-	
 	if (numparticles >= r_maxparticles)
 		return;
 	else if (numparticles + j >= r_maxparticles)
@@ -263,9 +210,6 @@ R_BlobExplosion (vec3_t org)
 {
 	int         i;
 	int			j = 1024;
-
-	if (!r_particles->int_val)
-		return;
 
 	if (numparticles >= r_maxparticles)
 		return;
@@ -317,7 +261,8 @@ R_BloodPuff (vec3_t org, int count)
 void
 R_RunPuffEffect (vec3_t org, particle_effect_t type, byte count)
 {
-	if (!r_particles->int_val)
+	// FIXME: Is this test worthwhile?
+	if (numparticles >= r_maxparticles)
 		return;
 
 	switch (type) {
@@ -362,9 +307,6 @@ R_RunParticleEffect (vec3_t org, int color, int count)
 	int			k = count;
 	vec3_t      porg;
 
-	if (!r_particles->int_val)
-		return;
-
 	if (numparticles >= r_maxparticles)
 		return;
 
@@ -392,9 +334,6 @@ R_RunParticleEffect (vec3_t org, int color, int count)
 void
 R_RunSpikeEffect (vec3_t org, particle_effect_t type)
 {
-	if (!r_particles->int_val)
-		return;
-
 	switch (type) {
 		case PE_SPIKE:
 			R_RunSparkEffect (org, 5, 8);
@@ -420,9 +359,6 @@ R_LavaSplash (vec3_t org)
 	int         i, j;
 	int			k = 256;
 	vec3_t      dir, porg, pvel;
-
-	if (!r_particles->int_val)
-		return;
 
 	if (numparticles + k >= r_maxparticles) {
 		return;
@@ -458,9 +394,6 @@ R_TeleportSplash (vec3_t org)
 	int			l = 896;
 	vec3_t      dir, porg, pvel;
 
-	if (!r_particles->int_val)
-		return;
-
 	if (numparticles + l >= r_maxparticles) {
 		return;
 	} // else if (numparticles + l >= r_maxparticles) {
@@ -493,7 +426,7 @@ R_RocketTrail (entity_t *ent)
 	float		dist, len, pscale, pscalenext;
 	vec3_t		subtract, vec;
 
-	if (!r_particles->int_val)
+	if (numparticles >= r_maxparticles)
 		return;
 
 	R_AddFire (ent->old_origin, ent->origin, ent);
@@ -527,7 +460,7 @@ R_GrenadeTrail (entity_t *ent)
 	float		dist, len, pscale, pscalenext;
 	vec3_t		subtract, vec;
 
-	if (!r_particles->int_val)
+	if (numparticles >= r_maxparticles)
 		return;
 
 	VectorSubtract (ent->origin, ent->old_origin, vec);
@@ -560,7 +493,7 @@ R_BloodTrail (entity_t *ent)
 	int			j;
 	vec3_t		subtract, vec, porg, pvel;
 
-	if (!r_particles->int_val)
+	if (numparticles >= r_maxparticles)
 		return;
 
 	VectorSubtract (ent->origin, ent->old_origin, vec);
@@ -599,7 +532,7 @@ R_SlightBloodTrail (entity_t *ent)
 	int			j;
 	vec3_t      subtract, vec, porg, pvel;
 
-	if (!r_particles->int_val)
+	if (numparticles >= r_maxparticles)
 		return;
 
 	VectorSubtract (ent->origin, ent->old_origin, vec);
@@ -638,7 +571,7 @@ R_GreenTrail (entity_t *ent)
 	static int	tracercount;
 	vec3_t		subtract, vec, pvel;
 
-	if (!r_particles->int_val)
+	if (numparticles >= r_maxparticles)
 		return;
 
 	VectorSubtract (ent->origin, ent->old_origin, vec);
@@ -676,7 +609,7 @@ R_FlameTrail (entity_t *ent)
 	static int	tracercount;
 	vec3_t		subtract, vec, pvel;
 
-	if (!r_particles->int_val)
+	if (numparticles >= r_maxparticles)
 		return;
 
 	VectorSubtract (ent->origin, ent->old_origin, vec);
@@ -713,7 +646,7 @@ R_VoorTrail (entity_t *ent)
 	int			j;
 	vec3_t		subtract, vec, porg;
 
-	if (!r_particles->int_val)
+	if (numparticles >= r_maxparticles)
 		return;
 
 	VectorSubtract (ent->origin, ent->old_origin, vec);
@@ -746,7 +679,7 @@ R_DrawParticles (void)
 	int				activeparticles, maxparticle, j, k;
 	particle_t	   *part;
 	vec3_t			up_scale, right_scale, up_right_scale, down_right_scale;
-	
+
 	if (!r_particles->int_val)
 		return;
 
