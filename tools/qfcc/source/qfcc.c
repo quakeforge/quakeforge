@@ -192,7 +192,7 @@ WriteData (int crc)
 		progs.ofs_functions = ftell (h);
 		progs.numfunctions = pr.num_functions;
 		pr.functions = malloc (pr.num_functions * sizeof (dfunction_t));
-		for (i = 0, f = pr.function_list; f; i++, f = f->next) {
+		for (i = 1, f = pr.func_head; f; i++, f = f->next) {
 			pr.functions[i].first_statement =
 				LittleLong (f->dfunc->first_statement);
 			pr.functions[i].parm_start = LittleLong (f->dfunc->parm_start);
@@ -200,6 +200,7 @@ WriteData (int crc)
 			pr.functions[i].s_file = LittleLong (f->dfunc->s_file);
 			pr.functions[i].numparms = LittleLong (f->dfunc->numparms);
 			pr.functions[i].locals = LittleLong (f->dfunc->locals);
+			memcpy (pr.functions[i].parm_size, f->dfunc->parm_size, MAX_PARMS);
 		}
 		SafeWrite (h, pr.functions, pr.num_functions * sizeof (dfunction_t));
 	}
@@ -305,6 +306,7 @@ PR_BeginCompilation (void)
 {
 	pr.num_globals = RESERVED_OFS;
 	pr.def_tail = &pr.def_head;
+	pr.func_tail = &pr.func_head;
 
 	pr_error_count = 0;
 }
@@ -375,7 +377,7 @@ qboolean PR_FinishCompilation (void)
 		PR_RelocateRefs (def);
 	}
 
-	for (f = pr.function_list; f; f = f->next) {
+	for (f = pr.func_head; f; f = f->next) {
 		if (f->builtin)
 			continue;
 		if (f->def->locals > num_localdefs) {

@@ -58,7 +58,8 @@ typedef struct {
 	int				num_statements;
 	int				statements_size;
 
-	struct function_s *function_list;
+	struct function_s *func_head;
+	struct function_s **func_tail;
 	dfunction_t		*functions;
 	int				num_functions;
 

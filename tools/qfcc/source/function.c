@@ -168,8 +168,8 @@ new_function (void)
 	function_t	*f;
 
 	f = calloc (1, sizeof (function_t));
-	f->next = pr.function_list;
-	pr.function_list = f;
+	*pr.func_tail = f;
+	pr.func_tail = &f->next;
 
 	return f;
 }
