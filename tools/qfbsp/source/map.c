@@ -53,9 +53,7 @@ char        miptex[MAX_MAP_TEXINFO][16];
 
 int         numdetailbrushes;
 
-#define	MAXTOKEN	128
-
-char        token[MAXTOKEN];
+dstring_t   token = {&dstring_default_mem};
 qboolean    unget;
 char       *script_p;
 const char *script_file;
@@ -193,26 +191,24 @@ GetToken (qboolean crossline)
 	}
 
 	// copy token
-	token_p = token;
-
 	if (*script_p == '"') {
 		script_p++;
+		token_p = script_p;
 		while (*script_p != '"') {
 			if (!*script_p)
 				map_error ("EOF inside quoted token");
 			if (*script_p == '\n')
 				script_line++;
 			*token_p++ = *script_p++;
-			if (token_p > &token[MAXTOKEN - 1])
-				map_error ("token too large");
 		}
+		dstring_copysubstr (&token, token_p, script_p - token_p);
 		script_p++;
-	} else
-		while (*script_p && !isspace ((unsigned char) *script_p)) {
-			*token_p++ = *script_p++;
-			if (token_p > &token[MAXTOKEN - 1])
-				map_error ("token too large");
-		}
+	} else {
+		token_p = script_p;
+		while (*script_p && !isspace ((unsigned char) *script_p))
+			script_p++;
+		dstring_copysubstr (&token, token_p, script_p - token_p);
+	}
 
 	*token_p = 0;
 
@@ -238,13 +234,9 @@ ParseEpair (void)
 	e->next = mapent->epairs;
 	mapent->epairs = e;
 
-	if (strlen (token) >= MAX_KEY - 1)
-		map_error ("ParseEpar: token too long");
-	e->key = strdup (token);
+	e->key = strdup (token.str);
 	GetToken (false);
-	if (strlen (token) >= MAX_VALUE - 1)
-		map_error ("ParseEpar: token too long");
-	e->value = strdup (token);
+	e->value = strdup (token.str);
 }
 
 vec3_t      baseaxis[18] = {
@@ -283,18 +275,18 @@ ParseVerts (int *n_verts)
 	vec3_t     *verts;
 	int         i;
 
-	if (token[0] != ':')
+	if (token.str[0] != ':')
 		map_error ("parsing brush");
-	*n_verts = atoi (token + 1);
+	*n_verts = atoi (token.str + 1);
 	verts = malloc (sizeof (vec3_t) * *n_verts);
 
 	for (i = 0; i < *n_verts; i++) {
 		GetToken (true);
-		verts[i][0] = atof (token);
+		verts[i][0] = atof (token.str);
 		GetToken (true);
-		verts[i][1] = atof (token);
+		verts[i][1] = atof (token.str);
 		GetToken (true);
-		verts[i][2] = atof (token);
+		verts[i][2] = atof (token.str);
 	}
 
 	return verts;
@@ -321,7 +313,7 @@ ParseBrush (void)
 	mapent->brushes = b;
 
 	GetToken (true);
-	if (strcmp (token, "(") != 0) {
+	if (strcmp (token.str, "(") != 0) {
 		verts = ParseVerts (&n_verts);
 	} else {
 		UngetToken ();
@@ -330,16 +322,16 @@ ParseBrush (void)
 	do {
 		if (!GetToken (true))
 			break;
-		if (!strcmp (token, "}"))
+		if (!strcmp (token.str, "}"))
 			break;
 
 		if (verts) {
 			int         n_v, v;
-			n_v = atoi (token);
+			n_v = atoi (token.str);
 			GetToken (false);
 			for (i = 0; i < n_v; i++) {
 				GetToken (false);
-				v = atof (token);
+				v = atof (token.str);
 				if (i < 3)
 					VectorCopy (verts[v], planepts[i]);
 			}
@@ -349,16 +341,16 @@ ParseBrush (void)
 			for (i = 0; i < 3; i++) {
 				if (i != 0)
 					GetToken (true);
-				if (strcmp (token, "("))
+				if (strcmp (token.str, "("))
 					map_error ("parsing brush");
 
 				for (j = 0; j < 3; j++) {
 					GetToken (false);
-					planepts[i][j] = atof (token);
+					planepts[i][j] = atof (token.str);
 				}
 
 				GetToken (false);
-				if (strcmp (token, ")"))
+				if (strcmp (token.str, ")"))
 					map_error ("parsing brush");
 			}
 		}
@@ -373,52 +365,52 @@ ParseBrush (void)
 		// read the texturedef
 		memset (&tx, 0, sizeof (tx));
 		GetToken (false);
-		tx.miptex = FindMiptex (token);
+		tx.miptex = FindMiptex (token.str);
 		GetToken (false);
-		if ((hltexdef = !strcmp (token, "["))) {
+		if ((hltexdef = !strcmp (token.str, "["))) {
 			// S vector
 			GetToken (false);
-			vecs[0][0] = atof (token);
+			vecs[0][0] = atof (token.str);
 			GetToken (false);
-			vecs[0][1] = atof (token);
+			vecs[0][1] = atof (token.str);
 			GetToken (false);
-			vecs[0][2] = atof (token);
+			vecs[0][2] = atof (token.str);
 			GetToken (false);
-			vecs[0][3] = atof (token);
+			vecs[0][3] = atof (token.str);
 			GetToken (false);
-			if (strcmp (token, "]"))
+			if (strcmp (token.str, "]"))
 				map_error ("missing ]");
 			GetToken (false);
-			if (strcmp (token, "["))
+			if (strcmp (token.str, "["))
 				map_error ("missing [");
 			// T vector
 			GetToken (false);
-			vecs[1][0] = atof (token);
+			vecs[1][0] = atof (token.str);
 			GetToken (false);
-			vecs[1][1] = atof (token);
+			vecs[1][1] = atof (token.str);
 			GetToken (false);
-			vecs[1][2] = atof (token);
+			vecs[1][2] = atof (token.str);
 			GetToken (false);
-			vecs[1][3] = atof (token);
+			vecs[1][3] = atof (token.str);
 			GetToken (false);
-			if (strcmp (token, "]"))
+			if (strcmp (token.str, "]"))
 				map_error ("missing ]");
 		} else {
-			vecs[0][3] = atof (token);
+			vecs[0][3] = atof (token.str);
 			GetToken (false);
-			vecs[1][3] = atof (token);
+			vecs[1][3] = atof (token.str);
 		}
 
 		GetToken (false);
-		rotate = atof (token);
+		rotate = atof (token.str);
 		GetToken (false);
-		scale[0] = atof (token);
+		scale[0] = atof (token.str);
 		GetToken (false);
-		scale[1] = atof (token);
+		scale[1] = atof (token.str);
 
 		while (TokenAvailable (false)) {
 			GetToken (false);
-			if (!strcmp (token, "detail"))
+			if (!strcmp (token.str, "detail"))
 				b->detail = 1;
 			else
 				map_error ("parse error");
@@ -520,7 +512,7 @@ ParseEntity (void)
 	if (!GetToken (true))
 		return false;
 
-	if (strcmp (token, "{"))
+	if (strcmp (token.str, "{"))
 		map_error ("ParseEntity: { not found");
 
 	if (num_entities == MAX_MAP_ENTITIES)
@@ -532,9 +524,9 @@ ParseEntity (void)
 	do {
 		if (!GetToken (true))
 			map_error ("ParseEntity: EOF without closing brace");
-		if (!strcmp (token, "}"))
+		if (!strcmp (token.str, "}"))
 			break;
-		if (!strcmp (token, "{"))
+		if (!strcmp (token.str, "{"))
 			ParseBrush ();
 		else
 			ParseEpair ();
