@@ -1130,9 +1130,9 @@ R_CullBlocked (vec3_t mins, vec3_t maxs, vec3_t org)
 			return false;
 	}
 
-	rad = sqrt((maxs[0]-org[0])*(maxs[0]-org[0]) +
-			(maxs[1]-org[1])*(maxs[1]-org[1]) +
-			(maxs[2]-org[2])*(maxs[2]-org[2]) );
+	rad = sqrt((maxs[0] - org[0]) * (maxs[0] - org[0]) +
+			(maxs[1] - org[1]) * (maxs[1] - org[1]) +
+			(maxs[2] - org[2]) * (maxs[2] - org[2]));
 
 	// Check a few points on the bounding sphere to catch rotating objects
 	// Raise the origin a bit to catch droptofloor models

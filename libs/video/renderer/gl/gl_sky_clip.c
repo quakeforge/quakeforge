@@ -479,8 +479,8 @@ process_corners (struct box_def *box)
 				// 3 vertices
 				unsigned int sel =
 					(((abs (visit[2].face - visit[0].face) == 3) << 2) |
-					 ((abs (visit[3].face - visit[1].face) == 3) << 1)
-					 | ((abs (visit[4].face - visit[2].face) == 3) << 0));
+					 ((abs (visit[3].face - visit[1].face) == 3) << 1) |
+					 ((abs (visit[4].face - visit[2].face) == 3) << 0));
 				vec3_t      v[3];
 
 				center = faces_bit_magic[sel];
@@ -682,8 +682,8 @@ EmitSkyPolys (float speedscale, msurface_t *fa)
 			dir[0] *= length;
 			dir[1] *= length;
 
-			s = (speedscale + dir[0]) * (1.0/128);
-			t = (speedscale + dir[1]) * (1.0/128);
+			s = (speedscale + dir[0]) * (1.0 / 128.0);
+			t = (speedscale + dir[1]) * (1.0 / 128.0);
 
 			qfglTexCoord2f (s, t);
 			qfglVertex3fv (v);
@@ -835,7 +835,7 @@ R_DrawSkyChain (msurface_t *sky_chain)
 			vec3_t      v;
 			qfglBegin (GL_LINE_LOOP);
 			for (j = 0; j < 4; j++) {
-				VectorScale (&skyvec[i][j][2], 1.0/128.0, v);
+				VectorScale (&skyvec[i][j][2], 1.0 / 128.0, v);
 				VectorAdd (v, r_refdef.vieworg, v);
 				qfglVertex3fv (v);
 			}
