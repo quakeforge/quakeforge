@@ -1693,7 +1693,6 @@ AC_OUTPUT(
 
 	doc/Makefile
 	doc/man/Makefile
-	doc/texinfo/Makefile
 
 	debian/Makefile
 
