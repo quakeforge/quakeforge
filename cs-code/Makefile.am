@@ -21,9 +21,8 @@ pkgdata_DATA= menu.dat$(GZ)
 
 menu_src= \
 	cbuf.r client_menu.qc cmd.r controls_o.qc cvar.r draw.r file.r \
-	game.r inputline.r inputline_util.qc key.r \
-	menu.r menu_pics.qc menu_util.qc options.qc options_util.qc \
-	servlist.qc string.r stringh.r object.r
+	game.r inputline.r inputline_util.qc key.r  menu.r options.qc \
+	options_util.qc servlist.qc string.r stringh.r object.r
 
 %.qfo: %.r
 	$(QFCC) $(QCFLAGS) $(QCPPFLAGS) -p $(STRIP) -c -o $@ $<
