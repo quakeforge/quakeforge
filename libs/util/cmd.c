@@ -131,14 +131,6 @@ Cmd_Command (cbuf_args_t *args)
 	// check cvars
 	if (Cvar_Command ())
 		return;
-#if 0 //FIXME
-	// Check for assignment
-	if (Cmd_Argc () == 3 && !strcmp (Cmd_Argv (1), "=")) {
-		Cmd_SetLocal (cmd_activebuffer, Cmd_Argv (0), Cmd_Argv (2));
-		return;
-	}
-	// check alias
-#endif
 
 	if (cmd_warncmd->int_val || developer->int_val)
 		Sys_Printf ("Unknown command \"%s\"\n", Cmd_Argv (0));

@@ -376,7 +376,6 @@ contains_updir (const char *filename)
 	if (filename[0] == 0 || filename [1] == 0)
                 return 0;
 
-	// FIXME: maybe I should handle alternate seperators?
 	for (i = 0; filename[i+1]; i++) {
 		if (!(i == 0 || filename[i-1] == '/')           // beginning of string
 														// or first slash
