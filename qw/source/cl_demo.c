@@ -871,7 +871,7 @@ CL_TimeDemo_f (void)
 	}
 	timedemo_runs = timedemo_count = max (timedemo_count, 1);
 	if (timedemo_data)
-		free (timedemo_data)
+		free (timedemo_data);
 	timedemo_data = calloc (timedemo_runs, sizeof (td_stats_t));
 	strncpy (demoname, Cmd_Argv (1), sizeof (demoname));
 	CL_StartTimeDemo ();
