@@ -1473,7 +1473,7 @@ SV_RunCmd (usercmd_t *ucmd, qboolean inside)
 														msec_cheating,
 														host_client->name));
 					SV_BroadcastPrintf (PRINT_HIGH,
-										"Please see http://www.quakeforge.net/speed_cheat.php for infomation on QuakeForge's time cheat protection, and to explain how some may be cheating without knowing it.\n");
+										"Please see http://www.quakeforge.net/speed_cheat.php for information on QuakeForge's time cheat protection. That page explains how some may be cheating without knowing it.\n");
 					SV_DropClient (host_client);
 				}
 			}
