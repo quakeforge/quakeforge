@@ -108,16 +108,25 @@ menu_get_key (void *m, void *unused)
 static void
 menu_free (void *_m, void *unused)
 {
+	int         i;
 	menu_item_t *m = (menu_item_t *)_m;
 
 	if (m->text)
 		free ((char*)m->text);
+	if (m->parent) {
+		// remove self from parent list to avoid double frees
+		for (i = 0; i < m->parent->num_items; i++)
+			if (m->parent->items[i] == m)
+				m->parent->items[i] = 0;
+	}
 	if (m->items) {
-		int         i;
-
 		for (i = 0; i < m->num_items; i++)
-			if (m->items[i]->func)
+			if (m->items[i]) {
+				m->items[i]->parent = 0;
+				if (m->items[i]->text)
+					Hash_Del (menu_hash, m->items[i]->text);
 				menu_free (m->items[i], 0);
+			}
 		free (m->items);
 	}
 	while (m->pics) {
@@ -170,11 +179,12 @@ bi_Menu_Begin (progs_t *pr)
 
 	m->x = x;
 	m->y = y;
-	m->text = strdup (text);
+	m->text = text && text[0] ? strdup (text) : 0;
 	if (menu)
 		menu_add_item (menu, m);
 	menu = m;
-	Hash_Add (menu_hash, m);
+	if (m->text)
+		Hash_Add (menu_hash, m);
 }
 
 static void
@@ -269,7 +279,7 @@ bi_Menu_Item (progs_t *pr)
 
 	mi->x = x;
 	mi->y = y;
-	mi->text = strdup (text);
+	mi->text = text && text[0] ? strdup (text) : 0;
 	mi->func = func;
 	mi->parent = menu;
 	mi->allkeys = allkeys;
