@@ -229,6 +229,51 @@ class_begin (class_type_t *class_type)
 	}
 }
 
+static void
+emit_class_ref (const char *class_name)
+{
+	def_t      *def;
+	def_t      *ref;
+
+	def = get_def (&type_pointer, va (".obj_class_ref_%s", class_name),
+				   pr.scope, st_static);
+	if (def->initialized)
+		return;
+	def->initialized = def->constant = 1;
+	ref = get_def (&type_integer, va (".obj_class_name_%s", class_name),
+				   pr.scope, st_extern);
+	if (!ref->external)
+		G_INT (def->ofs) = ref->ofs;
+	reloc_def_def (ref, def->ofs);
+}
+
+static void
+emit_class_name (const char *class_name)
+{
+	def_t      *def;
+
+	def = get_def (&type_integer, va (".obj_class_name_%s", class_name),
+				   pr.scope, st_global);
+	if (def->initialized)
+		return;
+	def->initialized = def->constant = 1;
+	G_INT (def->ofs) = 0;
+}
+
+static void
+emit_category_name (const char *class_name, const char *category_name)
+{
+	def_t      *def;
+
+	def = get_def (&type_integer,
+				   va (".obj_category_name_%s_%s", class_name, category_name),
+				   pr.scope, st_global);
+	if (def->initialized)
+		return;
+	def->initialized = def->constant = 1;
+	G_INT (def->ofs) = 0;
+}
+
 void
 class_finish (class_type_t *class_type)
 {
@@ -246,6 +291,8 @@ class_finish (class_type_t *class_type)
 				  emit_methods (category->methods, va ("%s_%s",
 													   class->name,
 													   category->name), 0));
+		emit_class_ref (class->name);
+		emit_category_name (class->name, category->name);
 	} else {
 		pr_class_t *meta;
 		pr_class_t *cls;
@@ -262,6 +309,9 @@ class_finish (class_type_t *class_type)
 		EMIT_DEF (cls->ivars, emit_struct (class->ivars, class->name));
 		EMIT_DEF (cls->methods, emit_methods (class->methods,
 											  class->name, 1));
+		if (class->super_class)
+			emit_class_ref (class->super_class->name);
+		emit_class_name (class->name);
 	}
 }
 
