@@ -6,7 +6,7 @@ INCLUDES=	-I$(top_srcdir)/include $(QWAQ_INCS)
 
 QFCC_DEP=$(top_builddir)/tools/qfcc/source/qfcc$(EXEEXT)
 QFCC=$(top_builddir)/tools/qfcc/source/qfcc
-QCFLAGS=-qq -g -Werror
+QCFLAGS=-qq -g -Werror --advanced
 
 if BUILD_QWAQ
 qwaq=qwaq
