@@ -725,26 +725,14 @@ QFS_CompressPath (const char *pth)
 
 	Checks if a string contains an updir ('..'), either at the ends or
 	surrounded by slashes ('/').  Doesn't check for leading slash.
+	Assumes canonical (compressed) path.
 */
-static int
-contains_updir (const char *filename)
+static inline int
+contains_updir (const char *path)
 {
-	int i;
-
-	if (filename[0] == 0 || filename [1] == 0)
-                return 0;
-
-	for (i = 0; filename[i+1]; i++) {
-		if (!(i == 0 || filename[i-1] == '/')           // beginning of string
-														// or first slash
-		    || filename[i] != '.'                       // first dot
-		    || filename[i+1] != '.')                    // second dot
-			continue;
-
-		if (filename[i+2] == 0 || filename[i+2] == '/')
-			// end of string or second slash
-			return 1;
-	}
+	if (path[0] == '.' && path[1] == '.'
+		&& (path [2] == '/' || path[2] == 0))
+		return 1;
 	return 0;
 }
 
@@ -1325,17 +1313,25 @@ QFS_Open (const char *path, const char *mode)
 	dstring_t  *full_path = dstring_new ();
 	QFile      *file;
 	const char *m;
+	char       *cpath;
 	int         write = 0;
 
-	dsprintf (full_path, "%s/%s", qfs_userpath, path);
-	Sys_DPrintf ("QFS_Open: %s %s\n", full_path->str, mode);
-	for (m = mode; *m; m++)
-		if (*m == 'w' || *m == '+' || *m == 'a')
-			write = 1;
-	if (write)
-		QFS_CreatePath (full_path->str);
-	file = Qopen (full_path->str, mode);
+	cpath = QFS_CompressPath (path);
+	if (contains_updir (cpath)) {
+		errno = EACCES;
+		file = 0;
+	} else {
+		dsprintf (full_path, "%s/%s", qfs_userpath, cpath);
+		Sys_DPrintf ("QFS_Open: %s %s\n", full_path->str, mode);
+		for (m = mode; *m; m++)
+			if (*m == 'w' || *m == '+' || *m == 'a')
+				write = 1;
+		if (write)
+			QFS_CreatePath (full_path->str);
+		file = Qopen (full_path->str, mode);
+	}
 	dstring_delete (full_path);
+	free (cpath);
 	return file;
 }
 
