@@ -100,6 +100,7 @@ install: build
 		usr/lib/libQFmodels.so.* \
 		usr/lib/libQFsound.so.* \
 		usr/lib/libQFutil.so.* \
+		usr/lib/quakeforge/plugins/cd_file.so* \
 		usr/lib/quakeforge/plugins/cd_linux.so* \
 		usr/lib/quakeforge/plugins/console_client.so* \
 		usr/lib/quakeforge/plugins/snd_output_disk.so* \
@@ -175,7 +176,9 @@ install: build
 	# quakeforge-sdl
 	dh_movefiles -p$(sdl) --sourcedir=$(tmp) \
 		usr/games/nq-sdl \
-		usr/games/qw-client-sdl
+		usr/games/qw-client-sdl \
+		usr/lib/quakeforge/plugins/cd_sdl.so \
+		usr/lib/quakeforge/plugins/snd_output_sdl.so
 	install -d -m755 debian/$(sdl)/usr/share/doc
 	ln -s $(common) debian/$(sdl)/usr/share/doc/$(sdl)
 
@@ -238,6 +241,9 @@ install: build
 	install -D -m755 $(tmp)/usr/games/qfbsp $(tmp)/usr/bin/qfbsp
 	install -D -m755 $(tmp)/usr/games/qflight $(tmp)/usr/bin/qflight
 	install -D -m755 $(tmp)/usr/games/qfvis $(tmp)/usr/bin/qfvis
+	rm -f $(tmp)/usr/games/qfbsp \
+		$(tmp)/usr/games/qflight \
+		$(tmp)/usr/games/qfvis
 	dh_movefiles -p$(maptools) --sourcedir=$(tmp) \
 		usr/bin/qfbsp \
 		usr/bin/qflight \

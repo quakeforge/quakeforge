@@ -65,7 +65,8 @@ Description: QuakeForge 3D game engine - SDL client
  adding portability and optional extensions to enhance gameplay.
  .
  This package contains the SDL versions of the QuakeWorld client and
- standalone engine.
+ standalone engine, as well as CD audio and sound output plugins that use SDL to
+ do their work.
 
 Package: quakeforge-x11
 Architecture: any
