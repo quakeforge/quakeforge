@@ -198,7 +198,7 @@ SV_DemoWriteToDisk (int type, int to, float time)
 			demobuffer->start += size + header;
 		}
 		// move along
-		p = (header_t *) p->data + size;
+		p = (header_t *) (p->data + size);
 	}
 
 	if (demobuffer->start == demobuffer->last) {
@@ -423,7 +423,7 @@ DemoSetBuf (byte type, int to)
 			return;
 		}
 
-		p = (header_t *) p->data + p->size;
+		p = (header_t *) (p->data + p->size);
 	}
 	// type && to not exist in the buf, so add it
 
