@@ -149,19 +149,21 @@ void *Cache_Get (cache_user_t *c);
 void *Cache_TryGet (cache_user_t *c);
 void Cache_Release (cache_user_t *c);
 
-/* Modes, pick one */
-#define QA_NOFAIL       1
-#define QA_LATEFAIL     2
-#define QA_EARLYFAIL    3
+/* Flags */
+#define QA_NONE			0
+#define QA_FAILURE		1
+#define QA_PREVIOUS		2
+#define QA_SIZE			4
+#define QA_ZEROED		8
 
-#define _QA_MODEMASK    3
-
-/* Flags, OR them with the mode */
-#define QA_ZEROED       4
+/* Modes used with the QA_FAILURE flag */
+#define QA_NOFAIL		1
+#define QA_LATEFAIL		2
+#define QA_EARLYFAIL	3
 
 extern size_t (*QA_alloc_callback) (size_t size);
 
-void *QA_alloc (void *ptr, size_t size, unsigned modes);
+void *QA_alloc (unsigned modes, ...);
 void *QA_malloc (size_t size);
 void *QA_calloc (size_t nmemb, size_t size);
 void *QA_realloc (void *ptr, size_t size);

@@ -36,6 +36,7 @@
 # include <strings.h>
 #endif
 
+#include <stdarg.h>
 #include <stdlib.h>
 
 #undef MMAPPED_CACHE
@@ -1047,30 +1048,49 @@ Cache_Release (cache_user_t *c)
 size_t (*QA_alloc_callback) (size_t size);
 
 void *
-QA_alloc (void *ptr, size_t size, unsigned modes)
+QA_alloc (unsigned flags, ...)
 {
 	void *mem;
+	void *ptr = 0;
+	size_t size = 0;
+	qboolean zeroed = false;
+	int failure = QA_NOFAIL;
+	va_list ap;
 
-	if (modes & ~(_QA_MODEMASK | QA_ZEROED))
-		Sys_Error ("QA_alloc: bad modes field: %u\n", modes);
+	if (flags & ~(QA_FAILURE | QA_PREVIOUS | QA_SIZE | QA_ZEROED))
+		Sys_Error ("QA_alloc: bad flags: %u\n", flags);
+
+	va_start (ap, flags);
+	if (flags & QA_PREVIOUS)
+		ptr = va_arg (ap, void *);
+	if (flags & QA_SIZE)
+		size = va_arg (ap, size_t);
+	if (flags & QA_ZEROED)
+		zeroed = true;
+	if (flags & QA_FAILURE)
+		failure = va_arg (ap, int);
+	va_end (ap);
+
+	if (failure != QA_NOFAIL && failure != QA_LATEFAIL && failure != QA_EARLYFAIL)
+		Sys_Error ("QA_alloc: invalid failure type: %u\n", failure);
 
 	if (size) {
 		do {
 			if (ptr) {
-				if (modes & QA_ZEROED)
+				if (zeroed)
 					Sys_Error ("QA_alloc: Zeroing reallocated memory not yet supported\n");
 				else
 					mem = realloc (ptr, size);
 			} else {
-				if (modes & QA_ZEROED)
+				if (zeroed)
 					mem = calloc (size, 1);
 				else
 					mem = malloc (size);
 			}
-		} while ((modes & _QA_MODEMASK) != QA_EARLYFAIL && !mem
+		} while (failure != QA_EARLYFAIL && !mem
 				 && QA_alloc_callback && QA_alloc_callback (size));
 
-		if (!mem && (modes & _QA_MODEMASK) == QA_NOFAIL)
+		if (!mem && failure == QA_NOFAIL)
 			Sys_Error ("QA_alloc: could not allocate %d bytes!\n", size);
 
 		return mem;
@@ -1085,25 +1105,25 @@ QA_alloc (void *ptr, size_t size, unsigned modes)
 void *
 QA_malloc (size_t size)
 {
-	return QA_alloc (0, size, QA_NOFAIL);
+	return QA_alloc (QA_SIZE, size);
 }
 
 void *
 QA_calloc (size_t nmemb, size_t size)
 {
-	return QA_alloc (0, nmemb * size, QA_NOFAIL | QA_ZEROED);
+	return QA_alloc (QA_ZEROED | QA_SIZE, nmemb * size);
 }
 
 void *
 QA_realloc (void *ptr, size_t size)
 {
-	return QA_alloc (ptr, size, QA_NOFAIL);
+	return QA_alloc (QA_PREVIOUS | QA_SIZE, ptr, size);
 }
 
 void 
 QA_free (void *ptr)
 {
-	QA_alloc (ptr, 0, QA_NOFAIL);
+	QA_alloc (QA_PREVIOUS, ptr);
 }
 
 char *
