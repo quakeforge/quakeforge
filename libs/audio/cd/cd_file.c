@@ -91,7 +91,7 @@ static plitem_t *tracklist = NULL;		// the parsed tracklist
 static void
 I_OGGMus_CloseDoor (void)
 {
-	Sys_Printf ("Entering I_OGGMus_CloseDoor\n");
+	Sys_DPrintf ("Entering I_OGGMus_CloseDoor\n");
 	return;
 }
 
@@ -99,7 +99,7 @@ I_OGGMus_CloseDoor (void)
 static void
 I_OGGMus_Eject (void)
 {
-	Sys_Printf ("Entering I_OGGMus_Eject\n");
+	Sys_DPrintf ("Entering I_OGGMus_Eject\n");
 	return;
 }
 
@@ -112,7 +112,7 @@ I_OGGMus_GetAudioDiskInfo (void)
 	int         size = -1;
 	char       *buffile = NULL;
 
-	Sys_Printf ("Entering I_OGGMus_GetAudioDiskInfo\n");
+	Sys_DPrintf ("Entering I_OGGMus_GetAudioDiskInfo\n");
 	ogglistvalid = false;
 
 	if (oggfile == NULL) {
@@ -140,7 +140,7 @@ I_OGGMus_GetAudioDiskInfo (void)
 static void
 I_OGGMus_Pause (void)
 {
-	Sys_Printf ("Entering I_OGGMus_Pause\n");
+	Sys_DPrintf ("Entering I_OGGMus_Pause\n");
 	/* pause the ogg playback. */
 	/* just kinda cheat and stop it for the time being */
 	if (tracklist == NULL || !mus_enabled)
@@ -157,7 +157,7 @@ I_OGGMus_Pause (void)
 static void
 I_OGGMus_Stop (void)
 {
-	Sys_Printf ("Entering I_OGGMus_Stop\n");
+	Sys_DPrintf ("Entering I_OGGMus_Stop\n");
 	/* okay, stop playing oggs.  */
 	if (tracklist == NULL || !mus_enabled)
 		return;
@@ -178,7 +178,7 @@ I_OGGMus_Play (int track, qboolean looping)
 	dstring_t  *trackstring = dstring_new ();
 	wavinfo_t  *info;
 
-	Sys_Printf ("Entering I_OGGMus_Play\n");
+	Sys_DPrintf ("Entering I_OGGMus_Play\n");
 	/* alrighty. grab the list, map track to filename. grab filename from data
 	   resources, attach sound to play, loop. */
 	if (tracklist == NULL || !mus_enabled) {
@@ -224,7 +224,7 @@ I_OGGMus_Play (int track, qboolean looping)
 static void
 I_OGGMus_Resume (void)
 {
-	Sys_Printf ("Entering I_OGGMus_Resume\n");
+	Sys_DPrintf ("Entering I_OGGMus_Resume\n");
 
 	if (tracklist == NULL || !mus_enabled)
 		return;
@@ -237,7 +237,7 @@ I_OGGMus_Resume (void)
 static void
 I_OGGMus_Shutdown (void)
 {
-	Sys_Printf ("Entering I_OGGMus_Shutdown\n");
+	Sys_DPrintf ("Entering I_OGGMus_Shutdown\n");
 	/* clean up a bit, destroy the ogg if i have to */
 
 	if (tracklist != NULL) {
@@ -261,7 +261,7 @@ I_OGGMus_Info (void)
 	plitem_t   *currenttrack = NULL;
 	int         iter = 0;
 
-	Sys_Printf ("Entering I_OGGMus_Info\n");
+	Sys_DPrintf ("Entering I_OGGMus_Info\n");
 	if (tracklist != NULL) {
 
 		keylist = PL_D_AllKeys (tracklist);
@@ -307,7 +307,7 @@ I_OGG_f (void)
 {
 	const char *command;
 
-	Sys_Printf ("Entering I_OGG_f\n");
+	Sys_DPrintf ("Entering I_OGG_f\n");
 	if (Cmd_Argc () < 2)
 		return;
 
@@ -401,7 +401,7 @@ Mus_OggChange (cvar_t *mus_ogglist)
 {
 	int         size;
 
-	Sys_Printf ("Entering Mus_OggChange\n");
+	Sys_DPrintf ("Entering Mus_OggChange\n");
 
 	/* make sure we're not playing anything right now, and we've cleaned up */
 	CDAudio_Shutdown ();
@@ -433,7 +433,7 @@ Mus_OggChange (cvar_t *mus_ogglist)
 static void
 Mus_VolChange (cvar_t *bgmvolume)
 {
-	Sys_Printf ("Entering Mus_VolChange\n");
+	Sys_DPrintf ("Entering Mus_VolChange\n");
 	if (cd_channel->sfx) {
 		int         vol = bgmvolume->value * 255;
 
@@ -445,7 +445,7 @@ Mus_VolChange (cvar_t *bgmvolume)
 static void
 I_OGGMus_Init (void)
 {
-	Sys_Printf ("Entering I_OGGMus_Init\n");
+	Sys_DPrintf ("Entering I_OGGMus_Init\n");
 
 	cd_channel = S_AllocChannel ();
 
