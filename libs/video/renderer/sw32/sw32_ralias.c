@@ -40,6 +40,8 @@ static const char rcsid[] =
 #include "d_ifacea.h"
 #include "r_local.h"
 
+#include "stdlib.h"
+
 #define LIGHT_MIN	5					// lowest light value we'll allow, to
 										// avoid the need for inner-loop light
 										// clamping
@@ -659,23 +661,33 @@ R_AliasSetupFrame (void)
 }
 
 
-#define MAXALIASVERTS 1024
+finalvert_t *finalverts;
+auxvert_t   *auxverts;
+int          maxaliasverts = 0;
+
 void
 R_AliasDrawModel (alight_t *plighting)
 {
-	finalvert_t finalverts[MAXALIASVERTS +
-						   ((CACHE_SIZE - 1) / sizeof (finalvert_t)) + 1];
-	auxvert_t   auxverts[MAXALIASVERTS];
-
 	r_amodels_drawn++;
+
+	paliashdr = Cache_Get (&currententity->model->cache);
+	pmdl = (mdl_t *) ((byte *) paliashdr + paliashdr->model);
+
+	if (pmdl->numverts > maxaliasverts)
+	{
+		finalverts = realloc (finalverts, (CACHE_SIZE - 1) +
+			sizeof (finalvert_t) * (pmdl->numverts + 1));
+		auxverts = realloc (auxverts,
+			sizeof (auxvert_t) * pmdl->numverts);
+		if (!finalverts || !auxverts)
+			Sys_Error ("R_AliasDrawModel: out of memory");
+		maxaliasverts = pmdl->numverts;
+	}
 
 	// cache align
 	pfinalverts = (finalvert_t *)
 		(((long) &finalverts[0] + CACHE_SIZE - 1) & ~(CACHE_SIZE - 1));
 	pauxverts = &auxverts[0];
-
-	paliashdr = Cache_Get (&currententity->model->cache);
-	pmdl = (mdl_t *) ((byte *) paliashdr + paliashdr->model);
 
 	R_AliasSetupSkin ();
 	R_AliasSetUpTransform (currententity->trivial_accept);
