@@ -118,7 +118,7 @@ Draw_InitText (void)
 
 	if (r_init) {
 		if (vaelements > 3)
-			tVAsize = vaelements - (vaelements %4);
+			tVAsize = vaelements - (vaelements % 4);
 		else
 			tVAsize = 2048;
 		Con_Printf ("Text: %i maximum vertex elements.\n", tVAsize);
@@ -360,6 +360,41 @@ Draw_Init (void)
 
 #define CELL_SIZE 0.0625
 
+static inline void
+flush_text (void)
+{
+	qfglFinish ();
+	qfglBindTexture (GL_TEXTURE_2D, char_texture);
+	qfglDrawElements (GL_QUADS, tVAcount, GL_UNSIGNED_INT, tVAindices);
+	tVAcount = 0;
+	tV = textVertices;
+	tC = textCoords;
+}
+
+static inline void
+queue_character (int x, int y, float frow, float fcol)
+{
+	*tC++ = fcol;
+	*tC++ = frow;
+	*tC++ = fcol + CELL_SIZE;
+	*tC++ = frow;
+	*tC++ = fcol + CELL_SIZE;
+	*tC++ = frow + CELL_SIZE;
+	*tC++ = fcol;
+	*tC++ = frow + CELL_SIZE;
+	*tV++ = x;
+	*tV++ = y;
+	*tV++ = x + 8;
+	*tV++ = y;
+	*tV++ = x + 8;
+	*tV++ = y + 8;
+	*tV++ = x;
+	*tV++ = y + 8;
+	tVAcount += 4;
+	if (tVAcount + 4 > tVAsize)
+		flush_text ();
+}
+
 /*
 	Draw_Character
 
@@ -382,30 +417,7 @@ Draw_Character (int x, int y, unsigned int num)
 	frow = (num >> 4) * CELL_SIZE;
 	fcol = (num & 15) * CELL_SIZE;
 
-	*tC++ = fcol;
-	*tC++ = frow;
-	*tC++ = fcol + CELL_SIZE;
-	*tC++ = frow;
-	*tC++ = fcol + CELL_SIZE;
-	*tC++ = frow + CELL_SIZE;
-	*tC++ = fcol;
-	*tC++ = frow + CELL_SIZE;
-	*tV++ = x;
-	*tV++ = y;
-	*tV++ = x + 8;
-	*tV++ = y;
-	*tV++ = x + 8;
-	*tV++ = y + 8;
-	*tV++ = x;
-	*tV++ = y + 8;
-	tVAcount += 4;
-	if (tVAcount + 4 > tVAsize) {
-		qfglBindTexture (GL_TEXTURE_2D, char_texture);
-		qfglDrawElements (GL_QUADS, tVAcount, GL_UNSIGNED_INT, tVAindices);
-		tVAcount = 0;
-		tV = textVertices;
-		tC = textCoords;
-	}
+	queue_character (x, y, frow, fcol);
 }
 
 void
@@ -420,36 +432,11 @@ Draw_String (int x, int y, const char *str)
 		return;							// totally off screen
 
 	while (*str) {
-		if ((num = *str++) != 32) // Don't render spaces
-		{
+		if ((num = *str++) != 32) {		// Don't render spaces
 			frow = (num >> 4) * CELL_SIZE;
 			fcol = (num & 15) * CELL_SIZE;
 
-			*tC++ = fcol;
-			*tC++ = frow;
-			*tC++ = fcol + CELL_SIZE;
-			*tC++ = frow;
-			*tC++ = fcol + CELL_SIZE;
-			*tC++ = frow + CELL_SIZE;
-			*tC++ = fcol;
-			*tC++ = frow + CELL_SIZE;
-			*tV++ = x;
-			*tV++ = y;
-			*tV++ = x + 8;
-			*tV++ = y;
-			*tV++ = x + 8;
-			*tV++ = y + 8;
-			*tV++ = x;
-			*tV++ = y + 8;
-			tVAcount += 4;
-			if (tVAcount + 4 > tVAsize) {
-				qfglBindTexture (GL_TEXTURE_2D, char_texture);
-				qfglDrawElements (GL_QUADS, tVAcount, GL_UNSIGNED_INT,
-								  tVAindices);
-				tVAcount = 0;
-				tV = textVertices;
-				tC = textCoords;
-			}
+			queue_character (x, y, frow, fcol);
 		}
 		x += 8;
 	}
@@ -471,31 +458,7 @@ Draw_nString (int x, int y, const char *str, int count)
 			frow = (num >> 4) * CELL_SIZE;
 			fcol = (num & 15) * CELL_SIZE;
 
-			*tC++ = fcol;
-			*tC++ = frow;
-			*tC++ = fcol + CELL_SIZE;
-			*tC++ = frow;
-			*tC++ = fcol + CELL_SIZE;
-			*tC++ = frow + CELL_SIZE;
-			*tC++ = fcol;
-			*tC++ = frow + CELL_SIZE;
-			*tV++ = x;
-			*tV++ = y;
-			*tV++ = x + 8;
-			*tV++ = y;
-			*tV++ = x + 8;
-			*tV++ = y + 8;
-			*tV++ = x;
-			*tV++ = y + 8;
-			tVAcount += 4;
-			if (tVAcount + 4 > tVAsize) {
-				qfglBindTexture (GL_TEXTURE_2D, char_texture);
-				qfglDrawElements (GL_QUADS, tVAcount, GL_UNSIGNED_INT,
-								  tVAindices);
-				tVAcount = 0;
-				tV = textVertices;
-				tC = textCoords;
-			}
+			queue_character (x, y, frow, fcol);
 		}
 		x += 8;
 	}
@@ -518,31 +481,7 @@ Draw_AltString (int x, int y, const char *str)
 			frow = (num >> 4) * CELL_SIZE;
 			fcol = (num & 15) * CELL_SIZE;
 
-			*tC++ = fcol;
-			*tC++ = frow;
-			*tC++ = fcol + CELL_SIZE;
-			*tC++ = frow;
-			*tC++ = fcol + CELL_SIZE;
-			*tC++ = frow + CELL_SIZE;
-			*tC++ = fcol;
-			*tC++ = frow + CELL_SIZE;
-			*tV++ = x;
-			*tV++ = y;
-			*tV++ = x + 8;
-			*tV++ = y;
-			*tV++ = x + 8;
-			*tV++ = y + 8;
-			*tV++ = x;
-			*tV++ = y + 8;
-			tVAcount += 4;
-			if (tVAcount + 4 > tVAsize) {
-				qfglBindTexture (GL_TEXTURE_2D, char_texture);
-				qfglDrawElements (GL_QUADS, tVAcount, GL_UNSIGNED_INT,
-								  tVAindices);
-				tVAcount = 0;
-				tV = textVertices;
-				tC = textCoords;
-			}
+			queue_character (x, y, frow, fcol);
 		}
 		x += 8;
 	}
@@ -895,10 +834,6 @@ void
 GL_FlushText (void)
 {
 	if (tVAcount) {
-		qfglBindTexture (GL_TEXTURE_2D, char_texture);
-		qfglDrawElements (GL_QUADS, tVAcount, GL_UNSIGNED_INT, tVAindices);
-		tVAcount = 0;
-		tV = textVertices;
-		tC = textCoords;
+		flush_text ();
 	}
 }
