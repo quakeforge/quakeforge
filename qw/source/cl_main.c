@@ -1139,6 +1139,12 @@ CL_Init (void)
 	if ((servlist = Qopen (va ("%s/servers.txt", e_path), "r"))) {
 		slist = SL_LoadF (servlist, slist);
 		Qclose (servlist);
+	} else {
+		Qexpand_squiggle (fs_sharepath->string, e_path);
+		if ((servlist = Qopen (va ("%s/servers.txt", e_path), "r"))) {
+			slist = SL_LoadF (servlist, slist);
+			Qclose (servlist);
+		}
 	}
 
 //
