@@ -178,7 +178,8 @@ qw_client_wgl_DEPENDENCIES=../../libs/video/renderer/libQFrenderer_gl.la ../../l
 EXTRA_DIST=	makefile.mgw makefile.win \
 		qf-server.mak qw_server.dsp \
 		qf-client-sdl.mak qf-client-win.mak qw_client.dsp \
-		qf-client-sgl.mak qf-client-wgl.mak qf-client-win.mak
+		qf-client-sgl.mak qf-client-wgl.mak qf-client-win.mak \
+		cl_sys_win.c sv_sys_win.c
 
 # Kill the temp files, hopefully.
 CLEANFILES	= *.i *.s $(YACCLEX_CLEANFILES)

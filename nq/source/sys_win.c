@@ -155,7 +155,7 @@ Sys_MakeCodeWriteable (unsigned long startaddr, unsigned long length)
 }
 
 
-#ifndef _M_IX86
+#ifndef USE_INTEL_ASM
 
 void
 Sys_SetFPCW (void)

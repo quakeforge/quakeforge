@@ -17,6 +17,7 @@ endif
 libQFjs_la_CFLAGS=       $(JOY_CFLAGS)
 libQFjs.la: $(libQFjs_la_OBJECTS) $(libQFjs_la_DEPENDENCIES)
 	$(LINK) -rpath $(libdir) $(libQFjs_la_LDFLAGS) $(libQFjs_la_OBJECTS) $(libQFjs_la_LIBADD) $(LIBS)
+EXTRA_DIST= joy.c joy_linux.c joy_null.c joy_win.c
 
 # Linux FBdev
 YFLAGS = -d

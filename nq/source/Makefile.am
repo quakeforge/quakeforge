@@ -158,7 +158,7 @@ nq_server_DEPENDENCIES=	libqfnet.a
 
 # Stuff that doesn't get linked into an executable NEEDS to be mentioned here,
 # or it won't be distributed with 'make dist'
-EXTRA_DIST=	#nq.dsp sys_unix.c sys_win.c
+EXTRA_DIST=	sys_win.c sys_unix.c #nq.dsp
 
 # Kill the temp files, hopefully.
 CLEANFILES  = *.i *.s $(YACCLEX_CLEANFILES)
