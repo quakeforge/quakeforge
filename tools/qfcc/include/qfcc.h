@@ -48,9 +48,7 @@ typedef struct pr_info_s {
 	struct type_s	*types;
 	struct ex_label_s *labels;
 	
-	char			*strings;
-	int				strofs;
-	int				strings_size;
+	struct strpool_s *strings;
 
 	dstatement_t	*statements;
 	int				*statement_linenums;
@@ -80,11 +78,12 @@ extern	char		destfile[];
 
 extern	struct scope_s *current_scope;
 
+#define G_GETSTR(s)		(pr.strings->strings + (s))
 #define G_var(t, o)		(pr.near_data->data[o].t##_var)
 #define	G_FLOAT(o)		G_var (float, o)
 #define	G_INT(o)		G_var (integer, o)
 #define	G_VECTOR(o)		G_var (vector, o)
-#define	G_STRING(o)		(pr.strings + G_var (string, o))
+#define	G_STRING(o)		G_GETSTR (G_var (string, o))
 #define	G_FUNCTION(o)	G_var (func, o)
 #define G_POINTER(t,o)	((t *)(pr.near_data->data + o))
 #define G_STRUCT(t,o)	(*G_POINTER (t, o))

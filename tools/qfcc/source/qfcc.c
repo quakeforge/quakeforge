@@ -77,6 +77,7 @@ static const char rcsid[] =
 #include "opcodes.h"
 #include "options.h"
 #include "reloc.h"
+#include "strpool.h"
 #include "struct.h"
 #include "type.h"
 
@@ -127,6 +128,7 @@ InitData (void)
 
 	if (pr.statements) {
 		free (pr.statements);
+		strpool_delete (pr.strings);
 		memset (&pr, 0, sizeof (pr));
 	}
 	chain_initial_types ();
@@ -136,8 +138,7 @@ InitData (void)
 	pr.statements_size = 16384;
 	pr.statements = calloc (pr.statements_size, sizeof (dstatement_t));
 	pr.statement_linenums = calloc (pr.statements_size, sizeof (int));
-	pr.strofs = 0;
-	CopyString ("");
+	pr.strings = strpool_new ();
 	pr.num_functions = 1;
 
 	pr.near_data = new_defspace ();
@@ -193,10 +194,10 @@ WriteData (int crc)
 		dd->ofs = def->ofs;
 	}
 
-	pr.strofs = (pr.strofs + 3) & ~3;
+	pr.strings->size = (pr.strings->size + 3) & ~3;
 
 	if (options.verbosity >= 0) {
-		printf ("%6i strofs\n", pr.strofs);
+		printf ("%6i strofs\n", pr.strings->size);
 		printf ("%6i statements\n", pr.num_statements);
 		printf ("%6i functions\n", pr.num_functions);
 		printf ("%6i global defs\n", numglobaldefs);
@@ -210,8 +211,8 @@ WriteData (int crc)
 	SafeWrite (h, &progs, sizeof (progs));
 
 	progs.ofs_strings = ftell (h);
-	progs.numstrings = pr.strofs;
-	SafeWrite (h, pr.strings, pr.strofs);
+	progs.numstrings = pr.strings->size;
+	SafeWrite (h, pr.strings->strings, pr.strings->size);
 
 	progs.ofs_statements = ftell (h);
 	progs.numstatements = pr.num_statements;

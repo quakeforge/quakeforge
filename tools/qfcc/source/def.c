@@ -37,6 +37,7 @@ static const char rcsid[] =
 #include "qfcc.h"
 #include "def.h"
 #include "expr.h"
+#include "strpool.h"
 #include "struct.h"
 #include "type.h"
 
@@ -365,7 +366,7 @@ free_tempdefs (void)
 			*def = d->next;
 
 			if (d->users < 0)
-				printf ("%s:%d: warning: %s %3d %3d %d\n", pr.strings + d->file,
+				printf ("%s:%d: warning: %s %3d %3d %d\n", G_GETSTR (d->file),
 						d->line, pr_type_name[d->type->type], d->ofs, d->users,
 						d->managed);
 			size = type_size (d->type);
@@ -394,7 +395,7 @@ reset_tempdefs (void)
 	}
 
 	for (d = temp_scope.next; d; d = d->next)
-		printf ("%s:%d: warning: %s %3d %3d %d\n", pr.strings + d->file, d->line,
+		printf ("%s:%d: warning: %s %3d %3d %d\n", G_GETSTR (d->file), d->line,
 				pr_type_name[d->type->type], d->ofs, d->users, d->managed);
 	temp_scope.next = 0;
 }

@@ -55,6 +55,7 @@ static const char rcsid[] =
 #include "immediate.h"
 #include "method.h"
 #include "options.h"
+#include "strpool.h"
 #include "struct.h"
 #include "type.h"
 #include "qc-parse.h"
@@ -232,7 +233,7 @@ error (expr_t *e, const char *fmt, ...)
 		file = e->file;
 		line = e->line;
 	}
-	fprintf (stderr, "%s:%d: ", pr.strings + file, line);
+	fprintf (stderr, "%s:%d: ", G_GETSTR (file), line);
 	vfprintf (stderr, fmt, args);
 	fputs ("\n", stderr);
 	va_end (args);
@@ -260,7 +261,7 @@ _warning (expr_t *e, const char *fmt, va_list args)
 		file = e->file;
 		line = e->line;
 	}
-	fprintf (stderr, "%s:%d: warning: ", pr.strings + file, line);
+	fprintf (stderr, "%s:%d: warning: ", G_GETSTR (file), line);
 	vfprintf (stderr, fmt, args);
 	fputs ("\n", stderr);
 }
@@ -294,7 +295,7 @@ notice (expr_t *e, const char *fmt, ...)
 			file = e->file;
 			line = e->line;
 		}
-		fprintf (stderr, "%s:%d: notice: ", pr.strings + file, line);
+		fprintf (stderr, "%s:%d: notice: ", G_GETSTR (file), line);
 		vfprintf (stderr, fmt, args);
 		fputs ("\n", stderr);
 	}

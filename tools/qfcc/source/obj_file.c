@@ -3,7 +3,7 @@
 
 	qfcc object file support
 
-	Copyright (C) 2001 Bill Currie <bill@taniwha.org>
+	Copyright (C) 2002 Bill Currie <bill@taniwha.org>
 
 	Author: Bill Currie <bill@taniwha.org>
 	Date: 2002/6/21
@@ -50,8 +50,9 @@ static const char rcsid[] =
 #include "function.h"
 #include "immediate.h"
 #include "obj_file.h"
-#include "reloc.h"
 #include "qfcc.h"
+#include "reloc.h"
+#include "strpool.h"
 #include "type.h"
 
 static qfo_def_t *defs;
@@ -227,7 +228,7 @@ write_obj_file (const char *filename)
 
 	file = Qopen (filename, "wbz9");
 
-	pr.strofs = (pr.strofs + 3) & ~3;
+	pr.strings->size = (pr.strings->size + 3) & ~3;
 
 	memset (&hdr, 0, sizeof (hdr));
 
@@ -238,7 +239,7 @@ write_obj_file (const char *filename)
 	if (pr.far_data) {
 		hdr.far_data_size = LittleLong (pr.far_data->size);
 	}
-	hdr.strings_size  = LittleLong (pr.strofs);
+	hdr.strings_size  = LittleLong (pr.strings->size);
 	hdr.num_relocs    = LittleLong (num_relocs);
 	hdr.num_defs      = LittleLong (num_defs);
 	hdr.num_functions = LittleLong (num_functions);
@@ -254,8 +255,8 @@ write_obj_file (const char *filename)
 		Qwrite (file, pr.far_data->data,
 				pr.far_data->size * sizeof (pr_type_t));
 	}
-	if (pr.strofs)
-		Qwrite (file, pr.strings, pr.strofs);
+	if (pr.strings->size)
+		Qwrite (file, pr.strings->strings, pr.strings->size);
 	if (num_relocs)
 		Qwrite (file, relocs, num_relocs * sizeof (qfo_reloc_t));
 	if (num_defs)
@@ -394,4 +395,93 @@ read_obj_file (const char *filename)
 	}
 
 	return qfo;
+}
+
+defspace_t *
+init_space (int size, pr_type_t *data)
+{
+	defspace_t *space = new_defspace ();
+	space->max_size = space->size = size;
+	if (size && data) {
+		space->data = malloc (size * sizeof (pr_type_t));
+		memcpy (space->data, data, size * sizeof (pr_type_t));
+	}
+	return space;
+}
+
+int
+qfo_to_progs (qfo_t *qfo, pr_info_t *pr)
+{
+	int         i;
+	function_t *pf;
+	qfo_function_t *qf;
+	def_t      *pd;
+	qfo_def_t  *qd;
+	reloc_t    *relocs;
+
+	relocs = calloc (qfo->num_relocs, sizeof (reloc_t));
+	for (i = 0; i < qfo->num_relocs; i++) {
+		if (i + 1 < qfo->num_relocs)
+			relocs[i].next = &relocs[i + 1];
+		relocs[i].ofs = qfo->relocs[i].ofs;
+		relocs[i].type = qfo->relocs[i].type;
+	}
+
+	pr->strings = strpool_build (qfo->strings, qfo->strings_size);
+
+	pr->num_statements = pr->statements_size = qfo->code_size;
+	pr->statements = malloc (pr->statements_size * sizeof (dstatement_t));
+	memcpy (pr->statements, qfo->code,
+			pr->statements_size * sizeof (dstatement_t));
+
+	pr->near_data = init_space (qfo->data_size, qfo->data);
+	pr->far_data = init_space (qfo->far_data_size, qfo->far_data);
+	pr->scope = new_scope (sc_global, pr->near_data, 0);
+	pr->scope->num_defs = qfo->num_defs;
+	pr->scope->head = calloc (pr->scope->num_defs, sizeof (def_t));
+	for (i = 0, pd = pr->scope->head, qd = qfo->defs;
+		 i < pr->scope->num_defs; i++) {
+		*pr->scope->tail = pd;
+		pr->scope->tail = &pd->def_next;
+		pd->type = 0; //XXX
+		pd->name = qfo->strings + qd->name;
+		pd->ofs = qd->ofs;
+		if (qd->num_relocs) {
+			pd->refs = relocs + qd->relocs;
+			pd->refs[qd->num_relocs - 1].next = 0;
+		}
+		pd->initialized = (qd->flags & QFOD_INITIALIZED) != 0;
+		pd->constant    = (qd->flags & QFOD_CONSTANT)    != 0;
+		pd->absolute    = (qd->flags & QFOD_ABSOLUTE)    != 0;
+		pd->global      = (qd->flags & QFOD_GLOBAL)      != 0;
+		pd->external    = (qd->flags & QFOD_EXTERNAL)    != 0;
+		pd->file = qd->file;
+		pd->line = qd->line;
+	}
+
+	pr->num_functions = qfo->num_functions;
+	pr->func_head = calloc (pr->num_functions, sizeof (function_t));
+	pr->func_tail = &pr->func_head;
+	for (i = 0, pf = pr->func_head, qf = qfo->functions;
+		 i < pr->num_functions; i++) {
+		*pr->func_tail = pf;
+		pr->func_tail = &pf->next;
+		pf->aux = 0;//XXX
+		pf->builtin = qf->builtin;
+		pf->code = qf->code;
+		pf->function_num = i + 1;
+		pf->s_file = qf->file;
+		pf->file_line = qf->line;
+		pf->scope = new_scope (sc_params, init_space (qf->locals_size, 0),
+							   pr->scope);
+		if (qf->num_local_defs) {
+			pf->scope->head = pr->scope->head + qf->local_defs;
+			pf->scope->tail = &pf->scope->head[qf->num_local_defs - 1].def_next;
+		}
+		if (qf->num_relocs) {
+			pf->refs = relocs + qf->relocs;
+			pf->refs[qf->num_relocs - 1].next = 0;
+		}
+	}
+	return 0;
 }

@@ -3,7 +3,7 @@
 
 	QC method support code
 
-	Copyright (C) 2001 Bill Currie
+	Copyright (C) 2002 Bill Currie
 
 	Author: Bill Currie <bill@taniwha.org>
 	Date: 2002/5/7
@@ -54,6 +54,7 @@ static const char rcsid[] =
 #include "immediate.h"
 #include "method.h"
 #include "reloc.h"
+#include "strpool.h"
 #include "struct.h"
 #include "type.h"
 
@@ -224,8 +225,8 @@ sel_def_get_hash (void *_sel_def, void *unused)
 	sel_def_t  *sel_def = (sel_def_t*)_sel_def;
 	unsigned long hash;
 
-	hash = Hash_String (pr.strings + sel_def->sel_id)
-		   ^ Hash_String (pr.strings + sel_def->sel_types);
+	hash = Hash_String (G_GETSTR (sel_def->sel_id))
+		   ^ Hash_String (G_GETSTR (sel_def->sel_types));
 	return hash;
 }
 
@@ -236,10 +237,10 @@ sel_def_compare (void *_sd1, void *_sd2, void *unused)
 	sel_def_t  *sd2 = (sel_def_t*)_sd2;
 	int         cmp;
 
-	cmp = strcmp (pr.strings + sd1->sel_id, pr.strings + sd2->sel_id) == 0;
+	cmp = strcmp (G_GETSTR (sd1->sel_id), G_GETSTR (sd2->sel_id)) == 0;
 	if (cmp)
-		cmp = strcmp (pr.strings + sd1->sel_types,
-					  pr.strings + sd2->sel_types) == 0;
+		cmp = strcmp (G_GETSTR (sd1->sel_types),
+					  G_GETSTR (sd2->sel_types)) == 0;
 	return cmp;
 }
 

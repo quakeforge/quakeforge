@@ -37,6 +37,7 @@ static const char rcsid[] =
 #include "qfcc.h"
 #include "expr.h"
 #include "options.h"
+#include "strpool.h"
 #include "type.h"
 
 #define	MAX_SOUNDS		1024

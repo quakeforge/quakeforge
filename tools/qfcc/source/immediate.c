@@ -38,6 +38,7 @@ static const char rcsid[] =
 #include "def.h"
 #include "expr.h"
 #include "immediate.h"
+#include "strpool.h"
 #include "type.h"
 
 static hashtab_t *string_imm_defs;
@@ -49,7 +50,6 @@ static hashtab_t *func_imm_defs;
 static hashtab_t *pointer_imm_defs;
 static hashtab_t *quaternion_imm_defs;
 static hashtab_t *integer_imm_defs;
-static hashtab_t *strings_tab;
 
 static const char *
 string_imm_get_key (void *_def, void *unused)
@@ -95,45 +95,10 @@ int_imm_get_key (void *_def, void *_str)
 	return va ("\001%s:%08X\001", str, G_INT (def->ofs));
 }
 
-static const char *
-strings_get_key (void *_str, void *unsued)
-{
-	return pr.strings + (int) _str;
-}
-
-int
-CopyString (const char *str)
-{
-	int         old;
-	int         len = strlen (str) + 1;
-
-	if (!strings_tab) {
-		strings_tab = Hash_NewTable (16381, strings_get_key, 0, 0);
-	}
-	if (pr.strofs + len >= pr.strings_size) {
-		pr.strings_size += (len + 16383) & ~16383;
-		pr.strings = realloc (pr.strings, pr.strings_size);
-	}
-	old = pr.strofs;
-	strcpy (pr.strings + pr.strofs, str);
-	pr.strofs += len;
-	Hash_Add (strings_tab, (void *)old);
-	return old;
-}
-
 int
 ReuseString (const char *str)
 {
-	int         s;
-
-	if (!str || !*str)
-		return 0;
-	if (!strings_tab)
-		return CopyString (str);
-	s = (long) Hash_Find (strings_tab, str);
-	if (s)
-		return s;
-	return CopyString (str);
+	return strpool_addstr (pr.strings, str);
 }
 
 def_t *

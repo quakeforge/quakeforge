@@ -1,12 +1,12 @@
 /*
-	immediate.h
+	strpool.h
 
-	#DESCRIPTION#
+	unique strings support
 
-	Copyright (C) 2001 #AUTHOR#
+	Copyright (C) 2002 Bill Currie <bill@taniwha.org>
 
-	Author: #AUTHOR#
-	Date: #DATE#
+	Author: Bill Currie <bill@taniwha.org>
+	Date: 2002/7/5
 
 	This program is free software; you can redistribute it and/or
 	modify it under the terms of the GNU General Public License
@@ -29,14 +29,18 @@
 	$Id$
 */
 
-#ifndef __immediate_h
-#define __immediate_h
+#ifndef __strpool_h
+#define __strpool_h
 
-struct expr_s;
-struct def_s *ReuseConstant (struct expr_s *expr, struct def_s *def);
+typedef struct strpool_s {
+	char       *strings;
+	struct hashtab_s *str_tab;
+	int         size, max_size;
+} strpool_t;
 
-int	ReuseString (const char *str);
+strpool_t *strpool_new (void);
+strpool_t *strpool_build (const char *strings, int size);
+void strpool_delete (strpool_t *strpool);
+int strpool_addstr (strpool_t *strpool, const char *str);
 
-void clear_immediates (void);
-
-#endif//__immediate_h
+#endif//__strpool_h

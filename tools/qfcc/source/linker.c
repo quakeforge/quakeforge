@@ -3,7 +3,7 @@
 
 	qc object file linking
 
-	Copyright (C) 2001 Bill Currie <bill@taniwha.org>
+	Copyright (C) 2002 Bill Currie <bill@taniwha.org>
 
 	Author: Bill Currie <bill@taniwha.org>
 	Date: 2002/7/3
@@ -48,6 +48,7 @@ static const char rcsid[] =
 #include "immediate.h"
 #include "obj_file.h"
 #include "qfcc.h"
+#include "strpool.h"
 
 static hashtab_t *extern_defs;
 static hashtab_t *defined_defs;
@@ -57,7 +58,7 @@ defs_get_key (void *_def, void *unused)
 {
 	qfo_def_t  *def = (qfo_def_t *) _def;
 
-	return pr.strings + def->name;
+	return G_GETSTR (def->name);
 }
 
 void
@@ -67,7 +68,7 @@ add_code (qfo_t *qfo)
 
 	pr.num_statements += qfo->code_size;
 	if (pr.num_statements >= pr.statements_size) {
-		pr.statements_size = (pr.num_statements + 16383) & ~16384;
+		pr.statements_size = (pr.num_statements + 16383) & ~16383;
 		pr.statements = realloc (pr.statements,
 								 pr.statements_size * sizeof (dstatement_t));
 	}
@@ -89,10 +90,10 @@ add_defs (qfo_t *qfo)
 			Hash_Add (extern_defs, def);
 		} else {
 			if (def->flags & QFOD_GLOBAL) {
-				if ((d = Hash_Find (defined_defs, pr.strings + def->name))) {
+				if ((d = Hash_Find (defined_defs, G_GETSTR (def->name)))) {
 					pr.source_file = def->file;
 					pr.source_line = def->line;
-					error (0, "%s redefined", pr.strings + def->name);
+					error (0, "%s redefined", G_GETSTR (def->name));
 				}
 			}
 			if (def->basic_type == ev_string && def->ofs
@@ -104,14 +105,14 @@ add_defs (qfo_t *qfo)
 			if (def->ofs)
 				def->ofs += pr.near_data->size;
 			if (def->flags & QFOD_GLOBAL) {
-				while ((d = Hash_Find (extern_defs, pr.strings + def->name))) {
-					Hash_Del (extern_defs, pr.strings + d->name);
+				while ((d = Hash_Find (extern_defs, G_GETSTR (def->name)))) {
+					Hash_Del (extern_defs, G_GETSTR (d->name));
 					if (d->full_type != def->full_type) {
 						pr.source_file = def->file;
 						pr.source_line = def->line;
 						error (0, "type mismatch %s %s",
-							   pr.strings + def->full_type,
-							   pr.strings + d->full_type);
+							   G_GETSTR (def->full_type),
+							   G_GETSTR (d->full_type));
 					}
 				}
 				Hash_Add (defined_defs, def);
@@ -146,7 +147,7 @@ linker_begin (void)
 	pr.statements_size = 16384;
 	pr.statements = calloc (pr.statements_size, sizeof (dstatement_t));
 	pr.statement_linenums = calloc (pr.statements_size, sizeof (int));
-	CopyString ("");
+	pr.strings = strpool_new ();
 	pr.num_functions = 1;
 	pr.near_data = new_defspace ();
 	pr.near_data->data = calloc (65536, sizeof (pr_type_t));
@@ -177,6 +178,6 @@ linker_finish (void)
 	for (def = undef_defs; *def; def++) {
 		pr.source_file = (*def)->file;
 		pr.source_line = (*def)->line;
-		error (0, "undefined symbol %s", pr.strings + (*def)->name);
+		error (0, "undefined symbol %s", G_GETSTR ((*def)->name));
 	}
 }

@@ -3,7 +3,7 @@
 
 	QC function support code
 
-	Copyright (C) 2001 Bill Currie
+	Copyright (C) 2002 Bill Currie
 
 	Author: Bill Currie <bill@taniwha.org>
 	Date: 2002/5/7
@@ -55,6 +55,7 @@ static const char rcsid[] =
 #include "method.h"
 #include "options.h"
 #include "reloc.h"
+#include "strpool.h"
 #include "struct.h"
 #include "type.h"
 
@@ -330,7 +331,7 @@ class_message_response (class_t *class, expr_t *sel)
 		return 0;
 	}
 	selector = &G_STRUCT (pr_sel_t, sel->e.pointer.val);
-	sel_name = pr.strings + selector->sel_id;
+	sel_name = G_GETSTR (selector->sel_id);
 	while (c) {
 		if (c->methods) {
 			for (m = c->methods->head; m; m = m->next) {

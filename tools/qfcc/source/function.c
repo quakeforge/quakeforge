@@ -3,7 +3,7 @@
 
 	QC function support code
 
-	Copyright (C) 2001 Bill Currie
+	Copyright (C) 2002 Bill Currie
 
 	Author: Bill Currie <bill@taniwha.org>
 	Date: 2002/5/7

@@ -3,7 +3,7 @@
 
 	object file support
 
-	Copyright (C) 2001 Bill Currie <bill@taniwha.org>
+	Copyright (C) 2002 Bill Currie <bill@taniwha.org>
 
 	Author: Bill Currie <bill@taniwha.org>
 	Date: 2002/6/16
@@ -123,7 +123,7 @@ typedef struct qfo_s {
 #define	QFO_FLOAT(q, o)		QFO_var (q, float, o)
 #define	QFO_INT(q, o)		QFO_var (q, integer, o)
 #define	QFO_VECTOR(q, o)	QFO_var (q, vector, o)
-#define	QFO_STRING(q, o)	(pr.strings + QFO_var (q, string, o))
+#define	QFO_STRING(q, o)	G_GETSTR (QFO_var (q, string, o))
 #define	QFO_FUNCTION(q, o)	QFO_var (q, func, o)
 #define QFO_POINTER(q, t,o)	((t *)((q)->data + o))
 #define QFO_STRUCT(q, t,o)	(*QFO_POINTER (q, t, o))
