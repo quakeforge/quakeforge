@@ -107,6 +107,7 @@ add_statement_ref (def_t *def, dstatement_t *st, int field)
 
 		if (def->alias) {
 			def = def->alias;
+			def->users--;
 			def->used = 1;
 			reloc_op_def_ofs (def, st_ofs, field);
 		} else
@@ -546,6 +547,20 @@ emit_sub_expr (expr_t *e, def_t *dest)
 						|| (def_a->type->type == ev_func
 							&& e->e.expr.type->type == ev_func)) {
 						return def_a;
+					}
+					if ((def_a->type->type == ev_pointer
+						 && (e->e.expr.type->type == ev_integer
+							 || e->e.expr.type->type == ev_uinteger))
+						|| ((def_a->type->type == ev_integer
+							 || def_a->type->type == ev_uinteger)
+							&& e->e.expr.type->type == ev_pointer)) {
+						def_t      *tmp;
+						tmp = new_def (e->e.expr.type, 0, def_a->scope);
+						tmp->ofs = 0;
+						tmp->alias = def_a;
+						tmp->users = def_a->users;
+						tmp->freed = 1;
+						return tmp;
 					}
 					def_b = &def_void;
 					if (!dest) {

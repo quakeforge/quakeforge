@@ -2365,11 +2365,13 @@ cast_expr (type_t *type, expr_t *e)
 	if (type == e_type)
 		return e;
 
-	if (!(type->type == ev_pointer && e_type->type == ev_pointer)
+	if (!(type->type == ev_pointer
+		  && (e_type->type == ev_pointer
+			  || e_type == &type_integer || e_type == &type_uinteger))
 		&& !(type->type == ev_func && e_type->type == ev_func)
 		&& !(((type == &type_integer || type == &type_uinteger)
 			  && (e_type == &type_float || e_type == &type_integer
-				  || e_type == &type_uinteger))
+				  || e_type == &type_uinteger || e_type->type == ev_pointer))
 			 || (type == &type_float
 				 && (e_type == &type_integer || e_type == &type_uinteger)))) {
 		c = error (e, "can not cast from %s to %s",
