@@ -155,6 +155,18 @@ dump_relocs (qfo_t *qfo)
 	}
 }
 
+void
+dump_lines (qfo_t *qfo)
+{
+	pr_lineno_t *line;
+	int         i;
+
+	for (i = 0; i < qfo->num_lines; i++) {
+		line = qfo->lines + i;
+		printf ("%5d %5d %d\n", i, line->fa.addr, line->line);
+	}
+}
+
 int
 main (int argc, char **argv)
 {
@@ -174,6 +186,7 @@ main (int argc, char **argv)
 		dump_defs (qfo);
 		dump_funcs (qfo);
 		dump_relocs (qfo);
+		dump_lines (qfo);
 	}
 	return 0;
 }

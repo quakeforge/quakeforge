@@ -67,6 +67,18 @@ typedef struct pr_info_s {
 	int             error_count;
 
 	struct reloc_s *relocs;
+
+	struct pr_auxfunction_s *auxfunctions;
+	int             auxfunctions_size;
+	int             num_auxfunctions;
+
+	struct pr_lineno_s *linenos;
+	int             linenos_size;
+	int             num_linenos;
+
+	ddef_t         *locals;
+	int             locals_size;
+	int             num_locals;
 } pr_info_t;
 
 extern	pr_info_t	pr;

@@ -34,15 +34,6 @@
 
 #include "QF/pr_debug.h"
 
-extern	int         num_auxfunctions;
-extern	pr_auxfunction_t *auxfunctions;
-
-extern	int         num_linenos;
-extern	pr_lineno_t *linenos;
-
-extern	int         num_locals;
-extern	struct ddef_s *locals;
-
 pr_auxfunction_t *new_auxfunction (void);
 pr_lineno_t *new_lineno (void);
 struct ddef_s *new_local (void);

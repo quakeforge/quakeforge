@@ -52,6 +52,7 @@ static const char rcsid[] =
 #include "function.h"
 #include "immediate.h"
 #include "opcodes.h"
+#include "options.h"
 #include "reloc.h"
 #include "type.h"
 
@@ -181,6 +182,8 @@ new_function (const char *name)
 	f->function_num = pr.num_functions++;
 	f->s_name = ReuseString (name);
 	f->s_file = pr.source_file;
+	if (options.code.debug)
+		f->aux = new_auxfunction ();
 	return f;
 }
 
@@ -224,14 +227,16 @@ finish_function (function_t *f)
 	if (f->aux) {
 		def_t *def;
 		f->aux->function = f->function_num;
-		for (def = f->scope->head; def; def = def->def_next) {
-			if (def->name) {
-				ddef_t *d = new_local ();
-				d->type = def->type->type;
-				d->ofs = def->ofs;
-				d->s_name = ReuseString (def->name);
+		if (f->scope) {
+			for (def = f->scope->head; def; def = def->def_next) {
+				if (def->name) {
+					ddef_t *d = new_local ();
+					d->type = def->type->type;
+					d->ofs = def->ofs;
+					d->s_name = ReuseString (def->name);
 
-				f->aux->num_locals++;
+					f->aux->num_locals++;
+				}
 			}
 		}
 	}

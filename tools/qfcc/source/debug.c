@@ -44,50 +44,41 @@ static const char rcsid[] =
 #include "QF/pr_comp.h"
 
 #include "debug.h"
-
-static int  auxfunctions_size;
-int         num_auxfunctions;
-pr_auxfunction_t *auxfunctions;
-
-static int  linenos_size;
-int         num_linenos;
-pr_lineno_t *linenos;
-
-static int  locals_size;
-int         num_locals;
-ddef_t     *locals;
+#include "qfcc.h"
 
 pr_auxfunction_t *
 new_auxfunction (void)
 {
-	if (num_auxfunctions == auxfunctions_size) {
-		auxfunctions_size += 1024;
-		auxfunctions = realloc (auxfunctions,
-								auxfunctions_size * sizeof (pr_auxfunction_t));
+	if (pr.num_auxfunctions == pr.auxfunctions_size) {
+		pr.auxfunctions_size += 1024;
+		pr.auxfunctions = realloc (pr.auxfunctions,
+								   pr.auxfunctions_size 
+								   * sizeof (pr_auxfunction_t));
 	}
-	memset (&auxfunctions[num_auxfunctions], 0,
-			sizeof (linenos[num_auxfunctions]));
-	return &auxfunctions[num_auxfunctions++];
+	memset (&pr.auxfunctions[pr.num_auxfunctions], 0,
+			sizeof (pr_auxfunction_t));
+	return &pr.auxfunctions[pr.num_auxfunctions++];
 }
 
 pr_lineno_t *
 new_lineno (void)
 {
-	if (num_linenos == linenos_size) {
-		linenos_size += 1024;
-		linenos = realloc (linenos, linenos_size * sizeof (pr_lineno_t));
+	if (pr.num_linenos == pr.linenos_size) {
+		pr.linenos_size += 1024;
+		pr.linenos = realloc (pr.linenos,
+							  pr.linenos_size * sizeof (pr_lineno_t));
 	}
-	memset (&linenos[num_linenos], 0, sizeof (linenos[num_linenos]));
-	return &linenos[num_linenos++];
+	memset (&pr.linenos[pr.num_linenos], 0, sizeof (pr_lineno_t));
+	return &pr.linenos[pr.num_linenos++];
 }
 
 ddef_t *
 new_local (void)
 {
-	if (num_locals == locals_size) {
-		locals_size += 1024;
-		locals = realloc (locals, locals_size * sizeof (ddef_t));
+	if (pr.num_locals == pr.locals_size) {
+		pr.locals_size += 1024;
+		pr.locals = realloc (pr.locals, pr.locals_size * sizeof (ddef_t));
 	}
-	memset (&locals[num_locals], 0, sizeof (locals[num_locals]));
-	return &locals[num_locals++];
+	memset (&pr.locals[pr.num_locals], 0, sizeof (ddef_t));
+	return &pr.locals[pr.num_locals++];
 }

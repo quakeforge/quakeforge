@@ -490,12 +490,11 @@ begin_function
 			$$->code = pr.code->size;
 			if (options.code.debug) {
 				pr_lineno_t *lineno = new_lineno ();
-				$$->aux = new_auxfunction ();
 				$$->aux->source_line = pr.source_line;
-				$$->aux->line_info = lineno - linenos;
-				$$->aux->local_defs = num_locals;
+				$$->aux->line_info = lineno - pr.linenos;
+				$$->aux->local_defs = pr.num_locals;
 
-				lineno->fa.func = $$->aux - auxfunctions;
+				lineno->fa.func = $$->aux - pr.auxfunctions;
 			}
 			build_scope ($$, current_def, current_params);
 			current_scope = $$->scope;

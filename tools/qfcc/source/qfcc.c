@@ -296,32 +296,33 @@ WriteData (int crc)
 	SafeWrite (h, &debug, sizeof (debug));
 
 	debug.auxfunctions = LittleLong (ftell (h));
-	debug.num_auxfunctions = LittleLong (num_auxfunctions);
-	for (i = 0; i < num_auxfunctions; i++) {
-		auxfunctions[i].function = LittleLong (auxfunctions[i].function);
-		auxfunctions[i].source_line = LittleLong (auxfunctions[i].source_line);
-		auxfunctions[i].line_info = LittleLong (auxfunctions[i].line_info);
-		auxfunctions[i].local_defs = LittleLong (auxfunctions[i].local_defs);
-		auxfunctions[i].num_locals = LittleLong (auxfunctions[i].num_locals);
+	debug.num_auxfunctions = LittleLong (pr.num_auxfunctions);
+	for (i = 0; i < pr.num_auxfunctions; i++) {
+		pr.auxfunctions[i].function = LittleLong (pr.auxfunctions[i].function);
+		pr.auxfunctions[i].source_line = LittleLong (pr.auxfunctions[i].source_line);
+		pr.auxfunctions[i].line_info = LittleLong (pr.auxfunctions[i].line_info);
+		pr.auxfunctions[i].local_defs = LittleLong (pr.auxfunctions[i].local_defs);
+		pr.auxfunctions[i].num_locals = LittleLong (pr.auxfunctions[i].num_locals);
 	}
-	SafeWrite (h, auxfunctions, num_auxfunctions * sizeof (auxfunctions[0]));
+	SafeWrite (h, pr.auxfunctions,
+			   pr.num_auxfunctions * sizeof (pr_auxfunction_t));
 
 	debug.linenos = LittleLong (ftell (h));
-	debug.num_linenos = LittleLong (num_linenos);
-	for (i = 0; i < num_linenos; i++) {
-		linenos[i].fa.addr = LittleLong (linenos[i].fa.addr);
-		linenos[i].line = LittleLong (linenos[i].line);
+	debug.num_linenos = LittleLong (pr.num_linenos);
+	for (i = 0; i < pr.num_linenos; i++) {
+		pr.linenos[i].fa.addr = LittleLong (pr.linenos[i].fa.addr);
+		pr.linenos[i].line = LittleLong (pr.linenos[i].line);
 	}
-	SafeWrite (h, linenos, num_linenos * sizeof (linenos[0]));
+	SafeWrite (h, pr.linenos, pr.num_linenos * sizeof (pr_lineno_t));
 
 	debug.locals = LittleLong (ftell (h));
-	debug.num_locals = LittleLong (num_locals);
-	for (i = 0; i < num_locals; i++) {
-		locals[i].type = LittleShort (locals[i].type);
-		locals[i].ofs = LittleShort (locals[i].ofs);
-		locals[i].s_name = LittleLong (locals[i].s_name);
+	debug.num_locals = LittleLong (pr.num_locals);
+	for (i = 0; i < pr.num_locals; i++) {
+		pr.locals[i].type = LittleShort (pr.locals[i].type);
+		pr.locals[i].ofs = LittleShort (pr.locals[i].ofs);
+		pr.locals[i].s_name = LittleLong (pr.locals[i].s_name);
 	}
-	SafeWrite (h, locals, num_locals * sizeof (locals[0]));
+	SafeWrite (h, pr.locals, pr.num_locals * sizeof (ddef_t));
 
 	fseek (h, 0, SEEK_SET);
 	SafeWrite (h, &debug, sizeof (debug));
