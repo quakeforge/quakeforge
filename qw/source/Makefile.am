@@ -45,7 +45,7 @@ else
 asm=
 endif
 
-asm_src= sys_x86.S worlda.S
+asm_src= worlda.S
 
 libasm_la_SOURCES= $(asm_src)
 

@@ -115,18 +115,6 @@ shutdown (void)
 #endif
 }
 
-#ifndef USE_INTEL_ASM
-void
-Sys_HighFPPrecision (void)
-{
-}
-
-void
-Sys_LowFPPrecision (void)
-{
-}
-#endif
-
 #ifndef SDL_main
 # define SDL_main main
 #endif

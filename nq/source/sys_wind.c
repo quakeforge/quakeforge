@@ -47,31 +47,6 @@ static const char rcsid[] =
 
 qboolean	isDedicated = true;
 
-#if 0
-// FILE IO ====================================================================
-
-#define	MAX_HANDLES		10
-VFile      *sys_handles[MAX_HANDLES];
-
-
-// SYSTEM IO ==================================================================
-
-void
-IN_SendKeyEvents (void)
-{
-}
-
-void
-Sys_HighFPPrecision (void)
-{
-}
-
-void
-Sys_LowFPPrecision (void)
-{
-}
-#endif
-
 const char       *
 Sys_ConsoleInput (void)
 {

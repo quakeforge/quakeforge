@@ -97,28 +97,12 @@ findhandle (void)
 
 // SYSTEM IO ==================================================================
 
+
 #ifndef USE_INTEL_ASM
-
-void
-Sys_SetFPCW (void)
-{
-}
-
-void
-Sys_PushFPCW_SetHigh (void)
-{
-}
-
-void
-Sys_PopFPCW (void)
-{
-}
-
 void
 MaskExceptions (void)
 {
 }
-
 #endif
 
 void

@@ -117,18 +117,6 @@ Sys_ConsoleInput (void)
 	return NULL;
 }
 
-#ifndef USE_INTEL_ASM
-void
-Sys_HighFPPrecision (void)
-{
-}
-
-void
-Sys_LowFPPrecision (void)
-{
-}
-#endif
-
 int
 main (int c, const char *v[])
 {

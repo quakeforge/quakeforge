@@ -10,7 +10,7 @@ else
 noinst_LTLIBRARIES=
 endif
 
-asm_src= math.S
+asm_src= math.S sys_ia32.S
 
 libasm_la_SOURCES=	$(asm_src)
 

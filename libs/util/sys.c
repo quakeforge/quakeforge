@@ -429,3 +429,30 @@ Sys_DebugLog (const char *file, const char *fmt, ...)
 	write (fd, data, strlen (data));
 	close (fd);
 }
+
+#ifndef USE_INTEL_ASM
+void
+Sys_HighFPPrecision (void)
+{
+}
+
+void
+Sys_LowFPPrecision (void)
+{   
+}   
+
+void
+Sys_SetFPCW (void)
+{
+}
+
+void
+Sys_PushFPCW_SetHigh (void)
+{
+}
+
+void
+Sys_PopFPCW (void)
+{
+}
+#endif

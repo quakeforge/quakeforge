@@ -1,7 +1,7 @@
 /*
-	sys_x86.S
+	sys_ia32.S
 
-	x86 assembly-language dependent routines.
+	Intel 32-bit assembly language dependent routines.
 
 	Copyright (C) 1996-1997  Id Software, Inc.
 
@@ -33,19 +33,41 @@
 
 
 #ifdef USE_INTEL_ASM
+
+#ifdef WIN32
+# undef PIC		//no such thing in win32
+#endif
+
 	.data
 
 	.align	4
 fpenv:
 	.long	0, 0, 0, 0, 0, 0, 0, 0
 
+#ifdef PIC
+#define got_base(n)										\
+	call	.Lpic##n									;\
+.Lpic##n:												;\
+	popl	%edx										;\
+	addl	$C(_GLOBAL_OFFSET_TABLE_)+[.-.Lpic##n],%edx
+
+#define got_var(v) v@GOT(%edx)
+#else
+#define got_base(n)
+#define got_var(v) v
+#endif
+
 	.text
 
 .globl C(MaskExceptions)
+#ifdef PIC
+	.type	C(MaskExceptions),@function
+#endif
 C(MaskExceptions):
-	fnstenv	fpenv
+	got_base(1)
+	fnstenv	got_var(fpenv)
 	orl		$0x3F,fpenv
-	fldenv	fpenv
+	fldenv	got_var(fpenv)
 
 	ret
 
@@ -73,44 +95,44 @@ pushed_cw:	.long	0
 
 .globl C(Sys_LowFPPrecision)
 C(Sys_LowFPPrecision):
-	fldcw	single_cw
+	fldcw	got_var(single_cw)
 
 	ret
 
 .globl C(Sys_HighFPPrecision)
 C(Sys_HighFPPrecision):
-	fldcw	full_cw
+	fldcw	got_var(full_cw)
 
 	ret
 
 .globl C(Sys_PushFPCW_SetHigh)
 C(Sys_PushFPCW_SetHigh):
-	fnstcw	pushed_cw
-	fldcw	full_cw
+	fnstcw	got_var(pushed_cw)
+	fldcw	got_var(full_cw)
 
 	ret
 
 .globl C(Sys_PopFPCW)
 C(Sys_PopFPCW):
-	fldcw	pushed_cw
+	fldcw	got_var(pushed_cw)
 
 	ret
 
 .globl C(Sys_SetFPCW)
 C(Sys_SetFPCW):
-	fnstcw	cw
-	movl	cw,%eax
+	fnstcw	got_var(cw)
+	movl	got_var(cw),%eax
 	andb	$0xF0,%ah
 	orb		$0x03,%ah	// round mode, 64-bit precision
-	movl	%eax,full_cw
+	movl	%eax,got_var(full_cw)
 
 	andb	$0xF0,%ah
 	orb		$0x0C,%ah	// chop mode, single precision
-	movl	%eax,single_cw
+	movl	%eax,got_var(single_cw)
 
 	andb	$0xF0,%ah
 	orb		$0x08,%ah	// ceil mode, single precision
-	movl	%eax,ceil_cw
+	movl	%eax,got_var(ceil_cw)
 
 	ret
 #endif /* USE_INTEL_ASM */

@@ -79,35 +79,10 @@ shutdown (void)
 }
 
 void
-Sys_Warn (char *warning, ...)
-{
-	va_list     argptr;
-	char        string[1024];
-
-	va_start (argptr, warning);
-	vsnprintf (string, sizeof (string), warning, argptr);
-	va_end (argptr);
-	fprintf (stderr, "Warning: %s", string);
-}
-
-void
 floating_point_exception_handler (int whatever)
 {
-//	Sys_Warn("floating point exception\n");
 	signal (SIGFPE, floating_point_exception_handler);
 }
-
-#ifndef USE_INTEL_ASM
-void
-Sys_HighFPPrecision (void)
-{
-}
-
-void
-Sys_LowFPPrecision (void)
-{
-}
-#endif
 
 int         skipframes;
 
