@@ -267,6 +267,7 @@ gl_lightmode_callback (cvar_t *cvar)
 	R_ForceLightUpdate ();
 }
 
+
 void
 Draw_Init (void)
 {
@@ -314,6 +315,7 @@ Draw_Init (void)
 	glrmain_init ();
 	glrsurf_init ();
 }
+
 
 void
 Draw_Init_Cvars (void)
@@ -506,8 +508,6 @@ Draw_SubPic (int x, int y, qpic_t *pic, int srcx, int srcy, int width,
 }
 
 
-extern int gl_filter_min, gl_filter_max;
-
 /*
 	Draw_TransPicTranslate
 
@@ -603,7 +603,7 @@ Draw_ConsoleBackground (int lines)
 	else
 		ofs = (vid.conheight - lines) / (float) vid.conheight;
 
-	y = vid.height * 0.5; // 0.5 was scr_consize->value
+	y = vid.height * scr_consize->value;
 	if (cls.state != ca_active || lines > y) {
 		alpha = 1.0;
 	} else {
@@ -642,7 +642,7 @@ Draw_ConsoleBackground (int lines)
 		glMatrixMode (GL_MODELVIEW);
 		glPopMatrix ();
 	}
-	// draw version string if not downloading
+
 	Draw_AltString8 (vid.conwidth - strlen (cl_verstring->string) * 8 - 11,
 			 lines - 14, cl_verstring->string);
 	glColor3ubv (lighthalf_v);
@@ -705,11 +705,10 @@ Draw_Fill (int x, int y, int w, int h, int c)
 	glEnable (GL_TEXTURE_2D);
 }
 
+
 //=============================================================================
 
-/*
-	Draw_FadeScreen
-*/
+
 void
 Draw_FadeScreen (void)
 {
@@ -729,7 +728,9 @@ Draw_FadeScreen (void)
 	Sbar_Changed ();
 }
 
+
 //=============================================================================
+
 
 /*
 	Draw_BeginDisc

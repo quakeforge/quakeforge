@@ -603,10 +603,8 @@ Draw_ConsoleBackground (int lines)
 		}
 	}
 
-	if (!cls.download)
-		Draw_AltString8 (vid.conwidth - strlen (cl_verstring->string)
-						 * 8 - 11, lines - 14, cl_verstring->string);
-
+	Draw_AltString8 (vid.conwidth - strlen (cl_verstring->string)
+			 * 8 - 11, lines - 14, cl_verstring->string);
 }
 
 

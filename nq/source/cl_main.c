@@ -176,12 +176,10 @@ CL_ClearState (void)
 
 
 /*
-=====================
-CL_Disconnect
+	CL_Disconnect
 
-Sends a disconnect message to the server
-This is also called on Host_Error, so it shouldn't cause any errors
-=====================
+	Sends a disconnect message to the server
+	This is also called on Host_Error, so it shouldn't cause any errors
 */
 void
 CL_Disconnect (void)
@@ -215,6 +213,7 @@ CL_Disconnect (void)
 	cls.signon = 0;
 }
 
+
 void
 CL_Disconnect_f (void)
 {
@@ -225,11 +224,9 @@ CL_Disconnect_f (void)
 
 
 /*
-=====================
-CL_EstablishConnection
+	CL_EstablishConnection
 
-Host should be either "local" or a net address to be passed on
-=====================
+	Host should be either "local" or a net address to be passed on
 */
 void
 CL_EstablishConnection (char *host)
@@ -255,11 +252,9 @@ CL_EstablishConnection (char *host)
 
 
 /*
-=====================
-CL_SignonReply
+	CL_SignonReply
 
-An svc_signonnum has been received, perform a client side setup
-=====================
+	An svc_signonnum has been received, perform a client side setup
 */
 void
 CL_SignonReply (void)
@@ -295,18 +290,16 @@ CL_SignonReply (void)
 		break;
 
 		case 4:
-		SCR_EndLoadingPlaque ();		// allow normal screen updates
+//		SCR_EndLoadingPlaque ();		// allow normal screen updates
 		break;
 	}
 }
 
 
 /*
-=====================
-CL_NextDemo
+	CL_NextDemo
 
-Called to play the next demo in the demo loop
-=====================
+	Called to play the next demo in the demo loop
 */
 void
 CL_NextDemo (void)
@@ -315,8 +308,6 @@ CL_NextDemo (void)
 
 	if (cls.demonum == -1)
 		return;							// don't play demos
-
-	SCR_BeginLoadingPlaque ();
 
 	if (!cls.demos[cls.demonum][0] || cls.demonum == MAX_DEMOS) {
 		cls.demonum = 0;

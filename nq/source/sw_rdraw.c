@@ -1,7 +1,7 @@
 /*
 	r_draw.c
 
-	@description@
+	(description)
 
 	Copyright (C) 1996-1997  Id Software, Inc.
 
@@ -78,12 +78,10 @@ int         r_ceilv1;
 qboolean    r_lastvertvalid;
 
 
-#ifndef	USE_INTEL_ASM
+#ifndef USE_INTEL_ASM
 
 /*
-================
-R_EmitEdge
-================
+	R_EmitEdge
 */
 void
 R_EmitEdge (mvertex_t *pv0, mvertex_t *pv1)
@@ -250,9 +248,7 @@ R_EmitEdge (mvertex_t *pv0, mvertex_t *pv1)
 
 
 /*
-================
-R_ClipEdge
-================
+	R_ClipEdge
 */
 void
 R_ClipEdge (mvertex_t *pv0, mvertex_t *pv1, clipplane_t *clip)
@@ -335,13 +331,11 @@ R_ClipEdge (mvertex_t *pv0, mvertex_t *pv1, clipplane_t *clip)
 	R_EmitEdge (pv0, pv1);
 }
 
-#endif // USE_INTEL_ASM
+#endif // !USE_INTEL_ASM
 
 
 /*
-================
-R_EmitCachedEdge
-================
+	R_EmitCachedEdge
 */
 void
 R_EmitCachedEdge (void)
@@ -363,15 +357,13 @@ R_EmitCachedEdge (void)
 
 
 /*
-================
-R_RenderFace
-================
+	R_RenderFace
 */
 void
 R_RenderFace (msurface_t *fa, int clipflags)
 {
 	int         i, lindex;
-	unsigned    mask;
+	unsigned int mask;
 	mplane_t   *pplane;
 	float       distinv;
 	vec3_t      p_normal;
@@ -534,15 +526,13 @@ R_RenderFace (msurface_t *fa, int clipflags)
 
 
 /*
-================
-R_RenderBmodelFace
-================
+	R_RenderBmodelFace
 */
 void
 R_RenderBmodelFace (bedge_t *pedges, msurface_t *psurf)
 {
 	int         i;
-	unsigned    mask;
+	unsigned int mask;
 	mplane_t   *pplane;
 	float       distinv;
 	vec3_t      p_normal;
@@ -639,16 +629,14 @@ R_RenderBmodelFace (bedge_t *pedges, msurface_t *psurf)
 
 
 /*
-================
-R_RenderPoly
-================
+	R_RenderPoly
 */
 void
 R_RenderPoly (msurface_t *fa, int clipflags)
 {
 	int         i, lindex, lnumverts, s_axis, t_axis;
 	float       dist, lastdist, lzi, scale, u, v, frac;
-	unsigned    mask;
+	unsigned int mask;
 	vec3_t      local, transformed;
 	clipplane_t *pclip;
 	medge_t    *pedges;
@@ -746,19 +734,19 @@ R_RenderPoly (msurface_t *fa, int clipflags)
 	switch (pplane->type) {
 		case PLANE_X:
 		case PLANE_ANYX:
-		s_axis = 1;
-		t_axis = 2;
-		break;
+			s_axis = 1;
+			t_axis = 2;
+			break;
 		case PLANE_Y:
 		case PLANE_ANYY:
-		s_axis = 0;
-		t_axis = 2;
-		break;
+			s_axis = 0;
+			t_axis = 2;
+			break;
 		case PLANE_Z:
 		case PLANE_ANYZ:
-		s_axis = 0;
-		t_axis = 1;
-		break;
+			s_axis = 0;
+			t_axis = 1;
+			break;
 	}
 
 	r_nearzi = 0;
@@ -811,9 +799,7 @@ R_RenderPoly (msurface_t *fa, int clipflags)
 
 
 /*
-================
-R_ZDrawSubmodelPolys
-================
+	R_ZDrawSubmodelPolys
 */
 void
 R_ZDrawSubmodelPolys (model_t *pmodel)

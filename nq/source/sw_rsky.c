@@ -1,7 +1,7 @@
 /*
 	r_sky.c
 
-	@description@
+	(description)
 
 	Copyright (C) 1996-1997  Id Software, Inc.
 
@@ -32,7 +32,6 @@
 
 #include "client.h"
 #include "r_local.h"
-#include "d_local.h"
 
 
 int         iskyspeed = 8;
@@ -60,11 +59,9 @@ byte        newsky[128 * 256];			// newsky and topsky both pack in
 
 
 /*
-=============
-R_InitSky
+	R_InitSky
 
-A sky texture is 256*128, with the right side being a masked overlay
-==============
+	A sky texture is 256*128, with the right side being a masked overlay
 */
 void
 R_InitSky (texture_t *mt)
@@ -97,9 +94,7 @@ R_InitSky (texture_t *mt)
 
 
 /*
-=================
-R_MakeSky
-=================
+	R_MakeSky
 */
 void
 R_MakeSky (void)
@@ -107,7 +102,7 @@ R_MakeSky (void)
 	int         x, y;
 	int         ofs, baseofs;
 	int         xshift, yshift;
-	unsigned   *pnewsky;
+	unsigned int *pnewsky;
 	static int  xlast = -1, ylast = -1;
 
 	xshift = skytime * skyspeed;
@@ -119,7 +114,7 @@ R_MakeSky (void)
 	xlast = xshift;
 	ylast = yshift;
 
-	pnewsky = (unsigned *) &newsky[0];
+	pnewsky = (unsigned int *) &newsky[0];
 
 	for (y = 0; y < SKYSIZE; y++) {
 		baseofs = ((y + yshift) & SKYMASK) * 131;
@@ -132,9 +127,9 @@ R_MakeSky (void)
 
 			// PORT: unaligned dword access to bottommask and bottomsky
 
-			*pnewsky = (*(pnewsky + (128 / sizeof (unsigned))) &
-						*(unsigned *) &bottommask[ofs]) |
-				*(unsigned *) &bottomsky[ofs];
+			*pnewsky = (*(pnewsky + (128 / sizeof (unsigned int))) &
+						*(unsigned int *) &bottommask[ofs]) |
+				*(unsigned int *) &bottomsky[ofs];
 
 			pnewsky++;
 		}
@@ -147,12 +142,12 @@ R_MakeSky (void)
 			*(byte *) pnewsky = (*((byte *) pnewsky + 128) &
 								 *(byte *) & bottommask[ofs]) |
 				*(byte *) & bottomsky[ofs];
-			pnewsky = (unsigned *) ((byte *) pnewsky + 1);
+			pnewsky = (unsigned int *) ((byte *) pnewsky + 1);
 		}
 
 #endif
 
-		pnewsky += 128 / sizeof (unsigned);
+		pnewsky += 128 / sizeof (unsigned int);
 	}
 
 	r_skymade = 1;
@@ -160,9 +155,7 @@ R_MakeSky (void)
 
 
 /*
-=================
-R_GenSkyTile
-=================
+	R_GenSkyTile
 */
 void
 R_GenSkyTile (void *pdest)
@@ -170,14 +163,14 @@ R_GenSkyTile (void *pdest)
 	int         x, y;
 	int         ofs, baseofs;
 	int         xshift, yshift;
-	unsigned   *pnewsky;
-	unsigned   *pd;
+	unsigned int *pnewsky;
+	unsigned int *pd;
 
 	xshift = skytime * skyspeed;
 	yshift = skytime * skyspeed;
 
-	pnewsky = (unsigned *) &newsky[0];
-	pd = (unsigned *) pdest;
+	pnewsky = (unsigned int *) &newsky[0];
+	pd = (unsigned int *) pdest;
 
 	for (y = 0; y < SKYSIZE; y++) {
 		baseofs = ((y + yshift) & SKYMASK) * 131;
@@ -190,10 +183,10 @@ R_GenSkyTile (void *pdest)
 
 			// PORT: unaligned dword access to bottommask and bottomsky
 
-			*pd = (*(pnewsky + (128 / sizeof (unsigned))) &
-				   *(unsigned *) &bottommask[ofs]) |
+			*pd = (*(pnewsky + (128 / sizeof (unsigned int))) &
+				   *(unsigned int *) &bottommask[ofs]) |
+				*(unsigned int *) &bottomsky[ofs];
 
-				*(unsigned *) &bottomsky[ofs];
 			pnewsky++;
 			pd++;
 		}
@@ -206,21 +199,19 @@ R_GenSkyTile (void *pdest)
 			*(byte *) pd = (*((byte *) pnewsky + 128) &
 							*(byte *) & bottommask[ofs]) |
 				*(byte *) & bottomsky[ofs];
-			pnewsky = (unsigned *) ((byte *) pnewsky + 1);
-			pd = (unsigned *) ((byte *) pd + 1);
+			pnewsky = (unsigned int *) ((byte *) pnewsky + 1);
+			pd = (unsigned int *) ((byte *) pd + 1);
 		}
 
 #endif
 
-		pnewsky += 128 / sizeof (unsigned);
+		pnewsky += 128 / sizeof (unsigned int);
 	}
 }
 
 
 /*
-=================
-R_GenSkyTile16
-=================
+	R_GenSkyTile16
 */
 void
 R_GenSkyTile16 (void *pdest)
@@ -258,9 +249,7 @@ R_GenSkyTile16 (void *pdest)
 
 
 /*
-=============
-R_SetSkyFrame
-==============
+	R_SetSkyFrame
 */
 void
 R_SetSkyFrame (void)
@@ -280,4 +269,16 @@ R_SetSkyFrame (void)
 
 
 	r_skymade = 0;
+}
+
+
+/*
+   R_LoadSkys
+
+   Stub function for loading a skybox.  Currently we only have support for
+   skyboxes in GL targets, so we just do nothing here.  --KB
+*/
+void
+R_LoadSkys (const char *name)
+{
 }

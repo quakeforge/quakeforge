@@ -279,7 +279,7 @@ Host_Map_f (void)
 	Host_ShutdownServer (false);
 
 	key_dest = key_game;				// remove console or menu
-	SCR_BeginLoadingPlaque ();
+//	SCR_BeginLoadingPlaque ();
 
 	cls.mapstring[0] = 0;
 	for (i = 0; i < Cmd_Argc (); i++) {
@@ -404,7 +404,7 @@ This is sent just before a server changes levels
 void
 Host_Reconnect_f (void)
 {
-	SCR_BeginLoadingPlaque ();
+//	SCR_BeginLoadingPlaque ();
 	cls.signon = 0;						// need new connection messages
 }
 

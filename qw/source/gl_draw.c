@@ -642,10 +642,9 @@ Draw_ConsoleBackground (int lines)
 		glMatrixMode (GL_MODELVIEW);
 		glPopMatrix ();
 	}
-	// draw version string if not downloading
-	if (!cls.download)
-		Draw_AltString8 (vid.conwidth - strlen (cl_verstring->string) * 8 - 11,
-						 lines - 14, cl_verstring->string);
+
+	Draw_AltString8 (vid.conwidth - strlen (cl_verstring->string) * 8 - 11,
+			 lines - 14, cl_verstring->string);
 	glColor3ubv (lighthalf_v);
 }
 

@@ -1,7 +1,7 @@
 /*
 	d_sky.c
 
-	@description@
+	(description)
 
 	Copyright (C) 1996-1997  Id Software, Inc.
 
@@ -39,9 +39,7 @@
 
 
 /*
-=================
-D_Sky_uv_To_st
-=================
+	D_Sky_uv_To_st
 */
 void
 D_Sky_uv_To_st (int u, int v, fixed16_t *s, fixed16_t *t)
@@ -64,16 +62,14 @@ D_Sky_uv_To_st (int u, int v, fixed16_t *s, fixed16_t *t)
 	VectorNormalize (end);
 
 	temp = skytime * skyspeed;			// TODO: add D_SetupFrame & set this
-	// there
+										// there
 	*s = (int) ((temp + 6 * (SKYSIZE / 2 - 1) * end[0]) * 0x10000);
 	*t = (int) ((temp + 6 * (SKYSIZE / 2 - 1) * end[1]) * 0x10000);
 }
 
 
 /*
-=================
-D_DrawSkyScans8
-=================
+	D_DrawSkyScans8
 */
 void
 D_DrawSkyScans8 (espan_t *pspan)

@@ -73,7 +73,8 @@ client_POST_LIBS=	$(top_builddir)/libs/video/targets/libQFjs.la
 client_SOURCES=	cl_cam.c cl_cmd.c cl_demo.c cl_input.c cl_main.c cl_parse.c \
 		cl_tent.c console.c keys.c sbar.c r_part.c r_view.c \
 		nonintel.c gib.c gib_instructions.c gib_vars.c \
-		gib_interpret.c gib_modules.c gib_parse.c gib_stack.c
+		gib_interpret.c gib_modules.c gib_parse.c gib_stack.c \
+		pcx.c tga.c
 
 server_SOURCES= 	host.c host_cmd.c pr_cmds.c sv_cvar.c sv_main.c \
 			sv_move.c sv_phys.c sv_progs.c sv_user.c
@@ -122,7 +123,7 @@ nq_x11_DEPENDENCIES=$(client_LIB_DEPS)
 ogl_SOURCES=	noisetextures.c gl_textures.c gl_draw.c gl_dyn_fires.c	\
 		gl_dyn_part.c gl_dyn_textures.c gl_mesh.c		\
 		gl_refrag.c gl_rlight.c gl_rmain.c gl_rmisc.c gl_rsurf.c \
-		gl_screen.c gl_view.c gl_warp.c
+		gl_screen.c gl_sky.c gl_view.c gl_warp.c
 
 # ... 3Dfx Voodoo 1 and 2 SVGAlib-based console GL
 nq_3dfx_SOURCES=	$(combined_SOURCES) $(ogl_SOURCES)

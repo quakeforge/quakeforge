@@ -54,9 +54,9 @@
 #include "net.h"
 #include "protocol.h"
 #include "sbar.h"
-#include "render.h"
 #include "r_dynamic.h"
 #include "r_local.h"
+#include "render.h"
 
 extern entity_t r_worldentity;
 extern void GDT_Init ();

@@ -157,7 +157,7 @@ Host_Error (char *error, ...)
 		Sys_Error ("Host_Error: recursively entered");
 	inerror = true;
 
-	SCR_EndLoadingPlaque ();			// reenable screen updates
+//	SCR_EndLoadingPlaque ();			// reenable screen updates
 
 	va_start (argptr, error);
 	vsnprintf (string, sizeof (string), error, argptr);
