@@ -66,6 +66,7 @@ type_t *find_type (type_t *new);
 void new_typedef (const char *name, type_t *type);
 type_t *get_typedef (const char *name);
 type_t *pointer_type (type_t *aux);
+type_t *array_type (type_t *aux, int size);
 void print_type (type_t *type);
 void encode_type (struct dstring_s *encodking, type_t *type);
 int type_assignable (type_t *dst, type_t *src);

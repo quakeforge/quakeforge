@@ -20,12 +20,25 @@ string [6] dot = {
 	"gfx/menudot5.lpm",
 };
 
+void (string fmt, ...) test_argv =
+{
+traceon ();
+	local vector v;
+	local integer i;
+	local string f = fmt;
+
+	for (i = 0; i < @argc; i++)
+		v = @argv[i];
+traceoff ();
+};
+
 float () main =
 {
 	local float messed_or;
 	local integer handle;
 	local string buffer;
 
+	test_argv ("hi there", 1, "123", '1', '1 2 3');
 	messed_or = PC_ENGINEER_TF_ITEMS;
 	handle = open ("main.qc", 0);
 	if (handle == -1) {

@@ -209,12 +209,34 @@ PR_EnterFunction (progs_t * pr, dfunction_t *f)
 
 	// copy parameters
 	o = f->parm_start;
-	for (i = 0; i < f->numparms; i++) {
-		for (j = 0; j < f->parm_size[i]; j++) {
+	if (f->numparms >= 0) {
+		for (i = 0; i < f->numparms; i++) {
+			for (j = 0; j < f->parm_size[i]; j++) {
+				memcpy (&pr->pr_globals[o],
+						&pr->pr_globals[OFS_PARM0 + i * 3 + j],
+						sizeof (pr_type_t));
+				o++;
+			}
+		}
+	} else {
+		pr_type_t  *argc = &pr->pr_globals[o++];
+		pr_type_t  *argv = &pr->pr_globals[o++];
+		for (i = 0; i < -f->numparms - 1; i++) {
+			for (j = 0; j < f->parm_size[i]; j++) {
+				memcpy (&pr->pr_globals[o],
+						&pr->pr_globals[OFS_PARM0 + i * 3 + j],
+						sizeof (pr_type_t));
+				o++;
+			}
+		}
+		argc->integer_var = pr->pr_argc - i;
+		argv->integer_var = o;
+		while (i < MAX_PARMS) {
 			memcpy (&pr->pr_globals[o],
-					&pr->pr_globals[OFS_PARM0 + i * 3 + j],
-					sizeof (pr_type_t));
-			o++;
+					&pr->pr_globals[OFS_PARM0 + i * 3],
+					3);
+			o += 3;
+			i++;
 		}
 	}
 

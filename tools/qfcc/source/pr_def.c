@@ -63,6 +63,8 @@ check_for_name (type_t *type, const char *name, def_t *scope, int *allocate)
 	if (!defs_by_name) {
 		defs_by_name = Hash_NewTable (16381, defs_get_key, 0, &defs_by_name);
 	}
+	if (!name)
+		return 0;
 	if (!scope && (find_struct (name) || get_enum (name))) {
 		error (0, "%s redeclared", name);
 		return 0;
@@ -115,7 +117,8 @@ PR_GetDef (type_t *type, const char *name, def_t *scope, int *allocate)
 
 	// allocate a new def
 	def = PR_NewDef (type, name, scope);
-	Hash_Add (defs_by_name, def);
+	if (name)
+		Hash_Add (defs_by_name, def);
 
 	// FIXME: need to sort out location re-use
 	def->ofs = *allocate;
@@ -125,7 +128,7 @@ PR_GetDef (type_t *type, const char *name, def_t *scope, int *allocate)
 		make automatic defs for the vectors elements .origin can be accessed
 		as .origin_x, .origin_y, and .origin_z
 	*/
-	if (type->type == ev_vector) {
+	if (type->type == ev_vector && name) {
 		def_t      *d;
 
 		snprintf (element, sizeof (element), "%s_x", name);

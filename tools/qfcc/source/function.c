@@ -102,13 +102,23 @@ parse_params (type_t *type, param_t *parms)
 void
 build_scope (function_t *f, def_t *func, param_t *params)
 {
-	int        i;
-	def_t     *def;
+	int         i;
+	def_t      *def;
 	param_t    *p;
+	def_t      *argv = 0;
 
 	func->alloc = &func->locals;
 
-	for (p = params, i = 0; p; p = p->next, i++) {
+	if (func->type->num_parms < 0) {
+		def = PR_GetDef (&type_integer, ".argc", func, func->alloc);
+		def->used = 1;
+		PR_DefInitialized (def);
+		argv = PR_GetDef (&type_pointer, ".argv", func, func->alloc);
+		argv->used = 1;
+		PR_DefInitialized (argv);
+	}
+
+	for (p = params, i = 0; p; p = p->next) {
 		if (!p->selector && !p->type && !p->name)
 			continue;					// ellipsis marker
 		if (!p->type)
@@ -120,6 +130,17 @@ build_scope (function_t *f, def_t *func, param_t *params)
 		//printf ("%s%s %d\n", p == params ? "" : "    ", p->name, def->ofs);
 		def->used = 1;				// don't warn for unused params
 		PR_DefInitialized (def);	// params are assumed to be initialized
+		i++;
+	}
+
+	if (argv) {
+		while (i < MAX_PARMS) {
+			def = PR_GetDef (&type_vector, 0, func, func->alloc);
+			def->used = 1;
+			if (argv->type == &type_pointer)
+				argv->type = array_type (&type_vector, MAX_PARMS - i);
+			i++;
+		}
 	}
 }
 

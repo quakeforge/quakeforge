@@ -279,6 +279,8 @@ static keyword_t keywords[] = {
 	{"@public",		PUBLIC,	0,					0, PROG_VERSION},
 	{"@selector",	SELECTOR, 0,				0, PROG_VERSION},
 	{"@self",		SELF,	0,					0, PROG_VERSION},
+	{"@argc",		ARGC,	0,					0, PROG_VERSION},
+	{"@argv",		ARGV,	0,					0, PROG_VERSION},
 };
 
 static const char *
