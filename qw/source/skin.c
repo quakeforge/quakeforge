@@ -41,15 +41,15 @@
 #include "QF/console.h"
 #include "QF/hash.h"
 #include "QF/msg.h"
+#include "QF/pcx.h"
 #include "QF/qendian.h"
+#include "QF/screen.h"
 #include "QF/sys.h"
 #include "QF/va.h"
 
 #include "cl_parse.h"
 #include "client.h"
 #include "host.h"
-#include "pcx.h"
-#include "QF/screen.h"
 #include "skin.h"
 #include "texture.h"
 

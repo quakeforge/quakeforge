@@ -38,13 +38,14 @@
 
 #include <limits.h>
 
-#include "client.h"
 #include "QF/compat.h"
 #include "QF/console.h"
-#include "locs.h"
+#include "QF/locs.h"
 #include "QF/quakefs.h"
 #include "QF/qtypes.h"
 #include "QF/sys.h"
+
+#include "client.h"
 
 #define LOCATION_BLOCK	128				// 128 locations per block.
 

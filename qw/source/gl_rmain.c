@@ -42,6 +42,7 @@
 
 #include "QF/compat.h"
 #include "QF/console.h"
+#include "QF/locs.h"
 #include "QF/mathlib.h"
 #include "QF/qargs.h"
 #include "QF/sound.h"
@@ -54,7 +55,6 @@
 #include "cl_parse.h" //FIXME CL_NewTranslation
 #include "commdef.h"
 #include "glquake.h"
-#include "locs.h"
 #include "r_dynamic.h"
 #include "r_local.h"
 #include "skin.h"

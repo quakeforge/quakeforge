@@ -36,20 +36,19 @@
 # include <strings.h>
 #endif
 
-#include "cl_parse.h"
 #include "QF/console.h"
-#include "host.h"
-#include "pcx.h"
+#include "QF/pcx.h"
 #include "QF/qendian.h"
 #include "QF/qtypes.h"
 #include "QF/quakefs.h"
-#include "texture.h"
 #include "QF/vid.h"
 #include "QF/zone.h"
 
-/*
-	LoadPCX
-*/
+#include "cl_parse.h"
+#include "host.h"
+#include "texture.h"
+
+
 tex_t *
 LoadPCX (QFile *f, int convert)
 {
@@ -149,9 +148,7 @@ LoadPCX (QFile *f, int convert)
 	return tex;
 }
 
-/* 
-	WritePCXfile 
-*/
+
 void
 WritePCXfile (char *filename, byte * data, int width, int height,
 				int rowbytes, byte * palette, qboolean upload, qboolean flip)

@@ -41,7 +41,8 @@
 #include "QF/qendian.h"
 #include "QF/quakefs.h"
 #include "QF/sys.h"
-#include "tga.h"
+#include "QF/tga.h"
+
 
 static int
 fgetLittleShort (QFile *f)
@@ -53,6 +54,7 @@ fgetLittleShort (QFile *f)
 
 	return (short) (b1 + b2 * 256);
 }
+
 
 /*
 static int
@@ -70,10 +72,7 @@ fgetLittleLong (QFile *f)
 */
 
 
-/*
-	LoadTGA
-*/
-byte       *
+byte *
 LoadTGA (QFile *fin)
 {
 	int         columns, rows, numPixels;
@@ -227,6 +226,7 @@ LoadTGA (QFile *fin)
 	Qclose (fin);
 	return targa_rgba;
 }
+
 
 void
 WriteTGAfile (const char *tganame, byte *data, int width, int height)

@@ -38,14 +38,15 @@
 
 #include <errno.h>
 
-#include "bothdefs.h"
 #include "QF/compat.h"
 #include "QF/console.h"
 #include "QF/cmd.h"
-#include "client.h"
-#include "locs.h"
+#include "QF/locs.h"
 #include "QF/model.h"
 #include "QF/sys.h"
+
+#include "bothdefs.h"
+#include "client.h"
 #include "teamplay.h"
 
 extern cvar_t *skin;

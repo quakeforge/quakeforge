@@ -42,17 +42,17 @@
 #include "QF/compat.h"
 #include "QF/console.h"
 #include "QF/keys.h"
+#include "QF/pcx.h"
 #include "QF/sys.h"
+#include "QF/tga.h"
 
 #include "cl_parse.h"
 #include "draw.h"
 #include "glquake.h"
 #include "host.h"
-#include "pcx.h"
 #include "r_local.h"
 #include "sbar.h"
 #include "skin.h"
-#include "tga.h"
 #include "view.h"
 
 /*
@@ -164,6 +164,7 @@ int         scr_center_lines;
 int         scr_erase_lines;
 int         scr_erase_center;
 
+
 /*
 	SCR_CenterPrint
 
@@ -185,6 +186,7 @@ SCR_CenterPrint (char *str)
 		str++;
 	}
 }
+
 
 void
 SCR_DrawCenterString (void)
@@ -232,6 +234,7 @@ SCR_DrawCenterString (void)
 	} while (1);
 }
 
+
 void
 SCR_CheckDrawCenterString (void)
 {
@@ -249,11 +252,10 @@ SCR_CheckDrawCenterString (void)
 	SCR_DrawCenterString ();
 }
 
+
 //=============================================================================
 
-/*
-	CalcFov
-*/
+
 float
 CalcFov (float fov_x, float width, float height)
 {
@@ -271,6 +273,7 @@ CalcFov (float fov_x, float width, float height)
 
 	return a;
 }
+
 
 /*
 	SCR_CalcRefdef
@@ -378,11 +381,10 @@ SCR_SizeDown_f (void)
 	vid.recalc_refdef = 1;
 }
 
+
 //============================================================================
 
-/*
-	SCR_Init
-*/
+
 void
 SCR_Init_Cvars (void)
 {
@@ -403,6 +405,7 @@ SCR_Init_Cvars (void)
 	cl_crossy = Cvar_Get ("cl_crossy", "0", CVAR_ARCHIVE, NULL, "Sets the position of the crosshair on the Y-axis.");
 }
 
+
 void
 SCR_Init (void)
 {
@@ -421,9 +424,7 @@ SCR_Init (void)
 	scr_initialized = true;
 }
 
-/*
-	SCR_DrawRam
-*/
+
 void
 SCR_DrawRam (void)
 {
@@ -436,9 +437,7 @@ SCR_DrawRam (void)
 	Draw_Pic (scr_vrect.x + 32, scr_vrect.y, scr_ram);
 }
 
-/*
-	SCR_DrawTurtle
-*/
+
 void
 SCR_DrawTurtle (void)
 {
@@ -459,9 +458,7 @@ SCR_DrawTurtle (void)
 	Draw_Pic (scr_vrect.x, scr_vrect.y, scr_turtle);
 }
 
-/*
-	SCR_DrawNet
-*/
+
 void
 SCR_DrawNet (void)
 {
@@ -473,6 +470,7 @@ SCR_DrawNet (void)
 
 	Draw_Pic (scr_vrect.x + 64, scr_vrect.y, scr_net);
 }
+
 
 extern cvar_t *show_time;
 extern cvar_t *show_fps;
@@ -551,9 +549,7 @@ SCR_DrawTime (void)
 	Draw_String8 (x, y, st);
 }
 
-/*
-	DrawPause
-*/
+
 void
 SCR_DrawPause (void)
 {
@@ -574,9 +570,6 @@ SCR_DrawPause (void)
 //=============================================================================
 
 
-/*
-	SCR_SetUpToDrawConsole
-*/
 void
 SCR_SetUpToDrawConsole (void)
 {
@@ -609,9 +602,7 @@ SCR_SetUpToDrawConsole (void)
 		con_notifylines = 0;
 }
 
-/*
-	SCR_DrawConsole
-*/
+
 void
 SCR_DrawConsole (void)
 {
@@ -631,9 +622,7 @@ SCR_DrawConsole (void)
 						SCREEN SHOTS 
 */
 
-/* 
-	SCR_ScreenShot_f
-*/
+
 void
 SCR_ScreenShot_f (void)
 {
@@ -654,6 +643,7 @@ SCR_ScreenShot_f (void)
 	free (buffer);
 	Con_Printf ("Wrote %s\n", pcxname);
 }
+
 
 /*
 Find closest color in the palette for named color
@@ -691,6 +681,7 @@ MipColor (int r, int g, int b)
 	return best;
 }
 
+
 // in gl_draw.c
 extern byte *draw_chars;				// 8*8 graphic characters
 
@@ -720,6 +711,7 @@ SCR_DrawCharToSnap (int num, byte * dest, int width)
 
 }
 
+
 void
 SCR_DrawStringToSnap (const char *s, byte * buf, int x, int y, int width)
 {
@@ -736,9 +728,6 @@ SCR_DrawStringToSnap (const char *s, byte * buf, int x, int y, int width)
 }
 
 
-/* 
-	SCR_RSShot_f
-*/
 void
 SCR_RSShot_f (void)
 {
@@ -847,6 +836,7 @@ SCR_RSShot_f (void)
 
 //=============================================================================
 
+
 char       *scr_notifystring;
 
 void
@@ -881,7 +871,9 @@ SCR_DrawNotifyString (void)
 	} while (1);
 }
 
+
 //=============================================================================
+
 
 void
 SCR_TileClear (void)
@@ -908,6 +900,7 @@ SCR_TileClear (void)
 	}
 }
 
+
 extern void R_ForceLightUpdate (void);
 
 int 			oldviewsize = 0;
@@ -915,6 +908,7 @@ unsigned char	lighthalf_v[3];
 qboolean		lighthalf;
 extern cvar_t	*gl_lightmode;
 extern cvar_t	*brightness;
+
 /*
 	SCR_UpdateScreen
 

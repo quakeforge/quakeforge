@@ -38,18 +38,19 @@
 
 #include <math.h>
 
-#include "bothdefs.h"
-#include "cl_cam.h"
-#include "cl_main.h"
 #include "QF/console.h"
 #include "QF/cmd.h"
-#include "locs.h"
+#include "QF/locs.h"
 #include "QF/mathlib.h"
-#include "r_dynamic.h"
-#include "r_local.h"
 #include "QF/screen.h"
 #include "QF/sound.h"
 #include "QF/sys.h"
+
+#include "bothdefs.h"
+#include "cl_cam.h"
+#include "cl_main.h"
+#include "r_dynamic.h"
+#include "r_local.h"
 #include "view.h"
 
 
