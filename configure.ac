@@ -1926,40 +1926,32 @@ AC_SUBST(VID_TARGETS)
 AC_SUBST(plugin_ldflags)
 AC_SUBST(plugin_libadd)
 
-QFCC_DEPS='$(top_builddir)/libs/gamecode/engine/libQFgamecode.la $(top_builddir)/libs/util/libQFutil.la'
-QFCC_LIBS="${QFCC_DEPS} "'$(WIN32_LIBS)'
-QFCC_INCS='-I$(top_srcdir)/tools/qfcc/include'
-AC_SUBST(QFCC_LIBS)
-AC_SUBST(QFCC_DEPS)
-AC_SUBST(QFCC_INCS)
-
-QFPROGS_DEPS='$(top_builddir)/libs/gamecode/engine/libQFgamecode.la $(top_builddir)/libs/util/libQFutil.la'
-QFPROGS_LIBS="${QFPROGS_DEPS} "'$(WIN32_LIBS)'
-QFPROGS_INCS='-I$(top_srcdir)/tools/qfprogs/include'
-AC_SUBST(QFPROGS_LIBS)
-AC_SUBST(QFPROGS_DEPS)
-AC_SUBST(QFPROGS_INCS)
-
-QWAQ_DEPS='$(top_builddir)/libs/gamecode/engine/libQFgamecode.la $(top_builddir)/libs/util/libQFutil.la'
-QWAQ_LIBS="${QWAQ_DEPS} "'$(WIN32_LIBS)'
-QWAQ_INCS=''
-AC_SUBST(QWAQ_LIBS)
-AC_SUBST(QWAQ_DEPS)
-AC_SUBST(QWAQ_INCS)
-
-PAK_DEPS='$(top_builddir)/libs/util/libQFutil.la'
-PAK_LIBS="${PAK_DEPS} "'$(WIN32_LIBS)'
-PAK_INCS=""
-AC_SUBST(PAK_LIBS)
-AC_SUBST(PAK_DEPS)
-AC_SUBST(PAK_INCS)
-
-WAV_DEPS='$(top_builddir)/libs/util/libQFutil.la'
-WAV_LIBS="${WAV_DEPS} "'$(WIN32_LIBS)'
+QF_DEPS(QFCC,
+	[-I$(top_srcdir)/tools/qfcc/include],
+	[$(top_builddir)/libs/gamecode/engine/libQFgamecode.la $(top_builddir)/libs/util/libQFutil.la],
+	[$(WIN32_LIBS)],
+)
+QF_DEPS(QFPROGS,
+	[-I$(top_srcdir)/tools/qfprogs/include],
+	[$(top_builddir)/libs/gamecode/engine/libQFgamecode.la $(top_builddir)/libs/util/libQFutil.la],
+	[$(WIN32_LIBS)],
+)
+QF_DEPS(QWAQ,
+	[],
+	[$(top_builddir)/libs/gamecode/engine/libQFgamecode.la $(top_builddir)/libs/util/libQFutil.la],
+	[$(WIN32_LIBS)],
+)
+QF_DEPS(PAK,
+	[],
+	[$(top_builddir)/libs/util/libQFutil.la],
+	[$(WIN32_LIBS)],
+)
+QF_DEPS(WAV,
+	[],
+	[$(top_builddir)/libs/util/libQFutil.la],
+	[$(WIN32_LIBS)],
+)
 WAV_INCS=""
-AC_SUBST(WAV_LIBS)
-AC_SUBST(WAV_DEPS)
-AC_SUBST(WAV_INCS)
 
 AC_DEFINE_UNQUOTED(PATH_SEPARATOR, '/', [Define this to your operating system's path separator character])
 AC_DEFINE_UNQUOTED(CPP_NAME, "$CPP_NAME", [Define this to the command line for the C preprocessor])

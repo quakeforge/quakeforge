@@ -1105,3 +1105,12 @@ else
 fi
 
 ])
+
+AC_DEFUN(QF_DEPS, [
+$1_INCS='$2'
+$1_DEPS='$3'
+$1_LIBS='$3 $4 '
+AC_SUBST($1_INCS)
+AC_SUBST($1_DEPS)
+AC_SUBST($1_LIBS)
+])
