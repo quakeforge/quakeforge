@@ -284,7 +284,6 @@ typedef struct {
 	int         infotableofs;
 } wadinfo_t;
 
-
 typedef struct {
 	int         filepos;
 	int         disksize;
@@ -295,9 +294,14 @@ typedef struct {
 	char        name[16];				// must be null terminated
 } lumpinfo_t;
 
+typedef struct wadlist_s {
+	struct wadlist_s *next;
+	wadinfo_t   wadinfo;
+	lumpinfo_t *lumpinfo;
+} wadlist_t;
+
 QFile      *texfile;
-wadinfo_t   wadinfo;
-lumpinfo_t *lumpinfo;
+wadlist_t  *wadlist;
 
 void
 CleanupName (char *in, char *out)
@@ -319,24 +323,30 @@ void
 TEX_InitFromWad (char *path)
 {
 	int         i;
+	wadlist_t  *wl;
 
 	texfile = Qopen (path, "rb");
 	if (!texfile)
 		Sys_Error ("couldn't open %s", path);
-	Qread (texfile, &wadinfo, sizeof (wadinfo));
-	if (strncmp (wadinfo.identification, "WAD2", 4))
-		Sys_Error ("TEX_InitFromWad: %s isn't a wadfile", path);
-	wadinfo.numlumps = LittleLong (wadinfo.numlumps);
-	wadinfo.infotableofs = LittleLong (wadinfo.infotableofs);
-	Qseek (texfile, wadinfo.infotableofs, SEEK_SET);
-	lumpinfo = malloc (wadinfo.numlumps * sizeof (lumpinfo_t));
-	Qread (texfile, lumpinfo, wadinfo.numlumps * sizeof (lumpinfo_t));
 
-	for (i = 0; i < wadinfo.numlumps; i++) {
-		CleanupName (lumpinfo[i].name, lumpinfo[i].name);
-		lumpinfo[i].filepos = LittleLong (lumpinfo[i].filepos);
-		lumpinfo[i].disksize = LittleLong (lumpinfo[i].disksize);
+	wl = calloc (1, sizeof (wadlist_t));
+
+	Qread (texfile, &wl->wadinfo, sizeof (wadinfo_t));
+	if (strncmp (wl->wadinfo.identification, "WAD2", 4))
+		Sys_Error ("TEX_InitFromWad: %s isn't a wadfile", path);
+	wl->wadinfo.numlumps = LittleLong (wl->wadinfo.numlumps);
+	wl->wadinfo.infotableofs = LittleLong (wl->wadinfo.infotableofs);
+	Qseek (texfile, wl->wadinfo.infotableofs, SEEK_SET);
+	wl->lumpinfo = malloc (wl->wadinfo.numlumps * sizeof (lumpinfo_t));
+	Qread (texfile, wl->lumpinfo, wl->wadinfo.numlumps * sizeof (lumpinfo_t));
+
+	for (i = 0; i < wl->wadinfo.numlumps; i++) {
+		CleanupName (wl->lumpinfo[i].name, wl->lumpinfo[i].name);
+		wl->lumpinfo[i].filepos = LittleLong (wl->lumpinfo[i].filepos);
+		wl->lumpinfo[i].disksize = LittleLong (wl->lumpinfo[i].disksize);
 	}
+	wl->next = wadlist;
+	wadlist = wl;
 }
 
 int
@@ -345,16 +355,19 @@ LoadLump (char *name, dstring_t *dest)
 	char        cname[16];
 	int         i;
 	int         ofs = dest->size;
+	wadlist_t  *wl;
 
 	CleanupName (name, cname);
 
-	for (i = 0; i < wadinfo.numlumps; i++) {
-		if (!strcmp (cname, lumpinfo[i].name)) {
-			dest->size += lumpinfo[i].disksize;
-			dstring_adjust (dest);
-			Qseek (texfile, lumpinfo[i].filepos, SEEK_SET);
-			Qread (texfile, dest->str + ofs, lumpinfo[i].disksize);
-			return lumpinfo[i].disksize;
+	for (wl = wadlist; wl; wl = wl->next) {
+		for (i = 0; i < wl->wadinfo.numlumps; i++) {
+			if (!strcmp (cname, wl->lumpinfo[i].name)) {
+				dest->size += wl->lumpinfo[i].disksize;
+				dstring_adjust (dest);
+				Qseek (texfile, wl->lumpinfo[i].filepos, SEEK_SET);
+				Qread (texfile, dest->str + ofs, wl->lumpinfo[i].disksize);
+				return wl->lumpinfo[i].disksize;
+			}
 		}
 	}
 
@@ -367,6 +380,7 @@ AddAnimatingTextures (void)
 {
 	int         base, i, j, k;
 	char        name[32];
+	wadlist_t  *wl;
 
 	base = nummiptex;
 
@@ -382,11 +396,14 @@ AddAnimatingTextures (void)
 				name[1] = 'A' + j - 10;	// alternate animation
 
 			// see if this name exists in the wadfile
-			for (k = 0; k < wadinfo.numlumps; k++)
-				if (!strcmp (name, lumpinfo[k].name)) {
-					FindMiptex (name);	// add to the miptex list
-					break;
+			for (wl = wadlist; wl; wl = wl->next) {
+				for (k = 0; k < wl->wadinfo.numlumps; k++) {
+					if (!strcmp (name, wl->lumpinfo[k].name)) {
+						FindMiptex (name);	// add to the miptex list
+						break;
+					}
 				}
+			}
 		}
 	}
 
@@ -414,7 +431,7 @@ WriteMiptex (void)
 	path = strdup (path);
 	p = strtok (path, ";");	// yeah yeah. but it works :)
 	while (p) {
-		sprintf (fullpath, "%s/%s", /* FIXME gamedir */ ".", path);
+		sprintf (fullpath, "%s/%s", /* FIXME gamedir */ ".", p);
 
 		TEX_InitFromWad (fullpath);
 
