@@ -36,5 +36,7 @@ menu.dat$(GZ): $(menu_obj) $(QFCC_DEP)
 	$(QFCC) $(QCFLAGS) -p $(STRIP) -o menu.dat $(menu_obj)
 	$(GZIP)
 
-EXTRA_DIST= $(menu_src)
+EXTRA_DIST= $(menu_src) cbuf.h client_menu.h cmd.h controls_o.h cvar.h \
+		draw.h file.h game.h inputline.h key.h menu.h object.h options.h \
+		options_util.h servlist.h string.h stringh.h
 CLEANFILES= *.dat *.sym *.gz *.qfo
