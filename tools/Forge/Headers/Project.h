@@ -94,7 +94,7 @@
 - (id) initVars;
 - (void) initProjectSettings;
 
-- (void) setTextureWad: (NSString *) wadFile;
+//- (void) setTextureWad: (NSString *) wadFile;
 
 - (void) addToOutput: (NSString *) string;
 
@@ -105,8 +105,8 @@
 - (void) openProjectWithFile: (NSString *) path;	// called by openProject and newProject
 - (id) openProject;
 
-- (void) wadWasClicked: (id) sender;	// called if clicked on wad in browser
-- (void) mapWasClicked: (id) sender;	// called if clicked on map in browser
+//- (void) wadWasClicked: (id) sender;	// called if clicked on wad in browser
+//- (void) mapWasClicked: (id) sender;	// called if clicked on map in browser
 - (void) clearBspOutput: (id) sender;	// Called if the BSP output view should
 										//	be cleared
 

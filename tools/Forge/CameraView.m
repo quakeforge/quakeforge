@@ -31,10 +31,13 @@
 #import <Foundation/NSGeometry.h>
 #import <Foundation/NSObject.h>
 
+#import <AppKit/DPSOperators.h>
+#import <AppKit/NSGraphicsContext.h>
+
 #import "CameraView.h"
 #import "Forge.h"
 #import "Map.h"
-#import "UserPath.h"
+//#import "UserPath.h"
 #import "ZView.h"
 
 #import "render.h"

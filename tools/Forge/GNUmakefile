@@ -101,29 +101,29 @@ Forge_HEADERS= \
 # Class files
 #
 Forge_OBJC_FILES= \
-	CameraView.m \
 	Clipper.m \
+	Forge_main.m \
+	Preferences.m \
+	Project.m \
+	Forge.m \
+	Map.m \
+	Things.m \
+	misc.m \
 	Entity.m \
 	EntityArray.m \
 	EntityClass.m \
-	Forge.m \
-	Forge_main.m \
-	InspectorControl.m \
+	CameraView.m \
+	XYView.m \
 	KeypairView.m \
-	Map.m \
+	InspectorControl.m \
 	PopScrollView.m \
-	Preferences.m \
-	Project.m \
 	TexturePalette.m \
 	TextureView.m \
-	Things.m \
-	UserPath.m \
-	XYView.m \
 	ZScrollView.m \
 	ZView.m \
-	misc.m \
 	render.m
 #	SetBrush.m \
+#	UserPath.m \
 
 #
 # C files

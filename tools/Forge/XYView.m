@@ -1,4 +1,6 @@
-#import "qedefs.h"
+#import "XYView.h"
+
+//#import "qedefs.h"
 
 id xyview_i;
 

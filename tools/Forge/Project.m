@@ -4,11 +4,12 @@
 //
 //======================================
 
-#import "qedefs.h"
+#import <AppKit/NSApplication.h>
 
 #import "Preferences.h"
+#import "Project.h"
 
-Project *	project;
+Project	*project;
 
 @implementation Project
 
@@ -133,7 +134,7 @@ Project *	project;
 //	[ppWadBrowser reuseColumns: YES];
 	[ppWadBrowser loadColumnZero];
 
-	[things_i		initEntities];
+//	[things_i		initEntities]; // FIXME
 	
 	return self;
 }
@@ -210,14 +211,14 @@ Project *	project;
 	panel = NSGetInformationalAlertPanel (@"Loading...",
 		@"Loading map. Please wait...", nil, nil, nil);
 	[panel orderFront: self];
-	[quakeed_i doOpen: fname];
+	[NSApp tryToPerform: @selector(openFile:) with: fname];
 	[panel performClose: self];
 	NSReleaseAlertPanel (panel);
 
 	return;
 }
 
-
+#if 0
 - (void) setTextureWad: (NSString *) wadFile
 {
 	int			i, c;
@@ -262,6 +263,7 @@ Project *	project;
 	
 	return;
 }
+#endif
 
 
 //

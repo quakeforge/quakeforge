@@ -110,8 +110,11 @@
     };
     XYView = {
 	Actions = (
+	    autoresizingMask,
+	    setAutoresizingMask:
 	);
 	Outlets = (
+	    target
 	);
 	Super = NSView;
     };

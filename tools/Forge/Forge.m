@@ -1,4 +1,4 @@
-#import "qedefs.h"
+//#import "qedefs.h"
 
 #import <Foundation/Foundation.h>
 #import <AppKit/AppKit.h>
@@ -6,9 +6,12 @@
 #import "Forge.h"
 
 #import "Preferences.h"
+#import "Project.h"
+#import "UserPath.h"
 
 #include <sys/types.h>
 #include <signal.h>
+#include <unistd.h>
 
 extern Preferences 	*prefs;
 extern Project		*project;
