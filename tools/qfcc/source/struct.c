@@ -88,7 +88,8 @@ new_struct_field (struct_t *strct, type_t *type, const char *name,
 		return 0;
 	field = malloc (sizeof (struct_field_t));
 	field->visibility = visibility;
-	field->name = name;
+	if (name)
+		field->name = save_string (name);
 	field->type = type;
 	if (strct->stype == str_union) {
 		int         size = type_size (type);
@@ -147,7 +148,8 @@ get_struct (const char *name, int create)
 			return s;
 	}
 	s = calloc (sizeof (struct_t), 1);
-	s->name = name;
+	if (name)
+		s->name = save_string (name);
 	s->return_addr = __builtin_return_address (0);
 	if (name)
 		Hash_Add (structs, s);
