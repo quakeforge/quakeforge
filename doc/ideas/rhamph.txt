@@ -1,0 +1,43 @@
+These are my personal ideas for how I hope things will develop.
+
+- Portal vis system.  Have distinct borders between rooms, such that
+the door can close and completely eliminate the blocked off room for
+vis tests.
+
+- Remappable portals.  Exension of above, to allow changing which room
+is on the far side of a portal.  (assuming doors are exact same size)
+
+- Room duplication.  Since you can change what door leads to what
+room, add the ability to copy the room.  This would specifically mean
+reusing the static (including visibility and texture) data between
+each instance, while the lightmaps and such info would be given
+independent data for each instance.
+
+- The above items would give you the ability to have randomly
+generated maps.  You'd have a base map which would have one of each
+room you wanted available, then you'd pick between them, connecting
+portals and duplicating rooms as necesary.  You also could (would have
+to) modify the multiple-texture mechanism currently used for button
+animations to allow different bases in TF have different coloured
+walls.
+
+- Variable-detail models.  Have 3 or 4 different versions of the same
+model, each with a different amount of detail/polygons.  You could
+then make it switch between them either based on range, detail levels
+chosen, or preferably a combination of both.
+
+- Skeletal model animations.  Nothing special here.  Just seems alot
+more suitable than vertex animations.
+
+- "Inverse kinematics".  Or whatever you want to call it.  Basically
+just stuff about moving legs and such in a realistic way.
+
+- "Skin Bones".  Basically extra bones added to the skin of
+high-detail models, that attach to the underlying bones, used so the
+skin stretches in a realistic way when you move.
+
+- Variable-detail walls.  Same thing as a variable detail model, but
+you don't need a skeleton.  It'd be fixed to a specific place on the
+map/wall.  Used for extra bits of detail that aren't necesary for
+using the map, like having a high-detail statue vs a low detail one.
+
