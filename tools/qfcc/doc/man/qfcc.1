@@ -1,0 +1,55 @@
+.\"                              hey, Emacs:   -*- nroff -*-
+.\" qfcc is free software; you can redistribute it and/or modify
+.\" it under the terms of the GNU General Public License as published by
+.\" the Free Software Foundation; either version 2 of the License, or
+.\" (at your option) any later version.
+.\"
+.\" This program is distributed in the hope that it will be useful,
+.\" but WITHOUT ANY WARRANTY; without even the implied warranty of
+.\" MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+.\" GNU General Public License for more details.
+.\"
+.\" You should have received a copy of the GNU General Public License
+.\" along with this program; see the file COPYING.  If not, write to
+.\" the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
+.\"
+.TH QFCC 1 "February 21, 2001" QuakeForge QuakeForge\ Developer\'s\ Manual
+.\" Please update the above date whenever this man page is modified.
+.\"
+.\" Some roff macros, for reference:
+.\" .nh        disable hyphenation
+.\" .hy        enable hyphenation
+.\" .ad l      left justify
+.\" .ad b      justify to both left and right margins (default)
+.\" .nf        disable filling
+.\" .fi        enable filling
+.\" .br        insert line break
+.\" .sp <n>    insert n+1 empty lines
+.\" for manpage-specific macros, see man(7)
+.SH NAME
+qfcc \- The QuakeForge Code Compiler
+.SH SYNOPSIS
+.B qfcc
+.RI [ options ]
+.SH DESCRIPTION
+\fBqfcc\fP compiles GameC source into a form that the QuakeForge server can
+understand.
+.PP
+.SH OPTIONS
+\fBqfcc\fP accepts the following options:
+.TP
+.B \-s, \-\-source <dir>
+Set source directory for "progs.src".
+.TP
+.B \-h, \-\-help
+Show summary of options.
+.TP
+.B \-V, \-\-version
+Show version of program.
+.SH "SEE ALSO"
+.BR quakeforge (1)
+.SH AUTHORS
+The original \fBqcc\fP program was written by Id Software, Inc. The members of
+the QuakeForge Project have modified it to work with extensions to the QuakeC
+language. To minimize confusion, the name of the language compiled by \fBqfcc\fP
+is called GameC.

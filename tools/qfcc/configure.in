@@ -1,0 +1,55 @@
+dnl Process this file with autoconf to produce a configure script.
+
+AC_PREREQ(2.13)
+AC_INIT(source/qfcc.c)
+AC_REVISION($Revision$) dnl
+AM_CONFIG_HEADER(include/config.h)
+AC_CANONICAL_SYSTEM
+
+dnl Every other copy of the package version number gets its value from here
+AM_INIT_AUTOMAKE(qfcc, 0.1.0)
+
+AC_SUBST(VERSION)
+
+ISODATE=$(date +%Y-%m-%d)
+AC_SUBST(ISODATE)
+
+AC_LANG_C
+
+dnl Checks for programs.
+AC_PROG_INSTALL
+AC_PROG_CC
+AC_PROG_CPP
+
+set $CC
+if test "$1" = gcc; then
+	shift
+	args="$*"
+	AC_MSG_CHECKING(for broken gcc)
+	if test $(gcc --version) = 2.96; then
+		AC_MSG_RESULT(yes. You poor sod, hope you have egcs)
+		CC="egcs $args"
+		set $CPP
+		shift
+		CPP="egcs $*"
+	else
+		AC_MSG_RESULT(no. good.)
+	fi
+fi
+
+dnl Checks for libraries.
+
+dnl Checks for header files.
+AC_HEADER_STDC
+AC_CHECK_HEADERS(unistd.h)
+
+dnl Checks for typedefs, structures, and compiler characteristics.
+
+dnl Checks for library functions.
+
+AC_OUTPUT(
+	include/Makefile
+	source/Makefile
+	Makefile
+	qfcc.lsm
+)

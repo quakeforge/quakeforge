@@ -1,0 +1,25 @@
+-bad -bap
+-c41 -cd41 -ncdb -fca -nfc1 -d0
+-br -ce -cli4 -pcs -nss -cs -bs
+-di12 -nbc -psl -brs
+-i4 -ci4 -lp -ip0 -lps
+-l80 -bbo -hnl
+
+-ts4
+
+-T byte
+-T def_s
+-T def_t
+-T etype_t
+-T eval_s
+-T eval_t
+-T func_t
+-T function_s
+-T function_t
+-T gofs_t
+-T qboolean
+-T statement_s
+-T statement_t
+-T string_t
+-T type_s
+-T type_t
