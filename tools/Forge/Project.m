@@ -102,6 +102,8 @@ static const char rcsid[] =
 			}
 			break;
 		}
+		default:
+			break;
 	}
 }
 
