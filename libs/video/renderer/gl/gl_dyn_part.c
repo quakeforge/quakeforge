@@ -231,8 +231,8 @@ R_RunSparkEffect (vec3_t org, int count, int ofuzz)
 				  ofuzz * 0.08, vec3_origin, r_realtime + 9,
 				  12 + (rand () & 3), 64 + (rand () & 31));
 	while (count--)
-		particle_new_random (pt_fallfadespark, part_tex_spark, org,
-							 ofuzz * 0.75, 1, 96, r_realtime + 5,
+		particle_new_random (pt_fallfadespark, part_tex_dot, org,
+							 ofuzz * 0.75, 0.7, 96, r_realtime + 5,
 							 ramp[rand () & 7], 255);
 }
 
