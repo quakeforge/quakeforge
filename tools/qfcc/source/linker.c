@@ -766,9 +766,11 @@ linker_add_lib (const char *libname)
 				qfo_def_t  *def = qfo->defs + j;
 				if ((def->flags & QFOD_GLOBAL)
 					&& !(def->flags & QFOD_EXTERNAL)
+					&& def->relocs
 					&& Hash_Find (extern_defs, qfo->strings + def->name)) {
 					if (options.verbosity >= 2)
-						printf ("adding %s\n", pack->files[i].name);
+						printf ("adding %s because of %s\n",
+								pack->files[i].name, qfo->strings + def->name);
 					linker_add_qfo (qfo);
 					did_something = 1;
 					break;
