@@ -744,6 +744,10 @@ AC_ARG_ENABLE(sound,
 [  --disable-sound         disable sound outright],
 )
 
+AC_ARG_ENABLE(soundmodules,
+[  --enable-soundmodules   enable modular sound drivers],
+)
+
 SNDTYPE=""
 SOUND_LIBS=""
 SOUND_CFLAGS=""
@@ -864,6 +868,11 @@ QF_maGiC_VALUE
        SOUND_LIBS="-lwinmm")
 fi
 
+if test "x$enable_soundmodules" = "xyes"; then
+	SNDTYPE="modules"
+	SOUND_LIBS=""
+fi
+
 if test "x$enable_sound" = "xno"; then
 	SNDTYPE=""
 	SOUND_LIBS=""
@@ -885,7 +894,8 @@ AM_CONDITIONAL(SNDTYPE_SDL, test "$SNDTYPE" = "SDL")
 AM_CONDITIONAL(SNDTYPE_SGI, test "$SNDTYPE" = "SGI")
 AM_CONDITIONAL(SNDTYPE_SUN, test "$SNDTYPE" = "SUN")
 AM_CONDITIONAL(SNDTYPE_WIN32, test "$SNDTYPE" = "WIN32")
-AM_CONDITIONAL(SNDTYPE_NULL, test "$SNDTYPE" != "ALSA_0_5" -a "$SNDTYPE" != "ALSA_0_9" -a "$SNDTYPE" != "MME" -a "$SNDTYPE" != "OSS" -a "$SNDTYPE" != "SDL" -a "$SNDTYPE" != "SGI" -a "$SNDTYPE" != "SUN" -a "$SNDTYPE" != "WIN32")
+AM_CONDITIONAL(SNDTYPE_MODULES, test "$SNDTYPE" = "MODULES")
+AM_CONDITIONAL(SNDTYPE_NULL, test "$SNDTYPE" != "ALSA_0_5" -a "$SNDTYPE" != "ALSA_0_9" -a "$SNDTYPE" != "MME" -a "$SNDTYPE" != "OSS" -a "$SNDTYPE" != "SDL" -a "$SNDTYPE" != "SGI" -a "$SNDTYPE" != "SUN" -a "$SNDTYPE" != "WIN32" -a "$SNDTYPE" != "MODULES")
 
 dnl Tests for joystick support
 AC_MSG_CHECKING(for joystick support)
