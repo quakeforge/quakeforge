@@ -96,6 +96,7 @@ S_Init (struct model_s **worldmodel, int *viewentity, double *host_frametime)
 			snd_render_module->data->snd_render->viewentity = viewentity;
 			snd_render_module->data->snd_render->host_frametime =
 				host_frametime;
+			snd_render_module->data->snd_render->output = snd_output_module;
 
 			snd_output_module->data->snd_output->soundtime
 				= snd_render_module->data->snd_render->soundtime;
@@ -268,51 +269,4 @@ S_UnblockSound (void)
 {
 	if (snd_render_module)
 		snd_render_module->functions->snd_render->pS_UnblockSound ();
-}
-
-
-qboolean
-S_O_Init (void)
-{
-	if (snd_output_module)
-		return snd_output_module->functions->snd_output->pS_O_Init ();
-	else
-		return false;
-}
-
-void
-S_O_Shutdown (void)
-{
-	if (snd_output_module)
-		return snd_output_module->functions->snd_output->pS_O_Shutdown ();
-}
-
-int
-S_O_GetDMAPos (void)
-{
-	if (snd_output_module)
-		return snd_output_module->functions->snd_output->pS_O_GetDMAPos ();
-	else
-		return 0; // FIXME: good value for this?
-}
-
-void
-S_O_Submit (void)
-{
-	if (snd_output_module)
-		snd_output_module->functions->snd_output->pS_O_Submit ();
-}
-
-void
-S_O_BlockSound (void)
-{
-	if (snd_output_module)
-		snd_output_module->functions->snd_output->pS_O_BlockSound ();
-}
-
-void
-S_O_UnblockSound (void)
-{
-	if (snd_output_module)
-		snd_output_module->functions->snd_output->pS_O_UnblockSound ();
 }

@@ -142,7 +142,7 @@ SND_Startup (void)
 		return;
 
 	if (!fakedma) {
-		rc = S_O_Init ();
+		rc = plugin_info_snd_render_data.output->functions->snd_output->pS_O_Init ();
 
 		if (!rc) {
 			Sys_Printf ("S_Startup: S_O_Init failed.\n");
@@ -545,7 +545,7 @@ SND_GetSoundtime (void)
 
 	// it is possible to miscount buffers if it has wrapped twice between
 	// calls to SND_Update.  Oh well.
-	samplepos = S_O_GetDMAPos ();
+	samplepos = plugin_info_snd_render_data.output->functions->snd_output->pS_O_GetDMAPos ();
 
 	if (samplepos < oldsamplepos) {
 		buffers++;						// buffer wrapped
@@ -593,7 +593,7 @@ SND_Update_ (void)
 #endif
 
 	SND_PaintChannels (endtime);
-	S_O_Submit ();
+	plugin_info_snd_render_data.output->functions->snd_output->pS_O_Submit ();
 }
 
 /*
@@ -817,7 +817,7 @@ void
 SND_BlockSound (void)
 {
 	if (++snd_blocked == 1)
-		S_O_BlockSound ();
+		plugin_info_snd_render_data.output->functions->snd_output->pS_O_BlockSound ();
 }
 
 void
@@ -826,7 +826,7 @@ SND_UnblockSound (void)
 	if (!snd_blocked)
 		return;
 	if (!--snd_blocked)
-		S_O_UnblockSound ();
+		plugin_info_snd_render_data.output->functions->snd_output->pS_O_UnblockSound ();
 }
 
 static void
@@ -947,7 +947,7 @@ SND_Shutdown (void)
 	sound_started = 0;
 
 	if (!fakedma) {
-		S_O_Shutdown ();
+		plugin_info_snd_render_data.output->functions->snd_output->pS_O_Shutdown ();
 	}
 
 	shm = 0;

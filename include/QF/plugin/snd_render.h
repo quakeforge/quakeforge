@@ -84,6 +84,7 @@ typedef struct snd_render_data_s {
 
 	int *soundtime;
 	int *paintedtime;
+	struct plugin_s *output;
 } snd_render_data_t;
 
 #endif // __QF_plugin_snd_render_h_
