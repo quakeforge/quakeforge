@@ -234,7 +234,6 @@ find_cube_vertex (int face1, int face2, int face3, vec3_t v)
 static void
 set_vertex (struct box_def *box, int face, int ind, const vec3_t v)
 {
-	VectorCopy (v, box->face[face].poly.verts[ind]);
 	VectorAdd (v, r_refdef.vieworg, box->face[face].poly.verts[ind]);
 	switch (face) {
 		case 0:
@@ -309,9 +308,9 @@ insert_cube_vertices (struct box_def *box, struct visit_def visit, int count,
 	va_end (args);
 
 	if (ind == box->face[face].poly.numverts) {
-		// the vertex the sky poly left this cube fase through is very
+		// the vertex the sky poly left this cube face through is very
 		// conveniently the last vertex of the face poly. this means we can
-		// just append the vetexen
+		// just append the vertices
 		for (i = 0; i < count; i++)
 			add_vertex (box, face, *v[i]);
 	} else {
