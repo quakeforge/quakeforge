@@ -143,10 +143,9 @@ nq_sdl_libs=  \
 			$(soft_QFLIBS) \
 			$(top_builddir)/libs/video/targets/libQFsdl.la \
 			$(client_LIBS)
-nq_sdl_SOURCES=
+nq_sdl_SOURCES=sdl_link.c
 nq_sdl_LDADD=		$(nq_sdl_libs) $(SDL_LIBS) $(NET_LIBS)
 nq_sdl_LDFLAGS= 	$(common_ldflags)
-nq_sdl_CFLAGS=	 	$(SDL_CFLAGS)
 nq_sdl_DEPENDENCIES=	$(nq_sdl_libs)
 
 # ... 32-bit software, SDL
@@ -158,10 +157,9 @@ nq_sdl32_libs=  \
 			$(top_builddir)/libs/models/libQFmodels_sw.la \
 			$(top_builddir)/libs/video/targets/libQFsdl32.la \
 			$(client_LIBS)
-nq_sdl32_SOURCES=
+nq_sdl32_SOURCES=sdl_link.c
 nq_sdl32_LDADD= 	$(nq_sdl32_libs) $(SDL_LIBS) $(NET_LIBS)
 nq_sdl32_LDFLAGS=	$(common_ldflags)
-nq_sdl32_CFLAGS= 	$(SDL_CFLAGS)
 nq_sdl32_DEPENDENCIES=	$(nq_sdl32_libs)
 
 # ... Linux SVGAlib
@@ -230,10 +228,9 @@ nq_sgl_libs=  \
 			$(opengl_QFLIBS) \
 			$(top_builddir)/libs/video/targets/libQFsgl.la \
 			$(client_LIBS)
-nq_sgl_SOURCES=
+nq_sgl_SOURCES=sdl_link.c
 nq_sgl_LDADD=		$(nq_sgl_libs) $(SDL_LIBS) $(DL_LIBS) $(NET_LIBS)
 nq_sgl_LDFLAGS= 	$(common_ldflags)
-nq_sgl_CFLAGS=	 	$(SDL_CFLAGS)
 nq_sgl_DEPENDENCIES=	$(nq_sgl_libs)
 
 # ... SGI/Microsoft WGL (Windows OpenGL)

@@ -159,7 +159,7 @@ qw_client_sdl_libs= \
 			$(soft_LIBS) \
 			$(top_builddir)/libs/video/targets/libQFsdl.la \
 			$(client_LIBS)
-qw_client_sdl_SOURCES=
+qw_client_sdl_SOURCES=sdl_link.c
 qw_client_sdl_LDADD= libsdl.a $(qw_client_sdl_libs) $(SDL_LIBS) $(NET_LIBS)
 qw_client_sdl_LDFLAGS=  $(common_ldflags)
 qw_client_sdl_DEPENDENCIES= libsdl.a $(qw_client_sdl_libs)
@@ -173,7 +173,7 @@ qw_client_sdl32_libs= \
 			$(top_builddir)/libs/models/libQFmodels_sw.la \
 			$(top_builddir)/libs/video/targets/libQFsdl32.la \
 			$(client_LIBS)
-qw_client_sdl32_SOURCES=
+qw_client_sdl32_SOURCES=sdl_link.c
 qw_client_sdl32_LDADD= libsdl.a $(qw_client_sdl32_libs) $(SDL_LIBS) $(NET_LIBS)
 qw_client_sdl32_LDFLAGS=$(common_ldflags)
 qw_client_sdl32_DEPENDENCIES= libsdl.a $(qw_client_sdl32_libs)
@@ -244,7 +244,7 @@ qw_client_sgl_libs= \
 			$(opengl_LIBS) \
 			$(top_builddir)/libs/video/targets/libQFsgl.la \
 			$(client_LIBS)
-qw_client_sgl_SOURCES=
+qw_client_sgl_SOURCES=sdl_link.c
 qw_client_sgl_LDADD= $(qw_client_sgl_libs) $(SDL_LIBS) $(DL_LIBS) $(NET_LIBS)
 qw_client_sgl_LDFLAGS=  $(common_ldflags)
 qw_client_sgl_DEPENDENCIES= $(qw_client_sgl_libs)
