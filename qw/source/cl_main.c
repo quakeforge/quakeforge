@@ -1127,10 +1127,10 @@ CL_SetState (cactive_t state)
 	if (old_state != state) {
 		if (old_state == ca_active) {
 			// leaving active state
+			IN_ClearStates ();
 			r_active = false;
 			game_target = IMT_CONSOLE;
 			key_dest = key_console;
-			IN_ClearStates ();
 			if (con_module)
 				con_module->data->console->force_commandline = 1;
 			if (con_module)
@@ -1142,10 +1142,10 @@ CL_SetState (cactive_t state)
 				CL_Record (0);
 		} else if (state == ca_active) {
 			// entering active state
+			IN_ClearStates ();
 			r_active = true;
 			game_target = IMT_0;
 			key_dest = key_game;
-			IN_ClearStates ();
 
 			// Auto demo recorder stops here
 			if(cl_autorecord->int_val && cls.demorecording)
