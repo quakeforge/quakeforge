@@ -185,15 +185,16 @@ vector_component (int is_field, def_t *vec, int comp, scope_t *scope,
 	const char *name;
 
 	name = save_string (va (vector_component_names[comp], vec->name));
-	if (vec->external) {
-		d = get_def (is_field ? &type_floatfield : &type_float, name, scope,
-					 st_none);
-		if (d) {
+	d = get_def (is_field ? &type_floatfield : &type_float, name, scope,
+				 st_none);
+	if (d) {
+		if (vec->external) {
 			error (0, "internal error");
 			abort ();
 		}
+	} else {
+		d = new_def (is_field ? &type_floatfield : &type_float, name, scope);
 	}
-	d = new_def (is_field ? &type_floatfield : &type_float, name, scope);
 	d->used = 1;
 	d->parent = vec;
 	d->ofs = vec->ofs + comp;
