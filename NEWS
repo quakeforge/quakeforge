@@ -6,6 +6,8 @@ Changes from 0.5.2
     o General enhancements.
         * MVD playback in the qw clients.
         * MVD recording in the qw server.
+		* sv_maxrate changes now take effect immediately rathern than when
+          clients (re)connect or change their rate
 
 Changes from 0.3.0
 
