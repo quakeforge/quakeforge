@@ -71,7 +71,7 @@ particle_new (ptype_t type, int texnum, vec3_t org, float scale, vec3_t vel,
 
 /*
 	if (numparticles >= r_maxparticles) {
-		Con_Printf("FAILED PARTICLE ALLOC!\n");
+		Sys_Error  ("FAILED PARTICLE ALLOC!\n");
 		return NULL;
 	}
 */
@@ -86,9 +86,6 @@ particle_new (ptype_t type, int texnum, vec3_t org, float scale, vec3_t vel,
 	part->alpha = alpha;
 	part->tex = texnum;
 	part->scale = scale;
-	if (numparticles > r_maxparticles)
-		Sys_Error ("%s: numparticles > r_maxparticles: %d, %d\n", __func__,
-				   numparticles, r_maxparticles);
 
 	return part;
 }
@@ -157,18 +154,16 @@ R_ReadPointFile_f (void)
 			break;
 		c++;
 
-		if (!particle_new (pt_static, part_tex_dot, org, 1.5, vec3_origin,
-						   99999, (-c) & 15, 255)) {
+		if (numparticles >= r_maxparticles) {
 			Con_Printf ("Not enough free particles\n");
 			break;
+		} else {
+			particle_new (pt_static, part_tex_dot, org, 1.5, vec3_origin,
+						  99999, (-c) & 15, 255);
 		}
 	}
-
 	Qclose (f);
 	Con_Printf ("%i points read\n", c);
-	if (numparticles > r_maxparticles)
-		Sys_Error ("%s: numparticles > r_maxparticles: %d, %d\n", __func__,
-				   numparticles, r_maxparticles);
 }
 
 void
@@ -182,9 +177,6 @@ R_ParticleExplosion (vec3_t org)
 	particle_new_random (pt_smokecloud, part_tex_smoke, org, 4,
 						 30, 8, r_realtime + 5, (rand () & 7) + 8,
 						 128 + (rand () & 63));
-	if (numparticles > r_maxparticles)
-		Sys_Error ("%s: numparticles > r_maxparticles: %d, %d\n", __func__,
-				   numparticles, r_maxparticles);
 }
 
 void
@@ -204,9 +196,6 @@ R_ParticleExplosion2 (vec3_t org, int colorStart, int colorLength)
 							 (colorStart + (colorMod % colorLength)), 255);
 		colorMod++;
 	}
-	if (numparticles > r_maxparticles)
-		Sys_Error ("%s: numparticles > r_maxparticles: %d, %d\n", __func__,
-				   numparticles, r_maxparticles);
 }
 
 void
@@ -230,9 +219,6 @@ R_BlobExplosion (vec3_t org)
 							 (r_realtime + 1 + (rand () & 7) * 0.05),
 							 (150 + rand () % 6), 255);
 	}
-	if (numparticles > r_maxparticles)
-		Sys_Error ("%s: numparticles > r_maxparticles: %d, %d\n", __func__,
-				   numparticles, r_maxparticles);
 }
 
 static void
@@ -253,9 +239,6 @@ R_RunSparkEffect (vec3_t org, int count, int ofuzz)
 		particle_new_random (pt_fallfadespark, part_tex_spark, org,
 							 ofuzz * 0.75, 1, 96, r_realtime + 5,
 							 ramp[rand () & 7], 255);
-	if (numparticles > r_maxparticles)
-		Sys_Error ("%s: numparticles > r_maxparticles: %d, %d\n", __func__,
-				   numparticles, r_maxparticles);
 }
 
 inline static void
@@ -266,9 +249,6 @@ R_BloodPuff (vec3_t org, int count)
 
 	particle_new (pt_bloodcloud, part_tex_smoke, org, count / 5,
 				  vec3_origin, r_realtime + 99, 70 + (rand () & 3), 128);
-	if (numparticles > r_maxparticles)
-		Sys_Error ("%s: numparticles > r_maxparticles: %d, %d\n", __func__,
-				   numparticles, r_maxparticles);
 }
 
 void
@@ -310,9 +290,6 @@ R_RunPuffEffect (vec3_t org, particle_effect_t type, byte count)
 		default:
 			break;
 	}
-	if (numparticles > r_maxparticles)
-		Sys_Error ("%s: numparticles > r_maxparticles: %d, %d\n", __func__,
-				   numparticles, r_maxparticles);
 }
 
 void
@@ -334,9 +311,6 @@ R_RunParticleEffect (vec3_t org, vec3_t dir, int color, int count)
 					  (r_realtime + 0.1 * (rand () % 5)),
 					  (color & ~7) + (rand () & 7), 255);
 	}
-	if (numparticles > r_maxparticles)
-		Sys_Error ("%s: numparticles > r_maxparticles: %d, %d\n", __func__,
-				   numparticles, r_maxparticles);
 }
 
 void
@@ -358,9 +332,6 @@ R_RunSpikeEffect (vec3_t org, particle_effect_t type)
 		default:
 			break;
 	}
-	if (numparticles > r_maxparticles)
-		Sys_Error ("%s: numparticles > r_maxparticles: %d, %d\n", __func__,
-				   numparticles, r_maxparticles);
 }
 
 void
@@ -395,9 +366,6 @@ R_LavaSplash (vec3_t org)
 						  (224 + (rand () & 7)), 193);
 		}
 	}
-	if (numparticles > r_maxparticles)
-		Sys_Error ("%s: numparticles > r_maxparticles: %d, %d\n", __func__,
-				   numparticles, r_maxparticles);
 }
 
 void
@@ -434,9 +402,6 @@ R_TeleportSplash (vec3_t org)
 			}
 		}
 	}
-	if (numparticles > r_maxparticles)
-		Sys_Error ("%s: numparticles > r_maxparticles: %d, %d\n", __func__,
-				   numparticles, r_maxparticles);
 }
 
 void
@@ -471,9 +436,6 @@ R_RocketTrail (entity_t *ent)
 					  12 + (rand () & 3), 128 + (rand () & 31));
 		pscale = pscalenext;
 	}
-	if (numparticles > r_maxparticles)
-		Sys_Error ("%s: numparticles > r_maxparticles: %d, %d\n", __func__,
-				   numparticles, r_maxparticles);
 }
 
 void
@@ -506,9 +468,6 @@ R_GrenadeTrail (entity_t *ent)
 					  128 + (rand () & 31));
 		pscale = pscalenext;
 	}
-	if (numparticles > r_maxparticles)
-		Sys_Error ("%s: numparticles > r_maxparticles: %d, %d\n", __func__,
-				   numparticles, r_maxparticles);
 }
 
 void
@@ -548,9 +507,6 @@ R_BloodTrail (entity_t *ent)
 					  r_realtime + 2.0, 68 + (rand () & 3), 255);
 		pscale = pscalenext;
 	}
-	if (numparticles > r_maxparticles)
-		Sys_Error ("%s: numparticles > r_maxparticles: %d, %d\n", __func__,
-				   numparticles, r_maxparticles);
 }
 
 void
@@ -590,9 +546,6 @@ R_SlightBloodTrail (entity_t *ent)
 					  r_realtime + 1.5, 68 + (rand () & 3), 192);
 		pscale = pscalenext;
 	}
-	if (numparticles > r_maxparticles)
-		Sys_Error ("%s: numparticles > r_maxparticles: %d, %d\n", __func__,
-				   numparticles, r_maxparticles);
 }
 
 void
@@ -631,9 +584,6 @@ R_GreenTrail (entity_t *ent)
 					  2.0 + qfrandom (1.0), pvel, r_realtime + 0.5,
 					  52 + (rand () & 4), 255);
 	}
-	if (numparticles > r_maxparticles)
-		Sys_Error ("%s: numparticles > r_maxparticles: %d, %d\n", __func__,
-				   numparticles, r_maxparticles);
 }
 
 void
@@ -671,9 +621,6 @@ R_FlameTrail (entity_t *ent)
 		particle_new (pt_fire, part_tex_smoke, ent->old_origin,
 					  2.0 + qfrandom (1.0), pvel, r_realtime + 0.5, 234, 255);
 	}
-	if (numparticles > r_maxparticles)
-		Sys_Error ("%s: numparticles > r_maxparticles: %d, %d\n", __func__,
-				   numparticles, r_maxparticles);
 }
 
 void
@@ -705,9 +652,6 @@ R_VoorTrail (entity_t *ent)
 					  vec3_origin, r_realtime + 0.3,
 					  9 * 16 + 8 + (rand () & 3), 255);
 	}
-	if (numparticles > r_maxparticles)
-		Sys_Error ("%s: numparticles > r_maxparticles: %d, %d\n", __func__,
-				   numparticles, r_maxparticles);
 }
 
 void
@@ -722,9 +666,6 @@ R_DrawParticles (void)
 
 	if (!r_particles->int_val)
 		return;
-	if (numparticles > r_maxparticles)
-		Sys_Error ("%s:%d: numparticles > r_maxparticles: %d, %d\n", __func__,
-				   __LINE__, numparticles, r_maxparticles);
 
 	// LordHavoc: particles should not affect zbuffer
 	qfglDepthMask (GL_FALSE);
@@ -844,9 +785,6 @@ R_DrawParticles (void)
 		}
 	}
 	k = 0;
-	if (numparticles > r_maxparticles)
-		Sys_Error ("%s:%d: numparticles > r_maxparticles: %d, %d\n", __func__,
-				   __LINE__, numparticles, r_maxparticles);
 	while (maxparticle >= activeparticles) {
 		*freeparticles[k++] = particles[maxparticle--];
 		while (maxparticle >= activeparticles && 
@@ -857,7 +795,4 @@ R_DrawParticles (void)
 
 	qfglColor3ubv (color_white);
 	qfglDepthMask (GL_TRUE);
-	if (numparticles > r_maxparticles)
-		Sys_Error ("%s:%d: numparticles > r_maxparticles: %d, %d\n", __func__,
-				   __LINE__, numparticles, r_maxparticles);
 }
