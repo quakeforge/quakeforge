@@ -56,17 +56,6 @@ static const char rcsid[] =
 #include "struct.h"
 #include "type.h"
 
-typedef struct {
-	const char *name;
-	type_t     *type;
-	int         is_union;
-} struct_t;
-
-typedef struct {
-	const char *name;
-	expr_t      value;
-} enum_t;
-
 static hashtab_t *structs;
 static hashtab_t *enums;
 
@@ -125,6 +114,23 @@ struct_find_field (type_t *strct, const char *name)
 }
 
 type_t *
+init_struct (struct_t *strct, type_t *type, const char *name)
+{
+	strct->name = name ? save_string (name) : 0;
+	strct->type = type;
+	strct->type->type = ev_struct;
+	strct->type->struct_tail = &strct->type->struct_head;
+	strct->type->struct_fields = Hash_NewTable (61, struct_field_get_key, 0, 0);
+	strct->type->class = (struct class_s *)strct;
+	strct->is_union = 0;
+	if (name) {
+		strct->type->name = save_string (name);
+		Hash_Add (structs, strct);
+	}
+	return strct->type;
+}
+
+type_t *
 new_struct (const char *name)
 {
 	struct_t   *strct;
@@ -140,18 +146,7 @@ new_struct (const char *name)
 		}
 	}
 	strct = malloc (sizeof (struct_t));
-	strct->name = name ? save_string (name) : 0;
-	strct->type = new_type ();
-	strct->type->type = ev_struct;
-	strct->type->struct_tail = &strct->type->struct_head;
-	strct->type->struct_fields = Hash_NewTable (61, struct_field_get_key, 0, 0);
-	strct->type->class = (struct class_s *)strct;
-	strct->is_union = 0;
-	if (name) {
-		strct->type->name = save_string (name);
-		Hash_Add (structs, strct);
-	}
-	return strct->type;
+	return init_struct (strct, new_type (), name);
 }
 
 type_t *
@@ -292,8 +287,7 @@ process_enum (expr_t *enm)
 		if (!new_enum)
 			Sys_Error ("out of memory");
 		new_enum->name = name->e.string_val;
-		new_enum->value.type = ex_integer;
-		new_enum->value.e.integer_val = enum_val++;
+		new_enum->value = enum_val++;
 		Hash_Add (enums, new_enum);
 		//printf ("%s = %d\n", new_enum->name, new_enum->value.e.integer_val);
 	}
@@ -309,7 +303,7 @@ get_enum (const char *name)
 	e = (enum_t *) Hash_Find (enums, name);
 	if (!e)
 		return 0;
-	return &e->value;
+	return new_integer_expr (e->value);
 }
 
 void
