@@ -454,7 +454,7 @@ PR_PrintStatement (progs_t * pr, dstatement_t *s)
 	}
 
 	if (!(fmt = op->fmt))
-		fmt = "%Ga %Gb %gc";
+		fmt = "%Ga, %Gb, %gc";
 
 	dasprintf (line, "%04x ", addr);
 	if (pr_debug->int_val > 1)
