@@ -159,7 +159,7 @@ DecodeArgs (int argc, char **argv)
 				else if (!strcmp(optarg, "none"))
 					options.attenuation = LIGHT_NO_ATTEN;
 				else if (!strcmp(optarg, "havoc"))
-					options.attenuation = LIGHT_REALISTIC;
+					options.attenuation = LIGHT_LH;
 				else {
 					options.attenuation = strtol (optarg, &eptr, 10);
 					if (eptr == optarg || *eptr)

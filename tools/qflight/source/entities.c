@@ -311,7 +311,7 @@ LoadEntities (void)
 				else if (!strcmp(com_token, "none"))
 					entity->attenuation = LIGHT_NO_ATTEN;
 				else if (!strcmp(com_token, "havoc"))
-					entity->attenuation = LIGHT_REALISTIC;
+					entity->attenuation = LIGHT_LH;
 				else
 					entity->attenuation = atoi (com_token);
 			} else if (!strcmp(key, "_radius"))
