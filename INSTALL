@@ -1,5 +1,3 @@
-NOTE: for building from cvs or a cvs snapshot, run ./bootstrap first.
-
 Basic Installation
 ==================
 
@@ -32,6 +30,9 @@ The simplest way to compile this package is:
      using `csh' on an old version of System V, you might need to type
      `sh ./configure' instead to prevent `csh' from trying to execute
      `configure' itself.
+
+     NOTE: for building from cvs or a cvs snapshot, run ./bootstrap
+	 first.
 
      Running `configure' takes awhile.  While running, it prints some
      messages telling which features it is checking for.

@@ -44,4 +44,4 @@ else
 	exit 1
 fi
 
-libtoolize --automake && aclocal && automake --add-missing && autoheader && autoconf
+aclocal && autoheader && libtoolize --automake && automake --add-missing && autoconf

@@ -509,7 +509,7 @@ fi
 
 dnl Check for XFree86-VidMode support
 AC_ARG_ENABLE(vidmode,
-[  --enable-vidmode        use XFree86 VidMode extension, if available],
+[  --disable-vidmode       don't use XFree86 VidMode extension],
 	HAVE_VIDMODE=$enable_vidmode, HAVE_VIDMODE=auto)
 if test "x$HAVE_VIDMODE" != xno; then
 	save_CPPFLAGS="$CPPFLAGS"
@@ -528,7 +528,7 @@ AC_SUBST(VIDMODE_LIBS)
 
 dnl Check for DGA support
 AC_ARG_ENABLE(dga,
-[  --enable-dga            use XFree86 DGA extension, if available],
+[  --disable-dga           don't use XFree86 DGA extension],
 HAVE_DGA=$enable_dga, HAVE_DGA=auto)
 if test "x$HAVE_DGA" != xno; then
 	save_CPPFLAGS="$CPPFLAGS"
