@@ -369,18 +369,11 @@ SV_Map_f (void)
 	level[sizeof (level) - 1] = 0;
 
 	// check to make sure the level exists
-	while (1) {
-		snprintf (expanded, sizeof (expanded), "maps/%s.bsp", level);
-		COM_FOpenFile (expanded, &f);
-		if (!f) {
-			SV_Printf ("Can't find %s\n", expanded);
-			// If curlevel == level, something is SCREWED!  --KB
-			if (strcaseequal (level, curlevel))
-				Sys_Error ("map: cannot restart level");
-			strcpy (level, curlevel);
-		} else {
-			break;
-		}
+	snprintf (expanded, sizeof (expanded), "maps/%s.bsp", level);
+	COM_FOpenFile (expanded, &f);
+	if (!f) {
+		SV_Printf ("Can't find %s\n", expanded);
+		return;
 	}
 	Qclose (f);
 
