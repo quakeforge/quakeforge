@@ -14,10 +14,10 @@ for pakfile in $*; do
 
 	mkdir ${tmp}
 	cd ${tmp}
-	pak -vx ${pakfile} | sed -e 's/$/.gz/' > pakfile.lst
+	pak -vxf ${pakfile} | sed -e 's/$/.gz/' > pakfile.lst
 	mv ${pakfile} ${pakfile}.bak
 	gzip -rv9 *
-	pak -vc ${pakfile} `zcat pakfile.lst.gz`
+	pak -vcf ${pakfile} `zcat pakfile.lst.gz`
 	cd -
 	rm -rf ${tmp}
 done
