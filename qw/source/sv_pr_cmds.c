@@ -1637,7 +1637,11 @@ PF_Fixme (progs_t *pr)
 	PR_RunError (pr, "unimplemented bulitin");
 }
 
-
+void
+PF_Checkextension (progs_t *pr)
+{
+	G_FLOAT(pr, OFS_RETURN) = 0; //FIXME make this function actually useful :P
+}
 
 builtin_t   pr_builtin[] = {
 	PF_Fixme,
@@ -1763,7 +1767,25 @@ builtin_t   pr_builtin[] = {
 
 	PF_infokey,
 	PF_stof,
-	PF_multicast
+	PF_multicast,
+
+	PF_Fixme,
+	PF_Fixme,
+	PF_Fixme,
+	PF_Fixme,
+	PF_Fixme,
+	PF_Fixme,
+	PF_Fixme,
+	PF_Fixme,
+	PF_Fixme,
+	PF_Fixme,
+	PF_Fixme,
+	PF_Fixme,
+	PF_Fixme,
+	PF_Fixme,
+	PF_Fixme,
+	PF_Fixme,
+	PF_Checkextension,
 };
 
 builtin_t  *pr_builtins = pr_builtin;

@@ -1895,6 +1895,12 @@ PF_Fixme (progs_t * pr)
 }
 
 
+void
+PF_checkextension (progs_t *pr)
+{
+	G_FLOAT(pr, OFS_RETURN) = 0; //FIXME make this function actually useful :P
+}
+
 
 builtin_t   pr_builtin[] = {
 	PF_Fixme,
@@ -2034,7 +2040,29 @@ builtin_t   pr_builtin[] = {
 	// for qcc
 	PF_precache_file,
 
-	PF_setspawnparms
+	PF_setspawnparms,
+
+	PF_Fixme,
+	PF_Fixme,
+	PF_Fixme,
+	PF_Fixme,
+	PF_Fixme,
+	PF_Fixme,
+	PF_Fixme,
+	PF_Fixme,
+	PF_Fixme,
+	PF_Fixme,
+	PF_Fixme,
+	PF_Fixme,
+	PF_Fixme,
+	PF_Fixme,
+	PF_Fixme,
+	PF_Fixme,
+	PF_Fixme,
+	PF_Fixme,
+	PF_Fixme,
+	PF_Fixme,
+	PF_checkextension,
 };
 
 builtin_t  *pr_builtins = pr_builtin;
