@@ -852,6 +852,7 @@ main (int argc, char **argv)
 		usage (1);
 	}
 	
+
 	COM_StripExtension (options.bspfile, options.bspfile);
 	COM_DefaultExtension (options.bspfile, ".bsp");
 	
