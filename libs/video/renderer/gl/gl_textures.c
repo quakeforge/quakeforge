@@ -518,6 +518,8 @@ GL_Upload8 (byte * data, int width, int height, qboolean mipmap, qboolean alpha)
 
 	s = width * height;
 	trans = malloc (s * sizeof (unsigned int));
+	if (!trans)
+		Sys_Error ("GL_Upload8: Memory Allocation Failure\n");
 
 	// if there are no transparent pixels, make it a 3 component
 	// texture even if it was specified as otherwise

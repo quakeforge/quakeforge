@@ -41,6 +41,8 @@
 #include <direct.h>
 #endif
 
+#include <QF/sys.h>
+
 #include "cmdlib.h"
 
 #define PATHSEPERATOR   '/'
@@ -150,16 +152,6 @@ ExpandPathAndArchive (char *path)
 		CopyFile (expanded, archivename);
 	}
 	return expanded;
-}
-
-char *
-copystring (char *s) 
-{
-	char *b;
-
-	b = malloc (strlen (s) + 1);
-	strcpy (b, s);
-	return b;
 }
 
 /*

@@ -621,6 +621,8 @@ SCR_ScreenShot_f (void)
 		return;
 	}
 	buffer = malloc (glwidth * glheight * 3);
+	if (!buffer)
+		Sys_Error ("SCR_ScreenShot_f: Memory Allocation Failure\n");
 	qfglReadPixels (glx, gly, glwidth, glheight, GL_BGR_EXT, GL_UNSIGNED_BYTE,
 				  buffer);
 	WriteTGAfile (pcxname, buffer, glwidth, glheight);

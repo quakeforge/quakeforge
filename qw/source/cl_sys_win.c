@@ -228,6 +228,9 @@ Sys_ConsoleInput (void)
 									if (clipText) {
 										textCopied =
 											malloc (GlobalSize (th) + 1);
+										if (!textCopied)
+											Sys_Error ("Sys_ConsoleInput: "
+												"Memory Allocation Failure\n");
 										strcpy (textCopied, clipText);
 										// Substitutes a NULL for every token
 											strtok (textCopied, "\n\r\b");

@@ -43,6 +43,8 @@
 #include <libc.h>
 #endif
 
+#include <QF/sys.h>
+
 #include "cmdlib.h"
 
 #define PATHSEPERATOR   '/'
@@ -249,6 +251,8 @@ LoadFile (char *filename, void **bufferptr)
 	f = SafeOpenRead (filename);
 	length = FileLength (f);
 	buffer = malloc (length + 1);
+	if (!buffer)
+		Sys_Error ("LoadFile: Memory Allocation Failure\n");
 	((char *) buffer)[length] = 0;
 	SafeRead (f, buffer, length);
 	fclose (f);

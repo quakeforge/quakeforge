@@ -80,6 +80,10 @@ SNDDMA_Init (void)
 	shm->samples = 16384;				// mono samples in buffer
 	shm->speed = 44100;
 	shm->buffer = malloc (shm->samples * shm->channels * shm->samplebits / 8);
+	if (!shm->buffer) {
+		Sys_Printf ("SNDDMA_Init: memory allocation failure\n");
+		return 0;
+	}
 
 	Sys_Printf ("%5d stereo\n", shm->channels - 1);
 	Sys_Printf ("%5d samples\n", shm->samples);

@@ -99,8 +99,6 @@ char *COM_Parse (char *data);
 extern	char		com_token[1024];
 extern	qboolean	com_eof;
 
-char *copystring(char *s);
-
 void CRC_Init(unsigned short *crcvalue);
 void CRC_ProcessByte(unsigned short *crcvalue, byte data);
 unsigned short CRC_Value(unsigned short crcvalue);

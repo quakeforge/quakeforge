@@ -67,6 +67,8 @@ main ()
 	Cvar_Init_Hash ();
 	Cmd_Init_Hash ();
 	membase = malloc (memsize);
+	if (!membase)
+		Sys_Error ("Memory Allocation Failure\n");
 	Memory_Init (membase, memsize);
 	Cvar_Init ();
 	Cbuf_Init ();

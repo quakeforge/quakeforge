@@ -33,6 +33,7 @@ static const char rcsid[] =
 #include <stdlib.h>
 
 #include <QF/mathlib.h>
+#include <QF/sys.h>
 #include <QF/va.h>
 
 #include "qfcc.h"
@@ -286,6 +287,8 @@ new_label_expr (void)
 	expr_t *l = new_expr ();
 	l->type = ex_label;
 	l->e.label.name = malloc (len);
+	if (!l->e.label.name)
+		Sys_Error ("new_label_expr: Memory Allocation Failure\n");
 	sprintf (l->e.label.name, "$%s_%d", fname, lnum);
 	return l;
 }
@@ -472,6 +475,8 @@ do_op_string (int op, expr_t *e1, expr_t *e2)
 		case '+':
 			len = strlen (s1) + strlen (s2) + 1;
 			buf = malloc (len);
+			if (!buf)
+				Sys_Error ("do_op_string: Memory Allocation Failure\n");
 			strcpy (buf, s1);
 			strcat (buf, s2);
 			e1->e.string_val = buf;
@@ -1235,6 +1240,8 @@ function_expr (expr_t *e1, expr_t *e2)
 		expr_t     *ret = new_expr ();
 		ret->type = ex_def;
 		ret->e.def = memcpy (malloc (sizeof (def_t)), &def_ret, sizeof (def_t));
+		if (!ret->e.def)
+			Sys_Error ("function_expr: Memory Allocation Failure\n");
 		ret->e.def->type = ftype->aux_type;
 		call->e.block.result = ret;
 	}

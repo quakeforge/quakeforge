@@ -30,6 +30,7 @@
 #ifdef HAVE_CONFIG_H
 # include "config.h"
 #endif
+#include <QF/sys.h>
 
 #include "qfcc.h"
 
@@ -291,12 +292,16 @@ PR_FindType (type_t *type)
 
 	// allocate a new one
 	check = malloc (sizeof (*check));
+	if (!check)
+		Sys_Error ("PR_FindType: Memory Allocation Failure\n");
 	*check = *type;
 	check->next = pr.types;
 	pr.types = check;
 
 	// allocate a generic def for the type, so fields can reference it
 	def = malloc (sizeof (def_t));
+	if (!check)
+		Sys_Error ("PR_FindType: Memory Allocation Failure\n");
 	def->name = "COMPLEX TYPE";
 	def->type = check;
 	check->def = def;

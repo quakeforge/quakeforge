@@ -132,7 +132,8 @@ main (int argc, const char **argv)
 	memset (&parms, 0, sizeof (parms));
 
 	parms.memsize = 16384 * 1024;
-	parms.membase = malloc (parms.memsize);
+	if (!(parms.membase = malloc (parms.memsize)))
+		Sys_Error ("Can't allocate %d\n", parms.memsize);
 #if 0
 	_getcwd (cwd, sizeof (cwd));
 	if (cwd[Q_strlen (cwd) - 1] == '\\')

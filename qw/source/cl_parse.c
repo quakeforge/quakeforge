@@ -50,6 +50,7 @@ static const char rcsid[] =
 #include "QF/msg.h"
 #include "QF/screen.h"
 #include "QF/sound.h"
+#include "QF/sys.h"
 #include "QF/teamplay.h"
 #include "QF/va.h"
 #include "QF/vfile.h"
@@ -576,6 +577,8 @@ CL_StartUpload (byte * data, int size)
 	Con_DPrintf ("Upload starting of %d...\n", size);
 
 	upload_data = malloc (size);
+	if (!upload_data)
+		Sys_Error ("CL_StartUpload: Memory Allocation Failure\n");
 	memcpy (upload_data, data, size);
 	upload_size = size;
 	upload_pos = 0;

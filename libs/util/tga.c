@@ -108,6 +108,8 @@ LoadTGA (VFile *fin)
 	numPixels = columns * rows;
 
 	targa_rgba = malloc (numPixels * 4);
+	if (!targa_rgba)
+		Sys_Error ("LoadTGA: Memory Allocation Failure\n");
 
 	if (targa_header.id_length != 0)
 		Qseek (fin, targa_header.id_length, SEEK_CUR);	// skip TARGA image

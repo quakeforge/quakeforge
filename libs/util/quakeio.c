@@ -383,8 +383,11 @@ Qgetline (VFile *file)
 	static char *buf = 0;
 	int         len;
 
-	if (!buf)
+	if (!buf) {
 		buf = malloc (size);
+		if (!buf)
+			return 0;
+	}
 
 	if (!Qgets (file, buf, size))
 		return 0;

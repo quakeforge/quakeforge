@@ -244,6 +244,8 @@ Cmd_StuffCmds_f (void)
 
 	// pull out the commands
 	build = malloc (s + 1);
+	if (!build)
+		Sys_Error ("Cmd_StuffCmds_f: Memory Allocation Failure\n");
 	build[0] = 0;
 
 	for (i = 0; i < s - 1; i++) {
@@ -339,16 +341,6 @@ Cmd_Echo_f (void)
 
 	Creates a new command that executes a command string (possibly ; seperated)
 */
-char       *
-CopyString (char *in)
-{
-	char       *out;
-
-	out = malloc (strlen (in) + 1);
-	strcpy (out, in);
-	return out;
-}
-
 void
 Cmd_Alias_f (void)
 {
@@ -384,6 +376,8 @@ Cmd_Alias_f (void)
 
 	// copy the rest of the command line
 	cmd = malloc (strlen (Cmd_Args (1)) + 2);// can never be longer
+	if (!cmd)
+		Sys_Error ("Cmd_Alias_f: Memory Allocation Failure\n");
 	cmd[0] = 0;							// start out with a null string
 	c = Cmd_Argc ();
 	for (i = 2; i < c; i++) {
@@ -545,6 +539,8 @@ Cmd_AddCommand (const char *cmd_name, xcommand_t function, const char *descripti
 	}
 
 	cmd = malloc (sizeof (cmd_function_t));
+	if (!cmd)
+		Sys_Error ("Cmd_AddCommand: Memory_Allocation_Failure\n");
 	cmd->name = cmd_name;
 	cmd->function = function;
 	cmd->description = description;
@@ -648,6 +644,8 @@ Cmd_CompleteBuildList (const char *partial)
 
 	len = strlen(partial);
 	buf = malloc(sizeofbuf + sizeof (char *));
+	if (!buf)
+		Sys_Error ("Cmd_CompleteBuildList: Memory Allocation Failure\n");
 	// Loop through the alias list and print all matches
 	for (cmd = cmd_functions; cmd; cmd = cmd->next)
 		if (!strncasecmp(partial, cmd->name, len))
@@ -734,6 +732,8 @@ Cmd_CompleteAliasBuildList (const char *partial)
 
 	len = strlen(partial);
 	buf = malloc(sizeofbuf + sizeof (char *));
+	if (!buf)
+		Sys_Error ("Cmd_CompleteAliasBuildList: Memory Allocation Failure\n");
 	// Loop through the alias list and print all matches
 	for (alias = cmd_alias; alias; alias = alias->next)
 		if (!strncasecmp(partial, alias->name, len))

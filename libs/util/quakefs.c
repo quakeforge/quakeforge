@@ -879,6 +879,8 @@ COM_LoadGameDirectory (const char *dir)
 			}
 
 			pakfiles[count] = malloc (FNAME_SIZE);
+			if (!pakfiles[count])
+				Sys_Error ("COM_LoadGameDirectory: MemoryAllocationFailure\n");
 			snprintf (pakfiles[count], FNAME_SIZE - 1, "%s/%s", dir,
 					  dirent->d_name);
 			pakfiles[count][FNAME_SIZE - 1] = '\0';

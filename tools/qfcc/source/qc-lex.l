@@ -32,6 +32,7 @@ static const char rcsid[] =
 	"$Id$";
 
 #include <QF/hash.h>
+#include <QF/sys.h>
 #include "qfcc.h"
 #include "scope.h"
 #include "qc-parse.h"
@@ -320,6 +321,8 @@ void
 add_frame_macro (char *token)
 {
 	frame_t *frame = malloc (sizeof (frame_t));
+	if (!frame)
+		Sys_Error ("add_frame_macro: Memory Allocation Failure\n");
 
 	frame->name = strdup (token);
 	frame->num = frame_number++;
@@ -342,6 +345,8 @@ make_string (char *token)
 	pr_file_p = token;
 	PR_LexString ();
 	str = malloc (pr_token_len + 1);
+	if (!str)
+		Sys_Error ("make_string: Memory Allocation Failure\n");
 	memcpy (str, pr_token, pr_token_len + 1);
 	return str;
 }

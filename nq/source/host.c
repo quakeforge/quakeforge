@@ -793,12 +793,16 @@ Host_InitVCR (quakeparms_t *parms)
 
 		Qread (vcrFile, &com_argc, sizeof (int));
 		com_argv = malloc (com_argc * sizeof (char *));
+		if (!com_argv)
+			Sys_Error ("Host_InitVCR: Memory Allocation Failure\n");
 
 		com_argv[0] = parms->argv[0];
 		for (i = 0; i < com_argc; i++) {
 			Qread (vcrFile, &len, sizeof (int));
 
 			p = malloc (len);
+			if (!p)
+				Sys_Error ("Host_InitVCR: Memory Allocation Failure\n");
 			Qread (vcrFile, p, len);
 			com_argv[i + 1] = p;
 		}

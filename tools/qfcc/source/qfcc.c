@@ -913,6 +913,7 @@ main (int argc, char **argv)
 	int 	p, crc;
 	double	start, stop;
 	int		no_cpp = 0;
+	void   *mem;
 
 	start = Sys_DoubleTime ();
 
@@ -1023,7 +1024,10 @@ main (int argc, char **argv)
 			printf ("debug file: %s\n", debugfile);
 	}
 
-	PR_BeginCompilation (malloc (0x100000), 0x100000);
+	mem = malloc (0x100000);
+	if (!mem)
+		Sys_Error ("main: Memory Allocation Failure\n");
+	PR_BeginCompilation (mem, 0x100000);
 
 	// compile all the files
 	while ((src = COM_Parse (src))) {

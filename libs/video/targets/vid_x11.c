@@ -294,6 +294,7 @@ static void
 ResetFrameBuffer (void)
 {
 	int         mem, pwidth;
+	char       *buf;
 
 	if (x_framebuffer[0]) {
 		XDestroyImage (x_framebuffer[0]);
@@ -304,10 +305,13 @@ ResetFrameBuffer (void)
 	if (pwidth == 3)
 		pwidth = 4;
 	mem = ((vid.width * pwidth + 7) & ~7) * vid.height;
+	buf = malloc (mem);
+	if (!buf)
+		Sys_Error ("ResetFrameBuffer: Memory Allocation Failure\n");
 
 	// allocate new screen buffer
 	x_framebuffer[0] = XCreateImage (x_disp, x_vis, x_visinfo->depth,
-									 ZPixmap, 0, malloc (mem), vid.width,
+									 ZPixmap, 0, buf, vid.width,
 									 vid.height, 32, 0);
 
 	if (!x_framebuffer[0]) {

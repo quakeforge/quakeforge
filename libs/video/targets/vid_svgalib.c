@@ -267,6 +267,8 @@ VID_InitModes (void)
 	/* Get complete information on all modes */
 	num_modes = vga_lastmodenumber () + 1;
 	modes = malloc (num_modes * sizeof (vga_modeinfo));
+	if (!modes)
+		Sys_Error ("VID_InitModes: Memory Allocation Failure\n");
 	for (i = 0; i < num_modes; i++) {
 		if (vga_hasmode (i)) {
 			memcpy (&modes[i], vga_getmodeinfo (i), sizeof (vga_modeinfo));

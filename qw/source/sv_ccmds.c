@@ -842,7 +842,6 @@ SV_SendServerInfoChange (const char *key, const char *value)
 
 	Examine or change the serverinfo string
 */
-char       *CopyString (char *s);
 void
 SV_Serverinfo_f (void)
 {
@@ -881,7 +880,6 @@ SV_Serverinfo_f (void)
 
 	Examine or change the serverinfo string
 */
-char       *CopyString (char *s);
 void
 SV_Localinfo_f (void)
 {
