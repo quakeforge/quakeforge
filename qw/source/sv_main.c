@@ -365,6 +365,7 @@ SV_FullClientUpdate (client_t *client, sizebuf_t *buf)
 {
 	char        info[MAX_INFO_STRING];
 	int         i;
+	net_svc_updateuserinfo_t block;
 
 	i = client - svs.clients;
 
@@ -389,10 +390,11 @@ SV_FullClientUpdate (client_t *client, sizebuf_t *buf)
 	strncpy (info, client->userinfo, sizeof (info));
 	Info_RemovePrefixedKeys (info, '_', client_info_filters);	// server passwords, etc
 
+	block.slot = i;
+	block.userid = client->userid;
+	block.userinfo = info;
 	MSG_WriteByte (buf, svc_updateuserinfo);
-	MSG_WriteByte (buf, i);
-	MSG_WriteLong (buf, client->userid);
-	MSG_WriteString (buf, info);
+	NET_SVC_UpdateUserInfo_Emit (&block, buf);
 }
 
 /*

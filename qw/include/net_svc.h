@@ -219,12 +219,20 @@ net_status_t NET_SVC_SpawnStatic_Parse (net_svc_spawnstatic_t *block,
 net_status_t NET_SVC_TempEntity_Emit (net_svc_tempentity_t *block,
 									  sizebuf_t *buf);
 net_status_t NET_SVC_TempEntity_Parse (net_svc_tempentity_t *block, msg_t *msg);
+net_status_t NET_SVC_SpawnStaticSound_Emit (net_svc_spawnstaticsound_t *block,
+											sizebuf_t *buf);
 net_status_t NET_SVC_SpawnStaticSound_Parse (net_svc_spawnstaticsound_t *block,
 										 msg_t *msg);
+net_status_t NET_SVC_UpdateUserInfo_Emit (net_svc_updateuserinfo_t *block,
+										  sizebuf_t *buf);
 net_status_t NET_SVC_UpdateUserInfo_Parse (net_svc_updateuserinfo_t *block,
 									   msg_t *msg);
+net_status_t NET_SVC_SetInfo_Emit (net_svc_setinfo_t *block, sizebuf_t *buf);
 net_status_t NET_SVC_SetInfo_Parse (net_svc_setinfo_t *block, msg_t *msg);
+net_status_t NET_SVC_ServerInfo_Emit (net_svc_serverinfo_t *block,
+									  sizebuf_t *buf);
 net_status_t NET_SVC_ServerInfo_Parse (net_svc_serverinfo_t *block, msg_t *msg);
+net_status_t NET_SVC_Download_Emit (net_svc_download_t *block, sizebuf_t *buf);
 net_status_t NET_SVC_Download_Parse (net_svc_download_t *block, msg_t *msg);
 net_status_t NET_SVC_Playerinfo_Parse (net_svc_playerinfo_t *block, msg_t *msg);
 net_status_t NET_SVC_Nails_Parse (net_svc_nails_t *block, msg_t *msg);

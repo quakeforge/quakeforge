@@ -280,17 +280,16 @@ PF_ambientsound (progs_t *pr)
 {
 	const char      **check;
 	const char       *samp;
-	float      *pos;
-	float       vol, attenuation;
-	int         i, soundnum;
+	net_svc_spawnstaticsound_t block;
 
-	pos = G_VECTOR (pr, OFS_PARM0);
+	VectorCopy (G_VECTOR (pr, OFS_PARM0), block.position);
 	samp = G_STRING (pr, OFS_PARM1);
-	vol = G_FLOAT (pr, OFS_PARM2);
-	attenuation = G_FLOAT (pr, OFS_PARM3);
+	block.volume = G_FLOAT (pr, OFS_PARM2) * 255;
+	block.attenuation = G_FLOAT (pr, OFS_PARM3) * 64;
 
 	// check to see if samp was properly precached
-	for (soundnum = 0, check = sv.sound_precache; *check; check++, soundnum++)
+	for (block.sound_num = 0, check = sv.sound_precache; *check;
+		 check++, block.sound_num++)
 		if (!strcmp (*check, samp))
 			break;
 
@@ -301,14 +300,7 @@ PF_ambientsound (progs_t *pr)
 
 	// add an svc_spawnambient command to the level signon packet
 	MSG_WriteByte (&sv.signon, svc_spawnstaticsound);
-	for (i = 0; i < 3; i++)
-		MSG_WriteCoord (&sv.signon, pos[i]);
-
-	MSG_WriteByte (&sv.signon, soundnum);
-
-	MSG_WriteByte (&sv.signon, vol * 255);
-	MSG_WriteByte (&sv.signon, attenuation * 64);
-
+	NET_SVC_SpawnStaticSound_Emit (&block, &sv.signon);
 }
 
 /*
@@ -1366,6 +1358,7 @@ PF_setinfokey (progs_t *pr)
 	int         e1 = NUM_FOR_EDICT (pr, edict);
 	const char *key = G_STRING (pr, OFS_PARM1);
 	const char *value = G_STRING (pr, OFS_PARM2);
+	net_svc_setinfo_t block;
 
 	if (e1 == 0) {
 		Info_SetValueForKey (localinfo, key, value, MAX_LOCALINFO_STRING,
@@ -1376,12 +1369,11 @@ PF_setinfokey (progs_t *pr)
 		SV_ExtractFromUserinfo (&svs.clients[e1 - 1]);
 
 		if (Info_FilterForKey (key, client_info_filters)) {
+			block.slot = e1 - 1;
+			block.key = key;
+			block.value = Info_ValueForKey (svs.clients[e1 - 1].userinfo, key);
 			MSG_WriteByte (&sv.reliable_datagram, svc_setinfo);
-			MSG_WriteByte (&sv.reliable_datagram, e1 - 1);
-			MSG_WriteString (&sv.reliable_datagram, key);
-			MSG_WriteString (&sv.reliable_datagram,
-							 Info_ValueForKey (svs.clients[e1 - 1].userinfo,
-								 			   key));
+			NET_SVC_SetInfo_Emit (&block, &sv.reliable_datagram);
 		}
 	}
 }

@@ -548,27 +548,27 @@ void
 SV_NextDownload_f (void)
 {
 	byte        buffer[1024];
-	int         r;
-	int         percent;
-	int         size;
+	net_svc_download_t block;
 
 	if (!host_client->download)
 		return;
 
-	r = host_client->downloadsize - host_client->downloadcount;
-	if (r > 768)
-		r = 768;
-	r = Qread (host_client->download, buffer, r);
-	ClientReliableWrite_Begin (host_client, svc_download, 6 + r);
-	ClientReliableWrite_Short (host_client, r);
+	block.size = host_client->downloadsize - host_client->downloadcount;
+	if (block.size > 768)
+		block.size = 768;
+	block.size = Qread (host_client->download, buffer, block.size);
 
-	host_client->downloadcount += r;
-	size = host_client->downloadsize;
-	if (!size)
-		size = 1;
-	percent = host_client->downloadcount * 100 / size;
-	ClientReliableWrite_Byte (host_client, percent);
-	ClientReliableWrite_SZ (host_client, buffer, r);
+	host_client->downloadcount += block.size;
+	block.percent = host_client->downloadcount * 100 /
+				  (host_client->downloadsize ?: 1);
+
+	block.data = buffer;
+	ClientReliableWrite_Begin (host_client, svc_download, 6 + block.size);
+	if (host_client->num_backbuf) {
+		NET_SVC_Download_Emit (&block, &host_client->backbuf);
+		ClientReliable_FinishWrite (host_client);
+	} else
+		NET_SVC_Download_Emit (&block, &host_client->netchan.message);
 
 	if (host_client->downloadcount != host_client->downloadsize)
 		return;
@@ -677,6 +677,7 @@ SV_BeginDownload_f (void)
 	int         size;
 	char        realname[MAX_OSPATH];
 	int         zip;
+	net_svc_download_t block;
 
 	name = Cmd_Argv (1);
 // hacked by zoid to allow more conrol over download
@@ -694,9 +695,14 @@ SV_BeginDownload_f (void)
 		|| (strncmp (name, "maps/", 5) == 0 && !allow_download_maps->int_val)
 		// MUST be in a subdirectory    
 		|| !strstr (name, "/")) {		// don't allow anything with .. path
+		block.size = -1;
+		block.percent = 0;
 		ClientReliableWrite_Begin (host_client, svc_download, 4);
-		ClientReliableWrite_Short (host_client, -1);
-		ClientReliableWrite_Byte (host_client, 0);
+		if (host_client->num_backbuf) {
+			NET_SVC_Download_Emit (&block, &host_client->backbuf);
+			ClientReliable_FinishWrite (host_client);
+		} else
+			NET_SVC_Download_Emit (&block, &host_client->netchan.message);
 		return;
 	}
 
@@ -732,19 +738,30 @@ SV_BeginDownload_f (void)
 		}
 
 		SV_Printf ("Couldn't download %s to %s\n", name, host_client->name);
+
+		block.size = -1;
+		block.percent = 0;
 		ClientReliableWrite_Begin (host_client, svc_download, 4);
-		ClientReliableWrite_Short (host_client, -1);
-		ClientReliableWrite_Byte (host_client, 0);
+		if (host_client->num_backbuf) {
+			NET_SVC_Download_Emit (&block, &host_client->backbuf);
+			ClientReliable_FinishWrite (host_client);
+		} else
+			NET_SVC_Download_Emit (&block, &host_client->netchan.message);
 		return;
 	}
 
 	if (zip && strcmp (realname, name)) {
 		SV_Printf ("download renamed to %s\n", realname);
+
+		block.size = -2;
+		block.percent = 0;
+		block.name = realname;
 		ClientReliableWrite_Begin (host_client, svc_download,
 								   strlen (realname) + 5);
-		ClientReliableWrite_Short (host_client, -2);
-		ClientReliableWrite_Byte (host_client, 0);
-		ClientReliableWrite_String (host_client, realname);
+		if (host_client->num_backbuf)
+			NET_SVC_Download_Emit (&block, &host_client->backbuf);
+		else
+			NET_SVC_Download_Emit (&block, &host_client->netchan.message);
 		ClientReliable_FinishWrite (host_client);
 	}
 
@@ -1101,6 +1118,8 @@ SV_Msg_f (void)
 void
 SV_SetInfo_f (void)
 {
+	net_svc_setinfo_t block;
+
 	if (Cmd_Argc () == 1) {
 		SV_Printf ("User info settings:\n");
 		Info_Print (host_client->userinfo);
@@ -1139,12 +1158,11 @@ SV_SetInfo_f (void)
 	SV_ExtractFromUserinfo (host_client);
 
 	if (Info_FilterForKey (Cmd_Argv (1), client_info_filters)) {
+		block.slot = host_client - svs.clients;
+		block.key = Cmd_Argv (1);
+		block.value = Info_ValueForKey (host_client->userinfo, Cmd_Argv (1));
 		MSG_WriteByte (&sv.reliable_datagram, svc_setinfo);
-		MSG_WriteByte (&sv.reliable_datagram, host_client - svs.clients);
-		MSG_WriteString (&sv.reliable_datagram, Cmd_Argv (1));
-		MSG_WriteString (&sv.reliable_datagram,
-						 Info_ValueForKey (host_client->userinfo,
-							 			   Cmd_Argv (1)));
+		NET_SVC_SetInfo_Emit (&block, &sv.reliable_datagram);
 	}
 }
 
