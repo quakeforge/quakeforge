@@ -52,9 +52,6 @@ static __attribute__ ((unused)) const char rcsid[] =
 
 #include "compat.h"
 
-typedef unsigned char	uch;
-typedef unsigned short	ush;
-typedef unsigned long	ulg;
 
 /* Qread wrapper for libpng */
 static void 
@@ -67,16 +64,17 @@ user_read_data (png_structp png_ptr, png_bytep data, png_size_t length)
 static int
 readpng_init (QFile *infile, png_structp *png_ptr, png_infop *info_ptr)
 {
-	uch sig[8];
+	unsigned char	sig[8];
 
 	/* Check the signiture */
 	Qread (infile, sig, 8);
-	if (!png_check_sig(sig, 8)) {
+	if (!png_check_sig (sig, 8)) {
 		Sys_Printf ("Bad png file\n");
 		return (1);
 	}
 
-	*png_ptr = png_create_read_struct (PNG_LIBPNG_VER_STRING, NULL, NULL, NULL);
+	*png_ptr = png_create_read_struct (PNG_LIBPNG_VER_STRING, NULL, NULL,
+									   NULL);
 	if (!*png_ptr)
 		return (2); /* Out of memory! */
 
@@ -89,7 +87,7 @@ readpng_init (QFile *infile, png_structp *png_ptr, png_infop *info_ptr)
 	/* setjmp() must be called in every function that calls a PNG-reading
 	 * libpng function */
 
-	if (setjmp(png_jmpbuf(*png_ptr))) {
+	if (setjmp (png_jmpbuf (*png_ptr))) {
 		png_destroy_read_struct (png_ptr, info_ptr, NULL);
 		return (4);
 	}
@@ -108,19 +106,19 @@ readpng_init (QFile *infile, png_structp *png_ptr, png_infop *info_ptr)
 tex_t *
 LoadPNG (QFile *infile)
 {
-	double gamma;
-	png_structp png_ptr = NULL;
-	png_infop info_ptr = NULL;
-	png_uint_32  i, rowbytes;
-	png_bytepp  row_pointers = NULL;
-	png_uint_32 width, height;
-	int bit_depth, color_type;
-	tex_t *tex;
+	double			gamma;
+	png_structp		png_ptr = NULL;
+	png_infop		info_ptr = NULL;
+	png_uint_32		height, width, rowbytes, i;
+	png_bytepp		row_pointers = NULL;
+	int				bit_depth, color_type;
+	tex_t		   *tex;
 	
-	if (readpng_init(infile, &png_ptr, &info_ptr) != 0)
+	if (readpng_init (infile, &png_ptr, &info_ptr) != 0)
 		return (NULL);
 		
-	png_get_IHDR(png_ptr, info_ptr, &width, &height, &bit_depth, &color_type, NULL, NULL, NULL);
+	png_get_IHDR (png_ptr, info_ptr, &width, &height, &bit_depth, &color_type,
+				  NULL, NULL, NULL);
 	
 	if (color_type == PNG_COLOR_TYPE_PALETTE)
 		png_set_expand (png_ptr);
@@ -128,13 +126,14 @@ LoadPNG (QFile *infile)
 	if (color_type == PNG_COLOR_TYPE_GRAY && bit_depth < 8)
 		png_set_expand (png_ptr);
 		
-	if (png_get_valid(png_ptr, info_ptr, PNG_INFO_tRNS))
+	if (png_get_valid (png_ptr, info_ptr, PNG_INFO_tRNS))
 		png_set_expand (png_ptr);
 		
 	if (bit_depth == 16)
 		png_set_strip_16 (png_ptr);
 	
-	if (color_type == PNG_COLOR_TYPE_GRAY || color_type == PNG_COLOR_TYPE_GRAY_ALPHA)
+	if (color_type == PNG_COLOR_TYPE_GRAY
+		|| color_type == PNG_COLOR_TYPE_GRAY_ALPHA)
 		png_set_gray_to_rgb (png_ptr);
 	
 	/* NOTE: gamma support? */
@@ -145,7 +144,8 @@ LoadPNG (QFile *infile)
 	if (!png_get_gAMA(png_ptr, info_ptr, &gamma))
 		png_set_gamma (png_ptr, 1.0, gamma);
 
-	/* All transformations have been registered, now update the info_ptr structure */		
+	/* All transformations have been registered, now update the info_ptr
+	 * structure */		
 	png_read_update_info (png_ptr, info_ptr);
 	
 	/* Allocate tex_t structure */
@@ -160,7 +160,8 @@ LoadPNG (QFile *infile)
 		tex->format = tex_rgb;
 	tex->palette = NULL;
 	
-	if ((row_pointers = (png_bytepp)malloc(height * sizeof(png_bytep))) == NULL) {
+	if ((row_pointers = (png_bytepp) malloc (height * sizeof (png_bytep)))
+		== NULL) {
 		png_destroy_read_struct (&png_ptr, &info_ptr, NULL);
 		return (NULL); /* Out of memory */
 	}
@@ -169,12 +170,12 @@ LoadPNG (QFile *infile)
 		row_pointers[i] = tex->data + (i * rowbytes);
 		
 	/* Now we can go ahead and read the whole image */
-	png_read_image(png_ptr, row_pointers);
+	png_read_image (png_ptr, row_pointers);
 	
-	free(row_pointers);
+	free (row_pointers);
 	row_pointers = NULL;
 
-	png_read_end(png_ptr, NULL);
+	png_read_end (png_ptr, NULL);
 		
 	return (tex);
 }
