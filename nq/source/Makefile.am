@@ -139,7 +139,6 @@ nq_glx_SOURCES=	$(combined_SOURCES) $(ogl_SOURCES)
 nq_glx_LDADD=	$(client_LIBS) $(GLX_LIBS) $(X_PRE_LIBS) $(VIDMODE_LIBS) $(DGA_LIBS) $(X_LIBS) -lX11 $(X_EXTRA_LIBS) $(DL_LIBS) ../../libs/video/targets/libQFglx.la
 nq_glx_DEPENDENCIES= $(client_LIB_DEPS)
 
-#
 # ... Simple Directmedia Layer, version 1.1 and higher, in GL mode
 nq_sgl_SOURCES=	$(combined_SOURCES) $(ogl_SOURCES)
 nq_sgl_LDADD=	$(client_LIBS) $(X_LIBS) $(SDL_LIBS) $(GLX_LIBS) $(DL_LIBS) ../../libs/video/targets/libQFsgl.la
@@ -147,8 +146,7 @@ nq_sgl_DEPENDENCIES= $(client_LIB_DEPS)
 
 
 # ... SGI/Microsoft WGL (Windows OpenGL)
-wgl_SOURCES=	vid_wgl.c conproc.c
-nq_wgl_SOURCES=	$(combined_SOURCES) $(ogl_SOURCES)
+nq_wgl_SOURCES=	$(combined_SOURCES) $(ogl_SOURCES) conproc.c
 nq_wgl_LDADD=	$(client_LIBS) $(GLX_LIBS) ../../libs/video/targets/libQFwgl.la -lgdi32 -lcomctl32
 nq_wgl_DEPENDENCIES= $(client_LIB_DEPS)
 
@@ -161,7 +159,6 @@ nq_server_DEPENDENCIES=	libqfnet.a
 
 # Stuff that doesn't get linked into an executable NEEDS to be mentioned here,
 # or it won't be distributed with 'make dist'
-#
 EXTRA_DIST=	#nq.dsp dirent.c fnmatch.c sys_unix.c sys_win.c
 
 # Kill the temp files, hopefully.
