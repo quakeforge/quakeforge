@@ -713,7 +713,7 @@ _Host_Frame (float time)
 // update audio
 	if (cls.signon == SIGNONS) {
 		S_Update (r_origin, vpn, vright, vup);
-		CL_DecayLights ();
+		R_DecayLights ();
 	} else
 		S_Update (vec3_origin, vec3_origin, vec3_origin, vec3_origin);
 

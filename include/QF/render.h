@@ -34,6 +34,24 @@
 #include "QF/model.h"
 #include "QF/vid.h"
 
+// dynamic lights ===========================================================
+
+#define MAX_DLIGHTS     32
+typedef struct dlight_s
+{
+	int     key;                // so entities can reuse same entry
+	vec3_t  origin;
+	float   radius;
+	float   die;                // stop lighting after this time
+	float   decay;              // drop this each second
+	float   minlight;           // don't add when contributing less
+	float   color[3];           // Don't use alpha  --KB
+} dlight_t;
+
+extern  dlight_t        r_dlights[MAX_DLIGHTS];
+
+//===============
+
 #define	TOP_RANGE		16			// soldier uniform colors
 #define	BOTTOM_RANGE	96
 
@@ -140,7 +158,7 @@ void R_ViewChanged (vrect_t *pvrect, int lineadj, float aspect);
 void R_AddEfrags (entity_t *ent);
 void R_RemoveEfrags (entity_t *ent);
 
-void R_NewMap (void);
+void R_NewMap (model_t *worldmodel);
 
 
 // LordHavoc: relative bmodel lighting
@@ -165,5 +183,9 @@ void R_LoadSkys (const char *);
 void R_ClearEfrags (void);
 void R_ClearEnts (void);
 struct entity_s **R_NewEntity (void);
+
+dlight_t *R_AllocDlight (int key);
+void R_DecayLights (void);
+void R_ClearDlights (void);
 
 #endif // __render_h

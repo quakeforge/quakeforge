@@ -691,7 +691,6 @@ R_AliasDrawModel (alight_t *plighting)
 
 	if (currententity != &cl.viewent)
 		ziscale = (float) 0x8000 *(float) 0x10000;
-
 	else
 		ziscale = (float) 0x8000 *(float) 0x10000 *3.0;
 

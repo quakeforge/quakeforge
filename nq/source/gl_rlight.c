@@ -167,7 +167,7 @@ R_RenderDlights (void)
 	glBlendFunc (GL_ONE, GL_ONE);
 	glShadeModel (GL_SMOOTH);
 
-	l = cl_dlights;
+	l = r_dlights;
 	for (i = 0; i < MAX_DLIGHTS; i++, l++) {
 		if (l->die < r_realtime || !l->radius)
 			continue;
@@ -291,7 +291,7 @@ R_PushDlights (vec3_t entorigin)
 	if (!gl_dlight_lightmap->int_val)
 		return;
 
-	l = cl_dlights;
+	l = r_dlights;
 
 	for (i = 0; i < MAX_DLIGHTS; i++, l++) {
 		if (l->die < r_realtime || !l->radius)

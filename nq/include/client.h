@@ -282,15 +282,11 @@ extern	client_state_t	cl;
 extern	entity_t		cl_entities[MAX_EDICTS];
 extern	entity_t		cl_static_entities[MAX_STATIC_ENTITIES];
 extern	lightstyle_t	cl_lightstyle[MAX_LIGHTSTYLES];
-extern	dlight_t		cl_dlights[MAX_DLIGHTS];
 
 
 /*
   cl_main
 */
-dlight_t *CL_AllocDlight (int key);
-void	CL_DecayLights (void);
-
 void CL_Init (void);
 void CL_InitCvars (void);
 

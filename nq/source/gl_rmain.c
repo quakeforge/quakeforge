@@ -639,10 +639,10 @@ R_DrawAliasModel (entity_t *e)
 		shadelight = max (shadelight, 24);
 
 	for (lnum = 0; lnum < MAX_DLIGHTS; lnum++) {
-		if (cl_dlights[lnum].die >= r_realtime) {
-			VectorSubtract (currententity->origin, cl_dlights[lnum].origin,
+		if (r_dlights[lnum].die >= r_realtime) {
+			VectorSubtract (currententity->origin, r_dlights[lnum].origin,
 							dist);
-			add = (cl_dlights[lnum].radius * cl_dlights[lnum].radius * 8) /
+			add = (r_dlights[lnum].radius * r_dlights[lnum].radius * 8) /
 				(DotProduct (dist, dist));	// FIXME Deek
 
 			if (add > 0)
@@ -787,7 +787,7 @@ R_ShowNearestLoc (void)
 	nearloc = locs_find (r_origin);
 
 	if (nearloc) {
-		dl = CL_AllocDlight (4096);
+		dl = R_AllocDlight (4096);
 		VectorCopy (nearloc->loc, dl->origin);
 		dl->radius = 200;
 		dl->die = r_realtime + 0.1;

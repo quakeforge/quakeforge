@@ -297,7 +297,7 @@ Model_NextDownload (void)
 	// all done
 	cl.worldmodel = cl.model_precache[1];
 
-	R_NewMap ();
+	R_NewMap (cl.worldmodel);
 	Team_NewMap ();
 	Hunk_Check ();						// make sure nothing is hurt
 
@@ -1081,7 +1081,7 @@ CL_MuzzleFlash (void)
 
 	pl = &cl.frames[parsecountmod].playerstate[i - 1];
 
-	dl = CL_AllocDlight (i);
+	dl = R_AllocDlight (i);
 	VectorCopy (pl->origin, dl->origin);
 	AngleVectors (pl->viewangles, fv, rv, uv);
 

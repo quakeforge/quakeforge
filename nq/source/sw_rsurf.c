@@ -84,13 +84,13 @@ R_AddDynamicLights (void)
 		if (!(surf->dlightbits & (1 << lnum)))
 			continue;					// not lit by this light
 
-		VectorSubtract (cl_dlights[lnum].origin, currententity->origin,
+		VectorSubtract (r_dlights[lnum].origin, currententity->origin,
 						lightorigin);
-		rad = cl_dlights[lnum].radius;
+		rad = r_dlights[lnum].radius;
 		dist = DotProduct (lightorigin, surf->plane->normal) -
 			surf->plane->dist;
 		rad -= fabs (dist);
-		minlight = cl_dlights[lnum].minlight;
+		minlight = r_dlights[lnum].minlight;
 		if (rad < minlight)
 			continue;
 		minlight = rad - minlight;

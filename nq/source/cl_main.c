@@ -89,7 +89,6 @@ entity_state_t    cl_baselines[MAX_EDICTS];
 entity_t    cl_static_entities[MAX_STATIC_ENTITIES];
 entity_state_t    cl_static_entity_baselines[MAX_STATIC_ENTITIES];
 lightstyle_t cl_lightstyle[MAX_LIGHTSTYLES];
-dlight_t    cl_dlights[MAX_DLIGHTS];
 
 
 void
@@ -170,12 +169,12 @@ CL_ClearState (void)
 	// clear other arrays   
 	memset (cl_entities, 0, sizeof (cl_entities));
 	memset (cl_baselines, 0, sizeof (cl_baselines));
-	memset (cl_dlights, 0, sizeof (cl_dlights));
 	memset (cl_lightstyle, 0, sizeof (cl_lightstyle));
 
 	CL_ClearTEnts ();
 
 	R_ClearEfrags ();
+	R_ClearDlights ();
 
 	for (i = 0; i < MAX_EDICTS; i++) {
 		cl_entities[i].baseline = &cl_baselines[i];
@@ -413,47 +412,13 @@ SetPal (int i)
 }
 
 
-dlight_t *
-CL_AllocDlight (int key)
-{
-	int         i;
-	dlight_t   *dl;
-
-	// first look for an exact key match
-	if (key) {
-		dl = cl_dlights;
-		for (i = 0; i < MAX_DLIGHTS; i++, dl++) {
-			if (dl->key == key) {
-				memset (dl, 0, sizeof (*dl));
-				dl->key = key;
-				return dl;
-			}
-		}
-	}
-	// then look for anything else
-	dl = cl_dlights;
-	for (i = 0; i < MAX_DLIGHTS; i++, dl++) {
-		if (dl->die < cl.time) {
-			memset (dl, 0, sizeof (*dl));
-			dl->key = key;
-			return dl;
-		}
-	}
-
-	dl = &cl_dlights[0];
-	memset (dl, 0, sizeof (*dl));
-	dl->key = key;
-	return dl;
-}
-
-
 void
 CL_NewDlight (int key, float x, float y, float z, float radius, float time,
 			  int type)
 {
 	dlight_t   *dl;
 
-	dl = CL_AllocDlight (key);
+	dl = R_AllocDlight (key);
 	dl->origin[0] = x;
 	dl->origin[1] = y;
 	dl->origin[2] = z;
@@ -481,27 +446,6 @@ CL_NewDlight (int key, float x, float y, float z, float radius, float time,
 		dl->color[1] = 0.05;
 		dl->color[2] = 0.5;
 		break;
-	}
-}
-
-
-void
-CL_DecayLights (void)
-{
-	int         i;
-	dlight_t   *dl;
-	float       time;
-
-	time = cl.time - cl.oldtime;
-
-	dl = cl_dlights;
-	for (i = 0; i < MAX_DLIGHTS; i++, dl++) {
-		if (dl->die < cl.time || !dl->radius)
-			continue;
-
-		dl->radius -= time * dl->decay;
-		if (dl->radius < 0)
-			dl->radius = 0;
 	}
 }
 
@@ -639,7 +583,7 @@ CL_RelinkEntities (void)
 		if (ent->effects & EF_MUZZLEFLASH) {
 			vec3_t      fv, rv, uv;
 
-			dl = CL_AllocDlight (i);
+			dl = R_AllocDlight (i);
 			VectorCopy (ent->origin, dl->origin);
 			dl->origin[2] += 16;
 			AngleVectors (ent->angles, fv, rv, uv);
@@ -669,14 +613,14 @@ CL_RelinkEntities (void)
 						  200 + (rand () & 31), 0.001, 0);
 #ifdef QUAKE2
 		if (ent->effects & EF_DARKLIGHT) {
-			dl = CL_AllocDlight (i);
+			dl = R_AllocDlight (i);
 			VectorCopy (ent->origin, dl->origin);
 			dl->radius = 200.0 + (rand () & 31);
 			dl->die = cl.time + 0.001;
 			dl->dark = true;
 		}
 		if (ent->effects & EF_LIGHT) {
-			dl = CL_AllocDlight (i);
+			dl = R_AllocDlight (i);
 			VectorCopy (ent->origin, dl->origin);
 			dl->radius = 200;
 			dl->die = cl.time + 0.001;
@@ -685,7 +629,7 @@ CL_RelinkEntities (void)
 		if (VectorDistance_fast(ent->msg_origins[1], ent->origin) > (256*256))
 			VectorCopy (ent ->origin, ent->msg_origins[1]);
 		if (ent->model->flags & EF_ROCKET) {
-			dl = CL_AllocDlight (i);
+			dl = R_AllocDlight (i);
 			VectorCopy (ent->origin, dl->origin);
 			VectorCopy (r_firecolor->vec, dl->color);
 			dl->radius = 200;

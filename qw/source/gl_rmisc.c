@@ -175,7 +175,7 @@ R_Init (void)
 
 
 void
-R_NewMap (void)
+R_NewMap (model_t *worldmodel)
 {
 	int         i;
 	cvar_t     *r_skyname;
@@ -184,7 +184,7 @@ R_NewMap (void)
 		d_lightstylevalue[i] = 264;		// normal light value
 
 	memset (&r_worldentity, 0, sizeof (r_worldentity));
-	r_worldentity.model = cl.worldmodel;
+	r_worldentity.model = worldmodel;
 
 	// clear out efrags in case the level hasn't been reloaded
 	for (i = 0; i < r_worldentity.model->numleafs; i++)

@@ -82,42 +82,6 @@ CL_ClearEnts ()
 }
 
 
-dlight_t *
-CL_AllocDlight (int key)
-{
-	int         i;
-	dlight_t   *dl;
-
-	// first look for an exact key match
-	if (key) {
-		dl = cl_dlights;
-		for (i = 0; i < MAX_DLIGHTS; i++, dl++) {
-			if (dl->key == key) {
-				memset (dl, 0, sizeof (*dl));
-				dl->key = key;
-				dl->color[0] = dl->color[1] = dl->color[2] = 1;
-				return dl;
-			}
-		}
-	}
-	// then look for anything else
-	dl = cl_dlights;
-	for (i = 0; i < MAX_DLIGHTS; i++, dl++) {
-		if (dl->die < cl.time) {
-			memset (dl, 0, sizeof (*dl));
-			dl->key = key;
-			dl->color[0] = dl->color[1] = dl->color[2] = 1;
-			return dl;
-		}
-	}
-
-	dl = &cl_dlights[0];
-	memset (dl, 0, sizeof (*dl));
-	dl->key = key;
-	return dl;
-}
-
-
 void
 CL_NewDlight (int key, vec3_t org, int effects)
 {
@@ -133,7 +97,7 @@ CL_NewDlight (int key, vec3_t org, int effects)
 		return;
 
 	radius = 200 + (rand () & 31);
-	dl = CL_AllocDlight (key);
+	dl = R_AllocDlight (key);
 	VectorCopy (org, dl->origin);
 	dl->die = cl.time + 0.1;
 	switch (effects & (EF_BLUE | EF_RED)) {
@@ -155,24 +119,6 @@ CL_NewDlight (int key, vec3_t org, int effects)
 		dl->origin[2] += 16;
 	}
 	dl->radius = radius;
-}
-
-
-void
-CL_DecayLights (void)
-{
-	int         i;
-	dlight_t   *dl;
-
-	dl = cl_dlights;
-	for (i = 0; i < MAX_DLIGHTS; i++, dl++) {
-		if (dl->die < cl.time || !dl->radius)
-			continue;
-
-		dl->radius -= host_frametime * dl->decay;
-		if (dl->radius < 0)
-			dl->radius = 0;
-	}
 }
 
 
@@ -552,7 +498,7 @@ CL_LinkPacketEntities (void)
 			VectorCopy ((*ent)->origin, (*ent)->old_origin);
 
 		if (model->flags & EF_ROCKET) {
-			dl = CL_AllocDlight (-(*ent)->keynum);
+			dl = R_AllocDlight (-(*ent)->keynum);
 			VectorCopy ((*ent)->origin, dl->origin);
 			VectorCopy (r_firecolor->vec, dl->color);
 			dl->radius = 200;

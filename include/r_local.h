@@ -42,21 +42,6 @@
 #define BMODEL_FULLY_CLIPPED	0x10 // value returned by R_BmodelCheckBBox ()
 									 //  if bbox is trivially rejected
 
-// dynamic lights ===========================================================
-
-#define MAX_DLIGHTS     32
-typedef struct
-{
-	int     key;                // so entities can reuse same entry
-	vec3_t  origin;
-	float   radius;
-	float   die;                // stop lighting after this time
-	float   decay;              // drop this each second
-	float   minlight;           // don't add when contributing less
-	float   color[3];           // Don't use alpha  --KB
-} dlight_t;
-
-
 // color shifts =============================================================
 
 typedef struct
@@ -335,6 +320,7 @@ extern qboolean	r_fov_greater_than_90;
 
 extern int r_numvisedicts;
 extern struct entity_s *r_visedicts[];
+struct dlight_s;
 
 void R_StoreEfrags (efrag_t **ppefrag);
 void R_TimeRefresh_f (void);
@@ -349,7 +335,7 @@ void R_cshift_f (void);
 void R_EmitEdge (mvertex_t *pv0, mvertex_t *pv1);
 void R_ClipEdge (mvertex_t *pv0, mvertex_t *pv1, clipplane_t *clip);
 void R_SplitEntityOnNode2 (mnode_t *node);
-void R_MarkLights (vec3_t lightorigin, dlight_t *light, int bit, mnode_t *node);
+void R_MarkLights (vec3_t lightorigin, struct dlight_s *light, int bit, mnode_t *node);
 
 void R_LoadSkys (const char *);
 

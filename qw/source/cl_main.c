@@ -165,7 +165,6 @@ entity_state_t cl_baselines[MAX_EDICTS];
 efrag_t     cl_efrags[MAX_EFRAGS];
 entity_t    cl_static_entities[MAX_STATIC_ENTITIES];
 lightstyle_t cl_lightstyle[MAX_LIGHTSTYLES];
-dlight_t    cl_dlights[MAX_DLIGHTS];
 
 double      connect_time = -1;			// for connection retransmits
 
@@ -411,6 +410,7 @@ CL_ClearState (void)
 	CL_ClearTEnts ();
 
 	R_ClearEfrags ();
+	R_ClearDlights ();
 
 // wipe the entire cl structure
 	memset (&cl, 0, sizeof (cl));
@@ -419,7 +419,6 @@ CL_ClearState (void)
 
 // clear other arrays   
 	memset (cl_efrags, 0, sizeof (cl_efrags));
-	memset (cl_dlights, 0, sizeof (cl_dlights));
 	memset (cl_lightstyle, 0, sizeof (cl_lightstyle));
 }
 
@@ -1489,7 +1488,7 @@ Host_Frame (float time)
 	// update audio
 	if (cls.state == ca_active) {
 		S_Update (r_origin, vpn, vright, vup);
-		CL_DecayLights ();
+		R_DecayLights ();
 	} else
 		S_Update (vec3_origin, vec3_origin, vec3_origin, vec3_origin);
 

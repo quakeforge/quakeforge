@@ -30,6 +30,8 @@
 # include "config.h"
 #endif
 
+#include "QF/render.h"
+
 #include "client.h"
 #include "r_local.h"
 
@@ -108,7 +110,7 @@ R_PushDlights (vec3_t entorigin)
 
 	r_dlightframecount = r_framecount + 1;	// because the count hasn't
 	// advanced yet for this frame
-	l = cl_dlights;
+	l = r_dlights;
 
 	for (i = 0; i < MAX_DLIGHTS; i++, l++) {
 		if (l->die < r_realtime || !l->radius)

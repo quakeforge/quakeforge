@@ -33,9 +33,6 @@
 #include "QF/qtypes.h"
 #include "QF/render.h"
 
-dlight_t *CL_AllocDlight (int key);
-void	CL_DecayLights (void);
-
 void CL_Init (void);
 void Host_WriteConfiguration (void);
 

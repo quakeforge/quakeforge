@@ -163,11 +163,11 @@ R_AddDynamicLights (msurface_t *surf)
 		if (!(surf->dlightbits & (1 << lnum)))
 			continue;					// not lit by this light
 
-		VectorSubtract (cl_dlights[lnum].origin, currententity->origin, local);
+		VectorSubtract (r_dlights[lnum].origin, currententity->origin, local);
 		dist = DotProduct (local, surf->plane->normal) - surf->plane->dist;
 		for (i = 0; i < 3; i++)
 			impact[i] =
-				cl_dlights[lnum].origin[i] - surf->plane->normal[i] * dist;
+				r_dlights[lnum].origin[i] - surf->plane->normal[i] * dist;
 
 		i = f =	DotProduct (impact,	surf->texinfo->vecs[0]) +
 			surf->texinfo->vecs[0][3] - surf->texturemins[0];
@@ -181,7 +181,7 @@ R_AddDynamicLights (msurface_t *surf)
 			surf->texinfo->vecs[1][3] - surf->texturemins[1];
 
 		// for comparisons to minimum acceptable light
-		maxdist = (int) ((cl_dlights[lnum].radius * cl_dlights[lnum].radius) * 0.75);
+		maxdist = (int) ((r_dlights[lnum].radius * r_dlights[lnum].radius) * 0.75);
 
 		// clamp radius to avoid exceeding 8192 entry division table
 		if (maxdist > 1048576)
@@ -189,9 +189,9 @@ R_AddDynamicLights (msurface_t *surf)
 		maxdist3 = maxdist - (int) (dist * dist);
 
 		// convert to 8.8 blocklights format
-		red = f = cl_dlights[lnum].color[0] * maxdist;
-		green = f = cl_dlights[lnum].color[1] * maxdist;
-		blue = f = cl_dlights[lnum].color[2] * maxdist;
+		red = f = r_dlights[lnum].color[0] * maxdist;
+		green = f = r_dlights[lnum].color[1] * maxdist;
+		blue = f = r_dlights[lnum].color[2] * maxdist;
 		bl = blocklights;
 		for (t = 0; t < tmax; t++, i -= 16) {
 			td = i * i;
@@ -723,11 +723,11 @@ R_DrawBrushModel (entity_t *e)
 		vec3_t      lightorigin;
 
 		for (k = 0; k < MAX_DLIGHTS; k++) {
-			if ((cl_dlights[k].die < r_realtime) || (!cl_dlights[k].radius))
+			if ((r_dlights[k].die < r_realtime) || (!r_dlights[k].radius))
 				continue;
 
-			VectorSubtract (cl_dlights[k].origin, e->origin, lightorigin);
-			R_MarkLights (lightorigin, &cl_dlights[k], 1 << k,
+			VectorSubtract (r_dlights[k].origin, e->origin, lightorigin);
+			R_MarkLights (lightorigin, &r_dlights[k], 1 << k,
 						  clmodel->nodes + clmodel->hulls[0].firstclipnode);
 		}
 	}

@@ -183,12 +183,12 @@ R_Init (void)
 
 
 void
-R_NewMap (void)
+R_NewMap (model_t *worldmodel)
 {
 	int         i;
 
 	memset (&r_worldentity, 0, sizeof (r_worldentity));
-	r_worldentity.model = cl.worldmodel;
+	r_worldentity.model = worldmodel;
 
 	// clear out efrags in case the level hasn't been reloaded
 // FIXME: is this one short?
@@ -465,7 +465,7 @@ R_ShowNearestLoc (void)
 		return;
 	nearloc = locs_find (r_origin);
 	if (nearloc) {
-		dl = CL_AllocDlight (4096);
+		dl = R_AllocDlight (4096);
 		VectorCopy (nearloc->loc, dl->origin);
 		dl->radius = 200;
 		dl->die = r_realtime + 0.1;
@@ -526,10 +526,10 @@ R_DrawEntitiesOnList (void)
 					lighting.plightvec = lightvec;
 
 					for (lnum = 0; lnum < MAX_DLIGHTS; lnum++) {
-						if (cl_dlights[lnum].die >= r_realtime) {
+						if (r_dlights[lnum].die >= r_realtime) {
 							VectorSubtract (currententity->origin,
-											cl_dlights[lnum].origin, dist);
-							add = cl_dlights[lnum].radius - Length (dist);
+											r_dlights[lnum].origin, dist);
+							add = r_dlights[lnum].radius - Length (dist);
 
 							if (add > 0)
 								lighting.ambientlight += add;
@@ -597,7 +597,7 @@ R_DrawViewModel (void)
 
 	// add dynamic lights       
 	for (lnum = 0; lnum < MAX_DLIGHTS; lnum++) {
-		dl = &cl_dlights[lnum];
+		dl = &r_dlights[lnum];
 		if (!dl->radius)
 			continue;
 		if (!dl->radius)
@@ -728,12 +728,12 @@ R_DrawBEntitiesOnList (void)
 						vec3_t      lightorigin;
 
 						for (k = 0; k < MAX_DLIGHTS; k++) {
-							if ((cl_dlights[k].die < r_realtime) ||
-								(!cl_dlights[k].radius)) continue;
+							if ((r_dlights[k].die < r_realtime) ||
+								(!r_dlights[k].radius)) continue;
 
-							VectorSubtract (cl_dlights[k].origin,
+							VectorSubtract (r_dlights[k].origin,
 											currententity->origin, lightorigin);
-							R_MarkLights (lightorigin, &cl_dlights[k], 1 << k,
+							R_MarkLights (lightorigin, &r_dlights[k], 1 << k,
 										  clmodel->nodes +
 										  clmodel->hulls[0].firstclipnode);
 						}
