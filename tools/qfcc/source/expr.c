@@ -1076,6 +1076,83 @@ do_op_uinteger (int op, expr_t *e1, expr_t *e2)
 }
 
 static expr_t *
+do_op_short (int op, expr_t *e1, expr_t *e2)
+{
+	int         i1, i2;
+
+	i1 = e1->e.short_val;
+	i2 = e2->e.short_val;
+
+	switch (op) {
+		case '+':
+			e1->e.short_val += i2;
+			break;
+		case '-':
+			e1->e.short_val -= i2;
+			break;
+		case '*':
+			e1->e.short_val *= i2;
+			break;
+		case '/':
+			if (options.warnings.integer_divide)
+				warning (e2, "%d / %d == %d", i1, i2, i1 / i2);
+			e1->e.short_val /= i2;
+			break;
+		case '&':
+			e1->e.short_val = i1 & i2;
+			break;
+		case '|':
+			e1->e.short_val = i1 | i2;
+			break;
+		case '^':
+			e1->e.short_val = i1 ^ i2;
+			break;
+		case '%':
+			e1->e.short_val = i1 % i2;
+			break;
+		case SHL:
+			e1->e.short_val = i1 << i2;
+			break;
+		case SHR:
+			e1->e.short_val = i1 >> i2;
+			break;
+		case AND:
+			e1->e.short_val = i1 && i2;
+			break;
+		case OR:
+			e1->e.short_val = i1 || i2;
+			break;
+		case LT:
+			e1->type = ex_integer;
+			e1->e.integer_val = i1 < i2;
+			break;
+		case GT:
+			e1->type = ex_integer;
+			e1->e.integer_val = i1 > i2;
+			break;
+		case LE:
+			e1->type = ex_integer;
+			e1->e.integer_val = i1 <= i2;
+			break;
+		case GE:
+			e1->type = ex_integer;
+			e1->e.integer_val = i1 >= i2;
+			break;
+		case EQ:
+			e1->type = ex_integer;
+			e1->e.integer_val = i1 == i2;
+			break;
+		case NE:
+			e1->type = ex_integer;
+			e1->e.integer_val = i1 != i2;
+			break;
+		default:
+			return error (e1, "invalid operand for uinteger");
+	}
+	return e1;
+}
+
+static expr_t *
 do_op_huh (int op, expr_t *e1, expr_t *e2)
 {
 	return error (e1, "funny constant");
@@ -1093,7 +1170,7 @@ static expr_t *(*do_op[]) (int op, expr_t *e1, expr_t *e2) = {
 	do_op_huh,							// ev_quaternion
 	do_op_integer,						// ev_integer
 	do_op_uinteger,						// ev_uinteger
-	do_op_huh,							// ev_short
+	do_op_short,						// ev_short
 	do_op_huh,							// ev_struct
 };
 
@@ -1392,6 +1469,20 @@ convert_int_uint (expr_t *e)
 	e->e.uinteger_val = e->e.integer_val;
 }
 
+void
+convert_short_int (expr_t *e)
+{
+	e->type = ex_integer;
+	e->e.integer_val = e->e.short_val;
+}
+
+void
+convert_short_uint (expr_t *e)
+{
+	e->type = ex_uinteger;
+	e->e.uinteger_val = e->e.short_val;
+}
+
 static void
 convert_nil (expr_t *e, type_t *t)
 {
@@ -1467,6 +1558,26 @@ binary_expr (int op, expr_t *e1, expr_t *e2)
 		} else if (e2->type == ex_nil) {
 			t2 = t1;
 			convert_nil (e2, t2);
+		}
+	}
+
+	if (e1->type == ex_short) {
+		if (t2 == &type_integer) {
+			convert_short_int (e1);
+			t1 = &type_integer;
+		} else if (t2 == &type_uinteger) {
+			convert_short_uint (e1);
+			t1 = &type_uinteger;
+		}
+	}
+
+	if (e2->type == ex_short) {
+		if (t1 == &type_integer) {
+			convert_short_int (e2);
+			t2 = &type_integer;
+		} else if (t1 == &type_uinteger) {
+			convert_short_uint (e2);
+			t2 = &type_uinteger;
 		}
 	}
 
@@ -2199,7 +2310,12 @@ address_expr (expr_t *e1, expr_t *e2, type_t *t)
 			e->e.pointer.val += e2->e.short_val;
 		} else {
 			if (e2->type != ex_short || e2->e.short_val) {
-				e = new_binary_expr ('&', e, e2);
+				if (e->type == ex_expr && e->e.expr.op == '&') {
+					e = new_binary_expr ('&', e->e.expr.e1,
+										 binary_expr ('+', e->e.expr.e2, e2));
+				} else {
+					e = new_binary_expr ('&', e, e2);
+				}
 			}
 			if (e->type == ex_expr || e->type == ex_uexpr)
 				e->e.expr.type = pointer_type (t);
