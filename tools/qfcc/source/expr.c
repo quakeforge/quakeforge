@@ -924,10 +924,10 @@ emit_expr (expr_t *e)
 					if (e->e.expr.e1)
 						def = emit_sub_expr (e->e.expr.e1, 0);
 					PR_Statement (op_return, def, 0);
-					return;
+					break;
 				case 'g':
 					emit_branch (op_goto, 0, e->e.expr.e1);
-					return;
+					break;
 				default:
 					fprintf (stderr,
 							 "%s:%d: warning: unused expression ignored\n",
@@ -935,6 +935,7 @@ emit_expr (expr_t *e)
 					emit_expr (e->e.expr.e1);
 					break;
 			}
+			break;
 		case ex_def:
 		case ex_int:
 		case ex_float:
@@ -945,4 +946,5 @@ emit_expr (expr_t *e)
 					 strings + e->file, e->line);
 			break;
 	}
+	PR_FreeTempDefs ();
 }
