@@ -159,7 +159,7 @@ loc0:
 	}
 }
 
-static void
+static inline void
 mark_surfaces (msurface_t *surf, vec3_t lightorigin, dlight_t *light, int bit)
 {
 	float      dist;
