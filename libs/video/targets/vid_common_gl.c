@@ -45,8 +45,8 @@ static const char rcsid[] =
 #include "QF/cvar.h"
 #include "QF/input.h"
 #include "QF/qargs.h"
+#include "QF/quakefs.h"
 #include "QF/sys.h"
-#include "QF/vfs.h"
 #include "QF/vid.h"
 #include "QF/GL/defines.h"
 #include "QF/GL/extensions.h"
@@ -175,7 +175,7 @@ VID_SetPalette (unsigned char *palette)
 	unsigned short i;
 	unsigned int *table;
 	static qboolean palflag = false;
-	VFile      *f;
+	QFile      *f;
 
 	// 8 8 8 encoding
 //	Con_Printf("Converting 8to24\n");

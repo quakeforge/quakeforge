@@ -280,7 +280,7 @@ Host_InitLocal (void)
 void
 Host_WriteConfiguration (void)
 {
-	VFile      *f;
+	QFile      *f;
 
 	// dedicated servers initialize the host but don't parse and set the
 	// config.cfg cvars
@@ -796,7 +796,7 @@ check_quakerc (void)
 {
 	const char *l, *p;
 	int ret = 1;
-	VFile *f;
+	QFile *f;
 
 	COM_FOpenFile ("quake.rc", &f);
 	if (!f)

@@ -43,9 +43,9 @@ static const char rcsid[] =
 #include "QF/console.h"
 #include "QF/cvar.h"
 #include "QF/qargs.h"
+#include "QF/quakefs.h"
 #include "QF/render.h"
 #include "QF/sys.h"
-#include "QF/vfs.h"
 #include "QF/GL/defines.h"
 #include "QF/GL/funcs.h"
 #include "QF/GL/qf_explosions.h"
@@ -160,7 +160,7 @@ R_ReadPointFile_f (void)
 	char        name[MAX_OSPATH], *mapname, *t1;
 	int         c, r;
 	vec3_t      org;
-	VFile      *f;
+	QFile      *f;
 
 	mapname = strdup (r_worldentity.model->name);
 	if (!mapname)

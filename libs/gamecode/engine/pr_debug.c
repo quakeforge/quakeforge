@@ -47,8 +47,8 @@ static const char rcsid[] =
 #include "QF/pr_debug.h"
 #include "QF/progs.h"
 #include "QF/qendian.h"
+#include "QF/quakefs.h"
 #include "QF/sys.h"
-#include "QF/vfs.h"
 #include "QF/zone.h"
 
 typedef struct {

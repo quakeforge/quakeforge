@@ -36,8 +36,8 @@ static const char rcsid[] =
 #include "QF/cmd.h"
 #include "QF/console.h"
 #include "QF/cvar.h"
+#include "QF/quakefs.h"
 #include "QF/sys.h"
-#include "QF/vfs.h"
 
 cvar_t     *registered;
 
@@ -61,7 +61,7 @@ void
 COM_CheckRegistered (void)
 {
 	unsigned short check[128];
-	VFile      *h;
+	QFile      *h;
 
 	COM_FOpenFile ("gfx/pop.lmp", &h);
 	static_registered = 0;

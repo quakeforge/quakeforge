@@ -53,9 +53,9 @@ static const char rcsid[] =
 #include "QF/hash.h"
 #include "QF/pr_comp.h"
 #include "QF/progs.h"
+#include "QF/quakeio.h"
 #include "QF/sys.h"
 #include "QF/va.h"
-#include "QF/vfile.h"
 #include "QF/zone.h"
 
 #include "disassemble.h"
@@ -82,7 +82,7 @@ static int      memsize = 1024*1024;
 
 static hashtab_t *func_tab;
 
-static VFile *
+static QFile *
 open_file (const char *path, int *len)
 {
 	int         fd = open (path, O_RDONLY);
@@ -112,7 +112,7 @@ open_file (const char *path, int *len)
 static void *
 load_file (progs_t *pr, const char *name)
 {
-	VFile      *file;
+	QFile      *file;
 	int         size;
 	void       *sym;
 
@@ -192,7 +192,7 @@ init_qf (void)
 int
 load_progs (const char *name)
 {
-	VFile      *file;
+	QFile      *file;
 	int         i, size;
 
 	file = open_file (name, &size);

@@ -38,9 +38,9 @@ static const char rcsid[] =
 #include "QF/console.h"
 #include "QF/cvar.h"
 #include "QF/qargs.h"
+#include "QF/quakeio.h"
 #include "QF/screen.h"
 #include "QF/sys.h"
-#include "QF/vfile.h"
 
 #include "client.h"
 #include "compat.h"
@@ -73,7 +73,7 @@ static HANDLE heventChild;
 // FILE IO ====================================================================
 
 #define	MAX_HANDLES		10
-VFile      *sys_handles[MAX_HANDLES];
+QFile      *sys_handles[MAX_HANDLES];
 
 int
 findhandle (void)

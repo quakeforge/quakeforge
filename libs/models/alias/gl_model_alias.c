@@ -42,11 +42,11 @@ static const char rcsid[] =
 
 #include "QF/model.h"
 #include "QF/qendian.h"
+#include "QF/quakefs.h"
 #include "QF/skin.h"
 #include "QF/sys.h"
 #include "QF/texture.h"
 #include "QF/tga.h"
-#include "QF/vfs.h"
 #include "QF/vid.h"
 #include "QF/GL/qf_textures.h"
 
@@ -268,7 +268,7 @@ void
 Mod_LoadExternalSkin (maliasskindesc_t *pskindesc, char *filename)
 {
 	tex_t		*targa;
-	VFile		*f;
+	QFile		*f;
 
 	COM_FOpenFile (filename, &f);
 	if (f)

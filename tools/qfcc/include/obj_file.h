@@ -34,7 +34,7 @@
 
 #include "QF/pr_comp.h"
 #include "QF/pr_debug.h"
-#include "QF/vfile.h"
+#include "QF/quakeio.h"
 
 #define QFO			"QFO"
 #define QFO_VERSION 0x00001004		// MMmmmRRR 0.001.004 (hex)
@@ -140,7 +140,7 @@ struct pr_info_s;
 
 qfo_t *qfo_from_progs (struct pr_info_s *pr);
 int qfo_write (qfo_t *qfo, const char *filename);
-qfo_t *qfo_read (VFile *file);
+qfo_t *qfo_read (QFile *file);
 qfo_t *qfo_open (const char *filename);
 int qfo_to_progs (qfo_t *qfo, struct pr_info_s *pr);
 

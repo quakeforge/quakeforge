@@ -66,9 +66,9 @@ static const char rcsid[] =
 #include "QF/cmd.h"
 #include "QF/console.h"
 #include "QF/cvar.h"
+#include "QF/quakeio.h"
 #include "QF/sys.h"
 #include "QF/va.h"
-#include "QF/vfile.h"
 
 #include "bothdefs.h"
 #include "cl_main.h"
@@ -295,7 +295,7 @@ SL_Del_All (server_entry_t *start)
 }
 
 void
-SL_SaveF (VFile *f, server_entry_t *start)
+SL_SaveF (QFile *f, server_entry_t *start)
 {
 	do {
 		Qprintf (f, "%s   %s\n", start->server, start->desc);
@@ -308,7 +308,7 @@ void
 SL_Shutdown (void)
 {
 	char        e_path[MAX_OSPATH];
-	VFile      *f;
+	QFile      *f;
 	
 	if (fav_slist) {
 		Qexpand_squiggle (fs_userpath->string, e_path);
@@ -610,7 +610,7 @@ MSL_ParseServerList(const char *msl_data)
 }
 
 server_entry_t *
-SL_LoadF (VFile *f, server_entry_t *start)
+SL_LoadF (QFile *f, server_entry_t *start)
 {
 	//This could get messy
 	char        line[256];      /* Long lines get truncated. */
@@ -651,7 +651,7 @@ SL_LoadF (VFile *f, server_entry_t *start)
 void SL_Init (void)
 {
 	char        e_path[MAX_OSPATH];
-	VFile      *servlist;
+	QFile      *servlist;
 
 	Qexpand_squiggle (fs_userpath->string, e_path);
 	if ((servlist = Qopen (va ("%s/servers.txt", e_path), "r"))) {

@@ -34,26 +34,26 @@
 
 #include "QF/gcc_attr.h"
 
-typedef struct VFile_s VFile;
+typedef struct VFile_s QFile;
 
 void Qexpand_squiggle(const char *path, char *dest);
 int Qrename(const char *old, const char *new);
-VFile *Qopen(const char *path, const char *mode);
-VFile *Qdopen(int fd, const char *mode);
-void Qclose(VFile *file);
-int Qread(VFile *file, void *buf, int count);
-int Qwrite(VFile *file, const void *buf, int count);
-int Qprintf(VFile *file, const char *fmt, ...) __attribute__((format(printf,2,3)));
-int Qputs(VFile *file, const char *buf);
-char *Qgets(VFile *file, char *buf, int count);
-int Qgetc(VFile *file);
-int Qputc(VFile *file, int c);
-int Qseek(VFile *file, long offset, int whence);
-long Qtell(VFile *file);
-int Qflush(VFile *file);
-int Qeof(VFile *file);
-const char *Qgetline(VFile *file);
-int Qgetpos(VFile *file, fpos_t *pos);
-int Qsetpos(VFile *file, fpos_t *pos);
+QFile *Qopen(const char *path, const char *mode);
+QFile *Qdopen(int fd, const char *mode);
+void Qclose(QFile *file);
+int Qread(QFile *file, void *buf, int count);
+int Qwrite(QFile *file, const void *buf, int count);
+int Qprintf(QFile *file, const char *fmt, ...) __attribute__((format(printf,2,3)));
+int Qputs(QFile *file, const char *buf);
+char *Qgets(QFile *file, char *buf, int count);
+int Qgetc(QFile *file);
+int Qputc(QFile *file, int c);
+int Qseek(QFile *file, long offset, int whence);
+long Qtell(QFile *file);
+int Qflush(QFile *file);
+int Qeof(QFile *file);
+const char *Qgetline(QFile *file);
+int Qgetpos(QFile *file, fpos_t *pos);
+int Qsetpos(QFile *file, fpos_t *pos);
 
 #endif /*__quakeio_h*/

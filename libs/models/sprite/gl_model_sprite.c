@@ -39,9 +39,9 @@ static const char rcsid[] =
 
 #include "QF/console.h"
 #include "QF/model.h"
+#include "QF/quakefs.h"
 #include "QF/texture.h"
 #include "QF/tga.h"
-#include "QF/vfs.h"
 #include "QF/GL/qf_textures.h"
 
 #include "compat.h"
@@ -52,7 +52,7 @@ Mod_SpriteLoadTexture (mspriteframe_t *pspriteframe, int framenum)
 	char        name[64];
 	char        filename[MAX_QPATH + 4];
 	tex_t      *targa;
-	VFile      *f;
+	QFile      *f;
 
 	snprintf (name, sizeof (name), "%s_%i", loadmodel->name, framenum);
 

@@ -32,7 +32,7 @@
 #define __quakefs_h
 
 #include "QF/qtypes.h"
-#include "QF/vfile.h"
+#include "QF/quakeio.h"
 
 //============================================================================
 
@@ -61,10 +61,10 @@ extern char	gamedirfile[MAX_OSPATH];
 void COM_WriteFile (const char *filename, void *data, int len);
 void COM_WriteBuffers (const char *filename, int count, ...);
 
-int _COM_FOpenFile (const char *filename, VFile **gzfile, char *foundname, int zip);
-int COM_FOpenFile (const char *filename, VFile **gzfile);
-void COM_CloseFile (VFile *h);
-int COM_filelength (VFile *f);
+int _COM_FOpenFile (const char *filename, QFile **gzfile, char *foundname, int zip);
+int COM_FOpenFile (const char *filename, QFile **gzfile);
+void COM_CloseFile (QFile *h);
+int COM_filelength (QFile *f);
 void COM_FileBase (const char *in, char *out);
 void COM_DefaultExtension (char *path, char *extension);
 const char *COM_SkipPath (const char *pathname);

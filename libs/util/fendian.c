@@ -31,11 +31,11 @@ static const char rcsid[] =
 	"$Id$";
 
 #include "QF/qendian.h"
-#include "QF/vfile.h"
+#include "QF/quakeio.h"
 
 
 void
-WriteFloat (VFile *file, float f)
+WriteFloat (QFile *file, float f)
 {
 	// a float in C is /defined/ to be 32 bits. byte order, can, of course
 	// still make a mess.
@@ -49,14 +49,14 @@ WriteFloat (VFile *file, float f)
 }
 
 void
-WriteByte (VFile *file, int b)
+WriteByte (QFile *file, int b)
 {
 	byte        dat = b & 0xff;
 	Qwrite (file, &dat, 1);
 }
 
 void
-WriteShort (VFile *file, unsigned int s)
+WriteShort (QFile *file, unsigned int s)
 {
 	byte        dat[2];
 
@@ -66,7 +66,7 @@ WriteShort (VFile *file, unsigned int s)
 }
 
 void
-WriteLong (VFile *file, unsigned int l)
+WriteLong (QFile *file, unsigned int l)
 {
 	byte        dat[4];
 
@@ -78,7 +78,7 @@ WriteLong (VFile *file, unsigned int l)
 }
 
 float
-ReadFloat (VFile *file)
+ReadFloat (QFile *file)
 {
 	// a float in C is /defined/ to be 32 bits. byte order, can, of course
 	// still make a mess.
@@ -92,7 +92,7 @@ ReadFloat (VFile *file)
 }
 
 byte
-ReadByte (VFile *file)
+ReadByte (QFile *file)
 {
 	byte        dat;
 	Qread (file, &dat, 1);
@@ -100,7 +100,7 @@ ReadByte (VFile *file)
 }
 
 unsigned short
-ReadShort (VFile *file)
+ReadShort (QFile *file)
 {
 	byte        dat[2];
 
@@ -109,7 +109,7 @@ ReadShort (VFile *file)
 }
 
 unsigned long
-ReadLong (VFile *file)
+ReadLong (QFile *file)
 {
 	byte        dat[4];
 

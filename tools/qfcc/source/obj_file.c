@@ -43,7 +43,7 @@ static const char rcsid[] =
 
 #include "QF/dstring.h"
 #include "QF/qendian.h"
-#include "QF/vfile.h"
+#include "QF/quakeio.h"
 
 #include "debug.h"
 #include "def.h"
@@ -282,7 +282,7 @@ int
 qfo_write (qfo_t *qfo, const char *filename)
 {
 	qfo_header_t hdr;
-	VFile      *file;
+	QFile      *file;
 
 	file = Qopen (filename, "wbz9");
 
@@ -327,7 +327,7 @@ qfo_write (qfo_t *qfo, const char *filename)
 }
 
 qfo_t *
-qfo_read (VFile *file)
+qfo_read (QFile *file)
 {
 	qfo_header_t hdr;
 	qfo_t      *qfo;
@@ -461,7 +461,7 @@ qfo_read (VFile *file)
 qfo_t *qfo_open (const char *filename)
 {
 	qfo_t      *qfo;
-	VFile      *file;
+	QFile      *file;
 
 	file = Qopen (filename, "rbz");
 	if (!file) {

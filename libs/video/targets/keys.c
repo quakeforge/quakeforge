@@ -705,7 +705,7 @@ Key_InputMappingTable_f (void)
   Writes lines containing "bind key value"
 */
 void
-Key_WriteBindings (VFile *f)
+Key_WriteBindings (QFile *f)
 {
 	int			i, j;
 	const char	*bind;

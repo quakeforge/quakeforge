@@ -51,9 +51,9 @@ static const char rcsid[] =
 #include "QF/dstring.h"
 #include "QF/hash.h"
 #include "QF/msg.h"
+#include "QF/quakefs.h"
 #include "QF/sys.h"
 #include "QF/va.h"
-#include "QF/vfs.h"
 
 #include "bothdefs.h"
 #include "compat.h"
@@ -661,7 +661,7 @@ SV_BeginDownload_f (ucmd_t *cmd)
 	const char *name;
 	char		realname[MAX_OSPATH];
 	int			size, zip;
-	VFile	   *file;
+	QFile	   *file;
 
 	name = Cmd_Argv (1);
 // hacked by zoid to allow more conrol over download

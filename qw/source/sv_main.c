@@ -72,10 +72,10 @@ static const char rcsid[] =
 #include "QF/msg.h"
 #include "QF/plugin.h"
 #include "QF/qargs.h"
+#include "QF/quakefs.h"
 #include "QF/sys.h"
 #include "QF/va.h"
 #include "QF/ver_check.h"
-#include "QF/vfs.h"
 #include "QF/zone.h"
 
 #include "bothdefs.h"
@@ -181,7 +181,7 @@ cvar_t     *watervis;
 
 cvar_t     *hostname;
 
-VFile      *sv_fraglogfile;
+QFile      *sv_fraglogfile;
 
 cvar_t     *pr_gc;
 cvar_t     *pr_gc_interval;
@@ -1491,7 +1491,7 @@ SV_WriteIP_f (void)
 {
 	char        name[MAX_OSPATH];
 	int         i;
-	VFile      *f;
+	QFile      *f;
 	char		*type;
 
 	snprintf (name, sizeof (name), "%s/listip.cfg", com_gamedir);

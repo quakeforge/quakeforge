@@ -46,9 +46,8 @@ static const char rcsid[] =
 #include "QF/bspfile.h"
 #include "QF/qendian.h"
 #include "QF/qtypes.h"
+#include "QF/quakefs.h"
 #include "QF/sys.h"
-#include "QF/vfile.h"
-#include "QF/vfs.h"
 
 int			nummodels;
 dmodel_t	dmodels[MAX_MAP_MODELS];
@@ -97,7 +96,7 @@ int			dsurfedges[MAX_MAP_SURFEDGES];
 
 dheader_t		*header;
 dheader_t		 outheader;
-VFile			*wadfile;
+QFile			*wadfile;
 
 
 /*

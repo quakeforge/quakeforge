@@ -40,16 +40,16 @@ static const char rcsid[] =
 #include "QF/pcx.h"
 #include "QF/qendian.h"
 #include "QF/qtypes.h"
+#include "QF/quakefs.h"
 #include "QF/sys.h"
 #include "QF/texture.h"
-#include "QF/vfs.h"
 #include "QF/zone.h"
 
 #include "compat.h"
 
 
 tex_t *
-LoadPCX (VFile *f, int convert, byte *pal)
+LoadPCX (QFile *f, int convert, byte *pal)
 {
 	pcx_t      *pcx;
 	int         pcx_mark;

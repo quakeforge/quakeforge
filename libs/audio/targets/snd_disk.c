@@ -53,7 +53,7 @@ static const char rcsid[] =
 #include "QF/sys.h"
 
 static int  snd_inited;
-static VFile      *snd_file;
+static QFile      *snd_file;
 static int snd_blocked = 0;
 //FIXME static volatile dma_t sn;
 

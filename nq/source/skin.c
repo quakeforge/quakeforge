@@ -42,10 +42,10 @@ static const char rcsid[] =
 #include "QF/cvar.h"
 #include "QF/hash.h"
 #include "QF/pcx.h"
+#include "QF/quakefs.h"
 #include "QF/skin.h"
 #include "QF/sys.h"
 #include "QF/texture.h"
-#include "QF/vfs.h"
 
 #include "client.h"
 
@@ -135,7 +135,7 @@ Skin_Cache (skin_t *skin)
 {
 	char        name[1024];
 	tex_t      *out;
-	VFile      *file;
+	QFile      *file;
 	tex_t      *tex;
 	int         pixels;
 	byte       *ipix, *opix;

@@ -970,7 +970,7 @@ void CL_TimeFrames_DumpLog (void)
 	char	   *filename = "timeframes.txt";
 	int			i;
 	long		frame;
-	VFile	   *outputfile;
+	QFile	   *outputfile;
 
 	if (cl_timeframes_isactive == 0)
 		return;

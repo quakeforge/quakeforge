@@ -45,13 +45,12 @@ static const char rcsid[] =
 #endif
 #include <stdlib.h>
 
-#include "QF/qtypes.h"
-#include "QF/sys.h"
-#include "QF/dstring.h"
-#include "QF/vfile.h"
-#include "QF/vfs.h"
 #include "QF/bspfile.h"
 #include "QF/mathlib.h"
+#include "QF/qtypes.h"
+#include "QF/dstring.h"
+#include "QF/quakefs.h"
+#include "QF/sys.h"
 #include "light.h"
 
 typedef struct {

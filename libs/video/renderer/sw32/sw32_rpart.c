@@ -36,7 +36,7 @@ static const char rcsid[] =
 #include "QF/console.h"
 #include "QF/cvar.h"
 #include "QF/qargs.h"
-#include "QF/vfs.h"
+#include "QF/quakefs.h"
 #include "QF/render.h"
 
 #include "compat.h"
@@ -71,7 +71,7 @@ R_ClearParticles (void)
 void
 R_ReadPointFile_f (void)
 {
-	VFile      *f;
+	QFile      *f;
 	vec3_t      org;
 	int         r;
 	int         c;

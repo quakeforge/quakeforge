@@ -34,8 +34,8 @@
 #include "QF/input.h"
 #include "QF/mathlib.h"
 #include "QF/model.h"
+#include "QF/quakefs.h"
 #include "QF/sound.h"
-#include "QF/vfs.h"
 #include "QF/render.h"
 
 #include "game.h"
@@ -107,7 +107,7 @@ typedef struct
 	char		spawnparms[MAX_MAPSTRING];	// to restart a level
 
 // file transfer from server
-	VFile	   *download;
+	QFile	   *download;
 	char		downloadtempname[MAX_OSPATH];
 	char		downloadname[MAX_OSPATH];
 	int			downloadnumber;
@@ -124,7 +124,7 @@ typedef struct
 	qboolean	demoplayback;
 	qboolean	timedemo;
 	int			forcetrack;			// -1 = use normal cd track
-	VFile		*demofile;
+	QFile		*demofile;
 	int			td_lastframe;		// to meter out one message a frame
 	int			td_startframe;		// host_framecount at start
 	float		td_starttime;		// realtime at second frame of timedemo

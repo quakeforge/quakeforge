@@ -47,10 +47,10 @@ static const char rcsid[] =
 #include "QF/progs.h"
 #include "QF/qdefs.h"
 #include "QF/qendian.h"
+#include "QF/quakefs.h"
 #include "QF/sys.h"
 #include "QF/zone.h"
 #include "QF/va.h"
-#include "QF/vfs.h"
 
 #include "compat.h"
 
@@ -488,7 +488,7 @@ ED_Print (progs_t * pr, edict_t *ed)
 	For savegames
 */
 void
-ED_Write (progs_t * pr, VFile *f, edict_t *ed)
+ED_Write (progs_t * pr, QFile *f, edict_t *ed)
 {
 	ddef_t     *d;
 	pr_type_t  *v;
@@ -609,7 +609,7 @@ ED_Count (progs_t * pr)
 	ED_WriteGlobals
 */
 void
-ED_WriteGlobals (progs_t * pr, VFile *f)
+ED_WriteGlobals (progs_t * pr, QFile *f)
 {
 	ddef_t     *def;
 	int         i;

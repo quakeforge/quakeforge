@@ -72,12 +72,12 @@ static const char rcsid[] =
 #include "QF/progs.h"
 #include "QF/qargs.h"
 #include "QF/qendian.h"
+#include "QF/quakefs.h"
 #include "QF/screen.h"
 #include "QF/sound.h"
 #include "QF/sys.h"
 #include "QF/teamplay.h"
 #include "QF/va.h"
-#include "QF/vfs.h"
 #include "QF/vid.h"
 #include "QF/gib_thread.h"
 
@@ -1438,7 +1438,7 @@ Host_Error (const char *error, ...)
 void
 Host_WriteConfiguration (void)
 {
-	VFile      *f;
+	QFile      *f;
 
 	if (host_initialized && cl_writecfg->int_val) {
 		char       *path = va ("%s/config.cfg", com_gamedir);
@@ -1612,7 +1612,7 @@ check_quakerc (void)
 {
 	const char *l, *p;
 	int ret = 1;
-	VFile *f;
+	QFile *f;
 
 	COM_FOpenFile ("quake.rc", &f);
 	if (!f)

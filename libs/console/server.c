@@ -63,16 +63,15 @@ static const char rcsid[] =
 #include "QF/keys.h"
 #include "QF/plugin.h"
 #include "QF/qtypes.h"
+#include "QF/quakefs.h"
 #include "QF/sys.h"
 #include "QF/va.h"
-#include "QF/vfile.h"
-#include "QF/vfs.h"
 
 #include "compat.h"
 
 static console_data_t con_data;
 
-static VFile  *log_file;
+static QFile  *log_file;
 static cvar_t *sv_logfile;
 
 #ifdef HAVE_CURSES_H

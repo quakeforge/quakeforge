@@ -31,13 +31,13 @@
 #ifndef __QF_pakfile_h
 #define __QF_pakfile_h
 
-#include "QF/vfile.h"
 #include "QF/hash.h"
 #include "QF/pak.h"
+#include "QF/quakeio.h"
 
 typedef struct pack_s {
 	char       *filename;
-	VFile      *handle;
+	QFile      *handle;
 	int         numfiles;
 	int         files_size;
 	dpackfile_t *files;

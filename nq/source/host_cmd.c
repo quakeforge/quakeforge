@@ -397,7 +397,7 @@ void
 Host_Savegame_f (void)
 {
 	char        name[256];
-	VFile      *f;
+	QFile      *f;
 	int         i;
 	char        comment[SAVEGAME_COMMENT_LENGTH + 1];
 
@@ -478,7 +478,7 @@ void
 Host_Loadgame_f (void)
 {
 	char        name[MAX_OSPATH];
-	VFile      *f;
+	QFile      *f;
 	char        mapname[MAX_QPATH];
 	float       time, tfloat;
 	char        str[32768];

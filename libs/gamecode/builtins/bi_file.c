@@ -53,12 +53,12 @@ int         fnmatch (const char *__pattern, const char *__string, int __flags);
 #endif
 
 #include "QF/progs.h"
+#include "QF/quakefs.h"
 #include "QF/va.h"
-#include "QF/vfs.h"
 #include "QF/zone.h"
 
 #define MAX_HANDLES 20
-static VFile *handles[MAX_HANDLES];
+static QFile *handles[MAX_HANDLES];
 
 static const char *file_ban_list[] = {
 	"default.cfg{,.gz}",

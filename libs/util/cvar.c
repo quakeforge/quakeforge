@@ -47,9 +47,9 @@ static const char rcsid[] =
 #include "QF/hash.h"
 #include "QF/mathlib.h"
 #include "QF/qargs.h"
+#include "QF/quakefs.h"
 #include "QF/sys.h"
 #include "QF/va.h"
-#include "QF/vfs.h"
 
 #include "compat.h"
 
@@ -330,7 +330,7 @@ Cvar_Command (void)
 	with the archive flag set to true.
 */
 void
-Cvar_WriteVariables (VFile *f)
+Cvar_WriteVariables (QFile *f)
 {
 	cvar_t     *var;
 

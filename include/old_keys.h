@@ -33,7 +33,7 @@
 #ifndef __keys_h
 #define __keys_h
 
-#include "QF/vfile.h"
+#include "QF/quakeio.h"
 
 void OK_Init (void);
 const char *OK_TranslateKeyName (const char *name);

@@ -35,7 +35,7 @@ static const char rcsid[] =
 #include <QF/cmd.h>
 #include <QF/cvar.h>
 #include <QF/progs.h>
-#include <QF/vfs.h>
+#include <QF/quakefs.h>
 #include <QF/sys.h>
 #include <QF/zone.h>
 
@@ -57,7 +57,7 @@ int
 main ()
 {
 	func_t main_func;
-	VFile *f;
+	QFile *f;
 	int len;
 
 	Cvar_Init_Hash ();

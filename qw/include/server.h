@@ -33,10 +33,10 @@
 #include <stdarg.h>
 
 #include "QF/gcc_attr.h"
-#include "QF/model.h"
-#include "QF/sizebuf.h"
 #include "QF/info.h"
-#include "QF/vfile.h"
+#include "QF/model.h"
+#include "QF/quakeio.h"
+#include "QF/sizebuf.h"
 
 #include "host.h"
 #include "net.h"
@@ -201,7 +201,7 @@ typedef struct client_s
 
 	client_frame_t	frames[UPDATE_BACKUP];	// updates can be deltad from here
 
-	VFile			*download;			// file being downloaded
+	QFile			*download;			// file being downloaded
 	int				downloadsize;		// total bytes
 	int				downloadcount;		// bytes sent
 
@@ -213,7 +213,7 @@ typedef struct client_s
 
 	qboolean		upgradewarn;		// did we warn him?
 
-	VFile			*upload;
+	QFile			*upload;
 	char			uploadfn[MAX_QPATH];
 	netadr_t		snap_from;
 	qboolean		remote_snap;
@@ -410,8 +410,8 @@ extern	char		localmodels[MAX_MODELS][5];	// inline model names for precache
 extern	struct info_s	*localinfo;
 
 extern	int			host_hunklevel;
-extern	VFile		*sv_logfile;
-extern	VFile		*sv_fraglogfile;
+extern	QFile		*sv_logfile;
+extern	QFile		*sv_fraglogfile;
 
 extern	double		sv_frametime;
 extern	double		realtime;

@@ -50,9 +50,8 @@ static const char rcsid[] =
 #include "QF/idparse.h"
 #include "QF/mathlib.h"
 #include "QF/qtypes.h"
+#include "QF/quakefs.h"
 #include "QF/sys.h"
-#include "QF/vfile.h"
-#include "QF/vfs.h"
 
 #include "light.h"
 #include "threads.h"

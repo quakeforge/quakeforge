@@ -46,10 +46,10 @@ static const char rcsid[] =
 #include "QF/progs.h"
 #include "QF/qdefs.h"
 #include "QF/qendian.h"
+#include "QF/quakefs.h"
 #include "QF/sys.h"
 #include "QF/zone.h"
 #include "QF/va.h"
-#include "QF/vfs.h"
 
 #include "compat.h"
 
@@ -87,7 +87,7 @@ free_progs_mem (progs_t *pr, void *mem)
 }
 
 void
-PR_LoadProgsFile (progs_t * pr, VFile *file, int size, int edicts, int zone)
+PR_LoadProgsFile (progs_t * pr, QFile *file, int size, int edicts, int zone)
 {
 	int         i;
 	dprograms_t progs;
@@ -259,7 +259,7 @@ PR_LoadProgsFile (progs_t * pr, VFile *file, int size, int edicts, int zone)
 void
 PR_LoadProgs (progs_t *pr, const char *progsname, int edicts, int zone)
 {
-	VFile      *file;
+	QFile      *file;
 	COM_FOpenFile (progsname, &file);
 
 	pr->progs_name = progsname;

@@ -32,7 +32,7 @@
 
 #ifndef __QFCC__
 # include "QF/qtypes.h"
-# include "QF/vfile.h"
+# include "QF/quakeio.h"
 #endif
 
 // these are the key numbers that should be passed to Key_Event
@@ -387,7 +387,7 @@ struct cbuf_s;
 void Key_Event (knum_t key, short unicode, qboolean down);
 void Key_Init (struct cbuf_s *cb);
 void Key_Init_Cvars (void);
-void Key_WriteBindings (VFile *f);
+void Key_WriteBindings (QFile *f);
 void Key_ClearStates (void);
 const char *Key_GetBinding (imt_t imt, knum_t key);
 void Key_SetBinding (imt_t target, knum_t keynum, const char *binding);

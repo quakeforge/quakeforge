@@ -46,10 +46,10 @@ static const char rcsid[] =
 #include "QF/progs.h"
 #include "QF/qdefs.h"
 #include "QF/qendian.h"
+#include "QF/quakefs.h"
 #include "QF/sys.h"
 #include "QF/zone.h"
 #include "QF/va.h"
-#include "QF/vfs.h"
 
 #include "compat.h"
 

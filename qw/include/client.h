@@ -30,7 +30,7 @@
 #define _CLIENT_H
 
 #include "QF/info.h"
-#include "QF/vfs.h"
+#include "QF/quakefs.h"
 #include "QF/vid.h"
 #include "QF/zone.h"
 
@@ -162,7 +162,7 @@ typedef struct
 	int			qport;
 
 // file transfer from server
-	VFile		*download;
+	QFile		*download;
 	char		downloadtempname[MAX_OSPATH];
 	char		downloadname[MAX_OSPATH];
 	int			downloadnumber;
@@ -178,7 +178,7 @@ typedef struct
 	qboolean	demorecording;
 	qboolean	demoplayback;
 	qboolean	timedemo;
-	VFile		*demofile;
+	QFile		*demofile;
 	float		td_lastframe;		// to meter out one message a frame
 	int			td_startframe;		// host_framecount at start
 	float		td_starttime;		// realtime at second frame of timedemo

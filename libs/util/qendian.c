@@ -37,7 +37,7 @@ static const char rcsid[] =
 
 #include "QF/qendian.h"
 #include "QF/qtypes.h"
-#include "QF/vfile.h"
+#include "QF/quakeio.h"
 
 /*
 					BYTE ORDER FUNCTIONS

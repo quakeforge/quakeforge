@@ -30,9 +30,9 @@
 #define __QF_progs_h
 
 #include "QF/link.h"
-#include "QF/vfile.h"
 #include "QF/pr_comp.h"
 #include "QF/pr_debug.h"
+#include "QF/quakeio.h"
 
 #define	MAX_ENT_LEAFS	16
 typedef struct edict_s
@@ -66,7 +66,7 @@ void PR_Init_Cvars (void);
 
 void PR_PrintStatement (progs_t * pr, dstatement_t *s);
 void PR_ExecuteProgram (progs_t *pr, func_t fnum);
-void PR_LoadProgsFile (progs_t * pr, VFile *file, int size, int edicts,
+void PR_LoadProgsFile (progs_t * pr, QFile *file, int size, int edicts,
 					   int zone);
 void PR_LoadProgs (progs_t *pr, const char *progsname, int edicts, int zone);
 void PR_LoadStrings (progs_t *pr);
@@ -84,10 +84,10 @@ char	*ED_NewString (progs_t *pr, const char *string);
 // returns a copy of the string allocated from the server's string heap
 
 void ED_Print (progs_t *pr, edict_t *ed);
-void ED_Write (progs_t *pr, VFile *f, edict_t *ed);
+void ED_Write (progs_t *pr, QFile *f, edict_t *ed);
 const char *ED_ParseEdict (progs_t *pr, const char *data, edict_t *ent);
 
-void ED_WriteGlobals (progs_t *pr, VFile *f);
+void ED_WriteGlobals (progs_t *pr, QFile *f);
 void ED_ParseGlobals (progs_t *pr, const char *data);
 
 void ED_LoadFromFile (progs_t *pr, const char *data);

@@ -597,7 +597,7 @@ linker_add_lib (const char *libname)
 		did_something = 0;
 		for (i = 0; i < pack->numfiles; i++) {
 			int         fd;
-			VFile      *f;
+			QFile      *f;
 			qfo_t      *qfo;
 
 			fd = open (libname, O_RDONLY);

@@ -41,9 +41,9 @@ static const char rcsid[] =
 #include "QF/hash.h"
 #include "QF/plugin.h"
 #include "QF/progs.h"
+#include "QF/quakefs.h"
 #include "QF/render.h"
 #include "QF/sys.h"
-#include "QF/vfs.h"
 
 //FIXME need a better way to communicate this (bah, need a better menu system
 // in general :P)
@@ -458,7 +458,7 @@ void
 Menu_Load (void)
 {
 	int         size;
-	VFile      *file;
+	QFile      *file;
 
 	menu_pr_state.time = con_data.realtime;
 

@@ -40,7 +40,7 @@ static const char rcsid[] =
 #include <QF/cmd.h>
 #include <QF/cvar.h>
 #include "QF/progs.h"
-#include <QF/vfs.h>
+#include <QF/quakefs.h>
 #include <QF/sys.h>
 #include <QF/va.h>
 #include <QF/zone.h>
@@ -80,7 +80,7 @@ main (int argc, char **argv)
 	while (--argc) {
 		int fix = 0;
 		int size;
-		VFile *file;
+		QFile *file;
 
 		progs.progs_name = *++argv;
 		size = COM_FOpenFile (progs.progs_name, &file);

@@ -47,13 +47,13 @@ static const char rcsid[] =
 #include "QF/cmd.h"
 #include "QF/cvar.h"
 #include "QF/dstring.h"
-#include "QF/hash.h"
-#include "QF/qargs.h"
-#include "QF/sys.h"
-#include "QF/vfs.h"
-#include "QF/zone.h"
 #include "QF/gib_builtin.h"
 #include "QF/gib_parse.h"
+#include "QF/hash.h"
+#include "QF/qargs.h"
+#include "QF/quakefs.h"
+#include "QF/sys.h"
+#include "QF/zone.h"
 
 typedef struct cmdalias_s {
 	struct cmdalias_s *next;
@@ -614,7 +614,7 @@ Cmd_Exec_File (cbuf_t *cbuf, const char *path)
 {
 	char       *f;
 	int         len;
-	VFile      *file;
+	QFile      *file;
 
 	if (!path || !*path)
 		return;

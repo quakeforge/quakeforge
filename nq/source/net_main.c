@@ -43,9 +43,9 @@ static const char rcsid[] =
 #include "QF/cvar.h"
 #include "QF/msg.h"
 #include "QF/qargs.h"
+#include "QF/quakeio.h"
 #include "QF/sizebuf.h"
 #include "QF/sys.h"
-#include "QF/vfile.h"
 
 #include "host.h"
 #include "net.h"
@@ -112,7 +112,7 @@ cvar_t     *config_modem_clear;
 cvar_t     *config_modem_init;
 cvar_t     *config_modem_hangup;
 
-VFile      *vcrFile;
+QFile      *vcrFile;
 qboolean    recording = false;
 
 // these two macros are to make the code more readable

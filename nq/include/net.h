@@ -30,8 +30,8 @@
 #define __net_h
 
 #include "QF/gcc_attr.h"
+#include "QF/quakeio.h"
 #include "QF/sizebuf.h"
-#include "QF/vfile.h"
 
 struct qsockaddr
 {
@@ -340,6 +340,6 @@ extern struct cvar_s	*config_modem_init;
 extern struct cvar_s	*config_modem_hangup;
 extern struct cvar_s	*hostname;
 
-extern VFile *vcrFile;
+extern QFile *vcrFile;
 
 #endif // __net_h

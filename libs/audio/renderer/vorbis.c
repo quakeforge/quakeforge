@@ -48,7 +48,7 @@ static const char rcsid[] =
 #include "QF/cvar.h"
 #include "QF/sound.h"
 #include "QF/sys.h"
-#include "QF/vfile.h"
+#include "QF/quakeio.h"
 
 //FIXME should be in header
 void SND_ResampleSfx (sfxcache_t *sc, byte * data);
@@ -88,7 +88,7 @@ static ov_callbacks callbacks = {
 };
 
 sfxcache_t *
-SND_LoadOgg (VFile *file, sfx_t *sfx, cache_allocator_t allocator)
+SND_LoadOgg (QFile *file, sfx_t *sfx, cache_allocator_t allocator)
 {
 	OggVorbis_File vf;
 	vorbis_info *vi;
@@ -157,10 +157,10 @@ SND_LoadOgg (VFile *file, sfx_t *sfx, cache_allocator_t allocator)
 
 #include "QF/sound.h"
 #include "QF/sys.h"
-#include "QF/vfile.h"
+#include "QF/quakeio.h"
 
 sfxcache_t *
-SND_LoadOgg (VFile *file, sfx_t *sfx, cache_allocator_t allocator)
+SND_LoadOgg (QFile *file, sfx_t *sfx, cache_allocator_t allocator)
 {
 	Sys_Printf ("Ogg/Vorbis support not available, sorry.\n");
 	Qclose (file);

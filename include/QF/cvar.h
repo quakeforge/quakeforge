@@ -30,7 +30,7 @@
 #define __cvar_h
 
 #include "QF/qtypes.h"
-#include "QF/vfile.h"
+#include "QF/quakeio.h"
 
 typedef struct cvar_s
 {
@@ -108,7 +108,7 @@ qboolean Cvar_Command (void);
 
 // Writes lines containing "set variable value" for all variables
 // with the archive flag set to true.
-void 	Cvar_WriteVariables (VFile *f);
+void 	Cvar_WriteVariables (QFile *f);
 
 // Added by EvilTypeGuy - functions for tab completion system
 // Thanks to Fett erich@heintz.com

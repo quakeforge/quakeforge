@@ -38,17 +38,17 @@ static const char rcsid[] =
 #endif
 
 #include "QF/cvar.h"
-#include "QF/qendian.h"
 #include "QF/sound.h"
 #include "QF/sys.h"
-#include "QF/vfs.h"
+#include "QF/qendian.h"
+#include "QF/quakefs.h"
 
 int         cache_full_cycle;
 
 byte       *SND_Alloc (int size);
 wavinfo_t   SND_GetWavinfo (const char *name, byte * wav, int wavlength);
 sfxcache_t *SND_LoadSound (sfx_t *sfx, cache_allocator_t allocator);
-sfxcache_t *SND_LoadOgg (VFile *file, sfx_t *sfx, cache_allocator_t allocator);
+sfxcache_t *SND_LoadOgg (QFile *file, sfx_t *sfx, cache_allocator_t allocator);
 
 sfxcache_t *
 SND_GetCache (long samples, int rate, int inwidth, int channels,
@@ -193,7 +193,7 @@ SND_LoadSound (sfx_t *sfx, cache_allocator_t allocator)
 	float		stepscale;
 	sfxcache_t *sc;
 	byte		stackbuf[1 * 1024];		// avoid dirtying the cache heap
-	VFile      *file;
+	QFile      *file;
 
 	// load it in
 	strcpy (namebuffer, "sound/");

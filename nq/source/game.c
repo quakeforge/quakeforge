@@ -34,7 +34,7 @@ static const char rcsid[] =
 #endif
 
 #include "QF/qargs.h"
-#include "QF/vfs.h"
+#include "QF/quakefs.h"
 
 #include "game.h"
 

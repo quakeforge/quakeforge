@@ -39,10 +39,10 @@ static const char rcsid[] =
 
 #include "QF/console.h"
 #include "QF/cvar.h"
+#include "QF/quakefs.h"
 #include "QF/render.h"
 #include "QF/texture.h"
 #include "QF/tga.h"
-#include "QF/vfs.h"
 #include "QF/vid.h"
 #include "QF/GL/defines.h"
 #include "QF/GL/funcs.h"
@@ -69,7 +69,7 @@ R_LoadSkys (const char *skyname)
 {
 	char        name[64];
 	int         i;
-	VFile      *f;
+	QFile      *f;
 
 	if (strcasecmp (skyname, "none") == 0) {
 		skyloaded = false;

@@ -32,10 +32,10 @@
 #include <setjmp.h>
 
 #include "QF/gcc_attr.h"
-#include "QF/model.h"
-#include "QF/sizebuf.h"
 #include "QF/info.h"
-#include "QF/vfile.h"
+#include "QF/model.h"
+#include "QF/quakeio.h"
+#include "QF/sizebuf.h"
 
 #include "client.h"
 #include "net.h"

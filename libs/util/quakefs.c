@@ -75,9 +75,9 @@ static const char rcsid[] =
 #include "QF/qargs.h"
 #include "QF/qendian.h"
 #include "QF/qtypes.h"
+#include "QF/quakefs.h"
 #include "QF/sys.h"
 #include "QF/va.h"
-#include "QF/vfs.h"
 #include "QF/zone.h"
 
 #include "compat.h"
@@ -153,7 +153,7 @@ COM_FileBase (const char *in, char *out)
 
 
 int
-COM_filelength (VFile *f)
+COM_filelength (QFile *f)
 {
 	int         end, pos;
 
@@ -166,9 +166,9 @@ COM_filelength (VFile *f)
 }
 
 int
-COM_FileOpenRead (char *path, VFile **hndl)
+COM_FileOpenRead (char *path, QFile **hndl)
 {
-	VFile      *f;
+	QFile      *f;
 
 	f = Qopen (path, "rbz");
 	if (!f) {
@@ -180,10 +180,10 @@ COM_FileOpenRead (char *path, VFile **hndl)
 	return COM_filelength (f);
 }
 
-VFile *
+QFile *
 COM_SafeOpenRead (const char *filename)
 {
-	VFile       *f;
+	QFile       *f;
 
 	f = Qopen (filename, "rb");
 
@@ -193,10 +193,10 @@ COM_SafeOpenRead (const char *filename)
 	return f;
 }
 
-VFile *
+QFile *
 COM_SafeOpenWrite (const char *filename)
 {
-	VFile       *f;
+	QFile       *f;
 
 	f = Qopen (filename, "wb");
 
@@ -207,14 +207,14 @@ COM_SafeOpenWrite (const char *filename)
 }
 
 void
-COM_SafeRead (VFile *f, void *buffer, int count)
+COM_SafeRead (QFile *f, void *buffer, int count)
 {
 	if (Qread (f, buffer, count) != (size_t) count)
 		Sys_Error ("File read failure");
 }
 
 void
-COM_SafeWrite (VFile *f, const void *buffer, int count)
+COM_SafeWrite (QFile *f, const void *buffer, int count)
 {
 	if (Qwrite (f, buffer, count) != (size_t) count)
 		Sys_Error ("File read failure");
@@ -225,7 +225,7 @@ LoadFile (const char *filename, void **bufferptr)
 {
 	int		 length;
 	void		*buffer;
-	VFile		*f;
+	QFile		*f;
 
 	f = COM_SafeOpenRead (filename);
 	length = COM_filelength (f);
@@ -266,7 +266,7 @@ void
 COM_WriteFile (const char *filename, void *data, int len)
 {
 	char        name[MAX_OSPATH];
-	VFile      *f;
+	QFile      *f;
 
 	snprintf (name, sizeof (name), "%s/%s", com_gamedir, filename);
 
@@ -293,7 +293,7 @@ COM_WriteBuffers (const char *filename, int count, ...)
 {
 	char        name[MAX_OSPATH];
 	va_list     args;
-	VFile      *f;
+	QFile      *f;
 
 	va_start (args, count);
 
@@ -352,7 +352,7 @@ COM_CopyFile (char *netpath, char *cachepath)
 {
 	int         remaining, count;
 	char        buf[4096];
-	VFile      *in, *out;
+	QFile      *in, *out;
 
 	remaining = COM_FileOpenRead (netpath, &in);
 	COM_CreatePath (cachepath);  // create directories up to the cache file
@@ -374,7 +374,7 @@ COM_CopyFile (char *netpath, char *cachepath)
 	Qclose (out);
 }
 
-VFile      *
+QFile      *
 COM_OpenRead (const char *path, int offs, int len, int zip)
 {
 	unsigned char id[2], len_bytes[4];
@@ -502,7 +502,7 @@ int file_from_pak; // global indicating file came from pack file ZOID
 */
 
 static int
-open_file (searchpath_t *search, const char *filename, VFile **gzfile,
+open_file (searchpath_t *search, const char *filename, QFile **gzfile,
 		   char *foundname, int zip)
 {
 	char        netpath[MAX_OSPATH];
@@ -543,7 +543,7 @@ open_file (searchpath_t *search, const char *filename, VFile **gzfile,
 }
 
 int
-_COM_FOpenFile (const char *filename, VFile **gzfile, char *foundname, int zip)
+_COM_FOpenFile (const char *filename, QFile **gzfile, char *foundname, int zip)
 {
 	searchpath_t *search;
 	char       *path;
@@ -601,7 +601,7 @@ ok:
 }
 
 int
-COM_FOpenFile (const char *filename, VFile **gzfile)
+COM_FOpenFile (const char *filename, QFile **gzfile)
 {
 	char        foundname[MAX_OSPATH];
 
@@ -621,7 +621,7 @@ int         loadsize;
 byte       *
 COM_LoadFile (const char *path, int usehunk)
 {
-	VFile      *h;
+	QFile      *h;
 	byte       *buf = NULL;
 	char        base[32];
 	int         len;

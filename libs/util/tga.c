@@ -40,10 +40,10 @@ static const char rcsid[] =
 #include <stdlib.h>
 
 #include "QF/qendian.h"
+#include "QF/quakefs.h"
 #include "QF/sys.h"
 #include "QF/texture.h"
 #include "QF/tga.h"
-#include "QF/vfs.h"
 #include "QF/zone.h"
 
 #include "compat.h"
@@ -115,7 +115,7 @@ read_rgba (byte *buf, int count, byte **data)
 }
 
 struct tex_s *
-LoadTGA (VFile *fin)
+LoadTGA (QFile *fin)
 {
 	byte       *dataByte, *pixcol, *pixrow;
 	int         column, row, columns, rows, numPixels, span, targa_mark;

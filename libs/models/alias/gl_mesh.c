@@ -42,8 +42,8 @@ static const char rcsid[] =
 #include "QF/cvar.h"
 #include "QF/mdfour.h"
 #include "QF/model.h"
+#include "QF/quakefs.h"
 #include "QF/sys.h"
-#include "QF/vfs.h"
 
 #include "compat.h"
 
@@ -338,7 +338,7 @@ Mod_MakeAliasModelDisplayLists (model_t *m, aliashdr_t *hdr, void *_m, int _s, i
 	unsigned char mesh_digest[MDFOUR_DIGEST_BYTES];
 	int         i, j;
 	int        *cmds;
-	VFile      *f;
+	QFile      *f;
 	qboolean    remesh = true;
 	qboolean    do_cache = false;
 

@@ -50,11 +50,11 @@ static const char rcsid[] =
 #include "QF/cvar.h"
 #include "QF/hash.h"
 #include "QF/msg.h"
+#include "QF/quakeio.h"
 #include "QF/screen.h"
 #include "QF/sound.h"
 #include "QF/teamplay.h"
 #include "QF/va.h"
-#include "QF/vfile.h"
 #include "QF/dstring.h"
 #include "QF/gib_vars.h"
 #include "QF/gib_thread.h"
@@ -206,7 +206,7 @@ CL_CalcNet (void)
 qboolean
 CL_CheckOrDownloadFile (const char *filename)
 {
-	VFile	   *f;
+	QFile	   *f;
 
 	if (strstr (filename, "..")) {
 		Con_Printf ("Refusing to download a path with ..\n");

@@ -47,7 +47,7 @@ static const char rcsid[] =
 #include "QF/console.h"
 #include "QF/sys.h"
 #include "QF/cvar.h"
-#include "QF/vfs.h"
+#include "QF/quakefs.h"
 #include "QF/zone.h"
 
 #include "compat.h"
@@ -57,7 +57,7 @@ int cf_maxsize; // max combined file size (eg quota)
 int cf_cursize; // current combined file size
 
 typedef struct cf_file_s {
-	VFile *file;
+	QFile *file;
 	char *path;
 	char *buf;
 	int size;
@@ -208,7 +208,7 @@ CF_Open (const char *path, const char *mode)
 {
 	char *fullpath, *j;
 	int desc, oldsize, i;
-	VFile *file;
+	QFile *file;
 
 	if (cf_openfiles >= CF_MAXFILES) {
 		return -1;

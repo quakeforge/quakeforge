@@ -44,7 +44,7 @@ static const char rcsid[] =
 #include <getopt.h>
 
 #include "QF/dstring.h"
-#include "QF/vfile.h"
+#include "QF/quakeio.h"
 
 #include "class.h"
 #include "def.h"

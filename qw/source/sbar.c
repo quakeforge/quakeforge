@@ -45,10 +45,10 @@ static const char rcsid[] =
 #include "QF/cvar.h"
 #include "QF/draw.h"
 #include "QF/msg.h"
+#include "QF/quakefs.h"
 #include "QF/screen.h"
 #include "QF/va.h"
 #include "QF/vid.h"
-#include "QF/vfs.h"
 #include "QF/sys.h"
 
 #include "bothdefs.h"
@@ -920,7 +920,7 @@ Sbar_LogFrags (void)
 	char        conv[512];
 	char        conv2[512];
 	char       *cp   = NULL;
-	VFile      *file = NULL;
+	QFile      *file = NULL;
 	int         minutes, fph, total, f, i, k, l, p, d;
 	player_info_t *s = NULL;
 	const char *t    = NULL;

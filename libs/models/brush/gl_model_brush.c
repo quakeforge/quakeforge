@@ -42,10 +42,10 @@ static const char rcsid[] =
 
 #include "QF/model.h"
 #include "QF/qendian.h"
+#include "QF/quakefs.h"
 #include "QF/sys.h"
 #include "QF/texture.h"
 #include "QF/tga.h"
-#include "QF/vfs.h"
 #include "QF/GL/qf_textures.h"
 
 #include "compat.h"
@@ -73,7 +73,7 @@ Mod_LoadExternalTextures (model_t *mod)
 	int			length, i;
 	tex_t	   *targa;
 	texture_t  *tx;
-	VFile	   *f;
+	QFile	   *f;
 
 	for (i = 0; i < mod->numtextures; i++)
 	{

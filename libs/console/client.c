@@ -50,11 +50,11 @@ static const char rcsid[] =
 #include "QF/keys.h"
 #include "QF/plugin.h"
 #include "QF/qargs.h"
+#include "QF/quakefs.h"
 #include "QF/screen.h"
 #include "QF/sys.h"
 #include "QF/va.h"
 #include "QF/vid.h"
-#include "QF/vfs.h"
 
 #include "compat.h"
 
@@ -236,7 +236,7 @@ Condump_f (void)
 {
 	int         line = con->current - con->numlines;
 	const char *start, *end;
-	VFile      *file;
+	QFile      *file;
 	char        name[MAX_OSPATH];
 
 	if (Cmd_Argc () != 2) {

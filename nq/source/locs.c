@@ -47,8 +47,8 @@ static const char rcsid[] =
 #include "QF/console.h"
 #include "QF/locs.h"
 #include "QF/qtypes.h"
+#include "QF/quakefs.h"
 #include "QF/sys.h"
-#include "QF/vfs.h"
 
 #include "client.h"
 
@@ -114,7 +114,7 @@ locs_add (const vec3_t location, const char *name)
 void
 locs_load (const char *filename)
 {
-	VFile      *file;
+	QFile      *file;
 	const char *line;
 	char       *t1, *t2;
 	vec3_t      loc;
@@ -195,7 +195,7 @@ locs_more (void)
 void
 locs_save (const char *filename, qboolean gz)
 {
-	VFile *locfd;
+	QFile *locfd;
 	int i;
 	char locfile[MAX_OSPATH];
 	

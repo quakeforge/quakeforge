@@ -46,9 +46,9 @@ static const char rcsid[] =
 #include "QF/msg.h"
 #include "QF/qargs.h"
 #include "QF/qendian.h"
+#include "QF/quakefs.h"
 #include "QF/sys.h"
 #include "QF/va.h"
-#include "QF/vfs.h"
 
 #include "bothdefs.h"
 #include "compat.h"
@@ -355,7 +355,7 @@ SV_Map_f (void)
 {
 	char        level[MAX_QPATH];
 	char        expanded[MAX_QPATH];
-	VFile      *f;
+	QFile      *f;
 
 	if (Cmd_Argc () > 2) {
 		SV_Printf ("map <levelname> : continue game on a new level\n");

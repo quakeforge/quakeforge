@@ -51,8 +51,8 @@ static const char rcsid[] =
 #include "QF/cmd.h"
 #include "QF/cvar.h"
 #include "QF/msg.h"
+#include "QF/quakefs.h"
 #include "QF/va.h"
-#include "QF/vfs.h"
 
 #include "compat.h"
 #include "net.h"
@@ -169,8 +169,8 @@ const char *clc_string[] = {
 #define svc_particle            18		// [vec3] <variable>
 #define svc_signonnum           25		// [byte]  used for the signon
 										// sequence
-static VFile      *_stdout;
-static VFile      *Net_PacketLog;
+static QFile      *_stdout;
+static QFile      *Net_PacketLog;
 static const char **Net_sound_precache;
 static sizebuf_t   _packet;
 static msg_t       packet = {0, 0, &_packet};

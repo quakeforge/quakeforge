@@ -59,8 +59,8 @@ static const char rcsid[] =
 #include <stdlib.h>
 
 #include "QF/dstring.h"
-#include "QF/vfile.h"
-#include "QF/vfs.h"
+#include "QF/quakefs.h"
+#include "QF/quakeio.h"
 
 #ifdef WIN32
 # ifndef __BORLANDC__
@@ -123,10 +123,10 @@ Qrename (const char *old, const char *new)
 	return rename (e_old, e_new);
 }
 
-VFile *
+QFile *
 Qopen (const char *path, const char *mode)
 {
-	VFile      *file;
+	QFile      *file;
 	char        m[80], *p;
 	int         zip = 0;
 	char        e_path[PATH_MAX];
@@ -170,10 +170,10 @@ Qopen (const char *path, const char *mode)
 	return file;
 }
 
-VFile *
+QFile *
 Qdopen (int fd, const char *mode)
 {
-	VFile      *file;
+	QFile      *file;
 	char        m[80], *p;
 	int         zip = 0;
 
@@ -214,7 +214,7 @@ Qdopen (int fd, const char *mode)
 }
 
 void
-Qclose (VFile *file)
+Qclose (QFile *file)
 {
 	if (file->file)
 		fclose (file->file);
@@ -226,7 +226,7 @@ Qclose (VFile *file)
 }
 
 int
-Qread (VFile *file, void *buf, int count)
+Qread (QFile *file, void *buf, int count)
 {
 	if (file->file)
 		return fread (buf, 1, count, file->file);
@@ -239,7 +239,7 @@ Qread (VFile *file, void *buf, int count)
 }
 
 int
-Qwrite (VFile *file, const void *buf, int count)
+Qwrite (QFile *file, const void *buf, int count)
 {
 	if (file->file)
 		return fwrite (buf, 1, count, file->file);
@@ -252,7 +252,7 @@ Qwrite (VFile *file, const void *buf, int count)
 }
 
 int
-Qprintf (VFile *file, const char *fmt, ...)
+Qprintf (QFile *file, const char *fmt, ...)
 {
 	va_list     args;
 	int         ret = -1;
@@ -280,7 +280,7 @@ Qprintf (VFile *file, const char *fmt, ...)
 }
 
 int
-Qputs (VFile *file, const char *buf)
+Qputs (QFile *file, const char *buf)
 {
 	if (file->file)
 		return fputs (buf, file->file);
@@ -293,7 +293,7 @@ Qputs (VFile *file, const char *buf)
 }
 
 char *
-Qgets (VFile *file, char *buf, int count)
+Qgets (QFile *file, char *buf, int count)
 {
 	if (file->file)
 		return fgets (buf, count, file->file);
@@ -306,7 +306,7 @@ Qgets (VFile *file, char *buf, int count)
 }
 
 int
-Qgetc (VFile *file)
+Qgetc (QFile *file)
 {
 	if (file->file)
 		return fgetc (file->file);
@@ -319,7 +319,7 @@ Qgetc (VFile *file)
 }
 
 int
-Qputc (VFile *file, int c)
+Qputc (QFile *file, int c)
 {
 	if (file->file)
 		return fputc (c, file->file);
@@ -332,7 +332,7 @@ Qputc (VFile *file, int c)
 }
 
 int
-Qseek (VFile *file, long offset, int whence)
+Qseek (QFile *file, long offset, int whence)
 {
 	if (file->file)
 		return fseek (file->file, offset, whence);
@@ -345,7 +345,7 @@ Qseek (VFile *file, long offset, int whence)
 }
 
 long
-Qtell (VFile *file)
+Qtell (QFile *file)
 {
 	if (file->file)
 		return ftell (file->file);
@@ -358,7 +358,7 @@ Qtell (VFile *file)
 }
 
 int
-Qflush (VFile *file)
+Qflush (QFile *file)
 {
 	if (file->file)
 		return fflush (file->file);
@@ -371,7 +371,7 @@ Qflush (VFile *file)
 }
 
 int
-Qeof (VFile *file)
+Qeof (QFile *file)
 {
 	if (file->file)
 		return feof (file->file);
@@ -389,7 +389,7 @@ Qeof (VFile *file)
 	Dynamic length version of Qgets. DO NOT free the buffer.
 */
 const char *
-Qgetline (VFile *file)
+Qgetline (QFile *file)
 {
 	static int  size = 256;
 	static char *buf = 0;
@@ -420,7 +420,7 @@ Qgetline (VFile *file)
 }
 
 int
-Qgetpos (VFile *file, fpos_t * pos)
+Qgetpos (QFile *file, fpos_t * pos)
 {
 #ifdef HAVE_FPOS_T_STRUCT
 	pos->__pos = Qtell (file);
@@ -432,7 +432,7 @@ Qgetpos (VFile *file, fpos_t * pos)
 }
 
 int
-Qsetpos (VFile *file, fpos_t * pos)
+Qsetpos (QFile *file, fpos_t * pos)
 {
 #ifdef HAVE_FPOS_T_STRUCT
 	return Qseek (file, pos->__pos, 0);

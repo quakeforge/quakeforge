@@ -31,7 +31,7 @@
 
 #include "QF/gcc_attr.h"
 #include "QF/qtypes.h"
-#include "QF/vfile.h"
+#include "QF/quakeio.h"
 
 #ifndef __GNUC__
 # if defined (__BORLANDC__) || defined (_MSC_VER)
@@ -69,7 +69,7 @@ typedef struct _TargaHeader {
 # endif
 #endif
 
-struct tex_s *LoadTGA (VFile *fin);
+struct tex_s *LoadTGA (QFile *fin);
 void WriteTGAfile (const char *tganame, byte *data, int width, int height);
 
 #endif // __tga_h

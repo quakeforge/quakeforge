@@ -43,13 +43,13 @@ static const char rcsid[] =
 #include "QF/console.h"
 #include "QF/cvar.h"
 #include "QF/draw.h"
+#include "QF/quakefs.h"
 #include "QF/render.h"
 #include "QF/screen.h"
 #include "QF/sys.h"
 #include "QF/texture.h"
 #include "QF/tga.h"
 #include "QF/va.h"
-#include "QF/vfs.h"
 #include "QF/vid.h"
 #include "QF/GL/defines.h"
 #include "QF/GL/funcs.h"
@@ -160,7 +160,7 @@ Draw_PicFromWad (const char *name)
 	glpic_t    *gl;
 	qpic_t     *p;
 	char        filename[MAX_QPATH + 4];
-	VFile      *f;
+	QFile      *f;
 	tex_t      *targa;
 
 	p = W_GetLumpName (name);
@@ -202,7 +202,7 @@ Draw_CachePic (const char *path, qboolean alpha)
 	glpic_t    *gl;
 	qpic_t     *dat;
 	char        filename[MAX_QPATH + 4];
-	VFile      *f;
+	QFile      *f;
 	tex_t      *targa;
 
 	// First, check if its cached..

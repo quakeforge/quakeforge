@@ -229,7 +229,7 @@ Key_Init_Cvars (void)
 }
 
 void
-Key_WriteBindings (VFile *f)
+Key_WriteBindings (QFile *f)
 {
 }
 

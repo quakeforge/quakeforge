@@ -41,11 +41,11 @@ static const char rcsid[] =
 #include "QF/keys.h"
 #include "QF/qargs.h"
 #include "QF/qendian.h"
+#include "QF/quakefs.h"
 #include "QF/screen.h"
 #include "QF/sound.h"
 #include "QF/sys.h"
 #include "QF/va.h"
-#include "QF/vfs.h"
 #include "QF/vid.h"
 #include "QF/GL/funcs.h"
 
