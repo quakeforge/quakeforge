@@ -704,6 +704,7 @@ SV_Tell (const char *prefix)
 	i = strlen (text);
 	strncat (text, p, sizeof (text) - 1 - i);
 	text[sizeof (text) - 1] = 0;
+	SV_Printf ("%s\n", text);
 	for (; text[i];)
 		text[i++] |= 0x80; // non-bold text
 	SV_ClientPrintf (1, cl, PRINT_CHAT, "\n"); // bell
@@ -772,6 +773,7 @@ SV_ConSay (const char *prefix)
 	strcat (text, "\x8d ");				// and arrow
 	j = strlen (text);
 	strncat (text, p, sizeof (text) - j);
+	SV_Printf ("%s\n", text);
 	while (text[j])
 		text[j++] |= 0x80;				// non-bold text
 
