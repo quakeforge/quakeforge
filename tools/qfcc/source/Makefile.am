@@ -62,6 +62,6 @@ qfprogs_SOURCES= \
 qfprogs_LDADD=	$(QFCC_LIBS)
 qfprogs_DEPENDENCIES= $(QFCC_DEPS)
 
-constfold.$(OBJEXT) emit.$(OBJEXT) expr.$(OBJEXT) switch.$(OBJEXT) qc-lex.$(OBJEXT): qc-parse.h
+BUILT_SOURCES=qc-parse.c qc-parse.h qc-lex.c
 
 EXTRA_DIST=qc-lex.c qc-parse.c qc-parse.h qfpreqcc
