@@ -925,20 +925,20 @@ draw_hipnotic_weapons_sbar (view_t *view)
 static void
 draw_hipnotic_weapons_hud (view_t *view)
 {
-	int         flashon, grenadeflashing = 0, i;
-	static int  y[] = {0, 16, 32, 48, 64, 96, 112, 128, 144, 80, 80};
+	int         flashon, i;
+	static int  y[] = {0, 16, 32, 48, 64, 96, 112, 128, 144, 80};
+	static int  h[] = {0, 1, 3};
 	qpic_t     *pic;
 	int         mask;
 	float       time;
 
-	// hipnotic weapons
-	for (i = 0; i < 11; i++) {
+	for (i = 0; i < 10; i++) {
 		if (i < 7) {
-			mask = cl.stats[STAT_ITEMS] & (IT_SHOTGUN << i);
+			mask = IT_SHOTGUN << i;
 			time = cl.item_gettime[i];
 		} else {
-			mask = cl.stats[STAT_ITEMS] & (1 << hipweapons[i - 7]);
-			time = cl.item_gettime[hipweapons[i - 7]];
+			mask = 1 << hipweapons[h[i - 7]];
+			time = cl.item_gettime[hipweapons[h[i - 7]]];
 		}
 		if (cl.stats[STAT_ITEMS] & mask) {
 			flashon = calc_flashon (time, mask);
@@ -946,29 +946,11 @@ draw_hipnotic_weapons_hud (view_t *view)
 			pic = 0;
 			if (i < 7) {
 				pic = sb_weapons[flashon][i];
-			} else if (i < 9) {
-				pic = hsb_weapons[flashon][i - 7];
-			} else if (i == 9) {
-				if (cl.stats[STAT_ITEMS] & HIT_PROXIMITY_GUN) {
-					if (flashon) {
-						grenadeflashing = 1;
-						pic = hsb_weapons[flashon][2];
-					}
-				}
 			} else {
-				if (cl.stats[STAT_ITEMS] & (IT_SHOTGUN << 4)) {
-					if (flashon && !grenadeflashing) {
-						pic = hsb_weapons[flashon][3];
-					} else if (!grenadeflashing) {
-						pic = hsb_weapons[0][3];
-					}
-				} else {
-					pic = hsb_weapons[flashon][4];
-				}
+				pic = hsb_weapons[flashon][h[i - 7]];
 			}
 
-			if (pic)
-				draw_subpic (view, 0, y[i], pic, 0, 0, 24, 16);
+			draw_subpic (view, 0, y[i], pic, 0, 0, 24, 16);
 
 			if (flashon > 1)
 				sb_updates = 0;		// force update to remove flash
