@@ -46,7 +46,7 @@ m		([\-+]?)
 						} while (c != '/' && c != EOF);
 					}
 
-"//".*$	/* nothing to do */
+"//".*	/* nothing to do */
 
 {DIGIT}+			{
 						yylval.int_val = atoi (yytext);
