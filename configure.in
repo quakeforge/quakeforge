@@ -497,6 +497,8 @@ AC_ARG_WITH(glide,
 [  --with-glide=DIR        use the GLIDE 2.x SDK found in DIR],
 HAVE_GLIDE=$withval, HAVE_GLIDE=auto)
 if test "x$HAVE_GLIDE" != xno; then
+        AC_CHECK_LIB(glide, grGammaCorrectionValue, GLIDE_LIBS="-lglide", 
+		AC_CHECK_LIB(glide2x, grGammaCorrectionValue, GLIDE_LIBS="-lglide2x",GLIDE_LIBS=""))
 	if test "x$HAVE_GLIDE" != xauto; then
 		GLIDE_CFLAGS="$GLIDE_CFLAGS -I$withval/include"
 		GLIDE_LIBS="$GLIDE_LIBS -L$withval/lib"
@@ -530,47 +532,6 @@ if test "x$enable_sdl" != xno; then
 	AC_SUBST(HAVE_SDL)
 	AC_SUBST(HAVE_SGL)
 fi
-
-# 3Dfx stuff..
-
-# First we see if we can use mesa with glide support..
-# if not then try the MiniGL..
-
-TDFXGL_NAME=""
-AC_ARG_WITH(3dfx,
-[  --with-3dfx[=NAME]      support 3Dfx output for the V1/V2. If NAME is
-                          specified, it will be used as the GL wrapper lib
-                          for Glide.],
-	HAVE_3dfx=$withval, HAVE_3dfx=auto)
-
-if test "x$HAVE_3dfx" != "xno" -a "x$HAVE_SVGA" != "xno" \
-		-a "x$HAVE_GLIDE" != "xno"; then
-	if test "x$HAVE_3dfx" != "xauto" -a "x$HAVE_3dfx" != "xyes"; then
-		TDFXGL_NAME="$HAVE_3dfx"
-	fi
-	if test -z "$TDFXGL_NAME"; then
-		TDFXGL_NAME="$OGL_NAME"
-		TDFXGL_LIBS="$GLIDE_LIBS -l$TDFXGL_NAME"
-	fi
-	HAVE_3dfx=no
-        AC_CHECK_LIB($TDFXGL_NAME, fxMesaCreateContext, HAVE_3dfx=yes,,
-		[$GLIDE_LIBS $TDFXGL_LIBS])
-fi
-
-AC_MSG_CHECKING(for 3Dfx support)
-if test "x$HAVE_3dfx" = "xyes"; then
-   TDFXGL_CFLAGS="$GLIDE_CFLAGS"
-   TDFXGL_LIBS="$GLIDE_LIBS -l$TDFXGL_NAME"
-   HAVE_TDFXGL="yes"
-   AC_MSG_RESULT(yes (using $TDFXGL_NAME))
-else
-   TDFXGL_CFLAGS=""
-   TDFXGL_NAME=""
-   TDFXGL_LIBS=""
-   AC_MSG_RESULT(no)
-fi
-AC_SUBST(TDFXGL_CFLAGS)
-AC_SUBST(TDFXGL_LIBS)
 
 dnl ==================================================================
 dnl Checks for system type
@@ -1260,7 +1221,7 @@ SND_PLUGIN_TARGETS="libsound_null.la libsound_disk.la"
 VID_TARGETS=""
 BUILD_GL=no
 BUILD_SW=no
-if test "x$HAVE_TDFXGL" = xyes -a "x$ENABLE_3DFX" = xyes; then
+if test "x$HAVE_GLIDE" = xyes -a "x$ENABLE_3DFX" = xyes; then
 	QW_TARGETS="$QW_TARGETS qw-client-3dfx\$(EXEEXT)"
 	NQ_TARGETS="$NQ_TARGETS nq-3dfx\$(EXEEXT)"
 	CL_TARGETS="$CL_TARGETS 3dfx"

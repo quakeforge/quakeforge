@@ -33,6 +33,7 @@ AUTOMAKE_OPTIONS=	foreign
 INCLUDES=	-I$(top_srcdir)/include -I$(top_srcdir)/qw/include
 
 bin_PROGRAMS=	@QW_TARGETS@
+GLIDE_LIBS= @GLIDE_LIBS@
 
 EXTRA_PROGRAMS= qw-client-3dfx qw-client-fbdev \
 		qw-client-glx qw-client-mgl qw-client-sdl \
@@ -155,7 +156,7 @@ ogl_SOURCES=	gl_view.c
 
 # ... 3Dfx Voodoo 1 and 2 SVGAlib-based console GL
 qw_client_3dfx_SOURCES=	$(common_SOURCES) $(client_SOURCES) $(ogl_SOURCES)
-qw_client_3dfx_LDADD=	../../libs/video/renderer/libQFrenderer_gl.la ../../libs/models/libQFmodels_gl.la ../../libs/video/targets/libQFtdfx.la $(client_LIBS) $(TDFXGL_LIBS) $(SVGA_LIBS) $(DL_LIBS)
+qw_client_3dfx_LDADD=	../../libs/video/renderer/libQFrenderer_gl.la ../../libs/models/libQFmodels_gl.la ../../libs/video/targets/libQFtdfx.la $(client_LIBS) $(GLIDE_LIBS) $(SVGA_LIBS) $(DL_LIBS)
 qw_client_3dfx_LDFLAGS= $(common_ldflags)
 qw_client_3dfx_DEPENDENCIES=../../libs/video/renderer/libQFrenderer_gl.la ../../libs/models/libQFmodels_gl.la ../../libs/video/targets/libQFtdfx.la $(client_LIB_DEPS)
 

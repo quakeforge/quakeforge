@@ -38,7 +38,6 @@
 # include <strings.h>
 #endif
 
-#include <GL/fxmesa.h>
 #include <glide/glide.h>
 #include <glide/sst1vid.h>
 #include <sys/signal.h>
@@ -46,17 +45,34 @@
 #include "compat.h"
 #include "QF/console.h"
 #include "QF/cvar.h"
-#include "glquake.h"
 #include "QF/qargs.h"
 #include "QF/qendian.h"
-#include "qfgl_ext.h"
 #include "sbar.h"
+#include "QF/GL/extensions.h"
+#include "QF/GL/funcs.h"
 #include "QF/sys.h"
 #include "QF/va.h"
 #include "QF/vid.h"
 
 #define WARP_WIDTH              320
 #define WARP_HEIGHT             200
+
+#define GLAPI extern
+#define GLAPIENTRY
+
+#define FXMESA_NONE             0       /* to terminate attribList */
+#define FXMESA_DOUBLEBUFFER     10
+#define FXMESA_ALPHA_SIZE       11      /* followed by an integer */
+#define FXMESA_DEPTH_SIZE       12      /* followed by an integer */
+
+#define GL_DITHER                               0x0BD0
+
+typedef struct tfxMesaContext *fxMesaContext;
+
+GLAPI void GLAPIENTRY fxMesaDestroyContext(fxMesaContext ctx);
+GLAPI void GLAPIENTRY fxMesaSwapBuffers(void);
+GLAPI fxMesaContext GLAPIENTRY fxMesaCreateContext(GLuint win, GrScreenResolution_t, GrScreenRefresh_t, const GLint attribList[]);
+GLAPI void GLAPIENTRY fxMesaMakeCurrent(fxMesaContext ctx);
 
 // FIXME!!!!! This belongs in include/qfgl_ext.h -- deek
 typedef void (GLAPIENTRY * QF_3DfxSetDitherModeEXT) (GrDitherMode_t mode);
@@ -349,10 +365,7 @@ VID_SetCaption (char *text)
 qboolean
 VID_SetGamma (double gamma)
 {
-	 // FIXME: Need function for HW gamma correction
-	 // return X11_SetGamma (gamma);
 	grGammaCorrectionValue((float) gamma);
 	return true;
-	 
 }
 

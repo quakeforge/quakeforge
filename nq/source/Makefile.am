@@ -129,7 +129,7 @@ ogl_SOURCES=	gl_view.c
 
 # ... 3Dfx Voodoo 1 and 2 SVGAlib-based console GL
 nq_3dfx_SOURCES=	$(combined_SOURCES) $(ogl_SOURCES)
-nq_3dfx_LDADD=	../../libs/video/renderer/libQFrenderer_gl.la ../../libs/models/libQFmodels_gl.la ../../libs/video/targets/libQFtdfx.la $(client_LIBS) $(TDFXGL_LIBS) $(SVGA_LIBS) $(DL_LIBS)
+nq_3dfx_LDADD=	../../libs/video/renderer/libQFrenderer_gl.la ../../libs/models/libQFmodels_gl.la ../../libs/video/targets/libQFtdfx.la $(client_LIBS) $(GLIDE_LIBS) $(SVGA_LIBS) $(DL_LIBS)
 nq_3dfx_LDFLAGS=    $(common_ldflags)
 nq_3dfx_DEPENDENCIES=../../libs/video/renderer/libQFrenderer_gl.la ../../libs/models/libQFmodels_gl.la ../../libs/video/targets/libQFtdfx.la $(client_LIB_DEPS)
 

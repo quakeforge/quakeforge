@@ -1,6 +1,7 @@
-INCLUDES= -I$(top_srcdir)/include $(GGI_CFLAGS) $(MGL_CFLAGS) $(SDL_CFLAGS) $(SVGA_CFLAGS) $(X_CFLAGS) $(TDFXGL_CFLAGS)
+INCLUDES= -I$(top_srcdir)/include $(GGI_CFLAGS) $(MGL_CFLAGS) $(SDL_CFLAGS) $(SVGA_CFLAGS) $(X_CFLAGS) $(GLIDE_CFLAGS)
 
 lib_LTLIBRARIES =	@VID_TARGETS@
+
 EXTRA_LTLIBRARIES = libQFjs.la libQFfbdev.la libQFsvga.la libQFx11.la libQFglx.la libQFsdl.la libQFsgl.la libQFtdfx.la libQFwgl.la libQFmgl.la
 
 if ASM_ARCH
@@ -79,8 +80,9 @@ libQFsvga.la: $(libQFsvga_la_OBJECTS) $(libQFsvga_la_DEPENDENCIES)
 
 libQFtdfx_la_LDFLAGS=	-version-info 1:0:0
 libQFtdfx_la_SOURCES=	in_common.c in_svgalib.c qfgl_ext.c vid.c vid_common_gl.c vid_3dfxsvga.c
+TDFX_LIBS = $(LIBS) -lGL
 libQFtdfx.la: $(libQFtdfx_la_OBJECTS) $(libQFtdfx_la_DEPENDENCIES)
-	$(LINK) -rpath $(libdir) $(libQFtdfx_la_LDFLAGS) $(libQFtdfx_la_OBJECTS) $(libQFtdfx_la_LIBADD) $(LIBS)
+	$(LINK) -rpath $(libdir) $(libQFtdfx_la_LDFLAGS) $(libQFtdfx_la_OBJECTS) $(libQFtdfx_la_LIBADD) $(TDFX_LIBS)
 
 
 libQFwgl_la_LDFLAGS=	-version-info 1:0:0
