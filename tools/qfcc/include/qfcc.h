@@ -281,17 +281,18 @@ typedef struct statref_s {
 	int				field;		// a, b, c (0, 1, 2)
 } statref_t;
 
-typedef struct def_s
-{
-	type_t		*type;
+typedef struct def_s {
+	type_t			*type;
 	const char		*name;
-	struct def_s	*next;
 	int				num_locals;
-	struct def_s	*scope_next;	// to facilitate hash table removal
-	gofs_t		ofs;
-	struct def_s	*scope;		// function the var was defined in, or NULL
-	int			initialized;	// 1 when a declaration included "= immediate"
+	gofs_t			ofs;
+	int				initialized;// 1 when a declaration included "= immediate"
 	statref_t		*refs;		// for relocations
+
+	struct def_s	*def_next;		// for writing out the global defs list
+	struct def_s	*next;			// general purpose linking
+	struct def_s	*scope_next;	// to facilitate hash table removal
+	struct def_s	*scope;			// function the var was defined in, or NULL
 } def_t;
 
 //============================================================================
