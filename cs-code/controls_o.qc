@@ -191,14 +191,18 @@ CB_MAIN_control_binding =
 		   by the menu (maybe extended later) */
 		if(bindcnt < 2) {
 			Key_SetBinding (IMT_0, key, binding);
-		} // else: not bind the key
+		} else {
+			// else, remove a binding and assign a new one
+			dprint ("FOO\n");
+			Key_SetBinding (IMT_0, Key_LookupBinding(IMT_0, 1, binding), "");
+			Key_SetBinding (IMT_0, key, binding);
+		}
 
 		set_key_flag = 0;
 		retval = 1;
 	} else {
 		if(key == QFK_RETURN) {
-			if(Key_CountBinding(IMT_0, binding) < 2)
-				set_key_flag = 1;
+			set_key_flag = 1;
 			retval = 1;
 		} else if(key == QFK_BACKSPACE || key == QFK_DELETE) {
 			Key_SetBinding (IMT_0, Key_LookupBinding(IMT_0, 1, binding), "");
