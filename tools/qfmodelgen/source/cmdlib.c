@@ -721,6 +721,26 @@ CreatePath (char *path)
 	}
 }
 
+int
+LoadFile (char *fname, void **buf)
+{
+	QFile      *file;
+	char       *src;
+	int         len;
+
+	*buf = 0;
+	file = Qopen (fname, "rt");
+	if (!file)
+		return 0;
+	len = Qfilesize (file);
+	src = malloc (len + 1);
+	src[Qfilesize (file)] = 0;
+	Qread (file, src, len);
+	Qclose (file);
+	*buf = src;
+	return len;
+}
+
 /*
 ============
 CopyFile

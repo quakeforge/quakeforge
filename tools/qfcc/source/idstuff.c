@@ -44,7 +44,6 @@ static const char rcsid[] =
 #include <QF/crc.h>
 #include <QF/dstring.h>
 
-#include "cmdlib.h"
 #include "def.h"
 #include "qfcc.h"
 #include "expr.h"

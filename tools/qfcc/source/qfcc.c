@@ -66,7 +66,6 @@ static const char rcsid[] =
 
 #include "qfcc.h"
 #include "class.h"
-#include "cmdlib.h"
 #include "cpp.h"
 #include "debug.h"
 #include "def.h"
@@ -598,6 +597,22 @@ separate_compile (void)
 	return err;
 }
 
+static const char *
+load_file (const char *fname)
+{
+	QFile      *file;
+	char       *src;
+
+	file = Qopen (fname, "rt");
+	if (!file)
+		return 0;
+	src = malloc (Qfilesize (file) + 1);
+	src[Qfilesize (file)] = 0;
+	Qread (file, src, Qfilesize (file));
+	Qclose (file);
+	return src;
+}
+
 static int
 progs_src_compile (void)
 {
@@ -616,7 +631,8 @@ progs_src_compile (void)
 		dsprintf (filename, "%s/%s", sourcedir, progs_src);
 	else
 		dsprintf (filename, "%s", progs_src);
-	LoadFile (filename->str, (void *) &src);
+
+	src = load_file (filename->str);
 
 	if (!(src = COM_Parse (src))) {
 		fprintf (stderr, "No destination filename.  qfcc --help for info.\n");

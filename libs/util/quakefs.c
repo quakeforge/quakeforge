@@ -166,65 +166,6 @@ COM_FileOpenRead (char *path, QFile **hndl)
 	return Qfilesize (f);
 }
 
-QFile *
-COM_SafeOpenRead (const char *filename)
-{
-	QFile       *f;
-
-	f = Qopen (filename, "rb");
-
-	if (!f)
-		Sys_Error ("Error opening %s: %s", filename, strerror (errno));
-
-	return f;
-}
-
-QFile *
-COM_SafeOpenWrite (const char *filename)
-{
-	QFile       *f;
-
-	f = Qopen (filename, "wb");
-
-	if (!f)
-		Sys_Error ("Error opening %s: %s", filename, strerror (errno));
-
-	return f;
-}
-
-void
-COM_SafeRead (QFile *f, void *buffer, int count)
-{
-	if (Qread (f, buffer, count) != (size_t) count)
-		Sys_Error ("File read failure");
-}
-
-void
-COM_SafeWrite (QFile *f, const void *buffer, int count)
-{
-	if (Qwrite (f, buffer, count) != (size_t) count)
-		Sys_Error ("File read failure");
-}
-
-int
-LoadFile (const char *filename, void **bufferptr)
-{
-	int		 length;
-	void		*buffer;
-	QFile		*f;
-
-	f = COM_SafeOpenRead (filename);
-	length = Qfilesize (f);
-	buffer = malloc (length + 1);
-	SYS_CHECKMEM (buffer);
-	((char *) buffer)[length] = 0;
-	COM_SafeRead (f, buffer, length);
-	Qclose (f);
-
-	*bufferptr = buffer;
-	return length;
-}
-
 
 void
 COM_Path_f (void)
