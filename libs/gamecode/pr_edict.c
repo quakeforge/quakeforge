@@ -1359,7 +1359,7 @@ PR_Init (void)
 	PR_Debug_Init ();
 }
 
-#define PR_AUTOBUILTIN 110
+#define PR_AUTOBUILTIN 120
 void
 PR_AddBuiltin (progs_t *pr, const char *name, builtin_proc builtin, int num)
 {
@@ -1395,6 +1395,16 @@ PR_AddBuiltin (progs_t *pr, const char *name, builtin_proc builtin, int num)
 	}
 	pr->builtins[j].proc = builtin;
 	pr->builtins[j].name = name;
+}
+
+int
+PR_FindBuiltin (progs_t *pr, const char *name)
+{
+	int i;
+	for (i = 0; i < pr->numbuiltins; i++)
+		if (pr->builtins[i].name && strequal (pr->builtins[i].name, name))
+			return i;
+	return 0;
 }
 
 edict_t    *

@@ -161,6 +161,7 @@ char *PR_GlobalStringNoContents (progs_t *pr, int ofs);
 pr_type_t *GetEdictFieldValue(progs_t *pr, edict_t *ed, const char *field);
 
 void PR_AddBuiltin (progs_t *pr, const char *name, builtin_proc builtin, int num);
+int PR_FindBuiltin (progs_t *pr, const char *name);
 
 //
 // PR Strings stuff

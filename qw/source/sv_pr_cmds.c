@@ -2001,16 +2001,20 @@ PF_Checkextension (progs_t *pr)
 void
 PF_checkfunction (progs_t *pr)
 {
-	char *name = G_STRING (pr, OFS_PARM0);
-	int i;
+	G_FUNCTION (pr, OFS_RETURN) = -PR_FindBuiltin (pr, G_STRING (pr, OFS_PARM0));
+}
 
-	for (i = 0; i < pr->numbuiltins; i++) {
-		if (pr->builtins[i].name && strequal (pr->builtins[i].name, name)) {
-			G_FUNCTION (pr, OFS_RETURN) = -i;
-			return;
-		}
-	}
-	G_FUNCTION (pr, OFS_RETURN) = 0;
+void
+PF_getfunction (progs_t *pr)
+{
+	int i;
+	const char *name;
+
+	name = G_STRING (pr, OFS_PARM0);
+	i = PR_FindBuiltin (pr, name);
+	if (!i)
+		PR_RunError (pr, "PF_getfunction: function '%s' not found!\n", name);
+	G_FUNCTION (pr, OFS_RETURN) = -i;
 }
 
 void
@@ -2136,4 +2140,5 @@ SV_PR_Cmds_Init ()
 	PR_AddBuiltin (&sv_pr_state, "cfeof", PF_cfeof, 107);	// float (float desc) cfeof = #107
 	PR_AddBuiltin (&sv_pr_state, "cfquota", PF_cfquota, 108);	// float () cfquota = #108
 	PR_AddBuiltin (&sv_pr_state, "checkfunction", PF_checkfunction, 109);	// function (string name) checkfunction = #109
+	PR_AddBuiltin (&sv_pr_state, "getfunction", PF_getfunction, 110);	// function (string name) getfunction = #110
 };
