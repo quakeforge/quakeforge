@@ -57,8 +57,6 @@ cvar_t     *chase_active;
 int         fps_count;
 int         viewentity;
 
-qboolean    scr_disabled_for_loading;
-
 byte       *vid_colormap;
 
 vec3_t      vpn, vright, vup;

@@ -1412,8 +1412,6 @@ VID_SetMode (int modenum, unsigned char *palette)
 		return true;
 
 	// so Con_Printfs don't mess us up by forcing vid and snd updates
-	temp = scr_disabled_for_loading;
-	scr_disabled_for_loading = true;
 	in_mode_set = true;
 
 	CDAudio_Pause ();
@@ -1450,7 +1448,6 @@ VID_SetMode (int modenum, unsigned char *palette)
 	VID_UpdateWindowStatus (window_x, window_y);
 
 	CDAudio_Resume ();
-	scr_disabled_for_loading = temp;
 
 	if (!stat) {
 		VID_RestoreOldMode (original_mode);

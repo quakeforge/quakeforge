@@ -44,9 +44,8 @@ static const char rcsid[] =
 #include "QF/cvar.h"
 #include "QF/draw.h"
 #include "QF/keys.h"
-#include "QF/pcx.h"
-#include "QF/quakefs.h"     // MAX_OSPATH
-#include "QF/render.h"  // r_refdef
+#include "QF/quakefs.h"
+#include "QF/render.h"
 #include "QF/screen.h"
 #include "QF/sys.h"
 #include "QF/texture.h"
@@ -64,47 +63,44 @@ static const char rcsid[] =
 #include "view.h"
 
 /*
-background clear
-rendering
-turtle/net/ram icons
-sbar
-centerprint / slow centerprint
-notify lines
-intermission / finale overlay
-loading plaque
-console
-menu
-
-required background clears
-required update regions
-
-
-syncronous draw mode or async
-One off screen buffer, with updates either copied or xblited
-Need to double buffer?
-
-
-async draw will require the refresh area to be cleared, because it will be
-xblited, but sync draw can just ignore it.
-
-sync
-draw
-
-CenterPrint ()
-SlowPrint ()
-Screen_Update ();
-Con_Printf ();
-
-net 
-turn off messages option
-
-the refresh is always rendered, unless the console is full screen
-
-
-console is:
+	background clear
+	rendering
+	turtle/net/ram icons
+	sbar
+	centerprint / slow centerprint
 	notify lines
-	half
-	full
+	intermission / finale overlay
+	loading plaque
+	console
+	menu
+
+	required background clears
+	required update regions
+
+	syncronous draw mode or async
+	One off screen buffer, with updates either copied or xblited
+	Need to double buffer?
+
+	async draw will require the refresh area to be cleared, because it will be
+	xblited, but sync draw can just ignore it.
+
+	sync
+	draw
+
+	CenterPrint ()
+	SlowPrint ()
+	Screen_Update ();
+	Con_Printf ();
+
+	net
+	turn off messages option
+
+	the refresh is always rendered, unless the console is full screen
+
+	console is:
+		notify lines
+		half
+		full
 */
 
 int         glx, gly, glwidth, glheight;
@@ -116,7 +112,8 @@ int         scr_copyeverything;
 float       scr_con_current;
 float       scr_conlines;				// lines of console to display
 
-int         oldscreensize, oldfov;
+int         oldscreensize;
+float       oldfov;
 int         oldsbar;
 
 qboolean    scr_initialized;			// ready to draw
@@ -133,9 +130,6 @@ int         clearnotify;
 viddef_t    vid;						// global video state
 
 vrect_t     scr_vrect;
-
-qboolean    scr_disabled_for_loading;
-float       scr_disabled_time;
 
 qboolean    block_drawing;
 
@@ -304,8 +298,8 @@ SCR_CalcRefdef (void)
 	}
 
 	r_refdef.vrect.height = vid.height * size + 0.5;
-	if (r_refdef.vrect.height > vid.height - r_lineadj)
-		r_refdef.vrect.height = vid.height - r_lineadj;
+	if (r_refdef.vrect.height > h)
+		r_refdef.vrect.height = h;
 	r_refdef.vrect.x = (vid.width - r_refdef.vrect.width) / 2;
 	if (full)
 		r_refdef.vrect.y = 0;
@@ -424,11 +418,11 @@ SCR_DrawFPS (void)
 void
 SCR_DrawTime (void)
 {
-	char		st[80];
-	char	   *timefmt = NULL;
-	int 		x, y;
+	char        st[80];
+	char       *timefmt = NULL;
+	int         x, y;
 	struct tm  *local = NULL;
-	time_t		utc = 0;
+	time_t      utc = 0;
 
 	// any cvar that can take multiple settings must be able to handle abuse. 
 	if (show_time->int_val <= 0)
@@ -591,7 +585,7 @@ SCR_ScreenShot_f (void)
 }
 
 /*
-  Find closest color in the palette for named color
+	Find closest color in the palette for named color
 */
 int
 MipColor (int r, int g, int b)
@@ -608,7 +602,7 @@ MipColor (int r, int g, int b)
 	bestdist = 256 * 256 * 3;
 
 	for (i = 0; i < 256; i++) {
-		static int	j;
+		int         j;
 		j = i * 3;
 		r1 = vid.palette[j] - r;
 		g1 = vid.palette[j + 1] - g;
@@ -658,7 +652,7 @@ SCR_DrawStringToSnap (const char *s, tex_t *tex, int x, int y)
 	byte       *dest;
 	byte       *buf = tex->data;
 	const unsigned char *p;
-	int          width = tex->width;
+	int         width = tex->width;
 
 	dest = buf + ((y * width) + x);
 
@@ -752,15 +746,6 @@ SCR_UpdateScreen (double realtime, SCR_Func *scr_funcs)
 
 	scr_copytop = 0;
 	scr_copyeverything = 0;
-
-	if (scr_disabled_for_loading) {
-		if (r_realtime - scr_disabled_time > 60) {
-			scr_disabled_for_loading = false;
-			Con_Printf ("load failed.\n");
-		} else {
-			return;
-		}
-	}
 
 	if (!scr_initialized)
 		return;							// not initialized yet

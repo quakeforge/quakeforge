@@ -50,54 +50,53 @@ static const char rcsid[] =
 #include "QF/screen.h"
 #include "QF/sys.h"
 #include "QF/texture.h"
-#include "QF/vid.h"
 
 #include "compat.h"
-#include "d_iface.h"
 #include "r_cvar.h"
+#include "r_dynamic.h"
 #include "r_local.h"
 #include "sbar.h"
 #include "view.h"
 
 /*
-  background clear
-  rendering
-  turtle/net/ram icons
-  sbar
-  centerprint / slow centerprint
-  notify lines
-  intermission / finale overlay
-  loading plaque
-  console
-  menu
-
-  required background clears
-  required update regions
-
-  syncronous draw mode or async
-  One off screen buffer, with updates either copied or xblited
-  Need to double buffer?
-
-  async draw will require the refresh area to be cleared, because it will be
-  xblited, but sync draw can just ignore it.
-
-  sync
-  draw
-
-  CenterPrint ()
-  SlowPrint ()
-  Screen_Update ();
-  Con_Printf ();
-
-  net
-  turn off messages option
-
-  the refresh is always rendered, unless the console is full screen
-
-  console is:
+	background clear
+	rendering
+	turtle/net/ram icons
+	sbar
+	centerprint / slow centerprint
 	notify lines
-	half
-	full
+	intermission / finale overlay
+	loading plaque
+	console
+	menu
+
+	required background clears
+	required update regions
+
+	syncronous draw mode or async
+	One off screen buffer, with updates either copied or xblited
+	Need to double buffer?
+
+	async draw will require the refresh area to be cleared, because it will be
+	xblited, but sync draw can just ignore it.
+
+	sync
+	draw
+
+	CenterPrint ()
+	SlowPrint ()
+	Screen_Update ();
+	Con_Printf ();
+
+	net
+	turn off messages option
+
+	the refresh is always rendered, unless the console is full screen
+
+	console is:
+		notify lines
+		half
+		full
 */
 
 // only the refresh window will be updated unless these variables are flagged 
@@ -107,7 +106,8 @@ int         scr_copyeverything;
 float       scr_con_current;
 float       scr_conlines;				// lines of console to display
 
-int         oldscreensize, oldfov;
+int         oldscreensize;
+float       oldfov;
 int         oldsbar;
 
 qboolean    scr_initialized;			// ready to draw
@@ -121,21 +121,16 @@ int         scr_fullupdate;
 int         clearconsole;
 int         clearnotify;
 
-
 viddef_t    vid;						// global video state
 
 vrect_t    *pconupdate;
 vrect_t     scr_vrect;
 
-qboolean    scr_disabled_for_loading;
-
 qboolean    scr_skipupdate;
 
 qboolean    block_drawing;
 
-/*
-	CENTER PRINTING
-*/
+/* CENTER PRINTING */
 
 char        scr_centerstring[1024];
 float       scr_centertime_start;		// for slow victory printing
@@ -171,13 +166,10 @@ void
 SCR_DrawCenterString (void)
 {
 	char       *start;
-	int         l;
-	int         j;
-	int         x, y;
-	int         remaining;
+	int         remaining, j, l, x, y;
 
 	// the finale prints the characters one at a time
-	if (r_force_fullscreen /*FIXME*/)
+	if (r_force_fullscreen /* FIXME: better test */)
 		remaining = scr_printspeed->value * (r_realtime -
 											 scr_centertime_start);
 	else
@@ -223,7 +215,7 @@ SCR_CheckDrawCenterString (void)
 
 	scr_centertime_off -= r_frametime;
 
-	if (scr_centertime_off <= 0 && !r_force_fullscreen /*FIXME*/)
+	if (scr_centertime_off <= 0 && !r_force_fullscreen /*FIXME: better test*/)
 		return;
 	if (key_dest != key_game)
 		return;
@@ -231,22 +223,19 @@ SCR_CheckDrawCenterString (void)
 	SCR_DrawCenterString ();
 }
 
-//=============================================================================
-
-float
+static float
 CalcFov (float fov_x, float width, float height)
 {
-	float       a;
-	float       x;
+	float       a, x;
 
 	if (fov_x < 1 || fov_x > 179)
 		Sys_Error ("Bad fov: %f", fov_x);
 
-	x = width / tan (fov_x / 360 * M_PI);
+	x = width / tan (fov_x * (M_PI / 360));
 
 	a = (x == 0) ? 90 : atan (height / x);	// 0 shouldn't happen
 
-	a = a * 360 / M_PI;
+	a = a * (360 / M_PI);
 
 	return a;
 }
@@ -271,8 +260,6 @@ SCR_CalcRefdef (void)
 	// force the status bar to redraw
 	Sbar_Changed ();
 
-//========================================
-
 	// bound viewsize
 	Cvar_SetValue (scr_viewsize, bound (30, scr_viewsize->int_val, 120));
 
@@ -293,7 +280,7 @@ SCR_CalcRefdef (void)
 		size = scr_viewsize->int_val;
 	}
 	// intermission is always full screen
-	if (r_force_fullscreen /*FIXME*/) {
+	if (r_force_fullscreen /* FIXME: better test */) {
 		full = true;
 		size = 100.0;
 		sb_lines = 0;
@@ -343,11 +330,11 @@ SCR_CalcRefdef (void)
 
 
 void
-SCR_ApplyBlend (void) // Used to be V_UpdatePalette
+SCR_ApplyBlend (void)		// Used to be V_UpdatePalette
 {
-	int			r, b, g, i;
-	byte	   *basepal, *newpal;
-	byte		pal[768];
+	int         r, g, b, i;
+	byte       *basepal, *newpal;
+	byte        pal[768];
 
 	switch(r_pixbytes) {
 	case 1:
@@ -462,8 +449,6 @@ SCR_SizeDown_f (void)
 	vid.recalc_refdef = 1;
 }
 
-//============================================================================
-
 void
 SCR_DrawRam (void)
 {
@@ -500,12 +485,13 @@ SCR_DrawTurtle (void)
 void
 SCR_DrawFPS (void)
 {
+	char          st[80];
+	double        t;
 	static double lastframetime;
-	double      t;
-	extern int  fps_count;
-	static int  lastfps;
-	int         i, x, y;
-	char        st[80];
+	int           i, x, y;
+	static int    lastfps;
+
+	extern int    fps_count;	//FIXME
 
 	if (!show_fps->int_val)
 		return;
@@ -517,6 +503,9 @@ SCR_DrawFPS (void)
 		lastframetime = t;
 	}
 	snprintf (st, sizeof (st), "%3d FPS", lastfps);
+
+	// FIXME! This is evil. -- Deek
+	// calculate the location of the clock
 	if (show_time->int_val <= 0) {
 		i = 8;
 	} else if (show_time->int_val == 1) {
@@ -524,8 +513,9 @@ SCR_DrawFPS (void)
 	} else {
 		i = 80;
 	}
+
 	x = hudswap ? vid.width - ((strlen (st) * 8) + i) : i;
-	y = vid.height - (sb_lines + 8);
+	y = vid.height - sb_lines - 8;
 	Draw_String (x, y, st);
 }
 
@@ -533,17 +523,16 @@ SCR_DrawFPS (void)
 	SCR_DrawTime
 
 	Draw a clock on the screen
-	Written by Misty, rewritten by Deek
+	Written by Misty, rewritten by Deek.
 */
 void
 SCR_DrawTime (void)
 {
-	int 		x, y;
-	char		st[80];
-
-	time_t		utc = 0;
-	struct tm	*local = NULL;
-	char		*timefmt = NULL;
+	char        st[80];
+	char       *timefmt = NULL;
+	int         x, y;
+	struct tm  *local = NULL;
+	time_t      utc = 0;
 
 	// any cvar that can take multiple settings must be able to handle abuse. 
 	if (show_time->int_val <= 0)
@@ -558,9 +547,9 @@ SCR_DrawTime (void)
 	} else if (show_time->int_val >= 2) {	// US AM/PM display
 		timefmt = "%l:%M %P";
 	}
-
-	// Print it next to the fps meter
 	strftime (st, sizeof (st), timefmt, local);
+
+	// Print it at far left/right of screen
 	x = hudswap ? (vid.width - ((strlen (st) * 8) + 8)) : 8;
 	y = vid.height - (sb_lines + 8);
 	Draw_String (x, y, st);
@@ -581,8 +570,6 @@ SCR_DrawPause (void)
 	Draw_Pic ((vid.width - pic->width) / 2,
 			  (vid.height - 48 - pic->height) / 2, pic);
 }
-
-//=============================================================================
 
 void
 SCR_SetUpToDrawConsole (void)
@@ -623,9 +610,7 @@ SCR_DrawConsole (void)
 	Con_DrawConsole (scr_con_current);
 }
 
-/*
-	SCREEN SHOTS
-*/
+/* SCREEN SHOTS */
 
 tex_t *
 SCR_ScreenShot (int width, int height)
@@ -677,13 +662,11 @@ SCR_ScreenShot_f (void)
 int
 MipColor (int r, int g, int b)
 {
-	int         i;
-	float       dist;
+	float       bestdist, dist;
+	int         r1, g1, b1, i;
 	int         best = 0;
-	float       bestdist;
-	int         r1, g1, b1;
-	static int  lr = -1, lg = -1, lb = -1;
 	static int  lastbest;
+	static int  lr = -1, lg = -1, lb = -1;
 
 	if (r == lr && g == lg && b == lb)
 		return lastbest;
@@ -691,9 +674,11 @@ MipColor (int r, int g, int b)
 	bestdist = 256 * 256 * 3;
 
 	for (i = 0; i < 256; i++) {
-		r1 = vid.palette[i * 3] - r;
-		g1 = vid.palette[i * 3 + 1] - g;
-		b1 = vid.palette[i * 3 + 2] - b;
+		int         j;
+		j = i * 3;
+		r1 = vid.palette[j] - r;
+		g1 = vid.palette[j + 1] - g;
+		b1 = vid.palette[j + 2] - b;
 		dist = r1 * r1 + g1 * g1 + b1 * b1;
 		if (dist < bestdist) {
 			bestdist = dist;
@@ -712,10 +697,8 @@ MipColor (int r, int g, int b)
 void
 SCR_DrawCharToSnap (int num, byte * dest, int width)
 {
-	int         row, col;
 	byte       *source;
-	int         drawline;
-	int         x;
+	int         col, row, drawline, x;
 
 	row = num >> 4;
 	col = num & 15;
@@ -730,7 +713,7 @@ SCR_DrawCharToSnap (int num, byte * dest, int width)
 			else
 				dest[x] = 98;
 		source += 128;
-		dest += width;
+		dest -= width;
 	}
 
 }
@@ -738,10 +721,10 @@ SCR_DrawCharToSnap (int num, byte * dest, int width)
 void
 SCR_DrawStringToSnap (const char *s, tex_t *tex, int x, int y)
 {
-	byte       *buf = tex->data;
 	byte       *dest;
+	byte       *buf = tex->data;
 	const unsigned char *p;
-	int width = tex->width;
+	int         width = tex->width;
 
 	dest = buf + ((y * width) + x);
 
@@ -752,16 +735,13 @@ SCR_DrawStringToSnap (const char *s, tex_t *tex, int x, int y)
 	}
 }
 
-//=============================================================================
-
 char       *scr_notifystring;
 
 void
 SCR_DrawNotifyString (void)
 {
 	char       *start;
-	int         l;
-	int         x, y;
+	int         l, x, y;
 
 	start = scr_notifystring;
 
@@ -775,6 +755,8 @@ SCR_DrawNotifyString (void)
 		x = (vid.width - l * 8) / 2;
 		Draw_nString (x, y, start, l);
 
+		y += 8;
+
 		while (*start && *start != '\n')
 			start++;
 
@@ -783,8 +765,6 @@ SCR_DrawNotifyString (void)
 		start++;						// skip the \n
 	} while (1);
 }
-
-//=============================================================================
 
 /*
 	SCR_UpdateScreen
@@ -798,13 +778,10 @@ SCR_DrawNotifyString (void)
 void
 SCR_UpdateScreen (double realtime, SCR_Func *scr_funcs)
 {
-	static int  oldscr_viewsize;
+	static int  oldviewsize;
 	vrect_t     vrect;
 
 	if (scr_skipupdate || block_drawing)
-		return;
-
-	if (scr_disabled_for_loading)
 		return;
 
 	r_realtime = realtime;
@@ -815,14 +792,13 @@ SCR_UpdateScreen (double realtime, SCR_Func *scr_funcs)
 	if (!scr_initialized)
 		return;							// not initialized yet
 
-	if (scr_viewsize->int_val != oldscr_viewsize) {
-		oldscr_viewsize = scr_viewsize->int_val;
-		vid.recalc_refdef = 1;
+	if (oldviewsize != scr_viewsize->int_val) {
+		oldviewsize = scr_viewsize->int_val;
+		vid.recalc_refdef = true;
 	}
 
-	// check for vid changes
-	if (oldfov != scr_fov->int_val) {
-		oldfov = scr_fov->int_val;
+	if (oldfov != scr_fov->value) {		// determine size of refresh window
+		oldfov = scr_fov->value;
 		vid.recalc_refdef = true;
 	}
 
@@ -831,10 +807,8 @@ SCR_UpdateScreen (double realtime, SCR_Func *scr_funcs)
 		vid.recalc_refdef = true;
 	}
 
-	if (vid.recalc_refdef) {
-		// something changed, so reorder the screen
+	if (vid.recalc_refdef)
 		SCR_CalcRefdef ();
-	}
 
 	// do 3D refresh drawing, and then update the screen
 	D_EnableBackBufferAccess ();		// of all overlay stuff if drawing
@@ -911,11 +885,10 @@ void
 SCR_Init (void)
 {
 	// register our commands
-	Cmd_AddCommand ("screenshot", SCR_ScreenShot_f, "Take a screenshot and "
-					"write it as qfxxx.tga in the current directory");
-	Cmd_AddCommand ("sizeup", SCR_SizeUp_f, "Increase the size of the screen");
-	Cmd_AddCommand ("sizedown", SCR_SizeDown_f, "Decrease the size of the "
-					"screen");
+	Cmd_AddCommand ("screenshot", SCR_ScreenShot_f, "Take a screenshot, "
+					"saves as qfxxx.pcx in the current directory");
+	Cmd_AddCommand ("sizeup", SCR_SizeUp_f, "Increases the screen size");
+	Cmd_AddCommand ("sizedown", SCR_SizeDown_f, "Decreases the screen size");
 
 	scr_ram = Draw_PicFromWad ("ram");
 	scr_net = Draw_PicFromWad ("net");
