@@ -730,6 +730,7 @@ PR_ParseDefs (void)
 			def->initialized = 1;
 			memcpy (pr_globals + def->ofs, &pr_immediate,
 					4 * type_size[pr_immediate_type->type]);
+			PR_NameImmediate (def);
 			PR_Lex ();
 		}
 
