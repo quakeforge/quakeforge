@@ -509,12 +509,6 @@ CL_WriteSetDemoMessage (void)
 	Qflush (cls.demofile);
 }
 
-/*
-	CL_Record_f
-
-	record <demoname> <server>
-*/
-
 void
 CL_Record (const char *argv1)
 {
@@ -812,6 +806,11 @@ CL_Record (const char *argv1)
 	// done
 }
 
+/*
+	CL_Record_f
+
+	record <demoname> <server>
+*/
 void
 CL_Record_f (void)
 {
@@ -822,7 +821,7 @@ CL_Record_f (void)
 		return;
 	}
 
-	if (cls.state != ca_active) {
+	if (cls.demoplayback || cls.state != ca_active) {
 		Con_Printf ("You must be connected to record.\n");
 		return;
 	}
