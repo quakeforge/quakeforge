@@ -71,8 +71,8 @@ byte        *lightmaps[MAX_LIGHTMAPS];
 unsigned int blocklights[34 * 34 * 3];	//FIXME make dynamic
 int          allocated[MAX_LIGHTMAPS][BLOCK_WIDTH];
 
-glpoly_t	*lightmap_modified[MAX_GLTEXTURES];
-glpoly_t    *lightmap_polys[MAX_LIGHTMAPS];
+qboolean	 lightmap_modified[MAX_GLTEXTURES];
+glpoly_t	*lightmap_polys[MAX_LIGHTMAPS];
 glRect_t	 lightmap_rectchange[MAX_LIGHTMAPS];
 
 void (*R_BuildLightMap) (msurface_t *surf);
@@ -111,8 +111,8 @@ R_AddDynamicLights_1 (msurface_t *surf)
 	float			dist;
 	int				maxdist, maxdist2, maxdist3, smax, smax_bytes, tmax,
 					grey, s, t;
-	unsigned int	lnum, i, j;
-	unsigned int    sdtable[18], td;
+	unsigned int	lnum, td, i, j;
+	unsigned int    sdtable[18];
 	unsigned int   *bl;
 	vec3_t			impact, local;
 
@@ -176,8 +176,8 @@ R_AddDynamicLights_3 (msurface_t *surf)
 	float			dist;
 	int				maxdist, maxdist2, maxdist3, smax, smax_bytes, tmax,
 					red, green, blue, s, t;
-	unsigned int	lnum, i, j;
-	unsigned int    sdtable[18], td;
+	unsigned int	lnum, td, i, j;
+	unsigned int    sdtable[18];
 	unsigned int   *bl;
 	vec3_t			impact, local;
 
@@ -289,11 +289,32 @@ R_BuildLightMap_1 (msurface_t *surf)
 
 	dest = lightmaps[surf->lightmaptexturenum]
 			+ (surf->light_t * BLOCK_WIDTH + surf->light_s) * lightmap_bytes;
-	for (i = 0; i < tmax; i++, dest += stride) {
-		for (j = smax; j; j--) {
-			*dest++ = 255 - min (*bl >> 8, 255);
-			bl++;
+
+	switch (gl_overbright->int_val) {
+	case 1:
+		for (i = 0; i < tmax; i++, dest += stride) {
+			for (j = smax; j; j--) {
+				*dest++ = min ((*bl >> 9) + (*bl >> 10), 255);
+				bl++;
+			}
 		}
+		break;
+	case 2:
+		for (i = 0; i < tmax; i++, dest += stride) {
+			for (j = smax; j; j--) {
+				*dest++ = min (*bl >> 9, 255);
+				bl++;
+			}
+		}
+		break;
+	default:
+		for (i = 0; i < tmax; i++, dest += stride) {
+			for (j = smax; j; j--) {
+				*dest++ = min (*bl >> 8, 255);
+				bl++;
+			}
+		}
+		break;
 	}
 }
 
@@ -347,15 +368,44 @@ R_BuildLightMap_3 (msurface_t *surf)
 
 	dest = lightmaps[surf->lightmaptexturenum]
 			+ (surf->light_t * BLOCK_WIDTH + surf->light_s) * lightmap_bytes;
-	for (i = 0; i < tmax; i++, dest += stride) {
-		for (j = 0; j < smax; j++) {
-			*dest++ = 255 - min (*bl >> 8, 255);
-			bl++;
-			*dest++ = 255 - min (*bl >> 8, 255);
-			bl++;
-			*dest++ = 255 - min (*bl >> 8, 255);
-			bl++;
+
+	switch (gl_overbright->int_val) {
+	case 1:
+		for (i = 0; i < tmax; i++, dest += stride) {
+			for (j = 0; j < smax; j++) {
+				*dest++ = min ((*bl >> 9) + (*bl >> 10), 255);
+				bl++;
+				*dest++ = min ((*bl >> 9) + (*bl >> 10), 255);
+				bl++;
+				*dest++ = min ((*bl >> 9) + (*bl >> 10), 255);
+				bl++;
+			}
 		}
+		break;
+	case 2:
+		for (i = 0; i < tmax; i++, dest += stride) {
+			for (j = 0; j < smax; j++) {
+				*dest++ = min (*bl >> 9, 255);
+				bl++;
+				*dest++ = min (*bl >> 9, 255);
+				bl++;
+				*dest++ = min (*bl >> 9, 255);
+				bl++;
+			}
+		}
+		break;
+	default:
+		for (i = 0; i < tmax; i++, dest += stride) {
+			for (j = 0; j < smax; j++) {
+				*dest++ = min (*bl >> 8, 255);
+				bl++;
+				*dest++ = min (*bl >> 8, 255);
+				bl++;
+				*dest++ = min (*bl >> 8, 255);
+				bl++;
+			}
+		}
+		break;
 	}
 }
 
@@ -409,16 +459,47 @@ R_BuildLightMap_4 (msurface_t *surf)
 
 	dest = lightmaps[surf->lightmaptexturenum]
 			+ (surf->light_t * BLOCK_WIDTH + surf->light_s) * lightmap_bytes;
-	for (i = 0; i < tmax; i++, dest += stride) {
-		for (j = 0; j < smax; j++) {
-			*dest++ = 255 - min (*bl >> 8, 255);
-			bl++;
-			*dest++ = 255 - min (*bl >> 8, 255);
-			bl++;
-			*dest++ = 255 - min (*bl >> 8, 255);
-			bl++;
-			*dest++ = 255;
+
+	switch (gl_overbright->int_val) {
+	case 1:
+		for (i = 0; i < tmax; i++, dest += stride) {
+			for (j = 0; j < smax; j++) {
+				*dest++ = min ((*bl >> 9) + (*bl >> 10), 255);
+				bl++;
+				*dest++ = min ((*bl >> 9) + (*bl >> 10), 255);
+				bl++;
+				*dest++ = min ((*bl >> 9) + (*bl >> 10), 255);
+				bl++;
+				*dest++ = 0;
+			}
 		}
+		break;
+	case 2:
+		for (i = 0; i < tmax; i++, dest += stride) {
+			for (j = 0; j < smax; j++) {
+				*dest++ = min (*bl >> 9, 255);
+				bl++;
+				*dest++ = min (*bl >> 9, 255);
+				bl++;
+				*dest++ = min (*bl >> 9, 255);
+				bl++;
+				*dest++ = 0;
+			}
+		}
+		break;
+	default:
+		for (i = 0; i < tmax; i++, dest += stride) {
+			for (j = 0; j < smax; j++) {
+				*dest++ = min (*bl >> 8, 255);
+				bl++;
+				*dest++ = min (*bl >> 8, 255);
+				bl++;
+				*dest++ = min (*bl >> 8, 255);
+				bl++;
+				*dest++ = 0;
+			}
+		}
+		break;
 	}
 }
 
@@ -478,7 +559,11 @@ R_BlendLightmaps (void)
 	glpoly_t   *p;
 
 	qfglDepthMask (GL_FALSE);					// don't bother writing Z
-	qfglBlendFunc (GL_ZERO, GL_ONE_MINUS_SRC_COLOR);
+
+	if (gl_doublebright->int_val)
+		qfglBlendFunc (GL_DST_COLOR, GL_SRC_COLOR);
+	else
+		qfglBlendFunc (GL_ZERO, GL_SRC_COLOR);
 
 	for (i = 0; i < MAX_LIGHTMAPS; i++) {
 		p = lightmap_polys[i];
@@ -502,6 +587,55 @@ R_BlendLightmaps (void)
 }
 
 void
+gl_overbright_f (cvar_t *var)
+{
+	int			 num, i, j;
+	model_t		*m;
+	msurface_t  *fa;
+
+	if (R_BuildLightMap == 0)
+		return;
+
+	for (i = 0; i < r_numvisedicts; i++) {
+		m = r_visedicts[i]->model;
+
+		if (m->type != mod_brush)
+			continue;
+		if (m->name[0] == '*')
+			continue;
+
+		for (j = 0, fa = m->surfaces; j < m->numsurfaces; j++, fa++) {
+			if (fa->flags & (SURF_DRAWTURB | SURF_DRAWSKY))
+				continue;
+			num = fa->lightmaptexturenum;
+
+			lightmap_modified[num] = true;
+			lightmap_rectchange[num].l = 0;
+			lightmap_rectchange[num].t = 0;
+			lightmap_rectchange[num].w = BLOCK_WIDTH;
+			lightmap_rectchange[num].h = BLOCK_HEIGHT;
+			R_BuildLightMap (fa);
+		}
+	}
+
+	m = r_worldentity.model;
+
+	for (i = 0, fa = m->surfaces; i < m->numsurfaces; i++, fa++) {
+		if (fa->flags & (SURF_DRAWTURB | SURF_DRAWSKY))
+			continue;
+
+		num = fa->lightmaptexturenum;
+		lightmap_modified[num] = true;
+		lightmap_rectchange[num].l = 0;
+		lightmap_rectchange[num].t = 0;
+		lightmap_rectchange[num].w = BLOCK_WIDTH;
+		lightmap_rectchange[num].h = BLOCK_HEIGHT;
+
+		R_BuildLightMap (fa);
+	}
+}
+
+void
 R_CalcAndBlendLightmaps (void)
 {
 	float      *v;
@@ -509,7 +643,10 @@ R_CalcAndBlendLightmaps (void)
 	glpoly_t   *p;
 
 	qfglDepthMask (GL_FALSE);					// don't bother writing Z
-	qfglBlendFunc (GL_ZERO, GL_ONE_MINUS_SRC_COLOR);
+	if (gl_doublebright->int_val)
+		qfglBlendFunc (GL_DST_COLOR, GL_SRC_COLOR);
+	else
+		qfglBlendFunc (GL_ZERO, GL_SRC_COLOR);
 
 	for (i = 0; i < MAX_LIGHTMAPS; i++) {
 		p = lightmap_polys[i];

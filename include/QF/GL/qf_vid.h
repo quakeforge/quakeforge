@@ -45,6 +45,7 @@ extern float					gldepthmin, gldepthmax;
 extern int						texture_extension_number;
 extern int						tess;
 extern qboolean					gl_feature_mach64;
+extern qboolean					gl_combine_capable;
 
 void GL_EndRendering (void);
 void GL_BeginRendering (int *x, int *y, int *width, int *height);

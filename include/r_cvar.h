@@ -2,6 +2,8 @@ extern struct cvar_s	 *easter_eggs;
 extern void r_easter_eggs_f (cvar_t *var);
 extern void r_particles_style_f (cvar_t *var);
 
+extern void gl_overbright_f (cvar_t *cvar);
+
 extern struct cvar_s     *cl_crossx;
 extern struct cvar_s     *cl_crossy;
 extern struct cvar_s     *cl_verstring;
@@ -17,6 +19,7 @@ extern struct cvar_s     *gl_conspin;
 extern struct cvar_s     *gl_constretch;
 extern struct cvar_s     *gl_dlight_polyblend;
 extern struct cvar_s     *gl_dlight_smooth;
+extern struct cvar_s	 *gl_doublebright;
 extern struct cvar_s     *gl_fb_bmodels;
 extern struct cvar_s     *gl_fb_models;
 extern struct cvar_s     *gl_keeptjunctions;
@@ -27,6 +30,7 @@ extern struct cvar_s     *gl_lightmap_subimage;
 extern struct cvar_s     *gl_max_size;
 extern struct cvar_s     *gl_multitexture;
 extern struct cvar_s     *gl_nocolors;
+extern struct cvar_s	 *gl_overbright;
 extern struct cvar_s     *gl_particle_mip;
 extern struct cvar_s     *gl_particle_size;
 extern struct cvar_s     *gl_picmip;

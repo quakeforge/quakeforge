@@ -91,6 +91,9 @@ qboolean			gl_mtex_fullbright = false;
 
 GLenum				gl_mtex_enum = GL_TEXTURE0_ARB;
 
+// ARB Combine
+qboolean			gl_combine_capable = false;
+
 QF_glColorTableEXT	qglColorTableEXT = NULL;
 qboolean			is8bit = false;
 
@@ -100,6 +103,7 @@ qboolean			gl_feature_mach64 = false;
 qboolean			TruForm;
 GLint				tess, tess_max;
 
+cvar_t		*gl_doublebright;
 cvar_t      *gl_max_size;
 cvar_t      *gl_multitexture;
 cvar_t		*gl_tessellate;
@@ -109,6 +113,15 @@ cvar_t      *vid_mode;
 cvar_t      *vid_use8bit;
 
 static int gl_mtex_tmus = 0;
+
+
+static void
+gl_doublebright_f (cvar_t *var)
+{
+	if (!gl_combine_capable)
+		Con_Printf ("Warning: doublebright will have no effect without "
+					"GL_COMBINE_ARB unless multitexture is disabled.\n");
+}
 
 static void
 gl_max_size_f (cvar_t *var)
@@ -173,6 +186,10 @@ GL_Common_Init_Cvars (void)
 {
 	vid_use8bit = Cvar_Get ("vid_use8bit", "0", CVAR_ROM, NULL,	"Use 8-bit "
 							"shared palettes.");
+	gl_doublebright = Cvar_Get ("gl_doublebright", "1", CVAR_ARCHIVE,
+								gl_doublebright_f, "Use different lighting "
+								"algorithm to increase brightness of map "
+								"surfaces.");
 	gl_max_size = Cvar_Get ("gl_max_size", "0", CVAR_NONE, gl_max_size_f,
 							"Texture dimension");
 	gl_multitexture = Cvar_Get ("gl_multitexture", "0", CVAR_ARCHIVE,
@@ -191,6 +208,19 @@ GL_Common_Init_Cvars (void)
 								  "Limit the vertex array size for buggy "
 								  "drivers. 0 (default) uses driver provided "
 								  "limit, -1 disables use of vertex arrays.");
+}
+
+static void
+CheckCombineExtensions (void)
+{
+	if (QFGL_ExtensionPresent ("GL_ARB_texture_env_combine")) {
+		gl_combine_capable = true;
+		Con_Printf ("COMBINE_ARB active, multitextured doublebright "
+					"enabled.\n");
+	} else {
+		Con_Printf ("GL_ARB_texture_env_combine not found. gl_doublebright "
+					"will have no effect with gl_multitexture on.\n");
+	}
 }
 
 /*
@@ -390,6 +420,7 @@ GL_Init_Common (void)
 	qfglTexEnvf (GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
 
 	CheckMultiTextureExtensions ();
+	CheckCombineExtensions ();
 	CheckTruFormExtensions ();
 	GL_Common_Init_Cvars ();
 	CheckVertexArraySize ();

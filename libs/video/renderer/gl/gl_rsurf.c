@@ -261,6 +261,24 @@ DrawTextureChains (void)
 	texture_t  *tex;
 
 	if (gl_mtex_active) {	
+		// Fullbrights
+		if (gl_mtex_fullbright) {
+			qglActiveTexture (gl_mtex_enum + 2);
+            qfglTexEnvf (GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_DECAL);
+		}
+
+		// Lightmaps
+		qglActiveTexture (gl_mtex_enum +1);
+		if (gl_combine_capable && gl_doublebright->int_val) {
+			qfglTexEnvf (GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_COMBINE_ARB);
+			qfglTexEnvf (GL_TEXTURE_ENV, GL_COMBINE_RGB_ARB, GL_MODULATE);
+			qfglTexEnvf (GL_TEXTURE_ENV, GL_RGB_SCALE_ARB, 2.0);
+		} else {
+			qfglTexEnvf (GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
+		}
+		qfglEnable (GL_TEXTURE_2D); // I hope this can go here...
+
+		// Base texture
 		qglActiveTexture (gl_mtex_enum + 0);
 		qfglTexEnvf (GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_REPLACE);
 	} else {
@@ -272,39 +290,37 @@ DrawTextureChains (void)
 		if (!tex)
 			continue;
 
+		if (gl_mtex_active)
+			qglActiveTexture (gl_mtex_enum + 0);
+
 		qfglBindTexture (GL_TEXTURE_2D, tex->gl_texturenum);
 
-		if (gl_mtex_fullbright&& gl_fb_bmodels->int_val && tex->gl_fb_texturenum) {
+		if (gl_mtex_fullbright && gl_fb_bmodels->int_val
+			&& tex->gl_fb_texturenum) {
 			qglActiveTexture (gl_mtex_enum + 2);
 			qfglBindTexture (GL_TEXTURE_2D, tex->gl_fb_texturenum);
-			qfglTexEnvf (GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_DECAL);
 			qfglEnable (GL_TEXTURE_2D);
 		}
 
 		if (gl_mtex_active) {
+			qglActiveTexture (gl_mtex_enum + 1);
+
 			for (s = tex->texturechain; s; s = s->texturechain) {
-				qglActiveTexture (gl_mtex_enum + 1);
 				qfglBindTexture (GL_TEXTURE_2D, lightmap_textures + 
-					s->lightmaptexturenum);
-				qfglTexEnvf (GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_BLEND);
-				qfglEnable (GL_TEXTURE_2D);
+								 s->lightmaptexturenum);
 
 				R_RenderBrushPoly (s);
-
-				qfglDisable (GL_TEXTURE_2D);
 			}
 		} else {
 			for (s = tex->texturechain; s; s = s->texturechain)
 				R_RenderBrushPoly (s);
 		}
 
-		if (gl_mtex_fullbright && gl_fb_bmodels->int_val && tex->gl_fb_texturenum) {
+		if (gl_mtex_fullbright && gl_fb_bmodels->int_val
+			&& tex->gl_fb_texturenum) {
 			qglActiveTexture (gl_mtex_enum + 2);
 			qfglDisable (GL_TEXTURE_2D);
 		}
-
-		if (gl_mtex_active)
-			qglActiveTexture (gl_mtex_enum + 0);
 
 		tex->texturechain = NULL;
 		tex->texturechain_tail = &tex->texturechain;
@@ -313,9 +329,14 @@ DrawTextureChains (void)
 	tex->texturechain = NULL;
 	tex->texturechain_tail = &tex->texturechain;
 
-	if (!gl_mtex_active)
+	if (!gl_mtex_active) {
 		qfglEnable (GL_BLEND);
-	else {
+	} else {
+		// Turn off lightmaps for other entities
+		qglActiveTexture (gl_mtex_enum + 1);
+		qfglDisable (GL_TEXTURE_2D);
+
+		// Rest mode for default TMU
 		qglActiveTexture (gl_mtex_enum + 0);
 		qfglTexEnvf (GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
 	}
@@ -401,9 +422,32 @@ R_DrawBrushModel (entity_t *e)
 	for (i = 0; i < model->nummodelsurfaces; i++, psurf++)
 		R_AddToLightmapChain(psurf);
 
-	R_CalcLightmaps ();
+	if (gl_mtex_active) {
+		R_CalcLightmaps ();
+		psurf = &model->surfaces[model->firstmodelsurface];
 
-	psurf = &model->surfaces[model->firstmodelsurface];
+		// Fullbrights
+		if (gl_mtex_fullbright) {
+			qglActiveTexture (gl_mtex_enum + 2);
+			qfglTexEnvf (GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_DECAL);
+		}
+
+		// Lightmaps
+		qglActiveTexture (gl_mtex_enum + 1);
+		if (gl_doublebright->int_val && gl_combine_capable) {
+			qfglTexEnvf (GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_COMBINE_ARB);
+			qfglTexEnvf (GL_TEXTURE_ENV, GL_COMBINE_RGB_ARB, GL_MODULATE);
+			qfglTexEnvf (GL_TEXTURE_ENV, GL_RGB_SCALE_ARB, 2.0);
+		} else {
+			qfglTexEnvf (GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
+		}
+		qfglEnable (GL_TEXTURE_2D);
+
+		// Regular texture (DON'T GL_REPLACE!)
+		qglActiveTexture (gl_mtex_enum + 0);
+	} else {
+		psurf = &model->surfaces[model->firstmodelsurface];
+	}
 
 	// draw texture
 	for (i = 0; i < model->nummodelsurfaces; i++, psurf++) {
@@ -440,15 +484,8 @@ R_DrawBrushModel (entity_t *e)
 					tex = psurf->texinfo->texture;
 				else
 					tex = R_TextureAnimation (psurf);
-				
-				if (gl_mtex_active) {
-					qglActiveTexture (gl_mtex_enum + 0);
-					qfglBindTexture (GL_TEXTURE_2D, tex->gl_texturenum);
-					qfglTexEnvf (GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE,
-								 GL_REPLACE);
-				} else {
-					qfglBindTexture (GL_TEXTURE_2D, tex->gl_texturenum);
-				}
+
+				qfglBindTexture (GL_TEXTURE_2D, tex->gl_texturenum);
 
 				qfglColor4fv (color);
 
@@ -456,25 +493,16 @@ R_DrawBrushModel (entity_t *e)
 					&& tex->gl_fb_texturenum > 0) {
 					qglActiveTexture (gl_mtex_enum + 2);
 					qfglBindTexture (GL_TEXTURE_2D, tex->gl_fb_texturenum);
-					qfglTexEnvf (GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE,
-								 GL_DECAL);
 					qfglEnable (GL_TEXTURE_2D);
 				}					
 
 				if (gl_mtex_active) {
 					qglActiveTexture (gl_mtex_enum + 1);
 					qfglBindTexture (GL_TEXTURE_2D, lightmap_textures + 
-						psurf->lightmaptexturenum);
-					qfglTexEnvf (GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE,
-								 GL_BLEND);	
-					qfglEnable (GL_TEXTURE_2D);
+									 psurf->lightmaptexturenum);
 				}
 
 				R_RenderBrushPoly (psurf);
-
-				if (gl_mtex_active) {
-					qfglDisable (GL_TEXTURE_2D);
-				}
 
 				if (gl_fb_bmodels->int_val && gl_mtex_fullbright
 					&& tex->gl_fb_texturenum > 0) {
@@ -484,13 +512,12 @@ R_DrawBrushModel (entity_t *e)
 
 				if (gl_mtex_active) {
 					qglActiveTexture (gl_mtex_enum + 0);
-					qfglTexEnvf (GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE,
-								 GL_MODULATE);
 				}
 
 				qfglColor3ubv (color_white);
 	
-				if (tex->gl_fb_texturenum > 0 && gl_fb_bmodels->int_val) {
+				if (tex->gl_fb_texturenum > 0 && gl_fb_bmodels->int_val
+					&& !gl_mtex_fullbright) {
 					psurf->polys->fb_chain =
 						fullbright_polys[tex->gl_fb_texturenum];
 					fullbright_polys[tex->gl_fb_texturenum] = psurf->polys;
@@ -499,8 +526,14 @@ R_DrawBrushModel (entity_t *e)
 		}
 	}
 
-	if (!gl_mtex_active)
-		R_BlendLightmaps ();
+	if (gl_mtex_active) {
+		// Go away, lightmap
+		qglActiveTexture (gl_mtex_enum + 1);
+		qfglDisable (GL_TEXTURE_2D);
+		qglActiveTexture (gl_mtex_enum + 0);
+	} else {
+		R_CalcAndBlendLightmaps ();
+	}
 
 	if (gl_fb_bmodels->int_val && !gl_mtex_fullbright)
 		R_RenderFullbrights ();

@@ -927,3 +927,8 @@ R_InitTurb (void)
 		// AMP2 not 20
 	}
 }
+
+void
+gl_overbright_f (cvar_t *un)
+{
+}

@@ -1206,3 +1206,8 @@ R_RenderViewFishEye (void)
 	r_refdef.viewangles[ROLL] = roll;
 	renderlookup (offs, scrbufs);
 }
+
+void
+gl_overbright_f (cvar_t *un)
+{
+}

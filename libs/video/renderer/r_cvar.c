@@ -70,6 +70,7 @@ cvar_t     *gl_lerp_anim;
 cvar_t     *gl_lightmap_align;
 cvar_t     *gl_lightmap_subimage;
 cvar_t     *gl_nocolors;
+cvar_t	   *gl_overbright;
 cvar_t     *gl_particle_mip;
 cvar_t     *gl_particle_size;
 cvar_t     *gl_picmip;
@@ -285,6 +286,10 @@ R_Init_Cvars (void)
 									 "entire lightmap.");
 	gl_nocolors = Cvar_Get ("gl_nocolors", "0", CVAR_NONE, NULL,
 							"Set to 1, turns off all player colors");
+	gl_overbright = Cvar_Get ("gl_overbright", "1", CVAR_NONE,
+							  gl_overbright_f, "Darken lightmaps so that "
+							  "dynamic lights can be overbright. 1 = 0.75 "
+							  "brightness, 2 = 0.5 brightness.");
 	gl_particle_mip = Cvar_Get ("gl_particle_mip", "0", CVAR_NONE, NULL,
 								"Toggles particle texture mipmapping.");
 	gl_particle_size = Cvar_Get ("gl_particle_size", "5", CVAR_NONE, NULL,
