@@ -234,23 +234,11 @@ void
 QW_Master (struct sockaddr_in *addr)
 {
 	int sock;
-#ifdef _WIN32
-	int i;
-	WSADATA winsockdata;
-#endif
 
 	if (!servers) {
 		printf ("initial malloc failed\n");
 		return;
 	}
-
-#ifdef _WIN32
-	i = WSAStartup (MAKEWORD (1, 1), &winsockdata);
-	if (i) {
-		printf ("Winsock initialization failed.\n");
-		return;
-	}
-#endif
 
 	sock = socket (AF_INET, SOCK_DGRAM, IPPROTO_UDP);
 	if (sock < 0) {
@@ -373,12 +361,31 @@ read_hosts (const char *fname)
 	fclose (host_file);
 }
 
+static int
+net_init (void)
+{
+#ifdef _WIN32
+	int i;
+	WSADATA winsockdata;
+
+	i = WSAStartup (MAKEWORD (1, 1), &winsockdata);
+	if (i) {
+		printf ("Winsock initialization failed.\n");
+		return 0;
+	}
+#endif
+	return 1;
+}
+
 int
 main (int argc, char **argv)
 {
 	struct sockaddr_in addr;
 	short port = htons (PORT_MASTER);
 	int c;
+
+	if (!net_init ())
+		return 1;
 
 	servers = calloc (sizeof (server_t), serverlen);
 
