@@ -114,7 +114,7 @@ void
 R_LoadSkys (const char *skyname)
 {
 	const char *name;
-	int         i, j;
+	int         i;	// j
 
 	if (strcasecmp (skyname, "none") == 0) {
 		skyloaded = false;
@@ -139,12 +139,13 @@ R_LoadSkys (const char *skyname)
 		}
 
 		qfglTexImage2D (GL_TEXTURE_2D, 0, gl_solid_format, targa->width,
-						targa->height, 0, GL_RGBA, GL_UNSIGNED_BYTE,
+						targa->height, 0, targa->format, GL_UNSIGNED_BYTE,
 						&targa->data);
 
 		qfglTexParameterf (GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 		qfglTexParameterf (GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 
+#if 0
 		for (j = 0; j < 4; j++) {
 			// set the texture coords to be 1/2 pixel in from the edge
 			if (skyvec[i][j][0] < 0.5)
@@ -157,6 +158,7 @@ R_LoadSkys (const char *skyname)
 			else
 				skyvec[i][j][1] = 1 - 0.5 / targa->height;
 		}
+#endif
 	}
 	if (!skyloaded)
 		Con_Printf ("Unable to load skybox %s, using normal sky\n", skyname);
