@@ -202,6 +202,10 @@ dvsprintf (dstring_t *dstr, const char *fmt, va_list args)
 	VA_COPY (tmp_args, args);
 #endif
 
+	if (!dstr->truesize) {
+		dstr->size = 1024;
+		dstring_adjust (dstr);
+	}
 	size = vsnprintf (dstr->str, dstr->truesize, fmt, args) + 1;  // +1 for nul
 	while (size <= 0 || size > dstr->truesize) {
 		if (size > 0)
