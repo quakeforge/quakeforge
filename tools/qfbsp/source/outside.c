@@ -255,8 +255,6 @@ FillOutside (node_t *node)
 		qprintf ("reached occupant at: (%4.0f,%4.0f,%4.0f)\n", v[0], v[1],
 				 v[2]);
 		qprintf ("no filling performed\n");
-		if (!options.hullnum)
-			fclose (leakfile);
 		qprintf ("leak file written to %s\n", options.pointfile);
 		qprintf ("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!\n");
 
