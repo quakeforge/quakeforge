@@ -244,12 +244,15 @@ bi_Menu_SelectMenu (progs_t *pr)
 {
 	const char *name = G_STRING (pr, OFS_PARM0);
 
-	menu = Hash_Find (menu_hash, name);
+	menu = 0;
+	if (name && *name)
+		menu = Hash_Find (menu_hash, name);
 	if (menu) {
 		key_dest = key_menu;
 		game_target = IMT_CONSOLE;
 	} else {
-		Con_Printf ("no menu \"%s\"\n", name);
+		if (name && *name)
+			Con_Printf ("no menu \"%s\"\n", name);
 		if (con_data.force_commandline) {
 			key_dest = key_console;
 			game_target = IMT_CONSOLE;
@@ -426,7 +429,7 @@ Menu_KeyEvent (knum_t key, short unicode, qboolean down)
 		if (G_INT (&menu_pr_state, OFS_RETURN))
 			return;
 	}
-	if (!menu->items)
+	if (!menu || !menu->items)
 		return;
 	switch (key) {
 		case QFK_DOWN:
