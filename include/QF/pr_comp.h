@@ -211,6 +211,7 @@ typedef enum {
 	OP_IFA,
 
 	OP_JUMP,
+	OP_JUMPB,
 
 	OP_LT_UI,
 	OP_GT_UI,
@@ -268,7 +269,7 @@ typedef struct
 
 
 #define	PROG_ID_VERSION	6
-#define	PROG_VERSION	0x00fff001	// MMmmmRRR 0.fff.001 (hex)
+#define	PROG_VERSION	0x00fff002	// MMmmmRRR 0.fff.002 (hex)
 
 typedef struct
 {

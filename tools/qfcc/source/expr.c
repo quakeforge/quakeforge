@@ -61,6 +61,7 @@ etype_t qc_types[] = {
 	ev_pointer,		// ex_pointer
 	ev_quaternion,	// ex_quaternion
 	ev_integer,		// ex_integer
+	ev_uinteger,	// ex_uinteger
 };
 
 type_t *types[] = {
@@ -74,6 +75,7 @@ type_t *types[] = {
 	&type_pointer,
 	&type_quaternion,
 	&type_integer,
+	&type_uinteger,
 };
 
 expr_type expr_types[] = {
@@ -87,6 +89,7 @@ expr_type expr_types[] = {
 	ex_pointer,		// ev_pointer
 	ex_quaternion,	// ev_quaternion
 	ex_integer,		// ev_integer
+	ex_uinteger,	// ev_uinteger
 };
 
 type_t *
@@ -122,6 +125,7 @@ get_type (expr_t *e)
 		case ex_func:
 		case ex_pointer:
 		case ex_quaternion:
+		case ex_uinteger:
 			return types[qc_types[e->type]];
 	}
 	return 0;
@@ -287,20 +291,27 @@ num_digits (int val)
 	return num;
 }
 
-expr_t *
-new_label_expr (void)
+const char *
+new_label_name (void)
 {
 	static int  label = 0;
 	int         lnum = ++label;
 	const char *fname = current_func->def->name;
 	int         len = 1 + strlen (fname) + 1 + num_digits (lnum) + 1;
+	char       *lname = malloc (len);
+	if (!lname)
+		Sys_Error ("new_label_expr: Memory Allocation Failure\n");
+	sprintf (lname, "$%s_%d", fname, lnum);
+	return lname;
+}
+
+expr_t *
+new_label_expr (void)
+{
 
 	expr_t *l = new_expr ();
 	l->type = ex_label;
-	l->e.label.name = malloc (len);
-	if (!l->e.label.name)
-		Sys_Error ("new_label_expr: Memory Allocation Failure\n");
-	sprintf (l->e.label.name, "$%s_%d", fname, lnum);
+	l->e.label.name = new_label_name ();
 	return l;
 }
 
@@ -482,7 +493,7 @@ do_op_string (int op, expr_t *e1, expr_t *e2)
 {
 	int len;
 	char *buf;
-	char *s1, *s2;
+	const char *s1, *s2;
 
 	s1 = e1->e.string_val ? e1->e.string_val : "";
 	s2 = e2->e.string_val ? e2->e.string_val : "";

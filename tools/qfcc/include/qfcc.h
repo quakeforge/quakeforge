@@ -342,6 +342,7 @@ extern	type_t	type_pointer;
 extern	type_t	type_floatfield;
 extern	type_t	type_quaternion;
 extern	type_t	type_integer;
+extern	type_t	type_uinteger;
 
 extern	def_t	def_void;
 extern	def_t	def_string;
@@ -353,6 +354,7 @@ extern	def_t	def_function;
 extern	def_t	def_pointer;
 extern	def_t	def_quaternion;
 extern	def_t	def_integer;
+extern	def_t	def_uinteger;
 
 struct function_s
 {
@@ -397,6 +399,8 @@ extern opcode_t *op_ifae;
 extern opcode_t *op_ifa;
 extern opcode_t *op_state;
 extern opcode_t *op_goto;
+extern opcode_t *op_jump;
+extern opcode_t *op_jumpb;
 
 statref_t *PR_NewStatref (dstatement_t *st, int field);
 void PR_AddStatementRef (def_t *def, dstatement_t *st, int field);
@@ -466,6 +470,9 @@ extern	def_t	*pr_scope;
 extern	int		pr_error_count;
 
 void PR_NewLine (void);
+def_t *PR_GetArray (type_t *etype, const char *name, int size, def_t *scope,
+					int *allocate);
+
 def_t *PR_GetDef (type_t *type, const char *name, def_t *scope,
 				  int *allocate);
 def_t *PR_NewDef (type_t *type, const char *name, def_t *scope);

@@ -623,6 +623,19 @@ PR_ExecuteProgram (progs_t * pr, func_t fnum)
 				}
 				st = &pr->pr_statements[OPA.uinteger_var];
 				break;
+			case OP_JUMPB:
+				//FIXME put bounds checking in
+				pointer = OPA.integer_var + OPB.integer_var;
+				ptr = pr->pr_globals + pointer;
+				pointer = ptr->integer_var;
+				if (pr_boundscheck->int_val
+					&& (pointer >= pr->progs->numstatements)) {
+					pr->pr_xstatement = st - pr->pr_statements;
+					PR_RunError (pr, "Invalid jump destination\n");
+					return;
+				}
+				st = &pr->pr_statements[pointer];
+				break;
 
 			case OP_CALL0:
 			case OP_CALL1:

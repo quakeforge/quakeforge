@@ -65,6 +65,7 @@ type_t	type_function = { ev_func, &def_function, NULL, &type_void };
 type_t	type_pointer = { ev_pointer, &def_pointer };
 type_t	type_quaternion = { ev_quaternion, &def_quaternion };
 type_t	type_integer = { ev_integer, &def_integer };
+type_t	type_uinteger = { ev_uinteger, &def_uinteger };
 
 type_t	type_floatfield = { ev_field, &def_field, NULL, &type_float };
 
@@ -78,6 +79,7 @@ def_t	def_function = { &type_function, "temp" };
 def_t	def_pointer = { &type_pointer, "temp" };
 def_t	def_quaternion = { &type_quaternion, "temp"};
 def_t	def_integer = { &type_integer, "temp"};
+def_t	def_uinteger = { &type_uinteger, "temp"};
 
 def_t	def_ret, def_parms[MAX_PARMS];
 

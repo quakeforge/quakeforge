@@ -52,17 +52,10 @@ defs_get_key (void *_def, void *_tab)
 	return "";
 }
 
-/*
-	PR_GetDef
-
-	If type is NULL, it will match any type
-	If allocate is true, a new def will be allocated if it can't be found
-*/
-def_t *
-PR_GetDef (type_t *type, const char *name, def_t *scope, int *allocate)
+static def_t *
+check_for_name (type_t *type, const char *name, def_t *scope, int *allocate)
 {
 	def_t	*def;
-	char	element[MAX_NAME];
 
 	if (!defs_by_name) {
 		defs_by_name = Hash_NewTable (16381, defs_get_key, 0, &defs_by_name);
@@ -77,9 +70,49 @@ PR_GetDef (type_t *type, const char *name, def_t *scope, int *allocate)
 		if (!allocate || def->scope == scope)
 			return def;
 	}
+	return 0;
+}
 
-	if (!allocate)
-		return NULL;
+static inline type_t *
+find_type (type_t *type, type_t *aux_type)
+{
+	type_t      new;
+	memset (&new, 0, sizeof (new));
+	new.type = type->type;
+	new.aux_type = aux_type;
+	return PR_FindType (&new);
+}
+
+def_t *
+PR_GetArray (type_t *etype, const char *name, int size, def_t *scope,
+			 int *allocate)
+{
+	type_t  *type = find_type (&type_pointer, etype);
+	def_t	*def = check_for_name (type, name, scope, allocate);
+	if (def || !allocate)
+		return def;
+	def = PR_NewDef (type, name, scope);
+	def->ofs = *allocate;
+	*allocate += pr_type_size [type->type] * size + 1;
+	pr_global_defs[def->ofs] = def;
+	G_INT (def->ofs) = def->ofs + 1;
+	return def;
+}
+
+/*
+	PR_GetDef
+
+	If type is NULL, it will match any type
+	If allocate is true, a new def will be allocated if it can't be found
+*/
+def_t *
+PR_GetDef (type_t *type, const char *name, def_t *scope, int *allocate)
+{
+	def_t	*def = check_for_name (type, name, scope, allocate);
+	char	element[MAX_NAME];
+
+	if (def || !allocate)
+		return def;
 
 	// allocate a new def
 	def = PR_NewDef (type, name, scope);

@@ -16,12 +16,13 @@ typedef enum {
 	ex_pointer,
 	ex_quaternion,
 	ex_integer,
+	ex_uinteger,
 } expr_type;
 
 typedef struct {
 	statref_t	*refs;
 	dstatement_t *statement;
-	char *name;
+	const char *name;
 } elabel_t;
 
 typedef struct {
@@ -56,7 +57,7 @@ typedef struct expr_s {
 		def_t	*def;
 		temp_t	temp;
 
-		char	*string_val;
+		const char	*string_val;
 		float	float_val;
 		float	vector_val[3];
 		int		entity_val;
@@ -65,6 +66,7 @@ typedef struct expr_s {
 		int		pointer_val;
 		float	quaternion_val[4];
 		int		integer_val;
+		int		uinteger_val;
 	} e;
 } expr_t;
 
@@ -76,6 +78,7 @@ type_t *get_type (expr_t *e);
 etype_t extract_type (expr_t *e);
 
 expr_t *new_expr (void);
+const char *new_label_name (void);
 expr_t *new_label_expr (void);
 expr_t *new_block_expr (void);
 expr_t *new_binary_expr (int op, expr_t *e1, expr_t *e2);

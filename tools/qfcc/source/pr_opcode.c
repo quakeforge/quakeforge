@@ -40,6 +40,8 @@ opcode_t *op_ifae;
 opcode_t *op_ifa;
 opcode_t *op_state;
 opcode_t *op_goto;
+opcode_t *op_jump;
+opcode_t *op_jumpb;
 
 statref_t *
 PR_NewStatref (dstatement_t *st, int field)
@@ -167,6 +169,10 @@ PR_Opcode_Init_Tables (void)
 			op_state = op;
 		} else if (!strcmp (op->name, "<GOTO>")) {
 			op_goto = op;
+		} else if (!strcmp (op->name, "<JUMP>")) {
+			op_jump = op;
+		} else if (!strcmp (op->name, "<JUMPB>")) {
+			op_jumpb = op;
 		}
 	}
 }

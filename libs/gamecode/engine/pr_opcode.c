@@ -166,6 +166,7 @@ opcode_t    pr_opcodes[] = {
 
 	{"<GOTO>", "goto", OP_GOTO, false, ev_integer, ev_void, ev_void, PROG_ID_VERSION},
 	{"<JUMP>", "jump", OP_JUMP, false, ev_integer, ev_void, ev_void, PROG_VERSION},
+	{"<JUMPB>", "jumpb", OP_JUMPB, false, ev_pointer, ev_integer, ev_void, PROG_VERSION},
 
 	{"&&", "and", OP_AND, false, ev_float, ev_float, ev_integer, PROG_ID_VERSION},
 	{"||", "or", OP_OR, false, ev_float, ev_float, ev_integer, PROG_ID_VERSION},

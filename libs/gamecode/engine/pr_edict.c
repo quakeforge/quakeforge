@@ -1094,9 +1094,23 @@ PR_LoadProgsFile (progs_t * pr, const char *progsname)
 		((int *) pr->progs)[i] = LittleLong (((int *) pr->progs)[i]);
 
 	if (pr->progs->version != PROG_VERSION
-		&& pr->progs->version != PROG_ID_VERSION)
-		PR_Error (pr, "%s has unrecognised version number (%08x)",
-				  progsname, pr->progs->version);
+		&& pr->progs->version != PROG_ID_VERSION) {
+		if (pr->progs->version < 0x00fff000) {
+			PR_Error (pr, "%s has unrecognised version number (%d)",
+					  progsname, pr->progs->version);
+		} else {
+			PR_Error (pr,
+					  "%s has unrecognised version number (%02x.%03x.%03x)"
+					  " [%02x.%03x.%03x expected]",
+					  progsname,
+					  pr->progs->version >> 24,
+					  (pr->progs->version >> 12) & 0xfff,
+					  pr->progs->version & 0xfff,
+					  PROG_VERSION >> 24,
+					  (PROG_VERSION >> 12) & 0xfff,
+					  PROG_VERSION & 0xfff);
+		}
+	}
 
 	pr->progs_name = progsname;	//XXX is this safe?
 

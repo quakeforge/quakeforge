@@ -87,7 +87,8 @@ def_t *
 PR_ReuseConstant (expr_t *expr, def_t *def)
 {
 	def_t	*cn = 0;
-	char rep[60], *r = rep;
+	char rep[60];
+	const char *r = rep;
 	hashtab_t *tab = 0;
 	type_t *type;
 	expr_t e = *expr;
@@ -131,13 +132,17 @@ PR_ReuseConstant (expr_t *expr, def_t *def)
 			type = &type_pointer;
 			break;
 		case ex_integer:
+		case ex_uinteger:
 			if (!def || def->type != &type_float) {
 				sprintf (rep, "\001integer:%08X\001", e.e.integer_val);
 				tab = integer_imm_defs;
 				type = &type_integer;
 				break;
 			}
-			e.e.float_val = e.e.integer_val;
+			if (e.type == ex_uinteger)
+				e.e.float_val = e.e.uinteger_val;
+			else
+				e.e.float_val = e.e.integer_val;
 		case ex_float:
 			sprintf (rep, "\001float:%08X\001", e.e.integer_val);
 			tab = float_imm_defs;

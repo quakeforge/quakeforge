@@ -38,6 +38,14 @@ static const char rcsid[] =
 #include "scope.h"
 #include "qc-parse.h"
 
+typedef struct case_node_s {
+	expr_t     *low;
+	expr_t     *high;
+	expr_t    **labels;
+	expr_t     *_label;
+	struct case_node_s *left, *right;
+} case_node_t;
+
 static unsigned long
 get_hash (void *_cl, void *unused)
 {
@@ -80,7 +88,6 @@ case_label_expr (switch_block_t *switch_block, expr_t *value)
 		return 0;
 	}
 	cl->value = value;
-	print_expr(value);puts("");
 	if (Hash_FindElement (switch_block->labels, cl)) {
 		error (value, "duplicate %s", value ? "case" : "default");
 		free (cl);
@@ -128,18 +135,118 @@ label_compare (const void *_a, const void *_b)
 	}
 }
 
-static void
-build_binary_jump_table (expr_t *sw, case_label_t **labels, int op, int base, int count, expr_t *sw_val, expr_t *temp, expr_t *default_label)
+static case_node_t *
+new_case_node (expr_t *low, expr_t *high)
 {
-	case_label_t *l;
+	case_node_t *node = malloc (sizeof (case_node_t));
+
+	if (!node)
+		Sys_Error ("out of memory");
+	node->low = low;
+	node->high = high;
+	if (low == high) {
+		node->labels = &node->_label;
+		node->_label = 0;
+	} else {
+		int         size;
+		if (low->type != ex_integer) {
+			error (low, "switch: internal error");
+			abort ();
+		}
+		size = high->e.integer_val - low->e.integer_val + 1;
+		node->labels = calloc (size, sizeof (case_node_t *));
+	}
+	node->left = node->right = 0;
+	return node;
+}
+
+static case_node_t *
+balance_case_tree (case_node_t **nodes, int base, int count)
+{
+	case_node_t *node;
+	int         index = count / 2;
+
+	if (!count)
+		return 0;
+
+	node = nodes[base + index];
+
+	node->left = balance_case_tree (nodes, base, index);
+
+	base += index + 1;
+	count -= index + 1;
+	node->right = balance_case_tree (nodes, base, count);
+
+	return node;
+}
+
+static case_node_t *
+build_case_tree (case_label_t **labels, int count)
+{
+	case_node_t **nodes;
+	int         i, j, k;
+	int			num_nodes = 0;
+
+	qsort (labels, count, sizeof (*labels), label_compare);
+
+	nodes = (case_node_t **) malloc (count * sizeof (case_node_t*));
+	if (!nodes)
+		Sys_Error ("out of memory");
+
+	if (labels[0]->value->type == ex_integer) {
+		for (i = 0; i < count - 1; i = j, num_nodes++) {
+			for (j = i + 1; j < count; j++) {
+				if (labels[j]->value->e.integer_val
+					- labels[j - 1]->value->e.integer_val > 1)
+					break;
+			}
+			nodes[num_nodes] = new_case_node (labels[i]->value,
+											  labels[j - 1]->value);
+			for (k = i; k < j; k++)
+				nodes[num_nodes]->labels[labels[k]->value->e.integer_val
+										 - labels[i]->value->e.integer_val]
+					= labels[k]->label;
+		}
+		if (i < count) {
+			nodes[num_nodes] = new_case_node (labels[i]->value,
+											  labels[i]->value);
+			nodes[num_nodes]->labels[0] = labels[i]->label;
+			num_nodes++;
+		}
+	} else {
+		for (i = 0; i < count; i++, num_nodes++) {
+			nodes[num_nodes] = new_case_node (labels[i]->value,
+											  labels[i]->value);
+			nodes[num_nodes]->labels[0] = labels[i]->label;
+		}
+	}
+	return balance_case_tree (nodes, 0, num_nodes);
+}
+
+static void
+build_switch (expr_t *sw, case_node_t  *tree, int op, expr_t *sw_val,
+			  expr_t *temp, expr_t *default_label)
+{
 	expr_t     *test;
 	expr_t     *branch;
-	int         index;
+	expr_t     *high_label = default_label;
+	expr_t     *low_label = default_label;
 
-	index = count / 2;
-	l = labels [base + index];
+	if (!tree)
+		return;
 
-	test = binary_expr (op, l->value, sw_val);
+	if (tree->right) {
+		high_label = new_label_expr ();
+		high_label->line = sw_val->line;
+		high_label->file = sw_val->file;
+	}
+	if (tree->left) {
+		low_label = new_label_expr ();
+		low_label->line = sw_val->line;
+		low_label->file = sw_val->file;
+	}
+
+	test = binary_expr (op, sw_val, tree->low);
 	test->line = sw_val->line;
 	test->file = sw_val->file;
 
@@ -147,37 +254,81 @@ build_binary_jump_table (expr_t *sw, case_label_t **labels, int op, int base, in
 	test->line = sw_val->line;
 	test->file = sw_val->file;
 
-	branch = new_binary_expr ('n', test, l->label);
-	branch->line = sw_val->line;
-	branch->file = sw_val->file;
-	append_expr (sw, branch);
-
-	if (index) {
-		expr_t     *high_label;
-
-		if (count - (index + 1)) {
-			high_label = new_label_expr ();
-			high_label->line = sw_val->line;
-			high_label->file = sw_val->file;
-		} else {
-			high_label = default_label;
-		}
-		branch = new_binary_expr (IFA, temp, high_label);
+	if (tree->low == tree->high) {
+		printf ("%3d\n", tree->low->e.integer_val);
+		branch = new_binary_expr ('n', test, tree->labels[0]);
 		branch->line = sw_val->line;
 		branch->file = sw_val->file;
 		append_expr (sw, branch);
 
-		build_binary_jump_table (sw, labels, op, base, index, sw_val, temp, default_label);
+		if (tree->left) {
+			branch = new_binary_expr (IFA, temp, high_label);
+			branch->line = sw_val->line;
+			branch->file = sw_val->file;
+			append_expr (sw, branch);
 
-		if (count - (index + 1))
+			build_switch (sw, tree->left, op, sw_val, temp, default_label);
+
+			if (tree->right)
+				append_expr (sw, high_label);
+		}
+		if (tree->right)
+			build_switch (sw, tree->right, op, sw_val, temp, default_label);
+	} else {
+		expr_t     *utemp = new_temp_def_expr (&type_uinteger);
+		int         low = tree->low->e.integer_val;
+		int         high = tree->high->e.integer_val;
+		def_t      *def;
+		expr_t     *table = new_expr ();
+		const char *name = new_label_name ();
+		int         i;
+		expr_t     *range = binary_expr ('-', tree->high, tree->low);
+
+		printf ("%3d %3d\n", low, high);
+
+		def = PR_GetArray (&type_uinteger, name, high - low + 1, 0,
+						   &numpr_globals);
+		table->type = ex_def;
+		table->e.def = def;
+
+		append_expr (sw, test);
+
+		if (tree->left) {
+			branch = new_binary_expr (IFB, temp, low_label);
+			branch->line = sw_val->line;
+			branch->file = sw_val->file;
+			append_expr (sw, branch);
+		}
+		tree->high->type = ex_uinteger;
+		append_expr (sw, new_binary_expr ('b', temp, utemp));
+		test = binary_expr (GT, utemp, range);
+		test->line = sw_val->line;
+		test->file = sw_val->file;
+		branch = new_binary_expr ('i', test, high_label);
+		branch->line = sw_val->line;
+		branch->file = sw_val->file;
+		append_expr (sw, branch);
+		branch = new_binary_expr ('g', table, temp);
+		branch->line = sw_val->line;
+		branch->file = sw_val->file;
+		append_expr (sw, branch);
+		if (tree->left) {
+			append_expr (sw, low_label);
+			build_switch (sw, tree->left, op, sw_val, temp, default_label);
+		}
+		if (tree->right) {
 			append_expr (sw, high_label);
+			build_switch (sw, tree->right, op, sw_val, temp, default_label);
+		}
+		for (i = 0; i <= high - low; i++) {
+			dstatement_t *st;
+			statref_t  *ref;
+			st = (dstatement_t *) &pr_globals[G_INT (def->ofs) + i];
+			ref = PR_NewStatref (st, 3);
+			ref->next = tree->labels[i]->e.label.refs;
+			tree->labels[i]->e.label.refs = ref;
+		}
 	}
-
-	base += index + 1;
-	count -= index + 1;
-
-	if (count)
-		build_binary_jump_table (sw, labels, op, base, count, sw_val, temp, default_label);
 }
 
 struct expr_s *
@@ -229,12 +380,13 @@ switch_expr (switch_block_t *switch_block, expr_t *break_label,
 	} else {
 		expr_t     *temp;
 		int         op;
+		case_node_t *case_tree;
 
 		if (type == &type_string)
 			temp = new_temp_def_expr (&type_integer);
 		else
 			temp = new_temp_def_expr (type);
-		qsort (labels, num_labels, sizeof (*labels), label_compare);
+		case_tree = build_case_tree (labels, num_labels);
 		switch (type->type) {
 			case ev_string:
 				op = NE;
@@ -249,7 +401,7 @@ switch_expr (switch_block_t *switch_block, expr_t *break_label,
 				error (0, "internal compiler error in switch");
 				abort ();
 		}
-		build_binary_jump_table (sw, labels, op, 0, num_labels, sw_val, temp, default_label->label);
+		build_switch (sw, case_tree, op, sw_val, temp, default_label->label);
 	}
 	append_expr (sw, default_expr);
 	append_expr (sw, statements);

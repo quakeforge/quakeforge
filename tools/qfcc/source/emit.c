@@ -288,6 +288,7 @@ emit_sub_expr (expr_t *e, def_t *dest)
 		case ex_pointer:
 		case ex_quaternion:
 		case ex_integer:
+		case ex_uinteger:
 			d = PR_ReuseConstant (e, 0);
 			break;
 	}
@@ -318,6 +319,9 @@ emit_expr (expr_t *e)
 						break;
 					case 2:
 						ref->statement->c = label->statement - ref->statement;
+						break;
+					case 3:
+						*(int*)ref->statement = label->statement - statements;
 						break;
 					default:
 						abort();
@@ -366,6 +370,11 @@ emit_expr (expr_t *e)
 					}
 					e->e.expr.e2->e.temp.def = emit_sub_expr (e->e.expr.e1, e->e.expr.e2->e.temp.def);
 					break;
+				case 'g':
+					def_a = emit_sub_expr (e->e.expr.e1, 0);
+					def_b = emit_sub_expr (e->e.expr.e2, 0);
+					emit_statement (e->line, op_jumpb, def_a, def_b, 0);
+					break;
 				default:
 					warning (e, "Ignoring useless expression");
 					break;
@@ -399,6 +408,7 @@ emit_expr (expr_t *e)
 		case ex_pointer:
 		case ex_quaternion:
 		case ex_integer:
+		case ex_uinteger:
 			warning (e, "Ignoring useless expression");
 			break;
 		case ex_nil:
