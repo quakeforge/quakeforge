@@ -49,11 +49,11 @@ dump_strings (progs_t *pr)
 	char *s = pr->pr_strings;
 
 	printf ("%d ", 0);
-	while (i++ < pr->pr_stringsize) {
+	while (i++ < pr->progs->numstrings) {
 		switch (*s) {
 			case 0:
 				fputs ("\n", stdout);
-				if (i < pr->pr_stringsize)
+				if (i < pr->progs->numstrings)
 					printf ("%d ", i);
 				break;
 			case 9:
