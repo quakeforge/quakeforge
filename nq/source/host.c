@@ -120,8 +120,6 @@ cvar_t     *pausable;
 
 cvar_t     *temp1;
 
-cvar_t     *cl_demospeed;
-
 
 
 void
@@ -260,10 +258,6 @@ Host_InitLocal (void)
 	coop = Cvar_Get ("coop", "0", CVAR_NONE, NULL, "0 or 1");
 	pausable = Cvar_Get ("pausable", "1", CVAR_NONE, NULL, "None");
 	temp1 = Cvar_Get ("temp1", "0", CVAR_NONE, NULL, "None");
-
-	cl_demospeed = Cvar_Get ("cl_demospeed", "1.0", CVAR_NONE, NULL,
-							 "adjust demo playback speed. 1.0 = normal, "
-							 "< 1 slow-mo, > 1 timelapse");
 
 	Host_FindMaxClients ();
 
@@ -513,7 +507,7 @@ Host_FilterTime (float time)
 	float       timescale = 1.0;
 
 	if (cls.demoplayback) {
-		timescale = max (0, cl_demospeed->value);
+		timescale = max (0, demo_speed->value);
 		time *= timescale;
 	}
 
@@ -931,6 +925,8 @@ Host_Init (void)
 	W_LoadWadFile ("gfx.wad");
 	Key_Init ();
 	Mod_Init ();
+
+	CL_Demo_Init ();
 
 	SV_Progs_Init ();
 	SV_Init ();

@@ -51,6 +51,7 @@ float       scr_centertime_off;
 
 cvar_t     *cl_name;
 cvar_t     *cl_writecfg;
+cvar_t     *demo_speed;
 cvar_t     *chase_active;
 
 int         fps_count;
@@ -132,6 +133,12 @@ CL_InitCvars (void)
 void
 CL_NextDemo (void)
 {
+}
+
+void
+CL_Demo_Init (void)
+{
+	demo_speed = Cvar_Get ("demo_speed", "1", CVAR_NONE, NULL, "");
 }
 
 int

@@ -210,7 +210,6 @@ cvar_t     *show_fps;
 cvar_t     *show_ping;
 cvar_t     *show_pl;
 cvar_t     *show_time;
-cvar_t     *cl_demospeed;
 
 int         fps_count;
 
@@ -1281,9 +1280,6 @@ CL_Init_Cvars (void)
 								 "Shift view colors on damage");
 	cl_cshift_powerup = Cvar_Get ("cl_cshift_powerup", "1", CVAR_ARCHIVE, NULL,
 								  "Shift view colors for powerups");
-	cl_demospeed = Cvar_Get ("cl_demospeed", "1.0", CVAR_NONE, NULL,
-							 "adjust demo playback speed. 1.0 = normal, "
-							 "< 1 slow-mo, > 1 timelapse");
 	cl_anglespeedkey = Cvar_Get ("cl_anglespeedkey", "1.5", CVAR_NONE, NULL,
 								 "turn `run' speed multiplier");
 	cl_backspeed = Cvar_Get ("cl_backspeed", "200", CVAR_ARCHIVE, NULL,
@@ -1473,7 +1469,7 @@ Host_SimulationTime (float time)
 	float		timescale = 1.0;
 
 	if (cls.demoplayback) {
-		timescale = max (0, cl_demospeed->value);
+		timescale = max (0, demo_speed->value);
 		time *= timescale;
 	}
 
@@ -1762,7 +1758,7 @@ Host_Init (void)
 	Key_Init ();
 	Mod_Init ();
 
-	CL_TimeFrames_Init();
+	CL_Demo_Init();
 
 	Con_Printf ("%4.1f megabyte heap.\n", cl_mem_size->value);
 

@@ -79,6 +79,9 @@ void CL_FinishTimeDemo (void);
 void CL_TimeFrames_Reset (void);
 void CL_TimeFrames_DumpLog (void);
 
+cvar_t     *demo_speed;
+cvar_t     *demo_gzip;
+
 /*
 	DEMO CODE
 
@@ -461,9 +464,17 @@ CL_Record (const char *argv1)
 	}
 
 	// open the demo file
-	COM_DefaultExtension (name, ".qwd");
-
-	cls.demofile = Qopen (name, "wb");
+#ifdef HAVE_ZLIB
+	if (demo_gzip->int_val) {
+		COM_DefaultExtension (name, ".qwd.gz");
+		cls.demofile = Qopen (name, va ("wbz%d",
+										bound (1, demo_gzip->int_val, 9)));
+	} else
+#endif
+	{
+		COM_DefaultExtension (name, ".qwd");
+		cls.demofile = Qopen (name, "wb");
+	}
 	if (!cls.demofile) {
 		Con_Printf ("ERROR: couldn't open.\n");
 		return;
@@ -922,11 +933,19 @@ CL_TimeDemo_f (void)
 }
 
 void
-CL_TimeFrames_Init (void)
+CL_Demo_Init (void)
 {
 	cl_timeframes_isactive = 0;
 	cl_timeframes_index = 0;
 	cl_timeframes_array = NULL;
+
+	demo_gzip = Cvar_Get ("demo_gzip", "0", CVAR_ARCHIVE, NULL,
+						  "Compress demos using gzip. 0 = none, 1 = least "
+						  "compression, 9 = most compression. Compressed "
+						  " demos (1-9) will have .gz appended to the name");
+	demo_speed = Cvar_Get ("demo_speed", "1.0", CVAR_NONE, NULL,
+						   "adjust demo playback speed. 1.0 = normal, "
+						   "< 1 slow-mo, > 1 timelapse");
 }
 
 void

@@ -38,21 +38,26 @@ static const char rcsid[] =
 # include <strings.h>
 #endif
 
-#include "QF/qendian.h"
-#include "QF/va.h"
-#include "host.h"
+#include "QF/cmd.h"
+#include "QF/console.h"
+#include "QF/cvar.h"
+#include "QF/keys.h"
 #include "QF/msg.h"
+#include "QF/qendian.h"
+#include "QF/sys.h"
+#include "QF/va.h"
+
 #include "client.h"
 #include "compat.h"
-#include "QF/sys.h"
-#include "QF/console.h"
-#include "QF/cmd.h"
-#include "QF/keys.h"
+#include "host.h"
 
 char        demoname[1024];
 int         timedemo_count;
 
 void        CL_FinishTimeDemo (void);
+
+cvar_t     *demo_gzip;
+cvar_t     *demo_speed;
 
 /*
 DEMO CODE
@@ -256,19 +261,29 @@ CL_Record_f (void)
 
 // open the demo file
 //
-	COM_DefaultExtension (name, ".dem");
+#ifdef HAVE_ZLIB
+	if (demo_gzip->int_val) {
+		COM_DefaultExtension (name, ".dem.gz");
+		cls.demofile = Qopen (name, va ("wbz%d",
+										bound (1, demo_gzip->int_val, 9)));
+	} else
+#endif
+	{
+		COM_DefaultExtension (name, ".dem");
+		cls.demofile = Qopen (name, "wb");
+	}
 
-	Con_Printf ("recording to %s.\n", name);
-	cls.demofile = Qopen (name, "wb");
 	if (!cls.demofile) {
 		Con_Printf ("ERROR: couldn't open.\n");
 		return;
 	}
 
+	Con_Printf ("recording to %s.\n", name);
+	cls.demorecording = true;
+
 	cls.forcetrack = track;
 	Qprintf (cls.demofile, "%i\n", cls.forcetrack);
 
-	cls.demorecording = true;
 }
 
 
@@ -387,4 +402,16 @@ CL_TimeDemo_f (void)
 	}
 	strncpy (demoname, Cmd_Argv (1), sizeof (demoname));
 	CL_StartTimeDemo ();
+}
+
+void
+CL_Demo_Init (void)
+{
+	demo_gzip = Cvar_Get ("demo_gzip", "0", CVAR_ARCHIVE, NULL,
+						  "Compress demos using gzip. 0 = none, 1 = least "
+						  "compression, 9 = most compression. Compressed "
+						  " demos (1-9) will have .gz appended to the name");
+	demo_speed = Cvar_Get ("demo_speed", "1.0", CVAR_NONE, NULL,
+						   "adjust demo playback speed. 1.0 = normal, "
+						   "< 1 slow-mo, > 1 timelapse");
 }
