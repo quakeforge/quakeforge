@@ -77,6 +77,13 @@
 	);
 	Super = NSResponder;
     };
+    NewClass = {
+	Actions = (
+	);
+	Outlets = (
+	);
+	Super = NSObject;
+    };
     Preferences = {
 	Actions = (
 	    ok:,
@@ -92,6 +99,13 @@
 	    xLight,
 	    yLight,
 	    zLight
+	);
+	Super = NSObject;
+    };
+    PrefsWindowController = {
+	Actions = (
+	);
+	Outlets = (
 	);
 	Super = NSObject;
     };

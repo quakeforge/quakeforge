@@ -65,7 +65,9 @@ Forge_LANGUAGES= \
 #
 Forge_HEADERS= \
 	Controller.h \
-	Preferences.h
+	Preferences.h \
+	PrefsPanel.h \
+	PrefsController.h
 
 #
 # Class files
@@ -73,6 +75,8 @@ Forge_HEADERS= \
 Forge_OBJC_FILES= \
 	Controller.m \
 	Preferences.m \
+	PrefsPanel.m \
+	PrefsController.m \
 	main.m
 
 #

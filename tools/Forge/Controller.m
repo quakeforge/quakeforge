@@ -1,9 +1,12 @@
 /*
-	Controller.m
+	Controller.h
 
-	Controller class for Forge
+	Application controller class
 
-	Copyright (C) 2001 Jeff Teunissen <deek@quakeforge.net>
+	Copyright (C) 2001 Dusk to Dawn Computing, Inc.
+
+	Author: Jeff Teunissen <deek@d2dc.net>
+	Date:	5 Nov 2001
 
 	This program is free software; you can redistribute it and/or
 	modify it under the terms of the GNU General Public License as
@@ -22,16 +25,23 @@
 		Free Software Foundation, Inc.
 		59 Temple Place - Suite 330
 		Boston, MA  02111-1307, USA
-
-	$Id$
 */
+static const char rcsid[] = 
+	"$Id$";
+
+#ifdef HAVE_CONFIG_H
+# include "Config.h"
+#endif
 
 #import <AppKit/NSApplication.h>
 #import <AppKit/NSMenu.h>
 #import "Controller.h"
 #import "Preferences.h"
+#import "PrefsController.h"
 
 @implementation Controller
+
+static PrefsController	*prefsController = nil;
 
 - (BOOL) application: (NSApplication *) app openFile: (NSString *) filename;
 {
@@ -96,6 +106,18 @@
 	NSLog (@"This _would_ save, but it doesn't.");
 }
 
+- (void) showPreferencesPanel: (id) sender;
+{
+	NSDebugLog (@"Showing Preferences panel...");
+
+	if (!prefsController)
+		prefsController = [[PrefsController alloc] init];
+
+	[prefsController orderFrontPreferencesPanel: self];
+
+	return;
+}
+
 /*
 	Notifications
 */
@@ -148,7 +170,7 @@
 					action: @selector (orderFrontStandardAboutPanel:)
 			 keyEquivalent: @""];
 	[info addItemWithTitle: _(@"Preferences...")
-					action: @selector (orderFrontPreferencesPanel:)
+					action: @selector (showPreferencesPanel:)
 			 keyEquivalent: @""];
 	[info addItemWithTitle: _(@"Help")
 					action: @selector (orderFrontHelpPanel:)
@@ -246,7 +268,7 @@
 	brush = [[[NSMenu alloc] init] autorelease];
 	[menu setSubmenu: brush forItem: [menu itemWithTitle: _(@"Brush")]];
 	
-	[brush addItemWithTitle: _(@"none")	action: @selector(nothing:)	keyEquivalent: @""];
+	[brush addItemWithTitle: _(@"None")	action: @selector(nothing:)	keyEquivalent: @""];
 
 	/*
 		Windows

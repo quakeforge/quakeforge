@@ -1,9 +1,12 @@
 /*
 	Preferences.h
 
-	Preferences class definition for Forge
+	Preferences class
 
-	Copyright (C) 2001 Jeff Teunissen <deek@d2dc.net>
+	Copyright (C) 2001 Dusk to Dawn Computing, Inc.
+
+	Author: Jeff Teunissen <deek@d2dc.net>
+	Date:	9 Feb 2001
 
 	This program is free software; you can redistribute it and/or
 	modify it under the terms of the GNU General Public License as
@@ -22,14 +25,14 @@
 		Free Software Foundation, Inc.
 		59 Temple Place - Suite 330
 		Boston, MA  02111-1307, USA
-
-	$Id$
 */
+
 #ifdef HAVE_CONFIG_H
 # include "Config.h"
 #endif
 
 #import <Foundation/NSObject.h>
+#import <Foundation/NSString.h>
 #import <Foundation/NSDictionary.h>
 
 /*

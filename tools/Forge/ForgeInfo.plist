@@ -3,9 +3,11 @@
     ApplicationIcon = "Forge.tiff";
     ApplicationName = Forge;
     ApplicationRelease = "0.1.0 (Development)";
-    Authors = ("Jeff Teunissen <deek@quakeforge.net>", "Bill Currie <taniwha@quakeforge.net>");
-    Copyright = "Copyright (C) 2002 Dusk To Dawn Computing";
+    ApplicationURL = "http://www.quakeforge.net/Forge/";
+    Authors = (
+	"Jeff Teunissen <deek@d2dc.net>",
+    );
+    Copyright = "Copyright (C) 2001 Dusk To Dawn Computing";
     CopyrightDescription = "This program is released under the GNU General Public License";
     FullVersionID = "0.1.0 (Development)";
-    URL = "http://www.quakeforge.net/Forge/";
 }
