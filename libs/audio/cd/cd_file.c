@@ -195,13 +195,25 @@ I_OGGMus_Pause (void)
 	if (!tracklist || !mus_enabled || !playing)
 		return;
 	
-	if (cd_sfx) {
-		cd_sfx->close (cd_sfx);
-		cd_channel->sfx = NULL;
+	if (cd_channel) {
+		cd_channel->master_vol = 0;
+		cd_channel->leftvol = cd_channel->rightvol = 0;
 	}
 
 	wasPlaying = playing;
 	playing = false;
+}
+
+/* unpause. might just cheat and restart playing */
+static void
+I_OGGMus_Resume (void)
+{
+	if (!tracklist || !mus_enabled || !wasPlaying)
+		return;
+
+	set_volume ();
+	wasPlaying = false;
+	playing = true;
 }
 
 /* start playing, if we've got a trackmap.
@@ -253,17 +265,6 @@ I_OGGMus_Play (int track, qboolean looping)
 
 	playing = true;
 	current_track = track;
-}
-
-/* unpause. might just cheat and restart playing */
-static void
-I_OGGMus_Resume (void)
-{
-	if (!tracklist || !mus_enabled || !wasPlaying)
-		return;
-
-	I_OGGMus_Play (current_track, true);
-	playing = true;
 }
 
 /* print out the current track map, in numerical order. */
