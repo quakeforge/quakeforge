@@ -60,7 +60,7 @@ typedef struct sfxstream_s {
 
 typedef struct sfxblock_s {
 	sfx_t      *sfx;
-	const char *file;
+	void       *file;
 	int         bytes;
 	cache_user_t cache;
 } sfxblock_t;

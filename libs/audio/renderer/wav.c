@@ -37,6 +37,7 @@ static __attribute__ ((unused)) const char rcsid[] =
 #ifdef HAVE_STRINGS_H
 # include <strings.h>
 #endif
+#include <stdlib.h>
 
 #include "QF/cvar.h"
 #include "QF/sound.h"
@@ -47,6 +48,41 @@ static __attribute__ ((unused)) const char rcsid[] =
 
 #include "snd_render.h"
 
+typedef struct {
+	const char *name;
+	int         data_start;
+	int         data_length;
+} wavfile_t;
+
+static void
+wav_callback_load (void *object, cache_allocator_t allocator)
+{
+	sfxblock_t *block = (sfxblock_t *) object;
+	sfx_t      *sfx = block->sfx;
+	wavfile_t  *wavfile = (wavfile_t *) block->file;
+	QFile      *file;
+	byte       *data;
+	sfxbuffer_t *buffer;
+
+	QFS_FOpenFile (block->file, &file);
+	if (!file)
+		return; //FIXME Sys_Error?
+
+	Qseek (file, wavfile->data_start, SEEK_SET);
+	data = malloc (wavfile->data_length);
+	Qread (file, data, wavfile->data_length);
+	Qclose (file);
+
+	buffer = SND_GetCache (sfx->length, sfx->speed, sfx->width, sfx->channels,
+						   block, allocator);
+	SND_ResampleSfx (sfx, buffer, data);
+	free (data);
+}
+
+static void
+stream_wav (sfx_t *sfx, wavfile_t *wavfile)
+{
+}
 
 void
 SND_LoadWav (QFile *file, sfx_t *sfx, char *realname)
@@ -68,6 +104,8 @@ SND_LoadWav (QFile *file, sfx_t *sfx, char *realname)
 
 	riff_ltxt_t *ltxt;
 	riff_d_ltxt_t *dltxt = 0;
+
+	wavfile_t  *wavfile;
 
 	int         loop_start = -1, sample_count = -1;
 
@@ -116,6 +154,39 @@ SND_LoadWav (QFile *file, sfx_t *sfx, char *realname)
 		Sys_Printf ("missing data chunk\n");
 		goto bail;
 	}
+	if (dfmt->format_tag != 1) {
+		Sys_Printf ("not Microsfot PCM\n");
+		goto bail;
+	}
+	if (dfmt->channels < 1 || dfmt->channels > 2) {
+		Sys_Printf ("unsupported channel count\n");
+		goto bail;
+	}
+	sfx->width = dfmt->bits_per_sample / 8;
+	sfx->length = data->ck.len / sfx->width;
+	sfx->speed = dfmt->samples_per_sec;
+	sfx->channels = dfmt->channels;
+	
+	wavfile = malloc (sizeof (wavfile_t));
+	wavfile->name = realname;
+	wavfile->data_start = *(int *)data->data;
+	wavfile->data_length = data->ck.len;
+
+	if (sfx->length < 3 * shm->speed) {
+		sfxblock_t *block = calloc (1, sizeof (sfxblock_t));
+		sfx->data = block;
+		sfx->retain = SND_CacheRetain;
+		sfx->release = SND_CacheRelease;
+		block->sfx = sfx;
+		block->file = wavfile;
+		Cache_Add (&block->cache, block, wav_callback_load);
+	} else {
+		sfx->retain = SND_StreamRetain;
+		sfx->release = SND_StreamRelease;
+		free (realname);
+		stream_wav (sfx, wavfile);
+	}
+
 	if (dltxt)
 		sample_count = dltxt->len;
 	if (cp)
