@@ -5,6 +5,7 @@
 
 	Copyright (C) 2000 David Jeffery
 	Copyright (C) 2000 Jeff Teunissen <deek@dusknet.dhs.org>
+	Copyright (C) 2001 Ragnvald `Despair` Maartmann-Moe IV
 
 	This program is free software; you can redistribute it and/or
 	modify it under the terms of the GNU General Public License
@@ -38,17 +39,14 @@ static const char rcsid[] =
 #include "QF/joystick.h"
 #include "QF/keys.h"
 #include "QF/mathlib.h"
+#include "QF/va.h"
 
 #include "compat.h"
-
-#define JOY_MAX_AXES	6
-#define JOY_MAX_BUTTONS 16
 
 cvar_t     *joy_device;					// Joystick device name
 cvar_t     *joy_enable;					// Joystick enabling flag
 cvar_t     *joy_amp;					// Joystick amplification
 cvar_t     *joy_pre_amp;				// Joystick pre-amplification
-
 
 qboolean    joy_found = false;
 qboolean    joy_active = false;
@@ -64,7 +62,9 @@ ocvar_t joy_axes_cvar_init[JOY_MAX_AXES] = {
 	{"joyaxis3", "3"},
 	{"joyaxis4", "0"},
 	{"joyaxis5", "0"},
-	{"joyaxis6", "0"}
+	{"joyaxis6", "0"},
+	{"joyaxis7", "0"},
+	{"joyaxis8", "0"}
 };
 
 struct joy_axis joy_axes[JOY_MAX_AXES];
@@ -86,11 +86,8 @@ JOY_Move (void)
 	if (!joy_active || !joy_enable->int_val)
 		return;
 
-	Cvar_SetValue (joy_amp, max (0.0001, joy_amp->value));
-	Cvar_SetValue (joy_pre_amp, max (0.0001, joy_pre_amp->value));
-
-	mult_joy = 4 * joy_amp->value * joy_pre_amp->value *
-		in_amp->value * in_pre_amp->value;
+	mult_joy = 1 / (201 - (4 * joy_amp->value * joy_pre_amp->value *
+						   in_amp->value * in_pre_amp->value));
 	// Yes, mult_joy looks like a mess, but use of pre_amp values is useful in
 	// scripts, and *_pre_amp will matter once joystick filtering/acceleration
 	// is implemented
@@ -98,26 +95,66 @@ JOY_Move (void)
 	for (i = 0; i < JOY_MAX_AXES; i++) {
 		switch (joy_axes[i].axis->int_val) {
 			case 1:
-				viewdelta.angles[YAW] -=
-					(float) (joy_axes[i].current /
-						 (201 - mult_joy));
+				if (joy_axes[i].current) {
+					viewdelta.angles[YAW] -=
+						(float) (joy_axes[i].current * mult_joy);
+				}
+				break;
+			case -1:
+				if (joy_axes[i].current) {
+					viewdelta.angles[YAW] +=
+						(float) (joy_axes[i].current * mult_joy);
+				}
 				break;
 			case 2:
-				viewdelta.position[2] -=
-					(float) (joy_axes[i].current /
-						  (201 - mult_joy));
+				if (joy_axes[i].current) {
+					viewdelta.position[2] -=
+						(float) (joy_axes[i].current * mult_joy);
+				}
+				break;
+			case -2:
+				if (joy_axes[i].current) {
+					viewdelta.position[2] +=
+						(float) (joy_axes[i].current * mult_joy);
+				}
 				break;
 			case 3:
-				viewdelta.position[0] +=
-					(float) (joy_axes[i].current /
-						 (201 - mult_joy));
+				if (joy_axes[i].current) {
+					viewdelta.position[0] +=
+						(float) (joy_axes[i].current * mult_joy);
+				}
+				break;
+			case -3:
+				if (joy_axes[i].current) {
+					viewdelta.position[0] -=
+						(float) (joy_axes[i].current * mult_joy);
+				}
 				break;
 			case 4:
 				if (joy_axes[i].current) {
 					viewdelta.angles[PITCH] -=
-						(float) (joy_axes[i].current /
-							 (201 - mult_joy));
+						(float) (joy_axes[i].current * mult_joy);
 				}
+				break;
+			case -4:
+				if (joy_axes[i].current) {
+					viewdelta.angles[PITCH] +=
+						(float) (joy_axes[i].current * mult_joy);
+				}
+				break;
+			case 5:
+				if (joy_axes[i].current) {
+				viewdelta.position[1] -=
+					(float) (joy_axes[i].current * mult_joy);
+				}
+				break;
+			case -5:
+				if (joy_axes[i].current) {
+					viewdelta.position[1] +=
+						(float) (joy_axes[i].current * mult_joy);
+				}
+				break;
+			default:
 				break;
 		}
 	}
@@ -149,8 +186,14 @@ JOY_Init (void)
 	for (i = 0; i < JOY_MAX_BUTTONS; i++) {
 		joy_buttons[i].old = 0;
 		joy_buttons[i].current = 0;
-	}   
+	}
 	joy_active = true;
+}
+
+static void
+joyamp_f (cvar_t *var)
+{
+	Cvar_Set (var, va ("%g", max (0.0001, var->value)));
 }
 
 void
@@ -162,10 +205,10 @@ JOY_Init_Cvars (void)
 						   "Joystick device");
 	joy_enable = Cvar_Get ("joy_enable", "1", CVAR_NONE | CVAR_ARCHIVE, 0,
 						   "Joystick enable flag");
-	joy_amp = Cvar_Get ("joy_amp", "1", CVAR_NONE | CVAR_ARCHIVE, 0,
+	joy_amp = Cvar_Get ("joy_amp", "1", CVAR_NONE | CVAR_ARCHIVE, joyamp_f,
 						"Joystick amplification");
-	joy_pre_amp = Cvar_Get ("joy_pre_amp", "1", CVAR_NONE | CVAR_ARCHIVE, 0,
-							"Joystick pre-amplification");
+	joy_pre_amp = Cvar_Get ("joy_pre_amp", "1", CVAR_NONE | CVAR_ARCHIVE,
+							joyamp_f, "Joystick pre-amplification");
 
 	for (i = 0; i < JOY_MAX_AXES; i++) {
 		joy_axes[i].axis = Cvar_Get (joy_axes_cvar_init[i].name,
