@@ -504,7 +504,7 @@ Sys_DebugLog (const char *file, const char *fmt, ...)
 }
 
 int
-Sys_CheckInput (int idle, unsigned int net_socket)
+Sys_CheckInput (int idle, int net_socket)
 {
 	fd_set      fdset;
 	int         res;
@@ -538,7 +538,7 @@ Sys_CheckInput (int idle, unsigned int net_socket)
 		FD_SET (0, &fdset);
 #endif
 	if (net_socket >= 0)
-		FD_SET (net_socket, &fdset);
+		FD_SET (((unsigned) net_socket), &fdset);	// cast needed for windows
 
 	if (!idle || !sys_dead_sleep->int_val)
 		timeout = &_timeout;

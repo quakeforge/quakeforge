@@ -78,7 +78,7 @@ void Sys_RegisterShutdown (void (*func) (void));
 double Sys_DoubleTime (void);
 void Sys_TimeOfDay(date_t *date);
 
-int Sys_CheckInput (int idle, unsigned int net_socket);
+int Sys_CheckInput (int idle, int net_socket);
 const char *Sys_ConsoleInput (void);
 
 void Sys_Sleep (void);
