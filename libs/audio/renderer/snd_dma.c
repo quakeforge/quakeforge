@@ -185,7 +185,6 @@ SND_Startup (void)
 void
 SND_Init (void)
 {
-
 	Con_Printf ("\nSound Initialization\n");
 
 	Cmd_AddCommand ("play", SND_Play,
@@ -535,6 +534,9 @@ SND_StopSound (int entnum, int entchannel)
 {
 	int			i;
 
+	if (!sound_started)
+		return;
+
 	for (i = 0; i < MAX_DYNAMIC_CHANNELS; i++) {
 		if (channels[i].entnum == entnum
 			&& channels[i].entchannel == entchannel) {
@@ -604,7 +606,7 @@ SND_StaticSound (sfx_t *sfx, vec3_t origin, float vol, float attenuation)
 	channel_t  *ss;
 	sfxcache_t *sc;
 
-	if (!sfx)
+	if (!sound_started || !sfx)
 		return;
 
 	if (total_channels == MAX_CHANNELS) {
@@ -805,7 +807,7 @@ SND_GetSoundtime (void)
 void
 SND_ExtraUpdate (void)
 {
-	if (snd_noextraupdate->int_val)
+	if (!sound_started || snd_noextraupdate->int_val)
 		return;							// don't pollute timings
 	SND_Update_ ();
 }
@@ -930,9 +932,9 @@ SND_LocalSound (const char *sound)
 {
 	sfx_t	   *sfx;
 
-	if (nosound->int_val)
-		return;
 	if (!sound_started)
+		return;
+	if (nosound->int_val)
 		return;
 
 	sfx = SND_PrecacheSound (sound);
