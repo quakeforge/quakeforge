@@ -144,7 +144,7 @@ def process_source (source_file):
 				if defines.has_key (arg1):
 					condition[-1]=0
 			elif directive == 'else':
-				condition[-1] = not condition[-1]
+				condition[-1] = condition [-2] and not condition[-1]
 			elif directive == 'endif':
 				del condition[-1]
 			else:
