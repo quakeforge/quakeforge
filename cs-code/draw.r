@@ -3,6 +3,7 @@
 qpic_t (string name, integer alpha) Draw_CachePic = #0;
 
 void (integer x, integer y, qpic_t pic) Draw_Pic = #0;
+void (integer x, integer y, qpic_t pic, integer srcx, integer srcy, integer width, integer height) Draw_SubPic = #0;
 void (integer x, integer y, qpic_t pic) Draw_CenterPic = #0;
 
 void (integer x, integer y, integer chr) Draw_Character = #0;

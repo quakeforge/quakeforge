@@ -48,6 +48,7 @@ static const char rcsid[] =
 typedef struct menu_pic_s {
 	struct menu_pic_s *next;
 	int         x, y;
+	int         srcx, srcy, width, height;
 	const char *name;
 } menu_pic_t;
 
@@ -138,6 +139,24 @@ menu_add_item (menu_item_t *m, menu_item_t *i)
 }
 
 static void
+menu_pic (int x, int y, const char *name,
+		  int srcx, int srcy, int width, int height)
+{
+	menu_pic_t *pic = malloc (sizeof (menu_pic_t));
+
+	pic->x = x;
+	pic->y = y;
+	pic->name = strdup (name);
+	pic->srcx = srcx;
+	pic->srcy = srcy;
+	pic->width = width;
+	pic->height = height;
+
+	pic->next = menu->pics;
+	menu->pics = pic;
+}
+
+static void
 bi_Menu_Begin (progs_t *pr)
 {
 	int         x = P_INT (pr, 0);
@@ -184,13 +203,22 @@ bi_Menu_Pic (progs_t *pr)
 	int         x = P_INT (pr, 0);
 	int         y = P_INT (pr, 1);
 	const char *name = P_STRING (pr, 2);
-	menu_pic_t *pic = malloc (sizeof (menu_pic_t));
 
-	pic->x = x;
-	pic->y = y;
-	pic->name = strdup (name);
-	pic->next = menu->pics;
-	menu->pics = pic;
+	menu_pic (x, y, name, 0, 0, -1, -1);
+}
+
+static void
+bi_Menu_SubPic (progs_t *pr)
+{
+	int         x = P_INT (pr, 0);
+	int         y = P_INT (pr, 1);
+	const char *name = P_STRING (pr, 2);
+	int         srcx = P_INT (pr, 3);
+	int         srcy = P_INT (pr, 4);
+	int         width = P_INT (pr, 5);
+	int         height = P_INT (pr, 6);
+
+	menu_pic (x, y, name, srcx, srcy, width, height);
 }
 
 static void
@@ -199,19 +227,30 @@ bi_Menu_CenterPic (progs_t *pr)
 	int         x = P_INT (pr, 0);
 	int         y = P_INT (pr, 1);
 	const char *name = P_STRING (pr, 2);
-	menu_pic_t *pic = malloc (sizeof (menu_pic_t));
 	qpic_t     *qpic = Draw_CachePic (name, 1);
 
-	if (!qpic) {
-		free (pic);
+	if (!qpic)
 		return;
-	}
 
-	pic->x = x - qpic->width / 2;
-	pic->y = y;
-	pic->name = strdup (name);
-	pic->next = menu->pics;
-	menu->pics = pic;
+	menu_pic (x - qpic->width / 2, y, name, 0, 0, -1, -1);
+}
+
+static void
+bi_Menu_CenterSubPic (progs_t *pr)
+{
+	int         x = P_INT (pr, 0);
+	int         y = P_INT (pr, 1);
+	const char *name = P_STRING (pr, 2);
+	qpic_t     *qpic = Draw_CachePic (name, 1);
+	int         srcx = P_INT (pr, 3);
+	int         srcy = P_INT (pr, 4);
+	int         width = P_INT (pr, 5);
+	int         height = P_INT (pr, 6);
+
+	if (!qpic)
+		return;
+
+	menu_pic (x - qpic->width / 2, y, name, srcx, srcy, width, height);
 }
 
 static void
@@ -367,7 +406,9 @@ Menu_Init (void)
 	PR_AddBuiltin (&menu_pr_state, "Menu_EnterHook", bi_Menu_EnterHook, -1);
 	PR_AddBuiltin (&menu_pr_state, "Menu_LeaveHook", bi_Menu_LeaveHook, -1);
 	PR_AddBuiltin (&menu_pr_state, "Menu_Pic", bi_Menu_Pic, -1);
+	PR_AddBuiltin (&menu_pr_state, "Menu_SubPic", bi_Menu_SubPic, -1);
 	PR_AddBuiltin (&menu_pr_state, "Menu_CenterPic", bi_Menu_CenterPic, -1);
+	PR_AddBuiltin (&menu_pr_state, "Menu_CenterSubPic", bi_Menu_CenterSubPic, -1);
 	PR_AddBuiltin (&menu_pr_state, "Menu_Item", bi_Menu_Item, -1);
 	PR_AddBuiltin (&menu_pr_state, "Menu_Cursor", bi_Menu_Cursor, -1);
 	PR_AddBuiltin (&menu_pr_state, "Menu_KeyEvent", bi_Menu_KeyEvent, -1);
@@ -464,7 +505,11 @@ Menu_Draw (void)
 		qpic_t     *pic = Draw_CachePic (m_pic->name, 1);
 		if (!pic)
 			continue;
-		Draw_Pic (m_pic->x, m_pic->y, pic);
+		if (m_pic->width > 0 && m_pic->height > 0)
+			Draw_SubPic (m_pic->x, m_pic->y, pic, m_pic->srcx, m_pic->srcy,
+						 m_pic->width, m_pic->height);
+		else
+			Draw_Pic (m_pic->x, m_pic->y, pic);
 	}
 	for (i = 0; i < menu->num_items; i++) {
 		if (menu->items[i]->text) {

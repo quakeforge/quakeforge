@@ -10,6 +10,7 @@ typedef _qpic_t [] qpic_t;
 @extern qpic_t (string name, integer alpha) Draw_CachePic;
 
 @extern void (integer x, integer y, qpic_t pic) Draw_Pic;
+@extern void (integer x, integer y, qpic_t pic, integer srcx, integer srcy, integer width, integer height) Draw_SubPic;
 @extern void (integer x, integer y, qpic_t pic) Draw_CenterPic;
 
 @extern void (integer x, integer y, integer chr) Draw_Character;
