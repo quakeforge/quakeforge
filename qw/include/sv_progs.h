@@ -165,4 +165,9 @@ extern sv_fields_t sv_fields;
 
 #define PROGHEADER_CRC 54730
 
+extern func_t EndFrame;
+extern func_t SpectatorConnect;
+extern func_t SpectatorThink;
+extern func_t SpectatorDisconnect;
+
 #endif // __sv_progs_h

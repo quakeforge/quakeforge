@@ -32,7 +32,6 @@
 
 #include <string.h>
 
-#include "progs.h"
 #include "console.h"
 #include "sys.h"
 #include "cmd.h"

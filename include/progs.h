@@ -142,11 +142,6 @@ extern int pr_numbuiltins;
 
 ddef_t *PR_FindGlobal (progs_t *pr, const char *name);
 eval_t *PR_GetGlobalPointer (progs_t *pr, const char *name);
-extern func_t	EndFrame;	// 2000-01-02 EndFrame function by Maddes/FrikaC
-
-extern func_t SpectatorConnect;
-extern func_t SpectatorThink;
-extern func_t SpectatorDisconnect;
 
 void PR_Error (progs_t *pr, const char *error, ...) __attribute__((format(printf,2,3)));
 void PR_RunError (progs_t *pr, char *error, ...) __attribute__((format(printf,2,3)));

@@ -40,7 +40,6 @@
 #include "msg.h"
 #include "model.h"
 #include "console.h"
-#include "progs.h"
 #include "keys.h"
 #include "sys.h"
 #include "sv_progs.h"

@@ -36,7 +36,7 @@
 #include "cvar.h"
 #include "protocol.h"
 #include "model.h"
-#include "progs.h"
+#include "sv_progs.h"
 #include "sizebuf.h"
 #include "info.h"
 #include "quakeio.h"

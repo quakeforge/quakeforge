@@ -187,6 +187,4 @@ extern sv_fields_t sv_fields;
 #define SVFIELD(e,f,t) E_var (e, sv_fields.f, t)
 #endif
 
-#define PROGHEADER_CRC 54730
-
 #endif // __sv_progs_h
