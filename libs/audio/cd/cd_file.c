@@ -187,15 +187,15 @@ Load_Tracklist (void)
 	return 0;
 }
 
-/* pause playback of music */
 static void
 I_OGGMus_Pause (void)
 {
-	/* just kinda cheat and stop it for the time being */
 	if (!tracklist || !mus_enabled || !playing)
 		return;
 	
 	if (cd_channel) {
+		// the sound system will skip a 0 volume channel completely,
+		// not even updating the sample position
 		cd_channel->master_vol = 0;
 		cd_channel->leftvol = cd_channel->rightvol = 0;
 	}
@@ -204,7 +204,6 @@ I_OGGMus_Pause (void)
 	playing = false;
 }
 
-/* unpause. might just cheat and restart playing */
 static void
 I_OGGMus_Resume (void)
 {
