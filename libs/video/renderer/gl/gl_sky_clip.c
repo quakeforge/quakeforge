@@ -647,21 +647,20 @@ R_DrawSkyBoxPoly (glpoly_t *poly)
 void
 EmitSkyPolys (float speedscale, msurface_t *fa)
 {
-	glpoly_t   *p;
+	float       length, s, t;
 	float      *v;
 	int         i;
-	float       s, t;
+	glpoly_t   *p;
 	vec3_t      dir;
-	float       length;
 
 	for (p = fa->polys; p; p = p->next) {
 		qfglBegin (GL_POLYGON);
 		for (i = 0, v = p->verts[0]; i < p->numverts; i++, v += VERTEXSIZE) {
 			VectorSubtract (v, r_origin, dir);
-			dir[2] *= 3;	// flatten the sphere
+			dir[2] *= 3.0;	// flatten the sphere
 
 			length = DotProduct (dir, dir);
-			length = 2.95 / sqrt (length);
+			length = 2.953125 / sqrt (length);
 
 			dir[0] *= length;
 			dir[1] *= length;
@@ -715,7 +714,7 @@ draw_skybox_sky_polys (msurface_t *sky_chain)
 {
 	msurface_t *sc = sky_chain;
 
-	//qfglDepthRange (gldepthmax, gldepthmax);
+//	qfglDepthRange (gldepthmax, gldepthmax);
 	qfglDepthMask (GL_FALSE);
 	qfglDisable (GL_DEPTH_TEST);
 	while (sc) {
@@ -729,7 +728,7 @@ draw_skybox_sky_polys (msurface_t *sky_chain)
 	}
 	qfglEnable (GL_DEPTH_TEST);
 	qfglDepthMask (GL_TRUE);
-	//qfglDepthRange (gldepthmin, gldepthmax);
+//	qfglDepthRange (gldepthmin, gldepthmax);
 }
 
 static void
@@ -821,6 +820,7 @@ R_DrawSkyChain (msurface_t *sky_chain)
 
 		while (p) {
 			int i;
+
 			qfglBegin (GL_POLYGON);
 			for (i = 0; i < p->numverts; i++) {
 				qfglVertex3fv (p->verts[i]);
@@ -837,8 +837,10 @@ R_DrawSkyChain (msurface_t *sky_chain)
 	qfglColor3ubv (255, 255, 255);
 	while (sc) {
 		glpoly_t   *p = sc->polys;
+
 		while (p) {
 			int         i;
+
 			qfglBegin (GL_LINE_LOOP);
 			for (i = 0; i < p->numverts; i++) {
 				qfglVertex3fv (p->verts[i]);
@@ -853,9 +855,11 @@ R_DrawSkyChain (msurface_t *sky_chain)
 	qfglBegin (GL_POINTS);
 	while (sc) {
 		glpoly_t   *p = sc->polys;
+
 		while (p) {
 			int         i;
 			vec3_t      x, c = { 0, 0, 0 };
+
 			for (i = 0; i < p->numverts; i++) {
 				VectorSubtract (p->verts[i], r_refdef.vieworg, x);
 				VectorAdd (x, c, c);
@@ -870,9 +874,11 @@ R_DrawSkyChain (msurface_t *sky_chain)
 	qfglEnd ();
 	if (skyloaded) {
 		int         i, j;
+
 		qfglColor3ubv (255, 0, 0);
 		for (i = 0; i < 6; i++) {
 			vec3_t      v;
+
 			qfglBegin (GL_LINE_LOOP);
 			for (j = 0; j < 4; j++) {
 				VectorScale (&skyvec[i][j][2], 1.0 / 128.0, v);
