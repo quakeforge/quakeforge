@@ -1,3 +1,7 @@
+NOTE: for building from cvs or a cvs snapshot, run ./bootstrap first.
+If you are using an autoconf version prior to 2.50,
+"ln -s configure.ac configure.in" before running bootstrap.
+
 Basic Installation
 ==================
 
