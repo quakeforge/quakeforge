@@ -64,4 +64,4 @@ r    fs_userpath          : location of your game directories
    s timelimit            : Sets the amount of time in minutes that is needed before advancing to the next level
      timeout              : Sets the amount of time in seconds before a client is considered disconnected if the server does not receive a packet
    s watervis             : Toggle the use of r_watervis by OpenGL clients
-     zombietime           : The number of seconds that the server will keep the character of a player on the map who seems to have disconnected
+     zombietime           : The number of seconds that the server will keep the character of a player on the map who seems to have disconnected.
