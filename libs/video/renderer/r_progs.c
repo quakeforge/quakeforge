@@ -36,43 +36,72 @@ static const char rcsid[] =
 #ifdef HAVE_STRINGS_H
 # include <strings.h>
 #endif
+#include <stdlib.h>
 
 #include "QF/console.h"
 #include "QF/draw.h"
+#include "QF/hash.h"
 #include "QF/progs.h"
 #include "QF/render.h"
+
+typedef struct {
+	int         width;
+	int         height;
+	qpic_t     *pic;
+} bi_qpic_t;
+
+typedef struct qpic_res_s {
+	char       *name;
+	bi_qpic_t  *pic;
+} qpic_res_t;
+
+typedef struct {
+	hashtab_t  *pic_hash;
+} draw_resources_t;
 
 static qpic_t *
 get_qpic (progs_t *pr, int arg, const char *func)
 {
-	qpic_t     *pic;
+	bi_qpic_t  *pic;
 
 	if (arg <= ((pr_type_t *) pr->zone - pr->pr_globals)
-		|| arg >= (pr->zone_size / sizeof (pr_type_t)))
-		PR_RunError (pr, "%s: Invalid qpic_t", func);
+		|| arg >= pr->globals_size)
+		PR_RunError (pr, "%s: Invalid qpic_t: %d %d", func, arg, pr->globals_size);
 
-	memcpy (&pic, ((qpic_t *)(pr->pr_globals + arg))->data, sizeof (qpic_t *));
-	return pic;
+	pic = (bi_qpic_t *)(pr->pr_globals + arg);
+	return pic->pic;
 }
 
 static void
 bi_Draw_CachePic (progs_t *pr)
 {
+	draw_resources_t *res = PR_Resources_Find (pr, "Draw");
 	const char *path = G_STRING (pr, OFS_PARM0);
 	int         alpha = G_INT (pr, OFS_PARM1);
 	qpic_t     *pic = Draw_CachePic (path, alpha);
-	qpic_t     *qpic;
+	bi_qpic_t  *qpic;
+	qpic_res_t *rpic = Hash_Find (res->pic_hash, path);
 
 	if (!pic) {
 		Con_DPrintf ("can't load %s\n", path);
 		G_INT (pr, OFS_RETURN) = 0;
 		return;
 	}
-	qpic = PR_Zone_Malloc (pr, sizeof (qpic_t) - 4 + sizeof (qpic_t *));
+	if (rpic) {
+		qpic = rpic->pic;
+		qpic->pic = pic;
+		G_INT (pr, OFS_RETURN) = (pr_type_t *)qpic - pr->pr_globals;
+		return;
+	}
+	qpic = PR_Zone_Malloc (pr, sizeof (bi_qpic_t));
 	qpic->width = pic->width;
 	qpic->height = pic->height;
-	memcpy (qpic->data, &pic, sizeof (qpic_t *));
+	qpic->pic = pic;
 	G_INT (pr, OFS_RETURN) = (pr_type_t *)qpic - pr->pr_globals;
+	rpic = malloc (sizeof (qpic_res_t));
+	rpic->name = strdup (path);
+	rpic->pic = qpic;
+	Hash_Add (res->pic_hash, rpic);
 }
 
 static void
@@ -154,9 +183,36 @@ bi_Draw_Fill (progs_t *pr)
 	Draw_Fill (x, y, w, h, color);
 }
 
+static const char *
+bi_draw_get_key (void *p, void *unused)
+{
+	return ((qpic_res_t *) p)->name;
+}
+
+static void
+bi_draw_free (void *_p, void *unused)
+{
+	qpic_res_t *p = (qpic_res_t *) _p;
+
+	free (p->name);
+	free (p);
+}
+
+static void
+bi_draw_clear (progs_t *pr, void *data)
+{
+	draw_resources_t *res = (draw_resources_t *) data;
+
+	Hash_FlushTable (res->pic_hash);
+}
+
 void
 R_Progs_Init (progs_t *pr)
 {
+	draw_resources_t *res = malloc (sizeof (draw_resources_t));
+	res->pic_hash = Hash_NewTable (61, bi_draw_get_key, bi_draw_free, 0);
+
+	PR_Resources_Register (pr, "Draw", res, bi_draw_clear);
 	PR_AddBuiltin (pr, "Draw_CachePic", bi_Draw_CachePic, -1);
 	PR_AddBuiltin (pr, "Draw_Pic", bi_Draw_Pic, -1);
 	PR_AddBuiltin (pr, "Draw_CenterPic", bi_Draw_CenterPic, -1);

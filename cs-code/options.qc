@@ -116,8 +116,8 @@ DRAW_video_options =
 	local integer spacing = 120;
 	local integer bar_pad;
 
-	Draw_Pic (16, 4, qplaque_pic);
-	Draw_CenterPic (160, 4, p_option_pic);
+	Draw_Pic (16, 4, Draw_CachePic ("gfx/qplaque.lmp", 1));
+	Draw_CenterPic (160, 4, Draw_CachePic ("gfx/p_option.lmp", 1));
 	Draw_String	(54,  40, "Video");
 	Draw_String	(54,  50, "-----");
 	draw_val_item   (70, 60, spacing, "Fullscreen", 
@@ -206,8 +206,8 @@ DRAW_audio_options =
 	local integer spacing = 120;
 	local integer bar_pad;
 
-	Draw_Pic (16, 4, qplaque_pic);
-	Draw_CenterPic (160, 4, p_option_pic);
+	Draw_Pic (16, 4, Draw_CachePic ("gfx/qplaque.lmp", 1));
+	Draw_CenterPic (160, 4, Draw_CachePic ("gfx/p_option.lmp", 1));
 	Draw_String	(54,  40, "Audio");
 	Draw_String	(54,  50, "-----");
 	bar_pad = 50;
@@ -315,8 +315,8 @@ DRAW_control_options =
 {
 	local integer cursor_pad = 0, spacing = 120, bar_pad;
 
-	Draw_Pic		(16,  4,  qplaque_pic);
-	Draw_CenterPic  (160, 4,  p_option_pic);
+	Draw_Pic		(16,  4,  Draw_CachePic ("gfx/qplaque.lmp", 1));
+	Draw_CenterPic  (160, 4,  Draw_CachePic ("gfx/p_option.lmp", 1));
 	Draw_String		(54,  40, "Controls");
 	Draw_String		(54,  50, "--------");
 	Draw_String     (70,  60, "Bindings");
@@ -400,8 +400,8 @@ DRAW_feature_options =
 {
 	local integer cursor_pad = 0, spacing = 120;
 
-	Draw_Pic		(16, 4, qplaque_pic);
-	Draw_CenterPic  (160,4, p_option_pic);
+	Draw_Pic		(16, 4, Draw_CachePic ("gfx/qplaque.lmp", 1));
+	Draw_CenterPic  (160,4, Draw_CachePic ("gfx/p_option.lmp", 1));
 	Draw_String		(54,  40, "Features");
 	Draw_String		(54,  50, "--------");
 
@@ -545,8 +545,8 @@ DRAW_player_options =
 {
 	local integer cursor_pad = 0, spacing = 120;
 
-	Draw_Pic		(16, 4, qplaque_pic);
-	Draw_CenterPic  (160,4, p_option_pic);
+	Draw_Pic		(16, 4, Draw_CachePic ("gfx/qplaque.lmp", 1));
+	Draw_CenterPic  (160,4, Draw_CachePic ("gfx/p_option.lmp", 1));
 	Draw_String		(54,  40, "Player");
 	Draw_String		(54,  50, "--------");
 
@@ -710,8 +710,8 @@ DRAW_network_options =
 {
 	local integer cursor_pad = 0, spacing = 120;
 
-	Draw_Pic		(16, 4, qplaque_pic);
-	Draw_CenterPic  (160,4, p_option_pic);
+	Draw_Pic		(16, 4, Draw_CachePic ("gfx/qplaque.lmp", 1));
+	Draw_CenterPic  (160,4, Draw_CachePic ("gfx/p_option.lmp", 1));
 	Draw_String		(54,  40, "Network");
 	Draw_String		(54,  50, "--------");
 

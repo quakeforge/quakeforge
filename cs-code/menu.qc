@@ -92,7 +92,7 @@ integer () load_draw =
 {
 	local integer i;
 
-	Draw_CenterPic (160, 4, p_load_pic);
+	Draw_CenterPic (160, 4, Draw_CachePic ("gfx/p_load.lmp", 1));
 	for (i=0 ; i< MAX_SAVEGAMES; i++)
 		Draw_String (16, 32 + 8 * i, filenames[i]);
 	Draw_Character (8, 32 + load_cursor * 8, 12 + (integer (time * 4) & 1));
@@ -103,7 +103,7 @@ integer () save_draw =
 {
 	local integer i;
 
-	Draw_CenterPic (160, 4, p_save_pic);
+	Draw_CenterPic (160, 4, Draw_CachePic ("p_save.lmp", 1));
 	for (i=0 ; i< MAX_SAVEGAMES; i++)
 		Draw_String (16, 32 + 8 * i, filenames[i]);
 	Draw_Character (8, 32 + save_cursor * 8, 12 + (integer (time * 4) & 1));

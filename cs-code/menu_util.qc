@@ -2,7 +2,10 @@ float time;
 
 void (integer x, integer y) spinner =
 {
-	Draw_Pic (x, y, dot[integer(time * 10) % 6]);
+	local integer i = integer(time * 10) % 6;
+	local qpic_t p = Draw_CachePic (dot_name[i], 1);
+
+	Draw_Pic (x, y, p);
 };
 
 void (integer x, integer y, integer width, integer lines) text_box =
@@ -12,34 +15,42 @@ void (integer x, integer y, integer width, integer lines) text_box =
 
 	cx = x;
 	cy = y;
-	Draw_Pic (cx, cy, box_tl_pic);
+	p = Draw_CachePic ("gfx/box_tl.lmp", 1);
+	Draw_Pic (cx, cy, p);
+	p = Draw_CachePic ("gfx/box_ml.lmp", 1);
 	for (n = 0; n < lines; n++) {
 		cy += 8;
-		Draw_Pic (cx, cy, box_ml_pic);
+		Draw_Pic (cx, cy, p);
 	}
-	Draw_Pic (cx, cy + 8, box_bl_pic);
+	p = Draw_CachePic ("gfx/box_bl.lmp", 1);
+	Draw_Pic (cx, cy + 8, p);
 
 	cx += 8;
 	while (width > 0) {
 		cy = y;
-		Draw_Pic (cx, cy, box_tm_pic);
-		p = box_mm_pic;
+		p = Draw_CachePic ("gfx/box_tm.lmp", 1);
+		Draw_Pic (cx, cy, p);
+		p = Draw_CachePic ("gfx/box_mm.lmp", 1);
 		for (n = 0; n < lines; n++) {
 			cy += 8;
 			if (n == 1)
-				p = box_mm2_pic;
+				p = Draw_CachePic ("gfx/box_mm2.lmp", 1);
 			Draw_Pic (cx, cy, p);
 		}
-		Draw_Pic (cx, cy + 8, box_bm_pic);
+		p = Draw_CachePic ("gfx/box_bm.lmp", 1);
+		Draw_Pic (cx, cy + 8, p);
 		width -= 2;
 		cx += 16;
 	}
 
 	cy = y;
-	Draw_Pic (cx, cy, box_tr_pic);
+	p = Draw_CachePic ("gfx/box_tr.lmp", 1);
+	Draw_Pic (cx, cy, p);
+	p = Draw_CachePic ("gfx/box_mr.lmp", 1);
 	for (n = 0; n < lines; n++) {
 		cy += 8;
-		Draw_Pic (cx, cy, box_mr_pic);
+		Draw_Pic (cx, cy, p);
 	}
-	Draw_Pic (cx, cy + 8, box_br_pic);
+	p = Draw_CachePic ("gfx/box_br.lmp", 1);
+	Draw_Pic (cx, cy + 8, p);
 };
