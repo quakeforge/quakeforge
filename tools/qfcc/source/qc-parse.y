@@ -1011,12 +1011,12 @@ obj_def
 	;
 
 identifier_list
-	: NAME
+	: maybe_class
 		{
 			$$ = new_block_expr ();
 			append_expr ($$, new_name_expr ($1));
 		}
-	| identifier_list ',' NAME
+	| identifier_list ',' maybe_class
 		{
 			append_expr ($1, new_name_expr ($3));
 			$$ = $1;
