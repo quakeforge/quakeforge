@@ -132,4 +132,5 @@ void () assign =
 	foo = bar = 1;
 	foo = bar = bar + 1;
 	foo = self.nextthink = self.nextthink + 1;
+	self.frame = self.nextthink = self.nextthink + 1;
 };
