@@ -339,7 +339,6 @@ GL_GetAliasFrameVerts16 (int frame, aliashdr_t *paliashdr, entity_t *e)
 				float       d1, d2;
 
 				VectorBlend (v1, v2, blend, vo_v->vert);
-				VectorScale (vo_v->vert, 1.0 / 256.0, vo_v->vert);
 				n1 = r_avertexnormals[verts1->lightnormalindex];
 				n2 = r_avertexnormals[verts2->lightnormalindex];
 				d1 = DotProduct (shadevector, n1);
@@ -355,7 +354,6 @@ GL_GetAliasFrameVerts16 (int frame, aliashdr_t *paliashdr, entity_t *e)
 		float      *n;
 		float       d;
 
-		VectorScale (verts->v, 1.0 / 256.0, vo_v->vert);
 		n = r_avertexnormals[verts->lightnormalindex];
 		d = DotProduct (shadevector, n);
 		vo_v->lightdot = max (0.0, d);
@@ -580,16 +578,6 @@ R_DrawAliasModel (entity_t *e)
 	// locate the proper data
 	paliashdr = Cache_Get (&e->model->cache);
 	c_alias_polys += paliashdr->mdl.numtris;
-	VectorScale (paliashdr->mdl.scale, e->scale, scale);
-
-	// draw all the triangles
-	qfglPushMatrix ();
-	R_RotateForEntity (e);
-
-	qfglTranslatef (paliashdr->mdl.scale_origin[0],
-					paliashdr->mdl.scale_origin[1],
-					paliashdr->mdl.scale_origin[2]);
-	qfglScalef (scale[0], scale[1], scale[2]);
 
 	// if the model has a colorised/external skin, use it, otherwise use
 	// the skin embedded in the model data
@@ -609,14 +597,27 @@ R_DrawAliasModel (entity_t *e)
 			fb_texture = skindesc->fb_texnum;
 	}
 
-	if (paliashdr->mdl.ident == POLYHEADER16)
+	if (paliashdr->mdl.ident == POLYHEADER16) {
+		VectorScale (paliashdr->mdl.scale, e->scale / 256.0, scale);
 		vo = GL_GetAliasFrameVerts16 (e->frame, paliashdr, e);
-	else
+	} else {
+		VectorScale (paliashdr->mdl.scale, e->scale, scale);
 		vo = GL_GetAliasFrameVerts (e->frame, paliashdr, e);
+	}
+
+	// setup the transform
+	qfglPushMatrix ();
+	R_RotateForEntity (e);
+
+	qfglTranslatef (paliashdr->mdl.scale_origin[0],
+					paliashdr->mdl.scale_origin[1],
+					paliashdr->mdl.scale_origin[2]);
+	qfglScalef (scale[0], scale[1], scale[2]);
 
 	if (modelalpha < 1.0)
 		qfglDepthMask (GL_FALSE);
 
+	// draw all the triangles
 	if (model->fullbright) {
 		qfglBindTexture (GL_TEXTURE_2D, texture);
 		GL_DrawAliasFrame_fb (vo);
