@@ -134,6 +134,9 @@ HWND WINAPI InitializeWindow (HINSTANCE hInstance, int nCmdShow);
 LONG CDAudio_MessageHandler (HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
 LONG WINAPI MainWndProc (HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
 void AppActivate (BOOL fActive, BOOL minimize);
+
+#undef E_POINTER
+
 #endif /* _WIN32 */
 
 #endif /* _WINQUAKE_H */
