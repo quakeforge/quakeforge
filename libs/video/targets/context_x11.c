@@ -376,6 +376,7 @@ void X11_UpdateFullscreen (cvar_t *fullscreen)
 {
 	XSetWindowAttributes attr;
 	unsigned long mask = CWOverrideRedirect;
+	XEvent      x_event;
 
 	if (!vid_context_created) {
 		return;
@@ -390,19 +391,32 @@ void X11_UpdateFullscreen (cvar_t *fullscreen)
 	}
 
 	XUnmapWindow (x_disp, x_win);
-	X11_ProcessEvent ();	//FIXME should do proper event parsing.
+	do {
+		XNextEvent (x_disp, &x_event);
+	} while (x_event.type != UnmapNotify);
+
 	attr.override_redirect = vidmode_active != 0;
 	XChangeWindowAttributes (x_disp, x_win, mask, &attr);
 	XMapRaised (x_disp, x_win);
-	X11_ProcessEvent ();	//FIXME should do proper event parsing.
+	do {
+		XNextEvent (x_disp, &x_event);
+	} while (x_event.type != MapNotify);
+
 	if (vidmode_active) {
 		XMoveWindow(x_disp, x_win, 0, 0);
 	} else if (window_saved) {
 		XMoveWindow(x_disp, x_win, window_x, window_y);
 		window_saved = 0;
 	}
-	X11_ProcessEvent ();	//FIXME should do proper event parsing.
+	do {
+		XNextEvent (x_disp, &x_event);
+	} while (x_event.type != Expose);
+	do {
+		XNextEvent (x_disp, &x_event);
+	} while (x_event.type != ConfigureNotify && x_event.type != ReparentNotify);
+
 	XWarpPointer (x_disp, None, x_win, 0, 0, 0, 0, 0, 0);
+	XSync (x_disp, false);
 
 	if (vidmode_active) {
 		X11_ForceViewPort ();
