@@ -85,16 +85,18 @@ GIB_Function_Free (void *ele, void *ptr)
 	Builds a new function struct and returns
 	a pointer to it.
 */
+
+static void
+afree (void *data, void *unused)
+{
+	free (data);
+};
+
+
 static gib_function_t *
 GIB_Function_New (const char *name)
 {
 	gib_function_t *new = calloc (1, sizeof (gib_function_t));
-
-	static void
-	afree (void *data, void *unused)
-	{
-		free (data);
-	};
 	
 	new->text = dstring_newstr ();
 	new->name = strdup (name);
