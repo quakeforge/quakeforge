@@ -1081,6 +1081,8 @@ SV_Msg_f (void *unused)
 static void
 SV_SetInfo_f (void *unused)
 {
+	char        oldval[MAX_INFO_STRING];
+
 	if (Cmd_Argc () == 1) {
 		SV_Printf ("User info settings:\n");
 		Info_Print (host_client->userinfo);
@@ -1095,6 +1097,9 @@ SV_SetInfo_f (void *unused)
 	if (Cmd_Argv (1)[0] == '*')
 		return;							// don't set priveledged values
 
+	// preserve the old value
+	strcpy (oldval, Info_ValueForKey (host_client->userinfo,
+									  Cmd_Argv (1)));
 
 	if (UserInfoCallback) {
 		*sv_globals.self = EDICT_TO_PROG (&sv_pr_state, sv_player);
@@ -1103,10 +1108,6 @@ SV_SetInfo_f (void *unused)
 		PR_ExecuteProgram (&sv_pr_state, UserInfoCallback);
 		return;
 	} else {
-		char        oldval[MAX_INFO_STRING];
-
-		strcpy (oldval, Info_ValueForKey (host_client->userinfo,
-										  Cmd_Argv (1)));
 		Info_SetValueForKey (host_client->userinfo, Cmd_Argv (1), Cmd_Argv (2),
 							 !sv_highchars->int_val);
 		if (strequal
@@ -1116,6 +1117,13 @@ SV_SetInfo_f (void *unused)
 
 	// process any changed values
 	SV_ExtractFromUserinfo (host_client);
+
+	// trigger a GIB event
+	if (sv_setinfo_e->func)
+		GIB_Event_Callback (sv_setinfo_e, 4, va("%d", host_client->userid),
+							Cmd_Argv (1), oldval,
+							Info_ValueForKey (host_client->userinfo,
+											  Cmd_Argv (1)));
 
 	if (Info_FilterForKey (Cmd_Argv (1), client_info_filters)) {
 		MSG_WriteByte (&sv.reliable_datagram, svc_setinfo);

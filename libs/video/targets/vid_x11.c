@@ -81,6 +81,8 @@ static __attribute__ ((unused)) const char rcsid[] =
 #include "d_iface.h"
 #include "dga_check.h"
 
+int XShmGetEventBase (Display *x);	// for broken X11 headers
+
 static Colormap x_cmap;
 static GC		x_gc;
 

@@ -36,3 +36,5 @@ extern gib_event_t *sv_client_connect_e;
 extern gib_event_t *sv_client_disconnect_e;
 extern gib_event_t *sv_client_spawn_e;
 extern gib_event_t *sv_map_e;
+extern gib_event_t *sv_frag_e;
+extern gib_event_t *sv_setinfo_e;

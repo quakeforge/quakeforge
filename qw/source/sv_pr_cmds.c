@@ -1370,6 +1370,34 @@ PF_logfrag (progs_t *pr)
 	e1 = NUM_FOR_EDICT (pr, ent1);
 	e2 = NUM_FOR_EDICT (pr, ent2);
 
+	// do gib event callback
+	if (sv_frag_e->func) {
+		char buf[16];
+		char type1[2], type2[2];
+		int u1, u2;
+		
+		type1[1] = type2[1] = 0;
+		if (e1 < 1 || e1 > MAX_CLIENTS) {
+			type1[0] = 'e';
+			u1 = e1;
+		} else {
+			type1[0] = 'c';
+			u1 = svs.clients[e1 - 1].userid;
+		}
+
+		if (e2 < 1 || e2 > MAX_CLIENTS) {
+			type2[0] = 'e';
+			u2 = e2;
+		} else {
+			type2[0] = 'c';
+			u2 = svs.clients[e2 - 1].userid;
+		}
+
+		snprintf(buf, sizeof(buf), "%d", u2);
+		
+		GIB_Event_Callback (sv_frag_e, 4, type1, va ("%d", u1), type2, buf);
+	}
+
 	if (e1 < 1 || e1 > MAX_CLIENTS || e2 < 1 || e2 > MAX_CLIENTS)
 		return;
 
@@ -1521,6 +1549,7 @@ PF_setinfokey (progs_t *pr)
 	int         e1 = NUM_FOR_EDICT (pr, edict);
 	const char *key = P_GSTRING (pr, 1);
 	const char *value = P_GSTRING (pr, 2);
+	char		oldval[MAX_INFO_STRING];
 
 	if (e1 == 0) {
 		if (*value)
@@ -1529,9 +1558,18 @@ PF_setinfokey (progs_t *pr)
 		else
 			Info_RemoveKey (localinfo, key);
 	} else if (e1 <= MAX_CLIENTS) {
+		strcpy(oldval, Info_ValueForKey (svs.clients[e1 - 1].userinfo, key));
 		Info_SetValueForKey (svs.clients[e1 - 1].userinfo, key, value,
 							 !sv_highchars->int_val);
 		SV_ExtractFromUserinfo (&svs.clients[e1 - 1]);
+
+		// trigger a GIB event
+		if (sv_setinfo_e->func)
+			GIB_Event_Callback (sv_setinfo_e, 4, 
+								va("%d", svs.clients[e1 - 1].userid),
+								key, oldval,
+								Info_ValueForKey (svs.clients[e1 - 1].userinfo,
+												  key));
 
 		if (Info_FilterForKey (key, client_info_filters)) {
 			MSG_WriteByte (&sv.reliable_datagram, svc_setinfo);
@@ -1540,6 +1578,7 @@ PF_setinfokey (progs_t *pr)
 			MSG_WriteString (&sv.reliable_datagram,
 							 Info_ValueForKey (svs.clients[e1 - 1].userinfo,
 								 			   key));
+
 		}
 	}
 }
