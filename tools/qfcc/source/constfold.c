@@ -149,7 +149,6 @@ convert_to_float (expr_t *e)
 		case ex_def:
 		case ex_expr:
 		case ex_uexpr:
-		case ex_temp:
 			return cast_expr (&type_float, e);
 		default:
 			internal_error (e);
@@ -170,15 +169,7 @@ do_op_float (int op, expr_t *e, expr_t *e1, expr_t *e2)
 	if (!valid_op (op, valid))
 		return error (e1, "invalid operand for float");
 
-	if (op == 'b') {
-		// bind is backwards to assign (why did I do that? :P)
-		if ((type = get_type (e2)) != &type_float) {
-			//FIXME optimize casting a constant
-			e->e.expr.e1 = e1 = cast_expr (type, e1);
-		} else if ((conv = convert_to_float (e1)) != e1) {
-			e->e.expr.e1 = e1 = conv;
-		}
-	} else if (op == '=' || op == PAS) {
+	if (op == '=') {
 		if ((type = get_type (e1)) != &type_float) {
 			//FIXME optimize casting a constant
 			e->e.expr.e2 = e2 = cast_expr (type, e2);
@@ -645,7 +636,6 @@ convert_to_uinteger (expr_t *e)
 		case ex_def:
 		case ex_expr:
 		case ex_uexpr:
-		case ex_temp:
 			return cast_expr (&type_uinteger, e);
 		default:
 			internal_error (e);
@@ -670,14 +660,7 @@ do_op_uinteger (int op, expr_t *e, expr_t *e1, expr_t *e2)
 		convert_short_uint (e1);
 	if (e1->type == ex_integer)
 		convert_int_uint (e1);
-	if (op == 'b') {
-		// bind is backwards to assign (why did I do that? :P)
-		if ((type = get_type (e2)) != &type_uinteger) {
-			e->e.expr.e1 = e1 = cast_expr (type, e1);
-		} else if ((conv = convert_to_uinteger (e1)) != e1) {
-			e->e.expr.e1 = e1 = conv;
-		}
-	} else if (op == '=' || op == PAS) {
+	if (op == '=') {
 		if ((type = get_type (e1)) != &type_uinteger) {
 			e->e.expr.e2 = e2 = cast_expr (type, e2);
 		} else if ((conv = convert_to_uinteger (e2)) != e2) {

@@ -230,16 +230,14 @@ copy_keywordargs (const keywordarg_t *kwargs)
 }
 
 expr_t *
-send_message (method_t *method, int super)
+send_message (int super)
 {
-	expr_t     *def;
 	if (super)
-		def = new_def_expr (get_def (&type_supermsg, "obj_msgSend_super",
-									 pr.scope, st_extern));
+		return new_def_expr (get_def (&type_supermsg, "obj_msgSend_super",
+									  pr.scope, st_extern));
 	else
-		def = new_def_expr (get_def (&type_IMP, "obj_msgSend", pr.scope,
-									 st_extern));
-	return cast_expr (method->type, def);
+		return new_def_expr (get_def (&type_IMP, "obj_msgSend", pr.scope,
+									  st_extern));
 }
 
 method_t *
@@ -470,6 +468,10 @@ method_check_params (method_t *method, expr_t *args)
 		if (!t)
 			return e;
  
+		if (mtype->parm_types[i] == &type_float && e->type == ex_integer) {
+			convert_int (e);
+			t = &type_float;
+		}
 		if (i < parm_count) {
 			if (e->type != ex_nil)
 				if (!type_assignable (mtype->parm_types[i], t)) {
