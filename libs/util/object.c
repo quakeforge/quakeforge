@@ -158,6 +158,16 @@ Object_Release (Object *obj)
 	return obj;
 }
 
+qboolean
+Object_InstanceOf (Object *obj, Class *cl)
+{
+	Class *c;
+	for (c = obj->cl; c; c = c->parent)
+		if (c == cl)
+			return true;
+	return false;
+}
+
 static String *
 List_ToString_f (Object *self)
 {

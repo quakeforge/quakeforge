@@ -39,11 +39,11 @@
 #include "QF/qtypes.h"
 
 #ifdef __GNUC__
-#define superInit(cl, obj, args...) (cl##_class->parent->init ((obj), ##args))
-#define new(cl, args...) ((void *) (cl##_class->abstract ? NULL : retain(cl##_class->init (Object_Create(cl##_class), ##args))))
-#define newFloat(cl, args...) ((void *) (cl##_class->abstract ? NULL : cl##_class->init (Object_Create(cl##_class), ##args)))
-#define methodCall(obj, m, args...) ((obj)->m(obj, ##args))
-#define methodDecl(type, name, args...) (* name) (struct type##_s *self, ##args)
+#define superInit(cl, obj, args...) (cl##_class->parent->init ((obj) , ## args))
+#define new(cl, args...) ((void *) (cl##_class->abstract ? NULL : retain(cl##_class->init (Object_Create(cl##_class) , ## args))))
+#define newFloat(cl, args...) ((void *) (cl##_class->abstract ? NULL : cl##_class->init (Object_Create(cl##_class) , ## args)))
+#define methodCall(obj, m, args...) ((obj)->m(obj , ## args))
+#define methodDecl(type, name, args...) (* name) (struct type##_s *self , ## args)
 #else
 #define superInit(cl, obj, ...) (cl##_class->parent->init ((obj), ##__VA_ARGS__))
 #define new(cl, ...) ((void *) (cl##_class->abstract ? NULL : retain(cl##_class->init (Object_Create(cl##_class), ##__VA_ARGS__))))
@@ -55,6 +55,8 @@
 #define classDecl(name,extends,def) typedef struct name##_s {struct extends##_s base; def} name; extern Class * name##_class
 #define retain(obj) (Object_Retain((Object *)obj))
 #define release(obj) (Object_Release((Object *)obj))
+
+#define instanceOf(obj, cl) (Object_InstaceOf((Object *)obj, cl##_class))
 
 typedef struct Object_s {
 	struct Class_s *cl;
@@ -109,7 +111,7 @@ Object *Object_Create (Class *cl);
 void Object_Delete (Object *obj);
 Object *Object_Retain (Object *obj);
 Object *Object_Release (Object *obj);
-
+qboolean Object_InstanceOf (Object *obj, Class *cl);
 void Object_Init (void);
 
 #endif
