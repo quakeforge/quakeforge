@@ -433,14 +433,3 @@ Netchan_Process (netchan_t *chan)
 
 	return true;
 }
-
-/*
-	Netchan_AckPacket
-
-	Send a nop packet so that any unacked reliable packets get acked.
-*/
-void
-Netchan_AckPacket (netchan_t *chan)
-{
-	Netchan_Transmit (chan, 1, (byte*)"\001");
-}
