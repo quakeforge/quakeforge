@@ -135,7 +135,7 @@ void RotatePointAroundVector (vec3_t dst, const vec3_t axis,
 
 extern	mplane_t	frustum[4];
 
-#ifndef IMPLEMENT_R_CullBox
+#ifndef IMPLEMENT_R_Cull
 extern inline
 #endif
 qboolean
@@ -149,7 +149,7 @@ R_CullBox (const vec3_t mins, const vec3_t maxs)
 	return false;
 }
 
-#ifndef IMPLEMENT_R_CullSphere
+#ifndef IMPLEMENT_R_Cull
 extern inline
 #endif
 qboolean
