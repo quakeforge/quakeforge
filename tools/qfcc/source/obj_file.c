@@ -167,7 +167,7 @@ setup_data (void)
 {
 	qfo_def_t  *def = defs;
 	def_t      *d;
-	qfo_function_t *func = functions;
+	qfo_function_t *func = functions + 1;
 	function_t *f;
 	qfo_reloc_t *reloc = relocs;
 	dstatement_t *st;
@@ -198,13 +198,13 @@ setup_data (void)
 		func->num_parms      = LittleLong (function_parms (f, func->parm_size));
 		func->relocs         = LittleLong (reloc - relocs);
 		func->num_relocs     = LittleLong (count_relocs (f->refs));
-		write_relocs (f->refs, &reloc, -1);
+		write_relocs (f->refs, &reloc, func - functions);
 
 		if (f->scope)
 			for (d = f->scope->head; d; d = d->def_next)
 				write_def (d, def++, &reloc);
 	}
-	write_relocs (pr.relocs, &reloc, -1);
+	write_relocs (pr.relocs, &reloc, G_INT (reloc->ofs));
 	for (st = pr.code->code; st - pr.code->code < pr.code->size; st++) {
 		st->op = LittleLong (st->op);
 		st->a  = LittleLong (st->a);

@@ -54,6 +54,12 @@ static const char rcsid[] =
 #include "reloc.h"
 #include "strpool.h"
 
+typedef struct {
+	qfo_def_t  *defs;
+	int         num_defs;
+	int         max_defs;
+} defgroup_t;
+
 static hashtab_t *extern_defs;
 static hashtab_t *defined_defs;
 
@@ -67,11 +73,7 @@ static struct {
 	int         num_relocs;
 	int         max_relocs;
 } relocs;
-static struct {
-	qfo_def_t  *defs;
-	int         num_defs;
-	int         max_defs;
-} defs;
+static defgroup_t global_defs, local_defs, defs;
 static struct {
 	qfo_function_t *funcs;
 	int         num_funcs;
@@ -86,9 +88,21 @@ static int      code_base;
 static int      data_base;
 static int      far_data_base;
 static int      reloc_base;
-static int      def_base;
 static int      func_base;
 static int      line_base;
+
+static void
+defgroup_add_defs (defgroup_t *defgroup, qfo_def_t *defs, int num_defs)
+{
+	if (defgroup->num_defs + num_defs > defgroup->max_defs) {
+		defgroup->max_defs = RUP (defgroup->num_defs + num_defs, 16384);
+		defgroup->defs = realloc (defgroup->defs,
+								  defgroup->max_defs * sizeof (qfo_def_t));
+	}
+	memcpy (defgroup->defs + defgroup->num_defs, defs,
+			num_defs * sizeof (qfo_def_t));
+	defgroup->num_defs += num_defs;
+}
 
 static const char *
 defs_get_key (void *_def, void *unused)
@@ -134,11 +148,82 @@ add_relocs (qfo_t *qfo)
 				reloc->ofs += code_base;
 				break;
 			case rel_def_op:
-			case rel_def_def:
+				reloc->ofs += data_base;
+				reloc->def += code_base;
+				break;
 			case rel_def_func:
+				reloc->ofs += data_base;
+				reloc->def += func_base;
+				break;
+			case rel_def_def:
 			case rel_def_string:
 				reloc->ofs += data_base;
+				data->data[reloc->ofs].string_var =
+					strpool_addstr (strings,
+							qfo->strings + data->data[reloc->ofs].string_var);
 				break;
+		}
+	}
+}
+
+static void
+fixup_def (qfo_t *qfo, qfo_def_t *def, int def_num)
+{
+	qfo_def_t  *d;
+	int         i;
+	qfo_reloc_t *reloc;
+	qfo_function_t *func;
+
+	def->full_type = strpool_addstr (type_strings,
+									 qfo->types + def->full_type);
+	def->name = strpool_addstr (strings, qfo->strings + def->name);
+	def->relocs += reloc_base;
+	for (i = 0, reloc = relocs.relocs + def->relocs;
+		 i < def->num_relocs;
+		 i++, reloc++)
+		reloc->def = def_num;
+	def->file = strpool_addstr (strings, qfo->strings + def->file);
+
+	if ((def->flags & (QFOD_LOCAL | QFOD_ABSOLUTE)))
+		return;
+
+	if (def->flags & QFOD_EXTERNAL) {
+		if ((d = Hash_Find (defined_defs, strings->strings + def->name))) {
+			def->ofs = d->ofs;
+			def->flags = d->flags;
+		} else {
+			Hash_Add (extern_defs, def);
+		}
+	} else {
+		def->ofs += data_base;
+		if (def->flags & QFOD_GLOBAL) {
+			if ((d = Hash_Find (defined_defs,
+								strings->strings + def->name))) {
+				pr.source_file = def->file;
+				pr.source_line = def->line;
+				error (0, "%s redefined", strings->strings + def->name);
+			}
+		}
+		if (def->flags & QFOD_GLOBAL) {
+			while ((d = Hash_Find (extern_defs,
+								   strings->strings + def->name))) {
+				Hash_Del (extern_defs, strings->strings + d->name);
+				if (d->full_type != def->full_type) {
+					pr.source_file = def->file;
+					pr.source_line = def->line;
+					error (0, "type mismatch `%s' `%s'",
+						   type_strings->strings + def->full_type,
+						   type_strings->strings + d->full_type);
+					continue;
+				}
+				d->ofs = def->ofs;
+				d->flags = def->flags;
+			}
+			Hash_Add (defined_defs, def);
+		}
+		if (def->basic_type == ev_func && (def->flags & QFOD_INITIALIZED)) {
+			func = funcs.funcs + data->data[def->ofs].func_var;
+			func->def = def_num;
 		}
 	}
 }
@@ -146,62 +231,19 @@ add_relocs (qfo_t *qfo)
 static void
 add_defs (qfo_t *qfo)
 {
-	int         i;
+	qfo_def_t  *s, *e;
 
-	if (defs.num_defs + qfo->num_defs > defs.max_defs) {
-		defs.max_defs = RUP (defs.num_defs + qfo->num_defs, 16384);
-		defs.defs = realloc (defs.defs, defs.max_defs * sizeof (qfo_def_t));
-	}
-	defs.num_defs += qfo->num_defs;
-	memcpy (defs.defs + def_base, qfo->defs,
-			qfo->num_defs * sizeof (qfo_def_t));
-	for (i = def_base; i < defs.num_defs; i++) {
-		qfo_def_t  *def = defs.defs + i;
+	for (s = e = qfo->defs; s - qfo->defs < qfo->num_defs; s = e) {
+		int         def_num = global_defs.num_defs;
 		qfo_def_t  *d;
-
-		def->full_type = strpool_addstr (type_strings,
-										 qfo->types + def->full_type);
-		def->name = strpool_addstr (strings, qfo->strings + def->name);
-		if (!(def->flags & (QFOD_LOCAL | QFOD_EXTERNAL | QFOD_ABSOLUTE))) {
-			def->ofs += data_base;
-		}
-		def->relocs += reloc_base;
-		def->file = strpool_addstr (strings, qfo->strings + def->file);
-
-		if (def->flags & QFOD_EXTERNAL) {
-			if ((d = Hash_Find (defined_defs, strings->strings + def->name))) {
-				def->ofs = d->ofs;
-				def->flags = d->flags;
-			} else {
-				Hash_Add (extern_defs, def);
-			}
-		} else {
-			if (def->flags & QFOD_GLOBAL) {
-				if ((d = Hash_Find (defined_defs,
-									strings->strings + def->name))) {
-					pr.source_file = def->file;
-					pr.source_line = def->line;
-					error (0, "%s redefined", strings->strings + def->name);
-				}
-			}
-			if (def->flags & QFOD_GLOBAL) {
-				while ((d = Hash_Find (extern_defs,
-									   strings->strings + def->name))) {
-					Hash_Del (extern_defs, strings->strings + d->name);
-					if (d->full_type != def->full_type) {
-						pr.source_file = def->file;
-						pr.source_line = def->line;
-						error (0, "type mismatch `%s' `%s'",
-							   type_strings->strings + def->full_type,
-							   type_strings->strings + d->full_type);
-						continue;
-					}
-					d->ofs = def->ofs;
-					d->flags = def->flags;
-				}
-				Hash_Add (defined_defs, def);
-			}
-		}
+		while (e - qfo->defs < qfo->num_defs && !(e->flags & QFOD_LOCAL))
+			e++;
+		defgroup_add_defs (&global_defs, s, e - s);
+		for (d = global_defs.defs + def_num; def_num < global_defs.num_defs;
+			 d++, def_num++)
+			fixup_def (qfo, d, def_num);
+		while (e - qfo->defs < qfo->num_defs && (e->flags & QFOD_LOCAL))
+			e++;
 	}
 }
 
@@ -224,10 +266,16 @@ add_funcs (qfo_t *qfo)
 		func->file = strpool_addstr (strings, qfo->strings + func->file);
 		if (func->code)
 			func->code += code_base;
-		if (func->def)
-			func->def += def_base;
-		if (func->local_defs)
-			func->local_defs += def_base;
+		if (func->num_local_defs) {
+			int         def_num = local_defs.num_defs;
+			qfo_def_t  *d;
+			defgroup_add_defs (&local_defs, qfo->defs + func->local_defs,
+							   func->num_local_defs);
+			func->local_defs = def_num;
+			for (d = local_defs.defs + def_num; def_num < local_defs.num_defs;
+				 d++, def_num++)
+				fixup_def (qfo, d, def_num);
+		}
 		if (func->line_info)
 			func->line_info += line_base;
 		func->relocs += reloc_base;
@@ -260,47 +308,82 @@ static void
 fixup_relocs (qfo_t *qfo)
 {
 	qfo_reloc_t *reloc;
+	qfo_def_t  *def;
 
-	for (reloc = relocs.relocs + reloc_base;
+	for (reloc = relocs.relocs;
 		 reloc - relocs.relocs < relocs.num_relocs;
 		 reloc++) {
-		if (reloc->def != -1
-			&& ((defs.defs[reloc->def].flags & QFOD_EXTERNAL)
-				|| (defs.defs[reloc->def].flags & QFOD_LOCAL)
-				|| (defs.defs[reloc->def].flags & QFOD_ABSOLUTE)))
-			continue;
+		def = 0;
+		switch ((reloc_type)reloc->type) {
+			case rel_none:
+				break;
+
+			case rel_op_a_def:
+			case rel_op_b_def:
+			case rel_op_c_def:
+			case rel_def_def:
+				def = defs.defs + reloc->def;
+				if (def->flags & (QFOD_EXTERNAL | QFOD_LOCAL | QFOD_ABSOLUTE))
+					continue;
+				break;
+
+			case rel_def_op:
+			case rel_op_a_op:
+			case rel_op_b_op:
+			case rel_op_c_op:
+			case rel_def_func:
+			case rel_def_string:
+				break;
+		}
 		switch ((reloc_type)reloc->type) {
 			case rel_none:
 				break;
 			case rel_op_a_def:
-				code->code[reloc->ofs].a += data_base;
+				code->code[reloc->ofs].a = def->ofs;
 				break;
 			case rel_op_b_def:
-				code->code[reloc->ofs].b += data_base;
+				code->code[reloc->ofs].b = def->ofs;
 				break;
 			case rel_op_c_def:
-				code->code[reloc->ofs].c += data_base;
+				code->code[reloc->ofs].c = def->ofs;
 				break;
 			case rel_op_a_op:
 			case rel_op_b_op:
 			case rel_op_c_op:
 				break;
 			case rel_def_op:
-				data->data[reloc->ofs].integer_var += code_base;
+				data->data[reloc->ofs].integer_var = reloc->def;
 				break;
 			case rel_def_def:
-				data->data[reloc->ofs].integer_var += data_base;
+				data->data[reloc->ofs].integer_var = def->ofs;
 				break;
 			case rel_def_func:
-				data->data[reloc->ofs].integer_var += func_base;
+				data->data[reloc->ofs].integer_var = reloc->def;
 				break;
 			case rel_def_string:
-				data->data[reloc->ofs].string_var =
-					strpool_addstr (strings,
-							qfo->strings + data->data[reloc->ofs].string_var);
-				reloc->ofs += data_base;
 				break;
 		}
+	}
+}
+
+static void
+merge_defgroups (void)
+{
+	int         local_base, i, j;
+	qfo_def_t  *def;
+	qfo_function_t *func;
+
+	defgroup_add_defs (&defs, global_defs.defs, global_defs.num_defs);
+	local_base = defs.num_defs;
+	defgroup_add_defs (&defs, local_defs.defs, local_defs.num_defs);
+	for (i = 0; i < local_defs.num_defs; i++) {
+		def = local_defs.defs + i;
+		for (j = def->relocs; j < def->relocs + def->num_relocs; j++)
+			relocs.relocs[j].def += local_base;
+	}
+	for (i = 0; i < funcs.num_funcs; i++) {
+		func = funcs.funcs + i;
+		func->local_defs += local_base;
 	}
 }
 
@@ -333,7 +416,6 @@ linker_add_object_file (const char *filename)
 	data_base = data->size;
 	far_data_base = far_data->size;
 	reloc_base = relocs.num_relocs;
-	def_base = defs.num_defs;
 	func_base = funcs.num_funcs;
 	line_base = lines.num_lines;
 
@@ -342,11 +424,9 @@ linker_add_object_file (const char *filename)
 	defspace_adddata (far_data, qfo->far_data, qfo->far_data_size);
 	add_strings (qfo);
 	add_relocs (qfo);
-	add_defs (qfo);
 	add_funcs (qfo);
+	add_defs (qfo);
 	add_lines (qfo);
-
-	fixup_relocs (qfo);
 	
 	qfo_delete (qfo);
 }
@@ -367,6 +447,10 @@ linker_finish (void)
 		if (pr.error_count)
 			return 0;
 	}
+
+	merge_defgroups ();
+
+	fixup_relocs (qfo);
 
 	qfo = qfo_new ();
 	qfo_add_code (qfo, code->code, code->size);
