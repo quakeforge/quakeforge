@@ -42,6 +42,7 @@ static __attribute__ ((unused)) const char rcsid[] =
 #endif
 
 #include "QF/cvar.h"
+#include "QF/dstring.h"
 #include "QF/hash.h"
 #include "QF/pr_obj.h"
 #include "QF/progs.h"
@@ -122,6 +123,18 @@ dump_ivars (progs_t *pr, pointer_t _ivars)
 					PR_GetString (pr, ivars->ivar_list[i].ivar_type),
 					ivars->ivar_list[i].ivar_offset);
 	}
+}
+
+static int
+object_is_instance (progs_t *pr, pr_id_t *object)
+{
+	pr_class_t *class;
+
+	if (object) {
+		class = &G_STRUCT (pr, pr_class_t, object->class_pointer);
+		return PR_CLS_ISCLASS (class);
+	}
+	return 0;
 }
 
 static string_t
@@ -312,24 +325,41 @@ obj_msg_lookup_super (progs_t *pr, pr_super_t *super, pr_sel_t *op)
 }
 
 static void
+obj_verror (progs_t *pr, pr_id_t *object, int code, const char *fmt, int count,
+			pr_type_t *args)
+{
+	pr_type_t **arglist = (pr_type_t **) alloca (count * sizeof (pr_type_t *));
+	dstring_t  *dstr = dstring_newstr ();
+	int         i;
+
+	for (i = 0; i < count; i++)
+		arglist[i] = args + i * 3;
+	PR_Sprintf (pr, dstr, "obj_verror", fmt, count, arglist);
+	PR_RunError (pr, "%s", dstr->str);
+}
+
+static void
 pr_obj_error (progs_t *pr)
 {
-	//pr_id_t    *object = &P_STRUCT (pr, pr_id_t, 0);
-	//int         code = P_INT (pr, 1);
-	//const char *fmt = P_GSTRING (pr, 2);
-	//...
-	//XXX
-	PR_RunError (pr, "%s, not implemented", __FUNCTION__);
+	pr_id_t    *object = &P_STRUCT (pr, pr_id_t, 0);
+	int         code = P_INT (pr, 1);
+	const char *fmt = P_GSTRING (pr, 2);
+	int         count = pr->pr_argc - 3;
+	pr_type_t  *args = pr->pr_params[3];
+	
+	obj_verror (pr, object, code, fmt, count, args);
 }
 
 static void
 pr_obj_verror (progs_t *pr)
 {
-	//pr_id_t    *object = &P_STRUCT (pr, pr_id_t, 0);
-	//int         code = P_INT (pr, 1);
-	//const char *fmt = P_GSTRING (pr, 2);
-	//XXX
-	PR_RunError (pr, "%s, not implemented", __FUNCTION__);
+	pr_id_t    *object = &P_STRUCT (pr, pr_id_t, 0);
+	int         code = P_INT (pr, 1);
+	const char *fmt = P_GSTRING (pr, 2);
+	pr_va_list_t *val = (pr_va_list_t *) pr->pr_params[3];
+
+	obj_verror (pr, object, code, fmt, val->count,
+				&G_STRUCT (pr, pr_type_t, val->list));
 }
 
 static void
@@ -838,14 +868,8 @@ static void
 pr_object_is_instance (progs_t *pr)
 {
 	pr_id_t    *object = &P_STRUCT (pr, pr_id_t, 0);
-	pr_class_t *class;
 
-	if (object) {
-		class = &G_STRUCT (pr, pr_class_t, object->class_pointer);
-		R_INT (pr) = PR_CLS_ISCLASS (class);
-		return;
-	}
-	R_INT (pr) = 0;
+	R_INT (pr) = object_is_instance (pr, object);
 }
 
 static void
@@ -871,11 +895,16 @@ pr__i_Object__hash (progs_t *pr)
 static void
 pr__i_Object_error_error_ (progs_t *pr)
 {
-	//pr_id_t    *object = &P_STRUCT (pr, pr_id_t, 0);
-	//const char *fmt = P_GSTRING (pr, 2);
-	//...
-	//XXX
-	PR_RunError (pr, "%s, not implemented", __FUNCTION__);
+	pr_id_t    *self = &P_STRUCT (pr, pr_id_t, 0);
+	const char *fmt = P_GSTRING (pr, 2);
+	dstring_t  *dstr = dstring_new ();
+	int         count = pr->pr_argc - 3;
+	pr_type_t  *args = pr->pr_params[3];
+	
+	dsprintf (dstr, "error: %s (%s)\n%s",
+			  PR_GetString (pr, object_get_class_name (pr, self)),
+			  object_is_instance (pr, self) ? "instance" : "class", fmt);
+	obj_verror (pr, self, 0, dstr->str, count, args);
 }
 
 static void
