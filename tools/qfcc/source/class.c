@@ -330,10 +330,14 @@ class_def (class_t *class)
 	def = PR_GetDef (class->type,
 					 va ("_OBJ_CLASS_POINTER_%s", class->class_name),
 					 0, &numpr_globals);
+	if (def->initialized)
+		return def;
 	if (class->def) {	//FIXME need externals?
-		def->initialized = def->constant = 1;
 		G_INT (def->ofs) = class->def->ofs;
+	} else {
+		warning (0, "%s not implemented", class->class_name);
 	}
+	def->initialized = def->constant = 1;
 	return def;
 }
 
