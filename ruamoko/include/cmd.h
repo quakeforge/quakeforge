@@ -5,6 +5,5 @@
 @extern integer () Cmd_Argc;
 @extern string (integer arg) Cmd_Argv;
 @extern string (integer arg) Cmd_Args;
-@extern void (string value) Cmd_Return;
 
 #endif//__ruamoko_cmd_h
