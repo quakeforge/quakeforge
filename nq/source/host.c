@@ -559,27 +559,14 @@ Host_FilterTime (float time)
 	return true;
 }
 
-/*
-	Host_GetConsoleCommands
-
-	Add them exactly as if they had been typed at the console
-*/
-static void
-Host_GetConsoleCommands (void)
-{
-	Con_ProcessInput ();
-}
-
 void
 Host_ServerFrame (void)
 {
-	// run the world state  
 	*sv_globals.frametime = host_frametime;
 
 	// set the time and clear the general datagram
 	SV_ClearDatagram ();
 
-	// check for new clients
 	SV_CheckForNewClients ();
 
 	// read client messages
@@ -596,63 +583,11 @@ Host_ServerFrame (void)
 	SV_SendClientMessages ();
 }
 
-/*
-	Host_Frame
-
-	Runs all active servers
-*/
 static void
-_Host_Frame (float time)
+Host_ClientFrame (void)
 {
 	static double time1 = 0, time2 = 0, time3 = 0;
-	int           pass1, pass2, pass3;
-
-	if (setjmp (host_abortserver))
-		return;							// something bad happened, or the
-	// server disconnected
-
-	// keep the random time dependent
-	rand ();
-
-	// decide the simulation time
-	if (!Host_FilterTime (time))
-		return;							// don't run too fast, or packets
-										// will flood out
-
-	if (cls.state != ca_dedicated)
-		IN_ProcessEvents ();
-
-	// process gib threads
-
-	// check for commands typed to the host
-	Host_GetConsoleCommands ();
-
-	GIB_Thread_Execute ();
-
-	// process console commands
-	cmd_source = src_command;
-	Cbuf_Execute_Stack (host_cbuf);
-
-	NET_Poll ();
-
-	// if running the server locally, make intentions now
-	if (sv.active)
-		CL_SendCmd ();
-
-//-------------------
-//
-// server operations
-//
-//-------------------
-
-	if (sv.active)
-		Host_ServerFrame ();
-
-//-------------------
-//
-// client operations
-//
-//-------------------
+	int         pass1, pass2, pass3;
 
 	// if running the server remotely, send intentions now after
 	// the incoming messages have been read
@@ -662,9 +597,9 @@ _Host_Frame (float time)
 	host_time += host_frametime;
 
 	// fetch results from server
-	if (cls.state == ca_connected) {
+	if (cls.state == ca_connected)
 		CL_ReadFromServer ();
-	}
+
 	// update video
 	if (host_speeds->int_val)
 		time1 = Sys_DoubleTime ();
@@ -700,6 +635,49 @@ _Host_Frame (float time)
 		Con_Printf ("%3i tot %3i server %3i gfx %3i snd\n",
 					pass1 + pass2 + pass3, pass1, pass2, pass3);
 	}
+}
+
+/*
+	Host_Frame
+
+	Runs all active servers
+*/
+static void
+_Host_Frame (float time)
+{
+	if (setjmp (host_abortserver))
+		return;							// something bad happened, or the
+										// server disconnected
+
+
+	rand ();							// keep the random time dependent
+
+	// decide the simulation time
+	if (!Host_FilterTime (time))
+		return;							// don't run too fast, or packets
+										// will flood out
+
+	if (cls.state != ca_dedicated)
+		IN_ProcessEvents ();
+
+	if (cls.state == ca_dedicated)
+		Con_ProcessInput ();
+
+	GIB_Thread_Execute ();
+	cmd_source = src_command;
+	Cbuf_Execute_Stack (host_cbuf);
+
+	NET_Poll ();
+
+	if (sv.active) {
+		CL_SendCmd ();
+		Host_ServerFrame ();
+	}
+
+	if (cls.state != ca_dedicated)
+		Host_ClientFrame ();
+	else
+		host_time += host_frametime;	//FIXME is this needed? vcr stuff
 
 	host_framecount++;
 	fps_count++;
