@@ -1022,7 +1022,7 @@ SV_Record (char *name)
 
 		info = player->userinfo ? Info_MakeString (player->userinfo,
 												   make_info_string_filter)
-			: "";
+								: "";
 
 		MSG_WriteByte (&buf, svc_updateuserinfo);
 		MSG_WriteByte (&buf, i);
