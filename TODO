@@ -91,9 +91,9 @@ o         |       +--- mdl        Quake model read/write
 o         |       +--- md2        Quake2 model read/write [would be nice]
 o         |       +--- qfm        QuakeForge native model format
 o         |       \--- textures   PCX, QFS (multi-skins), TGA
-o         +--- gamecode           Progs interpreter (core)
-o         |       +--- client     Client bindings
-o         |       \--- server     Server bindings
+o         +--- gamecode           Gamecode
+o         |       +--- engine     Progs interpreter (core)
+o         |       \--- builtins   Progs utility builtins
 o         +--- network            Network code (like netchan, but sane)
 o         |       +--- transport  Low-level protocols (UDP, TCP+UDP, etc.)
 o         |       +--- netquake   Quake's wire protocol
