@@ -32,6 +32,14 @@ static const char rcsid[] =
 # include "config.h"
 #endif
 
+#ifdef HAVE_STRING_H
+# include <string.h>
+#endif
+
+#ifdef HAVE_STRINGS_H
+# include <strings.h>
+#endif
+
 #include <getopt.h>
 #include <errno.h>
 #include <string.h>
@@ -61,7 +69,7 @@ static void
 usage (int status)
 {
 	printf ("%s - QuakeForge Packfile tool\n", this_program);
-	printf ("Usage: %s <command> [options] ARCHIVE FILE [FILE ...]\n",
+	printf ("Usage: %s <command> [options] ARCHIVE [FILE...]\n",
 			this_program);
 
 	printf ("Commands:\n"
@@ -72,6 +80,7 @@ usage (int status)
 			"    -V, --version             Output version information and exit\n\n");
 
 	printf ("Options:\n"
+			"    -f, --file ARCHIVE        Use ARCHIVE for archive filename\n"
 			"    -p, --pad                 Pad file space to a 32-bit boundary\n"
 			"    -q, --quiet               Inhibit usual output\n"
 			"    -v, --verbose             Display more output than usual\n");
@@ -93,7 +102,7 @@ decode_args (int argc, char **argv)
 										 "x"	// extract archive contents
 										 "h"	// show help
 										 "V"	// show version
-//										 "f:"	// filename
+										 "f:"	// filename
 										 "p"	// pad
 										 "q"	// quiet
 										 "v"	// verbose
@@ -115,6 +124,9 @@ decode_args (int argc, char **argv)
 			case 'x':					// extract
 				options.mode = mo_extract;
 				break;
+			case 'f':					// set filename
+				options.packfile = strdup (optarg);
+				break;
 			case 'q':					// lower verbosity
 				options.verbosity--;
 				break;
@@ -129,7 +141,7 @@ decode_args (int argc, char **argv)
 		}
 	}
 
-	if (argv[optind] && *(argv[optind]))
+	if ((!options.packfile) && argv[optind] && *(argv[optind]))
 		options.packfile = strdup (argv[optind++]);
 
 	return optind;
@@ -146,9 +158,9 @@ main (int argc, char **argv)
 	decode_args (argc, argv);
 
 	if (!options.packfile) {
-		fprintf (stderr, "%s: no archive file specified, giving up.\n",
+		fprintf (stderr, "%s: no archive file specified.\n",
 						 this_program);
-		return 1;
+		usage (1);
 	}
 
 	switch (options.mode) {
@@ -198,9 +210,9 @@ main (int argc, char **argv)
 			pack_close (pack);
 			break;
 		default:
-			fprintf (stderr, "%s: No command given, bailing out.\n",
+			fprintf (stderr, "%s: No command given.\n",
 							 this_program);
-			return 1;
+			usage (1);
 	}
 	return 0;
 }

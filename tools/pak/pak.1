@@ -34,7 +34,7 @@
 pak \- The QuakeForge Packfile Tool
 .SH SYNOPSIS
 .B pak
-<\fIcommand\fP> [\fIoption\fP]... \fIARCHIVE\fP \fIFILE\fP...
+<\fBcommand\fP> [\fBoptions\fP] \fIARCHIVE\fP \fIFILE\fP...
 .SH DESCRIPTION
 \fBpak\fP is a utility for managing pack (*.pak) archives. The format used is
 compatible with Quake and Quake II. Pak archives are a convenient way to store
@@ -45,7 +45,7 @@ internally.
 used at a time.
 .TP
 .B \-c, \-\-create
-Create an archive. Overwrites any contents.
+Create an archive. Overwrites any contents the archive may have had.
 .TP
 .B \-t, \-\-test
 Test an archive for valid formatting.
@@ -62,18 +62,37 @@ Show the version of pak.
 .SH OPTIONS
 \fBpak\fP takes the following arguments as options.
 .TP
+.B \-f, \-\-file ARCHIVE
+Use ARCHIVE as the archive filename, instead of the first non-option argument.
+This option is provided for compatibility with older versions of \fBpak\fP.
+.TP
 .B \-p, \-\-pad
 Can be useful when creating an archive. File space is padded to a 4\-byte
-boundary, assisting in the speed of loading files from the archive.
+boundary, assisting in the speed of loading files from the archive. The file
+data itself is not changed.
 .TP
 .B \-q, \-\-quiet
 Inhibit some of pak's normal output.
 .TP
 .B \-v, \-\-verbose
 Display more output than usual.
-.SH "SEE ALSO"
-.BR quakeforge (1)
+.SH "EXIT STATUS"
+\fBpak\fP returns a zero exit status when it has completed a command
+successfully (without error). Otherwise, it returns a non-zero exit status.
+.SH BUGS
+.PP
+The program does not currently handle compression or decompression. This
+is planned for a future version.
+.PP
+The program does not currently handle extraction of individual files inside an
+archive. This is planned for a future version.
+.PP
+The program cannot modify an archive once it has been created.
 .SH AUTHORS
-\fBpak\fP was written by Bill Currie <taniwha@quakeforge.net> for QuakeForge.
-Jeff Teunissen <deek@quakeforge.net> has also work on it, mostly in the
-interface.
+Bill Currie (taniwha@quakeforge.net) wrote most of the program.
+.PP
+Jeff Teunissen (deek@quakeforge.net) wrote the command-line interface and the
+documentation.
+.SH "SEE ALSO"
+.BR quakeforge (1),
+.BR qfcc (1)
