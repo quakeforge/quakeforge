@@ -268,7 +268,7 @@ typedef struct def_s
 
 #define	MAX_NAME		64		// chars long
 
-#define	MAX_REGS		16384
+#define	MAX_REGS		65536
 
 //=============================================================================
 
@@ -413,9 +413,9 @@ extern	def_t	def_ret, def_parms[MAX_PARMS];
 //=============================================================================
 
 #define	MAX_STRINGS		500000
-#define	MAX_GLOBALS		16384
+#define	MAX_GLOBALS		65536
 #define	MAX_FIELDS		1024
-#define	MAX_STATEMENTS	65536
+#define	MAX_STATEMENTS	131072
 #define	MAX_FUNCTIONS	8192
 
 #define	MAX_SOUNDS		1024
