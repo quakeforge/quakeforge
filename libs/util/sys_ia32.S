@@ -85,6 +85,7 @@ F_END(MaskExceptions)
 
 #if 0
 F_BEGIN(unmaskexceptions)
+	got_base(2)
 	fnstenv	got_var(fpenv)
 	andl		$0xFFFFFFE0,got_var(fpenv)
 	fldenv	got_var(fpenv)
@@ -106,31 +107,40 @@ pushed_cw:	.long	0
 	.text
 
 F_BEGIN(Sys_LowFPPrecision)
+	got_base(3)
 	fldcw	got_var(single_cw)
 
 	ret
 F_END(Sys_LowFPPrecision)
 
+
 F_BEGIN(Sys_HighFPPrecision)
+	got_base(4)
 	fldcw	got_var(full_cw)
 
 	ret
 F_END(Sys_HighFPPrecision)
 
+
 F_BEGIN(Sys_PushFPCW_SetHigh)
+	got_base(5)
 	fnstcw	got_var(pushed_cw)
 	fldcw	got_var(full_cw)
 
 	ret
 F_END(Sys_PushFPCW_SetHigh)
 
+
 F_BEGIN(Sys_PopFPCW)
+	got_base(6)
 	fldcw	got_var(pushed_cw)
 
 	ret
 F_END(Sys_PopFPCW)
 
+
 F_BEGIN(Sys_SetFPCW)
+	got_base(7)
 	fnstcw	got_var(cw)
 	movl	got_var(cw),%eax
 	andb	$0xF0,%ah
