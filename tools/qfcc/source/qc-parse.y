@@ -516,7 +516,7 @@ statement_block
 			current_scope = current_scope->parent;
 			*current_scope->tail = defs;
 			while (*current_scope->tail) {
-				current_scope->tail = &(*current_scope->tail)->next;
+				current_scope->tail = &(*current_scope->tail)->def_next;
 				current_scope->num_defs++;
 			}
 			$$ = $3;

@@ -342,7 +342,7 @@ finish_compilation (void)
 	}
 
 	for (def = pr.scope->head; def; def = def->def_next) {
-		if (def->scope || def->absolute)
+		if (def->scope->type < sc_params || def->absolute)
 			continue;
 		relocate_refs (def->refs, def->ofs);
 	}
