@@ -192,7 +192,7 @@ Sys_Print (FILE *stream, const char *fmt, va_list args)
 
 #ifdef WIN32
 	if (stream == stderr)
-		MessageBox (NULL, string, "Error", 0 /* MB_OK */ );
+		MessageBox (NULL, msg, "Error", 0 /* MB_OK */ );
 #endif
 
 	/* translate to ASCII instead of printing [xx]  --KB */
