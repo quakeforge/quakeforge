@@ -20,6 +20,7 @@ int reserved_edicts;
 void BI_Init (progs_t *progs);
 
 extern char *type_name[];
+extern cvar_t *developer;
 
 extern float *read_result; //FIXME: eww
 
@@ -43,7 +44,7 @@ main ()
 	Cvar_Get ("fs_basegame", ".", 0, 0, 0);
 	Cvar_Get ("fs_userpath", ".", 0, 0, 0);
 	Cvar_Get ("fs_sharepath", ".", 0, 0, 0);
-	Cvar_Get ("developer", "1", 0, 0, 0);
+	developer = Cvar_Get ("developer", "1", 0, 0, 0);
 
 	PR_Init_Cvars ();
 	COM_Filesystem_Init_Cvars ();
@@ -64,6 +65,7 @@ main ()
 		progs.progs = Hunk_AllocName (len, "qwaq.dat");
 		fread (progs.progs, 1, len, f);
 		fclose (f);
+		com_filesize = len;
 		if (progs.progs)
 			PR_LoadProgs (&progs, 0);
 	}

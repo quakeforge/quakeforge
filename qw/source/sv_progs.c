@@ -147,8 +147,6 @@ SV_LoadProgs (void)
 	PR_LoadProgs (&sv_pr_state, sv_progs->string);
 	if (!sv_pr_state.progs)
 		SV_Error ("SV_LoadProgs: couldn't load %s", sv_progs->string);
-	if (sv_pr_state.progs->crc != PROGHEADER_CRC)
-		SV_Error ("You must have the qwprogs.dat from QuakeWorld installed");
 	// progs engine needs these globals anyway
 	sv_globals.self = sv_pr_state.globals.self;
 	sv_globals.time = sv_pr_state.globals.time;

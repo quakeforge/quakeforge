@@ -230,7 +230,7 @@ PR_ReuseConstant (expr_t *expr, def_t *def)
 		default:
 			abort ();
 	}
-	cn = (def_t*) Hash_Find (tab, rep);
+	cn = (def_t*) Hash_Find (tab, r);
 	if (cn) {
 		if (def) {
 			PR_FreeLocation (def);
