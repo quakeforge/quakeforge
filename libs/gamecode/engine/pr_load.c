@@ -255,8 +255,10 @@ PR_LoadProgs (progs_t *pr, const char *progsname, int edicts, int zone)
 	COM_FOpenFile (progsname, &file);
 
 	pr->progs_name = progsname;
-	if (file)
+	if (file) {
 		PR_LoadProgsFile (pr, file, com_filesize, edicts, zone);
+		Qclose (file);
+	}
 	if (!pr->progs)
 		return;
 

@@ -700,7 +700,7 @@ COM_LoadGameDirectory (const char *dir)
 
 	dir_ptr = opendir (dir);
 	if (!dir_ptr)
-		return;
+		goto COM_LoadGameDirectory_free;
 
 	while ((dirent = readdir (dir_ptr))) {
 		if (!fnmatch ("*.pak", dirent->d_name, 0)) {

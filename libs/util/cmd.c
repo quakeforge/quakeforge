@@ -129,18 +129,7 @@ Cmd_LocalFree (void *ele, void *ptr)
 {
 	dstring_delete (((cmd_localvar_t *)ele)->key);
 	dstring_delete (((cmd_localvar_t *)ele)->value);
-}
-
-unsigned long
-Cmd_LocalGetHash (void *ele, void *ptr)
-{
-	return (unsigned long) ele;
-}
-
-int
-Cmd_LocalCompare (void *ele1, void *ele2, void *ptr)
-{
-	return !strcmp(((cmd_localvar_t *)ele1)->key->str, ((cmd_localvar_t *)ele2)->key->str);
+	free (ele);
 }
 
 cmd_buffer_t	*
@@ -153,7 +142,6 @@ Cmd_NewBuffer (void)
 	new->line = dstring_newstr ();
 	new->realline = dstring_newstr ();
 	new->locals = Hash_NewTable (1021, Cmd_LocalGetKey, Cmd_LocalFree, 0);
-	Hash_SetHashCompare (new->locals, Cmd_LocalGetHash, Cmd_LocalCompare);
 	return new;
 }
 
@@ -165,9 +153,16 @@ Cmd_FreeBuffer (cmd_buffer_t *del)
 	dstring_delete (del->buffer);
 	dstring_delete (del->line);
 	dstring_delete (del->realline);
-	for (i = 0; i < del->maxargc; i++)
-		if (del->argv[i])
-			dstring_delete(del->argv[i]);
+	if (del->maxargc) {
+		for (i = 0; i < del->maxargc; i++)
+			if (del->argv[i])
+				dstring_delete(del->argv[i]);
+		free(del->argv);
+	}
+	if (del->argspace)
+		free(del->argspace);
+	if (del->args)
+		free(del->args);
 	Hash_DelTable(del->locals);
 	free(del);
 }
@@ -903,7 +898,7 @@ Cmd_ProcessVariablesRecursive (dstring_t *dstr, int start)
 			dstring_snip (dstr, start, i-start+1); // Nuke it, even if no match is found
 			if ((lvar = (cmd_localvar_t *)Hash_Find(cmd_activebuffer->locals, varname->str))) { // Local variables get precedence
 				dstring_insertstr (dstr, lvar->value->str, start);
-				n = strlen(lvar->key->str);
+				n = strlen(lvar->value->str);
 			}
 			else if ((cvar = Cvar_FindVar(varname->str))) {// Then cvars
 				dstring_insertstr (dstr, cvar->string, start); // Stick in the value of variable
@@ -946,6 +941,7 @@ Cmd_ProcessMath (dstring_t *dstr)
 	int i, n, paren;
 	float value;
 	char *temp;
+	int ret = 0;
 	
 	statement = dstring_newstr ();
 	
@@ -960,8 +956,10 @@ Cmd_ProcessMath (dstring_t *dstr)
 					if (!paren)
 						break;
 				}
-				else if (!dstr->str[i+n])
-					return -1; // Open parentheses, give up
+				else if (!dstr->str[i+n]) {
+					ret = -1;
+					break;
+				}
 			}
 			/* Copy text between parentheses into a buffer */
 			dstring_clearstr (statement);
@@ -973,12 +971,14 @@ Cmd_ProcessMath (dstring_t *dstr)
 				dstring_insertstr (dstr, temp, i); // Stick in the value
 				i += strlen(temp) - 1;
 			}
-			else
-				return -2; // Math evaluation error
+			else {
+				ret = -2;
+				break; // Math evaluation error
+			}
 		}
 	}
 	dstring_delete (statement);
-	return 0;
+	return ret;
 }
 
 /*

@@ -128,8 +128,10 @@ token *EXP_ParseString (char *str)
 						break;
 					}
 				}
-				if (!(optable[n].func))
+				if (!(optable[n].func)) {
+					EXP_DestroyTokens (chain);
 					return 0;
+				}
 			}
 		}
 	}
@@ -213,6 +215,7 @@ float EXP_Evaluate (char *str)
 	
 	if (res)
 	{
+		EXP_DestroyTokens (chain);
 		EXP_ERROR = res;
 		return 0;
 	}
@@ -268,12 +271,14 @@ exp_error_t EXP_Validate (token *chain)
 				EXP_InsertTokenAfter (cur, new);
 			}
 			else
+				EXP_DestroyTokens (chain);
 				return EXP_E_SYNTAX; /* Operator misuse */
 		}
 		else if (cur->generic.type == TOKEN_NUM && cur->generic.next->generic.type == TOKEN_NUM)
 			return EXP_E_SYNTAX; /* Double number error */
 		else if (cur->generic.type == TOKEN_OPAREN && cur->generic.next->generic.type == TOKEN_CPAREN)
 			return EXP_E_PAREN; /* Pointless parentheses */
+
 	}
 
 	paren--;
