@@ -422,7 +422,7 @@ I_XMMS_f (void)
 	command = Cmd_Argv (1);
 
 	if (strequal (command, "play")) {
-		I_XMMS_Play (((int) atoi (Cmd_Argv (2)) -1), 0);
+		I_XMMS_Play ((atoi (Cmd_Argv (2)) -1), 0);
 		return;
 	}
 
@@ -472,7 +472,7 @@ I_XMMS_f (void)
 	}
 
 	if (strequal (command, "pos")) {
-		I_XMMS_Pos (((int) atoi (Cmd_Argv (2)) -1 ));
+		I_XMMS_Pos (atoi (Cmd_Argv (2)) - 1);
 		return;
 	}
 

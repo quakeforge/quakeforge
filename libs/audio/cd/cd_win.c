@@ -405,12 +405,12 @@ I_CD_f (void)
 	}
 
 	if (strequal (command, "play")) {
-		I_CDAudio_Play ((int) atoi (Cmd_Argv (2)), false);
+		I_CDAudio_Play (atoi (Cmd_Argv (2)), false);
 		return;
 	}
 
 	if (strequal (command, "loop")) {
-		I_CDAudio_Play ((int) atoi (Cmd_Argv (2)), true);
+		I_CDAudio_Play (atoi (Cmd_Argv (2)), true);
 		return;
 	}
 
