@@ -1,12 +1,5 @@
 .vimrc
-ChangeLog
-Config.h*
 Forge.app
 Forge.debug
 Forge.profile
-aclocal.m4
-config.cache
-config.log
-config.status
-configure
 *_obj
