@@ -267,13 +267,15 @@ WriteData (int crc)
 //	PrintGlobals ();
 	strofs = (strofs + 3) & ~3;
 
-	printf ("%6i strofs\n", strofs);
-	printf ("%6i statements\n", numstatements);
-	printf ("%6i functions\n", numfunctions);
-	printf ("%6i globaldefs\n", numglobaldefs);
-	printf ("%6i locals size\n", num_locals);
-	printf ("%6i fielddefs\n", numfielddefs);
-	printf ("%6i pr_globals\n", numpr_globals);
+	if (options.quiet < 2) {
+		printf ("%6i strofs\n", strofs);
+		printf ("%6i statements\n", numstatements);
+		printf ("%6i functions\n", numfunctions);
+		printf ("%6i globaldefs\n", numglobaldefs);
+		printf ("%6i locals size\n", num_locals);
+		printf ("%6i fielddefs\n", numfielddefs);
+		printf ("%6i pr_globals\n", numpr_globals);
+	}
 
 	h = SafeOpenWrite (destfile);
 	SafeWrite (h, &progs, sizeof (progs));
@@ -330,7 +332,8 @@ WriteData (int crc)
 
 	SafeWrite (h, pr_globals, numpr_globals * 4);
 
-	printf ("%6i TOTAL SIZE\n", (int) ftell (h));
+	if (options.quiet < 2)
+		printf ("%6i TOTAL SIZE\n", (int) ftell (h));
 
 	progs.entityfields = pr.size_fields;
 
@@ -694,7 +697,8 @@ PR_WriteProgdefs (char *filename)
 	unsigned short	crc;
 	int 			c;
 
-	printf ("writing %s\n", filename);
+	if (!options.quiet)
+		printf ("writing %s\n", filename);
 	f = fopen (filename, "w");
 
 	// print global vars until the first field is defined
@@ -873,6 +877,14 @@ Options: \n\
 		}
 	}
 
+	if (CheckParm ("--quiet=2")) { //FIXME: getopt, need getopt </#5>
+		options.quiet = 2;
+	}
+
+	if (CheckParm ("--quiet")) {
+		options.quiet = 1;
+	}
+
 	if (CheckParm ("--cow")) {
 		options.cow = 1;
 	}
@@ -901,7 +913,8 @@ Options: \n\
 		Error ("No destination filename.  qfcc --help for info.\n");
 
 	strcpy (destfile, com_token);
-	printf ("outputfile: %s\n", destfile);
+	if (!options.quiet)
+		printf ("outputfile: %s\n", destfile);
 
 	pr_dumpasm = false;
 
@@ -917,7 +930,8 @@ Options: \n\
 		//yydebug = 1;
 
 		sprintf (filename, "%s/%s", sourcedir, com_token);
-		printf ("compiling %s\n", filename);
+		if (!options.quiet)
+			printf ("compiling %s\n", filename);
 
 		yyin = fopen (filename, "rt");
 		s_file = ReuseString (filename);
@@ -929,7 +943,8 @@ Options: \n\
 #else
 		char	*src2;
 		sprintf (filename, "%s/%s", sourcedir, com_token);
-		printf ("compiling %s\n", filename);
+		if (!options.quiet)
+			printf ("compiling %s\n", filename);
 		LoadFile (filename, (void *) &src2);
 		if (!PR_CompileFile (src2, filename))
 			return 1;
@@ -949,6 +964,7 @@ Options: \n\
 	WriteFiles ();
 
 	stop = Sys_DoubleTime ();
-	printf ("Compilation time: %.3f seconds.\n", (stop - start));
+	if (options.quiet < 2)
+		printf ("Compilation time: %.3f seconds.\n", (stop - start));
 	return 0;
 }

@@ -26,6 +26,7 @@ progs_src = "progs.src"
 compile_this_file = 1
 keep_newlines = 1
 check_redefines = 1
+verbose = 0
 
 def append_file (filename):
 	global current_file
@@ -101,7 +102,8 @@ def include_file (fname):
 
 def process_source (source_file):
 	global compile_this_file, current_file
-	print source_file
+	if verbose:
+		print source_file
 	compile_this_file = 1
 	includelist = 0
 	current_file = []
@@ -185,6 +187,18 @@ def process_source (source_file):
 			f.write(l + '\n')
 		f.close ()
 
+no_delete = 0
+i = 0
+while i < len (sys.argv):
+	if sys.argv[i] == '--keep':
+		no_delete = 1
+		del sys.argv[i]
+		continue
+	elif sys.argv[i] == '--verbose':
+		verbose = 1;
+		del sys.argv[i]
+		continue
+	i = i + 1
 do_preprogs_src ()
 for s in source_list:
 	if s[0]=='#':
@@ -195,15 +209,10 @@ f.write (progs_dat + '\n\n')
 for l in qcc_list:
 	f.write(l + '\n')
 f.close ()
-no_delete = 0
-i = 0
-while i < len (sys.argv):
-	if sys.argv[i] == '--keep':
-		no_delete = 1
-		del sys.argv[i]
-		continue
-	i = i + 1
-args = ["qfcc"] + sys.argv[1:]
+args = sys.argv[1:]
+if not verbose:
+	args = ["--quiet=2"] + args
+args = ["qfcc"] + args
 if not os.fork():
 	os.execvp ("qfcc", args)
 else:
