@@ -509,6 +509,9 @@ GIB_Parse_Semantic_Preprocess (gib_tree_t * line)
 			|| !line->children->next->next->next->next) {
 			GIB_Parse_Error ("Malformed 'for' statement.", line->start);
 			return line;
+		} else if (line->flags & TREE_L_EMBED) {
+			GIB_Parse_Error ("'for' statements may not be used in embedded commands.", line->start);
+			return line;
 		}
 		// Find last token in line (contains program block)
 		for (tmp = line->children->next->next->next->next; tmp->next;
@@ -552,8 +555,11 @@ GIB_Parse_Semantic_Preprocess (gib_tree_t * line)
 		!(line->children->next->flags & TREE_A_CONCAT) && 
 		line->children->next->delim == ' ' &&
 		!strcmp (line->children->next->str, "=")
-		)
+		) {
+			if (line->flags & TREE_L_EMBED)
+				GIB_Parse_Error ("Assignment may not be used as an embedded command.", line->start);
 			line->type = TREE_T_ASSIGN;
+	}
 	return line;
 }
 
