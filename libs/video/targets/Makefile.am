@@ -5,12 +5,10 @@ lib_LTLIBRARIES =	@VID_TARGETS@
 EXTRA_LTLIBRARIES = libQFjs.la libQFfbdev.la libQFsvga.la libQFx11.la libQFglx.la libQFsdl.la libQFsdl32.la libQFsgl.la libQFtdfx.la libQFwgl.la libQFmgl.la
 
 if ASM_ARCH
-ASM = libasm.la
+noinst_LTLIBRARIES = libasm.la
 else
-ASM =
+noinst_LTLIBRARIES = 
 endif
-
-noinst_LTLIBRARIES = $(ASM)
 
 libasm_la_SOURCES = d_copy.S 
 
@@ -74,7 +72,8 @@ libQFsgl.la: $(libQFsgl_la_OBJECTS) $(libQFsgl_la_DEPENDENCIES)
 	$(LINK) -rpath $(libdir) $(libQFsgl_la_LDFLAGS) $(libQFsgl_la_OBJECTS) $(libQFsgl_la_LIBADD) $(LIBS)
 
 libQFsvga_la_LDFLAGS=	-version-info 1:0:0
-libQFsvga_la_LIBADD=$(ASM)
+libQFsvga_la_LIBADD= libasm.la
+libQFsvga_la_DEPENDENCIES= libasm.la
 libQFsvga_la_SOURCES=	$(in_common_SOURCE) in_svgalib.c vid.c vid_common_sw.c vid_svgalib.c
 libQFsvga.la: $(libQFsvga_la_OBJECTS) $(libQFsvga_la_DEPENDENCIES)
 	$(LINK) -rpath $(libdir) $(libQFsvga_la_LDFLAGS) $(libQFsvga_la_OBJECTS) $(libQFsvga_la_LIBADD) $(LIBS)

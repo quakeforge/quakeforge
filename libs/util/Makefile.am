@@ -8,18 +8,17 @@ else
 fnmatch_SRC =
 endif
 
+noinst_LTLIBRARIES = libasm.la
+
 if ASM_ARCH
-ASM = libasm.la
+libasm_la_SOURCES = math.S
 else
-ASM =
+libasm_la_SOURCES =
 endif
 
-noinst_LTLIBRARIES = $(ASM)
-
-libasm_la_SOURCES = math.S
-
 libQFutil_la_LDFLAGS = -version-info 1:0:0 $(Z_LIBS) $(DL_LIBS)
-libQFutil_la_LIBADD = $(ASM)
+libQFutil_la_LIBADD = libasm.la
+libQFutil_la_DEPENDENCIES = libasm.la
 libQFutil_la_SOURCES = \
 	checksum.c cmd.c console.c con_print.c crc.c cvar.c fendian.c hash.c \
 	info.c link.c \
