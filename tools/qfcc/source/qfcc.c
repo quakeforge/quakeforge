@@ -113,6 +113,8 @@ InitData (void)
 	pr.scope = new_scope (sc_global, pr.near_data, 0);
 	current_scope = pr.scope;
 
+	pr.entity_data = new_defspace ();
+
 	numglobaldefs = 1;
 	numfielddefs = 1;
 
@@ -169,7 +171,7 @@ WriteData (int crc)
 		printf ("%6i locals size (%s)\n", num_localdefs, big_function);
 		printf ("%6i fielddefs\n", numfielddefs);
 		printf ("%6i globals\n", pr.near_data->size);
-		printf ("%6i entity fields\n", pr.size_fields);
+		printf ("%6i entity fields\n", pr.entity_data->size);
 	}
 
 	h = SafeOpenWrite (destfile);
@@ -235,7 +237,7 @@ WriteData (int crc)
 	if (options.verbosity >= -1)
 		printf ("%6i TOTAL SIZE\n", (int) ftell (h));
 
-	progs.entityfields = pr.size_fields;
+	progs.entityfields = pr.entity_data->size;
 
 	progs.version = options.code.progsversion;
 	progs.crc = crc;

@@ -63,9 +63,8 @@ typedef struct {
 
 	struct defspace_s *near_data;
 	struct defspace_s *far_data;
+	struct defspace_s *entity_data;
 	struct scope_s *scope;
-
-	int				size_fields;
 } pr_info_t;
 
 extern	pr_info_t	pr;

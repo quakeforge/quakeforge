@@ -43,6 +43,7 @@ static const char rcsid[] =
 typedef struct locref_s {
 	struct locref_s *next;
 	int         ofs;
+	int         size;
 } locref_t;
 
 def_t       def_void = { &type_void, "temp" };
@@ -55,7 +56,6 @@ static def_t temp_scope;
 static def_t *free_defs;
 static defspace_t *free_spaces;
 static scope_t *free_scopes;
-static locref_t *free_locs[4];			// indexted by type size
 static locref_t *free_free_locs;
 
 static hashtab_t *defs_by_name;
@@ -138,7 +138,6 @@ def_t *
 get_def (type_t *type, const char *name, scope_t *scope, int allocate)
 {
 	def_t      *def = check_for_name (type, name, scope, allocate);
-	int         size;
 
 	if (def || !allocate)
 		return def;
@@ -148,8 +147,7 @@ get_def (type_t *type, const char *name, scope_t *scope, int allocate)
 	if (name)
 		Hash_Add (defs_by_name, def);
 
-	// FIXME: need to sort out location re-use
-	def->ofs = scope->space->size;
+	def->ofs = new_location (type, scope->space);
 
 	/* 
 		make automatic defs for the vectors elements .origin can be accessed
@@ -158,73 +156,49 @@ get_def (type_t *type, const char *name, scope_t *scope, int allocate)
 	if (type->type == ev_vector && name) {
 		def_t      *d;
 
-		d = get_def (&type_float, va ("%s_x", name), scope, allocate);
+		d = new_def (&type_float, va ("%s_x", name), scope);
 		d->used = 1;
 		d->parent = def;
+		d->ofs = def->ofs + 0;
+		Hash_Add (defs_by_name, d);
 
-		d = get_def (&type_float, va ("%s_y", name), scope, allocate);
+		d = new_def (&type_float, va ("%s_y", name), scope);
 		d->used = 1;
 		d->parent = def;
+		d->ofs = def->ofs + 3;
+		Hash_Add (defs_by_name, d);
 
-		d = get_def (&type_float, va ("%s_z", name), scope, allocate);
+		d = new_def (&type_float, va ("%s_z", name), scope);
 		d->used = 1;
 		d->parent = def;
-	} else {
-		scope->space->size += type_size (type);
+		d->ofs = def->ofs + 2;
+		Hash_Add (defs_by_name, d);
 	}
 
 	if (type->type == ev_field) {
-		G_INT (def->ofs) = pr.size_fields;
+		G_INT (def->ofs) = new_location (type->aux_type, pr.entity_data);
 
 		if (type->aux_type->type == ev_vector) {
 			def_t      *d;
 
-			d = get_def (&type_floatfield,
-						   va ("%s_x", name), scope, allocate);
+			d = new_def (&type_floatfield, va ("%s_x", name), scope);
 			d->used = 1;				// always `used'
 			d->parent = def;
+			d->ofs = def->ofs + 0;
+			Hash_Add (defs_by_name, d);
 
-			d = get_def (&type_floatfield,
-						   va ("%s_y", name), scope, allocate);
+			d = new_def (&type_floatfield, va ("%s_y", name), scope);
 			d->used = 1;				// always `used'
 			d->parent = def;
+			d->ofs = def->ofs + 1;
+			Hash_Add (defs_by_name, d);
 
-			d = get_def (&type_floatfield,
-						   va ("%s_z", name), scope, allocate);
+			d = new_def (&type_floatfield, va ("%s_z", name), scope);
 			d->used = 1;				// always `used'
 			d->parent = def;
-		} else if (type->aux_type->type == ev_pointer) {
-			//FIXME I don't think this is right for a field pointer
-			size = type_size  (type->aux_type->aux_type);
-			pr.size_fields += type->aux_type->num_parms * size;
-		} else {
-			size = type_size  (type->aux_type);
-			pr.size_fields += size;
+			d->ofs = def->ofs + 2;
+			Hash_Add (defs_by_name, d);
 		}
-	} else if (type->type == ev_pointer && type->num_parms) {
-		int         ofs = scope->space->size;
-
-		size = type_size  (type->aux_type);
-		scope->space->size += type->num_parms * size;
-
-		if (scope->type >= sc_params) {
-			expr_t     *e1 = new_expr ();
-			expr_t     *e2 = new_expr ();
-
-			e1->type = ex_def;
-			e1->e.def = def;
-
-			e2->type = ex_def;
-			e2->e.def = new_def (type->aux_type, 0, scope);
-			e2->e.def->ofs = ofs;
-
-			append_expr (local_expr,
-						 new_binary_expr ('=', e1, address_expr (e2, 0, 0)));
-		} else {
-			G_INT (def->ofs) = ofs;
-			def->constant = 1;
-		}
-		def->initialized = 1;
 	}
 
 	return def;
@@ -247,6 +221,7 @@ new_def (type_t *type, const char *name, scope_t *scope)
 	def->type = type;
 
 	def->scope = scope;
+	def->space = scope->space;
 	def->global = scope->type == sc_global;
 
 	def->file = s_file;
@@ -259,19 +234,27 @@ int
 new_location (type_t *type, defspace_t *space)
 {
 	int         size = type_size (type);
+	int         ofs;
 	locref_t   *loc;
+	locref_t  **l = &space->free_locs;
 
-	if (free_locs[size]) {
-		loc = free_locs[size];
-		free_locs[size] = loc->next;
-
-		loc->next = free_free_locs;
-		free_free_locs = loc;
-
-		return loc->ofs;
+	while (*l && (*l)->size < size)
+		l = &(*l)->next;
+	if ((loc = *l)) {
+		ofs = loc->ofs;
+		if (loc->size == size) {
+			*l = loc->next;
+		} else {
+			loc->ofs += size;
+			loc->size -= size;
+		}
+		return ofs;
 	}
+	ofs = space->size;
 	space->size += size;
-	return space->size - size;
+	if (space->size > space->max_size)
+		space->grow (space);
+	return ofs;
 }
 
 void
@@ -280,10 +263,25 @@ free_location (def_t *def)
 	int         size = type_size (def->type);
 	locref_t   *loc;
 
+	for (loc = def->space->free_locs; loc; loc = loc->next) {
+		if (def->ofs + size == loc->ofs) {
+			loc->size += size;
+			loc->ofs = def->ofs;
+			return;
+		} else if (loc->ofs + loc->size == def->ofs) {
+			loc->size += size;
+			if (loc->next && loc->next->ofs == loc->ofs + loc->size) {
+				loc->size += loc->next->size;
+				loc->next = loc->next->next;
+			}
+			return;
+		}
+	}
 	ALLOC (1024, locref_t, free_locs, loc);
 	loc->ofs = def->ofs;
-	loc->next = free_locs[size];
-	free_locs[size] = loc;
+	loc->size = size;
+	loc->next = def->space->free_locs;
+	def->space->free_locs = loc;
 }
 
 def_t *
@@ -298,8 +296,7 @@ get_tempdef (type_t *type, scope_t *scope)
 		def->type = type;
 	} else {
 		def = new_def (type, 0, scope);
-		def->ofs = scope->space->size;
-		scope->space->size += size;
+		def->ofs = new_location (type, scope->space);
 	}
 	def->freed = def->removed = def->users = 0;
 	def->next = temp_scope.next;

@@ -274,7 +274,7 @@ emit_bind_expr (expr_t *e1, expr_t *e2)
 	}
 	def = emit_sub_expr (e1, e2->e.temp.def);
 	if (t1 != t2) {
-		def_t      *tmp = new_def (t2, 0, def->scope);
+		def_t      *tmp = new_def (t2, 0, current_scope);
 
 		tmp->ofs = def->ofs;
 		tmp->users = e2->e.temp.users;

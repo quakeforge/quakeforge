@@ -60,6 +60,7 @@ typedef struct def_s {
 	struct def_s	*def_next;		// next def in scope
 	struct def_s	*next;			// general purpose linking
 	struct scope_s	*scope;			// scope the var was defined in
+	struct defspace_s *space;
 	struct def_s	*parent;		// vector/quaternion member
 
 	void			*return_addr;	// who allocated this
@@ -67,6 +68,7 @@ typedef struct def_s {
 
 typedef struct defspace_s {
 	struct defspace_s *next;
+	struct locref_s *free_locs;
 	pr_type_t  *data;
 	int         size;
 	int         max_size;
