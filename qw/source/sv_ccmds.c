@@ -623,7 +623,7 @@ SV_Mute_f (void)
 	int         i;
 	double      mins = 0.5;
 	qboolean    all = false, done = false;
-	client_t    *cl;
+	client_t    *cl = 0;
 	char        text[1024];
 
 	if (Cmd_Argc() != 2 && Cmd_Argc() != 3) {
