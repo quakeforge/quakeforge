@@ -109,16 +109,11 @@ R_LoadSkys (const char *skyname)
 		Con_Printf ("Unable to load skybox %s, using normal sky\n", skyname);
 }
 
-static inline void
-R_SkyBoxPolyVec (vec5_t v)
-{
-	// avoid interpolation seams
-	qfglTexCoord2fv (v);
-	qfglVertex3f (r_refdef.vieworg[0] + v[2], r_refdef.vieworg[1] + v[3],
-				  r_refdef.vieworg[2] + v[4]);
-}
-
-#define ftc(x) (x * (254.0/256.0) + (1.0/256.0))
+#if 0
+#define ftc(x) (x * (254.0/256.0) + (1.0/256.0)) // avoid interpolation seams
+#else
+#define ftc(x) (x) // what seams?
+#endif
 vec5_t      skyvec[6][4] = {
 	{
 		// right +y
@@ -170,21 +165,22 @@ R_DrawSkyBox (void)
 {
 	int         i, j;
 
-	qfglDisable (GL_DEPTH_TEST);
-	qfglDepthMask (GL_FALSE);
 	for (i = 0; i < 6; i++) {
 		qfglBindTexture (GL_TEXTURE_2D, SKY_TEX + i);
 		qfglBegin (GL_QUADS);
-		for (j = 0; j < 4; j++)
-			R_SkyBoxPolyVec (skyvec[i][j]);
+		for (j = 0; j < 4; j++) {
+			float *v = (float *) skyvec[i][j];
+
+			qfglTexCoord2fv (v);
+			qfglVertex3f (r_refdef.vieworg[0] + v[2],
+						  r_refdef.vieworg[1] + v[3],
+						  r_refdef.vieworg[2] + v[4]);
+		}
 		qfglEnd ();
 	}
-
-	qfglDepthMask (GL_TRUE);
-	qfglEnable (GL_DEPTH_TEST);
 }
 
-vec3_t      domescale;
+vec3_t      domescale = {512.0, 512.0, 128.0};
 
 static void
 R_DrawSkyLayer (float s)
@@ -211,7 +207,7 @@ R_DrawSkyLayer (float s)
 			v[1] = a1y * x;
 			v[2] = y * domescale[2];
 			qfglTexCoord2f ((v[0] + s) * (1.0 / 128.0),
-						  (v[1] + s) * (1.0 / 128.0));
+							(v[1] + s) * (1.0 / 128.0));
 			qfglVertex3f (v[0] + r_refdef.vieworg[0], v[1] +
 						  r_refdef.vieworg[1], v[2] + r_refdef.vieworg[2]);
 
@@ -219,13 +215,13 @@ R_DrawSkyLayer (float s)
 			v[1] = a2y * x;
 			v[2] = y * domescale[2];
 			qfglTexCoord2f ((v[0] + s) * (1.0 / 128.0),
-						  (v[1] + s) * (1.0 / 128.0));
+							(v[1] + s) * (1.0 / 128.0));
 			qfglVertex3f (v[0] + r_refdef.vieworg[0], v[1] +
 						  r_refdef.vieworg[1], v[2] + r_refdef.vieworg[2]);
 		}
 		qfglTexCoord2f (0.5 + s * (1.0 / 128.0), 0.5 + s * (1.0 / 128.0));
-		qfglVertex3f (r_refdef.vieworg[0],
-					r_refdef.vieworg[1], r_refdef.vieworg[2] - domescale[2]);
+		qfglVertex3f (r_refdef.vieworg[0], r_refdef.vieworg[1],
+					  r_refdef.vieworg[2] - domescale[2]);
 		qfglEnd ();
 	}
 }
@@ -235,16 +231,9 @@ R_DrawSkyDome (void)
 {
 	float       speedscale;					// for top sky and bottom sky
 
-	qfglDisable (GL_DEPTH_TEST);
-	qfglDepthMask (GL_FALSE);
-
-	qfglDisable (GL_BLEND);
-
 	// base sky
+	qfglDisable (GL_BLEND);
 	qfglBindTexture (GL_TEXTURE_2D, solidskytexture);
-	domescale[0] = 512;
-	domescale[1] = 512;
-	domescale[2] = 128;
 	speedscale = r_realtime * 8;
 	speedscale -= (int) speedscale & ~127;
 	R_DrawSkyLayer (speedscale);
@@ -253,25 +242,23 @@ R_DrawSkyDome (void)
 	// clouds
 	if (gl_sky_multipass->int_val) {
 		qfglBindTexture (GL_TEXTURE_2D, alphaskytexture);
-		domescale[0] = 512;
-		domescale[1] = 512;
-		domescale[2] = 128;
 		speedscale = r_realtime * 16;
 		speedscale -= (int) speedscale & ~127;
 		R_DrawSkyLayer (speedscale);
 	}
-
-	qfglDepthMask (GL_TRUE);
-	qfglEnable (GL_DEPTH_TEST);
 }
 
 inline void
 R_DrawSky (void)
 {
+	qfglDisable (GL_DEPTH_TEST);
+	qfglDepthMask (GL_FALSE);
 	if (skyloaded)
 		R_DrawSkyBox ();
 	else
 		R_DrawSkyDome ();
+	qfglDepthMask (GL_TRUE);
+	qfglEnable (GL_DEPTH_TEST);
 }
 
 /*
