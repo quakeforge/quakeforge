@@ -169,7 +169,7 @@ SND_GetCache (long samples, int rate, int inwidth, int channels,
 	width = snd_loadas8bit->int_val ? 1 : 2;
 	stepscale = (float) rate / shm->speed;	// usually 0.5, 1, or 2
 	size = samples / stepscale;
-printf ("%ld %d\n", samples, size);
+//printf ("%ld %d\n", samples, size);
 	size *= width * channels;
 	sc = allocator (&block->cache, sizeof (sfxbuffer_t) + size, sfx->name);
 	if (!sc)
@@ -198,7 +198,7 @@ SND_ResampleMono (sfxbuffer_t *sc, byte *data, int length)
 	stepscale = (float) inrate / shm->speed;	// usually 0.5, 1, or 2
 
 	outcount = length / stepscale;
-printf ("%d %d\n", length, outcount);
+//printf ("%d %d\n", length, outcount);
 
 	sc->sfx->length = outcount;
 	if (info->loopstart != -1)
