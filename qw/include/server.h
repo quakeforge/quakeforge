@@ -111,6 +111,9 @@ typedef struct
 	int			num_signon_buffers;
 	int			signon_buffer_size[MAX_SIGNON_BUFFERS];
 	byte		signon_buffers[MAX_SIGNON_BUFFERS][MAX_DATAGRAM];
+
+	// demo stuff
+	qboolean    demorecording;
 } server_t;
 
 #define	NUM_SPAWN_PARMS			16
@@ -162,6 +165,7 @@ typedef struct client_s
 
 	int				userid;							// identifying number
 	struct info_s   *userinfo;			// infostring
+	const char *team;//FIXME demo
 
 	usercmd_t		lastcmd;			// for filling in big drops and partial predictions
 	double			localtime;			// of last message
@@ -287,6 +291,10 @@ typedef struct
 	byte		log_buf[2][MAX_DATAGRAM];
 
 	challenge_t	challenges[MAX_CHALLENGES];	// to prevent invalid IPs from connecting
+
+	// demo stuff
+	byte        *demomem;
+	int         demomemsize;
 } server_static_t;
 
 //=============================================================================
