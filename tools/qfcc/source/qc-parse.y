@@ -120,7 +120,7 @@ void free_local_inits (hashtab_t *def_list);
 %token	CLASS DEFS ENCODE END IMPLEMENTATION INTERFACE PRIVATE PROTECTED
 %token	PROTOCOL PUBLIC SELECTOR
 
-%type	<type>	type type_name
+%type	<type>	type non_field_type type_name
 %type	<param> function_decl
 %type	<integer_val> array_decl
 %type	<param>	param param_list
@@ -245,14 +245,21 @@ enum
 
 type
 	: '.' type { $$ = build_type (1, $2); }
-	| type array_decl { $$ = build_type (0, build_array_type ($1, $2)); }
-	| type_name function_decl
+	| non_field_type { $$ = $1; }
+	| non_field_type function_decl
 		{
 			current_params = $2;
 			$$ = build_type (0, parse_params ($1, $2));
 		}
-	| type_name { $$ = build_type (0, $1); }
-	| '(' type ')' { $$ = $2; }
+	| non_field_type array_decl
+		{
+			$$ = build_type (0, build_array_type ($1, $2));
+		}
+	;
+
+non_field_type
+	: '(' type ')' { $$ = $2; }
+	| type_name { $$ = $1; }
 	;
 
 type_name
@@ -903,6 +910,7 @@ new_class_name
 				error (0, "redefinition of `%s'", $1);
 				$$ = get_class (0, 1);
 			}
+			current_class = $$;
 		}
 
 class_with_super
@@ -920,6 +928,7 @@ new_class_with_super
 		{
 			$1->super_class = $3;
 			$$ = $1;
+			current_class = $$;
 		}
 	;
 
@@ -942,6 +951,7 @@ new_category_name
 				error (0, "redefinition of category `%s (%s)'", $1, $3);
 				$$ = get_category (0, 0, 1);
 			}
+			current_class = $$;
 		}
 	;
 
@@ -958,27 +968,27 @@ protocol_name
 		}
 
 classdef
-	: INTERFACE new_class_name			{ current_class = $2; }
-	  protocolrefs						{ class_add_protocol_methods ($2, $4);}
-	  '{' ivar_decl_list '}'			{ class_add_ivars ($2, $7); }
-	  methodprotolist					{ class_add_methods ($2, $10); }
+	: INTERFACE new_class_name
+	  protocolrefs						{ class_add_protocol_methods ($2, $3);}
+	  '{' ivar_decl_list '}'			{ class_add_ivars ($2, $6); }
+	  methodprotolist					{ class_add_methods ($2, $9); }
 	  END								{ current_class = 0; }
-	| INTERFACE new_class_name			{ current_class = $2; }
-	  protocolrefs						{ class_add_protocol_methods ($2, $4);}
-	  methodprotolist					{ class_add_methods ($2, $6); }
+	| INTERFACE new_class_name
+	  protocolrefs						{ class_add_protocol_methods ($2, $3);}
+	  methodprotolist					{ class_add_methods ($2, $5); }
 	  END								{ current_class = 0; }
-	| INTERFACE new_class_with_super	{ current_class = $2; }
-	  protocolrefs						{ class_add_protocol_methods ($2, $4);}
-	  '{' ivar_decl_list '}'			{ class_add_ivars ($2, $7); }
-	  methodprotolist					{ class_add_methods ($2, $10); }
+	| INTERFACE new_class_with_super
+	  protocolrefs						{ class_add_protocol_methods ($2, $3);}
+	  '{' ivar_decl_list '}'			{ class_add_ivars ($2, $6); }
+	  methodprotolist					{ class_add_methods ($2, $9); }
 	  END								{ current_class = 0; }
-	| INTERFACE new_class_with_super	{ current_class = $2; }
-	  protocolrefs						{ class_add_protocol_methods ($2, $4);}
-	  methodprotolist					{ class_add_methods ($2, $6); }
+	| INTERFACE new_class_with_super
+	  protocolrefs						{ class_add_protocol_methods ($2, $3);}
+	  methodprotolist					{ class_add_methods ($2, $5); }
 	  END								{ current_class = 0; }
-	| INTERFACE new_category_name		{ current_class = $2; }
-	  protocolrefs						{ class_add_protocol_methods ($2, $4);}
-	  methodprotolist					{ class_add_methods ($2, $6); }
+	| INTERFACE new_category_name
+	  protocolrefs						{ class_add_protocol_methods ($2, $3);}
+	  methodprotolist					{ class_add_methods ($2, $5); }
 	  END								{ current_class = 0; }
 	| IMPLEMENTATION class_name			{ class_begin ($2); }
 	  '{' ivar_decl_list '}'			{ class_check_ivars ($2, $5); }
