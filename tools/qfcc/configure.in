@@ -54,32 +54,11 @@ dnl Checks for typedefs, structures, and compiler characteristics.
 
 dnl Checks for library functions.
 
-
-AC_ARG_ENABLE(zlib,
-[  --disable-zlib          disable zlib support],
-)
-
-Z_LIBS=
-if test "x$enable_zlib" != "xno"; then
-  dnl Check for working -lz
-  dnl Note - must have gztell *and* gzgets in -lz *and* zlib.h
-  AC_CHECK_LIB(z, gztell, HAVE_ZLIB=yes, HAVE_ZLIB=no, [$LIBS])
-  if test "x$HAVE_ZLIB" = "xyes"; then
-     AC_CHECK_LIB(z, gzgets, HAVE_ZLIB=yes, HAVE_ZLIB=no, [$LIBS])
-     if test "x$HAVE_ZLIB" = "xyes"; then
-        AC_CHECK_HEADER(zlib.h, HAVE_ZLIB=yes, HAVE_ZLIB=no)
-        if test "x$HAVE_ZLIB" = "xyes"; then
-           Z_LIBS="-lz"
-        fi
-     fi
-  fi
-fi
-
 AC_CHECK_HEADER(QF/qtypes.h, HAVE_QF=yes, HAVE_QF=no)
 if test "$HAVE_QF" = yes; then
 	AC_CHECK_LIB(QFutil, Qopen,
 	    HAVE_QF=yes, HAVE_QF=no,
-	    [$Z_LIBS]
+	    []
 	)
 fi
 if test "$HAVE_QF" != yes; then
