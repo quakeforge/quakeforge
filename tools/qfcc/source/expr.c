@@ -50,6 +50,7 @@ etype_t qc_types[] = {
 	ev_void,		// ex_uexpr
 	ev_void,		// ex_def
 	ev_void,		// ex_temp
+	ev_void,		// ex_nil
 
 	ev_string,		// ex_string
 	ev_float,		// ex_float
@@ -76,7 +77,7 @@ type_t *types[] = {
 };
 
 expr_type expr_types[] = {
-	ex_label,		// ev_void (ick)
+	ex_nil,			// ev_void
 	ex_string,		// ev_string
 	ex_float,		// ev_float
 	ex_vector,		// ev_vector
@@ -107,6 +108,8 @@ get_type (expr_t *e)
 	switch (e->type) {
 		case ex_label:
 			return 0;		// something went very wrong
+		case ex_nil:
+			return &type_void;
 		case ex_block:
 			if (e->e.block.result)
 				return get_type (e->e.block.result);
@@ -411,6 +414,9 @@ print_expr (expr_t *e)
 			}
 			printf (":%s:%d)@", type_names [e->e.temp.type->type],
 					e->e.temp.users);
+			break;
+		case ex_nil:
+			printf ("NULL");
 			break;
 		case ex_string:
 			printf ("\"%s\"", e->e.string_val);
@@ -802,9 +808,9 @@ convert_int (expr_t *e)
 expr_t *
 binary_expr (int op, expr_t *e1, expr_t *e2)
 {
-	etype_t t1, t2;
-	type_t *type = 0;
-	expr_t *e;
+	type_t     *t1, *t2;
+	type_t     *type = 0;
+	expr_t     *e;
 
 	if (e1->type == ex_block && e1->e.block.is_call
 		&& e2->type == ex_block && e2->e.block.is_call
@@ -822,21 +828,25 @@ binary_expr (int op, expr_t *e1, expr_t *e2)
 		e2 = test_expr (e2, true);
 	}
 
-	t1 = extract_type (e1);
-	t2 = extract_type (e2);
-	if (t1 == ev_type_count || t2 == ev_type_count) {
+	t1 = get_type (e1);
+	t2 = get_type (e2);
+	if (!t1 || !t2) {
 		error (e1, "internal error");
 		abort ();
 	}
 
 	if (e1->type == ex_integer
-		&& (t2 == ev_float || t2 == ev_vector || t2 == ev_quaternion)) {
+		&& (t2 == &type_float
+			|| t2 == &type_vector
+			|| t2 == &type_quaternion)) {
 		convert_int (e1);
-		t1 = ev_float;
+		t1 = &type_float;
 	} else if (e2->type == ex_integer
-			   && (t1 == ev_float || t1 == ev_vector || t1 == ev_quaternion)) {
+			   && (t1 == &type_float
+				   || t1 == &type_vector
+				   || t1 == &type_quaternion)) {
 		convert_int (e2);
-		t2 = ev_float;
+		t2 = &type_float;
 	}
 
 	if (e1->type >= ex_string && e2->type >= ex_string)
@@ -847,25 +857,39 @@ binary_expr (int op, expr_t *e1, expr_t *e2)
 		warning (e1, "ambiguous logic. Suggest explicit parentheses with expressions involving ! and %c", op);
 	}
 
+	if (op == '=' && t1->type != ev_void && e2->type == ex_nil) {
+		t2 = t1;
+		e2->type = expr_types[t2->type];
+	}
+
 	if (t1 != t2) {
-		switch (t1) {
+		switch (t1->type) {
 			case ev_float:
-				if (t2 == ev_vector && op == '*') {
+				if (t2 == &type_vector && op == '*') {
 					type = &type_vector;
 				} else {
 					goto type_mismatch;
 				}
 				break;
 			case ev_vector:
-				if (t2 == ev_float && op == '*') {
+				if (t2 == &type_float && op == '*') {
 					type = &type_vector;
 				} else {
 					goto type_mismatch;
 				}
 				break;
 			case ev_field:
-				if (e1->e.expr.type->aux_type->type == t2) {
-					type = e1->e.expr.type->aux_type;
+				if (t1->aux_type == t2) {
+					type = t1->aux_type;
+				} else {
+					goto type_mismatch;
+				}
+				break;
+			case ev_func:
+				if (e1->type == ex_func && !e1->e.func_val) {
+					type = t2;
+				} else if (e2->type == ex_func && !e2->e.func_val) {
+					type = t1;
 				} else {
 					goto type_mismatch;
 				}
@@ -875,14 +899,14 @@ type_mismatch:
 				return type_mismatch (e1, e2, op);
 		}
 	} else {
-		type = types[t1];
+		type = t1;
 	}
 	if ((op >= OR && op <= GT) || op == '>' || op == '<') {
 		if (options.version > PROG_ID_VERSION)
 			type = &type_integer;
 		else
 			type = &type_float;
-	} else if (op == '*' && t1 == ev_vector && t2 == ev_vector) {
+	} else if (op == '*' && t1 == &type_vector && t2 == &type_vector) {
 		type = &type_float;
 	}
 	if (op == '=' && e1->type == ex_expr && e1->e.expr.op == '.') {
@@ -940,6 +964,7 @@ unary_expr (int op, expr_t *e)
 				case ex_float:
 					e->e.float_val *= -1;
 					return e;
+				case ex_nil:
 				case ex_string:
 				case ex_entity:
 				case ex_field:
@@ -978,6 +1003,8 @@ unary_expr (int op, expr_t *e)
 							n->e.expr.type = &type_float;
 						return n;
 					}
+				case ex_nil:
+					return error (e, "invalid type for unary !");
 				case ex_integer:
 					e->e.integer_val = !e->e.integer_val;
 					return e;
@@ -1038,6 +1065,7 @@ unary_expr (int op, expr_t *e)
 					e->e.float_val = ~(int)e->e.float_val;
 					e->type = ex_integer;
 					return e;
+				case ex_nil:
 				case ex_string:
 				case ex_vector:
 				case ex_quaternion:

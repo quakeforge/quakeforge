@@ -96,7 +96,7 @@ typedef struct {
 %token	<vector_val> VECTOR_VAL
 %token	<quaternion_val> QUATERNION_VAL
 
-%token	LOCAL RETURN WHILE DO IF ELSE FOR ELIPSIS
+%token	LOCAL RETURN WHILE DO IF ELSE FOR ELIPSIS NIL
 %token	<type> TYPE
 
 %type	<type>	type maybe_func
@@ -561,6 +561,11 @@ const
 			$$ = new_expr ();
 			$$->type = ex_integer;
 			$$->e.integer_val = $1;
+		}
+	| NIL
+		{
+			$$ = new_expr ();
+			$$->type = ex_nil;
 		}
 	;
 
