@@ -100,6 +100,7 @@ void () eek =
 	printf ("%v\n", v);
 	v = -v;
 	printf ("%v\n", v);
+	printf ("%f %f %f\n", expr, expr ^ 3, ~expr);
 };
 
 void () assign = {
