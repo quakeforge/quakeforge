@@ -1309,19 +1309,19 @@ AddLinksToPmove (areanode_t *node)
 			VectorCopy (SVFIELD (check, origin, vector), pe->origin);
 			pe->info = NUM_FOR_EDICT (&sv_pr_state, check);
 
-			if (SVFIELD (check, solid, float) == SOLID_BSP) {
-				pe->model = sv.models[(int) (SVFIELD (check, modelindex, float))];
+			if (sv_fields.rotated_bbox != -1
+				&& SVFIELD (check, rotated_bbox, integer)) {
+				int h = SVFIELD (check, rotated_bbox, integer);
+				extern hull_t pf_hull_list[];
+				pe->hull = &pf_hull_list[h - 1];
 			} else {
-				pe->model = NULL;
-				VectorCopy (SVFIELD (check, mins, vector), pe->mins);
-				VectorCopy (SVFIELD (check, maxs, vector), pe->maxs);
-				if (sv_fields.rotated_bbox != -1
-					&& SVFIELD (check, rotated_bbox, integer)) {
-					int h = SVFIELD (check, rotated_bbox, integer);
-					extern hull_t pf_hull_list[];
-					pe->hull = &pf_hull_list[h - 1];
+				pe->hull = 0;
+				if (SVFIELD (check, solid, float) == SOLID_BSP) {
+					pe->model = sv.models[(int) (SVFIELD (check, modelindex, float))];
 				} else {
-					pe->hull = 0;
+					pe->model = NULL;
+					VectorCopy (SVFIELD (check, mins, vector), pe->mins);
+					VectorCopy (SVFIELD (check, maxs, vector), pe->maxs);
 				}
 			}
 		}
