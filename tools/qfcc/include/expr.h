@@ -86,7 +86,8 @@ typedef struct expr_s {
 	expr_type	type;
 	int			line;
 	string_t	file;
-	int			paren;
+	unsigned	paren:1;
+	unsigned	rvalue:1;
 	union {
 		elabel_t label;
 		block_t block;

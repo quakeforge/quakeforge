@@ -206,6 +206,8 @@ emit_assign_expr (int oper, expr_t *e)
 		return def_a;
 	} else {
 		def_b = emit_sub_expr (e2, 0);
+		if (e->rvalue && def_b->managed)
+			def_b->users++;
 		if (e1->type == ex_expr && extract_type (e1->e.expr.e1) == ev_pointer) {
 			def_a = emit_sub_expr (e1->e.expr.e1, 0);
 			def_c = emit_sub_expr (e1->e.expr.e2, 0);
@@ -420,6 +422,9 @@ emit_expr (expr_t *e)
 	statref_t  *ref;
 	elabel_t   *label;
 
+	//printf ("%d ", e->line);
+	//print_expr (e);
+	//puts ("");
 	switch (e->type) {
 		case ex_label:
 			label = &e->e.label;
@@ -522,12 +527,10 @@ emit_expr (expr_t *e)
 		case ex_integer:
 		case ex_uinteger:
 		case ex_short:
+		case ex_name:
+		case ex_nil:
 			warning (e, "Ignoring useless expression");
 			break;
-		case ex_nil:
-		case ex_name:
-			error (e, "internal error");
-			abort ();
 	}
 	PR_FreeTempDefs ();
 }

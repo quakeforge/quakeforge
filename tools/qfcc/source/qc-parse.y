@@ -1007,6 +1007,7 @@ emit_function (function_t *f, expr_t *e)
 
 	pr_scope = f->def;
 	while (e) {
+		//printf ("%d ", pr_source_line);
 		//print_expr (e);
 		//puts("");
 

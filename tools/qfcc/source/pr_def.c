@@ -321,8 +321,9 @@ PR_FreeTempDefs (void)
 			*def = d->next;
 
 			if (d->users < 0)
-				printf ("%s:%d: warning: %s %3d %3d\n", strings + d->file,
-						d->line, pr_type_name[d->type->type], d->ofs, d->users);
+				printf ("%s:%d: warning: %s %3d %3d %d\n", strings + d->file,
+						d->line, pr_type_name[d->type->type], d->ofs, d->users,
+						d->managed);
 			size = pr_type_size[d->type->type];
 			if (d->expr)
 				d->expr->e.temp.def = 0;
@@ -349,8 +350,8 @@ PR_ResetTempDefs (void)
 	}
 
 	for (d = temp_scope.next; d; d = d->next)
-		printf ("%s:%d: warning: %s %3d %3d\n", strings + d->file, d->line,
-				pr_type_name[d->type->type], d->ofs, d->users);
+		printf ("%s:%d: warning: %s %3d %3d %d\n", strings + d->file, d->line,
+				pr_type_name[d->type->type], d->ofs, d->users, d->managed);
 	temp_scope.next = 0;
 }
 

@@ -1748,6 +1748,8 @@ assign_expr (expr_t *e1, expr_t *e2)
 		convert_nil (e2, t2);
 	}
 
+	e2->rvalue = 1;
+
 	if (t1 != t2) {
 		if (!options.traditional || t1->type != ev_func || t2->type != ev_func)
 			return type_mismatch (e1, e2, op);
