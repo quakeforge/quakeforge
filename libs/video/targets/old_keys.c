@@ -245,7 +245,7 @@ OK_TranslateKeyName (const char *name)
 	const char *s = name;
 	char       *d = uname;
 	
-	while ((*d++ = toupper(*s)))
+	while ((*d++ = toupper (*s)))
 		s++;
 	ok = Hash_Find (old_key_table, uname);
 	if (!ok) {

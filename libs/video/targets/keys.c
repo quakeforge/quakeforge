@@ -56,10 +56,6 @@ static __attribute__ ((unused)) const char rcsid[] =
 #include "compat.h"
 #include "old_keys.h"
 
-#define U __attribute__ ((unused))
-static U void (*const key_progs_init)(struct progs_s *) = Key_Progs_Init;
-#undef U
-
 /*  key up events are sent even if in console mode */
 
 cvar_t     *in_bind_imt;
@@ -402,14 +398,14 @@ Key_Game (knum_t key, short unicode)
 	const char *kb;
 	char        cmd[1024];
 
-	kb = Key_GetBinding(game_target, key);
+	kb = Key_GetBinding (game_target, key);
 	if (!kb && (game_target > IMT_0))
-		kb = Key_GetBinding(IMT_0, key);
+		kb = Key_GetBinding (IMT_0, key);
 
-	/*
+/*
 	Con_Printf("kb %p, game_target %d, key_dest %d, key %d\n", kb,
 			game_target, key_dest, key);
-			*/
+*/
 	if (!kb)
 		return false;
 
@@ -590,7 +586,7 @@ Key_In_Bind (const char *imt, const char *key, const char *cmd)
 	}
 
 	if (!cmd) {
-		if (Key_GetBinding(t, b))
+		if (Key_GetBinding (t, b))
 			Con_Printf ("%s %s \"%s\"\n", imt, key,
 						Key_GetBinding(t, b));
 		else
@@ -684,7 +680,7 @@ Key_GIB_Bind_Get_f (void)
 	const char *imt, *key, *cmd;
 	int t, k;
 
-	if (GIB_Argc() != 2) {
+	if (GIB_Argc () != 2) {
 		GIB_USAGE ("key");
 		return;
 	}
@@ -756,14 +752,15 @@ Key_WriteBindings (QFile *f)
 	for (j = 0; j < IMT_LAST; j++)
 		for (i = 0; i < QFK_LAST; i++)
 			if ((bind = Key_GetBinding(j, i))) {
-				if (f)
+			  if (f) {
 					Qprintf (f, "in_bind %s %s \"%s\"\n",
 							 Key_IMTnumToString (j),
 							 Key_KeynumToString (i), bind);
-				else
+			  } else {
 					Sys_Printf ("in_bind %s %s \"%s\"\n",
 							 Key_IMTnumToString (j),
 							 Key_KeynumToString (i), bind);
+			  }
 			}
 }
 
