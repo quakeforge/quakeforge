@@ -234,7 +234,7 @@ qfs_var_subst (const char *string, hashtab_t *vars)
 				dstring_appendsubstr (new, s, (e - s));
 				break;
 			}
-			var = va ("%.*s", (e - s) - 1, s + 1);
+			var = va ("%.*s", (int) (e - s) - 1, s + 1);
 			sub = Hash_Find (vars, var);
 			if (sub)
 				dstring_appendstr (new, sub->val);
@@ -245,7 +245,7 @@ qfs_var_subst (const char *string, hashtab_t *vars)
 			s = e;
 			while (qfs_isident (*e))
 				e++;
-			var = va ("%.*s", e - s, s);
+			var = va ("%.*s", (int) (e - s), s);
 			sub = Hash_Find (vars, var);
 			if (sub)
 				dstring_appendstr (new, sub->val);
@@ -274,7 +274,7 @@ qfs_get_gd_params (plitem_t *gdpl, gamedir_t *gamedir, dstring_t *path,
 
 		if (!e)
 			e = str + strlen (str);
-		qfs_set_var (vars, "path", va ("%.*s", e - str, str));
+		qfs_set_var (vars, "path", va ("%.*s", (int) (e - str), str));
 		if (path->str[0])
 			dstring_appendstr (path, ":");
 		dstring_appendstr (path, str);
@@ -372,7 +372,7 @@ qfs_process_path (const char *path, const char *gamedir)
 		while (s != path && s[-1] !=':')
 			s--;
 		if (s != e) {
-			dsprintf (dir, "%.*s", e - s, s);
+			dsprintf (dir, "%.*s", (int) (e - s), s);
 			COM_AddGameDirectory (dir->str);
 		}
 		e = --s;
