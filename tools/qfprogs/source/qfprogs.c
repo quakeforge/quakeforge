@@ -93,10 +93,8 @@ open_file (const char *path, int *len)
 {
 	QFile      *file = Qopen (path, "rbz");
 
-	if (!file) {
-		perror (path);
+	if (!file)
 		return 0;
-	}
 	*len = Qfilesize (file);
 	return file;
 }
@@ -112,6 +110,7 @@ load_file (progs_t *pr, const char *name)
 	if (!file) {
 		file = open_file (va ("%s.gz", name), &size);
 		if (!file) {
+			perror (name);
 			return 0;
 		}
 	}
@@ -196,6 +195,10 @@ load_progs (const char *name)
 	pr.progs_name = name;
 	PR_LoadProgsFile (&pr, file, size, 1, 0);
 	Qclose (file);
+
+	if (!pr.progs)
+		return 0;
+
 	PR_LoadStrings (&pr);
 
 	for (i = 0; i < pr.progs->numfunctions; i++) {
@@ -244,7 +247,8 @@ main (int argc, char **argv)
 	}
 	init_qf ();
 	while (optind < argc) {
-		load_progs (argv[optind++]);
+		if (!load_progs (argv[optind++]))
+			return 1;
 		func (&pr);
 	}
 	return 0;

@@ -97,7 +97,7 @@ PR_LoadProgsFile (progs_t * pr, QFile *file, int size, int edicts, int zone)
 
 	pr->progs = 0;
 	if (Qread (file, &progs, sizeof (progs)) != sizeof (progs))
-		return;
+		PR_Error (pr, "error reading header");
 
 	pr->progs_size = com_filesize;
 	Sys_DPrintf ("Programs occupy %iK.\n", com_filesize / 1024);
