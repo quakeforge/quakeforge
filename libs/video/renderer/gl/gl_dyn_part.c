@@ -102,6 +102,7 @@ particle_new (ptype_t type, int texnum, const vec3_t org, float scale,
 
 /*
 	particle_new_random
+
 	note that org_fuzz & vel_fuzz should be ints greater than 0 if you are
 	going to bother using this function.
 */
@@ -110,15 +111,39 @@ particle_new_random (ptype_t type, int texnum, const vec3_t org, int org_fuzz,
 					 float scale, int vel_fuzz, float die, int color,
 					 float alpha, float ramp)
 {
-	int         j;
+	float		o_fuzz = org_fuzz, v_fuzz = vel_fuzz;
+	int         rnd;
 	vec3_t      porg, pvel;
 
-	for (j = 0; j < 3; j++) {
-			porg[j] = qfrandom (org_fuzz * 2) - org_fuzz + org[j];
-			pvel[j] = qfrandom (vel_fuzz * 2) - vel_fuzz;
-	}
+	rnd = rand ();
+	porg[0] = o_fuzz * ((rnd & 63) - 31.5) / 63.0 + org[0];
+	porg[1] = o_fuzz * (((rnd >> 5) & 63) - 31.5) / 63.0 + org[1];
+	porg[2] = o_fuzz * (((rnd >> 10) & 63) - 31.5) / 63.0 + org[2];
+	rnd = rand ();
+	pvel[0] = v_fuzz * ((rnd & 63) - 31.5) / 63.0;
+	pvel[1] = v_fuzz * (((rnd >> 5) & 63) - 31.5) / 63.0;
+	pvel[2] = v_fuzz * (((rnd >> 10) & 63) - 31.5) / 63.0;
+
 	particle_new (type, texnum, porg, scale, pvel, die, color, alpha, ramp);
 }
+
+/*
+inline static void
+particle_new_veryrandom (ptype_t type, int texnum, const vec3_t org,
+						 int org_fuzz, float scale, int vel_fuzz, float die,
+						 int color, float alpha, float ramp)
+{
+	vec3_t		porg, pvel;
+
+	porg[0] = qfrandom (org_fuzz * 2) - org_fuzz + org[0];
+	porg[1] = qfrandom (org_fuzz * 2) - org_fuzz + org[1];
+	porg[2] = qfrandom (org_fuzz * 2) - org_fuzz + org[2];
+	pvel[0] = qfrandom (vel_fuzz * 2) - vel_fuzz;
+	pvel[1] = qfrandom (vel_fuzz * 2) - vel_fuzz;
+	pvel[2] = qfrandom (vel_fuzz * 2) - vel_fuzz;
+	particle_new (type, texnum, porg, scale, pvel, die, color, alpha, ramp);
+}
+*/
 
 inline void
 R_ClearParticles (void)
