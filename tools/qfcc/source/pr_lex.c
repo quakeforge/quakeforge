@@ -131,9 +131,11 @@ PR_NewLine (void)
 			pr_file_p++;
 		if (!*pr_file_p)
 			PR_ParseError ("Unexpected end of file");
-		m = false;
-		pr_source_line = line - 1;
+		pr_source_line = line - (m != false);
 		s_file = ReuseString (pr_immediate_string);
+		if (!m)
+			pr_file_p++;
+		m = false;
 	}
 
 	pr_source_line++;
