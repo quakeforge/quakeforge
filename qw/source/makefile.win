@@ -1,0 +1,68 @@
+include <win32.mak>
+#!include <winopt.mak>
+
+all: notarget
+
+INCPATH=E:\quakesrc\q1src\incs  # Path to other includes (mgl, etc)
+MGLPATH=E:\quakesrc\q1src\libs  # Path to other librarys (mgl)
+DXPATH=E:\quakesrc\q1src\libs   # Path to other librarys (DirectX)
+
+LIBS=winmm.lib wsock32.lib opengl32.lib kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib  comctl32.lib wsock32.lib winmm.lib kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib  ole32.lib oleaut32.lib uuid.lib libc.lib
+SWLIBS=$(LIBS) $(DXPATH)\dinput.lib $(DXPATH)\dxguid.lib $(MGLPATH)\mgllt.lib
+GLLIBS=$(LIBS) $(DXPATH)\dinput.lib $(DXPATH)\dxguid.lib glu32.lib opengl32.lib
+
+NCFLAGS=/c /nologo /DWIN32 /D_WIN32 /I..\include /I..\include\win32 /I..\include\win32\vc /I$(INCPATH) /MT /DHAVE_CONFIG_H
+
+COM_sources=\
+  net_chan.obj net_com.obj net_udp.obj msg.obj \
+  pmove.obj pmovetst.obj \
+  zone.obj mdfour.obj crc.obj checksum.obj \
+  mathlib.obj cvar.obj com.obj \
+  buildnum.obj sizebuf.obj info.obj link.obj cmd.obj qargs.obj \
+  quakefs.obj quakeio.obj qendian.obj \
+  va.obj dirent.obj fnmatch.obj \
+  sys_win.obj
+
+SV_sources=\
+  pr_cmds.obj pr_edict.obj pr_exec.obj pr_offs.obj\
+  sv_init.obj sv_main.obj sv_misc.obj sv_model.obj sv_nchan.obj sv_ents.obj \
+  sv_send.obj sv_move.obj sv_phys.obj sv_user.obj sv_ccmds.obj \
+  world.obj sv_cvar.obj model.obj \
+  sv_sys_win.obj sys_win.obj
+
+CL_SW_sources=\
+  d_edge.obj d_fill.obj d_init.obj d_modech.obj d_part.obj d_polyse.obj \
+  d_scan.obj d_sky.obj d_sprite.obj d_surf.obj d_vars.obj d_zpoint.obj \
+  r_aclip.obj r_alias.obj r_bsp.obj r_draw.obj r_edge.obj r_efrag.obj \
+  r_light.obj r_main.obj r_misc.obj r_part.obj r_sky.obj r_sprite.obj \
+  r_surf.obj r_vars.obj  r_view.obj screen.obj draw.obj vid_mgl.obj \
+  sw_view.obj cl_model.obj model.obj
+
+CL_GL_sources=\
+  gl_draw.obj  gl_mesh.obj   gl_model.obj  gl_ngraph.obj \
+  gl_part.obj  gl_refrag.obj gl_rlight.obj gl_rmain.obj \
+  gl_rmisc.obj gl_mesh.obj   gl_rsurf.obj  gl_screen.obj \
+  gl_view.obj  gl_warp.obj   vid_wgl.obj   r_view.obj
+
+CL_sources=\
+  cl_cmd.obj cl_cvar.obj cl_demo.obj cl_ents.obj cl_input.obj cl_main.obj \
+  cl_misc.obj cl_parse.obj cl_pred.obj cl_tent.obj cl_cam.obj \
+  snd_dma.obj snd_mem.obj snd_mix.obj snd_win.obj cd_win.obj \
+  wad.obj skin.obj sbar.obj menu.obj keys.obj console.obj cl_slist.obj \
+  cl_trans.obj cl_sys_win.obj nonintel.obj in_win.obj sys_x86.obj
+
+qfsv.exe:     $(COM_sources) $(SV_sources)
+        $(link) /nologo /subsystem:console /incremental:yes /machine:I386 -out:qfsv.exe $(COM_sources) $(SV_sources) $(LIBS)
+
+qfsw.exe:     $(COM_sources) $(CL_sources) $(CL_SW_sources)
+        $(link) /nologo /subsystem:windows /incremental:yes /machine:I386 -out:qfsw.exe $(COM_sources) $(CL_sources) $(CL_SW_sources) $(SWLIBS) /nodefaultlib:libcmt
+
+qfgl.exe:     $(COM_sources) $(CL_sources) $(CL_GL_sources)
+        $(link) /nologo /subsystem:windows /incremental:yes /machine:I386 -out:qfgl.exe $(COM_sources) $(CL_sources) $(CL_GL_sources) $(GLLIBS) /nodefaultlib:libcmt
+
+notarget:
+
+.c.obj:
+    $(cc) $(NCFLAGS) $*.c
+
+

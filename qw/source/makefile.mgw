@@ -1,0 +1,237 @@
+#
+#	 Newtree makefile for MINGW (http://www.mingw.org)
+#
+#        Copyright (C) 2000 Jukka Sorjonen
+#
+#        This program is free software; you can redistribute it and/or
+#        modify it under the terms of the GNU General Public License
+#        as published by the Free Software Foundation; either version 2
+#        of the License, or (at your option) any later version.
+#
+#        This program is distributed in the hope that it will be useful,
+#        but WITHOUT ANY WARRANTY; without even the implied warranty of
+#        MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+#
+#        See the GNU General Public License for more details.
+#
+#        You should have received a copy of the GNU General Public License
+#        along with this program; if not, write to:
+#
+#                Free Software Foundation, Inc.
+#                59 Temple Place - Suite 330
+#                Boston, MA  02111-1307, USA
+#
+#
+
+# Where quakeforge source is located
+QFROOT = D:\PROJECT\QUAKE1\NEWTREE
+
+# Mingw root directory
+CROOT = C:\MINGW32
+
+# Path to your Direct-X libraries and includes
+DIRECTXSDK=D:\project\dx7sdk
+# Path to ZLIB includes (if not with mingw includes)
+ZLIB=D:\PROJECT\ZLIB
+# Path to SDLSDK
+SDLSDK=D:\project\SDL-1.1.6
+
+# Target filenames
+qf_client_win_PROGRAM = qfwin.exe
+qf_client_wgl_PROGRAM = qfwgl.exe
+qf_client_sgl_PROGRAM = qfsgl.exe
+qf_client_sdl_PROGRAM = qfsdl.exe
+qf_server_PROGRAM = qfserver.exe
+
+#qf_client_win_PROGRAM = qf-client-win.exe
+#qf_client_wgl_PROGRAM = qf-client-wgl.exe
+#qf_client_sgl_PROGRAM = qf-client-sgl.exe
+#qf_client_sdl_PROGRAM = qf-client-sdl.exe
+#qf_server_PROGRAM = qf-server.exe
+
+#
+# Common sources
+#
+
+#!if ASM_ARCH
+#math_ASM = math.S sys_x86.S
+#!endif
+
+common_SOURCES= buildnum.c checksum.c cmd.c com.c crc.c cvar.c info.c link.c \
+		locs.c mathlib.c mdfour.c model.c model_brush.c msg.c \
+		net_chan.c net_com.c net_udp.c pmove.c pmovetst.c qargs.c \
+                qendian.c quakefs.c quakeio.c sizebuf.c va.c zone.c hash.c \
+		$(math_ASM)
+
+sound_SOURCES= snd_dma.c snd_mem.c snd_mix.c
+
+#
+# Win32 specific
+#
+WIN32_GENERAL = cl_sys_win.c fnmatch.c dirent.c sys_win.c
+WIN32_SOUND =  snd_win.c
+WIN32_OTHER = cd_win.c joy_win.c in_win.c
+
+#
+# Client itself
+#
+#if ASM_ARCH
+#client_ASM=     snd_mixa.S cl_math.S
+#endif
+
+client_SOURCES= cl_cam.c cl_cmd.c cl_cvar.c cl_demo.c cl_ents.c cl_input.c \
+	cl_main.c cl_misc.c cl_parse.c cl_pred.c cl_slist.c cl_tent.c \
+	console.c keys.c menu.c model_alias.c model_sprite.c nonintel.c \
+	pcx.c r_view.c sbar.c skin.c teamplay.c tga.c wad.c vid.c $(client_ASM)
+
+#
+# OPENGL rendering
+#
+ogl_SOURCES=	fractalnoise.c gl_draw.c gl_dyn_fires.c gl_dyn_part.c \
+		gl_dyn_textures.c gl_mesh.c gl_ngraph.c r_efrag.c \
+		gl_rlight.c gl_rmain.c gl_rmisc.c gl_rsurf.c gl_screen.c \
+		gl_sky.c gl_sky_clip.c gl_skin.c gl_view.c gl_warp.c \
+		gl_model_alias.c gl_model_brush.c gl_model_fullbright.c \
+		gl_model_sprite.c qfgl_ext.c
+
+#
+# Software-rendering clients
+#
+# ... Common stuff
+#
+#if ASM_ARCH
+soft_ASM=	d_draw.S d_draw16.S d_parta.S d_polysa.S d_scana.S d_spr8.S \
+		d_varsa.S r_aclipa.S r_aliasa.S r_drawa.S r_edgea.S r_varsa.S \
+		surf16.S surf8.S
+#endif
+
+soft_SOURCES=	sw_skin.c d_edge.c d_fill.c d_init.c d_modech.c \
+		d_part.c d_polyse.c d_scan.c d_sky.c d_sprite.c d_surf.c \
+		d_vars.c d_zpoint.c draw.c r_aclip.c r_alias.c r_bsp.c \
+		r_draw.c r_edge.c r_efrag.c r_light.c r_main.c r_misc.c \
+		r_part.c r_sky.c r_sprite.c r_surf.c r_vars.c sw_view.c \
+		screen.c $(soft_ASM) sw_model_alias.c sw_model_brush.c \
+		sw_model_sprite.c
+
+#
+#
+#
+
+#if ASM_ARCH
+#world_ASM = worlda.S
+#endif
+
+server_SYS = fnmatch.c dirent.c sv_sys_win.c sys_win.c
+
+server_SOURCES= sv_pr_cmds.c pr_edict.c pr_exec.c pr_offs.c sv_ccmds.c sv_cvar.c \
+		sv_ents.c sv_init.c sv_main.c sv_misc.c sv_model.c \
+		sv_move.c sv_nchan.c sv_phys.c sv_send.c sv_user.c \
+                ver_check.c world.c sv_progs.c $(world_ASM)
+
+# Microsoft Opengl Win32
+
+wgl_SOURCES=	vid_wgl.c
+
+#
+# ... SciTech MGL
+#
+mgl_SOURCES=		vid_mgl.c
+
+#
+# ... Sam Lantinga's Simple DirectMedia Layer, version 1.0 and higher
+#
+
+sdl_SOURCES=    vid_sdl.c in_sdl.c joy_null.c cd_sdl.c SDL_main.c
+
+#
+
+sgl_SOURCES=    vid_sgl.c vid_common_gl.c in_sdl.c joy_null.c cd_sdl.c SDL_main.c
+
+#
+#
+#
+
+qf_client_wgl_SOURCES = $(common_SOURCES) $(wgl_SOURCES) $(client_SOURCES) $(ogl_SOURCES) \
+	$(WIN32_GENERAL) $(WIN32_SOUND) $(WIN32_OTHER) $(sound_SOURCES)
+
+qf_client_win_SOURCES = $(common_SOURCES) $(mgl_SOURCES) $(client_SOURCES) $(soft_SOURCES) \
+        $(WIN32_GENERAL) $(WIN32_SOUND) $(WIN32_OTHER) $(sound_SOURCES) sys_x86.S
+
+qf_client_sgl_SOURCES = $(common_SOURCES) $(client_SOURCES) $(ogl_SOURCES) \
+        $(WIN32_SOUND) $(sgl_SOURCES) $(sound_SOURCES) fnmatch.c dirent.c sys_win.c cl_sys_sdl.c
+
+qf_client_sdl_SOURCES = $(common_SOURCES) $(client_SOURCES) $(soft_SOURCES) \
+        $(WIN32_SOUND) $(sdl_SOURCES) $(sound_SOURCES) fnmatch.c dirent.c sys_win.c cl_sys_sdl.c sys_x86.S
+
+qf_server_SOURCES = $(common_SOURCES) $(server_SOURCES) $(server_SYS)
+
+#
+#
+#
+
+DEFS = -DHAVE_CONFIG_H=1 -D_WINDOWS=1 -DWINDOWS=1 -D_WIN32=1 -DWIN32=1 -DHAVE_FNMATCH_H=1 
+
+#-DUSE_INTEL_ASM=1
+
+# For Pentium Pro and higher
+#MACHINEDEPOPTS = -mpentiumpro -march=pentiumpro -malign-loops=2 -malign-jumps=2 -malign-functions=2
+#OPTIMIZATION = $(MACHINEDEPOPTS) -O6 -ffast-math -funroll-loops -fomit-frame-pointer -fexpensive-optimizations
+ 
+# For 386
+MACHINEDEPOPTS = -m386 -march=i386 -malign-loops=2 -malign-jumps=2 -malign-functions=2
+OPTIMIZATION = $(MACHINEDEPOPTS) -O3 -ffast-math -funroll-loops -fomit-frame-pointer -fexpensive-optimizations
+
+COPTS = -g $(OPTIMIZATION) -Wall
+
+#-DHAVE_MGRAPH_H=1
+
+# Libraries
+
+common_libs = -lcomctl32 -lwsock32 -lwininet -lwinmm -lz
+qf_client_wgl_LIBS = -lopengl32 -ldxguid $(common_libs)
+qf_client_win_LIBS = -lmglfx -ldxguid $(common_libs)
+qf_client_sdl_LIBS = -ldxguid -lsdl $(common_libs)
+qf_client_sgl_LIBS = -ldxguid -lsdl -lopengl32 $(common_libs)
+qf_server_LIBS = $(common_libs)
+
+QFINCLUDES = -I$(QFROOT)\include\win32\mingw -I$(QFROOT)\include\win32 -I$(QFROOT)\include -L. -I$(QFROOT)\include\win32\resources
+OTHERINCLUDES = -I$(DIRECTXSDK)\includes -I$(ZLIB)
+
+CFLAGS = -I$(SDLSDK)\include $(QFINCLUDES) $(OTHERINCLUDES) $(COPTS) $(DEFS)
+
+qf_client_wgl_OBJECTS = $(qf_client_wgl_SOURCES:.c=.o)
+qf_client_win_OBJECTS = $(qf_client_win_SOURCES:.c=.o)
+qf_client_sgl_OBJECTS = $(qf_client_sgl_SOURCES:.c=.o)
+qf_client_sdl_OBJECTS = $(qf_client_sdl_SOURCES:.c=.o)
+qf_server_OBJECTS = $(qf_server_SOURCES:.c=.o) 
+
+all: qf-client-wgl qf-server qf-client-sgl qf-client-sdl 
+#qf-client-win
+
+.S.o:
+	gcc $(CFLAGS) -c $<
+
+qf-client-wgl: $(qf_client_wgl_OBJECTS)
+	gcc $(CFLAGS) -o $(qf_client_wgl_PROGRAM) $(qf_client_wgl_OBJECTS) $(qf_client_wgl_LIBS) -mwindows
+	strip --strip-all $(qf_client_wgl_PROGRAM)
+
+qf-client-sdl: $(qf_client_sdl_OBJECTS)
+	gcc $(CFLAGS) -o $(qf_client_sdl_PROGRAM) $(qf_client_sdl_OBJECTS) $(qf_client_sdl_LIBS)
+	strip --strip-all $(qf_client_sdl_PROGRAM)
+
+qf-client-sgl: $(qf_client_sgl_OBJECTS)
+	gcc $(CFLAGS) -o $(qf_client_sgl_PROGRAM) $(qf_client_sgl_OBJECTS) $(qf_client_sgl_LIBS)
+	strip --strip-all $(qf_client_sgl_PROGRAM)
+
+qf-server: $(qf_server_OBJECTS)
+	gcc $(CFLAGS) -o $(qf_server_PROGRAM) $(qf_server_OBJECTS) $(qf_server_LIBS)
+	strip --strip-all $(qf_server_PROGRAM)
+
+clean: 
+	rm -f $(PROGRAM) $(OBJECTS)
+
+# compile is not supported yet, probs with MGLFX
+#qf-client-win: $(qf_client_win_OBJECTS)
+#	gcc -Xlinker --verbose $(CFLAGS) -ID:\scitech\includes -o $(qf_client_win_PROGRAM) $(qf_client_win_OBJECTS) $(qf_client_win_LIBS) -mwindows
+#	strip --strip-all $(qf_client_win_PROGRAM)
+
