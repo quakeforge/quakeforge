@@ -35,6 +35,7 @@
 #ifdef HAVE_STRINGS_H
 # include <strings.h>
 #endif
+
 #include <stdlib.h>
 
 #include "QF/cmd.h"
@@ -44,23 +45,21 @@
 //FIXME eww
 extern int  con_linewidth;
 
+
 /*
-	Con_BasicCompleteCommandLine
+  Con_BasicCompleteCommandLine
 
-	New function for tab-completion system
-	Added by EvilTypeGuy
-	Thanks to Fett erich@heintz.com
-	Thanks to taniwha
-
+  New function for tab-completion system
+  Added by EvilTypeGuy
+  Thanks to Fett erich@heintz.com
+  Thanks to taniwha
 */
 void
 Con_BasicCompleteCommandLine (inputline_t *il)
 {
-	const char *cmd = "";
-	char	*s;
-	int	c, v, a, i;
-	int		cmd_len;
-	const char **list[3] = {0, 0, 0};
+	char		   *s;
+	const char	   *cmd = "", **list[3] = {0, 0, 0};
+	int				cmd_len, a, c, i, v;
 
 	s = il->lines[il->edit_line] + 1;
 	if (*s == '\\' || *s == '/')

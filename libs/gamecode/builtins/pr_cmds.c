@@ -29,14 +29,14 @@
 #ifdef HAVE_CONFIG_H
 # include "config.h"
 #endif
+#ifdef HAVE_ERRNO_H
+# include <errno.h>
+#endif
 #ifdef HAVE_STRING_H
 # include <string.h>
 #endif
 #ifdef HAVE_STRINGS_H
 # include <strings.h>
-#endif
-#ifdef HAVE_ERRNO_H
-# include <errno.h>
 #endif
 
 #include <stdlib.h>
@@ -56,9 +56,7 @@
 #define	RETURN_EDICT(p, e) ((p)->pr_globals[OFS_RETURN].integer_var = EDICT_TO_PROG(p, e))
 #define	RETURN_STRING(p, s) ((p)->pr_globals[OFS_RETURN].integer_var = PR_SetString((p), s))
 
-/*
-  BUILT-IN FUNCTIONS
-*/
+/* BUILT-IN FUNCTIONS */
 
 // FIXME: Hunk_TempAlloc, Con_Printf, Cvar_*, PR_SetString, PR_RunError, ED_PrintEdicts, PF_traceon, PF_traceoff, ED_PrintNum, PR_FindBuiltin isn't threadsafe/reentrant
 
@@ -66,9 +64,8 @@
 const char *
 PF_VarString (progs_t *pr, int first)
 {
-	int         i;
-	int         len;
-	char       *out;
+	char	   *out;
+	int			len, i;
 
 	for (len = 0, i = first; i < pr->pr_argc; i++)
 		len += strlen (G_STRING (pr, (OFS_PARM0 + i * 3)));
@@ -86,9 +83,9 @@ PF_VarString (progs_t *pr, int first)
 void
 PF_normalize (progs_t *pr)
 {
-	float      *value1;
-	vec3_t      newvalue;
-	float       new;
+	float		new;
+	float	   *value1;
+	vec3_t		newvalue;
 
 	value1 = G_VECTOR (pr, OFS_PARM0);
 
@@ -116,8 +113,8 @@ PF_normalize (progs_t *pr)
 void
 PF_vlen (progs_t *pr)
 {
-	float      *value1;
-	float       new;
+	float		new;
+	float	   *value1;
 
 	value1 = G_VECTOR (pr, OFS_PARM0);
 
@@ -136,8 +133,8 @@ PF_vlen (progs_t *pr)
 void
 PF_vectoyaw (progs_t *pr)
 {
-	float      *value1;
-	float       yaw;
+	float		yaw;
+	float	   *value1;
 
 	value1 = G_VECTOR (pr, OFS_PARM0);
 
@@ -160,9 +157,8 @@ PF_vectoyaw (progs_t *pr)
 void
 PF_vectoangles (progs_t *pr)
 {
-	float      *value1;
-	float       forward;
-	float       yaw, pitch;
+	float		forward, pitch, yaw;
+	float	   *value1;
 
 	value1 = G_VECTOR (pr, OFS_PARM0);
 
@@ -198,7 +194,7 @@ PF_vectoangles (progs_t *pr)
 void
 PF_random (progs_t *pr)
 {
-	float       num;
+	float		num;
 
 	num = (rand () & 0x7fff) / ((float) 0x7fff);
 
@@ -229,7 +225,7 @@ PF_break (progs_t *pr)
 void
 PF_localcmd (progs_t *pr)
 {
-	const char       *str;
+	const char		*str;
 
 	str = G_STRING (pr, OFS_PARM0);
 	Cbuf_AddText (str);
@@ -244,7 +240,7 @@ PF_localcmd (progs_t *pr)
 void
 PF_cvar (progs_t *pr)
 {
-	const char       *str;
+	const char		*str;
 
 	str = G_STRING (pr, OFS_PARM0);
 
@@ -259,8 +255,8 @@ PF_cvar (progs_t *pr)
 void
 PF_cvar_set (progs_t *pr)
 {
-	const char       *var_name, *val;
-	cvar_t     *var;
+	const char	*var_name, *val;
+	cvar_t		*var;
 
 	var_name = G_STRING (pr, OFS_PARM0);
 	val = G_STRING (pr, OFS_PARM1);
@@ -285,9 +281,9 @@ PF_cvar_set (progs_t *pr)
 void
 PF_ftos (progs_t *pr)
 {
-	float       v;
-	int         i;						// 1999-07-25 FTOS fix by Maddes
-	char        string[MAX_FLOAT_STRING];
+	char		string[MAX_FLOAT_STRING];
+	float		v;
+	int			i;						// 1999-07-25 FTOS fix by Maddes
 
 	v = G_FLOAT (pr, OFS_PARM0);
 
@@ -310,7 +306,7 @@ PF_ftos (progs_t *pr)
 void
 PF_fabs (progs_t *pr)
 {
-	float       v;
+	float		v;
 
 	v = G_FLOAT (pr, OFS_PARM0);
 	G_FLOAT (pr, OFS_RETURN) = fabs (v);
@@ -331,14 +327,11 @@ PF_vtos (progs_t *pr)
 void
 PF_Find (progs_t *pr)
 {
-	int         e;
-	int         f;
-	edict_t    *ed;
-	ddef_t     *field_def;
-	int			type;
-
 	const char *s = 0, *t; // ev_string
-	int i; // ev_vector
+	int			i; // ev_vector
+	int			type, e, f;
+	ddef_t	   *field_def;
+	edict_t	   *ed;
 
 	e = G_EDICTNUM (pr, OFS_PARM0);
 	f = G_INT (pr, OFS_PARM1);
@@ -424,7 +417,7 @@ PF_dprint (progs_t *pr)
 void
 PF_rint (progs_t *pr)
 {
-	float       f;
+	float		f;
 
 	f = G_FLOAT (pr, OFS_PARM0);
 	if (f > 0)
@@ -453,8 +446,8 @@ PF_ceil (progs_t *pr)
 void
 PF_nextent (progs_t *pr)
 {
-	int         i;
-	edict_t    *ent;
+	int			i;
+	edict_t	   *ent;
 
 	i = G_EDICTNUM (pr, OFS_PARM0);
 	while (1) {
@@ -479,13 +472,12 @@ PF_nextent (progs_t *pr)
 void
 PF_stof (progs_t *pr)
 {
-	const char       *s;
+	const char		*s;
 
 	s = G_STRING (pr, OFS_PARM0);
 
 	G_FLOAT (pr, OFS_RETURN) = atof (s);
 }
-
 
 /*
 	PF_strlen
@@ -495,7 +487,7 @@ PF_stof (progs_t *pr)
 void
 PF_strlen (progs_t *pr)
 {
-	const char *s;
+	const char	*s;
 
 	s = G_STRING (pr, OFS_PARM0);
 	G_FLOAT (pr, OFS_RETURN) = strlen(s);
@@ -509,9 +501,9 @@ PF_strlen (progs_t *pr)
 void
 PF_charcount (progs_t *pr)
 {
+	char		goal;
 	const char *s;
-	char goal;
-	int count;
+	int			count;
 
 	goal = (G_STRING (pr, OFS_PARM0))[0];
 	if (goal == '\0') {
@@ -538,8 +530,8 @@ PF_checkbuiltin (progs_t *pr)
 void
 PF_getbuiltin (progs_t *pr)
 {
-	int i;
 	const char *name;
+	int			i;
 
 	name = G_STRING (pr, OFS_PARM0);
 	i = PR_FindBuiltin (pr, name);
@@ -559,25 +551,13 @@ PF_getbuiltin (progs_t *pr)
 void
 PF_sprintf (progs_t *pr)
 {
-	char *out = 0;
-	int out_size = 0;
-	int out_max = 32;
-	char *format;
-	char *c; // current
-	char new_format[INT_WIDTH * 2 + 9]; // "%0-+ #." and conversion
-	int new_format_i;
-	int looping;
-	int ret;
-	int curarg = 3;
-
-	int fmt_leadzero;
-	int fmt_leftjust;
-	int fmt_signed;
-	int fmt_space;
-	int fmt_alternate;
-
-	int fmt_minwidth;
-	int fmt_precision;
+	char   *format;
+	char   *c; // current
+	char   *out = 0;
+	int		fmt_alternate, fmt_leadzero, fmt_leftjust, fmt_minwidth,
+			fmt_precision, fmt_signed, fmt_space, looping, new_format_i, ret;
+	int		cur_arg = 3, out_max = 32, out_size = 0;
+	char	new_format[INT_WIDTH * 2 + 9]; // "%0-+ #." and conversion
 
 	format = G_STRING (pr, OFS_PARM0);
 	c = format;
@@ -649,16 +629,15 @@ PF_sprintf (progs_t *pr)
 			if (fmt_alternate) new_format[new_format_i++] = '#';
 			if (fmt_minwidth)
 				if ((new_format_i += snprintf (new_format + new_format_i,
-											   sizeof (new_format) - new_format_i,
-											   "%d",
-											   fmt_minwidth))
+											   sizeof (new_format) -
+											   new_format_i,
+											   "%d", fmt_minwidth))
 					>= sizeof (new_format))
 					PR_Error (pr, "PF_sprintf: new_format overflowed?!");
 			new_format[new_format_i++] = '.';
 			if ((new_format_i += snprintf (new_format + new_format_i,
 										   sizeof (new_format) - new_format_i,
-										   "%d",
-										   fmt_precision))
+										   "%d", fmt_precision))
 				>= sizeof (new_format))
 				PR_Error (pr, "PF_sprintf: new_format overflowed?!");
 			switch (*c) {
@@ -670,8 +649,7 @@ PF_sprintf (progs_t *pr)
 			new_format[new_format_i++] = '\0';
 			switch (*c) {
 				case 'i':
-					while ((ret = snprintf (&out[out_size],
-											out_max - out_size,
+					while ((ret = snprintf (&out[out_size], out_max - out_size,
 											new_format,
 											G_INT (pr, OFS_PARM0 + curarg)))
 						   >= out_max - out_size) {
@@ -686,8 +664,7 @@ PF_sprintf (progs_t *pr)
 					curarg += 3;
 					break;
 				case 'f':
-					while ((ret = snprintf (&out[out_size],
-											out_max - out_size,
+					while ((ret = snprintf (&out[out_size], out_max - out_size,
 											new_format,
 											G_FLOAT (pr, OFS_PARM0 + curarg)))
 						   >= out_max - out_size) {
@@ -707,9 +684,9 @@ PF_sprintf (progs_t *pr)
 						if (curarg > MAX_ARG)
 							goto maxargs;
 						while ((ret = snprintf (&out[out_size],
-												out_max - out_size,
-												new_format,
-												G_FLOAT (pr, OFS_PARM0 + curarg)))
+												out_max - out_size, new_format,
+												G_FLOAT (pr, OFS_PARM0 +
+														 curarg)))
 							   >= out_max - out_size) {
 							char *o;
 							out_max *= 2;
@@ -731,7 +708,8 @@ PF_sprintf (progs_t *pr)
 			if (curarg > MAX_ARG)
 				goto maxargs;
 			s = G_STRING (pr, OFS_PARM0 + curarg);
-			while ((ret = snprintf (&out[out_size], out_max - out_size, "%s", s))
+			while ((ret = snprintf (&out[out_size], out_max - out_size, "%s",
+									s))
 				   >= out_max - out_size) {
 				char *o;
 				out_max *= 2;
@@ -775,7 +753,7 @@ PF_sprintf (progs_t *pr)
 
 	mallocerror:
 //		if (errno == ENOMEM)
-			// hopefully we can free up some mem so it can be used during shutdown
+		// hopefully we can free up some mem so it can be used during shutdown
 //			free (out);
 		PR_Error (pr, "PF_sprintf: memory allocation error!\n");
 

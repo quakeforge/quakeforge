@@ -47,10 +47,9 @@
 struct inputline_s *
 Con_CreateInputLine (int lines, int width, char prompt)
 {
-	int size;
-	inputline_t *inputline;
-	char **p;
-	char *l;
+	char		   *l, **p;
+	int				size;
+	inputline_t	   *inputline;
 
 	size = sizeof (inputline_t);	// space for the header
 	size += sizeof (char *[lines]);	// space for the line pointers
@@ -79,7 +78,7 @@ Con_DestroyInputLine (inputline_t *inputline)
 void
 Con_ProcessInput (inputline_t *il, int ch)
 {
-	int         i;
+	int			i;
 
 	switch (ch) {
 		/*

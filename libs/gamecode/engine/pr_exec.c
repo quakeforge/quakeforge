@@ -46,17 +46,13 @@
 
 #include "compat.h"
 
-//=============================================================================
-
 extern cvar_t *pr_deadbeef;
 
-/*
-	PR_PrintStatement
-*/
+
 void
 PR_PrintStatement (progs_t * pr, dstatement_t *s)
 {
-	int         addr = s - pr->pr_statements;
+	int			addr = s - pr->pr_statements;
 	opcode_t   *op;
 
 	if (pr_debug->int_val && pr->debug) {
@@ -95,14 +91,11 @@ PR_PrintStatement (progs_t * pr, dstatement_t *s)
 	Con_Printf ("\n");
 }
 
-/*
-	PR_StackTrace
-*/
 void
 PR_StackTrace (progs_t * pr)
 {
-	dfunction_t *f;
-	int         i;
+	int				i;
+	dfunction_t	   *f;
 
 	if (pr->pr_depth == 0) {
 		Con_Printf ("<NO STACK>\n");
@@ -121,17 +114,11 @@ PR_StackTrace (progs_t * pr)
 	}
 }
 
-
-/*
-	PR_Profile
-*/
 void
 PR_Profile (progs_t * pr)
 {
-	dfunction_t *f, *best;
-	int         max;
-	int         num;
-	int         i;
+	int				max, num, i;
+	dfunction_t	   *best, *f;
 
 	num = 0;
 	do {
@@ -162,8 +149,8 @@ PR_Profile (progs_t * pr)
 void
 PR_RunError (progs_t * pr, const char *error, ...)
 {
-	va_list     argptr;
-	char        string[1024];
+	char		string[1024];
+	va_list		argptr;
 
 	va_start (argptr, error);
 	vsnprintf (string, sizeof (string), error, argptr);
@@ -195,8 +182,7 @@ PR_RunError (progs_t * pr, const char *error, ...)
 int
 PR_EnterFunction (progs_t * pr, dfunction_t *f)
 {
-	int         i, j, c, o;
-//	int			k;
+	int			i, j, c, o;
 
 	//printf("%s:\n", PR_GetString(pr,f->s_name));
 	pr->pr_stack[pr->pr_depth].s = pr->pr_xstatement;
@@ -219,7 +205,7 @@ PR_EnterFunction (progs_t * pr, dfunction_t *f)
 //		for (k = f->parm_start; k < f->parm_start + c; k++)
 //			pr->pr_globals[k].integer_var = 0xdeadbeef;
 
-// copy parameters
+	// copy parameters
 	o = f->parm_start;
 	for (i = 0; i < f->numparms; i++) {
 		for (j = 0; j < f->parm_size[i]; j++) {
@@ -234,18 +220,15 @@ PR_EnterFunction (progs_t * pr, dfunction_t *f)
 	return f->first_statement - 1;		// offset the s++
 }
 
-/*
-	PR_LeaveFunction
-*/
 int
 PR_LeaveFunction (progs_t * pr)
 {
-	int         c;
+	int			c;
 
 	if (pr->pr_depth <= 0)
 		PR_Error (pr, "prog stack underflow");
 
-// restore locals from the stack
+	// restore locals from the stack
 	c = pr->pr_xfunction->locals;
 	pr->localstack_used -= c;
 	if (pr->localstack_used < 0)
@@ -255,33 +238,31 @@ PR_LeaveFunction (progs_t * pr)
 			&pr->localstack[pr->localstack_used],
 			sizeof (pr_type_t) * c);
 
-// up stack
+	// up stack
 	pr->pr_depth--;
 	pr->pr_xfunction = pr->pr_stack[pr->pr_depth].f;
 	return pr->pr_stack[pr->pr_depth].s;
 }
 
-
-/*
-	PR_ExecuteProgram
-
-	The interpretation main loop
-*/
 #define OPA (pr->pr_globals[st->a])
 #define OPB (pr->pr_globals[st->b])
 #define OPC (pr->pr_globals[st->c])
 
 extern cvar_t *pr_boundscheck;
 
+/*
+	PR_ExecuteProgram
+
+	The interpretation main loop
+*/
 void
 PR_ExecuteProgram (progs_t * pr, func_t fnum)
 {
-	dstatement_t *st;
-	dfunction_t *f, *newf;
-	edict_t    *ed;
-	int         exitdepth;
-	pr_type_t  *ptr;
-	int         profile, startprofile;
+	int				exitdepth, profile, startprofile;
+	dfunction_t	   *f, *newf;
+	dstatement_t   *st;
+	edict_t		   *ed;
+	pr_type_t	   *ptr;
 
 	if (!fnum || fnum >= pr->progs->numfunctions) {
 		if (*pr->globals.self)
@@ -294,7 +275,7 @@ PR_ExecuteProgram (progs_t * pr, func_t fnum)
 
 	pr->pr_trace = false;
 
-// make a stack frame
+	// make a stack frame
 	exitdepth = pr->pr_depth;
 
 	st = &pr->pr_statements[PR_EnterFunction (pr, f)];
@@ -412,7 +393,8 @@ PR_ExecuteProgram (progs_t * pr, func_t fnum)
 					&& !OPA.vector_var[2];
 				break;
 			case OP_NOT_S:
-				OPC.integer_var = !OPA.string_var || !*PR_GetString (pr, OPA.string_var);
+				OPC.integer_var = !OPA.string_var ||
+					!*PR_GetString (pr, OPA.string_var);
 				break;
 			case OP_NOT_FNC:
 				OPC.integer_var = !OPA.func_var;
@@ -489,19 +471,20 @@ PR_ExecuteProgram (progs_t * pr, func_t fnum)
 			case OP_STOREP_S:
 			case OP_STOREP_FNC:		// pointers
 				if (pr_boundscheck->int_val
-					&& (OPB.integer_var < 0 || OPB.integer_var + 4 > pr->pr_edictareasize)) {
+					&& (OPB.integer_var < 0 || OPB.integer_var + 4 >
+						pr->pr_edictareasize)) {
 					pr->pr_xstatement = st - pr->pr_statements;
-					PR_RunError
-						(pr,
-						 "Progs attempted to write to an out of bounds edict\n");
+					PR_RunError (pr, "Progs attempted to write to an out of "
+								 "bounds edict\n");
 					return;
 				}
-				if (pr_boundscheck->int_val && (OPB.integer_var % pr->pr_edict_size <
+				if (pr_boundscheck->int_val && (OPB.integer_var %
+												pr->pr_edict_size <
 												((byte *) & (*pr->edicts)->v -
 												 (byte *) * pr->edicts))) {
 					pr->pr_xstatement = st - pr->pr_statements;
-					PR_RunError
-						(pr, "Progs attempted to write to an engine edict field\n");
+					PR_RunError (pr, "Progs attempted to write to an engine "
+								 "edict field\n");
 					return;
 				}
 				ptr = (pr_type_t*)((int)*pr->edicts + OPB.integer_var);
@@ -509,11 +492,11 @@ PR_ExecuteProgram (progs_t * pr, func_t fnum)
 				break;
 			case OP_STOREP_V:
 				if (pr_boundscheck->int_val
-					&& (OPB.integer_var < 0 || OPB.integer_var + 12 > pr->pr_edictareasize)) {
+					&& (OPB.integer_var < 0 || OPB.integer_var + 12 >
+						pr->pr_edictareasize)) {
 					pr->pr_xstatement = st - pr->pr_statements;
-					PR_RunError
-						(pr,
-						 "Progs attempted to write to an out of bounds edict\n");
+					PR_RunError (pr, "Progs attempted to write to an out of "
+								 "bounds edict\n");
 					return;
 				}
 				ptr = (pr_type_t*)((int)*pr->edicts + OPB.integer_var);
@@ -523,10 +506,11 @@ PR_ExecuteProgram (progs_t * pr, func_t fnum)
 				break;
 			case OP_ADDRESS:
 				if (pr_boundscheck->int_val
-					&& (OPA.entity_var < 0 || OPA.entity_var >= pr->pr_edictareasize)) {
+					&& (OPA.entity_var < 0 || OPA.entity_var >=
+						pr->pr_edictareasize)) {
 					pr->pr_xstatement = st - pr->pr_statements;
-					PR_RunError
-						(pr, "Progs attempted to address an out of bounds edict\n");
+					PR_RunError (pr, "Progs attempted to address an out of "
+								 "bounds edict\n");
 					return;
 				}
 				if (pr_boundscheck->int_val
@@ -536,15 +520,16 @@ PR_ExecuteProgram (progs_t * pr, func_t fnum)
 					return;
 				}
 				if (pr_boundscheck->int_val
-					&& (OPB.integer_var < 0 || OPB.integer_var >= pr->progs->entityfields)) {
+					&& (OPB.integer_var < 0 || OPB.integer_var >=
+						pr->progs->entityfields)) {
 					pr->pr_xstatement = st - pr->pr_statements;
-					PR_RunError
-						(pr,
-						 "Progs attempted to address an invalid field in an edict\n");
+					PR_RunError (pr, "Progs attempted to address an invalid "
+								 "field in an edict\n");
 					return;
 				}
 				ed = PROG_TO_EDICT (pr, OPA.entity_var);
-				OPC.integer_var = (int)&ed->v[OPB.integer_var] - (int)*pr->edicts;
+				OPC.integer_var = (int) &ed->v[OPB.integer_var] -
+					(int) *pr->edicts;
 				break;
 			case OP_LOAD_F:
 			case OP_LOAD_FLD:
@@ -552,19 +537,19 @@ PR_ExecuteProgram (progs_t * pr, func_t fnum)
 			case OP_LOAD_S:
 			case OP_LOAD_FNC:
 				if (pr_boundscheck->int_val
-					&& (OPA.entity_var < 0 || OPA.entity_var >= pr->pr_edictareasize)) {
+					&& (OPA.entity_var < 0 || OPA.entity_var >=
+						pr->pr_edictareasize)) {
 					pr->pr_xstatement = st - pr->pr_statements;
-					PR_RunError
-						(pr,
-						 "Progs attempted to read an out of bounds edict number\n");
+					PR_RunError (pr, "Progs attempted to read an out of "
+								 "bounds edict number\n");
 					return;
 				}
 				if (pr_boundscheck->int_val
-					&& (OPB.integer_var < 0 || OPB.integer_var >= pr->progs->entityfields)) {
+					&& (OPB.integer_var < 0 || OPB.integer_var >=
+						pr->progs->entityfields)) {
 					pr->pr_xstatement = st - pr->pr_statements;
-					PR_RunError
-						(pr,
-						 "Progs attempted to read an invalid field in an edict\n");
+					PR_RunError (pr, "Progs attempted to read an invalid "
+								 "field in an edict\n");
 					return;
 				}
 				ed = PROG_TO_EDICT (pr, OPA.entity_var);
@@ -572,20 +557,19 @@ PR_ExecuteProgram (progs_t * pr, func_t fnum)
 				break;
 			case OP_LOAD_V:
 				if (pr_boundscheck->int_val
-					&& (OPA.entity_var < 0 || OPA.entity_var >= pr->pr_edictareasize)) {
+					&& (OPA.entity_var < 0 || OPA.entity_var >=
+						pr->pr_edictareasize)) {
 					pr->pr_xstatement = st - pr->pr_statements;
-					PR_RunError
-						(pr,
-						 "Progs attempted to read an out of bounds edict number\n");
+					PR_RunError (pr, "Progs attempted to read an out of "
+								 "bounds edict number\n");
 					return;
 				}
 				if (pr_boundscheck->int_val
 					&& (OPB.integer_var < 0
 						|| OPB.integer_var + 2 >= pr->progs->entityfields)) {
 					pr->pr_xstatement = st - pr->pr_statements;
-					PR_RunError
-						(pr,
-						 "Progs attempted to read an invalid field in an edict\n");
+					PR_RunError (pr, "Progs attempted to read an invalid "
+								 "field in an edict\n");
 					return;
 				}
 				ed = PROG_TO_EDICT (pr, OPA.entity_var);
@@ -647,7 +631,8 @@ PR_ExecuteProgram (progs_t * pr, func_t fnum)
 				break;
 			case OP_STATE:
 				ed = PROG_TO_EDICT (pr, *pr->globals.self);
-				ed->v[pr->fields.nextthink].float_var = *pr->globals.time + 0.1;
+				ed->v[pr->fields.nextthink].float_var = *pr->globals.time +
+					0.1;
 				ed->v[pr->fields.frame].float_var = OPA.float_var;
 				ed->v[pr->fields.think].func_var = OPB.func_var;
 				break;
@@ -730,18 +715,21 @@ PR_ExecuteProgram (progs_t * pr, func_t fnum)
 				break;
 			case OP_STOREP_I:
 				if (pr_boundscheck->int_val
-					&& (OPB.integer_var < 0 || OPB.integer_var + 4 > pr->pr_edictareasize)) {
+					&& (OPB.integer_var < 0 || OPB.integer_var + 4 >
+						pr->pr_edictareasize)) {
 					pr->pr_xstatement = st - pr->pr_statements;
-					PR_RunError
-						(pr, "Progs attempted to write to an out of bounds edict\n");
+					PR_RunError (pr, "Progs attempted to write to an out of "
+								 "bounds edict\n");
 					return;
 				}
 				if (pr_boundscheck->int_val
 					&& (OPB.integer_var % pr->pr_edict_size <
-						((byte *) & (*pr->edicts)->v - (byte *) *pr->edicts))) {
+						((byte *) & (*pr->edicts)->v - (byte *) *pr->edicts)))
+				{
 					pr->pr_xstatement = st - pr->pr_statements;
 					PR_RunError
-						(pr, "Progs attempted to write to an engine edict field\n");
+						(pr, "Progs attempted to write to an engine edict "
+						 "field\n");
 					return;
 				}
 				ptr = (pr_type_t*)((int)*pr->edicts + OPB.integer_var);
@@ -749,17 +737,20 @@ PR_ExecuteProgram (progs_t * pr, func_t fnum)
 				break;
 			case OP_LOAD_I:
 				if (pr_boundscheck->int_val
-					&& (OPA.entity_var < 0 || OPA.entity_var >= pr->pr_edictareasize)) {
+					&& (OPA.entity_var < 0 || OPA.entity_var >=
+						pr->pr_edictareasize)) {
 					pr->pr_xstatement = st - pr->pr_statements;
 					PR_RunError
-						(pr, "Progs attempted to read an out of bounds edict number\n");
+						(pr, "Progs attempted to read an out of bounds edict "
+						 "number\n");
 					return;
 				}
 				if (pr_boundscheck->int_val
-					&& (OPB.integer_var < 0 || OPB.integer_var >= pr->progs->entityfields)) {
+					&& (OPB.integer_var < 0 || OPB.integer_var >=
+						pr->progs->entityfields)) {
 					pr->pr_xstatement = st - pr->pr_statements;
-					PR_RunError
-						(pr, "Progs attempted to read an invalid field in an entity_var\n");
+					PR_RunError (pr, "Progs attempted to read an invalid "
+								 "field in an entity_var\n");
 					return;
 				}
 				ed = PROG_TO_EDICT (pr, OPA.entity_var);
@@ -774,21 +765,22 @@ PR_ExecuteProgram (progs_t * pr, func_t fnum)
 			case OP_GSTOREP_FLD:	// integers
 			case OP_GSTOREP_S:
 			case OP_GSTOREP_FNC:	// pointers
-				if (pr_boundscheck->int_val
-					&& (OPB.integer_var < 0 || OPB.integer_var >= pr->pr_globaldefs)) {
+				if (pr_boundscheck->int_val && (OPB.integer_var < 0 ||
+				OPB.integer_var >= pr->pr_globaldefs)) {
 					pr->pr_xstatement = st - pr->pr_statements;
-					PR_RunError
-						(pr, "Progs attempted to write to an invalid indexed global\n");
+					PR_RunError (pr, "Progs attempted to write to an invalid "
+					"indexed global\n");
 					return;
 				}
 				pr->pr_globals[OPB.integer_var] = OPA.float_var;
 				break;
 			case OP_GSTOREP_V:
 				if (pr_boundscheck->int_val
-					&& (OPB.integer_var < 0 || OPB.integer_var + 2 >= pr->pr_globaldefs)) {
+					&& (OPB.integer_var < 0 || OPB.integer_var + 2 >=
+					pr->pr_globaldefs)) {
 					pr->pr_xstatement = st - pr->pr_statements;
-					PR_RunError
-						(pr, "Progs attempted to write to an invalid indexed global\n");
+					PR_RunError (pr, "Progs attempted to write to an invalid "
+					"indexed global\n");
 					return;
 				}
 				pr->pr_globals[OPB.integer_var] = OPA.vector_var[0];
@@ -801,8 +793,8 @@ PR_ExecuteProgram (progs_t * pr, func_t fnum)
 				if (pr_boundscheck->int_val
 					&& (i < 0 || i >= pr->pr_globaldefs)) {
 					pr->pr_xstatement = st - pr->pr_statements;
-					PR_RunError
-						(pr, "Progs attempted to address an out of bounds global\n");
+					PR_RunError (pr, "Progs attempted to address an out of "
+					"bounds global\n");
 					return;
 				}
 				OPC.float_var = pr->pr_globals[i];
@@ -815,10 +807,11 @@ PR_ExecuteProgram (progs_t * pr, func_t fnum)
 			case OP_GLOAD_S:
 			case OP_GLOAD_FNC:
 				if (pr_boundscheck->int_val
-					&& (OPA.integer_var < 0 || OPA.integer_var >= pr->pr_globaldefs)) {
+					&& (OPA.integer_var < 0 || OPA.integer_var >=
+					pr->pr_globaldefs)) {
 					pr->pr_xstatement = st - pr->pr_statements;
-					PR_RunError
-						(pr, "Progs attempted to read an invalid indexed global\n");
+					PR_RunError (pr, "Progs attempted to read an invalid "
+					"indexed global\n");
 					return;
 				}
 				OPC.float_var = pr->pr_globals[OPA.integer_var];
@@ -826,10 +819,11 @@ PR_ExecuteProgram (progs_t * pr, func_t fnum)
 
 			case OP_GLOAD_V:
 				if (pr_boundscheck->int_val
-					&& (OPA.integer_var < 0 || OPA.integer_var + 2 >= pr->pr_globaldefs)) {
+					&& (OPA.integer_var < 0 || OPA.integer_var + 2 >=
+					pr->pr_globaldefs)) {
 					pr->pr_xstatement = st - pr->pr_statements;
-					PR_RunError
-						(pr, "Progs attempted to read an invalid indexed global\n");
+					PR_RunError (pr, "Progs attempted to read an invalid "
+					"indexed global\n");
 					return;
 				}
 				OPC.vector_var[0] = pr->pr_globals[OPA.integer_var];
@@ -840,9 +834,8 @@ PR_ExecuteProgram (progs_t * pr, func_t fnum)
 			case OP_BOUNDCHECK:
 				if (OPA.integer_var < 0 || OPA.integer_var >= st->b) {
 					pr->pr_xstatement = st - pr->pr_statements;
-					PR_RunError
-						(pr, "Progs boundcheck failed at line number %d, value is < 0 or >= %d\n",
-						 st->b, st->c);
+					PR_RunError (pr, "Progs boundcheck failed at line number "
+					"%d, value is < 0 or >= %d\n", st->b, st->c);
 					return;
 				}
 				break;

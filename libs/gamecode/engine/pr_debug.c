@@ -38,6 +38,7 @@
 #ifdef HAVE_STRINGS_H
 # include <strings.h>
 #endif
+
 #include <stdlib.h>
 
 #include "QF/cvar.h"
@@ -65,19 +66,20 @@ cvar_t      *pr_debug;
 cvar_t      *pr_source_path;
 static hashtab_t  *file_hash;
 
+
 file_t *
 PR_Load_Source_File (progs_t *pr, const char *fname)
 {
-	file_t *f = Hash_Find (file_hash, fname);
-	char *l;
-	char *path;
+	char		*path, *l;
+	file_t		*f = Hash_Find (file_hash, fname);
 
 	if (f)
 		return f;
 	f = malloc (sizeof (file_t));
 	if (!f)
 		return 0;
-	path = Hunk_TempAlloc (strlen (pr_source_path->string) + strlen (fname) + 2);
+	path = Hunk_TempAlloc (strlen (pr_source_path->string) + strlen (fname) +
+						   2);
 	sprintf (path, "%s/%s", pr_source_path->string, fname);
 	f->text = COM_LoadFile (path, 0);
 	if (!f->text) {
@@ -115,13 +117,12 @@ PR_Load_Source_File (progs_t *pr, const char *fname)
 void
 PR_LoadDebug (progs_t *pr)
 {
+	char		*sym_path;
+	const char	*path_end, *sym_file;
+	int			i;
+	int			start = Hunk_LowMark ();
+	ddef_t	   *def;
 	pr_type_t  *str = 0;
-	int         start = Hunk_LowMark ();
-	int         i;
-	const char *path_end;
-	const char *sym_file;
-	char       *sym_path;
-	ddef_t     *def;
 
 	pr->debug = 0;
 	pr->auxfunctions = 0;
@@ -142,7 +143,8 @@ PR_LoadDebug (progs_t *pr)
 	pr->debugfile = PR_GetString (pr, str->string_var);
 	sym_file = COM_SkipPath (pr->debugfile);
 	path_end = COM_SkipPath (pr->progs_name);
-	sym_path = Hunk_TempAlloc (strlen (sym_file) + (path_end - pr->progs_name) + 1);
+	sym_path = Hunk_TempAlloc (strlen (sym_file) + (path_end - pr->progs_name)
+							   + 1);
 	strncpy (sym_path, pr->progs_name, path_end - pr->progs_name);
 	strcpy (sym_path + (path_end - pr->progs_name), sym_file);
 	pr->debug = (pr_debug_header_t*)COM_LoadHunkFile (sym_path);
@@ -163,7 +165,8 @@ PR_LoadDebug (progs_t *pr)
 	}
 	pr->debug->crc = LittleShort (pr->debug->crc);
 	if (pr->debug->crc != pr->crc) {
-		Sys_Printf ("ignoring %s that doesn't match %s. (CRCs: sym:%d dat:%d)\n",
+		Sys_Printf ("ignoring %s that doesn't match %s. (CRCs: "
+					"sym:%d dat:%d)\n",
 					sym_path,
 					pr->progs_name,
 					pr->debug->crc,
@@ -172,7 +175,8 @@ PR_LoadDebug (progs_t *pr)
 		pr->debug = 0;
 		return;
 	}
-	pr->debug->you_tell_me_and_we_will_both_know = LittleShort (pr->debug->you_tell_me_and_we_will_both_know);
+	pr->debug->you_tell_me_and_we_will_both_know = LittleShort
+		(pr->debug->you_tell_me_and_we_will_both_know);
 	pr->debug->auxfunctions = LittleLong (pr->debug->auxfunctions);
 	pr->debug->num_auxfunctions = LittleLong (pr->debug->num_auxfunctions);
 	pr->debug->linenos = LittleLong (pr->debug->linenos);
@@ -180,21 +184,28 @@ PR_LoadDebug (progs_t *pr)
 	pr->debug->locals = LittleLong (pr->debug->locals);
 	pr->debug->num_locals = LittleLong (pr->debug->num_locals);
 
-	pr->auxfunctions = (pr_auxfunction_t*)((char*)pr->debug + pr->debug->auxfunctions);
+	pr->auxfunctions = (pr_auxfunction_t*)((char*)pr->debug +
+										   pr->debug->auxfunctions);
 	pr->linenos = (pr_lineno_t*)((char*)pr->debug + pr->debug->linenos);
 	pr->local_defs = (ddef_t*)((char*)pr->debug + pr->debug->locals);
 
-	pr->auxfunction_map = Hunk_Alloc (pr->progs->numfunctions
-									  * sizeof (pr_auxfunction_t*));
+	pr->auxfunction_map = Hunk_Alloc (pr->progs->numfunctions *
+									  sizeof (pr_auxfunction_t*));
 
 	for (i = 0; i < pr->debug->num_auxfunctions; i++) {
-		pr->auxfunctions[i].function = LittleLong (pr->auxfunctions[i].function);
-		pr->auxfunctions[i].source_line = LittleLong (pr->auxfunctions[i].source_line);
-		pr->auxfunctions[i].line_info = LittleLong (pr->auxfunctions[i].line_info);
-		pr->auxfunctions[i].local_defs = LittleLong (pr->auxfunctions[i].local_defs);
-		pr->auxfunctions[i].num_locals = LittleLong (pr->auxfunctions[i].num_locals);
+		pr->auxfunctions[i].function = LittleLong
+			(pr->auxfunctions[i].function);
+		pr->auxfunctions[i].source_line = LittleLong
+			(pr->auxfunctions[i].source_line);
+		pr->auxfunctions[i].line_info = LittleLong
+			(pr->auxfunctions[i].line_info);
+		pr->auxfunctions[i].local_defs = LittleLong
+			(pr->auxfunctions[i].local_defs);
+		pr->auxfunctions[i].num_locals = LittleLong
+			(pr->auxfunctions[i].num_locals);
 
-		pr->auxfunction_map[pr->auxfunctions[i].function] = &pr->auxfunctions[i];
+		pr->auxfunction_map[pr->auxfunctions[i].function] =
+			&pr->auxfunctions[i];
 	}
 	for (i = 0; i < pr->debug->num_linenos; i++) {
 		pr->linenos[i].fa.func = LittleLong (pr->linenos[i].fa.func);
@@ -242,8 +253,8 @@ PR_Get_Lineno_Line (progs_t *pr, pr_lineno_t *lineno)
 pr_lineno_t *
 PR_Find_Lineno (progs_t *pr, unsigned long addr)
 {
-	pr_lineno_t *lineno = 0;
-	int i;
+	int				i;
+	pr_lineno_t	   *lineno = 0;
 
 	if (!pr->debug)
 		return 0;
@@ -270,11 +281,11 @@ PR_Get_Source_File (progs_t *pr, pr_lineno_t *lineno)
 const char *
 PR_Get_Source_Line (progs_t *pr, unsigned long addr)
 {
-	pr_auxfunction_t *func;
-	const char *fname;
-	unsigned long line;
-	char       *str;
-	file_t     *file;
+	char			   *str;
+	const char		   *fname;
+	unsigned long		line;
+	file_t			   *file;
+	pr_auxfunction_t   *func;
 
 	pr_lineno_t *lineno = PR_Find_Lineno (pr, addr);
 	if (!lineno || PR_Get_Lineno_Addr (pr, lineno) != addr)
@@ -303,9 +314,9 @@ PR_Get_Source_Line (progs_t *pr, unsigned long addr)
 ddef_t *
 PR_Get_Local_Def (progs_t *pr, int offs)
 {
-	int i;
-	dfunction_t *func = pr->pr_xfunction;
-	pr_auxfunction_t *aux_func;
+	int					i;
+	dfunction_t		   *func = pr->pr_xfunction;
+	pr_auxfunction_t   *aux_func;
 
 	if (!func)
 		return 0;
@@ -348,7 +359,6 @@ PR_Debug_Init_Cvars (void)
 {
 	pr_debug = Cvar_Get ("pr_debug", "0", CVAR_NONE, NULL,
 						 "enable progs debugging");
-	pr_source_path = Cvar_Get ("pr_source_path", ".", CVAR_NONE, NULL,
-							   "where to look (within gamedir) for source "
-							   "files");
+	pr_source_path = Cvar_Get ("pr_source_path", ".", CVAR_NONE, NULL, "where "
+							   "to look (within gamedir) for source files");
 }

@@ -41,6 +41,7 @@
 #ifdef HAVE_STRINGS_H
 # include <strings.h>
 #endif
+
 #include <ctype.h>
 #include <stdlib.h>
 
@@ -52,14 +53,14 @@
 
 static gib_module_t *gibmodules;
 
+
 void
 GIB_Module_Load (const char *name, VFile *f)
 {
-	char        line[1024];
-	gib_module_t *newmod;
-	gib_sub_t  *newsub;
-	int         nameofs;
-	int         namelen;
+	char			line[1024];
+	int				namelen, nameofs;
+	gib_module_t   *newmod;
+	gib_sub_t	   *newsub;
 
 	newmod = GIB_Create_Module (name);
 
@@ -112,10 +113,9 @@ GIB_Create_Sub (gib_module_t * mod, const char *name)
 void
 GIB_Read_Sub (gib_sub_t * sub, VFile *f)
 {
-	char        line[1024];
-	fpos_t      begin;
-	int         sublen = 0;
-	int         insub = 0;
+	char		line[1024];
+	int         insub = 0, sublen = 0;
+	fpos_t		begin;
 
 	while (Qgets (f, line, 1024)) {
 		if (strncmp ("}}", line, 2) == 0 && insub == 1) {
@@ -167,10 +167,9 @@ GIB_Find_Sub (gib_module_t * mod, const char *name)
 void
 GIB_Stats_f (void)
 {
-	int         modc, subc;
-
-	gib_module_t *mod;
-	gib_sub_t  *sub;
+	int				modc, subc;
+	gib_module_t   *mod;
+	gib_sub_t	   *sub;
 
 	modc = 0;
 	Con_Printf ("---=== GIB statistics ===---\n");

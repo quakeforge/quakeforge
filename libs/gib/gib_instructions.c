@@ -38,8 +38,9 @@
 #ifdef HAVE_STRINGS_H
 # include <strings.h>
 #endif
-#include <stdlib.h>
+
 #include <ctype.h>
+#include <stdlib.h>
 
 #include "QF/console.h"
 #include "QF/cmd.h"
@@ -54,6 +55,7 @@
 static gib_inst_t *gibinstructions;
 
 char       *gib_subret;
+
 
 void
 GIB_AddInstruction (const char *name, gib_func_t func)
@@ -91,7 +93,6 @@ GIB_Init_Instructions (void)
 	GIB_AddInstruction ("listfetch", GIB_ListFetch_f);
 }
 
-
 int
 GIB_Echo_f (void)
 {
@@ -102,9 +103,9 @@ GIB_Echo_f (void)
 int
 GIB_Call_f (void)
 {
-	gib_module_t *mod;
-	gib_sub_t  *sub;
-	int         i, ret;
+	int				ret, i;
+	gib_module_t   *mod;
+	gib_sub_t	   *sub;
 
 	mod = GIB_Get_ModSub_Mod (GIB_Argv (1));
 	if (!mod)
@@ -128,8 +129,8 @@ GIB_Call_f (void)
 int
 GIB_VarPrint_f (void)
 {
+	int			i;
 	gib_var_t  *var;
-	int         i;
 
 	for (i = 1; i <= GIB_Argc (); i++) {
 		var = GIB_Var_FindLocal (GIB_Argv (i));
@@ -157,9 +158,9 @@ GIB_Return_f (void)
 int
 GIB_ListFetch_f (void)
 {
-	char       *element;
+	char	   *element;
+	int			i, m, n;
 	gib_var_t  *var;
-	int         i, n, m;
 
 	if (GIB_Argc () != 2)
 		return GIB_E_NUMARGS;
@@ -196,9 +197,8 @@ GIB_Con_f (void)
 int
 GIB_ExpandVars (const char *source, char *buffer, int buffersize)
 {
-	int         i, n, m;
-
-	char        varname[256];
+	char		varname[256];
+	int			i, m, n;
 	gib_var_t  *var;
 
 	for (i = 0, n = 0; i <= strlen (source); i++) {
@@ -228,9 +228,8 @@ GIB_ExpandVars (const char *source, char *buffer, int buffersize)
 int
 GIB_ExpandBackticks (const char *source, char *buffer, int buffersize)
 {
-	int         i, n, m, ret;
-
-	char        tick[256];
+	char		tick[256];
+	int			ret, i, m, n;
 	gib_var_t  *var;
 
 	for (i = 0, n = 0; i <= strlen (source); i++) {

@@ -20,7 +20,6 @@
 #ifdef HAVE_CONFIG_H
 # include "config.h"
 #endif
-
 #ifdef HAVE_STRING_H
 # include "string.h"
 #endif
@@ -159,12 +158,13 @@ opcode_t    pr_opcodes[] = {
 	{0},
 };
 
+
 static const char *
 get_key (void *_op, void *unused)
 {
-	opcode_t *op = (opcode_t *)_op;
-	static char rep[4];
-	char *r = rep;
+	char		   *r = rep;
+	static char		rep[4];
+	opcode_t	   *op = (opcode_t *)_op;
 
 	*r++ = (op->opcode & 0x7f) + 2;
 	*r++ = ((op->opcode >> 7) & 0x7f) + 2;
@@ -176,8 +176,8 @@ get_key (void *_op, void *unused)
 opcode_t *
 PR_Opcode (short opcode)
 {
-	opcode_t op;
-	char rep[100];
+	char		rep[100];
+	opcode_t	op;
 
 	op.opcode = opcode;
 	strcpy (rep, get_key (&op, 0));
@@ -187,7 +187,7 @@ PR_Opcode (short opcode)
 void
 PR_Opcode_Init (void)
 {
-	opcode_t *op;
+	opcode_t   *op;
 
 	opcode_table = Hash_NewTable (1021, get_key, 0, 0);
 

@@ -46,8 +46,6 @@
 #include "gib_parse.h"
 
 
-// Standard cvars
-
 void
 GIB_Init (void)
 {
@@ -60,9 +58,9 @@ GIB_Init (void)
 void
 GIB_Gib_f (void)
 {
-	gib_sub_t  *sub;
-	gib_module_t *mod;
-	int         i, ret;
+	int				i, ret;
+	gib_module_t   *mod;
+	gib_sub_t	   *sub;
 
 	if (!(mod = GIB_Get_ModSub_Mod (Cmd_Argv (1)))) {
 		Con_Printf ("Module not found!\n");
@@ -85,8 +83,8 @@ GIB_Gib_f (void)
 void
 GIB_Load_f (void)
 {
-	char        filename[256];
-	VFile      *f;
+	char		filename[256];
+	VFile	   *f;
 
 	snprintf (filename, sizeof (filename), "%s/%s.gib", com_gamedir,
 			  Cmd_Argv (1));

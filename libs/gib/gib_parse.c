@@ -48,8 +48,8 @@
 int
 GIB_Get_Inst (const char *start)
 {
-	int         i;
-	int         len = 0;
+	int			i;
+	int			len = 0;
 
 	for (i = 0; start[i] != ';'; i++) {
 		if (start[i] == '\'') {
@@ -78,8 +78,8 @@ GIB_Get_Inst (const char *start)
 int
 GIB_Get_Arg (const char *start)
 {
-	int         i;
-	int         ret = -2;
+	int			i;
+	int			ret = -2;
 
 	if (*start == '\'') {
 		ret = GIB_End_Quote (start) + 1;
@@ -96,16 +96,17 @@ GIB_Get_Arg (const char *start)
 	if (ret >= 0)
 		return ret;
 
-	for (i = 1;
-		 (start[i] != ' ' && start[i] != 0 && start[i] != '\''
-		  && start[i] != '\"' && start[i] != '{') || start[i - 1] == '\\'; i++);
+	for (i = 1; (start[i] != ' ' && start[i] != 0 && start[i] != '\'' &&
+				 start[i] != '\"' && start[i] != '{') || start[i - 1] == '\\';
+		 i++);
 	return i;
 }
+
 int
 GIB_End_Quote (const char *start)
 {
-	int         i;
-	int         len = 0;
+	int			i;
+	int			len = 0;
 
 	for (i = 1; start[i] != '\''; i++) {
 		if (start[i - 1] != '\\') {
@@ -115,7 +116,6 @@ GIB_End_Quote (const char *start)
 				else
 					i += len;
 			}
-
 			if (start[i] == '{') {
 				if ((len = GIB_End_Bracket (start + i)) < 0)
 					return len;
@@ -128,10 +128,11 @@ GIB_End_Quote (const char *start)
 	}
 	return i;
 }
+
 int
 GIB_End_DQuote (const char *start)
 {
-	int         i, ret;
+	int			ret, i;
 
 	for (i = 1; start[i] != '\"'; i++) {
 		if (start[i - 1] != '\\') {
@@ -141,7 +142,6 @@ GIB_End_DQuote (const char *start)
 				else
 					i += ret;
 			}
-
 			if (start[i] == '{') {
 				if ((ret = GIB_End_Bracket (start + i)) < 0)
 					return ret;
@@ -158,7 +158,7 @@ GIB_End_DQuote (const char *start)
 int
 GIB_End_Bracket (const char *start)
 {
-	int         i, ret;
+	int			ret, i;
 
 	for (i = 1; start[i] != '}'; i++) {
 		if (start[i - 1] != '\\') {
@@ -168,21 +168,18 @@ GIB_End_Bracket (const char *start)
 				else
 					i += ret;
 			}
-
 			if (start[i] == '\"') {
 				if ((ret = GIB_End_DQuote (start + i)) < 0)
 					return ret;
 				else
 					i += ret;
 			}
-
 			if (start[i] == '{') {
 				if ((ret = GIB_End_Bracket (start + i)) < 0)
 					return ret;
 				else
 					i += ret;
 			}
-
 			if (start[i] == 0)
 				return -1;
 		}
@@ -193,9 +190,9 @@ GIB_End_Bracket (const char *start)
 gib_sub_t  *
 GIB_Get_ModSub_Sub (const char *modsub)
 {
-	gib_module_t *mod;
-	gib_sub_t  *sub;
-	char       *divider;
+	char			*divider;
+	gib_module_t	*mod;
+	gib_sub_t		*sub;
 
 	if (!(divider = strstr (modsub, "::")))
 		return 0;
@@ -207,11 +204,12 @@ GIB_Get_ModSub_Sub (const char *modsub)
 	sub = GIB_Find_Sub (mod, divider + 2);
 	return sub;
 }
+
 gib_module_t *
 GIB_Get_ModSub_Mod (const char *modsub)
 {
-	gib_module_t *mod;
-	char       *divider;
+	char			*divider;
+	gib_module_t	*mod;
 
 	if (!(divider = strstr (modsub, "::")))
 		return 0;
@@ -224,7 +222,7 @@ GIB_Get_ModSub_Mod (const char *modsub)
 int
 GIB_ExpandEscapes (char *source)
 {
-	int         i, m;
+	int				i, m;
 
 	for (i = 0, m = 0; i <= strlen (source); i++) {
 		if (source[i] == '\\') {

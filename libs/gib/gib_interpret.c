@@ -38,9 +38,10 @@
 #ifdef HAVE_STRINGS_H
 # include <strings.h>
 #endif
+
+#include <ctype.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <ctype.h>
 
 #include "QF/gib.h"
 
@@ -54,6 +55,7 @@
 
 const char *gib_subargv[256];
 int         gib_subargc;
+
 
 const char       *
 GIB_Argv (int i)
@@ -79,8 +81,8 @@ GIB_Strip_Arg (char *arg)
 int
 GIB_Execute_Block (const char *block, int retflag)
 {
-	int         len, i, ret;
-	char       *code;
+	char	   *code;
+	int			len, ret, i;
 
 	i = 0;
 
@@ -109,7 +111,7 @@ GIB_Execute_Block (const char *block, int retflag)
 int
 GIB_Execute_Inst (void)
 {
-	int         ret;
+	int			ret;
 
 	ret = gib_instack[gib_insp - 1].instruction->func ();
 	GIB_InStack_Pop ();
@@ -119,13 +121,10 @@ GIB_Execute_Inst (void)
 int
 GIB_Interpret_Inst (const char *inst)
 {
-	char       *buffer;
-	char       *buffer2;
-	char       *buffer3;
-	int         i, n, len, ret, gib_argc;
-	char       *gib_argv[256];
+	char       *buffer, *buffer2, *buffer3;
+	char	   *gib_argv[256];
+	int			gib_argc, len, ret, i, n;
 	gib_inst_t *ginst;
-
 
 	buffer = malloc (strlen (inst) + 1);
 	i = 0;
@@ -140,7 +139,6 @@ GIB_Interpret_Inst (const char *inst)
 			buffer[n] = inst[i];
 		n++;
 	}
-
 
 	buffer2 = malloc (2048);
 	buffer3 = malloc (2048);
@@ -192,8 +190,8 @@ GIB_Interpret_Inst (const char *inst)
 int
 GIB_Run_Sub (gib_module_t * mod, gib_sub_t * sub)
 {
-	int         ret, i;
-	char        buf[256];
+	char		buf[256];
+	int			ret, i;
 
 	GIB_SubStack_Push (mod, sub, 0);
 
@@ -223,7 +221,7 @@ GIB_Execute_Sub (void)
 int
 GIB_Run_Inst (const char *inst)
 {
-	int         ret;
+	int			ret;
 
 	ret = GIB_Interpret_Inst (inst);
 	if (ret) {

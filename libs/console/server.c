@@ -32,10 +32,6 @@
 #ifdef HAVE_CONFIG_H
 # include "config.h"
 #endif
-#include <stdlib.h>
-#ifdef HAVE_UNISTD_H
-# include <unistd.h>
-#endif
 #ifdef HAVE_CURSES_H
 # include <curses.h>
 #endif
@@ -45,6 +41,11 @@
 #ifdef HAVE_STRINGS_H
 # include <strings.h>
 #endif
+#ifdef HAVE_UNISTD_H
+# include <unistd.h>
+#endif
+
+#include <stdlib.h>
 
 #include "QF/cmd.h"
 #include "QF/console.h"
@@ -89,6 +90,7 @@ static const byte attr_map[256] = {
 	1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
 };
 #endif
+
 
 static void
 C_Init (void)
@@ -150,11 +152,11 @@ C_Print (const char *fmt, va_list args)
 {
 #ifdef HAVE_CURSES_H
 	if (use_curses) {
-		static char *buffer;
-		static int buffer_size;
-		char      *txt;
-		chtype     ch;
-		int size;
+		char		   *txt;
+		static char	   *buffer;
+		int				size;
+		static int		buffer_size;
+		chtype			ch;
 
 		size = vsnprintf (buffer, buffer_size, fmt, args);
 		if (size + 1 > buffer_size) {

@@ -50,10 +50,11 @@ gib_substack_t *gib_substack = 0;
 int         gib_insp = 0;
 int         gib_subsp = 0;
 
+
 void
 GIB_InStack_Push (gib_inst_t * instruction, int argc, char **argv)
 {
-	int         i;
+	int			i;
 
 	gib_instack =
 		realloc (gib_instack, sizeof (gib_instack_t) * (gib_insp + 1));
@@ -72,7 +73,7 @@ GIB_InStack_Push (gib_inst_t * instruction, int argc, char **argv)
 void
 GIB_InStack_Pop (void)
 {
-	int         i;
+	int			i;
 
 	gib_insp--;
 
@@ -98,5 +99,6 @@ GIB_SubStack_Push (gib_module_t * mod, gib_sub_t * sub, gib_var_t * local)
 void
 GIB_SubStack_Pop (void)
 {
-	gib_instack = realloc (gib_instack, sizeof (gib_instack_t) * (--gib_subsp));
+	gib_instack = realloc (gib_instack, sizeof (gib_instack_t) *
+						   (--gib_subsp));
 }

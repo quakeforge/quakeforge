@@ -98,7 +98,6 @@ Con_ToggleConsole_f (void)
 	Con_ClearNotify ();
 }
 
-
 void
 Con_ToggleChat_f (void)
 {
@@ -118,7 +117,6 @@ Con_ToggleChat_f (void)
 	Con_ClearNotify ();
 }
 
-
 void
 Con_Clear_f (void)
 {
@@ -129,16 +127,14 @@ Con_Clear_f (void)
 	con_main.display = con_main.current;
 }
 
-
 void
 Con_ClearNotify (void)
 {
-	int         i;
+	int			i;
 
 	for (i = 0; i < NUM_CON_TIMES; i++)
 		con_times[i] = 0;
 }
-
 
 void
 Con_MessageMode_f (void)
@@ -151,7 +147,6 @@ Con_MessageMode_f (void)
 	key_dest = key_message;
 }
 
-
 void
 Con_MessageMode2_f (void)
 {
@@ -163,12 +158,11 @@ Con_MessageMode2_f (void)
 	key_dest = key_message;
 }
 
-
 void
 Con_Resize (console_t *con)
 {
-	int         i, j, width, oldwidth, oldtotallines, numlines, numchars;
-	char        tbuf[CON_TEXTSIZE];
+	char		tbuf[CON_TEXTSIZE];
+	int			width, oldwidth, oldtotallines, numlines, numchars, i, j;
 
 	width = (vid.width >> 3) - 2;
 
@@ -213,7 +207,6 @@ Con_Resize (console_t *con)
 	con->display = con->current;
 }
 
-
 /*
 	Con_CheckResize
 
@@ -225,7 +218,6 @@ Con_CheckResize (void)
 	Con_Resize (&con_main);
 	Con_Resize (&con_chat);
 }
-
 
 static void
 C_Init (void)
@@ -256,15 +248,13 @@ C_Shutdown (void)
 {
 }
 
-
 void
 Con_Init_Cvars (void)
 {
-	con_notifytime =
-		Cvar_Get ("con_notifytime", "3", CVAR_NONE, NULL,
-				  "How long in seconds messages are displayed on screen");
+	con_notifytime = Cvar_Get ("con_notifytime", "3", CVAR_NONE, NULL,
+							   "How long in seconds messages are displayed "
+							   "on screen");
 }
-
 
 void
 Con_Linefeed (void)
@@ -279,7 +269,6 @@ Con_Linefeed (void)
 			' ', con_linewidth);
 }
 
-
 /*
 	C_Print
 
@@ -290,14 +279,10 @@ Con_Linefeed (void)
 void
 C_Print (const char *fmt, va_list args)
 {
-	static char *buffer;
-	static int  buffer_size;
-	int         size;
-	int         y;
-	int         c, l;
-	static int  cr;
-	int         mask;
-	const char *txt;
+	const char	*txt;
+	static char	*buffer;
+	int			 mask, size, c, l, y;
+	static int	 buffer_size, cr;
 
 	size = vsnprintf (buffer, buffer_size, fmt, args);
 	if (size + 1 > buffer_size) {
@@ -343,7 +328,6 @@ C_Print (const char *fmt, va_list args)
 			cr = false;
 		}
 
-
 		if (!con->x) {
 			Con_Linefeed ();
 			// mark time for transparent overlay
@@ -375,10 +359,7 @@ C_Print (const char *fmt, va_list args)
 	}
 }
 
-
-/*
-	DRAWING
-*/
+/* DRAWING */
 
 
 /*
@@ -389,10 +370,9 @@ C_Print (const char *fmt, va_list args)
 void
 Con_DrawInput (void)
 {
-	int         y;
-	int         i;
-	char       *text;
-	char        temp[MAXCMDLINE];
+	int			i, y;
+	char		temp[MAXCMDLINE];
+	char	   *text;
 
 /*XXX
 	if (key_dest != key_console && cls.state == ca_active)
@@ -422,7 +402,6 @@ Con_DrawInput (void)
 		Draw_Character ((i + 1) << 3, con_vislines - 22, text[i]);
 }
 
-
 /*
 	Con_DrawNotify
 
@@ -431,12 +410,9 @@ Con_DrawInput (void)
 void
 Con_DrawNotify (void)
 {
-	int         x, v;
-	char       *text;
-	int         i;
-	float       time;
-	char       *s;
-	int         skip;
+	int			skip, i, v, x;
+	char	   *text, *s;
+	float		time;
 
 	v = 0;
 	for (i = con->current - NUM_CON_TIMES + 1; i <= con->current; i++) {
@@ -492,7 +468,6 @@ Con_DrawNotify (void)
 		con_notifylines = v;
 }
 
-
 /*
 	Con_DrawConsole
 
@@ -501,10 +476,8 @@ Con_DrawNotify (void)
 void
 Con_DrawConsole (int lines)
 {
-	int         i, x, y;
-	int         rows;
-	char       *text;
-	int         row;
+	char	   *text;
+	int			row, rows, i, x, y;
 
 	if (lines <= 0)
 		return;
@@ -547,13 +520,12 @@ Con_DrawConsole (int lines)
 	Con_DrawInput ();
 }
 
-
 void
 Con_DrawDownload (int lines)
 {
-	int         i, j, x, y, n = 0; //XXX n
-	const char *text = 0;//XXX
-	char        dlbar[1024];
+	char		dlbar[1024];
+	const char *text = 0; //XXX
+	int			i, j, x, y, n = 0; //XXX n
 
 /*XXX
 	if (!cls.download)
@@ -604,12 +576,12 @@ static general_funcs_t plugin_info_general_funcs = {
 	C_Init,
 	C_Shutdown,
 };
-static general_data_t plugin_info_general_data;
 
+static general_data_t plugin_info_general_data;
+static console_data_t plugin_info_console_data;
 static console_funcs_t plugin_info_console_funcs = {
 	C_Print,
 };
-static console_data_t plugin_info_console_data;
 
 static plugin_funcs_t plugin_info_funcs = {
 	&plugin_info_general_funcs,
@@ -632,8 +604,8 @@ static plugin_t plugin_info = {
 	"0.1",
 	"client console driver",
 	"Copyright (C) 1996-1997 id Software, Inc.\n"
-		"Copyright (C) 1999,2000,2001  contributors of the QuakeForge"
-		" project\n"
+		"Copyright (C) 1999,2000,2001  contributors of the QuakeForge "
+		"project\n"
 		"Please see the file \"AUTHORS\" for a list of contributors",
 	&plugin_info_funcs,
 	&plugin_info_data,

@@ -38,6 +38,7 @@
 
 #include "QF/console.h"
 
+
 /*
 	Con_DisplayList
 
@@ -49,12 +50,9 @@
 void
 Con_DisplayList(const char **list, int con_linewidth)
 {
-	int	i = 0;
-	int	pos = 0;
-	int	len = 0;
-	int	maxlen = 0;
-	int	width = (con_linewidth - 4);
-	const char **walk = list;
+	const char	  **walk = list;
+	int				len = 0, maxlen = 0, pos =0, i = 0;
+	int				width = (con_linewidth - 4);
 
 	while (*walk) {
 		len = strlen(*walk);

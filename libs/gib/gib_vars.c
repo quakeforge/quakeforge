@@ -44,6 +44,7 @@
 
 #include "gib_stack.h"
 
+
 gib_var_t  *
 GIB_Var_FindLocal (char *key)
 {
@@ -56,6 +57,7 @@ GIB_Var_FindLocal (char *key)
 			return 0;
 	return var;
 }
+
 gib_var_t  *
 GIB_Var_FindGlobal (char *key)
 {
@@ -68,7 +70,6 @@ GIB_Var_FindGlobal (char *key)
 			return 0;
 	return var;
 }
-
 
 void
 GIB_Var_Set (char *key, char *value)

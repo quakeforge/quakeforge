@@ -32,6 +32,7 @@
 #ifdef HAVE_CONFIG_H
 # include "config.h"
 #endif
+
 #include <stdarg.h>
 #include <stdio.h>
 
@@ -40,6 +41,7 @@
 #include "QF/plugin.h"
 
 static plugin_t *con_module;
+
 
 void
 Con_Init (const char *plugin_name)
@@ -68,7 +70,8 @@ Con_Shutdown (void)
 void
 Con_Printf (const char *fmt, ...)
 {
-	va_list     args;
+	va_list		args;
+
 	va_start (args, fmt);
 	if (con_module)
 		con_module->functions->console->pC_Print (fmt, args);

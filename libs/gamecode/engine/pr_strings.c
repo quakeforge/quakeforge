@@ -35,19 +35,21 @@
 #ifdef HAVE_STRINGS_H
 # include <strings.h>
 #endif
-#include <stdlib.h>
 
 #include <stdarg.h>
+#include <stdlib.h>
 
 #include "QF/hash.h"
 #include "QF/progs.h"
+
 
 static strref_t *
 new_string_ref (progs_t *pr)
 {
 	strref_t *sr;
 	if (!pr->free_string_refs) {
-		int i;
+		int		i;
+
 		pr->dyn_str_size++;
 		pr->dynamic_strings = realloc (pr->dynamic_strings, pr->dyn_str_size);
 		if (!pr->dynamic_strings)
@@ -76,7 +78,7 @@ free_string_ref (progs_t *pr, strref_t *sr)
 static int
 string_index (progs_t *pr, strref_t *sr)
 {
-	int i = sr - pr->static_strings;
+	int		i = sr - pr->static_strings;
 
 	if (i >= 0 && i < pr->num_strings)
 		return sr->string - pr->pr_strings;
@@ -91,15 +93,16 @@ string_index (progs_t *pr, strref_t *sr)
 static const char *
 strref_get_key (void *_sr, void *notused)
 {
-	strref_t *sr = (strref_t*)_sr;
+	strref_t	*sr = (strref_t*)_sr;
+
 	return sr->string;
 }
 
 static void
 strref_free (void *_sr, void *_pr)
 {
-	progs_t *pr = (progs_t*)_pr;
-	strref_t *sr = (strref_t*)_sr;
+	progs_t		*pr = (progs_t*)_pr;
+	strref_t	*sr = (strref_t*)_sr;
 
 	// free the string and ref only if it's not a static string
 	if (sr < pr->static_strings || sr >= pr->static_strings + pr->num_strings) {
@@ -111,9 +114,9 @@ strref_free (void *_sr, void *_pr)
 void
 PR_LoadStrings (progs_t *pr)
 {
-	int count = 0;
-	char *end = pr->pr_strings + pr->pr_stringsize;
-	char *str = pr->pr_strings;
+	char   *end = pr->pr_strings + pr->pr_stringsize;
+	char   *str = pr->pr_strings;
+	int		count = 0;
 
 	while (str < end) {
 		count++;
@@ -122,7 +125,8 @@ PR_LoadStrings (progs_t *pr)
 	if (pr->strref_hash) {
 		Hash_FlushTable (pr->strref_hash);
 	} else {
-		pr->strref_hash = Hash_NewTable (1021, strref_get_key, strref_free, pr);
+		pr->strref_hash = Hash_NewTable (1021, strref_get_key, strref_free,
+										 pr);
 		pr->dynamic_strings = 0;
 		pr->free_string_refs = 0;
 		pr->dyn_str_size = 0;
@@ -145,10 +149,10 @@ PR_LoadStrings (progs_t *pr)
 void
 PR_GarbageCollect (progs_t *pr)
 {
+	char	   *str;
+	int			i, j;
+	ddef_t	   *def;
 	strref_t   *sr;
-	ddef_t     *def;
-	int         i, j;
-	char       *str;
 
 	for (i = 0; i < pr->dyn_str_size; i++)
 		for (j = 0; j < 1024; j++)
@@ -192,7 +196,8 @@ char *
 PR_GetString (progs_t *pr, int num)
 {
 	if (num < 0) {
-		int row = ~num / 1024;
+		int		row = ~num / 1024;
+
 		num = ~num % 1024;
 
 		if (row < 0 || row >= pr->dyn_str_size)
