@@ -1178,14 +1178,15 @@ qboolean
 SV_StringToFilter (const char *address, ipfilter_t *f)
 {
 #ifdef HAVE_IPV6
-	byte		b[16];
+	byte		b[16] = {};
 #else
-	byte        b[4];
+	byte        b[4] = {};
 #endif
-	int			mask;
-	int			i;
+	int			mask = 0;
+	int			i = 0;
 	char		*s;
 	char		*slash;
+	char		*c;
 
 	Con_Printf ("SV_StringToFilter: '%s'\n", address);
 
@@ -1193,6 +1194,7 @@ SV_StringToFilter (const char *address, ipfilter_t *f)
 	if (!s)
 		Sys_Error ("SV_StringToFilter: memory allocation failure\n");
 
+	// Parse out the mask (the /8 part)
 	if ((slash = strchr (s, '/'))) {
 		char *endptr;
 		*slash = '\0';
@@ -1213,34 +1215,41 @@ SV_StringToFilter (const char *address, ipfilter_t *f)
 	} else
 		mask = -1;
 
+	// parse the ip for ipv6
 #ifdef HAVE_IPV6
-	// FIXME: we *must* fill in the extra bytes here if we're doing ipv6
+	if (inet_pton (AF_INET6, s, b) != 1) {
+	// FIXME: we *must* fill in the prefix bytes here if we're doing ipv6
 #error Prefix bytes not set for parsing ipv4 addresses
 #endif
-	i = inet_pton (AF_INET, s, b);
-	if (i == 1) {
+		c = s;
+
+		// parse for ipv4, as dotted quad, only we have implicit trailing segments
+		do {
+			int j;
+			if (*c == '.')
+				c++;
+			j = strtol (c, &c, 10);
+			if (j < 0 || j > 255)
+				goto bad_address;
+			if (i >= sizeof (b))
+				goto bad_address;
+			b[i++] = j;
+		} while (*c == '.');
+		if (*c)
+			goto bad_address;
+
+		// change trailing 0 segments to be a mask, eg 1.2.0.0 gives a /16 mask
+		// FIXME: should check a cvar
 		if (mask == -1) {
-			if (!b[3]) { // FIXME: should check a cvar
-				if (!b[2]) {
-					if (!b[1]) {
-						if (!b[0]) {
-							mask = 0;
-						} else
-							mask = 8;
-					} else
-						mask = 16;
-				} else
-					mask = 24;
-			} else
-				mask = 32;
+			i = sizeof (b) - 1;
+			while (i >= 0 && !b[i]) {
+				mask += 8;
+				i--;
+			}
 		}
-	} else {
 #ifdef HAVE_IPV6
-	    i = inet_pton (AF_INET6, s, b);
-#endif
 	}
-    if (i != 1)
-        goto bad_address;
+#endif
 
 #ifdef HAVE_IPV6
 	if (mask > 128)
@@ -1249,7 +1258,10 @@ SV_StringToFilter (const char *address, ipfilter_t *f)
 #endif
 		goto bad_address;
 
+	// incase they did 1.2.3.4/16, change it to 1.2.0.0 for easier comparison
 	SV_MaskIPTrim (b, mask);
+
+	// yada :)
 	f->mask = mask;
 	SV_IPCopy (f->ip, b);
 
