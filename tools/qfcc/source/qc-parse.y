@@ -11,7 +11,7 @@ extern int pr_source_line;
 void
 yyerror (const char *s)
 {
-	fprintf (stderr, "%d, %s %s\n", pr_source_line, yytext, s);
+	fprintf (stderr, "%s:%d, %s %s\n", strings + s_file, pr_source_line, yytext, s);
 }
 
 int yylex (void);

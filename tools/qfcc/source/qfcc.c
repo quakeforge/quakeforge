@@ -917,10 +917,8 @@ Options: \n\
 		s_file = ReuseString (filename);
 		pr_source_line = 1;
 		clear_frame_macros ();
-		if (yyparse ()) {
-			printf ("%s\n", filename);
+		if (yyparse ())
 			return 1;
-		}
 		fclose (yyin);
 #else
 		char	*src2;
