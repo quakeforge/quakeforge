@@ -56,6 +56,12 @@ typedef struct expr_s {
 	} e;
 } expr_t;
 
+extern etype_t qc_types[];
+extern struct type_s *types[];
+extern expr_type expr_types[];
+
+etype_t get_type (expr_t *e);
+
 expr_t *new_expr (void);
 expr_t *new_label_expr (void);
 expr_t *new_block_expr (void);
