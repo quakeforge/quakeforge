@@ -358,6 +358,8 @@ Menu_Init (void)
 	File_Progs_Init (&menu_pr_state);
 	InputLine_Progs_Init (&menu_pr_state);
 	String_Progs_Init (&menu_pr_state);
+	Cvar_Progs_Init (&menu_pr_state);
+	Key_Progs_Init (&menu_pr_state);
 	PR_Cmds_Init (&menu_pr_state);
 	R_Progs_Init (&menu_pr_state);
 

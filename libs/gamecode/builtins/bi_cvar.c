@@ -1,7 +1,7 @@
 /*
-	bi_init.c
+	bi_cvar.c
 
-	CSQC builtins init
+	CSQC cvar builtins
 
 	Copyright (C) 1996-1997  Id Software, Inc.
 
@@ -30,18 +30,33 @@ static const char rcsid[] =
 #ifdef HAVE_CONFIG_H
 # include "config.h"
 #endif
-#include "QF/csqc.h"
-#include "QF/progs.h"
 
-static void (*const cbuf_progs_init)(struct progs_s *) = Cbuf_Progs_Init;
-static void (*const file_progs_init)(struct progs_s *) = File_Progs_Init;
-static void (*const inputline_progs_init)(struct progs_s *) = InputLine_Progs_Init;
-static void (*const string_progs_init)(struct progs_s *) = String_Progs_Init;
-static void (*const cvar_progs_init)(struct progs_s *) = Cvar_Progs_Init;
-static void (*const key_progs_init)(struct progs_s *) = Key_Progs_Init;
+#ifdef HAVE_STRING_H
+# include <string.h>
+#endif
+#ifdef HAVE_STRINGS_H
+# include <strings.h>
+#endif
+
+#include "QF/cvar.h"
+#include "QF/progs.h"
+#include "QF/zone.h"
+
+/*
+    bi_Cvar_GetCvarString
+    
+    QC-Function for get a string from a cvar
+*/      
+static void
+bi_Cvar_GetCvarString (progs_t *pr)
+{
+	const char *varname = G_STRING (pr, OFS_PARM0);
+
+	RETURN_STRING (pr, Cvar_VariableString (varname));
+}
 
 void
-BI_Init ()
+Cvar_Progs_Init (progs_t *pr)
 {
-	// do nothing stub for now. used to force linking
+	PR_AddBuiltin (pr, "Cvar_GetCvarString", bi_Cvar_GetCvarString, -1);
 }
