@@ -264,7 +264,7 @@ PR_ValueString (progs_t * pr, etype_t type, pr_type_t *val)
 					  val->vector_var[2]);
 			break;
 		case ev_pointer:
-			strcpy (line, "pointer");
+			snprintf (line, sizeof (line), "[%d]", val->integer_var);
 			break;
 		case ev_quaternion:
 			snprintf (line, sizeof (line), "'%5.1f %5.1f %5.1f %5.1f'",
