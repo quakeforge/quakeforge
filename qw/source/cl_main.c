@@ -1199,7 +1199,10 @@ cl_usleep_f (cvar_t *var)
 static void
 cl_cmd_pkt_adr_f (cvar_t *var)
 {
-	NET_StringToAdr (var->string, &cl_cmd_packet_address);
+	if (var->string[0])
+		NET_StringToAdr (var->string, &cl_cmd_packet_address);
+	else
+		memset (&cl_cmd_packet_address, 0, sizeof (cl_cmd_packet_address));
 }
 
 static void
