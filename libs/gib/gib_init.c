@@ -76,7 +76,7 @@ GIB_Exec_Override_f (void) {
 }
 
 void
-GIB_Init (void)
+GIB_Init (qboolean sandbox)
 {
 	// Override the exec command with a GIB-aware one
 	if (Cmd_Exists("exec")) {
@@ -84,5 +84,5 @@ GIB_Init (void)
 		Cmd_AddCommand ("exec", GIB_Exec_Override_f, "Execute a script file.");
 	}
 	// Initialize builtins
-	GIB_Builtin_Init ();
+	GIB_Builtin_Init (sandbox);
 }

@@ -29,4 +29,4 @@
 	$Id$
 */
 
-void GIB_Init (void);
+void GIB_Init (qboolean sandbox);

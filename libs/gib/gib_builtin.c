@@ -522,6 +522,23 @@ GIB_Thread_Kill_f (void)
 
 /* File access */
 
+int (*GIB_File_Transform_Path) (dstring_t *path) = NULL;
+
+int
+GIB_File_Transform_Path_Null (dstring_t *path)
+{
+	return 0;
+}
+
+int
+GIB_File_Transform_Path_Secure (dstring_t *path)
+{
+		if (Sys_PathType (path->str) != PATHTYPE_RELATIVE_BELOW)
+			return -1;
+		dstring_insertstr (path, 0, com_gamedir);
+		return 0;
+}
+		
 void
 GIB_File_Read_f (void)
 {
@@ -534,27 +551,26 @@ GIB_File_Read_f (void)
 		  "usage: file::read path_and_filename");
 		return;
 	}
-	path = COM_CompressPath (GIB_Argv (1));
-	if (!path[0]) {
+	if (!*GIB_Argv (1)) {
 		Cbuf_Error ("file",
 		  "file::read: null filename provided");
 		return;
 	}
-	if (path[0] == '/' || (path[0] == '.' && path[1] == '.')) {
+	if (GIB_File_Transform_Path (GIB_Argd(1))) {
 		Cbuf_Error ("access",
-		  "file::read: access to %s denied", path);
+		  "file::read: access to %s denied", GIB_Argv(1));
 		return;
 	}
+	path = GIB_Argv (1);
 	mark = Hunk_LowMark ();
 	contents = (char *) COM_LoadHunkFile (path);
 	if (!contents) {
 		Cbuf_Error ("file",
-		  "file::read: could not open %s/%s for reading: %s", com_gamedir, path, strerror (errno));
+		  "file::read: could not open %s for reading: %s", path, strerror (errno));
 		return;
 	}
 	GIB_Return (contents);
 	Hunk_FreeToLowMark (mark);
-	free (path);
 }
 
 void
@@ -569,25 +585,24 @@ GIB_File_Write_f (void)
 		  "usage: file::write path_and_filename data");
 		return;
 	}
-	path = COM_CompressPath (GIB_Argv (1));
-	if (!path[0]) {
+	if (!*GIB_Argv(1)) {
 		Cbuf_Error ("file",
 		  "file::write: null filename provided");
 		return;
 	}
-	if (path[0] == '/' || (path[0] == '.' && path[1] == '.')) {
+	if (GIB_File_Transform_Path (GIB_Argd(1))) {
 		Cbuf_Error ("access",
-		  "file::write: access to %s denied", path);
+		  "file::write: access to %s denied", GIB_Argv(1));
 		return;
 	}
-	if (!(file = Qopen (va ("%s/%s", com_gamedir, path), "w"))) {
+	path = GIB_Argv(1);
+	if (!(file = Qopen (path, "w"))) {
 		Cbuf_Error ("file",
-		  "file::write: could not open %s/%s for writing: %s", com_gamedir, path, strerror (errno));
+		  "file::write: could not open %s for writing: %s", path, strerror (errno));
 		return;
 	}
 	Qprintf (file, "%s", GIB_Argv (2));
 	Qclose (file);
-	free (path);
 }
 
 void
@@ -605,23 +620,23 @@ GIB_File_Find_f (void)
 		  "usage: file::find glob [path]");
 		return;
 	}
-	path = COM_CompressPath (GIB_Argv (2));
 	if (GIB_Argc () == 3) {
-		if (!path[0]) {
+		if (!*GIB_Argv(2)) {
 			Cbuf_Error ("file",
 			  "file::find: null path provided");
 			return;
 		}
-		if (path[0] == '/' || (path[0] == '.' && path[1] == '.')) {
+		if (GIB_File_Transform_Path (GIB_Argd(2))) {
 			Cbuf_Error ("access", 
-			  "file::find: access to %s denied", path);
+			  "file::find: access to %s denied", GIB_Argv(2));
 			return;
 		}
 	}
-	directory = opendir (va ("%s/%s", com_gamedir, path));
+	path = GIB_Argv(2);
+	directory = opendir (path);
 	if (!directory) {
 		Cbuf_Error ("file",
-		  "file.find: could not open directory %s/%s: %s", com_gamedir, path, strerror (errno));
+		  "file.find: could not open directory %s: %s", path, strerror (errno));
 		return;
 	}
 	list = dstring_newstr ();
@@ -640,14 +655,12 @@ GIB_File_Find_f (void)
 	else
 		GIB_Return ("");
 	dstring_delete (list);
-	free (path);
 }
 
 void
 GIB_File_Move_f (void)
 {
 	char *path1, *path2;
-	dstring_t *from, *to;
 
 	if (GIB_Argc () != 3) {
 		Cbuf_Error ("syntax",
@@ -655,30 +668,22 @@ GIB_File_Move_f (void)
 		  "usage: file::move from_file to_file");
 		return;
 	}
-	path1 = COM_CompressPath (GIB_Argv (1));
-	path2 = COM_CompressPath (GIB_Argv (2));
-	if (path1[0] == '/' || (path1[0] == '.' && path1[1] == '.')) {
+	if (GIB_File_Transform_Path (GIB_Argd(1))) {
 		Cbuf_Error ("access",
-		  "file::move: access to %s denied", path1);
+		  "file::move: access to %s denied", GIB_Argv(1));
 		return;
 	}
-	if (path2[0] == '/' || (path2[0] == '.' && path2[1] == '.')) {
+	if (GIB_File_Transform_Path (GIB_Argd(2))) {
 		Cbuf_Error ("access",
-		  "file::move: access to %s denied", path2);
+		  "file::move: access to %s denied", GIB_Argv(2));
 		return;
 	}
-	from = dstring_newstr ();
-	to = dstring_newstr ();
-	dsprintf (from, "%s/%s", com_gamedir, path1);
-	dsprintf (to, "%s/%s", com_gamedir, path2);
-	if (Qrename (from->str, to->str))
+	path1 = GIB_Argv(1);
+	path2 = GIB_Argv(2);
+	if (Qrename (path1, path2))
 		Cbuf_Error ("file",
 		  "file::move: could not move %s to %s: %s",
-	      from->str, to->str, strerror(errno));
-	dstring_delete (from);
-	dstring_delete (to);
-	free (path1);
-	free (path2);
+	      path1, path2, strerror(errno));
 }
 
 void
@@ -692,17 +697,16 @@ GIB_File_Delete_f (void)
 		  "usage: file::delete file");
 		return;
 	}
-	path = COM_CompressPath (GIB_Argv (1));
-	if (path[0] == '/' || (path[0] == '.' && path[1] == '.')) {
+	if (GIB_File_Transform_Path (GIB_Argd(1))) {
 		Cbuf_Error ("access",
-		  "file::delete: access to %s denied", path);
+		  "file::delete: access to %s denied", GIB_Argv(1));
 		return;
 	}
-	if (Qremove(va("%s/%s", com_gamedir, path)))
+	path = GIB_Argv (1);
+	if (Qremove(path))
 		Cbuf_Error ("file",
-		  "file::delete: could not delete %s/%s: %s",
-	      com_gamedir, path, strerror(errno));
-	free (path);
+		  "file::delete: could not delete %s: %s",
+	      path, strerror(errno));
 }
 
 void
@@ -750,10 +754,15 @@ GIB_Print_f (void)
 }
 
 void
-GIB_Builtin_Init (void)
+GIB_Builtin_Init (qboolean sandbox)
 {
 	gib_globals = Hash_NewTable (512, GIB_Var_Get_Key, GIB_Var_Free, 0);
 
+	if (sandbox)
+		GIB_File_Transform_Path = GIB_File_Transform_Path_Secure;
+	else
+		GIB_File_Transform_Path = GIB_File_Transform_Path_Null;
+	
 	GIB_Builtin_Add ("function", GIB_Function_f, GIB_BUILTIN_NORMAL);
 	GIB_Builtin_Add ("function::get", GIB_Function_Get_f, GIB_BUILTIN_NORMAL);
 	GIB_Builtin_Add ("function::export", GIB_Function_Export_f, GIB_BUILTIN_NORMAL);

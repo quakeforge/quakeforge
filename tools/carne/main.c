@@ -31,7 +31,7 @@ int main (int argc, char **argv)
 	Cvar_Init_Hash ();
 	Cmd_Init_Hash ();
 	Cmd_Init ();	
-	GIB_Init ();
+	GIB_Init (false); // No sandbox
 	
 	// Load the script
 	file = Qopen (argv[1], "r");

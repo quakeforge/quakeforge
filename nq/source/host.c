@@ -867,7 +867,7 @@ Host_Init (void)
 	Sys_Init ();
 
 	Cmd_Init ();
-	GIB_Init ();
+	GIB_Init (true);
 
 	// execute +set as early as possible
 	Cmd_StuffCmds (host_cbuf);

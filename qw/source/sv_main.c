@@ -2470,7 +2470,7 @@ SV_Init (void)
 	Cvar_Get ("cmd_warncmd", "1", CVAR_NONE, NULL, NULL);
 
 	Cmd_Init ();
-	GIB_Init ();
+	GIB_Init (true);
 
 	// execute +set as early as possible
 	Cmd_StuffCmds (sv_cbuf);
