@@ -73,6 +73,8 @@ GIB_Var_Get_R (hashtab_t *vars, char *name)
 	char *p;
 	gib_var_t *l;
 	
+	if (!vars)
+		return 0;
 	if ((p = strchr (name, '.'))) {
 		*p = 0;
 		l = Hash_Find (vars, name);
