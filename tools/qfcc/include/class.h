@@ -34,15 +34,23 @@
 
 typedef struct class_s {
 	int         defined;
-	const char *class_name;
-	const char *category_name;
+	const char *name;
 	struct class_s *super_class;
+	struct category_s *categories;
 	struct type_s *ivars;
 	struct methodlist_s *methods;
 	struct protocollist_s *protocols;
 	struct def_s *def;
 	struct type_s *type;
 } class_t;
+
+typedef struct category_s {
+	struct category_s *next;
+	const char *name;
+	class_t    *class;
+	struct methodlist_s *methods;
+	struct protocollist_s *protocols;
+} category_t;
 
 extern class_t  class_id;
 extern class_t  class_Class;

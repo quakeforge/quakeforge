@@ -277,9 +277,9 @@ print_type (type_t *type)
 		case ev_class:
 			class = type->class;
 			printf (" %s%s", 
-					class->class_name,
-					class->category_name ? va (" (%s)", class->category_name)
-										 : "");
+					class->name,
+					class->categories ? va (" (%s)", class->categories->name)
+									  : "");
 			break;
 		case ev_struct:
 			printf (" %s %s", pr_type_name[type->type], type->name);
@@ -369,7 +369,7 @@ _encode_type (dstring_t *encoding, type_t *type, int level)
 			if (type->name) {
 				dstring_appendstr (encoding, type->name);
 			} else if (type->type == ev_object || type->type == ev_class) {
-				dstring_appendstr (encoding, type->class->class_name);
+				dstring_appendstr (encoding, type->class->name);
 			}
 			if (level < 2) {
 				dstring_appendstr (encoding, "=");

@@ -946,8 +946,7 @@ class_with_super
 	: class_name ':' class_name
 		{
 			if ($1->super_class != $3)
-				error (0, "%s is not a super class of %s",
-					   $3->class_name, $1->class_name);
+				error (0, "%s is not a super class of %s", $3->name, $1->name);
 			$$ = $1;
 		}
 	;

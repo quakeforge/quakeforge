@@ -112,8 +112,8 @@ method_def (class_t *class, method_t *method)
 
 	dsprintf (str, "_%c_%s_%s_%s",
 			  method->instance ? 'i' : 'c',
-			  class->class_name,
-			  class->category_name ? class->category_name : "",
+			  class->name,
+			  class->categories ? class->categories->name : "",
 			  method->name);
 	str->str[--str->size - 1] = 0;
 	for (s = str->str; *s; s++)
