@@ -5,3 +5,5 @@
 *.sym
 .deps
 .vimrc
+Makefile
+Makefile.in
