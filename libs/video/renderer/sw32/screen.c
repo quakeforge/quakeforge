@@ -246,7 +246,7 @@ void
 SCR_ScreenShot_f (void)
 {
 	dstring_t  *pcxname = dstring_new ();
-	pcx_t      *pcx;
+	pcx_t      *pcx = 0;
 	int         pcx_len;
 
 	// find a file name to save it to 
@@ -276,9 +276,10 @@ SCR_ScreenShot_f (void)
 		// for adapters that can't stay mapped in for linear writes all the time
 		D_DisableBackBufferAccess ();
 
-		QFS_WriteFile (pcxname->str, pcx, pcx_len);
-
-		Con_Printf ("Wrote %s\n", pcxname->str);
+		if (pcx) {
+			QFS_WriteFile (pcxname->str, pcx, pcx_len);
+			Con_Printf ("Wrote %s\n", pcxname->str);
+		}
 	}
 	dstring_delete (pcxname);
 }
