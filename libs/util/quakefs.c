@@ -332,6 +332,9 @@ COM_OpenRead (const char *path, int offs, int len, int zip)
 		Sys_Error ("Couldn't open %s", path);
 		return 0;
 	}
+#ifdef WIN32
+	setmode (fd, O_BINARY);
+#endif
 	if (offs < 0 || len < 0) {
 		// normal file
 		offs = 0;
@@ -353,9 +356,6 @@ COM_OpenRead (const char *path, int offs, int len, int zip)
 	lseek (fd, offs, SEEK_SET);
 	com_filesize = len;
 
-#ifdef WIN32
-	setmode (fd, O_BINARY);
-#endif
 	if (zip)
 		return Qdopen (fd, "rbz");
 	else
