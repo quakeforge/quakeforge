@@ -552,6 +552,7 @@ PR_ParseDefs (void)
 				pr_scope = def;
 				f = PR_ParseImmediateStatements (type);
 				PR_FlushScope (pr_scope);
+				PR_ResetTempDefs ();
 				pr_scope = NULL;
 				def->initialized = 1;
 				G_FUNCTION (def->ofs) = numfunctions;

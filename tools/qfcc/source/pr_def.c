@@ -155,6 +155,8 @@ PR_GetTempDef (type_t *type)
 		free_temps[t] = d->next;
 	} else {
 		d = PR_NewDef (type, 0, 0);
+	}
+	if (!d->ofs) {
 		d->ofs = numpr_globals;
 		numpr_globals += type_size[t];
 	}
@@ -175,6 +177,19 @@ PR_FreeTempDefs (void)
 		free_temps[type] = def;
 	}
 	temp_scope.scope_next = 0;
+}
+
+void
+PR_ResetTempDefs (void)
+{
+	int i;
+	def_t *d;
+
+	for (i = 0; i < ev_type_count; i++) {
+		for (d = free_temps[i]; d && d->ofs; d = d->next) {
+			d->ofs = 0;
+		}
+	}
 }
 
 void

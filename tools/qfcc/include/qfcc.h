@@ -443,6 +443,7 @@ def_t *PR_GetDef (type_t *type, const char *name, def_t *scope,
 def_t *PR_NewDef (type_t *type, const char *name, def_t *scope);
 def_t *PR_GetTempDef (type_t *type);
 void PR_FreeTempDefs ();
+void PR_ResetTempDefs ();
 void PR_FlushScope (def_t *scope);
 
 void PR_PrintDefs (void);
