@@ -33,6 +33,7 @@ static const char rcsid[] =
 #include <stdlib.h>
 #include <string.h>
 
+#include "QF/cmd.h"
 #include "QF/console.h"
 #include "QF/draw.h"
 #include "QF/hash.h"
@@ -206,6 +207,15 @@ bi_Menu_End (progs_t *pr)
 	menu = menu->parent;
 }
 
+static void
+togglemenu_f (void)
+{
+	if (menu)
+		Menu_Leave ();
+	else
+		Menu_Enter ();
+}
+
 void
 Menu_Init (void)
 {
@@ -221,6 +231,9 @@ Menu_Init (void)
 	PR_AddBuiltin (&menu_pr_state, "Menu_End", bi_Menu_End, -1);
 
 	R_Progs_Init (&menu_pr_state);
+
+	Cmd_AddCommand ("togglemenu", togglemenu_f,
+					"Toggle the display of the menu");
 }
 
 void
@@ -289,8 +302,8 @@ Menu_Draw (void)
 		}
 	}
 	if (menu->cursor) {
-		G_INT (&menu_pr_state, OFS_PARM0) = 0;
-		G_INT (&menu_pr_state, OFS_PARM1) = 0;
+		G_INT (&menu_pr_state, OFS_PARM0) = 320;
+		G_INT (&menu_pr_state, OFS_PARM1) = 240;
 		PR_ExecuteProgram (&menu_pr_state, menu->cursor);
 	}
 	if (menu_draw) {
