@@ -176,10 +176,10 @@ QuatMult (const quat_t v1, const quat_t v2, quat_t out)
 	vec3_t     v;
 
 	s = v1[0] * v2[0] - DotProduct (v1 + 1, v2 + 1);
-	CrossProduct (v1, v2, v);
+	CrossProduct (v1 + 1, v2 + 1, v);
 	VectorMultAdd (v, v1[0], v2 + 1, v);
-	out[0] = s;
 	VectorMultAdd (v, v2[0], v1 + 1, out + 1);
+	out[0] = s;
 }
 
 #if defined(_WIN32) && !defined(__GNUC__)
