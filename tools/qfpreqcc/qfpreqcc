@@ -195,11 +195,20 @@ f.write (progs_dat + '\n\n')
 for l in qcc_list:
 	f.write(l + '\n')
 f.close ()
+no_delete = 0
+i = 0
+while i < len (sys.argv):
+	if sys.argv[i] == '--keep':
+		no_delete = 1
+		del sys.argv[i]
+		continue
+	i = i + 1
 args = ["qfcc"] + sys.argv[1:]
 if not os.fork():
 	os.execvp ("qfcc", args)
 else:
 	os.wait()
-for l in qcc_list:
-	os.unlink (l)
-os.unlink (progs_src)
+if not no_delete:
+	for l in qcc_list:
+		os.unlink (l)
+	os.unlink (progs_src)
