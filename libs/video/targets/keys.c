@@ -44,6 +44,7 @@ static const char rcsid[] =
 #include "QF/cbuf.h"
 #include "QF/cmd.h"
 #include "QF/console.h"
+#include "QF/csqc.h"
 #include "QF/cvar.h"
 #include "QF/keys.h"
 #include "QF/screen.h"
@@ -52,6 +53,8 @@ static const char rcsid[] =
 
 #include "compat.h"
 #include "old_keys.h"
+
+static void (*const key_progs_init)(struct progs_s *) = Key_Progs_Init;
 
 /*  key up events are sent even if in console mode */
 

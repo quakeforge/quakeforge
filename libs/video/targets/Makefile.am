@@ -39,7 +39,8 @@ libQFjs_la_CFLAGS=		@PREFER_PIC@ $(JOY_CFLAGS)
 libQFjs_la_SOURCES=		joy.c $(joy_src)
 EXTRA_libQFjs_la_SOURCES= $(joy_linux_src) $(joy_win_src) $(joy_null_src)
 
-libcommon_la_SOURCES=	in_common.c in_event.c keys.c old_keys.c vid.c
+libcommon_la_SOURCES=	\
+		in_common.c in_event.c keys.c old_keys.c pr_keys.c vid.c
 libcommon_la_CFLAGS=	@PREFER_NON_PIC@
 libcommon_la_LDFLAGS=	-static
 

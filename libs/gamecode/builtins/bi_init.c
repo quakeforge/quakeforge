@@ -37,7 +37,6 @@ static void (*const cbuf_progs_init)(progs_t *) = Cbuf_Progs_Init;
 static void (*const cvar_progs_init)(progs_t *) = Cvar_Progs_Init;
 static void (*const cmd_progs_init)(progs_t *) = Cmd_Progs_Init;
 static void (*const file_progs_init)(progs_t *) = File_Progs_Init;
-static void (*const key_progs_init)(progs_t *) = Key_Progs_Init;
 static void (*const inputline_progs_init)(progs_t *) = InputLine_Progs_Init;
 static void (*const string_progs_init)(progs_t *) = String_Progs_Init;
 static void (*const stringhashe_progs_init)(progs_t *) = StringHash_Progs_Init;
