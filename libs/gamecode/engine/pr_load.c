@@ -281,6 +281,9 @@ PR_LoadProgs (progs_t *pr, const char *progsname, int edicts, int zone)
 	if (!pr->progs)
 		return;
 
+	if (!PR_RelocateBuiltins (pr))
+		PR_Error (pr, "unable to load %s", progsname);
+
 	if (!PR_ResolveGlobals (pr))
 		PR_Error (pr, "unable to load %s", progsname);
 

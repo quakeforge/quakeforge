@@ -145,8 +145,12 @@ finish_class (progs_t *pr, pr_class_t *class, pointer_t object_ptr)
 
 	meta->class_pointer = object_ptr;
 	if (class->super_class) {
-		val = Hash_Find (pr->classes, PR_GetString (pr,
-													class->super_class));
+		const char *super_class = PR_GetString (pr, class->super_class);
+		const char *class_name = PR_GetString (pr, class->name);
+		val = Hash_Find (pr->classes, super_class);
+		if (!val)
+			PR_Error (pr, "broken class %s: super class %s not found",
+					  class_name, super_class);
 		meta->super_class = val->class_pointer;
 		class->super_class = POINTER_TO_PROG (pr, val);
 	} else {
