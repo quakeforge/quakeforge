@@ -165,10 +165,10 @@ pr___obj_exec_class (progs_t *pr)
 														class->super_class));
 			meta->super_class = class->super_class = val - pr->pr_globals;
 		} else {
-			pointer_t  *ml = &class->methods;
+			pointer_t  *ml = &meta->methods;
 			while (*ml)
 				ml = &G_STRUCT (pr, pr_method_list_t, *ml).method_next;
-			*ml = meta->methods;
+			*ml = class->methods;
 		}
 		Sys_DPrintf ("    %d %d %d\n", meta->class_pointer, meta->super_class,
 					 class->super_class);
