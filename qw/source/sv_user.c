@@ -704,16 +704,6 @@ SV_BeginDownload_f (ucmd_t *cmd)
 		Qclose (host_client->download);
 		host_client->download = NULL;
 	}
-	// lowercase name (needed for casesen file systems)
-	{
-		char *p = Hunk_TempAlloc (strlen (name) + 1);
-		char *n = p;
-
-		while (*name)
-			*p++ = tolower ((byte) *name++);
-		*p = 0;
-		name = n;
-	}
 
 	zip = strchr (Info_ValueForKey (host_client->userinfo, "*cap"), 'z') != 0;
 
