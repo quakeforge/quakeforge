@@ -218,6 +218,22 @@ CL_KeepaliveMessage (void)
 	SZ_Clear (&cls.message);
 }
 
+void CL_NewMap (const char *mapname)
+{
+	char       *name = malloc (strlen (mapname) + 4 + 1);
+
+
+	R_NewMap (cl.worldmodel, cl.model_precache, MAX_MODELS);
+	Con_NewMap ();
+
+	COM_StripExtension (mapname, name);
+	strcat (name, ".cfg");
+	Cbuf_AddText (host_cbuf, "exec ");
+	Cbuf_AddText (host_cbuf, name);
+	Cbuf_AddText (host_cbuf, "\n");
+	free (name);
+}
+
 void
 CL_ParseServerInfo (void)
 {
@@ -310,9 +326,7 @@ CL_ParseServerInfo (void)
 
 	// local state
 	cl_entities[0].model = cl.worldmodel = cl.model_precache[1];
-
-	R_NewMap (cl.worldmodel, cl.model_precache, MAX_MODELS);
-	Con_NewMap ();
+	CL_NewMap (model_precache[1]);
 
 	Hunk_Check ();						// make sure nothing is hurt
 

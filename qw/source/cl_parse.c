@@ -246,6 +246,23 @@ CL_CheckOrDownloadFile (const char *filename)
 	return false;
 }
 
+void CL_NewMap (const char *mapname)
+{
+	char       *name = malloc (strlen (mapname) + 4 + 1);
+
+	R_NewMap (cl.worldmodel, cl.model_precache, MAX_MODELS);
+	Team_NewMap ();
+	Con_NewMap ();
+	Hunk_Check ();								// make sure nothing is hurt
+
+	COM_StripExtension (mapname, name);
+	strcat (name, ".cfg");
+	Cbuf_AddText (cl_cbuf, "exec ");
+	Cbuf_AddText (cl_cbuf, name);
+	Cbuf_AddText (cl_cbuf, "\n");
+	free (name);
+}
+
 void
 Model_NextDownload (void)
 {
@@ -315,11 +332,7 @@ Model_NextDownload (void)
 
 	// all done
 	cl.worldmodel = cl.model_precache[1];
-
-	R_NewMap (cl.worldmodel, cl.model_precache, MAX_MODELS);
-	Team_NewMap ();
-	Con_NewMap ();
-	Hunk_Check ();								// make sure nothing is hurt
+	CL_NewMap (cl.model_name[1]);
 
 	// done with modellist, request first of static signon messages
 	MSG_WriteByte (&cls.netchan.message, clc_stringcmd);
