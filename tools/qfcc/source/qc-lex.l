@@ -6,7 +6,7 @@
 
 #define YY_NO_UNPUT
 
-void error (char*s){fprintf(stderr,"%d: %s\n",pr_source_line,s);}
+void error (char*s){fprintf(stderr,"%s:%d: %s\n",strings+s_file,pr_source_line,s);}
 
 int type_or_name (char *token);
 
