@@ -129,13 +129,13 @@ GIB_Parse_Extract_Line (struct cbuf_s *cbuf)
 {
 	int i;
 	char c;
-	
-	if (GIB_DATA(cbuf)->ret.waiting) // Not ready for next line
-		return;
-	
 	dstring_t *dstr = cbuf->buf;
 	
+	if (GIB_DATA(cbuf)->ret.waiting ) // Not ready for the next line
+		return;
+		
 	dstring_clearstr (cbuf->line);
+	
 		
 	for (i = 0; dstr->str[i]; i++) {
 		if (dstr->str[i] == '{') {
