@@ -95,6 +95,8 @@ cvar_t     *sv_timekick_interval;
 cvar_t     *sv_timecheck_fuzz;
 cvar_t     *sv_timecheck_decay;
 
+static void OutofBandPrintf (netadr_t where, const char *fmt, ...) __attribute__ ((format (printf, 2, 3)));
+
 //	USER STRINGCMD EXECUTION host_client and sv_player will be valid.
 
 /*
@@ -583,24 +585,6 @@ SV_NextDownload_f (void *unused)
 	Qclose (host_client->download);
 	host_client->download = NULL;
 
-}
-
-static void
-OutofBandPrintf (netadr_t where, const char *fmt, ...)
-{
-	char		send[1024];
-	va_list		argptr;
-
-	send[0] = 0xff;
-	send[1] = 0xff;
-	send[2] = 0xff;
-	send[3] = 0xff;
-	send[4] = A2C_PRINT;
-	va_start (argptr, fmt);
-	vsnprintf (send + 5, sizeof (send - 5), fmt, argptr);
-	va_end (argptr);
-
-	Netchan_SendPacket (strlen (send) + 1, send, where);
 }
 
 static void
@@ -1877,4 +1861,22 @@ SV_UserInit (void)
 								   "\"forgiven\".");
 	sv_kickfake = Cvar_Get ("sv_kickfake", "1", CVAR_NONE, NULL,
 							"Kick users sending to send fake talk messages");
+}
+
+static void
+OutofBandPrintf (netadr_t where, const char *fmt, ...)
+{
+	char		send[1024];
+	va_list		argptr;
+
+	send[0] = 0xff;
+	send[1] = 0xff;
+	send[2] = 0xff;
+	send[3] = 0xff;
+	send[4] = A2C_PRINT;
+	va_start (argptr, fmt);
+	vsnprintf (send + 5, sizeof (send - 5), fmt, argptr);
+	va_end (argptr);
+
+	Netchan_SendPacket (strlen (send) + 1, send, where);
 }

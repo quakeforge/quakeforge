@@ -200,16 +200,6 @@ SV_Print (const char *fmt, va_list args)
 	}
 }
 
-void
-SV_Printf (const char *fmt, ...)
-{
-	va_list     argptr;
-
-	va_start (argptr, fmt);
-	SV_Print (fmt, argptr);
-	va_end (argptr);
-}
-
 /* EVENT MESSAGES */
 
 static void
@@ -242,91 +232,6 @@ SV_PrintToClient (client_t *cl, int level, const char *string)
 	ClientReliableWrite_Begin (cl, svc_print, strlen (buffer) + 3);
 	ClientReliableWrite_Byte (cl, level);
 	ClientReliableWrite_String (cl, buffer);
-}
-
-/*
-	SV_ClientPrintf
-
-	Sends text across to be displayed if the level passes
-*/
-void
-SV_ClientPrintf (int recorder, client_t *cl, int level, const char *fmt, ...)
-{
-	char        string[1024];
-	va_list     argptr;
-
-	if (level < cl->messagelevel)
-		return;
-
-	va_start (argptr, fmt);
-	vsnprintf (string, sizeof (string), fmt, argptr);
-	va_end (argptr);
-
-	if (recorder && sv.demorecording) {
-		DemoWrite_Begin (dem_single, cl - svs.clients, strlen (string) + 3);
-		MSG_WriteByte (&demo.dbuf->sz, svc_print);
-		MSG_WriteByte (&demo.dbuf->sz, level);
-		MSG_WriteString (&demo.dbuf->sz, string);
-	}
-
-	SV_PrintToClient (cl, level, string);
-}
-
-/*
-	SV_BroadcastPrintf
-
-	Sends text to all active clients
-*/
-void
-SV_BroadcastPrintf (int level, const char *fmt, ...)
-{
-	char        string[1024];
-	client_t   *cl;
-	int         i;
-	va_list     argptr;
-
-	va_start (argptr, fmt);
-	vsnprintf (string, sizeof (string), fmt, argptr);
-	va_end (argptr);
-
-	SV_Printf ("%s", string);			// print to the console
-
-	for (i = 0, cl = svs.clients; i < MAX_CLIENTS; i++, cl++) {
-		if (level < cl->messagelevel)
-			continue;
-		if (cl->state < cs_zombie)
-			continue;
-
-		SV_PrintToClient (cl, level, string);
-	}
-
-	if (sv.demorecording) {
-		DemoWrite_Begin (dem_all, cl - svs.clients, strlen (string) + 3);
-		MSG_WriteByte (&demo.dbuf->sz, svc_print);
-		MSG_WriteByte (&demo.dbuf->sz, level);
-		MSG_WriteString (&demo.dbuf->sz, string);
-	}
-}
-
-/*
-	SV_BroadcastCommand
-
-	Sends text to all active clients
-*/
-void
-SV_BroadcastCommand (const char *fmt, ...)
-{
-	char        string[1024];
-	va_list     argptr;
-
-	if (!sv.state)
-		return;
-	va_start (argptr, fmt);
-	vsnprintf (string, sizeof (string), fmt, argptr);
-	va_end (argptr);
-
-	MSG_WriteByte (&sv.reliable_datagram, svc_stufftext);
-	MSG_WriteString (&sv.reliable_datagram, string);
 }
 
 /*
@@ -1012,4 +917,99 @@ SV_SendMessagesToAll (void)
 			c->send_message = true;
 
 	SV_SendClientMessages ();
+}
+
+void
+SV_Printf (const char *fmt, ...)
+{
+	va_list     argptr;
+
+	va_start (argptr, fmt);
+	SV_Print (fmt, argptr);
+	va_end (argptr);
+}
+
+/*
+	SV_ClientPrintf
+
+	Sends text across to be displayed if the level passes
+*/
+void
+SV_ClientPrintf (int recorder, client_t *cl, int level, const char *fmt, ...)
+{
+	char        string[1024];
+	va_list     argptr;
+
+	if (level < cl->messagelevel)
+		return;
+
+	va_start (argptr, fmt);
+	vsnprintf (string, sizeof (string), fmt, argptr);
+	va_end (argptr);
+
+	if (recorder && sv.demorecording) {
+		DemoWrite_Begin (dem_single, cl - svs.clients, strlen (string) + 3);
+		MSG_WriteByte (&demo.dbuf->sz, svc_print);
+		MSG_WriteByte (&demo.dbuf->sz, level);
+		MSG_WriteString (&demo.dbuf->sz, string);
+	}
+
+	SV_PrintToClient (cl, level, string);
+}
+
+/*
+	SV_BroadcastPrintf
+
+	Sends text to all active clients
+*/
+void
+SV_BroadcastPrintf (int level, const char *fmt, ...)
+{
+	char        string[1024];
+	client_t   *cl;
+	int         i;
+	va_list     argptr;
+
+	va_start (argptr, fmt);
+	vsnprintf (string, sizeof (string), fmt, argptr);
+	va_end (argptr);
+
+	SV_Printf ("%s", string);			// print to the console
+
+	for (i = 0, cl = svs.clients; i < MAX_CLIENTS; i++, cl++) {
+		if (level < cl->messagelevel)
+			continue;
+		if (cl->state < cs_zombie)
+			continue;
+
+		SV_PrintToClient (cl, level, string);
+	}
+
+	if (sv.demorecording) {
+		DemoWrite_Begin (dem_all, cl - svs.clients, strlen (string) + 3);
+		MSG_WriteByte (&demo.dbuf->sz, svc_print);
+		MSG_WriteByte (&demo.dbuf->sz, level);
+		MSG_WriteString (&demo.dbuf->sz, string);
+	}
+}
+
+/*
+	SV_BroadcastCommand
+
+	Sends text to all active clients
+*/
+void
+SV_BroadcastCommand (const char *fmt, ...)
+{
+	char        string[1024];
+	va_list     argptr;
+
+	if (!sv.state)
+		return;
+	va_start (argptr, fmt);
+	vsnprintf (string, sizeof (string), fmt, argptr);
+	va_end (argptr);
+
+	MSG_WriteByte (&sv.reliable_datagram, svc_stufftext);
+	MSG_WriteString (&sv.reliable_datagram, string);
 }
