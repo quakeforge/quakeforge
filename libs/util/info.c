@@ -253,6 +253,8 @@ Info_MakeString (info_t *info, int (*filter)(const char *))
 	key_list = (info_key_t **)Hash_GetList (info->tab);
 
 	for (key = key_list; *key; key++) {
+		if (!*(*key)->value)
+			continue;
 		if (filter && filter ((*key)->key))
 			continue;
 		*d++ = '\\';
