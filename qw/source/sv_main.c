@@ -2361,6 +2361,8 @@ SV_Init (void)
 	Sys_Init_Cvars ();
 	Sys_Init ();
 
+	Cvar_Get ("cmd_warncmd", "1", CVAR_NONE, NULL, NULL);
+
 	svs.info = Info_ParseString ("", MAX_SERVERINFO_STRING);
 	localinfo = Info_ParseString ("", 0);	// unlimited
 
