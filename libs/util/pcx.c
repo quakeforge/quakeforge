@@ -78,13 +78,13 @@ LoadPCX (VFile *f, int convert, byte *pal)
 	if (pcx->manufacturer != 0x0a
 		|| pcx->version != 5
 		|| pcx->encoding != 1
-		|| pcx->bits_per_pixel != 8 || pcx->xmax >= 320 || pcx->ymax >= 256) {
+		|| pcx->bits_per_pixel != 8) {
 		Sys_Printf ("Bad pcx file\n");
 		return 0;
 	}
 
-	palette = ((byte*)pcx) + com_filesize - 768;
-	dataByte = (byte*)&pcx[1];
+	palette = ((byte *) pcx) + com_filesize - 768;
+	dataByte = (byte *) &pcx[1];
 
 	count = (pcx->xmax + 1) * (pcx->ymax + 1);
 	if (convert)
@@ -93,8 +93,10 @@ LoadPCX (VFile *f, int convert, byte *pal)
 	tex->width = pcx->xmax + 1;
 	tex->height = pcx->ymax + 1;
 	if (convert) {
+		tex->format = tex_rgba;
 		tex->palette = 0;
 	} else {
+		tex->format = tex_palette;
 		tex->palette = pal;
 	}
 	pix = tex->data;
@@ -113,11 +115,10 @@ LoadPCX (VFile *f, int convert, byte *pal)
 
 			if (convert) {
 				while (count && runLength > 0) {
-					pix[0] = palette[*dataByte * 3];
-					pix[1] = palette[*dataByte * 3 + 1];
-					pix[2] = palette[*dataByte * 3 + 2];
-					pix[3] = 255;
-					pix += 4;
+					*pix++ = palette[*dataByte * 3];
+					*pix++ = palette[*dataByte * 3 + 1];
+					*pix++ = palette[*dataByte * 3 + 2];
+					*pix++ = 255;
 					count -= 4;
 					runLength--;
 					x++;
@@ -175,7 +176,7 @@ EncodePCX (byte * data, int width, int height,
 	memset (pcx->filler, 0, sizeof (pcx->filler));
 
 	// pack the image
-	pack = (byte*)&pcx[1];
+	pack = (byte *) &pcx[1];
 
 	if (flip)
 		data += rowbytes * (height - 1);
