@@ -11,6 +11,13 @@ Changes from 0.5.4
     o save game loading fixed
     o FPS display now updated every 0.2 seconds and displays to the tenth of
       an fps
+    o qfcc conforms better to Objective-C sematics
+    o Object root class revamped
+    o qfcc's "struct" support closer to that of C (ie, separate namespace)
+    o minor improvement s to statement printing (pr_debug >= 1)
+    o qfcc how supports the "unsigned" type (32 bit unsigned integer)
+    o improper placement of fullscreen window on startup in -x11 and -glx fixed
+      (ie, starting with +set vid_fullscreen 1)
 
 Changes from 0.5.3
     o CRITICAL: exploitable buffer overflow in qw-server fixed
