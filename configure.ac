@@ -1642,6 +1642,7 @@ dnl Output files
 AC_OUTPUT(
 	Makefile
 	quakeforge-config
+	quakeforge.lsm
 
 	include/Makefile
 	include/QF/Makefile
@@ -1672,12 +1673,10 @@ AC_OUTPUT(
 	libs/video/targets/Makefile
 
 	qw/Makefile
-	qw/quakeforge.lsm
 	qw/include/Makefile
 	qw/source/Makefile
 	
 	nq/Makefile
-	nq/nuq.lsm
 	nq/include/Makefile
 	nq/source/Makefile
 
