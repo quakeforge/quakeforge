@@ -111,36 +111,27 @@ QFGL_ExtensionPresent (const char *name)
 void *
 QFGL_ExtensionAddress (const char *name)
 {
-	void       *handle;
-	static qboolean glProcAddress_present = true;
-	static QF_glXGetProcAddressARB glGetProcAddress = NULL;
+	static void *handle;
 
+	if (!handle) {
 #if defined(HAVE_DLOPEN)
-	if (!(handle = dlopen (gl_driver->string, RTLD_NOW))) {
-		Sys_Error ("Couldn't load OpenGL library %s: %s\n", gl_driver->string,
-				   dlerror ());
-		return 0;
-	}
+		if (!(handle = dlopen (gl_driver->string, RTLD_NOW))) {
+			Sys_Error ("Couldn't load OpenGL library %s: %s\n",
+					   gl_driver->string, dlerror ());
+			return 0;
+		}
 #elif defined(_WIN32)
-	if (!(handle = LoadLibrary (gl_driver->string))) {
-		Sys_Error ("Couldn't load OpenGL library %s!\n", gl_driver->string);
-		return 0;
-	}
+		if (!(handle = LoadLibrary (gl_driver->string))) {
+			Sys_Error ("Couldn't load OpenGL library %s!\n",
+					   gl_driver->string);
+			return 0;
+		}
 #else
 # error "Cannot load libraries: %s was not configured with DSO support"
 #endif
-
-	if (glProcAddress_present && !glGetProcAddress) {
-#if defined (_WIN32)
-		glGetProcAddress = QFGL_ProcAddress (handle, "wglGetProcAddress", false);
-#else
-		glGetProcAddress = QFGL_ProcAddress (handle, "glXGetProcAddressARB", false);
-#endif
-		if (!glGetProcAddress)
-			glProcAddress_present = false;
 	}
 
-	if (name && glProcAddress_present)
-		return glGetProcAddress (name);
+	if (name)
+		return QFGL_ProcAddress (handle, name, false);
 	return NULL;
 }
