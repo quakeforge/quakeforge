@@ -11,10 +11,10 @@ INCLUDES=	-I$(top_srcdir)/ruamoko/include -I$(top_srcdir)/include
 noinst_LIBRARIES= libr.a libgui.a libcsqc.a
 
 %.qfo: %.r
-	$(QFCC) $(QCFLAGS) $(QCPPFLAGS) -p $(STRIP) -c -o $@ $<
+	$(QFCC) $(QCFLAGS) $(QCPPFLAGS) -c -o $@ $<
 
 %.o: %.r
-	$(QFCC) $(QCFLAGS) $(QCPPFLAGS) -p $(STRIP) -c -o $@ $<
+	$(QFCC) $(QCFLAGS) $(QCPPFLAGS) -c -o $@ $<
 
 libr_a_SOURCES=\
 	crudefile.r debug.r entities.r infokey.r math.r message.r nq_message.r \
