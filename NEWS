@@ -139,10 +139,10 @@ Changes from 0.3.0
         * Experimental 32 bit software renderer.
         * Dynamic lights don't shine through walls.
         * Colored alias model lighting for GL.
-	* Vertex Array use for sprites, particles and text. No fallbacks yet,
-	  so QF wont work with old or broken GL drivers. 
-	* Switchable particle styles: r_particles_style 0 for Id. Default is 1,
-	  for lower particle count, larger texture particle effects.
-	* 16 bit vertex alias model format.
-	* Improved software gamma that more closely resembles hardware gamma.
+        * Vertex Array use for sprites, particles and text. No fallbacks yet,
+          so QF wont work with old or broken GL drivers. 
+        * Switchable particle styles: r_particles_style 0 for Id. Default is 1,
+          for lower particle count, larger texture particle effects.
+        * 16 bit vertex alias model format.
+        * Improved software gamma that more closely resembles hardware gamma.
         * Countless speed improvements.
