@@ -391,23 +391,17 @@ X11_UpdateFullscreen (cvar_t *fullscreen)
 			X11_ForceMove (window_x, window_y);
 			window_saved = 0;
 		}
-		if (in_grab) {
-			IN_UpdateGrab (in_grab);
-		}
+		IN_UpdateGrab (in_grab);
 		return;
 	} else {
-		if (in_grab) {
-			IN_UpdateGrab (in_grab);
-		}
+		IN_UpdateGrab (in_grab);
 
 		if (X11_GetWindowCoords (&window_x, &window_y))
 			window_saved = 1;
 
 		X11_SetVidMode (scr_width, scr_height);
 
-		if (in_grab) { // FIXME: why are there two of these?
-			IN_UpdateGrab (in_grab);
-		}
+		IN_UpdateGrab (in_grab);	// FIXME: why are there two of these?
 
 		if (!vidmode_active) {
 			window_saved = 0;

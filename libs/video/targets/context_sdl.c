@@ -73,8 +73,7 @@ VID_UpdateFullscreen (cvar_t *vid_fullscreen)
 		|| (!vid_fullscreen->int_val && screen->flags & SDL_FULLSCREEN))
 		if (!SDL_WM_ToggleFullScreen (screen))
 			Con_Printf ("VID_UpdateFullscreen: error setting fullscreen\n");
-	if (in_grab)
-		IN_UpdateGrab (in_grab);
+	IN_UpdateGrab (in_grab);
 }
 
 void

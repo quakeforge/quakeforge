@@ -83,13 +83,15 @@ static int  input_grabbed = 0;
 void
 IN_UpdateGrab (cvar_t *var)		// called from context_*.c
 {
-	if (var->int_val) {
-		if (!input_grabbed) {
-			input_grabbed = IN_LL_Grab_Input ();
-		}
-	} else {
-		if (input_grabbed) {
-			input_grabbed = IN_LL_Ungrab_Input ();
+	if (var) {
+		if (var->int_val) {
+			if (!input_grabbed) {
+				input_grabbed = IN_LL_Grab_Input ();
+			}
+		} else {
+			if (input_grabbed) {
+				input_grabbed = IN_LL_Ungrab_Input ();
+			}
 		}
 	}
 }
