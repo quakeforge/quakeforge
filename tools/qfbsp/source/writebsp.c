@@ -128,10 +128,11 @@ WriteClipNodes_r (node_t *node)
 	}
 	// emit a clipnode
 	c = bsp->numclipnodes;
+	BSP_AddClipnode (bsp, &cn);
 	cn.planenum = node->outputplanenum;
 	for (i = 0; i < 2; i++)
 		cn.children[i] = WriteClipNodes_r (node->children[i]);
-	BSP_AddClipnode (bsp, &cn);
+	bsp->clipnodes[c] = cn;
 
 	free (node);
 	return c;
