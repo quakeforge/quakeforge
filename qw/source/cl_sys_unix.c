@@ -63,11 +63,6 @@ int         noconinput = 0;
 qboolean    is_server = false;
 char       *svs_info;
 
-void
-Sys_Init (void)
-{
-}
-
 static void
 shutdown (void)
 {

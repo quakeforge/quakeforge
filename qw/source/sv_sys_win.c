@@ -48,7 +48,7 @@ info_t    **svs_info = &svs.info;
 
 
 void
-Sys_Init (void)
+startup (void)
 {
 	OSVERSIONINFO vinfo;
 
@@ -77,6 +77,8 @@ int
 main (int argc, const char **argv)
 {
 	double      newtime, time, oldtime;
+
+	startup ();
 
 	COM_InitArgv (argc, argv);
 

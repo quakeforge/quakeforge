@@ -853,7 +853,6 @@ Host_Init (void)
 	Cmd_Init_Hash ();
 	Cvar_Init ();
 	Sys_Init_Cvars ();
-	Sys_Init ();
 
 	Cbuf_Init ();
 	Cmd_Init ();

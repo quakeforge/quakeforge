@@ -111,7 +111,7 @@ wrfpcr(unsigned long val)
 #endif
 
 void
-Sys_Init (void)
+startup (void)
 {
 #ifdef __alpha__
 	wrfpcr (rdfpcr () | 1L << 47);
@@ -122,6 +122,8 @@ int
 main (int argc, const char *argv[])
 {
 	double      time, oldtime, newtime;
+
+	startup ();
 
 	memset (&host_parms, 0, sizeof (host_parms));
 

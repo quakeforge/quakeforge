@@ -76,11 +76,6 @@ shutdown (void)
 	fflush (stdout);
 }
 
-void
-Sys_Init (void)
-{
-}
-
 int
 main (int argc, const char **argv)
 {

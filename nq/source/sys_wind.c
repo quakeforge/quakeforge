@@ -52,11 +52,6 @@ shutdown (void)
 {
 }
 
-void
-Sys_Init (void)
-{
-}
-
 const char       *newargv[256];
 
 int

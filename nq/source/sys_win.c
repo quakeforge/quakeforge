@@ -93,7 +93,7 @@ findhandle (void)
 
 
 void
-Sys_Init (void)
+startup (void)
 {
 	LARGE_INTEGER PerformanceFreq;
 	unsigned int lowpart, highpart;
@@ -178,6 +178,8 @@ WinMain (HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine,
 	/* previous instances do not exist in Win32 */
 	if (hPrevInstance)
 		return 0;
+
+	startup ();
 
 	global_hInstance = hInstance;
 	global_nCmdShow = nCmdShow;

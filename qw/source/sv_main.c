@@ -2412,7 +2412,6 @@ SV_Init (void)
 	Cmd_Init_Hash ();
 	Cvar_Init ();
 	Sys_Init_Cvars ();
-	Sys_Init ();
 
 	Cvar_Get ("cmd_warncmd", "1", CVAR_NONE, NULL, NULL);
 

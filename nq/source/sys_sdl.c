@@ -80,18 +80,12 @@ int         noconinput;
 #endif
 
 void
-Sys_Init (void)
+startup (void)
 {
 #ifdef WIN32
 	OSVERSIONINFO vinfo;
-#endif
-#ifdef USE_INTEL_ASM
-#ifdef _WIN32
 	Sys_MaskExceptions ();
-#endif
-#endif
 
-#ifdef _WIN32
 	// make sure the timer is high precision, otherwise NT gets 18ms resolution
 	timeBeginPeriod (1);
 
@@ -105,6 +99,8 @@ Sys_Init (void)
 		Sys_Error ("This version of " PROGRAM
 				   " requires at least Win95 or NT 4.0");
 	}
+#else
+	signal (SIGFPE, SIG_IGN);
 #endif
 }
 
@@ -125,9 +121,7 @@ SDL_main (int c, char **v)
 {
 	double      time, oldtime, newtime;
 
-#ifndef WIN32
-	signal (SIGFPE, SIG_IGN);
-#endif
+	startup ();
 
 	memset (&host_parms, 0, sizeof (host_parms));
 
