@@ -65,6 +65,7 @@ static __attribute__ ((unused)) const char rcsid[] =
 #include "QF/va.h"
 #include "QF/zone.h"
 
+#include "obj_file.h"
 #include "qfprogs.h"
 
 int         sorted = 0;
@@ -90,6 +91,9 @@ static int      reserved_edicts = 1;
 static progs_t  pr;
 static void    *membase;
 static int      memsize = 1024*1024;
+
+static qfo_t   *qfo;
+static dprograms_t progs;
 
 static const char *source_path = "";
 
@@ -193,32 +197,168 @@ init_qf (void)
 	Hash_SetHashCompare (func_tab, func_hash, func_compare);
 }
 
+static void
+convert_qfo (void)
+{
+	int         i;
+
+	pr.progs = &progs;
+	progs.version = PROG_VERSION;
+
+	pr.pr_statements = qfo->code;
+	progs.numstatements = qfo->code_size;
+
+	pr.pr_strings = qfo->strings;
+	progs.numstrings = qfo->strings_size;
+	pr.pr_stringsize = qfo->strings_size;
+
+	pr.pr_globals = qfo->data;
+	progs.numglobals = qfo->data_size;
+
+	progs.numglobaldefs = 0;
+	progs.numfielddefs = 0;
+	progs.entityfields = 0;
+	pr.pr_globaldefs = calloc (qfo->num_defs, sizeof (ddef_t));
+	pr.pr_fielddefs = calloc (qfo->num_defs, sizeof (ddef_t));
+	for (i = 0; i < qfo->num_defs; i++) {
+		qfo_def_t  *def = qfo->defs + i;
+		ddef_t      ddef;
+
+		if ((def->flags & QFOD_LOCAL) || !def->name)
+			continue;
+
+		ddef.type = def->basic_type;
+		ddef.ofs = def->ofs;
+		ddef.s_name = def->name;
+		if (!(def->flags & QFOD_NOSAVE)
+			&& !(def->flags & QFOD_CONSTANT)
+			&& (def->flags & QFOD_GLOBAL)
+			&& def->basic_type != ev_func
+			&& def->basic_type != ev_field)
+			ddef.type |= DEF_SAVEGLOBAL;
+		pr.pr_globaldefs[progs.numglobaldefs++] = ddef;
+		if (ddef.type == ev_field) {
+			const char *type = qfo->types + def->full_type;
+			if (type[0] != 'F') {
+				ddef.type = ev_void;
+			} else {
+				switch (type[1]) {
+					default:
+					case 'v':
+						ddef.type = ev_void;
+						break;
+					case '*':
+						ddef.type = ev_string;
+						break;
+					case 'f':
+						ddef.type = ev_float;
+						break;
+					case 'V':
+						ddef.type = ev_vector;
+						break;
+					case 'E':
+						ddef.type = ev_entity;
+						break;
+					case 'F':
+						ddef.type = ev_field;
+						break;
+					case '(':
+						ddef.type = ev_func;
+						break;
+					case ':':
+						ddef.type = ev_sel;
+						break;
+					case '@':	// id
+					case '#':	// class
+					case '^':
+						ddef.type = ev_pointer;
+						break;
+					case 'Q':
+						ddef.type = ev_quaternion;
+						break;
+					case 'i':
+						ddef.type = ev_integer;
+						break;
+					case 'I':
+						ddef.type = ev_uinteger;
+						break;
+					case 's':
+						ddef.type = ev_short;
+						break;
+					case '{':
+						ddef.type = ev_struct;
+						break;
+					case '[':
+						ddef.type = ev_array;
+						break;
+				}
+			}
+			ddef.ofs = G_INT (&pr, ddef.ofs);
+			pr.pr_fielddefs[progs.numfielddefs++] = ddef;
+		}
+	}
+
+	progs.numfunctions = qfo->num_funcs;
+	pr.pr_functions = calloc (qfo->num_funcs, sizeof (dfunction_t));
+	for (i = 0; i < qfo->num_funcs; i++) {
+		qfo_func_t *func = qfo->funcs + i;
+		dfunction_t df;
+
+		df.first_statement = func->builtin ? -func->builtin : func->code;
+		df.parm_start = 0;
+		df.locals = func->locals_size;
+		df.profile = 0;
+		df.s_name = func->name;
+		df.s_file = func->file;
+		df.numparms = func->num_parms;
+		memcpy (df.parm_size, func->parm_size, sizeof (df.parm_size));
+
+		pr.pr_functions[i] = df;
+	}
+}
+
 static int
 load_progs (const char *name)
 {
 	QFile      *file;
 	int         i, size;
+	char        buff[5];
+
+	Hash_FlushTable (func_tab);
 
 	file = open_file (name, &size);
 	if (!file) {
 		perror (name);
 		return 0;
 	}
-	Hash_FlushTable (func_tab);
-	pr.progs_name = name;
-	PR_LoadProgsFile (&pr, file, size, 1, 0);
-	Qclose (file);
+	Qread (file, buff, 4);
+	buff[4] = 0;
+	Qseek (file, 0, SEEK_SET);
+	if (!strcmp (buff, QFO)) {
+		qfo = qfo_read (file);
+		Qclose (file);
 
-	if (!pr.progs)
-		return 0;
+		if (!qfo)
+			return 0;
 
-	PR_LoadStrings (&pr);
+		convert_qfo ();
+	} else {
+		pr.progs_name = name;
+		PR_LoadProgsFile (&pr, file, size, 1, 0);
+		Qclose (file);
 
+		if (!pr.progs)
+			return 0;
+
+		PR_LoadStrings (&pr);
+
+		PR_LoadDebug (&pr);
+	}
 	for (i = 0; i < pr.progs->numfunctions; i++) {
-		if (pr.pr_functions[i].first_statement > 0)// don't bother with builtins
+		// don't bother with builtins
+		if (pr.pr_functions[i].first_statement > 0)
 			Hash_AddElement (func_tab, &pr.pr_functions[i]);
 	}
-	PR_LoadDebug (&pr);
 	return 1;
 }
 
