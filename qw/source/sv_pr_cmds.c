@@ -1729,12 +1729,14 @@ PF_SV_AllocClient (progs_t *pr)
 		R_var (pr, entity) = 0;
 		return;
 	}
+	ent = EDICT_NUM (&sv_pr_state, (cl - svs.clients) + 1);
+
 	memset (cl, 0, sizeof (*cl));
 	cl->userinfo = Info_ParseString ("", 1023, !sv_highchars->int_val);
 	//XXX netchan? Netchan_Setup (&newcl->netchan, adr, qport);
 	cl->state = cs_server;
 	cl->spectator = 0;
-	ent = EDICT_NUM (&sv_pr_state, (cl - svs.clients) + 1);
+	cl->edict = ent;
 	//SV_ExtractFromUserinfo (cl);
 	RETURN_EDICT (pr, ent);
 }
