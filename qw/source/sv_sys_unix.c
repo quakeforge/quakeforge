@@ -149,7 +149,8 @@ main (int argc, const char *argv[])
 		if (svs.num_clients || !sys_dead_sleep->int_val)
 			timeout = &_timeout;
 
-		if (select (net_socket + 1, &fdset, NULL, NULL, timeout) == -1)
+		if (select (net_socket + 1, &fdset, NULL, NULL, timeout) == -1
+			&& errno != EINTR)
 			continue;
 		stdin_ready = FD_ISSET (0, &fdset);
 

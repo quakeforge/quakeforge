@@ -45,6 +45,9 @@
 # include <unistd.h>
 #endif
 
+#include <sys/ioctl.h>
+#include <termios.h>
+#include <signal.h>
 #include <stdlib.h>
 
 #include "QF/cmd.h"
@@ -104,6 +107,13 @@ C_ExecLine (const char *line)
 		line++;
 	Cbuf_AddText (line);
 }
+
+static void
+sigwinch (int sig)
+{
+	ungetch (KEY_RESIZE);
+	signal (SIGWINCH, sigwinch);
+}
 #endif
 
 
@@ -115,6 +125,8 @@ C_Init (void)
 								   "set to 0 to disable curses server console");
 	use_curses = curses->int_val;
 	if (use_curses) {
+		signal (SIGWINCH, sigwinch);
+
 		initscr ();
 		start_color ();
 		cbreak ();
@@ -220,6 +232,16 @@ C_ProcessInput (void)
 		const char *text;
 
 		switch (ch) {
+			case KEY_RESIZE:
+				{
+					struct winsize size;
+
+					if (ioctl (fileno (stdout), TIOCGWINSZ, &size) == 0) {
+						resizeterm (size.ws_row, size.ws_col);
+						wrefresh (curscr);
+					}
+				}
+				break;
 			case KEY_ENTER:
 			case '\n':
 			case '\r':
