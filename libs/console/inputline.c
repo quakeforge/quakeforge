@@ -50,6 +50,7 @@ Con_CreateInputLine (int lines, int width, char prompt)
 	char		   *l, **p;
 	int				size;
 	inputline_t	   *inputline;
+	int				i;
 
 	size = sizeof (inputline_t);	// space for the header
 	size += sizeof (char *[lines]);	// space for the line pointers
@@ -68,7 +69,8 @@ Con_CreateInputLine (int lines, int width, char prompt)
 	}
 	inputline->prompt_char = prompt;
 
-	inputline->lines[0][0] = prompt;
+	for (i = 0; i < inputline->num_lines; i++)
+		inputline->lines[i][0] = prompt;
 	inputline->linepos = 1;
 	return inputline;
 }
@@ -120,7 +122,7 @@ Con_ProcessInputLine (inputline_t *il, int ch)
 			break;
 		case K_UP:
 			do {
-				il->history_line = (il->history_line - 1) % il->num_lines;
+				il->history_line = il->history_line - 1;
 				if (il->history_line < 0)
 					il->history_line = il->num_lines - 1;
 			} while (il->history_line != il->edit_line
