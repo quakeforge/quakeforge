@@ -235,6 +235,7 @@ CL_Quit_f (void)
 //		M_Menu_Quit_f ();
 //		return;
 //	}
+	Con_Printf ("I hope you wanted to quit\n");
 	CL_Disconnect ();
 	Sys_Quit ();
 }
