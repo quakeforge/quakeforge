@@ -207,22 +207,34 @@ aiee (int sig)
 static void
 TragicDeath (int sig)
 {
-	signal (SIGHUP, aiee);
-	signal (SIGINT, aiee);
-	signal (SIGQUIT, aiee);
-	signal (SIGILL, aiee);
-	signal (SIGTRAP, aiee);
-	signal (SIGIOT, aiee);
-	signal (SIGBUS, aiee);
-	signal (SIGSEGV, aiee);
-	signal (SIGTERM, aiee);
-
 	printf ("Received signal %d, exiting...\n", sig);
 
-	if (!setjmp (aiee_abort))
-		Sys_Shutdown ();
+	switch (sig) {
+		case SIGHUP:
+		case SIGINT:
+		case SIGTERM:
+			signal (SIGHUP, SIG_DFL);
+			signal (SIGINT, SIG_DFL);
+			signal (SIGTERM, SIG_DFL);
+			Sys_Quit ();
+		default:
+			signal (SIGQUIT, aiee);
+			signal (SIGILL, aiee);
+			signal (SIGTRAP, aiee);
+			signal (SIGIOT, aiee);
+			signal (SIGBUS, aiee);
+			signal (SIGSEGV, aiee);
 
-	signal (sig, SIG_DFL);
+			if (!setjmp (aiee_abort))
+				Sys_Shutdown ();
+
+			signal (SIGQUIT, SIG_DFL);
+			signal (SIGILL, SIG_DFL);
+			signal (SIGTRAP, SIG_DFL);
+			signal (SIGIOT, SIG_DFL);
+			signal (SIGBUS, SIG_DFL);
+			signal (SIGSEGV, SIG_DFL);
+	}
 }
 
 void
