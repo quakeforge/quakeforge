@@ -121,24 +121,19 @@ Con_ProcessInputLine (inputline_t *il, int ch)
 				il->linepos--;
 			break;
 		case K_UP:
-			do {
-				il->history_line = il->history_line - 1;
-				if (il->history_line < 0)
-					il->history_line = il->num_lines - 1;
-			} while (il->history_line != il->edit_line
-					 && !il->lines[il->history_line][1]);
-			if (il->history_line == il->edit_line)
-				il->history_line = (il->edit_line + 1) % il->num_lines;
+			{
+				int j = (il->history_line + il->num_lines - 1) % il->num_lines;
+				if (j == il->edit_line || !il->lines[j][1])
+					break;
+				il->history_line = j;
+			}
 			strcpy (il->lines[il->edit_line], il->lines[il->history_line]);
 			il->linepos = strlen (il->lines[il->edit_line]);
 			break;
 		case K_DOWN:
 			if (il->history_line == il->edit_line)
 				break;
-			do {
-				il->history_line = (il->history_line + 1) % il->num_lines;
-			} while (il->history_line != il->edit_line
-					 && !il->lines[il->history_line][1]);
+			il->history_line = (il->history_line + 1) % il->num_lines;
 			if (il->history_line == il->edit_line) {
 				il->lines[il->edit_line][0] = ']';
 				il->lines[il->edit_line][1] = 0;

@@ -91,6 +91,8 @@ double      netdosvalues[DOSFLOODCMDS] = { 12, 1, 3, 1, 1, 1 };
 cvar_t     *fs_globalcfg;
 cvar_t     *fs_usercfg;
 
+cvar_t     *sv_console_plugin;
+
 cvar_t     *sv_allow_status;
 cvar_t     *sv_allow_log;
 cvar_t     *sv_allow_ping;
@@ -2364,7 +2366,9 @@ SV_Init (void)
 
 	PI_Init ();
 
-	Con_Init ("server");
+	sv_console_plugin = Cvar_Get ("sv_console_plugin", "server",
+								  CVAR_ROM, 0, "Plugin used for the console");
+	Con_Init (sv_console_plugin->string);
 
 	COM_Filesystem_Init_Cvars ();
 	Game_Init_Cvars ();
