@@ -162,7 +162,7 @@ Info_Print (info_t *info)
 	key_list = (info_key_t **)Hash_GetList (info->tab);
 
 	for (key = key_list; *key; key++) {
-		Sys_Printf ("%20s %s\n", (*key)->key, (*key)->value);
+		Sys_Printf ("%-15s %s\n", (*key)->key, (*key)->value);
 	}
 	free (key_list);
 }
