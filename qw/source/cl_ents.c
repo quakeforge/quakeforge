@@ -444,7 +444,7 @@ CL_LinkPacketEntities (void)
 			info = NULL;
 		}
 
-		if (info && !info->skin)
+		if (info && info->skinname && !info->skin)
 			Skin_Find (info);
 		if (info && info->skin) {
 			(*ent)->skin = Skin_NewTempSkin ();
