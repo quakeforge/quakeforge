@@ -1249,7 +1249,7 @@ field_expr (expr_t *e1, expr_t *e2)
 								e = new_expr ();
 								e->type = ex_pointer;
 								e1 = e1->e.expr.e1;
-								i = POINTER_VAL (e1->e.pointer);
+								i = e1->e.pointer.val;
 								e->e.pointer.val = i + field->offset;
 								e->e.pointer.type = field->type;
 								return unary_expr ('.', e);

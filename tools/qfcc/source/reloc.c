@@ -114,6 +114,30 @@ relocate_refs (reloc_t *refs, int ofs)
 				break;
 			case rel_def_field:
 				break;
+			case rel_op_a_def_ofs:
+				o = ofs + pr.code->code[refs->ofs].a;
+				if (o < 0 || o > 65535)
+					error (0, "def offset out of range");
+				else
+					pr.code->code[refs->ofs].a = o;
+				break;
+			case rel_op_b_def_ofs:
+				o = ofs + pr.code->code[refs->ofs].b;
+				if (o < 0 || o > 65535)
+					error (0, "def offset out of range");
+				else
+					pr.code->code[refs->ofs].b = o;
+				break;
+			case rel_op_c_def_ofs:
+				o = ofs + pr.code->code[refs->ofs].c;
+				if (o < 0 || o > 65535)
+					error (0, "def offset out of range");
+				else
+					pr.code->code[refs->ofs].c = o;
+				break;
+			case rel_def_def_ofs:
+				G_INT (refs->ofs) += ofs;
+				break;
 		}
 		refs = refs->next;
 	}
@@ -133,9 +157,35 @@ new_reloc (int ofs, reloc_type type)
 }
 
 void
+reloc_op_def (def_t *def, int ofs, int field)
+{
+	reloc_t    *ref = new_reloc (ofs, rel_op_a_def + field);
+	ref->next = def->refs;
+	def->refs = ref;
+}
+
+void
+reloc_op_def_ofs (def_t *def, int ofs, int field)
+{
+	reloc_t    *ref = new_reloc (ofs, rel_op_a_def_ofs + field);
+	unsigned short x = (&pr.code->code[ofs].a)[field];
+	printf ("%3d %c %3d %3d %s\n", ofs, 'a' + field, x, def->ofs, def->name);
+	ref->next = def->refs;
+	def->refs = ref;
+}
+
+void
 reloc_def_def (def_t *def, int ofs)
 {
 	reloc_t    *ref = new_reloc (ofs, rel_def_def);
+	ref->next = def->refs;
+	def->refs = ref;
+}
+
+void
+reloc_def_def_ofs (def_t *def, int ofs)
+{
+	reloc_t    *ref = new_reloc (ofs, rel_def_def_ofs);
 	ref->next = def->refs;
 	def->refs = ref;
 }

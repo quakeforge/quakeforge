@@ -45,6 +45,10 @@ typedef enum {
 	rel_def_func,
 	rel_def_string,
 	rel_def_field,
+	rel_op_a_def_ofs,
+	rel_op_b_def_ofs,
+	rel_op_c_def_ofs,
+	rel_def_def_ofs,
 } reloc_type;
 
 typedef struct reloc_s {
@@ -59,7 +63,10 @@ struct statement_s;
 
 reloc_t *new_reloc (int ofs, reloc_type type);
 void relocate_refs (reloc_t *refs, int ofs);
+void reloc_op_def (struct def_s *def, int ofs, int field);
+void reloc_op_def_ofs (struct def_s *def, int ofs, int field);
 void reloc_def_def (struct def_s *def, int ofs);
+void reloc_def_def_ofs (struct def_s *def, int ofs);
 void reloc_def_func (struct function_s *func, int ofs);
 void reloc_def_string (int ofs);
 void reloc_def_field (struct def_s *def, int ofs);

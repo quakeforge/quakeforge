@@ -426,11 +426,8 @@ finish_compilation (void)
 					   st_global));
 	}
 
-	for (def = pr.scope->head; def; def = def->def_next) {
-		if (def->global || def->absolute)
-			continue;
+	for (def = pr.scope->head; def; def = def->def_next)
 		relocate_refs (def->refs, def->ofs);
-	}
 
 	pr.functions = calloc (pr.num_functions + 1, sizeof (dfunction_t));
 	for (df = pr.functions + 1, f = pr.func_head; f; df++, f = f->next) {
@@ -452,8 +449,6 @@ finish_compilation (void)
 		}
 		df->parm_start = pr.near_data->size;
 		for (def = f->scope->head; def; def = def->def_next) {
-			if (def->absolute)
-				continue;
 			def->ofs += pr.near_data->size;
 			relocate_refs (def->refs, def->ofs);
 		}

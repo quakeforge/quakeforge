@@ -97,16 +97,16 @@ codespace_newstatement (codespace_t *codespace)
 }
 
 static void
-add_statement_ref (def_t *def, dstatement_t *st, reloc_type type)
+add_statement_ref (def_t *def, dstatement_t *st, int field)
 {
 	if (def) {
-		reloc_t    *ref = new_reloc (st - pr.code->code, type);
+		int         st_ofs = st - pr.code->code;
 
-		if (def->alias)
+		if (def->alias) {
 			def = def->alias;
-
-		ref->next = def->refs;
-		def->refs = ref;
+			reloc_op_def_ofs (def, st_ofs, field);
+		} else
+			reloc_op_def (def, st_ofs, field);
 
 		def->users--;
 		def->used = 1;
@@ -162,9 +162,9 @@ emit_statement (expr_t *e, opcode_t *op, def_t *var_a, def_t *var_b,
 			var_c ? var_c->name : "", statement->c);
 #endif
 
-	add_statement_ref (var_a, statement, rel_op_a_def);
-	add_statement_ref (var_b, statement, rel_op_b_def);
-	add_statement_ref (var_c, statement, rel_op_c_def);
+	add_statement_ref (var_a, statement, 0);
+	add_statement_ref (var_b, statement, 1);
+	add_statement_ref (var_c, statement, 2);
 
 	if (op->right_associative)
 		return var_a;
@@ -384,11 +384,10 @@ emit_deref_expr (expr_t *e, def_t *dest)
 	e = e->e.expr.e1;
 	if (e->type == ex_pointer) {
 		if (e->e.pointer.def) {
-			d = new_def (e->e.pointer.type, 0, current_scope);
+			d = new_def (e->e.pointer.type, 0, e->e.pointer.def->scope);
 			d->local = e->e.pointer.def->local;
-			d->ofs = POINTER_VAL (e->e.pointer);
-			if (d->ofs == e->e.pointer.def->ofs)
-				d->alias = e->e.pointer.def;
+			d->ofs = e->e.pointer.val;
+			d->alias = e->e.pointer.def;
 		} else if (e->e.pointer.val >= 0 && e->e.pointer.val < 65536) {
 			d = new_def (e->e.pointer.type, 0, current_scope);
 			d->ofs = e->e.pointer.val;

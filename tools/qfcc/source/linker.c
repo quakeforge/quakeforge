@@ -215,6 +215,9 @@ add_relocs (qfo_t *qfo)
 			case rel_op_a_def:
 			case rel_op_b_def:
 			case rel_op_c_def:
+			case rel_op_a_def_ofs:
+			case rel_op_b_def_ofs:
+			case rel_op_c_def_ofs:
 				reloc->ofs += code_base;
 				break;
 			case rel_op_a_op:
@@ -232,6 +235,7 @@ add_relocs (qfo_t *qfo)
 				DATA (reloc->ofs)->func_var = reloc->def + 1;
 				break;
 			case rel_def_def:
+			case rel_def_def_ofs:
 				reloc->ofs += data_base;
 				break;
 			case rel_def_string:
@@ -470,6 +474,10 @@ fixup_relocs (void)
 			case rel_op_c_def:
 			case rel_def_def:
 			case rel_def_field:
+			case rel_op_a_def_ofs:
+			case rel_op_b_def_ofs:
+			case rel_op_c_def_ofs:
+			case rel_def_def_ofs:
 				def = defs.defs + reloc->def;
 				if (def->flags & (QFOD_EXTERNAL | QFOD_LOCAL | QFOD_ABSOLUTE))
 					continue;
@@ -498,6 +506,10 @@ fixup_relocs (void)
 			case rel_op_a_op:
 			case rel_op_b_op:
 			case rel_op_c_op:
+			case rel_op_a_def_ofs:
+			case rel_op_b_def_ofs:
+			case rel_op_c_def_ofs:
+			case rel_def_def_ofs:
 				break;
 			case rel_def_op:
 				DATA (reloc->ofs)->integer_var = reloc->def;
@@ -806,8 +818,12 @@ undefined_def (qfo_def_t *def)
 	qfo_reloc_t *reloc = relocs.relocs + def->relocs;
 
 	for (i = 0; i < def->num_relocs; i++, reloc++) {
-		if ((reloc->type == rel_op_a_def || reloc->type == rel_op_b_def
-			 || reloc->type == rel_op_c_def)
+		if ((reloc->type == rel_op_a_def
+			 || reloc->type == rel_op_b_def
+			 || reloc->type == rel_op_c_def
+			 || reloc->type == rel_op_a_def_ofs
+			 || reloc->type == rel_op_b_def_ofs
+			 || reloc->type == rel_op_c_def_ofs)
 			&& lines.lines) {
 			qfo_func_t *func = funcs.funcs;
 			qfo_func_t *best = func;
