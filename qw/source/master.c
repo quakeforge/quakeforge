@@ -234,6 +234,7 @@ QW_Master (struct sockaddr_in *addr)
 {
 	int sock;
 #ifdef _WIN32
+	int i;
 	WSADATA winsockdata;
 #endif
 
@@ -336,7 +337,7 @@ make_host_addr (const char *host, int port, struct sockaddr_in *host_addr)
 	return 0;
 }
 
-
+#ifndef WIN32
 static void
 read_hosts (const char *fname)
 {
@@ -371,6 +372,7 @@ read_hosts (const char *fname)
 	}
 	fclose (host_file);
 }
+#endif
 
 int
 main (int argc, char **argv)
