@@ -1065,6 +1065,14 @@ merge (ex_list_t *l1, ex_list_t *l2)
 {
 	ex_list_t  *m;
 
+	if (!l1 && !l2) {
+		error (0, "internal error");
+		abort ();
+	}
+	if (!l2)
+		return l1;
+	if (!l1)
+		return l2;
 	m = malloc ((size_t)&((ex_list_t *)0)->e[l1->size + l2->size]);
 	m->size = l1->size + l2->size;
 	memcpy (m->e, l1->e, l1->size * sizeof (expr_t *));
