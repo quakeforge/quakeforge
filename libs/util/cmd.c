@@ -24,7 +24,7 @@
 		Boston, MA  02111-1307, USA
 
 */
-static const char rcsid[] = 
+static const char rcsid[] =
 	"$Id$";
 
 #ifdef HAVE_CONFIG_H
@@ -55,8 +55,8 @@ static const char rcsid[] =
 
 typedef struct cmdalias_s {
 	struct cmdalias_s *next;
-	const char       *name;
-	const char       *value;
+	const char *name;
+	const char *value;
 } cmdalias_t;
 
 cmdalias_t *cmd_alias;
@@ -67,13 +67,14 @@ The command buffer interface should be generalized and
 each part of QF (console, stufftext, config files and scripts)
 that needs one should allocate and maintain its own.
 */
-cmd_buffer_t *cmd_consolebuffer; // Console buffer
-cmd_buffer_t *cmd_legacybuffer; // Server stuffcmd buffer with absolute backwards-compatibility
-cmd_buffer_t *cmd_activebuffer; // Buffer currently being executed
+cmd_buffer_t *cmd_consolebuffer;		// Console buffer
+cmd_buffer_t *cmd_legacybuffer;			// Server stuffcmd buffer with
+										// absolute backwards-compatibility
+cmd_buffer_t *cmd_activebuffer;			// Buffer currently being executed
 
-dstring_t *cmd_backtrace;
+dstring_t  *cmd_backtrace;
 
-qboolean cmd_error;
+qboolean    cmd_error;
 
 cvar_t     *cmd_warncmd;
 cvar_t     *cmd_highchars;
@@ -85,12 +86,13 @@ hashtab_t  *cmd_hash;
 
 /* Local variable stuff */
 
-cmd_localvar_t	*
+cmd_localvar_t *
 Cmd_NewLocal (const char *key, const char *value)
 {
 	cmd_localvar_t *new;
-	dstring_t *dkey, *dvalue;
-	new = malloc(sizeof(cmd_localvar_t));
+	dstring_t  *dkey, *dvalue;
+
+	new = malloc (sizeof (cmd_localvar_t));
 	if (!new)
 		Sys_Error ("Cmd_NewLocal:  Memory allocation failed!");
 	dkey = dstring_newstr ();
@@ -106,38 +108,38 @@ void
 Cmd_SetLocal (cmd_buffer_t *buffer, const char *key, const char *value)
 {
 	cmd_localvar_t *var;
-	
-	var = (cmd_localvar_t *)Hash_Find(buffer->locals, Cmd_Argv(1));
+
+	var = (cmd_localvar_t *) Hash_Find (buffer->locals, Cmd_Argv (1));
 	if (!var) {
 		var = Cmd_NewLocal (key, value);
-		Hash_Add (buffer->locals, (void *)var);
-	}
-	else {
+		Hash_Add (buffer->locals, (void *) var);
+	} else {
 		dstring_clearstr (var->value);
 		dstring_appendstr (var->value, value);
 	}
 }
 
-const char	*
+const char *
 Cmd_LocalGetKey (void *ele, void *ptr)
 {
-	return ((cmd_localvar_t *)ele)->key->str;
+	return ((cmd_localvar_t *) ele)->key->str;
 }
 
 void
 Cmd_LocalFree (void *ele, void *ptr)
 {
-	dstring_delete (((cmd_localvar_t *)ele)->key);
-	dstring_delete (((cmd_localvar_t *)ele)->value);
+	dstring_delete (((cmd_localvar_t *) ele)->key);
+	dstring_delete (((cmd_localvar_t *) ele)->value);
 	free (ele);
 }
 
-cmd_buffer_t	*
+cmd_buffer_t *
 Cmd_NewBuffer (void)
 {
 	cmd_buffer_t *new;
-	
-	new = calloc(1, sizeof(cmd_buffer_t));
+
+	new = calloc (1, sizeof (cmd_buffer_t));
+
 	new->buffer = dstring_newstr ();
 	new->line = dstring_newstr ();
 	new->realline = dstring_newstr ();
@@ -145,46 +147,48 @@ Cmd_NewBuffer (void)
 	return new;
 }
 
-void 
+void
 Cmd_FreeBuffer (cmd_buffer_t *del)
 {
-	int i;
-	
+	int         i;
+
 	dstring_delete (del->buffer);
 	dstring_delete (del->line);
 	dstring_delete (del->realline);
 	if (del->maxargc) {
 		for (i = 0; i < del->maxargc; i++)
 			if (del->argv[i])
-				dstring_delete(del->argv[i]);
-		free(del->argv);
+				dstring_delete (del->argv[i]);
+		free (del->argv);
 	}
 	if (del->argspace)
-		free(del->argspace);
+		free (del->argspace);
 	if (del->args)
-		free(del->args);
-	Hash_DelTable(del->locals);
-	free(del);
+		free (del->args);
+	Hash_DelTable (del->locals);
+	free (del);
 }
 
 /* Quick function to determine if a character is escaped */
-qboolean 
+qboolean
 escaped (const char *str, int i)
 {
-	int n, c;
+	int         n, c;
+
 	if (!i)
 		return 0;
-	for (n = i-1, c = 0; n >= 0 && str[n] == '\\'; n--,c++);
+	for (n = i - 1, c = 0; n >= 0 && str[n] == '\\'; n--, c++)
+		;
 	return c & 1;
 }
 
 /* Quick function to escape stuff in a dstring */
 void
-escape (dstring_t *dstr)
+escape (dstring_t * dstr)
 {
-	int i;
-	
-	for (i = 0; i < strlen(dstr->str); i++) {
+	int         i;
+
+	for (i = 0; i < strlen (dstr->str); i++) {
 		switch (dstr->str[i]) {
 			case '\\':
 			case '$':
@@ -213,6 +217,7 @@ void
 Cmd_Wait_f (void)
 {
 	cmd_buffer_t *cur;
+
 	for (cur = cmd_activebuffer; cur; cur = cur->prev)
 		cur->wait = true;
 }
@@ -221,15 +226,18 @@ void
 Cmd_Error (const char *message)
 {
 	cmd_buffer_t *cur;
-	Sys_Printf("GIB:  Error in execution.  Type backtrace for a description and execution path to the error\n");
+
+	Sys_Printf ("GIB:  Error in execution.  "
+				"Type backtrace for a description and execution path to "
+				"the error\n");
 	cmd_error = true;
 	dstring_clearstr (cmd_backtrace);
 	dstring_appendstr (cmd_backtrace, message);
 	dstring_appendstr (cmd_backtrace, "Path of execution:\n");
 	for (cur = cmd_activebuffer; cur; cur = cur->prev)
-		dstring_appendstr (cmd_backtrace, va("--> %s\n", cur->realline->str));
+		dstring_appendstr (cmd_backtrace, va ("--> %s\n", cur->realline->str));
 }
-	
+
 
 /*
 						COMMAND BUFFER
@@ -239,10 +247,10 @@ void
 Cbuf_Init (void)
 {
 	cmd_consolebuffer = Cmd_NewBuffer ();
-	
+
 	cmd_legacybuffer = Cmd_NewBuffer ();
 	cmd_legacybuffer->legacy = true;
-	
+
 	cmd_activebuffer = cmd_consolebuffer;
 
 	cmd_backtrace = dstring_newstr ();
@@ -296,40 +304,51 @@ Cbuf_InsertText (const char *text)
 */
 
 void
-extract_line (dstring_t *buffer, dstring_t *line)
+extract_line (dstring_t * buffer, dstring_t * line)
 {
-	int i, squotes = 0, dquotes = 0, braces = 0, n;
-	
+	int         i, squotes = 0, dquotes = 0, braces = 0, n;
+
 	for (i = 0; buffer->str[i]; i++) {
-		if (buffer->str[i] == '\'' && !escaped(buffer->str,i) && !dquotes && !braces)
-			squotes^=1;
-		if (buffer->str[i] == '"' && !escaped(buffer->str,i) && !squotes && !braces)
-			dquotes^=1;
-		if (buffer->str[i] == ';' && !escaped(buffer->str,i) && !squotes && !dquotes && !braces)
+		if (buffer->str[i] == '\'' && !escaped (buffer->str, i)
+			&& !dquotes && !braces)
+			squotes ^= 1;
+		if (buffer->str[i] == '"' && !escaped (buffer->str, i)
+			&& !squotes && !braces)
+			dquotes ^= 1;
+		if (buffer->str[i] == ';' && !escaped (buffer->str, i)
+			&& !squotes && !dquotes && !braces)
 			break;
-		if (buffer->str[i] == '{' && !escaped(buffer->str,i) && !squotes && !dquotes)
+		if (buffer->str[i] == '{' && !escaped (buffer->str, i)
+			&& !squotes && !dquotes)
 			braces++;
-		if (buffer->str[i] == '}' && !escaped(buffer->str,i) && !squotes && !dquotes)
+		if (buffer->str[i] == '}' && !escaped (buffer->str, i)
+			&& !squotes && !dquotes)
 			braces--;
-		if (buffer->str[i] == '/' && buffer->str[i+1] == '/' && !squotes && !dquotes) { // Filter out comments until newline
-			for (n = 0;buffer->str[i+n] != '\n' && buffer->str[i+n] != '\r';n++);
-			dstring_snip(buffer, i, n);
+		if (buffer->str[i] == '/' && buffer->str[i + 1] == '/'
+			&& !squotes && !dquotes) {
+			// Filter out comments until newline
+			for (n = 0;
+				 buffer->str[i + n] != '\n' && buffer->str[i + n] != '\r';
+				 n++)
+				;
+			dstring_snip (buffer, i, n);
 		}
 		if (buffer->str[i] == '\n' || buffer->str[i] == '\r') {
 			if (braces) {
-				dstring_snip(buffer, i, 1);
+				dstring_snip (buffer, i, 1);
 				i--;
-			}
-			else
+			} else
 				break;
 		}
 	}
 	if (i)
 		dstring_insert (line, buffer->str, i, 0);
-	if (buffer->str[i])
+	if (buffer->str[i]) {
 		dstring_snip (buffer, 0, i + 1);
-	else // We've hit the end of the buffer, just clear it
-		dstring_clearstr (buffer); 
+	} else {
+		// We've hit the end of the buffer, just clear it
+		dstring_clearstr (buffer);
+	}
 }
 
 /*
@@ -340,41 +359,41 @@ extract_line (dstring_t *buffer, dstring_t *line)
 	a wait command is executed
 */
 
-void 
+void
 Cbuf_ExecuteBuffer (cmd_buffer_t *buffer)
 {
-	dstring_t *buf = dstring_newstr ();
-	cmd_buffer_t *temp = cmd_activebuffer; // save old context
+	dstring_t  *buf = dstring_newstr ();
+	cmd_buffer_t *temp = cmd_activebuffer;	// save old context
+
 	cmd_activebuffer = buffer;
 	buffer->wait = false;
 	cmd_error = false;
-	while (strlen(buffer->buffer->str)) {
+	while (strlen (buffer->buffer->str)) {
 		extract_line (buffer->buffer, buf);
-		Cmd_ExecuteString(buf->str, src_command);
+		Cmd_ExecuteString (buf->str, src_command);
 		if (buffer->wait)
 			break;
 		if (cmd_error)
 			break;
-		dstring_clearstr(buf);
+		dstring_clearstr (buf);
 	}
 	dstring_delete (buf);
-	cmd_activebuffer = temp; // restore old context
+	cmd_activebuffer = temp;			// restore old context
 }
 
 void
 Cbuf_ExecuteStack (cmd_buffer_t *buffer)
 {
-	qboolean wait = false;
+	qboolean    wait = false;
 	cmd_buffer_t *cur;
-	
+
 	for (cur = buffer; cur->next; cur = cur->next);
-	for (;cur != buffer; cur = cur->prev) {
+	for (; cur != buffer; cur = cur->prev) {
 		Cbuf_ExecuteBuffer (cur);
 		if (cur->wait) {
 			wait = true;
 			break;
-		}
-		else if (cmd_error)
+		} else if (cmd_error)
 			break;
 		else {
 			cur->prev->next = 0;
@@ -383,11 +402,12 @@ Cbuf_ExecuteStack (cmd_buffer_t *buffer)
 	}
 	if (!wait)
 		Cbuf_ExecuteBuffer (buffer);
-	if (cmd_error) { // If an error occured, nuke the entire stack
+	if (cmd_error) {
+		// If an error occured, nuke the entire stack
 		for (cur = buffer->next; cur; cur = cur->next)
-			Cmd_FreeBuffer(cur);
+			Cmd_FreeBuffer (cur);
 		buffer->next = 0;
-		dstring_clearstr (buffer->buffer); // And the root buffer
+		dstring_clearstr (buffer->buffer);	// And the root buffer
 	}
 }
 
@@ -396,20 +416,22 @@ Cbuf_ExecuteStack (cmd_buffer_t *buffer)
 
 	Executes both root buffers
 */
-	
-void Cbuf_Execute (void)
+
+void
+Cbuf_Execute (void)
 {
 	Cbuf_ExecuteStack (cmd_consolebuffer);
 	Cbuf_ExecuteStack (cmd_legacybuffer);
-}	
+}
 
-void Cmd_ExecuteSubroutine (cmd_buffer_t *buffer)
+void
+Cmd_ExecuteSubroutine (cmd_buffer_t *buffer)
 {
 	cmd_activebuffer->next = buffer;
 	buffer->prev = cmd_activebuffer;
 	Cbuf_ExecuteBuffer (buffer);
 	if (!buffer->wait) {
-		Cmd_FreeBuffer(buffer);
+		Cmd_FreeBuffer (buffer);
 		cmd_activebuffer->next = 0;
 	}
 	return;
@@ -429,16 +451,17 @@ void Cmd_ExecuteSubroutine (cmd_buffer_t *buffer)
 void
 Cbuf_Execute_Sets (void)
 {
-	dstring_t *buf = dstring_newstr ();
-	
-	while (strlen(cmd_consolebuffer->buffer->str)) {
+	dstring_t  *buf = dstring_newstr ();
+
+	while (strlen (cmd_consolebuffer->buffer->str)) {
 		extract_line (cmd_consolebuffer->buffer, buf);
 		if (!strncmp (buf->str, "set", 3) && isspace ((int) buf->str[3])) {
 			Cmd_ExecuteString (buf->str, src_command);
-		} else if (!strncmp (buf->str, "setrom", 6) && isspace ((int) buf->str[6])) {
+		} else if (!strncmp (buf->str, "setrom", 6)
+				   && isspace ((int) buf->str[6])) {
 			Cmd_ExecuteString (buf->str, src_command);
 		}
-		dstring_clearstr(buf);
+		dstring_clearstr (buf);
 	}
 	dstring_delete (buf);
 }
@@ -479,8 +502,9 @@ Cmd_StuffCmds_f (void)
 
 			for (j = i; !((com_cmdline[j] == '+')
 						  || (com_cmdline[j] == '-'
-						      && (j==0 || com_cmdline[j - 1] == ' '))
-						  || (com_cmdline[j] == 0)); j++);
+							  && (j == 0 || com_cmdline[j - 1] == ' '))
+						  || (com_cmdline[j] == 0)); j++)
+				;
 
 			c = com_cmdline[j];
 			com_cmdline[j] = 0;
@@ -516,7 +540,8 @@ Cmd_Exec_File (const char *path)
 			f[len] = 0;
 			Qread (file, f, len);
 			Qclose (file);
-			Cbuf_InsertTextTo (cmd_consolebuffer, f); // Always insert into console
+			// Always insert into console
+			Cbuf_InsertTextTo (cmd_consolebuffer, f);
 			free (f);
 		}
 	}
@@ -540,11 +565,12 @@ Cmd_Exec_f (void)
 		Sys_Printf ("couldn't exec %s\n", Cmd_Argv (1));
 		return;
 	}
-	if (!Cvar_Command () && (cmd_warncmd->int_val || (developer && developer->int_val)))
+	if (!Cvar_Command ()
+		&& (cmd_warncmd->int_val || (developer && developer->int_val)))
 		Sys_Printf ("execing %s\n", Cmd_Argv (1));
 	sub = Cmd_NewBuffer ();
 	Cbuf_InsertTextTo (sub, f);
-	Cmd_ExecuteSubroutine (sub); // Execute file in it's own buffer
+	Cmd_ExecuteSubroutine (sub);		// Execute file in it's own buffer
 	Hunk_FreeToLowMark (mark);
 }
 
@@ -570,7 +596,7 @@ Cmd_Alias_f (void)
 	cmdalias_t *alias;
 	char       *cmd;
 	int         i, c;
-	const char       *s;
+	const char *s;
 
 	if (Cmd_Argc () == 1) {
 		Sys_Printf ("Current alias commands:\n");
@@ -581,9 +607,9 @@ Cmd_Alias_f (void)
 
 	s = Cmd_Argv (1);
 	// if the alias already exists, reuse it
-	alias = (cmdalias_t*)Hash_Find (cmd_alias_hash, s);
+	alias = (cmdalias_t *) Hash_Find (cmd_alias_hash, s);
 	if (alias) {
-		free ((char*)alias->value);
+		free ((char *) alias->value);
 	} else {
 		cmdalias_t **a;
 
@@ -593,13 +619,13 @@ Cmd_Alias_f (void)
 		alias->name = strdup (s);
 		Hash_Add (cmd_alias_hash, alias);
 		for (a = &cmd_alias; *a; a = &(*a)->next)
-			if (strcmp ((*a)->name, alias->name) >=0)
+			if (strcmp ((*a)->name, alias->name) >= 0)
 				break;
 		alias->next = *a;
 		*a = alias;
 	}
 	// copy the rest of the command line
-	cmd = malloc (strlen (Cmd_Args (1)) + 2);// can never be longer
+	cmd = malloc (strlen (Cmd_Args (1)) + 2);	// can never be longer
 	if (!cmd)
 		Sys_Error ("Cmd_Alias_f: Memory Allocation Failure\n");
 	cmd[0] = 0;							// start out with a null string
@@ -617,7 +643,7 @@ void
 Cmd_UnAlias_f (void)
 {
 	cmdalias_t *alias;
-	const char       *s;
+	const char *s;
 
 	if (Cmd_Argc () != 2) {
 		Sys_Printf ("unalias <alias>: erase an existing alias\n");
@@ -634,8 +660,8 @@ Cmd_UnAlias_f (void)
 			;
 		*a = alias->next;
 
-		free ((char*)alias->name);
-		free ((char*)alias->value);
+		free ((char *) alias->name);
+		free ((char *) alias->value);
 		free (alias);
 	} else {
 		Sys_Printf ("Unknown alias \"%s\"\n", s);
@@ -649,9 +675,9 @@ Cmd_UnAlias_f (void)
 
 typedef struct cmd_function_s {
 	struct cmd_function_s *next;
-	const char       *name;
+	const char *name;
 	xcommand_t  function;
-	const char       *description;
+	const char *description;
 } cmd_function_t;
 
 static cmd_function_t *cmd_functions;	// possible commands to execute
@@ -662,7 +688,7 @@ Cmd_Argc (void)
 	return cmd_activebuffer->argc;
 }
 
-const char       *
+const char *
 Cmd_Argv (int arg)
 {
 	if (arg >= cmd_activebuffer->argc)
@@ -675,7 +701,7 @@ Cmd_Argv (int arg)
 
 	Returns a single string containing argv(start) to argv(argc()-1)
 */
-const char       *
+const char *
 Cmd_Args (int start)
 {
 	if (start >= cmd_activebuffer->argc)
@@ -684,67 +710,65 @@ Cmd_Args (int start)
 }
 
 
-int 
+int
 Cmd_EndDoubleQuote (const char *str)
 {
-	int i;
-	
-	for (i = 1; i < strlen(str); i++) {
-		if (str[i] == '\"' && !escaped(str,i))
+	int         i;
+
+	for (i = 1; i < strlen (str); i++) {
+		if (str[i] == '\"' && !escaped (str, i))
 			return i;
 	}
-	return -1; // Not found
+	return -1;							// Not found
 }
 
 int
 Cmd_EndSingleQuote (const char *str)
 {
-	int i;
-	
-	for (i = 1; i < strlen(str); i++) {
-		if (str[i] == '\'' && !escaped(str,i))
+	int         i;
+
+	for (i = 1; i < strlen (str); i++) {
+		if (str[i] == '\'' && !escaped (str, i))
 			return i;
 	}
-	return -1; // Not found
+	return -1;							// Not found
 }
 
-int 
+int
 Cmd_EndBrace (const char *str)
 {
-	int i, n;
-	
-	for (i = 1; i < strlen(str); i++) {
-		if (str[i] == '{' && !escaped(str,i)) {
+	int         i, n;
+
+	for (i = 1; i < strlen (str); i++) {
+		if (str[i] == '{' && !escaped (str, i)) {
 			n = Cmd_EndBrace (str + i);
 			if (n < 0)
 				return n;
 			else
 				i += n;
-		}
-		else if (str[i] == '\"' && !escaped(str,i)) {
+		} else if (str[i] == '\"' && !escaped (str, i)) {
 			n = Cmd_EndDoubleQuote (str + i);
 			if (n < 0)
 				return n;
 			else
 				i += n;
-		}
-		else if (str[i] == '\'' && !escaped(str,i)) {
+		} else if (str[i] == '\'' && !escaped (str, i)) {
 			n = Cmd_EndSingleQuote (str + i);
 			if (n < 0)
 				return n;
 			else
 				i += n;
-		}
-		else if (str[i] == '}' && !escaped(str,i))
+		} else if (str[i] == '}' && !escaped (str, i))
 			return i;
 	}
-	return -1; // No matching brace found
+	return -1;							// No matching brace found
 }
 
 int
 Cmd_GetToken (const char *str)
 {
-	int i;
+	int         i;
+
 	switch (*str) {
 		case '\'':
 			return Cmd_EndSingleQuote (str);
@@ -755,41 +779,43 @@ Cmd_GetToken (const char *str)
 		case '}':
 			return -1;
 		default:
-			for (i = 0; i < strlen(str); i++)
-				if (isspace(str[i]))
+			for (i = 0; i < strlen (str); i++)
+				if (isspace (str[i]))
 					break;
 			return i;
 	}
-	return -1; // We should never get here	
+	return -1;							// We should never get here  
 }
 
-int tag_shift = 0;
-int tag_special = 0;
+int         tag_shift = 0;
+int         tag_special = 0;
 
-struct stable_s {char a, b;} stable1[] =
-{
-	{'f', 0x0D}, // Fake message
-	
-	{'[', 0x90}, // Gold braces
+struct stable_s {
+	char        a, b;
+} stable1[] = {
+	{'f', 0x0D},							// Fake message
+
+	{'[', 0x90},							// Gold braces
 	{']', 0x91},
-	
-	{'(', 0x80}, // Scroll bar characters
+
+	{'(', 0x80},							// Scroll bar characters
 	{'=', 0x81},
 	{')', 0x82},
 	{'|', 0x83},
-	
-	{'<', 0x9D}, // Vertical line characters
+
+	{'<', 0x9D},							// Vertical line characters
 	{'-', 0x9E},
 	{'>', 0x9F},
-	
-	{'.', 0x05}, // White dot
-	
-	{'#', 0x0B}, // White block
-	
-	{'a', 0x7F}, // White arrow. DO NOT USE WITH <b> TAG IN ANYTHING SENT TO SERVER.  PERIOD.
-	{'A', 0x8D}, // Brown arrow
-	
-	{'0', 0x92}, // Golden numbers
+
+	{'.', 0x05},							// White dot
+
+	{'#', 0x0B},							// White block
+
+	{'a', 0x7F},							// White arrow.
+	// DO NOT USE <a> WITH <b> TAG IN ANYTHING SENT TO SERVER.  PERIOD.
+	{'A', 0x8D},							// Brown arrow
+
+	{'0', 0x92},							// Golden numbers
 	{'1', 0x93},
 	{'2', 0x94},
 	{'3', 0x95},
@@ -814,43 +840,47 @@ struct stable_s {char a, b;} stable1[] =
 */
 
 void
-Cmd_ProcessTags (dstring_t *dstr)
+Cmd_ProcessTags (dstring_t * dstr)
 {
-	int close = 0, ignore = 0, i, n, c;
-	
-	for (i = 0; i < strlen(dstr->str); i++) {
-		if (dstr->str[i] == '<' && !escaped(dstr->str,i)){
+	int         close = 0, ignore = 0, i, n, c;
+
+	for (i = 0; i < strlen (dstr->str); i++) {
+		if (dstr->str[i] == '<' && !escaped (dstr->str, i)) {
 			close = 0;
-			for (n = 1; dstr->str[i+n] != '>' || escaped(dstr->str, i+n); n++)
+			for (n = 1;
+				 dstr->str[i + n] != '>' || escaped (dstr->str, i + n);
+				 n++)
 				if (dstr->str[n] == 0)
 					return;
-			if (dstr->str[i+1] == '/')
+			if (dstr->str[i + 1] == '/')
 				close = 1;
-			if (!strncmp(dstr->str+i+close+1, "i", 1)) {
-				if (ignore && !close) // If we are ignoring, ignore a non close
+			if (!strncmp (dstr->str + i + close + 1, "i", 1)) {
+				if (ignore && !close)
+					// If we are ignoring, ignore a non close
 					continue;
-				else if (close && ignore) // If we are closing, turn off ignore
+				else if (close && ignore)
+					// If we are closing, turn off ignore
 					ignore--;
 				else if (!close)
-					ignore++; // Otherwise, turn ignore on
-			}					
-			else if (ignore) // If ignore isn't being changed and we are ignore, go on
+					ignore++;			// Otherwise, turn ignore on
+			} else if (ignore)
+				// If ignore isn't being changed and we are ignore, go on
 				continue;
-			else if (!strncmp(dstr->str+i+close+1, "b", 1))
+			else if (!strncmp (dstr->str + i + close + 1, "b", 1))
 				tag_shift = close ? tag_shift - 1 : tag_shift + 1;
-			else if (!strncmp(dstr->str+i+close+1, "s", 1))
+			else if (!strncmp (dstr->str + i + close + 1, "s", 1))
 				tag_special = close ? tag_special - 1 : tag_special + 1;
 			if (tag_shift < 0)
 				tag_shift = 0;
 			if (tag_special < 0)
 				tag_special = 0;
-			dstring_snip(dstr, i, n+1);
+			dstring_snip (dstr, i, n + 1);
 			i--;
 			continue;
 		}
-		c = dstr->str[i];	
+		c = dstr->str[i];
 		/* This ignores escape characters, unless it is itself escaped */
-		if (c == '\\' && !escaped(dstr->str, i))
+		if (c == '\\' && !escaped (dstr->str, i))
 			continue;
 		if (tag_special) {
 			for (n = 0; stable1[n].a; n++)
@@ -861,7 +891,7 @@ Cmd_ProcessTags (dstring_t *dstr)
 			c = (dstr->str[i] += 128);
 	}
 }
-	
+
 /*
 	Cmd_ProcessVariablesRecursive
 	
@@ -871,109 +901,111 @@ Cmd_ProcessTags (dstring_t *dstr)
 	within itself.
 */
 
-int 
-Cmd_ProcessVariablesRecursive (dstring_t *dstr, int start)
+int
+Cmd_ProcessVariablesRecursive (dstring_t * dstr, int start)
 {
-	dstring_t *varname;
+	dstring_t  *varname;
 	cmd_localvar_t *lvar;
-	cvar_t *cvar;
-	int i, n;
-	
+	cvar_t     *cvar;
+	int         i, n;
+
 	varname = dstring_newstr ();
-	
+
 	for (i = start + 2;; i++) {
-		if (dstr->str[i] == '$' && dstr->str[i+1] == '{' && !escaped(dstr->str,i)) {
+		if (dstr->str[i] == '$' && dstr->str[i + 1] == '{'
+			&& !escaped (dstr->str, i)) {
 			n = Cmd_ProcessVariablesRecursive (dstr, i);
 			if (n < 0) {
 				break;
-			}
-			else {
-				i += n-1;
+			} else {
+				i += n - 1;
 				continue;
 			}
-		}
-		else if (dstr->str[i] == '}' && !escaped(dstr->str, i)) {
+		} else if (dstr->str[i] == '}' && !escaped (dstr->str, i)) {
 			dstring_clearstr (varname);
-			dstring_insert (varname, dstr->str+start+2, i-start-2, 0);		
-			dstring_snip (dstr, start, i-start+1); // Nuke it, even if no match is found
-			if ((lvar = (cmd_localvar_t *)Hash_Find(cmd_activebuffer->locals, varname->str))) { // Local variables get precedence
+			dstring_insert (varname, dstr->str + start + 2, i - start - 2, 0);
+			// Nuke it, even if no match is found
+			dstring_snip (dstr, start, i - start + 1);
+			lvar = (cmd_localvar_t *) Hash_Find (cmd_activebuffer->locals,
+												 varname->str);
+			if (lvar) {
+				// Local variables get precedence
 				dstring_insertstr (dstr, lvar->value->str, start);
-				n = strlen(lvar->value->str);
-			}
-			else if ((cvar = Cvar_FindVar(varname->str))) {// Then cvars
-				dstring_insertstr (dstr, cvar->string, start); // Stick in the value of variable
-				n = strlen(cvar->string);
-			}
-			else
+				n = strlen (lvar->value->str);
+			} else if ((cvar = Cvar_FindVar (varname->str))) {
+				// Then cvars
+				// Stick in the value of variable
+				dstring_insertstr (dstr, cvar->string, start);
+				n = strlen (cvar->string);
+			} else
 				n = 0;
 			break;
-		}
-		else if (!dstr->str[i]) { // No closing brace
+		} else if (!dstr->str[i]) {		// No closing brace
 			n = -1;
 			break;
 		}
 	}
 	dstring_delete (varname);
 	return n;
-}		
+}
 
 int
-Cmd_ProcessVariables (dstring_t *dstr)
+Cmd_ProcessVariables (dstring_t * dstr)
 {
-	int i, n;
-	
-	for (i = 0; i < strlen(dstr->str); i++) {
-		if (dstr->str[i] == '$' && dstr->str[i+1] == '{' && !escaped(dstr->str,i)) {
+	int         i, n;
+
+	for (i = 0; i < strlen (dstr->str); i++) {
+		if (dstr->str[i] == '$' && dstr->str[i + 1] == '{'
+			&& !escaped (dstr->str, i)) {
 			n = Cmd_ProcessVariablesRecursive (dstr, i);
 			if (n < 0)
 				return n;
 			else
-				i += n-1;
+				i += n - 1;
 		}
 	}
 	return 0;
 }
 
 int
-Cmd_ProcessMath (dstring_t *dstr)
+Cmd_ProcessMath (dstring_t * dstr)
 {
-	dstring_t *statement;
-	int i, n, paren;
-	float value;
-	char *temp;
-	int ret = 0;
-	
+	dstring_t  *statement;
+	int         i, n, paren;
+	float       value;
+	char       *temp;
+	int         ret = 0;
+
 	statement = dstring_newstr ();
-	
-	for (i = 0; i < strlen(dstr->str); i++) {
-		if (dstr->str[i] == '$' && dstr->str[i+1] == '(' && !escaped(dstr->str,i)) {
+
+	for (i = 0; i < strlen (dstr->str); i++) {
+		if (dstr->str[i] == '$' && dstr->str[i + 1] == '('
+			&& !escaped (dstr->str, i)) {
 			paren = 1;
-			for (n = 2;;n++) {
-				if (dstr->str[i+n] == '(')
+			for (n = 2;; n++) {
+				if (dstr->str[i + n] == '(')
 					paren++;
-				else if (dstr->str[i+n] == ')') {
+				else if (dstr->str[i + n] == ')') {
 					paren--;
 					if (!paren)
 						break;
-				}
-				else if (!dstr->str[i+n]) {
+				} else if (!dstr->str[i + n]) {
 					ret = -1;
 					break;
 				}
 			}
 			/* Copy text between parentheses into a buffer */
 			dstring_clearstr (statement);
-			dstring_insert (statement, dstr->str+i+2, n-2, 0);
+			dstring_insert (statement, dstr->str + i + 2, n - 2, 0);
 			value = EXP_Evaluate (statement->str);
 			if (EXP_ERROR == EXP_E_NORMAL) {
-				temp = va("%g", value);
-				dstring_snip (dstr, i, n+1); // Nuke the statement
-				dstring_insertstr (dstr, temp, i); // Stick in the value
-				i += strlen(temp) - 1;
-			}
-			else {
+				temp = va ("%g", value);
+				dstring_snip (dstr, i, n + 1);	// Nuke the statement
+				dstring_insertstr (dstr, temp, i);	// Stick in the value
+				i += strlen (temp) - 1;
+			} else {
 				ret = -2;
-				break; // Math evaluation error
+				break;					// Math evaluation error
 			}
 		}
 	}
@@ -993,13 +1025,13 @@ Cmd_ProcessMath (dstring_t *dstr)
 */
 
 void
-Cmd_ProcessEscapes (dstring_t *dstr)
+Cmd_ProcessEscapes (dstring_t * dstr)
 {
-	int i;
-	
-	for (i = 0; i < strlen(dstr->str); i++) {
-		if (dstr->str[i] == '\\' && dstr->str[i+1]) {
-			dstring_snip(dstr, i, 1);
+	int         i;
+
+	for (i = 0; i < strlen (dstr->str); i++) {
+		if (dstr->str[i] == '\\' && dstr->str[i + 1]) {
+			dstring_snip (dstr, i, 1);
 			if (dstr->str[i] == '\\')
 				i++;
 			if (dstr->str[i] == 'n')
@@ -1027,106 +1059,117 @@ Cmd_ProcessEscapes (dstring_t *dstr)
 	be left alone since it is the delimeter
 	for info keys.
 */
-	
+
 void
 Cmd_TokenizeString (const char *text, qboolean filter)
 {
-	int i = 0, n, len = 0, quotes, braces, space, res;
+	int         i = 0, n, len = 0, quotes, braces, space, res;
 	const char *str = text;
 	unsigned int cmd_argc = 0;
-	
+
 	dstring_clearstr (cmd_activebuffer->realline);
 	dstring_appendstr (cmd_activebuffer->realline, text);
-	
-	/* Turn off tags at the beginning of a command.
-	This causes tags to continue past token boundaries. */
+
+	/* Turn off tags at the beginning of a command. This causes tags to
+	   continue past token boundaries. */
 	tag_shift = 0;
 	tag_special = 0;
 	if (text[0] == '|')
 		str++;
-	while (strlen(str + i)) {
+	while (strlen (str + i)) {
 		space = 0;
-		while (isspace(str[i])) {
+		while (isspace (str[i])) {
 			i++;
 			space++;
 		}
 		len = Cmd_GetToken (str + i);
 		if (len < 0) {
-			Cmd_Error ("Parse error:  Unmatched quotes, braces, or double quotes\n");
+			Cmd_Error ("Parse error:  Unmatched quotes, braces, or "
+					   "double quotes\n");
 			cmd_activebuffer->argc = 0;
 			return;
-		}
-		else if (len == 0)
+		} else if (len == 0)
 			break;
 		cmd_argc++;
 		if (cmd_argc > cmd_activebuffer->maxargc) {
-			cmd_activebuffer->argv = realloc(cmd_activebuffer->argv, sizeof(dstring_t *)*cmd_argc);
-			if (!cmd_activebuffer->argv)
-				Sys_Error ("Cmd_TokenizeString:  Failed to reallocate memory.\n");
-			cmd_activebuffer->args = realloc(cmd_activebuffer->args, sizeof(int)*cmd_argc);
-			if (!cmd_activebuffer->args)
-				Sys_Error ("Cmd_TokenizeString:  Failed to reallocate memory.\n");
-			cmd_activebuffer->argspace = realloc(cmd_activebuffer->argspace, sizeof(int)*cmd_argc);
-			if (!cmd_activebuffer->argspace)
-				Sys_Error ("Cmd_TokenizeString:  Failed to reallocate memory.\n");
-			cmd_activebuffer->argv[cmd_argc-1] = dstring_newstr ();
+			cmd_activebuffer->argv = realloc (cmd_activebuffer->argv,
+											  sizeof (dstring_t *) * cmd_argc);
+			SYS_CHECKMEM (cmd_activebuffer->argv);
+
+			cmd_activebuffer->args = realloc (cmd_activebuffer->args,
+											  sizeof (int) * cmd_argc);
+
+			SYS_CHECKMEM (cmd_activebuffer->args);
+
+			cmd_activebuffer->argspace = realloc (cmd_activebuffer->argspace,
+												  sizeof (int) * cmd_argc);
+
+			SYS_CHECKMEM (cmd_activebuffer->argspace);
+
+			cmd_activebuffer->argv[cmd_argc - 1] = dstring_newstr ();
 			cmd_activebuffer->maxargc++;
 		}
-		dstring_clearstr(cmd_activebuffer->argv[cmd_argc-1]);
-		cmd_activebuffer->argspace[cmd_argc-1] = space;
-		/* Remove surrounding quotes or double quotes or braces*/
+		dstring_clearstr (cmd_activebuffer->argv[cmd_argc - 1]);
+		cmd_activebuffer->argspace[cmd_argc - 1] = space;
+		/* Remove surrounding quotes or double quotes or braces */
 		quotes = 0;
 		braces = 0;
-		if ((str[i] == '\'' && str[i+len] == '\'') || (str[i] == '"' && str[i+len] == '"')) {
+		if ((str[i] == '\'' && str[i + len] == '\'')
+			|| (str[i] == '"' && str[i + len] == '"')) {
 			i++;
-			len-=1;
+			len -= 1;
 			quotes = 1;
 		}
-		if (str[i] == '{' && str[i+len] == '}') {
+		if (str[i] == '{' && str[i + len] == '}') {
 			i++;
-			len-=1;
+			len -= 1;
 			braces = 1;
 		}
-		dstring_insert(cmd_activebuffer->argv[cmd_argc-1], str + i, len, 0);
+		dstring_insert (cmd_activebuffer->argv[cmd_argc - 1], str + i, len, 0);
 		if (filter && text[0] != '|') {
 			if (!braces) {
-				Cmd_ProcessTags(cmd_activebuffer->argv[cmd_argc-1]);
-				res = Cmd_ProcessVariables(cmd_activebuffer->argv[cmd_argc-1]);
+				Cmd_ProcessTags (cmd_activebuffer->argv[cmd_argc - 1]);
+				res =
+					Cmd_ProcessVariables (cmd_activebuffer->argv[cmd_argc - 1]);
 				if (res < 0) {
-					Cmd_Error ("Parse error: Unmatched braces in variable substitution expression.\n");
+					Cmd_Error ("Parse error: Unmatched braces in "
+							   "variable substitution expression.\n");
 					cmd_activebuffer->argc = 0;
 					return;
 				}
-				res = Cmd_ProcessMath(cmd_activebuffer->argv[cmd_argc-1]);
+				res = Cmd_ProcessMath (cmd_activebuffer->argv[cmd_argc - 1]);
 				if (res == -1) {
 					Cmd_Error ("Parse error:  Unmatched parenthesis\n");
 					cmd_activebuffer->argc = 0;
 					return;
 				}
 				if (res == -2) {
-					Cmd_Error("Math error:  Invalid math expression\n");
+					Cmd_Error ("Math error:  Invalid math expression\n");
 					cmd_activebuffer->argc = 0;
 					return;
 				}
 			}
-			Cmd_ProcessEscapes(cmd_activebuffer->argv[cmd_argc-1]);
+			Cmd_ProcessEscapes (cmd_activebuffer->argv[cmd_argc - 1]);
 		}
 
-		i += len + quotes + braces; /* If we ended on a quote or brace, skip it */
+		i += len + quotes + braces;		/* If we ended on a quote or brace,
+										   skip it */
 	}
 	/* Now we must reconstruct cmd_args */
 	dstring_clearstr (cmd_activebuffer->line);
 	for (i = 0; i < cmd_argc; i++) {
 		for (n = 0; n < cmd_activebuffer->argspace[i]; n++)
-			dstring_appendstr (cmd_activebuffer->line," ");
-		cmd_activebuffer->args[i] = strlen(cmd_activebuffer->line->str);
-		dstring_appendstr (cmd_activebuffer->line, cmd_activebuffer->argv[i]->str);
+			dstring_appendstr (cmd_activebuffer->line, " ");
+		cmd_activebuffer->args[i] = strlen (cmd_activebuffer->line->str);
+		dstring_appendstr (cmd_activebuffer->line,
+						   cmd_activebuffer->argv[i]->str);
 	}
 	cmd_activebuffer->argc = cmd_argc;
 }
 
 void
-Cmd_AddCommand (const char *cmd_name, xcommand_t function, const char *description)
+Cmd_AddCommand (const char *cmd_name, xcommand_t function,
+				const char *description)
 {
 	cmd_function_t *cmd;
 	cmd_function_t **c;
@@ -1137,7 +1180,7 @@ Cmd_AddCommand (const char *cmd_name, xcommand_t function, const char *descripti
 		return;
 	}
 	// fail if the command already exists
-	cmd = (cmd_function_t*)Hash_Find (cmd_hash, cmd_name);
+	cmd = (cmd_function_t *) Hash_Find (cmd_hash, cmd_name);
 	if (cmd) {
 		Sys_Printf ("Cmd_AddCommand: %s already defined\n", cmd_name);
 		return;
@@ -1151,7 +1194,7 @@ Cmd_AddCommand (const char *cmd_name, xcommand_t function, const char *descripti
 	cmd->description = description;
 	Hash_Add (cmd_hash, cmd);
 	for (c = &cmd_functions; *c; c = &(*c)->next)
-		if (strcmp ((*c)->name, cmd->name) >=0)
+		if (strcmp ((*c)->name, cmd->name) >= 0)
 			break;
 	cmd->next = *c;
 	*c = cmd;
@@ -1162,7 +1205,7 @@ Cmd_Exists (const char *cmd_name)
 {
 	cmd_function_t *cmd;
 
-	cmd = (cmd_function_t*)Hash_Find (cmd_hash, cmd_name);
+	cmd = (cmd_function_t *) Hash_Find (cmd_hash, cmd_name);
 	if (cmd) {
 		return true;
 	}
@@ -1170,12 +1213,12 @@ Cmd_Exists (const char *cmd_name)
 	return false;
 }
 
-const char       *
+const char *
 Cmd_CompleteCommand (const char *partial)
 {
-	cmd_function_t	*cmd;
-	int				len;
-	cmdalias_t		*a;
+	cmd_function_t *cmd;
+	int         len;
+	cmdalias_t *a;
 
 	len = strlen (partial);
 
@@ -1212,19 +1255,19 @@ Cmd_CompleteCommand (const char *partial)
 int
 Cmd_CompleteCountPossible (const char *partial)
 {
-	cmd_function_t	*cmd;
-	int				len;
-	int				h;
-	
+	cmd_function_t *cmd;
+	int         len;
+	int         h;
+
 	h = 0;
-	len = strlen(partial);
-	
+	len = strlen (partial);
+
 	if (!len)
 		return 0;
-	
+
 	// Loop through the command list and count all partial matches
 	for (cmd = cmd_functions; cmd; cmd = cmd->next)
-		if (!strncasecmp(partial, cmd->name, len))
+		if (!strncasecmp (partial, cmd->name, len))
 			h++;
 
 	return h;
@@ -1238,22 +1281,24 @@ Cmd_CompleteCountPossible (const char *partial)
 	Thanks to Fett erich@heintz.com
 	Thanks to taniwha
 */
-const char	**
+const char **
 Cmd_CompleteBuildList (const char *partial)
 {
-	cmd_function_t	*cmd;
-	int				len = 0;
-	int				bpos = 0;
-	int				sizeofbuf = (Cmd_CompleteCountPossible (partial) + 1) * sizeof (char *);
-	const char			**buf;
+	cmd_function_t *cmd;
+	int         len = 0;
+	int         bpos = 0;
+	int         sizeofbuf;
+	const char **buf;
 
-	len = strlen(partial);
-	buf = malloc(sizeofbuf + sizeof (char *));
+	sizeofbuf = (Cmd_CompleteCountPossible (partial) + 1) * sizeof (char *);
+	len = strlen (partial);
+	buf = malloc (sizeofbuf + sizeof (char *));
+
 	if (!buf)
 		Sys_Error ("Cmd_CompleteBuildList: Memory Allocation Failure\n");
 	// Loop through the alias list and print all matches
 	for (cmd = cmd_functions; cmd; cmd = cmd->next)
-		if (!strncasecmp(partial, cmd->name, len))
+		if (!strncasecmp (partial, cmd->name, len))
 			buf[bpos++] = cmd->name;
 
 	buf[bpos] = NULL;
@@ -1269,19 +1314,19 @@ Cmd_CompleteBuildList (const char *partial)
 	Thanks to taniwha
 */
 const char *
-Cmd_CompleteAlias (const char * partial)
+Cmd_CompleteAlias (const char *partial)
 {
-	cmdalias_t	*alias;
-	int			len;
+	cmdalias_t *alias;
+	int         len;
 
-	len = strlen(partial);
+	len = strlen (partial);
 
 	if (!len)
 		return NULL;
 
 	// Check functions
 	for (alias = cmd_alias; alias; alias = alias->next)
-		if (!strncasecmp(partial, alias->name, len))
+		if (!strncasecmp (partial, alias->name, len))
 			return alias->name;
 
 	return NULL;
@@ -1298,20 +1343,20 @@ Cmd_CompleteAlias (const char * partial)
 int
 Cmd_CompleteAliasCountPossible (const char *partial)
 {
-	cmdalias_t	*alias;
-	int			len;
-	int			h;
+	cmdalias_t *alias;
+	int         len;
+	int         h;
 
 	h = 0;
 
-	len = strlen(partial);
+	len = strlen (partial);
 
 	if (!len)
 		return 0;
 
 	// Loop through the command list and count all partial matches
 	for (alias = cmd_alias; alias; alias = alias->next)
-		if (!strncasecmp(partial, alias->name, len))
+		if (!strncasecmp (partial, alias->name, len))
 			h++;
 
 	return h;
@@ -1325,23 +1370,24 @@ Cmd_CompleteAliasCountPossible (const char *partial)
 	Thanks to Fett erich@heintz.com
 	Thanks to taniwha
 */
-const char	**
+const char **
 Cmd_CompleteAliasBuildList (const char *partial)
 {
-	cmdalias_t	*alias;
-	int			len = 0;
-	int			bpos = 0;
-	int			sizeofbuf = (Cmd_CompleteAliasCountPossible (partial) + 1) *
-							 sizeof (char *);
-	const char		**buf;
+	cmdalias_t *alias;
+	int         len = 0;
+	int         bpos = 0;
+	int         sizeofbuf = (Cmd_CompleteAliasCountPossible (partial) + 1) *
+		sizeof (char *);
+	const char **buf;
 
-	len = strlen(partial);
-	buf = malloc(sizeofbuf + sizeof (char *));
+	len = strlen (partial);
+	buf = malloc (sizeofbuf + sizeof (char *));
+
 	if (!buf)
 		Sys_Error ("Cmd_CompleteAliasBuildList: Memory Allocation Failure\n");
 	// Loop through the alias list and print all matches
 	for (alias = cmd_alias; alias; alias = alias->next)
-		if (!strncasecmp(partial, alias->name, len))
+		if (!strncasecmp (partial, alias->name, len))
 			buf[bpos++] = alias->name;
 
 	buf[bpos] = NULL;
@@ -1358,6 +1404,7 @@ Cmd_ExecuteString (const char *text, cmd_source_t src)
 {
 	cmd_function_t *cmd;
 	cmdalias_t *a;
+
 	cmd_source = src;
 
 	Cmd_TokenizeString (text, !cmd_activebuffer->legacy);
@@ -1367,28 +1414,30 @@ Cmd_ExecuteString (const char *text, cmd_source_t src)
 		return;							// no tokens
 
 	// check functions
-	cmd = (cmd_function_t*)Hash_Find (cmd_hash, Cmd_Argv(0));
+	cmd = (cmd_function_t *) Hash_Find (cmd_hash, Cmd_Argv (0));
 	if (cmd) {
 		if (cmd->function)
 			cmd->function ();
 		return;
 	}
-
 	// Tonik: check cvars
 	if (Cvar_Command ())
 		return;
 
 	// check alias
-	a = (cmdalias_t*)Hash_Find (cmd_alias_hash, Cmd_Argv(0));
+	a = (cmdalias_t *) Hash_Find (cmd_alias_hash, Cmd_Argv (0));
 	if (a) {
-		int i;
-		cmd_buffer_t *sub; // Create a new buffer to execute the alias in
+		// Create a new buffer to execute the alias in
+		int         i;
+		cmd_buffer_t *sub;
+
 		sub = Cmd_NewBuffer ();
 		Cbuf_InsertTextTo (sub, a->value);
-		for (i = 0; i < Cmd_Argc(); i++)
-			Cmd_SetLocal (sub, va("%i", i), Cmd_Argv(i));
-		Cmd_SetLocal (sub, "#", va("%i", Cmd_Argc()));
-		Cmd_ExecuteSubroutine (sub); // This will handle freeing the buffer for us, leave it alone
+		for (i = 0; i < Cmd_Argc (); i++)
+			Cmd_SetLocal (sub, va ("%i", i), Cmd_Argv (i));
+		Cmd_SetLocal (sub, "#", va ("%i", Cmd_Argc ()));
+		// This will handle freeing the buffer for us, leave it alone
+		Cmd_ExecuteSubroutine (sub);
 		return;
 	}
 
@@ -1424,7 +1473,7 @@ Cmd_CmdList_f (void)
 	int         i;
 	int         show_description = 0;
 
-	if (Cmd_Argc() > 1)
+	if (Cmd_Argc () > 1)
 		show_description = 1;
 	for (cmd = cmd_functions, i = 0; cmd; cmd = cmd->next, i++) {
 		if (show_description) {
@@ -1440,8 +1489,8 @@ Cmd_CmdList_f (void)
 void
 Cmd_Help_f (void)
 {
-	const char     *name;
-	cvar_t         *var;
+	const char *name;
+	cvar_t     *var;
 	cmd_function_t *cmd;
 
 	if (Cmd_Argc () != 2) {
@@ -1478,35 +1527,38 @@ Cmd_Help_f (void)
 */
 
 void
-Cmd_If_f (void) {
-	long int num;
-	
-	if (Cmd_Argc() < 3) {
-		Sys_Printf("Usage: if {condition} {commands}\n");
+Cmd_If_f (void)
+{
+	long int    num;
+
+	if (Cmd_Argc () < 3) {
+		Sys_Printf ("Usage: if {condition} {commands}\n");
 		return;
 	}
-	
-	num = strtol (Cmd_Argv(1), 0, 10);
-	
+
+	num = strtol (Cmd_Argv (1), 0, 10);
+
 	if (num)
-		Cbuf_InsertText (Cmd_Argv(2));
+		Cbuf_InsertText (Cmd_Argv (2));
 	return;
 }
 
 void
-Cmd_While_f (void) {
-	long int num;
-	
-	if (Cmd_Argc() < 3) {
-		Sys_Printf("Usage: while {condition} {commands}\n");
+Cmd_While_f (void)
+{
+	long int    num;
+
+	if (Cmd_Argc () < 3) {
+		Sys_Printf ("Usage: while {condition} {commands}\n");
 		return;
 	}
-	
-	num = strtol (Cmd_Argv(1), 0, 10);
-	
+
+	num = strtol (Cmd_Argv (1), 0, 10);
+
 	if (num) {
-		Cbuf_InsertText (cmd_activebuffer->realline->str); // Run while loop again
-		Cbuf_InsertText (Cmd_Argv(2)); // But not before executing body
+		// Run while loop again
+		Cbuf_InsertText (cmd_activebuffer->realline->str);
+		Cbuf_InsertText (Cmd_Argv (2));	// But not before executing body
 	}
 	return;
 }
@@ -1514,17 +1566,17 @@ Cmd_While_f (void) {
 void
 Cmd_Lset_f (void)
 {
-	if (Cmd_Argc() != 3) {
-		Sys_Printf("Usage: lset [local variable] [value]\n");
+	if (Cmd_Argc () != 3) {
+		Sys_Printf ("Usage: lset [local variable] [value]\n");
 		return;
 	}
-	Cmd_SetLocal(cmd_activebuffer, Cmd_Argv(1), Cmd_Argv(2));
+	Cmd_SetLocal (cmd_activebuffer, Cmd_Argv (1), Cmd_Argv (2));
 }
 
 void
 Cmd_Backtrace_f (void)
 {
-	Sys_Printf("%s", cmd_backtrace->str);
+	Sys_Printf ("%s", cmd_backtrace->str);
 }
 
 void
@@ -1539,23 +1591,26 @@ Cmd_Hash_Stats_f (void)
 static void
 cmd_alias_free (void *_a, void *unused)
 {
-	cmdalias_t *a = (cmdalias_t*)_a;
-	free ((char*)a->name);
-	free ((char*)a->value);
+	cmdalias_t *a = (cmdalias_t *) _a;
+
+	free ((char *) a->name);
+	free ((char *) a->value);
 	free (a);
 }
 
 static const char *
 cmd_alias_get_key (void *_a, void *unused)
 {
-	cmdalias_t *a = (cmdalias_t*)_a;
+	cmdalias_t *a = (cmdalias_t *) _a;
+
 	return a->name;
 }
 
 static const char *
 cmd_get_key (void *c, void *unused)
 {
-	cmd_function_t *cmd = (cmd_function_t*)c;
+	cmd_function_t *cmd = (cmd_function_t *) c;
+
 	return cmd->name;
 }
 
@@ -1569,8 +1624,7 @@ void
 Cmd_Init_Hash (void)
 {
 	cmd_hash = Hash_NewTable (1021, cmd_get_key, 0, 0);
-	cmd_alias_hash = Hash_NewTable (1021, cmd_alias_get_key, cmd_alias_free,
-									0);
+	cmd_alias_hash = Hash_NewTable (1021, cmd_alias_get_key, cmd_alias_free, 0);
 }
 
 void
@@ -1593,23 +1647,27 @@ Cmd_Init (void)
 	Cmd_AddCommand ("help", Cmd_Help_f, "Display help for a command or "
 					"variable");
 	Cmd_AddCommand ("if", Cmd_If_f, "Conditionally execute a set of commands.");
-	Cmd_AddCommand ("while", Cmd_While_f, "Execute a set of commands while a condition is true.");
-	Cmd_AddCommand ("lset", Cmd_Lset_f, "Sets the value of a local variable (not cvar).");
-	Cmd_AddCommand ("backtrace", Cmd_Backtrace_f, "Show a description of the last GIB error and a backtrace.");
-	//Cmd_AddCommand ("cmd_hash_stats", Cmd_Hash_Stats_f, "Display statistics "
-	//				"alias and command hash tables");
+	Cmd_AddCommand ("while", Cmd_While_f,
+					"Execute a set of commands while a condition is true.");
+	Cmd_AddCommand ("lset", Cmd_Lset_f,
+					"Sets the value of a local variable (not cvar).");
+	Cmd_AddCommand ("backtrace", Cmd_Backtrace_f,
+					"Show a description of the last GIB error and a backtrace.");
+	// Cmd_AddCommand ("cmd_hash_stats", Cmd_Hash_Stats_f, "Display
+	// statistics "
+	// "alias and command hash tables");
 	cmd_warncmd = Cvar_Get ("cmd_warncmd", "0", CVAR_NONE, NULL, "Toggles the "
 							"display of error messages for unknown commands");
 }
 
-char        *com_token;
+char       *com_token;
 static size_t com_token_size;
 
 static inline void
 write_com_token (size_t pos, char c)
 {
 	if (pos + 1 <= com_token_size) {
-write:
+	  write:
 		com_token[pos] = c;
 		return;
 	}
@@ -1617,7 +1675,7 @@ write:
 	com_token = realloc (com_token, com_token_size);
 	if (!com_token)
 		Sys_Error ("COM_Parse: could not allocate %ld bytes",
-				   (long)com_token_size);
+				   (long) com_token_size);
 	goto write;
 }
 
@@ -1627,10 +1685,10 @@ write:
 	Parse a token out of a string
 	FIXME:  Does anything still need this crap?
 */
-const char       *
+const char *
 COM_Parse (const char *_data)
 {
-	const byte *data = (const byte *)_data;
+	const byte *data = (const byte *) _data;
 	unsigned int c;
 	size_t      len = 0;
 
@@ -1640,7 +1698,7 @@ COM_Parse (const char *_data)
 		return NULL;
 
 	// skip whitespace
-skipwhite:
+  skipwhite:
 	while ((c = *data) <= ' ') {
 		if (c == 0)
 			return NULL;				// end of file;
@@ -1653,7 +1711,6 @@ skipwhite:
 			data++;
 		goto skipwhite;
 	}
-
 	// handle quoted strings specially
 	if (c == '\"') {
 		data++;
