@@ -950,10 +950,10 @@ Host_Init (quakeparms_t *parms)
 
 	GIB_Init ();
 
-	NET_Init ();
-
 	Host_InitVCR (parms);
 	Host_InitLocal ();
+
+	NET_Init ();
 
 	W_LoadWadFile ("gfx.wad");
 	Key_Init ();
