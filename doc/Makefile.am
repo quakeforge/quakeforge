@@ -1,12 +1,12 @@
 AUTOMAKE_OPTIONS= foreign
 
 SUBDIRS= man
-EXTRA_DIST= 3dfx.txt CodingStyle cvarlist.txt glqnotes.txt makefile.linuxi386 \
-	makefile.solaris net_DoS_protection.txt progdefs.q1 progdefs.q2 \
+EXTRA_DIST= 3dfx.txt CodingStyle glqnotes.txt \
+	net_DoS_protection.txt progdefs.q1 progdefs.q2 \
 	qe3.ico qf-client-3dfx-cvar.txt qf-client-glx-cvar.txt \
 	qf-client-sdl-cvar.txt qf-client-sgl-cvar.txt qf-client-svga-cvar.txt \
 	qf-client-x11-cmd.txt qf-client-x11-cvar.txt qf-server-cmd.txt \
-	qf-server-cvar.txt quake.gif quake.ico readme.solaris readme.txt \
+	qf-server-cvar.txt quake.gif quake.ico readme.txt \
 	skybox.fig template.h timestamps.txt wqreadme.txt \
 	\
 	config/glspeed-v1.cfg config/glspeed-v3.cfg config/swspeed.cfg \

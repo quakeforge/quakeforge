@@ -1,3 +1,3 @@
 AUTOMAKE_OPTIONS= foreign
 
-EXTRA_DIST=	config.h.in pr_comp.h qfcc.h getopt.h
+EXTRA_DIST=	config.h.in qfcc.h getopt.h
