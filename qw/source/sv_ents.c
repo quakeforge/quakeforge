@@ -530,6 +530,9 @@ SV_WriteEntitiesToClient (client_t *client, sizebuf_t *msg)
 
 	for (e = MAX_CLIENTS + 1, ent = EDICT_NUM (&sv_pr_state, e); e < sv.num_edicts;
 		 e++, ent = NEXT_EDICT (&sv_pr_state, ent)) {
+		if (ent->free)
+			continue;
+
 		// ignore ents without visible models
 		if (!SVfloat (ent, modelindex) || !*PR_GetString (&sv_pr_state, SVstring (ent, model)))
 			continue;
