@@ -123,12 +123,14 @@ LightThread (void *l)
 	while (1) {
 		LOCK;
 		i = bspfileface++;
+		if (i < bsp->numfaces) {
+			printf ("%5d / %d\r", i, bsp->numfaces);
+			fflush (stdout);
+		}
 		UNLOCK;
 		if (i >= bsp->numfaces)
 			return 0;
 
-		printf ("%5d / %d\r", i, bsp->numfaces);
-		fflush (stdout);
 		LightFace (l, i);
 	}
 }
