@@ -61,6 +61,7 @@ typedef struct {
 	vec3_t      start, end;
 	entity_t    ent_list[MAX_BEAM_ENTS];
 	int         ent_count;
+	int         seed;
 } beam_t;
 
 beam_t      cl_beams[MAX_BEAMS];
@@ -216,6 +217,7 @@ CL_ParseBeam (model_t *m)
 			b->entity = ent;
 			b->model = m;
 			b->endtime = cl.time + 0.2;
+			b->seed = rand();
 			VectorCopy (start, b->start);
 			VectorCopy (end, b->end);
 			return;
@@ -226,6 +228,7 @@ CL_ParseBeam (model_t *m)
 			b->entity = ent;
 			b->model = m;
 			b->endtime = cl.time + 0.2;
+			b->seed = rand();
 			VectorCopy (start, b->start);
 			VectorCopy (end, b->end);
 			return;
@@ -438,6 +441,8 @@ CL_ParseTEnt (void)
 	}
 }
 
+#define BEAM_SEED_INTERVAL 72
+#define BEAM_SEED_PRIME 3191
 
 void
 CL_UpdateBeams (void)
@@ -449,6 +454,7 @@ CL_UpdateBeams (void)
 	entity_t  **ent;
 	float       yaw, pitch;
 	float       forward;
+	unsigned    seed;
 
 	// update lightning
 	for (i = 0, b = cl_beams; i < MAX_BEAMS; i++, b++) {
@@ -479,6 +485,8 @@ CL_UpdateBeams (void)
 				pitch += 360;
 		}
 
+		seed = b->seed + ((int)(cl.time * BEAM_SEED_INTERVAL) % BEAM_SEED_INTERVAL);
+
 		// add new entities for the lightning
 		VectorCopy (b->start, org);
 		d = VectorNormalize (dist);
@@ -492,7 +500,8 @@ CL_UpdateBeams (void)
 			(*ent)->model = b->model;
 			(*ent)->angles[0] = pitch;
 			(*ent)->angles[1] = yaw;
-			(*ent)->angles[2] = rand () % 360;
+//			(*ent)->angles[2] = rand () % 360;
+			(*ent)->angles[2] = (seed = seed * BEAM_SEED_PRIME) % 360;
 
 			VectorMA(org, 30, dist, org);
 			d -= 30;
