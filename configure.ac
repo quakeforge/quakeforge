@@ -2156,9 +2156,6 @@ AC_OUTPUT(
 
 	include/Makefile
 	include/QF/Makefile
-	include/QF/GL/Makefile
-	include/QF/plugin/Makefile
-	include/QF/classes/Makefile
 
 	libs/Makefile
 	libs/audio/Makefile

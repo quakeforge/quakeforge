@@ -1,7 +1,7 @@
 AUTOMAKE_OPTIONS = foreign
-SUBDIRS = GL plugin classes
 includedir = $(prefix)/include/QF
-include_HEADERS = bspfile.h cbuf.h cdaudio.h checksum.h clip_hull.h cmd.h \
+nobase_include_HEADERS = \
+	bspfile.h cbuf.h cdaudio.h checksum.h clip_hull.h cmd.h \
 	console.h crc.h csqc.h cvar.h dstring.h draw.h gib.h hash.h hl.h \
 	idparse.h image.h in_event.h info.h input.h joystick.h keys.h link.h \
 	llist.h locs.h mathlib.h mdfour.h model.h modelgen.h msg.h object.h pak.h \
@@ -9,4 +9,16 @@ include_HEADERS = bspfile.h cbuf.h cdaudio.h checksum.h clip_hull.h cmd.h \
 	qargs.h qdefs.h qendian.h qfplist.h qtypes.h quakefs.h quakeio.h render.h \
 	riff.h ruamoko.h screen.h sizebuf.h skin.h sound.h spritegn.h sys.h \
 	teamplay.h tga.h uint32.h va.h ver_check.h vid.h view.h wad.h wadfile.h \
-	zone.h
+	zone.h \
+	\
+	GL/ati.h GL/defines.h GL/extensions.h GL/funcs.h GL/qf_explosions.h \
+	GL/qf_funcs_list.h GL/qf_lightmap.h GL/qf_noisetextures.h \
+	GL/qf_rlight.h GL/qf_rmain.h GL/qf_rsurf.h GL/qf_screen.h GL/qf_sky.h \
+	GL/qf_textures.h GL/qf_vid.h GL/types.h \
+	\
+	classes/ArrayList.h classes/Collection.h classes/Double.h \
+	classes/Exception.h classes/Integer.h classes/Iterator.h classes/List.h \
+	classes/Number.h classes/String.h \
+	\
+	plugin/cd.h plugin/console.h plugin/general.h plugin/input.h \
+	plugin/snd_output.h plugin/snd_render.h
