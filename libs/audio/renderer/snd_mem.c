@@ -131,7 +131,8 @@ read_samples (sfxbuffer_t *buffer, int count)
 		size = samples * info->width * info->channels;
 		data = alloca (size);
 
-		stream->read (stream->file, data, size, info);
+		if (stream->read (stream->file, data, size, info) < size)
+			Sys_Printf ("%s\n", sfx->name);
 		stream->resample (buffer, data, samples);
 		buffer->head += count;
 		if (buffer->head >= buffer->length)
