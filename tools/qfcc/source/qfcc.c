@@ -569,6 +569,8 @@ separate_compile (void)
 				finish_compilation ();
 				WriteData (0);
 			}
+		} else {
+			err = 1;
 		}
 	}
 	return err;
