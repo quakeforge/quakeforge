@@ -363,7 +363,8 @@ print_expr (expr_t *e)
 			} else {
 				printf("<>");
 			}
-			printf (":%s)@", type_names [e->e.temp.type->type]);
+			printf (":%s:%d)@", type_names [e->e.temp.type->type],
+					e->e.temp.users);
 			break;
 		case ex_string:
 			printf ("\"%s\"", e->e.string_val);
@@ -1082,6 +1083,8 @@ function_expr (expr_t *e1, expr_t *e2)
 	call = new_block_expr ();
 	for (e = e2, i = 0; e; e = e->next, i++) {
 		*a = new_temp_def_expr (arg_types[i]);
+		if (i)	// compensate for new_binary_expr and the first arg
+			inc_users(*a);
 		append_expr (call, binary_expr ('=', *a, e));
 		a = &(*a)->next;
 	}
