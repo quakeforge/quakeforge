@@ -74,7 +74,7 @@ get_type (expr_t *e)
 	switch (e->type) {
 		case ex_label:
 		case ex_block:
-			return ev_void;
+			return ev_type_count;
 		case ex_expr:
 		case ex_uexpr:
 			return e->e.expr.type->type;
@@ -91,7 +91,7 @@ get_type (expr_t *e)
 		case ex_integer:
 			return qc_types[e->type];
 	}
-	return ev_void;
+	return ev_type_count;
 }
 
 expr_t *
@@ -629,9 +629,11 @@ test_expr (expr_t *e, int test)
 
 	switch (get_type (e)) {
 		case ev_type_count:
-		case ev_void:
 			error (e, "internal error");
 			abort ();
+		case ev_void:
+			error (e, "void has no value");
+			break;
 		case ev_string:
 			new = new_expr ();
 			new->type = ex_string;
@@ -694,7 +696,7 @@ binary_expr (int op, expr_t *e1, expr_t *e2)
 
 	t1 = get_type (e1);
 	t2 = get_type (e2);
-	if (t1 == ev_void || t2 == ev_void) {
+	if (t1 == ev_type_count || t2 == ev_type_count) {
 		error (e1, "internal error");
 		abort ();
 	}
