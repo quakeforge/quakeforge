@@ -107,6 +107,7 @@ extern struct cvar_s	*fs_pluginpath;
 */
 plugin_t *PI_LoadPlugin (const char *, const char *);
 qboolean PI_UnloadPlugin (plugin_t *);
+void PI_RegisterPlugins (plugin_list_t *);
 void PI_Init (void);
 void PI_Shutdown (void);
 

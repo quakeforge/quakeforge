@@ -84,6 +84,8 @@ S_Init (void)
 		return;
 	}
 
+	PI_RegisterPlugins (snd_output_list);
+	PI_RegisterPlugins (snd_render_list);
 	snd_output_module = PI_LoadPlugin ("snd_output", snd_output->string);
 	if (!snd_output_module) {
 		Sys_Printf ("Loading of sound output module: %s failed!\n",

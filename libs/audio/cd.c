@@ -93,6 +93,7 @@ CD_f (void)
 int
 CDAudio_Init (void)
 {
+	PI_RegisterPlugins (cd_plugin_list);
 	cd_plugin = Cvar_Get ("cd_plugin", "null", CVAR_ARCHIVE, NULL,
 						  "CD Plugin to use");
 	cdmodule = PI_LoadPlugin ("cd", cd_plugin->string);
