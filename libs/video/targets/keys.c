@@ -430,7 +430,7 @@ Key_Game (knum_t key, short unicode)
 	char        cmd[1024];
 
 	kb = Key_GetBinding(game_target, key);
-	if (!kb && game_target > KGT_DEFAULT)
+	if (!kb && (game_target > KGT_DEFAULT))
 		kb = Key_GetBinding(KGT_DEFAULT, key);
 
 	/*
@@ -605,7 +605,7 @@ Key_Message (knum_t key, short unicode)
 	if (keydown[key] != 1)
 		return;
 
-	if (unicode == '\n') {
+	if (unicode == '\x0D' || key == K_RETURN) {
 		if (chat_team)
 			Cbuf_AddText ("say_team \"");
 		else
@@ -628,7 +628,7 @@ Key_Message (knum_t key, short unicode)
 		return;
 	}
 
-	if (unicode == '\b') {
+	if (unicode == '\x08') {
 		if (chat_bufferlen) {
 			chat_bufferlen--;
 			chat_buffer[chat_bufferlen] = 0;
@@ -772,7 +772,7 @@ Key_Unbind_f (void)
 		return;
 	}
 
-	Key_SetBinding (t, b, "");
+	Key_SetBinding (t, b, NULL);
 }
 
 void
@@ -1013,7 +1013,7 @@ Key_ClearTyping (void)
 char *
 Key_GetBinding (kgt_t kgt, knum_t key)
 {
-	return keybindings[game_target][key];
+	return keybindings[kgt][key];
 }
 
 void
