@@ -303,10 +303,10 @@ rm -rf $RPM_BUILD_ROOT
 %attr(-,root,root) %{_prefix}/lib/libQFsound.so.*
 %attr(-,root,root) %{_prefix}/lib/libQFutil.so.*
 %attr(-,root,root) %{fs_sharepath}/QF/menu.dat*
-%attr(-,root,root) %{fs_sharepath}/QFplugins/cd_linux.so*
-%attr(-,root,root) %{fs_sharepath}/QFplugins/console_client.so*
-%attr(-,root,root) %{fs_sharepath}/QFplugins/snd_output_disk.so*
-%attr(-,root,root) %{fs_sharepath}/QFplugins/snd_render_default.so*
+%attr(-,root,root) %{fs_sharepath}/QF/plugins/cd_linux.so*
+%attr(-,root,root) %{fs_sharepath}/QF/plugins/console_client.so*
+%attr(-,root,root) %{fs_sharepath}/QF/plugins/snd_output_disk.so*
+%attr(-,root,root) %{fs_sharepath}/QF/plugins/snd_render_default.so*
 
 %files devel
 %attr(-,root,root)	%{_prefix}/lib/libQFcd.*a
@@ -362,7 +362,7 @@ rm -rf $RPM_BUILD_ROOT
 %attr(-,root,root)	%{_prefix}/bin/qw-server
 %attr(-,root,root)	%{_prefix}/bin/nq-server
 %attr(-,root,root)	%{_prefix}/bin/qw-master
-%attr(-,root,root)	%{fs_sharepath}/QFplugins/console_server.so*
+%attr(-,root,root)	%{fs_sharepath}/QF/plugins/console_server.so*
 
 %if "%{HAVE_X11}"=="'yes'"
 %files glx
@@ -394,12 +394,12 @@ rm -rf $RPM_BUILD_ROOT
 
 %if "%{HAVE_ALSA}"=="'yes'"
 %files alsa
-%attr(-,root,root)	%{fs_sharepath}/QFplugins/snd_output_alsa0_9.so*
+%attr(-,root,root)	%{fs_sharepath}/QF/plugins/snd_output_alsa0_9.so*
 %endif
 
 %if "%{HAVE_OSS}"=="'yes'"
 %files oss
-%attr(-,root,root)	%{fs_sharepath}/QFplugins/snd_output_oss.so*
+%attr(-,root,root)	%{fs_sharepath}/QF/plugins/snd_output_oss.so*
 %endif
 
 %files -n qfcc
