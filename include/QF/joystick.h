@@ -36,7 +36,6 @@
 
 extern struct cvar_s	*joy_device;		// Joystick device name
 extern struct cvar_s	*joy_enable;		// Joystick enabling flag
-extern struct cvar_s	*joy_sensitivity;	// Joystick sensitivity
 
 extern qboolean 	joy_found;			// Joystick present?
 extern qboolean 	joy_active; 		// Joystick in use?
