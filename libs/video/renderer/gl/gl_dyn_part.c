@@ -254,8 +254,9 @@ R_BloodPuff (vec3_t org, int count)
 	if (numparticles >= r_maxparticles)
 		return;
 
-	particle_new (pt_bloodcloud, part_tex_smoke, org, 9,
-				  vec3_origin, r_realtime + 99, 70 + (rand () & 3), 128);
+	particle_new (pt_bloodcloud, part_tex_smoke, org, count / 4,
+				  vec3_origin, r_realtime + 99, 70 + (rand () & 3), 128 +
+				  ((count / 20) % 128));
 }
 
 void
@@ -270,7 +271,7 @@ R_RunPuffEffect (vec3_t org, particle_effect_t type, byte count)
 		{
 			int scale = 16;
 
-			if (count > 6)
+			if (count > 120)
 				scale = 24;
 			R_RunSparkEffect (org, count / 2, scale);
 		}
@@ -279,7 +280,7 @@ R_RunPuffEffect (vec3_t org, particle_effect_t type, byte count)
 			R_BloodPuff (org, count);
 			break;
 		case PE_LIGHTNINGBLOOD:
-			R_BloodPuff (org, 5 + (rand () & 1));
+			R_BloodPuff (org, 50);
 			count = 4 + (rand () % 5);
 
 			if (numparticles >= r_maxparticles)
@@ -303,24 +304,17 @@ R_RunPuffEffect (vec3_t org, particle_effect_t type, byte count)
 void
 R_RunParticleEffect (vec3_t org, vec3_t dir, int color, int count)
 {
-	int         scale, i, j;
+	int         i, j;
 
 	if (numparticles >= r_maxparticles)
 		return;
-
-	if (count > 130)
-		scale = 3;
-	else if (count > 20)
-		scale = 2;
-	else
-		scale = 1;
 
 	if (numparticles + count >= r_maxparticles)
 		count = r_maxparticles - numparticles;
 
 	for (i = 0; i < count; i++) {
 		for (j = 0; j < 3; j++) {
-			org[j] += scale * ((rand () & 15) - 8);
+			org[j] += ((rand () & 15) - 8);
 		}
 		particle_new (pt_slowgrav, part_tex_dot, org, 1.5, dir,
 					  (r_realtime + 0.1 * (rand () % 5)),

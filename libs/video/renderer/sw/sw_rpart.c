@@ -269,17 +269,9 @@ R_RunParticleEffect (vec3_t org, vec3_t dir, int color, int count)
 {
 	int         i, j;
 	particle_t *p;
-	int         scale;
 
 	if (!r_particles->int_val)
 		return;
-
-	if (count > 130)
-		scale = 3;
-	else if (count > 20)
-		scale = 2;
-	else
-		scale = 1;
 
 	for (i = 0; i < count; i++) {
 		if (!free_particles)
@@ -293,7 +285,7 @@ R_RunParticleEffect (vec3_t org, vec3_t dir, int color, int count)
 		p->color = (color & ~7) + (rand () & 7);
 		p->type = pt_grav;
 		for (j = 0; j < 3; j++) {
-			p->org[j] = org[j] + scale * ((rand () & 15) - 8);
+			p->org[j] = org[j] + ((rand () & 15) - 8);
 			p->vel[j] = dir[j];	// + (rand()%300)-150;
 		}
 	}
