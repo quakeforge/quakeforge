@@ -468,10 +468,6 @@ method_check_params (method_t *method, expr_t *args)
 		if (!t)
 			return e;
  
-		if (mtype->parm_types[i] == &type_float && e->type == ex_integer) {
-			convert_int (e);
-			t = &type_float;
-		}
 		if (i < parm_count) {
 			if (e->type != ex_nil)
 				if (!type_assignable (mtype->parm_types[i], t)) {
