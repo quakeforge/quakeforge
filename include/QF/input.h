@@ -36,6 +36,8 @@ struct {
 
 #define freelook (in_mlook.state & 1 || in_freelook->int_val)
 
+
+void IN_UpdateGrab (cvar_t *);
 void IN_Init (void);
 void IN_Init_Cvars (void);
 

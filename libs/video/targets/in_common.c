@@ -75,10 +75,13 @@ static float in_old_mouse_x, in_old_mouse_y;
 
 static int  input_grabbed;
 
-static void
-in_grab_f (cvar_t *var)
+extern
+cvar_t     *vid_fullscreen;
+
+void // called from context_x11.c
+IN_UpdateGrab (cvar_t *var)
 {
-	if (var->int_val) {
+	if (var->int_val || (vid_fullscreen && vid_fullscreen->int_val)) {
 		if (!input_grabbed) {
 			IN_LL_Grab_Input ();
 			input_grabbed = 1;
@@ -167,7 +170,7 @@ IN_Init_Cvars (void)
 {
 	IE_Init_Cvars ();
 	JOY_Init_Cvars ();
-	in_grab = Cvar_Get ("in_grab", "0", CVAR_ARCHIVE, in_grab_f,
+	in_grab = Cvar_Get ("in_grab", "0", CVAR_ARCHIVE, IN_UpdateGrab,
 			"With this set to 1, quake will grab the mouse from X");
 	in_amp = Cvar_Get ("in_amp", "1", CVAR_ARCHIVE, NULL,
 					   "global in_amp multiplier");

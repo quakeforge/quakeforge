@@ -49,6 +49,7 @@
 #include <stdlib.h>
 #include <X11/Xlib.h>
 #include <X11/keysym.h>
+#include <X11/Xutil.h>
 
 #ifdef HAVE_DGA
 # include <X11/extensions/XShm.h>
@@ -478,11 +479,9 @@ IN_LL_Grab_Input (void)
 {
 	if (!x_disp || !x_win)
 		return;
-	XGrabPointer (x_disp, x_win, True, MOUSE_MASK, GrabModeAsync,
-				  GrabModeAsync, x_win, None, CurrentTime);
+	X11_Grabber(true);
 	if (in_dga->int_val)
 		dga_on ();
-	X11_GrabKeyboard ();
 }
 
 void
@@ -492,8 +491,7 @@ IN_LL_Ungrab_Input (void)
 		return;
 	if (in_dga->int_val)
 		dga_off ();
-	XUngrabPointer (x_disp, CurrentTime);
-	X11_UngrabKeyboard ();
+	X11_Grabber(false);
 }
 
 void
@@ -547,11 +545,11 @@ IN_LL_Init (void)
 
 	if (!COM_CheckParm ("-nomouse")) {
 		dga_avail = VID_CheckDGA (x_disp, NULL, NULL, NULL);
-		if (vid_fullscreen->int_val) {
-			Cvar_Set (in_grab, "1");
-			in_grab->flags |= CVAR_ROM;
-			IN_LL_Grab_Input ();
-		}
+				//if (vid_fullscreen->int_val) {
+				//Cvar_Set (in_grab, "1");
+				//in_grab->flags |= CVAR_ROM;
+				//IN_LL_Grab_Input ();
+				//}
 
 		X11_AddEvent (ButtonPress, &event_button);
 		X11_AddEvent (ButtonRelease, &event_button);
