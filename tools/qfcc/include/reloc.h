@@ -61,6 +61,8 @@ typedef struct reloc_s {
 } reloc_t;
 
 struct statement_s;
+struct def_s;
+struct function_s;
 
 reloc_t *new_reloc (int ofs, reloc_type type);
 void relocate_refs (reloc_t *refs, int ofs);
