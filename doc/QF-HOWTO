@@ -119,9 +119,13 @@ public location (eg. /usr/local/) )
 
 3.3 Quake1 datafiles
 --------------------
-You will need DOS or a DOS-emulator and install Quake1 to harddisk before,
-because the files are packed on the CD and will need to be extracted.
-Then you should mount the partition with the installed Quake1.  
+The Quake1 datafiles are packed into an lha archive on the CD, which you
+will need to extract for use with Quakeforge.  If you have the lha file
+extractor, you can use it to extract the Quake1 datafiles directly from
+the CD's resource archive:
+  $ lha e resource.1
+Alternately, you can use DOS or a DOS-emulator to install Quake1 to your
+harddisk normally, and then mount the partition with the installed Quake1.
 Now there are two locations to install the quake1-gamedata to:
 
 Public/Shared location:
