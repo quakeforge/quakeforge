@@ -34,8 +34,8 @@
 
 #include "QF/sys.h"
 
-#include "host.h"
 #include "compat.h"
+#include "host.h"
 
 
 qboolean
@@ -47,8 +47,8 @@ ServerPaused (void)
 void
 SV_Error (char *error, ...)
 {
-	va_list     argptr;
-	static char string[1024];
+	static char	string[1024];
+	va_list		argptr;
 
 	va_start (argptr, error);
 	vsnprintf (string, sizeof (string), error, argptr);

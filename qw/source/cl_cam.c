@@ -53,9 +53,9 @@
 #include "pmove.h"
 #include "sbar.h"
 
-#define	PM_SPECTATORMAXSPEED	500
-#define	PM_STOPSPEED	100
-#define	PM_MAXSPEED			320
+#define	PM_SPECTATORMAXSPEED 500
+#define	PM_STOPSPEED 100
+#define	PM_MAXSPEED 320
 #define BUTTON_JUMP 2
 #define BUTTON_ATTACK 1
 #define MAX_ANGLE_TURN 10
@@ -83,7 +83,7 @@ int         autocam = CAM_NONE;
 static void
 vectoangles (vec3_t vec, vec3_t ang)
 {
-	float       forward, pitch, yaw;
+	float		forward, pitch, yaw;
 
 	if (vec[1] == 0 && vec[0] == 0) {
 		yaw = 0;
@@ -92,12 +92,12 @@ vectoangles (vec3_t vec, vec3_t ang)
 		else
 			pitch = 270;
 	} else {
-		yaw = (int) (atan2 (vec[1], vec[0]) * 180 / M_PI);
+		yaw = (int) (atan2 (vec[1], vec[0]) * (180.0 / M_PI));
 		if (yaw < 0)
 			yaw += 360;
 
 		forward = sqrt (vec[0] * vec[0] + vec[1] * vec[1]);
-		pitch = (int) (atan2 (vec[2], forward) * 180 / M_PI);
+		pitch = (int) (atan2 (vec[2], forward) * (180.0 / M_PI));
 		if (pitch < 0)
 			pitch += 360;
 	}
@@ -151,7 +151,7 @@ Cam_Unlock (void)
 void
 Cam_Lock (int playernum)
 {
-	char        st[40];
+	char		st[40];
 
 	snprintf (st, sizeof (st), "ptrack %i", playernum);
 	MSG_WriteByte (&cls.netchan.message, clc_stringcmd);
@@ -187,7 +187,7 @@ Cam_TryFlyby (player_state_t * self, player_state_t * player, vec3_t vec,
 	vec3_t      v;
 
 	vectoangles (vec, v);
-//  v[0] = -v[0];
+//	v[0] = -v[0];
 	VectorCopy (v, pmove.angles);
 	VectorNormalize (vec);
 	VectorMA (player->origin, 800, vec, v);
@@ -235,8 +235,7 @@ static qboolean
 InitFlyby (player_state_t * self, player_state_t * player, int checkvis)
 {
 	float       f, max;
-	vec3_t      vec, vec2;
-	vec3_t      forward, right, up;
+	vec3_t      forward, right, up, vec, vec2;
 
 	VectorCopy (player->viewangles, vec);
 	vec[0] = 0;
@@ -324,8 +323,8 @@ InitFlyby (player_state_t * self, player_state_t * player, int checkvis)
 static void
 Cam_CheckHighTarget (void)
 {
-	int         i, j, max;
-	player_info_t *s;
+	int				i, j, max;
+	player_info_t  *s;
 
 	j = -1;
 	for (i = 0, max = -9999; i < MAX_CLIENTS; i++) {
@@ -349,10 +348,10 @@ Cam_CheckHighTarget (void)
 void
 Cam_Track (usercmd_t *cmd)
 {
-	float       len;
-	frame_t    *frame;
+	float			len;
+	frame_t		   *frame;
 	player_state_t *player, *self;
-	vec3_t      vec;
+	vec3_t			vec;
 
 	if (!cl.spectator)
 		return;
@@ -433,7 +432,7 @@ Cam_Track (usercmd_t *cmd)
 static float
 adjustang (float current, float ideal, float speed)
 {
-	float       move;
+	float		move;
 
 	current = anglemod (current);
 	ideal = anglemod (ideal);
@@ -466,9 +465,9 @@ adjustang (float current, float ideal, float speed)
 void
 Cam_SetView (void)
 {
-	frame_t    *frame;
+	frame_t		   *frame;
 	player_state_t *player, *self;
-	vec3_t      vec, vec2;
+	vec3_t			vec, vec2;
 
 	if (cls.state != ca_active || !cl.spectator || !autocam || !locked)
 		return;
@@ -501,8 +500,8 @@ Cam_SetView (void)
 void
 Cam_FinishMove (usercmd_t *cmd)
 {
-	int         end, i;
-	player_info_t *s;
+	int				end, i;
+	player_info_t  *s;
 
 	if (cls.state != ca_active)
 		return;
@@ -606,14 +605,14 @@ Cam_Reset (void)
 void
 CL_Cam_Init_Cvars (void)
 {
-	cl_hightrack = Cvar_Get ("cl_hightrack", "0", CVAR_NONE, NULL, "view the "
-							 "player who has the most frags while you are in "
-							 "spectator mode.");
-	cl_chasecam = Cvar_Get ("cl_chasecam", "0", CVAR_NONE, NULL, "get first "
-							"person view of the person you are tracking in "
-							"spectator mode");
 	cl_camera_maxpitch = Cvar_Get ("cl_camera_maxpitch", "10", CVAR_NONE, NULL,
 								   "highest camera pitch in spectator mode");
 	cl_camera_maxyaw = Cvar_Get ("cl_camera_maxyaw", "30", CVAR_NONE, NULL,
 								 "highest camera yaw in spectator mode");
+	cl_chasecam = Cvar_Get ("cl_chasecam", "0", CVAR_NONE, NULL, "get first "
+							"person view of the person you are tracking in "
+							"spectator mode");
+	cl_hightrack = Cvar_Get ("cl_hightrack", "0", CVAR_NONE, NULL, "view the "
+							 "player who has the most frags while you are in "
+							 "spectator mode.");
 }

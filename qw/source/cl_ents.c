@@ -57,9 +57,6 @@
 #include "r_dynamic.h"
 #include "view.h"
 
-extern cvar_t *cl_predict_players;
-extern cvar_t *cl_solid_players;
-
 static struct predicted_player {
 	int         flags;
 	qboolean    active;
@@ -70,11 +67,14 @@ entity_t    cl_packet_ents[512];	// FIXME: magic number
 entity_t    cl_flag_ents[MAX_CLIENTS];
 entity_t    cl_player_ents[MAX_CLIENTS];
 
+extern cvar_t *cl_predict_players;
+extern cvar_t *cl_solid_players;
+
 
 void
 CL_ClearEnts ()
 {
-	int i;
+	int		i;
 
 	for (i = 0; i < sizeof (cl_packet_ents) / sizeof (cl_packet_ents[0]); i++)
 		CL_Init_Entity (&cl_packet_ents[i]);
@@ -87,7 +87,7 @@ CL_ClearEnts ()
 void
 CL_NewDlight (int key, vec3_t org, int effects)
 {
-	float       radius;
+	float		radius;
 	dlight_t   *dl;
 	static vec3_t normal = {0.4, 0.2, 0.05};
 	static vec3_t red = {0.5, 0.05, 0.05};
@@ -134,7 +134,7 @@ int         bitcounts[32];				// / just for protocol profiling
 void
 CL_ParseDelta (entity_state_t *from, entity_state_t *to, int bits)
 {
-	int         i;
+	int		i;
 
 	// set everything to the state we are delta'ing from
 	*to = *from;
@@ -234,8 +234,8 @@ CL_ParseDelta (entity_state_t *from, entity_state_t *to, int bits)
 void
 FlushEntityPacket (void)
 {
-	entity_state_t olde, newe;
-	int         word;
+	entity_state_t	olde, newe;
+	int				word;
 
 	Con_DPrintf ("FlushEntityPacket\n");
 
@@ -268,10 +268,10 @@ FlushEntityPacket (void)
 void
 CL_ParsePacketEntities (qboolean delta)
 {
-	byte        from;
-	int         oldindex, newindex, newnum, oldnum, oldpacket, newpacket, word;
+	byte		from;
+	int			oldindex, newindex, newnum, oldnum, oldpacket, newpacket, word;
 	packet_entities_t *oldp, *newp, dummy;
-	qboolean    full;
+	qboolean	full;
 
 	newpacket = cls.netchan.incoming_sequence & UPDATE_MASK;
 	newp = &cl.frames[newpacket].packet_entities;
@@ -394,14 +394,15 @@ CL_ParsePacketEntities (qboolean delta)
 void
 CL_LinkPacketEntities (void)
 {
-	dlight_t   *dl;
-	entity_t  **ent;
+	int				pnum, i;
+	dlight_t	   *dl;
+	entity_t	  **ent;
 	entity_state_t *s1;
-	int         pnum, i;
+	model_t		   *model;
+	packet_entities_t *pack;
+
 	extern int  cl_h_playerindex, cl_gib1index, cl_gib2index, cl_gib3index;
 	extern int  cl_playerindex;
-	model_t    *model;
-	packet_entities_t *pack;
 
 	pack = &cl.frames[cls.netchan.incoming_sequence &
 					  UPDATE_MASK].packet_entities;
@@ -566,8 +567,8 @@ CL_ClearProjectiles (void)
 void
 CL_ParseProjectiles (void)
 {
-	int         i, c, j;
-	byte        bits[6];
+	byte		bits[6];
+	int			i, c, j;
 	projectile_t *pr;
 
 	c = MSG_ReadByte (net_message);
@@ -593,8 +594,8 @@ CL_ParseProjectiles (void)
 void
 CL_LinkProjectiles (void)
 {
+	int			i;
 	entity_t  **ent;
-	int         i;
 	projectile_t *pr;
 
 	for (i = 0, pr = cl_projectiles; i < cl_num_projectiles; i++, pr++) {
@@ -628,7 +629,7 @@ extern int    cl_spikeindex, cl_playerindex, cl_flagindex, parsecountmod;
 void
 CL_ParsePlayerinfo (void)
 {
-	int         flags, msec, num, i;
+	int				flags, msec, num, i;
 	player_state_t *state;
 
 	num = MSG_ReadByte (net_message);
@@ -697,10 +698,10 @@ CL_ParsePlayerinfo (void)
 void
 CL_AddFlagModels (entity_t *ent, int team)
 {
+	float		f;
+	int			i;
 	entity_t  **newent;
-	float       f;
-	int         i;
-	vec3_t      v_forward, v_right, v_up;
+	vec3_t		v_forward, v_right, v_up;
 
 	if (cl_flagindex == -1)
 		return;
@@ -772,14 +773,14 @@ CL_AddFlagModels (entity_t *ent, int team)
 void
 CL_LinkPlayers (void)
 {
-	double          playertime;
-	entity_t      **ent;
-	frame_t        *frame;
-	int             msec, oldphysent, i, j;
+	double			playertime;
+	int				msec, oldphysent, i, j;
+	entity_t	  **ent;
+	frame_t		   *frame;
 	player_info_t  *info;
-	player_state_t  exact;
+	player_state_t	exact;
 	player_state_t *state;
-	vec3_t          org;
+	vec3_t			org;
 
 	playertime = realtime - cls.latency + 0.02;
 	if (playertime > realtime)
@@ -891,10 +892,10 @@ CL_LinkPlayers (void)
 void
 CL_SetSolidEntities (void)
 {
-	entity_state_t *state;
-	frame_t    *frame;
-	int         i;
-	packet_entities_t *pak;
+	int					i;
+	entity_state_t	   *state;
+	frame_t			   *frame;
+	packet_entities_t  *pak;
 
 	pmove.physents[0].model = cl.worldmodel;
 	VectorCopy (vec3_origin, pmove.physents[0].origin);
@@ -934,10 +935,10 @@ CL_SetSolidEntities (void)
 void
 CL_SetUpPlayerPrediction (qboolean dopred)
 {
-	double          playertime;
-	frame_t    *frame;
-	int             msec, j;
-	player_state_t  exact;
+	double			playertime;
+	frame_t		   *frame;
+	int				msec, j;
+	player_state_t	exact;
 	player_state_t *state;
 	struct predicted_player *pplayer;
 
@@ -997,8 +998,8 @@ CL_SetUpPlayerPrediction (qboolean dopred)
 void
 CL_SetSolidPlayers (int playernum)
 {
-	int           j;
-	physent_t    *pent;
+	int			j;
+	physent_t  *pent;
 	struct predicted_player *pplayer;
 
 	extern vec3_t player_maxs, player_mins;

@@ -89,7 +89,7 @@ CL_PredictUsercmd (player_state_t * from, player_state_t * to, usercmd_t *u,
 
 	PlayerMove ();
 //	for (i=0 ; i<3 ; i++)
-//	pmove.origin[i] = ((int)(pmove.origin[i]*8))*0.125;
+//		pmove.origin[i] = ((int)(pmove.origin[i] * 8)) * 0.125;
 	to->waterjumptime = pmove.waterjumptime;
 	to->oldbuttons = pmove.oldbuttons;	// Tonik
 //	to->oldbuttons = pmove.cmd.buttons;
@@ -104,8 +104,8 @@ void
 CL_PredictMove (void)
 {
 	float       f;
-	frame_t    *from, *to = NULL;
 	int         oldphysent, i;
+	frame_t    *from, *to = NULL;
 
 	if (cl_pushlatency->value > 0)
 		Cvar_Set (cl_pushlatency, "0");
@@ -215,10 +215,10 @@ CL_PredictMove (void)
 void
 CL_Prediction_Init_Cvars (void)
 {
-	cl_pushlatency = Cvar_Get ("pushlatency", "-999", CVAR_NONE, NULL,
-							   "How much prediction should the client make");
 	cl_nopred = Cvar_Get ("cl_nopred", "0", CVAR_NONE, NULL,
 						  "Set to turn off client prediction");
 	cl_nostatpred = Cvar_Get ("cl_nostatpred", "0", CVAR_NONE, NULL,
 							  "Set to turn off static player prediction");
+	cl_pushlatency = Cvar_Get ("pushlatency", "-999", CVAR_NONE, NULL,
+							   "How much prediction should the client make");
 }

@@ -100,8 +100,8 @@ extern cvar_t *vid_gamma;
 float
 V_CalcRoll (vec3_t angles, vec3_t velocity)
 {
-	float       side, sign, value;
-	vec3_t      forward, right, up;
+	float		side, sign, value;
+	vec3_t		forward, right, up;
 
 	AngleVectors (angles, forward, right, up);
 	side = DotProduct (velocity, right);
@@ -121,9 +121,9 @@ V_CalcRoll (vec3_t angles, vec3_t velocity)
 float
 V_CalcBob (void)
 {
-	static double bobtime;
-	float         cycle;
-	static float  bob;
+	static double	bobtime;
+	float			cycle;
+	static float	bob;
 
 	if (cl.spectator)
 		return 0;
@@ -191,7 +191,7 @@ V_StopPitchDrift (void)
 void
 V_DriftPitch (void)
 {
-	float       delta, move;
+	float		delta, move;
 
 	if (view_message->onground == -1 || cls.demoplayback) {
 		cl.driftmove = 0;
@@ -246,9 +246,9 @@ V_DriftPitch (void)
 void
 V_ParseDamage (void)
 {
-	float       count, side;
-	int         armor, blood, i;
-	vec3_t      forward, from, right, up;
+	float		count, side;
+	int			armor, blood, i;
+	vec3_t		forward, from, right, up;
 
 	armor = MSG_ReadByte (net_message);
 	blood = MSG_ReadByte (net_message);
@@ -408,12 +408,12 @@ V_CalcPowerupCshift (void)
 void
 V_CalcBlend (void)
 {
-	float       a2, a3;
-	float       r = 0, g = 0, b = 0, a = 0;
-	int         i;
+	float		a2, a3;
+	float		r = 0, g = 0, b = 0, a = 0;
+	int			i;
 
 	for (i = 0; i < NUM_CSHIFTS; i++) {
-		a2 = cl.cshifts[i].percent / 255.0;
+		a2 = cl.cshifts[i].percent * (1.0 / 255.0);
 
 		if (!a2)
 			continue;
@@ -435,16 +435,16 @@ V_CalcBlend (void)
 		b *= a2;
 	}
 
-	v_blend[0] = min (r, 255.0) / 255.0;
-	v_blend[1] = min (g, 255.0) / 255.0;
-	v_blend[2] = min (b, 255.0) / 255.0;
+	v_blend[0] = min (r, 255.0) * (1.0 / 255.0);
+	v_blend[1] = min (g, 255.0) * (1.0 / 255.0);
+	v_blend[2] = min (b, 255.0) * (1.0 / 255.0);
 	v_blend[3] = bound (0.0, a, 1.0);
 }
 
 void
 V_PrepBlend (void)
 { 
-	int         i, j;
+	int		i, j;
 
 	if (cl_cshift_powerup->int_val
 		|| (atoi (Info_ValueForKey (cl.serverinfo, "cshifts"))
@@ -583,7 +583,7 @@ V_AddIdle (void)
 void
 V_CalcViewRoll (void)
 {
-	float       side;
+	float		side;
 
 	side = V_CalcRoll (cl.simangles, cl.simvel);
 	r_refdef.viewangles[ROLL] += side;
@@ -646,9 +646,9 @@ V_CalcRefdef (void)
 	// never let it sit exactly on a node line, because a water plane can
 	// disappear when viewed with the eye exactly on it.
 	// server protocol only specifies to 1/8 pixel, so add 1/16 in each axis
-	r_refdef.vieworg[0] += 1.0 / 16;
-	r_refdef.vieworg[1] += 1.0 / 16;
-	r_refdef.vieworg[2] += 1.0 / 16;
+	r_refdef.vieworg[0] += (1.0 / 16.0);
+	r_refdef.vieworg[1] += (1.0 / 16.0);
+	r_refdef.vieworg[2] += (1.0 / 16.0);
 
 	VectorCopy (cl.simangles, r_refdef.viewangles);
 	V_CalcViewRoll ();
@@ -766,15 +766,15 @@ V_RenderView (void)
 void
 V_Init (void)
 {
-	Cmd_AddCommand ("v_cshift", V_cshift_f, "This adjusts all of the colors "
-					"currently being displayed.\n"
-					"Used when you are underwater, hit, have the Ring of "
-					"Shadows, or Quad Damage. (v_cshift r g b intensity)");
 	Cmd_AddCommand ("bf", V_BonusFlash_f, "Background flash, used when you "
 					"pick up an item");
 	Cmd_AddCommand ("centerview", V_StartPitchDrift, "Centers the player's "
 					"view ahead after +lookup or +lookdown \n"
 					"Will not work while mlook is active or freelook is 1.");
+	Cmd_AddCommand ("v_cshift", V_cshift_f, "This adjusts all of the colors "
+					"currently being displayed.\n"
+					"Used when you are underwater, hit, have the Ring of "
+					"Shadows, or Quad Damage. (v_cshift r g b intensity)");
 }
 
 void

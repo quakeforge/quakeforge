@@ -111,10 +111,10 @@ CL_StopPlayback (void)
 void
 CL_WriteDemoCmd (usercmd_t *pcmd)
 {
-	byte        c;
-	float       fl;
-	int         i;
-	usercmd_t   cmd;
+	byte		c;
+	float		fl;
+	int			i;
+	usercmd_t	cmd;
 
 //	Con_Printf("write: %ld bytes, %4.4f\n", msg->cursize, realtime);
 
@@ -151,9 +151,9 @@ CL_WriteDemoCmd (usercmd_t *pcmd)
 void
 CL_WriteDemoMessage (sizebuf_t *msg)
 {
-	byte        c;
-	float       fl;
-	int         len;
+	byte		c;
+	float		fl;
+	int			len;
 
 //	Con_Printf("write: %ld bytes, %4.4f\n", msg->cursize, realtime);
 
@@ -176,10 +176,10 @@ CL_WriteDemoMessage (sizebuf_t *msg)
 qboolean
 CL_GetDemoMessage (void)
 {
-	byte        c;
-	float       demotime, f;
+	byte		c;
+	float		demotime, f;
 	static float cached_demotime;
-	int         r, i, j;
+	int			r, i, j;
 	usercmd_t  *pcmd;
 
 	// read the time from the packet
@@ -259,7 +259,8 @@ CL_GetDemoMessage (void)
 		case dem_read:
 			// get the next message
 			Qread (cls.demofile, &net_message->message->cursize, 4);
-			net_message->message->cursize = LittleLong (net_message->message->cursize);
+			net_message->message->cursize = LittleLong
+				(net_message->message->cursize);
 //			Con_Printf("read: %ld bytes\n", net_message->message->cursize);
 			if (net_message->message->cursize > MAX_MSGLEN)
 //				Sys_Error ("Demo message > MAX_MSGLEN");
@@ -341,9 +342,9 @@ CL_Stop_f (void)
 void
 CL_WriteRecordDemoMessage (sizebuf_t *msg, int seq)
 {
-	byte        c;
-	float       fl;
-	int         len, i;
+	byte		c;
+	float		fl;
+	int			len, i;
 
 //	Con_Printf("write: %ld bytes, %4.4f\n", msg->cursize, realtime);
 
@@ -371,9 +372,9 @@ CL_WriteRecordDemoMessage (sizebuf_t *msg, int seq)
 void
 CL_WriteSetDemoMessage (void)
 {
-	byte        c;
-	float       fl;
-	int         len;
+	byte		c;
+	float		fl;
+	int			len;
 
 //	Con_Printf("write: %ld bytes, %4.4f\n", msg->cursize, realtime);
 
@@ -402,14 +403,14 @@ CL_WriteSetDemoMessage (void)
 void
 CL_Record_f (void)
 {
-	char        buf_data[MAX_MSGLEN], name[MAX_OSPATH];
-	char       *s;
-	int         c, n, i, j;
-	int         seq = 1;
+	char		buf_data[MAX_MSGLEN], name[MAX_OSPATH];
+	char	   *s;
+	int			c, n, i, j;
+	int			seq = 1;
 	entity_t   *ent;
 	entity_state_t *es, blankes;
 	player_info_t *player;
-	sizebuf_t   buf;
+	sizebuf_t	buf;
 
 	extern char gamedirfile[];
 
@@ -683,8 +684,8 @@ CL_Record_f (void)
 void
 CL_ReRecord_f (void)
 {
-	char        name[MAX_OSPATH];
-	int         c;
+	char		name[MAX_OSPATH];
+	int			c;
 
 	c = Cmd_Argc ();
 	if (c != 2) {
@@ -726,7 +727,7 @@ CL_ReRecord_f (void)
 void
 CL_PlayDemo_f (void)
 {
-	char        name[MAX_OSPATH];
+	char		name[MAX_OSPATH];
 
 	if (Cmd_Argc () != 2) {
 		Con_Printf ("play <demoname> : plays a demo\n");
@@ -758,8 +759,8 @@ CL_PlayDemo_f (void)
 void
 CL_FinishTimeDemo (void)
 {
-	float       time;
-	int         frames;
+	float		time;
+	int			frames;
 
 	cls.timedemo = false;
 
@@ -841,11 +842,11 @@ CL_TimeFrames_AddTimestamp (void)
 
 void CL_TimeFrames_DumpLog (void)
 {
-	char e_path[MAX_OSPATH];
-	char *filename = "timeframes.txt";
-	long frame;
-	int i;
-	VFile *outputfile;
+	char		e_path[MAX_OSPATH];
+	char	   *filename = "timeframes.txt";
+	int			i;
+	long		frame;
+	VFile	   *outputfile;
 
 	if (cl_timeframes_isactive == 0)
 		return;
