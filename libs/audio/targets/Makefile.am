@@ -1,6 +1,8 @@
 INCLUDES= -I$(top_srcdir)/include $(ALSA_CFLAGS) $(MME_CFLAGS) $(OSS_CFLAGS) $(SGISND_CFLAGS) $(SUNSND_CFLAGS) $(WIN32SND_CFLAGS) $(SDL_CFLAGS)
 
-pkglib_LTLIBRARIES = @SND_PLUGIN_TARGETS@ libsound_null.la libsound_disk.la
+libdir = @PLUGINDIR@
+
+lib_LTLIBRARIES = @SND_PLUGIN_TARGETS@ libsound_null.la libsound_disk.la
 EXTRA_LTLIBRARIES = libsound_sdl.la libsound_alsa0_5.la libsound_alsa0_9.la libsound_oss.la libsound_sgi.la libsound_sun.la libsound_win.la
 
 common_sound_files= snd_dma.c snd_mem.c snd_mix.c snd_mixa.S

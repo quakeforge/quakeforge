@@ -1141,12 +1141,18 @@ pluginpath=$withval, pluginpath="auto")
 eval foo="$libdir"
 default_pluginpath="$foo/$PACKAGE"
 if test "x$pluginpath" = "xauto" -o "x$pluginpath" = "xyes" -o "x$pluginpath" = "x"; then
-	pluginpath="$default_pluginpath"
+	PLUGINDIR='${exec_prefix}/lib'/$PACKAGE
+	eval pluginpath="$PLUGINDIR"
 elif test "x$pluginpath" = xno; then
+	PLUGINDIR='${exec_prefix}/lib'/$PACKAGE
 	pluginpath="."
+else
+	PLUGINDIR=$pluginpath
+	eval pluginpath="$PLUGINDIR"
 fi
 AC_DEFINE_UNQUOTED(FS_PLUGINPATH, "$pluginpath")
 AC_SUBST(pluginpath)
+AC_SUBST(PLUGINDIR)
 
 dnl CFLAGS for release and devel versions
 CFLAGS=""
