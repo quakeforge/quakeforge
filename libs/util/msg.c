@@ -168,20 +168,20 @@ MSG_WriteAngle16 (sizebuf_t *sb, float angle16)
 // reading functions ==========================================================
 
 void
-MSG_BeginReading (msg_t *msg)
+MSG_BeginReading (qmsg_t *msg)
 {
 	msg->readcount = 0;
 	msg->badread = false;
 }
 
 int
-MSG_GetReadCount (msg_t *msg)
+MSG_GetReadCount (qmsg_t *msg)
 {
 	return msg->readcount;
 }
 
 int
-MSG_ReadByte (msg_t *msg)
+MSG_ReadByte (qmsg_t *msg)
 {
 	if (msg->readcount + 1 <= msg->message->cursize)
 		return (unsigned char) msg->message->data[msg->readcount++];
@@ -191,7 +191,7 @@ MSG_ReadByte (msg_t *msg)
 }
 
 int
-MSG_ReadShort (msg_t *msg)
+MSG_ReadShort (qmsg_t *msg)
 {
 	int         c;
 
@@ -207,7 +207,7 @@ MSG_ReadShort (msg_t *msg)
 }
 
 int
-MSG_ReadLong (msg_t *msg)
+MSG_ReadLong (qmsg_t *msg)
 {
 	int         c;
 
@@ -225,7 +225,7 @@ MSG_ReadLong (msg_t *msg)
 }
 
 float
-MSG_ReadFloat (msg_t *msg)
+MSG_ReadFloat (qmsg_t *msg)
 {
 	union {
 		byte        b[4];
@@ -251,7 +251,7 @@ MSG_ReadFloat (msg_t *msg)
 }
 
 const char *
-MSG_ReadString (msg_t *msg)
+MSG_ReadString (qmsg_t *msg)
 {
 	char   *string;
 	size_t len, maxlen;
@@ -286,13 +286,13 @@ MSG_ReadString (msg_t *msg)
 }
 
 float
-MSG_ReadCoord (msg_t *msg)
+MSG_ReadCoord (qmsg_t *msg)
 {
 	return MSG_ReadShort (msg) * (1.0 / 8.0);
 }
 
 void
-MSG_ReadCoordV (msg_t *msg, vec3_t coord)
+MSG_ReadCoordV (qmsg_t *msg, vec3_t coord)
 {
 	int		i;
 
@@ -301,7 +301,7 @@ MSG_ReadCoordV (msg_t *msg, vec3_t coord)
 }
 
 void
-MSG_ReadCoordAngleV (msg_t *msg, vec3_t coord, vec3_t angles)
+MSG_ReadCoordAngleV (qmsg_t *msg, vec3_t coord, vec3_t angles)
 {
 	int		i;
 
@@ -312,13 +312,13 @@ MSG_ReadCoordAngleV (msg_t *msg, vec3_t coord, vec3_t angles)
 }
 
 float
-MSG_ReadAngle (msg_t *msg)
+MSG_ReadAngle (qmsg_t *msg)
 {
 	return ((signed char) MSG_ReadByte (msg)) * (360.0 / 256.0);
 }
 
 void
-MSG_ReadAngleV (msg_t *msg, vec3_t angles)
+MSG_ReadAngleV (qmsg_t *msg, vec3_t angles)
 {
 	int		i;
 
@@ -327,7 +327,7 @@ MSG_ReadAngleV (msg_t *msg, vec3_t angles)
 }
 
 float
-MSG_ReadAngle16 (msg_t *msg)
+MSG_ReadAngle16 (qmsg_t *msg)
 {
 	return MSG_ReadShort (msg) * (360.0 / 65536.0);
 }

@@ -92,8 +92,8 @@ PollProcedure slistPollProcedure = { NULL, 0.0, Slist_Poll };
 
 
 static sizebuf_t _net_message_message;
-static msg_t _net_message = { 0, 0, &_net_message_message };
-msg_t      *net_message = &_net_message;
+static qmsg_t _net_message = { 0, 0, &_net_message_message };
+qmsg_t     *net_message = &_net_message;
 int         net_activeconnections = 0;
 
 int         messagesSent = 0;

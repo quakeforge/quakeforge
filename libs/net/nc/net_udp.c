@@ -101,8 +101,8 @@ netadr_t    net_local_adr;
 netadr_t    net_from;
 
 static sizebuf_t _net_message_message;
-static msg_t _net_message = {0, 0, &_net_message_message};
-msg_t      *net_message = &_net_message;
+static qmsg_t _net_message = {0, 0, &_net_message_message};
+qmsg_t     *net_message = &_net_message;
 
 #define	MAX_UDP_PACKET	(MAX_MSGLEN*2)
 byte        net_message_buffer[MAX_UDP_PACKET];

@@ -334,136 +334,136 @@ typedef struct net_svc_setpause_s
 
 const char *NET_SVC_GetString (int type);
 net_status_t NET_SVC_NOP_Emit (net_svc_nop_t *block, sizebuf_t *buf);
-net_status_t NET_SVC_NOP_Parse (net_svc_nop_t *block, msg_t *msg);
+net_status_t NET_SVC_NOP_Parse (net_svc_nop_t *block, qmsg_t *msg);
 net_status_t NET_SVC_Disconnect_Emit (net_svc_disconnect_t *block,
 									  sizebuf_t *buf);
-net_status_t NET_SVC_Disconnect_Parse (net_svc_disconnect_t *block, msg_t *msg);
+net_status_t NET_SVC_Disconnect_Parse (net_svc_disconnect_t *block, qmsg_t *msg);
 net_status_t NET_SVC_Print_Emit (net_svc_print_t *block, sizebuf_t *buf);
-net_status_t NET_SVC_Print_Parse (net_svc_print_t *block, msg_t *msg);
+net_status_t NET_SVC_Print_Parse (net_svc_print_t *block, qmsg_t *msg);
 net_status_t NET_SVC_Centerprint_Emit (net_svc_centerprint_t *block,
 									   sizebuf_t *buf);
 net_status_t NET_SVC_Centerprint_Parse (net_svc_centerprint_t *block,
-										msg_t *msg);
+										qmsg_t *msg);
 net_status_t NET_SVC_Stufftext_Emit (net_svc_stufftext_t *block,
 									 sizebuf_t *buf);
-net_status_t NET_SVC_Stufftext_Parse (net_svc_stufftext_t *block, msg_t *msg);
+net_status_t NET_SVC_Stufftext_Parse (net_svc_stufftext_t *block, qmsg_t *msg);
 net_status_t NET_SVC_Damage_Emit (net_svc_damage_t *block, sizebuf_t *buf);
-net_status_t NET_SVC_Damage_Parse (net_svc_damage_t *block, msg_t *msg);
+net_status_t NET_SVC_Damage_Parse (net_svc_damage_t *block, qmsg_t *msg);
 net_status_t NET_SVC_ServerData_Emit (net_svc_serverdata_t *block,
 									  sizebuf_t *buf);
-net_status_t NET_SVC_ServerData_Parse (net_svc_serverdata_t *block, msg_t *msg);
+net_status_t NET_SVC_ServerData_Parse (net_svc_serverdata_t *block, qmsg_t *msg);
 net_status_t NET_SVC_SetAngle_Emit (net_svc_setangle_t *block, sizebuf_t *buf);
-net_status_t NET_SVC_SetAngle_Parse (net_svc_setangle_t *block, msg_t *msg);
+net_status_t NET_SVC_SetAngle_Parse (net_svc_setangle_t *block, qmsg_t *msg);
 net_status_t NET_SVC_LightStyle_Emit (net_svc_lightstyle_t *block,
 									  sizebuf_t *buf);
-net_status_t NET_SVC_LightStyle_Parse (net_svc_lightstyle_t *block, msg_t *msg);
+net_status_t NET_SVC_LightStyle_Parse (net_svc_lightstyle_t *block, qmsg_t *msg);
 net_status_t NET_SVC_Sound_Emit (net_svc_sound_t *block, sizebuf_t *buf);
-net_status_t NET_SVC_Sound_Parse (net_svc_sound_t *block, msg_t *msg);
+net_status_t NET_SVC_Sound_Parse (net_svc_sound_t *block, qmsg_t *msg);
 net_status_t NET_SVC_StopSound_Emit (net_svc_stopsound_t *block,
 									 sizebuf_t *buf);
-net_status_t NET_SVC_StopSound_Parse (net_svc_stopsound_t *block, msg_t *msg);
+net_status_t NET_SVC_StopSound_Parse (net_svc_stopsound_t *block, qmsg_t *msg);
 net_status_t NET_SVC_UpdateFrags_Emit (net_svc_updatefrags_t *block,
 									   sizebuf_t *buf);
 net_status_t NET_SVC_UpdateFrags_Parse (net_svc_updatefrags_t *block,
-										msg_t *msg);
+										qmsg_t *msg);
 net_status_t NET_SVC_UpdatePing_Emit (net_svc_updateping_t *block,
 									  sizebuf_t *buf);
-net_status_t NET_SVC_UpdatePing_Parse (net_svc_updateping_t *block, msg_t *msg);
+net_status_t NET_SVC_UpdatePing_Parse (net_svc_updateping_t *block, qmsg_t *msg);
 net_status_t NET_SVC_UpdatePL_Emit (net_svc_updatepl_t *block, sizebuf_t *buf);
-net_status_t NET_SVC_UpdatePL_Parse (net_svc_updatepl_t *block, msg_t *msg);
+net_status_t NET_SVC_UpdatePL_Parse (net_svc_updatepl_t *block, qmsg_t *msg);
 net_status_t NET_SVC_UpdateEnterTime_Emit (net_svc_updateentertime_t *block,
 										   sizebuf_t *buf);
 net_status_t NET_SVC_UpdateEnterTime_Parse (net_svc_updateentertime_t *block,
-											msg_t *msg);
+											qmsg_t *msg);
 net_status_t NET_SVC_SpawnBaseline_Emit (net_svc_spawnbaseline_t *block,
 										 sizebuf_t *buf);
 net_status_t NET_SVC_SpawnBaseline_Parse (net_svc_spawnbaseline_t *block,
-									  msg_t *msg);
+									  qmsg_t *msg);
 net_status_t NET_SVC_SpawnStatic_Emit (net_svc_spawnstatic_t *block,
 									   sizebuf_t *buf);
 net_status_t NET_SVC_SpawnStatic_Parse (net_svc_spawnstatic_t *block,
-										msg_t *msg);
+										qmsg_t *msg);
 net_status_t NET_SVC_TempEntity_Emit (net_svc_tempentity_t *block,
 									  sizebuf_t *buf);
-net_status_t NET_SVC_TempEntity_Parse (net_svc_tempentity_t *block, msg_t *msg);
+net_status_t NET_SVC_TempEntity_Parse (net_svc_tempentity_t *block, qmsg_t *msg);
 net_status_t NET_SVC_KilledMonster_Emit (net_svc_killedmonster_t *block,
 										 sizebuf_t *buf);
 net_status_t NET_SVC_KilledMonster_Parse (net_svc_killedmonster_t *block,
-										  msg_t *msg);
+										  qmsg_t *msg);
 net_status_t NET_SVC_FoundSecret_Emit (net_svc_foundsecret_t *block,
 									   sizebuf_t *buf);
 net_status_t NET_SVC_FoundSecret_Parse (net_svc_foundsecret_t *block,
-										msg_t *msg);
+										qmsg_t *msg);
 net_status_t NET_SVC_SpawnStaticSound_Emit (net_svc_spawnstaticsound_t *block,
 											sizebuf_t *buf);
 net_status_t NET_SVC_SpawnStaticSound_Parse (net_svc_spawnstaticsound_t *block,
-										 msg_t *msg);
+										 qmsg_t *msg);
 net_status_t NET_SVC_UpdateStat_Emit (net_svc_updatestat_t *block,
 									  sizebuf_t *buf);
-net_status_t NET_SVC_UpdateStat_Parse (net_svc_updatestat_t *block, msg_t *msg);
+net_status_t NET_SVC_UpdateStat_Parse (net_svc_updatestat_t *block, qmsg_t *msg);
 net_status_t NET_SVC_UpdateStatLong_Emit (net_svc_updatestatlong_t *block,
 										  sizebuf_t *buf);
 net_status_t NET_SVC_UpdateStatLong_Parse (net_svc_updatestatlong_t *block,
-										   msg_t *msg);
+										   qmsg_t *msg);
 net_status_t NET_SVC_CDTrack_Emit (net_svc_cdtrack_t *block, sizebuf_t *buf);
-net_status_t NET_SVC_CDTrack_Parse (net_svc_cdtrack_t *block, msg_t *msg);
+net_status_t NET_SVC_CDTrack_Parse (net_svc_cdtrack_t *block, qmsg_t *msg);
 net_status_t NET_SVC_Intermission_Emit (net_svc_intermission_t *block,
 										sizebuf_t *buf);
 net_status_t NET_SVC_Intermission_Parse (net_svc_intermission_t *block,
-										 msg_t *msg);
+										 qmsg_t *msg);
 net_status_t NET_SVC_Finale_Emit (net_svc_finale_t *block, sizebuf_t *buf);
-net_status_t NET_SVC_Finale_Parse (net_svc_finale_t *block, msg_t *msg);
+net_status_t NET_SVC_Finale_Parse (net_svc_finale_t *block, qmsg_t *msg);
 net_status_t NET_SVC_SellScreen_Emit (net_svc_sellscreen_t *block,
 									  sizebuf_t *buf);
-net_status_t NET_SVC_SellScreen_Parse (net_svc_sellscreen_t *block, msg_t *msg);
+net_status_t NET_SVC_SellScreen_Parse (net_svc_sellscreen_t *block, qmsg_t *msg);
 net_status_t NET_SVC_SmallKick_Emit (net_svc_smallkick_t *block,
 									 sizebuf_t *buf);
-net_status_t NET_SVC_SmallKick_Parse (net_svc_smallkick_t *block, msg_t *msg);
+net_status_t NET_SVC_SmallKick_Parse (net_svc_smallkick_t *block, qmsg_t *msg);
 net_status_t NET_SVC_BigKick_Emit (net_svc_bigkick_t *block, sizebuf_t *buf);
-net_status_t NET_SVC_BigKick_Parse (net_svc_bigkick_t *block, msg_t *msg);
+net_status_t NET_SVC_BigKick_Parse (net_svc_bigkick_t *block, qmsg_t *msg);
 net_status_t NET_SVC_MuzzleFlash_Emit (net_svc_muzzleflash_t *block,
 									   sizebuf_t *buf);
 net_status_t NET_SVC_MuzzleFlash_Parse (net_svc_muzzleflash_t *block,
-										msg_t *msg);
+										qmsg_t *msg);
 net_status_t NET_SVC_UpdateUserInfo_Emit (net_svc_updateuserinfo_t *block,
 										  sizebuf_t *buf);
 net_status_t NET_SVC_UpdateUserInfo_Parse (net_svc_updateuserinfo_t *block,
-									   msg_t *msg);
+									   qmsg_t *msg);
 net_status_t NET_SVC_SetInfo_Emit (net_svc_setinfo_t *block, sizebuf_t *buf);
-net_status_t NET_SVC_SetInfo_Parse (net_svc_setinfo_t *block, msg_t *msg);
+net_status_t NET_SVC_SetInfo_Parse (net_svc_setinfo_t *block, qmsg_t *msg);
 net_status_t NET_SVC_ServerInfo_Emit (net_svc_serverinfo_t *block,
 									  sizebuf_t *buf);
-net_status_t NET_SVC_ServerInfo_Parse (net_svc_serverinfo_t *block, msg_t *msg);
+net_status_t NET_SVC_ServerInfo_Parse (net_svc_serverinfo_t *block, qmsg_t *msg);
 net_status_t NET_SVC_Download_Emit (net_svc_download_t *block, sizebuf_t *buf);
-net_status_t NET_SVC_Download_Parse (net_svc_download_t *block, msg_t *msg);
+net_status_t NET_SVC_Download_Parse (net_svc_download_t *block, qmsg_t *msg);
 net_status_t NET_SVC_Playerinfo_Emit (net_svc_playerinfo_t *block,
 									  sizebuf_t *buf);
-net_status_t NET_SVC_Playerinfo_Parse (net_svc_playerinfo_t *block, msg_t *msg);
+net_status_t NET_SVC_Playerinfo_Parse (net_svc_playerinfo_t *block, qmsg_t *msg);
 net_status_t NET_SVC_Nails_Emit (net_svc_nails_t *block, sizebuf_t *buf);
-net_status_t NET_SVC_Nails_Parse (net_svc_nails_t *block, msg_t *msg);
+net_status_t NET_SVC_Nails_Parse (net_svc_nails_t *block, qmsg_t *msg);
 net_status_t NET_SVC_ChokeCount_Emit (net_svc_chokecount_t *block,
 									  sizebuf_t *buf);
-net_status_t NET_SVC_ChokeCount_Parse (net_svc_chokecount_t *block, msg_t *msg);
+net_status_t NET_SVC_ChokeCount_Parse (net_svc_chokecount_t *block, qmsg_t *msg);
 net_status_t NET_SVC_Modellist_Emit (net_svc_modellist_t *block,
 									 sizebuf_t *buf);
-net_status_t NET_SVC_Modellist_Parse (net_svc_modellist_t *block, msg_t *msg);
+net_status_t NET_SVC_Modellist_Parse (net_svc_modellist_t *block, qmsg_t *msg);
 net_status_t NET_SVC_Soundlist_Emit (net_svc_soundlist_t *block,
 									 sizebuf_t *buf);
-net_status_t NET_SVC_Soundlist_Parse (net_svc_soundlist_t *block, msg_t *msg);
+net_status_t NET_SVC_Soundlist_Parse (net_svc_soundlist_t *block, qmsg_t *msg);
 net_status_t NET_SVC_PacketEntities_Emit (net_svc_packetentities_t *block,
 										  sizebuf_t *buf);
 net_status_t NET_SVC_PacketEntities_Parse (net_svc_packetentities_t *block,
-										   msg_t *msg);
+										   qmsg_t *msg);
 net_status_t NET_SVC_DeltaPacketEntities_Emit (net_svc_deltapacketentities_t *block,
 											   sizebuf_t *buf);
 net_status_t NET_SVC_DeltaPacketEntities_Parse (net_svc_deltapacketentities_t *block,
-												msg_t *msg);
+												qmsg_t *msg);
 net_status_t NET_SVC_MaxSpeed_Emit (net_svc_maxspeed_t *block, sizebuf_t *buf);
-net_status_t NET_SVC_MaxSpeed_Parse (net_svc_maxspeed_t *block, msg_t *msg);
+net_status_t NET_SVC_MaxSpeed_Parse (net_svc_maxspeed_t *block, qmsg_t *msg);
 net_status_t NET_SVC_EntGravity_Emit (net_svc_entgravity_t *block,
 									  sizebuf_t *buf);
-net_status_t NET_SVC_EntGravity_Parse (net_svc_entgravity_t *block, msg_t *msg);
+net_status_t NET_SVC_EntGravity_Parse (net_svc_entgravity_t *block, qmsg_t *msg);
 net_status_t NET_SVC_SetPause_Emit (net_svc_setpause_t *block, sizebuf_t *buf);
-net_status_t NET_SVC_SetPause_Parse (net_svc_setpause_t *block, msg_t *msg);
+net_status_t NET_SVC_SetPause_Parse (net_svc_setpause_t *block, qmsg_t *msg);
 
 #endif // NET_SVC_H

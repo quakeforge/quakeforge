@@ -166,7 +166,7 @@ static QFile      *_stdout;
 static QFile      *Net_PacketLog;
 static const char **Net_sound_precache;
 static sizebuf_t   _packet;
-static msg_t       packet = {0, 0, &_packet};
+static qmsg_t      packet = {0, 0, &_packet};
 
 static void Net_LogPrintf (const char *fmt, ...) __attribute__ ((format (printf, 1, 2)));
 

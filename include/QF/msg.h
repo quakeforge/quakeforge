@@ -49,21 +49,21 @@ typedef struct msg_s {
 	sizebuf_t *message;
 	size_t badread_string_size;
 	char *badread_string;
-} msg_t;
+} qmsg_t;
 
-void MSG_BeginReading (msg_t *msg);
-int MSG_GetReadCount(msg_t *msg);
-int MSG_ReadByte (msg_t *msg);
-int MSG_ReadShort (msg_t *msg);
-int MSG_ReadLong (msg_t *msg);
-float MSG_ReadFloat (msg_t *msg);
-const char *MSG_ReadString (msg_t *msg);
+void MSG_BeginReading (qmsg_t *msg);
+int MSG_GetReadCount(qmsg_t *msg);
+int MSG_ReadByte (qmsg_t *msg);
+int MSG_ReadShort (qmsg_t *msg);
+int MSG_ReadLong (qmsg_t *msg);
+float MSG_ReadFloat (qmsg_t *msg);
+const char *MSG_ReadString (qmsg_t *msg);
 
-float MSG_ReadCoord (msg_t *msg);
-void MSG_ReadCoordV (msg_t *msg, vec3_t coord);
-float MSG_ReadAngle (msg_t *msg);
-void MSG_ReadCoordAngleV (msg_t *msg, vec3_t coord, vec3_t angles);
-void MSG_ReadAngleV (msg_t *msg, vec3_t angles);
-float MSG_ReadAngle16 (msg_t *msg);
+float MSG_ReadCoord (qmsg_t *msg);
+void MSG_ReadCoordV (qmsg_t *msg, vec3_t coord);
+float MSG_ReadAngle (qmsg_t *msg);
+void MSG_ReadCoordAngleV (qmsg_t *msg, vec3_t coord, vec3_t angles);
+void MSG_ReadAngleV (qmsg_t *msg, vec3_t angles);
+float MSG_ReadAngle16 (qmsg_t *msg);
 
 #endif
