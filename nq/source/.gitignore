@@ -16,6 +16,7 @@ nq-3dfx
 nq-fbdev
 nq-glx
 nq-sdl
+nq-sdl32
 nq-sgl
 nq-svga
 nq-wgl.exe

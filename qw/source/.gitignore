@@ -22,6 +22,8 @@ qw-client-glx
 qw-client-glx.exe
 qw-client-sdl
 qw-client-sdl.exe
+qw-client-sdl32
+qw-client-sdl32.exe
 qw-client-sgl
 qw-client-sgl.exe
 qw-client-svga
