@@ -15,6 +15,7 @@
 - (void []) getItemAt: (integer) index;
 - (void) setItemAt: (integer) index item:(void []) item;
 - (void) addItem: (void []) item;
+- (void) removeItem: (void []) item;
 - (void []) removeItemAt: (integer) index;
 - (void []) insertItemAt: (integer) index item:(void []) item;
 - (integer) count;

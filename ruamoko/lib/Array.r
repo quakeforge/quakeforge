@@ -53,6 +53,19 @@
 	array[count++] = item;
 }
 
+- (void) removeItem: (void []) item
+{
+	local integer i, n;
+
+	for (i = 0; i < count; i++)
+		if (array[i] == item) {
+			count--;
+			for (n = i; n < count; n++)
+				array[n] = array[n + 1];
+		}
+	return;
+}
+
 - (void []) removeItemAt: (integer) index
 {
 	local integer i;
