@@ -28,7 +28,7 @@
 def_t		*pr_global_defs[MAX_REGS];	// to find def for a global variable
 int 		pr_edict_size;
 
-hashtab_t  *defs_by_name;
+static hashtab_t  *defs_by_name;
 
 static char *
 defs_get_key (void *_def, void *_tab)

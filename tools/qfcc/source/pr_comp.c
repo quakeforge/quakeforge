@@ -182,65 +182,6 @@ PR_Statement (opcode_t * op, def_t * var_a, def_t * var_b)
 	return var_c;
 }
 
-/*
-	PR_ParseImmediate
-
-	Looks for a preexisting constant
-*/
-def_t *
-PR_ParseImmediate (void)
-{
-	def_t	*cn;
-
-	// check for a constant with the same value
-	for (cn = pr.def_head.next; cn; cn = cn->next) {
-		if (!cn->initialized)
-			continue;
-		if (cn->type != pr_immediate_type)
-			continue;
-		if (pr_immediate_type == &type_string) {
-			if (!strcmp (G_STRING (cn->ofs), pr_immediate_string)) {
-				PR_Lex ();
-				return cn;
-			}
-		} else if (pr_immediate_type == &type_float) {
-			if (G_FLOAT (cn->ofs) == pr_immediate._float) {
-				PR_Lex ();
-				return cn;
-			}
-		} else if (pr_immediate_type == &type_vector) {
-			if ((G_FLOAT (cn->ofs) == pr_immediate.vector[0])
-				&& (G_FLOAT (cn->ofs + 1) == pr_immediate.vector[1])
-				&& (G_FLOAT (cn->ofs + 2) == pr_immediate.vector[2])) {
-				PR_Lex ();
-				return cn;
-			}
-		} else {
-			PR_ParseError ("weird immediate type");
-		}
-	}
-
-	// allocate a new one
-	// always share immediates
-	cn = PR_NewDef (pr_immediate_type, "IMMEDIATE", 0);
-	cn->initialized = 1;
-	cn->scope = NULL;
-
-	// copy the immediate to the global area
-	cn->ofs = numpr_globals;
-	pr_global_defs[cn->ofs] = cn;
-	numpr_globals += type_size[pr_immediate_type->type];
-	if (pr_immediate_type == &type_string)
-		pr_immediate.string = CopyString (pr_immediate_string);
-
-	memcpy (pr_globals + cn->ofs, &pr_immediate,
-			4 * type_size[pr_immediate_type->type]);
-
-	PR_Lex ();
-
-	return cn;
-}
-
 
 void
 PrecacheSound (def_t *e, int ch)
