@@ -65,8 +65,25 @@ static int reserved_edicts = MAX_CLIENTS;
 static int
 prune_edict (progs_t *pr, edict_t *ent)
 {
-	if (((int) SVFIELD (ent, spawnflags, float) & SPAWNFLAG_NOT_DEATHMATCH))
-		return 1;
+	if (!sv_globals.current_skill) {
+		if (((int) SVFIELD (ent, spawnflags, float) & SPAWNFLAG_NOT_DEATHMATCH))
+			return 1;
+	} else {
+		// remove things from different skill levels or deathmatch
+		if (deathmatch->int_val) {
+			if (((int) SVFIELD (ent, spawnflags, float) & SPAWNFLAG_NOT_DEATHMATCH)) {
+				return 1;
+			}
+		} else if (
+				(*sv_globals.current_skill == 0
+					&& ((int) SVFIELD (ent, spawnflags, float) & SPAWNFLAG_NOT_EASY))
+						|| (*sv_globals.current_skill == 1
+					&& ((int) SVFIELD (ent, spawnflags, float) & SPAWNFLAG_NOT_MEDIUM))
+						|| (*sv_globals.current_skill >= 2
+					&& ((int) SVFIELD (ent, spawnflags, float) & SPAWNFLAG_NOT_HARD))) {
+			return 1;
+		}
+	}
 	return 0;
 }
 
@@ -125,6 +142,7 @@ void
 SV_LoadProgs (void)
 {
 	dfunction_t *f;
+	ddef_t *def;
 
 	PR_LoadProgs (&sv_pr_state, sv_progs->string);
 	if (!sv_pr_state.progs)
@@ -257,6 +275,12 @@ SV_LoadProgs (void)
 	sv_fields.glow_size = ED_GetFieldIndex (&sv_pr_state, "glow_size");
 	sv_fields.glow_color = ED_GetFieldIndex (&sv_pr_state, "glow_color");
 	sv_fields.colormod = ED_GetFieldIndex (&sv_pr_state, "colormod");
+
+	def = PR_FindGlobal (&sv_pr_state, "current_skill");
+	if (def)
+		sv_globals.current_skill = (float *) &sv_pr_state.pr_globals[def->ofs];
+	else
+		sv_globals.current_skill = 0;
 }
 
 extern builtin_t sv_builtins[];
