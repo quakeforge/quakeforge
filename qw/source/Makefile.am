@@ -168,7 +168,7 @@ qw_client_wgl_DEPENDENCIES=../../libs/video/renderer/libQFrenderer_gl.la ../../l
 
 # Stuff that doesn't get linked into an executable NEEDS to be mentioned here,
 # or it won't be distributed with 'make dist'
-EXTRA_DIST=	cl_sys_win.c sv_sys_win.c
+EXTRA_DIST=	cl_sys_win.c sv_sys_win.c cl_sys_sdl.c
 
 # Kill the temp files, hopefully.
 CLEANFILES	= *.i *.s $(YACCLEX_CLEANFILES)
