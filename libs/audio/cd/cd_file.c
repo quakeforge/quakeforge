@@ -204,7 +204,6 @@ I_OGGMus_Pause (void)
 	playing = false;
 }
 
-
 /* start playing, if we've got a trackmap.
  * cry if we can't find a file to play */
 static void
@@ -274,9 +273,7 @@ I_OGGMus_Info (void)
 	plitem_t	*keylist = NULL;
 	plitem_t	*currentmap = NULL;
 	plitem_t	*currenttrack = NULL;
-	int			iter = 0;
-	int			count = 0;
-	int			highesttrack = 0;
+	int			 count = 0, iter = 0, highesttrack = 0;
 	const char	*trackstring;
 	char		**mapoutput = NULL;
 
@@ -306,7 +303,7 @@ I_OGGMus_Info (void)
 			continue;
 		}
 
-		if (highesttrack < strtol ((char *) currentmap->data, NULL, 10) )
+		if (highesttrack < strtol ((char *) currentmap->data, NULL, 10))
 			highesttrack = strtol ((char *) currentmap->data, NULL, 10);
 	}
 	Sys_DPrintf ("Highest Track number = %i.\n", highesttrack);
@@ -318,29 +315,23 @@ I_OGGMus_Info (void)
 
 	/* loop until we've extracted 'numval' trackmaps, or hit the highest track
 	 * number */
-	for (iter = 0, count = 0;
-		 (iter < ((plarray_t *) keylist->data)->numvals
-		  || count <= highesttrack);
-		 count++)
-	{
+	for (iter = 0, count = 0; (iter < ((plarray_t *) keylist->data)->numvals
+							   || count <= highesttrack); count++) {
 		trackstring = va ("%i", count);
 		
-		if (!(currenttrack = PL_ObjectForKey (tracklist, trackstring)))
-		{
+		if (!(currenttrack = PL_ObjectForKey (tracklist, trackstring))) {
 			Sys_DPrintf ("Skipping trackstring: %s.\n", trackstring);
 			continue;
 		}
 		mapoutput[iter] = nva (" %s  -  %s", trackstring,
-						 (char*) currenttrack->data);
+							   (char *) currenttrack->data);
 		if (!mapoutput[iter])
 			Sys_Error ("I_OGGMus: couldn't allocate mapstring!\n");
 		iter++;
-		
 	}
 
 	/* output the map, and delete the allocated strings */
-	for (iter = 0; (iter < ((plarray_t *) (keylist->data))->numvals); iter++)
-	{
+	for (iter = 0; (iter < ((plarray_t *) (keylist->data))->numvals); iter++) {
 		Sys_Printf ("%s\n", mapoutput[iter]);
 		free (mapoutput[iter]);
 	}
@@ -475,8 +466,8 @@ I_OGGMus_Init (void)
 	mus_ogglist = Cvar_Get ("mus_ogglist", "tracklist.cfg", CVAR_NONE,
 							Mus_OggChange,
 							"filename of track to music file map");
-	bgmvolume = Cvar_Get ("bgmvolume", "1", CVAR_ARCHIVE, Mus_VolChange,
-							"Volume of CD music");
+	bgmvolume = Cvar_Get ("bgmvolume", "1.0", CVAR_ARCHIVE, Mus_VolChange,
+						  "Volume of CD music");
 	QFS_GamedirCallback (Mus_gamedir);
 }
 
