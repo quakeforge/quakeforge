@@ -709,7 +709,7 @@ COM_LoadGameDirectory (const char *dir)
 	if (!pakfiles)
 		goto COM_LoadGameDirectory_free;
 
-	for (i = count; i < bufsize; i++) {
+	for (i = 0; i < bufsize; i++) {
 		pakfiles[i] = NULL;
 	}
 
