@@ -235,6 +235,6 @@ VisStats (void)
 				"out of the solid or sky to accelerate compiling\n",
 				 counts.solid + counts.sky, counts.lights,
 				(counts.solid + counts.sky) * 100 / counts.lights);
-	printf ("%i lights will be cast onto %i surfaces, %i casts will\n"
+	printf ("%i lights will be cast onto %i surfaces, %i casts will "
 			"be performed\n", counts.lights, bsp->numfaces, counts.cast);
 }

@@ -138,66 +138,86 @@ MakeTnodes (dmodel_t *bm)
 #define TESTLINESTATE_EMPTY 1
 #define TESTLINESTATE_SOLID 2
 
-static qboolean
-RecursiveTestLine (lightinfo_t *l, int num, vec3_t p1, vec3_t p2)
-{
-	int         side, ret;
-	vec_t       t1, t2, frac;
-	vec3_t      mid;
-	tnode_t    *tnode;
-
-	// check for empty
-loc0:
-	if (num < 0) {
-		if (num == CONTENTS_SOLID)
-			return TESTLINESTATE_SOLID;
-		else
-			return TESTLINESTATE_EMPTY;
-	}
-
-	// find the point distances
-	tnode = tnodes + num;
-
-	if (tnode->type < 3) {
-		t1 = p1[tnode->type] - tnode->dist;
-		t2 = p2[tnode->type] - tnode->dist;
-	} else {
-		t1 = DotProduct (tnode->normal, p1) - tnode->dist;
-		t2 = DotProduct (tnode->normal, p2) - tnode->dist;
-	}
-
-	if (t1 >= 0) {
-		if (t2 >= 0) {
-			num = tnode->children[0];
-			goto loc0;
-		}
-		side = 0;
-	} else {
-		if (t2 < 0) {
-			num = tnode->children[1];
-			goto loc0;
-		}
-		side = 1;
-	}
-
-	frac = t1 / (t1 - t2);
-	mid[0] = p1[0] + frac * (p2[0] - p1[0]);
-	mid[1] = p1[1] + frac * (p2[1] - p1[1]);
-	mid[2] = p1[2] + frac * (p2[2] - p1[2]);
-
-	// front side first
-	ret = RecursiveTestLine (l, tnode->children[side], p1, mid);
-	if (ret != TESTLINESTATE_EMPTY)
-		return ret; // solid or blocked
-	ret = RecursiveTestLine (l, tnode->children[!side], mid, p2);
-	if (ret != TESTLINESTATE_SOLID)
-		return ret; // empty or blocked
-	VectorCopy (mid, l->testlineimpact);
-	return TESTLINESTATE_BLOCKED;
-}
-
 qboolean
 TestLine (lightinfo_t *l, vec3_t start, vec3_t end)
 {
-	return RecursiveTestLine (l, 0, start, end) != TESTLINESTATE_BLOCKED;
+	vec_t       front, back;
+	vec3_t      frontpt, backpt;
+	int         node, side, empty;
+	tracestack_t *tstack;
+	tracestack_t tracestack[64];
+	tnode_t    *tnode;
+
+	VectorCopy (start, frontpt);
+	VectorCopy (end, backpt);
+
+	tstack = tracestack;
+	node = 0;
+	empty = 0;
+
+	while (1) {
+		while (node < 0) {
+			if (node != CONTENTS_SOLID)
+				empty = 1;
+			else if (empty) {
+				// DONE!
+				VectorCopy (backpt, l->testlineimpact);
+				return false;
+			}
+
+			// pop up the stack for a back side
+			if (tstack-- == tracestack)
+				return true;
+
+			// set the hit point for this plane
+			VectorCopy (backpt, frontpt);
+
+			// go down the back side
+			VectorCopy (tstack->backpt, backpt);
+
+			node = tnodes[tstack->node].children[!tstack->side];
+		}
+
+		if (node == CONTENTS_SOLID && empty) {
+			// DONE!
+			VectorCopy (backpt, l->testlineimpact);
+			return false;
+		}
+
+		tnode = &tnodes[node];
+
+		if (tnode->type < 3) {
+			front = frontpt[tnode->type] - tnode->dist;
+			back = backpt[tnode->type] - tnode->dist;
+		} else {
+			front = DotProduct (tnode->normal, frontpt) - tnode->dist;
+			back = DotProduct (tnode->normal, backpt) - tnode->dist;
+		}
+
+		if (front >= 0 && back >= 0) {
+			node = tnode->children[0];
+			continue;
+		}
+
+		if (front < 0 && back < 0) {
+			node = tnode->children[1];
+			continue;
+		}
+
+		side = front < 0;
+
+		front = front / (front - back);
+
+		tstack->node = node;
+		tstack->side = side;
+		VectorCopy (backpt, tstack->backpt);
+
+		tstack++;
+
+		backpt[0] = frontpt[0] + front * (backpt[0] - frontpt[0]);
+		backpt[1] = frontpt[1] + front * (backpt[1] - frontpt[1]);
+		backpt[2] = frontpt[2] + front * (backpt[2] - frontpt[2]);
+
+		node = tnode->children[side];
+	}
 }

@@ -110,7 +110,7 @@ CalcFaceVectors (lightinfo_t *l, vec3_t faceorg)
 		tex->vecs[1][0] * tex->vecs[0][2];
 	texnormal[2] = tex->vecs[1][0] * tex->vecs[0][1] - 
 		tex->vecs[1][1] * tex->vecs[0][0];
-	_VectorNormalize (texnormal);
+	VectorNormalize (texnormal);
 
 	// flip it towards plane normal
 	distscale = DotProduct (texnormal, l->facenormal);
@@ -414,8 +414,6 @@ LightFace (lightinfo_t *l, int surfnum)
 	int         red, green, blue, white;
 	lightchain_t *lightchain;
 	lightsample_t *sample;
-
-	memset (l, 0, sizeof(lightinfo_t));
 
 	f = bsp->faces + surfnum;
 
