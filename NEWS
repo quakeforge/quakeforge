@@ -8,6 +8,7 @@ Changes from 0.5.2
         * MVD recording in the qw server.
 		* sv_maxrate changes now take effect immediately rathern than when
           clients (re)connect or change their rate
+        * segfault when using "snd_output null" fixed
 
 Changes from 0.3.0
 
