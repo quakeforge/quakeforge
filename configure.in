@@ -736,7 +736,7 @@ QF_maGiC_VALUE
 				[
 #include <sys/asoundlib.h>
 #if defined(SND_LIB_MAJOR) && defined(SND_LIB_MINOR)
-#if SND_LIB_MAJOR>0 || (SND_LIB_MAJOR==0 && SND_LIB_MINOR>=6)
+#if SND_LIB_MAJOR>0 || (SND_LIB_MAJOR==0 && SND_LIB_MINOR>=9)
 QF_maGiC_VALUE
 #endif
 #endif
