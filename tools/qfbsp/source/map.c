@@ -37,6 +37,7 @@ static __attribute__ ((unused)) const char rcsid[] =
 #include "QF/dstring.h"
 #include "QF/quakefs.h"
 #include "QF/sys.h"
+#include "QF/va.h"
 
 #include "bsp5.h"
 
@@ -616,7 +617,6 @@ void
 WriteEntitiesToString (void)
 {
 	dstring_t  *buf;
-	char        line[128];
 	epair_t    *ep;
 	int         i;
 
@@ -630,8 +630,8 @@ WriteEntitiesToString (void)
 		dstring_appendstr (buf, "{\n");
 
 		for (ep = entities[i].epairs; ep; ep = ep->next) {
-			sprintf (line, "\"%s\" \"%s\"\n", ep->key, ep->value);
-			dstring_appendstr (buf, line);
+			dstring_appendstr (buf, va ("\"%s\" \"%s\"\n",
+										ep->key, ep->value));
 		}
 		dstring_appendstr (buf, "}\n");
 	}
