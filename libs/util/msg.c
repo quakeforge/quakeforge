@@ -40,7 +40,9 @@ static const char rcsid[] =
 #include "QF/msg.h"
 #include "QF/qendian.h"
 #include "QF/sys.h"
+#include "QF/string.h"
 
+#include "compat.h"
 
 /*
 	MESSAGE IO FUNCTIONS
@@ -261,8 +263,36 @@ MSG_ReadFloat (msg_t *msg)
 	return dat.f;
 }
 
-char       *
+const char *
 MSG_ReadString (msg_t *msg)
+{
+	char   *string;
+	int		len, maxlen;
+
+	if (msg->readcount + 1 > msg->message->cursize) {
+		msg->badread = true;
+		return "";
+	}
+
+	string = &msg->message->data[msg->readcount];
+
+	maxlen = msg->message->cursize - msg->readcount;
+	len = strnlen (string, maxlen);
+	if (len == maxlen) {
+		msg->badread = true;
+		return "";
+	}
+	msg->readcount += len + 1;
+
+	return string;
+}
+
+// Netchan_OutOfBandPrint is broken such that it strips the
+// terminating nul, which means connection packets (amoung others)
+// aren't nul-terminated.  So I provide the old string function for
+// connectionless-packet parsers to use.
+char *
+MSG_ReadStaticString (msg_t *msg)
 {
 	static char string[2048];
 	int         l, c;

@@ -411,7 +411,7 @@ Analyze_Server_Packet (const byte * data, int len)
 void
 Parse_Server_Packet ()
 {
-	char       *s;
+	const char *s;
 	int         c, i, ii, iii, mask1, mask2;
 	long        seq1, seq2;
 
@@ -626,7 +626,7 @@ Parse_Server_Packet ()
 					Net_LogPrintf ("**QW OBSOLETE**");
 					break;
 				case svc_centerprint:
-					Net_LogPrintf (MSG_ReadString (&packet));
+					Net_LogPrintf ("%s", MSG_ReadString (&packet));
 					break;
 				case svc_killedmonster:
 					break;

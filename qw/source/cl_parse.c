@@ -64,6 +64,7 @@ static const char rcsid[] =
 #include "client.h"
 #include "compat.h"
 #include "host.h"
+#include "net_svc.h"
 #include "pmove.h"
 #include "protocol.h"
 #include "sbar.h"
@@ -427,7 +428,7 @@ CL_ParseDownload (void)
 	}
 
 	if (size == -2) {
-		char       *newname = MSG_ReadString (net_message);
+		const char *newname = MSG_ReadString (net_message);
 
 		if (strncmp (newname, cls.downloadname, strlen (cls.downloadname))
 			|| strstr (newname + strlen (cls.downloadname), "/")) {
@@ -612,7 +613,7 @@ void
 CL_ParseServerData (void)
 {
 	char        fn[MAX_OSPATH];
-	char       *str;
+	const char *str;
 	int         protover;
 	qboolean    cflag = false;
 
@@ -724,16 +725,15 @@ CL_ClearBaselines (void)
 void
 CL_ParseSoundlist (void)
 {
-	char       *str;
-	int         numsounds, n;
+	const char *str;
+	int         numsounds, i;
+	net_svc_soundlist_t soundlist;
 
 	// precache sounds
-//	memset (cl.sound_precache, 0, sizeof(cl.sound_precache));
+	NET_SVC_Soundlist_Parse (&soundlist, net_message);
 
-	numsounds = MSG_ReadByte (net_message);
-
-	for (;;) {
-		str = MSG_ReadString (net_message);
+	for (i = 0, numsounds = soundlist.startsound;; i++) {
+		str = soundlist.sounds[i];
 		if (!str[0])
 			break;
 		numsounds++;
@@ -742,12 +742,11 @@ CL_ParseSoundlist (void)
 		strcpy (cl.sound_name[numsounds], str);
 	}
 
-	n = MSG_ReadByte (net_message);
-
-	if (n) {
+	if (soundlist.nextsound) {
 		MSG_WriteByte (&cls.netchan.message, clc_stringcmd);
 		MSG_WriteString (&cls.netchan.message,
-						 va (soundlist_name, cl.servercount, n));
+						 va (soundlist_name, cl.servercount,
+							 soundlist.nextsound));
 		return;
 	}
 
@@ -759,44 +758,45 @@ CL_ParseSoundlist (void)
 void
 CL_ParseModellist (void)
 {
-	int         nummodels, n;
-	char       *str;
+	int         nummodels, i;
+	const char *str;
+	net_svc_modellist_t modellist;
 
 	// precache models and note certain default indexes
-	nummodels = MSG_ReadByte (net_message);
+	NET_SVC_Modellist_Parse (&modellist, net_message);
 
-	for (;;) {
-		str = MSG_ReadString (net_message);
+	for (i = 0, nummodels = modellist.startmodel;; i++) {
+		str = modellist.models[i];
 		if (!str[0])
 			break;
 		nummodels++;
 		if (nummodels == MAX_MODELS)
 			Host_EndGame ("Server sent too many model_precache");
-		strcpy (cl.model_name[nummodels], str);
+		strncpy (cl.model_name[nummodels], str, MAX_QPATH - 1);
+		cl.model_name[nummodels][MAX_QPATH - 1] = '\0';
 
-		if (!strcmp (cl.model_name[nummodels], "progs/spike.mdl"))
+		if (!strcmp (str, "progs/spike.mdl"))
 			cl_spikeindex = nummodels;
-		else if (!strcmp (cl.model_name[nummodels], "progs/player.mdl"))
+		else if (!strcmp (str, "progs/player.mdl"))
 			cl_playerindex = nummodels;
-		else if (!strcmp (cl.model_name[nummodels], "progs/flag.mdl"))
+		else if (!strcmp (str, "progs/flag.mdl"))
 			cl_flagindex = nummodels;
 		// for deadbodyfilter & gibfilter
-		else if (!strcmp (cl.model_name[nummodels], "progs/h_player.mdl"))
+		else if (!strcmp (str, "progs/h_player.mdl"))
 			cl_h_playerindex = nummodels;
-		else if (!strcmp (cl.model_name[nummodels], "progs/gib1.mdl"))
+		else if (!strcmp (str, "progs/gib1.mdl"))
 			cl_gib1index = nummodels;
-		else if (!strcmp (cl.model_name[nummodels], "progs/gib2.mdl"))
+		else if (!strcmp (str, "progs/gib2.mdl"))
 			cl_gib2index = nummodels;
-		else if (!strcmp (cl.model_name[nummodels], "progs/gib3.mdl"))
+		else if (!strcmp (str, "progs/gib3.mdl"))
 			cl_gib3index = nummodels;
 	}
 
-	n = MSG_ReadByte (net_message);
-
-	if (n) {
+	if (modellist.nextmodel) {
 		MSG_WriteByte (&cls.netchan.message, clc_stringcmd);
 		MSG_WriteString (&cls.netchan.message,
-						 va (modellist_name, cl.servercount, n));
+						 va (modellist_name, cl.servercount,
+							 modellist.nextmodel));
 		return;
 	}
 
@@ -1099,7 +1099,7 @@ int         received_framecount;
 void
 CL_ParseServerMessage (void)
 {
-	char       *s;
+	const char *s;
 	int         cmd, i, j;
 
 	received_framecount = host_framecount;
@@ -1151,18 +1151,24 @@ CL_ParseServerMessage (void)
 					Host_EndGame ("Server disconnected");
 				break;
 
-			case svc_print:
+			case svc_print: {
+				char p[2048];
+				int j;
 				i = MSG_ReadByte (net_message);
 				s = MSG_ReadString (net_message);
 				if (i == PRINT_CHAT) {
 					// TODO: cl_nofake 2 -- accept fake messages from
 					// teammates
-					char       *p;
 
 					if (cl_nofake->int_val) {
-						for (p = s; *p; p++)
-							if (*p == 13)
-								*p = '#';
+						do {
+							p[j] = (s[j] == 13) ? '#' : s[j];
+							if (j == sizeof (p) - 1) {
+								p[j] = '\0';
+								break;
+							}
+						} while (s[j++]);
+						s = p;
 					}
 					con_ormask = 128;
 					S_LocalSound ("misc/talk.wav");
@@ -1170,7 +1176,7 @@ CL_ParseServerMessage (void)
 				Con_Printf ("%s", s);
 				con_ormask = 0;
 				break;
-
+			}
 			case svc_centerprint:
 				SCR_CenterPrint (MSG_ReadString (net_message));
 				break;

@@ -969,7 +969,7 @@ _Datagram_CheckNewConnections (void)
 	}
 
 	if (command == CCREQ_RULE_INFO) {
-		char       *prevCvarName;
+		const char *prevCvarName;
 		cvar_t     *var;
 
 		// find the search start location
@@ -1277,7 +1277,7 @@ _Datagram_Connect (const char *host)
 	int         reps;
 	double      start_time;
 	int         control;
-	char       *reason;
+	const char *reason;
 
 	// see if we can resolve the host name
 	if (dfunc.GetAddrFromName (host, &sendaddr) == -1)

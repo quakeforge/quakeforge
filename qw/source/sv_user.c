@@ -1673,7 +1673,7 @@ void
 SV_ExecuteClientMessage (client_t *cl)
 {
 	int         c;
-	char       *s;
+	const char *s;
 	usercmd_t   oldest, oldcmd, newcmd;
 	client_frame_t *frame;
 	vec3_t      o;

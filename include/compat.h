@@ -93,6 +93,10 @@ extern int vsnprintf(char *s, size_t maxlen, const char *format, va_list arg);
 #if !defined(strcasestr)
 # define strcasestr Q_strcasestr
 #endif
+// FIXME: same as above
+#if !defined(strnlen)
+# define strnlen Q_strnlen
+#endif
 
 #undef field_offset
 #define field_offset(type,field) ((int)&(((type *)0)->field))

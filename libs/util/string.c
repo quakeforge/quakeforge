@@ -45,11 +45,24 @@ static const char rcsid[] =
 const char *
 Q_strcasestr (const char *haystack, const char *needle)
 {
-	int len = strlen (needle);
+	size_t len = strlen (needle);
 	while (*haystack) {
 		if (!strncasecmp (haystack, needle, len))
 			return haystack;
 		haystack++;
 	}
 	return 0;
+}
+
+/*
+	Q_strnlen
+
+	strlen with a cutoff
+*/
+size_t
+Q_strnlen (const char *s, size_t maxlen)
+{
+	size_t i;
+	for (i = 0; s[i] && i < maxlen; i++);
+	return i;
 }

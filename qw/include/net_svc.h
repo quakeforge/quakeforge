@@ -1,9 +1,9 @@
 /*
-	string.h
+	net_svc.h
 
-	A string helper function
+	(description)
 
-	Copyright (C) 2001  Adam Olsen
+	Copyright (C) 1996-1997  Id Software, Inc.
 
 	This program is free software; you can redistribute it and/or
 	modify it under the terms of the GNU General Public License
@@ -26,10 +26,29 @@
 	$Id$
 */
 
-#ifndef string_h
-#define string_h
+#ifndef NET_SVC_H
+#define NET_SVC_H
 
-const char * Q_strcasestr (const char *haystack, const char *needle);
-size_t Q_strnlen (const char *s, size_t maxlen);
+#include "QF/mathlib.h"
+#include "QF/msg.h"
 
-#endif // string_h
+#include "bothdefs.h"
+
+typedef struct net_svc_soundlist_s
+{
+	byte		startsound;
+	const char *sounds[MAX_SOUNDS + 1]; // space left for terminating empty string
+	byte		nextsound;
+} net_svc_soundlist_t;
+
+typedef struct net_svc_modellist_s
+{
+	byte		startmodel;
+	const char *models[MAX_MODELS + 1]; // space left for terminating empty string
+	byte		nextmodel;
+} net_svc_modellist_t;
+
+void NET_SVC_Soundlist_Parse (net_svc_soundlist_t *soundlist, msg_t *message);
+void NET_SVC_Modellist_Parse (net_svc_modellist_t *modellist, msg_t *message);
+
+#endif // NET_SVC_H

@@ -112,7 +112,7 @@ client_LIB_DEPS=	libqfnet.la libasm.la $(qf_client_LIBS)
 client_sources= cl_cam.c cl_cmd.c cl_cvar.c cl_demo.c cl_ents.c cl_input.c \
 		cl_main.c cl_misc.c cl_ngraph.c cl_parse.c cl_pred.c \
 		cl_screen.c cl_skin.c cl_slist.c cl_tent.c cl_view.c \
-		console.c locs.c sbar.c skin.c teamplay.c
+		console.c locs.c net_svc.c sbar.c skin.c teamplay.c
 
 # Software-rendering clients
 
