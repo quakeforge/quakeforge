@@ -1,11 +1,11 @@
 /*
-        joy_win.c
+	joy_win.c
 
-        Joystick device driver for Win32
+	Joystick device driver for Win32
 
-        Copyright (C) 2000 Jeff Teunissen <deek@dusknet.dhs.org>
-        Copyright (C) 2000 Jukka Sorjonen <jukka.sorjone@asikkala.fi>
-        
+	Copyright (C) 2000 Jeff Teunissen <deek@dusknet.dhs.org>
+	Copyright (C) 2000 Jukka Sorjonen <jukka.sorjone@asikkala.fi>
+
 	This program is free software; you can redistribute it and/or
 	modify it under the terms of the GNU General Public License
 	as published by the Free Software Foundation; either version 2
@@ -32,6 +32,7 @@
 #ifdef HAVE_CONFIG_H
 # include "config.h"
 #endif
+#include <math.h>
 #ifdef __MINGW32__
 # define INITGUID
 #endif
@@ -44,7 +45,6 @@
 #include "QF/compat.h"
 #include "QF/console.h"
 #include "QF/cvar.h"
-#include "host.h"
 #include "QF/input.h"
 #include "QF/keys.h"
 #include "QF/qargs.h"
@@ -146,13 +146,13 @@ JOY_Read (void)
 			ji.dwUpos += 100;
 		}
 		if (joy_debug->int_val) {
-                        if (ji.dwXpos) Con_Printf("X: %ld\n",ji.dwXpos);
-                        if (ji.dwYpos) Con_Printf("Y: %ld\n",ji.dwYpos);
-                        if (ji.dwZpos) Con_Printf("Z: %ld\n",ji.dwZpos);
-                        if (ji.dwRpos) Con_Printf("R: %ld\n",ji.dwRpos);
-                        if (ji.dwUpos) Con_Printf("U: %ld\n",ji.dwUpos);
-                        if (ji.dwVpos) Con_Printf("V: %ld\n",ji.dwVpos);
-                        if (ji.dwButtons) Con_Printf("B: %ld\n",ji.dwButtons);
+			if (ji.dwXpos) Con_Printf("X: %ld\n",ji.dwXpos);
+			if (ji.dwYpos) Con_Printf("Y: %ld\n",ji.dwYpos);
+			if (ji.dwZpos) Con_Printf("Z: %ld\n",ji.dwZpos);
+			if (ji.dwRpos) Con_Printf("R: %ld\n",ji.dwRpos);
+			if (ji.dwUpos) Con_Printf("U: %ld\n",ji.dwUpos);
+			if (ji.dwVpos) Con_Printf("V: %ld\n",ji.dwVpos);
+			if (ji.dwButtons) Con_Printf("B: %ld\n",ji.dwButtons);
 		}
 		return true;
 	} else {							// read error
@@ -166,7 +166,7 @@ JOY_Command (void)
 	int         i, key_index;
 	DWORD       buttonstate, povstate;
 
-        if (!joy_found) {
+	if (!joy_found) {
 		return;
 	}
 	// loop through the joystick buttons
@@ -219,17 +219,16 @@ JOY_Command (void)
 void
 JOY_Move (void)
 {
-	float       speed, aspeed;
 	float       fAxisValue, fTemp;
 	int         i;
-        static int lastjoy=0;
+	static int lastjoy=0;
 
 	// complete initialization if first time in
 	// this is needed as cvars are not available at initialization time
-        if (!joy_advancedinit || lastjoy!=joy_advanced->int_val) {
+	if (!joy_advancedinit || lastjoy!=joy_advanced->int_val) {
 		JOY_AdvancedUpdate_f ();
 		joy_advancedinit = true;
-                lastjoy=joy_advanced->int_val;
+		lastjoy=joy_advanced->int_val;
 	}
 	// verify joystick is available and that the user wants to use it
 	if (!joy_active || !joy_enable->int_val) {
@@ -239,12 +238,6 @@ JOY_Move (void)
 	if (!JOY_Read ()) {
 		return;
 	}
-
-	if (in_speed.state & 1)
-		speed = cl_movespeedkey->value;
-	else
-		speed = 1;
-	aspeed = speed * host_frametime;
 
 	// loop through the axes
 	for (i = 0; i < JOY_MAX_AXES; i++) {
@@ -274,6 +267,7 @@ JOY_Move (void)
 
 		switch (dwAxisMap[i]) {
 			case AxisForward:
+				
 				if (!joy_advanced->int_val && freelook) {
 					// user wants forward control to become look control
 					if (fabs (fAxisValue) > joy_pitchthreshold->value) {
@@ -378,10 +372,10 @@ JOY_Move (void)
 void
 JOY_Init (void)
 {
-        JOY_StartupJoystick();
+	JOY_StartupJoystick();
 	Cmd_AddCommand ("joyadvancedupdate", JOY_AdvancedUpdate_f, "FIXME: This appears to update the joystick poll? No Description");
 
-//        Con_DPrintf ("This system does not have joystick support.\n");
+//	Con_DPrintf ("This system does not have joystick support.\n");
 }
 
 void
@@ -465,7 +459,7 @@ JOY_StartupJoystick (void)
 	MMRESULT    mmr = !JOYERR_NOERROR;
 
 	// assume no joystick
-        joy_found = false;
+	joy_found = false;
 
 	// abort startup if user requests no joystick
 	if (COM_CheckParm ("-nojoy"))
@@ -512,9 +506,9 @@ JOY_StartupJoystick (void)
 	// this is needed as cvars are not available during initialization
 
 	joy_advancedinit = false;
-        joy_found = true;
-        // FIXME: do this right
-        joy_active = true;
+	joy_found = true;
+	// FIXME: do this right
+	joy_active = true;
 	Con_Printf ("\njoystick detected\n\n");
 }
 
@@ -593,7 +587,7 @@ JOY_Init_Cvars(void)
 	joy_wwhack1 = Cvar_Get ("joywwhack1", "0.0", CVAR_NONE, 0, "FIXME: No Description");
 	joy_wwhack2 = Cvar_Get ("joywwhack2", "0.0", CVAR_NONE, 0, "FIXME: No Description");
 
-        joy_debug = Cvar_Get ("joy_debug", "0.0", CVAR_NONE, 0, "FIXME: No Description");
+	joy_debug = Cvar_Get ("joy_debug", "0.0", CVAR_NONE, 0, "FIXME: No Description");
 
 	return;
 }

@@ -35,55 +35,17 @@
 #include <fcntl.h>
 #include <unistd.h>
 
-#include "QF/compat.h"
 #include "QF/console.h"
 #include "QF/cvar.h"
-#include "QF/input.h"
+#include "QF/joystick.h"
 #include "QF/keys.h"
-#include "QF/mathlib.h"
-
-#define JOY_MAX_AXES	6
-#define JOY_MAX_BUTTONS 16
-
-cvar_t     *joy_device;					// Joystick device name
-cvar_t     *joy_enable;					// Joystick enabling flag
-cvar_t     *joy_sensitivity;			// Joystick sensitivity
-
-qboolean    joy_found = false;
-qboolean    joy_active = false;
+#include "QF/qtypes.h"
 
 // Variables and structures for this driver
 int         joy_handle;
 
-typedef struct {
-	char       *name;
-	char       *string;
-} ocvar_t;
-
-struct joy_axis {
-	cvar_t     *axis;
-	ocvar_t     var;
-	int         current;
-};
-
-struct joy_button {
-	int         old;
-	int         current;
-};
-
-struct joy_axis joy_axes[JOY_MAX_AXES] = {
-	{NULL, {"joyaxis1", "1"}, 0},
-	{NULL, {"joyaxis2", "2"}, 0},
-	{NULL, {"joyaxis3", "3"}, 0},
-	{NULL, {"joyaxis4", "0"}, 0},
-	{NULL, {"joyaxis5", "0"}, 0},
-	{NULL, {"joyaxis6", "0"}, 0}
-};
-
-struct joy_button joy_buttons[JOY_MAX_BUTTONS];
-
 void
-JOY_Command (void)
+JOY_Read (void)
 {
 	struct js_event event;
 
@@ -117,107 +79,21 @@ JOY_Command (void)
 	}
 }
 
-void
-JOY_Move (void)
-{
-	int         i;
-
-	if (!joy_active || !joy_enable->int_val)
-		return;
-
-	Cvar_SetValue (joy_sensitivity, max (0.01, joy_sensitivity->value));
-	for (i = 0; i < JOY_MAX_AXES; i++) {
-		switch (joy_axes[i].axis->int_val) {
-			case 1:
-				viewdelta.angles[YAW] -=
-					(float) (joy_axes[i].current /
-						 (201 -
-						  (joy_sensitivity->value * 4)));
-				break;
-			case 2:
-				viewdelta.position[2] -=
-					(float) (joy_axes[i].current /
-						  (201 -
-						   (joy_sensitivity->value * 4)));
-				break;
-			case 3:
-				viewdelta.position[0] +=
-					(float) (joy_axes[i].current /
-						 (201 -
-						  (joy_sensitivity->value * 4)));
-				break;
-			case 4:
-				if (joy_axes[i].current) {
-					viewdelta.angles[PITCH] -=
-						(float) (joy_axes[i].current /
-							 (201 -
-							  (joy_sensitivity->value *
-							   4)));
-				}
-				break;
-		}
-	}
-}
-
-void
-JOY_Init (void)
+int
+JOY_Open (void)
 {
 	// Open joystick device
 	joy_handle = open (joy_device->string, O_RDONLY | O_NONBLOCK);
 	if (joy_handle < 0) {
-		Con_Printf ("JOY: Joystick not found.\n");
-	} else {
-		int         i;
-
-		joy_found = true;
-
-		if (!joy_enable->int_val) {
-			Con_Printf ("JOY: Joystick found, but not enabled.\n");
-			i = close (joy_handle);
-			if (i) {
-				Con_Printf ("JOY: Failed to close joystick device!\n");
-			}
-		} else {
-			// Initialize joystick if found and enabled
-			for (i = 0; i < JOY_MAX_BUTTONS; i++) {
-				joy_buttons[i].old = 0;
-				joy_buttons[i].current = 0;
-			}
-			joy_active = true;
-			Con_Printf ("JOY: Joystick found and activated.\n");
-		}
+		return -1;
 	}
+	return 0;
 }
 
 void
-JOY_Init_Cvars (void)
+JOY_Close (void)
 {
 	int         i;
-
-	joy_device =
-		Cvar_Get ("joy_device", "/dev/js0", CVAR_NONE | CVAR_ROM, 0,
-				  "Joystick device");
-	joy_enable =
-		Cvar_Get ("joy_enable", "1", CVAR_NONE | CVAR_ARCHIVE, 0,
-				  "Joystick enable flag");
-	joy_sensitivity =
-		Cvar_Get ("joy_sensitivity", "1", CVAR_NONE | CVAR_ARCHIVE, 0,
-				  "Joystick sensitivity");
-
-	for (i = 0; i < JOY_MAX_AXES; i++) {
-		joy_axes[i].axis = Cvar_Get (joy_axes[i].var.name,
-									 joy_axes[i].var.string,
-									 CVAR_ARCHIVE, 0, "Set joystick axes");
-	}
-}
-
-void
-JOY_Shutdown (void)
-{
-	int         i;
-
-	if (!joy_active)
-		return;
 
 	i = close (joy_handle);
 	if (i) {
@@ -225,6 +101,4 @@ JOY_Shutdown (void)
 	} else {
 		Con_Printf ("JOY_Shutdown\n");
 	}
-	joy_active = false;
-	joy_found = false;
 }

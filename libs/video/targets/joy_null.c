@@ -32,49 +32,21 @@
 
 #include "QF/console.h"
 #include "QF/cvar.h"
+#include "QF/joystick.h"
 #include "QF/qtypes.h"
 
-// Joystick variables and structures
-cvar_t     *joy_device;					// Joystick device name
-cvar_t     *joy_enable;					// Joystick enabling flag
-cvar_t     *joy_sensitivity;			// Joystick sensitivity
-
-qboolean    joy_found = false;
-qboolean    joy_active = false;
-
 void
-JOY_Command (void)
+JOY_Read (void)
 {
 }
 
-void
-JOY_Move (void)
+int
+JOY_Open (void)
 {
+	return -1;
 }
 
 void
-JOY_Init (void)
+JOY_Close (void)
 {
-	Con_DPrintf ("This system does not have joystick support.\n");
-}
-
-void
-JOY_Init_Cvars (void)
-{
-	joy_device =
-		Cvar_Get ("joy_device", "none", CVAR_NONE | CVAR_ROM, 0,
-				  "Joystick device");
-	joy_enable =
-		Cvar_Get ("joy_enable", "1", CVAR_NONE | CVAR_ARCHIVE, 0,
-				  "Joystick enable flag");
-	joy_sensitivity =
-		Cvar_Get ("joy_sensitivity", "1", CVAR_NONE | CVAR_ARCHIVE, 0,
-				  "Joystick sensitivity");
-}
-
-void
-JOY_Shutdown (void)
-{
-	joy_active = false;
-	joy_found = false;
 }

@@ -26,19 +26,31 @@
 	$Id$
 */
 
-#ifdef HAVE_CONFIG_H
-# include "config.h"
-#endif
+#include "QF/qtypes.h"
 
-#include "QF/cvar.h"
-#include "protocol.h"
+#define JOY_MAX_AXES    6
+#define JOY_MAX_BUTTONS 16
 
-extern cvar_t	*joy_device;		// Joystick device name
-extern cvar_t	*joy_enable;		// Joystick enabling flag
-extern cvar_t	*joy_sensitivity;	// Joystick sensitivity
+extern struct cvar_s *joy_device;		// Joystick device name
+extern struct cvar_s *joy_enable;		// Joystick enabling flag
+extern struct cvar_s *joy_sensitivity;	// Joystick sensitivity
 
 extern qboolean joy_found;			// Joystick present?
 extern qboolean joy_active; 		// Joystick in use?
+
+struct joy_axis {
+	struct cvar_s *axis;
+	int         current;
+};
+
+struct joy_button {
+	int         old;
+	int         current;
+};
+
+extern struct joy_axis joy_axes[JOY_MAX_AXES];
+
+extern struct joy_button joy_buttons[JOY_MAX_BUTTONS];
 
 /*
 	JOY_Command ()
@@ -81,3 +93,19 @@ void JOY_Init_Cvars (void);
 	elsewhere to disable the device.
 */
 void JOY_Shutdown (void);
+
+/*
+	JOY_Open ()
+	JOY_Close ()
+
+	os specific joystick init/deinit
+*/
+int JOY_Open (void);
+void JOY_Close (void);
+
+/*
+	JOY_Read ()
+
+	os specific joystick reading
+*/
+void JOY_Read (void);
