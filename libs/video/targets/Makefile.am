@@ -14,8 +14,9 @@ noinst_LTLIBRARIES= @VID_TARGETS@ @vid_libs@
 
 EXTRA_LTLIBRARIES= \
 	libQFjs.la libQFfbdev.la libQFglx.la libQFsvga.la libQFtdfx.la \
-	libQFx11.la libQFsdl.la libQFsdl32.la libQFsgl.la libQFwgl.la libasm.la \
-	libcommon.la libgl.la libsdl.la libsw.la libsw32.la libsvga.la libx11.la
+	libQFx11.la libQFsdl.la libQFsdl32.la libQFsgl.la libQFwgl.la \
+	libasm.la libcommon.la libgl.la libsdl.la libsw.la libsw32.la \
+	libsvga.la libx11.la
 
 libasm_la_SOURCES=		d_copy.S
 libasmn_la_CFLAGS=		@PREFER_NON_PIC@
@@ -62,7 +63,7 @@ libsvga_la_SOURCES=		in_svgalib.c
 libsvga_la_CFLAGS=		@PREFER_NON_PIC@ $(SVGA_CFLAGS)
 libsvga_la_LDFLAGS=		-static
 
-libsdl_la_SOURCES=		in_sdl.c
+libsdl_la_SOURCES=		in_sdl.c context_sdl.c
 libsdl_la_CFLAGS=		@PREFER_NON_PIC@ $(SDL_CFLAGS)
 libsdl_la_LDFLAGS=		-static
 

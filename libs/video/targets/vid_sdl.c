@@ -44,30 +44,26 @@ static const char rcsid[] =
 #include "QF/cvar.h"
 #include "QF/qendian.h"
 #include "QF/sys.h"
-#include "QF/va.h"
 #include "QF/vid.h"
 
 #include "compat.h"
 
-#ifdef WIN32
-/* FIXME: this is evil hack to get full DirectSound support with SDL */
+#ifdef WIN32	// FIXME: evil hack to get full DirectSound support with SDL
 #include <windows.h>
 #include <SDL_syswm.h>
 HWND 		mainwindow;
 #endif
 
-// static float oldin_grab = 0;
-
-int modestate; // FIXME: just to avoid cross-compile errors - remove later
+//int modestate; // FIXME: just to avoid cross-compile errors - remove later
 
 // The original defaults
-#define    BASEWIDTH    320
-#define    BASEHEIGHT   200
+#define BASEWIDTH 320
+#define BASEHEIGHT 200
 
 byte       *VGA_pagebase;
 int         VGA_width, VGA_height, VGA_rowbytes, VGA_bufferrowbytes = 0;
 
-static SDL_Surface *screen = NULL;
+SDL_Surface *screen = NULL;
 
 
 void
@@ -146,33 +142,6 @@ VID_Init (unsigned char *palette)
 }
 
 void
-VID_UpdateFullscreen (cvar_t *vid_fullscreen)
-{
-	if (!vid.initialized)
-		return;
-	if ((vid_fullscreen->int_val && !(screen->flags & SDL_FULLSCREEN))
-		|| (!vid_fullscreen->int_val && screen->flags & SDL_FULLSCREEN))
-		if (!SDL_WM_ToggleFullScreen (screen))
-			Con_Printf ("VID_UpdateFullscreen: error setting fullscreen\n");
-}
-
-void
-VID_Init_Cvars ()
-{
-	vid_fullscreen = Cvar_Get ("vid_fullscreen", "0", CVAR_ARCHIVE,
-							   VID_UpdateFullscreen,
-							   "Toggles fullscreen game mode");
-	vid_system_gamma = Cvar_Get ("vid_system_gamma", "1", CVAR_ARCHIVE, NULL,
-								 "Use system gamma control if available");
-}
-
-void
-VID_Shutdown (void)
-{
-	SDL_Quit ();
-}
-
-void
 VID_Update (vrect_t *rects)
 {
 	SDL_Rect   *sdlrects;
@@ -236,23 +205,4 @@ VID_LockBuffer (void)
 void
 VID_UnlockBuffer (void)
 {
-}
-
-void
-VID_SetCaption (const char *text)
-{
-	if (text && *text) {
-		char       *temp = strdup (text);
-
-		SDL_WM_SetCaption (va ("%s %s: %s", PROGRAM, VERSION, temp), NULL);
-		free (temp);
-	} else {
-		SDL_WM_SetCaption (va ("%s %s", PROGRAM, VERSION), NULL);
-	}
-}
-
-qboolean
-VID_SetGamma (double gamma)
-{
-	return false; //FIXME
 }

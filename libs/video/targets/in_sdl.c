@@ -46,7 +46,6 @@ static const char rcsid[] =
 
 #include "compat.h"
 
-
 int		old_windowed_mouse;
 
 
@@ -803,7 +802,7 @@ IN_LL_SendKeyEvents (void)
 				break;
 
 			case SDL_QUIT:
-				//CL_Disconnect ();
+//				CL_Disconnect ();
 				Sys_Quit ();
 				break;
 			default:
@@ -829,7 +828,7 @@ IN_LL_Ungrab_Input (void)
 void
 IN_LL_Init (void)
 {
-	/* Enable UNICODE translation for keyboard input */
+	// Enable UNICODE translation for keyboard input
 	SDL_EnableUNICODE(1);
 
 	if (COM_CheckParm ("-nomouse") && !in_grab->value)
@@ -842,6 +841,8 @@ IN_LL_Init (void)
 void
 IN_LL_Init_Cvars (void)
 {
+//	in_snd_block = Cvar_Get ("in_snd_block", "0", CVAR_ARCHIVE, NULL,
+//							 "block sound output on window focus loss");
 }
 
 void

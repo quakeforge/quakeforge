@@ -36,11 +36,8 @@ static const char rcsid[] =
 #ifdef HAVE_STRINGS_H
 # include <strings.h>
 #endif
-#ifndef WIN32
-# include <signal.h>
-#endif
-#include <stdlib.h>
 
+#include <stdlib.h>
 #include <SDL.h>
 
 #include "QF/console.h"
@@ -48,7 +45,6 @@ static const char rcsid[] =
 #include "QF/qargs.h"
 #include "QF/qendian.h"
 #include "QF/sys.h"
-#include "QF/va.h"
 #include "QF/vid.h"
 #include "QF/GL/funcs.h"
 
@@ -66,9 +62,12 @@ HWND 		mainwindow;
 #define	WARP_HEIGHT	200
 
 int			VID_options_items = 1;
-int			modestate;
+//int			modestate; //FIXME: cross-compile issue, ready to remove?
 
-static SDL_Surface *screen = NULL;
+SDL_Surface *screen = NULL;
+
+extern void VID_SDL_GammaCheck (void);
+
 
 void *
 QFGL_GetProcAddress (void *handle, const char *name)
@@ -84,47 +83,6 @@ QFGL_LoadLibrary (void)
 
 	return NULL;
 }
-
-void
-VID_SDL_GammaCheck (void)
-{
-	Uint16 redtable[256], greentable[256], bluetable[256];
-
-	if (SDL_GetGammaRamp(redtable, greentable, bluetable) < 0)
-		vid_gamma_avail = false;
-	else
-		vid_gamma_avail = true;
-}
-
-void
-VID_Shutdown (void)
-{
-	SDL_Quit ();
-}
-
-#ifndef WIN32
-static void
-signal_handler (int sig)
-{
-	printf ("Received signal %d, exiting...\n", sig);
-	Sys_Quit ();
-}
-
-static void
-InitSig (void)
-{
-	signal (SIGHUP, signal_handler);
-	signal (SIGINT, signal_handler);
-	signal (SIGQUIT, signal_handler);
-	signal (SIGILL, signal_handler);
-	signal (SIGTRAP, signal_handler);
-	signal (SIGIOT, signal_handler);
-	signal (SIGBUS, signal_handler);
-//  signal(SIGFPE, signal_handler);
-	signal (SIGSEGV, signal_handler);
-	signal (SIGTERM, signal_handler);
-}
-#endif
 
 void
 GL_Init (void)
@@ -213,14 +171,9 @@ VID_Init (unsigned char *palette)
 	vid.aspect = ((float) vid.height / (float) vid.width) * (4.0 / 3.0);
 	vid.numpages = 2;
 
-#ifndef WIN32
-	InitSig ();							// trap evil signals
-#endif
-
 	GL_Init ();
 
 	VID_SDL_GammaCheck ();
-
 	VID_InitGamma (palette);
 	VID_SetPalette (palette);
 
@@ -241,44 +194,4 @@ VID_Init (unsigned char *palette)
 #endif
 
 	vid.recalc_refdef = 1;				// force a surface cache flush
-}
-
-void
-VID_UpdateFullscreen (cvar_t *vid_fullscreen)
-{
-	if (!vid.initialized)
-		return;
-	if ((vid_fullscreen->int_val && !(screen->flags & SDL_FULLSCREEN))
-		|| (!vid_fullscreen->int_val && screen->flags & SDL_FULLSCREEN))
-		if (!SDL_WM_ToggleFullScreen (screen))
-			Con_Printf ("VID_UpdateFullscreen: error setting fullscreen\n");
-}
-
-void
-VID_Init_Cvars ()
-{
-	vid_fullscreen = Cvar_Get ("vid_fullscreen", "0", CVAR_ARCHIVE,
-							   VID_UpdateFullscreen,
-							   "Toggles fullscreen mode");
-	vid_system_gamma = Cvar_Get ("vid_system_gamma", "1", CVAR_ARCHIVE, NULL,
-								 "Use system gamma control if available");
-}
-
-void
-VID_SetCaption (const char *text)
-{
-	if (text && *text) {
-		char		*temp = strdup (text);
-
-		SDL_WM_SetCaption (va ("%s %s: %s", PROGRAM, VERSION, temp), NULL);
-		free (temp);
-	} else {
-		SDL_WM_SetCaption (va ("%s %s", PROGRAM, VERSION), NULL);
-	}
-}
-
-qboolean
-VID_SetGamma (double gamma)
-{
-	return SDL_SetGamma((float) gamma, (float) gamma, (float) gamma); 
 }

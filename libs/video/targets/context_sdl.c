@@ -1,0 +1,80 @@
+static const char rcsid[] = 
+	"$Id$";
+
+#ifdef HAVE_CONFIG_H
+# include "config.h"
+#endif
+#ifdef HAVE_STRING_H
+# include <string.h>
+#endif
+#ifdef HAVE_STRINGS_H
+# include <strings.h>
+#endif
+
+#include <stdlib.h>
+#include <SDL.h>
+
+#include "QF/console.h"
+#include "QF/cvar.h"
+#include "QF/va.h"
+#include "QF/vid.h"
+
+extern SDL_Surface *screen;
+
+
+void
+VID_SDL_GammaCheck (void)
+{
+	Uint16 redtable[256], greentable[256], bluetable[256];
+
+	if (SDL_GetGammaRamp(redtable, greentable, bluetable) < 0)
+		vid_gamma_avail = false;
+	else
+		vid_gamma_avail = true;
+}
+
+void
+VID_SetCaption (const char *text)
+{
+	if (text && *text) {
+		char		*temp = strdup (text);
+
+		SDL_WM_SetCaption (va ("%s %s: %s", PROGRAM, VERSION, temp), NULL);
+		free (temp);
+	} else {
+		SDL_WM_SetCaption (va ("%s %s", PROGRAM, VERSION), NULL);
+	}
+}
+
+qboolean
+VID_SetGamma (double gamma)
+{
+	return SDL_SetGamma((float) gamma, (float) gamma, (float) gamma); 
+}
+
+void
+VID_Shutdown (void)
+{
+	SDL_Quit ();
+}
+
+void
+VID_UpdateFullscreen (cvar_t *vid_fullscreen)
+{
+	if (!vid.initialized)
+		return;
+	if ((vid_fullscreen->int_val && !(screen->flags & SDL_FULLSCREEN))
+		|| (!vid_fullscreen->int_val && screen->flags & SDL_FULLSCREEN))
+		if (!SDL_WM_ToggleFullScreen (screen))
+			Con_Printf ("VID_UpdateFullscreen: error setting fullscreen\n");
+}
+
+void
+VID_Init_Cvars ()
+{
+	vid_fullscreen = Cvar_Get ("vid_fullscreen", "0", CVAR_ARCHIVE,
+							   VID_UpdateFullscreen,
+							   "Toggles fullscreen mode");
+	vid_system_gamma = Cvar_Get ("vid_system_gamma", "1", CVAR_ARCHIVE, NULL,
+								 "Use system gamma control if available");
+}
