@@ -1,21 +1,3 @@
 #!/bin/sh
 
-ltver=`libtool --version | sed -e 's/.*(GNU libtool) *\([0-9]\+\(\.[0-9]\+\)\+\).*/\1/'`
-amver=`automake --version | grep '(GNU automake)' | sed -e 's/.*(GNU automake) *\([0-9]\+\(\.[0-9]\+\)\+\).*/\1/'`
-IFS="."
-set $ltver
-ltver_maj=$1
-ltver_min=$2
-set $amver
-amver_maj=$1
-amver_min=$2
-IFS=" "
-
-if test $ltver_maj -gt 1 -o $ltver_maj -eq 1 -a $ltver_min -ge 4; then
-	if test $amver_maj -lt 1 -o $amver_maj -eq 1 -a $amver_min -le 4; then
-		echo 'working around libtool >= 1.4 / automake <= 1.4 incompatability'
-		touch ltconfig
-	fi
-fi
-
 aclocal && autoheader && libtoolize --automake && automake --add-missing && autoconf
