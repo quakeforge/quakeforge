@@ -510,7 +510,7 @@ C_KeyEvent (key_t key, short unicode, qboolean down)
 		}
 		il = input_line;
 	}
-	Con_ProcessInputLine (il, key);
+	Con_ProcessInputLine (il, key >= 256 ? key : unicode);
 }
 
 /* DRAWING */
