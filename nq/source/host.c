@@ -949,6 +949,7 @@ Host_Init (quakeparms_t *parms)
 		Con_Init ("client");
 	if (con_module) {
 		con_module->data->console->realtime = &realtime;
+		con_module->data->console->quit = Host_Quit_f;
 	}
 
 	GIB_Init ();

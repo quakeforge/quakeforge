@@ -37,6 +37,7 @@ static const char rcsid[] =
 #include "QF/input.h"
 #include "QF/keys.h"
 #include "QF/msg.h"
+#include "QF/plugin.h"
 #include "QF/render.h"
 #include "QF/screen.h"
 #include "QF/skin.h"
@@ -718,11 +719,15 @@ CL_SetState (cactive_t state)
 		key_dest = key_game;
 		IN_ClearStates ();
 		VID_SetCaption ("");
+		if (con_module)
+			con_module->data->console->force_commandline = 0;
 	} else {
 		r_active = false;
 		game_target = IMT_CONSOLE;
 		key_dest = key_console;
 		VID_SetCaption ("Disconnected");
+		if (con_module)
+			con_module->data->console->force_commandline = 1;
 	}
 }
 

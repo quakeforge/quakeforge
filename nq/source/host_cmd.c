@@ -60,6 +60,8 @@ Host_Quit_f (void)
 //		M_Menu_Quit_f ();
 //		return;
 //	}
+	if (!con_module)
+		Con_Printf ("I hope you wanted to quit\n");
 	CL_Disconnect ();
 	Host_ShutdownServer (false);
 
@@ -1355,7 +1357,8 @@ void
 Host_InitCommands (void)
 {
 	Cmd_AddCommand ("status", Host_Status_f, "No Description");
-	Cmd_AddCommand ("quit", Host_Quit_f, "No Description");
+	if (!con_module)
+		Cmd_AddCommand ("quit", Host_Quit_f, "No Description");
 	Cmd_AddCommand ("god", Host_God_f, "No Description");
 	Cmd_AddCommand ("notarget", Host_Notarget_f, "No Description");
 	Cmd_AddCommand ("fly", Host_Fly_f, "No Description");

@@ -243,7 +243,8 @@ CL_Quit_f (void)
 //		M_Menu_Quit_f ();
 //		return;
 //	}
-	Con_Printf ("I hope you wanted to quit\n");
+	if (!con_module)
+		Con_Printf ("I hope you wanted to quit\n");
 	CL_Disconnect ();
 	Sys_Quit ();
 }
@@ -1105,10 +1106,14 @@ CL_SetState (cactive_t state)
 		game_target = IMT_0;
 		key_dest = key_game;
 		IN_ClearStates ();
+		if (con_module)
+			con_module->data->console->force_commandline = 0;
 	} else {
 		r_active = false;
 		game_target = IMT_CONSOLE;
 		key_dest = key_console;
+		if (con_module)
+			con_module->data->console->force_commandline = 1;
 	}
 }
 
@@ -1153,7 +1158,8 @@ CL_Init (void)
 	Cmd_AddCommand ("skinlist", Con_Skinlist_f, "List skins available");
 	Cmd_AddCommand ("skyboxlist", Con_Skyboxlist_f, "List skyboxes available");
 	Cmd_AddCommand ("demolist", Con_Demolist_QWD_f, "List demos available");
-	Cmd_AddCommand ("quit", CL_Quit_f, "Exit the program");
+	if (!con_module)
+		Cmd_AddCommand ("quit", CL_Quit_f, "Exit the program");
 	Cmd_AddCommand ("connect", CL_Connect_f, "Connect to a server 'connect "
 					"hostname:port'");
 	Cmd_AddCommand ("reconnect", CL_Reconnect_f, "Reconnect to the last "
@@ -1682,6 +1688,7 @@ Host_Init (void)
 		con_module->data->console->dl_name = cls.downloadname;
 		con_module->data->console->dl_percent = &cls.downloadpercent;
 		con_module->data->console->realtime = &realtime;
+		con_module->data->console->quit = CL_Quit_f;
 	}
 
 	NET_Init (cl_port->int_val);
