@@ -218,21 +218,34 @@ CL_KeepaliveMessage (void)
 	SZ_Clear (&cls.message);
 }
 
-void
-CL_NewMap (const char *mapname)
+static void
+map_cfg (const char *mapname, int all)
 {
 	char       *name = malloc (strlen (mapname) + 4 + 1);
-
-
-	R_NewMap (cl.worldmodel, cl.model_precache, MAX_MODELS);
-	Con_NewMap ();
+	QFile      *f;
 
 	COM_StripExtension (mapname, name);
 	strcat (name, ".cfg");
-	Cbuf_AddText (host_cbuf, "exec ");
-	Cbuf_AddText (host_cbuf, name);
-	Cbuf_AddText (host_cbuf, "\n");
+	if (COM_FOpenFile (name, &f)) {
+		Qclose (f);
+		Cmd_Exec_File (host_cbuf, name);
+	} else {
+		Cmd_Exec_File (host_cbuf, "maps_default.cfg");
+	}
+	if (all)
+		Cbuf_Execute_Stack (host_cbuf);
+	else
+		Cbuf_Execute_Sets (host_cbuf);
 	free (name);
+}
+
+void
+CL_NewMap (const char *mapname)
+{
+	R_NewMap (cl.worldmodel, cl.model_precache, MAX_MODELS);
+	Con_NewMap ();
+
+	map_cfg (mapname, 1);
 }
 
 void
@@ -308,6 +321,8 @@ CL_ParseServerInfo (void)
 	}
 
 	// now we try to load everything else until a cache allocation fails
+	if (model_precache[1])
+		map_cfg (model_precache[1], 0);
 
 	for (i = 1; i < nummodels; i++) {
 		cl.model_precache[i] = Mod_ForName (model_precache[i], false);

@@ -253,22 +253,36 @@ CL_CheckOrDownloadFile (const char *filename)
 	return false;
 }
 
+static void
+map_cfg (const char *mapname, int all)
+{
+	char       *name = malloc (strlen (mapname) + 4 + 1);
+	QFile      *f;
+
+	COM_StripExtension (mapname, name);
+	strcat (name, ".cfg");
+	if (COM_FOpenFile (name, &f)) {
+		Qclose (f);
+		Cmd_Exec_File (cl_cbuf, name);
+	} else {
+		Cmd_Exec_File (cl_cbuf, "maps_default.cfg");
+	}
+	if (all)
+		Cbuf_Execute_Stack (cl_cbuf);
+	else
+		Cbuf_Execute_Sets (cl_cbuf);
+	free (name);
+}
+
 void
 CL_NewMap (const char *mapname)
 {
-	char       *name = malloc (strlen (mapname) + 4 + 1);
-
 	R_NewMap (cl.worldmodel, cl.model_precache, MAX_MODELS);
 	Team_NewMap ();
 	Con_NewMap ();
 	Hunk_Check ();								// make sure nothing is hurt
 
-	COM_StripExtension (mapname, name);
-	strcat (name, ".cfg");
-	Cbuf_AddText (cl_cbuf, "exec ");
-	Cbuf_AddText (cl_cbuf, name);
-	Cbuf_AddText (cl_cbuf, "\n");
-	free (name);
+	map_cfg (mapname, 1);
 }
 
 void
@@ -291,6 +305,9 @@ Model_NextDownload (void)
 		if (!CL_CheckOrDownloadFile (s))
 			return;								// started a download
 	}
+
+	if (cl.model_name[1])
+		map_cfg (cl.model_name[1], 0);
 
 	for (i = 1; i < MAX_MODELS; i++) {
 		char *info_key = 0;

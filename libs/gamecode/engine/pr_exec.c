@@ -417,21 +417,17 @@ PR_ExecuteProgram (progs_t * pr, func_t fnum)
 				break;
 
 			case OP_ADDRESS:
-				if (pr_boundscheck->int_val
-					&& (OPA.entity_var < 0 || OPA.entity_var >=
-						pr->pr_edictareasize)) {
-					PR_RunError (pr, "Progs attempted to address an out of "
-								 "bounds edict");
-				}
-				if (pr_boundscheck->int_val
-					&& (OPA.entity_var == 0 && pr->null_bad)) {
-					PR_RunError (pr, "assignment to world entity");
-				}
-				if (pr_boundscheck->int_val
-					&& (OPB.integer_var < 0 || OPB.integer_var >=
-						pr->progs->entityfields)) {
-					PR_RunError (pr, "Progs attempted to address an invalid "
-								 "field in an edict");
+				if (pr_boundscheck->int_val) {
+					if (OPA.entity_var < 0
+						|| OPA.entity_var >= pr->pr_edictareasize)
+						PR_RunError (pr, "Progs attempted to address an out "
+									 "of bounds edict");
+					if (OPA.entity_var == 0 && pr->null_bad)
+						PR_RunError (pr, "assignment to world entity");
+					if (OPB.integer_var < 0
+						|| OPB.integer_var >= pr->progs->entityfields)
+						PR_RunError (pr, "Progs attempted to address an "
+									 "invalid field in an edict");
 				}
 				ed = PROG_TO_EDICT (pr, OPA.entity_var);
 				OPC.integer_var = &ed->v[OPB.integer_var] - pr->pr_globals;
@@ -454,31 +450,27 @@ PR_ExecuteProgram (progs_t * pr, func_t fnum)
 			case OP_LOAD_FNC:
 			case OP_LOAD_I:
 			case OP_LOAD_P:
-				if (pr_boundscheck->int_val
-					&& (OPA.entity_var < 0 || OPA.entity_var >=
-						pr->pr_edictareasize)) {
-					PR_RunError (pr, "Progs attempted to read an out of "
-								 "bounds edict number");
-				}
-				if (pr_boundscheck->int_val
-					&& (OPB.integer_var < 0 || OPB.integer_var >=
-						pr->progs->entityfields)) {
-					PR_RunError (pr, "Progs attempted to read an invalid "
-								 "field in an edict");
+				if (pr_boundscheck->int_val) {
+					if (OPA.entity_var < 0
+						|| OPA.entity_var >= pr->pr_edictareasize)
+						PR_RunError (pr, "Progs attempted to read an out of "
+									 "bounds edict number");
+					if (OPB.integer_var < 0
+						|| OPB.integer_var >= pr->progs->entityfields)
+						PR_RunError (pr, "Progs attempted to read an invalid "
+									 "field in an edict");
 				}
 				ed = PROG_TO_EDICT (pr, OPA.entity_var);
 				OPC.integer_var = ed->v[OPB.integer_var].integer_var;
 				break;
 			case OP_LOAD_V:
-				if (pr_boundscheck->int_val
-					&& (OPA.entity_var < 0 || OPA.entity_var >=
-						pr->pr_edictareasize)) {
+				if (pr_boundscheck->int_val) {
+					if (OPA.entity_var < 0
+						|| OPA.entity_var >= pr->pr_edictareasize)
 					PR_RunError (pr, "Progs attempted to read an out of "
 								 "bounds edict number");
-				}
-				if (pr_boundscheck->int_val
-					&& (OPB.integer_var < 0
-						|| OPB.integer_var + 2 >= pr->progs->entityfields)) {
+					if (OPB.integer_var < 0
+						|| OPB.integer_var + 2 >= pr->progs->entityfields)
 					PR_RunError (pr, "Progs attempted to read an invalid "
 								 "field in an edict");
 				}
