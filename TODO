@@ -25,14 +25,14 @@ o  doublesize modes (eg, render in 320x240 but display in 640x480)
 ?  Draw_Pic and friends need a cleanup in GL at least
 ?  console commands to see a user, ignore talk from them, etc
 ?  improved crosshairs (custom file, 32 bit for GL, etc)
-?  software targets should mix color at 16/16 or 24/32 color
+W  software targets should mix color at 16/16 or 24/32 color
 ?  Draw_Pic and other tex draw functions should use local palettes
 ?  wad loader should load wad3 and fall back to wad2 if necessary
 ?  better control over client console logging
 ?  ban reasons and expire times
 ?  no 512 entities limit (protocol limitation)
 ?  large or infinite (!) maps (currently has +-4096 protocol limit)
-?  http for file downloads
+?  redirection for file downloads
 ?  way to change con back besides changing mod dir (csqc likely)
 ?  server-side demos
 ?  movie-like demo controls (fastforward, rewind, step forward and back, seek, etc)
