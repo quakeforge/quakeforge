@@ -204,23 +204,17 @@ VID_CheckWindowXY (void)
 }
 
 void
-VID_UpdateWindowStatus (void)
+VID_UpdateWindowStatus (int w_x, int w_y)
 {
 
-	window_rect.left = window_x;
-	window_rect.top = window_y;
+	window_rect.left = window_x = w_x;
+	window_rect.top = window_y = w_y;
 	window_rect.right = window_x + window_width;
 	window_rect.bottom = window_y + window_height;
 	window_center_x = (window_rect.left + window_rect.right) / 2;
 	window_center_y = (window_rect.top + window_rect.bottom) / 2;
 
 	IN_UpdateClipCursor ();
-}
-
-void
-ClearAllStates (void)
-{
-	IN_ClearStates ();
 }
 
 qboolean
@@ -296,7 +290,7 @@ VID_Suspend (MGLDC * dc, int flags)
 	} else if (flags & MGL_REACTIVATE) {
 		IN_SetQuakeMouseState ();
 		// fix leftover Alt from any Alt-Tab or the like that switched us away
-		ClearAllStates ();
+		IN_ClearStates ();
 		CDAudio_Resume ();
 		in_mode_set = false;
 
@@ -339,7 +333,7 @@ VID_Suspend (MGLDC * dc, int flags)
 	} else if (flags & MGL_REACTIVATE) {
 		IN_SetQuakeMouseState ();
 		// fix leftover Alt from any Alt-Tab or the like that switched us away
-		ClearAllStates ();
+		IN_ClearStates ();
 		CDAudio_Resume ();
 		S_UnblockSound ();
 
@@ -1496,7 +1490,7 @@ VID_SetMode (int modenum, unsigned char *palette)
 
 	window_width = vid.width << vid_stretched;
 	window_height = vid.height << vid_stretched;
-	VID_UpdateWindowStatus ();
+	VID_UpdateWindowStatus (window_x, window_y);
 
 	CDAudio_Resume ();
 	scr_disabled_for_loading = temp;
@@ -1557,7 +1551,7 @@ VID_SetMode (int modenum, unsigned char *palette)
 	}
 
 	// fix the leftover Alt from any Alt-Tab or the like that switched us away
-	ClearAllStates ();
+	IN_ClearStates ();
 
 	Con_Printf ("Video mode %s initialized\n",
 				VID_GetModeDescription (vid_modenum));
@@ -2315,71 +2309,6 @@ D_EndDirectRect (int x, int y, int width, int height)
 
 //==========================================================================
 
-byte        scantokey[128] = {
-//  0       1        2       3       4       5       6       7
-//  8       9        A       B       C       D       E       F
-	0, 27, '1', '2', '3', '4', '5', '6',
-	'7', '8', '9', '0', '-', '=', K_BACKSPACE, 9,	// 0
-	'q', 'w', 'e', 'r', 't', 'y', 'u', 'i',
-	'o', 'p', '[', ']', 13, K_CTRL, 'a', 's',	// 1
-	'd', 'f', 'g', 'h', 'j', 'k', 'l', ';',
-	'\'', '`', K_SHIFT, '\\', 'z', 'x', 'c', 'v',	// 2
-	'b', 'n', 'm', ',', '.', '/', K_SHIFT, KP_MULTIPLY,
-	K_ALT, ' ', K_CAPSLOCK, K_F1, K_F2, K_F3, K_F4, K_F5,	// 3
-	K_F6, K_F7, K_F8, K_F9, K_F10, K_PAUSE, K_SCRLCK, KP_HOME,
-	KP_UPARROW, KP_PGUP, KP_MINUS, KP_LEFTARROW, KP_5, KP_RIGHTARROW, KP_PLUS,
-	KP_END,	// 4
-	KP_DOWNARROW, KP_PGDN, KP_INS, KP_DEL, 0, 0, 0, K_F11,
-	K_F12, 0, 0, 0, 0, 0, 0, 0,			// 5
-	0, 0, 0, 0, 0, 0, 0, 0,
-	0, 0, 0, 0, 0, 0, 0, 0,
-	0, 0, 0, 0, 0, 0, 0, 0,
-	0, 0, 0, 0, 0, 0, 0, 0
-};
-
-byte        extscantokey[128] = {
-//  0       1        2       3       4       5       6       7
-//  8       9        A       B       C       D       E       F
-	0, 27, '1', '2', '3', '4', '5', '6',
-	'7', '8', '9', '0', '-', '=', K_BACKSPACE, 9,	// 0
-	'q', 'w', 'e', 'r', 't', 'y', 'u', 'i',
-	'o', 'p', '[', ']', KP_ENTER, K_CTRL, 'a', 's',	// 1
-	'd', 'f', 'g', 'h', 'j', 'k', 'l', ';',
-	'\'', '`', K_SHIFT, '\\', 'z', 'x', 'c', 'v',	// 2
-	'b', 'n', 'm', ',', '.', KP_DIVIDE, K_SHIFT, '*',
-	K_ALT, ' ', K_CAPSLOCK, K_F1, K_F2, K_F3, K_F4, K_F5,	// 3
-	K_F6, K_F7, K_F8, K_F9, K_F10, KP_NUMLCK, 0, K_HOME,
-	K_UPARROW, K_PGUP, '-', K_LEFTARROW, '5', K_RIGHTARROW, '+', K_END,	// 4
-	K_DOWNARROW, K_PGDN, K_INS, K_DEL, 0, 0, 0, K_F11,
-	K_F12, 0, 0, 0, 0, 0, 0, 0,			// 5
-	0, 0, 0, 0, 0, 0, 0, 0,
-	0, 0, 0, 0, 0, 0, 0, 0,
-	0, 0, 0, 0, 0, 0, 0, 0,
-	0, 0, 0, 0, 0, 0, 0, 0
-};
-
-/*
-	MapKey
-
-	Map from windows to quake keynums
-*/
-int
-MapKey (int key)
-{
-	int         extended;
-
-	extended = (key >> 24) & 1;
-
-	key = (key >> 16) & 255;
-	if (key > 127)
-		return 0;
-
-	if (extended)
-		return extscantokey[key];
-	else
-		return scantokey[key];
-}
-
 /*
   AppActivate
   
@@ -2534,6 +2463,7 @@ MainWndProc (HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 {
 	LONG        lRet = 0;
 	int         fActive, fMinimized, temp;
+	int         key, unicode;
 	HDC         hdc;
 	PAINTSTRUCT ps;
 	extern unsigned int uiWheelMessage;
@@ -2547,200 +2477,201 @@ MainWndProc (HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 		case WM_CREATE:
 			break;
 
+		case WM_MOVE:
+			VID_UpdateWindowStatus ((int) LOWORD (lParam),
+									(int) HIWORD (lParam));
+
+			if ((modestate == MS_WINDOWED) && !in_mode_set && !Minimized)
+				VID_RememberWindowPos ();
+
+			break;
+
+		case WM_KEYDOWN:
+		case WM_SYSKEYDOWN:
+			if (!in_mode_set) {
+				MapKey (lParam, 1, &key, &unicode);
+				Key_Event (key, unicode, true);
+			}
+			break;
+
+		case WM_KEYUP:
+		case WM_SYSKEYUP:
+			if (!in_mode_set) {
+				MapKey (lParam, 0, &key, &unicode);
+				Key_Event (key, unicode, false);
+			}
+			break;
+
+		case WM_SYSCHAR:
+			// keep Alt-Space from happening
+			break;
+
+		// this is complicated because Win32 seems to pack multiple mouse
+		// events into one update sometimes, so always check all states and
+		// look for events
+		case WM_LBUTTONDOWN:
+		case WM_LBUTTONUP:
+		case WM_RBUTTONDOWN:
+		case WM_RBUTTONUP:
+		case WM_MBUTTONDOWN:
+		case WM_MBUTTONUP:
+		case WM_MOUSEMOVE:
+			if (!in_mode_set) {
+				temp = 0;
+
+				if (wParam & MK_LBUTTON)
+					temp |= 1;
+				if (wParam & MK_RBUTTON)
+					temp |= 2;
+				if (wParam & MK_MBUTTON)
+					temp |= 4;
+				IN_MouseEvent (temp);
+			}
+			break;
+
+		// JACK: This is the mouse wheel with the Intellimouse
+		// Its delta is either positive or neg, and we generate the proper
+		// Event.
+		case WM_MOUSEWHEEL:
+			if ((short) HIWORD (wParam) > 0) {
+				Key_Event (QFK_MWHEELUP, -1, true);
+				Key_Event (QFK_MWHEELUP, -1, false);
+			} else {
+					Key_Event (QFK_MWHEELDOWN, -1, true);
+					Key_Event (QFK_MWHEELDOWN, -1, false);
+			}
+			break;
+
+		case WM_SIZE:
+			Minimized = false;
+
+			if (!(wParam & SIZE_RESTORED)) {
+				if (wParam & SIZE_MINIMIZED)
+					Minimized = true;
+			}
+			break;
+
+		case WM_CLOSE:
+			// this causes Close in the right-click task bar menu not to work,
+			// but right now bad things happen if Close is handled in that case
+			// (garbage and a crash on Win95)
+			if (!in_mode_set) {
+				if (MessageBox
+					(mainwindow, "Are you sure you want to quit?",
+					 "Confirm Exit",
+					 MB_YESNO | MB_SETFOREGROUND | MB_ICONQUESTION) == IDYES) {
+					Sys_Quit ();
+				}
+			}
+			break;
+
+		case WM_ACTIVATE:
+			fActive = LOWORD (wParam);
+			fMinimized = (BOOL) HIWORD (wParam);
+			AppActivate (!(fActive == WA_INACTIVE), fMinimized);
+			// fix leftover Alt from any Alt-Tab or the like that switched us
+			// away
+			IN_ClearStates ();
+
+			if (!in_mode_set) {
+				if (windc)
+					MGL_activatePalette (windc, true);
+
+				VID_SetPalette (vid_curpal);
+			}
+			break;
+
+		case MM_MCINOTIFY:
+			//FIXME lRet = CDAudio_MessageHandler (hWnd, uMsg, wParam, lParam);
+			break;
+
+		default:
+			/* pass all unhandled messages to DefWindowProc */
+			lRet = DefWindowProc (hWnd, uMsg, wParam, lParam);
+			break;
+
 		case WM_SYSCOMMAND:
 			// Check for maximize being hit
 			switch (wParam & ~0x0F) {
-			case SC_MAXIMIZE:
-				// if minimized, bring up as a window before going
-				// fullscreen,
-				// so MGL will have the right state to restore
-				if (Minimized) {
-					force_mode_set = true;
-					VID_SetMode (vid_modenum, vid_curpal);
-					force_mode_set = false;
-				}
+				case SC_MAXIMIZE:
+					// if minimized, bring up as a window before going
+					// fullscreen, so MGL will have the right state to restore
+					if (Minimized) {
+						force_mode_set = true;
+						VID_SetMode (vid_modenum, vid_curpal);
+						force_mode_set = false;
+					}
 
-				VID_SetMode (vid_fullscreen_mode->int_val, vid_curpal);
-				break;
-
-			case SC_SCREENSAVE:
-			case SC_MONITORPOWER:
-				if (modestate != MS_WINDOWED) {
-					// don't call DefWindowProc() because we don't want
-					// to start the screen saver fullscreen
+					VID_SetMode (vid_fullscreen_mode->int_val, vid_curpal);
 					break;
-				}
 
-			// fall through windowed and allow the screen saver to start
-			default:
-				if (!in_mode_set) {
-					S_BlockSound ();
-					S_ClearBuffer ();
-				}
+				case SC_SCREENSAVE:
+				case SC_MONITORPOWER:
+					if (modestate != MS_WINDOWED) {
+						// don't call DefWindowProc() because we don't want
+						// to start the screen saver fullscreen
+						break;
+					}
 
-				lRet = DefWindowProc (hWnd, uMsg, wParam, lParam);
+				// fall through windowed and allow the screen saver to start
+				default:
+					if (!in_mode_set) {
+						S_BlockSound ();
+						S_ClearBuffer ();
+					}
 
-				if (!in_mode_set) {
-					S_UnblockSound ();
-				}
+					lRet = DefWindowProc (hWnd, uMsg, wParam, lParam);
+
+					if (!in_mode_set) {
+						S_UnblockSound ();
+					}
 			}
 			break;
 
-	case WM_MOVE:
-		window_x = (int) LOWORD (lParam);
-		window_y = (int) HIWORD (lParam);
-		VID_UpdateWindowStatus ();
+		case WM_PAINT:
+			hdc = BeginPaint (hWnd, &ps);
 
-		if ((modestate == MS_WINDOWED) && !in_mode_set && !Minimized)
-			VID_RememberWindowPos ();
+			if (!in_mode_set && host_initialized)
+				SCR_UpdateWholeScreen ();
 
-		break;
-
-	case WM_SIZE:
-		Minimized = false;
-
-		if (!(wParam & SIZE_RESTORED)) {
-			if (wParam & SIZE_MINIMIZED)
-				Minimized = true;
-		}
-		break;
-
-	case WM_SYSCHAR:
-		// keep Alt-Space from happening
-		break;
-
-	case WM_ACTIVATE:
-		fActive = LOWORD (wParam);
-		fMinimized = (BOOL) HIWORD (wParam);
-		AppActivate (!(fActive == WA_INACTIVE), fMinimized);
-
-		// fix leftover Alt from any Alt-Tab or the like that switched us away
-		ClearAllStates ();
-
-		if (!in_mode_set) {
-			if (windc)
-				MGL_activatePalette (windc, true);
-
-			VID_SetPalette (vid_curpal);
-		}
-		break;
-
-	case WM_PAINT:
-		hdc = BeginPaint (hWnd, &ps);
-
-		if (!in_mode_set && host_initialized)
-			SCR_UpdateWholeScreen ();
-
-		EndPaint (hWnd, &ps);
-		break;
-
-	case WM_KEYDOWN:
-	case WM_SYSKEYDOWN:
-		if (!in_mode_set)
-			Key_Event (MapKey (lParam), -1, true);
-		break;
-
-	case WM_KEYUP:
-	case WM_SYSKEYUP:
-		if (!in_mode_set)
-			Key_Event (MapKey (lParam), -1, false);
-		break;
-
-	// this is complicated because Win32 seems to pack multiple mouse events
-	// into one update sometimes, so always check all states and look for
-	// events
-	case WM_LBUTTONDOWN:
-	case WM_LBUTTONUP:
-	case WM_RBUTTONDOWN:
-	case WM_RBUTTONUP:
-	case WM_MBUTTONDOWN:
-	case WM_MBUTTONUP:
-	case WM_MOUSEMOVE:
-		if (!in_mode_set) {
-			temp = 0;
-
-			if (wParam & MK_LBUTTON)
-				temp |= 1;
-
-			if (wParam & MK_RBUTTON)
-				temp |= 2;
-
-			if (wParam & MK_MBUTTON)
-				temp |= 4;
-
-			IN_MouseEvent (temp);
-		}
-		break;
-	// JACK: This is the mouse wheel with the Intellimouse
-	// Its delta is either positive or neg, and we generate the proper Event.
-	case WM_MOUSEWHEEL:
-		if ((short) HIWORD (wParam) > 0) {
-			Key_Event (K_MWHEELUP, -1, true);
-			Key_Event (K_MWHEELUP, -1, false);
-		} else {
-				Key_Event (K_MWHEELDOWN, -1, true);
-				Key_Event (K_MWHEELDOWN, -1, false);
-		}
-		break;
-	// KJB: Added these new palette functions
-	case WM_PALETTECHANGED:
-		if ((HWND) wParam == hWnd)
+			EndPaint (hWnd, &ps);
 			break;
-	/* Fall through to WM_QUERYNEWPALETTE */
-	case WM_QUERYNEWPALETTE:
-		hdc = GetDC (NULL);
+		// KJB: Added these new palette functions
+		case WM_PALETTECHANGED:
+			if ((HWND) wParam == hWnd)
+				break;
+		/* Fall through to WM_QUERYNEWPALETTE */
+		case WM_QUERYNEWPALETTE:
+			hdc = GetDC (NULL);
 
-		if (GetDeviceCaps (hdc, RASTERCAPS) & RC_PALETTE)
-			vid_palettized = true;
-		else
-			vid_palettized = false;
+			if (GetDeviceCaps (hdc, RASTERCAPS) & RC_PALETTE)
+				vid_palettized = true;
+			else
+				vid_palettized = false;
 
-		ReleaseDC (NULL, hdc);
+			ReleaseDC (NULL, hdc);
 
-		scr_fullupdate = 0;
+			scr_fullupdate = 0;
 
-		if (vid.initialized && !in_mode_set && windc
-			&& MGL_activatePalette (windc, false) && !Minimized) {
-			VID_SetPalette (vid_curpal);
-			InvalidateRect (mainwindow, NULL, false);
+			if (vid.initialized && !in_mode_set && windc
+				&& MGL_activatePalette (windc, false) && !Minimized) {
+				VID_SetPalette (vid_curpal);
+				InvalidateRect (mainwindow, NULL, false);
 
-			// specifically required if WM_QUERYNEWPALETTE realizes a new 
-			// palette
-			lRet = TRUE;
-		}
-		break;
-
-	case WM_DISPLAYCHANGE:
-		if (!in_mode_set && (modestate == MS_WINDOWED)
-			&& !vid_fulldib_on_focus_mode) {
-			force_mode_set = true;
-			VID_SetMode (vid_modenum, vid_curpal);
-			force_mode_set = false;
-		}
-		break;
-
-	case WM_CLOSE:
-		// this causes Close in the right-click task bar menu not to work, but
-		// right now bad things happen if Close is handled in that case
-		// (garbage and a crash on Win95)
-		if (!in_mode_set) {
-			if (MessageBox
-				(mainwindow, "Are you sure you want to quit?",
-				 "Confirm Exit",
-				 MB_YESNO | MB_SETFOREGROUND | MB_ICONQUESTION) == IDYES) {
-				Sys_Quit ();
+				// specifically required if WM_QUERYNEWPALETTE realizes a new 
+				// palette
+				lRet = TRUE;
 			}
-		}
-		break;
+			break;
 
-	case MM_MCINOTIFY:
-		lRet = CDAudio_MessageHandler (hWnd, uMsg, wParam, lParam);
-		break;
-
-	default:
-		/* pass all unhandled messages to DefWindowProc */
-		lRet = DefWindowProc (hWnd, uMsg, wParam, lParam);
-		break;
+		case WM_DISPLAYCHANGE:
+			if (!in_mode_set && (modestate == MS_WINDOWED)
+				&& !vid_fulldib_on_focus_mode) {
+				force_mode_set = true;
+				VID_SetMode (vid_modenum, vid_curpal);
+				force_mode_set = false;
+			}
+			break;
 	}
 
 	/* return 0 if handled message, 1 if not */

@@ -723,12 +723,6 @@ MapKey (unsigned int keycode, int press, int *k, int *u)
 	MAIN WINDOW
 */
 
-void
-ClearAllStates (void)
-{
-	IN_ClearStates ();
-}
-
 /*
   AppActivate
 
@@ -806,100 +800,103 @@ MainWndProc (HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 		uMsg = WM_MOUSEWHEEL;
 
 	switch (uMsg) {
-	case WM_KILLFOCUS:
-		if (modestate == MS_FULLDIB)
-			ShowWindow (mainwindow, SW_SHOWMINNOACTIVE);
-		break;
-	case WM_CREATE:
-		break;
+		case WM_KILLFOCUS:
+			if (modestate == MS_FULLDIB)
+				ShowWindow (mainwindow, SW_SHOWMINNOACTIVE);
+			break;
+		case WM_CREATE:
+			break;
 
-	case WM_MOVE:
-		VID_UpdateWindowStatus ((int) LOWORD (lParam), (int) HIWORD (lParam));
-		break;
+		case WM_MOVE:
+			VID_UpdateWindowStatus ((int) LOWORD (lParam),
+									(int) HIWORD (lParam));
+			break;
 
-	case WM_KEYDOWN:
-	case WM_SYSKEYDOWN:
-		MapKey (lParam, 1, &key, &unicode);
-		Key_Event (key, unicode, true);
-		break;
+		case WM_KEYDOWN:
+		case WM_SYSKEYDOWN:
+			MapKey (lParam, 1, &key, &unicode);
+			Key_Event (key, unicode, true);
+			break;
 
-	case WM_KEYUP:
-	case WM_SYSKEYUP:
-		MapKey (lParam, 0, &key, &unicode);
-		Key_Event (key, unicode, false);
-		break;
+		case WM_KEYUP:
+		case WM_SYSKEYUP:
+			MapKey (lParam, 0, &key, &unicode);
+			Key_Event (key, unicode, false);
+			break;
 
-	case WM_SYSCHAR:
-		// keep Alt-Space from happening
-		break;
+		case WM_SYSCHAR:
+			// keep Alt-Space from happening
+			break;
 
-	// this is complicated because Win32 seems to pack multiple mouse events
-	// into one update sometimes, so we always check all states and look for
-	// events
-	case WM_LBUTTONDOWN:
-	case WM_LBUTTONUP:
-	case WM_RBUTTONDOWN:
-	case WM_RBUTTONUP:
-	case WM_MBUTTONDOWN:
-	case WM_MBUTTONUP:
-	case WM_MOUSEMOVE:
-		temp = 0;
+		// this is complicated because Win32 seems to pack multiple mouse
+		// events into one update sometimes, so we always check all states and
+		// look for events
+		case WM_LBUTTONDOWN:
+		case WM_LBUTTONUP:
+		case WM_RBUTTONDOWN:
+		case WM_RBUTTONUP:
+		case WM_MBUTTONDOWN:
+		case WM_MBUTTONUP:
+		case WM_MOUSEMOVE:
+			temp = 0;
 
-		if (wParam & MK_LBUTTON)
-			temp |= 1;
-		if (wParam & MK_RBUTTON)
-			temp |= 2;
-		if (wParam & MK_MBUTTON)
-			temp |= 4;
-		IN_MouseEvent (temp);
+			if (wParam & MK_LBUTTON)
+				temp |= 1;
+			if (wParam & MK_RBUTTON)
+				temp |= 2;
+			if (wParam & MK_MBUTTON)
+				temp |= 4;
+			IN_MouseEvent (temp);
 
-		break;
+			break;
 
-	// JACK: This is the mouse wheel with the Intellimouse
-	// It's delta is either positive or neg, and we generate the proper Event.
-	case WM_MOUSEWHEEL:
-		if ((short) HIWORD (wParam) > 0) {
-			Key_Event (QFM_WHEEL_UP, -1, true);
-			Key_Event (QFM_WHEEL_UP, -1, false);
-		} else {
-			Key_Event (QFM_WHEEL_DOWN, -1, true);
-			Key_Event (QFM_WHEEL_DOWN, -1, false);
-		}
-		break;
+		// JACK: This is the mouse wheel with the Intellimouse
+		// It's delta is either positive or neg, and we generate the proper
+		// Event.
+		case WM_MOUSEWHEEL:
+			if ((short) HIWORD (wParam) > 0) {
+				Key_Event (QFM_WHEEL_UP, -1, true);
+				Key_Event (QFM_WHEEL_UP, -1, false);
+			} else {
+				Key_Event (QFM_WHEEL_DOWN, -1, true);
+				Key_Event (QFM_WHEEL_DOWN, -1, false);
+			}
+			break;
 
-	case WM_SIZE:
-		break;
+		case WM_SIZE:
+			break;
 
-	case WM_CLOSE:
-		if (MessageBox
-			(mainwindow, "Are you sure you want to quit?", "Confirm Exit",
-			 MB_YESNO | MB_SETFOREGROUND | MB_ICONQUESTION) == IDYES) {
-			Sys_Quit ();
-		}
-		break;
+		case WM_CLOSE:
+			if (MessageBox
+				(mainwindow, "Are you sure you want to quit?", "Confirm Exit",
+				 MB_YESNO | MB_SETFOREGROUND | MB_ICONQUESTION) == IDYES) {
+				Sys_Quit ();
+			}
+			break;
 
-	case WM_ACTIVATE:
-		fActive = LOWORD (wParam);
-		fMinimized = (BOOL) HIWORD (wParam);
-		AppActivate (!(fActive == WA_INACTIVE), fMinimized);
-		// fix leftover Alt from any Alt-Tab or the like that switched us away
-		ClearAllStates ();
-		break;
+		case WM_ACTIVATE:
+			fActive = LOWORD (wParam);
+			fMinimized = (BOOL) HIWORD (wParam);
+			AppActivate (!(fActive == WA_INACTIVE), fMinimized);
+			// fix leftover Alt from any Alt-Tab or the like that switched us
+			// away
+			IN_ClearStates ();
+			break;
 
-	case WM_DESTROY:
-		if (mainwindow)
-			DestroyWindow (mainwindow);
-		PostQuitMessage (0);
-		break;
+		case WM_DESTROY:
+			if (mainwindow)
+				DestroyWindow (mainwindow);
+			PostQuitMessage (0);
+			break;
 
-	case MM_MCINOTIFY:
-		//FIXME lRet = CDAudio_MessageHandler (hWnd, uMsg, wParam, lParam);
-		break;
+		case MM_MCINOTIFY:
+			//FIXME lRet = CDAudio_MessageHandler (hWnd, uMsg, wParam, lParam);
+			break;
 
-	default:
-		/* pass all unhandled messages to DefWindowProc */
-		lRet = DefWindowProc (hWnd, uMsg, wParam, lParam);
-		break;
+		default:
+			/* pass all unhandled messages to DefWindowProc */
+			lRet = DefWindowProc (hWnd, uMsg, wParam, lParam);
+			break;
 	}
 
 	/* return 1 if handled message, 0 if not */
