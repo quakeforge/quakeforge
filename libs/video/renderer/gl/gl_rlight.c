@@ -387,8 +387,7 @@ R_MarkLights (vec3_t lightorigin, dlight_t *light, int bit, model_t *model)
 				leaf->dlightbits |= bit;
 				for (m = 0; m < leaf->nummarksurfaces; m++) {
 					msurface_t *surf = leaf->firstmarksurface[m];
-					if (surf->visframe != r_visframecount
-						|| surf->dlightframe == r_framecount)
+					if (surf->visframe != r_visframecount)
 						continue;
 					mark_surfaces (surf, lightorigin, light, bit);
 				}
