@@ -187,6 +187,13 @@ typedef struct entity_state_s
 	int		colormap;
 	int		skin;
 	int		effects;
+
+	// LordHavoc: Endy neglected to mark this as a QSG version 2 thingy...
+	byte	alpha;
+	byte	scale;
+	byte	glow_size;
+	byte	glow_color;
+	byte	colormod;
 } entity_state_t;
 
 #endif // __protocol_h

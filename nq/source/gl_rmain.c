@@ -620,9 +620,9 @@ R_DrawAliasModel (entity_t *e)
 
 	// FIXME: shadecolor is supposed to be the lighting for the model, not
 	// just colormod
-	shadecolor[0] = 255;//currententity->colormod[0];
-	shadecolor[1] = 255;//currententity->colormod[1];
-	shadecolor[2] = 255;//currententity->colormod[2];
+	shadecolor[0] = currententity->colormod[0];
+	shadecolor[1] = currententity->colormod[1];
+	shadecolor[2] = currententity->colormod[2];
 	if (!lighthalf) {
 		shadecolor[0] *= 2.0;
 		shadecolor[1] *= 2.0;
@@ -822,7 +822,7 @@ R_DrawEntitiesOnList (void)
 		if (cl_visedicts[i]->model->type != mod_brush)
 			continue;
 		currententity = cl_visedicts[i];
-		modelalpha = 1.0;//currententity->alpha;
+		modelalpha = currententity->alpha;
 
 		R_DrawBrushModel (currententity);
 	}
@@ -831,7 +831,7 @@ R_DrawEntitiesOnList (void)
 		if (cl_visedicts[i]->model->type != mod_alias)
 			continue;
 		currententity = cl_visedicts[i];
-		modelalpha = 1.0;//currententity->alpha;
+		modelalpha = currententity->alpha;
 
 		if (currententity == &cl_entities[cl.viewentity])
 			currententity->angles[PITCH] *= 0.3;
@@ -843,7 +843,7 @@ R_DrawEntitiesOnList (void)
 		if (cl_visedicts[i]->model->type != mod_sprite)
 			continue;
 		currententity = cl_visedicts[i];
-		modelalpha = 1.0;//currententity->alpha;
+		modelalpha = currententity->alpha;
 
 		R_DrawSpriteModel (currententity);
 	}
@@ -861,7 +861,8 @@ R_DrawViewModel (void)
 		|| cl.stats[STAT_HEALTH] <= 0 || !currententity->model)
 		return;
 
-	modelalpha = 1.0;//currententity->alpha;
+	// this is a HACK!  --KB
+	modelalpha = currententity->alpha;
 
 	// hack the depth range to prevent view model from poking into walls
 	glDepthRange (gldepthmin, gldepthmin + 0.3 * (gldepthmax - gldepthmin));

@@ -182,6 +182,13 @@ CL_ClearState (void)
 	for (i = 0; i < MAX_EFRAGS - 1; i++)
 		cl.free_efrags[i].entnext = &cl.free_efrags[i + 1];
 	cl.free_efrags[i].entnext = NULL;
+	for (i = 0; i < MAX_EDICTS; i++) {
+		cl_entities[i].baseline.alpha = 255;
+		cl_entities[i].baseline.scale = 16;
+		cl_entities[i].baseline.glow_color = 254;
+		cl_entities[i].baseline.glow_size = 0;
+		cl_entities[i].baseline.colormod = 255;
+	}
 }
 
 

@@ -489,6 +489,13 @@ CL_ParseBaseline (entity_t *ent)
 		ent->baseline.origin[i] = MSG_ReadCoord (net_message);
 		ent->baseline.angles[i] = MSG_ReadAngle (net_message);
 	}
+	// LordHavoc: set up the baseline to account for new effects (alpha,
+	// colormod, etc)
+	ent->alpha = 1;
+	ent->scale = 16;
+	ent->glow_color = 254;
+	ent->glow_size = 0;
+	ent->colormod[0] = ent->colormod[1] = ent->colormod[2] = 1;
 }
 
 
