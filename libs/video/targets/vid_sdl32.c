@@ -42,7 +42,6 @@
 #include "QF/console.h"
 #include "QF/cvar.h"
 #include "QF/qendian.h"
-#include "QF/render.h" // FIXME: should this be touching render?
 #include "QF/sys.h"
 #include "QF/va.h"
 #include "QF/vid.h"
@@ -218,21 +217,28 @@ VID_Shutdown (void)
 void
 VID_Update (vrect_t *rects)
 {
-/* FIXME
-	if (vid_bitdepth->int_val != 8)
-	{
-		// blit internal framebuffer to display buffer
-		SDL_BlitSurface(rendersurface, &rects, screen, &rects);
+	while (rects) {
+		if (vid_bitdepth->int_val != 8)
+		{
+			SDL_Rect    sdlrect;
+
+			sdlrect.x = rects->x;
+			sdlrect.y = rects->y;
+			sdlrect.w = rects->width;
+			sdlrect.h = rects->height;
+
+			// blit internal framebuffer to display buffer
+			SDL_BlitSurface(rendersurface, &sdlrect, screen, &sdlrect);
+		}
+		// update display
+		SDL_UpdateRect (screen, rects->x, rects->y, rects->width, rects->height);
+		rects = rects->pnext;
 	}
-	// update display
-	SDL_UpdateRect (screen, rects);
-*/
 }
 
 void
 D_BeginDirectRect (int x, int y, byte * pbitmap, int width, int height)
 {
-	/*
 	Uint8      *offset;
 
 
@@ -246,19 +252,16 @@ D_BeginDirectRect (int x, int y, byte * pbitmap, int width, int height)
 		offset += screen->pitch;
 		pbitmap += width;
 	}
-	*/
 }
 
 void
 D_EndDirectRect (int x, int y, int width, int height)
 {
-	/*
 	if (!screen)
 		return;
 	if (x < 0)
 		x = screen->w + x - 1;
 	SDL_UpdateRect (screen, x, y, width, height);
-	*/
 }
 
 void
