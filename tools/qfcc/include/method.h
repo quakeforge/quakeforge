@@ -49,20 +49,29 @@ typedef struct {
 } methodlist_t;
 
 typedef struct keywordarg_s {
+	// the first two fields match the first two fiels of param_t in
+	// functionl.h
 	struct keywordarg_s *next;
 	const char *selector;
 	expr_t     *expr;
 } keywordarg_t;
 
 struct class_s;
+struct category_s;
 struct expr_s;
+struct dstring_s;
 
 method_t *new_method (type_t *ret_type, param_t *selector, param_t *opt_parms);
 void add_method (methodlist_t *methodlist, method_t *method);
-def_t *method_def (struct class_s *klass, method_t *method);
+def_t *method_def (struct class_s *klass, struct category_s *category,
+				   method_t *method);
 
 keywordarg_t *new_keywordarg (const char *selector, struct expr_s *expr);
 
 struct expr_s *send_message (void);
+
+void selector_name (struct dstring_s *sel_id, keywordarg_t *selector);
+void selector_types (struct dstring_s *sel_types, keywordarg_t *selector);
+struct def_s *selector_def (const char *sel_id, const char *sel_types);
 
 #endif//__method_h

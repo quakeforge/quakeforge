@@ -32,6 +32,7 @@ static const char rcsid[] =
 
 #include <stdlib.h>
 
+#include <QF/dstring.h>
 #include <QF/mathlib.h>
 #include <QF/sys.h>
 #include <QF/va.h>
@@ -147,14 +148,7 @@ get_type (expr_t *e)
 		case ex_temp:
 			return e->e.temp.type;
 		case ex_pointer:
-			{
-				type_t      new;
-
-				memset (&new, 0, sizeof (new));
-				new.type = ev_pointer;
-				new.aux_type = e->e.pointer.type;
-				return find_type (&new);
-			}
+			return pointer_type (e->e.pointer.type);
 		case ex_integer:
 			if (options.code.progsversion == PROG_ID_VERSION) {
 				e->type = ex_float;
@@ -435,6 +429,15 @@ new_name_expr (const char *name)
 	expr_t     *e = new_expr ();
 	e->type = ex_name;
 	e->e.string_val = name;
+	return e;
+}
+
+expr_t *
+new_def_expr (def_t *def)
+{
+	expr_t     *e = new_expr ();
+	e->type = ex_def;
+	e->e.def = def;
 	return e;
 }
 
@@ -1477,7 +1480,7 @@ function_expr (expr_t *e1, expr_t *e2)
 		return error (e1, "more than %d parameters", MAX_PARMS);
 	}
 	if (ftype->num_parms < -1) {
-		if (arg_count > ftype->num_parms + 1) {
+		if (-arg_count > ftype->num_parms + 1) {
 			if (!options.traditional)
 				return error (e1, "too few arguments");
 			warning (e1, "too few arguments");
@@ -1927,7 +1930,16 @@ init_elements (def_t *def, expr_t *eles)
 expr_t *
 selector_expr (keywordarg_t *selector)
 {
-	return error (0, "not implemented");
+	dstring_t  *sel_id = dstring_newstr ();
+	dstring_t  *sel_types = dstring_newstr ();
+	expr_t     *sel;
+	selector_name (sel_id, selector);
+	selector_types (sel_types, selector);
+	//printf ("'%s' '%s'\n", sel_id->str, sel_types->str);
+	sel = new_def_expr (selector_def (sel_id->str, sel_types->str));
+	dstring_delete (sel_id);
+	dstring_delete (sel_types);
+	return address_expr (sel, 0, 0);
 }
 
 expr_t *
@@ -1951,7 +1963,7 @@ message_expr (expr_t *receiver, keywordarg_t *message)
 
 	for (m = message; m; m = m->next) {
 		*a = m->expr;
-		while ((*a)->next)
+		while ((*a))
 			a = &(*a)->next;
 	}
 	*a = selector;

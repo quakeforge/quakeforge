@@ -37,6 +37,7 @@ static const char rcsid[] =
 
 #include "qfcc.h"
 #include "function.h"
+#include "struct.h"
 
 typedef struct {
 	const char *name;
@@ -59,8 +60,13 @@ type_t      type_integer = { ev_integer };
 type_t      type_uinteger = { ev_uinteger };
 type_t      type_short = { ev_short };
 type_t      type_struct = { ev_struct };
-type_t      type_id = {ev_pointer };
-type_t      type_SEL = {ev_pointer };
+// these will be built up further
+type_t      type_id = { ev_pointer };
+type_t      type_Class = { ev_pointer };
+type_t      type_SEL = { ev_pointer };
+type_t      type_IMP = { ev_func, NULL, &type_id, -3, { &type_id, &type_SEL }};
+type_t      type_method_list = { ev_pointer };
+type_t     *type_method;
 
 type_t      type_floatfield = { ev_field, NULL, &type_float };
 
@@ -68,6 +74,13 @@ def_t       def_void = { &type_void, "temp" };
 def_t       def_function = { &type_function, "temp" };
 
 def_t       def_ret, def_parms[MAX_PARMS];
+
+static inline void
+chain_type (type_t *type)
+{
+	type->next = pr.types;
+	pr.types = type;
+}
 
 /*
 	find_type
@@ -109,8 +122,8 @@ find_type (type_t *type)
 	if (!check)
 		Sys_Error ("find_type: Memory Allocation Failure\n");
 	*check = *type;
-	check->next = pr.types;
-	pr.types = check;
+
+	chain_type (check);
 
 	return check;
 }
@@ -165,6 +178,18 @@ pointer_type (type_t *aux)
 	return find_type (&new);
 }
 
+type_t *
+array_type (type_t *aux, int size)
+{
+	type_t      new;
+
+	memset (&new, 0, sizeof (new));
+	new.type = ev_pointer;
+	new.aux_type = aux;
+	new.num_parms = size;
+	return find_type (&new);
+}
+
 void
 print_type (type_t *type)
 {
@@ -208,4 +233,53 @@ print_type (type_t *type)
 			printf(" %s", pr_type_name[type->type]);
 			break;
 	}
+}
+
+void
+init_types (void)
+{
+	type_t     *type;
+
+	chain_type (&type_void);
+	chain_type (&type_string);
+	chain_type (&type_float);
+	chain_type (&type_vector);
+	chain_type (&type_entity);
+	chain_type (&type_field);
+	chain_type (&type_function);
+	chain_type (&type_pointer);
+	chain_type (&type_floatfield);
+	chain_type (&type_quaternion);
+	chain_type (&type_integer);
+	chain_type (&type_uinteger);
+	chain_type (&type_short);
+	chain_type (&type_struct);
+	chain_type (&type_IMP);
+
+	type = type_SEL.aux_type = new_struct ("SEL");
+	new_struct_field (type, &type_string, "sel_id");
+	new_struct_field (type, &type_string, "sel_types");
+	chain_type (&type_SEL);
+
+	type_method = new_struct ("obj_method");
+	new_struct_field (type_method, &type_SEL, "method_name");
+	new_struct_field (type_method, &type_string, "method_types");
+	new_struct_field (type_method, &type_IMP, "method_imp");
+	chain_type (type_method);
+
+	type = type_method_list.aux_type = new_struct ("obj_method_list");
+	new_struct_field (type, &type_method_list, "method_next");
+	new_struct_field (type, &type_integer, "method_count");
+	new_struct_field (type, array_type (type_method, 1),
+					  "method_list");
+	chain_type (&type_method_list);
+
+	type = type_Class.aux_type = new_struct ("Class");
+	new_struct_field (type, &type_Class, "super_class");
+	new_struct_field (type, &type_Class, "methods");
+	chain_type (&type_Class);
+
+	type = type_id.aux_type = new_struct ("id");
+	new_struct_field (type, &type_Class, "class_pointer");
+	chain_type (&type_id);
 }

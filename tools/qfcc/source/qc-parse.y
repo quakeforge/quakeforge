@@ -1020,7 +1020,7 @@ methoddef
 	  methoddecl opt_state_expr
 		{
 			$2->instance = 0;
-			current_def = $2->def = method_def (current_class, $2);
+			current_def = $2->def = method_def (current_class, 0, $2);
 			current_params = $2->params;
 		}
 	  begin_function statement_block end_function
@@ -1038,7 +1038,7 @@ methoddef
 	  methoddecl opt_state_expr
 		{
 			$2->instance = 1;
-			current_def = $2->def = method_def (current_class, $2);
+			current_def = $2->def = method_def (current_class, 0, $2);
 			current_params = $2->params;
 		}
 	  begin_function statement_block end_function

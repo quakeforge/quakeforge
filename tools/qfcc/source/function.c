@@ -79,7 +79,7 @@ parse_params (type_t *type, param_t *parms)
 	new.aux_type = type;
 	new.num_parms = 0;
 
-	for (p = parms; p; p = p->next, new.num_parms++) {
+	for (p = parms; p; p = p->next) {
 		if (new.num_parms > MAX_PARMS) {
 			error (0, "too many params");
 			return type;
@@ -90,9 +90,9 @@ parse_params (type_t *type, param_t *parms)
 				abort ();
 			}
 			new.num_parms = -(new.num_parms + 1);
-			break;
-		} else {
+		} else if (p->type) {
 			new.parm_types[new.num_parms] = p->type;
+			new.num_parms++;
 		}
 	}
 	//print_type (&new); puts("");
@@ -111,6 +111,8 @@ build_scope (function_t *f, def_t *func, param_t *params)
 	for (p = params, i = 0; p; p = p->next, i++) {
 		if (!p->selector && !p->type && !p->name)
 			continue;					// ellipsis marker
+		if (!p->type)
+			continue;					// non-param selector
 		def = PR_GetDef (p->type, p->name, func, func->alloc);
 		f->parm_ofs[i] = def->ofs;
 		if (i > 0 && f->parm_ofs[i] < f->parm_ofs[i - 1])

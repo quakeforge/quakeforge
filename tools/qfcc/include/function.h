@@ -33,6 +33,8 @@
 #define __function_h
 
 typedef struct param_s {
+	// the first two fields match the first two fiels of keywordarg_t in
+	// method.h
 	struct param_s *next;
 	const char *selector;
 	type_t     *type;

@@ -486,10 +486,6 @@ PR_BeginCompilation (void)
 	for (i = 0; i < RESERVED_OFS; i++)
 		pr_global_defs[i] = &def_void;
 
-	// link the function type in so state forward declarations match proper
-	// type
-	pr.types = &type_function;
-	type_function.next = NULL;
 	pr_error_count = 0;
 }
 
@@ -1179,6 +1175,7 @@ main (int argc, char **argv)
 	PR_Opcode_Init_Tables ();
 
 	InitData ();
+	init_types ();
 
 	if (*sourcedir)
 		snprintf (filename, sizeof (filename), "%s/%s", sourcedir, progs_src);

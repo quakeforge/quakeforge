@@ -47,7 +47,11 @@ extern	type_t	type_uinteger;
 extern	type_t	type_short;
 extern	type_t	type_struct;
 extern	type_t	type_id;
+extern	type_t	type_Class;
 extern	type_t	type_SEL;
+extern	type_t	type_IMP;
+extern	type_t	type_method_list;
+extern	type_t	*type_method;
 
 extern	def_t	def_void;
 extern	def_t	def_function;
@@ -57,5 +61,7 @@ void new_typedef (const char *name, struct type_s *type);
 struct type_s *get_typedef (const char *name);
 struct type_s *pointer_type (struct type_s *aux);
 void print_type (struct type_s *type);
+
+void init_types (void);
 
 #endif//__type_h
