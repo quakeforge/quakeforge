@@ -14,6 +14,7 @@ GZ=.gz
 else
 GZ=
 endif
+STRIP=$(shell echo -n $(srcdir)/ | sed -e 's/[^/]//g' | wc -c)
 
 pkgdata_DATA= menu.dat$(GZ)
 
@@ -24,7 +25,7 @@ menu_src= \
 	servlist.qc string_def.qc stringh_def.qc
 
 menu.dat$(GZ): menu.src $(menu_src)
-	$(QFCC) $(QCFLAGS) $(QCPPFLAGS) -P $<
+	$(QFCC) $(QCFLAGS) $(QCPPFLAGS) -p $(STRIP) -P $<
 	$(GZIP)
 
 EXTRA_DIST= $(menu_src)

@@ -82,6 +82,7 @@ static struct option const long_options[] = {
 	{"version", no_argument, 0, 'V'},
 	{"files", no_argument, 0, 'F'},
 	{"traditional", no_argument, 0, 't'},
+	{"strip-path", required_argument, 0, 'p'},
 #ifdef USE_CPP
 	{"define", required_argument, 0, 'D'},
 	{"include", required_argument, 0, 'I'},
@@ -813,6 +814,7 @@ DecodeArgs (int argc, char **argv)
 
 	options.save_temps = false;
 	options.verbosity = 0;
+	options.strip_path = 0;
 
 	sourcedir = "";
 	progs_src = "progs.src";
@@ -827,6 +829,7 @@ DecodeArgs (int argc, char **argv)
 										 "W:"	// warning options
 										 "h"	// help
 										 "V"	// version
+										 "p:"	// strip path
 #ifdef USE_CPP
 										 "S"	// save temps
 										 "D:"	// define
@@ -847,6 +850,9 @@ DecodeArgs (int argc, char **argv)
 				break;
 			case 'P':					// progs-src
 				progs_src = strdup (optarg);
+				break;
+			case 'p':
+				options.strip_path = atoi (optarg);
 				break;
 			case 'F':
 				options.files_dat = true;
@@ -1122,6 +1128,22 @@ preprocess_file (const char *filename)
 	return fopen (filename, "rt");
 }
 
+const char *
+strip_path (const char *filename)
+{
+	const char *p = filename;
+	int         i = options.strip_path;
+
+	while (i-- > 0) {
+		while (*p && *p != '/')
+			p++;
+		if (!*p)
+			break;
+		filename = ++p;
+	}
+	return filename;
+}
+
 /*
 	main
 
@@ -1212,7 +1234,7 @@ main (int argc, char **argv)
 
 		yyin = preprocess_file (filename);
 
-		s_file = ReuseString (filename);
+		s_file = ReuseString (strip_path (filename));
 		pr_source_line = 1;
 		clear_frame_macros ();
 		error = yyparse () || pr_error_count;

@@ -571,6 +571,7 @@ ddef_t *new_local (void);
 
 int	CopyString (const char *str);
 int	ReuseString (const char *str);
+const char *strip_path (const char *filename);
 
 typedef struct {
 	qboolean	cow;				// Turn constants into variables if written to
@@ -595,6 +596,8 @@ typedef struct {
 	qboolean		save_temps;		// save temporary files
 	qboolean		files_dat;		// generate files.dat
 	qboolean		traditional;	// behave more like qcc
+	int				strip_path;		// number of leading path elements to strip
+									// from source file names
 } options_t;
 
 extern options_t options;

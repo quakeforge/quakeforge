@@ -138,7 +138,7 @@ m		([\-+]?)
 						while (*p && *p != '\n')	// ignore flags
 							p++;
 						pr_source_line = line - 1;
-						s_file = ReuseString (s);
+						s_file = ReuseString (strip_path (s));
 						free (s);
 					}
 
