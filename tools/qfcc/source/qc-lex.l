@@ -111,7 +111,7 @@ m		([\-+]?)
 						return QUATERNION_VAL;
 					}
 
-'(\\[^xX0-7\n]|[^'\n]|\\[xX][0-9A-Fa-f]+|\\[0-7]+)*'	{
+'(\\[^xX0-7\r\n]|[^'\r\n]|\\[xX][0-9A-Fa-f]+|\\[0-7]+)*'	{
 						char *str = make_string (yytext);
 
 						if (str[1])
@@ -190,9 +190,9 @@ m		([\-+]?)
 
 <grab_frame>{ID}	add_frame_macro (yytext);
 
-<grab_other>[^\n]*	/* skip */
+<grab_other>[^\r\n]*	/* skip */
 
-<*>\n				{
+<*>\r*\n				{
 						pr_source_line++;
 						BEGIN (INITIAL);
 					}
