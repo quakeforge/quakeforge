@@ -142,12 +142,13 @@ R_RecursiveLightUpdate (mnode_t *node)
 void
 R_AddDynamicLights (msurface_t *surf)
 {
-	float		  dist;
-	int			  lnum, maxdist, maxdist2, maxdist3, red, green, blue, smax,
-				  smax3, tmax, td, i, j, s, t;
-	int           sdtable[18];
-	unsigned int *bl;
-	vec3_t		  impact, local;
+	float			dist;
+	int				lnum, maxdist, maxdist2, maxdist3, red, green, blue, smax,
+					smax3, tmax;
+	unsigned int	td, i, j, s, t;
+	unsigned int	sdtable[18];
+	unsigned int   *bl;
+	vec3_t			impact, local;
 
 	smax = (surf->extents[0] >> 4) + 1;
 	smax3 = smax * 3;
@@ -220,8 +221,8 @@ void
 R_BuildLightMap (msurface_t *surf, byte * dest, int stride)
 {
 	byte		   *lightmap;
-	int				maps, shift, size, smax, tmax, t2, i, j;
-	unsigned int	scale;
+	int				maps, shift, size, smax, tmax, i, j;
+	unsigned int	scale, t2;
 	unsigned int   *bl;
 
 	surf->cached_dlight = (surf->dlightframe == r_framecount);
@@ -723,8 +724,8 @@ R_DrawBrushModel (entity_t *e)
 	if (gl_fb_bmodels->int_val)
 		R_RenderFullbrights ();
 
-	//if (gl_sky_clip->int_val)
-	//	R_DrawSkyChain (sky_chain);
+//	if (gl_sky_clip->int_val)
+//		R_DrawSkyChain (sky_chain);
 
 	qfglPopMatrix ();
 }
@@ -783,7 +784,7 @@ R_RecursiveWorldNode (mnode_t *node)
 				continue;				// wrong side
 
 			if (surf->flags & SURF_DRAWTURB) {
-				if (r_wateralpha->value < 1)
+				if (r_wateralpha->value < 1.0)
 					CHAIN_SURF_B2F (surf, waterchain);
 				else
 					CHAIN_SURF (surf, waterchain);
@@ -839,7 +840,8 @@ R_MarkLeaves (void)
 {
 	byte         solid[4096];
 	byte        *vis;
-	int          c, i;
+	int			 c;
+	unsigned int i;
 	mleaf_t     *leaf;
 	mnode_t     *node;
 	msurface_t **mark;
