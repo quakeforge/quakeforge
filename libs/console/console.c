@@ -37,6 +37,7 @@ static const char rcsid[] =
 #include <stdarg.h>
 #include <stdio.h>
 
+#include "QF/cmd.h"
 #include "QF/console.h"
 #include "QF/cvar.h"
 #include "QF/plugin.h"
@@ -109,4 +110,11 @@ Con_ProcessInput (void)
 {
 	if (con_module)
 		con_module->functions->console->pC_ProcessInput ();
+	else
+		while (1) {
+			const char *cmd = Sys_ConsoleInput ();
+			if (!cmd)
+				break;
+			Cbuf_AddText (cmd);
+		}
 }

@@ -899,6 +899,10 @@ Sbar_DeathmatchOverlay (int start)
 	player_info_t *s;
 	qpic_t     *pic;
 
+	// FIXME: magic number, gained through experimentation
+	if (vid.width < 244)
+		return;
+
 	if (largegame)
 		skip = 8;
 
