@@ -159,7 +159,7 @@ selection_notify (XEvent * event)
 	if (XGetWindowProperty (x_disp, x_win, property, 0, num_bytes, True,
 							AnyPropertyType, &type, &format, &len,
 							&tmp, &data) != Success) {
-		XFree (data);	//FIXME is this correct for his instance?
+		XFree (data);	//FIXME is this correct for this instance?
 		return;
 	}
 
