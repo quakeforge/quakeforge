@@ -1046,6 +1046,7 @@ preprocess_file (const char *filename)
 
 			tempname->size = strlen (temp1) + 1
 							 + strlen (temp2 ? temp2 + 1 : this_program) + 1;
+			dstring_adjust (tempname);
 			sprintf (tempname->str, "%s%c%sXXXXXX", temp1,
 					  PATH_SEPARATOR, temp2 ? temp2 + 1 : this_program);
 		}
@@ -1079,6 +1080,10 @@ preprocess_file (const char *filename)
 		}
 		if (!pid) {
 			// we're a child, check for abuse
+			//const char **a;
+			//for (a = cpp_argv; *a; a++)
+			//	printf ("%s ", *a);
+			//puts("");
 			execvp (cpp_argv[0], (char **)cpp_argv);
 			fprintf (stderr, "Child shouldn't reach here\n");
 			exit (1);
