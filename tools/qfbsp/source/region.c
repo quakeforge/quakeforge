@@ -23,9 +23,13 @@
 #ifdef HAVE_CONFIG_H
 # include "config.h"
 #endif
+#ifdef HAVE_STRING_H
+# include "string.h"
+#endif
 
 #include "QF/sys.h"
 
+#include "compat.h"
 #include "bsp5.h"
 
 /*
