@@ -141,7 +141,7 @@ convert_name (expr_t *e)
 			e->e.def = class_def (class);
 			return;
 		}
-		d = get_def (NULL, name, current_scope, 0);
+		d = get_def (NULL, name, current_scope, st_none);
 		if (d) {
 			if (d->global) {
 				new = class_ivar_expr (current_class, name);
@@ -520,7 +520,7 @@ new_def_expr (def_t *def)
 expr_t *
 new_self_expr (void)
 {
-	def_t      *def = get_def (&type_entity, ".self", pr.scope, 1);
+	def_t      *def = get_def (&type_entity, ".self", pr.scope, st_global);
 
 	def_initialized (def);
 	return new_def_expr (def);
@@ -530,7 +530,7 @@ expr_t *
 new_this_expr (void)
 {
 	type_t     *type = field_type (&type_id);
-	def_t      *def = get_def (type, ".this", pr.scope, 1);
+	def_t      *def = get_def (type, ".this", pr.scope, st_global);
 
 	def_initialized (def);
 	return new_def_expr (def);

@@ -73,7 +73,8 @@ defs_get_key (void *_def, void *_tab)
 }
 
 static def_t *
-check_for_name (type_t *type, const char *name, scope_t *scope, int allocate)
+check_for_name (type_t *type, const char *name, scope_t *scope,
+				storage_class_t storage)
 {
 	def_t      *def;
 
@@ -89,10 +90,10 @@ check_for_name (type_t *type, const char *name, scope_t *scope, int allocate)
 	// see if the name is already in use
 	def = (def_t *) Hash_Find (defs_by_name, name);
 	if (def) {
-		if (allocate && scope == def->scope)
+		if (storage != st_none && scope == def->scope)
 			if (type && def->type != type)
 				error (0, "Type mismatch on redeclaration of %s", name);
-		if (!allocate || def->scope == scope)
+		if (storage == st_none || def->scope == scope)
 			return def;
 	}
 	return 0;
@@ -166,11 +167,12 @@ vector_field_component (def_t *vec, int comp, scope_t *scope)
 	If allocate is true, a new def will be allocated if it can't be found
 */
 def_t *
-get_def (type_t *type, const char *name, scope_t *scope, int allocate)
+get_def (type_t *type, const char *name, scope_t *scope,
+		 storage_class_t storage)
 {
-	def_t      *def = check_for_name (type, name, scope, allocate);
+	def_t      *def = check_for_name (type, name, scope, storage);
 
-	if (def || !allocate)
+	if (def || storage == st_none)
 		return def;
 
 	// allocate a new def

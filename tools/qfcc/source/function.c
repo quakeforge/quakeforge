@@ -132,10 +132,10 @@ build_scope (function_t *f, def_t *func, param_t *params)
 	f->scope = new_scope (sc_params, new_defspace (), pr.scope);
 
 	if (func->type->num_parms < 0) {
-		def = get_def (&type_integer, ".argc", f->scope, 1);
+		def = get_def (&type_integer, ".argc", f->scope, st_local);
 		def->used = 1;
 		def_initialized (def);
-		argv = get_def (&type_pointer, ".argv", f->scope, 1);
+		argv = get_def (&type_pointer, ".argv", f->scope, st_local);
 		argv->used = 1;
 		def_initialized (argv);
 	}
@@ -145,7 +145,7 @@ build_scope (function_t *f, def_t *func, param_t *params)
 			continue;					// ellipsis marker
 		if (!p->type)
 			continue;					// non-param selector
-		def = get_def (p->type, p->name, f->scope, 1);
+		def = get_def (p->type, p->name, f->scope, st_local);
 		parm_ofs[i] = def->ofs;
 		if (i > 0 && parm_ofs[i] < parm_ofs[i - 1]) {
 			error (0, "bad parm order");
@@ -159,7 +159,7 @@ build_scope (function_t *f, def_t *func, param_t *params)
 
 	if (argv) {
 		while (i < MAX_PARMS) {
-			def = get_def (&type_vector, 0, f->scope, 1);
+			def = get_def (&type_vector, 0, f->scope, st_local);
 			def->used = 1;
 			if (argv->type == &type_pointer)
 				argv->type = array_type (&type_vector, MAX_PARMS - i);

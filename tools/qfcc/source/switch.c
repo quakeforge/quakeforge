@@ -298,7 +298,8 @@ build_switch (expr_t *sw, case_node_t *tree, int op, expr_t *sw_val,
 
 		range->type = ex_uinteger;
 
-		def = get_def (array_type (&type_uinteger, high - low + 1), name, pr.scope, 1);
+		def = get_def (array_type (&type_uinteger, high - low + 1), name,
+					   pr.scope, st_static);
 		table = new_def_expr (def);
 
 		if (tree->left) {

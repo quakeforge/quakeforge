@@ -119,10 +119,12 @@ flags (def_t *d)
 		flags |= QFOD_INITIALIZED;
 	if (d->constant)
 		flags |= QFOD_CONSTANT;
-	if (d->global)
-		flags |= QFOD_GLOBAL;
 	if (d->absolute)
 		flags |= QFOD_ABSOLUTE;
+	if (d->global)
+		flags |= QFOD_GLOBAL;
+	if (d->external)
+		flags |= QFOD_EXTERNAL;
 	return flags;
 }
 

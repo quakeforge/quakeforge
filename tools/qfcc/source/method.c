@@ -121,8 +121,7 @@ method_def (class_t *class, method_t *method)
 		if (*s == ':')
 			*s = '_';
 	//printf ("%s %s %s %ld\n", method->name, method->types, str->str, str->size);
-	// FIXME need a file scope
-	def = get_def (method->type, str->str, pr.scope, 1);
+	def = get_def (method->type, str->str, pr.scope, st_static);
 	dstring_delete (str);
 	return def;
 }
@@ -175,7 +174,7 @@ make_message_def (const char *name, def_t **def)
 	expr_t     *zero = new_expr ();
 
 	zero->type = ex_integer;
-	*def = get_def (&type_IMP, name, pr.scope, 1);
+	*def = get_def (&type_IMP, name, pr.scope, st_static);
 	build_builtin_function (*def, zero);
 }
 
@@ -298,7 +297,7 @@ emit_methods (methodlist_t *_methods, const char *name, int instance)
 	for (i = 0; i < count; i++)
 		new_struct_field (method_list, type_Method.aux_type, 0, vis_public);
 	methods_def = get_def (method_list, va ("_OBJ_%s_METHODS_%s", type, name),
-						   pr.scope, 1);
+						   pr.scope, st_static);
 	methods_def->initialized = methods_def->constant = 1;
 	methods = &G_STRUCT (pr_method_list_t, methods_def->ofs);
 	methods->method_next = 0;

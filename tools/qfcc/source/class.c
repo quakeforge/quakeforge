@@ -161,7 +161,7 @@ class_begin (class_t *class)
 								va ("_OBJ_CATEGORY_%s_%s",
 									class->class_name,
 									class->category_name),
-								pr.scope, 1);
+								pr.scope, st_static);
 		class->def->initialized = class->def->constant = 1;
 		category = &G_STRUCT (pr_category_t, class->def->ofs);
 		category->category_name = ReuseString (class->category_name);
@@ -177,7 +177,7 @@ class_begin (class_t *class)
 		
 		meta_def = get_def (type_Class.aux_type,
 							  va ("_OBJ_METACLASS_%s", class->class_name),
-							  pr.scope, 1);
+							  pr.scope, st_static);
 		meta_def->initialized = meta_def->constant = 1;
 		meta = &G_STRUCT (pr_class_t, meta_def->ofs);
 		meta->class_pointer  = ReuseString (class->class_name);
@@ -192,7 +192,7 @@ class_begin (class_t *class)
 
 		class->def = get_def (type_Class.aux_type,
 								va ("_OBJ_CLASS_%s", class->class_name),
-								pr.scope, 1);
+								pr.scope, st_static);
 		class->def->initialized = class->def->constant = 1;
 		cls = &G_STRUCT (pr_class_t, class->def->ofs);
 		cls->class_pointer = meta_def->ofs;
@@ -400,7 +400,7 @@ class_def (class_t *class)
 
 	def = get_def (class->type,
 					 va ("_OBJ_CLASS_POINTER_%s", class->class_name),
-					 pr.scope, 1);
+					 pr.scope, st_static);
 	if (def->initialized)
 		return def;
 	if (class->def) {	//FIXME need externals?
@@ -453,7 +453,7 @@ class_finish_module (void)
 	new_struct_field (symtab_type, &type_integer, "cat_def_cnt", vis_public);
 	for (i = 0; i < num_classes + num_categories; i++)
 		new_struct_field (symtab_type, &type_pointer, 0, vis_public);
-	symtab_def = get_def (symtab_type, "_OBJ_SYMTAB", pr.scope, 1);
+	symtab_def = get_def (symtab_type, "_OBJ_SYMTAB", pr.scope, st_static);
 	symtab_def->initialized = symtab_def->constant = 1;
 	symtab = &G_STRUCT (pr_symtab_t, symtab_def->ofs);
 	symtab->cls_def_cnt = num_classes;
@@ -466,7 +466,7 @@ class_finish_module (void)
 		if ((*t)->def)
 			*def_ptr++ = (*t)->def->ofs;
 
-	module_def = get_def (type_module, "_OBJ_MODULE", pr.scope, 1);
+	module_def = get_def (type_module, "_OBJ_MODULE", pr.scope, st_static);
 	module_def->initialized = module_def->constant = 1;
 	module = &G_STRUCT (pr_module_t, module_def->ofs);
 	module->size = type_size (type_module);
@@ -474,7 +474,7 @@ class_finish_module (void)
 	module->symtab = symtab_def->ofs;
 
 	exec_class_def = get_def (&type_obj_exec_class, "__obj_exec_class",
-								pr.scope, 1);
+								pr.scope, st_static);
 	exec_class_func = new_function ("__obj_exec_class");
 	exec_class_func->builtin = 0;
 	exec_class_func->def = exec_class_def;
@@ -482,7 +482,7 @@ class_finish_module (void)
 	build_function (exec_class_func);
 	finish_function (exec_class_func);
 
-	init_def = get_def (&type_function, ".ctor", pr.scope, 1);
+	init_def = get_def (&type_function, ".ctor", pr.scope, st_static);
 	init_func = new_function (".ctor");
 	init_func->def = init_def;
 	init_func->refs = new_reloc (init_def->ofs, rel_def_func);
@@ -548,7 +548,7 @@ protocol_add_protocol_methods (protocol_t *protocol, expr_t *protocols)
 def_t *
 protocol_def (protocol_t *protocol)
 {
-	return get_def (&type_Protocol, protocol->name, pr.scope, 1);
+	return get_def (&type_Protocol, protocol->name, pr.scope, st_static);
 }
 
 protocollist_t *
@@ -578,7 +578,7 @@ emit_protocol (protocol_t *protocol)
 
 	proto_def = get_def (type_Protocol.aux_type,
 						   va ("_OBJ_PROTOCOL_%s", protocol->name),
-						   pr.scope, 1);
+						   pr.scope, st_static);
 	proto_def->initialized = proto_def->constant = 1;
 	proto = &G_STRUCT (pr_protocol_t, proto_def->ofs);
 	proto->class_pointer = 0;
@@ -609,7 +609,7 @@ emit_protocol_list (protocollist_t *protocols, const char *name)
 		new_struct_field (protocol_list, &type_pointer, 0, vis_public);
 	proto_list_def = get_def (type_Protocol.aux_type,
 								va ("_OBJ_PROTOCOLS_%s", name),
-								pr.scope, 1);
+								pr.scope, st_static);
 	proto_list_def->initialized = proto_list_def->constant = 1;
 	proto_list = &G_STRUCT (pr_protocol_list_t, proto_list_def->ofs);
 	proto_list->next = 0;

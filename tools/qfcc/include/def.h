@@ -47,9 +47,10 @@ typedef struct def_s {
 	unsigned		freed:1;		// already freed from the scope
 	unsigned		removed:1;		// already removed from the symbol table
 	unsigned		used:1;			// unused local detection
-	unsigned		global:1;		// globally declared def
 	unsigned		absolute:1;		// don't relocate (for temps for shorts)
 	unsigned		managed:1;		// managed temp
+	unsigned		global:1;		// globally declared def
+	unsigned		external:1;		// externally declared def
 
 	string_t		file;			// source file
 	int				line;			// source line
@@ -93,6 +94,14 @@ typedef struct scope_s {
 	struct scope_s *parent;
 } scope_t;
 
+typedef enum {
+	st_none,
+	st_global,
+	st_extern,
+	st_static,
+	st_local
+} storage_class_t;
+
 extern	def_t	def_ret, def_parms[MAX_PARMS];
 extern	def_t	def_void;
 extern	def_t	def_function;
@@ -101,7 +110,7 @@ scope_t *new_scope (scope_type type, defspace_t *space, scope_t *parent);
 defspace_t *new_defspace (void);
 
 def_t *get_def (struct type_s *type, const char *name, scope_t *scope,
-				int allocate);
+				storage_class_t storage);
 def_t *new_def (struct type_s *type, const char *name, scope_t *scope);
 int new_location (struct type_s *type, defspace_t *space);
 void free_location (def_t *def);

@@ -67,8 +67,9 @@ typedef struct qfo_def_s {
 
 #define QFOD_INITIALIZED	(1u<<0)
 #define QFOD_CONSTANT		(1u<<1)
-#define QFOD_GLOBAL			(1u<<2)
-#define QFOD_ABSOLUTE		(1u<<3)
+#define QFOD_ABSOLUTE		(1u<<2)
+#define QFOD_GLOBAL			(1u<<3)
+#define QFOD_EXTERNAL		(1u<<4)
 
 typedef struct qfo_function_s {
 	string_t    name;

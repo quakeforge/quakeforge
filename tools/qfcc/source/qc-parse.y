@@ -128,7 +128,7 @@ void free_local_inits (hashtab_t *def_list);
 %token	LOCAL RETURN WHILE DO IF ELSE FOR BREAK CONTINUE ELLIPSIS NIL
 %token	IFBE IFB IFAE IFA
 %token	SWITCH CASE DEFAULT STRUCT UNION ENUM TYPEDEF SUPER SELF THIS
-%token	ARGC ARGV
+%token	ARGC ARGV EXTERN STATIC
 %token	ELE_START
 %token	<type> TYPE
 
@@ -179,6 +179,7 @@ type_t	*struct_type;
 visibility_t current_visibility;
 type_t	*current_ivars;
 scope_t *current_scope;
+storage_class_t current_storage;
 
 string_t	s_file;						// filename for function definition
 
@@ -195,7 +196,7 @@ defs
 	;
 
 def
-	: type { current_type = $1; } def_list
+	: storage_class type { current_type = $2; } def_list
 	| STRUCT NAME
 	  { struct_type = new_struct ($2); } '=' '{' struct_defs '}'
 	| UNION NAME
@@ -209,6 +210,12 @@ def
 			process_enum ($4);
 			new_typedef ($7, &type_integer);
 		}
+	;
+
+storage_class
+	: /* empty */	{ current_storage = st_global; }
+	| EXTERN		{ current_storage = st_extern; }
+	| STATIC		{ current_storage = st_static; }
 	;
 
 struct_defs
@@ -356,13 +363,13 @@ def_name
 		{
 			if (current_scope->type == sc_local
 				&& current_scope->parent->type == sc_params) {
-				def_t      *def = get_def (0, $1, current_scope, 0);
+				def_t      *def = get_def (0, $1, current_scope, st_none);
 				if (def) {
 					if (def->scope->type == sc_params)
 						warning (0, "local %s shadows param %s", $1, def->name);
 				}
 			}
-			$$ = get_def (current_type, $1, current_scope, 1);
+			$$ = get_def (current_type, $1, current_scope, current_storage);
 			current_def = $$;
 		}
 	;
@@ -628,6 +635,7 @@ statement
 		}
 	| LOCAL type
 		{
+			current_storage = st_local;
 			current_type = $2;
 			local_expr = new_block_expr ();
 		}
