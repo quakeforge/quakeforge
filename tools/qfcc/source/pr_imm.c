@@ -60,7 +60,7 @@ vector_imm_get_key (void *_def, void *unused)
 	Looks for a preexisting constant
 */
 def_t *
-PR_ParseImmediate (void)
+PR_ParseImmediate (def_t *def)
 {
 	def_t	*cn = 0;
 	char rep[60];
@@ -100,13 +100,16 @@ PR_ParseImmediate (void)
 
 	// allocate a new one
 	// always share immediates
-	cn = PR_NewDef (pr_immediate_type, "IMMEDIATE", 0);
+	if (def) {
+		cn = def;
+	} else {
+		cn = PR_NewDef (pr_immediate_type, "IMMEDIATE", 0);
+		cn->ofs = numpr_globals;
+		pr_global_defs[cn->ofs] = cn;
+		numpr_globals += type_size[pr_immediate_type->type];
+	}
 	cn->initialized = 1;
-
 	// copy the immediate to the global area
-	cn->ofs = numpr_globals;
-	pr_global_defs[cn->ofs] = cn;
-	numpr_globals += type_size[pr_immediate_type->type];
 	if (pr_immediate_type == &type_string)
 		pr_immediate.string = CopyString (pr_immediate_string);
 
@@ -118,43 +121,4 @@ PR_ParseImmediate (void)
 	PR_Lex ();
 
 	return cn;
-}
-
-void
-PR_NameImmediate (def_t *def)
-{
-	char rep[60];
-	def_t *cn;
-	hashtab_t *tab;
-
-	if (!string_imm_defs) {
-		string_imm_defs = Hash_NewTable (16381, string_imm_get_key, 0, 0);
-		float_imm_defs = Hash_NewTable (16381, float_imm_get_key, 0, 0);
-		vector_imm_defs = Hash_NewTable (16381, vector_imm_get_key, 0, 0);
-	}
-	if (def->type == &type_string) {
-		cn = Hash_Find (string_imm_defs, string_imm_get_key (def, 0));
-		tab = string_imm_defs;
-	} else if (def->type == &type_float) {
-		strcpy (rep, float_imm_get_key (def, 0));
-		cn = Hash_Find (float_imm_defs, rep);
-		tab = float_imm_defs;
-	} else if (def->type == &type_vector) {
-		strcpy (rep, vector_imm_get_key (def, 0));
-		cn = Hash_Find (vector_imm_defs, rep);
-		tab = vector_imm_defs;
-	} else {
-		PR_ParseError ("weird immediate type");
-		return;
-	}
-/*
-	if (cn) {
-		if (strcmp (cn->name, "IMMEDIATE") != 0) {
-			free cn->name;
-			cn->name = strdup (def->name);
-		}
-		return;
-	}
-*/
-	Hash_Add (tab, def);
 }

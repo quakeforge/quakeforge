@@ -38,11 +38,13 @@
 
 #include <stdarg.h>
 
-#include "compat.h"
 #include "QF/console.h"
 #include "QF/cvar.h"
 #include "QF/progs.h"
 #include "QF/sys.h"
+#include "QF/zone.h"
+
+#include "compat.h"
 
 char       *pr_opnames[] = {
 	"DONE",
@@ -129,7 +131,9 @@ char       *pr_opnames[] = {
 	"OR",
 
 	"BITAND",
-	"BITOR"
+	"BITOR",
+
+	"ADD_S",
 };
 
 //=============================================================================
@@ -390,6 +394,18 @@ PR_ExecuteProgram (progs_t * pr, func_t fnum)
 				E_OPC->vector[0] = E_OPA->vector[0] + E_OPB->vector[0];
 				E_OPC->vector[1] = E_OPA->vector[1] + E_OPB->vector[1];
 				E_OPC->vector[2] = E_OPA->vector[2] + E_OPB->vector[2];
+				break;
+			case OP_ADD_S:
+				{
+					char *a = PR_GetString (pr, E_OPA->string);
+					char *b = PR_GetString (pr, E_OPB->string);
+					int lena = strlen (a);
+					int size = lena + strlen (b) + 1;
+					char *c = Hunk_TempAlloc (size);
+					strcpy (c, a);
+					strcpy (c + lena, b);
+					E_OPC->string = PR_SetString (pr, c);
+				}
 				break;
 			case OP_SUB_F:
 				E_OPC->_float = E_OPA->_float - E_OPB->_float;

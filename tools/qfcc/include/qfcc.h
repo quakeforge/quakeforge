@@ -356,8 +356,7 @@ void PR_Lex (void);
 
 type_t *PR_ParseType (void);
 char *PR_ParseName (void);
-def_t *PR_ParseImmediate (void);
-void PR_NameImmediate (def_t *def);
+def_t *PR_ParseImmediate (def_t *def);
 
 qboolean PR_Check (token_type_t type, char *string);
 void PR_Expect (token_type_t type, char *string);

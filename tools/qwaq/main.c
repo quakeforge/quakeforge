@@ -12,12 +12,15 @@ int memsize = 16*1024*1024;
 
 void BI_Init (progs_t *progs);
 
+extern char *type_name[];
+
 int
 main ()
 {
 	func_t main_func;
 	FILE *f;
 	int len;
+	int i;
 
 	Cvar_Init_Hash ();
 	Cmd_Init_Hash ();
@@ -44,6 +47,31 @@ main ()
 	}
 	if (!progs.progs)
 		Sys_Error ("couldn't load %s\n", "qwaq.dat");
+	for (i = 0; i < progs.progs->numstatements; i++)
+		PR_PrintStatement (&progs, &progs.pr_statements[i]);
+	printf ("\n");
+	for (i = 0; i < progs.progs->numfunctions; i++) {
+		dfunction_t *func = &progs.pr_functions[i];
+		int j;
+
+		printf ("%d %d %d %d %s %s %d", func->first_statement, func->parm_start, func->locals, func->profile, PR_GetString (&progs, func->s_name), PR_GetString (&progs, func->s_file), func->numparms);
+		for (j = 0; j < func->numparms; j++)
+			printf (" %d", func->parm_size[j]);
+		printf ("\n");
+	}
+	printf ("\n");
+	for (i = 0; i < progs.progs->numglobaldefs; i++) {
+		ddef_t *def = &progs.pr_globaldefs[i];
+
+		printf ("%s %d %d %s\n", type_name[def->type & ~DEF_SAVEGLOBAL], (def->type & DEF_SAVEGLOBAL) != 0, def->ofs, PR_GetString (&progs, def->s_name));
+	}
+	printf ("\n");
+	for (i = 0; i < progs.progs->numfielddefs; i++) {
+		ddef_t *def = &progs.pr_fielddefs[i];
+
+		printf ("%s %d %d %s\n", type_name[def->type & ~DEF_SAVEGLOBAL], (def->type & DEF_SAVEGLOBAL) != 0, def->ofs, PR_GetString (&progs, def->s_name));
+	}
+	printf ("\n");
 	main_func = PR_GetFunctionIndex (&progs, "main");
 	PR_ExecuteProgram (&progs, main_func);
 	return 0;

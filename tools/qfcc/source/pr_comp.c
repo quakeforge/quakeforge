@@ -131,6 +131,8 @@ opcode_t    pr_opcodes[] = {
 	{"&", "BITAND", 2, false, &def_float, &def_float, &def_float},
 	{"|", "BITOR", 2, false, &def_float, &def_float, &def_float},
 
+	{"+", "ADD_S", 3, false, &def_string, &def_string, &def_string},
+
 	{NULL}
 };
 
@@ -340,7 +342,7 @@ PR_ParseValue (void)
 
 	// if the token is an immediate, allocate a constant for it
 	if (pr_token_type == tt_immediate)
-		return PR_ParseImmediate ();
+		return PR_ParseImmediate (0);
 
 	name = PR_ParseName ();
 
@@ -446,9 +448,10 @@ PR_Expression (int priority)
 			oldop = op;
 			while (type_a != op->type_a->type->type
 				   || type_b != op->type_b->type->type
-				   || (type_c != ev_void && type_c != op->type_c->type->type)) {
+				   || (type_c != ev_void && type_c != op->type_c->type->type)
+				   || strcmp (op->name, oldop->name)) {
 				op++;
-				if (!op->name || strcmp (op->name, oldop->name))
+				if (!op->name)// || strcmp (op->name, oldop->name))
 					PR_ParseError ("type mismatch for %s", oldop->name);
 			}
 
@@ -594,7 +597,7 @@ PR_ParseState (void)
 	if (pr_token_type != tt_immediate || pr_immediate_type != &type_float)
 		PR_ParseError ("state frame must be a number");
 
-	s1 = PR_ParseImmediate ();
+	s1 = PR_ParseImmediate (0);
 
 	PR_Expect (tt_punct, ",");
 
@@ -727,11 +730,7 @@ PR_ParseDefs (void)
 				PR_ParseError ("wrong immediate type for %s", name);
 			}
 
-			def->initialized = 1;
-			memcpy (pr_globals + def->ofs, &pr_immediate,
-					4 * type_size[pr_immediate_type->type]);
-			PR_NameImmediate (def);
-			PR_Lex ();
+			def = PR_ParseImmediate (def);
 		}
 
 	} while (PR_Check (tt_punct, ","));
