@@ -1256,7 +1256,7 @@ CL_Init_Cvars (void)
 						  "maximum frames rendered in one second. 0 == 32");
 	cl_timeout = Cvar_Get ("cl_timeout", "60", CVAR_ARCHIVE, NULL, "server "
 						   "connection timeout (since last packet received)");
-	host_speeds = Cvar_Get ("host_speeds", 0, CVAR_NONE, NULL,
+	host_speeds = Cvar_Get ("host_speeds", "0", CVAR_NONE, NULL,
 							"display host processing times");
 	lookspring = Cvar_Get ("lookspring", "0", CVAR_ARCHIVE, NULL, "Snap view "
 						   "to center when moving and no mlook/klook");
