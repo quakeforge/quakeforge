@@ -586,48 +586,42 @@ Con_DrawDownload (int lines)
 	char       *text;
 	char        dlbar[1024];
 
-	// draw the download bar
-	// figure out width
-	if (cls.download) {
-		if ((text = strrchr (cls.downloadname, '/')))
-			text++;
-		else
-			text = cls.downloadname;
+	if (!cls.download)
+		return;
 
-		x = con_linewidth - ((con_linewidth * 7) / 40);
-		y = x - strlen (text) - 8;
-		i = con_linewidth / 3;
-		if (strlen (text) > i) {
-			y = x - i - 11;
-			strncpy (dlbar, text, i);
-			dlbar[i] = 0;
-			strncat (dlbar, "...", sizeof (dlbar) - strlen (dlbar));
-		} else
-			strncpy (dlbar, text, sizeof (dlbar));
-		strncat (dlbar, ": ", sizeof (dlbar) - strlen (dlbar));
-		i = strlen (dlbar);
-		dlbar[i++] = '\x80';
-		// where's the dot go?
-		if (cls.downloadpercent == 0)
-			n = 0;
-		else
-			n = y * cls.downloadpercent / 100;
+	text = COM_SkipPath(cls.downloadname);
 
-		for (j = 0; j < y; j++)
-			if (j == n)
-				dlbar[i++] = '\x83';
-			else
-				dlbar[i++] = '\x81';
-		dlbar[i++] = '\x82';
+	x = con_linewidth - ((con_linewidth * 7) / 40);
+	y = x - strlen (text) - 8;
+	i = con_linewidth / 3;
+	if (strlen (text) > i) {
+		y = x - i - 11;
+		strncpy (dlbar, text, i);
 		dlbar[i] = 0;
+		strncat (dlbar, "...", sizeof (dlbar) - strlen (dlbar));
+	} else
+		strncpy (dlbar, text, sizeof (dlbar));
+	strncat (dlbar, ": ", sizeof (dlbar) - strlen (dlbar));
+	i = strlen (dlbar);
+	dlbar[i++] = '\x80';
+	// where's the dot go?
+	if (cls.downloadpercent == 0)
+		n = 0;
+	else
+		n = y * cls.downloadpercent / 100;
+		for (j = 0; j < y; j++)
+		if (j == n)
+			dlbar[i++] = '\x83';
+		else
+			dlbar[i++] = '\x81';
+	dlbar[i++] = '\x82';
+	dlbar[i] = 0;
 
-		snprintf (dlbar + strlen (dlbar), sizeof (dlbar) - strlen (dlbar),
-				  " %02d%%", cls.downloadpercent);
-
-		// draw it
-		y = lines - 22 + 8;
-		for (i = 0; i < strlen (dlbar); i++)
-			Draw_Character8 ((i + 1) << 3, y, dlbar[i]);
-	}
+	snprintf (dlbar + strlen (dlbar), sizeof (dlbar) - strlen (dlbar),
+			  " %02d%%", cls.downloadpercent);
+	// draw it
+	y = lines - 22 + 8;
+	for (i = 0; i < strlen (dlbar); i++)
+		Draw_Character8 ((i + 1) << 3, y, dlbar[i]);
 }
 
