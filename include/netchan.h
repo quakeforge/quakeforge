@@ -138,6 +138,7 @@ typedef struct
 extern	int	net_drop;		// packets dropped before this one
 extern	int net_nochoke;	// don't choke packets
 extern	int net_blocksend;	// don't send packets (used by client for demos)
+extern	double *net_realtime;
 
 void Netchan_Init (void);
 void Netchan_Init_Cvars (void);

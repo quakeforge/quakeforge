@@ -2416,6 +2416,7 @@ SV_InitNet (void)
 	NET_Init (port);
 
 	Netchan_Init ();
+	net_realtime = &realtime;
 
 	Net_Log_Init (sv.sound_precache);
 

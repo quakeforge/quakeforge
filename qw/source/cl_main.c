@@ -1723,6 +1723,7 @@ Host_Init (void)
 
 	NET_Init (cl_port->int_val);
 	Netchan_Init ();
+	net_realtime = &realtime;
 	{
 		static const char *sound_precache[MAX_MODELS];
 		int i;

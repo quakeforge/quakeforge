@@ -106,6 +106,7 @@ static __attribute__ ((unused)) const char rcsid[] =
 int         net_drop;
 int         net_nochoke;
 int         net_blocksend;
+double     *net_realtime;
 cvar_t     *showpackets;
 cvar_t     *showdrop;
 cvar_t     *qport;
@@ -193,7 +194,7 @@ Netchan_Setup (netchan_t *chan, netadr_t adr, int qport, int flags)
 	memset (chan, 0, sizeof (*chan));
 
 	chan->remote_address = adr;
-	chan->last_received = realtime;
+	chan->last_received = *net_realtime;
 
 	chan->message.data = chan->message_buf;
 	chan->message.allowoverflow = true;
@@ -215,7 +216,7 @@ Netchan_Setup (netchan_t *chan, netadr_t adr, int qport, int flags)
 qboolean
 Netchan_CanPacket (netchan_t *chan)
 {
-	if (chan->cleartime < realtime + MAX_BACKUP * chan->rate)
+	if (chan->cleartime < *net_realtime + MAX_BACKUP * chan->rate)
 		return true;
 	return false;
 }
@@ -301,18 +302,18 @@ Netchan_Transmit (netchan_t *chan, int length, byte *data)
 	// send the datagram
 	i = chan->outgoing_sequence & (MAX_LATENT - 1);
 	chan->outgoing_size[i] = send.cursize;
-	chan->outgoing_time[i] = realtime;
+	chan->outgoing_time[i] = *net_realtime;
 
 	// zoid, no input in demo playback mode
 	if (!net_blocksend)
 		Netchan_SendPacket (send.cursize, send.data, chan->remote_address);
 
-	if (chan->cleartime < realtime)
-		chan->cleartime = realtime + send.cursize * chan->rate;
+	if (chan->cleartime < *net_realtime)
+		chan->cleartime = *net_realtime + send.cursize * chan->rate;
 	else
 		chan->cleartime += send.cursize * chan->rate;
 	if (net_nochoke)
-		chan->cleartime = realtime;
+		chan->cleartime = *net_realtime;
 
 	if (showpackets->int_val)
 		Con_Printf ("--> s=%i(%i) a=%i(%i) %i\n", chan->outgoing_sequence,
@@ -362,7 +363,7 @@ Netchan_Process (netchan_t *chan)
 		double      time, rate;
 
 		i = sequence_ack & (MAX_LATENT - 1);
-		time = realtime - chan->outgoing_time[i];
+		time = *net_realtime - chan->outgoing_time[i];
 		time -= 0.1;					// subtract 100 ms
 		if (time <= 0) {				// gotta be a digital link for <100
 										// ms ping
@@ -420,10 +421,10 @@ Netchan_Process (netchan_t *chan)
 	chan->frame_latency = chan->frame_latency * OLD_AVG
 		+ (chan->outgoing_sequence - sequence_ack) * (1.0 - OLD_AVG);
 	chan->frame_rate = chan->frame_rate * OLD_AVG
-		+ (realtime - chan->last_received) * (1.0 - OLD_AVG);
+		+ (*net_realtime - chan->last_received) * (1.0 - OLD_AVG);
 	chan->good_count += 1;
 
-	chan->last_received = realtime;
+	chan->last_received = *net_realtime;
 
 	return true;
 }
