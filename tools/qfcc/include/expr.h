@@ -173,7 +173,7 @@ expr_t *new_vector_expr (float *vector_val);
 expr_t *new_entity_expr (int entity_val);
 expr_t *new_field_expr (int field_val);
 expr_t *new_func_expr (int func_val);
-//expr_t *new_pointer_expr ();
+expr_t *new_pointer_expr (int val, struct type_s *type, struct def_s *def);
 expr_t *new_quaternion_expr (float *quaternion_val);
 expr_t *new_integer_expr (int integer_val);
 expr_t *new_uinteger_expr (unsigned int uinteger_val);

@@ -670,10 +670,6 @@ init_types (void)
 	strct = quaternion_struct = get_struct (0, 1);
 	init_struct (strct, new_type (), str_struct, 0);
 	new_struct_field (strct, &type_float,  "s", vis_public);
-	new_struct_field (strct, &type_float,  "x", vis_public);
-	new_struct_field (strct, &type_float,  "y", vis_public);
-	new_struct_field (strct, &type_float,  "z", vis_public);
-	strct->size = 1;		// evil hack for the vector access
 	new_struct_field (strct, &type_vector, "v", vis_public);
 
 	strct = get_struct (0, 1);

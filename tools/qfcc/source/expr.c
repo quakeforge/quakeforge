@@ -531,7 +531,17 @@ new_func_expr (int func_val)
 	return e;
 }
 
-//expr_t *new_pointer_expr ();
+expr_t *
+new_pointer_expr (int val, type_t *type, def_t *def)
+{
+	expr_t     *e = new_expr ();
+	e->type = ex_pointer;
+	e->e.pointer.val = val;
+	e->e.pointer.type = type;
+	e->e.pointer.def = def;
+	return e;
+}
+
 expr_t *
 new_quaternion_expr (float *quaternion_val)
 {
@@ -590,7 +600,7 @@ constant_expr (expr_t *var)
 		case ev_vector:
 			return new_vector_expr (G_VECTOR (var->e.def->ofs));
 		case ev_field:
-			return new_field_expr (G_var (integer, var->e.def->ofs));
+			return new_field_expr (G_INT (var->e.def->ofs));
 		case ev_integer:
 			return new_integer_expr (G_INT (var->e.def->ofs));
 		case ev_uinteger:
@@ -931,20 +941,34 @@ field_expr (expr_t *e1, expr_t *e2)
 			}
 			break;
 		case ev_vector:
+		case ev_quat:
 			if (!options.traditional && e2->type == ex_name) {
-				field = struct_find_field (vector_struct, e2->e.string_val);
-				if (!field)
-					return error (e2, "vector has no field %s",
-								  e2->e.string_val);
+				if (t1->type == ev_quat) {
+					field = struct_find_field (quaternion_struct,
+											   e2->e.string_val);
+					if (!field)
+						return error (e2, "quaternion has no field %s",
+									  e2->e.string_val);
+				} else {
+					field = struct_find_field (vector_struct,
+											   e2->e.string_val);
+					if (!field)
+						return error (e2, "vector has no field %s",
+									  e2->e.string_val);
+				}
 				switch (e1->type) {
 					case ex_expr:
 						if (e1->e.expr.op == '.'
-							&& extract_type (e1->e.expr.e1) == ev_entity
-							&& e1->e.expr.e2->type == ex_def) {
-							d = e1->e.expr.e2->e.def->def_next;
-							for (i = field->offset; i; i--)
-								d = d->def_next;
-							e = new_def_expr (d);
+							&& extract_type (e1->e.expr.e1) == ev_entity) {
+							int         ofs;
+
+							if (e1->e.expr.e2->type == ex_def)
+								ofs = e1->e.expr.e2->e.def->ofs;
+							else if (e1->e.expr.e2->type == ex_field)
+								ofs = e1->e.expr.e2->e.field_val;
+							else
+								break;
+							e = new_field_expr (ofs + field->offset);
 							e = new_binary_expr ('.', e1->e.expr.e1, e);
 							e->e.expr.type = field->type;
 							return e;
@@ -953,13 +977,11 @@ field_expr (expr_t *e1, expr_t *e2)
 					case ex_uexpr:
 						if (e1->e.expr.op == '.') {
 							if (e1->e.expr.e1->type == ex_pointer) {
-								e = new_expr ();
-								e->type = ex_pointer;
-								e1 = e1->e.expr.e1;
-								i = e1->e.pointer.val;
-								e->e.pointer.val = i + field->offset;
+								e = e1->e.expr.e1;
+								e->e.pointer.val += field->offset;
 								e->e.pointer.type = field->type;
-								return unary_expr ('.', e);
+								e1->e.expr.type = field->type;
+								return e1;
 							} else if (extract_type (e1->e.expr.e1)
 									   == ev_pointer) {
 								e = new_integer_expr (field->offset);
@@ -979,13 +1001,28 @@ field_expr (expr_t *e1, expr_t *e2)
 #endif
 						break;
 					case ex_def:
-						d = e1->e.def->def_next;
-						for (i = field->offset; i; i--)
-							d = d->def_next;
-						e = new_def_expr (d);
+						if (t1->type == ev_quat) {
+							e = new_pointer_expr (field->offset, field->type,
+												  e1->e.def);
+							e = unary_expr ('.', e);
+							return e;
+						} else {
+							d = e1->e.def->def_next;
+							for (i = field->offset; i; i--)
+								d = d->def_next;
+							e = new_def_expr (d);
+						}
 						return e;
 					case ex_vector:
 						e = new_float_expr (e1->e.vector_val[field->offset]);
+						return e;
+					case ex_quaternion:
+						if (field->type == &type_float)
+							e = new_float_expr (*(e1->e.quaternion_val
+												  + field->offset));
+						else
+							e = new_vector_expr (e1->e.quaternion_val
+												 + field->offset);
 						return e;
 					default:
 						break;
@@ -2172,13 +2209,9 @@ address_expr (expr_t *e1, expr_t *e2, type_t *t)
 				def->used = 1;
 				type = def->type;
 				if (type->type == ev_struct || type->type == ev_class) {
-					e = new_expr ();
+					e = new_pointer_expr (0, t, def);
 					e->line = e1->line;
 					e->file = e1->file;
-					e->type = ex_pointer;
-					e->e.pointer.val = 0;
-					e->e.pointer.type = t;
-					e->e.pointer.def = def;
 				} else if (type->type == ev_array) {
 					e = e1;
 					e->type = ex_pointer;
