@@ -1125,17 +1125,6 @@ CL_Init (void)
 	Info_SetValueForStarKey (cls.userinfo, "stdver", QW_QSG_VERSION,
 							 MAX_INFO_STRING);
 
-	PI_Init ();
-#ifdef PACKET_LOGGING
-	{
-		static char *sound_precache[MAX_MODELS];
-		int i;
-
-		for (i = 0; i < MAX_MODELS; i++)
-			sound_precache[i] = cl.sound_name[i];
-		Net_Log_Init (sound_precache);
-	}
-#endif
 	CL_Input_Init ();
 	CL_Ents_Init ();
 	CL_TEnts_Init ();
@@ -1637,6 +1626,16 @@ Host_Init (void)
 
 	NET_Init (PORT_CLIENT);
 	Netchan_Init ();
+#ifdef PACKET_LOGGING
+	{
+		static char *sound_precache[MAX_MODELS];
+		int i;
+
+		for (i = 0; i < MAX_MODELS; i++)
+			sound_precache[i] = cl.sound_name[i];
+		Net_Log_Init (sound_precache);
+	}
+#endif
 
 	W_LoadWadFile ("gfx.wad");
 	Key_Init ();

@@ -54,9 +54,6 @@ cvar_t     *netloglevel;
 //extern server_t sv;
 extern qboolean is_server;
 
-//extern sizebuf_t net_message;
-extern byte net_message_buffer[MAX_MSGLEN * 2];
-
 void        Analyze_Server_Packet (byte * data, int len);
 void        Analyze_Client_Packet (byte * data, int len);
 
@@ -173,9 +170,10 @@ char       *clc_string[] = {
 #define svc_signonnum           25		// [byte]  used for the signon
 										// sequence
 
-QFile      *Net_PacketLog;
-
-char      **Net_sound_precache;
+static QFile      *Net_PacketLog;
+static char      **Net_sound_precache;
+static sizebuf_t   _packet;
+static msg_t       packet = {0, 0, &_packet};
 
 /*
 	NET_LogPrintf
@@ -324,72 +322,72 @@ Log_Delta(int bits)
 	bits &= ~511;
 
 	if (bits & U_MOREBITS) {			// read in the low order bits
-		i = MSG_ReadByte (net_message);
+		i = MSG_ReadByte (&packet);
 		bits |= i;
 	}
 
 	// LordHavoc: Endy neglected to mark this as being part of the QSG
 	// version 2 stuff...
 	if (bits & U_EXTEND1) {
-		bits |= MSG_ReadByte (net_message) << 16;
+		bits |= MSG_ReadByte (&packet) << 16;
 		if (bits & U_EXTEND2)
-			bits |= MSG_ReadByte (net_message) << 24;
+			bits |= MSG_ReadByte (&packet) << 24;
 	}
 
 	to.flags = bits;
 
 	if (bits & U_MODEL)
-                Net_LogPrintf (" MdlIdx: %d", MSG_ReadByte (net_message));
+                Net_LogPrintf (" MdlIdx: %d", MSG_ReadByte (&packet));
 
         if (bits & U_FRAME) {
-                to.frame = MSG_ReadByte (net_message);
+                to.frame = MSG_ReadByte (&packet);
                 Net_LogPrintf (" Frame: %d", to.frame);
         }
 
 	if (bits & U_COLORMAP)
-                Net_LogPrintf (" Colormap: %d", MSG_ReadByte (net_message));
+                Net_LogPrintf (" Colormap: %d", MSG_ReadByte (&packet));
 
 	if (bits & U_SKIN)
-                Net_LogPrintf (" Skinnum: %d", MSG_ReadByte (net_message));
+                Net_LogPrintf (" Skinnum: %d", MSG_ReadByte (&packet));
 
         if (bits & U_EFFECTS) {
-                to.effects = MSG_ReadByte (net_message);
+                to.effects = MSG_ReadByte (&packet);
                 Net_LogPrintf (" Effects: %d", to.effects);
         }
 
 	if (bits & U_ORIGIN1)
-                Net_LogPrintf (" X: %f", MSG_ReadCoord (net_message));
+                Net_LogPrintf (" X: %f", MSG_ReadCoord (&packet));
 
 	if (bits & U_ANGLE1)
-                Net_LogPrintf (" Pitch: %d", MSG_ReadAngle (net_message));
+                Net_LogPrintf (" Pitch: %d", MSG_ReadAngle (&packet));
 
 	if (bits & U_ORIGIN2)
-                Net_LogPrintf (" Y: %f", MSG_ReadCoord (net_message));
+                Net_LogPrintf (" Y: %f", MSG_ReadCoord (&packet));
 
 	if (bits & U_ANGLE2)
-                Net_LogPrintf (" Yaw: %d", MSG_ReadAngle (net_message));
+                Net_LogPrintf (" Yaw: %d", MSG_ReadAngle (&packet));
 
 	if (bits & U_ORIGIN3)
-                Net_LogPrintf (" Z: %f", MSG_ReadCoord (net_message));
+                Net_LogPrintf (" Z: %f", MSG_ReadCoord (&packet));
 
 	if (bits & U_ANGLE3)
-                Net_LogPrintf (" Roll: %d", MSG_ReadAngle (net_message));
+                Net_LogPrintf (" Roll: %d", MSG_ReadAngle (&packet));
 
 // Ender (QSG - Begin)
 	if (bits & U_ALPHA)
-                Net_LogPrintf(" Alpha: %d", MSG_ReadByte (net_message));
+                Net_LogPrintf(" Alpha: %d", MSG_ReadByte (&packet));
 	if (bits & U_SCALE)
-                Net_LogPrintf(" Scale: %d", MSG_ReadByte (net_message));
+                Net_LogPrintf(" Scale: %d", MSG_ReadByte (&packet));
 	if (bits & U_EFFECTS2)
-                Net_LogPrintf(" U_EFFECTS2: %d", (to.effects & 0xFF) | (MSG_ReadByte (net_message) << 8));
+                Net_LogPrintf(" U_EFFECTS2: %d", (to.effects & 0xFF) | (MSG_ReadByte (&packet) << 8));
 	if (bits & U_GLOWSIZE)
-                Net_LogPrintf(" GlowSize: %d", MSG_ReadByte (net_message));
+                Net_LogPrintf(" GlowSize: %d", MSG_ReadByte (&packet));
 	if (bits & U_GLOWCOLOR)
-                Net_LogPrintf(" ColorGlow: %d", MSG_ReadByte (net_message));
+                Net_LogPrintf(" ColorGlow: %d", MSG_ReadByte (&packet));
 	if (bits & U_COLORMOD)
-                Net_LogPrintf(" Colormod: %d", MSG_ReadByte (net_message));
+                Net_LogPrintf(" Colormod: %d", MSG_ReadByte (&packet));
 	if (bits & U_FRAME2)
-                Net_LogPrintf(" Uframe2: %d", ((to.frame & 0xFF) | (MSG_ReadByte (net_message) << 8)));
+                Net_LogPrintf(" Uframe2: %d", ((to.frame & 0xFF) | (MSG_ReadByte (&packet) << 8)));
 // Ender (QSG - End)
 
         return;
@@ -400,19 +398,10 @@ Log_Delta(int bits)
 void
 Analyze_Server_Packet (byte * data, int len)
 {
-        byte *safe;
-        int slen;
-	// FIXME: quick-hack
-        safe=net_message->message->data;
-        slen=net_message->message->cursize;
-
-	net_message->message->data = data;
-	net_message->message->cursize = len;
-	MSG_BeginReading (net_message);
+	packet.message->data = data;
+	packet.message->cursize = len;
+	MSG_BeginReading (&packet);
 	Parse_Server_Packet ();
-//        net_message.data = net_message_buffer;
-        net_message->message->data = safe;
-        net_message->message->cursize = slen;
 }
 
 
@@ -423,15 +412,15 @@ Parse_Server_Packet ()
 	int         c, i, ii, iii, mask1, mask2;
 	char       *s;
 
-	seq1 = MSG_ReadLong (net_message);
-	if (net_message->badread)
+	seq1 = MSG_ReadLong (&packet);
+	if (packet.badread)
 		return;
 
 	if (seq1 == -1) {
 		Net_LogPrintf ("Special Packet");
 
 	} else {
-		seq2 = MSG_ReadLong (net_message);
+		seq2 = MSG_ReadLong (&packet);
 		// FIXME: display seqs right when reliable
 		Net_LogPrintf ("\nSeq: %ld Ack: %ld ", seq1 & 0x7FFFFFFF,
 					   seq2 & 0x7FFFFFFF);
@@ -443,19 +432,19 @@ Parse_Server_Packet ()
 		Net_LogPrintf ("\n");
 
 		while (1) {
-			if (net_message->badread)
+			if (packet.badread)
 				break;
-			c = MSG_ReadByte (net_message);
+			c = MSG_ReadByte (&packet);
 			if (c == -1)
 				break;
 //                      Net_LogPrintf("\n<%ld,%ld> ",seq1 & 0x7FFFFFFF,seq2 & 0x7FFFFFFF);
-			Net_LogPrintf ("<%06x> [0x%02x] ", MSG_GetReadCount (net_message), c);
+			Net_LogPrintf ("<%06x> [0x%02x] ", MSG_GetReadCount (&packet), c);
 
 			if (c < 53)
 				Net_LogPrintf ("%s: ", svc_string[c]);
 //                        else Net_LogPrintf("(UNK: %d): ",c);
 
-			if (MSG_GetReadCount (net_message) > net_message->message->cursize)
+			if (MSG_GetReadCount (&packet) > packet.message->cursize)
 				return;
 
 			switch (c) {
@@ -468,8 +457,8 @@ Parse_Server_Packet ()
 					Net_LogPrintf (" <Quit>");
 					break;
 				case svc_updatestat:
-					i = MSG_ReadByte (net_message);
-					Net_LogPrintf (" index: %d value: %d", i, MSG_ReadByte (net_message));
+					i = MSG_ReadByte (&packet);
+					Net_LogPrintf (" index: %d value: %d", i, MSG_ReadByte (&packet));
 					break;
 				case svc_version:
 #ifdef QUAKEWORLD
@@ -480,23 +469,23 @@ Parse_Server_Packet ()
 #ifdef QUAKEWORLD
 					Net_LogPrintf ("**QW OBSOLETE**");
 #else
-					MSG_ReadShort (net_message);
+					MSG_ReadShort (&packet);
 #endif
 					break;
 				case svc_sound:
-					i = MSG_ReadShort (net_message);
+					i = MSG_ReadShort (&packet);
 					Net_LogPrintf (": (%d) ", i);
 					if (i & SND_VOLUME)
-						Net_LogPrintf ("Volume %d ", MSG_ReadByte (net_message));
+						Net_LogPrintf ("Volume %d ", MSG_ReadByte (&packet));
 					if (i & SND_ATTENUATION)
 						Net_LogPrintf ("Ann: %f",
-									   (float) MSG_ReadByte (net_message) / 64.0);
-					ii = MSG_ReadByte (net_message);
+									   (float) MSG_ReadByte (&packet) / 64.0);
+					ii = MSG_ReadByte (&packet);
 
 					Net_LogPrintf ("%d (%s) ", ii, Net_sound_precache[ii]);
 					Net_LogPrintf ("Pos: ");
 					for (ii = 0; ii < 3; ii++)
-						Net_LogPrintf ("%f ", MSG_ReadCoord (net_message));
+						Net_LogPrintf ("%f ", MSG_ReadCoord (&packet));
 					Net_LogPrintf ("Ent: %d ", (i >> 3) & 1023);
 					Net_LogPrintf ("Channel %d ", i & 7);
 					break;
@@ -504,49 +493,49 @@ Parse_Server_Packet ()
 #ifdef QUAKEWORLD
 					Net_LogPrintf ("**QW OBSOLETE**\n");
 #else
-					MSG_ReadFloat (net_message);
+					MSG_ReadFloat (&packet);
 #endif
 					break;
 				case svc_print:
 					// FIXME: i==PRINT_CHAT
-					Net_LogPrintf (" [%d]", MSG_ReadByte (net_message));
-					Net_LogPrintf (" %s", MSG_ReadString (net_message));
+					Net_LogPrintf (" [%d]", MSG_ReadByte (&packet));
+					Net_LogPrintf (" %s", MSG_ReadString (&packet));
 					break;
 				case svc_stufftext:
-					Net_LogPrintf ("%s", MSG_ReadString (net_message));
+					Net_LogPrintf ("%s", MSG_ReadString (&packet));
 					break;
 				case svc_setangle:
 					for (i = 0; i < 3; i++)
-						Net_LogPrintf ("%f ", MSG_ReadAngle (net_message));
+						Net_LogPrintf ("%f ", MSG_ReadAngle (&packet));
 					break;
 #ifdef QUAKEWORLD
 				case svc_serverdata:
-					Net_LogPrintf ("Ver: %ld", MSG_ReadLong (net_message));
-					Net_LogPrintf (" Client ID: %ld", MSG_ReadLong (net_message));
-					Net_LogPrintf (" Dir: %s", MSG_ReadString (net_message));
-					Net_LogPrintf (" User ID: %d", MSG_ReadByte (net_message));
-					Net_LogPrintf (" Map: %s", MSG_ReadString (net_message));
+					Net_LogPrintf ("Ver: %ld", MSG_ReadLong (&packet));
+					Net_LogPrintf (" Client ID: %ld", MSG_ReadLong (&packet));
+					Net_LogPrintf (" Dir: %s", MSG_ReadString (&packet));
+					Net_LogPrintf (" User ID: %d", MSG_ReadByte (&packet));
+					Net_LogPrintf (" Map: %s", MSG_ReadString (&packet));
 					for (i = 0; i < 10; i++)
-						MSG_ReadFloat (net_message);
+						MSG_ReadFloat (&packet);
 					break;
 #endif
 
 				case svc_lightstyle:
-					i = MSG_ReadByte (net_message);
+					i = MSG_ReadByte (&packet);
 					if (i >= MAX_LIGHTSTYLES)
 						return;
-					Net_LogPrintf ("%d %s", i, MSG_ReadString (net_message));
+					Net_LogPrintf ("%d %s", i, MSG_ReadString (&packet));
 					break;
 				case svc_updatename:
 #ifdef QUAKEWORLD
 					Net_LogPrintf ("**QW OBSOLETE**");
 #else
-					Net_LogPrintf ("%d %s", MSG_ReadByte (net_message), MSG_ReadString ());
+					Net_LogPrintf ("%d %s", MSG_ReadByte (&packet), MSG_ReadString ());
 #endif
 					break;
 				case svc_updatefrags:
-					Net_LogPrintf ("player: %d frags: %d", MSG_ReadByte (net_message),
-								   MSG_ReadShort (net_message));
+					Net_LogPrintf ("player: %d frags: %d", MSG_ReadByte (&packet),
+								   MSG_ReadShort (&packet));
 					break;
 				case svc_clientdata:
 #ifdef QUAKEWORLD
@@ -554,14 +543,14 @@ Parse_Server_Packet ()
 #endif
 					break;
 				case svc_stopsound:
-					Net_LogPrintf ("%d", MSG_ReadShort (net_message));
+					Net_LogPrintf ("%d", MSG_ReadShort (&packet));
 					break;
 
 				case svc_updatecolors:
 #ifdef QUAKEWORLD
 					Net_LogPrintf ("**QW OBSOLETE**");
 #else
-					Net_LogPrintf ("%d %d", MSG_ReadByte (net_message), MSG_ReadByte ());
+					Net_LogPrintf ("%d %d", MSG_ReadByte (&packet), MSG_ReadByte ());
 #endif
 					break;
 				case svc_particle:
@@ -569,46 +558,46 @@ Parse_Server_Packet ()
 					Net_LogPrintf ("**QW OBSOLETE**");
 #else
 					for (i = 0; i < 3; i++)
-						Net_LogPrintf (" %f", MSG_ReadCoord (net_message));
+						Net_LogPrintf (" %f", MSG_ReadCoord (&packet));
 					for (i = 0; i < 3; i++)
-						Net_LogPrintf (" %d", MSG_ReadChar (net_message));
-					Net_LogPrintf (" Count: %d", MSG_ReadByte (net_message));
-					Net_LogPrintf (" Color: %d", MSG_ReadByte (net_message));
+						Net_LogPrintf (" %d", MSG_ReadChar (&packet));
+					Net_LogPrintf (" Count: %d", MSG_ReadByte (&packet));
+					Net_LogPrintf (" Color: %d", MSG_ReadByte (&packet));
 #endif
 					break;
 
 				case svc_damage:
 					// FIXME: parse damage
-					Net_LogPrintf ("armor: %d health: %d", MSG_ReadByte (net_message),
-								   MSG_ReadByte (net_message));
-					Net_LogPrintf (" from %f,%f,%f", MSG_ReadCoord (net_message),
-								   MSG_ReadCoord (net_message), MSG_ReadCoord (net_message));
+					Net_LogPrintf ("armor: %d health: %d", MSG_ReadByte (&packet),
+								   MSG_ReadByte (&packet));
+					Net_LogPrintf (" from %f,%f,%f", MSG_ReadCoord (&packet),
+								   MSG_ReadCoord (&packet), MSG_ReadCoord (&packet));
 					break;
 				case svc_spawnstatic:
-					Net_LogPrintf ("Model: %d", MSG_ReadByte (net_message));
+					Net_LogPrintf ("Model: %d", MSG_ReadByte (&packet));
 					Net_LogPrintf (" Frame: %d Color: %d Skin: %",
-								   MSG_ReadByte (net_message), MSG_ReadByte (net_message),
-								   MSG_ReadByte (net_message));
+								   MSG_ReadByte (&packet), MSG_ReadByte (&packet),
+								   MSG_ReadByte (&packet));
 					for (i = 0; i < 3; i++)
-						Net_LogPrintf ("%d: %f %f", i + 1, MSG_ReadCoord (net_message),
-									   MSG_ReadAngle (net_message));
+						Net_LogPrintf ("%d: %f %f", i + 1, MSG_ReadCoord (&packet),
+									   MSG_ReadAngle (&packet));
 					break;
 				case svc_spawnbinary:
 					Net_LogPrintf ("**OBSOLETE**");
 					break;
 				case svc_spawnbaseline:
-					Net_LogPrintf ("%d", MSG_ReadShort (net_message));
-					Net_LogPrintf (" idx: %d", MSG_ReadByte (net_message));
-					Net_LogPrintf (" Frame: %d", MSG_ReadByte (net_message));
-					Net_LogPrintf (" Colormap: %d", MSG_ReadByte (net_message));
-					Net_LogPrintf (" Skin: %d", MSG_ReadByte (net_message));
+					Net_LogPrintf ("%d", MSG_ReadShort (&packet));
+					Net_LogPrintf (" idx: %d", MSG_ReadByte (&packet));
+					Net_LogPrintf (" Frame: %d", MSG_ReadByte (&packet));
+					Net_LogPrintf (" Colormap: %d", MSG_ReadByte (&packet));
+					Net_LogPrintf (" Skin: %d", MSG_ReadByte (&packet));
 					for (i = 0; i < 3; i++) {
-						Net_LogPrintf (" %f", MSG_ReadCoord (net_message));
-						Net_LogPrintf (" %d", MSG_ReadAngle (net_message));
+						Net_LogPrintf (" %f", MSG_ReadCoord (&packet));
+						Net_LogPrintf (" %d", MSG_ReadAngle (&packet));
 					};
 					break;
 				case svc_temp_entity:
-					i = MSG_ReadByte (net_message);
+					i = MSG_ReadByte (&packet);
 					switch (i) {
 						case 0:
 						case 1:
@@ -619,25 +608,25 @@ Parse_Server_Packet ()
 						case 10:
 						case 11:
 						case 13:
-							Net_LogPrintf (" origin %f %f %f", MSG_ReadCoord (net_message),
-										   MSG_ReadCoord (net_message), MSG_ReadCoord (net_message));
+							Net_LogPrintf (" origin %f %f %f", MSG_ReadCoord (&packet),
+										   MSG_ReadCoord (&packet), MSG_ReadCoord (&packet));
 							break;
 						case 5:
 						case 6:
 						case 9:
-							Net_LogPrintf (" created by %d", MSG_ReadShort (net_message));
+							Net_LogPrintf (" created by %d", MSG_ReadShort (&packet));
 							Net_LogPrintf (" origin: %f,%f,%f",
-										   MSG_ReadCoord (net_message), MSG_ReadCoord (net_message),
-										   MSG_ReadCoord (net_message));
+										   MSG_ReadCoord (&packet), MSG_ReadCoord (&packet),
+										   MSG_ReadCoord (&packet));
 							Net_LogPrintf (" trace endpos: %f,%f,%f",
-										   MSG_ReadCoord (net_message), MSG_ReadCoord (net_message),
-										   MSG_ReadCoord (net_message));
+										   MSG_ReadCoord (&packet), MSG_ReadCoord (&packet),
+										   MSG_ReadCoord (&packet));
 							break;
 						case 2:
 						case 12:
-							Net_LogPrintf (" count: %d", MSG_ReadByte (net_message));
-							printf (" origin: %f,%f,%f", MSG_ReadCoord (net_message),
-									MSG_ReadCoord (net_message), MSG_ReadCoord (net_message));
+							Net_LogPrintf (" count: %d", MSG_ReadByte (&packet));
+							printf (" origin: %f,%f,%f", MSG_ReadCoord (&packet),
+									MSG_ReadCoord (&packet), MSG_ReadCoord (&packet));
 							break;
 						default:
 							Net_LogPrintf (" unknown value %d for tempentity",
@@ -647,40 +636,40 @@ Parse_Server_Packet ()
 					break;
 
 				case svc_setpause:
-					Net_LogPrintf (" %d", MSG_ReadByte (net_message));
+					Net_LogPrintf (" %d", MSG_ReadByte (&packet));
 					break;
 				case svc_signonnum:
 #ifdef QUAKEWORLD
 					Net_LogPrintf ("**QW OBSOLETE**");
 #else
-					Net_LogPrintf ("%d", MSG_ReadByte (net_message));
+					Net_LogPrintf ("%d", MSG_ReadByte (&packet));
 #endif
 					break;
 				case svc_centerprint:
-					Net_LogPrintf (MSG_ReadString (net_message));
+					Net_LogPrintf (MSG_ReadString (&packet));
 					break;
 				case svc_killedmonster:
 					break;
 				case svc_foundsecret:
 					break;
 				case svc_spawnstaticsound:
-					Net_LogPrintf ("pos %f,%f,%f", MSG_ReadCoord (net_message),
-								   MSG_ReadCoord (net_message), MSG_ReadCoord (net_message));
-					Net_LogPrintf ("%d %d %d", MSG_ReadByte (net_message), MSG_ReadByte (net_message),
-								   MSG_ReadByte (net_message));
+					Net_LogPrintf ("pos %f,%f,%f", MSG_ReadCoord (&packet),
+								   MSG_ReadCoord (&packet), MSG_ReadCoord (&packet));
+					Net_LogPrintf ("%d %d %d", MSG_ReadByte (&packet), MSG_ReadByte (&packet),
+								   MSG_ReadByte (&packet));
 					break;
 				case svc_intermission:
 					for (i = 0; i < 3; i++)
-						Net_LogPrintf ("%f ", MSG_ReadCoord (net_message));
+						Net_LogPrintf ("%f ", MSG_ReadCoord (&packet));
 					Net_LogPrintf ("\n");
 					for (i = 0; i < 3; i++)
-						Net_LogPrintf ("%f ", MSG_ReadAngle (net_message));
+						Net_LogPrintf ("%f ", MSG_ReadAngle (&packet));
 					break;
 				case svc_finale:
-					Net_LogPrintf ("%s", MSG_ReadString (net_message));
+					Net_LogPrintf ("%s", MSG_ReadString (&packet));
 					break;
 				case svc_cdtrack:
-					Net_LogPrintf ("%d", MSG_ReadByte (net_message));
+					Net_LogPrintf ("%d", MSG_ReadByte (&packet));
 					break;
 				case svc_sellscreen:
 					break;
@@ -689,98 +678,98 @@ Parse_Server_Packet ()
 				case svc_bigkick:
 					break;
 				case svc_updateping:
-					Net_LogPrintf ("Player: %d ", MSG_ReadByte (net_message));
-					Net_LogPrintf ("Ping: %d", MSG_ReadShort (net_message));
+					Net_LogPrintf ("Player: %d ", MSG_ReadByte (&packet));
+					Net_LogPrintf ("Ping: %d", MSG_ReadShort (&packet));
 					break;
 				case svc_updateentertime:
-					Net_LogPrintf ("Player: %d ", MSG_ReadByte (net_message));
-					Net_LogPrintf ("Time: %f", MSG_ReadFloat (net_message));
+					Net_LogPrintf ("Player: %d ", MSG_ReadByte (&packet));
+					Net_LogPrintf ("Time: %f", MSG_ReadFloat (&packet));
 					break;
 
 				case svc_updatestatlong:
-					i = MSG_ReadByte (net_message);
-					Net_LogPrintf ("%d value: %ld", i, MSG_ReadLong (net_message));
+					i = MSG_ReadByte (&packet);
+					Net_LogPrintf ("%d value: %ld", i, MSG_ReadLong (&packet));
 					break;
 
 				case svc_muzzleflash:
-					Net_LogPrintf ("%d", MSG_ReadShort (net_message));
+					Net_LogPrintf ("%d", MSG_ReadShort (&packet));
 					break;
 
 				case svc_updateuserinfo:
-					Net_LogPrintf ("Player: %d ", MSG_ReadByte (net_message));
-					Net_LogPrintf ("ID: %ld ", MSG_ReadLong (net_message));
-					Net_LogPrintf ("Info: %s", MSG_ReadString (net_message));
+					Net_LogPrintf ("Player: %d ", MSG_ReadByte (&packet));
+					Net_LogPrintf ("ID: %ld ", MSG_ReadLong (&packet));
+					Net_LogPrintf ("Info: %s", MSG_ReadString (&packet));
 					break;
 				case svc_download:
-					ii = MSG_ReadShort (net_message);
-					Net_LogPrintf ("%d bytes at %d", ii, MSG_ReadByte (net_message));
+					ii = MSG_ReadShort (&packet);
+					Net_LogPrintf ("%d bytes at %d", ii, MSG_ReadByte (&packet));
 					for (i = 0; i < ii; i++)
-						MSG_ReadByte (net_message);
+						MSG_ReadByte (&packet);
 					break;
 				case svc_playerinfo:
-					Net_LogPrintf ("\n\tPlayer: %d", MSG_ReadByte (net_message));
-					mask1 = MSG_ReadShort (net_message);
+					Net_LogPrintf ("\n\tPlayer: %d", MSG_ReadByte (&packet));
+					mask1 = MSG_ReadShort (&packet);
 					Net_LogPrintf (" Mask1: %d", mask1);
-					Net_LogPrintf (" Origin: %f,%f,%f", MSG_ReadCoord (net_message),
-								   MSG_ReadCoord (net_message), MSG_ReadCoord (net_message));
-					Net_LogPrintf (" Frame: %d", MSG_ReadByte (net_message));
+					Net_LogPrintf (" Origin: %f,%f,%f", MSG_ReadCoord (&packet),
+								   MSG_ReadCoord (&packet), MSG_ReadCoord (&packet));
+					Net_LogPrintf (" Frame: %d", MSG_ReadByte (&packet));
 
 					if (mask1 & PF_MSEC)
-						Net_LogPrintf (" Ping: %d", MSG_ReadByte (net_message));
+						Net_LogPrintf (" Ping: %d", MSG_ReadByte (&packet));
 
 					if (mask1 & PF_COMMAND) {
-						mask2 = MSG_ReadByte (net_message);	// command
+						mask2 = MSG_ReadByte (&packet);	// command
 						if (mask2 & 0x01)
-							Net_LogPrintf (" Pitch: %f", MSG_ReadAngle16 (net_message));
+							Net_LogPrintf (" Pitch: %f", MSG_ReadAngle16 (&packet));
 						if (mask2 & 0x80)
-							Net_LogPrintf (" Yaw: %f", MSG_ReadAngle16 (net_message));
+							Net_LogPrintf (" Yaw: %f", MSG_ReadAngle16 (&packet));
 						if (mask2 & 0x02)
-							Net_LogPrintf (" Roll: %f", MSG_ReadAngle16 (net_message));
+							Net_LogPrintf (" Roll: %f", MSG_ReadAngle16 (&packet));
 						if (mask2 & 0x04)
-							Net_LogPrintf (" Speed1: %d", MSG_ReadShort (net_message));
+							Net_LogPrintf (" Speed1: %d", MSG_ReadShort (&packet));
 						if (mask2 & 0x08)
-							Net_LogPrintf (" Speed2: %d", MSG_ReadShort (net_message));
+							Net_LogPrintf (" Speed2: %d", MSG_ReadShort (&packet));
 						if (mask2 & 0x10)
-							Net_LogPrintf (" Speed3: %d", MSG_ReadShort (net_message));
+							Net_LogPrintf (" Speed3: %d", MSG_ReadShort (&packet));
 						if (mask2 & 0x20)
-							Net_LogPrintf (" Flag: %d", MSG_ReadByte (net_message));
+							Net_LogPrintf (" Flag: %d", MSG_ReadByte (&packet));
 						if (mask2 & 0x40)
-							Net_LogPrintf (" Impulse: %d", MSG_ReadByte (net_message));
-						Net_LogPrintf (" Msec: %d", MSG_ReadByte (net_message));
+							Net_LogPrintf (" Impulse: %d", MSG_ReadByte (&packet));
+						Net_LogPrintf (" Msec: %d", MSG_ReadByte (&packet));
 					}
 					if (mask1 & PF_VELOCITY1)
-						Net_LogPrintf (" Xspd: %f", MSG_ReadCoord (net_message));
+						Net_LogPrintf (" Xspd: %f", MSG_ReadCoord (&packet));
 					if (mask1 & PF_VELOCITY2)
-						Net_LogPrintf (" Yspd: %f", MSG_ReadCoord (net_message));
+						Net_LogPrintf (" Yspd: %f", MSG_ReadCoord (&packet));
 					if (mask1 & PF_VELOCITY3)
-						Net_LogPrintf (" ZSpd: %f", MSG_ReadCoord (net_message));
+						Net_LogPrintf (" ZSpd: %f", MSG_ReadCoord (&packet));
 					if (mask1 & PF_MODEL)
-						Net_LogPrintf (" Model: %d", MSG_ReadByte (net_message));
+						Net_LogPrintf (" Model: %d", MSG_ReadByte (&packet));
 					if (mask1 & PF_SKINNUM)
-						Net_LogPrintf (" Skin: %d", MSG_ReadByte (net_message));
+						Net_LogPrintf (" Skin: %d", MSG_ReadByte (&packet));
 					if (mask1 & PF_EFFECTS)
-						Net_LogPrintf (" Effects: %d", MSG_ReadByte (net_message));
+						Net_LogPrintf (" Effects: %d", MSG_ReadByte (&packet));
 
 					if (mask1 & PF_WEAPONFRAME)
-						Net_LogPrintf (" Weapon frame: %d", MSG_ReadByte (net_message));
+						Net_LogPrintf (" Weapon frame: %d", MSG_ReadByte (&packet));
 					break;
 				case svc_nails:
-					ii = MSG_ReadByte (net_message);
+					ii = MSG_ReadByte (&packet);
 					Net_LogPrintf (" %d (bits not parsed)", ii);
 					for (i = 0; i < ii; i++) {
 						for (iii = 0; iii < 6; iii++)
-							MSG_ReadByte (net_message);
+							MSG_ReadByte (&packet);
 					}
 					break;
 				case svc_chokecount:
-					Net_LogPrintf ("%d", MSG_ReadByte (net_message));
+					Net_LogPrintf ("%d", MSG_ReadByte (&packet));
 					break;
 				case svc_modellist:
-					ii = MSG_ReadByte (net_message);
+					ii = MSG_ReadByte (&packet);
 					Net_LogPrintf ("start %d", ii);
 					for (i = ii; i < 256; i++) {
-						s = MSG_ReadString (net_message);
-						if (net_message->badread)
+						s = MSG_ReadString (&packet);
+						if (packet.badread)
 							break;
 						if (!s)
 							break;
@@ -788,18 +777,18 @@ Parse_Server_Packet ()
 							break;
 						Net_LogPrintf ("\n\tModel %d: %s", i, s);
 					}
-					i = MSG_ReadByte (net_message);
+					i = MSG_ReadByte (&packet);
 					if (i)
 						Net_LogPrintf ("\n\tnext at %d", i);
 					else
 						Net_LogPrintf ("\n\t*End of modellist*");
 					break;
 				case svc_soundlist:
-					ii = MSG_ReadByte (net_message);
+					ii = MSG_ReadByte (&packet);
 					Net_LogPrintf ("start %d", ii);
 					for (i = ii; i < 256; i++) {
-						s = MSG_ReadString (net_message);
-						if (net_message->badread)
+						s = MSG_ReadString (&packet);
+						if (packet.badread)
 							break;
 						if (!s)
 							break;
@@ -807,7 +796,7 @@ Parse_Server_Packet ()
 							break;
 						Net_LogPrintf ("\n\tSound %d: %s", i, s);
 					}
-					i = MSG_ReadByte (net_message);
+					i = MSG_ReadByte (&packet);
 
 					if (i)
 						Net_LogPrintf ("\n\tnext at %d", i);
@@ -817,8 +806,8 @@ Parse_Server_Packet ()
 				case svc_packetentities:
 
                                         while (1) {
-                                                mask1 = (unsigned short) MSG_ReadShort(net_message);
-                                                if (net_message->badread) {
+                                                mask1 = (unsigned short) MSG_ReadShort(&packet);
+                                                if (packet.badread) {
                                                         Net_LogPrintf ("Badread\n");
                                                         return;
                                                 }
@@ -828,27 +817,27 @@ Parse_Server_Packet ()
                                         }
 					break;
 				case svc_deltapacketentities:
-					Net_LogPrintf ("idx: %d", MSG_ReadByte (net_message));
+					Net_LogPrintf ("idx: %d", MSG_ReadByte (&packet));
 					return;
                                         break;
 				case svc_maxspeed:
-					Net_LogPrintf ("%f", MSG_ReadFloat (net_message));
+					Net_LogPrintf ("%f", MSG_ReadFloat (&packet));
 					break;
 				case svc_entgravity:
-					Net_LogPrintf ("%f", MSG_ReadFloat (net_message));
+					Net_LogPrintf ("%f", MSG_ReadFloat (&packet));
 					break;
 				case svc_setinfo:
-					Net_LogPrintf ("Player: %d ", MSG_ReadByte (net_message));
-					Net_LogPrintf ("Keyname: %s ", MSG_ReadString (net_message));
-					Net_LogPrintf ("Value: %s", MSG_ReadString (net_message));
+					Net_LogPrintf ("Player: %d ", MSG_ReadByte (&packet));
+					Net_LogPrintf ("Keyname: %s ", MSG_ReadString (&packet));
+					Net_LogPrintf ("Value: %s", MSG_ReadString (&packet));
 					break;
 				case svc_serverinfo:
-					Net_LogPrintf ("Name: %s Value: %s", MSG_ReadString (net_message),
-								   MSG_ReadString (net_message));
+					Net_LogPrintf ("Name: %s Value: %s", MSG_ReadString (&packet),
+								   MSG_ReadString (&packet));
 					break;
 				case svc_updatepl:
-					Net_LogPrintf ("Player: %d Ploss: %d", MSG_ReadByte (net_message),
-								   MSG_ReadByte (net_message));
+					Net_LogPrintf ("Player: %d Ploss: %d", MSG_ReadByte (&packet),
+								   MSG_ReadByte (&packet));
 					break;
 				default:
 					Net_LogPrintf ("**UNKNOWN**: [%d]", c);
@@ -863,11 +852,10 @@ void
 Analyze_Client_Packet (byte * data, int len)
 {
 	// FIXME: quick-hack
-	net_message->message->data = data;
-	net_message->message->cursize = len;
-	MSG_BeginReading (net_message);
+	packet.message->data = data;
+	packet.message->cursize = len;
+	MSG_BeginReading (&packet);
 	Parse_Client_Packet ();
-	net_message->message->data = net_message_buffer;
 }
 
 void
@@ -877,13 +865,13 @@ Parse_Client_Packet (void)
 	long        seq1, seq2;
 	int         mask;
 
-	seq1 = MSG_ReadLong (net_message);
+	seq1 = MSG_ReadLong (&packet);
 	if (seq1 == -1) {
-		Net_LogPrintf ("Special: %s\n", MSG_ReadString (net_message));
+		Net_LogPrintf ("Special: %s\n", MSG_ReadString (&packet));
 		return;
 	} else {
 		// FIXME: display seqs right when reliable
-		seq2 = MSG_ReadLong (net_message);
+		seq2 = MSG_ReadLong (&packet);
 
 		Net_LogPrintf ("\nSeq: %ld Ack: %ld ", seq1 & 0x7FFFFFFF,
 					   seq2 & 0x7FFFFFFF);
@@ -892,16 +880,16 @@ Parse_Client_Packet (void)
 		if ((seq2 >>31) &0x01) Net_LogPrintf("CL_RELACK ");
 */
 
-		Net_LogPrintf ("QP: %u\n", MSG_ReadShort (net_message));
+		Net_LogPrintf ("QP: %u\n", MSG_ReadShort (&packet));
 
 		while (1) {
-			if (net_message->badread)
+			if (packet.badread)
 				break;
-			c = MSG_ReadByte (net_message);
+			c = MSG_ReadByte (&packet);
 			if (c == -1)
 				break;
 //          Net_LogPrintf("<%ld,%ld> ",seq1 & 0x7FFFFFFF,seq2 & 0x7FFFFFFF);
-			Net_LogPrintf ("\n<%06x> [0x%02x] ", MSG_GetReadCount (net_message), c);
+			Net_LogPrintf ("\n<%06x> [0x%02x] ", MSG_GetReadCount (&packet), c);
 			if (c < 8)
 				Net_LogPrintf ("%s: ", clc_string[c]);
 
@@ -909,46 +897,46 @@ Parse_Client_Packet (void)
 				case clc_nop:
 					break;
 				case clc_delta:
-					Net_LogPrintf ("%d", MSG_ReadByte (net_message));
+					Net_LogPrintf ("%d", MSG_ReadByte (&packet));
 					break;
 				case clc_move:
-					Net_LogPrintf ("checksum = %02x ", MSG_ReadByte (net_message));
-					Net_LogPrintf ("PacketLoss: %d", MSG_ReadByte (net_message));
+					Net_LogPrintf ("checksum = %02x ", MSG_ReadByte (&packet));
+					Net_LogPrintf ("PacketLoss: %d", MSG_ReadByte (&packet));
 
 					for (i = 0; i < 3; i++) {
-						mask = MSG_ReadByte (net_message);
+						mask = MSG_ReadByte (&packet);
 						Net_LogPrintf ("\n\t(%d) mask = %02x", i, mask);
 						if (mask & 0x01)
-							Net_LogPrintf (" Tilt: %f", MSG_ReadAngle16 (net_message));
+							Net_LogPrintf (" Tilt: %f", MSG_ReadAngle16 (&packet));
 						if (mask & 0x80)
-							Net_LogPrintf (" Yaw: %f", MSG_ReadAngle16 (net_message));
+							Net_LogPrintf (" Yaw: %f", MSG_ReadAngle16 (&packet));
 						if (mask & 0x02)
-							Net_LogPrintf (" Roll: %f", MSG_ReadAngle16 (net_message));
+							Net_LogPrintf (" Roll: %f", MSG_ReadAngle16 (&packet));
 						if (mask & 0x04)
-							Net_LogPrintf (" Fwd: %d", MSG_ReadShort (net_message));
+							Net_LogPrintf (" Fwd: %d", MSG_ReadShort (&packet));
 						if (mask & 0x08)
-							Net_LogPrintf (" Right: %d", MSG_ReadShort (net_message));
+							Net_LogPrintf (" Right: %d", MSG_ReadShort (&packet));
 						if (mask & 0x10)
-							Net_LogPrintf (" Up: %d", MSG_ReadShort (net_message));
+							Net_LogPrintf (" Up: %d", MSG_ReadShort (&packet));
 						if (mask & 0x20)
-							Net_LogPrintf (" Flags: %d", MSG_ReadByte (net_message));
+							Net_LogPrintf (" Flags: %d", MSG_ReadByte (&packet));
 						if (mask & 0x40)
-							Net_LogPrintf (" Impulse: %d", MSG_ReadByte (net_message));
-						Net_LogPrintf (" Msec: %d", MSG_ReadByte (net_message));
+							Net_LogPrintf (" Impulse: %d", MSG_ReadByte (&packet));
+						Net_LogPrintf (" Msec: %d", MSG_ReadByte (&packet));
 					}
 					break;
 				case clc_stringcmd:
-					Net_LogPrintf ("%s", MSG_ReadString (net_message));
+					Net_LogPrintf ("%s", MSG_ReadString (&packet));
 					break;
 				case clc_tmove:
 					for (i = 0; i < 3; i++)
-						Net_LogPrintf ("%f ", MSG_ReadCoord (net_message));
+						Net_LogPrintf ("%f ", MSG_ReadCoord (&packet));
 					break;
 				case clc_upload:
-					ii = MSG_ReadShort (net_message);
-					Net_LogPrintf ("%d bytes at %d", ii, MSG_ReadByte (net_message));
+					ii = MSG_ReadShort (&packet);
+					Net_LogPrintf ("%d bytes at %d", ii, MSG_ReadByte (&packet));
 					for (i = 0; i < ii; i++)
-						MSG_ReadByte (net_message);
+						MSG_ReadByte (&packet);
 					break;
 				default:
 					Net_LogPrintf ("**UNKNOWN**: [%d]", c);
