@@ -126,19 +126,12 @@ R_RecursiveLightUpdate (mnode_t *node)
 void
 R_AddDynamicLights (msurface_t *surf)
 {
-	float		  dist, f;
+	float		  dist;
 	int			  lnum, maxdist, maxdist2, maxdist3, red, green, blue, smax,
 				  tmax, td, i, j, s, t;
 	int           sdtable[18];
 	unsigned int *bl;
 	vec3_t		  impact, local;
-
-	// use 64bit integer...  shame it's not very standardized...
-#if _MSC_VER || __BORLANDC__
-	__int64     k;
-#else
-	long long   k;
-#endif
 
 	smax = (surf->extents[0] >> 4) + 1;
 	tmax = (surf->extents[1] >> 4) + 1;
@@ -153,7 +146,7 @@ R_AddDynamicLights (msurface_t *surf)
 			impact[i] =
 				r_dlights[lnum].origin[i] - surf->plane->normal[i] * dist;
 
-		i = f =	DotProduct (impact,	surf->texinfo->vecs[0]) +
+		i = DotProduct (impact,	surf->texinfo->vecs[0]) +
 			surf->texinfo->vecs[0][3] - surf->texturemins[0];
 
 		// reduce calculations
@@ -161,7 +154,7 @@ R_AddDynamicLights (msurface_t *surf)
 		for (s = 0; s < smax; s++, i -= 16)
 			sdtable[s] = i * i + t;
 
-		i = f =	DotProduct (impact,	surf->texinfo->vecs[1]) +
+		i = DotProduct (impact,	surf->texinfo->vecs[1]) +
 			surf->texinfo->vecs[1][3] - surf->texturemins[1];
 
 		// for comparisons to minimum acceptable light
@@ -174,9 +167,9 @@ R_AddDynamicLights (msurface_t *surf)
 		maxdist3 = maxdist - t;
 
 		// convert to 8.8 blocklights format
-		red = f = r_dlights[lnum].color[0] * maxdist;
-		green = f = r_dlights[lnum].color[1] * maxdist;
-		blue = f = r_dlights[lnum].color[2] * maxdist;
+		red = r_dlights[lnum].color[0] * maxdist;
+		green = r_dlights[lnum].color[1] * maxdist;
+		blue = r_dlights[lnum].color[2] * maxdist;
 		bl = blocklights;
 		for (t = 0; t < tmax; t++, i -= 16) {
 			td = i * i;
@@ -185,9 +178,9 @@ R_AddDynamicLights (msurface_t *surf)
 				for (s = 0; s < smax; s++) {
 					if (sdtable[s] < maxdist2) {
 						j = dlightdivtable[(sdtable[s] + td) >> 7];
-						bl[0] += (k = (red * j) >> 7);
-						bl[1] += (k = (green * j) >> 7);
-						bl[2] += (k = (blue * j) >> 7);
+						bl[0] += (red * j) >> 7;
+						bl[1] += (green * j) >> 7;
+						bl[2] += (blue * j) >> 7;
 					}
 					bl += 3;
 				}
@@ -208,11 +201,10 @@ R_AddDynamicLights (msurface_t *surf)
 void
 R_BuildLightMap (msurface_t *surf, byte * dest, int stride)
 {
-	byte         *lightmap;
-	float         t2;
-	int           maps, shift, size, smax, tmax, i, j;
-	unsigned int  scale;
-	unsigned int *bl;
+	byte		   *lightmap;
+	int				maps, shift, size, smax, tmax, t2, i, j;
+	unsigned int	scale;
+	unsigned int   *bl;
 
 	surf->cached_dlight = (surf->dlightframe == r_framecount);
 
@@ -286,11 +278,8 @@ R_BuildLightMap (msurface_t *surf, byte * dest, int stride)
 	case 1:
 		for (i = 0; i < tmax; i++, dest += stride) {
 			for (j = 0; j < smax; j++) {
-				t2 = bound (0, bl[0] >> shift, 255);
-				t2 += bound (0, bl[1] >> shift, 255);
-				t2 += bound (0, bl[2] >> shift, 255);
-				t2 *= (1.0 / 3.0);
-				*dest++ = t2;
+				t2 = (bl[0] + bl[1] + bl[2]) / 3;
+				*dest++ = bound (0, t2 >> shift, 255);
 				bl += 3;
 			}
 		}
