@@ -14,6 +14,10 @@
 typedef XID GLXDrawable;
 typedef struct __GLXcontextRec *GLXContext;
 
+#define TRACE do { \
+	puts (__FUNCTION__);\
+} while (0)
+
 #define QFGL_DONT_NEED(ret, func, params) QFGL_NEED(ret, func, params)
 
 #undef QFGL_NEED
@@ -21,13 +25,11 @@ typedef struct __GLXcontextRec *GLXContext;
 #define QFGL_NEED(ret, name, args) \
 ret GLAPIENTRY norm_##name args;
 #include "QF/GL/qf_funcs_list.h"
-#include "glx_funcs_list.h"
 #undef QFGL_NEED
 
 #define QFGL_NEED(ret, name, args) \
 ret GLAPIENTRY trace_##name args;
 #include "QF/GL/qf_funcs_list.h"
-#include "glx_funcs_list.h"
 #undef QFGL_NEED
 
 typedef struct {
@@ -36,11 +38,12 @@ typedef struct {
 	void       *trace;
 } gl_stub_t;
 
+static int  trace;
+
 static gl_stub_t gl_stub_funcs[] = {
 #define QFGL_NEED(ret, name, args) \
 	{#name, norm_##name, trace_##name},
 #include "QF/GL/qf_funcs_list.h"
-#include "glx_funcs_list.h"
 #undef QFGL_NEED
 };
 
@@ -56,10 +59,9 @@ void *
 glXGetProcAddressARB (const GLubyte *procName)
 {
 	static int  called;
-	static int  trace;
 	gl_stub_t  *stub;
 	gl_stub_t   key;
-
+puts(procName);
 	if (!called) {
 		char       *glstub_trace;
 
@@ -75,4 +77,60 @@ glXGetProcAddressARB (const GLubyte *procName)
 	if (!stub)
 		return 0;
 	return trace ? stub->trace : stub->norm;
+}
+
+void
+glXSwapBuffers (Display *dpy, GLXDrawable drawable)
+{
+	if (trace)
+		TRACE;
+}
+
+XVisualInfo*
+glXChooseVisual (Display *dpy, int screen, int *attribList)
+{
+	XVisualInfo template;
+	int         num_visuals;
+	int         template_mask;
+
+	if (trace)
+		TRACE;
+
+	template_mask = 0;
+	template.visualid =
+		XVisualIDFromVisual (XDefaultVisual (dpy, screen));
+	template_mask = VisualIDMask;
+	return XGetVisualInfo (dpy, template_mask, &template, &num_visuals);
+}
+
+GLXContext
+glXCreateContext (Display *dpy, XVisualInfo *vis, GLXContext shareList,
+				  Bool direct)
+{
+	if (trace)
+		TRACE;
+	return (GLXContext)1;
+}
+
+Bool
+glXMakeCurrent (Display *dpy, GLXDrawable drawable, GLXContext ctx)
+{
+	if (trace)
+		TRACE;
+	return 1;
+}
+
+void
+glXDestroyContext (Display *dpy, GLXContext ctx )
+{
+	if (trace)
+		TRACE;
+}
+
+int
+glXGetConfig (Display *dpy, XVisualInfo *visual, int attrib, int *value )
+{
+	if (trace)
+		TRACE;
+    return 0;
 }

@@ -90,7 +90,7 @@ Bool (* qfglXMakeCurrent) (Display *dpy, GLXDrawable drawable, GLXContext ctx);
 
 // ============================================================================
 
-static int use_gl_procaddress;
+static int use_gl_procaddress = 1;
 
 #if defined(HAVE_DLOPEN)
 
@@ -185,6 +185,8 @@ VID_Init (unsigned char *palette)
 	};
 
 	GL_Pre_Init ();
+
+	use_gl_procaddress = 0;
 
 	qfglXSwapBuffers = QFGL_ProcAddress (libgl_handle, "glXSwapBuffers", true);
 	qfglXChooseVisual = QFGL_ProcAddress (libgl_handle, "glXChooseVisual",
