@@ -410,15 +410,29 @@ PM_TestPlayerPosition (const vec3_t pos)
 	return true;
 }
 
+static inline int
+bboxes_touch (const vec3_t min1, const vec3_t max1,
+			  const vec3_t min2, const vec3_t max2)
+{
+	if (min1[0] > max2[0] || max1[0] < min2[0])
+		return 0;
+	if (min1[1] > max2[1] || max1[1] < min2[1])
+		return 0;
+	if (min1[2] > max2[2] || max1[2] < min2[2])
+		return 0;
+	return 1;
+}
+
 /* PM_PlayerMove */
 pmtrace_t
 PM_PlayerMove (const vec3_t start, const vec3_t end)
 {
 	hull_t     *hull;
-	int         i;
+	int         i, check_box;
 	physent_t  *pe;
 	pmtrace_t   trace, total;
 	vec3_t      maxs, mins, offset, start_l, end_l;
+	vec3_t      move[2];
 
 	// fill in a default trace
 	memset (&total, 0, sizeof (pmtrace_t));
@@ -432,9 +446,13 @@ PM_PlayerMove (const vec3_t start, const vec3_t end)
 		// get the clipping hull
 		if (pe->hull) {
 			hull = pe->hull;
+			check_box = 0;
 		} else {
+			check_box = 1;
 			if (pe->model) {
-				hull = &pmove.physents[i].model->hulls[1];
+				hull = &pe->model->hulls[1];
+				VectorSubtract (pe->model->mins, player_maxs, mins);
+				VectorSubtract (pe->model->maxs, player_mins, maxs);
 			} else {
 				VectorSubtract (pe->mins, player_maxs, mins);
 				VectorSubtract (pe->maxs, player_mins, maxs);
@@ -447,6 +465,15 @@ PM_PlayerMove (const vec3_t start, const vec3_t end)
 
 		VectorSubtract (start, offset, start_l);
 		VectorSubtract (end, offset, end_l);
+
+		move[0][0] = min (start_l[0], end_l[0]);
+		move[0][1] = min (start_l[1], end_l[1]);
+		move[0][2] = min (start_l[2], end_l[2]);
+		move[1][0] = max (start_l[0], end_l[0]);
+		move[1][1] = max (start_l[1], end_l[1]);
+		move[1][2] = max (start_l[2], end_l[2]);
+		if (check_box && !bboxes_touch (move[0], move[1], mins, maxs))
+			continue;
 
 		// fill in a default trace
 		memset (&trace, 0, sizeof (pmtrace_t));
