@@ -91,14 +91,14 @@ static void
 XLateKey (XKeyEvent * ev, int *k, int *u)
 {
 	int         key = 0;
-	KeySym      keysym;
+	KeySym      keysym, shifted_keysym;
 	XComposeStatus compose;
 	unsigned char buffer[4];
 	int         bytes;
 	int         unicode;
 
-	//keysym = XLookupKeysym (ev, 0);
-	bytes = XLookupString (ev, buffer, sizeof(buffer), &keysym, &compose);
+	keysym = XLookupKeysym (ev, 0);
+	bytes = XLookupString (ev, buffer, sizeof(buffer), &shifted_keysym, &compose);
 	unicode = buffer[0];
 
 	switch (keysym) {
