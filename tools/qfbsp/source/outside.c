@@ -123,8 +123,10 @@ RecursiveFillOutside (node_t *l, qboolean fill)
 	if (l->valid == valid)
 		return false;
 
-	if (l->occupied)
+	if (l->occupied) {
+		hit_occupied = l->occupied;
 		return true;
+	}
 
 	l->valid = valid;
 
