@@ -157,7 +157,7 @@ PR_LoadDebug (progs_t *pr)
 	}
 	pr->debug->crc = LittleShort (pr->debug->crc);
 	if (pr->debug->crc != pr->crc) {
-		Sys_Printf ("ignoring %s that doesn't match %s. (crcs: sys:%d dat:%d)",
+		Sys_Printf ("ignoring %s that doesn't match %s. (crcs: sym:%d dat:%d)",
 					sym_path,
 					pr->progs_name,
 					pr->debug->crc,
