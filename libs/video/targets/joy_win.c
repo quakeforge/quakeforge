@@ -25,14 +25,15 @@
 		Boston, MA  02111-1307, USA
 
 */
-static const char rcsid[] = 
-	"$Id$";
-
 // FIXME: THIS IS NOT FINISHED YET
 
 #ifdef HAVE_CONFIG_H
 # include "config.h"
 #endif
+
+static __attribute__ ((unused)) const char rcsid[] = 
+	"$Id$";
+
 #include <math.h>
 
 #include "winquake.h"

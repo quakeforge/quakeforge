@@ -30,8 +30,6 @@
 #ifndef __va_h
 #define __va_h
 
-#include "QF/gcc_attr.h"
-
 // does a varargs printf into a temp buffer
 char	*va(const char *format, ...) __attribute__((format(printf,1,2)));
 // does a varargs printf into a malloced buffer

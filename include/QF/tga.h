@@ -29,7 +29,6 @@
 #ifndef __tga_h
 #define __tga_h
 
-#include "QF/gcc_attr.h"
 #include "QF/qtypes.h"
 #include "QF/quakeio.h"
 

@@ -32,7 +32,6 @@
 
 #include <stdarg.h>
 
-#include "QF/gcc_attr.h"
 #include "QF/info.h"
 #include "QF/model.h"
 #include "QF/quakeio.h"

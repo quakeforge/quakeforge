@@ -16,12 +16,12 @@
 
     See file, 'COPYING', for details.
 */
-static const char rcsid[] =
-	"$Id$";
-
 #ifdef HAVE_CONFIG_H
 # include "config.h"
 #endif
+
+static __attribute__ ((unused)) const char rcsid[] =
+	"$Id$";
 
 #include "QF/sys.h"
 

@@ -24,14 +24,14 @@
 		Boston, MA  02111-1307, USA
 
 */
-static const char rcsid[] = 
-	"$Id$";
-
 // 02/21/97 JCB Added extended DirectInput code to support external controllers.
 
 #ifdef HAVE_CONFIG_H
 # include "config.h"
 #endif
+
+static __attribute__ ((unused)) const char rcsid[] = 
+	"$Id$";
 
 #ifdef __MINGW32__
 # define INITGUID

@@ -187,6 +187,36 @@ AC_STRUCT_ST_BLKSIZE
 AC_HEADER_TIME
 AC_STRUCT_TM
 
+AC_MSG_CHECKING(for __attribute__)
+AC_TRY_COMPILE(
+	[static __attribute__ ((unused)) const char *foo = "bar";],
+	[],
+	AC_DEFINE(HAVE___ATTRIBUTE__)
+	AC_MSG_RESULT(yes),
+	AC_MSG_RESULT(no)
+)
+AH_VERBATIM([HAVE___ATTRIBUTE__],
+[/* Define this if the GCC __attribute__ keyword is available */
+#undef HAVE___ATTRIBUTE__
+#ifndef HAVE___ATTRIBUTE__
+# define __attribute__(x)
+#endif])
+
+AC_MSG_CHECKING(for __builtin_expect)
+AC_TRY_COMPILE(
+	[int i;],
+	[if (__builtin_expect (i == 20, 0)) i = 0;],
+	AC_DEFINE(HAVE___BUILTIN_EXPECT)
+	AC_MSG_RESULT(yes),
+	AC_MSG_RESULT(no)
+)
+AH_VERBATIM([HAVE___BUILTIN_EXPECT],
+[/* Define this if the GCC __builtin_expect keyword is available */
+#undef HAVE___BUILTIN_EXPECT
+#ifndef HAVE___BUILTIN_EXPECT
+# define __builtin_expect(x,c) x
+#endif])
+
 AC_TYPE_VA_LIST
 
 if test "x$cross_compiling" = xyes; then

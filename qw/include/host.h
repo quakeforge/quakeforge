@@ -29,7 +29,6 @@
 #ifndef _QUAKEDEF_H
 #define _QUAKEDEF_H
 
-#include "QF/gcc_attr.h"
 #include "QF/qtypes.h"
 
 #define	QUAKE_GAME			// as opposed to utilities

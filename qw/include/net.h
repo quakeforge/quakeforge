@@ -29,7 +29,6 @@
 #ifndef _NET_H
 #define _NET_H
 
-#include "QF/gcc_attr.h"
 #include "QF/qdefs.h"
 #include "QF/sizebuf.h"
 

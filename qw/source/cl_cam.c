@@ -24,9 +24,6 @@
 		Boston, MA  02111-1307, USA
 
 */
-static const char rcsid[] = 
-	"$Id$";
-
 /*
   ZOID - This takes over player controls for spectator automatic camera.
   Player moves as a spectator, but the camera tracks an enemy player
@@ -35,6 +32,10 @@ static const char rcsid[] =
 #ifdef HAVE_CONFIG_H
 # include "config.h"
 #endif
+
+static __attribute__ ((unused)) const char rcsid[] = 
+	"$Id$";
+
 #ifdef HAVE_STRING_H
 # include <string.h>
 #endif

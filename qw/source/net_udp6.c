@@ -27,15 +27,16 @@
 		Boston, MA  02111-1307, USA
 
 */
-static const char rcsid[] = 
-	"$Id$";
-
 /* Sun's model_t in sys/model.h conflicts w/ Quake's model_t */
 #define model_t quakeforgemodel_t
 
 #ifdef HAVE_CONFIG_H
 # include "config.h"
 #endif
+
+static __attribute__ ((unused)) const char rcsid[] = 
+	"$Id$";
+
 #ifdef HAVE_STRING_H
 # include <string.h>
 #endif

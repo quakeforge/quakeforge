@@ -31,8 +31,6 @@
 
 #include <stdarg.h>
 
-#include "QF/gcc_attr.h"
-
 typedef struct dstring_s {
 	unsigned long int size, truesize;
 	char *str;

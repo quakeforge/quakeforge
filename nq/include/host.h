@@ -29,7 +29,6 @@
 #ifndef __host_h
 #define __host_h
 
-#include "QF/gcc_attr.h"
 #include "QF/qtypes.h"
 
 extern qboolean noclip_anglehack;

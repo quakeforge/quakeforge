@@ -24,9 +24,6 @@
 		Boston, MA  02111-1307, USA
 		
 */
-static const char rcsid[] =
-	"$Id$";
-
 		/* afternoon hack (james was here.)
 		   FIXME: I coded this outside of the QF tree so it has non-quake
 		   stuff like malloc and things... ie, it's POSIX, not quake. */
@@ -34,6 +31,10 @@ static const char rcsid[] =
 #ifdef HAVE_CONFIG_H
 # include "config.h"
 #endif
+
+static __attribute__ ((unused)) const char rcsid[] =
+	"$Id$";
+
 #ifdef HAVE_WINDOWS_H
 # include "winquake.h"
 #endif

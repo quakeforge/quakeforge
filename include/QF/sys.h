@@ -32,8 +32,6 @@
 #include <stdio.h>
 #include <stdarg.h>
 
-#include "QF/gcc_attr.h"
-
 extern	struct cvar_s	*sys_nostdout;
 extern	struct cvar_s	*sys_extrasleep;
 extern	struct cvar_s	*sys_dead_sleep;

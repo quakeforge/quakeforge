@@ -29,7 +29,6 @@
 #ifndef __net_h
 #define __net_h
 
-#include "QF/gcc_attr.h"
 #include "QF/quakeio.h"
 #include "QF/sizebuf.h"
 

@@ -24,15 +24,15 @@
 		Boston, MA  02111-1307, USA
 
 */
-static const char rcsid[] = 
-	"$Id$";
-
 // models are the only shared resource between a client and server running
 // on the same machine.
 
 #ifdef HAVE_CONFIG_H
 # include "config.h"
 #endif
+
+static __attribute__ ((unused)) const char rcsid[] = 
+	"$Id$";
 
 #include <stdlib.h>
 

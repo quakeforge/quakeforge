@@ -32,8 +32,6 @@
 
 #include <stdio.h>
 
-#include "QF/gcc_attr.h"
-
 typedef struct QFile_s QFile;
 
 void Qexpand_squiggle(const char *path, char *dest);
