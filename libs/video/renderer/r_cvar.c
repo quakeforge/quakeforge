@@ -38,7 +38,6 @@
 #include "QF/cvar.h"
 
 extern cvar_t *gl_sky_divide;		// FIXME
-extern void R_ForceLightUpdate (void);
 
 cvar_t     *cl_crossx;
 cvar_t     *cl_crossy;
