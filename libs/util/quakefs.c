@@ -42,9 +42,10 @@ static const char rcsid[] =
 
 #include <ctype.h>
 #include <dirent.h>
+#include <errno.h>
 #include <fcntl.h>
-#include <stdlib.h>
 #include <stdarg.h>
+#include <stdlib.h>
 
 #ifdef HAVE_FNMATCH_H
 # define model_t sunmodel_t
@@ -82,7 +83,7 @@ static const char rcsid[] =
 #include "compat.h"
 
 #ifndef HAVE_FNMATCH_PROTO
-int         fnmatch (const char *__pattern, const char *__string, int __flags);
+int fnmatch (const char *__pattern, const char *__string, int __flags);
 #endif
 
 /*
@@ -108,20 +109,17 @@ int         fnmatch (const char *__pattern, const char *__string, int __flags);
 	mirrored into the cache directory, then opened there.
 */
 
-/*
-	QUAKE FILESYSTEM
-*/
-
-char        gamedirfile[MAX_OSPATH];
+// QUAKE FILESYSTEM
 
 cvar_t     *fs_userpath;
 cvar_t     *fs_sharepath;
 cvar_t     *fs_basegame;
 cvar_t     *fs_skinbase;
 
-int         com_filesize;
+char        gamedirfile[MAX_OSPATH];
 
 char        com_gamedir[MAX_OSPATH];
+int         com_filesize;
 
 searchpath_t *com_searchpaths;
 searchpath_t *com_base_searchpaths;		// without gamedirs
@@ -130,8 +128,7 @@ searchpath_t *com_base_searchpaths;		// without gamedirs
 void
 COM_FileBase (const char *in, char *out)
 {
-	const char *slash, *dot;
-	const char *s;
+	const char *slash, *dot, *s;
 
 	slash = in;
 	dot = NULL;
@@ -158,8 +155,7 @@ COM_FileBase (const char *in, char *out)
 int
 COM_filelength (VFile *f)
 {
-	int         pos;
-	int         end;
+	int         end, pos;
 
 	pos = Qtell (f);
 	Qseek (f, 0, SEEK_END);
@@ -168,7 +164,6 @@ COM_filelength (VFile *f)
 
 	return end;
 }
-
 
 int
 COM_FileOpenRead (char *path, VFile **hndl)
@@ -183,6 +178,65 @@ COM_FileOpenRead (char *path, VFile **hndl)
 	*hndl = f;
 
 	return COM_filelength (f);
+}
+
+VFile *
+COM_SafeOpenRead (const char *filename)
+{
+	VFile       *f;
+
+	f = Qopen (filename, "rb");
+
+	if (!f)
+		Sys_Error ("Error opening %s: %s", filename, strerror (errno));
+
+	return f;
+}
+
+VFile *
+COM_SafeOpenWrite (const char *filename)
+{
+	VFile       *f;
+
+	f = Qopen (filename, "wb");
+
+	if (!f)
+		Sys_Error ("Error opening %s: %s", filename, strerror (errno));
+
+	return f;
+}
+
+void
+COM_SafeRead (VFile *f, void *buffer, int count)
+{
+	if (Qread (f, buffer, count) != (size_t) count)
+		Sys_Error ("File read failure");
+}
+
+void
+COM_SafeWrite (VFile *f, const void *buffer, int count)
+{
+	if (Qwrite (f, buffer, count) != (size_t) count)
+		Sys_Error ("File read failure");
+}
+
+int
+LoadFile (const char *filename, void **bufferptr)
+{
+	int		 length;
+	void		*buffer;
+	VFile		*f;
+
+	f = COM_SafeOpenRead (filename);
+	length = COM_filelength (f);
+	buffer = malloc (length + 1);
+	SYS_CHECKMEM (buffer);
+	((char *) buffer)[length] = 0;
+	COM_SafeRead (f, buffer, length);
+	Qclose (f);
+
+	*bufferptr = buffer;
+	return length;
 }
 
 
@@ -211,8 +265,8 @@ COM_Path_f (void)
 void
 COM_WriteFile (const char *filename, void *data, int len)
 {
-	VFile      *f;
 	char        name[MAX_OSPATH];
+	VFile      *f;
 
 	snprintf (name, sizeof (name), "%s/%s", com_gamedir, filename);
 
@@ -237,9 +291,9 @@ COM_WriteFile (const char *filename, void *data, int len)
 void
 COM_WriteBuffers (const char *filename, int count, ...)
 {
-	VFile      *f;
 	char        name[MAX_OSPATH];
 	va_list     args;
+	VFile      *f;
 
 	va_start (args, count);
 
@@ -296,13 +350,12 @@ COM_CreatePath (const char *path)
 void
 COM_CopyFile (char *netpath, char *cachepath)
 {
-	VFile      *in, *out;
 	int         remaining, count;
 	char        buf[4096];
+	VFile      *in, *out;
 
 	remaining = COM_FileOpenRead (netpath, &in);
-	COM_CreatePath (cachepath);			// create directories up to the cache 
-	// file
+	COM_CreatePath (cachepath);  // create directories up to the cache file
 	out = Qopen (cachepath, "wb");
 	if (!out)
 		Sys_Error ("Error opening %s", cachepath);
@@ -324,9 +377,8 @@ COM_CopyFile (char *netpath, char *cachepath)
 VFile      *
 COM_OpenRead (const char *path, int offs, int len, int zip)
 {
+	unsigned char id[2], len_bytes[4];
 	int         fd = open (path, O_RDONLY);
-	unsigned char id[2];
-	unsigned char len_bytes[4];
 
 	if (fd == -1) {
 		Sys_Error ("Couldn't open %s", path);
@@ -365,8 +417,8 @@ COM_OpenRead (const char *path, int offs, int len, int zip)
 char *
 COM_CompressPath (const char *pth)
 {
-	char       *path= malloc (strlen (pth) + 1);
 	char       *p, *d;
+	char       *path= malloc (strlen (pth) + 1);
 
 	for (d = path; *pth; d++, pth++) {
 		if (*pth == '\\')

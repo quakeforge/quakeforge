@@ -1900,6 +1900,16 @@ QF_DEPS(QFCC,
 	[$(top_builddir)/libs/gamecode/engine/libQFgamecode.la $(top_builddir)/libs/util/libQFutil.la],
 	[$(WIN32_LIBS)],
 )
+QF_DEPS(QFLIGHT,
+	[-I$(top_srcdir)/tools/qflight/include],
+	[$(top_builddir)/libs/gamecode/engine/libQFgamecode.la $(top_builddir)/libs/util/libQFutil.la],
+	[$(WIN32_LIBS)],
+)
+QF_DEPS(QFVIS,
+	[-I$(top_srcdir)/tools/qfvis/include],
+	[$(top_builddir)/libs/gamecode/engine/libQFgamecode.la $(top_builddir)/libs/util/libQFutil.la],
+	[$(WIN32_LIBS)],
+)
 QF_DEPS(QFPROGS,
 	[-I$(top_srcdir)/tools/qfprogs/include],
 	[$(top_builddir)/libs/gamecode/engine/libQFgamecode.la $(top_builddir)/libs/util/libQFutil.la],
@@ -1995,9 +2005,15 @@ AC_OUTPUT(
 	tools/qfdefs/Makefile
 	tools/qfdefs/include/Makefile
 	tools/qfdefs/source/Makefile
+	tools/qflight/Makefile
+	tools/qflight/include/Makefile
+	tools/qflight/source/Makefile
 	tools/qfprogs/Makefile
 	tools/qfprogs/include/Makefile
 	tools/qfprogs/source/Makefile
+	tools/qfvis/Makefile
+	tools/qfvis/include/Makefile
+	tools/qfvis/source/Makefile
 	tools/qwaq/Makefile
 	tools/qwaq/progs.src
 	tools/wav/Makefile
