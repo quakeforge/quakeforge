@@ -44,20 +44,18 @@
 #include "QF/qtypes.h"
 #include "QF/sys.h"
 
-vec3_t      vec3_origin = { 0, 0, 0 };
-int         nanmask = 255 << 23;
-mplane_t    frustum[4];
+int			nanmask = 255 << 23;
+mplane_t	frustum[4];
+vec3_t		vec3_origin = { 0, 0, 0 };
 
-/*-----------------------------------------------------------------*/
+#define DEG2RAD(a) (a * (M_PI / 180.0))
 
-#define DEG2RAD( a ) ( a * M_PI ) / 180.0F
 
 void
 ProjectPointOnPlane (vec3_t dst, const vec3_t p, const vec3_t normal)
 {
-	float       d;
-	vec3_t      n;
-	float       inv_denom;
+	float		inv_denom, d;
+	vec3_t		n;
 
 	inv_denom = 1.0F / DotProduct (normal, normal);
 
@@ -76,10 +74,9 @@ ProjectPointOnPlane (vec3_t dst, const vec3_t p, const vec3_t normal)
 void
 PerpendicularVector (vec3_t dst, const vec3_t src)
 {
-	int         pos;
-	int         i;
-	float       minelem = 1.0F;
-	vec3_t      tempvec;
+	int			pos, i;
+	float		minelem = 1.0F;
+	vec3_t		tempvec;
 
 	/* find the smallest magnitude axially aligned vector */
 	for (pos = 0, i = 0; i < 3; i++) {
@@ -170,16 +167,14 @@ RotatePointAroundVector (vec3_t dst, const vec3_t dir, const vec3_t point,
 	R_ConcatRotations (tmpmat, im, rot);
 
 	for (i = 0; i < 3; i++) {
-		dst[i] =
-			rot[i][0] * point[0] + rot[i][1] * point[1] + rot[i][2] * point[2];
+		dst[i] = rot[i][0] * point[0] + rot[i][1] * point[1] + rot[i][2] *
+			point[2];
 	}
 }
 
 #if defined(_WIN32) && !defined(__GNUC__)
 # pragma optimize( "", on )
 #endif
-
-/*-----------------------------------------------------------------*/
 
 float
 anglemod (float a)
@@ -235,67 +230,51 @@ BoxOnPlaneSide (vec3_t emins, vec3_t emaxs, mplane_t *p)
 	// general case
 	switch (p->signbits) {
 		case 0:
-			dist1 =
-				p->normal[0] * emaxs[0] + p->normal[1] * emaxs[1] +
+			dist1 = p->normal[0] * emaxs[0] + p->normal[1] * emaxs[1] +
 				p->normal[2] * emaxs[2];
-			dist2 =
-				p->normal[0] * emins[0] + p->normal[1] * emins[1] +
+			dist2 = p->normal[0] * emins[0] + p->normal[1] * emins[1] +
 				p->normal[2] * emins[2];
 			break;
 		case 1:
-			dist1 =
-				p->normal[0] * emins[0] + p->normal[1] * emaxs[1] +
+			dist1 = p->normal[0] * emins[0] + p->normal[1] * emaxs[1] +
 				p->normal[2] * emaxs[2];
-			dist2 =
-				p->normal[0] * emaxs[0] + p->normal[1] * emins[1] +
+			dist2 = p->normal[0] * emaxs[0] + p->normal[1] * emins[1] +
 				p->normal[2] * emins[2];
 			break;
 		case 2:
-			dist1 =
-				p->normal[0] * emaxs[0] + p->normal[1] * emins[1] +
+			dist1 = p->normal[0] * emaxs[0] + p->normal[1] * emins[1] +
 				p->normal[2] * emaxs[2];
-			dist2 =
-				p->normal[0] * emins[0] + p->normal[1] * emaxs[1] +
+			dist2 = p->normal[0] * emins[0] + p->normal[1] * emaxs[1] +
 				p->normal[2] * emins[2];
 			break;
 		case 3:
-			dist1 =
-				p->normal[0] * emins[0] + p->normal[1] * emins[1] +
+			dist1 = p->normal[0] * emins[0] + p->normal[1] * emins[1] +
 				p->normal[2] * emaxs[2];
-			dist2 =
-				p->normal[0] * emaxs[0] + p->normal[1] * emaxs[1] +
+			dist2 = p->normal[0] * emaxs[0] + p->normal[1] * emaxs[1] +
 				p->normal[2] * emins[2];
 			break;
 		case 4:
-			dist1 =
-				p->normal[0] * emaxs[0] + p->normal[1] * emaxs[1] +
+			dist1 = p->normal[0] * emaxs[0] + p->normal[1] * emaxs[1] +
 				p->normal[2] * emins[2];
-			dist2 =
-				p->normal[0] * emins[0] + p->normal[1] * emins[1] +
+			dist2 = p->normal[0] * emins[0] + p->normal[1] * emins[1] +
 				p->normal[2] * emaxs[2];
 			break;
 		case 5:
-			dist1 =
-				p->normal[0] * emins[0] + p->normal[1] * emaxs[1] +
+			dist1 = p->normal[0] * emins[0] + p->normal[1] * emaxs[1] +
 				p->normal[2] * emins[2];
-			dist2 =
-				p->normal[0] * emaxs[0] + p->normal[1] * emins[1] +
+			dist2 = p->normal[0] * emaxs[0] + p->normal[1] * emins[1] +
 				p->normal[2] * emaxs[2];
 			break;
 		case 6:
-			dist1 =
-				p->normal[0] * emaxs[0] + p->normal[1] * emins[1] +
+			dist1 = p->normal[0] * emaxs[0] + p->normal[1] * emins[1] +
 				p->normal[2] * emins[2];
-			dist2 =
-				p->normal[0] * emins[0] + p->normal[1] * emaxs[1] +
+			dist2 = p->normal[0] * emins[0] + p->normal[1] * emaxs[1] +
 				p->normal[2] * emaxs[2];
 			break;
 		case 7:
-			dist1 =
-				p->normal[0] * emins[0] + p->normal[1] * emins[1] +
+			dist1 = p->normal[0] * emins[0] + p->normal[1] * emins[1] +
 				p->normal[2] * emins[2];
-			dist2 =
-				p->normal[0] * emaxs[0] + p->normal[1] * emaxs[1] +
+			dist2 = p->normal[0] * emaxs[0] + p->normal[1] * emaxs[1] +
 				p->normal[2] * emaxs[2];
 			break;
 		default:
@@ -344,8 +323,7 @@ BoxOnPlaneSide (vec3_t emins, vec3_t emaxs, mplane_t *p)
 void
 AngleVectors (vec3_t angles, vec3_t forward, vec3_t right, vec3_t up)
 {
-	float       angle;
-	float       sr, sp, sy, cr, cp, cy;
+	float       angle, sr, sp, sy, cr, cp, cy;
 
 	angle = angles[YAW] * (M_PI * 2 / 360);
 	sy = sin (angle);
@@ -431,8 +409,8 @@ double      sqrt (double x);
 vec_t
 _Length (vec3_t v)
 {
-	int         i;
-	float       length;
+	float		length;
+	int			i;
 
 	length = 0;
 	for (i = 0; i < 3; i++)
@@ -445,7 +423,7 @@ _Length (vec3_t v)
 float
 VectorNormalize (vec3_t v)
 {
-	float       length, ilength;
+	float		length, ilength;
 
 	length = v[0] * v[0] + v[1] * v[1] + v[2] * v[2];
 	length = sqrt (length);				// FIXME
@@ -549,8 +527,8 @@ R_ConcatTransforms (float in1[3][4], float in2[3][4], float out[3][4])
 void
 FloorDivMod (double numer, double denom, int *quotient, int *rem)
 {
-	int         q, r;
-	double      x;
+	double		x;
+	int			q, r;
 
 #ifndef PARANOID
 	if (denom <= 0.0)
