@@ -38,8 +38,12 @@
 #include <errno.h>
 #include <fcntl.h>
 #include <limits.h>
-#include <io.h>
-#include <conio.h>
+#ifdef HAVE_IO_H
+# include <io.h>
+#endif
+#ifdef HAVE_CONIO_H
+# include <conio.h>
+#endif
 
 #ifndef _WIN32
 # include <unistd.h>
@@ -69,6 +73,7 @@ qboolean    is_server = false;
 char       *svs_info;
 
 int         starttime;
+int         noconinput;
 
 #ifdef _WIN32
 # include "winquake.h"
@@ -185,8 +190,11 @@ Sys_Init_Cvars (void)
 		Cvar_Set (sys_nostdout, "1");
 }
 
+#ifndef SDL_main
+# define SDL_main main
+#endif
 
-C_LINKAGE int
+int
 SDL_main (int c, char **v)
 {
 	double      time, oldtime, newtime;

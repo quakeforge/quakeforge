@@ -77,7 +77,12 @@ extern void VID_Init8bitPalette (void);
 void
 VID_SDL_GammaCheck (void)
 {
+#if SDL_VERSIONNUM(SDL_MAJOR_VERSION,SDL_MINOR_VERSION,SDL_PATCHLEVEL) \
+	> SDL_VERSIONNUM(1,1,5)
 	Uint16 redtable[256], greentable[256], bluetable[256];
+#else
+	Uint8 redtable[256], greentable[256], bluetable[256];
+#endif
 
 	if (SDL_GetGammaRamp(redtable, greentable, bluetable) < 0)
 		vid_gamma_avail = false;
