@@ -422,7 +422,7 @@ _COM_FOpenFile (const char *filename, VFile **gzfile, char *foundname, int zip)
 
 #ifdef HAVE_ZLIB
 	char        gzfilename[MAX_OSPATH];
-	int         filenamelen;;
+	int         filenamelen;
 
 	filenamelen = strlen (filename);
 	strncpy (gzfilename, filename, sizeof (gzfilename));
