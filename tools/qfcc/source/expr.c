@@ -679,6 +679,7 @@ def_t *
 emit_function_call (expr_t *e, def_t *dest)
 {
 	def_t *func = emit_sub_expr (e->e.expr.e1, 0);
+	def_t parm;
 	def_t *arg;
 	expr_t *earg;
 	opcode_t *op;
@@ -689,10 +690,13 @@ emit_function_call (expr_t *e, def_t *dest)
 	ind = count;
 	for (earg = e->e.expr.e2; earg; earg = earg->next) {
 		ind--;
-		arg = emit_sub_expr (earg, 0);
-		def_parms[ind].type = arg->type;
-		op = PR_Opcode_Find ("=", 5, arg, &def_parms[ind], &def_parms[ind]);
-		emit_statement (op, arg, &def_parms[ind], 0);
+		parm = def_parms[ind];
+		parm.type = types[get_type (earg)];
+		arg = emit_sub_expr (earg, &parm);
+		if (earg->type != ex_expr) {
+			op = PR_Opcode_Find ("=", 5, arg, &parm, &parm);
+			emit_statement (op, arg, &parm, 0);
+		}
 	}
 	op = PR_Opcode_Find (va ("<CALL%d>", count), -1, &def_function,  &def_void, &def_void);
 	emit_statement (op, func, 0, 0);
