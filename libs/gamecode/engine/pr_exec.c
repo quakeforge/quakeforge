@@ -196,7 +196,7 @@ PR_EnterFunction (progs_t * pr, dfunction_t *f)
 	// save off any locals that the new function steps on
 	c = f->locals;
 	if (pr->localstack_used + c > LOCALSTACK_SIZE)
-		PR_RunError (pr, "PR_ExecuteProgram: locals stack overflow");
+		PR_RunError (pr, "PR_EnterFunction: locals stack overflow");
 
 	memcpy (&pr->localstack[pr->localstack_used],
 			&pr->pr_globals[f->parm_start],
@@ -234,7 +234,7 @@ PR_LeaveFunction (progs_t * pr)
 	c = pr->pr_xfunction->locals;
 	pr->localstack_used -= c;
 	if (pr->localstack_used < 0)
-		PR_RunError (pr, "PR_ExecuteProgram: locals stack underflow");
+		PR_RunError (pr, "PR_LeaveFunction: locals stack underflow");
 
 	memcpy (&pr->pr_globals[pr->pr_xfunction->parm_start],
 			&pr->localstack[pr->localstack_used],
