@@ -752,6 +752,13 @@ CL_SendCmd (void)
 
 
 void
+Force_CenterView_f (void)
+{
+	cl.viewangles[PITCH] = 0;
+}
+
+
+void
 CL_Init (void)
 {
 	int i;
@@ -768,6 +775,10 @@ CL_Init (void)
 	Cmd_AddCommand ("playdemo", CL_PlayDemo_f, "No Description");
 	Cmd_AddCommand ("timedemo", CL_TimeDemo_f, "No Description");
 	Cmd_AddCommand ("maplist", COM_Maplist_f, "No Description");
+
+	Cmd_AddCommand ("force_centerview", Force_CenterView_f, "force the view to "
+					"be level");
+
 
 	for (i = 0; i < MAX_STATIC_ENTITIES; i++) {
 		cl_static_entities[i].baseline = &cl_static_entity_baselines[i];

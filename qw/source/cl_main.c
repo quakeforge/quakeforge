@@ -1084,6 +1084,13 @@ CL_Download_f (void)
 
 
 void
+Force_CenterView_f (void)
+{
+	cl.viewangles[PITCH] = 0;
+}
+
+
+void
 CL_Init (void)
 {
 	char        st[80];
@@ -1153,6 +1160,9 @@ CL_Init (void)
 					"next upload");
 	Cmd_AddCommand ("stopul", CL_StopUpload, "Tells the client to stop "
 					"uploading");
+
+	Cmd_AddCommand ("force_centerview", Force_CenterView_f, "force the view to "
+					"be level");
 
 // forward to server commands
 	Cmd_AddCommand ("kill", Cmd_ForwardToServer, "Suicide :)");
