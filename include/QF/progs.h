@@ -163,7 +163,7 @@ qboolean PR_EdictValid (progs_t *pr, int e);
 #define RETURN_STRING(p, s)		(R_STRING (p) = PR_SetReturnString((p), s))
 #define RETURN_EDICT(p, e)		(R_STRING (p) = EDICT_TO_PROG(p, e))
 #define RETURN_POINTER(pr,p)	(R_POINTER (pr) = POINTER_TO_PROG (pr, p))
-#define RETURN_VECTOR(p, v)		(VectorCopy (v, R_VECTOR (p)))
+#define RETURN_VECTOR(p, v)		VectorCopy (v, R_VECTOR (p))
 
 #define E_var(e,o,t)	((e)->v[o].t##_var)
 

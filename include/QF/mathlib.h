@@ -45,27 +45,27 @@ extern const vec_t * const vec3_origin;
 #define IS_NAN(x) (((*(int *)&x)&nanmask)==nanmask)
 
 #define DotProduct(a,b) ((a)[0]*(b)[0]+(a)[1]*(b)[1]+(a)[2]*(b)[2])
-#define VectorSubtract(a,b,c) {(c)[0]=(a)[0]-(b)[0];(c)[1]=(a)[1]-(b)[1];(c)[2]=(a)[2]-(b)[2];}
-#define VectorNegate(a,b) {(b)[0]=-(a)[0];(b)[1]=-(a)[1];(b)[2]=-(a)[2];}
-#define VectorAdd(a,b,c) {(c)[0]=(a)[0]+(b)[0];(c)[1]=(a)[1]+(b)[1];(c)[2]=(a)[2]+(b)[2];}
-#define VectorCopy(a,b) {(b)[0]=(a)[0];(b)[1]=(a)[1];(b)[2]=(a)[2];}
-#define VectorMult(a,b,c) {(c)[0]=(a)[0]*(b)[0];(c)[1]=(a)[1]*(b)[1];(c)[2]=(a)[2]*(b)[2];}
-#define VectorMultAdd(a,s,b,c) {(c)[0]=(a)[0]+(s)*(b)[0];(c)[1]=(a)[1]+(s)*(b)[1];(c)[2]=(a)[2]+(s)*(b)[2];}
-#define VectorMultSub(a,s,b,c) {(c)[0]=(a)[0]-(s)*(b)[0];(c)[1]=(a)[1]-(s)*(b)[1];(c)[2]=(a)[2]-(s)*(b)[2];}
+#define VectorSubtract(a,b,c) do {(c)[0]=(a)[0]-(b)[0];(c)[1]=(a)[1]-(b)[1];(c)[2]=(a)[2]-(b)[2];} while (0)
+#define VectorNegate(a,b) do {(b)[0]=-(a)[0];(b)[1]=-(a)[1];(b)[2]=-(a)[2];} while (0)
+#define VectorAdd(a,b,c) do {(c)[0]=(a)[0]+(b)[0];(c)[1]=(a)[1]+(b)[1];(c)[2]=(a)[2]+(b)[2];} while (0)
+#define VectorCopy(a,b) do {(b)[0]=(a)[0];(b)[1]=(a)[1];(b)[2]=(a)[2];} while (0)
+#define VectorMult(a,b,c) do {(c)[0]=(a)[0]*(b)[0];(c)[1]=(a)[1]*(b)[1];(c)[2]=(a)[2]*(b)[2];} while (0)
+#define VectorMultAdd(a,s,b,c) do {(c)[0]=(a)[0]+(s)*(b)[0];(c)[1]=(a)[1]+(s)*(b)[1];(c)[2]=(a)[2]+(s)*(b)[2];} while (0)
+#define VectorMultSub(a,s,b,c) do {(c)[0]=(a)[0]-(s)*(b)[0];(c)[1]=(a)[1]-(s)*(b)[1];(c)[2]=(a)[2]-(s)*(b)[2];} while (0)
 #define VectorLength(a) sqrt(DotProduct(a, a))
 
-#define VectorScale(a,b,c) {(c)[0]=(a)[0]*(b);(c)[1]=(a)[1]*(b);(c)[2]=(a)[2]*(b);}
+#define VectorScale(a,b,c) do {(c)[0]=(a)[0]*(b);(c)[1]=(a)[1]*(b);(c)[2]=(a)[2]*(b);} while (0)
 #define VectorCompare(x, y) (((x)[0] == (y)[0]) && ((x)[1] == (y)[1]) && ((x)[2] == (y)[2]))
 
 #define VectorIsZero(a) ((a)[0] == 0 && (a)[1] == 0 && (a)[2] == 0)
 #define VectorZero(a) ((a)[2] = (a)[1] = (a)[0] = 0);
 
 #define VectorBlend(v1,v2,b,v) \
-	{ \
+	do { \
 		(v)[0] = (v1)[0] * (1 - (b)) + (v2)[0] * (b); \
 		(v)[1] = (v1)[1] * (1 - (b)) + (v2)[1] * (b); \
 		(v)[2] = (v1)[2] * (1 - (b)) + (v2)[2] * (b); \
-	}
+	} while (0)
 
 /*
  * VectorDistance, the distance between two points.
