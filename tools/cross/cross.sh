@@ -28,14 +28,16 @@ GCC=gcc-3.2.3-20030504-1
 GCC_ARCHIVE=$GCC-src.tar.gz
 GCC_PATCH=""
 BINUTILS=binutils-2.13.90-20030111-1
+BINUTILS_PATCH=binutils-2.13.90-20030111-1-flex.diff
 BINUTILS_ARCHIVE=$BINUTILS-src.tar.gz
-MINGW=mingw-runtime-3.0
+MINGW=mingw-runtime-3.2
 MINGW_ARCHIVE=$MINGW.tar.gz
-W32API=w32api-2.3
+W32API=w32api-2.4
 W32API_ARCHIVE=$W32API.tar.gz
 
 # These are the files from the SDL website
 
+TANIWHA_URL=http://quakeforge.net/~taniwha
 SDL_URL=http://www.libsdl.org/extras/win32/common
 OPENGL_ARCHIVE=opengl-devel.tar.gz
 DIRECTX_ARCHIVE=directx-devel.tar.gz
@@ -75,6 +77,7 @@ download_files()
 	fi
 	download_file "$GCC_ARCHIVE" "$MINGW_URL"
 	download_file "$BINUTILS_ARCHIVE" "$MINGW_URL"
+	download_file "$BINUTILS_PATCH" "$TANIWHA_URL"
 	download_file "$MINGW_ARCHIVE" "$MINGW_URL"
 	download_file "$W32API_ARCHIVE" "$MINGW_URL"
 	download_file "$OPENGL_ARCHIVE" "$SDL_URL"
@@ -99,6 +102,7 @@ extract_binutils()
 	rm -rf "$BINUTILS"
 	echo "Extracting binutils"
 	gzip -dc "$SRCDIR/$BINUTILS_ARCHIVE" | tar xf -
+	patch -p0 < binutils-2.13.90-20030111-1-flex.diff
 	mv binutils-2.13.90-20030111-1-src binutils-2.13.90-20030111-1
 	cd "$TOPDIR"
 }
