@@ -428,20 +428,10 @@ R_RocketTrail (entity_t *ent)
 		VectorAdd (ent->old_origin, subtract, ent->old_origin);
 		percent = len * origlen;
 
-		if (cl_surprise->int_val)
-		{
-			particle_new (pt_smoke, part_tex_smoke, ent->old_origin,
-					pscale + percent * 4.0, vec3_origin,
-					r_realtime + 2.0 - percent * 2.0, 
-					(rand () & 255),
-					128 + (rand () & 31) - percent * 100.0);
-		} else {
-			particle_new (pt_smoke, part_tex_smoke, ent->old_origin,
-					pscale + percent * 4.0, vec3_origin,
-					r_realtime + 2.0 - percent * 2.0,
-					12 + (rand () & 3),
-					128 + (rand () & 31) - percent * 100.0);
-		}
+		particle_new (pt_smoke, part_tex_smoke, ent->old_origin,
+					  pscale + percent * 4.0, vec3_origin,
+					  r_realtime + 2.0 - percent * 2.0, 12 + (rand () & 3),
+					  128 + (rand () & 31) - percent * 100.0);
 		if (numparticles >= r_maxparticles)
 			break;
 		len += dist;
@@ -472,19 +462,10 @@ R_GrenadeTrail (entity_t *ent)
 		VectorAdd (ent->old_origin, subtract, ent->old_origin);
 		percent = len * origlen;
 
-		if (cl_surprise->int_val)
-		{
-			particle_new (pt_smoke, part_tex_smoke, ent->old_origin,
-					pscale + percent * 4.0, vec3_origin,
-					r_realtime + 2.0 - percent * 2.0,
-					(rand () & 255),
-					160 + (rand () & 31) - percent * 100.0);
-		} else {
-			particle_new (pt_smoke, part_tex_smoke, ent->old_origin,                                        pscale + percent * 4.0, vec3_origin,
-					r_realtime + 2.0 - percent * 2.0,
-					(rand () & 3),
-					160 + (rand () & 31) - percent * 100.0);
-		}
+		particle_new (pt_smoke, part_tex_smoke, ent->old_origin,
+					  pscale + percent * 4.0, vec3_origin,
+					  r_realtime + 2.0 - percent * 2.0, (rand () & 3),
+					  160 + (rand () & 31) - percent * 100.0);
 		if (numparticles >= r_maxparticles)
 			break;
 		len += dist;

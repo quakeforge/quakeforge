@@ -44,7 +44,6 @@ static const char rcsid[] =
 cvar_t     *cl_crossx;
 cvar_t     *cl_crossy;
 cvar_t	   *cl_max_particles;
-cvar_t     *cl_surprise;
 cvar_t     *cl_verstring;   
 cvar_t     *crosshair;
 cvar_t     *crosshaircolor;
@@ -157,8 +156,6 @@ R_Init_Cvars (void)
 								 cl_max_particles_f, "Maximum amount of "
 								 "particles to display. No maximum, minimum " 
 								 "is 0.");
-	cl_surprise = Cvar_Get ("cl_surprise", "0", CVAR_NONE, NULL,
-							"Its a surprise, set to 1");
 	cl_verstring = Cvar_Get ("cl_verstring", PROGRAM " " VERSION, CVAR_NONE,
 							 NULL, "Client version string");
 	crosshair = Cvar_Get ("crosshair", "0", CVAR_ARCHIVE, NULL, "Crosshair "
