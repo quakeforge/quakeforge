@@ -264,9 +264,9 @@ map_cfg (const char *mapname, int all)
 	COM_FOpenFile (name, &f);
 	if (f) {
 		Qclose (f);
-		Cmd_Exec_File (cl_cbuf, name);
+		Cmd_Exec_File (cl_cbuf, name, 1);
 	} else {
-		Cmd_Exec_File (cl_cbuf, "maps_default.cfg");
+		Cmd_Exec_File (cl_cbuf, "maps_default.cfg", 1);
 	}
 	if (all)
 		Cbuf_Execute_Stack (cl_cbuf);

@@ -61,7 +61,7 @@ void Cmd_Command (struct cbuf_args_s *args);
 int Cmd_ExecuteString (const char *text, cmd_source_t src);
 struct cbuf_s;
 void Cmd_StuffCmds (struct cbuf_s *cbuf);
-void Cmd_Exec_File (struct cbuf_s *cbuf, const char *path);
+void Cmd_Exec_File (struct cbuf_s *cbuf, const char *path, int qfs);
 void Cmd_Return (const char *value);
 void Cmd_Error (const char *message);
 

@@ -625,7 +625,7 @@ Cmd_ExecuteString (const char *text, cmd_source_t src)
 }
 
 void
-Cmd_Exec_File (cbuf_t *cbuf, const char *path)
+Cmd_Exec_File (cbuf_t *cbuf, const char *path, int qfs)
 {
 	char       *f;
 	int         len;
@@ -633,17 +633,22 @@ Cmd_Exec_File (cbuf_t *cbuf, const char *path)
 
 	if (!path || !*path)
 		return;
-	if ((file = Qopen (path, "r")) != NULL) {
+	if (qfs) {
+		COM_FOpenFile (path, &file);
+	} else {
+		file = Qopen (path, "r");
+	}
+	if (file) {
 		len = Qfilesize (file);
 		f = (char *) malloc (len + 1);
 		if (f) {
 			f[len] = 0;
 			Qread (file, f, len);
-			Qclose (file);
 			// Always insert into console
 			Cbuf_InsertText (cbuf, f);
 			free (f);
 		}
+		Qclose (file);
 	}
 }
 

@@ -2480,7 +2480,7 @@ SV_Init (void)
 	// probably Not A Good Thing (tm).
 	fs_globalcfg = Cvar_Get ("fs_globalcfg", FS_GLOBALCFG,
 							 CVAR_ROM, 0, "global configuration file");
-	Cmd_Exec_File (sv_cbuf, fs_globalcfg->string);
+	Cmd_Exec_File (sv_cbuf, fs_globalcfg->string, 0);
 	Cbuf_Execute_Sets (sv_cbuf);
 
 	// execute +set again to override the config file
@@ -2489,7 +2489,7 @@ SV_Init (void)
 
 	fs_usercfg = Cvar_Get ("fs_usercfg", FS_USERCFG,
 						   CVAR_ROM, 0, "user configuration file");
-	Cmd_Exec_File (sv_cbuf, fs_usercfg->string);
+	Cmd_Exec_File (sv_cbuf, fs_usercfg->string, 0);
 	Cbuf_Execute_Sets (sv_cbuf);
 
 	// execute +set again to override the config file
@@ -2561,7 +2561,7 @@ SV_Init (void)
 	SV_Printf ("<==> %s initialized <==>\n", PROGRAM);
 
 	// process command line arguments
-	Cmd_Exec_File (sv_cbuf, fs_usercfg->string);
+	Cmd_Exec_File (sv_cbuf, fs_usercfg->string, 0);
 	Cmd_StuffCmds (sv_cbuf);
 	Cbuf_Execute (sv_cbuf);
 
