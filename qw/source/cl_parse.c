@@ -321,9 +321,11 @@ Model_NextDownload (void)
 			aliashdr_t *ahdr = Cache_Get (&cl.model_precache[i]->cache);
 			Info_SetValueForKey (cls.userinfo, info_key, va ("%d", ahdr->crc),
 								 0);
-			MSG_WriteByte (&cls.netchan.message, clc_stringcmd);
-			SZ_Print (&cls.netchan.message, va ("setinfo %s %d", info_key,
-												ahdr->crc));
+			if (!cls.demoplayback) {
+				MSG_WriteByte (&cls.netchan.message, clc_stringcmd);
+				SZ_Print (&cls.netchan.message, va ("setinfo %s %d", info_key,
+													ahdr->crc));
+			}
 			Cache_Release (&cl.model_precache[i]->cache);
 		}
 	}
@@ -342,10 +344,12 @@ Model_NextDownload (void)
 	CL_NewMap (cl.model_name[1]);
 
 	// done with modellist, request first of static signon messages
-	MSG_WriteByte (&cls.netchan.message, clc_stringcmd);
-	MSG_WriteString (&cls.netchan.message,
-					 va (prespawn_name, cl.servercount,
-						 cl.worldmodel->checksum2));
+	if (!cls.demoplayback) {
+		MSG_WriteByte (&cls.netchan.message, clc_stringcmd);
+		MSG_WriteString (&cls.netchan.message,
+						 va (prespawn_name, cl.servercount,
+							 cl.worldmodel->checksum2));
+	}
 }
 
 void
@@ -381,9 +385,11 @@ Sound_NextDownload (void)
 	cl_flagindex = -1;
 	cl_h_playerindex = -1;
 	cl_gib1index = cl_gib2index = cl_gib3index = -1;
-	MSG_WriteByte (&cls.netchan.message, clc_stringcmd);
-	MSG_WriteString (&cls.netchan.message,
-					 va (modellist_name, cl.servercount, 0));
+	if (!cls.demoplayback) {
+		MSG_WriteByte (&cls.netchan.message, clc_stringcmd);
+		MSG_WriteString (&cls.netchan.message,
+						 va (modellist_name, cl.servercount, 0));
+	}
 }
 
 void
@@ -700,9 +706,11 @@ CL_ParseServerData (void)
 
 	// ask for the sound list next
 	memset (cl.sound_name, 0, sizeof (cl.sound_name));
-	MSG_WriteByte (&cls.netchan.message, clc_stringcmd);
-	MSG_WriteString (&cls.netchan.message,
-					 va (soundlist_name, cl.servercount, 0));
+	if (!cls.demoplayback) {
+		MSG_WriteByte (&cls.netchan.message, clc_stringcmd);
+		MSG_WriteString (&cls.netchan.message,
+						 va (soundlist_name, cl.servercount, 0));
+	}
 
 	// now waiting for downloads, etc
 	CL_SetState (ca_onserver);
@@ -749,7 +757,7 @@ CL_ParseSoundlist (void)
 
 	n = MSG_ReadByte (net_message);
 
-	if (n) {
+	if (n && !cls.demoplayback) {
 		MSG_WriteByte (&cls.netchan.message, clc_stringcmd);
 		MSG_WriteString (&cls.netchan.message,
 						 va (soundlist_name, cl.servercount, n));

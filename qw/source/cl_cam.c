@@ -190,8 +190,10 @@ Cam_Lock (int playernum)
 		memcpy(cl.stats, cl.players[playernum].stats, sizeof (cl.stats));
 	}
 
-	MSG_WriteByte (&cls.netchan.message, clc_stringcmd);
-	MSG_WriteString (&cls.netchan.message, st);
+	if (!cls.demoplayback) {
+		MSG_WriteByte (&cls.netchan.message, clc_stringcmd);
+		MSG_WriteString (&cls.netchan.message, st);
+	}
 	spec_track = playernum;
 	last_lock = realtime;
 	cam_forceview = true;
@@ -451,8 +453,10 @@ Cam_Track (usercmd_t *cmd)
 		VectorCopy (player->origin, desired_position);
 		if (memcmp (&desired_position, &self->origin,
 					sizeof (desired_position)) != 0) {
-			MSG_WriteByte (&cls.netchan.message, clc_tmove);
-			MSG_WriteCoordV (&cls.netchan.message, desired_position);
+			if (!cls.demoplayback) {
+				MSG_WriteByte (&cls.netchan.message, clc_tmove);
+				MSG_WriteCoordV (&cls.netchan.message, desired_position);
+			}
 			// move there locally immediately
 			VectorCopy (desired_position, self->origin);
 		}

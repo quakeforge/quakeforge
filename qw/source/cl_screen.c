@@ -79,7 +79,7 @@ CL_NetStats (void)
 	x = hudswap ? vid.width - 104 : 0;
 	y = vid.height - sb_lines - 16;
 	// request new ping times every two seconds
-	if (realtime - cl.last_ping_request > 2) {
+	if (!cls.demoplayback && realtime - cl.last_ping_request > 2) {
 		cl.last_ping_request = realtime;
 		MSG_WriteByte (&cls.netchan.message, clc_stringcmd);
 		SZ_Print (&cls.netchan.message, "pings");
