@@ -753,7 +753,7 @@ SV_Say (qboolean team)
 {
 	char       *i, *p;
 	char		text[2048], t1[32];
-	const char *t2;
+	const char *t2, *type;
 	client_t   *client;
 	int			tmp, j, cls = 0;
 
@@ -765,12 +765,15 @@ SV_Say (qboolean team)
 		t1[31] = 0;
 	}
 
-	if (host_client->spectator && (!sv_spectalk->int_val || team))
+	if (host_client->spectator && (!sv_spectalk->int_val || team)) {
 		snprintf (text, sizeof (text), "[SPEC] %s: ", host_client->name);
-	else if (team)
+		type = "2";
+	} else if (team) {
 		snprintf (text, sizeof (text), "(%s): ", host_client->name);
-	else {
+		type = "1";
+	} else {
 		snprintf (text, sizeof (text), "%s: ", host_client->name);
+		type = "0";
 	}
 
 	if (fp_messages) {
@@ -823,13 +826,13 @@ SV_Say (qboolean team)
 				*i = '#';
 		}
 
+	if (sv_chat_e->func)
+		GIB_Event_Callback (sv_chat_e, 2, va("%i", host_client->userid), p, type);
+		
 	strncat (text, p, sizeof (text) - strlen (text));
 	strncat (text, "\n", sizeof (text) - strlen (text));
 
 	SV_Printf ("%s", text);
-
-	if (sv_chat_e->func)
-		GIB_Event_Callback (sv_chat_e, 1, text);
 
 	for (j = 0, client = svs.clients; j < MAX_CLIENTS; j++, client++) {
 		if (client->state < cs_connected)	// Clients connecting can hear.

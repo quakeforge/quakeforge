@@ -158,8 +158,8 @@ GIB_Function_Prepare_Args (cbuf_t * cbuf, dstring_t ** args, unsigned int argc)
 
 	var =
 		GIB_Var_Get_Complex (&GIB_DATA (cbuf)->locals, &zero, argss, &i, true);
-	var->array = realloc (var->array, sizeof (dstring_t *) * argc);
-	memset (var->array + 1, 0, (argc - 1) * sizeof (dstring_t *));
+	var->array = realloc (var->array, sizeof (struct gib_varray_s) * argc);
+	memset (var->array + 1, 0, (argc - 1) * sizeof (struct gib_varray_s));
 	var->size = argc;
 	for (i = 0; i < argc; i++) {
 		if (var->array[i].value)

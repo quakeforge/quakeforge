@@ -76,7 +76,7 @@ GIB_Execute_Generate_Composite (struct cbuf_s *cbuf)
 }
 
 static void
-GIB_Execute_Split_Array (cbuf_t * cbuf)
+GIB_Execute_Split_Var (cbuf_t * cbuf)
 {
 	gib_var_t  *var;
 	unsigned int i;
@@ -85,39 +85,53 @@ GIB_Execute_Split_Array (cbuf_t * cbuf)
 	void       *m = cbuf->args->argm[cbuf->args->argc - 1];
 
 	i = strlen (str) - 1;
-	if (str[i] == ']')
-		for (; i; i--)
-			if (str[i] == '[') {
-				str[i] = 0;
-				start = atoi (str + i + 1);
-				if ((c = strchr (str + i + 1, ':'))) {
-					if (c[1] != ']')
-						end = atoi (c + 1);
-				} else
-					end = start + 1;
-				break;
-			}
-	cbuf->args->argc--;
-	if (!(var = GIB_Var_Get_Complex (&GIB_DATA (cbuf)->locals,
-							  &GIB_DATA (cbuf)->globals, str, &i, false)))
-		return;
-	if (end < 0)
-		end += var->size;
-	else if (end > var->size)
-		end = var->size;
-	if (start < 0) {
-		start += var->size;
-		if (start < 0)
-			start = 0;
-	} else if (start >= var->size || start >= end)
-		return;
-	for (i = start; i < end; i++) {
-		if (var->array[i].value)
-			Cbuf_ArgsAdd (cbuf->args, var->array[i].value->str);
-		else
-			Cbuf_ArgsAdd (cbuf->args, "");
-		cbuf->args->argm[cbuf->args->argc - 1] = m;
-	}
+	if (str[-1] == '@') {
+		if (str[i] == ']')
+			for (; i; i--)
+				if (str[i] == '[') {
+					str[i] = 0;
+					start = atoi (str + i + 1);
+					if ((c = strchr (str + i + 1, ':'))) {
+						if (c[1] != ']')
+							end = atoi (c + 1);
+					} else
+						end = start + 1;
+					break;
+				}
+		cbuf->args->argc--;
+		if (!(var = GIB_Var_Get_Complex (&GIB_DATA (cbuf)->locals,
+								  &GIB_DATA (cbuf)->globals, str, &i, false)))
+			return;
+		if (end < 0)
+			end += var->size;
+		else if (end > var->size)
+			end = var->size;
+		if (start < 0) {
+			start += var->size;
+			if (start < 0)
+				start = 0;
+		} else if (start >= var->size || start >= end)
+			return;
+		for (i = start; i < end; i++) {
+			if (var->array[i].value)
+				Cbuf_ArgsAdd (cbuf->args, var->array[i].value->str);
+			else
+				Cbuf_ArgsAdd (cbuf->args, "");
+			cbuf->args->argm[cbuf->args->argc - 1] = m;
+		}
+	} else {
+		gib_var_t **vlist, **v;
+		
+		cbuf->args->argc--;
+		if (!(var = GIB_Var_Get_Complex (&GIB_DATA (cbuf)->locals,
+								  &GIB_DATA (cbuf)->globals, str, &i, false)))
+			return;
+		if (!var->array[i].leaves)
+			return;
+		vlist = (gib_var_t **) Hash_GetList (var->array[i].leaves);
+		for (v = vlist; *v; v++)
+			Cbuf_ArgsAdd (cbuf->args, (*v)->key);
+	}	
 }
 
 static int
@@ -148,8 +162,8 @@ GIB_Execute_Prepare_Line (cbuf_t * cbuf, gib_tree_t * line)
 		if (cur->delim == '('
 			&& GIB_Process_Math (args->argv[args->argc - 1], pos))
 			return -1;
-		if (cur->flags & TREE_ASPLIT)
-			GIB_Execute_Split_Array (cbuf);
+		if (cur->flags & TREE_SPLIT)
+			GIB_Execute_Split_Var (cbuf);
 	}
 	return 0;
 }

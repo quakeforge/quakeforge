@@ -68,7 +68,7 @@ endif
 EXTRA_DIST=sv_sys_win.c sv_sys_unix.c
 
 libqw_server_a_SOURCES= \
-		crudefile.c sv_ccmds.c sv_demo.c sv_ents.c sv_init.c sv_main.c \
+		crudefile.c sv_ccmds.c sv_demo.c sv_ents.c sv_gib.c sv_init.c sv_main.c \
 		sv_move.c sv_nchan.c sv_phys.c sv_pr_cmds.c sv_progs.c sv_send.c \
 		sv_user.c world.c $(syssv_SRC)
 

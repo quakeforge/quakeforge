@@ -479,6 +479,7 @@ void SV_Physics_Client (struct edict_s	*ent);
 void SV_SetupUserCommands (void);
 void SV_ExecuteUserCommand (const char *s);
 void SV_InitOperatorCommands (void);
+void SV_GIB_Init (void);
 
 void SV_SendServerinfo (client_t *client);
 void SV_ExtractFromUserinfo (client_t *cl);

@@ -34,7 +34,11 @@ exp_error_t EXP_ERROR;
 char       *exp_error_msg = 0;
 
 optable_t   optable[] = {
+	{"~", OP_BitInv, 1},
 	{"!", OP_Not, 1},
+	{"&", OP_BitAnd, 2},
+	{"|", OP_BitOr, 2},
+	{"^", OP_BitXor, 2},
 	{"**", OP_Exp, 2},
 	{"/", OP_Div, 2},
 	{"-", OP_Negate, 1},

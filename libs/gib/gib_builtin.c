@@ -210,7 +210,7 @@ GIB_Local_f (void)
 							GIB_Argc () - 3);
 	} else for (i = 1; i < GIB_Argc(); i++)
 		var = GIB_Var_Get_Complex (&GIB_DATA (cbuf_active)->locals, &zero,
-								 GIB_Argv (1), &index, true);
+								 GIB_Argv (i), &index, true);
 }
 
 
@@ -231,16 +231,15 @@ GIB_Global_f (void)
 							GIB_Argc () - 3);
 	} else for (i = 1; i < GIB_Argc(); i++)
 		var = GIB_Var_Get_Complex (&GIB_DATA (cbuf_active)->globals, &zero,
-								 GIB_Argv (1), &index, true);						 
+								 GIB_Argv (i), &index, true);						 
 }
 
 static void
-GIB_Global_Delete_f (void)
+GIB_Delete_f (void)
 {
 	gib_var_t *var;
 	unsigned int index, i;
 	hashtab_t *source;
-	static hashtab_t  *zero = 0;
 	char *c;
 	
 	if (GIB_Argc () < 2)
@@ -248,7 +247,8 @@ GIB_Global_Delete_f (void)
 	else for (i = 1; i < GIB_Argc(); i++) {
 		if ((c = strrchr (GIB_Argv(i), '.'))) {
 			*(c++) = 0;
-			if (!(var = GIB_Var_Get_Complex (&GIB_DATA (cbuf_active)->globals, &zero,
+			if (!(var = GIB_Var_Get_Complex (&GIB_DATA (cbuf_active)->locals,
+								&GIB_DATA(cbuf_active)->globals,
 								 GIB_Argv (i), &index, false)))
 				continue;
 			source = var->array[index].leaves;
@@ -423,6 +423,27 @@ GIB_Equal_f (void)
 		GIB_Return ("0");
 	else
 		GIB_Return ("1");
+}
+
+static void
+GIB_Count_f (void)
+{
+	if (GIB_CanReturn())
+		dsprintf (GIB_Return(0), "%u", GIB_Argc() - 1);
+}
+		
+
+static void
+GIB_Contains_f (void)
+{
+	unsigned int i;
+	if (GIB_Argc () < 2)
+		GIB_USAGE ("needle [straw1 straw2 ...]");
+	else if (GIB_CanReturn())
+		for (i = 2; i < GIB_Argc(); i++)
+			if (!strcmp(GIB_Argv(1), GIB_Argv(i)))
+				GIB_Return("1");
+	GIB_Return ("0");
 }
 
 static void
@@ -911,7 +932,7 @@ GIB_Builtin_Init (qboolean sandbox)
 	GIB_Builtin_Add ("function::export", GIB_Function_Export_f);
 	GIB_Builtin_Add ("local", GIB_Local_f);
 	GIB_Builtin_Add ("global", GIB_Global_f);
-	GIB_Builtin_Add ("global::delete", GIB_Global_Delete_f);
+	GIB_Builtin_Add ("delete", GIB_Delete_f);
 	GIB_Builtin_Add ("domain", GIB_Domain_f);
 	GIB_Builtin_Add ("domain::clear", GIB_Domain_Clear_f);
 	GIB_Builtin_Add ("return", GIB_Return_f);
@@ -920,6 +941,8 @@ GIB_Builtin_Init (qboolean sandbox)
 	GIB_Builtin_Add ("continue", GIB_Continue_f);
 	GIB_Builtin_Add ("length", GIB_Length_f);
 	GIB_Builtin_Add ("equal", GIB_Equal_f);
+	GIB_Builtin_Add ("count", GIB_Count_f);
+	GIB_Builtin_Add ("contains", GIB_Contains_f);
 	GIB_Builtin_Add ("slice", GIB_Slice_f);
 	GIB_Builtin_Add ("slice::find", GIB_Slice_Find_f);
 	GIB_Builtin_Add ("split", GIB_Split_f);
@@ -928,7 +951,7 @@ GIB_Builtin_Init (qboolean sandbox)
 	GIB_Builtin_Add ("regex::extract", GIB_Regex_Extract_f);
 	GIB_Builtin_Add ("thread::create", GIB_Thread_Create_f);
 	GIB_Builtin_Add ("thread::kill", GIB_Thread_Kill_f);
-	GIB_Builtin_Add ("thread::list", GIB_Thread_List_f);
+	GIB_Builtin_Add ("thread::getList", GIB_Thread_List_f);
 	GIB_Builtin_Add ("event::register", GIB_Event_Register_f);
 	GIB_Builtin_Add ("file::read", GIB_File_Read_f);
 	GIB_Builtin_Add ("file::write", GIB_File_Write_f);

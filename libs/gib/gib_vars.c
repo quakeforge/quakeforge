@@ -95,20 +95,21 @@ GIB_Var_Get (hashtab_t * first, hashtab_t * second, const char *key)
 		return 0;
 }
 
-/* Destroys key! */
+/* Alters key, but restores it */
 gib_var_t *
 GIB_Var_Get_Complex (hashtab_t ** first, hashtab_t ** second, char *key,
 					 unsigned int *ind, qboolean create)
 {
 	static hashtab_t *zero = 0;
-	unsigned int i, n, index, len, start;
-	gib_var_t  *var;
+	unsigned int i, n, index = 0, len, start;
+	gib_var_t  *var = 0;
 
 	len = strlen(key);
 	for (start = i = 0; i <= len; i++) {
 		if (key[i] == '.' || key[i] == 0) {
 			index = 0;
 			key[i] = 0;
+			n = 0;
 			if (i && key[i - 1] == ']')
 				for (n = i - 1; n; n--)
 					if (key[n] == '[') {
@@ -128,9 +129,9 @@ GIB_Var_Get_Complex (hashtab_t ** first, hashtab_t ** second, char *key,
 			if (index >= var->size) {
 				if (create) {
 					var->array =
-						realloc (var->array, (index + 1) * sizeof (struct gib_varray_s *));
+						realloc (var->array, (index + 1) * sizeof (struct gib_varray_s));
 					memset (var->array + var->size, 0,
-						(index + 1 - var->size) * sizeof (struct gib_varray_s *));
+						(index + 1 - var->size) * sizeof (struct gib_varray_s));
 					var->size = index + 1;
 				} else
 					return 0;
@@ -138,6 +139,10 @@ GIB_Var_Get_Complex (hashtab_t ** first, hashtab_t ** second, char *key,
 			second = &zero;
 			first = &var->array[index].leaves;
 			start = i+1;
+			if (n)
+				key[n] = '[';
+			if (i < len)
+				key[i] = '.';
 		}
 	}
 	if (!var->array[index].value)
@@ -146,19 +151,20 @@ GIB_Var_Get_Complex (hashtab_t ** first, hashtab_t ** second, char *key,
 	return var;
 }
 
+/* Mangles the hell out of key */
 gib_var_t *
 GIB_Var_Get_Very_Complex (hashtab_t ** first, hashtab_t ** second, dstring_t *key, unsigned int start,
 					 unsigned int *ind, qboolean create)
 {
 	static hashtab_t *zero = 0;
 	hashtab_t *one = *first, *two = *second;
-	unsigned int i, index, index2, n;
-	gib_var_t  *var;
+	unsigned int i, index = 0, index2 = 0, n, protect;
+	gib_var_t  *var = 0;
 	cvar_t *cvar;
 	char c, *str;
 	qboolean done = false;
 	
-	for (i = start; !done; i++) {
+	for (i = start, protect = 0; !done; i++) {
 		if (key->str[i] == '.' || key->str[i] == 0) {
 			index = 0;
 			if (!key->str[i])
@@ -193,7 +199,7 @@ GIB_Var_Get_Very_Complex (hashtab_t ** first, hashtab_t ** second, dstring_t *ke
 			second = &zero;
 			first = &var->array[index].leaves;
 			start = i+1;
-		} else if (key->str[i] == '$' || key->str[i] == '#') {
+		} else if (i >= protect && (key->str[i] == '$' || key->str[i] == '#')) {
 			n = i;
 			if (GIB_Parse_Match_Var (key->str, &i))
 				return 0;
@@ -204,13 +210,15 @@ GIB_Var_Get_Very_Complex (hashtab_t ** first, hashtab_t ** second, dstring_t *ke
 					str = va("%u", var->size);
 				else
 					str = var->array[index2].value->str;
-				dstring_replace (key, n, i-n, str, strlen (str));
+				dstring_replace (key, n, i-n+(c == '}'), str, strlen (str));
 			} else if (key->str[n] == '#')
-				dstring_replace (key, n, i-n, "0", 1);
+				dstring_replace (key, n, i-n+(c == '}'), "0", 1);
 			else if ((cvar = Cvar_FindVar (key->str+n+1+(c == '}'))))
-				dstring_replace (key, n, i-n, cvar->string, strlen (cvar->string));
+				dstring_replace (key, n, i-n+(c == '}'), cvar->string, strlen (cvar->string));
 			else
-				dstring_snip (key, n, n-i);
+				dstring_snip (key, n, n-i+(c == '}'));
+			protect = i+1;
+			i = n;
 		}
 			
 	}

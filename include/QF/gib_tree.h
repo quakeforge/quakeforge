@@ -36,7 +36,7 @@
 // Flags for tokens
 #define TREE_CONCAT		1	// Concatenate to previous
 #define TREE_P_EMBED	2	// Embedded stuff needs to be processed
-#define TREE_ASPLIT		4	// Token is the name of an array that should be split
+#define TREE_SPLIT		4	// Token is the name of an array that should be split
 // Flags for lines
 #define TREE_COND		1 // Conditional jump (if or while command)
 #define TREE_NOT		2 // Invert condition

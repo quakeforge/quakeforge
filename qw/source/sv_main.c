@@ -2504,7 +2504,8 @@ SV_Init (void)
 	svs.info = Info_ParseString ("", MAX_SERVERINFO_STRING);
 	localinfo = Info_ParseString ("", 0);	// unlimited
 	SV_InitOperatorCommands ();
-
+	SV_GIB_Init ();
+	
 	QFS_Init ("qw");
 	PI_Init ();
 

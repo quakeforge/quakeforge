@@ -37,6 +37,10 @@ double OP_GreaterThan (double op1, double op2);
 double OP_LessThan (double op1, double op2);
 double OP_GreaterThanEqual (double op1, double op2);
 double OP_LessThanEqual (double op1, double op2);
+double OP_BitAnd (double op1, double op2);
+double OP_BitOr (double op1, double op2);
+double OP_BitXor (double op1, double op2);
+double OP_BitInv (double op1, double op2);
 
 double Func_Sin (double *oplist, unsigned int numops);
 double Func_Cos (double *oplist, unsigned int numops);

@@ -113,6 +113,29 @@ OP_LessThanEqual (double op1, double op2)
 	return op1 <= op2;
 }
 
+double
+OP_BitAnd (double op1, double op2)
+{
+	return (double) ((long int) op1 & (long int) op2);
+}
+
+double
+OP_BitOr (double op1, double op2)
+{
+	return (double) ((long int) op1 | (long int) op2);
+}
+
+double
+OP_BitXor (double op1, double op2)
+{
+	return (double) ((long int) op1 ^ (long int) op2);
+}
+
+double
+OP_BitInv (double op1, double op2)
+{
+	return (double) ~((long int) op1);
+}
 
 double
 Func_Sin (double *oplist, unsigned int numops)
