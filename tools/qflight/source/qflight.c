@@ -54,6 +54,7 @@ static __attribute__ ((unused)) const char rcsid[] =
 #include "QF/qtypes.h"
 #include "QF/quakefs.h"
 #include "QF/sys.h"
+#include "QF/va.h"
 
 #include "light.h"
 #include "threads.h"
@@ -64,10 +65,12 @@ options_t	options;
 bsp_t *bsp;
 
 char *bspfile;
+dstring_t *litfile;
 
 float scalecos = 0.5;
 
 dstring_t *lightdata;
+dstring_t *rgblightdata;
 
 dmodel_t *bspmodel;
 int bspfileface;		// next surface to dispatch
@@ -90,6 +93,9 @@ GetFileSpace (int size)
 	ofs = lightdata->size;
 	lightdata->size += size;
 	dstring_adjust (lightdata);
+
+	rgblightdata->size = (ofs + size) * 3;
+	dstring_adjust (rgblightdata);
 	UNLOCK;
 	return ofs;
 }
@@ -110,7 +116,7 @@ VisThread (void *junk)
 }
 
 static void *
-LightThread (void *junk)
+LightThread (void *l)
 {
 	int         i;
 
@@ -121,16 +127,37 @@ LightThread (void *junk)
 		if (i >= bsp->numfaces)
 			return 0;
 
-		LightFace (i);
+		printf ("%5d / %d\r", i, bsp->numfaces);
+		fflush (stdout);
+		LightFace (l, i);
 	}
 }
 
 static void
 LightWorld (void)
 {
+	int         i, j;
+	vec3_t      org;
+	entity_t   *ent;
+	const char *name;
+
 	lightdata = dstring_new ();
+	rgblightdata = dstring_new ();
 	surfacelightchain = (lightchain_t **) calloc (bsp->numfaces,
 												  sizeof (lightchain_t *));
+	surfaceorgs = (vec3_t *) calloc (bsp->numfaces, sizeof (vec3_t));
+
+	for (i = 1; i < bsp->nummodels; i++) {
+		ent = FindEntityWithKeyPair ("model", name = va ("*%d", i));
+		VectorZero (org);
+		if (!ent)
+			Sys_Error ("FindFaceOffsets: Couldn't find entity for model %s.\n",
+					   name);
+		if (!strncmp (ValueForKey (ent, "classname"), "rotate_", 7))
+			GetVectorForKey (ent, "origin", org);
+		for (j = 0; j < bsp->models[i].numfaces; j++)
+			VectorCopy (org, surfaceorgs[i]);
+	}
 
 	VisThread (0);	// not worth threading :/
 	VisStats ();
@@ -146,6 +173,7 @@ int
 main (int argc, char **argv)
 {
 	double      start, stop;
+	char       *e;
 	QFile      *f;
 
 	start = Sys_DoubleTime ();
@@ -164,6 +192,11 @@ main (int argc, char **argv)
 	QFS_StripExtension (bspfile, bspfile);
 	QFS_DefaultExtension (bspfile, ".bsp");
 
+	litfile = dstring_new ();
+	dstring_copystr (litfile, bspfile);
+	e = strrchr (litfile->str, '.');
+	dstring_replace (litfile, e - litfile->str, -1, ".lit", 5);
+
 	f = Qopen (bspfile, "rb");
 	bsp = LoadBSPFile (f, Qfilesize (f));
 	Qclose (f);
@@ -177,6 +210,12 @@ main (int argc, char **argv)
 
 	f = Qopen (bspfile, "wb");
 	WriteBSPFile (bsp, f);
+	Qclose (f);
+
+	dstring_insert (rgblightdata, 0, "QLIT\x01\x00\x00\x00", 8);
+
+	f = Qopen (litfile->str, "wb");
+	Qwrite (f, rgblightdata->str, rgblightdata->size);
 	Qclose (f);
 
 	stop = Sys_DoubleTime ();

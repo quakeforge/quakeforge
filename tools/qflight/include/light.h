@@ -30,9 +30,46 @@
 #ifndef __light_h
 #define __light_h
 
+#include "QF/bspfile.h"
+
 #define	ON_EPSILON	0.1
 #define	MAXLIGHTS	1024
 #define LIGHTDISTBIAS 65536.0
+#define BOGUS_RANGE 1000000000
+
+#define	SINGLEMAP	(256*256)
+
+typedef struct {
+	vec3_t      v;
+	int         samplepos;	// offset into lightmap contributed to
+} lightpoint_t;
+
+typedef struct {
+	vec3_t      c;
+} lightsample_t;
+
+typedef struct {
+	vec_t       facedist;
+	vec3_t      facenormal;
+
+	vec3_t      testlineimpact;
+
+	int         numpoints;
+	int         numsamples;
+	// *16 for -extra4x4
+	lightpoint_t point[SINGLEMAP*16];
+	lightsample_t sample[MAXLIGHTMAPS][SINGLEMAP];
+
+	vec3_t      texorg;
+	vec3_t      worldtotex[2];	// s = (world - texorg) . worldtotex[0]
+	vec3_t      textoworld[2];	// world = texorg + s * textoworld[0]
+
+	vec_t       exactmins[2], exactmaxs[2];
+
+	int         texmins[2], texsize[2];
+	int         lightstyles[MAXLIGHTMAPS];
+	dface_t    *face;
+} lightinfo_t;
 
 extern float scaledist;
 extern float scalecos;
@@ -50,10 +87,10 @@ extern qboolean extrasamples;
 
 extern float minlights[MAX_MAP_FACES];
 
-void LoadNodes (char *file);
-qboolean TestLine (vec3_t start, vec3_t stop);
+void LoadNodes (const char *file);
+qboolean TestLine (lightinfo_t *l, vec3_t start, vec3_t stop);
 
-void LightFace (int surfnum);
+void LightFace (lightinfo_t *l, int surfnum);
 void LightLeaf (dleaf_t *leaf);
 
 void MakeTnodes (dmodel_t *bm);
@@ -66,6 +103,7 @@ void VisStats (void);
 
 extern struct bsp_s *bsp;
 extern struct dstring_s *lightdata;
+extern struct dstring_s *rgblightdata;
 
 typedef struct lightchain_s {
 	struct lightchain_s *next;
@@ -73,6 +111,7 @@ typedef struct lightchain_s {
 } lightchain_t;
 
 extern lightchain_t **surfacelightchain;
+extern vec3_t *surfaceorgs;
 extern struct entity_s **novislights;
 extern int num_novislights;
 

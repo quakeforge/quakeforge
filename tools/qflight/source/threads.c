@@ -1,5 +1,5 @@
 /*
-	trace.c
+	threads.c
 
 	(description)
 
@@ -49,6 +49,7 @@ static __attribute__ ((unused)) const char rcsid[] =
 #include "QF/qtypes.h"
 #include "QF/qendian.h"
 
+#include "light.h"
 #include "options.h"
 #include "threads.h"
 
@@ -82,6 +83,7 @@ RunThreadsOn (threadfunc_t *func)
 		pthread_t work_threads[256];
 		void *status;
 		pthread_attr_t attrib;
+		lightinfo_t *l[256];
 		long        i;
 
 		if (pthread_attr_init (&attrib) == -1)
@@ -90,17 +92,20 @@ RunThreadsOn (threadfunc_t *func)
 			fprintf (stderr, "pthread_attr_setstacksize failed");
 
 		for (i = 0; i < options.threads; i++) {
-			if (pthread_create (&work_threads[i], &attrib, func,
-								(void *) i) == -1)
+			l[i] = malloc (sizeof (lightinfo_t));
+			if (pthread_create (&work_threads[i], &attrib, func, l[i]) == -1)
 				fprintf (stderr, "pthread_create failed");
 		}
 
 		for (i = 0; i < options.threads; i++) {
 			if (pthread_join (work_threads[i], &status) == -1)
 				fprintf (stderr, "pthread_join failed");
+			free (l[i]);
 		}
-		return;
 	}
 #endif
-	func (NULL);
+	else {
+		lightinfo_t *l = malloc (sizeof (lightinfo_t));
+		func (l);
+	}
 }

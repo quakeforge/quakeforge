@@ -53,63 +53,15 @@ static __attribute__ ((unused)) const char rcsid[] =
 #include "QF/quakefs.h"
 #include "QF/sys.h"
 
+#include "compat.h"
+
 #include "light.h"
 #include "entities.h"
 #include "options.h"
 #include "threads.h"
 
-#define	SINGLEMAP	(18*18*4)
-
-typedef struct {
-	vec_t lightmaps[MAXLIGHTMAPS][SINGLEMAP];
-	int numlightstyles;
-	vec_t *light;
-	vec_t facedist;
-	vec3_t facenormal;
-
-	int numsurfpt;
-	vec3_t surfpt[SINGLEMAP];
-
-	vec3_t texorg;
-	vec3_t worldtotex[2];	// s = (world - texorg) . worldtotex[0]
-	vec3_t textoworld[2];	// world = texorg + s * textoworld[0]
-
-	vec_t exactmins[2], exactmaxs[2];
-
-	int texmins[2], texsize[2];
-	int lightstyles[256];
-	int surfnum;
-	dface_t *face;
-} lightinfo_t;
-
 int c_bad;
 int c_culldistplane, c_proper;
-
-/*
-	CastRay
-
-	Returns the distance between the points, or -1 if blocked
-*/
-static vec_t
-CastRay (vec3_t p1, vec3_t p2)
-{
-	int			i;
-	qboolean	trace;
-	vec_t		t;
-
-	trace = TestLine (p1, p2);
-
-	if (!trace)
-		return -1;		// ray was blocked
-
-	t = 0;
-	for (i = 0; i < 3; i++)
-		t += (p2[i] - p1[i]) * (p2[i] - p1[i]);
-
-	if (t == 0)
-		t = 1;			// don't blow up...
-	return sqrt (t);
-}
 
 /*
 SAMPLE POINT DETERMINATION
@@ -135,7 +87,7 @@ towards the center until it is valid.
 	Fills in texorg, worldtotex. and textoworld
 */
 static void
-CalcFaceVectors (lightinfo_t *l)
+CalcFaceVectors (lightinfo_t *l, vec3_t faceorg)
 {
 	texinfo_t	*tex;
 	int			i, j;
@@ -187,6 +139,8 @@ CalcFaceVectors (lightinfo_t *l)
 		l->texorg[i] = -tex->vecs[0][3] * l->textoworld[0][i] - 
 						tex->vecs[1][3] * l->textoworld[1][i];
 
+	VectorAdd (l->texorg, faceorg, l->texorg);
+
 	// project back to the face plane
 	dist = DotProduct (l->texorg, l->facenormal) - l->facedist - 1;
 	dist *= distscale;
@@ -210,8 +164,8 @@ CalcFaceExtents (lightinfo_t *l)
 
 	s = l->face;
 
-	mins[0] = mins[1] = 999999;
-	maxs[0] = maxs[1] = -99999;
+	mins[0] = mins[1] = BOGUS_RANGE;
+	maxs[0] = maxs[1] = -BOGUS_RANGE;
 
 	tex = &bsp->texinfo[s->texinfo];
 
@@ -223,9 +177,7 @@ CalcFaceExtents (lightinfo_t *l)
 			v = bsp->vertexes + bsp->edges[-e].v[1];
 
 		for (j = 0; j < 2; j++) {
-			val = v->point[0] * tex->vecs[j][0] +
-				  v->point[1] * tex->vecs[j][1] +	
-				  v->point[2] * tex->vecs[j][2] + tex->vecs[j][3];
+			val = DotProduct (v->point, tex->vecs[j]) + tex->vecs[j][3];
 			if (val < mins[j])
 				mins[j] = val;
 			if (val > maxs[j])
@@ -241,10 +193,16 @@ CalcFaceExtents (lightinfo_t *l)
 		maxs[i] = ceil (maxs[i] / 16);
 
 		l->texmins[i] = mins[i];
-		l->texsize[i] = maxs[i] - mins[i];
-		if (l->texsize[i] > 17)
+		l->texsize[i] = maxs[i] - mins[i] + 1;
+		if (l->texsize[i] > 256)
 			fprintf (stderr, "Bad surface extents");
 	}
+}
+
+static void
+CalcSamples (lightinfo_t *l)
+{
+	l->numsamples = l->texsize[0] * l->texsize[1];
 }
 
 /*
@@ -256,15 +214,14 @@ CalcFaceExtents (lightinfo_t *l)
 static void
 CalcPoints (lightinfo_t *l)
 {
-	int			step, i, j , s, t, w, h;
+	int			j , s, t, w, h, realw, realh, stepbit;
 	vec_t		mids, midt, starts, startt, us, ut;
-	vec_t		*surf;
-	vec3_t		facemid, move;
+	vec3_t		facemid, v;
+	lightpoint_t *point;
 
 	// fill in surforg
 	// the points are biased towards the center of the surface
 	// to help avoid edge cases just inside walls
-	surf = l->surfpt[0];
 	mids = (l->exactmaxs[0] + l->exactmins[0]) / 2;
 	midt = (l->exactmaxs[1] + l->exactmins[1]) / 2;
 
@@ -273,67 +230,41 @@ CalcPoints (lightinfo_t *l)
 			l->textoworld[0][j] * mids + 
 			l->textoworld[1][j] * midt;
 
-	if (extrasamples) {
-		// extra filtering
-		h = (l->texsize[1] + 1) * 2;
-		w = (l->texsize[0] + 1) * 2;
-		starts = (l->texmins[0] - 0.5) * 16;
-		startt = (l->texmins[1] - 0.5) * 16;
-		step = 8;
-	} else {
-		h = l->texsize[1] + 1;
-		w = l->texsize[0] + 1;
-		starts = l->texmins[0] * 16;
-		startt = l->texmins[1] * 16;
-		step = 16;
+	realw = l->texsize[0];
+	realh = l->texsize[1];
+	starts = l->texmins[0] * 16;
+	startt = l->texmins[1] * 16;
+
+	stepbit = 4 - options.extrabit;
+
+	w = realw << options.extrabit;
+	h = realh << options.extrabit;
+
+	if (stepbit < 4) {
+		starts -= 1 << stepbit;
+		startt -= 1 << stepbit;
 	}
 
-	l->numsurfpt = w * h;
+	point = l->point;
+	l->numpoints = w * h;
 	for (t = 0; t < h; t++) {
-		for (s = 0; s < w; s++, surf += 3) {
-			us = starts + s * step;
-			ut = startt + t * step;
+		for (s = 0; s < w; s++, point++) {
+			us = starts + (s << stepbit);
+			ut = startt + (t << stepbit);
+			point->samplepos = ((t >> options.extrabit) * realw
+								+ (s >> options.extrabit));
 
-			// if a line can be traced from surf to facemid,
-			// the point is good
-			for (i = 0; i < 6; i++) {
 			// calculate texture point
-				for (j = 0; j < 3; j++)
-					surf[j] = l->texorg[j] + 
-						l->textoworld[0][j] * us +
-						l->textoworld[1][j] * ut;
+			for (j = 0; j < 3; j++)
+				point->v[j] = l->texorg[j] + 
+					l->textoworld[0][j] * us + l->textoworld[1][j] * ut;
 
-				if (CastRay (facemid, surf) != -1)
-					break;	// got it
-				if (i & 1) {
-					if (us > mids) {
-						us -= 8;
-						if (us < mids)
-							us = mids;
-					} else {
-						us += 8;
-						if (us > mids)
-							us = mids;
-					}
-				} else {
-					if (ut > midt) {
-						ut -= 8;
-						if (ut < midt)
-							ut = midt;
-					} else {
-						ut += 8;
-						if (ut > midt)
-							ut = midt;
-					}
-				}
-
-				// move surf 8 pixels towards the center
-				VectorSubtract (facemid, surf, move);
-				_VectorNormalize (move);
-				VectorMultAdd (surf, 8, move, surf);
+			if (!TestLine (l, facemid, point->v)) {
+				VectorCopy(l->testlineimpact, point->v);
+				VectorSubtract(facemid, point->v, v);
+				VectorNormalize(v);
+				VectorMultAdd (point->v, 0.25, v, point->v);
 			}
-			if (i == 2)
-				c_bad++;
 		}	
 	}
 }
@@ -341,86 +272,107 @@ CalcPoints (lightinfo_t *l)
 static void
 SingleLightFace (entity_t *light, lightinfo_t *l)
 {
-	int			mapnum, size, c, i;
+	int			mapnum, i;
 	qboolean	hit;
-	vec3_t		incoming, rel, spotvec;
-	vec_t		add, angle, dist, falloff;
-	vec_t		*lightsamp, *surf;
+	vec3_t		incoming, spotvec;
+	vec_t		add, dist, idist, lightfalloff, lightsubtract, spotcone;
+	lightpoint_t *point;
+	lightsample_t *sample;
 
-	VectorSubtract (light->origin, bsp_origin, rel);
-	dist = options.distance * (DotProduct (rel, l->facenormal) - l->facedist);
+	dist = DotProduct (light->origin, l->facenormal) - l->facedist;
+	dist *= options.distance;
 
 	// don't bother with lights behind the surface
-	if (dist <= 0)
+	if (dist <= -0.25)
 		return;
 
+	lightfalloff = light->falloff;
+	lightsubtract = light->subbrightness;
+
 	// don't bother with light too far away
+#if 0
 	if (dist > light->light) {
 		c_culldistplane++;
 		return;
 	}
+#else
+	if (lightsubtract > (1.0 / (dist * dist * lightfalloff + LIGHTDISTBIAS))) {
+		c_culldistplane++;
+		return;
+	}
+#endif
 
-	if (light->targetent) {
-		VectorSubtract (light->targetent->origin, light->origin, spotvec);
-		_VectorNormalize (spotvec);
-		if (!light->angle)
-			falloff = -cos (20 * M_PI / 180);
-		else
-			falloff = -cos (light->angle / 2 * M_PI / 180);
-	} else
-		falloff = 0;
-		mapnum = 0;
-		for (mapnum = 0; mapnum < l->numlightstyles; mapnum++)
-			if (l->lightstyles[mapnum] == light->style)
-				break;
-		lightsamp = l->lightmaps[mapnum];
-		if (mapnum == l->numlightstyles) {	
-			// init a new light map
-			if (mapnum == MAXLIGHTMAPS) {
-				printf ("WARNING: Too many light styles on a face\n");
-				return;
-			}
-			size = (l->texsize[1] + 1) * (l->texsize[0] + 1);
-			for (i = 0; i < size; i++)
-				lightsamp[i] = 0;
+	for (mapnum = 0; mapnum < MAXLIGHTMAPS; mapnum++) {
+		if (l->lightstyles[mapnum] == light->style)
+			break;
+		if (l->lightstyles[mapnum] == 255) {
+			memset (l->sample[mapnum], 0,
+					sizeof (lightsample_t) * l->numsamples);
+			break;
 		}
+	}
+	if (mapnum == MAXLIGHTMAPS) {
+		printf ("WARNING: Too many light styles on a face\n");
+		return;
+	}
 
-		// check it for real
-		hit = false;
-		c_proper++;
+	spotcone = light->spotcone;
+	VectorCopy(light->spotdir, spotvec);
 
-		surf = l->surfpt[0];
-		for (c = 0; c < l->numsurfpt; c++, surf += 3) {
-			dist = CastRay (light->origin, surf) * options.distance;
-			if (dist < 0)
-				continue;		// light doesn't reach
+	// check it for real
+	hit = false;
+	c_proper++;
 
-			VectorSubtract (light->origin, surf, incoming);
-			_VectorNormalize (incoming);
-			angle = DotProduct (incoming, l->facenormal);
-			if (light->targetent) {	
-				// spotlight cutoff
-				if (DotProduct (spotvec, incoming) > falloff)
-					continue;
-			}
+	for (i = 0, point = l->point; i < l->numpoints; i++, point++) {
+		VectorSubtract (light->origin, point->v, incoming);
+		// avoid float roundoff
+		dist = sqrt (DotProduct(incoming, incoming));
+		idist = 1.0 / dist;
+		VectorScale (incoming, idist, incoming);
 
-			angle = (1.0 - scalecos) + scalecos * angle;
-			add = light->light - dist;
-			add *= angle;
-			if (add < 0)
-				continue;
-			lightsamp[c] += add;
-			if (lightsamp[c] > 1)	
-				// ignore real tiny lights
-				hit = true;
-		}
+		// spotlight cutoff
+		if (spotcone > 0 && DotProduct (spotvec, incoming) > spotcone)
+			continue;
+#if 0
+		angle = DotProduct (incoming, l->facenormal);
+		angle = (1.0 - scalecos) + scalecos * angle;
+		add = light->light - dist;
+		add *= angle;
+		if (add < 0)
+			continue;
+		lightsamp[c] += add;
+		if (lightsamp[c] > 1)	
+			// ignore real tiny lights
+			hit = true;
+#else
+		// LordHavoc: changed to be more realistic (entirely different
+		// lighting model)
+		// LordHavoc: use subbrightness on all lights, simply to have
+		//some distance culling
+		add = (1.0 / (dist * dist * lightfalloff + LIGHTDISTBIAS)
+			   - lightsubtract);
+		if (add <= 0)
+			continue;
+		if (!TestLine (l, point->v, light->origin))
+			continue;
 
-		if (mapnum == l->numlightstyles && hit) {
-			l->lightstyles[mapnum] = light->style;
-			l->numlightstyles++;	// the style has some real data now
-		}
+		// LordHavoc: FIXME: decide this 0.5 bias based on shader properties
+		// (some are dull, some are shiny)
+		add *= (DotProduct (incoming, l->facenormal) * 0.5 + 0.5);
+		add *= options.extrascale;
+		sample = &l->sample[mapnum][point->samplepos];
+		VectorMultAdd (sample->c, add, light->color, sample->c);
+		if (!hit && ((sample->c[0] + sample->c[1]  + sample->c[2]) >= 1))
+			hit = true;
+#endif
+	}
+
+	// if the style has some data now, make sure it is in the list
+	if (hit)
+		l->lightstyles[mapnum] = light->style;
 }
 
+#if 0
 static void
 FixMinlight (lightinfo_t *l)
 {
@@ -450,113 +402,102 @@ FixMinlight (lightinfo_t *l)
 				l->lightmaps[i][j] = minlight;
 	}
 }
+#endif
 
 void
-LightFace (int surfnum)
+LightFace (lightinfo_t *l, int surfnum)
 {
-	int         ofs;
-	byte       *out, *outdata;
-	dface_t		*f;
-	int			lightmapwidth, lightmapsize, size, c, i, j, s, t, w, h;
-	lightinfo_t	l;
-	vec_t		total;
-	vec_t		*light;
+	byte       *out, *lit;
+	byte       *outdata, *rgbdata;
+	dface_t    *f;
+	int         i, j, ofs, size;
+	int         red, green, blue, white;
 	lightchain_t *lightchain;
+	lightsample_t *sample;
+
+	memset (l, 0, sizeof(lightinfo_t));
 
 	f = bsp->faces + surfnum;
 
+	l->face = f;
+
 	// some surfaces don't need lightmaps
 	f->lightofs = -1;
-	for (j = 0; j < MAXLIGHTMAPS; j++)
-		f->styles[j] = 255;
+	for (i = 0; i < MAXLIGHTMAPS; i++)
+		f->styles[i] = l->lightstyles[i] = 255;
 
 	if (bsp->texinfo[f->texinfo].flags & TEX_SPECIAL)	
 		// non-lit texture
 		return;
 
-	memset(&l, 0, sizeof (l));
-	l.surfnum = surfnum;
-	l.face = f;
-
 	// rotate plane
-	VectorCopy (bsp->planes[f->planenum].normal, l.facenormal);
-	l.facedist = bsp->planes[f->planenum].dist;
+	VectorCopy (bsp->planes[f->planenum].normal, l->facenormal);
+	l->facedist = bsp->planes[f->planenum].dist;
 	if (f->side) {
-		VectorNegate (l.facenormal, l.facenormal);
-		l.facedist = -l.facedist;
+		VectorNegate (l->facenormal, l->facenormal);
+		l->facedist = -l->facedist;
 	}
 
-	CalcFaceVectors (&l);
-	CalcFaceExtents (&l);
-	CalcPoints (&l);
+	CalcFaceVectors (l, surfaceorgs[surfnum]);
+	CalcFaceExtents (l);
+	CalcSamples (l);
+	CalcPoints (l);
 
-	lightmapwidth = l.texsize[0] + 1;
-
-	size = lightmapwidth * (l.texsize[1] + 1);
-	if (size > SINGLEMAP)
+	if (l->numsamples > SINGLEMAP)
 		fprintf (stderr, "Bad lightmap size");
 
-	for (i = 0; i < MAXLIGHTMAPS; i++)
-		l.lightstyles[i] = 255;
-
 	// cast all lights
-	l.numlightstyles = 0;
 	for (lightchain = surfacelightchain[surfnum]; lightchain;
 		 lightchain = lightchain->next) {
-		SingleLightFace (lightchain->light, &l);
+		SingleLightFace (lightchain->light, l);
 	}
 	for (i = 0; i < num_novislights; i++) {
-		SingleLightFace (novislights[i], &l);
+		SingleLightFace (novislights[i], l);
 	}
 
-	FixMinlight (&l);
+	//FixMinlight (&l);
 
-	if (!l.numlightstyles)	
-		// no light hitting it
+	for (i = 0; i < MAXLIGHTMAPS; i++)
+		if (l->lightstyles[i] == 255)
+			break;
+	size = l->numsamples * i;
+	if (!size) {
+		// no light styles
 		return;
+	}
    
 	// save out the values
 	for (i = 0; i < MAXLIGHTMAPS; i++)
-		f->styles[i] = l.lightstyles[i];
-
-	lightmapsize = size * l.numlightstyles;
+		f->styles[i] = l->lightstyles[i];
 
 	LOCK;
-	outdata = out = malloc (lightmapsize);
+	outdata = out = malloc (size * 4);
 	UNLOCK;
-	ofs = GetFileSpace (lightmapsize);
+	rgbdata = lit = outdata + size;
+	ofs = GetFileSpace (size);
 	f->lightofs = ofs;
 
-	// extra filtering
-	h = (l.texsize[1] + 1) * 2;
-	w = (l.texsize[0] + 1) * 2;
+	for (i = 0; i < MAXLIGHTMAPS && f->styles[i] != 255; i++) {
+		for (j = 0, sample = l->sample[i]; j < l->numsamples; j++, sample++) {
+			red   = (int) sample->c[0];
+			green = (int) sample->c[1];
+			blue  = (int) sample->c[2];
+			white = (int) ((sample->c[0] + sample->c[1] + sample->c[2])
+						   * (1.0 / 3.0));
 
-	for (i = 0; i < l.numlightstyles; i++) {
-		if (l.lightstyles[i] == 0xff)
-			fprintf (stderr, "Wrote empty lightmap");
-		light = l.lightmaps[i];
-		c = 0;
-		for (t = 0; t <= l.texsize[1]; t++)
-			for (s = 0; s <= l.texsize[0]; s++, c++) {
-				if (extrasamples) {	
-					// filtered sample
-					total =	light[t * 2 * w + s * 2] + 
-							light[t * 2 * w + s * 2 + 1] + 
-							light[(t * 2 + 1) * w + s * 2] + 
-							light[(t * 2 + 1) * w + s * 2 + 1];
-					total *= 0.25;
-				} else
-					total = light[c];
-				total *= options.range;	// scale before clamping
-				if (total > 255)
-					total = 255;
-				if (total < 0)
-					fprintf (stderr, "light < 0");
-				*out++ = total;
-			}
+			red   = bound (0, red,   255);
+			green = bound (0, green, 255);
+			blue  = bound (0, blue,  255);
+			white = bound (0, white, 255);
+			*lit++ = red;
+			*lit++ = green;
+			*lit++ = blue;
+			*out++ = white;
+		}
 	}
 	LOCK;
-	memcpy (lightdata->str + ofs, outdata, lightmapsize);
+	memcpy (lightdata->str + ofs, outdata, size);
+	memcpy (rgblightdata->str + ofs * 3, rgbdata, size * 3);
 	free (outdata);
 	UNLOCK;
 }

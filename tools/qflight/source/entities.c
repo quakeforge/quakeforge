@@ -297,6 +297,9 @@ LoadEntities (void)
 			}
 		}
 
+		if (entity->targetname)
+			printf ("%s %d %d\n", entity->targetname, entity->light, entity->style);
+
 		// all fields have been parsed
 		if (entity->classname && !strncmp (entity->classname, "light", 5))
 			if (!entity->light)
@@ -382,7 +385,7 @@ FloatForKey (entity_t *ent, const char *key)
 }
 
 entity_t *
-FindEntityWithKeyPair (char *key, char *value)
+FindEntityWithKeyPair (const char *key, const char *value)
 {
 	entity_t   *ent;
 	epair_t    *ep;

@@ -43,6 +43,8 @@ static __attribute__ ((unused)) const char rcsid[] =
 
 #include "QF/qtypes.h"
 
+#include "compat.h"
+
 #include "options.h"
 
 const char *this_program;
@@ -53,7 +55,7 @@ static struct option const long_options[] = {
 	{"help", no_argument, 0, 'h'},
 	{"version", no_argument, 0, 'V'},
 	{"threads", required_argument, 0, 't'},
-	{"extra", no_argument, 0, 'e'},
+	{"extra", required_argument, 0, 'e'},
 	{"novis", no_argument, 0, 'N'},
 	{"distance", required_argument, 0, 'd'},	
 	{"range", required_argument, 0, 'r'},
@@ -68,7 +70,7 @@ static const char *short_options =
 	"V"		// version
 	"N"		// novis
 	"t:"	// threads
-	"e"		// extra sampling
+	"e:"	// extra sampling
 	"d:"	// scale distance
 	"r:"	// scale range
 	"f:"
@@ -87,7 +89,7 @@ usage (int status)
 		"    -V, --version             Output version information and exit\n"
 		"    -N, --novis               Don't use vis data\n"
 		"    -t, --threads [num]       Number of threads to use\n"
-		"    -e, --extra               Apply extra sampling\n"
+		"    -e, --extra [num]         Apply extra sampling\n"
 		"    -d, --distance [scale]    Scale distance\n"
 		"    -r, --range [scale]       Scale range\n"
 		"    -f, --file [bspfile]      BSP file\n\n");
@@ -102,7 +104,6 @@ DecodeArgs (int argc, char **argv)
 	memset (&options, 0, sizeof (options));
 	options.verbosity = 0;
 	options.threads = 1;
-	options.extra = false;
 	options.distance = 1.0;
 	options.range = 0.5;
 	options.globallightscale = 1.0;
@@ -131,7 +132,8 @@ DecodeArgs (int argc, char **argv)
 				options.threads = atoi (optarg);
 				break;
 			case 'e':					// extra
-				options.extra = true;
+				options.extrabit = atoi (optarg);
+				options.extrabit = bound (0, options.extrabit, 2);
 				break;
 			case 'd':					// scale distance
 				options.distance = atof (optarg);
@@ -146,6 +148,7 @@ DecodeArgs (int argc, char **argv)
 				usage (1);
 		}
 	}
+	options.extrascale = 1.0 / (1 << (options.extrabit * 2));
 	if ((!bspfile) && argv[optind] && *(argv[optind]))
 		bspfile = strdup (argv[optind++]);
 

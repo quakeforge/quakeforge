@@ -35,7 +35,8 @@ typedef struct {
 	int			verbosity;		// 0=silent
 	int			threads;
 	int         novis;
-	qboolean	extra;
+	int         extrabit;
+	vec_t       extrascale;
 	vec_t		distance;
 	vec_t		range;
 	vec_t       globallightscale;

@@ -65,6 +65,7 @@ static struct {
 
 static lightchain_t *free_lightchains;
 lightchain_t **surfacelightchain;
+vec3_t *surfaceorgs;
 entity_t **alllights;
 int num_alllights;
 entity_t **novislights;
