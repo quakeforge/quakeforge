@@ -130,6 +130,7 @@ class_add_protocol (class_t *class, protocol_t *protocol)
 void
 class_begin (class_t *class)
 {
+	current_class = class;
 	if (class->def)
 		return;
 	if (class->class_name && class->category_name) {
@@ -204,22 +205,52 @@ class_find_ivar (class_t *class, int protected, const char *name)
 	class_t    *c;
 
 	ivar = struct_find_field (class->ivars, name);
-	if (ivar)
+	if (ivar) {
+		if (protected && ivar->visibility != vis_public)
+			goto access_error;
 		return ivar;
+	}
 	for (c = class->super_class; c; c = c->super_class) {
 		ivar = struct_find_field (c->ivars, name);
 		if (ivar) {
 			if (ivar->visibility == vis_private
-				|| (protected && ivar->visibility == vis_protected)) {
-				error (0, "%s.%s is not accessable here",
-					   class->class_name, name);
-				return 0;
-			}
+				|| (protected && ivar->visibility == vis_protected))
+				goto access_error;
 			return ivar;
 		}
 	}
 	error (0, "%s.%s does not exist", class->class_name, name);
 	return 0;
+  access_error:
+	error (0, "%s.%s is not accessable here", class->class_name, name);
+	return 0;
+}
+
+expr_t *
+class_ivar_expr (class_t *class, const char *name)
+{
+	struct_field_t *ivar;
+	class_t    *c;
+
+	if (!class)
+		return 0;
+
+	ivar = struct_find_field (class->ivars, name);
+	if (!ivar) {
+		for (c = class->super_class; c; c = c->super_class) {
+			ivar = struct_find_field (c->ivars, name);
+			if (ivar)
+				break;
+		}
+	}
+	if (!ivar)
+		return 0;
+	if (ivar->visibility == vis_private) {
+		error (0, "%s.%s is not accessable here",
+			   class->class_name, name);
+		return 0;
+	}
+	return binary_expr ('.', new_name_expr ("self"), new_name_expr (name));
 }
 
 method_t *

@@ -891,7 +891,6 @@ class_name
 				error (0, "undefined symbol `%s'", $1);
 				$$ = get_class (0, 1);
 			}
-			current_class = $$;
 		}
 	;
 
@@ -903,7 +902,6 @@ new_class_name
 				error (0, "redefinition of `%s'", $1);
 				$$ = get_class (0, 1);
 			}
-			current_class = $$;
 		}
 
 class_with_super
@@ -913,7 +911,6 @@ class_with_super
 				error (0, "%s is not a super class of %s",
 					   $3->class_name, $1->class_name);
 			$$ = $1;
-			current_class = $$;
 		}
 	;
 
@@ -922,7 +919,6 @@ new_class_with_super
 		{
 			$1->super_class = $3;
 			$$ = $1;
-			current_class = $$;
 		}
 	;
 
@@ -934,7 +930,6 @@ category_name
 				error (0, "undefined category `%s (%s)'", $1, $3);
 				$$ = get_category (0, 0, 1);
 			}
-			current_class = $$;
 		}
 	;
 
@@ -946,7 +941,6 @@ new_category_name
 				error (0, "redefinition of category `%s (%s)'", $1, $3);
 				$$ = get_category (0, 0, 1);
 			}
-			current_class = $$;
 		}
 	;
 
@@ -963,27 +957,27 @@ protocol_name
 		}
 
 classdef
-	: INTERFACE new_class_name
-	  protocolrefs						{ class_add_protocol_methods ($2, $3);}
-	  '{' ivar_decl_list '}'			{ class_add_ivars ($2, $6); }
-	  methodprotolist					{ class_add_methods ($2, $9); }
+	: INTERFACE new_class_name			{ current_class = $2; }
+	  protocolrefs						{ class_add_protocol_methods ($2, $4);}
+	  '{' ivar_decl_list '}'			{ class_add_ivars ($2, $7); }
+	  methodprotolist					{ class_add_methods ($2, $10); }
 	  END								{ current_class = 0; }
-	| INTERFACE new_class_name
-	  protocolrefs						{ class_add_protocol_methods ($2, $3);}
-	  methodprotolist					{ class_add_methods ($2, $5); }
+	| INTERFACE new_class_name			{ current_class = $2; }
+	  protocolrefs						{ class_add_protocol_methods ($2, $4);}
+	  methodprotolist					{ class_add_methods ($2, $6); }
 	  END								{ current_class = 0; }
-	| INTERFACE new_class_with_super
-	  protocolrefs						{ class_add_protocol_methods ($2, $3);}
-	  '{' ivar_decl_list '}'			{ class_add_ivars ($2, $6); }
-	  methodprotolist					{ class_add_methods ($2, $9); }
+	| INTERFACE new_class_with_super	{ current_class = $2; }
+	  protocolrefs						{ class_add_protocol_methods ($2, $4);}
+	  '{' ivar_decl_list '}'			{ class_add_ivars ($2, $7); }
+	  methodprotolist					{ class_add_methods ($2, $10); }
 	  END								{ current_class = 0; }
-	| INTERFACE new_class_with_super
-	  protocolrefs						{ class_add_protocol_methods ($2, $3);}
-	  methodprotolist					{ class_add_methods ($2, $5); }
+	| INTERFACE new_class_with_super	{ current_class = $2; }
+	  protocolrefs						{ class_add_protocol_methods ($2, $4);}
+	  methodprotolist					{ class_add_methods ($2, $6); }
 	  END								{ current_class = 0; }
-	| INTERFACE new_category_name
-	  protocolrefs						{ class_add_protocol_methods ($2, $3);}
-	  methodprotolist					{ class_add_methods ($2, $5); }
+	| INTERFACE new_category_name		{ current_class = $2; }
+	  protocolrefs						{ class_add_protocol_methods ($2, $4);}
+	  methodprotolist					{ class_add_methods ($2, $6); }
 	  END								{ current_class = 0; }
 	| IMPLEMENTATION class_name			{ class_begin ($2); }
 	  '{' ivar_decl_list '}'			{ class_check_ivars ($2, $5); }

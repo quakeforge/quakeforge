@@ -48,6 +48,8 @@ extern class_t  class_id;
 extern class_t  class_Class;
 extern class_t  class_Protocol;
 
+extern class_t *current_class;
+
 struct expr_s;
 struct method_s;
 struct protocol_s;
@@ -63,6 +65,7 @@ void class_begin (class_t *class);
 void class_finish (class_t *class);
 struct struct_field_s *class_find_ivar (class_t *class, int protected,
 										const char *name);
+expr_t *class_ivar_expr (class_t *class, const char *name);
 struct method_s *class_find_method (class_t *class, struct method_s *method);
 struct method_s *class_message_response (class_t *class, struct expr_s *sel);
 struct def_s *class_def (class_t *class);

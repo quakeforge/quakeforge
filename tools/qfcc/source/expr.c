@@ -112,7 +112,7 @@ convert_name (expr_t *e)
 	if (e->type == ex_name) {
 		const char *name = e->e.string_val;
 		def_t      *d;
-		expr_t     *enm;
+		expr_t     *new;
 		class_t    *class;
 
 		class = get_class (name, 0);
@@ -123,17 +123,26 @@ convert_name (expr_t *e)
 		}
 		d = PR_GetDef (NULL, name, pr_scope, 0);
 		if (d) {
+			if (!d->scope) {
+				new = class_ivar_expr (current_class, name);
+				if (new)
+					goto convert;
+			}
 			e->type = ex_def;
 			e->e.def = d;
 			return;
 		}
-		enm = get_enum (name);
-		if (enm) {
-			e->type = ex_integer;
-			e->e.integer_val = enm->e.integer_val;
-			return;
-		}
+		new = class_ivar_expr (current_class, name);
+		if (new)
+			goto convert;
+		new = get_enum (name);
+		if (new)
+			goto convert;
 		error (e, "Undeclared variable \"%s\".", name);
+		return;
+	  convert:
+		e->type = new->type;
+		e->e = new->e;
 	}
 }
 
@@ -957,6 +966,7 @@ field_expr (expr_t *e1, expr_t *e2)
 	type_t     *t1, *t2;
 	expr_t     *e;
 	struct_field_t *field;
+	class_t    *class;
 
 	t1 = get_type (e1);
 	switch (t1->type) {
@@ -988,8 +998,8 @@ field_expr (expr_t *e1, expr_t *e2)
 				case ev_object:
 				case ev_class:
 					if (e2->type == ex_name) {
-						field = class_find_ivar (t1->aux_type->class,
-												 0,
+						class = t1->aux_type->class;
+						field = class_find_ivar (class, current_class != class,
 												 e2->e.string_val);
 						if (!field)
 							return new_error_expr ();
