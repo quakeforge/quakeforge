@@ -898,19 +898,24 @@ CL_SetSolidEntities (void)
 	pak = &frame->packet_entities;
 
 	for (i = 0; i < pak->num_entities; i++) {
-		if (pmove.numphysent == MAX_PHYSENTS) {
-			Con_Printf ("WARNING: entity physent overflow, email "
-						"quake-devel@lists.sourceforge.net\n");
-			break;
-		}
 		state = &pak->entities[i];
 
 		if (!state->modelindex)
 			continue;
 		if (!cl.model_precache[state->modelindex])
 			continue;
+		if (pmove.numphysent == MAX_PHYSENTS) {
+			Con_Printf ("WARNING: entity physent overflow, email "
+						"quake-devel@lists.sourceforge.net\n");
+			break;
+		}
 		if (cl.model_precache[state->modelindex]->hulls[1].firstclipnode
 			|| cl.model_precache[state->modelindex]->clipbox) {
+			if (pmove.numphysent == MAX_PHYSENTS) {
+				Con_Printf ("WARNING: entity physent overflow, email "
+							"quake-devel@lists.sourceforge.net\n");
+				break;
+			}
 			pmove.physents[pmove.numphysent].model =
 				cl.model_precache[state->modelindex];
 			VectorCopy (state->origin,
@@ -1003,12 +1008,6 @@ CL_SetSolidPlayers (int playernum)
 	pent = pmove.physents + pmove.numphysent;
 
 	for (j = 0, pplayer = predicted_players; j < MAX_CLIENTS; j++, pplayer++) {
-		if (pmove.numphysent == MAX_PHYSENTS) {
-			Con_Printf ("WARNING: player physent overflow, email "
-						"quake-devel@lists.sourceforge.net\n");
-			break;
-		}
-
 		if (!pplayer->active)
 			continue;					// not present this frame
 
@@ -1018,6 +1017,12 @@ CL_SetSolidPlayers (int playernum)
 
 		if (pplayer->flags & PF_DEAD)
 			continue;					// dead players aren't solid
+
+		if (pmove.numphysent == MAX_PHYSENTS) {
+			Con_Printf ("WARNING: player physent overflow, email "
+						"quake-devel@lists.sourceforge.net\n");
+			break;
+		}
 
 		pent->model = 0;
 		VectorCopy (pplayer->origin, pent->origin);
