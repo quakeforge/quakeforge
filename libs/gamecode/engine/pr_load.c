@@ -53,6 +53,8 @@ static const char rcsid[] =
 
 #include "compat.h"
 
+cvar_t     *pr_faultchecks;
+
 static const char *
 function_get_key (void *f, void *_pr)
 {
@@ -294,6 +296,8 @@ PR_Init_Cvars (void)
 	pr_deadbeef_locals = Cvar_Get ("pr_deadbeef_locals", "0", CVAR_NONE, NULL,
 								   "set to clear uninitialized local vars to "
 								   "0xdeadbeef");
+	pr_faultchecks = Cvar_Get ("pr_faultchecks", "0", CVAR_NONE, NULL,
+							   "capture and handle division by 0 in progs");
 	PR_Debug_Init_Cvars ();
 }
 

@@ -96,8 +96,6 @@ startup (void)
 		Sys_Error ("This version of " PROGRAM
 				   " requires at least Win95 or NT 4.0");
 	}
-#else
-	signal (SIGFPE, SIG_IGN);
 #endif
 }
 

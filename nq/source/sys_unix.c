@@ -69,20 +69,11 @@ shutdown (void)
 	fcntl (0, F_SETFL, fcntl (0, F_GETFL, 0) & ~O_NONBLOCK);
 }
 
-void
-floating_point_exception_handler (int whatever)
-{
-//	Sys_Warn("floating point exception\n");
-	signal (SIGFPE, floating_point_exception_handler);
-}
-
 int
 main (int c, const char *v[])
 {
 
 	double      time, oldtime, newtime;
-
-	signal (SIGFPE, SIG_IGN);
 
 	memset (&host_parms, 0, sizeof (host_parms));
 

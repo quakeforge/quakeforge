@@ -249,6 +249,7 @@ extern struct cvar_s *pr_debug;
 extern struct cvar_s *pr_deadbeef_ents;
 extern struct cvar_s *pr_deadbeef_locals;
 extern struct cvar_s *pr_boundscheck;
+extern struct cvar_s *pr_faultchecks;
 
 extern const char *pr_gametype;
 

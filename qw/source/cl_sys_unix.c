@@ -70,12 +70,6 @@ shutdown (void)
 	fcntl (0, F_SETFL, fcntl (0, F_GETFL, 0) & ~O_NONBLOCK);
 }
 
-void
-floating_point_exception_handler (int whatever)
-{
-	signal (SIGFPE, floating_point_exception_handler);
-}
-
 int         skipframes;
 
 int
@@ -83,9 +77,6 @@ main (int c, const char *v[])
 {
 //	static char cwd[1024];
 	double      time, oldtime, newtime;
-
-//	signal(SIGFPE, floating_point_exception_handler);
-	signal (SIGFPE, SIG_IGN);
 
 	memset (&host_parms, 0, sizeof (host_parms));
 

@@ -71,7 +71,7 @@ int Sys_TimeID (void);
 // not to hog cpu when paused or debugging
 
 void Sys_MaskFPUExceptions (void);
-void Sys_PushSignalHook (void (*hook)(int, void*), void *data);
+void Sys_PushSignalHook (int (*hook)(int, void*), void *data);
 void Sys_PopSignalHook (void);
 
 // send text to the console

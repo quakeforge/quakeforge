@@ -583,17 +583,17 @@ static jmp_buf  aiee_abort;
 
 typedef struct sh_stack_s {
 	struct sh_stack_s *next;
-	void (*signal_hook)(int,void*);
+	int (*signal_hook)(int,void*);
 	void *data;
 } sh_stack_t;
 
 static sh_stack_t *sh_stack;
 static sh_stack_t *free_sh;
-static void (*signal_hook)(int,void*);
+static int (*signal_hook)(int,void*);
 static void *signal_hook_data;
 
 void
-Sys_PushSignalHook (void (*hook)(int, void *), void *data)
+Sys_PushSignalHook (int (*hook)(int, void *), void *data)
 {
 	sh_stack_t *s;
 
@@ -639,6 +639,8 @@ aiee (int sig)
 static void
 signal_handler (int sig)
 {
+	int         recover = 0;
+
 	printf ("Received signal %d, exiting...\n", sig);
 
 	switch (sig) {
@@ -660,21 +662,35 @@ signal_handler (int sig)
 #endif
 			signal (SIGILL, aiee);
 			signal (SIGSEGV, aiee);
+			signal (SIGFPE, aiee);
 
 			if (!setjmp (aiee_abort)) {
 				if (signal_hook)
-					signal_hook (sig, signal_hook_data);
+					recover = signal_hook (sig, signal_hook_data);
 				Sys_Shutdown ();
 			}
 
+			if (recover) {
 #ifndef _WIN32
-			signal (SIGQUIT, SIG_DFL);
-			signal (SIGTRAP, SIG_DFL);
-			signal (SIGIOT, SIG_DFL);
-			signal (SIGBUS, SIG_DFL);
+				signal (SIGQUIT, signal_handler);
+				signal (SIGTRAP, signal_handler);
+				signal (SIGIOT, signal_handler);
+				signal (SIGBUS, signal_handler);
 #endif
-			signal (SIGILL, SIG_DFL);
-			signal (SIGSEGV, SIG_DFL);
+				signal (SIGILL, signal_handler);
+				signal (SIGSEGV, signal_handler);
+				signal (SIGFPE, signal_handler);
+			} else {
+#ifndef _WIN32
+				signal (SIGQUIT, SIG_DFL);
+				signal (SIGTRAP, SIG_DFL);
+				signal (SIGIOT, SIG_DFL);
+				signal (SIGBUS, SIG_DFL);
+#endif
+				signal (SIGILL, SIG_DFL);
+				signal (SIGSEGV, SIG_DFL);
+				signal (SIGFPE, SIG_DFL);
+			}
 	}
 }
 
@@ -693,5 +709,5 @@ Sys_Init (void)
 	signal (SIGILL, signal_handler);
 	signal (SIGSEGV, signal_handler);
 	signal (SIGTERM, signal_handler);
-//	signal (SIGFPE, signal_handler);
+	signal (SIGFPE, signal_handler);
 }

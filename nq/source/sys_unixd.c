@@ -80,8 +80,6 @@ main (int argc, const char **argv)
 {
 	double      time, oldtime, newtime;
 
-	signal (SIGFPE, SIG_IGN);
-
 	memset (&host_parms, 0, sizeof (host_parms));
 
 	COM_InitArgv (argc, argv);

@@ -36,7 +36,7 @@ static const char rcsid[] =
 #ifdef HAVE_STRINGS_H
 # include <strings.h>
 #endif
-
+#include <signal.h>
 #include <stdarg.h>
 
 #include "QF/cvar.h"
@@ -168,13 +168,6 @@ PR_LeaveFunction (progs_t * pr)
 	pr->pr_xstatement = pr->pr_stack[pr->pr_depth].s;
 }
 
-static void
-signal_hook (int sig, void *data)
-{
-	progs_t    *pr = (progs_t *) data;
-	PR_DumpState (pr);
-}
-
 #define OPA (*op_a)
 #define OPB (*op_b)
 #define OPC (*op_c)
@@ -185,6 +178,42 @@ signal_hook (int sig, void *data)
 */
 #define FNZ(x) ((x).integer_var && (x).integer_var != 0x80000000)
 
+
+static int
+signal_hook (int sig, void *data)
+{
+	progs_t    *pr = (progs_t *) data;
+	
+	if (sig == SIGFPE && pr_faultchecks->int_val) {
+		dstatement_t *st;
+		pr_type_t  *op_a, *op_b, *op_c;
+
+		st = pr->pr_statements + pr->pr_xstatement;
+		op_a = pr->pr_globals + st->a;
+		op_b = pr->pr_globals + st->b;
+		op_c = pr->pr_globals + st->c;
+
+		switch (st->op) {
+			case OP_DIV_F:
+				if ((OPA.integer_var & 0x80000000)
+					^ (OPB.integer_var & 0x80000000))
+					OPC.integer_var = 0xff7fffff;
+				else
+					OPC.integer_var = 0x7f7fffff;
+				return 1;
+			case OP_DIV_I:
+				if (OPA.integer_var & 0x80000000)
+					OPC.integer_var = -0x80000000;
+				else
+					OPC.integer_var = 0x7fffffff;
+				return 1;
+			default:
+				break;
+		}
+	}
+	PR_DumpState (pr);
+	return 0;
+}
 
 /*
 	PR_ExecuteProgram
