@@ -398,6 +398,23 @@ VID_Init (unsigned char *palette)
 	if (fbdev_inited)
 		return;
 
+	if (COM_CheckParm ("-novideo")) {
+		scr_width = vid.width = 320;
+		scr_height = vid.height = 200;
+		vid.rowbytes = 320;
+		vid.aspect = ((float) vid.height / (float) vid.width) * (4.0 / 3.0);
+		vid.colormap8 = (byte *) vid_colormap;
+		vid.fullbright = 256 - LittleLong (*((int *) vid.colormap8 + 2048));
+		vid.conrowbytes = vid.rowbytes;
+		vid.conwidth = vid.width;
+		vid.conheight = vid.height;
+		vid.numpages = 1;
+		vid.basepal = palette;
+		Con_CheckResize (); // Now that we have a window size, fix console
+		VID_InitBuffers ();
+		return;
+	}
+
 	fbname = getenv("FRAMEBUFFER");
 	if (!fbname)
 		fbname = "/dev/fb0";
