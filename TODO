@@ -40,6 +40,8 @@ W  software targets should mix color at 16/16 or 24/32 color
 ?  transmit nails as source/direction/speed/time rather than direction/location, to improve delta compression
 ?  custom particle explosions (doable via csqc)
 ?  server should shutdown cleanly when it recieves SIGTERM and SIGHUP
+?  client-only commands (rejected if done via a server stuffcmd)
+?  ~/.quakeforgerc should support all commands, not just set and setrom
 
 These are explained better in doc/ideas/rhamph.txt:
 ?  portal vis system
