@@ -503,8 +503,6 @@ R_RocketTrail_QF (entity_t *ent)
 			break;
 		len += dist;
 		VectorMA (ent->old_origin, len, vec, ent->old_origin);
-//		VectorScale (vec, len, subtract);
-//		VectorAdd (ent->old_origin, subtract, ent->old_origin);
 		pscale = pscalenext;
 	}
 }
@@ -626,7 +624,7 @@ R_WizTrail_QF (entity_t *ent)
 	float		maxlen, origlen, percent;
 	float		dist = 3.0, len = 0.0;
 	static int	tracercount;
-	vec3_t		vec, pvel;
+	vec3_t		subtract, vec, pvel;
 
 	if (numparticles >= r_maxparticles)
 		return;
@@ -634,6 +632,7 @@ R_WizTrail_QF (entity_t *ent)
 	VectorSubtract (ent->origin, ent->old_origin, vec);
 	maxlen = VectorNormalize (vec);
 	origlen = r_frametime / maxlen;
+	VectorScale (vec, maxlen - dist, subtract);
 
 	while (len < maxlen) {
 		percent = len * origlen;
@@ -655,7 +654,7 @@ R_WizTrail_QF (entity_t *ent)
 		if (numparticles >= r_maxparticles)
 			break;
 		len += dist;
-		VectorMA (ent->old_origin, len, vec, ent->old_origin);
+		VectorAdd (ent->old_origin, subtract, ent->old_origin);
 	}
 }
 
@@ -665,7 +664,7 @@ R_FlameTrail_QF (entity_t *ent)
 	float		maxlen, origlen, percent;
 	float		dist = 3.0, len = 0.0;
 	static int	tracercount;
-	vec3_t		vec, pvel;
+	vec3_t		subtract, vec, pvel;
 
 	if (numparticles >= r_maxparticles)
 		return;
@@ -673,6 +672,7 @@ R_FlameTrail_QF (entity_t *ent)
 	VectorSubtract (ent->origin, ent->old_origin, vec);
 	maxlen = VectorNormalize (vec);
 	origlen = r_frametime / maxlen;
+	VectorScale (vec, maxlen - dist, subtract);
 
 	while (len < maxlen) {
 		percent = len * origlen;
@@ -694,7 +694,7 @@ R_FlameTrail_QF (entity_t *ent)
 		if (numparticles >= r_maxparticles)
 			break;
 		len += dist;
-		VectorMA (ent->old_origin, len, vec, ent->old_origin);
+		VectorAdd (ent->old_origin, subtract, ent->old_origin);
 	}
 }
 
@@ -704,7 +704,7 @@ R_VoorTrail_QF (entity_t *ent)
 	float		maxlen, origlen, percent;
 	float		dist = 3.0, len = 0.0;
 	int			j;
-	vec3_t		vec, porg;
+	vec3_t		subtract, vec, porg;
 
 	if (numparticles >= r_maxparticles)
 		return;
@@ -712,6 +712,7 @@ R_VoorTrail_QF (entity_t *ent)
 	VectorSubtract (ent->origin, ent->old_origin, vec);
 	maxlen = VectorNormalize (vec);
 	origlen = r_frametime / maxlen;
+	VectorScale (vec, maxlen - dist, subtract);
 
 	while (len < maxlen) {
 		percent = len * origlen;
@@ -725,7 +726,7 @@ R_VoorTrail_QF (entity_t *ent)
 		if (numparticles >= r_maxparticles)
 			break;
 		len += dist;
-		VectorMA (ent->old_origin, len, vec, ent->old_origin);
+		VectorAdd (ent->old_origin, subtract, ent->old_origin);
 	}
 }
 
@@ -1067,7 +1068,6 @@ R_RocketTrail_ID (entity_t *ent)
 		if (numparticles >= r_maxparticles)
 			break;
 		len += dist;
-		VectorScale (vec, len, subtract);
 		VectorAdd (ent->old_origin, subtract, ent->old_origin);
 	}
 }
@@ -1085,6 +1085,7 @@ R_GrenadeTrail_ID (entity_t *ent)
 
 	VectorSubtract (ent->origin, ent->old_origin, vec);
 	maxlen = VectorNormalize (vec);
+	VectorScale (vec, maxlen - dist, subtract);
 
 	while (len < maxlen) {
 		rnd = rand ();
@@ -1098,7 +1099,6 @@ R_GrenadeTrail_ID (entity_t *ent)
 		if (numparticles >= r_maxparticles)
 			break;
 		len += dist;
-		VectorScale (vec, len, subtract);
 		VectorAdd (ent->old_origin, subtract, ent->old_origin);
 	}
 }
@@ -1116,6 +1116,7 @@ R_BloodTrail_ID (entity_t *ent)
 
 	VectorSubtract (ent->origin, ent->old_origin, vec);
 	maxlen = VectorNormalize (vec);
+	VectorScale (vec, maxlen - dist, subtract);
 
 	while (len < maxlen) {
 		rnd = rand ();
@@ -1128,7 +1129,6 @@ R_BloodTrail_ID (entity_t *ent)
 		if (numparticles >= r_maxparticles)
 			break;
 		len += dist;
-		VectorScale (vec, len, subtract);
 		VectorAdd (ent->old_origin, subtract, ent->old_origin);
 	}
 }
@@ -1146,6 +1146,7 @@ R_SlightBloodTrail_ID (entity_t *ent)
 
 	VectorSubtract (ent->origin, ent->old_origin, vec);
 	maxlen = VectorNormalize (vec);
+	VectorScale (vec, maxlen - dist, subtract);
 
 	while (len < maxlen) {
 		rnd = rand ();
@@ -1158,7 +1159,6 @@ R_SlightBloodTrail_ID (entity_t *ent)
 		if (numparticles >= r_maxparticles)
 			break;
 		len += dist;
-		VectorScale (vec, len, subtract);
 		VectorAdd (ent->old_origin, subtract, ent->old_origin);
 	}
 }
@@ -1176,6 +1176,7 @@ R_WizTrail_ID (entity_t *ent)
 
 	VectorSubtract (ent->origin, ent->old_origin, vec);
 	maxlen = VectorNormalize (vec);
+	VectorScale (vec, maxlen - dist, subtract);
 
 	while (len < maxlen) {
 		tracercount++;
@@ -1194,7 +1195,6 @@ R_WizTrail_ID (entity_t *ent)
 		if (numparticles >= r_maxparticles)
 			break;
 		len += dist;
-		VectorScale (vec, len, subtract);
 		VectorAdd (ent->old_origin, subtract, ent->old_origin);
 	}
 }
@@ -1212,6 +1212,7 @@ R_FlameTrail_ID (entity_t *ent)
 
 	VectorSubtract (ent->origin, ent->old_origin, vec);
 	maxlen = VectorNormalize (vec);
+	VectorScale (vec, maxlen - dist, subtract);
 
 	while (len < maxlen) {
 		tracercount++;
@@ -1230,7 +1231,6 @@ R_FlameTrail_ID (entity_t *ent)
 		if (numparticles >= r_maxparticles)
 			break;
 		len += dist;
-		VectorScale (vec, len, subtract);
 		VectorAdd (ent->old_origin, subtract, ent->old_origin);
 	}
 }
@@ -1248,6 +1248,7 @@ R_VoorTrail_ID (entity_t *ent)
 
 	VectorSubtract (ent->origin, ent->old_origin, vec);
 	maxlen = VectorNormalize (vec);
+	VectorScale (vec, maxlen - dist, subtract);
 
 	while (len < maxlen) {
 		rnd = rand ();
@@ -1260,7 +1261,6 @@ R_VoorTrail_ID (entity_t *ent)
 		if (numparticles >= r_maxparticles)
 			break;
 		len += dist;
-		VectorScale (vec, len, subtract);
 		VectorAdd (ent->old_origin, subtract, ent->old_origin);
 	}
 }
@@ -1390,7 +1390,7 @@ R_DrawParticles (void)
 					break;
 				}
 				part->color = ramp3[(int) part->ramp];
-				part->alpha = (6 - part->ramp) / 6;
+				part->alpha = (6.0 - part->ramp) / 6.0;
 				part->vel[2] += grav;
 				break;
 			case pt_explode:
