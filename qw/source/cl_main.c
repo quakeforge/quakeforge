@@ -1689,6 +1689,8 @@ Host_Init (void)
 				build_number ());
 
 	Con_Printf ("€‚ %s initialized €‚\n", PROGRAM);
+
+	SCR_UpdateScreen ();
 }
 
 
