@@ -38,7 +38,15 @@ static const char rcsid[] =
 # include <strings.h>
 #endif
 
-#include "fnmatch.h"
+#ifdef HAVE_FNMATCH_H
+# define model_t sunmodel_t
+# include <fnmatch.h>
+# undef model_t
+#else
+# ifdef WIN32
+# include "fnmatch.h"
+# endif
+#endif
 
 #include "QF/progs.h"
 #include "QF/va.h"
