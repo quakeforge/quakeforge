@@ -44,12 +44,12 @@
 
 #include <GL/gl.h>
 
-#include "console.h"
+#include "QF/console.h"
 #include "glquake.h"
 #include "input.h"
-#include "qargs.h"
+#include "QF/qargs.h"
 #include "qfgl_ext.h"
-#include "quakefs.h"
+#include "QF/quakefs.h"
 #include "sbar.h"
 
 #define WARP_WIDTH              320

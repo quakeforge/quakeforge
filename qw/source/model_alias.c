@@ -41,12 +41,12 @@
 
 #include "cl_main.h"
 #include "client.h"
-#include "crc.h"
-#include "info.h"
+#include "QF/crc.h"
+#include "QF/info.h"
 #include "model.h"
-#include "msg.h"
-#include "qendian.h"
-#include "quakefs.h"
+#include "QF/msg.h"
+#include "QF/qendian.h"
+#include "QF/quakefs.h"
 #include "r_local.h"
 #include "server.h"
 

@@ -36,10 +36,10 @@
 # include <strings.h>
 #endif
 
-#include "console.h"
-#include "sizebuf.h"
-#include "sys.h"
-#include "zone.h"
+#include "QF/console.h"
+#include "QF/sizebuf.h"
+#include "QF/sys.h"
+#include "QF/zone.h"
 
 void
 SZ_Alloc (sizebuf_t *buf, int startsize)

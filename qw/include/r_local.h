@@ -29,8 +29,8 @@
 #ifndef _R_LOCAL_H
 #define _R_LOCAL_H
 
-#include "mathlib.h"
-#include "cvar.h"
+#include "QF/mathlib.h"
+#include "QF/cvar.h"
 #include "vid.h"
 #include "client.h"
 #include "model.h"

@@ -31,15 +31,15 @@
 
 #include <setjmp.h>
 
-#include "gcc_attr.h"
+#include "QF/gcc_attr.h"
 #include "net.h"
-#include "cvar.h"
+#include "QF/cvar.h"
 #include "protocol.h"
 #include "model.h"
 #include "sv_progs.h"
-#include "sizebuf.h"
-#include "info.h"
-#include "quakeio.h"
+#include "QF/sizebuf.h"
+#include "QF/info.h"
+#include "QF/quakeio.h"
 #include "client.h"
 
 extern progs_t sv_pr_state;

@@ -38,10 +38,10 @@
 
 #include <stdio.h>
 
-#include "console.h"
-#include "mdfour.h"
+#include "QF/console.h"
+#include "QF/mdfour.h"
 #include "model.h"
-#include "quakefs.h"
+#include "QF/quakefs.h"
 
 /*
 	ALIAS MODEL DISPLAY LIST GENERATION

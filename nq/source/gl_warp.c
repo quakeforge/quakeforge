@@ -38,12 +38,12 @@
 #include <strings.h>
 #endif
 
-#include "qtypes.h"
-#include "console.h"
+#include "QF/qtypes.h"
+#include "QF/console.h"
 #include "model.h"
-#include "quakefs.h"
+#include "QF/quakefs.h"
 #include "glquake.h"
-#include "sys.h"
+#include "QF/sys.h"
 
 extern double realtime;
 extern model_t *loadmodel;

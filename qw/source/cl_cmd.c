@@ -37,9 +37,9 @@
 #endif
 
 #include "client.h"
-#include "console.h"
-#include "cmd.h"
-#include "msg.h"
+#include "QF/console.h"
+#include "QF/cmd.h"
+#include "QF/msg.h"
 #include "teamplay.h"
 
 /*

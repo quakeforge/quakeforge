@@ -36,13 +36,13 @@
 # include <strings.h>
 #endif
 
-#include "crc.h"
-#include "msg.h"
-#include "quakefs.h"
+#include "QF/crc.h"
+#include "QF/msg.h"
+#include "QF/quakefs.h"
 #include "server.h"
 #include "sv_progs.h"
 #include "world.h"
-#include "va.h"
+#include "QF/va.h"
 
 server_t    sv;							// local server
 

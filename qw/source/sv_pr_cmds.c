@@ -33,13 +33,13 @@
 # include <string.h>
 #endif
 
-#include "cmd.h"
-#include "msg.h"
+#include "QF/cmd.h"
+#include "QF/msg.h"
 #include "server.h"
 #include "sv_pr_cmds.h"
 #include "sv_progs.h"
 #include "world.h"
-#include "va.h"
+#include "QF/va.h"
 
 #define	RETURN_EDICT(p, e) ((p)->pr_globals[OFS_RETURN].int_var = EDICT_TO_PROG(p, e))
 #define	RETURN_STRING(p, s) ((p)->pr_globals[OFS_RETURN].int_var = PR_SetString((p), s))

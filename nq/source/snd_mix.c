@@ -31,7 +31,7 @@
 #endif
 
 #include "sound.h"
-#include "compat.h"
+#include "QF/compat.h"
 
 #ifdef _WIN32
 #include "winquake.h"

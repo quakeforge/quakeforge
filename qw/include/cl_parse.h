@@ -29,7 +29,7 @@
 #ifndef _CL_PARSE_H
 #define _CL_PARSE_H
 
-#include "qtypes.h"
+#include "QF/qtypes.h"
 
 #define NET_TIMINGS 256
 #define NET_TIMINGSMASK 255

@@ -29,9 +29,9 @@
 #ifndef __net_h
 #define __net_h
 
-#include "gcc_attr.h"
-#include "sizebuf.h"
-#include "cvar.h"
+#include "QF/gcc_attr.h"
+#include "QF/sizebuf.h"
+#include "QF/cvar.h"
 
 struct qsockaddr
 {

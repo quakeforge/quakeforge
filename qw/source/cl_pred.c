@@ -36,8 +36,8 @@
 #include "cl_ents.h"
 #include "client.h"
 #include "commdef.h"
-#include "console.h"
-#include "cvar.h"
+#include "QF/console.h"
+#include "QF/cvar.h"
 #include "pmove.h"
 
 cvar_t     *cl_nopred;

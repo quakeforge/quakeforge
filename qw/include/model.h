@@ -29,12 +29,12 @@
 #ifndef _MODEL_H
 #define _MODEL_H
 
-#include "qtypes.h"
+#include "QF/qtypes.h"
 #include "render.h"
 #include "bspfile.h"
 #include "spritegn.h"
 #include "modelgen.h"
-#include "zone.h"
+#include "QF/zone.h"
 
 /*
 

@@ -28,7 +28,7 @@
 #ifndef __bspfile_h_
 #define __bspfile_h_
 
-#include "qtypes.h"
+#include "QF/qtypes.h"
 
 // upper design bounds
 

@@ -65,7 +65,7 @@
 #endif
 
 #include "qfgl_ext.h"
-#include "qtypes.h"
+#include "QF/qtypes.h"
 
 /*
 	ParseExtensionList

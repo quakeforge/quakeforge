@@ -30,7 +30,7 @@
 #ifndef _WAD_H
 #define _WAD_H
 
-#include "qtypes.h"
+#include "QF/qtypes.h"
 
 //===============
 //   TYPES

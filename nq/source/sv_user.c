@@ -32,15 +32,15 @@
 #endif
 
 #include "server.h"
-#include "msg.h"
-#include "console.h"
+#include "QF/msg.h"
+#include "QF/console.h"
 #include "world.h"
-#include "keys.h"
+#include "QF/keys.h"
 #include "view.h"
-#include "cmd.h"
+#include "QF/cmd.h"
 #include "host.h"
 #include "sv_progs.h"
-#include "sys.h"
+#include "QF/sys.h"
 
 edict_t    *sv_player;
 

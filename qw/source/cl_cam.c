@@ -46,8 +46,8 @@
 #include "cl_cam.h"
 #include "client.h"
 #include "commdef.h"
-#include "console.h"
-#include "msg.h"
+#include "QF/console.h"
+#include "QF/msg.h"
 #include "pmove.h"
 #include "sbar.h"
 

@@ -31,18 +31,18 @@
 # include "config.h"
 #endif
 
-#include "msg.h"
-#include "cvar.h"
+#include "QF/msg.h"
+#include "QF/cvar.h"
 #include "client.h"
 #include "chase.h"
 #include "input.h"
 #include "host.h"
-#include "va.h"
+#include "QF/va.h"
 #include "host.h"
 #include "server.h"
-#include "console.h"
+#include "QF/console.h"
 #include "screen.h"
-#include "cmd.h"
+#include "QF/cmd.h"
 
 // we need to declare some mouse variables here, because the menu system
 // references them even when on a unix system.

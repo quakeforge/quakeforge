@@ -33,10 +33,10 @@
 #include <math.h>
 
 #include "client.h"
-#include "compat.h"
-#include "cvar.h"
+#include "QF/compat.h"
+#include "QF/cvar.h"
 #include "pmove.h"
-#include "qtypes.h"
+#include "QF/qtypes.h"
 
 cvar_t     *no_pogo_stick;
 movevars_t  movevars;

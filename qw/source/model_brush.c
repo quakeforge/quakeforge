@@ -42,10 +42,10 @@
 #include <math.h>
 
 
-#include "checksum.h"
-#include "cvar.h"
+#include "QF/checksum.h"
+#include "QF/cvar.h"
 #include "model.h"
-#include "qendian.h"
+#include "QF/qendian.h"
 #include "server.h"
 
 extern model_t *loadmodel;

@@ -29,8 +29,8 @@
 #ifndef __tga_h
 #define __tga_h
 
-#include "gcc_attr.h"
-#include "qtypes.h"
+#include "QF/gcc_attr.h"
+#include "QF/qtypes.h"
 
 #ifndef __GNUC__
 # if defined (__BORLANDC__) || defined (_MSC_VER)

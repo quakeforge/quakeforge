@@ -43,10 +43,10 @@
 #include "cl_main.h"
 #include "cl_tent.h"
 #include "client.h"
-#include "console.h"
+#include "QF/console.h"
 #include "host.h"
 #include "model.h"
-#include "msg.h"
+#include "QF/msg.h"
 #include "r_dynamic.h"
 #include "sound.h"
 

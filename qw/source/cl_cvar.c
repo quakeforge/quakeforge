@@ -31,9 +31,9 @@
 #endif
 
 #include "client.h"
-#include "cvar.h"
-#include "msg.h"
-#include "va.h"
+#include "QF/cvar.h"
+#include "QF/msg.h"
+#include "QF/va.h"
 
 void
 Cvar_Info (cvar_t *var)

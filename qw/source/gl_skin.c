@@ -34,7 +34,7 @@
 #include "host.h"
 #include "protocol.h"
 #include "skin.h"
-#include "sys.h"
+#include "QF/sys.h"
 #include "texture.h"
 
 byte        player_8bit_texels[320 * 200];

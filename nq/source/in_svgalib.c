@@ -44,15 +44,15 @@
 #include <vgamouse.h>
 
 #include "client.h"
-#include "cmd.h"
-#include "console.h"
-#include "cvar.h"
+#include "QF/cmd.h"
+#include "QF/console.h"
+#include "QF/cvar.h"
 #include "host.h"
 #include "input.h"
 #include "joystick.h"
-#include "keys.h"
-#include "qargs.h"
-#include "sys.h"
+#include "QF/keys.h"
+#include "QF/qargs.h"
+#include "QF/sys.h"
 #include "view.h"
 
 static int  UseKeyboard = 1;

@@ -37,8 +37,8 @@
 # include <strings.h>
 #endif
 
-#include "mdfour.h"
-#include "uint32.h"
+#include "QF/mdfour.h"
+#include "QF/uint32.h"
 
 /* NOTE: This code makes no attempt to be fast!
 

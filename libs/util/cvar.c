@@ -42,11 +42,11 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#include "console.h"
-#include "cmd.h"
-#include "cvar.h"
-#include "hash.h"
-#include "qargs.h"
+#include "QF/console.h"
+#include "QF/cmd.h"
+#include "QF/cvar.h"
+#include "QF/hash.h"
+#include "QF/qargs.h"
 
 cvar_t			*cvar_vars;
 char			*cvar_null_string = "";

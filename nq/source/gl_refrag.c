@@ -33,8 +33,8 @@
 #include "render.h"
 #include "model.h"
 #include "client.h"
-#include "sys.h"
-#include "console.h"
+#include "QF/sys.h"
+#include "QF/console.h"
 #include "glquake.h"
 
 mnode_t    *r_pefragtopnode;

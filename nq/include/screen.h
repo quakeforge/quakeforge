@@ -29,8 +29,8 @@
 #ifndef __screen_h
 #define __screen_h
 
-#include "qtypes.h"
-#include "cvar.h"
+#include "QF/qtypes.h"
+#include "QF/cvar.h"
 
 void SCR_Init (void);
 void SCR_InitCvars (void);

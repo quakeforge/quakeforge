@@ -40,7 +40,7 @@
 #include "client.h"
 #include "host.h"
 #include "skin.h"
-#include "sys.h"
+#include "QF/sys.h"
 #include "vid.h"
 
 void

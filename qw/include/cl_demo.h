@@ -29,7 +29,7 @@
 #ifndef _CL_DEMO_H
 #define _CL_DEMO_H
 
-#include "qtypes.h"
+#include "QF/qtypes.h"
 #include "protocol.h"
 
 void CL_StopPlayback (void);

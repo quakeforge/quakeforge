@@ -50,11 +50,11 @@
 # endif
 #endif
 
-#include "console.h"
+#include "QF/console.h"
 #include "glquake.h"
 #include "input.h"
-#include "qargs.h"
-#include "quakefs.h"
+#include "QF/qargs.h"
+#include "QF/quakefs.h"
 #include "sbar.h"
 
 #define WARP_WIDTH              320

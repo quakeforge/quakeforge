@@ -32,10 +32,10 @@
 #endif
 
 #include "server.h"
-#include "msg.h"
-#include "console.h"
-#include "sys.h"
-#include "cmd.h"
+#include "QF/msg.h"
+#include "QF/console.h"
+#include "QF/sys.h"
+#include "QF/cmd.h"
 #include "host.h"
 #include "world.h"
 #include "sv_progs.h"

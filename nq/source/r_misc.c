@@ -31,8 +31,8 @@
 #endif
 
 #include "r_local.h"
-#include "sys.h"
-#include "console.h"
+#include "QF/sys.h"
+#include "QF/console.h"
 #include "server.h"
 #include "host.h"
 #include "view.h"

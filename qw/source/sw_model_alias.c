@@ -40,12 +40,12 @@
 #include <strings.h>
 #endif
 
-#include "checksum.h"
+#include "QF/checksum.h"
 #include "d_iface.h"
 #include "model.h"
-#include "qendian.h"
+#include "QF/qendian.h"
 #include "server.h"
-#include "sys.h"
+#include "QF/sys.h"
 
 extern char loadname[];
 extern model_t *loadmodel;

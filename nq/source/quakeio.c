@@ -36,7 +36,6 @@
 #endif
 #include <stdarg.h>
 #include <stdlib.h>
-#include <quakeio.h>
 #include <string.h>
 #ifdef WIN32
 # include <io.h>
@@ -47,6 +46,8 @@
 #ifdef HAVE_UNISTD_H
 # include <unistd.h>
 #endif
+
+#include "QF/quakeio.h"
 
 #ifdef _MSC_VER
 # define _POSIX_

@@ -35,16 +35,16 @@
 
 #include "client.h"
 #include "host.h"
-#include "msg.h"
-#include "console.h"
+#include "QF/msg.h"
+#include "QF/console.h"
 #include "cdaudio.h"
-#include "sys.h"
+#include "QF/sys.h"
 #include "sbar.h"
 #include "screen.h"
 #include "server.h"
 #include "game.h"
 #include "input.h"
-#include "cmd.h"
+#include "QF/cmd.h"
 
 char       *svc_strings[] = {
 	"svc_bad",

@@ -44,10 +44,10 @@
 #include <sys/types.h>
 #include <sys/mman.h>
 
-#include "cvar.h"
+#include "QF/cvar.h"
 #include "host.h"
-#include "qargs.h"
-#include "sys.h"
+#include "QF/qargs.h"
+#include "QF/sys.h"
 
 int         noconinput = 0;
 qboolean    is_server = false;

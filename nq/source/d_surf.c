@@ -34,9 +34,9 @@
 #include <stdlib.h>
 
 #include "game.h"
-#include "sys.h"
-#include "qargs.h"
-#include "console.h"
+#include "QF/sys.h"
+#include "QF/qargs.h"
+#include "QF/console.h"
 #include "d_local.h"
 #include "r_local.h"
 #include "d_iface.h"

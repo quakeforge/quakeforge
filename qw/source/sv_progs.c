@@ -37,7 +37,7 @@
 #include "strings.h"
 #endif
 
-#include "cmd.h"
+#include "QF/cmd.h"
 #include "server.h"
 #include "progdefs.h"
 #include "sv_progs.h"

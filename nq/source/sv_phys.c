@@ -33,9 +33,9 @@
 #include "server.h"
 #include "host.h"
 #include "world.h"
-#include "console.h"
+#include "QF/console.h"
 #include "sv_progs.h"
-#include "sys.h"
+#include "QF/sys.h"
 
 /*
 

@@ -33,9 +33,9 @@
 #include <stdlib.h>
 
 #include "d_local.h"
-#include "qargs.h"
+#include "QF/qargs.h"
 #include "r_local.h"
-#include "sys.h"
+#include "QF/sys.h"
 
 float       surfscale;
 qboolean    r_cache_thrash;				// set if surface cache is thrashing

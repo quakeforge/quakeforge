@@ -30,7 +30,7 @@
 #define _PMOVE_H
 
 #include "protocol.h"
-#include "mathlib.h"
+#include "QF/mathlib.h"
 #include "model.h"
 
 #define STOP_EPSILON 0.1

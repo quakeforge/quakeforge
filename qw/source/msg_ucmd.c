@@ -36,11 +36,11 @@
 # include <strings.h>
 #endif
 
-#include "msg.h"
+#include "QF/msg.h"
 #include "net.h"
 #include "protocol.h"
-#include "qendian.h"
-#include "sys.h"
+#include "QF/qendian.h"
+#include "QF/sys.h"
 
 struct usercmd_s nullcmd;
 

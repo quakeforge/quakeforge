@@ -29,7 +29,7 @@
 #ifndef _D_IFACE_H
 #define _D_IFACE_H
 
-#include "mathlib.h"
+#include "QF/mathlib.h"
 #include "model.h"
 
 #define WARP_WIDTH		320

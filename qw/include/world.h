@@ -30,9 +30,9 @@
 #ifndef _WORLD_H
 #define _WORLD_H
 
-#include "mathlib.h"
+#include "QF/mathlib.h"
 #include "model.h"
-#include "progs.h"
+#include "QF/progs.h"
 
 typedef struct
 {

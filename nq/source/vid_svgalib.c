@@ -48,15 +48,15 @@
 
 #include <vga.h>
 
-#include "cmd.h"
-#include "console.h"
-#include "cvar.h"
+#include "QF/cmd.h"
+#include "QF/console.h"
+#include "QF/cvar.h"
 #include "d_local.h"
 #include "host.h"
 #include "input.h"
-#include "qargs.h"
-#include "qendian.h"
-#include "sys.h"
+#include "QF/qargs.h"
+#include "QF/qendian.h"
+#include "QF/sys.h"
 
 
 void        VGA_UpdatePlanarScreen (void *srcbuffer);

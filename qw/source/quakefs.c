@@ -61,20 +61,20 @@
 
 #include <limits.h>
 
-#include "cmd.h"
+#include "QF/cmd.h"
 #include "commdef.h"
-#include "console.h"
-#include "cvar.h"
+#include "QF/console.h"
+#include "QF/cvar.h"
 #include "draw.h"
-#include "hash.h"
-#include "info.h"
-#include "qargs.h"
-#include "qendian.h"
-#include "qtypes.h"
-#include "quakefs.h"
+#include "QF/hash.h"
+#include "QF/info.h"
+#include "QF/qargs.h"
+#include "QF/qendian.h"
+#include "QF/qtypes.h"
+#include "QF/quakefs.h"
 #include "server.h"
-#include "sys.h"
-#include "va.h"
+#include "QF/sys.h"
+#include "QF/va.h"
 
 #ifndef HAVE_FNMATCH_PROTO
 int         fnmatch (const char *__pattern, const char *__string, int __flags);

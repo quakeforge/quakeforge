@@ -34,7 +34,7 @@
 # include <config.h>
 #endif
 
-#include "cvar.h"
+#include "QF/cvar.h"
 #include "server.h"
 
 void

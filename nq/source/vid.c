@@ -30,11 +30,11 @@
 # include "config.h"
 #endif
 
-#include "cvar.h"
+#include "QF/cvar.h"
 #include "vid.h"
-#include "va.h"
-#include "qargs.h"
-#include "sys.h"
+#include "QF/va.h"
+#include "QF/qargs.h"
+#include "QF/sys.h"
 
 extern viddef_t vid;					// global video state
 

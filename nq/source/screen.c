@@ -32,16 +32,16 @@
 
 #include <time.h>
 #include "r_local.h"
-#include "cmd.h"
+#include "QF/cmd.h"
 #include "screen.h"
 #include "sbar.h"
 #include "input.h"
 #include "view.h"
 #include "host.h"
-#include "sys.h"
-#include "console.h"
-#include "qendian.h"
-#include "keys.h"
+#include "QF/sys.h"
+#include "QF/console.h"
+#include "QF/qendian.h"
+#include "QF/keys.h"
 #include "draw.h"
 
 // only the refresh window will be updated unless these variables are flagged 

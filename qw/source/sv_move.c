@@ -33,7 +33,7 @@
 #include <stdlib.h>
 #include <math.h>
 
-#include "qtypes.h"
+#include "QF/qtypes.h"
 #include "pmove.h"
 #include "server.h"
 #include "sv_pr_cmds.h"

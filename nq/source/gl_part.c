@@ -35,8 +35,8 @@
 #include "r_local.h"
 #include "glquake.h"
 #include "server.h"
-#include "console.h"
-#include "cmd.h"
+#include "QF/console.h"
+#include "QF/cmd.h"
 
 #define MAX_FIRES	128					// rocket flames
 fire_t      r_fires[MAX_FIRES];

@@ -39,14 +39,14 @@
 
 #include <stdio.h>
 
-#include "cmd.h"
-#include "console.h"
-#include "crc.h"
+#include "QF/cmd.h"
+#include "QF/console.h"
+#include "QF/crc.h"
 #include "draw.h"
 #include "glquake.h"
 #include "sbar.h"
 #include "screen.h"
-#include "sys.h"
+#include "QF/sys.h"
 
 extern unsigned char d_15to8table[65536];
 extern cvar_t *gl_picmip;

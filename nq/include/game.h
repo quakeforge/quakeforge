@@ -31,9 +31,9 @@
 #ifndef __game_h
 #define __game_h
 
-#include "qtypes.h"
-#include "cvar.h"
-#include "qdefs.h"
+#include "QF/qtypes.h"
+#include "QF/cvar.h"
+#include "QF/qdefs.h"
 
 #undef MAX_DATAGRAM
 #define	MAX_DATAGRAM	1024		// max length of unreliable message

@@ -38,11 +38,11 @@
 
 #include <stdlib.h>
 
-#include "cmd.h"
-#include "console.h"
-#include "qargs.h"
-#include "sys.h"
-#include "zone.h"
+#include "QF/cmd.h"
+#include "QF/console.h"
+#include "QF/qargs.h"
+#include "QF/sys.h"
+#include "QF/zone.h"
 
 #define	DYNAMIC_SIZE	0x20000
 #define	ZONEID			0x1d4a11

@@ -30,7 +30,7 @@
 #define _INPUT_H
 
 #include "protocol.h"
-#include "cvar.h"
+#include "QF/cvar.h"
 
 #define freelook (in_mlook.state&1 || cl_freelook->int_val)
 

@@ -29,7 +29,7 @@
 #ifndef __locs_h
 #define __locs_h
 
-#include "qtypes.h"
+#include "QF/qtypes.h"
 
 typedef struct
 {

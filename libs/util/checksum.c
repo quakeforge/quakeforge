@@ -41,9 +41,9 @@
 # include <strings.h>
 #endif
 
-#include "checksum.h"
-#include "crc.h"
-#include "mdfour.h"
+#include "QF/checksum.h"
+#include "QF/crc.h"
+#include "QF/mdfour.h"
 
 static byte chktbl[1024 + 4] = {
 	0x78, 0xd2, 0x94, 0xe3, 0x41, 0xec, 0xd6, 0xd5, 0xcb, 0xfc, 0xdb, 0x8a,

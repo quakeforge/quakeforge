@@ -34,7 +34,7 @@
 #include <X11/Xlib.h>
 #include <X11/Xutil.h>
 
-#include "qtypes.h"
+#include "QF/qtypes.h"
 
 void GetEvent( void );
 

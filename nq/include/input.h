@@ -29,9 +29,9 @@
 #ifndef _INPUT_H
 #define _INPUT_H
 
-#include "cvar.h"
+#include "QF/cvar.h"
 #include "protocol.h"
-#include "qtypes.h"
+#include "QF/qtypes.h"
 
 #define freelook (in_mlook.state&1 || cl_freelook->int_val)
 

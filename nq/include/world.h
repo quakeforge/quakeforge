@@ -29,7 +29,7 @@
 #ifndef __world_h
 #define __world_h
 
-#include "qtypes.h"
+#include "QF/qtypes.h"
 #include "sv_progs.h"
 
 typedef struct

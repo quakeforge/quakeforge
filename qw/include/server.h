@@ -30,16 +30,16 @@
 #ifndef _SERVER_H
 #define _SERVER_H
 
-#include "gcc_attr.h"
+#include "QF/gcc_attr.h"
 #include "commdef.h"
 #include "net.h"
-#include "cvar.h"
+#include "QF/cvar.h"
 #include "protocol.h"
 #include "model.h"
-#include "progs.h"
-#include "sizebuf.h"
-#include "info.h"
-#include "quakeio.h"
+#include "QF/progs.h"
+#include "QF/sizebuf.h"
+#include "QF/info.h"
+#include "QF/quakeio.h"
 
 #define	QW_SERVER
 

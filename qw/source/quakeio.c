@@ -57,8 +57,8 @@
 #include <stdlib.h>
 #include <limits.h>
 
-#include "quakefs.h"
-#include "quakeio.h"
+#include "QF/quakefs.h"
+#include "QF/quakeio.h"
 
 #ifdef WIN32
 # ifndef __BORLANDC__

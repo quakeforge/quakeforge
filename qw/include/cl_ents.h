@@ -29,7 +29,7 @@
 #ifndef _CL_ENTS_H
 #define _CL_ENTS_H
 
-#include "qtypes.h"
+#include "QF/qtypes.h"
 
 void CL_SetSolidPlayers (int playernum);
 void CL_SetUpPlayerPrediction(qboolean dopred);

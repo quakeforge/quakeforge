@@ -30,11 +30,12 @@
 # include "config.h"
 #endif
 
-#include "msg.h"
+#include "QF/msg.h"
 #include "net.h"
 #include "net_vcr.h"
-#include "sys.h"
+#include "QF/sys.h"
 #include "server.h"
+
 extern int  vcrFile;
 
 // This is the playback portion of the VCR.  It reads the file produced

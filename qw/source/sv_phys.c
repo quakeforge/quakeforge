@@ -30,7 +30,7 @@
 # include "config.h"
 #endif
 
-#include "cvar.h"
+#include "QF/cvar.h"
 #include "pmove.h"
 #include "server.h"
 #include "sv_progs.h"

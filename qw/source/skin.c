@@ -38,17 +38,17 @@
 
 #include "cl_parse.h"
 #include "client.h"
-#include "console.h"
-#include "cmd.h"
+#include "QF/console.h"
+#include "QF/cmd.h"
 #include "host.h"
-#include "msg.h"
+#include "QF/msg.h"
 #include "pcx.h"
-#include "qendian.h"
+#include "QF/qendian.h"
 #include "screen.h"
 #include "skin.h"
-#include "sys.h"
+#include "QF/sys.h"
 #include "texture.h"
-#include "va.h"
+#include "QF/va.h"
 
 cvar_t     *baseskin;
 cvar_t     *noskins;

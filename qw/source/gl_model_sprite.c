@@ -41,7 +41,7 @@
 
 #include "glquake.h"
 #include "model.h"
-#include "qendian.h"
+#include "QF/qendian.h"
 
 extern model_t *loadmodel;
 extern char loadname[];

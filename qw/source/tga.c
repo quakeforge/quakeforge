@@ -36,9 +36,9 @@
 # include <strings.h>
 #endif
 
-#include "qendian.h"
-#include "quakefs.h"
-#include "sys.h"
+#include "QF/qendian.h"
+#include "QF/quakefs.h"
+#include "QF/sys.h"
 #include "tga.h"
 
 static int

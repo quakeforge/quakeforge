@@ -29,8 +29,8 @@
 #ifndef __render_h
 #define __render_h
 
-#include "mathlib.h"
-#include "cvar.h"
+#include "QF/mathlib.h"
+#include "QF/cvar.h"
 #include "vid.h"
 #include "protocol.h"
 

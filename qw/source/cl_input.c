@@ -36,18 +36,18 @@
 # include <strings.h>
 #endif
 
-#include "checksum.h"
+#include "QF/checksum.h"
 #include "cl_cam.h"
 #include "cl_demo.h"
 #include "cl_input.h"
 #include "cl_parse.h"
 #include "client.h"
-#include "cmd.h"
-#include "console.h"
+#include "QF/cmd.h"
+#include "QF/console.h"
 #include "host.h"
 #include "input.h"
-#include "keys.h"
-#include "msg.h"
+#include "QF/keys.h"
+#include "QF/msg.h"
 #include "msg_ucmd.h"
 #include "teamplay.h"
 #include "view.h"

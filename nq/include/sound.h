@@ -30,9 +30,9 @@
 #ifndef __sound_h
 #define __sound_h
 
-#include "mathlib.h"
-#include "cvar.h"
-#include "zone.h"
+#include "QF/mathlib.h"
+#include "QF/cvar.h"
+#include "QF/zone.h"
 
 #define DEFAULT_SOUND_PACKET_VOLUME 255
 #define DEFAULT_SOUND_PACKET_ATTENUATION 1.0

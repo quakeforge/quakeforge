@@ -32,7 +32,7 @@
 #ifndef __sv_progs_h
 #define __sv_progs_h
 
-#include "progs.h"
+#include "QF/progs.h"
 
 typedef struct {
     int        *self;

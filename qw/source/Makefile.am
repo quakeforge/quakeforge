@@ -83,7 +83,7 @@ endif
 server_SOURCES=	sv_ccmds.c sv_cvar.c \
 		sv_ents.c sv_init.c sv_main.c sv_misc.c sv_model.c \
 		sv_move.c sv_nchan.c sv_phys.c sv_pr_cmds.c sv_progs.c sv_send.c \
-		sv_user.c ver_check.c world.c $(world_ASM)
+		sv_user.c world.c $(world_ASM)
 
 qw_server_SOURCES=	$(common_SOURCES) $(server_SOURCES)
 qw_server_LDADD=	-L. -L../../libs -lqfnet -lqfsys_sv -lqfgamecode -lqfutil $(NET_LIBS) $(Z_LIBS) $(DL_LIBS)

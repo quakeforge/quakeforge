@@ -29,8 +29,8 @@
 #ifndef __host_h
 #define __host_h
 
-#include "qtypes.h"
-#include "cvar.h"
+#include "QF/qtypes.h"
+#include "QF/cvar.h"
 
 extern qboolean noclip_anglehack;
 

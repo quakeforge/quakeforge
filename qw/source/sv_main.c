@@ -41,19 +41,19 @@
 
 #include "bothdefs.h"
 #include "buildnum.h"
-#include "cmd.h"
+#include "QF/cmd.h"
 #include "model.h"
 #include "net.h"
-#include "msg.h"
+#include "QF/msg.h"
 #include "pmove.h"
-#include "qargs.h"
-#include "quakefs.h"
+#include "QF/qargs.h"
+#include "QF/quakefs.h"
 #include "server.h"
 #include "sv_progs.h"
-#include "sys.h"
-#include "va.h"
-#include "ver_check.h"
-#include "zone.h"
+#include "QF/sys.h"
+#include "QF/va.h"
+#include "QF/ver_check.h"
+#include "QF/zone.h"
 
 quakeparms_t host_parms;
 qboolean    host_initialized;			// true if into command execution

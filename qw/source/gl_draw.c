@@ -38,13 +38,13 @@
 
 #include <stdio.h>
 
-#include "cmd.h"
-#include "console.h"
+#include "QF/cmd.h"
+#include "QF/console.h"
 #include "draw.h"
 #include "glquake.h"
 #include "sbar.h"
 #include "screen.h"
-#include "sys.h"
+#include "QF/sys.h"
 
 
 extern byte *host_basepal;

@@ -36,7 +36,7 @@
 # include <strings.h>
 #endif
 
-#include "console.h"
+#include "QF/console.h"
 #include "sound.h"
 
 #ifdef _WIN32

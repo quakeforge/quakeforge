@@ -34,8 +34,8 @@
 #include <X11/Xlib.h>
 #include <X11/Xutil.h>
 
-#include "cvar.h"
-#include "qtypes.h"
+#include "QF/cvar.h"
+#include "QF/qtypes.h"
 
 void GetEvent( void );
 

@@ -38,9 +38,9 @@
 
 #include <stdarg.h>
 
-#include "console.h"
+#include "QF/console.h"
 #include "glquake.h"
-#include "sys.h"
+#include "QF/sys.h"
 #include "view.h"
 
 extern qboolean skyloaded;

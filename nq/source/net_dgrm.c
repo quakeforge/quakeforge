@@ -33,16 +33,16 @@
 
 #include <string.h>
 
-#include "cmd.h"
-#include "sys.h"
-#include "keys.h"
+#include "QF/cmd.h"
+#include "QF/sys.h"
+#include "QF/keys.h"
 #include "client.h"
 #include "server.h"
-#include "qendian.h"
-#include "msg.h"
-#include "qargs.h"
+#include "QF/qendian.h"
+#include "QF/msg.h"
+#include "QF/qargs.h"
 #include "screen.h"
-#include "console.h"
+#include "QF/console.h"
 #include "net.h"
 #include "game.h"
 #include "sv_progs.h"

@@ -32,14 +32,14 @@
 
 #include <string.h>
 
-#include "cmd.h"
-#include "msg.h"
+#include "QF/cmd.h"
+#include "QF/msg.h"
 #include "net.h"
 #include "net_vcr.h"
-#include "qargs.h"
-#include "sizebuf.h"
-#include "console.h"
-#include "sys.h"
+#include "QF/qargs.h"
+#include "QF/sizebuf.h"
+#include "QF/console.h"
+#include "QF/sys.h"
 #include "server.h"
 
 qsocket_t  *net_activeSockets = NULL;

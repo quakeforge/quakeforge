@@ -37,12 +37,12 @@
 #endif
 
 #include "client.h"
-#include "console.h"
+#include "QF/console.h"
 #include "d_iface.h"
 #include "draw.h"
-#include "quakefs.h"
+#include "QF/quakefs.h"
 #include "sound.h"
-#include "sys.h"
+#include "QF/sys.h"
 
 typedef struct {
 	vrect_t     rect;

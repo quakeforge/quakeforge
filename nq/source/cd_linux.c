@@ -43,10 +43,10 @@
 
 #include <linux/cdrom.h>
 
-#include "qargs.h"
-#include "cmd.h"
+#include "QF/qargs.h"
+#include "QF/cmd.h"
 #include "cdaudio.h"
-#include "console.h"
+#include "QF/console.h"
 #include "sound.h"
 #include "client.h"
 

@@ -36,22 +36,22 @@
 #include <stdlib.h>
 #include <time.h>
 
-#include "compat.h"
+#include "QF/compat.h"
 #include "input.h"
-#include "qendian.h"
+#include "QF/qendian.h"
 #include "bspfile.h"					// needed by: glquake.h
 #include "vid.h"
-#include "sys.h"
-#include "mathlib.h"					// needed by: protocol.h, render.h,
+#include "QF/sys.h"
+#include "QF/mathlib.h"					// needed by: protocol.h, render.h,
 										// client.h,
 						// modelgen.h, glmodel.h
 #include "wad.h"
 #include "draw.h"
-#include "cvar.h"
+#include "QF/cvar.h"
 #include "net.h"						// needed by: client.h
 #include "protocol.h"					// needed by: client.h
-#include "keys.h"
-#include "cmd.h"
+#include "QF/keys.h"
+#include "QF/cmd.h"
 #include "sbar.h"
 #include "sound.h"
 #include "screen.h"
@@ -59,7 +59,7 @@
 										// glquake.h
 #include "client.h"						// need cls in this file
 #include "model.h"						// needed by: glquake.h
-#include "console.h"
+#include "QF/console.h"
 #include "glquake.h"
 #include "view.h"
 #include "client.h"

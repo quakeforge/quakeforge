@@ -30,13 +30,13 @@
 # include "config.h"
 #endif
 
-#include "qendian.h"
-#include "cvar.h"
-#include "quakefs.h"
-#include "console.h"
-#include "qargs.h"
+#include "QF/qendian.h"
+#include "QF/cvar.h"
+#include "QF/quakefs.h"
+#include "QF/console.h"
+#include "QF/qargs.h"
 #include "game.h"
-#include "cmd.h"
+#include "QF/cmd.h"
 
 cvar_t     *registered;
 cvar_t     *cmdline;

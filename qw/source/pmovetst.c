@@ -36,11 +36,11 @@
 # include <strings.h>
 #endif
 
-#include "console.h"
+#include "QF/console.h"
 #include "model.h"
 #include "pmove.h"
-#include "qtypes.h"
-#include "sys.h"
+#include "QF/qtypes.h"
+#include "QF/sys.h"
 
 static hull_t box_hull;
 static dclipnode_t box_clipnodes[6];

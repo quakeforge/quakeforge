@@ -31,7 +31,7 @@
 # include "config.h"
 #endif
 
-#include "cvar.h"
+#include "QF/cvar.h"
 #include "model.h"
 
 const int   mod_lightmap_bytes = 1;

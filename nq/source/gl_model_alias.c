@@ -34,10 +34,10 @@
 #endif
 
 #include "r_local.h"
-#include "sys.h"
-#include "console.h"
-#include "qendian.h"
-#include "checksum.h"
+#include "QF/sys.h"
+#include "QF/console.h"
+#include "QF/qendian.h"
+#include "QF/checksum.h"
 #include "glquake.h"
 
 extern char loadname[];

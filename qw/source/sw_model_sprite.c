@@ -41,7 +41,7 @@
 
 #include "d_iface.h"
 #include "model.h"
-#include "qendian.h"
+#include "QF/qendian.h"
 #include "server.h"
 
 extern model_t *loadmodel;

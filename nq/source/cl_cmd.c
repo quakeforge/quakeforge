@@ -38,10 +38,10 @@
 #endif
 
 #include "client.h"
-#include "cmd.h"
-#include "console.h"
-#include "msg.h"
-#include "sizebuf.h"
+#include "QF/cmd.h"
+#include "QF/console.h"
+#include "QF/msg.h"
+#include "QF/sizebuf.h"
 
 /*
 	Cmd_ForwardToServer

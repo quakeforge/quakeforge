@@ -36,7 +36,7 @@
 # include <strings.h>
 #endif
 
-#include "msg.h"
+#include "QF/msg.h"
 #include "server.h"
 
 // check to see if client block will fit, if not, rotate buffers

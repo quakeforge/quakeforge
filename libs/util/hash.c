@@ -37,8 +37,8 @@
 # include <strings.h>
 #endif
 
-#include "compat.h"
-#include "hash.h"
+#include "QF/compat.h"
+#include "QF/hash.h"
 
 static unsigned long
 hash (const char *str)

@@ -32,9 +32,9 @@
 
 #include "protocol.h"
 #include "client.h"
-#include "msg.h"
-#include "sys.h"
-#include "console.h"
+#include "QF/msg.h"
+#include "QF/sys.h"
+#include "QF/console.h"
 
 int         num_temp_entities;
 entity_t    cl_temp_entities[MAX_TEMP_ENTITIES];

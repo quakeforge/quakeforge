@@ -28,7 +28,7 @@
 #ifndef __msg_ucmd_h
 #define __msg_ucmd_h
 
-#include "sizebuf.h"
+#include "QF/sizebuf.h"
 
 extern struct usercmd_s nullcmd;
 

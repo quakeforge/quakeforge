@@ -36,9 +36,9 @@
 # include <strings.h>
 #endif
 
-#include "msg.h"
-#include "qendian.h"
-#include "sys.h"
+#include "QF/msg.h"
+#include "QF/qendian.h"
+#include "QF/sys.h"
 
 /*
 	MESSAGE IO FUNCTIONS

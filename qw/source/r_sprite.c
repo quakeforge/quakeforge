@@ -38,9 +38,9 @@
 
 #include <math.h>
 
-#include "console.h"
+#include "QF/console.h"
 #include "r_local.h"
-#include "sys.h"
+#include "QF/sys.h"
 
 static int  clip_current;
 static vec5_t clip_verts[2][MAXWORKINGVERTS];

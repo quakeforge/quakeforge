@@ -38,10 +38,10 @@
 
 #include <stdarg.h>
 
-#include "console.h"
-#include "cvar.h"
-#include "progs.h"
-#include "sys.h"
+#include "QF/console.h"
+#include "QF/cvar.h"
+#include "QF/progs.h"
+#include "QF/sys.h"
 
 char       *pr_opnames[] = {
 	"DONE",

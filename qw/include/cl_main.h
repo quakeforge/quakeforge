@@ -30,7 +30,7 @@
 #define _CL_MAIN_H
 
 #include "client.h"
-#include "qtypes.h"
+#include "QF/qtypes.h"
 #include "render.h"
 
 dlight_t *CL_AllocDlight (int key);

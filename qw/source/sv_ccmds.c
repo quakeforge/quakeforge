@@ -39,15 +39,15 @@
 #include <stdlib.h>
 
 #include "bothdefs.h"
-#include "cmd.h"
-#include "msg.h"
-#include "qargs.h"
-#include "qendian.h"
-#include "quakefs.h"
+#include "QF/cmd.h"
+#include "QF/msg.h"
+#include "QF/qargs.h"
+#include "QF/qendian.h"
+#include "QF/quakefs.h"
 #include "server.h"
 #include "sv_progs.h"
-#include "sys.h"
-#include "va.h"
+#include "QF/sys.h"
+#include "QF/va.h"
 
 qboolean    sv_allow_cheats;
 

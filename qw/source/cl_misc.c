@@ -33,7 +33,7 @@
 #include <stdarg.h>
 
 #include "host.h"
-#include "sys.h"
+#include "QF/sys.h"
 
 qboolean
 ServerPaused (void)

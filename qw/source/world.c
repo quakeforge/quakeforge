@@ -39,8 +39,8 @@
 #include <stdio.h>
 
 #include "commdef.h"
-#include "console.h"
-#include "crc.h"
+#include "QF/console.h"
+#include "QF/crc.h"
 #include "server.h"
 #include "sv_progs.h"
 #include "world.h"

@@ -35,7 +35,7 @@
 #ifndef _MODELGEN_H
 #define _MODELGEN_H
 
-#include "mathlib.h"
+#include "QF/mathlib.h"
 
 #define ALIAS_VERSION	6
 

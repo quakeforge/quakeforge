@@ -39,12 +39,12 @@
 #include <stdlib.h>
 
 #include "client.h"
-#include "cmd.h"
-#include "console.h"
+#include "QF/cmd.h"
+#include "QF/console.h"
 #include "host.h"
 #include "model.h"
-#include "qargs.h"
-#include "sys.h"
+#include "QF/qargs.h"
+#include "QF/sys.h"
 #include "sound.h"
 
 #ifdef _WIN32

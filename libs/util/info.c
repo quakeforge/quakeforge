@@ -39,8 +39,8 @@
 #include <stdio.h>
 #include <ctype.h>
 
-#include "console.h"
-#include "info.h"
+#include "QF/console.h"
+#include "QF/info.h"
 
 /*
 	INFO STRINGS

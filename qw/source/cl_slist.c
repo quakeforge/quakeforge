@@ -48,9 +48,9 @@
 #include "bothdefs.h"
 #include "cl_slist.h"
 #include "commdef.h"
-#include "console.h"
-#include "quakefs.h"
-#include "va.h"
+#include "QF/console.h"
+#include "QF/quakefs.h"
+#include "QF/va.h"
 
 server_entry_t *slist;
 

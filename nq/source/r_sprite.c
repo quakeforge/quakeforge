@@ -32,8 +32,8 @@
 #endif
 
 #include "r_local.h"
-#include "sys.h"
-#include "console.h"
+#include "QF/sys.h"
+#include "QF/console.h"
 
 static int  clip_current;
 static vec5_t clip_verts[2][MAXWORKINGVERTS];

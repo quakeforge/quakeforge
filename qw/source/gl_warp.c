@@ -30,9 +30,9 @@
 # include "config.h"
 #endif
 
-#include "cvar.h"
+#include "QF/cvar.h"
 #include "glquake.h"
-#include "sys.h"
+#include "QF/sys.h"
 
 extern double realtime;
 extern model_t *loadmodel;

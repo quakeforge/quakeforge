@@ -52,7 +52,7 @@
 # include <X11/extensions/xf86vmstr.h>
 #endif
 
-#include "console.h"
+#include "QF/console.h"
 #include "dga_check.h"
 
 

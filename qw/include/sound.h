@@ -30,9 +30,9 @@
 #ifndef _SOUND_H
 #define _SOUND_H
 
-#include "mathlib.h"
-#include "cvar.h"
-#include "zone.h"
+#include "QF/mathlib.h"
+#include "QF/cvar.h"
+#include "QF/zone.h"
 
 // !!! if this is changed, it must be changed in asm_i386.h too !!!
 typedef struct

@@ -35,10 +35,10 @@
 
 #include <sys/asoundlib.h>
 
-#include "qtypes.h"
+#include "QF/qtypes.h"
 #include "sound.h"
-#include "qargs.h"
-#include "console.h"
+#include "QF/qargs.h"
+#include "QF/console.h"
 
 static int  snd_inited;
 

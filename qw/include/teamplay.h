@@ -29,7 +29,7 @@
 #ifndef __teamplay_h
 #define __teamplay_h
 
-#include "cvar.h"
+#include "QF/cvar.h"
 
 extern cvar_t	*cl_parsesay;
 extern cvar_t	*cl_nofake;

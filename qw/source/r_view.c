@@ -35,10 +35,10 @@
 
 #include "bothdefs.h"
 #include "client.h"
-#include "cmd.h"
-#include "cvar.h"
+#include "QF/cmd.h"
+#include "QF/cvar.h"
 #include "host.h"
-#include "msg.h"
+#include "QF/msg.h"
 #include "pmove.h"
 #include "screen.h"
 #include "vid.h"

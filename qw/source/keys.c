@@ -43,12 +43,12 @@
 #include <ctype.h>
 
 #include "client.h"
-#include "cmd.h"
-#include "console.h"
-#include "cvar.h"
-#include "keys.h"
+#include "QF/cmd.h"
+#include "QF/console.h"
+#include "QF/cvar.h"
+#include "QF/keys.h"
 #include "screen.h"
-#include "sys.h"
+#include "QF/sys.h"
 
 /*
 

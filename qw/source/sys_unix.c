@@ -44,11 +44,11 @@
 #include <strings.h>
 #endif
 
-#include "cvar.h"
+#include "QF/cvar.h"
 #include "host.h"
-#include "qargs.h"
+#include "QF/qargs.h"
 #include "server.h"
-#include "sys.h"
+#include "QF/sys.h"
 
 cvar_t     *sys_nostdout;
 

@@ -33,12 +33,12 @@
 #include <string.h>
 #include <stdlib.h>
 
-#include "sys.h"
+#include "QF/sys.h"
 #include "sound.h"
-#include "cmd.h"
-#include "console.h"
+#include "QF/cmd.h"
+#include "QF/console.h"
 #include "client.h"
-#include "qargs.h"
+#include "QF/qargs.h"
 #include "host.h"
 
 #ifdef _WIN32

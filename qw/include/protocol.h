@@ -30,7 +30,7 @@
 #ifndef _PROTOCOL_H
 #define _PROTOCOL_H
 
-#include "mathlib.h"
+#include "QF/mathlib.h"
 
 #define	PROTOCOL_VERSION	28
 

@@ -33,12 +33,12 @@
 #include "view.h"
 #include "r_local.h"
 #include "host.h"
-#include "cmd.h"
+#include "QF/cmd.h"
 #include "chase.h"
 #include "draw.h"
 #include "screen.h"
-#include "console.h"
-#include "msg.h"
+#include "QF/console.h"
+#include "QF/msg.h"
 
 /*
 

@@ -36,11 +36,11 @@
 # include <strings.h>
 #endif
 
-#include "console.h"
-#include "qendian.h"
-#include "quakefs.h"
+#include "QF/console.h"
+#include "QF/qendian.h"
+#include "QF/quakefs.h"
 #include "sound.h"
-#include "sys.h"
+#include "QF/sys.h"
 
 int         cache_full_cycle;
 

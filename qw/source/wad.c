@@ -36,9 +36,9 @@
 # include <strings.h>
 #endif
 
-#include "sys.h"
-#include "quakefs.h"
-#include "qendian.h"
+#include "QF/sys.h"
+#include "QF/quakefs.h"
+#include "QF/qendian.h"
 #include "wad.h"
 
 int         wad_numlumps;

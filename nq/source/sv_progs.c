@@ -37,8 +37,8 @@
 #include "strings.h"
 #endif
 
-#include "cmd.h"
-#include "console.h"
+#include "QF/cmd.h"
+#include "QF/console.h"
 #include "host.h"
 #include "progdefs.h"
 #include "server.h"

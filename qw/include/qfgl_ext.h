@@ -45,7 +45,7 @@
 # include <GL/glext.h>
 #endif
 
-#include "qtypes.h"
+#include "QF/qtypes.h"
 
 // Define GLAPIENTRY to a useful value
 #ifndef GLAPIENTRY

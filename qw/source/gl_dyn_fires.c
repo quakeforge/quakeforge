@@ -39,8 +39,8 @@
 #include <stdlib.h>
 
 #include "cl_main.h"
-#include "cmd.h"
-#include "console.h"
+#include "QF/cmd.h"
+#include "QF/console.h"
 #include "glquake.h"
 
 #define MAX_FIRES				128		// rocket flames

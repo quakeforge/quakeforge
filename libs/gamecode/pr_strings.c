@@ -39,8 +39,8 @@
 
 #include <stdarg.h>
 
-#include "hash.h"
-#include "progs.h"
+#include "QF/hash.h"
+#include "QF/progs.h"
 
 static char *
 strref_get_key (void *_sr, void *notused)

@@ -46,16 +46,16 @@
 # include <X11/extensions/xf86dga.h>
 #endif
 
-#include "console.h"
+#include "QF/console.h"
 #include "context_x11.h"
 #include "glquake.h"
 #include "host.h"
 #include "input.h"
-#include "qargs.h"
-#include "qendian.h"
-#include "quakefs.h"
+#include "QF/qargs.h"
+#include "QF/qendian.h"
+#include "QF/quakefs.h"
 #include "sbar.h"
-#include "va.h"
+#include "QF/va.h"
 
 #define WARP_WIDTH		320
 #define WARP_HEIGHT 	200

@@ -32,10 +32,10 @@
 
 #include <stdlib.h>
 
-#include "console.h"
+#include "QF/console.h"
 #include "host.h"
-#include "qargs.h"
-#include "quakefs.h"
+#include "QF/qargs.h"
+#include "QF/quakefs.h"
 #include "r_dynamic.h"
 #include "r_local.h"
 

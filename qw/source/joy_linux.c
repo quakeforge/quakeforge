@@ -35,10 +35,10 @@
 #include <fcntl.h>
 #include <unistd.h>
 
-#include "console.h"
+#include "QF/console.h"
 #include "client.h"
-#include "cvar.h"
-#include "keys.h"
+#include "QF/cvar.h"
+#include "QF/keys.h"
 #include "protocol.h"
 #include "view.h"
 

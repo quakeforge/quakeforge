@@ -34,8 +34,8 @@
 #include "view.h"
 #include "client.h"
 #include "host.h"
-#include "console.h"
-#include "compat.h"
+#include "QF/console.h"
+#include "QF/compat.h"
 
 byte        ramps[3][256];
 float       v_blend[4];					// rgba 0.0 - 1.0

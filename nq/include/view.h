@@ -29,8 +29,8 @@
 #ifndef __view_h
 #define __view_h
 
-#include "qtypes.h"
-#include "cvar.h"
+#include "QF/qtypes.h"
+#include "QF/cvar.h"
 
 extern	byte		gammatable[256];	// palette is sent through this
 extern	byte		ramps[3][256];

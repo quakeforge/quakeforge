@@ -45,10 +45,10 @@
 #include <sys/time.h>
 #include <sys/types.h>
 
-#include "cvar.h"
-#include "qargs.h"
+#include "QF/cvar.h"
+#include "QF/qargs.h"
 #include "server.h"
-#include "sys.h"
+#include "QF/sys.h"
 
 #ifdef NeXT
 # include <libc.h>

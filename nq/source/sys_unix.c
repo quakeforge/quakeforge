@@ -43,9 +43,9 @@
 #include <string.h>
 #include <time.h>
 
-#include "sys.h"
-#include "qargs.h"
-#include "cvar.h"
+#include "QF/sys.h"
+#include "QF/qargs.h"
+#include "QF/cvar.h"
 #include "server.h"
 #include "host.h"
 

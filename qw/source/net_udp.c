@@ -68,11 +68,11 @@
 # include <libc.h>
 #endif
 
-#include "console.h"
-#include "msg.h"
+#include "QF/console.h"
+#include "QF/msg.h"
 #include "net.h"
-#include "sys.h"
-#include "qargs.h"
+#include "QF/sys.h"
+#include "QF/qargs.h"
 
 #ifdef _WIN32
 # include <windows.h>

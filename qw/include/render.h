@@ -29,8 +29,8 @@
 #ifndef _RENDER_H
 #define _RENDER_H
 
-#include "mathlib.h"
-#include "cvar.h"
+#include "QF/mathlib.h"
+#include "QF/cvar.h"
 #include "vid.h"
 //#include "model.h" 
 //now we know why (struct model_s *) is used here instead of model_t

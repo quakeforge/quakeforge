@@ -35,7 +35,7 @@
 
 #include "model.h"
 #include "server.h"
-#include "qendian.h"
+#include "QF/qendian.h"
 
 extern model_t *loadmodel;
 extern char loadname[];

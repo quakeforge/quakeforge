@@ -39,10 +39,10 @@
 # include <strings.h>
 #endif
 
-#include "cvar.h"
+#include "QF/cvar.h"
 #include "model.h"
-#include "qendian.h"
-#include "quakefs.h"
+#include "QF/qendian.h"
+#include "QF/quakefs.h"
 #include "server.h"
 
 void        Mod_LoadAliasModel (model_t *mod, void *buf);

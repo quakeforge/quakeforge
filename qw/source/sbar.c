@@ -41,13 +41,13 @@
 #include "bothdefs.h"
 #include "cl_cam.h"
 #include "client.h"
-#include "cmd.h"
+#include "QF/cmd.h"
 #include "commdef.h"
 #include "draw.h"
-#include "msg.h"
+#include "QF/msg.h"
 #include "sbar.h"
 #include "screen.h"
-#include "va.h"
+#include "QF/va.h"
 #include "vid.h"
 
 int         sb_updates;					// if >= vid.numpages, no update

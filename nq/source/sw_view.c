@@ -31,10 +31,10 @@
 # include "config.h"
 #endif
 
-#include "compat.h"
+#include "QF/compat.h"
 #include "view.h"
 #include "vid.h"
-#include "console.h"
+#include "QF/console.h"
 #include "host.h"
 #include "client.h"
 #include "draw.h"

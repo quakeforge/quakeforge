@@ -38,16 +38,16 @@
 
 #include <ctype.h>
 
-#include "cvar.h"
-#include "cmd.h"
-#include "console.h"
-#include "hash.h"
-#include "qargs.h"
-#include "qendian.h"
-#include "quakefs.h"
-#include "sizebuf.h"
-#include "sys.h"
-#include "zone.h"
+#include "QF/cvar.h"
+#include "QF/cmd.h"
+#include "QF/console.h"
+#include "QF/hash.h"
+#include "QF/qargs.h"
+#include "QF/qendian.h"
+#include "QF/quakefs.h"
+#include "QF/sizebuf.h"
+#include "QF/sys.h"
+#include "QF/zone.h"
 
 void        Cmd_ForwardToServer (void);
 

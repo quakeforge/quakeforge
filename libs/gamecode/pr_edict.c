@@ -36,18 +36,18 @@
 # include <strings.h>
 #endif
 
-#include "cmd.h"
-#include "console.h"
-#include "crc.h"
-#include "cvar.h"
-#include "hash.h"
-#include "progs.h"
-#include "qdefs.h"
-#include "qendian.h"
-#include "quakefs.h"
-#include "sys.h"	//XXX
-#include "zone.h"
-#include "va.h"
+#include "QF/cmd.h"
+#include "QF/console.h"
+#include "QF/crc.h"
+#include "QF/cvar.h"
+#include "QF/hash.h"
+#include "QF/progs.h"
+#include "QF/qdefs.h"
+#include "QF/qendian.h"
+#include "QF/quakefs.h"
+#include "QF/sys.h"	//XXX
+#include "QF/zone.h"
+#include "QF/va.h"
 
 cvar_t     *pr_boundscheck;
 

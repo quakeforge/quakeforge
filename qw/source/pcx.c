@@ -37,14 +37,14 @@
 #endif
 
 #include "cl_parse.h"
-#include "console.h"
+#include "QF/console.h"
 #include "host.h"
 #include "pcx.h"
-#include "qendian.h"
-#include "qtypes.h"
-#include "quakefs.h"
+#include "QF/qendian.h"
+#include "QF/qtypes.h"
+#include "QF/quakefs.h"
 #include "texture.h"
-#include "zone.h"
+#include "QF/zone.h"
 
 /*
 	LoadPCX

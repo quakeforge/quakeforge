@@ -36,11 +36,11 @@
 # include <strings.h>
 #endif
 
-#include "msg.h"
+#include "QF/msg.h"
 #include "msg_ucmd.h"
 #include "server.h"
 #include "sv_progs.h"
-#include "sys.h"
+#include "QF/sys.h"
 
 /*
 	The PVS must include a small area around the client to allow head

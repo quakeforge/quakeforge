@@ -51,10 +51,10 @@
 #include "cl_parse.h"
 #include "cl_tent.h"
 #include "client.h"
-#include "cmd.h"
-#include "console.h"
+#include "QF/cmd.h"
+#include "QF/console.h"
 #include "host.h"
-#include "msg.h"
+#include "QF/msg.h"
 #include "pmove.h"
 #include "protocol.h"
 #include "screen.h"
@@ -62,7 +62,7 @@
 #include "skin.h"
 #include "sound.h"
 #include "teamplay.h"
-#include "va.h"
+#include "QF/va.h"
 #include "view.h"
 
 extern cvar_t *gl_dlight_polyblend;

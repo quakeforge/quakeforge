@@ -30,11 +30,11 @@
 # include "config.h"
 #endif
 
-#include "console.h"
+#include "QF/console.h"
 #include "d_ifacea.h"
 #include "r_local.h"
 #include "skin.h"
-#include "sys.h"
+#include "QF/sys.h"
 #include "texture.h"
 
 #define LIGHT_MIN	5					// lowest light value we'll allow, to 

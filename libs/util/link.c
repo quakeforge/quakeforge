@@ -30,7 +30,7 @@
 # include "config.h"
 #endif
 
-#include "link.h"
+#include "QF/link.h"
 
 // ClearLink is used for new headnodes
 void

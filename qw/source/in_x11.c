@@ -57,17 +57,17 @@
 
 #include "cl_input.h"
 #include "client.h"
-#include "console.h"
+#include "QF/console.h"
 #include "context_x11.h"
-#include "cmd.h"
-#include "cvar.h"
+#include "QF/cmd.h"
+#include "QF/cvar.h"
 #include "dga_check.h"
 #include "host.h"
 #include "input.h"
 #include "joystick.h"
-#include "keys.h"
-#include "qargs.h"
-#include "sys.h"
+#include "QF/keys.h"
+#include "QF/qargs.h"
+#include "QF/sys.h"
 #include "view.h"
 
 cvar_t     *_windowed_mouse;

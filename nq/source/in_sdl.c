@@ -33,16 +33,16 @@
 #include <SDL.h>
 
 #include "client.h"
-#include "console.h"
-#include "cvar.h"
+#include "QF/console.h"
+#include "QF/cvar.h"
 #include "draw.h"
 #include "host.h"
 #include "input.h"
 #include "joystick.h"
-#include "keys.h"
-#include "sys.h"
-#include "qargs.h"
-#include "qendian.h"
+#include "QF/keys.h"
+#include "QF/sys.h"
+#include "QF/qargs.h"
+#include "QF/qendian.h"
 #include "vid.h"
 #include "view.h"
 

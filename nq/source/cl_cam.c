@@ -30,7 +30,7 @@
 # include "config.h"
 #endif
 
-#include "mathlib.h"
+#include "QF/mathlib.h"
 #include "client.h"
 #include "world.h"
 

@@ -34,7 +34,7 @@
 
 #include <ctype.h>
 
-#include "qtypes.h"
+#include "QF/qtypes.h"
 
 /*
 					BYTE ORDER FUNCTIONS

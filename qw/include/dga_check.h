@@ -32,7 +32,7 @@
 
 #include <X11/Xlib.h>
 
-#include "qtypes.h"
+#include "QF/qtypes.h"
 
 /*
   VID_CheckDGA

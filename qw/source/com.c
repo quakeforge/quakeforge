@@ -32,12 +32,12 @@
 
 #include <ctype.h>
 
-#include "cmd.h"
-#include "console.h"
-#include "cvar.h"
-#include "qendian.h"
-#include "quakefs.h"
-#include "sys.h"
+#include "QF/cmd.h"
+#include "QF/console.h"
+#include "QF/cvar.h"
+#include "QF/qendian.h"
+#include "QF/quakefs.h"
+#include "QF/sys.h"
 
 cvar_t     *registered;
 

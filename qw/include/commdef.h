@@ -34,8 +34,8 @@
 # include "config.h"
 #endif
 
-#include "gcc_attr.h"
-#include "qtypes.h"
+#include "QF/gcc_attr.h"
+#include "QF/qtypes.h"
 
 /* The host system specifies the base of the directory tree, the
    command line parms passed to the program, and the amount of memory

@@ -31,12 +31,12 @@
 # include "config.h"
 #endif
 
-#include "compat.h"
+#include "QF/compat.h"
 #include "sbar.h"
 #include "game.h"
-#include "cmd.h"
+#include "QF/cmd.h"
 #include "vid.h"
-#include "va.h"
+#include "QF/va.h"
 #include "draw.h"
 #include "wad.h"
 #include "screen.h"

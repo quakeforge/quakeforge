@@ -39,16 +39,16 @@
 #include <time.h>
 
 #include "cl_parse.h"
-#include "cmd.h"
-#include "console.h"
+#include "QF/cmd.h"
+#include "QF/console.h"
 #include "draw.h"
 #include "glquake.h"
 #include "host.h"
-#include "keys.h"
+#include "QF/keys.h"
 #include "pcx.h"
 #include "sbar.h"
 #include "skin.h"
-#include "sys.h"
+#include "QF/sys.h"
 #include "tga.h"
 #include "view.h"
 

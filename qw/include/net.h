@@ -29,9 +29,9 @@
 #ifndef _NET_H
 #define _NET_H
 
-#include "gcc_attr.h"
-#include "sizebuf.h"
-#include "cvar.h"
+#include "QF/gcc_attr.h"
+#include "QF/sizebuf.h"
+#include "QF/cvar.h"
 
 #define	PORT_ANY	-1
 

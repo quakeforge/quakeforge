@@ -34,8 +34,8 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "qfplist.h"
-#include "qtypes.h"
+#include "QF/qfplist.h"
+#include "QF/qtypes.h"
 
 static plitem_t *PL_ParsePropertyListItem (pldata_t *);
 static qboolean PL_SkipSpace (pldata_t *);

@@ -36,16 +36,16 @@
 # include <strings.h>
 #endif
 
-#include "console.h"
+#include "QF/console.h"
 #include "cl_main.h"
 #include "client.h"
-#include "cmd.h"
+#include "QF/cmd.h"
 #include "host.h"
-#include "msg.h"
+#include "QF/msg.h"
 #include "pmove.h"
-#include "qendian.h"
-#include "sys.h"
-#include "va.h"
+#include "QF/qendian.h"
+#include "QF/sys.h"
+#include "QF/va.h"
 
 void        CL_FinishTimeDemo (void);
 

@@ -43,11 +43,11 @@
 #include <stdlib.h>
 #include <assert.h>
 
-#include "console.h"
-#include "cmd.h"
-#include "crc.h"
-#include "qtypes.h"
-#include "sys.h"
+#include "QF/console.h"
+#include "QF/cmd.h"
+#include "QF/crc.h"
+#include "QF/qtypes.h"
+#include "QF/sys.h"
 
 static char **largv;
 static char *argvdummy = " ";

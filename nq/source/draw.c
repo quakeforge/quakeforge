@@ -32,9 +32,9 @@
 
 #include "draw.h"
 #include "vid.h"
-#include "zone.h"
-#include "sys.h"
-#include "quakefs.h"
+#include "QF/zone.h"
+#include "QF/sys.h"
+#include "QF/quakefs.h"
 #include "d_iface.h"
 #include "sound.h"
 

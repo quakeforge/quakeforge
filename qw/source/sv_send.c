@@ -38,10 +38,10 @@
 #include <time.h>
 
 #include "bothdefs.h"
-#include "msg.h"
+#include "QF/msg.h"
 #include "server.h"
 #include "sv_progs.h"
-#include "sys.h"
+#include "QF/sys.h"
 
 #define CHAN_AUTO   0
 #define CHAN_WEAPON 1

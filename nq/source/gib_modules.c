@@ -6,12 +6,12 @@
 #include <ctype.h>
 #include <stdlib.h>
 
-#include "cvar.h"
-#include "console.h"
-#include "qargs.h"
-#include "cmd.h"
-#include "zone.h"
-#include "quakefs.h"
+#include "QF/cvar.h"
+#include "QF/console.h"
+#include "QF/qargs.h"
+#include "QF/cmd.h"
+#include "QF/zone.h"
+#include "QF/quakefs.h"
 #include "gib.h"
 #include "gib_instructions.h"
 #include "gib_interpret.h"

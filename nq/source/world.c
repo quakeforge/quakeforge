@@ -34,8 +34,8 @@
 #include "world.h"
 #include "model.h"
 #include "server.h"
-#include "sys.h"
-#include "console.h"
+#include "QF/sys.h"
+#include "QF/console.h"
 #include "sv_progs.h"
 
 /*

@@ -39,11 +39,11 @@
 # include <strings.h>
 #endif
 
-#include "console.h"
+#include "QF/console.h"
 #include "glquake.h"
 #include "model.h"
-#include "qendian.h"
-#include "quakefs.h"
+#include "QF/qendian.h"
+#include "QF/quakefs.h"
 
 int         Mod_Fullbright (byte * skin, int width, int height, char *name);
 

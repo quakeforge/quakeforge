@@ -45,15 +45,15 @@
 #include "cl_main.h"
 #include "cl_parse.h" //FIXME CL_NewTranslation
 #include "commdef.h"
-#include "console.h"
+#include "QF/console.h"
 #include "locs.h"
 #include "glquake.h"
-#include "mathlib.h"
-#include "qargs.h"
+#include "QF/mathlib.h"
+#include "QF/qargs.h"
 #include "r_dynamic.h"
 #include "skin.h"
 #include "sound.h"
-#include "sys.h"
+#include "QF/sys.h"
 #include "view.h"
 
 entity_t	r_worldentity;

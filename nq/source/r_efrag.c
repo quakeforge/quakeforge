@@ -30,8 +30,8 @@
 # include "config.h"
 #endif
 
-#include "console.h"
-#include "sys.h"
+#include "QF/console.h"
+#include "QF/sys.h"
 #include "r_local.h"
 
 mnode_t    *r_pefragtopnode;

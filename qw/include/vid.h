@@ -29,7 +29,7 @@
 #ifndef __vid_h_
 #define __vid_h_
 
-#include "qtypes.h"
+#include "QF/qtypes.h"
 
 #define VID_CBITS	6
 #define VID_GRADES	(1 << VID_CBITS)

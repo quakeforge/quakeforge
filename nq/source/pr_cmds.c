@@ -32,13 +32,13 @@
 
 #include <string.h>
 
-#include "console.h"
-#include "sys.h"
-#include "cmd.h"
-#include "va.h"
+#include "QF/console.h"
+#include "QF/sys.h"
+#include "QF/cmd.h"
+#include "QF/va.h"
 #include "host.h"
 #include "world.h"
-#include "msg.h"
+#include "QF/msg.h"
 #include "server.h"
 #include "sv_progs.h"
 

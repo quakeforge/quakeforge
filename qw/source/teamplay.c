@@ -39,12 +39,12 @@
 #include <errno.h>
 
 #include "bothdefs.h"
-#include "console.h"
-#include "cmd.h"
+#include "QF/console.h"
+#include "QF/cmd.h"
 #include "client.h"
 #include "locs.h"
 #include "model.h"
-#include "sys.h"
+#include "QF/sys.h"
 #include "teamplay.h"
 
 extern cvar_t *skin;

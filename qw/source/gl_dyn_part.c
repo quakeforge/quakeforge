@@ -38,13 +38,13 @@
 
 #include <stdlib.h>
 
-#include "cmd.h"
-#include "console.h"
+#include "QF/cmd.h"
+#include "QF/console.h"
 #include "glquake.h"
 #include "host.h"
 #include "r_dynamic.h"
-#include "qargs.h"
-#include "sys.h"
+#include "QF/qargs.h"
+#include "QF/sys.h"
 
 typedef enum {
 	pt_static, pt_grav, pt_blob, pt_blob2,

@@ -31,8 +31,8 @@
 #ifndef _R_SHARED_H
 #define _R_SHARED_H
 
-#include "mathlib.h"
-#include "cvar.h"
+#include "QF/mathlib.h"
+#include "QF/cvar.h"
 #include "model.h"
 #include "d_iface.h"
 

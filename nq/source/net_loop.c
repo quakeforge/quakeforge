@@ -30,12 +30,12 @@
 # include "config.h"
 #endif
 
-#include "msg.h"
+#include "QF/msg.h"
 #include "net.h"
 #include "net_loop.h"
 #include "client.h"
-#include "console.h"
-#include "sys.h"
+#include "QF/console.h"
+#include "QF/sys.h"
 #include "server.h"
 
 qboolean    localconnectpending = false;

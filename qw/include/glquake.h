@@ -40,7 +40,7 @@
 #include <GL/gl.h>
 
 #include "client.h"
-#include "cvar.h"
+#include "QF/cvar.h"
 #include "model.h"
 #include "render.h"
 #include "qfgl_ext.h"

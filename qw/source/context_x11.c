@@ -61,15 +61,15 @@
 #endif
 
 #include "commdef.h"
-#include "console.h"
+#include "QF/console.h"
 #include "context_x11.h"
-#include "cvar.h"
+#include "QF/cvar.h"
 #include "dga_check.h"
 #include "input.h"
-#include "qargs.h"
-#include "qtypes.h"
-#include "sys.h"
-#include "va.h"
+#include "QF/qargs.h"
+#include "QF/qtypes.h"
+#include "QF/sys.h"
+#include "QF/va.h"
 #include "vid.h"
 
 static void (*event_handlers[LASTEvent]) (XEvent *);

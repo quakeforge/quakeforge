@@ -31,15 +31,15 @@
 
 #include <stdio.h>
 
-#include "info.h"
-#include "mathlib.h"
+#include "QF/info.h"
+#include "QF/mathlib.h"
 #include "protocol.h"
 #include "net.h"
 #include "model.h"
 #include "sound.h"
 #include "render.h"
-#include "cvar.h"
-#include "quakefs.h"
+#include "QF/cvar.h"
+#include "QF/quakefs.h"
 #include "game.h"
 
 typedef struct usercmd_s

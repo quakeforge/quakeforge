@@ -58,13 +58,13 @@
 
 #include "context_x11.h"
 #include "dga_check.h"
-#include "va.h"
-#include "qargs.h"
-#include "qtypes.h"
+#include "QF/va.h"
+#include "QF/qargs.h"
+#include "QF/qtypes.h"
 #include "vid.h"
-#include "sys.h"
-#include "console.h"
-#include "cvar.h"
+#include "QF/sys.h"
+#include "QF/console.h"
+#include "QF/cvar.h"
 #include "input.h"
 
 static void (*event_handlers[LASTEvent]) (XEvent *);

@@ -30,8 +30,8 @@
 #ifndef __view_h_
 #define __view_h_
 
-#include "mathlib.h"
-#include "cvar.h"
+#include "QF/mathlib.h"
+#include "QF/cvar.h"
 
 extern	cvar_t	*brightness;
 extern	cvar_t	*contrast;

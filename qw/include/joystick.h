@@ -30,7 +30,7 @@
 # include "config.h"
 #endif
 
-#include "cvar.h"
+#include "QF/cvar.h"
 #include "protocol.h"
 
 extern cvar_t	*joy_device;		// Joystick device name

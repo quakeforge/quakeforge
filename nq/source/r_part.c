@@ -32,10 +32,10 @@
 #endif
 
 #include "r_local.h"
-#include "qargs.h"
-#include "console.h"
+#include "QF/qargs.h"
+#include "QF/console.h"
 #include "server.h"
-#include "msg.h"
+#include "QF/msg.h"
 
 #define MAX_PARTICLES			2048	// default max # of particles at one
 										// time

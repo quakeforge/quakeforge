@@ -38,13 +38,13 @@
 
 #include <stdio.h>
 
-#include "cmd.h"
-#include "console.h"
-#include "cvar.h"
+#include "QF/cmd.h"
+#include "QF/console.h"
+#include "QF/cvar.h"
 #include "glquake.h"
 #include "r_dynamic.h"
 #include "skin.h"
-#include "sys.h"
+#include "QF/sys.h"
 #include "vid.h"
 
 qboolean VID_Is8bit (void);

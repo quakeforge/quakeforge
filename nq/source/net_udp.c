@@ -54,9 +54,9 @@
 #endif
 
 #include "net.h"
-#include "qargs.h"
-#include "sys.h"
-#include "console.h"
+#include "QF/qargs.h"
+#include "QF/sys.h"
+#include "QF/console.h"
 
 //extern int gethostname (char *, int);
 extern int  close (int);

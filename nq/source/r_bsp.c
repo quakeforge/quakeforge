@@ -31,8 +31,8 @@
 #endif
 
 #include "r_local.h"
-#include "console.h"
-#include "sys.h"
+#include "QF/console.h"
+#include "QF/sys.h"
 
 //
 // current entity info

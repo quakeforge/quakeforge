@@ -38,13 +38,13 @@
 
 #include <SDL.h>
 
-#include "console.h"
-#include "cvar.h"
+#include "QF/console.h"
+#include "QF/cvar.h"
 #include "d_local.h"
 #include "host.h"
-#include "qendian.h"
-#include "sys.h"
-#include "va.h"
+#include "QF/qendian.h"
+#include "QF/sys.h"
+#include "QF/va.h"
 #include "vid.h"
 
 #ifdef WIN32

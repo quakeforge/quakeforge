@@ -33,7 +33,7 @@
 #include <stdio.h>
 #include <stdarg.h>
 
-#include "qtypes.h"
+#include "QF/qtypes.h"
 
 /*
 	va

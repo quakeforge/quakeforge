@@ -30,7 +30,7 @@
 #ifndef _SCREEN_H
 #define _SCREEN_H
 
-#include "cvar.h"
+#include "QF/cvar.h"
 
 void SCR_Init_Cvars (void);
 void SCR_Init (void);

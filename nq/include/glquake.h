@@ -42,7 +42,7 @@
 
 #include <GL/gl.h>
 
-#include "qtypes.h"
+#include "QF/qtypes.h"
 #include "model.h"
 #include "d_iface.h"
 

@@ -29,7 +29,7 @@
 #ifndef _R_DYNAMIC_H
 #define _R_DYNAMIC_H
 
-#include "mathlib.h"
+#include "QF/mathlib.h"
 
 struct entity_s;
 void R_RocketTrail (int type, struct entity_s *ent);

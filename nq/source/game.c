@@ -31,7 +31,7 @@
 #ifdef HAVE_CONFIG_H
 # include <config.h>
 #endif
-#include "qargs.h"
+#include "QF/qargs.h"
 #include "game.h"
 
 qboolean standard_quake = false;

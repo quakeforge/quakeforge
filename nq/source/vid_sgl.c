@@ -39,14 +39,14 @@
 #endif
 #include <SDL.h>
 
-#include "compat.h"
-#include "console.h"
+#include "QF/compat.h"
+#include "QF/console.h"
 #include "host.h"
-#include "qargs.h"
-#include "qendian.h"
+#include "QF/qargs.h"
+#include "QF/qendian.h"
 #include "sbar.h"
-#include "sys.h"
-#include "va.h"
+#include "QF/sys.h"
+#include "QF/va.h"
 #include "glquake.h"
 
 #define	WARP_WIDTH	320

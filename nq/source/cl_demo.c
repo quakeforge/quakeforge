@@ -33,14 +33,14 @@
 
 #include <string.h>
 
-#include "qendian.h"
-#include "va.h"
+#include "QF/qendian.h"
+#include "QF/va.h"
 #include "host.h"
-#include "msg.h"
+#include "QF/msg.h"
 #include "client.h"
-#include "sys.h"
-#include "console.h"
-#include "cmd.h"
+#include "QF/sys.h"
+#include "QF/console.h"
+#include "QF/cmd.h"
 
 void        CL_FinishTimeDemo (void);
 

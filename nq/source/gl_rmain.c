@@ -35,9 +35,9 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#include "compat.h"
-#include "qargs.h"
-#include "console.h"
+#include "QF/compat.h"
+#include "QF/qargs.h"
+#include "QF/console.h"
 #include "r_local.h"
 #include "view.h"
 #include "game.h"
@@ -45,7 +45,7 @@
 #include "client.h"
 #include "model.h"
 #include "render.h"
-#include "sys.h"
+#include "QF/sys.h"
 #include "chase.h"
 
 entity_t    r_worldentity;

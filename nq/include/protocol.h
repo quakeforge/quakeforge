@@ -29,7 +29,7 @@
 #ifndef __protocol_h
 #define __protocol_h
 
-#include "qtypes.h"
+#include "QF/qtypes.h"
 
 #define	PROTOCOL_VERSION	15
 

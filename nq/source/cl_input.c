@@ -32,11 +32,11 @@
 
 #include <string.h>
 
-#include "msg.h"
+#include "QF/msg.h"
 #include "host.h"
-#include "console.h"
+#include "QF/console.h"
 #include "client.h"
-#include "cmd.h"
+#include "QF/cmd.h"
 
 /*
 ===============================================================================

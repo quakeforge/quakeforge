@@ -29,7 +29,7 @@
 #ifndef __net_udp_h
 #define __net_udp_h
 
-#include "qtypes.h"
+#include "QF/qtypes.h"
 
 int  UDP_Init (void);
 void UDP_Shutdown (void);
