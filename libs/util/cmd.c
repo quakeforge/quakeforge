@@ -205,7 +205,16 @@ void
 Cmd_FreeBuffer (cmd_buffer_t *free) {
 	if (free->ownvars)
 		Hash_DelTable(free->locals); // Local variables are always deadbeef
-	free->wait = free->loop = free->ownvars = free->legacy = free->subroutine = false;
+	free->subroutine = false;
+	free->again = false;
+	free->wait = false;
+	free->legacy = false;
+	free->ownvars = false;
+	free->loop = false;
+	free->embedded = false;
+
+	free->timeleft = 0.0;
+	
 	dstring_clearstr (free->buffer);
 	dstring_clearstr (free->line);
 	dstring_clearstr (free->realline);
@@ -732,7 +741,8 @@ Cmd_Return (const char *value) {
 		dstring_clearstr (cmd_activebuffer->prev->retval);
 		dstring_appendstr (cmd_activebuffer->prev->retval, value);
 		cmd_activebuffer->prev->returned = cmd_returned;
-	}
+	} else
+		Sys_DPrintf ("GIB warning:  Return value \"%s\" was unwanted.\n", value);
 }
 
 
@@ -2191,6 +2201,7 @@ Cmd_Return_f (void) {
 	}
 	if (!cmd_activebuffer->prev) {
 		Cmd_Error("GIB:  Return attempted in a root buffer\n");
+		cmd_activebuffer = old;
 		return;
 	}
 	dstring_clearstr (cmd_activebuffer->buffer); // Clear the buffer out no matter what
