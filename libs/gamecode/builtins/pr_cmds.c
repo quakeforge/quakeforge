@@ -734,7 +734,6 @@ PF_sprintf (progs_t *pr)
 							goto mallocerror;
 						out = o;
 					}
-					printf ("%s %d %s\n", out, ret, new_format);
 					out_size += ret;
 					curarg += 3;
 					break;
