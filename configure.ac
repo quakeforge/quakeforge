@@ -1164,7 +1164,7 @@ AC_SUBST(plugindir)
 AC_SUBST(PLUGINDIR)
 
 AC_ARG_WITH(gl-driver,
-	[  --with-gl-driver        default gl dynamic lib name],
+	[  --with-gl-driver=NAME   Name of OpenGL driver DLL/DSO],
 	gl_driver=$withval,
 	gl_driver=auto
 )
