@@ -51,7 +51,7 @@
 void
 SCR_DrawNet (int swap)
 {
-	if (r_realtime - cl.last_received_message < 0.3)
+	if (realtime - cl.last_received_message < 0.3)
 		return;
 	if (cls.demoplayback)
 		return;
