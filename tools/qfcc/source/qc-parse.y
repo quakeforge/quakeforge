@@ -161,7 +161,7 @@ expr_t *argv_expr (void);
 %type	<expr>	const opt_expr expr element_list element_list1 element
 %type	<expr>	string_val opt_state_expr array_decl
 %type	<expr>	statement statements statement_block
-%type	<expr>	break_label continue_label enum_list enum
+%type	<expr>	label break_label continue_label enum_list enum
 %type	<expr>	unary_expr primary cast_expr opt_arg_list arg_list
 %type	<function> begin_function
 %type	<def_list> save_inits
@@ -654,25 +654,23 @@ statement
 		{
 			expr_t *l1 = new_label_expr ();
 			expr_t *l2 = break_label;
-			expr_t *e;
 
 			restore_local_inits ($7);
 			free_local_inits ($7);
 
 			$$ = new_block_expr ();
 
-			e = new_binary_expr ('n', test_expr ($5, 1), l2);
-			e->line = $5->line;
-			e->file = $5->file;
-			append_expr ($$, e);
+			append_expr ($$, new_unary_expr ('g', continue_label));
 			append_expr ($$, l1);
 			append_expr ($$, $8);
 			append_expr ($$, continue_label);
-			e = new_binary_expr ('i', test_expr ($5, 1), l1);
-			e->line = $5->line;
-			e->file = $5->file;
-			append_expr ($$, e);
-			append_expr ($$, l2);
+
+			$5 = convert_bool ($5, 1);
+			backpatch ($5->e.bool.true_list, l1);
+			backpatch ($5->e.bool.false_list, l2);
+			append_expr ($5->e.bool.e, l2);
+			append_expr ($$, $5);
+
 			break_label = $2;
 			continue_label = $3;
 		}
@@ -685,8 +683,13 @@ statement
 			append_expr ($$, l1);
 			append_expr ($$, $4);
 			append_expr ($$, continue_label);
-			append_expr ($$, new_binary_expr ('i', test_expr ($7, 1), l1));
-			append_expr ($$, break_label);
+
+			$7 = convert_bool ($7, 1);
+			backpatch ($7->e.bool.true_list, l1);
+			backpatch ($7->e.bool.false_list, break_label);
+			append_expr ($7->e.bool.e, break_label);
+			append_expr ($$, $7);
+
 			break_label = $2;
 			continue_label = $3;
 		}
@@ -703,20 +706,22 @@ statement
 		}
 	| IF '(' expr ')' save_inits statement
 		{
-			expr_t *l1 = new_label_expr ();
-			expr_t *e;
+			expr_t *tl = new_label_expr ();
+			expr_t *fl = new_label_expr ();
 
 			$$ = new_block_expr ();
 
 			restore_local_inits ($5);
 			free_local_inits ($5);
 
-			e = new_binary_expr ('n', test_expr ($3, 1), l1);
-			e->line = $3->line;
-			e->file = $3->file;
-			append_expr ($$, e);
+			$3 = convert_bool ($3, 1);
+			backpatch ($3->e.bool.true_list, tl);
+			backpatch ($3->e.bool.false_list, fl);
+			append_expr ($3->e.bool.e, tl);
+			append_expr ($$, $3);
+
 			append_expr ($$, $6);
-			append_expr ($$, l1);
+			append_expr ($$, fl);
 		}
 	| IF '(' expr ')' save_inits statement ELSE
 		{
@@ -725,8 +730,9 @@ statement
 		}
 	  statement
 		{
-			expr_t     *l1 = new_label_expr ();
-			expr_t     *l2 = new_label_expr ();
+			expr_t     *tl = new_label_expr ();
+			expr_t     *fl = new_label_expr ();
+			expr_t     *nl = new_label_expr ();
 			expr_t     *e;
 			hashtab_t  *merged;
 			hashtab_t  *else_ini;
@@ -738,19 +744,21 @@ statement
 			restore_local_inits ($5);
 			free_local_inits ($5);
 
-			e = new_binary_expr ('n', test_expr ($3, 1), l1);
-			e->line = $3->line;
-			e->file = $3->file;
-			append_expr ($$, e);
+			$3 = convert_bool ($3, 1);
+			backpatch ($3->e.bool.true_list, tl);
+			backpatch ($3->e.bool.false_list, fl);
+			append_expr ($3->e.bool.e, tl);
+			append_expr ($$, $3);
 
 			append_expr ($$, $6);
 
-			e = new_unary_expr ('g', l2);
+			e = new_unary_expr ('g', nl);
 			append_expr ($$, e);
 
-			append_expr ($$, l1);
+			append_expr ($$, fl);
 			append_expr ($$, $9);
-			append_expr ($$, l2);
+			append_expr ($$, nl);
+
 			merged = merge_local_inits ($<def_list>8, else_ini);
 			restore_local_inits (merged);
 			free_local_inits (merged);
@@ -760,8 +768,14 @@ statement
 	| FOR break_label continue_label
 			'(' opt_expr ';' opt_expr ';' opt_expr ')' save_inits statement
 		{
-			expr_t *l1 = new_label_expr ();
-			expr_t *l2 = break_label;
+			expr_t     *tl = new_label_expr ();
+			expr_t     *fl = break_label;
+			expr_t     *l1 = 0;
+			int         line = pr.source_line;
+			string_t    file = pr.source_file;
+
+			pr.source_line = $7->line;
+			pr.source_file = $7->file;
 
 			restore_local_inits ($11);
 			free_local_inits ($11);
@@ -769,21 +783,40 @@ statement
 			$$ = new_block_expr ();
 
 			append_expr ($$, $5);
-			if ($7)
-				append_expr ($$, new_binary_expr ('n', test_expr ($7, 1), l2));
-			append_expr ($$, l1);
+			if ($7) {
+				l1 = new_label_expr ();
+				append_expr ($$, new_unary_expr ('g', l1));
+			}
+			append_expr ($$, tl);
 			append_expr ($$, $12);
 			append_expr ($$, continue_label);
 			append_expr ($$, $9);
-			if ($5)
-				append_expr ($$, new_binary_expr ('i', test_expr ($7, 1), l1));
-			append_expr ($$, l2);
+			if ($7) {
+				append_expr ($$, l1);
+				$7 = convert_bool ($7, 1);
+				backpatch ($7->e.bool.true_list, tl);
+				backpatch ($7->e.bool.false_list, fl);
+				append_expr ($7->e.bool.e, fl);
+				append_expr ($$, $7);
+			} else {
+				append_expr ($$, fl);
+			}
 			break_label = $2;
 			continue_label = $3;
+
+			pr.source_line = line;
+			pr.source_file = file;
 		}
 	| expr ';'
 		{
 			$$ = $1;
+		}
+	;
+
+label
+	: /* empty */
+		{
+			$$ = new_label_expr ();
 		}
 	;
 
@@ -864,8 +897,8 @@ expr
 	| expr '=' expr				{ $$ = assign_expr ($1, $3); }
 	| expr ASX expr				{ $$ = asx_expr ($2, $1, $3); }
 	| expr '?' expr ':' expr 	{ $$ = conditional_expr ($1, $3, $5); }
-	| expr AND expr				{ $$ = binary_expr (AND, $1, $3); }
-	| expr OR expr				{ $$ = binary_expr (OR,  $1, $3); }
+	| expr AND label expr		{ $$ = bool_expr (AND, $3, $1, $4); }
+	| expr OR label expr		{ $$ = bool_expr (OR,  $3, $1, $4); }
 	| expr EQ expr				{ $$ = binary_expr (EQ,  $1, $3); }
 	| expr NE expr				{ $$ = binary_expr (NE,  $1, $3); }
 	| expr LE expr				{ $$ = binary_expr (LE,  $1, $3); }

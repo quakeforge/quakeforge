@@ -69,6 +69,7 @@ int         lineno_base;
 etype_t     qc_types[] = {
 	ev_void,							// ex_error
 	ev_void,							// ex_label
+	ev_void,							// ex_bool
 	ev_void,							// ex_block
 	ev_void,							// ex_expr
 	ev_void,							// ex_uexpr
@@ -179,6 +180,10 @@ get_type (expr_t *e)
 		case ex_name:
 		case ex_error:
 			return 0;					// something went very wrong
+		case ex_bool:
+			if (options.code.progsversion == PROG_ID_VERSION)
+				return &type_float;
+			return &type_integer;
 		case ex_nil:
 			return &type_void;
 		case ex_block:
@@ -350,6 +355,18 @@ new_label_expr (void)
 	l->e.label.next = pr.labels;
 	pr.labels = &l->e.label;
 	return l;
+}
+
+expr_t *
+new_bool_expr (ex_list_t *true_list, ex_list_t *false_list, expr_t *e)
+{
+	expr_t     *b = new_expr ();
+
+	b->type = ex_bool;
+	b->e.bool.true_list = true_list;
+	b->e.bool.false_list = false_list;
+	b->e.bool.e = e;
+	return b;
 }
 
 expr_t *
@@ -653,6 +670,9 @@ print_expr (expr_t *e)
 	switch (e->type) {
 		case ex_error:
 			printf ("(error)");
+			break;
+		case ex_bool:
+			printf ("bool");	//FIXME
 			break;
 		case ex_label:
 			printf ("%s", e->e.label.name);
@@ -1442,6 +1462,113 @@ test_expr (expr_t *e, int test)
 }
 
 void
+backpatch (ex_list_t *list, expr_t *label)
+{
+	int         i;
+	expr_t     *e;
+
+	for (i = 0; i < list->size; i++) {
+		e = list->e[i];
+		if (e->type == ex_uexpr && e->e.expr.op == 'g')
+			e->e.expr.e1 = label;
+		else if (e->type == ex_expr && (e->e.expr.op == 'i'
+										|| e->e.expr.op == 'n'))
+			e->e.expr.e2 = label;
+		else {
+			error (e, "internal compiler error");
+			abort ();
+		}
+	}
+}
+
+static ex_list_t *
+merge (ex_list_t *l1, ex_list_t *l2)
+{
+	ex_list_t  *m;
+
+	m = malloc ((size_t)&((ex_list_t *)0)->e[l1->size + l2->size]);
+	m->size = l1->size + l2->size;
+	memcpy (m->e, l1->e, l1->size * sizeof (expr_t *));
+	memcpy (m->e + l1->size, l2->e, l2->size * sizeof (expr_t *));
+	return m;
+}
+
+static ex_list_t *
+make_list (expr_t *e)
+{
+	ex_list_t  *m;
+
+	m = malloc ((size_t)&((ex_list_t *) 0)->e[1]);
+	m->size = 1;
+	m->e[0] = e;
+	return m;
+}
+
+expr_t *
+convert_bool (expr_t *e, int block)
+{
+	expr_t     *b;
+
+	if (e->type == ex_uexpr && e->e.expr.op == '!') {
+		e = convert_bool (e->e.expr.e1, 0);
+		e = unary_expr ('!', e);
+	}
+	if (e->type != ex_bool) {
+		e = test_expr (e, 1);
+		if (e->type == ex_integer) {
+			e = new_unary_expr ('g', 0);
+			if (e->e.integer_val)
+				e = new_bool_expr (make_list (e), 0, e);
+			else
+				e = new_bool_expr (0, make_list (e), e);
+		} else {
+			b = new_block_expr ();
+			append_expr (b, new_binary_expr ('i', e, 0));
+			append_expr (b, new_unary_expr ('g', 0));
+			e = new_bool_expr (make_list (b->e.block.head),
+							   make_list (b->e.block.head->next), b);
+		}
+	}
+	if (block && e->e.bool.e->type != ex_block) {
+		expr_t     *block = new_block_expr ();
+		append_expr (block, e->e.bool.e);
+		e->e.bool.e = block;
+	}
+	return e;
+}
+
+expr_t *
+bool_expr (int op, expr_t *label, expr_t *e1, expr_t *e2)
+{
+	expr_t     *block;
+
+	e1 = convert_bool (e1, 0);
+	e2 = convert_bool (e2, 0);
+
+	block = new_block_expr ();
+	append_expr (block, e1);
+	append_expr (block, label);
+	append_expr (block, e2);
+
+	switch (op) {
+		case OR:
+			backpatch (e1->e.bool.false_list, label);
+			return new_bool_expr (merge (e1->e.bool.true_list,
+										 e2->e.bool.true_list),
+								  e2->e.bool.false_list, block);
+			break;
+		case AND:
+			backpatch (e1->e.bool.true_list, label);
+			return new_bool_expr (e2->e.bool.true_list,
+								  merge (e1->e.bool.false_list,
+										 e2->e.bool.false_list), block);
+			break;
+	}
+	error (e1, "internal error");
+	abort ();
+}
+
+void
 convert_int (expr_t *e)
 {
 	e->type = ex_float;
@@ -1606,6 +1733,12 @@ binary_expr (int op, expr_t *e1, expr_t *e2)
 			convert_nil (e2, t2);
 		}
 	}
+
+	if (e1->type == ex_bool)
+		e1 = conditional_expr (e1, new_integer_expr (1), new_integer_expr (0));
+
+	if (e2->type == ex_bool)
+		e2 = conditional_expr (e2, new_integer_expr (1), new_integer_expr (0));
 
 	if (e1->type == ex_short) {
 		if (t2 == &type_integer) {
@@ -1798,6 +1931,7 @@ unary_expr (int op, expr_t *e)
 					if (!e->e.block.result)
 						return error (e, "invalid type for unary -");
 				case ex_expr:
+				case ex_bool:
 				case ex_def:
 				case ex_temp:
 					{
@@ -1844,6 +1978,9 @@ unary_expr (int op, expr_t *e)
 				case ex_name:
 					error (e, "internal error");
 					abort ();
+				case ex_bool:
+					return new_bool_expr (e->e.bool.false_list,
+										  e->e.bool.true_list, e);
 				case ex_block:
 					if (!e->e.block.result)
 						return error (e, "invalid type for unary !");
@@ -1914,6 +2051,7 @@ unary_expr (int op, expr_t *e)
 						return error (e, "invalid type for unary ~");
 					goto bitnot_expr;
 				case ex_expr:
+				case ex_bool:
 				case ex_def:
 				case ex_temp:
 bitnot_expr:
@@ -2131,6 +2269,8 @@ function_expr (expr_t *e1, expr_t *e2)
 expr_t *
 return_expr (function_t *f, expr_t *e)
 {
+	type_t     *t = get_type (e);
+
 	if (!e) {
 		if (f->def->type->aux_type != &type_void) {
 			if (options.traditional) {
@@ -2141,33 +2281,41 @@ return_expr (function_t *f, expr_t *e)
 				return e;
 			}
 		}
+		return new_unary_expr ('r', 0);
 	}
-	if (e) {
-		type_t     *t = get_type (e);
 
-		if (e->type == ex_error)
-			return e;
-		if (f->def->type->aux_type == &type_void) {
-			if (!options.traditional)
-				return error (e, "returning a value for a void function");
-			warning (e, "returning a value for a void function");
-		}
-		if (f->def->type->aux_type == &type_float && e->type == ex_integer) {
-			e->type = ex_float;
-			e->e.float_val = e->e.integer_val;
-			t = &type_float;
-		}
-		if (t == &type_void) {
-			t = f->def->type->aux_type;
-			e->type = expr_types[t->type];
-		}
-		if (!type_assignable (f->def->type->aux_type, t)) {
-			if (!options.traditional)
-				return error (e, "type mismatch for return value of %s",
-							  f->def->name);
-			warning (e, "type mismatch for return value of %s",
-					 f->def->name);
-		}
+	if (e->type == ex_error)
+		return e;
+	if (f->def->type->aux_type == &type_void) {
+		if (!options.traditional)
+			return error (e, "returning a value for a void function");
+		warning (e, "returning a value for a void function");
+	}
+	if (e->type == ex_bool) {
+		if (f->def->type->aux_type == &type_float)
+			e = conditional_expr (e, new_float_expr (1), new_float_expr (0));
+		else if (f->def->type->aux_type == &type_integer)
+			e = conditional_expr (e, new_integer_expr (1),
+								  new_integer_expr (0));
+		else if (f->def->type->aux_type == &type_uinteger)
+			e = conditional_expr (e, new_uinteger_expr (1),
+								  new_uinteger_expr (0));
+	}
+	if (f->def->type->aux_type == &type_float && e->type == ex_integer) {
+		e->type = ex_float;
+		e->e.float_val = e->e.integer_val;
+		t = &type_float;
+	}
+	if (t == &type_void) {
+		t = f->def->type->aux_type;
+		e->type = expr_types[t->type];
+	}
+	if (!type_assignable (f->def->type->aux_type, t)) {
+		if (!options.traditional)
+			return error (e, "type mismatch for return value of %s",
+						  f->def->name);
+		warning (e, "type mismatch for return value of %s",
+				 f->def->name);
 	}
 	return new_unary_expr ('r', e);
 }
@@ -2179,6 +2327,7 @@ conditional_expr (expr_t *cond, expr_t *e1, expr_t *e2)
 	type_t     *type1 = get_type (e1);
 	type_t     *type2 = get_type (e2);
 	expr_t     *tlabel = new_label_expr ();
+	expr_t     *flabel = new_label_expr ();
 	expr_t     *elabel = new_label_expr ();
 
 	if (cond->type == ex_error)
@@ -2188,8 +2337,14 @@ conditional_expr (expr_t *cond, expr_t *e1, expr_t *e2)
 	if (e2->type == ex_error)
 		return e2;
 
+	cond = convert_bool (cond, 1);
+
+	backpatch (cond->e.bool.true_list, tlabel);
+	backpatch (cond->e.bool.false_list, flabel);
+
 	block->e.block.result = (type1 == type2) ? new_temp_def_expr (type1) : 0;
-	append_expr (block, new_binary_expr ('i', test_expr (cond, 1), tlabel));
+	append_expr (block, cond);
+	append_expr (cond->e.bool.e, flabel);
 	if (block->e.block.result)
 		append_expr (block, assign_expr (block->e.block.result, e2));
 	else

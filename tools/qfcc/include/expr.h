@@ -34,6 +34,7 @@
 
 typedef enum {
 	ex_error,
+	ex_bool,
 	ex_label,
 	ex_block,
 	ex_expr,	// binary expression
@@ -83,6 +84,17 @@ typedef struct {
 	struct def_s *def;
 } ex_pointer_t;
 
+typedef struct {
+	int         size;
+	struct expr_s *e[1];
+} ex_list_t;
+
+typedef struct {
+	ex_list_t  *true_list;
+	ex_list_t  *false_list;
+	struct expr_s *e;
+} ex_bool_t;
+
 #define POINTER_VAL(p) (((p).def ? (p).def->ofs : 0) + (p).val)
 
 typedef struct expr_s {
@@ -94,6 +106,7 @@ typedef struct expr_s {
 	unsigned	rvalue:1;
 	union {
 		ex_label_t label;
+		ex_bool_t  bool;
 		ex_block_t block;
 		struct {
 			int		op;
@@ -132,6 +145,7 @@ expr_t *new_expr (void);
 const char *new_label_name (void);
 
 expr_t *new_label_expr (void);
+expr_t *new_bool_expr (ex_list_t *true_list, ex_list_t *false_list, expr_t *e);
 expr_t *new_block_expr (void);
 expr_t *new_binary_expr (int op, expr_t *e1, expr_t *e2);
 expr_t *new_unary_expr (int op, expr_t *e1);
@@ -176,6 +190,9 @@ void convert_short_int (expr_t *e);
 void convert_short_uint (expr_t *e);
 
 expr_t *test_expr (expr_t *e, int test);
+void backpatch (ex_list_t *list, expr_t *label);
+expr_t *convert_bool (expr_t *e, int block);
+expr_t *bool_expr (int op, expr_t *label, expr_t *e1, expr_t *e2);
 expr_t *binary_expr (int op, expr_t *e1, expr_t *e2);
 expr_t *asx_expr (int op, expr_t *e1, expr_t *e2);
 expr_t *unary_expr (int op, expr_t *e);

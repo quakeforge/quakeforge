@@ -434,6 +434,125 @@ emit_deref_expr (expr_t *e, def_t *dest)
 	return d;
 }
 
+static void
+build_bool_block (expr_t *block, expr_t *e)
+{
+	switch (e->type) {
+		case ex_bool:
+			build_bool_block (block, e->e.bool.e);
+			return;
+		case ex_label:
+			e->next = 0;
+			append_expr (block, e);
+			return;
+		case ex_expr:
+			if (e->e.expr.op == OR || e->e.expr.op == AND) {
+				build_bool_block (block, e->e.expr.e1);
+				build_bool_block (block, e->e.expr.e2);
+			} else if (e->e.expr.op == 'i') {
+				e->next = 0;
+				append_expr (block, e);
+			} else if (e->e.expr.op == 'n') {
+				e->next = 0;
+				append_expr (block, e);
+			}
+			return;
+		case ex_uexpr:
+			if (e->e.expr.op == 'g') {
+				e->next = 0;
+				append_expr (block, e);
+				return;
+			}
+			break;
+		case ex_block:
+			if (!e->e.block.result) {
+				expr_t     *t;
+				for (e = e->e.block.head; e; e = t) {
+					t = e->next;
+					build_bool_block (block, e);
+				}
+				return;
+			}
+			break;
+		default:
+			;
+	}
+	error (e, "internal error");
+	abort ();
+}
+
+static int
+is_goto (expr_t *e)
+{
+	return e && e->type == ex_uexpr && e->e.expr.op == 'g';
+}
+
+static int
+is_if (expr_t *e)
+{
+	return e && e->type == ex_expr && e->e.expr.op == 'i';
+}
+
+static int
+is_ifnot (expr_t *e)
+{
+	return e && e->type == ex_expr && e->e.expr.op == 'n';
+}
+
+static void
+emit_bool_expr (expr_t *e)
+{
+	expr_t     *block = new_block_expr ();
+	expr_t    **s;
+	expr_t     *l;
+
+	build_bool_block (block, e);
+
+	s = &block->e.block.head;
+	while (*s) {
+		if (is_if (*s) && is_goto ((*s)->next)) {
+			l = (*s)->e.expr.e2;
+			for (e = (*s)->next->next; e && e->type == ex_label; e = e->next) {
+				if (e == l) {
+					e = *s;
+					e->e.expr.op = 'n';
+					e->e.expr.e2 = e->next->e.expr.e1;
+					e->next = e->next->next;
+					break;
+				}
+			}
+			s = &(*s)->next;
+		} else if (is_ifnot (*s) && is_goto ((*s)->next)) {
+			l = (*s)->e.expr.e2;
+			for (e = (*s)->next->next; e && e->type == ex_label; e = e->next) {
+				if (e == l) {
+					e = *s;
+					e->e.expr.op = 'i';
+					e->e.expr.e2 = e->next->e.expr.e1;
+					e->next = e->next->next;
+					break;
+				}
+			}
+			s = &(*s)->next;
+		} else if (is_goto (*s)) {
+			l = (*s)->e.expr.e1;
+			for (e = (*s)->next; e && e->type == ex_label; e = e->next) {
+				if (e == l) {
+					*s = (*s)->next;
+					l = 0;
+					break;
+				}
+			}
+			if (l)
+				s = &(*s)->next;
+		} else {
+			s = &(*s)->next;
+		}
+	}
+
+	emit_expr (block);
+}
+
 def_t *
 emit_sub_expr (expr_t *e, def_t *dest)
 {
@@ -449,8 +568,9 @@ emit_sub_expr (expr_t *e, def_t *dest)
 				for (e = e->e.block.head; e; e = e->next)
 					emit_expr (e);
 				d = emit_sub_expr (res, dest);
-				break;
 			}
+			break;
+		case ex_bool:
 		case ex_name:
 		case ex_nil:
 		case ex_label:
@@ -636,6 +756,9 @@ emit_expr (expr_t *e)
 			label = &e->e.label;
 			label->ofs = pr.code->size;
 			relocate_refs (label->refs, label->ofs);
+			break;
+		case ex_bool:
+			emit_bool_expr (e);
 			break;
 		case ex_block:
 			for (e = e->e.block.head; e; e = e->next)
