@@ -30,7 +30,6 @@ fix_missing_globals (progs_t *pr, def_t *globals)
 {
 	int defs_count = 0;
 	int strings_size = 0;
-	int defs_size;
 	int i;
 	def_t *def;
 	ddef_t **new_defs, *d, **n;
@@ -61,12 +60,9 @@ fix_missing_globals (progs_t *pr, def_t *globals)
 			*n++ = d;
 			strings_size += strlen (def->name) + 1;
 		} else {
-			*n = calloc (sizeof (ddef_t), 1);
-			(*n)->type = (def->type | DEF_SAVEGLOBAL);
-			(*n)->ofs = def->offset;
-			(*n)->s_name = strings_size;
-			n++;
-			strings_size += strlen (def->name) + 1;
+			fprintf (stderr, "no pre-existing def for %s at %d",
+					 def->name, def->offset);
+			exit (1);
 		}
 	}
 	new_strings = calloc (strings_size, 1);
@@ -76,22 +72,8 @@ fix_missing_globals (progs_t *pr, def_t *globals)
 		new_defs[i]->s_name += pr->pr_stringsize;
 	}
 
-	defs_size = defs_count * sizeof (ddef_t);
-	progs = malloc (pr->progs_size + strings_size + defs_size);
+	progs = malloc (pr->progs_size + strings_size);
 	memcpy (progs, pr->progs, pr->progs_size);
-
-	offs = progs->ofs_globaldefs + progs->numglobaldefs * sizeof (ddef_t);
-
-	memmove ((char*)progs + offs + defs_size, (char*)progs + offs,
-			 pr->progs_size - offs);
-	for (i = 0; i < defs_count; i++) {
-		ddef_t *d = &((ddef_t*)((char*)progs + offs))[i];
-		memcpy (d, new_defs[i], sizeof (ddef_t));
-	}
-
-	progs->numglobaldefs += defs_count;
-	pr->progs_size += defs_size;
-	update_offsets (progs, progs->ofs_globaldefs, defs_size);
 
 	offs = progs->ofs_strings + progs->numstrings;
 	memmove ((char*)progs + offs + strings_size, (char*)progs + offs,
