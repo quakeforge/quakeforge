@@ -1138,13 +1138,10 @@ AC_ARG_WITH(plugin-path,
                           \${libdir}/quakeforge],
 pluginpath=$withval, pluginpath="auto")
 
-eval foo="$libdir"
-default_pluginpath="$foo/$PACKAGE"
+PLUGINDIR="$libdir/$PACKAGE"
 if test "x$pluginpath" = "xauto" -o "x$pluginpath" = "xyes" -o "x$pluginpath" = "x"; then
-	PLUGINDIR='${exec_prefix}/lib'/$PACKAGE
 	eval pluginpath="$PLUGINDIR"
 elif test "x$pluginpath" = xno; then
-	PLUGINDIR='${exec_prefix}/lib'/$PACKAGE
 	pluginpath="."
 else
 	PLUGINDIR=$pluginpath
