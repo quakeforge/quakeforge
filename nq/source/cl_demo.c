@@ -338,7 +338,7 @@ CL_FinishTimeDemo (void)
 	time = realtime - cls.td_starttime;
 	if (!time)
 		time = 1;
-	Con_Printf ("%i frames %5.1f seconds %5.1f fps\n", frames, time,
+	Con_Printf ("%i frames %5.2f seconds %5.2f fps\n", frames, time,
 				frames / time);
 }
 
