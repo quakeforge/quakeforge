@@ -107,7 +107,7 @@ Mod_FloodFillSkin (byte * skin, int skinwidth, int skinheight)
 	}
 	// can't fill to filled color or transparent color (used as visited marker)
 	if ((fillcolor == filledcolor) || (fillcolor == 255)) {
-		//Sys_Printf ("not filling skin from %d to %d\n", fillcolor, filledcolor);
+//		Sys_Printf ("not filling skin from %d to %d\n", fillcolor, filledcolor);
 		return;
 	}
 
@@ -166,7 +166,8 @@ Mod_LoadSkin (byte * skin, int skinsize, int snum, int gnum, qboolean group,
 									pheader->mdl.skinheight, name);
 	}
 	if (group) {
-		snprintf (name, sizeof (name), "%s_%i_%i", loadmodel->name, snum, gnum);
+		snprintf (name, sizeof (name), "%s_%i_%i", loadmodel->name, snum,
+				  gnum);
 	} else {
 		snprintf (name, sizeof (name), "%s_%i", loadmodel->name, snum);
 	}
@@ -180,7 +181,8 @@ Mod_LoadSkin (byte * skin, int skinsize, int snum, int gnum, qboolean group,
 }
 
 void *
-Mod_LoadAliasFrame (void *pin, int *posenum, maliasframedesc_t *frame, int extra)
+Mod_LoadAliasFrame (void *pin, int *posenum, maliasframedesc_t *frame,
+					int extra)
 {
 	trivertx_t *pinframe;
 	int         i;
@@ -306,7 +308,8 @@ Mod_LoadExternalSkins (model_t *mod)
 			pskingroup = (maliasskingroup_t *)
 				((byte *) pheader + pskindesc->skin);
 			for (j = 0; j < pskingroup->numskins; j++) {
-				snprintf (filename, sizeof (filename), "%s_%i_%i.tga", mod->name, i, j);
+				snprintf (filename, sizeof (filename), "%s_%i_%i.tga",
+						  mod->name, i, j);
 				Mod_LoadExternalSkin (pskingroup->skindescs + j, filename);
 			}
 		}
