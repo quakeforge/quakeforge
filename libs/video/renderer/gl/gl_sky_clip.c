@@ -593,13 +593,13 @@ render_box (struct box_def *box)
 	for (i = 0; i < 6; i++) {
 		if (box->face[i].poly.numverts <= 2)
 			continue;
-		glBindTexture (GL_TEXTURE_2D, box->face[i].tex);
-		glBegin (GL_POLYGON);
+		qfglBindTexture (GL_TEXTURE_2D, box->face[i].tex);
+		qfglBegin (GL_POLYGON);
 		for (j = 0; j < box->face[i].poly.numverts; j++) {
-			glTexCoord2fv (box->face[i].poly.verts[j] + 3);
-			glVertex3fv (box->face[i].poly.verts[j]);
+			qfglTexCoord2fv (box->face[i].poly.verts[j] + 3);
+			qfglVertex3fv (box->face[i].poly.verts[j]);
 		}
-		glEnd ();
+		qfglEnd ();
 	}
 }
 
@@ -668,11 +668,11 @@ R_DrawSkyDomePoly (glpoly_t *poly)
 {
 	int         i;
 
-	glBegin (GL_POLYGON);
+	qfglBegin (GL_POLYGON);
 	for (i = 0; i < poly->numverts; i++) {
-		glVertex3fv (poly->verts[i]);
+		qfglVertex3fv (poly->verts[i]);
 	}
-	glEnd ();
+	qfglEnd ();
 }
 
 void
@@ -681,7 +681,7 @@ R_DrawSkyChain (msurface_t *sky_chain)
 	msurface_t *sc = sky_chain;
 	
 	if (skyloaded) {
-		glDepthRange (gldepthmax, gldepthmax);
+		qfglDepthRange (gldepthmax, gldepthmax);
 		while (sc) {
 			glpoly_t   *p = sc->polys;
 
@@ -691,11 +691,11 @@ R_DrawSkyChain (msurface_t *sky_chain)
 			}
 			sc = sc->texturechain;
 		}
-		glDepthRange (gldepthmin, gldepthmax);
+		qfglDepthRange (gldepthmin, gldepthmax);
 	} else {
-		glDisable (GL_BLEND);
-		glDisable (GL_TEXTURE_2D);
-		glColor3f (0, 0, 0);
+		qfglDisable (GL_BLEND);
+		qfglDisable (GL_TEXTURE_2D);
+		qfglColor3f (0, 0, 0);
 		while (sc) {
 			glpoly_t   *p = sc->polys;
 
@@ -705,51 +705,51 @@ R_DrawSkyChain (msurface_t *sky_chain)
 			}
 			sc = sc->texturechain;
 		}
-		glEnable (GL_TEXTURE_2D);
-		glEnable (GL_BLEND);
+		qfglEnable (GL_TEXTURE_2D);
+		qfglEnable (GL_BLEND);
 	}
 #if 0
 	// seems to work, but this is the wrong place to do it.
-	glColor4f (1,1,1,0);
+	qfglColor4f (1,1,1,0);
 	sc = sky_chain;
 	while (sc) {
 		glpoly_t   *p = sc->polys;
 
 		while (p) {
 			int i;
-			glBegin (GL_POLYGON);
+			qfglBegin (GL_POLYGON);
 			for (i = 0; i < p->numverts; i++) {
-				glVertex3fv (p->verts[i]);
+				qfglVertex3fv (p->verts[i]);
 			}
-			glEnd ();
+			qfglEnd ();
 			p = p->next;
 		}
 		sc = sc->texturechain;
 	}
 #endif
-	glColor3ubv (lighthalf_v);
+	qfglColor3ubv (lighthalf_v);
 #if 0
-	glDisable (GL_TEXTURE_2D);
+	qfglDisable (GL_TEXTURE_2D);
 	sc = sky_chain;
-	glColor3f (1, 1, 1);
+	qfglColor3f (1, 1, 1);
 	while (sc) {
 		glpoly_t   *p = sc->polys;
 
 		while (p) {
 			int         i;
 
-			glBegin (GL_LINE_LOOP);
+			qfglBegin (GL_LINE_LOOP);
 			for (i = 0; i < p->numverts; i++) {
-				glVertex3fv (p->verts[i]);
+				qfglVertex3fv (p->verts[i]);
 			}
-			glEnd ();
+			qfglEnd ();
 			p = p->next;
 		}
 		sc = sc->texturechain;
 	}
 	sc = sky_chain;
-	glColor3f (0, 1, 0);
-	glBegin (GL_POINTS);
+	qfglColor3f (0, 1, 0);
+	qfglBegin (GL_POINTS);
 	while (sc) {
 		glpoly_t   *p = sc->polys;
 
@@ -763,29 +763,29 @@ R_DrawSkyChain (msurface_t *sky_chain)
 			}
 			VectorScale (c, 1.0 / p->numverts, c);
 			VectorAdd (c, r_refdef.vieworg, c);
-			glVertex3fv (c);
+			qfglVertex3fv (c);
 			p = p->next;
 		}
 		sc = sc->texturechain;
 	}
-	glEnd ();
+	qfglEnd ();
 	if (skyloaded) {
 		int         i, j;
 
-		glColor3f (1, 0, 0);
+		qfglColor3f (1, 0, 0);
 		for (i = 0; i < 6; i++) {
 			vec3_t      v;
 
-			glBegin (GL_LINE_LOOP);
+			qfglBegin (GL_LINE_LOOP);
 			for (j = 0; j < 4; j++) {
 				memcpy (v, &skyvec[i][j][2], sizeof (v));
 				VectorAdd (v, r_refdef.vieworg, v);
-				glVertex3fv (v);
+				qfglVertex3fv (v);
 			}
-			glEnd ();
+			qfglEnd ();
 		}
 	}
-	glColor3ubv (lighthalf_v);
-	glEnable (GL_TEXTURE_2D);
+	qfglColor3ubv (lighthalf_v);
+	qfglEnable (GL_TEXTURE_2D);
 #endif
 }

@@ -117,12 +117,12 @@ glrmain_init (void)
 void
 R_RotateForEntity (entity_t *e)
 {
-	glTranslatef (e->origin[0], e->origin[1], e->origin[2]);
+	qfglTranslatef (e->origin[0], e->origin[1], e->origin[2]);
 
-	glRotatef (e->angles[1], 0, 0, 1);
-	glRotatef (-e->angles[0], 0, 1, 0);
+	qfglRotatef (e->angles[1], 0, 0, 1);
+	qfglRotatef (-e->angles[0], 0, 1, 0);
 	// ZOID: fixed z angle
-	glRotatef (e->angles[2], 1, 0, 0);
+	qfglRotatef (e->angles[2], 1, 0, 0);
 }
 
 
@@ -193,34 +193,34 @@ R_DrawSpriteModel (entity_t *e)
 		right = vright;
 	}
 
-	glBindTexture (GL_TEXTURE_2D, frame->gl_texturenum);
+	qfglBindTexture (GL_TEXTURE_2D, frame->gl_texturenum);
 
-	glEnable (GL_ALPHA_TEST);
-	glBegin (GL_QUADS);
+	qfglEnable (GL_ALPHA_TEST);
+	qfglBegin (GL_QUADS);
 
-	glTexCoord2f (0, 1);
+	qfglTexCoord2f (0, 1);
 	VectorMA (e->origin, frame->down, up, point);
 	VectorMA (point, frame->left, right, point);
-	glVertex3fv (point);
+	qfglVertex3fv (point);
 
-	glTexCoord2f (0, 0);
+	qfglTexCoord2f (0, 0);
 	VectorMA (e->origin, frame->up, up, point);
 	VectorMA (point, frame->left, right, point);
-	glVertex3fv (point);
+	qfglVertex3fv (point);
 
-	glTexCoord2f (1, 0);
+	qfglTexCoord2f (1, 0);
 	VectorMA (e->origin, frame->up, up, point);
 	VectorMA (point, frame->right, right, point);
-	glVertex3fv (point);
+	qfglVertex3fv (point);
 
-	glTexCoord2f (1, 1);
+	qfglTexCoord2f (1, 1);
 	VectorMA (e->origin, frame->down, up, point);
 	VectorMA (point, frame->right, right, point);
-	glVertex3fv (point);
+	qfglVertex3fv (point);
 
-	glEnd ();
+	qfglEnd ();
 
-	glDisable (GL_ALPHA_TEST);
+	qfglDisable (GL_ALPHA_TEST);
 }
 
 
@@ -263,24 +263,24 @@ GL_DrawAliasFrame (aliashdr_t *paliashdr, int posenum, qboolean fb)
 	order = (int *) ((byte *) paliashdr + paliashdr->commands);
 
 	if (modelalpha != 1.0)
-		glDepthMask (GL_FALSE);
+		qfglDepthMask (GL_FALSE);
 
 	if (fb) {
-		glColor4f (1, 1, 1, modelalpha);
+		qfglColor4f (1, 1, 1, modelalpha);
 	}
 
 	while ((count = *order++)) {
 		// get the vertex count and primitive type
 		if (count < 0) {
 			count = -count;
-			glBegin (GL_TRIANGLE_FAN);
+			qfglBegin (GL_TRIANGLE_FAN);
 		} else {
-			glBegin (GL_TRIANGLE_STRIP);
+			qfglBegin (GL_TRIANGLE_STRIP);
 		}
 
 		do {
 			// texture coordinates come from the draw list
-			glTexCoord2f (((float *) order)[0], ((float *) order)[1]);
+			qfglTexCoord2f (((float *) order)[0], ((float *) order)[1]);
 			order += 2;
 
 			if (!fb) {
@@ -288,21 +288,21 @@ GL_DrawAliasFrame (aliashdr_t *paliashdr, int posenum, qboolean fb)
 				l = shadedots[verts->lightnormalindex] * shadelight;
 
 				// LordHavoc: cleanup after Endy
-				glColor4f (shadecolor[0] * l, shadecolor[1] * l,
+				qfglColor4f (shadecolor[0] * l, shadecolor[1] * l,
 						   shadecolor[2] * l, modelalpha);
 			}
 
-			glVertex3f (verts->v[0], verts->v[1], verts->v[2]);
+			qfglVertex3f (verts->v[0], verts->v[1], verts->v[2]);
 			verts++;
 		} while (--count);
 
-		glEnd ();
+		qfglEnd ();
 	}
 
 	if (modelalpha != 1.0)
-		glDepthMask (GL_TRUE);
+		qfglDepthMask (GL_TRUE);
 
-	glColor3ubv (lighthalf_v);
+	qfglColor3ubv (lighthalf_v);
 }
 
 
@@ -333,10 +333,10 @@ GL_DrawAliasBlendedFrame (aliashdr_t *paliashdr, int pose1, int pose2, float ble
 	order = (int *) ((byte *) paliashdr + paliashdr->commands);
 
 	if (modelalpha != 1.0)
-		glDepthMask (GL_FALSE);
+		qfglDepthMask (GL_FALSE);
 
 	if (fb) {	// don't do this in the loop, it doesn't change
-		glColor4f (1, 1, 1, modelalpha);
+		qfglColor4f (1, 1, 1, modelalpha);
 	}
 
 	lerp = 1 - blend;
@@ -344,14 +344,14 @@ GL_DrawAliasBlendedFrame (aliashdr_t *paliashdr, int pose1, int pose2, float ble
 
 		if (count < 0) {
 			count = -count;
-			glBegin (GL_TRIANGLE_FAN);
+			qfglBegin (GL_TRIANGLE_FAN);
 		} else {
-			glBegin (GL_TRIANGLE_STRIP);
+			qfglBegin (GL_TRIANGLE_STRIP);
 		}
 
 		do {
 			// texture coordinates come from the draw list
-			glTexCoord2f (((float *) order)[0], ((float *) order)[1]);
+			qfglTexCoord2f (((float *) order)[0], ((float *) order)[1]);
 			order += 2;
 
 			if (!fb) {
@@ -361,24 +361,24 @@ GL_DrawAliasBlendedFrame (aliashdr_t *paliashdr, int pose1, int pose2, float ble
 									   lerp)
 									+ (shadedots[verts2->lightnormalindex] *
 									   blend));
-				glColor4f (shadecolor[0] * light, shadecolor[1] * light,
+				qfglColor4f (shadecolor[0] * light, shadecolor[1] * light,
 							shadecolor[2] * light, modelalpha);
 			}
 
 			// blend the vertex positions from each frame together
-			glVertex3f ((verts1->v[0] * lerp) + (verts2->v[0] * blend),
+			qfglVertex3f ((verts1->v[0] * lerp) + (verts2->v[0] * blend),
 						(verts1->v[1] * lerp) + (verts2->v[1] * blend),
 						(verts1->v[2] * lerp) + (verts2->v[2] * blend));
 
 			verts1++;
 			verts2++;
 		} while (--count);
-		glEnd ();
+		qfglEnd ();
 	}
 
 	if (modelalpha != 1.0)
-		glDepthMask (GL_TRUE);
-	glColor3ubv (lighthalf_v);
+		qfglDepthMask (GL_TRUE);
+	qfglColor3ubv (lighthalf_v);
 }
 
 
@@ -412,13 +412,13 @@ GL_DrawAliasShadow (aliashdr_t *paliashdr, int posenum)
 
 		if (count < 0) {
 			count = -count;
-			glBegin (GL_TRIANGLE_FAN);
+			qfglBegin (GL_TRIANGLE_FAN);
 		} else
-			glBegin (GL_TRIANGLE_STRIP);
+			qfglBegin (GL_TRIANGLE_STRIP);
 
 		do {
 			// texture coordinates come from the draw list
-			// (skipped for shadows) glTexCoord2fv ((float *)order);
+			// (skipped for shadows) qfglTexCoord2fv ((float *)order);
 			order += 2;
 
 			// normals and vertexes come from the frame list
@@ -436,12 +436,12 @@ GL_DrawAliasShadow (aliashdr_t *paliashdr, int posenum)
 			point[1] -= shadevector[1] * (point[2] + lheight);
 			point[2] = height;
 //          height -= 0.001;
-			glVertex3fv (point);
+			qfglVertex3fv (point);
 
 			verts++;
 		} while (--count);
 
-		glEnd ();
+		qfglEnd ();
 	}
 }
 
@@ -479,9 +479,9 @@ GL_DrawAliasBlendedShadow (aliashdr_t *paliashdr, int pose1, int pose2, entity_t
 
 		if (count < 0) {
 			count = -count;
-			glBegin (GL_TRIANGLE_FAN);
+			qfglBegin (GL_TRIANGLE_FAN);
 		} else {
-			glBegin (GL_TRIANGLE_STRIP);
+			qfglBegin (GL_TRIANGLE_STRIP);
 		}
 
 		do {
@@ -501,14 +501,14 @@ GL_DrawAliasBlendedShadow (aliashdr_t *paliashdr, int pose1, int pose2, entity_t
 			point2[0] -= shadevector[0] * (point2[2] + lheight);
 			point2[1] -= shadevector[1] * (point2[2] + lheight);
 
-			glVertex3f ((point1[0] * lerp) + (point2[0] * blend),
+			qfglVertex3f ((point1[0] * lerp) + (point2[0] * blend),
 						(point1[1] * lerp) + (point2[1] * blend),
 						height);
 
 			verts1++;
 			verts2++;
 		} while (--count);
-		glEnd ();
+		qfglEnd ();
 	}
 }
 
@@ -671,21 +671,21 @@ R_DrawAliasModel (entity_t *e, qboolean cull)
 	c_alias_polys += paliashdr->mdl.numtris;
 
 	// draw all the triangles
-	glPushMatrix ();
+	qfglPushMatrix ();
 	R_RotateForEntity (e);
 
 	if (strequal (clmodel->name, "progs/eyes.mdl")) {
-		glTranslatef (paliashdr->mdl.scale_origin[0],
+		qfglTranslatef (paliashdr->mdl.scale_origin[0],
 					  paliashdr->mdl.scale_origin[1],
 					  paliashdr->mdl.scale_origin[2] - (22 + 8));
 		// double size of eyes, since they are really hard to see in GL
-		glScalef (paliashdr->mdl.scale[0] * 2, paliashdr->mdl.scale[1] * 2,
+		qfglScalef (paliashdr->mdl.scale[0] * 2, paliashdr->mdl.scale[1] * 2,
 				  paliashdr->mdl.scale[2] * 2);
 	} else {
-		glTranslatef (paliashdr->mdl.scale_origin[0],
+		qfglTranslatef (paliashdr->mdl.scale_origin[0],
 					  paliashdr->mdl.scale_origin[1],
 					  paliashdr->mdl.scale_origin[2]);
-		glScalef (paliashdr->mdl.scale[0], paliashdr->mdl.scale[1],
+		qfglScalef (paliashdr->mdl.scale[0], paliashdr->mdl.scale[1],
 				  paliashdr->mdl.scale[2]);
 	}
 
@@ -712,10 +712,10 @@ R_DrawAliasModel (entity_t *e, qboolean cull)
 		}
 	}
 
-	glBindTexture (GL_TEXTURE_2D, texture);
+	qfglBindTexture (GL_TEXTURE_2D, texture);
 
 	if (gl_affinemodels->int_val)
-		glHint (GL_PERSPECTIVE_CORRECTION_HINT, GL_NICEST);
+		qfglHint (GL_PERSPECTIVE_CORRECTION_HINT, GL_NICEST);
 
 	if (gl_lerp_anim->int_val) {
 		R_SetupAliasBlendedFrame (currententity->frame, paliashdr, currententity, false);
@@ -725,7 +725,7 @@ R_DrawAliasModel (entity_t *e, qboolean cull)
 
 	// This block is GL fullbright support for objects...
 	if (fb_texture) {
-		glBindTexture (GL_TEXTURE_2D, fb_texture);
+		qfglBindTexture (GL_TEXTURE_2D, fb_texture);
 		if (gl_lerp_anim->int_val) {
 			R_SetupAliasBlendedFrame (currententity->frame, paliashdr,
 			                          currententity, true);
@@ -735,9 +735,9 @@ R_DrawAliasModel (entity_t *e, qboolean cull)
 	}
 
 	if (gl_affinemodels->int_val)
-		glHint (GL_PERSPECTIVE_CORRECTION_HINT, GL_DONT_CARE);
+		qfglHint (GL_PERSPECTIVE_CORRECTION_HINT, GL_DONT_CARE);
 
-	glPopMatrix ();
+	qfglPopMatrix ();
 
 	if (r_shadows->int_val) {
 		// torches, grenades, and lightning bolts do not have shadows
@@ -746,11 +746,11 @@ R_DrawAliasModel (entity_t *e, qboolean cull)
 		if (strequal (clmodel->name, "progs/grenade.mdl"))
 			return;
 
-		glPushMatrix ();
+		qfglPushMatrix ();
 		R_RotateForEntity (e);
 
-		glDisable (GL_TEXTURE_2D);
-		glColor4f (0, 0, 0, 0.5);
+		qfglDisable (GL_TEXTURE_2D);
+		qfglColor4f (0, 0, 0, 0.5);
 
 		if (gl_lerp_anim->int_val) {
 			GL_DrawAliasBlendedShadow (paliashdr, lastposenum0, lastposenum, currententity);
@@ -758,9 +758,9 @@ R_DrawAliasModel (entity_t *e, qboolean cull)
 			GL_DrawAliasShadow (paliashdr, lastposenum);
 		}
 
-		glEnable (GL_TEXTURE_2D);
-		glColor3ubv (lighthalf_v);
-		glPopMatrix ();
+		qfglEnable (GL_TEXTURE_2D);
+		qfglColor3ubv (lighthalf_v);
+		qfglPopMatrix ();
 	}
 }
 
@@ -860,9 +860,9 @@ R_DrawViewModel (void)
 	modelalpha = currententity->alpha;
 
 	// hack the depth range to prevent view model from poking into walls
-	glDepthRange (gldepthmin, gldepthmin + 0.3 * (gldepthmax - gldepthmin));
+	qfglDepthRange (gldepthmin, gldepthmin + 0.3 * (gldepthmax - gldepthmin));
 	R_DrawAliasModel (currententity, false);
-	glDepthRange (gldepthmin, gldepthmax);
+	qfglDepthRange (gldepthmin, gldepthmax);
 }
 
 
@@ -957,7 +957,7 @@ MYgluPerspective (GLdouble fovy, GLdouble aspect, GLdouble zNear, GLdouble zFar)
 	xmin = ymin * aspect;
 	xmax = ymax * aspect;
 
-	glFrustum (xmin, xmax, ymin, ymax, zNear, zFar);
+	qfglFrustum (xmin, xmax, ymin, ymax, zNear, zFar);
 }
 
 
@@ -969,8 +969,8 @@ R_SetupGL (void)
 	int			x, x2, y2, y, w, h;
 
 	// set up viewpoint
-	glMatrixMode (GL_PROJECTION);
-	glLoadIdentity ();
+	qfglMatrixMode (GL_PROJECTION);
+	qfglLoadIdentity ();
 	x = r_refdef.vrect.x * glwidth / vid.width;
 	x2 = (r_refdef.vrect.x + r_refdef.vrect.width) * glwidth / vid.width;
 	y = (vid.height - r_refdef.vrect.y) * glheight / vid.height;
@@ -995,41 +995,41 @@ R_SetupGL (void)
 		w = h = 256;
 	}
 
-	glViewport (glx + x, gly + y2, w, h);
+	qfglViewport (glx + x, gly + y2, w, h);
 	screenaspect = (float) r_refdef.vrect.width / r_refdef.vrect.height;
 	MYgluPerspective (r_refdef.fov_y, screenaspect, 4, 4096);
 
 	if (mirror) {
 		if (mirror_plane->normal[2])
-			glScalef (1, -1, 1);
+			qfglScalef (1, -1, 1);
 		else
-			glScalef (-1, 1, 1);
-		glCullFace (GL_BACK);
+			qfglScalef (-1, 1, 1);
+		qfglCullFace (GL_BACK);
 	} else
-		glCullFace (GL_FRONT);
+		qfglCullFace (GL_FRONT);
 
-	glMatrixMode (GL_MODELVIEW);
-	glLoadIdentity ();
+	qfglMatrixMode (GL_MODELVIEW);
+	qfglLoadIdentity ();
 
-	glRotatef (-90, 1, 0, 0);			// put Z going up
-	glRotatef (90, 0, 0, 1);			// put Z going up
-	glRotatef (-r_refdef.viewangles[2], 1, 0, 0);
-	glRotatef (-r_refdef.viewangles[0], 0, 1, 0);
-	glRotatef (-r_refdef.viewangles[1], 0, 0, 1);
-	glTranslatef (-r_refdef.vieworg[0], -r_refdef.vieworg[1],
+	qfglRotatef (-90, 1, 0, 0);			// put Z going up
+	qfglRotatef (90, 0, 0, 1);			// put Z going up
+	qfglRotatef (-r_refdef.viewangles[2], 1, 0, 0);
+	qfglRotatef (-r_refdef.viewangles[0], 0, 1, 0);
+	qfglRotatef (-r_refdef.viewangles[1], 0, 0, 1);
+	qfglTranslatef (-r_refdef.vieworg[0], -r_refdef.vieworg[1],
 				  -r_refdef.vieworg[2]);
 
-	glGetFloatv (GL_MODELVIEW_MATRIX, r_world_matrix);
+	qfglGetFloatv (GL_MODELVIEW_MATRIX, r_world_matrix);
 
 	// set drawing parms
-	glEnable (GL_CULL_FACE);
-	glDisable (GL_ALPHA_TEST);
-	glAlphaFunc (GL_GREATER, 0.5);
-	glEnable (GL_DEPTH_TEST);
+	qfglEnable (GL_CULL_FACE);
+	qfglDisable (GL_ALPHA_TEST);
+	qfglAlphaFunc (GL_GREATER, 0.5);
+	qfglEnable (GL_DEPTH_TEST);
 	if (gl_dlight_smooth->int_val)
-		glShadeModel (GL_SMOOTH);
+		qfglShadeModel (GL_SMOOTH);
 	else
-		glShadeModel (GL_FLAT);
+		qfglShadeModel (GL_FLAT);
 }
 
 
@@ -1037,14 +1037,14 @@ static void
 R_Clear (void)
 {
 	if (gl_clear->int_val)
-		glClear (GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+		qfglClear (GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 	else
-		glClear (GL_DEPTH_BUFFER_BIT);
+		qfglClear (GL_DEPTH_BUFFER_BIT);
 	gldepthmin = 0;
 	gldepthmax = 1;
-	glDepthFunc (GL_LEQUAL);
+	qfglDepthFunc (GL_LEQUAL);
 
-	glDepthRange (gldepthmin, gldepthmax);
+	qfglDepthRange (gldepthmin, gldepthmax);
 }
 
 
@@ -1112,34 +1112,34 @@ R_Mirror (void)
 
 	gldepthmin = 0.5;
 	gldepthmax = 1;
-	glDepthRange (gldepthmin, gldepthmax);
-	glDepthFunc (GL_LEQUAL);
+	qfglDepthRange (gldepthmin, gldepthmax);
+	qfglDepthFunc (GL_LEQUAL);
 
 	R_RenderScene ();
 	R_DrawWaterSurfaces ();
 
 	gldepthmin = 0;
 	gldepthmax = 1;//XXX 0.5;
-	glDepthRange (gldepthmin, gldepthmax);
-	glDepthFunc (GL_LEQUAL);
+	qfglDepthRange (gldepthmin, gldepthmax);
+	qfglDepthFunc (GL_LEQUAL);
 
 	// blend on top
-	glMatrixMode (GL_PROJECTION);
+	qfglMatrixMode (GL_PROJECTION);
 	if (mirror_plane->normal[2])
-		glScalef (1, -1, 1);
+		qfglScalef (1, -1, 1);
 	else
-		glScalef (-1, 1, 1);
-	glCullFace (GL_FRONT);
-	glMatrixMode (GL_MODELVIEW);
+		qfglScalef (-1, 1, 1);
+	qfglCullFace (GL_FRONT);
+	qfglMatrixMode (GL_MODELVIEW);
 
-	glLoadMatrixf (r_base_world_matrix);
+	qfglLoadMatrixf (r_base_world_matrix);
 
-	glColor4f (1, 1, 1, r_mirroralpha->value);
+	qfglColor4f (1, 1, 1, r_mirroralpha->value);
 	s = r_worldentity.model->textures[mirrortexturenum]->texturechain;
 	for (; s; s = s->texturechain)
 		R_RenderBrushPoly (s);
 	r_worldentity.model->textures[mirrortexturenum]->texturechain = NULL;
-	glColor4f (1, 1, 1, 1);
+	qfglColor4f (1, 1, 1, 1);
 }
 
 
@@ -1157,7 +1157,7 @@ R_RenderView (void)
 	if (!r_worldentity.model)
 		Sys_Error ("R_RenderView: NULL worldmodel");
 
-//	glFinish ();
+//	qfglFinish ();
 
 	mirror = false;
 

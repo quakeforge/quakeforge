@@ -166,12 +166,12 @@ R_DrawFire (fire_t *f)
 		return;
 	}
 	// we're not - draw it
-	glBegin (GL_TRIANGLE_FAN);
-	glColor3fv (f->color);
+	qfglBegin (GL_TRIANGLE_FAN);
+	qfglColor3fv (f->color);
 	for (i = 0; i < 3; i++)
 		vec[i] = f->origin[i] - vpn[i] * radius;
-	glVertex3fv (vec);
-	glColor3f (0.0, 0.0, 0.0);
+	qfglVertex3fv (vec);
+	qfglColor3f (0.0, 0.0, 0.0);
 
 	// don't panic, this just draws a bubble...
 	for (i = 16; i >= 0; i--) {
@@ -181,14 +181,14 @@ R_DrawFire (fire_t *f)
 			vec2[j] = f->owner[j] + (*b_cos * vright[j]
 									 + vup[j] * (*b_sin)) * radius;
 		}
-		glVertex3fv (vec);
-		glVertex3fv (vec2);
+		qfglVertex3fv (vec);
+		qfglVertex3fv (vec2);
 
 		b_sin += 2;
 		b_cos += 2;
 	}
-	glEnd ();
-	glColor3ubv (lighthalf_v);
+	qfglEnd ();
+	qfglColor3ubv (lighthalf_v);
 }
 
 
@@ -206,9 +206,9 @@ R_UpdateFires (void)
 	if (!gl_fires->int_val)
 		return;
 
-	glDepthMask (GL_FALSE);
-	glDisable (GL_TEXTURE_2D);
-	glBlendFunc (GL_ONE, GL_ONE);
+	qfglDepthMask (GL_FALSE);
+	qfglDisable (GL_TEXTURE_2D);
+	qfglBlendFunc (GL_ONE, GL_ONE);
 
 	f = r_fires;
 	for (i = 0; i < MAX_FIRES; i++, f++) {
@@ -218,7 +218,7 @@ R_UpdateFires (void)
 		R_DrawFire (f);
 	}
 
-	glEnable (GL_TEXTURE_2D);
-	glBlendFunc (GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-	glDepthMask (GL_TRUE);
+	qfglEnable (GL_TEXTURE_2D);
+	qfglBlendFunc (GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+	qfglDepthMask (GL_TRUE);
 }

@@ -525,7 +525,7 @@ VID_Shutdown (void)
 		// LordHavoc: free textures before closing (may help NVIDIA)
 		for (i = 0; i < 8192; i++)
                         temp[i] = i + 1;
-		glDeleteTextures (8192, temp);
+		qfglDeleteTextures (8192, temp);
 
 		if (hRC)
 			wglDeleteContext (hRC);

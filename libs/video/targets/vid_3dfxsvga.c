@@ -135,7 +135,7 @@ GL_Init (void)
 			Con_Printf ("4x4.\n");
 		}
 	} else {
-		glDisable (GL_DITHER);
+		qfglDisable (GL_DITHER);
 		Con_Printf ("disabled.\n");
 	}
 }
@@ -143,7 +143,7 @@ GL_Init (void)
 void
 GL_EndRendering (void)
 {
-	glFlush ();
+	qfglFlush ();
 	fxMesaSwapBuffers ();
 	Sbar_Changed ();
 }

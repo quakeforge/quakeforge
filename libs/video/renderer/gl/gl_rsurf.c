@@ -370,11 +370,11 @@ extern float speedscale;				// for top sky and bottom sky
 void
 GL_UploadLightmap (int i, int x, int y, int w, int h)
 {
-/*	glTexSubImage2D (GL_TEXTURE_2D, 0, 0, y, BLOCK_WIDTH, h, gl_lightmap_format,
+/*	qfglTexSubImage2D (GL_TEXTURE_2D, 0, 0, y, BLOCK_WIDTH, h, gl_lightmap_format,
 					 GL_UNSIGNED_BYTE,
 					 lightmaps[i] + (y * BLOCK_WIDTH) * lightmap_bytes);
 */
-	glTexImage2D (GL_TEXTURE_2D, 0, gl_internalformat, BLOCK_WIDTH,
+	qfglTexImage2D (GL_TEXTURE_2D, 0, gl_internalformat, BLOCK_WIDTH,
 				  BLOCK_HEIGHT, 0, gl_lightmap_format,
 				  GL_UNSIGNED_BYTE, lightmaps[i]);
 }
@@ -398,17 +398,17 @@ R_DrawMultitexturePoly (msurface_t *s)
 
 	i = s->lightmaptexturenum;
 
-	glColor3f (1, 1, 1);
+	qfglColor3f (1, 1, 1);
 	// Binds world to texture env 0
 	qglActiveTexture (gl_mtex_enum + 0);
-	glBindTexture (GL_TEXTURE_2D, texture->gl_texturenum);
-	glTexEnvf (GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_REPLACE);
-	glEnable (GL_TEXTURE_2D);
+	qfglBindTexture (GL_TEXTURE_2D, texture->gl_texturenum);
+	qfglTexEnvf (GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_REPLACE);
+	qfglEnable (GL_TEXTURE_2D);
 	// Binds lightmap to texenv 1
 	qglActiveTexture (gl_mtex_enum + 1);
-	glBindTexture (GL_TEXTURE_2D, lightmap_textures + i);
-	glTexEnvf (GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
-	glEnable (GL_TEXTURE_2D);
+	qfglBindTexture (GL_TEXTURE_2D, lightmap_textures + i);
+	qfglTexEnvf (GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
+	qfglEnable (GL_TEXTURE_2D);
 
 	// check for lightmap modification
 	if (r_dynamic->int_val) {
@@ -429,24 +429,24 @@ R_DrawMultitexturePoly (msurface_t *s)
 		}
 	}
 
-	glBegin (GL_POLYGON);
+	qfglBegin (GL_POLYGON);
 	v = s->polys->verts[0];
 	for (i = 0; i < s->polys->numverts; i++, v += VERTEXSIZE) {
 		qglMultiTexCoord2f (gl_mtex_enum + 0, v[3], v[4]);
 		qglMultiTexCoord2f (gl_mtex_enum + 1, v[5], v[6]);
-		glVertex3fv (v);
+		qfglVertex3fv (v);
 	}
-	glEnd ();
-	glDisable (GL_TEXTURE_2D);
+	qfglEnd ();
+	qfglDisable (GL_TEXTURE_2D);
 	qglActiveTexture (gl_mtex_enum + 0);
-	glEnable (GL_TEXTURE_2D);
+	qfglEnable (GL_TEXTURE_2D);
 
 	if (texture->gl_fb_texturenum > 0) {
 		s->polys->fb_chain = fullbright_polys[texture->gl_fb_texturenum];
 		fullbright_polys[texture->gl_fb_texturenum] = s->polys;
 	}
-	glColor3ubv (lighthalf_v);
-	glTexEnvf (GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
+	qfglColor3ubv (lighthalf_v);
+	qfglTexEnvf (GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
 }
 
 
@@ -457,17 +457,17 @@ R_BlendLightmaps (void)
 	glpoly_t   *p;
 	float      *v;
 
-	glDepthMask (GL_FALSE);					// don't bother writing Z
+	qfglDepthMask (GL_FALSE);					// don't bother writing Z
 
-	glBlendFunc (GL_DST_COLOR, GL_SRC_COLOR);
+	qfglBlendFunc (GL_DST_COLOR, GL_SRC_COLOR);
 
-	glColor3f (1, 1, 1);
+	qfglColor3f (1, 1, 1);
 
 	for (i = 0; i < MAX_LIGHTMAPS; i++) {
 		p = lightmap_polys[i];
 		if (!p)
 			continue;
-		glBindTexture (GL_TEXTURE_2D, lightmap_textures + i);
+		qfglBindTexture (GL_TEXTURE_2D, lightmap_textures + i);
 		if (lightmap_modified[i]) {
 			GL_UploadLightmap (i, lightmap_rectchange[i].l,
 							   lightmap_rectchange[i].t,
@@ -476,21 +476,21 @@ R_BlendLightmaps (void)
 			lightmap_modified[i] = false;
 		}
 		for (; p; p = p->chain) {
-			glBegin (GL_POLYGON);
+			qfglBegin (GL_POLYGON);
 			v = p->verts[0];
 			for (j = 0; j < p->numverts; j++, v += VERTEXSIZE) {
-				glTexCoord2fv (&v[5]);
-				glVertex3fv (v);
+				qfglTexCoord2fv (&v[5]);
+				qfglVertex3fv (v);
 			}
-			glEnd ();
+			qfglEnd ();
 		}
 	}
 
 	// Return to normal blending  --KB
-	glColor3ubv (lighthalf_v);
-	glBlendFunc (GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+	qfglColor3ubv (lighthalf_v);
+	qfglBlendFunc (GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
-	glDepthMask (GL_TRUE);					// back to normal Z buffering
+	qfglDepthMask (GL_TRUE);					// back to normal Z buffering
 }
 
 
@@ -501,22 +501,22 @@ R_RenderFullbrights (void)
 	glpoly_t   *p;
 	float      *v;
 
-	glBlendFunc (GL_ONE, GL_ONE);
+	qfglBlendFunc (GL_ONE, GL_ONE);
 
 	for (i = 1; i < MAX_GLTEXTURES; i++) {
 		if (!fullbright_polys[i])
 			continue;
-		glBindTexture (GL_TEXTURE_2D, i);
+		qfglBindTexture (GL_TEXTURE_2D, i);
 		for (p = fullbright_polys[i]; p; p = p->fb_chain) {
-			glBegin (GL_POLYGON);
+			qfglBegin (GL_POLYGON);
 			for (j = 0, v = p->verts[0]; j < p->numverts; j++, v += VERTEXSIZE) {
-				glTexCoord2fv (&v[3]);
-				glVertex3fv (v);
+				qfglTexCoord2fv (&v[3]);
+				qfglVertex3fv (v);
 			}
-			glEnd ();
+			qfglEnd ();
 		}
 	}
-	glBlendFunc (GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+	qfglBlendFunc (GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 }
 
 
@@ -533,16 +533,16 @@ R_RenderBrushPoly (msurface_t *fa)
 
 	c_brush_polys++;
 
-	glColor3f (1, 1, 1);
-	glBindTexture (GL_TEXTURE_2D, texture->gl_texturenum);
+	qfglColor3f (1, 1, 1);
+	qfglBindTexture (GL_TEXTURE_2D, texture->gl_texturenum);
 
-	glBegin (GL_POLYGON);
+	qfglBegin (GL_POLYGON);
 	v = fa->polys->verts[0];
 	for (i = 0; i < fa->polys->numverts; i++, v += VERTEXSIZE) {
-		glTexCoord2fv (&v[3]);
-		glVertex3fv (v);
+		qfglTexCoord2fv (&v[3]);
+		qfglVertex3fv (v);
 	}
-	glEnd ();
+	qfglEnd ();
 
 	// add the poly to the proper lightmap chain
 
@@ -585,7 +585,7 @@ R_RenderBrushPoly (msurface_t *fa)
 			R_BuildLightMap (fa, base, BLOCK_WIDTH * lightmap_bytes);
 		}
 	}
-	glColor3ubv (lighthalf_v);
+	qfglColor3ubv (lighthalf_v);
 }
 
 
@@ -595,13 +595,13 @@ GL_WaterSurface (msurface_t *s)
 	int         i;
 
 	i = s->texinfo->texture->gl_texturenum;
-	glBindTexture (GL_TEXTURE_2D, i);
+	qfglBindTexture (GL_TEXTURE_2D, i);
 	if (r_wateralpha->value < 1.0) {
-		glDepthMask (GL_FALSE);
-		glColor4f (1, 1, 1, r_wateralpha->value);
+		qfglDepthMask (GL_FALSE);
+		qfglColor4f (1, 1, 1, r_wateralpha->value);
 		EmitWaterPolys (s);
-		glColor3ubv (lighthalf_v);
-		glDepthMask (GL_TRUE);
+		qfglColor3ubv (lighthalf_v);
+		qfglDepthMask (GL_TRUE);
 	} else
 		EmitWaterPolys (s);
 }
@@ -617,18 +617,18 @@ R_DrawWaterSurfaces (void)
 		return;
 
 	// go back to the world matrix
-	glLoadMatrixf (r_world_matrix);
+	qfglLoadMatrixf (r_world_matrix);
 
 	if (r_wateralpha->value < 1.0) {
-		glDepthMask (GL_FALSE);
-		glColor4f (1, 1, 1, r_wateralpha->value);
+		qfglDepthMask (GL_FALSE);
+		qfglColor4f (1, 1, 1, r_wateralpha->value);
 	}
 
 	i = -1;
 	for (s = waterchain; s; s = s->texturechain) {
 		if (i != s->texinfo->texture->gl_texturenum) {
 			i = s->texinfo->texture->gl_texturenum;
-			glBindTexture (GL_TEXTURE_2D, i);
+			qfglBindTexture (GL_TEXTURE_2D, i);
 		}
 		EmitWaterPolys (s);
 	}
@@ -636,8 +636,8 @@ R_DrawWaterSurfaces (void)
 	waterchain = NULL;
 
 	if (r_wateralpha->value < 1.0) {
-		glDepthMask (GL_TRUE);
-		glColor3ubv (lighthalf_v);
+		qfglDepthMask (GL_TRUE);
+		qfglColor3ubv (lighthalf_v);
 	}
 }
 
@@ -648,7 +648,7 @@ DrawTextureChains (void)
 	int         i;
 	msurface_t *s;
 
-	glDisable (GL_BLEND);
+	qfglDisable (GL_BLEND);
 
 	for (i = 0; i < r_worldentity.model->numtextures; i++) {
 		if (!r_worldentity.model->textures[i])
@@ -659,7 +659,7 @@ DrawTextureChains (void)
 		r_worldentity.model->textures[i]->texturechain = NULL;
 	}
 
-	glEnable (GL_BLEND);
+	qfglEnable (GL_BLEND);
 }
 
 
@@ -728,7 +728,7 @@ R_DrawBrushModel (entity_t *e)
 		}
 	}
 
-	glPushMatrix ();
+	qfglPushMatrix ();
 	e->angles[0] = -e->angles[0];		// stupid quake bug
 	R_RotateForEntity (e);
 	e->angles[0] = -e->angles[0];		// stupid quake bug
@@ -771,7 +771,7 @@ R_DrawBrushModel (entity_t *e)
 	if (gl_sky_clip->int_val)
 		R_DrawSkyChain (sky_chain);
 
-	glPopMatrix ();
+	qfglPopMatrix ();
 }
 
 
@@ -1198,10 +1198,10 @@ GL_BuildLightmaps (model_t **models, int num_models)
 		lightmap_rectchange[i].t = BLOCK_HEIGHT;
 		lightmap_rectchange[i].w = 0;
 		lightmap_rectchange[i].h = 0;
-		glBindTexture (GL_TEXTURE_2D, lightmap_textures + i);
-		glTexParameterf (GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-		glTexParameterf (GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-		glTexImage2D (GL_TEXTURE_2D, 0, lightmap_bytes, BLOCK_WIDTH,
+		qfglBindTexture (GL_TEXTURE_2D, lightmap_textures + i);
+		qfglTexParameterf (GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+		qfglTexParameterf (GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+		qfglTexImage2D (GL_TEXTURE_2D, 0, lightmap_bytes, BLOCK_WIDTH,
 					  BLOCK_HEIGHT, 0, gl_lightmap_format,
 					  GL_UNSIGNED_BYTE, lightmaps[i]);
 	}

@@ -32,7 +32,7 @@
 #include "QF/GL/types.h"
 #include "QF/qtypes.h"
 
-#define QFGL_NEED(ret, name, args)	extern ret (* name) args
+#define QFGL_NEED(ret, name, args)	extern ret (* qf##name) args
 #include "QF/GL/qf_funcs_list.h"
 #undef QFGL_NEED
 

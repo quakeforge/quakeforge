@@ -169,7 +169,8 @@ TragicDeath (int sig)
 {
 	printf ("Received signal %d, exiting...\n", sig);
 	Sys_Quit ();
-	exit (sig);
+	abort();	// Hopefully not an infinite loop.
+//	exit (sig);
 	// XCloseDisplay(x_disp);
 	// VID_Shutdown();
 	// Sys_Error("This death brought to you by the number %d\n", signal_num);

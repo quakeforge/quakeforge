@@ -121,7 +121,7 @@ CheckMultiTextureExtensions (void)
 
 		int max_texture_units = 0;
 
-		glGetIntegerv (GL_MAX_TEXTURE_UNITS_ARB, &max_texture_units);
+		qfglGetIntegerv (GL_MAX_TEXTURE_UNITS_ARB, &max_texture_units);
 		if (max_texture_units >= 2) {
 			Con_Printf ("enabled, %d TMUs.\n", max_texture_units);
 			qglMultiTexCoord2f = QFGL_ExtensionAddress ("glMultiTexCoord2fARB");
@@ -231,36 +231,36 @@ GL_Init_Common (void)
 		return;
 	}
 
-	gl_vendor = glGetString (GL_VENDOR);
+	gl_vendor = qfglGetString (GL_VENDOR);
 	Con_Printf ("GL_VENDOR: %s\n", gl_vendor);
-	gl_renderer = glGetString (GL_RENDERER);
+	gl_renderer = qfglGetString (GL_RENDERER);
 	Con_Printf ("GL_RENDERER: %s\n", gl_renderer);
 
-	gl_version = glGetString (GL_VERSION);
+	gl_version = qfglGetString (GL_VERSION);
 	Con_Printf ("GL_VERSION: %s\n", gl_version);
-	gl_extensions = glGetString (GL_EXTENSIONS);
+	gl_extensions = qfglGetString (GL_EXTENSIONS);
 	Con_Printf ("GL_EXTENSIONS: %s\n", gl_extensions);
 
-	glClearColor (0, 0, 0, 0);
-	glCullFace (GL_FRONT);
-	glEnable (GL_TEXTURE_2D);
+	qfglClearColor (0, 0, 0, 0);
+	qfglCullFace (GL_FRONT);
+	qfglEnable (GL_TEXTURE_2D);
 
-	glEnable (GL_ALPHA_TEST);
-	glAlphaFunc (GL_GREATER, 0.666);
+	qfglEnable (GL_ALPHA_TEST);
+	qfglAlphaFunc (GL_GREATER, 0.666);
 
-	glPolygonMode (GL_FRONT_AND_BACK, GL_FILL);
+	qfglPolygonMode (GL_FRONT_AND_BACK, GL_FILL);
 
-	glShadeModel (GL_FLAT);
+	qfglShadeModel (GL_FLAT);
 
-	glTexParameterf (GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, gl_filter_min);
-	glTexParameterf (GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, gl_filter_max);
-	glTexParameterf (GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
-	glTexParameterf (GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+	qfglTexParameterf (GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, gl_filter_min);
+	qfglTexParameterf (GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, gl_filter_max);
+	qfglTexParameterf (GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+	qfglTexParameterf (GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
 
-	glEnable (GL_BLEND);
-	glBlendFunc (GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+	qfglEnable (GL_BLEND);
+	qfglBlendFunc (GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
-	glTexEnvf (GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
+	qfglTexEnvf (GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
 
 	CheckMultiTextureExtensions ();
 }
@@ -315,7 +315,7 @@ Tdfx_Init8bitPalette (void)
 			table[i][3] = 255;
 			oldpal++;
 		}
-		glEnable (GL_SHARED_TEXTURE_PALETTE_EXT);
+		qfglEnable (GL_SHARED_TEXTURE_PALETTE_EXT);
 		qgl3DfxSetPaletteEXT ((GLuint *) table);
 		is8bit = true;
 	} else {
@@ -351,7 +351,7 @@ Shared_Init8bitPalette (void)
 
 		Con_Printf ("GL_EXT_shared_texture_palette\n");
 
-		glEnable (GL_SHARED_TEXTURE_PALETTE_EXT);
+		qfglEnable (GL_SHARED_TEXTURE_PALETTE_EXT);
 		oldPalette = (GLubyte *) d_8to24table;	// d_8to24table3dfx;
 		newPalette = thePalette;
 		for (i = 0; i < 256; i++) {

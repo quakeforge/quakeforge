@@ -464,8 +464,10 @@ Cache_TryAlloc (int size, qboolean nobottom)
 // is the cache completely empty?
 
 	if (!nobottom && cache_head.prev == &cache_head) {
-		if (hunk_size - hunk_high_used - hunk_low_used < size)
-			Sys_Error ("Cache_TryAlloc: %i is greater then free hunk", size);
+		if (hunk_size - hunk_high_used - hunk_low_used < size) {
+			Con_Printf ("Cache_TryAlloc: %i is greater then free hunk", size);
+			return NULL;
+		}
 
 		new = (cache_system_t *) (hunk_base + hunk_low_used);
 		memset (new, 0, sizeof (*new));

@@ -208,7 +208,7 @@ EmitWaterPolys (msurface_t *fa)
 	vec3_t      nv;
 
 	for (p = fa->polys; p; p = p->next) {
-		glBegin (GL_POLYGON);
+		qfglBegin (GL_POLYGON);
 		for (i = 0, v = p->verts[0]; i < p->numverts; i++, v += VERTEXSIZE) {
 			os = v[3];
 			ot = v[4];
@@ -219,7 +219,7 @@ EmitWaterPolys (msurface_t *fa)
 			t = ot + turbsin[(int) ((os * 0.125 + r_realtime) * TURBSCALE) & 255];
 			t *= (1.0 / 64);
 
-			glTexCoord2f (s, t);
+			qfglTexCoord2f (s, t);
 
 			VectorCopy (v, nv);
 			nv[2] += r_waterripple->value
@@ -227,8 +227,8 @@ EmitWaterPolys (msurface_t *fa)
 				* turbsin[(int) ((v[4] * 0.125 + r_realtime) * TURBSCALE) & 255]
 				* (1.0 / 64.0);
 
-			glVertex3fv (nv);
+			qfglVertex3fv (nv);
 		}
-		glEnd ();
+		qfglEnd ();
 	}
 }

@@ -84,7 +84,7 @@ R_LoadSkys (const char *skyname)
 	for (i = 0; i < 6; i++) {
 		byte       *targa_rgba;
 
-		glBindTexture (GL_TEXTURE_2D, SKY_TEX + i);
+		qfglBindTexture (GL_TEXTURE_2D, SKY_TEX + i);
 		snprintf (name, sizeof (name), "env/%s%s.tga", skyname, suf[i]);
 		COM_FOpenFile (name, &f);
 		if (!f) {
@@ -94,13 +94,13 @@ R_LoadSkys (const char *skyname)
 		}
 		targa_rgba = LoadTGA (f);
 
-		glTexImage2D (GL_TEXTURE_2D, 0, gl_solid_format, 256, 256, 0, GL_RGBA,
+		qfglTexImage2D (GL_TEXTURE_2D, 0, gl_solid_format, 256, 256, 0, GL_RGBA,
 					  GL_UNSIGNED_BYTE, targa_rgba);
 
 		free (targa_rgba);
 
-		glTexParameterf (GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-		glTexParameterf (GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+		qfglTexParameterf (GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+		qfglTexParameterf (GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 	}
 	if (!skyloaded)
 		Con_Printf ("Unable to load skybox %s, using normal sky\n", skyname);
@@ -113,8 +113,8 @@ R_SkyBoxPolyVec (vec5_t v)
 	// avoid interpolation seams
 //  s = s * (254.0/256.0) + (1.0/256.0);
 //  t = t * (254.0/256.0) + (1.0/256.0);
-	glTexCoord2fv (v);
-	glVertex3f (r_refdef.vieworg[0] + v[2],
+	qfglTexCoord2fv (v);
+	qfglVertex3f (r_refdef.vieworg[0] + v[2],
 				r_refdef.vieworg[1] + v[3], r_refdef.vieworg[2] + v[4]);
 }
 
@@ -172,18 +172,18 @@ R_DrawSkyBox (void)
 {
 	int         i, j;
 
-	glDisable (GL_DEPTH_TEST);
-	glDepthRange (gldepthmax, gldepthmax);
+	qfglDisable (GL_DEPTH_TEST);
+	qfglDepthRange (gldepthmax, gldepthmax);
 	for (i = 0; i < 6; i++) {
-		glBindTexture (GL_TEXTURE_2D, SKY_TEX + i);
-		glBegin (GL_QUADS);
+		qfglBindTexture (GL_TEXTURE_2D, SKY_TEX + i);
+		qfglBegin (GL_QUADS);
 		for (j = 0; j < 4; j++)
 			R_SkyBoxPolyVec (skyvec[i][j]);
-		glEnd ();
+		qfglEnd ();
 	}
 
-	glEnable (GL_DEPTH_TEST);
-	glDepthRange (gldepthmin, gldepthmax);
+	qfglEnable (GL_DEPTH_TEST);
+	qfglDepthRange (gldepthmin, gldepthmax);
 }
 
 
@@ -202,9 +202,9 @@ R_DrawSkyLayer (float s)
 		a2x = bubble_costable[(a + 1) * 2] * domescale[0];
 		a2y = -bubble_sintable[(a + 1) * 2] * domescale[1];
 
-		glBegin (GL_TRIANGLE_STRIP);
-		glTexCoord2f (0.5 + s * (1.0 / 128.0), 0.5 + s * (1.0 / 128.0));
-		glVertex3f (r_refdef.vieworg[0],
+		qfglBegin (GL_TRIANGLE_STRIP);
+		qfglTexCoord2f (0.5 + s * (1.0 / 128.0), 0.5 + s * (1.0 / 128.0));
+		qfglVertex3f (r_refdef.vieworg[0],
 					r_refdef.vieworg[1], r_refdef.vieworg[2] + domescale[2]);
 		for (b = 1; b < 8; b++) {
 			x = bubble_costable[b * 2 + 16];
@@ -213,23 +213,23 @@ R_DrawSkyLayer (float s)
 			v[0] = a1x * x;
 			v[1] = a1y * x;
 			v[2] = y * domescale[2];
-			glTexCoord2f ((v[0] + s) * (1.0 / 128.0),
+			qfglTexCoord2f ((v[0] + s) * (1.0 / 128.0),
 						  (v[1] + s) * (1.0 / 128.0));
-			glVertex3f (v[0] + r_refdef.vieworg[0],
+			qfglVertex3f (v[0] + r_refdef.vieworg[0],
 						v[1] + r_refdef.vieworg[1], v[2] + r_refdef.vieworg[2]);
 
 			v[0] = a2x * x;
 			v[1] = a2y * x;
 			v[2] = y * domescale[2];
-			glTexCoord2f ((v[0] + s) * (1.0 / 128.0),
+			qfglTexCoord2f ((v[0] + s) * (1.0 / 128.0),
 						  (v[1] + s) * (1.0 / 128.0));
-			glVertex3f (v[0] + r_refdef.vieworg[0],
+			qfglVertex3f (v[0] + r_refdef.vieworg[0],
 						v[1] + r_refdef.vieworg[1], v[2] + r_refdef.vieworg[2]);
 		}
-		glTexCoord2f (0.5 + s * (1.0 / 128.0), 0.5 + s * (1.0 / 128.0));
-		glVertex3f (r_refdef.vieworg[0],
+		qfglTexCoord2f (0.5 + s * (1.0 / 128.0), 0.5 + s * (1.0 / 128.0));
+		qfglVertex3f (r_refdef.vieworg[0],
 					r_refdef.vieworg[1], r_refdef.vieworg[2] - domescale[2]);
-		glEnd ();
+		qfglEnd ();
 	}
 }
 
@@ -237,24 +237,24 @@ R_DrawSkyLayer (float s)
 void
 R_DrawSkyDome (void)
 {
-	glDisable (GL_DEPTH_TEST);
-	glDepthRange (gldepthmax, gldepthmax);
+	qfglDisable (GL_DEPTH_TEST);
+	qfglDepthRange (gldepthmax, gldepthmax);
 
-	glDisable (GL_BLEND);
+	qfglDisable (GL_BLEND);
 
 	// base sky
-	glBindTexture (GL_TEXTURE_2D, solidskytexture);
+	qfglBindTexture (GL_TEXTURE_2D, solidskytexture);
 	domescale[0] = 512;
 	domescale[1] = 512;
 	domescale[2] = 128;
 	speedscale = r_realtime * 8;
 	speedscale -= (int) speedscale & ~127;
 	R_DrawSkyLayer (speedscale);
-	glEnable (GL_BLEND);
+	qfglEnable (GL_BLEND);
 
 	// clouds
 	if (gl_skymultipass->int_val) {
-		glBindTexture (GL_TEXTURE_2D, alphaskytexture);
+		qfglBindTexture (GL_TEXTURE_2D, alphaskytexture);
 		domescale[0] = 512;
 		domescale[1] = 512;
 		domescale[2] = 128;
@@ -263,8 +263,8 @@ R_DrawSkyDome (void)
 		R_DrawSkyLayer (speedscale);
 	}
 
-	glEnable (GL_DEPTH_TEST);
-	glDepthRange (gldepthmin, gldepthmax);
+	qfglEnable (GL_DEPTH_TEST);
+	qfglDepthRange (gldepthmin, gldepthmax);
 }
 
 
@@ -317,11 +317,11 @@ R_InitSky (texture_t *mt)
 
 	if (!solidskytexture)
 		solidskytexture = texture_extension_number++;
-	glBindTexture (GL_TEXTURE_2D, solidskytexture);
-	glTexImage2D (GL_TEXTURE_2D, 0, gl_solid_format, 128, 128, 0, GL_RGBA,
+	qfglBindTexture (GL_TEXTURE_2D, solidskytexture);
+	qfglTexImage2D (GL_TEXTURE_2D, 0, gl_solid_format, 128, 128, 0, GL_RGBA,
 				  GL_UNSIGNED_BYTE, trans);
-	glTexParameterf (GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-	glTexParameterf (GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+	qfglTexParameterf (GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+	qfglTexParameterf (GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 
 
 	for (i = 0; i < 128; i++)
@@ -335,9 +335,9 @@ R_InitSky (texture_t *mt)
 
 	if (!alphaskytexture)
 		alphaskytexture = texture_extension_number++;
-	glBindTexture (GL_TEXTURE_2D, alphaskytexture);
-	glTexImage2D (GL_TEXTURE_2D, 0, gl_alpha_format, 128, 128, 0, GL_RGBA,
+	qfglBindTexture (GL_TEXTURE_2D, alphaskytexture);
+	qfglTexImage2D (GL_TEXTURE_2D, 0, gl_alpha_format, 128, 128, 0, GL_RGBA,
 				  GL_UNSIGNED_BYTE, trans);
-	glTexParameterf (GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-	glTexParameterf (GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+	qfglTexParameterf (GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+	qfglTexParameterf (GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 }

@@ -98,7 +98,7 @@ QFGL_ExtensionPresent (const char *name)
 	static const GLubyte *gl_extensions = NULL;
 
 	if (!gl_extensions) {				// get and save GL extension list
-		gl_extensions = glGetString (GL_EXTENSIONS);
+		gl_extensions = qfglGetString (GL_EXTENSIONS);
 	}
 
 	return QFGL_ParseExtensionList (gl_extensions, name);

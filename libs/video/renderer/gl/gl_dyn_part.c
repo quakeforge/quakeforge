@@ -575,7 +575,7 @@ R_DrawParticles (void)
 	int         activeparticles, maxparticle, j, k;
 	
 	// LordHavoc: particles should not affect zbuffer
-	glDepthMask (GL_FALSE);
+	qfglDepthMask (GL_FALSE);
 
 	VectorScale (vup, 1.5, o_up);
 	VectorScale (vright, 1.5, o_right);
@@ -660,8 +660,8 @@ R_DrawParticles (void)
 			varray[3].vertex[1] = part->org[1] + up_scale[1] - right_scale[1];
 			varray[3].vertex[2] = part->org[2] + up_scale[2] - right_scale[2];
 
-			glBindTexture (GL_TEXTURE_2D, part->tex);
-			glDrawArrays (GL_QUADS, 0, 4);
+			qfglBindTexture (GL_TEXTURE_2D, part->tex);
+			qfglDrawArrays (GL_QUADS, 0, 4);
 		}
 
 		for (i = 0; i < 3; i++)
@@ -747,6 +747,6 @@ R_DrawParticles (void)
 	}
 	numparticles = activeparticles;
 
-	glColor3ubv (lighthalf_v);
-	glDepthMask (GL_TRUE);
+	qfglColor3ubv (lighthalf_v);
+	qfglDepthMask (GL_TRUE);
 }
