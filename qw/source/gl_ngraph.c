@@ -39,6 +39,7 @@
 #include <stdio.h>
 
 #include "cl_parse.h"
+#include "QF/compat.h"
 #include "QF/cvar.h"
 #include "draw.h"
 #include "glquake.h"

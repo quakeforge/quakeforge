@@ -36,6 +36,7 @@
 # include <strings.h>
 #endif
 
+#include "QF/compat.h"
 #include "QF/console.h"
 #include "cl_main.h"
 #include "client.h"

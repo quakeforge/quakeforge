@@ -41,6 +41,7 @@
 
 #include "cl_main.h"
 #include "client.h"
+#include "QF/compat.h"
 #include "QF/crc.h"
 #include "QF/info.h"
 #include "QF/model.h"

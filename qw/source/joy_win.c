@@ -47,7 +47,7 @@
 #include "QF/console.h"
 #include "QF/cvar.h"
 #include "host.h"
-#include "input.h"
+#include "QF/input.h"
 #include "QF/keys.h"
 #include "protocol.h"
 #include "QF/qargs.h"

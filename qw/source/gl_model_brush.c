@@ -39,6 +39,7 @@
 # include <strings.h>
 #endif
 
+#include "QF/compat.h"
 #include "QF/console.h"
 #include "glquake.h"
 #include "QF/model.h"

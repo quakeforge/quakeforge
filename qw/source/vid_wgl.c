@@ -30,8 +30,11 @@
 # include "config.h"
 #endif
 
-#include "cdaudio.h"
+#include "winquake.h"
+
+#include "QF/cdaudio.h"
 #include "QF/cmd.h"
+#include "QF/compat.h"
 #include "QF/console.h"
 #include "draw.h"
 #include "glquake.h"
@@ -43,10 +46,9 @@
 #include "resource.h"
 #include "sbar.h"
 #include "screen.h"
-#include "sound.h"
+#include "QF/sound.h"
 #include "QF/sys.h"
 #include "QF/va.h"
-#include "winquake.h"
 
 extern void (*vid_menudrawfn) (void);
 extern void (*vid_menukeyfn) (int);
@@ -258,7 +260,7 @@ VID_SetWindowedMode (int modenum)
 		global_hInstance, NULL);
 
 	if (!mainwindow)
-                Sys_Error ("Couldn't create DIB window (%x)\r\n",GetLastError());
+                Sys_Error ("Couldn't create DIB window (%lx)\r\n",GetLastError());
 
 // Center and show the window
 	CenterWindow (mainwindow, WindowRect.right - WindowRect.left,
@@ -314,7 +316,7 @@ VID_SetFullDIBMode (int modenum)
 
 		if (ChangeDisplaySettings (&gdevmode, CDS_FULLSCREEN) !=
 			DISP_CHANGE_SUCCESSFUL)
-                                Sys_Error ("Couldn't set fullscreen DIB mode (%x)\r\n",GetLastError());
+                                Sys_Error ("Couldn't set fullscreen DIB mode (%lx)\r\n",GetLastError());
 	}
 
 	lastmodestate = modestate;
@@ -348,7 +350,7 @@ VID_SetFullDIBMode (int modenum)
 		global_hInstance, NULL);
 
 	if (!mainwindow)
-                Sys_Error ("Couldn't create DIB window (%x)\r\n",GetLastError());
+                Sys_Error ("Couldn't create DIB window (%lx)\r\n",GetLastError());
 
 	ShowWindow (mainwindow, SW_SHOWDEFAULT);
 	UpdateWindow (mainwindow);
@@ -889,7 +891,7 @@ AppActivate (BOOL fActive, BOOL minimize)
 				if (ChangeDisplaySettings (&gdevmode, CDS_FULLSCREEN) !=
 					DISP_CHANGE_SUCCESSFUL) {
 					IN_ShowMouse ();
-                                        Sys_Error ("Couldn't set fullscreen DIB mode\n(try upgrading your video drivers)\r\n (%x)",GetLastError());
+                                        Sys_Error ("Couldn't set fullscreen DIB mode\n(try upgrading your video drivers)\r\n (%lx)",GetLastError());
 				}
 				ShowWindow (mainwindow, SW_SHOWNORMAL);
 
@@ -1210,7 +1212,7 @@ VID_InitDIB (HINSTANCE hInstance)
 	wc.lpszClassName = "QuakeForge";
 
 	if (!RegisterClass (&wc))
-                Sys_Error ("Couldn't register window class (%x)\r\n",GetLastError());
+                Sys_Error ("Couldn't register window class (%lx)\r\n",GetLastError());
 
 	modelist[0].type = MS_WINDOWED;
 
@@ -1426,7 +1428,7 @@ void
 VID_Init (unsigned char *palette)
 {
 	int         i, existingmode;
-	int         basenummodes, width, height, bpp, findbpp, done;
+	int         basenummodes, width, height=480, bpp, findbpp, done;
 	char        gldir[MAX_OSPATH];
 	HDC         hdc;
 	DEVMODE     devmode;
@@ -1625,7 +1627,7 @@ VID_Init (unsigned char *palette)
 		lasterror=GetLastError();
 		if (maindc && mainwindow)
 			ReleaseDC (mainwindow, maindc);
-		Sys_Error("Could not initialize GL (wglCreateContext failed).\n\nMake sure you in are 65535 color mode, and try running -window. \nError code: (%x)\r\n",lasterror);
+		Sys_Error("Could not initialize GL (wglCreateContext failed).\n\nMake sure you in are 65535 color mode, and try running -window. \nError code: (%lx)\r\n",lasterror);
 	}
 
 	if (!wglMakeCurrent (maindc, baseRC)) {
@@ -1634,7 +1636,7 @@ VID_Init (unsigned char *palette)
 			wglDeleteContext (baseRC);
                 if (maindc && mainwindow)
        	                ReleaseDC (mainwindow, maindc);
-		Sys_Error ("wglMakeCurrent failed (%x)\r\n",lasterror);
+		Sys_Error ("wglMakeCurrent failed (%lx)\r\n",lasterror);
 	}
 
 	GL_Init ();

@@ -40,6 +40,7 @@
 #endif
 
 #include "glquake.h"
+#include "QF/compat.h"
 #include "QF/model.h"
 #include "QF/qendian.h"
 

@@ -39,6 +39,7 @@
 #include <limits.h>
 
 #include "client.h"
+#include "QF/compat.h"
 #include "QF/console.h"
 #include "locs.h"
 #include "QF/quakefs.h"

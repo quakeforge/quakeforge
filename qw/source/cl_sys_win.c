@@ -45,7 +45,7 @@
 #include "QF/qargs.h"
 #include "resource.h"
 #include "screen.h"
-#include "sound.h"
+#include "QF/sound.h"
 #include "QF/sys.h"
 #include "vid.h"
 

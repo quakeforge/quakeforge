@@ -45,6 +45,7 @@
 
 #include "cl_cam.h"
 #include "client.h"
+#include "QF/compat.h"
 #include "QF/console.h"
 #include "QF/msg.h"
 #include "pmove.h"
