@@ -6,6 +6,26 @@
 	);
 	Super = NSView;
     };
+    Forge = {
+	Actions = (
+	);
+	Outlets = (
+	    brushCount,
+	    cmdInput,
+	    cmdOutput,
+	    entityCount,
+	    filterClip,
+	    filterEntities,
+	    filterLights,
+	    filterPaths,
+	    filterWater,
+	    filterWorld,
+	    showCoords,
+	    showNames,
+	    xyDrawMode
+	);
+	Super = NSWindow;
+    };
     NSApplication = {
 	Outlets = (
 	    delegate
@@ -60,6 +80,33 @@
 	    delegate
 	);
 	Super = NSResponder;
+    };
+    Preferences = {
+	Actions = (
+	    commitDisplayedValues:,
+	    discardDisplayedValues:,
+	    loadDefaults:,
+	    objectForKey:key:,
+	    ok:sender:,
+	    preferences:,
+	    prefsChanged:sender:,
+	    revert:sender:,
+	    revertToDefault:sender:,
+	    saveDefaults:,
+	    sharedInstance:,
+	    updateUI:
+	);
+	Outlets = (
+	    bspSoundPathField,
+	    offsetBrushCopyButton,
+	    projectPathField,
+	    showBSPOutputButton,
+	    startWadField,
+	    xLightField,
+	    yLightField,
+	    zLightField
+	);
+	Super = NSObject;
     };
     XYView = {
 	Actions = (
