@@ -114,6 +114,9 @@ if test "x$cpp_name" != xauto; then
 else
 	CPP_NAME="cpp %d -o %o %i"
 	case "$target_os" in
+		*freebsd*)
+			CPP_NAME="cpp %d %i %o"
+			;;
 		*bsd*)
 			touch conftest.c
 			CPP_NAME="`(f=\`$CC -v -E -Dfoo conftest.c -o conftest.i 2>&1 | grep -e -Dfoo\`; set $f; echo "$1")` %d %i %o"
