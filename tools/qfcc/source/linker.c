@@ -185,9 +185,9 @@ process_def (qfo_def_t *def)
 			}
 		}
 		if (def->flags & QFOD_GLOBAL) {
-			while ((d = Hash_Find (extern_defs,
-								   strings->strings + def->name))) {
-				Hash_Del (extern_defs, strings->strings + d->name);
+			while ((d = Hash_Del (extern_defs,
+								  strings->strings + def->name))) {
+				Hash_Add (defined_defs, d);
 				if (d->full_type != def->full_type) {
 					pr.source_file = def->file;
 					pr.source_line = def->line;
