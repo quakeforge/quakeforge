@@ -60,14 +60,17 @@ static __attribute__ ((unused)) const char rcsid[] =
 #include "vis.h"
 #include "options.h"
 
-static void
+static int
 CheckStack (cluster_t *cluster, threaddata_t *thread)
 {
     pstack_t	*portal;
 	
     for (portal = thread->pstack_head.next; portal; portal = portal->next)
-		if (portal->cluster == cluster)
-			Sys_Error ("CheckStack: cluster recursion");
+		if (portal->cluster == cluster) {
+			printf ("CheckStack: cluster recursion\n");
+			return 1;
+		}
+	return 0;
 }
 
 /*
@@ -208,7 +211,8 @@ RecursiveClusterFlow (int clusternum, threaddata_t *thread, pstack_t *prevstack)
     c_chains++;
 
     cluster = &clusters[clusternum];
-    CheckStack(cluster, thread);
+    if (CheckStack(cluster, thread))
+		return;
 
 	// mark the cluster as visible
     if (!(thread->clustervis[clusternum >> 3] & (1 << (clusternum & 7)))) {
