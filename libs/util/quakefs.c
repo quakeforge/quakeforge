@@ -367,7 +367,7 @@ qfs_find_gamedir (const char *name, hashtab_t *dirs)
 		dictkey_t **list = (dictkey_t **) Hash_GetList (qfs_gd_plist->data);
 		dictkey_t **l;
 		for (l = list; *l; l++)
-			puts((*l)->key);
+			;
 		qsort (list, l - list, sizeof (char *), qfs_compare);
 		while (l-- != list) {
 			if (!fnmatch ((*l)->key, name, 0)) {
