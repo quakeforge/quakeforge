@@ -206,7 +206,7 @@ COM_execute (cbuf_t *cbuf)
 {
 	dstring_t *buf = DATA(cbuf)->buf;
 	dstring_t *line = DATA(cbuf)->line;
-	while (*buf->str) {
+	while (cbuf->state == CBUF_STATE_NORMAL && *buf->str) {
 		COM_extract_line (cbuf);
 		COM_TokenizeString (line->str, cbuf->args);
 		if (cbuf->args->argc)
