@@ -69,7 +69,7 @@ typedef struct _TargaHeader {
 # endif
 #endif
 
-byte *LoadTGA (VFile *fin);
+struct tex_s *LoadTGA (VFile *fin);
 void WriteTGAfile (const char *tganame, byte *data, int width, int height);
 
 #endif // __tga_h

@@ -40,6 +40,7 @@ static const char rcsid[] =
 #include "QF/console.h"
 #include "QF/cvar.h"
 #include "QF/render.h"
+#include "QF/texture.h"
 #include "QF/tga.h"
 #include "QF/vfs.h"
 #include "QF/vid.h"
@@ -78,7 +79,7 @@ R_LoadSkys (const char *skyname)
 
 	skyloaded = true;
 	for (i = 0; i < 6; i++) {
-		byte       *targa_rgba;
+		tex_t	*targa;
 
 		qfglBindTexture (GL_TEXTURE_2D, SKY_TEX + i);
 		snprintf (name, sizeof (name), "env/%s%s.tga", skyname, suf[i]);
@@ -88,12 +89,18 @@ R_LoadSkys (const char *skyname)
 			skyloaded = false;
 			continue;
 		}
-		targa_rgba = LoadTGA (f);
+		targa = LoadTGA (f);
 
-		qfglTexImage2D (GL_TEXTURE_2D, 0, gl_solid_format, 256, 256, 0,
-						GL_RGBA, GL_UNSIGNED_BYTE, targa_rgba);
+		if (targa->format < 4)
+			qfglTexImage2D (GL_TEXTURE_2D, 0, gl_solid_format, targa->width,
+							targa->height, 0, GL_RGB, GL_UNSIGNED_BYTE,
+							&targa->data);
+		else
+			qfglTexImage2D (GL_TEXTURE_2D, 0, gl_solid_format, targa->width,
+							targa->height, 0, GL_RGBA, GL_UNSIGNED_BYTE,
+							&targa->data);
 
-		free (targa_rgba);
+		free (targa);
 
 		qfglTexParameterf (GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 		qfglTexParameterf (GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);

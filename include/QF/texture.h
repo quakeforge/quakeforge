@@ -34,10 +34,15 @@
 
 // could not use texture_t as that is used for models.
 typedef struct tex_s {
-	int width;
-	int height;
-	unsigned char *palette;					// 0 = 32 bit, otherise 8
-	unsigned char data[4];					// variable length
+	int				width;
+	int				height;
+	int				format;
+	unsigned char  *palette;					// 0 = 32 bit, otherwise 8
+	unsigned char	data[4];					// variable length
 } tex_t;
+
+#define tex_palette 0;
+#define tex_rgb 3;
+#define tex_rgba 4;
 
 #endif // __texture_h

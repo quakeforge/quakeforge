@@ -41,8 +41,11 @@ static const char rcsid[] =
 
 #include "QF/qendian.h"
 #include "QF/sys.h"
+#include "QF/texture.h"
 #include "QF/tga.h"
 #include "QF/vfs.h"
+
+#include "compat.h"
 
 
 static int
@@ -71,15 +74,15 @@ fgetLittleLong (VFile *f)
 }
 */
 
-byte *
+struct tex_s *
 LoadTGA (VFile *fin)
 {
 	byte		   *pixbuf;
-	unsigned char	red = 0, green = 0, blue = 0, alphabyte = 0;
+	byte			red = 0, green = 0, blue = 0, alphabyte = 0;
 	int				column, row, columns, rows, numPixels;
 
-	TargaHeader targa_header;
-	byte       *targa_rgba;
+	TargaHeader		targa_header;
+	tex_t		   *targa_data;
 
 	targa_header.id_length = Qgetc (fin);
 	targa_header.colormap_type = Qgetc (fin);
@@ -107,30 +110,53 @@ LoadTGA (VFile *fin)
 	rows = targa_header.height;
 	numPixels = columns * rows;
 
-	targa_rgba = malloc (numPixels * 4);
-	if (!targa_rgba)
-		Sys_Error ("LoadTGA: Memory Allocation Failure\n");
+	switch (targa_header.pixel_size) {
+		case 24:
+			targa_data = malloc
+				(field_offset (tex_t, data[numPixels * 3]));
+			if (!targa_data)
+				Sys_Error ("LoadTGA: Memory Allocation Failure\n");
+			targa_data->format = tex_rgb;
+			break;
+		default:
+		case 32:
+			targa_data = malloc
+				(field_offset (tex_t, data[numPixels * 4]));
+			if (!targa_data)
+				Sys_Error ("LoadTGA: Memory Allocation Failure\n");
+			targa_data->format = tex_rgba;
+			break;
+	}
+
+	targa_data->width = columns;
+	targa_data->height = rows;
+	targa_data->palette = 0;
 
 	if (targa_header.id_length != 0)
 		Qseek (fin, targa_header.id_length, SEEK_CUR);	// skip TARGA image
 														// comment
 
-	if (targa_header.image_type == 2) {	// Uncompressed, RGB images
-		for (row = rows - 1; row >= 0; row--) {
-			pixbuf = targa_rgba + row * columns * 4;
-			for (column = 0; column < columns; column++) {
-				switch (targa_header.pixel_size) {
-					case 24:
-
+	if (targa_header.image_type == 2) {	// Uncompressed image
+		switch (targa_header.pixel_size) {
+			case 24:
+				for (row = rows - 1; row >= 0; row--) {
+					pixbuf = targa_data->data + row * columns *
+						targa_data->format;
+					for (column = 0; column < columns; column++) {
 						blue = Qgetc (fin);
 						green = Qgetc (fin);
 						red = Qgetc (fin);
 						*pixbuf++ = red;
 						*pixbuf++ = green;
 						*pixbuf++ = blue;
-						*pixbuf++ = 255;
-						break;
-					case 32:
+					}
+				}
+				break;
+			case 32:
+				for (row = rows - 1; row >= 0; row--) {
+					pixbuf = targa_data->data + row * columns *
+						targa_data->format;
+					for (column = 0; column < columns; column++) {
 						blue = Qgetc (fin);
 						green = Qgetc (fin);
 						red = Qgetc (fin);
@@ -139,16 +165,15 @@ LoadTGA (VFile *fin)
 						*pixbuf++ = green;
 						*pixbuf++ = blue;
 						*pixbuf++ = alphabyte;
-						break;
+					}
 				}
-			}
+				break;
 		}
-	} else if (targa_header.image_type == 10) {	// Runlength encoded RGB
-												// images
+	} else if (targa_header.image_type == 10) {	// RLE compressed image
 		unsigned char packetHeader, packetSize, j;
 
 		for (row = rows - 1; row >= 0; row--) {
-			pixbuf = targa_rgba + row * columns * 4;
+			pixbuf = targa_data->data + row * columns * targa_data->format;
 			for (column = 0; column < columns;) {
 				packetHeader = Qgetc (fin);
 				packetSize = 1 + (packetHeader & 0x7f);
@@ -158,7 +183,6 @@ LoadTGA (VFile *fin)
 							blue = Qgetc (fin);
 							green = Qgetc (fin);
 							red = Qgetc (fin);
-							alphabyte = 255;
 							break;
 						case 32:
 							blue = Qgetc (fin);
@@ -172,7 +196,8 @@ LoadTGA (VFile *fin)
 						*pixbuf++ = red;
 						*pixbuf++ = green;
 						*pixbuf++ = blue;
-						*pixbuf++ = alphabyte;
+						if (targa_header.pixel_size > 24)
+							*pixbuf++ = alphabyte;
 						column++;
 						if (column == columns) {	// run spans across rows
 							column = 0;
@@ -180,7 +205,8 @@ LoadTGA (VFile *fin)
 								row--;
 							else
 								goto breakOut;
-							pixbuf = targa_rgba + row * columns * 4;
+							pixbuf = targa_data->data + row * columns *
+								targa_data->format;
 						}
 					}
 				} else {				// non run-length packet
@@ -193,7 +219,6 @@ LoadTGA (VFile *fin)
 								*pixbuf++ = red;
 								*pixbuf++ = green;
 								*pixbuf++ = blue;
-								*pixbuf++ = 255;
 								break;
 							case 32:
 								blue = Qgetc (fin);
@@ -207,24 +232,25 @@ LoadTGA (VFile *fin)
 								break;
 						}
 						column++;
-						if (column == columns) {	// pixel packet run spans 
+						if (column == columns) {	// pixel packet run spans
 													// across rows
 							column = 0;
 							if (row > 0)
 								row--;
 							else
 								goto breakOut;
-							pixbuf = targa_rgba + row * columns * 4;
+							pixbuf = targa_data->data + row * columns *
+								targa_data->format;
 						}
 					}
 				}
 			}
-		  breakOut:;
+		breakOut:;
 		}
 	}
 
 	Qclose (fin);
-	return targa_rgba;
+	return targa_data;
 }
 
 void
