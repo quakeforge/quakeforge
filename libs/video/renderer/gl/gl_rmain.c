@@ -278,7 +278,6 @@ R_DrawEntitiesOnList (void)
 		qfglHint (GL_PERSPECTIVE_CORRECTION_HINT, GL_DONT_CARE);
 	if (gl_mtex_active) { // FIXME: Ugly, but faster than cleaning up in every
 						  // R_DrawAliasModel()!
-	//	qfglColor4ubv (color_white);
 		qglActiveTexture (gl_mtex_enum + 1);
 		qfglEnable (GL_TEXTURE_2D);
 		if (gl_combine_capable && gl_doublebright->int_val) {
@@ -326,7 +325,6 @@ R_DrawViewModel (void)
 	qfglColor3ubv (color_white);
 	if (gl_mtex_active) { // FIXME: Ugly, but faster than cleaning up in every
 						  // R_DrawAliasModel()!
-	//	qfglColor4ubv (color_white);
 		qglActiveTexture (gl_mtex_enum + 1);
 		qfglEnable (GL_TEXTURE_2D);
 		if (gl_combine_capable && gl_doublebright->int_val) {
@@ -604,7 +602,7 @@ R_Mirror (void)
 //		}
 
 		qfglBindTexture (GL_TEXTURE_2D, tex->gl_texturenum);
-		R_RenderBrushPoly (s, tex);
+//		R_RenderBrushPoly (s, tex); // FIXME: Need to move R_Mirror to gl_rsurf.c, and uncommment this line!
 	}
 	r_worldentity.model->textures[mirrortexturenum]->texturechain = NULL;
 	qfglColor3ubv (color_white);

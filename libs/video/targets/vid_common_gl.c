@@ -116,14 +116,6 @@ static int gl_mtex_tmus = 0;
 
 
 static void
-gl_doublebright_f (cvar_t *var)
-{
-	if (!gl_combine_capable)
-		Con_Printf ("Warning: doublebright will have no effect without "
-					"GL_COMBINE_ARB unless multitexture is disabled.\n");
-}
-
-static void
 gl_max_size_f (cvar_t *var)
 {
 	GLint		texSize;
@@ -135,6 +127,15 @@ gl_max_size_f (cvar_t *var)
 		Cvar_SetValue (var, texSize);
 	else
 		Cvar_SetValue (var, bound (1, var->int_val, texSize));
+}
+
+static void
+gl_doublebright_f (cvar_t *var)
+{
+	if (!gl_combine_capable && gl_mtex_capable)
+		Con_Printf ("Warning: gl_doublebright has no effect with "
+					"gl_multitexture enabled if you don't have GL_COMBINE_ARB "
+					"support in your driver.\n");
 }
 
 static void
@@ -208,6 +209,42 @@ GL_Common_Init_Cvars (void)
 								  "Limit the vertex array size for buggy "
 								  "drivers. 0 (default) uses driver provided "
 								  "limit, -1 disables use of vertex arrays.");
+}
+
+static void
+CheckGLVersionString (void)
+{
+	gl_version = qfglGetString (GL_VERSION);
+	if (sscanf (gl_version, "%d.%d", &gl_major, &gl_minor) == 2) {
+		gl_release_number = 0;
+		if (gl_major >= 1) {
+			if (gl_minor >= 1) {
+				gl_va_capable = true;
+			} else
+				gl_va_capable = false;
+		}
+	} else if (sscanf (gl_version, "%d.%d.%d", &gl_major, &gl_minor,
+					   &gl_release_number) == 3) {
+		if (gl_major >= 1) {
+			if (gl_minor >= 1) {
+				gl_va_capable = true;
+			} else
+				gl_va_capable = false;
+		}
+	} else {
+		Sys_Error ("Malformed OpenGL version string!");
+	}
+	Con_Printf ("GL_VERSION: %s\n", gl_version);
+
+	gl_vendor = qfglGetString (GL_VENDOR);
+	Con_Printf ("GL_VENDOR: %s\n", gl_vendor);
+	gl_renderer = qfglGetString (GL_RENDERER);
+	Con_Printf ("GL_RENDERER: %s\n", gl_renderer);
+	gl_extensions = qfglGetString (GL_EXTENSIONS);
+	Con_Printf ("GL_EXTENSIONS: %s\n", gl_extensions);
+
+	if (strstr (gl_renderer, "Mesa DRI Mach64"))
+		gl_feature_mach64 = true;
 }
 
 static void
@@ -369,54 +406,23 @@ void
 GL_Init_Common (void)
 {
 	GLF_FindFunctions ();
-	gl_version = qfglGetString (GL_VERSION);
-	if (sscanf (gl_version, "%d.%d", &gl_major, &gl_minor) == 2) {
-		gl_release_number = 0;
-		if (gl_major >= 1) {
-			if (gl_minor >= 1) {
-				gl_va_capable = true;
-			} else
-				gl_va_capable = false;
-		}
-	} else if (sscanf (gl_version, "%d.%d.%d", &gl_major, &gl_minor,
-					   &gl_release_number) == 3) {
-		if (gl_major >= 1) {
-			if (gl_minor >= 1) {
-				gl_va_capable = true;
-			} else
-				gl_va_capable = false;
-		}
-	} else {
-		Sys_Error ("Malformed OpenGL version string!");
-	}
-	Con_Printf ("GL_VERSION: %s\n", gl_version);
-
-	gl_vendor = qfglGetString (GL_VENDOR);
-	Con_Printf ("GL_VENDOR: %s\n", gl_vendor);
-	gl_renderer = qfglGetString (GL_RENDERER);
-	Con_Printf ("GL_RENDERER: %s\n", gl_renderer);
-	gl_extensions = qfglGetString (GL_EXTENSIONS);
-	Con_Printf ("GL_EXTENSIONS: %s\n", gl_extensions);
-
-	if (strstr (gl_renderer, "Mesa DRI Mach64"))
-		gl_feature_mach64 = true;
+	CheckGLVersionString ();
 
 	qfglClearColor (0, 0, 0, 0);
-	qfglCullFace (GL_FRONT);
+
 	qfglEnable (GL_TEXTURE_2D);
-
+	qfglCullFace (GL_FRONT);
 	qfglPolygonMode (GL_FRONT_AND_BACK, GL_FILL);
-
 	qfglShadeModel (GL_FLAT);
 
+	qfglEnable (GL_BLEND);
+	qfglBlendFunc (GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+
+	qfglTexEnvf (GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
 	qfglTexParameterf (GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, gl_filter_min);
 	qfglTexParameterf (GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, gl_filter_max);
 	qfglTexParameterf (GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
 	qfglTexParameterf (GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
-
-	qfglEnable (GL_BLEND);
-	qfglBlendFunc (GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-	qfglTexEnvf (GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
 
 	CheckMultiTextureExtensions ();
 	CheckCombineExtensions ();
