@@ -1670,7 +1670,7 @@ Host_Init (void)
 	Cmd_Exec_File (fs_usercfg->string);
 	// Reparse the command line for + commands.
 	// (Note, no non-base commands exist yet)
-	if (cl_quakerc->int_val && check_quakerc ())
+	if (!cl_quakerc->int_val || check_quakerc ())
 		Cmd_StuffCmds_f ();
 
 	Cbuf_AddText ("echo Type connect <internet address> or use a server "
