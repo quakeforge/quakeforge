@@ -37,8 +37,9 @@ static const char rcsid[] =
 # include <strings.h>
 #endif
 #ifndef WIN32
-# include <sys/signal.h>
+# include <signal.h>
 #endif
+#include <stdlib.h>
 
 #include <SDL.h>
 
@@ -175,9 +176,9 @@ VID_Init (unsigned char *palette)
 		// know where. Anyway, it's to work around a 3Dfx Glide bug.
 		SDL_ShowCursor (0);
 		SDL_WM_GrabInput (SDL_GRAB_ON);
-		setenv ("MESA_GLX_FX", "fullscreen", 1);
+		putenv ("MESA_GLX_FX=fullscreen");
 	} else {
-		setenv ("MESA_GLX_FX", "window", 1);
+		putenv ("MESA_GLX_FX=window");
 #endif
 	}
 
