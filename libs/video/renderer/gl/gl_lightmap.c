@@ -611,13 +611,14 @@ gl_overbright_f (cvar_t *var)
 		for (j = 0, fa = m->surfaces; j < m->numsurfaces; j++, fa++) {
 			if (fa->flags & (SURF_DRAWTURB | SURF_DRAWSKY))
 				continue;
-			num = fa->lightmaptexturenum;
 
+			num = fa->lightmaptexturenum;
 			lightmap_modified[num] = true;
 			lightmap_rectchange[num].l = 0;
 			lightmap_rectchange[num].t = 0;
 			lightmap_rectchange[num].w = BLOCK_WIDTH;
 			lightmap_rectchange[num].h = BLOCK_HEIGHT;
+
 			R_BuildLightMap (fa);
 		}
 	}
