@@ -280,7 +280,7 @@ CL_EstablishConnection (const char *host)
 	cls.signon = 0;						// need all the signon messages
 										// before playing
 	key_dest = key_game;
-	game_target = IMT_DEFAULT;
+	game_target = IMT_0;
 }
 
 /*
@@ -409,40 +409,44 @@ SetPal (int i)
 }
 
 void
-CL_NewDlight (int key, float x, float y, float z, float radius, float time,
-			  int type)
+CL_NewDlight (int key, vec3_t org, int effects)
 {
+	float       radius;
+	float       time = 0.1;
 	dlight_t   *dl;
+	static vec3_t normal  = {0.4, 0.2, 0.05};
+	static vec3_t red = {0.5, 0.05, 0.05};
+	static vec3_t blue = {0.05, 0.05, 0.5};
+	static vec3_t purple = {0.5, 0.05, 0.5};
 
+	if (!(effects & (EF_BLUE | EF_RED | EF_BRIGHTLIGHT | EF_DIMLIGHT)))
+		return;
+
+	radius = 200 + (rand () & 31);
 	dl = R_AllocDlight (key);
-	dl->origin[0] = x;
-	dl->origin[1] = y;
-	dl->origin[2] = z;
+	VectorCopy (org, dl->origin);
+	switch (effects & (EF_BLUE | EF_RED)) {
+		case EF_BLUE | EF_RED:
+			VectorCopy (purple, dl->color);
+			break;
+		case EF_BLUE:
+			VectorCopy (blue, dl->color);
+			break;
+		case EF_RED:
+			VectorCopy (red, dl->color);
+			break;
+		default:
+			VectorCopy (normal, dl->color);
+			break;
+	}
+	if (effects & EF_BRIGHTLIGHT) {
+		radius += 200;
+		dl->origin[2] += 16;
+	} else if (effects & EF_DIMLIGHT) {
+		time *= 0.001;
+	}
 	dl->radius = radius;
 	dl->die = cl.time + time;
-	switch (type) {
-	default:
-	case 0:
-		dl->color[0] = 0.4;
-		dl->color[1] = 0.2;
-		dl->color[2] = 0.05;
-		break;
-	case 1:						// blue
-		dl->color[0] = 0.05;
-		dl->color[1] = 0.05;
-		dl->color[2] = 0.5;
-		break;
-	case 2:						// red
-		dl->color[0] = 0.5;
-		dl->color[1] = 0.05;
-		dl->color[2] = 0.05;
-		break;
-	case 3:						// purple
-		dl->color[0] = 0.5;
-		dl->color[1] = 0.05;
-		dl->color[2] = 0.5;
-		break;
-	}
 }
 
 /*
@@ -593,21 +597,7 @@ CL_RelinkEntities (void)
 			dl->color[1] = 0.1;
 			dl->color[2] = 0.05;
 		}
-		if ((ent->effects & (EF_BLUE | EF_RED)) == (EF_BLUE | EF_RED))
-			CL_NewDlight (i, ent->origin[0], ent->origin[1], ent->origin[2],
-						  200 + (rand () & 31), 0.1, 3);
-		if (ent->effects & EF_BLUE)
-			CL_NewDlight (i, ent->origin[0], ent->origin[1], ent->origin[2],
-						  200 + (rand () & 31), 0.1, 1);
-		if (ent->effects & EF_RED)
-			CL_NewDlight (i, ent->origin[0], ent->origin[1], ent->origin[2],
-						  200 + (rand () & 31), 0.1, 2);
-		if (ent->effects & EF_BRIGHTLIGHT)
-			CL_NewDlight (i, ent->origin[0], ent->origin[1],
-						  ent->origin[2] + 16, 400 + (rand () & 31), 0.001, 0);
-		if (ent->effects & EF_DIMLIGHT)
-			CL_NewDlight (i, ent->origin[0], ent->origin[1], ent->origin[2],
-						  200 + (rand () & 31), 0.001, 0);
+		CL_NewDlight (i, ent->origin, ent->effects);
 		if (VectorDistance_fast(ent->msg_origins[1], ent->origin) > (256*256))
 			VectorCopy (ent ->origin, ent->msg_origins[1]);
 		if (ent->model->flags & EF_ROCKET) {
@@ -718,7 +708,7 @@ CL_SetState (cactive_t state)
 	cls.state = state;
 	if (cls.state == ca_active) {
 		r_active = true;
-		game_target = IMT_DEFAULT;
+		game_target = IMT_0;
 		key_dest = key_game;
 	} else {
 		r_active = false;

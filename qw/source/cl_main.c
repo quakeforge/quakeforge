@@ -1074,7 +1074,7 @@ CL_SetState (cactive_t state)
 	cls.state = state;
 	if (cls.state == ca_active) {
 		r_active = true;
-		game_target = IMT_DEFAULT;
+		game_target = IMT_0;
 		key_dest = key_game;
 	} else {
 		r_active = false;

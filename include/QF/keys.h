@@ -343,7 +343,7 @@ typedef struct
 
 typedef enum {
 	IMT_CONSOLE,
-	IMT_DEFAULT,
+	IMT_0,
 	IMT_1,
 	IMT_2,
 	IMT_3,

@@ -90,7 +90,7 @@ Con_ToggleConsole_f (void)
 	if (key_dest == key_console) {
 		if (cls.state == ca_active) {
 			key_dest = key_game;
-			game_target = IMT_DEFAULT;
+			game_target = IMT_0;
 		}
 	} else {
 		key_dest = key_console;

@@ -84,8 +84,7 @@ typedef struct {
 
 imtname_t   imtnames[] = {
 	{"IMT_CONSOLE",	IMT_CONSOLE},
-	{"IMT_DEFAULT",	IMT_DEFAULT},
-	{"IMT_0",		IMT_DEFAULT},
+	{"IMT_0",		IMT_0},
 	{"IMT_1",		IMT_1},
 	{"IMT_2",		IMT_2},
 	{"IMT_3",		IMT_3},
@@ -102,6 +101,8 @@ imtname_t   imtnames[] = {
 	{"IMT_14",		IMT_14},
 	{"IMT_15",		IMT_15},
 	{"IMT_16",		IMT_16},
+
+	{"IMT_DEFAULT",	IMT_0},
 
 	{NULL, 0}
 };
@@ -427,8 +428,8 @@ Key_Game (knum_t key, short unicode)
 	char        cmd[1024];
 
 	kb = Key_GetBinding(game_target, key);
-	if (!kb && (game_target > IMT_DEFAULT))
-		kb = Key_GetBinding(IMT_DEFAULT, key);
+	if (!kb && (game_target > IMT_0))
+		kb = Key_GetBinding(IMT_0, key);
 
 	/*
 	Con_Printf("kb %p, game_target %d, key_dest %d, key %d\n", kb,
@@ -606,7 +607,7 @@ Key_Message (knum_t key, short unicode)
 		Cbuf_AddText ("\"\n");
 
 		key_dest = key_game;
-		game_target = IMT_DEFAULT;
+		game_target = IMT_0;
 		chat_bufferlen = 0;
 		chat_buffer[0] = 0;
 		return;
@@ -614,7 +615,7 @@ Key_Message (knum_t key, short unicode)
 
 	if (unicode == '\x1b' || key == K_ESCAPE) {
 		key_dest = key_game;
-		game_target = IMT_DEFAULT;
+		game_target = IMT_0;
 		chat_bufferlen = 0;
 		chat_buffer[0] = 0;
 		return;
