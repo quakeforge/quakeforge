@@ -338,6 +338,14 @@ XLateKey (XKeyEvent * ev, int *k, int *u)
 			key = QFK_RMETA;
 			break;
 
+		case XK_Multi_key:
+			key = QFK_COMPOSE;
+			break;
+
+		case XK_Menu:
+			key = QFK_MENU;
+			break;
+
 		case XK_Caps_Lock:
 			key = QFK_CAPSLOCK;
 			break;
