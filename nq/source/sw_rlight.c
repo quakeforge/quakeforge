@@ -167,7 +167,6 @@ RecursiveLightPoint (mnode_t *node, vec3_t start, vec3_t end)
 		return -1;						// didn't hit anything
 
 	// check for impact on this node
-
 	surf = cl.worldmodel->surfaces + node->firstsurface;
 	for (i = 0; i < node->numsurfaces; i++, surf++) {
 		if (surf->flags & SURF_DRAWTILED)
