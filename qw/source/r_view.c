@@ -55,6 +55,11 @@ when crossing a water boudnary.
 
 */
 
+extern cvar_t *cl_cshift_bonus;
+extern cvar_t *cl_cshift_contents;
+extern cvar_t *cl_cshift_damage;
+extern cvar_t *vid_gamma;
+
 cvar_t     *cl_rollspeed;
 cvar_t     *cl_rollangle;
 
@@ -75,14 +80,18 @@ cvar_t     *v_ipitch_level;
 
 cvar_t     *v_idlescale;
 
-float       v_dmg_time, v_dmg_roll, v_dmg_pitch;
+float		v_dmg_time, v_dmg_roll, v_dmg_pitch;
 
-extern int  in_forward, in_forward2, in_back;
+extern int	in_forward, in_forward2, in_back;
 
 frame_t    *view_frame;
 player_state_t *view_message;
 
-// void BuildGammaTable (float, float);
+cshift_t	cshift_empty = { {130, 80, 50}, 0};
+cshift_t	cshift_water = { {130, 80, 50}, 128};
+cshift_t	cshift_slime = { {0, 25, 5}, 150};
+cshift_t	cshift_lava = { {255, 80, 0}, 150};
+cshift_t	cshift_bonus = { {215, 186, 60}, 50};
 
 
 float
@@ -247,18 +256,6 @@ V_DriftPitch (void)
 /*
 						PALETTE FLASHES 
 */
-
-extern cvar_t	*cl_cshift_bonus;
-extern cvar_t	*cl_cshift_contents;
-extern cvar_t	*cl_cshift_damage;
-
-cshift_t	cshift_empty = { {130, 80, 50}, 0 };
-cshift_t	cshift_water = { {130, 80, 50}, 128 };
-cshift_t	cshift_slime = { {0, 25, 5}, 150 };
-cshift_t	cshift_lava = { {255, 80, 0}, 150 };
-
-extern byte 	gammatable[256];			// palette is sent through this
-extern cvar_t	*vid_gamma;
 
 
 qboolean

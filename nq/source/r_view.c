@@ -31,6 +31,7 @@
 #endif
 
 #include "QF/cmd.h"
+#include "QF/compat.h"
 #include "QF/console.h"
 #include "QF/draw.h"
 #include "QF/msg.h"
@@ -51,6 +52,10 @@ when crossing a water boudnary.
 
 */
 
+extern cvar_t *cl_cshift_bonus;
+extern cvar_t *cl_cshift_contents;
+extern cvar_t *cl_cshift_damage;
+
 cvar_t     *scr_ofsx;
 cvar_t     *scr_ofsy;
 cvar_t     *scr_ofsz;
@@ -64,8 +69,6 @@ cvar_t     *cl_bobup;
 
 cvar_t     *v_centermove;
 cvar_t     *v_centerspeed;
-
-cvar_t     *v_gamma;
 
 cvar_t     *v_iyaw_cycle;
 cvar_t     *v_iroll_cycle;
@@ -90,13 +93,17 @@ cvar_t     *gl_cshiftpercent;
 cvar_t     *brightness;
 cvar_t     *contrast;
 
-byte        gammatable[256];			// palette is sent through this
-
 float       v_dmg_time, v_dmg_roll, v_dmg_pitch;
 
 extern cvar_t  *vid_gamma;
 
 extern int  in_forward, in_forward2, in_back;
+
+cshift_t	cshift_empty = { {130, 80, 50}, 0};
+cshift_t	cshift_water = { {130, 80, 50}, 128};
+cshift_t	cshift_slime = { {0, 25, 5}, 150};
+cshift_t	cshift_lava = { {255, 80, 0}, 150};
+cshift_t	cshift_bonus = { {215, 186, 60}, 50};
 
 
 float
@@ -225,23 +232,6 @@ V_DriftPitch (void)
 */
 
 
-cshift_t    cshift_empty = { {130, 80, 50}
-							 , 0
-};
-
-cshift_t    cshift_water = { {130, 80, 50}
-							 , 128
-};
-
-cshift_t    cshift_slime = { {0, 25, 5}
-							 , 150
-};
-
-cshift_t    cshift_lava = { {255, 80, 0}
-							, 150
-};
-
-
 qboolean
 V_CheckGamma (void)
 {
@@ -283,30 +273,31 @@ V_ParseDamage (void)
 
 	cl.faceanimtime = cl.time + 0.2;	// but sbar face into pain frame
 
-	cl.cshifts[CSHIFT_DAMAGE].percent += 3 * count;
-	if (cl.cshifts[CSHIFT_DAMAGE].percent < 0)
-		cl.cshifts[CSHIFT_DAMAGE].percent = 0;
-	if (cl.cshifts[CSHIFT_DAMAGE].percent > 150)
-		cl.cshifts[CSHIFT_DAMAGE].percent = 150;
+	if (cl_cshift_damage->int_val) {
+//		|| (atoi (Info_ValueForKey (cl.serverinfo, "cshifts")) &
+//		INFO_CSHIFT_DAMAGE)) {
+		cl.cshifts[CSHIFT_DAMAGE].percent += 3 * count;
+		cl.cshifts[CSHIFT_DAMAGE].percent =
+			bound (0, cl.cshifts[CSHIFT_DAMAGE].percent, 150);
 
-	if (armor > blood) {
-		cl.cshifts[CSHIFT_DAMAGE].destcolor[0] = 200;
-		cl.cshifts[CSHIFT_DAMAGE].destcolor[1] = 100;
-		cl.cshifts[CSHIFT_DAMAGE].destcolor[2] = 100;
-	} else if (armor) {
-		cl.cshifts[CSHIFT_DAMAGE].destcolor[0] = 220;
-		cl.cshifts[CSHIFT_DAMAGE].destcolor[1] = 50;
-		cl.cshifts[CSHIFT_DAMAGE].destcolor[2] = 50;
-	} else {
-		cl.cshifts[CSHIFT_DAMAGE].destcolor[0] = 255;
-		cl.cshifts[CSHIFT_DAMAGE].destcolor[1] = 0;
-		cl.cshifts[CSHIFT_DAMAGE].destcolor[2] = 0;
+		if (armor > blood) {
+			cl.cshifts[CSHIFT_DAMAGE].destcolor[0] = 200;
+			cl.cshifts[CSHIFT_DAMAGE].destcolor[1] = 100;
+			cl.cshifts[CSHIFT_DAMAGE].destcolor[2] = 100;
+		} else if (armor) {
+			cl.cshifts[CSHIFT_DAMAGE].destcolor[0] = 220;
+			cl.cshifts[CSHIFT_DAMAGE].destcolor[1] = 50;
+			cl.cshifts[CSHIFT_DAMAGE].destcolor[2] = 50;
+		} else {
+			cl.cshifts[CSHIFT_DAMAGE].destcolor[0] = 255;
+			cl.cshifts[CSHIFT_DAMAGE].destcolor[1] = 0;
+			cl.cshifts[CSHIFT_DAMAGE].destcolor[2] = 0;
+		}
 	}
 
 	// calculate view angle kicks
 
 	ent = &cl_entities[cl.viewentity];
-
 	VectorSubtract (from, ent->origin, from);
 	VectorNormalize (from);
 
@@ -340,10 +331,10 @@ V_cshift_f (void)
 void
 V_BonusFlash_f (void)
 {
-	cl.cshifts[CSHIFT_BONUS].destcolor[0] = 215;
-	cl.cshifts[CSHIFT_BONUS].destcolor[1] = 186;
-	cl.cshifts[CSHIFT_BONUS].destcolor[2] = 69;
-	cl.cshifts[CSHIFT_BONUS].percent = 50;
+	if (!cl_cshift_bonus->int_val)
+//		&& !(atoi (Info_ValueForKey (cl.serverinfo, "cshifts")) & INFO_CSHIFT_BONUS))
+		return;
+	cl.cshifts[CSHIFT_BONUS] = cshift_bonus;
 }
 
 
@@ -355,18 +346,24 @@ V_BonusFlash_f (void)
 void
 V_SetContentsColor (int contents)
 {
+	if (!cl_cshift_contents->int_val) {
+//		&& !(atoi (Info_ValueForKey (cl.serverinfo, "cshifts")) & INFO_CSHIFT_CONTENTS)) {
+		cl.cshifts[CSHIFT_CONTENTS] = cshift_empty;
+		return;
+	}
+
 	switch (contents) {
-		case CONTENTS_EMPTY:
-		case CONTENTS_SOLID:
+	case CONTENTS_EMPTY:
+	case CONTENTS_SOLID:
 		cl.cshifts[CSHIFT_CONTENTS] = cshift_empty;
 		break;
-		case CONTENTS_LAVA:
+	case CONTENTS_LAVA:
 		cl.cshifts[CSHIFT_CONTENTS] = cshift_lava;
 		break;
-		case CONTENTS_SLIME:
+	case CONTENTS_SLIME:
 		cl.cshifts[CSHIFT_CONTENTS] = cshift_slime;
 		break;
-		default:
+	default:
 		cl.cshifts[CSHIFT_CONTENTS] = cshift_water;
 	}
 }

@@ -42,8 +42,7 @@
 #define BMODEL_FULLY_CLIPPED	0x10 // value returned by R_BmodelCheckBBox ()
 									 //  if bbox is trivially rejected
 
-//===========================================================================
-// dynamic lights
+// dynamic lights ===========================================================
 
 #define MAX_DLIGHTS     32
 typedef struct
@@ -58,8 +57,7 @@ typedef struct
 } dlight_t;
 
 
-//===========================================================================
-// color shifts
+// color shifts =============================================================
 
 typedef struct
 {
@@ -74,8 +72,7 @@ typedef struct
 #define NUM_CSHIFTS     4
 
 
-//===========================================================================
-// viewmodel lighting
+// viewmodel lighting =======================================================
 
 typedef struct {
 	int			ambientlight;
@@ -83,8 +80,7 @@ typedef struct {
 	float		*plightvec;
 } alight_t;
 
-//===========================================================================
-// clipped bmodel edges
+// clipped bmodel edges =====================================================
 
 typedef struct bedge_s
 {
@@ -167,9 +163,8 @@ extern int	vstartscan;
 void R_ClearPolyList (void);
 void R_DrawPolyList (void);
 
-//
+
 // current entity info
-//
 extern	qboolean		insubmodel;
 extern	vec3_t			r_worldmodelorg;
 
@@ -262,9 +257,7 @@ extern btofpoly_t	*pbtofpolys;
 void	R_InitTurb (void);
 void	R_ZDrawSubmodelPolys (model_t *clmodel);
 
-//=========================================================
-// Alias models
-//=========================================================
+// Alias models ===========================================
 
 #define MAXALIASVERTS		1024
 #define ALIAS_Z_CLIP_PLANE	5
@@ -282,15 +275,13 @@ extern auxvert_t		*pauxverts;
 
 qboolean R_AliasCheckBBox (void);
 
-//=========================================================
-// turbulence stuff
+// turbulence stuff =======================================
 
 #define	AMP		8*0x10000
 #define	AMP2	3
 #define	SPEED	20
 
-//=========================================================
-// particle stuff
+// particle stuff =========================================
 
 void R_DrawParticles (void);
 void R_InitParticles (void);
@@ -332,7 +323,6 @@ extern float	se_time1, se_time2, de_time1, de_time2, dv_time1, dv_time2;
 extern int		r_frustum_indexes[4*6];
 extern int		r_maxsurfsseen, r_maxedgesseen, r_cnumsurfs;
 extern qboolean	r_surfsonstack;
-extern cshift_t	cshift_water;
 extern qboolean	r_dowarpold, r_viewchanged;
 
 extern mleaf_t	*r_viewleaf, *r_oldviewleaf;
