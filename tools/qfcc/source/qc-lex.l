@@ -641,5 +641,6 @@ make_string (char *token)
 
 #ifdef YY_FLEX_REALLOC_HACK
 static void *(*const yy_flex_realloc_hack)(void *,yy_size_t) = yy_flex_realloc;
+#else
 static __attribute__ ((unused)) void (*yyunput_hack)(int, char*) = yyunput;
 #endif

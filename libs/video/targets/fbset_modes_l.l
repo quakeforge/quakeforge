@@ -158,5 +158,6 @@ junk	.
 %%
 
 #ifdef YY_FLEX_REALLOC_HACK
+#else
 static __attribute__ ((unused)) void (*yyunput_hack)(int, char*) = yyunput;
 #endif
