@@ -147,7 +147,10 @@ get_def (type_t *type, const char *name, scope_t *scope, int allocate)
 	if (name)
 		Hash_Add (defs_by_name, def);
 
-	def->ofs = new_location (type, scope->space);
+	if (type->type == ev_field && type->aux_type == &type_vector)
+		def->ofs = new_location (type->aux_type, scope->space);
+	else
+		def->ofs = new_location (type, scope->space);
 
 	/* 
 		make automatic defs for the vectors elements .origin can be accessed
@@ -185,18 +188,21 @@ get_def (type_t *type, const char *name, scope_t *scope, int allocate)
 			d->used = 1;				// always `used'
 			d->parent = def;
 			d->ofs = def->ofs + 0;
+			G_INT (d->ofs) = G_INT (def->ofs) + 0;
 			Hash_Add (defs_by_name, d);
 
 			d = new_def (&type_floatfield, va ("%s_y", name), scope);
 			d->used = 1;				// always `used'
 			d->parent = def;
 			d->ofs = def->ofs + 1;
+			G_INT (d->ofs) = G_INT (def->ofs) + 1;
 			Hash_Add (defs_by_name, d);
 
 			d = new_def (&type_floatfield, va ("%s_z", name), scope);
 			d->used = 1;				// always `used'
 			d->parent = def;
 			d->ofs = def->ofs + 2;
+			G_INT (d->ofs) = G_INT (def->ofs) + 2;
 			Hash_Add (defs_by_name, d);
 		}
 	}

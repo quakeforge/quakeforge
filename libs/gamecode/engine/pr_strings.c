@@ -211,7 +211,7 @@ PR_GetString (progs_t *pr, int num)
 	}
 
 bad_string_offset:
-	PR_RunError (pr, "Invalid string offset 0x%u", num);
+	PR_RunError (pr, "Invalid string offset %u", num);
 }
 
 int
