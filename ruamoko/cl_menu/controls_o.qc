@@ -38,9 +38,9 @@
 integer set_key_flag;	// holds flag for the key-setting
  
 // three global hashes for the main binding groups
-Array movement_binding_hash;
-Array misc_binding_hash;
-Array weapon_binding_hash;
+Array movement_bindings;
+Array misc_bindings;
+Array weapon_bindings;
 
 struct binding_t = {
 	string      text;
@@ -106,15 +106,15 @@ init_binding_hash =
 {
 	local integer i;
 
-	movement_binding_hash = [[Array alloc] init];
-	for (i = 0; i < @sizeof (movement_binding_list); i++)
-		[movement_binding_hash addItem: new_binding (movement_binding_list[i])];
-	misc_binding_hash = [[Array alloc] init];
-	for (i = 0; i < @sizeof (misc_binding_list); i++)
-		[misc_binding_hash addItem: new_binding (misc_binding_list[i])];
-	weapon_binding_hash = [[Array alloc] init];
-	for (i = 0; i < @sizeof (weapon_binding_list); i++)
-		[weapon_binding_hash addItem: new_binding (weapon_binding_list[i])];
+	movement_bindings = [[Array alloc] init];
+	for (i = 0; i < @sizeof (movement_binding_list) / @sizeof (movement_binding_list[0]); i++)
+		[movement_bindings addItem: new_binding (movement_binding_list[i])];
+	misc_bindings = [[Array alloc] init];
+	for (i = 0; i < @sizeof (misc_binding_list) / @sizeof (misc_binding_list[0]); i++)
+		[misc_bindings addItem: new_binding (misc_binding_list[i])];
+	weapon_bindings = [[Array alloc] init];
+	for (i = 0; i < @sizeof (weapon_binding_list) / @sizeof (weapon_binding_list[0]); i++)
+		[weapon_bindings addItem: new_binding (weapon_binding_list[i])];
 
 };
 
@@ -176,9 +176,9 @@ get_hash_keys =
 void () 
 load_keybindings =
 {
-	get_hash_keys (movement_binding_hash);
-	get_hash_keys (misc_binding_hash);
-	get_hash_keys (weapon_binding_hash);
+	get_hash_keys (movement_bindings);
+	get_hash_keys (misc_bindings);
+	get_hash_keys (weapon_bindings);
 };
 
 /*******************
@@ -244,11 +244,11 @@ CB_MAIN_control_binding =
 integer (string text, integer key) 
 CB_basic_control_binding = 
 {
-	local binding_t [] binding = [movement_binding_hash getItemAt: stoi (text)];
+	local binding_t [] binding = [movement_bindings getItemAt: stoi (text)];
 	local integer ret = CB_MAIN_control_binding (binding, key);
 
 	// fetch all keynames (possible to optimize.. but not very neccessary)
-	get_hash_keys (movement_binding_hash);
+	get_hash_keys (movement_bindings);
 	return ret;
 };
 
@@ -260,7 +260,7 @@ CB_basic_control_binding =
 integer ()
 CB_ME_basic_control_binding =
 {
-    get_hash_keys (movement_binding_hash);
+    get_hash_keys (movement_bindings);
 };
 
 /*
@@ -279,9 +279,9 @@ DRAW_basic_control_binding =
 	Draw_String (20, 20, "Enter:            New binding");
 
 
-	hl = [movement_binding_hash count];	
+	hl = [movement_bindings count];	
 	for(i = 0; i < hl; i++) {
-		local binding_t [] binding = [movement_binding_hash getItemAt: i];
+		local binding_t [] binding = [movement_bindings getItemAt: i];
 		draw_val_item   (20, 40 + ( i * 10), bind_desc_pad, 
 			binding.text, binding.keys);
 	}
@@ -306,7 +306,7 @@ MENU_basic_control_binding =
 	Menu_EnterHook (CB_ME_basic_control_binding);
 	Menu_Draw (DRAW_basic_control_binding);
 
-	hl = [movement_binding_hash count];
+	hl = [movement_bindings count];
 	for (i = 0; i < hl; i++) {
 		Menu_Item (20, 40 + i * 10, itos (i), CB_basic_control_binding, 1);
 	}
@@ -321,11 +321,11 @@ MENU_basic_control_binding =
 integer (string text, integer key) 
 CB_misc_control_binding = 
 {
-	local binding_t [] binding = [misc_binding_hash getItemAt: stoi (text)];
+	local binding_t [] binding = [misc_bindings getItemAt: stoi (text)];
 	local integer ret = CB_MAIN_control_binding (binding, key);
 
 	// fetch all keynames (possible to optimize.. but not very neccessary)
-	get_hash_keys (misc_binding_hash);
+	get_hash_keys (misc_bindings);
 	return ret;
 };
 
@@ -337,7 +337,7 @@ CB_misc_control_binding =
 integer ()
 CB_ME_misc_control_binding =
 {
-    get_hash_keys(misc_binding_hash);
+    get_hash_keys(misc_bindings);
 };
 
 /*
@@ -356,9 +356,9 @@ DRAW_misc_control_binding =
 	Draw_String		(20, 10, "Backspace/Delete: Del binding");
 	Draw_String     (20, 20, "Enter:            New binding");
 
-	hl = [misc_binding_hash count];	
+	hl = [misc_bindings count];	
 	for(i=0;i < hl; i++) {
-		local binding_t [] binding = [misc_binding_hash getItemAt: i];
+		local binding_t [] binding = [misc_bindings getItemAt: i];
 		draw_val_item   (20, 40+(i*10), bind_desc_pad, 
 			binding.text, binding.keys);
 	}
@@ -382,7 +382,7 @@ MENU_misc_control_binding =
 	Menu_EnterHook (CB_ME_misc_control_binding);
 	Menu_Draw (DRAW_misc_control_binding);
 
-	hl = [movement_binding_hash count];
+	hl = [misc_bindings count];
 	for (i = 0; i < hl; i++) {
 		Menu_Item (20, 40 + i * 10, itos (i), CB_misc_control_binding, 1);
 	}
@@ -397,11 +397,11 @@ MENU_misc_control_binding =
 integer (string text, integer key)
 CB_weapon_control_binding = 
 {
-	local binding_t [] binding = [weapon_binding_hash getItemAt: stoi (text)];
+	local binding_t [] binding = [weapon_bindings getItemAt: stoi (text)];
 	local integer ret = CB_MAIN_control_binding (binding, key);
 
 	// fetch all keynames (possible to optimize.. but not very neccessary)
-	get_hash_keys (weapon_binding_hash);
+	get_hash_keys (weapon_bindings);
 	return ret;
 };
 
@@ -414,7 +414,7 @@ CB_weapon_control_binding =
 integer ()
 CB_ME_weapon_control_binding =
 {
-    get_hash_keys(weapon_binding_hash);
+    get_hash_keys(weapon_bindings);
 };
 
 /*
@@ -432,9 +432,9 @@ DRAW_weapon_control_binding =
 	Draw_String	(20, 10, "Backspace/Delete: Del binding");
 	Draw_String (20, 20, "Enter:            New binding");
 
-	hl = [weapon_binding_hash count];	
+	hl = [weapon_bindings count];	
 	for(i = 0; i < hl; i++) {
-		local binding_t [] binding = [weapon_binding_hash getItemAt: i];
+		local binding_t [] binding = [weapon_bindings getItemAt: i];
 		draw_val_item (20, 40 + (i * 10), bind_desc_pad, 
 			binding.text, binding.keys);
 	}
@@ -459,7 +459,7 @@ MENU_weapon_control_binding =
 	Menu_EnterHook (CB_ME_weapon_control_binding);
 	Menu_Draw (DRAW_weapon_control_binding);
 
-	hl = [movement_binding_hash count];
+	hl = [weapon_bindings count];
 	for (i = 0; i < hl; i++) {
 		Menu_Item (20, 40 + i * 10, itos (i), CB_weapon_control_binding, 1);
 	}
