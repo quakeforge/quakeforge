@@ -945,7 +945,7 @@ SV_InitOperatorCommands (void)
 	if (COM_CheckParm ("-cheats")) {
 		sv_allow_cheats = true;
 		Info_SetValueForStarKey (svs.info, "*cheats", "ON",
-								 MAX_SERVERINFO_STRING, !sv_highchars->int_val);
+								 MAX_SERVERINFO_STRING, 0);
 	}
 
 	Cmd_AddCommand ("logfile", SV_Logfile_f, "Toggles logging of console text to qconsole.log");
