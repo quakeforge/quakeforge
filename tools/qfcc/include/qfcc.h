@@ -352,26 +352,6 @@ typedef union eval_s
 	union eval_s		*ptr;
 } eval_t;	
 
-extern	type_t	type_void;
-extern	type_t	type_string;
-extern	type_t	type_float;
-extern	type_t	type_vector;
-extern	type_t	type_entity;
-extern	type_t	type_field;
-extern	type_t	type_function;
-extern	type_t	type_pointer;
-extern	type_t	type_floatfield;
-extern	type_t	type_quaternion;
-extern	type_t	type_integer;
-extern	type_t	type_uinteger;
-extern	type_t	type_short;
-extern	type_t	type_struct;
-extern	type_t	type_id;
-extern	type_t	type_SEL;
-
-extern	def_t	def_void;
-extern	def_t	def_function;
-
 struct function_s
 {
 	struct function_s	*next;

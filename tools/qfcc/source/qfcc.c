@@ -63,6 +63,7 @@ static const char rcsid[] =
 #include <QF/sys.h>
 
 #include "qfcc.h"
+#include "type.h"
 
 options_t   options;
 

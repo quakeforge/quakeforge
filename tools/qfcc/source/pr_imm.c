@@ -25,6 +25,7 @@ static const char rcsid[] =
 #include "QF/hash.h"
 
 #include "qfcc.h"
+#include "type.h"
 
 static hashtab_t *string_imm_defs;
 static hashtab_t *float_imm_defs;
