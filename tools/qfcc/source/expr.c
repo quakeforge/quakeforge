@@ -440,8 +440,8 @@ binary_expr (int op, expr_t *e1, expr_t *e2)
 
 	if ((op == '&' || op == '|')
 		&& e1->type == ex_uexpr && e1->e.expr.op == '!' && !e1->paren) {
-		fprintf (stderr, "%s:%d: warning: ambiguous logic. Suggest explicit parentheses with expressions involving ! and &\n",
-				 strings + e1->file, e1->line);
+		fprintf (stderr, "%s:%d: warning: ambiguous logic. Suggest explicit parentheses with expressions involving ! and %c\n",
+				 strings + e1->file, e1->line, op);
 	}
 
 	t1 = get_type (e1);
