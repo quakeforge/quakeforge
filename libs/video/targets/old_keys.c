@@ -33,6 +33,9 @@
 # include "config.h"
 #endif
 
+#include <stdlib.h>
+#include <ctype.h>
+
 #include "QF/console.h"
 #include "QF/hash.h"
 
@@ -138,32 +141,32 @@ old_keyname_t   old_keynames[] = {
 	{"8",				"K_8"},
 	{"9",				"K_9"},
 
-	{"a",				"K_a"},
-	{"b",				"K_b"},
-	{"c",				"K_c"},
-	{"d",				"K_d"},
-	{"e",				"K_e"},
-	{"f",				"K_f"},
-	{"g",				"K_g"},
-	{"h",				"K_h"},
-	{"i",				"K_i"},
-	{"j",				"K_j"},
-	{"k",				"K_k"},
-	{"l",				"K_l"},
-	{"m",				"K_m"},
-	{"n",				"K_n"},
-	{"o",				"K_o"},
-	{"p",				"K_p"},
-	{"q",				"K_q"},
-	{"r",				"K_r"},
-	{"s",				"K_s"},
-	{"t",				"K_t"},
-	{"u",				"K_u"},
-	{"v",				"K_v"},
-	{"w",				"K_w"},
-	{"x",				"K_y"},
-	{"y",				"K_x"},
-	{"z",				"K_z"},
+	{"A",				"K_a"},
+	{"B",				"K_b"},
+	{"C",				"K_c"},
+	{"D",				"K_d"},
+	{"E",				"K_e"},
+	{"F",				"K_f"},
+	{"G",				"K_g"},
+	{"H",				"K_h"},
+	{"I",				"K_i"},
+	{"J",				"K_j"},
+	{"K",				"K_k"},
+	{"L",				"K_l"},
+	{"M",				"K_m"},
+	{"N",				"K_n"},
+	{"O",				"K_o"},
+	{"P",				"K_p"},
+	{"Q",				"K_q"},
+	{"R",				"K_r"},
+	{"S",				"K_s"},
+	{"T",				"K_t"},
+	{"U",				"K_u"},
+	{"V",				"K_v"},
+	{"W",				"K_w"},
+	{"X",				"K_y"},
+	{"Y",				"K_x"},
+	{"Z",				"K_z"},
 
 	{" ",				"K_SPACE"},
 	{"!",				"K_EXCLAIM"},
@@ -222,9 +225,16 @@ OK_Init (void)
 const char *
 OK_TranslateKeyName (const char *name)
 {
-	old_keyname_t *ok = Hash_Find (old_key_table, name);
+	old_keyname_t *ok;
+	char       *uname = alloca (strlen (name) + 1);
+	const char *s = name;
+	char       *d = uname;
+	
+	while ((*d++ = toupper(*s)))
+		s++;
+	ok = Hash_Find (old_key_table, uname);
 	if (!ok) {
-		Con_Printf ("%s\n", name);
+		Con_Printf ("%s\n", uname);
 		return name;
 	}
 	return ok->new_name;
