@@ -1376,50 +1376,59 @@ if test "x$HAVE_TDFXGL" = xyes -a "x$ENABLE_3DFX" = xyes; then
 	QW_TARGETS="$QW_TARGETS qw-client-3dfx\$(EXEEXT)"
 	NQ_TARGETS="$NQ_TARGETS nq-3dfx\$(EXEEXT)"
 	CL_TARGETS="$CL_TARGETS 3dfx"
+	VID_TARGETS="$VID_TARGETS libQFtdfx.la"
 fi
 if test "x$HAVE_FBDEV" = xyes -a "x$ENABLE_FBDEV" = xyes; then
 	QW_TARGETS="$QW_TARGETS qw-client-fbdev\$(EXEEXT)"
 	NQ_TARGETS="$NQ_TARGETS nq-fbdev\$(EXEEXT)"
 	CL_TARGETS="$CL_TARGETS FBDEV"
+	VID_TARGETS="$VID_TARGETS libQFfbdev.la"
 fi
 if test "x$HAVE_X" = xyes; then
 	if test "x$HAVE_GLX" = xyes -a "x$ENABLE_GLX" = xyes; then
 		QW_TARGETS="$QW_TARGETS qw-client-glx\$(EXEEXT)"
 		NQ_TARGETS="$NQ_TARGETS nq-glx\$(EXEEXT)"
 		CL_TARGETS="$CL_TARGETS GLX"
+		VID_TARGETS="$VID_TARGETS libQFglx.la"
 	fi
 fi
 if test "x$HAVE_MGL" = xyes -a "x$ENABLE_MGL" = xyes; then
 	QW_TARGETS="$QW_TARGETS qw-client-mgl\$(EXEEXT)"
 	NQ_TARGETS="$NQ_TARGETS nq-mgl\$(EXEEXT)"
 	CL_TARGETS="$CL_TARGETS MGL"
+	VID_TARGETS="$VID_TARGETS libQFwgl.la"
 fi
 if test "x$HAVE_SDL" = xyes -a "x$ENABLE_SDL" = xyes; then
 	QW_TARGETS="$QW_TARGETS qw-client-sdl\$(EXEEXT)"
 	NQ_TARGETS="$NQ_TARGETS nq-sdl\$(EXEEXT)"
 	CL_TARGETS="$CL_TARGETS SDL"
+	VID_TARGETS="$VID_TARGETS libQFsdl.la"
 fi
 if test "x$HAVE_SGL" = xyes; then
 	if test "x$HAVE_GLX" = xyes -a "x$ENABLE_SGL" = xyes; then
 		QW_TARGETS="$QW_TARGETS qw-client-sgl\$(EXEEXT)"
 		NQ_TARGETS="$NQ_TARGETS nq-sgl\$(EXEEXT)"
 		CL_TARGETS="$CL_TARGETS SDL-GL"
+		VID_TARGETS="$VID_TARGETS libQFsgl.la"
 	fi
 fi
 if test "x$HAVE_SVGA" = xyes -a "x$ENABLE_SVGA" = xyes; then
 	QW_TARGETS="$QW_TARGETS qw-client-svga\$(EXEEXT)"
 	NQ_TARGETS="$NQ_TARGETS nq-svga\$(EXEEXT)"
 	CL_TARGETS="$CL_TARGETS SVGAlib"
+	VID_TARGETS="$VID_TARGETS libQFsvga.la"
 fi
 if test "x$mingw" = xyes -a "x$HAVE_GLX" = xyes -a "x$ENABLE_WGL" = xyes; then
 	QW_TARGETS="$QW_TARGETS qw-client-wgl\$(EXEEXT)"
 	NQ_TARGETS="$NQ_TARGETS nq-wgl\$(EXEEXT)"
 	CL_TARGETS="$CL_TARGETS WGL"
+	VID_TARGETS="$VID_TARGETS libQFwgl.la"
 fi
 if test "x$HAVE_X" = xyes -a "x$ENABLE_X11" = xyes; then
 	QW_TARGETS="$QW_TARGETS qw-client-x11\$(EXEEXT)"
 	NQ_TARGETS="$NQ_TARGETS nq-x11\$(EXEEXT)"
 	CL_TARGETS="$CL_TARGETS X11"
+	VID_TARGETS="$VID_TARGETS libQFx11.la"
 fi
 if test "x$SV_TARGETS" = xyes; then
 	QW_TARGETS="qw-server\$(EXEEXT) $QW_TARGETS"
