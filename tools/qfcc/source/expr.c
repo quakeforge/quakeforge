@@ -2597,6 +2597,21 @@ message_expr (expr_t *receiver, keywordarg_t *message)
 	*a = selector;
 	a = &(*a)->next;
 	*a = receiver;
+
+	if (method) {
+		def_t       def;
+		expr_t      e, *err;
+
+		def.type = method->type;
+		def.name = method->name;
+		e.type = ex_def;
+		e.e.def = &def;
+		e.line = receiver->line;
+		e.file = receiver->file;
+		err = function_expr (&e, args);
+		if (err->type == ex_error)
+			return err;
+	}
 	call = function_expr (send_message (super), args);
 
 	if (call->type == ex_error)
