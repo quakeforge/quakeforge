@@ -217,7 +217,7 @@ preprocess_file (const char *filename)
 				puts("");
 			}
 
-			status = spawnvp (_P_WAIT, cpp_argv[0], (char **)cpp_argv);
+			status = spawnvp (_P_WAIT, cpp_argv[0], (const char **)cpp_argv);
 
 			if (status) {
 				fprintf (stderr, "%s: cpp returned error code %d\n",
