@@ -1,7 +1,19 @@
 SUBDIRS= alias brush sprite
 INCLUDES= -I$(top_srcdir)/include
 
-lib_LTLIBRARIES = libQFmodels.la libQFmodels_gl.la libQFmodels_sw.la
+if BUILD_GL
+MODELS_GL = libQFmodels_gl.la
+else
+MODELS_GL =
+endif
+
+if BUILD_SW
+MODELS_SW = libQFmodels_sw.la
+else
+MODELS_SW =
+endif
+
+lib_LTLIBRARIES = libQFmodels.la $(MODELS_GL) $(MODELS_SW)
 
 libQFmodels_la_LDFLAGS = -version-info 1:0:0 brush/model_brush.lo
 libQFmodels_la_SOURCES = model.c

@@ -1,6 +1,18 @@
 INCLUDES= -I$(top_srcdir)/include
 
-noinst_LTLIBRARIES = libbrush_gl.la libbrush_sw.la
+if BUILD_GL
+BRUSH_GL = libbrush_gl.la
+else
+BRUSH_GL =
+endif
+
+if BUILD_SW
+BRUSH_SW = libbrush_sw.la
+else
+BRUSH_SW =
+endif
+
+noinst_LTLIBRARIES = $(BRUSH_GL) $(BRUSH_SW)
 
 libbrush_gl_la_LDFLAGS = -version-info 1:0:0
 libbrush_gl_la_SOURCES = gl_model_brush.c model_brush.c

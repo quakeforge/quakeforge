@@ -1401,17 +1401,21 @@ NQ_TARGETS=""
 CD_TARGETS=""
 SND_TARGETS=""
 VID_TARGETS=""
+BUILD_GL=no
+BUILD_SW=no
 if test "x$HAVE_TDFXGL" = xyes -a "x$ENABLE_3DFX" = xyes; then
 	QW_TARGETS="$QW_TARGETS qw-client-3dfx\$(EXEEXT)"
 	NQ_TARGETS="$NQ_TARGETS nq-3dfx\$(EXEEXT)"
 	CL_TARGETS="$CL_TARGETS 3dfx"
 	VID_TARGETS="$VID_TARGETS libQFtdfx.la"
+	BUILD_GL=yes
 fi
 if test "x$HAVE_FBDEV" = xyes -a "x$ENABLE_FBDEV" = xyes; then
 	QW_TARGETS="$QW_TARGETS qw-client-fbdev\$(EXEEXT)"
 	NQ_TARGETS="$NQ_TARGETS nq-fbdev\$(EXEEXT)"
 	CL_TARGETS="$CL_TARGETS FBDEV"
 	VID_TARGETS="$VID_TARGETS libQFfbdev.la"
+	BUILD_SW=yes
 fi
 if test "x$HAVE_X" = xyes; then
 	if test "x$HAVE_GLX" = xyes -a "x$ENABLE_GLX" = xyes; then
@@ -1419,6 +1423,7 @@ if test "x$HAVE_X" = xyes; then
 		NQ_TARGETS="$NQ_TARGETS nq-glx\$(EXEEXT)"
 		CL_TARGETS="$CL_TARGETS GLX"
 		VID_TARGETS="$VID_TARGETS libQFglx.la"
+		BUILD_GL=yes
 	fi
 fi
 if test "x$HAVE_MGL" = xyes -a "x$ENABLE_MGL" = xyes; then
@@ -1426,12 +1431,14 @@ if test "x$HAVE_MGL" = xyes -a "x$ENABLE_MGL" = xyes; then
 	NQ_TARGETS="$NQ_TARGETS nq-mgl\$(EXEEXT)"
 	CL_TARGETS="$CL_TARGETS MGL"
 	VID_TARGETS="$VID_TARGETS libQFwgl.la"
+	BUILD_SW=yes
 fi
 if test "x$HAVE_SDL" = xyes -a "x$ENABLE_SDL" = xyes; then
 	QW_TARGETS="$QW_TARGETS qw-client-sdl\$(EXEEXT)"
 	NQ_TARGETS="$NQ_TARGETS nq-sdl\$(EXEEXT)"
 	CL_TARGETS="$CL_TARGETS SDL"
 	VID_TARGETS="$VID_TARGETS libQFsdl.la"
+	BUILD_SW=yes
 fi
 if test "x$HAVE_SGL" = xyes; then
 	if test "x$HAVE_GLX" = xyes -a "x$ENABLE_SGL" = xyes; then
@@ -1439,6 +1446,7 @@ if test "x$HAVE_SGL" = xyes; then
 		NQ_TARGETS="$NQ_TARGETS nq-sgl\$(EXEEXT)"
 		CL_TARGETS="$CL_TARGETS SDL-GL"
 		VID_TARGETS="$VID_TARGETS libQFsgl.la"
+		BUILD_GL=yes
 	fi
 fi
 if test "x$HAVE_SVGA" = xyes -a "x$ENABLE_SVGA" = xyes; then
@@ -1446,18 +1454,21 @@ if test "x$HAVE_SVGA" = xyes -a "x$ENABLE_SVGA" = xyes; then
 	NQ_TARGETS="$NQ_TARGETS nq-svga\$(EXEEXT)"
 	CL_TARGETS="$CL_TARGETS SVGAlib"
 	VID_TARGETS="$VID_TARGETS libQFsvga.la"
+	BUILD_SW=yes
 fi
 if test "x$mingw" = xyes -a "x$HAVE_GLX" = xyes -a "x$ENABLE_WGL" = xyes; then
 	QW_TARGETS="$QW_TARGETS qw-client-wgl\$(EXEEXT)"
 	NQ_TARGETS="$NQ_TARGETS nq-wgl\$(EXEEXT)"
 	CL_TARGETS="$CL_TARGETS WGL"
 	VID_TARGETS="$VID_TARGETS libQFwgl.la"
+	BUILD_GL=yes
 fi
 if test "x$HAVE_X" = xyes -a "x$ENABLE_X11" = xyes; then
 	QW_TARGETS="$QW_TARGETS qw-client-x11\$(EXEEXT)"
 	NQ_TARGETS="$NQ_TARGETS nq-x11\$(EXEEXT)"
 	CL_TARGETS="$CL_TARGETS X11"
 	VID_TARGETS="$VID_TARGETS libQFx11.la"
+	BUILD_SW=yes
 fi
 if test "x$SV_TARGETS" = xyes; then
 	QW_TARGETS="qw-server\$(EXEEXT) $QW_TARGETS"
@@ -1473,6 +1484,9 @@ AC_SUBST(QW_TARGETS)
 AC_SUBST(CD_TARGETS)
 AC_SUBST(SND_TARGETS)
 AC_SUBST(VID_TARGETS)
+
+AM_CONDITIONAL(BUILD_GL, test "$BUILD_GL" = "yes")
+AM_CONDITIONAL(BUILD_SW, test "$BUILD_SW" = "yes")
 
 dnl Output files
 AC_OUTPUT(
