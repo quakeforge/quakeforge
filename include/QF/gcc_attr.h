@@ -32,6 +32,10 @@
 #ifndef __GNUC__
 # define __attribute__(x)
 # define __builtin_expect(x,c) x
+#else
+# if __GNUC__ < 3
+#  define __builtin_expect(x,c) x
+# endif
 #endif
 
 #endif	// __gcc_attr_h
