@@ -486,6 +486,8 @@ _parse_type (const char **str)
 				new.num_parms *= 10;
 				new.num_parms += *(*str)++ - '0';
 			}
+			while (isspace (**str))
+				(*str)++;
 			new.aux_type = _parse_type (str);
 			if (**str != ']')
 				return 0;
