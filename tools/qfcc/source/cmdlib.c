@@ -30,8 +30,12 @@
 #ifdef HAVE_CONFIG_H
 # include "config.h"
 #endif
-
-#include "cmdlib.h"
+#ifdef HAVE_STRING_H
+# include <string.h>
+#endif
+#ifdef HAVE_STRINGS_H
+# include <strings.h>
+#endif
 #include <sys/types.h>
 #include <sys/stat.h>
 
@@ -43,6 +47,8 @@
 #include <libc.h>
 #endif
 
+#include "cmdlib.h"
+
 #define PATHSEPERATOR   '/'
 
 // set these before calling CheckParm
@@ -51,8 +57,6 @@ char		**myargv;
 
 char		com_token[1024];
 qboolean	com_eof;
-qboolean	archive;
-char		archivedir[1024];
 
 /*
 	Error
@@ -72,95 +76,6 @@ Error (char *error, ...)
 	printf ("\n");
 	exit (1);
 } 
-
-
-/*
-
-qdir will hold the path up to the quake directory, including the slash
-
-  f:\quake\
-  /raid/quake/
-
-gamedir will hold qdir + the game directory (id1, id2, etc)
-
-*/
-char	qdir[1024];
-char	gamedir[1024];
-
-void
-SetQdirFromPath (char *path)
-{
-	char	temp[1024];
-	char	*c;
-
-	if (!(path[0] == '/' || path[0] == '\\' || path[1] == ':')) {	// partial path
-		Q_getwd (temp);
-		strcat (temp, path);
-		path = temp;
-	}
-
-	// search for "quake" in path
-	for (c = path; *c; c++) {
-		if (!Q_strncasecmp (c, "quake", 5)) {
-			strncpy (qdir, path, c + 6 - path);
-			printf ("qdir: %s\n", qdir);
-			c += 6;
-			while (*c) {
-				if (*c == '/' || *c == '\\') {
-					strncpy (gamedir, path, c + 1 - path);
-					printf ("gamedir: %s\n", gamedir);
-					return;
-				}
-				c++;
-			}
-
-			Error ("No gamedir in %s", path);
-			return;
-		}
-	}
-
-	Error ("SeetQdirFromPath: no 'quake' in %s", path);
-}
-
-char *
-ExpandPath (char *path)
-{
-	static char full[1024];
-
-	if (!qdir)
-		Error ("ExpandPath called without qdir set");
-
-	if (path[0] == '/' || path[0] == '\\' || path[1] == ':')
-		return path;
-
-	sprintf (full, "%s%s", qdir, path);
-	return full;
-}
-
-char *
-ExpandPathAndArchive (char *path) 
-{
-	char	*expanded;
-	char	archivename[1024];
-
-	expanded = ExpandPath (path);
-	
-	if (archive) {
-		sprintf (archivename, "%s/%s", archivedir, path);
-		CopyFile (expanded, archivename);
-	}
-	return expanded;
-}
-
-char *
-copystring (char *s) 
-{
-	char *b;
-
-	b = malloc (strlen (s) + 1);
-	strcpy (b, s);
-	return b;
-}
 
 /*
 	I_FloatTime
@@ -189,48 +104,6 @@ I_FloatTime (void)
 	return (tp.tv_sec - secbase) + tp.tv_usec / 1000000.0;
 #endif
 }
-
-void
-Q_getwd (char *out)
-{
-#ifdef WIN32
-	_getcwd (out, 256);
-	strcat (out, "\\");
-#else
-	getcwd (out, 256);
-#endif
-}
-
-void
-Q_mkdir (char *path)
-{
-#ifdef WIN32
-	if (_mkdir (path) != -1)
-		return;
-#else
-	if (mkdir (path, 0777) != -1)
-		return;
-#endif
-	if (errno != EEXIST)
-		Error ("mkdir %s: %s", path, strerror (errno));
-}
-
-/*
-	FileTime
-
-	returns -1 if not present
-*/
-int
-FileTime (char *path)
-{
-	struct stat buf;
-
-	if (stat (path, &buf) == -1)
-		return -1;
-
-	return buf.st_mtime;
-}
-
 
 
 /*
@@ -304,67 +177,6 @@ skipwhite:
 }
 
 
-int
-Q_strncasecmp (char *s1, char *s2, int n)
-{
-	int         c1, c2;
-
-	while (1) {
-		c1 = *s1++;
-		c2 = *s2++;
-
-		if (!n--)
-			return 0;					// strings are equal until end point
-
-		if (c1 != c2) {
-			if (c1 >= 'a' && c1 <= 'z')
-				c1 -= ('a' - 'A');
-			if (c2 >= 'a' && c2 <= 'z')
-				c2 -= ('a' - 'A');
-			if (c1 != c2)
-				return -1;				// strings not equal
-		}
-		if (!c1)
-			return 0;					// strings are equal
-	}
-
-	return -1;
-}
-
-int
-Q_strcasecmp (char *s1, char *s2)
-{
-	return Q_strncasecmp (s1, s2, 99999);
-}
-
-
-char *
-strupr (char *start)
-{
-	char	*in;
-
-	in = start;
-	while (*in) {
-		*in = toupper (*in);
-		in++;
-	}
-	return start;
-}
-
-char *
-strlower (char *start)
-{
-	char	*in;
-
-	in = start;
-	while (*in) {
-		*in = tolower (*in);
-		in++;
-	}
-	return start;
-}
-
-
 /*
 =============================================================================
 
@@ -386,7 +198,7 @@ CheckParm (char *check)
 	int 	i;
 
 	for (i = 1; i < myargc; i++) {
-		if (!Q_strcasecmp (check, myargv[i]))
+		if (!strcasecmp (check, myargv[i]))
 			return i;
 	}
 
@@ -475,179 +287,6 @@ LoadFile (char *filename, void **bufferptr)
 
 	*bufferptr = buffer;
 	return length;
-}
-
-
-/*
-	SaveFile
-*/
-void
-SaveFile (char *filename, void *buffer, int count)
-{
-	FILE	*f;
-
-	f = SafeOpenWrite (filename);
-	SafeWrite (f, buffer, count);
-	fclose (f);
-}
-
-
-/*
-	DefaultExtension
-
-	Append an extension if the path doesn't have one.
-	The extension passed should include . at the beginning.
-*/
-void
-DefaultExtension (char *path, char *extension)
-{
-	char	*src;
-
-	src = path + strlen (path) - 1;
-
-	while (*src != PATHSEPERATOR && src != path) {
-		if (*src == '.')
-			return;						// it has an extension
-		src--;
-	}
-
-	strcat (path, extension);
-}
-
-
-void
-DefaultPath (char *path, char *basepath)
-{
-	char	temp[128];
-
-	if (path[0] == PATHSEPERATOR)
-		return;							// absolute path location
-	strcpy (temp, path);
-	strcpy (path, basepath);
-	strcat (path, temp);
-}
-
-
-void
-StripFilename (char *path)
-{
-	int 	length;
-
-	length = strlen (path) - 1;
-	while (length > 0 && path[length] != PATHSEPERATOR)
-		length--;
-	path[length] = 0;
-}
-
-void
-StripExtension (char *path)
-{
-	int 	length;
-
-	length = strlen (path) - 1;
-	while (length > 0 && path[length] != '.') {
-		length--;
-		if (path[length] == PATHSEPERATOR)	// no extension
-			return;
-	}
-	if (length)
-		path[length] = 0;
-}
-
-
-/*
-====================
-Extract file parts
-====================
-*/
-void
-ExtractFilePath (char *path, char *dest)
-{
-	char	*src;
-
-	src = path + strlen (path) - 1;
-
-	// back up until a / or the start
-	while (src != path && *(src - 1) != PATHSEPERATOR)
-		src--;
-
-	memcpy (dest, path, src - path);
-	dest[src - path] = 0;
-}
-
-void
-ExtractFileBase (char *path, char *dest)
-{
-	char	*src;
-
-	src = path + strlen (path) - 1;
-
-	// back up until a / or the start
-	while (src != path && *(src - 1) != PATHSEPERATOR)
-		src--;
-
-	while (*src && *src != '.') {
-		*dest++ = *src++;
-	}
-	*dest = 0;
-}
-
-void
-ExtractFileExtension (char *path, char *dest)
-{
-	char	*src;
-
-	src = path + strlen (path) - 1;
-
-	// back up until a . or the start
-	while (src != path && *(src - 1) != '.')
-		src--;
-	if (src == path) {
-		*dest = 0;						// no extension
-		return;
-	}
-
-	strcpy (dest, src);
-}
-
-
-/*
-	ParseNum / ParseHex
-*/
-int
-ParseHex (char *hex)
-{
-	char	*str;
-	int 	num;
-
-	num = 0;
-	str = hex;
-
-	while (*str) {
-		num <<= 4;
-		if (*str >= '0' && *str <= '9')
-			num += *str - '0';
-		else if (*str >= 'a' && *str <= 'f')
-			num += 10 + *str - 'a';
-		else if (*str >= 'A' && *str <= 'F')
-			num += 10 + *str - 'A';
-		else
-			Error ("Bad hex number: %s", hex);
-		str++;
-	}
-
-	return num;
-}
-
-
-int
-ParseNum (char *str)
-{
-	if (str[0] == '$')
-		return ParseHex (str + 1);
-	if (str[0] == '0' && str[1] == 'x')
-		return ParseHex (str + 2);
-	return atol (str);
 }
 
 /*
@@ -847,45 +486,3 @@ CRC_Value (unsigned short crcvalue)
 {
 	return crcvalue ^ CRC_XOR_VALUE;
 }
-
-
-//=============================================================================
-	
-/*
-============
-CreatePath
-============
-*/ 
-void
-CreatePath (char *path) 
-{
-	char	*ofs, c;
-
-	for (ofs = path + 1; *ofs; ofs++) {
-
-		c = *ofs;
-		if (c == '/' || c == '\\') {	// create the directory
-			*ofs = 0;
-			Q_mkdir (path);
-			*ofs = c;
-		}
-	}
-}
-
-
-/*
-	CopyFile
-
-	Used to archive source files
-*/ 
-	void
-CopyFile (char *from, char *to) 
-{
-	void	*buffer;
-	int 	length;
-
-	length = LoadFile (from, &buffer);
-	CreatePath (to);
-	SaveFile (to, buffer, length);
-	free (buffer);
-} 
