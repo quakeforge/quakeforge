@@ -68,7 +68,7 @@ hashtab_t  *registered_plugins;
 static const char *
 plugin_get_key (void *pl, void *unused)
 {
-	return ((plugin_list_t *)pl)->name;
+	return ((plugin_list_t *) pl)->name;
 }
 
 void
@@ -106,7 +106,7 @@ PI_LoadPlugin (const char *type, const char *name)
 	void			*dlhand = NULL;
 	plugin_t		*plugin = NULL;
 	P_PluginInfo	plugin_info = NULL;
-	plugin_list_t  *pl;
+	plugin_list_t	*pl;
 
 	if (!name)
 		return NULL;
@@ -140,8 +140,8 @@ PI_LoadPlugin (const char *type, const char *name)
 #if defined(HAVE_DLOPEN)
 		if (!(dlhand = dlopen (realname, RTLD_GLOBAL | RTLD_NOW))) {
 			// lib not found
-			Sys_Printf ("Could not load plugin \"%s\": %s\n", realname,
-						dlerror ());
+			Sys_Printf ("Could not load plugin \"%s\".\n", realname);
+			Sys_DPrintf ("Reason: \"%s\".\n", dlerror ());
 			return NULL;
 		}
 #elif defined (_WIN32)
