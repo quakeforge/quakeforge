@@ -41,12 +41,15 @@ typedef struct param_s {
 	const char *name;
 } param_t;
 
+struct expr_s;
+
 param_t *new_param (const char *selector, type_t *type, const char *name);
 param_t *_reverse_params (param_t *params, param_t *next);
 param_t *reverse_params (param_t *params);
 type_t *parse_params (type_t *type, param_t *params);
 void build_scope (function_t *f, def_t *func, param_t *params);
 function_t *new_function (void);
+void build_builtin_function (def_t *def, struct expr_s *bi_val);
 void build_function (function_t *f);
 void finish_function (function_t *f);
 void emit_function (function_t *f, expr_t *e);

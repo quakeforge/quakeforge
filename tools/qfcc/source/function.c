@@ -136,6 +136,30 @@ new_function (void)
 }
 
 void
+build_builtin_function (def_t *def, expr_t *bi_val)
+{
+	function_t *f;
+
+	if (def->type->type != ev_func) {
+		error (bi_val, "%s is not a function", def->name);
+		return;
+	}
+	
+	if (bi_val->type != ex_integer && bi_val->type != ex_float) {
+		error (bi_val, "invalid constant for = #");
+		return;
+	}
+
+	f = new_function ();
+
+	f->builtin = bi_val->type == ex_integer ? bi_val->e.integer_val
+											: (int)bi_val->e.float_val;
+	f->def = def;
+	build_function (f);
+	finish_function (f);
+}
+
+void
 build_function (function_t *f)
 {
 	f->def->constant = 1;

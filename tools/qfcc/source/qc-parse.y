@@ -372,22 +372,7 @@ var_initializer
 		}
 	| '=' '#' const
 		{
-			if (current_type->type != ev_func) {
-				error (0, "%s is not a function", current_def->name);
-			} else {
-				if ($3->type != ex_integer && $3->type != ex_float) {
-					error (0, "invalid constant for = #");
-				} else {
-					function_t	*f;
-
-					f = new_function ();
-					f->builtin = $3->type == ex_integer
-								 ? $3->e.integer_val : (int)$3->e.float_val;
-					f->def = current_def;
-					build_function (f);
-					finish_function (f);
-				}
-			}
+			build_builtin_function (current_def, $3);
 		}
 	| '=' opt_state_expr begin_function statement_block end_function
 		{
@@ -1093,6 +1078,14 @@ methoddef
 			}
 			finish_function ($6);
 		}
+	| '+' methoddecl '=' '#' const ';'
+		{
+			$2->instance = 0;
+			$2 = class_find_method (current_class, $2);
+			$2->def = method_def (current_class, $2);
+
+			build_builtin_function ($2->def, $5);
+		}
 	| '-' methoddecl
 		{
 			$2->instance = 1;
@@ -1113,6 +1106,14 @@ methoddef
 				emit_function ($6, $7);
 			}
 			finish_function ($6);
+		}
+	| '-' methoddecl '=' '#' const ';'
+		{
+			$2->instance = 0;
+			$2 = class_find_method (current_class, $2);
+			$2->def = method_def (current_class, $2);
+
+			build_builtin_function ($2->def, $5);
 		}
 	;
 
