@@ -412,8 +412,9 @@ CL_WriteSetDemoMessage (void)
 
 	record <demoname> <server>
 */
+
 void
-CL_Record_f (void)
+CL_Record (const char *argv1)
 {
 	char        buf_data[MAX_MSGLEN + 10];	// + 10 for header
 	char        name[MAX_OSPATH];
@@ -421,7 +422,7 @@ CL_Record_f (void)
 	char        timestring[20];
 	char        mapname[MAX_OSPATH];
 
-	int         c, n, i, j, k, l=0;
+	int         n, i, j, k, l=0;
 	int         seq = 1;
 	entity_t   *ent;
 	entity_state_t *es, blankes;
@@ -429,23 +430,7 @@ CL_Record_f (void)
 	sizebuf_t   buf;
 	time_t      tim;
 
-	c = Cmd_Argc ();
-	if (c > 2) {
-		/* we use a demo name like year-month-day-hours-minutes-mapname.qwd
-		   if there is no argument */
-		Con_Printf ("record [demoname]\n");
-		return;
-	}
-
-	if (cls.state != ca_active) {
-		Con_Printf ("You must be connected to record.\n");
-		return;
-	}
-
-	if (cls.demorecording)
-		CL_Stop_f ();
-
-	if (c < 2) {
+	if (!argv1) {
 		// Get time to a useable format
 		time (&tim);
 		strftime (timestring, 19, "%Y-%m-%d-%H-%M", localtime (&tim));
@@ -471,7 +456,7 @@ CL_Record_f (void)
 		snprintf (name, sizeof (name), "%s/%s-%s", com_gamedir,
 				  timestring, mapname);
 	} else {
-		snprintf (name, sizeof (name), "%s/%s", com_gamedir, Cmd_Argv(1));
+		snprintf (name, sizeof (name), "%s/%s", com_gamedir, argv1);
 	}
 
 	// open the demo file
@@ -715,6 +700,29 @@ CL_Record_f (void)
 	CL_WriteSetDemoMessage ();
 
 	// done
+}
+
+void
+CL_Record_f (void)
+{
+	if (Cmd_Argc () > 2) {
+		/* we use a demo name like year-month-day-hours-minutes-mapname.qwd
+		   if there is no argument */
+		Con_Printf ("record [demoname]\n");
+		return;
+	}
+
+	if (cls.state != ca_active) {
+		Con_Printf ("You must be connected to record.\n");
+		return;
+	}
+
+	if (cls.demorecording)
+		CL_Stop_f ();
+	if (Cmd_Argc () == 2)
+		CL_Record (Cmd_Argv (1));
+	else
+		CL_Record (0);
 }
 
 /*

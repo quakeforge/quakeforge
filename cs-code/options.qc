@@ -192,6 +192,11 @@ integer (string text, integer key) control_options_f =
 				Cbuf_AddText ("set m_pitch -0.022\n");
 			}
 			break;
+		case "cl_autorecord":
+			if(cvar("cl_autorecord") == 0)
+				Cbuf_AddText ("set cl_autorecord 1\n");
+			else
+				Cbuf_AddText ("set cl_autorecord 0\n");
 	}
 	if(!(key == QFK_RIGHT || key == QFK_LEFT)) {
 		return 0;
@@ -227,7 +232,7 @@ integer () options_controls_draw =
 	Draw_String (70, bar_pad + 10, "Mouse amp:");
 	draw_perc_bar  (150,  bar_pad + 10, 12, to_percentage (MIN_MOUSE_AMP, MAX_MOUSE_AMP, cvar("in_mouse_amp")));
 	Draw_String (150 + (12 + 4)*8 , bar_pad + 10, ftos(cvar("in_mouse_amp")));
-	
+
 	tmp = cvar("m_pitch") < 0 ? "On" : "Off";
 	draw_val_item (70, 110, spacing, "Mouse Invert", tmp);
 
@@ -247,9 +252,37 @@ void () options_controls_menu =
 	Menu_Item (54, 90, "freelook", control_options_f, 0);
 	Menu_Item (54, 100, "mouseamp", control_options_f, 1);
 	Menu_Item (54, 110, "m_pitch", control_options_f, 0);
+	Menu_Item (54, 120, "cl_autorecord", control_options_f, 0);
 	Menu_End ();
 };
 
+integer () options_features_draw = 
+{
+	local string tmp;
+	local integer cursor_pad = 0, spacing = 120, bar_pad;
+
+
+	Draw_Pic		(16, 4, "gfx/qplaque.lmp");
+	Draw_CenterPic  (160,4, "gfx/p_option.lmp");
+	Draw_String		(54,  40, "Features");
+	Draw_String		(54,  50, "--------");
+
+	tmp = cvar("cl_autorecord") != 0 ? "On" : "Off";
+	draw_val_item (70, 60, spacing, "Auto Record", tmp);
+
+	opt_cursor  (62, (Menu_GetIndex() * 10) + 60 + cursor_pad);
+	return 1;
+};
+
+void () options_features_menu =
+{
+	Menu_Begin (54, 70, "Features");
+	Menu_FadeScreen (1);
+	Menu_CenterPic (160, 4, "gfx/p_option.lmp");
+	Menu_Draw (options_features_draw);
+	Menu_Item (54, 70, "cl_autorecord", control_options_f, 0);
+	Menu_End ();
+};
 
 integer (integer key, integer unicode, integer down) options_keyevent =
 {
@@ -263,6 +296,9 @@ integer (integer key, integer unicode, integer down) options_keyevent =
 
 void () options_menu =
 {
+	local string tmp;
+	local integer spacing = 120;
+
 	Menu_Begin (54, 72, "");
 	Menu_FadeScreen (1);
 	Menu_Pic (16, 4, "gfx/qplaque.lmp");
@@ -271,5 +307,7 @@ void () options_menu =
 	options_controls_menu ();
 	options_video_menu ();
 	options_audio_menu ();
+	options_features_menu ();
+
 	Menu_End ();
 };

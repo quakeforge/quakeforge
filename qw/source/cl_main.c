@@ -165,7 +165,8 @@ cvar_t     *cl_solid_players;
 
 cvar_t     *localid;
 
-cvar_t    *cl_port;
+cvar_t     *cl_port;
+cvar_t     *cl_autorecord;
 
 static qboolean allowremotecmd = true;
 
@@ -1110,12 +1111,20 @@ CL_SetState (cactive_t state)
 		IN_ClearStates ();
 		if (con_module)
 			con_module->data->console->force_commandline = 0;
+
+		// Auto demo recorder starts here
+		if(cl_autorecord->int_val && !cls.demoplayback && !cls.demorecording)
+			CL_Record (0);		// FIXME might want a cvar here
 	} else {
 		r_active = false;
 		game_target = IMT_CONSOLE;
 		key_dest = key_console;
 		if (con_module)
 			con_module->data->console->force_commandline = 1;
+
+		// Auto demo recorder stops here
+		if(cl_autorecord->int_val && cls.demorecording)
+			CL_Stop_f ();
 	}
 }
 
@@ -1146,8 +1155,8 @@ CL_Init (void)
 	Cmd_AddCommand ("version", CL_Version_f, "Report version information");
 	Cmd_AddCommand ("changing", CL_Changing_f, "Used when maps are changing");
 	Cmd_AddCommand ("disconnect", CL_Disconnect_f, "Disconnect from server");
-	Cmd_AddCommand ("record", CL_Record_f, "Record a demo 'record filename "
-					"server'");
+	Cmd_AddCommand ("record", CL_Record_f, "Record a demo, if no filename argument is given\n"
+					"the demo will be called Year-Month-Day-Hour-Minute-Mapname");
 	Cmd_AddCommand ("rerecord", CL_ReRecord_f, "Rerecord a demo on the same "
 					"server");
 	Cmd_AddCommand ("snap", CL_RSShot_f, "Take a screenshot and upload it to "
@@ -1332,6 +1341,8 @@ CL_Init_Cvars (void)
 						  "Turn this on to save cpu when fps limited. "
 						  "May affect frame rate adversely depending on "
 						  "local machine/os conditions");
+	cl_autorecord = Cvar_Get ("cl_autorecord", "0", CVAR_ARCHIVE, NULL,
+			"Turn this on, if you want to record every game");
 }
 
 /*
