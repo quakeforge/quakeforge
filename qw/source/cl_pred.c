@@ -43,9 +43,9 @@ static const char rcsid[] =
 #include "client.h"
 #include "pmove.h"
 
-cvar_t     *cl_nopred;
+cvar_t     *cl_predict;
+cvar_t     *cl_predict_static;
 cvar_t     *cl_pushlatency;
-cvar_t     *cl_nostatpred;
 
 
 
@@ -54,7 +54,7 @@ CL_PredictUsercmd (player_state_t * from, player_state_t * to, usercmd_t *u,
 				   qboolean spectator)
 {
 // Dabb: if there is no movement to start with, don't predict...
-	if(cl_nostatpred->int_val && VectorIsZero (from->velocity)) {
+	if(!cl_predict_static->int_val && VectorIsZero (from->velocity)) {
 		VectorCopy (from->origin, to->origin);
 		VectorCopy (u->angles, to->viewangles);
 		VectorCopy (from->velocity, to->velocity);
@@ -142,14 +142,14 @@ CL_PredictMove (void)
 		CL_SetState (ca_active);
 	}
 
-	if (cl_nopred->int_val) {
+	if (!cl_predict->int_val) {
 		VectorCopy (from->playerstate[cl.playernum].velocity, cl.simvel);
 		VectorCopy (from->playerstate[cl.playernum].origin, cl.simorg);
 		return;
 	}
 
 	// Dabb: if there is no movement to start with, don't predict...
-	if (cl_nostatpred->int_val
+	if (!cl_predict_static->int_val
 		&& VectorIsZero (from->playerstate[cl.playernum].velocity)) {
 		VectorCopy (from->playerstate[cl.playernum].velocity, cl.simvel);
 		VectorCopy (from->playerstate[cl.playernum].origin, cl.simorg);
@@ -208,10 +208,10 @@ CL_PredictMove (void)
 void
 CL_Prediction_Init_Cvars (void)
 {
-	cl_nopred = Cvar_Get ("cl_nopred", "0", CVAR_NONE, NULL,
-						  "Set to turn off client prediction");
-	cl_nostatpred = Cvar_Get ("cl_nostatpred", "0", CVAR_NONE, NULL,
-							  "Set to turn off static player prediction");
+	cl_predict = Cvar_Get ("cl_predict", "1", CVAR_NONE, NULL,
+						  "Set to enable client prediction");
+	cl_predict_static = Cvar_Get ("cl_predict_static", "0", CVAR_NONE, NULL,
+							  "Set to enable static player prediction");
 	cl_pushlatency = Cvar_Get ("pushlatency", "-999", CVAR_NONE, NULL,
 							   "How much prediction should the client make");
 }
