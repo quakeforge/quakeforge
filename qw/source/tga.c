@@ -36,6 +36,8 @@
 # include <strings.h>
 #endif
 
+#include <stdlib.h>
+
 #include "QF/qendian.h"
 #include "QF/quakefs.h"
 #include "QF/sys.h"
