@@ -12,6 +12,7 @@ entity_t   *r_view_model;
 entity_t   *r_player_entity;
 lightstyle_t r_lightstyle[MAX_LIGHTSTYLES];
 int         r_lineadj;
+qboolean    r_active;
 float       r_time1;
 
 

@@ -190,6 +190,7 @@ extern qboolean	r_paused;
 extern entity_t *r_view_model;
 extern entity_t *r_player_entity;
 extern int		r_lineadj;
+extern qboolean r_active;
 
 void *D_SurfaceCacheAddress (void);
 int D_SurfaceCacheForRes (int width, int height);

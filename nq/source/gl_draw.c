@@ -42,12 +42,12 @@
 #include "QF/console.h"
 #include "QF/draw.h"
 #include "QF/quakefs.h"
+#include "QF/render.h"
 #include "QF/screen.h"
 #include "QF/sys.h"
 #include "QF/vid.h"
 #include "QF/va.h"
 
-#include "client.h"
 #include "glquake.h"
 #include "r_cvar.h"
 #include "sbar.h"
@@ -559,7 +559,7 @@ Draw_ConsoleBackground (int lines)
 		ofs = (vid.conheight - lines) / (float) vid.conheight;
 
 	y = vid.height * scr_consize->value;
-	if (cls.state != ca_active || lines > y) {
+	if (!r_active || lines > y) {
 		alpha = 1.0;
 	} else {
 		// set up to draw alpha console

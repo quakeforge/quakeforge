@@ -1485,6 +1485,7 @@ Host_Frame (float time)
 						   || cl.stats[STAT_HEALTH] <= 0);
 	r_force_fullscreen = cl.intermission;
 	r_paused = cl.paused;
+	r_active = cls.state == ca_active;
 	r_view_model = &cl.viewent;
 
 	// don't allow cheats in multiplayer
