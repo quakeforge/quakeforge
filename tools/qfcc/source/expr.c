@@ -1439,6 +1439,28 @@ binary_expr (int op, expr_t *e1, expr_t *e2)
 	if (!type)
 		error (e1, "internal error");
 
+	if (options.code.progsversion == PROG_ID_VERSION) {
+		switch (op) {
+			case '%':
+				{
+					expr_t     *tmp1, *tmp2;
+					e = new_block_expr ();
+					tmp1 = new_temp_def_expr (&type_float);
+					tmp2 = new_temp_def_expr (&type_float);
+					e2 = binary_expr ('&', e2, new_float_expr (-1.0));
+					e1 = binary_expr ('&', e1, new_float_expr (-1.0));
+					append_expr (e, assign_expr (tmp1, e2));
+					append_expr (e, assign_expr (tmp2,
+												 binary_expr ('/', e1, tmp1)));
+					e2 = binary_expr ('&', tmp2, new_float_expr (-1.0));
+					e->e.block.result = binary_expr ('-', tmp2, e2);
+					e2 = e;
+					e1 = tmp1;
+					op = '*';
+				}
+				break;
+		}
+	}
 	e = new_binary_expr (op, e1, e2);
 	e->e.expr.type = type;
 	return e;

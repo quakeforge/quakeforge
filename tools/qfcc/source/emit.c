@@ -384,9 +384,10 @@ emit_sub_expr (expr_t *e, def_t *dest)
 	switch (e->type) {
 		case ex_block:
 			if (e->e.block.result) {
-				d = emit_sub_expr (e->e.block.result, dest);
+				expr_t     *res = e->e.block.result;
 				for (e = e->e.block.head; e; e = e->next)
 					emit_expr (e);
+				d = emit_sub_expr (res, dest);
 				break;
 			}
 		case ex_name:
