@@ -370,16 +370,35 @@ Sys_Quit (void)
 	exit (0);
 }
 
+#if defined (HAVE_VA_COPY)
+# define VA_COPY(a,b) va_copy (a, b)
+#elif defined (HAVE__VA_COPY)
+# define VA_COPY(a,b) __va_copy (a, b)
+#else
+# define VA_COPY memcpy (a, b, sizeof (a))
+#endif
+
 void
 Sys_Error (const char *error, ...)
 {
-	va_list     argptr;
+	va_list     args;
+#ifdef VA_LIST_IS_ARRAY
+	va_list     tmp_args;
+	VA_COPY (tmp_args, args);
+#endif
 
-	va_start (argptr, error);
-	sys_err_printf_function (error, argptr);
-	va_end (argptr);
+	va_start (args, error);
+	sys_err_printf_function (error, args);
+	va_end (args);
 
 	Sys_Shutdown ();
+
+	// print the message again using the default error printer to increase the
+	// chances of the error being seen.
+#ifdef VA_LIST_IS_ARRAY
+	VA_COPY (args, tmp_args);
+#endif
+	Sys_ErrPrintf (error, args);
 
 	exit (1);
 }
@@ -434,15 +453,15 @@ Sys_PageIn (void *ptr, int size)
 void
 Sys_DebugLog (const char *file, const char *fmt, ...)
 {
-	va_list     argptr;
-	static char data[1024];					// why static ?
+	va_list     args;
+	dstring_t  *data = dstring_newstr ();
 	int         fd;
 
-	va_start (argptr, fmt);
-	vsnprintf (data, sizeof (data), fmt, argptr);
-	va_end (argptr);
+	va_start (args, fmt);
+	dvsprintf (data, fmt, args);
+	va_end (args);
 	fd = open (file, O_WRONLY | O_CREAT | O_APPEND, 0666);
-	write (fd, data, strlen (data));
+	write (fd, data->str, data->size - 1);
 	close (fd);
 }
 
