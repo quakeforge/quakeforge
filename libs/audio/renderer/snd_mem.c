@@ -48,6 +48,8 @@ static __attribute__ ((unused)) const char rcsid[] =
 #include "compat.h"
 #include "snd_render.h"
 
+#define SAMPLE_GAP	4
+
 typedef struct {
 	byte        left;
 	byte        right;
@@ -111,12 +113,16 @@ SND_StreamWavinfo (sfx_t *sfx)
 }
 
 static void
-read_samples (sfxbuffer_t *buffer, int count)
+read_samples (sfxbuffer_t *buffer, int count, void *prev)
 {
+
 	if (buffer->head + count > buffer->length) {
+		int         s = (buffer->length - 1);
+
 		count -= buffer->length - buffer->head;
-		read_samples (buffer, buffer->length - buffer->head);
-		read_samples (buffer, count);
+		read_samples (buffer, buffer->length - buffer->head, prev);
+		prev = buffer->data + s * buffer->bps;
+		read_samples (buffer, count, prev);
 	} else {
 		byte       *data;
 		float       stepscale;
@@ -133,7 +139,7 @@ read_samples (sfxbuffer_t *buffer, int count)
 
 		if (stream->read (stream->file, data, size, info) < size)
 			Sys_Printf ("%s\n", sfx->name);
-		stream->resample (buffer, data, samples);
+		stream->resample (buffer, data, samples, prev);
 		buffer->head += count;
 		if (buffer->head >= buffer->length)
 			buffer->head -= buffer->length;
@@ -149,6 +155,7 @@ SND_StreamAdvance (sfxbuffer_t *buffer, unsigned int count)
 	sfx_t      *sfx = buffer->sfx;
 	sfxstream_t *stream = (sfxstream_t *) sfx->data;
 	wavinfo_t  *info = &stream->wavinfo;
+	void       *prev;
 
 	stepscale = (float) info->rate / shm->speed;	// usually 0.5, 1, or 2
 
@@ -201,7 +208,7 @@ SND_StreamAdvance (sfxbuffer_t *buffer, unsigned int count)
 	}
 
 	// find out how many samples can be read into the buffer
-	samples = buffer->tail - buffer->head - 1;
+	samples = buffer->tail - buffer->head - SAMPLE_GAP;
 	if (buffer->tail <= buffer->head)
 		samples += buffer->length;
 
@@ -214,11 +221,27 @@ SND_StreamAdvance (sfxbuffer_t *buffer, unsigned int count)
 		}
 	}
 	if (samples) {
-		read_samples (buffer, samples);
+		if (buffer->head != buffer->tail) {
+			int         s = buffer->head - 1;
+			if (!buffer->head)
+				s += buffer->length;
+			prev = buffer->data + s * buffer->bps;
+		} else {
+			prev = 0;
+		}
+		read_samples (buffer, samples, prev);
 	}
 	if (loop_samples) {
+		if (buffer->head != buffer->tail) {
+			int         s = buffer->head - 1;
+			if (!buffer->head)
+				s += buffer->length;
+			prev = buffer->data + s * buffer->bps;
+		} else {
+			prev = 0;
+		}
 		stream->seek (stream->file, info->loopstart, info);
-		read_samples (buffer, loop_samples);
+		read_samples (buffer, loop_samples, prev);
 	}
 }
 
@@ -294,21 +317,31 @@ SND_GetCache (long samples, int rate, int inwidth, int channels,
 }
 
 void
-SND_ResampleMono (sfxbuffer_t *sc, byte *data, int length)
+SND_ResampleMono (sfxbuffer_t *sc, byte *data, int length, void *prev)
 {
-	unsigned char *ib, *ob;
+	byte       *ib, *ob, *pb;
 	int			fracstep, outcount, sample, samplefrac, srcsample, i;
 	float		stepscale;
-	short	   *is, *os;
+	short	   *is, *os, *ps;
 	wavinfo_t  *info = sc->sfx->wavinfo (sc->sfx);
 	int         inwidth = info->width;
 	int         inrate = info->rate;
 	int         outwidth;
+	short       zero_s[1];
+	byte        zero_b[1];
 
 	is = (short *) data;
 	os = (short *) sc->data;
 	ib = data;
 	ob = sc->data;
+
+	ps = zero_s;
+	pb = zero_b;
+
+	if (!prev) {
+		zero_s[0] = 0;
+		zero_b[0] = 128;
+	}
 
 	os += sc->head;
 	ob += sc->head;
@@ -325,11 +358,19 @@ SND_ResampleMono (sfxbuffer_t *sc, byte *data, int length)
 		sc->sfx->loopstart = (unsigned int)-1;
 
 	if (snd_loadas8bit->int_val) {
-		outwidth = 1;
+		sc->bps = outwidth = 1;
 		sc->paint = SND_PaintChannelFrom8;
+		if (prev) {
+			zero_s[0] = ((char *)prev)[0];
+			zero_b[0] = ((char *)prev)[0] + 128;
+		}
 	} else {
-		outwidth = 2;
+		sc->bps = outwidth = 2;
 		sc->paint = SND_PaintChannelFrom16;
+		if (prev) {
+			zero_s[0] = ((short *)prev)[0];
+			zero_b[0] = (((short *)prev)[0] >> 8) + 128;
+		}
 	}
 
 	if (!length)
@@ -364,15 +405,13 @@ SND_ResampleMono (sfxbuffer_t *sc, byte *data, int length)
 				int         s1, s2;
 
 				if (inwidth == 2) {
-					s2 = s1 = LittleShort (is[0]);
-					if (i < length - 1)
-						s2 = LittleShort (is[1]);
-					is++;
+					s1 = LittleShort (*ps);
+					s2 = LittleShort (*is);
+					ps = is++;
 				} else {
-					s2 = s1 = (ib[0] - 128) << 8;
-					if (i < length - 1)
-						s2 = (ib[1] - 128) << 8;
-					ib++;
+					s1 = (*pb - 128) << 8;
+					s2 = (*ib - 128) << 8;
+					pb = ib++;
 				}
 				for (j = 0; j < points; j++) {
 					sample = s1 + (s2 - s1) * ((float) j) / points;
@@ -414,21 +453,31 @@ SND_ResampleMono (sfxbuffer_t *sc, byte *data, int length)
 }
 
 void
-SND_ResampleStereo (sfxbuffer_t *sc, byte *data, int length)
+SND_ResampleStereo (sfxbuffer_t *sc, byte *data, int length, void *prev)
 {
 	int			fracstep, outcount, sl, sr, samplefrac, srcsample, i;
 	float		stepscale;
-	stereo8_t  *ib, *ob;
-	stereo16_t *is, *os;
+	stereo8_t  *ib, *ob, *pb;
+	stereo16_t *is, *os, *ps;
 	wavinfo_t  *info = sc->sfx->wavinfo (sc->sfx);
 	int         inwidth = info->width;
 	int         inrate = info->rate;
 	int         outwidth;
+	stereo16_t  zero_s;
+	stereo8_t   zero_b;
 
 	is = (stereo16_t *) data;
 	os = (stereo16_t *) sc->data;
 	ib = (stereo8_t *) data;
 	ob = (stereo8_t *) sc->data;
+
+	ps = &zero_s;
+	pb = &zero_b;
+
+	if (!prev) {
+		zero_s.left = zero_s.right = 0;
+		zero_b.left = zero_b.right = 128;
+	}
 
 	os += sc->head;
 	ob += sc->head;
@@ -446,9 +495,23 @@ SND_ResampleStereo (sfxbuffer_t *sc, byte *data, int length)
 	if (snd_loadas8bit->int_val) {
 		outwidth = 1;
 		sc->paint = SND_PaintChannelStereo8;
+		sc->bps = 2;
+		if (prev) {
+			zero_s.left = ((char *)prev)[0];
+			zero_s.right = ((char *)prev)[1];
+			zero_b.left = ((char *)prev)[0] + 128;
+			zero_b.right = ((char *)prev)[1] + 128;
+		}
 	} else {
 		outwidth = 2;
 		sc->paint = SND_PaintChannelStereo16;
+		sc->bps = 4;
+		if (prev) {
+			zero_s.left = ((short *)prev)[0];
+			zero_s.right = ((short *)prev)[1];
+			zero_b.left = (((short *)prev)[0] >> 8) + 128;
+			zero_b.right = (((short *)prev)[1] >> 8) + 128;
+		}
 	}
 
 	if (!length)
@@ -488,21 +551,17 @@ SND_ResampleStereo (sfxbuffer_t *sc, byte *data, int length)
 				int         sr1, sr2;
 
 				if (inwidth == 2) {
-					sl2 = sl1 = LittleShort (is[0].left);
-					sr2 = sr1 = LittleShort (is[0].right);
-					if (i < length - 1) {
-						sl2 = LittleShort (is[1].left);
-						sr2 = LittleShort (is[1].right);
-					}
-					is++;
+					sl1 = LittleShort (ps->left);
+					sr1 = LittleShort (ps->right);
+					sl2 = LittleShort (is->left);
+					sr2 = LittleShort (is->right);
+					ps = is++;
 				} else {
-					sl2 = sl1 = (ib[0].left - 128) << 8;
-					sr2 = sr1 = (ib[0].right - 128) << 8;
-					if (i < length - 1) {
-						sl2 = (ib[1].left - 128) << 8;
-						sr2 = (ib[1].right - 128) << 8;
-					}
-					ib++;
+					sl1 = (pb->left - 128) << 8;
+					sr1 = (pb->right - 128) << 8;
+					sl2 = (ib->left - 128) << 8;
+					sr2 = (ib->right - 128) << 8;
+					pb = ib++;
 				}
 				for (j = 0; j < points; j++) {
 					sl = sl1 + (sl2 - sl1) * ((float) j) / points;

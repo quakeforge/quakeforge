@@ -155,7 +155,7 @@ vorbis_load (OggVorbis_File *vf, sfxblock_t *block, cache_allocator_t allocator)
 	byte       *data;
 	sfxbuffer_t *sc = 0;
 	sfx_t      *sfx = block->sfx;
-	void       (*resample)(sfxbuffer_t *, byte *, int);
+	void       (*resample)(sfxbuffer_t *, byte *, int, void *);
 	wavinfo_t  *info = &block->wavinfo;
 
 	switch (info->channels) {
@@ -181,7 +181,7 @@ vorbis_load (OggVorbis_File *vf, sfxblock_t *block, cache_allocator_t allocator)
 	sc->sfx = sfx;
 	if (vorbis_read (vf, data, info->datalen) < 0)
 		goto bail;
-	resample (sc, data, info->samples);
+	resample (sc, data, info->samples, 0);
 	sc->head = sc->length;
   bail:
 	if (data)
@@ -247,7 +247,8 @@ vorbis_stream (sfx_t *sfx, char *realname, OggVorbis_File *vf, wavinfo_t info)
 	int         samples;
 	int         size;
 	
-	samples = size = shm->speed * 0.3;
+	samples = shm->speed * 0.3;
+	size = samples = (samples + 3) & ~3;
 	if (!snd_loadas8bit->int_val)
 		size *= 2;
 	if (info.channels == 2)
@@ -275,7 +276,7 @@ vorbis_stream (sfx_t *sfx, char *realname, OggVorbis_File *vf, wavinfo_t info)
 	stream->buffer.advance = SND_StreamAdvance;
 	stream->buffer.sfx = sfx;
 
-	stream->resample (&stream->buffer, 0, 0);		// get sfx setup properly
+	stream->resample (&stream->buffer, 0, 0, 0);	// get sfx setup properly
 	stream->seek (stream->file, 0, &stream->wavinfo);
 
 	stream->buffer.advance (&stream->buffer, 0);

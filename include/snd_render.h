@@ -57,6 +57,7 @@ struct sfxbuffer_s {
 	unsigned int tail;			// ring buffer tail position in sampels
 	unsigned int length;		// length of buffer in samples
 	unsigned int pos;			// position of tail within full stream
+	unsigned int bps;			// bytes per sample: 1 2 4 usually
 	void        (*paint) (channel_t *ch, sfxbuffer_t *buffer, int count);
 	void        (*advance) (sfxbuffer_t *buffer, unsigned int count);
 	sfx_t      *sfx;
@@ -67,7 +68,7 @@ typedef struct sfxstream_s {
 	sfx_t      *sfx;
 	void       *file;
 	wavinfo_t   wavinfo;
-	void       (*resample)(sfxbuffer_t *, byte *, int);
+	void       (*resample)(sfxbuffer_t *, byte *, int, void *);
 	int        (*read)(void *file, byte *data, int bytes, wavinfo_t *info);
 	int        (*seek)(void *file, int pos, wavinfo_t *info);
 	sfxbuffer_t buffer;
@@ -121,8 +122,8 @@ void SND_LocalSound (const char *s);
 void SND_BlockSound (void);
 void SND_UnblockSound (void);
 
-void SND_ResampleMono (sfxbuffer_t *sc, byte *data, int length);
-void SND_ResampleStereo (sfxbuffer_t *sc, byte *data, int length);
+void SND_ResampleMono (sfxbuffer_t *sc, byte *data, int length, void *prev);
+void SND_ResampleStereo (sfxbuffer_t *sc, byte *data, int length, void *prev);
 sfxbuffer_t *SND_GetCache (long samples, int rate, int inwidth, int channels,
 						   sfxblock_t *block, cache_allocator_t allocator);
 

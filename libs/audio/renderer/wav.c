@@ -72,9 +72,9 @@ wav_callback_load (void *object, cache_allocator_t allocator)
 						   info->channels, block, allocator);
 	buffer->sfx = sfx;
 	if (info->channels == 2)
-		SND_ResampleStereo (buffer, data, info->samples);
+		SND_ResampleStereo (buffer, data, info->samples, 0);
 	else
-		SND_ResampleMono (buffer, data, info->samples);
+		SND_ResampleMono (buffer, data, info->samples, 0);
 	buffer->head = buffer->length;
 	free (data);
 }
@@ -118,7 +118,8 @@ wav_stream (sfx_t *sfx, char *realname, void *file, wavinfo_t info)
 	int         samples;
 	int         size;
 
-	samples = size = shm->speed * 0.3;
+	samples = shm->speed * 0.3;
+	size = samples = (samples + 3) & ~3;
 	if (!snd_loadas8bit->int_val)
 		size *= 2;
 	if (info.channels == 2)
@@ -145,7 +146,7 @@ wav_stream (sfx_t *sfx, char *realname, void *file, wavinfo_t info)
 	stream->buffer.advance = SND_StreamAdvance;
 	stream->buffer.sfx = sfx;
 
-	stream->resample (&stream->buffer, 0, 0);		// get sfx setup properly
+	stream->resample (&stream->buffer, 0, 0, 0);	// get sfx setup properly
 	stream->seek (stream->file, 0, &stream->wavinfo);
 
 	stream->buffer.advance (&stream->buffer, 0);
