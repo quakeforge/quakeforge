@@ -105,7 +105,7 @@ IN_Commands (void)
 void
 IN_SendKeyEvents (void)
 {
-	/* Get events from X server. */
+	/* Get events from environment. */
 	IN_LL_SendKeyEvents ();
 }
 
@@ -173,7 +173,8 @@ IN_Init_Cvars (void)
 	IE_Init_Cvars ();
 	JOY_Init_Cvars ();
 	in_grab = Cvar_Get ("in_grab", "0", CVAR_ARCHIVE, IN_UpdateGrab,
-			"With this set to 1, quake will grab the mouse from X");
+						"With this set to 1, quake will grab the mouse, "
+						"preventing loss of input focus.");
 	in_amp = Cvar_Get ("in_amp", "1", CVAR_ARCHIVE, NULL,
 					   "global in_amp multiplier");
 	in_pre_amp = Cvar_Get ("in_pre_amp", "1", CVAR_ARCHIVE, NULL,
