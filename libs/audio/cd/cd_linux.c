@@ -65,7 +65,6 @@ static plugin_data_t	plugin_info_data;
 static plugin_funcs_t	plugin_info_funcs;
 static general_data_t	plugin_info_general_data;
 static general_funcs_t	plugin_info_general_funcs;
-//static cd_data_t		plugin_info_cd_data;
 static cd_funcs_t		plugin_info_cd_funcs;
 
 static qboolean cdValid = false;
@@ -77,8 +76,8 @@ static float cdvolume;
 static byte remap[100];
 static byte playTrack;
 static byte maxTrack;
-
 static int  cdfile = -1;
+
 static cvar_t *mus_cddevice;
 static cvar_t *bgmvolume;
 
@@ -231,8 +230,6 @@ I_CDAudio_Play (int track, qboolean looping)
 					 strerror (errno));
 		return;
 	}
-//	if ( ioctl(cdfile, CDROMRESUME) == -1 ) 
-//	Sys_DPrintf("CDAudio: ioctl cdromresume failed\n");
 
 	playLooping = looping;
 	playTrack = track;
@@ -262,8 +259,7 @@ I_CDAudio_Resume (void)
 static void
 I_CDAudio_Shutdown (void)
 {
-	if (cdfile != -1)
-	{
+	if (cdfile != -1) {
 		I_CDAudio_Stop ();
 		close (cdfile);
 		cdfile = -1;
@@ -275,8 +271,7 @@ static void
 I_CD_f (void)
 {
 	const char *command;
-	int         ret;
-	int         n;
+	int         ret, n;
 
 	if (Cmd_Argc () < 2)
 		return;
@@ -421,21 +416,18 @@ Mus_CDChange (cvar_t *mus_cdaudio)
 	int         i;
 
 	CDAudio_Shutdown ();
-	if (strequal(mus_cdaudio->string, "none"))
-	{
+	if (strequal (mus_cdaudio->string, "none")) {
 		return;
 	}
 
 	cdfile = open (mus_cdaudio->string, O_RDONLY | O_NONBLOCK);
-	if (cdfile == -1)
-	{
+	if (cdfile == -1) {
 		Sys_DPrintf ("Mus_CDInit: open of device \"%s\" failed (error %i)\n",
-				mus_cdaudio->string, errno);
+					 mus_cdaudio->string, errno);
 		return;
 	}
 	
-	if (I_CDAudio_GetAudioDiskInfo ())
-	{
+	if (I_CDAudio_GetAudioDiskInfo ()) {
 		Sys_Printf ("CDAudio_Init: No CD in player.\n");
 		cdValid = false;
 	}
@@ -449,8 +441,8 @@ Mus_CDChange (cvar_t *mus_cdaudio)
 static void
 I_CDAudio_Init (void)
 {
-	mus_cddevice = Cvar_Get("mus_cddevice", "/dev/cdrom", CVAR_NONE,
-			Mus_CDChange, "device to use for CD music");
+	mus_cddevice = Cvar_Get ("mus_cddevice", "/dev/cdrom", CVAR_NONE,
+							 Mus_CDChange, "device to use for CD music");
 	bgmvolume = Cvar_Get ("bgmvolume", "1", CVAR_ARCHIVE, NULL,
 						  "Volume of CD music");
 }
@@ -492,8 +484,8 @@ static plugin_t plugin_info = {
 	QFPLUGIN_VERSION,
 	"0.1",
 	"Linux CD Audio output\n",
-		"Copyright (C) 2001  contributors of the QuakeForge project\n"
-		"Please see the file \"AUTHORS\" for a list of contributors\n",
+	"Copyright (C) 2001  contributors of the QuakeForge project\n"
+	"Please see the file \"AUTHORS\" for a list of contributors\n",
 	&plugin_info_funcs,
 	&plugin_info_data,
 };

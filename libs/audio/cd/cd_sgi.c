@@ -39,12 +39,13 @@ static __attribute__ ((unused)) const char rcsid[] =
 
 #include "QF/cdaudio.h"
 #include "QF/cmd.h"
+#include "QF/cvar.h"
 #include "QF/qargs.h"
 #include "QF/sound.h"
 #include "QF/sys.h"
 #include "QF/plugin.h"
+
 #include "compat.h"
-#include "QF/cvar.h"
 
 static plugin_t plugin_info;
 static plugin_data_t plugin_info_data;
@@ -230,17 +231,16 @@ I_SGI_Update (void)
 		}
 	}
 
-	if (I_SGI_GetState () != CD_PLAYING &&
-		I_SGI_GetState () != CD_PAUSED && playLooping)
-			CDAudio_Play (playTrack, true);
+	if (I_SGI_GetState () != CD_PLAYING
+		&& I_SGI_GetState () != CD_PAUSED && playLooping)
+		CDAudio_Play (playTrack, true);
 }
 
 static void
 I_SGI_f (void)
 {
 	const char       *command;
-	int         ret;
-	int         n;
+	int         ret, n;
 
 	if (Cmd_Argc () < 2)
 		return;
@@ -347,8 +347,8 @@ I_SGI_Init (void)
 	cdp = CDopen (cd_dev, "r");
 
 	if (cdp == NULL) {
-		Sys_Printf ("CDAudio_Init: open of \"%s\" failed (%i)\n",
-					cd_dev, errno);
+		Sys_Printf ("CDAudio_Init: open of \"%s\" failed (%i)\n", cd_dev,
+					errno);
 		return ;
 	}
 
@@ -359,8 +359,6 @@ I_SGI_Init (void)
 	enabled = true;
 
 	Sys_Printf ("CD Audio Initialized\n");
-
-	return ;
 }
 
 static general_funcs_t plugin_info_general_funcs = {
@@ -400,8 +398,8 @@ static plugin_t plugin_info = {
 	QFPLUGIN_VERSION,
 	"0.1",
 	"SGI CD Audio output\n",
-		"Copyright (C) 2001  contributors of the QuakeForge project\n"
-		"Please see the file \"AUTHORS\" for a list of contributors\n",
+	"Copyright (C) 2001  contributors of the QuakeForge project\n"
+	"Please see the file \"AUTHORS\" for a list of contributors\n",
 	&plugin_info_funcs,
 	&plugin_info_data,
 };

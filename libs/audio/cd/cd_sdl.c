@@ -55,7 +55,6 @@ static plugin_data_t	plugin_info_data;
 static plugin_funcs_t	plugin_info_funcs;
 static general_data_t	plugin_info_general_data;
 static general_funcs_t	plugin_info_general_funcs;
-//static cd_data_t		plugin_info_cd_data;
 static cd_funcs_t		plugin_info_cd_funcs;
 
 static qboolean cdValid = false;
@@ -67,6 +66,7 @@ static SDL_CD  *cd_id;
 static float	cdvolume = 1.0;
 
 static cvar_t *bgmvolume;
+
 
 static void
 I_CDAudio_Eject (void)
@@ -319,8 +319,8 @@ static plugin_t plugin_info = {
 	QFPLUGIN_VERSION,
 	"0.1",
 	"SDL CD Audio output\n",
-		"Copyright (C) 2001  contributors of the QuakeForge project\n"
-		"Please see the file \"AUTHORS\" for a list of contributors\n",
+	"Copyright (C) 2001  contributors of the QuakeForge project\n"
+	"Please see the file \"AUTHORS\" for a list of contributors\n",
 	&plugin_info_funcs,
 	&plugin_info_data,
 };

@@ -55,19 +55,18 @@ static __attribute__ ((unused)) const char  rcsid[] =
 #include "QF/cdaudio.h"
 #include "QF/cmd.h"
 #include "QF/cvar.h"
+#include "QF/dstring.h"
 #include "QF/plugin.h"
 #include "QF/qargs.h"
-#include "QF/sound.h"
-#include "QF/sys.h"
+#include "QF/qfplist.h"
 #include "QF/quakefs.h"
 #include "QF/quakeio.h"
-#include "QF/dstring.h"
-#include "QF/qfplist.h"
 #include "QF/sound.h"
+#include "QF/sys.h"
 #include "QF/va.h"
-#include "snd_render.h"
 
 #include "compat.h"
+#include "snd_render.h"
 
 /* Generic plugin structures */
 static general_data_t plugin_info_general_data;
@@ -77,25 +76,17 @@ static general_funcs_t plugin_info_general_funcs;
 static qboolean	playing = false;
 static qboolean	wasPlaying = false;
 static qboolean	mus_enabled = false;
-static qboolean	ogglistvalid = false;	// true if a valid ogg list has been
-										// loaded
-/* volume cvar */
-static cvar_t	*bgmvolume;
+static qboolean	ogglistvalid = false;
 
 /* sound resources */
 static channel_t *cd_channel;
-static sfx_t	*cd_sfx;
+static sfx_t	 *cd_sfx;
+static int		  current_track;	// current track, used when pausing
+static plitem_t	 *tracklist = NULL;	// parsed tracklist, dictionary format
 
-/* tracklist cvar */
-static cvar_t	*mus_ogglist;	
+static cvar_t	 *bgmvolume;		// volume cvar
+static cvar_t	 *mus_ogglist;	// tracklist cvar
 
-/* current track, used when pausing */
-static int		current_track;
-
-/* parsed tracklist, dictionary format */
-static plitem_t	*tracklist = NULL;	
-
-/* end of added variables. */
 
 static void
 set_volume (void)
@@ -108,28 +99,20 @@ set_volume (void)
 	}
 }
 
-/* does nothing */
 static void
 I_OGGMus_CloseDoor (void)
 {
-	Sys_DPrintf ("Entering I_OGGMus_CloseDoor\n");
-	return;
 }
 
-/* does nothing. */
 static void
 I_OGGMus_Eject (void)
 {
-	Sys_DPrintf ("Entering I_OGGMus_Eject\n");
-	return;
 }
 
 /* stop playback of music */
 static void
 I_OGGMus_Stop (void)
 {
-	Sys_DPrintf ("Entering I_OGGMus_Stop\n");
-
 	if (!tracklist || !mus_enabled || !playing)
 		return;
 	
@@ -146,8 +129,6 @@ I_OGGMus_Stop (void)
 static void
 I_OGGMus_Shutdown (void)
 {
-	Sys_DPrintf ("Entering I_OGGMus_Shutdown\n");
-
 	if (tracklist) {
 		I_OGGMus_Stop ();
 		PL_Free (tracklist);
@@ -163,9 +144,7 @@ Load_Tracklist (void)
 {
 	QFile	*oggfile = NULL;
 	char	*buffile = NULL;
-	int		size = -1;
-
-	Sys_DPrintf ("Entering Load_Tracklist\n");
+	int		 size = -1;
 
 	/* kill off the old tracklist, and make sure we're not playing anything */
 	I_OGGMus_Shutdown ();
@@ -174,8 +153,7 @@ Load_Tracklist (void)
 	mus_enabled = false;
 
 	if (!mus_ogglist || strequal (mus_ogglist->string, "none")) {
-		/* bail if we don't have a valid filename */
-		return -1;
+		return -1;		// bail if we don't have a valid filename
 	}
 
 	size = QFS_FOpenFile (mus_ogglist->string, &oggfile);
@@ -209,12 +187,10 @@ Load_Tracklist (void)
 	return 0;
 }
 
-/* pause playback of music? */
+/* pause playback of music */
 static void
 I_OGGMus_Pause (void)
 {
-	Sys_DPrintf("I_OGGMus: Pausing on track: %d.\n",current_track);
-	/* pause the ogg playback. */
 	/* just kinda cheat and stop it for the time being */
 	if (!tracklist || !mus_enabled || !playing)
 		return;
@@ -238,11 +214,10 @@ I_OGGMus_Play (int track, qboolean looping)
 	wavinfo_t	*info = 0;
 	const char	*trackstring;
 
-	Sys_DPrintf ("Entering I_OGGMus_Play\n");
 	/* alrighty. grab the list, map track to filename. grab filename from data
 	   resources, attach sound to play, loop. */
 
-	if (!cd_channel && mus_enabled) { // Shouldn't happen!
+	if (!cd_channel && mus_enabled) {		// Shouldn't happen!
 		Sys_Printf ("OGGMus: on fire.\n");
 		mus_enabled = false;
 	}
@@ -288,9 +263,7 @@ I_OGGMus_Resume (void)
 	if (!tracklist || !mus_enabled || !wasPlaying)
 		return;
 
-	Sys_DPrintf ("I_OGGMus: resuming track: %d.\n", current_track);
 	I_OGGMus_Play (current_track, true);
-
 	playing = true;
 }
 
@@ -301,20 +274,18 @@ I_OGGMus_Info (void)
 	plitem_t	*keylist = NULL;
 	plitem_t	*currentmap = NULL;
 	plitem_t	*currenttrack = NULL;
-	int			iter = 0;
-
-	Sys_DPrintf ("Entering I_OGGMus_Info\n");
+	int			 iter = 0;
 
 	if (!tracklist) {
 		Sys_Printf ("\n" "No Tracklist\n" "------------\n");
 		return;
 	}
-
 	if (!(keylist = PL_D_AllKeys (tracklist))) {
 		Sys_DPrintf ("OGGMus: Didn't get valid plist_t array, yet have "
 					 "valid tracklist?\n");
 		return;
 	}
+
 	Sys_DPrintf ("OGGMus: number of entries %i.\n",
 				 ((plarray_t *) (keylist->data))->numvals);
 	Sys_Printf ("\n" "Tracklist loaded from file:\n%s\n"
@@ -344,7 +315,6 @@ I_OGG_f (void)
 {
 	const char *command;
 
-	Sys_DPrintf ("Entering I_OGG_f\n");
 	if (Cmd_Argc () < 2)
 		return;
 
@@ -429,7 +399,6 @@ I_OGG_f (void)
 	}
 }
 
-/* stub out, since we don't need */
 static void
 I_OGGMus_Update (void)
 {
@@ -447,7 +416,6 @@ Mus_OggChange (cvar_t *ogglist)
 static void
 Mus_VolChange (cvar_t *bgmvolume)
 {
-	Sys_DPrintf ("Entering Mus_VolChange\n");
 	set_volume ();
 }
 
@@ -460,20 +428,16 @@ Mus_gamedir (void)
 static void
 I_OGGMus_Init (void)
 {
-	Sys_DPrintf ("Entering I_OGGMus_Init\n");
-
 	cd_channel = S_AllocChannel ();
 	if (!cd_channel) // We can't fail to load yet... so just disable everything
 		Sys_Printf ("OGGMus: Failed to allocate sound channel.\n");
 
 	/* check list file cvar, open list file, create map, close file. */
-
 	mus_ogglist = Cvar_Get ("mus_ogglist", "tracklist.cfg", CVAR_NONE,
 							Mus_OggChange,
 							"filename of track to music file map");
 	bgmvolume = Cvar_Get ("bgmvolume", "1", CVAR_ARCHIVE, Mus_VolChange,
 							"Volume of CD music");
-
 	QFS_GamedirCallback (Mus_gamedir);
 }
 
@@ -514,9 +478,9 @@ static plugin_t plugin_info = {
 	QFPLUGIN_VERSION,
 	"0.1",
 	"OGG Music output\n",
-		"Copyright (C) 2004 Andrew Pilley\n"
-		"Copyright (C) 2004 Members of the QuakeForge Project\n"
-		"See the file \"AUTHORS\" for more information.\n",
+	"Copyright (C) 2004 Andrew Pilley\n"
+	"Copyright (C) 2004 Members of the QuakeForge Project\n"
+	"See the file \"AUTHORS\" for more information.\n",
 	&plugin_info_funcs,
 	&plugin_info_data,
 };

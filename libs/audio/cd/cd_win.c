@@ -43,12 +43,11 @@ static __attribute__ ((unused)) const char rcsid[] =
 
 #include "compat.h"
 
-static plugin_t		plugin_info; 
+static plugin_t			plugin_info; 
 static plugin_data_t	plugin_info_data; 
 static plugin_funcs_t	plugin_info_funcs; 
 static general_data_t	plugin_info_general_data; 
 static general_funcs_t	plugin_info_general_funcs; 
-//static cd_data_t		plugin_info_cd_data; 
 static cd_funcs_t		plugin_info_cd_funcs;
 
 extern HWND mainwindow;		//FIXME
@@ -70,6 +69,7 @@ static void I_CDAudio_Play (int track, qboolean looping);
 static void I_CDAudio_Stop (void);
 
 static cvar_t *bgmvolume;
+
 
 static void
 I_CDAudio_CloseDoor (void)
@@ -178,7 +178,6 @@ I_CDAudio_Pause (void)
 
 	if (!enabled)
 		return;
-
 	if (!playing)
 		return;
 
@@ -203,7 +202,6 @@ I_CDAudio_Play (int track, qboolean looping)
 
 	if (!enabled)
 		return;
-
 	if (!cdValid) {
 		I_CDAudio_GetAudioDiskInfo ();
 		if (!cdValid)
@@ -281,10 +279,8 @@ I_CDAudio_Resume (void)
 
 	if (!enabled)
 		return;
-
 	if (!cdValid)
 		return;
-
 	if (!wasPlaying)
 		return;
 
@@ -318,7 +314,6 @@ I_CDAudio_Stop (void)
 
 	if (!enabled)
 		return;
-
 	if (!playing)
 		return;
 
@@ -354,8 +349,7 @@ static void
 I_CD_f (void)
 {
 	const char *command;
-	int         n, ret;
-//  int     startAddress;
+	int         ret, n;
 
 	if (Cmd_Argc () < 2)
 		return;
@@ -537,8 +531,8 @@ static plugin_t plugin_info = {
 	QFPLUGIN_VERSION,
 	"0.1",
 	"Windows CD Audio output\n",
-		"Copyright (C) 2001  contributors of the QuakeForge project\n"
-		"Please see the file \"AUTHORS\" for a list of contributors\n",
+	"Copyright (C) 2001  contributors of the QuakeForge project\n"
+	"Please see the file \"AUTHORS\" for a list of contributors\n",
 	&plugin_info_funcs,
 	&plugin_info_data,
 };

@@ -54,7 +54,6 @@ static __attribute__ ((unused)) const char rcsid[] =
 #include <fcntl.h>
 #include <stdlib.h>
 #include <time.h>
-
 #include <xmmsctrl.h>
 
 #include "QF/cdaudio.h"
@@ -73,7 +72,6 @@ static plugin_funcs_t plugin_info_funcs;
 static general_data_t plugin_info_general_data;
 static general_funcs_t plugin_info_general_funcs;
 
-//static cd_data_t plugin_info_cd_data;
 static cd_funcs_t plugin_info_cd_funcs;
 
 static const char *xmms_cmd = "xmms";
@@ -87,8 +85,7 @@ static int sessionNo;
 
 static qboolean playing = false;
 
-// no idea why I have wasPlaying, prolly cos this code was based on 
-// cd_linux.c :/
+// no idea why I have wasPlaying, pbly this code was based on cd_linux.c :/
 static qboolean wasPlaying = false;
 static qboolean musEnabled = true;
 
@@ -113,25 +110,22 @@ static void I_XMMS_Info(void);
 static void I_XMMS_f(void);
 plugin_t *cd_xmms_PluginInfo (void);
 
-/* static float cdvolume; */
-/* static byte remap[100]; */
-/* static byte playTrack; */
-/* static byte maxTrack; */
+//static float cdvolume;
+//static byte remap[100];
+//static byte playTrack;
+//static byte maxTrack;
 
 // FIXME: All of this code assumes that the xmms_remote_* functions succeed
 // FIXME: shouldn't I use gint for all the xmms stuff like
-// FIXME (cont): /usr/include/xmms/xmmsctrl.h says ?
+// FIXME (cont): /usr/include/xmms/xmmsctrl.h says?
 
 static void
 I_XMMS_Running (void)
 {
-
-	int         res;
-	int         i;
+	int         res, i;
 	int         fd_size = getdtablesize ();
 
 	if (!xmms_remote_is_running (sessionNo)) {
-
 		// this method is used over a system() call, so that we know child's
 		// pid (not that is particularly important) but so we can close
 		// unneeded descriptors
@@ -167,15 +161,12 @@ I_XMMS_Running (void)
 		}
 		return;
 	}
-	return;
 }
 
 
 static void
 I_XMMS_Stop (void)						// stop playing
 {
-
-	// don't try if "xmms off" has been called
 	if (!musEnabled)
 		return;
 	I_XMMS_Running ();
@@ -186,7 +177,6 @@ I_XMMS_Stop (void)						// stop playing
 
 	wasPlaying = playing;
 	playing = false;
-	return;
 }
 
 // Play
@@ -194,57 +184,18 @@ I_XMMS_Stop (void)						// stop playing
 static void
 I_XMMS_Play (int track, qboolean looping)		// looping for compatability 
 {
-	// don't try if "xmms off" has been called
 	if (!musEnabled)
 		return;
-	I_XMMS_Running ();					// Check it's on
-	/* I think this will fix some wierdness */
+	I_XMMS_Running ();
+	// I think this will fix some wierdness
 	if (xmms_remote_is_paused (sessionNo)) {
 		xmms_remote_pause (sessionNo);
 		return;
 	}
 
-	// set position
-	if(track >= 0) xmms_remote_set_playlist_pos(sessionNo, track);
+	if (track >= 0)
+		xmms_remote_set_playlist_pos (sessionNo, track);
 
-	if (xmms_remote_is_playing (sessionNo)) return;
-
-	xmms_remote_play (sessionNo);
-
-	wasPlaying = playing;
-	playing = true;
-	return;
-}
-
-static void
-I_XMMS_Pause (void)
-{
-	// don't try if "xmms off" has been called
-	if (!musEnabled)
-		return;
-	I_XMMS_Running ();					// It runnin ?
-	if (!xmms_remote_is_playing (sessionNo))
-		return;
-
-	xmms_remote_pause (sessionNo);
-
-	wasPlaying = playing;
-	playing = false;
-	return;
-}
-
-static void
-I_XMMS_Resume (void)
-{
-	// don't try if "xmms off" has been called
-	if (!musEnabled)
-		return;
-	I_XMMS_Running ();					// Is it on ? if not, make it so
-	/* i think this will fix some wierdness */
-	if (xmms_remote_is_paused (sessionNo)) {
-		xmms_remote_pause (sessionNo);
-		return;
-	}
 	if (xmms_remote_is_playing (sessionNo))
 		return;
 
@@ -256,43 +207,66 @@ I_XMMS_Resume (void)
 }
 
 static void
-I_XMMS_Prev (void)
+I_XMMS_Pause (void)
 {
-	// don't try if "xmms off" has been called
 	if (!musEnabled)
 		return;
-	I_XMMS_Running ();					// Running ?
+	I_XMMS_Running ();
+	if (!xmms_remote_is_playing (sessionNo))
+		return;
 
+	xmms_remote_pause (sessionNo);
+
+	wasPlaying = playing;
+	playing = false;
+}
+
+static void
+I_XMMS_Resume (void)
+{
+	if (!musEnabled)
+		return;
+	I_XMMS_Running ();
+	// i think this will fix some wierdness
+	if (xmms_remote_is_paused (sessionNo)) {
+		xmms_remote_pause (sessionNo);
+		return;
+	}
+	if (xmms_remote_is_playing (sessionNo))
+		return;
+
+	xmms_remote_play (sessionNo);
+	wasPlaying = playing;
+	playing = true;
+}
+
+static void
+I_XMMS_Prev (void)
+{
+	if (!musEnabled)
+		return;
+	I_XMMS_Running ();
 	xmms_remote_playlist_prev (sessionNo);
-
-	return;
 }
 
 static void
 I_XMMS_Next (void)
 {
-	// don't try if "xmms off" has been called
 	if (!musEnabled)
 		return;
-	I_XMMS_Running ();					// Running or not ?
-
+	I_XMMS_Running ();
 	xmms_remote_playlist_next (sessionNo);
-
-	return;
 }
 
 static void
 I_XMMS_Update (void)
 {
-	return;
 }
 
 static void
 XMMS_SessionChg(cvar_t *xmms_session)
 {
 	sessionNo = xmms_session->int_val;
-
-	return;
 }
 
 static void
@@ -317,25 +291,21 @@ I_XMMS_Init (void)
 					"pos - Set playlist position.\n"
 					"info - Get information about currently playing song.");
 
-	tmp = Cvar_Get("xmms_session", "0", CVAR_NONE, XMMS_SessionChg,
-				   "XMMS Session number to use");
+	tmp = Cvar_Get ("xmms_session", "0", CVAR_NONE, XMMS_SessionChg,
+					"XMMS Session number to use");
 
 	sessionNo = tmp->int_val;
-	
-	return;
 }
 
 static void
 I_XMMS_Shutdown (void)
 {
-	return;
 }
 
 static void
 I_XMMS_Kill (void)
 {
 	xmms_remote_quit (sessionNo);
-	return;
 }
 
 static void
@@ -343,7 +313,6 @@ I_XMMS_On (void)
 {
 	musEnabled = true;
 	I_XMMS_Running ();
-	return;
 }
 
 static void
@@ -351,7 +320,6 @@ I_XMMS_Off (void)
 {
 	musEnabled = false;
 	I_XMMS_Kill ();
-	return;
 }
 
 static void								// Toggle Shuffling
@@ -366,101 +334,88 @@ I_XMMS_Shuffle (void)
 	// SO, we check before, and assuming it works, we know that it will be the
 	// opposite of what it _WAS_, if you get my meaning :/
 
-	// don't try if "xmms off" has been called
 	if (!musEnabled)
 		return;
-	I_XMMS_Running ();					// It even running ?
+	I_XMMS_Running ();
 	shuf = xmms_remote_is_shuffle (sessionNo);
 	xmms_remote_toggle_shuffle (sessionNo);
-	if (shuf == 1)
+	if (shuf == 1) {
 		Sys_Printf ("XMMSAudio: Shuffling Disabled\n");
-	else if (shuf == 0)
+	} else if (shuf == 0) {
 		Sys_Printf ("XMMSAudio: Shuffling Enabled\n");
-	else
-		return;							// ACH !
-
-	return;
+	}
 }
 
 static void								// toggles playlist repeating
 I_XMMS_Repeat (void)
 {
-	// Similar situation as with I_XMMS_Shuffle();
-	// same code too :)
-
+	// Similar situation as with I_XMMS_Shuffle() -- same code too :)
 	int         rep;
 
-	// don't try if "xmms off" has been called
 	if (!musEnabled)
 		return;
-	I_XMMS_Running ();					// It even running ?
+	I_XMMS_Running ();
 	rep = xmms_remote_is_repeat (sessionNo);
 	xmms_remote_toggle_repeat (sessionNo);
-	if (rep == 1)
+	if (rep == 1) {
 		Sys_Printf ("XMMSAudio: Repeat Disabled\n");
-	else if (rep == 0)
+	} else if (rep == 0) {
 		Sys_Printf ("XMMSAudio: Repeat Enabled\n");
-	else
-		return;							// ACH !
-
-	return;
+	}
 }
 
 static void // sets playlist position
 I_XMMS_Pos (int track)
 {
-	if(!musEnabled) return; // allowed to or not ?
-	if(track < 0) return; // -ve track numbers are dumb
-	xmms_remote_set_playlist_pos(sessionNo, track); // and set the pos....
-	return; // all done
+	if (!musEnabled)
+		return;
+	if (track < 0)
+		return; // -ve track numbers are dumb
+	xmms_remote_set_playlist_pos (sessionNo, track);
 }
 
 static void // returns info about track playing and list progress
 I_XMMS_Info (void) // this is untested with really long tracks, prolly works
 {
-	int pos;
-	char *title;
+	int		pos;
+	char   *title;
 	unsigned int ctime;	// -ve times are dumb, will this help ?
 	unsigned int cmin;	// current no of mins
-	byte csecs;		// current no of secs
+	byte	csecs;		// current no of secs
 	unsigned int ttime;	// total track time
 	unsigned int tmin;	// total no of mins
-	byte tsecs;		// total no of secs
+	byte	tsecs;		// total no of secs
 	unsigned int len;	// playlist length
 
-	if(!musEnabled) return; // enabled ?
+	if (!musEnabled)
+		return;
+	I_XMMS_Running ();
 
-	I_XMMS_Running(); // is it running ?
-
-	pos = xmms_remote_get_playlist_pos(sessionNo); // get the playlist position
-	len = xmms_remote_get_playlist_length(sessionNo); // playlist length
-	title = xmms_remote_get_playlist_title(sessionNo, pos); // get track title
-	ctime = xmms_remote_get_output_time(sessionNo); // get track elapsed time
-	ttime = xmms_remote_get_playlist_time(sessionNo, pos);
+	pos = xmms_remote_get_playlist_pos (sessionNo); // get playlist position
+	len = xmms_remote_get_playlist_length (sessionNo); // playlist length
+	title = xmms_remote_get_playlist_title (sessionNo, pos); // get track title
+	ctime = xmms_remote_get_output_time (sessionNo); // get track elapsed time
+	ttime = xmms_remote_get_playlist_time (sessionNo, pos);
 	
 	// The time returned by xmms_remote_get_output_time is in milliseconds 
 	// elapsed, so, divide by (60*1000) to get mins (its an int, no decimals)
 	// and divide by 1000 mod 60 to get seconds. its a byte, no decimals too.
+	cmin = ctime / 60000;
+	csecs = ctime / 1000 % 60;
 
-	cmin=ctime/(60000);
-	csecs=ctime/(1000) % 60;
-	
-	tmin=ttime/(60000);
-	tsecs=ttime/(1000) % 60;
+	tmin = ttime / 60000;
+	tsecs = ttime / 1000 % 60;
 
 	// tell the user.
-	Sys_Printf("XMMS:    %d/%d        %s        %d:%02d/%d:%02d\n",
-			   pos, len, title, cmin, csecs, tmin, tsecs);
+	Sys_Printf ("XMMS:    %d/%d        %s        %d:%02d/%d:%02d\n",
+				pos, len, title, cmin, csecs, tmin, tsecs);
 	free (title);
-	return;
 }
 
 static void
 I_XMMS_f (void)
 {
 	const char *command;
-/*	int         ret;
-	int         n;  */
 
 	if (Cmd_Argc () < 2)
 		return;
@@ -530,7 +485,6 @@ I_XMMS_f (void)
 		Sys_Printf ("Try \"help xmms\".\n");
 		return;
 	}
-	return;
 }
 
 static general_funcs_t plugin_info_general_funcs = {
@@ -570,8 +524,8 @@ static plugin_t plugin_info = {
 	QFPLUGIN_VERSION,
 	"0.1",
 	"Linux XMMS Audio output\n",
-		"Copyright (C) 2001  contributors of the QuakeForge project\n"
-		"Please see the file \"AUTHORS\" for a list of contributors\n",
+	"Copyright (C) 2001  contributors of the QuakeForge project\n"
+	"Please see the file \"AUTHORS\" for a list of contributors\n",
 	&plugin_info_funcs,
 	&plugin_info_data,
 };
