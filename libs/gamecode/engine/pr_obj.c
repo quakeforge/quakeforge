@@ -235,12 +235,55 @@ pr___obj_exec_class (progs_t *pr)
 	//developer->int_val = d;
 }
 
+static void
+pr_return_self (progs_t *pr)
+{
+	G_INT (pr, OFS_RETURN) = G_INT (pr, OFS_PARM0);
+}
+
 void
 PR_Obj_Progs_Init (progs_t *pr)
 {
 	PR_AddBuiltin (pr, "obj_msgSend", pr_obj_msgSend, -1);
 	PR_AddBuiltin (pr, "obj_msgSend_super", pr_obj_msgSend_super, -1);
 	PR_AddBuiltin (pr, "__obj_exec_class", pr___obj_exec_class, -1);
+
+	PR_AddBuiltin (pr, "_c_Object__initialize", pr_return_self, -1);
+	PR_AddBuiltin (pr, "_i_Object__init", pr_return_self, -1);
+	PR_AddBuiltin (pr, "_c_Object__alloc", pr_return_self, -1);
+	PR_AddBuiltin (pr, "_i_Object__free", pr_return_self, -1);
+	PR_AddBuiltin (pr, "_i_Object__shallowCopy", pr_return_self, -1);
+	PR_AddBuiltin (pr, "_i_Object__deepen", pr_return_self, -1);
+	PR_AddBuiltin (pr, "_i_Object__class", pr_return_self, -1);
+	PR_AddBuiltin (pr, "_i_Object__superClass", pr_return_self, -1);
+	PR_AddBuiltin (pr, "_i_Object__metaClass", pr_return_self, -1);
+	PR_AddBuiltin (pr, "_i_Object__name", pr_return_self, -1);
+	PR_AddBuiltin (pr, "_i_Object__self", pr_return_self, -1);
+	PR_AddBuiltin (pr, "_i_Object__hash", pr_return_self, -1);
+	PR_AddBuiltin (pr, "_i_Object__isEqual", pr_return_self, -1);
+	PR_AddBuiltin (pr, "_i_Object__compare", pr_return_self, -1);
+	PR_AddBuiltin (pr, "_i_Object__isMetaClass", pr_return_self, -1);
+	PR_AddBuiltin (pr, "_i_Object__isClass", pr_return_self, -1);
+	PR_AddBuiltin (pr, "_i_Object__isInstance", pr_return_self, -1);
+	PR_AddBuiltin (pr, "_i_Object__isKindOf", pr_return_self, -1);
+	PR_AddBuiltin (pr, "_i_Object__isMemberOf", pr_return_self, -1);
+	PR_AddBuiltin (pr, "_i_Object__isKindOfClassNamed", pr_return_self, -1);
+	PR_AddBuiltin (pr, "_i_Object__isMemberOfClassNamed", pr_return_self, -1);
+	PR_AddBuiltin (pr, "_c_Object__instancesRespondTo", pr_return_self, -1);
+	PR_AddBuiltin (pr, "_i_Object__respondsTo", pr_return_self, -1);
+	PR_AddBuiltin (pr, "_c_Object__conformsTo", pr_return_self, -1);
+	PR_AddBuiltin (pr, "_c_Object__instanceMethodFor", pr_return_self, -1);
+	PR_AddBuiltin (pr, "_i_Object__methodFor", pr_return_self, -1);
+	PR_AddBuiltin (pr, "_i_Object__perform", pr_return_self, -1);
+	PR_AddBuiltin (pr, "_i_Object__perform_with", pr_return_self, -1);
+	PR_AddBuiltin (pr, "_i_Object__perform_with_with", pr_return_self, -1);
+	PR_AddBuiltin (pr, "_c_Object__poseAs", pr_return_self, -1);
+	PR_AddBuiltin (pr, "_i_Object__transmuteClassTo", pr_return_self, -1);
+	PR_AddBuiltin (pr, "_i_Object__subclassResponsibility", pr_return_self, -1);
+	PR_AddBuiltin (pr, "_i_Object__notImplemented", pr_return_self, -1);
+	PR_AddBuiltin (pr, "_i_Object__shouldNotImplement", pr_return_self, -1);
+	PR_AddBuiltin (pr, "_i_Object__doesNotRecognize", pr_return_self, -1);
+	PR_AddBuiltin (pr, "_i_Object__error", pr_return_self, -1);
 }
 
 void
