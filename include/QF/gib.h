@@ -36,6 +36,96 @@
 
 #include "QF/dstring.h"
 #include "QF/cbuf.h"
+#include "QF/hash.h"
+#include "QF/llist.h"
+
+// Object interface
+
+typedef void (*gib_reply_handler) (int argc, const char **argv, void *data);
+
+typedef struct gib_signal_s {
+	const char *name;
+	struct gib_object_s *receiver;
+	struct gib_slot_s *slot;
+} gib_signal_t;
+
+typedef struct gib_slot_s {
+	const char *mesg;
+	struct gib_object_s *sender;
+	struct gib_signal_s *signal;
+} gib_slot_t;
+
+typedef struct gib_object_s {
+	struct gib_class_s *class;
+	hashtab_t *methods;
+	void **data;
+	unsigned long int handle, refs;
+	hashtab_t *signals;
+	llist_t *slots;
+} gib_object_t;
+
+typedef struct gib_message_s {
+	int argc;
+	const char **argv;
+	gib_reply_handler reply;
+	void *replydata;
+} gib_message_t;
+
+typedef struct gib_method_s {
+	const char *name;
+	int (*func) (struct gib_object_s *obj, struct gib_method_s *method, void *data, gib_message_t message);
+	struct gib_method_s *parent;
+	struct gib_class_s *class;
+	void *data;
+} gib_method_t;
+
+typedef int (*gib_message_handler) (gib_object_t *obj, gib_method_t *method, void *data, gib_message_t message);
+typedef void * (*gib_obj_constructor) (gib_object_t *obj);
+typedef void (*gib_obj_destructor) (void *data);
+
+typedef struct gib_class_s {
+	const char *name;
+	hashtab_t *methods, *class_methods;
+	gib_obj_constructor construct, class_construct;
+	gib_obj_destructor destruct;
+	unsigned int depth;
+	struct gib_object_s *classobj;
+	struct gib_class_s *parent;
+} gib_class_t;
+
+typedef struct gib_methodtab_s {
+	const char *name;
+	gib_message_handler func;
+	void *data;
+} gib_methodtab_t;
+
+typedef struct gib_classdesc_s {
+	const char *name;
+	const char *parentname;
+	gib_obj_constructor construct, class_construct;
+	gib_obj_destructor destruct;
+	struct gib_methodtab_s *methods, *class_methods;
+} gib_classdesc_t;
+
+#define GIB_Reply(mesg,argc,argv) if ((mesg).reply) ((mesg).reply(argc,argv,(mesg).replydata))
+#define GIB_ForwardToSuper(mesg,obj,method) ((method)->parent->func ((obj), (method)->parent, (obj)->data[(method)->parent->class->depth], (mesg)))
+
+void GIB_Class_Create (gib_classdesc_t *desc);
+gib_object_t *GIB_Object_Create (const char *classname, qboolean classobj);
+void GIB_Object_Destroy (gib_object_t *obj);
+void GIB_Object_Incref (gib_object_t *obj);
+void GIB_Object_Decref (gib_object_t *obj);
+int GIB_Send (gib_object_t *obj, int argc, const char **argv, gib_reply_handler reply, void *replydata);
+int GIB_SendToMethod (gib_object_t *obj, gib_method_t *method, int argc, const
+		char **argv, gib_reply_handler reply, void *replydata);
+gib_object_t *GIB_Object_Get (const char *id);
+void GIB_Object_Signal_Slot_Pair (gib_object_t *sender, const char *signal,
+		gib_object_t *receiver, const char *slot);
+void GIB_Object_Signal_Slot_Destroy (gib_object_t *sender, const char *signal,
+		gib_object_t *receiver, const char *slot);
+void GIB_Object_Signal_Emit (gib_object_t *sender, int argc, const char
+		**argv);
+void GIB_Object_Init (void);
 
 // Buffer access (required to use GIB_Arg* macros)
 
@@ -58,8 +148,15 @@ typedef struct gib_buffer_data_s {
 		} *values;
 		unsigned int size, p;
 	} stack;
+	struct {
+		struct gib_object_s *obj;
+		struct gib_method_s *method;
+		struct gib_message_s mesg;
+	} reply;
 	struct hashtab_s *locals; // Local variables
 	struct hashtab_s *globals; // Current domain
+	void (*dnotify) (cbuf_t *cbuf, void *data);
+	void *ddata;
 } gib_buffer_data_t;
 
 // Builtin function interface
@@ -99,6 +196,7 @@ cbuf_interpreter_t *GIB_Interpreter (void);
 // Thread interface
 
 void GIB_Thread_Execute (void);
+unsigned int GIB_Thread_Count (void);
 
 // Init interface
 
@@ -106,9 +204,8 @@ void GIB_Init (qboolean sandbox);
 
 // Handle interface
 
-unsigned long int GIB_Handle_New (void *data, unsigned short int class);
-void GIB_Handle_Free (unsigned long int num, unsigned short int class);
-void *GIB_Handle_Get (unsigned long int num, unsigned short int class);
-unsigned short int GIB_Handle_Class_New (void);
+unsigned long int GIB_Handle_New (gib_object_t *data);
+void GIB_Handle_Free (unsigned long int num);
+gib_object_t *GIB_Handle_Get (unsigned long int num);
 
 #endif

@@ -302,6 +302,12 @@ GIB_Domain_Get (const char *name)
 	return d->vars;
 }
 
+hashtab_t *
+GIB_Var_Hash_New (void)
+{
+	return Hash_NewTable (1024, GIB_Var_Get_Key, GIB_Var_Free, 0);
+}
+
 void
 GIB_Var_Init (void)
 {

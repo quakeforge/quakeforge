@@ -58,8 +58,9 @@ llist_node_t *llist_getnode (llist_t *list, void *element);
 llist_node_t *llist_insertafter (llist_node_t *ref, void *element);
 llist_node_t *llist_insertbefore (llist_node_t *ref, void *element);
 void *llist_remove (llist_node_t *ref);
+unsigned int llist_size (llist_t *llist);
 void llist_iterate (llist_t *list, llist_iterator_t iterate);
 void *llist_find (llist_t *list, void *comparison);
 llist_node_t *llist_findnode (llist_t *list, void *comparison);
-
+void *llist_createarray (llist_t *list, size_t esize);
 #endif

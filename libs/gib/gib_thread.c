@@ -44,88 +44,67 @@ const char  rcsid[] = "$Id$";
 #include "QF/gib.h"
 #include "QF/dstring.h"
 #include "QF/hash.h"
+#include "QF/llist.h"
 
 #include "gib_handle.h"
 #include "gib_tree.h"
 #include "gib_function.h"
 #include "gib_thread.h"
 
-gib_thread_t *gib_thread_first = 0;
-gib_thread_t *gib_thread_last = 0;
-
-unsigned short int gib_thread_class;
-
+llist_t *gib_threads;
 hashtab_t  *gib_events;
 
-void
-GIB_Thread_Add (gib_thread_t * thread)
+static void
+GIB_Thread_Free (void *ele, void *data)
 {
-	if (!gib_thread_first)
-		gib_thread_first = thread;
-
-	thread->prev = gib_thread_last;
-	if (!gib_thread_last)
-		gib_thread_last = thread;
-	else {
-		gib_thread_last->next = thread;
-		gib_thread_last = thread;
-	}
+	Cbuf_DeleteStack ((cbuf_t *) ele);
 }
 
-void
-GIB_Thread_Remove (gib_thread_t * thread)
-{
-	if (thread->prev)
-		thread->prev->next = thread->next;
-	else
-		gib_thread_first = thread->next;
-	if (thread->next)
-		thread->next->prev = thread->prev;
-	else
-		gib_thread_last = thread->prev;
-}
-
-gib_thread_t *
+cbuf_t *
 GIB_Thread_New (void)
 {
-	gib_thread_t *new = calloc (1, sizeof (gib_thread_t));
-
-	new->cbuf = Cbuf_New (GIB_Interpreter ());
-	new->id = GIB_Handle_New (new, gib_thread_class);
+	cbuf_t *new = Cbuf_New (GIB_Interpreter ());
+	llist_append (gib_threads, new);
 	return new;
 }
 
 void
-GIB_Thread_Delete (gib_thread_t * thread)
+GIB_Thread_Delete (cbuf_t *thread)
 {
-	Cbuf_DeleteStack (thread->cbuf);
-	GIB_Handle_Free (thread->id, gib_thread_class);
-	free (thread);
+	cbuf_t *temp;
+
+	for (temp = thread; temp->down && temp->down->state != CBUF_STATE_JUNK; temp = temp->down);
+	if (temp == cbuf_active)
+		temp->state = CBUF_STATE_ERROR;
+	else
+		llist_remove (llist_getnode (gib_threads, thread));
+}
+
+unsigned int
+GIB_Thread_Count (void)
+{
+	return llist_size (gib_threads);
 }
 
 void
 GIB_Thread_Execute (void)
 {
-	gib_thread_t *cur, *tmp;
-
-	if (!gib_thread_first)
-		return;
-
-	for (cur = gib_thread_first; cur; cur = tmp) {
-		tmp = cur->next;
-		if (GIB_DATA(cur->cbuf)->program)
-			Cbuf_Execute_Stack (cur->cbuf);
-		else {
-			GIB_Thread_Remove (cur);
-			GIB_Thread_Delete (cur);
-		}
+	static qboolean iterator (cbuf_t *cbuf, llist_node_t *node)
+	{
+		if (GIB_DATA(cbuf)->program)
+			Cbuf_Execute_Stack (cbuf);
+		else
+			Cbuf_DeleteStack ((cbuf_t *) llist_remove (node));
+		return true;
 	}
+
+	llist_iterate (gib_threads, LLIST_ICAST (iterator));
 }
 
 void
 GIB_Thread_Init (void)
 {
-	gib_thread_class = GIB_Handle_Class_New ();
+	gib_threads = llist_new (GIB_Thread_Free, NULL, NULL);
 }
 
 static const char *
@@ -169,7 +148,7 @@ void
 GIB_Event_Callback (gib_event_t * event, unsigned int argc, ...)
 {
 	gib_function_t *f = event->func;
-	gib_thread_t *thread;
+	cbuf_t *thread;
 	cbuf_args_t *args;
 	va_list     ap;
 	unsigned int i;
@@ -188,8 +167,7 @@ GIB_Event_Callback (gib_event_t * event, unsigned int argc, ...)
 
 	va_end (ap);
 
-	GIB_Function_Execute_D (thread->cbuf, f, args->argv, args->argc);
-	GIB_Thread_Add (thread);
+	GIB_Function_Execute_D (thread, f, args->argv, args->argc);
 	Cbuf_ArgsDelete (args);
 }
 

@@ -38,13 +38,13 @@
 static __attribute__ ((unused)) const char rcsid[] =
 	"$Id$";
 
-static unsigned long int gib_next_handle, gib_next_class;
+static unsigned long int gib_next_handle;
 static gib_handle_t *gib_unused_handles;
 static gib_handle_t **gib_handles;
 static unsigned long int gib_handles_size;
 
 unsigned long int
-GIB_Handle_New (void *data, unsigned short int class)
+GIB_Handle_New (gib_object_t *data)
 {
 	gib_handle_t *new;
 	if (gib_unused_handles) {
@@ -60,17 +60,16 @@ GIB_Handle_New (void *data, unsigned short int class)
 		new->num = num;
 	}
 	new->data = data;
-	new->class = class;
 	gib_handles[new->num] = new;
 	return new->num;
 }
 
 void
-GIB_Handle_Free (unsigned long int num, unsigned short int class)
+GIB_Handle_Free (unsigned long int num)
 {
 	gib_handle_t *hand;
 
-	if (num >= gib_next_handle || gib_handles[num]->class != class)
+	if (num >= gib_next_handle || !gib_handles[num])
 		return;
 	hand = gib_handles[num];
 	gib_handles[num] = 0;
@@ -78,18 +77,12 @@ GIB_Handle_Free (unsigned long int num, unsigned short int class)
 	gib_unused_handles = hand;
 }
 
-void *
-GIB_Handle_Get (unsigned long int num, unsigned short int class)
+gib_object_t *
+GIB_Handle_Get (unsigned long int num)
 {
-	if (num >= gib_next_handle || !gib_handles[num] || gib_handles[num]->class != class)
+	if (num >= gib_next_handle || !gib_handles[num])
 		return 0;
 	return gib_handles[num]->data;
-}
-
-unsigned short int
-GIB_Handle_Class_New (void)
-{
-	return gib_next_class++;
 }
 
 void
@@ -97,7 +90,6 @@ GIB_Handle_Init (void)
 {
 	gib_handles_size = 256;
 	gib_handles = calloc (gib_handles_size, sizeof (gib_handle_t *));
-	gib_next_class = 0;
-	gib_next_handle = 0;
+	gib_next_handle = 1;
 	gib_unused_handles = 0;
 }

@@ -67,6 +67,9 @@ GIB_Buffer_Destruct (struct cbuf_s *cbuf)
 	gib_buffer_data_t *g = GIB_DATA (cbuf);
 	unsigned int i, j;
 
+	if (g->dnotify)
+		g->dnotify (cbuf, g->ddata);
+
 	dstring_delete (g->arg_composite);
 	if (g->locals)
 		Hash_DelTable (g->locals);
@@ -107,7 +110,7 @@ GIB_Buffer_Reset (struct cbuf_s *cbuf)
 	g->program = g->ip = 0;
 	g->stack.p = 0;
 	g->waitret = false;
-
+	g->reply.obj = NULL;
 }
 
 void
@@ -263,6 +266,18 @@ GIB_Buffer_Get_Line_Info (cbuf_t * cbuf, char **line)
 		*line = strdup (GIB_DATA (cbuf)->ip->str);
 		return -1;
 	}
+}
+
+void
+GIB_Buffer_Reply_Callback (int argc, const char **argv, void *data)
+{
+	cbuf_t *cbuf = (cbuf_t *) data;
+	int i;
+
+	for (i = 0; i < argc; i++)
+		dstring_copystr (GIB_Buffer_Dsarray_Get (cbuf), argv[i]);
+	if (cbuf->state == CBUF_STATE_BLOCKED)
+		cbuf->state = CBUF_STATE_NORMAL;
 }
 
 void

@@ -28,6 +28,12 @@
 #ifdef HAVE_CONFIG_H
 # include "config.h"
 #endif
+#ifdef HAVE_STRING_H
+# include <string.h>
+#endif
+#ifdef HAVE_STRINGS_H
+# include <strings.h>
+#endif
 
 #include <stdlib.h>
 
@@ -195,6 +201,19 @@ llist_remove (llist_node_t *ref)
 	return element;
 }
 
+unsigned int
+llist_size (llist_t *llist)
+{
+	unsigned int i;
+	llist_node_t *n;
+
+	if (!llist->start)
+		return 0;
+	else for (i = 0, n = llist->start; n; n = n->next, i++);
+
+	return i;
+}
+
 void
 llist_iterate (llist_t *list, llist_iterator_t iterate)
 {
@@ -228,7 +247,7 @@ llist_findnode (llist_t *list, void *comparison)
 {
 	llist_node_t *node;
 
-	if (!list)
+	if (!list || !list->cmpdata)
 		return 0;
 	for (node = list->start; node; node = node->next)
 		if (list->cmpdata (node->data, comparison, list->userdata))
@@ -236,3 +255,15 @@ llist_findnode (llist_t *list, void *comparison)
 	return 0;
 }
 
+void *
+llist_createarray (llist_t *list, size_t esize)
+{
+	void *ptr, *array = malloc (llist_size (list) * esize);
+	llist_node_t *node;
+
+	for (ptr = array, node = list->start; node; node = node->next, ptr +=
+			esize)
+		memcpy (ptr, node->data, esize);
+
+	return array;
+}

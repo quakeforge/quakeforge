@@ -17,8 +17,6 @@
 #include "gib_thread.h"
 #include "gib_parse.h"
 
-extern gib_thread_t *gib_threads;
-
 static qboolean carne_done = false;
 static int carne_exitcode = 0;
 
@@ -115,7 +113,8 @@ main (int argc, char **argv)
 	// Initialize required QF subsystems
 	Cvar_Init_Hash ();
 	Cmd_Init_Hash ();
-	Cmd_Init ();	
+	Cmd_Init ();
+	Cvar_Init ();
 	GIB_Init (false); // No sandbox
 	
 	GIB_Builtin_Add ("exit", Carne_GIB_Exit_f);

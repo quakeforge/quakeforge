@@ -64,6 +64,7 @@ const char  rcsid[] =
 #include "gib_thread.h"
 #include "gib_handle.h"
 #include "gib_builtin.h"
+#include "gib_classes.h"
 
 char        gib_null_string[] = "";
 
@@ -235,7 +236,7 @@ GIB_Local_f (void)
 
 
 static void
-GIB_Global_f (void)
+GIB_Shared_f (void)
 {
 	gib_var_t  *var;
 	unsigned int index;
@@ -312,7 +313,19 @@ GIB_Return_f (void)
 
 	GIB_DATA (cbuf_active)->ip = &fakeip;
 
-	if (GIB_Argc () > 1 && sp && sp->interpreter == &gib_interp
+	if (GIB_DATA (cbuf_active)->reply.obj) {
+		gib_buffer_data_t *g = GIB_DATA (cbuf_active);
+		const char **argv = malloc (sizeof (char *) * GIB_Argc() -1);
+		int i;
+
+		for (i = 1; i < GIB_Argc(); i++)
+			argv[i-1] = GIB_Argv(i);
+		
+		GIB_Reply (g->reply.mesg, GIB_Argc()-1, argv);
+		free (argv);
+		g->dnotify = NULL;
+		GIB_Object_Decref (g->reply.obj);
+	} else if (GIB_Argc () > 1 && sp && sp->interpreter == &gib_interp
 		&& GIB_DATA (sp)->waitret) {
 		int i;
 		dstring_t  *dstr;
@@ -715,68 +728,6 @@ GIB_Text_From_Decimal_f (void)
 }
 
 static void
-GIB_Thread_Create_f (void)
-{
-	gib_function_t *f;
-
-	if (GIB_Argc () < 2)
-		GIB_USAGE ("function [arg1 arg2 ...]");
-	else if (!(f = GIB_Function_Find (GIB_Argv (1))))
-		GIB_Error ("function", "%s: no function named '%s' exists.",
-				   GIB_Argv (0), GIB_Argv (1));
-	else {
-		gib_thread_t *thread = GIB_Thread_New ();
-
-		GIB_Function_Execute_D (thread->cbuf, f, cbuf_active->args->argv + 1,
-							  cbuf_active->args->argc - 1);
-		GIB_Thread_Add (thread);
-		if (GIB_CanReturn ())
-			dsprintf (GIB_Return (0), "%lu", thread->id);
-	}
-}
-
-static void
-GIB_Thread_Kill_f (void)
-{
-	if (GIB_Argc () != 2)
-		GIB_USAGE ("id");
-	else {
-		gib_thread_t *thread;
-		cbuf_t     *cur;
-		unsigned long int id = strtoul (GIB_Argv (1), 0, 10);
-
-		thread = GIB_Handle_Get (id, gib_thread_class);
-		if (!thread) {
-			GIB_Error ("thread", "%s: thread %lu does not exist.", GIB_Argv (0), id);
-			return;
-		}
-
-		// If we are currently running this thread, set an error state so we exit it cleanly
-		// if it were simply nuked, a crash would result
-		for (cur = thread->cbuf; cur->down && cur->down->state != CBUF_STATE_JUNK; cur = cur->down)
-			if (cur == cbuf_active) {
-				cur->state = CBUF_STATE_ERROR;
-				return;
-			}
-		GIB_Thread_Remove (thread);
-		GIB_Thread_Delete (thread);
-	}
-}
-
-static void
-GIB_Thread_List_f (void)
-{
-	if (GIB_Argc () != 1)
-		GIB_USAGE ("");
-	else if (GIB_CanReturn ()) {
-		gib_thread_t *cur;
-
-		for (cur = gib_thread_first; cur; cur = cur->next)
-			dsprintf (GIB_Return (0), "%lu", cur->id);
-	}
-}
-
-static void
 GIB_Event_Register_f (void)
 {
 	gib_function_t *func;
@@ -999,6 +950,42 @@ GIB_Print_f (void)
 }
 
 static void
+GIB_Class_f (void)
+{
+	if (GIB_Argc () == 5)
+		GIB_Classes_Build_Scripted (GIB_Argv(1), GIB_Argv(3), 
+				GIB_Argm (4)->children,
+				GIB_DATA(cbuf_active)->script);
+	else
+		GIB_Classes_Build_Scripted (GIB_Argv(1), NULL,
+				GIB_Argm (2)->children,
+				GIB_DATA(cbuf_active)->script);
+}
+
+static void
+GIB_Emit_f (void)
+{
+	if (GIB_Argc () < 2) {
+		GIB_USAGE ("signal [arg1 arg2 ...]");
+		return;
+	} else if (!GIB_DATA(cbuf_active)->reply.obj) {
+		GIB_Error ("emit", "Cannot emit signal in this context.");
+		return;
+	} else {
+		int i;
+		const char **argv = malloc (GIB_Argc () - 1);
+		
+		for (i = 1; i < GIB_Argc (); i ++)
+			argv[i-1] = GIB_Argv (1);
+		
+		GIB_Object_Signal_Emit (GIB_DATA(cbuf_active)->reply.obj,
+				GIB_Argc () - 1, argv);
+
+		free (argv);
+	}
+}
+
+static void
 GIB_bp1_f (void)
 {
 }
@@ -1031,7 +1018,8 @@ GIB_Builtin_Init (qboolean sandbox)
 	GIB_Builtin_Add ("function::get", GIB_Function_Get_f);
 	GIB_Builtin_Add ("function::export", GIB_Function_Export_f);
 	GIB_Builtin_Add ("local", GIB_Local_f);
-	GIB_Builtin_Add ("global", GIB_Global_f);
+	GIB_Builtin_Add ("shared", GIB_Shared_f);
+	GIB_Builtin_Add ("global", GIB_Shared_f);
 	GIB_Builtin_Add ("delete", GIB_Delete_f);
 	GIB_Builtin_Add ("domain", GIB_Domain_f);
 	GIB_Builtin_Add ("domain::clear", GIB_Domain_Clear_f);
@@ -1052,9 +1040,6 @@ GIB_Builtin_Init (qboolean sandbox)
 	GIB_Builtin_Add ("text::toBrown", GIB_Text_Brown_f);
 	GIB_Builtin_Add ("text::toDecimal", GIB_Text_To_Decimal_f);
 	GIB_Builtin_Add ("text::fromDecimal", GIB_Text_From_Decimal_f);
-	GIB_Builtin_Add ("thread::create", GIB_Thread_Create_f);
-	GIB_Builtin_Add ("thread::kill", GIB_Thread_Kill_f);
-	GIB_Builtin_Add ("thread::getList", GIB_Thread_List_f);
 	GIB_Builtin_Add ("event::register", GIB_Event_Register_f);
 	GIB_Builtin_Add ("file::read", GIB_File_Read_f);
 	GIB_Builtin_Add ("file::write", GIB_File_Write_f);
@@ -1063,6 +1048,8 @@ GIB_Builtin_Init (qboolean sandbox)
 	GIB_Builtin_Add ("file::delete", GIB_File_Delete_f);
 	GIB_Builtin_Add ("range", GIB_Range_f);
 	GIB_Builtin_Add ("print", GIB_Print_f);
+	GIB_Builtin_Add ("class", GIB_Class_f);
+	GIB_Builtin_Add ("emit", GIB_Emit_f);
 	GIB_Builtin_Add ("bp1", GIB_bp1_f);
 	GIB_Builtin_Add ("bp2", GIB_bp2_f);
 	GIB_Builtin_Add ("bp3", GIB_bp3_f);

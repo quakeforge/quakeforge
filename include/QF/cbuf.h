@@ -54,6 +54,7 @@ typedef struct cbuf_s {
 	enum {
 		CBUF_STATE_NORMAL = 0, // Normal condition
 		CBUF_STATE_WAIT, // Buffer is stalled until next frame
+		CBUF_STATE_BLOCKED, // Buffer is blocked until further notice
 		CBUF_STATE_ERROR, // An unrecoverable error occured
 		CBUF_STATE_STACK, // A buffer has been added to the stack
 		CBUF_STATE_JUNK // Buffer can be freed or reused

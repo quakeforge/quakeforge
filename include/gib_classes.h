@@ -1,12 +1,9 @@
 /*
-	#FILENAME#
+	gib_classes.h
 
-	#DESCRIPTION#
+	Built-in GIB classes
 
-	Copyright (C) 2002 #AUTHOR#
-
-	Author: #AUTHOR#
-	Date: #DATE#
+	Copyright (C) 2003 Brian Koropoff
 
 	This program is free software; you can redistribute it and/or
 	modify it under the terms of the GNU General Public License
@@ -26,19 +23,16 @@
 		59 Temple Place - Suite 330
 		Boston, MA  02111-1307, USA
 
-
 	$Id$
 */
 
-#ifndef __gib_handle_h
-#define __gib_handle_h
+#ifndef _GIB_CLASSES_H
+#define _GIB_CLASSES_H
 
-typedef struct gib_handle_s {
-	unsigned long int num;
-	gib_object_t *data;
-	struct gib_handle_s *next;
-} gib_handle_t;
+#include "gib_tree.h"
 
-void GIB_Handle_Init (void);
+void GIB_Classes_Build_Scripted (const char *name, const char *parentname,
+		gib_tree_t *tree, gib_script_t *script);
+void GIB_Classes_Init (void);
 
 #endif

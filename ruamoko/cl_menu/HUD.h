@@ -9,7 +9,6 @@
 	integer handle;
 }
 
-+ (void) initClass;
 - (id) initWithComponents: (integer) x : (integer) y;
 - (void) dealloc;
 - (integer) handle;

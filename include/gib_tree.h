@@ -53,11 +53,12 @@ typedef struct gib_tree_s {
 		TREE_T_CMD, // A command
 		TREE_T_COND, // Conditional jump
 		TREE_T_ASSIGN, // Assignment
+		TREE_T_SEND, // Message sending
 		TREE_T_JUMP, // Jump
 		TREE_T_ARG, // Argument (not a line)
 		TREE_T_FORNEXT, // Fetch next arg in for loop
 		TREE_T_META, // Info node
-		TREE_T_NOP // Do nothing (label, etc)
+		TREE_T_LABEL // Label (or no-op)
 	} type;
 	struct gib_tree_s *children, *next, *jump;
 } gib_tree_t;

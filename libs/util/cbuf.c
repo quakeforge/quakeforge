@@ -51,7 +51,7 @@ static __attribute__ ((unused)) const char rcsid[] =
 
 #include "compat.h"
 
-cbuf_t     *cbuf_active;
+cbuf_t     *cbuf_active = NULL;
 
 cbuf_args_t *
 Cbuf_ArgsNew (void)
@@ -175,8 +175,10 @@ Cbuf_InsertText (cbuf_t *cbuf, const char *text)
 void
 Cbuf_Execute (cbuf_t *cbuf)
 {
+	cbuf_t *old = cbuf_active;
 	cbuf_active = cbuf;
 	cbuf->interpreter->execute (cbuf);
+	cbuf_active = old;
 }
 
 void
@@ -191,6 +193,8 @@ Cbuf_Execute_Stack (cbuf_t *cbuf)
 				return;
 	}
 	for (sp = cbuf; sp->down && sp->down->state != CBUF_STATE_JUNK; sp = sp->down);
+	if (sp->state == CBUF_STATE_BLOCKED)
+		return;
 	while (sp) {
 		Cbuf_Execute (sp);
 		if (sp->state) {
@@ -200,6 +204,8 @@ Cbuf_Execute_Stack (cbuf_t *cbuf)
 				continue;
 			} else if (sp->state == CBUF_STATE_ERROR)
 				break;
+			else if (sp->state == CBUF_STATE_BLOCKED)
+				return;
 			else {
 				sp->state = CBUF_STATE_NORMAL;
 				return;

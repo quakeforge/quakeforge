@@ -202,16 +202,21 @@ GIB_Execute (cbuf_t * cbuf)
 	gib_buffer_data_t *g = GIB_DATA (cbuf);
 	gib_builtin_t *b;
 	gib_function_t *f;
+	gib_object_t *obj;
 	unsigned int index;
 	gib_var_t *var;
 	int i;
+	qboolean super;
+
+	static const char **mesg = NULL;
+	static int maxmesg = 0;
 
 	if (!g->program)
 		return;
 	g->ip = g->ip ? g->ip->next : g->program;
 	while (g->ip) {
 		switch (g->ip->type) {
-			case TREE_T_NOP: // Move to next instruction
+			case TREE_T_LABEL: // Move to next instruction
 				g->ip = g->ip->next;
 				continue;
 			case TREE_T_JUMP: // Absolute jump
@@ -244,10 +249,78 @@ GIB_Execute (cbuf_t * cbuf)
 				if (g->ip->flags & TREE_L_EMBED) {
 					GIB_Buffer_Push_Sstack (cbuf);
 					g->waitret = true;
-					for (i = 2; i < cbuf->args->argc; i++)
-						GIB_Return (cbuf->args->argv[i]->str);
+					if (GIB_CanReturn ())
+						for (i = 2; i < cbuf->args->argc; i++)
+							GIB_Return (cbuf->args->argv[i]->str);
 				} else
 					g->waitret = false;
+				g->ip = g->ip->next;
+				continue;
+			case TREE_T_SEND: // Message sending
+				if (GIB_Execute_Prepare_Line (cbuf, g->ip))
+					return;
+				if (cbuf->args->argc - 2 > maxmesg) {
+					maxmesg += 32;
+					mesg = realloc (mesg, sizeof (char *) * maxmesg);
+				}
+				for (i = 2; i < cbuf->args->argc; i++)
+					mesg[i-2] = cbuf->args->argv[i]->str;
+
+				super = false;
+				if (!strcmp (cbuf->args->argv[0]->str,
+							"super")) {
+						if (!(obj = g->reply.obj)) {
+							GIB_Error (
+								"send",
+								"Sending "
+								"message to "
+								"super not "
+								"possible in "
+								"this context."
+							);
+							return;
+						}
+						super = true;
+				} else if (!(obj = GIB_Object_Get (cbuf->args->argv[0]->str))) {
+					GIB_Error (
+						"send",
+						"No such object or class: %s",
+						cbuf->args->argv[0]->str
+					);
+					return;
+				}
+				if (g->ip->flags & TREE_L_EMBED) {
+					// Get ready for return values
+					g->waitret = true;
+					GIB_Buffer_Push_Sstack (cbuf);
+					cbuf->state = CBUF_STATE_BLOCKED;
+					i = super ? GIB_SendToMethod (obj,
+							g->reply.method->parent,
+							i - 2, mesg,
+							GIB_Buffer_Reply_Callback,
+							cbuf) : GIB_Send (obj,
+							i - 2, mesg, 
+							GIB_Buffer_Reply_Callback,
+							cbuf);
+				} else {
+					g->waitret = false;
+					i = super ? GIB_SendToMethod (obj,
+							g->reply.method->parent,
+							i - 2, mesg,
+							NULL, NULL) : 
+							GIB_Send (obj, i - 2, 
+							mesg, NULL, NULL);
+				}
+				if (i < 0) {
+					GIB_Error (
+						"send",
+						"Object %s (%s) could not handle message %s",
+						cbuf->args->argv[0]->str,
+						obj->class->name,
+						cbuf->args->argv[2]->str
+					);
+					return;
+				}
 				g->ip = g->ip->next;
 				continue;
 			case TREE_T_CMD: // Normal command
@@ -278,9 +351,9 @@ GIB_Execute (cbuf_t * cbuf)
 								cbuf->args->argv[0]->str
 							);
 					}
-					if (cbuf->state)
-						return;
 				}
+				if (cbuf->state)
+					return;
 				g->ip = g->ip->next;
 				continue;
 			default: // We should never get here

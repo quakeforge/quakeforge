@@ -508,5 +508,4 @@ void () menu_init =
 	Menu_TopMenu ("main");
 	Menu_SetQuit (quit);
 
-	HUD_Init ();
 };

@@ -54,6 +54,7 @@ const char  rcsid[] =
 #include "gib_builtin.h"
 #include "gib_thread.h"
 #include "gib_handle.h"
+#include "gib_object.h"
 
 static void
 GIB_Exec_Override_f (void)
@@ -109,7 +110,10 @@ GIB_Init (qboolean sandbox)
 	GIB_Regex_Init ();
 	// Initialize builtins
 	GIB_Builtin_Init (sandbox);
+	// Initialize thread system;
+	GIB_Thread_Init ();
 	// Initialize event system
 	GIB_Event_Init ();
-
+	// Initialize object system
+	GIB_Object_Init ();
 }

@@ -46,7 +46,7 @@ typedef struct gib_function_s {
 	qboolean exported;
 } gib_function_t;
 
-void GIB_Function_Define (const char *name, const char *text, gib_tree_t *program, gib_script_t *script, hashtab_t *globals);
+gib_function_t *GIB_Function_Define (const char *name, const char *text, gib_tree_t *program, gib_script_t *script, hashtab_t *globals);
 gib_function_t *GIB_Function_Find (const char *name);
 void GIB_Function_Prepare_Args (cbuf_t *cbuf, const char **args, unsigned int argc);
 void GIB_Function_Prepare_Args_D (cbuf_t *cbuf, dstring_t **args, unsigned int argc);

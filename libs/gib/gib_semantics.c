@@ -35,6 +35,80 @@
 #include "gib_parse.h"
 #include "gib_semantics.h"
 
+static int
+GIB_Semantic_Validate_Class (gib_tree_t * tokens)
+{
+	gib_tree_t *a_class, *line, *cmd;
+	
+	if (!tokens->next || !tokens->next->next) {
+		GIB_Parse_Error ("Malformed class definition; expected class "
+				"name, optional colon and parent class, and "
+				"program block.", tokens->start);
+		return -1;
+	}
+
+	if (tokens->next->next->delim == ' ' && !strcmp
+			(tokens->next->next->str, ":")) {
+		if (!tokens->next->next->next) {
+			GIB_Parse_Error ("Malformed class definition; "
+					"expected parent class after "
+					"\":\".", tokens->next->next->start);
+			return -1;
+		}
+		a_class = tokens->next->next->next->next;
+	} else
+		a_class = tokens->next->next;
+
+	if (!a_class || !a_class->children || a_class->delim != '{') {
+		GIB_Parse_Error ("Malformed class definition; expected "
+				"program block.", tokens->next->next->start);
+		return -1;
+	}
+
+	for (line = a_class->children; line; line = line->next) {
+		switch (line->type) {
+			case TREE_T_LABEL:
+				if (strcmp (line->str, "class") && strcmp
+						(line->str, "instance")) {
+					GIB_Parse_Error ("Malformed class "
+							"definition; allowed "
+							"labels are instance "
+							"and class.",
+							line->start);
+					return -1;
+				}
+				break;
+			case TREE_T_CMD:
+				cmd = line->children;
+				if (strcmp (cmd->str, "function")) {
+					GIB_Parse_Error ("Malformed class "
+							"definition; only "
+							"allowed command is "
+							"function.",
+							cmd->start);
+					return -1;
+				} else if (!cmd->next || !cmd->next->next ||
+						cmd->next->next->delim != '{'
+						|| !cmd->next->next->children) {
+					GIB_Parse_Error ("Malformed function "
+							"definition; name, "
+							"program block "
+							"expected.",
+							cmd->start);
+					return -1;
+				}
+				break;
+			default:
+				GIB_Parse_Error ("Malformed class "
+						"definition; only commands "
+						"and labels allowed.",
+						line->start);
+				return -1;
+				break;
+		}
+	}
+	return 0;
+}
 static gib_tree_t *
 GIB_Semantic_Normal_To_Lines (gib_tree_t * tokens, const char *program, gib_tree_flags_t flags, unsigned int start, unsigned int end)
 {
@@ -72,11 +146,25 @@ GIB_Semantic_Normal_To_Lines (gib_tree_t * tokens, const char *program, gib_tree
 	mainline->flags = flags;
 	mainline->start = start;
 	mainline->end = end;
-	mainline->children = tokens;
 
 	// Check for assignment
 	if (tokens->next && tokens->next->delim == ' ' && !strcmp (tokens->next->str, "="))
 		mainline->type = TREE_T_ASSIGN;
+	// Check for message sending
+	else if (tokens->next && tokens->next->delim == ' ' && !strcmp (tokens->next->str, "->")) {
+		if (!tokens->next->next) {
+			GIB_Tree_Unref (&mainline);
+			GIB_Parse_Error ("Cannot send empty message.", token->next->start);
+			return NULL;
+		} else
+			mainline->type = TREE_T_SEND;
+	// Check for class definition, validate
+	} else if (!strcmp (tokens->str, "class") &&
+			GIB_Semantic_Validate_Class (tokens)) {
+			GIB_Tree_Unref (&mainline);
+			return NULL;
+	}
+	mainline->children = tokens;
 
 	return lines;
 }
@@ -252,7 +340,7 @@ GIB_Semantic_While_To_Lines (gib_tree_t *tokens, const char *program, gib_tree_f
 	next = &conditional->next;
 
 	// Create end point (for 'break' commands)
-	endp = GIB_Tree_New (TREE_T_NOP);
+	endp = GIB_Tree_New (TREE_T_LABEL);
 
 	// Move program block inline
 	*next = a_block->children;
@@ -358,7 +446,7 @@ GIB_Semantic_For_To_Lines (gib_tree_t *tokens, const char *program, gib_tree_fla
 	*next = a_block->children;
 	a_block->children = 0;
 
-	endp = GIB_Tree_New (TREE_T_NOP);
+	endp = GIB_Tree_New (TREE_T_LABEL);
 
 	// Find end of program block
 	for (temp = *next; temp->next; temp = temp->next) {
@@ -384,7 +472,25 @@ GIB_Semantic_For_To_Lines (gib_tree_t *tokens, const char *program, gib_tree_fla
 	return lines;
 }
 
+static gib_tree_t *
+GIB_Semantic_Label_To_Lines (gib_tree_t *tokens, const char *program,
+		gib_tree_flags_t flags)
+{
+	gib_tree_t *line;
+	char *name;
 
+	line = GIB_Tree_New (TREE_T_LABEL);
+	
+	name = strdup (tokens->str);
+	name[strlen(name)-1] = '\0';
+	line->str = name;
+	line->flags = flags;
+	
+	GIB_Tree_Unref (&tokens);
+
+	return line;
+}
+	
 gib_tree_t *
 GIB_Semantic_Tokens_To_Lines (gib_tree_t *tokens, const char *program, gib_tree_flags_t flags, unsigned int start, unsigned int end)
 {
@@ -399,7 +505,7 @@ GIB_Semantic_Tokens_To_Lines (gib_tree_t *tokens, const char *program, gib_tree_
 		// Create landing pad where all program blocks in
 		// a chained if/else structure will jump to after
 		// completing so that only one block is executed.
-		endp = GIB_Tree_New (TREE_T_NOP);
+		endp = GIB_Tree_New (TREE_T_LABEL);
 		do {
 			// Link in output from if statement handler
 			*next = GIB_Semantic_If_To_Lines (&tokens, program, flags, endp);
@@ -419,6 +525,8 @@ GIB_Semantic_Tokens_To_Lines (gib_tree_t *tokens, const char *program, gib_tree_
 		*next = GIB_Semantic_While_To_Lines (tokens, program, flags);
 	else if (!strcmp (tokens->str, "for"))
 		*next = GIB_Semantic_For_To_Lines (tokens, program, flags);
+	else if (tokens->str[strlen(tokens->str)-1] == ':' && !tokens->next)
+		*next = GIB_Semantic_Label_To_Lines (tokens, program, flags);
 	else
 		*next = GIB_Semantic_Normal_To_Lines (tokens, program, flags, start, end);
 	next = &(*next)->next;

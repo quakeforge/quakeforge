@@ -147,38 +147,31 @@ bi_GIB_Return (progs_t *pr)
 }
 
 static void
-bi_GIB_Handle_Class_New (progs_t *pr)
-{
-	R_INT (pr) = GIB_Handle_Class_New ();
-}
-
-static void
 bi_GIB_Handle_New (progs_t *pr)
 {
-	long *qcptr = malloc (sizeof (long));
-	*qcptr = P_POINTER (pr, 0);
-	R_INT (pr) = GIB_Handle_New (qcptr, P_INT (pr, 1));
+	//long *qcptr = malloc (sizeof (long));
+	//*qcptr = P_POINTER (pr, 0);
+	//R_INT (pr) = GIB_Handle_New (qcptr);
 }
 
 static void
 bi_GIB_Handle_Free (progs_t *pr)
 {
-	unsigned long int hand = P_INT (pr, 0);
-	unsigned short int cl = (unsigned short) P_INT (pr, 1);
-	long *qcptr = GIB_Handle_Get (hand, cl);
+	//unsigned long int hand = P_INT (pr, 0);
+	//long *qcptr = GIB_Handle_Get (hand);
 
-	free (qcptr);
-	GIB_Handle_Free (hand, cl);
+	//free (qcptr);
+	//GIB_Handle_Free (hand);
 }
 
 static void
 bi_GIB_Handle_Get (progs_t *pr)
 {
-	long *hand = GIB_Handle_Get (P_INT (pr, 0), (unsigned short) P_INT (pr, 1));
-	if (hand)
-		R_INT (pr) = *hand;
-	else
-		R_INT (pr) = 0;
+	//long *hand = GIB_Handle_Get (P_INT (pr, 0));
+	//if (hand)
+	//	R_INT (pr) = *hand;
+	//else
+	//	R_INT (pr) = 0;
 }
 
 void
@@ -193,7 +186,6 @@ GIB_Progs_Init (progs_t *pr)
 
 	PR_AddBuiltin (pr, "GIB_Builtin_Add", bi_GIB_Builtin_Add, -1);
 	PR_AddBuiltin (pr, "GIB_Return", bi_GIB_Return, -1);
-	PR_AddBuiltin (pr, "GIB_Handle_Class_New", bi_GIB_Handle_Class_New, -1);
 	PR_AddBuiltin (pr, "GIB_Handle_New", bi_GIB_Handle_New, -1);
 	PR_AddBuiltin (pr, "GIB_Handle_Free", bi_GIB_Handle_Free, -1);
 	PR_AddBuiltin (pr, "GIB_Handle_Get", bi_GIB_Handle_Get, -1);

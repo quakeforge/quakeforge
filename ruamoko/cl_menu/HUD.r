@@ -8,17 +8,11 @@
 integer HUDHandleClass;
 
 @implementation HUDObject
-+ (void) initClass
-{
-	HUDHandleClass = GIB_Handle_Class_New ();
-}
-
 - (id) initWithComponents: (integer) x : (integer) y
 {
 	self = [super init];
 	origin = [[Point alloc] initWithComponents: x :y];
 	visible = YES;
-	handle = GIB_Handle_New (self, HUDHandleClass);
 
 	return self;
 }
@@ -26,7 +20,6 @@ integer HUDHandleClass;
 - (void) dealloc
 {
 	[origin dealloc];
-	GIB_Handle_Free (handle, HUDHandleClass);
 	[super dealloc];
 }
 

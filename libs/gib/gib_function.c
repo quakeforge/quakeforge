@@ -102,7 +102,7 @@ GIB_Function_Free (void *ele, void *ptr)
 	allocating one and adding it to the functions
 	hash if needed.
 */
-void
+gib_function_t *
 GIB_Function_Define (const char *name, const char *text, gib_tree_t * program,
 					 gib_script_t * script, hashtab_t * globals)
 {
@@ -132,6 +132,8 @@ GIB_Function_Define (const char *name, const char *text, gib_tree_t * program,
 	func->program = program;
 	func->globals = globals;
 	func->script = script;
+
+	return func;
 }
 
 /*

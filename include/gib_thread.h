@@ -33,23 +33,13 @@
 #define __gib_thread_h
 
 #include "gib_function.h"
+#include "QF/cbuf.h"
 
-typedef struct gib_thread_s {
-	unsigned long int id;
-	struct cbuf_s *cbuf;
-	struct gib_thread_s *prev, *next;
-} gib_thread_t;
-
-void GIB_Thread_Add (gib_thread_t *thread);
-void GIB_Thread_Remove (gib_thread_t *thread);
-void GIB_Thread_Delete (gib_thread_t *thread);
-gib_thread_t *GIB_Thread_New (void);
+cbuf_t *GIB_Thread_New (void);
+void GIB_Thread_Delete (cbuf_t *thread);
 void GIB_Thread_Init (void);
 
 int GIB_Event_Register (const char *name, gib_function_t *func);
 void GIB_Event_Init (void);
-
-extern gib_thread_t *gib_thread_first, *gib_thread_last;
-extern unsigned short int gib_thread_class;
 
 #endif
