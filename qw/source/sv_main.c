@@ -92,6 +92,8 @@ cvar_t     *sv_allow_status;
 cvar_t     *sv_allow_log;
 cvar_t     *sv_allow_ping;
 
+cvar_t     *sv_extensions;				// Use the extended protocols
+
 cvar_t     *sv_mintic;					// bound the size of the
 cvar_t     *sv_maxtic;					// physics time tic
 
@@ -610,6 +612,7 @@ void
 SVC_GetChallenge (void)
 {
 	int         oldest, oldestTime, i;
+	char       *extended = "";
 
 	oldest = 0;
 	oldestTime = 0x7fffffff;
@@ -631,9 +634,14 @@ SVC_GetChallenge (void)
 		svs.challenges[oldest].time = realtime;
 		i = oldest;
 	}
-	// send it back
-	Netchan_OutOfBandPrint (net_from, "%c%i QF", S2C_CHALLENGE,
-							svs.challenges[i].challenge);
+
+	if (sv_extensions->int_val) {
+		extended = " QF";
+	}
+
+	// send it to the client
+	Netchan_OutOfBandPrint (net_from, "%c%i%s", S2C_CHALLENGE,
+							svs.challenges[i].challenge, extended);
 }
 
 /*
@@ -1681,6 +1689,9 @@ SV_InitLocal (void)
 	sv_maxvelocity = Cvar_Get ("sv_maxvelocity", "2000", CVAR_NONE, NULL,
 							   "Sets the maximum velocity an object can "
 							   "travel");
+	sv_extensions = Cvar_Get ("sv_extensions", "1", CVAR_NONE, NULL,
+							  "Use protocol extensions for QuakeForge "
+							  "clients");
 	sv_gravity = Cvar_Get ("sv_gravity", "800", CVAR_NONE, NULL,
 						   "Sets the global value for the amount of gravity");
 	sv_stopspeed = Cvar_Get ("sv_stopspeed", "100", CVAR_NONE, NULL, 
@@ -1993,7 +2004,7 @@ SV_ExtractFromUserinfo (client_t *cl)
 		cl->messagelevel = atoi (val);
 	}
 
-	cl->stdver = atoi (Info_ValueForKey (cl->userinfo, "stdver"));
+	cl->stdver = atof (Info_ValueForKey (cl->userinfo, "*qsg_version"));
 }
 
 void

@@ -585,19 +585,19 @@ CL_FullServerinfo_f (void)
 
 	if ((p = Info_ValueForKey (cl.serverinfo, "*qf_version")) && *p) {
 		if (server_version == NULL)
-			Con_Printf ("QuakeForge Version %s Server\n", p);
+			Con_Printf ("QuakeForge v%s Server\n", p);
 		server_version = strdup (p);
 	} else if ((p = Info_ValueForKey (cl.serverinfo, "*version")) && *p) {
 		if (server_version == NULL)
-			Con_Printf ("Version %s Server\n", p);
+			Con_Printf ("QaukeWorld v%s Server\n", p);
 		server_version = strdup (p);
 	}
 
 	if ((p = Info_ValueForKey (cl.serverinfo, "*qsg_version")) && *p) {
-		if ((cl.stdver = atoi (p)))
-			Con_Printf ("QSG Standard version %i\n", cl.stdver);
+		if ((cl.stdver = atof (p)))
+			Con_Printf ("Server supports QSG v%s protocol\n", p);
 		else
-			Con_Printf ("Invalid standards version: %s", p);
+			Con_Printf ("Invalid QSG Protocol number: %s", p);
 	}
 	if ((p = Info_ValueForKey (cl.serverinfo, "skybox")) && *p) {
 		//FIXME didn't actually do anything anyway
@@ -1098,8 +1098,6 @@ CL_Init (void)
 //	snprintf (st, sizeof(st), "%s-%04d", QW_VERSION, build_number());
 	snprintf (st, sizeof (st), "%s", QW_VERSION);
 	Info_SetValueForStarKey (cls.userinfo, "*ver", st, MAX_INFO_STRING, 0);
-	Info_SetValueForStarKey (cls.userinfo, "stdver", QW_QSG_VERSION,
-							 MAX_INFO_STRING, 0);
 
 	CL_Input_Init ();
 	CL_Ents_Init ();

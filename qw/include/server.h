@@ -222,7 +222,7 @@ typedef struct client_s
 	int				msecs, msec_cheating;
 	double			last_check;
 	double			cuff_time;
-	int				stdver;
+	float			stdver;
 } client_t;
 
 // a client can leave the server in one of four ways:
