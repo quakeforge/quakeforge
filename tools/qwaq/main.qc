@@ -26,4 +26,5 @@ void () test =
 		return;
 	}
 	local entity p;
+	p = self;
 };
