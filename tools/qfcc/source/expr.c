@@ -426,7 +426,7 @@ do_op_float (int op, expr_t *e1, expr_t *e2)
 			e1->e.float_val = (int)f1 & (int)f2;
 			break;
 		case '|':
-			e1->e.float_val += (int)f1 | (int)f2;
+			e1->e.float_val = (int)f1 | (int)f2;
 			break;
 		case AND:
 			e1->e.float_val = f1 && f2;
