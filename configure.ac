@@ -269,6 +269,20 @@ AC_TRY_COMPILE(
 	)
 )
 
+if test "x$ac_cv_header_sys_uio_h" = xyes; then
+	AC_MSG_CHECKING(for struct in_pktinfo)
+	AC_TRY_COMPILE(
+		[#include <sys/types.h>
+		#include <sys/socket.h>
+		#include <netinet/in.h>
+		#include <sys/uio.h>],
+		[struct in_pktinfo x;],
+		AC_DEFINE(HAVE_IN_PKTINFO, 1, [Define this if your system has struct in_pktinfo])
+		AC_MSG_RESULT(yes),
+		AC_MSG_RESULT(no)
+	)
+fi
+
 AC_MSG_CHECKING(for underscore prefix in names)
 AC_TRY_LINK(
 	[asm(".long _bar");

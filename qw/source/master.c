@@ -66,7 +66,7 @@ static const char rcsid[] =
 
 #include "protocol.h"
 
-#ifdef HAVE_SYS_UIO_H
+#ifdef HAVE_IN_PKTINFO
 static int
 qf_sendmsg (int sock, void *data, size_t len, struct msghdr *msghdr)
 {
