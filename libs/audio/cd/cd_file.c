@@ -64,6 +64,7 @@ static __attribute__ ((unused)) const char  rcsid[] =
 #include "QF/dstring.h"
 #include "QF/qfplist.h"
 #include "QF/sound.h"
+#include "QF/va.h"
 #include "snd_render.h"
 
 #include "compat.h"
@@ -160,9 +161,9 @@ I_OGGMus_Shutdown (void)
 static int
 Load_Tracklist (void)
 {
-	static QFile	*oggfile = NULL;
-	char			*buffile = NULL;
-	int				size = -1;
+	QFile	*oggfile = NULL;
+	char	*buffile = NULL;
+	int		size = -1;
 
 	Sys_DPrintf ("Entering Load_Tracklist\n");
 
@@ -234,8 +235,8 @@ static void
 I_OGGMus_Play (int track, qboolean looping)
 {
 	plitem_t	*trackmap = NULL;
-	dstring_t	*trackstring = dstring_new ();
 	wavinfo_t	*info = 0;
+	const char	*trackstring;
 
 	Sys_DPrintf ("Entering I_OGGMus_Play\n");
 	/* alrighty. grab the list, map track to filename. grab filename from data
@@ -247,16 +248,13 @@ I_OGGMus_Play (int track, qboolean looping)
 	}
 
 	if (!tracklist || !mus_enabled) {
-		free (trackstring);
 		return;
 	}
 
-	dsprintf (trackstring, "%i", track);
-	trackmap = PL_ObjectForKey (tracklist, trackstring->str);
-	free (trackstring);
-
+	trackstring = va ("%i", track);
+	trackmap = PL_ObjectForKey (tracklist, trackstring);
 	if (!trackmap || trackmap->type != QFString) {
-		Sys_Printf ("No Track entry for track #%s.\n", trackstring->str);
+		Sys_Printf ("No Track entry for track #%s.\n", trackstring);
 		return;
 	}
 
