@@ -60,7 +60,7 @@ typedef struct struct_s {
 	struct_field_t *struct_head;
 	struct_field_t **struct_tail;
 	int         size;
-	void			*return_addr;	// who allocated this
+	void       *return_addr;		// who allocated this
 } struct_t;
 
 typedef struct enum_s {

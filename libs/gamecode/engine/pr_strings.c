@@ -649,9 +649,10 @@ PR_Sprintf (progs_t *pr, dstring_t *result, const char *name,
 							fi = &(*fi)->next;
 							break;
 						case 'v':
+						case 'q':
 							// vector
 							{
-								int         i;
+								int         i, count = 3;
 								int         flags = (*fi)->flags;
 								int         precision = (*fi)->precision;
 								unsigned    minWidth = (*fi)->minFieldWidth;
@@ -660,7 +661,10 @@ PR_Sprintf (progs_t *pr, dstring_t *result, const char *name,
 								(*fi)->precision = -1;
 								(*fi)->minFieldWidth = 0;
 
-								for (i = 0; i < 3; i++) {
+								if (*c == 'q')
+									count = 4;
+
+								for (i = 0; i < count; i++) {
 									if (i == 0) {
 										(*fi)->type = 's';
 										(*fi)->data.string_var = "'";

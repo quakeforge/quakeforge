@@ -213,7 +213,7 @@ ReuseConstant (expr_t *expr, def_t *def)
 			type = &type_vector;
 			break;
 		case ex_quaternion:
-			tab = vector_imm_defs;
+			tab = quaternion_imm_defs;
 			type = &type_quaternion;
 			break;
 		default:

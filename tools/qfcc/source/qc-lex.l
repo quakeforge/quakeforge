@@ -168,8 +168,10 @@ m		([\-+]?)
 
 '{s}*{m}{NUM}{s}+{m}{NUM}{s}+{m}{NUM}{s}+{m}{NUM}{s}*'	{
 						sscanf (yytext, "' %f %f %f %f '",
-								&yylval.vector_val[0], &yylval.vector_val[1],
-								&yylval.vector_val[2], &yylval.vector_val[3]);
+								&yylval.quaternion_val[0],
+								&yylval.quaternion_val[1],
+								&yylval.quaternion_val[2],
+								&yylval.quaternion_val[3]);
 						return QUATERNION_VAL;
 					}
 

@@ -172,7 +172,7 @@ build_scope (function_t *f, def_t *func, param_t *params)
 
 	if (args) {
 		while (i < MAX_PARMS) {
-			def = get_def (&type_vector, 0, f->scope, st_local);
+			def = get_def (&type_vector, 0, f->scope, st_local);//XXX param
 			def->used = 1;
 			i++;
 		}

@@ -240,6 +240,9 @@ WriteProgdefs (const char *filename)
 				fprintf (f, "\tvec3_t\t%s;\n", d->name);
 				d = d->def_next->def_next->def_next;	// skip the elements
 				break;
+			case ev_quat:
+				fprintf (f, "\tquat_t\t%s;\n", d->name);
+				break;
 			case ev_string:
 				fprintf (f, "\tstring_t\t%s;\n", d->name);
 				break;

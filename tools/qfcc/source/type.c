@@ -99,6 +99,7 @@ type_t      type_param;
 type_t      type_zero;
 
 struct_t   *vector_struct;
+struct_t   *quaterion_struct;
 
 type_t      type_floatfield = { ev_field, ".float", NULL, &type_float };
 
@@ -653,11 +654,27 @@ init_types (void)
 	if (options.traditional)
 		return;
 
+	strct = type_zero.s.strct;
+	new_struct_field (strct, &type_vector,     "vector_val",     vis_public);
+	new_struct_field (strct, &type_quaternion, "quaternion_val", vis_public);
+
+	strct = type_param.s.strct;
+	new_struct_field (strct, &type_quaternion, "quaternion_val", vis_public);
+
 	strct = vector_struct = get_struct (0, 1);
 	init_struct (strct, new_type (), str_struct, 0);
 	new_struct_field (strct, &type_float, "x", vis_public);
 	new_struct_field (strct, &type_float, "y", vis_public);
 	new_struct_field (strct, &type_float, "z", vis_public);
+
+	strct = quaterion_struct = get_struct (0, 1);
+	init_struct (strct, new_type (), str_struct, 0);
+	new_struct_field (strct, &type_float,  "s", vis_public);
+	new_struct_field (strct, &type_float,  "x", vis_public);
+	new_struct_field (strct, &type_float,  "y", vis_public);
+	new_struct_field (strct, &type_float,  "z", vis_public);
+	strct->size = 1;		// evil hack for the vector access
+	new_struct_field (strct, &type_vector, "v", vis_public);
 
 	strct = get_struct (0, 1);
 	init_struct (strct, new_type (), str_struct, 0);
