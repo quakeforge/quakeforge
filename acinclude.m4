@@ -69,7 +69,7 @@ AC_ARG_ENABLE(sdltest, [  --disable-sdltest       Do not try to compile and run 
       ac_save_CFLAGS="$CFLAGS"
       ac_save_LIBS="$LIBS"
       CFLAGS="$CFLAGS $SDL_CFLAGS"
-      LIBS="$LIBS $SDL_LIBS"
+      LIBS="$SDL_LIBS"
 dnl
 dnl Now check if the installed SDL is sufficiently new. (Also sanity
 dnl checks the results of sdl-config to some extent

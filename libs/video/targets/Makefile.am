@@ -16,12 +16,12 @@ libQFjs_la_LDFLAGS=	-version-info 1:0:0
 
 if JOYTYPE_LINUX
 libQFjs_la_SOURCES=      joy.c joy_linux.c
-endif
+else
 if JOYTYPE_WIN32
 libQFjs_la_SOURCES=      joy.c joy_win.c
-endif
-if JOYTYPE_NULL
+else
 libQFjs_la_SOURCES=      joy.c joy_null.c
+endif
 endif
 libQFjs_la_CFLAGS=       $(JOY_CFLAGS)
 libQFjs.la: $(libQFjs_la_OBJECTS) $(libQFjs_la_DEPENDENCIES)

@@ -30,12 +30,12 @@ libsnd_output_sgi_la_SOURCES= snd_sgi.c
 libsnd_output_sgi.la: $(libsnd_output_sgi_la_OBJECTS) $(libsnd_output_sgi_la_DEPENDENCIES)
 	$(LINK) -rpath $(pluginpath) $(libsnd_output_sgi_la_LDFLAGS) $(libsnd_output_sgi_la_OBJECTS) $(libsnd_output_sgi_la_LIBADD) $(LIBS)
 
-libsnd_output_sun_la_LDFLAGS= -version-info 1:0:0 $(SUN_LIBS)
+libsnd_output_sun_la_LDFLAGS= -version-info 1:0:0
 libsnd_output_sun_la_SOURCES= snd_sun.c
 libsnd_output_sun.la: $(libsnd_output_sun_la_OBJECTS) $(libsnd_output_sun_la_DEPENDENCIES)
 	$(LINK) -rpath $(pluginpath) $(libsnd_output_sun_la_LDFLAGS) $(libsnd_output_sun_la_OBJECTS) $(libsnd_output_sun_la_LIBADD) $(LIBS)
 
-libsnd_output_win_la_LDFLAGS= -version-info 1:0:0 $(WIN_LIBS)
+libsnd_output_win_la_LDFLAGS= -version-info 1:0:0 $(WINSND_LIBS)
 libsnd_output_win_la_SOURCES= snd_win.c
 libsnd_output_win.la: $(libsnd_output_win_la_OBJECTS) $(libsnd_output_win_la_DEPENDENCIES)
 	$(LINK) -rpath $(pluginpath) $(libsnd_output_win_la_LDFLAGS) $(libsnd_output_win_la_OBJECTS) $(libsnd_output_win_la_LIBADD) $(LIBS)

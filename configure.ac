@@ -840,6 +840,7 @@ QF_maGiC_VALUE
 	CD_PLUGIN_TARGETS="$CD_PLUGIN_TARGETS libcd_sgi.la"
 	SGI_CD_LIBS="-lcdaudio -lmediad -lds"
 )
+AC_SUBST(SGI_CD_LIBS)
 
 AC_EGREP_CPP([QF_maGiC_VALUE],
 	[
@@ -1164,6 +1165,11 @@ if test "x$GCC" = "xyes"; then
 	fi
 #	CFLAGS="$CFLAGS -Wall -pedantic"
 fi
+
+AS="$CC"
+ASFLAGS="$CFLAGS"
+AC_SUBST(AS)
+AC_SUBST(ASFLAGS)
 
 dnl ==================================================================
 dnl Make sure we link against a working zlib
