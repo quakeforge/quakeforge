@@ -850,6 +850,7 @@ Key_Event (int key, int alt_key, qboolean down)
 		&& key != K_CTRL && key != K_DEL && key != K_HOME && key != K_END
 		&& key != K_TAB) {
 //		M_ToggleMenu_f ();
+		Con_ToggleConsole_f ();
 		return;
 	}
 //
