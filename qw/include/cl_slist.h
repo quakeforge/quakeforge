@@ -57,7 +57,7 @@ server_entry_t *SL_LoadF(VFile *f, server_entry_t *start);
 void SL_SaveF(VFile *f, server_entry_t *start);
 
 void SL_Del_All(server_entry_t *start);
-void SL_Shutdown(server_entry_t *start);
+void SL_Shutdown(void);
 
 char *gettokstart(char *str, int req, char delim);
 int gettoklen(char *str, int req, char delim);
@@ -67,4 +67,9 @@ void timepassed (double time1, double *time2);
 void MSL_ParseServerList(char *msl_data);
 	
 void SList_Init (void);
+
+int SL_CheckStatus (char *cs_from, char *cs_data);
+
+void SL_CheckPing (char *cp_from);
+
 #endif	// _CL_SLIST_H

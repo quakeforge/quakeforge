@@ -66,8 +66,28 @@
 
 server_entry_t *slist;
 server_entry_t *all_slist;
+server_entry_t *fav_slist;
+int which_slist;
 
 int slist_last_details;
+
+void
+S_Refresh (server_entry_t *slrefresh)
+{
+	netadr_t addy;
+	char data_ping[] = "\377\377\377\377k";
+	char data_status[] = "\377\377\377\377status";
+
+	NET_StringToAdr (slrefresh->server, &addy);
+	if (!addy.port)
+		addy.port = ntohs (27500);
+
+	slrefresh->pingsent = Sys_DoubleTime ();
+	slrefresh->pongback = 0;
+	NET_SendPacket (6, data_ping, addy);
+	NET_SendPacket (11, data_status, addy);
+	slrefresh->waitstatus = 1;
+}
 
 server_entry_t *
 SL_Add (server_entry_t *start, char *ip, char *desc)
@@ -88,7 +108,9 @@ SL_Add (server_entry_t *start, char *ip, char *desc)
 		return (start);
 	}
 
-	for (p = start; p->next; p = p->next);	// Get to end of list
+	for (p = start; p->next; p = p->next)  //Get to end of list
+		if (strcmp(ip,p->server) == 0) //don't add duplicate
+			return (start);
 
 	p->next = calloc (1, sizeof (server_entry_t));
 
@@ -249,19 +271,24 @@ SL_SaveF (VFile *f, server_entry_t *start)
 }
 
 void
-SL_Shutdown (server_entry_t *start)
+SL_Shutdown (void)
 {
 	VFile      *f;
 	char        e_path[MAX_OSPATH];
 
-	if (start) {
+	if (which_slist)
+		slist = fav_slist;
+	
+	if (slist) {
 		Qexpand_squiggle (fs_userpath->string, e_path);
 		if ((f = Qopen (va ("%s/servers.txt", e_path), "w"))) {
-			SL_SaveF (f, start);
+			SL_SaveF (f, slist);
 			Qclose (f);
 		}
-		SL_Del_All (start);
+		SL_Del_All (slist);
 	}
+	if (all_slist)
+		SL_Del_All (all_slist);
 }
 
 void
@@ -354,7 +381,6 @@ SL_Connect (server_entry_t *sldata, int slitemno)
 	CL_BeginServerConnect ();
 }
 
-
 void
 SL_Update (server_entry_t *sldata)
 {
@@ -363,25 +389,12 @@ SL_Update (server_entry_t *sldata)
 	//         with some servers
 
 	int serv;
-	netadr_t addy;
 	server_entry_t *cp;
-	char data_ping[] = "\377\377\377\377k";
-	char data_status[] = "\377\377\377\377status";
-	
+		
 	for (serv = 0; serv < SL_Len (sldata); serv++)
 	{
 		cp = SL_Get_By_Num (sldata, serv);
-		NET_StringToAdr (cp->server, &addy);
-
-		if (!addy.port)
-			addy.port = ntohs (27500);
-
-		cp->pingsent = Sys_DoubleTime ();
-		cp->pongback = 0;
-		NET_SendPacket (6, data_ping, addy);
-		NET_SendPacket (11, data_status, addy);
-		cp->waitstatus = 1;
-								
+		S_Refresh (cp);
 	}
 }
 
@@ -401,12 +414,16 @@ SL_Con_Details (server_entry_t *sldata, int slitemno)
 		Con_Printf("N/A\n");
 	if (cp->status)
 	{
+		Con_Printf("Hostname: %s\n", Info_ValueForKey (cp->status, "hostname"));
 		Con_Printf("Game: %s\n", Info_ValueForKey (cp->status, "*gamedir"));
 		Con_Printf("Map: %s\n", Info_ValueForKey (cp->status, "map"));
 		for (i = 0; i < strlen(cp->status); i++)
 			if (cp->status[i] == '\n')
 				playercount++;
 		Con_Printf("Players: %i/%s\n", playercount, Info_ValueForKey(cp->status, "maxclients"));
+
+		// For Debug of Server Info 
+		// Con_Printf("%s\n",cp->status);
 	} else
 		Con_Printf("No Details Available\n");
 }
@@ -442,20 +459,39 @@ SL_Command (void)
 	
 	if (Cmd_Argc () == 1)
 		SL_Con_List(slist); 
-	else if (strcasecmp(Cmd_Argv(1),"update") == 0)
+	else if (strcasecmp(Cmd_Argv(1),"switch") == 0)
+	{
+		if (!which_slist)
+		{
+			fav_slist = slist;
+			slist = all_slist;
+			Con_Printf("Switched to Server List from Masters\n");
+			which_slist = 1;
+		} else {
+			all_slist = slist;
+			slist = fav_slist;
+			Con_Printf("Switched to Favorate Server List\n");
+			which_slist = 0;
+		}
+	}	
+	else if (strcasecmp(Cmd_Argv(1),"refresh") == 0)
 	{
 		if (Cmd_Argc () == 2)
 			SL_Update(slist);
 		else
+			Con_Printf("Syntax: slist refresh\n");
+	}
+	else if (strcasecmp(Cmd_Argv(1),"update") == 0)
+	{
+		if (Cmd_Argc () == 2)
+		{
+			if(!which_slist)
+				Con_Printf("ERROR: This of for updating the servers from a list of masters\n");
+			else	
+				SL_MasterUpdate();
+		}
+		else
 			Con_Printf("Syntax: slist update\n");
-	}
-	else if (strcasecmp(Cmd_Argv(1),"masterupdate") == 0)
-	{
-		SL_MasterUpdate();
-	}
-	else if (strcasecmp(Cmd_Argv(1),"masterlist") == 0)
-	{
-		SL_Con_List(all_slist);
 	}
 	else if (strcasecmp(Cmd_Argv(1),"connect") == 0)
 	{
@@ -479,13 +515,14 @@ SL_Command (void)
 			SL_Con_Details(slist,sltemp);
 	}
 }
+
 void
 MSL_ParseServerList(char *msl_data)
 {
 	int msl_ptr;
 	for (msl_ptr = 0; msl_ptr < strlen(msl_data); msl_ptr = msl_ptr + 6)
 	{
-		all_slist = SL_Add(all_slist, va("%i.%i.%i.%i:%i",
+		slist = SL_Add(slist, va("%i.%i.%i.%i:%i",
 			(byte)msl_data[msl_ptr],
 			(byte)msl_data[msl_ptr+1],
 			(byte)msl_data[msl_ptr+2],
@@ -509,8 +546,50 @@ void SList_Init (void)
 			slist = SL_LoadF (servlist, slist);
 			Qclose (servlist);
 		}
-		all_slist = NULL;
 	}
+	fav_slist = slist;
+	all_slist = NULL;
+	which_slist = 0;
 	Cmd_AddCommand("slist",SL_Command,"console commands to access server list\n");
+}
+
+int
+SL_CheckStatus (char *cs_from, char *cs_data)
+{
+	server_entry_t *temp;
+	
+	for (temp = slist; temp; temp = temp->next)
+		if (temp->waitstatus)
+		{
+			if (strcmp (cs_from, temp->server) == 0)
+			{
+				int i;
+				temp->status = realloc(temp->status, strlen(cs_data) + 1);
+				strcpy(temp->status, cs_data);
+				temp->waitstatus = 0;
+				for (i = 0; i < strlen(temp->status); i++)
+					if (temp->status[i] == '\n')
+					{
+						temp->status[i] = '\\';
+						break;
+					}
+				return (1);
+			}
+		}		
+	return (0);
+}
+
+void 
+SL_CheckPing (char *cp_from)
+{
+	server_entry_t *temp;
+
+	for (temp = slist; temp; temp = temp->next)
+		if (temp->pingsent && !temp->pongback) {
+			if (strcmp (cp_from, temp->server)) {
+				temp->pongback = Sys_DoubleTime ();
+				timepassed(temp->pingsent, &temp->pongback);
+			}
+		}
 }
 

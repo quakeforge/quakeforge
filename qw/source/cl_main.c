@@ -936,29 +936,12 @@ CL_ConnectionlessPacket (void)
 	}
 	// print command from somewhere
 	if (c == A2C_PRINT) {
-		netadr_t addy;
-		server_entry_t *temp;
 		s = MSG_ReadString (net_message);
-		for (temp = slist; temp; temp = temp->next)
-			if (temp->waitstatus)
-			{
-				NET_StringToAdr (temp->server, &addy);
-				if (NET_CompareBaseAdr (net_from, addy))
-				{
-					int i;
-					temp->status = realloc(temp->status, strlen(s) + 1);
-					strcpy(temp->status, s);
-					temp->waitstatus = 0;
-					for (i = 0; i < strlen(temp->status); i++)
-						if (temp->status[i] == '\n')
-						{
-							temp->status[i] = '\\';
-							break;
-						}
-					Con_Printf("status response\n");
-					return;
-				}
-			} 
+		if (SL_CheckStatus(NET_AdrToString (net_from), s))
+		{
+			Con_Printf("status response\n");
+			return;
+		} 
 		Con_Print (s);
 		return;
 	}
@@ -1008,25 +991,7 @@ CL_ConnectionlessPacket (void)
 	}
 
 	Con_Printf ("unknown:  %c\n", c);
-}
-
-
-void
-CL_PingPacket (void)
-{
-	server_entry_t *temp;
-	netadr_t addy;
-	MSG_ReadByte (net_message);;
-	for (temp = slist; temp; temp = temp->next)
-		if (temp->pingsent && !temp->pongback) {
-			NET_StringToAdr (temp->server, &addy);
-			if (NET_CompareBaseAdr (net_from, addy)) {
-				temp->pongback = Sys_DoubleTime ();
-				timepassed(temp->pingsent, &temp->pongback);
-			}
-		} 
 }		
-
 
 void
 CL_ReadPackets (void)
@@ -1044,7 +1009,7 @@ CL_ReadPackets (void)
 		}
 		if (*(char *) net_message->message->data == A2A_ACK)
 		{
-			CL_PingPacket ();
+			SL_CheckPing (NET_AdrToString (net_from));
 			continue;
 		}
 		if (net_message->message->cursize < 8) {
@@ -1734,7 +1699,7 @@ Host_Shutdown (void)
 	}
 	isdown = true;
 
-	SL_Shutdown (slist);
+	SL_Shutdown ();
 
 	Host_WriteConfiguration ();
 
