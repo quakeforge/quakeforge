@@ -888,7 +888,7 @@ void
 Sbar_DeathmatchOverlay (int start)
 {
 	char        num[12];
-	int         minutes, total, top, bottom, f, i, k, l, p, x, y;
+	int         minutes, fph, total, top, bottom, f, i, k, l, p, x, y;
 	int         skip = 10;
 	player_info_t *s;
 	qpic_t     *pic;
@@ -928,25 +928,25 @@ Sbar_DeathmatchOverlay (int start)
 		x = 4;
 //							 0    40 64   104   152  192 
 		if (cl_showscoresuid->int_val == 0)
-			Draw_String (x, y, "ping pl time frags team name");
+			Draw_String (x, y, "ping pl fph time frags team name");
 		else
-			Draw_String (x, y, " uid pl time frags team name");
+			Draw_String (x, y, " uid pl fph time frags team name");
 		y += 8;
 //		Draw_String ( x , y, "---- -- ---- ----- ---- ----------------");
-		Draw_String (x, y, "\x1d\x1e\x1e\x1f \x1d\x1f \x1d\x1e\x1e\x1f "
+		Draw_String (x, y, "\x1d\x1e\x1e\x1f \x1d\x1f \x1d\x1e\x1f \x1d\x1e\x1e\x1f "
 					 "\x1d\x1e\x1e\x1e\x1f \x1d\x1e\x1e\x1f \x1d\x1e\x1e"
-					 "\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1f");
+					 "\x1e\x1e\x1e\x1e\x1e\x1e\x1f");
 		y += 8;
 	} else {
 		x = 16;
 //							 0    40 64   104   152
 		if (cl_showscoresuid->int_val == 0)
-			Draw_String (x, y, "ping pl time frags name");
+			Draw_String (x, y, "ping pl fph time frags name");
 		else
-			Draw_String (x, y, " uid pl time frags name");
+			Draw_String (x, y, " uid pl fph time frags name");
 		y += 8;
 //		Draw_String ( x , y, "---- -- ---- ----- ----------------");
-		Draw_String (x, y, "\x1d\x1e\x1e\x1f \x1d\x1f \x1d\x1e\x1e\x1f "
+		Draw_String (x, y, "\x1d\x1e\x1e\x1f \x1d\x1f \x1d\x1e\x1f \x1d\x1e\x1e\x1f "
 					 "\x1d\x1e\x1e\x1e\x1f \x1d\x1e\x1e\x1e\x1e\x1e\x1e"
 					 "\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1f");
 		y += 8;
@@ -969,7 +969,7 @@ Sbar_DeathmatchOverlay (int start)
 		snprintf (num, sizeof (num), "%4i", p);
 		Draw_String (x, y, num);
 
-		// draw pl
+ 		// draw pl
 		p = s->pl;
 		snprintf (num, sizeof (num), "%3i", p);
 		if (p > 25)
@@ -978,24 +978,44 @@ Sbar_DeathmatchOverlay (int start)
 			Draw_String (x + 32, y, num);
 
 		if (s->spectator) {
-			Draw_String (x + 40, y, "(spectator)");
+			Draw_String (x + 72, y, "(spectator)");
 			// draw name
 			if (cl.teamplay)
-				Draw_String (x + 152 + 40, y, s->name);
+				Draw_String (x + 184 + 40, y, s->name);
 			else
-				Draw_String (x + 152, y, s->name);
+				Draw_String (x + 184, y, s->name);
 			y += skip;
 			continue;
 		}
-
-		// draw time
+		// get time
 		if (cl.intermission)
 			total = cl.completed_time - s->entertime;
 		else
 			total = realtime - s->entertime;
 		minutes = (int) total / 60;
-		snprintf (num, sizeof (num), "%4i", minutes);
+
+		// get frags
+		f = s->frags;
+
+		// get fph
+		if(total != 0)
+		{
+			fph = (3600/total)*f;
+		}
+		else
+		{
+			fph = 0;
+		}
+		if(fph >= 999) fph = 999;
+		if(fph <= -999) fph = -999;
+		
+		// draw fph
+		snprintf (num, sizeof(num), "%3i", fph);
 		Draw_String (x + 64, y, num);
+		
+		//draw time
+		snprintf (num, sizeof (num), "%4i", minutes);
+		Draw_String (x + 96, y, num);
 
 		// draw background
 		top = s->topcolor;
@@ -1004,27 +1024,26 @@ Sbar_DeathmatchOverlay (int start)
 		bottom = Sbar_ColorForMap (bottom);
 
 		if (largegame)
-			Draw_Fill (x + 104, y + 1, 40, 3, top);
+			Draw_Fill (x + 136, y + 1, 40, 3, top);
 		else
-			Draw_Fill (x + 104, y, 40, 4, top);
-		Draw_Fill (x + 104, y + 4, 40, 4, bottom);
+			Draw_Fill (x + 136, y, 40, 4, top);
+		Draw_Fill (x + 136, y + 4, 40, 4, bottom);
 
 		// draw number
-		f = s->frags;
 		if (k != cl.playernum) {
 			snprintf (num, sizeof (num), " %3i ", f);
 		} else {
 			snprintf (num, sizeof (num), "\x10%3i\x11", f);
 		}
 
-		Draw_nString (x + 104, y, num, 5);
+		Draw_nString (x + 136, y, num, 5);
 
 		// team
 		if (cl.teamplay) {
-			Draw_nString (x + 152, y, s->team->value, 4);
-			Draw_String (x + 152 + 40, y, s->name);
+			Draw_nString (x + 184, y, s->team->value, 4);
+			Draw_String (x + 184 + 40, y, s->name);
 		} else
-			Draw_String (x + 152, y, s->name);
+			Draw_String (x + 184, y, s->name);
 
 		y += skip;
 	}
