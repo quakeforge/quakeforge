@@ -51,6 +51,7 @@ static qboolean	snd_firsttime = true, snd_iswave;
 
 static int	sample16;
 static int	snd_sent, snd_completed;
+int snd_blocked = 0;
 
 static HPSTR		lpData;
 static LPWAVEHDR	lpWaveHdr;
@@ -78,11 +79,8 @@ S_BlockSound
 void
 S_BlockSound ( void )
 {
-	snd_blocked++;
-
-	if (snd_blocked == 1) {
+	if (++snd_blocked == 1)
 		waveOutReset(hWaveOut);
-	}
 }
 
 
@@ -94,6 +92,8 @@ S_UnblockSound
 void
 S_UnblockSound ( void )
 {
+	if (!snd_blocked)
+		return;
 	snd_blocked--;
 }
 

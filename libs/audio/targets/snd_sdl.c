@@ -36,6 +36,7 @@
 # include <strings.h>
 #endif
 
+#include <SDL.h>
 #include <SDL_audio.h>
 #include <SDL_byteorder.h>
 #include <stdlib.h>
@@ -49,9 +50,10 @@
 
 static dma_t the_shm;
 static int  snd_inited;
+int snd_blocked = 0;
 
-extern int  desired_speed;
-extern int  desired_bits;
+int desired_speed = 11025;
+int desired_bits = 16;
 
 plugin_t           plugin_info;
 plugin_data_t      plugin_info_data;
@@ -77,7 +79,7 @@ paint_audio (void *unused, Uint8 * stream, int len)
 		shm->samplepos += streamsamples;
 		while (shm->samplepos >= shm->samples)
 			shm->samplepos -= shm->samples;
-		SND_PaintChannels (*plugin_info_snd_output_data.soundtime + streamsamples);
+//		SND_PaintChannels (*plugin_info_snd_output_data.soundtime + streamsamples);
 
 		if (shm->samplepos + streamsamples <= shm->samples)
 			memcpy (stream, shm->buffer + sampleposbytes, len);
@@ -91,12 +93,22 @@ paint_audio (void *unused, Uint8 * stream, int len)
 	}
 }
 
+void
+SNDDMA_Init_Cvars (void)
+{
+}
+
 qboolean
 SNDDMA_Init (void)
 {
 	SDL_AudioSpec desired, obtained;
 
 	snd_inited = 0;
+
+	if (SDL_Init (SDL_INIT_AUDIO) < 0) {
+		Con_Printf ("Couldn't initialize SDL AUDIO: %s\n", SDL_GetError ());
+		return 0;
+	};
 
 	/* Set up the desired format */
 	desired.freq = desired_speed;
@@ -207,11 +219,15 @@ SNDDMA_Submit (void)
 void
 SNDDMA_BlockSound (void)
 {
+	++snd_blocked;
 }
 
 void
 SNDDMA_UnblockSound (void)
 {
+	if (!snd_blocked)
+		return;
+	--snd_blocked;
 }
 
 plugin_t *
@@ -235,8 +251,10 @@ PluginInfo (void) {
     plugin_info_funcs.input = NULL;
     plugin_info_funcs.snd_output = &plugin_info_snd_output_funcs;
 
-//    plugin_info_general_funcs.p_Init = SNDDMA_Init; // FIXME
-    plugin_info_general_funcs.p_Shutdown = SNDDMA_Shutdown;
+    plugin_info_general_funcs.p_Init = SNDDMA_Init_Cvars;
+    plugin_info_general_funcs.p_Shutdown = NULL;
+	plugin_info_snd_output_funcs.pS_O_Init = SNDDMA_Init;
+	plugin_info_snd_output_funcs.pS_O_Shutdown = SNDDMA_Shutdown;
     plugin_info_snd_output_funcs.pS_O_GetDMAPos = SNDDMA_GetDMAPos;
     plugin_info_snd_output_funcs.pS_O_Submit = SNDDMA_Submit;
     plugin_info_snd_output_funcs.pS_O_BlockSound = SNDDMA_BlockSound;

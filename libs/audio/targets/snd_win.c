@@ -59,6 +59,7 @@ static qboolean primary_format_set;
 
 static int  sample16;
 static int  snd_sent, snd_completed;
+int snd_blocked = 0;
 volatile dma_t sn;
 
 /* 
@@ -95,14 +96,10 @@ qboolean    SNDDMA_InitWav (void);
 void
 S_BlockSound (void)
 {
-
-// DirectSound takes care of blocking itself
-	if (snd_iswave) {
-		snd_blocked++;
-
-		if (snd_blocked == 1)
+	// DirectSound takes care of blocking itself
+	if (snd_iswave)
+		if (++snd_blocked == 1)
 			waveOutReset (hWaveOut);
-	}
 }
 
 
@@ -112,11 +109,10 @@ S_BlockSound (void)
 void
 S_UnblockSound (void)
 {
-
-// DirectSound takes care of blocking itself
-	if (snd_iswave) {
-		snd_blocked--;
-	}
+	// DirectSound takes care of blocking itself
+	if (snd_iswave)
+		if (!snd_blocked)
+			--snd_blocked;
 }
 
 

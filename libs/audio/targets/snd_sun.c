@@ -54,6 +54,7 @@
 
 int         audio_fd;
 int         snd_inited;
+int snd_blocked = 0;
 
 static int  wbufp;
 static audio_info_t info;
@@ -240,6 +241,20 @@ SNDDMA_Submit (void)
 
 }
 
+void
+SNDDMA_BlockSound (void)
+{
+	++snd_blocked;
+}
+
+void
+SNDDMA_UnblockSound (void)
+{
+	if (!snd_blocked)
+		return;
+	--snd_blocked;
+}
+
 plugin_t *
 PluginInfo (void) {
     plugin_info.type = qfp_sound;
@@ -281,14 +296,4 @@ PluginInfo (void) {
 	plugin_info_sound_funcs.pS_UnblockSound = SND_UnblockSound;
 
     return &plugin_info;
-}
-
-void
-SNDDMA_BlockSound (void)
-{
-}
-
-void
-SNDDMA_UnblockSound (void)
-{
 }

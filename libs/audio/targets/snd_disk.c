@@ -53,6 +53,7 @@
 
 static int  snd_inited;
 VFile      *snd_file;
+int snd_blocked = 0;
 volatile dma_t sn;
 
 plugin_t           plugin_info;
@@ -131,12 +132,16 @@ SNDDMA_Submit (void)
 
 void
 SNDDMA_BlockSound (void)                
-{   
+{
+	++snd_blocked;
 }   
     
 void
 SNDDMA_UnblockSound (void)
 {
+	if (!snd_blocked)
+		return;
+	--snd_blocked;
 }
 
 plugin_t *
