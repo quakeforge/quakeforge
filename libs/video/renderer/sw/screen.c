@@ -585,6 +585,10 @@ SCR_ScreenShot (int width, int height)
 	if (!tex)
 		return 0;
 
+	tex->width = w;
+	tex->height = h;
+	tex->palette = vid.palette;
+
 	for (y = 0; y < h; y++) {
 		dest = tex->data + (w * y);
 

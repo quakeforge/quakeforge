@@ -530,6 +530,10 @@ SCR_ScreenShot (int width, int height)
 	fracw = (float) vid.width / (float) w;
 	frach = (float) vid.height / (float) h;
 
+	tex->width = w;
+	tex->height = h;
+	tex->palette = vid.palette;
+
 	for (y = 0; y < h; y++) {
 		dest = tex->data + (w * 3 * y);
 
