@@ -6,7 +6,7 @@ EXTRA_LTLIBRARIES= \
 	libQFjs.la libQFfbdev.la libQFglx.la libQFsvga.la libQFx11.la \
 	libQFsdl.la libQFsdl32.la libQFsgl.la libQFwgl.la
 
-noinst_LTLIBRARIES=	libasm.la
+noinst_LTLIBRARIES=	libasm.la @VID_TARGETS_NOINST@
 
 if ASM_ARCH
 libasm_la_SOURCES= d_copy.S
