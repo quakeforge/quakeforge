@@ -1,0 +1,11 @@
+Server: foo.com
+ walla.bsp         19kB
+ joe.mdl           31kB
+Server: bar.org:1080
+ zing.wav          32kB
+ zang.wav           5kB
+
+
+Download Progress: 0/87kB
+
+Continue?  [Cancel] [OK]
