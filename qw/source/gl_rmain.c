@@ -981,9 +981,9 @@ MYgluPerspective (GLdouble fovy, GLdouble aspect, GLdouble zNear, GLdouble zFar)
 static void
 R_SetupGL (void)
 {
-	float       screenaspect;
-	extern int  glwidth, glheight;
-	int         x, x2, y2, y, w, h;
+	float		screenaspect;
+	extern int	glwidth, glheight;
+	int			x, x2, y2, y, w, h;
 
 	// set up viewpoint
 	glMatrixMode (GL_PROJECTION);
@@ -991,9 +991,8 @@ R_SetupGL (void)
 	x = r_refdef.vrect.x * glwidth / vid.width;
 	x2 = (r_refdef.vrect.x + r_refdef.vrect.width) * glwidth / vid.width;
 	y = (vid.height - r_refdef.vrect.y) * glheight / vid.height;
-	y2 =
-		(vid.height -
-		 (r_refdef.vrect.y + r_refdef.vrect.height)) * glheight / vid.height;
+	y2 = (vid.height - (r_refdef.vrect.y + r_refdef.vrect.height)) * glheight
+		/ vid.height;
 
 	// fudge around because of frac screen scale
 	if (x > 0)
@@ -1016,6 +1015,15 @@ R_SetupGL (void)
 	glViewport (glx + x, gly + y2, w, h);
 	screenaspect = (float) r_refdef.vrect.width / r_refdef.vrect.height;
 	MYgluPerspective (r_refdef.fov_y, screenaspect, 4, 4096);
+
+	if (mirror) {
+		if (mirror_plane->normal[2])
+			glScalef (1, -1, 1);
+		else
+			glScalef (-1, 1, 1);
+		glCullFace (GL_BACK);
+	} else
+		glCullFace (GL_FRONT);
 
 	glMatrixMode (GL_MODELVIEW);
 	glLoadIdentity ();
@@ -1055,6 +1063,7 @@ R_Clear (void)
 
 	glDepthRange (gldepthmin, gldepthmax);
 }
+
 
 void
 R_RenderScene (void)

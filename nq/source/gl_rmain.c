@@ -968,9 +968,9 @@ MYgluPerspective (GLdouble fovy, GLdouble aspect, GLdouble zNear, GLdouble zFar)
 static void
 R_SetupGL (void)
 {
-	float       screenaspect;
-	extern int  glwidth, glheight;
-	int         x, x2, y2, y, w, h;
+	float		screenaspect;
+	extern int	glwidth, glheight;
+	int			x, x2, y2, y, w, h;
 
 	// set up viewpoint
 	glMatrixMode (GL_PROJECTION);
@@ -978,9 +978,8 @@ R_SetupGL (void)
 	x = r_refdef.vrect.x * glwidth / vid.width;
 	x2 = (r_refdef.vrect.x + r_refdef.vrect.width) * glwidth / vid.width;
 	y = (vid.height - r_refdef.vrect.y) * glheight / vid.height;
-	y2 =
-		(vid.height -
-		 (r_refdef.vrect.y + r_refdef.vrect.height)) * glheight / vid.height;
+	y2 = (vid.height - (r_refdef.vrect.y + r_refdef.vrect.height)) * glheight
+		/ vid.height;
 
 	// fudge around because of frac screen scale
 	if (x > 0)
@@ -1027,11 +1026,6 @@ R_SetupGL (void)
 	glGetFloatv (GL_MODELVIEW_MATRIX, r_world_matrix);
 
 	// set drawing parms
-	if (gl_cull->int_val)
-		glEnable (GL_CULL_FACE);
-	else
-		glDisable (GL_CULL_FACE);
-
 	glEnable (GL_CULL_FACE);
 	glDisable (GL_ALPHA_TEST);
 	glAlphaFunc (GL_GREATER, 0.5);
@@ -1056,6 +1050,7 @@ R_Clear (void)
 
 	glDepthRange (gldepthmin, gldepthmax);
 }
+
 
 void
 R_RenderScene (void)

@@ -18,7 +18,6 @@ cvar_t     *gl_clear;
 cvar_t     *gl_conalpha;
 cvar_t     *gl_conspin;
 cvar_t     *gl_constretch;
-cvar_t     *gl_cull; // FIXME
 cvar_t     *gl_dlight_lightmap;
 cvar_t     *gl_dlight_polyblend;
 cvar_t     *gl_dlight_smooth;
@@ -129,7 +128,6 @@ R_Init_Cvars (void)
 						   "speed at which the console spins");
 	gl_constretch = Cvar_Get ("gl_constretch", "0", CVAR_ARCHIVE, NULL,
 							  "toggle console between slide and stretch");
-	gl_cull = Cvar_Get ("gl_cull", "1", CVAR_NONE, NULL, "None");
 	gl_dlight_lightmap = Cvar_Get ("gl_dlight_lightmap", "1", CVAR_ARCHIVE,
 								   NULL, "Set to 1 for high quality dynamic "
 								   "lighting.");
