@@ -32,8 +32,8 @@
 # include "config.h"
 #endif
 
-static __attribute__ ((unused)) const char rcsid[] =
-        "$Id$";
+static __attribute__ ((unused))
+const char  rcsid[] = "$Id$";
 
 #include <stdlib.h>
 #include <string.h>
@@ -61,17 +61,17 @@ GIB_Buffer_Construct (struct cbuf_s *cbuf)
 void
 GIB_Buffer_Destruct (struct cbuf_s *cbuf)
 {
-	gib_buffer_data_t *g = GIB_DATA(cbuf);
+	gib_buffer_data_t *g = GIB_DATA (cbuf);
 	unsigned int i, j;
-	
+
 	dstring_delete (g->arg_composite);
 	if (g->locals)
 		Hash_DelTable (g->locals);
 	if (g->program)
 		GIB_Tree_Unref (&g->program);
 	if (g->script && !(--g->script->refs)) {
-		free ((void *)g->script->text);
-		free ((void *)g->script->file);
+		free ((void *) g->script->text);
+		free ((void *) g->script->file);
 		free (g->script);
 	}
 	for (i = 0; i < g->stack.size; i++) {
@@ -88,8 +88,8 @@ GIB_Buffer_Destruct (struct cbuf_s *cbuf)
 void
 GIB_Buffer_Reset (struct cbuf_s *cbuf)
 {
-	gib_buffer_data_t *g = GIB_DATA(cbuf);
-	
+	gib_buffer_data_t *g = GIB_DATA (cbuf);
+
 	if (g->locals)
 		Hash_FlushTable (g->locals);
 	g->globals = gib_globals;
@@ -103,19 +103,20 @@ GIB_Buffer_Reset (struct cbuf_s *cbuf)
 	g->script = 0;
 	g->stack.p = 0;
 	g->waitret = g->done = false;
-	
+
 }
 
 void
-GIB_Buffer_Set_Program (cbuf_t *cbuf, gib_tree_t *program)
+GIB_Buffer_Set_Program (cbuf_t * cbuf, gib_tree_t * program)
 {
-	GIB_DATA(cbuf)->program = program;
+	GIB_DATA (cbuf)->program = program;
 }
 
 static unsigned int
 GIB_Buffer_Get_Line_Num (const char *program, unsigned int pos)
 {
 	unsigned int i, line;
+
 	for (i = 0, line = 1; i < pos; i++)
 		if (program[i] == '\n')
 			line++;
@@ -123,7 +124,7 @@ GIB_Buffer_Get_Line_Num (const char *program, unsigned int pos)
 }
 
 void
-GIB_Buffer_Add (cbuf_t *cbuf, const char *str)
+GIB_Buffer_Add (cbuf_t * cbuf, const char *str)
 {
 	gib_buffer_data_t *g = GIB_DATA (cbuf);
 	gib_tree_t **save, *cur;
@@ -134,125 +135,126 @@ GIB_Buffer_Add (cbuf_t *cbuf, const char *str)
 	} else
 		save = &g->program;
 	if (!(*save = GIB_Parse_Lines (str, 0, TREE_NORMAL)))
-		Sys_Printf (
-			"-----------------\n"
-			"|GIB Parse Error|\n"
-			"-----------------\n"
-			"Parse error while adding text to GIB buffer.\n"
-			"Line %u: %s\n", GIB_Buffer_Get_Line_Num (str, GIB_Parse_ErrorPos()), GIB_Parse_ErrorMsg()
+		Sys_Printf ("-----------------\n"
+					"|GIB Parse Error|\n"
+					"-----------------\n"
+					"Parse error while adding text to GIB buffer.\n"
+					"Line %u: %s\n", GIB_Buffer_Get_Line_Num (str,
+															  GIB_Parse_ErrorPos
+															  ()),
+					GIB_Parse_ErrorMsg ()
 			);
 }
 
 void
-GIB_Buffer_Insert (cbuf_t *cbuf, const char *str)
+GIB_Buffer_Insert (cbuf_t * cbuf, const char *str)
 {
 	gib_buffer_data_t *g = GIB_DATA (cbuf);
 	gib_tree_t *lines, *cur;
 
 	if ((lines = GIB_Parse_Lines (str, 0, TREE_NORMAL))) {
 		for (cur = lines; cur; cur = cur->next);
-		//if (g->ip) { // This buffer is already running!
-			
+		// if (g->ip) { // This buffer is already running!
+
 		GIB_Tree_Unref (&g->program);
 		cur->next = g->program;
 		g->program = lines;
 	} else
-		Sys_Printf (
-			"-----------------\n"
-			"|GIB Parse Error|\n"
-			"-----------------\n"
-			"Parse error while inserting text into GIB buffer.\n"
-			"Line %u: %s\n", GIB_Buffer_Get_Line_Num (str, GIB_Parse_ErrorPos()), GIB_Parse_ErrorMsg()
+		Sys_Printf ("-----------------\n"
+					"|GIB Parse Error|\n"
+					"-----------------\n"
+					"Parse error while inserting text into GIB buffer.\n"
+					"Line %u: %s\n", GIB_Buffer_Get_Line_Num (str,
+															  GIB_Parse_ErrorPos
+															  ()),
+					GIB_Parse_ErrorMsg ()
 			);
 }
 
 void
 GIB_Buffer_Push_Sstack (struct cbuf_s *cbuf)
 {
-	gib_buffer_data_t *g = GIB_DATA(cbuf);
+	gib_buffer_data_t *g = GIB_DATA (cbuf);
+
 	if (++g->stack.p > g->stack.size) {
-		g->stack.values = realloc(g->stack.values, sizeof (struct gib_dsarray_s) * g->stack.p);
-		g->stack.values[g->stack.p-1].dstrs = 0;
-		g->stack.values[g->stack.p-1].size = g->stack.values[g->stack.p-1].realsize = 0;
+		g->stack.values =
+			realloc (g->stack.values,
+					 sizeof (struct gib_dsarray_s) * g->stack.p);
+		g->stack.values[g->stack.p - 1].dstrs = 0;
+		g->stack.values[g->stack.p - 1].size =
+			g->stack.values[g->stack.p - 1].realsize = 0;
 		g->stack.size = g->stack.p;
 	}
-	g->stack.values[g->stack.p-1].size = 0;
+	g->stack.values[g->stack.p - 1].size = 0;
 }
 
 void
 GIB_Buffer_Pop_Sstack (struct cbuf_s *cbuf)
 {
-	GIB_DATA(cbuf)->stack.p--;
+	GIB_DATA (cbuf)->stack.p--;
 }
 
 dstring_t *
 GIB_Buffer_Dsarray_Get (struct cbuf_s *cbuf)
 {
-	struct gib_dsarray_s *vals = GIB_DATA(cbuf)->stack.values+GIB_DATA(cbuf)->stack.p-1;
+	struct gib_dsarray_s *vals =
+		GIB_DATA (cbuf)->stack.values + GIB_DATA (cbuf)->stack.p - 1;
 	if (++vals->size > vals->realsize) {
 		vals->dstrs = realloc (vals->dstrs, sizeof (dstring_t *) * vals->size);
-		vals->dstrs[vals->size-1] = dstring_newstr ();
+		vals->dstrs[vals->size - 1] = dstring_newstr ();
 		vals->realsize = vals->size;
 	} else
-		dstring_clearstr (vals->dstrs[vals->size-1]);
-	return vals->dstrs[vals->size-1];
+		dstring_clearstr (vals->dstrs[vals->size - 1]);
+	return vals->dstrs[vals->size - 1];
 }
 
 
 static int
-GIB_Buffer_Get_Line_Info (cbuf_t *cbuf, char **line)
+GIB_Buffer_Get_Line_Info (cbuf_t * cbuf, char **line)
 {
 	const char *text;
 	unsigned int ofs, i, start, linenum;
-	
+
 	// Do we have a copy of the original program this buffer comes from?
-	if (GIB_DATA(cbuf)->script) {
-		text = GIB_DATA(cbuf)->script->text;
-		for (ofs = GIB_DATA(cbuf)->ip->start, start = 0, i = 0, linenum = 1; i <= ofs; i++)
+	if (GIB_DATA (cbuf)->script) {
+		text = GIB_DATA (cbuf)->script->text;
+		for (ofs = GIB_DATA (cbuf)->ip->start, start = 0, i = 0, linenum = 1;
+			 i <= ofs; i++)
 			if (text[i] == '\n') {
-				start = i+1;
+				start = i + 1;
 				linenum++;
 			}
 		while (text[i] != '\n')
 			i++;
 		*line = malloc (i - start + 1);
-		memcpy (*line, text+start, i - start);
-		(*line)[i-start] = 0;
+		memcpy (*line, text + start, i - start);
+		(*line)[i - start] = 0;
 		return linenum;
 	} else {
-		*line = strdup (GIB_DATA(cbuf)->ip->str);
+		*line = strdup (GIB_DATA (cbuf)->ip->str);
 		return -1;
 	}
 }
 
 void
-GIB_Buffer_Error (cbuf_t *cbuf, const char *type, const char *fmt, va_list args)
+GIB_Buffer_Error (cbuf_t * cbuf, const char *type, const char *fmt,
+				  va_list args)
 {
-	char *line;
-	int linenum;
-	dstring_t *message = dstring_newstr();
+	char       *line;
+	int         linenum;
+	dstring_t  *message = dstring_newstr ();
+
 	dvsprintf (message, fmt, args);
 	va_end (args);
-	Sys_Printf (	"---------------------\n"
-			"|GIB Execution Error|\n"
-			"---------------------\n"
-			"Type: %s\n",
-				type
-	           );
+	Sys_Printf ("---------------------\n"
+				"|GIB Execution Error|\n"
+				"---------------------\n" "Type: %s\n", type);
 	if ((linenum = GIB_Buffer_Get_Line_Info (cbuf, &line)) != -1)
-		Sys_Printf (	"%s:%i: %s\n"
-				"-->%s\n",
-					GIB_DATA(cbuf)->script->file,
-					linenum,
-					message->str,
-					line
-		           );
+		Sys_Printf ("%s:%i: %s\n"
+					"-->%s\n",
+					GIB_DATA (cbuf)->script->file, linenum, message->str, line);
 	else
-		Sys_Printf (	"%s\n"
-				"-->%s\n",
-					message->str,
-					line
-		           );
+		Sys_Printf ("%s\n" "-->%s\n", message->str, line);
 	cbuf->state = CBUF_STATE_ERROR;
 	dstring_delete (message);
 	free (line);

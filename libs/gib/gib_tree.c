@@ -32,8 +32,8 @@
 # include "config.h"
 #endif
 
-static __attribute__ ((unused)) const char rcsid[] =
-        "$Id$";
+static __attribute__ ((unused))
+const char  rcsid[] = "$Id$";
 
 #include <stdlib.h>
 #include <string.h>
@@ -46,14 +46,15 @@ gib_tree_t *
 GIB_Tree_New (gib_tree_flags_t flags)
 {
 	gib_tree_t *new = calloc (1, sizeof (gib_tree_t));
+
 	new->flags = flags;
 	// All nodes are created for a reason, so start with 1 ref
-	new->refs = 1; 
+	new->refs = 1;
 	return new;
 }
 
 void
-GIB_Tree_Free_Recursive (gib_tree_t *tree)
+GIB_Tree_Free_Recursive (gib_tree_t * tree)
 {
 	gib_tree_t *n;
 
@@ -65,26 +66,24 @@ GIB_Tree_Free_Recursive (gib_tree_t *tree)
 			// Parent is about to bite the dust, meaning one less reference
 			GIB_Tree_Unref (&tree->children);
 		if (tree->str)
-			free((void *) tree->str);
-		free(tree);
+			free ((void *) tree->str);
+		free (tree);
 	}
 }
 
 void
-GIB_Tree_Ref (gib_tree_t **tp)
+GIB_Tree_Ref (gib_tree_t ** tp)
 {
 	(*tp)->refs++;
 	Sys_DPrintf ("Ref: %p %u\n", *tp, (*tp)->refs);
 }
 
 void
-GIB_Tree_Unref (gib_tree_t **tp)
+GIB_Tree_Unref (gib_tree_t ** tp)
 {
-	Sys_DPrintf ("Unref: %p %u\n", *tp, (*tp)->refs-1);
+	Sys_DPrintf ("Unref: %p %u\n", *tp, (*tp)->refs - 1);
 	if (!(--(*tp)->refs)) {
 		GIB_Tree_Free_Recursive (*tp);
 		*tp = 0;
 	}
 }
-		
-	

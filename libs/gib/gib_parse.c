@@ -32,8 +32,8 @@
 # include "config.h"
 #endif
 
-static __attribute__ ((unused)) const char rcsid[] =
-        "$Id$";
+static __attribute__ ((unused))
+const char  rcsid[] = "$Id$";
 
 #include <ctype.h>
 #include <string.h>
@@ -87,6 +87,7 @@ static char
 GIB_Parse_Match_Dquote (const char *str, unsigned int *i)
 {
 	unsigned int n = *i;
+
 	for ((*i)++; str[*i]; (*i)++) {
 		if (str[*i] == '\n')
 			break;
@@ -100,8 +101,9 @@ GIB_Parse_Match_Dquote (const char *str, unsigned int *i)
 char
 GIB_Parse_Match_Brace (const char *str, unsigned int *i)
 {
-	char c;
+	char        c;
 	unsigned int n = *i;
+
 	for ((*i)++; str[*i]; (*i)++) {
 		if (str[*i] == '\"') {
 			if ((c = GIB_Parse_Match_Dquote (str, i)))
@@ -110,7 +112,7 @@ GIB_Parse_Match_Brace (const char *str, unsigned int *i)
 			if ((c = GIB_Parse_Match_Brace (str, i)))
 				return c;
 		} else if (str[*i] == '}')
-				return 0;
+			return 0;
 	}
 	*i = n;
 	return '{';
@@ -119,8 +121,9 @@ GIB_Parse_Match_Brace (const char *str, unsigned int *i)
 char
 GIB_Parse_Match_Paren (const char *str, unsigned int *i)
 {
-	char c;
+	char        c;
 	unsigned int n = *i;
+
 	for ((*i)++; str[*i]; (*i)++) {
 		if (str[*i] == '(') {
 			if ((c = GIB_Parse_Match_Paren (str, i)))
@@ -138,12 +141,13 @@ GIB_Parse_Match_Paren (const char *str, unsigned int *i)
 char
 GIB_Parse_Match_Backtick (const char *str, unsigned int *i)
 {
-	char c;
+	char        c;
 	unsigned int n = *i;
+
 	for ((*i)++; str[*i]; (*i)++) {
 		if (str[*i] == '`')
 			return 0;
-		else if (str[*i] == '\"') { // Skip over strings as usual
+		else if (str[*i] == '\"') {		// Skip over strings as usual
 			if ((c = GIB_Parse_Match_Dquote (str, i)))
 				return c;
 		}
@@ -155,8 +159,9 @@ GIB_Parse_Match_Backtick (const char *str, unsigned int *i)
 char
 GIB_Parse_Match_Index (const char *str, unsigned int *i)
 {
-	char c;
+	char        c;
 	unsigned int n = *i;
+
 	for ((*i)++; str[*i]; (*i)++) {
 		if (str[*i] == '[' && (c = GIB_Parse_Match_Index (str, i)))
 			return c;
@@ -170,12 +175,13 @@ GIB_Parse_Match_Index (const char *str, unsigned int *i)
 char
 GIB_Parse_Match_Var (const char *str, unsigned int *i)
 {
-	char c;
+	char        c;
+
 	(*i)++;
 	if (str[*i] == '{' && (c = GIB_Parse_Match_Brace (str, i)))
 		return c;
 	else {
-		for (; isalnum((byte) str[*i]) || str[*i] == '_'; (*i)++);
+		for (; isalnum ((byte) str[*i]) || str[*i] == '_'; (*i)++);
 		if (str[*i] == '[') {
 			if ((c = GIB_Parse_Match_Index (str, i)))
 				return c;
@@ -185,7 +191,7 @@ GIB_Parse_Match_Var (const char *str, unsigned int *i)
 	return 0;
 }
 
-qboolean gib_parse_error;
+qboolean    gib_parse_error;
 unsigned int gib_parse_error_pos;
 const char *gib_parse_error_msg;
 
@@ -212,19 +218,20 @@ GIB_Parse_ErrorPos (void)
 // FIXME: Concatenation in stupid circumstances should generate errors
 
 static gib_tree_t *
-GIB_Parse_Tokens (const char *program, unsigned int *i, unsigned int pofs, gib_tree_flags_t flags, gib_tree_t **embedded)
+GIB_Parse_Tokens (const char *program, unsigned int *i, unsigned int pofs,
+				  gib_tree_flags_t flags, gib_tree_t ** embedded)
 {
-	char c, delim, *str;
+	char        c, delim, *str;
 	unsigned int tstart, start;
 	gib_tree_t *nodes = 0, *cur, *new, *embs = 0, *tmp;
 	gib_tree_t **node = &nodes;
-	qboolean cat = false;
+	qboolean    cat = false;
 
 	gib_parse_error = false;
 
 	while (1) {
 		// Skip whitespace
-		while (program[*i] != '\n' && isspace((byte)program[*i]))
+		while (program[*i] != '\n' && isspace ((byte) program[*i]))
 			(*i)++;
 		// Check for concatenation, skip comma and any more whitespace
 		if (program[*i] == ',') {
@@ -256,7 +263,9 @@ GIB_Parse_Tokens (const char *program, unsigned int *i, unsigned int pofs, gib_t
 				// Find the end of a "normal" token
 				delim = ' ';
 				tstart = *i;
-				for (;program[*i] && !isspace((byte)program[*i]) && program[*i] != ',' && program[*i] != ';'; (*i)++) {
+				for (;
+					 program[*i] && !isspace ((byte) program[*i])
+					 && program[*i] != ',' && program[*i] != ';'; (*i)++) {
 					if (program[*i] == '{') {
 						if ((c = GIB_Parse_Match_Brace (program, i)))
 							goto ERROR;
@@ -266,9 +275,10 @@ GIB_Parse_Tokens (const char *program, unsigned int *i, unsigned int pofs, gib_t
 					} else if (program[*i] == '`') {
 						if ((c = GIB_Parse_Match_Backtick (program, i)))
 							goto ERROR;
-					// Handle comments
-					} else if (program[*i] == '/' && program[*i+1] == '/') {
-						for((*i) += 2; program[*i] && program[*i] != '\n'; (*i)++);
+						// Handle comments
+					} else if (program[*i] == '/' && program[*i + 1] == '/') {
+						for ((*i) += 2; program[*i] && program[*i] != '\n';
+							 (*i)++);
 						goto DONE;
 					}
 				}
@@ -278,20 +288,24 @@ GIB_Parse_Tokens (const char *program, unsigned int *i, unsigned int pofs, gib_t
 		cur->start = start + pofs;
 		cur->end = *i + pofs;
 		cur->delim = delim;
-		str = calloc (*i - tstart + 1, sizeof(char));
-		memcpy (str, program+tstart, *i - tstart);
-		
-		// Don't bother parsing further if we are concatenating, as the resulting
+		str = calloc (*i - tstart + 1, sizeof (char));
+		memcpy (str, program + tstart, *i - tstart);
+
+		// Don't bother parsing further if we are concatenating, as the
+		// resulting
 		// string would differ from the parsed program.
 		if (cur->delim == '{' && !cat) {
 			// Try to parse sub-program
-			if (!(new = GIB_Parse_Lines (str, tstart+pofs, flags)))
+			if (!(new = GIB_Parse_Lines (str, tstart + pofs, flags)))
 				goto ERROR;
 			cur->children = new;
-		// Check for embedded commands/variables
+			// Check for embedded commands/variables
 		} else if (cur->delim == ' ' || cur->delim == '(') {
-			if (!(cur->children = GIB_Parse_Embedded (str, tstart+pofs, flags, &new))) {
-				// There could be no embedded elements, so check for a real error
+			if (!
+				(cur->children =
+				 GIB_Parse_Embedded (str, tstart + pofs, flags, &new))) {
+				// There could be no embedded elements, so check for a real
+				// error
 				if (gib_parse_error)
 					goto ERROR;
 			} else {
@@ -309,7 +323,7 @@ GIB_Parse_Tokens (const char *program, unsigned int *i, unsigned int pofs, gib_t
 			if (cur->delim == ' ' && str[0] == '@' && !cat) {
 				cur->flags |= TREE_ASPLIT;
 			}
-		// We can handle escape characters now
+			// We can handle escape characters now
 		} else if (cur->delim == '\"')
 			GIB_Process_Escapes (str);
 		cur->str = str;
@@ -326,32 +340,40 @@ GIB_Parse_Tokens (const char *program, unsigned int *i, unsigned int pofs, gib_t
 			(*i)++;
 		node = &cur->next;
 	}
-DONE:
+  DONE:
 	*embedded = embs;
 	return nodes;
-ERROR:
+  ERROR:
 	if (c)
-		GIB_Parse_Error (va("Could not find match for '%c'.", c), *i+pofs);
+		GIB_Parse_Error (va ("Could not find match for '%c'.", c), *i + pofs);
 	if (nodes)
 		GIB_Tree_Free_Recursive (nodes);
 	return 0;
 }
 
 static gib_tree_t *
-GIB_Parse_Semantic_Preprocess (gib_tree_t *line)
+GIB_Parse_Semantic_Preprocess (gib_tree_t * line)
 {
 	gib_tree_t *p, *start = line;
 	unsigned int flags = line->flags;
-	while (!strcmp (line->children->str, "if") || !strcmp (line->children->str, "ifnot")) {
+
+	while (!strcmp (line->children->str, "if")
+		   || !strcmp (line->children->str, "ifnot")) {
 		// Sanity checking
 		if (!line->children->next || !line->children->next->next) {
-			GIB_Parse_Error ("Not enough arguments to 'if' statement.", line->start);
+			GIB_Parse_Error ("Not enough arguments to 'if' statement.",
+							 line->start);
 			return line;
-		} else if (!line->children->next->next->children || line->children->next->next->delim != '{') {
-			GIB_Parse_Error ("First program block in 'if' statement not enclosed in braces or invalid.", line->start);
+		} else if (!line->children->next->next->children
+				   || line->children->next->next->delim != '{') {
+			GIB_Parse_Error
+				("First program block in 'if' statement not enclosed in braces or invalid.",
+				 line->start);
 			return line;
 		} else if (line->flags & TREE_EMBED) {
-			GIB_Parse_Error ("'if' statements may not be used in embedded commands.", line->start);
+			GIB_Parse_Error
+				("'if' statements may not be used in embedded commands.",
+				 line->start);
 			return line;
 		}
 		// Set conditional flag
@@ -364,17 +386,21 @@ GIB_Parse_Semantic_Preprocess (gib_tree_t *line)
 		line->next = line->children->next->next->children;
 		line->children->next->next->children = 0;
 		// Find end of subprogram
-		while (line->next) line = line->next;
+		while (line->next)
+			line = line->next;
 		line->next = GIB_Tree_New (flags | TREE_END);
 		line = line->next;
 		// Mark jump point
 		p->jump = line;
-		line->flags |= TREE_END; // Last instruction of subprogram
+		line->flags |= TREE_END;		// Last instruction of subprogram
 		// Handle "else"
-		if (p->children->next->next->next && !strcmp (p->children->next->next->next->str, "else")) {
+		if (p->children->next->next->next
+			&& !strcmp (p->children->next->next->next->str, "else")) {
 			// Sanity checking
 			if (!p->children->next->next->next->next) {
-				GIB_Parse_Error ("'if' statement contains 'else' but no secondary program block or command.", line->start);
+				GIB_Parse_Error
+					("'if' statement contains 'else' but no secondary program block or command.",
+					 line->start);
 				return line;
 			}
 			// Is "else" followed by a subprogram?
@@ -382,7 +408,8 @@ GIB_Parse_Semantic_Preprocess (gib_tree_t *line)
 				// Move subprogram inline
 				line->next = p->children->next->next->next->next->children;
 				p->children->next->next->next->next->children = 0;
-				while (line->next) line = line->next;
+				while (line->next)
+					line = line->next;
 			} else {
 				// Push rest of tokens into a new line
 				line->next = GIB_Tree_New (flags);
@@ -390,7 +417,9 @@ GIB_Parse_Semantic_Preprocess (gib_tree_t *line)
 				p->children->next->next->next->next = 0;
 				line = line->next;
 			}
-		} else break; // Don't touch if statements in the sub program
+		} else
+			break;						// Don't touch if statements in the sub 
+										// program
 	}
 	// Now we know our exit point, set it on all our ending instructions
 	while (start) {
@@ -405,13 +434,19 @@ GIB_Parse_Semantic_Preprocess (gib_tree_t *line)
 	if (!strcmp (line->children->str, "while")) {
 		// Sanity checks
 		if (!line->children->next || !line->children->next->next) {
-			GIB_Parse_Error ("Not enough arguments to 'while' statement.", line->start);
+			GIB_Parse_Error ("Not enough arguments to 'while' statement.",
+							 line->start);
 			return line;
-		} else if (!line->children->next->next->children || line->children->next->next->delim != '{') {
-			GIB_Parse_Error ("Program block in 'while' statement not enclosed in braces or invalid.", line->start);
+		} else if (!line->children->next->next->children
+				   || line->children->next->next->delim != '{') {
+			GIB_Parse_Error
+				("Program block in 'while' statement not enclosed in braces or invalid.",
+				 line->start);
 			return line;
 		} else if (line->flags & TREE_EMBED) {
-			GIB_Parse_Error ("'while' statements may not be used in embedded commands.", line->start);
+			GIB_Parse_Error
+				("'while' statements may not be used in embedded commands.",
+				 line->start);
 			return line;
 		}
 		// Set conditional flag
@@ -432,16 +467,23 @@ GIB_Parse_Semantic_Preprocess (gib_tree_t *line)
 		p->jump = line;
 	} else if (!strcmp (line->children->str, "for")) {
 		gib_tree_t *tmp;
+
 		// Sanity checks
-		if (!line->children->next || !line->children->next->next || strcmp (line->children->next->next->str, "in") || !line->children->next->next->next || !line->children->next->next->next->next) {
+		if (!line->children->next || !line->children->next->next
+			|| strcmp (line->children->next->next->str, "in")
+			|| !line->children->next->next->next
+			|| !line->children->next->next->next->next) {
 			GIB_Parse_Error ("Malformed 'for' statement.", line->start);
 			return line;
 		}
 		// Find last token in line (contains program block)
-		for (tmp = line->children->next->next->next->next; tmp->next; tmp = tmp->next);
+		for (tmp = line->children->next->next->next->next; tmp->next;
+			 tmp = tmp->next);
 		// More sanity
 		if (tmp->delim != '{' || !tmp->children) {
-			GIB_Parse_Error ("Program block in 'for' statement not enclosed in braces or invalid.", line->start);
+			GIB_Parse_Error
+				("Program block in 'for' statement not enclosed in braces or invalid.",
+				 line->start);
 			return line;
 		}
 		p = line;
@@ -457,19 +499,19 @@ GIB_Parse_Semantic_Preprocess (gib_tree_t *line)
 		line = line->next;
 		// Mark jump point out of loop
 		p->jump = line;
-	}	
+	}
 	return line;
-}		
+}
 
 gib_tree_t *
 GIB_Parse_Lines (const char *program, unsigned int pofs, gib_tree_flags_t flags)
 {
 	unsigned int i = 0, lstart;
 	gib_tree_t *lines = 0, *cur, *tokens, **line = &lines, *embs;
-	char *str;
+	char       *str;
 
 	while (1) {
-		while (isspace((byte)program[i]) || program[i] == ';')
+		while (isspace ((byte) program[i]) || program[i] == ';')
 			i++;
 		if (!program[i])
 			break;
@@ -479,8 +521,8 @@ GIB_Parse_Lines (const char *program, unsigned int pofs, gib_tree_flags_t flags)
 			// Link it in
 			cur = GIB_Tree_New (flags);
 			cur->delim = '\n';
-			str = calloc (i - lstart + 1, sizeof(char));
-			memcpy (str, program+lstart, i - lstart);
+			str = calloc (i - lstart + 1, sizeof (char));
+			memcpy (str, program + lstart, i - lstart);
 			cur->str = str;
 			cur->start = lstart + pofs;
 			cur->end = i + pofs;
@@ -500,48 +542,51 @@ GIB_Parse_Lines (const char *program, unsigned int pofs, gib_tree_flags_t flags)
 			goto ERROR;
 	}
 	return lines;
-ERROR:
+  ERROR:
 	if (lines)
 		GIB_Tree_Free_Recursive (lines);
 	return 0;
 }
 
 gib_tree_t *
-GIB_Parse_Embedded (const char *program, unsigned int pofs, gib_tree_flags_t flags, gib_tree_t **embedded)
+GIB_Parse_Embedded (const char *program, unsigned int pofs,
+					gib_tree_flags_t flags, gib_tree_t ** embedded)
 {
 	unsigned int i, n, t;
-	char c, d, *str;
+	char        c, d, *str;
 	gib_tree_t *lines = 0, **line = &lines, *cur, *tokens, *emb, *tmp;
 	unsigned int start, end;
-	
+
 	gib_parse_error = false;
 	*embedded = 0;
-	
+
 	for (i = 0; program[i]; i++) {
-		if (program[i] == '`' || (program[i] == '$' && program[i+1] == '(')) {
+		if (program[i] == '`' || (program[i] == '$' && program[i + 1] == '(')) {
 			// Extract the embedded command
 			start = i;
 			if (program[i] == '`') {
-				n = i+1;
+				n = i + 1;
 				if ((c = GIB_Parse_Match_Backtick (program, &i)))
 					goto ERROR;
 			} else {
-				n = ++i+1;
+				n = ++i + 1;
 				if ((c = GIB_Parse_Match_Paren (program, &i)))
 					goto ERROR;
 			}
-			end = i+1;
+			end = i + 1;
 			// Construct the actual line to be executed
 			cur = GIB_Tree_New (flags | TREE_EMBED);
 			cur->delim = '`';
 			str = calloc (i - n + 1, sizeof (char));
-			memcpy (str, program+n, i - n);
+			memcpy (str, program + n, i - n);
 			cur->str = str;
 			cur->start = start + pofs;
 			cur->end = end + pofs;
 			c = 0;
 			t = 0;
-			if (!(tokens = GIB_Parse_Tokens (cur->str, &t, start + pofs, flags, &emb)))
+			if (!
+				(tokens =
+				 GIB_Parse_Tokens (cur->str, &t, start + pofs, flags, &emb)))
 				goto ERROR;
 			cur->children = tokens;
 			GIB_Parse_Semantic_Preprocess (cur)->next = *embedded;
@@ -555,7 +600,8 @@ GIB_Parse_Embedded (const char *program, unsigned int pofs, gib_tree_flags_t fla
 				*embedded = emb;
 			} else
 				*embedded = cur;
-			// Create a representative child node for GIB_Process_Embedded to use
+			// Create a representative child node for GIB_Process_Embedded to
+			// use
 			cur = GIB_Tree_New (flags | TREE_EMBED);
 			cur->delim = '`';
 			// Save start/end indices
@@ -563,27 +609,28 @@ GIB_Parse_Embedded (const char *program, unsigned int pofs, gib_tree_flags_t fla
 			cur->end = end;
 			*line = cur;
 			line = &cur->next;
-		// Check for variable substitution
+			// Check for variable substitution
 		} else if (program[i] == '$' || program[i] == '#') {
 			// Extract variable name
 			start = i;
 			end = 0;
 			d = program[i];
-			if (program[i+1] == '{') {
-				n = i+2;
+			if (program[i + 1] == '{') {
+				n = i + 2;
 				end++;
 			} else
-				n = i+1;
+				n = i + 1;
 			if ((c = GIB_Parse_Match_Var (program, &i)))
 				goto ERROR;
 			end += i;
-			
+
 			cur = GIB_Tree_New (flags | TREE_EMBED);
 			cur->delim = d;
-			str = calloc (i - n + 1, sizeof(char));
-			memcpy (str, program+n, i - n);
+			str = calloc (i - n + 1, sizeof (char));
+			memcpy (str, program + n, i - n);
 			cur->str = str;
-			// Can we use the name as is, or must processing be done at runtime?
+			// Can we use the name as is, or must processing be done at
+			// runtime?
 			if (strchr (str, '$') || strchr (str, '#'))
 				cur->flags |= TREE_P_EMBED;
 			// Save start/end indices
@@ -592,12 +639,12 @@ GIB_Parse_Embedded (const char *program, unsigned int pofs, gib_tree_flags_t fla
 			*line = cur;
 			line = &cur->next;
 			// Don't skip anything important
-			if (program[n-1] != '{')
+			if (program[n - 1] != '{')
 				i--;
 		}
 	}
 	return lines;
-ERROR:
+  ERROR:
 	if (c)
 		GIB_Parse_Error (va ("Could not find match for '%c'.", c), i + pofs);
 	if (lines)

@@ -62,7 +62,7 @@ OP_Div (double op1, double op2)
 double
 OP_Exp (double op1, double op2)
 {
-	return pow(op1, op2);
+	return pow (op1, op2);
 }
 
 double

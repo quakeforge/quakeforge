@@ -32,8 +32,9 @@
 # include "config.h"
 #endif
 
-static __attribute__ ((unused)) const char rcsid[] =
-        "$Id$";
+static __attribute__ ((unused))
+const char  rcsid[] =
+	"$Id$";
 
 #include <stdlib.h>
 #include <string.h>
@@ -49,7 +50,7 @@ static __attribute__ ((unused)) const char rcsid[] =
 #include "QF/gib_tree.h"
 #include "QF/va.h"
 
-hashtab_t *gib_functions = 0;
+hashtab_t  *gib_functions = 0;
 
 /*
 	GIB_Function_New
@@ -61,7 +62,8 @@ static gib_function_t *
 GIB_Function_New (const char *name)
 {
 	gib_function_t *new = calloc (1, sizeof (gib_function_t));
-	new->text = dstring_newstr();
+
+	new->text = dstring_newstr ();
 	new->name = strdup (name);
 	return new;
 }
@@ -72,20 +74,21 @@ GIB_Function_New (const char *name)
 static const char *
 GIB_Function_Get_Key (void *ele, void *ptr)
 {
-	return ((gib_function_t *)ele)->name;
+	return ((gib_function_t *) ele)->name;
 }
 
 static void
 GIB_Function_Free (void *ele, void *ptr)
 {
-	gib_function_t *func = (gib_function_t *)ele;
+	gib_function_t *func = (gib_function_t *) ele;
+
 	dstring_delete (func->text);
-	free ((void *)func->name);
+	free ((void *) func->name);
 	if (func->program)
 		GIB_Tree_Free_Recursive (func->program);
 	if (func->script && !(--func->script->refs)) {
-		free ((void *)func->script->text);
-		free ((void *)func->script->file);
+		free ((void *) func->script->text);
+		free ((void *) func->script->file);
 		free (func->script);
 	}
 	free (func);
@@ -99,23 +102,25 @@ GIB_Function_Free (void *ele, void *ptr)
 	hash if needed.
 */
 void
-GIB_Function_Define (const char *name, const char *text, gib_tree_t *program, gib_script_t *script, hashtab_t *globals)
+GIB_Function_Define (const char *name, const char *text, gib_tree_t * program,
+					 gib_script_t * script, hashtab_t * globals)
 {
 	gib_function_t *func;
-	
+
 	GIB_Tree_Ref (&program);
 	if (script)
 		script->refs++;
 	if (!gib_functions)
-		gib_functions = Hash_NewTable (1024, GIB_Function_Get_Key, GIB_Function_Free, 0);
+		gib_functions =
+			Hash_NewTable (1024, GIB_Function_Get_Key, GIB_Function_Free, 0);
 
-	func = Hash_Find(gib_functions, name);
+	func = Hash_Find (gib_functions, name);
 	if (func) {
 		dstring_clearstr (func->text);
 		GIB_Tree_Unref (&func->program);
 		if (func->script && !(--func->script->refs)) {
-			free ((void *)func->script->text);
-			free ((void *)func->script->file);
+			free ((void *) func->script->text);
+			free ((void *) func->script->file);
 			free (func->script);
 		}
 	} else {
@@ -144,22 +149,23 @@ GIB_Function_Find (const char *name)
 }
 
 void
-GIB_Function_Prepare_Args (cbuf_t *cbuf, dstring_t **args, unsigned int argc)
+GIB_Function_Prepare_Args (cbuf_t * cbuf, dstring_t ** args, unsigned int argc)
 {
 	static hashtab_t *zero = 0;
 	unsigned int i;
-	gib_var_t *var;
+	gib_var_t  *var;
 	static char argss[] = "args";
 
-	var = GIB_Var_Get_Complex (&GIB_DATA(cbuf)->locals, &zero, argss, &i, true);
+	var =
+		GIB_Var_Get_Complex (&GIB_DATA (cbuf)->locals, &zero, argss, &i, true);
 	var->array = realloc (var->array, sizeof (dstring_t *) * argc);
-	memset (var->array+1, 0, (argc-1) * sizeof (dstring_t *));
+	memset (var->array + 1, 0, (argc - 1) * sizeof (dstring_t *));
 	var->size = argc;
 	for (i = 0; i < argc; i++) {
 		if (var->array[i])
-			dstring_clearstr(var->array[i]);
+			dstring_clearstr (var->array[i]);
 		else
-			var->array[i] = dstring_newstr();
+			var->array[i] = dstring_newstr ();
 		dstring_appendstr (var->array[i], args[i]->str);
 	}
 }
@@ -172,13 +178,14 @@ GIB_Function_Prepare_Args (cbuf_t *cbuf, dstring_t **args, unsigned int argc)
 */
 
 void
-GIB_Function_Execute (cbuf_t *cbuf, gib_function_t *func, dstring_t **args, unsigned int argc)
+GIB_Function_Execute (cbuf_t * cbuf, gib_function_t * func, dstring_t ** args,
+					  unsigned int argc)
 {
 	GIB_Tree_Ref (&func->program);
 	if (func->script)
 		func->script->refs++;
 	GIB_Buffer_Set_Program (cbuf, func->program);
-	GIB_DATA(cbuf)->script = func->script;
-	GIB_DATA(cbuf)->globals = func->globals;
+	GIB_DATA (cbuf)->script = func->script;
+	GIB_DATA (cbuf)->globals = func->globals;
 	GIB_Function_Prepare_Args (cbuf, args, argc);
 }

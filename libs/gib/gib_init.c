@@ -32,8 +32,9 @@
 # include "config.h"
 #endif
 
-static __attribute__ ((unused)) const char rcsid[] =
-        "$Id$";
+static __attribute__ ((unused))
+const char  rcsid[] =
+	"$Id$";
 
 #include <string.h>
 #include <stdlib.h>
@@ -54,7 +55,8 @@ static __attribute__ ((unused)) const char rcsid[] =
 #include "QF/cvar.h"
 
 static void
-GIB_Exec_Override_f (void) {
+GIB_Exec_Override_f (void)
+{
 	char       *f;
 	int         mark;
 
@@ -69,18 +71,22 @@ GIB_Exec_Override_f (void) {
 		Sys_Printf ("couldn't exec %s\n", Cmd_Argv (1));
 		return;
 	}
-	if (!Cvar_Command() && (cmd_warncmd->int_val || (developer && developer->int_val)))
+	if (!Cvar_Command ()
+		&& (cmd_warncmd->int_val || (developer && developer->int_val)))
 		Sys_Printf ("execing %s\n", Cmd_Argv (1));
-	if (!strcmp (Cmd_Argv (1) + strlen (Cmd_Argv(1)) - 4, ".gib") || cbuf_active->interpreter == &gib_interp) {
+	if (!strcmp (Cmd_Argv (1) + strlen (Cmd_Argv (1)) - 4, ".gib")
+		|| cbuf_active->interpreter == &gib_interp) {
 		// GIB script, put it in a new buffer on the stack
-		cbuf_t *sub = Cbuf_PushStack (&gib_interp);
-		GIB_DATA(sub)->script = malloc (sizeof (gib_script_t));
-		GIB_DATA(sub)->script->file = strdup (Cmd_Argv(1));
-		GIB_DATA(sub)->script->text = strdup (f);
-		GIB_DATA(sub)->script->refs = 1;
+		cbuf_t     *sub = Cbuf_PushStack (&gib_interp);
+
+		GIB_DATA (sub)->script = malloc (sizeof (gib_script_t));
+		GIB_DATA (sub)->script->file = strdup (Cmd_Argv (1));
+		GIB_DATA (sub)->script->text = strdup (f);
+		GIB_DATA (sub)->script->refs = 1;
 		Cbuf_AddText (sub, f);
 		if (gib_parse_error && cbuf_active->interpreter == &gib_interp)
-			GIB_Error ("parse", "%s: Parse error while executing %s.", Cmd_Argv(0), Cmd_Argv(1));
+			GIB_Error ("parse", "%s: Parse error while executing %s.",
+					   Cmd_Argv (0), Cmd_Argv (1));
 	} else
 		Cbuf_InsertText (cbuf_active, f);
 	Hunk_FreeToLowMark (mark);
@@ -90,7 +96,7 @@ void
 GIB_Init (qboolean sandbox)
 {
 	// Override the exec command with a GIB-aware one
-	if (Cmd_Exists("exec")) {
+	if (Cmd_Exists ("exec")) {
 		Cmd_RemoveCommand ("exec");
 		Cmd_AddCommand ("exec", GIB_Exec_Override_f, "Execute a script file.");
 	}

@@ -32,14 +32,14 @@
 # include "config.h"
 #endif
 
-static __attribute__ ((unused)) const char rcsid[] =
-        "$Id$";
+static __attribute__ ((unused))
+const char  rcsid[] = "$Id$";
 
-#include <stdlib.h> 
+#include <stdlib.h>
 #include <stdarg.h>
 #include <string.h>
 
-#include "QF/sys.h"       
+#include "QF/sys.h"
 #include "QF/cbuf.h"
 #include "QF/gib_parse.h"
 #include "QF/gib_thread.h"
@@ -51,12 +51,12 @@ static __attribute__ ((unused)) const char rcsid[] =
 gib_thread_t *gib_threads = 0;
 gib_thread_t **gib_thread_p = &gib_threads;
 
-hashtab_t *gib_events;
+hashtab_t  *gib_events;
 
 static unsigned long int nextid = 0;
 
 void
-GIB_Thread_Add (gib_thread_t *thread)
+GIB_Thread_Add (gib_thread_t * thread)
 {
 	thread->prev = *gib_thread_p;
 	*gib_thread_p = thread;
@@ -64,7 +64,7 @@ GIB_Thread_Add (gib_thread_t *thread)
 }
 
 void
-GIB_Thread_Remove (gib_thread_t *thread) 
+GIB_Thread_Remove (gib_thread_t * thread)
 {
 	if (thread->prev)
 		thread->prev->next = thread->next;
@@ -82,8 +82,8 @@ gib_thread_t *
 GIB_Thread_Find (unsigned long int id)
 {
 	gib_thread_t *cur;
-	
-	for (cur = gib_threads; cur; cur=cur->next)
+
+	for (cur = gib_threads; cur; cur = cur->next)
 		if (cur->id == id)
 			return cur;
 	return 0;
@@ -92,7 +92,8 @@ GIB_Thread_Find (unsigned long int id)
 gib_thread_t *
 GIB_Thread_New (void)
 {
-	gib_thread_t *new = calloc (1, sizeof(gib_thread_t));
+	gib_thread_t *new = calloc (1, sizeof (gib_thread_t));
+
 	new->cbuf = Cbuf_New (&gib_interp);
 	new->id = nextid;
 	nextid++;
@@ -100,7 +101,7 @@ GIB_Thread_New (void)
 }
 
 static void
-GIB_Thread_Delete (gib_thread_t *thread)
+GIB_Thread_Delete (gib_thread_t * thread)
 {
 	Cbuf_DeleteStack (thread->cbuf);
 	free (thread);
@@ -110,9 +111,10 @@ void
 GIB_Thread_Execute (void)
 {
 	gib_thread_t *cur, *tmp;
+
 	if (!gib_threads)
 		return;
-	
+
 	for (cur = gib_threads; cur; cur = tmp) {
 		tmp = cur->next;
 		if (cur->trash) {
@@ -126,14 +128,15 @@ GIB_Thread_Execute (void)
 static const char *
 GIB_Event_Get_Key (void *ele, void *ptr)
 {
-	return ((gib_event_t *)ele)->name;
+	return ((gib_event_t *) ele)->name;
 }
 
 static void
 GIB_Event_Free (void *ele, void *ptr)
 {
-	gib_event_t *ev = (gib_event_t *)ele;
-	free ((void *)ev->name);
+	gib_event_t *ev = (gib_event_t *) ele;
+
+	free ((void *) ev->name);
 	free (ev);
 }
 
@@ -141,7 +144,7 @@ gib_event_t *
 GIB_Event_New (const char *name)
 {
 	gib_event_t *new;
-	
+
 	new = calloc (1, sizeof (gib_event_t));
 	new->name = strdup (name);
 	Hash_Add (gib_events, new);
@@ -149,10 +152,10 @@ GIB_Event_New (const char *name)
 }
 
 int
-GIB_Event_Register (const char *name, gib_function_t *func)
+GIB_Event_Register (const char *name, gib_function_t * func)
 {
 	gib_event_t *ev;
-	
+
 	if (!(ev = Hash_Find (gib_events, name)))
 		return -1;
 	ev->func = func;
@@ -160,28 +163,28 @@ GIB_Event_Register (const char *name, gib_function_t *func)
 }
 
 void
-GIB_Event_Callback (gib_event_t *event, unsigned int argc, ...)
+GIB_Event_Callback (gib_event_t * event, unsigned int argc, ...)
 {
 	gib_function_t *f = event->func;
 	gib_thread_t *thread;
 	cbuf_args_t *args;
-	va_list ap;
+	va_list     ap;
 	unsigned int i;
-	
+
 	if (!f)
 		return;
-		
+
 	thread = GIB_Thread_New ();
 	args = Cbuf_ArgsNew ();
-	
+
 	va_start (ap, argc);
-	
+
 	Cbuf_ArgsAdd (args, f->name);
 	for (i = 0; i < argc; i++)
-			Cbuf_ArgsAdd (args, va_arg (ap, const char *));
-			
+		Cbuf_ArgsAdd (args, va_arg (ap, const char *));
+
 	va_end (ap);
-	
+
 	GIB_Function_Execute (thread->cbuf, f, args->argv, args->argc);
 	GIB_Thread_Add (thread);
 	Cbuf_ArgsDelete (args);

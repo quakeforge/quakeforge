@@ -32,8 +32,9 @@
 # include "config.h"
 #endif
 
-static __attribute__ ((unused)) const char rcsid[] =
-        "$Id$";
+static __attribute__ ((unused))
+const char  rcsid[] =
+	"$Id$";
 
 #include <string.h>
 #include <stdlib.h>
@@ -51,52 +52,58 @@ static void
 GIB_Execute_Generate_Composite (struct cbuf_s *cbuf)
 {
 	cbuf_args_t *args = cbuf->args;
-	int i;
-	
+	int         i;
+
 	dstring_clearstr (GIB_DATA (cbuf)->arg_composite);
 	for (i = 0; i < args->argc; i++) {
 		// ->str could be moved by realloc when a dstring is resized
 		// so save the offset instead of the pointer
-		args->args[i] = (const char *) strlen (GIB_DATA (cbuf)->arg_composite->str);
+		args->args[i] =
+			(const char *) strlen (GIB_DATA (cbuf)->arg_composite->str);
 		dstring_appendstr (GIB_DATA (cbuf)->arg_composite, args->argv[i]->str);
 		dstring_appendstr (GIB_DATA (cbuf)->arg_composite, " ");
 	}
-	
+
 	// Get rid of trailing space
-	GIB_DATA (cbuf)->arg_composite->str[strlen(GIB_DATA (cbuf)->arg_composite->str)-1] = 0;
-	
+	GIB_DATA (cbuf)->arg_composite->
+		str[strlen (GIB_DATA (cbuf)->arg_composite->str) - 1] = 0;
+
 	for (i = 0; i < args->argc; i++)
 		// now that arg_composite is done we can add the pointer to the stored
 		// offsets and get valid pointers. This *should* be portable.
-		args->args[i] += (unsigned long int) GIB_DATA (cbuf)->arg_composite->str;
-}		
+		args->args[i] +=
+			(unsigned long int) GIB_DATA (cbuf)->arg_composite->str;
+}
 
 static void
-GIB_Execute_Split_Array (cbuf_t *cbuf)
+GIB_Execute_Split_Array (cbuf_t * cbuf)
 {
-	gib_var_t *var;
+	gib_var_t  *var;
 	unsigned int i;
-	int start = 0, end = 0;
-	char *c, *str = cbuf->args->argv[cbuf->args->argc-1]->str+1;
-	void *m = cbuf->args->argm[cbuf->args->argc-1];
+	int         start = 0, end = 0;
+	char       *c, *str = cbuf->args->argv[cbuf->args->argc - 1]->str + 1;
+	void       *m = cbuf->args->argm[cbuf->args->argc - 1];
 
-	i = strlen(str)-1;
+	i = strlen (str) - 1;
 	if (str[i] == ']')
 		for (; i; i--)
 			if (str[i] == '[') {
 				str[i] = 0;
-				start = atoi (str+i+1);
-				if ((c = strchr (str+i+1, ':'))) {
+				start = atoi (str + i + 1);
+				if ((c = strchr (str + i + 1, ':'))) {
 					if (c[1] != ']')
-						end = atoi (c+1);
+						end = atoi (c + 1);
 					else
-						end = (int) ((unsigned int)~0>>1);
+						end = (int) ((unsigned int) ~0 >> 1);
 				} else
-					end = start+1;
+					end = start + 1;
 				break;
 			}
 	cbuf->args->argc--;
-	if (!(var = GIB_Var_Get_Complex (&GIB_DATA(cbuf)->locals, &GIB_DATA(cbuf)->globals, str, &i, false)))
+	if (!
+		(var =
+		 GIB_Var_Get_Complex (&GIB_DATA (cbuf)->locals,
+							  &GIB_DATA (cbuf)->globals, str, &i, false)))
 		return;
 	if (end < 0)
 		end += var->size;
@@ -113,26 +120,26 @@ GIB_Execute_Split_Array (cbuf_t *cbuf)
 			Cbuf_ArgsAdd (cbuf->args, var->array[i]->str);
 		else
 			Cbuf_ArgsAdd (cbuf->args, "");
-		cbuf->args->argm[cbuf->args->argc-1] = m;
+		cbuf->args->argm[cbuf->args->argc - 1] = m;
 	}
 }
 
 static int
-GIB_Execute_Prepare_Line (cbuf_t *cbuf, gib_tree_t *line)
+GIB_Execute_Prepare_Line (cbuf_t * cbuf, gib_tree_t * line)
 {
 	gib_tree_t *cur;
 	cbuf_args_t *args = cbuf->args;
 	unsigned int pos;
-	
+
 	args->argc = 0;
-	
+
 	for (cur = line->children; cur; cur = cur->next) {
 		if (cur->flags & TREE_CONCAT) {
-			pos = args->argv[args->argc-1]->size-1;
+			pos = args->argv[args->argc - 1]->size - 1;
 			if (cur->flags & TREE_P_EMBED) {
 				GIB_Process_Embedded (cur, cbuf->args);
 			} else
-				dstring_appendstr (args->argv[args->argc-1], cur->str);
+				dstring_appendstr (args->argv[args->argc - 1], cur->str);
 		} else {
 			pos = 0;
 			if (cur->flags & TREE_P_EMBED) {
@@ -140,9 +147,10 @@ GIB_Execute_Prepare_Line (cbuf_t *cbuf, gib_tree_t *line)
 				GIB_Process_Embedded (cur, cbuf->args);
 			} else
 				Cbuf_ArgsAdd (args, cur->str);
-			args->argm[args->argc-1] = cur;
+			args->argm[args->argc - 1] = cur;
 		}
-		if (cur->delim == '(' && GIB_Process_Math (args->argv[args->argc-1], pos))
+		if (cur->delim == '('
+			&& GIB_Process_Math (args->argv[args->argc - 1], pos))
 			return -1;
 		if (cur->flags & TREE_ASPLIT)
 			GIB_Execute_Split_Array (cbuf);
@@ -151,30 +159,34 @@ GIB_Execute_Prepare_Line (cbuf_t *cbuf, gib_tree_t *line)
 }
 
 int
-GIB_Execute_For_Next (cbuf_t *cbuf)
+GIB_Execute_For_Next (cbuf_t * cbuf)
 {
 	unsigned int index;
-	gib_var_t *var;
-	struct gib_dsarray_s *array = GIB_DATA(cbuf)->stack.values+GIB_DATA(cbuf)->stack.p-1;
+	gib_var_t  *var;
+	struct gib_dsarray_s *array =
+		GIB_DATA (cbuf)->stack.values + GIB_DATA (cbuf)->stack.p - 1;
 	if (array->size == 1) {
 		GIB_Buffer_Pop_Sstack (cbuf);
 		return 0;
 	}
 	array->size--;
-	var = GIB_Var_Get_Complex (&GIB_DATA(cbuf)->locals, &GIB_DATA(cbuf)->globals, array->dstrs[0]->str, &index, true);
+	var =
+		GIB_Var_Get_Complex (&GIB_DATA (cbuf)->locals,
+							 &GIB_DATA (cbuf)->globals, array->dstrs[0]->str,
+							 &index, true);
 	dstring_clearstr (var->array[index]);
 	dstring_appendstr (var->array[index], array->dstrs[array->size]->str);
 	return 1;
 }
 
 void
-GIB_Execute (cbuf_t *cbuf)
+GIB_Execute (cbuf_t * cbuf)
 {
 	gib_buffer_data_t *g = GIB_DATA (cbuf);
 	gib_builtin_t *b;
 	gib_function_t *f;
-	int cond;
-	
+	int         cond;
+
 	if (!g->program)
 		return;
 	if (!g->ip)
@@ -183,7 +195,10 @@ GIB_Execute (cbuf_t *cbuf)
 		if (GIB_Execute_Prepare_Line (cbuf, g->ip))
 			return;
 		if (g->ip->flags & TREE_COND) {
-			cond = g->ip->flags & TREE_NOT ? atoi (cbuf->args->argv[1]->str) : !atoi (cbuf->args->argv[1]->str);
+			cond =
+				g->ip->flags & TREE_NOT ? atoi (cbuf->args->argv[1]->
+												str) : !atoi (cbuf->args->
+															  argv[1]->str);
 			if (cond)
 				g->ip = g->ip->jump;
 		} else if (g->ip->flags & TREE_FORNEXT) {
@@ -200,25 +215,34 @@ GIB_Execute (cbuf_t *cbuf)
 				GIB_Buffer_Push_Sstack (cbuf);
 			} else
 				g->waitret = false;
-			if (cbuf->args->argc >= 2 && !strcmp (cbuf->args->argv[1]->str, "=") && ((gib_tree_t *)cbuf->args->argm[1])->delim == ' ') {
+			if (cbuf->args->argc >= 2 && !strcmp (cbuf->args->argv[1]->str, "=")
+				&& ((gib_tree_t *) cbuf->args->argm[1])->delim == ' ') {
 				unsigned int index;
-				gib_var_t *var = GIB_Var_Get_Complex (&g->locals, &g->globals, cbuf->args->argv[0]->str, &index, true);
-				GIB_Var_Assign (var, index, cbuf->args->argv+2, cbuf->args->argc-2);
-			}
-			else if ((b = GIB_Builtin_Find (cbuf->args->argv[0]->str))) {
+				gib_var_t  *var =
+					GIB_Var_Get_Complex (&g->locals, &g->globals,
+										 cbuf->args->argv[0]->str, &index,
+										 true);
+				GIB_Var_Assign (var, index, cbuf->args->argv + 2,
+								cbuf->args->argc - 2);
+			} else if ((b = GIB_Builtin_Find (cbuf->args->argv[0]->str))) {
 				b->func ();
 			} else if ((f = GIB_Function_Find (cbuf->args->argv[0]->str))) {
-				cbuf_t *new = Cbuf_PushStack (&gib_interp);
-				GIB_Function_Execute (new, f, cbuf->args->argv, cbuf->args->argc);
+				cbuf_t     *new = Cbuf_PushStack (&gib_interp);
+
+				GIB_Function_Execute (new, f, cbuf->args->argv,
+									  cbuf->args->argc);
 			} else {
 				GIB_Execute_Generate_Composite (cbuf);
 				if (Cmd_Command (cbuf->args))
-					GIB_Error ("command", "No builtin, function, or console command named '%s' was found.", cbuf->args->argv[0]->str);
+					GIB_Error ("command",
+							   "No builtin, function, or console command named '%s' was found.",
+							   cbuf->args->argv[0]->str);
 			}
 		}
-		if (!(g->ip = g->ip->next)) // No more commands
+		if (!(g->ip = g->ip->next))		// No more commands
 			g->done = true;
-		if (cbuf->state) // Let the stack walker figure out what to do
+		if (cbuf->state)				// Let the stack walker figure out what 
+										// to do
 			return;
 	}
 }
