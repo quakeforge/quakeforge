@@ -37,13 +37,21 @@
 QF_ALSA_NEED (int, snd_pcm_close, (snd_pcm_t *pcm))
 QF_ALSA_NEED (int, snd_pcm_hw_params, (snd_pcm_t *pcm, snd_pcm_hw_params_t *params))
 QF_ALSA_NEED (int, snd_pcm_hw_params_any, (snd_pcm_t *pcm, snd_pcm_hw_params_t *params))
+#if SND_LIB_MAJOR < 1
+QF_ALSA_NEED (snd_pcm_sframes_t, snd_pcm_hw_params_get_buffer_size, (const snd_pcm_hw_params_t *params))
+QF_ALSA_NEED (snd_pcm_sframes_t, snd_pcm_hw_params_get_period_size, (const snd_pcm_hw_params_t *params, int *dir))
+QF_ALSA_NEED (int, snd_pcm_hw_params_set_access, (snd_pcm_t *pcm, snd_pcm_hw_params_t *params, snd_pcm_access_t val))
+QF_ALSA_NEED (snd_pcm_uframes_t, snd_pcm_hw_params_set_period_size_near, (snd_pcm_t *pcm, snd_pcm_hw_params_t *params, snd_pcm_uframes_t val, int *dir))
+QF_ALSA_NEED (unsigned int, snd_pcm_hw_params_set_rate_near, (snd_pcm_t *pcm, snd_pcm_hw_params_t *params, unsigned int val, int *dir))
+#else
 QF_ALSA_NEED (int, snd_pcm_hw_params_get_buffer_size, (const snd_pcm_hw_params_t *params, snd_pcm_uframes_t *val))
 QF_ALSA_NEED (int, snd_pcm_hw_params_get_period_size, (const snd_pcm_hw_params_t *params, snd_pcm_uframes_t *frames, int *dir))
 QF_ALSA_NEED (int, snd_pcm_hw_params_set_access, (snd_pcm_t *pcm, snd_pcm_hw_params_t *params, snd_pcm_access_t access))
-QF_ALSA_NEED (int, snd_pcm_hw_params_set_channels, (snd_pcm_t *pcm, snd_pcm_hw_params_t *params, unsigned int val))
-QF_ALSA_NEED (int, snd_pcm_hw_params_set_format, (snd_pcm_t *pcm, snd_pcm_hw_params_t *params, snd_pcm_format_t val))
 QF_ALSA_NEED (int, snd_pcm_hw_params_set_period_size_near, (snd_pcm_t *pcm, snd_pcm_hw_params_t *params, snd_pcm_uframes_t *val, int *dir))
 QF_ALSA_NEED (int, snd_pcm_hw_params_set_rate_near, (snd_pcm_t *pcm, snd_pcm_hw_params_t *params, unsigned int *val, int *dir))
+#endif
+QF_ALSA_NEED (int, snd_pcm_hw_params_set_channels, (snd_pcm_t *pcm, snd_pcm_hw_params_t *params, unsigned int val))
+QF_ALSA_NEED (int, snd_pcm_hw_params_set_format, (snd_pcm_t *pcm, snd_pcm_hw_params_t *params, snd_pcm_format_t val))
 QF_ALSA_NEED (size_t, snd_pcm_hw_params_sizeof, (void))
 QF_ALSA_NEED (int, snd_pcm_mmap_begin, (snd_pcm_t *pcm, const snd_pcm_channel_area_t **areas, snd_pcm_uframes_t *offset, snd_pcm_uframes_t *frames))
 QF_ALSA_NEED (int, snd_pcm_avail_update, (snd_pcm_t *pcm))
