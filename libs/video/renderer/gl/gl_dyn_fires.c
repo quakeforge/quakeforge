@@ -59,10 +59,10 @@
 void
 R_DrawFire (fire_t *f)
 {
-	int         i, j;
-	vec3_t      vec, vec2;
 	float       radius;
 	float      *b_sin, *b_cos;
+	int         i, j;
+	vec3_t      vec, vec2;
 
 	b_sin = bubble_sintable;
 	b_cos = bubble_costable;
@@ -72,7 +72,8 @@ R_DrawFire (fire_t *f)
 	// figure out if we're inside the area of effect
 	VectorSubtract (f->origin, r_origin, vec);
 	if (Length (vec) < radius) {
-		AddLightBlend (f->color[0], f->color[1], f->color[2], f->size * 0.0003);	// we are
+		AddLightBlend (f->color[0], f->color[1], f->color[2],
+					   f->size * 0.0003);	// we are
 		return;
 	}
 	// we're not - draw it

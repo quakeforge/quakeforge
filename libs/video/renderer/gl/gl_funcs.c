@@ -39,14 +39,15 @@
 #ifdef HAVE_STRINGS_H
 # include <strings.h>
 #endif
+
 #include <stdio.h>
 
 #include <QF/cvar.h>
 #include <QF/console.h>
 #include <QF/sys.h>
-#include <QF/GL/types.h>
-#include <QF/GL/funcs.h>
 #include <QF/GL/extensions.h>
+#include <QF/GL/funcs.h>
+#include <QF/GL/types.h>
 
 #include "r_cvar.h"
 
@@ -92,8 +93,8 @@ GLF_Init (void)
 void *
 QFGL_ProcAddress (void *handle, const char *name, qboolean crit)
 {
-	static qboolean inited = false;
 	void			*glfunc = NULL;
+	static qboolean inited = false;
 
 #if defined(HAVE_DLOPEN)
 	static QF_glXGetProcAddressARB	glGetProcAddress = NULL;
@@ -125,7 +126,8 @@ QFGL_ProcAddress (void *handle, const char *name, qboolean crit)
 		glfunc = GetProcAddress (handle, name);
 #endif
 	if (glGetProcAddress && glfunc != glGetProcAddress (name)) {
-		Con_DPrintf ("mismatch! [%p != %p]\n", glfunc, glGetProcAddress (name));
+		Con_DPrintf ("mismatch! [%p != %p]\n", glfunc,
+					 glGetProcAddress (name));
 		return glfunc;
 	}
 

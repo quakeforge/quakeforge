@@ -36,31 +36,31 @@
 # include <strings.h>
 #endif
 
-#include <stdlib.h>
 #include <stdio.h>
+#include <stdlib.h>
 
 #include "QF/cvar.h"
 #include "QF/draw.h"
 #include "QF/sys.h"
-#include "QF/GL/qf_textures.h"
 #include "QF/GL/defines.h"
 #include "QF/GL/funcs.h"
+#include "QF/GL/qf_textures.h"
 
 #include "r_cvar.h"
 
 #define NUM_GRAPH_TEXTURES 8
 
-extern byte 	*draw_chars;	// 8*8 graphic characters
-
-extern cvar_t	*r_netgraph;
-extern cvar_t	*r_netgraph_alpha;
-extern cvar_t	*r_netgraph_box;
-
-static int graph_index;
-static int graph_size[NUM_GRAPH_TEXTURES];
-static int graph_width[NUM_GRAPH_TEXTURES];
 static byte *graph_texels[NUM_GRAPH_TEXTURES];
-int 	graph_texture[NUM_GRAPH_TEXTURES];
+int 	     graph_texture[NUM_GRAPH_TEXTURES];
+static int   graph_index;
+static int   graph_size[NUM_GRAPH_TEXTURES];
+static int   graph_width[NUM_GRAPH_TEXTURES];
+
+extern byte   *draw_chars;	// 8*8 graphic characters
+
+extern cvar_t *r_netgraph;
+extern cvar_t *r_netgraph_alpha;
+extern cvar_t *r_netgraph_box;
 
 
 int
@@ -76,12 +76,9 @@ R_InitGraphTextures (int base)
 void
 R_LineGraph (int x, int y, int *h_vals, int count)
 {
-	int         i, j;
-	int         h;
-	int         s;
 	byte        color;
-	int			size;
 	byte        *dest;
+	int         size, h, i, j, s;
 
 	if (!count)
 		return;

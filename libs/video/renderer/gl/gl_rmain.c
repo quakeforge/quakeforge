@@ -135,11 +135,12 @@ R_RotateForEntity (entity_t *e)
 static mspriteframe_t *
 R_GetSpriteFrame (entity_t *currententity)
 {
-	msprite_t  *psprite;
-	mspritegroup_t *pspritegroup;
+	float           fullinterval, targettime, time;
+	float          *pintervals;
+	int             frame, numframes, i;
+	msprite_t      *psprite;
 	mspriteframe_t *pspriteframe;
-	int         i, numframes, frame;
-	float      *pintervals, fullinterval, targettime, time;
+	mspritegroup_t *pspritegroup;
 
 	psprite = currententity->model->cache.data;
 	frame = currententity->frame;
@@ -178,11 +179,10 @@ R_GetSpriteFrame (entity_t *currententity)
 static void
 R_DrawSpriteModel (entity_t *e)
 {
-	vec3_t      point;
-	mspriteframe_t *frame;
 	float      *up, *right;
-	vec3_t      v_forward, v_right, v_up;
 	msprite_t  *psprite;
+	mspriteframe_t *frame;
+	vec3_t      point, v_forward, v_right, v_up;
 
 	// don't even bother culling, because it's just a single
 	// polygon without a surface cache
@@ -228,9 +228,7 @@ R_DrawSpriteModel (entity_t *e)
 	qfglDisable (GL_ALPHA_TEST);
 }
 
-/*
-  ALIAS MODELS
-*/
+/* ALIAS MODELS */
 
 #define NUMVERTEXNORMALS	162
 
@@ -238,26 +236,25 @@ float       r_avertexnormals[NUMVERTEXNORMALS][3] = {
 #include "anorms.h"
 };
 
-vec3_t      shadevector;
-float       shadelight;
-
 // precalculated dot products for quantized angles
 #define SHADEDOT_QUANT 16
 float   r_avertexnormal_dots[SHADEDOT_QUANT][256] =
 	#include "anorm_dots.h"
 		;
 
+float       shadelight;
 float      *shadedots = r_avertexnormal_dots[0];
-
 int         lastposenum, lastposenum0;
+vec3_t      shadevector;
+
 
 static void
 GL_DrawAliasFrame (vert_order_t *vo, qboolean fb)
 {
-	float       l;
+	float           l;
+	int             count;
+	int            *order;
 	blended_vert_t *verts;
-	int        *order;
-	int         count;
 
 	verts = vo->verts;
 	order = vo->order;
@@ -315,11 +312,11 @@ extern vec3_t lightspot;
 static void
 GL_DrawAliasShadow (aliashdr_t *paliashdr, int posenum)
 {
-	trivertx_t *verts;
-	int        *order;
-	vec3_t      point;
 	float       height, lheight;
 	int         count;
+	int        *order;
+	vec3_t      point;
+	trivertx_t *verts;
 
 	lheight = currententity->origin[2] - lightspot[2];
 
@@ -376,11 +373,11 @@ GL_DrawAliasShadow (aliashdr_t *paliashdr, int posenum)
 void
 GL_DrawAliasBlendedShadow (aliashdr_t *paliashdr, int pose1, int pose2, entity_t *e)
 {
-	trivertx_t	*verts1, *verts2;
-	float 		lerp;
+	float       blend, height, lheight, lerp;
+	int         count;
+	int 	   *order;
+	trivertx_t *verts1, *verts2;
 	vec3_t		point1, point2;
-	int 		*order, count;
-	float       height, lheight, blend;
 
 	blend = (r_realtime - e->frame_start_time) / e->frame_interval;
 	blend = min (blend, 1);
@@ -443,13 +440,10 @@ GL_DrawAliasBlendedShadow (aliashdr_t *paliashdr, int pose1, int pose2, entity_t
 vert_order_t *
 GL_GetAliasFrameVerts (int frame, aliashdr_t *paliashdr, entity_t *e)
 {
-	vert_order_t *vo;
-	int         count;
-	int         pose;
-	int         numposes;
-	trivertx_t *verts;
-	int         i;
 	float       interval;
+	int         count, numposes, pose, i;
+	trivertx_t *verts;
+	vert_order_t *vo;
 
 	if ((frame >= paliashdr->mdl.numframes) || (frame < 0)) {
 		Con_DPrintf ("R_AliasSetupFrame: no such frame %d\n", frame);
@@ -543,18 +537,13 @@ GL_GetAliasFrameVerts (int frame, aliashdr_t *paliashdr, entity_t *e)
 static void
 R_DrawAliasModel (entity_t *e, qboolean cull)
 {
-	int         lnum;
-	vec3_t      dist;
-	float       add;
-	model_t    *clmodel;
-	vec3_t      mins, maxs;
-	aliashdr_t *paliashdr;
-	float       an;
-	int         anim;
-	int         texture;
+	float       add, an;
+	int         anim, lnum, skinnum, texture;
 	int         fb_texture = 0;
-	int         skinnum;
+	aliashdr_t *paliashdr;
+	model_t    *clmodel;
 	qboolean	modelIsFullbright = false;
+	vec3_t      dist, mins, maxs;
 	vert_order_t *vo;
 
 	clmodel = currententity->model;
@@ -726,9 +715,9 @@ R_DrawAliasModel (entity_t *e, qboolean cull)
 static void
 R_ShowNearestLoc (void)
 {
-	location_t	*nearloc;
-	vec3_t		trueloc;
 	dlight_t	*dl;
+	location_t	*nearloc;
+	vec3_t		 trueloc;
 
 	if (r_drawentities->int_val)
 		return;
@@ -912,8 +901,8 @@ static void
 R_SetupGL (void)
 {
 	float		screenaspect;
-	extern int	glwidth, glheight;
 	int			x, x2, y2, y, w, h;
+	extern int	glwidth, glheight;
 
 	// set up viewpoint
 	qfglMatrixMode (GL_PROJECTION);
@@ -1023,9 +1012,9 @@ void R_RenderBrushPoly (msurface_t *fa);
 void
 R_Mirror (void)
 {
-	float       d;
-	msurface_t *s;
+	float        d;
 	entity_t   **ent;
+	msurface_t  *s;
 
 	if (!mirror)
 		return;
@@ -1126,9 +1115,9 @@ R_RenderView (void)
 qboolean
 R_CullBlocked (vec3_t mins, vec3_t maxs, vec3_t org)
 {
+	float   rad;
 	static struct trace_t  trace;
 	vec3_t  point;
-	float   rad;
 
 	if (!gl_occlusion->int_val)
 		return false;

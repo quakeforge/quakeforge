@@ -70,9 +70,9 @@ AddLightBlend (float r, float g, float b, float a2)
 void
 R_InitBubble ()
 {
-	int         i;
 	float       a;
 	float      *bub_sin, *bub_cos;
+	int         i;
 
 	bub_sin = bubble_sintable;
 	bub_cos = bubble_costable;
@@ -87,10 +87,10 @@ R_InitBubble ()
 void
 R_RenderDlight (dlight_t *light)
 {
-	int         i, j;
-	vec3_t      v;
 	float       rad;
 	float      *bub_sin, *bub_cos;
+	int         i, j;
+	vec3_t      v;
 
 	bub_sin = bubble_sintable;
 	bub_cos = bubble_costable;

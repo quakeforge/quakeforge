@@ -61,9 +61,6 @@
 #include "sbar.h"
 #include "view.h"
 
-extern float v_blend[4];
-extern void GL_Set2D (void);
-
 /*
 background clear
 rendering
@@ -131,8 +128,6 @@ int         scr_fullupdate;
 int         clearconsole;
 int         clearnotify;
 
-extern int  sb_lines;
-
 viddef_t    vid;						// global video state
 
 vrect_t     scr_vrect;
@@ -144,9 +139,7 @@ qboolean    block_drawing;
 
 void        SCR_ScreenShot_f (void);
 
-/*
-	CENTER PRINTING
-*/
+/* CENTER PRINTING */
 
 char        scr_centerstring[1024];
 float       scr_centertime_start;		// for slow victory printing
@@ -154,6 +147,11 @@ float       scr_centertime_off;
 int         scr_center_lines;
 int         scr_erase_lines;
 int         scr_erase_center;
+
+extern float v_blend[4];
+extern int   sb_lines;
+
+extern void GL_Set2D (void);
 
 
 /*
@@ -182,10 +180,7 @@ void
 SCR_DrawCenterString (void)
 {
 	char       *start;
-	int         l;
-	int         j;
-	int         x, y;
-	int         remaining;
+	int         remaining, j, l, x, y;
 
 	// the finale prints the characters one at a time
 	if (r_force_fullscreen /*FIXME better test*/)
@@ -245,8 +240,7 @@ SCR_CheckDrawCenterString (int swap)
 float
 CalcFov (float fov_x, float width, float height)
 {
-	float       a;
-	float       x;
+	float       a, x;
 
 	if (fov_x < 1 || fov_x > 179)
 		Sys_Error ("Bad fov: %f", fov_x);
@@ -404,18 +398,19 @@ SCR_DrawTurtle (int swap)
 	Draw_Pic (scr_vrect.x, scr_vrect.y, scr_turtle);
 }
 
-extern cvar_t *show_time;
 extern cvar_t *show_fps;
+extern cvar_t *show_time;
 
 void
 SCR_DrawFPS (int swap)
 {
+	char          st[80];
+	double        t;
 	static double lastframetime;
-	double      t;
-	extern int  fps_count;
-	static int  lastfps;
-	int         i, x, y;
-	char        st[80];
+	int           i, x, y;
+	static int    lastfps;
+
+	extern int    fps_count;
 
 	if (!show_fps->int_val)
 		return;
@@ -452,12 +447,11 @@ SCR_DrawFPS (int swap)
 void
 SCR_DrawTime (int swap)
 {
-	int 		x, y;
 	char		st[80];
-
+	char	   *timefmt = NULL;
+	int 		x, y;
+	struct tm  *local = NULL;
 	time_t		utc = 0;
-	struct tm	*local = NULL;
-	char		*timefmt = NULL;
 
 	// any cvar that can take multiple settings must be able to handle abuse. 
 	if (show_time->int_val <= 0)
@@ -549,14 +543,10 @@ SCR_DrawConsole (int swap)
 tex_t *
 SCR_ScreenShot (int width, int height)
 {
-	int         x, y;
 	unsigned char *src, *dest;
-	int         w, h;
-	int         dx, dy, dex, dey, nx;
-	int         r, b, g;
-	int         count;
-	float       fracw, frach;
-	tex_t      *tex;
+	float          fracw, frach;
+	int            count, dex, dey, dx, dy, nx, r, g, b, x, y, w, h;
+	tex_t         *tex;
 
 	tex = Hunk_TempAlloc (field_offset (tex_t, data[vid.width *
 													vid.height * 3]));
@@ -645,13 +635,11 @@ SCR_ScreenShot_f (void)
 int
 MipColor (int r, int g, int b)
 {
-	int         i;
-	float       dist;
+	float       bestdist, dist;
+	int         r1, g1, b1, i;
 	int         best = 0;
-	float       bestdist;
-	int         r1, g1, b1;
-	static int  lr = -1, lg = -1, lb = -1;
 	static int  lastbest;
+	static int  lr = -1, lg = -1, lb = -1;
 
 	if (r == lr && g == lg && b == lb)
 		return lastbest;
@@ -681,10 +669,8 @@ extern byte *draw_chars;				// 8*8 graphic characters
 void
 SCR_DrawCharToSnap (int num, byte * dest, int width)
 {
-	int         row, col;
 	byte       *source;
-	int         drawline;
-	int         x;
+	int         col, row, drawline, x;
 
 	row = num >> 4;
 	col = num & 15;
@@ -707,10 +693,10 @@ SCR_DrawCharToSnap (int num, byte * dest, int width)
 void
 SCR_DrawStringToSnap (const char *s, tex_t *tex, int x, int y)
 {
-	byte       *buf = tex->data;
 	byte       *dest;
+	byte       *buf = tex->data;
 	const unsigned char *p;
-	int         width = tex->width;
+	int          width = tex->width;
 
 	dest = buf + ((y * width) + x);
 
@@ -727,9 +713,7 @@ void
 SCR_DrawNotifyString (void)
 {
 	char       *start;
-	int         l;
-	int         j;
-	int         x, y;
+	int         j, l, x, y;
 
 	start = scr_notifystring;
 

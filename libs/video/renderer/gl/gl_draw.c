@@ -45,24 +45,19 @@
 #include "QF/render.h"
 #include "QF/screen.h"
 #include "QF/sys.h"
-#include "QF/vid.h"
 #include "QF/va.h"
 #include "QF/vfs.h"
-#include "QF/GL/qf_textures.h"
-#include "QF/GL/types.h"
+#include "QF/vid.h"
 #include "QF/GL/defines.h"
 #include "QF/GL/funcs.h"
 #include "QF/GL/qf_screen.h"
+#include "QF/GL/qf_textures.h"
 #include "QF/GL/qf_vid.h"
+#include "QF/GL/types.h"
 
 #include "r_cvar.h"
 #include "r_shared.h"
 #include "sbar.h"
-
-extern byte *vid_basepal;
-
-extern cvar_t *crosshair, *cl_crossx, *cl_crossy, *crosshaircolor,
-			  *r_lightmap_components;
 
 byte *draw_chars;						// 8*8 graphic characters
 
@@ -104,12 +99,17 @@ static int  numcachepics;
 
 static byte menuplyr_pixels[4096];
 
+extern byte *vid_basepal;
+
+extern cvar_t *crosshair, *cl_crossx, *cl_crossy, *crosshaircolor,
+			  *r_lightmap_components;
+
 
 qpic_t *
 Draw_PicFromWad (const char *name)
 {
-	qpic_t     *p;
 	glpic_t    *gl;
+	qpic_t     *p;
 
 	p = W_GetLumpName (name);
 	gl = (glpic_t *) p->data;
@@ -135,8 +135,8 @@ Draw_CachePic (const char *path, qboolean alpha)
 {
 	cachepic_t *pic;
 	int         i;
-	qpic_t     *dat;
 	glpic_t    *gl;
+	qpic_t     *dat;
 
 	// First, check if its cached..
 	for (pic = cachepics, i = 0; i < numcachepics; pic++, i++)
@@ -185,9 +185,8 @@ Draw_CachePic (const char *path, qboolean alpha)
 void
 Draw_TextBox (int x, int y, int width, int lines)
 {
+	int         cx, cy, n;
 	qpic_t     *p;
-	int         cx, cy;
-	int         n;
 
 	// draw left side
 	cx = x;
@@ -288,8 +287,8 @@ Draw_Init (void)
 void
 Draw_Character (int x, int y, int num)
 {
-	int         row, col;
 	float       frow, fcol, size;
+	int         row, col;
 
 	if (num == 32)
 		return;							// space
@@ -343,9 +342,9 @@ Draw_AltString (int x, int y, const char *str)
 void
 Draw_Crosshair (int swap)
 {
-	int         x, y;
-	extern vrect_t scr_vrect;
 	unsigned char *pColor;
+	int            x, y;
+	extern vrect_t scr_vrect;
 
 	switch (crosshair->int_val) {
 		case 0:
@@ -404,8 +403,8 @@ void
 Draw_SubPic (int x, int y, qpic_t *pic, int srcx, int srcy, int width,
 			 int height)
 {
-	glpic_t    *gl;
 	float       newsl, newtl, newsh, newth;
+	glpic_t    *gl;
 
 	gl = (glpic_t *) pic->data;
 
@@ -438,10 +437,9 @@ Draw_SubPic (int x, int y, qpic_t *pic, int srcx, int srcy, int width,
 void
 Draw_TransPicTranslate (int x, int y, qpic_t *pic, byte * translation)
 {
-	int         v, u, c;
+	byte        *src;
+	int          c, p, u, v;
 	unsigned int trans[64 * 64], *dest;
-	byte       *src;
-	int         p;
 
 	qfglBindTexture (GL_TEXTURE_2D, translate_texture);
 
@@ -488,11 +486,11 @@ Draw_TransPicTranslate (int x, int y, qpic_t *pic, byte * translation)
 void
 Draw_ConsoleBackground (int lines)
 {
-	int         y;
-	qpic_t     *conback;
-	glpic_t    *gl;
-	float       ofs;
 	byte        alpha;
+	float       ofs;
+	int         y;
+	glpic_t    *gl;
+	qpic_t     *conback;
 
 	// This can be a CachePic now, just like in software
 	conback = Draw_CachePic ("gfx/conback.lmp", false);

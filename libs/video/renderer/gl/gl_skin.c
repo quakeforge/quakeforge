@@ -82,10 +82,10 @@ build_skin_8 (byte * original, int tinwidth, int tinheight,
 			  unsigned int scaled_width, unsigned int scaled_height,
 			  int inwidth, qboolean alpha)
 {
+	byte        *inrow;
+	byte         pixels[512 * 256], *out;
+	int          i, j;
 	unsigned int frac, fracstep;
-	byte       *inrow;
-	byte        pixels[512 * 256], *out;
-	int         i, j;
 
 	out = pixels;
 	memset (pixels, 0, sizeof (pixels));
@@ -114,11 +114,11 @@ build_skin_32 (byte * original, int tinwidth, int tinheight,
 			   unsigned int scaled_width, unsigned int scaled_height,
 			   int inwidth, qboolean alpha)
 {
+	byte        *inrow;
+	int          i, j;
+	int          samples = alpha ? gl_alpha_format : gl_solid_format;
 	unsigned int frac, fracstep;
-	byte       *inrow;
 	unsigned int pixels[512 * 256], *out;
-	int         i, j;
-	int         samples = alpha ? gl_alpha_format : gl_solid_format;
 
 	out = pixels;
 	memset (pixels, 0, sizeof (pixels));
@@ -176,9 +176,9 @@ build_skin (int texnum, byte *ptexels, int width, int height,
 void
 Skin_Do_Translation (skin_t *player_skin, int slot, skin_t *skin)
 {
-	int         texnum = skin->texture;
-	int         inwidth, inheight;
 	byte       *original;
+	int         inwidth, inheight;
+	int         texnum = skin->texture;
 	tex_t      *skin_texels;
 
 	if ((skin_texels = (tex_t*)Skin_Cache (player_skin)) != NULL) {
@@ -197,10 +197,10 @@ Skin_Do_Translation (skin_t *player_skin, int slot, skin_t *skin)
 void
 Skin_Do_Translation_Model (model_t *model, int skinnum, int slot, skin_t *skin)
 {
-	int         texnum = skin->texture;
-	int         inwidth, inheight;
-	aliashdr_t *paliashdr;
 	byte       *original;
+	int         inwidth, inheight;
+	int         texnum = skin->texture;
+	aliashdr_t *paliashdr;
 	
 	if (!model)							// player doesn't have a model yet
 		return;

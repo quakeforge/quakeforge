@@ -54,25 +54,24 @@
 #include "view.h"
 #include "r_cvar.h"
 
-extern model_t *loadmodel;
-
-extern int  skytexturenum;
-
+char       *suf[6] = { "rt", "bk", "lf", "ft", "up", "dn" };
+float       speedscale;					// for top sky and bottom sky
 int         solidskytexture;
 int         alphaskytexture;
-float       speedscale;					// for top sky and bottom sky
 
 // Set to true if a valid skybox is loaded --KB
 qboolean    skyloaded = false;
 
+extern int      skytexturenum;
+extern model_t *loadmodel;
 
-char       *suf[6] = { "rt", "bk", "lf", "ft", "up", "dn" };
+
 void
 R_LoadSkys (const char *skyname)
 {
+	char        name[64];
 	int         i;
 	VFile      *f;
-	char        name[64];
 
 	if (strcasecmp (skyname, "none") == 0) {
 		skyloaded = false;
@@ -187,8 +186,8 @@ vec3_t      domescale;
 void
 R_DrawSkyLayer (float s)
 {
-	int         a, b;
 	float       x, y, a1x, a1y, a2x, a2y;
+	int         a, b;
 	vec3_t      v;
 
 	for (a = 0; a < 16; a++) {
@@ -278,17 +277,15 @@ R_DrawSky (void)
 void
 R_InitSky (texture_t *mt)
 {
-	int         i, j, p;
-	byte       *src;
-	unsigned int trans[128 * 128];
-	unsigned int transpix;
-	int         r, g, b;
+	byte         *src;
+	int           i, j, p, r, g, b;
+	unsigned int  transpix;
+	unsigned int  trans[128 * 128];
 	unsigned int *rgba;
 
 	src = (byte *) mt + mt->offsets[0];
 
-	// make an average value for the back to avoid
-	// a fringe on the top level
+	// make an average value for the back to avoid a fringe on the top level
 
 	r = g = b = 0;
 	for (i = 0; i < 128; i++)

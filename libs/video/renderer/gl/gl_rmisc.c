@@ -176,8 +176,8 @@ R_Init (void)
 void
 R_NewMap (model_t *worldmodel, struct model_s **models, int num_models)
 {
-	int         i;
 	cvar_t     *r_skyname;
+	int         i;
 
 	for (i = 0; i < 256; i++)
 		d_lightstylevalue[i] = 264;		// normal light value
@@ -223,8 +223,8 @@ R_NewMap (model_t *worldmodel, struct model_s **models, int num_models)
 void
 R_TimeRefresh_f (void)
 {
-	int         i;
 	double      start, stop, time;
+	int         i;
 
 	qfglFinish ();
 	GL_EndRendering ();

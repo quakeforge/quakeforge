@@ -63,8 +63,8 @@ GDT_Init (void)
 static void
 GDT_InitDotParticleTexture (void)
 {
-	int         x, y, dx2, dy, d;
 	byte        data[16][16][2];
+	int         x, y, dx2, dy, d;
 
 	for (x = 0; x < 16; x++) {
 		dx2 = x - 8;
@@ -92,8 +92,8 @@ GDT_InitDotParticleTexture (void)
 static void
 GDT_InitSparkParticleTexture (void)
 {
-	int         x, y, dx2, dy, d;
 	byte        data[16][16][2];
+	int         x, y, dx2, dy, d;
 
 	for (x = 0; x < 16; x++) {
 		dx2 = 8 - abs(x - 8);
@@ -123,9 +123,10 @@ GDT_InitSparkParticleTexture (void)
 static void
 GDT_InitSmokeParticleTexture (void)
 {
-	int         i, x, y, c;
+	byte        d;
+	byte        data[32][32][2], noise1[32][32], noise2[32][32];
 	float       dx, dy2;
-	byte        d, data[32][32][2], noise1[32][32], noise2[32][32];
+	int         i, x, y, c;
 
 	for (i = 0; i < 8; i++) {
 		noise_plasma (&noise1[0][0], 32);
@@ -161,9 +162,10 @@ GDT_InitSmokeParticleTexture (void)
 static void
 GDT_InitSmokeRingParticleTexture (void)
 {
-	int         i, x, y, b;
+	byte        d;
+	byte        data[32][32][2], noise1[32][32], noise2[32][32];
 	float       dx, dy, c, c2;
-	byte        d, data[32][32][2], noise1[32][32], noise2[32][32];
+	int         i, x, y, b;
 
 	for (i = 0; i < 8; i++) {
 		noise_diamondsquare (&noise1[0][0], 32);

@@ -51,9 +51,6 @@
 #include "r_shared.h"
 #include "view.h"
 
-extern qboolean skyloaded;
-extern vec5_t skyvec[6][4];
-
 #define BOX_WIDTH 2056
 
 /* cube face to sky texture offset conversion */
@@ -107,6 +104,9 @@ struct box_def {
 	struct face_def face[6];
 };
 
+extern qboolean skyloaded;
+extern vec5_t skyvec[6][4];
+
 
 /*
 	determine_face
@@ -123,8 +123,8 @@ struct box_def {
 static int
 determine_face (vec3_t v)
 {
-	float       a[3];
 	float       m;
+	float       a[3];
 	int         i = 0;
 
 	m = a[0] = fabs (v[0]);
@@ -174,20 +174,14 @@ determine_face (vec3_t v)
 static int
 find_intersect (int face1, vec3_t x1, int face2, vec3_t x2, vec3_t y)
 {
-	vec3_t      n;						// normal to the plane formed by the
-
-	// eye and the two points on the cube.
-
-	vec3_t      x = { 0, 0, 0 };		// point on cube edge of adjoining
-
-	// faces. always on an axis plane.
-
-	vec3_t      v = { 0, 0, 0 };		// direction vector of cube edge.
-
-	// always +ve
-
-	vec_t       x_n, v_n;				// x.n and v.n
 	int         axis;
+	vec3_t      n;						// normal to the plane formed by the
+										// eye and the two points on the cube.
+	vec3_t      x = { 0, 0, 0 };		// point on cube edge of adjoining
+										// faces. always on an axis plane.
+	vec3_t      v = { 0, 0, 0 };		// direction vector of cube edge.
+	// always +ve
+	vec_t       x_n, v_n;				// x.n and v.n
 	vec3_t      t;
 
 	x[face_axis[face1]] = face_offset[face1];
@@ -286,10 +280,10 @@ insert_cube_vertices (struct box_def *box, struct visit_def visit, int count,
 					  ...)
 {
 	int         i;
-	vec3_t    **v;
-	va_list     args;
 	int         face = visit.face;
 	int         ind = visit.leave + 1;
+	va_list     args;
+	vec3_t    **v;
 
 #ifdef __BORLANDC__
 // This is fix for borland alloca "feature" which fails to restore stack
@@ -339,9 +333,9 @@ static void
 cross_cube_edge (struct box_def *box, int face1, vec3_t v1, int face2,
 				 vec3_t v2)
 {
-	vec3_t      l;
 	int         axis;
 	int         face = -1;
+	vec3_t      l;
 
 	axis = find_intersect (face1, v1, face2, v2, l);
 	if (l[axis] > 1024)
@@ -376,10 +370,9 @@ cross_cube_edge (struct box_def *box, int face1, vec3_t v1, int face2,
 static void
 process_corners (struct box_def *box)
 {
-	struct visit_def *visit = box->visited_faces;
-	int         max_visit = 0;
 	int         i;
-	int         center = -1;
+	int         center = -1, max_visit = 0;
+	struct visit_def *visit = box->visited_faces;
 
 	if (visit[box->face_count - 1].face == visit[0].face) {
 		box->face_count--;

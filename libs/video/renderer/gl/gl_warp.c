@@ -33,24 +33,23 @@
 #include "QF/cvar.h"
 #include "QF/sys.h"
 
-#include "r_shared.h"
 #include "r_cvar.h"
+#include "r_shared.h"
 
 #include "QF/GL/defines.h"
 #include "QF/GL/funcs.h"
 
-extern model_t *loadmodel;
-
 msurface_t *warpface;
 
 extern cvar_t *gl_subdivide_size;
+extern model_t *loadmodel;
 
 
 void
 BoundPoly (int numverts, float *verts, vec3_t mins, vec3_t maxs)
 {
-	int         i, j;
 	float      *v;
+	int         i, j;
 
 	mins[0] = mins[1] = mins[2] = 9999;
 	maxs[0] = maxs[1] = maxs[2] = -9999;
@@ -67,16 +66,13 @@ BoundPoly (int numverts, float *verts, vec3_t mins, vec3_t maxs)
 void
 SubdividePolygon (int numverts, float *verts)
 {
-	int         i, j, k;
-	vec3_t      mins, maxs;
-	float       m;
-	float      *v;
-	vec3_t      front[64], back[64];
-	int         f, b;
+	float       frac, m, s, t;
 	float       dist[64];
-	float       frac;
+	float      *v;
+	int         b, f, i, j, k;
 	glpoly_t   *poly;
-	float       s, t;
+	vec3_t      mins, maxs;
+	vec3_t      front[64], back[64];
 
 	if (numverts > 60)
 		Sys_Error ("numverts = %i", numverts);
@@ -85,8 +81,7 @@ SubdividePolygon (int numverts, float *verts)
 
 	for (i = 0; i < 3; i++) {
 		m = (mins[i] + maxs[i]) * 0.5;
-		m =
-			gl_subdivide_size->value * floor (m / gl_subdivide_size->value +
+		m = gl_subdivide_size->value * floor (m / gl_subdivide_size->value +
 											  0.5);
 		if (maxs[i] - m < 8)
 			continue;
@@ -155,11 +150,9 @@ SubdividePolygon (int numverts, float *verts)
 void
 GL_SubdivideSurface (msurface_t *fa)
 {
-	vec3_t      verts[64];
-	int         numverts;
-	int         i;
-	int         lindex;
 	float      *vec;
+	int         lindex, numverts, i;
+	vec3_t      verts[64];
 
 	warpface = fa;
 
@@ -194,10 +187,10 @@ float       turbsin[] = {
 void
 EmitWaterPolys (msurface_t *fa)
 {
-	glpoly_t   *p;
+	float       os, ot, s, t;
 	float      *v;
 	int         i;
-	float       s, t, os, ot;
+	glpoly_t   *p;
 	vec3_t      nv;
 
 	for (p = fa->polys; p; p = p->next) {

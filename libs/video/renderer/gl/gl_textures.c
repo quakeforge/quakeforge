@@ -52,12 +52,8 @@
 #include "QF/GL/qf_vid.h"
 
 #include "compat.h"
-#include "sbar.h"
 #include "r_cvar.h"
-
-extern int      gl_filter_min, gl_filter_max;
-extern unsigned char d_15to8table[65536];
-extern cvar_t *gl_picmip;
+#include "sbar.h"
 
 typedef struct {
 	int         texnum;
@@ -180,11 +176,15 @@ static glformat_t formats[] = {
 
 int gl_alpha_format = 4, gl_lightmap_format = 4, gl_solid_format = 3;
 
+extern unsigned char d_15to8table[65536];
+extern int      gl_filter_min, gl_filter_max;
+extern cvar_t  *gl_picmip;
+
 
 void
 GL_TextureMode_f (void)
 {
-	int i;
+	int          i;
 	gltexture_t *glt;
 
 	if (Cmd_Argc () == 1) {
@@ -210,7 +210,7 @@ GL_TextureMode_f (void)
 	gl_filter_min = modes[i].minimize;
 	gl_filter_max = modes[i].maximize;
 
-// change all the existing mipmap texture objects
+	// change all the existing mipmap texture objects
 	for (i = 0, glt = gltextures; i < numgltextures; i++, glt++) {
 		if (glt->mipmap) {
 			qfglBindTexture (GL_TEXTURE_2D, glt->texnum);
@@ -253,9 +253,9 @@ static void
 GL_ResampleTexture (unsigned int *in, int inwidth, int inheight,
 		    unsigned int *out, int outwidth, int outheight)
 {
-	int         i, j; 
+	int           i, j; 
+	unsigned int  frac, fracstep; 
 	unsigned int *inrow; 
-	unsigned int frac, fracstep; 
  
 	if (!outwidth || !outheight) 
 		return; 
@@ -275,9 +275,9 @@ static void
 GL_Resample8BitTexture (unsigned char *in, int inwidth, int inheight,
 			unsigned char *out, int outwidth, int outheight) 
 {
-	int         i, j;
 	unsigned char *inrow;
-	unsigned int frac, fracstep;
+	int            i, j;
+	unsigned int   frac, fracstep;
 
 	if (!outwidth || !outheight)
 		return;
@@ -301,8 +301,8 @@ GL_Resample8BitTexture (unsigned char *in, int inwidth, int inheight,
 static void
 GL_MipMap (byte * in, int width, int height)
 {
-	int         i, j;
 	byte       *out;
+	int         i, j;
 
 	width <<= 2;
 	height >>= 1;
@@ -327,10 +327,9 @@ GL_MipMap (byte * in, int width, int height)
 static void
 GL_MipMap8Bit (byte * in, int width, int height)
 {
-	int         i, j;
-	byte       *out;
+	byte          *at1, *at2, *at3, *at4, *out;
+	int            i, j;
 	unsigned short r, g, b;
-	byte       *at1, *at2, *at3, *at4;
 
 	height >>= 1;
 	out = in;
@@ -358,8 +357,8 @@ static void
 GL_Upload32 (unsigned int *data, int width, int height, qboolean mipmap,
 	     qboolean alpha)
 {
+	int           scaled_width, scaled_height, intformat;
 	unsigned int *scaled;
-	int         scaled_width, scaled_height, intformat;
 
 	if (!width || !height)
 		return; // Null texture
@@ -505,8 +504,8 @@ extern qboolean VID_Is8bit (void);
 void
 GL_Upload8 (byte * data, int width, int height, qboolean mipmap, qboolean alpha)
 {
+	int           i, s, p;
 	unsigned int *trans = NULL;
-	int         i, s, p;
 
 	s = width * height;
 	trans = malloc (s * sizeof (unsigned int));
@@ -549,8 +548,8 @@ int
 GL_LoadTexture (const char *identifier, int width, int height, byte * data,
 		qboolean mipmap, qboolean alpha, int bytesperpixel)
 {
+	int          crc, i;
 	gltexture_t *glt;
-	int         i, crc;
 
 	// LordHavoc: now just using a standard CRC for texture validation
 	crc = CRC_Block (data, width * height * bytesperpixel);

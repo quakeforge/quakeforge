@@ -39,6 +39,7 @@
 #ifdef HAVE_STRINGS_H
 # include <strings.h>
 #endif
+
 #include <stdlib.h>
 
 #include "QF/mathlib.h"
@@ -47,7 +48,8 @@
 void
 noise_diamondsquare (unsigned char *noise, int size)
 {
-	int         x, y, g, g2, amplitude, min, max, size1 = size - 1;
+	int         amplitude, max, min, g, g2, x, y;
+	int         size1 = size - 1;
 	int        *noisebuf;
 
 #define n(x,y) noisebuf[((y)&size1)*size+((x)&size1)]
@@ -102,7 +104,7 @@ noise_diamondsquare (unsigned char *noise, int size)
 void
 noise_plasma (unsigned char *noise, int size)
 {
-	int a, b, c, d, i, j, k;
+	int   a, b, c, d, i, j, k;
 
 	if (128 >= size)
 		d = 64 / size;

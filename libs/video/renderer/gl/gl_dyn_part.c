@@ -57,14 +57,14 @@
 static particle_t *particles, **freeparticles;
 static short r_numparticles, numparticles;
 
-extern cvar_t *cl_max_particles;
+int         ramp[8] = { 0x6d, 0x6b, 0x06, 0x05, 0x04, 0x03, 0x02, 0x01 };
 
 extern int  part_tex_dot;
 extern int  part_tex_spark;
 extern int  part_tex_smoke[8];
 extern int  part_tex_smoke_ring[8];
 
-int         ramp[8] = { 0x6d, 0x6b, 0x06, 0x05, 0x04, 0x03, 0x02, 0x01 };
+extern cvar_t *cl_max_particles;
 
 
 inline particle_t *
@@ -100,8 +100,8 @@ particle_new_random (ptype_t type, int texnum, vec3_t org, int org_fuzz,
 					 float scale, int vel_fuzz, float die, byte color,
 					 byte alpha)
 {
-	vec3_t      porg, pvel;
 	int         j;
+	vec3_t      porg, pvel;
 
 	for (j = 0; j < 3; j++) {
 		if (org_fuzz)
@@ -172,11 +172,10 @@ R_ClearParticles (void)
 void
 R_ReadPointFile_f (void)
 {
-	VFile      *f;
-	vec3_t      org;
-	int         r;
-	int         c;
 	char        name[MAX_OSPATH], *mapname, *t1;
+	int         c, r;
+	vec3_t      org;
+	VFile      *f;
 
 	mapname = strdup (r_worldentity.model->name);
 	if (!mapname)
@@ -331,7 +330,7 @@ R_RunPuffEffect (vec3_t org, particle_effect_t type, byte count)
 void
 R_RunParticleEffect (vec3_t org, int color, int count)
 {
-	int         i, j, scale;
+	int         scale, i, j;
 	vec3_t      porg;
 
 	if (!r_particles->int_val)
@@ -379,8 +378,8 @@ R_RunSpikeEffect (vec3_t org, particle_effect_t type)
 void
 R_LavaSplash (vec3_t org)
 {
-	int         i, j;
 	float       vel;
+	int         i, j;
 	vec3_t      dir, porg, pvel;
 
 	if (!r_particles->int_val)
@@ -410,8 +409,8 @@ R_LavaSplash (vec3_t org)
 void
 R_TeleportSplash (vec3_t org)
 {
-	int         i, j, k;
 	float       vel;
+	int         i, j, k;
 	vec3_t      dir, porg, pvel;
 
 	if (!r_particles->int_val)
@@ -441,13 +440,11 @@ R_TeleportSplash (vec3_t org)
 void
 R_RocketTrail (int type, entity_t *ent)
 {
-	vec3_t      vec, subtract;
-	float       len, dist;
-	int         j, ptex;
-	ptype_t     ptype;
-	vec3_t      porg, pvel, up, right;
-	float       pdie, pscale;
 	byte        palpha, pcolor;
+	float       dist, len, pdie, pscale;
+	int         ptex, j;
+	ptype_t     ptype;
+	vec3_t      porg, pvel, up, right, subtract, vec;
 
 	if (type == 0)
 		R_AddFire (ent->old_origin, ent->origin, ent);
@@ -554,16 +551,13 @@ R_RocketTrail (int type, entity_t *ent)
 void
 R_DrawParticles (void)
 {
-	byte        i;
-	float       grav, fast_grav, dvel;
-	float       minparticledist;
+	byte        alpha, i;
 	unsigned char *at;
-	byte        alpha;
-	float       scale;
+	float       dvel, grav, fast_grav, minparticledist, scale;
+	int         activeparticles, maxparticle, j, k;
 	particle_t *part;
 	vec3_t		up, right, o_up, o_right;
 	vec3_t		up_scale, right_scale, up_right_scale, down_right_scale;
-	int         activeparticles, maxparticle, j, k;
 	
 	// LordHavoc: particles should not affect zbuffer
 	qfglDepthMask (GL_FALSE);

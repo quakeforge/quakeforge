@@ -45,10 +45,10 @@
 #include "QF/sys.h"
 #include "QF/GL/defines.h"
 #include "QF/GL/funcs.h"
-#include "QF/GL/qf_textures.h"
 #include "QF/GL/qf_rmain.h"
-#include "QF/GL/qf_vid.h"
 #include "QF/GL/qf_sky.h"
+#include "QF/GL/qf_textures.h"
+#include "QF/GL/qf_vid.h"
 
 #include "compat.h"
 #include "r_cvar.h"
@@ -57,16 +57,14 @@
 
 void EmitWaterPolys (msurface_t *fa);
 
-qboolean	r_cache_thrash;
+qboolean	 r_cache_thrash;
 
-extern vec3_t shadecolor;				// Ender (Extend) Colormod
-
-int         active_lightmaps;
-int         dlightdivtable[8192];
-int			gl_internalformat;
-int         lightmap_bytes;				// 1, 3, or 4
-int         lightmap_textures;
-int			skytexturenum;
+int          active_lightmaps;
+int          dlightdivtable[8192];
+int			 gl_internalformat;
+int          lightmap_bytes;				// 1, 3, or 4
+int          lightmap_textures;
+int			 skytexturenum;
 
 // LordHavoc: since lightmaps are now allocated only as needed, allow a ridiculous number :)
 #define	MAX_LIGHTMAPS	1024
@@ -75,23 +73,25 @@ int			skytexturenum;
 
 // keep lightmap texture data in main memory so texsubimage can update properly
 // LordHavoc: changed to be allocated at runtime (typically lower memory usage)
-byte       *lightmaps[MAX_LIGHTMAPS];
+byte        *lightmaps[MAX_LIGHTMAPS];
 
 // unsigned int blocklights[BLOCK_WIDTH * BLOCK_HEIGHT * 3];
 unsigned int blocklights[18 * 18 * 3];
-int         allocated[MAX_LIGHTMAPS][BLOCK_WIDTH];
+int          allocated[MAX_LIGHTMAPS][BLOCK_WIDTH];
 
 typedef struct glRect_s {
 	unsigned short l, t, w, h;
 } glRect_t;
 
-glpoly_t   *fullbright_polys[MAX_GLTEXTURES];
-qboolean    lightmap_modified[MAX_LIGHTMAPS];
-glpoly_t   *lightmap_polys[MAX_LIGHTMAPS];
-glRect_t    lightmap_rectchange[MAX_LIGHTMAPS];
+glpoly_t    *fullbright_polys[MAX_GLTEXTURES];
+qboolean     lightmap_modified[MAX_LIGHTMAPS];
+glpoly_t    *lightmap_polys[MAX_LIGHTMAPS];
+glRect_t     lightmap_rectchange[MAX_LIGHTMAPS];
 
-msurface_t *waterchain = NULL;
-msurface_t *sky_chain;
+msurface_t  *waterchain = NULL;
+msurface_t  *sky_chain;
+
+extern vec3_t shadecolor;				// Ender (Extend) Colormod
 
 
 // LordHavoc: place for gl_rsurf setup code
@@ -99,6 +99,7 @@ void
 glrsurf_init (void)
 {
 	int         s;
+
 	memset (&lightmaps, 0, sizeof (lightmaps));
 		dlightdivtable[0] = 1048576 >> 7;
 		for (s = 1; s < 8192; s++)
@@ -128,11 +129,12 @@ R_RecursiveLightUpdate (mnode_t *node)
 void
 R_AddDynamicLights (msurface_t *surf)
 {
-	int			sdtable[18], lnum, td, maxdist, maxdist2, maxdist3, i, j, s, t,
-				smax, tmax, red, green, blue;
+	float		  dist, f;
+	int			  lnum, maxdist, maxdist2, maxdist3, red, green, blue, smax,
+				  tmax, td, i, j, s, t;
+	int           sdtable[18];
 	unsigned int *bl;
-	float		dist, f;
-	vec3_t		impact, local;
+	vec3_t		  impact, local;
 
 	// use 64bit integer...  shame it's not very standardized...
 #if _MSC_VER || __BORLANDC__
@@ -209,12 +211,10 @@ R_AddDynamicLights (msurface_t *surf)
 void
 R_BuildLightMap (msurface_t *surf, byte * dest, int stride)
 {
-	int         smax, tmax;
-	int         i, j, size, shift;
-	byte       *lightmap;
-	unsigned int scale;
-	int         maps;
-	float       t2;
+	byte         *lightmap;
+	float         t2;
+	int           maps, shift, size, smax, tmax, i, j;
+	unsigned int  scale;
 	unsigned int *bl;
 
 	surf->cached_dlight = (surf->dlightframe == r_framecount);
@@ -309,8 +309,7 @@ R_BuildLightMap (msurface_t *surf, byte * dest, int stride)
 texture_t  *
 R_TextureAnimation (texture_t *base)
 {
-	int         relative;
-	int         count;
+	int         count, relative;
 
 	if (currententity->frame) {
 		if (base->alternate_anims)
@@ -334,13 +333,11 @@ R_TextureAnimation (texture_t *base)
 	return base;
 }
 
-/*
-  BRUSH MODELS
-*/
+/* BRUSH MODELS */
 
-extern int  solidskytexture;
-extern int  alphaskytexture;
 extern float speedscale;				// for top sky and bottom sky
+extern int   solidskytexture;
+extern int   alphaskytexture;
 
 void
 GL_UploadLightmap (int i, int x, int y, int w, int h)
@@ -372,9 +369,8 @@ GL_UploadLightmap (int i, int x, int y, int w, int h)
 void
 R_DrawMultitexturePoly (msurface_t *s)
 {
-	int         maps;
 	float      *v;
-	int         i;
+	int         maps, i;
 	texture_t  *texture = R_TextureAnimation (s->texinfo->texture);
 
 	c_brush_polys++;
@@ -433,9 +429,9 @@ R_DrawMultitexturePoly (msurface_t *s)
 void
 R_BlendLightmaps (void)
 {
+	float      *v;
 	int         i, j;
 	glpoly_t   *p;
-	float      *v;
 
 	qfglDepthMask (GL_FALSE);					// don't bother writing Z
 
@@ -473,9 +469,9 @@ R_BlendLightmaps (void)
 void
 R_RenderFullbrights (void)
 {
+	float      *v;
 	int         i, j;
 	glpoly_t   *p;
-	float      *v;
 
 	qfglBlendFunc (GL_ONE, GL_ONE);
 	for (i = 1; i < MAX_GLTEXTURES; i++) {
@@ -484,7 +480,8 @@ R_RenderFullbrights (void)
 		qfglBindTexture (GL_TEXTURE_2D, i);
 		for (p = fullbright_polys[i]; p; p = p->fb_chain) {
 			qfglBegin (GL_POLYGON);
-			for (j = 0, v = p->verts[0]; j < p->numverts; j++, v += VERTEXSIZE) {
+			for (j = 0, v = p->verts[0]; j < p->numverts; j++, v += VERTEXSIZE)
+			{
 				qfglTexCoord2fv (&v[3]);
 				qfglVertex3fv (v);
 			}
@@ -498,11 +495,9 @@ void
 R_RenderBrushPoly (msurface_t *fa)
 {
 	byte       *base;
-	int         maps;
-	glRect_t   *theRect;
-	int         i;
 	float      *v;
-	int         smax, tmax;
+	int         maps, smax, tmax, i;
+	glRect_t   *theRect;
 	texture_t  *texture = R_TextureAnimation (fa->texinfo->texture);
 
 	c_brush_polys++;
@@ -636,14 +631,13 @@ DrawTextureChains (void)
 void
 R_DrawBrushModel (entity_t *e)
 {
-	int         i;
-	int         k;
-	vec3_t      mins, maxs;
-	msurface_t *psurf;
 	float       dot;
-	mplane_t   *pplane;
+	int         i, k;
 	model_t    *clmodel;
+	mplane_t   *pplane;
+	msurface_t *psurf;
 	qboolean    rotated;
+	vec3_t      mins, maxs;
 
 	currententity = e;
 
@@ -739,18 +733,16 @@ R_DrawBrushModel (entity_t *e)
 	qfglPopMatrix ();
 }
 
-/*
-  WORLD MODEL
-*/
+/* WORLD MODEL */
 
 void
 R_RecursiveWorldNode (mnode_t *node)
 {
+	double      dot;
 	int         c, side;
+	mleaf_t    *pleaf;
 	mplane_t   *plane;
 	msurface_t *surf;
-	mleaf_t    *pleaf;
-	double      dot;
 
 	if (node->contents == CONTENTS_SOLID)
 		return;
@@ -866,13 +858,12 @@ R_DrawWorld (void)
 void
 R_MarkLeaves (void)
 {
-	byte       *vis;
-	mnode_t    *node;
-	mleaf_t    *leaf;
+	byte         solid[4096];
+	byte        *vis;
+	int          c, i;
+	mleaf_t     *leaf;
+	mnode_t     *node;
 	msurface_t **mark;
-	int         i;
-	int         c;
-	byte        solid[4096];
 
 	if (r_oldviewleaf == r_viewleaf && !r_novis->int_val)
 		return;
@@ -907,17 +898,13 @@ R_MarkLeaves (void)
 	}
 }
 
-/*
-  LIGHTMAP ALLOCATION
-*/
+/* LIGHTMAP ALLOCATION */
 
 // returns a texture number and the position inside it
 int
 AllocBlock (int w, int h, int *x, int *y)
 {
-	int         i, j;
-	int         best, best2;
-	int         texnum;
+	int         best, best2, texnum, i, j;
 
 	for (texnum = 0; texnum < MAX_LIGHTMAPS; texnum++) {
 		best = BLOCK_HEIGHT;
@@ -955,19 +942,18 @@ AllocBlock (int w, int h, int *x, int *y)
 	return 0;
 }
 
-mvertex_t  *r_pcurrentvertbase;
-model_t    *currentmodel;
 int         nColinElim;
+model_t    *currentmodel;
+mvertex_t  *r_pcurrentvertbase;
 
 void
 BuildSurfaceDisplayList (msurface_t *fa)
 {
-	int         i, lindex, lnumverts;
-	medge_t    *pedges, *r_pedge;
-	int         vertpage;
-	float      *vec;
 	float       s, t;
+	float      *vec;
+	int         lindex, lnumverts, vertpage, i;
 	glpoly_t   *poly;
+	medge_t    *pedges, *r_pedge;
 
 	// reconstruct the polygon
 	pedges = currentmodel->edges;
@@ -1060,8 +1046,8 @@ BuildSurfaceDisplayList (msurface_t *fa)
 void
 GL_CreateSurfaceLightmap (msurface_t *surf)
 {
-	int         smax, tmax;
 	byte       *base;
+	int         smax, tmax;
 
 	if (surf->flags & (SURF_DRAWSKY | SURF_DRAWTURB))
 		return;
