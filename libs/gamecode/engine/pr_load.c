@@ -280,6 +280,7 @@ PR_AddLoadFunc (progs_t *pr, int (*func)(progs_t *))
 }
 
 static int (*load_funcs[])(progs_t *) = {
+	PR_RelocateBuiltins,
 	PR_ResolveGlobals,
 	PR_Check_Opcodes,
 	PR_LoadStrings,
