@@ -226,31 +226,33 @@ R_TimeGraph (void)
 void
 R_NetGraph (void)
 {
-	int         a, x, y, i;
+	int         a, x, y, h, i;
 	int         lost;
 	char        st[80];
 
 	x = cl_hudswap->int_val ? vid.width - (NET_TIMINGS + 16): 0;
 	y = vid.height - sb_lines - 24 - r_graphheight->int_val - 1;
 
+	h = r_graphheight->int_val % 8;
+
 	Draw_TextBox (x, y, NET_TIMINGS / 8, r_graphheight->int_val / 8 + 1);
 
-	y += 8;
-
 	lost = CL_CalcNet ();
+	x = cl_hudswap->int_val ? vid.width - (NET_TIMINGS + 8) : 8;
+	y = vid.height - sb_lines - 9;
+
+	y -= h;
+	for (a = 0; a < NET_TIMINGS; a++) {
+		i = (cls.netchan.outgoing_sequence - a) & NET_TIMINGSMASK;
+		R_LineGraph (x + NET_TIMINGS - 1 - a, y, packet_latency[i]);
+	}
+
+	y -= vid.height - sb_lines - 24 - r_graphheight->int_val + 7;
 	snprintf (st, sizeof (st), "%3i%% packet loss", lost);
 	if (cl_hudswap->int_val) {
 		Draw_String8 (vid.width - ((strlen (st) * 8) + 8), y, st);
 	} else {
 		Draw_String8 (8, y, st);
-	}
-
-	x = cl_hudswap->int_val ? vid.width - (NET_TIMINGS + 8) : 8;
-	y = vid.height + 24 - sb_lines - r_graphheight->int_val - 1;
-
-	for (a = 0; a < NET_TIMINGS; a++) {
-		i = (cls.netchan.outgoing_sequence - a) & NET_TIMINGSMASK;
-		R_LineGraph (x + NET_TIMINGS - 1 - a, y, packet_latency[i]);
 	}
 }
 
