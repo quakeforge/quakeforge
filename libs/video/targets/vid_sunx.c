@@ -361,44 +361,6 @@ D_EndDirectRect (int x, int y, int width, int height)
 // direct drawing of the "accessing disk" icon isn't supported under Nextstep
 }
 
-
-/*
-=================
-VID_Gamma_f
-
-Keybinding command
-=================
-*/
-
-byte        vid_gamma[256];
-
-void
-VID_Gamma_f (void)
-{
-
-	float       g, f, inf;
-	int         i;
-
-	if (Cmd_Argc () == 2) {
-		g = Q_atof (Cmd_Argv (1));
-
-		for (i = 0; i < 255; i++) {
-			f = pow ((i + 1) / 256.0, g);
-			inf = f * 255 + 0.5;
-			if (inf < 0)
-				inf = 0;
-			if (inf > 255)
-				inf = 255;
-			vid_gamma[i] = inf;
-		}
-
-		VID_SetPalette (current_palette);
-
-		vid.recalc_refdef = 1;			// force a surface cache flush
-	}
-
-}
-
 // ========================================================================
 // Tragic death handler
 // ========================================================================
@@ -632,7 +594,6 @@ VID_Init (unsigned char *palette)
 	int         num_visuals;
 	int         template_mask;
 
-	Cmd_AddCommand ("gamma", VID_Gamma_f, "No Description");
 	for (i = 0; i < 256; i++)
 		vid_gamma[i] = i;
 

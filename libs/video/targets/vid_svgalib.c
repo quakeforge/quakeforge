@@ -194,36 +194,6 @@ D_EndDirectRect (int x, int y, int width, int height)
 }
 
 
-#if 0
-static void
-VID_Gamma_f (void)
-{
-	float       gamma, f, inf;
-	unsigned char palette[768];
-	int         i;
-
-	if (Cmd_Argc () == 2) {
-		gamma = atof (Cmd_Argv (1));
-
-		for (i = 0; i < 768; i++) {
-			f = pow ((vid_basepal[i] + 1) / 256.0, gamma);
-			inf = f * 255 + 0.5;
-			if (inf < 0)
-				inf = 0;
-			if (inf > 255)
-				inf = 255;
-			palette[i] = inf;
-		}
-
-		VID_SetPalette (palette);
-
-		/* Force a surface cache flush */
-		vid.recalc_refdef = 1;
-	}
-}
-#endif
-
-
 static void
 VID_DescribeMode_f (void)
 {
@@ -489,10 +459,6 @@ VID_Init (unsigned char *palette)
 
 	if (svgalib_inited)
 		return;
-
-#if 0
-	Cmd_AddCommand ("gamma", VID_Gamma_f, "Brightness level");
-#endif
 
 	if (UseDisplay) {
 		err = vga_init ();

@@ -192,44 +192,6 @@ D_EndDirectRect (int x, int y, int width, int height)
 // direct drawing of the "accessing disk" icon isnt supported under Nextstep
 }
 
-
-/*
-=================
-VID_Gamma_f
-
-Keybinding command
-=================
-*/
-
-byte        vid_gamma[256];
-
-void
-VID_Gamma_f (void)
-{
-
-	float       g, f, inf;
-	int         i;
-
-	if (Cmd_Argc () == 2) {
-		g = Q_atof (Cmd_Argv (1));
-
-		for (i = 0; i < 255; i++) {
-			f = pow ((i + 1) / 256.0, g);
-			inf = f * 255 + 0.5;
-			if (inf < 0)
-				inf = 0;
-			if (inf > 255)
-				inf = 255;
-			vid_gamma[i] = inf;
-		}
-
-		VID_SetPalette (current_palette);
-
-		vid.recalc_refdef = 1;			// force a surface cache flush
-	}
-
-}
-
 qboolean
 CheckPixelMultiply (void)
 {
@@ -414,8 +376,6 @@ VID_Init (unsigned char *palette)
 	int         w, h;
 
 	int         desired_width = 320, desired_height = 200;
-
-	Cmd_AddCommand ("gamma", VID_Gamma_f, "No Description");
 
 	pixel_multiply = Cvar_Get ("pixel_multiply", "2", CVAR_ARCHIVE, NULL,
 			"None");
