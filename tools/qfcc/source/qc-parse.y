@@ -44,8 +44,8 @@ typedef struct {
 	function_t *function;
 }
 
-%left	OR AND
 %right	'='
+%left	OR AND
 %left	EQ NE LE GE LT GT
 %left	'+' '-'
 %left	'*' '/' '&' '|'
@@ -379,9 +379,9 @@ statement
 	;
 
 expr
-	: expr AND expr	{ $$ = binary_expr (AND, $1, $3); }
+	: expr '=' expr	{ $$ = binary_expr ('=', $1, $3); }
+	| expr AND expr	{ $$ = binary_expr (AND, $1, $3); }
 	| expr OR expr	{ $$ = binary_expr (OR,  $1, $3); }
-	| expr '=' expr	{ $$ = binary_expr ('=', $1, $3); }
 	| expr EQ expr	{ $$ = binary_expr (EQ,  $1, $3); }
 	| expr NE expr	{ $$ = binary_expr (NE,  $1, $3); }
 	| expr LE expr	{ $$ = binary_expr (LE,  $1, $3); }
