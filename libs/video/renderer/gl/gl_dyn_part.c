@@ -264,22 +264,8 @@ R_RunSparkEffect (vec3_t org, int count, int ofuzz)
 				  12 + (rand () & 3), 64 + (rand () & 31));
 	while (count--)
 		particle_new_random (pt_fallfadespark, part_tex_spark, org,
-							 ofuzz * .75, 1, 96, r_realtime + 5,
+							 ofuzz * 0.75, 1, 96, r_realtime + 5,
 							 ramp[rand () & 7], 255);
-}
-
-inline static void
-R_RunGunshotEffect (vec3_t org, int count)
-{
-	int         scale;
-
-	if (count > 6)
-		scale = 24;
-	else
-		scale = 16;
-
-	R_RunSparkEffect (org, count / 2, scale);
-	return;
 }
 
 inline static void
@@ -297,13 +283,27 @@ R_RunPuffEffect (vec3_t org, particle_effect_t type, byte count)
 
 	switch (type) {
 		case PE_GUNSHOT:
-			R_RunGunshotEffect (org, count);
+		{
+			int scale = 16;
+
+			if (count > 6)
+				scale = 24;
+			R_RunSparkEffect (org, count / 2, scale);
+		}
 			break;
 		case PE_BLOOD:
 			R_BloodPuff (org, count);
 			break;
 		case PE_LIGHTNINGBLOOD:
 			R_BloodPuff (org, 5 + (rand () & 1));
+			count = 4 + (rand () % 5);
+			particle_new (pt_smokecloud, part_tex_smoke[rand () & 7], org,
+						  3, vec3_origin, r_realtime + 9,
+						  12 + (rand () & 3), 64 + (rand () & 31));
+			while (count--)
+				particle_new_random (pt_fallfadespark, part_tex_spark, org,
+									 16, 1, 128, r_realtime + 5,
+									 244 + (rand () % 3), 255);
 			break;
 		default:
 			break;
