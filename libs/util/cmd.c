@@ -589,9 +589,12 @@ Cbuf_Execute (void)
 		}
 		Cbuf_ExecuteStack (t->cbuf);
 	}
-	Cbuf_ExecuteStack (cmd_keybindbuffer);
-	Cbuf_ExecuteStack (cmd_consolebuffer);
-	Cbuf_ExecuteStack (cmd_legacybuffer);
+	if (cmd_keybindbuffer->buffer->str[0] || cmd_keybindbuffer->next)
+		Cbuf_ExecuteStack (cmd_keybindbuffer);
+	if (cmd_consolebuffer->buffer->str[0] || cmd_consolebuffer->next)
+		Cbuf_ExecuteStack (cmd_consolebuffer);
+	if (cmd_legacybuffer->buffer->str[0] || cmd_legacybuffer->next)
+		Cbuf_ExecuteStack (cmd_legacybuffer);
 }
 
 /*
