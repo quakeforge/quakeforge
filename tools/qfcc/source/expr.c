@@ -2341,9 +2341,34 @@ void
 init_elements (def_t *def, expr_t *eles)
 {
 	expr_t     *e;
-	int         count, i;
-	pr_type_t  *g = G_POINTER (pr_type_t, def->ofs);
+	int         count, i, num_params;
+	pr_type_t  *g;
+	def_t      *elements;
 
+	if (def->type->type == ev_array) {
+		elements = calloc (def->type->num_parms, sizeof (def_t));
+		for (i = 0; i < def->type->num_parms; i++) {
+			elements[i].type = def->type->aux_type;
+			elements[i].ofs = def->ofs + i * type_size (def->type->aux_type);
+		}
+		num_params = i;
+	} else if (def->type->type == ev_struct) {
+		struct_field_t *field;
+
+		for (i = 0, field = def->type->struct_head; field;
+			 i++, field = field->next)
+			;
+		elements = calloc (i, sizeof (def_t));
+		for (i = 0, field = def->type->struct_head; field;
+			 i++, field = field->next) {
+			elements[i].type = field->type;
+			elements[i].ofs = def->ofs + field->offset;
+		}
+		num_params = i;
+	} else {
+		error (eles, "invalid initializer");
+		return;
+	}
 	for (count = 0, e = eles->e.block.head; e; count++, e = e->next)
 		if (e->type == ex_error)
 			return;
@@ -2352,21 +2377,28 @@ init_elements (def_t *def, expr_t *eles)
 		count = def->type->num_parms;
 	}
 	for (i = 0, e = eles->e.block.head; i < count; i++, e = e->next) {
+		g = G_POINTER (pr_type_t, elements[i].ofs);
 		if (e->type == ex_def && e->e.def->constant)
 			e = constant_expr (e);
 		if (e->type == ex_block) {
-			warning (e, "not yet implemented");
-		} else if (e->type >= ex_string) {
-			if (get_type (e) != def->type->aux_type) {
+			if (elements[i].type->type != ev_array
+				&& elements[i].type->type != ev_struct) {
 				error (e, "type mismatch in initializer");
-				g += type_size (def->type->aux_type);
+				continue;
+			}
+			init_elements (&elements[i], e);
+		} else if (e->type >= ex_string) {
+			if (e->type == ex_integer
+				&& elements[i].type->type == ev_float)
+				convert_int (e);
+			if (get_type (e) != elements[i].type) {
+				error (e, "type mismatch in initializer");
+				continue;
+			}
+			if (e->type == ex_string) {
+				EMIT_STRING (g->string_var, e->e.string_val);
 			} else {
-				if (e->type == ex_string) {
-					EMIT_STRING (g->string_var, e->e.string_val);
-				} else {
-					memcpy (g, &e->e, type_size (get_type (e)) * 4);
-				}
-				g += type_size (get_type (e));
+				memcpy (g, &e->e, type_size (get_type (e)) * 4);
 			}
 		} else {
 			error (e, "non-constant initializer");
