@@ -479,9 +479,32 @@ PR_StackTrace (progs_t * pr)
 
 		if (!f) {
 			Sys_Printf ("<NO FUNCTION>\n");
-		} else
-			Sys_Printf ("%12s : %s: %x\n", PR_GetString (pr, f->s_file),
-						PR_GetString (pr, f->s_name), pr->pr_stack[i].s);
+		} else {
+			if (pr_debug->int_val && pr->debug) {
+				pr_lineno_t *lineno = PR_Find_Lineno (pr, pr->pr_stack[i].s);
+				pr_auxfunction_t *func = PR_Get_Lineno_Func (pr, lineno);
+				unsigned int line = PR_Get_Lineno_Line (pr, lineno);
+				int         addr = PR_Get_Lineno_Addr (pr, lineno);
+
+				line += func->source_line;
+				if (addr == pr->pr_stack[i].s) {
+					Sys_Printf ("%12s:%d : %s: %x\n",
+								PR_GetString (pr, f->s_file),
+								line,
+								PR_GetString (pr, f->s_name),
+								pr->pr_stack[i].s);
+				} else {
+					Sys_Printf ("%12s:%d+%d : %s: %x\n",
+								PR_GetString (pr, f->s_file),
+								line, pr->pr_stack[i].s - addr,
+								PR_GetString (pr, f->s_name),
+								pr->pr_stack[i].s);
+				}
+			} else {
+				Sys_Printf ("%12s : %s: %x\n", PR_GetString (pr, f->s_file),
+							PR_GetString (pr, f->s_name), pr->pr_stack[i].s);
+			}
+		}
 	}
 }
 
