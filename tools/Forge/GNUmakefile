@@ -36,7 +36,7 @@ include $(GNUSTEP_MAKEFILES)/common.make
 #
 PACKAGE_NAME=		Forge
 APP_NAME=		Forge
-Forge_PRINCIPAL_CLASS=	Forge
+Forge_PRINCIPAL_CLASS=	NSApplication
 Forge_APPLICATION_ICON=	Forge.tiff
 
 #
