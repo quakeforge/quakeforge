@@ -36,6 +36,8 @@
 #import <Foundation/NSBundle.h>
 #import <Foundation/NSObject.h>
 
+#import "PrefsView.h"
+
 /*
 	Bundle Delegate protocol
 
@@ -47,9 +49,20 @@
 // Notification, sent when a bundle is loaded.
 - (void) bundleController: (BundleController *) aController didLoadBundle: (NSBundle *) aBundle;
 
+/*
+	Methods for bundles to call
+*/
+- (BOOL) registerPrefsController: (id <PrefsViewController>) aPrefsController;
+#if 0
+- (BOOL) registerFileSubmenu: (NSMenu *) aMenu;
+- (BOOL) registerToolsSubmenu: (NSMenu *) aMenu;
+- (BOOL) registerCompiler: (id <Compiler>) aCompiler forType: (NSString *) type;
+- (BOOL) registerEditor: (id <Editor>) anEditor forType: (NSString *) type;
+#endif
+
 @end
 
-@interface BundleController: NSObject <BundleDelegate>
+@interface BundleController: NSObject
 {
 	id				delegate;
 	NSMutableArray	*loadedBundles;

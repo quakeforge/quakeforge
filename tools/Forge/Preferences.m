@@ -44,7 +44,7 @@ static const char rcsid[] =
 
 #import "Preferences.h"
 
-NSMutableDictionary *
+static NSMutableDictionary *
 defaultValues (void) {
     static NSMutableDictionary *dict = nil;
 
@@ -66,7 +66,7 @@ defaultValues (void) {
 /***
 	Code to deal with defaults
 ***/
-BOOL
+static BOOL
 getBoolDefault (NSMutableDictionary *dict, NSString *name)
 {
 	NSString	*str = [[NSUserDefaults standardUserDefaults] stringForKey: name];
@@ -81,7 +81,7 @@ getBoolDefault (NSMutableDictionary *dict, NSString *name)
 	return [num boolValue];
 }
 
-float
+static float
 getFloatDefault (NSMutableDictionary *dict, NSString *name)
 {
 	NSString	*str = [[NSUserDefaults standardUserDefaults] stringForKey: name];
@@ -96,7 +96,8 @@ getFloatDefault (NSMutableDictionary *dict, NSString *name)
 	return [num floatValue];
 }
 
-int
+#if 0	// unneeded
+static int
 getIntDefault (NSMutableDictionary *dict, NSString *name)
 {
 	NSString	*str = [[NSUserDefaults standardUserDefaults] stringForKey: name];
@@ -110,8 +111,9 @@ getIntDefault (NSMutableDictionary *dict, NSString *name)
 	
 	return [num intValue];
 }
+#endif
 
-NSString *
+static NSString *
 getStringDefault (NSMutableDictionary *dict, NSString *name)
 {
 	NSString	*str = [[NSUserDefaults standardUserDefaults] stringForKey: name];
@@ -322,11 +324,11 @@ static NSMutableDictionary	*displayedValues = nil;
 	setStringDefault(ProjectPath);
 	setStringDefault(BspSoundPath);
 	setStringDefault(StartWad);
-	setFloatDefault(XLight);
-	setFloatDefault(YLight);
-	setFloatDefault(ZLight);
-	setBoolDefault(ShowBSPOutput);
-	setBoolDefault(OffsetBrushCopy);
+	setFloatDefault	(XLight);
+	setFloatDefault	(YLight);
+	setFloatDefault	(ZLight);
+	setBoolDefault	(ShowBSPOutput);
+	setBoolDefault	(OffsetBrushCopy);
 	[defaults synchronize];
 }
 

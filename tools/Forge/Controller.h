@@ -36,7 +36,9 @@
 #import <Foundation/NSString.h>
 #import <AppKit/NSApplication.h>
 
-@interface Controller: NSObject
+#import "BundleController.h"
+
+@interface Controller: NSObject <BundleDelegate>
 {
 }
 

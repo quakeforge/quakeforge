@@ -36,7 +36,6 @@ static const char rcsid[] =
 #import <AppKit/NSApplication.h>
 #import <AppKit/NSMenu.h>
 #import "Controller.h"
-#import "Preferences.h"
 #import "PrefsController.h"
 
 @implementation Controller
@@ -261,6 +260,13 @@ static const char rcsid[] =
 	[menu setSubmenu: services	forItem: [menu itemWithTitle: _(@"Services")]];
 
 	[NSApp setMainMenu: menu];
+
+	{	// yeah, yeah, shaddap
+		id	controller = [[BundleController alloc] init];
+
+		[controller setDelegate: self];
+		[controller loadBundles];
+	}
 }
 
 /*
@@ -271,3 +277,39 @@ static const char rcsid[] =
 - (void) applicationWillTerminate: (NSNotification *) not;
 {
 }
+
+/******
+	Bundle Controller delegate methods
+******/
+
+- (void) bundleController: (BundleController *) aController didLoadBundle: (NSBundle *) aBundle
+{
+	if (!aBundle) {
+		NSLog (@"Controller -bundleController: sent nil bundle");
+		return;
+	}
+
+	if (![aBundle principalClass]) {
+		NSDictionary	*info = [aBundle infoDictionary];
+		
+		if (!(info || [info objectForKey: @"NSExecutable"])) {
+			NSLog (@"%@ has no principal class and no info dictionary", aBundle);
+			return;
+		}
+
+		NSLog (@"Bundle `%@' has no principal class!", [info objectForKey: @"NSExecutable"]);
+		return;
+	}
+	[[[aBundle principalClass] alloc] init];
+}
+
+- (BOOL) registerPrefsController: (id <PrefsViewController>) aPrefsController
+{
+	if (!aPrefsController)
+		return NO;
+
+	[[PrefsController sharedPrefsController] addPrefsViewController: aPrefsController];
+	return YES;
+}
+
+@end

@@ -60,7 +60,7 @@ static const char rcsid[] =
 	}
 
 	NSDebugLog (@"Loading bundle %@...", path);
-	
+
 	if ((bundle = [NSBundle bundleWithPath: path])) {
 		NSDebugLog (@"Bundle %@ successfully loaded.", path);
 
@@ -70,7 +70,7 @@ static const char rcsid[] =
 		*/
 		if (delegate && [delegate conformsToProtocol: @protocol(BundleDelegate)])
 			[(id <BundleDelegate>) delegate bundleController: self didLoadBundle: bundle];
-		[self bundleController: self didLoadBundle: bundle];
+		[loadedBundles addObject: bundle];
 	} else {
 		NSRunAlertPanel (@"Attention", @"Could not load bundle %@", @"OK", nil, nil, path);
 	}
@@ -95,7 +95,7 @@ static const char rcsid[] =
 	enumerator = [[fm directoryContentsAtPath: path] objectEnumerator];
 	while ((dir = [enumerator nextObject])) {
 		if ([[dir pathExtension] isEqualToString: extension])
-			[bundleList addObject: dir];
+			[bundleList addObject: [path stringByAppendingPathComponent: dir]];
 	}
 	return bundleList;
 }
@@ -104,17 +104,24 @@ static const char rcsid[] =
 
 @implementation BundleController
 
+static BundleController *	sharedInstance = nil;
+
 - (id) init
 {
-	if ((self = [super init]))
+	if (sharedInstance) {
+		[self dealloc];
+	} else {
+		self = [super init];
 		loadedBundles = [[NSMutableArray alloc] init];
-	return self;
+		sharedInstance = self;
+	}
+	return sharedInstance;
 }
 
 - (void) dealloc
 {
 	[loadedBundles release];
-	
+
 	[super dealloc];
 }
 
@@ -151,7 +158,7 @@ static const char rcsid[] =
 	// Okay, now go through dirList loading all of the bundles in each dir
 	counter = [dirList objectEnumerator];
 	while ((obj = [counter nextObject])) {
-		NSEnumerator	*enum2 = [[self bundlesWithExtension: @"Forge" inPath: obj] objectEnumerator];
+		NSEnumerator	*enum2 = [[self bundlesWithExtension: @"forgeb" inPath: obj] objectEnumerator];
 		NSString		*str;
 
 		while ((str = [enum2 nextObject])) {
@@ -163,11 +170,6 @@ static const char rcsid[] =
 - (NSArray *) loadedBundles
 {
 	return loadedBundles;
-}
-
-- (void) bundleController: (BundleController *) aController didLoadBundle: (NSBundle *) aBundle
-{
-	[loadedBundles addObject: aBundle];
 }
 
 @end
