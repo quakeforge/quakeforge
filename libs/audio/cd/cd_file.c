@@ -235,6 +235,9 @@ I_OGGMus_Play (int track, qboolean looping)
 	if (!tracklist || !mus_enabled)
 		return;
 
+	if (playing)
+		I_OGGMus_Stop ();
+
 	trackstring = va ("%i", track);
 	trackmap = PL_ObjectForKey (tracklist, trackstring);
 	if (!trackmap || trackmap->type != QFString) {
@@ -270,36 +273,30 @@ I_OGGMus_Play (int track, qboolean looping)
 static void
 I_OGGMus_Info (void)
 {
-	plitem_t	*keylist = NULL;
-	plitem_t	*currenttrack = NULL;
-	int			 count = 0, iter = 0;
+	int			 count = 0, iter = 0, keycount = 0;
 	const char	*trackstring;
+	plitem_t	*currenttrack = NULL;
 
 	if (!tracklist) {
 		Sys_Printf ("\n" "No Tracklist\n" "------------\n");
 		return;
 	}
-	if (!(keylist = PL_D_AllKeys (tracklist))) {
-		Sys_DPrintf ("OGGMus: Didn't get valid plist_t array, yet have "
-					 "valid tracklist?\n");
+	if (!(keycount = PL_D_NumKeys (tracklist)))
 		return;
-	}
 
 	Sys_Printf ("\n" "Tracklist loaded from file:\n%s\n"
 				"---------------------------\n", mus_ogglist->string);
 
 	/* loop, and count up the Highest key number. */
-	for (iter = 1, count = 0; count < ((plarray_t *) (keylist->data))->numvals
-							&& iter <= 99 ; iter++) {
+	for (iter = 1, count = 0; count < keycount && iter <= 99 ; iter++) {
 		trackstring = va ("%i", iter);
 		if (!(currenttrack = PL_ObjectForKey (tracklist, trackstring))) {
 			continue;
 		}
+
 		Sys_Printf (" %s  -  %s\n", trackstring, (char *) currenttrack->data);
 		count++;
-
 	}
-	PL_Free (keylist);
 }
 
 static void
