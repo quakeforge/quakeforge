@@ -44,10 +44,10 @@ static const char rcsid[] =
 
 static int  snd_inited;
 
-static snd_pcm_t *pcm;
+static snd_pcm_t  *pcm;
 static const char *pcmname = NULL;
 static size_t      buffer_size;
-static int snd_blocked = 0;
+static int		   snd_blocked = 0;
 static volatile dma_t sn;
 
 static cvar_t     *snd_stereo;
@@ -55,13 +55,13 @@ static cvar_t     *snd_rate;
 static cvar_t     *snd_device;
 static cvar_t     *snd_bits;
 
-static plugin_t           plugin_info;
-static plugin_data_t      plugin_info_data;
-static plugin_funcs_t     plugin_info_funcs;
-static general_data_t     plugin_info_general_data;
-static general_funcs_t    plugin_info_general_funcs;
-static snd_output_data_t       plugin_info_snd_output_data;
-static snd_output_funcs_t      plugin_info_snd_output_funcs;
+static plugin_t			  plugin_info;
+static plugin_data_t	  plugin_info_data;
+static plugin_funcs_t	  plugin_info_funcs;
+static general_data_t	  plugin_info_general_data;
+static general_funcs_t	  plugin_info_general_funcs;
+static snd_output_data_t  plugin_info_snd_output_data;
+static snd_output_funcs_t plugin_info_snd_output_funcs;
 
 static void *alsa_handle;
 
