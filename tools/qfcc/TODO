@@ -7,7 +7,7 @@ W = waiting on other work
 
 o	switch/case, for any type
 o	break/continue keywords for switch() and for(;;)
-o	native integer type
+X	native integer type
 o	quaternion type
 o	?: operator
 o	<op>= operator ( var += expr, etc. )
