@@ -542,7 +542,7 @@ IN_LL_SendKeyEvents (void)
 
 //==========================================================================
 
-byte        scantokey[128] = {
+unsigned short scantokey[128] = {
 //  0       1        2       3       4       5       6       7
 //  8       9        A       B       C       D       E       F
 	0, 27, '1', '2', '3', '4', '5', '6',
@@ -563,21 +563,21 @@ byte        scantokey[128] = {
 	0, 0, 0, 0, 0, 0, 0, 0
 };
 
-byte        extscantokey[128] = {
+unsigned short extscantokey[128] = {
 //  0       1        2       3       4       5       6       7
 //  8       9        A       B       C       D       E       F
-	0, 27, '1', '2', '3', '4', '5', '6',
-	'7', '8', '9', '0', '-', '=', K_BACKSPACE, 9,	// 0
-	'q', 'w', 'e', 'r', 't', 'y', 'u', 'i',
-	'o', 'p', '[', ']', K_KP_ENTER, K_RCTRL, 'a', 's',	// 1
-	'd', 'f', 'g', 'h', 'j', 'k', 'l', ';',
-	'\'', '`', K_LSHIFT, '\\', 'z', 'x', 'c', 'v',	// 2
-	'b', 'n', 'm', ',', '.', K_KP_DIVIDE, K_RSHIFT, '*',
-	K_RALT, ' ', K_CAPSLOCK, K_F1, K_F2, K_F3, K_F4, K_F5,	// 3
-	K_F6, K_F7, K_F8, K_F9, K_F10, K_NUMLOCK, 0, K_HOME,
-	K_UP, K_PAGEUP, '-', K_LEFT, '5', K_RIGHT, '+', K_END,	// 4
-	K_DOWN, K_PAGEDOWN, K_INSERT, K_DELETE, 0, 0, 0, K_F11,
-	K_F12, 0, 0, 0, 0, 0, 0, 0,			// 5
+	0, 27, '1', '2', '3', '4', '5', '6',					// 0
+	'7', '8', '9', '0', '-', '=', K_BACKSPACE, 9,
+	'q', 'w', 'e', 'r', 't', 'y', 'u', 'i',					// 1
+	'o', 'p', '[', ']', K_KP_ENTER, K_RCTRL, 'a', 's',
+	'd', 'f', 'g', 'h', 'j', 'k', 'l', ';',					// 2
+	'\'', '`', K_LSHIFT, '\\', 'z', 'x', 'c', 'v',
+	'b', 'n', 'm', ',', '.', K_KP_DIVIDE, K_RSHIFT, '*',	// 3
+	K_RALT, ' ', K_CAPSLOCK, K_F1, K_F2, K_F3, K_F4, K_F5,
+	K_F6, K_F7, K_F8, K_F9, K_F10, K_NUMLOCK, 0, K_HOME,	// 4
+	K_UP, K_PAGEUP, '-', K_LEFT, '5', K_RIGHT, '+', K_END,
+	K_DOWN, K_PAGEDOWN, K_INSERT, K_DELETE, 0, 0, 0, K_F11,	// 5
+	K_F12, 0, 0, 0, 0, 0, 0, 0,
 	0, 0, 0, 0, 0, 0, 0, 0,
 	0, 0, 0, 0, 0, 0, 0, 0,
 	0, 0, 0, 0, 0, 0, 0, 0,
@@ -590,29 +590,34 @@ byte        extscantokey[128] = {
 	Map from windows to quake keynums
 */
 void
-MapKey (int key, int *k, int *u)
+MapKey (unsigned int keycode, int *k, int *u)
 {
 	int         extended;
+	int         scan;
+	int         key;
+	int         uc;
 
-	extended = (key >> 24) & 1;
+	extended = (keycode >> 24) & 1;
+	scan = (keycode >> 16) & 255;
 
-	key = (key >> 16) & 255;
-	if (key > 127) {
+	if (scan > 127) {
 		*u = *k = 0;
 		return;
 	}
 
 	if (extended)
-		key = extscantokey[key];
+		key = extscantokey[scan];
 	else
-		key = scantokey[key];
+		key = scantokey[scan];
 	if (key >= 0 && key <= 255)
-		*u = key;
+		uc = key;
 	else
-		*u = 0;
+		uc = 0;
+	Con_DPrintf ("%08x %02x %04x %c\n", keycode, scan, key, uc > 32 && uc < 127 ? uc : '#');
 	if (key >= 'A' && key <= 'Z')
 		key += 'a' - 'A';
 	*k = key;
+	*u = uc;
 }
 
 /*
