@@ -157,8 +157,7 @@ RecursiveGrowRegion (dface_t *r, face_t *f)
 			// emit a surfedge
 			if (bsp->numsurfedges == MAX_MAP_SURFEDGES)
 				Sys_Error ("numsurfedges == MAX_MAP_SURFEDGES");
-			bsp->surfedges[bsp->numsurfedges] = e;
-			bsp->numsurfedges++;
+			BSP_AddSurfEdge (bsp, e);
 		}
 	}
 
@@ -390,7 +389,7 @@ CountRealNumbers (void)
 void
 GrowNodeRegion_r (node_t * node)
 {
-	dface_t    *r;
+	dface_t     r;
 	face_t     *f;
 	int         i;
 
@@ -407,14 +406,13 @@ GrowNodeRegion_r (node_t * node)
 		if (bsp->numfaces == MAX_MAP_FACES)
 			Sys_Error ("MAX_MAP_FACES");
 		f->outputnumber = bsp->numfaces;
-		r = &bsp->faces[bsp->numfaces];
 
-		r->planenum = node->outputplanenum;
-		r->side = f->planeside;
-		r->texinfo = f->texturenum;
+		r.planenum = node->outputplanenum;
+		r.side = f->planeside;
+		r.texinfo = f->texturenum;
 		for (i = 0; i < MAXLIGHTMAPS; i++)
-			r->styles[i] = 255;
-		r->lightofs = -1;
+			r.styles[i] = 255;
+		r.lightofs = -1;
 
 		// add the face and mergable neighbors to it
 #if 0
@@ -422,17 +420,16 @@ GrowNodeRegion_r (node_t * node)
 		AddFaceToRegionSize (f);
 		RecursiveGrowRegion (r, f);
 #endif
-		r->firstedge = firstedge = bsp->numsurfedges;
+		r.firstedge = firstedge = bsp->numsurfedges;
 		for (i = 0; i < f->numpoints; i++) {
 			if (bsp->numsurfedges == MAX_MAP_SURFEDGES)
 				Sys_Error ("numsurfedges == MAX_MAP_SURFEDGES");
-			bsp->surfedges[bsp->numsurfedges] = f->edges[i];
-			bsp->numsurfedges++;
+			BSP_AddSurfEdge (bsp, f->edges[i]);
 		}
 
-		r->numedges = bsp->numsurfedges - r->firstedge;
+		r.numedges = bsp->numsurfedges - r.firstedge;
 
-		bsp->numfaces++;
+		BSP_AddFace (bsp, &r);
 	}
 
 	node->numfaces = bsp->numfaces - node->firstface;

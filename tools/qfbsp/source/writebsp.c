@@ -30,6 +30,7 @@
 #include <stdlib.h>
 #include <ctype.h>
 
+#include "QF/dstring.h"
 #include "QF/qendian.h"
 #include "QF/sys.h"
 
@@ -69,9 +70,7 @@ FindFinalPlane (dplane_t *p)
 // new plane
 	if (bsp->numplanes == MAX_MAP_PLANES)
 		Sys_Error ("numplanes == MAX_MAP_PLANES");
-	dplane = &bsp->planes[bsp->numplanes];
-	*dplane = *p;
-	bsp->numplanes++;
+	BSP_AddPlane (bsp, p);
 
 	return bsp->numplanes - 1;
 }
@@ -81,7 +80,7 @@ int         planemapping[MAX_MAP_PLANES];
 void
 WriteNodePlanes_r (node_t *node)
 {
-	dplane_t   *dplane;
+	dplane_t    dplane;
 	plane_t    *plane;
 
 	if (node->planenum == -1)
@@ -89,17 +88,14 @@ WriteNodePlanes_r (node_t *node)
 	if (planemapping[node->planenum] == -1) {	// a new plane
 		planemapping[node->planenum] = bsp->numplanes;
 
-		if (bsp->numplanes == MAX_MAP_PLANES)
-			Sys_Error ("numplanes == MAX_MAP_PLANES");
 		plane = &planes[node->planenum];
-		dplane = &bsp->planes[bsp->numplanes];
-		dplane->normal[0] = plane->normal[0];
-		dplane->normal[1] = plane->normal[1];
-		dplane->normal[2] = plane->normal[2];
-		dplane->dist = plane->dist;
-		dplane->type = plane->type;
 
-		bsp->numplanes++;
+		dplane.normal[0] = plane->normal[0];
+		dplane.normal[1] = plane->normal[1];
+		dplane.normal[2] = plane->normal[2];
+		dplane.dist = plane->dist;
+		dplane.type = plane->type;
+		BSP_AddPlane (bsp, &dplane);
 	}
 
 	node->outputplanenum = planemapping[node->planenum];
@@ -120,7 +116,7 @@ WriteNodePlanes (node_t *nodes)
 int
 WriteClipNodes_r (node_t *node)
 {
-	dclipnode_t *cn;
+	dclipnode_t cn;
 	int         num, c, i;
 
 // FIXME: free more stuff?  
@@ -131,11 +127,10 @@ WriteClipNodes_r (node_t *node)
 	}
 // emit a clipnode
 	c = bsp->numclipnodes;
-	cn = &bsp->clipnodes[bsp->numclipnodes];
-	bsp->numclipnodes++;
-	cn->planenum = node->outputplanenum;
+	cn.planenum = node->outputplanenum;
 	for (i = 0; i < 2; i++)
-		cn->children[i] = WriteClipNodes_r (node->children[i]);
+		cn.children[i] = WriteClipNodes_r (node->children[i]);
+	BSP_AddClipnode (bsp, &cn);
 
 	free (node);
 	return c;
@@ -161,23 +156,20 @@ WriteClipNodes (node_t *nodes)
 void
 WriteLeaf (node_t *node)
 {
-	dleaf_t    *leaf_p;
+	dleaf_t     leaf_p;
 	face_t    **fp, *f;
 
 // emit a leaf
-	leaf_p = &bsp->leafs[bsp->numleafs];
-	bsp->numleafs++;
-
-	leaf_p->contents = node->contents;
+	leaf_p.contents = node->contents;
 
 // write bounding box info
-	VectorCopy (node->mins, leaf_p->mins);
-	VectorCopy (node->maxs, leaf_p->maxs);
+	VectorCopy (node->mins, leaf_p.mins);
+	VectorCopy (node->maxs, leaf_p.maxs);
 
-	leaf_p->visofs = -1;				// no vis info yet
+	leaf_p.visofs = -1;					// no vis info yet
 
 // write the marksurfaces
-	leaf_p->firstmarksurface = bsp->nummarksurfaces;
+	leaf_p.firstmarksurface = bsp->nummarksurfaces;
 
 	for (fp = node->markfaces; *fp; fp++) {
 		// emit a marksurface
@@ -185,26 +177,27 @@ WriteLeaf (node_t *node)
 			Sys_Error ("nummarksurfaces == MAX_MAP_MARKSURFACES");
 		f = *fp;
 		do {
-			bsp->marksurfaces[bsp->nummarksurfaces] = f->outputnumber;
-			bsp->nummarksurfaces++;
+			BSP_AddMarkSurface (bsp, f->outputnumber);
 			f = f->original;			// grab tjunction split faces
 		} while (f);
 	}
 
-	leaf_p->nummarksurfaces = bsp->nummarksurfaces - leaf_p->firstmarksurface;
+	leaf_p.nummarksurfaces = bsp->nummarksurfaces - leaf_p.firstmarksurface;
 }
 
 void
 WriteDrawNodes_r (node_t *node)
 {
+	static dnode_t dummy;
 	dnode_t    *n;
 	int         i;
+	int         nodenum = bsp->numnodes;
 
 // emit a node  
 	if (bsp->numnodes == MAX_MAP_NODES)
 		Sys_Error ("numnodes == MAX_MAP_NODES");
-	n = &bsp->nodes[bsp->numnodes];
-	bsp->numnodes++;
+	BSP_AddNode (bsp, &dummy);
+	n = &bsp->nodes[nodenum];
 
 	VectorCopy (node->mins, n->mins);
 	VectorCopy (node->maxs, n->maxs);
@@ -215,6 +208,7 @@ WriteDrawNodes_r (node_t *node)
 
 // recursively output the other nodes
 	for (i = 0; i < 2; i++) {
+		n = &bsp->nodes[nodenum];
 		if (node->children[i]->planenum == -1) {
 			if (node->children[i]->contents == CONTENTS_SOLID)
 				n->children[i] = -1;
@@ -232,7 +226,7 @@ WriteDrawNodes_r (node_t *node)
 void
 WriteDrawNodes (node_t *headnode)
 {
-	dmodel_t   *bm;
+	dmodel_t    bm;
 	int         start, i;
 
 #if 0
@@ -243,12 +237,10 @@ WriteDrawNodes (node_t *headnode)
 // emit a model
 	if (bsp->nummodels == MAX_MAP_MODELS)
 		Sys_Error ("nummodels == MAX_MAP_MODELS");
-	bm = &bsp->models[bsp->nummodels];
-	bsp->nummodels++;
 
-	bm->headnode[0] = bsp->numnodes;
-	bm->firstface = firstface;
-	bm->numfaces = bsp->numfaces - firstface;
+	bm.headnode[0] = bsp->numnodes;
+	bm.firstface = firstface;
+	bm.numfaces = bsp->numfaces - firstface;
 	firstface = bsp->numfaces;
 
 	start = bsp->numleafs;
@@ -257,12 +249,13 @@ WriteDrawNodes (node_t *headnode)
 		WriteLeaf (headnode);
 	else
 		WriteDrawNodes_r (headnode);
-	bm->visleafs = bsp->numleafs - start;
+	bm.visleafs = bsp->numleafs - start;
 
 	for (i = 0; i < 3; i++) {
-		bm->mins[i] = headnode->mins[i] + SIDESPACE + 1;  // remove the padding
-		bm->maxs[i] = headnode->maxs[i] - SIDESPACE - 1;
+		bm.mins[i] = headnode->mins[i] + SIDESPACE + 1;   // remove the padding
+		bm.maxs[i] = headnode->maxs[i] - SIDESPACE - 1;
 	}
+	BSP_AddModel (bsp, &bm);
 // FIXME: are all the children decendant of padded nodes?
 }
 
@@ -276,15 +269,11 @@ Used by the clipping hull processes that only need to store headclipnode
 void
 BumpModel (int hullnum)
 {
-	dmodel_t   *bm;
+	static dmodel_t bm;
 
 // emit a model
-	if (bsp->nummodels == MAX_MAP_MODELS)
-		Sys_Error ("nummodels == MAX_MAP_MODELS");
-	bm = &bsp->models[bsp->nummodels];
-	bsp->nummodels++;
-
-	bm->headnode[hullnum] = headclipnode;
+	bm.headnode[hullnum] = headclipnode;
+	BSP_AddModel (bsp, &bm);
 }
 
 //=============================================================================
@@ -332,6 +321,8 @@ TEX_InitFromWad (char *path)
 	int         i;
 
 	texfile = Qopen (path, "rb");
+	if (!texfile)
+		Sys_Error ("couldn't open %s", path);
 	Qread (texfile, &wadinfo, sizeof (wadinfo));
 	if (strncmp (wadinfo.identification, "WAD2", 4))
 		Sys_Error ("TEX_InitFromWad: %s isn't a wadfile", path);
@@ -349,17 +340,20 @@ TEX_InitFromWad (char *path)
 }
 
 int
-LoadLump (char *name, byte *dest)
+LoadLump (char *name, dstring_t *dest)
 {
 	char        cname[16];
 	int         i;
+	int         ofs = dest->size;
 
 	CleanupName (name, cname);
 
 	for (i = 0; i < wadinfo.numlumps; i++) {
 		if (!strcmp (cname, lumpinfo[i].name)) {
+			dest->size += lumpinfo[i].disksize;
+			dstring_adjust (dest);
 			Qseek (texfile, lumpinfo[i].filepos, SEEK_SET);
-			Qread (texfile, dest, lumpinfo[i].disksize);
+			Qread (texfile, dest->str + ofs, lumpinfo[i].disksize);
 			return lumpinfo[i].disksize;
 		}
 	}
@@ -402,8 +396,8 @@ AddAnimatingTextures (void)
 void
 WriteMiptex (void)
 {
-	byte       *data;
-	char       *path;
+	dstring_t  *data;
+	char       *path, *p;
 	char        fullpath[1024];
 	dmiptexlump_t *l;
 	int         i, len;
@@ -417,27 +411,36 @@ WriteMiptex (void)
 			return;
 		}
 	}
+	path = strdup (path);
+	p = strtok (path, ";");	// yeah yeah. but it works :)
+	while (p) {
+		sprintf (fullpath, "%s/%s", /* FIXME gamedir */ ".", path);
 
-	sprintf (fullpath, "%s/%s", /* FIXME gamedir */ ".", path);
+		TEX_InitFromWad (fullpath);
 
-	TEX_InitFromWad (fullpath);
+		AddAnimatingTextures ();
 
-	AddAnimatingTextures ();
+		p = strtok (0, ";");
+	}
+	free (path);
 
-	l = (dmiptexlump_t *) bsp->texdata;
-	data = (byte *) & l->dataofs[nummiptex];
+	data = dstring_new ();
+	data->size = sizeof (dmiptexlump_t);
+	dstring_adjust (data);
+
+	l = (dmiptexlump_t *) data->str;
 	l->nummiptex = nummiptex;
+	data->size = (char *) &l->dataofs[nummiptex] - data->str;
+	dstring_adjust (data);
+	l = (dmiptexlump_t *) data->str;
+
 	for (i = 0; i < nummiptex; i++) {
-		l->dataofs[i] = data - (byte *) l;
+		l->dataofs[i] = data->size;
 		len = LoadLump (miptex[i], data);
-		if (data + len - bsp->texdata >= MAX_MAP_MIPTEX)
-			Sys_Error ("Textures exceeded MAX_MAP_MIPTEX");
 		if (!len)
 			l->dataofs[i] = -1;			// didn't find the texture
-		data += len;
 	}
-
-	bsp->texdatasize = data - bsp->texdata;
+	BSP_AddTextures (bsp, data->str, data->size);
 }
 
 //===========================================================================
@@ -445,12 +448,14 @@ WriteMiptex (void)
 void
 BeginBSPFile (void)
 {
+	static dedge_t edge;
+	static dleaf_t leaf;
 // edge 0 is not used, because 0 can't be negated
-	bsp->numedges = 1;
+	BSP_AddEdge (bsp, &edge);
 
 // leaf 0 is common solid with no faces
-	bsp->numleafs = 1;
-	bsp->leafs[0].contents = CONTENTS_SOLID;
+	leaf.contents = CONTENTS_SOLID;
+	BSP_AddLeaf (bsp, &leaf);
 
 	firstface = 0;
 }

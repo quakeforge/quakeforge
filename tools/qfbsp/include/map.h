@@ -18,7 +18,7 @@
 	See file, 'COPYING', for details.
 */
 
-#define	MAX_FACES		16
+#define	MAX_FACES		128
 typedef struct mface_s
 {
 	struct mface_s	*next;

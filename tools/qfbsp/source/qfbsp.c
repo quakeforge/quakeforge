@@ -682,7 +682,7 @@ void
 ReadClipHull (int hullnum)
 {
 	FILE        *f;
-	dclipnode_t *d;
+	dclipnode_t  d;
 	dplane_t     p;
 	float        f1, f2, f3, f4;
 	int          firstclipnode, junk, c1, c2, i, j, n;
@@ -713,8 +713,6 @@ ReadClipHull (int hullnum)
 	for (i = 0; i < n; i++) {
 		if (bsp->numclipnodes == MAX_MAP_CLIPNODES)
 			Sys_Error ("ReadClipHull: MAX_MAP_CLIPNODES");
-		d = &bsp->clipnodes[bsp->numclipnodes];
-		bsp->numclipnodes++;
 		if (fscanf (f, "%i : %f %f %f %f : %i %i\n", &junk, &f1, &f2, &f3, &f4,
 					&c1, &c2) != 7)
 			Sys_Error ("Error parsing %s", hullfilename);
@@ -729,9 +727,10 @@ ReadClipHull (int hullnum)
 		norm[2] = f3;					// vec_t precision
 		p.type = PlaneTypeForNormal (norm);
 
-		d->children[0] = c1 >= 0 ? c1 + firstclipnode : c1;
-		d->children[1] = c2 >= 0 ? c2 + firstclipnode : c2;
-		d->planenum = FindFinalPlane (&p);
+		d.children[0] = c1 >= 0 ? c1 + firstclipnode : c1;
+		d.children[1] = c2 >= 0 ? c2 + firstclipnode : c2;
+		d.planenum = FindFinalPlane (&p);
+		BSP_AddClipnode (bsp, &d);
 	}
 
 }
@@ -849,6 +848,7 @@ ProcessFile (char *sourcebase, char *bspfilename1)
 		remove (portfilename);
 		remove (pointfilename);
 	}
+	bsp = BSP_New ();
 // load brushes and entities
 	LoadMapFile (sourcebase);
 	if (onlyents) {

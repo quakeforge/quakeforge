@@ -248,6 +248,7 @@ GetVertex (vec3_t in, int planenum)
 	hashvert_t *hv;
 	int         h, i;
 	vec3_t      vert;
+	dvertex_t   v;
 
 	for (i = 0; i < 3; i++) {
 		if (fabs (in[i] - (int) (in[i] + 0.5)) < 0.001)
@@ -293,10 +294,11 @@ GetVertex (vec3_t in, int planenum)
 	if (bsp->numvertexes == MAX_MAP_VERTS)
 		Sys_Error ("numvertexes == MAX_MAP_VERTS");
 
-	bsp->vertexes[bsp->numvertexes].point[0] = vert[0];
-	bsp->vertexes[bsp->numvertexes].point[1] = vert[1];
-	bsp->vertexes[bsp->numvertexes].point[2] = vert[2];
-	bsp->numvertexes++;
+	v.point[0] = vert[0];
+	v.point[1] = vert[1];
+	v.point[2] = vert[2];
+
+	BSP_AddVertex (bsp, &v);
 
 	return hv->num;
 }
@@ -315,7 +317,7 @@ Don't allow four way edges
 int
 GetEdge (vec3_t p1, vec3_t p2, face_t *f)
 {
-	dedge_t    *edge;
+	dedge_t     edge;
 	int         v1, v2, i;
 
 	if (!f->contents[0])
@@ -325,8 +327,7 @@ GetEdge (vec3_t p1, vec3_t p2, face_t *f)
 	v1 = GetVertex (p1, f->planenum);
 	v2 = GetVertex (p2, f->planenum);
 	for (i = firstmodeledge; i < bsp->numedges; i++) {
-		edge = &bsp->edges[i];
-		if (v1 == edge->v[1] && v2 == edge->v[0]
+		if (v1 == bsp->edges[i].v[1] && v2 == bsp->edges[i].v[0]
 			&& !edgefaces[i][1]
 			&& edgefaces[i][0]->contents[0] == f->contents[0]) {
 			edgefaces[i][1] = f;
@@ -337,10 +338,9 @@ GetEdge (vec3_t p1, vec3_t p2, face_t *f)
 // emit an edge
 	if (bsp->numedges == MAX_MAP_EDGES)
 		Sys_Error ("numedges == MAX_MAP_EDGES");
-	edge = &bsp->edges[bsp->numedges];
-	bsp->numedges++;
-	edge->v[0] = v1;
-	edge->v[1] = v2;
+	edge.v[0] = v1;
+	edge.v[1] = v2;
+	BSP_AddEdge (bsp, &edge);
 	edgefaces[i][0] = f;
 
 	return i;

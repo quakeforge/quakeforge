@@ -31,6 +31,7 @@
 #endif
 #include <stdlib.h>
 
+#include "QF/dstring.h"
 #include "QF/quakefs.h"
 #include "QF/sys.h"
 
@@ -97,10 +98,7 @@ FindTexinfo (texinfo_t *t)
 	}
 
 // allocate a new texture
-	if (bsp->numtexinfo == MAX_MAP_TEXINFO)
-		Sys_Error ("numtexinfo == MAX_MAP_TEXINFO");
-	bsp->texinfo[i] = *t;
-	bsp->numtexinfo++;
+	BSP_AddTexinfo (bsp, t);
 
 	return i;
 }
@@ -438,8 +436,13 @@ void
 LoadMapFile (char *filename)
 {
 	char       *buf;
+	QFile      *file;
 
-	buf = COM_LoadFile (filename, 0);
+	file = Qopen (filename, "rt");
+	buf = malloc (Qfilesize (file) + 1);
+	buf[Qfilesize (file)] = 0;
+	Qread (file, buf, Qfilesize (file));
+	Qclose (file);
 
 	StartTokenParsing (buf);
 
@@ -524,33 +527,25 @@ GetVectorForKey (entity_t *ent, char *key, vec3_t vec)
 void
 WriteEntitiesToString (void)
 {
-	char       *buf, *end;
+	dstring_t  *buf;
 	char        line[128];
 	epair_t    *ep;
 	int         i;
 
-	buf = bsp->entdata;
-	end = buf;
-	*end = 0;
+	buf = dstring_newstr ();
 
 	for (i = 0; i < num_entities; i++) {
 		ep = entities[i].epairs;
 		if (!ep)
 			continue;					// ent got removed
 
-		strcat (end, "{\n");
-		end += 2;
+		dstring_appendstr (buf, "{\n");
 
 		for (ep = entities[i].epairs; ep; ep = ep->next) {
 			sprintf (line, "\"%s\" \"%s\"\n", ep->key, ep->value);
-			strcat (end, line);
-			end += strlen (line);
+			dstring_appendstr (buf, line);
 		}
-		strcat (end, "}\n");
-		end += 2;
-
-		if (end > buf + MAX_MAP_ENTSTRING)
-			Sys_Error ("Entity text too long");
+		dstring_appendstr (buf, "}\n");
 	}
-	bsp->entdatasize = end - buf + 1;
+	BSP_AddEntities (bsp, buf->str, buf->size);
 }

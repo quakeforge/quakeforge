@@ -71,7 +71,7 @@
 #define BSPVERSION	29
 #define	TOOLVERSION	2
 
-typedef struct {
+typedef struct lump_s {
 	int		fileofs;
 	int 	filelen;
 } lump_t;
@@ -94,7 +94,7 @@ typedef struct {
 
 #define	HEADER_LUMPS	15
 
-typedef struct {
+typedef struct dmodel_s {
 	float		mins[3], maxs[3];
 	float		origin[3];
 	int			headnode[MAX_MAP_HULLS];
@@ -102,12 +102,12 @@ typedef struct {
 	int			firstface, numfaces;
 } dmodel_t;
 
-typedef struct {
+typedef struct dheader_s {
 	int			version;	
 	lump_t		lumps[HEADER_LUMPS];
 } dheader_t;
 
-typedef struct {
+typedef struct dmiptexlump_s {
 	int			nummiptex;
 	int			dataofs[4];		// [nummiptex]
 } dmiptexlump_t;
@@ -120,7 +120,7 @@ typedef struct miptex_s {
 } miptex_t;
 
 
-typedef struct {
+typedef struct dvertex_s {
 	float	point[3];
 } dvertex_t;
 
@@ -135,7 +135,7 @@ typedef struct {
 #define	PLANE_ANYY		4
 #define	PLANE_ANYZ		5
 
-typedef struct {
+typedef struct dplane_s {
 	float	normal[3];
 	float	dist;
 	int		type;		// PLANE_X - PLANE_ANYZ ?remove? trivial to regenerate
@@ -159,7 +159,7 @@ typedef struct {
 
 
 // !!! if this is changed, it must be changed in asm_i386.h too !!!
-typedef struct {
+typedef struct dnode_s {
 	int			planenum;
 	short		children[2];	// negative numbers are -(leafs+1), not nodes
 	short		mins[3];		// for sphere culling
@@ -168,7 +168,7 @@ typedef struct {
 	unsigned short	numfaces;	// counting both sides
 } dnode_t;
 
-typedef struct {
+typedef struct dclipnode_s {
 	int			planenum;
 	short		children[2];	// negative numbers are contents
 } dclipnode_t;
@@ -183,12 +183,12 @@ typedef struct texinfo_s {
 
 // note that edge 0 is never used, because negative edge nums are used for
 // counterclockwise use of the edge in a face
-typedef struct {
+typedef struct dedge_s {
 	unsigned short	v[2];		// vertex numbers
 } dedge_t;
 
 #define	MAXLIGHTMAPS	4
-typedef struct {
+typedef struct dface_s {
 	short		planenum;
 	short		side;
 
@@ -212,7 +212,7 @@ typedef struct {
 
 // leaf 0 is the generic CONTENTS_SOLID leaf, used for all solid areas
 // all other leafs need visibility info
-typedef struct {
+typedef struct dleaf_s {
 	int			contents;
 	int			visofs;				// -1 = no visibility info
 
@@ -281,6 +281,22 @@ typedef struct bsp_s {
 
 bsp_t *LoadBSPFile (QFile *file, int size);
 void WriteBSPFile (bsp_t *bsp, QFile *file);
+bsp_t *BSP_New (void);
+void BSP_AddPlane (bsp_t *bsp, dplane_t *plane);
+void BSP_AddLeaf (bsp_t *bsp, dleaf_t *leaf);
+void BSP_AddVertex (bsp_t *bsp, dvertex_t *vertex);
+void BSP_AddNode (bsp_t *bsp, dnode_t *node);
+void BSP_AddTexinfo (bsp_t *bsp, texinfo_t *texinfo);
+void BSP_AddFace (bsp_t *bsp, dface_t *face);
+void BSP_AddClipnode (bsp_t *bsp, dclipnode_t *clipnode);
+void BSP_AddMarkSurface (bsp_t *bsp, unsigned short marksurface);
+void BSP_AddSurfEdge (bsp_t *bsp, int surfedge);
+void BSP_AddEdge (bsp_t *bsp, dedge_t *edge);
+void BSP_AddModel (bsp_t *bsp, dmodel_t *model);
+void BSP_AddLighting (bsp_t *bsp, byte *lightdata, int lightdatasize);
+void BSP_AddVisibility (bsp_t *bsp, byte *visdata, int visdatasize);
+void BSP_AddEntities (bsp_t *bsp, char *entdata, int entdatasize);
+void BSP_AddTextures (bsp_t *bsp, byte *texdata, int texdatasize);
 
 #endif
 #endif	// __bspfile_h_
