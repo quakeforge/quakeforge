@@ -5,7 +5,8 @@ AUTOMAKE_OPTIONS= foreign
 #searched after everything else?
 pkgdatadir=@sharepath@/id1
 
-QFCC=$(top_builddir)/tools/qfcc/source/qfcc
+QFCC_DEP=$(top_builddir)/tools/qfcc/source/qfcc$(EXEEXT)
+QFCC=$(QFCC_DEP)
 QCFLAGS=-qq -g -Werror
 QCPPFLAGS=-I. -I$(srcdir) -I$(top_builddir)/include -I$(top_srcdir)/include
 GZIP=if echo $@ | grep -q .gz; then gzip -f `basename $@ .gz`; if test -f `basename $@ .dat.gz`.sym; then gzip -f `basename $@ .dat.gz`.sym; fi; fi
@@ -24,7 +25,7 @@ menu_src= \
 	menu_def.qc menu_pics.qc menu_util.qc options.qc options_util.qc \
 	servlist.qc string_def.qc stringh_def.qc object.r
 
-menu.dat$(GZ): menu.src $(menu_src)
+menu.dat$(GZ): menu.src $(menu_src) $(QFCC_DEP)
 	$(QFCC) $(QCFLAGS) $(QCPPFLAGS) -p $(STRIP) -P $<
 	$(GZIP)
 
