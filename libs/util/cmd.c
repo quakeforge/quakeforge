@@ -68,6 +68,7 @@ that needs one should allocate and maintain its own.
 dstring_t *cmd_buffer; // Console buffer
 dstring_t *cmd_legacybuffer; // Server stuffcmd buffer with absolute backwards-compatibility
 dstring_t *cmd_activebuffer; // Buffer currently being executed
+dstring_t *cmd_trueline; // The true, unadulterated line last tokenized
 dstring_t *cmd_argbuf; // Buffer for reconstructing tokens into single string
 qboolean cmd_wait = false;
 qboolean cmd_legacy = false; // Are we executing current buffer in legacy mode?
@@ -98,6 +99,29 @@ escaped (const char *str, int i)
 	return c & 1;
 }
 
+/* Quick function to escape stuff in a dstring */
+void
+escape (dstring_t *dstr)
+{
+	int i;
+	
+	for (i = 0; i < strlen(dstr->str); i++) {
+		switch (dstr->str[i]) {
+			case '\\':
+			case '$':
+			case '{':
+			case '}':
+			case '\"':
+			case '\'':
+			case '<':
+			case '>':
+				dstring_insertstr (dstr, "\\", i);
+				i++;
+				break;
+		}
+	}
+}
+
 /*
 	Cmd_Wait_f
 
@@ -125,6 +149,7 @@ Cbuf_Init (void)
 	cmd_legacybuffer = dstring_newstr ();
 	cmd_activebuffer = cmd_buffer;
 	cmd_argbuf = dstring_newstr ();
+	cmd_trueline = dstring_newstr ();
 }
 
 
@@ -190,8 +215,12 @@ extract_line (dstring_t *buffer, dstring_t *line)
 			braces++;
 		if (buffer->str[i] == '}' && !escaped(buffer->str,i) && !squotes && !dquotes)
 			braces--;
-		if (buffer->str[i] == '\n' || buffer->str[i] == '\r')
-			break;
+		if (buffer->str[i] == '\n' || buffer->str[i] == '\r') {
+			if (braces)
+				dstring_snip(buffer, i, 1);
+			else
+				break;
+		}
 	}
 	if (i)
 		dstring_insert (line, buffer->str, i, 0);
@@ -406,6 +435,8 @@ Cmd_Alias_f (void)
 		cmdalias_t **a;
 
 		alias = calloc (1, sizeof (cmdalias_t));
+		if (!alias)
+			Sys_Error ("Cmd_Alias_f: Memory Allocation Failure\n");
 		alias->name = strdup (s);
 		Hash_Add (cmd_alias_hash, alias);
 		for (a = &cmd_alias; *a; a = &(*a)->next)
@@ -499,68 +530,84 @@ Cmd_Args (int start)
 	return cmd_argbuf->str + cmd_args[start];
 }
 
-/* This function is a bit messy, so it will be commented in detail */
 
 int 
-Cmd_GetToken (const char *str) {
-	int i, squote = 0, dquote = 0, braces = 0, n;
-	/* Only stop on comments at the beginning of tokens */
-	if (!strncmp(str, "//", 2))
-		return 0;
-	for (i = 0; i <= strlen(str); i++) {
-		/* If we find a comment in the middle of a token, end the token
-		so it will be picked up on the next call */
-		if (!strncmp(str+i, "//", 2) && !dquote && !squote && !braces)
-			break;
-		if (str[i] == 0) { // At the end of the string...
-			if (dquote) { // We never found another quote, backtrack and continue as if it was escaped
-				for (; str[i] != '"'; i--);
-				dquote = 0;
-				continue;
-			}
-			else if (squote) { // Same for single quotes
-				for (; str[i] != '\''; i--);
-				squote = 0;
-				continue;
-			}
-			/* Unmatched braces will simply result in the entire thing being one token.
-			There is no good reason not to have matched braces */
-			else // End of string, this token is done
-				break;
-		}
-		else if (str[i] == '$' && !escaped(str,i) && str[i+1] == '{') { // We should skip past variable substitution
-			for (n = i; str[i] != '}'; i++) { // n = i to save start position
-				if (str[i] == 0) { // If a var sub string was invalid, give up and go back
-					i = n;
-					continue;
-				}
-			}
-		}
-		else if (str[i] == '{' && !escaped(str,i) && !dquote && !squote) { // Open brace
-			if (i && !braces) // If this isn't the first open brace we found, but we are in middle of string...
-				break; // Stop, a new token is beginning
-			braces++;
-		}
-		else if (str[i] == '}' && !escaped(str,i) && !dquote && !squote && braces) { // Close brace
-			braces--;
-			if (!braces) // If we just closed the opening brace, the token is done
-				break;
-		}
-		else if (str[i] == '\'' && !escaped(str,i) && !dquote) { // Single quotes
-			if (i) // If not at start of string, we must be at the end of a token
-				break;
-			squote = 1;
-		}
-		else if (str[i] == '"' && !escaped(str,i) && !squote) { // Double quotes
-			if (i) // Start new token
-				break;
-			dquote = 1;
-		}
-		else if (isspace(str[i]) && !dquote && !squote && !braces) { // Token ends at white space as well
-			break;
-		}
+Cmd_EndDoubleQuote (const char *str)
+{
+	int i;
+	
+	for (i = 1; i < strlen(str); i++) {
+		if (str[i] == '\"' && !escaped(str,i))
+			return i;
 	}
-	return i;
+	return -1; // Not found
+}
+
+int
+Cmd_EndSingleQuote (const char *str)
+{
+	int i;
+	
+	for (i = 1; i < strlen(str); i++) {
+		if (str[i] == '\'' && !escaped(str,i))
+			return i;
+	}
+	return -1; // Not found
+}
+
+int 
+Cmd_EndBrace (const char *str)
+{
+	int i, n;
+	
+	for (i = 1; i < strlen(str); i++) {
+		if (str[i] == '{' && !escaped(str,i)) {
+			n = Cmd_EndBrace (str + i);
+			if (n < 0)
+				return n;
+			else
+				i += n;
+		}
+		else if (str[i] == '\"' && !escaped(str,i)) {
+			n = Cmd_EndDoubleQuote (str + i);
+			if (n < 0)
+				return n;
+			else
+				i += n;
+		}
+		else if (str[i] == '\'' && !escaped(str,i)) {
+			n = Cmd_EndSingleQuote (str + i);
+			if (n < 0)
+				return n;
+			else
+				i += n;
+		}
+		else if (str[i] == '}' && !escaped(str,i))
+			return i;
+	}
+	return -1; // No matching brace found
+}
+
+int
+Cmd_GetToken (const char *str)
+{
+	int i;
+	switch (*str) {
+		case '\'':
+			return Cmd_EndSingleQuote (str);
+		case '\"':
+			return Cmd_EndDoubleQuote (str);
+		case '{':
+			return Cmd_EndBrace (str);
+		case '}':
+			return -1;
+		default:
+			for (i = 0; i < strlen(str); i++)
+				if (isspace(str[i]))
+					break;
+			return i;
+	}
+	return -1; // We should never get here	
 }
 
 int tag_shift = 0;
@@ -711,7 +758,8 @@ Cmd_ProcessVariables (dstring_t *dstr)
 */
 
 void
-Cmd_ProcessEscapes (dstring_t *dstr) {
+Cmd_ProcessEscapes (dstring_t *dstr)
+{
 	int i;
 	
 	for (i = 0; i < strlen(dstr->str); i++) {
@@ -732,11 +780,11 @@ Cmd_ProcessEscapes (dstring_t *dstr) {
 	Replaces %i with Cmd_Argv(i)
 */
 
-void Cmd_ProcessPercents (dstring_t *dstr) {
+void 
+Cmd_ProcessPercents (dstring_t *dstr)
+{
 	int i, n;
 	long int num;
-	
-	Sys_DPrintf("Cmd_ProcessPercents:  Received line:  %s\n", dstr->str);
 	
 	for (i = 0; i < strlen(dstr->str); i++) {
 		if (dstr->str[i] == '%') {
@@ -794,7 +842,12 @@ Cmd_TokenizeString (const char *text, qboolean filter)
 			space++;
 		}
 		len = Cmd_GetToken (str + i);
-		if (!len)
+		if (len < 0) {
+			Sys_Printf ("Parse error:  Unmatched quotes, braces, or double quotes in following line:\n--> %s\n", text);
+			cmd_argc = 0;
+			break;
+		}
+		else if (len == 0)
 			break;
 		cmd_argc++;
 		if (cmd_argc > cmd_maxargc) {
@@ -844,6 +897,8 @@ Cmd_TokenizeString (const char *text, qboolean filter)
 		cmd_args[i] = strlen(cmd_argbuf->str);
 		dstring_appendstr (cmd_argbuf, cmd_argv[i]->str);
 	}
+	dstring_clearstr (cmd_trueline);
+	dstring_appendstr (cmd_trueline, text);
 }
 
 void
@@ -1189,6 +1244,48 @@ Cmd_Help_f (void)
 	Sys_Printf ("variable/command not found\n");
 }
 
+/*
+	Scripting commands
+	
+	The following functions are commands for enhanced scripting
+	
+*/
+
+void
+Cmd_If_f (void) {
+	long int num;
+	
+	if (Cmd_Argc() < 3) {
+		Sys_Printf("Usage: if {condition} {commands}\n");
+		return;
+	}
+	
+	num = strtol (Cmd_Argv(1), 0, 10);
+	
+	if (num)
+		Cbuf_InsertText (Cmd_Argv(2));
+	return;
+}
+
+void
+Cmd_While_f (void) {
+	long int num;
+	
+	if (Cmd_Argc() < 3) {
+		Sys_Printf("Usage: while {condition} {commands}\n");
+		return;
+	}
+	
+	num = strtol (Cmd_Argv(1), 0, 10);
+	
+	if (num) {
+		Cbuf_InsertText (cmd_trueline->str); // Run while loop again
+		Cbuf_InsertText (Cmd_Argv(2)); // But not before executing body
+	}
+	return;
+}
+
+
 void
 Cmd_Hash_Stats_f (void)
 {
@@ -1254,13 +1351,12 @@ Cmd_Init (void)
 	Cmd_AddCommand ("cmdlist", Cmd_CmdList_f, "List all commands");
 	Cmd_AddCommand ("help", Cmd_Help_f, "Display help for a command or "
 					"variable");
+	Cmd_AddCommand ("if", Cmd_If_f, "Conditionally execute a set of commands.");
+	Cmd_AddCommand ("while", Cmd_While_f, "Execute a set of commands while a condition is true.");
 	//Cmd_AddCommand ("cmd_hash_stats", Cmd_Hash_Stats_f, "Display statistics "
 	//				"alias and command hash tables");
 	cmd_warncmd = Cvar_Get ("cmd_warncmd", "0", CVAR_NONE, NULL, "Toggles the "
 							"display of error messages for unknown commands");
-	cmd_highchars = Cvar_Get ("cmd_highchars", "0", CVAR_NONE, NULL, "Toggles availability of special "
-							"characters by proceeding letters by $ or #.  See "
-							"the documentation for details.");
 }
 
 char        *com_token;
