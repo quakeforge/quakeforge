@@ -35,7 +35,7 @@
 #include "QF/qtypes.h"
 #include "QF/gcc_attr.h"
 
-#define		CON_TEXTSIZE	16384
+#define		CON_TEXTSIZE	32764
 typedef struct
 {
 	char	text[CON_TEXTSIZE];
