@@ -161,6 +161,8 @@ PR_LoadProgsFile (progs_t * pr, VFile *file, int size, int edicts, int zone)
 
 	memcpy (pr->progs, &progs, sizeof (progs));
 	Qread (file, pr->progs + 1, size - sizeof (progs));
+	CRC_ProcessBlock ((byte *)(pr->progs + 1), & pr->crc,
+					  size - sizeof (progs));
 
 	if (pr->edicts)
 		*pr->edicts = (edict_t *)((byte *) pr->progs + pr->progs_size);
