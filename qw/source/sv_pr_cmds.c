@@ -1583,7 +1583,7 @@ PF_rotate_bbox (progs_t *pr)
 void
 PF_Fixme (progs_t *pr)
 {
-	PR_RunError (pr, "unimplemented bulitin");
+	PR_RunError (pr, "Unimplemented builtin function called");
 }
 
 void
