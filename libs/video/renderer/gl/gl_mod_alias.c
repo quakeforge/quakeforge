@@ -85,8 +85,7 @@ float   r_avertexnormal_dots[SHADEDOT_QUANT][256] =
 	#include "anorm_dots.h"
 		;
 
-float		shadelight;
-float	   *shadedots = r_avertexnormal_dots[0];
+float		shadelight, ambientlight;
 vec3_t		shadevector;
 
 static void
@@ -117,7 +116,7 @@ GL_DrawAliasFrame (vert_order_t *vo)
 			order += 2;
 
 			// normals and vertexes come from the frame list
-			VectorScale (shadecolor, verts->lightdot, color);
+			VectorMA (ambientcolor, verts->lightdot, shadecolor, color);
 
 			qfglColor4fv (color);
 
@@ -193,7 +192,7 @@ GL_DrawAliasFrameMulti (vert_order_t *vo)
 			order += 2;
 
 			// normals and vertexes come from the frame list
-			VectorScale (shadecolor, verts->lightdot, color);
+			VectorMA (ambientcolor, verts->lightdot, shadecolor, color);
 
 			qfglColor4fv (color);
 
@@ -336,11 +335,15 @@ GL_GetAliasFrameVerts16 (int frame, aliashdr_t *paliashdr, entity_t *e)
 
 			for (i = 0, vo_v = vo->verts; i < count;
 				 i++, vo_v++, verts1++, verts2++) {
+				float      *n1, *n2;
+				float       d1, d2;
 				VectorBlend (v1, v2, blend, vo_v->vert);
 				VectorScale (vo_v->vert, 1.0 / 256.0, vo_v->vert);
-				vo_v->lightdot =
-					shadedots[verts1->lightnormalindex] * (1.0 - blend)
-					+ shadedots[verts2->lightnormalindex] * blend;
+				n1 = r_avertexnormals[verts1->lightnormalindex];
+				n2 = r_avertexnormals[verts2->lightnormalindex];
+				d1 = DotProduct (shadevector, n1);
+				d2 = DotProduct (shadevector, n2);
+				vo_v->lightdot = max (0, d1 * (1.0 - blend) + d2 * blend);
 			}
 			return vo;
 		}
@@ -348,8 +351,13 @@ GL_GetAliasFrameVerts16 (int frame, aliashdr_t *paliashdr, entity_t *e)
 		verts += pose * count;
 	}
 	for (i = 0, vo_v = vo->verts; i < count; i++, vo_v++, verts++) {
+		float      *n;
+		float       d;
+
 		VectorScale (verts->v, 1.0 / 256.0, vo_v->vert);
-		vo_v->lightdot = shadedots[verts->lightnormalindex];
+		n = r_avertexnormals[verts->lightnormalindex];
+		d = DotProduct (shadevector, n);
+		vo_v->lightdot = max (0, d);
 	}
 	return vo;
 }
@@ -429,10 +437,15 @@ GL_GetAliasFrameVerts (int frame, aliashdr_t *paliashdr, entity_t *e)
 
 			for (i = 0, vo_v = vo->verts; i < count;
 				 i++, vo_v++, verts1++, verts2++) {
+				float      *n1, *n2;
+				float       d1, d2;
+
 				VectorBlend (verts1->v, verts2->v, blend, vo_v->vert);
-				vo_v->lightdot =
-					shadedots[verts1->lightnormalindex] * (1 - blend)
-					+ shadedots[verts2->lightnormalindex] * blend;
+				n1 = r_avertexnormals[verts1->lightnormalindex];
+				n2 = r_avertexnormals[verts2->lightnormalindex];
+				d1 = DotProduct (shadevector, n1);
+				d2 = DotProduct (shadevector, n2);
+				vo_v->lightdot = max (0, d1 * (1.0 - blend) + d2 * blend);
 			}
 			return vo;
 		}
@@ -440,8 +453,13 @@ GL_GetAliasFrameVerts (int frame, aliashdr_t *paliashdr, entity_t *e)
 		verts += pose * count;
 	}
 	for (i = 0, vo_v = vo->verts; i < count; i++, vo_v++, verts++) {
+		float      *n;
+		float       d;
+
 		VectorCopy (verts->v, vo_v->vert);
-		vo_v->lightdot = shadedots[verts->lightnormalindex];
+		n = r_avertexnormals[verts->lightnormalindex];
+		d = DotProduct (shadevector, n);
+		vo_v->lightdot = max (0, d);
 	}
 	return vo;
 }
@@ -509,38 +527,56 @@ R_DrawAliasModel (entity_t *e, qboolean cull)
 
 	VectorSubtract (r_origin, e->origin, modelorg);
 
-	if (clmodel->fullbright) {
-		shadelight = 1.0;	// make certain models full brightness always
-	} else {
+	if (!clmodel->fullbright) {
 		// get lighting information
-		shadelight = R_LightPoint (e->origin);
+		ambientlight = shadelight = R_LightPoint (e->origin);
+		ambientcolor[0] *= e->colormod[0];
+		ambientcolor[1] *= e->colormod[1];
+		ambientcolor[2] *= e->colormod[2];
+		VectorScale (ambientcolor, 0.005, shadecolor);
 
 		// always give the gun some light
-		if (e == r_view_model)
-			shadelight = max (shadelight, 24);
+		if (e == r_view_model && shadelight < 24) {
+			VectorScale (shadecolor, 24 / (shadelight + 0.1), shadecolor);
+			shadelight = 24;
+		}
 
 		for (lnum = 0; lnum < r_maxdlights; lnum++) {
 			if (r_dlights[lnum].die >= r_realtime) {
 				VectorSubtract (e->origin, r_dlights[lnum].origin, dist);
-				add = (r_dlights[lnum].radius * r_dlights[lnum].radius * 8) /
-					(DotProduct (dist, dist));	// FIXME Deek
+				add = ((r_dlights[lnum].radius
+						* r_dlights[lnum].radius * 8)
+					   / DotProduct (dist, dist));	// FIXME Deek
 
-				if (add > 0)
-					shadelight += add;
+				if (add > 0) {
+					VectorMA (ambientcolor, add, r_dlights[lnum].color,
+							  ambientcolor);
+					ambientlight += add;
+				}
 			}
 		}
 
 		// clamp lighting so it doesn't overbright as much
-		shadelight = min (shadelight, 100); // was 200
+		if (ambientlight > 128) {
+			VectorScale (ambientcolor, 128 / ambientlight, ambientcolor);
+			ambientlight = 128;
+		}
+		if (ambientlight + shadelight > 200) {
+			VectorScale (shadecolor, (200 - ambientlight) / shadelight,
+						 shadecolor);
+			shadelight = 200 - ambientlight;
+		}
+		VectorScale (ambientcolor, 0.005, ambientcolor);
 
 		// never allow players to go totally black
-		shadelight = max (shadelight, clmodel->min_light);
+		if (shadelight < clmodel->min_light) {
+			VectorScale (shadecolor, clmodel->min_light / (shadelight + 0.1),
+						 shadecolor);
+			shadelight = clmodel->min_light;
+		}
 
 		shadelight *= 0.005;
 
-		shadedots = r_avertexnormal_dots[(int) (e->angles[1] *
-												(SHADEDOT_QUANT / 360.0)) &
-										 (SHADEDOT_QUANT - 1)];
 		an = e->angles[1] * (M_PI / 180);
 		shadevector[0] = cos (-an);
 		shadevector[1] = sin (-an);
@@ -548,7 +584,6 @@ R_DrawAliasModel (entity_t *e, qboolean cull)
 		VectorNormalize (shadevector);
 	}
 
-	VectorScale (e->colormod, 2.0 * shadelight, shadecolor);
 	modelalpha = e->colormod[3];
 
 	// locate the proper data
@@ -591,7 +626,11 @@ R_DrawAliasModel (entity_t *e, qboolean cull)
 	if (modelalpha < 1.0)
 		qfglDepthMask (GL_FALSE);
 
-	if (!fb_texture) {	// Model has no fullbrights, don't bother with multi
+	if (clmodel->fullbright) {
+		qfglBindTexture (GL_TEXTURE_2D, texture);
+		GL_DrawAliasFrame_fb (vo);
+	} else if (!fb_texture) {
+		// Model has no fullbrights, don't bother with multi
 		qfglBindTexture (GL_TEXTURE_2D, texture);
 		GL_DrawAliasFrame (vo);
 	} else {	// try multitexture

@@ -173,5 +173,6 @@ typedef struct edge_s
 
 #define NUMVERTEXNORMALS        162
 extern float       r_avertexnormals[NUMVERTEXNORMALS][3];
+extern vec3_t ambientcolor;
 
 #endif	// _R_SHARED_H

@@ -368,7 +368,7 @@ calc_lighting_3 (msurface_t  *surf, int ds, int dt)
 
 	lightmap = surf->samples;
 	if (lightmap) {
-		lightmap += dt * se_s * 3 + ds;
+		lightmap += (dt * se_s + ds) * 3;
 
 		for (maps = 0; maps < MAXLIGHTMAPS && surf->styles[maps] != 255;
 			 maps++) {
