@@ -32,11 +32,13 @@ static const char rcsid[] =
 
 #include <stdlib.h>
 
+#include "QF/dstring.h"
 #include "QF/hash.h"
 #include "QF/sys.h"
-#include "QF/dstring.h"
+#include "QF/va.h"
 
 #include "qfcc.h"
+#include "class.h"
 #include "function.h"
 #include "struct.h"
 #include "type.h"
@@ -101,7 +103,8 @@ find_type (type_t *type)
 	for (check = pr.types; check; check = check->next) {
 		if (check->type != type->type
 			|| check->aux_type != type->aux_type
-			|| check->num_parms != type->num_parms)
+			|| check->num_parms != type->num_parms
+			|| check->class != type->class)
 			continue;
 
 		if (check->type != ev_func)
@@ -196,6 +199,8 @@ array_type (type_t *aux, int size)
 void
 print_type (type_t *type)
 {
+	class_t    *class;
+
 	if (!type) {
 		printf (" (null)");
 		return;
@@ -232,6 +237,12 @@ print_type (type_t *type)
 			else
 				printf ("[]");
 			break;
+		case ev_class:
+			class = type->class;
+			printf (" %s %s%s", pr_type_name[type->type],
+					class->class_name,
+					class->category_name ? va (" (%s)", class->category_name)
+										 : "");
 		default:
 			printf(" %s", pr_type_name[type->type]);
 			break;
@@ -320,6 +331,34 @@ encode_type (dstring_t *encoding, type_t *type)
 }
 
 int
+type_assignable (type_t *dst, type_t *src)
+{
+	class_t    *dst_class, *src_class;
+
+	if (dst == src)
+		return 1;
+	if (dst->type != ev_pointer || src->type != ev_pointer)
+		return 0;
+	dst = dst->aux_type;
+	src = src->aux_type;
+	if (dst->type != ev_class || src->type != ev_class)
+		return 0;
+	dst_class = dst->class;
+	src_class = src->class;
+	//printf ("%s %s\n", dst_class->class_name, src_class->class_name);
+	if (!dst_class || dst_class == &class_id)
+		return 1;
+	while (dst_class != src_class && src_class) {
+		src_class = src_class->super_class;
+		//if (src_class)
+		//	printf ("%s %s\n", dst_class->class_name, src_class->class_name);
+	}
+	if (dst_class == src_class)
+		return 1;
+	return 0;
+}
+
+int
 type_size (type_t *type)
 {
 	struct_field_t *field;
@@ -388,6 +427,7 @@ init_types (void)
 	chain_type (type_method);
 
 	type = type_Class.aux_type = new_struct ("Class");
+	type->type = ev_class;
 	new_struct_field (type, &type_Class, "class_pointer", vis_public);
 	new_struct_field (type, &type_Class, "super_class", vis_public);
 	new_struct_field (type, &type_string, "name", vis_public);
@@ -404,6 +444,7 @@ init_types (void)
 	chain_type (&type_Class);
 
 	type = type_Protocol.aux_type = new_struct ("Protocol");
+	type->type = ev_class;
 	new_struct_field (type, &type_Class, "class_pointer", vis_public);
 	new_struct_field (type, &type_string, "protocol_name", vis_public);
 	new_struct_field (type, &type_pointer, "protocol_list", vis_public);
@@ -412,6 +453,9 @@ init_types (void)
 	chain_type (&type_Protocol);
 
 	type = type_id.aux_type = new_struct ("id");
+	type->type = ev_class;
+	type->class = &class_id;
+	class_id.ivars = type_id.aux_type;
 	new_struct_field (type, &type_Class, "class_pointer", vis_public);
 	chain_type (&type_id);
 

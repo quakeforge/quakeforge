@@ -354,6 +354,14 @@ new_label_name (void)
 }
 
 expr_t *
+new_error_expr ()
+{
+	expr_t     *e = new_expr ();
+	e->type = ex_error;
+	return e;
+}
+
+expr_t *
 new_label_expr (void)
 {
 
@@ -1521,7 +1529,7 @@ function_expr (expr_t *e1, expr_t *e2)
 				t = ftype->parm_types[i];
 				e->type = expr_types[t->type];
 			}
-			if (t != ftype->parm_types[i]) {
+			if (!type_assignable (ftype->parm_types[i], t)) {
 				print_type (ftype->parm_types[i]); puts("");
 				print_type (t); puts("");
 				err = error (e, "type mismatch for parameter %d of %s",
@@ -1831,14 +1839,12 @@ assign_expr (expr_t *e1, expr_t *e2)
 
 	e2->rvalue = 1;
 
-	if (t1 != t2) {
+	if (!type_assignable (t1, t2)) {
 		if (!options.traditional || t1->type != ev_func || t2->type != ev_func)
 			return type_mismatch (e1, e2, op);
 		warning (e1, "assignment between disparate function types");
-		type = t1;
-	} else {
-		type = t1;
 	}
+	type = t1;
 	if (is_indirect (e1) && is_indirect (e2)) {
 		expr_t     *temp = new_temp_def_expr (t1);
 
@@ -1976,8 +1982,26 @@ message_expr (expr_t *receiver, keywordarg_t *message)
 {
 	expr_t     *args = 0, **a = &args;
 	expr_t     *selector = selector_expr (message);
+	expr_t     *call;
 	keywordarg_t *m;
+	int         super = 0;
+	type_t     *rec_type;
+	class_t    *class;
+	method_t   *method;
 
+	if (receiver->type == ex_name
+		&& strcmp (receiver->e.string_val, "super") == 0) {
+		super = 1;
+	}
+	rec_type = get_type (receiver);
+	if (rec_type->type != ev_pointer || rec_type->aux_type->type != ev_class)
+		return error (receiver, "not a class object");
+	class = rec_type->aux_type->class;
+	if (rec_type != &type_id) {
+		method = class_message_response (class, selector);
+		if (method)
+			rec_type = method->type->aux_type;
+	}
 	for (m = message; m; m = m->next) {
 		*a = m->expr;
 		while ((*a))
@@ -1986,5 +2010,7 @@ message_expr (expr_t *receiver, keywordarg_t *message)
 	*a = selector;
 	a = &(*a)->next;
 	*a = receiver;
-	return function_expr (send_message (), args);
+	call = function_expr (send_message (super), args);
+	call->e.block.result->e.def->type = rec_type;
+	return call;
 }

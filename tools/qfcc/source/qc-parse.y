@@ -257,6 +257,7 @@ type
 
 type_name
 	: TYPE { $$ = $1; }
+	| class_name { $$ = $1->type; }
 	;
 
 function_decl

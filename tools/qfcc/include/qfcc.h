@@ -294,6 +294,7 @@ typedef struct type_s
 	struct hashtab_s *struct_fields;
 	struct struct_field_s	*struct_head;
 	struct struct_field_s	**struct_tail;
+	struct class_s	*class;		// for ev_class
 } type_t;
 
 typedef struct statref_s {

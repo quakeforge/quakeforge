@@ -176,15 +176,21 @@ emit_struct(type_t *strct, const char *name)
 	pr_ivar_list_t *ivars;
 	type_t     *ivar_list;
 	dstring_t  *encoding = dstring_newstr ();
+	dstring_t  *ivars_name = dstring_newstr ();
 
+	if (!strct)
+		return 0;
 	for (count = 0, field = strct->struct_head; field; field = field->next)
 		count++;
 	ivar_list = new_struct (0);
 	new_struct_field (ivar_list, &type_integer, "ivar_count", vis_public);
 	for (i = 0; i < count; i++)
 		new_struct_field (ivar_list, type_ivar, 0, vis_public);
-	ivars_def = PR_GetDef (ivar_list, va ("_OBJ_INSTANCE_VARIABLES_%s", name),
-						   0, &numpr_globals);
+	dsprintf (ivars_name, "_OBJ_INSTANCE_VARIABLES_%s", name);
+	ivars_def = PR_GetDef (ivar_list, ivars_name->str, 0, 0);
+	if (ivars_def)
+		goto done;
+	ivars_def = PR_GetDef (ivar_list, ivars_name->str, 0, &numpr_globals);
 	ivars = &G_STRUCT (pr_ivar_list_t, ivars_def->ofs);
 	ivars->ivar_count = count;
 	for (i = 0, field = strct->struct_head; field; i++, field = field->next) {
@@ -194,7 +200,9 @@ emit_struct(type_t *strct, const char *name)
 		ivars->ivar_list[i].ivar_offset = field->offset;
 		dstring_clearstr (encoding);
 	}
+  done:
 	dstring_delete (encoding);
+	dstring_delete (ivars_name);
 	return ivars_def->ofs;
 }
 

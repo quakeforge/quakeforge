@@ -44,6 +44,8 @@ static const char rcsid[] =
 
 static def_t   *send_message_def;
 static function_t *send_message_func;
+static def_t   *send_message_super_def;
+static function_t *send_message_super_func;
 
 method_t *
 new_method (type_t *ret_type, param_t *selector, param_t *opt_parms)
@@ -51,6 +53,8 @@ new_method (type_t *ret_type, param_t *selector, param_t *opt_parms)
 	method_t   *meth = malloc (sizeof (method_t));
 	param_t    *cmd = new_param (0, &type_pointer, "_cmd");
 	param_t    *self = new_param (0, &type_id, "self");
+	dstring_t  *name = dstring_newstr ();
+	dstring_t  *types = dstring_newstr ();
 
 	opt_parms = reverse_params (opt_parms);
 	selector = _reverse_params (selector, opt_parms);
@@ -62,6 +66,14 @@ new_method (type_t *ret_type, param_t *selector, param_t *opt_parms)
 	meth->selector = selector;
 	meth->params = self;
 	meth->type = parse_params (ret_type, meth->params);
+
+	selector_name (name, (keywordarg_t *)selector);
+	selector_types (types, (keywordarg_t *)selector);
+	meth->name = name->str;
+	meth->types = types->str;
+	free (name);
+	free (types);
+
 	//print_type (meth->type); puts ("");
 	meth->def = 0;
 	return meth;
@@ -83,24 +95,21 @@ def_t *
 method_def (class_t *class, method_t *method)
 {
 	dstring_t  *str = dstring_newstr ();
-	dstring_t  *sel = dstring_newstr ();
 	def_t      *def;
 	char       *s;
 
-	selector_name (sel, (keywordarg_t *)method->selector);
 	dsprintf (str, "_%c_%s_%s_%s",
 			  method->instance ? 'i' : 'c',
 			  class->class_name,
 			  class->category_name ? class->category_name : "",
-			  sel->str);
+			  method->name);
 	for (s = str->str; *s; s++)
 		if (*s == ':')
 			*s = '_';
-	//printf ("%s\n", str->str);
+	//printf ("%s %s %s\n", method->name, method->types, str->str);
 	// FIXME need a file scope
 	def = PR_GetDef (method->type, str->str, 0, &numpr_globals);
 	dstring_delete (str);
-	dstring_delete (sel);
 	return def;
 }
 
@@ -129,24 +138,10 @@ copy_methods (methodlist_t *dst, methodlist_t *src)
 int
 method_compare (method_t *m1, method_t *m2)
 {
-	dstring_t  *s1 = dstring_newstr ();
-	dstring_t  *s2 = dstring_newstr ();
-	dstring_t  *t1 = dstring_newstr ();
-	dstring_t  *t2 = dstring_newstr ();
 	int         res;
 
-	selector_name (s1, (keywordarg_t *)m1->selector);
-	selector_name (s2, (keywordarg_t *)m2->selector);
-	selector_types (t1, (keywordarg_t *)m1->selector);
-	selector_types (t2, (keywordarg_t *)m2->selector);
-
-	res = strcmp (s1->str, s2->str) == 0
-		&& strcmp (t1->str, t2->str) == 0;
-
-	dstring_delete (s1);
-	dstring_delete (s2);
-	dstring_delete (t1);
-	dstring_delete (t2);
+	res = strcmp (m1->name, m2->name) == 0
+		&& strcmp (m1->types, m2->types) == 0;
 
 	return res;
 }
@@ -162,23 +157,32 @@ new_keywordarg (const char *selector, struct expr_s *expr)
 	return k;
 }
 
+static void
+make_message_def (const char *name, def_t **def, function_t **func)
+{
+	*def = PR_GetDef (&type_IMP, "obj_msgSend",
+								  0, &numpr_globals);
+	*func = new_function ();
+	(*func)->builtin = 0;
+	(*func)->def = *def;
+	build_function (*func);
+	finish_function (*func);
+}
+
 expr_t *
-send_message (void)
+send_message (int super)
 {
 	expr_t     *e;
 
 	if (!send_message_def) {
-		send_message_def = PR_GetDef (&type_IMP, "obj_msgSend",
-									  0, &numpr_globals);
-		send_message_func = new_function ();
-		send_message_func->builtin = 0;
-		send_message_func->def = send_message_def;
-		build_function (send_message_func);
-		finish_function (send_message_func);
+		make_message_def ("obj_msgSend",
+						  &send_message_def, &send_message_func);
+		make_message_def ("obj_msgSend_super",
+						  &send_message_super_def, &send_message_super_func);
 	}
 	e = new_expr ();
 	e->type = ex_def;
-	e->e.def = send_message_def;
+	e->e.def = super ? send_message_super_def : send_message_def;
 	return e;
 }
 
@@ -213,8 +217,8 @@ sel_def_get_hash (void *_sel_def, void *unused)
 	sel_def_t  *sel_def = (sel_def_t*)_sel_def;
 	unsigned long hash;
 
-	hash = Hash_String (G_STRING (sel_def->sel_id))
-		   ^ Hash_String (G_STRING (sel_def->sel_types));
+	hash = Hash_String (strings + sel_def->sel_id)
+		   ^ Hash_String (strings + sel_def->sel_types);
 	return hash;
 }
 
@@ -225,10 +229,10 @@ sel_def_compare (void *_sd1, void *_sd2, void *unused)
 	sel_def_t  *sd2 = (sel_def_t*)_sd2;
 	int         cmp;
 
-	cmp = strcmp (G_STRING (sd1->sel_id), G_STRING (sd2->sel_id)) == 0;
+	cmp = strcmp (strings + sd1->sel_id, strings + sd2->sel_id) == 0;
 	if (cmp)
-		cmp = strcmp (G_STRING (sd1->sel_types),
-					  G_STRING (sd2->sel_types)) == 0;
+		cmp = strcmp (strings + sd1->sel_types,
+					  strings + sd2->sel_types) == 0;
 	return cmp;
 }
 
@@ -267,7 +271,6 @@ emit_methods (methodlist_t *_methods, const char *name, int instance)
 	def_t      *methods_def;
 	pr_method_list_t *methods;
 	type_t     *method_list;
-	dstring_t  *tmp = dstring_newstr ();
 
 	for (count = 0, method = _methods->head; method; method = method->next)
 		if (!method->instance == !instance)
@@ -285,14 +288,12 @@ emit_methods (methodlist_t *_methods, const char *name, int instance)
 	for (i = 0, method = _methods->head; method; method = method->next) {
 		if (!method->instance != !instance)
 			continue;
-		selector_name (tmp, (keywordarg_t *)method->selector);
-		methods->method_list[i].method_name.sel_id = ReuseString (tmp->str);
-		selector_name (tmp, (keywordarg_t *)method->selector);
-		methods->method_list[i].method_name.sel_types = ReuseString (tmp->str);
+		methods->method_list[i].method_name.sel_id = ReuseString (method->name);
+		methods->method_list[i].method_name.sel_types =
+			ReuseString (method->types);
 		methods->method_list[i].method_types =
 			methods->method_list[i].method_name.sel_types;
 		methods->method_list[i].method_imp = method->def->ofs;
 	}
-	dstring_delete (tmp);
 	return methods_def->ofs;
 }

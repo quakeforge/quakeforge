@@ -41,8 +41,12 @@ typedef struct class_s {
 	struct methodlist_s *methods;
 	struct protocollist_s *protocols;
 	struct def_s *def;
+	struct type_s *type;
 } class_t;
 
+extern class_t  class_id;
+
+struct expr_s;
 struct method_s;
 struct protocol_s;
 struct type_s;
@@ -54,6 +58,7 @@ void class_add_protocol (class_t *class, struct protocol_s *protocol);
 void class_check_ivars (class_t *class, struct type_s *ivars);
 void class_finish (class_t *class);
 struct method_s *class_find_method (class_t *class, struct method_s *method);
+struct method_s *class_message_response (class_t *class, struct expr_s *sel);
 struct def_s *class_def (class_t *class);
 class_t *get_category (const char *class_name, const char *category_name,
 					   int create);

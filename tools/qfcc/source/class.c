@@ -46,6 +46,8 @@ static hashtab_t *class_hash;
 static hashtab_t *category_hash;
 static hashtab_t *protocol_hash;
 
+class_t         class_id = {1, "id", 0, 0, 0, 0, 0, 0, &type_id};
+
 static const char *
 class_get_key (void *class, void *unused)
 {
@@ -62,6 +64,7 @@ class_t *
 get_class (const char *name, int create)
 {
 	class_t    *c;
+	type_t      new;
 
 	if (!class_hash)
 		class_hash = Hash_NewTable (1021, class_get_key, 0, 0);
@@ -73,6 +76,9 @@ get_class (const char *name, int create)
 
 	c = calloc (sizeof (class_t), 1);
 	c->class_name = name;
+	new = *type_Class.aux_type;
+	new.class = c;
+	c->type = pointer_type (find_type (&new));
 	if (name)
 		Hash_Add (class_hash, c);
 	return c;
@@ -183,6 +189,31 @@ class_find_method (class_t *class, method_t *method)
 	return method;
 }
 
+method_t *
+class_message_response (class_t *class, expr_t *sel)
+{
+	pr_sel_t   *selector;
+	char       *sel_name;
+	method_t   *m;
+	class_t    *c = class;
+
+	if (sel->type != ex_pointer && sel->e.pointer.type != type_SEL.aux_type) {
+		error (sel, "not a selector");
+		return 0;
+	}
+	selector = &G_STRUCT (pr_sel_t, sel->e.pointer.val);
+	sel_name = strings + selector->sel_id;
+	while (c) {
+		for (m = c->methods->head; m; m = m->next) {
+			if (strcmp (sel_name, m->name) == 0)
+				return m;
+		}
+		c = c->super_class;
+	}
+	warning (sel, "%s does not respond to %s", class->class_name, sel_name);
+	return 0;
+}
+
 static unsigned long
 category_get_hash (void *_c, void *unused)
 {
@@ -236,7 +267,7 @@ get_category (const char *class_name, const char *category_name, int create)
 def_t *
 class_def (class_t *class)
 {
-	return PR_GetDef (&type_Class, class->class_name, 0, &numpr_globals);
+	return PR_GetDef (class->type, class->class_name, 0, &numpr_globals);
 }
 
 protocol_t *
