@@ -2339,6 +2339,40 @@ Cmd_CollapsePath (char *str)
 	}
 	return 1;
 }
+
+void
+Cmd_File_read_f (void)
+{
+	char *path, *contents;
+	int mark;
+
+	if (Cmd_Restricted ()) {
+		Cmd_Error ("file_read: access to restricted command denied.\n");
+		return;
+	}
+	if (Cmd_Argc() != 2) {
+		Cmd_Error ("file_read: invalid number of arguments.\n");
+		return;
+	}
+	path = strdup (Cmd_Argv(1));
+	SYS_CHECKMEM (path);
+	if (!Cmd_CollapsePath (path)) {
+			free (path);
+			Cmd_Error ("file_read: access to restricted directory/file denied.\n");
+			return;
+	}
+	free(path);
+	Sys_DPrintf ("file_read: opening %s/%s\n", com_gamedir, path);
+	mark = Hunk_LowMark ();
+	contents = (char *) COM_LoadHunkFile (Cmd_Argv(1));
+	if (!contents) {
+		Cmd_Error (va ("file_read: could not open file for reading: %s\n", strerror (errno)));
+		return;
+	}
+	Cmd_Return (contents);
+	Hunk_FreeToLowMark (mark);
+}
+
 void
 Cmd_File_write_f (void)
 {
@@ -2515,6 +2549,7 @@ Cmd_Init (void)
 	Cmd_AddCommand ("randint", Cmd_Randint_f, "Returns a random integer between $1 and $2");
 	Cmd_AddCommand ("streq", Cmd_Streq_f, "Returns 1 if $1 and $2 are the same string, 0 otherwise");
 	Cmd_AddCommand ("strlen", Cmd_Strlen_f, "Returns the length of $1");
+	Cmd_AddCommand ("file_read", Cmd_File_read_f, "Reads file $1 in the current gamedir and returns its contents.");
 	Cmd_AddCommand ("file_write", Cmd_File_write_f, "Write $2 to the file $1 in the current gamedir");
 	Cmd_AddCommand ("file_find", Cmd_File_find_f, "Finds a file matching pattern $1 in subdirectory $2 of the gamedir.");
 	Cmd_AddCommand ("eval", Cmd_Eval_f, "Evaluates a command.  Useful for callbacks or dynamically generated commands.");
