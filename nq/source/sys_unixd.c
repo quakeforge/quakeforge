@@ -257,7 +257,6 @@ main (int argc, const char **argv)
 			oldtime += time;
 
 		Host_Frame (time);
-		oldtime = time;
 	}
 	return true;						// return success
 }

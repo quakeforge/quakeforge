@@ -68,6 +68,9 @@ vec3_t      r_origin;
 qboolean    r_paused;
 entity_t   *r_view_model;
 
+extern cvar_t *cl_rollangle;
+extern cvar_t *cl_rollspeed;
+
 void
 CL_UpdateScreen (double realtime)
 {
@@ -118,6 +121,10 @@ CL_InitCvars (void)
 {
 	cl_name = Cvar_Get ("_cl_name", "player", CVAR_ARCHIVE, NULL, "");
 	cl_writecfg = Cvar_Get ("cl_writecfg", "1", CVAR_NONE, NULL, "");
+	cl_rollangle = Cvar_Get ("cl_rollangle", "2.0", CVAR_NONE, NULL,
+							 "How much your screen tilts when strafing");
+	cl_rollspeed = Cvar_Get ("cl_rollspeed", "200", CVAR_NONE, NULL,
+							 "How quickly you straighten out after strafing");
 }
 
 void
