@@ -50,29 +50,27 @@ void
 Mod_SpriteLoadTexture (mspriteframe_t *pspriteframe, int framenum)
 {
 	char        name[64];
-	qboolean    loaded = true;
+	char        filename[MAX_QPATH + 4];
 	VFile      *f;
 	tex_t      *targa;
 
-	snprintf (name, sizeof (name), "%s_%i.tga", loadmodel->name, framenum);
-	COM_FOpenFile (name, &f);
+	snprintf (name, sizeof (name), "%s_%i", loadmodel->name, framenum);
+
+	snprintf (filename, sizeof (filename), "%s.tga", name);
+	COM_FOpenFile (filename, &f);
 	if (f) {
 		targa = LoadTGA (f);
 		Qclose (f);
 		if (targa->format < 4)
-			pspriteframe->gl_texturenum =
-				GL_LoadTexture (name, targa->width,
-					targa->height, targa->data, true, false, 3);
+			pspriteframe->gl_texturenum = GL_LoadTexture (name,
+				targa->width, targa->height, targa->data,
+				true, false, 3);
 		else
-			pspriteframe->gl_texturenum =
-				GL_LoadTexture (name, targa->width,
-					targa->height, targa->data, true, true, 4);
+			pspriteframe->gl_texturenum = GL_LoadTexture (name,
+				targa->width, targa->height, targa->data,
+				true, true, 4);
 		return;
 	}
-	Con_DPrintf ("Couldn't load %s\n", name);
-	loaded = false;
-
-	snprintf (name, sizeof (name), "%s_%i", loadmodel->name, framenum);
 	pspriteframe->gl_texturenum =
 		GL_LoadTexture (name, pspriteframe->width, pspriteframe->height,
 						pspriteframe->pixels, true, true, 1);

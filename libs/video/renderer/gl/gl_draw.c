@@ -46,6 +46,8 @@ static const char rcsid[] =
 #include "QF/render.h"
 #include "QF/screen.h"
 #include "QF/sys.h"
+#include "QF/texture.h"
+#include "QF/tga.h"
 #include "QF/va.h"
 #include "QF/vfs.h"
 #include "QF/vid.h"
@@ -105,13 +107,28 @@ Draw_PicFromWad (const char *name)
 {
 	glpic_t    *gl;
 	qpic_t     *p;
+	char        filename[MAX_QPATH + 4];
+	VFile      *f;
+	tex_t      *targa;
 
 	p = W_GetLumpName (name);
 	gl = (glpic_t *) p->data;
 
-	gl->texnum = GL_LoadTexture (name, p->width, p->height, p->data, false,
-								 true, 1);
-
+	snprintf (filename, sizeof (filename), "%s.tga", name);
+	COM_FOpenFile (filename, &f);
+	if (f) {
+		targa = LoadTGA (f);
+		Qclose (f);
+		if (targa->format < 4)
+			gl->texnum = GL_LoadTexture (name, targa->width,
+				targa->height, targa->data, false, false, 3);
+		else
+			gl->texnum = GL_LoadTexture (name, targa->width,
+				targa->height, targa->data, false, true, 4);
+		return p;
+	}
+	gl->texnum = GL_LoadTexture (name, p->width, p->height,
+					p->data, false, true, 1);
 	return p;
 }
 
