@@ -297,13 +297,8 @@ WriteData (int crc)
 }
 
 
-/*
-	PR_BeginCompilation
-
-	called before compiling a batch of files, clears the pr struct
-*/
 void
-PR_BeginCompilation (void)
+begin_compilation (void)
 {
 	pr.num_globals = RESERVED_OFS;
 	pr.def_tail = &pr.def_head;
@@ -312,13 +307,8 @@ PR_BeginCompilation (void)
 	pr_error_count = 0;
 }
 
-/*
-	PR_FinishCompilation
-
-	called after all files are compiled to check for errors.
-	Returns false if errors were detected.
-*/
-qboolean PR_FinishCompilation (void)
+qboolean
+finish_compilation (void)
 {
 	def_t      *d;
 	qboolean    errors = false;
@@ -463,7 +453,7 @@ main (int argc, char **argv)
 			printf ("debug file: %s\n", debugfile);
 	}
 
-	PR_BeginCompilation ();
+	begin_compilation ();
 
 	// compile all the files
 	while ((src = Parse (src))) {
@@ -501,7 +491,7 @@ main (int argc, char **argv)
 			return 1;
 	}
 
-	if (!PR_FinishCompilation ())
+	if (!finish_compilation ())
 		Error ("compilation errors");
 
 	// write progdefs.h
