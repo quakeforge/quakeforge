@@ -301,7 +301,7 @@ rm -rf $RPM_BUILD_ROOT
 
 %files server
 %attr(-,root,root)	%{_prefix}/bin/qw-server
-#%attr(-,root,root)	%{_prefix}/bin/nq-server
+%attr(-,root,root)	%{_prefix}/bin/nq-server
 
 %files master
 %attr(-,root,root)	%{_prefix}/bin/qw-master
