@@ -49,11 +49,11 @@ static __attribute__ ((unused)) const char rcsid[] =
 
 #include "QF/bspfile.h"
 #include "QF/dstring.h"
-#include "QF/idparse.h"
 #include "QF/mathlib.h"
 #include "QF/qfplist.h"
 #include "QF/qtypes.h"
 #include "QF/quakefs.h"
+#include "QF/script.h"
 #include "QF/sys.h"
 
 #include "light.h"
@@ -167,7 +167,6 @@ WriteLights (void)
 void
 LoadEntities (void)
 {
-	const char *data;
 	const char *key;
 	double      vec[4];
 	entity_t   *entity;
@@ -175,22 +174,21 @@ LoadEntities (void)
 	float       cutoff_range;
 	float       intensity;
 	plitem_t   *dict;
+	script_t   *script;
 
-	data = bsp->entdata;
+	script = Script_New ();
+	Script_Start (script, "ent data", bsp->entdata);
 
 	// start parsing
 	max_entities = num_entities = 0;
 	entities = 0;
 
 	// go through all the entities
-	while (1) {
+	while (Script_GetToken (script, 1)) {
 		// parse the opening brace      
-		data = COM_Parse (data);
-		if (!data)
-			break;
-		if (com_token[0] != '{')
+		if (script->token->str[0] != '{')
 			fprintf (stderr, "LoadEntities: found %s when expecting {",
-					 com_token);
+					 script->token->str);
 
 		if (num_entities == max_entities) {
 			max_entities += 128;
@@ -211,32 +209,28 @@ LoadEntities (void)
 
 		// go through all the keys in this entity
 		while (1) {
-			int c;
-
 			// parse key
-			data = COM_Parse (data);
-			if (!data)
+			if (!Script_GetToken (script, 1))
 				fprintf (stderr, "LoadEntities: EOF without closing brace");
-			if (!strcmp (com_token, "}"))
+			if (!strcmp (script->token->str, "}"))
 				break;
-			key = strdup (com_token);
+			key = strdup (script->token->str);
 
 			// parse value
-			data = COM_Parse (data);
-			if (!data)
+			// FIXME shouldn't cross line
+			if (!Script_GetToken (script, 1))
 				fprintf (stderr, "LoadEntities: EOF without closing brace");
-			c = com_token[0];
-			if (c == '}')
+			if (script->token->str[0] == '}')
 				fprintf (stderr, "LoadEntities: closing brace without data");
 
 			epair = calloc (1, sizeof (epair_t));
 			epair->key = key;
-			epair->value = strdup (com_token);
+			epair->value = strdup (script->token->str);
 			epair->next = entity->epairs;
 			entity->epairs = epair;
 
 			PL_D_AddObject (dict, PL_NewString (key),
-							PL_NewString (com_token));
+							PL_NewString (script->token->str));
 
 			if (!strcmp (key, "classname"))
 				entity->classname = epair->value;
@@ -247,7 +241,7 @@ LoadEntities (void)
 			else if (!strcmp (key, "origin")) {   		
 				// scan into doubles, then assign
 				// which makes it vec_t size independent
-				if (sscanf (com_token, "%lf %lf %lf",
+				if (sscanf (script->token->str, "%lf %lf %lf",
 							&vec[0], &vec[1], &vec[2]) != 3)
 					fprintf (stderr, "LoadEntities: not 3 values for origin");
 				else
