@@ -34,7 +34,7 @@
 #define MULTICAST_PHS_R 4
 #define MULTICAST_PVS_R 5
 
-@extern void (string s) bprint;
+@extern void (...) bprint;
 @extern void (float to, float f) WriteByte;
 @extern void (float to, float f) WriteChar;
 @extern void (float to, float f) WriteShort;
