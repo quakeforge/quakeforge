@@ -34,6 +34,7 @@
 #ifdef HAVE_CONFIG_H
 # include "config.h"
 #endif
+#include <sys/types.h>
 #ifdef HAVE_STRING_H
 # include <string.h>
 #endif
@@ -56,7 +57,6 @@
 #include <ctype.h>
 #include <errno.h>
 #include <setjmp.h>
-#include <sys/types.h>
 
 #ifdef __sun
 # undef model_t			// allow qf to use it's model_t
