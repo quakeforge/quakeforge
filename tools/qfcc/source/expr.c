@@ -766,6 +766,7 @@ binary_expr (int op, expr_t *e1, expr_t *e2)
 		&& e2->type == ex_block && e2->e.block.is_call
 		&& e1->e.block.result) {
 		e = new_temp_def_expr (e1->e.block.result->e.def->type);
+		inc_users (e);
 		e1 = binary_expr ('=', e, e1);
 	}
 
