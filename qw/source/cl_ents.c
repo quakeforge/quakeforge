@@ -1044,4 +1044,8 @@ CL_EmitEntities (void)
 void
 CL_Ents_Init (void)
 {
+	int         i;
+
+	for (i = 0; i < MAX_PROJECTILES; i++)
+		CL_Init_Entity (&cl_projectiles[i]);
 }
