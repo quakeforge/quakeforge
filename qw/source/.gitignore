@@ -30,5 +30,7 @@ qw-client-svga
 qw-client-svga.exe
 qw-client-x11
 qw-client-x11.exe
+qw-master
+qw-master.exe
 qw-server
 qw-server.exe
