@@ -56,6 +56,9 @@ void finish_function (function_t *f);
 void emit_function (function_t *f, expr_t *e);
 void build_scope (function_t *f, def_t *func);
 
+def_t **save_local_inits (def_t *scope);
+void restore_local_inits (def_t **def_list);
+
 typedef struct {
 	type_t	*type;
 	def_t	*scope;
@@ -68,6 +71,7 @@ typedef struct {
 	int		op;
 	scope_t	scope;
 	def_t	*def;
+	def_t	**def_list;
 	type_t	*type;
 	expr_t	*expr;
 	int		integer_val;
@@ -104,6 +108,7 @@ typedef struct {
 %type	<expr>	const opt_expr expr arg_list
 %type	<expr>	statement statements statement_block
 %type	<function> begin_function
+%type	<def_list> save_inits
 
 %expect 1
 
@@ -415,7 +420,7 @@ statement
 			$$ = local_expr;
 			local_expr = 0;
 		}
-	| IF '(' expr ')' statement
+	| IF '(' expr ')' save_inits statement
 		{
 			expr_t *l1 = new_label_expr ();
 			expr_t *e;
@@ -426,10 +431,16 @@ statement
 			e->line = $3->line;
 			e->file = $3->file;
 			append_expr ($$, e);
-			append_expr ($$, $5);
+			append_expr ($$, $6);
 			append_expr ($$, l1);
+			restore_local_inits ($5);
 		}
-	| IF '(' expr ')' statement ELSE statement
+	| IF '(' expr ')' save_inits statement ELSE
+		{
+			$<def_list>$ = save_local_inits (pr_scope);
+			restore_local_inits ($5);
+		}
+	  statement
 		{
 			expr_t *l1 = new_label_expr ();
 			expr_t *l2 = new_label_expr ();
@@ -442,14 +453,16 @@ statement
 			e->file = $3->file;
 			append_expr ($$, e);
 
-			append_expr ($$, $5);
+			append_expr ($$, $6);
 
 			e = new_unary_expr ('g', l2);
 			append_expr ($$, e);
 
 			append_expr ($$, l1);
-			append_expr ($$, $7);
+			append_expr ($$, $9);
 			append_expr ($$, l2);
+			restore_local_inits ($5);
+			// XXX fancy stuff here :)
 		}
 	| FOR '(' opt_expr ';' opt_expr ';' opt_expr ')' statement
 		{
@@ -473,6 +486,12 @@ statement
 			$$ = $1;
 		}
 	;
+
+save_inits
+	: /* empty */
+		{
+			$$ = save_local_inits (pr_scope);
+		}
 
 opt_expr
 	: expr
@@ -697,8 +716,8 @@ emit_function (function_t *f, expr_t *e)
 
 	pr_scope = f->def;
 	while (e) {
-		//print_expr (e);
-		//puts("");
+		print_expr (e);
+		puts("");
 
 		emit_expr (e);
 		e = e->next;
@@ -709,4 +728,15 @@ emit_function (function_t *f, expr_t *e)
 	PR_ResetTempDefs ();
 
 	//puts ("");
+}
+
+def_t **
+save_local_inits (def_t *scope)
+{
+	return 0;
+}
+
+void
+restore_local_inits (def_t **def_list)
+{
 }
