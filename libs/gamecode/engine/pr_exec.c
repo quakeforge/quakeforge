@@ -40,6 +40,7 @@ static const char rcsid[] =
 #include <stdarg.h>
 
 #include "QF/cvar.h"
+#include "QF/dstring.h"
 #include "QF/mathlib.h"
 #include "QF/progs.h"
 #include "QF/sys.h"
