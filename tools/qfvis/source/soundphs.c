@@ -119,6 +119,9 @@ CalcAmbientSounds (void)
 			if (!(vis[j >> 3] & (1 << (j & 7))))
 				continue;
 
+			if (!bsp->texdata)
+				continue;
+
 			// check this leaf for sound textures
 			hit = &bsp->leafs[j + 1];
 
