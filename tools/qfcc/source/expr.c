@@ -1497,7 +1497,7 @@ binary_expr (int op, expr_t *e1, expr_t *e2)
 					    "code", op);
 			e1->e.expr.e1->paren = 1;
 			return unary_expr ('!', binary_expr (op, e1->e.expr.e1, e2));
-		} else {
+		} else if (!is_compare (op)) {
 			warning (e1, "ambiguous logic. Suggest explicit parentheses with "
 					 "expressions involving ! and %c", op);
 		}
