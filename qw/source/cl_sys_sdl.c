@@ -81,6 +81,7 @@ startup (void)
 {
 #ifdef WIN32
 	OSVERSIONINFO vinfo;
+	Sys_MaskFPUExceptions ();
 
 	// make sure the timer is high precision, otherwise NT gets 18ms resolution
 	timeBeginPeriod (1);
