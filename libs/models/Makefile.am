@@ -5,7 +5,7 @@ INCLUDES= -I$(top_srcdir)/include
 
 lib_LTLIBRARIES=	libQFmodels.la @VID_MODEL_TARGETS@
 EXTRA_LTLIBRARIES= \
-	libQFmodels_gl.la libQFmodels_sw.la libQFmodels_sw32.la
+	libQFmodels_gl.la libQFmodels_sw.la
 
 models_sources = clip_hull.c model.c
 
@@ -27,10 +27,3 @@ libQFmodels_sw_la_LDFLAGS=	-version-info 1:0:0 -rpath $(libdir)
 libQFmodels_sw_la_LIBADD=	$(sw_LIBS)
 libQFmodels_sw_la_SOURCES=	$(models_sources)
 libQFmodels_sw_la_DEPENDENCIES= $(sw_LIBS)
-
-sw32_LIBS= \
-	alias/libalias_sw32.la brush/libbrush_sw32.la sprite/libsprite_sw32.la
-libQFmodels_sw32_la_LDFLAGS=	-version-info 1:0:0 -rpath $(libdir)
-libQFmodels_sw32_la_LIBADD=	$(sw32_LIBS)
-libQFmodels_sw32_la_SOURCES=	$(models_sources)
-libQFmodels_sw32_la_DEPENDENCIES=$(sw32_LIBS)

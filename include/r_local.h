@@ -160,8 +160,7 @@ void R_RenderBmodelFace (bedge_t *pedges, msurface_t *psurf);
 void R_TransformPlane (mplane_t *p, float *normal, float *dist);
 void R_TransformFrustum (void);
 void R_SetSkyFrame (void);
-void R_DrawSurfaceBlock16 (void);
-void R_DrawSurfaceBlock8 (void);
+void R_DrawSurfaceBlock (void);
 texture_t *R_TextureAnimation (texture_t *base);
 
 #ifdef USE_INTEL_ASM
@@ -174,9 +173,7 @@ void R_DrawSurfaceBlock8_mip3 (void);
 #endif
 
 void R_GenSkyTile (void *pdest);
-void R_GenSkyTile16 (void *pdest);
-void R_Surf8Patch (void);
-void R_Surf16Patch (void);
+void R_SurfPatch (void);
 void R_DrawSubmodelPolygons (model_t *pmodel, int clipflags);
 void R_DrawSolidClippedSubmodelPolygons (model_t *pmodel);
 
@@ -192,8 +189,6 @@ void R_RemoveEdges (edge_t *pedge);
 
 extern void R_Surf8Start (void);
 extern void R_Surf8End (void);
-extern void R_Surf16Start (void);
-extern void R_Surf16End (void);
 extern void R_EdgeCodeStart (void);
 extern void R_EdgeCodeEnd (void);
 

@@ -55,8 +55,8 @@ C(R_Surf8Start):
 //----------------------------------------------------------------------
 
 	.align 4
-.globl C(R_DrawSurfaceBlock8_mip0)
-C(R_DrawSurfaceBlock8_mip0):
+.globl C(R_DrawSurfaceBlock_mip0)
+C(R_DrawSurfaceBlock_mip0):
 	pushl	%ebp				// preserve caller's stack frame
 	pushl	%edi
 	pushl	%esi				// preserve register variables
@@ -281,8 +281,8 @@ LSkip_mip0:
 //----------------------------------------------------------------------
 
 	.align 4
-.globl C(R_DrawSurfaceBlock8_mip1)
-C(R_DrawSurfaceBlock8_mip1):
+.globl C(R_DrawSurfaceBlock_mip1)
+C(R_DrawSurfaceBlock_mip1):
 	pushl	%ebp				// preserve caller's stack frame
 	pushl	%edi
 	pushl	%esi				// preserve register variables
@@ -451,8 +451,8 @@ LSkip_mip1:
 //----------------------------------------------------------------------
 
 	.align 4
-.globl C(R_DrawSurfaceBlock8_mip2)
-C(R_DrawSurfaceBlock8_mip2):
+.globl C(R_DrawSurfaceBlock_mip2)
+C(R_DrawSurfaceBlock_mip2):
 	pushl	%ebp				// preserve caller's stack frame
 	pushl	%edi
 	pushl	%esi				// preserve register variables
@@ -591,8 +591,8 @@ LSkip_mip2:
 //----------------------------------------------------------------------
 
 	.align 4
-.globl C(R_DrawSurfaceBlock8_mip3)
-C(R_DrawSurfaceBlock8_mip3):
+.globl C(R_DrawSurfaceBlock_mip3)
+C(R_DrawSurfaceBlock_mip3):
 	pushl	%ebp				// preserve caller's stack frame
 	pushl	%edi
 	pushl	%esi				// preserve register variables
@@ -774,8 +774,8 @@ LPatchTable8:
 	.text
 
 	.align 4
-.globl C(R_Surf8Patch)
-C(R_Surf8Patch):
+.globl C(R_SurfPatch)
+C(R_SurfPatch):
 	pushl	%ebx
 
 	movl	C(colormap),%eax

@@ -8,29 +8,20 @@ else
 gl=
 endif
 
-if BUILD_SW
+if BUILD_SW_MOD
 sw= libalias_sw.la
 else
 sw=
 endif
 
-if BUILD_SW32
-sw32= libalias_sw32.la
-else
-sw32=
-endif
-
-noinst_LTLIBRARIES=	$(gl) $(sw) $(sw32)
+noinst_LTLIBRARIES=	$(gl) $(sw)
 
 alias_src= model_alias.c
 gl_src= gl_mesh.c gl_model_alias.c
 sw_src= sw_model_alias.c
-sw32_src= sw32_model_alias.c
 
 libalias_gl_la_SOURCES= $(gl_src) $(alias_src)
 
 libalias_sw_la_SOURCES= $(sw_src) $(alias_src)
 
-libalias_sw32_la_SOURCES= $(sw32_src) $(alias_src)
-
-EXTRA_DIST= $(gl_src) $(sw_src) $(sw32_src) $(alias_src)
+EXTRA_DIST= $(gl_src) $(sw_src) $(alias_src)

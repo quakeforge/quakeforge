@@ -27,8 +27,8 @@
 static const char rcsid[] = 
 	"$Id$";
 
-// models are the only shared resource between a client and server running 
-// on the same machine. 
+// models are the only shared resource between a client and server running
+// on the same machine.
 
 #ifdef HAVE_CONFIG_H
 # include "config.h"
@@ -53,9 +53,7 @@ Mod_LoadSpriteFrame (void *pin, mspriteframe_t **ppframe, int framenum)
 {
 	dspriteframe_t *pinframe;
 	mspriteframe_t *pspriteframe;
-	int         i, width, height, size, origin[2];
-	unsigned short *ppixout;
-	byte       *ppixin;
+	int         width, height, size, origin[2];
 
 	pinframe = (dspriteframe_t *) pin;
 
@@ -63,8 +61,7 @@ Mod_LoadSpriteFrame (void *pin, mspriteframe_t **ppframe, int framenum)
 	height = LittleLong (pinframe->height);
 	size = width * height;
 
-	pspriteframe = Hunk_AllocName (sizeof (mspriteframe_t) + size * r_pixbytes,
-								   loadname);
+	pspriteframe = Hunk_AllocName (sizeof (mspriteframe_t) + size, loadname);
 
 	memset (pspriteframe, 0, sizeof (mspriteframe_t) + size);
 
@@ -80,18 +77,7 @@ Mod_LoadSpriteFrame (void *pin, mspriteframe_t **ppframe, int framenum)
 	pspriteframe->left = origin[0];
 	pspriteframe->right = width + origin[0];
 
-	if (r_pixbytes == 1) {
-		memcpy (&pspriteframe->pixels[0], (byte *) (pinframe + 1), size);
-	} else if (r_pixbytes == 2) {
-		ppixin = (byte *) (pinframe + 1);
-		ppixout = (unsigned short *) &pspriteframe->pixels[0];
-
-		for (i = 0; i < size; i++)
-			ppixout[i] = d_8to16table[ppixin[i]];
-	} else {
-		Sys_Error ("Mod_LoadSpriteFrame: driver set invalid r_pixbytes: %d\n",
-				  r_pixbytes);
-	}
+	memcpy (&pspriteframe->pixels[0], (byte *) (pinframe + 1), size);
 
 	return (void *) ((byte *) pinframe + sizeof (dspriteframe_t) + size);
 }

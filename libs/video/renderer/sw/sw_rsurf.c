@@ -51,14 +51,14 @@ int         r_lightwidth;
 int         r_numhblocks, r_numvblocks;
 unsigned char *r_source, *r_sourcemax;
 
-void        R_DrawSurfaceBlock8_mip0 (void);
-void        R_DrawSurfaceBlock8_mip1 (void);
-void        R_DrawSurfaceBlock8_mip2 (void);
-void        R_DrawSurfaceBlock8_mip3 (void);
+void        R_DrawSurfaceBlock_mip0 (void);
+void        R_DrawSurfaceBlock_mip1 (void);
+void        R_DrawSurfaceBlock_mip2 (void);
+void        R_DrawSurfaceBlock_mip3 (void);
 
 static void (*surfmiptable[4]) (void) = {
-	R_DrawSurfaceBlock8_mip0, R_DrawSurfaceBlock8_mip1,
-	R_DrawSurfaceBlock8_mip2, R_DrawSurfaceBlock8_mip3};
+	R_DrawSurfaceBlock_mip0, R_DrawSurfaceBlock_mip1,
+	R_DrawSurfaceBlock_mip2, R_DrawSurfaceBlock_mip3};
 
 unsigned int blocklights[18 * 18];
 
@@ -249,15 +249,9 @@ R_DrawSurface (void)
 
 //==============================
 
-	if (r_pixbytes == 1) {
-		pblockdrawer = surfmiptable[r_drawsurf.surfmip];
-		// TODO: only needs to be set when there is a display settings change
-		horzblockstep = blocksize;
-	} else {
-		pblockdrawer = R_DrawSurfaceBlock16;
-		// TODO: only needs to be set when there is a display settings change
-		horzblockstep = blocksize << 1;
-	}
+	pblockdrawer = surfmiptable[r_drawsurf.surfmip];
+	// TODO: only needs to be set when there is a display settings change
+	horzblockstep = blocksize;
 
 	smax = mt->width >> r_drawsurf.surfmip;
 	twidth = texwidth;
@@ -301,7 +295,7 @@ R_DrawSurface (void)
 #ifndef USE_INTEL_ASM
 
 void
-R_DrawSurfaceBlock8_mip0 (void)
+R_DrawSurfaceBlock_mip0 (void)
 {
 	int         v, i, b, lightstep, lighttemp, light;
 	unsigned char pix, *psource, *prowdest;
@@ -343,7 +337,7 @@ R_DrawSurfaceBlock8_mip0 (void)
 }
 
 void
-R_DrawSurfaceBlock8_mip1 (void)
+R_DrawSurfaceBlock_mip1 (void)
 {
 	int         v, i, b, lightstep, lighttemp, light;
 	unsigned char pix, *psource, *prowdest;
@@ -385,7 +379,7 @@ R_DrawSurfaceBlock8_mip1 (void)
 }
 
 void
-R_DrawSurfaceBlock8_mip2 (void)
+R_DrawSurfaceBlock_mip2 (void)
 {
 	int         v, i, b, lightstep, lighttemp, light;
 	unsigned char pix, *psource, *prowdest;
@@ -427,7 +421,7 @@ R_DrawSurfaceBlock8_mip2 (void)
 }
 
 void
-R_DrawSurfaceBlock8_mip3 (void)
+R_DrawSurfaceBlock_mip3 (void)
 {
 	int         v, i, b, lightstep, lighttemp, light;
 	unsigned char pix, *psource, *prowdest;
@@ -468,50 +462,6 @@ R_DrawSurfaceBlock8_mip3 (void)
 	}
 }
 
-/*
-	R_DrawSurfaceBlock16
-
-	FIXME: make this work
-*/
-void
-R_DrawSurfaceBlock16 (void)
-{
-	int         k;
-	unsigned char *psource;
-	int         lighttemp, lightstep, light;
-	unsigned short *prowdest;
-
-	prowdest = (unsigned short *) prowdestbase;
-
-	for (k = 0; k < blocksize; k++) {
-		unsigned short *pdest;
-		unsigned char pix;
-		int         b;
-
-		psource = pbasesource;
-		lighttemp = lightright - lightleft;
-		lightstep = lighttemp >> blockdivshift;
-
-		light = lightleft;
-		pdest = prowdest;
-
-		for (b = 0; b < blocksize; b++) {
-			pix = *psource;
-			*pdest = vid.colormap16[(light & 0xFF00) + pix];
-			psource += sourcesstep;
-			pdest++;
-			light += lightstep;
-		}
-
-		pbasesource += sourcetstep;
-		lightright += lightrightstep;
-		lightleft += lightleftstep;
-		prowdest = (unsigned short *) ((long) prowdest + surfrowbytes);
-	}
-
-	prowdestbase = prowdest;
-}
-
 #endif
 
 void
@@ -534,41 +484,13 @@ R_GenTurbTile (byte *pbasetex, void *pdest)
 }
 
 void
-R_GenTurbTile16 (byte *pbasetex, void *pdest)
-{
-	int        *turb;
-	int         i, j, s, t;
-	unsigned short *pd;
-
-	turb = sintable + ((int) (r_realtime * SPEED) & (CYCLE - 1));
-	pd = (unsigned short *) pdest;
-
-	for (i = 0; i < TILE_SIZE; i++) {
-		for (j = 0; j < TILE_SIZE; j++) {
-			s = (((j << 16) + turb[i & (CYCLE - 1)]) >> 16) & 63;
-			t = (((i << 16) + turb[j & (CYCLE - 1)]) >> 16) & 63;
-			*pd++ = d_8to16table[*(pbasetex + (t << 6) + s)];
-		}
-	}
-}
-
-void
 R_GenTile (msurface_t *psurf, void *pdest)
 {
 	if (psurf->flags & SURF_DRAWTURB) {
-		if (r_pixbytes == 1) {
-			R_GenTurbTile (((byte *) psurf->texinfo->texture +
-							psurf->texinfo->texture->offsets[0]), pdest);
-		} else {
-			R_GenTurbTile16 (((byte *) psurf->texinfo->texture +
-							  psurf->texinfo->texture->offsets[0]), pdest);
-		}
+		R_GenTurbTile (((byte *) psurf->texinfo->texture +
+						psurf->texinfo->texture->offsets[0]), pdest);
 	} else if (psurf->flags & SURF_DRAWSKY) {
-		if (r_pixbytes == 1) {
-			R_GenSkyTile (pdest);
-		} else {
-			R_GenSkyTile16 (pdest);
-		}
+		R_GenSkyTile (pdest);
 	} else {
 		Sys_Error ("Unknown tile type");
 	}

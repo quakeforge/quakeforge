@@ -59,7 +59,6 @@ D_Init (void)
 	r_drawpolys = false;
 	r_worldpolysbacktofront = false;
 	r_recursiveaffinetriangles = true;
-	r_pixbytes = 1;
 	r_aliasuvscale = 1.0;
 
 	vid.surf_cache_size = D_SurfaceCacheForRes;
@@ -122,18 +121,7 @@ D_SetupFrame (void)
 	for (i = 0; i < (NUM_MIPS - 1); i++)
 		d_scalemip[i] = basemip[i] * d_mipscale->value;
 
-#ifdef PIC
-#undef USE_INTEL_ASM //XXX asm pic hack
-#endif
-
-#ifdef USE_INTEL_ASM
-	if (d_subdiv16->int_val)
-		d_drawspans = D_DrawSpans16;
-	else
-		d_drawspans = D_DrawSpans8;
-#else
 	d_drawspans = D_DrawSpans8;
-#endif
 
 	d_aflatcolor = 0;
 }

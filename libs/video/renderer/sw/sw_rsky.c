@@ -193,41 +193,6 @@ R_GenSkyTile (void *pdest)
 
 
 void
-R_GenSkyTile16 (void *pdest)
-{
-	int         x, y;
-	int         ofs, baseofs;
-	int         xshift, yshift;
-	byte       *pnewsky;
-	unsigned short *pd;
-
-	xshift = skytime * skyspeed;
-	yshift = skytime * skyspeed;
-
-	pnewsky = (byte *) & newsky[0];
-	pd = (unsigned short *) pdest;
-
-	for (y = 0; y < SKYSIZE; y++) {
-		baseofs = ((y + yshift) & SKYMASK) * 131;
-
-// FIXME: clean this up
-// FIXME: do faster unaligned version?
-		for (x = 0; x < SKYSIZE; x++) {
-			ofs = baseofs + ((x + xshift) & SKYMASK);
-
-			*pd = d_8to16table[(*(pnewsky + 128) &
-								*(byte *) & bottommask[ofs]) |
-							   *(byte *) & bottomsky[ofs]];
-			pnewsky++;
-			pd++;
-		}
-
-		pnewsky += TILE_SIZE;
-	}
-}
-
-
-void
 R_SetSkyFrame (void)
 {
 	int         g, s1, s2;

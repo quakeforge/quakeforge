@@ -1542,7 +1542,9 @@ if test "x$BUILD_SW" = xyes; then
 fi
 if test "x$BUILD_SW32" = xyes; then
 	VID_REND_TARGETS="$VID_REND_TARGETS libQFrenderer_sw32.la"
-	VID_MODEL_TARGETS="$VID_MODEL_TARGETS libQFmodels_sw32.la"
+	if test "x$BUILD_SW" != xyes; then
+		VID_MODEL_TARGETS="$VID_MODEL_TARGETS libQFmodels_sw.la"
+	fi
 fi
 if test "x$BUILD_GL" = xyes; then
 	VID_REND_TARGETS="$VID_REND_TARGETS libQFrenderer_gl.la"
@@ -1681,6 +1683,7 @@ AC_SUBST(VID_TARGETS)
 AM_CONDITIONAL(BUILD_GL, test "$BUILD_GL" = "yes")
 AM_CONDITIONAL(BUILD_SW, test "$BUILD_SW" = "yes")
 AM_CONDITIONAL(BUILD_SW_ASM, test "$BUILD_SW" = "yes" -a "$ASM_ARCH" = "yes")
+AM_CONDITIONAL(BUILD_SW_MOD, test "$BUILD_SW" = "yes" -o "$BUILD_SW32" = "yes")
 AM_CONDITIONAL(BUILD_SW32, test "$BUILD_SW32" = "yes")
 
 dnl Finalization of CFLAGS, LDFLAGS, and LIBS

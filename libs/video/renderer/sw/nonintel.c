@@ -41,14 +41,7 @@ int         r_bmodelactive;
 
 
 void
-R_Surf8Patch (void)
-{
-	// we only patch code on Intel
-}
-
-
-void
-R_Surf16Patch (void)
+R_SurfPatch (void)
 {
 	// we only patch code on Intel
 }

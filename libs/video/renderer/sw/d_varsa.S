@@ -124,7 +124,7 @@ izistep:				.long	0
 // local variables for d_draw16.s
 //-------------------------------------------------------
 
-.globl	reciprocal_table_16, entryvec_table_16
+.globl	reciprocal_table_16
 // 1/2, 1/3, 1/4, 1/5, 1/6, 1/7, 1/8, 1/9, 1/10, 1/11, 1/12, 1/13,
 // 1/14, and 1/15 in 0.32 form
 reciprocal_table_16:	.long	0x40000000, 0x2aaaaaaa, 0x20000000
@@ -132,28 +132,6 @@ reciprocal_table_16:	.long	0x40000000, 0x2aaaaaaa, 0x20000000
 						.long	0x10000000, 0xe38e38e, 0xccccccc, 0xba2e8ba
 						.long	0xaaaaaaa, 0x9d89d89, 0x9249249, 0x8888888
 
-#ifndef NeXT
-	.extern Entry2_16
-	.extern Entry3_16
-	.extern Entry4_16
-	.extern Entry5_16
-	.extern Entry6_16
-	.extern Entry7_16
-	.extern Entry8_16
-	.extern Entry9_16
-	.extern Entry10_16
-	.extern Entry11_16
-	.extern Entry12_16
-	.extern Entry13_16
-	.extern Entry14_16
-	.extern Entry15_16
-	.extern Entry16_16
-#endif
-
-entryvec_table_16:	.long	0, Entry2_16, Entry3_16, Entry4_16
-					.long	Entry5_16, Entry6_16, Entry7_16, Entry8_16
-					.long	Entry9_16, Entry10_16, Entry11_16, Entry12_16
-					.long	Entry13_16, Entry14_16, Entry15_16, Entry16_16
 
 //-------------------------------------------------------
 // local variables for d_parta.s

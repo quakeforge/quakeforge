@@ -72,7 +72,7 @@ D_ViewChanged (void)
 	if (r_dowarp)
 		rowpixels = WARP_WIDTH;
 	else
-		rowpixels = vid.rowbytes / r_pixbytes;
+		rowpixels = vid.rowbytes;
 
 	scale_for_mip = xscale;
 	if (yscale > xscale)

@@ -157,13 +157,13 @@ qw_client_sdl_DEPENDENCIES= \
 # ... 32-bit software, SDL
 qw_client_sdl32_SOURCES=$(qw_client_sdl_SOURCES)
 qw_client_sdl32_LDADD=	$(top_builddir)/libs/video/renderer/libQFrenderer_sw32.la \
-			$(top_builddir)/libs/models/libQFmodels_sw32.la \
+			$(top_builddir)/libs/models/libQFmodels_sw.la \
 			$(top_builddir)/libs/video/targets/libQFsdl32.la \
 			$(client_LIBS) $(SDL_LIBS)
 qw_client_sdl32_LDFLAGS=$(common_ldflags)
 qw_client_sdl32_DEPENDENCIES= \
 			$(top_builddir)/libs/video/renderer/libQFrenderer_sw32.la \
-			$(top_builddir)/libs/models/libQFmodels_sw32.la \
+			$(top_builddir)/libs/models/libQFmodels_sw.la \
 			$(top_builddir)/libs/video/targets/libQFsdl32.la \
 			$(client_LIB_DEPS)
 

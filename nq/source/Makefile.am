@@ -133,12 +133,12 @@ nq_sdl_DEPENDENCIES=	$(soft_QFLIBS) \
 # ... 32-bit software, SDL
 nq_sdl32_SOURCES=	$(combined_sources) sys_sdl.c
 nq_sdl32_LDADD= 	$(top_builddir)/libs/video/renderer/libQFrenderer_sw32.la \
-			$(top_builddir)/libs/models/libQFmodels_sw32.la \
+			$(top_builddir)/libs/models/libQFmodels_sw.la \
 			$(top_builddir)/libs/video/targets/libQFsdl32.la \
 			$(client_LIBS) $(SDL_LIBS)
 nq_sdl32_LDFLAGS=	$(common_ldflags)
 nq_sdl32_DEPENDENCIES=	$(top_builddir)/libs/video/renderer/libQFrenderer_sw32.la \
-			$(top_builddir)/libs/models/libQFmodels_sw32.la \
+			$(top_builddir)/libs/models/libQFmodels_sw.la \
 			$(top_builddir)/libs/video/targets/libQFsdl32.la \
 			$(client_LIB_DEPS)
 

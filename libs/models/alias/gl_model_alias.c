@@ -135,7 +135,7 @@ Mod_FloodFillSkin (byte * skin, int skinwidth, int skinheight)
 	}
 }
 
-void       *
+void *
 Mod_LoadSkin (byte * skin, int skinsize, int snum, int gnum, qboolean group,
 			  maliasskindesc_t *skindesc)
 {
@@ -179,74 +179,6 @@ Mod_LoadSkin (byte * skin, int skinsize, int snum, int gnum, qboolean group,
 	loadmodel->hasfullbrights = fb_texnum;
 	// alpha param was true for non group skins
 	return skin + skinsize;
-}
-
-void       *
-Mod_LoadAllSkins (int numskins, daliasskintype_t *pskintype, int *pskinindex)
-{
-	int         snum, gnum, t;
-	int         skinsize;
-	byte       *skin;
-	int         groupskins;
-	daliasskingroup_t *pinskingroup;
-	daliasskininterval_t *pinskinintervals;
-	maliasskindesc_t *pskindesc;
-	maliasskingroup_t *paliasskingroup;
-	float      *poutskinintervals;
-
-	if (numskins < 1 || numskins > MAX_SKINS)
-		Sys_Error ("Mod_LoadAliasModel: Invalid # of skins: %d\n", numskins);
-
-	skinsize = pheader->mdl.skinwidth * pheader->mdl.skinheight;
-	pskindesc = Hunk_AllocName (numskins * sizeof (maliasskindesc_t),
-								loadname);
-
-	*pskinindex = (byte *) pskindesc - (byte *) pheader;
-
-	for (snum = 0; snum < numskins; snum++) {
-		pskindesc[snum].type = pskintype->type;
-		if (pskintype->type == ALIAS_SKIN_SINGLE) {
-			skin = (byte *) (pskintype + 1);
-			skin = Mod_LoadSkin (skin, skinsize, snum, 0, false,
-								 &pskindesc[snum]);
-		} else {
-			pskintype++;
-			pinskingroup = (daliasskingroup_t *) pskintype;
-			groupskins = LittleLong (pinskingroup->numskins);
-
-			t = field_offset (maliasskingroup_t, skindescs[groupskins]);
-			paliasskingroup = Hunk_AllocName (t, loadname);
-			paliasskingroup->numskins = groupskins;
-
-			pskindesc[snum].skin = (byte *) paliasskingroup - (byte *) pheader;
-			
-			pinskinintervals = (daliasskininterval_t *) (pinskingroup + 1);
-			poutskinintervals = Hunk_AllocName (groupskins * sizeof (float),
-												loadname);
-			paliasskingroup->intervals =
-				(byte *) poutskinintervals - (byte *) pheader;
-			for (gnum = 0; gnum < groupskins; gnum++) {
-				*poutskinintervals = LittleFloat (pinskinintervals->interval);
-				if (*poutskinintervals <= 0)
-					Sys_Error ("Mod_LoadAliasSkinGroup: interval<=0");
-
-				poutskinintervals++;
-				pinskinintervals++;
-			}
-
-			pskintype = (void *) pinskinintervals;
-			skin = (byte *) pskintype;
-
-			for (gnum = 0; gnum < groupskins; gnum++) {
-				paliasskingroup->skindescs[gnum].type = ALIAS_SKIN_SINGLE;
-				skin = Mod_LoadSkin (skin, skinsize, snum, gnum, true,
-									 &paliasskingroup->skindescs[gnum]);
-			}
-		}
-		pskintype = (daliasskintype_t *) skin;
-	}
-
-	return pskintype;
 }
 
 void *

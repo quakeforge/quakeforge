@@ -464,8 +464,8 @@ int     Mod_Fullbright (byte * skin, int width, int height, char *name);
 
 void    *Mod_LoadAliasFrame (void *pin, int *posenum, maliasframedesc_t *frame);
 void    *Mod_LoadAliasGroup (void *pin, int *posenum, maliasframedesc_t *frame);
-void    *Mod_LoadAllSkins (int numskins, daliasskintype_t *pskintype,
-						   int *pskinindex);
+void	*Mod_LoadSkin (byte *skin, int skinsize, int snum, int gnum,
+					   qboolean group, maliasskindesc_t *skindesc);
 void     Mod_MakeAliasModelDisplayLists (model_t *m, aliashdr_t *hdr, void *_m,
 										 int _s);
 void	 Mod_FinalizeAliasModel (model_t *m, aliashdr_t *hdr);
