@@ -104,59 +104,81 @@ int         d_lightstylevalue[256];		// 8.8 fraction of base light value
 vec3_t		shadecolor;					// Ender (Extend) Colormod
 float		modelalpha;					// Ender (Extend) Alpha
 
+unsigned int	InvalidEnum, InvalidValue, InvalidOperation, OutOfMemory,
+				StackOverflow, StackUnderflow, Unknown;
+
 extern void (*R_DrawSpriteModel) (struct entity_s *ent);
 
 
-void
-R_TestErrors (int numerous)
+unsigned int
+R_TestErrors (unsigned int numerous)
 {
 	switch (qfglGetError ()) {
 	case GL_INVALID_ENUM:
-		if (numerous)
-			printf (" and ");
-		printf ("OpenGL error: Invalid Enum!");
-		R_TestErrors (1);
+		InvalidEnum++;
+		R_TestErrors (numerous++);
 		break;
 	case GL_INVALID_VALUE:
-		if (numerous)
-			printf (" and ");
-		printf ("OpenGL error: Invalid Value!");
-		R_TestErrors (1);
+		InvalidValue++;
+		R_TestErrors (numerous++);
 		break;
 	case GL_INVALID_OPERATION:
-		if (numerous)
-			printf (" and ");
-		printf ("OpenGL error: Invalid Operation!");
-		R_TestErrors (1);
+		InvalidOperation++;
+		R_TestErrors (numerous++);
 		break;
 	case GL_STACK_OVERFLOW:
-		if (numerous)
-			printf (" and ");
-		printf ("OpenGL error: Stack Overflow!");
-		R_TestErrors (1);
+		StackOverflow++;
+		R_TestErrors (numerous++);
 		break;
 	case GL_STACK_UNDERFLOW:
-		if (numerous)
-			printf (" and ");
-		printf ("OpenGL error: Stack Underflow!");
-		R_TestErrors (1);
+		StackUnderflow++;
+		R_TestErrors (numerous++);
 		break;
 	case GL_OUT_OF_MEMORY:
-		if (numerous)
-			printf (" and ");
-		printf ("OpenGL error: Out Of Memory!");
-		R_TestErrors (1);
+		OutOfMemory++;
+		R_TestErrors (numerous++);
 		break;
 	case GL_NO_ERROR:
-		return;
+		return numerous;
+		break;
 	default:
-		if (numerous)
-			printf (" and ");
-		printf ("Unknown OpenGL error!");
-		R_TestErrors (1);
+		Unknown++;
+		R_TestErrors (numerous++);
 		break;
 	}
-	printf ("\n");
+
+	return numerous;
+}
+
+void
+R_DisplayErrors (void)
+{
+	if (InvalidEnum)
+		printf ("%d OpenGL errors: Invalid Enum!", InvalidEnum);
+	if (InvalidValue)
+		printf ("%d OpenGL errors: Invalid Value!", InvalidValue);
+	if (InvalidOperation)
+		printf ("%d OpenGL errors: Invalid Operation!", InvalidOperation);
+	if (StackOverflow)
+		printf ("%d OpenGL errors: Stack Overflow!", StackOverflow);
+	if (StackUnderflow)
+		printf ("%d OpenGL errors: Stack Underflow!", StackUnderflow);
+	if (OutOfMemory)
+		printf ("%d OpenGL errors: Out Of Memory!", OutOfMemory);
+	if (Unknown)
+		printf ("%d Unknown OpenGL errors!", Unknown);
+}
+
+void
+R_ClearErrors (void)
+{
+	InvalidEnum = 0;
+	InvalidValue = 0;
+	InvalidOperation = 0;
+	OutOfMemory = 0;
+	StackOverflow = 0;
+	StackUnderflow = 0;
+	Unknown = 0;
 }
 
 void
@@ -178,6 +200,7 @@ R_RotateForEntity (entity_t *e)
 	// ZOID: fixed z angle
 	qfglRotatef (e->angles[2], 1, 0, 0);
 }
+
 #if 0
 /*
 	R_ShowNearestLoc
@@ -211,6 +234,7 @@ R_ShowNearestLoc (void)
 	}
 }
 #endif
+
 /*
 	R_DrawEntitiesOnList
 
@@ -467,7 +491,10 @@ R_RenderScene (void)
 	S_ExtraUpdate ();			// don't let sound get messed up if going slow
 	R_DrawEntitiesOnList ();
 	R_RenderDlights ();
-	R_TestErrors (0);
+
+	R_ClearErrors ();
+	if (R_TestErrors (0))
+		R_DisplayErrors ();
 }
 
 static void
