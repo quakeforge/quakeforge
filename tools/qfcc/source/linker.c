@@ -75,7 +75,7 @@ static struct {
 } relocs;
 static defgroup_t global_defs, local_defs, defs;
 static struct {
-	qfo_function_t *funcs;
+	qfo_func_t *funcs;
 	int         num_funcs;
 	int         max_funcs;
 } funcs;
@@ -212,7 +212,7 @@ fixup_def (qfo_t *qfo, qfo_def_t *def, int def_num)
 {
 	int         i;
 	qfo_reloc_t *reloc;
-	qfo_function_t *func;
+	qfo_func_t *func;
 
 	def->full_type = strpool_addstr (type_strings,
 									 qfo->types + def->full_type);
@@ -260,16 +260,16 @@ add_funcs (qfo_t *qfo)
 {
 	int         i;
 
-	if (funcs.num_funcs + qfo->num_functions > funcs.max_funcs) {
-		funcs.max_funcs = RUP (funcs.num_funcs + qfo->num_functions, 16384);
+	if (funcs.num_funcs + qfo->num_funcs > funcs.max_funcs) {
+		funcs.max_funcs = RUP (funcs.num_funcs + qfo->num_funcs, 16384);
 		funcs.funcs = realloc (funcs.funcs,
-								 funcs.max_funcs * sizeof (qfo_function_t));
+								 funcs.max_funcs * sizeof (qfo_func_t));
 	}
-	funcs.num_funcs += qfo->num_functions;
-	memcpy (funcs.funcs + func_base, qfo->functions,
-			qfo->num_functions * sizeof (qfo_function_t));
+	funcs.num_funcs += qfo->num_funcs;
+	memcpy (funcs.funcs + func_base, qfo->funcs,
+			qfo->num_funcs * sizeof (qfo_func_t));
 	for (i = func_base; i < funcs.num_funcs; i++) {
-		qfo_function_t *func = funcs.funcs + i;
+		qfo_func_t *func = funcs.funcs + i;
 		func->name = strpool_addstr (strings, qfo->strings + func->name);
 		func->file = strpool_addstr (strings, qfo->strings + func->file);
 		if (func->code)
@@ -379,7 +379,7 @@ merge_defgroups (void)
 {
 	int         local_base, i, j;
 	qfo_def_t  *def;
-	qfo_function_t *func;
+	qfo_func_t *func;
 
 	defgroup_add_defs (&defs, global_defs.defs, global_defs.num_defs);
 	local_base = defs.num_defs;
@@ -502,7 +502,7 @@ linker_finish (void)
 	qfo_add_strings (qfo, strings->strings, strings->size);
 	qfo_add_relocs (qfo, relocs.relocs, relocs.num_relocs);
 	qfo_add_defs (qfo, defs.defs, defs.num_defs);
-	qfo_add_functions (qfo, funcs.funcs, funcs.num_funcs);
+	qfo_add_funcs (qfo, funcs.funcs, funcs.num_funcs);
 	qfo_add_lines (qfo, lines.lines, lines.num_lines);
 	qfo_add_types (qfo, type_strings->strings, type_strings->size);
 	return qfo;

@@ -58,8 +58,8 @@ static const char rcsid[] =
 
 static qfo_def_t *defs;
 static int  num_defs;
-static qfo_function_t *functions;
-static int  num_functions;
+static qfo_func_t *funcs;
+static int  num_funcs;
 static qfo_reloc_t *relocs;
 static int  num_relocs;
 static strpool_t *types;
@@ -82,7 +82,7 @@ allocate_stuff (void)
 	function_t *func;
 
 	num_defs = pr.scope->num_defs;
-	num_functions = pr.num_functions - 1;
+	num_funcs = pr.num_functions - 1;
 	num_relocs = 0;
 	for (def = pr.scope->head; def; def = def->def_next) {
 		num_relocs += count_relocs (def->refs);
@@ -98,7 +98,7 @@ allocate_stuff (void)
 	}
 	num_relocs += count_relocs (pr.relocs);
 	defs = calloc (num_defs, sizeof (qfo_def_t));
-	functions = calloc (num_functions, sizeof (qfo_function_t));
+	funcs = calloc (num_funcs, sizeof (qfo_func_t));
 	relocs = calloc (num_relocs, sizeof (qfo_reloc_t));
 }
 
@@ -167,7 +167,7 @@ setup_data (void)
 {
 	qfo_def_t  *def = defs;
 	def_t      *d;
-	qfo_function_t *func = functions;
+	qfo_func_t *func = funcs;
 	function_t *f;
 	qfo_reloc_t *reloc = relocs;
 	dstatement_t *st;
@@ -198,7 +198,7 @@ setup_data (void)
 		func->num_parms      = LittleLong (function_parms (f, func->parm_size));
 		func->relocs         = LittleLong (reloc - relocs);
 		func->num_relocs     = LittleLong (count_relocs (f->refs));
-		write_relocs (f->refs, &reloc, func - functions);
+		write_relocs (f->refs, &reloc, func - funcs);
 
 		if (f->scope)
 			for (d = f->scope->head; d; d = d->def_next)
@@ -244,13 +244,13 @@ qfo_from_progs (pr_info_t *pr)
 	qfo_add_strings (qfo, pr->strings->strings, pr->strings->size);
 	qfo_add_relocs (qfo, relocs, num_relocs);
 	qfo_add_defs (qfo, defs, num_defs);
-	qfo_add_functions (qfo, functions, num_functions);
+	qfo_add_funcs (qfo, funcs, num_funcs);
 	qfo_add_lines (qfo, linenos, num_linenos);
 	qfo_add_types (qfo, types->strings, types->size);
 
 	free (defs);
 	free (relocs);
-	free (functions);
+	free (funcs);
 	strpool_delete (types);
 	return qfo;
 }
@@ -273,7 +273,7 @@ qfo_write (qfo_t *qfo, const char *filename)
 	hdr.strings_size  = LittleLong (qfo->strings_size);
 	hdr.num_relocs    = LittleLong (qfo->num_relocs);
 	hdr.num_defs      = LittleLong (qfo->num_defs);
-	hdr.num_functions = LittleLong (qfo->num_functions);
+	hdr.num_funcs     = LittleLong (qfo->num_funcs);
 	hdr.num_lines     = LittleLong (qfo->num_lines);
 	hdr.types_size    = LittleLong (qfo->types_size);
 
@@ -290,9 +290,8 @@ qfo_write (qfo_t *qfo, const char *filename)
 		Qwrite (file, qfo->relocs, qfo->num_relocs * sizeof (qfo_reloc_t));
 	if (qfo->num_defs)
 		Qwrite (file, qfo->defs, qfo->num_defs * sizeof (qfo_def_t));
-	if (qfo->num_functions)
-		Qwrite (file, qfo->functions,
-				qfo->num_functions * sizeof (qfo_function_t));
+	if (qfo->num_funcs)
+		Qwrite (file, qfo->funcs, qfo->num_funcs * sizeof (qfo_func_t));
 	if (qfo->num_lines)
 		Qwrite (file, qfo->lines, qfo->num_lines * sizeof (pr_lineno_t));
 	if (qfo->types_size)
@@ -310,7 +309,7 @@ qfo_read (const char *filename)
 	qfo_header_t hdr;
 	qfo_t      *qfo;
 	qfo_def_t  *def;
-	qfo_function_t *func;
+	qfo_func_t *func;
 	qfo_reloc_t *reloc;
 	dstatement_t *st;
 	pr_type_t  *var;
@@ -339,7 +338,7 @@ qfo_read (const char *filename)
 	qfo->strings_size  = LittleLong (hdr.strings_size);
 	qfo->num_relocs    = LittleLong (hdr.num_relocs);
 	qfo->num_defs      = LittleLong (hdr.num_defs);
-	qfo->num_functions = LittleLong (hdr.num_functions);
+	qfo->num_funcs     = LittleLong (hdr.num_funcs);
 	qfo->num_lines     = LittleLong (hdr.num_lines);
 	qfo->types_size    = LittleLong (hdr.types_size);
 
@@ -359,7 +358,7 @@ qfo_read (const char *filename)
 	qfo->strings = malloc (qfo->strings_size);
 	qfo->relocs = malloc (qfo->num_relocs * sizeof (qfo_reloc_t));
 	qfo->defs = malloc (qfo->num_defs * sizeof (qfo_def_t));
-	qfo->functions = malloc (qfo->num_functions * sizeof (qfo_function_t));
+	qfo->funcs = malloc (qfo->num_funcs * sizeof (qfo_func_t));
 	qfo->lines = malloc (qfo->num_lines * sizeof (pr_lineno_t));
 	qfo->types = malloc (qfo->types_size);
 
@@ -370,7 +369,7 @@ qfo_read (const char *filename)
 	Qread (file, qfo->strings, qfo->strings_size);
 	Qread (file, qfo->relocs, qfo->num_relocs * sizeof (qfo_reloc_t));
 	Qread (file, qfo->defs, qfo->num_defs * sizeof (qfo_def_t));
-	Qread (file, qfo->functions, qfo->num_functions * sizeof (qfo_function_t));
+	Qread (file, qfo->funcs, qfo->num_funcs * sizeof (qfo_func_t));
 	if (qfo->num_lines)
 		Qread (file, qfo->lines, qfo->num_lines * sizeof (pr_lineno_t));
 	Qread (file, qfo->types, qfo->types_size);
@@ -405,8 +404,8 @@ qfo_read (const char *filename)
 		def->file       = LittleLong (def->file);
 		def->line       = LittleLong (def->line);
 	}
-	for (func = qfo->functions;
-		 func - qfo->functions < qfo->num_functions; func++) {
+	for (func = qfo->funcs;
+		 func - qfo->funcs < qfo->num_funcs; func++) {
 		func->name           = LittleLong (func->name);
 		func->file           = LittleLong (func->file);
 		func->line           = LittleLong (func->line);
@@ -447,7 +446,7 @@ qfo_to_progs (qfo_t *qfo, pr_info_t *pr)
 {
 	int         i;
 	function_t *pf;
-	qfo_function_t *qf;
+	qfo_func_t *qf;
 	def_t      *pd;
 	qfo_def_t  *qd;
 	reloc_t    *relocs;
@@ -492,11 +491,11 @@ qfo_to_progs (qfo_t *qfo, pr_info_t *pr)
 		pd->line = qd->line;
 	}
 
-	pr->num_functions = qfo->num_functions + 1;
-	pr->func_head = calloc (qfo->num_functions, sizeof (function_t));
+	pr->num_functions = qfo->num_funcs + 1;
+	pr->func_head = calloc (qfo->num_funcs, sizeof (function_t));
 	pr->func_tail = &pr->func_head;
-	for (i = 0, pf = pr->func_head, qf = qfo->functions;
-		 i < qfo->num_functions; i++, pf++, qf++) {
+	for (i = 0, pf = pr->func_head, qf = qfo->funcs;
+		 i < qfo->num_funcs; i++, pf++, qf++) {
 		*pr->func_tail = pf;
 		pr->func_tail = &pf->next;
 		pf->aux = new_auxfunction ();
@@ -594,13 +593,13 @@ qfo_add_defs (qfo_t *qfo, qfo_def_t *defs, int num_defs)
 }
 
 void
-qfo_add_functions (qfo_t *qfo, qfo_function_t *functions, int num_functions)
+qfo_add_funcs (qfo_t *qfo, qfo_func_t *funcs, int num_funcs)
 {
-	if (!num_functions)
+	if (!num_funcs)
 		return;
-	qfo->functions = malloc (num_functions * sizeof (qfo_function_t));
-	qfo->num_functions = num_functions;
-	memcpy (qfo->functions, functions, num_functions * sizeof (qfo_function_t));
+	qfo->funcs = malloc (num_funcs * sizeof (qfo_func_t));
+	qfo->num_funcs = num_funcs;
+	memcpy (qfo->funcs, funcs, num_funcs * sizeof (qfo_func_t));
 }
 
 void
@@ -640,8 +639,8 @@ qfo_delete (qfo_t *qfo)
 		free (qfo->relocs);
 	if (qfo->defs)
 		free (qfo->defs);
-	if (qfo->functions)
-		free (qfo->functions);
+	if (qfo->funcs)
+		free (qfo->funcs);
 	if (qfo->lines)
 		free (qfo->lines);
 	if (qfo->types)

@@ -94,7 +94,7 @@ dump_defs (qfo_t *qfo)
 //						qfo->strings + qfo->data[def->ofs].string_var);
 		} else if (def->basic_type == ev_func) {
 			printf ("    %4d %s\n", qfo->data[def->ofs].func_var,
-					qfo->strings + qfo->functions[qfo->data[def->ofs].func_var - 1].name);
+					qfo->strings + qfo->funcs[qfo->data[def->ofs].func_var - 1].name);
 		} else {
 //				printf ("    %4d\n", qfo->data[def->ofs].integer_var);
 		}
@@ -103,14 +103,14 @@ dump_defs (qfo_t *qfo)
 }
 
 void
-dump_functions (qfo_t *qfo)
+dump_funcs (qfo_t *qfo)
 {
-	qfo_function_t *func;
+	qfo_func_t *func;
 	int         i;
 	const char *str = qfo->strings;
 
-	for (i = 0; i < qfo->num_functions; i++) {
-		func = qfo->functions + i;
+	for (i = 0; i < qfo->num_funcs; i++) {
+		func = qfo->funcs + i;
 		printf ("%s %s:%d  %d %d %d\n",
 				str + func->name, str + func->file, func->line,
 				func->builtin, func->code, func->def);
@@ -161,7 +161,7 @@ main (int argc, char **argv)
 		if (!qfo)
 			return 1;
 		dump_defs (qfo);
-		dump_functions (qfo);
+		dump_funcs (qfo);
 		dump_relocs (qfo);
 	}
 	return 0;
