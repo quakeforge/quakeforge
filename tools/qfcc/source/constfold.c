@@ -178,9 +178,9 @@ do_op_float (int op, expr_t *e, expr_t *e1, expr_t *e2)
 		if ((conv = convert_to_float (e1)) != e1) {
 			e->e.expr.e1 = e1 = conv;
 		}
-	}
-	if ((conv = convert_to_float (e2)) != e2) {
-		e->e.expr.e2 = e2 = conv;
+		if ((conv = convert_to_float (e2)) != e2) {
+			e->e.expr.e2 = e2 = conv;
+		}
 	}
 	if (is_compare (op) || is_logic (op)) {
 		if (options.code.progsversion > PROG_ID_VERSION)
@@ -673,9 +673,9 @@ do_op_uinteger (int op, expr_t *e, expr_t *e1, expr_t *e2)
 		if (get_type (e2) != &type_uinteger) {
 			e->e.expr.e2 = e2 = cast_expr (&type_uinteger, e2);
 		}
-	}
-	if ((conv = convert_to_uinteger (e2)) != e2) {
-		e->e.expr.e2 = e2 = conv;
+		if ((conv = convert_to_uinteger (e2)) != e2) {
+			e->e.expr.e2 = e2 = conv;
+		}
 	}
 
 	if (is_compare (op) || is_logic (op)) {
