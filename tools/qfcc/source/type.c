@@ -99,7 +99,7 @@ type_t      type_param;
 type_t      type_zero;
 
 struct_t   *vector_struct;
-struct_t   *quaterion_struct;
+struct_t   *quaternion_struct;
 
 type_t      type_floatfield = { ev_field, ".float", NULL, &type_float };
 
@@ -667,7 +667,7 @@ init_types (void)
 	new_struct_field (strct, &type_float, "y", vis_public);
 	new_struct_field (strct, &type_float, "z", vis_public);
 
-	strct = quaterion_struct = get_struct (0, 1);
+	strct = quaternion_struct = get_struct (0, 1);
 	init_struct (strct, new_type (), str_struct, 0);
 	new_struct_field (strct, &type_float,  "s", vis_public);
 	new_struct_field (strct, &type_float,  "x", vis_public);

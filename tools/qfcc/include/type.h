@@ -79,6 +79,7 @@ extern	type_t	type_param;
 extern	type_t	type_zero;
 
 extern struct struct_s *vector_struct;
+extern struct struct_s *quaternion_struct;
 
 struct dstring_s;
 
