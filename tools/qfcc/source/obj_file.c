@@ -247,10 +247,14 @@ write_obj_file (const char *filename)
 	Qwrite (file, pr.strings, pr.strofs);
 	Qwrite (file, relocs, num_relocs * sizeof (qfo_reloc_t));
 	Qwrite (file, defs, num_defs * sizeof (qfo_def_t));
-	Qwrite (file, defs, num_functions * sizeof (qfo_function_t));
+	Qwrite (file, functions, num_functions * sizeof (qfo_function_t));
 	Qwrite (file, linenos, num_linenos * sizeof (pr_lineno_t));
 
 	Qclose (file);
+
+	free (defs);
+	free (relocs);
+	free (functions);
 	return 0;
 }
 
