@@ -2564,7 +2564,6 @@ expr_t *
 selector_expr (keywordarg_t *selector)
 {
 	dstring_t  *sel_id = dstring_newstr ();
-	dstring_t  *sel_types = dstring_newstr ();
 	expr_t     *sel;
 	def_t      *sel_def;
 	int         index;
@@ -2572,15 +2571,12 @@ selector_expr (keywordarg_t *selector)
 	selector = copy_keywordargs (selector);
 	selector = (keywordarg_t *) reverse_params ((param_t *) selector);
 	selector_name (sel_id, selector);
-	selector_types (sel_types, selector);
-	//printf ("'%s' '%s'\n", sel_id->str, sel_types->str);
-	index = selector_index (sel_id->str, sel_types->str);
+	index = selector_index (sel_id->str);
 	index *= type_size (type_SEL.aux_type);
 	sel_def = get_def (type_SEL.aux_type, "_OBJ_SELECTOR_TABLE", pr.scope,
 					   st_extern);
 	sel = new_def_expr (sel_def);
 	dstring_delete (sel_id);
-	dstring_delete (sel_types);
 	return address_expr (sel, new_short_expr (index), 0);
 }
 

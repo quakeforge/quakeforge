@@ -59,9 +59,10 @@ static void
 }
 
 static const char *
-selector_get_key (void *s, void *pr)
+selector_get_key (void *s, void *_pr)
 {
-	return PR_GetString ((progs_t *)pr, ((pr_sel_t *)s)->sel_id);
+	progs_t    *pr = (progs_t *) _pr;
+	return PR_GetString (pr, pr->selector_names[(int) s]);
 }
 
 static const char *
@@ -94,22 +95,12 @@ category_compare (void *_c1, void *_c2, void *_pr)
 	return strcmp (cat1, cat2) == 0 && strcmp (cls1, cls2) == 0;
 }
 
-
-static void
-dump_ivars (progs_t *pr, pointer_t _ivars)
+static inline int
+sel_eq (pr_sel_t *s1, pr_sel_t *s2)
 {
-	pr_ivar_list_t *ivars;
-	int         i;
-
-	if (!_ivars)
-		return;
-	ivars = &G_STRUCT (pr, pr_ivar_list_t, _ivars);
-	for (i = 0; i < ivars->ivar_count; i++) {
-		Sys_Printf ("        %s %s %d\n",
-					PR_GetString (pr, ivars->ivar_list[i].ivar_name),
-					PR_GetString (pr, ivars->ivar_list[i].ivar_type),
-					ivars->ivar_list[i].ivar_offset);
-	}
+	if (!s1 || !s2)
+		return s1 == s2;
+	return s1->sel_id == s2->sel_id;
 }
 
 static int
@@ -171,99 +162,270 @@ finish_class (progs_t *pr, pr_class_t *class, pointer_t object_ptr)
 				 class->super_class);
 }
 
-static void
-finish_category (progs_t *pr, pr_category_t *category)
-{
-	const char *class_name = PR_GetString (pr, category->class_name);
-	const char *category_name = PR_GetString (pr, category->category_name);
-	pr_class_t *class = Hash_Find (pr->classes, class_name);
-	pr_method_list_t *method_list;
+//====================================================================
 
-	if (!class)
-		PR_Error (pr, "broken category %s (%s): class %s not found",
-				  class_name, category_name, class_name);
+static int
+add_sel_name (progs_t *pr, const char *name)
+{
+	int         ind = ++pr->selector_index;
+	int         size, i;
+
+	if (pr->selector_index > pr->selector_index_max) {
+		size = pr->selector_index_max + 128;
+		pr->selector_sels = realloc (pr->selector_sels,
+									 size * sizeof (obj_list *));
+		pr->selector_names = realloc (pr->selector_names,
+									  size * sizeof (string_t));
+		for (i = pr->selector_index_max; i < size; i++) {
+			((obj_list **) pr->selector_sels)[i] = 0;
+			pr->selector_names[i] = 0;
+		}
+		pr->selector_index_max = size;
+	}
+	pr->selector_names[ind] = PR_SetString (pr, name);
+	return ind;
+}
+
+static pr_sel_t *
+sel_register_typed_name (progs_t *pr, const char *name, const char *types,
+						 pr_sel_t *sel)
+{
+	int         index;
+	int         is_new = 0;
+	obj_list   *l;
+
+	index = (int) Hash_Find (pr->selector_hash, name);
+	if (index) {
+		for (l = ((obj_list **) pr->selector_sels)[index]; l; l = l->next) {
+			pr_sel_t   *s = l->data;
+			if (!types || !s->sel_types) {
+				if (!s->sel_types && !types) {
+					if (sel) {
+						sel->sel_id = index;
+						return sel;
+					}
+					return s;
+				}
+			} else if (strcmp (PR_GetString (pr, s->sel_types), types) == 0) {
+				if (sel) {
+					sel->sel_id = index;
+					return sel;
+				}
+				return s;
+			}
+		}
+	} else {
+		index = add_sel_name (pr, name);
+		is_new = 1;
+	}
+	if (!sel)
+		sel = PR_Zone_Malloc (pr, sizeof (pr_sel_t));
+
+	sel->sel_id = index;
+	sel->sel_types = PR_SetString (pr, types);
+
+	l = obj_list_new ();
+	l->data = sel;
+	l->next = ((obj_list **) pr->selector_sels)[index];
+	((obj_list **) pr->selector_sels)[index] = l;
+
+	if (is_new)
+		Hash_Add (pr->selector_hash, (void *)index);
+
+	return sel;
+}
+
+static pr_sel_t *
+sel_register_name (progs_t *pr, const char *name)
+{
+	return sel_register_typed_name (pr, name, 0, 0);
+}
+
+static void
+register_selectors_from_list (progs_t *pr, pr_method_list_t *method_list)
+{
+	int         i;
+
+	for (i = 0; i < method_list->method_count; i++) {
+		pr_method_t *method = &method_list->method_list[i];
+		const char *name = PR_GetString (pr, method->method_name);
+		const char *types = PR_GetString (pr, method->method_types);
+		pr_sel_t   *sel = sel_register_typed_name (pr, name, types, 0);
+		method->method_name = PR_SetPointer (pr, sel);
+	}
+}
+
+static void
+obj_register_selectors_from_class (progs_t *pr, pr_class_t *class)
+{
+	pr_method_list_t *method_list = &G_STRUCT (pr, pr_method_list_t,
+											   class->methods);
+	while (method_list) {
+		register_selectors_from_list (pr, method_list);
+		method_list = &G_STRUCT (pr, pr_method_list_t,
+								 method_list->method_next);
+	}
+}
+
+static void
+obj_init_protocols (progs_t *pr, pr_protocol_list_t *protos)
+{
+	pr_class_t *proto_class;
+	pr_protocol_t *proto;
+	int         i;
+
+	if (!protos)
+		return;
+
+	if (!(proto_class = Hash_Find (pr->classes, "Protocol"))) {
+		pr->unclaimed_proto_list = list_cons (protos,
+											  pr->unclaimed_proto_list);
+		return;
+	}
+
+	for (i = 0; i < protos->count; i++) {
+		proto = &G_STRUCT (pr, pr_protocol_t, protos->list[i]);
+		if (!proto->class_pointer) {
+			proto->class_pointer = PR_SetPointer (pr, proto_class);
+			obj_init_protocols (pr, &G_STRUCT (pr, pr_protocol_list_t,
+											   proto->protocol_list));
+		} else {
+			PR_RunError (pr, "protocol broken");
+		}
+	}
+}
+
+static void
+class_add_method_list (progs_t *pr, pr_class_t *class, pr_method_list_t *list)
+{
+	int         i;
+
+	for (i = 0; i < list->method_count; i++) {
+		pr_method_t *method = &list->method_list[i];
+		if (method->method_name) {
+			const char *name = PR_GetString (pr, method->method_name);
+			const char *types = PR_GetString (pr, method->method_types);
+			pr_sel_t   *sel = sel_register_typed_name (pr, name, types, 0);
+			method->method_name = PR_SetPointer (pr, sel);
+		}
+	}
+
+	list->method_next = class->methods;
+	class->methods = PR_SetPointer (pr, list);
+}
+
+static void
+obj_class_add_protocols (progs_t *pr, pr_class_t *class,
+						 pr_protocol_list_t *protos)
+{
+	if (!protos)
+		return;
+
+	protos->next = class->protocols;
+	class->protocols = protos->next;
+}
+
+static void
+finish_category (progs_t *pr, pr_category_t *category, pr_class_t *class)
+{
+	pr_method_list_t *method_list;
+	pr_protocol_list_t *protocol_list;
+
 	if (category->instance_methods) {
 		method_list = &G_STRUCT (pr, pr_method_list_t,
 								 category->instance_methods);
-		method_list->method_next = class->methods;
-		class->methods = category->instance_methods;
+		class_add_method_list (pr, class, method_list);
 	}
 	if (category->class_methods) {
 		pr_class_t *meta = &G_STRUCT (pr, pr_class_t, class->class_pointer);
 		method_list = &G_STRUCT (pr, pr_method_list_t,
 								 category->class_methods);
-		method_list->method_next = meta->methods;
-		meta->methods = category->class_methods;
+		class_add_method_list (pr, meta, method_list);
+	}
+	if (category->protocols) {
+		protocol_list = &G_STRUCT (pr, pr_protocol_list_t,
+								   category->protocols);
+		obj_init_protocols (pr, protocol_list);
+		obj_class_add_protocols (pr, class, protocol_list);
 	}
 }
 
 static void
-rua___obj_exec_class (progs_t *pr)
+obj_send_message_in_list (progs_t *pr, pr_method_list_t *method_list,
+						  pr_class_t *class, pr_sel_t *op)
 {
-	pr_module_t *module = &P_STRUCT (pr, pr_module_t, 0);
-	pr_symtab_t *symtab;
-	pr_sel_t   *sel;
-	pointer_t  *ptr;
 	int         i;
-	//int         d = developer->int_val;
 
-	if (!module)
+	if (!method_list)
 		return;
-	//developer->int_val = 1;
-	symtab = &G_STRUCT (pr, pr_symtab_t, module->symtab);
-	if (!symtab)
-		return;
-	Sys_DPrintf ("Initializing %s module\n"
-				 "symtab @ %d : %d selector%s, %d class%s and %d categor%s\n",
-				 PR_GetString (pr, module->name), module->symtab,
-				 symtab->sel_ref_cnt, symtab->sel_ref_cnt == 1 ? "" : "s",
-				 symtab->cls_def_cnt, symtab->cls_def_cnt == 1 ? "" : "es",
-				 symtab->cat_def_cnt, symtab->cat_def_cnt == 1 ? "y" : "ies");
-	sel = &G_STRUCT (pr, pr_sel_t, symtab->refs);
-	for (i = 0; i < symtab->sel_ref_cnt; i++) {
-		Sys_DPrintf ("    %s\n", PR_GetString (pr, sel->sel_id));
-		Hash_Add (pr->selectors, sel);
-		sel++;
-	}
-	ptr = symtab->defs;
-	for (i = 0; i < symtab->cls_def_cnt; i++) {
-		pr_class_t *class = &G_STRUCT (pr, pr_class_t, *ptr);
-		pr_class_t *meta = &G_STRUCT (pr, pr_class_t, class->class_pointer);
-		Sys_DPrintf ("Class %s @ %d\n", PR_GetString (pr, class->name), *ptr);
-		Sys_DPrintf ("    class pointer: %d\n", class->class_pointer);
-		Sys_DPrintf ("    super class: %s\n",
-					 PR_GetString (pr, class->super_class));
-		Sys_DPrintf ("    instance variables: %d @ %d\n", class->instance_size,
-					 class->ivars);
-		if (developer->int_val)
-			dump_ivars (pr, class->ivars);
-		Sys_DPrintf ("    instance methods: %d\n", class->methods);
-		Sys_DPrintf ("    protocols: %d\n", class->protocols);
 
-		Sys_DPrintf ("    class methods: %d\n", meta->methods);
-		Sys_DPrintf ("    instance variables: %d @ %d\n", meta->instance_size,
-					 meta->ivars);
-		if (developer->int_val)
-			dump_ivars (pr, meta->ivars);
+	obj_send_message_in_list (pr, &G_STRUCT (pr, pr_method_list_t,
+											 method_list->method_next),
+							  class, op);
 
-		Hash_Add (pr->classes, class);
-		ptr++;
+	for (i = 0; i < method_list->method_count; i++) {
+		pr_method_t *mth = &method_list->method_list[i];
+		if (mth->method_name && sel_eq (&G_STRUCT (pr, pr_sel_t,
+												   mth->method_name), op)
+			&& !Hash_FindElement (pr->load_methods, (void *)mth->method_imp)) {
+			Hash_AddElement (pr->load_methods, (void *)mth->method_imp);
+
+			PR_ExecuteProgram (pr, mth->method_imp);
+			break;
+		}
 	}
-	for (i = 0; i < symtab->cat_def_cnt; i++) {
-		pr_category_t *category = &G_STRUCT (pr, pr_category_t, *ptr);
-		Sys_DPrintf ("Category %s (%s) @ %d\n",
-					 PR_GetString (pr, category->class_name),
-					 PR_GetString (pr, category->category_name), *ptr);
-		Sys_DPrintf ("    instance methods: %d\n", category->instance_methods);
-		Sys_DPrintf ("    class methods: %d\n", category->class_methods);
-		Sys_DPrintf ("    protocols: %d\n", category->protocols);
-		Hash_AddElement (pr->categories, category);
-		ptr++;
-	}
-	//developer->int_val = d;
 }
 
-//====================================================================
+static void
+send_load (progs_t *pr, class_tree *tree, int level)
+{
+	pr_sel_t   *load_sel = sel_register_name (pr, "load");
+	pr_class_t *class = tree->class;
+	pr_class_t *meta = &G_STRUCT (pr, pr_class_t, class->class_pointer);
+	pr_method_list_t *method_list = &G_STRUCT (pr, pr_method_list_t,
+											   meta->methods);
+
+	obj_send_message_in_list (pr, method_list, class, load_sel);
+}
+
+static void
+obj_send_load (progs_t *pr)
+{
+	obj_list   *m;
+
+	if (pr->unresolved_classes) {
+		pr_class_t *class = ((obj_list *) pr->unresolved_classes)->data;
+		const char *super_class = PR_GetString (pr, class->super_class);
+		while (Hash_Find (pr->classes, super_class)) {
+			list_remove ((obj_list **) &pr->unresolved_classes);
+			if (pr->unresolved_classes) {
+				class = ((obj_list *) pr->unresolved_classes)->data;
+				super_class = PR_GetString (pr, class->super_class);
+			} else {
+				break;
+			}
+		}
+		if (pr->unresolved_classes)
+			return;
+	}
+
+	//XXX constant string stuff here (see init.c in libobjc source)
+
+	for (m = pr->module_list; m; m = m->next)
+		obj_create_classes_tree (pr, m->data);
+	while (pr->class_tree_list) {
+		obj_preorder_traverse (pr, ((obj_list *) pr->class_tree_list)->data,
+							   0, send_load);
+		obj_postorder_traverse (pr, ((obj_list *) pr->class_tree_list)->data,
+								0, obj_destroy_class_tree_node);
+		list_remove ((obj_list **) &pr->class_tree_list);
+	}
+	//XXX callback
+	//for (m = pr->module_list; m; m = m->next)
+	//	obj_create_classes_tree (pr, m->data);
+	obj_list_free (pr->module_list);
+	pr->module_list = 0;
+}
 
 static pr_method_t *
 obj_find_message (progs_t *pr, pr_class_t *class, pr_sel_t *selector)
@@ -271,6 +433,7 @@ obj_find_message (progs_t *pr, pr_class_t *class, pr_sel_t *selector)
 	pr_class_t *c = class;
 	pr_method_list_t *method_list;
 	pr_method_t *method;
+	pr_sel_t   *sel;
 	int         i;
 
 	while (c) {
@@ -278,7 +441,8 @@ obj_find_message (progs_t *pr, pr_class_t *class, pr_sel_t *selector)
 		while (method_list) {
 			for (i = 0, method = method_list->method_list;
 				 i < method_list->method_count; i++, method++) {
-				if (method->method_name.sel_id == selector->sel_id)
+				sel = &G_STRUCT (pr, pr_sel_t, method->method_name);
+				if (sel->sel_id == selector->sel_id)
 					return method;
 			}
 			method_list = &G_STRUCT (pr, pr_method_list_t,
@@ -579,13 +743,18 @@ static void
 rua_sel_get_name (progs_t *pr)
 {
 	pr_sel_t   *sel = &P_STRUCT (pr, pr_sel_t, 0);
-	R_INT (pr) = sel->sel_id;
+
+	if (sel->sel_id > 0 && sel->sel_id <= pr->selector_index)
+		R_STRING (pr) = pr->selector_names[sel->sel_id];
+	else
+		R_STRING (pr) = 0;
 }
 
 static void
 rua_sel_get_type (progs_t *pr)
 {
 	pr_sel_t   *sel = &P_STRUCT (pr, pr_sel_t, 0);
+
 	R_INT (pr) = sel->sel_types;
 }
 
@@ -593,24 +762,24 @@ static void
 rua_sel_get_uid (progs_t *pr)
 {
 	const char *name = P_GSTRING (pr, 0);
-	pr_sel_t   *sel = Hash_Find (pr->selectors, name);
-	RETURN_POINTER (pr, sel);
+
+	RETURN_POINTER (pr, sel_register_typed_name (pr, name, 0, 0));
 }
 
 static void
 rua_sel_register_name (progs_t *pr)
 {
-	//const char *name = P_GSTRING (pr, 0);
-	//XXX
-	PR_RunError (pr, "%s, not implemented", __FUNCTION__);
+	const char *name = P_GSTRING (pr, 0);
+
+	RETURN_POINTER (pr, sel_register_typed_name (pr, name, 0, 0));
 }
 
 static void
 rua_sel_is_mapped (progs_t *pr)
 {
-	//pr_sel_t   *sel = &P_STRUCT (pr, pr_sel_t, 0);
-	//XXX
-	PR_RunError (pr, "%s, not implemented", __FUNCTION__);
+	// FIXME might correspond to a string
+	pr_sel_t   *sel = &P_STRUCT (pr, pr_sel_t, 0);
+	R_INT (pr) = sel->sel_id > 0 && sel->sel_id <= pr->selector_index;
 }
 
 //====================================================================
@@ -1049,10 +1218,19 @@ rua_init_finish (progs_t *pr)
 static int
 rua_init_runtime (progs_t *pr)
 {
-	if (!pr->selectors)
-		pr->selectors = Hash_NewTable (1021, selector_get_key, 0, pr);
+	ddef_t     *def;
+	int         i;
+
+	if (!pr->selector_hash)
+		pr->selector_hash = Hash_NewTable (1021, selector_get_key, 0, pr);
 	else
-		Hash_FlushTable (pr->selectors);
+		Hash_FlushTable (pr->selector_hash);
+	pr->selector_index = 0;
+	for (i = 0; i < pr->selector_index_max; i++) {
+		obj_list_free (((obj_list **) pr->selector_sels)[i]);
+		((obj_list **) pr->selector_sels)[i] = 0;
+		pr->selector_names[i] = 0;
+	}
 
 	if (!pr->classes)
 		pr->classes = Hash_NewTable (1021, class_get_key, 0, pr);

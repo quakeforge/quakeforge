@@ -100,7 +100,7 @@ new_method (type_t *ret_type, param_t *selector, param_t *opt_parms)
 	meth->type = parse_params (ret_type, meth->params);
 
 	selector_name (name, (keywordarg_t *)selector);
-	selector_types (types, (keywordarg_t *)selector);
+	method_types (types, meth);
 	meth->name = name->str;
 	meth->types = types->str;
 	free (name);
@@ -126,7 +126,7 @@ copy_method (method_t *method)
 	meth->instance = method->instance;
 	meth->selector = self->next->next;
 	meth->params = self;
-	meth->type = parse_params (method->type->aux_type, meth->params);
+	meth->type = method->type;
 	meth->name = method->name;
 	meth->types = method->types;
 	return meth;
@@ -276,9 +276,10 @@ selector_name (dstring_t *sel_id, keywordarg_t *selector)
 }
 
 void
-selector_types (dstring_t *sel_types, keywordarg_t *selector)
+method_types (dstring_t *sel_types, method_t *method)
 {
 	dstring_clearstr (sel_types);
+	encode_type (sel_types, method->type);
 }
 
 static hashtab_t *sel_hash;
@@ -291,7 +292,7 @@ sel_get_hash (void *_sel, void *unused)
 	selector_t *sel = (selector_t *) _sel;
 	unsigned long hash;
 
-	hash = Hash_String (sel->name) ^ Hash_String (sel->types);
+	hash = Hash_String (sel->name);
 	return hash;
 }
 
@@ -303,8 +304,6 @@ sel_compare (void *_s1, void *_s2, void *unused)
 	int         cmp;
 
 	cmp = strcmp (s1->name, s2->name) == 0;
-	if (cmp)
-		cmp = strcmp (s1->types, s2->types) == 0;
 	return cmp;
 }
 
@@ -324,9 +323,9 @@ sel_index_compare (void *_s1, void *_s2, void *unused)
 }
 
 int
-selector_index (const char *sel_id, const char *sel_types)
+selector_index (const char *sel_id)
 {
-	selector_t  _sel = {save_string (sel_id), save_string (sel_types), 0};
+	selector_t  _sel = {save_string (sel_id), 0, 0};
 	selector_t *sel = &_sel;
 
 	if (!sel_hash) {
@@ -422,14 +421,55 @@ emit_methods (methodlist_t *_methods, const char *name, int instance)
 	for (i = 0, method = _methods->head; method; method = method->next) {
 		if (!method->instance != !instance || !method->def)
 			continue;
-		EMIT_STRING (methods->method_list[i].method_name.sel_id, method->name);
-		EMIT_STRING (methods->method_list[i].method_name.sel_types, method->types);
+		EMIT_STRING (methods->method_list[i].method_name, method->name);
 		EMIT_STRING (methods->method_list[i].method_types, method->types);
 		methods->method_list[i].method_imp = G_FUNCTION (method->def->ofs);
 		if (method->func) {
 			reloc_def_func (method->func,
 							POINTER_OFS (&methods->method_list[i].method_imp));
 		}
+		i++;
+	}
+	return methods_def;
+}
+
+def_t *
+emit_method_descriptions (methodlist_t *_methods, const char *name,
+						  int instance)
+{
+	const char *type = instance ? "PROTOCOL_INSTANCE" : "PROTOCOL_CLASS";
+	method_t   *method;
+	int         i, count;
+	def_t      *methods_def;
+	pr_method_description_list_t *methods;
+	struct_t     *method_list;
+
+	if (!_methods)
+		return 0;
+
+	for (count = 0, method = _methods->head; method; method = method->next)
+		if (!method->instance == !instance)
+			count++;
+	if (!count)
+		return 0;
+	method_list = get_struct (0, 1);
+	init_struct (method_list, new_type (), str_struct, 0);
+	new_struct_field (method_list, &type_integer, "count", vis_public);
+	for (i = 0; i < count; i++)
+		new_struct_field (method_list, &type_method_description, 0,
+						  vis_public);
+	methods_def = get_def (method_list->type,
+						   va ("_OBJ_%s_METHODS_%s", type, name),
+						   pr.scope, st_static);
+	methods_def->initialized = methods_def->constant = 1;
+	methods_def->nosave = 1;
+	methods = &G_STRUCT (pr_method_description_list_t, methods_def->ofs);
+	methods->count = count;
+	for (i = 0, method = _methods->head; method; method = method->next) {
+		if (!method->instance != !instance || !method->def)
+			continue;
+		EMIT_STRING (methods->list[i].name, method->name);
+		EMIT_STRING (methods->list[i].types, method->types);
 		i++;
 	}
 	return methods_def;

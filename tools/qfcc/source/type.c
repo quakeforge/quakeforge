@@ -85,6 +85,7 @@ type_t      type_supermsg = { ev_func, ".supermsg", NULL, &type_id, -3,
 type_t      type_obj_exec_class = { ev_func, "function", NULL, &type_void, 1, { 0 }};
 type_t      type_Method = { ev_pointer, "Method" };
 type_t      type_Super = { ev_pointer, "Super" };
+type_t      type_method_description = { ev_struct, "obj_method_description" };
 type_t     *type_category;
 type_t     *type_ivar;
 type_t     *type_module;
@@ -280,13 +281,35 @@ print_type (type_t *type)
 	}
 }
 
+const char *
+encode_params (type_t *type)
+{
+	const char *ret;
+	dstring_t  *encoding = dstring_newstr ();
+	int         i, count;
+
+	if (type->num_parms < 0)
+		count = -type->num_parms - 1;
+	else
+		count = type->num_parms;
+	for (i = 0; i < count; i++)
+		encode_type (encoding, type->parm_types[i]);
+	if (type->num_parms < 0)
+		dstring_appendstr (encoding, ".");
+
+	ret = save_string (encoding->str);
+	dstring_delete (encoding);
+	return ret;
+}
+
 static void
 _encode_type (dstring_t *encoding, type_t *type, int level)
 {
 	struct_field_t *field;
-	int         i, count;
 	struct_t   *strct;
 
+	if (!type)
+		return;
 	switch (type->type) {
 		case ev_void:
 			dstring_appendstr (encoding, "v");
@@ -310,14 +333,7 @@ _encode_type (dstring_t *encoding, type_t *type, int level)
 		case ev_func:
 			dstring_appendstr (encoding, "(");
 			_encode_type (encoding, type->aux_type, level + 1);
-			if (type->num_parms < 0)
-				count = -type->num_parms - 1;
-			else
-				count = type->num_parms;
-			for (i = 0; i < count; i++)
-				_encode_type (encoding, type->parm_types[i], level + 1);
-			if (type->num_parms < 0)
-				dstring_appendstr (encoding, ".");
+			dstring_appendstr (encoding, encode_params (type));
 			dstring_appendstr (encoding, ")");
 			break;
 		case ev_pointer:
@@ -669,7 +685,7 @@ init_types (void)
 
 	strct = get_struct (0, 1);
 	init_struct (strct, new_type (), str_struct, 0);
-	new_struct_field (strct, type_SEL.aux_type, "method_name", vis_public);
+	new_struct_field (strct, &type_SEL, "method_name", vis_public);
 	new_struct_field (strct, &type_string, "method_types", vis_public);
 	new_struct_field (strct, &type_IMP, "method_imp", vis_public);
 	type_Method.aux_type = strct->type;
@@ -713,6 +729,11 @@ init_types (void)
 	new_struct_field (strct, &type_Class, "class_pointer", vis_public);
 	type_id.aux_type = strct->type;
 	class_id.ivars = strct;
+
+	strct = get_struct (0, 1);
+	init_struct (strct, &type_method_description, str_struct, 0);
+	new_struct_field (strct, &type_string, "name", vis_public);
+	new_struct_field (strct, &type_string, "types", vis_public);
 
 	strct = get_struct (0, 1);
 	init_struct (strct, new_type (), str_struct, 0);

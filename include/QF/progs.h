@@ -1220,13 +1220,17 @@ struct progs_s {
 	pr_resource_t *resources;
 	struct hashtab_s *resource_hash;
 
-	// obj info
-	struct hashtab_s *selectors;
+	/// obj info
+	//@{
+	int         selector_index;
+	int         selector_index_max;
+	void       *selector_sels;
+	string_t   *selector_names;
+	struct hashtab_s *selector_hash;
 	struct hashtab_s *classes;
 	struct hashtab_s *categories;
 	struct hashtab_s *protocols;
-
-	// debug info
+	//@}
 
 	/// debug info
 	//@{

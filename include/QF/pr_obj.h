@@ -128,7 +128,7 @@ typedef struct pr_method_list_s {
 	pointer_t   method_next;
 	int         method_count;
 	struct pr_method_s {
-		pr_sel_t    method_name;
+		pointer_t   method_name;	// pr_sel_t
 		string_t    method_types;
 		func_t      method_imp;		// typedef id (id, SEL, ...) IMP
 	} method_list[1];

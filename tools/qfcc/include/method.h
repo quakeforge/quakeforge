@@ -88,13 +88,15 @@ struct expr_s *send_message (int super);
 method_t *find_method (const char *sel_name);
 
 void selector_name (struct dstring_s *sel_id, keywordarg_t *selector);
-void selector_types (struct dstring_s *sel_types, keywordarg_t *selector);
-int selector_index (const char *sel_id, const char *sel_types);
+void method_types (struct dstring_s *sel_types, method_t *method);
+int selector_index (const char *sel_id);
 selector_t *get_selector (struct expr_s *sel);
 struct def_s *emit_selectors(void);
 
 struct def_s *emit_methods (methodlist_t *methods, const char *name,
 							int instance);
+struct def_s *emit_method_descriptions (methodlist_t *_methods,
+										const char *name, int instance);
 
 void clear_selectors (void);
 
