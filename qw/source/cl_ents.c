@@ -99,7 +99,8 @@ CL_NewDlight (int key, vec3_t org, int effects, byte glow_size,
 	static vec3_t blue = {0.05, 0.05, 0.5};
 	static vec3_t purple = {0.5, 0.05, 0.5};
 
-	if (!(effects & (EF_BLUE | EF_RED | EF_BRIGHTLIGHT | EF_DIMLIGHT))) {
+	effects &= EF_BLUE | EF_RED | EF_BRIGHTLIGHT | EF_DIMLIGHT;
+	if (!effects) {
 		if (!glow_size)
 			return;
 	}
