@@ -343,7 +343,7 @@ begin_function
 			$$ = current_func = new_function ();
 			$$->def = current_def;
 			$$->code = numstatements;
-			if (options.debug) {
+			if (options.code.debug) {
 				pr_lineno_t *lineno = new_lineno ();
 				$$->aux = new_auxfunction ();
 				$$->aux->source_line = pr_source_line;

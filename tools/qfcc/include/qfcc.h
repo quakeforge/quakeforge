@@ -555,13 +555,24 @@ int	CopyString (const char *str);
 int	ReuseString (const char *str);
 
 typedef struct {
-	int		cow;		// copy on write for constants
-	int		version;	// maximum progs version to support (eg, 6 for id)
-	int		warn_error;	// treat warnings as errors
-	int		quiet;		// not so much chatter
-	int		debug;		// produce debug info
-	int		undefined_function_warning;	// print a warning when a function isn't defined
-	int		warn_uninitialized;	// warn for uninitialized vars
+	qboolean	cow;				// Turn constants into variables if written to
+	qboolean	debug;				// Generate debug info for the engine
+	int			progsversion;		// Progs version to generate code for
+} code_options_t;
+
+typedef struct {
+	qboolean	promote;			// Promote warnings to errors
+	qboolean	cow;				// Warn on copy-on-write detection
+	qboolean	undefined_function;	// Warn on undefined function use
+	qboolean	uninited_variable;	// Warn on use of uninitialized vars
+	qboolean	vararg_integer;		// Warn on passing an integer to vararg func
+} warn_options_t;
+
+typedef struct {
+	code_options_t	code;			// Code generation options
+	warn_options_t	warnings;		// Warning options
+
+	int				verbosity;		// 0=silent, goes up to 2 currently
 } options_t;
 
 extern options_t options;

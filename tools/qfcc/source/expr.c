@@ -123,7 +123,7 @@ get_type (expr_t *e)
 		case ex_temp:
 			return e->e.temp.type;
 		case ex_integer:
-			if (options.version == PROG_ID_VERSION) {
+			if (options.code.progsversion == PROG_ID_VERSION) {
 				e->type = ex_float;
 				e->e.float_val = e->e.integer_val;
 			}
@@ -182,8 +182,8 @@ warning (expr_t *e, const char *fmt, ...)
 	string_t file = s_file;
 	int line = pr_source_line;
 
-	if (options.warn_error) {
-		options.warn_error = 0;		// only want to do this once
+	if (options.warnings.promote) {
+		options.warnings.promote = 0;		// only want to do this once
 		fprintf (stderr, "%s: warnings treated as errors\n", "qfcc");
 		pr_error_count++;
 	}
@@ -249,7 +249,7 @@ type_mismatch (expr_t *e1, expr_t *e2, int op)
 void
 check_initialized (expr_t *e)
 {
-	if (options.warn_uninitialized) {
+	if (options.warnings.uninited_variable) {
 		if (e->type == ex_def
 			&& !(e->e.def->type->type == ev_func && !e->e.def->scope)
 			&& !e->e.def->initialized) {
@@ -781,7 +781,7 @@ test_expr (expr_t *e, int test)
 		case ev_integer:
 			return e;
 		case ev_float:
-			if (options.version == PROG_ID_VERSION)
+			if (options.code.progsversion == PROG_ID_VERSION)
 				return e;
 			new = new_expr ();
 			new->type = ex_float;
@@ -930,7 +930,7 @@ type_mismatch:
 		type = t1;
 	}
 	if ((op >= OR && op <= GT) || op == '>' || op == '<') {
-		if (options.version > PROG_ID_VERSION)
+		if (options.code.progsversion > PROG_ID_VERSION)
 			type = &type_integer;
 		else
 			type = &type_float;
@@ -1026,7 +1026,7 @@ unary_expr (int op, expr_t *e)
 				case ex_temp:
 					{
 						expr_t *n = new_unary_expr (op, e);
-						if (options.version > PROG_ID_VERSION)
+						if (options.code.progsversion > PROG_ID_VERSION)
 							n->e.expr.type = &type_integer;
 						else
 							n->e.expr.type = &type_float;

@@ -246,7 +246,7 @@ type_or_name (char *token)
 		int i;
 		keyword_tab = Hash_NewTable (1021, keyword_get_key, 0, 0);
 		for (i = 0; i < sizeof (keywords) / sizeof (keywords[0]); i++)
-			if (keywords[i].version <= options.version)
+			if (keywords[i].version <= options.code.progsversion)
 				Hash_Add (keyword_tab, &keywords[i]);
 		initialized = 1;
 	}

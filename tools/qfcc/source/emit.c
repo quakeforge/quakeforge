@@ -54,7 +54,7 @@ emit_statement (int sline, opcode_t *op, def_t *var_a, def_t *var_b, def_t *var_
 		error (&e, "ice ice baby\n");
 		abort ();
 	}
-	if (options.debug) {
+	if (options.code.debug) {
 		int				line = sline - lineno_base;
 
 		if (line != linenos[num_linenos - 1].line) {
@@ -177,13 +177,15 @@ emit_assign_expr (expr_t *e)
 		emit_statement (e->line, op, def_b, def_a, 0);
 	} else {
 		if (def_a->constant) {
-			if (options.cow) {
+			if (options.code.cow) {
 				int size = type_size [def_a->type->type];
 				int ofs = PR_NewLocation (def_a->type);
+
 				memcpy (pr_globals + ofs, pr_globals + def_a->ofs, size);
 				def_a->ofs = ofs;
 				def_a->constant = 0;
-				//warning (e1, "assignment to constant %s", def_a->name);
+				if (options.warnings.cow)
+					warning (e1, "assignment to constant %s (Moooooooo!)", def_a->name);
 			} else {
 				error (e1, "assignment to constant %s", def_a->name);
 			}

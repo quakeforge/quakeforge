@@ -4,7 +4,8 @@
 	QuakeForge Code Compiler (main program)
 
 	Copyright (C) 1996-1997 id Software, Inc.
-	Copyright (C) 2001 Jeff Teunissen <deek@dusknet.dhs.org>
+	Copyright (C) 2001 Jeff Teunissen <deek@quakeforge.net>
+	Copyright (C) 2001 Bill Currie <bill@taniwha.org>
 
 	This program is free software; you can redistribute it and/or
 	modify it under the terms of the GNU General Public License as
@@ -281,7 +282,7 @@ WriteData (int crc)
 //	PrintGlobals ();
 	strofs = (strofs + 3) & ~3;
 
-	if (options.quiet < 2) {
+	if (options.verbosity > 1) {
 		printf ("%6i strofs\n", strofs);
 		printf ("%6i statements\n", numstatements);
 		printf ("%6i functions\n", numfunctions);
@@ -346,12 +347,12 @@ WriteData (int crc)
 
 	SafeWrite (h, pr_globals, numpr_globals * 4);
 
-	if (options.quiet < 2)
+	if (options.verbosity > 1)
 		printf ("%6i TOTAL SIZE\n", (int) ftell (h));
 
 	progs.entityfields = pr.size_fields;
 
-	progs.version = options.version;
+	progs.version = options.code.progsversion;
 	progs.crc = crc;
 
 	// byte swap the header and write it out
@@ -362,7 +363,7 @@ WriteData (int crc)
 	SafeWrite (h, &progs, sizeof (progs));
 	fclose (h);
 
-	if (!options.debug) {
+	if (!options.code.debug) {
 		return;
 	}
 
@@ -454,7 +455,6 @@ PR_String (char *string)
 
 	return buf;
 }
-
 
 
 def_t *
@@ -704,7 +704,7 @@ PR_FinishCompilation (void)
 	expr_t       e;
 
 	// check to make sure all functions prototyped have code
-	if (options.undefined_function_warning)
+	if (options.warnings.undefined_function)
 		for (d = pr.def_head.def_next; d; d = d->def_next) {
 			if (d->type->type == ev_func && !d->scope) {	// function args ok
 				if (d->used) {
@@ -719,7 +719,7 @@ PR_FinishCompilation (void)
 	if (errors)
 		return !errors;
 
-	if (options.debug) {
+	if (options.code.debug) {
 		e.type = ex_string;
 		e.e.string_val = debugfile;
 		PR_ReuseConstant (&e, PR_GetDef (&type_string, ".debug_file", 0,
@@ -767,7 +767,7 @@ PR_WriteProgdefs (char *filename)
 	unsigned short	crc;
 	int 			c;
 
-	if (!options.quiet)
+	if (options.verbosity)
 		printf ("writing %s\n", filename);
 	f = fopen (filename, "w");
 
@@ -894,6 +894,38 @@ PR_PrintFunction (def_t *def)
 	}
 }
 
+/*
+"Options: \n"
+"	-s, --source <dir>	look for progs.src in directory <dir>\n"
+"	-h, --help		display this help and exit\n"
+"	-V, --version		output version information and exit\n"
+"	--cow			allow assignment to initialized globals\n"
+"	--id			only support id (progs version 6) features\n"
+"	--warn=error	treat warnings as errors\n"
+"	--undefined-function-warning	warn when a function isn't defined\n"
+*/
+
+qboolean
+ParseParmOptions (const char *options, const char *name)
+{
+	const char	*start;
+	char		*where, *terminator;
+
+	// Options are comma-separated, so bail if the string has a comma
+	if ((!(*name)) || strchr (name, ','))
+		return false;
+
+	for (start = options;; start = terminator) {
+		if (!(where = strstr (start, name)))
+			break;
+
+		terminator = where + strlen (name);
+		if ((where == start) || (*(where - 1) == ','))
+			if ((*terminator == ',') || (*terminator == '\0'))
+				return true;
+	}
+	return false;
+}
 
 //============================================================================
 
@@ -916,11 +948,12 @@ main (int argc, char **argv)
 	myargc = argc;
 	myargv = argv;
 
-	options.version = PROG_VERSION;
-	options.warn_uninitialized = 1;
+	options.code.progsversion = PROG_VERSION;
+	options.warnings.uninited_variable = 1;
+	options.verbosity = 2;
 
 	if (CheckParm ("-h") || CheckParm ("--help")) {
-		printf ("%s - A compiler for the QuakeC language\n", argv[0]);
+		printf ("%s - QuakeForge Code Compiler\n", argv[0]);
 		printf ("Usage: %s [options]\n", argv[0]);
 		printf (
 "Options: \n"
@@ -929,8 +962,8 @@ main (int argc, char **argv)
 "	-V, --version		output version information and exit\n"
 "	--cow			allow assignment to initialized globals\n"
 "	--id			only support id (progs version 6) features\n"
-"	--warn=error	treat warnings as errors\n"
-"	--no-undefined-function-warning	don't warn when a function isn't defined\n"
+"	--warn=error		treat warnings as errors\n"
+"	--no-undefined-function-warning don't warn when a function isn't defined\n"
 );
 		return 1;
 	}
@@ -951,23 +984,24 @@ main (int argc, char **argv)
 	}
 
 	if (CheckParm ("--quiet=2")) { //FIXME: getopt, need getopt </#5>
-		options.quiet = 2;
+		options.verbosity = 0;
 	}
 
 	if (CheckParm ("--quiet")) {
-		options.quiet = 1;
+		options.verbosity = 1;
 	}
 
 	if (CheckParm ("--cow")) {
-		options.cow = 1;
+		options.code.cow = 1;
+		options.warnings.cow = 1;
 	}
 
 	if (CheckParm ("--id")) {
-		options.version = PROG_ID_VERSION;
+		options.code.progsversion = PROG_ID_VERSION;
 	}
 
 	if (CheckParm ("--debug")) {
-		options.debug = 1;
+		options.code.debug = 1;
 	}
 
 	if (CheckParm ("--no-cpp")) {
@@ -976,12 +1010,16 @@ main (int argc, char **argv)
 
 	// FIXME eww, really must go to getopt
 	if (CheckParm ("--warn=error")) {
-		options.warn_error = 1;
+		options.warnings.promote = 1;
 	}
 
-	options.undefined_function_warning = 1;
+	if (CheckParm ("--warn=nocow")) {
+		options.warnings.cow = 0;
+	}
+
+	options.warnings.undefined_function = 1;
 	if (CheckParm ("--no-undefined-function-warning")) {
-		options.undefined_function_warning = 0;
+		options.warnings.undefined_function = 0;
 	}
 
 	if (strcmp (sourcedir, ".")) {
@@ -999,10 +1037,10 @@ main (int argc, char **argv)
 		Error ("No destination filename.  qfcc --help for info.\n");
 
 	strcpy (destfile, com_token);
-	if (!options.quiet) {
+	if (options.verbosity) {
 		printf ("outputfile: %s\n", destfile);
 	}
-	if (options.debug) {
+	if (options.code.debug) {
 		char *s;
 		strcpy (debugfile, com_token);
 
@@ -1016,7 +1054,7 @@ main (int argc, char **argv)
 			}
 		}
 		strcpy (s, ".sym");
-		if (!options.quiet)
+		if (options.verbosity)
 			printf ("debug file: %s\n", debugfile);
 	}
 
@@ -1032,14 +1070,16 @@ main (int argc, char **argv)
 		int 	tempfd;
 #endif
 		int		error;
+
 		extern FILE *yyin;
-		int yyparse(void);
+		int yyparse (void);
 		extern void clear_frame_macros (void);
+
 		//extern int yydebug;
 		//yydebug = 1;
 
 		sprintf (filename, "%s%c%s", sourcedir, PATH_SEPARATOR, com_token);
-		if (!options.quiet)
+		if (options.verbosity)
 			printf ("compiling %s\n", filename);
 
 #ifdef USE_CPP
@@ -1069,7 +1109,7 @@ main (int argc, char **argv)
 				int 	status;
 				pid_t	rc;
 					
-	//			printf ("pid = %d\n", pid);
+//				printf ("pid = %d\n", pid);
 				if ((rc = waitpid (0, &status, 0 | WUNTRACED)) != pid) {
 					if (rc == -1) {
 						perror ("wait");
@@ -1129,7 +1169,28 @@ main (int argc, char **argv)
 	WriteFiles ();
 
 	stop = Sys_DoubleTime ();
-	if (options.quiet < 2)
-		printf ("Compilation time: %.3f seconds.\n", (stop - start));
+	if (options.verbosity > 1)
+		printf ("Compilation time: %0.3g seconds.\n", (stop - start));
 	return 0;
 }
+
+/*
+static void
+usage (int status)
+{
+	printf ("%s - the QuakeForge Code Compiler\n", PROGRAM);
+	printf ("Usage: %s [options]\n", argv[0]);
+	printf (
+"Options:\n"
+"	-s, --source DIR	look for progs.src in DIR instead of \".\"\n"
+"	-q, --quiet NUM		Inhibit usual output\n"
+"	-g, --debug		Output symbol information\n"
+"	--code=<option,...>	Set code generation options\n"
+"	--warn=<option,...>	Set warning options\n"
+"	-h, --help		display this help and exit\n"
+"	-V, --version		output version information and exit\n\n"
+"For help on options for --code and --warn, see the qfcc(1) man page\n"
+	);
+	exit (status);
+}
+*/

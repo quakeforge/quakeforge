@@ -133,9 +133,9 @@ PR_Opcode_Init_Tables (void)
 	Hash_SetHashCompare (opcode_type_table_ab, get_hash, compare);
 	Hash_SetHashCompare (opcode_type_table_abc, get_hash, compare);
 	for (op = pr_opcodes; op->name; op++) {
-		if (op->min_version > options.version)
+		if (op->min_version > options.code.progsversion)
 			continue;
-		if (options.version == PROG_ID_VERSION
+		if (options.code.progsversion == PROG_ID_VERSION
 			&& op->type_c == ev_integer)
 			op->type_c = ev_float;
 		Hash_AddElement (opcode_type_table_ab, op);
