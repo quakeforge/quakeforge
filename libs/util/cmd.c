@@ -309,6 +309,7 @@ void
 extract_line (dstring_t * buffer, dstring_t * line)
 {
 	int         i, squotes = 0, dquotes = 0, braces = 0, n;
+	char		*tmp;
 
 	for (i = 0; buffer->str[i]; i++) {
 		if (buffer->str[i] == '\'' && !escaped (buffer->str, i)
@@ -329,10 +330,12 @@ extract_line (dstring_t * buffer, dstring_t * line)
 		if (buffer->str[i] == '/' && buffer->str[i + 1] == '/'
 			&& !squotes && !dquotes) {
 			// Filter out comments until newline
-			for (n = 0;
-				 buffer->str[i + n] != '\n' && buffer->str[i + n] != '\r';
-				 n++)
-				;
+			if ((tmp = strchr (buffer->str+i, '\n')))
+				n = tmp - (buffer->str+i);
+			else if ((tmp = strchr (buffer->str+i, '\r')))
+				n = tmp - (buffer->str+i);
+			else
+				n = strlen(buffer->str+i); // snip till \0
 			dstring_snip (buffer, i, n);
 		}
 		if (buffer->str[i] == '\n' || buffer->str[i] == '\r') {
