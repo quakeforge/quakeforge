@@ -147,7 +147,7 @@ VID_Init (unsigned char *palette)
         mainwindow=GetActiveWindow();
 #endif
 
-	vid.initialzed = true;
+	vid.initialized = true;
 
 }
 
