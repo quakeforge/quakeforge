@@ -1553,15 +1553,6 @@ VID_REND_TARGETS=""
 VID_REND_NOINST_TARGETS=""
 VID_TARGETS=""
 
-vid_need_asm=no
-vid_need_common=no
-vid_need_gl=no
-vid_need_sdl=no
-vid_need_sw=no
-vid_need_sw32=no
-vid_need_svgas=no
-vid_need_x11=no
-
 if test "x$HAVE_FBDEV" = xyes; then
 	if test "x$ENABLE_FBDEV" = xyes; then
 		QW_TARGETS="$QW_TARGETS qw-client-fbdev\$(EXEEXT)"
