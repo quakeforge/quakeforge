@@ -131,6 +131,7 @@ expr_t *new_bind_expr (expr_t *e1, expr_t *e2);
 expr_t *new_name_expr (const char *name);
 
 void inc_users (expr_t *e);
+void convert_name (expr_t *e);
 
 expr_t *append_expr (expr_t *block, expr_t *e);
 
