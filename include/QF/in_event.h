@@ -68,8 +68,8 @@ typedef struct {
 
 void IE_Init (void);
 void IE_Init_Cvars (void);
-int IE_Send_Event (const Qevent_t *event);
-int IE_Add_Handler (int (*event_handler)(const Qevent_t*));
+int IE_Send_Event (const IE_event_t *event);
+int IE_Add_Handler (int (*event_handler)(const IE_event_t*));
 void IE_Remove_Handler (int handle);
 void IE_Set_Focus (int handle);
 
