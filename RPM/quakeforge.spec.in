@@ -369,8 +369,6 @@ rm -rf $RPM_BUILD_ROOT
 %files svga
 %attr(4755,root,root)	%{_prefix}/bin/qw-client-svga
 %attr(4755,root,root)	%{_prefix}/bin/nq-svga
-%attr(-,root,root)	%{_prefix}/lib/libQFsvga.so.1
-%attr(-,root,root)	%{_prefix}/lib/libQFsvga.so.1.0.0
 %endif
 
 %if "%{HAVE_X11}"=="'yes'"
@@ -414,8 +412,6 @@ rm -rf $RPM_BUILD_ROOT
 %files libs-sw
 %attr(-,root,root)	%{_prefix}/lib/libQFmodels_sw.so.1
 %attr(-,root,root)	%{_prefix}/lib/libQFmodels_sw.so.1.0.0
-%attr(-,root,root)	%{_prefix}/lib/libQFrenderer_sw.so.1
-%attr(-,root,root)	%{_prefix}/lib/libQFrenderer_sw.so.1.0.0
 %if "%{HAVE_SDL}"=="'yes'"
 %attr(-,root,root)	%{_prefix}/lib/libQFmodels_sw32.so.1
 %attr(-,root,root)	%{_prefix}/lib/libQFmodels_sw32.so.1.0.0
@@ -460,11 +456,6 @@ rm -rf $RPM_BUILD_ROOT
 %attr(-,root,root)	%{_prefix}/lib/libQFrenderer_gl.a
 %attr(-,root,root)	%{_prefix}/lib/libQFrenderer_gl.la
 %attr(-,root,root)	%{_prefix}/lib/libQFrenderer_gl.so
-%endif
-%if "%{BUILD_SW}"=="'yes'"
-%attr(-,root,root)	%{_prefix}/lib/libQFrenderer_sw.a
-%attr(-,root,root)	%{_prefix}/lib/libQFrenderer_sw.la
-%attr(-,root,root)	%{_prefix}/lib/libQFrenderer_sw.so
 %endif
 %if "%{HAVE_SDL}"=="'yes'"
 %if "%{BUILD_SW}"=="'yes'"
