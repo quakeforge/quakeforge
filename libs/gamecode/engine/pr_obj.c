@@ -54,6 +54,8 @@ call_function (progs_t *pr, func_t func)
 {
 	dfunction_t *newf;
 
+	if (!func)
+		PR_RunError (pr, "NULL function");
 	newf = pr->pr_functions + func;
 	if (newf->first_statement < 0) {
 		// negative statements are built in functions
