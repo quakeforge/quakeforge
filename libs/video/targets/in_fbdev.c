@@ -40,8 +40,6 @@
 #include "QF/cvar.h"
 #include "QF/keys.h"
 
-cvar_t		*_windowed_mouse;
-
 int
 fd_blocking (int fd, int on)
 {
@@ -134,6 +132,16 @@ IN_LL_SendKeyEvents (void)
 
 void
 IN_LL_Commands (void)
+{
+}
+
+void
+IN_LL_Grab_Input (void)
+{
+}
+
+void
+IN_LL_Ungrab_Input (void)
 {
 }
 

@@ -204,8 +204,6 @@ VID_Init (unsigned char *palette)
 	/* Invisible cursor */
 	X11_CreateNullCursor ();
 
-	X11_GrabKeyboard ();
-
 	XSync (x_disp, 0);
 
 	ctx = glXCreateContext (x_disp, x_visinfo, NULL, True);

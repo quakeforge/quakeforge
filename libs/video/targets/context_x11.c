@@ -378,15 +378,15 @@ void X11_UpdateFullscreen (cvar_t *fullscreen)
 	}
 	
 	if (!fullscreen->int_val) {
-		if (_windowed_mouse) {
-			_windowed_mouse->flags &= ~CVAR_ROM;
+		if (in_grab) {
+			in_grab->flags &= ~CVAR_ROM;
 		}
 		X11_RestoreVidMode ();
 	} else {
-		if (_windowed_mouse) {
-			_windowed_mouse->flags &= ~CVAR_ROM;
-			Cvar_Set (_windowed_mouse, "1");
-			_windowed_mouse->flags |= CVAR_ROM;
+		if (in_grab) {
+			in_grab->flags &= ~CVAR_ROM;
+			Cvar_Set (in_grab, "1");
+			in_grab->flags |= CVAR_ROM;
 		}
 		X11_SetVidMode (scr_width, scr_height);
 	}
@@ -494,12 +494,14 @@ X11_RestoreVidMode (void)
 void
 X11_GrabKeyboard (void)
 {
-#ifdef HAVE_VIDMODE
-	if (vidmode_active && vid_fullscreen->int_val) {
-		XGrabKeyboard (x_disp, x_win, 1, GrabModeAsync, GrabModeAsync,
-					   CurrentTime);
-	}
-#endif
+	XGrabKeyboard (x_disp, x_win, 1, GrabModeAsync, GrabModeAsync,
+				   CurrentTime);
+}
+
+void
+X11_UngrabKeyboard (void)
+{
+	XUngrabKeyboard (x_disp, CurrentTime);
 }
 
 void

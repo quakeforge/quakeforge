@@ -164,7 +164,7 @@ void        GL_Init (void);
 
 //====================================
 
-cvar_t     *_windowed_mouse;
+cvar_t     *in_grab;
 cvar_t     *vid_use8bit;
 
 int         window_center_x, window_center_y, window_x, window_y, window_width,
@@ -379,7 +379,7 @@ VID_SetMode (int modenum, unsigned char *palette)
 
 	// Set either the fullscreen or windowed mode
 	if (modelist[modenum].type == MS_WINDOWED) {
-		if (_windowed_mouse->int_val && key_dest == key_game) {
+		if (in_grab->int_val && key_dest == key_game) {
 			stat = VID_SetWindowedMode (modenum);
 			IN_ActivateMouse ();
 			IN_HideMouse ();
@@ -473,7 +473,7 @@ GL_EndRendering (void)
 
 	// handle the mouse state when windowed if that's changed
 	if (modestate == MS_WINDOWED) {
-		if (!_windowed_mouse->int_val) {
+		if (!in_grab->int_val) {
 			if (windowed_mouse) {
 				IN_DeactivateMouse ();
 				IN_ShowMouse ();
@@ -694,7 +694,7 @@ AppActivate (BOOL fActive, BOOL minimize)
 						   gdevmode.dmPelsHeight, false);
 			}
 		}
-		else if ((modestate == MS_WINDOWED) && _windowed_mouse->int_val
+		else if ((modestate == MS_WINDOWED) && in_grab->int_val
 			&& key_dest == key_game) {
 			IN_ActivateMouse ();
 			IN_HideMouse ();
@@ -707,7 +707,7 @@ AppActivate (BOOL fActive, BOOL minimize)
 				ChangeDisplaySettings (NULL, 0);
 				vid_wassuspended = true;
 			}
-		} else if ((modestate == MS_WINDOWED) && _windowed_mouse->int_val) {
+		} else if ((modestate == MS_WINDOWED) && in_grab->int_val) {
 			IN_DeactivateMouse ();
 			IN_ShowMouse ();
 		}

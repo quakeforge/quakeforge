@@ -87,6 +87,40 @@ static int  p_mouse_x, p_mouse_y;
 #define FOCUS_MASK (FocusChangeMask)
 #define INPUT_MASK (KEY_MASK | MOUSE_MASK | FOCUS_MASK)
 
+static void
+dga_on (void)
+{
+#ifdef HAVE_DGA
+	if (dga_avail && !dga_active) {
+		XF86DGADirectVideo (x_disp, DefaultScreen (x_disp),
+							XF86DGADirectMouse);
+		dga_active = true;
+	}
+#endif
+}
+
+static void
+dga_off (void)
+{
+#ifdef HAVE_DGA
+	if (dga_avail && dga_active) {
+		XF86DGADirectVideo (x_disp, DefaultScreen (x_disp), 0);
+		dga_active = false;
+	}
+#endif
+}
+
+static void
+in_dga_f (cvar_t *var)
+{
+	if (in_grab && in_grab->int_val) {
+		if (var->int_val) {
+			dga_on ();
+		} else {
+			dga_off ();
+		}
+	}
+}
 
 static void
 XLateKey (XKeyEvent * ev, int *k, int *u)
@@ -421,7 +455,7 @@ event_motion (XEvent * event)
 		in_mouse_x += event->xmotion.x_root;
 		in_mouse_y += event->xmotion.y_root;
 	} else {
-		if (vid_fullscreen->int_val || _windowed_mouse->int_val) {
+		if (vid_fullscreen->int_val || in_grab->int_val) {
 			if (!event->xmotion.send_event) {
 				in_mouse_x += (event->xmotion.x - p_mouse_x);
 				in_mouse_y += (event->xmotion.y - p_mouse_y);
@@ -442,34 +476,25 @@ event_motion (XEvent * event)
 void
 IN_LL_Commands (void)
 {
-	static int  old_windowed_mouse;
-	static int  old_in_dga;
+} 
 
-	if ((old_windowed_mouse != _windowed_mouse->int_val)
-		|| (old_in_dga != in_dga->int_val)) {
-		old_windowed_mouse = _windowed_mouse->int_val;
-		old_in_dga = in_dga->int_val;
+void
+IN_LL_Grab_Input (void)
+{
+	XGrabPointer (x_disp, x_win, True, MOUSE_MASK, GrabModeAsync,
+				  GrabModeAsync, x_win, None, CurrentTime);
+	if (in_dga->int_val)
+		dga_on ();
+	X11_GrabKeyboard ();
+}
 
-		if (_windowed_mouse->int_val) {	// grab the pointer
-			XGrabPointer (x_disp, x_win, True, MOUSE_MASK, GrabModeAsync,
-						  GrabModeAsync, x_win, None, CurrentTime);
-#ifdef HAVE_DGA
-			if (dga_avail && in_dga->int_val && !dga_active) {
-				XF86DGADirectVideo (x_disp, DefaultScreen (x_disp),
-									XF86DGADirectMouse);
-				dga_active = true;
-			}
-#endif
-		} else {						// ungrab the pointer
-#ifdef HAVE_DGA
-			if (dga_avail && in_dga->int_val && dga_active) {
-				XF86DGADirectVideo (x_disp, DefaultScreen (x_disp), 0);
-				dga_active = false;
-			}
-#endif
-			XUngrabPointer (x_disp, CurrentTime);
-		}
-	}
+void
+IN_LL_Ungrab_Input (void)
+{
+	if (in_dga->int_val)
+		dga_off ();
+	XUngrabPointer (x_disp, CurrentTime);
+	X11_UngrabKeyboard ();
 }
 
 void
@@ -528,8 +553,8 @@ IN_LL_Init (void)
 	if (!COM_CheckParm ("-nomouse")) {
 		dga_avail = VID_CheckDGA (x_disp, NULL, NULL, NULL);
 		if (vid_fullscreen->int_val) {
-			Cvar_Set (_windowed_mouse, "1");
-			_windowed_mouse->flags |= CVAR_ROM;
+			Cvar_Set (in_grab, "1");
+			in_grab->flags |= CVAR_ROM;
 		}
 
 		X11_AddEvent (ButtonPress, &event_button);
@@ -545,7 +570,7 @@ IN_LL_Init_Cvars (void)
 {
 	in_snd_block= Cvar_Get ("in_snd_block", "0", CVAR_ARCHIVE, NULL,
 							"block sound output on window focus loss");
-	in_dga = Cvar_Get ("in_dga", "1", CVAR_ARCHIVE, NULL,
+	in_dga = Cvar_Get ("in_dga", "1", CVAR_ARCHIVE, in_dga_f,
 			"DGA Input support");
 }
 

@@ -504,8 +504,6 @@ VID_Init (unsigned char *palette)
 		x_gc = XCreateGC (x_disp, x_win, valuemask, &xgcvalues);
 	}
 
-	X11_GrabKeyboard ();
-
 	// wait for first exposure event
 	{
 		XEvent	event;

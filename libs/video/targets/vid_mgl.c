@@ -109,7 +109,7 @@ cvar_t     *vid_nopageflip;
 cvar_t     *vid_config_x;
 cvar_t     *vid_config_y;
 cvar_t     *vid_stretch_by_2;
-cvar_t     *_windowed_mouse;
+cvar_t     *in_grab;
 cvar_t     *vid_fullscreen_mode;
 cvar_t     *vid_windowed_mode;
 cvar_t     *block_switch;
@@ -1479,7 +1479,7 @@ VID_SetMode (int modenum, unsigned char *palette)
 
 	// Set either the fullscreen or windowed mode
 	if (modelist[modenum].type == MS_WINDOWED) {
-		if (_windowed_mouse->int_val && key_dest == key_game) {
+		if (in_grab->int_val && key_dest == key_game) {
 			stat = VID_SetWindowedMode (modenum);
 			IN_ActivateMouse ();
 			IN_HideMouse ();
@@ -1962,7 +1962,7 @@ VID_Init_Cvars ()
 	vid_stretch_by_2 = Cvar_Get ("vid_stretch_by_2", "1", CVAR_ARCHIVE, NULL,
 								 "Stretch the pixles by a two fold to acheive "
 								 "proper view");
-	_windowed_mouse = Cvar_Get ("_windowed_mouse", "0", CVAR_ARCHIVE, NULL,
+	in_grab = Cvar_Get ("in_grab", "0", CVAR_ARCHIVE, NULL,
 								"Have quake grab the mouse from X when you "
 								"play");
 	vid_fullscreen_mode = Cvar_Get ("vid_fullscreen_mode", "3", CVAR_ARCHIVE,
@@ -2147,7 +2147,7 @@ VID_Update (vrect_t *rects)
 
 	// handle the mouse state when windowed if that's changed
 	if (modestate == MS_WINDOWED) {
-		if (!_windowed_mouse->int_val) {
+		if (!in_grab->int_val) {
 			if (windowed_mouse) {
 				IN_DeactivateMouse ();
 				IN_ShowMouse ();
@@ -2471,7 +2471,7 @@ AppActivate (BOOL fActive, BOOL minimize)
 				IN_ActivateMouse ();
 				IN_HideMouse ();
 			}
-				else if ((modestate == MS_WINDOWED) && _windowed_mouse->int_val
+				else if ((modestate == MS_WINDOWED) && in_grab->int_val
 						 && key_dest == key_game) {
 				IN_ActivateMouse ();
 				IN_HideMouse ();
@@ -2500,7 +2500,7 @@ AppActivate (BOOL fActive, BOOL minimize)
 
 				IN_DeactivateMouse ();
 				IN_ShowMouse ();
-			} else if ((modestate == MS_WINDOWED) && _windowed_mouse->int_val
+			} else if ((modestate == MS_WINDOWED) && in_grab->int_val
 					   /* &&  mouseactive */ ) {
 				IN_DeactivateMouse ();
 				IN_ShowMouse ();
@@ -2513,7 +2513,7 @@ void
 VID_HandlePause (qboolean pause)
 {
 #if 0
-	if ((modestate == MS_WINDOWED) && _windowed_mouse->int_val) {
+	if ((modestate == MS_WINDOWED) && in_grab->int_val) {
 		if (pause) {
 			IN_DeactivateMouse ();
 			IN_ShowMouse ();

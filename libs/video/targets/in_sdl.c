@@ -51,7 +51,7 @@ HWND        mainwindow;
 #endif
 
 cvar_t	*m_filter;
-cvar_t	*_windowed_mouse;
+cvar_t	*in_grab;
 
 int		old_windowed_mouse;
 int		modestate;	// FIXME: just to avoid cross-comp errors - remove later
@@ -822,16 +822,20 @@ IN_LL_SendKeyEvents (void)
 void
 IN_LL_Commands (void)
 {
-	if (old_windowed_mouse != _windowed_mouse->value) {
-		old_windowed_mouse = _windowed_mouse->value;
-		if (!_windowed_mouse->value) {
-			SDL_ShowCursor (1);
-			SDL_WM_GrabInput (SDL_GRAB_OFF);
-		} else {
-			SDL_WM_GrabInput (SDL_GRAB_ON);
-			SDL_ShowCursor (0);
-		}
-	}
+}
+
+void
+IN_LL_Grab_Input (void)
+{
+	SDL_WM_GrabInput (SDL_GRAB_ON);
+	SDL_ShowCursor (0);
+}
+
+void
+IN_LL_Ungrab_Input (void)
+{
+	SDL_ShowCursor (1);
+	SDL_WM_GrabInput (SDL_GRAB_OFF);
 }
 
 void
@@ -842,7 +846,7 @@ IN_LL_Init (void)
 	/* Enable UNICODE translation for keyboard input */
 	SDL_EnableUNICODE(1);
 
-	if (COM_CheckParm ("-nomouse") && !_windowed_mouse->value)
+	if (COM_CheckParm ("-nomouse") && !in_grab->value)
 		return;
 
 	in_mouse_x = in_mouse_y = 0.0;

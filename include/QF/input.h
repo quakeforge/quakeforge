@@ -55,7 +55,7 @@ void IN_ModeChanged (void);
 
 void IN_HandlePause (qboolean paused);
 
-extern struct cvar_s		*_windowed_mouse;
+extern struct cvar_s		*in_grab;
 extern struct cvar_s		*m_filter;
 extern struct cvar_s		*in_freelook;
 extern struct cvar_s		*sensitivity;
@@ -68,6 +68,8 @@ void IN_LL_Init_Cvars (void);
 void IN_LL_Init (void);
 void IN_LL_Shutdown (void);
 void IN_LL_Commands (void);
+void IN_LL_Grab_Input (void);
+void IN_LL_Ungrab_Input (void);
 void IN_LL_SendKeyEvents (void);
 void IN_LL_ClearStates (void);
 

@@ -56,7 +56,7 @@
 #include "QF/keys.h"
 #include "QF/mathlib.h"
 
-cvar_t     *_windowed_mouse;
+cvar_t     *in_grab;
 cvar_t     *in_amp;
 cvar_t     *in_pre_amp;
 cvar_t     *in_freelook;
@@ -73,6 +73,23 @@ qboolean    in_mouse_avail;
 float       in_mouse_x, in_mouse_y;
 static float in_old_mouse_x, in_old_mouse_y;
 
+static int  input_grabbed;
+
+static void
+in_grab_f (cvar_t *var)
+{
+	if (var->int_val) {
+		if (!input_grabbed) {
+			IN_LL_Grab_Input ();
+			input_grabbed = 1;
+		}
+	} else {
+		if (input_grabbed) {
+			IN_LL_Ungrab_Input ();
+			input_grabbed = 0;
+		}
+	}
+}
 
 void
 IN_Commands (void)
@@ -152,7 +169,7 @@ IN_Init_Cvars (void)
 {
 	IE_Init_Cvars ();
 	JOY_Init_Cvars ();
-	_windowed_mouse = Cvar_Get ("_windowed_mouse", "0", CVAR_ARCHIVE, NULL,
+	in_grab = Cvar_Get ("in_grab", "0", CVAR_ARCHIVE, in_grab_f,
 			"With this set to 1, quake will grab the mouse from X");
 	in_amp = Cvar_Get ("in_amp", "1", CVAR_ARCHIVE, NULL,
 					   "global in_amp multiplier");

@@ -59,6 +59,7 @@ void X11_CreateNullCursor (void);
 void X11_CreateWindow (int, int);
 void X11_ForceViewPort (void);
 void X11_GrabKeyboard (void);
+void X11_UngrabKeyboard (void);
 void X11_Init_Cvars (void);
 void X11_OpenDisplay (void);
 void X11_ProcessEvent (void);
