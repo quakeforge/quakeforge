@@ -1,5 +1,6 @@
 float foo = 1;
 float bar = 1;
+float snafu = 2;
 
 float () main =
 {
@@ -33,5 +34,9 @@ void (float x) test =
 	local string str;
 	local float urk = 0;
 
-	print ("owie");
+	if (urk) {
+		urk = foo || snafu;
+	} else {
+		print ("owie");
+	}
 };

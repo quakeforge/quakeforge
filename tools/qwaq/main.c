@@ -62,8 +62,10 @@ main ()
 		Sys_Error ("couldn't load %s\n", "qwaq.dat");
 
 	*progs.edicts = PR_InitEdicts (&progs, MAX_EDICTS);
-	for (i = 0; i < progs.progs->numstatements; i++)
+	for (i = 0; i < progs.progs->numstatements; i++) {
+		printf ("%-6d ", i);
 		PR_PrintStatement (&progs, &progs.pr_statements[i]);
+	}
 #if 0
 	printf ("\n");
 	for (i = 0; i < progs.progs->numfunctions; i++) {
