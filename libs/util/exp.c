@@ -75,9 +75,9 @@ token *EXP_ParseString (char *str)
 		m = 0;
 		while(str[i] == ' ')
 			i++;
-		if (isdigit(str[i]) || str[i] == '.')
+		if (isdigit((byte)str[i]) || str[i] == '.')
 		{
-			while ((isdigit(str[i]) || str[i] == '.') && i < strlen(str) && m < 256)
+			while ((isdigit((byte)str[i]) || str[i] == '.') && i < strlen(str) && m < 256)
 				buf[m++] = str[i++];
 			buf[m] = 0;
 			new = EXP_NewToken();
@@ -109,7 +109,7 @@ token *EXP_ParseString (char *str)
 		}
 		else
 		{
-			while(!(isdigit(str[i])) && str[i] != '.' && str[i] != '(' && str[i] != ')' && m < 256)
+			while(!(isdigit((byte)str[i])) && str[i] != '.' && str[i] != '(' && str[i] != ')' && m < 256)
 				buf[m++] = str[i++];
 			buf[m] = 0;
 			if (m)
