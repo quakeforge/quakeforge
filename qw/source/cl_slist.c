@@ -50,6 +50,7 @@
 #ifdef HAVE_WINDOWS_H
 # include <windows.h>
 #endif
+#include <ctype.h>
 #include <stdlib.h>
 
 #include "QF/cmd.h"
@@ -68,9 +69,11 @@ server_entry_t *slist;
 server_entry_t *all_slist;
 server_entry_t *fav_slist;
 int which_slist;
-
 int slist_last_details;
 
+cvar_t *sl_sortby;
+
+	
 void
 S_Refresh (server_entry_t *slrefresh)
 {
@@ -360,11 +363,51 @@ void timepassed (double time1, double *time2)
 }
 
 void
+SL_Sort (server_entry_t *sort)
+{
+	server_entry_t *p;
+	server_entry_t *q;
+	int i;
+	
+	i = 0;
+	
+	if (!sort)
+		return;
+
+	for (p = sort; p->next; p = p->next)
+	{
+		for (q = p->next; q; q = q->next)
+		{
+			if (sl_sortby->int_val)
+			{
+				if ((q->pongback) && (p->pongback > q->pongback))
+				{
+					SL_Swap(p,q);
+					q = p;
+				}
+			} else {
+				i = 0;
+				while ((p->desc[i] != '\0') && (q->desc[i] != '\0') && (toupper(p->desc[i]) == toupper(q->desc[i])))
+					i++;
+				if (toupper(p->desc[i]) > toupper(q->desc[i]))
+				{
+					Con_Printf("%i <-> %s <-> %s\n", i, p->desc, q->desc);
+					SL_Swap(p,q);
+					q = p;
+				}
+			}
+		}
+	}
+}
+
+void
 SL_Con_List (server_entry_t *sldata)
 {
 	int serv;
 	server_entry_t *cp;
-
+	
+	SL_Sort (sldata);
+	
 	for(serv = 0; serv < SL_Len (sldata); serv++)
 	{
 		cp = SL_Get_By_Num (sldata, serv);
@@ -554,6 +597,8 @@ void SList_Init (void)
 	all_slist = NULL;
 	which_slist = 0;
 	Cmd_AddCommand("slist",SL_Command,"console commands to access server list\n");
+	sl_sortby = Cvar_Get ("sl_sortby", "0", CVAR_ARCHIVE, NULL, "0 = sort by name, 1 = sort by ping");
+	
 }
 
 int
