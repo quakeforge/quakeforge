@@ -39,6 +39,7 @@
 #include "QF/gib.h"
 #include "QF/vfs.h"
 
+#include "compat.h"
 #include "gib_instructions.h"
 #include "gib_interpret.h"
 #include "gib_modules.h"

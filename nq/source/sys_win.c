@@ -34,13 +34,14 @@
 #include "conproc.h"
 #include "resource.h"
 
-#include "compat.h"
+#include "QF/cvar.h"
 #include "QF/qargs.h"
 #include "QF/screen.h"
 #include "QF/sys.h"
 #include "QF/vfile.h"
 
 #include "client.h"
+#include "compat.h"
 #include "game.h"
 #include "host.h"
 

@@ -51,6 +51,7 @@
 #include "QF/va.h"
 #include "QF/vfs.h"
 
+#include "compat.h"
 #include "net.h"
 #include "protocol.h"
 #include "server.h"

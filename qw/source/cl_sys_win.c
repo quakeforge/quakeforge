@@ -39,6 +39,7 @@
 #include <windows.h>
 
 #include "QF/console.h"
+#include "QF/cvar.h"
 #include "QF/qargs.h"
 #include "QF/screen.h"
 #include "QF/sound.h"

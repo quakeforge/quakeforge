@@ -34,20 +34,21 @@
 
 #include "QF/cdaudio.h"
 #include "QF/cmd.h"
-#include "compat.h"
 #include "QF/console.h"
+#include "QF/cvar.h"
 #include "QF/input.h"
 #include "QF/keys.h"
 #include "QF/qargs.h"
 #include "QF/qendian.h"
 #include "QF/vfs.h"
-#include "sbar.h"
 #include "QF/screen.h"
 #include "QF/sound.h"
 #include "QF/sys.h"
 #include "QF/va.h"
 #include "QF/vid.h"
 
+#include "compat.h"
+#include "sbar.h"
 #include "glquake.h"
 #include "in_win.h"
 #include "resource.h"
@@ -133,8 +134,6 @@ unsigned char vid_curpal[256 * 3];
 static qboolean fullsbardraw = true;
 
 HDC         maindc;
-
-glvert_t    glv;
 
 HWND WINAPI InitializeWindow (HINSTANCE hInstance, int nCmdShow);
 LONG	CDAudio_MessageHandler (HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam);

@@ -44,6 +44,7 @@
 
 #include "QF/gib.h"
 
+#include "compat.h"
 #include "gib_error.h"
 #include "gib_instructions.h"
 #include "gib_interpret.h"
