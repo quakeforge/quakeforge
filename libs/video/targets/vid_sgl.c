@@ -49,6 +49,7 @@
 #include "sbar.h"
 #include "QF/sys.h"
 #include "QF/va.h"
+#include "QF/vid.h"
 
 #ifdef WIN32
 /* FIXME: this is evil hack to get full DirectSound support with SDL */

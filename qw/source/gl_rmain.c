@@ -124,7 +124,6 @@ cvar_t	*gl_fb_models;
 cvar_t	*gl_fb_bmodels;
 cvar_t	*gl_keeptjunctions;
 cvar_t	*gl_lerp_anim;
-cvar_t	*gl_multitexture;
 cvar_t	*gl_nocolors;
 cvar_t	*gl_playermip;
 cvar_t	*gl_dlight_smooth;

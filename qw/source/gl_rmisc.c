@@ -238,7 +238,6 @@ R_Init_Cvars (void)
 	gl_fires = Cvar_Get ("gl_fires", "0", CVAR_ARCHIVE, NULL, "Toggles lavaball and rocket fireballs");
 	gl_keeptjunctions = Cvar_Get ("gl_keeptjunctions", "1", CVAR_ARCHIVE, NULL, "Set to 0 to turn off colinear vertexes upon level load");
 	gl_lerp_anim = Cvar_Get ("gl_lerp_anim", "1", CVAR_ARCHIVE, NULL, "Toggles model animation interpolation");
-	gl_multitexture = Cvar_Get ("gl_multitexture", "0", CVAR_ARCHIVE, NULL, "Use multitexture when available");
 	gl_nocolors = Cvar_Get ("gl_nocolors", "0", CVAR_NONE, NULL, "Set to 1, turns off all player colors");
 	gl_playermip = Cvar_Get ("gl_playermip", "0", CVAR_NONE, NULL, "Detail of player skins. 0 best, 4 worst.");
 	gl_sky_clip = Cvar_Get ("gl_sky_clip", "0", CVAR_ARCHIVE, NULL, "controls whether sky is drawn first (0) or later (1)");

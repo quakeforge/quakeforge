@@ -63,6 +63,7 @@ unsigned char d_15to8table[65536];
 
 cvar_t     *vid_mode;
 cvar_t     *brighten;
+cvar_t     *gl_multitexture;
 extern byte gammatable[256];
 
 QF_glActiveTextureARB   qglActiveTexture = NULL;
@@ -98,6 +99,7 @@ GL_Common_Init_Cvars (void)
 	vid_use8bit = Cvar_Get ("vid_use8bit", "0", CVAR_ROM, NULL,	"Use 8-bit shared palettes.");
 	brightness = Cvar_Get ("brightness", "1", CVAR_ARCHIVE, NULL, "Brightness level");
 	contrast = Cvar_Get ("contrast", "1", CVAR_ARCHIVE, NULL, "Contrast level");
+	gl_multitexture = Cvar_Get ("gl_multitexture", "0", CVAR_ARCHIVE, NULL, "Use multitexture when available");
 }
 
 /*

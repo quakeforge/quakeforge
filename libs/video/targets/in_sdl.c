@@ -31,20 +31,17 @@
 
 #include <SDL.h>
 
-#include "client.h"
-#include "cl_input.h"
-#include "cl_main.h"
 #include "QF/compat.h"
 #include "QF/console.h"
 #include "QF/cvar.h"
-#include "draw.h"
 #include "QF/input.h"
 #include "QF/joystick.h"
 #include "QF/keys.h"
+#include "QF/mathlib.h"
 #include "QF/sys.h"
 #include "QF/qargs.h"
 #include "QF/qendian.h"
-#include "view.h" // FIXME: probable evil
+#include "QF/vid.h"
 
 #ifdef WIN32
 // FIXME: this is evil...
@@ -60,19 +57,14 @@ int         modestate;					// FIXME: just to avoid cross-comp.
 
 										// errors - remove later
 
-static qboolean mouse_avail;
-static float mouse_x, mouse_y;
-static float old_mouse_x, old_mouse_y;
 static int  mouse_oldbuttonstate = 0;
-
-extern viddef_t vid;					// global video state
 
 /*
 	IN_SendKeyEvents
 */
 
 void
-IN_SendKeyEvents (void)
+IN_LL_SendKeyEvents (void)
 {
 	SDL_Event   event;
 	int         sym, state, but;
@@ -294,8 +286,8 @@ IN_SendKeyEvents (void)
 					if ((event.motion.x != (vid.width / 2))
 						|| (event.motion.y != (vid.height / 2))) {
 						// *2 for vid_sdl.c, *10 for vid_sgl.c.
-						mouse_x = event.motion.xrel * 5;
-						mouse_y = event.motion.yrel * 5;
+						in_mouse_x = event.motion.xrel * 5;
+						in_mouse_y = event.motion.yrel * 5;
 						if (
 							(event.motion.x <
 							 ((vid.width / 2) - (vid.width / 4)))
@@ -309,13 +301,13 @@ IN_SendKeyEvents (void)
 					}
 				} else {
 					// following are *2 in vid_sdl.c, vid_sgl.c is *10
-					mouse_x = event.motion.xrel * 5;
-					mouse_y = event.motion.yrel * 5;
+					in_mouse_x = event.motion.xrel * 5;
+					in_mouse_y = event.motion.yrel * 5;
 				}
 				break;
 
 			case SDL_QUIT:
-				CL_Disconnect ();
+				//CL_Disconnect ();
 				Sys_Quit ();
 				break;
 			default:
@@ -326,7 +318,7 @@ IN_SendKeyEvents (void)
 
 
 void
-IN_Commands (void)
+IN_LL_Commands (void)
 {
 	JOY_Command ();
 
@@ -343,42 +335,38 @@ IN_Commands (void)
 }
 
 void
-IN_Init (void)
+IN_LL_Init (void)
 {
 	JOY_Init ();
 
 	if (COM_CheckParm ("-nomouse") && !_windowed_mouse->value)
 		return;
 
-	mouse_x = mouse_y = 0.0;
-	mouse_avail = 1;
+	in_mouse_x = in_mouse_y = 0.0;
+	in_mouse_avail = 1;
 //  SDL_ShowCursor (0); 
 //  SDL_WM_GrabInput (SDL_GRAB_ON);
 //  FIXME: disable DGA if in_dgamouse says to.
 }
 
 void
-IN_Init_Cvars (void)
+IN_LL_Init_Cvars (void)
 {
-	JOY_Init_Cvars ();
-
-	_windowed_mouse = Cvar_Get ("_windowed_mouse", "0", CVAR_ARCHIVE, NULL, "If set to 1, quake will grab the mouse in X");
-	m_filter = Cvar_Get ("m_filter", "0", CVAR_ARCHIVE, NULL, "Toggle mouse input filtering");
 }
 
 void
-IN_Shutdown (void)
+IN_LL_Shutdown (void)
 {
-	mouse_avail = 0;
+	in_mouse_avail = 0;
 }
 
 void
-IN_Frame (void)
+IN_LL_Frame (void)
 {
 	int         i;
 	int         mouse_buttonstate;
 
-	if (!mouse_avail)
+	if (!in_mouse_avail)
 		return;
 
 	i = SDL_GetMouseState (NULL, NULL);
@@ -394,39 +382,4 @@ IN_Frame (void)
 															 false);
 	}
 	mouse_oldbuttonstate = mouse_buttonstate;
-}
-
-void
-IN_Move (void)
-{
-	
-	JOY_Move ();
-
-	if (!mouse_avail)
-		return;
-
-	if (m_filter->value) {
-		mouse_x = (mouse_x + old_mouse_x) * 0.5;
-		mouse_y = (mouse_y + old_mouse_y) * 0.5;
-	}
-	old_mouse_x = mouse_x; 
-	old_mouse_y = mouse_y; 
-
-	mouse_x *= sensitivity->value;
-	mouse_y *= sensitivity->value;
-
-	if ((in_strafe.state & 1) || (lookstrafe->value && (in_mlook.state & 1)))
-		viewdelta.position[0] += mouse_x;
-	else
-		viewdelta.angles[YAW] -= mouse_x;
-
-	if (freelook && !(in_strafe.state & 1)) {
-		viewdelta.angles[PITCH] += mouse_y;
-	} else {
-		if (in_strafe.state & 1)
-			viewdelta.position[1] -= mouse_y;
-		else
-			viewdelta.position[2] -= mouse_y;
-	}
-	mouse_x = mouse_y = 0.0;
 }

@@ -42,7 +42,6 @@
 #include "QF/compat.h"
 #include "QF/console.h"
 #include "QF/cvar.h"
-#include "d_local.h"
 #include "QF/qendian.h"
 #include "QF/sys.h"
 #include "QF/va.h"
@@ -74,44 +73,6 @@ int         VGA_width, VGA_height, VGA_rowbytes, VGA_bufferrowbytes = 0;
 byte       *VGA_pagebase;
 
 static SDL_Surface *screen = NULL;
-
-void
-VID_InitBuffers (int width, int height)
-{
-	int         tbuffersize, tcachesize;
-	void       *vid_surfcache;
-
-	// Calculate the sizes we want first
-	tbuffersize = vid.width * vid.height * sizeof (*d_pzbuffer);
-	tcachesize = D_SurfaceCacheForRes (width, height);
-
-	// Free the old z-buffer
-	if (d_pzbuffer) {
-		free (d_pzbuffer);
-		d_pzbuffer = NULL;
-	}
-	// Free the old surface cache
-	vid_surfcache = D_SurfaceCacheAddress ();
-	if (vid_surfcache) {
-		D_FlushCaches ();
-		free (vid_surfcache);
-		vid_surfcache = NULL;
-	}
-	// Allocate the new z-buffer
-	d_pzbuffer = calloc (tbuffersize, 1);
-	if (!d_pzbuffer) {
-		Sys_Error ("Not enough memory for video mode\n");
-	}
-	// Allocate the new surface cache; free the z-buffer if we fail
-	vid_surfcache = calloc (tcachesize, 1);
-	if (!vid_surfcache) {
-		free (d_pzbuffer);
-		d_pzbuffer = NULL;
-		Sys_Error ("Not enough memory for video mode\n");
-	}
-
-	D_InitCaches (vid_surfcache, tcachesize);
-}
 
 void
 VID_SetPalette (unsigned char *palette)
@@ -149,9 +110,6 @@ VID_Init (unsigned char *palette)
 	VID_GetWindowSize (BASEWIDTH, BASEHEIGHT);
 	Con_CheckResize (); // Now that we have a window size, fix console
 
-	vid.maxwarpwidth = WARP_WIDTH;
-	vid.maxwarpheight = WARP_HEIGHT;
-
 	// Set video width, height and flags
 	flags = (SDL_SWSURFACE | SDL_HWPALETTE);
 	if (vid_fullscreen->int_val)
@@ -177,7 +135,7 @@ VID_Init (unsigned char *palette)
 	vid.direct = 0;
 
 	// allocate z buffer and surface cache
-	VID_InitBuffers (vid.width, vid.height);
+	VID_InitBuffers ();
 
 	// initialize the mouse
 	SDL_ShowCursor (0);
