@@ -323,12 +323,8 @@ NET_SendPacket (int length, void *data, netadr_t to)
 #ifdef _WIN32
 		int         err = WSAGetLastError ();
 
-		if (err == WSAEADDRNOTAVAIL) {
-			if (is_server)
-				Con_DPrintf ("NET_SendPacket Warning: %i\n", err);
-			else
-				Con_Printf ("NET_SendPacket ERROR: %i\n", err);
-		}
+		if (err == WSAEADDRNOTAVAIL)
+			Con_DPrintf ("NET_SendPacket Warning: %i\n", err);
 #else // _WIN32
 		int         err = errno;
 
