@@ -94,7 +94,18 @@ Bool (* qfglXMakeCurrent) (Display *dpy, GLXDrawable drawable, GLXContext ctx);
 #if defined(HAVE_DLOPEN)
 
 void * (* glGetProcAddress) (const char *symbol) = NULL;
-void * (* getProcAddress) (void *handle, const char *symbol);
+
+void *
+QFGL_GetProcAddress (void *handle, const char *name)
+{
+	void       *glfunc = NULL;
+
+	if (glGetProcAddress)
+		glfunc = glGetProcAddress (name);
+	if (!glfunc)
+		glfunc = dlsym (handle, name);
+	return glfunc;
+}
 
 void *
 QFGL_LoadLibrary (void)
@@ -105,7 +116,6 @@ QFGL_LoadLibrary (void)
 		Sys_Error ("Couldn't load OpenGL library %s: %s", gl_driver->string,
 				   dlerror ());
 	}
-	getProcAddress = dlsym;
 	glGetProcAddress = dlsym (handle, "glXGetProcAddressARB");
 	return handle;
 }
@@ -114,7 +124,11 @@ QFGL_LoadLibrary (void)
 # error "Cannot load libraries: %s was not configured with DSO support"
 
 // the following is to avoid other compiler errors
-void * (* getProcAddress) (void *handle, const char *symbol);
+void *
+QFGL_GetProcAddress (void *handle, const char *name)
+{
+	return 0;
+}
 
 void *
 QFGL_LoadLibrary (void)

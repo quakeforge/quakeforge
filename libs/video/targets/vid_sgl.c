@@ -70,14 +70,10 @@ int			modestate;
 
 static SDL_Surface *screen = NULL;
 
-void * (* glGetProcAddress) (const char *symbol) = NULL;
-void * (* getProcAddress) (void *, const char *);
-
-
 void *
-QFGL_DummyProcAddress (void *handle, const char *symbol)
+QFGL_GetProcAddress (void *handle, const char *name)
 {
-	return NULL;
+	return SDL_GL_GetProcAddress (name);
 }
 
 void *
@@ -85,9 +81,6 @@ QFGL_LoadLibrary (void)
 {
 	if (SDL_GL_LoadLibrary (gl_driver->string) != 0)
 		Sys_Error ("Couldn't load OpenGL library %s!", gl_driver->string);
-
-	getProcAddress = QFGL_DummyProcAddress;
-	glGetProcAddress = SDL_GL_GetProcAddress;
 
 	return NULL;
 }

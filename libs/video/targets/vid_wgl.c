@@ -139,10 +139,19 @@ void        VID_UpdateWindowStatus (int window_x, int window_y);
 void        GL_Init (void);
 
 
-#if defined(_WIN32)
-
 void * (WINAPI *glGetProcAddress) (const char *symbol) = NULL;
-FARPROC (WINAPI *getProcAddress) (HINSTANCE, LPCSTR);
+
+void *
+QFGL_GetProcAddress (void *handle, const char *name)
+{
+	void       *glfunc = NULL;
+
+	if (glGetProcAddress)
+		glfunc = glGetProcAddress (name);
+	if (!glfunc)
+		glfunc = GetProcAddress (handle, name);
+	return glfunc;
+}
 
 void *
 QFGL_LoadLibrary (void)
@@ -151,23 +160,9 @@ QFGL_LoadLibrary (void)
 
 	if (!(handle = LoadLibrary (gl_driver->string)))
 		Sys_Error ("Couldn't load OpenGL library %s!", gl_driver->string);
-	getProcAddress = GetProcAddress;
 	(FARPROC)glGetProcAddress = GetProcAddress (handle, "wglGetProcAddress");
 	return handle;
 }
-#else
-
-# error "Cannot load libraries: %s was not configured with DSO support"
-
-// the following is to avoid other compiler errors
-void * (* getProcAddress) (void *handle, const char *symbol);
-
-void *
-QFGL_LoadLibrary (void)
-{
-	return 0;
-}
-#endif	// _WIN32
 
 
 //====================================

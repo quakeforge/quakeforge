@@ -73,10 +73,7 @@ QFGL_ProcAddress (void *handle, const char *name, qboolean crit)
 
 	Con_DPrintf ("DEBUG: Finding symbol %s ... ", name);
 
-	if (glGetProcAddress)
-		glfunc = glGetProcAddress (name);
-	if (!glfunc)
-		glfunc = getProcAddress (handle, name);
+	glfunc = QFGL_GetProcAddress (handle, name);
 	if (glfunc) {
 		Con_DPrintf ("found [%p]\n", glfunc);
 		return glfunc;
