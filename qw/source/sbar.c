@@ -88,6 +88,7 @@ qboolean    sb_showscores;
 qboolean    sb_showteamscores;
 
 int         sb_lines;				// scan lines to draw
+qboolean	hudswap;
 
 static qboolean largegame = false;
 
@@ -96,13 +97,16 @@ cvar_t     *fs_fraglog;
 cvar_t     *cl_fraglog;
 cvar_t     *cl_sbar;
 cvar_t     *cl_sbar_separator;
+cvar_t     *cl_hudswap;
 
 static view_t *sbar_view;
-static view_t *minifrags_view;
-static view_t *miniteam_view;
-static view_t *inventory_view;
-static view_t *frags_view;
-static view_t *status_view;
+static view_t *sbar_inventory_view;
+static view_t *sbar_frags_view;
+
+static view_t *hud_view;
+static view_t *hud_inventory_view;
+static view_t *hud_armament_view;
+static view_t *hud_frags_view;
 
 static view_t *overlay_view;
 
@@ -111,22 +115,42 @@ static void Sbar_TeamOverlay (view_t *view);
 static void Sbar_DeathmatchOverlay (view_t *view, int start);
 
 static void
+cl_hudswap_f (cvar_t *var)
+{
+	hudswap = var->int_val;
+	if (hudswap) {
+		hud_armament_view->gravity = grav_southwest;
+	} else {
+		hud_armament_view->gravity = grav_southeast;
+	}
+	view_move (hud_armament_view, hud_armament_view->xpos,
+			   hud_armament_view->ypos);
+}
+
+static void
 calc_sb_lines (cvar_t *var)
 {
 	if (var->int_val >= 120) {
 		sb_lines = 0;
 	} else if (var->int_val >= 110) {
 		sb_lines = 24;
-		inventory_view->visible = 0;
+		sbar_inventory_view->visible = 0;
+		hud_inventory_view->visible = 0;
+		hud_armament_view->visible = 0;
 	} else {
 		sb_lines = 24 + 16 + 8;
-		inventory_view->visible = 1;
+		sbar_inventory_view->visible = 1;
+		hud_inventory_view->visible = 1;
+		hud_armament_view->visible = 1;
 	}
 	if (sb_lines) {
 		sbar_view->visible = 1;
+		hud_view->visible = 1;
 		view_resize (sbar_view, sbar_view->xlen, sb_lines);
+		view_resize (hud_view, hud_view->xlen, sb_lines);
 	} else {
 		sbar_view->visible = 0;
+		hud_view->visible = 0;
 	}
 }
 
@@ -137,6 +161,17 @@ cl_sbar_f (cvar_t *var)
 	if (scr_viewsize)
 		calc_sb_lines (scr_viewsize);
 	r_lineadj = var->int_val ? sb_lines : 0;
+	if (con_module) {
+		if (var->int_val) {
+			view_remove (con_module->data->console->view,
+						 con_module->data->console->view->children[0]);
+			view_insert (con_module->data->console->view, sbar_view, 0);
+		} else {
+			view_remove (con_module->data->console->view,
+						 con_module->data->console->view->children[0]);
+			view_insert (con_module->data->console->view, hud_view, 0);
+		}
+	}
 }
 
 static void
@@ -531,103 +566,6 @@ dmo_name (view_t *view, int x, int y, player_info_t *s)
 	draw_string (view, x, y, s->name);
 }
 
-/*
-static void
-Sbar_DrawInventory (void)
-{
-	char        num[6];
-	float       time;
-	int         flashon, i;
-	qboolean    headsup;
-
-	headsup = !(cl_sbar->int_val || scr_viewsize->int_val < 100);
-
-	if (!headsup)
-		Sbar_DrawPic (0, -24, sb_ibar);
-	// weapons
-	for (i = 0; i < 7; i++) {
-		if (cl.stats[STAT_ITEMS] & (IT_SHOTGUN << i)) {
-			time = cl.item_gettime[i];
-			flashon = (int) ((cl.time - time) * 10);
-			if (flashon < 0)
-				flashon = 0;
-			if (flashon >= 10) {
-				if (cl.stats[STAT_ACTIVEWEAPON] == (IT_SHOTGUN << i))
-					flashon = 1;
-				else
-					flashon = 0;
-			} else
-				flashon = (flashon % 5) + 2;
-
-			if (headsup) {
-				if (i || vid.height > 200)
-					Sbar_DrawSubPic (hudswap ? 0 : (vid.width - 24),
-									 -68 - (7 - i) * 16,
-									 sb_weapons[flashon][i], 0, 0, 24, 16);
-
-			} else
-				Sbar_DrawPic (i * 24, -16, sb_weapons[flashon][i]);
-
-			if (flashon > 1)
-				sb_updates = 0;			// force update to remove flash
-		}
-	}
-
-	// ammo counts
-	for (i = 0; i < 4; i++) {
-		snprintf (num, sizeof (num), "%3i", min (cl.stats[STAT_SHELLS + i],
-												 999));
-		if (headsup) {
-#define HUD_X(dist)		(hudswap ? dist : (vid.width - (42 - dist)))
-#define HUD_Y(n)		(-24 - (4 - n) * 11)
-			Sbar_DrawSubPic (HUD_X (0), HUD_Y (i), sb_ibar,
-							 3 + (i * 48), 0, 42, 11);
-			if (num[0] != ' ')
-				Sbar_DrawCharacter (HUD_X (3),  HUD_Y (i), 18 + num[0] - '0');
-			if (num[1] != ' ')
-				Sbar_DrawCharacter (HUD_X (11), HUD_Y (i), 18 + num[1] - '0');
-			if (num[2] != ' ')
-				Sbar_DrawCharacter (HUD_X (19), HUD_Y (i), 18 + num[2] - '0');
-#undef HUD_X
-#undef HUD_Y
-		} else {
-#define HUD_X(n, dist)	((6 * n + dist) * 8 - 2)
-			if (num[0] != ' ')
-				Sbar_DrawCharacter (HUD_X(i, 1), -24, 18 + num[0] - '0');
-			if (num[1] != ' ')
-				Sbar_DrawCharacter (HUD_X(i, 2), -24, 18 + num[1] - '0');
-			if (num[2] != ' ')
-				Sbar_DrawCharacter (HUD_X(i, 3), -24, 18 + num[2] - '0');
-#undef HUD_X
-		}
-	}
-
-	flashon = 0;
-	// items
-	for (i = 0; i < 6; i++)
-		if (cl.stats[STAT_ITEMS] & (1 << (17 + i))) {
-			time = cl.item_gettime[17 + i];
-			if (time && time > cl.time - 2 && flashon) {	// flash frame
-				sb_updates = 0;
-			} else
-				Sbar_DrawPic (192 + i * 16, -16, sb_items[i]);
-			if (time && time > cl.time - 2)
-				sb_updates = 0;
-		}
-	// sigils
-	for (i = 0; i < 4; i++)
-		if (cl.stats[STAT_ITEMS] & (1 << (28 + i))) {
-			time = cl.item_gettime[28 + i];
-			if (time && time > cl.time - 2 && flashon) {	// flash frame
-				sb_updates = 0;
-			} else
-				Sbar_DrawPic (320 - 32 + i * 8, -16, sb_sigil[i]);
-			if (time && time > cl.time - 2)
-				sb_updates = 0;
-		}
-}
-*/
-
 static int
 calc_flashon (int ind)
 {
@@ -649,7 +587,7 @@ calc_flashon (int ind)
 }
 
 static void
-draw_weapons (view_t *view)
+draw_weapons_sbar (view_t *view)
 {
 	int         flashon, i;
 
@@ -664,7 +602,25 @@ draw_weapons (view_t *view)
 }
 
 static void
-draw_ammo (view_t *view)
+draw_weapons_hud (view_t *view)
+{
+	int         flashon, i, x = 0;
+
+	if (view->parent->gravity == grav_southeast)
+		x = view->xlen - 24;
+
+	for (i = 0; i < 7; i++) {
+		if (cl.stats[STAT_ITEMS] & (IT_SHOTGUN << i)) {
+			flashon = calc_flashon (i);
+			draw_pic (view, x, i * 16, sb_weapons[flashon][i]);
+			if (flashon > 1)
+				sb_updates = 0;			// force update to remove flash
+		}
+	}
+}
+
+static void
+draw_ammo_sbar (view_t *view)
 {
 	char        num[6];
 	int         i;
@@ -685,6 +641,28 @@ draw_ammo (view_t *view)
 }
 
 static void
+draw_ammo_hud (view_t *view)
+{
+	char        num[6];
+	int         i;
+
+	// ammo counts
+	for (i = 0; i < 4; i++) {
+		snprintf (num, sizeof (num), "%3i", min (cl.stats[STAT_SHELLS + i],
+												 999));
+#define HUD_X(dist)		(dist + 4)
+		draw_subpic (view, 0, i * 11, sb_ibar, 3 + (i * 48), 0, 42, 11);
+		if (num[0] != ' ')
+			draw_character (view, HUD_X (3),  i * 11, 18 + num[0] - '0');
+		if (num[1] != ' ')
+			draw_character (view, HUD_X (11), i * 11, 18 + num[1] - '0');
+		if (num[2] != ' ')
+			draw_character (view, HUD_X (19), i * 11, 18 + num[2] - '0');
+#undef HUD_X
+	}
+}
+
+static void
 draw_items (view_t *view)
 {
 	float       time;
@@ -696,7 +674,7 @@ draw_items (view_t *view)
 			if (time && time > cl.time - 2 && flashon) {	// flash frame
 				sb_updates = 0;
 			} else
-				draw_pic (view, 192 + i * 16, 0, sb_items[i]);
+				draw_pic (view, i * 16, 0, sb_items[i]);
 			if (time && time > cl.time - 2)
 				sb_updates = 0;
 		}
@@ -721,11 +699,11 @@ draw_sigils (view_t *view)
 }
 
 static void
-draw_inventory (view_t *view)
+draw_inventory_sbar (view_t *view)
 {
 	if (cl.spectator && autocam == CAM_TRACK) {
-		if (frags_view)
-			view_draw (frags_view);
+		if (sbar_frags_view)
+			view_draw (sbar_frags_view);
 		return;
 	}
 	draw_pic (view, 0, 0, sb_ibar);
@@ -821,55 +799,12 @@ draw_face (view_t *view)
 	draw_pic (view, 112, 0, sb_faces[f][anim]);
 }
 
-/*
-static void
-Sbar_DrawNormal (void)
-{
-	if (cl_sbar->int_val || scr_viewsize->int_val < 100)
-		Sbar_DrawPic (0, 0, sb_sbar);
-
-	// armor
-	if (cl.stats[STAT_ITEMS] & IT_INVULNERABILITY) {
-		Sbar_DrawNum (24, 0, 666, 3, 1);
-	} else {
-		Sbar_DrawNum (24, 0, cl.stats[STAT_ARMOR], 3,
-					  cl.stats[STAT_ARMOR] <= 25);
-		if (cl.stats[STAT_ITEMS] & IT_ARMOR3)
-			Sbar_DrawPic (0, 0, sb_armor[2]);
-		else if (cl.stats[STAT_ITEMS] & IT_ARMOR2)
-			Sbar_DrawPic (0, 0, sb_armor[1]);
-		else if (cl.stats[STAT_ITEMS] & IT_ARMOR1)
-			Sbar_DrawPic (0, 0, sb_armor[0]);
-	}
-
-	// face
-	Sbar_DrawFace ();
-
-	// health
-	Sbar_DrawNum (136, 0, cl.stats[STAT_HEALTH], 3,
-				  cl.stats[STAT_HEALTH] <= 25);
-
-	// ammo icon
-	if (cl.stats[STAT_ITEMS] & IT_SHELLS)
-		Sbar_DrawPic (224, 0, sb_ammo[0]);
-	else if (cl.stats[STAT_ITEMS] & IT_NAILS)
-		Sbar_DrawPic (224, 0, sb_ammo[1]);
-	else if (cl.stats[STAT_ITEMS] & IT_ROCKETS)
-		Sbar_DrawPic (224, 0, sb_ammo[2]);
-	else if (cl.stats[STAT_ITEMS] & IT_CELLS)
-		Sbar_DrawPic (224, 0, sb_ammo[3]);
-
-	Sbar_DrawNum (248, 0, cl.stats[STAT_AMMO], 3, cl.stats[STAT_AMMO] <= 10);
-}
-*/
-
 static void
 draw_spectator (view_t *view)
 {
 	char        st[512];
 
 	if (autocam != CAM_TRACK) {
-		draw_pic (view, 0, 0, sb_scorebar);
 		draw_string (view, 160 - 7 * 8, 4, "SPECTATOR MODE");
 		draw_string (view, 160 - 14 * 8 + 4, 12,
 					 "Press [ATTACK] for AutoCamera");
@@ -882,10 +817,17 @@ draw_spectator (view_t *view)
 }
 
 static void
+draw_status_bar (view_t *view)
+{
+	if (cl.spectator && autocam != CAM_TRACK)
+		draw_pic (view, 0, 0, sb_scorebar);
+	else
+		draw_pic (view, 0, 0, sb_sbar);
+}
+
+static void
 draw_status (view_t *view)
 {
-	draw_pic (view, 0, 0, sb_sbar);
-
 	if (cl.spectator) {
 		draw_spectator (view);
 		if (autocam != CAM_TRACK)
@@ -1495,22 +1437,17 @@ draw_minifrags (view_t *view)
 	char        num[12];
 	player_info_t *s;
 
-	if (vid.width < 512 || !sb_lines)
-		return;							// not enuff room
-
 	scr_copyeverything = 1;
 	scr_fullupdate = 0;
 
 	// scores   
 	Sbar_SortFrags (false);
-	if (vid.width >= 640)
-		Sbar_SortTeams ();
 
 	if (!scoreboardlines)
 		return;							// no one there?
 
 	numlines = view->ylen / 8;
-	if (numlines / 8 < 3)
+	if (numlines < 3)
 		return;							// not enough room
 
 	// find us
@@ -1577,6 +1514,7 @@ draw_miniteam (view_t *view)
 
 	if (!cl.teamplay)
 		return;
+	Sbar_SortTeams ();
 /*
 	// draw separator
 	x += 208;
@@ -1626,15 +1564,17 @@ Sbar_FinaleOverlay (void)
 }
 
 static void
-init_views (void)
+init_sbar_views (void)
 {
 	view_t     *view;
+	view_t     *minifrags_view;
+	view_t     *miniteam_view;
 
 	if (vid.conwidth < 512) {
 		sbar_view = view_new (0, 0, 320, 48, grav_south);
 
-		frags_view = view_new (0, 0, 130, 8, grav_northeast);
-		frags_view->draw = draw_frags;
+		sbar_frags_view = view_new (0, 0, 130, 8, grav_northeast);
+		sbar_frags_view->draw = draw_frags;
 	} else if (vid.conwidth < 640) {
 		sbar_view = view_new (0, 0, 512, 48, grav_south);
 		minifrags_view = view_new (320, 0, 192, 48, grav_southwest);
@@ -1660,39 +1600,38 @@ init_views (void)
 		view_add (sbar_view, view);
 	}
 
-	if (vid.conheight > 300)
-		overlay_view = view_new (0, 0, 320, 300, grav_center);
-	else
-		overlay_view = view_new (0, 0, 320, vid.conheight, grav_center);
-	overlay_view->draw = draw_overlay;
-
-	inventory_view = view_new (0, 0, 320, 24, grav_northwest);
-	inventory_view->draw = draw_inventory;
+	sbar_inventory_view = view_new (0, 0, 320, 24, grav_northwest);
+	sbar_inventory_view->draw = draw_inventory_sbar;
 
 	view = view_new (0, 0, 32, 16, grav_southwest);
-	view->draw = draw_weapons;
-	view_add (inventory_view, view);
+	view->draw = draw_weapons_sbar;
+	view_add (sbar_inventory_view, view);
 
 	view = view_new (0, 0, 32, 8, grav_northwest);
-	view->draw = draw_ammo;
-	view_add (inventory_view, view);
+	view->draw = draw_ammo_sbar;
+	view_add (sbar_inventory_view, view);
 
-	view = view_new (0, 0, 96, 16, grav_southeast);
+	view = view_new (32, 0, 96, 16, grav_southeast);
 	view->draw = draw_items;
-	view_add (inventory_view, view);
+	view_add (sbar_inventory_view, view);
 
 	view = view_new (0, 0, 32, 16, grav_southeast);
 	view->draw = draw_sigils;
-	view_add (inventory_view, view);
+	view_add (sbar_inventory_view, view);
 
-	if (frags_view)
-		view_add (inventory_view, frags_view);
+	if (sbar_frags_view)
+		view_add (sbar_inventory_view, sbar_frags_view);
 
-	status_view = view_new (0, 0, 320, 24, grav_southwest);
-	status_view->draw = draw_status;
+	view_add (sbar_view, sbar_inventory_view);
 
-	view_add (sbar_view, inventory_view);
-	view_add (sbar_view, status_view);
+	view = view_new (0, 0, 320, 24, grav_southwest);
+	view->draw = draw_status_bar;
+	view_add (sbar_view, view);
+
+	view = view_new (0, 0, 320, 24, grav_southwest);
+	view->draw = draw_status;
+	view_add (sbar_view, view);
+
 	if (minifrags_view)
 		view_add (sbar_view, minifrags_view);
 	if (miniteam_view)
@@ -1712,10 +1651,99 @@ init_views (void)
 		view_add (sbar_view, view);
 	}
 
-	if (con_module) {
-		view_insert (con_module->data->console->view, overlay_view, 0);
-		view_insert (con_module->data->console->view, sbar_view, 0);
+	//if (con_module)
+	//	view_insert (con_module->data->console->view, sbar_view, 0);
+}
+
+static void
+init_hud_views (void)
+{
+	view_t     *view;
+	view_t     *minifrags_view;
+	view_t     *miniteam_view;
+
+	if (vid.conwidth < 512) {
+		hud_view = view_new (0, 0, 320, 48, grav_south);
+
+		hud_frags_view = view_new (0, 0, 130, 8, grav_northeast);
+		hud_frags_view->draw = draw_frags;
+	} else if (vid.conwidth < 640) {
+		hud_view = view_new (0, 0, 512, 48, grav_south);
+
+		minifrags_view = view_new (320, 0, 192, 48, grav_southwest);
+		minifrags_view->draw = draw_minifrags;
+		minifrags_view->resize_y = 1;
+	} else {
+		hud_view = view_new (0, 0, 640, 48, grav_south);
+
+		minifrags_view = view_new (320, 0, 192, 48, grav_southwest);
+		minifrags_view->draw = draw_minifrags;
+		minifrags_view->resize_y = 1;
+
+		miniteam_view = view_new (0, 0, 96, 48, grav_southeast);
+		miniteam_view->draw = draw_miniteam;
+		miniteam_view->resize_y = 1;
 	}
+	hud_view->resize_y = 1;
+
+	hud_armament_view = view_new (0, 48, 42, 156, grav_southeast);
+
+	view = view_new (0, 0, 42, 44, grav_northeast);
+	view->draw = draw_weapons_hud;
+	view_add (hud_armament_view, view);
+
+	view = view_new (0, 0, 42, 44, grav_southeast);
+	view->draw = draw_ammo_hud;
+	view_add (hud_armament_view, view);
+
+	hud_inventory_view = view_new (0, 0, 320, 24, grav_northwest);
+	view_add (hud_view, hud_inventory_view);
+
+	view = view_new (0, 0, 320, 24, grav_southwest);
+	view->draw = draw_status;
+	view_add (hud_view, view);
+
+	view = view_new (32, 0, 96, 16, grav_southeast);
+	view->draw = draw_items;
+	view_add (hud_inventory_view, view);
+
+	view = view_new (0, 0, 32, 16, grav_southeast);
+	view->draw = draw_sigils;
+	view_add (hud_inventory_view, view);
+
+	if (hud_frags_view)
+		view_add (hud_inventory_view, hud_frags_view);
+
+	if (minifrags_view)
+		view_add (hud_view, minifrags_view);
+	if (miniteam_view)
+		view_add (hud_view, miniteam_view);
+
+	view = view_new (0, 0, vid.conwidth, 48, grav_south);
+	view_add (view, hud_view);
+	hud_view = view;
+
+	view_add (hud_view, hud_armament_view);
+
+	if (con_module)
+		view_insert (con_module->data->console->view, hud_view, 0);
+}
+
+static void
+init_views (void)
+{
+	if (vid.conheight > 300)
+		overlay_view = view_new (0, 0, 320, 300, grav_center);
+	else
+		overlay_view = view_new (0, 0, 320, vid.conheight, grav_center);
+	overlay_view->draw = draw_overlay;
+	overlay_view->visible = 0;
+
+	if (con_module)
+		view_insert (con_module->data->console->view, overlay_view, 0);
+
+	init_sbar_views ();
+	init_hud_views ();
 }
 
 void
@@ -1826,4 +1854,6 @@ Sbar_Init (void)
 						"status bar mode");
 	cl_sbar_separator = Cvar_Get ("cl_sbar_separator", "0", CVAR_ARCHIVE, NULL,
 								  "turns on status bar separator");
+	cl_hudswap = Cvar_Get ("cl_hudswap", "0", CVAR_ARCHIVE, cl_hudswap_f,
+						   "new HUD on left side?");
 }
