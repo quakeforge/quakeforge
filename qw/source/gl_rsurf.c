@@ -44,7 +44,6 @@
 #include "QF/render.h"
 #include "QF/sys.h"
 
-#include "client.h"
 #include "glquake.h"
 #include "r_cvar.h"
 #include "r_local.h"
@@ -1140,7 +1139,7 @@ GL_CreateSurfaceLightmap (msurface_t *surf)
 	Builds the lightmap texture with all the surfaces from all brush models
 */
 void
-GL_BuildLightmaps (void)
+GL_BuildLightmaps (model_t **models, int num_models)
 {
 	int         i, j;
 	model_t    *m;
@@ -1173,8 +1172,8 @@ GL_BuildLightmaps (void)
 		break;
 	}
 
-	for (j = 1; j < MAX_MODELS; j++) {
-		m = cl.model_precache[j];
+	for (j = 1; j < num_models; j++) {
+		m = models[j];
 		if (!m)
 			break;
 		if (m->name[0] == '*')

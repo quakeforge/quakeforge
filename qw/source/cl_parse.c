@@ -297,7 +297,7 @@ Model_NextDownload (void)
 	// all done
 	cl.worldmodel = cl.model_precache[1];
 
-	R_NewMap (cl.worldmodel);
+	R_NewMap (cl.worldmodel, cl.model_precache, MAX_MODELS);
 	Team_NewMap ();
 	Hunk_Check ();						// make sure nothing is hurt
 

@@ -172,7 +172,7 @@ R_Init (void)
 
 
 void
-R_NewMap (model_t *worldmodel)
+R_NewMap (model_t *worldmodel, struct model_s **models, int num_models)
 {
 	int         i;
 	cvar_t     *r_skyname;
@@ -190,7 +190,7 @@ R_NewMap (model_t *worldmodel)
 	r_viewleaf = NULL;
 	R_ClearParticles ();
 
-	GL_BuildLightmaps ();
+	GL_BuildLightmaps (models, num_models);
 
 	// identify sky texture
 	skytexturenum = -1;

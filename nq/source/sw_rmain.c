@@ -182,7 +182,7 @@ R_Init (void)
 
 
 void
-R_NewMap (model_t *worldmodel)
+R_NewMap (model_t *worldmodel, struct model_s **models, int num_models)
 {
 	int         i;
 

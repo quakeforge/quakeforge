@@ -194,7 +194,8 @@ extern GLenum					gl_mtex_enum;
 
 void GL_DisableMultitexture (void);
 void GL_EnableMultitexture (void);
-void GL_BuildLightmaps (void);
+struct model_s;
+void GL_BuildLightmaps (struct model_s **models, int num_models);
 void GL_Upload8_EXT (byte *data, int width, int height,  qboolean mipmap, qboolean alpha) ;
 void GL_Set2D (void);
 void GL_CheckGamma (unsigned char *pal);

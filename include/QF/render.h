@@ -172,7 +172,7 @@ void R_ViewChanged (vrect_t *pvrect, int lineadj, float aspect);
 void R_AddEfrags (entity_t *ent);
 void R_RemoveEfrags (entity_t *ent);
 
-void R_NewMap (model_t *worldmodel);
+void R_NewMap (model_t *worldmodel, struct model_s **models, int num_models);
 
 
 // LordHavoc: relative bmodel lighting
