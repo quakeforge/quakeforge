@@ -43,18 +43,20 @@
 #include "QF/compat.h"
 #include "QF/console.h"
 #include "QF/locs.h"
-#include "QF/model.h"
+#include "QF/mathlib.h"
 #include "QF/qargs.h"
+#include "QF/skin.h"
+#include "QF/sound.h"
 #include "QF/sys.h"
+#include "QF/vid.h"
 
 #include "client.h"
 #include "chase.h"
 #include "game.h"
 #include "glquake.h"
 #include "r_cvar.h"
-#include "r_local.h"
 #include "r_dynamic.h"
-//#include "render.h"
+#include "r_local.h"
 #include "view.h"
 
 entity_t    r_worldentity;
@@ -63,10 +65,6 @@ qboolean    r_cache_thrash;				// compatability
 
 vec3_t      modelorg, r_entorigin;
 entity_t   *currententity;
-
-int         currenttexture = -1;		// to avoid unnecessary texture sets
-int         cnttextures[2] = { -1, -1 };	// cached
-
 
 int         r_visframecount;			// bumped when going to a new PVS
 int         r_framecount;				// used for dlight push checking
@@ -823,7 +821,7 @@ R_DrawEntitiesOnList (void)
 		if (cl_visedicts[i]->model->type != mod_brush)
 			continue;
 		currententity = cl_visedicts[i];
-		modelalpha = 1.0;
+		modelalpha = 1.0;//currententity->alpha;
 
 		R_DrawBrushModel (currententity);
 	}
@@ -832,7 +830,7 @@ R_DrawEntitiesOnList (void)
 		if (cl_visedicts[i]->model->type != mod_alias)
 			continue;
 		currententity = cl_visedicts[i];
-		modelalpha = 1.0;
+		modelalpha = 1.0;//currententity->alpha;
 
 		if (currententity == &cl_entities[cl.viewentity])
 			currententity->angles[PITCH] *= 0.3;
@@ -844,7 +842,7 @@ R_DrawEntitiesOnList (void)
 		if (cl_visedicts[i]->model->type != mod_sprite)
 			continue;
 		currententity = cl_visedicts[i];
-		modelalpha = 1.0;
+		modelalpha = 1.0;//currententity->alpha;
 
 		R_DrawSpriteModel (currententity);
 	}
@@ -861,7 +859,7 @@ R_DrawViewModel (void)
 		|| cl.stats[STAT_HEALTH] <= 0 || !currententity->model)
 		return;
 
-	modelalpha = 1.0;
+	modelalpha = 1.0;//currententity->alpha;
 
 	// hack the depth range to prevent view model from poking into walls
 	glDepthRange (gldepthmin, gldepthmin + 0.3 * (gldepthmax - gldepthmin));

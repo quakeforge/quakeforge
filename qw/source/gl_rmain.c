@@ -60,7 +60,7 @@
 #include "r_local.h"
 #include "view.h"
 
-entity_t	r_worldentity;
+entity_t    r_worldentity;
 
 vec3_t      modelorg, r_entorigin;
 entity_t   *currententity;
@@ -68,7 +68,7 @@ entity_t   *currententity;
 int         r_visframecount;			// bumped when going to a new PVS
 int         r_framecount;				// used for dlight push checking
 
-int 		c_brush_polys, c_alias_polys;
+int         c_brush_polys, c_alias_polys;
 
 qboolean    envmap;						// true during envmap command capture
 
