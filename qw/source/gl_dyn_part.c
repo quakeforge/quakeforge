@@ -495,22 +495,22 @@ R_RocketTrail (int type, entity_t *ent)
 		switch (type) {
 			case 0:					// rocket trail
 				pdie = cl.time + 60;
-				ptype = pt_smokering;
+//				ptype = pt_smokering; // Mercury's Rings
+				ptype = pt_smoke;
 				pscale = lhrandom (9, 12);
-				// Misty-chan: Temporary easter egg
-				pcolor = (rand () & 255);
-				// pcolor = (rand () & 3) + 12;
+//				pcolor = (rand () & 255); // Misty-chan's Easter Egg
+				pcolor = (rand () & 3) + 12;
 				palpha = 128 + (rand () & 31);
-				VectorVectors(vec, right, up);
+//				VectorVectors(vec, right, up); // Mercury's Rings
 				VectorCopy (ent->old_origin, porg);
-				ptex = part_tex_smoke_ring[rand () & 7];
+//				ptex = part_tex_smoke_ring[rand () & 7]; // Mercury's Rings
+				ptex = part_tex_smoke[rand () & 7];
 				break;
 			case 1:					// grenade trail
 				ptype = pt_smoke;
 				pscale = lhrandom (6, 9);
-				// Misty-chan: Temporary easter egg.
-				pcolor = (rand () & 255);
-				// pcolor = (rand () & 2);
+//				pcolor = (rand () & 255); // Misty-chan's Easter Egg
+				pcolor = (rand () & 2);
 				palpha = 128 + (rand () & 31);
 				VectorCopy (ent->old_origin, porg);
 				ptex = part_tex_smoke[rand () & 7];

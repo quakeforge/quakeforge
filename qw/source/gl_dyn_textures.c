@@ -126,8 +126,8 @@ GDT_InitSmokeParticleTexture (void)
 	byte        d, data[32][32][2], noise1[32][32], noise2[32][32];
 
 	for (i = 0; i < 8; i++) {
-		noise_diamondsquare (&noise1[0][0], 32);
-		noise_plasma (&noise2[0][0], 32);
+		noise_plasma (&noise1[0][0], 32);
+		noise_diamondsquare (&noise2[0][0], 32);
 		for (y = 0; y < 32; y++)
 		{
 			dy2 = y - 16;

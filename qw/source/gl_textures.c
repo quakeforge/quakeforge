@@ -91,41 +91,6 @@ static glformat_t formats[] = {
 	way to avoid ugly code for supporting a shortcut, partly for
 	consistency. --Despair
 */
-/*	EXT_paletted_textures
-	{"COLOR_INDEX1_EXT", COLOR_INDEX1_EXT}.
-	{"COLOR_INDEX2_EXT", COLOR_INDEX2_EXT},
-	{"COLOR_INDEX4_EXT", COLOR_INDEX4_EXT},
-	{"COLOR_INDEX8_EXT", COLOR_INDEX8_EXT},
-	{"COLOR_INDEX12_EXT", COLOR_INDEX12_EXT},
-	{"COLOR_INDEX16_EXT", COLOR_INDEX16_EXT},
-*/
-/*	EXT_cymyka
-	{"CMYK_EXT", CMYK_EXT},
-	{"CMYKA_EXT", CMYKA_EXT},
-*/
-/*	EXT_422_pixels
-	{"422_EXT", 422_EXT},
-	{"422_REV_EXT", 422_REV_EXT},
-	{"422_AVERAGE_EXT", 422_AVERAGE_EXT},
-	{"422_REV_AVERAGE_EXT", 422_REV_AVERAGE_EXT},
-*/
-/*	EXT_abgr
-	{"ABGR_EXT", ABGR_EXT},
-*/
-/*	EXT_bgra
-	{"BGR_EXT", BGR_EXT},
-	{"BGRA_EXT", BGRA_EXT},
-*/
-/* ARB_texture_compression
- * only applicable for CompressedTexImage and CompressedTexSubimage
- * which will complicate upload paths. *ponder*
-	{"COMPRESSED_ALPHA_ARB", COMPRESSED_ALPHA_ARB},
-	{"COMPRESSED_LUMINANCE_ARB", COMPRESSED_LUMINANCE_ARB},
-	{"COMPRESSED_LUMINANCE_ALPHA_ARB", COMPRESSED_LUMINANCE_ALPHA_ARB},
-	{"COMPRESSED_INTENSITY_ARB", COMPRESSED_INTENSITY_ARB},
-	{"COMPRESSED_RGB_ARB", COMPRESSED_RGB_ARB},
-	{"COMPRESSED_RGBA_ARB", COMPRESSED_RGBA_ARB},
-*/
 	{"1", 1},
 	{"2", 2},
 	{"3", 3},
@@ -167,7 +132,43 @@ static glformat_t formats[] = {
 	{"GL_RGBA8", GL_RGBA8},
 	{"GL_RGB10_A2", GL_RGB10_A2},
 	{"GL_RGBA12", GL_RGBA12},
-	{"GL_RGBA16", GL_RGBA16}
+	{"GL_RGBA16", GL_RGBA16},
+/*	EXT_paletted_textures
+	{"COLOR_INDEX1_EXT", COLOR_INDEX1_EXT}.
+	{"COLOR_INDEX2_EXT", COLOR_INDEX2_EXT},
+	{"COLOR_INDEX4_EXT", COLOR_INDEX4_EXT},
+	{"COLOR_INDEX8_EXT", COLOR_INDEX8_EXT},
+	{"COLOR_INDEX12_EXT", COLOR_INDEX12_EXT},
+	{"COLOR_INDEX16_EXT", COLOR_INDEX16_EXT},
+*/
+/*	EXT_cmyka
+	{"CMYK_EXT", CMYK_EXT},
+	{"CMYKA_EXT", CMYKA_EXT},
+*/
+/*	EXT_422_pixels
+	{"422_EXT", 422_EXT},
+	{"422_REV_EXT", 422_REV_EXT},
+	{"422_AVERAGE_EXT", 422_AVERAGE_EXT},
+	{"422_REV_AVERAGE_EXT", 422_REV_AVERAGE_EXT},
+*/
+/*	EXT_abgr
+	{"ABGR_EXT", ABGR_EXT},
+*/
+/*	EXT_bgra
+	{"BGR_EXT", BGR_EXT},
+	{"BGRA_EXT", BGRA_EXT},
+*/
+/* ARB_texture_compression
+ * only applicable for CompressedTexImage and CompressedTexSubimage
+ * which will complicate upload paths. *ponder*
+	{"COMPRESSED_ALPHA_ARB", COMPRESSED_ALPHA_ARB},
+	{"COMPRESSED_LUMINANCE_ARB", COMPRESSED_LUMINANCE_ARB},
+	{"COMPRESSED_LUMINANCE_ALPHA_ARB", COMPRESSED_LUMINANCE_ALPHA_ARB},
+	{"COMPRESSED_INTENSITY_ARB", COMPRESSED_INTENSITY_ARB},
+	{"COMPRESSED_RGB_ARB", COMPRESSED_RGB_ARB},
+	{"COMPRESSED_RGBA_ARB", COMPRESSED_RGBA_ARB},
+*/
+	{"NULL", 0}
 };
 
 int gl_alpha_format = 4, gl_lightmap_format = 4, gl_solid_format = 3;
@@ -224,16 +225,16 @@ GL_TextureDepth_f (int format)
 			Con_Printf ("%s\n", formats[i].name);
 			return GL_RGBA;
 		}
-		Con_Printf ("current texture format is unknown?\n");
+		Con_Printf ("Current texture format is unknown.\n");
 		return GL_RGBA;
 	}
 
-	for (i = 0; i < 42; i++) {
+	for (i = 0; formats[i].format != 0; i++) {
 		if (!strcasecmp (formats[i].name, Cmd_Argv (1)))
 			break;
 	}
 
-	if (i == 42) {
+	if (formats[i].format == 0) {
 		Con_Printf ("bad texture format name\n");
 		return GL_RGBA;
 	}
@@ -356,7 +357,7 @@ GL_Upload32 (unsigned int *data, int width, int height, qboolean mipmap,
 	     qboolean alpha)
 {
 	unsigned int *scaled;
-	int         scaled_width, scaled_height, samples;
+	int         scaled_width, scaled_height, intformat;
 
 	if (!width || !height)
 		return; // Null texture
@@ -374,7 +375,7 @@ GL_Upload32 (unsigned int *data, int width, int height, qboolean mipmap,
 	if (!(scaled = malloc (scaled_width * scaled_height * sizeof (GLuint))))
 		Sys_Error ("GL_LoadTexture: too big");
 
-	samples = alpha ? gl_alpha_format : gl_solid_format;
+	intformat = alpha ? gl_alpha_format : gl_solid_format;
 
 	// If the real width/height and the 'scaled' width/height then we
 	// rescale it.
@@ -386,7 +387,7 @@ GL_Upload32 (unsigned int *data, int width, int height, qboolean mipmap,
 				    scaled_height);
 	}
 
-	glTexImage2D (GL_TEXTURE_2D, 0, samples, scaled_width, scaled_height, 0,
+	glTexImage2D (GL_TEXTURE_2D, 0, intformat, scaled_width, scaled_height, 0,
 		      GL_RGBA, GL_UNSIGNED_BYTE, scaled);
 
 	if (mipmap) {
@@ -399,7 +400,7 @@ GL_Upload32 (unsigned int *data, int width, int height, qboolean mipmap,
 			scaled_width = max (scaled_width, 1);
 			scaled_height = max (scaled_height, 1);
 			miplevel++;
-			glTexImage2D (GL_TEXTURE_2D, miplevel, samples, scaled_width,
+			glTexImage2D (GL_TEXTURE_2D, miplevel, intformat, scaled_width,
 				      scaled_height, 0, GL_RGBA, GL_UNSIGNED_BYTE, scaled);
 		}
 	}
