@@ -4,7 +4,8 @@ NEWS for the QuakeForge project
 Changes from 0.5.2
 
     o General enhancements.
-        * MVD demo playback in the clients.
+        * MVD playback in the qw clients.
+        * MVD recording in the qw server.
 
 Changes from 0.3.0
 
