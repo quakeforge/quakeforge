@@ -269,6 +269,7 @@ PR_EnterFunction (progs_t * pr, dfunction_t *f)
 {
 	int         i, j, c, o;
 
+	printf("%s:\n", PR_GetString(pr,f->s_name));
 	pr->pr_stack[pr->pr_depth].s = pr->pr_xstatement;
 	pr->pr_stack[pr->pr_depth].f = pr->pr_xfunction;
 	pr->pr_depth++;
@@ -358,6 +359,7 @@ PR_ExecuteProgram (progs_t * pr, func_t fnum)
 	}
 
 	f = &pr->pr_functions[fnum];
+	printf("%s:\n", PR_GetString(pr,f->s_name));
 
 	pr->pr_trace = false;
 
@@ -376,7 +378,7 @@ PR_ExecuteProgram (progs_t * pr, func_t fnum)
 			PR_RunError (pr, "runaway loop error");
 		}
 
-		if (pr->pr_trace)
+		if (1||pr->pr_trace)
 			PR_PrintStatement (pr, st);
 
 		switch (st->op) {
