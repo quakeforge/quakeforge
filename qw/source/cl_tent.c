@@ -193,7 +193,8 @@ CL_AllocBeam (int ent)
 
 	// override any beam with the same entity
 	for (i = 0, b = cl_beams; i < MAX_BEAMS; i++, b++)
-		return b;
+		if (b->entity == ent)
+			return b;
 	// find a free beam
 	for (i = 0, b = cl_beams; i < MAX_BEAMS; i++, b++)
 		if (!b->model || b->endtime < cl.time)
