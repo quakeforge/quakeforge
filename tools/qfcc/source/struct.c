@@ -68,13 +68,15 @@ enums_get_key (void *e, void *unused)
 }
 
 struct_field_t *
-new_struct_field (type_t *strct, type_t *type, const char *name)
+new_struct_field (type_t *strct, type_t *type, const char *name,
+				  visibility_t visibility)
 {
 	struct_field_t *field;
 
 	if (!strct)
 		return 0;
 	field = malloc (sizeof (struct_field_t));
+	field->visibility = visibility;
 	field->name = name;
 	field->type = type;
 	field->offset = strct->num_parms;
@@ -102,10 +104,12 @@ new_struct (const char *name)
 	if (!structs) {
 		structs = Hash_NewTable (16381, structs_get_key, 0, 0);
 	}
-	strct = (struct_t *) Hash_Find (structs, name);
-	if (strct) {
-		error (0, "duplicate struct definition");
-		return 0;
+	if (name) {
+		strct = (struct_t *) Hash_Find (structs, name);
+		if (strct) {
+			error (0, "duplicate struct definition");
+			return 0;
+		}
 	}
 	strct = malloc (sizeof (struct_t));
 	strct->name = name;
@@ -128,6 +132,17 @@ find_struct (const char *name)
 	if (strct)
 		return strct->type;
 	return 0;
+}
+
+void
+copy_struct_fields (type_t *dst, type_t *src)
+{
+	struct_field_t *s;
+
+	if (!src)
+		return;
+	for (s = src->struct_head; s; s = s->next)
+		new_struct_field (dst, s->type, s->name, s->visibility);
 }
 
 void

@@ -39,6 +39,7 @@ static const char rcsid[] =
 
 #include "qfcc.h"
 #include "function.h"
+#include "class.h"
 #include "method.h"
 #include "struct.h"
 #include "type.h"
@@ -107,9 +108,17 @@ convert_name (expr_t *e)
 {
 	if (e->type == ex_name) {
 		const char *name = e->e.string_val;
-		def_t      *d = PR_GetDef (NULL, name, pr_scope, 0);
+		def_t      *d;
 		expr_t     *enm;
+		class_t    *class;
 
+		class = get_class (name, 0);
+		if (class) {
+			e->type = ex_def;
+			e->e.def = class_def (class);
+			return;
+		}
+		d = PR_GetDef (NULL, name, pr_scope, 0);
 		if (d) {
 			e->type = ex_def;
 			e->e.def = d;
@@ -198,7 +207,6 @@ error (expr_t *e, const char *fmt, ...)
 	pr_error_count++;
 
 	if (e) {
-		e = new_expr ();
 		e->type = ex_error;
 	}
 	return e;
@@ -1444,6 +1452,8 @@ function_expr (expr_t *e1, expr_t *e2)
 
 	if (e1->type == ex_error)
 		return e1;
+	for (e = e2; e; e = e->next)
+		convert_name (e);
 	for (e = e2; e; e = e->next) {
 		if (e->type == ex_error)
 			return e;

@@ -64,16 +64,10 @@ hashtab_t *merge_local_inits (hashtab_t *dl_1, hashtab_t *dl_2);
 void restore_local_inits (hashtab_t *def_list);
 void free_local_inits (hashtab_t *def_list);
 
-typedef struct {
-	type_t	*type;
-	def_t	*scope;
-} scope_t;
-
 %}
 
 %union {
 	int			op;
-	def_t		*scope;
 	def_t		*def;
 	struct hashtab_s	*def_list;
 	type_t		*type;
@@ -87,10 +81,10 @@ typedef struct {
 	struct switch_block_s	*switch_block;
 	struct param_s	*param;
 	struct method_s	*method;
-	struct class_s	*klass;
+	struct class_s	*class;
 	struct protocol_s *protocol;
-	struct category_s *category;
 	struct keywordarg_s *keywordarg;
+	struct methodlist_s *methodlist;
 }
 
 %right	<op> '=' ASX PAS /* pointer assign */
@@ -131,14 +125,17 @@ typedef struct {
 %type	<function> begin_function
 %type	<def_list> save_inits
 %type	<switch_block> switch_block
-%type	<scope>	param_scope
 
 %type	<string_val> selector reserved_word
 %type	<param>	optparmlist unaryselector keyworddecl keywordselector
 %type	<method> methodproto methoddecl
 %type	<expr>	obj_expr identifier_list obj_messageexpr obj_string receiver
+%type	<expr>	protocolrefs
 %type	<keywordarg> messageargs keywordarg keywordarglist selectorarg
 %type	<keywordarg> keywordnamelist keywordname
+%type	<class>	class_name new_class_name
+%type	<protocol> protocol_name
+%type	<methodlist> methodprotolist methodprotolist2
 
 %expect 2	// statement : if | if else, defs : defs def ';' | defs obj_def
 
@@ -150,12 +147,12 @@ function_t *current_func;
 param_t *current_params;
 expr_t	*current_init;
 class_t	*current_class;
-methodlist_t *current_methodlist;
 expr_t	*local_expr;
 expr_t	*break_label;
 expr_t	*continue_label;
 switch_block_t *switch_block;
 type_t	*struct_type;
+visibility_t current_visibility;
 
 def_t		*pr_scope;					// the function being parsed, or NULL
 string_t	s_file;						// filename for function definition
@@ -190,6 +187,16 @@ def
 struct_defs
 	: /* empty */
 	| struct_defs struct_def ';'
+	| DEFS '(' NAME ')'
+		{
+			class_t    *class = get_class ($3, 0);
+
+			if (class) {
+				copy_struct_fields (struct_type, class->ivars);
+			} else {
+				error (0, "undefined symbol `%s'", $3);
+			}
+		}
 	;
 
 struct_def
@@ -242,41 +249,17 @@ type_name
 	;
 
 function_decl
-	: '(' param_scope param_list
+	: '(' param_list ')' { $$ = reverse_params ($2); }
+	| '(' param_list ',' ELLIPSIS ')'
 		{
-			PR_FlushScope (pr_scope, 1);
-			pr_scope = $<scope>2;
-		}
-	  ')'
-		{
-			$$ = reverse_params ($3);
-		}
-	| '(' param_scope param_list ',' ELLIPSIS ')'
-		{
-			PR_FlushScope (pr_scope, 1);
-			pr_scope = $<scope>2;
-
 			$$ = new_param (0, 0, 0);
-			$$->next = $3;
+			$$->next = $2;
 			$$ = reverse_params ($$);
 		}
-	| '(' ELLIPSIS ')'
-		{
-			$$ = new_param (0, 0, 0);
-		}
+	| '(' ELLIPSIS ')' { $$ = new_param (0, 0, 0); }
 	| '(' ')'
 		{
 			$$ = 0;
-		}
-	;
-
-param_scope
-	: /* empty */
-		{
-			$$ = pr_scope;
-			pr_scope = PR_NewDef (0, 0, 0);
-			pr_scope->alloc = &pr_scope->locals;
-			*pr_scope->alloc = 0;
 		}
 	;
 
@@ -312,7 +295,7 @@ struct_def_list
 	;
 
 struct_def_item
-	: NAME { new_struct_field (struct_type, current_type, $1); }
+	: NAME { new_struct_field (struct_type, current_type, $1, vis_public); }
 	;
 
 def_list
@@ -887,132 +870,147 @@ identifier_list
 		}
 	;
 
-classdecl /* XXX */
+classdecl
 	: CLASS identifier_list
 		{
 			expr_t     *e;
 			for (e = $2->e.block.head; e; e = e->next)
-				new_class (e->e.string_val, 0);
+				get_class (e->e.string_val, 1);
 		}
 	;
 
-classdef /* XXX */
-	: INTERFACE NAME
-	  protocolrefs
+class_name
+	: NAME
 		{
-			$<klass>$ = new_class ($2, 0);
-			current_methodlist = &$<klass>$->methods;
-		}
-	  '{' ivar_decl_list '}'
-	  methodprotolist
-	  END
-	| INTERFACE NAME
-	  protocolrefs
-		{
-			$<klass>$ = new_class ($2, 0);
-			current_methodlist = &$<klass>$->methods;
-		}
-	  methodprotolist
-	  END
-	| INTERFACE NAME ':' NAME
-	  protocolrefs
-		{
-			class_t    *base = find_class ($4);
-			$<klass>$ = new_class ($2, base);
-			current_methodlist = &$<klass>$->methods;
-		}
-	  '{' ivar_decl_list '}'
-	  methodprotolist
-	  END
-	| INTERFACE NAME ':' NAME
-	  protocolrefs
-		{
-			class_t    *base = find_class ($4);
-			$<klass>$ = new_class ($2, base);
-			current_methodlist = &$<klass>$->methods;
-		}
-	  methodprotolist
-	  END
-	| INTERFACE NAME '(' NAME ')'
-		{
-			class_t    *klass = find_class ($4);
-			$<category>$ = new_category ($2, klass);
-			current_methodlist = &$<category>$->methods;
-		}
-	  protocolrefs
-	  methodprotolist
-	  END
-	| IMPLEMENTATION NAME
-		{
-			current_class = new_class ($2, 0);
-		}
-	  '{' ivar_decl_list '}'
-	| IMPLEMENTATION NAME
-		{
-			current_class = new_class ($2, 0);
-		}
-	| IMPLEMENTATION NAME ':' NAME
-		{
-			class_t    *base = find_class ($4);
-			current_class = new_class ($2, base);
-		}
-	  '{' ivar_decl_list '}'
-	| IMPLEMENTATION NAME ':' NAME
-		{
-			class_t    *base = find_class ($4);
-			current_class = new_class ($2, base);
-		}
-	| IMPLEMENTATION NAME '(' NAME ')'
-	;
-
-protocoldef /* XXX */
-	: PROTOCOL NAME 
-		{
-			$<protocol>$ = new_protocol ($2);
-			current_methodlist = &$<protocol>$->methods;
-		}
-	  protocolrefs
-	  methodprotolist END
-	;
-
-protocolrefs /* XXX */
-	: /* emtpy */
-	| LT identifier_list GT
-		{
-			expr_t     *e;
-			for (e = $2->e.block.head; e; e = e->next) {
-				//puts (e->e.string_val);
+			current_visibility = vis_private;
+			$$ = get_class ($1, 0);
+			if (!$$) {
+				error (0, "undefined symbol `%s'", $1);
+				$$ = get_class (0, 1);
 			}
 		}
 	;
 
-ivar_decl_list /* XXX */
+new_class_name
+	: NAME
+		{
+			$$ = get_class ($1, 1);
+			if ($$->defined) {
+				error (0, "redefinition of `%s'", $1);
+				$$ = get_class (0, 1);
+			}
+			current_class = $$;
+		}
+
+protocol_name
+	: NAME
+		{
+			$$ = get_protocol ($1, 1);
+			if ($$->methods) {
+				error (0, "redefinition of %s", $1);
+				$$ = get_protocol (0, 1);
+			}
+		}
+
+classdef /* XXX */
+	: INTERFACE new_class_name
+	  protocolrefs				{ class_add_protocol_methods ($2, $3); }
+	  '{'						{ $2->ivars = new_struct (0); }
+	  ivar_decl_list '}'
+	  methodprotolist			{ class_add_methods ($2, $9); }
+	  END
+	| INTERFACE new_class_name
+	  protocolrefs				{ class_add_protocol_methods ($2, $3); }
+	  methodprotolist			{ class_add_methods ($2, $5); }
+	  END
+	| INTERFACE new_class_name ':' class_name
+	  protocolrefs				{ class_add_protocol_methods ($2, $5); }
+	  '{'
+		{
+			$2->ivars = new_struct (0);
+			copy_struct_fields ($2->ivars, $4->ivars);
+		}
+	  ivar_decl_list '}'
+	  methodprotolist			{ class_add_methods ($2, $11); }
+	  END
+	| INTERFACE new_class_name ':' class_name
+	  protocolrefs				{ class_add_protocol_methods ($2, $5); }
+	  methodprotolist			{ class_add_methods ($2, $7); }
+	  END
+	| INTERFACE new_class_name '(' class_name ')'
+	  protocolrefs				{ class_add_protocol_methods ($2, $6); }
+	  methodprotolist			{ class_add_methods ($2, $8); }
+	  END
+	| IMPLEMENTATION class_name '{'
+		{
+			$2->ivars = new_struct (0);
+			current_class = $2;
+		}
+	  ivar_decl_list '}'
+	| IMPLEMENTATION class_name	{ current_class = $2; }
+	| IMPLEMENTATION class_name ':' class_name '{'
+		{
+			if ($4 != $2->base)
+				warning (0, "%s is not a super class of %s",
+						 $4->name, $2->name);
+			$2->ivars = new_struct (0);
+			copy_struct_fields ($2->ivars, $4->ivars);
+			current_class = $2;
+		}
+	  ivar_decl_list '}'
+	| IMPLEMENTATION class_name ':' class_name
+		{
+			if ($4 != $2->base)
+				warning (0, "%s is not a super class of %s",
+						 $4->name, $2->name);
+			current_class = $2;
+		}
+	| IMPLEMENTATION class_name '(' class_name ')' { current_class = $2; }
+	;
+
+protocoldef
+	: PROTOCOL protocol_name 
+	  protocolrefs				{ protocol_add_protocol_methods ($2, $3); }
+	  methodprotolist			{ protocol_add_methods ($2, $5); }
+	  END
+	;
+
+protocolrefs
+	: /* emtpy */				{ $$ = 0; }
+	| LT identifier_list GT		{ $$ = $2->e.block.head; }
+	;
+
+ivar_decl_list
 	: ivar_decl_list visibility_spec ivar_decls
 	| ivar_decls
 	;
 
-visibility_spec /* XXX */
-	: PRIVATE
-	| PROTECTED
-	| PUBLIC
+visibility_spec
+	: PRIVATE					{ current_visibility = vis_private; }
+	| PROTECTED					{ current_visibility = vis_protected; }
+	| PUBLIC					{ current_visibility = vis_public; }
 	;
 
-ivar_decls /* XXX */
+ivar_decls
 	: /* empty */
 	| ivar_decls ivar_decl ';'
 	;
 
-ivar_decl /* XXX */
-	: type ivars {}
+ivar_decl
+	: type ivars				{ current_type = $1 }
 	;
 
-ivars /* XXX */
+ivars
 	: ivar_declarator
 	| ivars ',' ivar_declarator
 	;
 
-ivar_declarator /* XXX */
-	: NAME {}
+ivar_declarator
+	: NAME
+		{
+			new_struct_field (current_class->ivars, current_type,
+							  $1, current_visibility);
+		}
 	;
 
 methoddef
@@ -1055,13 +1053,21 @@ methoddef
 	;
 
 methodprotolist
-	: /* emtpy */
+	: /* emtpy */				{ $$ = 0; }
 	| methodprotolist2
 	;
 
 methodprotolist2
-	: methodproto { add_method (current_methodlist, $1); }
-	| methodprotolist2 methodproto { add_method (current_methodlist, $2); }
+	: methodproto
+		{
+			$$ = new_methodlist ();
+			add_method ($$, $1);
+		}
+	| methodprotolist2 methodproto
+		{
+			add_method ($1, $2);
+			$$ = $1;
+		}
 	;
 
 methodproto
@@ -1089,12 +1095,9 @@ methoddecl
 	;
 
 optparmlist
-	: /* empty */
-		{ $$ = 0; }
-	| ',' ELLIPSIS
-		{ $$ = new_param (0, 0, 0); }
-	| ',' param_list
-		{ $$ = $2; }
+	: /* empty */				{ $$ = 0; }
+	| ',' ELLIPSIS				{ $$ = new_param (0, 0, 0); }
+	| ',' param_list			{ $$ = $2; }
 	| ',' param_list ',' ELLIPSIS
 		{
 			$$ = new_param (0, 0, 0);
@@ -1103,7 +1106,7 @@ optparmlist
 	;
 
 unaryselector
-	: selector { $$ = new_param ($1, 0, 0); }
+	: selector					{ $$ = new_param ($1, 0, 0); }
 	;
 
 keywordselector
@@ -1113,27 +1116,27 @@ keywordselector
 
 selector
 	: NAME
-	| TYPE		{ $$ = strdup (yytext); }
+	| TYPE						{ $$ = strdup (yytext); }
 	| reserved_word
 	;
 
 reserved_word
-	: LOCAL		{ $$ = strdup (yytext); }
-	| RETURN	{ $$ = strdup (yytext); }
-	| WHILE		{ $$ = strdup (yytext); }
-	| DO		{ $$ = strdup (yytext); }
-	| IF		{ $$ = strdup (yytext); }
-	| ELSE		{ $$ = strdup (yytext); }
-	| FOR		{ $$ = strdup (yytext); }
-	| BREAK		{ $$ = strdup (yytext); }
-	| CONTINUE	{ $$ = strdup (yytext); }
-	| SWITCH	{ $$ = strdup (yytext); }
-	| CASE		{ $$ = strdup (yytext); }
-	| DEFAULT	{ $$ = strdup (yytext); }
-	| NIL		{ $$ = strdup (yytext); }
-	| STRUCT	{ $$ = strdup (yytext); }
-	| ENUM		{ $$ = strdup (yytext); }
-	| TYPEDEF	{ $$ = strdup (yytext); }
+	: LOCAL						{ $$ = strdup (yytext); }
+	| RETURN					{ $$ = strdup (yytext); }
+	| WHILE						{ $$ = strdup (yytext); }
+	| DO						{ $$ = strdup (yytext); }
+	| IF						{ $$ = strdup (yytext); }
+	| ELSE						{ $$ = strdup (yytext); }
+	| FOR						{ $$ = strdup (yytext); }
+	| BREAK						{ $$ = strdup (yytext); }
+	| CONTINUE					{ $$ = strdup (yytext); }
+	| SWITCH					{ $$ = strdup (yytext); }
+	| CASE						{ $$ = strdup (yytext); }
+	| DEFAULT					{ $$ = strdup (yytext); }
+	| NIL						{ $$ = strdup (yytext); }
+	| STRUCT					{ $$ = strdup (yytext); }
+	| ENUM						{ $$ = strdup (yytext); }
+	| TYPEDEF					{ $$ = strdup (yytext); }
 	;
 
 keyworddecl

@@ -63,6 +63,7 @@ type_t      type_struct = { ev_struct };
 // these will be built up further
 type_t      type_id = { ev_pointer };
 type_t      type_Class = { ev_pointer };
+type_t      type_Protocol = { ev_pointer };
 type_t      type_SEL = { ev_pointer };
 type_t      type_IMP = { ev_func, NULL, &type_id, -3, { &type_id, &type_SEL }};
 type_t      type_method_list = { ev_pointer };
@@ -257,29 +258,32 @@ init_types (void)
 	chain_type (&type_IMP);
 
 	type = type_SEL.aux_type = new_struct ("SEL");
-	new_struct_field (type, &type_string, "sel_id");
-	new_struct_field (type, &type_string, "sel_types");
+	new_struct_field (type, &type_string, "sel_id", vis_public);
+	new_struct_field (type, &type_string, "sel_types", vis_public);
 	chain_type (&type_SEL);
 
 	type_method = new_struct ("obj_method");
-	new_struct_field (type_method, &type_SEL, "method_name");
-	new_struct_field (type_method, &type_string, "method_types");
-	new_struct_field (type_method, &type_IMP, "method_imp");
+	new_struct_field (type_method, &type_SEL, "method_name", vis_public);
+	new_struct_field (type_method, &type_string, "method_types", vis_public);
+	new_struct_field (type_method, &type_IMP, "method_imp", vis_public);
 	chain_type (type_method);
 
 	type = type_method_list.aux_type = new_struct ("obj_method_list");
-	new_struct_field (type, &type_method_list, "method_next");
-	new_struct_field (type, &type_integer, "method_count");
+	new_struct_field (type, &type_method_list, "method_next", vis_public);
+	new_struct_field (type, &type_integer, "method_count", vis_public);
 	new_struct_field (type, array_type (type_method, 1),
-					  "method_list");
+					  "method_list", vis_public);
 	chain_type (&type_method_list);
 
 	type = type_Class.aux_type = new_struct ("Class");
-	new_struct_field (type, &type_Class, "super_class");
-	new_struct_field (type, &type_Class, "methods");
+	new_struct_field (type, &type_Class, "super_class", vis_public);
+	new_struct_field (type, &type_Class, "methods", vis_public);
 	chain_type (&type_Class);
 
+	type = type_Protocol.aux_type = new_struct ("Protocol");
+	chain_type (&type_Protocol);
+
 	type = type_id.aux_type = new_struct ("id");
-	new_struct_field (type, &type_Class, "class_pointer");
+	new_struct_field (type, &type_Class, "class_pointer", vis_public);
 	chain_type (&type_id);
 }

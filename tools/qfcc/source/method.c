@@ -77,7 +77,7 @@ add_method (methodlist_t *methodlist, method_t *method)
 }
 
 def_t *
-method_def (class_t *klass, category_t *category, method_t *method)
+method_def (class_t *class, class_t *category, method_t *method)
 {
 	dstring_t  *str = dstring_newstr ();
 	dstring_t  *sel = dstring_newstr ();
@@ -87,7 +87,7 @@ method_def (class_t *klass, category_t *category, method_t *method)
 	selector_name (sel, (keywordarg_t *)method->selector);
 	dsprintf (str, "_%c_%s_%s_%s",
 			  method->instance ? 'i' : 'c',
-			  klass->name,
+			  class->name,
 			  category ? category->name : "",
 			  sel->str);
 	for (s = str->str; *s; s++)
@@ -99,6 +99,28 @@ method_def (class_t *klass, category_t *category, method_t *method)
 	dstring_delete (str);
 	dstring_delete (sel);
 	return def;
+}
+
+methodlist_t *
+new_methodlist (void)
+{
+	methodlist_t *l = malloc (sizeof (methodlist_t));
+	l->head = 0;
+	l->tail = &l->head;
+	return l;
+}
+
+void
+copy_methods (methodlist_t *dst, methodlist_t *src)
+{
+	method_t *s, *d;
+
+	for (s = src->head; s; s++) {
+		d = malloc (sizeof (method_t));
+		*d = *s;
+		d->next = 0;
+		add_method (dst, d);
+	}
 }
 
 keywordarg_t *

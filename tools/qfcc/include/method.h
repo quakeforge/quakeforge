@@ -43,7 +43,7 @@ typedef struct method_s {
 	def_t      *def;
 } method_t;
 
-typedef struct {
+typedef struct methodlist_s {
 	method_t   *head;
 	method_t  **tail;
 } methodlist_t;
@@ -57,14 +57,16 @@ typedef struct keywordarg_s {
 } keywordarg_t;
 
 struct class_s;
-struct category_s;
 struct expr_s;
 struct dstring_s;
 
 method_t *new_method (type_t *ret_type, param_t *selector, param_t *opt_parms);
 void add_method (methodlist_t *methodlist, method_t *method);
-def_t *method_def (struct class_s *klass, struct category_s *category,
+def_t *method_def (struct class_s *class, struct class_s *category,
 				   method_t *method);
+
+methodlist_t *new_methodlist (void);
+void copy_methods (methodlist_t *dst, methodlist_t *src);
 
 keywordarg_t *new_keywordarg (const char *selector, struct expr_s *expr);
 

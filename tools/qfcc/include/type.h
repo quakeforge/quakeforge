@@ -48,6 +48,7 @@ extern	type_t	type_short;
 extern	type_t	type_struct;
 extern	type_t	type_id;
 extern	type_t	type_Class;
+extern	type_t	type_Protocol;
 extern	type_t	type_SEL;
 extern	type_t	type_IMP;
 extern	type_t	type_method_list;

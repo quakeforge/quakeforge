@@ -32,18 +32,26 @@
 #ifndef __struct_h
 #define __struct_h
 
+typedef enum {
+	vis_private,
+	vis_protected,
+	vis_public,
+} visibility_t;
+
 typedef struct struct_field_s {
 	struct struct_field_s *next;
 	const char		*name;
 	struct type_s	*type;
 	int				offset;
+	visibility_t	visibility;
 } struct_field_t;
 
 struct_field_t *new_struct_field (struct type_s *strct, struct type_s *type,
-								  const char *name);
+								  const char *name, visibility_t visibility);
 struct_field_t *struct_find_field (struct type_s *strct, const char *name);
 struct type_s *new_struct (const char *name);
 struct type_s *find_struct (const char *name);
+void copy_struct_fields (struct type_s *dst, struct type_s *src);
 
 void process_enum (struct expr_s *enm);
 expr_t *get_enum (const char *name);

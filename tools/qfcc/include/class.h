@@ -32,29 +32,27 @@
 #ifndef __class_h
 #define __class_h
 
-#include "method.h"
-
 typedef struct class_s {
+	int         defined;
 	const char *name;
 	struct class_s *base;
-	methodlist_t methods;
+	struct methodlist_s *methods;
+	struct type_s *ivars;
 } class_t;
 
 typedef struct protocol_s {
 	const char *name;
-	methodlist_t methods;
+	struct methodlist_s *methods;
 } protocol_t;
 
-typedef struct category_s {
-	const char *name;
-	class_t    *klass;
-	methodlist_t methods;
-} category_t;
+class_t *get_class (const char *name, int create);
+void class_add_methods (class_t *class, struct methodlist_s *methods);
+void class_add_protocol_methods (class_t *class, expr_t *protocols);
+struct def_s *class_def (class_t *class);
 
-class_t *new_class (const char *name, class_t *base);
-protocol_t *new_protocol (const char *name);
-category_t *new_category (const char *name, class_t *klass);
-class_t *find_class (const char *name);
-protocol_t *find_protocol (const char *name);
+protocol_t *get_protocol (const char *name, int create);
+void protocol_add_methods (protocol_t *protocol, struct methodlist_s *methods);
+void protocol_add_protocol_methods (protocol_t *protocol, expr_t *protocols);
+struct def_s *protocol_def (protocol_t *protocol);
 
 #endif//__class_h
