@@ -1,4 +1,3 @@
-
 /*
 	r_part.c
 
@@ -117,16 +116,17 @@ R_MaxParticlesCheck (cvar_t *r_particles, cvar_t *r_particles_max)
 void
 R_DarkFieldParticles (entity_t *ent)
 {
-	int         i, j, k;
-	float       vel;
-	particle_t *p;
-	vec3_t      dir, org;
+	int				i, j, k;
+	unsigned int	rnd;
+	float			vel;
+	particle_t	   *p;
+	vec3_t	   		dir, org;
 
 	org[0] = ent->origin[0];
 	org[1] = ent->origin[1];
 	org[2] = ent->origin[2];
-	for (i = -16; i < 16; i += 8)
-		for (j = -16; j < 16; j += 8)
+	for (i = -16; i < 16; i += 8) {
+		for (j = -16; j < 16; j += 8) {
 			for (k = 0; k < 32; k += 8) {
 				if (!free_particles)
 					return;
@@ -135,7 +135,9 @@ R_DarkFieldParticles (entity_t *ent)
 				p->next = active_particles;
 				active_particles = p;
 
-				p->die = r_realtime + 0.2 + (rand () & 7) * 0.02;
+				rnd = rand ();
+
+				p->die = r_realtime + 0.2 + (rnd & 7) * 0.02;
 				p->color = 150 + rand () % 6;
 				p->type = pt_slowgrav;
 
@@ -143,30 +145,28 @@ R_DarkFieldParticles (entity_t *ent)
 				dir[1] = i * 8;
 				dir[2] = k * 8;
 
-				p->org[0] = org[0] + i + (rand () & 3);
-				p->org[1] = org[1] + j + (rand () & 3);
-				p->org[2] = org[2] + k + (rand () & 3);
+				p->org[0] = org[0] + i + ((rnd >> 3) & 3);
+				p->org[1] = org[1] + j + ((rnd >> 5) & 3);
+				p->org[2] = org[2] + k + ((rnd >> 7) & 3);
 
 				VectorNormalize (dir);
-				vel = 50 + (rand () & 63);
+				vel = 50 + ((rnd >> 9) & 63);
 				VectorScale (dir, vel, p->vel);
 			}
+		}
+	}
 }
 
-static float		beamlength = 16;
 static vec3_t		avelocities[NUMVERTEXNORMALS];
-
 
 void
 R_EntityParticles (entity_t *ent)
 {
-	int         count, i;
-	float       angle, dist, sp, sy, cp, cy; // cr, sr
+	int			i;
+	float		angle, sp, sy, cp, cy; // cr, sr
+	float		beamlength = 16.0, dist = 64.0;
 	particle_t *p;
 	vec3_t      forward;
-
-	dist = 64;
-	count = 50;
 
 	if (!avelocities[0][0]) {
 		for (i = 0; i < NUMVERTEXNORMALS * 3; i++)
@@ -175,11 +175,11 @@ R_EntityParticles (entity_t *ent)
 
 	for (i = 0; i < NUMVERTEXNORMALS; i++) {
 		angle = r_realtime * avelocities[i][0];
-		sy = sin (angle);
 		cy = cos (angle);
+		sy = sin (angle);
 		angle = r_realtime * avelocities[i][1];
-		sp = sin (angle);
 		cp = cos (angle);
+		sp = sin (angle);
 // Next 3 lines results aren't currently used, may be in future. --Despair
 //		angle = r_realtime * avelocities[i][2];
 //		sr = sin (angle);
