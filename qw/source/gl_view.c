@@ -110,6 +110,9 @@ V_CalcBlend (void)
 }
 
 
+extern void V_CalcGlowCshift (void);
+extern void V_CalcItemCshift (void);
+
 void
 V_CalcPowerupCshift (void)
 {
@@ -118,39 +121,12 @@ V_CalcPowerupCshift (void)
 			INFO_CSHIFT_POWERUP))
 		return;
 
-	if ((gl_dlight_polyblend->int_val ||
-		 !(gl_dlight_lightmap->int_val && gl_dlight_polyblend->int_val)) &&
-		(cl.stats[STAT_ITEMS] & IT_INVULNERABILITY ||
-		 cl.stats[STAT_ITEMS] & IT_QUAD)) {
-		if (cl.stats[STAT_ITEMS] & IT_INVULNERABILITY &&
-			cl.stats[STAT_ITEMS] & IT_QUAD) {
-			cl.cshifts[CSHIFT_POWERUP].destcolor[0] = 255;
-			cl.cshifts[CSHIFT_POWERUP].destcolor[1] = 0;
-			cl.cshifts[CSHIFT_POWERUP].destcolor[2] = 255;
-			cl.cshifts[CSHIFT_POWERUP].percent = 30;
-		} else if (cl.stats[STAT_ITEMS] & IT_QUAD) {
-			cl.cshifts[CSHIFT_POWERUP].destcolor[0] = 0;
-			cl.cshifts[CSHIFT_POWERUP].destcolor[1] = 0;
-			cl.cshifts[CSHIFT_POWERUP].destcolor[2] = 255;
-			cl.cshifts[CSHIFT_POWERUP].percent = 30;
-		} else if (cl.stats[STAT_ITEMS] & IT_INVULNERABILITY) {
-			cl.cshifts[CSHIFT_POWERUP].destcolor[0] = 255;
-			cl.cshifts[CSHIFT_POWERUP].destcolor[1] = 255;
-			cl.cshifts[CSHIFT_POWERUP].destcolor[2] = 0;
-			cl.cshifts[CSHIFT_POWERUP].percent = 30;
-		}
-	} else if (cl.stats[STAT_ITEMS] & IT_SUIT) {
-		cl.cshifts[CSHIFT_POWERUP].destcolor[0] = 0;
-		cl.cshifts[CSHIFT_POWERUP].destcolor[1] = 255;
-		cl.cshifts[CSHIFT_POWERUP].destcolor[2] = 0;
-		cl.cshifts[CSHIFT_POWERUP].percent = 20;
-	} else if (cl.stats[STAT_ITEMS] & IT_INVISIBILITY) {
-		cl.cshifts[CSHIFT_POWERUP].destcolor[0] = 100;
-		cl.cshifts[CSHIFT_POWERUP].destcolor[1] = 100;
-		cl.cshifts[CSHIFT_POWERUP].destcolor[2] = 100;
-		cl.cshifts[CSHIFT_POWERUP].percent = 100;
-	} else
-		cl.cshifts[CSHIFT_POWERUP].percent = 0;
+	if (gl_dlight_polyblend->int_val ||
+		!(gl_dlight_lightmap->int_val && gl_dlight_polyblend->int_val)) {
+		V_CalcGlowCshift ();
+	} else {
+		V_CalcItemCshift ();
+	}
 }
 
 
