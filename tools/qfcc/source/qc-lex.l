@@ -1,13 +1,13 @@
 %{
 /*
-	#FILENAME#
+	qc-lex.l
 
-	#DESCRIPTION#
+	lexer for quakec
 
-	Copyright (C) 2001 #AUTHOR#
+	Copyright (C) 2001 Bill Currie <bill@taniwha.org>
 
-	Author: #AUTHOR#
-	Date: #DATE#
+	Author: Bill Currie <bill@taniwha.org>
+	Date: 2001/06/12
 
 	This program is free software; you can redistribute it and/or
 	modify it under the terms of the GNU General Public License
