@@ -483,7 +483,7 @@ Sys_CheckInput (int idle, int net_socket)
 	if (do_stdin)
 		FD_SET (0, &fdset);
 	FD_SET (net_socket, &fdset);
-printf ("%d\n", do_stdin);
+
 	if (!idle || !sys_dead_sleep->int_val)
 		timeout = &_timeout;
 
