@@ -1074,7 +1074,7 @@ CL_SetStat (int stat, int value)
 			else if (value & IT_ARMOR3)
 				arm = "red";
 			else
-				arm = "blue";
+				arm = "none";
 			GIB_Var_Set_Global ("player.armor.type", arm);
 			GIB_Var_Set_Global ("player.weapon.1", value & IT_AXE ? "1" : "0");
 			for (j = 0; j < 7; j++)
