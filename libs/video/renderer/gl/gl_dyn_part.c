@@ -287,9 +287,10 @@ R_RunSparkEffect_QF (const vec3_t org, int count, int ofuzz)
 
 		while (count--) {
 			int		color = rand () & 7;
-			particle_new_random (pt_fallfadespark, part_tex_dot, org,
-								 orgfuzz, 0.7, 96, r_realtime + 5.0,
-								 ramp1[color], 1.0, color);
+
+			particle_new_random (pt_fallfadespark, part_tex_dot, org, orgfuzz,
+								 0.7, 96, r_realtime + 5.0, ramp1[color], 1.0,
+								 color);
 		}
 	}
 }
@@ -344,7 +345,7 @@ R_RunParticleEffect_QF (const vec3_t org, const vec3_t dir, int color,
 						int count)
 {
 	float       scale;
-	int         i, j;
+	int         i;
 	vec3_t      porg;
 
 	if (numparticles >= r_maxparticles)
@@ -356,13 +357,15 @@ R_RunParticleEffect_QF (const vec3_t org, const vec3_t dir, int color,
 		count = r_maxparticles - numparticles;
 
 	for (i = 0; i < count; i++) {
-		for (j = 0; j < 3; j++) {
-			porg[j] = org[j] + scale * ((rand () & 15) - 7.5);
-		}
+		int 	rnd = rand ();
+
+		porg[0] = org[0] + scale * (((rnd >> 3) & 15) - 7.5);
+		porg[1] = org[1] + scale * (((rnd >> 7) & 15) - 7.5);
+		porg[2] = org[2] + scale * (((rnd >> 11) & 15) - 7.5);
 		// Note that ParseParticleEffect handles (dir * 15)
 		particle_new (pt_grav, part_tex_dot, porg, 1.5, dir,
-					  r_realtime + 0.1 * (rand () % 5),
-					  (color & ~7) + (rand () & 7), 1.0, 0.0);
+					  r_realtime + 0.1 * (i % 5),
+					  (color & ~7) + (rnd & 7), 1.0, 0.0);
 	}
 }
 
@@ -439,7 +442,7 @@ R_LavaSplash_QF (const vec3_t org)
 
 			VectorNormalize (dir);
 			rnd = rand ();
-			vel = 50 + (rnd & 63);
+			vel = 50.0 + 0.5 * (float) (rnd & 127);
 			VectorScale (dir, vel, pvel);
 			particle_new (pt_grav, part_tex_dot, porg, 3, pvel,
 						  r_realtime + 2.0 + ((rnd >> 7) & 31) * 0.02,
@@ -899,20 +902,19 @@ R_ParticleExplosion_ID (const vec3_t org)
 {
 	unsigned int	i;
 	unsigned int	j = 1024;
-	ptype_t			ptype;
 
 	if (numparticles >= r_maxparticles)
 		return;
 	else if (numparticles + j >= r_maxparticles)
 		j = r_maxparticles - numparticles;
 
-	for (i = 0; i < j; i++) {
-		if (i & 1)
-			ptype = pt_explode;
-		else
-			ptype = pt_explode2;
-		particle_new_random (ptype, part_tex_dot, org, 16, 1.0, 256,
-							 r_realtime + 5.0, ramp1[0], 1.0, rand () & 3);
+	for (i = 0; i < j >> 1; i++) {
+		particle_new_random (pt_explode, part_tex_dot, org, 16, 1.0, 256,
+							 r_realtime + 5.0, ramp1[0], 1.0, i & 3);
+	}
+	for (i = 0; i < j / 2; i++) {
+		particle_new_random (pt_explode2, part_tex_dot, org, 16, 1.0, 256,
+                             r_realtime + 5.0, ramp1[0], 1.0, i & 3);
 	}
 }
 
@@ -930,12 +932,12 @@ R_BlobExplosion_ID (const vec3_t org)
 	for (i = 0; i < j >> 1; i++) {
 		particle_new_random (pt_blob, part_tex_dot, org, 12, 1.0, 256,
 							 r_realtime + 1.0 + (rand () & 8) * 0.05,
-							 66 + rand () % 6, 1.0, 0.0);
+							 66 + i % 6, 1.0, 0.0);
 	}
 	for (i = 0; i < j / 2; i++) {
 		particle_new_random (pt_blob2, part_tex_dot, org, 12, 1.0, 256,
 							 r_realtime + 1.0 + (rand () & 8) * 0.05,
-							 150 + rand () % 6, 1.0, 0.0);
+							 150 + i % 6, 1.0, 0.0);
 	}
 }
 
@@ -969,7 +971,7 @@ R_RunParticleEffect_ID (const vec3_t org, const vec3_t dir, int color,
 
 		// Note that ParseParticleEffect handles (dir * 15)
 		particle_new (pt_grav, part_tex_dot, porg, 1.0, dir,
-					  r_realtime + 0.1 * (rand () % 5),
+					  r_realtime + 0.1 * (i % 5),
 					  (color & ~7) + (rnd & 7), 1.0, 0.0);
 	}
 }
