@@ -31,16 +31,15 @@
 
 
 #include "QF/qtypes.h"
-#include "QF/dstring.h"
 
 typedef struct cmd_buffer_s {
-	dstring_t *buffer; // Actual text
+	struct dstring_s *buffer; // Actual text
 	qboolean wait; // Execution stopped until next frame
 	qboolean legacy; // Backwards compatible with old command buffer style
 	unsigned int argc, maxargc; // Number of args, number of args allocated
-	dstring_t **argv; // Array of arguments
-	dstring_t *realline; // Actual command being processed
-	dstring_t *line; // Tokenized and reassembled command
+	struct dstring_s **argv; // Array of arguments
+	struct dstring_s *realline; // Actual command being processed
+	struct dstring_s *line; // Tokenized and reassembled command
 	int *args; // Array of positions of each token in above string
 	int *argspace; // Amount of space before each token
 	struct cmd_buffer_s *prev, *next; // Next buffer in the stack

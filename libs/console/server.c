@@ -58,6 +58,7 @@ static const char rcsid[] =
 #include "QF/cmd.h"
 #include "QF/console.h"
 #include "QF/cvar.h"
+#include "QF/dstring.h"
 #include "QF/keys.h"
 #include "QF/plugin.h"
 #include "QF/qtypes.h"
