@@ -10,7 +10,7 @@ But you may use not the same prefixes.
 Use these prefixes where it makes sense:
 CB_  Input callback
 MENU_ Menu making function
-DRAW_ Draw callback
+DRAW_ Draw 
 
 
 Comment functions like this:

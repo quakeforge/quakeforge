@@ -480,7 +480,7 @@ void () main_menu =
 	default:
 		break;
 	}
-	options_menu ();
+	MENU_options ();
 	help_menu ();
 	Menu_Item (54, 112, "", quit_f, 0);
 	Menu_End ();

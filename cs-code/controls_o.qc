@@ -25,6 +25,7 @@ string [NUM_BINDED_KEYS] key_bindings =
 	"messagemode",
 	"screenshot",
 #define NUM_MISC_KEYS NUM_BASIC_KEYS + 4
+	"impulse 0",
 	"impulse 1",
 	"impulse 2",
 	"impulse 3",
@@ -68,6 +69,8 @@ void () load_keybindings =
 		}
 	}
 };
+
+//**** BINDINGS OPTIONS
 
 integer (string text, integer key) control_bind_f =
 {
