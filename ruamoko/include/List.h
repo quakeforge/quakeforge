@@ -22,7 +22,9 @@ struct list_bucket_t = {
 - (id) tail;
 - (void) addItemAtHead: (id) item;
 - (void) addItemAtTail: (id) item;
-- (void) removeItem: (id) item;
+- (id) removeItem: (id) item;
+- (id) removeItemAtHead;
+- (id) removeItemAtTail;
 - (integer) count;
 -(void)makeObjectsPerformSelector:(SEL)selector;
 -(void)makeObjectsPerformSelector:(SEL)selector withObject:(id)arg;

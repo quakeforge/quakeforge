@@ -68,7 +68,7 @@
 	tail = &e.next;
 }
 
-- (void) removeItem: (id) item
+- (id) removeItem: (id) item
 {
 	local list_bucket_t [] e;
 
@@ -77,9 +77,43 @@
 			e.prev[0] = e.next;
 			if (e.next)
 				e.next.prev = e.prev;
-			return;
+			obj_free (e);
+			return item;
 		}
 	}
+	return NIL;
+}
+
+- (id) removeItemAtHead
+{
+	local list_bucket_t [] e;
+	local id obj;
+
+	if (!count)
+		return NIL;
+	e = head;
+	obj = e.obj;
+	e.prev[0] = e.next;
+	if (e.next)
+		e.next.prev = e.prev;
+	obj_free (e);
+	return obj;
+}
+
+- (id) removeItemAtTail
+{
+	local list_bucket_t [] e;
+	local id obj;
+
+	if (!count)
+		return NIL;
+	e = (list_bucket_t []) tail;
+	obj = e.obj;
+	e.prev[0] = e.next;
+	if (e.next)
+		e.next.prev = e.prev;
+	obj_free (e);
+	return obj;
 }
 
 - (integer) count
