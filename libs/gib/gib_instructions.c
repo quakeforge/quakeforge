@@ -168,12 +168,12 @@ GIB_ListFetch_f (void)
 
 	if (!(var = GIB_Var_FindLocal (GIB_Argv (1))))
 		return GIB_E_NOVAR;
-	for (i = 0; isspace (var->value[i]); i++);
+	for (i = 0; isspace ((byte)var->value[i]); i++);
 	for (n = 1; n < atoi (GIB_Argv (2)); n++) {
 		if ((m = GIB_Get_Arg (var->value + i)) < 1)
 			return GIB_E_ULIMIT;
 		i += m;
-		for (; isspace (var->value[i]); i++);
+		for (; isspace ((byte)var->value[i]); i++);
 	}
 	if ((m = GIB_Get_Arg (var->value + i)) < 1)
 		return GIB_E_ULIMIT;
@@ -205,7 +205,7 @@ GIB_ExpandVars (const char *source, char *buffer, int buffersize)
 	for (i = 0, n = 0; i <= strlen (source); i++) {
 		if (source[i] == '$') {
 			m = 0;
-			while (isalnum (source[++i]))
+			while (isalnum ((byte)source[++i]))
 				varname[m++] = source[i];
 
 			varname[m++] = 0;
