@@ -204,7 +204,7 @@ opt_initializer
 			if (pr_scope) {
 				def_t *imm = PR_ReuseConstant ($2, 0);
 				opcode_t *op = PR_Opcode_Find ("=", 5, imm, imm, current_def);
-				emit_statement (op, imm, current_def, 0);
+				emit_statement (pr_source_line, op, imm, current_def, 0);
 			} else {
 				current_def = PR_ReuseConstant ($2,  current_def);
 			}
@@ -242,20 +242,24 @@ opt_initializer
 	  	{
 			current_def = $<def>5;
 		}
-	  ']' begin_function statement_block end_function
+	  ']'
 		{
-			expr_t *e = new_expr ();
-			build_function ($9);
+			$<expr>$ = new_expr ();
+		}
+	  begin_function statement_block end_function
+		{
+			expr_t *e = $<expr>9;
+			build_function ($10);
 			e->type = ex_expr;
 			e->e.expr.op = 's';
 			e->e.expr.e1 = $3;
 			e->e.expr.e2 = new_expr ();
 			e->e.expr.e2->type = ex_def;
 			e->e.expr.e2->e.def = $6;
-			e->next = $10;
+			e->next = $11;
 
-			emit_function ($9, e);
-			finish_function ($9);
+			emit_function ($10, e);
+			finish_function ($10);
 		}
 	;
 
@@ -265,6 +269,15 @@ begin_function
 			$$ = current_func = new_function ();
 			$$->def = current_def;
 			$$->code = numstatements;
+			if (options.debug) {
+				pr_lineno_t *lineno = new_lineno ();
+				$$->aux = new_auxfunction ();
+				$$->aux->source_line = pr_source_line;
+				$$->aux->line_info = lineno - linenos;
+				$$->aux->local_defs = num_locals;
+
+				lineno->fa.func = $$->aux - auxfunctions;
+			}
 			pr_scope = current_def;
 			build_scope ($$, current_def);
 		}
@@ -559,6 +572,21 @@ finish_function (function_t *f)
 	df->parm_start = 0;
 	for (i = 0; i < df->numparms; i++)
 		df->parm_size[i] = type_size[f->def->type->parm_types[i]->type];
+
+	if (f->aux) {
+		def_t *def;
+		f->aux->function = df - functions;
+		for (def = f->def->scope_next; def; def = def->scope_next) {
+			if (def->name) {
+				ddef_t *d = new_local ();
+				d->type = def->type->type;
+				d->ofs = def->ofs;
+				d->s_name = ReuseString (def->name);
+
+				f->aux->num_locals++;
+			}
+		}
+	}
 }
 
 void
@@ -566,6 +594,8 @@ emit_function (function_t *f, expr_t *e)
 {
 	//PR_PrintType (f->def->type);
 	//printf (" %s =\n", f->def->name);
+
+	lineno_base = f->aux->source_line;
 
 	pr_scope = f->def;
 	while (e) {
@@ -575,7 +605,7 @@ emit_function (function_t *f, expr_t *e)
 		emit_expr (e);
 		e = e->next;
 	}
-	emit_statement (op_done, 0, 0, 0);
+	emit_statement (pr_source_line, op_done, 0, 0, 0);
 	PR_FlushScope (pr_scope);
 	pr_scope = 0;
 	PR_ResetTempDefs ();

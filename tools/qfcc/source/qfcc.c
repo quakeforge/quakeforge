@@ -41,6 +41,7 @@ options_t   options;
 
 char        sourcedir[1024];
 char        destfile[1024];
+char        debugfile[1024];
 
 float       pr_globals[MAX_REGS];
 int         numpr_globals;
@@ -57,7 +58,7 @@ int         numfunctions;
 
 ddef_t      globals[MAX_GLOBALS];
 int         numglobaldefs;
-int			num_locals;
+int			num_localdefs;
 
 ddef_t      fields[MAX_FIELDS];
 int         numfielddefs;
@@ -232,6 +233,7 @@ WriteData (int crc)
 	def_t		*def;
 	ddef_t		*dd;
 	dprograms_t progs;
+	pr_debug_header_t debug;
 	FILE		*h;
 	int 		i;
 
@@ -272,7 +274,7 @@ WriteData (int crc)
 		printf ("%6i statements\n", numstatements);
 		printf ("%6i functions\n", numfunctions);
 		printf ("%6i globaldefs\n", numglobaldefs);
-		printf ("%6i locals size\n", num_locals);
+		printf ("%6i locals size\n", num_localdefs);
 		printf ("%6i fielddefs\n", numfielddefs);
 		printf ("%6i pr_globals\n", numpr_globals);
 	}
@@ -346,8 +348,55 @@ WriteData (int crc)
 
 	fseek (h, 0, SEEK_SET);
 	SafeWrite (h, &progs, sizeof (progs));
-	fclose (h);
 
+	fseek (h, 0, SEEK_SET);
+	if (!options.debug) {
+		fclose (h);
+		return;
+	}
+
+	debug.version = LittleLong (PROG_DEBUG_VERSION);
+	CRC_Init (&debug.crc);
+	while ((i = fgetc (h)) != EOF)
+		CRC_ProcessByte (&debug.crc, i);
+	fclose (h);
+	debug.crc = LittleShort (debug.crc);
+	debug.you_tell_me_and_we_will_both_know = 0;
+	
+	h = SafeOpenWrite (debugfile);
+	SafeWrite (h, &debug, sizeof (debug));
+
+	debug.auxfunctions = LittleLong (ftell (h));
+	debug.num_auxfunctions = LittleLong (num_auxfunctions);
+	for (i = 0; i < num_auxfunctions; i++) {
+		auxfunctions[i].function = LittleLong (auxfunctions[i].function);
+		auxfunctions[i].source_line = LittleLong (auxfunctions[i].source_line);
+		auxfunctions[i].line_info = LittleLong (auxfunctions[i].line_info);
+		auxfunctions[i].local_defs = LittleLong (auxfunctions[i].local_defs);
+		auxfunctions[i].num_locals = LittleLong (auxfunctions[i].num_locals);
+	}
+	SafeWrite (h, auxfunctions, num_auxfunctions * sizeof (auxfunctions[0]));
+
+	debug.linenos = LittleLong (ftell (h));
+	debug.num_linenos = LittleLong (num_linenos);
+	for (i = 0; i < num_linenos; i++) {
+		linenos[i].fa.addr = LittleLong (linenos[i].fa.addr);
+		linenos[i].line = LittleLong (linenos[i].line);
+	}
+	SafeWrite (h, linenos, num_linenos * sizeof (linenos[0]));
+
+	debug.locals = LittleLong (ftell (h));
+	debug.num_locals = LittleLong (num_locals);
+	for (i = 0; i < num_locals; i++) {
+		locals[i].type = LittleShort (locals[i].type);
+		locals[i].ofs = LittleShort (locals[i].ofs);
+		locals[i].s_name = LittleLong (locals[i].s_name);
+	}
+	SafeWrite (h, locals, num_locals * sizeof (locals[0]));
+
+	fseek (h, 0, SEEK_SET);
+	SafeWrite (h, &debug, sizeof (debug));
+	fclose (h);
 }
 
 
@@ -642,6 +691,7 @@ PR_FinishCompilation (void)
 	qboolean	errors = false;
 	function_t	*f;
 	def_t		*def;
+	expr_t       e;
 
 	// check to make sure all functions prototyped have code
 	for (d = pr.def_head.def_next; d; d = d->def_next) {
@@ -658,6 +708,13 @@ PR_FinishCompilation (void)
 	if (errors)
 		return !errors;
 
+	if (options.debug) {
+		e.type = ex_string;
+		e.e.string_val = debugfile;
+		PR_ReuseConstant (&e, PR_GetDef (&type_string, ".debug_file", 0,
+										 &numpr_globals));
+	}
+
 	for (def = pr.def_head.def_next; def; def = def->def_next) {
 		if (def->scope)
 			continue;
@@ -667,15 +724,15 @@ PR_FinishCompilation (void)
 	for (f = pr_functions; f; f = f->next) {
 		if (f->builtin)
 			continue;
-		if (f->def->num_locals > num_locals)
-			num_locals = f->def->num_locals;
+		if (f->def->num_locals > num_localdefs)
+			num_localdefs = f->def->num_locals;
 		f->dfunc->parm_start = numpr_globals;
 		for (def = f->def->scope_next; def; def = def->scope_next) {
 			def->ofs += numpr_globals;
 			PR_RelocateRefs (def);
 		}
 	}
-	numpr_globals += num_locals;
+	numpr_globals += num_localdefs;
 
 	return !errors;
 }
@@ -893,6 +950,10 @@ Options: \n\
 		options.version = PROG_ID_VERSION;
 	}
 
+	if (CheckParm ("--debug")) {
+		options.debug = 1;
+	}
+
 	// FIXME eww, really must go to getopt
 	if (CheckParm ("--warn=error")) {
 		options.warn_error = 1;
@@ -913,8 +974,26 @@ Options: \n\
 		Error ("No destination filename.  qfcc --help for info.\n");
 
 	strcpy (destfile, com_token);
-	if (!options.quiet)
+	if (!options.quiet) {
 		printf ("outputfile: %s\n", destfile);
+	}
+	if (options.debug) {
+		char *s;
+		strcpy (debugfile, com_token);
+
+		s = debugfile + strlen (debugfile);
+		while (s-- > debugfile) {
+			if (*s == '.')
+				break;
+			if (*s == '/' || *s == '\\') {
+				s = debugfile + strlen (debugfile);
+				break;
+			}
+		}
+		strcpy (s, ".sym");
+		if (!options.quiet)
+			printf ("debug file: %s\n", debugfile);
+	}
 
 	pr_dumpasm = false;
 

@@ -346,6 +346,7 @@ struct function_s
 {
 	struct function_s	*next;
 	dfunction_t			*dfunc;
+	pr_auxfunction_t	*aux;		// debug info;
 	int					builtin;	// if non 0, call an internal function
 	int					code;		// first statement
 	const char			*file;		// source file with definition
@@ -536,6 +537,19 @@ extern	char		precache_files[MAX_FILES][MAX_DATA_PATH];
 extern	int			precache_files_block[MAX_SOUNDS];
 extern	int			numfiles;
 
+extern	int         num_auxfunctions;
+extern	pr_auxfunction_t *auxfunctions;
+
+extern	int         num_linenos;
+extern	pr_lineno_t *linenos;
+
+extern	int         num_locals;
+extern	ddef_t      *locals;
+
+pr_auxfunction_t *new_auxfunction (void);
+pr_lineno_t *new_lineno (void);
+ddef_t *new_local (void);
+
 int	CopyString (const char *str);
 int	ReuseString (const char *str);
 
@@ -544,6 +558,7 @@ typedef struct {
 	int		version;	// maximum progs version to support (eg, 6 for id)
 	int		warn_error;	// treat warnings as errors
 	int		quiet;		// not so much chatter
+	int		debug;		// produce debug info
 } options_t;
 
 extern options_t options;
