@@ -74,7 +74,6 @@ glpoly_t	*lightmap_modified[MAX_GLTEXTURES];
 glpoly_t    *lightmap_polys[MAX_LIGHTMAPS];
 glRect_t	 lightmap_rectchange[MAX_LIGHTMAPS];
 
-void (*R_AddDynamicLights) (msurface_t *surf);
 void (*R_BuildLightMap) (msurface_t *surf);
 
 
@@ -276,7 +275,7 @@ R_BuildLightMap_1 (msurface_t *surf)
 	}
 	// add all the dynamic lights
 	if (surf->dlightframe == r_framecount)
-		R_AddDynamicLights (surf);
+		R_AddDynamicLights_1 (surf);
 
   store:
 	// bound and shift
@@ -333,7 +332,7 @@ R_BuildLightMap_3 (msurface_t *surf)
 	}
 	// add all the dynamic lights
 	if (surf->dlightframe == r_framecount)
-		R_AddDynamicLights (surf);
+		R_AddDynamicLights_3 (surf);
 
   store:
 	// bound and shift
@@ -394,7 +393,7 @@ R_BuildLightMap_4 (msurface_t *surf)
 	}
 	// add all the dynamic lights
 	if (surf->dlightframe == r_framecount)
-		R_AddDynamicLights (surf);
+		R_AddDynamicLights_3 (surf);
 
   store:
 	// bound and shift
@@ -567,14 +566,12 @@ GL_BuildLightmaps (model_t **models, int num_models)
 		gl_internalformat = 1;
 		gl_lightmap_format = GL_LUMINANCE;
 		lightmap_bytes = 1;
-		R_AddDynamicLights = R_AddDynamicLights_1;
 		R_BuildLightMap = R_BuildLightMap_1;
 		break;
 	case 3:
 		gl_internalformat = 3;
 		gl_lightmap_format = GL_RGB;
 		lightmap_bytes = 3;
-		R_AddDynamicLights = R_AddDynamicLights_3;
 		R_BuildLightMap = R_BuildLightMap_3;
 		break;
 	case 4:
@@ -582,7 +579,6 @@ GL_BuildLightmaps (model_t **models, int num_models)
 		gl_internalformat = 3;
 		gl_lightmap_format = GL_RGBA;
 		lightmap_bytes = 4;
-		R_AddDynamicLights = R_AddDynamicLights_3;
 		R_BuildLightMap = R_BuildLightMap_4;
 		break;
 	}
