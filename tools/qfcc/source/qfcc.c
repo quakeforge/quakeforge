@@ -41,6 +41,9 @@
 #ifdef HAVE_UNISTD_H
 # include <unistd.h>
 #endif
+#ifdef HAVE_PROCESS_H
+# include <process.h>
+#endif
 
 #include <stdio.h>
 
@@ -136,7 +139,7 @@ WriteFiles (void)
 	int 	i;
 	char	filename[1024];
 
-	sprintf (filename, "%s%cfiles.dat", sourcedir, PATH_SEPARATOR);
+	snprintf (filename, sizeof (filename), "%s%cfiles.dat", sourcedir, PATH_SEPARATOR);
 	f = fopen (filename, "w");
 	if (!f)
 		Error ("Couldn't open %s", filename);
@@ -899,7 +902,7 @@ main (int argc, char **argv)
 
 	InitData ();
 
-	sprintf (filename, "%s/progs.src", sourcedir);
+	snprintf (filename, sizeof (filename), "%s/progs.src", sourcedir);
 	LoadFile (filename, (void *) &src);
 
 	if (!(src = Parse (src)))
@@ -932,11 +935,13 @@ main (int argc, char **argv)
 	// compile all the files
 	while ((src = Parse (src))) {
 #ifdef USE_CPP
+# ifndef _WIN32
 		pid_t	pid;
+		int 	tempfd;
+# endif
 		char	*temp1;
 		char	*temp2 = strrchr (argv[0], PATH_SEPARATOR);
 		char	tempname[1024];
-		int 	tempfd;
 #endif
 		int		error;
 
@@ -947,7 +952,7 @@ main (int argc, char **argv)
 		//extern int yydebug;
 		//yydebug = 1;
 
-		sprintf (filename, "%s%c%s", sourcedir, PATH_SEPARATOR, com_token);
+		snprintf (filename, sizeof (filename), "%s%c%s", sourcedir, PATH_SEPARATOR, com_token);
 		if (options.verbosity >= 2)
 			printf ("compiling %s\n", filename);
 
@@ -963,13 +968,29 @@ main (int argc, char **argv)
 
 			snprintf (tempname, sizeof (tempname), "%s%c%sXXXXXX", temp1,
 					  PATH_SEPARATOR, temp2 ? temp2 + 1 : argv[0]);
-			tempfd = mkstemp (tempname);
 
+# ifdef _WIN32
+
+			mktemp (tempname);
+			yyin = fopen (tempname, "wt");
+			fclose (yyin);
+
+			{
+				int status = spawnvp (_P_WAIT, "cpp", cpp_argv);
+
+				if (status) {
+					fprintf (stderr, "cpp returned error code %d", status);
+					exit (1);
+				}
+			}
+
+			yyin = fopen (tempname, "rt");
+# else
+			tempfd = mkstemp (tempname);
 			if ((pid = fork ()) == -1) {
 				perror ("fork");
 				return 1;
 			}
-
 			if (!pid) { // we're a child, check for abuse
 				cpp_argv[cpp_argc++] = "-o";
 				cpp_argv[cpp_argc++] = tempname;
@@ -1004,8 +1025,8 @@ main (int argc, char **argv)
 					exit (1);
 				}
 			}
-				
 			yyin = fdopen (tempfd, "r+t");
+# endif
 		} else {
 			yyin = fopen (filename, "rt");
 		}

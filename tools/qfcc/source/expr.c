@@ -301,7 +301,7 @@ new_label_name (void)
 	char       *lname = malloc (len);
 	if (!lname)
 		Sys_Error ("new_label_expr: Memory Allocation Failure\n");
-	sprintf (lname, "$%s_%d", fname, lnum);
+	snprintf (lname, len, "$%s_%d", fname, lnum);
 	return lname;
 }
 

@@ -48,7 +48,7 @@ float_imm_get_key (void *_def, void *unused)
 {
 	def_t       *def = (def_t*)_def;
 	static char rep[20];
-	sprintf (rep, "\001float:%08X\001", G_INT(def->ofs));
+	snprintf (rep, sizeof (rep), "\001float:%08X\001", G_INT(def->ofs));
 	return rep;
 }
 
@@ -57,7 +57,7 @@ vector_imm_get_key (void *_def, void *unused)
 {
 	def_t       *def = (def_t*)_def;
 	static char rep[60];
-	sprintf (rep, "\001vector:%08X\001%08X\001%08X\001",
+	snprintf (rep, sizeof (rep), "\001vector:%08X\001%08X\001%08X\001",
 			 G_INT(def->ofs), G_INT(def->ofs+1), G_INT(def->ofs+2));
 	return rep;
 }
@@ -67,7 +67,8 @@ quaternion_imm_get_key (void *_def, void *unused)
 {
 	def_t       *def = (def_t*)_def;
 	static char rep[60];
-	sprintf (rep, "\001quaternion:%08X\001%08X\001%08X\001%08X\001",
+	snprintf (rep, sizeof (rep),
+			 "\001quaternion:%08X\001%08X\001%08X\001%08X\001",
 			 G_INT(def->ofs), G_INT(def->ofs+1),
 			 G_INT(def->ofs+2), G_INT(def->ofs+3));
 	return rep;
@@ -79,7 +80,7 @@ int_imm_get_key (void *_def, void *_str)
 	def_t      *def = (def_t*)_def;
 	static char rep[60];
 	char       *str = (char*)_str;
-	sprintf (rep, "\001%s:%08X\001", str, G_INT(def->ofs));
+	snprintf (rep, sizeof (rep), "\001%s:%08X\001", str, G_INT(def->ofs));
 	return rep;
 }
 
@@ -112,29 +113,29 @@ PR_ReuseConstant (expr_t *expr, def_t *def)
 	}
 	switch (e.type) {
 		case ex_entity:
-			sprintf (rep, "\001entity:%08X\001", e.e.integer_val);
+			snprintf (rep, sizeof (rep), "\001entity:%08X\001", e.e.integer_val);
 			tab = entity_imm_defs;
 			type = &type_entity;
 			break;
 		case ex_field:
-			sprintf (rep, "\001field:%08X\001", e.e.integer_val);
+			snprintf (rep, sizeof (rep), "\001field:%08X\001", e.e.integer_val);
 			tab = field_imm_defs;
 			type = &type_field;
 			break;
 		case ex_func:
-			sprintf (rep, "\001func:%08X\001", e.e.integer_val);
+			snprintf (rep, sizeof (rep), "\001func:%08X\001", e.e.integer_val);
 			tab = func_imm_defs;
 			type = &type_function;
 			break;
 		case ex_pointer:
-			sprintf (rep, "\001pointer:%08X\001", e.e.integer_val);
+			snprintf (rep, sizeof (rep), "\001pointer:%08X\001", e.e.integer_val);
 			tab = pointer_imm_defs;
 			type = &type_pointer;
 			break;
 		case ex_integer:
 		case ex_uinteger:
 			if (!def || def->type != &type_float) {
-				sprintf (rep, "\001integer:%08X\001", e.e.integer_val);
+				snprintf (rep, sizeof (rep), "\001integer:%08X\001", e.e.integer_val);
 				tab = integer_imm_defs;
 				if (e.type == ex_uinteger)
 					type = &type_uinteger;
@@ -147,7 +148,7 @@ PR_ReuseConstant (expr_t *expr, def_t *def)
 			else
 				e.e.float_val = e.e.integer_val;
 		case ex_float:
-			sprintf (rep, "\001float:%08X\001", e.e.integer_val);
+			snprintf (rep, sizeof (rep), "\001float:%08X\001", e.e.integer_val);
 			tab = float_imm_defs;
 			type = &type_float;
 			break;
@@ -157,7 +158,7 @@ PR_ReuseConstant (expr_t *expr, def_t *def)
 			type = &type_string;
 			break;
 		case ex_vector:
-			sprintf (rep, "\001vector:%08X\001%08X\001%08X\001",
+			snprintf (rep, sizeof (rep), "\001vector:%08X\001%08X\001%08X\001",
 					 *(int*)&e.e.vector_val[0],
 					 *(int*)&e.e.vector_val[1],
 					 *(int*)&e.e.vector_val[2]);
@@ -165,7 +166,7 @@ PR_ReuseConstant (expr_t *expr, def_t *def)
 			type = &type_vector;
 			break;
 		case ex_quaternion:
-			sprintf (rep, "\001quaternion:%08X\001%08X\001%08X\001%08X\001",
+			snprintf (rep, sizeof (rep), "\001quaternion:%08X\001%08X\001%08X\001%08X\001",
 					 *(int*)&e.e.quaternion_val[0],
 					 *(int*)&e.e.quaternion_val[1],
 					 *(int*)&e.e.quaternion_val[2],

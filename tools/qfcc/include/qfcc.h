@@ -17,6 +17,9 @@
     See file, 'COPYING', for details.
 */
 
+#ifdef HAVE_CONFIG_H
+# include "config.h"
+#endif
 
 #include "cmdlib.h"
 #include <stdio.h>
@@ -24,6 +27,16 @@
 
 #include "QF/pr_comp.h"
 #include "QF/pr_debug.h"
+
+/* These may be underscored... */
+#if defined(HAVE__SNPRINTF)
+# undef snprintf
+# define snprintf _snprintf
+#endif
+#if defined(HAVE__VSNPRINTF)
+# undef vsnprintf
+# define vsnprintf _vsnprintf
+#endif
 
 /*
 	TODO:

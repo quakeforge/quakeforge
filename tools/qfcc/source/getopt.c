@@ -200,7 +200,8 @@ static char *posixly_correct;
 
 # if HAVE_STRING_H
 #  include <string.h>
-# else
+# endif
+# if HAVE_STRINGS_H
 #  include <strings.h>
 # endif
 
