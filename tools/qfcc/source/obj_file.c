@@ -135,13 +135,19 @@ flags (def_t *d)
 }
 
 static void
+write_one_reloc (reloc_t *r, qfo_reloc_t **reloc, int def)
+{
+	(*reloc)->ofs  = LittleLong (r->ofs);
+	(*reloc)->type = LittleLong (r->type);
+	(*reloc)->def  = LittleLong (def);
+	(*reloc)++;
+}
+
+static void
 write_relocs (reloc_t *r, qfo_reloc_t **reloc, int def)
 {
 	while (r) {
-		(*reloc)->ofs  = LittleLong (r->ofs);
-		(*reloc)->type = LittleLong (r->type);
-		(*reloc)->def  = LittleLong (def);
-		(*reloc)++;
+		write_one_reloc (r, reloc, def);
 		r = r->next;
 	}
 }
@@ -170,6 +176,7 @@ setup_data (void)
 	qfo_func_t *func = funcs;
 	function_t *f;
 	qfo_reloc_t *reloc = relocs;
+	reloc_t    *r;
 	dstatement_t *st;
 	pr_type_t  *var;
 	pr_lineno_t *line;
@@ -204,7 +211,11 @@ setup_data (void)
 			for (d = f->scope->head; d; d = d->def_next)
 				write_def (d, def++, &reloc);
 	}
-	write_relocs (pr.relocs, &reloc, G_INT (reloc->ofs));
+	for (r = pr.relocs; r; r = r->next)
+		if (r->type == rel_def_op)
+			write_one_reloc (r, &reloc, G_INT (r->ofs));
+		else
+			write_one_reloc (r, &reloc, 0);
 	for (st = pr.code->code; st - pr.code->code < pr.code->size; st++) {
 		st->op = LittleLong (st->op);
 		st->a  = LittleLong (st->a);
