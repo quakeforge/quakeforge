@@ -47,12 +47,6 @@ sv_globals_t sv_globals;
 sv_funcs_t sv_funcs;
 sv_fields_t sv_fields;
 
-int eval_alpha;
-int eval_scale;
-int eval_glowsize;
-int eval_glowcolor;
-int eval_colormod;
-
 progs_t	    sv_pr_state;
 cvar_t     *r_skyname;
 cvar_t     *sv_progs;
@@ -63,35 +57,6 @@ func_t	SpectatorDisconnect;
 func_t	SpectatorThink;
 
 static int reserved_edicts = MAX_CLIENTS;
-
-void
-FindEdictFieldOffsets (progs_t *pr)
-{
-	dfunction_t *f;
-
-	if (pr == &sv_pr_state) {
-		// Zoid, find the spectator functions
-		SpectatorConnect = SpectatorThink = SpectatorDisconnect = 0;
-
-		if ((f = ED_FindFunction (&sv_pr_state, "SpectatorConnect")) != NULL)
-			SpectatorConnect = (func_t) (f - sv_pr_state.pr_functions);
-		if ((f = ED_FindFunction (&sv_pr_state, "SpectatorThink")) != NULL)
-			SpectatorThink = (func_t) (f - sv_pr_state.pr_functions);
-		if ((f = ED_FindFunction (&sv_pr_state, "SpectatorDisconnect")) != NULL)
-			SpectatorDisconnect = (func_t) (f - sv_pr_state.pr_functions);
-
-		// 2000-01-02 EndFrame function by Maddes/FrikaC
-		EndFrame = 0;
-		if ((f = ED_FindFunction (&sv_pr_state, "EndFrame")) != NULL)
-			EndFrame = (func_t) (f - sv_pr_state.pr_functions);
-
-		eval_alpha = FindFieldOffset (&sv_pr_state, "alpha");
-		eval_scale = FindFieldOffset (&sv_pr_state, "scale");
-		eval_glowsize = FindFieldOffset (&sv_pr_state, "glow_size");
-		eval_glowcolor = FindFieldOffset (&sv_pr_state, "glow_color");
-		eval_colormod = FindFieldOffset (&sv_pr_state, "colormod");
-	}
-}
 
 int
 ED_Prune_Edict (progs_t *pr, edict_t *ent)
@@ -155,6 +120,8 @@ ED_Parse_Extra_Fields (progs_t *pr, char *key, char *value)
 void
 SV_LoadProgs (void)
 {
+	dfunction_t *f;
+
 	PR_LoadProgs (&sv_pr_state, sv_progs->string);
 	if (!sv_pr_state.progs)
 		SV_Error ("SV_LoadProgs: couldn't load %s", sv_progs->string);
@@ -300,6 +267,27 @@ SV_LoadProgs (void)
 	sv_fields.owner = ED_FindField (&sv_pr_state, "owner")->ofs;
 	sv_fields.message = ED_FindField (&sv_pr_state, "message")->ofs;
 	sv_fields.sounds = ED_FindField (&sv_pr_state, "sounds")->ofs;
+
+	// Zoid, find the spectator functions
+	SpectatorConnect = SpectatorThink = SpectatorDisconnect = 0;
+
+	if ((f = ED_FindFunction (&sv_pr_state, "SpectatorConnect")) != NULL)
+		SpectatorConnect = (func_t) (f - sv_pr_state.pr_functions);
+	if ((f = ED_FindFunction (&sv_pr_state, "SpectatorThink")) != NULL)
+		SpectatorThink = (func_t) (f - sv_pr_state.pr_functions);
+	if ((f = ED_FindFunction (&sv_pr_state, "SpectatorDisconnect")) != NULL)
+		SpectatorDisconnect = (func_t) (f - sv_pr_state.pr_functions);
+
+	// 2000-01-02 EndFrame function by Maddes/FrikaC
+	EndFrame = 0;
+	if ((f = ED_FindFunction (&sv_pr_state, "EndFrame")) != NULL)
+		EndFrame = (func_t) (f - sv_pr_state.pr_functions);
+
+	sv_fields.alpha = ED_GetFieldIndex (&sv_pr_state, "alpha");
+	sv_fields.scale = ED_GetFieldIndex (&sv_pr_state, "scale");
+	sv_fields.glowsize = ED_GetFieldIndex (&sv_pr_state, "glow_size");
+	sv_fields.glowcolor = ED_GetFieldIndex (&sv_pr_state, "glow_color");
+	sv_fields.colormod = ED_GetFieldIndex (&sv_pr_state, "colormod");
 }
 
 void

@@ -82,6 +82,8 @@ static gefv_cache gefvCache[GEFV_CACHESIZE] = { {NULL, ""}, {NULL, ""} };
 void
 ED_ClearEdict (progs_t * pr, edict_t *e)
 {
+	if (NUM_FOR_EDICT(pr,e)<*pr->reserved_edicts)
+		printf("clearing reserved edict %d\n", NUM_FOR_EDICT(pr,e));
 	memset (&e->v, 0, pr->progs->entityfields * 4);
 	e->free = false;
 }
@@ -196,6 +198,16 @@ ED_FindField (progs_t * pr, char *name)
 	return NULL;
 }
 
+int
+ED_GetFieldIndex (progs_t *pr, char *name)
+{
+	ddef_t     *def;
+
+	def = ED_FindField (pr, name);
+	if (def)
+		return def->ofs;
+	return -1;
+}
 
 /*
 	PR_FindGlobal
@@ -212,6 +224,17 @@ PR_FindGlobal (progs_t * pr, const char *name)
 			return def;
 	}
 	return NULL;
+}
+
+eval_t *
+PR_GetGlobalPointer (progs_t *pr, const char *name)
+{
+	ddef_t     *def;
+
+	def = PR_FindGlobal (pr, name);
+	if (def)
+		return (eval_t*)&pr->pr_globals[def->ofs];
+	return 0;
 }
 
 
@@ -267,7 +290,7 @@ GetEdictFieldValue (progs_t * pr, edict_t *ed, char *field)
 	Returns a string describing *data in a type specific manner
 */
 char       *
-PR_ValueString (progs_t * pr, etype_t type, eval_t *val)
+PR_ValueString (progs_t * pr, etype_t type, pr_type_t *val)
 {
 	static char line[256];
 	ddef_t     *def;
@@ -278,19 +301,19 @@ PR_ValueString (progs_t * pr, etype_t type, eval_t *val)
 	switch (type) {
 		case ev_string:
 			snprintf (line, sizeof (line), "%s",
-					  PR_GetString (pr, val->string));
+					  PR_GetString (pr, val->string_var));
 			break;
 		case ev_entity:
 			snprintf (line, sizeof (line), "entity %i",
-					  NUM_FOR_EDICT (pr, PROG_TO_EDICT (pr, val->edict)));
+					  NUM_FOR_EDICT (pr, PROG_TO_EDICT (pr, val->entity_var)));
 			break;
 		case ev_func:
-			f = pr->pr_functions + val->function;
+			f = pr->pr_functions + val->func_var;
 			snprintf (line, sizeof (line), "%s()",
 					  PR_GetString (pr, f->s_name));
 			break;
 		case ev_field:
-			def = ED_FieldAtOfs (pr, val->_int);
+			def = ED_FieldAtOfs (pr, val->int_var);
 			snprintf (line, sizeof (line), ".%s",
 					  PR_GetString (pr, def->s_name));
 			break;
@@ -298,11 +321,11 @@ PR_ValueString (progs_t * pr, etype_t type, eval_t *val)
 			strcpy (line, "void");
 			break;
 		case ev_float:
-			snprintf (line, sizeof (line), "%5.1f", val->_float);
+			snprintf (line, sizeof (line), "%5.1f", val->float_var);
 			break;
 		case ev_vector:
 			snprintf (line, sizeof (line), "'%5.1f %5.1f %5.1f'",
-					  val->vector[0], val->vector[1], val->vector[2]);
+					  val->vector_var[0], val->vector_var[1], val->vector_var[2]);
 			break;
 		case ev_pointer:
 			strcpy (line, "pointer");
@@ -432,7 +455,7 @@ ED_Print (progs_t * pr, edict_t *ed)
 {
 	int         l;
 	ddef_t     *d;
-	int        *v;
+	pr_type_t  *v;
 	int         i, j;
 	char       *name;
 	int         type;
@@ -449,13 +472,13 @@ ED_Print (progs_t * pr, edict_t *ed)
 		if (name[strlen (name) - 2] == '_')
 			continue;					// skip _x, _y, _z vars
 
-		v = (int *) ((char *) &ed->v + d->ofs * 4);
+		v = ed->v + d->ofs;
 
 		// if the value is still all 0, skip the field
 		type = d->type & ~DEF_SAVEGLOBAL;
 
 		for (j = 0; j < type_size[type]; j++)
-			if (v[j])
+			if (((char*)v)[j])
 				break;
 		if (j == type_size[type])
 			continue;
@@ -465,7 +488,7 @@ ED_Print (progs_t * pr, edict_t *ed)
 		while (l++ < 15)
 			Con_Printf (" ");
 
-		Con_Printf ("%s\n", PR_ValueString (pr, d->type, (eval_t *) v));
+		Con_Printf ("%s\n", PR_ValueString (pr, d->type, v));
 	}
 }
 
@@ -924,7 +947,6 @@ PR_LoadProgs (progs_t * pr, char *progsname)
 {
 	int         i;
 	dstatement_t *st;
-	ddef_t     *def;
 
 // flush the non-C variable lookup cache
 	for (i = 0; i < GEFV_CACHESIZE; i++)
@@ -967,7 +989,6 @@ PR_LoadProgs (progs_t * pr, char *progsname)
 		pr->progs->entityfields * 4 + sizeof (edict_t) - sizeof (pr_type_t);
 
 	pr->pr_edictareasize = 0;
-Con_Printf("pr_edict_size: %d\n", pr->pr_edict_size);
 
 // byte swap the lumps
 	for (i = 0; i < pr->progs->numstatements; i++) {
@@ -1006,23 +1027,16 @@ Con_Printf("pr_edict_size: %d\n", pr->pr_edict_size);
 	for (i = 0; i < pr->progs->numglobals; i++)
 		((int *) pr->pr_globals)[i] = LittleLong (((int *) pr->pr_globals)[i]);
 
-	def = PR_FindGlobal (pr, "time");
-	if (!def)
+	if (!(pr->globals.time = (float*)PR_GetGlobalPointer (pr, "time")))
 		PR_Error (pr, "%s: undefined symbol: time", progsname);
-	pr->globals.time = &pr->pr_globals[def->ofs].float_var;
-	def = PR_FindGlobal (pr, "self");
-	if (!def)
+	if (!(pr->globals.self = (int*)PR_GetGlobalPointer (pr, "self")))
 		PR_Error (pr, "%s: undefined symbol: self", progsname);
-	pr->globals.self = &pr->pr_globals[def->ofs].entity_var;
-	if (!(pr->fields.nextthink = FindFieldOffset (pr, "nextthink")))
+	if ((pr->fields.nextthink = ED_GetFieldIndex (pr, "nextthink")) == -1)
 		PR_Error (pr, "%s: undefined field: nextthink", progsname);
-	if (!(pr->fields.frame = FindFieldOffset (pr, "frame")))
+	if ((pr->fields.frame = ED_GetFieldIndex (pr, "frame")) == -1)
 		PR_Error (pr, "%s: undefined field: frame", progsname);
-	if (!(pr->fields.think = FindFieldOffset (pr, "think")))
+	if ((pr->fields.think = ED_GetFieldIndex (pr, "think")) == -1)
 		PR_Error (pr, "%s: undefined field: think", progsname);
-
-	// LordHavoc: Ender added this
-	FindEdictFieldOffsets (pr);
 
 	// LordHavoc: bounds check anything static
 	for (i = 0, st = pr->pr_statements; i < pr->progs->numstatements; i++, st++) {
@@ -1138,9 +1152,6 @@ Con_Printf("pr_edict_size: %d\n", pr->pr_edict_size);
 				break;
 		}
 	}
-
-	FindEdictFieldOffsets (pr);			// LordHavoc: update field offset
-	// list
 }
 
 void

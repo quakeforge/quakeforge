@@ -145,7 +145,6 @@ SV_RunThink (edict_t *ent)
 
 	do {
 		thinktime = SVFIELD (ent, nextthink, float);
-Con_Printf("thinktime: %f\n", thinktime);
 		if (thinktime <= 0)
 			return true;
 		if (thinktime > sv.time + sv_frametime)

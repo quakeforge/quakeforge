@@ -147,6 +147,12 @@ typedef struct
 	int			owner;			//int
 	int			message;		//string_t
 	int			sounds;			//float
+
+	int			alpha;
+	int			scale;
+	int			glowsize;
+	int			glowcolor;
+	int			colormod;
 } sv_fields_t;
 
 extern sv_fields_t sv_fields;

@@ -98,6 +98,7 @@ void ED_ParseGlobals (progs_t *pr, char *data);
 void ED_LoadFromFile (progs_t *pr, char *data);
 
 ddef_t *ED_FindField (progs_t *pr, char *name);
+int ED_GetFieldIndex (progs_t *pr, char *name);
 dfunction_t *ED_FindFunction (progs_t *pr, char *name);
 
 
@@ -140,9 +141,7 @@ extern	builtin_t *pr_builtins;
 extern int pr_numbuiltins;
 
 ddef_t *PR_FindGlobal (progs_t *pr, const char *name);
-int FindFieldOffset (progs_t *pr, char *field);
-eval_t *GETEDICTFIELDVALUE (edict_t *ed, int fieldoffset);
-
+eval_t *PR_GetGlobalPointer (progs_t *pr, const char *name);
 extern func_t	EndFrame;	// 2000-01-02 EndFrame function by Maddes/FrikaC
 
 extern func_t SpectatorConnect;
@@ -174,8 +173,6 @@ int PR_SetString(progs_t *pr, char *s);
 
 int ED_Parse_Extra_Fields (progs_t *pr, char *key, char *value);
 int ED_Prune_Edict (progs_t *pr, edict_t *ent);
-void FindEdictFieldOffsets (progs_t *pr);
-
 
 //============================================================================
 

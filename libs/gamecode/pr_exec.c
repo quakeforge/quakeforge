@@ -681,7 +681,6 @@ PR_ExecuteProgram (progs_t * pr, func_t fnum)
 				ed->v[pr->fields.nextthink].float_var = *pr->globals.time + 0.1;
 				ed->v[pr->fields.frame].float_var = E_OPA->_float;
 				ed->v[pr->fields.think].func_var = E_OPB->function;
-				printf ("STATE: %d %f %d %s\n", *pr->globals.self, ed->v[pr->fields.nextthink].float_var, (int)ed->v[pr->fields.frame].float_var, PR_GetString(pr,pr->pr_functions[ed->v[pr->fields.think].func_var].s_name));
 				break;
 // LordHavoc: to be enabled when Progs version 7 (or whatever it will be numbered) is finalized
 /*

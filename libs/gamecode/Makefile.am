@@ -1,6 +1,6 @@
 noinst_LIBRARIES = libqfgamecode.a
 
-libqfgamecode_a_SOURCES = pr_edict.c pr_exec.c pr_offs.c
+libqfgamecode_a_SOURCES = pr_edict.c pr_exec.c
 
 all-local: ../libqfgamecode.a
 

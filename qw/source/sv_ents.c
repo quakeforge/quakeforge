@@ -42,12 +42,6 @@
 #include "sv_progs.h"
 #include "sys.h"
 
-// LordHavoc: added and removed certain eval_ items
-// Ender Extends (QSG - Begin)
-extern int  eval_alpha, eval_scale, eval_glowsize, eval_glowcolor,
-
-	eval_colormod;
-
 /*
 	The PVS must include a small area around the client to allow head
 	bobbing or other small motion on the client side.  Otherwise, a bob
@@ -571,37 +565,32 @@ SV_WriteEntitiesToClient (client_t *client, sizebuf_t *msg)
 		// and implemented missing effects
 // Ender: EXTEND (QSG - Begin)
 		{
-			eval_t     *val;
-
 			state->alpha = 255;
 			state->scale = 16;
 			state->glowsize = 0;
 			state->glowcolor = 254;
 			state->colormod = 255;
 
-			if ((val = GETEDICTFIELDVALUE (ent, eval_alpha))
-				&& val->_float != 0)
-				state->alpha = bound (0, val->_float, 1) * 255.0;
+			if (sv_fields.alpha != -1 && SVFIELD (ent, alpha, float))
+				state->alpha = bound (0, SVFIELD (ent, alpha, float), 1) * 255.0;
 
-			if ((val = GETEDICTFIELDVALUE (ent, eval_scale))
-				&& val->_float != 0)
-				state->scale = bound (0, val->_float, 15.9375) * 16.0;
+			if (sv_fields.scale != -1 && SVFIELD (ent, scale, float))
+				state->scale = bound (0, SVFIELD (ent, scale, float), 15.9375) * 16.0;
 
-			if ((val = GETEDICTFIELDVALUE (ent, eval_glowsize))
-				&& val->_float != 0)
-				state->glowsize = bound (-1024, (int) val->_float, 1016) >> 3;
+			if (sv_fields.glowsize != -1 && SVFIELD (ent, glowsize, float))
+				state->glowsize = bound (-1024, (int) SVFIELD (ent, glowsize, float), 1016) >> 3;
 
-			if ((val = GETEDICTFIELDVALUE (ent, eval_glowcolor))
-				&& val->_float != 0)
-				state->glowcolor = (int) val->_float;
+			if (sv_fields.glowcolor != -1 && SVFIELD (ent, glowcolor, float))
+				state->glowcolor = (int) SVFIELD (ent, glowcolor, float);
 
-			if ((val = GETEDICTFIELDVALUE (ent, eval_colormod))
-				&& (val->vector[0] != 0 || val->vector[1] != 0
-					|| val->vector[2] != 0))
+			if (sv_fields.colormod != -1
+				&& SVFIELD (ent, colormod, vector)[0]
+				&& SVFIELD (ent, colormod, vector)[1]
+				&& SVFIELD (ent, colormod, vector)[2])
 				state->colormod =
-					((int) (bound (0, val->vector[0], 1) * 7.0) << 5) |
-					((int) (bound (0, val->vector[1], 1) * 7.0) << 2) |
-					(int) (bound (0, val->vector[2], 1) * 3.0);
+					((int) (bound (0, SVFIELD (ent, colormod, vector)[0], 1) * 7.0) << 5) |
+					((int) (bound (0, SVFIELD (ent, colormod, vector)[1], 1) * 7.0) << 2) |
+					(int) (bound (0, SVFIELD (ent, colormod, vector)[2], 1) * 3.0);
 		}
 // Ender: EXTEND (QSG - End)
 	}
