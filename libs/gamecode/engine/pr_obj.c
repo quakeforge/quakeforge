@@ -199,10 +199,11 @@ pr___obj_exec_class (progs_t *pr)
 	symtab = &G_STRUCT (pr, pr_symtab_t, module->symtab);
 	if (!symtab)
 		return;
-	Sys_DPrintf ("Initializing %s module with symtab @ %d : %d classes and %d "
-				 "categories\n",
+	Sys_DPrintf ("Initializing %s module with symtab @ %d : %d class%s and %d "
+				 "categor%s\n",
 				 PR_GetString (pr, module->name), module->symtab,
-				 symtab->cls_def_cnt, symtab->cat_def_cnt);
+				 symtab->cls_def_cnt, symtab->cls_def_cnt == 1 ? "" : "es",
+				 symtab->cat_def_cnt, symtab->cat_def_cnt == 1 ? "y" : "ies");
 	ptr = symtab->defs;
 	for (i = 0; i < symtab->cls_def_cnt; i++) {
 		pr_class_t *class = &G_STRUCT (pr, pr_class_t, *ptr);
