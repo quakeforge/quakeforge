@@ -47,10 +47,11 @@ ADDITIONAL_GUI_LIBS +=
 #
 # Resource files
 #
+Forge_MAIN_MODEL_FILE=	Forge.gorm
 Forge_RESOURCE_FILES= \
-	ForgeInfo.plist \
-	Forge.tiff 
-#	Forge.gorm \
+	Forge.gorm \
+	Forge.tiff \
+	ForgeInfo.plist
 
 # Languages we're localized for
 Forge_LANGUAGES= \
