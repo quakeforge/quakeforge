@@ -38,6 +38,9 @@ AC_SUBST(ISODATE)
 
 AC_LANG_C
 
+if test ${CFLAGS-unset} = unset; then
+	CFLAGS=""
+fi
 if test ${AR-unset} = unset; then
 	AR="ar"
 fi
