@@ -59,6 +59,7 @@ qpic_t *Draw_CachePic (const char *path, qboolean alpha);
 void Draw_ClearCache (void);
 
 void GL_Set2D (void);
+void GL_DrawReset (void);
 void GL_FlushText (void);
 
 #endif // _DRAW_H

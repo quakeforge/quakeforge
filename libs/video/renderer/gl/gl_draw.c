@@ -899,6 +899,11 @@ GL_Set2D (void)
 	qfglEnableClientState (GL_TEXTURE_COORD_ARRAY);
 	qfglTexCoordPointer (2, GL_FLOAT, 0, textCoords);
 	qfglDisableClientState (GL_COLOR_ARRAY);
+}
+
+void
+GL_DrawReset (void)
+{
 	tVAcount = 0;
 	tV = textVertices;
 	tC = textCoords;

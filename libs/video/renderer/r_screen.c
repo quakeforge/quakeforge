@@ -169,17 +169,17 @@ SCR_CalcRefdef (void)
 	// bound field of view
 	Cvar_SetValue (scr_fov, bound (1, scr_fov->value, 170));
 
-	r_refdef.fov_x = scr_fov->value;
-	r_refdef.fov_y =
-		CalcFov (r_refdef.fov_x, r_refdef.vrect.width, r_refdef.vrect.height);
-
 	vrect.x = 0;
 	vrect.y = 0;
 	vrect.width = vid.width;
 	vrect.height = vid.height;
 
 	R_SetVrect (&vrect, &scr_vrect, r_lineadj);
+
 	r_refdef.vrect = scr_vrect;
+	r_refdef.fov_x = scr_fov->value;
+	r_refdef.fov_y =
+		CalcFov (r_refdef.fov_x, r_refdef.vrect.width, r_refdef.vrect.height);
 
 	// notify the refresh of the change
 	R_ViewChanged (vid.aspect);

@@ -231,7 +231,9 @@ SCR_UpdateScreen (double realtime, SCR_Func *scr_funcs)
 	V_RenderView ();
 
 	SCR_SetUpToDrawConsole ();
-	GL_Set2D ();
+	if (!r_worldentity.model)
+		GL_Set2D ();
+	GL_DrawReset ();
 
 	// also makes polyblend apply to whole screen
 	if (v_blend[3]) {

@@ -717,6 +717,7 @@ V_RenderView (void)
 {
 	cl.simangles[ROLL] = 0;				// FIXME @@@
 
+	r_worldentity.model = cl.worldmodel;
 	if (cls.state != ca_active)
 		return;
 

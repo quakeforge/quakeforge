@@ -44,6 +44,7 @@ static __attribute__ ((unused)) const char rcsid[] =
 
 #include "QF/console.h"
 #include "QF/cvar.h"
+#include "QF/draw.h"
 #include "QF/locs.h"
 #include "QF/mathlib.h"
 #include "QF/qargs.h"
@@ -672,6 +673,7 @@ R_RenderView (void)
 		R_RenderView_ ();
 	else
 		R_RenderViewFishEye ();
+	GL_Set2D ();
 }
 
 #define BOX_FRONT  0

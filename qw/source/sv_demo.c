@@ -57,9 +57,9 @@ demo_t      demo;
 #define MIN_DEMO_MEMORY 0x100000
 #define USACACHE (sv_demoUseCache->int_val && svs.demomemsize)
 #define DWRITE(a,b,d) dwrite((QFile *) d, a, b)
-#define MAXSIZE (demobuffer->end < demobuffer->last ? \
-				 demobuffer->start - demobuffer->end : \
-				 demobuffer->maxsize - demobuffer->end)
+#define MAXSIZE (demo.dbuffer.end < demo.dbuffer.last ? \
+				 demo.dbuffer.start - demo.dbuffer.end : \
+				 demo.dbuffer.maxsize - demo.dbuffer.end)
 
 static int  demo_max_size;
 static int  demo_size;
@@ -80,7 +80,6 @@ cvar_t     *serverdemo;
 
 int         (*dwrite) (QFile * file, const void *buf, int count);
 
-static dbuffer_t *demobuffer;
 static int  header = (int) &((header_t *) 0)->data;
 
 entity_state_t demo_entities[UPDATE_MASK + 1][MAX_DEMO_PACKET_ENTITIES];
@@ -173,7 +172,7 @@ SV_DemoWriteToDisk (int type, int to, float time)
 	demo.dbuf->h = NULL;
 
 	oldm = demo.dbuf->bufsize;
-	oldd = demobuffer->start;
+	oldd = demo.dbuffer.start;
 	while (pos < demo.dbuf->bufsize) {
 		size = p->size;
 		pos += header + size;
@@ -195,20 +194,20 @@ SV_DemoWriteToDisk (int type, int to, float time)
 			demo.dbuf->sz.data += size + header;
 			pos -= size + header;
 			demo.dbuf->sz.maxsize -= size + header;
-			demobuffer->start += size + header;
+			demo.dbuffer.start += size + header;
 		}
 		// move along
 		p = (header_t *) (p->data + size);
 	}
 
-	if (demobuffer->start == demobuffer->last) {
-		if (demobuffer->start == demobuffer->end) {
-			demobuffer->end = 0;		// demobuffer is empty
-			demo.dbuf->sz.data = demobuffer->data;
+	if (demo.dbuffer.start == demo.dbuffer.last) {
+		if (demo.dbuffer.start == demo.dbuffer.end) {
+			demo.dbuffer.end = 0;		// demo.dbuffer is empty
+			demo.dbuf->sz.data = demo.dbuffer.data;
 		}
 		// go back to begining of the buffer
-		demobuffer->last = demobuffer->end;
-		demobuffer->start = 0;
+		demo.dbuffer.last = demo.dbuffer.end;
+		demo.dbuffer.start = 0;
 	}
 }
 
@@ -270,7 +269,7 @@ SV_DemoWritePackets (int num)
 
 		// find two frames
 		// one before the exact time (time - msec) and one after,
-		// then we can interpolte exact position for current frame
+		// then we can interpolate exact position for current frame
 		for (i = 0, cl = frame->clients, demoinfo = demo.info; i < MAX_CLIENTS;
 			 i++, cl++, demoinfo++) {
 			if (cl->parsecount != demo.lastwritten)
@@ -433,7 +432,7 @@ DemoSetBuf (byte type, int to)
 
 	demo.dbuf->bufsize += header;
 	demo.dbuf->sz.cursize = demo.dbuf->bufsize;
-	demobuffer->end += header;
+	demo.dbuffer.end += header;
 	demo.dbuf->h = p;
 }
 
@@ -442,12 +441,12 @@ DemoMoveBuf (void)
 {
 	// set the last message mark to the previous frame (i/e begining of this
 	// one)
-	demobuffer->last = demobuffer->end - demo.dbuf->bufsize;
+	demo.dbuffer.last = demo.dbuffer.end - demo.dbuf->bufsize;
 
 	// move buffer to the begining of demo buffer
-	memmove (demobuffer->data, demo.dbuf->sz.data, demo.dbuf->bufsize);
-	demo.dbuf->sz.data = demobuffer->data;
-	demobuffer->end = demo.dbuf->bufsize;
+	memmove (demo.dbuffer.data, demo.dbuf->sz.data, demo.dbuf->bufsize);
+	demo.dbuf->sz.data = demo.dbuffer.data;
+	demo.dbuffer.end = demo.dbuf->bufsize;
 	demo.dbuf->h = NULL;				// it will be setup again
 	demo.dbuf->sz.maxsize = MAXSIZE + demo.dbuf->bufsize;
 }
@@ -461,11 +460,11 @@ DemoWrite_Begin (byte type, int to, int size)
 	// will it fit?
 	while (demo.dbuf->bufsize + size + header > demo.dbuf->sz.maxsize) {
 		// if we reached the end of buffer move msgbuf to the begining
-		if (!move && demobuffer->end > demobuffer->start)
+		if (!move && demo.dbuffer.end > demo.dbuffer.start)
 			move = true;
 
 		SV_DemoWritePackets (1);
-		if (move && demobuffer->start > demo.dbuf->bufsize + header + size)
+		if (move && demo.dbuffer.start > demo.dbuf->bufsize + header + size)
 			DemoMoveBuf ();
 	}
 
@@ -486,8 +485,8 @@ DemoWrite_Begin (byte type, int to, int size)
 
 	demo.dbuf->bufsize += size;
 	demo.dbuf->h->size += size;
-	if ((demobuffer->end += size) > demobuffer->last)
-		demobuffer->last = demobuffer->end;
+	if ((demo.dbuffer.end += size) > demo.dbuffer.last)
+		demo.dbuffer.last = demo.dbuffer.end;
 }
 
 /*
@@ -616,13 +615,11 @@ SV_DemoPings (void)
 static void
 DemoBuffer_Init (dbuffer_t *dbuffer, byte *buf, size_t size)
 {
-	demobuffer = dbuffer;
-
-	demobuffer->data = buf;
-	demobuffer->maxsize = size;
-	demobuffer->start = 0;
-	demobuffer->end = 0;
-	demobuffer->last = 0;
+	dbuffer->data = buf;
+	dbuffer->maxsize = size;
+	dbuffer->start = 0;
+	dbuffer->end = 0;
+	dbuffer->last = 0;
 }
 
 /*
@@ -642,7 +639,7 @@ DemoSetMsgBuf (demobuf_t *prev, demobuf_t *cur)
 	demo.dbuf = cur;
 	memset (demo.dbuf, 0, sizeof (*demo.dbuf));
 
-	demo.dbuf->sz.data = demobuffer->data + demobuffer->end;
+	demo.dbuf->sz.data = demo.dbuffer.data + demo.dbuffer.end;
 	demo.dbuf->sz.maxsize = MAXSIZE;
 }
 
