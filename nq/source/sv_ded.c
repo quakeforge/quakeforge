@@ -303,3 +303,7 @@ console_client_PluginInfo (void)
 	return 0;
 }   
 
+void
+BI_Init (void)
+{
+}

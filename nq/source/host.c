@@ -34,6 +34,7 @@ static const char rcsid[] =
 #include "QF/cdaudio.h"
 #include "QF/cmd.h"
 #include "QF/console.h"
+#include "QF/csqc.h"
 #include "QF/cvar.h"
 #include "QF/draw.h"
 #include "QF/gib.h"
@@ -938,6 +939,7 @@ Host_Init (quakeparms_t *parms)
 	Cbuf_Execute_Sets ();
 
 	PR_Init ();
+	BI_Init ();
 
 	V_Init ();
 	COM_Filesystem_Init ();

@@ -84,8 +84,8 @@ server_sources= crudefile.c sv_ccmds.c sv_cvar.c sv_ents.c \
 qf_server_LIBS= \
 		$(SERVER_PLUGIN_STATIC_LIBS) \
 		$(top_builddir)/libs/models/libQFmodels.la \
-		$(top_builddir)/libs/gamecode/engine/libQFgamecode.la \
 		$(top_builddir)/libs/gamecode/builtins/libQFgamecode_builtins.la \
+		$(top_builddir)/libs/gamecode/engine/libQFgamecode.la \
 		$(top_builddir)/libs/console/libQFconsole.la \
 		$(top_builddir)/libs/util/libQFutil.la
 
@@ -99,13 +99,14 @@ qw_master_LDADD=	$(NET_LIBS)
 qw_master_LDFLAGS=	$(common_ldflags)
 
 cl_plugin_LIBS= \
-		$(CLIENT_PLUGIN_STATIC_LIBS)
+		$(CLIENT_PLUGIN_STATIC_LIBS) \
+		$(top_builddir)/libs/gamecode/builtins/libQFcsqc.la
 
 qf_client_LIBS= \
 		$(top_builddir)/libs/console/libQFconsole.la \
 		$(top_builddir)/libs/video/targets/libQFjs.la \
-		$(top_builddir)/libs/gamecode/engine/libQFgamecode.la \
 		$(top_builddir)/libs/gamecode/builtins/libQFgamecode_builtins.la \
+		$(top_builddir)/libs/gamecode/engine/libQFgamecode.la \
 		$(top_builddir)/libs/audio/libQFcd.la \
 		$(top_builddir)/libs/audio/libQFsound.la \
 		$(top_builddir)/libs/util/libQFutil.la

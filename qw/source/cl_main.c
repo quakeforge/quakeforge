@@ -66,6 +66,7 @@ static const char rcsid[] =
 #include "QF/cdaudio.h"
 #include "QF/cmd.h"
 #include "QF/console.h"
+#include "QF/csqc.h"
 #include "QF/cvar.h"
 #include "QF/draw.h"
 #include "QF/input.h"
@@ -1677,6 +1678,7 @@ Host_Init (void)
 	VID_Init_Cvars ();
 
 	PR_Init ();
+	BI_Init ();
 
 	cl_Cmd_Init ();
 	V_Init ();

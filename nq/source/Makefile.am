@@ -65,7 +65,8 @@ EXTRA_libqfnet_la_SOURCES= \
 		net_wipx.c net_udp.c
 
 cl_plugin_LIBS= \
-		$(CLIENT_PLUGIN_STATIC_LIBS)
+		$(CLIENT_PLUGIN_STATIC_LIBS) \
+		$(top_builddir)/libs/gamecode/builtins/libQFcsqc.la
 
 client_LIBFILES= \
 		$(top_builddir)/libs/video/targets/libQFjs.la \
@@ -81,8 +82,8 @@ common_LIBFILES= \
 		libasm.la \
 		libqfnet.la \
 		$(top_builddir)/libs/console/libQFconsole.la \
-		$(top_builddir)/libs/gamecode/engine/libQFgamecode.la \
 		$(top_builddir)/libs/gamecode/builtins/libQFgamecode_builtins.la \
+		$(top_builddir)/libs/gamecode/engine/libQFgamecode.la \
 		$(top_builddir)/libs/gib/libQFgib.la \
 		$(top_builddir)/libs/util/libQFutil.la
 

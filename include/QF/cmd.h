@@ -58,11 +58,15 @@ void Cbuf_InsertText (const char *text);
 // inserted at the beginning of the buffer, before any remaining unexecuted
 // commands.
 
+void Cbuf_Execute_Sets (void);
 void Cbuf_Execute (void);
 // Pulls off \n terminated lines of text from the command buffer and sends
 // them through Cmd_ExecuteString.  Stops when the buffer is empty.
 // Normally called once per frame, but may be explicitly invoked.
 // Do not call inside a command function!
+
+struct progs_s;
+void Cbuf_Progs_Init (struct progs_s *pr);
 
 //===========================================================================
 
@@ -141,7 +145,6 @@ void	Cmd_ForwardToServer (void);
 
 void Cmd_StuffCmds_f (void);
 
-void Cbuf_Execute_Sets (void);
 void Cmd_Exec_File (const char *path);
 
 extern char	*com_token;
