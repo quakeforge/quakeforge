@@ -927,9 +927,7 @@ Name_of_sender (void)
 void
 SVC_RemoteCommand (void)
 {
-	int         i;
-	int         len = 0;
-	char        remaining[1024];
+	const char *command;
 	char       *name;
 	qboolean    admin_cmd = false;
 	qboolean    do_cmd = false;
@@ -966,21 +964,15 @@ SVC_RemoteCommand (void)
 	}
 	
 	if (do_cmd) {
-		remaining[0] = 0;
-
-		for (i = 2; i < Cmd_Argc (); i++) {
-			strncat (remaining, Cmd_Argv (i), sizeof (remaining) - len - 1);
-			strncat (remaining, " ", sizeof (remaining) - len - 2);
-			len += strlen (Cmd_Argv (i)) + 1;	// +1 for " "
-		}
+		command = Cmd_Args (2);
 
 		SV_Printf ("Rcon from %s:\n\trcon (hidden) %s\n",
-					NET_AdrToString (net_from), remaining);
+					NET_AdrToString (net_from), command);
 
 		SV_BeginRedirect (RD_PACKET);
 		if (name)
 			rcon_from_user = true;
-		Cmd_ExecuteString (remaining, src_command);
+		Cmd_ExecuteString (command, src_command);
 		rcon_from_user = false;
 	} else {
 		SV_Printf ("Bad rcon from %s:\n%s\n", NET_AdrToString (net_from),

@@ -378,19 +378,10 @@ void
 CL_Rcon_f (void)
 {
 	char        message[1024];
-	int         len, i;
 	netadr_t    to;
 
-	snprintf (message, sizeof (message), "\377\377\377\377rcon %s ",
-			  rcon_password->string);
-	len = strlen (message);
-
-	for (i = 1; i < Cmd_Argc (); i++) {
-		strncat (message, Cmd_Argv (i), sizeof (message) - len - 1);
-		len += strlen (Cmd_Argv (i));
-		strncat (message, " ", sizeof (message) - len - 1);
-		len += strlen (" ");
-	}
+	snprintf (message, sizeof (message), "\377\377\377\377rcon %s %s",
+			  rcon_password->string, Cmd_Args (1));
 
 	if (cls.state >= ca_connected)
 		to = cls.netchan.remote_address;
