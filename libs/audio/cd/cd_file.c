@@ -76,7 +76,7 @@ static qboolean mus_enabled = false;
 static cvar_t *bgmvolume;
 
 static channel_t *cd_channel;
-static sfx_t cd_sfx;
+static sfx_t *cd_sfx;
 
 /* added by Andrew, for cd_ogg */
 static cvar_t *mus_ogglist;				// contain the filename of the ogglist. 
@@ -86,6 +86,17 @@ static qboolean ogglistvalid = false;	// true if a valid ogg list has been
 static plitem_t *tracklist = NULL;		// the parsed tracklist
 
 /* end of added variables. */
+
+static void
+set_volume (void)
+{
+	if (cd_channel->sfx) {
+		int         vol = bgmvolume->value * 255;
+
+		cd_channel->master_vol = vol;
+		cd_channel->leftvol = cd_channel->rightvol = cd_channel->master_vol;
+	}
+}
 
 /* does nothing */
 static void
@@ -200,20 +211,14 @@ I_OGGMus_Play (int track, qboolean looping)
 		memset (cd_channel, 0, sizeof (*cd_channel));
 	}
 
-	if (cd_sfx.name)
-		free ((char *) cd_sfx.name);
-	cd_sfx.name = strdup ((char *) trackmap->data);
-	SND_Load (&cd_sfx);
-	if (cd_sfx.wavinfo)
-		info = cd_sfx.wavinfo (&cd_sfx);
-	if (info)
-		info->loopstart = 0;
-	cd_channel->sfx = cd_sfx.open (&cd_sfx);
-	if (cd_channel->sfx) {
-		int         vol = bgmvolume->value * 255;
-
-		cd_channel->master_vol = vol;
-		cd_channel->leftvol = cd_channel->rightvol = cd_channel->master_vol;
+	cd_sfx = S_LoadSound ((char *) trackmap->data);
+	if (cd_sfx) {
+		if (cd_sfx->wavinfo)
+			info = cd_sfx->wavinfo (cd_sfx);
+		if (info)
+			info->loopstart = 0;
+		cd_channel->sfx = cd_sfx->open (cd_sfx);
+		set_volume ();
 	}
 
 	free (trackstring);
@@ -434,12 +439,7 @@ static void
 Mus_VolChange (cvar_t *bgmvolume)
 {
 	Sys_DPrintf ("Entering Mus_VolChange\n");
-	if (cd_channel->sfx) {
-		int         vol = bgmvolume->value * 255;
-
-		cd_channel->master_vol = vol;
-		cd_channel->leftvol = cd_channel->rightvol = cd_channel->master_vol;
-	}
+	set_volume ();
 }
 
 static void
