@@ -58,10 +58,10 @@ static const char rcsid[] =
 def_t      *emit_sub_expr (expr_t *e, def_t *dest);
 
 void
-add_statement_ref (def_t *def, dstatement_t *st, int field)
+add_statement_ref (def_t *def, dstatement_t *st, reloc_type type)
 {
 	if (def) {
-		reloc_t    *ref = new_reloc (st - pr.statements, field);
+		reloc_t    *ref = new_reloc (st - pr.statements, type);
 
 		ref->next = def->refs;
 		def->refs = ref;
@@ -133,9 +133,9 @@ emit_statement (int sline, opcode_t *op, def_t *var_a, def_t *var_b,
 			var_c ? var_c->name : "", statement->c);
 #endif
 
-	add_statement_ref (var_a, statement, 0);
-	add_statement_ref (var_b, statement, 1);
-	add_statement_ref (var_c, statement, 2);
+	add_statement_ref (var_a, statement, rel_op_a_def);
+	add_statement_ref (var_b, statement, rel_op_b_def);
+	add_statement_ref (var_c, statement, rel_op_c_def);
 
 	if (op->right_associative)
 		return var_a;
