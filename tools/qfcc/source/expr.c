@@ -1046,6 +1046,8 @@ function_expr (expr_t *e1, expr_t *e2)
 	int         i;
 	expr_t     *args = 0, **a = &args;
 	type_t     *arg_types[MAX_PARMS];
+	expr_t     *arg_exprs[MAX_PARMS][2];
+	int         arg_expr_count = 0;
 	expr_t     *call;
 	expr_t     *err = 0;
 
@@ -1121,18 +1123,22 @@ function_expr (expr_t *e1, expr_t *e2)
 	for (e = e2, i = 0; e; e = e->next, i++) {
 		if (has_function_call (e)) {
 			*a = new_temp_def_expr (arg_types[i]);
-			if (e->next) {
-				if (i)	// compensate for new_binary_expr and the first arg
-					inc_users(*a);
-				append_expr (call, binary_expr ('=', *a, e));
-			} else {
-				e = new_binary_expr ('b', e, *a);
-				append_expr (call, e);
-			}
+			arg_exprs[arg_expr_count][0] = e;
+			arg_exprs[arg_expr_count][1] = *a;
+			arg_expr_count++;
 		} else {
 			*a = e;
 		}
 		a = &(*a)->next;
+	}
+	for (i = 0; i < arg_expr_count - 1; i++) {
+		append_expr (call, binary_expr ('=', arg_exprs[i][1],
+					                    arg_exprs[i][0]));
+	}
+	if (arg_expr_count) {
+		e = new_binary_expr ('b', arg_exprs[arg_expr_count - 1][0],
+							 arg_exprs[arg_expr_count - 1][1]);
+		append_expr (call, e);
 	}
 	e = new_binary_expr ('c', e1, args);
 	e->e.expr.type = ftype->aux_type;
