@@ -296,9 +296,6 @@ SV_SpawnServer (const char *server)
 	edict_t    *ent;
 	int         i;
 
-// Misty: Lets try this again. HACKHACKHACK
-	realtime = 0;
-
 	Con_DPrintf ("SpawnServer: %s\n", server);
 
 	SV_SaveSpawnparms ();
