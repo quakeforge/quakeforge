@@ -122,7 +122,7 @@ wad_open (const char *name)
 
 	if (!wad)
 		return 0;
-	wad->handle = Qopen (name, "rb");
+	wad->handle = Qopen (name, "rbz");
 	if (!wad->handle) {
 		goto error;
 	}
@@ -141,7 +141,7 @@ wad_open (const char *name)
 	wad->header.infotableofs = LittleLong (wad->header.infotableofs);
 	wad->header.numlumps = LittleLong (wad->header.numlumps);
 
-	wad->numlumps = wad->header.numlumps / sizeof (lumpinfo_t);
+	wad->numlumps = wad->header.numlumps;
 	wad->old_numlumps = wad->lumps_size = wad->numlumps;
 
 	wad->lumps = malloc (wad->lumps_size * sizeof (lumpinfo_t));
