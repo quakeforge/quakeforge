@@ -223,6 +223,10 @@ get_def (type_t *type, const char *name, scope_t *scope,
 		return def;
 
 	if (def) {
+		if (storage != st_extern && !def->initialized) {
+			def->file = pr.source_file;
+			def->line = pr.source_line;
+		}
 		if (!def->external || storage == st_extern)
 			return def;
 	} else {
