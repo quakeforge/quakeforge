@@ -53,17 +53,17 @@ vec3_t			r_pright, r_pup, r_ppn;
   others.
 */
 void
-R_MaxParticlesCheck (cvar_t *r_particles, cvar_t *cl_max_particles)
+R_MaxParticlesCheck (cvar_t *r_particles, cvar_t *r_particles_max)
 {
 /*
 	Catchall. If the user changed the setting to a number less than zero *or*
 	if we had a wacky cfg get past the init code check, this will make sure we
 	don't have problems. Also note that grabbing the var->int_val is IMPORTANT:
-	Prevents a segfault since if we grabbed the int_val of cl_max_particles
+	Prevents a segfault since if we grabbed the int_val of r_particles_max
 	we'd sig11 right here at startup.
 */
 	if (r_particles && r_particles->int_val)
-		r_maxparticles = cl_max_particles ? cl_max_particles->int_val : 0;
+		r_maxparticles = r_particles_max ? r_particles_max->int_val : 0;
 	else
 		r_maxparticles = 0;
 

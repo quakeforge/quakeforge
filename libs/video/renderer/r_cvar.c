@@ -43,7 +43,6 @@ static const char rcsid[] =
 
 cvar_t     *cl_crossx;
 cvar_t     *cl_crossy;
-cvar_t	   *cl_max_particles;
 cvar_t     *cl_verstring;   
 cvar_t     *crosshair;
 cvar_t     *crosshaircolor;
@@ -61,7 +60,6 @@ cvar_t     *gl_dlight_smooth;
 cvar_t     *gl_fb_bmodels;
 cvar_t     *gl_fb_models;
 cvar_t     *gl_fires;
-cvar_t     *gl_keeptjunctions;
 cvar_t     *gl_lerp_anim;
 cvar_t     *gl_driver;
 cvar_t     *gl_lightmap_align;
@@ -87,12 +85,12 @@ cvar_t     *r_clearcolor;
 cvar_t     *r_dlight_lightmap;
 cvar_t	   *r_dlight_max;
 cvar_t     *r_drawentities;
-cvar_t     *r_drawexplosions; // DESPAIR
+cvar_t     *r_drawexplosions;
 cvar_t     *r_drawflat;
 cvar_t     *r_drawviewmodel;
 cvar_t     *r_dspeeds;
 cvar_t     *r_dynamic;
-cvar_t     *r_explosionclip; // DESPAIR
+cvar_t     *r_explosionclip;
 cvar_t     *r_firecolor;
 cvar_t     *r_graphheight;
 cvar_t     *r_lightmap_components;
@@ -107,6 +105,7 @@ cvar_t     *r_novis;
 cvar_t     *r_numedges;
 cvar_t     *r_numsurfs;
 cvar_t     *r_particles;
+cvar_t	   *r_particles_max;
 cvar_t     *r_reportedgeout;
 cvar_t     *r_reportsurfout;
 cvar_t     *r_shadows;
@@ -129,16 +128,14 @@ cvar_t     *scr_showturtle;
 cvar_t     *scr_viewsize;
 
 
-
-
 static void
 r_particles_f (cvar_t *var)
 {
-	R_MaxParticlesCheck (var, cl_max_particles);
+	R_MaxParticlesCheck (var, r_particles_max);
 }
 
 static void
-cl_max_particles_f (cvar_t *var)
+r_particles_max_f (cvar_t *var)
 {
 	R_MaxParticlesCheck (r_particles, var);
 }
@@ -151,10 +148,6 @@ R_Init_Cvars (void)
 						  "Sets the position of the crosshair on the X-axis.");
 	cl_crossy = Cvar_Get ("cl_crossy", "0", CVAR_ARCHIVE, NULL,
 						  "Sets the position of the crosshair on the Y-axis.");
-	cl_max_particles = Cvar_Get ("cl_max_particles", "2048", CVAR_ARCHIVE,
-								 cl_max_particles_f, "Maximum amount of "
-								 "particles to display. No maximum, minimum " 
-								 "is 0.");
 	cl_verstring = Cvar_Get ("cl_verstring", PROGRAM " " VERSION, CVAR_NONE,
 							 NULL, "Client version string");
 	crosshair = Cvar_Get ("crosshair", "0", CVAR_ARCHIVE, NULL, "Crosshair "
@@ -187,9 +180,6 @@ R_Init_Cvars (void)
 							 "Toggles fullbright color support for models");
 	gl_fires = Cvar_Get ("gl_fires", "0", CVAR_ARCHIVE, NULL,
 						 "Toggles lavaball and rocket fireballs");
-	gl_keeptjunctions = Cvar_Get ("gl_keeptjunctions", "1", CVAR_ARCHIVE, NULL,
-								  "Set to 0 to turn off colinear vertexes "
-								  "upon level load");
 	gl_lerp_anim = Cvar_Get ("gl_lerp_anim", "1", CVAR_ARCHIVE, NULL,
 							 "Toggles model animation interpolation");
 
@@ -262,7 +252,7 @@ R_Init_Cvars (void)
 							   "Toggles drawing of entities (almost "
 							   "everything but the world)");
 	r_drawexplosions = Cvar_Get ("r_drawexplosions", "1", CVAR_ARCHIVE, NULL,
-								 "Draw explosions."); // DESPAIR
+								 "Draw explosions.");
 	r_drawflat = Cvar_Get ("r_drawflat", "0", CVAR_NONE, NULL,
 						   "Toggles the drawing of textures");
 	r_drawviewmodel = Cvar_Get ("r_drawviewmodel", "1", CVAR_ARCHIVE, NULL,
@@ -272,7 +262,7 @@ R_Init_Cvars (void)
 	r_dynamic = Cvar_Get ("r_dynamic", "1", CVAR_NONE, NULL,
 						  "Set to 0 to disable lightmap changes");
 	r_explosionclip = Cvar_Get ("r_explosionclip", "0", CVAR_ARCHIVE, NULL,
-								"Clip explosions."); // DESPAIR
+								"Clip explosions.");
 	r_firecolor = Cvar_Get ("r_firecolor", "0.9 0.4 0", CVAR_ARCHIVE, NULL,
 							"color of rocket and lava ball fires");
 	r_graphheight = Cvar_Get ("r_graphheight", "32", CVAR_NONE, NULL,
@@ -305,6 +295,10 @@ R_Init_Cvars (void)
 						   "currently being viewed");
 	r_particles = Cvar_Get ("r_particles", "1", CVAR_ARCHIVE, r_particles_f,
 							"Toggles drawing of particles.");
+	r_particles_max = Cvar_Get ("r_particles_max", "2048", CVAR_ARCHIVE,
+								r_particles_max_f, "Maximum amount of "
+								"particles to display. No maximum, minimum " 
+								"is 0.");
 	r_reportedgeout = Cvar_Get ("r_reportedgeout", "0", CVAR_NONE, NULL,
 								"Toggle the display of how many edges were "
 								"not displayed");
