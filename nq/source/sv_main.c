@@ -903,6 +903,7 @@ SV_SpawnServer (const char *server)
 	int         i;
 	edict_t    *ent;
 
+	S_BlockSound ();
 	// let's not have any servers with no name
 	if (hostname->string[0] == 0)
 		Cvar_Set (hostname, "UNNAMED");
@@ -974,6 +975,7 @@ SV_SpawnServer (const char *server)
 	if (!sv.worldmodel) {
 		Con_Printf ("Couldn't spawn server %s\n", sv.modelname);
 		sv.active = false;
+		S_UnblockSound ();
 		return;
 	}
 	sv.models[1] = sv.worldmodel;
@@ -1038,4 +1040,5 @@ SV_SpawnServer (const char *server)
 			SV_SendServerinfo (host_client);
 
 	Con_DPrintf ("Server spawned.\n");
+	S_UnblockSound ();
 }
