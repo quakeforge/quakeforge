@@ -305,7 +305,7 @@ MYgluPerspective (GLdouble fovy, GLdouble aspect, GLdouble zNear,
 	xmin = ymin * aspect;
 	xmax = -xmin;
 
-	//printf ("glFrustum (%f, %f, %f, %f)\n", xmin, xmax, ymin, ymax);
+//	printf ("glFrustum (%f, %f, %f, %f)\n", xmin, xmax, ymin, ymax);
 	qfglFrustum (xmin, xmax, ymin, ymax, zNear, zFar);
 }
 
@@ -342,7 +342,7 @@ R_SetupGL_Viewport_and_Perspective (void)
 		w = x2 - x;
 		h = y - y2;
 	}
-	//printf("glViewport(%d, %d, %d, %d)\n", glx + x, gly + y2, w, h);
+//	printf("glViewport(%d, %d, %d, %d)\n", glx + x, gly + y2, w, h);
 	qfglViewport (glx + x, gly + y2, w, h);
 	screenaspect = (float) r_refdef.vrect.width / r_refdef.vrect.height;
 	MYgluPerspective (r_refdef.fov_y, screenaspect, r_nearclip->value,
@@ -552,7 +552,7 @@ struct xyz {
 	float x, y, z;
 };
 
-static struct xyz FisheyeLookupTbl[FPOLYCNT+1][FPOLYCNT+1];
+static struct xyz FisheyeLookupTbl[FPOLYCNT + 1][FPOLYCNT + 1];
 static GLuint cube_map_tex;
 static GLint gl_cube_map_size;
 static GLint gl_cube_map_step;
@@ -574,16 +574,16 @@ R_BuildFisheyeLookup (int width, int height, float fov)
 
 	for (y = 0; y <= height; y += gl_cube_map_step) {
 		for (x = 0; x <= width; x += gl_cube_map_step) {
-			float dx = x - width/2;
-			float dy = y - height/2;
-			float yaw = sqrt(dx*dx+dy*dy)*fov/width;
-			float roll = atan2(dy, dx);
+			float dx = x - width / 2;
+			float dy = y - height / 2;
+			float yaw = sqrt (dx * dx + dy * dy) * fov / width;
+			float roll = atan2 (dy, dx);
 			// X is a first index and Y is a second, because later
 			// when we draw QUAD_STRIPes we need next Y vertix coordinate.
-			v = &FisheyeLookupTbl[x/gl_cube_map_step][y/gl_cube_map_step];
-			v->x = sin(yaw) * cos(roll);
-			v->y = -sin(yaw) * sin(roll);
-			v->z = cos(yaw);
+			v = &FisheyeLookupTbl[x / gl_cube_map_step][y / gl_cube_map_step];
+			v->x = sin (yaw) * cos (roll);
+			v->y = -sin (yaw) * sin (roll);
+			v->z = cos (yaw);
 		}
 	}
 }
@@ -591,13 +591,16 @@ R_BuildFisheyeLookup (int width, int height, float fov)
 #define CHKGLERR(s) \
 do { \
 	GLint err = qfglGetError(); \
-	if (err != GL_NO_ERROR) printf ("%s: gl error %d\n", s, (int)err); \
+	if (err != GL_NO_ERROR) \
+		printf ("%s: gl error %d\n", s, (int) err); \
 } while (0);
 
 #define NO(x) \
 do { \
-	if (x < 0) x += 360; \
-	else if (x >= 360) x -= 360; \
+	if (x < 0) \
+		x += 360; \
+	else if (x >= 360) \
+		x -= 360; \
 } while (0)
 
 static void
@@ -613,14 +616,15 @@ R_RenderCubeSide (int side)
 	// setting ROLL for now to 0, correct roll handling
 	// requre more exhaustive changes in rotation
 	// TODO: implement via matrix
-	//roll  = n_roll = r_refdef.viewangles[ROLL];
+//	roll  = n_roll = r_refdef.viewangles[ROLL];
 	s_roll = r_refdef.viewangles[ROLL];
 	roll = n_roll = 0;
-	//roll -= scr_fviews->int_val*10;
-	//n_roll = roll;
+//	roll -= scr_fviews->int_val * 10;
+//	n_roll = roll;
 
 	switch (side) {
-	case BOX_FRONT: break;
+	case BOX_FRONT:
+		break;
 	case BOX_RIGHT:
 		n_pitch = roll;
 		n_yaw -= 90;
@@ -630,10 +634,10 @@ R_RenderCubeSide (int side)
 		n_pitch = -roll;
 		n_yaw += 90;
 		n_roll = pitch;
-		//static int f = 0;
-		//if (!(f++%100)) printf("%4d %4d %4d | %4d %4d %4d\n",
-		//(int)pitch, (int)yaw, (int)roll,
-		//(int)n_pitch, (int)n_yaw, (int)n_roll);
+//		static int f = 0;
+//		if (!(f++ % 100))
+//				printf ("%4d %4d %4d | %4d %4d %4d\n", (int) pitch, (int) yaw,
+//						(int) roll, (int) n_pitch, (int) n_yaw, (int) n_roll);
 		break;
 	case BOX_TOP:
 		n_pitch -= 90;
@@ -646,18 +650,20 @@ R_RenderCubeSide (int side)
 		n_yaw += 180;
 		break;
 	}
-	NO(n_pitch); NO(n_yaw); NO(n_roll);
+	NO (n_pitch);
+	NO (n_yaw);
+	NO (n_roll);
 	r_refdef.viewangles[PITCH] = n_pitch;
 	r_refdef.viewangles[YAW] = n_yaw;
 	r_refdef.viewangles[ROLL] = n_roll;
 
 	R_RenderView_ ();
-	qfglEnable(GL_TEXTURE_CUBE_MAP_ARB);
-	qfglBindTexture(GL_TEXTURE_CUBE_MAP_ARB, cube_map_tex);
+	qfglEnable (GL_TEXTURE_CUBE_MAP_ARB);
+	qfglBindTexture (GL_TEXTURE_CUBE_MAP_ARB, cube_map_tex);
 	qfglCopyTexSubImage2D (box2cube_map[side], 0, 0, 0, 0, 0,
-		gl_cube_map_size, gl_cube_map_size);
-	//CHKGLERR ("qfglCopyTexSubImage2D");
-	qfglDisable(GL_TEXTURE_CUBE_MAP_ARB);
+						   gl_cube_map_size, gl_cube_map_size);
+//	CHKGLERR ("qfglCopyTexSubImage2D");
+	qfglDisable (GL_TEXTURE_CUBE_MAP_ARB);
 
 	r_refdef.viewangles[PITCH] = pitch;
 	r_refdef.viewangles[YAW] = yaw;
@@ -673,14 +679,18 @@ R_InitFishEyeOnce (void)
 {
 	static qboolean fisheye_init_once_completed = false;
 
-	if (fisheye_init_once_completed) return 1;
+	if (fisheye_init_once_completed)
+		return 1;
 	Con_Printf ("GL_ARB_texture_cube_map ");
 	if (QFGL_ExtensionPresent ("GL_ARB_texture_cube_map")) {
-		qfglGetIntegerv (GL_MAX_CUBE_MAP_TEXTURE_SIZE_ARB, &gl_cube_map_maxtex);
-		Con_Printf ("present, max texture size %d.\n", (int)gl_cube_map_maxtex);
+		qfglGetIntegerv (GL_MAX_CUBE_MAP_TEXTURE_SIZE_ARB,
+						 &gl_cube_map_maxtex);
+		Con_Printf ("present, max texture size %d.\n",
+					(int) gl_cube_map_maxtex);
 		gl_cube_map_capable = true;
 	} else {
 		Con_Printf ("not found.\n");
+		gl_cube_map_capable = false;
 	}
 	fisheye_init_once_completed = true;
 	return 1;
@@ -701,8 +711,10 @@ R_InitFishEye (void)
 
 	int i, x, y, min_wh, wh_changed = 0;
 
-	if (!R_InitFishEyeOnce()) return 0;
-	if (!gl_cube_map_capable) return 0;
+	if (!R_InitFishEyeOnce())
+		return 0;
+	if (!gl_cube_map_capable)
+		return 0;
 
 	// There is a problem when max texture size is bigger than
 	// min(width, height), it shows up as black fat stripes at the edges
@@ -714,7 +726,7 @@ R_InitFishEye (void)
 		gl_cube_map_size = gl_cube_map_maxtex;
 		while (gl_cube_map_size > min_wh)
 			gl_cube_map_size /= 2;
-		gl_cube_map_step = gl_cube_map_size/FPOLYCNT;
+		gl_cube_map_step = gl_cube_map_size / FPOLYCNT;
 	}
 	if (pviews != views) {
 		qfglEnable (GL_TEXTURE_CUBE_MAP_ARB);
@@ -724,11 +736,14 @@ R_InitFishEye (void)
 		qfglGenTextures (1, &cube_map_tex);
 		qfglBindTexture (GL_TEXTURE_CUBE_MAP_ARB, cube_map_tex);
 		for (i = 0; i < 6; ++i) {
-			qfglTexImage2D (box2cube_map[i], 0, 3, gl_cube_map_size, gl_cube_map_size,
-				0, GL_RGB, GL_UNSIGNED_SHORT, NULL);
+			qfglTexImage2D (box2cube_map[i], 0, 3, gl_cube_map_size,
+							gl_cube_map_size, 0, GL_RGB, GL_UNSIGNED_SHORT,
+							NULL);
 		}
-		qfglTexParameteri (GL_TEXTURE_CUBE_MAP_ARB, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-		qfglTexParameteri (GL_TEXTURE_CUBE_MAP_ARB, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+		qfglTexParameteri (GL_TEXTURE_CUBE_MAP_ARB, GL_TEXTURE_MAG_FILTER,
+						   GL_LINEAR);
+		qfglTexParameteri (GL_TEXTURE_CUBE_MAP_ARB, GL_TEXTURE_MIN_FILTER,
+						   GL_LINEAR);
 		qfglDisable (GL_TEXTURE_CUBE_MAP_ARB);
 	}
 	if (wh_changed || pfov != fov) {
@@ -738,27 +753,32 @@ R_InitFishEye (void)
 		pheight = height;
 		pfov = fov;
 
-		R_BuildFisheyeLookup (gl_cube_map_size, gl_cube_map_size, ((float)fov)*M_PI/180.0);
+		R_BuildFisheyeLookup (gl_cube_map_size, gl_cube_map_size,
+							  ((float) fov) * M_PI / 180.0);
 
 		fisheye_grid = qfglGenLists (1);
 		qfglNewList (fisheye_grid, GL_COMPILE);
 		qfglLoadIdentity ();
-		qfglTranslatef (-gl_cube_map_size/2, -gl_cube_map_size/2, -gl_cube_map_size/2);
+		qfglTranslatef (-gl_cube_map_size / 2, -gl_cube_map_size / 2,
+						-gl_cube_map_size / 2);
 
 		qfglDisable (GL_DEPTH_TEST);
 		qfglCullFace (GL_BACK);
 		qfglClear (GL_COLOR_BUFFER_BIT);
 
-		qfglEnable(GL_TEXTURE_CUBE_MAP_ARB);
-		qfglBindTexture(GL_TEXTURE_CUBE_MAP_ARB, cube_map_tex);
-		qfglBegin(GL_QUAD_STRIP);
+		qfglEnable (GL_TEXTURE_CUBE_MAP_ARB);
+		qfglBindTexture (GL_TEXTURE_CUBE_MAP_ARB, cube_map_tex);
+		qfglBegin (GL_QUAD_STRIP);
 
 		for (y = 0; y < gl_cube_map_size; y += gl_cube_map_step) {
 			for (x = 0; x <= gl_cube_map_size; x += gl_cube_map_step) { // quad_strip, X should be inclusive
-				struct xyz *v = &FisheyeLookupTbl[x/gl_cube_map_step][y/gl_cube_map_step+1];
-				qfglTexCoord3f (v->x, v->y, v->z); qfglVertex2i (x, y+gl_cube_map_step);
+				struct xyz *v = &FisheyeLookupTbl[x / gl_cube_map_step]
+					[y / gl_cube_map_step + 1];
+				qfglTexCoord3f (v->x, v->y, v->z);
+				qfglVertex2i (x, y + gl_cube_map_step);
 				--v;
-				qfglTexCoord3f (v->x, v->y, v->z); qfglVertex2i (x, y);
+				qfglTexCoord3f (v->x, v->y, v->z);
+				qfglVertex2i (x, y);
 			}
 		}
 		qfglEnd ();
