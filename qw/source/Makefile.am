@@ -33,7 +33,6 @@ AUTOMAKE_OPTIONS=	foreign
 INCLUDES=	-I$(top_srcdir)/include -I$(top_srcdir)/qw/include
 
 bin_PROGRAMS=	@QW_TARGETS@
-GLIDE_LIBS= @GLIDE_LIBS@
 
 EXTRA_PROGRAMS= qw-client-fbdev qw-client-glx qw-client-mgl qw-client-sdl \
 		qw-client-sdl32 qw-client-sgl qw-client-svga qw-client-wgl \

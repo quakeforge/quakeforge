@@ -34,8 +34,8 @@ INCLUDES=	-I$(top_srcdir)/include -I$(top_srcdir)/nq/include
 
 bin_PROGRAMS=	@NQ_TARGETS@
 
-EXTRA_PROGRAMS= nq-3dfx nq-fbdev nq-glx nq-mgl nq-sdl nq-sdl32 \
-		nq-sgl nq-svga nq-wgl nq-x11 nq-server
+EXTRA_PROGRAMS= nq-fbdev nq-glx nq-mgl nq-sdl nq-sdl32 nq-sgl nq-svga nq-wgl \
+		nq-x11 nq-server
 
 if ASM_ARCH
 libasm_la_SOURCES= sys_ia32.S worlda.S
@@ -153,19 +153,6 @@ nq_x11_DEPENDENCIES=	$(top_builddir)/libs/video/renderer/.libs/libQFrenderer_sw.
 			$(client_LIB_DEPS)
 
 # OpenGL-using targets
-
-# ... 3Dfx Voodoo 1 and 2 SVGAlib-based console GL
-nq_3dfx_SOURCES=	$(combined_sources) sys_unix.c
-nq_3dfx_LDADD=		$(top_builddir)/libs/video/renderer/libQFrenderer_gl.la \
-			$(top_builddir)/libs/models/libQFmodels_gl.la \
-			$(top_builddir)/libs/video/targets/libQFtdfx.la \
-			$(client_LIBS) \
-			$(GLIDE_LIBS) $(SVGA_LIBS) $(DL_LIBS)
-nq_3dfx_LDFLAGS=	$(common_ldflags)
-nq_3dfx_DEPENDENCIES=	$(top_builddir)/libs/video/renderer/libQFrenderer_gl.la \
-			$(top_builddir)/libs/models/libQFmodels_gl.la \
-			$(top_builddir)/libs/video/targets/libQFtdfx.la \
-			$(client_LIB_DEPS)
 
 # ... OpenGL in X Window
 nq_glx_SOURCES= 	$(combined_sources) sys_unix.c

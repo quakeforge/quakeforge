@@ -95,7 +95,7 @@ AC_CHECK_HEADERS(
 	alsa/asoundlib.h \
 	arpa/inet.h asm/io.h assert.h conio.h ctype.h ddraw.h dinput.h \
 	direct.h dirent.h dlfcn.h dmedia/audio.h dmedia/cdaudio.h dpmi.h \
-	dsound.h errno.h execinfo.h fcntl.h fnmatch.h glide/sst1vid.h io.h \
+	dsound.h errno.h execinfo.h fcntl.h fnmatch.h io.h \
 	libc.h limits.h linux/cdrom.h linux/joystick.h linux/soundcard.h \
 	machine/soundcard.h malloc.h math.h mgraph.h _mingw.h netdb.h \
 	netinet/in.h pwd.h rpc/types.h setjmp.h signal.h stdarg.h stdio.h \
@@ -127,8 +127,8 @@ AC_STRUCT_TM
 if test "x$cross_compiling" = xyes; then
 	AC_MSG_CHECKING(whether byte ordering is bigendian)
 	AC_ARG_WITH(endian,
-[  --with-endian=TYPE            set endian of target system for
-                                cross-compiling. TYPE = little or big.],
+[  --with-endian=TYPE      set endian of target system for
+                          cross-compiling. TYPE = little or big.],
 		endian="$withval",
 	)
 	case "x$endian" in
@@ -339,7 +339,7 @@ fi
 
 
 AC_ARG_WITH(ipv6,
-[  --with-ipv6[=DIR]       enable IPv6 support. Optional argument specifies
+[  --with-ipv6=DIR         enable IPv6 support. Optional argument specifies
                           location of inet6 libraries.],
 	if test "x$withval" = xno ; then
 		NETTYPE_IPV6=no
@@ -357,7 +357,7 @@ AM_CONDITIONAL(NETTYPE_IPV6, test "x$NETTYPE_IPV6" = "xyes")
 
 dnl Checks for MGL support
 AC_ARG_WITH(mgl,
-[  --with-mgl[=DIR]        use MGL found in DIR],
+[  --with-mgl=DIR          use MGL found in DIR],
 HAVE_MGL=$withval, HAVE_MGL=auto)
 if test "x$HAVE_MGL" != xno; then
 	if test "x$ac_cv_header_windows_h" != "xyes"; then
@@ -434,7 +434,7 @@ fi
 
 dnl Checks for SVGALib support
 AC_ARG_WITH(svga,
-[  --with-svga[=DIR]       use SVGALib found in DIR],
+[  --with-svga=DIR         use SVGALib found in DIR],
 HAVE_SVGA=$withval, HAVE_SVGA=auto)
 if test "x$HAVE_SVGA" != xno; then
 	if test "x$HAVE_SVGA" != xauto; then
@@ -514,32 +514,6 @@ if test "x$HAVE_DGA" != xno; then
 fi
 AC_SUBST(DGA_LIBS)
 
-dnl Checks for GLIDE support
-AC_ARG_WITH(glide,
-[  --with-glide=DIR        use the GLIDE 2.x SDK found in DIR],
-HAVE_GLIDE=$withval, HAVE_GLIDE=auto)
-if test "x$HAVE_GLIDE" != xno; then
-        AC_CHECK_LIB(glide, grGammaCorrectionValue, GLIDE_LIBS="-lglide", 
-		AC_CHECK_LIB(glide2x, grGammaCorrectionValue, GLIDE_LIBS="-lglide2x",GLIDE_LIBS=""))
-	if test "x$HAVE_GLIDE" != xauto; then
-		GLIDE_CFLAGS="$GLIDE_CFLAGS -I$withval/include"
-		GLIDE_LIBS="$GLIDE_LIBS -L$withval/lib"
-	else
-		GLIDE_CFLAGS="$GLIDE_CFLAGS -I/usr/include/glide -I/usr/local/include/glide"
-	fi
-	save_CPPFLAGS="$CPPFLAGS"
-	CPPFLAGS="$CPPFLAGS $GLIDE_CFLAGS"
-	AC_CHECK_HEADER(glide.h, HAVE_GLIDE=yes, HAVE_GLIDE=no)
-	if test "x$HAVE_GLIDE" != xyes; then
-		HAVE_GLIDE=no
-	else
-		AC_DEFINE(HAVE_GLIDE)
-	fi
-	CPPFLAGS="$save_CPPFLAGS"
-fi
-AC_SUBST(GLIDE_CFLAGS)
-AC_SUBST(GLIDE_LIBS)
-
 dnl SDL/SDL-GL checks
 AC_ARG_ENABLE(sdl,
 [  --disable-sdl           disable checking for SDL],
@@ -547,12 +521,9 @@ AC_ARG_ENABLE(sdl,
 
 if test "x$enable_sdl" != xno; then
 	AM_PATH_SDL(1.2.0,
-		HAVE_SDL=yes
-		HAVE_SGL=yes,
-		HAVE_SDL=no
-		HAVE_SGL=no)
+		HAVE_SDL=yes,
+		HAVE_SDL=no)
 	AC_SUBST(HAVE_SDL)
-	AC_SUBST(HAVE_SGL)
 fi
 
 dnl ==================================================================
@@ -996,7 +967,7 @@ fi
 AC_DEFINE_UNQUOTED(FS_USERPATH, "$userpath")
 
 AC_ARG_WITH(plugin-path,
-[  --with-plugin-path=DIR     Use DIR for loading plugins, defaults to
+[  --with-plugin-path=DIR  Use DIR for loading plugins, defaults to
                           \${libdir}/quakeforge],
 pluginpath=$withval, pluginpath="auto")
 
@@ -1214,7 +1185,7 @@ dnl ==================================================================
 
 AC_ARG_WITH(clients,
 	[  --with-clients=<list>   compile clients in <list>;
-                          3dfx,fbdev,glx,mgl,sdl,sdl32,sgl,svga,wgl,x11],
+                          fbdev,glx,mgl,sdl,sdl32,sgl,svga,wgl,x11],
 	clients="$withval",
 	clients="all"
 )
@@ -1243,9 +1214,6 @@ else
 	IFS=","
 	for client in $clients; do
 		case "$client" in
-			3dfx)
-				ENABLE_3DFX=yes
-				;;
 			fbdev)
 				ENABLE_FBDEV=yes
 				;;
@@ -1301,17 +1269,6 @@ CAN_BUILD_SW32=no
 
 HAVE_3DFX=no
 HAVE_GLX=no
-if test "x$HAVE_GLIDE" = xyes -a "x$HAVE_SVGA" = xyes; then
-	if test "x$ENABLE_3DFX" = xyes; then
-		QW_TARGETS="$QW_TARGETS qw-client-3dfx\$(EXEEXT)"
-		NQ_TARGETS="$NQ_TARGETS nq-3dfx\$(EXEEXT)"
-		CL_TARGETS="$CL_TARGETS 3dfx"
-		VID_TARGETS="$VID_TARGETS libQFtdfx.la"
-		BUILD_GL=yes
-	fi
-	HAVE_3DFX=yes
-	CAN_BUILD_GL=yes
-fi
 if test "x$HAVE_FBDEV" = xyes; then
 	if test "x$ENABLE_FBDEV" = xyes; then
 		QW_TARGETS="$QW_TARGETS qw-client-fbdev\$(EXEEXT)"
@@ -1360,16 +1317,14 @@ if test "x$HAVE_SDL" = xyes; then
 		BUILD_SW32=yes
 	fi
 	CAN_BUILD_SW32=yes
-fi
-if test "x$HAVE_SGL" = xyes; then
 	if test "x$ENABLE_SGL" = xyes; then
 		QW_TARGETS="$QW_TARGETS qw-client-sgl\$(EXEEXT)"
 		NQ_TARGETS="$NQ_TARGETS nq-sgl\$(EXEEXT)"
 		CL_TARGETS="$CL_TARGETS SDL-GL"
 		VID_TARGETS="$VID_TARGETS libQFsgl.la"
 		BUILD_GL=yes
+		CAN_BUILD_GL=yes
 	fi
-	CAN_BUILD_GL=yes
 fi
 if test "x$HAVE_SVGA" = xyes; then
 	if test "x$ENABLE_SVGA" = xyes; then
@@ -1410,11 +1365,9 @@ AC_SUBST(CAN_BUILD_GL)
 AC_SUBST(CAN_BUILD_SW)
 AC_SUBST(CAN_BUILD_SW32)
 
-AC_SUBST(HAVE_3DFX)
 AC_SUBST(HAVE_FBDEV)
 AC_SUBST(HAVE_GLX)
 AC_SUBST(HAVE_SDL)
-AC_SUBST(HAVE_SGL)
 AC_SUBST(HAVE_SVGA)
 AC_SUBST(HAVE_X)
 
@@ -1471,6 +1424,11 @@ AM_CONDITIONAL(BUILD_SND_RENDERER, test "$BUILD_SND_RENDERER" = "yes")
 AM_CONDITIONAL(BUILD_GL, test "$BUILD_GL" = "yes")
 AM_CONDITIONAL(BUILD_SW, test "$BUILD_SW" = "yes")
 AM_CONDITIONAL(BUILD_SW32, test "$BUILD_SW32" = "yes")
+
+dnl Finalization of CFLAGS, LDFLAGS, and LIBS
+AC_SUBST(CFLAGS)
+AC_SUBST(LDFLAGS)
+AC_SUBST(LIBS)
 
 dnl Output files
 AC_OUTPUT(
