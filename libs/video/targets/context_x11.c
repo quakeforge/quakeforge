@@ -393,7 +393,7 @@ void X11_UpdateFullscreen (cvar_t *fullscreen)
 	X11_ProcessEvent ();	//FIXME should do proper event parsing.
 	attr.override_redirect = vidmode_active != 0;
 	XChangeWindowAttributes (x_disp, x_win, mask, &attr);
-	XMapWindow (x_disp, x_win);
+	XMapRaised (x_disp, x_win);
 	X11_ProcessEvent ();	//FIXME should do proper event parsing.
 	if (vidmode_active) {
 		XMoveWindow(x_disp, x_win, 0, 0);
@@ -401,8 +401,6 @@ void X11_UpdateFullscreen (cvar_t *fullscreen)
 		XMoveWindow(x_disp, x_win, window_x, window_y);
 		window_saved = 0;
 	}
-	X11_ProcessEvent ();	//FIXME should do proper event parsing.
-	XRaiseWindow (x_disp, x_win);
 	X11_ProcessEvent ();	//FIXME should do proper event parsing.
 	XWarpPointer (x_disp, None, x_win, 0, 0, 0, 0, 0, 0);
 
