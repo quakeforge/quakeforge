@@ -386,12 +386,12 @@ process_corners (struct box_def *box)
 	}
 
 	switch (box->face_count) {
-		case 1:
-		case 2:
-		case 8:
+		case 1: // a
+		case 2:	// b
+		case 8:	// f
 			// no corners
 			return;
-		case 3:
+		case 3: // g
 			// one corner, no edges
 			{
 				vec3_t      v;
@@ -403,7 +403,7 @@ process_corners (struct box_def *box)
 				insert_cube_vertices (box, visit[2], 1, v);
 			}
 			break;
-		case 4:
+		case 4:	// c d j n
 			if (max_visit > 1)
 				return;
 			if (abs (visit[2].face - visit[0].face) == 3
@@ -458,7 +458,7 @@ process_corners (struct box_def *box)
 				insert_cube_vertices (box, visit[r_f], 1, v_r);
 			}
 			break;
-		case 5:
+		case 5:	// h m
 			if (max_visit > 1) {
 				// one vertex
 				vec3_t      v;
@@ -500,8 +500,8 @@ process_corners (struct box_def *box)
 				insert_cube_vertices (box, visit[(center + 4) % 5], 1, v[2]);
 			}
 			break;
-		case 6:
-			if (max_visit > 2)
+		case 6:	// e k l
+			if (max_visit > 2) // e
 				return;
 			for (i = 0; i < 5; i++) {
 				// don't need to check the last point
@@ -513,13 +513,14 @@ process_corners (struct box_def *box)
 				// adjacant vertices
 				vec3_t      v[2];
 
-				find_cube_vertex (visit[i].face, visit[(i + 1) % 6].face,
-								  visit[(i + 2) % 6].face, v[0]);
+				find_cube_vertex (visit[i].face,
+								  visit[(i + 1) % 6].face,
+								  visit[(i + 5) % 6].face, v[0]);
 				find_cube_vertex (visit[(i + 1) % 6].face,
 								  visit[(i + 2) % 6].face,
 								  visit[(i + 3) % 6].face, v[1]);
 
-				insert_cube_vertices (box, visit[(i + 5) % 6], 2, v[2], v[1]);
+				insert_cube_vertices (box, visit[(i + 5) % 6], 2, v[0], v[1]);
 
 				insert_cube_vertices (box, visit[i], 1, v[0]);
 				insert_cube_vertices (box, visit[(i + 1) % 6], 2, v[1], v[0]);
@@ -544,7 +545,7 @@ process_corners (struct box_def *box)
 				insert_cube_vertices (box, visit[(i + 5) % 6], 1, v[0]);
 			}
 			break;
-		case 7:
+		case 7:	// i
 			for (i = 0; i < 6; i++) {
 				// don't need to check the last point
 				if (visit[(i + 2) % 6].face == visit[(i + 4) % 6].face
@@ -789,7 +790,7 @@ R_DrawSkyChain (msurface_t *sky_chain)
 		sc = sc->texturechain;
 	}
 #endif
-#if 1
+#if 0
 	qfglDisable (GL_TEXTURE_2D);
 	sc = sky_chain;
 	qfglColor3f (1, 1, 1);
@@ -806,7 +807,6 @@ R_DrawSkyChain (msurface_t *sky_chain)
 		}
 		sc = sc->texturechain;
 	}
-#if 0
 	sc = sky_chain;
 	qfglColor3f (0, 1, 0);
 	qfglBegin (GL_POINTS);
@@ -827,15 +827,15 @@ R_DrawSkyChain (msurface_t *sky_chain)
 		sc = sc->texturechain;
 	}
 	qfglEnd ();
-#endif
 	if (skyloaded) {
 		int         i, j;
 		qfglColor3f (1, 0, 0);
-		for (i = 0; i < 1; i++) {
+		for (i = 0; i < 6; i++) {
 			vec3_t      v;
 			qfglBegin (GL_LINE_LOOP);
 			for (j = 0; j < 4; j++) {
-				VectorAdd (&skyvec[i][j][2], r_refdef.vieworg, v);
+				VectorScale (&skyvec[i][j][2], 1.0/128.0, v);
+				VectorAdd (v, r_refdef.vieworg, v);
 				qfglVertex3fv (v);
 			}
 			qfglEnd ();
