@@ -448,6 +448,7 @@ PR_ExecuteProgram (progs_t * pr, func_t fnum)
 			case OP_STORE_FLD:			// integers
 			case OP_STORE_S:
 			case OP_STORE_FNC:			// pointers
+			case OP_STORE_I:
 				OPB.integer_var = OPA.integer_var;
 				break;
 			case OP_STORE_V:
@@ -461,6 +462,7 @@ PR_ExecuteProgram (progs_t * pr, func_t fnum)
 			case OP_STOREP_FLD:		// integers
 			case OP_STOREP_S:
 			case OP_STOREP_FNC:		// pointers
+			case OP_STOREP_I:
 				if (pr_boundscheck->int_val
 					&& (OPB.integer_var < 0 || OPB.integer_var + 4 >
 						pr->pr_edictareasize)) {
@@ -527,6 +529,7 @@ PR_ExecuteProgram (progs_t * pr, func_t fnum)
 			case OP_LOAD_ENT:
 			case OP_LOAD_S:
 			case OP_LOAD_FNC:
+			case OP_LOAD_I:
 				if (pr_boundscheck->int_val
 					&& (OPA.entity_var < 0 || OPA.entity_var >=
 						pr->pr_edictareasize)) {
@@ -700,52 +703,6 @@ PR_ExecuteProgram (progs_t * pr, func_t fnum)
 				break;
 			case OP_NE_I:
 				OPC.integer_var = OPA.integer_var != OPB.integer_var;
-				break;
-			case OP_STORE_I:
-				OPB.integer_var = OPA.integer_var;
-				break;
-			case OP_STOREP_I:
-				if (pr_boundscheck->int_val
-					&& (OPB.integer_var < 0 || OPB.integer_var + 4 >
-						pr->pr_edictareasize)) {
-					pr->pr_xstatement = st - pr->pr_statements;
-					PR_RunError (pr, "Progs attempted to write to an out of "
-								 "bounds edict\n");
-					return;
-				}
-				if (pr_boundscheck->int_val
-					&& (OPB.integer_var % pr->pr_edict_size <
-						((byte *) & (*pr->edicts)->v - (byte *) *pr->edicts)))
-				{
-					pr->pr_xstatement = st - pr->pr_statements;
-					PR_RunError
-						(pr, "Progs attempted to write to an engine edict "
-						 "field\n");
-					return;
-				}
-				ptr = (pr_type_t*)((int)*pr->edicts + OPB.integer_var);
-				ptr->integer_var = OPA.integer_var;
-				break;
-			case OP_LOAD_I:
-				if (pr_boundscheck->int_val
-					&& (OPA.entity_var < 0 || OPA.entity_var >=
-						pr->pr_edictareasize)) {
-					pr->pr_xstatement = st - pr->pr_statements;
-					PR_RunError
-						(pr, "Progs attempted to read an out of bounds edict "
-						 "number\n");
-					return;
-				}
-				if (pr_boundscheck->int_val
-					&& (OPB.integer_var < 0 || OPB.integer_var >=
-						pr->progs->entityfields)) {
-					pr->pr_xstatement = st - pr->pr_statements;
-					PR_RunError (pr, "Progs attempted to read an invalid "
-								 "field in an entity_var\n");
-					return;
-				}
-				ed = PROG_TO_EDICT (pr, OPA.entity_var);
-				OPC.integer_var = ed->v[OPB.integer_var].integer_var;
 				break;
 
 // LordHavoc: to be enabled when Progs version 7 (or whatever it will be numbered) is finalized
