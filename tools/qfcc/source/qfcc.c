@@ -62,6 +62,7 @@ static struct option const long_options[] = {
 	{"source",	required_argument,	0, 's'},
 	{"quiet",	no_argument,		0, 'q'},
 	{"verbose",	no_argument,		0, 'v'},
+	{NULL,		no_argument,		0, 'g'},
 	{"code",	required_argument,	0, 'C'},
 	{"warn",	required_argument,	0, 'W'},
 	{"help",	no_argument,		0, 'h'},
@@ -678,6 +679,7 @@ usage (int status)
 "    -s, --source DIR          Look for progs.src in DIR instead of \".\"\n"
 "    -q, --quiet               Inhibit usual output\n"
 "    -v, --verbose             Display more output than usual\n"
+"    -g,                       Generate debuggin info\n"
 "    -C, --code OPTION,...     Set code generation options\n"
 "    -W, --warn OPTION,...     Set warning options\n"
 "    -h, --help                Display this help and exit\n"
@@ -716,6 +718,7 @@ DecodeArgs (int argc, char **argv)
 			"s:"	// source dir
 			"q"		// quiet
 			"v"		// verbose
+			"g"		// debug
 			"C:"	// code options
 			"W:"	// warning options
 			"h"		// help
@@ -742,6 +745,9 @@ DecodeArgs (int argc, char **argv)
 				break;
 			case 'v':	// verbose
 				options.verbosity += 1;
+				break;
+			case 'g':	// debug
+				options.code.debug = 1;
 				break;
 			case 'C': {	// code options
 					char	*opts = strdup (optarg);
