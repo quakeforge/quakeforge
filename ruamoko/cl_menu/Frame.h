@@ -1,4 +1,4 @@
-#include "Point.h"
+#include "gui/Point.h"
 #include "draw.h"
 
 @interface Frame : Object

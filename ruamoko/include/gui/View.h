@@ -2,8 +2,10 @@
 #define __ruamoko_View_h
 
 #include "Object.h"
-#include "Point.h"
-#include "Size.h"
+
+@class Point;
+@class Size;
+@class Rect;
 
 @interface View: Object
 {
@@ -15,7 +17,10 @@
 }
 
 - (id) initWithComponents: (integer)x : (integer)y : (integer)w : (integer)h;
+- (id) initWithOrigin: (Point)anOrigin size: (Size)aSize;
+- (id) initWithBounds: (Rect)aRect;
+- (void) setBasePos: (integer) x y: (integer) y;
 - (void) draw;
 @end
 
-#endif //__ruamoko_Rect_h
+#endif //__ruamoko_View_h

@@ -32,10 +32,15 @@
 #include "draw.h"
 #include "cvar.h"
 #include "key.h"
-#include "InputLine.h"
-#include "Rect.h"
 #include "controls_o.h"
 #include "options_util.h"
+
+#include "gui/InputLine.h"
+#include "gui/Rect.h"
+#include "gui/Slider.h"
+
+Slider volume_slider;
+Slider bgmvolume_slider;
 
 /*
 	some definitions of border values for different things
@@ -196,15 +201,22 @@ MENU_video_options =
 integer (string text, integer key) 
 CB_audio_options =
 {
-	local float		volume;
+	local float volume;
+	local Slider slider;
 
 	if(!(key == QFK_RIGHT || key == QFK_LEFT )) {
 		return 0;
 	}
+	if (text == "volume")
+		slider = volume_slider;
+	else
+		slider = bgmvolume_slider;
+
 	volume = cvar (text);
 	volume = min_max_cnt (MIN_VOLUME, MAX_VOLUME, VOLUME_STEP, volume, 
 						  (key == QFK_RIGHT) && (key != QFK_LEFT));
 	cvar_set (text, ftos (volume));
+	[slider setIndex: to_percentage (MIN_VOLUME, MAX_VOLUME, volume)];
 
 	return 0;
 };
@@ -227,13 +239,13 @@ DRAW_audio_options =
 	bar_pad = y + 50;
 
 	Draw_String (x + 70, bar_pad + 10, "Volume:");
-	draw_perc_bar  (x + 126,  bar_pad + 10, 15, 
-		to_percentage (MIN_VOLUME, MAX_VOLUME, cvar("volume")) );
+	[volume_slider setBasePos:x y:y];
+	[volume_slider draw];
 	Draw_String (x + 126 + (15 + 4)*8 , bar_pad + 10, ftos(cvar("volume")));
 
 	Draw_String (x + 70, bar_pad + 18, "Music :");
-	draw_perc_bar  (x + 126,  bar_pad + 18, 15, 
-		to_percentage (MIN_VOLUME, MAX_VOLUME, cvar("bgmvolume")) );
+	[bgmvolume_slider setBasePos:x y:y];
+	[bgmvolume_slider draw];
 	Draw_String (x + 126 + (15 + 4)*8 , bar_pad + 18, ftos(cvar("bgmvolume")));
 
 	opt_cursor  (x + 62, y + (Menu_GetIndex() * 10) + 60);
@@ -249,10 +261,21 @@ void ()
 MENU_audio_options =
 {
 	local integer bar_pad;
+	local Rect rect;
 
 	Menu_Begin (54, 60, "Audio");
 	Menu_FadeScreen (1);
 	Menu_Draw (DRAW_audio_options);
+
+	rect = [[Rect alloc] initWithComponents:126 :60 :15 * 8 :8];
+	volume_slider = [[Slider alloc] initWithBounds:rect size:100];
+	[volume_slider setIndex: to_percentage (MIN_VOLUME, MAX_VOLUME,
+											cvar("volume"))];
+	rect.origin.y += 8;
+	bgmvolume_slider = [[Slider alloc] initWithBounds:rect size:100];
+	[bgmvolume_slider setIndex: to_percentage (MIN_VOLUME, MAX_VOLUME,
+											   cvar("bgmvolume"))];
+	[rect dealloc];
 	
 	bar_pad = 0;
 	Menu_Item (54, bar_pad + 10, "volume", CB_audio_options, 1);

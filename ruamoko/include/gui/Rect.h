@@ -2,8 +2,8 @@
 #define __ruamoko_Rect_h
 
 #include "Object.h"
-#include "Point.h"
-#include "Size.h"
+#include "gui/Point.h"
+#include "gui/Size.h"
 
 @interface Rect: Object
 {

@@ -1,0 +1,9 @@
+*.d
+*.dat
+*.pak
+*.qfo
+*.sym
+.deps
+.vimrc
+Makefile
+Makefile.in

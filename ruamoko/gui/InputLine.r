@@ -1,6 +1,5 @@
-#include "InputLine.h"
-
-#include "Rect.h"
+#include "gui/InputLine.h"
+#include "gui/Rect.h"
 
 inputline_t (integer lines, integer size, integer prompt) InputLine_Create = #0;
 void (inputline_t il, void [] data) InputLine_SetUserData = #0;

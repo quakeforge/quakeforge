@@ -1,7 +1,7 @@
 #include "Object.h"
-#include "Point.h"
-#include "Size.h"
-#include "Rect.h"
+#include "gui/Point.h"
+#include "gui/Size.h"
+#include "gui/Rect.h"
 
 @implementation Rect
 

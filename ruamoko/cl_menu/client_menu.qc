@@ -4,8 +4,6 @@
 #include "gib.h"
 #include "draw.h"
 #include "key.h"
-#include "InputLine.h"
-#include "Rect.h"
 #include "string.h"
 #include "cbuf.h"
 #include "options.h"
@@ -14,6 +12,9 @@
 #include "debug.h"
 #include "HUD.h"
 #include "client_menu.h"
+
+#include "gui/InputLine.h"
+#include "gui/Rect.h"
 
 //FIXME shouldn't need these
 entity self;

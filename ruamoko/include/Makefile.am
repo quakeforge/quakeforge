@@ -8,5 +8,6 @@ include_HEADERS= \
 	draw.h key.h \
 	\
 	cbuf.h cmd.h cvar.h file.h gib.h hash.h plist.h \
-	Object.h AutoreleasePool.h Array.h Entity.h List.h ListNode.h \
-	InputLine.h Point.h Rect.h Size.h Stack.h
+	Object.h AutoreleasePool.h Array.h Entity.h List.h ListNode.h Stack.h \
+	\
+	gui/InputLine.h gui/Point.h gui/Rect.h gui/Size.h gui/View.h

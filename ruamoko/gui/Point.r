@@ -1,4 +1,4 @@
-#include "Point.h"
+#include "gui/Point.h"
 
 @implementation Point
 

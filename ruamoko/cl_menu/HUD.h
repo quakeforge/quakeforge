@@ -1,6 +1,7 @@
-#include "Point.h"
 #include "Frame.h"
 #include "Array.h"
+
+@class Point;
 
 @interface HUDObject : Object
 {

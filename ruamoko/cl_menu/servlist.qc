@@ -1,10 +1,11 @@
 #include "menu.h"
 #include "draw.h"
-#include "InputLine.h"
-#include "Rect.h"
 #include "options_util.h"
 #include "controls_o.h"
 #include "client_menu.h"
+
+#include "gui/InputLine.h"
+#include "gui/Rect.h"
 
 integer (integer x, integer y) servlist_favorates_draw =
 {
