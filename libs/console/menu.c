@@ -272,6 +272,9 @@ bi_Menu_SelectMenu (progs_t *pr)
 	if (menu) {
 		key_dest = key_menu;
 		game_target = IMT_CONSOLE;
+		if (menu->enter_hook) {
+			PR_ExecuteProgram (&menu_pr_state, menu->enter_hook);
+		}
 	} else {
 		if (name && *name)
 			Con_Printf ("no menu \"%s\"\n", name);
