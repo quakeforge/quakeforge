@@ -180,6 +180,9 @@ R_Init_Cvars (void)
 							 "Toggles fullbright color support for models");
 	gl_fires = Cvar_Get ("gl_fires", "0", CVAR_ARCHIVE, NULL,
 						 "Toggles lavaball and rocket fireballs");
+	gl_keeptjunctions = Cvar_Get ("gl_keeptjunctions", "1", CVAR_ARCHIVE, NULL,
+								  "Set to 0 to turn off colinear vertexes "
+								  "upon level load.");
 	gl_lerp_anim = Cvar_Get ("gl_lerp_anim", "1", CVAR_ARCHIVE, NULL,
 							 "Toggles model animation interpolation");
 
