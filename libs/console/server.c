@@ -239,6 +239,8 @@ C_ProcessInput (void)
 			if (ioctl (fileno (stdout), TIOCGWINSZ, &size) == 0) {
 				resizeterm (size.ws_row, size.ws_col);
 				wrefresh (curscr);
+				getmaxyx (stdscr, screen_y, screen_x);
+				con_linewidth = screen_x;
 			}
 		}
 
