@@ -1041,6 +1041,12 @@ CL_ServerInfo (void)
 	Info_SetValueForKey (cl.serverinfo, key, value, 0);
 	if (strequal (key, "chase")) {
 		cl.chase = atoi (value);
+	} else if (strequal (key, "cshifts")) {
+		cl.sv_cshifts = atoi (value);
+	} else if (strequal (key, "no_pogo_stick")) {
+		cl.no_pogo_stick = atoi (value);
+	} else if (strequal (key, "teamplay")) {
+		cl.teamplay = atoi (value);
 	} else if (strequal (key, "watervis")) {
 		cl.watervis = atoi (value);
 	}

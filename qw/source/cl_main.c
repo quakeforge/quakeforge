@@ -596,17 +596,22 @@ CL_FullServerinfo_f (void)
 		else
 			Con_Printf ("Invalid QSG Protocol number: %s", p);
 	}
+
+	cl.chase = cl.sv_cshifts = cl.no_pogo_stick = cl.teamplay = 0;
 	if ((p = Info_ValueForKey (cl.serverinfo, "chase")) && *p) {
-		cl.chase = atof (p);
+		cl.chase = atoi (p);
+	}
+	if ((p = Info_ValueForKey (cl.serverinfo, "cshifts")) && *p) {
+		cl.sv_cshifts = atoi (p);
 	}
 	if ((p = Info_ValueForKey (cl.serverinfo, "no_pogo_stick")) && *p) {
-		cl.no_pogo_stick = atof (p);
+		cl.no_pogo_stick = atoi (p);
 	}
 	if ((p = Info_ValueForKey (cl.serverinfo, "teamplay")) && *p) {
-		cl.teamplay = atof (p);
+		cl.teamplay = atoi (p);
 	}
 	if ((p = Info_ValueForKey (cl.serverinfo, "watervis")) && *p) {
-		cl.watervis = atof (p);
+		cl.watervis = atoi (p);
 	}
 	if ((p = Info_ValueForKey (cl.serverinfo, "skybox")) && *p) {
 		//FIXME didn't actually do anything anyway
@@ -1453,7 +1458,7 @@ Host_Frame (float time)
 	// fetch results from server
 	CL_ReadPackets ();
 
-	if (cl.no_pogo_stick)
+	if (cl.no_pogo_stick && !no_pogo_stick->int_val)
 		Cvar_Set (no_pogo_stick, "1");
 
 	// send intentions now

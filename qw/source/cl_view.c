@@ -258,8 +258,7 @@ V_ParseDamage (void)
 	cl.faceanimtime = cl.time + 0.2;	// but sbar face into pain frame
 
 	if (cl_cshift_damage->int_val
-		|| (atoi (Info_ValueForKey (cl.serverinfo, "cshifts")) &
-			INFO_CSHIFT_DAMAGE)) {
+		|| (cl.sv_cshifts & INFO_CSHIFT_DAMAGE)) {
 
 		cl.cshifts[CSHIFT_DAMAGE].percent += 3 * count;
 		cl.cshifts[CSHIFT_DAMAGE].percent =
@@ -313,8 +312,7 @@ void
 V_BonusFlash_f (void)
 {
 	if (!cl_cshift_bonus->int_val
-		&& !(atoi (Info_ValueForKey (cl.serverinfo, "cshifts")) &
-			 INFO_CSHIFT_BONUS))
+		&& !(cl.sv_cshifts & INFO_CSHIFT_BONUS))
 		return;
 		
 	cl.cshifts[CSHIFT_BONUS].destcolor[0] = 215;
@@ -332,8 +330,7 @@ void
 V_SetContentsColor (int contents)
 {
 	if (!cl_cshift_contents->int_val
-		&& !(atoi (Info_ValueForKey (cl.serverinfo, "cshifts")) &
-			 INFO_CSHIFT_CONTENTS)) {
+		&& !(cl.sv_cshifts & INFO_CSHIFT_CONTENTS)) {
 		cl.cshifts[CSHIFT_CONTENTS] = cshift_empty;
 		return;
 	}
@@ -443,8 +440,7 @@ V_PrepBlend (void)
 	int		i, j;
 
 	if (cl_cshift_powerup->int_val
-		|| (atoi (Info_ValueForKey (cl.serverinfo, "cshifts"))
-			& INFO_CSHIFT_POWERUP))
+		|| (cl.sv_cshifts & INFO_CSHIFT_POWERUP))
 		V_CalcPowerupCshift ();
 
 	vid.cshift_changed = false;

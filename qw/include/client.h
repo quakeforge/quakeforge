@@ -261,6 +261,7 @@ typedef struct
 
 	// serverinfo mirrors
 	int			chase;
+	int			sv_cshifts;
 	int			no_pogo_stick;
 	int			teamplay;
 	int			watervis;
