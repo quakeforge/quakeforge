@@ -248,9 +248,9 @@ IN_LL_SendKeyEvents (void)
 						sym = SDLK_EQUALS;
 						break;
 				}
-				// If we're not directly handled and still above 255
+				// If we're not directly handled and still >= K_NUM_KEYS
 				// just force it to 0
-				if (sym > 255)
+				if (sym >= K_NUM_KEYS)
 					sym = 0;
 				Key_Event (sym, -1, state);
 				break;
