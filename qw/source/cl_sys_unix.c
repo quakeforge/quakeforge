@@ -55,9 +55,33 @@ int         noconinput = 0;
 qboolean    is_server = false;
 char       *svs_info;
 
-// General routines ======================================================
 
+/*
+	Sys_Init_Cvars
 
+	Quake calls this so the system can register variables before host_hunklevel
+	is marked
+*/
+void
+Sys_Init_Cvars (void)
+{
+	sys_nostdout = Cvar_Get ("sys_nostdout", "0", CVAR_NONE, NULL,
+							 "set to disable std out");
+	if (COM_CheckParm ("-nostdout"))
+		Cvar_Set (sys_nostdout, "1");
+}
+
+void
+Sys_Init (void)
+{
+#ifdef USE_INTEL_ASM
+	Sys_SetFPCW ();
+#endif
+}
+
+/*
+	Sys_Quit
+*/
 void
 Sys_Quit (void)
 {
@@ -69,26 +93,9 @@ Sys_Quit (void)
 	exit (0);
 }
 
-
-void
-Sys_Init_Cvars (void)
-{
-	sys_nostdout = Cvar_Get ("sys_nostdout", "0", CVAR_NONE, NULL,
-			"set to disable std out");
-	if (COM_CheckParm ("-nostdout"))
-		Cvar_Set (sys_nostdout, "1");
-}
-
-
-void
-Sys_Init (void)
-{
-#ifdef USE_INTEL_ASM
-	Sys_SetFPCW ();
-#endif
-}
-
-
+/*
+	Sys_Error
+*/
 void
 Sys_Error (const char *error, ...)
 {
@@ -107,7 +114,6 @@ Sys_Error (const char *error, ...)
 	exit (1);
 }
 
-
 void
 Sys_Warn (char *warning, ...)
 {
@@ -119,7 +125,6 @@ Sys_Warn (char *warning, ...)
 	va_end (argptr);
 	fprintf (stderr, "Warning: %s", string);
 }
-
 
 void
 Sys_DebugLog (const char *file, const char *fmt, ...)
@@ -146,6 +151,12 @@ floating_point_exception_handler (int whatever)
 }
 
 
+/*
+	Sys_ConsoleInput
+
+	Checks for a complete line of text typed in at the console, then forwards
+	it to the host command processor
+*/
 const char *
 Sys_ConsoleInput (void)
 {
@@ -181,6 +192,9 @@ Sys_LowFPPrecision (void)
 
 int         skipframes;
 
+/*
+	main
+*/
 int
 main (int c, const char *v[])
 {
@@ -204,6 +218,7 @@ main (int c, const char *v[])
 	if (j)
 		host_parms.memsize = (int) (atof (com_argv[j + 1]) * 1024 * 1024);
 	host_parms.membase = malloc (host_parms.memsize);
+
 	if (!host_parms.membase) {
 		printf ("Can't allocate memory for zone.\n");
 		return 1;

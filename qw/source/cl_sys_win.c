@@ -83,59 +83,18 @@ void        Sys_PopFPCW (void);
 void        Sys_PushFPCW_SetHigh (void);
 
 
-void
-Sys_DebugLog (const char *file, const char *fmt, ...)
-{
-	va_list     argptr;
-	static char data[1024];
-	int         fd;
-
-	va_start (argptr, fmt);
-	vsnprintf (data, sizeof (data), fmt, argptr);
-	va_end (argptr);
-	fd = open (file, O_WRONLY | O_CREAT | O_APPEND, 0666);
-	write (fd, data, strlen (data));
-	close (fd);
-};
-
-
 /*
-	FILE IO
+	Sys_Init_Cvars
+
+	Quake calls this so the system can register variables before host_hunklevel
+	is marked
 */
-
-
-int
-wfilelength (VFile *f)
-{
-	int         pos;
-	int         end;
-
-	pos = Qtell (f);
-	Qseek (f, 0, SEEK_END);
-	end = Qtell (f);
-	Qseek (f, pos, SEEK_SET);
-
-	return end;
-}
-
-
-/*
-	SYSTEM IO
-*/
-
-
-/*
-	Sys_Init
-*/
-
-
 void
 Sys_Init_Cvars (void)
 {
 	sys_nostdout = Cvar_Get ("sys_nostdout", "1", CVAR_NONE, NULL,
-					"unset to enable std out - windows does NOT support this");
+							 "unset to enable std out - windows does NOT support this");
 }
-
 
 void
 Sys_Init (void)
@@ -184,7 +143,30 @@ Sys_Init (void)
 		WinNT = false;
 }
 
+/*
+	Sys_Quit
+*/
+void
+Sys_Quit (void)
+{
+	VID_ForceUnlockedAndReturnState ();
 
+	Host_Shutdown ();
+
+	if (tevent)
+		CloseHandle (tevent);
+
+	if (qwclsemaphore)
+		CloseHandle (qwclsemaphore);
+
+	Net_LogStop();
+
+	exit (0);
+}
+
+/*
+	Sys_Error
+*/
 void
 Sys_Error (const char *error, ...)
 {
@@ -206,26 +188,42 @@ Sys_Error (const char *error, ...)
 	exit (1);
 }
 
-
 void
-Sys_Quit (void)
+Sys_DebugLog (const char *file, const char *fmt, ...)
 {
-	VID_ForceUnlockedAndReturnState ();
+	va_list     argptr;
+	static char data[1024];
+	int         fd;
 
-	Host_Shutdown ();
+	va_start (argptr, fmt);
+	vsnprintf (data, sizeof (data), fmt, argptr);
+	va_end (argptr);
+	fd = open (file, O_WRONLY | O_CREAT | O_APPEND, 0666);
+	write (fd, data, strlen (data));
+	close (fd);
+};
 
-	if (tevent)
-		CloseHandle (tevent);
 
-	if (qwclsemaphore)
-		CloseHandle (qwclsemaphore);
+int
+wfilelength (VFile *f)
+{
+	int         pos;
+	int         end;
 
-	Net_LogStop();
+	pos = Qtell (f);
+	Qseek (f, 0, SEEK_END);
+	end = Qtell (f);
+	Qseek (f, pos, SEEK_SET);
 
-	exit (0);
+	return end;
 }
 
+/*
+	Sys_ConsoleInput
 
+	Checks for a complete line of text typed in at the console, then forwards
+	it to the host command processor
+*/
 const char *
 Sys_ConsoleInput (void)
 {
@@ -334,17 +332,10 @@ Sys_ConsoleInput (void)
 	return NULL;
 }
 
-
 void
 Sys_Sleep (void)
 {
 }
-
-
-/*
-	WINDOWS CRAP
-*/
-
 
 void
 SleepUntilInput (int time)
@@ -360,6 +351,9 @@ char       *argv[MAX_NUM_ARGVS];
 static char *empty_string = "";
 
 
+/*
+	main
+*/
 int WINAPI
 WinMain (HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine,
 		 int nCmdShow)

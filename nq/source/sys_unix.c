@@ -54,8 +54,6 @@
 #include "server.h"
 #include "host.h"
 
-
-
 qboolean    isDedicated;
 
 char       *basedir = ".";
@@ -65,28 +63,30 @@ cvar_t     *sys_linerefresh;
 cvar_t     *timestamps;
 cvar_t     *timeformat;
 
+
 void
-Sys_DebugLog (const char *file, const char *fmt, ...)
+Sys_Init (void)
 {
-	va_list     argptr;
-	static char data[1024];
-	int         fd;
-
-	va_start (argptr, fmt);
-	vsnprintf (data, sizeof (data), fmt, argptr);
-	va_end (argptr);
-
-	fd = open (file, O_WRONLY | O_CREAT | O_APPEND, 0666);
-	write (fd, data, strlen (data));
-	close (fd);
+#ifdef USE_INTEL_ASM
+	Sys_SetFPCW ();
+#endif
 }
 
+/*
+	Sys_Quit
+*/
+void
+Sys_Quit (void)
+{
+	Host_Shutdown ();
+	fcntl (0, F_SETFL, fcntl (0, F_GETFL, 0) & ~FNDELAY);
+	fflush (stdout);
+	exit (0);
+}
 
 /*
- *	System I/O
- */
-
-
+	Sys_Error
+*/
 void
 Sys_Error (const char *error, ...)
 {
@@ -107,22 +107,20 @@ Sys_Error (const char *error, ...)
 }
 
 void
-Sys_Quit (void)
+Sys_DebugLog (const char *file, const char *fmt, ...)
 {
-	Host_Shutdown ();
-	fcntl (0, F_SETFL, fcntl (0, F_GETFL, 0) & ~FNDELAY);
-	fflush (stdout);
-	exit (0);
-}
+	va_list     argptr;
+	static char data[1024];
+	int         fd;
 
-void
-Sys_Init (void)
-{
-#ifdef USE_INTEL_ASM
-	Sys_SetFPCW ();
-#endif
-}
+	va_start (argptr, fmt);
+	vsnprintf (data, sizeof (data), fmt, argptr);
+	va_end (argptr);
 
+	fd = open (file, O_WRONLY | O_CREAT | O_APPEND, 0666);
+	write (fd, data, strlen (data));
+	close (fd);
+}
 
 void
 floating_point_exception_handler (int whatever)
@@ -131,6 +129,12 @@ floating_point_exception_handler (int whatever)
 	signal (SIGFPE, floating_point_exception_handler);
 }
 
+/*
+	Sys_ConsoleInput
+
+	Checks for a complete line of text typed in at the console, then forwards
+	it to the host command processor
+*/
 const char *
 Sys_ConsoleInput (void)
 {

@@ -26,15 +26,12 @@
 	$Id$
 */
 
-
-
 #ifdef HAVE_CONFIG_H
 # include "config.h"
 #endif
 
 #include <stdio.h>
 #include <stdlib.h>
-
 #include <errno.h>
 #include <fcntl.h>
 #include <limits.h>
@@ -84,26 +81,20 @@ void        MaskExceptions (void);
 #endif
 
 
-void
-Sys_DebugLog (const char *file, const char *fmt, ...)
-{
-	int         fd;
-	static char data[1024];				// why static ?
-	va_list     argptr;
-
-	va_start (argptr, fmt);
-	vsnprintf (data, sizeof (data), fmt, argptr);
-	va_end (argptr);
-	fd = open (file, O_WRONLY | O_CREAT | O_APPEND, 0666);
-	write (fd, data, strlen (data));
-	close (fd);
-};
-
-
 /*
-	SYSTEM IO
-*/
+	Sys_Init_Cvars
 
+	Quake calls this so the system can register variables before host_hunklevel
+	is marked
+*/
+void
+Sys_Init_Cvars (void)
+{
+	sys_nostdout = Cvar_Get ("sys_nostdout", "0", CVAR_NONE, NULL,
+							 "set to disable std out");
+	if (COM_CheckParm ("-nostdout"))
+		Cvar_Set (sys_nostdout, "1");
+}
 
 void
 Sys_Init (void)
@@ -136,7 +127,20 @@ Sys_Init (void)
 #endif
 }
 
+/*
+	Sys_Quit
+*/
+void
+Sys_Quit (void)
+{
+	Host_Shutdown ();
+	exit (0);
+}
 
+
+/*
+	Sys_Error
+*/
 void
 Sys_Error (const char *error, ...)
 {
@@ -160,14 +164,29 @@ Sys_Error (const char *error, ...)
 }
 
 
+
 void
-Sys_Quit (void)
+Sys_DebugLog (const char *file, const char *fmt, ...)
 {
-	Host_Shutdown ();
-	exit (0);
-}
+	int         fd;
+	static char data[1024];				// why static ?
+	va_list     argptr;
+
+	va_start (argptr, fmt);
+	vsnprintf (data, sizeof (data), fmt, argptr);
+	va_end (argptr);
+	fd = open (file, O_WRONLY | O_CREAT | O_APPEND, 0666);
+	write (fd, data, strlen (data));
+	close (fd);
+};
 
 
+/*
+	Sys_ConsoleInput
+
+	Checks for a complete line of text typed in at the console, then forwards
+	it to the host command processor
+*/
 const char *
 Sys_ConsoleInput (void)
 {
@@ -181,19 +200,13 @@ Sys_Sleep (void)
 }
 
 
-void
-Sys_Init_Cvars (void)
-{
-	sys_nostdout = Cvar_Get ("sys_nostdout", "0", CVAR_NONE, NULL,
-							 "Set to disable std out");
-	if (COM_CheckParm ("-nostdout"))
-		Cvar_Set (sys_nostdout, "1");
-}
-
 #ifndef SDL_main
 # define SDL_main main
 #endif
 
+/*
+	main
+*/
 int
 SDL_main (int c, char **v)
 {
@@ -210,7 +223,7 @@ SDL_main (int c, char **v)
 	host_parms.argc = com_argc;
 	host_parms.argv = com_argv;
 
-	host_parms.memsize = 16 * 1024 * 1024;
+	host_parms.memsize = 16 * 1024 * 1024;  // 16MB default heap
 
 	j = COM_CheckParm ("-mem");
 	if (j)
@@ -221,6 +234,7 @@ SDL_main (int c, char **v)
 		printf ("Can't allocate memory for zone.\n");
 		return 1;
 	}
+
 #ifndef WIN32
 	noconinput = COM_CheckParm ("-noconinput");
 	if (!noconinput)
@@ -231,7 +245,7 @@ SDL_main (int c, char **v)
 
 	oldtime = Sys_DoubleTime ();
 	while (1) {
-// find time spent rendering last frame
+		// find time spent rendering last frame
 		newtime = Sys_DoubleTime ();
 		time = newtime - oldtime;
 

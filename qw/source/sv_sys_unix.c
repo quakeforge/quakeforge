@@ -65,72 +65,7 @@ char       *svs_info = svs.info;
 
 
 /*
-				REQUIRED SYS FUNCTIONS
-*/
-
-/*
-	Sys_Error
-*/
-void
-Sys_Error (const char *error, ...)
-{
-	va_list     argptr;
-	char        string[1024];
-
-	va_start (argptr, error);
-	vsnprintf (string, sizeof (string), error, argptr);
-	va_end (argptr);
-	printf ("Fatal error: %s\n", string);
-
-	exit (1);
-}
-
-
-/*
-	Sys_Quit
-*/
-void
-Sys_Quit (void)
-{
-
-	Net_LogStop();
-
-	exit (0);							// appkit isn't running
-}
-
-static int  do_stdin = 1;
-
-/*
-	Sys_ConsoleInput
-
-	Checks for a complete line of text typed in at the console, then forwards
-	it to the host command processor
-*/
-const char       *
-Sys_ConsoleInput (void)
-{
-	static char text[256];
-	int         len;
-
-	if (!stdin_ready || !do_stdin)
-		return NULL;					// the select didn't say it was ready
-	stdin_ready = false;
-
-	len = read (0, text, sizeof (text));
-	if (len == 0) {
-		// end of file
-		do_stdin = 0;
-		return NULL;
-	}
-	if (len < 1)
-		return NULL;
-	text[len - 1] = 0;					// rip off the /n and terminate
-
-	return text;
-}
-
-/*
-	Sys_Init
+	Sys_Init_Cvars
 
 	Quake calls this so the system can register variables before host_hunklevel
 	is marked
@@ -154,6 +89,67 @@ Sys_Init (void)
 #ifdef USE_INTEL_ASM
 	Sys_SetFPCW ();
 #endif
+}
+
+/*
+	Sys_Quit
+*/
+void
+Sys_Quit (void)
+{
+
+	Net_LogStop();
+
+	exit (0);
+}
+
+/*
+	Sys_Error
+*/
+void
+Sys_Error (const char *error, ...)
+{
+	va_list     argptr;
+	char        string[1024];
+
+	va_start (argptr, error);
+	vsnprintf (string, sizeof (string), error, argptr);
+	va_end (argptr);
+	printf ("Fatal error: %s\n", string);
+
+	exit (1);
+}
+
+
+static int  do_stdin = 1;
+
+/*
+	Sys_ConsoleInput
+
+	Checks for a complete line of text typed in at the console, then forwards
+	it to the host command processor
+*/
+const char *
+Sys_ConsoleInput (void)
+{
+	static char text[256];
+	int         len;
+
+	if (!stdin_ready || !do_stdin)
+		return NULL;					// the select didn't say it was ready
+	stdin_ready = false;
+
+	len = read (0, text, sizeof (text));
+	if (len == 0) {
+		// end of file
+		do_stdin = 0;
+		return NULL;
+	}
+	if (len < 1)
+		return NULL;
+	text[len - 1] = 0;					// rip off the /n and terminate
+
+	return text;
 }
 
 /*

@@ -1,5 +1,5 @@
 /*
-	sys_win.c
+	sv_sys_win.c
 
 	(description)
 
@@ -52,81 +52,11 @@ cvar_t     *sys_sleep;
 
 
 /*
-	Sys_Error
-*/
-void
-Sys_Error (const char *error, ...)
-{
-	va_list     argptr;
-	char        text[1024];
-
-	va_start (argptr, error);
-	vsnprintf (text, sizeof (text), error, argptr);
-	va_end (argptr);
-
-//    MessageBox(NULL, text, "Error", 0 /* MB_OK */ );
-	printf ("ERROR: %s\n", text);
-
-	exit (1);
-}
-
-
-/*
-	Sys_ConsoleInput
-*/
-const char *
-Sys_ConsoleInput (void)
-{
-	static char text[256];
-	static int  len;
-	int         c;
-
-	// read a line out
-	while (kbhit ()) {
-		c = _getch ();
-		putch (c);
-		if (c == '\r') {
-			text[len] = 0;
-			putch ('\n');
-			len = 0;
-			return text;
-		}
-		if (c == 8) {
-			if (len) {
-				putch (' ');
-				putch (c);
-				len--;
-				text[len] = 0;
-			}
-			continue;
-		}
-		text[len] = c;
-		len++;
-		text[len] = 0;
-		if (len == sizeof (text))
-			len = 0;
-	}
-
-	return NULL;
-}
-
-/*
-	Sys_Quit
-*/
-void
-Sys_Quit (void)
-{
-	Net_LogStop();
-	exit (0);
-}
-
-/*
-	Sys_Init
+	Sys_Init_Cvars
 
 	Quake calls this so the system can register variables before host_hunklevel
 	is marked
 */
-
 void
 Sys_Init_Cvars (void)
 {
@@ -162,6 +92,78 @@ Sys_Init (void)
 		WinNT = true;
 	else
 		WinNT = false;
+}
+
+/*
+	Sys_Quit
+*/
+void
+Sys_Quit (void)
+{
+	Net_LogStop();
+	exit (0);
+}
+
+/*
+	Sys_Error
+*/
+void
+Sys_Error (const char *error, ...)
+{
+	va_list     argptr;
+	char        text[1024];
+
+	va_start (argptr, error);
+	vsnprintf (text, sizeof (text), error, argptr);
+	va_end (argptr);
+
+//    MessageBox(NULL, text, "Error", 0 /* MB_OK */ );
+	printf ("ERROR: %s\n", text);
+
+	exit (1);
+}
+
+
+/*
+	Sys_ConsoleInput
+
+	Checks for a complete line of text typed in at the console, then forwards
+	it to the host command processor
+*/
+const char *
+Sys_ConsoleInput (void)
+{
+	static char text[256];
+	static int  len;
+	int         c;
+
+	// read a line out
+	while (kbhit ()) {
+		c = _getch ();
+		putch (c);
+		if (c == '\r') {
+			text[len] = 0;
+			putch ('\n');
+			len = 0;
+			return text;
+		}
+		if (c == 8) {
+			if (len) {
+				putch (' ');
+				putch (c);
+				len--;
+				text[len] = 0;
+			}
+			continue;
+		}
+		text[len] = c;
+		len++;
+		text[len] = 0;
+		if (len == sizeof (text))
+			len = 0;
+	}
+
+	return NULL;
 }
 
 /*
