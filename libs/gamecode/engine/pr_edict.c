@@ -52,7 +52,8 @@
 #include "QF/vfs.h"
 
 cvar_t     *pr_boundscheck;
-cvar_t     *pr_deadbeef;
+cvar_t     *pr_deadbeef_ents;
+cvar_t     *pr_deadbeef_locals;
 
 int         type_size[8] = {
 	1,
@@ -192,7 +193,7 @@ ED_Free (progs_t * pr, edict_t *ed)
 	if (pr->unlink)
 		pr->unlink (ed);				// unlink from world bsp
 
-	if (pr_deadbeef->int_val) {
+	if (pr_deadbeef_ents->int_val) {
 		ED_ClearEdict (pr, ed, 0xdeadbeef);
 	} else {
 		if (pr->free_edict)
@@ -1371,7 +1372,7 @@ PR_InitEdicts (progs_t *pr, int num_edicts)
 	pr->pr_edictareasize = pr->pr_edict_size * num_edicts;
 	edicts = Hunk_AllocName (pr->pr_edictareasize, "edicts");
 	(*pr->edicts) = edicts;
-	if (pr_deadbeef->int_val) {
+	if (pr_deadbeef_ents->int_val) {
 		memset (edicts, 0, *pr->reserved_edicts * pr->pr_edict_size);
 		for (j =  *pr->reserved_edicts; j < num_edicts; j++) {
 			e = EDICT_NUM (pr, j);
@@ -1390,8 +1391,11 @@ PR_Init_Cvars (void)
 	pr_boundscheck =
 		Cvar_Get ("pr_boundscheck", "1", CVAR_NONE, NULL,
 				  "Server progs bounds checking");
-	pr_deadbeef = Cvar_Get ("pr_deadbeef", "0", CVAR_NONE, NULL,
+	pr_deadbeef_ents = Cvar_Get ("pr_deadbeef_ents", "0", CVAR_NONE, NULL,
 							"set to clear unallocated memory to 0xdeadbeef");
+	pr_deadbeef_locals = Cvar_Get ("pr_deadbeef_locals", "0", CVAR_NONE, NULL,
+								   "set to clear uninitialized local vars to "
+								   "0xdeadbeef");
 	PR_Debug_Init_Cvars ();
 }
 

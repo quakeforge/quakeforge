@@ -72,6 +72,8 @@ cvar_t     *sv_timekick;
 cvar_t     *sv_timekick_fuzz;
 cvar_t     *sv_timekick_interval;
 
+cvar_t     *sv_kickfake;
+
 extern cvar_t *sv_maxrate;
 
 extern vec3_t player_mins;
@@ -788,6 +790,7 @@ SV_Say (qboolean team)
 	char        text[2048];
 	char        t1[32];
 	const char *t2;
+	char       *i;
 
 	if (Cmd_Argc () < 2)
 		return;
@@ -841,6 +844,17 @@ SV_Say (qboolean team)
 		p++;
 		p[strlen (p) - 1] = 0;
 	}
+
+	for (i = p; *i; i++)
+		if (*i == 13) { // ^M
+			if (sv_kickfake->int_val) {
+				SV_BroadcastPrintf (PRINT_HIGH, "%s was kicked for attempting to fake messages\n", host_client->name);
+				SV_ClientPrintf (host_client, PRINT_HIGH, "You were kicked for attempting to fake messages\n");
+				SV_DropClient (host_client);
+				return;
+			} else
+				*i = '#';
+		}
 
 	strncat (text, p, sizeof (text) - strlen (text));
 	strncat (text, "\n", sizeof (text) - strlen (text));
@@ -1814,5 +1828,7 @@ SV_UserInit (void)
 			"Toggles the ability of spectators to talk to players");
 	sv_mapcheck = Cvar_Get ("sv_mapcheck", "1", CVAR_NONE, NULL, 
 		"Toggle the use of map checksumming to check for players who edit maps to cheat");
+	sv_kickfake = Cvar_Get ("sv_kickfake", "1", CVAR_NONE, NULL,
+			"Kick users sending to send fake talk messages");
 }
 

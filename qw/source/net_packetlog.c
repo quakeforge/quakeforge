@@ -456,6 +456,7 @@ Parse_Server_Packet ()
 			switch (c) {
 				case svc_bad:
 					Net_LogPrintf (" - should not happen");
+					break;
 				case svc_nop:
 					Net_LogPrintf (" No operation");
 					break;
