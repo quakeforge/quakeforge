@@ -42,8 +42,8 @@ typedef enum {
 
 extern double realtime;
 
-extern cbuf_t *qtv_cbuf;
-extern cbuf_args_t *qtv_args;
+extern struct cbuf_s *qtv_cbuf;
+extern struct cbuf_args_s *qtv_args;
 
 struct client_s;
 
