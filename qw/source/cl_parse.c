@@ -272,6 +272,8 @@ Model_NextDownload (void)
 	Netchan_AckPacket (&cls.netchan);
 
 	for (i = 1; i < MAX_MODELS; i++) {
+		char *info_key = 0;
+
 		if (!cl.model_name[i][0])
 			break;
 
@@ -284,6 +286,21 @@ Model_NextDownload (void)
 						gamedirfile);
 			CL_Disconnect ();
 			return;
+		}
+
+		if (strequal (cl.model_name[i], "progs/player.mdl")
+			&& cl.model_precache[i]->type == mod_alias)
+			info_key = pmodel_name;
+		if (strequal (cl.model_name[i], "progs/eyes.mdl")
+			&& cl.model_precache[i]->type == mod_alias)
+			info_key = emodel_name;
+
+		if (info_key) {
+			aliashdr_t *ahdr = (aliashdr_t *) Mod_Extradata (cl.model_precache[i]);
+			Info_SetValueForKey (cls.userinfo, info_key, va ("%d", ahdr->crc),
+								 MAX_INFO_STRING);
+			MSG_WriteByte (&cls.netchan.message, clc_stringcmd);
+			SZ_Print (&cls.netchan.message, va ("setinfo %s %d", info_key, ahdr->crc));
 		}
 	}
 

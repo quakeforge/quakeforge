@@ -324,6 +324,9 @@ typedef struct {
 	int			poseverts;
 	int			posedata;	// numposes*poseverts trivert_t
 	int			commands;	// gl command list with embedded s/t
+
+	unsigned short crc;
+
 	int			gl_texturenum[MAX_SKINS][4];
 	int			gl_fb_texturenum[MAX_SKINS][4];
 	int			texels[MAX_SKINS];  // only for player skins

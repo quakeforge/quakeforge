@@ -94,34 +94,13 @@ Mod_LoadAliasModel (model_t *mod, void *buffer)
 	daliasframetype_t *pframetype;
 	daliasskintype_t *pskintype;
 	int         start, end, total;
-#if 0 //XXX FIXME
-	if (!strcmp (loadmodel->name, "progs/player.mdl") ||
-		!strcmp (loadmodel->name, "progs/eyes.mdl")) {
-		unsigned short crc;
-		byte       *p;
-		int         len;
-		char        st[40];
+	byte       *p;
+	int         len;
+	unsigned short crc;
 
-		CRC_Init (&crc);
-		for (len = com_filesize, p = buffer; len; len--, p++)
-			CRC_ProcessByte (&crc, *p);
-
-		snprintf (st, sizeof (st), "%d", (int) crc);
-		Info_SetValueForKey (cls.userinfo,
-							 !strcmp (loadmodel->name,
-									  "progs/player.mdl") ? pmodel_name :
-							 emodel_name, st, MAX_INFO_STRING);
-
-		if (cls.state >= ca_connected) {
-			MSG_WriteByte (&cls.netchan.message, clc_stringcmd);
-			snprintf (st, sizeof (st), "setinfo %s %d",
-					  !strcmp (loadmodel->name,
-							   "progs/player.mdl") ? pmodel_name : emodel_name,
-					  (int) crc);
-			SZ_Print (&cls.netchan.message, st);
-		}
-	}
-#endif
+	CRC_Init (&crc);
+	for (len = com_filesize, p = buffer; len; len--, p++)
+		CRC_ProcessByte (&crc, *p);
 
 	start = Hunk_LowMark ();
 
@@ -141,6 +120,8 @@ Mod_LoadAliasModel (model_t *mod, void *buffer)
 	memset (pheader, 0, size);
 	pmodel = &pheader->mdl;
 	pheader->model = (byte *) pmodel - (byte *) pheader;
+
+	pheader->crc = crc;
 
 	mod->flags = LittleLong (pinmodel->flags);
 
