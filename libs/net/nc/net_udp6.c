@@ -271,7 +271,6 @@ NET_StringToAdr (const char *s, netadr_t *a)
 		for (; *space && *space != ']'; space++);
 		if (!*space) {
 			Con_Printf ("NET_StringToAdr: invalid IPv6 address %s\n", s);
-			dstring_delete (copy);
 			return 0;
 		}
 		*space++ = '\0';
@@ -288,7 +287,6 @@ NET_StringToAdr (const char *s, netadr_t *a)
 		// Error
 		Con_Printf ("NET_StringToAdr: string %s:\n%s\n", s,
 					gai_strerror (err));
-		dstring_delete (copy);
 		return 0;
 	}
 
@@ -314,12 +312,10 @@ NET_StringToAdr (const char *s, netadr_t *a)
 		default:
 			Con_Printf ("NET_StringToAdr: string %s:\nprotocol family %d not "
 						"supported\n", s, resultp->ai_family);
-			dstring_delete (copy);
 			return 0;
 	}
 
 	SockadrToNetadr ((struct sockaddr_in6 *) &ss, a);
-	dstring_delete (copy);
 
 	return true;
 }
