@@ -30,6 +30,12 @@
 #ifdef HAVE_CONFIG_H
 # include "config.h"
 #endif
+#ifdef HAVE_STRING_H
+# include "string.h"
+#endif
+#ifdef HAVE_STRINGS_H
+# include "strings.h"
+#endif
 
 static __attribute__ ((unused)) const char rcsid[] =
 	"$Id$";
@@ -44,42 +50,77 @@ void *alloca(size_t size);
 #include "QF/dstring.h"
 #include "QF/riff.h"
 
+static inline int
+Rread (QFile *f, void *buf, int len)
+{
+	int         count;
+
+	count = Qread (f, buf, len);
+	if (count != len)
+		return 0;
+	return count;
+}
+
 static char *
 read_string (QFile *f, int len)
 {
 	char        c[2] = {0, 0};
 	char       *s;
 	int         l = len;
-	dstring_t  *str = dstring_newstr ();
+	dstring_t  *str;
 
+	if (!len)
+		return 0;
+	str = dstring_newstr ();
 	while (l--) {
-		Qread (f, c, 1);
+		if (Qread (f, c, 1) != 1)
+			goto done;
 		if (!c[0])
 			break;
 		dstring_appendstr (str, c);
 	}
+	Qseek (f, l, SEEK_CUR);
+	if (len &1) {
+		int         c;
+
+		if ((c = Qgetc (f)) && c != -1)
+			Qungetc (f, c);
+	}
+done:
 	s = str->str;
 	free (str);
-	if (len &1) puts ("bling");
-	Qseek (f, l + (len & 1), SEEK_CUR);
 	return s;
 }
 
 static void *
 read_data (QFile *f, int len)
 {
-	void       *data = malloc (len);
+	void       *data;
+	int         count;
 
-	Qread (f, data, len);
-	if (len &1) puts ("bling");
-	Qseek (f, len & 1, SEEK_CUR);
+	if (!len)
+		return 0;
+	data = malloc (len);
+	count = Qread (f, data, len);
+	if (count == len && len &1) {
+		int         c;
+
+		if ((c = Qgetc (f)) && c != -1)
+			Qungetc (f, c);
+	}
+	if (count && count != len)
+		realloc (data, count);
+	if (!count) {
+		free (data);
+		return 0;
+	}
 	return data;
 }
 
-static void
+static int
 read_ltxt (QFile *f, int len, d_ltxt_t *ltxt)
 {
-	Qread (f, ltxt, len);
+	return Qread (f, ltxt, len) == len;
 }
 
 static void
@@ -94,7 +135,7 @@ read_adtl (dstring_t *list_buf, QFile *f, int len)
 
 	list = (list_t *) list_buf->str;
 	while (len) {
-		r = Qread (f, &ck, sizeof (ck));
+		r = Rread (f, &ck, sizeof (ck));
 		if (!r) {
 			len = 0;
 			break;
@@ -102,7 +143,7 @@ read_adtl (dstring_t *list_buf, QFile *f, int len)
 		len -= r;
 		SWITCH (ck.name) {
 			case CASE ('l','t','x','t'):
-				ltxt = malloc (sizeof (ltxt_t));
+				ltxt = calloc (1, sizeof (ltxt_t));
 				ltxt->ck = ck;
 				read_ltxt (f, ck.len, &ltxt->ltxt);
 				chunk = &ltxt->ck;
@@ -111,7 +152,9 @@ read_adtl (dstring_t *list_buf, QFile *f, int len)
 			case CASE ('n','o','t','e'):
 				label = malloc (sizeof (label_t));
 				label->ck = ck;
-				Qread (f, &label->ofs, 4);
+				if (!Rread (f, &label->ofs, 4)) {
+					label->ofs = 0;
+				}
 				label->label = read_string (f, ck.len - 4);
 				chunk = &label->ck;
 				break;
@@ -137,7 +180,6 @@ read_list (d_chunk_t *ck, QFile *f, int len)
 	d_chunk_t  *chunk = 0;
 	dstring_t  *list_buf;
 	list_t     *list;
-	int         r;
 
 	list_buf = dstring_new ();
 	list_buf->size = sizeof (list_t);
@@ -145,19 +187,24 @@ read_list (d_chunk_t *ck, QFile *f, int len)
 	list = (list_t *)list_buf->str;
 	list->ck = *ck;
 
-	len -= Qread (f, list->name, sizeof (list->name));
-	while (len) {
+	if (!Rread (f, list->name, sizeof (list->name))) {
+		dstring_delete (list_buf);
+		return 0;
+	}
+	len -= sizeof (list->name);
+	while (len > 0) {
 		SWITCH (list->name) {
 			case CASE ('I','N','F','O'):
 				{
 					data_t     *data = malloc (sizeof (data_t));
-					chunk = &data->ck;
-					r = Qread (f, &data->ck, sizeof (data->ck));
-					if (!r) {
+					if (!Rread (f, &data->ck, sizeof (data->ck))) {
 						len = 0;
+						free (data);
 						break;
 					}
-					len -= r;
+					chunk = &data->ck;
+					//printf ("%.4s %d\n", data->ck.name, data->ck.len);
+					len -= sizeof (data->ck);
 					SWITCH (data->ck.name) {
 						case CASE ('I','C','R','D'):
 						case CASE ('I','S','F','T'):
@@ -177,10 +224,13 @@ read_list (d_chunk_t *ck, QFile *f, int len)
 			default:
 				{
 					data_t     *data = malloc (sizeof (data_t));
-					Qread (f, &data->ck, sizeof (data->ck));
-					data->data = read_data (f, data->ck.len);
-					len -= data->ck.len + sizeof (data->ck);
-					chunk = &data->ck;
+					if (!Rread (f, &data->ck, sizeof (data->ck))) {
+						free (data);
+					} else {
+						data->data = read_data (f, data->ck.len);
+						len -= data->ck.len + sizeof (data->ck);
+						chunk = &data->ck;
+					}
 				}
 				len = 0;
 				break;
@@ -202,7 +252,10 @@ read_cue (QFile *f, int len)
 {
 	d_cue_t    *cue = malloc (len);
 
-	Qread (f, cue, len);
+	if (!Rread (f, cue, len)) {
+		free (cue);
+		cue = 0;
+	}
 
 	return cue;
 }
@@ -221,17 +274,28 @@ riff_read (QFile *f)
 	dstring_adjust (riff_buf);
 	riff = (list_t *)riff_buf->str;
 
-	Qseek (f, 0, SEEK_END);
-	file_len = Qtell (f);
-	Qseek (f, 0, SEEK_SET);
+	file_len = Qfilesize (f);
 
-	Qread (f, &riff->ck, sizeof (riff->ck));
-	Qread (f, riff->name, sizeof (riff->name));
-	while (Qread (f, &ck, sizeof (ck))) {
+	if (!Rread (f, &riff->ck, sizeof (riff->ck))) {
+		dstring_delete (riff_buf);
+		return 0;
+	}
+	if (!Rread (f, riff->name, sizeof (riff->name))) {
+		dstring_delete (riff_buf);
+		return 0;
+	}
+	if (strncmp (riff->ck.name, "RIFF", 4) || strncmp (riff->name, "WAVE", 4)) {
+		dstring_delete (riff_buf);
+		return 0;
+	}
+	while (Rread (f, &ck, sizeof (ck))) {
+		//printf ("%.4s %d\n", ck.name, ck.len);
 		if (ck.len < 0x80000000)
 			len = ck.len;
-		else
-			len = file_len - Qtell (f);
+		else {
+			//puts ("bling");
+			ck.len = len = file_len - Qtell (f);
+		}
 		SWITCH (ck.name) {
 			case CASE ('c','u','e',' '):
 				{
@@ -267,6 +331,9 @@ riff_read (QFile *f)
 	return riff;
 }
 
+/*****************************************************************************
+*****************************************************************************/
+
 static void
 free_adtl (d_chunk_t *adtl)
 {
@@ -292,12 +359,14 @@ free_adtl (d_chunk_t *adtl)
 		case CASE ('n','o','t','e'):
 			label = (label_t *) adtl;
 			//printf ("      %-8d %s\n", label->ofs, label->label);
-			free (label->label);
+			if (label->label)
+				free (label->label);
 			free (label);
 			break;
 		default:
 			data = (data_t *) adtl;
-			free (data->data);
+			if (data->data)
+				free (data->data);
 			free (data);
 			break;
 	}
@@ -320,7 +389,8 @@ free_list (list_t *list)
 					case CASE ('I','S','F','T'):
 						//printf ("      %s\n", data->data);
 					default:
-						free (data->data);
+						if (data->data)
+							free (data->data);
 						free (data);
 						break;
 				}
@@ -330,7 +400,8 @@ free_list (list_t *list)
 				break;
 			default:
 				data = (data_t *) *ck;
-				free (data->data);
+				if (data->data)
+					free (data->data);
 				free (data);
 				break;
 		}
@@ -351,8 +422,8 @@ riff_free (list_t *riff)
 		SWITCH ((*ck)->name) {
 			case CASE ('c','u','e',' '):
 				cue = (cue_t *) *ck;
-				/*{
-					int i;
+				if (cue->cue) {
+					/*int i;
 					for (i = 0; i < cue->cue->count; i++) {
 						printf ("  %08x %d %.4s %d %d %d\n",
 								cue->cue->cue_points[i].name,
@@ -361,9 +432,9 @@ riff_free (list_t *riff)
 								cue->cue->cue_points[i].chunk_start,
 								cue->cue->cue_points[i].block_start,
 								cue->cue->cue_points[i].sample_offset);
-					}
-				}*/
-				free (cue->cue);
+					}*/
+					free (cue->cue);
+				}
 				free (cue);
 				break;
 			case CASE ('L','I','S','T'):
@@ -372,7 +443,8 @@ riff_free (list_t *riff)
 				break;
 			default:
 				data = (data_t *) *ck;
-				free (data->data);
+				if (data->data)
+					free (data->data);
 				free (data);
 				break;
 		}
