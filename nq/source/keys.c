@@ -202,6 +202,7 @@ keyname_t   keynames[] = {
 	{"ASC224", K_ASC224},
 
 	{"SEMICOLON", ';'},			// because a raw semicolon seperates commands
+	{"DOUBLEQUOTE", '"'},		// because a raw quote groups arguments
 
 	{NULL, 0}
 };
