@@ -471,7 +471,7 @@ SV_ReadClientMessage (void)
 				return false;
 			}
 
-			cmd = MSG_ReadChar (net_message);
+			cmd = MSG_ReadByte (net_message);
 
 			switch (cmd) {
 			case -1:
