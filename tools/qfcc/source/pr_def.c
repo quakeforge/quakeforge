@@ -28,6 +28,7 @@ static const char rcsid[] =
 #include "qfcc.h"
 #include "expr.h"
 #include "struct.h"
+#include "type.h"
 
 extern expr_t *local_expr;				// FIXME just where should this go?
 
@@ -80,23 +81,11 @@ check_for_name (type_t *type, const char *name, def_t *scope, int *allocate)
 	return 0;
 }
 
-static inline type_t *
-find_type (type_t *type, type_t *aux_type)
-{
-	type_t      new;
-
-	memset (&new, 0, sizeof (new));
-	new.type = type->type;
-	new.aux_type = aux_type;
-	new.num_parms = 0;
-	return PR_FindType (&new);
-}
-
 def_t *
 PR_GetArray (type_t *etype, const char *name, int size, def_t *scope,
 			 int *allocate)
 {
-	type_t     *type = find_type (&type_pointer, etype);
+	type_t     *type = pointer_type (etype);
 	def_t      *def = check_for_name (type, name, scope, allocate);
 
 	if (def || !allocate)

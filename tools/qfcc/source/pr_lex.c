@@ -34,7 +34,6 @@ static const char rcsid[] =
 #include <QF/sys.h>
 
 #include "qfcc.h"
-#include "function.h"
 
 int         pr_source_line;
 
@@ -48,102 +47,4 @@ int         pr_token_len;
 type_t     *pr_immediate_type;
 eval_t      pr_immediate;
 
-char        pr_immediate_string[2048];
-
 int         pr_error_count;
-
-// simple types.  function types are dynamically allocated
-type_t      type_void = { ev_void, &def_void };
-type_t      type_string = { ev_string, &def_string };
-type_t      type_float = { ev_float, &def_float };
-type_t      type_vector = { ev_vector, &def_vector };
-type_t      type_entity = { ev_entity, &def_entity };
-type_t      type_field = { ev_field, &def_field };
-
-// type_function is a void() function used for state defs
-type_t      type_function = { ev_func, &def_function, NULL, &type_void };
-type_t      type_pointer = { ev_pointer, &def_pointer };
-type_t      type_quaternion = { ev_quaternion, &def_quaternion };
-type_t      type_integer = { ev_integer, &def_integer };
-type_t      type_uinteger = { ev_uinteger, &def_uinteger };
-type_t      type_short = { ev_short, &def_short };
-type_t      type_struct = { ev_struct, &def_struct };
-type_t      type_id = {ev_pointer, &def_id };
-
-type_t      type_floatfield = { ev_field, &def_field, NULL, &type_float };
-
-def_t       def_void = { &type_void, "temp" };
-def_t       def_string = { &type_string, "temp" };
-def_t       def_float = { &type_float, "temp" };
-def_t       def_vector = { &type_vector, "temp" };
-def_t       def_entity = { &type_entity, "temp" };
-def_t       def_field = { &type_field, "temp" };
-def_t       def_function = { &type_function, "temp" };
-def_t       def_pointer = { &type_pointer, "temp" };
-def_t       def_quaternion = { &type_quaternion, "temp" };
-def_t       def_integer = { &type_integer, "temp" };
-def_t       def_uinteger = { &type_uinteger, "temp" };
-def_t       def_short = { &type_short, "temp" };
-def_t       def_struct = { &type_struct, "temp" };
-def_t       def_id = { &type_id, "temp" };
-
-def_t       def_ret, def_parms[MAX_PARMS];
-
-def_t      *def_for_type[8] = {
-	&def_void, &def_string, &def_float, &def_vector,
-	&def_entity, &def_field, &def_function, &def_pointer
-};
-
-/*
-	PR_FindType
-
-	Returns a preexisting complex type that matches the parm, or allocates
-	a new one and copies it out.
-*/
-type_t *
-PR_FindType (type_t *type)
-{
-	def_t      *def;
-	type_t     *check;
-	int         c, i;
-
-	for (check = pr.types; check; check = check->next) {
-		if (check->type != type->type
-			|| check->aux_type != type->aux_type
-			|| check->num_parms != type->num_parms)
-			continue;
-
-		if (check->type != ev_func)
-			return check;
-
-		if (check->num_parms == -1)
-			return check;
-
-		if ((c = check->num_parms) < 0)
-			c = -c - 1;
-
-		for (i = 0; i < c; i++)
-			if (check->parm_types[i] != type->parm_types[i])
-				break;
-
-		if (i == c)
-			return check;
-	}
-
-	// allocate a new one
-	check = malloc (sizeof (*check));
-	if (!check)
-		Sys_Error ("PR_FindType: Memory Allocation Failure\n");
-	*check = *type;
-	check->next = pr.types;
-	pr.types = check;
-
-	// allocate a generic def for the type, so fields can reference it
-	def = malloc (sizeof (def_t));
-	if (!def)
-		Sys_Error ("PR_FindType: Memory Allocation Failure\n");
-	def->name = "COMPLEX TYPE";
-	def->type = check;
-	check->def = def;
-	return check;
-}

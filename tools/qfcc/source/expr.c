@@ -153,7 +153,7 @@ get_type (expr_t *e)
 				memset (&new, 0, sizeof (new));
 				new.type = ev_pointer;
 				new.aux_type = e->e.pointer.type;
-				return PR_FindType (&new);
+				return find_type (&new);
 			}
 		case ex_integer:
 			if (options.code.progsversion == PROG_ID_VERSION) {

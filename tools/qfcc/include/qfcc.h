@@ -286,7 +286,6 @@ typedef struct function_s function_t;
 typedef struct type_s
 {
 	etype_t			type;
-	struct def_s	*def;		// a def that points to this type
 	struct type_s	*next;
 // function/pointer/struct types are more complex
 	struct type_s	*aux_type;	// return type or field type
@@ -353,8 +352,6 @@ typedef union eval_s
 	union eval_s		*ptr;
 } eval_t;	
 
-extern	def_t	*def_for_type[8];
-
 extern	type_t	type_void;
 extern	type_t	type_string;
 extern	type_t	type_float;
@@ -370,21 +367,10 @@ extern	type_t	type_uinteger;
 extern	type_t	type_short;
 extern	type_t	type_struct;
 extern	type_t	type_id;
+extern	type_t	type_SEL;
 
 extern	def_t	def_void;
-extern	def_t	def_string;
-extern	def_t	def_float;
-extern	def_t	def_vector;
-extern	def_t	def_entity;
-extern	def_t	def_field;
 extern	def_t	def_function;
-extern	def_t	def_pointer;
-extern	def_t	def_quaternion;
-extern	def_t	def_integer;
-extern	def_t	def_uinteger;
-extern	def_t	def_short;
-extern	def_t	def_struct;
-extern	def_t	def_id;
 
 struct function_s
 {
@@ -444,42 +430,15 @@ void PR_Opcode_Init_Tables (void);
 #include "expr.h"
 
 
-extern	qboolean	pr_dumpasm;
-
 extern	def_t		*pr_global_defs[MAX_REGS];	// to find def for a global
-												// variable
 
-// reads the next token into pr_token and classifies its type
-
-type_t *PR_ParseType (void);
-char *PR_ParseName (void);
-def_t *PR_ParseImmediate (def_t *def);
 def_t *PR_ReuseConstant (expr_t *expr, def_t *def);
-type_t *PR_FindType (type_t *new);
 
-void PR_ParseError (const char *error, ...)__attribute__((format(printf, 1,2)));
-
-
-extern	jmp_buf		pr_parse_abort;		// longjump with this on parse error
 extern	int			pr_source_line;
-
-void *PR_Malloc (int size);
-
-
-#define	OFS_NULL		0
-#define	OFS_RETURN		1
-#define	OFS_PARM0		4		// leave 3 ofs for each parm to hold vectors
-#define	OFS_PARM1		7
-#define	OFS_PARM2		10
-#define	OFS_PARM3		13
-#define	OFS_PARM4		16
-#define	RESERVED_OFS	28
-
 
 extern	def_t	*pr_scope;
 extern	int		pr_error_count;
 
-void PR_NewLine (void);
 int PR_GetTypeSize (type_t *type);
 def_t *PR_GetArray (type_t *etype, const char *name, int size, def_t *scope,
 					int *allocate);
@@ -495,23 +454,11 @@ void PR_ResetTempDefs ();
 void PR_FlushScope (def_t *scope, int force_used);
 void PR_DefInitialized (def_t *d);
 
-void PR_PrintDefs (void);
-void PR_PrintFunction (def_t *def);
-void PR_SkipToSemicolon (void);
-
-extern	qboolean	pr_trace;
-
 #define	G_FLOAT(o) (pr_globals[o])
 #define	G_INT(o) (*(int *)&pr_globals[o])
 #define	G_VECTOR(o) (&pr_globals[o])
 #define	G_STRING(o) (strings + *(string_t *)&pr_globals[o])
 #define	G_FUNCTION(o) (*(func_t *)&pr_globals[o])
-
-void PR_ClearGrabMacros (void);
-
-qboolean	PR_CompileFile (char *string, const char *filename);
-
-extern	qboolean	pr_dumpasm;
 
 extern	string_t	s_file;			// filename for function definition
 
@@ -542,8 +489,6 @@ extern	int			numfunctions;
 
 extern	float		pr_globals[MAX_REGS];
 extern	int			numpr_globals;
-
-extern	char	pr_immediate_string[2048];
 
 extern	char		precache_sounds[MAX_SOUNDS][MAX_DATA_PATH];
 extern	int			precache_sounds_block[MAX_SOUNDS];

@@ -38,8 +38,9 @@ static const char rcsid[] =
 #include "method.h"
 #include "type.h"
 
+static type_t  *send_message_type;
 static def_t   *send_message_def;
-static expr_t  *send_message_expr;
+static function_t *send_message_func;
 
 method_t *
 new_method (type_t *ret_type, param_t *selector, param_t *opt_parms)
@@ -107,10 +108,23 @@ new_keywordarg (const char *selector, struct expr_s *expr)
 expr_t *
 send_message (void)
 {
+	expr_t     *e;
+
 	if (!send_message_def) {
-		send_message_expr = new_expr ();
-		send_message_expr->type = ex_def;
-		send_message_expr->e.def = send_message_def;
+		send_message_type = parse_params (&type_id,
+			_reverse_params (new_param (0, &type_id, "receiver"),
+				_reverse_params (new_param (0, &type_SEL, "selector"), 
+								 new_param (0, 0, 0))));
+		send_message_def = PR_GetDef (send_message_type, "obj_msgSend",
+									  0, &numpr_globals);
+		send_message_func = new_function ();
+		send_message_func->builtin = 0;
+		send_message_func->def = send_message_def;
+		build_function (send_message_func);
+		finish_function (send_message_func);
 	}
-	return send_message_expr;
+	e = new_expr ();
+	e->type = ex_def;
+	e->e.def = send_message_def;
+	return e;
 }

@@ -33,6 +33,7 @@ static const char rcsid[] =
 #include <stdlib.h>
 
 #include "QF/hash.h"
+#include "QF/sys.h"
 
 #include "qfcc.h"
 #include "function.h"
@@ -41,6 +42,78 @@ typedef struct {
 	const char *name;
 	type_t     *type;
 } typedef_t;
+
+// simple types.  function types are dynamically allocated
+type_t      type_void = { ev_void };
+type_t      type_string = { ev_string };
+type_t      type_float = { ev_float };
+type_t      type_vector = { ev_vector };
+type_t      type_entity = { ev_entity };
+type_t      type_field = { ev_field };
+
+// type_function is a void() function used for state defs
+type_t      type_function = { ev_func, NULL, &type_void };
+type_t      type_pointer = { ev_pointer };
+type_t      type_quaternion = { ev_quaternion };
+type_t      type_integer = { ev_integer };
+type_t      type_uinteger = { ev_uinteger };
+type_t      type_short = { ev_short };
+type_t      type_struct = { ev_struct };
+type_t      type_id = {ev_pointer };
+type_t      type_SEL = {ev_pointer };
+
+type_t      type_floatfield = { ev_field, NULL, &type_float };
+
+def_t       def_void = { &type_void, "temp" };
+def_t       def_function = { &type_function, "temp" };
+
+def_t       def_ret, def_parms[MAX_PARMS];
+
+/*
+	find_type
+
+	Returns a preexisting complex type that matches the parm, or allocates
+	a new one and copies it out.
+*/
+type_t *
+find_type (type_t *type)
+{
+	type_t     *check;
+	int         c, i;
+
+	for (check = pr.types; check; check = check->next) {
+		if (check->type != type->type
+			|| check->aux_type != type->aux_type
+			|| check->num_parms != type->num_parms)
+			continue;
+
+		if (check->type != ev_func)
+			return check;
+
+		if (check->num_parms == -1)
+			return check;
+
+		if ((c = check->num_parms) < 0)
+			c = -c - 1;
+
+		for (i = 0; i < c; i++)
+			if (check->parm_types[i] != type->parm_types[i])
+				break;
+
+		if (i == c)
+			return check;
+	}
+
+	// allocate a new one
+	check = malloc (sizeof (*check));
+	if (!check)
+		Sys_Error ("find_type: Memory Allocation Failure\n");
+	*check = *type;
+	check->next = pr.types;
+	pr.types = check;
+
+	return check;
+}
 
 static hashtab_t *typedef_hash;
 
@@ -89,7 +162,7 @@ pointer_type (type_t *aux)
 	memset (&new, 0, sizeof (new));
 	new.type = ev_pointer;
 	new.aux_type = aux;
-	return PR_FindType (&new);
+	return find_type (&new);
 }
 
 void

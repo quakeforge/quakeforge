@@ -55,7 +55,6 @@ yyerror (const char *s)
 }
 
 int yylex (void);
-type_t *PR_FindType (type_t *new);
 
 type_t *build_type (int is_field, type_t *type);
 type_t *build_array_type (type_t *type, int size);
@@ -1228,7 +1227,7 @@ build_type (int is_field, type_t *type)
 		memset (&new, 0, sizeof (new));
 		new.type = ev_field;
 		new.aux_type = type;
-		return PR_FindType (&new);
+		return find_type (&new);
 	} else {
 		return type;
 	}
@@ -1243,7 +1242,7 @@ build_array_type (type_t *type, int size)
 	new.type = ev_pointer;
 	new.aux_type = type;
 	new.num_parms = size;
-	return PR_FindType (&new);
+	return find_type (&new);
 }
 
 typedef struct {
