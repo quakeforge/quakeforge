@@ -496,6 +496,7 @@ CL_Disconnect (void)
 			cl.players[i].userinfo = 0;
 		}
 	cl.worldmodel = NULL;
+	cl.validsequence = 0;
 }
 
 void
