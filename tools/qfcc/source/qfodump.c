@@ -111,9 +111,9 @@ dump_functions (qfo_t *qfo)
 
 	for (i = 0; i < qfo->num_functions; i++) {
 		func = qfo->functions + i;
-		printf ("%s %s:%d  %d %d\n",
+		printf ("%s %s:%d  %d %d %d\n",
 				str + func->name, str + func->file, func->line,
-				func->builtin, func->code);
+				func->builtin, func->code, func->def);
 	}
 }
 

@@ -222,7 +222,7 @@ fixup_def (qfo_t *qfo, qfo_def_t *def, int def_num)
 			Hash_Add (defined_defs, def);
 		}
 		if (def->basic_type == ev_func && (def->flags & QFOD_INITIALIZED)) {
-			func = funcs.funcs + data->data[def->ofs].func_var;
+			func = funcs.funcs + data->data[def->ofs].func_var + func_base;
 			func->def = def_num;
 		}
 	}
