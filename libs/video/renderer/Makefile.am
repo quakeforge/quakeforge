@@ -17,7 +17,7 @@ libQFrenderer_gl_la_LIBADD=			gl/libgl.la
 libQFrenderer_gl_la_SOURCES=		$(common_sources)
 libQFrenderer_gl_la_DEPENDENCIES=	gl/libgl.la
 
-libQFrenderer_sw_la_LDFLAGS=		-static
+libQFrenderer_sw_la_LDFLAGS=		@STATIC@
 libQFrenderer_sw_la_LIBADD=			sw/libsw.la
 libQFrenderer_sw_la_SOURCES=		$(common_sources)
 libQFrenderer_sw_la_DEPENDENCIES=	sw/libsw.la

@@ -562,6 +562,7 @@ typedef enum {
 void SV_BeginRedirect (redirect_t rd);
 void SV_EndRedirect (void);
 extern redirect_t sv_redirected;
+extern struct dstring_s outputbuf;
 
 //
 // sv_ccmds.c

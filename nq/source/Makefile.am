@@ -48,6 +48,7 @@ noinst_LIBRARIES= @nq_libs@ $(asm)
 EXTRA_LIBRARIES=libasm.a libnq_client.a libnq_common.a libnq_sdl.a libnq_server.a
 
 libasm_a_SOURCES=	worlda.S
+libasm_la_CCASFLAGS=@PREFER_NON_PIC@
 libnq_common_a_SOURCES=game.c world.c com.c
 libnq_sdl_a_SOURCES=	sys_sdl.c
 libnq_sdl_a_CFLAGS=	$(SDL_CFLAGS)

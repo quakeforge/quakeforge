@@ -1878,8 +1878,14 @@ else
 	PREFER_PIC=-prefer-pic
 	PREFER_NON_PIC=-prefer-non-pic
 fi
+if test "x$enable_static" = xno; then
+	STATIC=
+else
+	STATIC=-static
+fi
 AC_SUBST(PREFER_PIC)
 AC_SUBST(PREFER_NON_PIC)
+AC_SUBST(STATIC)
 
 AC_ARG_WITH(static-plugins,
 [  --with-static-plugins   build plugins into executable rather than separate],

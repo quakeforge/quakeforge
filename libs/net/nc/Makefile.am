@@ -13,5 +13,5 @@ else
 ipvX_src= $(ipv4_src)
 endif
 libnc_la_SOURCES= $(ipvX_src)
-libnc_la_LDFLAGS= -static
+libnc_la_LDFLAGS= @STATIC@
 EXTRA_libnc_la_SOURCES= $(ipv4_src) $(ipv6_src)

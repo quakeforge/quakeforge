@@ -50,6 +50,7 @@ EXTRA_LIBRARIES=libasm.a libqw_client.a libqw_common.a libqw_sdl.a libqw_server.
 
 
 libasm_a_SOURCES= worlda.S
+libasm_la_CCASFLAGS=@PREFER_NON_PIC@
 libqw_common_a_SOURCES= com.c game.c msg_ucmd.c pmove.c pmovetst.c net_packetlog.c
 libqw_sdl_a_SOURCES=cl_sys_sdl.c
 libqw_sdl_a_CFLAGS=$(SDL_CFLAGS)
@@ -91,7 +92,7 @@ qw_server_DEPENDENCIES=	libqw_common.a libqw_server.a libasm.a $(qf_server_LIBS)
 
 qw_master_SOURCES=	master.c
 qw_master_LDADD=	$(top_builddir)/libs/util/libQFutil.la $(NET_LIBS)
-qw_master_LDFLAGS=	$(common_ldflags) -static
+qw_master_LDFLAGS=	$(common_ldflags)
 
 cl_plugin_LIBS= \
 		$(CLIENT_PLUGIN_STATIC_LIBS) \
