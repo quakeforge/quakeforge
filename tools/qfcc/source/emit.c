@@ -353,12 +353,16 @@ emit_sub_expr (expr_t *e, def_t *dest)
 						d->type = e->e.expr.type;
 					return d;
 				case 'C':
+					def_a = emit_sub_expr (e->e.expr.e1, 0);
+					if (def_a->type->type == ev_pointer
+						&& e->e.expr.type->type == ev_pointer) {
+						return def_a;
+					}
+					def_b = &def_void;
 					if (!dest) {
 						dest = PR_GetTempDef (e->e.expr.type, pr_scope);
 						dest->users = 2;
 					}
-					def_a = emit_sub_expr (e->e.expr.e1, 0);
-					def_b = &def_void;
 					operator = "=";
 					break;
 				default:

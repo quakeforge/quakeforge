@@ -71,7 +71,7 @@ type_t      type_Protocol = { ev_pointer };
 type_t      type_SEL = { ev_pointer };
 type_t      type_IMP = { ev_func, NULL, &type_id, -3, { &type_id, &type_SEL }};
 type_t      type_obj_exec_class = { ev_func, NULL, &type_void, 1, { 0 }};
-type_t     *type_method;
+type_t      type_Method = { ev_pointer };
 type_t     *type_category;
 type_t     *type_ivar;
 type_t     *type_module;
@@ -419,16 +419,16 @@ init_types (void)
 	chain_type (&type_struct);
 	chain_type (&type_IMP);
 
-	type = type_SEL.aux_type = new_struct ("SEL");
+	type = type_SEL.aux_type = new_struct (0);
 	new_struct_field (type, &type_string, "sel_id", vis_public);
 	new_struct_field (type, &type_string, "sel_types", vis_public);
 	chain_type (&type_SEL);
 
-	type_method = new_struct (0);
-	new_struct_field (type_method, type_SEL.aux_type, "method_name", vis_public);
-	new_struct_field (type_method, &type_string, "method_types", vis_public);
-	new_struct_field (type_method, &type_IMP, "method_imp", vis_public);
-	chain_type (type_method);
+	type = type_Method.aux_type = new_struct (0);
+	new_struct_field (type, type_SEL.aux_type, "method_name", vis_public);
+	new_struct_field (type, &type_string, "method_types", vis_public);
+	new_struct_field (type, &type_IMP, "method_imp", vis_public);
+	chain_type (&type_Method);
 
 	type = type_Class.aux_type = new_struct (0);
 	type->type = ev_class;

@@ -51,7 +51,7 @@ method_t *
 new_method (type_t *ret_type, param_t *selector, param_t *opt_parms)
 {
 	method_t   *meth = malloc (sizeof (method_t));
-	param_t    *cmd = new_param (0, &type_pointer, "_cmd");
+	param_t    *cmd = new_param (0, &type_SEL, "_cmd");
 	param_t    *self = new_param (0, &type_id, "self");
 	dstring_t  *name = dstring_newstr ();
 	dstring_t  *types = dstring_newstr ();
@@ -286,7 +286,7 @@ emit_methods (methodlist_t *_methods, const char *name, int instance)
 	new_struct_field (method_list, &type_pointer, "method_next", vis_public);
 	new_struct_field (method_list, &type_integer, "method_count", vis_public);
 	for (i = 0; i < count; i++)
-		new_struct_field (method_list, type_method, 0, vis_public);
+		new_struct_field (method_list, type_Method.aux_type, 0, vis_public);
 	methods_def = PR_GetDef (method_list, va ("_OBJ_%s_METHODS_%s", type, name),
 							 0, &numpr_globals);
 	methods_def->initialized = methods_def->constant = 1;

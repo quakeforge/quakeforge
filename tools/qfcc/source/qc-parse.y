@@ -1245,8 +1245,8 @@ keywordarglist
 	;
 
 keywordarg
-	: selector ':' expr	{ $$ = new_keywordarg ($1, $3); }
-	| ':' expr			{ $$ = new_keywordarg ("", $2); }
+	: selector ':' arg_list	{ $$ = new_keywordarg ($1, $3); }
+	| ':' arg_list			{ $$ = new_keywordarg ("", $2); }
 	;
 
 selectorarg

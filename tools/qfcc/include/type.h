@@ -52,7 +52,7 @@ extern	type_t	type_Protocol;
 extern	type_t	type_SEL;
 extern	type_t	type_IMP;
 extern	type_t	type_obj_exec_class;
-extern	type_t	*type_method;
+extern	type_t	type_Method;
 extern	type_t	*type_category;
 extern	type_t	*type_ivar;
 extern	type_t	*type_module;

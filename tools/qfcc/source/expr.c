@@ -1935,21 +1935,31 @@ assign_expr (expr_t *e1, expr_t *e2)
 }
 
 expr_t *
-cast_expr (type_t *t, expr_t *e)
+cast_expr (type_t *type, expr_t *e)
 {
 	expr_t    *c;
+	type_t    *e_type;
+
+	convert_name (e);
 
 	if (e->type == ex_error)
 		return e;
 
-	if ((t != &type_integer && t != &type_uinteger
-		 && get_type (e) != &type_float)
-		&& (t != &type_float && get_type (e) != &type_integer)) {
-		return error (e, "can not cast from %s to %s",
-					  pr_type_name[extract_type (e)], pr_type_name[t->type]);
+	e_type = get_type (e);
+
+	if (type->type == ev_pointer && e_type->type == ev_pointer) {
+		c = new_unary_expr ('C', e);
+		c->e.expr.type = type;
+	} else if (((type == &type_integer || type == &type_uinteger)
+				&& e_type == &type_float)
+			   || (type == &type_float
+				   && (e_type == &type_integer || e_type == &type_uinteger))) {
+		c = new_unary_expr ('C', e);
+		c->e.expr.type = type;
+	} else {
+		c = error (e, "can not cast from %s to %s",
+				   pr_type_name[extract_type (e)], pr_type_name[type->type]);
 	}
-	c = new_unary_expr ('C', e);
-	c->e.expr.type = t;
 	return c;
 }
 
