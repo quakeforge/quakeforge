@@ -139,7 +139,8 @@ warning (expr_t *e, const char *fmt, ...)
 
 	if (options.warn_error) {
 		options.warn_error = 0;		// only want to do this once
-		error (e, "warnings treated as errors");
+		fprintf (stderr, "%s: warnings treated as errors\n", "qfcc");
+		pr_error_count++;
 	}
 	
 	va_start (args, fmt);
