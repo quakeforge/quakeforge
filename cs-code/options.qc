@@ -770,6 +770,13 @@ MENU_network_options =
 	Menu_End ();
 };
 
+integer (string text, integer key)
+op_goto_console =
+{
+	Cbuf_AddText ("toggleconsole\n");
+	return 0;
+};
+
 /*************************
  * MAIN OPTIONS 
  * Main options menu code
@@ -790,6 +797,7 @@ MENU_options =
 	Menu_Pic (16, 4, "gfx/qplaque.lmp");
 	Menu_CenterPic (160, 4, "gfx/p_option.lmp");
 
+	Menu_Item (54, 32, "Goto Console", op_goto_console, 0);
 	MENU_control_options ();
 	MENU_video_options   ();
 	MENU_audio_options   ();
