@@ -1,9 +1,9 @@
 #! /bin/sh
 # Check Autoconf version
 if [ -x `which autoconf` ]; then
-	AC_VER=`autoconf --version | head -1 | sed 's/^[^0-9]*//i'`
+	AC_VER=`autoconf --version | head -1 | sed 's/^[^0-9]*//'`
 	AC_VER_MAJOR=`echo $AC_VER | cut -f1 -d'.'`
-	AC_VER_MINOR=`echo $AC_VER | cut -f2 -d'.' | sed 's/[^0-9]*$//i'`
+	AC_VER_MINOR=`echo $AC_VER | cut -f2 -d'.' | sed 's/[^0-9]*$//'`
 
 	if [ "$AC_VER_MAJOR" -lt "2" ]; then
 		echo "Autoconf 2.13 or greater needed to build configure."
