@@ -55,6 +55,7 @@
 # include <X11/extensions/xf86dga.h>
 #endif
 
+#include "QF/cdaudio.h"
 #include "QF/console.h"
 #include "QF/cmd.h"
 #include "QF/cvar.h"
@@ -71,6 +72,7 @@
 #include "context_x11.h"
 #include "dga_check.h"
 
+cvar_t     *in_snd_block;
 cvar_t     *in_dga;
 cvar_t     *in_dga_mouseaccel;
 
@@ -343,14 +345,19 @@ static void
 event_focusout (XEvent * event)
 {
 	XAutoRepeatOn (x_disp);
-	S_BlockSound ();
+	if (in_snd_block->int_val) {
+		S_BlockSound ();
+		CDAudio_Pause ();
+	}
 }
 
 static void
 event_focusin (XEvent * event)
 {
-	XAutoRepeatOff (x_disp);
+	if (key_dest == key_game)
+		XAutoRepeatOff (x_disp);
 	S_UnblockSound ();
+	CDAudio_Resume ();
 }
 
 static void
@@ -500,6 +507,8 @@ IN_LL_Init (void)
 void
 IN_LL_Init_Cvars (void)
 {
+	in_snd_block= Cvar_Get ("in_snd_block", "0", CVAR_ARCHIVE, NULL,
+							"block sound output on window focus loss");
 	in_dga = Cvar_Get ("in_dga", "1", CVAR_ARCHIVE, NULL,
 			"DGA Input support");
 	in_dga_mouseaccel = Cvar_Get ("in_dga_mouseaccel", "1", CVAR_ARCHIVE, NULL,
