@@ -281,7 +281,7 @@ R_BuildLightMap (msurface_t *surf, byte * dest, int stride)
 				dest[1] = bound(0, bl[1] >> shift, 255);
 				dest[2] = bound(0, bl[2] >> shift, 255);
 				dest[3] = 255;
-				dest += 4;
+				dest += lightmap_bytes;
 				bl += 3;
 			}
 		}
@@ -292,7 +292,7 @@ R_BuildLightMap (msurface_t *surf, byte * dest, int stride)
 				dest[0] = bound(0, bl[0] >> shift, 255);
 				dest[1] = bound(0, bl[1] >> shift, 255);
 				dest[2] = bound(0, bl[2] >> shift, 255);
-				dest += 3;
+				dest += lightmap_bytes;
 				bl += 3;
 			}
 		}
@@ -1168,7 +1168,7 @@ GL_BuildLightmaps (model_t **models, int num_models)
 	default:
 		gl_internalformat = 3;
 		gl_lightmap_format = GL_RGBA;
-		lightmap_bytes = 3;
+		lightmap_bytes = 4;
 		break;
 	}
 
