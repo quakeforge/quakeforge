@@ -550,6 +550,7 @@ CL_RelinkEntities (void)
 		// if the object wasn't included in the last packet, remove it
 		if (state->msgtime != cl.mtime[0]) {
 			ent->model = NULL;
+			ent->pose1 = ent->pose2 = -1;
 			continue;
 		}
 
@@ -557,7 +558,6 @@ CL_RelinkEntities (void)
 
 		if (state->forcelink) {		// the entity was not updated in the
 									// last message so move to the final spot
-			ent->pose1 = ent->pose2 = -1;
 		} else {					// if the delta is large, assume a
 									// teleport and don't lerp
 			f = frac;
