@@ -30,6 +30,8 @@ static __attribute__ ((unused)) const char rcsid[] =
 
 #include "QF/sys.h"
 
+#include "compat.h"
+
 #include "bsp5.h"
 #include "options.h"
 
@@ -236,118 +238,28 @@ AddFaceEdges (face_t *f)
 {
 	int         i, j;
 
-	for (i = 0; i < f->numpoints; i++) {
-		j = (i + 1) % f->numpoints;
-		AddEdge (f->pts[i], f->pts[j]);
+	for (i = 0; i < f->points->numpoints; i++) {
+		j = (i + 1) % f->points->numpoints;
+		AddEdge (f->points->points[i], f->points->points[j]);
 	}
 }
-
-// a specially allocated face that can hold hundreds of edges if needed
-byte        superfacebuf[8192];
-face_t     *superface = (face_t *) superfacebuf;
-
-void        FixFaceEdges (face_t * f);
 
 face_t     *newlist;
 
 static void
-SplitFaceForTjunc (face_t *f, face_t *original)
-{
-	face_t     *new, *chain;
-	int         firstcorner, lastcorner, i;
-	vec3_t      dir, test;
-	vec_t       v;
-
-	chain = NULL;
-	do {
-		if (f->numpoints <= MAXPOINTS) {
-			// the face is now small enough without more cutting so copy it
-			// back to the original
-			*original = *f;
-			original->original = chain;
-			original->next = newlist;
-			newlist = original;
-			return;
-		}
-
-		tjuncfaces++;
-
-	  restart:
-		// find the last corner 
-		VectorSubtract (f->pts[f->numpoints - 1], f->pts[0], dir);
-		_VectorNormalize (dir);
-		for (lastcorner = f->numpoints - 1; lastcorner > 0; lastcorner--) {
-			VectorSubtract (f->pts[lastcorner - 1], f->pts[lastcorner], test);
-			_VectorNormalize (test);
-			v = DotProduct (test, dir);
-			if (v < 0.9999 || v > 1.00001)
-				break;
-		}
-
-		// find the first corner    
-		VectorSubtract (f->pts[1], f->pts[0], dir);
-		_VectorNormalize (dir);
-		for (firstcorner = 1; firstcorner < f->numpoints - 1; firstcorner++) {
-			VectorSubtract (f->pts[firstcorner + 1], f->pts[firstcorner],
-							test);
-			_VectorNormalize (test);
-			v = DotProduct (test, dir);
-			if (v < 0.9999 || v > 1.00001)
-				break;
-		}
-
-		if (firstcorner + 2 >= MAXPOINTS) {
-			// rotate the point winding
-			VectorCopy (f->pts[0], test);
-			for (i = 1; i < f->numpoints; i++)
-				VectorCopy (f->pts[i], f->pts[i - 1]);
-			VectorCopy (test, f->pts[f->numpoints - 1]);
-			goto restart;
-		}
-
-		// cut off as big a piece as possible, less than MAXPOINTS, and not
-		// past lastcorner
-
-		new = NewFaceFromFace (f);
-		if (f->original)
-			Sys_Error ("SplitFaceForTjunc: f->original");
-
-		new->original = chain;
-		chain = new;
-		new->next = newlist;
-		newlist = new;
-		if (f->numpoints - firstcorner <= MAXPOINTS)
-			new->numpoints = firstcorner + 2;
-		else if (lastcorner + 2 < MAXPOINTS &&
-				 f->numpoints - lastcorner <= MAXPOINTS)
-				new->numpoints = lastcorner + 2;
-		else
-			new->numpoints = MAXPOINTS;
-
-		for (i = 0; i < new->numpoints; i++)
-			VectorCopy (f->pts[i], new->pts[i]);
-		for (i = new->numpoints - 1; i < f->numpoints; i++)
-			VectorCopy (f->pts[i], f->pts[i - (new->numpoints - 2)]);
-		f->numpoints -= (new->numpoints - 2);
-	} while (1);
-
-}
-
-void
 FixFaceEdges (face_t *f)
 {
 	int         i, j, k;
 	vec_t       t1, t2;
 	wedge_t    *w;
+	winding_t  *fp = f->points;
 	wvert_t    *v;
 
-	*superface = *f;
-
   restart:
-	for (i = 0; i < superface->numpoints; i++) {
-		j = (i + 1) % superface->numpoints;
+	for (i = 0; i < fp->numpoints; i++) {
+		j = (i + 1) % fp->numpoints;
 
-		w = FindEdge (superface->pts[i], superface->pts[j], &t1, &t2);
+		w = FindEdge (fp->points[i], fp->points[j], &t1, &t2);
 
 		for (v = w->head.next; v->t < t1 + T_EPSILON; v = v->next) {
 		}
@@ -355,25 +267,20 @@ FixFaceEdges (face_t *f)
 		if (v->t < t2 - T_EPSILON) {
 			tjuncs++;
 			// insert a new vertex here
-			for (k = superface->numpoints; k > j; k--) {
-				VectorCopy (superface->pts[k - 1], superface->pts[k]);
+			fp = realloc (fp, field_offset (winding_t,
+											points[fp->numpoints + 1]));
+			for (k = fp->numpoints; k > j; k--) {
+				VectorCopy (fp->points[k - 1], fp->points[k]);
 			}
-			VectorMultAdd (w->origin, v->t, w->dir, superface->pts[j]);
-			superface->numpoints++;
+			VectorMultAdd (w->origin, v->t, w->dir, fp->points[j]);
+			fp->numpoints++;
 			goto restart;
 		}
 	}
+	f->points = fp;
 
-
-	if (superface->numpoints <= MAXPOINTS) {
-		*f = *superface;
-		f->next = newlist;
-		newlist = f;
-		return;
-	}
-	// the face needs to be split into multiple faces because of too many edges
-
-	SplitFaceForTjunc (superface, f);
+	f->next = newlist;
+	newlist = f;
 }
 
 //============================================================================

@@ -203,7 +203,8 @@ ClearOutFaces (node_t *node)
 
 	for (fp = node->markfaces; *fp; fp++) {
 		// mark all the original faces that are removed
-		(*fp)->numpoints = 0;
+		FreeWinding ((*fp)->points);
+		(*fp)->points = 0;
 	}
 	node->faces = NULL;
 }

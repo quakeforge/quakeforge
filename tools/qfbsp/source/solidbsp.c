@@ -53,12 +53,13 @@ FaceSide (face_t *in, plane_t *split)
 	int         frontcount, backcount, i;
 	vec_t       dot;
 	vec_t      *p;
+	winding_t  *inp = in->points;
 
 	frontcount = backcount = 0;
 
 	// axial planes are fast
 	if (split->type < 3)
-		for (i = 0, p = in->pts[0] + split->type; i < in->numpoints;
+		for (i = 0, p = inp->points[0] + split->type; i < inp->numpoints;
 			 i++, p += 3) {
 			if (*p > split->dist + ON_EPSILON) {
 				if (backcount)
@@ -71,7 +72,7 @@ FaceSide (face_t *in, plane_t *split)
 			}
 	} else
 		// sloping planes take longer
-		for (i = 0, p = in->pts[0]; i < in->numpoints; i++, p += 3) {
+		for (i = 0, p = inp->points[0]; i < inp->numpoints; i++, p += 3) {
 			dot = DotProduct (p, split->normal);
 			dot -= split->dist;
 			if (dot > ON_EPSILON) {
@@ -334,14 +335,15 @@ CalcSurfaceInfo (surface_t * surf)
 	}
 
 	for (f = surf->faces; f; f = f->next) {
+		winding_t  *fp = f->points;
 		if (f->contents[0] >= 0 || f->contents[1] >= 0)
 			Sys_Error ("Bad contents");
-		for (i = 0; i < f->numpoints; i++)
+		for (i = 0; i < fp->numpoints; i++)
 			for (j = 0; j < 3; j++) {
-				if (f->pts[i][j] < surf->mins[j])
-					surf->mins[j] = f->pts[i][j];
-				if (f->pts[i][j] > surf->maxs[j])
-					surf->maxs[j] = f->pts[i][j];
+				if (fp->points[i][j] < surf->mins[j])
+					surf->mins[j] = fp->points[i][j];
+				if (fp->points[i][j] > surf->maxs[j])
+					surf->maxs[j] = fp->points[i][j];
 			}
 	}
 }
@@ -583,6 +585,7 @@ LinkNodeFaces (surface_t *surface)
 		nodefaces++;
 		new = AllocFace ();
 		*new = *f;
+		new->points = CopyWinding (f->points);
 		f->original = new;
 		new->next = list;
 		list = new;

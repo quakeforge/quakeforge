@@ -53,21 +53,21 @@ CheckFace (face_t *f)
 	vec_t	 d, edgedist;
 	vec3_t	 dir, edgenormal, facenormal;
 
-	if (f->numpoints < 3)
-		Sys_Error ("CheckFace: %i points", f->numpoints);
+	if (f->points->numpoints < 3)
+		Sys_Error ("CheckFace: %i points", f->points->numpoints);
 
 	VectorCopy (planes[f->planenum].normal, facenormal);
 	if (f->planeside)
 		VectorNegate (facenormal, facenormal);
 
-	for (i = 0; i < f->numpoints; i++) {
-		p1 = f->pts[i];
+	for (i = 0; i < f->points->numpoints; i++) {
+		p1 = f->points->points[i];
 
 		for (j = 0; j < 3; j++)
 			if (p1[j] > BOGUS_RANGE || p1[j] < -BOGUS_RANGE)
 				Sys_Error ("CheckFace: BUGUS_RANGE: %f", p1[j]);
 
-		j = i + 1 == f->numpoints ? 0 : i + 1;
+		j = i + 1 == f->points->numpoints ? 0 : i + 1;
 
 		// check the point is on the face plane
 		d = DotProduct (p1, planes[f->planenum].normal)
@@ -80,7 +80,7 @@ CheckFace (face_t *f)
 #endif
 
 		// check the edge isn't degenerate
-		p2 = f->pts[j];
+		p2 = f->points->points[j];
 		VectorSubtract (p2, p1, dir);
 
 		if (VectorLength (dir) < ON_EPSILON)
@@ -92,10 +92,10 @@ CheckFace (face_t *f)
 		edgedist += ON_EPSILON;
 
 		// all other points must be on front side
-		for (j = 0; j < f->numpoints; j++) {
+		for (j = 0; j < f->points->numpoints; j++) {
 			if (j == i)
 				continue;
-			d = DotProduct (f->pts[j], edgenormal);
+			d = DotProduct (f->points->points[j], edgenormal);
 			if (d > edgedist)
 				Sys_Error ("CheckFace: non-convex");
 		}
@@ -318,27 +318,24 @@ CreateBrushFaces (void)
 		}
 
 		if (!w)
-			continue;					// overcontrained plane
+			continue;					// overconstrained plane
 
 		// this face is a keeper
 		f = AllocFace ();
-		f->numpoints = w->numpoints;
-		if (f->numpoints > MAXEDGES)
-			Sys_Error ("f->numpoints > MAXEDGES");
+		f->points = w;
 
 		for (j = 0; j < w->numpoints; j++) {
+			vec_t      *v = f->points->points[j];
+			VectorSubtract (v, offset, v);
 			for (k = 0; k < 3; k++) {
-				point[k] = w->points[j][k] - offset[k];
-				r = RINT (point[k]);
-				if (fabs (point[k] - r) < ZERO_EPSILON)
-					f->pts[j][k] = r;
-				else
-					f->pts[j][k] = point[k];
+				r = RINT (v[k]);
+				if (fabs (v[k] - r) < ZERO_EPSILON)
+					v[k] = r;
 
-				if (f->pts[j][k] < brush_mins[k])
-					brush_mins[k] = f->pts[j][k];
-				if (f->pts[j][k] > brush_maxs[k])
-					brush_maxs[k] = f->pts[j][k];
+				if (v[k] < brush_mins[k])
+					brush_mins[k] = v[k];
+				if (v[k] > brush_maxs[k])
+					brush_maxs[k] = v[k];
 			}
 
 		}
@@ -347,7 +344,6 @@ CreateBrushFaces (void)
 		VectorSubtract (point, offset, point);
 		plane.dist = DotProduct (plane.normal, point);
 
-		FreeWinding (w);
 		f->texturenum = mf->texinfo;
 		f->planenum = FindPlane (&plane, &f->planeside);
 		f->next = brush_faces;
@@ -588,8 +584,8 @@ ExpandBrush (int hullnum)
 
 	// create all the hull points
 	for (f = brush_faces; f; f = f->next)
-		for (i = 0; i < f->numpoints; i++)
-			AddHullPoint (f->pts[i], hullnum);
+		for (i = 0; i < f->points->numpoints; i++)
+			AddHullPoint (f->points->points[i], hullnum);
 
 	// expand all of the planes
 	for (i = 0; i < numbrushfaces; i++) {
@@ -619,8 +615,10 @@ ExpandBrush (int hullnum)
 
 	// add all of the edge bevels
 	for (f = brush_faces; f; f = f->next)
-		for (i = 0; i < f->numpoints; i++)
-			AddHullEdge (f->pts[i], f->pts[(i + 1) % f->numpoints], hullnum);
+		for (i = 0; i < f->points->numpoints; i++)
+			AddHullEdge (f->points->points[i],
+						 f->points->points[(i + 1) % f->points->numpoints],
+						 hullnum);
 }
 
 /*

@@ -141,6 +141,22 @@ CopyWinding (winding_t *w)
 	return c;
 }
 
+winding_t *
+CopyWindingReverse (winding_t *w)
+{
+	int         i, size;
+	winding_t  *c;
+
+	size = (long) ((winding_t *) 0)->points[w->numpoints];
+	c = malloc (size);
+	c->numpoints = w->numpoints;
+	for (i = 0; i < w->numpoints; i++) {
+		// add points backwards
+		VectorCopy (w->points[w->numpoints - 1 - i], c->points[i]);
+	}
+	return c;
+}
+
 void
 CheckWinding (winding_t * w)
 {
@@ -355,7 +371,7 @@ NewWinding (int points)
 	int         size;
 	winding_t  *w;
 
-	if (points > MAX_POINTS_ON_WINDING)
+	if (points < 3 || points > MAX_POINTS_ON_WINDING)
 		Sys_Error ("NewWinding: %i points", points);
 
 	c_activewindings++;

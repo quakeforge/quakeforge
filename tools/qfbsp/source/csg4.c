@@ -73,98 +73,47 @@ NewFaceFromFace (face_t *in)
 void
 SplitFace (face_t *in, plane_t *split, face_t **front, face_t **back)
 {
-	face_t     *newf, *new2;
-	int         i, j;
-	int         sides[MAXEDGES + 1];
+	int         i;
 	int         counts[3];
+	plane_t     plane;
 	vec_t       dot;
-	vec_t       dists[MAXEDGES + 1];
-	vec_t      *p1, *p2;
-	vec3_t      mid;
+	winding_t  *tmp;
 
-	if (in->numpoints < 0)
+	if (in->points->numpoints < 0)
 		Sys_Error ("SplitFace: freed face");
 	counts[0] = counts[1] = counts[2] = 0;
 
 	// determine sides for each point
-	for (i = 0; i < in->numpoints; i++) {
-		dot = DotProduct (in->pts[i], split->normal);
-		dot -= split->dist;
-		dists[i] = dot;
+	for (i = 0; i < in->points->numpoints; i++) {
+		dot = DotProduct (in->points->points[i], split->normal) - split->dist;
 		if (dot > ON_EPSILON)
-			sides[i] = SIDE_FRONT;
+			counts[SIDE_FRONT]++;
 		else if (dot < -ON_EPSILON)
-			sides[i] = SIDE_BACK;
-		else
-			sides[i] = SIDE_ON;
-		counts[sides[i]]++;
+			counts[SIDE_BACK]++;
 	}
-	sides[i] = sides[0];
-	dists[i] = dists[0];
 
-	if (!counts[0]) {
+	if (!counts[SIDE_FRONT]) {
 		*front = NULL;
 		*back = in;
 		return;
 	}
-	if (!counts[1]) {
+	if (!counts[SIDE_BACK]) {
 		*front = in;
 		*back = NULL;
 		return;
 	}
 
-	*back = newf = NewFaceFromFace (in);
-	*front = new2 = NewFaceFromFace (in);
+	*back = NewFaceFromFace (in);
+	*front = NewFaceFromFace (in);
 
-	// distribute the points and generate splits
-	for (i = 0; i < in->numpoints; i++) {
-		if (newf->numpoints > MAXEDGES || new2->numpoints > MAXEDGES)
-			Sys_Error ("SplitFace: numpoints > MAXEDGES");
+	tmp = CopyWinding (in->points);
+	(*front)->points = ClipWinding (tmp, split, 0);
 
-		p1 = in->pts[i];
+	plane.dist = -split->dist;
+	VectorNegate (split->normal, plane.normal);
+	(*back)->points = ClipWinding (in->points, &plane, 0);
 
-		if (sides[i] == SIDE_ON) {
-			VectorCopy (p1, newf->pts[newf->numpoints]);
-			newf->numpoints++;
-			VectorCopy (p1, new2->pts[new2->numpoints]);
-			new2->numpoints++;
-			continue;
-		}
-
-		if (sides[i] == SIDE_FRONT) {
-			VectorCopy (p1, new2->pts[new2->numpoints]);
-			new2->numpoints++;
-		} else {
-			VectorCopy (p1, newf->pts[newf->numpoints]);
-			newf->numpoints++;
-		}
-
-		if (sides[i + 1] == SIDE_ON || sides[i + 1] == sides[i])
-			continue;
-
-		// generate a split point
-		p2 = in->pts[(i + 1) % in->numpoints];
-
-		dot = dists[i] / (dists[i] - dists[i + 1]);
-		for (j = 0; j < 3; j++) {		// avoid round off error when possible
-			if (split->normal[j] == 1)
-				mid[j] = split->dist;
-			else if (split->normal[j] == -1)
-				mid[j] = -split->dist;
-			else
-				mid[j] = p1[j] + dot * (p2[j] - p1[j]);
-		}
-
-		VectorCopy (mid, newf->pts[newf->numpoints]);
-		newf->numpoints++;
-		VectorCopy (mid, new2->pts[new2->numpoints]);
-		new2->numpoints++;
-	}
-
-	if (newf->numpoints > MAXEDGES || new2->numpoints > MAXEDGES)
-		Sys_Error ("SplitFace: numpoints > MAXEDGES");
-
-	// free the original face now that is is represented by the fragments
+	in->points = 0;		// freed by ClipWinding
 	FreeFace (in);
 }
 
@@ -226,7 +175,7 @@ static void
 SaveOutside (qboolean mirror)
 {
 	face_t     *f, *next, *newf;
-	int         planenum, i;
+	int         planenum;
 
 	for (f = outside; f; f = next) {
 		next = f->next;
@@ -237,15 +186,11 @@ SaveOutside (qboolean mirror)
 		if (mirror) {
 			newf = NewFaceFromFace (f);
 
-			newf->numpoints = f->numpoints;
+			newf->points = CopyWindingReverse (f->points);
 			newf->planeside = f->planeside ^ 1;	// reverse side
 			newf->contents[0] = f->contents[1];
 			newf->contents[1] = f->contents[0];
 
-			for (i = 0; i < f->numpoints; i++)	// add points backwards
-			{
-				VectorCopy (f->pts[f->numpoints - 1 - i], newf->pts[i]);
-			}
 			validfaces[planenum] = MergeFaceToList (newf,
 													validfaces[planenum]);
 		}
@@ -331,6 +276,7 @@ CopyFacesToOutside (brush_t *b)
 		brushfaces++;
 		newf = AllocFace ();
 		*newf = *f;
+		newf->points = CopyWinding (f->points);
 		newf->next = outside;
 		newf->contents[0] = CONTENTS_EMPTY;
 		newf->contents[1] = b->contents;

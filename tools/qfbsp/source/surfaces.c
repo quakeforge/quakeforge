@@ -75,8 +75,8 @@ SubdivideFace (face_t *f, face_t **prevptr)
 			mins = BOGUS_RANGE;
 			maxs = -BOGUS_RANGE;
 
-			for (i = 0; i < f->numpoints; i++) {
-				v = DotProduct (f->pts[i], tex->vecs[axis]);
+			for (i = 0; i < f->points->numpoints; i++) {
+				v = DotProduct (f->points->points[i], tex->vecs[axis]);
 				if (v < mins)
 					mins = v;
 				if (v > maxs)
@@ -146,7 +146,7 @@ GatherNodeFaces_r (node_t *node)
 		// decision node
 		for (f = node->faces; f; f = next) {
 			next = f->next;
-			if (!f->numpoints) {		// face was removed outside
+			if (!f->points) {		// face was removed outside
 				FreeFace (f);
 			} else {
 				f->next = validfaces[f->planenum];
@@ -349,14 +349,15 @@ static void
 FindFaceEdges (face_t *face)
 {
 	int         i;
+	winding_t  *facep = face->points;
 
 	face->outputnumber = -1;
-	if (face->numpoints > MAXEDGES)
-		Sys_Error ("WriteFace: %i points", face->numpoints);
+	face->edges = malloc (sizeof (int) * facep->numpoints);
 
-	for (i = 0; i < face->numpoints; i++)
-		face->edges[i] = GetEdge
-			(face->pts[i], face->pts[(i + 1) % face->numpoints], face);
+	for (i = 0; i < facep->numpoints; i++)
+		face->edges[i] = GetEdge (facep->points[i],
+								  facep->points[(i + 1) % facep->numpoints],
+								  face);
 }
 
 static void

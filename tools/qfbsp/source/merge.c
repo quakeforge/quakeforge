@@ -50,8 +50,9 @@ TryMerge (face_t *f1, face_t *f2)
 	vec3_t      normal, delta, planenormal;
 	vec_t       dot;
 	vec_t      *p1, *p2, *p3, *p4, *back;
+	winding_t  *f1p, *f2p, *newfp;
 
-	if (f1->numpoints == -1 || f2->numpoints == -1)
+	if (!(f1p = f1->points) || !(f2p = f2->points))
 		return NULL;
 	if (f1->planeside != f2->planeside)
 		return NULL;
@@ -66,12 +67,12 @@ TryMerge (face_t *f1, face_t *f2)
 	p1 = p2 = NULL;						// stop compiler warning
 	j = 0;
 
-	for (i = 0; i < f1->numpoints; i++) {
-		p1 = f1->pts[i];
-		p2 = f1->pts[(i + 1) % f1->numpoints];
-		for (j = 0; j < f2->numpoints; j++) {
-			p3 = f2->pts[j];
-			p4 = f2->pts[(j + 1) % f2->numpoints];
+	for (i = 0; i < f1p->numpoints; i++) {
+		p1 = f1p->points[i];
+		p2 = f1p->points[(i + 1) % f1p->numpoints];
+		for (j = 0; j < f2p->numpoints; j++) {
+			p3 = f2p->points[j];
+			p4 = f2p->points[(j + 1) % f2p->numpoints];
 			for (k = 0; k < 3; k++) {
 				if (fabs (p1[k] - p4[k]) > EQUAL_EPSILON)
 					break;
@@ -79,15 +80,11 @@ TryMerge (face_t *f1, face_t *f2)
 					break;
 			}
 			if (k == 3)
-				break;
+				goto found_edge;
 		}
-		if (j < f2->numpoints)
-			break;
 	}
-
-	if (i == f1->numpoints)
-		return NULL;					// no matching edges
-
+	return NULL;					// no matching edges
+found_edge:
 	// check slope of connected lines
 	// if the slopes are colinear, the point can be removed
 	plane = &planes[f1->planenum];
@@ -95,24 +92,24 @@ TryMerge (face_t *f1, face_t *f2)
 	if (f1->planeside)
 		VectorNegate (planenormal, planenormal);
 
-	back = f1->pts[(i + f1->numpoints - 1) % f1->numpoints];
+	back = f1p->points[(i + f1p->numpoints - 1) % f1p->numpoints];
 	VectorSubtract (p1, back, delta);
 	CrossProduct (planenormal, delta, normal);
 	_VectorNormalize (normal);
 
-	back = f2->pts[(j + 2) % f2->numpoints];
+	back = f2p->points[(j + 2) % f2p->numpoints];
 	VectorSubtract (back, p1, delta);
 	dot = DotProduct (delta, normal);
 	if (dot > CONTINUOUS_EPSILON)
 		return NULL;					// not a convex polygon
 	keep1 = dot < -CONTINUOUS_EPSILON;
 
-	back = f1->pts[(i + 2) % f1->numpoints];
+	back = f1p->points[(i + 2) % f1p->numpoints];
 	VectorSubtract (back, p2, delta);
 	CrossProduct (planenormal, delta, normal);
 	_VectorNormalize (normal);
 
-	back = f2->pts[(j + f2->numpoints - 1) % f2->numpoints];
+	back = f2p->points[(j + f2p->numpoints - 1) % f2p->numpoints];
 	VectorSubtract (back, p2, delta);
 	dot = DotProduct (delta, normal);
 	if (dot > CONTINUOUS_EPSILON)
@@ -120,28 +117,26 @@ TryMerge (face_t *f1, face_t *f2)
 	keep2 = dot < -CONTINUOUS_EPSILON;
 
 	// build the new polygon
-	if (f1->numpoints + f2->numpoints > MAXEDGES) {
-//		Sys_Error ("TryMerge: too many edges!");
-		return NULL;
-	}
 
+	k = f1p->numpoints + f2p->numpoints - 4 + keep1 + keep2;
 	newf = NewFaceFromFace (f1);
+	newfp = newf->points = NewWinding (k);
 
 	// copy first polygon
-	for (k = (i + 1) % f1->numpoints; k != i; k = (k + 1) % f1->numpoints) {
-		if (k == (i + 1) % f1->numpoints && !keep2)
+	for (k = (i + 1) % f1p->numpoints; k != i; k = (k + 1) % f1p->numpoints) {
+		if (k == (i + 1) % f1p->numpoints && !keep2)
 			continue;
 
-		VectorCopy (f1->pts[k], newf->pts[newf->numpoints]);
-		newf->numpoints++;
+		VectorCopy (f1p->points[k], newfp->points[newfp->numpoints]);
+		newfp->numpoints++;
 	}
 
 	// copy second polygon
-	for (l = (j + 1) % f2->numpoints; l != j; l = (l + 1) % f2->numpoints) {
-		if (l == (j + 1) % f2->numpoints && !keep1)
+	for (l = (j + 1) % f2p->numpoints; l != j; l = (l + 1) % f2p->numpoints) {
+		if (l == (j + 1) % f2p->numpoints && !keep1)
 			continue;
-		VectorCopy (f2->pts[l], newf->pts[newf->numpoints]);
-		newf->numpoints++;
+		VectorCopy (f2p->points[l], newfp->points[newfp->numpoints]);
+		newfp->numpoints++;
 	}
 
 	return newf;
@@ -165,7 +160,8 @@ MergeFaceToList (face_t *face, face_t *list)
 		if (!newf)
 			continue;
 		FreeFace (face);
-		f->numpoints = -1;				// merged out
+		FreeWinding (f->points);	// merged out
+		f->points = 0;
 		return MergeFaceToList (newf, list);
 	}
 
@@ -182,7 +178,7 @@ FreeMergeListScraps (face_t *merged)
 	head = NULL;
 	for (; merged; merged = next) {
 		next = merged->next;
-		if (merged->numpoints == -1)
+		if (!merged->points)
 			FreeFace (merged);
 		else {
 			merged->next = head;

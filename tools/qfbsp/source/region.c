@@ -74,8 +74,8 @@ AddFaceToRegionSize (face_t *f)
 {
 	int         i;
 
-	for (i = 0; i < f->numpoints; i++)
-		AddPointToRegion (f->pts[i]);
+	for (i = 0; i < f->points->numpoints; i++)
+		AddPointToRegion (f->points->points[i]);
 }
 
 static qboolean
@@ -107,7 +107,7 @@ CanJoinFaces (face_t *f, face_t *f2)
 			}
 		}
 	} else {
-		if (bsp->numsurfedges - firstedge + f2->numpoints
+		if (bsp->numsurfedges - firstedge + f2->points->numpoints
 			> MAX_EDGES_IN_REGION)
 			return false;				// a huge water or sky polygon
 	}
@@ -130,7 +130,7 @@ RecursiveGrowRegion (dface_t *r, face_t *f)
 	f->outputnumber = bsp->numfaces;
 
 	// add edges    
-	for (i = 0; i < f->numpoints; i++) {
+	for (i = 0; i < f->points->numpoints; i++) {
 		e = f->edges[i];
 		if (!edgefaces[abs (e)][0])
 			continue;					// edge has allready been removed
@@ -225,7 +225,7 @@ GrowNodeRegion_r (node_t * node)
 		RecursiveGrowRegion (r, f);
 #endif
 		r.firstedge = firstedge = bsp->numsurfedges;
-		for (i = 0; i < f->numpoints; i++) {
+		for (i = 0; i < f->points->numpoints; i++) {
 			if (bsp->numsurfedges == MAX_MAP_SURFEDGES)
 				Sys_Error ("numsurfedges == MAX_MAP_SURFEDGES");
 			BSP_AddSurfEdge (bsp, f->edges[i]);

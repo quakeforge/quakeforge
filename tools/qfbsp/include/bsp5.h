@@ -61,6 +61,7 @@ void CheckWinding (winding_t *w);
 winding_t	*NewWinding (int points);
 void		FreeWinding (winding_t *w);
 winding_t	*CopyWinding (winding_t *w);
+winding_t	*CopyWindingReverse (winding_t *w);
 winding_t	*ClipWinding (winding_t *in, plane_t *split, qboolean keepon);
 void	DivideWinding (winding_t *in, plane_t *split, winding_t **front, winding_t **back);
 
@@ -84,9 +85,8 @@ typedef struct visfacet_s
 										// write surfaces
 	qboolean        detail;				// is a detail face
 
-	int				numpoints;
-	vec3_t			pts[MAXEDGES];		// FIXME: change to use winding_t
-	int				edges[MAXEDGES];
+	winding_t      *points;
+	int            *edges;
 } face_t;
 
 typedef struct surface_s

@@ -502,7 +502,7 @@ ParseBrush (void)
 			tx.vecs[i][3] = vecs[i][3];
 		}
 
-		f = malloc (sizeof (mface_t));
+		f = calloc (1, sizeof (mface_t));
 		f->next = b->faces;
 		b->faces = f;
 		f->plane = plane;
