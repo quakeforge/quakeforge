@@ -1239,7 +1239,7 @@ SND_PLUGIN_TARGETS="libsound_null.la libsound_disk.la"
 VID_TARGETS=""
 BUILD_GL=no
 BUILD_SW=no
-if test "x$HAVE_GLIDE" = xyes -a "x$ENABLE_3DFX" = xyes; then
+if test "x$HAVE_GLIDE" = xyes -a "x$HAVE_SVGA" = xyes -a "x$ENABLE_3DFX" = xyes; then
 	QW_TARGETS="$QW_TARGETS qw-client-3dfx\$(EXEEXT)"
 	NQ_TARGETS="$NQ_TARGETS nq-3dfx\$(EXEEXT)"
 	CL_TARGETS="$CL_TARGETS 3dfx"
