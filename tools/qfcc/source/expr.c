@@ -1597,6 +1597,9 @@ function_expr (expr_t *e1, expr_t *e2)
 
 	t1 = extract_type (e1);
 
+	if (e1->type == ex_error)
+		return e1;
+
 	if (t1 != ev_func) {
 		if (e1->type == ex_def)
 			return error (e1, "Called object \"%s\" is not a function",
