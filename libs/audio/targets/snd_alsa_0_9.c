@@ -304,7 +304,8 @@ SNDDMA_Submit (void)
 					avail = buffer_size;
 				if (count > avail)
 					count = avail;
-				snd_pcm_mmap_forward (pcm, count);
+				if (count)
+					snd_pcm_mmap_forward (pcm, count);
 			}
 			break;
 		default:
