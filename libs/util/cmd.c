@@ -50,6 +50,8 @@ static const char rcsid[] =
 #include "QF/zone.h"
 #include "compat.h"
 #include "QF/dstring.h"
+#include "QF/exp.h"
+#include "QF/va.h"
 
 typedef struct cmdalias_s {
 	struct cmdalias_s *next;
@@ -202,7 +204,7 @@ Cbuf_InsertText (const char *text)
 void
 extract_line (dstring_t *buffer, dstring_t *line)
 {
-	int i, squotes = 0, dquotes = 0, braces = 0;
+	int i, squotes = 0, dquotes = 0, braces = 0, n;
 	
 	for (i = 0; buffer->str[i]; i++) {
 		if (buffer->str[i] == '\'' && !escaped(buffer->str,i) && !dquotes && !braces)
@@ -215,6 +217,10 @@ extract_line (dstring_t *buffer, dstring_t *line)
 			braces++;
 		if (buffer->str[i] == '}' && !escaped(buffer->str,i) && !squotes && !dquotes)
 			braces--;
+		if (buffer->str[i] == '/' && buffer->str[i+1] == '/' && !squotes && !dquotes) { // Filter out comments until newline
+			for (n = 0;buffer->str[i+n] != '\n' && buffer->str[i+n] != '\r';n++);
+			dstring_snip(buffer, i, n);
+		}
 		if (buffer->str[i] == '\n' || buffer->str[i] == '\r') {
 			if (braces)
 				dstring_snip(buffer, i, 1);
@@ -746,6 +752,48 @@ Cmd_ProcessVariables (dstring_t *dstr)
 	dstring_delete (varname);
 }
 
+int
+Cmd_ProcessMath (dstring_t *dstr)
+{
+	dstring_t *statement;
+	int i, n, paren;
+	float value;
+	char *temp;
+	
+	statement = dstring_newstr ();
+	
+	for (i = 0; i < strlen(dstr->str); i++) {
+		if (dstr->str[i] == '$' && dstr->str[i+1] == '(' && !escaped(dstr->str,i)) {
+			paren = 1;
+			for (n = 2;;n++) {
+				if (dstr->str[i+n] == '(')
+					paren++;
+				else if (dstr->str[i+n] == ')') {
+					paren--;
+					if (!paren)
+						break;
+				}
+				else if (!dstr->str[i+n])
+					return -1; // Open parentheses, give up
+			}
+			/* Copy text between braces into a buffer */
+			dstring_clearstr (statement);
+			dstring_insert (statement, dstr->str+i+2, n-2, 0);
+			value = EXP_Evaluate (statement->str);
+			if (EXP_ERROR == EXP_E_NORMAL) {
+				temp = va("%f", value);
+				dstring_snip (dstr, i, n+1); // Nuke the statement
+				dstring_insertstr (dstr, temp, i); // Stick in the value
+				i += strlen(temp) - 1;
+			}
+			else
+				return -2; // Math evaluation error
+		}
+	}
+	dstring_delete (statement);
+	return 0;
+}
+
 /*
 	Cmd_ProcessEscapes
 	
@@ -824,7 +872,7 @@ Cmd_ProcessPercents (dstring_t *dstr)
 void
 Cmd_TokenizeString (const char *text, qboolean filter)
 {
-	int i = 0, n, len = 0, quotes, braces, space;
+	int i = 0, n, len = 0, quotes, braces, space, res;
 	const char *str = text;
 	
 	cmd_argc = 0;
@@ -883,6 +931,17 @@ Cmd_TokenizeString (const char *text, qboolean filter)
 			if (!braces) {
 				Cmd_ProcessTags(cmd_argv[cmd_argc-1]);
 				Cmd_ProcessVariables(cmd_argv[cmd_argc-1]);
+				res = Cmd_ProcessMath(cmd_argv[cmd_argc-1]);
+				if (res == -1) {
+					Sys_Printf("Parse error:  Unmatched parenthesis in following line:\n--> %s\n", text);
+					cmd_argc = 0;
+					return;
+				}
+				if (res == -2) {
+					Sys_Printf("Math error:  Invalid math expression on the following line:\n--> %s\n", text);
+					cmd_argc = 0;
+					return;
+				}
 			}
 			Cmd_ProcessEscapes(cmd_argv[cmd_argc-1]);
 		}
