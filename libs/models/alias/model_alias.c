@@ -187,11 +187,11 @@ Mod_LoadAliasModel (model_t *mod, void *buffer, cache_allocator_t allocator)
 
 		if (frametype == ALIAS_SINGLE) {
 			pframetype = (daliasframetype_t *)
-				Mod_LoadAliasFrame (pframetype + 1, posenum,
+				Mod_LoadAliasFrame (pframetype + 1, &posenum,
 									&pheader->frames[i]);
 		} else {
 			pframetype = (daliasframetype_t *)
-				Mod_LoadAliasGroup (pframetype + 1, posenum,
+				Mod_LoadAliasGroup (pframetype + 1, &posenum,
 									&pheader->frames[i]);
 		}
 	}

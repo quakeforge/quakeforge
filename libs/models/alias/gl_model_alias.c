@@ -233,7 +233,7 @@ Mod_LoadAllSkins (int numskins, daliasskintype_t *pskintype, int *pskinindex)
 }
 
 void *
-Mod_LoadAliasFrame (void *pin, int posenum, maliasframedesc_t *frame)
+Mod_LoadAliasFrame (void *pin, int *posenum, maliasframedesc_t *frame)
 {
 	trivertx_t *pinframe;
 	int         i;
@@ -242,7 +242,7 @@ Mod_LoadAliasFrame (void *pin, int posenum, maliasframedesc_t *frame)
 	pdaliasframe = (daliasframe_t *) pin;
 
 	strcpy (frame->name, pdaliasframe->name);
-	frame->firstpose = posenum;
+	frame->firstpose = (*posenum);
 	frame->numposes = 1;
 
 	for (i = 0; i < 3; i++) {
@@ -253,8 +253,8 @@ Mod_LoadAliasFrame (void *pin, int posenum, maliasframedesc_t *frame)
 
 	pinframe = (trivertx_t *) (pdaliasframe + 1);
 
-	poseverts[posenum] = pinframe;
-	posenum++;
+	poseverts[(*posenum)] = pinframe;
+	(*posenum)++;
 
 	pinframe += pheader->mdl.numverts;
 
@@ -262,7 +262,7 @@ Mod_LoadAliasFrame (void *pin, int posenum, maliasframedesc_t *frame)
 }
 
 void *
-Mod_LoadAliasGroup (void *pin, int posenum, maliasframedesc_t *frame)
+Mod_LoadAliasGroup (void *pin, int *posenum, maliasframedesc_t *frame)
 {
 	daliasgroup_t *pingroup;
 	int         i, numframes;
@@ -273,7 +273,7 @@ Mod_LoadAliasGroup (void *pin, int posenum, maliasframedesc_t *frame)
 
 	numframes = LittleLong (pingroup->numframes);
 
-	frame->firstpose = posenum;
+	frame->firstpose = (*posenum);
 	frame->numposes = numframes;
 
 	for (i = 0; i < 3; i++) {
@@ -291,8 +291,8 @@ Mod_LoadAliasGroup (void *pin, int posenum, maliasframedesc_t *frame)
 	ptemp = (void *) pin_intervals;
 
 	for (i = 0; i < numframes; i++) {
-		poseverts[posenum] = (trivertx_t *) ((daliasframe_t *) ptemp + 1);
-		posenum++;
+		poseverts[(*posenum)] = (trivertx_t *) ((daliasframe_t *) ptemp + 1);
+		(*posenum)++;
 		ptemp =	(trivertx_t *) ((daliasframe_t *) ptemp + 1) + pheader->mdl.numverts;
 	}
 	return ptemp;

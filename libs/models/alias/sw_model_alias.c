@@ -184,7 +184,7 @@ GL_MakeAliasModelDisplayLists (model_t *m, aliashdr_t *hdr, void *_m, int _s)
 }
 
 void *
-Mod_LoadAliasFrame (void *pin, int posenum, maliasframedesc_t *frame)
+Mod_LoadAliasFrame (void *pin, int *posenum, maliasframedesc_t *frame)
 {
 	trivertx_t *pframe, *pinframe;
 	int         i, j;
@@ -223,7 +223,7 @@ Mod_LoadAliasFrame (void *pin, int posenum, maliasframedesc_t *frame)
 }
 
 void *
-Mod_LoadAliasGroup (void *pin, int posenum, maliasframedesc_t *frame)
+Mod_LoadAliasGroup (void *pin, int *posenum, maliasframedesc_t *frame)
 {
 	daliasgroup_t *pingroup;
 	maliasgroup_t *paliasgroup;
@@ -267,7 +267,7 @@ Mod_LoadAliasGroup (void *pin, int posenum, maliasframedesc_t *frame)
 
 	for (i = 0; i < numframes; i++) {
 		maliasframedesc_t temp_frame;
-		ptemp = Mod_LoadAliasFrame (ptemp, i, &temp_frame);
+		ptemp = Mod_LoadAliasFrame (ptemp, &i, &temp_frame);
 		memcpy (&paliasgroup->frames[i], &temp_frame,
 				sizeof(paliasgroup->frames[i]));
 	}

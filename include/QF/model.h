@@ -463,8 +463,8 @@ void	Mod_ProcessTexture(miptex_t *mt, texture_t *tx);
 void	Mod_LoadLighting (lump_t *l);
 int     Mod_CalcFullbright (byte *in, byte *out, int pixels);
 
-void    *Mod_LoadAliasFrame (void *pin, int posenum, maliasframedesc_t *frame);
-void    *Mod_LoadAliasGroup (void *pin, int posenum, maliasframedesc_t *frame);
+void    *Mod_LoadAliasFrame (void *pin, int *posenum, maliasframedesc_t *frame);
+void    *Mod_LoadAliasGroup (void *pin, int *posenum, maliasframedesc_t *frame);
 void    *Mod_LoadAllSkins (int numskins, daliasskintype_t *pskintype,
 						   int *pskinindex);
 void     GL_MakeAliasModelDisplayLists (model_t *m, aliashdr_t *hdr, void *_m,
