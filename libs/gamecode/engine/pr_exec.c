@@ -70,11 +70,13 @@ PR_PrintStatement (progs_t * pr, dstatement_t *s)
 	Sys_Printf ("%-9s ", op->opname);
 
 	if (s->op == OP_IF || s->op == OP_IFNOT || s->op == OP_IFBE
-		|| s->op == OP_IFB || s->op == OP_IFAE || s->op == OP_IFA)
+		|| s->op == OP_IFB || s->op == OP_IFAE || s->op == OP_IFA) {
+		int         ofs = (short) s->b;
 		Sys_Printf ("%sbranch %i (%i)",
-					PR_GlobalString (pr, s->a, ev_integer), s->b, addr + s->b);
-	else if (s->op == OP_GOTO) {
-		Sys_Printf ("branch %i (%i)", s->a, addr + s->a);
+					PR_GlobalString (pr, s->a, ev_integer), ofs, addr + ofs);
+	} else if (s->op == OP_GOTO) {
+		int         ofs = (short) s->a;
+		Sys_Printf ("branch %i (%i)", ofs, addr + ofs);
 	} else if (s->op == OP_RETURN || s->op == OP_DONE) {
 		Sys_Printf ("%s", PR_GlobalString (pr, s->a, ev_void));
 	} else {

@@ -257,7 +257,7 @@ check_branch (progs_t *pr, dstatement_t *st, opcode_t *op, short offset)
 {
 	int         address = st - pr->pr_statements;
 	
-	address += offset - 1;
+	address += offset;
 	if (address < 0 || address >= pr->progs->numstatements)
 		PR_Error (pr, "PR_Check_Opcodes: invalid branch (statement %d: %s)\n",
 				  st - pr->pr_statements, op->opname);
