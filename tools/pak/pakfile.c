@@ -22,20 +22,12 @@ typedef struct {
 
 #define MAX_FILES_IN_PACK   2048
 
-/*
-	In-memory pack file structs
-*/
-
-typedef struct {
-	char        name[PAK_PATH_LENGTH];
-	int         filepos, filelen;
-} packfile_t;
-
 typedef struct pack_s {
 	char        filename[MAX_PATH];
 	FILE       *handle;
 	int         numfiles;
-	packfile_t *files;
+	int         files_size;
+	dpackfile_t *files;
 } pack_t;
 
 pack_t *
@@ -81,12 +73,18 @@ open_pack (const char *name)
 		goto error;
 	}
 	pack->numfiles = header.dirlen / sizeof (dpackfile_t);
+	pack->files_size = pack->numfiles;
 	if (pack->numfiles > MAX_FILES_IN_PACK) {
 		fprintf (stderr, "%s: too many files in pack: %d", name, pack->numfiles);
 		goto error;
 	}
 	pack->files = malloc (numpackfiles * sizeof (packfile_t));
-	if (!
+	if (!pack->files)
+		fprintf (stderr, "out of memory\n");
+		goto error;
+	}
+	fseek (pack->handle, header.diroffs, SEEK_POS);
+	fread (pack->files, pack->numfiles, sizeof (pack->files[0]), pack->handle);
 error:
 	del_pack (pack);
 	return 0;
