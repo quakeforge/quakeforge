@@ -1801,7 +1801,7 @@ if test "x$ENABLE_servers_nq" = xyes; then
 	QF_NEED(nq, [common server])
 fi
 if test "x$ENABLE_servers_qtv" = xyes; then
-	QTV_TARGETS="qtv $QTV_TARGETS"
+	QTV_TARGETS="qtv\$(EXEEXT) $QTV_TARGETS"
 	SV_TARGETS="$SV_TARGETS qtv"
 #	QF_NEED(qtv, [common server])
 fi
