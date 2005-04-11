@@ -100,7 +100,8 @@ Info_SetValueForStarKey (info_t *info, const char *key, const char *value,
 {
 	info_key_t *k;
 	int         cursize;
-	char		*str, *d, *s;
+	char		*str;
+	byte		*d, *s;
 
 	if (strstr (key, "\\") || strstr (value, "\\")) {
 		Sys_Printf ("Can't use keys or values with a \\\n");
@@ -176,7 +177,7 @@ Info_Print (info_t *info)
 	info_key_t **key_list;
 	info_key_t **key;
 
-	key_list = (info_key_t **)Hash_GetList (info->tab);
+	key_list = (info_key_t **) Hash_GetList (info->tab);
 
 	for (key = key_list; *key; key++) {
 		Sys_Printf ("%-15s %s\n", (*key)->key, (*key)->value);
@@ -193,9 +194,9 @@ info_get_key (void *k, void *unused)
 static void
 free_key (void *_k, void *unused)
 {
-	info_key_t *k = (info_key_t *)_k;
-	free ((char*)k->key);
-	free ((char*)k->value);
+	info_key_t *k = (info_key_t *) _k;
+	free ((char *) k->key);
+	free ((char *) k->value);
 	free (k);
 }
 
@@ -226,7 +227,7 @@ Info_ParseString (const char *s, int maxsize, int flags)
 			if (*end)
 				*end++ = 0;
 		} else {
-			value = end = (char *)"";
+			value = end = (char *) "";
 		}
 		Info_SetValueForStarKey (info, key, value, flags);
 		key = end;
@@ -242,7 +243,7 @@ Info_Destroy (info_t *info)
 }
 
 char *
-Info_MakeString (info_t *info, int (*filter)(const char *))
+Info_MakeString (info_t *info, int (*filter) (const char *))
 {
 	char       *string;
 	const char *s;
@@ -251,7 +252,7 @@ Info_MakeString (info_t *info, int (*filter)(const char *))
 	info_key_t **key;
 
 	d = string = Hunk_TempAlloc (info->cursize + 1);
-	key_list = (info_key_t **)Hash_GetList (info->tab);
+	key_list = (info_key_t **) Hash_GetList (info->tab);
 
 	for (key = key_list; *key; key++) {
 		if (!*(*key)->value)
