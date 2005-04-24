@@ -48,9 +48,6 @@ static __attribute__ ((unused)) const char rcsid[] =
 
 /* LINE TESTING IN HULLS */
 
-// 1/32 epsilon to keep floating point happy
-#define	DIST_EPSILON	(0.03125)
-
 typedef struct {
 	vec3_t     backpt;
 	int        side;
