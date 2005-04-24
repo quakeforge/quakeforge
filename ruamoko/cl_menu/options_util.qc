@@ -428,15 +428,16 @@
 	}
 }
 @end
-
+void traceon () = #0;
 @implementation ProxyView
 
--(id)initWithBounds:(Rect)aRect title:(string)_title view:(View)aView
+-(id)initWithBounds:(Rect)aRect title:(View)aTitle view:(View)aView
 {
-	self = [super initWidthBounds:aRect text:_title];
+	self = [super initWithBounds:aRect];
 	if (!self)
 		return self;
 
+	title = aTitle;
 	view = aView;
 	return self;
 }
@@ -444,6 +445,21 @@
 - (integer) keyEvent:(integer)key unicode:(integer)unicode down:(integer)down
 {
 	return [view keyEvent:key unicode:unicode down:down];
+}
+
+- (void) draw
+{
+	[title draw];
+	[view draw];
+}
+
+- (void) setBasePos: (Point) pos
+{
+    [super setBasePos:pos];
+	local Point point = [[Point alloc] initWithComponents:xabs :yabs];
+	[title setBasePos:point];
+	[view setBasePos:point];
+	[point release];
 }
 
 @end

@@ -95,9 +95,10 @@
 
 @interface ProxyView : View
 {
+	View title;
 	View view;
 }
--(id)initWithBounds:(Rect)aRect title:(string)_title view:(View)aView;
+-(id)initWithBounds:(Rect)aRect title:(View)aTitle view:(View)aView;
 @end
 
 

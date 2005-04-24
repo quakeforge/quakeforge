@@ -43,7 +43,7 @@
 			{
 				Class = CvarToggleView;
 				Messages = (
-					(initWithBounds:title::, $rect, "\"Fullscreen\"", $toggle)
+					(initWithBounds:title::, $rect, "\"Fullscreen\"", $toggle),
 				);
 				rect = "[70, 60, 224, 8]";
 				toggle = {
@@ -54,25 +54,32 @@
 				};
 			},
 			{
-				Class = Text;
+				Class = ProxyView;
 				Messages = (
-					(initWithBounds:, $rect),
-					(setText:, "\"Crosshair\"")
+					(initWithBounds:title:view:, $rect, $title, $view),
 				);
 				rect = "[70, 70, 224, 8]";
-			},
-			{
-				Class = CrosshairView;
-				crosshair = {
-					Class = CrosshairCvar;
+				title = {
+					Class = Text;
 					Messages = (
-						(initWithCvar:, "\"crosshair\"")
+						(initWithBounds:, $rect),
+						(setText:, "\"Crosshair\"")
+					);
+					rect = "[0, 0, 224, 8]";
+				};
+				view = {
+					Class = CrosshairView;
+					crosshair = {
+						Class = CrosshairCvar;
+						Messages = (
+							(initWithCvar:, "\"crosshair\"")
+						);
+					};
+					rect = "[186, -3, 14, 14]";
+					Messages = (
+						(initWithBounds::, $rect, $crosshair)
 					);
 				};
-				rect = "[256, 67, 14, 14]";
-				Messages = (
-					(initWithBounds::, $rect, $crosshair)
-				);
 			},
 			{
 				Class = CvarToggleView;
