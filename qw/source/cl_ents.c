@@ -1195,4 +1195,5 @@ CL_Ents_Init (void)
 
 	for (i = 0; i < MAX_PROJECTILES; i++)
 		CL_Init_Entity (&cl_projectiles[i]);
+	r_view_model = &cl.viewent;
 }

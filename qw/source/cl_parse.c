@@ -1424,6 +1424,7 @@ CL_ParseServerMessage (void)
 				Con_DPrintf ("svc_intermission\n");
 
 				cl.intermission = 1;
+				r_force_fullscreen = 1;
 				cl.completed_time = realtime;
 				vid.recalc_refdef = true;	// go to full screen
 				Con_DPrintf ("intermission simorg: ");
@@ -1445,6 +1446,7 @@ CL_ParseServerMessage (void)
 
 			case svc_finale:
 				cl.intermission = 2;
+				r_force_fullscreen = 1;
 				cl.completed_time = realtime;
 				vid.recalc_refdef = true;				// go to full screen
 				Sbar_CenterPrint (MSG_ReadString (net_message));
@@ -1526,7 +1528,7 @@ CL_ParseServerMessage (void)
 				break;
 
 			case svc_setpause:
-				cl.paused = MSG_ReadByte (net_message);
+				r_paused = cl.paused = MSG_ReadByte (net_message);
 				if (cl.paused)
 					CDAudio_Pause ();
 				else

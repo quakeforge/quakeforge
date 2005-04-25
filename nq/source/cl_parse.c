@@ -910,7 +910,7 @@ CL_ParseServerMessage (void)
 
 			case svc_setpause:
 			{
-				cl.paused = MSG_ReadByte (net_message);
+				r_paused = cl.paused = MSG_ReadByte (net_message);
 
 				if (cl.paused) {
 					CDAudio_Pause ();
@@ -960,12 +960,14 @@ CL_ParseServerMessage (void)
 
 			case svc_intermission:
 				cl.intermission = 1;
+				r_force_fullscreen = 1;
 				cl.completed_time = cl.time;
 				vid.recalc_refdef = true;	// go to full screen
 				break;
 
 			case svc_finale:
 				cl.intermission = 2;
+				r_force_fullscreen = 1;
 				cl.completed_time = cl.time;
 				vid.recalc_refdef = true;	// go to full screen
 				Sbar_CenterPrint (MSG_ReadString (net_message));
@@ -973,6 +975,7 @@ CL_ParseServerMessage (void)
 
 			case svc_cutscene:
 				cl.intermission = 3;
+				r_force_fullscreen = 1;
 				cl.completed_time = cl.time;
 				vid.recalc_refdef = true;	// go to full screen
 				Sbar_CenterPrint (MSG_ReadString (net_message));

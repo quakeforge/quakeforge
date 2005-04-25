@@ -521,6 +521,7 @@ Host_ClearMemory (void)
 	cls.signon = 0;
 	memset (&sv, 0, sizeof (sv));
 	memset (&cl, 0, sizeof (cl));
+	r_force_fullscreen = 0;
 }
 
 /*
@@ -611,10 +612,6 @@ Host_ClientFrame (void)
 	r_inhibit_viewmodel = (chase_active->int_val
 						   || (cl.stats[STAT_ITEMS] & IT_INVISIBILITY)
 						   || cl.stats[STAT_HEALTH] <= 0);
-	r_force_fullscreen = cl.intermission;
-	r_paused = cl.paused;
-	r_active = cls.state == ca_active;
-	r_view_model = &cl.viewent;
 	r_frametime = host_frametime;
 
 	CL_UpdateScreen (cl.time);

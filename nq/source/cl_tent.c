@@ -138,6 +138,7 @@ CL_ClearTEnts (void)
 	for (i = 0; i < MAX_EXPLOSIONS; i++) {
 		CL_Init_Entity (&cl_explosions[i].ent);
 	}
+	r_view_model = &cl.viewent;
 }
 
 static explosion_t *

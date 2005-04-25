@@ -398,6 +398,7 @@ CL_ClearState (void)
 	// wipe the entire cl structure
 	Info_Destroy (cl.serverinfo);
 	memset (&cl, 0, sizeof (cl));
+	r_force_fullscreen = 0;
 
 	// Note: we should probably hack around this and give diff values for diff gamedirs
 	cl.fpd = FPD_DEFAULT;
@@ -795,6 +796,7 @@ CL_Changing_f (void)
 
 	S_StopAllSounds (true);
 	cl.intermission = 0;
+	r_force_fullscreen = 0;
 	CL_SetState (ca_connected);			// not active anymore, but not
 										// disconnected
 	Con_Printf ("\nChanging map...\n");
@@ -1582,10 +1584,6 @@ Host_Frame (float time)
 	r_inhibit_viewmodel = (!Cam_DrawViewModel ()
 						   || (cl.stats[STAT_ITEMS] & IT_INVISIBILITY)
 						   || cl.stats[STAT_HEALTH] <= 0);
-	r_force_fullscreen = cl.intermission;
-	r_paused = cl.paused;
-	r_active = cls.state == ca_active;
-	r_view_model = &cl.viewent;
 	r_frametime = host_frametime;
 
 	CL_UpdateScreen (realtime);

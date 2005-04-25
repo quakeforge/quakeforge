@@ -151,6 +151,7 @@ CL_ClearState (void)
 
 	// wipe the entire cl structure
 	memset (&cl, 0, sizeof (cl));
+	r_force_fullscreen = 0;
 
 	CL_Init_Entity (&cl.viewent);
 

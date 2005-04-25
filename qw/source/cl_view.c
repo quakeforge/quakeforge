@@ -717,8 +717,7 @@ V_RenderView (void)
 {
 	cl.simangles[ROLL] = 0;				// FIXME @@@
 
-	r_worldentity.model = cl.worldmodel;
-	if (cls.state != ca_active)
+	if (!r_active)
 		return;
 
 	view_frame = &cl.frames[cls.netchan.incoming_sequence & UPDATE_MASK];

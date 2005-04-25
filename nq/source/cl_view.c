@@ -704,8 +704,7 @@ V_CalcRefdef (void)
 void
 V_RenderView (void)
 {
-	r_worldentity.model = cl.worldmodel;
-	if (!cl.worldmodel || cls.signon != SIGNONS)
+	if (cls.signon != SIGNONS)
 		return;
 
 	// don't allow cheats in multiplayer
