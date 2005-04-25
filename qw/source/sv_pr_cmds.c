@@ -1122,27 +1122,28 @@ void
 PF_WriteBytes (progs_t *pr)
 {
 	int         i, p;
+	int         count = pr->pr_argc - 1;
+	byte        buf[MAX_PARMS];
+
+	for (i = 0; i < count; i++) {
+		p = P_FLOAT (pr, i + 1);
+		buf[i] = p;
+	}
 
 	if (P_FLOAT (pr, 0) == MSG_ONE) {
 		client_t   *cl = Write_GetClient (pr);
 
-		if (cl->state != cs_server)
-			MSG_ReliableCheckBlock (&cl->backbuf, pr->pr_argc);
-		if (sv.demorecording)
-			DemoWrite_Begin (dem_single, cl - svs.clients, pr->pr_argc);
-		for (i = 1; i < pr->pr_argc; i++) {
-			p = P_FLOAT (pr, i);
-			if (cl->state != cs_server)
-				MSG_ReliableWrite_Byte (&cl->backbuf, p);
-			if (sv.demorecording)
-				MSG_WriteByte (&demo.dbuf->sz, p);
+		if (cl->state != cs_server) {
+			MSG_ReliableCheckBlock (&cl->backbuf, count);
+			MSG_ReliableWrite_SZ (&cl->backbuf, buf, count);
+		}
+		if (sv.demorecording) {
+			DemoWrite_Begin (dem_single, cl - svs.clients, count);
+			SZ_Write (&demo.dbuf->sz, buf, count);
 		}
 	} else {
 		sizebuf_t  *msg = WriteDest (pr);
-		for (i = 1; i < pr->pr_argc; i++) {
-			p = P_FLOAT (pr, i);
-			MSG_WriteByte (msg, p);
-		}
+		SZ_Write (msg, buf, count);
 	}
 }
 
@@ -1306,40 +1307,42 @@ PF_WriteCoordV (progs_t *pr)
 void
 PF_WriteString (progs_t *pr)
 {
+	const char *str = P_GSTRING (pr, 1);
+
 	if (P_FLOAT (pr, 0) == MSG_ONE) {
 		client_t   *cl = Write_GetClient (pr);
 
 		if (cl->state != cs_server) {
-			MSG_ReliableCheckBlock (&cl->backbuf,
-									1 + strlen (P_GSTRING (pr, 1)));
-			MSG_ReliableWrite_String (&cl->backbuf, P_GSTRING (pr, 1));
+			MSG_ReliableCheckBlock (&cl->backbuf, 1 + strlen (str));
+			MSG_ReliableWrite_String (&cl->backbuf, str);
 		}
 		if (sv.demorecording) {
-			DemoWrite_Begin (dem_single, cl - svs.clients,
-							 1 + strlen (P_GSTRING (pr, 1)));
-			MSG_WriteString (&demo.dbuf->sz, P_GSTRING (pr, 1));
+			DemoWrite_Begin (dem_single, cl - svs.clients, 1 + strlen (str));
+			MSG_WriteString (&demo.dbuf->sz, str);
 		}
 	} else
-		MSG_WriteString (WriteDest (pr), P_GSTRING (pr, 1));
+		MSG_WriteString (WriteDest (pr), str);
 }
 
 // void (float to, entity s) WriteEntity
 void
 PF_WriteEntity (progs_t *pr)
 {
+	int         ent = P_EDICTNUM (pr, 1);
+
 	if (P_FLOAT (pr, 0) == MSG_ONE) {
 		client_t   *cl = Write_GetClient (pr);
 
 		if (cl->state != cs_server) {
 			MSG_ReliableCheckBlock (&cl->backbuf, 2);
-			MSG_ReliableWrite_Short (&cl->backbuf, P_EDICTNUM (pr, 1));
+			MSG_ReliableWrite_Short (&cl->backbuf, ent);
 		}
 		if (sv.demorecording) {
 			DemoWrite_Begin (dem_single, cl - svs.clients, 2);
-			MSG_WriteShort (&demo.dbuf->sz, P_EDICTNUM (pr, 1));
+			MSG_WriteShort (&demo.dbuf->sz, ent);
 		}
 	} else
-		MSG_WriteShort (WriteDest (pr), P_EDICTNUM (pr, 1));
+		MSG_WriteShort (WriteDest (pr), ent);
 }
 
 // void (entity e) makestatic
