@@ -642,7 +642,7 @@ SV_SendClientDatagram (client_t *client)
 		SZ_Clear (&msg);
 	}
 	// send the datagram
-	Netchan_Transmit (&client->netchan, msg.cursize, buf);
+	Netchan_Transmit (&client->netchan, msg.cursize, msg.data);
 
 	return true;
 }
@@ -778,17 +778,6 @@ SV_SendClientMessages (void)
 
 			// if the reliable message overflowed, drop the client
 			if (c->netchan.message.overflowed) {
-#if 0
-				int i;
-
-				Analyze_Server_Packet (c->netchan.message.data,
-									   c->netchan.message.cursize, 0);
-
-				for (i = 0; i < c->num_backbuf; i++) {
-					Analyze_Server_Packet (c->backbuf_data[i],
-										   c->backbuf_size[i], 0);
-				}
-#endif
 				SZ_Clear (&c->netchan.message);
 				SZ_Clear (&c->datagram);
 				SV_BroadcastPrintf (PRINT_HIGH, "%s overflowed\n", c->name);

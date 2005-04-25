@@ -527,8 +527,8 @@ SV_Stop (int reason)
 	demo.dbuf->h = NULL;
 	demo.dbuf->bufsize = 0;
 	DemoWrite_Begin (dem_all, 0, 2 + strlen ("EndOfDemo"));
-	MSG_WriteByte ((sizebuf_t *) demo.dbuf, svc_disconnect);
-	MSG_WriteString ((sizebuf_t *) demo.dbuf, "EndOfDemo");
+	MSG_WriteByte (&demo.dbuf->sz, svc_disconnect);
+	MSG_WriteString (&demo.dbuf->sz, "EndOfDemo");
 
 	SV_DemoWritePackets (demo.parsecount - demo.lastwritten + 1);
 	// finish up
@@ -603,12 +603,12 @@ SV_DemoPings (void)
 			continue;
 
 		DemoWrite_Begin (dem_all, 0, 7);
-		MSG_WriteByte ((sizebuf_t *) demo.dbuf, svc_updateping);
-		MSG_WriteByte ((sizebuf_t *) demo.dbuf, j);
-		MSG_WriteShort ((sizebuf_t *) demo.dbuf, SV_CalcPing (client));
-		MSG_WriteByte ((sizebuf_t *) demo.dbuf, svc_updatepl);
-		MSG_WriteByte ((sizebuf_t *) demo.dbuf, j);
-		MSG_WriteByte ((sizebuf_t *) demo.dbuf, client->lossage);
+		MSG_WriteByte (&demo.dbuf->sz, svc_updateping);
+		MSG_WriteByte (&demo.dbuf->sz, j);
+		MSG_WriteShort (&demo.dbuf->sz, SV_CalcPing (client));
+		MSG_WriteByte (&demo.dbuf->sz, svc_updatepl);
+		MSG_WriteByte (&demo.dbuf->sz, j);
+		MSG_WriteByte (&demo.dbuf->sz, client->lossage);
 	}
 }
 
