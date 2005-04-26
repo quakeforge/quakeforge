@@ -80,7 +80,7 @@ cvar_t     *serverdemo;
 
 int         (*dwrite) (QFile * file, const void *buf, int count);
 
-static int  header = (int) &((header_t *) 0)->data;
+#define HEADER  ((int) &((header_t *) 0)->data)
 
 entity_state_t demo_entities[UPDATE_MASK + 1][MAX_DEMO_PACKET_ENTITIES];
 
@@ -175,7 +175,7 @@ SV_DemoWriteToDisk (int type, int to, float time)
 	oldd = demo.dbuffer.start;
 	while (pos < demo.dbuf->bufsize) {
 		size = p->size;
-		pos += header + size;
+		pos += HEADER + size;
 
 		// no type means we are writing to disk everything
 		if (!type || (p->type == type && p->to == to)) {
@@ -187,14 +187,14 @@ SV_DemoWriteToDisk (int type, int to, float time)
 			}
 			// data is written so it need to be cleard from demobuf
 			if (demo.dbuf->sz.data != (byte *) p)
-				memmove (demo.dbuf->sz.data + size + header,
+				memmove (demo.dbuf->sz.data + size + HEADER,
 						 demo.dbuf->sz.data, (byte *) p - demo.dbuf->sz.data);
 
-			demo.dbuf->bufsize -= size + header;
-			demo.dbuf->sz.data += size + header;
-			pos -= size + header;
-			demo.dbuf->sz.maxsize -= size + header;
-			demo.dbuffer.start += size + header;
+			demo.dbuf->bufsize -= size + HEADER;
+			demo.dbuf->sz.data += size + HEADER;
+			pos -= size + HEADER;
+			demo.dbuf->sz.maxsize -= size + HEADER;
+			demo.dbuffer.start += size + HEADER;
 		}
 		// move along
 		p = (header_t *) (p->data + size);
@@ -413,7 +413,7 @@ DemoSetBuf (byte type, int to)
 	p = (header_t *) demo.dbuf->sz.data;
 
 	while (pos < demo.dbuf->bufsize) {
-		pos += header + p->size;
+		pos += HEADER + p->size;
 
 		if (type == p->type && to == p->to && !p->full) {
 			demo.dbuf->sz.cursize = pos;
@@ -430,9 +430,9 @@ DemoSetBuf (byte type, int to)
 	p->size = 0;
 	p->full = 0;
 
-	demo.dbuf->bufsize += header;
+	demo.dbuf->bufsize += HEADER;
 	demo.dbuf->sz.cursize = demo.dbuf->bufsize;
-	demo.dbuffer.end += header;
+	demo.dbuffer.end += HEADER;
 	demo.dbuf->h = p;
 }
 
@@ -458,13 +458,13 @@ DemoWrite_Begin (byte type, int to, int size)
 	qboolean    move = false;
 
 	// will it fit?
-	while (demo.dbuf->bufsize + size + header > demo.dbuf->sz.maxsize) {
+	while (demo.dbuf->bufsize + size + HEADER > demo.dbuf->sz.maxsize) {
 		// if we reached the end of buffer move msgbuf to the begining
 		if (!move && demo.dbuffer.end > demo.dbuffer.start)
 			move = true;
 
 		SV_DemoWritePackets (1);
-		if (move && demo.dbuffer.start > demo.dbuf->bufsize + header + size)
+		if (move && demo.dbuffer.start > demo.dbuf->bufsize + HEADER + size)
 			DemoMoveBuf ();
 	}
 

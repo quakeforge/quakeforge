@@ -358,7 +358,6 @@ SV_Multicast (const vec3_t origin, int to)
 
 	if (sv.demorecording) {
 		if (reliable) {
-//			DemoWrite_Begin (dem_multiple, cls, sv.multicast.cursize);
 			DemoWrite_Begin (dem_all, 0, sv.multicast.cursize);
 			SZ_Write (&demo.dbuf->sz, sv.multicast.data, sv.multicast.cursize);
 		} else
@@ -741,7 +740,7 @@ SV_UpdateToReliableMessages (void)
 				  sv.reliable_datagram.cursize);
 	}
 	if (sv.demorecording)
-		SZ_Write (&demo.datagram, sv.datagram.data, sv.datagram.cursize); // FIXME: ???
+		SZ_Write (&demo.datagram, sv.datagram.data, sv.datagram.cursize);
 
 	SZ_Clear (&sv.reliable_datagram);
 	SZ_Clear (&sv.datagram);
