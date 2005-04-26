@@ -371,7 +371,6 @@ Cmd_Alias_f (void)
 		return;
 	}
 	// copy the rest of the command line
-	puts (Cmd_Args(1));
 	cmd = dstring_newstr ();
 	c = Cmd_Argc ();
 	for (i = 2; i < c; i++) {
@@ -379,7 +378,6 @@ Cmd_Alias_f (void)
 		if (i != c - 1)
 			dstring_appendstr (cmd, " ");
 	}
-	puts (cmd->str);
 
 	alias->value = dstring_freeze (cmd);
 }
