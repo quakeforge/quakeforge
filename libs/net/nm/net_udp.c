@@ -77,6 +77,8 @@ static __attribute__ ((unused)) const char rcsid[] =
 #include <errno.h>
 #include <stdlib.h>
 #include <sys/types.h>
+#include <sys/ioctl.h>
+#include <net/if.h>
 
 #include "QF/console.h"
 #include "QF/cvar.h"
@@ -117,6 +119,40 @@ static unsigned long myAddr;
 
 #include "net_udp.h"
 
+static int
+get_address (int sock)
+{
+	struct ifconf  ifc;
+	struct ifreq  *ifr;
+	char           buf[8192];
+	int            i, n;
+	struct sockaddr_in *in_addr;
+	unsigned long  addr;
+
+	ifc.ifc_len = sizeof (buf);
+	ifc.ifc_buf = buf;
+
+	if (ioctl (sock, SIOCGIFCONF, &ifc) == -1)
+		return 0;
+
+	ifr = ifc.ifc_req;
+	n = ifc.ifc_len / sizeof (struct ifreq);
+
+	for (i = 0; i < n; i++) {
+		if (ioctl (sock, SIOCGIFADDR, &ifr[i]) == -1)
+			continue;
+		in_addr = (struct sockaddr_in *)&ifr[i].ifr_addr;
+		Con_DPrintf ("%s: %s\n", ifr[i].ifr_name,
+					 inet_ntoa (in_addr->sin_addr));
+		addr = *(unsigned long *)&in_addr->sin_addr;
+		if (addr != htonl (0x7f000001)) {
+			myAddr = addr;
+			break;
+		}
+	}
+
+	return 1;
+}
 
 int
 UDP_Init (void)
@@ -152,6 +188,8 @@ UDP_Init (void)
 
 	if ((net_controlsocket = UDP_OpenSocket (0)) == -1)
 		Sys_Error ("UDP_Init: Unable to open control socket");
+
+	get_address (net_controlsocket);
 
 	((struct sockaddr_in *) &broadcastaddr)->sin_family = AF_INET;
 	((struct sockaddr_in *) &broadcastaddr)->sin_addr.s_addr =
