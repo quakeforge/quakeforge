@@ -1842,9 +1842,9 @@ SV_ExecuteClientMessage (client_t *cl)
 				// read loss percentage
 				cl->lossage = MSG_ReadByte (net_message);
 
-				MSG_ReadDeltaUsercmd (&nullcmd, &oldest);
-				MSG_ReadDeltaUsercmd (&oldest, &oldcmd);
-				MSG_ReadDeltaUsercmd (&oldcmd, &newcmd);
+				MSG_ReadDeltaUsercmd (net_message, &nullcmd, &oldest);
+				MSG_ReadDeltaUsercmd (net_message, &oldest, &oldcmd);
+				MSG_ReadDeltaUsercmd (net_message, &oldcmd, &newcmd);
 
 				if (cl->state != cs_spawned)
 					break;

@@ -254,9 +254,9 @@ client_parse_message (client_t *cl)
 				/*checksum = (byte) */MSG_ReadByte (net_message);
 				// read loss percentage
 				/*cl->lossage = */MSG_ReadByte (net_message);
-				MSG_ReadDeltaUsercmd (&nullcmd, &oldest);
-				MSG_ReadDeltaUsercmd (&oldest, &oldcmd);
-				MSG_ReadDeltaUsercmd (&oldcmd, &newcmd);
+				MSG_ReadDeltaUsercmd (net_message, &nullcmd, &oldest);
+				MSG_ReadDeltaUsercmd (net_message, &oldest, &oldcmd);
+				MSG_ReadDeltaUsercmd (net_message, &oldcmd, &newcmd);
 #if 0
 				if (cl->state != cs_spawned)
 					break;

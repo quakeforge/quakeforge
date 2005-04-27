@@ -28,11 +28,11 @@
 #ifndef __msg_ucmd_h
 #define __msg_ucmd_h
 
-#include "QF/sizebuf.h"
-
 extern struct usercmd_s nullcmd;
+struct msg_s;
+struct sizebuf_s;
 
-void MSG_WriteDeltaUsercmd (sizebuf_t *sb, struct usercmd_s *from, struct usercmd_s *cmd);
-void MSG_ReadDeltaUsercmd (struct usercmd_s *from, struct usercmd_s *cmd);
+void MSG_WriteDeltaUsercmd (struct sizebuf_s *sb, struct usercmd_s *from, struct usercmd_s *cmd);
+void MSG_ReadDeltaUsercmd (struct msg_s *msg, struct usercmd_s *from, struct usercmd_s *cmd);
 
 #endif // __msg_ucmd_h

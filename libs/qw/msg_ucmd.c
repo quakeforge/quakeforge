@@ -45,10 +45,7 @@ static __attribute__ ((unused)) const char rcsid[] =
 #include "qw/msg_ucmd.h"
 #include "qw/protocol.h"
 
-#include "netchan.h"
-
 struct usercmd_s nullcmd;
-
 
 void
 MSG_WriteDeltaUsercmd (sizebuf_t *buf, usercmd_t *from, usercmd_t *cmd)
@@ -97,37 +94,37 @@ MSG_WriteDeltaUsercmd (sizebuf_t *buf, usercmd_t *from, usercmd_t *cmd)
 }
 
 void
-MSG_ReadDeltaUsercmd (usercmd_t *from, usercmd_t *move)
+MSG_ReadDeltaUsercmd (qmsg_t *msg, usercmd_t *from, usercmd_t *move)
 {
 	int         bits;
 
 	memcpy (move, from, sizeof (*move));
 
-	bits = MSG_ReadByte (net_message);
+	bits = MSG_ReadByte (msg);
 
 	// read current angles
 	if (bits & CM_ANGLE1)
-		move->angles[0] = MSG_ReadAngle16 (net_message);
+		move->angles[0] = MSG_ReadAngle16 (msg);
 	if (bits & CM_ANGLE2)
-		move->angles[1] = MSG_ReadAngle16 (net_message);
+		move->angles[1] = MSG_ReadAngle16 (msg);
 	if (bits & CM_ANGLE3)
-		move->angles[2] = MSG_ReadAngle16 (net_message);
+		move->angles[2] = MSG_ReadAngle16 (msg);
 
 	// read movement
 	if (bits & CM_FORWARD)
-		move->forwardmove = MSG_ReadShort (net_message);
+		move->forwardmove = MSG_ReadShort (msg);
 	if (bits & CM_SIDE)
-		move->sidemove = MSG_ReadShort (net_message);
+		move->sidemove = MSG_ReadShort (msg);
 	if (bits & CM_UP)
-		move->upmove = MSG_ReadShort (net_message);
+		move->upmove = MSG_ReadShort (msg);
 
 	// read buttons
 	if (bits & CM_BUTTONS)
-		move->buttons = MSG_ReadByte (net_message);
+		move->buttons = MSG_ReadByte (msg);
 
 	if (bits & CM_IMPULSE)
-		move->impulse = MSG_ReadByte (net_message);
+		move->impulse = MSG_ReadByte (msg);
 
 	// read time to run command
-	move->msec = MSG_ReadByte (net_message);
+	move->msec = MSG_ReadByte (msg);
 }

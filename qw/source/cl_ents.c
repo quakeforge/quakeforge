@@ -739,7 +739,7 @@ CL_ParsePlayerinfo (void)
 		state->state_time = parsecounttime;
 
 	if (flags & PF_COMMAND)
-		MSG_ReadDeltaUsercmd (&nullcmd, &state->command);
+		MSG_ReadDeltaUsercmd (net_message, &nullcmd, &state->command);
 
 	for (i = 0; i < 3; i++) {
 		if (flags & (PF_VELOCITY1 << i))
