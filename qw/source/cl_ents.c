@@ -673,7 +673,6 @@ CL_ParsePlayerinfo (void)
 		Host_Error ("CL_ParsePlayerinfo: bad num");
 
 	info = &cl.players[num];
-	player_parsecountmod = parsecountmod;
 	state = &cl.frames[parsecountmod].playerstate[num];
 
 	state->number = num;

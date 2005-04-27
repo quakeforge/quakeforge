@@ -159,7 +159,6 @@ const char *svc_strings[] = {
 
 int         oldparsecountmod;
 int         parsecountmod;
-int         player_parsecountmod;
 double      parsecounttime;
 
 int         viewentity;
@@ -1161,7 +1160,7 @@ CL_MuzzleFlash (void)
 	if ((unsigned int) (i - 1) >= MAX_CLIENTS)
 		return;
 
-	pl = &cl.frames[player_parsecountmod].playerstate[i - 1];
+	pl = &cl.frames[parsecountmod].playerstate[i - 1];
 
 	dl = R_AllocDlight (i);
 	if (!dl)
@@ -1203,7 +1202,8 @@ CL_ParseServerMessage (void)
 	if (cl_shownet->int_val == 1)
 		Con_Printf ("%i ", net_message->message->cursize);
 	else if (cl_shownet->int_val == 2)
-		Con_Printf ("------------------\n");
+		Con_Printf ("------------------ %d\n",
+					cls.netchan.incoming_acknowledged);
 
 	CL_ParseClientdata ();
 

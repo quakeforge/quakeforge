@@ -422,9 +422,7 @@ SV_WritePlayersToClient (client_t *client, edict_t *clent, byte *pvs,
 
 			dcl->parsecount = demo.parsecount;
 			VectorCopy (SVvector (ent, origin), dcl->info.origin);
-			VectorCopy (SVvector (ent, angles), dcl->info.angles);
-			dcl->info.angles[0] *= -3;
-			dcl->info.angles[2] = 0; // no roll angle
+			VectorCopy (cl->lastcmd.angles, dcl->info.angles);
 
 			if (SVfloat (ent, health) <= 0) {
 				// don't show the corpse looking around...
@@ -441,13 +439,13 @@ SV_WritePlayersToClient (client_t *client, edict_t *clent, byte *pvs,
 			dcl->frame = SVfloat (ent, frame);
 			dcl->flags = 0;
 			dcl->cmdtime = cl->localtime;
-			dcl->fixangle = demo.fixangle[j];
-			demo.fixangle[j] = 0;
 
 			if (SVfloat (ent, health) <= 0)
 				dcl->flags |= DF_DEAD;
 			if (SVvector (ent, mins)[2] != -24)
 				dcl->flags |= DF_GIB;
+
+			SV_WriteClientToDemo (msg, j, dcl);
 			continue;
 		}
 

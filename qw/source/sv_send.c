@@ -522,7 +522,6 @@ SV_WriteClientdataToMessage (client_t *client, sizebuf_t *msg)
 		MSG_WriteByte (msg, svc_setangle);
 		MSG_WriteAngleV (msg, angles);
 		SVfloat (ent, fixangle) = 0;
-		demo.fixangle[clnum] = true;
 
 		if (sv.demorecording) {
 			MSG_WriteByte (&demo.datagram, svc_setangle);
@@ -807,7 +806,7 @@ SV_SendClientMessages (void)
 void
 SV_SendDemoMessage (void)
 {
-	int         i, j, cls = 0;
+	int         i, j;
 	client_t   *c;
 	byte        buf[MAX_DATAGRAM];
 	sizebuf_t	msg;
@@ -829,21 +828,9 @@ SV_SendDemoMessage (void)
 		return;
 	demo.forceFrame = 0;
 
-	for (i = 0, c = svs.clients ; i<MAX_CLIENTS ; i++, c++) {
-		if (c->state != cs_spawned && c->state != cs_server)
-			continue;	// datagrams only go to spawned
-
-		cls |= 1 << i;
-	}
-
-	if (!cls) {
-		SZ_Clear (&demo.datagram);
-		return;
-	}
-	
 	for (i = 0, c = svs.clients; i < MAX_CLIENTS; i++, c++) {
 		if (c->state != cs_spawned && c->state != cs_server)
-			continue;	// datagrams only go to spawned
+			continue;
 
 		if (c->spectator)
 			continue;

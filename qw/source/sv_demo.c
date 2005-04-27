@@ -211,49 +211,71 @@ SV_DemoWriteToDisk (int type, int to, float time)
 	}
 }
 
-/*
-	SV_DemoWritePackets
-
-	Interpolates to get exact players position for current frame
-	and writes packets to the disk/memory
-*/
-
-static float
-adjustangle (float current, float ideal, float fraction)
+void
+SV_WriteClientToDemo (sizebuf_t *msg, int i, demo_client_t *cl)
 {
-	float       move;
+	float      *origin, *angles;
+	int         flags;
+	int         j;
+	demoinfo_t *demoinfo = &demo.info[i];
 
-	move = ideal - current;
-	if (ideal > current) {
+	origin = cl->info.origin;
+	angles = cl->info.angles;
 
-		if (move >= 180)
-			move = move - 360;
-	} else {
-		if (move <= -180)
-			move = move + 360;
-	}
+	// now write it to buf
+	flags = cl->flags;
 
-	move *= fraction;
+	for (j = 0; j < 3; j++)
+		if (origin[j] != demoinfo->origin[j])
+			flags |= DF_ORIGIN << j;
 
-	return (current + move);
+	for (j = 0; j < 3; j++)
+		if (angles[j] != demoinfo->angles[j])
+			flags |= DF_ANGLES << j;
+
+	if (cl->info.model != demoinfo->model)
+		flags |= DF_MODEL;
+	if (cl->info.effects != demoinfo->effects)
+		flags |= DF_EFFECTS;
+	if (cl->info.skinnum != demoinfo->skinnum)
+		flags |= DF_SKINNUM;
+	if (cl->info.weaponframe != demoinfo->weaponframe)
+		flags |= DF_WEAPONFRAME;
+
+	MSG_WriteByte (msg, svc_playerinfo);
+	MSG_WriteByte (msg, i);
+	MSG_WriteShort (msg, flags);
+
+	MSG_WriteByte (msg, cl->frame);
+
+	for (j = 0; j < 3; j++)
+		if (flags & (DF_ORIGIN << j))
+			MSG_WriteCoord (msg, origin[j]);
+
+	for (j = 0; j < 3; j++)
+		if (flags & (DF_ANGLES << j))
+			MSG_WriteAngle16 (msg, angles[j]);
+
+	if (flags & DF_MODEL)
+		MSG_WriteByte (msg, cl->info.model);
+
+	if (flags & DF_SKINNUM)
+		MSG_WriteByte (msg, cl->info.skinnum);
+
+	if (flags & DF_EFFECTS)
+		MSG_WriteByte (msg, cl->info.effects);
+
+	if (flags & DF_WEAPONFRAME)
+		MSG_WriteByte (msg, cl->info.weaponframe);
+
+	*demoinfo = cl->info;
 }
 
 void
 SV_DemoWritePackets (int num)
 {
-	demo_frame_t *frame, *nextframe;
-	demo_client_t *cl, *nextcl = 0;
-	int         i, j, flags;
-	qboolean    valid;
-	double      time, playertime, nexttime;
-	float       f;
-	vec3_t      origin, angles;
-	sizebuf_t   msg;
-	byte        msg_buf[MAX_MSGLEN];
-	demoinfo_t *demoinfo;
-
-	msg.data = msg_buf;
-	msg.maxsize = sizeof (msg_buf);
+	demo_frame_t *frame;
+	double      time;
 
 	if (num > demo.parsecount - demo.lastwritten + 1)
 		num = demo.parsecount - demo.lastwritten + 1;
@@ -262,122 +284,12 @@ SV_DemoWritePackets (int num)
 	for (; num; num--, demo.lastwritten++) {
 		frame = &demo.frames[demo.lastwritten & DEMO_FRAMES_MASK];
 		time = frame->time;
-		nextframe = frame;
-		msg.cursize = 0;
 
 		demo.dbuf = &frame->buf;
 
-		// find two frames
-		// one before the exact time (time - msec) and one after,
-		// then we can interpolate exact position for current frame
-		for (i = 0, cl = frame->clients, demoinfo = demo.info; i < MAX_CLIENTS;
-			 i++, cl++, demoinfo++) {
-			if (cl->parsecount != demo.lastwritten)
-				continue;				// not valid
-
-			nexttime = playertime = time - cl->sec;
-
-			for (j = demo.lastwritten + 1, valid = false;
-				 nexttime < time && j < demo.parsecount; j++) {
-				nextframe = &demo.frames[j & DEMO_FRAMES_MASK];
-				nextcl = &nextframe->clients[i];
-
-				if (nextcl->parsecount != j)
-					break;				// disconnected?
-				if (nextcl->fixangle)
-					break;				// respawned, or walked into
-										// teleport, do not interpolate!
-				if (!(nextcl->flags & DF_DEAD) && (cl->flags & DF_DEAD))
-					break;				// respawned, do not interpolate
-
-				nexttime = nextframe->time - nextcl->sec;
-
-				if (nexttime >= time) {
-					// good, found what we were looking for
-					valid = true;
-					break;
-				}
-			}
-
-			if (valid) {
-				f = (time - nexttime) / (nexttime - playertime);
-				for (j = 0; j < 3; j++) {
-					angles[j] = adjustangle (cl->info.angles[j],
-											 nextcl->info.angles[j], 1.0 + f);
-					origin[j] = (nextcl->info.origin[j]
-							     + f * (nextcl->info.origin[j]
-									    - cl->info.origin[j]));
-				}
-			} else {
-				VectorCopy (cl->info.origin, origin);
-				VectorCopy (cl->info.angles, angles);
-			}
-
-			// now write it to buf
-			flags = cl->flags;
-
-			if (cl->fixangle) {
-				demo.fixangletime[i] = cl->cmdtime;
-			}
-
-			for (j = 0; j < 3; j++)
-				if (origin[j] != demoinfo->origin[j])
-					flags |= DF_ORIGIN << j;
-
-			if (cl->fixangle || demo.fixangletime[i] != cl->cmdtime) {
-				for (j = 0; j < 3; j++)
-					if (angles[j] != demoinfo->angles[j])
-						flags |= DF_ANGLES << j;
-			}
-
-			if (cl->info.model != demoinfo->model)
-				flags |= DF_MODEL;
-			if (cl->info.effects != demoinfo->effects)
-				flags |= DF_EFFECTS;
-			if (cl->info.skinnum != demoinfo->skinnum)
-				flags |= DF_SKINNUM;
-			if (cl->info.weaponframe != demoinfo->weaponframe)
-				flags |= DF_WEAPONFRAME;
-
-			MSG_WriteByte (&msg, svc_playerinfo);
-			MSG_WriteByte (&msg, i);
-			MSG_WriteShort (&msg, flags);
-
-			MSG_WriteByte (&msg, cl->frame);
-
-			for (j = 0; j < 3; j++)
-				if (flags & (DF_ORIGIN << j))
-					MSG_WriteCoord (&msg, origin[j]);
-
-			for (j = 0; j < 3; j++)
-				if (flags & (DF_ANGLES << j))
-					MSG_WriteAngle16 (&msg, angles[j]);
-
-			if (flags & DF_MODEL)
-				MSG_WriteByte (&msg, cl->info.model);
-
-			if (flags & DF_SKINNUM)
-				MSG_WriteByte (&msg, cl->info.skinnum);
-
-			if (flags & DF_EFFECTS)
-				MSG_WriteByte (&msg, cl->info.effects);
-
-			if (flags & DF_WEAPONFRAME)
-				MSG_WriteByte (&msg, cl->info.weaponframe);
-
-			VectorCopy (cl->info.origin, demoinfo->origin);
-			VectorCopy (cl->info.angles, demoinfo->angles);
-			demoinfo->skinnum = cl->info.skinnum;
-			demoinfo->effects = cl->info.effects;
-			demoinfo->weaponframe = cl->info.weaponframe;
-			demoinfo->model = cl->info.model;
-		}
-
 		// this goes first to reduce demo size a bit
-		SV_DemoWriteToDisk (demo.lasttype, demo.lastto, time);
+//		SV_DemoWriteToDisk (demo.lasttype, demo.lastto, time);
 		SV_DemoWriteToDisk (0, 0, time);			// now goes the rest
-		if (msg.cursize)
-			SV_WriteDemoMessage (&msg, dem_all, 0, time);
 	}
 
 	if (demo.lastwritten > demo.parsecount)

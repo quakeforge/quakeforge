@@ -53,7 +53,6 @@ typedef struct demo_client_s {
 	demoinfo_t  info;
 	float       sec;
 	int         parsecount;
-	qboolean    fixangle;
 	vec3_t      angle;
 	float       cmdtime;
 	int         flags;
@@ -92,8 +91,6 @@ typedef struct demo_s {
 
 	client_t    recorder;
 	int         stats[MAX_CLIENTS][MAX_CL_STATS];	// ouch!
-	qboolean    fixangle[MAX_CLIENTS];
-	float       fixangletime[MAX_CLIENTS];
 	demoinfo_t  info[MAX_CLIENTS];
 	demo_frame_t frames[DEMO_FRAMES];
 
@@ -127,6 +124,7 @@ extern struct cvar_s *sv_demotxt;
 extern struct cvar_s *serverdemo;
 
 void DemoWrite_Begin (byte type, int to, int size);
+void SV_WriteClientToDemo (sizebuf_t *msg, int i, demo_client_t *cl);
 void SV_DemoWritePackets (int num);
 void SV_Stop (int reason);
 void DemoSetMsgBuf (demobuf_t *prev, demobuf_t *cur);

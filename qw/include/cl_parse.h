@@ -38,7 +38,6 @@ struct skin_s;
 
 extern int	packet_latency[NET_TIMINGS];
 extern int	parsecountmod;
-extern int	player_parsecountmod;
 extern double	parsecounttime;
 extern int	cl_playerindex;
 extern int	cl_flagindex;
