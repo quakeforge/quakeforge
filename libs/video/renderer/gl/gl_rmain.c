@@ -253,9 +253,6 @@ R_DrawEntitiesOnList (void)
 			continue;
 		currententity = r_visedicts[i];
 
-		if (currententity == r_player_entity)
-			currententity->angles[PITCH] *= 0.3;
-
 		R_DrawAliasModel (currententity);
 	}
 	qfglColor3ubv (color_white);
