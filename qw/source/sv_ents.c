@@ -500,7 +500,7 @@ SV_WritePlayersToClient (client_t *client, edict_t *clent, byte *pvs,
 				&& !VectorIsZero (SVvector (ent, colormod)))
 				qf_bits |= PF_COLORMOD;
 			if ((int) SVfloat (ent, frame) > 255)
-				qf_bits |= PF_EFFECTS2;
+				qf_bits |= PF_FRAME2;
 			if (qf_bits)
 				pflags |= PF_QF;
 		}
