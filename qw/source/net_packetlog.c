@@ -354,7 +354,7 @@ static void
 Parse_Server_Packet (int has_sequence)
 {
 	const char *s;
-	int         c, i, ii, iii, mask1, mask2;
+	int         c = 0, i, ii, iii, mask1, mask2;
 	long        seq1 = 0, seq2;
 
 	if (has_sequence) {
@@ -380,8 +380,10 @@ Parse_Server_Packet (int has_sequence)
 		}
 
 		while (1) {
-			if (packet.badread)
+			if (packet.badread) {
+				Net_LogPrintf ("*** BAD READ *** %s", svc_string[c]);
 				break;
+			}
 			c = MSG_ReadByte (&packet);
 			if (c == -1)
 				break;

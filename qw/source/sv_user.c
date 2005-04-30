@@ -1782,7 +1782,10 @@ SV_ExecuteClientMessage (client_t *cl)
 	vec3_t      o;
 
 	// calc ping time
-	frame = &cl->frames[cl->netchan.incoming_acknowledged & UPDATE_MASK];
+	cl->delta.cur_frame = cl->netchan.incoming_acknowledged & UPDATE_MASK;
+	cl->delta.out_frame = cl->netchan.outgoing_sequence & UPDATE_MASK;
+	cl->delta.in_frame = cl->netchan.incoming_sequence & UPDATE_MASK;
+	frame = &cl->delta.frames[cl->delta.cur_frame];
 	frame->ping_time = realtime - frame->senttime;
 
 	// make sure the reply sequence number matches the incoming
@@ -1792,9 +1795,8 @@ SV_ExecuteClientMessage (client_t *cl)
 	else
 		cl->send_message = false;		// don't reply, sequences have slipped
 	// save time for ping calculations
-	cl->frames[cl->netchan.outgoing_sequence & UPDATE_MASK].senttime =
-		realtime;
-	cl->frames[cl->netchan.outgoing_sequence & UPDATE_MASK].ping_time = -1;
+	cl->delta.frames[cl->delta.out_frame].senttime = realtime;
+	cl->delta.frames[cl->delta.out_frame].ping_time = -1;
 
 	host_client = cl;
 	sv_player = host_client->edict;
@@ -1804,7 +1806,7 @@ SV_ExecuteClientMessage (client_t *cl)
 
 	// mark time so clients will know how much to predict other players
 	cl->localtime = sv.time;
-	cl->delta_sequence = -1;			// no delta unless requested
+	cl->delta.delta_sequence = -1;			// no delta unless requested
 	while (1) {
 		if (net_message->badread) {
 			SV_Printf ("SV_ReadClientMessage: badread\n");
@@ -1826,7 +1828,8 @@ SV_ExecuteClientMessage (client_t *cl)
 				break;
 
 			case clc_delta:
-				cl->delta_sequence = MSG_ReadByte (net_message);
+				cl->delta.delta_sequence = MSG_ReadByte (net_message);
+				cl->delta.delta_sequence &= UPDATE_MASK;
 				break;
 
 			case clc_move:

@@ -325,7 +325,8 @@ SV_WriteDelta (entity_state_t *from, entity_state_t *to, sizebuf_t *msg,
 	Writes a delta update of a packet_entities_t to the message.
 */
 static void
-SV_EmitPacketEntities (client_t *client, packet_entities_t *to, sizebuf_t *msg)
+SV_EmitPacketEntities (delta_t *delta, packet_entities_t *to, sizebuf_t *msg,
+					   int stdver)
 {
 	int			newindex, oldindex, newnum, oldnum, oldmax;
 	edict_t	   *ent;
@@ -333,13 +334,13 @@ SV_EmitPacketEntities (client_t *client, packet_entities_t *to, sizebuf_t *msg)
 	packet_entities_t *from;
 
 	// this is the frame that we are going to delta update from
-	if (client->delta_sequence != -1) {
-		fromframe = &client->frames[client->delta_sequence & UPDATE_MASK];
+	if (delta->delta_sequence != -1) {
+		fromframe = &delta->frames[delta->delta_sequence];
 		from = &fromframe->entities;
 		oldmax = from->num_entities;
 
 		MSG_WriteByte (msg, svc_deltapacketentities);
-		MSG_WriteByte (msg, client->delta_sequence);
+		MSG_WriteByte (msg, delta->delta_sequence);
 	} else {
 		oldmax = 0;						// no delta update
 		from = NULL;
@@ -349,8 +350,8 @@ SV_EmitPacketEntities (client_t *client, packet_entities_t *to, sizebuf_t *msg)
 
 	newindex = 0;
 	oldindex = 0;
-//	SV_Printf ("---%i to %i ----\n", client->delta_sequence & UPDATE_MASK,
-//			   client->netchan.outgoing_sequence & UPDATE_MASK);
+//	SV_Printf ("---%i to %i ----\n", delta->delta_sequence & UPDATE_MASK,
+//			   delta->netchan.outgoing_sequence & UPDATE_MASK);
 	while (newindex < to->num_entities || oldindex < oldmax) {
 		newnum = newindex >= to->num_entities ? 9999 :
 			to->entities[newindex].number;
@@ -359,7 +360,7 @@ SV_EmitPacketEntities (client_t *client, packet_entities_t *to, sizebuf_t *msg)
 		if (newnum == oldnum) {			// delta update from old position
 //			SV_Printf ("delta %i\n", newnum);
 			SV_WriteDelta (&from->entities[oldindex], &to->entities[newindex],
-						   msg, false, client->stdver);
+						   msg, false, stdver);
 			oldindex++;
 			newindex++;
 			continue;
@@ -370,15 +371,15 @@ SV_EmitPacketEntities (client_t *client, packet_entities_t *to, sizebuf_t *msg)
 			if (newnum == 9999) {
 				Sys_Printf ("LOL, %d, %d, %d, %d %d %d\n", newnum, oldnum,
 							to->num_entities, oldmax,
-							client->netchan.incoming_sequence & UPDATE_MASK,
-							client->delta_sequence & UPDATE_MASK);
-				if (!client->edict)
+							delta->in_frame,
+							delta->delta_sequence);
+				if (!delta->client)
 					Sys_Printf ("demo\n");
 			}
 			ent = EDICT_NUM (&sv_pr_state, newnum);
 //			SV_Printf ("baseline %i\n", newnum);
 			SV_WriteDelta (ent->data, &to->entities[newindex], msg, true,
-						   client->stdver);
+						   stdver);
 			newindex++;
 			continue;
 		}
@@ -396,122 +397,212 @@ SV_EmitPacketEntities (client_t *client, packet_entities_t *to, sizebuf_t *msg)
 }
 
 static void
-SV_WriteClientToDemo (sizebuf_t *msg, int i, demo_client_t *cl)
+write_demoplayer (plent_state_t *from, plent_state_t *to, sizebuf_t *msg,
+				  int mask, int full)
 {
-	float      *origin, *angles;
 	int         flags;
 	int         j;
-	demoinfo_t *demoinfo = &demo.info[i];
 
-	origin = cl->info.origin;
-	angles = cl->info.angles;
+	flags = to->flags >> 1;		// convert PF_(GIB|DEAD) to DF_(GIB|DEAD)
+	flags &= DF_GIB | DF_DEAD;	// PF_MSEC and PF_COMMAND aren't wanted
+	if (full) {
+		flags |= DF_ORIGIN | (DF_ORIGIN << 1) | (DF_ORIGIN << 2)
+				| DF_ANGLES | (DF_ANGLES << 1) | (DF_ANGLES << 2)
+				| DF_EFFECTS | DF_SKINNUM | DF_WEAPONFRAME | DF_MODEL;
+	} else {
+		for (j = 0; j < 3; j++)
+			if (from->origin[j] != to->origin[j])
+				flags |= DF_ORIGIN << j;
 
-	// now write it to buf
-	flags = cl->flags;
+		for (j = 0; j < 3; j++)
+			if (from->cmd.angles[j] != to->cmd.angles[j])
+				flags |= DF_ANGLES << j;
 
-	for (j = 0; j < 3; j++)
-		if (origin[j] != demoinfo->origin[j])
-			flags |= DF_ORIGIN << j;
-
-	for (j = 0; j < 3; j++)
-		if (angles[j] != demoinfo->angles[j])
-			flags |= DF_ANGLES << j;
-
-	if (cl->info.model != demoinfo->model)
-		flags |= DF_MODEL;
-	if (cl->info.effects != demoinfo->effects)
-		flags |= DF_EFFECTS;
-	if (cl->info.skinnum != demoinfo->skinnum)
-		flags |= DF_SKINNUM;
-	if (cl->info.weaponframe != demoinfo->weaponframe)
-		flags |= DF_WEAPONFRAME;
+		if (from->modelindex != to->modelindex)
+			flags |= DF_MODEL;
+		if ((from->effects & 0xff) != (to->effects & 0xff))
+			flags |= DF_EFFECTS;
+		if (from->skinnum != to->skinnum)
+			flags |= DF_SKINNUM;
+		if (from->weaponframe != to->weaponframe)
+			flags |= DF_WEAPONFRAME;
+	}
 
 	MSG_WriteByte (msg, svc_playerinfo);
-	MSG_WriteByte (msg, i);
+	MSG_WriteByte (msg, to->number);
 	MSG_WriteShort (msg, flags);
 
-	MSG_WriteByte (msg, cl->frame);
+	MSG_WriteByte (msg, to->frame);
 
 	for (j = 0; j < 3; j++)
 		if (flags & (DF_ORIGIN << j))
-			MSG_WriteCoord (msg, origin[j]);
+			MSG_WriteCoord (msg, to->origin[j]);
 
 	for (j = 0; j < 3; j++)
 		if (flags & (DF_ANGLES << j))
-			MSG_WriteAngle16 (msg, angles[j]);
+			MSG_WriteAngle16 (msg, to->cmd.angles[j]);
 
 	if (flags & DF_MODEL)
-		MSG_WriteByte (msg, cl->info.model);
+		MSG_WriteByte (msg, to->modelindex);
 
 	if (flags & DF_SKINNUM)
-		MSG_WriteByte (msg, cl->info.skinnum);
+		MSG_WriteByte (msg, to->skinnum);
 
 	if (flags & DF_EFFECTS)
-		MSG_WriteByte (msg, cl->info.effects);
+		MSG_WriteByte (msg, to->effects);
 
 	if (flags & DF_WEAPONFRAME)
-		MSG_WriteByte (msg, cl->info.weaponframe);
-
-	*demoinfo = cl->info;
+		MSG_WriteByte (msg, to->weaponframe);
 }
 
 static void
-SV_WritePlayersToClient (client_t *client, edict_t *clent, byte *pvs,
-						 sizebuf_t *msg)
+write_player (plent_state_t *from, plent_state_t *to, sizebuf_t *msg, int mask,
+			  int full)
 {
-	int			msec, pflags, qf_bits, i, j;
+	int         flags = to->flags;
+	int         qf_bits = 0;
+	int         i;
+
+	if (full) {
+		flags |= PF_VELOCITY1 | PF_VELOCITY2 | PF_VELOCITY3 | PF_MODEL
+				| PF_SKINNUM | PF_EFFECTS | PF_WEAPONFRAME;
+		if (full > 1) {
+			qf_bits = PF_ALPHA | PF_SCALE | PF_EFFECTS2 | PF_GLOWSIZE
+					  | PF_GLOWCOLOR | PF_COLORMOD | PF_FRAME2;
+			flags |= PF_QF;
+		}
+	} else {
+		for (i = 0; i < 3; i++)
+			if (from->velocity[i] != to->velocity[i])
+				flags |= PF_VELOCITY1 << i;
+		if (from->modelindex != to->modelindex)
+			flags |= PF_MODEL;
+		if (from->skinnum != to->skinnum)
+			flags |= PF_SKINNUM;
+		if ((from->effects & 0xff) != (to->effects &0xff))
+			flags |= PF_EFFECTS;
+		if (from->weaponframe != to->weaponframe)
+			flags |= PF_WEAPONFRAME;
+
+		if (from->alpha != to->alpha)
+			qf_bits |= PF_ALPHA;
+		if (from->scale != to->scale)
+			qf_bits |= PF_SCALE;
+		if ((from->effects & 0xff00) != (to->effects & 0xff00))
+			qf_bits |= PF_EFFECTS2;
+		if (from->glow_size != to->glow_size)
+			qf_bits |= PF_GLOWSIZE;
+		if (from->glow_color != to->glow_color)
+			qf_bits |= PF_GLOWCOLOR;
+		if (from->colormod != to->colormod)
+			qf_bits |= PF_COLORMOD;
+		if ((from->frame & 0xff00) != (to->frame & 0xff00))
+			qf_bits |= PF_FRAME2;
+		if (qf_bits)
+			flags |= PF_QF;
+	}
+
+	flags &= mask;
+
+	MSG_WriteByte (msg, svc_playerinfo);
+	MSG_WriteByte (msg, to->number);
+	MSG_WriteShort (msg, flags);
+
+	MSG_WriteCoordV (msg, to->origin);
+
+	MSG_WriteByte (msg, to->frame);
+
+	if (flags & PF_MSEC)
+		MSG_WriteByte (msg, to->msec);
+	if (flags & PF_COMMAND)
+		MSG_WriteDeltaUsercmd (msg, &from->cmd, &to->cmd);
+	for (i = 0; i < 3; i++)
+		if (flags & (PF_VELOCITY1 << i))
+			MSG_WriteShort (msg, to->velocity[i]);
+	if (flags & PF_MODEL)
+		MSG_WriteByte (msg, to->modelindex);
+	if (flags & PF_SKINNUM)
+		MSG_WriteByte (msg, to->skinnum);
+	if (flags & PF_EFFECTS)
+		MSG_WriteByte (msg, to->effects);
+	if (flags & PF_WEAPONFRAME)
+		MSG_WriteByte (msg, to->weaponframe);
+
+	if (flags & PF_QF) {
+		MSG_WriteByte (msg, qf_bits);
+		if (qf_bits & PF_ALPHA)
+			MSG_WriteByte (msg, to->alpha);
+		if (qf_bits & PF_SCALE)
+			MSG_WriteByte (msg, to->scale);
+		if (qf_bits & PF_EFFECTS2)
+			MSG_WriteByte (msg, to->effects >> 8);
+		if (qf_bits & PF_GLOWSIZE)
+			MSG_WriteByte (msg, to->glow_size);
+		if (qf_bits & PF_GLOWCOLOR)
+			MSG_WriteByte (msg, to->glow_color);
+		if (qf_bits & PF_COLORMOD)
+			MSG_WriteByte (msg, to->colormod);
+		if (qf_bits & PF_FRAME2)
+			MSG_WriteByte (msg, to->frame);
+	}
+}
+
+static void
+SV_WritePlayersToClient (delta_t *delta, byte *pvs, sizebuf_t *msg)
+{
+	int			i, j, k;
 	client_t   *cl;
+	edict_t    *clent = 0;
+	int         spec_track = 0;
+	int         stdver = 2, full = stdver;
 	edict_t	   *ent;
-	usercmd_t	cmd;
-	demo_frame_t *demo_frame;
-	demo_client_t *dcl;
+	packet_players_t *pack;
+	client_frame_t *frame = &delta->frames[delta->cur_frame];
+	packet_players_t *from_pack = 0;
+	plent_state_t dummy_player_state, *state = &dummy_player_state;
+	static plent_state_t null_player_state;
+	void (*write) (plent_state_t *, plent_state_t *, sizebuf_t *, int, int);
 
-	demo_frame = &demo.frames[demo.parsecount & DEMO_FRAMES_MASK];
+	if (!null_player_state.alpha) {
+		null_player_state.alpha = 255;
+		null_player_state.scale = 16;
+		null_player_state.glow_size = 0;
+		null_player_state.glow_color = 254;
+		null_player_state.colormod = 255;
+	}
+	null_player_state.modelindex = 0;
 
-	for (j = 0, cl = svs.clients, dcl = demo_frame->clients; j < MAX_CLIENTS;
-		 j++, cl++, dcl++) {
+	if (delta->client) {
+		clent = delta->client->edict;
+		spec_track = delta->client->spec_track;
+		stdver = delta->client->stdver;
+		null_player_state.modelindex = sv_playermodel;
+		full = 0;		// normal qw clients don't get real deltas on players
+	}
+
+	write = write_player;
+	if (!clent)
+		write = write_demoplayer;
+
+	if (delta->delta_sequence != -1) {
+		from_pack = &delta->frames[delta->delta_sequence].players;
+		full = 0;
+	}
+
+	pack = &frame->players;
+	pack->num_players = 0;
+
+	for (j = k = 0, cl = svs.clients; j < MAX_CLIENTS; j++, cl++) {
+		int         mask = ~PF_WEAPONFRAME;
 
 		if (cl->state != cs_spawned && cl->state != cs_server)
 			continue;
 
 		ent = cl->edict;
 
-		if (!clent) {
-			if (cl->spectator)
-				continue;
-
-			dcl->parsecount = demo.parsecount;
-			VectorCopy (SVvector (ent, origin), dcl->info.origin);
-			VectorCopy (cl->lastcmd.angles, dcl->info.angles);
-
-			if (SVfloat (ent, health) <= 0) {
-				// don't show the corpse looking around...
-				dcl->info.angles[0] = 0;
-				dcl->info.angles[1] = SVvector (ent, angles)[1];
-				dcl->info.angles[2] = 0;
-			}
-
-			dcl->info.skinnum = SVfloat (ent, skin);
-			dcl->info.effects = SVfloat (ent, effects);
-			dcl->info.weaponframe = SVfloat (ent, weaponframe);
-			dcl->info.model = SVfloat (ent, modelindex);
-			dcl->sec = sv.time - cl->localtime;
-			dcl->frame = SVfloat (ent, frame);
-			dcl->flags = 0;
-			dcl->cmdtime = cl->localtime;
-
-			if (SVfloat (ent, health) <= 0)
-				dcl->flags |= DF_DEAD;
-			if (SVvector (ent, mins)[2] != -24)
-				dcl->flags |= DF_GIB;
-
-			SV_WriteClientToDemo (msg, j, dcl);
-			continue;
-		}
-
 		// ZOID visibility tracking
-		if (ent != clent &&
-			!(client->spec_track && client->spec_track - 1 == j)) {
+		// self or the the ent being tracked as a spectator always gets sent
+		if (ent != clent && !(spec_track && spec_track - 1 == j)) {
 			if (cl->spectator)
 				continue;
 
@@ -526,168 +617,107 @@ SV_WritePlayersToClient (client_t *client, edict_t *clent, byte *pvs,
 			}
 		}
 
-		pflags = PF_MSEC | PF_COMMAND;
+		if (pack->players)
+			state = &pack->players[pack->num_players];
+		pack->num_players++;
 
-		if (SVfloat (ent, modelindex) != sv_playermodel)
-			pflags |= PF_MODEL;
-		for (i = 0; i < 3; i++)
-			if (SVvector (ent, velocity)[i])
-				pflags |= PF_VELOCITY1 << i;
-		if (SVfloat (ent, effects))
-			pflags |= PF_EFFECTS;
-		if (SVfloat (ent, skin))
-			pflags |= PF_SKINNUM;
+		state->number = j;
+		state->flags = 0;
+		VectorCopy (SVvector (ent, origin), state->origin);
+
+		state->msec = min (255, 1000 * (sv.time - cl->localtime));
+
+		state->cmd = cl->lastcmd;
+		if (SVfloat (ent, health) <= 0) {	// don't show the corpse
+											// looking around...
+			state->cmd.angles[0] = 0;
+			state->cmd.angles[1] = SVvector (ent, angles)[1];
+			state->cmd.angles[0] = 0;
+		}
+
+		VectorCopy (SVvector (ent, velocity), state->velocity);
+		state->modelindex = SVfloat (ent, modelindex);
+		state->frame = SVfloat (ent, frame);
+		state->skinnum = SVfloat (ent, skin);
+		state->effects = SVfloat (ent, effects);
+		state->weaponframe = SVfloat (ent, weaponframe);
+
 		if (SVfloat (ent, health) <= 0)
-			pflags |= PF_DEAD;
+			state->flags |= PF_DEAD;
 		if (SVvector (ent, mins)[2] != -24)
-			pflags |= PF_GIB;
+			state->flags |= PF_GIB;
+		state->flags |= PF_MSEC | PF_COMMAND;
 
-		qf_bits = 0;
-		if (client->stdver > 1) {
-			if (sv_fields.alpha != -1 && SVfloat (ent, alpha))
-				qf_bits |= PF_ALPHA;
-			if (sv_fields.scale != -1 && SVfloat (ent, scale))
-				qf_bits |= PF_SCALE;
-			if ((int) SVfloat (ent, effects) > 255)
-				qf_bits |= PF_EFFECTS2;
-			if (sv_fields.glow_size != -1 && SVfloat (ent, glow_size))
-				qf_bits |= PF_GLOWSIZE;
-			if (sv_fields.glow_color != -1 && SVfloat (ent, glow_color))
-				qf_bits |= PF_GLOWCOLOR;
-			if (sv_fields.colormod != -1
-				&& !VectorIsZero (SVvector (ent, colormod)))
-				qf_bits |= PF_COLORMOD;
-			if ((int) SVfloat (ent, frame) > 255)
-				qf_bits |= PF_FRAME2;
-			if (qf_bits)
-				pflags |= PF_QF;
+		state->alpha = 255;
+		state->scale = 16;
+		state->glow_size = 0;
+		state->glow_color = 254;
+		state->colormod = 255;
+		if (sv_fields.alpha != -1 && SVfloat (ent, alpha)) {
+			float       alpha = SVfloat (ent, alpha);
+			state->alpha = bound (0, alpha, 1) * 255.0;
+		}
+		if (sv_fields.scale != -1 && SVfloat (ent, scale)) {
+			float       scale = SVfloat (ent, scale);
+			state->scale = bound (0, scale, 15.9375) * 16;
+		}
+		if (sv_fields.glow_size != -1 && SVfloat (ent, glow_size)) {
+			int         glow_size = SVfloat (ent, glow_size);
+			state->glow_size = bound (-1024, glow_size, 1016) >> 3;
+		}
+		if (sv_fields.glow_color != -1 && SVfloat (ent, glow_color))
+			state->glow_color = SVfloat (ent, glow_color);
+		if (sv_fields.colormod != -1
+			&& !VectorIsZero (SVvector (ent, colormod))) {
+			float      *colormod= SVvector (ent, colormod);
+			state->colormod = ((int) (bound (0, colormod[0], 1) * 7) << 5) |
+							  ((int) (bound (0, colormod[1], 1) * 7) << 2) |
+							   (int) (bound (0, colormod[2], 1) * 3);
 		}
 
 		if (cl->spectator) {
-			// only sent origin and velocity to spectators
-			pflags &= PF_VELOCITY1 | PF_VELOCITY2 | PF_VELOCITY3;
+			// only send origin and velocity of spectators
+			mask &= PF_VELOCITY1 | PF_VELOCITY2 | PF_VELOCITY3;
 		} else if (ent == clent) {
 			// don't send a lot of data on personal entity
-			pflags &= ~(PF_MSEC | PF_COMMAND);
-			if (SVfloat (ent, weaponframe))
-				pflags |= PF_WEAPONFRAME;
+			mask &= ~(PF_MSEC | PF_COMMAND);
+			mask |= PF_WEAPONFRAME;
 		}
 
-		if (client->spec_track && client->spec_track - 1 == j
-			&& SVfloat (ent, weaponframe))
-			pflags |= PF_WEAPONFRAME;
+		if (spec_track && spec_track - 1 == j)
+			mask |= PF_WEAPONFRAME;
 
-		MSG_WriteByte (msg, svc_playerinfo);
-		MSG_WriteByte (msg, j);
-		MSG_WriteShort (msg, pflags);
-
-		MSG_WriteCoordV (msg, SVvector (ent, origin));
-
-		MSG_WriteByte (msg, SVfloat (ent, frame));
-
-		if (pflags & PF_MSEC) {
-			msec = 1000 * (sv.time - cl->localtime);
-			if (msec > 255)
-				msec = 255;
-			MSG_WriteByte (msg, msec);
+		if (from_pack && from_pack->players) {
+			while (from_pack->players[k].number < state->number)
+				k++;
+			if (from_pack->players[k].number == state->number) {
+				write (&from_pack->players[k], state, msg, mask, full);
+				continue;
+			}
 		}
-
-		if (pflags & PF_COMMAND) {
-			cmd = cl->lastcmd;
-
-			if (SVfloat (ent, health) <= 0) {	// don't show the corpse
-												// looking around...
-				cmd.angles[0] = 0;
-				cmd.angles[1] = SVvector (ent, angles)[1];
-				cmd.angles[0] = 0;
-			}
-
-			cmd.buttons = 0;			// never send buttons
-			cmd.impulse = 0;			// never send impulses
-
-			MSG_WriteDeltaUsercmd (msg, &nullcmd, &cmd);
-		}
-
-		for (i = 0; i < 3; i++)
-			if (pflags & (PF_VELOCITY1 << i))
-				MSG_WriteShort (msg, SVvector (ent, velocity)[i]);
-
-		if (pflags & PF_MODEL)
-			MSG_WriteByte (msg, SVfloat (ent, modelindex));
-
-		if (pflags & PF_SKINNUM)
-			MSG_WriteByte (msg, SVfloat (ent, skin));
-
-		if (pflags & PF_EFFECTS)
-			MSG_WriteByte (msg, SVfloat (ent, effects));
-
-		if (pflags & PF_WEAPONFRAME)
-			MSG_WriteByte (msg, SVfloat (ent, weaponframe));
-
-		if (pflags & PF_QF) {
-			MSG_WriteByte (msg, qf_bits);
-			if (qf_bits & PF_ALPHA) {
-				float       alpha = SVfloat (ent, alpha);
-				MSG_WriteByte (msg, bound (0, alpha, 1) * 255);
-			}
-			if (qf_bits & PF_SCALE) {
-				float       scale = SVfloat (ent, scale);
-				MSG_WriteByte (msg, bound (0, scale, 15.9375) * 16);
-			}
-			if (qf_bits & PF_EFFECTS2) {
-				MSG_WriteByte (msg, (int) (SVfloat (ent, effects)) >> 8);
-			}
-			if (qf_bits & PF_GLOWSIZE) {
-				int         glow_size = SVfloat (ent, scale);
-				MSG_WriteByte (msg, bound (-1024, glow_size, 1016) >> 3);
-			}
-			if (qf_bits & PF_GLOWCOLOR)
-				MSG_WriteByte (msg, SVfloat (ent, glow_color));
-			if (qf_bits & PF_COLORMOD) {
-				float      *colormod= SVvector (ent, colormod);
-				MSG_WriteByte (msg,
-					 ((int) (bound (0, colormod[0], 1) * 7.0) << 5) |
-					 ((int) (bound (0, colormod[1], 1) * 7.0) << 2) |
-					 (int) (bound (0, colormod[2], 1) * 3.0));
-			}
-			if (qf_bits & PF_FRAME2)
-				MSG_WriteByte (msg, (int) (SVfloat (ent, frame)) >> 8);
-		}
+		write (&null_player_state, state, msg, mask, full);
 	}
 }
 
-/*
-	SV_WriteEntitiesToClient
-
-	Encodes the current state of the world as
-	a svc_packetentities messages and possibly
-	a svc_nails message and
-	svc_playerinfo messages
-*/
-void
-SV_WriteEntitiesToClient (client_t *client, sizebuf_t *msg, qboolean recorder)
+static inline byte *
+calc_pvs (delta_t *delta)
 {
-	byte	   *pvs = 0;
-	int			e, i, num_edicts, mpe_moaned = 0;
-	int         max_packet_entities = MAX_PACKET_ENTITIES;
-	vec3_t		org;
-	client_frame_t *frame;
-	edict_t	   *clent, *ent;
-	entity_state_t *state;
-	packet_entities_t *pack;
-
-	// this is the frame we are creating
-	frame = &client->frames[client->netchan.incoming_sequence & UPDATE_MASK];
+	byte       *pvs = 0;
+	vec3_t      org;
 
 	// find the client's PVS
-	clent = client->edict;
-	if (!recorder) {
+	if (delta->pvs == dt_pvs_normal) {
+		edict_t *clent = delta->client->edict;
 		VectorAdd (SVvector (clent, origin), SVvector (clent, view_ofs), org);
 		pvs = SV_FatPVS (org);
-	} else if (!sv_demoNoVis->int_val) {
+	} else if (delta->pvs == dt_pvs_fat) {
+		// when recording a demo, only send entities that can be seen. Can help
+		// shrink the mvd at expense of effectively lossy compressio (ents that
+		// can't be seen by a player either won't get updated or will disappear
+		// for people watching the mvd from viewpoints with no players around
+		// (not sure yet:).
 		client_t   *cl;
-
-		max_packet_entities = MAX_DEMO_PACKET_ENTITIES;
+		int         i;
 
 		for (i=0, cl = svs.clients; i<MAX_CLIENTS; i++, cl++) {
 			if (cl->state != cs_spawned && cl->state != cs_server)
@@ -705,9 +735,41 @@ SV_WriteEntitiesToClient (client_t *client, sizebuf_t *msg, qboolean recorder)
 			}
 		}
 	}
+	return pvs;
+}
+
+/*
+	SV_WriteEntitiesToClient
+
+	Encodes the current state of the world as
+	a svc_packetentities messages and possibly
+	a svc_nails message and
+	svc_playerinfo messages
+*/
+void
+SV_WriteEntitiesToClient (delta_t *delta, sizebuf_t *msg)
+{
+	byte	   *pvs = 0;
+	int			e, i, num_edicts;
+	int         max_packet_entities = MAX_DEMO_PACKET_ENTITIES;
+	int         stdver = 1;
+	client_frame_t *frame;
+	edict_t	   *ent;
+	entity_state_t *state;
+	packet_entities_t *pack;
+
+	if (delta->client) {
+		max_packet_entities = MAX_PACKET_ENTITIES;
+		stdver = delta->client->stdver;
+	}
+
+	pvs = calc_pvs (delta);
 
 	// send over the players in the PVS
-	SV_WritePlayersToClient (client, clent, pvs, msg);
+	SV_WritePlayersToClient (delta, pvs, msg);
+
+	// this is the frame we are creating
+	frame = &delta->frames[delta->in_frame];
 
 	// put other visible entities into either a packet_entities or a nails
 	// message
@@ -743,11 +805,6 @@ SV_WriteEntitiesToClient (client_t *client, sizebuf_t *msg, qboolean recorder)
 
 		// add to the packetentities
 		if (pack->num_entities == max_packet_entities) {
-			if (!mpe_moaned) {
-				Con_DPrintf ("hit max_packet_entities for client %d\n",
-							 client->userid);
-				mpe_moaned = 1;
-			}
 			continue;					// all full
 		}
 
@@ -801,8 +858,8 @@ SV_WriteEntitiesToClient (client_t *client, sizebuf_t *msg, qboolean recorder)
 
 	// encode the packet entities as a delta from the
 	// last packetentities acknowledged by the client
-	SV_EmitPacketEntities (client, pack, msg);
+	SV_EmitPacketEntities (delta, pack, msg, stdver);
 
 	// now add the specialized nail update
-	SV_EmitNailUpdate (msg, recorder);
+	SV_EmitNailUpdate (msg, delta->client != 0);
 }

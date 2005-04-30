@@ -646,8 +646,9 @@ SV_Record (char *name)
 		dstring_clearstr (demo.name = tn);
 		dstring_clearstr (demo.text = tt);
 	}
+	demo.recorder.delta.pvs = dt_pvs_fat;
 	for (i = 0; i < UPDATE_BACKUP; i++)
-		demo.recorder.frames[i].entities.entities = demo_entities[i];
+		demo.recorder.delta.frames[i].entities.entities = demo_entities[i];
 
 	DemoBuffer_Init (&demo.dbuffer, demo.buffer, sizeof (demo.buffer));
 	DemoSetMsgBuf (NULL, &demo.frames[0].buf);

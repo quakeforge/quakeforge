@@ -391,7 +391,7 @@ SV_CalcPing (client_t *cl)
 		return cl->ping;
 	ping = 0;
 	count = 0;
-	for (frame = cl->frames, i = 0; i < UPDATE_BACKUP; i++, frame++) {
+	for (frame = cl->delta.frames, i = 0; i < UPDATE_BACKUP; i++, frame++) {
 		if (frame->ping_time > 0) {
 			ping += frame->ping_time;
 			count++;
@@ -773,6 +773,7 @@ SVC_DirectConnect (void)
 	int         challenge, qport, version, i, qtv = 0;
 	netadr_t    adr;
 	qboolean    spectator;
+	client_frame_t *frames;
 
 	if (CheckForFlood (FLOOD_CONNECT))
 		return;
@@ -900,11 +901,13 @@ SVC_DirectConnect (void)
 	// build a new connection
 	// accept the new client
 	// this is the only place a client_t is ever initialized
+	frames = newcl->delta.frames;
 	for (i = 0; i < UPDATE_BACKUP; i++) {
-		newcl->frames[i].entities.entities = cl_entities[newcl-svs.clients][i];
+		frames[i].entities.entities = cl_entities[newcl-svs.clients][i];
 		memset (cl_entities[newcl-svs.clients][i], 0,
 				sizeof (cl_entities[newcl-svs.clients][i]));
 	}
+	newcl->delta.client = newcl;
 
 	Netchan_OutOfBandPrint (adr, "%c", S2C_CONNECTION);
 

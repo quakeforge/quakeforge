@@ -147,6 +147,7 @@ typedef struct {
 	int         delta_sequence;
 	int         cur_frame;
 	int			out_frame;
+	int			in_frame;
 	struct client_s *client;
 	client_frame_t frames[UPDATE_BACKUP];	// updates can be deltad from here
 } delta_t;
@@ -214,7 +215,7 @@ typedef struct client_s {
 	
 	int				stats[MAX_CL_STATS];
 
-	client_frame_t	frames[UPDATE_BACKUP];	// updates can be deltad from here
+	delta_t			delta;
 
 	QFile			*download;			// file being downloaded
 	int				downloadsize;		// total bytes
@@ -233,7 +234,6 @@ typedef struct client_s {
  
 //===== NETWORK ============
 	int				chokecount;
-	int				delta_sequence;		// -1 = no compression
 	netchan_t		netchan;
 	int				msecs, msec_cheating;
 	double			last_check;
@@ -580,8 +580,7 @@ void SV_SetLocalinfo (const char *key, const char *value);
 //
 // sv_ents.c
 //
-void SV_WriteEntitiesToClient (client_t *client, sizebuf_t *msg,
-							   qboolean recorder);
+void SV_WriteEntitiesToClient (delta_t *delta, sizebuf_t *msg);
 
 //
 // sv_nchan.c

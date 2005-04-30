@@ -621,7 +621,7 @@ SV_SendClientDatagram (client_t *client)
 	// send over all the objects that are in the PVS
 	// this will include clients, a packetentities, and
 	// possibly a nails update
-	SV_WriteEntitiesToClient (client, &msg, false);
+	SV_WriteEntitiesToClient (&client->delta, &msg);
 
 	// copy the accumulated multicast datagram
 	// for this client out to the message
@@ -863,9 +863,12 @@ SV_SendDemoMessage (void)
 	msg.allowoverflow = true;
 	msg.overflowed = false;
 
-	if (!demo.recorder.delta_sequence)
-		demo.recorder.delta_sequence = -1;
-	SV_WriteEntitiesToClient (&demo.recorder, &msg, true);
+	if (!demo.recorder.delta.delta_sequence)
+		demo.recorder.delta.delta_sequence = -1;
+	demo.recorder.delta.cur_frame = (demo.recorder.delta.delta_sequence + 1)
+									& UPDATE_MASK;
+	demo.recorder.delta.out_frame = demo.recorder.delta.cur_frame;
+	SV_WriteEntitiesToClient (&demo.recorder.delta, &msg);
 	DemoWrite_Begin (dem_all, 0, msg.cursize);
 	SZ_Write (&demo.dbuf->sz, msg.data, msg.cursize);
 	// copy the accumulated multicast datagram
@@ -876,8 +879,8 @@ SV_SendDemoMessage (void)
 		SZ_Clear (&demo.datagram);
 	}
 
-	demo.recorder.delta_sequence =
-		demo.recorder.netchan.incoming_sequence & 255;
+	demo.recorder.delta.delta_sequence =
+		demo.recorder.netchan.incoming_sequence & UPDATE_MASK;
 	demo.recorder.netchan.incoming_sequence++;
 	demo.frames[demo.parsecount & DEMO_FRAMES_MASK].time = demo.time = sv.time;
 
