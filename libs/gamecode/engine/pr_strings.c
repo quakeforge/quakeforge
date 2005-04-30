@@ -47,6 +47,7 @@ static __attribute__ ((unused)) const char rcsid[] =
 #include "QF/progs.h"
 
 typedef enum {
+	str_free,
 	str_static,
 	str_dynamic,
 	str_mutable,
@@ -237,16 +238,19 @@ static inline strref_t *
 get_strref (progs_t *pr, int num)
 {
 	if (num < 0) {
+		strref_t   *ref;
 		unsigned int row = ~num / 1024;
 
 		num = ~num % 1024;
 
 		if (row >= pr->dyn_str_size)
 			return 0;
-		return &pr->string_map[row][num];
-	} else {
-		return 0;
+		ref = &pr->string_map[row][num];
+		if (ref->type == str_free)
+			return 0;
+		return ref;
 	}
+	return 0;
 }
 
 static inline const char *
@@ -264,6 +268,8 @@ get_string (progs_t *pr, int num)
 				return ref->s.string;
 			case str_mutable:
 				return ref->s.dstring->str;
+			case str_free:
+				break;
 		}
 		PR_Error (pr, "internal string error");
 	} else {
