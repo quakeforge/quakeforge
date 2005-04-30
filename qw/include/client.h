@@ -49,29 +49,15 @@ typedef struct player_state_s {
 
 	double		state_time;		// not the same as the packet time,
 								// because player commands come asyncronously
-	usercmd_t	command;		// last command for prediction
-
-	vec3_t		origin;
 	vec3_t		viewangles;		// only for demos, not from server
-	vec3_t		velocity;
-	int			weaponframe;
 
-	int 		number;
-	int			modelindex;
-	int			frame;
-	int			skinnum;
-	int			effects;
-
-	int			flags;			// dead, gib, etc
+	plent_state_t pls;
 
 	float		waterjumptime;
 	int			onground;		// -1 = in air, else pmove entity number
 	int			oldbuttons;
 	int			oldonground;
 
-	// QSG2
-	byte		glow_size;
-	byte		glow_color;
 } player_state_t;
 
 #undef MAX_SCOREBOARDNAME

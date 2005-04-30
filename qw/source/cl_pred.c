@@ -53,10 +53,10 @@ CL_PredictUsercmd (player_state_t * from, player_state_t * to, usercmd_t *u,
 				   qboolean clientplayer)
 {
 	if (!clientplayer) {
-		if (VectorIsZero (from->velocity)) {
-			VectorCopy (from->origin, to->origin);
+		if (VectorIsZero (from->pls.velocity)) {
+			VectorCopy (from->pls.origin, to->pls.origin);
 			VectorCopy (u->angles, to->viewangles);
-			VectorCopy (from->velocity, to->velocity);
+			VectorCopy (from->pls.velocity, to->pls.velocity);
 			return;
 		}
 	}
@@ -74,9 +74,9 @@ CL_PredictUsercmd (player_state_t * from, player_state_t * to, usercmd_t *u,
 		return;
 	}
 
-	VectorCopy (from->origin, pmove.origin);
+	VectorCopy (from->pls.origin, pmove.origin);
 	VectorCopy (u->angles, pmove.angles);
-	VectorCopy (from->velocity, pmove.velocity);
+	VectorCopy (from->pls.velocity, pmove.velocity);
 
 	pmove.oldbuttons = from->oldbuttons;
 	pmove.oldonground = from->oldonground;
@@ -94,11 +94,11 @@ CL_PredictUsercmd (player_state_t * from, player_state_t * to, usercmd_t *u,
 	to->waterjumptime = pmove.waterjumptime;
 	to->oldbuttons = pmove.oldbuttons;	// Tonik
 	to->oldonground = pmove.oldonground;
-	VectorCopy (pmove.origin, to->origin);
+	VectorCopy (pmove.origin, to->pls.origin);
 	VectorCopy (pmove.angles, to->viewangles);
-	VectorCopy (pmove.velocity, to->velocity);
+	VectorCopy (pmove.velocity, to->pls.velocity);
 	to->onground = onground;
-	to->weaponframe = from->weaponframe;
+	to->pls.weaponframe = from->pls.weaponframe;
 }
 
 static inline void
@@ -151,8 +151,8 @@ CL_PredictMove (void)
 	check_onserver ();
 
 	if (!cl_predict->int_val) {
-		VectorCopy (from->playerstate[cl.playernum].velocity, cl.simvel);
-		VectorCopy (from->playerstate[cl.playernum].origin, cl.simorg);
+		VectorCopy (from->playerstate[cl.playernum].pls.velocity, cl.simvel);
+		VectorCopy (from->playerstate[cl.playernum].pls.origin, cl.simorg);
 		return;
 	}
 
@@ -188,21 +188,21 @@ CL_PredictMove (void)
 				   (to->senttime - from->senttime), 1);
 
 	for (i = 0; i < 3; i++)
-		if (fabs (from->playerstate[cl.playernum].origin[i] -
-				  to->playerstate[cl.playernum].origin[i]) > 128) {
+		if (fabs (from->playerstate[cl.playernum].pls.origin[i] -
+				  to->playerstate[cl.playernum].pls.origin[i]) > 128) {
 			// teleported, so don't lerp
-			VectorCopy (to->playerstate[cl.playernum].velocity, cl.simvel);
-			VectorCopy (to->playerstate[cl.playernum].origin, cl.simorg);
+			VectorCopy (to->playerstate[cl.playernum].pls.velocity, cl.simvel);
+			VectorCopy (to->playerstate[cl.playernum].pls.origin, cl.simorg);
 			return;
 		}
 
 	for (i = 0; i < 3; i++) {
-		cl.simorg[i] = from->playerstate[cl.playernum].origin[i] +
-			f * (to->playerstate[cl.playernum].origin[i] -
-				   from->playerstate[cl.playernum].origin[i]);
-		cl.simvel[i] = from->playerstate[cl.playernum].velocity[i] +
-			f * (to->playerstate[cl.playernum].velocity[i] -
-				 from->playerstate[cl.playernum].velocity[i]);
+		cl.simorg[i] = from->playerstate[cl.playernum].pls.origin[i] +
+			f * (to->playerstate[cl.playernum].pls.origin[i] -
+				   from->playerstate[cl.playernum].pls.origin[i]);
+		cl.simvel[i] = from->playerstate[cl.playernum].pls.velocity[i] +
+			f * (to->playerstate[cl.playernum].pls.velocity[i] -
+				 from->playerstate[cl.playernum].pls.velocity[i]);
 	}
 }
 

@@ -56,8 +56,7 @@ typedef enum {
 // some qc commands are only valid before the server has finished
 // initializing (precache commands, static sounds / objects, etc)
 
-typedef struct
-{
+typedef struct {
 	qboolean	active;				// false when server is going down
 	server_state_t	state;			// precache commands are only valid during load
 
@@ -118,8 +117,7 @@ typedef struct
 
 #define	NUM_SPAWN_PARMS			16
 
-typedef enum
-{
+typedef enum {
 	cs_free,		// can be reused for a new connection
 	cs_server,		// client is grabbed by the server for its own purposes
 	cs_zombie,		// client has been disconnected, but don't reuse
@@ -128,15 +126,30 @@ typedef enum
 	cs_spawned		// client is fully in game
 } sv_client_state_t;
 
-typedef struct
-{
+typedef struct {
 	// received from client
 
 	// reply
 	double				senttime;
 	float				ping_time;
 	packet_entities_t	entities;
+	packet_players_t	players;
 } client_frame_t;
+
+typedef enum {
+	dt_pvs_normal,
+	dt_pvs_fat,
+	dt_pvs_none,
+} delta_pvs_t;
+
+typedef struct {
+	delta_pvs_t pvs;
+	int         delta_sequence;
+	int         cur_frame;
+	int			out_frame;
+	struct client_s *client;
+	client_frame_t frames[UPDATE_BACKUP];	// updates can be deltad from here
+} delta_t;
 
 #define MAX_BACK_BUFFERS	8
 #define MAX_STUFFTEXT		512
@@ -148,8 +161,7 @@ typedef enum {
 	ft_cuff,		// cuff penatly save over disconnect
 } filtertype_t;
 
-typedef struct client_s
-{
+typedef struct client_s {
 	sv_client_state_t	state;
 	int				ping;				// fake ping for server clients
 	qboolean		prespawned;
@@ -158,14 +170,14 @@ typedef struct client_s
 	int				spectator;			// non-interactive
 
 	qboolean		sendinfo;			// at end of frame, send info to all
-										// this prevents malicious multiple broadcasts
+										// this prevents malicious multiple
+										// broadcasts
 	float			lastnametime;		// time of last name change
 	int				lastnamecount;		// time of last name change
-	unsigned int	checksum;			// checksum for calcs
 	qboolean		drop;				// lose this guy next opportunity
 	int				lossage;			// loss percentage
 
-	int				userid;							// identifying number
+	int				userid;				// identifying number
 	struct info_s   *userinfo;			// infostring
 
 	usercmd_t		lastcmd;			// for filling in big drops and partial predictions
@@ -176,8 +188,8 @@ typedef struct client_s
 	float			maxspeed;			// localized maxspeed
 	float			entgravity;			// localized ent gravity
 
-	struct edict_s			*edict;				// EDICT_NUM(clientnum+1)
-	char			name[MAX_NAME];			// for printing to other people
+	struct edict_s			*edict;		// EDICT_NUM(clientnum+1)
+	char			name[MAX_NAME];		// for printing to other people
 										// extracted from userinfo
 	int				messagelevel;		// for filtering printed messages
 
@@ -214,8 +226,6 @@ typedef struct client_s
  	int				whensaidhead;       // Head value for floodprots
  	double			lockedtill;
 
-	qboolean		upgradewarn;		// did we warn him?
-
 	QFile			*upload;
 	struct dstring_s *uploadfn;
 	netadr_t		snap_from;
@@ -243,8 +253,7 @@ extern qboolean rcon_from_user;			// current command is a from a user
 
 
 #define	STATFRAMES	100
-typedef struct
-{
+typedef struct {
 	double	active;
 	double	idle;
 	double  demo;
@@ -262,15 +271,13 @@ typedef struct
 // out before legitimate users connected
 #define	MAX_CHALLENGES	1024
 
-typedef struct
-{
+typedef struct {
 	netadr_t	adr;
 	int			challenge;
 	int			time;
 } challenge_t;
 
-typedef struct
-{
+typedef struct {
 	int			spawncount;			// number of servers spawned since start,
 									// used to check late spawns
 	client_t	clients[MAX_CLIENTS];
@@ -300,8 +307,7 @@ typedef struct
 //=============================================================================
 // DoSflood protection
 //=============================================================================
-typedef struct
-{
+typedef struct {
 	netadr_t	adr;
 	double		issued;
 	int			floodcount;
@@ -309,8 +315,7 @@ typedef struct
 	double		firstseen;
 } flood_t;
 
-typedef enum
-{
+typedef enum {
 	FLOOD_PING,
 	FLOOD_LOG,
 	FLOOD_CONNECT,

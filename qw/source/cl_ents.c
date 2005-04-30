@@ -675,7 +675,7 @@ CL_ParsePlayerinfo (void)
 	info = &cl.players[num];
 	state = &cl.frames[parsecountmod].playerstate[num];
 
-	state->number = num;
+	state->pls.number = num;
 
 	if (cls.demoplayback2) {
 		if (info->prevcount > cl.parsecount || !cl.parsecount) {
@@ -699,35 +699,35 @@ CL_ParsePlayerinfo (void)
 		memcpy (state, prevstate, sizeof (player_state_t));
 
 		flags = MSG_ReadShort (net_message);
-		state->flags = TranslateFlags (flags);
+		state->pls.flags = TranslateFlags (flags);
 		state->messagenum = cl.parsecount;
-		state->command.msec = 0;
-		state->frame = MSG_ReadByte (net_message);
+		state->pls.cmd.msec = 0;
+		state->pls.frame = MSG_ReadByte (net_message);
 		state->state_time = parsecounttime;
 		for (i=0; i <3; i++)
 			if (flags & (DF_ORIGIN << i))
-				state->origin[i] = MSG_ReadCoord (net_message);
+				state->pls.origin[i] = MSG_ReadCoord (net_message);
 		for (i=0; i <3; i++)
 			if (flags & (DF_ANGLES << i))
-				state->command.angles[i] = MSG_ReadAngle16 (net_message);
+				state->pls.cmd.angles[i] = MSG_ReadAngle16 (net_message);
 		if (flags & DF_MODEL)
-			state->modelindex = MSG_ReadByte (net_message);
+			state->pls.modelindex = MSG_ReadByte (net_message);
 		if (flags & DF_SKINNUM)
-			state->skinnum = MSG_ReadByte (net_message);
+			state->pls.skinnum = MSG_ReadByte (net_message);
 		if (flags & DF_EFFECTS)
-			state->effects = MSG_ReadByte (net_message);
+			state->pls.effects = MSG_ReadByte (net_message);
 		if (flags & DF_WEAPONFRAME)
-			state->weaponframe = MSG_ReadByte (net_message);
-		VectorCopy (state->command.angles, state->viewangles);
+			state->pls.weaponframe = MSG_ReadByte (net_message);
+		VectorCopy (state->pls.cmd.angles, state->viewangles);
 		return;
 	}
 
-	flags = state->flags = MSG_ReadShort (net_message);
+	flags = state->pls.flags = MSG_ReadShort (net_message);
 
 	state->messagenum = cl.parsecount;
-	MSG_ReadCoordV (net_message, state->origin);
+	MSG_ReadCoordV (net_message, state->pls.origin);
 
-	state->frame = MSG_ReadByte (net_message);
+	state->pls.frame = MSG_ReadByte (net_message);
 
 	// the other player's last move was likely some time
 	// before the packet was sent out, so accurately track
@@ -739,36 +739,36 @@ CL_ParsePlayerinfo (void)
 		state->state_time = parsecounttime;
 
 	if (flags & PF_COMMAND)
-		MSG_ReadDeltaUsercmd (net_message, &nullcmd, &state->command);
+		MSG_ReadDeltaUsercmd (net_message, &nullcmd, &state->pls.cmd);
 
 	for (i = 0; i < 3; i++) {
 		if (flags & (PF_VELOCITY1 << i))
-			state->velocity[i] = MSG_ReadShort (net_message);
+			state->pls.velocity[i] = MSG_ReadShort (net_message);
 		else
-			state->velocity[i] = 0;
+			state->pls.velocity[i] = 0;
 	}
 	if (flags & PF_MODEL)
 		i = MSG_ReadByte (net_message);
 	else
 		i = cl_playerindex;
-	state->modelindex = i;
+	state->pls.modelindex = i;
 
 	if (flags & PF_SKINNUM)
-		state->skinnum = MSG_ReadByte (net_message);
+		state->pls.skinnum = MSG_ReadByte (net_message);
 	else
-		state->skinnum = 0;
+		state->pls.skinnum = 0;
 
 	if (flags & PF_EFFECTS)
-		state->effects = MSG_ReadByte (net_message);
+		state->pls.effects = MSG_ReadByte (net_message);
 	else
-		state->effects = 0;
+		state->pls.effects = 0;
 
 	if (flags & PF_WEAPONFRAME)
-		state->weaponframe = MSG_ReadByte (net_message);
+		state->pls.weaponframe = MSG_ReadByte (net_message);
 	else
-		state->weaponframe = 0;
+		state->pls.weaponframe = 0;
 
-	VectorCopy (state->command.angles, state->viewangles);
+	VectorCopy (state->pls.cmd.angles, state->viewangles);
 
 	if (cl.stdver >= 2.0 && (flags & PF_QF)) {
 		// QSG2
@@ -787,13 +787,13 @@ CL_ParsePlayerinfo (void)
 			ent->scale = val / 16.0;
 		}
 		if (bits & PF_EFFECTS2) {
-			state->effects |= MSG_ReadByte (net_message) << 8;
+			state->pls.effects |= MSG_ReadByte (net_message) << 8;
 		}
 		if (bits & PF_GLOWSIZE) {
-			state->glow_size = MSG_ReadByte (net_message);
+			state->pls.glow_size = MSG_ReadByte (net_message);
 		}
 		if (bits & PF_GLOWCOLOR) {
-			state->glow_color = MSG_ReadByte (net_message);
+			state->pls.glow_color = MSG_ReadByte (net_message);
 		}
 		if (bits & PF_COLORMOD) {
 			val = MSG_ReadByte (net_message);
@@ -806,7 +806,7 @@ CL_ParsePlayerinfo (void)
 			}
 		}
 		if (bits & PF_FRAME2) {
-			state->frame |= MSG_ReadByte (net_message) << 8;
+			state->pls.frame |= MSG_ReadByte (net_message) << 8;
 		}
 	}
 }
@@ -900,37 +900,38 @@ CL_LinkPlayers (void)
 			r_player_entity = &cl_player_ents[j];
 			clientplayer = true;
 		} else {
-			VectorCopy (state->origin, org);
+			VectorCopy (state->pls.origin, org);
 			clientplayer = false;
 		}
-		CL_NewDlight (j + 1, org, state->effects, state->glow_size,
-					  state->glow_color);
+		CL_NewDlight (j + 1, org, state->pls.effects, state->pls.glow_size,
+					  state->pls.glow_color);
 
 		// Draw player?
 		if (!Cam_DrawPlayer (j))
 			continue;
 
-		if (!state->modelindex)
+		if (!state->pls.modelindex)
 			continue;
 
 		// Hack hack hack
-		if (cl_deadbodyfilter->int_val && state->modelindex == cl_playerindex
-			&& ((i = state->frame) == 49 || i == 60 || i == 69 || i == 84
+		if (cl_deadbodyfilter->int_val
+			&& state->pls.modelindex == cl_playerindex
+			&& ((i = state->pls.frame) == 49 || i == 60 || i == 69 || i == 84
 				|| i == 93 || i == 102))
 			continue;
 
 		// only predict half the move to minimize overruns
 		msec = 500 * (playertime - state->state_time);
 		if (msec <= 0 || (!cl_predict_players->int_val) || cls.demoplayback2) {
-			VectorCopy (state->origin, ent->origin);
+			VectorCopy (state->pls.origin, ent->origin);
 		} else {									// predict players movement
-			state->command.msec = msec = min (msec, 255);
+			state->pls.cmd.msec = msec = min (msec, 255);
 
 			oldphysent = pmove.numphysent;
 			CL_SetSolidPlayers (j);
-			CL_PredictUsercmd (state, &exact, &state->command, clientplayer);
+			CL_PredictUsercmd (state, &exact, &state->pls.cmd, clientplayer);
 			pmove.numphysent = oldphysent;
-			VectorCopy (exact.origin, ent->origin);
+			VectorCopy (exact.pls.origin, ent->origin);
 		}
 
 		// angles
@@ -942,17 +943,18 @@ CL_LinkPlayers (void)
 			ent->angles[PITCH] = -state->viewangles[PITCH] / 3.0;
 			ent->angles[YAW] = state->viewangles[YAW];
 		}
-		ent->angles[ROLL] = V_CalcRoll (ent->angles, state->velocity) * 4.0;
+		ent->angles[ROLL] = V_CalcRoll (ent->angles,
+										state->pls.velocity) * 4.0;
 
-		ent->model = cl.model_precache[state->modelindex];
-		ent->frame = state->frame;
+		ent->model = cl.model_precache[state->pls.modelindex];
+		ent->frame = state->pls.frame;
 		ent->colormap = info->translations;
-		ent->skinnum = state->skinnum;
+		ent->skinnum = state->pls.skinnum;
 
 		ent->min_light = 0;
 		ent->fullbright = 0;
 
-		if (state->modelindex == cl_playerindex) { //XXX
+		if (state->pls.modelindex == cl_playerindex) { //XXX
 			// use custom skin
 			if (!info->skin)
 				Skin_Find (info);
@@ -976,9 +978,9 @@ CL_LinkPlayers (void)
 		// stuff entity in map
 		R_AddEfrags (ent);
 
-		if (state->effects & EF_FLAG1)
+		if (state->pls.effects & EF_FLAG1)
 			CL_AddFlagModels (ent, 0, j);
-		else if (state->effects & EF_FLAG2)
+		else if (state->pls.effects & EF_FLAG2)
 			CL_AddFlagModels (ent, 1, j);
 	}
 }
@@ -1066,30 +1068,30 @@ CL_SetUpPlayerPrediction (qboolean dopred)
 		if (state->messagenum != cl.parsecount)
 			continue;					// not present this frame
 
-		if (!state->modelindex)
+		if (!state->pls.modelindex)
 			continue;
 
 		pplayer->active = true;
-		pplayer->flags = state->flags;
+		pplayer->flags = state->pls.flags;
 
 		// note that the local player is special, since he moves locally
 		// we use his last predicted postition
 		if (j == cl.playernum) {
 			VectorCopy (cl.frames[cls.netchan.outgoing_sequence & UPDATE_MASK].
-						playerstate[cl.playernum].origin, pplayer->origin);
+						playerstate[cl.playernum].pls.origin, pplayer->origin);
 		} else {
 			// only predict half the move to minimize overruns
 			msec = 500 * (playertime - state->state_time);
 			if (msec <= 0 || !dopred) {
-				VectorCopy (state->origin, pplayer->origin);
+				VectorCopy (state->pls.origin, pplayer->origin);
 //				Con_DPrintf ("nopredict\n");
 			} else {
 				// predict players movement
-				state->command.msec = msec = min (msec, 255);
+				state->pls.cmd.msec = msec = min (msec, 255);
 //				Con_DPrintf ("predict: %i\n", msec);
 
-				CL_PredictUsercmd (state, &exact, &state->command, false);
-				VectorCopy (exact.origin, pplayer->origin);
+				CL_PredictUsercmd (state, &exact, &state->pls.cmd, false);
+				VectorCopy (exact.pls.origin, pplayer->origin);
 			}
 		}
 	}

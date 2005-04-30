@@ -1171,7 +1171,7 @@ CL_MuzzleFlash (void)
 	else
 		AngleVectors (pl->viewangles, fv, rv, uv);
 
-	VectorMultAdd (pl->origin, 18, fv, dl->origin);
+	VectorMultAdd (pl->pls.origin, 18, fv, dl->origin);
 	dl->radius = 200 + (rand () & 31);
 	dl->die = cl.time + 0.1;
 	dl->minlight = 32;

@@ -1548,8 +1548,8 @@ Host_Frame (float time)
 		oldself = &cl.frames[(cls.netchan.outgoing_sequence - 1)
 							 & UPDATE_MASK].playerstate[cl.playernum];
 		self->messagenum = cl.parsecount;
-		VectorCopy (oldself->origin, self->origin);
-		VectorCopy (oldself->velocity, self->velocity);
+		VectorCopy (oldself->pls.origin, self->pls.origin);
+		VectorCopy (oldself->pls.velocity, self->pls.velocity);
 		VectorCopy (oldself->viewangles, self->viewangles);
 
 		CL_ParseClientdata ();

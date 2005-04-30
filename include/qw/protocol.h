@@ -125,7 +125,7 @@
 #define	clc_bad			0
 #define	clc_nop 		1
 //define	clc_doublemove	2
-#define	clc_move		3		// [[usercmd_t]
+#define	clc_move		3		// [usercmd_t]
 #define	clc_stringcmd	4		// [string] message
 #define	clc_delta		5		// [byte] sequence number, requests delta compression of message
 #define clc_tmove		6		// teleport request, spectator only
@@ -182,7 +182,7 @@
 
 // if the high bit of the client to server byte is set, the low bits are
 // client move cmd bits
-// ms and angle2 are always sent, the others are optional
+// msec is always sent, the others are optional
 #define	CM_ANGLE1 	(1<<0)
 #define	CM_ANGLE3 	(1<<1)
 #define	CM_FORWARD	(1<<2)
@@ -279,44 +279,68 @@
 
 // entity_state_t is the information conveyed from the server
 // in an update message
-typedef struct
-{
-	int		number;			// edict index
+typedef struct {
+	int         number;			// edict index
 
-	int		flags;			// nolerp, etc
-	vec3_t	origin;
-	vec3_t	angles;
-	int		modelindex;
-	int		frame;
-	int		colormap;
-	int		skinnum;
-	int		effects;
+	unsigned int flags;			// nolerp, etc
+	vec3_t      origin;
+	vec3_t      angles;
+	int         modelindex;
+	int         frame;
+	int         colormap;
+	int         skinnum;
+	int         effects;
 
-	// LordHavoc: Endy neglected to mark this as a QSG version 2 thingy...
-	byte	alpha;
-	byte	scale;
-	byte	glow_size;
-	byte	glow_color;
-	byte	colormod;
+	// QSG 2
+	byte        alpha;
+	byte        scale;
+	byte        glow_size;
+	byte        glow_color;
+	byte        colormod;
 } entity_state_t;
-
 
 #define	MAX_PACKET_ENTITIES			64	// doesn't count nails
 #define	MAX_DEMO_PACKET_ENTITIES	196	// doesn't count nails
-typedef struct
-{
-	int		num_entities;
-	entity_state_t	*entities;
+typedef struct {
+	int         num_entities;
+	entity_state_t *entities;
 } packet_entities_t;
 
-typedef struct usercmd_s
-{
-	byte	msec;
-	byte	padding[3];		// make sure non-aligning compilers get it right
-	vec3_t	angles;
-	short	forwardmove, sidemove, upmove;
-	byte	buttons;
-	byte	impulse;
+typedef struct usercmd_s {
+	byte        msec;
+	byte        padding[3];	// make sure non-aligning compilers get it right
+	vec3_t      angles;
+	short       forwardmove, sidemove, upmove;
+	byte        buttons;
+	byte        impulse;
 } usercmd_t;
+
+typedef struct plent_state_s {
+	int         number;
+
+	unsigned int flags;
+	vec3_t      origin;
+	usercmd_t   cmd;
+	vec3_t      velocity;
+	int         modelindex;
+	int         frame;
+	int         skinnum;
+	int         effects;
+	int         weaponframe;
+
+	byte        msec;
+
+	// QSG 2
+	byte	    alpha;
+	byte	    scale;
+	byte	    glow_size;
+	byte	    glow_color;
+	byte	    colormod;
+} plent_state_t;
+
+typedef struct {
+	int		    num_players;
+	plent_state_t *players;
+} packet_players_t;
 
 #endif//__qw_protocol_h

@@ -154,11 +154,11 @@ SV_EmitNailUpdate (sizebuf_t *msg, qboolean recorder)
 			*buf++ = (byte)SVfloat (ent, colormap);
 		}
 
-		x = ((int) (SVvector (ent, origin)[0] + 4096 + 1) >> 1) & 4095;
-		y = ((int) (SVvector (ent, origin)[1] + 4096 + 1) >> 1) & 4095;
-		z = ((int) (SVvector (ent, origin)[2] + 4096 + 1) >> 1) & 4095;
-		p = (int) (SVvector (ent, angles)[0] * (16.0 / 360.0)) & 15;
-		yaw = (int) (SVvector (ent, angles)[1] * (256.0 / 360.0)) & 255;
+		x   = ((int) (SVvector (ent, origin)[0] + 4096 + 1) >> 1) & 0xfff;
+		y   = ((int) (SVvector (ent, origin)[1] + 4096 + 1) >> 1) & 0xfff;
+		z   = ((int) (SVvector (ent, origin)[2] + 4096 + 1) >> 1) & 0xfff;
+		p   =  (int) (SVvector (ent, angles)[0] * (16.0 / 360.0)) & 0x00f;
+		yaw = (int) (SVvector (ent, angles)[1] * (256.0 / 360.0)) & 0x0ff;
 
 		*buf++ = x;
 		*buf++ = (x >> 8) | (y << 4);
@@ -209,7 +209,7 @@ SV_WriteDelta (entity_state_t *from, entity_state_t *to, sizebuf_t *msg,
 	if (to->frame != from->frame)
 		bits |= U_FRAME;
 
-	if (to->effects != from->effects)
+	if ((to->effects & 0xff) != (from->effects & 0xff))
 		bits |= U_EFFECTS;
 
 	if (to->modelindex != from->modelindex)
@@ -224,7 +224,7 @@ SV_WriteDelta (entity_state_t *from, entity_state_t *to, sizebuf_t *msg,
 		if (to->scale != from->scale)
 			bits |= U_SCALE;
 
-		if (to->effects > 255)
+		if ((to->effects & 0xff00) != (from->effects & 0xff00))
 			bits |= U_EFFECTS2;
 
 		if (to->glow_size != from->glow_size)

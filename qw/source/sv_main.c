@@ -749,6 +749,8 @@ SV_AllocClient (int spectator, int server)
 			svs.num_clients++;
 			memset (cl, 0, sizeof (client_t));
 			cl->userid = userid++;	// so every client gets a unique id
+			if (userid < 0)			// reserve -ve userids for special purposes
+				userid = 0;
 			cl->edict = EDICT_NUM (&sv_pr_state, (cl - svs.clients) + 1);
 			return cl;
 		}

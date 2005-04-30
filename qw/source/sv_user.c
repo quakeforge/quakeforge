@@ -313,7 +313,6 @@ SV_PreSpawn_f (void *unused)
 			SV_DropClient (host_client);
 			return;
 		}
-		host_client->checksum = check;
 	}
 
 	host_client->prespawned = true;
