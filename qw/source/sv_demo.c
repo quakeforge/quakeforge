@@ -83,6 +83,7 @@ int         (*dwrite) (QFile * file, const void *buf, int count);
 #define HEADER  ((int) &((header_t *) 0)->data)
 
 entity_state_t demo_entities[UPDATE_MASK + 1][MAX_DEMO_PACKET_ENTITIES];
+plent_state_t demo_players[UPDATE_MASK + 1][MAX_CLIENTS];
 
 /*
 	SV_WriteDemoMessage
@@ -647,8 +648,10 @@ SV_Record (char *name)
 		dstring_clearstr (demo.text = tt);
 	}
 	demo.recorder.delta.pvs = dt_pvs_fat;
-	for (i = 0; i < UPDATE_BACKUP; i++)
+	for (i = 0; i < UPDATE_BACKUP; i++) {
 		demo.recorder.delta.frames[i].entities.entities = demo_entities[i];
+		demo.recorder.delta.frames[i].players.players = demo_players[i];
+	}
 
 	DemoBuffer_Init (&demo.dbuffer, demo.buffer, sizeof (demo.buffer));
 	DemoSetMsgBuf (NULL, &demo.frames[0].buf);
