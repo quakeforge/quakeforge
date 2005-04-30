@@ -55,7 +55,7 @@ static __attribute__ ((unused)) const char rcsid[] =
 demo_t      demo;
 
 #define MIN_DEMO_MEMORY 0x100000
-#define USACACHE (sv_demoUseCache->int_val && svs.demomemsize)
+#define USECACHE (sv_demoUseCache->int_val && svs.demomemsize)
 #define DWRITE(a,b,d) dwrite((QFile *) d, a, b)
 #define MAXSIZE (demo.dbuffer.end < demo.dbuffer.last ? \
 				 demo.dbuffer.start - demo.dbuffer.end : \
@@ -499,7 +499,7 @@ DemoSetMsgBuf (demobuf_t *prev, demobuf_t *cur)
 static qboolean
 SV_InitRecord (void)
 {
-	if (!USACACHE) {
+	if (!USECACHE) {
 		dwrite = &Qwrite;
 		demo.dest = demo.file;
 		demo.disk = true;
