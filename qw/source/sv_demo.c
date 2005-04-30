@@ -212,66 +212,6 @@ SV_DemoWriteToDisk (int type, int to, float time)
 }
 
 void
-SV_WriteClientToDemo (sizebuf_t *msg, int i, demo_client_t *cl)
-{
-	float      *origin, *angles;
-	int         flags;
-	int         j;
-	demoinfo_t *demoinfo = &demo.info[i];
-
-	origin = cl->info.origin;
-	angles = cl->info.angles;
-
-	// now write it to buf
-	flags = cl->flags;
-
-	for (j = 0; j < 3; j++)
-		if (origin[j] != demoinfo->origin[j])
-			flags |= DF_ORIGIN << j;
-
-	for (j = 0; j < 3; j++)
-		if (angles[j] != demoinfo->angles[j])
-			flags |= DF_ANGLES << j;
-
-	if (cl->info.model != demoinfo->model)
-		flags |= DF_MODEL;
-	if (cl->info.effects != demoinfo->effects)
-		flags |= DF_EFFECTS;
-	if (cl->info.skinnum != demoinfo->skinnum)
-		flags |= DF_SKINNUM;
-	if (cl->info.weaponframe != demoinfo->weaponframe)
-		flags |= DF_WEAPONFRAME;
-
-	MSG_WriteByte (msg, svc_playerinfo);
-	MSG_WriteByte (msg, i);
-	MSG_WriteShort (msg, flags);
-
-	MSG_WriteByte (msg, cl->frame);
-
-	for (j = 0; j < 3; j++)
-		if (flags & (DF_ORIGIN << j))
-			MSG_WriteCoord (msg, origin[j]);
-
-	for (j = 0; j < 3; j++)
-		if (flags & (DF_ANGLES << j))
-			MSG_WriteAngle16 (msg, angles[j]);
-
-	if (flags & DF_MODEL)
-		MSG_WriteByte (msg, cl->info.model);
-
-	if (flags & DF_SKINNUM)
-		MSG_WriteByte (msg, cl->info.skinnum);
-
-	if (flags & DF_EFFECTS)
-		MSG_WriteByte (msg, cl->info.effects);
-
-	if (flags & DF_WEAPONFRAME)
-		MSG_WriteByte (msg, cl->info.weaponframe);
-
-	*demoinfo = cl->info;
-}
-
-void
 SV_DemoWritePackets (int num)
 {
 	demo_frame_t *frame;

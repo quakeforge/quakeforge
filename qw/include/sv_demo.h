@@ -124,7 +124,6 @@ extern struct cvar_s *sv_demotxt;
 extern struct cvar_s *serverdemo;
 
 void DemoWrite_Begin (byte type, int to, int size);
-void SV_WriteClientToDemo (sizebuf_t *msg, int i, demo_client_t *cl);
 void SV_DemoWritePackets (int num);
 void SV_Stop (int reason);
 void DemoSetMsgBuf (demobuf_t *prev, demobuf_t *cur);
