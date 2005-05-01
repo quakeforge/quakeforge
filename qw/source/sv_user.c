@@ -1391,7 +1391,7 @@ SV_ExecuteUserCommand (const char *s)
 	u = (ucmd_t*) Hash_Find (ucmd_table, sv_args->argv[0]->str);
 
 	if (!u) {
-		if (ucmd_unknown && !ucmd_unknown ()) {
+		if (!ucmd_unknown || !ucmd_unknown ()) {
 			SV_BeginRedirect (RD_CLIENT);
 			SV_Printf ("Bad user command: %s\n", sv_args->argv[0]->str);
 			SV_EndRedirect ();

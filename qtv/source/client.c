@@ -201,7 +201,7 @@ client_exec_command (client_t *cl, const char *s)
 	u = (ucmd_t*) Hash_Find (ucmd_table, qtv_args->argv[0]->str);
 
 	if (!u) {
-		if (ucmd_unknown && !ucmd_unknown ()) {
+		if (!ucmd_unknown || !ucmd_unknown ()) {
 			qtv_begin_redirect (RD_CLIENT, cl);
 			qtv_printf ("Bad user command: %s\n", qtv_args->argv[0]->str);
 			qtv_end_redirect ();
