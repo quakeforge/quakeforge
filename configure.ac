@@ -1654,7 +1654,7 @@ QF_WITH_TARGETS(
 QF_WITH_TARGETS(
 	tools,
 	[  --with-tools=<list>     compile qf tools:],
-	[bsp2img,carne,pak,qfbsp,qfcc,qflight,qfmodelgen,qfvis,qwaq,wad,wav],dummy
+	[bsp2img,carne,gsc,pak,qfbsp,qfcc,qflight,qfmodelgen,qfvis,qwaq,wad,wav],dummy
 )
 
 unset CL_TARGETS
@@ -1831,6 +1831,9 @@ fi
 if test "x$ENABLE_tools_carne" = xyes; then
 	TOOLS_TARGETS="$TOOLS_TARGETS carne"
 fi
+if test "x$ENABLE_tools_gsc" = xyes; then
+	TOOLS_TARGETS="$TOOLS_TARGETS gsc"
+fi
 if test "x$ENABLE_tools_pak" = xyes; then
 	TOOLS_TARGETS="$TOOLS_TARGETS pak"
 fi
@@ -1861,6 +1864,7 @@ fi
 
 AM_CONDITIONAL(BUILD_BSP2IMG, test "$ENABLE_tools_bsp2img" = "yes")
 AM_CONDITIONAL(BUILD_CARNE, test "$ENABLE_tools_carne" = "yes")
+AM_CONDITIONAL(BUILD_GSC, test "$ENABLE_tools_gsc" = "yes")
 AM_CONDITIONAL(BUILD_PAK, test "$ENABLE_tools_pak" = "yes")
 AM_CONDITIONAL(BUILD_QFBSP, test "$ENABLE_tools_qfbsp" = "yes")
 AM_CONDITIONAL(BUILD_QFCC, test "$ENABLE_tools_qfcc" = "yes")
@@ -2123,12 +2127,17 @@ QF_DEPS(QFVIS,
 )
 QF_DEPS(QWAQ,
 	[],
-	[$(top_builddir)/libs/ruamoko/libQFruamoko.la $(top_builddir)/libs/gamecode/engine/libQFgamecode.la $(top_builddir)/libs/util/libQFutil.la],
+	[$(top_builddir)/libs/ruamoko/libQFruamoko.la $(top_builddir)/libs/gamecode/engine/libQFgamecode.la $(top_builddir)/libs/util/libQFutil.la $(top_builddir)/libs/gamecode/builtins/libQFgamecode_builtins.la],
 	[$(WIN32_LIBS)],
 )
 QF_DEPS(CARNE,
 	[],
 	[$(top_builddir)/libs/gib/libQFgib.la $(top_builddir)/libs/util/libQFutil.la],
+	[$(WIN32_LIBS)],
+)
+QF_DEPS(GSC,
+	[],
+	[$(top_builddir)/libs/gibscript/libQFgibscript.la $(top_builddir)/libs/util/libQFutil.la],
 	[$(WIN32_LIBS)],
 )
 QF_DEPS(PAK,
@@ -2185,6 +2194,7 @@ AC_OUTPUT(
 	libs/gamecode/engine/Makefile
 	libs/gamecode/builtins/Makefile
 	libs/gib/Makefile
+	libs/gibscript/Makefile
 	libs/image/Makefile
 	libs/models/Makefile
 	libs/models/alias/Makefile
@@ -2222,6 +2232,7 @@ AC_OUTPUT(
 	tools/Makefile
 	tools/bsp2img/Makefile
 	tools/carne/Makefile
+	tools/gsc/Makefile
 	tools/pak/Makefile
 	tools/qfbsp/Makefile
 	tools/qfbsp/include/Makefile
@@ -2251,6 +2262,7 @@ AC_OUTPUT(
 	ruamoko/game/Makefile
 	ruamoko/gui/Makefile
 	ruamoko/cl_menu/Makefile
+	ruamoko/scheme/Makefile
 
 	doc/Makefile
 	doc/quakeforge.dox

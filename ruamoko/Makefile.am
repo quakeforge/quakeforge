@@ -1,1 +1,1 @@
-SUBDIRS= include lib game gui cl_menu
+SUBDIRS= include lib game gui cl_menu scheme
