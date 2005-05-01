@@ -2194,7 +2194,6 @@ AC_OUTPUT(
 	libs/gamecode/engine/Makefile
 	libs/gamecode/builtins/Makefile
 	libs/gib/Makefile
-	libs/gibscript/Makefile
 	libs/image/Makefile
 	libs/models/Makefile
 	libs/models/alias/Makefile
@@ -2232,7 +2231,6 @@ AC_OUTPUT(
 	tools/Makefile
 	tools/bsp2img/Makefile
 	tools/carne/Makefile
-	tools/gsc/Makefile
 	tools/pak/Makefile
 	tools/qfbsp/Makefile
 	tools/qfbsp/include/Makefile
