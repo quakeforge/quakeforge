@@ -57,6 +57,7 @@ static __attribute__ ((unused)) const char rcsid[] =
 #include "server.h"
 #include "sv_demo.h"
 #include "sv_progs.h"
+#include "sv_recorder.h"
 
 qboolean    sv_allow_cheats;
 
@@ -421,7 +422,7 @@ SV_Map_f (void)
 	Qclose (f);
 	free (expanded);
 
-	if (sv.demorecording)
+	if (sv.recorders)
 		SV_Stop (0);
 
 	SV_BroadcastCommand ("changing\n");
@@ -763,14 +764,15 @@ SV_ConSay (const char *prefix, client_t *client)
 			if (*prefix != 'I')		// beep, except for Info says
 				SV_ClientPrintf (0, client, PRINT_CHAT, "%s", "");
 		}
-		if (sv.demorecording) {
-			DemoWrite_Begin (dem_all, 0, strlen (text->str) + 7);
-			MSG_WriteByte (&demo.dbuf->sz, svc_print);
-			MSG_WriteByte (&demo.dbuf->sz, PRINT_HIGH);
-			MSG_WriteString (&demo.dbuf->sz, va ("%s\n", text->str));
-			MSG_WriteByte (&demo.dbuf->sz, svc_print);
-			MSG_WriteByte (&demo.dbuf->sz, PRINT_CHAT);
-			MSG_WriteString (&demo.dbuf->sz, "");
+		if (sv.recorders) {
+			sizebuf_t *dbuf;
+			dbuf = SVR_WriteBegin (dem_all, 0, strlen (text->str) + 7);
+			MSG_WriteByte (dbuf, svc_print);
+			MSG_WriteByte (dbuf, PRINT_HIGH);
+			MSG_WriteString (dbuf, va ("%s\n", text->str));
+			MSG_WriteByte (dbuf, svc_print);
+			MSG_WriteByte (dbuf, PRINT_CHAT);
+			MSG_WriteString (dbuf, "");
 		}
 	}
 }

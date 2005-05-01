@@ -112,7 +112,7 @@ typedef struct {
 	byte		signon_buffers[MAX_SIGNON_BUFFERS][MAX_DATAGRAM];
 
 	// demo stuff
-	qboolean    demorecording;
+	struct recorder_s *recorders;
 } server_t;
 
 #define	NUM_SPAWN_PARMS			16
@@ -524,7 +524,7 @@ void SV_SetMoveVars(void);
 void SV_Print (const char *fmt, va_list args);
 void SV_Printf (const char *fmt, ...) __attribute__((format(printf,1,2)));
 void SV_SendClientMessages (void);
-void SV_SendDemoMessage(void);
+void SV_GetStats (struct edict_s *ent, int spectator, int stats[]);
 
 void SV_Multicast (const vec3_t origin, int to);
 void SV_StartSound (struct edict_s *entity, int channel, const char *sample,

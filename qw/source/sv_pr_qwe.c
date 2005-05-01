@@ -53,9 +53,10 @@ const char  rcsid[] = "$Id$";
 #include "QF/sys.h"
 #include "QF/va.h"
 
-#include "sv_demo.h"
+#include "server.h"
 #include "sv_pr_qwe.h"
 #include "sv_progs.h"
+#include "sv_recorder.h"
 
 typedef struct {
 	func_t      timeofday;
@@ -368,7 +369,7 @@ PF_calltimeofday (progs_t * pr)
 static void
 PF_forcedemoframe (progs_t * pr)
 {
-	demo.forceFrame = 1;
+	SVR_ForceFrame ();
 	if (P_FLOAT (pr, 0) == 1)
 		SV_SendDemoMessage ();
 }

@@ -52,10 +52,10 @@ static __attribute__ ((unused)) const char rcsid[] =
 #include "compat.h"
 #include "crudefile.h"
 #include "server.h"
-#include "sv_demo.h"
 #include "sv_gib.h"
 #include "sv_pr_cmds.h"
 #include "sv_progs.h"
+#include "sv_recorder.h"
 #include "world.h"
 
 /* BUILT-IN FUNCTIONS */
@@ -295,10 +295,11 @@ PF_centerprint (progs_t *pr)
 	MSG_ReliableWrite_Begin (&cl->backbuf, svc_centerprint, 2 + strlen (s));
 	MSG_ReliableWrite_String (&cl->backbuf, s);
 
-	if (sv.demorecording) {
-		DemoWrite_Begin (dem_single, entnum - 1, 2 + strlen (s));
-		MSG_WriteByte (&demo.dbuf->sz, svc_centerprint);
-		MSG_WriteString (&demo.dbuf->sz, s);
+	if (sv.recorders) {
+		sizebuf_t  *dbuf;
+		dbuf = SVR_WriteBegin (dem_single, entnum - 1, 2 + strlen (s));
+		MSG_WriteByte (dbuf, svc_centerprint);
+		MSG_WriteString (dbuf, s);
 	}
 }
 
@@ -604,10 +605,11 @@ PF_stuffcmd (progs_t *pr)
 		p[1] = 0;
 		MSG_ReliableWrite_Begin (&cl->backbuf, svc_stufftext, 2 + p - buf);
 		MSG_ReliableWrite_String (&cl->backbuf, buf);
-		if (sv.demorecording) {
-			DemoWrite_Begin (dem_single, cl - svs.clients, 2 + strlen (buf));
-			MSG_WriteByte (&demo.dbuf->sz, svc_stufftext);
-			MSG_WriteString (&demo.dbuf->sz, buf);
+		if (sv.recorders) {
+			sizebuf_t  *dbuf;
+			dbuf = SVR_WriteBegin (dem_single, cl - svs.clients, 2 + p - buf);
+			MSG_WriteByte (dbuf, svc_stufftext);
+			MSG_WriteString (dbuf, buf);
 		}
 		p[1] = t;
 		strcpy (buf, p + 1);		// safe because this is a downward, in
@@ -898,11 +900,12 @@ PF_lightstyle (progs_t *pr)
 			MSG_ReliableWrite_Char (&cl->backbuf, style);
 			MSG_ReliableWrite_String (&cl->backbuf, val);
 		}
-	if (sv.demorecording) {
-		DemoWrite_Begin (dem_all, 0, strlen (val) + 3);
-		MSG_WriteByte (&demo.dbuf->sz, svc_lightstyle);
-		MSG_WriteByte (&demo.dbuf->sz, style);
-		MSG_WriteString (&demo.dbuf->sz, val);
+	if (sv.recorders) {
+		sizebuf_t  *dbuf;
+		dbuf = SVR_WriteBegin (dem_all, 0, strlen (val) + 3);
+		MSG_WriteByte (dbuf, svc_lightstyle);
+		MSG_WriteByte (dbuf, style);
+		MSG_WriteString (dbuf, val);
 	}
 }
 
@@ -1137,9 +1140,10 @@ PF_WriteBytes (progs_t *pr)
 			MSG_ReliableCheckBlock (&cl->backbuf, count);
 			MSG_ReliableWrite_SZ (&cl->backbuf, buf, count);
 		}
-		if (sv.demorecording) {
-			DemoWrite_Begin (dem_single, cl - svs.clients, count);
-			SZ_Write (&demo.dbuf->sz, buf, count);
+		if (sv.recorders) {
+			sizebuf_t  *dbuf;
+			dbuf = SVR_WriteBegin (dem_single, cl - svs.clients, count);
+			SZ_Write (dbuf, buf, count);
 		}
 	} else {
 		sizebuf_t  *msg = WriteDest (pr);
@@ -1158,9 +1162,10 @@ PF_WriteByte (progs_t *pr)
 			MSG_ReliableCheckBlock (&cl->backbuf, 1);
 			MSG_ReliableWrite_Byte (&cl->backbuf, P_FLOAT (pr, 1));
 		}
-		if (sv.demorecording) {
-			DemoWrite_Begin (dem_single, cl - svs.clients, 1);
-			MSG_WriteByte (&demo.dbuf->sz, P_FLOAT (pr, 1));
+		if (sv.recorders) {
+			sizebuf_t  *dbuf;
+			dbuf = SVR_WriteBegin (dem_single, cl - svs.clients, 1);
+			MSG_WriteByte (dbuf, P_FLOAT (pr, 1));
 		}
 	} else
 		MSG_WriteByte (WriteDest (pr), P_FLOAT (pr, 1));
@@ -1177,9 +1182,10 @@ PF_WriteChar (progs_t *pr)
 			MSG_ReliableCheckBlock (&cl->backbuf, 1);
 			MSG_ReliableWrite_Char (&cl->backbuf, P_FLOAT (pr, 1));
 		}
-		if (sv.demorecording) {
-			DemoWrite_Begin (dem_single, cl - svs.clients, 1);
-			MSG_WriteByte (&demo.dbuf->sz, P_FLOAT (pr, 1));
+		if (sv.recorders) {
+			sizebuf_t  *dbuf;
+			dbuf = SVR_WriteBegin (dem_single, cl - svs.clients, 1);
+			MSG_WriteByte (dbuf, P_FLOAT (pr, 1));
 		}
 	} else
 		MSG_WriteByte (WriteDest (pr), P_FLOAT (pr, 1));
@@ -1196,9 +1202,10 @@ PF_WriteShort (progs_t *pr)
 			MSG_ReliableCheckBlock (&cl->backbuf, 2);
 			MSG_ReliableWrite_Short (&cl->backbuf, P_FLOAT (pr, 1));
 		}
-		if (sv.demorecording) {
-			DemoWrite_Begin (dem_single, cl - svs.clients, 2);
-			MSG_WriteShort (&demo.dbuf->sz, P_FLOAT (pr, 1));
+		if (sv.recorders) {
+			sizebuf_t  *dbuf;
+			dbuf = SVR_WriteBegin (dem_single, cl - svs.clients, 2);
+			MSG_WriteShort (dbuf, P_FLOAT (pr, 1));
 		}
 	} else
 		MSG_WriteShort (WriteDest (pr), P_FLOAT (pr, 1));
@@ -1215,9 +1222,10 @@ PF_WriteLong (progs_t *pr)
 			MSG_ReliableCheckBlock (&cl->backbuf, 4);
 			MSG_ReliableWrite_Long (&cl->backbuf, P_FLOAT (pr, 1));
 		}
-		if (sv.demorecording) {
-			DemoWrite_Begin (dem_single, cl - svs.clients, 4);
-			MSG_WriteLong (&demo.dbuf->sz, P_FLOAT (pr, 1));
+		if (sv.recorders) {
+			sizebuf_t  *dbuf;
+			dbuf = SVR_WriteBegin (dem_single, cl - svs.clients, 4);
+			MSG_WriteLong (dbuf, P_FLOAT (pr, 1));
 		}
 	} else
 		MSG_WriteLong (WriteDest (pr), P_FLOAT (pr, 1));
@@ -1234,9 +1242,10 @@ PF_WriteAngle (progs_t *pr)
 			MSG_ReliableCheckBlock (&cl->backbuf, 1);
 			MSG_ReliableWrite_Angle (&cl->backbuf, P_FLOAT (pr, 1));
 		}
-		if (sv.demorecording) {
-			DemoWrite_Begin (dem_single, cl - svs.clients, 1);
-			MSG_WriteAngle (&demo.dbuf->sz, P_FLOAT (pr, 1));
+		if (sv.recorders) {
+			sizebuf_t  *dbuf;
+			dbuf = SVR_WriteBegin (dem_single, cl - svs.clients, 1);
+			MSG_WriteAngle (dbuf, P_FLOAT (pr, 1));
 		}
 	} else
 		MSG_WriteAngle (WriteDest (pr), P_FLOAT (pr, 1));
@@ -1253,9 +1262,10 @@ PF_WriteCoord (progs_t *pr)
 			MSG_ReliableCheckBlock (&cl->backbuf, 2);
 			MSG_ReliableWrite_Coord (&cl->backbuf, P_FLOAT (pr, 1));
 		}
-		if (sv.demorecording) {
-			DemoWrite_Begin (dem_single, cl - svs.clients, 2);
-			MSG_WriteCoord (&demo.dbuf->sz, P_FLOAT (pr, 1));
+		if (sv.recorders) {
+			sizebuf_t  *dbuf;
+			dbuf = SVR_WriteBegin (dem_single, cl - svs.clients, 2);
+			MSG_WriteCoord (dbuf, P_FLOAT (pr, 1));
 		}
 	} else
 		MSG_WriteCoord (WriteDest (pr), P_FLOAT (pr, 1));
@@ -1274,9 +1284,10 @@ PF_WriteAngleV (progs_t *pr)
 			MSG_ReliableCheckBlock (&cl->backbuf, 1);
 			MSG_ReliableWrite_AngleV (&cl->backbuf, ang);
 		}
-		if (sv.demorecording) {
-			DemoWrite_Begin (dem_single, cl - svs.clients, 1);
-			MSG_WriteAngleV (&demo.dbuf->sz, ang);
+		if (sv.recorders) {
+			sizebuf_t  *dbuf;
+			dbuf = SVR_WriteBegin (dem_single, cl - svs.clients, 1);
+			MSG_WriteAngleV (dbuf, ang);
 		}
 	} else
 		MSG_WriteAngleV (WriteDest (pr), ang);
@@ -1295,9 +1306,10 @@ PF_WriteCoordV (progs_t *pr)
 			MSG_ReliableCheckBlock (&cl->backbuf, 2);
 			MSG_ReliableWrite_CoordV (&cl->backbuf, coord);
 		}
-		if (sv.demorecording) {
-			DemoWrite_Begin (dem_single, cl - svs.clients, 2);
-			MSG_WriteCoordV (&demo.dbuf->sz, coord);
+		if (sv.recorders) {
+			sizebuf_t  *dbuf;
+			dbuf = SVR_WriteBegin (dem_single, cl - svs.clients, 2);
+			MSG_WriteCoordV (dbuf, coord);
 		}
 	} else
 		MSG_WriteCoordV (WriteDest (pr), coord);
@@ -1316,9 +1328,10 @@ PF_WriteString (progs_t *pr)
 			MSG_ReliableCheckBlock (&cl->backbuf, 1 + strlen (str));
 			MSG_ReliableWrite_String (&cl->backbuf, str);
 		}
-		if (sv.demorecording) {
-			DemoWrite_Begin (dem_single, cl - svs.clients, 1 + strlen (str));
-			MSG_WriteString (&demo.dbuf->sz, str);
+		if (sv.recorders) {
+			sizebuf_t  *dbuf;
+			dbuf = SVR_WriteBegin (dem_single, cl - svs.clients, 1 + strlen (str));
+			MSG_WriteString (dbuf, str);
 		}
 	} else
 		MSG_WriteString (WriteDest (pr), str);
@@ -1337,9 +1350,10 @@ PF_WriteEntity (progs_t *pr)
 			MSG_ReliableCheckBlock (&cl->backbuf, 2);
 			MSG_ReliableWrite_Short (&cl->backbuf, ent);
 		}
-		if (sv.demorecording) {
-			DemoWrite_Begin (dem_single, cl - svs.clients, 2);
-			MSG_WriteShort (&demo.dbuf->sz, ent);
+		if (sv.recorders) {
+			sizebuf_t  *dbuf;
+			dbuf = SVR_WriteBegin (dem_single, cl - svs.clients, 2);
+			MSG_WriteShort (dbuf, ent);
 		}
 	} else
 		MSG_WriteShort (WriteDest (pr), ent);

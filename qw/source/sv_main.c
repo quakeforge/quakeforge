@@ -91,6 +91,7 @@ static __attribute__ ((unused)) const char rcsid[] =
 #include "sv_progs.h"
 #include "sv_gib.h"
 #include "sv_qtv.h"
+#include "sv_recorder.h"
 
 SERVER_PLUGIN_PROTOS
 static plugin_list_t server_plugin_list[] = {
@@ -247,7 +248,7 @@ SV_Shutdown (void)
 		Qclose (sv_fraglogfile);
 		sv_fraglogfile = NULL;
 	}
-	if (sv.demorecording)
+	if (sv.recorders)
 		SV_Stop (0);
 
 	NET_Shutdown ();
@@ -1983,7 +1984,7 @@ SV_Frame (float time)
 	SV_SendClientMessages ();
 
 	demo_start = Sys_DoubleTime ();
-	if (sv.demorecording)
+	if (sv.recorders)
 		SV_SendDemoMessage ();
 	demo_end = Sys_DoubleTime ();
 	svs.stats.demo += demo_end - demo_start;
@@ -2573,6 +2574,7 @@ SV_Init (void)
 	SV_InitLocal ();
 	Pmove_Init ();
 
+	SVR_Init ();
 	Demo_Init ();
 
 	Hunk_AllocName (0, "-HOST_HUNKLEVEL-");

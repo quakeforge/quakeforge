@@ -62,9 +62,9 @@ static __attribute__ ((unused)) const char rcsid[] =
 #include "compat.h"
 #include "pmove.h"
 #include "server.h"
-#include "sv_demo.h"
-#include "sv_progs.h"
 #include "sv_gib.h"
+#include "sv_progs.h"
+#include "sv_recorder.h"
 #include "world.h"
 
 typedef struct ucmd_s {
@@ -757,6 +757,7 @@ SV_Say (qboolean team)
 	const char *t1 = 0, *t2, *type, *fmt;
 	client_t   *client;
 	int			tmp, j, cls = 0;
+	sizebuf_t  *dbuf;
 
 	if (Cmd_Argc () < 2)
 		return;
@@ -877,7 +878,7 @@ SV_Say (qboolean team)
 		SV_ClientPrintf (0, client, PRINT_CHAT, "%s", text->str);
 	}
 
-	if (!sv.demorecording || !cls) {
+	if (!sv.recorders || !cls) {
 		dstring_delete (text);
 		return;
 	}
@@ -885,13 +886,13 @@ SV_Say (qboolean team)
 	// player
 	if (!team && ((host_client->spectator && sv_spectalk->value)
 				  || !host_client->spectator)) {
-		DemoWrite_Begin (dem_all, 0, strlen (text->str) + 3);
+		dbuf = SVR_WriteBegin (dem_all, 0, strlen (text->str) + 3);
 	} else {
-		DemoWrite_Begin (dem_multiple, cls, strlen (text->str) + 3);
+		dbuf = SVR_WriteBegin (dem_multiple, cls, strlen (text->str) + 3);
 	}
-	MSG_WriteByte (&demo.dbuf->sz, svc_print);
-	MSG_WriteByte (&demo.dbuf->sz, PRINT_CHAT);
-	MSG_WriteString (&demo.dbuf->sz, text->str);
+	MSG_WriteByte (dbuf, svc_print);
+	MSG_WriteByte (dbuf, PRINT_CHAT);
+	MSG_WriteString (dbuf, text->str);
 	dstring_delete (text);
 }
 

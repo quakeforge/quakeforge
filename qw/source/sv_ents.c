@@ -46,7 +46,6 @@ static __attribute__ ((unused)) const char rcsid[] =
 
 #include "compat.h"
 #include "server.h"
-#include "sv_demo.h"
 #include "sv_progs.h"
 
 

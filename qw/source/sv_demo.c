@@ -47,206 +47,48 @@ static __attribute__ ((unused)) const char rcsid[] =
 #include "QF/sys.h"
 #include "QF/va.h"
 
+#include "compat.h"
 #include "pmove.h"
 #include "server.h"
 #include "sv_demo.h"
 #include "sv_progs.h"
+#include "sv_recorder.h"
 
-demo_t          demo;
-static byte     demo_buffer[20 * MAX_MSGLEN];
-static byte     demo_datagram_data[MAX_DATAGRAM];
 static QFile   *demo_file;
 static byte    *demo_mfile;
 static qboolean demo_disk;
 static dstring_t *demo_name;		// filename of mvd
 static dstring_t *demo_text;		// filename of description file
 static void    *demo_dest;
+static double   demo_time;
+
+static recorder_t *recorder;
 
 #define MIN_DEMO_MEMORY 0x100000
 #define USECACHE (sv_demoUseCache->int_val && svs.demomemsize)
 #define DWRITE(a,b,d) dwrite((QFile *) d, a, b)
-#define MAXSIZE (demo.dbuffer.end < demo.dbuffer.last ? \
-				 demo.dbuffer.start - demo.dbuffer.end : \
-				 demo.dbuffer.maxsize - demo.dbuffer.end)
 
 static int  demo_max_size;
 static int  demo_size;
-cvar_t     *sv_demoUseCache;
-cvar_t     *sv_demoCacheSize;
-cvar_t     *sv_demoMaxDirSize;
-cvar_t     *sv_demoDir;
-cvar_t     *sv_demofps;
-cvar_t     *sv_demoPings;
-cvar_t     *sv_demoNoVis;
-cvar_t     *sv_demoMaxSize;
-cvar_t     *sv_demoPrefix;
-cvar_t     *sv_demoSuffix;
-cvar_t     *sv_onrecordfinish;
-cvar_t     *sv_ondemoremove;
-cvar_t     *sv_demotxt;
-cvar_t     *serverdemo;
 
-int         (*dwrite) (QFile * file, const void *buf, int count);
+cvar_t         *sv_demofps;
+cvar_t         *sv_demoPings;
+cvar_t         *sv_demoMaxSize;
+static cvar_t  *sv_demoUseCache;
+static cvar_t  *sv_demoCacheSize;
+static cvar_t  *sv_demoMaxDirSize;
+static cvar_t  *sv_demoDir;
+static cvar_t  *sv_demoNoVis;
+static cvar_t  *sv_demoPrefix;
+static cvar_t  *sv_demoSuffix;
+static cvar_t  *sv_onrecordfinish;
+static cvar_t  *sv_ondemoremove;
+static cvar_t  *sv_demotxt;
+static cvar_t  *serverdemo;
+
+static int    (*dwrite) (QFile * file, const void *buf, int count);
 
 #define HEADER  ((int) &((header_t *) 0)->data)
-
-entity_state_t demo_entities[UPDATE_MASK + 1][MAX_DEMO_PACKET_ENTITIES];
-plent_state_t demo_players[UPDATE_MASK + 1][MAX_CLIENTS];
-
-/*
-	SV_WriteDemoMessage
-
-	Dumps the current net message, prefixed by the length and view angles
-*/
-static void
-SV_WriteDemoMessage (sizebuf_t *msg, int type, int to, float time)
-{
-	int         len, i, msec;
-	byte        c;
-	static double prevtime;
-
-	msec = (time - prevtime) * 1000;
-	prevtime += msec * 0.001;
-	if (msec > 255)
-		msec = 255;
-	if (msec < 2)
-		msec = 0;
-
-	c = msec;
-	demo.size += DWRITE (&c, sizeof (c), demo_dest);
-
-	if (demo.lasttype != type || demo.lastto != to) {
-		demo.lasttype = type;
-		demo.lastto = to;
-		switch (demo.lasttype) {
-			case dem_all:
-				c = dem_all;
-				demo.size += DWRITE (&c, sizeof (c), demo_dest);
-				break;
-			case dem_multiple:
-				c = dem_multiple;
-				demo.size += DWRITE (&c, sizeof (c), demo_dest);
-
-				i = LittleLong (demo.lastto);
-				demo.size += DWRITE (&i, sizeof (i), demo_dest);
-				break;
-			case dem_single:
-			case dem_stats:
-				c = demo.lasttype + (demo.lastto << 3);
-				demo.size += DWRITE (&c, sizeof (c), demo_dest);
-				break;
-			default:
-				SV_Stop (0);
-				Con_Printf ("bad demo message type:%d", type);
-				return;
-		}
-	} else {
-		c = dem_read;
-		demo.size += DWRITE (&c, sizeof (c), demo_dest);
-	}
-
-
-	len = LittleLong (msg->cursize);
-	demo.size += DWRITE (&len, 4, demo_dest);
-	demo.size += DWRITE (msg->data, msg->cursize, demo_dest);
-
-	if (demo_disk)
-		Qflush (demo_file);
-	else if (demo.size - demo_size > demo_max_size) {
-		demo_size = demo.size;
-		demo_mfile -= 0x80000;
-		Qwrite (demo_file, svs.demomem, 0x80000);
-		Qflush (demo_file);
-		memmove (svs.demomem, svs.demomem + 0x80000, demo.size - 0x80000);
-	}
-}
-
-/*
-	DemoWriteToDisk
-
-	Writes to disk a message meant for specifc client
-	or all messages if type == 0
-	Message is cleared from demobuf after that
-*/
-
-static void
-SV_DemoWriteToDisk (int type, int to, float time)
-{
-	int         pos = 0, oldm, oldd;
-	header_t   *p;
-	int         size;
-	sizebuf_t   msg;
-
-	p = (header_t *) demo.dbuf->sz.data;
-	demo.dbuf->h = NULL;
-
-	oldm = demo.dbuf->bufsize;
-	oldd = demo.dbuffer.start;
-	while (pos < demo.dbuf->bufsize) {
-		size = p->size;
-		pos += HEADER + size;
-
-		// no type means we are writing to disk everything
-		if (!type || (p->type == type && p->to == to)) {
-			if (size) {
-				msg.data = p->data;
-				msg.cursize = size;
-
-				SV_WriteDemoMessage (&msg, p->type, p->to, time);
-			}
-			// data is written so it need to be cleard from demobuf
-			if (demo.dbuf->sz.data != (byte *) p)
-				memmove (demo.dbuf->sz.data + size + HEADER,
-						 demo.dbuf->sz.data, (byte *) p - demo.dbuf->sz.data);
-
-			demo.dbuf->bufsize -= size + HEADER;
-			demo.dbuf->sz.data += size + HEADER;
-			pos -= size + HEADER;
-			demo.dbuf->sz.maxsize -= size + HEADER;
-			demo.dbuffer.start += size + HEADER;
-		}
-		// move along
-		p = (header_t *) (p->data + size);
-	}
-
-	if (demo.dbuffer.start == demo.dbuffer.last) {
-		if (demo.dbuffer.start == demo.dbuffer.end) {
-			demo.dbuffer.end = 0;		// demo.dbuffer is empty
-			demo.dbuf->sz.data = demo.dbuffer.data;
-		}
-		// go back to begining of the buffer
-		demo.dbuffer.last = demo.dbuffer.end;
-		demo.dbuffer.start = 0;
-	}
-}
-
-void
-SV_DemoWritePackets (int num)
-{
-	demo_frame_t *frame;
-	double      time;
-
-	if (num > demo.parsecount - demo.lastwritten + 1)
-		num = demo.parsecount - demo.lastwritten + 1;
-
-	// 'num' frames to write
-	for (; num; num--, demo.lastwritten++) {
-		frame = &demo.frames[demo.lastwritten & DEMO_FRAMES_MASK];
-		time = frame->time;
-
-		demo.dbuf = &frame->buf;
-
-		// this goes first to reduce demo size a bit
-//		SV_DemoWriteToDisk (demo.lasttype, demo.lastto, time);
-		SV_DemoWriteToDisk (0, 0, time);			// now goes the rest
-	}
-
-	if (demo.lastwritten > demo.parsecount)
-		demo.lastwritten = demo.parsecount;
-
-	demo.dbuf = &demo.frames[demo.parsecount & DEMO_FRAMES_MASK].buf;
-	demo.dbuf->sz.maxsize = MAXSIZE + demo.dbuf->bufsize;
-}
 
 static int
 memwrite (QFile *_mem, const void *buffer, int size)
@@ -259,95 +101,26 @@ memwrite (QFile *_mem, const void *buffer, int size)
 	return size;
 }
 
-/*
-	DemoSetBuf
-
-	Sets position in the buf for writing to specific client
-*/
-
 static void
-DemoSetBuf (byte type, int to)
+demo_write (sizebuf_t *msg)
 {
-	header_t   *p;
-	int         pos = 0;
-
-	p = (header_t *) demo.dbuf->sz.data;
-
-	while (pos < demo.dbuf->bufsize) {
-		pos += HEADER + p->size;
-
-		if (type == p->type && to == p->to && !p->full) {
-			demo.dbuf->sz.cursize = pos;
-			demo.dbuf->h = p;
-			return;
-		}
-
-		p = (header_t *) (p->data + p->size);
-	}
-	// type && to not exist in the buf, so add it
-
-	p->type = type;
-	p->to = to;
-	p->size = 0;
-	p->full = 0;
-
-	demo.dbuf->bufsize += HEADER;
-	demo.dbuf->sz.cursize = demo.dbuf->bufsize;
-	demo.dbuffer.end += HEADER;
-	demo.dbuf->h = p;
+	DWRITE (msg->data, msg->cursize, demo_dest);
 }
 
-static void
-DemoMoveBuf (void)
+static int
+demo_frame (void)
 {
-	// set the last message mark to the previous frame (i/e begining of this
-	// one)
-	demo.dbuffer.last = demo.dbuffer.end - demo.dbuf->bufsize;
+	double      min_fps;
 
-	// move buffer to the begining of demo buffer
-	memmove (demo.dbuffer.data, demo.dbuf->sz.data, demo.dbuf->bufsize);
-	demo.dbuf->sz.data = demo.dbuffer.data;
-	demo.dbuffer.end = demo.dbuf->bufsize;
-	demo.dbuf->h = NULL;				// it will be setup again
-	demo.dbuf->sz.maxsize = MAXSIZE + demo.dbuf->bufsize;
-}
-
-void
-DemoWrite_Begin (byte type, int to, int size)
-{
-	byte       *p;
-	qboolean    move = false;
-
-	// will it fit?
-	while (demo.dbuf->bufsize + size + HEADER > demo.dbuf->sz.maxsize) {
-		// if we reached the end of buffer move msgbuf to the begining
-		if (!move && demo.dbuffer.end > demo.dbuffer.start)
-			move = true;
-
-		SV_DemoWritePackets (1);
-		if (move && demo.dbuffer.start > demo.dbuf->bufsize + HEADER + size)
-			DemoMoveBuf ();
-	}
-
-	if (demo.dbuf->h == NULL || demo.dbuf->h->type != type
-		|| demo.dbuf->h->to != to || demo.dbuf->h->full) {
-		DemoSetBuf (type, to);
-	}
-
-	if (demo.dbuf->h->size + size > MAX_MSGLEN) {
-		demo.dbuf->h->full = 1;
-		DemoSetBuf (type, to);
-	}
-	// we have to make room for new data
-	if (demo.dbuf->sz.cursize != demo.dbuf->bufsize) {
-		p = demo.dbuf->sz.data + demo.dbuf->sz.cursize;
-		memmove (p + size, p, demo.dbuf->bufsize - demo.dbuf->sz.cursize);
-	}
-
-	demo.dbuf->bufsize += size;
-	demo.dbuf->h->size += size;
-	if ((demo.dbuffer.end += size) > demo.dbuffer.last)
-		demo.dbuffer.last = demo.dbuffer.end;
+	if (!sv_demofps->value)
+		min_fps = 20.0;
+	else
+		min_fps = sv_demofps->value;
+	min_fps = max (4, min_fps);
+	if (sv.time - demo_time < 1.0 / min_fps)
+		return 0;
+	demo_time = sv.time;
+	return 1;
 }
 
 /*
@@ -358,7 +131,9 @@ DemoWrite_Begin (byte type, int to, int size)
 void
 SV_Stop (int reason)
 {
-	if (!sv.demorecording) {
+	sizebuf_t  *dbuf;
+
+	if (!recorder) {
 		Con_Printf ("Not recording a demo.\n");
 		return;
 	}
@@ -372,7 +147,8 @@ SV_Stop (int reason)
 		QFS_Remove (demo_text->str);
 
 		demo_file = NULL;
-		sv.demorecording = false;
+		SVR_RemoveUser (recorder);
+		recorder = 0;
 
 		SV_BroadcastPrintf (PRINT_CHAT,
 							"Server recording canceled, demo removed\n");
@@ -384,24 +160,28 @@ SV_Stop (int reason)
 	// write a disconnect message to the demo file
 
 	// clearup to be sure message will fit
+	dbuf = SVR_WriteBegin (dem_all, 0, 2 + strlen ("EndOfDemo"));
+	MSG_WriteByte (dbuf, svc_disconnect);
+	MSG_WriteString (dbuf, "EndOfDemo");
+/* XXX
 	demo.dbuf->sz.cursize = 0;
 	demo.dbuf->h = NULL;
 	demo.dbuf->bufsize = 0;
-	DemoWrite_Begin (dem_all, 0, 2 + strlen ("EndOfDemo"));
-	MSG_WriteByte (&demo.dbuf->sz, svc_disconnect);
-	MSG_WriteString (&demo.dbuf->sz, "EndOfDemo");
+	DemoWrite_Begin (
 
 	SV_DemoWritePackets (demo.parsecount - demo.lastwritten + 1);
+
 	// finish up
 	if (!demo_disk) {
 		Qwrite (demo_file, svs.demomem, demo.size - demo_size);
 		Qflush (demo_file);
 	}
-
+*/
 	Qclose (demo_file);
 
 	demo_file = NULL;
-	sv.demorecording = false;
+	SVR_RemoveUser (recorder);
+	recorder = 0;
 	if (!reason)
 		SV_BroadcastPrintf (PRINT_CHAT, "Server recording completed\n");
 	else
@@ -453,57 +233,6 @@ SV_Cancel_f (void)
 	SV_Stop (2);
 }
 
-void
-SV_DemoPings (void)
-{
-	client_t   *client;
-	int         j;
-
-	for (j = 0, client = svs.clients; j < MAX_CLIENTS; j++, client++) {
-		if (client->state != cs_spawned && client->state != cs_server)
-			continue;
-
-		DemoWrite_Begin (dem_all, 0, 7);
-		MSG_WriteByte (&demo.dbuf->sz, svc_updateping);
-		MSG_WriteByte (&demo.dbuf->sz, j);
-		MSG_WriteShort (&demo.dbuf->sz, SV_CalcPing (client));
-		MSG_WriteByte (&demo.dbuf->sz, svc_updatepl);
-		MSG_WriteByte (&demo.dbuf->sz, j);
-		MSG_WriteByte (&demo.dbuf->sz, client->lossage);
-	}
-}
-
-static void
-DemoBuffer_Init (dbuffer_t *dbuffer, byte *buf, size_t size)
-{
-	dbuffer->data = buf;
-	dbuffer->maxsize = size;
-	dbuffer->start = 0;
-	dbuffer->end = 0;
-	dbuffer->last = 0;
-}
-
-/*
-	Demo_SetMsgBuf
-
-	Sets the frame message buffer
-*/
-
-void
-DemoSetMsgBuf (demobuf_t *prev, demobuf_t *cur)
-{
-	// fix the maxsize of previous msg buffer,
-	// we won't be able to write there anymore
-	if (prev != NULL)
-		prev->sz.maxsize = prev->bufsize;
-
-	demo.dbuf = cur;
-	memset (demo.dbuf, 0, sizeof (*demo.dbuf));
-
-	demo.dbuf->sz.data = demo.dbuffer.data + demo.dbuffer.end;
-	demo.dbuf->sz.maxsize = MAXSIZE;
-}
-
 static qboolean
 SV_InitRecord (void)
 {
@@ -535,15 +264,15 @@ SV_WriteRecordDemoMessage (sizebuf_t *msg)
 	byte        c;
 
 	c = 0;
-	demo.size += DWRITE (&c, sizeof (c), demo_dest);
+	/*demo.size +=*/ DWRITE (&c, sizeof (c), demo_dest);
 
 	c = dem_read;
-	demo.size += DWRITE (&c, sizeof (c), demo_dest);
+	/*demo.size +=*/ DWRITE (&c, sizeof (c), demo_dest);
 
 	len = LittleLong (msg->cursize);
-	demo.size += DWRITE (&len, 4, demo_dest);
+	/*demo.size +=*/ DWRITE (&len, 4, demo_dest);
 
-	demo.size += DWRITE (msg->data, msg->cursize, demo_dest);
+	/*demo.size +=*/ DWRITE (msg->data, msg->cursize, demo_dest);
 
 	if (demo_disk)
 		Qflush (demo_file);
@@ -556,16 +285,16 @@ SV_WriteSetDemoMessage (void)
 	byte        c;
 
 	c = 0;
-	demo.size += DWRITE (&c, sizeof (c), demo_dest);
+	/*demo.size +=*/ DWRITE (&c, sizeof (c), demo_dest);
 
 	c = dem_set;
-	demo.size += DWRITE (&c, sizeof (c), demo_dest);
+	/*demo.size +=*/ DWRITE (&c, sizeof (c), demo_dest);
 
 
 	len = LittleLong (0);
-	demo.size += DWRITE (&len, 4, demo_dest);
+	/*demo.size +=*/ DWRITE (&len, 4, demo_dest);
 	len = LittleLong (0);
-	demo.size += DWRITE (&len, 4, demo_dest);
+	/*demo.size +=*/ DWRITE (&len, 4, demo_dest);
 
 	if (demo_disk)
 		Qflush (demo_file);
@@ -648,20 +377,6 @@ SV_Record (char *name)
 	client_t   *player;
 	const char *gamedir, *s;
 
-	memset (&demo, 0, sizeof (demo));
-
-	demo.delta.pvs = dt_pvs_fat;
-	for (i = 0; i < UPDATE_BACKUP; i++) {
-		demo.delta.frames[i].entities.entities = demo_entities[i];
-		demo.delta.frames[i].players.players = demo_players[i];
-	}
-
-	DemoBuffer_Init (&demo.dbuffer, demo_buffer, sizeof (demo_buffer));
-	DemoSetMsgBuf (NULL, &demo.frames[0].buf);
-
-	demo.datagram.maxsize = sizeof (demo_datagram_data);
-	demo.datagram.data = demo_datagram_data;
-
 	demo_file = QFS_Open (name, "wb");
 	if (!demo_file) {
 		Con_Printf ("ERROR: couldn't open %s\n", name);
@@ -702,8 +417,8 @@ SV_Record (char *name)
 	} else
 		QFS_Remove (demo_text->str);
 
-	sv.demorecording = true;
-	demo.pingtime = demo.time = sv.time;
+	recorder = SVR_AddUser (demo_write, demo_frame);
+	demo_time = sv.time;
 
 /*-------------------------------------------------*/
 
@@ -927,7 +642,7 @@ SV_Record_f (void)
 		return;
 	}
 
-	if (sv.demorecording)
+	if (recorder)
 		SV_Stop (0);
 
 	dsprintf (name, "%s/%s/%s%s%s", qfs_gamedir->dir.def, sv_demoDir->string,
@@ -1023,7 +738,7 @@ SV_EasyRecord_f (void)
 		return;
 	}
 
-	if (sv.demorecording)
+	if (recorder)
 		SV_Stop (0);
 
 	if (Cmd_Argc () == 2)

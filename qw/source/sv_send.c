@@ -52,8 +52,8 @@ static __attribute__ ((unused)) const char rcsid[] =
 #include "bothdefs.h"
 #include "compat.h"
 #include "server.h"
-#include "sv_demo.h"
 #include "sv_progs.h"
+#include "sv_recorder.h"
 
 #define CHAN_AUTO   0
 #define CHAN_WEAPON 1
@@ -356,12 +356,13 @@ SV_Multicast (const vec3_t origin, int to)
 					  sv.multicast.cursize);
 	}
 
-	if (sv.demorecording) {
+	if (sv.recorders) {
 		if (reliable) {
-			DemoWrite_Begin (dem_all, 0, sv.multicast.cursize);
-			SZ_Write (&demo.dbuf->sz, sv.multicast.data, sv.multicast.cursize);
+			sizebuf_t *dbuf = SVR_WriteBegin (dem_all, 0,
+											  sv.multicast.cursize);
+			SZ_Write (dbuf, sv.multicast.data, sv.multicast.cursize);
 		} else
-			SZ_Write (&demo.datagram, sv.multicast.data, sv.multicast.cursize);
+			SZ_Write (SVR_Datagram (), sv.multicast.data, sv.multicast.cursize);
 	}
 
 	SZ_Clear (&sv.multicast);
@@ -485,6 +486,7 @@ SV_WriteClientdataToMessage (client_t *client, sizebuf_t *msg)
 {
 	edict_t    *ent, *other;
 	int         i, clnum;
+	sizebuf_t  *dbuf;
 
 	ent = client->edict;
 
@@ -511,9 +513,9 @@ SV_WriteClientdataToMessage (client_t *client, sizebuf_t *msg)
 	}
 
 	// add this to server demo
-	if (sv.demorecording && msg->cursize) {
-		DemoWrite_Begin (dem_single, clnum, msg->cursize);
-		SZ_Write (&demo.dbuf->sz, msg->data, msg->cursize);
+	if (sv.recorders && msg->cursize) {
+		dbuf = SVR_WriteBegin (dem_single, clnum, msg->cursize);
+		SZ_Write (dbuf, msg->data, msg->cursize);
 	}
 
 	// a fixangle might get lost in a dropped packet.  Oh well.
@@ -523,16 +525,17 @@ SV_WriteClientdataToMessage (client_t *client, sizebuf_t *msg)
 		MSG_WriteAngleV (msg, angles);
 		SVfloat (ent, fixangle) = 0;
 
-		if (sv.demorecording) {
-			MSG_WriteByte (&demo.datagram, svc_setangle);
-			MSG_WriteByte (&demo.datagram, clnum);
-			MSG_WriteAngleV (&demo.datagram, angles);
+		if (sv.recorders) {
+			dbuf = SVR_Datagram ();
+			MSG_WriteByte (dbuf, svc_setangle);
+			MSG_WriteByte (dbuf, clnum);
+			MSG_WriteAngleV (dbuf, angles);
 		}
 	}
 }
 
-static void
-get_stats (edict_t *ent, int spectator, int stats[MAX_CL_STATS])
+void
+SV_GetStats (edict_t *ent, int spectator, int stats[])
 {
 	memset (stats, 0, sizeof (int) * MAX_CL_STATS);
 
@@ -582,7 +585,7 @@ SV_UpdateClientStats (client_t *client)
 	if (client->spectator && client->spec_track > 0)
 		ent = svs.clients[client->spec_track - 1].edict;
 
-	get_stats (ent, client->spectator, stats);
+	SV_GetStats (ent, client->spectator, stats);
 
 	for (i = 0; i < MAX_CL_STATS; i++)
 		if (stats[i] != client->stats[i]) {
@@ -651,6 +654,7 @@ SV_UpdateToReliableMessages (void)
 	client_t   *client;
 	edict_t    *ent;
 	int         i, j;
+	sizebuf_t  *dbuf;
 
 	// check for changes to be sent over the reliable streams to all clients
 	for (i = 0, host_client = svs.clients; i < MAX_CLIENTS; i++, host_client++) {
@@ -670,12 +674,11 @@ SV_UpdateToReliableMessages (void)
 										 SVfloat (host_client->edict, frags));
 			}
 
-			if (sv.demorecording) {
-				DemoWrite_Begin (dem_all, 0, 4);
-				MSG_WriteByte (&demo.dbuf->sz, svc_updatefrags);
-				MSG_WriteByte (&demo.dbuf->sz, i);
-				MSG_WriteShort (&demo.dbuf->sz,
-								SVfloat (host_client->edict, frags));
+			if (sv.recorders) {
+				dbuf = SVR_WriteBegin (dem_all, 0, 4);
+				MSG_WriteByte (dbuf, svc_updatefrags);
+				MSG_WriteByte (dbuf, i);
+				MSG_WriteShort (dbuf, SVfloat (host_client->edict, frags));
 			}
 
 			host_client->old_frags = SVfloat (host_client->edict, frags);
@@ -692,10 +695,10 @@ SV_UpdateToReliableMessages (void)
 				MSG_ReliableWrite_Float (&host_client->backbuf,
 										 host_client->entgravity);
 			}
-			if (sv.demorecording) {
-				DemoWrite_Begin (dem_single, i, 5);
-				MSG_WriteByte (&demo.dbuf->sz, svc_entgravity);
-				MSG_WriteFloat (&demo.dbuf->sz, host_client->entgravity);
+			if (sv.recorders) {
+				dbuf = SVR_WriteBegin (dem_single, i, 5);
+				MSG_WriteByte (dbuf, svc_entgravity);
+				MSG_WriteFloat (dbuf, host_client->entgravity);
 			}
 		}
 		if (sv_fields.maxspeed != -1
@@ -707,10 +710,10 @@ SV_UpdateToReliableMessages (void)
 				MSG_ReliableWrite_Float (&host_client->backbuf,
 										 host_client->maxspeed);
 			}
-			if (sv.demorecording) {
-				DemoWrite_Begin (dem_single, i, 5);
-				MSG_WriteByte (&demo.dbuf->sz, svc_maxspeed);
-				MSG_WriteFloat (&demo.dbuf->sz, host_client->maxspeed);
+			if (sv.recorders) {
+				dbuf = SVR_WriteBegin (dem_single, i, 5);
+				MSG_WriteByte (dbuf, svc_maxspeed);
+				MSG_WriteFloat (dbuf, host_client->maxspeed);
 			}
 		}
 	}
@@ -733,13 +736,13 @@ SV_UpdateToReliableMessages (void)
 		SZ_Write (&client->datagram, sv.datagram.data, sv.datagram.cursize);
 	}
 
-	if (sv.demorecording && sv.reliable_datagram.cursize) {
-		DemoWrite_Begin (dem_all, 0, sv.reliable_datagram.cursize);
-		SZ_Write (&demo.dbuf->sz, sv.reliable_datagram.data,
+	if (sv.recorders && sv.reliable_datagram.cursize) {
+		dbuf = SVR_WriteBegin (dem_all, 0, sv.reliable_datagram.cursize);
+		SZ_Write (dbuf, sv.reliable_datagram.data,
 				  sv.reliable_datagram.cursize);
 	}
-	if (sv.demorecording)
-		SZ_Write (&demo.datagram, sv.datagram.data, sv.datagram.cursize);
+	if (sv.recorders)
+		SZ_Write (SVR_Datagram (), sv.datagram.data, sv.datagram.cursize);
 
 	SZ_Clear (&sv.reliable_datagram);
 	SZ_Clear (&sv.datagram);
@@ -803,100 +806,6 @@ SV_SendClientMessages (void)
 	}
 }
 
-void
-SV_SendDemoMessage (void)
-{
-	int         i, j;
-	client_t   *c;
-	byte        buf[MAX_DATAGRAM];
-	sizebuf_t	msg;
-	int         stats[MAX_CL_STATS];
-	float       min_fps;
-
-	if (sv_demoPings->value && sv.time - demo.pingtime > sv_demoPings->value) {
-		SV_DemoPings ();
-		demo.pingtime = sv.time;
-	}
-
-	if (!sv_demofps->value)
-		min_fps = 20.0;
-	else
-		min_fps = sv_demofps->value;
-
-	min_fps = max (4, min_fps);
-	if (!demo.forceFrame && sv.time - demo.time < 1.0 / min_fps)
-		return;
-	demo.forceFrame = 0;
-
-	for (i = 0, c = svs.clients; i < MAX_CLIENTS; i++, c++) {
-		if (c->state != cs_spawned && c->state != cs_server)
-			continue;
-
-		if (c->spectator)
-			continue;
-
-		get_stats (c->edict, 0, stats);
-
-		for (j = 0 ; j < MAX_CL_STATS ; j++)
-			if (stats[j] != demo.stats[i][j]) {
-				demo.stats[i][j] = stats[j];
-				if (stats[j] >=0 && stats[j] <= 255) {
-					DemoWrite_Begin (dem_stats, i, 3);
-					MSG_WriteByte (&demo.dbuf->sz, svc_updatestat);
-					MSG_WriteByte (&demo.dbuf->sz, j);
-					MSG_WriteByte (&demo.dbuf->sz, stats[j]);
-				} else {
-					DemoWrite_Begin (dem_stats, i, 6);
-					MSG_WriteByte (&demo.dbuf->sz, svc_updatestatlong);
-					MSG_WriteByte (&demo.dbuf->sz, j);
-					MSG_WriteLong (&demo.dbuf->sz, stats[j]);
-				}
-			}
-	}
-
-	// send over all the objects that are in the PVS
-	// this will include clients, a packetentities, and
-	// possibly a nails update
-	msg.data = buf;
-	msg.maxsize = sizeof (buf);
-	msg.cursize = 0;
-	msg.allowoverflow = true;
-	msg.overflowed = false;
-
-	if (!demo.delta.delta_sequence)
-		demo.delta.delta_sequence = -1;
-	demo.delta.cur_frame = (demo.delta.delta_sequence + 1) & UPDATE_MASK;
-	demo.delta.out_frame = demo.delta.cur_frame;
-	SV_WriteEntitiesToClient (&demo.delta, &msg);
-	DemoWrite_Begin (dem_all, 0, msg.cursize);
-	SZ_Write (&demo.dbuf->sz, msg.data, msg.cursize);
-	// copy the accumulated multicast datagram
-	// for this client out to the message
-	if (demo.datagram.cursize) {
-		DemoWrite_Begin (dem_all, 0, demo.datagram.cursize);
-		SZ_Write (&demo.dbuf->sz, demo.datagram.data, demo.datagram.cursize);
-		SZ_Clear (&demo.datagram);
-	}
-
-	demo.delta.delta_sequence++;
-	demo.delta.delta_sequence &= UPDATE_MASK;
-	demo.frames[demo.parsecount & DEMO_FRAMES_MASK].time = demo.time = sv.time;
-
-	// that's a backup of 3sec at 20fps, should be enough
-	// FIXME make this framerate dependent.
-	// eg. sv_fps->int_val * sv_packetdelay->float_val
-	if (demo.parsecount - demo.lastwritten > 60) {
-		SV_DemoWritePackets (1);
-	}
-
-	demo.parsecount++;
-	DemoSetMsgBuf (demo.dbuf,
-				   &demo.frames[demo.parsecount & DEMO_FRAMES_MASK].buf);
-
-	if (sv_demoMaxSize->int_val && demo.size > sv_demoMaxSize->int_val * 1024)
-		SV_Stop (1);
-}
-
 #if defined(_WIN32) && !defined(__GNUC__)
 # pragma optimize( "", on )
 #endif
@@ -947,11 +856,12 @@ SV_ClientPrintf (int recorder, client_t *cl, int level, const char *fmt, ...)
 	vsnprintf (string, sizeof (string), fmt, argptr);
 	va_end (argptr);
 
-	if (recorder && sv.demorecording) {
-		DemoWrite_Begin (dem_single, cl - svs.clients, strlen (string) + 3);
-		MSG_WriteByte (&demo.dbuf->sz, svc_print);
-		MSG_WriteByte (&demo.dbuf->sz, level);
-		MSG_WriteString (&demo.dbuf->sz, string);
+	if (recorder && sv.recorders) {
+		sizebuf_t *dbuf = SVR_WriteBegin (dem_single, cl - svs.clients,
+										  strlen (string) + 3);
+		MSG_WriteByte (dbuf, svc_print);
+		MSG_WriteByte (dbuf, level);
+		MSG_WriteString (dbuf, string);
 	}
 
 	SV_PrintToClient (cl, level, string);
@@ -985,11 +895,12 @@ SV_BroadcastPrintf (int level, const char *fmt, ...)
 		SV_PrintToClient (cl, level, string);
 	}
 
-	if (sv.demorecording) {
-		DemoWrite_Begin (dem_all, cl - svs.clients, strlen (string) + 3);
-		MSG_WriteByte (&demo.dbuf->sz, svc_print);
-		MSG_WriteByte (&demo.dbuf->sz, level);
-		MSG_WriteString (&demo.dbuf->sz, string);
+	if (sv.recorders) {
+		sizebuf_t *dbuf = SVR_WriteBegin (dem_all, cl - svs.clients,
+										  strlen (string) + 3);
+		MSG_WriteByte (dbuf, svc_print);
+		MSG_WriteByte (dbuf, level);
+		MSG_WriteString (dbuf, string);
 	}
 }
 
