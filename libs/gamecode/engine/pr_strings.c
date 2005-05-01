@@ -138,6 +138,7 @@ new_string_ref (progs_t *pr)
 static void
 free_string_ref (progs_t *pr, strref_t *sr)
 {
+	sr->type = str_free;
 	if (sr->prev)
 		*sr->prev = sr->next;
 	sr->next = pr->free_string_refs;
