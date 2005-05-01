@@ -1,16 +1,16 @@
-void (string str) print = #1;
-integer () errno = #3;
-string (integer err) strerror = #4;
-integer (...) open = #5; // string path, float flags[, float mode]
-integer (integer handle) close = #6;
-string (integer handle, integer count, integer []result) read = #7;
-integer (integer handle, string buffer, integer count) write = #8;
-integer (integer handle, integer pos, integer whence) seek = #9;
+void (string str) print = #0;
+integer () errno = #0;
+string (integer err) strerror = #0;
+integer (...) open = #0; // string path, float flags[, float mode]
+integer (integer handle) close = #0;
+string (integer handle, integer count, integer []result) read = #0;
+integer (integer handle, string buffer, integer count) write = #0;
+integer (integer handle, integer pos, integer whence) seek = #0;
 
-void() traceon = #10;          // turns statment trace on
-void() traceoff = #11;
+//void() traceon = #0;          // turns statment trace on
+//void() traceoff = #0;
 
-void (...) printf = #12;
+void (...) printf = #0;
 
 
 float time;

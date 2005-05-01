@@ -123,6 +123,7 @@ bi_seek (progs_t *pr)
 	R_INT (pr) = lseek (handle, pos, whence);
 }
 
+/*
 static void
 bi_traceon (progs_t *pr)
 {
@@ -135,7 +136,7 @@ bi_traceoff (progs_t *pr)
 {   
 	pr->pr_trace = false;
 }
-
+*/
 static void
 bi_printf (progs_t *pr)
 {
@@ -151,17 +152,17 @@ bi_printf (progs_t *pr)
 }
 
 static builtin_t builtins[] = {
-	{"print",		bi_print,		1},
-	{"errno",		bi_errno,		3},
-	{"strerror",	bi_strerror,	4},
-	{"open",		bi_open,		5},
-	{"close",		bi_close,		6},
-	{"read",		bi_read,		7},
-	{"write",		bi_write,		8},
-	{"seek",		bi_seek,		9},
-	{"traceon",		bi_traceon,		10},
-	{"traceoff",	bi_traceoff,	11},
-	{"printf",		bi_printf,		12},
+	{"print",		bi_print,		-1},
+	{"errno",		bi_errno,		-1},
+	{"strerror",	bi_strerror,	-1},
+	{"open",		bi_open,		-1},
+	{"close",		bi_close,		-1},
+	{"read",		bi_read,		-1},
+	{"write",		bi_write,		-1},
+	{"seek",		bi_seek,		-1},
+//	{"traceon",		bi_traceon,		-1},
+//	{"traceoff",	bi_traceoff,	-1},
+	{"printf",		bi_printf,		-1},
 	{0}
 };
 

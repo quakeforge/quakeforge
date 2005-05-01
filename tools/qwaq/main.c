@@ -122,6 +122,7 @@ init_qf (void)
 	PR_Init_Cvars ();
 	PR_Init ();
 	RUA_Init (&pr, 0);
+	PR_Cmds_Init(&pr);
 	BI_Init (&pr);
 }
 
