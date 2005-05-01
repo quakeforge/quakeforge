@@ -123,6 +123,15 @@ demo_frame (void)
 	return 1;
 }
 
+static void
+demo_finish (sizebuf_t *msg)
+{
+	// write a disconnect message to the demo file
+	MSG_WriteByte (msg, svc_disconnect);
+	MSG_WriteString (msg, "EndOfDemo");
+	recorder = 0;
+}
+
 /*
 	SV_Stop
 
@@ -131,8 +140,6 @@ demo_frame (void)
 void
 SV_Stop (int reason)
 {
-	sizebuf_t  *dbuf;
-
 	if (!recorder) {
 		Con_Printf ("Not recording a demo.\n");
 		return;
@@ -148,7 +155,6 @@ SV_Stop (int reason)
 
 		demo_file = NULL;
 		SVR_RemoveUser (recorder);
-		recorder = 0;
 
 		SV_BroadcastPrintf (PRINT_CHAT,
 							"Server recording canceled, demo removed\n");
@@ -157,30 +163,13 @@ SV_Stop (int reason)
 
 		return;
 	}
-	// write a disconnect message to the demo file
 
 	// clearup to be sure message will fit
-	dbuf = SVR_WriteBegin (dem_all, 0, 2 + strlen ("EndOfDemo"));
-	MSG_WriteByte (dbuf, svc_disconnect);
-	MSG_WriteString (dbuf, "EndOfDemo");
-/* XXX
-	demo.dbuf->sz.cursize = 0;
-	demo.dbuf->h = NULL;
-	demo.dbuf->bufsize = 0;
-	DemoWrite_Begin (
 
-	SV_DemoWritePackets (demo.parsecount - demo.lastwritten + 1);
-
-	// finish up
-	if (!demo_disk) {
-		Qwrite (demo_file, svs.demomem, demo.size - demo_size);
-		Qflush (demo_file);
-	}
-*/
-	Qclose (demo_file);
-
-	demo_file = NULL;
 	SVR_RemoveUser (recorder);
+
+	Qclose (demo_file);
+	demo_file = NULL;
 	recorder = 0;
 	if (!reason)
 		SV_BroadcastPrintf (PRINT_CHAT, "Server recording completed\n");
@@ -417,7 +406,7 @@ SV_Record (char *name)
 	} else
 		QFS_Remove (demo_text->str);
 
-	recorder = SVR_AddUser (demo_write, demo_frame);
+	recorder = SVR_AddUser (demo_write, demo_frame, demo_finish);
 	demo_time = sv.time;
 
 /*-------------------------------------------------*/

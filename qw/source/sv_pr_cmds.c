@@ -601,13 +601,14 @@ PF_stuffcmd (progs_t *pr)
 
 	p = strrchr (buf, '\n');
 	if (p) {
-		char t = p[1];
+		char        t = p[1];
+		int         len = (p - buf) + 2;
 		p[1] = 0;
-		MSG_ReliableWrite_Begin (&cl->backbuf, svc_stufftext, 2 + p - buf);
+		MSG_ReliableWrite_Begin (&cl->backbuf, svc_stufftext, len + 1);
 		MSG_ReliableWrite_String (&cl->backbuf, buf);
 		if (sv.recorders) {
 			sizebuf_t  *dbuf;
-			dbuf = SVR_WriteBegin (dem_single, cl - svs.clients, 2 + p - buf);
+			dbuf = SVR_WriteBegin (dem_single, cl - svs.clients, len + 1);
 			MSG_WriteByte (dbuf, svc_stufftext);
 			MSG_WriteString (dbuf, buf);
 		}

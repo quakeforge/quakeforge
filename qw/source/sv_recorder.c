@@ -103,8 +103,9 @@ typedef struct rec_s {
 
 struct recorder_s {
 	recorder_t *next;
-	void (*writer)(sizebuf_t *);
+	void (*write)(sizebuf_t *);
 	int (*frame)(void);
+	void (*finish)(sizebuf_t *);
 };
 
 static rec_t    rec;
@@ -182,7 +183,8 @@ write_msg (sizebuf_t *msg, int type, int to, float time, sizebuf_t *dst)
 				MSG_WriteByte (dst, rec.lasttype | (rec.lastto << 3));
 				break;
 			default:
-				//XXX SV_Stop (0);
+				while (sv.recorders)
+					SVR_RemoveUser (sv.recorders);
 				Con_Printf ("bad demo message type:%d", type);
 				return;
 		}
@@ -332,7 +334,8 @@ SVR_Init (void)
 }
 
 recorder_t *
-SVR_AddUser (void (*writer)(sizebuf_t *), int (*frame)(void))
+SVR_AddUser (void (*write)(sizebuf_t *), int (*frame)(void),
+			 void (*finish)(sizebuf_t *))
 {
 	recorder_t *r;
 
@@ -350,8 +353,9 @@ SVR_AddUser (void (*writer)(sizebuf_t *), int (*frame)(void))
 	r->next = sv.recorders;
 	sv.recorders = r;
 
-	r->writer = writer;
+	r->write = write;
 	r->frame = frame;
+	r->finish = finish;
 
 	return r;
 }
@@ -360,12 +364,34 @@ void
 SVR_RemoveUser (recorder_t *r)
 {
 	recorder_t **_r;
+	sizebuf_t   msg;//, *dbuf;
+
+	memset (&msg, 0, sizeof (msg));
+	msg.data = msg_buffer;
+	msg.maxsize = sizeof (msg_buffer);
+
+//	rec.dbuf->sz.cursize = 0;
+//	rec.dbuf->h = 0;
+//	rec.dbuf->bufsize = 0;
+
+	MSG_WriteByte (&msg, 0);
+	MSG_WriteByte (&msg, dem_all);
+	MSG_WriteLong (&msg, 0);
+	r->finish (&msg);
+	if (msg.cursize > 6) {
+		msg.data[2] = ((msg.cursize - 6) >>  0) & 0xff;
+		msg.data[3] = ((msg.cursize - 6) >>  8) & 0xff;
+		msg.data[4] = ((msg.cursize - 6) >> 16) & 0xff;
+		msg.data[5] = ((msg.cursize - 6) >> 24) & 0xff;
+		r->write (&msg);
+	}
 
 	for (_r = &sv.recorders; *_r; _r = &(*_r)->next) {
 		if (*_r == r) {
 			*_r = (*_r)->next;
 			r->next = free_recorders;
 			free_recorders = r;
+			break;
 		}
 	}
 }
@@ -409,14 +435,12 @@ SVR_WritePacket (void)
 	sizebuf_t   msg;
 	recorder_t *r;
 
-	write_datagram ();
-
 	memset (&msg, 0, sizeof (msg));
 	msg.data = msg_buffer;
 	msg.maxsize = sizeof (msg_buffer);
 	msg.allowoverflow = true;
 
-	frame = &rec.frames[rec.lastwritten & DEMO_FRAMES_MASK];
+	frame = &rec.frames[rec.lastwritten++ & DEMO_FRAMES_MASK];
 	time = frame->time;
 
 	rec.dbuf = &frame->buf;
@@ -424,13 +448,10 @@ SVR_WritePacket (void)
 	write_to_msg (0, 0, time, &msg);
 
 	for (r = sv.recorders; r; r = r->next)
-		r->writer (&msg);
+		r->write (&msg);
 
 	rec.dbuf = &rec.frames[rec.parsecount & DEMO_FRAMES_MASK].buf;
 	rec.dbuf->sz.maxsize = MAXSIZE + rec.dbuf->bufsize;
-
-	rec.parsecount++;
-	set_msgbuf (rec.dbuf, &rec.frames[rec.parsecount & DEMO_FRAMES_MASK].buf);
 }
 
 sizebuf_t *
@@ -572,5 +593,10 @@ SV_SendDemoMessage (void)
 	msg.allowoverflow = true;
 	msg.overflowed = false;
 
+	write_datagram ();
+
 	SVR_WritePacket ();
+
+	rec.parsecount++;
+	set_msgbuf (rec.dbuf, &rec.frames[rec.parsecount & DEMO_FRAMES_MASK].buf);
 }
