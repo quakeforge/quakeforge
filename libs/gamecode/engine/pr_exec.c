@@ -914,7 +914,7 @@ PR_ExecuteProgram (progs_t * pr, func_t fnum)
 				break;
 			case OP_LT_I:
 			case OP_LT_P:
-				OPC.integer_var = OPA.uinteger_var < OPB.uinteger_var;
+				OPC.integer_var = OPA.integer_var < OPB.integer_var;
 				break;
 			case OP_LT_U:
 				OPC.integer_var = OPA.uinteger_var < OPB.uinteger_var;
