@@ -863,12 +863,11 @@ SV_SendDemoMessage (void)
 	msg.allowoverflow = true;
 	msg.overflowed = false;
 
-	if (!demo.recorder.delta.delta_sequence)
-		demo.recorder.delta.delta_sequence = -1;
-	demo.recorder.delta.cur_frame = (demo.recorder.delta.delta_sequence + 1)
-									& UPDATE_MASK;
-	demo.recorder.delta.out_frame = demo.recorder.delta.cur_frame;
-	SV_WriteEntitiesToClient (&demo.recorder.delta, &msg);
+	if (!demo.delta.delta_sequence)
+		demo.delta.delta_sequence = -1;
+	demo.delta.cur_frame = (demo.delta.delta_sequence + 1) & UPDATE_MASK;
+	demo.delta.out_frame = demo.delta.cur_frame;
+	SV_WriteEntitiesToClient (&demo.delta, &msg);
 	DemoWrite_Begin (dem_all, 0, msg.cursize);
 	SZ_Write (&demo.dbuf->sz, msg.data, msg.cursize);
 	// copy the accumulated multicast datagram
@@ -879,9 +878,8 @@ SV_SendDemoMessage (void)
 		SZ_Clear (&demo.datagram);
 	}
 
-	demo.recorder.delta.delta_sequence =
-		demo.recorder.netchan.incoming_sequence & UPDATE_MASK;
-	demo.recorder.netchan.incoming_sequence++;
+	demo.delta.delta_sequence++;
+	demo.delta.delta_sequence &= UPDATE_MASK;
 	demo.frames[demo.parsecount & DEMO_FRAMES_MASK].time = demo.time = sv.time;
 
 	// that's a backup of 3sec at 20fps, should be enough

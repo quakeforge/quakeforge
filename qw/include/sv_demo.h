@@ -37,27 +37,8 @@ typedef struct header_s {
 	byte        full;
 	int         to;
 	int         size;
-	byte        data[1];				// gcc doesn't allow [] (?)
+	byte        data[1];
 } header_t;
-
-typedef struct demoinfo_s {
-	vec3_t      origin;
-	vec3_t      angles;
-	int         weaponframe;
-	int         skinnum;
-	int         model;
-	int         effects;
-} demoinfo_t;
-
-typedef struct demo_client_s {
-	demoinfo_t  info;
-	float       sec;
-	int         parsecount;
-	vec3_t      angle;
-	float       cmdtime;
-	int         flags;
-	int         frame;
-} demo_client_t;
 
 typedef struct demobuf_s {
 	sizebuf_t   sz;
@@ -66,7 +47,6 @@ typedef struct demobuf_s {
 } demobuf_t;
 
 typedef struct demo_frame_s {
-	demo_client_t clients[MAX_CLIENTS];
 	double      time;
 	demobuf_t   buf;
 } demo_frame_t;
@@ -75,36 +55,23 @@ typedef struct demo_frame_s {
 #define DEMO_FRAMES_MASK (DEMO_FRAMES - 1)
 
 typedef struct demo_s {
-	QFile      *file;
-
 	demobuf_t  *dbuf;
-
 	dbuffer_t   dbuffer;
-	byte        buffer[20 * MAX_MSGLEN];
-
 	sizebuf_t   datagram;
-	byte        datagram_data[MAX_DATAGRAM];
 
 	int         lastto;
 	int         lasttype;
 	double      time, pingtime;
 
-	client_t    recorder;
+	delta_t     delta;
 	int         stats[MAX_CLIENTS][MAX_CL_STATS];	// ouch!
-	demoinfo_t  info[MAX_CLIENTS];
 	demo_frame_t frames[DEMO_FRAMES];
+	int         forceFrame;
 
 	int         parsecount;
 	int         lastwritten;
 
-	int         size;
-	qboolean    disk;
-	void       *dest;
-	byte       *mfile;
-	struct dstring_s *name;
-	struct dstring_s *text;
-
-	int         forceFrame;
+	int         size;			// XXX doesn't belong here
 } demo_t;
 
 extern demo_t      demo;

@@ -52,7 +52,15 @@ static __attribute__ ((unused)) const char rcsid[] =
 #include "sv_demo.h"
 #include "sv_progs.h"
 
-demo_t      demo;
+demo_t          demo;
+static byte     demo_buffer[20 * MAX_MSGLEN];
+static byte     demo_datagram_data[MAX_DATAGRAM];
+static QFile   *demo_file;
+static byte    *demo_mfile;
+static qboolean demo_disk;
+static dstring_t *demo_name;		// filename of mvd
+static dstring_t *demo_text;		// filename of description file
+static void    *demo_dest;
 
 #define MIN_DEMO_MEMORY 0x100000
 #define USECACHE (sv_demoUseCache->int_val && svs.demomemsize)
@@ -105,7 +113,7 @@ SV_WriteDemoMessage (sizebuf_t *msg, int type, int to, float time)
 		msec = 0;
 
 	c = msec;
-	demo.size += DWRITE (&c, sizeof (c), demo.dest);
+	demo.size += DWRITE (&c, sizeof (c), demo_dest);
 
 	if (demo.lasttype != type || demo.lastto != to) {
 		demo.lasttype = type;
@@ -113,19 +121,19 @@ SV_WriteDemoMessage (sizebuf_t *msg, int type, int to, float time)
 		switch (demo.lasttype) {
 			case dem_all:
 				c = dem_all;
-				demo.size += DWRITE (&c, sizeof (c), demo.dest);
+				demo.size += DWRITE (&c, sizeof (c), demo_dest);
 				break;
 			case dem_multiple:
 				c = dem_multiple;
-				demo.size += DWRITE (&c, sizeof (c), demo.dest);
+				demo.size += DWRITE (&c, sizeof (c), demo_dest);
 
 				i = LittleLong (demo.lastto);
-				demo.size += DWRITE (&i, sizeof (i), demo.dest);
+				demo.size += DWRITE (&i, sizeof (i), demo_dest);
 				break;
 			case dem_single:
 			case dem_stats:
 				c = demo.lasttype + (demo.lastto << 3);
-				demo.size += DWRITE (&c, sizeof (c), demo.dest);
+				demo.size += DWRITE (&c, sizeof (c), demo_dest);
 				break;
 			default:
 				SV_Stop (0);
@@ -134,21 +142,21 @@ SV_WriteDemoMessage (sizebuf_t *msg, int type, int to, float time)
 		}
 	} else {
 		c = dem_read;
-		demo.size += DWRITE (&c, sizeof (c), demo.dest);
+		demo.size += DWRITE (&c, sizeof (c), demo_dest);
 	}
 
 
 	len = LittleLong (msg->cursize);
-	demo.size += DWRITE (&len, 4, demo.dest);
-	demo.size += DWRITE (msg->data, msg->cursize, demo.dest);
+	demo.size += DWRITE (&len, 4, demo_dest);
+	demo.size += DWRITE (msg->data, msg->cursize, demo_dest);
 
-	if (demo.disk)
-		Qflush (demo.file);
+	if (demo_disk)
+		Qflush (demo_file);
 	else if (demo.size - demo_size > demo_max_size) {
 		demo_size = demo.size;
-		demo.mfile -= 0x80000;
-		Qwrite (demo.file, svs.demomem, 0x80000);
-		Qflush (demo.file);
+		demo_mfile -= 0x80000;
+		Qwrite (demo_file, svs.demomem, 0x80000);
+		Qflush (demo_file);
 		memmove (svs.demomem, svs.demomem + 0x80000, demo.size - 0x80000);
 	}
 }
@@ -357,13 +365,13 @@ SV_Stop (int reason)
 
 	if (reason == 2) {
 		// stop and remove
-		if (demo.disk)
-			Qclose (demo.file);
+		if (demo_disk)
+			Qclose (demo_file);
 
-		QFS_Remove (demo.name->str);
-		QFS_Remove (demo.text->str);
+		QFS_Remove (demo_name->str);
+		QFS_Remove (demo_text->str);
 
-		demo.file = NULL;
+		demo_file = NULL;
 		sv.demorecording = false;
 
 		SV_BroadcastPrintf (PRINT_CHAT,
@@ -385,14 +393,14 @@ SV_Stop (int reason)
 
 	SV_DemoWritePackets (demo.parsecount - demo.lastwritten + 1);
 	// finish up
-	if (!demo.disk) {
-		Qwrite (demo.file, svs.demomem, demo.size - demo_size);
-		Qflush (demo.file);
+	if (!demo_disk) {
+		Qwrite (demo_file, svs.demomem, demo.size - demo_size);
+		Qflush (demo_file);
 	}
 
-	Qclose (demo.file);
+	Qclose (demo_file);
 
-	demo.file = NULL;
+	demo_file = NULL;
 	sv.demorecording = false;
 	if (!reason)
 		SV_BroadcastPrintf (PRINT_CHAT, "Server recording completed\n");
@@ -409,8 +417,8 @@ SV_Stop (int reason)
 		if ((p = strstr (sv_onrecordfinish->string, " ")) != NULL)
 			*p = 0;						// strip parameters
 
-		strcpy (path, demo.name->str);
-		strcpy (path + strlen (demo.name->str) - 3, "txt");
+		strcpy (path, demo_name->str);
+		strcpy (path + strlen (demo_name->str) - 3, "txt");
 
 		sv_redirected = RD_NONE;		// onrecord script is called always
 										// from the console
@@ -501,12 +509,12 @@ SV_InitRecord (void)
 {
 	if (!USECACHE) {
 		dwrite = &Qwrite;
-		demo.dest = demo.file;
-		demo.disk = true;
+		demo_dest = demo_file;
+		demo_disk = true;
 	} else {
 		dwrite = &memwrite;
-		demo.mfile = svs.demomem;
-		demo.dest = &demo.mfile;
+		demo_mfile = svs.demomem;
+		demo_dest = &demo_mfile;
 	}
 
 	demo_size = 0;
@@ -527,18 +535,18 @@ SV_WriteRecordDemoMessage (sizebuf_t *msg)
 	byte        c;
 
 	c = 0;
-	demo.size += DWRITE (&c, sizeof (c), demo.dest);
+	demo.size += DWRITE (&c, sizeof (c), demo_dest);
 
 	c = dem_read;
-	demo.size += DWRITE (&c, sizeof (c), demo.dest);
+	demo.size += DWRITE (&c, sizeof (c), demo_dest);
 
 	len = LittleLong (msg->cursize);
-	demo.size += DWRITE (&len, 4, demo.dest);
+	demo.size += DWRITE (&len, 4, demo_dest);
 
-	demo.size += DWRITE (msg->data, msg->cursize, demo.dest);
+	demo.size += DWRITE (msg->data, msg->cursize, demo_dest);
 
-	if (demo.disk)
-		Qflush (demo.file);
+	if (demo_disk)
+		Qflush (demo_file);
 }
 
 static void
@@ -548,19 +556,19 @@ SV_WriteSetDemoMessage (void)
 	byte        c;
 
 	c = 0;
-	demo.size += DWRITE (&c, sizeof (c), demo.dest);
+	demo.size += DWRITE (&c, sizeof (c), demo_dest);
 
 	c = dem_set;
-	demo.size += DWRITE (&c, sizeof (c), demo.dest);
+	demo.size += DWRITE (&c, sizeof (c), demo_dest);
 
 
 	len = LittleLong (0);
-	demo.size += DWRITE (&len, 4, demo.dest);
+	demo.size += DWRITE (&len, 4, demo_dest);
 	len = LittleLong (0);
-	demo.size += DWRITE (&len, 4, demo.dest);
+	demo.size += DWRITE (&len, 4, demo_dest);
 
-	if (demo.disk)
-		Qflush (demo.file);
+	if (demo_disk)
+		Qflush (demo_file);
 }
 
 static const char *
@@ -640,27 +648,22 @@ SV_Record (char *name)
 	client_t   *player;
 	const char *gamedir, *s;
 
-	{
-		// save over memset
-		dstring_t  *tn = demo.name, *tt = demo.text;
-		memset (&demo, 0, sizeof (demo));
-		dstring_clearstr (demo.name = tn);
-		dstring_clearstr (demo.text = tt);
-	}
-	demo.recorder.delta.pvs = dt_pvs_fat;
+	memset (&demo, 0, sizeof (demo));
+
+	demo.delta.pvs = dt_pvs_fat;
 	for (i = 0; i < UPDATE_BACKUP; i++) {
-		demo.recorder.delta.frames[i].entities.entities = demo_entities[i];
-		demo.recorder.delta.frames[i].players.players = demo_players[i];
+		demo.delta.frames[i].entities.entities = demo_entities[i];
+		demo.delta.frames[i].players.players = demo_players[i];
 	}
 
-	DemoBuffer_Init (&demo.dbuffer, demo.buffer, sizeof (demo.buffer));
+	DemoBuffer_Init (&demo.dbuffer, demo_buffer, sizeof (demo_buffer));
 	DemoSetMsgBuf (NULL, &demo.frames[0].buf);
 
-	demo.datagram.maxsize = sizeof (demo.datagram_data);
-	demo.datagram.data = demo.datagram_data;
+	demo.datagram.maxsize = sizeof (demo_datagram_data);
+	demo.datagram.data = demo_datagram_data;
 
-	demo.file = QFS_Open (name, "wb");
-	if (!demo.file) {
+	demo_file = QFS_Open (name, "wb");
+	if (!demo_file) {
 		Con_Printf ("ERROR: couldn't open %s\n", name);
 		return;
 	}
@@ -670,19 +673,19 @@ SV_Record (char *name)
 	s = name + strlen (name);
 	while (s > name && *s != '/')
 		s--;
-	dstring_copystr (demo.name, s + (*s == '/'));
+	dstring_copystr (demo_name, s + (*s == '/'));
 
 	SV_BroadcastPrintf (PRINT_CHAT, "Server started recording (%s):\n%s\n",
-						demo.disk ? "disk" : "memory", demo.name->str);
-	Cvar_Set (serverdemo, demo.name->str);
+						demo_disk ? "disk" : "memory", demo_name->str);
+	Cvar_Set (serverdemo, demo_name->str);
 
-	dstring_copystr (demo.text, name);
-	strcpy (demo.text->str + strlen (demo.text->str) - 3, "txt");
+	dstring_copystr (demo_text, name);
+	strcpy (demo_text->str + strlen (demo_text->str) - 3, "txt");
 
 	if (sv_demotxt->int_val) {
 		QFile      *f;
 
-		f = QFS_Open (demo.text->str, "w+t");
+		f = QFS_Open (demo_text->str, "w+t");
 		if (f != NULL) {
 			char        date[20];
 			time_t      tim;
@@ -697,7 +700,7 @@ SV_Record (char *name)
 			Qclose (f);
 		}
 	} else
-		QFS_Remove (demo.text->str);
+		QFS_Remove (demo_text->str);
 
 	sv.demorecording = true;
 	demo.pingtime = demo.time = sv.time;
@@ -1078,8 +1081,8 @@ Demo_Init (void)
 		size = MIN_DEMO_MEMORY;
 	}
 
-	demo.name = dstring_newstr ();
-	demo.text = dstring_newstr ();
+	demo_name = dstring_newstr ();
+	demo_text = dstring_newstr ();
 
 	svs.demomem = Hunk_AllocName (size, "demo");
 	svs.demomemsize = size;
