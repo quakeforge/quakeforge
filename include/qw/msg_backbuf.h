@@ -45,9 +45,9 @@ typedef struct backbuf_s {
 } backbuf_t;
 
 int MSG_ReliableCheckSize (backbuf_t *rel, int maxsize, int minsize);
-void MSG_ReliableCheckBlock(backbuf_t *rel, int maxsize);
+sizebuf_t *MSG_ReliableCheckBlock(backbuf_t *rel, int maxsize);
 void MSG_Reliable_FinishWrite(backbuf_t *rel);
-void MSG_ReliableWrite_Begin(backbuf_t *rel, int c, int maxsize);
+sizebuf_t *MSG_ReliableWrite_Begin(backbuf_t *rel, int c, int maxsize);
 void MSG_ReliableWrite_Angle(backbuf_t *rel, float f);
 void MSG_ReliableWrite_Angle16(backbuf_t *rel, float f);
 void MSG_ReliableWrite_Byte(backbuf_t *rel, int c);

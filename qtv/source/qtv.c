@@ -383,7 +383,7 @@ main (int argc, const char *argv[])
 		Cbuf_Execute_Stack (qtv_cbuf);
 
 		Sys_CheckInput (1, net_socket);
-		realtime = Sys_DoubleTime ();
+		realtime = Sys_DoubleTime () + 1;
 
 		qtv_read_packets ();
 

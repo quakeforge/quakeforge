@@ -47,6 +47,7 @@ static __attribute__ ((unused)) const char rcsid[] =
 #include "QF/hash.h"
 #include "QF/idparse.h"
 #include "QF/info.h"
+#include "QF/va.h"
 
 #include "compat.h"
 #include "server.h"
@@ -103,6 +104,77 @@ qtv_new_f (sv_qtv_t *proxy)
 	SV_WriteWorldVars (&proxy->netchan);
 }
 
+static void
+qtv_soundlist_f (sv_qtv_t *proxy)
+{
+	int         n;
+
+	if (atoi (Cmd_Argv (1)) != svs.spawncount) {
+		qtv_new_f (proxy);
+		return;
+	}
+
+	n = atoi (Cmd_Argv (2));
+	if (n >= MAX_SOUNDS) {
+		qtv_new_f (proxy);
+		return;
+	}
+	MSG_WriteByte (&proxy->netchan.message, qtv_soundlist);
+	SV_WriteSoundlist (&proxy->netchan, n);
+}
+
+static void
+qtv_modellist_f (sv_qtv_t *proxy)
+{
+	int         n;
+
+	if (atoi (Cmd_Argv (1)) != svs.spawncount) {
+		qtv_new_f (proxy);
+		return;
+	}
+
+	n = atoi (Cmd_Argv (2));
+	if (n >= MAX_SOUNDS) {
+		qtv_new_f (proxy);
+		return;
+	}
+	MSG_WriteByte (&proxy->netchan.message, qtv_modellist);
+	SV_WriteModellist (&proxy->netchan, n);
+}
+
+static void
+qtv_prespawn_f (sv_qtv_t *proxy)
+{
+	int         buf;
+	int         size;
+	const char *command;
+	sizebuf_t  *msg;
+
+	if (atoi (Cmd_Argv (1)) != svs.spawncount) {
+		qtv_new_f (proxy);
+		return;
+	}
+
+	buf = atoi (Cmd_Argv (2));
+	if (buf >= sv.num_signon_buffers)
+		buf = 0;
+
+	if (buf == sv.num_signon_buffers - 1)
+		command = va ("cmd spawn %i 0\n", svs.spawncount);
+	else
+		command = va ("cmd prespawn %i %i\n", svs.spawncount, buf + 1);
+	size = 5 + sv.signon_buffer_size[buf] + 1 + strlen (command) + 2;
+
+	msg = MSG_ReliableCheckBlock (&proxy->backbuf, size);
+
+	MSG_WriteByte (msg, qtv_signon);
+	MSG_WriteShort (msg, sv.signon_buffer_size[buf]);
+	SZ_Write (msg, sv.signon_buffers[buf], sv.signon_buffer_size[buf]);
+
+	MSG_WriteByte (msg, qtv_stringcmd);
+	MSG_WriteString (msg, command);
+}
+
 typedef struct {
 	const char *name;
 	void      (*func) (sv_qtv_t *proxy);
@@ -110,10 +182,13 @@ typedef struct {
 } qcmd_t;
 
 qcmd_t qcmds[] = {
-	{"drop",	drop_proxy},
-	{"new",		qtv_new_f},
+	{"drop",		drop_proxy},
+	{"new",			qtv_new_f},
+	{"soundlist",	qtv_soundlist_f},
+	{"modellist",	qtv_modellist_f},
+	{"prespawn",	qtv_prespawn_f},
 
-	{0,			0},
+	{0,				0},
 };
 
 static void

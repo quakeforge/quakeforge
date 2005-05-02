@@ -135,6 +135,132 @@ qtv_server_data (server_t *sv)
 	qtv_printf ("%s: gamedir: %s\n", sv->name, sv->gamedir);
 	str = Info_ValueForKey (sv->info, "map");
 	qtv_printf ("%s: (%s) %s\n", sv->name, str, sv->message);
+
+	MSG_WriteByte (&sv->netchan.message, qtv_stringcmd);
+	MSG_WriteString (&sv->netchan.message,
+					 va ("soundlist %i %i", sv->spawncount, 0));
+	sv->next_run = realtime;
+}
+
+static void
+qtv_sound_list (server_t *sv)
+{
+	int         numsounds = MSG_ReadByte (net_message);
+	int         n;
+	const char *str;
+
+	for (;;) {
+		str = MSG_ReadString (net_message);
+		if (!str[0])
+			break;
+		qtv_printf ("%s\n", str);
+		numsounds++;
+		if (numsounds == MAX_SOUNDS) {
+			while (str[0])
+				str = MSG_ReadString (net_message);
+			MSG_ReadByte (net_message);
+			return;
+		}
+		// save sound name
+	}
+	n = MSG_ReadByte (net_message);
+	if (n) {
+		MSG_WriteByte (&sv->netchan.message, qtv_stringcmd);
+		MSG_WriteString (&sv->netchan.message,
+						 va ("soundlist %d %d", sv->spawncount, n));
+	} else {
+		MSG_WriteByte (&sv->netchan.message, qtv_stringcmd);
+		MSG_WriteString (&sv->netchan.message,
+						 va ("modellist %d %d", sv->spawncount, 0));
+	}
+	sv->next_run = realtime;
+}
+
+static void
+qtv_model_list (server_t *sv)
+{
+	int         nummodels = MSG_ReadByte (net_message);
+	int         n;
+	const char *str;
+
+	for (;;) {
+		str = MSG_ReadString (net_message);
+		if (!str[0])
+			break;
+		qtv_printf ("%s\n", str);
+		nummodels++;
+		if (nummodels == MAX_SOUNDS) {
+			while (str[0])
+				str = MSG_ReadString (net_message);
+			MSG_ReadByte (net_message);
+			return;
+		}
+		// save sound name
+	}
+	n = MSG_ReadByte (net_message);
+	if (n) {
+		MSG_WriteByte (&sv->netchan.message, qtv_stringcmd);
+		MSG_WriteString (&sv->netchan.message,
+						 va ("modellist %d %d", sv->spawncount, n));
+	} else {
+		MSG_WriteByte (&sv->netchan.message, qtv_stringcmd);
+		MSG_WriteString (&sv->netchan.message,
+						 va ("prespawn %d 0 0", sv->spawncount));
+	}
+	sv->next_run = realtime;
+}
+
+static void
+qtv_sign_on (server_t *sv)
+{
+	int         len;
+	byte       *buf;
+
+	len = MSG_ReadShort (net_message);
+	buf = malloc (len);
+	MSG_ReadBytes (net_message, buf, len);
+	free (buf);	//XXX
+}
+
+static void
+qtv_cmd_f (server_t *sv)
+{
+	if (Cmd_Argc () > 1) {
+		MSG_WriteByte (&sv->netchan.message, qtv_stringcmd);
+		SZ_Print (&sv->netchan.message, Cmd_Args (1));
+	}
+	sv->next_run = realtime;
+}
+
+typedef struct {
+	const char *name;
+	void      (*func) (server_t *sv);
+} svcmd_t;
+
+svcmd_t svcmds[] = {
+	{"cmd",			qtv_cmd_f},
+
+	{0,				0},
+};
+
+static void
+qtv_sv_cmd (server_t *sv)
+{
+	svcmd_t    *c;
+	const char *name;
+
+	COM_TokenizeString (MSG_ReadString (net_message), qtv_args);
+	cmd_args = qtv_args;
+	name = Cmd_Argv (0);
+
+	for (c = svcmds; c->name; c++)
+		if (strcmp (c->name, name) == 0)
+			break;
+	if (!c->name) {
+		qtv_printf ("Bad QTV command: %s\n", name);
+		return;
+	}
+	c->func (sv);
 }
 
 static void
@@ -165,6 +291,18 @@ server_handler (connection_t *con, void *object)
 				break;
 			case qtv_serverdata:
 				qtv_server_data (sv);
+				break;
+			case qtv_soundlist:
+				qtv_sound_list (sv);
+				break;
+			case qtv_modellist:
+				qtv_model_list (sv);
+				break;
+			case qtv_signon:
+				qtv_sign_on (sv);
+				break;
+			case qtv_stringcmd:
+				qtv_sv_cmd (sv);
 				break;
 		}
 	}
@@ -212,10 +350,8 @@ server_connect (connection_t *con, void *object)
 	sv->connected = 1;
 	MSG_WriteByte (msg, qtv_stringcmd);
 	MSG_WriteString (msg, "new");
-	Netchan_Transmit (&sv->netchan, 0, 0);
-	con->handler = server_handler;
-
 	sv->next_run = realtime;
+	con->handler = server_handler;
 }
 
 static void
@@ -365,9 +501,11 @@ server_shutdown (void)
 static void
 server_run (server_t *sv)
 {
-	static byte msg[] = {qtv_nop};
-	Netchan_Transmit (&sv->netchan, sizeof (msg), msg);
-	sv->next_run = realtime + 0.03;
+	//static byte msg[] = {qtv_nop};
+	qtv_printf ("%d\n", sv->netchan.message.cursize);
+	//Netchan_Transmit (&sv->netchan, sizeof (msg), msg);
+	Netchan_Transmit (&sv->netchan, 0, 0);
+//	sv->next_run = realtime + 0.03;
 }
 
 void

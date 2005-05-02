@@ -65,6 +65,7 @@ int MSG_ReadShort (qmsg_t *msg);
 int MSG_ReadLong (qmsg_t *msg);
 float MSG_ReadFloat (qmsg_t *msg);
 const char *MSG_ReadString (qmsg_t *msg);
+int MSG_ReadBytes (qmsg_t *msg, void *buf, int len);
 
 float MSG_ReadCoord (qmsg_t *msg);
 void MSG_ReadCoordV (qmsg_t *msg, vec3_t coord);

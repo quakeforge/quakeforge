@@ -81,7 +81,7 @@ MSG_ReliableCheckSize (backbuf_t *rel, int maxsize, int minsize)
 }
 
 // check to see if client block will fit, if not, rotate buffers
-void
+sizebuf_t *
 MSG_ReliableCheckBlock (backbuf_t *rel, int maxsize)
 {
 	sizebuf_t  *msg = &rel->netchan->message;
@@ -98,19 +98,24 @@ MSG_ReliableCheckBlock (backbuf_t *rel, int maxsize)
 				rel->backbuf.cursize = 0;	// don't overflow without
 											// allowoverflow set
 				msg->overflowed = true;		// this will drop the client
-				return;
+				return 0;
 			}
 			PushBackbuf (rel);
 		}
 	}
+	if (rel->num_backbuf)
+		return &rel->backbuf;
+	return &rel->netchan->message;
 }
 
 // begin a client block, estimated maximum size
-void
+sizebuf_t *
 MSG_ReliableWrite_Begin (backbuf_t *rel, int c, int maxsize)
 {
-	MSG_ReliableCheckBlock (rel, maxsize);
+	sizebuf_t  *msg;
+	msg = MSG_ReliableCheckBlock (rel, maxsize);
 	MSG_ReliableWrite_Byte (rel, c);
+	return msg;
 }
 
 void

@@ -285,6 +285,18 @@ MSG_ReadString (qmsg_t *msg)
 	return string;
 }
 
+int
+MSG_ReadBytes (qmsg_t *msg, void *buf, int len)
+{
+	if (msg->badread || len > msg->message->cursize - msg->readcount) {
+		msg->badread = true;
+		len = msg->message->cursize - msg->readcount;
+	}
+	memcpy (buf, msg->message->data + msg->readcount, len);
+	msg->readcount += len;
+	return len;
+}
+
 float
 MSG_ReadCoord (qmsg_t *msg)
 {

@@ -139,7 +139,10 @@
 #define qtv_delta		3		// [byte] sequence number, requests delta
 								// compression of message
 #define qtv_serverdata	4
-#define qtv_disconnect  5
+#define qtv_disconnect	5
+#define qtv_soundlist	6
+#define qtv_modellist	7
+#define qtv_signon		8
 
 // demo recording
 
