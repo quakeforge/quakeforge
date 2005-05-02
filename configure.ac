@@ -1413,7 +1413,6 @@ if test "x$optimize" = xyes; then
 		CFLAGS=""
 		QF_CC_OPTION(-frename-registers)
 		QF_CC_OPTION(-finline-limit=32000 -Winline)
-		QF_CC_OPTION(-Wsign-compare)
 		heavy="-O2 $CFLAGS -ffast-math -funroll-loops -fomit-frame-pointer -fexpensive-optimizations"
 		CFLAGS="$saved_cflags"
 		light="-O2"
@@ -1528,6 +1527,7 @@ fi
 if test "x$check_pipe" = xyes; then
 	QF_CC_OPTION(-pipe)
 fi
+QF_CC_OPTION(-Wsign-compare)
 
 dnl QuakeForge uses lots of BCPL-style (//) comments, which can cause problems
 dnl with many compilers that don't support the latest ISO standards. Well,
