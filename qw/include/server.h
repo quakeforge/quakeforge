@@ -137,12 +137,18 @@ typedef struct {
 } client_frame_t;
 
 typedef enum {
+	dt_tp_normal,
+	dt_tp_demo,
+} delta_type_t;
+
+typedef enum {
 	dt_pvs_normal,
 	dt_pvs_fat,
 	dt_pvs_none,
 } delta_pvs_t;
 
 typedef struct {
+	delta_type_t type;
 	delta_pvs_t pvs;
 	int         delta_sequence;
 	int         cur_frame;

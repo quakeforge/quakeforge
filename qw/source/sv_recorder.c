@@ -92,7 +92,6 @@ typedef struct rec_s {
 	int         lasttype;
 	double      time, pingtime;
 
-	delta_t     delta;
 	int         stats[MAX_CLIENTS][MAX_CL_STATS];	// ouch!
 	demo_frame_t frames[DEMO_FRAMES];
 	int         forceFrame;
@@ -106,6 +105,9 @@ struct recorder_s {
 	void (*write)(sizebuf_t *);
 	int (*frame)(void);
 	void (*finish)(sizebuf_t *);
+	delta_t     delta;
+	entity_state_t entities[UPDATE_MASK][MAX_DEMO_PACKET_ENTITIES];
+	plent_state_t players[UPDATE_MASK][MAX_CLIENTS];
 };
 
 static rec_t    rec;
@@ -114,7 +116,7 @@ static recorder_t recorders_list[3];
 
 static byte     buffer[20 * MAX_MSGLEN];
 static byte     datagram_data[MAX_DATAGRAM];
-static byte     msg_buffer[MAX_DATAGRAM];
+static byte     msg_buffer[2][MAX_DATAGRAM];
 
 #define MIN_DEMO_MEMORY 0x100000
 #define USECACHE (sv_demoUseCache->int_val && svs.demomemsize)
@@ -123,9 +125,6 @@ static byte     msg_buffer[MAX_DATAGRAM];
 				 rec.dbuffer.maxsize - rec.dbuffer.end)
 
 #define HEADER  ((int) &((header_t *) 0)->data)
-
-static entity_state_t entities[UPDATE_MASK + 1][MAX_DEMO_PACKET_ENTITIES];
-static plent_state_t players[UPDATE_MASK + 1][MAX_CLIENTS];
 
 static void
 dbuffer_init (dbuffer_t *dbuffer, byte *buf, size_t size)
@@ -303,15 +302,7 @@ move_buf (void)
 static void
 clear_rec (void)
 {
-	int         i;
-
 	memset (&rec, 0, sizeof (rec));
-
-	rec.delta.pvs = dt_pvs_fat;
-	for (i = 0; i < UPDATE_BACKUP; i++) {
-		rec.delta.frames[i].entities.entities = entities[i];
-		rec.delta.frames[i].players.players = players[i];
-	}
 	dbuffer_init (&rec.dbuffer, buffer, sizeof (buffer));
 	set_msgbuf (NULL, &rec.frames[0].buf);
 
@@ -335,9 +326,10 @@ SVR_Init (void)
 
 recorder_t *
 SVR_AddUser (void (*write)(sizebuf_t *), int (*frame)(void),
-			 void (*finish)(sizebuf_t *))
+			 void (*finish)(sizebuf_t *), int demo)
 {
 	recorder_t *r;
+	int         i;
 
 	if (!free_recorders)
 		return 0;
@@ -350,9 +342,19 @@ SVR_AddUser (void (*write)(sizebuf_t *), int (*frame)(void),
 	r = free_recorders;
 	free_recorders = r->next;
 
+	memset (r, 0, sizeof (*r));
+
 	r->next = sv.recorders;
 	sv.recorders = r;
 
+
+	if (demo)
+		r->delta.type = dt_tp_demo;
+	r->delta.pvs = dt_pvs_fat;
+	for (i = 0; i < UPDATE_BACKUP; i++) {
+		r->delta.frames[i].entities.entities = r->entities[i];
+		r->delta.frames[i].players.players = r->players[i];
+	}
 	r->write = write;
 	r->frame = frame;
 	r->finish = finish;
@@ -364,11 +366,11 @@ void
 SVR_RemoveUser (recorder_t *r)
 {
 	recorder_t **_r;
-	sizebuf_t   msg;//, *dbuf;
+	sizebuf_t   msg;
 
 	memset (&msg, 0, sizeof (msg));
-	msg.data = msg_buffer;
-	msg.maxsize = sizeof (msg_buffer);
+	msg.data = msg_buffer[0];
+	msg.maxsize = sizeof (msg_buffer[0]);
 
 //	rec.dbuf->sz.cursize = 0;
 //	rec.dbuf->h = 0;
@@ -397,38 +399,51 @@ SVR_RemoveUser (recorder_t *r)
 }
 
 static void
-write_datagram (void)
+write_datagram (recorder_t *r)
 {
-	sizebuf_t  *dbuf;
-	sizebuf_t   msg;
+	sizebuf_t   msg, dst;
 
 	memset (&msg, 0, sizeof (msg));
-	msg.data = msg_buffer;
-	msg.maxsize = sizeof (msg_buffer);
+	msg.data = msg_buffer[0];
+	msg.maxsize = sizeof (msg_buffer[0]);
 	msg.allowoverflow = true;
 
-	if (!rec.delta.delta_sequence)
-		rec.delta.delta_sequence = -1;
-	rec.delta.cur_frame = (rec.delta.delta_sequence + 1) & UPDATE_MASK;
-	rec.delta.out_frame = rec.delta.cur_frame;
-	SV_WriteEntitiesToClient (&rec.delta, &msg);
-	dbuf = SVR_WriteBegin (dem_all, 0, msg.cursize);
-	SZ_Write (dbuf, msg.data, msg.cursize);
+	memset (&dst, 0, sizeof (dst));
+	dst.data = msg_buffer[1];
+	dst.maxsize = sizeof (msg_buffer[1]);
+	dst.allowoverflow = true;
+
+//	MSG_WriteByte (&msg, 0);
+//	MSG_WriteByte (&msg, dem_all);
+//	MSG_WriteLong (&msg, 0);
+
+	if (!r->delta.delta_sequence)
+		r->delta.delta_sequence = -1;
+	r->delta.cur_frame = (r->delta.delta_sequence + 1) & UPDATE_MASK;
+	r->delta.out_frame = r->delta.cur_frame;
+	SV_WriteEntitiesToClient (&r->delta, &msg);
 	// copy the accumulated multicast datagram
 	// for this client out to the message
-	if (rec.datagram.cursize) {
-		dbuf = SVR_WriteBegin (dem_all, 0, rec.datagram.cursize);
-		SZ_Write (dbuf, rec.datagram.data, rec.datagram.cursize);
-		SZ_Clear (&rec.datagram);
+	if (rec.datagram.cursize)
+		SZ_Write (&msg, rec.datagram.data, rec.datagram.cursize);
+//	if (msg.cursize > 6) {
+	if (msg.cursize) {
+//		msg.data[2] = ((msg.cursize - 6) >>  0) & 0xff;
+//		msg.data[3] = ((msg.cursize - 6) >>  8) & 0xff;
+//		msg.data[4] = ((msg.cursize - 6) >> 16) & 0xff;
+//		msg.data[5] = ((msg.cursize - 6) >> 24) & 0xff;
+		double time = rec.frames[rec.lastwritten & DEMO_FRAMES_MASK].time;
+		write_msg (&msg, dem_all, 0, time, &dst);
+		r->write (&dst);
 	}
 
-	rec.delta.delta_sequence++;
-	rec.delta.delta_sequence &= UPDATE_MASK;
+	r->delta.delta_sequence++;
+	r->delta.delta_sequence &= UPDATE_MASK;
 	rec.frames[rec.parsecount & DEMO_FRAMES_MASK].time = rec.time = sv.time;
 }
 
-void
-SVR_WritePacket (void)
+static void
+write_packet (void)
 {
 	demo_frame_t *frame;
 	double      time;
@@ -436,11 +451,11 @@ SVR_WritePacket (void)
 	recorder_t *r;
 
 	memset (&msg, 0, sizeof (msg));
-	msg.data = msg_buffer;
-	msg.maxsize = sizeof (msg_buffer);
+	msg.data = msg_buffer[0];
+	msg.maxsize = sizeof (msg_buffer[0]);
 	msg.allowoverflow = true;
 
-	frame = &rec.frames[rec.lastwritten++ & DEMO_FRAMES_MASK];
+	frame = &rec.frames[rec.lastwritten & DEMO_FRAMES_MASK];
 	time = frame->time;
 
 	rec.dbuf = &frame->buf;
@@ -466,7 +481,7 @@ SVR_WriteBegin (byte type, int to, int size)
 		if (!move && rec.dbuffer.end > rec.dbuffer.start)
 			move = true;
 
-		SVR_WritePacket ();
+		write_packet ();
 		if (move && rec.dbuffer.start > rec.dbuf->bufsize + HEADER + size)
 			move_buf ();
 	}
@@ -546,9 +561,9 @@ SV_SendDemoMessage (void)
 {
 	int         i, j;
 	client_t   *c;
-	byte        buf[MAX_DATAGRAM];
-	sizebuf_t	msg, *dbuf;
+	sizebuf_t	*dbuf;
 	int         stats[MAX_CL_STATS];
+	recorder_t *r;
 
 	if (sv_demoPings->value && sv.time - rec.pingtime > sv_demoPings->value) {
 		demo_pings ();
@@ -584,19 +599,15 @@ SV_SendDemoMessage (void)
 			}
 	}
 
+	write_packet ();
 	// send over all the objects that are in the PVS
 	// this will include clients, a packetentities, and
 	// possibly a nails update
-	msg.data = buf;
-	msg.maxsize = sizeof (buf);
-	msg.cursize = 0;
-	msg.allowoverflow = true;
-	msg.overflowed = false;
-
-	write_datagram ();
-
-	SVR_WritePacket ();
+	for (r = sv.recorders; r; r = r->next)
+		write_datagram (r);
+	SZ_Clear (&rec.datagram);
 
 	rec.parsecount++;
 	set_msgbuf (rec.dbuf, &rec.frames[rec.parsecount & DEMO_FRAMES_MASK].buf);
+	rec.lastwritten++;
 }

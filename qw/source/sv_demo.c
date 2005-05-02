@@ -406,7 +406,7 @@ SV_Record (char *name)
 	} else
 		QFS_Remove (demo_text->str);
 
-	recorder = SVR_AddUser (demo_write, demo_frame, demo_finish);
+	recorder = SVR_AddUser (demo_write, demo_frame, demo_finish, 1);
 	demo_time = sv.time;
 
 /*-------------------------------------------------*/
