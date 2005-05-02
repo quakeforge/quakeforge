@@ -195,6 +195,7 @@ Netchan_Setup (netchan_t *chan, netadr_t adr, int qport, int flags)
 
 	chan->remote_address = adr;
 	chan->last_received = *net_realtime;
+	chan->incoming_sequence = -1;
 
 	chan->message.data = chan->message_buf;
 	chan->message.allowoverflow = true;
@@ -384,7 +385,7 @@ Netchan_Process (netchan_t *chan)
 #endif
 
 	// discard stale or duplicated packets
-	if (sequence <= (unsigned int) chan->incoming_sequence) {
+	if (sequence < (unsigned int) chan->incoming_sequence + 1) {
 		if (showdrop->int_val)
 			Con_Printf ("%s:Out of order packet %i at %i\n",
 						NET_AdrToString (chan->remote_address), sequence,
