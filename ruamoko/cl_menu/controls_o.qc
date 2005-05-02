@@ -48,6 +48,28 @@ struct binding_s = {
 };
 typedef struct binding_s binding_t;
 
+@interface Binding : Object
+{
+	string      text;
+	string      command;
+	string      keys;
+}
+-initWithBinding: (binding_t) binding;
+@end
+
+@implementation Binding
+-initWithBinding: (binding_t) binding
+{
+	self = [self init];
+	if (self) {
+		text = binding.text;
+		text = binding.command;
+		text = binding.keys;
+	}
+	return self;
+}
+@end
+
 binding_t [16] movement_binding_list = {
 	{"Jump/Swin up", "+jump"},
 	{"Walk forward", "+forward"},
@@ -87,13 +109,10 @@ binding_t [10] weapon_binding_list = {
 	{"Thunderbolt", "impulse 8"},
 };
 
-(binding_t []) (binding_t binding)
+Binding (binding_t binding)
 new_binding =
 {
-	local binding_t []newb = obj_malloc (@sizeof (binding_t));
-
-	newb[0] = binding;
-	return newb;
+	return [[Binding alloc] initWithBinding:binding];
 };
 
 /*
@@ -108,13 +127,13 @@ init_binding_hash =
 
 	movement_bindings = [[Array alloc] init];
 	for (i = 0; i < @sizeof (movement_binding_list) / @sizeof (movement_binding_list[0]); i++)
-		[movement_bindings addItem: (id)new_binding (movement_binding_list[i])];
+		[movement_bindings addItem: new_binding (movement_binding_list[i])];
 	misc_bindings = [[Array alloc] init];
 	for (i = 0; i < @sizeof (misc_binding_list) / @sizeof (misc_binding_list[0]); i++)
-		[misc_bindings addItem: (id)new_binding (misc_binding_list[i])];
+		[misc_bindings addItem: new_binding (misc_binding_list[i])];
 	weapon_bindings = [[Array alloc] init];
 	for (i = 0; i < @sizeof (weapon_binding_list) / @sizeof (weapon_binding_list[0]); i++)
-		[weapon_bindings addItem: (id)new_binding (weapon_binding_list[i])];
+		[weapon_bindings addItem: new_binding (weapon_binding_list[i])];
 
 };
 
