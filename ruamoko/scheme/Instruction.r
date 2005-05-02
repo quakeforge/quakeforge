@@ -51,4 +51,9 @@
     }
 }
 
+- (void) markReachable
+{
+    [label mark];
+}
+
 @end

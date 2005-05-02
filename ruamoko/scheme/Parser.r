@@ -12,8 +12,9 @@
 
 - (id) initWithSource: (string) s
 {
+    self = [super init];
     lexer = [Lexer newFromSource: s];
-    return [super init];
+    return self;
 }
 
 - (SchemeObject) readList

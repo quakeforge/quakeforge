@@ -8,6 +8,7 @@ Nil one_nil_to_rule_them_all;
 + (void) initialize
 {
     one_nil_to_rule_them_all = [Nil new];
+    [one_nil_to_rule_them_all makeRootCell];
 }
 
 + (id) nil

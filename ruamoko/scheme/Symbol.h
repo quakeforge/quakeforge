@@ -4,7 +4,6 @@
 
 @interface Symbol: String
 {
-    string value;
 }
 + (void) initialize;
 + (Symbol) leftParen;

@@ -30,4 +30,19 @@
     return link;
 }
 
+- (void) markReachable
+{
+    local integer index;
+    for (index = 0; index < size; index++) {
+            [array[index] mark];
+    }
+    [link mark];
+}
+
+- (void) dealloc
+{
+    obj_free(array);
+    [super dealloc];
+}
+
 @end

@@ -29,8 +29,9 @@ BOOL issymbol (string x)
 
 - (id) initWithSource: (string) s
 {
+    self = [super init];
     source = s;
-    return [super init];
+    return self;
 }
 
 - (SchemeObject) nextToken
@@ -70,7 +71,7 @@ BOOL issymbol (string x)
             return NIL;
         default:
             for (len = 1; issymbol(str_mid(source, len, len+1)); len++);
-            sym = [Symbol newFromString: str_mid (source, 0, len)];
+            sym = [Symbol forString: str_mid (source, 0, len)];
             source = str_mid(source, len);
             return sym;
     }

@@ -6,8 +6,6 @@
 @interface Lexer: Object
 {
     string source;
-    Symbol lparen;
-    Symbol rparen;
 }
 + (id) newFromSource: (string) s;
 - (id) initWithSource: (string) s;

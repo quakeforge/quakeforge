@@ -28,12 +28,22 @@ Symbol quote;
     lparen = [Symbol forString: "("];
     rparen = [Symbol forString: ")"];
     quote = [Symbol forString: "'"];
-    
+    [lparen makeRootCell];
+    [rparen makeRootCell];
+    [quote makeRootCell];
 }
 
 + (Symbol) forString: (string) s
 {
-    return (Symbol) [self newFromString: s];
+    local Symbol res;
+
+    if ((res = Hash_Find (symbols, s))) {
+            return res;
+    } else {
+            res = (Symbol) [self newFromString: s];
+            Hash_Add (symbols, res);
+            return res;
+    }
 }
 
 + (Symbol) leftParen
@@ -51,24 +61,17 @@ Symbol quote;
     return quote;
 }
 
-- (id) initWithString: (string) s
-{
-    local Symbol res;
-    [super initWithString: s];
-
-    if ((res = Hash_Find (symbols, s))) {
-            [self release];
-            return res;
-    } else {
-            Hash_Add (symbols, self);
-            return self;
-    }
-}
-
 - (string) printForm
 {
-    return [self stringValue];
+    return value;
 }
 
+- (void) dealloc
+{
+    if (Hash_Find (symbols, value) == self) {
+            Hash_Del (symbols, value);
+    }
+    [super dealloc];
+}
 
 @end

@@ -26,6 +26,14 @@
     return;
 }
 
+- (void) markReachable
+{
+    [state.literals mark];
+    [state.stack mark];
+    [cont mark];
+    [env mark];
+}
+
 - (string) printForm
 {
     return "<continuation>";

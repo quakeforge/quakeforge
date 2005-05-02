@@ -40,6 +40,7 @@ integer main (integer argc, string []argv)
     builtin_init();
     parser = [Parser newFromSource: readfile(argv[1])];
     vm = [Machine new];
+    [vm makeRootCell];
     [vm addGlobal: [Symbol forString: "display"] value: print_p];
     [vm addGlobal: [Symbol forString: "newline"] value: newline_p];
     [vm addGlobal: [Symbol forString: "+"] value: add_p];
@@ -55,6 +56,7 @@ integer main (integer argc, string []argv)
             lm = [Lambda newWithCode: code environment: NIL];
             [lm invokeOnMachine: vm];
             [vm run];
+            [SchemeObject collect];
     }
     return 0;
 }

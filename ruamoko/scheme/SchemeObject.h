@@ -4,13 +4,22 @@
 #define true YES
 #define false NO
 
+//#define DEBUG
+#ifdef DEBUG
+#define dprintf printf
+#else
+#define dprintf(x, ...)
+#endif
+
+
 @interface SchemeObject: Object
 {
-	BOOL marked;
+    @public SchemeObject prev, next;
+    BOOL marked, root;
 }
 - (void) mark;
-- (BOOL) sweep;
-//+ (id) alloc;
+- (void) markReachable;
+- (void) makeRootCell;
 - (string) printForm;
 @end
 

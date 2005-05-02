@@ -1,32 +1,139 @@
 #include "SchemeObject.h"
+#include "defs.h"
+
+SchemeObject maybe_garbage, not_garbage, roots;
+BOOL markstate;
+
+BOOL contains (SchemeObject list, SchemeObject what)
+{
+    local SchemeObject cur;
+
+    for (cur = list; cur; cur = cur.next) {
+            if (cur == what)
+                    return true;
+    }
+
+    return false;
+}
+
+
 
 @implementation SchemeObject
 
-/*
-+ (id) alloc
++ (void) initialize
 {
-    return [super alloc];
-}
-*/
-- (void) mark
-{
-    marked = true;
+    maybe_garbage = not_garbage = roots = NIL;
+    markstate = true;
 }
 
-- (BOOL) sweep
++ (id) dummyObject
 {
-    if (marked) {
-            marked = false;
-            return false;
-    } else {
-            [self release];
-            return true;
+    return [[SchemeObject alloc] initDummy];
+}
+
+- (id) initDummy
+{
+    self = [super init];
+    prev = next = NIL;
+    marked = markstate;
+    root = false;
+    return self;
+}
+
++ (void) collect
+{
+    local SchemeObject cur, next = NIL, dummy;
+
+    not_garbage = dummy = [SchemeObject dummyObject];
+    for (cur = roots; cur; cur = next) {
+            next = cur.next;
+            [cur markReachable];
     }
+    for (cur = dummy; cur; cur = cur.prev) {
+            dprintf("GC: marking queue: %s[%s]@%i\n", [cur description], [cur printForm],
+                    (integer) cur);
+            [cur markReachable];
+    }
+    for (cur = maybe_garbage; cur; cur = next) {
+            next = cur.next;
+            dprintf("GC: freeing %s[%s]@%i...\n", [cur description], [cur printForm], (integer) cur);
+            [cur release];
+    }
+    maybe_garbage = not_garbage;
+    not_garbage = NIL;
+    markstate = !markstate;
+}
+
+- (id) init
+{
+    self = [super init];
+    if (maybe_garbage) {
+            maybe_garbage.prev = self;
+    }
+    next = maybe_garbage;
+    maybe_garbage = self;
+    prev = NIL;
+    marked = !markstate;
+    root = false;
+    return self;
+}
+
+- (void) mark
+{
+    if (!root && marked != markstate) {
+            dprintf("GC: Marking %s[%s]@%i\n", [self description], [self printForm], (integer) self);
+            marked = markstate;
+            if (prev) {
+                    prev.next = next;
+            } else {
+                    maybe_garbage = next;
+                    }
+            if (next) {
+                    next.prev = prev;
+            }
+            if (not_garbage) {
+                    not_garbage.prev = self;
+            }
+            next = not_garbage;
+            prev = NIL;
+            not_garbage = self;
+                //[self markReachable];
+    }
+}
+
+- (void) makeRootCell
+{
+    if (prev) {
+            prev.next = next;
+    } else {
+            maybe_garbage = next;
+    }
+    if (next) {
+            next.prev = prev;
+    }
+    if (roots) {
+            roots.prev = self;
+    }
+    next = roots;
+    prev = NIL;
+    roots = self;
+    root = true;
+}
+
+- (void) markReachable
+{
+    return;
 }
 
 - (string) printForm
 {
     return "<generic>";
+}
+
+- (void) dealloc
+{
+    dprintf("Deallocing %s @ %i!\n", [self description], (integer) self);
+    [super dealloc];
 }
 
 @end

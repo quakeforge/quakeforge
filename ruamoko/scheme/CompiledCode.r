@@ -9,7 +9,14 @@
     instructions = [Array new];
     return self;
 }
-    
+
+- (void) markReachable
+{
+    [literals mark];
+    [constants makeObjectsPerformSelector: @selector(mark)];
+    [instructions makeObjectsPerformSelector: @selector(mark)];
+}
+
 - (void) addInstruction: (Instruction) inst
 {
     [inst offset: [instructions count]];
@@ -38,10 +45,9 @@
             inst = [instructions getItemAt: index];
             [inst emitStruct: code];
     }
-    [instructions makeObjectsPerformSelector: @selector(retain)];
     [instructions release];
-    [constants makeObjectsPerformSelector: @selector(retain)];
     [constants release];
+    instructions = constants = NIL;
 }
 
 - (instruction_t []) code
@@ -52,6 +58,14 @@
 - (Frame) literals
 {
     return literals;
+}
+
+- (void) dealloc
+{
+    [instructions release];
+    [constants release];
+    if (code)
+            obj_free (code);
 }
 
 @end

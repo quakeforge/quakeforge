@@ -74,4 +74,10 @@
     [names release];
 }
 
+- (void) markReachable
+{
+    [names makeObjectsPerformSelector: @selector(mark)];
+    [outerScope mark];
+}
+
 @end

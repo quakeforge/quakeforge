@@ -15,8 +15,8 @@
     self = [super init];
     sexpr = xp;
     scope = sc;
-    lambdaSym = [Symbol newFromString: "lambda"];
-    quoteSym = [Symbol newFromString: "quote"];
+    lambdaSym = [Symbol forString: "lambda"];
+    quoteSym = [Symbol forString: "quote"];
     code = [CompiledCode new];
     return self;
 }
@@ -140,5 +140,14 @@
 {
     return code;
 }
-            
+
+- (void) markReachable
+{
+    [code mark];
+    [sexpr mark];
+    [lambdaSym mark];
+    [quoteSym mark];
+    [Scope mark];
+}
+
 @end

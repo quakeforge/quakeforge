@@ -4,14 +4,6 @@
 #include "Nil.h"
 #include "defs.h"
 
-
-//#define DEBUG
-#ifdef DEBUG
-#define dprintf printf
-#else
-#define dprintf(x, ...)
-#endif
-
 string GlobalGetKey (void []ele, void []data)
 {
     return [[((Cons) ele) car] printForm];
@@ -40,7 +32,9 @@ void GlobalFree (void []ele, void []data)
 
 - (void) addGlobal: (Symbol) sym value: (SchemeObject) val
 {
-    Hash_Add(globals, cons(sym, val));
+    local Cons c = cons(sym, val);
+    [c makeRootCell];
+    Hash_Add(globals, c);
 }
 
 - (void) loadCode: (CompiledCode) code
@@ -123,7 +117,8 @@ void GlobalFree (void []ele, void []data)
                     break;
                 case MAKECLOSURE:
                     dprintf("Makeclosure\n");
-                    value = [Lambda newWithCode: (CompiledCode) value environment: env];
+                    value = [Lambda newWithCode: (CompiledCode) value
+                                    environment: env];
                     break;
                 case MAKECONT:
                     dprintf("Makecont\n");
@@ -175,5 +170,15 @@ void GlobalFree (void []ele, void []data)
                     break;
             }
     }
+}
+
+- (void) markReachable
+{
+    [state.literals mark];
+    [state.stack mark];
+    [cont mark];
+    [env mark];
+    [value mark];
+        // FIXME: need to mark globals
 }
 @end

@@ -7,6 +7,7 @@ Void voidConstant;
 + (void) initialize
 {
     voidConstant = [Void new];
+    [voidConstant makeRootCell];
 }
 
 + (id) voidConstant

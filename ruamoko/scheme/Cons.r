@@ -49,9 +49,8 @@ Cons cons (SchemeObject car, SchemeObject cdr)
     cdr = d;
 }   
 
-- (void) mark
+- (void) markReachable
 {
-    [super mark];
     [car mark];
     [cdr mark];
 }
