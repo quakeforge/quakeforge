@@ -33,18 +33,30 @@
 #define __server_h
 
 #include "netchan.h"
+#include "qw/pmove.h"
 
 typedef struct server_s {
+	struct server_s *next;
 	const char *name;
 	const char *address;
 	int         qport;
 	int         connected;
-	struct info_s *info;
 	struct connection_s *con;
 	netadr_t    adr;
 	netchan_t   netchan;
+	double      next_run;
+
+	int         ver;
+	int         spawncount;
+	const char *gamedir;
+	const char *message;
+	movevars_t  movevars;
+	int         cdtrack;
+	int         sounds;
+	struct info_s *info;
 } server_t;
 
 void Server_Init (void);
+void Server_Frame (void);
 
 #endif//__server_h

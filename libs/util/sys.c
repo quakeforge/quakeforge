@@ -523,10 +523,10 @@ Sys_CheckInput (int idle, int net_socket)
 	}
 
 	_timeout.tv_sec = 0;
-	_timeout.tv_usec = net_socket < 0 ? 0 : 100;
+	_timeout.tv_usec = net_socket < 0 ? 0 : 20;
 #else
 	_timeout.tv_sec = 0;
-	_timeout.tv_usec = net_socket < 0 ? 0 : 10000;
+	_timeout.tv_usec = net_socket < 0 ? 0 : 2000;
 #endif
 	// select on the net socket and stdin
 	// the only reason we have a timeout at all is so that if the last

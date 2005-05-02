@@ -60,7 +60,7 @@ static __attribute__ ((unused)) const char rcsid[] =
 
 #include "bothdefs.h"
 #include "compat.h"
-#include "pmove.h"
+#include "qw/pmove.h"
 #include "server.h"
 #include "sv_gib.h"
 #include "sv_progs.h"
@@ -108,25 +108,55 @@ static void OutofBandPrintf (netadr_t where, const char *fmt, ...) __attribute__
 	Sends the first message from the server to a connected client.
 	This will be sent on the initial connection and upon each server load.
 */
+void
+SV_WriteWorldVars (netchan_t *netchan)
+{
+
+	// send full levelname
+	MSG_WriteString (&netchan->message,
+					 PR_GetString (&sv_pr_state,
+								   SVstring (sv.edicts, message)));
+
+	// send the movevars
+	MSG_WriteFloat (&netchan->message, movevars.gravity);
+	MSG_WriteFloat (&netchan->message, movevars.stopspeed);
+	MSG_WriteFloat (&netchan->message, movevars.maxspeed);
+	MSG_WriteFloat (&netchan->message, movevars.spectatormaxspeed);
+	MSG_WriteFloat (&netchan->message, movevars.accelerate);
+	MSG_WriteFloat (&netchan->message, movevars.airaccelerate);
+	MSG_WriteFloat (&netchan->message, movevars.wateraccelerate);
+	MSG_WriteFloat (&netchan->message, movevars.friction);
+	MSG_WriteFloat (&netchan->message, movevars.waterfriction);
+	MSG_WriteFloat (&netchan->message, movevars.entgravity);
+
+	// send music
+	MSG_WriteByte (&netchan->message, svc_cdtrack);
+	MSG_WriteByte (&netchan->message, SVfloat (sv.edicts, sounds));
+
+	// send server info string
+	MSG_WriteByte (&netchan->message, svc_stufftext);
+	MSG_WriteString (&netchan->message,
+					 va ("fullserverinfo \"%s\"\n",
+						 Info_MakeString (svs.info, 0)));
+}
+
 static void
 SV_New_f (void *unused)
 {
-	const char *gamedir;
 	int         playernum;
+	const char *gamedir;
 
 	if (host_client->state == cs_spawned)
 		return;
+
+	gamedir = Info_ValueForKey (svs.info, "*gamedir");
+	if (!gamedir[0])
+		gamedir = "qw";
 
 	host_client->state = cs_connected;
 	host_client->connection_started = realtime;
 
 	// send the info about the new client to all connected clients
-//	SV_FullClientUpdate (host_client, &sv.reliable_datagram);
-//	host_client->sendinfo = true;
-
-	gamedir = Info_ValueForKey (svs.info, "*gamedir");
-	if (!gamedir[0])
-		gamedir = "qw";
 
 // NOTE:  This doesn't go through MSG_ReliableWrite since it's before the
 // user spawns.  These functions are written to not overflow
@@ -136,6 +166,7 @@ SV_New_f (void *unused)
 		host_client->backbuf.num_backbuf = 0;
 		SZ_Clear (&host_client->netchan.message);
 	}
+
 	// send the serverdata
 	MSG_WriteByte (&host_client->netchan.message, svc_serverdata);
 	MSG_WriteLong (&host_client->netchan.message, PROTOCOL_VERSION);
@@ -147,32 +178,7 @@ SV_New_f (void *unused)
 		playernum |= 128;
 	MSG_WriteByte (&host_client->netchan.message, playernum);
 
-	// send full levelname
-	MSG_WriteString (&host_client->netchan.message,
-					 PR_GetString (&sv_pr_state,
-								   SVstring (sv.edicts, message)));
-
-	// send the movevars
-	MSG_WriteFloat (&host_client->netchan.message, movevars.gravity);
-	MSG_WriteFloat (&host_client->netchan.message, movevars.stopspeed);
-	MSG_WriteFloat (&host_client->netchan.message, movevars.maxspeed);
-	MSG_WriteFloat (&host_client->netchan.message, movevars.spectatormaxspeed);
-	MSG_WriteFloat (&host_client->netchan.message, movevars.accelerate);
-	MSG_WriteFloat (&host_client->netchan.message, movevars.airaccelerate);
-	MSG_WriteFloat (&host_client->netchan.message, movevars.wateraccelerate);
-	MSG_WriteFloat (&host_client->netchan.message, movevars.friction);
-	MSG_WriteFloat (&host_client->netchan.message, movevars.waterfriction);
-	MSG_WriteFloat (&host_client->netchan.message, movevars.entgravity);
-
-	// send music
-	MSG_WriteByte (&host_client->netchan.message, svc_cdtrack);
-	MSG_WriteByte (&host_client->netchan.message, SVfloat (sv.edicts, sounds));
-
-	// send server info string
-	MSG_WriteByte (&host_client->netchan.message, svc_stufftext);
-	MSG_WriteString (&host_client->netchan.message,
-					 va ("fullserverinfo \"%s\"\n",
-						 Info_MakeString (svs.info, 0)));
+	SV_WriteWorldVars (&host_client->netchan);
 
 	// Trigger GIB connection event
 	if (sv_client_connect_e->func)

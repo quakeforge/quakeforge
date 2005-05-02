@@ -61,7 +61,8 @@ static __attribute__ ((unused)) const char rcsid[] =
 #include "qtv.h"
 #include "server.h"
 
-static hashtab_t *servers;
+static hashtab_t *server_hash;
+static server_t *servers;
 
 static const char *
 server_get_key (void *sv, void *unused)
@@ -73,11 +74,20 @@ static void
 server_free (void *_sv, void *unused)
 {
 	server_t   *sv = (server_t *) _sv;
-	static byte final[] = {clc_stringcmd, 'd', 'r', 'o', 'p', 0};
+	server_t  **s;
+
+	static byte final[] = {qtv_stringcmd, 'd', 'r', 'o', 'p', 0};
 
 	if (sv->connected)
 		Netchan_Transmit (&sv->netchan, sizeof (final), final);
 	Connection_Del (sv->con);
+
+	for (s = &servers; *s; s = &(*s)->next) {
+		if (*s == sv) {
+			*s = sv->next;
+			break;
+		}
+	}
 }
 
 static int
@@ -87,10 +97,50 @@ server_compare (const void *a, const void *b)
 }
 
 static void
+qtv_server_data (server_t *sv)
+{
+	const char *str;
+
+	sv->ver = MSG_ReadLong (net_message);
+	sv->spawncount = MSG_ReadLong (net_message);
+	sv->gamedir = strdup (MSG_ReadString (net_message));
+
+	sv->message = strdup (MSG_ReadString (net_message));
+	sv->movevars.gravity = MSG_ReadFloat (net_message);
+	sv->movevars.stopspeed = MSG_ReadFloat (net_message);
+	sv->movevars.maxspeed = MSG_ReadFloat (net_message);
+	sv->movevars.spectatormaxspeed = MSG_ReadFloat (net_message);
+	sv->movevars.accelerate = MSG_ReadFloat (net_message);
+	sv->movevars.airaccelerate = MSG_ReadFloat (net_message);
+	sv->movevars.wateraccelerate = MSG_ReadFloat (net_message);
+	sv->movevars.friction = MSG_ReadFloat (net_message);
+	sv->movevars.waterfriction = MSG_ReadFloat (net_message);
+	sv->movevars.entgravity = MSG_ReadFloat (net_message);
+
+	sv->cdtrack = MSG_ReadByte (net_message);
+	sv->sounds = MSG_ReadByte (net_message);
+
+	COM_TokenizeString (MSG_ReadString (net_message), qtv_args);
+	cmd_args = qtv_args;
+	sv->info = Info_ParseString (Cmd_Argv (1), MAX_SERVERINFO_STRING, 0);
+
+	str = Info_ValueForKey (sv->info, "hostname");
+	if (strcmp (str, "unnamed"))
+		qtv_printf ("%s: %s\n", sv->name, str);
+	str = Info_ValueForKey (sv->info, "*version");
+	qtv_printf ("%s: QW %s\n", sv->name, str);
+	str = Info_ValueForKey (sv->info, "*qf_version");
+	if (str[0])
+		qtv_printf ("%s: QuakeForge %s\n", sv->name, str);
+	qtv_printf ("%s: gamedir: %s\n", sv->name, sv->gamedir);
+	str = Info_ValueForKey (sv->info, "map");
+	qtv_printf ("%s: (%s) %s\n", sv->name, str, sv->message);
+}
+
+static void
 server_handler (connection_t *con, void *object)
 {
 	server_t   *sv = (server_t *) object;
-	byte        d = clc_nop;
 
 	if (*(int *) net_message->message->data == -1)
 		return;
@@ -110,13 +160,16 @@ server_handler (connection_t *con, void *object)
 			default:
 				qtv_printf ("Illegible server message: %d\n", cmd);
 				goto bail;
-			case svc_disconnect:
+			case qtv_disconnect:
 				qtv_printf ("%s: disconnected\n", sv->name);
+				break;
+			case qtv_serverdata:
+				qtv_server_data (sv);
 				break;
 		}
 	}
 bail:
-	Netchan_Transmit (&sv->netchan, 1, &d);
+	return;
 }
 
 static inline const char *
@@ -157,10 +210,12 @@ server_connect (connection_t *con, void *object)
 	Netchan_Setup (&sv->netchan, con->address, sv->qport, NC_SEND_QPORT);
 	sv->netchan.outgoing_sequence = 1;
 	sv->connected = 1;
-	MSG_WriteByte (msg, clc_stringcmd);
+	MSG_WriteByte (msg, qtv_stringcmd);
 	MSG_WriteString (msg, "new");
 	Netchan_Transmit (&sv->netchan, 0, 0);
 	con->handler = server_handler;
+
+	sv->next_run = realtime;
 }
 
 static void
@@ -192,8 +247,8 @@ server_challenge (connection_t *con, void *object)
 
 	if (!qtv) {
 		qtv_printf ("%s can't handle qtv.\n", sv->name);
-		Hash_Del (servers, sv->name);
-		Hash_Free (servers, sv);
+		Hash_Del (server_hash, sv->name);
+		Hash_Free (server_hash, sv);
 		return;
 	}
 
@@ -228,7 +283,7 @@ sv_new_f (void)
 		return;
 	}
 	name = Cmd_Argv (1);
-	if (Hash_Find (servers, name)) {
+	if (Hash_Find (server_hash, name)) {
 		qtv_printf ("sv_new: %s already exists\n", name);
 		return;
 	}
@@ -241,6 +296,8 @@ sv_new_f (void)
 		adr.port = BigShort (27500);
 
 	sv = calloc (1, sizeof (server_t));
+	sv->next = servers;
+	servers = sv;
 	sv->name = strdup (name);
 	sv->address = strdup (address);
 	sv->adr = adr;
@@ -250,7 +307,7 @@ sv_new_f (void)
 							 va ("%s QTV %s", QW_VERSION, VERSION), 0);
 	Info_SetValueForStarKey (sv->info, "*qsg_version", QW_QSG_VERSION, 0);
 	Info_SetValueForKey (sv->info, "name", "QTV Proxy", 0);
-	Hash_Add (servers, sv);
+	Hash_Add (server_hash, sv);
 
 	sv->con = Connection_Add (&adr, sv, server_challenge);
 
@@ -268,11 +325,11 @@ sv_del_f (void)
 		return;
 	}
 	name = Cmd_Argv (1);
-	if (!(sv = Hash_Del (servers, name))) {
+	if (!(sv = Hash_Del (server_hash, name))) {
 		qtv_printf ("sv_new: %s unkown\n", name);
 		return;
 	}
-	Hash_Free (servers, sv);
+	Hash_Free (server_hash, sv);
 }
 
 static void
@@ -281,33 +338,57 @@ sv_list_f (void)
 	server_t  **list, **l, *sv;
 	int         count;
 
-	list = (server_t **) Hash_GetList (servers);
-	for (l = list, count = 0; *l; l++)
+	for (l = &servers, count = 0; *l; l = &(*l)->next)
 		count++;
 	if (!count) {
 		qtv_printf ("no servers\n");
 		return;
 	}
+	list = malloc (count * sizeof (server_t **));
+	for (l = &servers, count = 0; *l; l = &(*l)->next)
+		list[count] = *l;
 	qsort (list, count, sizeof (*list), server_compare);
 	for (l = list; *l; l++) {
 		sv = *l;
 		qtv_printf ("%-20s %s(%s)\n", sv->name, sv->address,
 					NET_AdrToString (sv->adr));
 	}
+	free (list);
 }
 
 static void
 server_shutdown (void)
 {
-	Hash_FlushTable (servers);
+	Hash_FlushTable (server_hash);
+}
+
+static void
+server_run (server_t *sv)
+{
+	static byte msg[] = {qtv_nop};
+	Netchan_Transmit (&sv->netchan, sizeof (msg), msg);
+	sv->next_run = realtime + 0.03;
 }
 
 void
 Server_Init (void)
 {
 	Sys_RegisterShutdown (server_shutdown);
-	servers = Hash_NewTable (61, server_get_key, server_free, 0);
+	server_hash = Hash_NewTable (61, server_get_key, server_free, 0);
 	Cmd_AddCommand ("sv_new", sv_new_f, "Add a new server");
 	Cmd_AddCommand ("sv_del", sv_del_f, "Remove an existing server");
 	Cmd_AddCommand ("sv_list", sv_list_f, "List available servers");
+}
+
+void
+Server_Frame (void)
+{
+	server_t   *sv;
+
+	for (sv = servers; sv; sv = sv->next) {
+		if (sv->next_run && sv->next_run <= realtime) {
+			sv->next_run = 0;
+			server_run (sv);
+		}
+	}
 }

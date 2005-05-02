@@ -53,7 +53,7 @@ static __attribute__ ((unused)) const char rcsid[] =
 #include "cl_input.h"
 #include "client.h"
 #include "compat.h"
-#include "pmove.h"
+#include "qw/pmove.h"
 #include "sbar.h"
 
 #define	PM_SPECTATORMAXSPEED 500

@@ -388,6 +388,8 @@ main (int argc, const char *argv[])
 		qtv_read_packets ();
 
 		Con_ProcessInput ();
+
+		Server_Frame ();
 	}
 	return 0;
 }

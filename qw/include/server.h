@@ -548,6 +548,7 @@ void SV_FindModelNumbers (void);
 #define UCMD_NO_REDIRECT 1
 #define UCMD_OVERRIDABLE 2
 
+void SV_WriteWorldVars (netchan_t *netchan);
 void SV_ExecuteClientMessage (client_t *cl);
 void SV_UserInit (void);
 void SV_TogglePause (const char *msg);

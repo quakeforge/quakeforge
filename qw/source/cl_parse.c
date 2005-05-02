@@ -73,7 +73,7 @@ static __attribute__ ((unused)) const char rcsid[] =
 #include "client.h"
 #include "compat.h"
 #include "host.h"
-#include "pmove.h"
+#include "qw/pmove.h"
 #include "qw/protocol.h"
 #include "sbar.h"
 #include "view.h"

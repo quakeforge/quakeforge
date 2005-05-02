@@ -35,7 +35,7 @@ static __attribute__ ((unused)) const char rcsid[] =
 #include "QF/cvar.h"
 #include "QF/sys.h"
 
-#include "pmove.h"
+#include "qw/pmove.h"
 #include "server.h"
 #include "sv_progs.h"
 #include "world.h"

@@ -44,7 +44,7 @@ static __attribute__ ((unused)) const char rcsid[] =
 #include "QF/sys.h"
 
 #include "compat.h"
-#include "pmove.h"
+#include "qw/pmove.h"
 #include "world.h"
 
 static hull_t box_hull;

@@ -131,6 +131,16 @@
 #define clc_tmove		6		// teleport request, spectator only
 #define clc_upload		7		// teleport request, spectator only
 
+// qtv ========================================================================
+
+#define qtv_bad			0
+#define qtv_nop			1
+#define qtv_stringcmd	2		// [string] message
+#define qtv_delta		3		// [byte] sequence number, requests delta
+								// compression of message
+#define qtv_serverdata	4
+#define qtv_disconnect  5
+
 // demo recording
 
 #define dem_cmd         0

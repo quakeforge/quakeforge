@@ -36,5 +36,6 @@ struct info_s;
 void SV_qtvConnect (int qport, struct info_s *info);
 int SV_qtvPacket (int qport);
 void SV_qtvCheckTimeouts (void);
+void SV_qtvSendMessages (void);
 
 #endif//__sv_qtv_h

@@ -42,7 +42,7 @@ static __attribute__ ((unused)) const char rcsid[] =
 #include "cl_ents.h"
 #include "cl_pred.h"
 #include "client.h"
-#include "pmove.h"
+#include "qw/pmove.h"
 
 cvar_t     *cl_predict;
 cvar_t     *cl_pushlatency;

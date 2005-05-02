@@ -85,7 +85,7 @@ static __attribute__ ((unused)) const char rcsid[] =
 #include "crudefile.h"
 #include "game.h"
 #include "netchan.h"
-#include "pmove.h"
+#include "qw/pmove.h"
 #include "server.h"
 #include "sv_demo.h"
 #include "sv_progs.h"
@@ -1982,6 +1982,8 @@ SV_Frame (float time)
 
 	// send messages back to the clients that had packets read this frame
 	SV_SendClientMessages ();
+
+	SV_qtvSendMessages ();
 
 	demo_start = Sys_DoubleTime ();
 	if (sv.recorders)

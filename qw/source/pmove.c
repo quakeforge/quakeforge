@@ -39,7 +39,7 @@ static __attribute__ ((unused)) const char rcsid[] =
 
 #include "client.h"
 #include "compat.h"
-#include "pmove.h"
+#include "qw/pmove.h"
 
 cvar_t     *no_pogo_stick;
 movevars_t  movevars;
