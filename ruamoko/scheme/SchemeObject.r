@@ -136,4 +136,29 @@ BOOL contains (SchemeObject list, SchemeObject what)
     [super dealloc];
 }
 
+- (BOOL) isError
+{
+    return false;
+}
+
+- (string) source
+{
+    return source;
+}
+
+- (void) source: (string) s
+{
+    source = s;
+}
+
+- (integer) line
+{
+    return line;
+}
+
+- (void) line: (integer) l
+{
+    line = l;
+}
+
 @end

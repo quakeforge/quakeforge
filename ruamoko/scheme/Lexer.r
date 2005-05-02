@@ -1,7 +1,7 @@
 #include "Lexer.h"
 #include "Number.h"
 #include "string.h"
-
+#include "defs.h"
 
 BOOL isdigit (string x)
 {
@@ -22,15 +22,17 @@ BOOL issymbol (string x)
 
 @implementation Lexer
 
-+ (id) newFromSource: (string) s
++ (id) newFromSource: (string) s file: (string) f
 {
-    return [[Lexer alloc] initWithSource: s];
+    return [[Lexer alloc] initWithSource: s file: f];
 }
 
-- (id) initWithSource: (string) s
+- (id) initWithSource: (string) s file: (string) f
 {
     self = [super init];
     source = s;
+    filename = f;
+    linenum = 1;
     return self;
 }
 
@@ -40,8 +42,13 @@ BOOL issymbol (string x)
     local Number num;
     local Symbol sym;
     local String str;
-    
-    for (len = 0; isspace(str_mid(source, len, len+1)); len++);
+
+    for (len = 0; isspace(str_mid(source, len, len+1)); len++) {
+            if (str_mid(source, len, len+1) == "\n") {
+                    linenum++;
+            }
+    }
+
     source = str_mid(source, len);
 
     switch (str_mid (source, 0, 1)) {
@@ -57,11 +64,15 @@ BOOL issymbol (string x)
         case "9":
             for (len = 1; isdigit(str_mid(source, len, len+1)); len++);
             num = [Number newFromInt: stoi (str_mid(source, 0, len))];
+            [num source: filename];
+            [num line: linenum];
             source = str_mid(source, len);
             return num;
         case "\"":
             for (len = 1; str_mid(source, len, len+1) != "\""; len++);
             str = [String newFromString: str_mid(source, 1, len)];
+            [str source: filename];
+            [str line: linenum];
             source = str_mid(source, len+1);
             return str;
         case "'":
@@ -75,6 +86,11 @@ BOOL issymbol (string x)
             source = str_mid(source, len);
             return sym;
     }
+}
+
+- (integer) lineNumber
+{
+    return linenum;
 }
 
 @end

@@ -6,10 +6,13 @@
 @interface Lexer: Object
 {
     string source;
+    string filename;
+    integer linenum;
 }
-+ (id) newFromSource: (string) s;
-- (id) initWithSource: (string) s;
++ (id) newFromSource: (string) s file: (string) f;
+- (id) initWithSource: (string) s file: (string) f;
 - (SchemeObject) nextToken;
+- (integer) lineNumber;
 @end
 
 #endif //__Lexer_h

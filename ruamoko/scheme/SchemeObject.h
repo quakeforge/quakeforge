@@ -16,11 +16,18 @@
 {
     @public SchemeObject prev, next;
     BOOL marked, root;
+    integer line;
+    string source;
 }
 - (void) mark;
 - (void) markReachable;
 - (void) makeRootCell;
 - (string) printForm;
+- (string) source;
+- (void) source: (string) s;
+- (integer) line;
+- (void) line: (integer) l;
+- (BOOL) isError;
 @end
 
 #endif //__SchemeObject_h

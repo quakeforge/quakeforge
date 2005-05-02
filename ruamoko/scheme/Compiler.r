@@ -18,9 +18,11 @@
     lambdaSym = [Symbol forString: "lambda"];
     quoteSym = [Symbol forString: "quote"];
     code = [CompiledCode new];
+    err = NIL;
     return self;
 }
 
+// FIXME: handle variable argument lists
 - (void) emitBuildEnvironment: (SchemeObject) arguments
 {
     local integer count, index;
@@ -47,6 +49,7 @@
 
     for (cur = expressions; cur != [Nil nil]; cur = [cur cdr]) {
             [self emitExpression: [cur car]];
+            if (err) return;
     }
 }
 
@@ -74,10 +77,12 @@
     if ([expression isKindOfClass: [Cons class]]) {
             if ([expression car] == lambdaSym) {
                     [self emitLambda: expression];
+                    if (err) return;
             } else if ([expression car] == quoteSym) {
                     [self emitConstant: [[expression cdr] car]];
             } else {
                     [self emitApply: expression];
+                    if (err) return;
             }
     } else if ([expression isKindOfClass: [Symbol class]]) {
             [self emitVariable: (Symbol) expression];
@@ -92,7 +97,9 @@
             return;
     } else {
             [self emitArguments: [expression cdr]];
+            if (err) return;
             [self emitExpression: [expression car]];
+            if (err) return;
             [code addInstruction: [Instruction opcode: PUSH]];
     }
 }
@@ -102,7 +109,9 @@
     local Instruction label = [Instruction opcode: LABEL];
     [code addInstruction: [Instruction opcode: MAKECONT label: label]];
     [self emitArguments: [expression cdr]];
+    if (err) return;
     [self emitExpression: [expression car]];
+    if (err) return;
     [code addInstruction: [Instruction opcode: CALL]];
     [code addInstruction: label];
 }
@@ -111,10 +120,15 @@
 {
     local Compiler compiler = [Compiler newWithLambda: expression
                                         scope: scope];
+    local SchemeObject res;
     local integer index;
     
-    [compiler compile];
-    index = [code addConstant: [compiler code]];
+    res = [compiler compile];
+    if ([res isError]) {
+            err = (Error) res;
+            return;
+    }          
+    index = [code addConstant: res];
     [code addInstruction: [Instruction opcode: LOADLITS]];
     [code addInstruction: [Instruction opcode: GET operand: index]];
     [code addInstruction: [Instruction opcode: MAKECLOSURE]];
@@ -128,16 +142,34 @@
     [code addInstruction: [Instruction opcode: GET operand: index]];
 }
 
-- (void) compile
+- (void) checkLambdaSyntax: (SchemeObject) expression
 {
-    [self emitBuildEnvironment: [[sexpr cdr] car]];
-    [self emitSequence: [[sexpr cdr] cdr]];
-    [code addInstruction: [Instruction opcode: RETURN]];
-    [code compile];
+    if (![expression isKindOfClass: [Cons class]] ||
+        [expression car] != lambdaSym ||
+        [expression cdr] == [Nil nil] ||
+        [[expression cdr] cdr] == [Nil nil]) {
+            err = [Error type: "syntax"
+                         message: "malformed lambda expression"
+                         by: expression];
+    }
 }
 
-- (CompiledCode) code
+- (SchemeObject) compile
 {
+    [self checkLambdaSyntax: sexpr];
+    if (err) {
+            return err;
+    }
+    [self emitBuildEnvironment: [[sexpr cdr] car]];
+    if (err) {
+            return err;
+    }
+    [self emitSequence: [[sexpr cdr] cdr]];
+    if (err) {
+            return err;
+    }
+    [code addInstruction: [Instruction opcode: RETURN]];
+    [code compile];
     return code;
 }
 

@@ -4,6 +4,7 @@
 #include "CompiledCode.h"
 #include "Symbol.h"
 #include "Scope.h"
+#include "Error.h"
 
 @interface Compiler: SchemeObject
 {
@@ -11,12 +12,12 @@
     SchemeObject sexpr;
     Symbol lambdaSym, quoteSym;
     Scope scope;
+    Error err;
 }
 
 + (id) newWithLambda: (SchemeObject) xp scope: (Scope) sc;
 - (id) initWithLambda: (SchemeObject) xp scope: (Scope) sc;
-- (void) compile;
-- (CompiledCode) code;
+- (SchemeObject) compile;
 
 @end
 

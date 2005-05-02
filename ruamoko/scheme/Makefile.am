@@ -44,7 +44,8 @@ EXTRA_DATA = $(scheme_data)
 libscheme_a_SOURCES=\
 	SchemeObject.r Cons.r Number.r String.r Symbol.r Lexer.r Parser.r Nil.r \
 	Procedure.r Primitive.r Lambda.r Scope.r Instruction.r builtins.r \
-	Frame.r CompiledCode.r Compiler.r Continuation.r Machine.r Void.r
+	Frame.r CompiledCode.r Compiler.r Continuation.r Machine.r Void.r \
+	Error.r
 libscheme_a_AR=$(PAK) -cf
 
 scheme_data=\

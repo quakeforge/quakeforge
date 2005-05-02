@@ -5,9 +5,11 @@
 @interface Parser: Object
 {
     Lexer lexer;
+    string file;
 }
-+ (id) newFromSource: (string) s;
-- (id) initWithSource: (string) s;
++ (id) newFromSource: (string) s file: (string) f;
+- (id) initWithSource: (string) s file: (string) f;
+- (SchemeObject) readAtomic;
 - (SchemeObject) read;
 @end
 
