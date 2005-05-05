@@ -786,16 +786,17 @@ sv_new_f (void)
 	server_t   *sv;
 	netadr_t    adr;
 
-	if (Cmd_Argc () != 3) {
+	if (Cmd_Argc () < 2 || Cmd_Argc () > 3) {
 		qtv_printf ("Usage: sv_new <name> <address>\n");
 		return;
 	}
-	name = Cmd_Argv (1);
+	address = name = Cmd_Argv (1);
 	if (Hash_Find (server_hash, name)) {
 		qtv_printf ("sv_new: %s already exists\n", name);
 		return;
 	}
-	address = Cmd_Argv (2);
+	if (Cmd_Argc () == 3)
+		address = Cmd_Argv (2);
 	if (!NET_StringToAdr (address, &adr)) {
 		qtv_printf ("Bad server address\n");
 		return;
