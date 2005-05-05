@@ -472,7 +472,7 @@ void SV_FinalMessage (const char *message);
 void SV_DropClient (client_t *drop);
 int SV_CalcPing (client_t *cl);
 void SV_FullClientUpdate (client_t *client, sizebuf_t *buf);
-void SV_FullClientUpdateToClient (client_t *client, client_t *cl);
+void SV_FullClientUpdateToClient (client_t *client, backbuf_t *backbuf);
 
 int SV_ModelIndex (const char *name);
 
@@ -551,6 +551,8 @@ void SV_FindModelNumbers (void);
 void SV_WriteWorldVars (netchan_t *netchan);
 void SV_WriteSoundlist (netchan_t *netchan, int n);
 void SV_WriteModellist (netchan_t *netchan, int n);
+void SV_WriteSpawn1 (backbuf_t *backbuf, int n);
+void SV_WriteSpawn2 (backbuf_t *backbuf);
 void SV_ExecuteClientMessage (client_t *cl);
 void SV_UserInit (void);
 void SV_TogglePause (const char *msg);

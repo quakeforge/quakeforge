@@ -67,6 +67,8 @@ static __attribute__ ((unused)) const char rcsid[] =
 #include "qtv.h"
 #include "server.h"
 
+#undef qtv_print
+
 SERVER_PLUGIN_PROTOS
 static plugin_list_t server_plugin_list[] = {
 	SERVER_PLUGIN_LIST

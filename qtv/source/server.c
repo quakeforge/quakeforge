@@ -97,7 +97,7 @@ server_compare (const void *a, const void *b)
 }
 
 static void
-qtv_server_data (server_t *sv)
+qtv_serverdata (server_t *sv)
 {
 	const char *str;
 
@@ -143,7 +143,7 @@ qtv_server_data (server_t *sv)
 }
 
 static void
-qtv_sound_list (server_t *sv)
+qtv_soundlist (server_t *sv)
 {
 	int         numsounds = MSG_ReadByte (net_message);
 	int         n;
@@ -153,7 +153,7 @@ qtv_sound_list (server_t *sv)
 		str = MSG_ReadString (net_message);
 		if (!str[0])
 			break;
-		qtv_printf ("%s\n", str);
+		//qtv_printf ("%s\n", str);
 		numsounds++;
 		if (numsounds == MAX_SOUNDS) {
 			while (str[0])
@@ -177,7 +177,7 @@ qtv_sound_list (server_t *sv)
 }
 
 static void
-qtv_model_list (server_t *sv)
+qtv_modellist (server_t *sv)
 {
 	int         nummodels = MSG_ReadByte (net_message);
 	int         n;
@@ -187,7 +187,7 @@ qtv_model_list (server_t *sv)
 		str = MSG_ReadString (net_message);
 		if (!str[0])
 			break;
-		qtv_printf ("%s\n", str);
+		//qtv_printf ("%s\n", str);
 		nummodels++;
 		if (nummodels == MAX_SOUNDS) {
 			while (str[0])
@@ -211,15 +211,96 @@ qtv_model_list (server_t *sv)
 }
 
 static void
-qtv_sign_on (server_t *sv)
+qtv_p_signon_f (server_t *sv, int len)
 {
-	int         len;
+	int         c, start;
+	vec3_t      v, a;
+
+	start = net_message->readcount;
+	while (net_message->readcount - start < len) {
+		c = MSG_ReadByte (net_message);
+		if (c == -1)
+			break;
+		//qtv_printf ("svc: %d\n", c);
+		switch (c) {
+			case svc_serverdata:
+				qtv_serverdata (sv);
+				break;
+			case svc_soundlist:
+				qtv_soundlist (sv);
+				break;
+			case svc_modellist:
+				qtv_modellist (sv);
+				break;
+			case svc_spawnstaticsound:
+				MSG_ReadCoordV (net_message, v);
+				MSG_ReadByte (net_message);
+				MSG_ReadByte (net_message);
+				MSG_ReadByte (net_message);
+				break;
+			case svc_spawnbaseline:
+				MSG_ReadShort (net_message);
+			case svc_spawnstatic:
+				MSG_ReadByte (net_message);
+				MSG_ReadByte (net_message);
+				MSG_ReadByte (net_message);
+				MSG_ReadByte (net_message);
+				MSG_ReadCoordAngleV (net_message, v, a);
+				break;
+			case svc_lightstyle:
+				MSG_ReadByte (net_message);
+				MSG_ReadString (net_message);
+				break;
+			case svc_updatestatlong:
+				MSG_ReadByte (net_message);
+				MSG_ReadLong (net_message);
+				break;
+			case svc_updatestat:
+				MSG_ReadByte (net_message);
+				MSG_ReadByte (net_message);
+				break;
+			default:
+				qtv_printf ("unkown svc: %d\n", c);
+				return;
+		}
+	}
+}
+
+static void
+qtv_packet_f (server_t *sv)
+{
+	int         len_type, len, type, pos;
 	byte       *buf;
 
-	len = MSG_ReadShort (net_message);
-	buf = malloc (len);
-	MSG_ReadBytes (net_message, buf, len);
-	free (buf);	//XXX
+	len_type = MSG_ReadShort (net_message);
+	len = len_type & 0x0fff;
+	type = len_type & 0xf000;
+	pos = net_message->readcount;
+	qtv_printf ("qtv_packet: %d %d\n", type, len);
+	switch (type) {
+		case qtv_p_signon:
+			qtv_p_signon_f (sv, len);
+			break;
+		case qtv_p_print:
+			qtv_printf ("%s\n", MSG_ReadString (net_message));
+			break;
+		case qtv_p_reliable:
+		case qtv_p_unreliable:
+		default:
+			//absorb unhandled packet types
+			qtv_printf ("unknown packet type %x (%d bytes)\n", type, len);
+			break;
+	}
+	if (net_message->readcount - pos != len) {
+		qtv_printf ("packet not completely read\n");
+
+		len -= net_message->readcount - pos;
+		if (len > 0) {
+			buf = malloc (len);
+			MSG_ReadBytes (net_message, buf, len);
+			free (buf);	//XXX
+		}
+	}
 }
 
 static void
@@ -232,6 +313,19 @@ qtv_cmd_f (server_t *sv)
 	sv->next_run = realtime;
 }
 
+static void
+qtv_skins_f (server_t *sv)
+{
+	// we don't actually bother checking skins here, but this is a good way
+	// to get everything ready at the last miniute before we start getting
+	// actual in-game update messages
+	MSG_WriteByte (&sv->netchan.message, qtv_stringcmd);
+	MSG_WriteString (&sv->netchan.message, va ("begin %d", sv->spawncount));
+	sv->next_run = realtime;
+	sv->connected = 2;
+	sv->delta = -1;
+}
+
 typedef struct {
 	const char *name;
 	void      (*func) (server_t *sv);
@@ -239,12 +333,13 @@ typedef struct {
 
 svcmd_t svcmds[] = {
 	{"cmd",			qtv_cmd_f},
+	{"skins",		qtv_skins_f},
 
 	{0,				0},
 };
 
 static void
-qtv_sv_cmd (server_t *sv)
+qtv_stringcmd_f (server_t *sv)
 {
 	svcmd_t    *c;
 	const char *name;
@@ -282,6 +377,7 @@ server_handler (connection_t *con, void *object)
 			net_message->readcount++;
 			break;
 		}
+		//qtv_printf ("cmd: %d\n", cmd);
 		switch (cmd) {
 			default:
 				qtv_printf ("Illegible server message: %d\n", cmd);
@@ -289,20 +385,11 @@ server_handler (connection_t *con, void *object)
 			case qtv_disconnect:
 				qtv_printf ("%s: disconnected\n", sv->name);
 				break;
-			case qtv_serverdata:
-				qtv_server_data (sv);
-				break;
-			case qtv_soundlist:
-				qtv_sound_list (sv);
-				break;
-			case qtv_modellist:
-				qtv_model_list (sv);
-				break;
-			case qtv_signon:
-				qtv_sign_on (sv);
-				break;
 			case qtv_stringcmd:
-				qtv_sv_cmd (sv);
+				qtv_stringcmd_f (sv);
+				break;
+			case qtv_packet:
+				qtv_packet_f (sv);
 				break;
 		}
 	}
@@ -501,11 +588,14 @@ server_shutdown (void)
 static void
 server_run (server_t *sv)
 {
-	//static byte msg[] = {qtv_nop};
-	qtv_printf ("%d\n", sv->netchan.message.cursize);
-	//Netchan_Transmit (&sv->netchan, sizeof (msg), msg);
-	Netchan_Transmit (&sv->netchan, 0, 0);
-//	sv->next_run = realtime + 0.03;
+	static byte msg[2] = {qtv_delta};
+	if (sv->connected > 1) {
+		sv->next_run = realtime + 0.03;
+		msg[1] = sv->delta;
+		Netchan_Transmit (&sv->netchan, sizeof (msg), msg);
+	} else {
+		Netchan_Transmit (&sv->netchan, 0, 0);
+	}
 }
 
 void

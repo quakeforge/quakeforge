@@ -54,6 +54,8 @@ typedef struct server_s {
 	int         cdtrack;
 	int         sounds;
 	struct info_s *info;
+
+	int         delta;
 } server_t;
 
 void Server_Init (void);

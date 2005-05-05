@@ -36,10 +36,10 @@ struct sizebuf_s;
 typedef struct recorder_s recorder_t;
 
 void SVR_Init (void);
-recorder_t *SVR_AddUser (void (*writer)(struct sizebuf_s *),
-						 int (*frame)(void),
-						 void (*finish)(struct sizebuf_s *),
-						 int demo);
+recorder_t *SVR_AddUser (void (*writer)(void *, struct sizebuf_s *, int),
+						 int (*frame)(void *),
+						 void (*finish)(void *, struct sizebuf_s *),
+						 int demo, void *user);
 void SVR_RemoveUser (recorder_t *r);
 struct sizebuf_s *SVR_WriteBegin (byte type, int to, int size);
 struct sizebuf_s *SVR_Datagram (void);

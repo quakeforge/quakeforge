@@ -313,6 +313,7 @@ SV_FinalMessage (const char *message)
 		if (cl->state >= cs_connected)
 			Netchan_Transmit (&cl->netchan, net_message->message->cursize,
 							  net_message->message->data);
+	SV_qtvFinalMessage (message);
 }
 
 /*
@@ -457,16 +458,13 @@ SV_FullClientUpdate (client_t *client, sizebuf_t *buf)
 	Writes all update values to a client's reliable stream
 */
 void
-SV_FullClientUpdateToClient (client_t *client, client_t *cl)
+SV_FullClientUpdateToClient (client_t *client, backbuf_t *backbuf)
 {
 	if (client->state < cs_connected && client->state != cs_server)
 		return;
-	MSG_ReliableCheckBlock (&cl->backbuf, 24 + client->userinfo->cursize);
-	if (cl->backbuf.num_backbuf) {
-		SV_FullClientUpdate (client, &cl->backbuf.backbuf);
-		MSG_Reliable_FinishWrite (&cl->backbuf);
-	} else
-		SV_FullClientUpdate (client, &cl->netchan.message);
+	MSG_ReliableCheckBlock (backbuf, 24 + client->userinfo->cursize);
+	SV_FullClientUpdate (client, &backbuf->backbuf);
+	MSG_Reliable_FinishWrite (backbuf);
 }
 
 /* CONNECTIONLESS COMMANDS */
@@ -1983,13 +1981,13 @@ SV_Frame (float time)
 	// send messages back to the clients that had packets read this frame
 	SV_SendClientMessages ();
 
-	SV_qtvSendMessages ();
-
 	demo_start = Sys_DoubleTime ();
 	if (sv.recorders)
 		SV_SendDemoMessage ();
 	demo_end = Sys_DoubleTime ();
 	svs.stats.demo += demo_end - demo_start;
+
+	SV_qtvSendMessages ();
 
 	// send a heartbeat to the master if needed
 	Master_Heartbeat ();

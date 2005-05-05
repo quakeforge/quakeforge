@@ -102,9 +102,10 @@ typedef struct rec_s {
 
 struct recorder_s {
 	recorder_t *next;
-	void (*write)(sizebuf_t *);
-	int (*frame)(void);
-	void (*finish)(sizebuf_t *);
+	void      (*write)(void *, sizebuf_t *, int);
+	int       (*frame)(void *);
+	void      (*finish)(void *, sizebuf_t *);
+	void       *user;
 	delta_t     delta;
 	entity_state_t entities[UPDATE_MASK][MAX_DEMO_PACKET_ENTITIES];
 	plent_state_t players[UPDATE_MASK][MAX_CLIENTS];
@@ -325,8 +326,8 @@ SVR_Init (void)
 }
 
 recorder_t *
-SVR_AddUser (void (*write)(sizebuf_t *), int (*frame)(void),
-			 void (*finish)(sizebuf_t *), int demo)
+SVR_AddUser (void (*write)(void *, sizebuf_t *, int), int (*frame)(void *),
+			 void (*finish)(void *, sizebuf_t *), int demo, void *user)
 {
 	recorder_t *r;
 	int         i;
@@ -358,6 +359,7 @@ SVR_AddUser (void (*write)(sizebuf_t *), int (*frame)(void),
 	r->write = write;
 	r->frame = frame;
 	r->finish = finish;
+	r->user = user;
 
 	return r;
 }
@@ -379,13 +381,13 @@ SVR_RemoveUser (recorder_t *r)
 	MSG_WriteByte (&msg, 0);
 	MSG_WriteByte (&msg, dem_all);
 	MSG_WriteLong (&msg, 0);
-	r->finish (&msg);
+	r->finish (r->user, &msg);
 	if (msg.cursize > 6) {
 		msg.data[2] = ((msg.cursize - 6) >>  0) & 0xff;
 		msg.data[3] = ((msg.cursize - 6) >>  8) & 0xff;
 		msg.data[4] = ((msg.cursize - 6) >> 16) & 0xff;
 		msg.data[5] = ((msg.cursize - 6) >> 24) & 0xff;
-		r->write (&msg);
+		r->write (r->user, &msg, 1);
 	}
 
 	for (_r = &sv.recorders; *_r; _r = &(*_r)->next) {
@@ -434,7 +436,7 @@ write_datagram (recorder_t *r)
 //		msg.data[5] = ((msg.cursize - 6) >> 24) & 0xff;
 		double time = rec.frames[rec.lastwritten & DEMO_FRAMES_MASK].time;
 		write_msg (&msg, dem_all, 0, time, &dst);
-		r->write (&dst);
+		r->write (r->user, &dst, 0);
 	}
 
 	r->delta.delta_sequence++;
@@ -463,7 +465,7 @@ write_packet (void)
 	write_to_msg (0, 0, time, &msg);
 
 	for (r = sv.recorders; r; r = r->next)
-		r->write (&msg);
+		r->write (r->user, &msg, 1);
 
 	rec.dbuf = &rec.frames[rec.parsecount & DEMO_FRAMES_MASK].buf;
 	rec.dbuf->sz.maxsize = MAXSIZE + rec.dbuf->bufsize;
@@ -530,7 +532,7 @@ SVR_Frame (void)
 		return 1;
 	}
 	for (r = sv.recorders; r; r = r->next)
-		if (r->frame ())
+		if (r->frame (r->user))
 			return 1;
 	return 0;
 }

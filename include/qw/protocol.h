@@ -138,11 +138,14 @@
 #define qtv_stringcmd	2		// [string] message
 #define qtv_delta		3		// [byte] sequence number, requests delta
 								// compression of message
-#define qtv_serverdata	4
+#define qtv_packet		4		// [short] len/type encoding followed by len
+								// bytes of packet data
 #define qtv_disconnect	5
-#define qtv_soundlist	6
-#define qtv_modellist	7
-#define qtv_signon		8
+
+#define qtv_p_signon	0x0000
+#define qtv_p_print		0x1000
+#define qtv_p_reliable	0x2000	// data would have been sent reliably
+#define qtv_p_unreliable 0x3000	// data would have been sent unreliably
 
 // demo recording
 

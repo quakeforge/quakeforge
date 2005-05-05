@@ -57,6 +57,7 @@ static __attribute__ ((unused)) const char rcsid[] =
 #include "QF/va.h"
 
 #include "qw/msg_ucmd.h"
+#include "qw/msg_ucmd.h"
 
 #include "bothdefs.h"
 #include "compat.h"
@@ -191,6 +192,7 @@ SV_WriteSoundlist (netchan_t *netchan, int n)
 {
 	const char **s;
 
+	MSG_WriteByte (&netchan->message, svc_soundlist);
 	MSG_WriteByte (&netchan->message, n);
 	for (s = sv.sound_precache + 1 + n;
 		 *s && netchan->message.cursize < (MAX_MSGLEN / 2);
@@ -237,7 +239,6 @@ SV_Soundlist_f (void *unused)
 		SZ_Clear (&host_client->netchan.message);
 	}
 
-	MSG_WriteByte (&host_client->netchan.message, svc_soundlist);
 	SV_WriteSoundlist (&host_client->netchan, n);
 }
 
@@ -246,6 +247,7 @@ SV_WriteModellist (netchan_t *netchan, int n)
 {
 	const char **s;
 
+	MSG_WriteByte (&netchan->message, svc_modellist);
 	MSG_WriteByte (&netchan->message, n);
 	for (s = sv.model_precache + 1 + n;
 		 *s && netchan->message.cursize < (MAX_MSGLEN / 2);
@@ -291,7 +293,6 @@ SV_Modellist_f (void *unused)
 		SZ_Clear (&host_client->netchan.message);
 	}
 
-	MSG_WriteByte (&host_client->netchan.message, svc_modellist);
 	SV_WriteModellist (&host_client->netchan, n);
 }
 
@@ -379,11 +380,51 @@ SV_Spawn (client_t *client)
 		SVfloat (ent, maxspeed) = sv_maxspeed->value;
 }
 
+void
+SV_WriteSpawn1 (backbuf_t *backbuf, int n)
+{
+	int         i;
+	client_t   *client;
+
+	// normally this could overflow, but no need to check due to backbuf
+	for (i = n, client = svs.clients + n; i < MAX_CLIENTS; i++, client++)
+		SV_FullClientUpdateToClient (client, backbuf);
+
+	// send all current light styles
+	for (i = 0; i < MAX_LIGHTSTYLES; i++) {
+		MSG_ReliableWrite_Begin (backbuf, svc_lightstyle,
+								 3 + (sv.lightstyles[i] ?
+									  strlen (sv.lightstyles[i]) : 1));
+		MSG_ReliableWrite_Byte (backbuf, (char) i);
+		MSG_ReliableWrite_String (backbuf, sv.lightstyles[i]);
+	}
+}
+
+void
+SV_WriteSpawn2 (backbuf_t *backbuf)
+{
+
+	MSG_ReliableWrite_Begin (backbuf, svc_updatestatlong, 6);
+	MSG_ReliableWrite_Byte (backbuf, STAT_TOTALSECRETS);
+	MSG_ReliableWrite_Long (backbuf, *sv_globals.total_secrets);
+
+	MSG_ReliableWrite_Begin (backbuf, svc_updatestatlong, 6);
+	MSG_ReliableWrite_Byte (backbuf, STAT_TOTALMONSTERS);
+	MSG_ReliableWrite_Long (backbuf, *sv_globals.total_monsters);
+
+	MSG_ReliableWrite_Begin (backbuf, svc_updatestatlong, 6);
+	MSG_ReliableWrite_Byte (backbuf, STAT_SECRETS);
+	MSG_ReliableWrite_Long (backbuf, *sv_globals.found_secrets);
+
+	MSG_ReliableWrite_Begin (backbuf, svc_updatestatlong, 6);
+	MSG_ReliableWrite_Byte (backbuf, STAT_MONSTERS);
+	MSG_ReliableWrite_Long (backbuf, *sv_globals.killed_monsters);
+}
+
 static void
 SV_Spawn_f (void *unused)
 {
-	int         i, n;
-	client_t   *client;
+	int         n;
 
 	if (host_client->state != cs_connected) {
 		SV_Printf ("Spawn not valid -- already spawned\n");
@@ -419,44 +460,16 @@ SV_Spawn_f (void *unused)
 	SZ_Clear (&host_client->netchan.message);
 
 	// send current status of all other players
-
-	// normally this could overflow, but no need to check due to backbuf
-	for (i = n, client = svs.clients + n; i < MAX_CLIENTS; i++, client++)
-		SV_FullClientUpdateToClient (client, host_client);
-
-	// send all current light styles
-	for (i = 0; i < MAX_LIGHTSTYLES; i++) {
-		MSG_ReliableWrite_Begin (&host_client->backbuf, svc_lightstyle,
-								 3 + (sv.lightstyles[i] ?
-									  strlen (sv.lightstyles[i]) : 1));
-		MSG_ReliableWrite_Byte (&host_client->backbuf, (char) i);
-		MSG_ReliableWrite_String (&host_client->backbuf, sv.lightstyles[i]);
-	}
+	SV_WriteSpawn1 (&host_client->backbuf, n);
 
 	SV_Spawn (host_client);
+
+	SV_WriteSpawn2 (&host_client->backbuf);
 
 //
 // force stats to be updated
 //
 	memset (host_client->stats, 0, sizeof (host_client->stats));
-
-	MSG_ReliableWrite_Begin (&host_client->backbuf, svc_updatestatlong, 6);
-	MSG_ReliableWrite_Byte (&host_client->backbuf, STAT_TOTALSECRETS);
-	MSG_ReliableWrite_Long (&host_client->backbuf, *sv_globals.total_secrets);
-
-	MSG_ReliableWrite_Begin (&host_client->backbuf, svc_updatestatlong, 6);
-	MSG_ReliableWrite_Byte (&host_client->backbuf, STAT_TOTALMONSTERS);
-	MSG_ReliableWrite_Long (&host_client->backbuf,
-							*sv_globals.total_monsters);
-
-	MSG_ReliableWrite_Begin (&host_client->backbuf, svc_updatestatlong, 6);
-	MSG_ReliableWrite_Byte (&host_client->backbuf, STAT_SECRETS);
-	MSG_ReliableWrite_Long (&host_client->backbuf, *sv_globals.found_secrets);
-
-	MSG_ReliableWrite_Begin (&host_client->backbuf, svc_updatestatlong, 6);
-	MSG_ReliableWrite_Byte (&host_client->backbuf, STAT_MONSTERS);
-	MSG_ReliableWrite_Long (&host_client->backbuf,
-							*sv_globals.killed_monsters);
 
 	// get the client to check and download skins
 	// when that is completed, a begin command will be issued

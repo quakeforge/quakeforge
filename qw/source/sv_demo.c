@@ -102,13 +102,13 @@ memwrite (QFile *_mem, const void *buffer, int size)
 }
 
 static void
-demo_write (sizebuf_t *msg)
+demo_write (void *unused, sizebuf_t *msg, int unused2)
 {
 	DWRITE (msg->data, msg->cursize, demo_dest);
 }
 
 static int
-demo_frame (void)
+demo_frame (void *unused)
 {
 	double      min_fps;
 
@@ -124,7 +124,7 @@ demo_frame (void)
 }
 
 static void
-demo_finish (sizebuf_t *msg)
+demo_finish (void *unused, sizebuf_t *msg)
 {
 	// write a disconnect message to the demo file
 	MSG_WriteByte (msg, svc_disconnect);
@@ -406,7 +406,7 @@ SV_Record (char *name)
 	} else
 		QFS_Remove (demo_text->str);
 
-	recorder = SVR_AddUser (demo_write, demo_frame, demo_finish, 1);
+	recorder = SVR_AddUser (demo_write, demo_frame, demo_finish, 1, 0);
 	demo_time = sv.time;
 
 /*-------------------------------------------------*/
