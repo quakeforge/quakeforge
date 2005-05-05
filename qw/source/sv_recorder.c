@@ -430,8 +430,6 @@ write_datagram (recorder_t *r)
 		write_msg (&msg, dem_all, 0, time, &dst);
 		r->write (r->user, &dst, 0);
 	}
-
-	rec.frames[rec.parsecount & DEMO_FRAMES_MASK].time = rec.time = sv.time;
 }
 
 static void
@@ -590,6 +588,8 @@ SV_SendDemoMessage (void)
 				}
 			}
 	}
+
+	rec.frames[rec.parsecount & DEMO_FRAMES_MASK].time = rec.time = sv.time;
 
 	write_packet ();
 	// send over all the objects that are in the PVS

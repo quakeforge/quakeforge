@@ -168,8 +168,6 @@ static const char **Net_sound_precache;
 static sizebuf_t   _packet;
 static qmsg_t      packet = {0, 0, &_packet};
 
-static void Net_LogPrintf (const char *fmt, ...) __attribute__ ((format (printf, 1, 2)));
-
 static int
 Net_LogStart (const char *fname)
 {
@@ -965,7 +963,7 @@ Net_Log_Init (const char **sound_precache)
 
 	Prints packet to logfile, adds time stamp etc.
 */
-static void
+void
 Net_LogPrintf (const char *fmt, ...)
 {
 	char        text[2048];
