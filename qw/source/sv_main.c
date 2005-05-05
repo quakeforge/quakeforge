@@ -463,8 +463,11 @@ SV_FullClientUpdateToClient (client_t *client, backbuf_t *backbuf)
 	if (client->state < cs_connected && client->state != cs_server)
 		return;
 	MSG_ReliableCheckBlock (backbuf, 24 + client->userinfo->cursize);
-	SV_FullClientUpdate (client, &backbuf->backbuf);
-	MSG_Reliable_FinishWrite (backbuf);
+	if (backbuf->num_backbuf) {
+		SV_FullClientUpdate (client, &backbuf->backbuf);
+		MSG_Reliable_FinishWrite (backbuf);
+	} else
+		SV_FullClientUpdate (client, &backbuf->netchan->message);
 }
 
 /* CONNECTIONLESS COMMANDS */
