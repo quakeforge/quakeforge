@@ -258,7 +258,6 @@ static int
 qtv_frame (void *r)
 {
 	sv_qtv_t   *proxy = (sv_qtv_t *) r;
-	SV_Printf ("A proxy->packet: %d\n", proxy->packet);
 	return proxy->packet;
 }
 
@@ -465,7 +464,6 @@ SV_qtvSendMessages (void)
 		} else {
 			Netchan_Transmit (&proxy->netchan, 0, 0);
 		}
-		SV_Printf ("B proxy->packet: %d\n", proxy->packet);
 		proxy->packet = 0;
 	}
 }
