@@ -165,6 +165,45 @@ MSG_WriteAngle16 (sizebuf_t *sb, float angle16)
 	MSG_WriteShort (sb, (int) (angle16 * (65536.0 / 360.0)) & 65535);
 }
 
+void
+MSG_WriteUTF8 (sizebuf_t *sb, unsigned utf8)
+{
+	byte	   *buf;
+	int			count;
+
+	if (utf8 & 0x80000000) {
+		return;					// invalid (FIXME die?)
+	} else if (utf8 & 0x7c000000) {
+		buf = SZ_GetSpace (sb, count = 6);
+		*buf = 0xfc | ((utf8 & 0x40000000) >> 30);	// 1 bit
+		utf8 <<= 2;
+	} else if (utf8 & 0x03e00000) {
+		buf = SZ_GetSpace (sb, count = 5);
+		*buf = 0xf8 | ((utf8 & 0x30000000) >> 28);	// 2 bits
+		utf8 <<= 4;
+	} else if (utf8 & 0x001f0000) {
+		buf = SZ_GetSpace (sb, count = 4);
+		*buf = 0xf0 | ((utf8 & 0x001c0000) >> 18);	// 3 bits
+		utf8 <<= 14;
+	} else if (utf8 & 0x0000f800) {
+		buf = SZ_GetSpace (sb, count = 3);
+		*buf = 0xe0 | ((utf8 & 0x0000f000) >> 12);	// 4 bits
+		utf8 <<= 20;
+	} else if (utf8 & 0x00000780) {
+		buf = SZ_GetSpace (sb, count = 2);
+		*buf = 0xc0 | ((utf8 & 0x00000780) >> 7);	// 5 bits
+		utf8 <<= 25;
+	} else {
+		buf = SZ_GetSpace (sb, count = 1);
+		*buf = utf8;
+		return;
+	}
+	while (--count) {
+		*buf++ = 0x80 | ((utf8 & 0xfc000000) >> 26);
+		utf8 <<= 6;
+	}
+}
+
 // reading functions ==========================================================
 
 void
@@ -342,4 +381,59 @@ float
 MSG_ReadAngle16 (qmsg_t *msg)
 {
 	return MSG_ReadShort (msg) * (360.0 / 65536.0);
+}
+
+int
+MSG_ReadUTF8 (qmsg_t *msg)
+{
+	byte       *buf, *start, c;
+	int         val = 0, count;
+
+	if (msg->badread || msg->message->cursize == msg->readcount) {
+		msg->badread = true;
+		return -1;
+	}
+	buf = start = msg->message->data + msg->readcount;
+
+	c = *buf++;
+	if (c < 0x80) {
+		val = c;
+		count = 1;
+	} else if (c < 0xc0) {
+		msg->badread = true;
+		return -1;
+	} else if (c < 0xe0) {
+		count = 2;
+		val = c & 0x1f;
+	} else if (c < 0xf0) {
+		count = 3;
+		val = c & 0x0f;
+	} else if (c < 0xf8) {
+		count = 4;
+		val = c & 0x07;
+	} else if (c < 0xfc) {
+		count = 5;
+		val = c & 0x03;
+	} else if (c < 0xfe) {
+		count = 6;
+		val = c & 0x01;
+	} else {
+		msg->badread = true;
+		return -1;
+	}
+	if (count > (msg->message->cursize - msg->readcount)) {
+		msg->badread = true;
+		return -1;
+	}
+	while (--count) {
+		c = *buf++;
+		if ((c & 0xc0) != 0x80) {
+			msg->badread = true;
+			return -1;
+		}
+		val <<= 6;
+		val |= c & 0x3f;
+	}
+	msg->readcount += buf - start;
+	return val;
 }
