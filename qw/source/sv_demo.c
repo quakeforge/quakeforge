@@ -63,6 +63,7 @@ static void    *demo_dest;
 static double   demo_time;
 
 static recorder_t *recorder;
+static int      delta_sequence;
 
 #define MIN_DEMO_MEMORY 0x100000
 #define USECACHE (sv_demoUseCache->int_val && svs.demomemsize)
@@ -121,6 +122,12 @@ demo_frame (void *unused)
 		return 0;
 	demo_time = sv.time;
 	return 1;
+}
+
+static void
+demo_end_frame (recorder_t *r, void *unused)
+{
+	SVR_SetDelta (r, ++delta_sequence, -1);
 }
 
 static void
@@ -406,7 +413,9 @@ SV_Record (char *name)
 	} else
 		QFS_Remove (demo_text->str);
 
-	recorder = SVR_AddUser (demo_write, demo_frame, demo_finish, 1, 0);
+	recorder = SVR_AddUser (demo_write, demo_frame, demo_end_frame,
+							demo_finish, 1, 0);
+	delta_sequence = -1;
 	demo_time = sv.time;
 
 /*-------------------------------------------------*/

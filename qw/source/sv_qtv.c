@@ -59,10 +59,11 @@ typedef struct {
 	backbuf_t   backbuf;
 	info_t     *info;
 	info_key_t *name_key;
-	int         packet;
+	qboolean    packet;
 	recorder_t *recorder;
 	sizebuf_t   datagram;
 	byte        datagram_buf[MAX_DATAGRAM];
+	int         begun;
 } sv_qtv_t;
 
 #define MAX_PROXIES 2
@@ -91,7 +92,7 @@ drop_proxy (sv_qtv_t *proxy)
 	}
 	MSG_WriteByte (&proxy->netchan.message, qtv_disconnect);
 	Netchan_Transmit (&proxy->netchan, 0, 0);
-	proxy->packet = 0;
+	proxy->packet = false;
 	Info_Destroy (proxy->info);
 	proxy->info = 0;
 }
@@ -196,7 +197,7 @@ qtv_prespawn_f (sv_qtv_t *proxy)
 		command = va ("cmd spawn %i 0\n", svs.spawncount);
 	else
 		command = va ("cmd prespawn %i %i\n", svs.spawncount, buf + 1);
-	size = 5 + sv.signon_buffer_size[buf] + 1 + strlen (command) + 2;
+	size = (5 + sv.signon_buffer_size[buf]) + (1 + strlen (command) + 1);
 
 	msg = MSG_ReliableCheckBlock (&proxy->backbuf, size);
 
@@ -211,24 +212,28 @@ qtv_prespawn_f (sv_qtv_t *proxy)
 static void
 qtv_spawn_f (sv_qtv_t *proxy)
 {
-	int         pos, len;
-	byte       *buf;
+	int         pos = -1, len = 0;
+	byte       *buf = 0;
 
 	if (atoi (Cmd_Argv (1)) != svs.spawncount) {
 		qtv_new_f (proxy);
 		return;
 	}
-	MSG_WriteByte (&proxy->netchan.message, qtv_packet);
-	pos = proxy->netchan.message.cursize;
-	MSG_WriteShort (&proxy->netchan.message, qtv_p_signon);
+	if (!proxy->backbuf.num_backbuf) {
+		MSG_WriteByte (&proxy->netchan.message, qtv_packet);
+		pos = proxy->netchan.message.cursize;
+		MSG_WriteShort (&proxy->netchan.message, qtv_p_signon);
+	}
 	SV_WriteSpawn1 (&proxy->backbuf, 0);
 	SV_WriteSpawn2 (&proxy->backbuf);
-	len = proxy->netchan.message.cursize - pos - 2;
-	buf = proxy->netchan.message.data + pos;
-	buf[0] = len & 0xff;
-	buf[1] |= (len >> 8) & 0x0f;
-	MSG_ReliableWrite_Begin (&proxy->backbuf, qtv_stringcmd, 8);
+	MSG_ReliableWrite_Begin (&proxy->backbuf, svc_stufftext, 8);
 	MSG_ReliableWrite_String (&proxy->backbuf, "skins\n");
+	if (pos != -1) {
+		len = proxy->netchan.message.cursize - pos - 2;
+		buf = proxy->netchan.message.data + pos;
+		buf[0] = len & 0xff;
+		buf[1] |= (len >> 8) & 0x0f;
+	}
 }
 
 static void
@@ -236,22 +241,20 @@ qtv_write (void *r, sizebuf_t *msg, int reliable)
 {
 	sv_qtv_t   *proxy = (sv_qtv_t *) r;
 	sizebuf_t  *buf;
-	int         size;
+	int         type;
 
+	if (!msg->cursize)
+		return;
 	if (reliable) {
-		if (msg->cursize) {
-			size = msg->cursize + 3;
-			buf = MSG_ReliableCheckBlock (&proxy->backbuf, size);
-
-			MSG_WriteByte (buf, qtv_packet);
-			MSG_WriteShort (buf, qtv_p_reliable | msg->cursize);
-			SZ_Write (buf, msg->data, msg->cursize);
-		}
+		buf = MSG_ReliableCheckBlock (&proxy->backbuf, msg->cursize);
+		type = qtv_p_reliable;
 	} else {
-		MSG_WriteByte (&proxy->datagram, qtv_packet);
-		MSG_WriteShort (&proxy->datagram, qtv_p_unreliable | msg->cursize);
-		SZ_Write (&proxy->datagram, msg->data, msg->cursize);
+		buf = &proxy->datagram;
+		type = qtv_p_unreliable;
 	}
+	MSG_WriteByte (buf, qtv_packet);
+	MSG_WriteShort (buf, type | msg->cursize);
+	SZ_Write (buf, msg->data, msg->cursize);
 }
 
 static int
@@ -273,7 +276,9 @@ qtv_begin_f (sv_qtv_t *proxy)
 		qtv_new_f (proxy);
 		return;
 	}
-	proxy->recorder = SVR_AddUser (qtv_write, qtv_frame, qtv_finish, 0, proxy);
+	proxy->recorder = SVR_AddUser (qtv_write, qtv_frame, 0, qtv_finish, 0,
+								   proxy);
+	proxy->begun = 1;
 }
 
 typedef struct {
@@ -317,9 +322,19 @@ qtv_command (sv_qtv_t *proxy, const char *s)
 static void
 qtv_parse (sv_qtv_t *proxy)
 {
-	int         c;
+	int         c, delta;
 
-	proxy->packet = 1;
+	// make sure the reply sequence number matches the incoming
+	// sequence number 
+	if (proxy->netchan.incoming_sequence >= proxy->netchan.outgoing_sequence) {
+		proxy->netchan.outgoing_sequence = proxy->netchan.incoming_sequence;
+		proxy->packet = true;
+	} else {
+		proxy->packet = false;		// don't reply, sequences have slipped
+		return;						// FIXME right thing?
+	}
+	if (proxy->recorder)
+		SVR_SetDelta (proxy->recorder, -1, proxy->netchan.incoming_sequence);
 	while (1) {
 		if (net_message->badread) {
 			SV_Printf ("SV_ReadClientMessage: badread\n");
@@ -344,7 +359,10 @@ qtv_parse (sv_qtv_t *proxy)
 				break;
 
 			case qtv_delta:
-				MSG_ReadByte (net_message);
+				delta = MSG_ReadByte (net_message);
+				if (proxy->recorder)
+					SVR_SetDelta (proxy->recorder, delta,
+								  proxy->netchan.incoming_sequence);
 				break;
 		}
 	}
@@ -353,17 +371,22 @@ qtv_parse (sv_qtv_t *proxy)
 static void
 qtv_reliable_send (sv_qtv_t *proxy)
 {
-	int         pos, len;
-	byte       *buf;
+	int         pos = 0, len = 0;
+	byte       *buf = 0;
 
-	MSG_WriteByte (&proxy->netchan.message, qtv_packet);
-	pos = proxy->netchan.message.cursize;
-	MSG_WriteShort (&proxy->netchan.message, qtv_p_reliable);
+	SV_Printf ("proxy->begun: %d\n", proxy->begun);
+	if (!proxy->begun) {
+		MSG_WriteByte (&proxy->netchan.message, qtv_packet);
+		pos = proxy->netchan.message.cursize;
+		MSG_WriteShort (&proxy->netchan.message, qtv_p_signon);
+	}
 	MSG_Reliable_Send (&proxy->backbuf);
-	len = proxy->netchan.message.cursize - pos - 2;
-	buf = proxy->netchan.message.data + pos;
-	buf[0] = len & 0xff;
-	buf[1] |= (len >> 8) & 0x0f;
+	if (!proxy->begun) {
+		len = proxy->netchan.message.cursize - pos - 2;
+		buf = proxy->netchan.message.data + pos;
+		buf[0] = len & 0xff;
+		buf[1] |= (len >> 8) & 0x0f;
+	}
 }
 
 void
@@ -371,8 +394,7 @@ SV_qtvConnect (int qport, info_t *info)
 {
 	sv_qtv_t   *proxy;
 
-	SV_Printf ("QTV proxy connection: %d %s\n", Cmd_Argc (), Cmd_Args (1));
-	SV_Printf ("qport: %d\n", qport);
+	SV_Printf ("QTV proxy connection: %s\n", NET_AdrToString (net_from));
 
 	if (!(proxy = alloc_proxy ())) {
 		SV_Printf ("%s:full proxy connect\n", NET_AdrToString (net_from));
@@ -388,6 +410,7 @@ SV_qtvConnect (int qport, info_t *info)
 	proxy->backbuf.name = proxy->name_key->value;
 	proxy->datagram.data = proxy->datagram_buf;
 	proxy->datagram.maxsize = sizeof (proxy->datagram_buf);
+	proxy->begun = 0;
 
 	Netchan_OutOfBandPrint (net_from, "%c", S2C_CONNECTION);
 }
@@ -411,8 +434,8 @@ SV_qtvPacket (int qport)
 		if (Netchan_Process (&proxies[i].netchan)) {
 			// this is a valid, sequenced packet, so process it
 			svs.stats.packets++;
+			qtv_parse (&proxies[i]);
 		}
-		qtv_parse (&proxies[i]);
 		return 1;
 	}
 	return 0;

@@ -556,7 +556,7 @@ SV_WritePlayersToClient (delta_t *delta, byte *pvs, sizebuf_t *msg)
 	int         stdver = 2, full = stdver;
 	edict_t	   *ent;
 	packet_players_t *pack;
-	client_frame_t *frame = &delta->frames[delta->cur_frame];
+	client_frame_t *frame = &delta->frames[delta->in_frame];
 	packet_players_t *from_pack = 0;
 	plent_state_t dummy_player_state, *state = &dummy_player_state;
 	static plent_state_t null_player_state;

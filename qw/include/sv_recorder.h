@@ -38,13 +38,14 @@ typedef struct recorder_s recorder_t;
 void SVR_Init (void);
 recorder_t *SVR_AddUser (void (*writer)(void *, struct sizebuf_s *, int),
 						 int (*frame)(void *),
+						 void (*end_frame)(recorder_t *, void *),
 						 void (*finish)(void *, struct sizebuf_s *),
 						 int demo, void *user);
 void SVR_RemoveUser (recorder_t *r);
 struct sizebuf_s *SVR_WriteBegin (byte type, int to, int size);
 struct sizebuf_s *SVR_Datagram (void);
 void SVR_ForceFrame (void);
-int SVR_Frame (void);
+void SVR_SetDelta (recorder_t *r, int delta, int in_frame);
 void SV_SendDemoMessage (void);
 
 #endif//__sv_recorder_h
