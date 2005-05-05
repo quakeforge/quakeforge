@@ -554,12 +554,16 @@ qfs_load_config (void)
 	buf[0] = '{';
 	buf[len + 1] = '}';
 	buf[len + 2] = 0;
+	if (qfs_gd_plist)
+		PL_Free (qfs_gd_plist);
 	qfs_gd_plist = PL_GetPropertyList (buf);
 	free (buf);
 	if (qfs_gd_plist && qfs_gd_plist->type == QFDictionary)
 		return;		// done
 	Sys_Printf ("not a dictionary\n");
 no_config:
+	if (qfs_gd_plist)
+		PL_Free (qfs_gd_plist);
 	qfs_gd_plist = PL_GetPropertyList (qfs_default_dirconf);
 }
 

@@ -53,6 +53,12 @@ static __attribute__ ((unused)) const char rcsid[] =
 
 static hashtab_t *connections;
 
+static void
+connection_free (void *_c, void *unused)
+{
+	free (_c);
+}
+
 static unsigned long
 connection_get_hash (void *_c, void *unused)
 {
@@ -76,7 +82,7 @@ connection_compare (void *_c1, void *_c2, void *unused)
 void
 Connection_Init (void)
 {
-	connections = Hash_NewTable (1023, 0, 0, 0);
+	connections = Hash_NewTable (1023, 0, connection_free, 0);
 	Hash_SetHashCompare (connections, connection_get_hash, connection_compare);
 }
 
@@ -99,7 +105,7 @@ Connection_Add (netadr_t *address, void *object,
 void
 Connection_Del (connection_t *con)
 {
-	Hash_DelElement (connections, con);
+	Hash_Free (connections, Hash_DelElement (connections, con));
 }
 
 connection_t *

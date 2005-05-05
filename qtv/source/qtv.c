@@ -222,6 +222,8 @@ qtv_shutdown (void)
 {
 	NET_Shutdown ();
 	Con_Shutdown ();
+	Cbuf_Delete (qtv_cbuf);
+	Cbuf_ArgsDelete (qtv_args);
 }
 
 static void

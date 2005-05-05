@@ -81,6 +81,13 @@ server_free (void *_sv, void *unused)
 	if (sv->connected)
 		Netchan_Transmit (&sv->netchan, sizeof (final), final);
 	Connection_Del (sv->con);
+	Info_Destroy (sv->info);
+	free ((char *) sv->name);
+	free ((char *) sv->address);
+	if (sv->gamedir)
+		free ((char *) sv->gamedir);
+	if (sv->message)
+		free ((char *) sv->message);
 
 	for (s = &servers; *s; s = &(*s)->next) {
 		if (*s == sv) {
@@ -88,6 +95,7 @@ server_free (void *_sv, void *unused)
 			break;
 		}
 	}
+	free (sv);
 }
 
 static int
@@ -122,6 +130,7 @@ qtv_serverdata (server_t *sv)
 
 	COM_TokenizeString (MSG_ReadString (net_message), qtv_args);
 	cmd_args = qtv_args;
+	Info_Destroy (sv->info);
 	sv->info = Info_ParseString (Cmd_Argv (1), MAX_SERVERINFO_STRING, 0);
 
 	str = Info_ValueForKey (sv->info, "hostname");
@@ -869,6 +878,7 @@ static void
 server_shutdown (void)
 {
 	Hash_FlushTable (server_hash);
+	Hash_DelTable (server_hash);
 }
 
 static void

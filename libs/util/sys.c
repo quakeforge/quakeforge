@@ -387,11 +387,13 @@ Sys_Init_Cvars (void)
 void
 Sys_Shutdown (void)
 {
-	shutdown_list_t *p = shutdown_list;
+	shutdown_list_t *p = shutdown_list, *t;
 
 	while (p) {
 		p->func ();
+		t = p;
 		p = p->next;
+		free (t);
 	}
 }
 
