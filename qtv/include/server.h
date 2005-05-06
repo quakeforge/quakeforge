@@ -35,6 +35,14 @@
 #include "netchan.h"
 #include "qw/pmove.h"
 
+typedef struct sv_client_s {
+	struct sv_client_s *next;			// for multicast messages
+	struct info_s *info;
+	int            stats[MAX_CL_STATS];
+} sv_client_t;
+
+#define MAX_SV_CLIENTS 32
+
 typedef struct server_s {
 	struct server_s *next;
 	const char *name;
@@ -56,6 +64,9 @@ typedef struct server_s {
 	struct info_s *info;
 
 	int         delta;
+
+	sv_client_t clients[MAX_SV_CLIENTS];
+	sv_client_t *client_list;			// list of clients for multicast
 } server_t;
 
 void Server_Init (void);
