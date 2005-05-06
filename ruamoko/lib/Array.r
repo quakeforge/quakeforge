@@ -4,6 +4,7 @@
 
 - (id) init
 {
+	self = [super init];
 	count = size = 0;
 	incr = 16;
 	array = NIL;
@@ -21,9 +22,13 @@
 - (void) dealloc
 {
 	local integer i;
-	for (i = 0; i < count; i++)
-		[array[i] release];
-	obj_free (array);
+	for (i = 0; i < count; i++) {
+		if (array[i])
+			[array[i] release];
+	}
+	if (array) {
+		obj_free (array);
+	}
 	[super dealloc];
 }
 
@@ -42,6 +47,7 @@
 		index = count - 1;
 	if (index < 0 || index >= count)
 		return;
+	[array[index] release];
 	array[index] = item;
 	[item retain];
 }
