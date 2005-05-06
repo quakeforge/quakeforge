@@ -10,7 +10,6 @@
 {
     CompiledCode code;
     SchemeObject sexpr;
-    Symbol lambdaSym, quoteSym;
     Scope scope;
     Error err;
 }

@@ -8,7 +8,10 @@
 + (void) initialize;
 + (Symbol) leftParen;
 + (Symbol) rightParen;
++ (Symbol) dot;
 + (Symbol) forString: (string) s;
 @end
+
+@extern Symbol symbol (string str);
 
 #endif //__Symbol_h

@@ -7,7 +7,7 @@
 @extern integer (integer handle, string buffer, integer count) write = #0;
 @extern integer (integer handle, integer pos, integer whence) seek = #0;
 
-//@extern void() traceon = #0;          // turns statment trace on
-//@extern void() traceoff = #0;
+@extern void() traceon = #0;          // turns statment trace on
+@extern void() traceoff = #0;
 
 @extern void (...) printf = #0;

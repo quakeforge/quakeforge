@@ -15,8 +15,11 @@
 - (SchemeObject) invokeOnMachine: (Machine) m
 {
     local SchemeObject value = func ([m stack], m);
-    [m value: value];
-    [[m continuation] invokeOnMachine: m];
+    [super invokeOnMachine: m];
+    if (value) {
+            [m value: value];
+            [[m continuation] invokeOnMachine: m];
+    }
 }
 
 - (string) printForm

@@ -13,10 +13,15 @@ typedef enum {
     MAKEENV,
     GET,
     SET,
+    SETREST,
+    SETSTACK,
     GETLINK,
     GETGLOBAL,
+    SETGLOBAL,
     CALL,
-    RETURN
+    RETURN,
+    IFFALSE,
+    GOTO
 } opcode_e;
 
 struct instruction_s {

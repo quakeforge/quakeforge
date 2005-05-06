@@ -1,10 +1,29 @@
 #include "Compiler.h"
 #include "Instruction.h"
 #include "Nil.h"
+#include "Void.h"
+#include "Boolean.h"
 #include "Cons.h"
 #include "defs.h"
 
+Symbol lambdaSym;
+Symbol quoteSym;
+Symbol defineSym;
+Symbol ifSym;
+
 @implementation Compiler
++ (void) initialize
+{
+    lambdaSym = [Symbol forString: "lambda"];
+    [lambdaSym makeRootCell];
+    quoteSym = [Symbol forString: "quote"];
+    [quoteSym makeRootCell];
+    defineSym = [Symbol forString: "define"];
+    [defineSym makeRootCell];
+    ifSym = [Symbol forString: "if"];
+    [ifSym makeRootCell];
+}
+
 + (id) newWithLambda: (SchemeObject) xp scope: (Scope) sc
 {
     return [[self alloc] initWithLambda: xp scope: sc];
@@ -15,14 +34,11 @@
     self = [super init];
     sexpr = xp;
     scope = sc;
-    lambdaSym = [Symbol forString: "lambda"];
-    quoteSym = [Symbol forString: "quote"];
     code = [CompiledCode new];
     err = NIL;
     return self;
 }
 
-// FIXME: handle variable argument lists
 - (void) emitBuildEnvironment: (SchemeObject) arguments
 {
     local integer count, index;
@@ -30,15 +46,30 @@
 
     scope = [Scope newWithOuter: scope];
     count = 0;
-    for (cur = arguments; cur != [Nil nil]; cur = [cur cdr]) {
+    for (cur = arguments; [cur isKindOfClass: [Cons class]]; cur = [cur cdr]) {
+            count++;
+    }
+    if (cur != [Nil nil]) {
             count++;
     }
     [code addInstruction: [Instruction opcode: MAKEENV operand: count]];
     [code addInstruction: [Instruction opcode: LOADENV]];
     cur = arguments;
     for (index = 0; index < count; cur = [cur cdr]) {
-            [scope addName: (Symbol) [cur car]];
-            [code addInstruction: [Instruction opcode: SET operand: index]];
+            if ([cur isKindOfClass: [Cons class]]) {
+                    [scope addName: (Symbol) [cur car]];
+                    [code addInstruction: [Instruction opcode: SET operand: index]];
+            } else if ([cur isKindOfClass: [Symbol class]]) {
+                    [scope addName: (Symbol) cur];
+                    [code addInstruction:
+                              [Instruction opcode: SETREST operand: index]];
+                    break;
+            } else {
+                    err = [Error type: "syntax"
+                                 message: "Invalid entry in argument list"
+                                 by: arguments];
+                    return;
+            }
             index++;
     }       
 }
@@ -72,17 +103,89 @@
     }                          
 }
 
+- (void) emitDefine: (SchemeObject) expression
+{
+    local integer index = 0;
+    
+    if (![expression isKindOfClass: [Cons class]] ||
+        ![[expression cdr] isKindOfClass: [Cons class]]) {
+            err = [Error type: "syntax"
+                         message: "Malformed define statement"
+                         by: expression];
+            return;
+    }
+
+    if ([[expression car] isKindOfClass: [Cons class]]) {
+            index = [code addConstant: [[expression car] car]];
+            [self emitLambda: cons(lambdaSym,
+                                   cons([[expression car] cdr],
+                                        [expression cdr]))];
+            if (err) return;
+    } else if ([[expression car] isKindOfClass: [Symbol class]]) {
+            index = [code addConstant: [expression car]];
+            [self emitExpression: [[expression cdr] car]];
+            if (err) return;
+    } else {
+            err = [Error type: "syntax"
+                         message: "Malformed define statement"
+                         by: expression];
+            return;
+    }
+    [code addInstruction: [Instruction opcode: PUSH]];
+    [code addInstruction: [Instruction opcode: LOADLITS]];
+    [code addInstruction: [Instruction opcode: GET operand: index]];
+    [code addInstruction: [Instruction opcode: SETGLOBAL]];
+}
+
+- (void) emitIf: (SchemeObject) expression
+{
+    local Instruction falseLabel, endLabel;
+    local integer index;
+    if (![expression isKindOfClass: [Cons class]] ||
+        ![[expression cdr] isKindOfClass: [Cons class]]) {
+            err = [Error type: "syntax"
+                         message: "Malformed if expression"
+                         by: expression];
+    }
+
+    falseLabel = [Instruction opcode: LABEL];
+    endLabel = [Instruction opcode: LABEL];
+
+    [self emitExpression: [expression car]];
+    if (err) return;
+    [code addInstruction: [Instruction opcode: IFFALSE label: falseLabel]];
+    [self emitExpression: [[expression cdr] car]];
+    if (err) return;
+    [code addInstruction: [Instruction opcode: GOTO label: endLabel]];
+    [code addInstruction: falseLabel];
+    if ([[expression cdr] cdr] == [Nil nil]) {
+            index = [code addConstant: [Void voidConstant]];
+            [code addInstruction: [Instruction opcode: LOADLITS]];
+            [code addInstruction: [Instruction opcode: GET operand: index]];
+    } else {
+            [self emitExpression: [[[expression cdr] cdr] car]];
+            if (err) return;
+    }
+    [code addInstruction: endLabel];
+}
+                
+            
+
+    
+
 - (void) emitExpression: (SchemeObject) expression
 {
     if ([expression isKindOfClass: [Cons class]]) {
             if ([expression car] == lambdaSym) {
                     [self emitLambda: expression];
-                    if (err) return;
             } else if ([expression car] == quoteSym) {
                     [self emitConstant: [[expression cdr] car]];
+            } else if ([expression car] == defineSym) {
+                    [self emitDefine: [expression cdr]];
+            } else if ([expression car] == ifSym) {
+                    [self emitIf: [expression cdr]];
             } else {
                     [self emitApply: expression];
-                    if (err) return;
             }
     } else if ([expression isKindOfClass: [Symbol class]]) {
             [self emitVariable: (Symbol) expression];
@@ -122,7 +225,7 @@
                                         scope: scope];
     local SchemeObject res;
     local integer index;
-    
+
     res = [compiler compile];
     if ([res isError]) {
             err = (Error) res;
@@ -177,9 +280,7 @@
 {
     [code mark];
     [sexpr mark];
-    [lambdaSym mark];
-    [quoteSym mark];
-    [Scope mark];
+    [scope mark];
 }
 
 @end

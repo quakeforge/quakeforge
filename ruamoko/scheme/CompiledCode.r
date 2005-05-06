@@ -13,8 +13,10 @@
 - (void) markReachable
 {
     [literals mark];
-    [constants makeObjectsPerformSelector: @selector(mark)];
-    [instructions makeObjectsPerformSelector: @selector(mark)];
+    if (constants)
+            [constants makeObjectsPerformSelector: @selector(mark)];
+    if (instructions)
+            [instructions makeObjectsPerformSelector: @selector(mark)];
 }
 
 - (void) addInstruction: (Instruction) inst
@@ -30,7 +32,7 @@
     local integer number = [constants count];
     [constants addItem: c];
     return number;
-}            
+}
     
 - (void) compile
 {
@@ -62,10 +64,23 @@
 
 - (void) dealloc
 {
-    [instructions release];
-    [constants release];
-    if (code)
+    local Array temp;
+    
+    if (instructions) {
+            temp = instructions;
+            instructions = NIL;
+            [temp release];
+    }
+    if (constants) {
+            temp = constants;
+            constants = NIL;
+            [temp release];
+    }
+       
+    if (code) {
             obj_free (code);
+    }
+    [super dealloc];
 }
 
 @end

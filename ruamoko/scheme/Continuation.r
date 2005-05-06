@@ -2,27 +2,25 @@
 #include "defs.h"
 
 @implementation Continuation
-+ (id) newWithState: (state_t []) st environment: (Frame) e continuation: (Continuation) c pc: (integer) p
++ (id) newWithState: (state_t []) st pc: (integer) p
 {
-    return [[self alloc] initWithState: st environment: e continuation: c pc: p];
+    return [[self alloc] initWithState: st pc: p];
 }
-- (id) initWithState: (state_t []) st environment: (Frame) e continuation: (Continuation) c pc: (integer) p
+- (id) initWithState: (state_t []) st pc: (integer) p
 {
     self = [self init];
     state.program = st.program;
     state.pc = p;
     state.literals = st.literals;
     state.stack = st.stack;
-    cont = c;
-    env = e;
+    state.cont = st.cont;
+    state.env = st.env;
     return self;
 }
 
 - (void) invokeOnMachine: (Machine) m
 {
     [m state: &state];
-    [m environment: env];
-    [m continuation: cont];
     return;
 }
 
@@ -30,8 +28,9 @@
 {
     [state.literals mark];
     [state.stack mark];
-    [cont mark];
-    [env mark];
+    [state.cont mark];
+    [state.env mark];
+    [state.proc mark];
 }
 
 - (string) printForm

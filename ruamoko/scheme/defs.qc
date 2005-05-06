@@ -7,8 +7,8 @@ string (integer handle, integer count, integer []result) read = #0;
 integer (integer handle, string buffer, integer count) write = #0;
 integer (integer handle, integer pos, integer whence) seek = #0;
 
-//void() traceon = #0;          // turns statment trace on
-//void() traceoff = #0;
+void() traceon = #0;          // turns statment trace on
+void() traceoff = #0;
 
 void (...) printf = #0;
 

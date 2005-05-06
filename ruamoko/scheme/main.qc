@@ -36,16 +36,14 @@ integer main (integer argc, string []argv)
     if (argc < 1) {
             return -1;
     }
+
+        //traceon();
     
-    builtin_init();
     parser = [Parser newFromSource: readfile(argv[1]) file: argv[1]];
     vm = [Machine new];
     [vm makeRootCell];
-    [vm addGlobal: [Symbol forString: "display"] value: print_p];
-    [vm addGlobal: [Symbol forString: "newline"] value: newline_p];
-    [vm addGlobal: [Symbol forString: "+"] value: add_p];
-    [vm addGlobal: [Symbol forString: "map"] value: map_p];
-    [vm addGlobal: [Symbol forString: "for-each"] value: for_each_p];
+    [parser makeRootCell];
+    builtin_addtomachine (vm);
     while ((stuff = [parser read])) {
             if ([stuff isError]) {
                     printf(">> %s: %i\n", [stuff source], [stuff line]);
@@ -65,7 +63,7 @@ integer main (integer argc, string []argv)
             lm = [Lambda newWithCode: code environment: NIL];
             [lm invokeOnMachine: vm];
             [vm run];
-            [SchemeObject collect];
     }
+    [SchemeObject finishCollecting];
     return 0;
 }

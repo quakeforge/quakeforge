@@ -6,14 +6,9 @@
 #include "string.h"
 #include "Cons.h"
 #include "Continuation.h"
+#include "Boolean.h"
 
-Primitive print_p;
-Primitive newline_p;
-Primitive add_p;
-Primitive map_p;
-Primitive for_each_p;
-
-SchemeObject bi_print (SchemeObject args, Machine m)
+SchemeObject bi_display (SchemeObject args, Machine m)
 {
     print([[args car] printForm]);
     return [Void voidConstant];
@@ -37,58 +32,53 @@ SchemeObject bi_add (SchemeObject args, Machine m)
     return [Number newFromInt: sum];
 }
 
-SchemeObject bi_map (SchemeObject args, Machine m)
+SchemeObject bi_cons (SchemeObject args, Machine m)
 {
-    local SchemeObject func = [args car];
-    local SchemeObject list = [[args cdr] car];
-    local SchemeObject output, cur, last, temp;
-    local Continuation oldcont;
-    
-    if (list == [Nil nil]) {
-            return list;
-    } else {
-            oldcont = [m continuation];
-            [m stack: cons([list car], [Nil nil])];
-            [m continuation: NIL];
-            [func invokeOnMachine: m];
-            output = last = cons([m run], [Nil nil]);
-            for (cur = [list cdr]; cur != [Nil nil]; cur = [cur cdr]) {
-                    [m stack: cons([cur car], [Nil nil])];
-                    [func invokeOnMachine: m];
-                    temp = cons([m run], [Nil nil]);
-                    [last cdr: temp];
-                    last = temp;
-            }
-            [m continuation: oldcont];
-            return output;
-    }
-}
-    
-SchemeObject bi_for_each (SchemeObject args, Machine m)
-{
-    local SchemeObject func = [args car];
-    local SchemeObject list = [[args cdr] car];
-    local SchemeObject cur;
-    local Continuation oldcont;
-    
-    if (list != [Nil nil]) { 
-            oldcont = [m continuation];
-            [m continuation: NIL];
-            for (cur = list; cur != [Nil nil]; cur = [cur cdr]) {
-                    [m stack: cons([cur car], [Nil nil])];
-                    [func invokeOnMachine: m];
-                    [m run];
-            }
-            [m continuation: oldcont];
-    }
-    return [Void voidConstant];
+    [args cdr: [[args cdr] car]];
+    return args;
 }
 
-void builtin_init (void)
+SchemeObject bi_null (SchemeObject args, Machine m)
 {
-    print_p = [Primitive newFromFunc: bi_print];
-    newline_p = [Primitive newFromFunc: bi_newline];
-    add_p = [Primitive newFromFunc: bi_add];
-    map_p = [Primitive newFromFunc: bi_map];
-    for_each_p = [Primitive newFromFunc: bi_for_each];
+    return [args car] == [Nil nil]
+        ?
+        [Boolean trueConstant] :
+        [Boolean falseConstant];
+}
+
+SchemeObject bi_car (SchemeObject args, Machine m)
+{
+    return [[args car] car];
+}
+
+SchemeObject bi_cdr (SchemeObject args, Machine m)
+{
+    return [[args car] cdr];
+}
+
+SchemeObject bi_apply (SchemeObject args, Machine m)
+{
+    [m stack: [[args cdr] car]];
+    [[args car] invokeOnMachine: m];
+    return NIL;
+}
+
+void builtin_addtomachine (Machine m)
+{
+    [m addGlobal: symbol("display")
+       value: [Primitive newFromFunc: bi_display]];
+    [m addGlobal: symbol("newline")
+       value: [Primitive newFromFunc: bi_newline]];
+    [m addGlobal: symbol("+")
+       value: [Primitive newFromFunc: bi_add]];
+    [m addGlobal: symbol("cons")
+       value: [Primitive newFromFunc: bi_cons]];
+    [m addGlobal: symbol("null?")
+       value: [Primitive newFromFunc: bi_null]];
+    [m addGlobal: symbol("car")
+       value: [Primitive newFromFunc: bi_car]];
+    [m addGlobal: symbol("cdr")
+       value: [Primitive newFromFunc: bi_cdr]];
+    [m addGlobal: symbol("apply")
+       value: [Primitive newFromFunc: bi_apply]];
 }

@@ -30,7 +30,8 @@ BOOL issymbol (string x)
 - (id) initWithSource: (string) s file: (string) f
 {
     self = [super init];
-    source = s;
+    source = str_new();
+    str_copy(source, s);
     filename = f;
     linenum = 1;
     return self;
@@ -49,14 +50,14 @@ BOOL issymbol (string x)
             }
     }
 
-    source = str_mid(source, len);
+    str_copy (source, str_mid(source, len));
 
     switch (str_mid (source, 0, 1)) {
         case "(":
-            source = str_mid (source, 1);
+            str_copy (source, str_mid (source, 1));
             return [Symbol leftParen];
         case ")":
-            source = str_mid (source, 1);
+            str_copy (source, str_mid (source, 1));
             return [Symbol rightParen];
         case "0": case "1": case "2":
         case "3": case "4": case "5":
@@ -66,24 +67,27 @@ BOOL issymbol (string x)
             num = [Number newFromInt: stoi (str_mid(source, 0, len))];
             [num source: filename];
             [num line: linenum];
-            source = str_mid(source, len);
+            str_copy (source, str_mid(source, len));
             return num;
         case "\"":
             for (len = 1; str_mid(source, len, len+1) != "\""; len++);
             str = [String newFromString: str_mid(source, 1, len)];
             [str source: filename];
             [str line: linenum];
-            source = str_mid(source, len+1);
+            str_copy (source, str_mid(source, len+1));
             return str;
         case "'":
-            source = str_mid (source, 1);
+            str_copy (source, str_mid (source, 1));
             return [Symbol quote];
+        case ".":
+            str_copy (source, str_mid (source, 1));
+            return [Symbol dot];
         case "":
             return NIL;
         default:
             for (len = 1; issymbol(str_mid(source, len, len+1)); len++);
             sym = [Symbol forString: str_mid (source, 0, len)];
-            source = str_mid(source, len);
+            str_copy (source, str_mid(source, len));
             return sym;
     }
 }

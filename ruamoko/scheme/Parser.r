@@ -40,6 +40,16 @@
     
     if (token == [Symbol rightParen]) {
             return [Nil nil];
+    } else if (token == [Symbol dot]) {
+            res = [self readAtomic];
+            if ([res isError]) return res;
+            if ([self readAtomic] != [Symbol rightParen]) {
+                    err = [Error type: "parse" message: "Improper use of dot"];
+                    [err source: file];
+                    [err line: [lexer lineNumber]];
+                    return err;
+            }
+            return res;
     } else {
             res = [self readList];
             if ([res isError]) return res;
@@ -56,7 +66,7 @@
     local integer line;
 
     line = [lexer lineNumber];
-
+ 
     token = [lexer nextToken];
 
     if ([token isError]) {

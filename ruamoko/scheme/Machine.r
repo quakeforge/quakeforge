@@ -1,8 +1,10 @@
 #include "Machine.h"
 #include "Cons.h"
 #include "Lambda.h"
+#include "Boolean.h"
 #include "Nil.h"
 #include "defs.h"
+//#include "debug.h"
 
 string GlobalGetKey (void []ele, void []data)
 {
@@ -22,19 +24,20 @@ void GlobalFree (void []ele, void []data)
     state.program = NIL;
     state.pc = 0;
     value = NIL;
-    cont = NIL;
-    env = NIL;
+    state.cont = NIL;
+    state.env = NIL;
     state.literals = NIL;
     state.stack = [Nil nil];
     globals = Hash_NewTable(1024, GlobalGetKey, GlobalFree, NIL);
+    all_globals = [Nil nil];
     return self;
 }
 
 - (void) addGlobal: (Symbol) sym value: (SchemeObject) val
 {
     local Cons c = cons(sym, val);
-    [c makeRootCell];
     Hash_Add(globals, c);
+    all_globals = cons(c, all_globals);
 }
 
 - (void) loadCode: (CompiledCode) code
@@ -46,12 +49,12 @@ void GlobalFree (void []ele, void []data)
 
 - (void) environment: (Frame) e
 {
-    env = e;
+    state.env = e;
 }
 
 - (void) continuation: (Continuation) c
 {
-    cont = c;
+    state.cont = c;
 }
 
 - (void) value: (SchemeObject) v
@@ -59,9 +62,14 @@ void GlobalFree (void []ele, void []data)
     value = v;
 }
 
+- (SchemeObject) value
+{
+    return value;
+}
+
 - (Continuation) continuation
 {
-    return cont;
+    return state.cont;
 }
 
 - (SchemeObject) stack
@@ -85,6 +93,14 @@ void GlobalFree (void []ele, void []data)
     state.pc = st[0].pc;
     state.literals = st[0].literals;
     state.stack = st[0].stack;
+    state.cont = st[0].cont;
+    state.env = st[0].env;
+    state.proc = st[0].proc;
+}
+
+- (void) procedure: (Procedure) pr
+{
+    state.proc = pr;
 }
 
 - (SchemeObject) run
@@ -118,18 +134,17 @@ void GlobalFree (void []ele, void []data)
                 case MAKECLOSURE:
                     dprintf("Makeclosure\n");
                     value = [Lambda newWithCode: (CompiledCode) value
-                                    environment: env];
+                                    environment: state.env];
                     break;
                 case MAKECONT:
                     dprintf("Makecont\n");
-                    cont = [Continuation newWithState: &state
-                                         environment: env
-                                         continuation: cont
-                                         pc: operand];
+                    state.cont = [Continuation newWithState: &state
+                                               pc: operand];
+                    state.stack = [Nil nil];
                     break;
                 case LOADENV:
                     dprintf("Loadenv\n");
-                    value = env;
+                    value = state.env;
                     break;
                 case LOADLITS:
                     dprintf("Loadlits\n");
@@ -137,7 +152,7 @@ void GlobalFree (void []ele, void []data)
                     break;
                 case MAKEENV:
                     dprintf("Makeenv\n");
-                    env = [Frame newWithSize: operand link: env];
+                    state.env = [Frame newWithSize: operand link: state.env];
                     break;
                 case GET:
                     value = [value get: operand];
@@ -145,28 +160,54 @@ void GlobalFree (void []ele, void []data)
                     break;
                 case SET:
                     [value set: operand to: [state.stack car]];
-                    dprintf("Set: %i --> %s\n", operand, [value printForm]);
+                    dprintf("Set: %i --> %s\n", operand, [[state.stack car] printForm]);
                     state.stack = [state.stack cdr];
                     break;
+                case SETREST:
+                    [value set: operand to: state.stack];
+                    dprintf("Setrest: %i --> %s\n", operand, [state.stack printForm]);
+                    state.stack = [Nil nil];
+                    break;
+                case SETSTACK:
+                    dprintf("Setstack: %s\n", [value printForm]);
+                    state.stack = value;
+                    break;
                 case GETLINK:
-                    dprintf("Getlink");
+                    dprintf("Getlink\n");
                     value = [value getLink];
                     break;
                 case GETGLOBAL:
                     dprintf("Getglobal: %s\n", [value printForm]);
                     value = [((Cons) Hash_Find(globals, [value printForm])) cdr];
+                    dprintf(" --> %s\n", [value printForm]);
+                    break;
+                case SETGLOBAL:
+                    dprintf("Setglobal: %s\n", [value printForm]);
+                    [self addGlobal: (Symbol) value value: [state.stack car]];
+                    state.stack = [state.stack cdr];
                     break;
                 case CALL:
                     dprintf("Call\n");
+                    [SchemeObject collectCheckPoint];
                     [value invokeOnMachine: self];
                     break;
                 case RETURN:
                     dprintf("Return: %s\n", [value printForm]);
-                    if (!cont) {
+                    if (!state.cont) {
                             return value;
                     } else {
-                            [cont invokeOnMachine: self];
+                            [state.cont invokeOnMachine: self];
                     }
+                    break;
+                case IFFALSE:
+                    dprintf("Iffalse: %s\n", [value printForm]);
+                    if (value == [Boolean falseConstant]) {
+                            state.pc = operand;
+                    }
+                    break;
+                case GOTO:
+                    dprintf("Goto: %i\n", operand);
+                    state.pc = operand;
                     break;
             }
     }
@@ -176,9 +217,11 @@ void GlobalFree (void []ele, void []data)
 {
     [state.literals mark];
     [state.stack mark];
-    [cont mark];
-    [env mark];
+    [state.cont mark];
+    [state.env mark];
+    [state.proc mark];
     [value mark];
-        // FIXME: need to mark globals
+    [all_globals mark];
 }
 @end
+

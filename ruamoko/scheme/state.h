@@ -4,11 +4,15 @@
 #include "Instruction.h"
 #include "Frame.h"
 
+@class Continuation;
+
 struct state_s = {
     instruction_t [] program;
     integer pc;
-    Frame literals;
+    Frame literals, env;
     SchemeObject stack;
+    Continuation cont;
+    Procedure proc;
 };
 
 typedef struct state_s state_t;

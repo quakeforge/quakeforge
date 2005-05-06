@@ -71,7 +71,11 @@
 
 - (void) dealloc
 {
-    [names release];
+    if (names) {
+            [names release];
+    }
+    names = NIL;
+    [super dealloc];
 }
 
 - (void) markReachable

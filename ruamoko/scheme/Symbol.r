@@ -20,6 +20,12 @@ hashtab_t symbols;
 Symbol lparen;
 Symbol rparen;
 Symbol quote;
+Symbol dot;
+
+Symbol symbol (string str)
+{
+    return [Symbol forString: str];
+}
 
 @implementation Symbol
 + (void) initialize
@@ -28,9 +34,11 @@ Symbol quote;
     lparen = [Symbol forString: "("];
     rparen = [Symbol forString: ")"];
     quote = [Symbol forString: "'"];
+    dot = symbol(".");
     [lparen makeRootCell];
     [rparen makeRootCell];
     [quote makeRootCell];
+    [dot makeRootCell];
 }
 
 + (Symbol) forString: (string) s
@@ -59,6 +67,11 @@ Symbol quote;
 + (Symbol) quote
 {
     return quote;
+}
+
++ (Symbol) dot
+{
+    return dot;
 }
 
 - (string) printForm

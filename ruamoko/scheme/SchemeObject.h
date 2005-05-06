@@ -3,13 +3,8 @@
 #include "Object.h"
 #define true YES
 #define false NO
-
-//#define DEBUG
-#ifdef DEBUG
-#define dprintf printf
-#else
 #define dprintf(x, ...)
-#endif
+
 
 
 @interface SchemeObject: Object

@@ -7,11 +7,9 @@
 @interface Continuation: Procedure
 {
     state_t state;
-    SchemeObject cont;
-    Frame env;
 }
-+ (id) newWithState: (state_t []) st environment: (Frame) e continuation: (Continuation) c pc: (integer) p;
-- (id) initWithState: (state_t []) st environment: (Frame) e continuation: (Continuation) c pc: (integer) p;
++ (id) newWithState: (state_t []) st pc: (integer) p;
+- (id) initWithState: (state_t []) st pc: (integer) p;
 
 @end
 

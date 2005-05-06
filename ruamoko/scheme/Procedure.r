@@ -3,6 +3,7 @@
 @implementation Procedure
 - (void) invokeOnMachine: (Machine) m
 {
+    [m procedure: self];
     return;
 }
 

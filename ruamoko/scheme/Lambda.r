@@ -20,6 +20,7 @@
 
 - (void) invokeOnMachine: (Machine) m
 {
+    [super invokeOnMachine: m];
     [m loadCode: code];
     [m environment: env];
 }

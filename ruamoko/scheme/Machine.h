@@ -11,9 +11,8 @@
 {
     state_t state;
     SchemeObject value;
-    Continuation cont;
-    Frame env;
     hashtab_t globals;
+    SchemeObject all_globals;
 }
 - (void) loadCode: (CompiledCode) code;
 - (SchemeObject) run;

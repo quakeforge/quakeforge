@@ -2,7 +2,7 @@
 #define __Parser_h
 #include "Lexer.h"
 
-@interface Parser: Object
+@interface Parser: SchemeObject
 {
     Lexer lexer;
     string file;

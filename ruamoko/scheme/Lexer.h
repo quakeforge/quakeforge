@@ -3,7 +3,7 @@
 #include "SchemeObject.h"
 #include "Symbol.h"
 
-@interface Lexer: Object
+@interface Lexer: SchemeObject
 {
     string source;
     string filename;
