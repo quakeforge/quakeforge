@@ -105,55 +105,73 @@ server_compare (const void *a, const void *b)
 }
 
 static void
-qtv_p_signon_f (server_t *sv, int len)
+setup_sub_message (qmsg_t *msg, qmsg_t *sub, sizebuf_t *buf, int len)
 {
-	sizebuf_t   sub_message_buf;
-	qmsg_t      sub_message;
+	memset (sub, 0, sizeof (qmsg_t));
+	memset (buf, 0, sizeof (sizebuf_t));
 
-	memset (&sub_message_buf, 0, sizeof (sub_message_buf));
-	memset (&sub_message, 0, sizeof (sub_message));
-	sub_message.message = &sub_message_buf;
-
-	sub_message_buf.cursize = len;
-	sub_message_buf.maxsize = sub_message_buf.cursize;
-	sub_message_buf.data = net_message->message->data;
-	sub_message_buf.data += net_message->readcount;
-	sub_message.readcount = 0;
-	sub_message.badread = 0;
-	net_message->readcount += sub_message_buf.cursize;
-
-	sv_parse (sv, &sub_message, 1);
+	if (len > msg->message->cursize - msg->readcount) {
+		len = msg->message->cursize - msg->readcount;
+		msg->badread = 1;
+	}
+	sub->message = buf;
+	buf->cursize = buf->maxsize = len;
+	buf->data = msg->message->data + msg->readcount;
+	msg->readcount += len;
 }
 
 static void
-qtv_parse_updates (server_t *sv, int reliable, int len)
+setup_client_list (server_t *sv, unsigned mask)
 {
-	int         msec, type, to, start;
+	int         i;
+	sv_client_t **p, *cl;
+
+	p = &sv->client_list;
+	*p = 0;
+	for (i = 0, cl = sv->clients; i < MAX_SV_CLIENTS; i++, cl++) {
+		if (mask & (1 << i)) {
+			*p = cl;
+			p = &(*p)->next;
+		}
+	}
+	*p = 0;
+}
+
+static void
+qtv_parse_updates (server_t *sv, qmsg_t *msg, int reliable)
+{
+	byte        type;
+	int         msec;
 	sizebuf_t   sub_message_buf;
 	qmsg_t      sub_message;
 
-	memset (&sub_message_buf, 0, sizeof (sub_message_buf));
-	memset (&sub_message, 0, sizeof (sub_message));
-	sub_message.message = &sub_message_buf;
-
-	start = net_message->readcount;
-	while (net_message->readcount - start < len) {
+	while (1) {
 		msec = MSG_ReadByte (net_message);
+		if (msec == -1)
+			break;
 		type = MSG_ReadByte (net_message);
-		if (type == dem_multiple) {
-			to = MSG_ReadLong (net_message);
-		} else if (type == dem_single) {
-			to = MSG_ReadByte (net_message);
+		switch (type & 7) {
+			case dem_cmd:
+			case dem_set:
+				qtv_printf ("qtv_parse_updates: unexpected dem: %d\n",
+							type & 7);
+				return;
+			case dem_read:
+				break;
+			case dem_multiple:
+				setup_client_list (sv, MSG_ReadLong (net_message));
+				break;
+			case dem_stats:
+			case dem_single:
+				setup_client_list (sv, 1 << (type >> 3));
+				break;
+			case dem_all:
+				setup_client_list (sv, ~0);
+				break;
 		}
 
-		sub_message_buf.cursize = MSG_ReadLong (net_message);
-		sub_message_buf.maxsize = sub_message_buf.cursize;
-		sub_message_buf.data = net_message->message->data;
-		sub_message_buf.data += net_message->readcount;
-		sub_message.readcount = 0;
-		sub_message.badread = 0;
-		net_message->readcount += sub_message_buf.cursize;
-
+		setup_sub_message (msg, &sub_message, &sub_message_buf,
+						   MSG_ReadLong (msg));
 		sv_parse (sv, &sub_message, reliable);
 	}
 }
@@ -161,18 +179,19 @@ qtv_parse_updates (server_t *sv, int reliable, int len)
 static void
 qtv_packet_f (server_t *sv)
 {
-	int         len_type, len, type, pos;
-	byte       *buf;
+	int         len, type;
 	int         reliable = 0;
+	sizebuf_t   sub_message_buf;
+	qmsg_t      sub_message;
 
-	len_type = MSG_ReadShort (net_message);
-	len = len_type & 0x0fff;
-	type = len_type & 0xf000;
-	pos = net_message->readcount;
+	len = MSG_ReadShort (net_message);
+	type = len & 0xf000;
+	len &= 0x0fff;
+	setup_sub_message (net_message, &sub_message, &sub_message_buf, len);
 	qtv_printf ("qtv_packet: %x %d\n", type, len);
 	switch (type) {
 		case qtv_p_signon:
-			qtv_p_signon_f (sv, len);
+			sv_parse (sv, &sub_message, 1);
 			break;
 		case qtv_p_print:
 			qtv_printf ("%s\n", MSG_ReadString (net_message));
@@ -180,22 +199,11 @@ qtv_packet_f (server_t *sv)
 		case qtv_p_reliable:
 			reliable = 1;
 		case qtv_p_unreliable:
-			qtv_parse_updates (sv, reliable, len);
+			qtv_parse_updates (sv, &sub_message, reliable);
 			break;
 		default:
-			//absorb unhandled packet types
 			qtv_printf ("unknown packet type %x (%d bytes)\n", type, len);
 			break;
-	}
-	if (net_message->readcount - pos != len) {
-		qtv_printf ("packet not completely read\n");
-
-		len -= net_message->readcount - pos;
-		if (len > 0) {
-			buf = malloc (len);
-			MSG_ReadBytes (net_message, buf, len);
-			free (buf);	//XXX
-		}
 	}
 }
 
