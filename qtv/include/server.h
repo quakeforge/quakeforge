@@ -61,4 +61,8 @@ typedef struct server_s {
 void Server_Init (void);
 void Server_Frame (void);
 
+struct qmsg_s;
+void sv_parse (server_t *sv, struct msg_s *msg, int reliable);
+void sv_stringcmd (server_t *sv, struct msg_s *msg);
+
 #endif//__server_h
