@@ -308,6 +308,7 @@ clear_rec (void)
 	dbuffer_init (&rec.dbuffer, buffer, sizeof (buffer));
 	set_msgbuf (NULL, &rec.frames[0].buf);
 
+	rec.datagram.allowoverflow = true;
 	rec.datagram.maxsize = sizeof (datagram_data);
 	rec.datagram.data = datagram_data;
 }
