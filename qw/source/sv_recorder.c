@@ -108,8 +108,8 @@ struct recorder_s {
 	void      (*finish)(void *, sizebuf_t *);
 	void       *user;
 	delta_t     delta;
-	entity_state_t entities[UPDATE_MASK][MAX_DEMO_PACKET_ENTITIES];
-	plent_state_t players[UPDATE_MASK][MAX_CLIENTS];
+	entity_state_t entities[UPDATE_BACKUP][MAX_DEMO_PACKET_ENTITIES];
+	plent_state_t players[UPDATE_BACKUP][MAX_CLIENTS];
 };
 
 static rec_t    rec;
