@@ -446,6 +446,7 @@ sv_playerinfo (server_t *sv, qmsg_t *msg)
 		ent = &pl->ent;
 	}
 	flags = ent->flags = MSG_ReadShort (msg);
+	//qtv_printf ("%2d %x\n", num, flags);
 	MSG_ReadCoordV (msg, ent->origin);
 	ent->frame = (ent->frame & 0xff00) | MSG_ReadByte (msg);
 	if (flags & PF_MSEC)
@@ -459,31 +460,31 @@ sv_playerinfo (server_t *sv, qmsg_t *msg)
 	if (flags & PF_MODEL)
 		ent->modelindex = MSG_ReadByte (msg);
 	if (flags & PF_SKINNUM)
-		ent->skinnum = MSG_ReadByte (net_message);
+		ent->skinnum = MSG_ReadByte (msg);
 	if (flags & PF_EFFECTS)
-		ent->effects = (ent->effects & 0xff00) | MSG_ReadByte (net_message);;
+		ent->effects = (ent->effects & 0xff00) | MSG_ReadByte (msg);;
 	if (flags & PF_WEAPONFRAME)
-		ent->weaponframe = MSG_ReadByte (net_message);
+		ent->weaponframe = MSG_ReadByte (msg);
 	if (flags & PF_QF) {
 		int         bits;
 
 		bits = MSG_ReadByte (msg);
 		if (bits & PF_ALPHA)
-			ent->alpha = MSG_ReadByte (net_message);
+			ent->alpha = MSG_ReadByte (msg);
 		if (bits & PF_SCALE)
-			ent->scale = MSG_ReadByte (net_message);
+			ent->scale = MSG_ReadByte (msg);
 		if (bits & PF_EFFECTS2)
 			ent->effects = (ent->effects & 0x00ff)
-						 | (MSG_ReadByte (net_message) << 8);
+						 | (MSG_ReadByte (msg) << 8);
 		if (bits & PF_GLOWSIZE)
-			ent->glow_size = MSG_ReadByte (net_message);
+			ent->glow_size = MSG_ReadByte (msg);
 		if (bits & PF_GLOWCOLOR)
-			ent->glow_color = MSG_ReadByte (net_message);
+			ent->glow_color = MSG_ReadByte (msg);
 		if (bits & PF_COLORMOD)
-			ent->colormod = MSG_ReadByte (net_message);
+			ent->colormod = MSG_ReadByte (msg);
 		if (bits & PF_FRAME2)
 			ent->frame = (ent->frame & 0xff)
-					   | (MSG_ReadByte (net_message) << 8);
+					   | (MSG_ReadByte (msg) << 8);
 	}
 }
 
