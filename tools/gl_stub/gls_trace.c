@@ -2337,3 +2337,8 @@ trace_glViewport (GLint x, GLint y, GLsizei width, GLsizei height)
 {
 	TRACE;
 }
+
+void
+trace_glPNTrianglesiATI (GLint x, GLint y)
+{
+}

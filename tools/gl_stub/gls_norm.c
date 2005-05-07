@@ -1959,3 +1959,8 @@ void
 norm_glViewport (GLint x, GLint y, GLsizei width, GLsizei height)
 {
 }
+
+void
+norm_glPNTrianglesiATI (GLint x, GLint y)
+{
+}
