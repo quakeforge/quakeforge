@@ -572,7 +572,10 @@ sv_update_net (server_t *sv, qmsg_t *msg, int ping)
 	player_t   *pl;
 
 	slot = MSG_ReadByte (msg);
-	val = MSG_ReadShort (msg);
+	if (ping)
+		val = MSG_ReadShort (msg);
+	else
+		val = MSG_ReadByte (msg);
 	if (slot >= MAX_SV_PLAYERS) {
 		qtv_printf ("bogus player: %d\n", slot);
 		return;
