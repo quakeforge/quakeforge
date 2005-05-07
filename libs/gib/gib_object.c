@@ -141,12 +141,12 @@ GIB_Method_Build_Hash (gib_class_t *class, hashtab_t *inherited,
 	}
 	
 	if (inherited) {
-		void **list;
+		void **list, **l;
 		
-		for (list = Hash_GetList (inherited); *list; list++)
-			if (!Hash_Find (new, GIB_Method_Get_Key (*list,
-							NULL)))
-				Hash_Add (new, *list);
+		for (l = list = Hash_GetList (inherited); *l; l++)
+			if (!Hash_Find (new, GIB_Method_Get_Key (*l, NULL)))
+				Hash_Add (new, *l);
+		free (list);
 	}
 
 	return new;
