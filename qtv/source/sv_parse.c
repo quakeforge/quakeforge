@@ -740,6 +740,20 @@ sv_temp_entity (server_t *sv, qmsg_t *msg)
 	}
 }
 
+static void
+sv_nails (server_t *sv, qmsg_t *msg, int nails2)
+{
+	int         c, i;
+	byte        bits[6];
+
+	c = MSG_ReadByte (msg);
+	for (i = 0; i < c; i++) {
+		if (nails2)
+			MSG_ReadByte (msg);
+		MSG_ReadBytes (msg, bits, 6);
+	}
+}
+
 void
 sv_parse (server_t *sv, qmsg_t *msg, int reliable)
 {
@@ -751,7 +765,7 @@ sv_parse (server_t *sv, qmsg_t *msg, int reliable)
 		svc = MSG_ReadByte (msg);
 		if (svc == -1)
 			break;
-		qtv_printf ("sv_parse: svc: %d\n", svc);
+		//qtv_printf ("sv_parse: svc: %d\n", svc);
 		switch (svc) {
 			default:
 				qtv_printf ("sv_parse: unknown svc: %d\n", svc);
@@ -767,7 +781,7 @@ sv_parse (server_t *sv, qmsg_t *msg, int reliable)
 			case svc_print:
 				//XXX
 				MSG_ReadByte (msg);
-				MSG_ReadString (msg);
+				qtv_printf ("%s", MSG_ReadString (msg));
 				break;
 			case svc_setangle:
 				sv_setangle (sv, msg);
@@ -847,7 +861,7 @@ sv_parse (server_t *sv, qmsg_t *msg, int reliable)
 				break;
 			case svc_nails:
 			case svc_nails2:
-				//XXX
+				sv_nails (sv, msg, svc == svc_nails2);
 				break;
 			case svc_packetentities:
 				sv_packetentities (sv, msg, 0);
