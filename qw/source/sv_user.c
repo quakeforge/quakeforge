@@ -1865,7 +1865,6 @@ SV_ExecuteClientMessage (client_t *cl)
 
 			case clc_delta:
 				cl->delta.delta_sequence = MSG_ReadByte (net_message);
-				cl->delta.delta_sequence &= UPDATE_MASK;
 				break;
 
 			case clc_move:

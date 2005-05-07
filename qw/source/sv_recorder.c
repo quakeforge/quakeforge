@@ -612,7 +612,7 @@ SVR_SetDelta (recorder_t *r, int delta, int in_frame)
 {
 	r->delta.delta_sequence = -1;
 	if (delta != -1)
-		r->delta.delta_sequence = delta & UPDATE_MASK;
+		r->delta.delta_sequence = delta;
 	r->delta.in_frame = (r->delta.delta_sequence + 1) & UPDATE_MASK;
 	if (in_frame != -1)
 		r->delta.in_frame = in_frame & UPDATE_MASK;

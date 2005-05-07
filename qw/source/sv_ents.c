@@ -334,7 +334,7 @@ SV_EmitPacketEntities (delta_t *delta, packet_entities_t *to, sizebuf_t *msg,
 
 	// this is the frame that we are going to delta update from
 	if (delta->delta_sequence != -1) {
-		fromframe = &delta->frames[delta->delta_sequence];
+		fromframe = &delta->frames[delta->delta_sequence & UPDATE_MASK];
 		from = &fromframe->entities;
 		oldmax = from->num_entities;
 
@@ -371,7 +371,7 @@ SV_EmitPacketEntities (delta_t *delta, packet_entities_t *to, sizebuf_t *msg,
 				Sys_Printf ("LOL, %d, %d, %d, %d %d %d\n", newnum, oldnum,
 							to->num_entities, oldmax,
 							delta->in_frame,
-							delta->delta_sequence);
+							delta->delta_sequence & UPDATE_MASK);
 				if (!delta->client)
 					Sys_Printf ("demo\n");
 			}
@@ -580,11 +580,13 @@ SV_WritePlayersToClient (delta_t *delta, byte *pvs, sizebuf_t *msg)
 	}
 
 	write = write_player;
-	if (!clent)
+	if (!clent && delta->type == dt_tp_demo)
 		write = write_demoplayer;
 
 	if (delta->delta_sequence != -1) {
-		from_pack = &delta->frames[delta->delta_sequence].players;
+		client_frame_t *fromframe;
+		fromframe = &delta->frames[delta->delta_sequence & UPDATE_MASK];
+		from_pack = &frame->players;
 		full = 0;
 	}
 
