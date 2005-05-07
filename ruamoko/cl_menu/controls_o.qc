@@ -50,6 +50,7 @@ typedef struct binding_s binding_t;
 
 @interface Binding : Object
 {
+@public
 	string      text;
 	string      command;
 	string      keys;
@@ -63,8 +64,8 @@ typedef struct binding_s binding_t;
 	self = [self init];
 	if (self) {
 		text = binding.text;
-		text = binding.command;
-		text = binding.keys;
+		command = binding.command;
+		keys = binding.keys;
 	}
 	return self;
 }
@@ -171,12 +172,12 @@ void (Array list)
 get_hash_keys =
 {
 	local integer i,hlen;
-	local binding_t [] binding;
+	local Binding binding;
 	local string desc1 = "", desc2 = "";
 	
 	hlen = [list count];
 	for(i = 0; i < hlen; i++) {
-		binding = (binding_t [])[list getItemAt: i];
+		binding = [list getItemAt: i];
 		desc1 = get_keyname (binding.command, 1);	// first key bound to
 		desc2 = get_keyname (binding.command, 2);	// second key bound to
 
@@ -228,7 +229,7 @@ load_keybindings =
 	It takes the binding as argument.
 	This function is called by the real callbacks.
 */
-integer (binding_t [] binding, integer key)
+integer (Binding binding, integer key)
 CB_MAIN_control_binding =
 {
 	local integer	retval = 0, bindcnt = 0;
@@ -269,7 +270,7 @@ CB_MAIN_control_binding =
 integer (string text, integer key) 
 CB_basic_control_binding = 
 {
-	local binding_t [] binding = (binding_t [])[movement_bindings getItemAt: stoi (text)];
+	local Binding binding = [movement_bindings getItemAt: stoi (text)];
 	local integer ret = CB_MAIN_control_binding (binding, key);
 
 	// fetch all keynames (possible to optimize.. but not very neccessary)
@@ -306,7 +307,7 @@ DRAW_basic_control_binding =
 
 	hl = [movement_bindings count];	
 	for(i = 0; i < hl; i++) {
-		local binding_t [] binding = (binding_t [])[movement_bindings getItemAt: i];
+		local Binding binding = [movement_bindings getItemAt: i];
 		draw_val_item   (x + 20, y + 40 + ( i * 10), bind_desc_pad, 
 			binding.text, binding.keys);
 	}
@@ -346,7 +347,7 @@ MENU_basic_control_binding =
 integer (string text, integer key) 
 CB_misc_control_binding = 
 {
-	local binding_t [] binding = (binding_t [])[misc_bindings getItemAt: stoi (text)];
+	local Binding binding = [misc_bindings getItemAt: stoi (text)];
 	local integer ret = CB_MAIN_control_binding (binding, key);
 
 	// fetch all keynames (possible to optimize.. but not very neccessary)
@@ -383,7 +384,7 @@ DRAW_misc_control_binding =
 
 	hl = [misc_bindings count];	
 	for(i=0;i < hl; i++) {
-		local binding_t [] binding = (binding_t [])[misc_bindings getItemAt: i];
+		local Binding binding = [misc_bindings getItemAt: i];
 		draw_val_item   (x + 20, y + 40+(i*10), bind_desc_pad, 
 			binding.text, binding.keys);
 	}
@@ -422,7 +423,7 @@ MENU_misc_control_binding =
 integer (string text, integer key)
 CB_weapon_control_binding = 
 {
-	local binding_t [] binding = (binding_t [])[weapon_bindings getItemAt: stoi (text)];
+	local Binding binding = [weapon_bindings getItemAt: stoi (text)];
 	local integer ret = CB_MAIN_control_binding (binding, key);
 
 	// fetch all keynames (possible to optimize.. but not very neccessary)
@@ -459,7 +460,7 @@ DRAW_weapon_control_binding =
 
 	hl = [weapon_bindings count];	
 	for(i = 0; i < hl; i++) {
-		local binding_t [] binding = (binding_t [])[weapon_bindings getItemAt: i];
+		local Binding binding = [weapon_bindings getItemAt: i];
 		draw_val_item (x + 20, y + 40 + (i * 10), bind_desc_pad, 
 			binding.text, binding.keys);
 	}
