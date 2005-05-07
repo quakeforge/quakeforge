@@ -673,6 +673,73 @@ sv_spawnstatic (server_t *sv, qmsg_t *msg)
 	parse_baseline (msg, &ent);
 }
 
+static void
+parse_beam (qmsg_t *msg)
+{
+	vec3_t      start, end;
+
+	MSG_ReadShort (msg);
+	MSG_ReadCoordV (msg, start);
+	MSG_ReadCoordV (msg, end);
+}
+
+static void
+sv_temp_entity (server_t *sv, qmsg_t *msg)
+{
+	vec3_t      pos;
+	int         type;
+
+	type = MSG_ReadByte (msg);
+	switch (type) {
+		case TE_WIZSPIKE:
+			MSG_ReadCoordV (msg, pos);
+			break;
+		case TE_KNIGHTSPIKE:
+			MSG_ReadCoordV (msg, pos);
+			break;
+		case TE_SPIKE:
+			MSG_ReadCoordV (msg, pos);
+			break;
+		case TE_SUPERSPIKE:
+			MSG_ReadCoordV (msg, pos);
+			break;
+		case TE_EXPLOSION:
+			MSG_ReadCoordV (msg, pos);
+			break;
+		case TE_TAREXPLOSION:
+			MSG_ReadCoordV (msg, pos);
+			break;
+		case TE_LIGHTNING1:
+		case TE_LIGHTNING2:
+		case TE_LIGHTNING3:
+		case TE_BEAM:
+			parse_beam (msg);
+			break;
+		case TE_LAVASPLASH:
+			MSG_ReadCoordV (msg, pos);
+			break;
+		case TE_TELEPORT:
+			MSG_ReadCoordV (msg, pos);
+			break;
+		case TE_EXPLOSION2:
+			MSG_ReadCoordV (msg, pos);
+			MSG_ReadByte (msg);
+			MSG_ReadByte (msg);
+			break;
+		case TE_GUNSHOT:
+			MSG_ReadByte (msg);
+			MSG_ReadCoordV (msg, pos);
+			break;
+		case TE_BLOOD:
+			MSG_ReadByte (msg);
+			MSG_ReadCoordV (msg, pos);
+			break;
+		case TE_LIGHTNINGBLOOD:
+			MSG_ReadCoordV (msg, pos);
+			break;
+	}
+}
+
 void
 sv_parse (server_t *sv, qmsg_t *msg, int reliable)
 {
@@ -684,7 +751,7 @@ sv_parse (server_t *sv, qmsg_t *msg, int reliable)
 		svc = MSG_ReadByte (msg);
 		if (svc == -1)
 			break;
-		//qtv_printf ("sv_parse: svc: %d\n", svc);
+		qtv_printf ("sv_parse: svc: %d\n", svc);
 		switch (svc) {
 			default:
 				qtv_printf ("sv_parse: unknown svc: %d\n", svc);
@@ -718,6 +785,7 @@ sv_parse (server_t *sv, qmsg_t *msg, int reliable)
 				MSG_ReadCoordV (msg, v);
 				break;
 			case svc_temp_entity:
+				sv_temp_entity (sv, msg);
 				//XXX
 				break;
 			case svc_setpause:
