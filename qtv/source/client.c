@@ -113,6 +113,8 @@ cl_begin_f (client_t *cl, void *unused)
 static void
 cl_drop_f (client_t *cl, void *unused)
 {
+	if (cl->server)
+		Server_Disconnect (cl);
 	client_drop (cl);
 }
 
