@@ -370,12 +370,12 @@ SV_Spawn (client_t *client)
 	memset (&ent->v, 0, sv_pr_state.progs->entityfields * 4);
 	SVfloat (ent, colormap) = NUM_FOR_EDICT (&sv_pr_state, ent);
 	SVfloat (ent, team) = 0; // FIXME
-	SVstring (ent, netname) = PR_SetString (&sv_pr_state, host_client->name);
+	SVstring (ent, netname) = PR_SetString (&sv_pr_state, client->name);
 
-	host_client->entgravity = 1.0;
+	client->entgravity = 1.0;
 	if (sv_fields.gravity != -1)
 		SVfloat (ent, gravity) = 1.0;
-	host_client->maxspeed = sv_maxspeed->value;
+	client->maxspeed = sv_maxspeed->value;
 	if (sv_fields.maxspeed != -1)
 		SVfloat (ent, maxspeed) = sv_maxspeed->value;
 }
