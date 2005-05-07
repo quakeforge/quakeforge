@@ -36,11 +36,17 @@
 #include "qw/msg_backbuf.h"
 
 typedef struct client_s {
+	struct client_s *next;
+	struct client_s **prev;
 	struct info_s *userinfo;
 	struct connection_s *con;
 	int         drop;
 	netchan_t   netchan;
 	backbuf_t   backbuf;
+	sizebuf_t   datagram;
+	byte        datagram_buf[MAX_DATAGRAM];
+
+	struct server_s *server;
 } client_t;
 
 typedef struct challenge_s {

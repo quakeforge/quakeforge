@@ -35,6 +35,8 @@
 #include "netchan.h"
 #include "qw/pmove.h"
 
+struct client_s;
+
 typedef struct player_s {
 	struct player_s *next;				// for multicast messages
 	struct info_s *info;
@@ -77,6 +79,8 @@ typedef struct server_s {
 	int         sounds;
 	struct info_s *info;
 
+	struct client_s *clients;
+
 	int         delta;
 
 	frame_t     frames[UPDATE_BACKUP];
@@ -91,6 +95,9 @@ typedef struct server_s {
 
 void Server_Init (void);
 void Server_Frame (void);
+void Server_List (void);
+void Server_Connect (const char *name, struct client_s *client);
+void Server_Disconnect (struct client_s *client);
 
 struct qmsg_s;
 void sv_parse (server_t *sv, struct msg_s *msg, int reliable);

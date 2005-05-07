@@ -58,9 +58,31 @@ static __attribute__ ((unused)) const char rcsid[] =
 #include "qw/msg_ucmd.h"
 #include "qw/protocol.h"
 
+#include "client.h"
 #include "connection.h"
 #include "qtv.h"
 #include "server.h"
+
+static void
+sv_broadcast (server_t *sv, int reliable, byte *msg, int len)
+{
+	client_t   *cl;
+	byte        svc;
+
+	if (len < 1)
+		return;
+	svc = *msg++;
+	len--;
+	for (cl = sv->clients; cl; cl = cl->next) {
+		if (reliable) {
+			MSG_ReliableWrite_Begin (&cl->backbuf, svc, len + 1);
+			MSG_ReliableWrite_SZ (&cl->backbuf, msg, len);
+		} else {
+			MSG_WriteByte (&cl->datagram, svc);
+			SZ_Write (&cl->datagram, msg, len);
+		}
+	}
+}
 
 static void
 sv_serverdata (server_t *sv, qmsg_t *msg)
@@ -754,6 +776,20 @@ sv_nails (server_t *sv, qmsg_t *msg, int nails2)
 	}
 }
 
+static void
+sv_print (server_t *sv, qmsg_t *msg)
+{
+	byte       *data;
+	int         len;
+
+	len = msg->readcount - 1;
+	data = msg->message->data + len;
+	MSG_ReadByte (msg);
+	qtv_printf ("%s", MSG_ReadString (msg));
+	len = msg->readcount - len;
+	sv_broadcast (sv, 1, data, len);
+}
+
 void
 sv_parse (server_t *sv, qmsg_t *msg, int reliable)
 {
@@ -779,9 +815,7 @@ sv_parse (server_t *sv, qmsg_t *msg, int reliable)
 				sv_sound (sv, msg, 0);
 				break;
 			case svc_print:
-				//XXX
-				MSG_ReadByte (msg);
-				qtv_printf ("%s", MSG_ReadString (msg));
+				sv_print (sv, msg);
 				break;
 			case svc_setangle:
 				sv_setangle (sv, msg);

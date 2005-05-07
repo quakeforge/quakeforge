@@ -58,6 +58,7 @@ static __attribute__ ((unused)) const char rcsid[] =
 #include "client.h"
 #include "connection.h"
 #include "qtv.h"
+#include "server.h"
 
 typedef struct ucmd_s {
 	const char *name;
@@ -158,6 +159,28 @@ cl_ptrack_f (client_t *cl, void *unused)
 static void
 cl_list_f (client_t *cl, void *unused)
 {
+	Server_List ();
+}
+
+static void
+cl_connect_f (client_t *cl, void *unused)
+{
+	if (cl->server) {
+		qtv_printf ("already connected to server %s\n", cl->server->name);
+		qtv_printf ("\"cmd disconnect\" first\n");
+		return;
+	}
+	Server_Connect (Cmd_Argv (1), cl);
+}
+
+static void
+cl_disconnect_f (client_t *cl, void *unused)
+{
+	if (!cl->server) {
+		qtv_printf ("not connected to a server\n");
+		return;
+	}
+	Server_Disconnect (cl);
 }
 
 static ucmd_t ucmds[] = {
@@ -168,7 +191,7 @@ static ucmd_t ucmds[] = {
 	{"spawn",		cl_spawn_f,			0, 0},
 	{"begin",		cl_begin_f,			1, 0},
 
-	{"drop",		cl_drop_f,			0, 0},
+	{"drop",		cl_drop_f,			1, 0},
 	{"pings",		cl_pings_f,			0, 0},
 
 // issued by hand at client consoles    
@@ -192,6 +215,8 @@ static ucmd_t ucmds[] = {
 	{"snap",		0,					0, 0},
 
 	{"list",		cl_list_f,			0, 0},
+	{"connect",		cl_connect_f,		0, 0},
+	{"disconnect",	cl_disconnect_f,	0, 0},
 };
 
 static hashtab_t *ucmd_table;
@@ -331,15 +356,6 @@ client_handler (connection_t *con, void *object)
 		qtv_printf ("%s: Runt packet\n", NET_AdrToString (net_from));
 		return;
 	}
-#if 0
-	// read the qport out of the message so we can fix up
-	// stupid address translating routers
-	MSG_ReadLong (net_message);				// sequence number
-	MSG_ReadLong (net_message);				// sequence number
-	qport = MSG_ReadShort (net_message) & 0xffff;
-	if (cl->netchan.qport != qport)
-		return;
-#endif
 	if (Netchan_Process (&cl->netchan)) {
 		// this is a valid, sequenced packet, so process it
 		//svs.stats.packets++;
@@ -348,7 +364,9 @@ client_handler (connection_t *con, void *object)
 			client_parse_message (cl);
 		if (cl->backbuf.num_backbuf)
 			MSG_Reliable_Send (&cl->backbuf);
-		Netchan_Transmit (&cl->netchan, 0, NULL);
+		Netchan_Transmit (&cl->netchan, cl->datagram.cursize,
+						  cl->datagram.data);
+		SZ_Clear (&cl->datagram);
 		if (cl->drop) {
 			Connection_Del (cl->con);
 			Info_Destroy (cl->userinfo);
@@ -410,6 +428,10 @@ client_connect (connection_t *con, void *object)
 	cl->con = con;
 	con->object = cl;
 	con->handler = client_handler;
+
+	cl->datagram.allowoverflow = true;
+	cl->datagram.maxsize = sizeof (cl->datagram_buf);
+	cl->datagram.data = cl->datagram_buf;
 
 	qtv_printf ("client %s (%s) connected\n",
 				Info_ValueForKey (userinfo, "name"),

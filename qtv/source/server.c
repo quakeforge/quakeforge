@@ -57,6 +57,7 @@ static __attribute__ ((unused)) const char rcsid[] =
 
 #include "qw/protocol.h"
 
+#include "client.h"
 #include "connection.h"
 #include "qtv.h"
 #include "server.h"
@@ -429,10 +430,12 @@ sv_list_f (void)
 		return;
 	}
 	list = malloc (count * sizeof (server_t **));
-	for (l = &servers, count = 0; *l; l = &(*l)->next)
+	for (l = &servers, count = 0; *l; l = &(*l)->next, count++)
 		list[count] = *l;
 	qsort (list, count, sizeof (*list), server_compare);
-	for (l = list; *l; l++) {
+	qtv_printf ("Name                 Address\n");
+	qtv_printf ("-------------------- --------------------\n");
+	for (l = list; count--; l++) {
 		sv = *l;
 		qtv_printf ("%-20s %s(%s)\n", sv->name, sv->address,
 					NET_AdrToString (sv->adr));
@@ -489,4 +492,37 @@ Server_Frame (void)
 			server_run (sv);
 		}
 	}
+}
+
+void
+Server_List (void)
+{
+	sv_list_f ();
+}
+
+void
+Server_Connect (const char *name, struct client_s *client)
+{
+	server_t   *sv;
+
+	if (!(sv = Hash_Find (server_hash, name))) {
+		qtv_printf ("server not found: %s\n", name);
+		return;
+	}
+	client->server = sv;
+
+	client->prev = &sv->clients;
+	client->next = sv->clients;
+	if (sv->clients)
+		sv->clients->prev = &client->next;
+	sv->clients = client;
+}
+
+void
+Server_Disconnect (struct client_s *client)
+{
+	client->server = 0;
+	if (client->next)
+		client->next->prev = client->prev;
+	*client->prev = client->next;
 }
