@@ -55,6 +55,7 @@ static __attribute__ ((unused)) const char rcsid[] =
 #include "QF/sys.h"
 #include "QF/va.h"
 
+#include "qw/msg_ucmd.h"
 #include "qw/protocol.h"
 
 #include "connection.h"
@@ -62,7 +63,7 @@ static __attribute__ ((unused)) const char rcsid[] =
 #include "server.h"
 
 static void
-qtv_serverdata (server_t *sv, qmsg_t *msg)
+sv_serverdata (server_t *sv, qmsg_t *msg)
 {
 	const char *str;
 
@@ -109,7 +110,7 @@ qtv_serverdata (server_t *sv, qmsg_t *msg)
 }
 
 static void
-qtv_soundlist (server_t *sv, qmsg_t *msg)
+sv_soundlist (server_t *sv, qmsg_t *msg)
 {
 	int         numsounds = MSG_ReadByte (msg);
 	int         n;
@@ -143,7 +144,7 @@ qtv_soundlist (server_t *sv, qmsg_t *msg)
 }
 
 static void
-qtv_modellist (server_t *sv, qmsg_t *msg)
+sv_modellist (server_t *sv, qmsg_t *msg)
 {
 	int         nummodels = MSG_ReadByte (msg);
 	int         n;
@@ -177,7 +178,7 @@ qtv_modellist (server_t *sv, qmsg_t *msg)
 }
 
 static void
-qtv_cmd_f (server_t *sv)
+sv_cmd_f (server_t *sv)
 {
 	if (Cmd_Argc () > 1) {
 		MSG_WriteByte (&sv->netchan.message, qtv_stringcmd);
@@ -187,8 +188,9 @@ qtv_cmd_f (server_t *sv)
 }
 
 static void
-qtv_skins_f (server_t *sv)
+sv_skins_f (server_t *sv)
 {
+	int         i;
 	// we don't actually bother checking skins here, but this is a good way
 	// to get everything ready at the last miniute before we start getting
 	// actual in-game update messages
@@ -197,6 +199,11 @@ qtv_skins_f (server_t *sv)
 	sv->next_run = realtime;
 	sv->connected = 2;
 	sv->delta = -1;
+
+	for (i = 0; i < UPDATE_BACKUP; i++) {
+		sv->frames[i].entities.entities = sv->entity_states[i];
+		sv->frames[i].players.players = sv->player_states[i];
+	}
 }
 
 typedef struct {
@@ -205,8 +212,8 @@ typedef struct {
 } svcmd_t;
 
 svcmd_t svcmds[] = {
-	{"cmd",			qtv_cmd_f},
-	{"skins",		qtv_skins_f},
+	{"cmd",			sv_cmd_f},
+	{"skins",		sv_skins_f},
 
 	{0,				0},
 };
@@ -232,8 +239,9 @@ sv_stringcmd (server_t *sv, qmsg_t *msg)
 }
 
 static void
-qtv_parse_delta (server_t *sv, qmsg_t *msg, int bits)
+sv_parse_delta (qmsg_t *msg, int bits, entity_state_t *ent)
 {
+	ent->number = bits & 511;
 	bits &= ~511;
 
 	if (bits & U_MOREBITS)
@@ -244,137 +252,463 @@ qtv_parse_delta (server_t *sv, qmsg_t *msg, int bits)
 			bits |= MSG_ReadByte (msg) << 24;
 	}
 	if (bits & U_MODEL)
-		MSG_ReadByte (msg);
+		ent->modelindex = MSG_ReadByte (msg);
 	if (bits & U_FRAME)
-		MSG_ReadByte (msg);
+		ent->frame = (ent->frame & 0xff00) | MSG_ReadByte (msg);
 	if (bits & U_COLORMAP)
-		MSG_ReadByte (msg);
+		ent->colormap = MSG_ReadByte (msg);
 	if (bits & U_SKIN)
-		MSG_ReadByte (msg);
+		ent->skinnum = MSG_ReadByte (msg);
 	if (bits & U_EFFECTS)
-		MSG_ReadByte (msg);
+		ent->effects = (ent->effects & 0xff00) | MSG_ReadByte (msg);
 	if (bits & U_ORIGIN1)
-		MSG_ReadCoord (msg);
+		ent->origin[0] = MSG_ReadCoord (msg);
 	if (bits & U_ANGLE1)
-		MSG_ReadAngle (msg);
+		ent->angles[0] = MSG_ReadAngle (msg);
 	if (bits & U_ORIGIN2)
-		MSG_ReadCoord (msg);
+		ent->origin[1] = MSG_ReadCoord (msg);
 	if (bits & U_ANGLE2)
-		MSG_ReadAngle (msg);
+		ent->angles[1] = MSG_ReadAngle (msg);
 	if (bits & U_ORIGIN3)
-		MSG_ReadCoord (msg);
+		ent->origin[2] = MSG_ReadCoord (msg);
 	if (bits & U_ANGLE3)
-		MSG_ReadAngle (msg);
+		ent->angles[2] = MSG_ReadAngle (msg);
 	if (bits & U_SOLID) {
 		// FIXME
 	}
 	if (!(bits & U_EXTEND1))
 		return;
 	if (bits & U_ALPHA)
-		MSG_ReadByte (msg);
+		ent->alpha = MSG_ReadByte (msg);
 	if (bits & U_SCALE)
-		MSG_ReadByte (msg);
+		ent->scale = MSG_ReadByte (msg);
 	if (bits & U_EFFECTS2)
-		MSG_ReadByte (msg);
+		ent->effects = (ent->effects & 0x00ff) | (MSG_ReadByte (msg) << 8);
 	if (bits & U_GLOWSIZE)
-		MSG_ReadByte (msg);
+		ent->glow_size = MSG_ReadByte (msg);
 	if (bits & U_GLOWCOLOR)
-		MSG_ReadByte (msg);
+		ent->glow_color = MSG_ReadByte (msg);
 	if (bits & U_COLORMOD)
-		MSG_ReadByte (msg);
+		ent->colormod = MSG_ReadByte (msg);
 	if (!(bits & U_EXTEND1))
 		return;
 	if (bits & U_FRAME2)
-		MSG_ReadByte (msg);
+		ent->frame = (ent->frame & 0x00ff) | (MSG_ReadByte (msg) << 8);
 }
 
 static void
-qtv_packetentities (server_t *sv, qmsg_t *msg, int delta)
+sv_packetentities (server_t *sv, qmsg_t *msg, int delta)
 {
 	unsigned short word;
-	int         newnum, oldnum;
+	int         newnum, oldnum, from;
+	int         newindex, oldindex;
+	int         newpacket, oldpacket;
+	int         full;
+	packet_entities_t *oldp, *newp, dummy;
 
-	newnum = oldnum = 0;
+	newpacket = sv->netchan.incoming_sequence & UPDATE_MASK;
+	newp = &sv->frames[newpacket].entities;
+	sv->frames[newpacket].invalid = false;
+
 	if (delta) {
-		/*from =*/ MSG_ReadByte (msg);
+		from = MSG_ReadByte (msg);
+		oldpacket = sv->frames[newpacket].delta_sequence;
+		if ((from & UPDATE_MASK) != (oldpacket & UPDATE_MASK))
+			qtv_printf ("WARNING: from mismatch\n");
 	} else {
+		oldpacket = -1;
 	}
+	full = 0;
+	if (oldpacket != -1) {
+		if (sv->netchan.outgoing_sequence - oldpacket > UPDATE_BACKUP) {
+			//XXX flush_entity_packet ();
+			return;
+		}
+		oldp = &sv->frames[oldpacket & UPDATE_MASK].entities;
+	} else {
+		oldp = &dummy;
+		dummy.num_entities = 0;
+		full = 1;
+	}
+	//qtv_printf ("newp = %-5d oldp = %d\n", newpacket, oldpacket & UPDATE_MASK);
 	sv->delta = sv->netchan.incoming_sequence;
+	newindex = oldindex = 0;
+	newp->num_entities = 0;
 	while (1) {
-		word = (unsigned short) MSG_ReadShort (msg);
+		word = MSG_ReadShort (msg);
 		if (msg->badread) {     // something didn't parse right...
 			qtv_printf ("msg_badread in packetentities\n");
 			return;
 		}
+		//qtv_printf ("word = %04x new = %-3d old = %-3d\n", word, newindex, oldindex);
 		if (!word) {
 			// copy rest of ents from old packet
+			while (oldindex < oldp->num_entities) {
+				if (newindex >= MAX_DEMO_PACKET_ENTITIES) {
+					qtv_printf ("A too many packet entities\n");
+					Sys_Quit ();
+					//XXX flush_entitiy_packet
+					return;
+				}
+				newp->entities[newindex] = oldp->entities[oldindex];
+				newnum = newp->entities[newindex].number;
+				sv->entities[newnum] = newp->entities[newindex];
+				newindex++;
+				oldindex++;
+			}
 			break;
 		}
+		newnum = word & 511;
+		oldnum = 9999;
+		if (oldindex < oldp->num_entities)
+			oldnum = oldp->entities[oldindex].number;
+		//qtv_printf ("    %-3d %-4d %3d\n", newnum, oldnum, oldp->num_entities);
+
+		while (newnum > oldnum) {
+			if (full) {
+				qtv_printf ("WARNING: oldcopy on full update\n");
+				//XXX flush_entitiy_packet
+				return;
+			}
+			if (newindex >= MAX_DEMO_PACKET_ENTITIES) {
+				qtv_printf ("B too many packet entities\n");
+				Sys_Quit ();
+				//XXX flush_entitiy_packet
+				return;
+			}
+			newp->entities[newindex] = oldp->entities[oldindex];
+			sv->entities[newnum] = newp->entities[newindex];
+			newindex++;
+			oldindex++;
+			oldnum = 9999;
+			if (oldindex < oldp->num_entities)
+				oldnum = oldp->entities[oldindex].number;
+		//qtv_printf ("    %-3d %-4d %3d\n", newnum, oldnum, oldp->num_entities);
+		}
+
 		if (newnum < oldnum) {
 			if (word & U_REMOVE) {
+				if (full) {
+					sv->delta = 0;	//XXX -1?
+					qtv_printf ("WARNING: U_REMOVE on full update\n");
+					//XXX flush_entitiy_packet
+					return;
+				}
 				continue;
 			}
-			qtv_parse_delta (sv, msg, word);
+			if (newindex >= MAX_DEMO_PACKET_ENTITIES) {
+				qtv_printf ("C too many packet entities\n");
+				Sys_Quit ();
+				//XXX flush_entitiy_packet
+				return;
+			}
+			newp->entities[newindex] = sv->baselines[newnum];
+			sv_parse_delta (msg, word, &newp->entities[newindex]);
+			sv->entities[newnum] = newp->entities[newindex];
+			newindex++;
 			continue;
 		}
 		if (newnum == oldnum) {
+			if (full) {
+				sv->delta = 0;	//XXX -1?
+				qtv_printf ("WARNING: delta on full update\n");
+			}
 			if (word & U_REMOVE) {
+				memset (&sv->entities[newnum], 0, sizeof (entity_state_t));
+				oldindex++;
 				continue;
 			}
-			qtv_parse_delta (sv, msg, word);
-			continue;
+			newp->entities[newindex] = oldp->entities[oldindex];
+			sv_parse_delta (msg, word, &sv->entities[newindex]);
+			sv->entities[newnum] = newp->entities[newindex];
+			newindex++;
+			oldindex++;
 		}
 	}
+	newp->num_entities = newindex;
+}
+
+static void
+sv_playerinfo (server_t *sv, qmsg_t *msg)
+{
+	player_t    *pl;
+	plent_state_t dummy;				// for bad player indices
+	plent_state_t *ent;
+	int          num, flags;
+	int          i;
+
+	num = MSG_ReadByte (msg);
+	if (num > MAX_SV_PLAYERS) {
+		qtv_printf ("bogus player: %d\n", num);
+		ent = &dummy;
+	} else {
+		pl = &sv->players[num];
+		ent = &pl->ent;
+	}
+	flags = ent->flags = MSG_ReadShort (msg);
+	MSG_ReadCoordV (msg, ent->origin);
+	ent->frame = (ent->frame & 0xff00) | MSG_ReadByte (msg);
+	if (flags & PF_MSEC)
+		ent->msec = MSG_ReadByte (msg);
+	if (flags & PF_COMMAND)
+		MSG_ReadDeltaUsercmd (msg, &nullcmd, &ent->cmd);
+	for (i = 0; i < 3; i++) {
+		if (flags & (PF_VELOCITY1 << i))
+			ent->velocity[i] = MSG_ReadShort (msg);
+	}
+	if (flags & PF_MODEL)
+		ent->modelindex = MSG_ReadByte (msg);
+	if (flags & PF_SKINNUM)
+		ent->skinnum = MSG_ReadByte (net_message);
+	if (flags & PF_EFFECTS)
+		ent->effects = (ent->effects & 0xff00) | MSG_ReadByte (net_message);;
+	if (flags & PF_WEAPONFRAME)
+		ent->weaponframe = MSG_ReadByte (net_message);
+	if (flags & PF_QF) {
+		int         bits;
+
+		bits = MSG_ReadByte (msg);
+		if (bits & PF_ALPHA)
+			ent->alpha = MSG_ReadByte (net_message);
+		if (bits & PF_SCALE)
+			ent->scale = MSG_ReadByte (net_message);
+		if (bits & PF_EFFECTS2)
+			ent->effects = (ent->effects & 0x00ff)
+						 | (MSG_ReadByte (net_message) << 8);
+		if (bits & PF_GLOWSIZE)
+			ent->glow_size = MSG_ReadByte (net_message);
+		if (bits & PF_GLOWCOLOR)
+			ent->glow_color = MSG_ReadByte (net_message);
+		if (bits & PF_COLORMOD)
+			ent->colormod = MSG_ReadByte (net_message);
+		if (bits & PF_FRAME2)
+			ent->frame = (ent->frame & 0xff)
+					   | (MSG_ReadByte (net_message) << 8);
+	}
+}
+
+static void
+sv_serverinfo (server_t *sv, qmsg_t *msg)
+{
+	dstring_t  *key = dstring_newstr ();
+	dstring_t  *value = dstring_newstr ();
+
+	dstring_copystr (key, MSG_ReadString (msg));
+	dstring_copystr (value, MSG_ReadString (msg));
+
+	Info_SetValueForKey (sv->info, key->str, value->str, 0);
+
+	dstring_delete (key);
+	dstring_delete (value);
+}
+
+static void
+sv_setinfo (server_t *sv, qmsg_t *msg)
+{
+	int         slot;
+	dstring_t  *key = dstring_newstr ();
+	dstring_t  *value = dstring_newstr ();
+	player_t   *pl;
+
+	slot = MSG_ReadByte (msg);
+	dstring_copystr (key, MSG_ReadString (msg));
+	dstring_copystr (value, MSG_ReadString (msg));
+	if (slot >= MAX_SV_PLAYERS) {
+		qtv_printf ("bogus player: %d\n", slot);
+	} else {
+		pl = sv->players + slot;
+		if (!pl->info)
+			pl->info = Info_ParseString ("", MAX_INFO_STRING,
+										 0);
+		Info_SetValueForKey (pl->info, key->str, value->str,
+							 0);
+	}
+	dstring_delete (key);
+	dstring_delete (value);
+}
+
+static void
+sv_updateuserinfo (server_t *sv, qmsg_t *msg)
+{
+	int         slot, uid;
+	const char *info;
+	player_t   *pl;
+
+	slot = MSG_ReadByte (msg);
+	uid = MSG_ReadLong (msg);
+	info = MSG_ReadString (msg);
+	if (slot >= MAX_SV_PLAYERS) {
+		qtv_printf ("bogus player: %d\n", slot);
+		return;
+	}
+	pl = sv->players + slot;
+	if (pl->info)
+		Info_Destroy (pl->info);
+	if (info) {
+		pl->info = Info_ParseString (info, MAX_INFO_STRING, 0);
+		pl->uid = uid;
+	}
+}
+
+static void
+sv_updatestat (server_t *sv, qmsg_t *msg, int islong)
+{
+	int         stat, val;
+	player_t   *pl;
+
+	stat = MSG_ReadByte (msg);
+	if (!islong)
+		val = MSG_ReadByte (msg);
+	else
+		val = MSG_ReadLong (msg);
+	for (pl = sv->players; pl; pl = pl->next)
+		pl->stats[stat] = val;
+}
+
+static void
+sv_update_net (server_t *sv, qmsg_t *msg, int ping)
+{
+	int         slot, val;
+	player_t   *pl;
+
+	slot = MSG_ReadByte (msg);
+	val = MSG_ReadShort (msg);
+	if (slot >= MAX_SV_PLAYERS) {
+		qtv_printf ("bogus player: %d\n", slot);
+		return;
+	}
+	pl = sv->players + slot;
+	if (ping)
+		pl->ping = val;
+	else
+		pl->pl = val;
+}
+
+static void
+sv_sound (server_t *sv, qmsg_t *msg, int stop)
+{
+	// XXX
+	int         c;
+	vec3_t      v;
+
+	if (stop) {
+		MSG_ReadShort (msg);
+	} else {
+		c = MSG_ReadShort (msg);
+		if (c & SND_VOLUME)
+			MSG_ReadByte (msg);
+		if (c & SND_ATTENUATION)
+			MSG_ReadByte (msg);
+		MSG_ReadByte (msg);
+		MSG_ReadCoordV (msg, v);
+	}
+}
+
+static void
+sv_setangle (server_t *sv, qmsg_t *msg)
+{
+	int         slot;
+	player_t   *pl;
+	vec3_t      ang;
+
+	slot = MSG_ReadByte (msg);
+	MSG_ReadAngleV (msg, ang);
+	if (slot >= MAX_SV_PLAYERS) {
+		qtv_printf ("bogus player: %d\n", slot);
+		return;
+	}
+	pl = sv->players + slot;
+	VectorCopy (ang, pl->ent.cmd.angles);
+}
+
+static void
+sv_updatefrags (server_t *sv, qmsg_t *msg)
+{
+	int         slot, frags;
+	player_t   *pl;
+
+	slot = MSG_ReadByte (msg);
+	frags = MSG_ReadShort (msg);
+	if (slot >= MAX_SV_PLAYERS) {
+		qtv_printf ("bogus player: %d\n", slot);
+		return;
+	}
+	pl = sv->players + slot;
+	pl->frags = frags;
+}
+
+static void
+parse_baseline (qmsg_t *msg, entity_state_t *ent)
+{
+	ent->modelindex = MSG_ReadByte (msg);
+	ent->frame = MSG_ReadByte (msg);
+	ent->colormap = MSG_ReadByte (msg);
+	ent->skinnum = MSG_ReadByte (msg);
+	MSG_ReadCoordAngleV (msg, ent->origin, ent->angles);
+	ent->colormod = 255;
+	ent->alpha = 255;
+	ent->scale = 16;
+	ent->glow_size = 254;
+	ent->glow_color = 254;
+}
+
+static void
+sv_spawnbaseline (server_t *sv, qmsg_t *msg)
+{
+	int         i;
+
+	i = MSG_ReadShort (msg) % MAX_SV_ENTITIES;
+	sv->baselines[i].number = i;
+	parse_baseline (msg, &sv->baselines[i]);
+}
+
+static void
+sv_spawnstatic (server_t *sv, qmsg_t *msg)
+{
+	entity_state_t ent;
+	parse_baseline (msg, &ent);
 }
 
 void
 sv_parse (server_t *sv, qmsg_t *msg, int reliable)
 {
-	int         c;
-	vec3_t      v, a;
+	int         svc;
+	vec3_t      v;
+	player_t   *pl;
 
 	while (1) {
-		c = MSG_ReadByte (msg);
-		if (c == -1)
+		svc = MSG_ReadByte (msg);
+		if (svc == -1)
 			break;
-		//qtv_printf ("sv_parse: svc: %d\n", c);
-		switch (c) {
+		//qtv_printf ("sv_parse: svc: %d\n", svc);
+		switch (svc) {
 			default:
-				qtv_printf ("sv_parse: unknown svc: %d\n", c);
+				qtv_printf ("sv_parse: unknown svc: %d\n", svc);
+				Sys_Quit ();
 				return;
 			case svc_nop:
 				break;
-			case svc_updatestat:
-				MSG_ReadByte (msg);
-				MSG_ReadByte (msg);
-				break;
-			case svc_setview:
-				break;
+			//case svc_setview:
+			//	break;
 			case svc_sound:
-				c = MSG_ReadShort (msg);
-				if (c & SND_VOLUME)
-					MSG_ReadByte (msg);
-				if (c & SND_ATTENUATION)
-					MSG_ReadByte (msg);
-				MSG_ReadByte (msg);
-				MSG_ReadCoordV (msg, v);
+				sv_sound (sv, msg, 0);
 				break;
 			case svc_print:
+				//XXX
 				MSG_ReadByte (msg);
 				MSG_ReadString (msg);
 				break;
 			case svc_setangle:
-				MSG_ReadByte (msg);
-				MSG_ReadAngleV(msg, v);
+				sv_setangle (sv, msg);
 				break;
 			case svc_updatefrags:
-				MSG_ReadByte (msg);
-				MSG_ReadShort (msg);
+				sv_updatefrags (sv, msg);
 				break;
 			case svc_stopsound:
-				MSG_ReadShort (msg);
+				sv_sound (sv, msg, 1);
 				break;
 			case svc_damage:
+				//XXX
 				MSG_ReadByte (msg);
 				MSG_ReadByte (msg);
 				MSG_ReadCoordV (msg, v);
@@ -383,29 +717,36 @@ sv_parse (server_t *sv, qmsg_t *msg, int reliable)
 				//XXX
 				break;
 			case svc_setpause:
+				//XXX
 				MSG_ReadByte (msg);
 				break;
 			case svc_centerprint:
+				//XXX
 				MSG_ReadString (msg);
 				break;
 			case svc_killedmonster:
-				//XXX
+				for (pl = sv->players; pl; pl = pl->next)
+					pl->stats[14]++;	//FIXME STAT_MONSTERS
 				break;
 			case svc_foundsecret:
-				//XXX
+				for (pl = sv->players; pl; pl = pl->next)
+					pl->stats[13]++;	//FIXME STAT_SECRETS
 				break;
 			case svc_intermission:
+				//XXX
 				MSG_ReadCoordV (msg, v);
 				MSG_ReadAngleV (msg, v);
 				break;
 			case svc_finale:
+				//XXX
 				MSG_ReadString (msg);
 				break;
 			case svc_cdtrack:
+				//XXX
 				MSG_ReadByte (msg);
 				break;
 			case svc_sellscreen:
-				//XXX
+				//ignore
 				break;
 			case svc_smallkick:
 				//XXX
@@ -413,88 +754,85 @@ sv_parse (server_t *sv, qmsg_t *msg, int reliable)
 			case svc_bigkick:
 				//XXX
 				break;
-			case svc_updateping:
-				MSG_ReadByte (msg);
-				MSG_ReadShort (msg);
-				break;
 			case svc_updateentertime:
+				//XXX
 				MSG_ReadByte (msg);
 				MSG_ReadFloat (msg);
 				break;
+			case svc_updatestat:
 			case svc_updatestatlong:
-				MSG_ReadByte (msg);
-				MSG_ReadLong (msg);
+				sv_updatestat (sv, msg, svc == svc_updatestatlong);
 				break;
 			case svc_muzzleflash:
+				//XXX
 				MSG_ReadShort (msg);
 				break;
 			case svc_updateuserinfo:
-				MSG_ReadByte (msg);
-				MSG_ReadLong (msg);
-				MSG_ReadString (msg);
+				sv_updateuserinfo (sv, msg);
 				break;
 			case svc_playerinfo:
-				//XXX
+				sv_playerinfo (sv, msg);
 				break;
 			case svc_nails:
-				//XXX
-				break;
-			case svc_packetentities:
-				qtv_packetentities (sv, msg, 0);
-				break;
-			case svc_deltapacketentities:
-				qtv_packetentities (sv, msg, 1);
-				break;
-			case svc_maxspeed:
-				MSG_ReadFloat (msg);
-				break;
-			case svc_entgravity:
-				MSG_ReadFloat (msg);
-				break;
-			case svc_setinfo:
-				MSG_ReadByte (msg);
-				MSG_ReadString (msg);
-				MSG_ReadString (msg);
-				break;
-			case svc_serverinfo:
-				MSG_ReadString (msg);
-				MSG_ReadString (msg);
-				break;
-			case svc_updatepl:
-				MSG_ReadByte (msg);
-				MSG_ReadByte (msg);
-				break;
 			case svc_nails2:
 				//XXX
 				break;
+			case svc_packetentities:
+				sv_packetentities (sv, msg, 0);
+				break;
+			case svc_deltapacketentities:
+				sv_packetentities (sv, msg, 1);
+				break;
+			case svc_maxspeed:
+				//XXX
+				MSG_ReadFloat (msg);
+				break;
+			case svc_entgravity:
+				//XXX
+				MSG_ReadFloat (msg);
+				break;
+			case svc_setinfo:
+				sv_setinfo (sv, msg);
+				break;
+			case svc_serverinfo:
+				sv_serverinfo (sv, msg);
+				break;
+			case svc_updatepl:
+				sv_update_net (sv, msg, 0);
+				break;
+			case svc_updateping:
+				sv_update_net (sv, msg, 1);
+				break;
 			case svc_serverdata:
-				qtv_serverdata (sv, msg);
+				sv_serverdata (sv, msg);
 				break;
 			case svc_stufftext:
 				sv_stringcmd (sv, msg);
 				break;
+
 			case svc_soundlist:
-				qtv_soundlist (sv, msg);
+				sv_soundlist (sv, msg);
 				break;
 			case svc_modellist:
-				qtv_modellist (sv, msg);
+				sv_modellist (sv, msg);
 				break;
+
 			case svc_spawnstaticsound:
+				//XXX
 				MSG_ReadCoordV (msg, v);
 				MSG_ReadByte (msg);
 				MSG_ReadByte (msg);
 				MSG_ReadByte (msg);
 				break;
+
 			case svc_spawnbaseline:
-				MSG_ReadShort (msg);
+				sv_spawnbaseline (sv, msg);
+				break;
 			case svc_spawnstatic:
-				MSG_ReadByte (msg);
-				MSG_ReadByte (msg);
-				MSG_ReadByte (msg);
-				MSG_ReadByte (msg);
-				MSG_ReadCoordAngleV (msg, v, a);
+				sv_spawnstatic (sv, msg);
 				break;
 			case svc_lightstyle:
+				//XXX
 				MSG_ReadByte (msg);
 				MSG_ReadString (msg);
 				break;

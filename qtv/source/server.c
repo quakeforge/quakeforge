@@ -121,14 +121,17 @@ setup_sub_message (qmsg_t *msg, qmsg_t *sub, sizebuf_t *buf, int len)
 }
 
 static void
-setup_client_list (server_t *sv, unsigned mask)
+setup_player_list (server_t *sv, unsigned mask)
 {
 	int         i;
-	sv_client_t **p, *cl;
+	player_t  **p, *cl;
 
-	p = &sv->client_list;
+	if (sv->player_mask == mask)
+		return;
+	sv->player_mask = mask;
+	p = &sv->player_list;
 	*p = 0;
-	for (i = 0, cl = sv->clients; i < MAX_SV_CLIENTS; i++, cl++) {
+	for (i = 0, cl = sv->players; i < MAX_SV_PLAYERS; i++, cl++) {
 		if (mask & (1 << i)) {
 			*p = cl;
 			p = &(*p)->next;
@@ -146,10 +149,11 @@ qtv_parse_updates (server_t *sv, qmsg_t *msg, int reliable)
 	qmsg_t      sub_message;
 
 	while (1) {
-		msec = MSG_ReadByte (net_message);
+		msec = MSG_ReadByte (msg);
+		//qtv_printf ("msec = %d\n", msec);
 		if (msec == -1)
 			break;
-		type = MSG_ReadByte (net_message);
+		type = MSG_ReadByte (msg);
 		switch (type & 7) {
 			case dem_cmd:
 			case dem_set:
@@ -159,14 +163,14 @@ qtv_parse_updates (server_t *sv, qmsg_t *msg, int reliable)
 			case dem_read:
 				break;
 			case dem_multiple:
-				setup_client_list (sv, MSG_ReadLong (net_message));
+				setup_player_list (sv, MSG_ReadLong (msg));
 				break;
 			case dem_stats:
 			case dem_single:
-				setup_client_list (sv, 1 << (type >> 3));
+				setup_player_list (sv, 1 << (type >> 3));
 				break;
 			case dem_all:
-				setup_client_list (sv, ~0);
+				setup_player_list (sv, ~0);
 				break;
 		}
 
@@ -188,9 +192,10 @@ qtv_packet_f (server_t *sv)
 	type = len & 0xf000;
 	len &= 0x0fff;
 	setup_sub_message (net_message, &sub_message, &sub_message_buf, len);
-	qtv_printf ("qtv_packet: %x %d\n", type, len);
+	//qtv_printf ("qtv_packet: %x %d\n", type, len);
 	switch (type) {
 		case qtv_p_signon:
+			setup_player_list (sv, ~0);
 			sv_parse (sv, &sub_message, 1);
 			break;
 		case qtv_p_print:
@@ -448,7 +453,9 @@ server_run (server_t *sv)
 	static byte delta_msg[2] = {qtv_delta};
 	static byte nop_msg[1] = {qtv_nop};
 	if (sv->connected > 1) {
+		int         frame = (sv->netchan.outgoing_sequence) & UPDATE_MASK;
 		sv->next_run = realtime + 0.03;
+		sv->frames[frame].delta_sequence = sv->delta;
 		if (sv->delta != -1) {
 			delta_msg[1] = sv->delta;
 			Netchan_Transmit (&sv->netchan, sizeof (delta_msg), delta_msg);

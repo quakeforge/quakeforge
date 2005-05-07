@@ -35,13 +35,27 @@
 #include "netchan.h"
 #include "qw/pmove.h"
 
-typedef struct sv_client_s {
-	struct sv_client_s *next;			// for multicast messages
+typedef struct player_s {
+	struct player_s *next;				// for multicast messages
 	struct info_s *info;
-	int            stats[MAX_CL_STATS];
-} sv_client_t;
+	int         stats[MAX_CL_STATS];
+	int         uid;
+	int         ping;
+	int         pl;
+	int         frags;
 
-#define MAX_SV_CLIENTS 32
+	plent_state_t ent;
+} player_t;
+
+typedef struct frame_s {
+	int         delta_sequence;
+	qboolean    invalid;
+	packet_players_t players;
+	packet_entities_t entities;
+} frame_t;
+
+#define MAX_SV_PLAYERS 32
+#define MAX_SV_ENTITIES 512
 
 typedef struct server_s {
 	struct server_s *next;
@@ -65,8 +79,14 @@ typedef struct server_s {
 
 	int         delta;
 
-	sv_client_t clients[MAX_SV_CLIENTS];
-	sv_client_t *client_list;			// list of clients for multicast
+	frame_t     frames[UPDATE_BACKUP];
+	entity_state_t entities[MAX_SV_ENTITIES];
+	entity_state_t baselines[MAX_SV_ENTITIES];
+	player_t    players[MAX_SV_PLAYERS];
+	player_t   *player_list;			// list of players for multicast
+	unsigned    player_mask;			// which players are in the list
+	plent_state_t player_states[UPDATE_BACKUP][MAX_SV_PLAYERS];
+	entity_state_t entity_states[UPDATE_BACKUP][MAX_DEMO_PACKET_ENTITIES];
 } server_t;
 
 void Server_Init (void);
