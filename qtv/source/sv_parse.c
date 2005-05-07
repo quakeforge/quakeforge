@@ -889,6 +889,10 @@ sv_parse (server_t *sv, qmsg_t *msg, int reliable)
 			case svc_updateping:
 				sv_update_net (sv, msg, 1);
 				break;
+			case svc_chokecount:
+				//XXX
+				MSG_ReadByte (msg);
+				break;
 			case svc_serverdata:
 				sv_serverdata (sv, msg);
 				break;

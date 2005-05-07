@@ -73,7 +73,7 @@ static void
 client_drop (client_t *cl)
 {
 	MSG_WriteByte (&cl->netchan.message, svc_disconnect);
-	Con_Printf ("Client %s removed\n", Info_ValueForKey (cl->userinfo, "name"));
+	qtv_printf ("Client %s removed\n", Info_ValueForKey (cl->userinfo, "name"));
 	cl->drop = 1;
 }
 
@@ -155,6 +155,11 @@ cl_ptrack_f (client_t *cl, void *unused)
 {
 }
 
+static void
+cl_list_f (client_t *cl, void *unused)
+{
+}
+
 static ucmd_t ucmds[] = {
 	{"new",			cl_new_f,			0, 0},
 	{"modellist",	cl_modellist_f,		0, 0},
@@ -185,6 +190,8 @@ static ucmd_t ucmds[] = {
 	{"ptrack",		cl_ptrack_f,		0, 1},		// ZOID - used with autocam
 
 	{"snap",		0,					0, 0},
+
+	{"list",		cl_list_f,			0, 0},
 };
 
 static hashtab_t *ucmd_table;
@@ -227,7 +234,7 @@ client_parse_message (client_t *cl)
 
 	while (1) {
 		if (net_message->badread) {
-			Con_Printf ("SV_ReadClientMessage: badread\n");
+			qtv_printf ("SV_ReadClientMessage: badread\n");
 			client_drop (cl);
 			return;
 		}
@@ -238,7 +245,7 @@ client_parse_message (client_t *cl)
 
 		switch (c) {
 			default:
-				Con_Printf ("SV_ReadClientMessage: unknown command char\n");
+				qtv_printf ("SV_ReadClientMessage: unknown command char\n");
 				client_drop (cl);
 				return;
 			case clc_nop:
@@ -321,7 +328,7 @@ client_handler (connection_t *con, void *object)
 	client_t   *cl = (client_t *) object;
 
 	if (net_message->message->cursize < 11) {
-		Con_Printf ("%s: Runt packet\n", NET_AdrToString (net_from));
+		qtv_printf ("%s: Runt packet\n", NET_AdrToString (net_from));
 		return;
 	}
 #if 0
@@ -362,21 +369,21 @@ client_connect (connection_t *con, void *object)
 	MSG_BeginReading (net_message);
 	seq = MSG_ReadLong (net_message);
 	if (seq != -1) {
-		Con_Printf ("unexpected connected packet\n");
+		qtv_printf ("unexpected connected packet\n");
 		return;
 	}
 	str = MSG_ReadString (net_message);
 	COM_TokenizeString (str, qtv_args);
 	cmd_args = qtv_args;
 	if (strcmp (Cmd_Argv (0), "connect")) {
-		Con_Printf ("unexpected connected packet\n");
+		qtv_printf ("unexpected connected packet\n");
 		return;
 	}
 	version = atoi (Cmd_Argv (1));
 	if (version != PROTOCOL_VERSION) {
 		Netchan_OutOfBandPrint (net_from, "%c\nServer is version %s.\n",
 								A2C_PRINT, QW_VERSION);
-		Con_Printf ("* rejected connect from version %i\n", version);
+		qtv_printf ("* rejected connect from version %i\n", version);
 		return;
 	}
 	qport = atoi (Cmd_Argv (2));
@@ -404,7 +411,7 @@ client_connect (connection_t *con, void *object)
 	con->object = cl;
 	con->handler = client_handler;
 
-	Con_Printf ("client %s (%s) connected\n",
+	qtv_printf ("client %s (%s) connected\n",
 				Info_ValueForKey (userinfo, "name"),
 				NET_AdrToString (con->address));
 
