@@ -17,9 +17,14 @@ BOOL isspace (string x)
     return (x == " " || x == "\t" || x == "\n" || x == "\r");
 }
 
+BOOL isjunk (string x)
+{
+    return isspace (x) || x == ";";
+}
+
 BOOL issymbol (string x)
 {
-    return (x != "" && x != "(" && x !=")" && !isspace (x));
+    return (x != "" && x != "(" && x !=")" && !isjunk (x));
 }
 
 @implementation Lexer
@@ -47,7 +52,12 @@ BOOL issymbol (string x)
     local String str;
     local Boolean bl;
 
-    for (len = 0; isspace(str_mid(source, len, len+1)); len++) {
+    for (len = 0; isjunk(str_mid(source, len, len+1)); len++) {
+            if (str_mid(source, len, len+1) == ";") {
+                    while (str_mid(source, len, len+1) != "\n") {
+                            len++;
+                    }
+            }
             if (str_mid(source, len, len+1) == "\n") {
                     linenum++;
             }
