@@ -1,6 +1,8 @@
 #include "Lexer.h"
 #include "Number.h"
 #include "string.h"
+#include "Boolean.h"
+#include "Error.h"
 #include "defs.h"
 
 BOOL isdigit (string x)
@@ -43,6 +45,7 @@ BOOL issymbol (string x)
     local Number num;
     local Symbol sym;
     local String str;
+    local Boolean bl;
 
     for (len = 0; isspace(str_mid(source, len, len+1)); len++) {
             if (str_mid(source, len, len+1) == "\n") {
@@ -82,6 +85,22 @@ BOOL issymbol (string x)
         case ".":
             str_copy (source, str_mid (source, 1));
             return [Symbol dot];
+        case "#":
+            str_copy (source, str_mid (source, 1));
+            switch (str_mid (source, 0, 1)) {
+                case "t":
+                    bl = [Boolean trueConstant];
+                    str_copy (source, str_mid (source, 1));
+                    return bl;
+                case "f":
+                    bl = [Boolean falseConstant];
+                    str_copy (source, str_mid (source, 1));
+                    return bl;
+                default:
+                    return [Error type: "parse"
+                                  message: "Invalid # constant"
+                                  by: self];
+            }
         case "":
             return NIL;
         default:
@@ -97,4 +116,14 @@ BOOL issymbol (string x)
     return linenum;
 }
 
+- (integer) line
+{
+    return linenum;
+}
+
+- (string) source
+{
+    return filename;
+}
+ 
 @end
