@@ -35,6 +35,8 @@
 #include "netchan.h"
 #include "qw/msg_backbuf.h"
 
+#include "server.h"
+
 typedef struct client_s {
 	// list of clients connected to a server
 	struct client_s *next;
@@ -50,6 +52,10 @@ typedef struct client_s {
 	sizebuf_t   datagram;
 	byte        datagram_buf[MAX_DATAGRAM];
 	qboolean    send_message;
+	frame_t     frames[UPDATE_BACKUP];
+	entity_state_t packet_entities[UPDATE_BACKUP][MAX_PACKET_ENTITIES];
+
+	int         delta_sequence;
 
 	struct server_s *server;
 

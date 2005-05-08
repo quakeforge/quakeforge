@@ -707,9 +707,319 @@ write_player (int num, plent_state_t *pl, server_t *sv, sizebuf_t *msg)
 			MSG_WriteByte (msg, pl->frame >> 8);
 	}
 }
+#if 0
+#define MAX_NAILS   32
+edict_t    *nails[MAX_NAILS];
+int         numnails;
+int         nailcount;
+
+static void
+emit_nails (sizebuf_t *msg, qboolean recorder)
+{
+	byte	   *buf;				// [48 bits] xyzpy 12 12 12 4 8 
+	int			n, p, x, y, z, yaw;
+	int         bpn = recorder ? 7 : 6;	// bytes per nail
+	edict_t	   *ent;
+
+	if (!numnails)
+		return;
+
+	buf =  SZ_GetSpace (msg, numnails * bpn + 2);
+	*buf++ = recorder ? svc_nails2 : svc_nails;
+	*buf++ = numnails;
+
+	for (n = 0; n < numnails; n++) {
+		ent = nails[n];
+		if (recorder) {
+			if (!ent->colormap) {
+				if (!((++nailcount) & 255))
+					nailcount++;
+				ent->colormap = nailcount&255;
+			}
+			*buf++ = (byte)ent->colormap;
+		}
+
+		x = ((int) (ent->origin[0] + 4096 + 1) >> 1) & 4095;
+		y = ((int) (ent->origin[1] + 4096 + 1) >> 1) & 4095;
+		z = ((int) (ent->origin[2] + 4096 + 1) >> 1) & 4095;
+		p = (int) (ent->angles[0] * (16.0 / 360.0)) & 15;
+		yaw = (int) (ent->angles[1] * (256.0 / 360.0)) & 255;
+
+		*buf++ = x;
+		*buf++ = (x >> 8) | (y << 4);
+		*buf++ = (y >> 4);
+		*buf++ = z;
+		*buf++ = (z >> 8) | (p << 4);
+		*buf++ = yaw;
+	}
+}
+#endif
+static void
+write_delta (entity_state_t *from, entity_state_t *to, sizebuf_t *msg,
+			 qboolean force)//, int stdver)
+{
+	int			bits, i;
+	float		miss;
+
+	// send an update
+	bits = 0;
+
+	for (i = 0; i < 3; i++) {
+		miss = to->origin[i] - from->origin[i];
+		if (miss < -0.1 || miss > 0.1)
+			bits |= U_ORIGIN1 << i;
+	}
+
+	if (to->angles[0] != from->angles[0])
+		bits |= U_ANGLE1;
+
+	if (to->angles[1] != from->angles[1])
+		bits |= U_ANGLE2;
+
+	if (to->angles[2] != from->angles[2])
+		bits |= U_ANGLE3;
+
+	if (to->colormap != from->colormap)
+		bits |= U_COLORMAP;
+
+	if (to->skinnum != from->skinnum)
+		bits |= U_SKIN;
+
+	if (to->frame != from->frame)
+		bits |= U_FRAME;
+
+	if (to->effects != from->effects)
+		bits |= U_EFFECTS;
+
+	if (to->modelindex != from->modelindex)
+		bits |= U_MODEL;
+
+	// LordHavoc: cleaned up Endy's coding style, and added missing effects
+// Ender (QSG - Begin)
+#if 0
+	if (stdver > 1) {
+		if (to->alpha != from->alpha)
+			bits |= U_ALPHA;
+
+		if (to->scale != from->scale)
+			bits |= U_SCALE;
+
+		if (to->effects > 255)
+			bits |= U_EFFECTS2;
+
+		if (to->glow_size != from->glow_size)
+			bits |= U_GLOWSIZE;
+
+		if (to->glow_color != from->glow_color)
+			bits |= U_GLOWCOLOR;
+
+		if (to->colormod != from->colormod)
+			bits |= U_COLORMOD;
+
+		if (to->frame > 255)
+			bits |= U_EFFECTS2;
+	}
+	if (bits >= 16777216)
+		bits |= U_EXTEND2;
+
+	if (bits >= 65536)
+		bits |= U_EXTEND1;
+#endif
+	if (bits & 511)
+		bits |= U_MOREBITS;
+
+	if (to->flags & U_SOLID)
+		bits |= U_SOLID;
+
+	if (!bits && !force)
+		return;							// nothing to send!
+	i = to->number | (bits & ~511);
+//	if (i & U_REMOVE)
+//		Sys_Error ("U_REMOVE");
+	MSG_WriteShort (msg, i);
+
+	if (bits & U_MOREBITS)
+		MSG_WriteByte (msg, bits & 255);
+
+	// LordHavoc: cleaned up Endy's tabs
+// Ender (QSG - Begin)
+	if (bits & U_EXTEND1)
+		MSG_WriteByte (msg, bits >> 16);
+	if (bits & U_EXTEND2)
+		MSG_WriteByte (msg, bits >> 24);
+// Ender (QSG - End)
+
+	if (bits & U_MODEL)
+		MSG_WriteByte (msg, to->modelindex);
+	if (bits & U_FRAME)
+		MSG_WriteByte (msg, to->frame);
+	if (bits & U_COLORMAP)
+		MSG_WriteByte (msg, to->colormap);
+	if (bits & U_SKIN)
+		MSG_WriteByte (msg, to->skinnum);
+	if (bits & U_EFFECTS)
+		MSG_WriteByte (msg, to->effects);
+	if (bits & U_ORIGIN1)
+		MSG_WriteCoord (msg, to->origin[0]);
+	if (bits & U_ANGLE1)
+		MSG_WriteAngle (msg, to->angles[0]);
+	if (bits & U_ORIGIN2)
+		MSG_WriteCoord (msg, to->origin[1]);
+	if (bits & U_ANGLE2)
+		MSG_WriteAngle (msg, to->angles[1]);
+	if (bits & U_ORIGIN3)
+		MSG_WriteCoord (msg, to->origin[2]);
+	if (bits & U_ANGLE3)
+		MSG_WriteAngle (msg, to->angles[2]);
+
+	// LordHavoc: cleaned up Endy's tabs, rearranged bytes, and implemented
+	// missing effects
+// Ender (QSG - Begin)
+	if (bits & U_ALPHA)
+		MSG_WriteByte (msg, to->alpha);
+	if (bits & U_SCALE)
+		MSG_WriteByte (msg, to->scale);
+	if (bits & U_EFFECTS2)
+		MSG_WriteByte (msg, (to->effects >> 8));
+	if (bits & U_GLOWSIZE)
+		MSG_WriteByte (msg, to->glow_size);
+	if (bits & U_GLOWCOLOR)
+		MSG_WriteByte (msg, to->glow_color);
+	if (bits & U_COLORMOD)
+		MSG_WriteByte (msg, to->colormod);
+	if (bits & U_FRAME2)
+		MSG_WriteByte (msg, (to->frame >> 8));
+// Ender (QSG - End)
+}
+
+static void
+emit_entities (client_t *client, packet_entities_t *to, sizebuf_t *msg)
+{
+	int         newindex, oldindex, newnum, oldnum, oldmax;
+	entity_state_t *ent;
+	frame_t    *fromframe;
+	packet_entities_t *from;
+	server_t   *sv = client->server;
+
+	// this is the frame that we are going to delta update from
+	if (client->delta_sequence != -1) {
+		fromframe = &client->frames[client->delta_sequence & UPDATE_MASK];
+		from = &fromframe->entities;
+		oldmax = from->num_entities;
+
+		MSG_WriteByte (msg, svc_deltapacketentities);
+		MSG_WriteByte (msg, client->delta_sequence);
+	} else {
+		oldmax = 0;						// no delta update
+		from = NULL;
+
+		MSG_WriteByte (msg, svc_packetentities);
+	}
+
+	newindex = 0;
+	oldindex = 0;
+	while (newindex < to->num_entities || oldindex < oldmax) {
+		newnum = newindex >= to->num_entities ? 9999 :
+			to->entities[newindex].number;
+		oldnum = oldindex >= oldmax ? 9999 : from->entities[oldindex].number;
+
+		if (newnum == oldnum) {			// delta update from old position
+			write_delta (&from->entities[oldindex], &to->entities[newindex],
+						 msg, false);//, client->stdver);
+			oldindex++;
+			newindex++;
+			continue;
+		}
+
+		if (newnum < oldnum) {
+			// this is a new entity, send it from the baseline
+			ent = sv->baselines + newnum;
+			write_delta (ent, &to->entities[newindex], msg, true);//,
+						 //client->stdver);
+			newindex++;
+			continue;
+		}
+
+		if (newnum > oldnum) {			// the old entity isn't present in
+										// the new message
+			MSG_WriteShort (msg, oldnum | U_REMOVE);
+			oldindex++;
+			continue;
+		}
+	}
+
+	MSG_WriteShort (msg, 0);			// end of packetentities
+}
 
 static void
 write_entities (client_t *client, sizebuf_t *msg)
+{
+	//byte       *pvs = 0;
+	//int         i;
+	int         e;
+	//vec3_t      org;
+	frame_t    *frame;
+	entity_state_t *ent;
+	entity_state_t *state;
+	packet_entities_t *pack;
+	server_t   *sv = client->server;
+
+	// this is the frame we are creating
+	frame = &client->frames[client->netchan.incoming_sequence & UPDATE_MASK];
+
+	// find the client's PVS
+	//clent = client->edict;
+	//VectorAdd (SVvector (clent, origin), SVvector (clent, view_ofs), org);
+	//pvs = SV_FatPVS (org);
+
+	// put other visible entities into either a packet_entities or a nails
+	// message
+	pack = &frame->entities;
+	pack->num_entities = 0;
+
+	//numnails = 0;
+
+	for (e = MAX_CLIENTS + 1, ent = sv->entities + e; e < MAX_SV_ENTITIES;
+		 e++, ent++) {
+//		if (ent->free)
+//			continue;
+
+		// ignore ents without visible models
+		if (!ent->modelindex)
+			continue;
+#if 0
+		if (pvs) {
+			// ignore if not touching a PV leaf
+			for (i = 0; i < ent->num_leafs; i++)
+				if (pvs[ent->leafnums[i] >> 3] & (1 << (ent->leafnums[i] & 7)))
+					break;
+
+			if (i == ent->num_leafs)
+				continue;					// not visible
+		}
+#endif
+//		if (SV_AddNailUpdate (ent))
+//			continue;					// added to the special update list
+
+		// add to the packetentities
+		if (pack->num_entities == MAX_PACKET_ENTITIES)
+			continue;					// all full
+
+		state = &pack->entities[pack->num_entities];
+		pack->num_entities++;
+		*state = *ent;
+		state->flags = 0;
+	}
+	// encode the packet entities as a delta from the
+	// last packetentities acknowledged by the client
+	emit_entities (client, pack, msg);
+
+	// now add the specialized nail update
+	//emit_nails (msg, 0);
+}
+
+static void
+write_players (client_t *client, sizebuf_t *msg)
 {
 	server_t   *sv = client->server;
 	int         i;
@@ -735,10 +1045,9 @@ cl_send_messages (client_t *cl)
 	if (cl->backbuf.num_backbuf)
 		MSG_Reliable_Send (&cl->backbuf);
 	if (cl->connected) {
-		write_entities (cl, &msg);
+		write_players (cl, &msg);
 		write_player (31, &cl->state, cl->server, &msg);
-		MSG_WriteByte (&msg, svc_packetentities);
-		MSG_WriteShort (&msg, 0);
+		write_entities (cl, &msg);
 		if (cl->datagram.cursize) {
 			SZ_Write (&msg, cl->datagram.data, cl->datagram.cursize);
 			SZ_Clear (&cl->datagram);
@@ -773,6 +1082,7 @@ client_connect (connection_t *con, void *object)
 	const char *str;
 	info_t     *userinfo;
 	int         version, qport, challenge, seq;
+	int         i;
 
 	MSG_BeginReading (net_message);
 	seq = MSG_ReadLong (net_message);
@@ -825,6 +1135,9 @@ client_connect (connection_t *con, void *object)
 	cl->datagram.allowoverflow = true;
 	cl->datagram.maxsize = sizeof (cl->datagram_buf);
 	cl->datagram.data = cl->datagram_buf;
+
+	for (i = 0; i < UPDATE_BACKUP; i++)
+		cl->frames[i].entities.entities = cl->packet_entities[i];
 
 	qtv_printf ("client %s (%s) connected\n",
 				Info_ValueForKey (userinfo, "name"),
