@@ -16,15 +16,15 @@ Symbol letrecSym;
 + (void) initialize
 {
     lambdaSym = [Symbol forString: "lambda"];
-    [lambdaSym makeRootCell];
+    [lambdaSym retain];
     quoteSym = [Symbol forString: "quote"];
-    [quoteSym makeRootCell];
+    [quoteSym retain];
     defineSym = [Symbol forString: "define"];
-    [defineSym makeRootCell];
+    [defineSym retain];
     ifSym = [Symbol forString: "if"];
-    [ifSym makeRootCell];
+    [ifSym retain];
     letrecSym = symbol("letrec");
-    [letrecSym makeRootCell];
+    [letrecSym retain];
 }
 
 + (id) newWithLambda: (SchemeObject) xp scope: (Scope) sc
@@ -52,6 +52,7 @@ Symbol letrecSym;
     for (cur = arguments; [cur isKindOfClass: [Cons class]]; cur = [cur cdr]) {
             count++;
     }
+    [code minimumArguments: count];
     if (cur != [Nil nil]) {
             count++;
     }
@@ -130,7 +131,7 @@ Symbol letrecSym;
             if (err) return;
     } else if ([[expression car] isKindOfClass: [Symbol class]]) {
             index = [code addConstant: [expression car]];
-            [self emitExpression: [[expression cdr] car]];
+            [self emitExpression: [[expression cdr] car] flags: 0];
             if (err) return;
     } else {
             err = [Error type: "syntax"

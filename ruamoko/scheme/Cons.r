@@ -8,6 +8,17 @@ Cons cons (SchemeObject car, SchemeObject cdr)
     return [Cons newWithCar: car cdr: cdr];
 }
 
+integer length (SchemeObject foo)
+{
+    local integer len;
+
+    for (len = 0; [foo isKindOfClass: [Cons class]]; foo = [foo cdr]) {
+            len++;
+    }
+
+    return len;
+}
+
 BOOL isList (SchemeObject ls)
 {
     return ls == [Nil nil] ||

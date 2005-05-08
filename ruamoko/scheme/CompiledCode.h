@@ -20,6 +20,7 @@ typedef struct lineinfo_s lineinfo_t;
     Array constants;
     instruction_t [] code;
     lineinfo_t [] lineinfo;
+    integer minargs, size;
 }
 - (void) addInstruction: (Instruction) inst;
 - (integer) addConstant: (SchemeObject) c;
@@ -27,6 +28,9 @@ typedef struct lineinfo_s lineinfo_t;
 - (instruction_t []) code;
 - (lineinfo_t []) lineinfo;
 - (Frame) literals;
+- (integer) minimumArguments;
+- (void) minimumArguments: (integer) min;
+    
 @end
 
 #endif //__CompiledCode_h

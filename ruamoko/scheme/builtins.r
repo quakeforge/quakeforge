@@ -58,6 +58,102 @@ SchemeObject bi_add (SchemeObject args, Machine m)
     return [Number newFromInt: sum];
 }
 
+SchemeObject bi_sub (SchemeObject args, Machine m)
+{
+    local integer diff = 0;
+    local SchemeObject cur;
+
+    if (args == [Nil nil]) {
+            return [Error type: "-"
+                          message: sprintf("expected at least 1 argument")
+                          by: m];
+    }
+
+    cur = [args car];
+    
+    if (![cur isKindOfClass: [Number class]]) {
+            return [Error type: "-"
+                          message: sprintf("non-number argument: %s\n",
+                                           [cur printForm])
+                          by: m];
+    }
+
+    diff = [(Number) cur intValue];
+    
+    if ([args cdr] == [Nil nil]) {
+            return [Number newFromInt: -diff];
+    }
+    
+    for (cur = [args cdr]; cur != [Nil nil]; cur = [cur cdr]) {
+            if (![[cur car] isKindOfClass: [Number class]]) {
+                    return [Error type: "-"
+                                  message: sprintf("non-number argument: %s\n",
+                                                   [[cur car] printForm])
+                                  by: m];
+            }                     
+            diff -= [(Number) [cur car] intValue];
+    }
+
+    return [Number newFromInt: diff];
+}
+
+SchemeObject bi_mult (SchemeObject args, Machine m)
+{
+    local integer prod = 1;
+    local SchemeObject cur;
+
+    for (cur = args; cur != [Nil nil]; cur = [cur cdr]) {
+            if (![[cur car] isKindOfClass: [Number class]]) {
+                    return [Error type: "*"
+                                  message: sprintf("non-number argument: %s\n",
+                                                   [[cur car] printForm])
+                                  by: m];
+            }                     
+            prod *= [(Number) [cur car] intValue];
+    }
+
+    return [Number newFromInt: prod];
+}
+
+SchemeObject bi_div (SchemeObject args, Machine m)
+{
+    local integer frac = 0;
+    local SchemeObject cur;
+
+    if (args == [Nil nil]) {
+            return [Error type: "/"
+                          message: sprintf("expected at least 1 argument")
+                          by: m];
+    }
+
+    cur = [args car];
+    
+    if (![cur isKindOfClass: [Number class]]) {
+            return [Error type: "/"
+                          message: sprintf("non-number argument: %s\n",
+                                           [cur printForm])
+                          by: m];
+    }
+
+    frac = [(Number) cur intValue];
+    
+    if ([args cdr] == [Nil nil]) {
+            return [Number newFromInt: 1/frac];
+    }
+    
+    for (cur = [args cdr]; cur != [Nil nil]; cur = [cur cdr]) {
+            if (![[cur car] isKindOfClass: [Number class]]) {
+                    return [Error type: "/"
+                                  message: sprintf("non-number argument: %s\n",
+                                                   [[cur car] printForm])
+                                  by: m];
+            }                     
+            frac /= [(Number) [cur car] intValue];
+    }
+
+    return [Number newFromInt: frac];
+}
+
 SchemeObject bi_cons (SchemeObject args, Machine m)
 {
     if (!num_args(args, 2)) {
@@ -156,26 +252,94 @@ SchemeObject bi_callcc (SchemeObject args, Machine m)
     [[args car] invokeOnMachine: m];
     return NIL;
 }
-    
+
+SchemeObject bi_eq (SchemeObject args, Machine m)
+{
+    if (!num_args(args, 2)) {
+            return [Error type: "eq?"
+                          message: "expected 2 arguments"
+                          by: m];
+    }
+    return
+        [args car] == [[args cdr] car] ?
+        [Boolean trueConstant] :
+        [Boolean falseConstant];
+}
+
+SchemeObject bi_numeq (SchemeObject args, Machine m)
+{
+    local SchemeObject num1, num2;
+    if (!num_args(args, 2)) {
+            return [Error type: "="
+                          message: "expected 2 arguments"
+                          by: m];
+    }
+    num1 = [args car];
+    num2 = [[args cdr] car];
+    if (![num1 isKindOfClass: [Number class]]) {
+            return [Error type: "="
+                          message: sprintf("expected number argument, got: %s",
+                                           [num1 printform])
+                          by: m];
+    } else if (![num2 isKindOfClass: [Number class]]) {
+            return [Error type: "="
+                          message: sprintf("expected number argument, got: %s",
+                                           [num2 printform])
+                          by: m];
+    }
+
+    return
+        [num1 intValue] == [num2 intValue] ?
+        [Boolean trueConstant] :
+        [Boolean falseConstant];
+}
+
+SchemeObject bi_islist (SchemeObject args, Machine m)
+{
+    if (!num_args(args, 1)) {
+            return [Error type: "list?"
+                          message: "expected 1 argument"
+                          by: m];
+    }
+
+    return
+        isList (args) ?
+        [Boolean trueConstant] :
+        [Boolean falseConstant];
+}
+
+SchemeObject bi_ispair (SchemeObject args, Machine m)
+{
+    if (!num_args(args, 1)) {
+            return [Error type: "pair?"
+                          message: "expected 1 argument"
+                          by: m];
+    }
+
+    return
+        [[args car] isKindOfClass: [Cons class]] ?
+        [Boolean trueConstant] :
+        [Boolean falseConstant];
+}
+
+#define builtin(name, func) [m addGlobal: symbol(#name) value: [Primitive newFromFunc: (func)]]
 
 void builtin_addtomachine (Machine m)
 {
-    [m addGlobal: symbol("display")
-       value: [Primitive newFromFunc: bi_display]];
-    [m addGlobal: symbol("newline")
-       value: [Primitive newFromFunc: bi_newline]];
-    [m addGlobal: symbol("+")
-       value: [Primitive newFromFunc: bi_add]];
-    [m addGlobal: symbol("cons")
-       value: [Primitive newFromFunc: bi_cons]];
-    [m addGlobal: symbol("null?")
-       value: [Primitive newFromFunc: bi_null]];
-    [m addGlobal: symbol("car")
-       value: [Primitive newFromFunc: bi_car]];
-    [m addGlobal: symbol("cdr")
-       value: [Primitive newFromFunc: bi_cdr]];
-    [m addGlobal: symbol("apply")
-       value: [Primitive newFromFunc: bi_apply]];
-    [m addGlobal: symbol("call-with-current-continuation")
-       value: [Primitive newFromFunc: bi_callcc]];
+    builtin(display, bi_display);
+    builtin(newline, bi_newline);
+    builtin(+, bi_add);
+    builtin(-, bi_sub);
+    builtin(*, bi_mult);
+    builtin(/, bi_div);
+    builtin(cons, bi_cons);
+    builtin(null?, bi_null);
+    builtin(car, bi_car);
+    builtin(cdr, bi_cdr);
+    builtin(apply, bi_apply);
+    builtin(call-with-current-continuation, bi_callcc);
+    builtin(eq?, bi_eq);
+    builtin(=, bi_numeq);
+    builtin(list?, bi_islist);
+    builtin(pair?, bi_ispair);
 }

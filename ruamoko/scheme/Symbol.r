@@ -35,10 +35,10 @@ Symbol symbol (string str)
     rparen = [Symbol forString: ")"];
     quote = [Symbol forString: "'"];
     dot = symbol(".");
-    [lparen makeRootCell];
-    [rparen makeRootCell];
-    [quote makeRootCell];
-    [dot makeRootCell];
+    [lparen retain];
+    [rparen retain];
+    [quote retain];
+    [dot retain];
 }
 
 + (Symbol) forString: (string) s

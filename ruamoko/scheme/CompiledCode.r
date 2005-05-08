@@ -56,6 +56,7 @@
             lineinfo[index].sourcefile = symbol([inst source]);
             [lineinfo[index].sourcefile retain];
     }
+    size = [instructions count];
     [instructions release];
     [constants release];
     instructions = constants = NIL;
@@ -94,7 +95,25 @@
     if (code) {
             obj_free (code);
     }
+
+    if (lineinfo) {
+            local integer i;
+            for (i = 0; i < size; i++) {
+                    [lineinfo[i].sourcefile release];
+            }
+            obj_free (lineinfo);
+    }
     [super dealloc];
+}
+
+- (integer) minimumArguments
+{
+    return minargs;
+}
+
+- (void) minimumArguments: (integer) min
+{
+    minargs = min;
 }
 
 @end

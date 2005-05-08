@@ -92,7 +92,6 @@ integer checkpoint;
                     queue_pos = queue_pos.next;
                         //if (++amount == GC_AMOUNT) return;
                     }
-            dprintf("Alloced: %i  Freed: %i\n", alloced, freed);
             maybe_garbage = not_garbage;
             not_garbage_end.next = wait_list;
             if (wait_list) {

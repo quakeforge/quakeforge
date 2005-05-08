@@ -16,5 +16,6 @@
 
 @extern Cons cons (SchemeObject car, SchemeObject cdr);
 @extern BOOL isList (SchemeObject ls);
+@extern integer length (SchemeObject foo);
 
 #endif //__Cons_h

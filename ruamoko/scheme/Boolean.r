@@ -8,9 +8,9 @@ Boolean falseConstant;
 + (void) initialize
 {
     trueConstant = [Boolean new];
-    [trueConstant makeRootCell];
+    [trueConstant retain];
     falseConstant = [Boolean new];
-    [falseConstant makeRootCell];
+    [falseConstant retain];
     
 }
 
