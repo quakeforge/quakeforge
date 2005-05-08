@@ -160,8 +160,26 @@ static void
 cl_prespawn_f (client_t *cl, void *unused)
 {
 	const char *cmd;
-	const char *info;
 	server_t   *sv = cl->server;
+
+	if (!cl->server)
+		return;
+	if (atoi (Cmd_Argv (1)) != sv->spawncount) {
+		qtv_printf ("prespawn from different level\n");
+		Client_New (cl);
+		return;
+	}
+	cmd = va ("cmd spawn %i 0\n", cl->server->spawncount);
+	MSG_ReliableWrite_Begin (&cl->backbuf, svc_stufftext, strlen (cmd) + 2);
+	MSG_ReliableWrite_String (&cl->backbuf, cmd);
+}
+
+static void
+cl_spawn_f (client_t *cl, void *unused)
+{
+	const char *cmd;
+	server_t   *sv = cl->server;
+	const char *info;
 	player_t   *pl;
 	int         i;
 	sizebuf_t  *msg;
@@ -169,7 +187,7 @@ cl_prespawn_f (client_t *cl, void *unused)
 	if (!cl->server)
 		return;
 	if (atoi (Cmd_Argv (1)) != sv->spawncount) {
-		qtv_printf ("prespawn from different level\n");
+		qtv_printf ("spawn from different level\n");
 		Client_New (cl);
 		return;
 	}
@@ -218,24 +236,6 @@ cl_prespawn_f (client_t *cl, void *unused)
 	MSG_ReliableWrite_Begin (&cl->backbuf, svc_updatestatlong, 6);
 	MSG_ReliableWrite_Byte (&cl->backbuf, STAT_SECRETS);
 	MSG_ReliableWrite_Long (&cl->backbuf, sv->players[0].stats[STAT_SECRETS]);
-	cmd = va ("cmd spawn %i 0\n", cl->server->spawncount);
-	MSG_ReliableWrite_Begin (&cl->backbuf, svc_stufftext, strlen (cmd) + 2);
-	MSG_ReliableWrite_String (&cl->backbuf, cmd);
-}
-
-static void
-cl_spawn_f (client_t *cl, void *unused)
-{
-	const char *cmd;
-	server_t   *sv = cl->server;
-
-	if (!cl->server)
-		return;
-	if (atoi (Cmd_Argv (1)) != sv->spawncount) {
-		qtv_printf ("spawn from different level\n");
-		Client_New (cl);
-		return;
-	}
 	cmd = "skins\n";
 	MSG_ReliableWrite_Begin (&cl->backbuf, svc_stufftext, strlen (cmd) + 2);
 	MSG_ReliableWrite_String (&cl->backbuf, cmd);
@@ -297,6 +297,7 @@ cl_serverinfo_f (client_t *cl, void *unused)
 static void
 cl_download_f (client_t *cl, void *unused)
 {
+	qtv_printf ("download denied\n");
 	MSG_ReliableWrite_Begin (&cl->backbuf, svc_download, 4);
 	MSG_ReliableWrite_Short (&cl->backbuf, -1);
 	MSG_ReliableWrite_Byte (&cl->backbuf, 0);
