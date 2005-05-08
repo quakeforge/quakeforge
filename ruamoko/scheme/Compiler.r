@@ -11,6 +11,7 @@ Symbol quoteSym;
 Symbol defineSym;
 Symbol ifSym;
 Symbol letrecSym;
+Symbol beginSym;
 
 @implementation Compiler
 + (void) initialize
@@ -25,6 +26,8 @@ Symbol letrecSym;
     [ifSym retain];
     letrecSym = symbol("letrec");
     [letrecSym retain];
+    beginSym = symbol("begin");
+    [beginSym retain];
 }
 
 + (id) newWithLambda: (SchemeObject) xp scope: (Scope) sc
@@ -236,6 +239,8 @@ Symbol letrecSym;
                     [self emitIf: [expression cdr] flags: fl];
             } else if ([expression car] == letrecSym) {
                     [self emitLetrec: [expression cdr] flags: fl];
+            } else if ([expression car] == beginSym) {
+                    [self emitSequence: [expression cdr] flags: fl];
             } else {
                     [self emitApply: expression flags: fl];
             }

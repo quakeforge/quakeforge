@@ -2,6 +2,7 @@
 #include "Cons.h"
 #include "Nil.h"
 #include "defs.h"
+#include "SchemeString.h"
 
 Cons cons (SchemeObject car, SchemeObject cdr)
 {
@@ -75,7 +76,7 @@ BOOL isList (SchemeObject ls)
 
 - (string) printForm
 {
-    local string acc = "", res;
+    local string acc = "";
     local id cur, next = NIL;
 
     for (cur = self; cur; cur = next) {
@@ -91,9 +92,7 @@ BOOL isList (SchemeObject ls)
             }
     }
 
-    res = str_new();
-    str_copy(res, sprintf("(%s)", acc));
-    return res;
+    return [[String newFromString: sprintf("(%s)", acc)] stringValue];
 }
 
 @end

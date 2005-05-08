@@ -14,7 +14,7 @@ typedef enum {
 gc_state_e gc_state;
 integer checkpoint;
 
-#define GC_AMOUNT 200
+#define GC_AMOUNT 100
 
 @implementation SchemeObject
 
