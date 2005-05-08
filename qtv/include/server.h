@@ -58,6 +58,7 @@ typedef struct frame_s {
 
 #define MAX_SV_PLAYERS 32
 #define MAX_SV_ENTITIES 512
+#define MAX_SIGNON_BUFFERS  8
 
 typedef struct server_s {
 	struct server_s *next;
@@ -65,6 +66,7 @@ typedef struct server_s {
 	const char *address;
 	int         qport;
 	int         connected;
+	int         signon;
 	struct connection_s *con;
 	netadr_t    adr;
 	netchan_t   netchan;
@@ -82,6 +84,9 @@ typedef struct server_s {
 	char       *modellist[MAX_MODELS + 1];
 	char       *lightstyles[MAX_LIGHTSTYLES];
 	int         playermodel;
+	int         num_signon_buffers;
+	int         signon_buffer_size[MAX_SIGNON_BUFFERS];
+	byte        signon_buffers[MAX_SIGNON_BUFFERS][MAX_DATAGRAM];
 
 	struct client_s *clients;
 

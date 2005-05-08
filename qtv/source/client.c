@@ -161,6 +161,8 @@ cl_prespawn_f (client_t *cl, void *unused)
 {
 	const char *cmd;
 	server_t   *sv = cl->server;
+	int         buf, size;
+	sizebuf_t  *msg;
 
 	if (!cl->server)
 		return;
@@ -169,9 +171,18 @@ cl_prespawn_f (client_t *cl, void *unused)
 		Client_New (cl);
 		return;
 	}
-	cmd = va ("cmd spawn %i 0\n", cl->server->spawncount);
-	MSG_ReliableWrite_Begin (&cl->backbuf, svc_stufftext, strlen (cmd) + 2);
-	MSG_ReliableWrite_String (&cl->backbuf, cmd);
+	buf = atoi (Cmd_Argv (2));
+	if (buf >= sv->num_signon_buffers)
+		buf = 0;
+	if (buf == sv->num_signon_buffers - 1)
+		cmd = va ("cmd spawn %i 0\n", cl->server->spawncount);
+	else
+		cmd = va ("cmd prespawn %i %i\n", cl->server->spawncount, buf + 1);
+	size = sv->signon_buffer_size[buf] + 1 + strlen (cmd) + 1;
+	msg = MSG_ReliableCheckBlock (&cl->backbuf, size);
+	SZ_Write (msg, sv->signon_buffers[buf], sv->signon_buffer_size[buf]);
+	MSG_WriteByte (msg, svc_stufftext);
+	MSG_WriteString (msg, cmd);
 }
 
 static void
@@ -728,10 +739,10 @@ cl_send_messages (client_t *cl)
 		write_player (31, &cl->state, cl->server, &msg);
 		MSG_WriteByte (&msg, svc_packetentities);
 		MSG_WriteShort (&msg, 0);
-	}
-	if (cl->datagram.cursize) {
-		SZ_Write (&msg, cl->datagram.data, cl->datagram.cursize);
-		SZ_Clear (&cl->datagram);
+		if (cl->datagram.cursize) {
+			SZ_Write (&msg, cl->datagram.data, cl->datagram.cursize);
+			SZ_Clear (&cl->datagram);
+		}
 	}
 	Netchan_Transmit (&cl->netchan, msg.cursize, msg.data);
 }

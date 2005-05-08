@@ -184,6 +184,9 @@ static void
 sv_cmd_f (server_t *sv)
 {
 	if (Cmd_Argc () > 1) {
+		sv->signon = 0;
+		if (strcmp (Cmd_Argv (1), "prespawn") == 0)
+			sv->signon = 1;
 		MSG_WriteByte (&sv->netchan.message, qtv_stringcmd);
 		SZ_Print (&sv->netchan.message, Cmd_Args (1));
 	}
@@ -797,12 +800,28 @@ sv_lightstyle (server_t *sv, qmsg_t *msg)
 	sv->lightstyles[ind] = strdup (style);
 }
 
+static void
+save_signon (server_t *sv, qmsg_t *msg, int start)
+{
+	int         size = msg->readcount - start;
+	byte       *buf = msg->message->data + start;
+
+	if (!size)
+		return;
+
+	sv->signon_buffer_size[sv->num_signon_buffers] = size;
+	memcpy (sv->signon_buffers[sv->num_signon_buffers], buf, size);
+	sv->num_signon_buffers++;
+}
+
 void
 sv_parse (server_t *sv, qmsg_t *msg, int reliable)
 {
 	int         svc;
 	vec3_t      v;
 	player_t   *pl;
+	int         start = msg->readcount;
+	int         signon_saved = 0;
 
 	while (1) {
 		svc = MSG_ReadByte (msg);
@@ -938,6 +957,10 @@ sv_parse (server_t *sv, qmsg_t *msg, int reliable)
 				sv_serverdata (sv, msg);
 				break;
 			case svc_stufftext:
+				if (sv->signon && !signon_saved) {
+					save_signon (sv, msg, start);
+					signon_saved = 1;
+				}
 				sv_stringcmd (sv, msg);
 				break;
 
@@ -966,5 +989,8 @@ sv_parse (server_t *sv, qmsg_t *msg, int reliable)
 				sv_lightstyle (sv, msg);
 				break;
 		}
+	}
+	if (sv->signon && !signon_saved) {
+		save_signon (sv, msg, start);
 	}
 }
