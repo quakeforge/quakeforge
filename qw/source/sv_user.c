@@ -1904,14 +1904,14 @@ SV_ExecuteClientMessage (client_t *cl)
 				if (!sv.paused) {
 					SV_PreRunCmd ();
 
-					if (net_drop < 20) {
-						while (net_drop > 2) {
+					if (cl->netchan.net_drop < 20) {
+						while (cl->netchan.net_drop > 2) {
 							SV_RunCmd (&cl->lastcmd, 0);
-							net_drop--;
+							cl->netchan.net_drop--;
 						}
-						if (net_drop > 1)
+						if (cl->netchan.net_drop > 1)
 							SV_RunCmd (&oldest, 0);
-						if (net_drop > 0)
+						if (cl->netchan.net_drop > 0)
 							SV_RunCmd (&oldcmd, 0);
 					}
 					SV_RunCmd (&newcmd, 0);

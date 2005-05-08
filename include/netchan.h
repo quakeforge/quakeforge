@@ -104,6 +104,7 @@ typedef struct netchan_s {
 	float		frame_rate;
 
 	int			drop_count;			// dropped packets, cleared each level
+	int			net_drop;			//packets dropped before this one
 	int			good_count;			// cleared each level
 
 	netadr_t	remote_address;
@@ -137,7 +138,6 @@ typedef struct netchan_s {
 	double		outgoing_time[MAX_LATENT];
 } netchan_t;
 
-extern	int	net_drop;		// packets dropped before this one
 extern	int net_nochoke;	// don't choke packets
 extern	int net_blocksend;	// don't send packets (used by client for demos)
 extern	double *net_realtime;

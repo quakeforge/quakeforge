@@ -43,6 +43,7 @@ typedef struct client_s {
 	struct client_s *clnext;
 	struct info_s *userinfo;
 	struct connection_s *con;
+	const char *name;
 	int         drop;
 	netchan_t   netchan;
 	backbuf_t   backbuf;
@@ -53,6 +54,9 @@ typedef struct client_s {
 	struct server_s *server;
 
 	int         connected;
+
+	plent_state_t state;
+	usercmd_t   lastcmd;
 } client_t;
 
 typedef struct challenge_s {

@@ -156,14 +156,16 @@ sv_modellist (server_t *sv, qmsg_t *msg)
 		if (!str[0])
 			break;
 		//qtv_printf ("%s\n", str);
-		nummodels++;
+		n = nummodels++;
 		if (nummodels == MAX_MODELS) {
 			while (str[0])
 				str = MSG_ReadString (msg);
 			MSG_ReadByte (msg);
 			return;
 		}
-		sv->modellist[nummodels - 1] = strdup (str);
+		sv->modellist[n] = strdup (str);
+		if (!strcmp (sv->modellist[n], "progs/player.mdl"))
+			sv->playermodel = n;
 	}
 	n = MSG_ReadByte (msg);
 	if (n) {

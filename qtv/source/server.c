@@ -308,6 +308,7 @@ server_connect (connection_t *con, void *object)
 	Netchan_Setup (&sv->netchan, con->address, sv->qport, NC_SEND_QPORT);
 	sv->netchan.outgoing_sequence = 1;
 	sv->connected = 1;
+	sv->playermodel = -1;
 	MSG_WriteByte (msg, qtv_stringcmd);
 	MSG_WriteString (msg, "new");
 	sv->next_run = realtime;

@@ -103,7 +103,6 @@ static __attribute__ ((unused)) const char rcsid[] =
   to the new value before sending out any replies.
 */
 
-int         net_drop;
 int         net_nochoke;
 int         net_blocksend;
 double     *net_realtime;
@@ -394,8 +393,8 @@ Netchan_Process (netchan_t *chan)
 	}
 
 	// dropped packets don't keep the message from being used
-	net_drop = sequence - (chan->incoming_sequence + 1);
-	if (net_drop > 0) {
+	chan->net_drop = sequence - (chan->incoming_sequence + 1);
+	if (chan->net_drop > 0) {
 		chan->drop_count += 1;
 
 		if (showdrop->int_val)

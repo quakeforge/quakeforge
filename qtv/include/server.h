@@ -80,6 +80,7 @@ typedef struct server_s {
 	struct info_s *info;
 	char       *soundlist[MAX_SOUNDS + 1];
 	char       *modellist[MAX_MODELS + 1];
+	int         playermodel;
 
 	struct client_s *clients;
 

@@ -47,6 +47,7 @@ static __attribute__ ((unused)) const char rcsid[] =
 #include "QF/cbuf.h"
 #include "QF/cmd.h"
 #include "QF/console.h"
+#include "QF/checksum.h"
 #include "QF/dstring.h"
 #include "QF/hash.h"
 #include "QF/idparse.h"
@@ -282,7 +283,7 @@ cl_disconnect_f (client_t *cl, void *unused)
 		qtv_printf ("not connected to a server\n");
 		return;
 	}
-	Server_Disconnect (cl);
+	client_drop (cl);
 }
 
 static ucmd_t ucmds[] = {
@@ -352,12 +353,101 @@ client_exec_command (client_t *cl, const char *s)
 }
 
 static void
+spectator_move (client_t *cl, usercmd_t *ucmd)
+{
+	float       frametime = ucmd->msec * 0.001;
+	float       control, drop, friction, fmove, smove, speed, newspeed;
+	float       currentspeed, addspeed, accelspeed, wishspeed;
+	int         i;
+	vec3_t      wishdir, wishvel;
+	vec3_t      forward, right, up;
+	server_t   *sv = cl->server;
+
+	AngleVectors (cl->state.cmd.angles, forward, right, up);
+
+	speed = DotProduct (cl->state.velocity, cl->state.velocity);
+	if (speed < 1) {
+		VectorZero (cl->state.velocity);
+	} else {
+		speed = sqrt (speed);
+		drop = 0;
+
+		friction = sv->movevars.friction * 1.5;
+		control = speed < sv->movevars.stopspeed ? sv->movevars.stopspeed
+												 : speed;
+		drop += control * friction * frametime;
+		newspeed = speed - drop;
+		if (newspeed < 0)
+			newspeed = 0;
+		newspeed /= speed;
+
+		VectorScale (cl->state.velocity, newspeed, cl->state.velocity);
+	}
+
+	fmove = ucmd->forwardmove;
+	smove = ucmd->sidemove;
+
+	VectorNormalize (forward);
+	VectorNormalize (right);
+
+	for (i = 0; i < 3; i++)
+		wishvel[i] = forward[i] * fmove + right[i] * smove;
+	wishvel[2] += ucmd->upmove;
+
+	VectorCopy (wishvel, wishdir);
+	wishspeed = VectorNormalize (wishdir);
+
+	if (wishspeed > sv->movevars.spectatormaxspeed) {
+		VectorScale (wishvel, sv->movevars.spectatormaxspeed / wishspeed,
+					 wishvel);
+		wishspeed = sv->movevars.spectatormaxspeed;
+	}
+
+	currentspeed = DotProduct (cl->state.velocity, wishdir);
+	addspeed = wishspeed - currentspeed;
+	if (addspeed <= 0)
+		return;
+	accelspeed = sv->movevars.accelerate * frametime * wishspeed;
+	if (accelspeed > addspeed)
+		accelspeed = addspeed;
+
+	VectorMultAdd (cl->state.velocity, accelspeed, wishdir,
+				   cl->state.velocity);
+	VectorMultAdd (cl->state.origin, frametime, cl->state.velocity,
+				   cl->state.origin);
+}
+
+static void
+run_command (client_t *cl, usercmd_t *ucmd)
+{
+	if (ucmd->msec > 50) {
+		usercmd_t   cmd = *ucmd;
+		int         oldmsec = ucmd->msec;
+		cmd.msec = oldmsec / 2;
+		run_command (cl, &cmd);
+		cmd.msec = oldmsec / 2;
+		cmd.impulse = 0;
+		run_command (cl, &cmd);
+		return;
+	}
+
+	VectorCopy (ucmd->angles, cl->state.cmd.angles);
+
+	spectator_move (cl, ucmd);
+}
+
+static void
 client_parse_message (client_t *cl)
 {
 	int         c, size;
 	vec3_t      o;
 	const char *s;
 	usercmd_t   oldest, oldcmd, newcmd;
+	byte        checksum, calculatedChecksum;
+	int         checksumIndex, seq_hash;
+	qboolean    move_issued = false;
+
+	seq_hash = cl->netchan.incoming_sequence;
 
 	while (1) {
 		if (net_message->badread) {
@@ -381,19 +471,20 @@ client_parse_message (client_t *cl)
 				/*cl->delta_sequence = */MSG_ReadByte (net_message);
 				break;
 			case clc_move:
-				/*if (move_issued)
-					return;				// someone is trying to cheat...
-				move_issued = true;*/
-				/*checksumIndex = */MSG_GetReadCount (net_message);
-				/*checksum = (byte) */MSG_ReadByte (net_message);
+				checksumIndex = MSG_GetReadCount (net_message);
+				checksum = MSG_ReadByte (net_message);
 				// read loss percentage
 				/*cl->lossage = */MSG_ReadByte (net_message);
 				MSG_ReadDeltaUsercmd (net_message, &nullcmd, &oldest);
 				MSG_ReadDeltaUsercmd (net_message, &oldest, &oldcmd);
 				MSG_ReadDeltaUsercmd (net_message, &oldcmd, &newcmd);
-#if 0
-				if (cl->state != cs_spawned)
+				if (!cl->server)
 					break;
+				if (move_issued)
+					break;				// someone is trying to cheat...
+				move_issued = true;
+//				if (cl->state != cs_spawned)
+//					break;
 				// if the checksum fails, ignore the rest of the packet
 				calculatedChecksum =
 					COM_BlockSequenceCRCByte (net_message->message->data +
@@ -403,28 +494,28 @@ client_parse_message (client_t *cl)
 				if (calculatedChecksum != checksum) {
 					Con_DPrintf
 						("Failed command checksum for %s(%d) (%d != %d)\n",
-						 cl->name, cl->netchan.incoming_sequence, checksum,
+						 Info_ValueForKey (cl->userinfo, "name"),
+						 cl->netchan.incoming_sequence, checksum,
 						 calculatedChecksum);
 					return;
 				}
-				if (!sv.paused) {
-					SV_PreRunCmd ();
-					if (net_drop < 20) {
-						while (net_drop > 2) {
-							SV_RunCmd (&cl->lastcmd, 0);
-							net_drop--;
+//				if (!sv.paused) {
+//					SV_PreRunCmd ();
+					if (cl->netchan.net_drop < 20) {
+						while (cl->netchan.net_drop > 2) {
+							run_command (cl, &cl->lastcmd);
+							cl->netchan.net_drop--;
 						}
-						if (net_drop > 1)
-							SV_RunCmd (&oldest, 0);
-						if (net_drop > 0)
-							SV_RunCmd (&oldcmd, 0);
+						if (cl->netchan.net_drop > 1)
+							run_command (cl, &oldest);
+						if (cl->netchan.net_drop > 0)
+							run_command (cl, &oldcmd);
 					}
-					SV_RunCmd (&newcmd, 0);
-					SV_PostRunCmd ();
-				}
+					run_command (cl, &newcmd);
+//					SV_PostRunCmd ();
+//				}
 				cl->lastcmd = newcmd;
 				cl->lastcmd.buttons = 0;	// avoid multiple fires on lag
-#endif
 				break;
 			case clc_stringcmd:
 				s = MSG_ReadString (net_message);
@@ -432,13 +523,7 @@ client_parse_message (client_t *cl)
 				break;
 			case clc_tmove:
 				MSG_ReadCoordV (net_message, o);
-#if 0
-				// only allowed by spectators
-				if (host_client->spectator) {
-					VectorCopy (o, SVvector (sv_player, origin));
-					SV_LinkEdict (sv_player, false);
-				}
-#endif
+				VectorCopy (o, cl->state.origin);
 				break;
 			case clc_upload:
 				size = MSG_ReadShort (net_message);
@@ -446,6 +531,128 @@ client_parse_message (client_t *cl)
 				net_message->readcount += size;
 				break;
 		}
+	}
+}
+
+static void
+write_player (int num, plent_state_t *pl, server_t *sv, sizebuf_t *msg)
+{
+	int         i;
+	int         pflags = (pl->flags & (PF_GIB | PF_DEAD))
+						| PF_MSEC | PF_COMMAND;
+	int         qf_bits = 0;
+
+	if (pl->modelindex != sv->playermodel)
+		pflags |= PF_MODEL;
+	for (i = 0; i < 3; i++)
+		if (pl->velocity[i])
+			pflags |= PF_VELOCITY1 << i;
+	if (pl->effects & 0xff)
+		pflags |= PF_EFFECTS;
+	if (pl->skinnum)
+		pflags |= PF_SKINNUM;
+
+	qf_bits = 0;
+#if 0
+	if (client->stdver > 1) {
+		if (sv_fields.alpha != -1 && pl->alpha)
+			qf_bits |= PF_ALPHA;
+		if (sv_fields.scale != -1 && pl->scale)
+			qf_bits |= PF_SCALE;
+		if (pl->effects & 0xff00)
+			qf_bits |= PF_EFFECTS2;
+		if (sv_fields.glow_size != -1 && pl->glow_size)
+			qf_bits |= PF_GLOWSIZE;
+		if (sv_fields.glow_color != -1 && pl->glow_color)
+			qf_bits |= PF_GLOWCOLOR;
+		if (sv_fields.colormod != -1
+			&& !VectorIsZero (pl->colormod))
+			qf_bits |= PF_COLORMOD;
+		if (pl->frame & 0xff00)
+			qf_bits |= PF_FRAME2;
+		if (qf_bits)
+			pflags |= PF_QF;
+	}
+#endif
+
+//	if (cl->spectator) {
+//		// only sent origin and velocity to spectators
+//		pflags &= PF_VELOCITY1 | PF_VELOCITY2 | PF_VELOCITY3;
+//	} else if (ent == clent) {
+//		// don't send a lot of data on personal entity
+//		pflags &= ~(PF_MSEC | PF_COMMAND);
+//		if (pl->weaponframe)
+//			pflags |= PF_WEAPONFRAME;
+//	}
+
+//	if (client->spec_track && client->spec_track - 1 == j
+//		&& pl->weaponframe)
+//		pflags |= PF_WEAPONFRAME;
+
+	MSG_WriteByte (msg, svc_playerinfo);
+	MSG_WriteByte (msg, num);
+	MSG_WriteShort (msg, pflags);
+
+	MSG_WriteCoordV (msg, pl->origin);
+
+	MSG_WriteByte (msg, pl->frame);
+
+	if (pflags & PF_MSEC) {
+		//msec = 1000 * (sv.time - cl->localtime);
+		//if (msec > 255)
+		//	msec = 255;
+		MSG_WriteByte (msg, pl->msec);
+	}
+
+	if (pflags & PF_COMMAND) {
+		MSG_WriteDeltaUsercmd (msg, &nullcmd, &pl->cmd);
+	}
+
+	for (i = 0; i < 3; i++)
+		if (pflags & (PF_VELOCITY1 << i))
+			MSG_WriteShort (msg, pl->velocity[i]);
+
+	if (pflags & PF_MODEL)
+		MSG_WriteByte (msg, pl->modelindex);
+
+	if (pflags & PF_SKINNUM)
+		MSG_WriteByte (msg, pl->skinnum);
+
+	if (pflags & PF_EFFECTS)
+		MSG_WriteByte (msg, pl->effects);
+
+	if (pflags & PF_WEAPONFRAME)
+		MSG_WriteByte (msg, pl->weaponframe);
+
+	if (pflags & PF_QF) {
+		MSG_WriteByte (msg, qf_bits);
+		if (qf_bits & PF_ALPHA)
+			MSG_WriteByte (msg, pl->alpha);
+		if (qf_bits & PF_SCALE)
+			MSG_WriteByte (msg, pl->scale);
+		if (qf_bits & PF_EFFECTS2)
+			MSG_WriteByte (msg, pl->effects >> 8);
+		if (qf_bits & PF_GLOWSIZE)
+			MSG_WriteByte (msg, pl->scale);
+		if (qf_bits & PF_GLOWCOLOR)
+			MSG_WriteByte (msg, pl->glow_color);
+		if (qf_bits & PF_COLORMOD)
+			MSG_WriteByte (msg, pl->colormod);
+		if (qf_bits & PF_FRAME2)
+			MSG_WriteByte (msg, pl->frame >> 8);
+	}
+}
+
+static void
+write_entities (client_t *client, sizebuf_t *msg)
+{
+	server_t   *sv = client->server;
+	int         i;
+
+	for (i = 0; i < MAX_SV_PLAYERS; i++) {
+		if (!sv->players[i].info)
+			continue;
+		write_player (i, &sv->players[i].ent, sv, msg);
 	}
 }
 
@@ -463,6 +670,8 @@ cl_send_messages (client_t *cl)
 	if (cl->backbuf.num_backbuf)
 		MSG_Reliable_Send (&cl->backbuf);
 	if (cl->connected) {
+		write_entities (cl, &msg);
+		write_player (31, &cl->state, cl->server, &msg);
 		MSG_WriteByte (&msg, svc_packetentities);
 		MSG_WriteShort (&msg, 0);
 	}
@@ -488,12 +697,6 @@ client_handler (connection_t *con, void *object)
 		cl->send_message = true;
 		//if (cl->state != cs_zombie)
 			client_parse_message (cl);
-		cl_send_messages (cl);
-		if (cl->drop) {
-			Connection_Del (cl->con);
-			Info_Destroy (cl->userinfo);
-			free (cl);
-		}
 	}
 }
 
@@ -546,9 +749,10 @@ client_connect (connection_t *con, void *object)
 	Netchan_Setup (&cl->netchan, con->address, qport, NC_READ_QPORT);
 	cl->clnext = clients;
 	clients = cl;
-	cl->backbuf.netchan = &cl->netchan;
-	cl->backbuf.name = "FIXME";
 	cl->userinfo = userinfo;
+	cl->name = Info_ValueForKey (userinfo, "name");
+	cl->backbuf.name = cl->name;
+	cl->backbuf.netchan = &cl->netchan;
 	cl->con = con;
 	con->object = cl;
 	con->handler = client_handler;
@@ -631,14 +835,42 @@ Client_New (client_t *cl)
 						 Info_MakeString (sv->info, 0)));
 }
 
+static void
+delete_client (client_t *cl)
+{
+	if (cl->server)
+		Server_Disconnect (cl);
+	Connection_Del (cl->con);
+	Info_Destroy (cl->userinfo);
+	free (cl);
+}
+
 void
 Client_Frame (void)
 {
-	client_t   *cl;
+	client_t  **c;
 
-	for (cl = clients; cl; cl = cl->next) {
+	for (c = &clients; *c; ) {
+		client_t   *cl = *c;
+
+		if (realtime - cl->netchan.last_received > 60) {
+			qtv_printf ("client %s timed out\n", (*c)->name);
+			client_drop (cl);
+		}
+		if (cl->netchan.message.overflowed) {
+			qtv_printf ("client %s overflowed\n", cl->name);
+			client_drop (cl);
+		}
+		if (cl->drop) {
+			qtv_printf ("client %s dropped\n", cl->name);
+			*c = cl->clnext;
+			delete_client (cl);
+			continue;
+		}
 		if (cl->send_message) {
 			cl_send_messages (cl);
+			cl->send_message = false;
 		}
+		c = &(*c)->clnext;
 	}
 }
