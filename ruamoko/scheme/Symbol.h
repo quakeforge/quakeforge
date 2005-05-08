@@ -1,6 +1,6 @@
 #ifndef __Symbol_h
 #define __Symbol_h
-#include "String.h"
+#include "SchemeString.h"
 
 @interface Symbol: String
 {

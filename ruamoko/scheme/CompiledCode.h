@@ -4,7 +4,7 @@
 #include "Array.h"
 #include "Instruction.h"
 #include "Frame.h"
-#include "String.h"
+#include "SchemeString.h"
 
 struct lineinfo_s {
     integer linenumber;

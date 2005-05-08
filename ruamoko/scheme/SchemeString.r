@@ -1,5 +1,5 @@
 #include "string.h"
-#include "String.h"
+#include "SchemeString.h"
 
 @implementation String
 

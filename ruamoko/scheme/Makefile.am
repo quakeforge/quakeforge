@@ -42,7 +42,7 @@ EXTRA_DATA = $(scheme_data)
 	$(QFCC) $(QCFLAGS) $(QCPPFLAGS) -c -o $@ $<
 
 libscheme_a_SOURCES=\
-	SchemeObject.r Cons.r Number.r String.r Symbol.r Lexer.r Parser.r Nil.r \
+	SchemeObject.r Cons.r Number.r SchemeString.r Symbol.r Lexer.r Parser.r Nil.r \
 	Procedure.r Primitive.r Lambda.r Scope.r Instruction.r builtins.r \
 	Frame.r CompiledCode.r Compiler.r Continuation.r Machine.r Void.r \
 	Error.r Boolean.r BaseContinuation.r
