@@ -4,7 +4,6 @@
 #include "Boolean.h"
 #include "Nil.h"
 #include "defs.h"
-//#include "debug.h"
 
 string GlobalGetKey (void []ele, void []data)
 {
@@ -154,6 +153,9 @@ void GlobalFree (void []ele, void []data)
                     dprintf("Makeenv\n");
                     state.env = [Frame newWithSize: operand link: state.env];
                     break;
+                case POPENV:
+                    dprintf("Popenv\n");
+                    state.env = [state.env getLink];
                 case GET:
                     value = [value get: operand];
                     dprintf("Get: %i --> %s\n", operand, [value printForm]);
@@ -196,7 +198,7 @@ void GlobalFree (void []ele, void []data)
                     if (!state.cont) {
                             return value;
                     } else {
-                            [state.cont invokeOnMachine: self];
+                            [state.cont restoreOnMachine: self];
                     }
                     break;
                 case IFFALSE:

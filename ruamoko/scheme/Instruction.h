@@ -11,6 +11,7 @@ typedef enum {
     LOADENV,
     LOADLITS,
     MAKEENV,
+    POPENV,
     GET,
     SET,
     SETREST,

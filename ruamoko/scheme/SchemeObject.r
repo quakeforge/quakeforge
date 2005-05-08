@@ -14,20 +14,7 @@ typedef enum {
 gc_state_e gc_state;
 integer checkpoint;
 
-
-BOOL contains (SchemeObject list, SchemeObject what)
-{
-    local SchemeObject cur;
-
-    for (cur = list; cur; cur = cur.next) {
-            if (cur == what)
-                    return true;
-    }
-
-    return false;
-}
-
-
+#define GC_AMOUNT 200
 
 @implementation SchemeObject
 
@@ -55,7 +42,7 @@ BOOL contains (SchemeObject list, SchemeObject what)
 
 + (void) collectCheckPoint
 {
-    if (++checkpoint == 50)
+    if (checkpoint >= GC_AMOUNT)
     {
             [self collect];
             checkpoint = 0;
@@ -87,8 +74,9 @@ BOOL contains (SchemeObject list, SchemeObject what)
                             (integer) queue_pos);
                     [queue_pos markReachable];
                     queue_pos = queue_pos.prev;
-                    if (++amount == 50) return;
+                    if (++amount >= GC_AMOUNT/2) return;
             }
+            dprintf("MARKED: %i reachable objects\n", amount);
             gc_state = GC_SWEEP;
             queue_pos = maybe_garbage;
             return;
@@ -102,8 +90,9 @@ BOOL contains (SchemeObject list, SchemeObject what)
                             (integer) queue_pos);
                     [queue_pos release];
                     queue_pos = queue_pos.next;
-                    if (++amount == 100) return;
-            }
+                        //if (++amount == GC_AMOUNT) return;
+                    }
+            dprintf("Alloced: %i  Freed: %i\n", alloced, freed);
             maybe_garbage = not_garbage;
             not_garbage_end.next = wait_list;
             if (wait_list) {
@@ -127,6 +116,7 @@ BOOL contains (SchemeObject list, SchemeObject what)
 - (id) init
 {
     self = [super init];
+
     if (gc_state) {
             if (wait_list) {
                     wait_list.prev = self;
@@ -147,6 +137,7 @@ BOOL contains (SchemeObject list, SchemeObject what)
     
     prev = NIL;
     root = false;
+    checkpoint++;
     return self;
 }
 
@@ -169,10 +160,6 @@ BOOL contains (SchemeObject list, SchemeObject what)
             next = not_garbage;
             prev = NIL;
             not_garbage = self;
-                //[self markReachable];
-            if (contains (maybe_garbage, self)) {
-                    dprintf("Shit shit shit!\n");
-            }
     }
 }
 

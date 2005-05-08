@@ -10,6 +10,7 @@ Symbol lambdaSym;
 Symbol quoteSym;
 Symbol defineSym;
 Symbol ifSym;
+Symbol letrecSym;
 
 @implementation Compiler
 + (void) initialize
@@ -22,6 +23,8 @@ Symbol ifSym;
     [defineSym makeRootCell];
     ifSym = [Symbol forString: "if"];
     [ifSym makeRootCell];
+    letrecSym = symbol("letrec");
+    [letrecSym makeRootCell];
 }
 
 + (id) newWithLambda: (SchemeObject) xp scope: (Scope) sc
@@ -74,12 +77,16 @@ Symbol ifSym;
     }       
 }
 
-- (void) emitSequence: (SchemeObject) expressions
+- (void) emitSequence: (SchemeObject) expressions flags: (integer) fl
 {
     local SchemeObject cur;
 
     for (cur = expressions; cur != [Nil nil]; cur = [cur cdr]) {
-            [self emitExpression: [cur car]];
+            if ([cur cdr] == [Nil nil] && (fl & TAIL)) {
+                    [self emitExpression: [cur car] flags: fl];
+            } else {
+                    [self emitExpression: [cur car] flags: fl & ~TAIL];
+            }
             if (err) return;
     }
 }
@@ -137,7 +144,7 @@ Symbol ifSym;
     [code addInstruction: [Instruction opcode: SETGLOBAL]];
 }
 
-- (void) emitIf: (SchemeObject) expression
+- (void) emitIf: (SchemeObject) expression flags: (integer) fl
 {
     local Instruction falseLabel, endLabel;
     local integer index;
@@ -151,10 +158,10 @@ Symbol ifSym;
     falseLabel = [Instruction opcode: LABEL];
     endLabel = [Instruction opcode: LABEL];
 
-    [self emitExpression: [expression car]];
+    [self emitExpression: [expression car] flags: fl & ~TAIL];
     if (err) return;
     [code addInstruction: [Instruction opcode: IFFALSE label: falseLabel]];
-    [self emitExpression: [[expression cdr] car]];
+    [self emitExpression: [[expression cdr] car] flags: fl];
     if (err) return;
     [code addInstruction: [Instruction opcode: GOTO label: endLabel]];
     [code addInstruction: falseLabel];
@@ -163,7 +170,7 @@ Symbol ifSym;
             [code addInstruction: [Instruction opcode: LOADLITS]];
             [code addInstruction: [Instruction opcode: GET operand: index]];
     } else {
-            [self emitExpression: [[[expression cdr] cdr] car]];
+            [self emitExpression: [[[expression cdr] cdr] car] flags: fl];
             if (err) return;
     }
     [code addInstruction: endLabel];
@@ -173,7 +180,38 @@ Symbol ifSym;
 
     
 
-- (void) emitExpression: (SchemeObject) expression
+- (void) emitLetrec: (SchemeObject) expression flags: (integer) fl
+{
+    local SchemeObject bindings;
+    local integer count;
+
+    scope = [Scope newWithOuter: scope];
+    
+    count = 0;
+    
+    for (bindings = [expression car]; bindings != [Nil nil]; bindings = [bindings cdr]) {
+            [scope addName: (Symbol) [[bindings car] car]];
+            count++;
+    }
+
+    [code addInstruction: [Instruction opcode: MAKEENV operand: count]];
+
+    count = 0;
+    
+    for (bindings = [expression car]; bindings != [Nil nil]; bindings = [bindings cdr]) {
+            [self emitSequence: [[bindings car] cdr] flags: fl & ~TAIL];
+            [code addInstruction: [Instruction opcode: PUSH]];
+            [code addInstruction: [Instruction opcode: LOADENV]];
+            [code addInstruction: [Instruction opcode: SET operand: count]];
+            count++;
+    }
+
+    [self emitSequence: [expression cdr] flags: fl];
+    [code addInstruction: [Instruction opcode: POPENV]];
+    scope = [scope outer];
+}
+
+- (void) emitExpression: (SchemeObject) expression flags: (integer) fl
 {
     if ([expression isKindOfClass: [Cons class]]) {
             if ([expression car] == lambdaSym) {
@@ -183,9 +221,11 @@ Symbol ifSym;
             } else if ([expression car] == defineSym) {
                     [self emitDefine: [expression cdr]];
             } else if ([expression car] == ifSym) {
-                    [self emitIf: [expression cdr]];
+                    [self emitIf: [expression cdr] flags: fl];
+            } else if ([expression car] == letrecSym) {
+                    [self emitLetrec: [expression cdr] flags: fl];
             } else {
-                    [self emitApply: expression];
+                    [self emitApply: expression flags: fl];
             }
     } else if ([expression isKindOfClass: [Symbol class]]) {
             [self emitVariable: (Symbol) expression];
@@ -201,19 +241,21 @@ Symbol ifSym;
     } else {
             [self emitArguments: [expression cdr]];
             if (err) return;
-            [self emitExpression: [expression car]];
+            [self emitExpression: [expression car] flags: 0];
             if (err) return;
             [code addInstruction: [Instruction opcode: PUSH]];
     }
 }
 
-- (void) emitApply: (SchemeObject) expression
+- (void) emitApply: (SchemeObject) expression flags: (integer) fl
 {
     local Instruction label = [Instruction opcode: LABEL];
-    [code addInstruction: [Instruction opcode: MAKECONT label: label]];
+    if (!(fl & TAIL)) {
+            [code addInstruction: [Instruction opcode: MAKECONT label: label]];
+    }
     [self emitArguments: [expression cdr]];
     if (err) return;
-    [self emitExpression: [expression car]];
+    [self emitExpression: [expression car] flags: fl & ~TAIL];
     if (err) return;
     [code addInstruction: [Instruction opcode: CALL]];
     [code addInstruction: label];
@@ -267,7 +309,7 @@ Symbol ifSym;
     if (err) {
             return err;
     }
-    [self emitSequence: [[sexpr cdr] cdr]];
+    [self emitSequence: [[sexpr cdr] cdr] flags: TAIL];
     if (err) {
             return err;
     }

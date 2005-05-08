@@ -84,4 +84,9 @@
     [outerScope mark];
 }
 
+- (Scope) outer
+{
+    return outerScope;
+}
+
 @end

@@ -6,6 +6,7 @@
 #include "string.h"
 #include "Cons.h"
 #include "Continuation.h"
+#include "BaseContinuation.h"
 #include "Boolean.h"
 
 SchemeObject bi_display (SchemeObject args, Machine m)
@@ -63,6 +64,19 @@ SchemeObject bi_apply (SchemeObject args, Machine m)
     return NIL;
 }
 
+SchemeObject bi_callcc (SchemeObject args, Machine m)
+{
+    if ([m continuation]) {
+            [m stack: cons([m continuation], [Nil nil])];
+    } else {
+            [m stack: cons([BaseContinuation baseContinuation],
+                           [Nil nil])];
+    }
+    [[args car] invokeOnMachine: m];
+    return NIL;
+}
+    
+
 void builtin_addtomachine (Machine m)
 {
     [m addGlobal: symbol("display")
@@ -81,4 +95,6 @@ void builtin_addtomachine (Machine m)
        value: [Primitive newFromFunc: bi_cdr]];
     [m addGlobal: symbol("apply")
        value: [Primitive newFromFunc: bi_apply]];
+    [m addGlobal: symbol("call-with-current-continuation")
+       value: [Primitive newFromFunc: bi_callcc]];
 }

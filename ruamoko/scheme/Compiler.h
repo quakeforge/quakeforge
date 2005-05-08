@@ -6,6 +6,8 @@
 #include "Scope.h"
 #include "Error.h"
 
+#define TAIL 1
+
 @interface Compiler: SchemeObject
 {
     CompiledCode code;

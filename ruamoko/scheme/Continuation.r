@@ -18,8 +18,15 @@
     return self;
 }
 
+- (void) restoreOnMachine: (Machine) m
+{
+    [m state: &state];
+    return;
+}
+
 - (void) invokeOnMachine: (Machine) m
 {
+    [m value: [[m stack] car]];
     [m state: &state];
     return;
 }

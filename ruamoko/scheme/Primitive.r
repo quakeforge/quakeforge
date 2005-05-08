@@ -18,7 +18,7 @@
     [super invokeOnMachine: m];
     if (value) {
             [m value: value];
-            [[m continuation] invokeOnMachine: m];
+            [[m continuation] restoreOnMachine: m];
     }
 }
 
