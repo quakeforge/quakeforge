@@ -306,7 +306,7 @@ static void
 sv_packetentities (server_t *sv, qmsg_t *msg, int delta)
 {
 	unsigned short word;
-	int         newnum, oldnum, from;
+	int         newnum, oldnum, from, num;
 	int         newindex, oldindex;
 	int         newpacket, oldpacket;
 	int         full;
@@ -335,6 +335,7 @@ sv_packetentities (server_t *sv, qmsg_t *msg, int delta)
 		oldp = &dummy;
 		dummy.num_entities = 0;
 		full = 1;
+		memset (sv->ent_valid, 0, sizeof (sv->ent_valid));
 	}
 	//qtv_printf ("newp = %-5d oldp = %d\n", newpacket, oldpacket & UPDATE_MASK);
 	sv->delta = sv->netchan.incoming_sequence;
@@ -357,8 +358,9 @@ sv_packetentities (server_t *sv, qmsg_t *msg, int delta)
 					return;
 				}
 				newp->entities[newindex] = oldp->entities[oldindex];
-				newnum = newp->entities[newindex].number;
-				sv->entities[newnum] = newp->entities[newindex];
+				num = newp->entities[newindex].number;
+				sv->entities[num] = newp->entities[newindex];
+				sv->ent_valid[num] = 1;
 				newindex++;
 				oldindex++;
 			}
@@ -383,7 +385,9 @@ sv_packetentities (server_t *sv, qmsg_t *msg, int delta)
 				return;
 			}
 			newp->entities[newindex] = oldp->entities[oldindex];
-			sv->entities[newnum] = newp->entities[newindex];
+			num = newp->entities[newindex].number;
+			sv->entities[num] = newp->entities[newindex];
+			sv->ent_valid[num] = 1;
 			newindex++;
 			oldindex++;
 			oldnum = 9999;
@@ -420,13 +424,14 @@ sv_packetentities (server_t *sv, qmsg_t *msg, int delta)
 				qtv_printf ("WARNING: delta on full update\n");
 			}
 			if (word & U_REMOVE) {
-				memset (&sv->entities[newnum], 0, sizeof (entity_state_t));
+				sv->ent_valid[newnum] = 0;
 				oldindex++;
 				continue;
 			}
 			newp->entities[newindex] = oldp->entities[oldindex];
-			sv_parse_delta (msg, word, &sv->entities[newindex]);
+			sv_parse_delta (msg, word, &newp->entities[newindex]);
 			sv->entities[newnum] = newp->entities[newindex];
+			sv->ent_valid[newnum] = 1;
 			newindex++;
 			oldindex++;
 		}

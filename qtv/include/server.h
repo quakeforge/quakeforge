@@ -94,6 +94,7 @@ typedef struct server_s {
 
 	frame_t     frames[UPDATE_BACKUP];
 	entity_state_t entities[MAX_SV_ENTITIES];
+	byte        ent_valid[MAX_SV_ENTITIES];
 	entity_state_t baselines[MAX_SV_ENTITIES];
 	player_t    players[MAX_SV_PLAYERS];
 	player_t   *player_list;			// list of players for multicast

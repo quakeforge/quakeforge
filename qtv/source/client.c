@@ -513,7 +513,7 @@ client_parse_message (client_t *cl)
 	qboolean    move_issued = false;
 
 	seq_hash = cl->netchan.incoming_sequence;
-
+	cl->delta_sequence = -1;
 	while (1) {
 		if (net_message->badread) {
 			qtv_printf ("SV_ReadClientMessage: badread\n");
@@ -533,7 +533,7 @@ client_parse_message (client_t *cl)
 			case clc_nop:
 				break;
 			case clc_delta:
-				/*cl->delta_sequence = */MSG_ReadByte (net_message);
+				cl->delta_sequence = MSG_ReadByte (net_message);
 				break;
 			case clc_move:
 				checksumIndex = MSG_GetReadCount (net_message);
@@ -981,12 +981,10 @@ write_entities (client_t *client, sizebuf_t *msg)
 
 	for (e = MAX_CLIENTS + 1, ent = sv->entities + e; e < MAX_SV_ENTITIES;
 		 e++, ent++) {
-//		if (ent->free)
-//			continue;
-
-		// ignore ents without visible models
-		if (!ent->modelindex)
+		if (!sv->ent_valid[e])
 			continue;
+		if (ent->number && ent->number != e)
+			qtv_printf ("%d %d\n", e, ent->number);
 #if 0
 		if (pvs) {
 			// ignore if not touching a PV leaf
@@ -1002,8 +1000,10 @@ write_entities (client_t *client, sizebuf_t *msg)
 //			continue;					// added to the special update list
 
 		// add to the packetentities
-		if (pack->num_entities == MAX_PACKET_ENTITIES)
+		if (pack->num_entities == MAX_PACKET_ENTITIES) {
+			qtv_printf ("mpe overflow\n");
 			continue;					// all full
+		}
 
 		state = &pack->entities[pack->num_entities];
 		pack->num_entities++;
