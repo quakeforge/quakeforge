@@ -351,10 +351,11 @@ SVR_AddUser (void (*write)(void *, sizebuf_t *, int), int (*frame)(void *),
 	r->next = sv.recorders;
 	sv.recorders = r;
 
-
-	if (demo)
+	r->delta.pvs = dt_pvs_none;
+	if (demo) {
 		r->delta.type = dt_tp_demo;
-	r->delta.pvs = dt_pvs_fat;
+		r->delta.pvs = dt_pvs_fat;
+	}
 	for (i = 0; i < UPDATE_BACKUP; i++) {
 		r->delta.frames[i].entities.entities = r->entities[i];
 		r->delta.frames[i].players.players = r->players[i];
