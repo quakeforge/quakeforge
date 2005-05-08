@@ -70,7 +70,7 @@ static __attribute__ ((unused)) const char rcsid[] =
 #include "QF/sys.h"
 #include "QF/va.h"
 
-#include "bothdefs.h"
+#include "qw/bothdefs.h"
 #include "cl_main.h"
 #include "cl_slist.h"
 #include "client.h"

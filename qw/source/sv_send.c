@@ -49,7 +49,7 @@ static __attribute__ ((unused)) const char rcsid[] =
 #include "QF/sound.h" // FIXME: DEFAULT_SOUND_PACKET_*
 #include "QF/sys.h"
 
-#include "bothdefs.h"
+#include "qw/bothdefs.h"
 #include "compat.h"
 #include "server.h"
 #include "sv_progs.h"

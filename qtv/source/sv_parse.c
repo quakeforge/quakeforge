@@ -784,6 +784,19 @@ sv_print (server_t *sv, qmsg_t *msg)
 	Server_Broadcast (sv, 1, data, len);
 }
 
+static void
+sv_lightstyle (server_t *sv, qmsg_t *msg)
+{
+	int         ind = MSG_ReadByte (msg);
+	const char *style = MSG_ReadString (msg);
+
+	if (ind > MAX_LIGHTSTYLES)
+		return;
+	if (sv->lightstyles[ind])
+		free (sv->lightstyles[ind]);
+	sv->lightstyles[ind] = strdup (style);
+}
+
 void
 sv_parse (server_t *sv, qmsg_t *msg, int reliable)
 {
@@ -950,9 +963,7 @@ sv_parse (server_t *sv, qmsg_t *msg, int reliable)
 				sv_spawnstatic (sv, msg);
 				break;
 			case svc_lightstyle:
-				//XXX
-				MSG_ReadByte (msg);
-				MSG_ReadString (msg);
+				sv_lightstyle (sv, msg);
 				break;
 		}
 	}

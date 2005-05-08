@@ -57,7 +57,7 @@ static __attribute__ ((unused)) const char rcsid[] =
 #include "QF/vid.h"
 #include "QF/view.h"
 
-#include "bothdefs.h"
+#include "qw/bothdefs.h"
 #include "cl_cam.h"
 #include "cl_parse.h"
 #include "client.h"

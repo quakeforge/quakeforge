@@ -37,7 +37,7 @@ static __attribute__ ((unused)) const char rcsid[] =
 #include "QF/cvar.h"
 #include "QF/keys.h"
 
-#include "bothdefs.h"
+#include "qw/bothdefs.h"
 #include "compat.h"
 #include "cl_ents.h"
 #include "cl_pred.h"

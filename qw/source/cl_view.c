@@ -40,7 +40,7 @@ static __attribute__ ((unused)) const char rcsid[] =
 #include "QF/screen.h"
 #include "QF/vid.h"
 
-#include "bothdefs.h"
+#include "qw/bothdefs.h"
 #include "cl_main.h"
 #include "client.h"
 #include "compat.h"

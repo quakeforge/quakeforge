@@ -47,7 +47,7 @@ static __attribute__ ((unused)) const char rcsid[] =
 
 #include "qw/msg_ucmd.h"
 
-#include "bothdefs.h"
+#include "qw/bothdefs.h"
 #include "cl_cam.h"
 #include "cl_ents.h"
 #include "cl_main.h"

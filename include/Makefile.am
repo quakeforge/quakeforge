@@ -12,7 +12,7 @@ EXTRA_DIST = asm_i386.h alsa_funcs_list.h adivtab.h anorm_dots.h anorms.h \
 	r_local.h r_screen.h r_shared.h rua_internal.h sbar.h skin_stencil.h \
 	snd_render.h varrays.h vgamodes.h view.h vregset.h winquake.h world.h \
 	\
-	qw/msg_backbuf.h qw/msg_ucmd.h qw/pmove.h qw/protocol.h \
+	qw/bothdefs.h qw/msg_backbuf.h qw/msg_ucmd.h qw/pmove.h qw/protocol.h \
 	\
 	win32/fnmatch.h \
 	\

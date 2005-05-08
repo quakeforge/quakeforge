@@ -49,7 +49,7 @@ static __attribute__ ((unused)) const char rcsid[] =
 
 #include "QF/sizebuf.h"
 
-#include "bothdefs.h"
+#include "qw/bothdefs.h"
 #include "server.h"
 #include "sv_demo.h"
 #include "sv_progs.h"

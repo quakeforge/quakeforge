@@ -54,6 +54,7 @@ static __attribute__ ((unused)) const char rcsid[] =
 #include "QF/info.h"
 #include "QF/va.h"
 
+#include "qw/bothdefs.h"
 #include "qw/msg_ucmd.h"
 #include "qw/protocol.h"
 
@@ -159,7 +160,11 @@ static void
 cl_prespawn_f (client_t *cl, void *unused)
 {
 	const char *cmd;
+	const char *info;
 	server_t   *sv = cl->server;
+	player_t   *pl;
+	int         i;
+	sizebuf_t  *msg;
 
 	if (!cl->server)
 		return;
@@ -168,6 +173,51 @@ cl_prespawn_f (client_t *cl, void *unused)
 		Client_New (cl);
 		return;
 	}
+	for (i = 0, pl = sv->players; i < MAX_SV_PLAYERS; i++, pl++) {
+		if (!pl->info)
+			continue;
+		msg = MSG_ReliableCheckBlock (&cl->backbuf, 24 + pl->info->cursize);
+		MSG_WriteByte (msg, svc_updatefrags);
+		MSG_WriteByte (msg, i);
+		MSG_WriteShort (msg, pl->frags);
+		MSG_WriteByte (msg, svc_updateping);
+		MSG_WriteByte (msg, i);
+		MSG_WriteShort (msg, 333/*XXX*/);
+		MSG_WriteByte (msg, svc_updatepl);
+		MSG_WriteByte (msg, i);
+		MSG_WriteByte (msg, 0/*XXX*/);
+		MSG_WriteByte (msg, svc_updateentertime);
+		MSG_WriteByte (msg, i);
+		MSG_WriteFloat (msg, 0/*XXX*/);
+		info = pl->info ? Info_MakeString (pl->info, 0) : "";
+		MSG_WriteByte (msg, svc_updateuserinfo);
+		MSG_WriteByte (msg, i);
+		MSG_WriteLong (msg, pl->uid);
+		MSG_WriteString (msg, info);
+		if (cl->backbuf.num_backbuf)
+			MSG_Reliable_FinishWrite (&cl->backbuf);
+	}
+	for (i = 0; i < MAX_LIGHTSTYLES; i++) {
+		MSG_ReliableWrite_Begin (&cl->backbuf, svc_lightstyle,
+								 3 + (sv->lightstyles[i] ?
+									  strlen (sv->lightstyles[i]) : 1));
+		MSG_ReliableWrite_Byte (&cl->backbuf, i);
+		MSG_ReliableWrite_String (&cl->backbuf, sv->lightstyles[i]);
+	}
+	MSG_ReliableWrite_Begin (&cl->backbuf, svc_updatestatlong, 6);
+	MSG_ReliableWrite_Byte (&cl->backbuf, STAT_TOTALSECRETS);
+	MSG_ReliableWrite_Long (&cl->backbuf,
+							sv->players[0].stats[STAT_TOTALSECRETS]);
+	MSG_ReliableWrite_Begin (&cl->backbuf, svc_updatestatlong, 6);
+	MSG_ReliableWrite_Byte (&cl->backbuf, STAT_TOTALMONSTERS);
+	MSG_ReliableWrite_Long (&cl->backbuf,
+							sv->players[0].stats[STAT_TOTALMONSTERS]);
+	MSG_ReliableWrite_Begin (&cl->backbuf, svc_updatestatlong, 6);
+	MSG_ReliableWrite_Byte (&cl->backbuf, STAT_SECRETS);
+	MSG_ReliableWrite_Long (&cl->backbuf, sv->players[0].stats[STAT_SECRETS]);
+	MSG_ReliableWrite_Begin (&cl->backbuf, svc_updatestatlong, 6);
+	MSG_ReliableWrite_Byte (&cl->backbuf, STAT_SECRETS);
+	MSG_ReliableWrite_Long (&cl->backbuf, sv->players[0].stats[STAT_SECRETS]);
 	cmd = va ("cmd spawn %i 0\n", cl->server->spawncount);
 	MSG_ReliableWrite_Begin (&cl->backbuf, svc_stufftext, strlen (cmd) + 2);
 	MSG_ReliableWrite_String (&cl->backbuf, cmd);
@@ -247,6 +297,9 @@ cl_serverinfo_f (client_t *cl, void *unused)
 static void
 cl_download_f (client_t *cl, void *unused)
 {
+	MSG_ReliableWrite_Begin (&cl->backbuf, svc_download, 4);
+	MSG_ReliableWrite_Short (&cl->backbuf, -1);
+	MSG_ReliableWrite_Byte (&cl->backbuf, 0);
 }
 
 static void

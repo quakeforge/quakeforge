@@ -54,7 +54,7 @@ static __attribute__ ((unused)) const char rcsid[] =
 #include "QF/skin.h"
 #include "QF/gib.h"
 
-#include "bothdefs.h"
+#include "qw/bothdefs.h"
 #include "cl_input.h"
 #include "client.h"
 #include "compat.h"

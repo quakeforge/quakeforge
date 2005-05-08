@@ -61,7 +61,7 @@ static __attribute__ ((unused)) const char rcsid[] =
 #include "QF/dstring.h"
 #include "QF/gib.h"
 
-#include "bothdefs.h"
+#include "qw/bothdefs.h"
 #include "cl_cam.h"
 #include "cl_chat.h"
 #include "cl_ents.h"

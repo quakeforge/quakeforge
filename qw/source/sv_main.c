@@ -79,7 +79,7 @@ static __attribute__ ((unused)) const char rcsid[] =
 #include "QF/ver_check.h"
 #include "QF/zone.h"
 
-#include "bothdefs.h"
+#include "qw/bothdefs.h"
 #include "buildnum.h"
 #include "compat.h"
 #include "crudefile.h"
