@@ -233,7 +233,7 @@ SV_Soundlist_f (void *unused)
 // NOTE:  This doesn't go through MSG_ReliableWrite since it's before the
 // user spawns.  These functions are written to not overflow
 	if (host_client->backbuf.num_backbuf) {
-		SV_Printf ("WARNING %s: [SV_Soundlist] Back buffered (%d0, clearing",
+		SV_Printf ("WARNING %s: [SV_Soundlist] Back buffered (%d), clearing",
 					host_client->name, host_client->netchan.message.cursize);
 		host_client->backbuf.num_backbuf = 0;
 		SZ_Clear (&host_client->netchan.message);
