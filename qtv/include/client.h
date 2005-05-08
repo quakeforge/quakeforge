@@ -36,8 +36,11 @@
 #include "qw/msg_backbuf.h"
 
 typedef struct client_s {
+	// list of clients connected to a server
 	struct client_s *next;
 	struct client_s **prev;
+	// list of clients in general
+	struct client_s *clnext;
 	struct info_s *userinfo;
 	struct connection_s *con;
 	int         drop;
@@ -45,8 +48,11 @@ typedef struct client_s {
 	backbuf_t   backbuf;
 	sizebuf_t   datagram;
 	byte        datagram_buf[MAX_DATAGRAM];
+	qboolean    send_message;
 
 	struct server_s *server;
+
+	int         connected;
 } client_t;
 
 typedef struct challenge_s {
@@ -56,5 +62,8 @@ typedef struct challenge_s {
 
 void Client_Init (void);
 void Client_NewConnection (void);
+
+void Client_New (client_t *cl);
+void Client_Frame (void);
 
 #endif//__client_h

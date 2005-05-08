@@ -78,6 +78,8 @@ typedef struct server_s {
 	int         cdtrack;
 	int         sounds;
 	struct info_s *info;
+	char       *soundlist[MAX_SOUNDS + 1];
+	char       *modellist[MAX_MODELS + 1];
 
 	struct client_s *clients;
 
@@ -98,6 +100,7 @@ void Server_Frame (void);
 void Server_List (void);
 void Server_Connect (const char *name, struct client_s *client);
 void Server_Disconnect (struct client_s *client);
+void Server_Broadcast (server_t *sv, int reliable, byte *msg, int len);
 
 struct qmsg_s;
 void sv_parse (server_t *sv, struct msg_s *msg, int reliable);

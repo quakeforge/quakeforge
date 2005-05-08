@@ -64,27 +64,6 @@ static __attribute__ ((unused)) const char rcsid[] =
 #include "server.h"
 
 static void
-sv_broadcast (server_t *sv, int reliable, byte *msg, int len)
-{
-	client_t   *cl;
-	byte        svc;
-
-	if (len < 1)
-		return;
-	svc = *msg++;
-	len--;
-	for (cl = sv->clients; cl; cl = cl->next) {
-		if (reliable) {
-			MSG_ReliableWrite_Begin (&cl->backbuf, svc, len + 1);
-			MSG_ReliableWrite_SZ (&cl->backbuf, msg, len);
-		} else {
-			MSG_WriteByte (&cl->datagram, svc);
-			SZ_Write (&cl->datagram, msg, len);
-		}
-	}
-}
-
-static void
 sv_serverdata (server_t *sv, qmsg_t *msg)
 {
 	const char *str;
@@ -150,7 +129,7 @@ sv_soundlist (server_t *sv, qmsg_t *msg)
 			MSG_ReadByte (msg);
 			return;
 		}
-		// save sound name
+		sv->soundlist[numsounds - 1] = strdup (str);
 	}
 	n = MSG_ReadByte (msg);
 	if (n) {
@@ -178,13 +157,13 @@ sv_modellist (server_t *sv, qmsg_t *msg)
 			break;
 		//qtv_printf ("%s\n", str);
 		nummodels++;
-		if (nummodels == MAX_SOUNDS) {
+		if (nummodels == MAX_MODELS) {
 			while (str[0])
 				str = MSG_ReadString (msg);
 			MSG_ReadByte (msg);
 			return;
 		}
-		// save sound name
+		sv->modellist[nummodels - 1] = strdup (str);
 	}
 	n = MSG_ReadByte (msg);
 	if (n) {
@@ -616,7 +595,11 @@ sv_sound (server_t *sv, qmsg_t *msg, int stop)
 	// XXX
 	int         c;
 	vec3_t      v;
+	byte       *data;
+	int         len;
 
+	len = msg->readcount - 1;
+	data = msg->message->data + len;
 	if (stop) {
 		MSG_ReadShort (msg);
 	} else {
@@ -628,6 +611,8 @@ sv_sound (server_t *sv, qmsg_t *msg, int stop)
 		MSG_ReadByte (msg);
 		MSG_ReadCoordV (msg, v);
 	}
+	len = msg->readcount - len;
+	Server_Broadcast (sv, 0, data, len);
 }
 
 static void
@@ -710,6 +695,11 @@ sv_temp_entity (server_t *sv, qmsg_t *msg)
 {
 	vec3_t      pos;
 	int         type;
+	byte       *data;
+	int         len;
+
+	len = msg->readcount - 1;
+	data = msg->message->data + len;
 
 	type = MSG_ReadByte (msg);
 	switch (type) {
@@ -760,6 +750,8 @@ sv_temp_entity (server_t *sv, qmsg_t *msg)
 			MSG_ReadCoordV (msg, pos);
 			break;
 	}
+	len = msg->readcount - len;
+	Server_Broadcast (sv, 0, data, len);
 }
 
 static void
@@ -787,7 +779,7 @@ sv_print (server_t *sv, qmsg_t *msg)
 	MSG_ReadByte (msg);
 	qtv_printf ("%s", MSG_ReadString (msg));
 	len = msg->readcount - len;
-	sv_broadcast (sv, 1, data, len);
+	Server_Broadcast (sv, 1, data, len);
 }
 
 void

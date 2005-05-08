@@ -394,6 +394,7 @@ main (int argc, const char *argv[])
 		Con_ProcessInput ();
 
 		Server_Frame ();
+		Client_Frame ();
 	}
 	return 0;
 }

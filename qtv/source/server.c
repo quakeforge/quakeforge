@@ -76,6 +76,8 @@ server_free (void *_sv, void *unused)
 {
 	server_t   *sv = (server_t *) _sv;
 	server_t  **s;
+	int         i;
+	client_t   *cl;
 
 	static byte final[] = {qtv_stringcmd, 'd', 'r', 'o', 'p', 0};
 
@@ -95,6 +97,16 @@ server_free (void *_sv, void *unused)
 			*s = sv->next;
 			break;
 		}
+	}
+	for (i = 0; i < 256; i++) {
+		if (sv->soundlist[i])
+			free (sv->soundlist[i]);
+		if (sv->modellist[i])
+			free (sv->modellist[i]);
+	}
+	for (cl = sv->clients; cl; cl = cl->next) {
+		cl->server = 0;
+		cl->connected = 0;
 	}
 	free (sv);
 }
@@ -516,13 +528,36 @@ Server_Connect (const char *name, struct client_s *client)
 	if (sv->clients)
 		sv->clients->prev = &client->next;
 	sv->clients = client;
+
+	Client_New (client);
 }
 
 void
 Server_Disconnect (struct client_s *client)
 {
 	client->server = 0;
+	client->connected = 0;
 	if (client->next)
 		client->next->prev = client->prev;
 	*client->prev = client->next;
+}
+
+void
+Server_Broadcast (server_t *sv, int reliable, byte *msg, int len)
+{
+	client_t   *cl;
+	byte        svc;
+
+	if (len < 1)
+		return;
+	svc = *msg++;
+	len--;
+	for (cl = sv->clients; cl; cl = cl->next) {
+		if (reliable) {
+			MSG_ReliableWrite_Begin (&cl->backbuf, svc, len + 1);
+			MSG_ReliableWrite_SZ (&cl->backbuf, msg, len);
+		} else {
+			SZ_Write (&cl->datagram, msg - 1, len + 1);
+		}
+	}
 }

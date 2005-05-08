@@ -51,6 +51,7 @@ static __attribute__ ((unused)) const char rcsid[] =
 #include "QF/hash.h"
 #include "QF/idparse.h"
 #include "QF/info.h"
+#include "QF/va.h"
 
 #include "qw/msg_ucmd.h"
 #include "qw/protocol.h"
@@ -59,6 +60,8 @@ static __attribute__ ((unused)) const char rcsid[] =
 #include "connection.h"
 #include "qtv.h"
 #include "server.h"
+
+static client_t *clients;
 
 typedef struct ucmd_s {
 	const char *name;
@@ -88,26 +91,118 @@ cl_new_f (client_t *cl, void *unused)
 static void
 cl_modellist_f (client_t *cl, void *unused)
 {
+	server_t   *sv = cl->server;
+	unsigned    n;
+	char      **s;
+
+	if (atoi (Cmd_Argv (1)) != sv->spawncount) {
+		qtv_printf ("modellist from different level\n");
+		Client_New (cl);
+		return;
+	}
+	n = atoi (Cmd_Argv (2));
+	if (n >= MAX_MODELS) {
+		qtv_printf ("invalid modellist index\n");
+		Client_New (cl);
+		return;
+	}
+
+	MSG_WriteByte (&cl->netchan.message, svc_modellist);
+	MSG_WriteByte (&cl->netchan.message, n);
+	for (s = sv->modellist + n;
+		 *s && cl->netchan.message.cursize < (MAX_MSGLEN /2);
+		 s++, n++)
+		MSG_WriteString (&cl->netchan.message, *s);
+	MSG_WriteByte (&cl->netchan.message, 0);
+	if (*s)
+		MSG_WriteByte (&cl->netchan.message, n);
+	else
+		MSG_WriteByte (&cl->netchan.message, 0);
 }
 
 static void
 cl_soundlist_f (client_t *cl, void *unused)
 {
+	server_t   *sv = cl->server;
+	unsigned    n;
+	char      **s;
+
+	if (!cl->server)
+		return;
+	if (atoi (Cmd_Argv (1)) != sv->spawncount) {
+		qtv_printf ("soundlist from different level\n");
+		Client_New (cl);
+		return;
+	}
+	n = atoi (Cmd_Argv (2));
+	if (n >= MAX_SOUNDS) {
+		qtv_printf ("invalid soundlist index\n");
+		Client_New (cl);
+		return;
+	}
+
+	MSG_WriteByte (&cl->netchan.message, svc_soundlist);
+	MSG_WriteByte (&cl->netchan.message, n);
+	for (s = sv->soundlist + n;
+		 *s && cl->netchan.message.cursize < (MAX_MSGLEN /2);
+		 s++, n++)
+		MSG_WriteString (&cl->netchan.message, *s);
+	MSG_WriteByte (&cl->netchan.message, 0);
+	if (*s)
+		MSG_WriteByte (&cl->netchan.message, n);
+	else
+		MSG_WriteByte (&cl->netchan.message, 0);
 }
 
 static void
 cl_prespawn_f (client_t *cl, void *unused)
 {
+	const char *cmd;
+	server_t   *sv = cl->server;
+
+	if (!cl->server)
+		return;
+	if (atoi (Cmd_Argv (1)) != sv->spawncount) {
+		qtv_printf ("prespawn from different level\n");
+		Client_New (cl);
+		return;
+	}
+	cmd = va ("cmd spawn %i 0\n", cl->server->spawncount);
+	MSG_ReliableWrite_Begin (&cl->backbuf, svc_stufftext, strlen (cmd) + 2);
+	MSG_ReliableWrite_String (&cl->backbuf, cmd);
 }
 
 static void
 cl_spawn_f (client_t *cl, void *unused)
 {
+	const char *cmd;
+	server_t   *sv = cl->server;
+
+	if (!cl->server)
+		return;
+	if (atoi (Cmd_Argv (1)) != sv->spawncount) {
+		qtv_printf ("spawn from different level\n");
+		Client_New (cl);
+		return;
+	}
+	cmd = "skins\n";
+	MSG_ReliableWrite_Begin (&cl->backbuf, svc_stufftext, strlen (cmd) + 2);
+	MSG_ReliableWrite_String (&cl->backbuf, cmd);
 }
 
 static void
 cl_begin_f (client_t *cl, void *unused)
 {
+	server_t   *sv = cl->server;
+
+	if (!cl->server)
+		return;
+	if (atoi (Cmd_Argv (1)) != sv->spawncount) {
+		qtv_printf ("spawn from different level\n");
+		Client_New (cl);
+		return;
+	}
+	cl->connected = 1;
 }
 
 static void
@@ -141,6 +236,11 @@ cl_setinfo_f (client_t *cl, void *unused)
 static void
 cl_serverinfo_f (client_t *cl, void *unused)
 {
+	if (cl->server) {
+		Info_Print (cl->server->info);
+		return;
+	}
+	qtv_printf ("not connected to a server");
 }
 
 static void
@@ -350,6 +450,30 @@ client_parse_message (client_t *cl)
 }
 
 static void
+cl_send_messages (client_t *cl)
+{
+	byte        buf[MAX_DATAGRAM];
+	sizebuf_t   msg;
+
+	memset (&msg, 0, sizeof (msg));
+	msg.allowoverflow = true;
+	msg.maxsize = sizeof (buf);
+	msg.data = buf;
+
+	if (cl->backbuf.num_backbuf)
+		MSG_Reliable_Send (&cl->backbuf);
+	if (cl->connected) {
+		MSG_WriteByte (&msg, svc_packetentities);
+		MSG_WriteShort (&msg, 0);
+	}
+	if (cl->datagram.cursize) {
+		SZ_Write (&msg, cl->datagram.data, cl->datagram.cursize);
+		SZ_Clear (&cl->datagram);
+	}
+	Netchan_Transmit (&cl->netchan, msg.cursize, msg.data);
+}
+
+static void
 client_handler (connection_t *con, void *object)
 {
 	client_t   *cl = (client_t *) object;
@@ -361,14 +485,10 @@ client_handler (connection_t *con, void *object)
 	if (Netchan_Process (&cl->netchan)) {
 		// this is a valid, sequenced packet, so process it
 		//svs.stats.packets++;
-		//cl->send_message = true;
+		cl->send_message = true;
 		//if (cl->state != cs_zombie)
 			client_parse_message (cl);
-		if (cl->backbuf.num_backbuf)
-			MSG_Reliable_Send (&cl->backbuf);
-		Netchan_Transmit (&cl->netchan, cl->datagram.cursize,
-						  cl->datagram.data);
-		SZ_Clear (&cl->datagram);
+		cl_send_messages (cl);
 		if (cl->drop) {
 			Connection_Del (cl->con);
 			Info_Destroy (cl->userinfo);
@@ -424,6 +544,8 @@ client_connect (connection_t *con, void *object)
 
 	cl = calloc (1, sizeof (client_t));
 	Netchan_Setup (&cl->netchan, con->address, qport, NC_READ_QPORT);
+	cl->clnext = clients;
+	clients = cl;
 	cl->backbuf.netchan = &cl->netchan;
 	cl->backbuf.name = "FIXME";
 	cl->userinfo = userinfo;
@@ -478,4 +600,45 @@ Client_Init (void)
 	ucmd_table = Hash_NewTable (251, ucmds_getkey, 0, 0);
 	for (i = 0; i < sizeof (ucmds) / sizeof (ucmds[0]); i++)
 		Hash_Add (ucmd_table, &ucmds[i]);
+}
+
+void
+Client_New (client_t *cl)
+{
+	server_t   *sv = cl->server;
+
+	MSG_WriteByte (&cl->netchan.message, svc_serverdata);
+	MSG_WriteLong (&cl->netchan.message, PROTOCOL_VERSION);
+	MSG_WriteLong (&cl->netchan.message, sv->spawncount);
+	MSG_WriteString (&cl->netchan.message, sv->gamedir);
+	MSG_WriteByte (&cl->netchan.message, 0x80 | 31);
+	MSG_WriteString (&cl->netchan.message, sv->message);
+	MSG_WriteFloat (&cl->netchan.message, sv->movevars.gravity);
+	MSG_WriteFloat (&cl->netchan.message, sv->movevars.stopspeed);
+	MSG_WriteFloat (&cl->netchan.message, sv->movevars.maxspeed);
+	MSG_WriteFloat (&cl->netchan.message, sv->movevars.spectatormaxspeed);
+	MSG_WriteFloat (&cl->netchan.message, sv->movevars.accelerate);
+	MSG_WriteFloat (&cl->netchan.message, sv->movevars.airaccelerate);
+	MSG_WriteFloat (&cl->netchan.message, sv->movevars.wateraccelerate);
+	MSG_WriteFloat (&cl->netchan.message, sv->movevars.friction);
+	MSG_WriteFloat (&cl->netchan.message, sv->movevars.waterfriction);
+	MSG_WriteFloat (&cl->netchan.message, sv->movevars.entgravity);
+	MSG_WriteByte (&cl->netchan.message, svc_cdtrack);
+	MSG_WriteByte (&cl->netchan.message, sv->cdtrack);
+	MSG_WriteByte (&cl->netchan.message, svc_stufftext);
+	MSG_WriteString (&cl->netchan.message,
+					 va ("fullserverinfo \"%s\"\n",
+						 Info_MakeString (sv->info, 0)));
+}
+
+void
+Client_Frame (void)
+{
+	client_t   *cl;
+
+	for (cl = clients; cl; cl = cl->next) {
+		if (cl->send_message) {
+			cl_send_messages (cl);
+		}
+	}
 }
