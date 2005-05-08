@@ -185,6 +185,14 @@ Symbol letrecSym;
     local SchemeObject bindings;
     local integer count;
 
+    if (!isList(expression) ||
+        !isList([expression car]) ||
+        ![[expression cdr] isKindOfClass: [Cons class]]) {
+            err = [Error type: "syntax"
+                         message: "Malformed letrec expression"
+                         by: expression];
+    }
+    
     scope = [Scope newWithOuter: scope];
     
     count = 0;
@@ -214,6 +222,9 @@ Symbol letrecSym;
 - (void) emitExpression: (SchemeObject) expression flags: (integer) fl
 {
     if ([expression isKindOfClass: [Cons class]]) {
+            [code source: [expression source]];
+            [code line: [expression line]];
+            
             if ([expression car] == lambdaSym) {
                     [self emitLambda: expression];
             } else if ([expression car] == quoteSym) {

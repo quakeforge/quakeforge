@@ -4,6 +4,14 @@
 #include "Array.h"
 #include "Instruction.h"
 #include "Frame.h"
+#include "String.h"
+
+struct lineinfo_s {
+    integer linenumber;
+    String sourcefile;
+};
+    
+typedef struct lineinfo_s lineinfo_t;
 
 @interface CompiledCode: SchemeObject
 {
@@ -11,11 +19,13 @@
     Array instructions;
     Array constants;
     instruction_t [] code;
+    lineinfo_t [] lineinfo;
 }
 - (void) addInstruction: (Instruction) inst;
 - (integer) addConstant: (SchemeObject) c;
 - (void) compile;
 - (instruction_t []) code;
+- (lineinfo_t []) lineinfo;
 - (Frame) literals;
 @end
 

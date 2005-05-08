@@ -1,4 +1,5 @@
 #include "CompiledCode.h"
+#include "Symbol.h"
 #include "defs.h"
 
 @implementation CompiledCode
@@ -9,6 +10,8 @@
     instructions = [Array new];
     return self;
 }
+
+
 
 - (void) markReachable
 {
@@ -21,6 +24,8 @@
 
 - (void) addInstruction: (Instruction) inst
 {
+    [inst line: [self line]];
+    [inst source: [self source]];
     [inst offset: [instructions count]];
     if ([inst opcode] != LABEL) {
             [instructions addItem: inst];
@@ -40,12 +45,16 @@
     local Instruction inst;
     literals = [Frame newWithSize: [constants count] link: NIL];
     code = obj_malloc (@sizeof(instruction_t) * [instructions count]);
+    lineinfo = obj_malloc(@sizeof(lineinfo_t) * [instructions count]);
     for (index = 0; index < [constants count]; index++) {
             [literals set: index to: (SchemeObject) [constants getItemAt: index]];
     }
     for (index = 0; index < [instructions count]; index++) {
             inst = [instructions getItemAt: index];
             [inst emitStruct: code];
+            lineinfo[index].linenumber = [inst line];
+            lineinfo[index].sourcefile = symbol([inst source]);
+            [lineinfo[index].sourcefile retain];
     }
     [instructions release];
     [constants release];
@@ -55,6 +64,11 @@
 - (instruction_t []) code
 {
     return code;
+}
+
+- (lineinfo_t []) lineinfo
+{
+    return lineinfo;
 }
 
 - (Frame) literals

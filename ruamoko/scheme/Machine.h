@@ -25,6 +25,7 @@
 - (void) stack: (SchemeObject) o;
 - (state_t []) state;
 - (void) state: (state_t []) st;
+- (void) reset;
 @end
 
 #endif //__Machine_h

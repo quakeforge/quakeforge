@@ -165,6 +165,8 @@ integer checkpoint;
 
 - (void) makeRootCell
 {
+    if (root)
+            return;
     if (gc_state) {
             dprintf("Root cell made during collection!\n");
             [SchemeObject finishCollecting];

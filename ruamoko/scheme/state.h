@@ -3,11 +3,13 @@
 
 #include "Instruction.h"
 #include "Frame.h"
+#include "CompiledCode.h"
 
 @class Continuation;
 
 struct state_s = {
     instruction_t [] program;
+    lineinfo_t [] lineinfo;
     integer pc;
     Frame literals, env;
     SchemeObject stack;

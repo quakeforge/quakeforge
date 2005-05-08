@@ -15,6 +15,8 @@
     state.stack = st.stack;
     state.cont = st.cont;
     state.env = st.env;
+    state.proc = st.proc;
+    state.lineinfo = st.lineinfo;
     return self;
 }
 

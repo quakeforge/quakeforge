@@ -4,6 +4,9 @@
 #include "Boolean.h"
 #include "Nil.h"
 #include "defs.h"
+#include "string.h"
+#include "Error.h"
+//#include "debug.h"
 
 string GlobalGetKey (void []ele, void []data)
 {
@@ -26,7 +29,9 @@ void GlobalFree (void []ele, void []data)
     state.cont = NIL;
     state.env = NIL;
     state.literals = NIL;
+    state.proc = NIL;
     state.stack = [Nil nil];
+    state.lineinfo = NIL;
     globals = Hash_NewTable(1024, GlobalGetKey, GlobalFree, NIL);
     all_globals = [Nil nil];
     return self;
@@ -43,6 +48,7 @@ void GlobalFree (void []ele, void []data)
 {
     state.program = [code code];
     state.literals = [code literals];
+    state.lineinfo = [code lineinfo];
     state.pc = 0;
 }
 
@@ -95,6 +101,7 @@ void GlobalFree (void []ele, void []data)
     state.cont = st[0].cont;
     state.env = st[0].env;
     state.proc = st[0].proc;
+    state.lineinfo = st[0].lineinfo;
 }
 
 - (void) procedure: (Procedure) pr
@@ -106,7 +113,12 @@ void GlobalFree (void []ele, void []data)
 {
     local integer opcode;
     local integer operand;
+    local SchemeObject res;
     while (1) {
+            if (value && [value isError]) {
+                    dprintf("Error: %s[%s]\n", [value description], [value printForm]);
+                    return value;
+            }
             opcode = state.program[state.pc].opcode;
             operand = state.program[state.pc].operand;
             state.pc = state.pc + 1;
@@ -180,7 +192,14 @@ void GlobalFree (void []ele, void []data)
                     break;
                 case GETGLOBAL:
                     dprintf("Getglobal: %s\n", [value printForm]);
-                    value = [((Cons) Hash_Find(globals, [value printForm])) cdr];
+                    res = [((Cons) Hash_Find(globals, [value printForm])) cdr];
+                    if (!res) {
+                            return [Error type: "binding"
+                                          message: sprintf("Undefined binding: %s",
+                                                           [value printForm])
+                                          by: self];
+                    }
+                    value = res;
                     dprintf(" --> %s\n", [value printForm]);
                     break;
                 case SETGLOBAL:
@@ -191,6 +210,13 @@ void GlobalFree (void []ele, void []data)
                 case CALL:
                     dprintf("Call\n");
                     [SchemeObject collectCheckPoint];
+                    if (![value isKindOfClass: [Procedure class]]) {
+                            return [Error type: "call"
+                                          message:
+                                              sprintf("Attempted to apply non-procedure: %s. Arguments were: %s",
+                                                      [value printForm], [state.stack printForm])
+                                          by: self];
+                    }
                     [value invokeOnMachine: self];
                     break;
                 case RETURN:
@@ -215,6 +241,24 @@ void GlobalFree (void []ele, void []data)
     }
 }
 
+- (string) source
+{
+    if (state.lineinfo) {
+            return [state.lineinfo[state.pc-1].sourcefile stringValue];
+    } else {
+            return [super source];
+    }
+}
+
+- (integer) line
+{
+    if (state.lineinfo) {
+            return state.lineinfo[state.pc-1].linenumber;
+    } else {
+            return [super line];
+    }
+}
+
 - (void) markReachable
 {
     [state.literals mark];
@@ -224,6 +268,11 @@ void GlobalFree (void []ele, void []data)
     [state.proc mark];
     [value mark];
     [all_globals mark];
+}
+
+- (void) reset
+{
+    state.stack = [Nil nil];
 }
 @end
 

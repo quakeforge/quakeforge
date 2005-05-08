@@ -23,6 +23,7 @@
     [super invokeOnMachine: m];
     [m loadCode: code];
     [m environment: env];
+    [m procedure: self];
 }
 
 - (void) markReachable

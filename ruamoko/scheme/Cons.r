@@ -8,6 +8,13 @@ Cons cons (SchemeObject car, SchemeObject cdr)
     return [Cons newWithCar: car cdr: cdr];
 }
 
+BOOL isList (SchemeObject ls)
+{
+    return ls == [Nil nil] ||
+        ([ls isKindOfClass: [Cons class]] &&
+         isList([ls cdr]));
+}
+
 @implementation Cons
 
 + (id) newWithCar: (SchemeObject) a cdr: (SchemeObject) d

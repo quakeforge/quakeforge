@@ -31,7 +31,7 @@ integer main (integer argc, string []argv)
     local Compiler comp;
     local Machine vm;
     local Lambda lm;
-    local SchemeObject stuff;
+    local SchemeObject stuff, res;
 
     if (argc < 1) {
             return -1;
@@ -62,7 +62,13 @@ integer main (integer argc, string []argv)
             }
             lm = [Lambda newWithCode: code environment: NIL];
             [lm invokeOnMachine: vm];
-            [vm run];
+            res = [vm run];
+            if ([res isError]) {
+                    printf(">> %s: %i\n", [res source], [res line]);
+                    printf(">> Error (%s): %s\n", [res type], [res message]);
+                    return -1;
+            }
+            [vm reset];
     }
     [SchemeObject finishCollecting];
     return 0;
