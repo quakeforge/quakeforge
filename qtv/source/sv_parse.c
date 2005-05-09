@@ -55,6 +55,7 @@ static __attribute__ ((unused)) const char rcsid[] =
 #include "QF/sys.h"
 #include "QF/va.h"
 
+#include "qw/bothdefs.h"
 #include "qw/msg_ucmd.h"
 #include "qw/protocol.h"
 
@@ -546,11 +547,6 @@ sv_setinfo (server_t *sv, qmsg_t *msg)
 	dstring_t  *key = dstring_newstr ();
 	dstring_t  *value = dstring_newstr ();
 	player_t   *pl;
-	byte       *data;
-	int         len;
-
-	len = msg->readcount - 1;
-	data = msg->message->data + len;
 
 	slot = MSG_ReadByte (msg);
 	dstring_copystr (key, MSG_ReadString (msg));
@@ -567,8 +563,6 @@ sv_setinfo (server_t *sv, qmsg_t *msg)
 	}
 	dstring_delete (key);
 	dstring_delete (value);
-	len = msg->readcount - len;
-	Server_Broadcast (sv, 1, data, len);
 }
 
 static void
@@ -577,11 +571,6 @@ sv_updateuserinfo (server_t *sv, qmsg_t *msg)
 	int         slot, uid;
 	const char *info;
 	player_t   *pl;
-	byte       *data;
-	int         len;
-
-	len = msg->readcount - 1;
-	data = msg->message->data + len;
 
 	slot = MSG_ReadByte (msg);
 	uid = MSG_ReadLong (msg);
@@ -597,8 +586,6 @@ sv_updateuserinfo (server_t *sv, qmsg_t *msg)
 		pl->info = Info_ParseString (info, MAX_INFO_STRING, 0);
 		pl->uid = uid;
 	}
-	len = msg->readcount - len;
-	Server_Broadcast (sv, 1, data, len);
 }
 
 static void
@@ -641,14 +628,9 @@ sv_update_net (server_t *sv, qmsg_t *msg, int ping)
 static void
 sv_sound (server_t *sv, qmsg_t *msg, int stop)
 {
-	// XXX
 	int         c;
 	vec3_t      v;
-	byte       *data;
-	int         len;
 
-	len = msg->readcount - 1;
-	data = msg->message->data + len;
 	if (stop) {
 		MSG_ReadShort (msg);
 	} else {
@@ -660,8 +642,6 @@ sv_sound (server_t *sv, qmsg_t *msg, int stop)
 		MSG_ReadByte (msg);
 		MSG_ReadCoordV (msg, v);
 	}
-	len = msg->readcount - len;
-	Server_Broadcast (sv, 0, data, len);
 }
 
 static void
@@ -744,11 +724,6 @@ sv_temp_entity (server_t *sv, qmsg_t *msg)
 {
 	vec3_t      pos;
 	int         type;
-	byte       *data;
-	int         len;
-
-	len = msg->readcount - 1;
-	data = msg->message->data + len;
 
 	type = MSG_ReadByte (msg);
 	switch (type) {
@@ -799,8 +774,6 @@ sv_temp_entity (server_t *sv, qmsg_t *msg)
 			MSG_ReadCoordV (msg, pos);
 			break;
 	}
-	len = msg->readcount - len;
-	Server_Broadcast (sv, 0, data, len);
 }
 
 static void
@@ -820,15 +793,8 @@ sv_nails (server_t *sv, qmsg_t *msg, int nails2)
 static void
 sv_print (server_t *sv, qmsg_t *msg)
 {
-	byte       *data;
-	int         len;
-
-	len = msg->readcount - 1;
-	data = msg->message->data + len;
 	MSG_ReadByte (msg);
 	qtv_printf ("%s", MSG_ReadString (msg));
-	len = msg->readcount - len;
-	Server_Broadcast (sv, 1, data, len);
 }
 
 static void
@@ -842,6 +808,21 @@ sv_lightstyle (server_t *sv, qmsg_t *msg)
 	if (sv->lightstyles[ind])
 		free (sv->lightstyles[ind]);
 	sv->lightstyles[ind] = strdup (style);
+}
+
+static void
+sv_updateentertime (server_t *sv, qmsg_t *msg)
+{
+	int         slot = MSG_ReadByte (msg);
+	int         time = MSG_ReadFloat (msg);
+	player_t   *pl;
+
+	if (slot >= MAX_SV_PLAYERS) {
+		qtv_printf ("bogus player: %d\n", slot);
+		return;
+	}
+	pl = sv->players + slot;
+	pl->time = time;
 }
 
 static void
@@ -868,6 +849,10 @@ sv_parse (server_t *sv, qmsg_t *msg, int reliable)
 	int         signon_saved = 0;
 
 	while (1) {
+		int         bc_len = msg->readcount;
+		byte       *bc_data = msg->message->data + bc_len;
+		int         send = 1;
+
 		svc = MSG_ReadByte (msg);
 		if (svc == -1)
 			break;
@@ -878,6 +863,7 @@ sv_parse (server_t *sv, qmsg_t *msg, int reliable)
 				Sys_Quit ();
 				return;
 			case svc_nop:
+				send = 0;
 				break;
 			//case svc_setview:
 			//	break;
@@ -889,6 +875,7 @@ sv_parse (server_t *sv, qmsg_t *msg, int reliable)
 				break;
 			case svc_setangle:
 				sv_setangle (sv, msg);
+				send = 0;
 				break;
 			case svc_updatefrags:
 				sv_updatefrags (sv, msg);
@@ -916,11 +903,11 @@ sv_parse (server_t *sv, qmsg_t *msg, int reliable)
 				break;
 			case svc_killedmonster:
 				for (pl = sv->players; pl; pl = pl->next)
-					pl->stats[14]++;	//FIXME STAT_MONSTERS
+					pl->stats[STAT_MONSTERS]++;
 				break;
 			case svc_foundsecret:
 				for (pl = sv->players; pl; pl = pl->next)
-					pl->stats[13]++;	//FIXME STAT_SECRETS
+					pl->stats[STAT_SECRETS]++;
 				break;
 			case svc_intermission:
 				//XXX
@@ -945,9 +932,7 @@ sv_parse (server_t *sv, qmsg_t *msg, int reliable)
 				//XXX
 				break;
 			case svc_updateentertime:
-				//XXX
-				MSG_ReadByte (msg);
-				MSG_ReadFloat (msg);
+				sv_updateentertime (sv, msg);
 				break;
 			case svc_updatestat:
 			case svc_updatestatlong:
@@ -962,16 +947,20 @@ sv_parse (server_t *sv, qmsg_t *msg, int reliable)
 				break;
 			case svc_playerinfo:
 				sv_playerinfo (sv, msg);
+				send = 0;
 				break;
 			case svc_nails:
 			case svc_nails2:
 				sv_nails (sv, msg, svc == svc_nails2);
+				send = 0;
 				break;
 			case svc_packetentities:
 				sv_packetentities (sv, msg, 0);
+				send = 0;
 				break;
 			case svc_deltapacketentities:
 				sv_packetentities (sv, msg, 1);
+				send = 0;
 				break;
 			case svc_maxspeed:
 				//XXX
@@ -1032,6 +1021,10 @@ sv_parse (server_t *sv, qmsg_t *msg, int reliable)
 			case svc_lightstyle:
 				sv_lightstyle (sv, msg);
 				break;
+		}
+		if (send) {
+			bc_len = msg->readcount - bc_len;
+			Server_Broadcast (sv, reliable, bc_data, bc_len);
 		}
 	}
 	if (sv->signon && !signon_saved) {

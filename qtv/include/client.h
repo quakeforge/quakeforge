@@ -58,6 +58,7 @@ typedef struct client_s {
 	int         delta_sequence;
 
 	struct server_s *server;
+	unsigned    spec_track;
 
 	int         connected;
 

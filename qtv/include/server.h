@@ -45,6 +45,7 @@ typedef struct player_s {
 	int         ping;
 	int         pl;
 	int         frags;
+	int         time;
 
 	plent_state_t ent;
 } player_t;

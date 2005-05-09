@@ -554,6 +554,8 @@ Server_Broadcast (server_t *sv, int reliable, byte *msg, int len)
 	svc = *msg++;
 	len--;
 	for (cl = sv->clients; cl; cl = cl->next) {
+		if ((sv->player_mask != ~0u) && !(sv->player_mask & cl->spec_track))
+			continue;
 		if (reliable) {
 			MSG_ReliableWrite_Begin (&cl->backbuf, svc, len + 1);
 			MSG_ReliableWrite_SZ (&cl->backbuf, msg, len);

@@ -211,13 +211,13 @@ cl_spawn_f (client_t *cl, void *unused)
 		MSG_WriteShort (msg, pl->frags);
 		MSG_WriteByte (msg, svc_updateping);
 		MSG_WriteByte (msg, i);
-		MSG_WriteShort (msg, 333/*XXX*/);
+		MSG_WriteShort (msg, pl->ping);
 		MSG_WriteByte (msg, svc_updatepl);
 		MSG_WriteByte (msg, i);
-		MSG_WriteByte (msg, 0/*XXX*/);
+		MSG_WriteByte (msg, pl->pl);
 		MSG_WriteByte (msg, svc_updateentertime);
 		MSG_WriteByte (msg, i);
-		MSG_WriteFloat (msg, 0/*XXX*/);
+		MSG_WriteFloat (msg, pl->time);
 		info = pl->info ? Info_MakeString (pl->info, 0) : "";
 		MSG_WriteByte (msg, svc_updateuserinfo);
 		MSG_WriteByte (msg, i);
@@ -322,6 +322,19 @@ cl_nextdl_f (client_t *cl, void *unused)
 static void
 cl_ptrack_f (client_t *cl, void *unused)
 {
+	int         i;
+
+	if (Cmd_Argc () != 2) {
+		cl->spec_track = 0;
+		return;
+	}
+	i = atoi (Cmd_Argv (1));
+	if (i < 0 || i >= MAX_CLIENTS) {
+		cl->spec_track = 0;
+		qtv_printf ("Invalid client to track\n");
+		return;
+	}
+	cl->spec_track = 1 << i;
 }
 
 static void
