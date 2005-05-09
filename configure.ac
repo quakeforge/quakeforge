@@ -40,14 +40,6 @@ AC_SUBST(ISODATE)
 
 AC_LANG_C
 
-if test "x${CFLAGS-unset}" = xunset; then
-	CFLAGS=""
-fi
-if test "$x{AR-unset}" = xunset; then
-	AR="ar"
-fi
-export AR
-
 endian=""
 case "$host_os" in
 	mingw32*)
@@ -2274,16 +2266,6 @@ AC_OUTPUT(
 	RPM/quakeforge.spec,
 
 	chmod +x RPM/build_rpm
-	if test -n "$AR" -a "$AR" != "ar"; then
-		sed -e 's/^AR="ar"$/AR="'$AR'"/' libtool > libtool.qf
-		if cmp -s libtool.qf libtool; then
-			echo libtool is unchanged
-			rm -f libtool.qf
-		else
-			rm -f libtool
-			mv libtool.qf libtool
-		fi
-	fi
 )
 
 if test "x$CCVER" = "x"; then

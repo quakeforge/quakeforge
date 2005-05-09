@@ -284,12 +284,6 @@ FlushEntityPacket (void)
 	}
 }
 
-/*
-	CL_ParsePacketEntities
-
-	An svc_packetentities has just been parsed, deal with the
-	rest of the data stream.
-*/
 void
 CL_ParsePacketEntities (qboolean delta)
 {
