@@ -584,7 +584,7 @@ SVC_Status (void)
 }
 
 /* SV_CheckLog */
-#define	LOG_HIGHWATER	4096
+#define	LOG_HIGHWATER	(MAX_DATAGRAM - 100)
 #define	LOG_FLUSH		10*60
 
 static void
