@@ -40,6 +40,14 @@ AC_SUBST(ISODATE)
 
 AC_LANG_C
 
+if test "x${CFLAGS-unset}" = xunset; then
+	CFLAGS=""
+fi
+if test "$x{AR-unset}" = xunset; then
+	AR="ar"
+fi
+export AR
+
 endian=""
 case "$host_os" in
 	mingw32*)
