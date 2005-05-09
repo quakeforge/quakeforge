@@ -396,8 +396,8 @@ SV_EmitPacketEntities (delta_t *delta, packet_entities_t *to, sizebuf_t *msg,
 }
 
 static void
-write_demoplayer (plent_state_t *from, plent_state_t *to, sizebuf_t *msg,
-				  int mask, int full)
+write_demoplayer (delta_t *delta, plent_state_t *from, plent_state_t *to,
+				  sizebuf_t *msg, int mask, int full)
 {
 	int         flags;
 	int         j;
@@ -455,12 +455,13 @@ write_demoplayer (plent_state_t *from, plent_state_t *to, sizebuf_t *msg,
 }
 
 static void
-write_player (plent_state_t *from, plent_state_t *to, sizebuf_t *msg, int mask,
-			  int full)
+write_player (delta_t *delta, plent_state_t *from, plent_state_t *to,
+			  sizebuf_t *msg, int mask, int full)
 {
 	int         flags = to->flags;
 	int         qf_bits = 0;
 	int         i;
+	int         ds = delta->delta_sequence & 0x7f;
 
 	if (full) {
 		flags |= PF_VELOCITY1 | PF_VELOCITY2 | PF_VELOCITY3 | PF_MODEL
@@ -470,6 +471,7 @@ write_player (plent_state_t *from, plent_state_t *to, sizebuf_t *msg, int mask,
 					  | PF_GLOWCOLOR | PF_COLORMOD | PF_FRAME2;
 			flags |= PF_QF;
 		}
+		ds = -1;
 	} else {
 		for (i = 0; i < 3; i++)
 			if (from->velocity[i] != to->velocity[i])
@@ -504,6 +506,8 @@ write_player (plent_state_t *from, plent_state_t *to, sizebuf_t *msg, int mask,
 	flags &= mask;
 
 	MSG_WriteByte (msg, svc_playerinfo);
+	if (delta->type == dt_tp_qtv)
+		MSG_WriteByte (msg, ds);
 	MSG_WriteByte (msg, to->number);
 	MSG_WriteShort (msg, flags);
 
@@ -560,7 +564,8 @@ SV_WritePlayersToClient (delta_t *delta, byte *pvs, sizebuf_t *msg)
 	packet_players_t *from_pack = 0;
 	plent_state_t dummy_player_state, *state = &dummy_player_state;
 	static plent_state_t null_player_state;
-	void (*write) (plent_state_t *, plent_state_t *, sizebuf_t *, int, int);
+	void (*write) (delta_t *, plent_state_t *, plent_state_t *, sizebuf_t *,
+				   int, int);
 
 	if (!null_player_state.alpha) {
 		null_player_state.alpha = 255;
@@ -586,7 +591,7 @@ SV_WritePlayersToClient (delta_t *delta, byte *pvs, sizebuf_t *msg)
 	if (delta->delta_sequence != -1) {
 		client_frame_t *fromframe;
 		fromframe = &delta->frames[delta->delta_sequence & UPDATE_MASK];
-		from_pack = &frame->players;
+		from_pack = &fromframe->players;
 		full = 0;
 	}
 
@@ -689,14 +694,17 @@ SV_WritePlayersToClient (delta_t *delta, byte *pvs, sizebuf_t *msg)
 			mask |= PF_WEAPONFRAME;
 
 		if (from_pack && from_pack->players) {
-			while (from_pack->players[k].number < state->number)
+			while (k < from_pack->num_players
+				   && from_pack->players[k].number < state->number)
 				k++;
-			if (from_pack->players[k].number == state->number) {
-				write (&from_pack->players[k], state, msg, mask, full);
+			if (k < from_pack->num_players
+				&& from_pack->players[k].number == state->number) {
+				write (delta, &from_pack->players[k], state, msg, mask, full);
 				continue;
 			}
+			full = 1;
 		}
-		write (&null_player_state, state, msg, mask, full);
+		write (delta, &null_player_state, state, msg, mask, full);
 	}
 }
 

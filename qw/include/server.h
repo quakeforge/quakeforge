@@ -139,6 +139,7 @@ typedef struct {
 typedef enum {
 	dt_tp_normal,
 	dt_tp_demo,
+	dt_tp_qtv,
 } delta_type_t;
 
 typedef enum {

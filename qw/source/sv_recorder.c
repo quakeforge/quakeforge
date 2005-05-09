@@ -351,6 +351,7 @@ SVR_AddUser (void (*write)(void *, sizebuf_t *, int), int (*frame)(void *),
 	r->next = sv.recorders;
 	sv.recorders = r;
 
+	r->delta.type = dt_tp_qtv;
 	r->delta.pvs = dt_pvs_none;
 	if (demo) {
 		r->delta.type = dt_tp_demo;

@@ -440,63 +440,87 @@ sv_packetentities (server_t *sv, qmsg_t *msg, int delta)
 }
 
 static void
-sv_playerinfo (server_t *sv, qmsg_t *msg)
+parse_player_delta (qmsg_t *msg, plent_state_t *to)
 {
-	player_t    *pl;
-	plent_state_t dummy;				// for bad player indices
-	plent_state_t *ent;
-	int          num, flags;
 	int          i;
+	int          flags;
 
-	num = MSG_ReadByte (msg);
-	if (num > MAX_SV_PLAYERS) {
-		qtv_printf ("bogus player: %d\n", num);
-		ent = &dummy;
-	} else {
-		pl = &sv->players[num];
-		ent = &pl->ent;
-	}
-	flags = ent->flags = MSG_ReadShort (msg);
-	//qtv_printf ("%2d %x\n", num, flags);
-	MSG_ReadCoordV (msg, ent->origin);
-	ent->frame = (ent->frame & 0xff00) | MSG_ReadByte (msg);
+	flags = to->flags = MSG_ReadShort (msg);
+	MSG_ReadCoordV (msg, to->origin);
+	to->frame = (to->frame & 0xff00) | MSG_ReadByte (msg);
 	if (flags & PF_MSEC)
-		ent->msec = MSG_ReadByte (msg);
+		to->msec = MSG_ReadByte (msg);
 	if (flags & PF_COMMAND)
-		MSG_ReadDeltaUsercmd (msg, &nullcmd, &ent->cmd);
+		MSG_ReadDeltaUsercmd (msg, &nullcmd, &to->cmd);
 	for (i = 0; i < 3; i++) {
 		if (flags & (PF_VELOCITY1 << i))
-			ent->velocity[i] = MSG_ReadShort (msg);
+			to->velocity[i] = MSG_ReadShort (msg);
 	}
 	if (flags & PF_MODEL)
-		ent->modelindex = MSG_ReadByte (msg);
+		to->modelindex = MSG_ReadByte (msg);
 	if (flags & PF_SKINNUM)
-		ent->skinnum = MSG_ReadByte (msg);
+		to->skinnum = MSG_ReadByte (msg);
 	if (flags & PF_EFFECTS)
-		ent->effects = (ent->effects & 0xff00) | MSG_ReadByte (msg);;
+		to->effects = (to->effects & 0xff00) | MSG_ReadByte (msg);;
 	if (flags & PF_WEAPONFRAME)
-		ent->weaponframe = MSG_ReadByte (msg);
+		to->weaponframe = MSG_ReadByte (msg);
 	if (flags & PF_QF) {
 		int         bits;
 
 		bits = MSG_ReadByte (msg);
 		if (bits & PF_ALPHA)
-			ent->alpha = MSG_ReadByte (msg);
+			to->alpha = MSG_ReadByte (msg);
 		if (bits & PF_SCALE)
-			ent->scale = MSG_ReadByte (msg);
+			to->scale = MSG_ReadByte (msg);
 		if (bits & PF_EFFECTS2)
-			ent->effects = (ent->effects & 0x00ff)
-						 | (MSG_ReadByte (msg) << 8);
+			to->effects = (to->effects & 0x00ff)
+						| (MSG_ReadByte (msg) << 8);
 		if (bits & PF_GLOWSIZE)
-			ent->glow_size = MSG_ReadByte (msg);
+			to->glow_size = MSG_ReadByte (msg);
 		if (bits & PF_GLOWCOLOR)
-			ent->glow_color = MSG_ReadByte (msg);
+			to->glow_color = MSG_ReadByte (msg);
 		if (bits & PF_COLORMOD)
-			ent->colormod = MSG_ReadByte (msg);
+			to->colormod = MSG_ReadByte (msg);
 		if (bits & PF_FRAME2)
-			ent->frame = (ent->frame & 0xff)
-					   | (MSG_ReadByte (msg) << 8);
+			to->frame = (to->frame & 0xff)
+					  | (MSG_ReadByte (msg) << 8);
 	}
+}
+
+static void
+sv_playerinfo (server_t *sv, qmsg_t *msg)
+{
+	plent_state_t dummy;				// for bad player indices
+	plent_state_t *ent;
+	plent_state_t *from, *to;
+	int          num;
+	int          fromind, toind;
+	static plent_state_t null_player_state;
+
+	if (!null_player_state.alpha) {
+		null_player_state.alpha = 255;
+		null_player_state.scale = 16;
+		null_player_state.glow_size = 0;
+		null_player_state.glow_color = 254;
+		null_player_state.colormod = 255;
+	}
+	fromind = MSG_ReadByte (msg);
+	toind = sv->netchan.incoming_sequence & UPDATE_MASK;
+	num = MSG_ReadByte (msg);
+	if (num > MAX_SV_PLAYERS) {
+		qtv_printf ("bogus player: %d\n", num);
+		ent = from = to = &dummy;
+	} else {
+		ent = &sv->players[num].ent;
+		from = &null_player_state;
+		if (fromind != 255)
+			from = &sv->player_states[fromind & UPDATE_MASK][num];
+		to = &sv->player_states[toind][num];
+		*to = *from;
+	}
+	parse_player_delta (msg, to);
+	qtv_printf ("%3d %g %g %g %d\n", fromind, to->origin[0], to->origin[1], to->origin[2], to->modelindex);
+	*ent = *to;
 }
 
 static void
