@@ -440,7 +440,7 @@ sv_packetentities (server_t *sv, qmsg_t *msg, int delta)
 }
 
 static void
-parse_player_delta (qmsg_t *msg, plent_state_t *to)
+parse_player_delta (qmsg_t *msg, plent_state_t *from, plent_state_t *to)
 {
 	int          i;
 	int          flags;
@@ -450,8 +450,9 @@ parse_player_delta (qmsg_t *msg, plent_state_t *to)
 	to->frame = (to->frame & 0xff00) | MSG_ReadByte (msg);
 	if (flags & PF_MSEC)
 		to->msec = MSG_ReadByte (msg);
+//	qtv_printf ("%02x\n", msg->message->data[msg->readcount]);
 	if (flags & PF_COMMAND)
-		MSG_ReadDeltaUsercmd (msg, &nullcmd, &to->cmd);
+		MSG_ReadDeltaUsercmd (msg, &from->cmd, &to->cmd);
 	for (i = 0; i < 3; i++) {
 		if (flags & (PF_VELOCITY1 << i))
 			to->velocity[i] = MSG_ReadShort (msg);
@@ -518,8 +519,8 @@ sv_playerinfo (server_t *sv, qmsg_t *msg)
 		to = &sv->player_states[toind][num];
 		*to = *from;
 	}
-	parse_player_delta (msg, to);
-	qtv_printf ("%3d %g %g %g %d\n", fromind, to->origin[0], to->origin[1], to->origin[2], to->modelindex);
+	parse_player_delta (msg, from, to);
+//	qtv_printf ("%3d %g %g %g %d\n", fromind, to->cmd.angles[0], to->cmd.angles[1], to->cmd.angles[2], to->modelindex);
 	*ent = *to;
 }
 
@@ -545,6 +546,11 @@ sv_setinfo (server_t *sv, qmsg_t *msg)
 	dstring_t  *key = dstring_newstr ();
 	dstring_t  *value = dstring_newstr ();
 	player_t   *pl;
+	byte       *data;
+	int         len;
+
+	len = msg->readcount - 1;
+	data = msg->message->data + len;
 
 	slot = MSG_ReadByte (msg);
 	dstring_copystr (key, MSG_ReadString (msg));
@@ -561,6 +567,8 @@ sv_setinfo (server_t *sv, qmsg_t *msg)
 	}
 	dstring_delete (key);
 	dstring_delete (value);
+	len = msg->readcount - len;
+	Server_Broadcast (sv, 1, data, len);
 }
 
 static void
@@ -569,6 +577,11 @@ sv_updateuserinfo (server_t *sv, qmsg_t *msg)
 	int         slot, uid;
 	const char *info;
 	player_t   *pl;
+	byte       *data;
+	int         len;
+
+	len = msg->readcount - 1;
+	data = msg->message->data + len;
 
 	slot = MSG_ReadByte (msg);
 	uid = MSG_ReadLong (msg);
@@ -584,6 +597,8 @@ sv_updateuserinfo (server_t *sv, qmsg_t *msg)
 		pl->info = Info_ParseString (info, MAX_INFO_STRING, 0);
 		pl->uid = uid;
 	}
+	len = msg->readcount - len;
+	Server_Broadcast (sv, 1, data, len);
 }
 
 static void
