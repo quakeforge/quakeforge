@@ -213,6 +213,7 @@ SchemeObject bi_cdr (SchemeObject args, Machine m)
 
 SchemeObject bi_apply (SchemeObject args, Machine m)
 {
+    local SchemeObject cur, prev;
     if (args == [Nil nil]) {
             return [Error type: "apply"
                           message: "expected at least 1 argument"
@@ -224,8 +225,18 @@ SchemeObject bi_apply (SchemeObject args, Machine m)
                                       [[args car] printForm])
                           by: m];
     }
+
+    prev = NIL;
     
-    [m stack: [[args cdr] car]];
+    for (cur = args; [cur cdr] != [Nil nil]; cur = [cur cdr]) {
+            prev = cur;
+    }
+
+    if (prev) {
+            [prev cdr: [cur car]];
+    }
+    
+    [m stack: [args cdr]];
     [[args car] invokeOnMachine: m];
     return NIL;
 }
