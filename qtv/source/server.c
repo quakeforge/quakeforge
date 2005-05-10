@@ -472,7 +472,7 @@ server_run (server_t *sv)
 		int         frame = (sv->netchan.outgoing_sequence) & UPDATE_MASK;
 		sv->next_run = realtime + 0.03;
 		sv->frames[frame].delta_sequence = sv->delta;
-		if (sv->delta != -1) {
+		if (sv->validsequence && sv->delta != -1) {
 			delta_msg[1] = sv->delta;
 			Netchan_Transmit (&sv->netchan, sizeof (delta_msg), delta_msg);
 			return;

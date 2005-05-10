@@ -304,6 +304,26 @@ sv_parse_delta (qmsg_t *msg, int bits, entity_state_t *ent)
 }
 
 static void
+flush_entity_packet (server_t *sv, qmsg_t *msg)
+{
+	entity_state_t dummy;
+	int         word;
+
+	memset (&dummy, 0, sizeof (dummy));
+	sv->frames[sv->netchan.incoming_sequence & UPDATE_MASK].invalid = true;
+	while (1) {
+		word = MSG_ReadShort (msg);
+		if (msg->badread) {
+			qtv_printf ("msg_badread in packetentities\n");
+			return;
+		}
+		if (!word)
+			break;
+		sv_parse_delta (msg, word, &dummy);
+	}
+}
+
+static void
 sv_packetentities (server_t *sv, qmsg_t *msg, int delta)
 {
 	unsigned short word;
@@ -328,13 +348,15 @@ sv_packetentities (server_t *sv, qmsg_t *msg, int delta)
 	full = 0;
 	if (oldpacket != -1) {
 		if (sv->netchan.outgoing_sequence - oldpacket > UPDATE_BACKUP) {
-			//XXX flush_entity_packet ();
+			flush_entity_packet (sv, msg);
 			return;
 		}
 		oldp = &sv->frames[oldpacket & UPDATE_MASK].entities;
+		sv->validsequence = sv->netchan.incoming_sequence;
 	} else {
 		oldp = &dummy;
 		dummy.num_entities = 0;
+		sv->validsequence = sv->netchan.incoming_sequence;
 		full = 1;
 		memset (sv->ent_valid, 0, sizeof (sv->ent_valid));
 	}
@@ -355,7 +377,7 @@ sv_packetentities (server_t *sv, qmsg_t *msg, int delta)
 				if (newindex >= MAX_DEMO_PACKET_ENTITIES) {
 					qtv_printf ("A too many packet entities\n");
 					Sys_Quit ();
-					//XXX flush_entitiy_packet
+					flush_entity_packet (sv, msg);
 					return;
 				}
 				newp->entities[newindex] = oldp->entities[oldindex];
@@ -376,13 +398,13 @@ sv_packetentities (server_t *sv, qmsg_t *msg, int delta)
 		while (newnum > oldnum) {
 			if (full) {
 				qtv_printf ("WARNING: oldcopy on full update\n");
-				//XXX flush_entitiy_packet
+				flush_entity_packet (sv, msg);
 				return;
 			}
 			if (newindex >= MAX_DEMO_PACKET_ENTITIES) {
 				qtv_printf ("B too many packet entities\n");
 				Sys_Quit ();
-				//XXX flush_entitiy_packet
+				flush_entity_packet (sv, msg);
 				return;
 			}
 			newp->entities[newindex] = oldp->entities[oldindex];
@@ -400,9 +422,8 @@ sv_packetentities (server_t *sv, qmsg_t *msg, int delta)
 		if (newnum < oldnum) {
 			if (word & U_REMOVE) {
 				if (full) {
-					sv->delta = 0;	//XXX -1?
 					qtv_printf ("WARNING: U_REMOVE on full update\n");
-					//XXX flush_entitiy_packet
+					flush_entity_packet (sv, msg);
 					return;
 				}
 				continue;
@@ -410,7 +431,7 @@ sv_packetentities (server_t *sv, qmsg_t *msg, int delta)
 			if (newindex >= MAX_DEMO_PACKET_ENTITIES) {
 				qtv_printf ("C too many packet entities\n");
 				Sys_Quit ();
-				//XXX flush_entitiy_packet
+				flush_entity_packet (sv, msg);
 				return;
 			}
 			newp->entities[newindex] = sv->baselines[newnum];
@@ -421,7 +442,7 @@ sv_packetentities (server_t *sv, qmsg_t *msg, int delta)
 		}
 		if (newnum == oldnum) {
 			if (full) {
-				sv->delta = 0;	//XXX -1?
+				sv->validsequence = 0;
 				qtv_printf ("WARNING: delta on full update\n");
 			}
 			if (word & U_REMOVE) {

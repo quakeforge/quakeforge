@@ -92,6 +92,7 @@ typedef struct server_s {
 	struct client_s *clients;
 
 	int         delta;
+	int         validsequence;
 
 	frame_t     frames[UPDATE_BACKUP];
 	entity_state_t entities[MAX_SV_ENTITIES];
