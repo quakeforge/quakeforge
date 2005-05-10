@@ -315,10 +315,11 @@ Netchan_Transmit (netchan_t *chan, int length, byte *data)
 	if (net_nochoke)
 		chan->cleartime = *net_realtime;
 
-	if (showpackets->int_val)
-		Con_Printf ("--> s=%i(%i) a=%i(%i) %i\n", chan->outgoing_sequence,
+	if (showpackets->int_val & 1)
+		Con_Printf ("--> s=%i(%i) a=%i(%i) %-4i %i\n", chan->outgoing_sequence,
 					send_reliable, chan->incoming_sequence,
-					chan->incoming_reliable_sequence, send.cursize);
+					chan->incoming_reliable_sequence, send.cursize,
+					chan->outgoing_sequence - chan->incoming_sequence);
 }
 
 /*
@@ -352,7 +353,7 @@ Netchan_Process (netchan_t *chan)
 	sequence &= ~(1 << 31);
 	sequence_ack &= ~(1 << 31);
 
-	if (showpackets->int_val)
+	if (showpackets->int_val & 2)
 		Con_Printf ("<-- s=%i(%i) a=%i(%i) %i\n", sequence, reliable_message,
 					sequence_ack, reliable_ack, net_message->message->cursize);
 
