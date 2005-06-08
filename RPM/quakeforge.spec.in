@@ -16,7 +16,7 @@
 %define BUILD_GL    '@CAN_BUILD_GL@'
 %define BUILD_SW    '@CAN_BUILD_SW@'
 
-%define ALSA_PLUGIN '@ALSA_PLUGIN@'
+%define ALSA_PLUGIN 'snd_output_@ALSA_PLUGIN@'
 
 %define fs_sharepath %{_prefix}/share/games/quakeforge
 

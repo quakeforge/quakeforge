@@ -963,7 +963,7 @@ fi
 AC_SUBST(ALSA_LIBS)
 AC_SUBST(HAVE_ALSA)
 
-SOUND_TYPES="$SOUND_TYPES NULL DISK"
+SOUND_TYPES="$SOUND_TYPES DISK"
 
 dnl MME
 if test "x$ac_cv_header_mme_mmsystem_h" = "xyes" -a \
@@ -1905,9 +1905,9 @@ AC_SUBST(HAVE_SDL)
 AC_SUBST(HAVE_SVGA)
 AC_SUBST(HAVE_X)
 
-ALSA_PLUGIN="snd_output_alsa"
+ALSA_PLUGIN="alsa"
 if test "`echo $SOUND_TYPES | grep ALSA0_9`"; then
-	ALSA_PLUGIN="snd_output_alsa0_9"
+	ALSA_PLUGIN="alsa0_9"
 fi
 
 if test -n "$CL_TARGETS"; then
@@ -1916,7 +1916,7 @@ if test -n "$CL_TARGETS"; then
 	JOY_TARGETS="libQFjs.la"
 	# the following will catch both ALSA and ALSA0_9
 	if test "`echo $SOUND_TYPES | grep ALSA`"; then
-		SND_PLUGIN_TARGETS="$SND_PLUGIN_TARGETS $ALSA_PLUGIN.la"
+		SND_PLUGIN_TARGETS="$SND_PLUGIN_TARGETS snd_output_$ALSA_PLUGIN.la"
 	fi
 	if test "`echo $SOUND_TYPES | grep MME`"; then
 		SND_PLUGIN_TARGETS="$SND_PLUGIN_TARGETS snd_output_mme.la"
@@ -1942,6 +1942,35 @@ if test -n "$CL_TARGETS"; then
 	if test "$SOUND_TYPES"; then
 		SND_REND_TARGETS="$SND_REND_TARGETS snd_render_default.la"
 	fi
+
+	# priority sorted list for default sound driver in order of increasing
+	# priority. default is no driver.
+	SND_OUTPUT_DEFAULT=""
+	if test "`echo $SOUND_TYPES | grep SDL`"; then
+		SND_OUTPUT_DEFAULT="sdl"
+	fi
+	if test "`echo $SOUND_TYPES | grep MME`"; then
+		SND_OUTPUT_DEFAULT="mme"
+	fi
+	if test "`echo $SOUND_TYPES | grep SGI`"; then
+		SND_OUTPUT_DEFAULT="sgi"
+	fi
+	if test "`echo $SOUND_TYPES | grep SUN`"; then
+		SND_OUTPUT_DEFAULT="sun"
+	fi
+	if test "`echo $SOUND_TYPES | grep Win32`"; then
+		SND_OUTPUT_DEFAULT="win"
+	fi
+	if test "`echo $SOUND_TYPES | grep DirectX`"; then
+		SND_OUTPUT_DEFAULT="dx"
+	fi
+	if test "`echo $SOUND_TYPES | grep OSS`"; then
+		SND_OUTPUT_DEFAULT="oss"
+	fi
+	if test "`echo $SOUND_TYPES | grep ALSA`"; then
+		SND_OUTPUT_DEFAULT="$ALSA_PLUGIN"
+	fi
+	AC_DEFINE_UNQUOTED(SND_OUTPUT_DEFAULT, "$SND_OUTPUT_DEFAULT", [Define this to the default sound output driver.])
 else
 	unset CDTYPE
 	CD_PLUGIN_TARGETS=""
@@ -2292,7 +2321,7 @@ AC_MSG_RESULT([
 	Server support     :${SV_TARGETS- no}
 	Client support     :${CL_TARGETS- no}
 	Tools support      :${TOOLS_TARGETS- no}
-	Sound support      :${SOUND_TYPES- no}
+	Sound support      :${SOUND_TYPES- no} ${SND_OUTPUT_DEFAULT}
 	CD Audio system    :${CDTYPE- no}
 	IPv6 networking    : $NETTYPE_IPV6
 	Compression support: gz=$HAVE_ZLIB ogg=$HAVE_VORBIS png=$HAVE_PNG
