@@ -70,7 +70,7 @@ static __attribute__ ((unused)) const char rcsid[] =
 
 #include "compat.h"
 
-console_data_t con_data;
+static console_data_t sv_con_data;
 
 static QFile  *log_file;
 static cvar_t *sv_logfile;
@@ -225,7 +225,7 @@ C_ExecLine (const char *line)
 {
 	if (line[0] == '/')
 		line++;
-	Cbuf_AddText (con_data.cbuf, line);
+	Cbuf_AddText (sv_con_data.cbuf, line);
 }
 
 static void
@@ -533,7 +533,7 @@ static plugin_data_t plugin_info_data = {
 	&plugin_info_general_data,
 	0,
 	0,
-	&con_data,
+	&sv_con_data,
 };
 
 static plugin_t plugin_info = {
