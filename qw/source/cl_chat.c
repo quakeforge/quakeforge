@@ -66,7 +66,9 @@ CL_Ignore_Compare (const void *ele, const void *cmp, void *unused)
 static void
 CL_Ignore_Sanity_Check (void)
 {
-	static qboolean iterator (ignore_t *ig, llist_node_t *node)
+	auto qboolean iterator (ignore_t *ig, llist_node_t *node);
+	qboolean
+	iterator (ignore_t *ig, llist_node_t *node)
 	{
 		if (cl.players[ig->slot].userid != ig->uid) // We got out of sync somehow
 			llist_remove (node);
@@ -80,12 +82,14 @@ CL_Ignore_f (void)
 {
 	CL_Ignore_Sanity_Check ();
 	if (Cmd_Argc () == 1) {
-		static qboolean live_iterator (ignore_t *ig, llist_node_t *node)
+		auto qboolean live_iterator (ignore_t *ig, llist_node_t *node);
+		qboolean live_iterator (ignore_t *ig, llist_node_t *node)
 		{
 			Sys_Printf ("%5i - %s\n", ig->uid, Info_ValueForKey (cl.players[ig->slot].userinfo, "name"));
 			return true;
 		}
-		static qboolean dead_iterator (ignore_t *ig, llist_node_t *node)
+		auto qboolean dead_iterator (ignore_t *ig, llist_node_t *node);
+		qboolean dead_iterator (ignore_t *ig, llist_node_t *node)
 		{
 			Sys_Printf ("%s\n", ig->lastname);
 			return true;
@@ -145,7 +149,8 @@ CL_Chat_Allow_Message (const char *str)
 	dstring_t *test = dstring_newstr ();
 	qboolean allowed = true;
 
-	static qboolean iterator (ignore_t *ig, llist_node_t *node)
+	auto qboolean iterator (ignore_t *ig, llist_node_t *node);
+	qboolean iterator (ignore_t *ig, llist_node_t *node)
 	{
 		if (cl.players[ig->slot].userid != ig->uid) { // We got out of sync somehow
 			llist_remove (node);
@@ -183,7 +188,8 @@ CL_Chat_Check_Name (const char *name, int slot)
 {
 	ignore_t *found = 0;
 
-	static qboolean iterator (ignore_t *ig, llist_node_t *node)
+	auto qboolean iterator (ignore_t *ig, llist_node_t *node);
+	qboolean iterator (ignore_t *ig, llist_node_t *node)
 	{
 		if (!strcmp (ig->lastname, name)) {
 			found = ig;

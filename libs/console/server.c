@@ -70,7 +70,7 @@ static __attribute__ ((unused)) const char rcsid[] =
 
 #include "compat.h"
 
-static console_data_t con_data;
+console_data_t con_data;
 
 static QFile  *log_file;
 static cvar_t *sv_logfile;
@@ -346,7 +346,7 @@ C_Print (const char *fmt, va_list args)
 
 	dvsprintf (buffer, fmt, args);
 
-	txt = buffer->str;
+	txt = (unsigned char *) buffer->str;
 
 	if (log_file) {
 		Qputs (log_file, buffer->str);

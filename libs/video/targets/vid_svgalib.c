@@ -70,7 +70,7 @@ static vga_modeinfo *modes;
 
 static byte  vid_current_palette[768];
 static byte  backingbuf[48 * 24];
-static char *framebuffer_ptr;
+static byte *framebuffer_ptr;
 
 static int   svgalib_inited = 0;
 static int   svgalib_backgrounded = 0;
@@ -322,7 +322,7 @@ VID_SetMode (int modenum, unsigned char *palette)
 	}
 	VID_SetPalette (palette);
 
-	VGA_pagebase = vid.direct = framebuffer_ptr = (char *) vga_getgraphmem ();
+	VGA_pagebase = vid.direct = framebuffer_ptr = vga_getgraphmem ();
 #if 0
 	if (vga_setlinearaddressing () > 0) {
 		framebuffer_ptr = (char *) vga_getgraphmem ();

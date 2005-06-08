@@ -225,7 +225,7 @@ ascii_dump_buf (unsigned char *buf, int len)
 }
 */
 void
-Log_Incoming_Packet (const char *p, int len, int has_sequence)
+Log_Incoming_Packet (const byte *p, int len, int has_sequence)
 {
 	if (!net_loglevel->int_val)
 		return;
@@ -249,7 +249,7 @@ Log_Incoming_Packet (const char *p, int len, int has_sequence)
 }
 
 void
-Log_Outgoing_Packet (const char *p, int len, int has_sequence)
+Log_Outgoing_Packet (const byte *p, int len, int has_sequence)
 {
 	if (!net_loglevel->int_val)
 		return;
@@ -281,6 +281,8 @@ Log_Delta (int bits)
 	// set everything to the state we are delta'ing from
 
 	to.number = bits & 511;
+	to.frame = 0;
+	to.effects = 0;
 	bits &= ~511;
 
 	if (bits & U_MOREBITS) {			// read in the low order bits

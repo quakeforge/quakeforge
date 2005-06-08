@@ -89,7 +89,9 @@ GIB_Thread_Count (void)
 void
 GIB_Thread_Execute (void)
 {
-	static qboolean iterator (cbuf_t *cbuf, llist_node_t *node)
+	auto qboolean iterator (cbuf_t *cbuf, llist_node_t *node);
+	qboolean
+	iterator (cbuf_t *cbuf, llist_node_t *node)
 	{
 		if (GIB_DATA(cbuf)->program)
 			Cbuf_Execute_Stack (cbuf);

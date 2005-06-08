@@ -414,7 +414,7 @@ SV_SpawnServer (const char *server)
 
 	// load and spawn all other entities
 	*sv_globals.time = sv.time;
-	if ((buf = QFS_LoadFile (va ("maps/%s.ent", server), 0))) {
+	if ((buf = (char *) QFS_LoadFile (va ("maps/%s.ent", server), 0))) {
 		ED_LoadFromFile (&sv_pr_state, buf);
 		free (buf);
 	} else {

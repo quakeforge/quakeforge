@@ -166,7 +166,7 @@ LightWorld (void)
 	VisStats ();
 	RunThreadsOn (LightThread);
 
-	BSP_AddLighting (bsp, lightdata->str, lightdata->size);
+	BSP_AddLighting (bsp, (byte *) lightdata->str, lightdata->size);
 
 	if (options.verbosity >= 0)
 		printf ("lightdatasize: %i\n", bsp->lightdatasize);

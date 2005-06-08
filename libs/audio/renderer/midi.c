@@ -73,6 +73,8 @@ get_info (void * handle) {
 	wavinfo_t   info;
 	struct _WM_Info *wm_info;
 
+	memset (&info, 0, sizeof (info));
+
 	if ((wm_info = WildMidi_GetInfo (handle)) == NULL) {
 		Sys_Printf ("Could not obtain midi information\n");
 		return info;

@@ -212,8 +212,7 @@ get_info (QFile *file)
 
 	wavinfo_t   info;
 
-
-	info.rate = 0;
+	memset (&info, 0, sizeof (info));
 
 	if (!(riff = riff_read (file))) {
 		Sys_Printf ("bad riff file\n");

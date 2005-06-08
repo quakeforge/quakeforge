@@ -231,7 +231,7 @@ wad_extract (wad_t *wad, lumpinfo_t *pf)
 	size_t      count;
 	int         len, i;
 	QFile      *file;
-	char        buffer[16384];
+	byte        buffer[16384];
 	pcx_t      *pcx;
 	qpic_t     *qpic;
 	miptex_t   *mip;

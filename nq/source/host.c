@@ -446,7 +446,7 @@ SV_DropClient (qboolean crash)
 void
 Host_ShutdownServer (qboolean crash)
 {
-	char        message[4];
+	byte        message[4];
 	double      start;
 	int         count, i;
 	sizebuf_t   buf;

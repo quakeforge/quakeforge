@@ -1136,7 +1136,7 @@ Sbar_LogFrags (void)
 		fph = calc_fph (f, total);
 
 		name = malloc (strlen (s->name) + 1);
-		for (cp = s->name, d = 0; *cp; cp++, d++)
+		for (cp = (byte *) s->name, d = 0; *cp; cp++, d++)
 			name[d] = sys_char_map[*cp];
 		name[d] = 0;
 		

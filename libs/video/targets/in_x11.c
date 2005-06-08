@@ -188,7 +188,7 @@ enter_notify (XEvent *event)
 static void
 XLateKey (XKeyEvent * ev, int *k, int *u)
 {
-	unsigned char buffer[4];
+	char        buffer[4];
 	int         bytes, unicode;
 	int         key = 0;
 	KeySym      keysym, shifted_keysym;
@@ -197,7 +197,7 @@ XLateKey (XKeyEvent * ev, int *k, int *u)
 	keysym = XLookupKeysym (ev, 0);
 	bytes = XLookupString (ev, buffer, sizeof(buffer), &shifted_keysym,
 						   &compose);
-	unicode = buffer[0];
+	unicode = (byte) buffer[0];
 
 	switch (keysym) {
 		case XK_KP_Page_Up:

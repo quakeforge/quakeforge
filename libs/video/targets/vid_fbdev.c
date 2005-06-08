@@ -92,7 +92,7 @@ static int  fbdev_backgrounded = 0;
 static cvar_t *vid_redrawfull;
 static cvar_t *vid_waitforrefresh;
 
-static char *framebuffer_ptr;
+static byte *framebuffer_ptr;
 
 static byte backingbuf[48 * 24];
 
@@ -321,7 +321,7 @@ VID_SetMode (const char *name, unsigned char *palette)
 	smem_start = (unsigned long)fix.smem_start & PAGE_MASK;
 	smem_offset = (unsigned long)fix.smem_start & ~PAGE_MASK;
 	fb_map_length = (smem_offset+fix.smem_len+~PAGE_MASK) & PAGE_MASK;
-	fb_map_addr = (char *)mmap(0, fb_map_length, PROT_WRITE, MAP_SHARED,
+	fb_map_addr = mmap(0, fb_map_length, PROT_WRITE, MAP_SHARED,
 							   fb_fd, 0);
 	if (!fb_map_addr)
 		Sys_Error ("This mode isn't hapnin'");

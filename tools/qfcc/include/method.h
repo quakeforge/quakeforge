@@ -102,6 +102,4 @@ void clear_selectors (void);
 
 struct expr_s *method_check_params (method_t *method, struct expr_s *args);
 
-extern struct hashtab_s *known_methods;
-
 #endif//__method_h

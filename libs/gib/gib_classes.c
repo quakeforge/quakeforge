@@ -192,7 +192,8 @@ Object_Class_Children_f (gib_object_t *obj, gib_method_t *method, void *data,
 	unsigned int size;
 	unsigned int i = 0;
 	
-	static qboolean
+	auto qboolean iterator (gib_class_t *class, void *unused);
+	qboolean
 	iterator (gib_class_t *class, void *unused)
 	{
 		reply[i++] = class->name;
@@ -610,13 +611,15 @@ GIB_Classes_Build_Scripted (const char *name, const char *parentname,
 	gib_classdesc_t desc;
 	enum {CLASS, INSTANCE} mode = INSTANCE;
 	
-	static void
+	auto void mtabfree (void *mtab, void *unused);
+	void
 	mtabfree (void *mtab, void *unused)
 	{
 		free (mtab);
 	}
 
-	static const char *
+	auto const char *fname (const char *str);
+	const char *
 	fname (const char *str)
 	{
 		if (mode == INSTANCE)

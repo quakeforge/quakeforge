@@ -141,6 +141,4 @@ void Menu_KeyEvent (knum_t key, short unicode, qboolean down);
 void Menu_Enter (void);
 void Menu_Leave (void);
 
-extern struct cvar_s *con_size;
-
 #endif // __console_h

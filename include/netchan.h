@@ -76,8 +76,8 @@ qboolean NET_IsClientLegal(netadr_t *adr);
 
 int Net_Log_Init (const char **sound_precache);
 void Net_LogPrintf (const char *fmt, ...) __attribute__ ((format (printf, 1, 2)));
-void Log_Incoming_Packet (const char *p, int len, int has_sequence);
-void Log_Outgoing_Packet (const char *p, int len, int has_sequence);
+void Log_Incoming_Packet (const byte *p, int len, int has_sequence);
+void Log_Outgoing_Packet (const byte *p, int len, int has_sequence);
 void Net_LogStop (void);
 void Analyze_Client_Packet (const byte * data, int len, int has_sequence);
 void Analyze_Server_Packet (const byte * data, int len, int has_sequence);

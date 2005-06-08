@@ -35,7 +35,7 @@
 #include "QF/quakeio.h"
 
 typedef struct riff_d_chunk_s {
-	unsigned char name[4];
+	char        name[4];
 	unsigned    len;
 } riff_d_chunk_t;
 
@@ -107,8 +107,10 @@ typedef struct riff_list_s {
 } riff_list_t;
 typedef riff_list_t riff_t;	// a riff file is one huge list chunk
 
-#define RIFF_SWITCH(name) switch (((name)[0] << 24) | ((name)[1] << 16) \
-								  | ((name)[2] << 8) | (name)[3])
+#define RIFF_SWITCH(name) switch ((((unsigned char) (name)[0]) << 24) \
+								  | (((unsigned char) (name)[1]) << 16) \
+								  | (((unsigned char) (name)[2]) << 8) \
+								  | ((unsigned char) (name)[3]))
 #define RIFF_CASE(a,b,c,d) (((unsigned char)(a) << 24) \
 							| ((unsigned char)(b) << 16) \
 							| ((unsigned char)(c) << 8) \

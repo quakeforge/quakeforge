@@ -313,7 +313,7 @@ GL_Common_Init_Cvars (void)
 static void
 CheckGLVersionString (void)
 {
-	gl_version = qfglGetString (GL_VERSION);
+	gl_version = (char *) qfglGetString (GL_VERSION);
 	if (sscanf (gl_version, "%d.%d", &gl_major, &gl_minor) == 2) {
 		gl_release_number = 0;
 		if (gl_major >= 1) {
@@ -337,11 +337,11 @@ CheckGLVersionString (void)
 	}
 	Con_Printf ("GL_VERSION: %s\n", gl_version);
 
-	gl_vendor = qfglGetString (GL_VENDOR);
+	gl_vendor = (char *) qfglGetString (GL_VENDOR);
 	Con_Printf ("GL_VENDOR: %s\n", gl_vendor);
-	gl_renderer = qfglGetString (GL_RENDERER);
+	gl_renderer = (char *) qfglGetString (GL_RENDERER);
 	Con_Printf ("GL_RENDERER: %s\n", gl_renderer);
-	gl_extensions = qfglGetString (GL_EXTENSIONS);
+	gl_extensions = (char *) qfglGetString (GL_EXTENSIONS);
 	Con_Printf ("GL_EXTENSIONS: %s\n", gl_extensions);
 
 	if (strstr (gl_renderer, "Mesa DRI Mach64"))

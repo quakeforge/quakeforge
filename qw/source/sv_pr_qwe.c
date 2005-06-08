@@ -229,7 +229,7 @@ PF_str2byte (progs_t * pr)
 static void
 PF_str2short (progs_t * pr)
 {
-	const unsigned char *str = P_GSTRING (pr, 0);
+	const byte *str = (byte *) P_GSTRING (pr, 0);
 
 	R_FLOAT (pr) = (short) ((str[1] << 8) | str[0]);
 }
@@ -429,10 +429,10 @@ PF_strstr (progs_t * pr)
 }
 
 static inline void
-clean_text (unsigned char *text)
+clean_text (char *text)
 {
 	while (*text) {
-		*text = sys_char_map[*text];
+		*text = sys_char_map[(byte) *text];
 		text++;
 	}
 }

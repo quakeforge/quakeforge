@@ -51,8 +51,8 @@ typedef struct snd_output_funcs_s {
 } snd_output_funcs_t;
 
 typedef struct snd_output_data_s {
-	int		*soundtime;
-	int		*paintedtime;
+	unsigned   *soundtime;
+	unsigned   *paintedtime;
 } snd_output_data_t;
 
 #endif // __QF_plugin_snd_output_h_

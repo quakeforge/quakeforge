@@ -142,7 +142,7 @@ Info_SetValueForStarKey (info_t *info, const char *key, const char *value,
 	}
 	if (!(str = strdup (value)))
 		Sys_Error ("Info_SetValueForStarKey: out of memory");
-	for (d = s = str; *s; s++) {
+	for (d = s = (byte *) str; *s; s++) {
 		if (flags & 1) {
 			*s &= 127;
 			if (*s < 32)

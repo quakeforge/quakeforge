@@ -169,7 +169,8 @@ GIB_Function_Prepare_Args (cbuf_t * cbuf, const char **args, unsigned int
 	gib_var_t  *var;
 	static char argss[] = "args";
 
-	static qboolean 
+	auto qboolean iterate (char *arg, llist_node_t *node);
+	qboolean 
 	iterate (char *arg, llist_node_t *node)
 	{	
 		var = GIB_Var_Get_Complex (&GIB_DATA(cbuf)->locals, &zero,
@@ -207,7 +208,8 @@ GIB_Function_Prepare_Args_D (cbuf_t * cbuf, dstring_t **args, unsigned int
 	gib_var_t  *var;
 	static char argss[] = "args";
 
-	static qboolean 
+	auto qboolean iterate (char *arg, llist_node_t *node);
+	qboolean 
 	iterate (char *arg, llist_node_t *node)
 	{	
 		var = GIB_Var_Get_Complex (&GIB_DATA(cbuf)->locals, &zero,

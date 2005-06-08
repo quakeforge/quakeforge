@@ -512,7 +512,7 @@ CL_WriteSetDemoMessage (void)
 void
 CL_Record (const char *argv1)
 {
-	char        buf_data[MAX_MSGLEN + 10];	// + 10 for header
+	byte        buf_data[MAX_MSGLEN + 10];	// + 10 for header
 	char        name[MAX_OSPATH];
 	char       *s;
 	char        timestring[20];

@@ -228,6 +228,8 @@ PM_PlayerMove (const vec3_t start, const vec3_t end)
 		if (pe->hull) {
 			hull = pe->hull;
 			check_box = 0;
+			VectorZero (mins);
+			VectorZero (maxs);
 		} else {
 			check_box = 1;
 			if (pe->model) {

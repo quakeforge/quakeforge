@@ -209,7 +209,7 @@ typedef struct client_s {
 	// back buffers for client reliable data
 	backbuf_t       backbuf;
 
-	byte			stufftext_buf[MAX_STUFFTEXT];
+	char			stufftext_buf[MAX_STUFFTEXT];
 
 	double			connection_started;	// or time of disconnect for zombies
 	qboolean		send_message;		// set on frames a datagram arived on

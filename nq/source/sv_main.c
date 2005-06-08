@@ -850,7 +850,7 @@ SV_CreateBaseline (void)
 static void
 SV_SendReconnect (void)
 {
-	char        data[128];
+	byte        data[128];
 	sizebuf_t   msg;
 
 	msg.data = data;
@@ -1012,7 +1012,7 @@ SV_SpawnServer (const char *server)
 	*sv_globals.serverflags = svs.serverflags;
 
 	*sv_globals.time = sv.time;
-	if ((buf = QFS_LoadFile (va ("maps/%s.ent", server), 0))) {
+	if ((buf = (char *) QFS_LoadFile (va ("maps/%s.ent", server), 0))) {
 		ED_LoadFromFile (&sv_pr_state, buf);
 		free (buf);
 	} else {

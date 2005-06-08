@@ -364,7 +364,7 @@ UDP_CheckNewConnections (void)
 int
 UDP_Read (int socket, byte * buf, int len, struct qsockaddr *addr)
 {
-	int         addrlen = sizeof (struct qsockaddr);
+	size_t      addrlen = sizeof (struct qsockaddr);
 	int         ret;
 
 	ret = recvfrom (socket, buf, len, 0, (struct sockaddr *) addr, &addrlen);
@@ -451,7 +451,7 @@ int
 UDP_GetSocketAddr (int socket, struct qsockaddr *addr)
 {
 	unsigned int a;
-	int          addrlen = sizeof (struct qsockaddr);
+	size_t       addrlen = sizeof (struct qsockaddr);
 
 	memset (addr, 0, sizeof (struct qsockaddr));
 

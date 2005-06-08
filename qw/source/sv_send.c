@@ -171,7 +171,8 @@ SV_Print (const char *fmt, va_list args)
 	struct tm  *local = NULL;
 	qboolean    timestamps = false;
 
-	unsigned char *in, *out;
+	char        *in;
+	unsigned char *out;
 
 	vsnprintf (premsg, sizeof (premsg), fmt, args);
 	in = premsg;
@@ -179,7 +180,7 @@ SV_Print (const char *fmt, va_list args)
 
 	// expand FFnickFF to nick <userid>
 	do {
-		switch (*in) {
+		switch ((byte) *in) {
 			case 0xFF: {
 				char *end = strchr (in + 1, 0xFF);
 				int userid = 0;
@@ -197,7 +198,7 @@ SV_Print (const char *fmt, va_list args)
 						break;
 					}
 				}
-				len = snprintf (out, sizeof (msg) - (out - msg),
+				len = snprintf ((char *) out, sizeof (msg) - (out - msg),
 								"%s <%d>", in + 1, userid);
 				out += len;
 				in = end + 1;
@@ -210,7 +211,7 @@ SV_Print (const char *fmt, va_list args)
 	*out = '\0';
 
 	if (sv_redirected) {				// Add to redirected message
-		dstring_appendstr (&outputbuf, msg);
+		dstring_appendstr (&outputbuf, (char *) msg);
 	}
 	if (!con_printf_no_log) {
 		// We want to output to console and maybe logfile
@@ -242,8 +243,8 @@ SV_Print (const char *fmt, va_list args)
 static void
 SV_PrintToClient (client_t *cl, int level, const char *string)
 {
-	static unsigned char *buffer;
-	const unsigned char *a;
+	static char *buffer;
+	const char *a;
 	unsigned char *b;
 	int size;
 	static int buffer_size;
@@ -260,7 +261,7 @@ SV_PrintToClient (client_t *cl, int level, const char *string)
 	}
 
 	a = string;
-	b = buffer;
+	b = (byte *) buffer;
 	// strip 0xFFs
 	while ((*b = *a++))
 		if (*b != 0xFF)

@@ -366,7 +366,7 @@ static void
 SV_Record (char *name)
 {
 	sizebuf_t   buf;
-	char        buf_data[MAX_MSGLEN];
+	byte        buf_data[MAX_MSGLEN];
 	int         n, i;
 	const char *info;
 
@@ -599,7 +599,7 @@ SV_Record (char *name)
 */
 
 static char *
-SV_CleanName (const unsigned char *name)
+SV_CleanName (const char *name)
 {
 	static char *text;
 	static size_t text_len;
@@ -612,7 +612,7 @@ SV_CleanName (const unsigned char *name)
 
 	out = text;
 	do {
-		c = sys_char_map[*name++];
+		c = sys_char_map[(byte) *name++];
 		if (c != '_')
 			*out++ = c;
 	} while (c);

@@ -133,7 +133,8 @@ vorbis_read (OggVorbis_File *vf, byte *buf, int len)
 	int         current_section;
 
 	while (len) {
-		int         res = ov_read (vf, buf, len, 0, 2, 1, &current_section);
+		int         res = ov_read (vf, (char *) buf, len, 0, 2, 1,
+								   &current_section);
 		if (res > 0) {
 			count += res;
 			len -= res;

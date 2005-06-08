@@ -132,7 +132,7 @@ GLF_FindFunctions (void)
   string. Don't be fooled by sub-strings, etc.
 */
 static qboolean
-QFGL_ParseExtensionList (const GLubyte * list, const char *name)
+QFGL_ParseExtensionList (const GLubyte *list, const char *name)
 {
 	const char *start;
 	char       *where, *terminator;
@@ -141,11 +141,11 @@ QFGL_ParseExtensionList (const GLubyte * list, const char *name)
 		return 0;
 
 	// Extension names must not have spaces.
-	where = (GLubyte *) strchr (name, ' ');
+	where = strchr (name, ' ');
 	if (where || *name == '\0')
 		return 0;
 
-	start = list;
+	start = (const char *) list;
 	for (;;) {
 		where = strstr (start, name);
 		if (!where)

@@ -84,8 +84,8 @@ typedef struct snd_render_data_s {
 	double *host_frametime;
 	int *viewentity;
 
-	int *soundtime;
-	int *paintedtime;
+	unsigned int *soundtime;
+	unsigned int *paintedtime;
 	struct plugin_s *output;
 } snd_render_data_t;
 

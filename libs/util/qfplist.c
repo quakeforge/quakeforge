@@ -61,7 +61,7 @@ init_quotables (void)
 							  "abcdefghijklmnopqrstuvwxyz!#$%&*+-./:?@|~_^";
 	const byte *c;
 	memset (quotable_bitmap, ~0, sizeof (quotable_bitmap));
-	for (c = unquotables; *c; c++)
+	for (c = (byte *) unquotables; *c; c++)
 		quotable_bitmap[*c / 8] &= ~(1 << (*c % 8));
 }
 

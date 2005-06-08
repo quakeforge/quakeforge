@@ -393,7 +393,7 @@ ClusterFlow (int clusternum)
 
 	i = CompressRow (outbuffer, compressed);
 	cluster->visofs = visdata->size;
-	dstring_append (visdata, compressed, i);
+	dstring_append (visdata, (char *) compressed, i);
 }
 
 static void
@@ -849,7 +849,7 @@ main (int argc, char **argv)
 		printf ("c_chains: %i%s\n", c_chains,
 				options.threads > 1 ? " (not reliable)" :"");
 
-	BSP_AddVisibility (bsp, visdata->str, visdata->size);
+	BSP_AddVisibility (bsp, (byte *) visdata->str, visdata->size);
 	if (options.verbosity >= 0)
 		printf ("visdatasize:%i  compressed from %i\n", bsp->visdatasize,
 				originalvismapsize);

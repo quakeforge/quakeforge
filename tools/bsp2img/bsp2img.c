@@ -586,13 +586,14 @@ render_map (bsp_t *bsp)
 
 				e1 = &edgelist[abs (ledges[j])];
 				e2 = &edgelist[abs (ledges[k])];
+				//FIXME verify directions
 				if (ledges[j] > 0) {
 					SUB (vertexlist[e1->v[0]], vertexlist[e1->v[1]], v0);
-					SUB (vertexlist[e2->v[0]], vertexlist[e2->v[1]], v0);
+					SUB (vertexlist[e2->v[0]], vertexlist[e2->v[1]], v1);
 				} else {
 					/* negative index, therefore walk in reverse order */
 					SUB (vertexlist[e1->v[1]], vertexlist[e1->v[0]], v0);
-					SUB (vertexlist[e2->v[1]], vertexlist[e2->v[0]], v0);
+					SUB (vertexlist[e2->v[1]], vertexlist[e2->v[0]], v1);
 				}
 
 				/* cross product */

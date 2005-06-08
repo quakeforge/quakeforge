@@ -460,7 +460,7 @@ WriteMiptex (void)
 		if (!len)
 			l->dataofs[i] = -1;			// didn't find the texture
 	}
-	BSP_AddTextures (bsp, data->str, data->size);
+	BSP_AddTextures (bsp, (byte *) data->str, data->size);
 }
 
 void

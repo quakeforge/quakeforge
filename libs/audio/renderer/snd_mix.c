@@ -268,7 +268,7 @@ snd_paint_mono_8 (int offs, channel_t *ch, void *bytes, unsigned int count)
 
 	lscale = snd_scaletable[ch->leftvol >> 3];
 	rscale = snd_scaletable[ch->rightvol >> 3];
-	sfx = (signed char *) bytes;
+	sfx = (unsigned char *) bytes;
 
 	pair = paintbuffer + offs;
 

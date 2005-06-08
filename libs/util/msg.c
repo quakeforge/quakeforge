@@ -300,7 +300,7 @@ MSG_ReadString (qmsg_t *msg)
 		return "";
 	}
 
-	string = &msg->message->data[msg->readcount];
+	string = (char *) &msg->message->data[msg->readcount];
 
 	maxlen = msg->message->cursize - msg->readcount;
 	len = strnlen (string, maxlen);
