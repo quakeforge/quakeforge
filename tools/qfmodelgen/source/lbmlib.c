@@ -21,7 +21,7 @@
 #include "config.h"
 
 #include <string.h>
-#include <malloc.h>
+#include <stdlib.h>
 #include <errno.h>
 
 #include "QF/qendian.h"
