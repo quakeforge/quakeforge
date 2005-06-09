@@ -277,8 +277,10 @@ ReuseConstant (expr_t *expr, def_t *def)
 				reloc_def_field_ofs (e.e.pointer.def, cn->ofs);
 			break;
 		case ex_pointer:
-			if (e.e.pointer.def)
+			if (e.e.pointer.def) {
 				EMIT_DEF_OFS (G_INT (cn->ofs), e.e.pointer.def);
+				e.e.pointer.def->users--;
+			}
 			break;
 		default:
 			break;

@@ -419,6 +419,16 @@ emit_deref_expr (expr_t *e, def_t *dest)
 		dest->file = e->file;
 		dest->users += 2;
 	}
+	if (dest->type->type == ev_struct) {
+		expr_t     *d = new_def_expr (dest);
+		expr_t     *m = new_move_expr (d, e, dest->type);
+		d->line = dest->line;
+		d->file = dest->file;
+		m->line = e->line;
+		m->file = e->file;
+		emit_sub_expr (m, 0);
+		return dest;
+	}
 
 	if (e->type == ex_expr
 		&& e->e.expr.op == '&'

@@ -1147,7 +1147,7 @@ static operation_t op_struct[ev_type_count] = {
 	do_op_invalid,						// ev_entity
 	do_op_invalid,						// ev_field
 	do_op_invalid,						// ev_func
-	do_op_invalid,						// ev_pointer
+	do_op_pointer,						// ev_pointer
 	do_op_invalid,						// ev_quaternion
 	do_op_invalid,						// ev_integer
 	do_op_invalid,						// ev_uinteger
