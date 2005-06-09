@@ -1,12 +1,12 @@
 /*
-	#FILENAME#
+	connection.c
 
-	#DESCRIPTION#
+	connection management
 
-	Copyright (C) 2004 #AUTHOR#
+	Copyright (C) 2004 Bill Currie <bill@taniwha.org>
 
-	Author: #AUTHOR#
-	Date: #DATE#
+	Author: Bill Currie
+	Date: 2004/02/20
 
 	This program is free software; you can redistribute it and/or
 	modify it under the terms of the GNU General Public License

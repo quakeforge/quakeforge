@@ -1,12 +1,12 @@
 /*
-	#FILENAME#
+	sv_parse.c
 
-	#DESCRIPTION#
+	quakeworld protocol parsing
 
-	Copyright (C) 2004 #AUTHOR#
+	Copyright (C) 2005 Bill Currie <bill@taniwha.org>
 
-	Author: #AUTHOR#
-	Date: #DATE#
+	Author: Bill Currie
+	Date: 2005/05/06
 
 	This program is free software; you can redistribute it and/or
 	modify it under the terms of the GNU General Public License
