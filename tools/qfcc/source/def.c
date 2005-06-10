@@ -362,8 +362,13 @@ new_location (type_t *type, defspace_t *space)
 	}
 	ofs = space->size;
 	space->size += size;
-	if (space->size > space->max_size)
+	if (space->size > space->max_size) {
+		if (!space->grow) {
+			error (0, "unable to allocate %d globals", size);
+			exit (1);
+		}
 		space->grow (space);
+	}
 	return ofs;
 }
 

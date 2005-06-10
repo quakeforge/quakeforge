@@ -154,6 +154,8 @@ InitData (void)
 
 	pr.near_data = new_defspace ();
 	pr.near_data->data = calloc (65536, sizeof (pr_type_t));
+	pr.near_data->max_size = 65536;
+	pr.near_data->grow = 0;
 	pr.scope = new_scope (sc_global, pr.near_data, 0);
 	current_scope = pr.scope;
 
