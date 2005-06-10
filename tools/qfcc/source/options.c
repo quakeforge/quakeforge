@@ -281,6 +281,8 @@ DecodeArgs (int argc, char **argv)
 							options.code.short_circuit = flag;
 						} else if (!(strcasecmp (temp, "fast-float"))) {
 							options.code.fast_float = flag;
+						} else if (!(strcasecmp (temp, "vector-calls"))) {
+							options.code.vector_calls = flag;
 						} else if (!(strcasecmp (temp, "v6only"))) {
 							if (flag)
 								options.code.progsversion = PROG_ID_VERSION;

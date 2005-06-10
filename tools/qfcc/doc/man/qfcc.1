@@ -165,6 +165,12 @@ mode.
 Use float values directly in \*(lqif\*(rq statements. Defaults to on. This
 option is always enabled when using version 6 progs.
 .TP
+.B vector\-calls
+Where a function is called with just a vector, this causes the function call to
+store three floats instead of one vector. This can save a good number of
+pr_globals where those vectors contain many duplicate coordinates but do not
+match entirly. However, this will generate slower code for such calls.
+.TP
 .B v6only
 Restrict the compiler to only version 6 progs (original Quake/QuakeWorld)
 features. This means that the compiled data file should be able to run on
@@ -229,7 +235,7 @@ report the details (operating system, detection methods, correct execution
 specification). The base default execution spec (on most Linux systems) is
 \fBcpp %d -o %o %i\fP.  This spec is similar in concept to a \fBprintf\fP
 string. The name of the program may be either absolute (eg \fB/lib/cpp\fP) or
-relative as the \fBPATH\fB will be searched.  Available substitutions:
+relative as the \fBPATH\fP will be searched.  Available substitutions:
 .TP
 .B %d
 Mainly for defines (\-D, \-U and \-I) but \fB%d\fP will be replaced by all
@@ -248,6 +254,13 @@ In Maori mythology, Ruamoko is the youngest child of Ranginui, the
 Sky-father, and Papatuanuku, the Earth-mother. Ruamoko is the god of
 volcanoes and earthquakes \fB(Quake, get it?)\fP. For more information, see
 the Web site at <\fBhttp://maori.com/kmst1.htm\fP>.
+.TP
+.B qfcc hangs
+This is almost always caused by qfcc incorrectly invoking \fBcpp\fP. Using the
+\fB--cpp\fP option (refer to the \fBCPP NAME\fP section above), the correct
+method for invoking cpp can be specified. Once you have found this, please
+send the correct \fBcpp\fP command line, preferably along with the output of
+\fBconfig.guess\fP, to the team.
 .TP
 .B qfcc is singing a bad 80s rap song to me. What's going on?
 \*(lqice ice baby\*(rq is QuakeForge-speak for \*(lqInternal Compiler

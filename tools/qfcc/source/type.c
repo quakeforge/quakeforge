@@ -656,6 +656,12 @@ init_types (void)
 	new_struct_field (strct, &type_integer,  "integer_val",  vis_public);
 	new_struct_field (strct, &type_uinteger, "uinteger_val", vis_public);
 
+	strct = vector_struct = get_struct (0, 1);
+	init_struct (strct, new_type (), str_struct, 0);
+	new_struct_field (strct, &type_float, "x", vis_public);
+	new_struct_field (strct, &type_float, "y", vis_public);
+	new_struct_field (strct, &type_float, "z", vis_public);
+
 	if (options.traditional)
 		return;
 
@@ -665,12 +671,6 @@ init_types (void)
 
 	strct = type_param.s.strct;
 	new_struct_field (strct, &type_quaternion, "quaternion_val", vis_public);
-
-	strct = vector_struct = get_struct (0, 1);
-	init_struct (strct, new_type (), str_struct, 0);
-	new_struct_field (strct, &type_float, "x", vis_public);
-	new_struct_field (strct, &type_float, "y", vis_public);
-	new_struct_field (strct, &type_float, "z", vis_public);
 
 	strct = quaternion_struct = get_struct (0, 1);
 	init_struct (strct, new_type (), str_struct, 0);

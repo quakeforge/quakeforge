@@ -953,7 +953,7 @@ field_expr (expr_t *e1, expr_t *e2)
 			break;
 		case ev_vector:
 		case ev_quat:
-			if (!options.traditional && e2->type == ex_name) {
+			if (e2->type == ex_name) {
 				if (t1->type == ev_quat) {
 					field = struct_find_field (quaternion_struct,
 											   e2->e.string_val);

@@ -39,6 +39,7 @@ typedef struct {
 	qboolean	debug;				// Generate debug info for the engine
 	qboolean	short_circuit;		// short circuit logic for && and ||
 	qboolean	fast_float;			// use floats directly in ifs
+	qboolean    vector_calls;		// use floats instead of vectors for constant function args
 	unsigned int progsversion;		// Progs version to generate code for
 } code_options_t;
 

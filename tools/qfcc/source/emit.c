@@ -202,10 +202,11 @@ static def_t *
 emit_function_call (expr_t *e, def_t *dest)
 {
 	def_t      *func = emit_sub_expr (e->e.expr.e1, 0);
-	def_t      *parm;
 	def_t      *ret;
 	def_t      *arg;
+	def_t      *p;
 	expr_t     *earg;
+	expr_t     *parm;
 	opcode_t   *op;
 	int         count = 0, ind;
 
@@ -214,17 +215,34 @@ emit_function_call (expr_t *e, def_t *dest)
 	ind = count;
 	for (earg = e->e.expr.e2; earg; earg = earg->next) {
 		ind--;
-		parm = emit_sub_expr (new_param_expr (get_type (earg), ind), 0);
-		if (parm->type->type == ev_struct) {
-			expr_t     *a = assign_expr (new_def_expr (parm), earg);
+		parm = new_param_expr (get_type (earg), ind);
+		if (extract_type (parm) == ev_struct) {
+			expr_t     *a = assign_expr (parm, earg);
 			a->line = e->line;
 			a->file = e->file;
 			emit_expr (a);
 		} else {
-			arg = emit_sub_expr (earg, parm);
-			if (arg != parm) {
-				op = opcode_find ("=", arg->type, arg->type, &type_void);
-				emit_statement (e, op, arg, parm, 0);
+			if (options.code.vector_calls && earg->type == ex_vector) {
+				expr_t     *a, *v, *n;
+				int         i;
+				static const char *names[] = {"x", "y", "z"};
+
+				for (i = 0; i < 3; i++) {
+					n = new_name_expr (names[i]);
+					v = new_float_expr (earg->e.vector_val[i]);
+					a = assign_expr (binary_expr ('.', parm, n), v);
+					parm = new_param_expr (get_type (earg), ind);
+					a->line = e->line;
+					a->file = e->file;
+					emit_expr (a);
+				}
+			} else {
+				p = emit_sub_expr (parm, 0);
+				arg = emit_sub_expr (earg, p);
+				if (arg != p) {
+					op = opcode_find ("=", arg->type, arg->type, &type_void);
+					emit_statement (e, op, arg, p, 0);
+				}
 			}
 		}
 	}
