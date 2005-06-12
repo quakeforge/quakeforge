@@ -174,7 +174,6 @@ DecodeArgs (int argc, char **argv)
 	add_cpp_def ("-D__QFCC__=1");
 	add_cpp_def ("-D__QUAKEC__=1");
 
-	options.code.progsversion = PROG_VERSION;
 	options.code.short_circuit = -1;
 	options.code.fast_float = true;
 	options.warnings.uninited_variable = true;
@@ -431,10 +430,13 @@ DecodeArgs (int argc, char **argv)
 		// progs.src mode without --advanced implies --traditional
 		options.traditional = true;
 		options.advanced = false;
-		options.code.progsversion = PROG_ID_VERSION;
+		if (!options.code.progsversion)
+			options.code.progsversion = PROG_ID_VERSION;
 		if (options.code.short_circuit == (qboolean) -1)
 			options.code.short_circuit = false;
 	}
+	if (!options.code.progsversion)
+		options.code.progsversion = PROG_VERSION;
 	if (!options.traditional) {
 		options.advanced = true;
 		add_cpp_def ("-D__RUAMOKO__=1");
