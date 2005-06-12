@@ -25,8 +25,10 @@
 
 - (id) addViews: (Array)viewlist
 {
-	while ([viewlist count])
-		[self addView:[viewlist removeItemAt:0]];
+	while ([viewlist count]) {
+		[self addView:[viewlist getItemAt:0]];
+		[viewlist removeItemAt:0];
+	}
 	return self;
 }
 
