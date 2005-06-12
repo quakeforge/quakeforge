@@ -195,6 +195,25 @@ emit_branch (expr_t *_e, opcode_t *op, expr_t *e, expr_t *l)
 }
 
 static def_t *
+vector_call (expr_t *earg, expr_t *parm, int ind)
+{
+	expr_t     *a, *v, *n;
+	int         i;
+	static const char *names[] = {"x", "y", "z"};
+
+	for (i = 0; i < 3; i++) {
+		n = new_name_expr (names[i]);
+		v = new_float_expr (earg->e.vector_val[i]);
+		a = assign_expr (binary_expr ('.', parm, n), v);
+		parm = new_param_expr (get_type (earg), ind);
+		a->line = earg->line;
+		a->file = earg->file;
+		emit_expr (a);
+	}
+	return emit_sub_expr (parm, 0);
+}
+
+static def_t *
 emit_function_call (expr_t *e, def_t *dest)
 {
 	def_t      *func = emit_sub_expr (e->e.expr.e1, 0);
@@ -216,7 +235,11 @@ emit_function_call (expr_t *e, def_t *dest)
 		parm = new_param_expr (get_type (earg), ind);
 		if (options.code.progsversion != PROG_ID_VERSION && ind < 2) {
 			pref = "R";
-			a[ind] = emit_sub_expr (earg, emit_sub_expr (parm, 0));
+			if (options.code.vector_calls && earg->type == ex_vector) {
+				a[ind] = vector_call (earg, parm, ind);
+			} else {
+				a[ind] = emit_sub_expr (earg, emit_sub_expr (parm, 0));
+			}
 			continue;
 		}
 		if (extract_type (parm) == ev_struct) {
@@ -226,19 +249,7 @@ emit_function_call (expr_t *e, def_t *dest)
 			emit_expr (a);
 		} else {
 			if (options.code.vector_calls && earg->type == ex_vector) {
-				expr_t     *a, *v, *n;
-				int         i;
-				static const char *names[] = {"x", "y", "z"};
-
-				for (i = 0; i < 3; i++) {
-					n = new_name_expr (names[i]);
-					v = new_float_expr (earg->e.vector_val[i]);
-					a = assign_expr (binary_expr ('.', parm, n), v);
-					parm = new_param_expr (get_type (earg), ind);
-					a->line = e->line;
-					a->file = e->file;
-					emit_expr (a);
-				}
+				vector_call (earg, parm, ind);
 			} else {
 				p = emit_sub_expr (parm, 0);
 				arg = emit_sub_expr (earg, p);
