@@ -487,6 +487,7 @@ ED_LoadFromFile (progs_t *pr, const char *data)
 
 	if (pr->edict_parse) {
 		PR_PushFrame (pr);
+		PR_RESET_PARAMS (pr);
 		P_INT (pr, 0) = PR_SetTempString (pr, data);
 		PR_ExecuteProgram (pr, pr->edict_parse);
 		PR_PopFrame (pr);

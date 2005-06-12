@@ -142,12 +142,8 @@ emit_statement (expr_t *e, opcode_t *op, def_t *var_a, def_t *var_b,
 	statement->b = var_b ? var_b->ofs : 0;
 	if (op->type_c == ev_void || op->right_associative) {
 		// ifs, gotos, and assignments don't need vars allocated
-		if (op->type_c == ev_void) {
-			var_c = NULL;
-			statement->c = 0;
-		} else {
+		if (var_c)
 			statement->c = var_c->ofs;
-		}
 		ret = var_a;
 	} else {							// allocate result space
 		if (!var_c) {
@@ -205,10 +201,12 @@ emit_function_call (expr_t *e, def_t *dest)
 	def_t      *ret;
 	def_t      *arg;
 	def_t      *p;
+	def_t      *a[2] = {0, 0};
 	expr_t     *earg;
 	expr_t     *parm;
 	opcode_t   *op;
 	int         count = 0, ind;
+	const char *pref = "";
 
 	for (earg = e->e.expr.e2; earg; earg = earg->next)
 		count++;
@@ -216,6 +214,11 @@ emit_function_call (expr_t *e, def_t *dest)
 	for (earg = e->e.expr.e2; earg; earg = earg->next) {
 		ind--;
 		parm = new_param_expr (get_type (earg), ind);
+		if (options.code.progsversion != PROG_ID_VERSION && ind < 2) {
+			pref = "R";
+			a[ind] = emit_sub_expr (earg, emit_sub_expr (parm, 0));
+			continue;
+		}
 		if (extract_type (parm) == ev_struct) {
 			expr_t     *a = assign_expr (parm, earg);
 			a->line = e->line;
@@ -246,9 +249,9 @@ emit_function_call (expr_t *e, def_t *dest)
 			}
 		}
 	}
-	op = opcode_find (va ("<CALL%d>", count), &type_function, &type_void,
-						 &type_void);
-	emit_statement (e, op, func, 0, 0);
+	op = opcode_find (va ("<%sCALL%d>", pref, count),
+					  &type_function, &type_void, &type_void);
+	emit_statement (e, op, func, a[0], a[1]);
 
 	ret = emit_sub_expr (new_ret_expr (func->type->aux_type), 0);
 	if (dest) {

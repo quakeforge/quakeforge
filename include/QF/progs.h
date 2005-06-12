@@ -67,6 +67,16 @@ void PR_RunError (progs_t *pr, const char *error, ...) __attribute__((format(pri
 */
 //@{
 
+/** Ensure P_* macros point to the right place for passing parameters to progs
+	functions.
+	\param pr pointer to progs_t VM struct
+*/
+#define PR_RESET_PARAMS(pr)							\
+	do {											\
+		(pr)->pr_params[0] = (pr)->pr_real_params[0];	\
+		(pr)->pr_params[1] = (pr)->pr_real_params[1];	\
+	} while (0)
+
 /** Push an execution frame onto the VM stack. Saves current execution state
 	\param pr pointer to progs_t VM struct
 */
@@ -1200,6 +1210,7 @@ struct progs_s {
 
 	pr_type_t  *pr_return;
 	pr_type_t  *pr_params[MAX_PARMS];
+	pr_type_t  *pr_real_params[MAX_PARMS];
 	int         pr_param_size;		///< covers both params and return
 
 	int         pr_edict_size;		///< in bytes

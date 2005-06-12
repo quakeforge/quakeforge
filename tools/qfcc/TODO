@@ -25,4 +25,4 @@ o	CSE optimizations. Hard?
 o	fix local structure used/uninitialized warnings
 o	arrays in entities/structures?
 o	try to reduce memory consumption
-?	pass the first two parms in call->b and call->c
+X	pass the first two parms in call->b and call->c

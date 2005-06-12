@@ -822,6 +822,46 @@ opcode_t pr_opcodes[] = {
 	 PROG_ID_VERSION,
 	 "%Ga",
 	},
+	{"<RCALL1>", "rcall1", OP_RCALL1, false,
+	 ev_func, ev_void, ev_void,
+	 PROG_ID_VERSION,
+	 "%Ga, %Vb",
+	},
+	{"<RCALL2>", "rcall2", OP_RCALL2, false,
+	 ev_func, ev_void, ev_void,
+	 PROG_ID_VERSION,
+	 "%Ga, %Vb, %Vc",
+	},
+	{"<RCALL3>", "rcall3", OP_RCALL3, false,
+	 ev_func, ev_void, ev_void,
+	 PROG_ID_VERSION,
+	 "%Ga, %Vb, %Vc",
+	},
+	{"<RCALL4>", "rcall4", OP_RCALL4, false,
+	 ev_func, ev_void, ev_void,
+	 PROG_ID_VERSION,
+	 "%Ga, %Vb, %Vc",
+	},
+	{"<RCALL5>", "rcall5", OP_RCALL5, false,
+	 ev_func, ev_void, ev_void,
+	 PROG_ID_VERSION,
+	 "%Ga, %Vb, %Vc",
+	},
+	{"<RCALL6>", "rcall6", OP_RCALL6, false,
+	 ev_func, ev_void, ev_void,
+	 PROG_ID_VERSION,
+	 "%Ga, %Vb, %Vc",
+	},
+	{"<RCALL7>", "rcall7", OP_RCALL7, false,
+	 ev_func, ev_void, ev_void,
+	 PROG_ID_VERSION,
+	 "%Ga, %Vb, %Vc",
+	},
+	{"<RCALL8>", "rcall8", OP_RCALL8, false,
+	 ev_func, ev_void, ev_void,
+	 PROG_ID_VERSION,
+	 "%Ga, %Vb, %Vc",
+	},
 
 	{"<STATE>", "state", OP_STATE, false,
 	 ev_float, ev_func, ev_void,
@@ -1230,6 +1270,20 @@ PR_Check_Opcodes (progs_t *pr)
 					check_global (pr, st, op, ev_integer, st->a);
 					check_global (pr, st, op, ev_void, st->b);
 					check_global (pr, st, op, ev_void, st->c);
+					break;
+				case OP_RCALL1:
+					check_global (pr, st, op, ev_void, st->c);
+				case OP_RCALL2:
+				case OP_RCALL3:
+				case OP_RCALL4:
+				case OP_RCALL5:
+				case OP_RCALL6:
+				case OP_RCALL7:
+				case OP_RCALL8:
+					if (st->op > OP_RCALL1)
+						check_global (pr, st, op, ev_integer, st->c);
+					check_global (pr, st, op, ev_integer, st->b);
+					check_global (pr, st, op, ev_func, st->a);
 					break;
 				case OP_STATE:
 				case OP_STATE_F:

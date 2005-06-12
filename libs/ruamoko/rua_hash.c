@@ -98,6 +98,7 @@ static const char *
 bi_get_key (void *key, void *_ht)
 {
 	bi_hashtab_t *ht = (bi_hashtab_t *)_ht;
+	PR_RESET_PARAMS (ht->pr);
 	P_INT (ht->pr, 0) = (long) (key);
 	P_INT (ht->pr, 1) = ht->ud;
 	PR_ExecuteProgram (ht->pr, ht->gk);
@@ -108,6 +109,7 @@ static unsigned long
 bi_get_hash (void *key, void *_ht)
 {
 	bi_hashtab_t *ht = (bi_hashtab_t *)_ht;
+	PR_RESET_PARAMS (ht->pr);
 	P_INT (ht->pr, 0) = (long) (key);
 	P_INT (ht->pr, 1) = ht->ud;
 	PR_ExecuteProgram (ht->pr, ht->gh);
@@ -118,6 +120,7 @@ static int
 bi_compare (void *key1, void *key2, void *_ht)
 {
 	bi_hashtab_t *ht = (bi_hashtab_t *)_ht;
+	PR_RESET_PARAMS (ht->pr);
 	P_INT (ht->pr, 0) = (long) (key1);
 	P_INT (ht->pr, 1) = (long) (key2);
 	P_INT (ht->pr, 2) = ht->ud;
@@ -129,6 +132,7 @@ static void
 bi_free (void *key, void *_ht)
 {
 	bi_hashtab_t *ht = (bi_hashtab_t *)_ht;
+	PR_RESET_PARAMS (ht->pr);
 	P_INT (ht->pr, 0) = (long) (key);
 	P_INT (ht->pr, 1) = ht->ud;
 	PR_ExecuteProgram (ht->pr, ht->f);

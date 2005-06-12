@@ -306,6 +306,16 @@ typedef enum {
 	OP_LOADB_Q,
 	OP_LOADBI_Q,
 	OP_ADDRESS_Q,
+
+	OP_RCALL0,
+	OP_RCALL1,
+	OP_RCALL2,
+	OP_RCALL3,
+	OP_RCALL4,
+	OP_RCALL5,
+	OP_RCALL6,
+	OP_RCALL7,
+	OP_RCALL8,
 } pr_opcode_e;
 
 typedef struct opcode_s {

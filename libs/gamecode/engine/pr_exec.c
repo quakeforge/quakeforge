@@ -772,6 +772,21 @@ PR_ExecuteProgram (progs_t * pr, func_t fnum)
 				st = pr->pr_statements + pr->pr_xstatement;
 				break;
 
+			case OP_RCALL2:
+			case OP_RCALL3:
+			case OP_RCALL4:
+			case OP_RCALL5:
+			case OP_RCALL6:
+			case OP_RCALL7:
+			case OP_RCALL8:
+				pr->pr_params[1] = &OPC;
+				goto op_rcall;
+			case OP_RCALL1:
+				pr->pr_params[1] = pr->pr_real_params[1];
+op_rcall:
+				pr->pr_params[0] = &OPB;
+				pr->pr_argc = st->op - OP_RCALL1 + 1;
+				goto op_call;
 			case OP_CALL0:
 			case OP_CALL1:
 			case OP_CALL2:
@@ -781,9 +796,11 @@ PR_ExecuteProgram (progs_t * pr, func_t fnum)
 			case OP_CALL6:
 			case OP_CALL7:
 			case OP_CALL8:
+				PR_RESET_PARAMS (pr);
+				pr->pr_argc = st->op - OP_CALL0;
+op_call:
 				pr->pr_xfunction->profile += profile - startprofile;
 				startprofile = profile;
-				pr->pr_argc = st->op - OP_CALL0;
 				PR_CallFunction (pr, OPA.func_var);
 				st = pr->pr_statements + pr->pr_xstatement;
 				break;

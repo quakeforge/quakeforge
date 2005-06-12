@@ -20,6 +20,7 @@ call_progs_main (progs_t *pr, int argc, const char **argv)
 	for (i = 0; i < argc; i++)
 		pr_argv[i] = PR_SetTempString (pr, argv[1 + i]);
 	pr_argv[i] = 0;
+	PR_RESET_PARAMS (pr);
 	P_INT (pr, 0) = argc;
 	P_POINTER (pr, 1) = PR_SetPointer (pr, pr_argv);
 	PR_ExecuteProgram (pr, progs_main);

@@ -345,6 +345,7 @@ PF_calltimeofday (progs_t * pr)
 		Sys_TimeOfDay (&date);
 
 		PR_PushFrame (&sv_pr_state);
+		PR_RESET_PARAMS (pr);
 		P_FLOAT (pr, 0) = (float) date.sec;
 		P_FLOAT (pr, 1) = (float) date.min;
 		P_FLOAT (pr, 2) = (float) date.hour;

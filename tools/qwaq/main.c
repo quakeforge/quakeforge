@@ -174,6 +174,7 @@ main (int argc, char **argv)
 		main_func = dfunc - pr.pr_functions;
 	else
 		PR_Undefined (&pr, "function", "main");
+	PR_RESET_PARAMS (&pr);
 	P_INT (&pr, 0) = pr_argc;
 	P_POINTER (&pr, 1) = PR_SetPointer (&pr, pr_argv);
 	PR_ExecuteProgram (&pr, main_func);

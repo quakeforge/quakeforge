@@ -138,6 +138,7 @@ PR_ResolveGlobals (progs_t *pr)
 			goto error;
 		pr->pr_param_size = G_INT (pr, def->ofs);
 	}
+	memcpy (pr->pr_real_params, pr->pr_params, sizeof (pr->pr_params));
 	if (!pr->globals.time) {
 		if ((def = PR_FindGlobal (pr, "time")))
 			pr->globals.time = &G_FLOAT (pr, def->ofs);

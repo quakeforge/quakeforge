@@ -892,6 +892,7 @@ SV_SetLocalinfo (const char *key, const char *value)
 		*sv_globals.time = sv.time;
 		*sv_globals.self = 0;
 		PR_PushFrame (&sv_pr_state);
+		PR_RESET_PARAMS (&sv_pr_state);
 		P_STRING (&sv_pr_state, 0) = PR_SetTempString (&sv_pr_state, key);
 		P_STRING (&sv_pr_state, 1) = PR_SetTempString (&sv_pr_state, oldvalue);
 		P_STRING (&sv_pr_state, 2) = PR_SetTempString (&sv_pr_state, value);

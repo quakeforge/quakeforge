@@ -522,6 +522,7 @@ Menu_Draw (view_t *view)
 	*menu_pr_state.globals.time = *con_data.realtime;
 
 	if (menu->draw) {
+		PR_RESET_PARAMS (&menu_pr_state);
 		P_INT (&menu_pr_state, 0) = x;
 		P_INT (&menu_pr_state, 1) = y;
 		PR_ExecuteProgram (&menu_pr_state, menu->draw);
@@ -551,6 +552,7 @@ Menu_Draw (view_t *view)
 		return;
 	item = menu->items[menu->cur_item];
 	if (menu->cursor) {
+		PR_RESET_PARAMS (&menu_pr_state);
 		P_INT (&menu_pr_state, 0) = x + item->x;
 		P_INT (&menu_pr_state, 1) = y + item->y;
 		PR_ExecuteProgram (&menu_pr_state, menu->cursor);
@@ -576,6 +578,7 @@ Menu_KeyEvent (knum_t key, short unicode, qboolean down)
 	if (!menu)
 		return;
 	if (menu->keyevent) {
+		PR_RESET_PARAMS (&menu_pr_state);
 		P_INT (&menu_pr_state, 0) = key;
 		P_INT (&menu_pr_state, 1) = unicode;
 		P_INT (&menu_pr_state, 2) = down;
@@ -586,6 +589,7 @@ Menu_KeyEvent (knum_t key, short unicode, qboolean down)
 			   && menu->items[menu->cur_item]->allkeys) {
 		PR_PushFrame (&menu_pr_state);
 		item = menu->items[menu->cur_item];
+		PR_RESET_PARAMS (&menu_pr_state);
 		P_STRING (&menu_pr_state, 0) = PR_SetTempString (&menu_pr_state,
 														 item->text);
 		P_INT (&menu_pr_state, 1) = key;
@@ -613,6 +617,7 @@ Menu_KeyEvent (knum_t key, short unicode, qboolean down)
 				item = menu->items[menu->cur_item];
 				if (item->func) {
 					PR_PushFrame (&menu_pr_state);
+					PR_RESET_PARAMS (&menu_pr_state);
 					P_STRING (&menu_pr_state, 0) =
 						PR_SetTempString (&menu_pr_state, item->text);
 					P_INT (&menu_pr_state, 1) = key;

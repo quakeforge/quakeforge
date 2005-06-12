@@ -91,6 +91,7 @@ bi_gib_builtin_f (void)
 	for (i = 0; i < GIB_Argc(); i++)
 		pr_list[i].integer_var = PR_SetTempString (builtin->pr, GIB_Argv(i));
 
+	PR_RESET_PARAMS (builtin->pr);
 	P_INT (builtin->pr, 0) = GIB_Argc();
 	P_INT (builtin->pr, 1) = PR_SetPointer (builtin->pr, pr_list);
 	PR_ExecuteProgram (builtin->pr, builtin->func);
