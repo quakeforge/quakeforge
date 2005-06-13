@@ -75,6 +75,9 @@ static console_data_t sv_con_data;
 static QFile  *log_file;
 static cvar_t *sv_logfile;
 
+static void C_ExecLine (const char *line);
+static void C_KeyEvent (knum_t key, short unicode, qboolean down);
+
 #ifdef HAVE_CURSES_H
 static int use_curses = 1;
 
@@ -168,8 +171,7 @@ C_DrawOutput (void)
 		while (len--)
 			draw_fun_char (output, *text++);
 	} while (cur_line < output_buffer->cur_line + view_offset);
-	//wrefresh (stdscr);
-	wrefresh (output);
+	wnoutrefresh (output);
 }
 
 static void
@@ -177,7 +179,7 @@ C_DrawStatus (void)
 {
 	wbkgdset (status, COLOR_PAIR(4));
 	wclear (status);
-	wrefresh (status);
+	wnoutrefresh (status);
 }
 
 static void
@@ -209,7 +211,7 @@ C_DrawInput (inputline_t *il)
 		waddch (win, ' ');
 	}
 	wmove (win, 0, il->linepos - il->scroll);
-	wrefresh (win);
+	wnoutrefresh (win);
 }
 
 static void
@@ -218,195 +220,80 @@ sigwinch (int sig)
 	interrupted = 1;
 	signal (SIGWINCH, sigwinch);
 }
-#endif
 
 static void
-C_ExecLine (const char *line)
+process_input (void)
 {
-	if (line[0] == '/')
-		line++;
-	Cbuf_AddText (sv_con_data.cbuf, line);
-}
+	int         ch;
+	int         escape = 0;
 
-static void
-sv_logfile_f (cvar_t *var)
-{
-	if (strequal (var->string, "none")) {
-		if (log_file)
-			Qclose (log_file);
-		log_file = 0;
-	} else {
-		char       *fname = strdup (var->string);
-		char       *flags = strrchr (fname, ':');
+	if (interrupted) {
+		struct winsize size;
 
-		if (flags) {
-			*flags++ = 0;
-			flags = nva ("a%s", flags);
-		} else {
-			flags = nva ("a");
+		interrupted = 0;
+		if (ioctl (fileno (stdout), TIOCGWINSZ, &size) == 0) {
+			resizeterm (size.ws_row, size.ws_col);
+			getmaxyx (stdscr, screen_y, screen_x);
+			con_linewidth = screen_x;
+			input_line->width = screen_x;
+			/* while a little ugly, this is needed because ncurses auto
+			 * resizing doesn't always do the right thing
+			 */
+			wresize (input, 1, screen_x);
+			mvwin (input, screen_y - 1, 0);
+			wresize (status, 1, screen_x);
+			mvwin (status, screen_y - 2, 0);
+			wresize (output, screen_y - 2, screen_x);
+			mvwin (output, 0, 0);
+			wnoutrefresh (curscr);
+
+			C_DrawOutput ();
+			C_DrawStatus ();
+			// input gets drawn below in Con_ProcessInputLine
 		}
-		log_file = QFS_Open (fname, flags);
-		free (flags);
-		free (fname);
 	}
-}
 
-static void
-C_Init (void)
-{
-#ifdef HAVE_CURSES_H
-	cvar_t	  *curses = Cvar_Get ("sv_use_curses", "0", CVAR_ROM, NULL,
-								  "Set to 1 to enable curses server console.");
-	use_curses = curses->int_val;
-	if (use_curses) {
-		signal (SIGWINCH, sigwinch);
-
-		initscr ();
-		start_color ();
-		cbreak ();
-		noecho ();
-
-		nonl ();
-		intrflush (stdscr, FALSE);
-
-		getmaxyx (stdscr, screen_y, screen_x);
-		output = newwin (screen_y - 2, screen_x, 0, 0);
-		status = newwin (1, screen_x, screen_y - 2, 0);
-		input  = newwin (1, screen_x, screen_y - 1, 0);
-
-		init_pair (1, COLOR_YELLOW, COLOR_BLACK);
-		init_pair (2, COLOR_GREEN, COLOR_BLACK);
-		init_pair (3, COLOR_RED, COLOR_BLACK);
-		init_pair (4, COLOR_YELLOW, COLOR_BLUE);
-		init_pair (5, COLOR_CYAN, COLOR_BLACK);
-
-		scrollok (output, TRUE);
-		leaveok (output, TRUE);
-
-		scrollok (status, FALSE);
-		leaveok (status, TRUE);
-
-		scrollok (input, FALSE);
-		leaveok (input, FALSE);
-		nodelay (input, TRUE);
-		keypad (input, TRUE);
-
-		wclear (output);
-		wbkgdset (status, COLOR_PAIR(4));
-		wclear (status);
-		wclear (input);
-		touchwin (stdscr);
-		wrefresh (output);
-		wrefresh (status);
-		wrefresh (input);
-
-		output_buffer = Con_CreateBuffer (BUFFER_SIZE, MAX_LINES);
-
-		input_line = Con_CreateInputLine (16, MAXCMDLINE, ']');
-		input_line->complete = Con_BasicCompleteCommandLine;
-		input_line->enter = C_ExecLine;
-		input_line->width = screen_x;
-		input_line->user_data = input;
-		input_line->draw = C_DrawInput;
-
-		con_linewidth = screen_x;
-
-		C_DrawOutput ();
-		C_DrawStatus ();
-		C_DrawInput (input_line);
-	} else
-#endif
-		setvbuf (stdout, 0, _IOLBF, BUFSIZ);
-	sv_logfile = Cvar_Get ("sv_logfile", "none", CVAR_NONE, sv_logfile_f,
-						   "Control server console logging. \"none\" for off, "
-						   "or \"filename:gzflags\"");
-}
-
-static void
-C_Shutdown (void)
-{
-	if (log_file) {
-		Qclose (log_file);
-		log_file = 0;
-	}
-#ifdef HAVE_CURSES_H
-	if (use_curses)
-		endwin ();
-#endif
-}
-
-static void
-C_Print (const char *fmt, va_list args)
-{
-	static dstring_t *buffer;
-	unsigned char *txt;
-
-	if (!buffer)
-		buffer = dstring_new ();
-
-	dvsprintf (buffer, fmt, args);
-
-	txt = (unsigned char *) buffer->str;
-
-	if (log_file) {
-		Qputs (log_file, buffer->str);
-		Qflush (log_file);
-	}
-#ifdef HAVE_CURSES_H
-	if (use_curses) {
-		Con_BufferAddText (output_buffer, buffer->str);
-		if (!view_offset) {
-			while (*txt)
-				draw_fun_char (output, *txt++);
-			wrefresh (output);
-			wrefresh (input);	// move the cursor back to the input line
-		}
-	} else
-#endif
-	{
-		while (*txt)
-			putc (sys_char_map[*txt++], stdout);
-		fflush (stdout);
-	}
-}
-
-static void C_KeyEvent (knum_t key, short unicode, qboolean down);
-
-static void
-C_ProcessInput (void)
-{
-#ifdef HAVE_CURSES_H
-	if (use_curses) {
-		int         ch;
-
-		if (interrupted) {
-			struct winsize size;
-
-			interrupted = 0;
-			if (ioctl (fileno (stdout), TIOCGWINSZ, &size) == 0) {
-				resizeterm (size.ws_row, size.ws_col);
-				getmaxyx (stdscr, screen_y, screen_x);
-				con_linewidth = screen_x;
-				input_line->width = screen_x;
-				/* while a little ugly, this is needed because ncurses auto
-				 * resizing doesn't always do the right thing
-				 */
-				wresize (input, 1, screen_x);
-				mvwin (input, screen_y - 1, 0);
-				wresize (status, 1, screen_x);
-				mvwin (status, screen_y - 2, 0);
-				wresize (output, screen_y - 2, screen_x);
-				mvwin (output, 0, 0);
-				wrefresh (curscr);
-
-				C_DrawOutput ();
-				C_DrawStatus ();
-				// input gets drawn below in Con_ProcessInputLine
+	for (ch = 1; ch; ) {
+		ch = wgetch (input);
+		if (ch == ERR)
+			escape = 0;
+		if (escape) {
+			switch (escape) {
+				case 1:
+					if (ch == '[') {
+						escape = 2;
+						continue;
+					}
+					break;
+				case 2:
+					switch (ch) {
+						case '1':
+							escape = 3;
+							continue;
+						case '4':
+							escape = 4;
+							continue;
+						default:
+							escape = 0;
+							break;
+					}
+					break;
+				case 3:
+					if (ch == '~')
+						ch = KEY_HOME;
+					escape = 0;
+					break;
+				case 4:
+					if (ch == '~')
+						ch = KEY_END;
+					escape = 0;
+					break;
 			}
 		}
-
-		ch = wgetch (input);
 		switch (ch) {
+			case '\033':
+				escape = 1;
+				continue;
 			case KEY_ENTER:
 			case '\n':
 			case '\r':
@@ -451,20 +338,13 @@ C_ProcessInput (void)
 					ch = 0;
 		}
 		C_KeyEvent (ch, 0, 1);
-	} else
-#endif
-		while (1) {
-			const char *cmd = Sys_ConsoleInput ();
-			if (!cmd)
-				break;
-			C_ExecLine (cmd);
-		}
+	}
+	doupdate ();
 }
 
 static void
-C_KeyEvent (knum_t key, short unicode, qboolean down)
+key_event (knum_t key, short unicode, qboolean down)
 {
-#ifdef HAVE_CURSES_H
 	int         ovf = view_offset;
 
 	switch (key) {
@@ -489,6 +369,192 @@ C_KeyEvent (knum_t key, short unicode, qboolean down)
 			Con_ProcessInputLine (input_line, key);
 			break;
 	}
+}
+
+static void
+print (char *txt)
+{
+	Con_BufferAddText (output_buffer, txt);
+	if (!view_offset) {
+		while (*txt)
+			draw_fun_char (output, (byte) *txt++);
+		wnoutrefresh (output);
+		wnoutrefresh (input);	// move the cursor back to the input line
+		doupdate ();
+	}
+}
+
+static void
+init (void)
+{
+	signal (SIGWINCH, sigwinch);
+
+	initscr ();
+	start_color ();
+	cbreak ();
+	noecho ();
+
+	nonl ();
+	intrflush (stdscr, FALSE);
+
+	getmaxyx (stdscr, screen_y, screen_x);
+	output = newwin (screen_y - 2, screen_x, 0, 0);
+	status = newwin (1, screen_x, screen_y - 2, 0);
+	input  = newwin (1, screen_x, screen_y - 1, 0);
+
+	init_pair (1, COLOR_YELLOW, COLOR_BLACK);
+	init_pair (2, COLOR_GREEN, COLOR_BLACK);
+	init_pair (3, COLOR_RED, COLOR_BLACK);
+	init_pair (4, COLOR_YELLOW, COLOR_BLUE);
+	init_pair (5, COLOR_CYAN, COLOR_BLACK);
+
+	scrollok (output, TRUE);
+	leaveok (output, TRUE);
+
+	scrollok (status, FALSE);
+	leaveok (status, TRUE);
+
+	scrollok (input, FALSE);
+	leaveok (input, FALSE);
+	nodelay (input, TRUE);
+	keypad (input, TRUE);
+
+	wclear (output);
+	wbkgdset (status, COLOR_PAIR(4));
+	wclear (status);
+	wclear (input);
+	touchwin (stdscr);
+	wnoutrefresh (output);
+	wnoutrefresh (status);
+	wnoutrefresh (input);
+
+	output_buffer = Con_CreateBuffer (BUFFER_SIZE, MAX_LINES);
+
+	input_line = Con_CreateInputLine (16, MAXCMDLINE, ']');
+	input_line->complete = Con_BasicCompleteCommandLine;
+	input_line->enter = C_ExecLine;
+	input_line->width = screen_x;
+	input_line->user_data = input;
+	input_line->draw = C_DrawInput;
+
+	con_linewidth = screen_x;
+
+	C_DrawOutput ();
+	C_DrawStatus ();
+	C_DrawInput (input_line);
+	doupdate ();
+}
+#endif
+
+static void
+C_ExecLine (const char *line)
+{
+	if (line[0] == '/')
+		line++;
+	Cbuf_AddText (sv_con_data.cbuf, line);
+}
+
+static void
+sv_logfile_f (cvar_t *var)
+{
+	if (!var->string[0] || strequal (var->string, "none")) {
+		if (log_file)
+			Qclose (log_file);
+		log_file = 0;
+	} else {
+		char       *fname = strdup (var->string);
+		char       *flags = strrchr (fname, ':');
+
+		if (flags) {
+			*flags++ = 0;
+			flags = nva ("a%s", flags);
+		} else {
+			flags = nva ("a");
+		}
+		log_file = QFS_Open (fname, flags);
+		free (flags);
+		free (fname);
+	}
+}
+
+static void
+C_Init (void)
+{
+#ifdef HAVE_CURSES_H
+	cvar_t	  *curses = Cvar_Get ("sv_use_curses", "0", CVAR_ROM, NULL,
+								  "Set to 1 to enable curses server console.");
+	use_curses = curses->int_val;
+	if (use_curses) {
+		init ();
+	} else
+#endif
+		setvbuf (stdout, 0, _IOLBF, BUFSIZ);
+	sv_logfile = Cvar_Get ("sv_logfile", "none", CVAR_NONE, sv_logfile_f,
+						   "Control server console logging. \"none\" for off, "
+						   "or \"filename:gzflags\"");
+}
+
+static void
+C_Shutdown (void)
+{
+	if (log_file) {
+		Qclose (log_file);
+		log_file = 0;
+	}
+#ifdef HAVE_CURSES_H
+	if (use_curses)
+		endwin ();
+#endif
+}
+
+static void
+C_Print (const char *fmt, va_list args)
+{
+	static dstring_t *buffer;
+
+	if (!buffer)
+		buffer = dstring_new ();
+
+	dvsprintf (buffer, fmt, args);
+
+	if (log_file) {
+		Qputs (log_file, buffer->str);
+		Qflush (log_file);
+	}
+#ifdef HAVE_CURSES_H
+	if (use_curses) {
+		print (buffer->str);
+	} else
+#endif
+	{
+		unsigned char *txt = (unsigned char *) buffer->str;
+		while (*txt)
+			putc (sys_char_map[*txt++], stdout);
+		fflush (stdout);
+	}
+}
+
+static void
+C_ProcessInput (void)
+{
+#ifdef HAVE_CURSES_H
+	if (use_curses) {
+		process_input ();
+	} else
+#endif
+		while (1) {
+			const char *cmd = Sys_ConsoleInput ();
+			if (!cmd)
+				break;
+			C_ExecLine (cmd);
+		}
+}
+
+static void
+C_KeyEvent (knum_t key, short unicode, qboolean down)
+{
+#ifdef HAVE_CURSES_H
+	key_event (key, unicode, down);
 #endif
 }
 
