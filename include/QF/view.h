@@ -56,6 +56,8 @@ struct view_s {
 	int     num_children;
 	int     max_children;
 	void    (*draw)(view_t *view);
+	void    (*setgeometry)(view_t *view);
+	void   *data;
 	unsigned visible:1;
 	unsigned resize_x:1;
 	unsigned resize_y:1;

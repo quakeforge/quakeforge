@@ -67,6 +67,8 @@ setgeometry (view_t *view)
 	if (!par) {
 		view->xabs = view->xrel = view->xpos;
 		view->yabs = view->yrel = view->ypos;
+		if (view->setgeometry)
+			view->setgeometry (view);
 		for (i = 0; i < view->num_children; i++)
 			setgeometry (view->children[i]);
 		return;
@@ -112,6 +114,8 @@ setgeometry (view_t *view)
 	}
 	view->xabs = par->xabs + view->xrel;
 	view->yabs = par->yabs + view->yrel;
+	if (view->setgeometry)
+		view->setgeometry (view);
 	for (i = 0; i < view->num_children; i++)
 		setgeometry (view->children[i]);
 }

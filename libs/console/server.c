@@ -67,6 +67,7 @@ static __attribute__ ((unused)) const char rcsid[] =
 #include "QF/quakefs.h"
 #include "QF/sys.h"
 #include "QF/va.h"
+#include "QF/view.h"
 
 #include "compat.h"
 
@@ -79,20 +80,33 @@ static void C_ExecLine (const char *line);
 static void C_KeyEvent (knum_t key, short unicode, qboolean down);
 
 #ifdef HAVE_CURSES_H
+
+typedef struct sv_view_s {
+	WINDOW     *win;
+	void       *obj;
+	void      (*draw) (view_t *view);
+	void      (*setgeometry) (view_t *view);
+} sv_view_t;
+
+enum {
+	sv_resize_x = 1,
+	sv_resize_y = 2,
+	sv_scroll	= 4,
+	sv_cursor	= 8,
+};
+
 static int use_curses = 1;
 
-static WINDOW *output;
-static WINDOW *status;
-static WINDOW *input;
+static view_t *output;
+static view_t *status;
+static view_t *input;
 static int screen_x, screen_y;
 static int interrupted;
 
 #define     MAXCMDLINE  256
-static inputline_t *input_line;
 
 #define BUFFER_SIZE 32768
 #define MAX_LINES 1024
-static con_buffer_t *output_buffer;
 static int view_offset;
 
 static chtype attr_table[4] = {
@@ -130,12 +144,50 @@ draw_fun_char (WINDOW *win, byte c)
 	waddch (win, ch);
 }
 
-static void
-C_DrawOutput (void)
+static inline void
+sv_refresh (view_t *view)
 {
+	sv_view_t  *sv_view = view->data;
+	wnoutrefresh (sv_view->win);
+}
+
+static inline int
+sv_getch (view_t *view)
+{
+	sv_view_t  *sv_view = view->data;
+	return wgetch (sv_view->win);
+}
+
+static inline void
+sv_draw (view_t *view)
+{
+	sv_view_t  *sv_view = view->data;
+	if (sv_view->draw)
+		sv_view->draw (view);
+	wnoutrefresh (sv_view->win);
+}
+
+static inline void
+sv_setgeometry (view_t *view)
+{
+	sv_view_t  *sv_view = view->data;
+	WINDOW *win = sv_view->win;
+	wresize (win, view->ylen, view->xlen);
+	mvwin (win, view->yabs, view->xabs);
+	if (sv_view->setgeometry)
+		sv_view->setgeometry (view);
+}
+
+static void
+draw_output (view_t *view)
+{
+	sv_view_t  *sv_view = view->data;
+	WINDOW     *win = sv_view->win;
+	con_buffer_t *output_buffer = sv_view->obj;
+	
 	// this is not the most efficient way to update the screen, but oh well
-	int         lines = screen_y - 3; // leave a blank line
-	int         width = screen_x;
+	int         lines = view->ylen - 1; // leave a blank line
+	int         width = view->xlen;
 	int         cur_line = output_buffer->cur_line + view_offset;
 	int         i, y;
 
@@ -152,8 +204,8 @@ C_DrawOutput (void)
 	}
 	cur_line -= i;
 	y -= lines;
-	wclear (output);
-	wmove (output, 0, 0);
+	wclear (win);
+	wmove (win, 0, 0);
 	do {
 		con_line_t *l = Con_BufferLine (output_buffer, cur_line++);
 		byte       *text = l->text;
@@ -169,23 +221,24 @@ C_DrawOutput (void)
 			}
 		}
 		while (len--)
-			draw_fun_char (output, *text++);
+			draw_fun_char (win, *text++);
 	} while (cur_line < output_buffer->cur_line + view_offset);
-	wnoutrefresh (output);
 }
 
 static void
-C_DrawStatus (void)
+draw_status (view_t *view)
 {
-	wbkgdset (status, COLOR_PAIR(4));
-	wclear (status);
-	wnoutrefresh (status);
+	sv_view_t  *sv_view = view->data;
+	wbkgdset (sv_view->win, COLOR_PAIR(4));
+	wclear (sv_view->win);
 }
 
 static void
-C_DrawInput (inputline_t *il)
+draw_input_line (inputline_t *il)
 {
-	WINDOW     *win = (WINDOW *) il->user_data;
+	view_t     *view = il->user_data;
+	sv_view_t  *sv_view = view->data;
+	WINDOW     *win = sv_view->win;
 	size_t      i;
 	const char *text;
 
@@ -211,7 +264,21 @@ C_DrawInput (inputline_t *il)
 		waddch (win, ' ');
 	}
 	wmove (win, 0, il->linepos - il->scroll);
-	wnoutrefresh (win);
+}
+
+static void
+draw_input (view_t *view)
+{
+	sv_view_t  *sv_view = view->data;
+	draw_input_line (sv_view->obj);
+}
+
+static void
+setgeometry_input (view_t *view)
+{
+	sv_view_t  *sv_view = view->data;
+	inputline_t *il = sv_view->obj;
+	il->width = view->xlen;
 }
 
 static void
@@ -235,26 +302,13 @@ process_input (void)
 			resizeterm (size.ws_row, size.ws_col);
 			getmaxyx (stdscr, screen_y, screen_x);
 			con_linewidth = screen_x;
-			input_line->width = screen_x;
-			/* while a little ugly, this is needed because ncurses auto
-			 * resizing doesn't always do the right thing
-			 */
-			wresize (input, 1, screen_x);
-			mvwin (input, screen_y - 1, 0);
-			wresize (status, 1, screen_x);
-			mvwin (status, screen_y - 2, 0);
-			wresize (output, screen_y - 2, screen_x);
-			mvwin (output, 0, 0);
-			wnoutrefresh (curscr);
-
-			C_DrawOutput ();
-			C_DrawStatus ();
-			// input gets drawn below in Con_ProcessInputLine
+			view_resize (sv_con_data.view, screen_x, screen_y);
+			view_draw (sv_con_data.view);
 		}
 	}
 
 	for (ch = 1; ch; ) {
-		ch = wgetch (input);
+		ch = sv_getch (input);
 		if (ch == ERR)
 			escape = 0;
 		if (escape) {
@@ -346,27 +400,32 @@ static void
 key_event (knum_t key, short unicode, qboolean down)
 {
 	int         ovf = view_offset;
+	sv_view_t  *sv_view;
+	con_buffer_t *buffer;
 
 	switch (key) {
 		case QFK_PAGEUP:
 			view_offset -= 10;
-			if (view_offset <= -(output_buffer->num_lines - (screen_y - 3)))
-				view_offset = -(output_buffer->num_lines - (screen_y - 3)) + 1;
+			sv_view = output->data;
+			buffer = sv_view->obj;
+			if (view_offset <= -(buffer->num_lines - (screen_y - 3)))
+				view_offset = -(buffer->num_lines - (screen_y - 3)) + 1;
 			if (ovf != view_offset)
-				C_DrawOutput ();
+				sv_draw (output);
 			break;
 		case QFK_PAGEDOWN:
 			view_offset += 10;
 			if (view_offset > 0)
 				view_offset = 0;
 			if (ovf != view_offset)
-				C_DrawOutput ();
+				sv_draw (output);
 			break;
 		case '\f':
-			C_DrawOutput ();
+			sv_draw (output);
 			break;
 		default:
-			Con_ProcessInputLine (input_line, key);
+			sv_view = input->data;
+			Con_ProcessInputLine (sv_view->obj, key);
 			break;
 	}
 }
@@ -374,14 +433,60 @@ key_event (knum_t key, short unicode, qboolean down)
 static void
 print (char *txt)
 {
-	Con_BufferAddText (output_buffer, txt);
+	sv_view_t  *sv_view = output->data;
+	Con_BufferAddText (sv_view->obj, txt);
 	if (!view_offset) {
 		while (*txt)
-			draw_fun_char (output, (byte) *txt++);
-		wnoutrefresh (output);
-		wnoutrefresh (input);	// move the cursor back to the input line
+			draw_fun_char (sv_view->win, (byte) *txt++);
+		sv_refresh (output);
+		// move the cursor back to the input line
+		sv_refresh (input);
 		doupdate ();
 	}
+}
+
+static view_t *
+create_window (view_t *parent, int xpos, int ypos, int xlen, int ylen,
+			   grav_t grav, void *obj, int opts, void (*draw) (view_t *),
+			   void (*setgeometry) (view_t *))
+{
+	view_t     *view;
+	sv_view_t  *sv_view;
+
+	sv_view = calloc (1, sizeof (sv_view_t));
+	sv_view->obj = obj;
+	sv_view->win = newwin (ylen, xlen, 0, 0);	// will get moved when added
+	scrollok (sv_view->win, (opts & sv_scroll) ? TRUE : FALSE);
+	leaveok (sv_view->win, (opts & sv_cursor) ? FALSE : TRUE);
+	nodelay (sv_view->win, TRUE);
+	keypad (sv_view->win, TRUE);
+	sv_view->draw = draw;
+	sv_view->setgeometry = setgeometry;
+
+	view = view_new (xpos, ypos, xlen, ylen, grav);
+	view->data = sv_view;
+	view->draw = sv_draw;
+	view->setgeometry = sv_setgeometry;
+	view->resize_x = (opts & sv_resize_x) != 0;
+	view->resize_y = (opts & sv_resize_y) != 0;
+	view_add (parent, view);
+
+	return view;
+}
+
+static inputline_t *
+create_input_line (int width)
+{
+	inputline_t *input_line;
+
+	input_line = Con_CreateInputLine (16, MAXCMDLINE, ']');
+	input_line->complete = Con_BasicCompleteCommandLine;
+	input_line->enter = C_ExecLine;
+	input_line->user_data = input;
+	input_line->draw = draw_input_line;
+	input_line->width = width;
+
+	return input_line;
 }
 
 static void
@@ -398,9 +503,26 @@ init (void)
 	intrflush (stdscr, FALSE);
 
 	getmaxyx (stdscr, screen_y, screen_x);
-	output = newwin (screen_y - 2, screen_x, 0, 0);
-	status = newwin (1, screen_x, screen_y - 2, 0);
-	input  = newwin (1, screen_x, screen_y - 1, 0);
+	sv_con_data.view = view_new (0, 0, screen_x, screen_y, grav_northwest);
+
+	output = create_window (sv_con_data.view,
+							0, 0, screen_x, screen_y - 2, grav_northwest,
+							Con_CreateBuffer (BUFFER_SIZE, MAX_LINES),
+							sv_resize_x | sv_resize_y | sv_scroll,
+							draw_output, 0);
+
+	status = create_window (sv_con_data.view,
+							0, 1, screen_x, 1, grav_southwest,
+							0,
+							sv_resize_x | sv_scroll,
+							draw_status, 0);
+
+	input = create_window (sv_con_data.view,
+						   0, 0, screen_x, 1, grav_southwest,
+						   create_input_line (screen_x),
+						   sv_resize_x | sv_cursor,
+						   draw_input, setgeometry_input);
+	((inputline_t *) ((sv_view_t *) input->data)->obj)->user_data = input;
 
 	init_pair (1, COLOR_YELLOW, COLOR_BLACK);
 	init_pair (2, COLOR_GREEN, COLOR_BLACK);
@@ -408,40 +530,9 @@ init (void)
 	init_pair (4, COLOR_YELLOW, COLOR_BLUE);
 	init_pair (5, COLOR_CYAN, COLOR_BLACK);
 
-	scrollok (output, TRUE);
-	leaveok (output, TRUE);
-
-	scrollok (status, FALSE);
-	leaveok (status, TRUE);
-
-	scrollok (input, FALSE);
-	leaveok (input, FALSE);
-	nodelay (input, TRUE);
-	keypad (input, TRUE);
-
-	wclear (output);
-	wbkgdset (status, COLOR_PAIR(4));
-	wclear (status);
-	wclear (input);
-	touchwin (stdscr);
-	wnoutrefresh (output);
-	wnoutrefresh (status);
-	wnoutrefresh (input);
-
-	output_buffer = Con_CreateBuffer (BUFFER_SIZE, MAX_LINES);
-
-	input_line = Con_CreateInputLine (16, MAXCMDLINE, ']');
-	input_line->complete = Con_BasicCompleteCommandLine;
-	input_line->enter = C_ExecLine;
-	input_line->width = screen_x;
-	input_line->user_data = input;
-	input_line->draw = C_DrawInput;
-
 	con_linewidth = screen_x;
 
-	C_DrawOutput ();
-	C_DrawStatus ();
-	C_DrawInput (input_line);
+	view_draw (sv_con_data.view);
 	doupdate ();
 }
 #endif
