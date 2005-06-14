@@ -45,6 +45,7 @@ QF_ALSA_NEED (snd_pcm_uframes_t, snd_pcm_hw_params_set_period_size_near, (snd_pc
 QF_ALSA_NEED (unsigned int, snd_pcm_hw_params_set_rate_near, (snd_pcm_t *pcm, snd_pcm_hw_params_t *params, unsigned int val, int *dir))
 #else
 QF_ALSA_NEED (int, snd_pcm_hw_params_get_buffer_size, (const snd_pcm_hw_params_t *params, snd_pcm_uframes_t *val))
+QF_ALSA_NEED (int, snd_pcm_hw_params_set_buffer_size, (snd_pcm_t *pcm, const snd_pcm_hw_params_t *params, snd_pcm_uframes_t *val))
 QF_ALSA_NEED (int, snd_pcm_hw_params_get_period_size, (const snd_pcm_hw_params_t *params, snd_pcm_uframes_t *frames, int *dir))
 QF_ALSA_NEED (int, snd_pcm_hw_params_set_access, (snd_pcm_t *pcm, snd_pcm_hw_params_t *params, snd_pcm_access_t access))
 QF_ALSA_NEED (int, snd_pcm_hw_params_set_period_size_near, (snd_pcm_t *pcm, snd_pcm_hw_params_t *params, snd_pcm_uframes_t *val, int *dir))

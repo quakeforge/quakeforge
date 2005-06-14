@@ -106,6 +106,18 @@ SNDDMA_Init_Cvars (void)
 
 static int SNDDMA_GetDMAPos (void);
 
+static snd_pcm_uframes_t
+round_buffer_size (snd_pcm_uframes_t sz)
+{
+	snd_pcm_uframes_t mask = ~0;
+
+	while (sz & mask) {
+		sz &= mask;
+		mask <<= 1;
+	}
+	return sz;
+}
+
 static volatile dma_t *
 SNDDMA_Init (void)
 {
@@ -324,6 +336,15 @@ SNDDMA_Init (void)
 		Sys_Printf ("ALSA: unable to get buffer size. %s\n",
 					qfsnd_strerror (err));
 		goto error;
+	}
+	if (buffer_size != round_buffer_size (buffer_size)) {
+		buffer_size = round_buffer_size (buffer_size);
+		err = qfsnd_pcm_hw_params_set_buffer_size (pcm, hw, &buffer_size);
+		if (0 > err) {
+			Sys_Printf ("ALSA: unable to set buffer size. %s\n",
+						qfsnd_strerror (err));
+			goto error;
+		}
 	}
 
 	sn.samples = buffer_size * sn.channels;		// mono samples in buffer
