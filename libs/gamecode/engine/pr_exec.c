@@ -125,8 +125,39 @@ PR_EnterFunction (progs_t *pr, dfunction_t *f)
 {
 	int			i, j, c, o;
 	int			k;
+	int         count = 0;
+	int         size[2] = {0, 0};
+	long        paramofs = 0;
+	long        offs;
 
 	PR_PushFrame (pr);
+
+	if (f->numparms > 0) {
+		for (i = 0; i < 2 && i < f->numparms; i++) {
+			paramofs += f->parm_size[i];
+			size[i] = f->parm_size[i];
+		}
+		count = i;
+	} else if (f->numparms < 0) {
+		for (i = 0; i < 2 && i < -f->numparms - 1; i++) {
+			paramofs += f->parm_size[i];
+			size[i] = f->parm_size[i];
+		}
+		for (; i < 2; i++) {
+			paramofs += pr->pr_param_size;
+			size[i] = pr->pr_param_size;
+		}
+		count = i;
+	}
+
+	for (i = 0; i < count && i < pr->pr_argc; i++) {
+		offs = (pr->pr_params[i] - pr->pr_globals) - f->parm_start;
+		if (offs >= 0 && offs < paramofs) {
+			memcpy (pr->pr_real_params[i], pr->pr_params[i],
+					size[i] * sizeof (pr_type_t));
+			pr->pr_params[i] = pr->pr_real_params[i];
+		}
+	}
 
 	//Sys_Printf("%s:\n", PR_GetString(pr,f->s_name));
 	pr->pr_xfunction = f;
