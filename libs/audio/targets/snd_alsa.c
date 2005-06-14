@@ -372,9 +372,6 @@ SNDDMA_GetDMAPos (void)
 	snd_pcm_uframes_t offset;
 	snd_pcm_uframes_t nframes = sn.samples/sn.channels;
 
-	if (!snd_inited)
-		return 0;
-
 	qfsnd_pcm_avail_update (pcm);
 	qfsnd_pcm_mmap_begin (pcm, &areas, &offset, &nframes);
 	offset *= sn.channels;
