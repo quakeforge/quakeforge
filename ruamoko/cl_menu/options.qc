@@ -280,7 +280,7 @@ PLItem read_plist (void)
 	file = QFS_OpenFile ("menu.plist");
 	plist_data = str_new ();
 	while ((l = Qgetline (file)))
-		plist_data += l;
+		str_cat (plist_data, l);
 	Qclose (file);
 	plist = [PLItem newFromString:plist_data];
 	str_free (plist_data);
