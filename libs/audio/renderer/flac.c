@@ -1,12 +1,12 @@
 /*
 	flac.c
 
-	Ogg Vorbis support
+	FLAC support
 
-	Copyright (C) 2001 Bill Currie <bill@taniwha.org>
+	Copyright (C) 2005 Bill Currie <bill@taniwha.org>
 
 	Author: Bill Currie <bill@taniwha.org>
-	Date: 2002/6/14
+	Date: 2005/6/15
 
 	This program is free software; you can redistribute it and/or
 	modify it under the terms of the GNU General Public License
