@@ -45,6 +45,7 @@ static __attribute__ ((unused)) const char rcsid[] =
 
 #include <stdlib.h>
 #include <FLAC/seekable_stream_decoder.h>
+#include <FLAC/metadata.h>
 
 #include "QF/cvar.h"
 #include "QF/quakefs.h"
@@ -62,6 +63,12 @@ typedef struct {
 	int         size;
 	int         pos;
 } flacfile_t;
+
+static void
+error_func (const FLAC__SeekableStreamDecoder *decoder,
+			FLAC__StreamDecoderErrorStatus status, void *client_data)
+{
+}
 
 static FLAC__SeekableStreamDecoderReadStatus
 read_func (const FLAC__SeekableStreamDecoder *decoder, FLAC__byte buffer[],
@@ -113,6 +120,9 @@ write_func (const FLAC__SeekableStreamDecoder *decoder,
 {
 	flacfile_t *ff = (flacfile_t *) client_data;
 	int         bps = ff->info.bits_per_sample / 8;
+
+	if (!ff->buffer)
+		ff->buffer = malloc (ff->info.max_blocksize * ff->info.channels * bps);
 	if (ff->info.channels == 1) {
 		memcpy (ff->buffer, buffer[0], bps * frame->header.blocksize);
 	} else {
@@ -150,6 +160,8 @@ meta_func (const FLAC__SeekableStreamDecoder *decoder,
 	flacfile_t *ff = (flacfile_t *) client_data;
 	if (metadata->type == FLAC__METADATA_TYPE_STREAMINFO)
 		ff->info = metadata->data.stream_info;
+	if (metadata->type == FLAC__METADATA_TYPE_VORBIS_COMMENT)
+		ff->vorbis_info = FLAC__metadata_object_clone (metadata);
 }
 
 static flacfile_t *
@@ -159,6 +171,7 @@ open_flac (QFile *file)
 	ff->decoder = FLAC__seekable_stream_decoder_new ();
 	ff->file = file;
 
+	FLAC__seekable_stream_decoder_set_error_callback (ff->decoder, error_func);
 	FLAC__seekable_stream_decoder_set_read_callback (ff->decoder, read_func);
 	FLAC__seekable_stream_decoder_set_seek_callback (ff->decoder, seek_func);
 	FLAC__seekable_stream_decoder_set_tell_callback (ff->decoder, tell_func);
@@ -169,8 +182,10 @@ open_flac (QFile *file)
 	FLAC__seekable_stream_decoder_set_metadata_callback (ff->decoder,
 														 meta_func);
 	FLAC__seekable_stream_decoder_set_client_data (ff->decoder, ff);
+	FLAC__seekable_stream_decoder_set_metadata_respond (ff->decoder,
+			FLAC__METADATA_TYPE_VORBIS_COMMENT);
 
-	FLAC__seekable_stream_decoder_init (ff->decoder);
+	Sys_DPrintf ("%s\n", FLAC__SeekableStreamDecoderStateString[FLAC__seekable_stream_decoder_init (ff->decoder)]);
 	FLAC__seekable_stream_decoder_process_until_end_of_metadata (ff->decoder);
 	return ff;
 }
@@ -181,6 +196,12 @@ close_flac (flacfile_t *ff)
 	FLAC__seekable_stream_decoder_finish (ff->decoder);
 	FLAC__seekable_stream_decoder_delete (ff->decoder);
 
+	if (ff->vorbis_info)
+		FLAC__metadata_object_delete (ff->vorbis_info);
+
+	if (ff->buffer)
+		free (ff->buffer);
+
 	Qclose (ff->file);
 
 	free (ff);
@@ -190,18 +211,21 @@ static int
 flac_read (flacfile_t *ff, byte *buf, int len)
 {
 	int         count = 0;
+	int         bps = ff->info.channels * ff->info.bits_per_sample / 8;
 
 	while (len) {
 		int         res = 0;
 		if (ff->size == ff->pos)
 			FLAC__seekable_stream_decoder_process_single (ff->decoder);
-		res = ff->size - ff->pos;
+		res = (ff->size - ff->pos) * bps;
 		if (res > len)
 			res = len;
 		if (res > 0) {
+			memcpy (buf, ff->buffer + ff->pos, res);
 			count += res;
 			len -= res;
 			buf += res;
+			ff->pos += res / bps;
 		} else if (res < 0) {
 			Sys_Printf ("flac error %d\n", res);
 			return -1;
@@ -300,7 +324,8 @@ flac_stream_read (void *file, byte *buf, int count, wavinfo_t *info)
 static int
 flac_stream_seek (void *file, int pos, wavinfo_t *info)
 {
-	return FLAC__seekable_stream_decoder_seek_absolute (file, pos);
+	flacfile_t *ff = file;
+	return FLAC__seekable_stream_decoder_seek_absolute (ff->decoder, pos);
 }
 
 static void
@@ -376,14 +401,15 @@ static void
 flac_stream (sfx_t *sfx, char *realname, flacfile_t *ff, wavinfo_t info)
 {
 	sfxstream_t *stream = calloc (1, sizeof (sfxstream_t));
-		
+
+	close_flac (ff);
 	sfx->open = flac_stream_open;
 	sfx->wavinfo = SND_CacheWavinfo;
 	sfx->touch = sfx->retain = SND_StreamRetain;
 	sfx->release = SND_StreamRelease;
 	sfx->data = stream;
 
-	stream->file = ff;
+	stream->file = realname;
 	stream->wavinfo = info;
 }
 
@@ -393,21 +419,22 @@ get_info (flacfile_t *ff)
 	int         sample_start = -1, sample_count = 0;
 	int         samples;
 	wavinfo_t   info;
-	FLAC__StreamMetadata_VorbisComment *vc;
+	FLAC__StreamMetadata_VorbisComment *vc = 0;
 	FLAC__StreamMetadata_VorbisComment_Entry *ve;
 	FLAC__uint32 i;
 
 	samples = ff->info.total_samples;
-	vc = &ff->vorbis_info->data.vorbis_comment;
+	if (ff->vorbis_info) {
+		vc = &ff->vorbis_info->data.vorbis_comment;
 
-	for (i = 0, ve = vc->comments;
-		 i < ff->vorbis_info->data.vorbis_comment.num_comments; ve++) {
-		Sys_DPrintf ("%.*s\n", ve->length, ve->entry);
-		if (strncmp ("CUEPOINT=", ve->entry, 9) == 0) {
-			char       *str = alloca (ve->length + 1);
-			strncpy (str, ve->entry, ve->length);
-			str[ve->length] = 0;
-			sscanf (str + 9, "%d %d", &sample_start, &sample_count);
+		for (i = 0, ve = vc->comments; i < vc->num_comments; ve++, i++) {
+			Sys_DPrintf ("%.*s\n", ve->length, ve->entry);
+			if (strncmp ("CUEPOINT=", ve->entry, 9) == 0) {
+				char       *str = alloca (ve->length + 1);
+				strncpy (str, ve->entry, ve->length);
+				str[ve->length] = 0;
+				sscanf (str + 9, "%d %d", &sample_start, &sample_count);
+			}
 		}
 	}
 
@@ -427,8 +454,10 @@ get_info (flacfile_t *ff)
 					info.channels, info.rate);
 		Sys_Printf ("\nDecoded length: %d samples (%d bytes)\n",
 					info.samples, info.samples * info.channels * 2);
-		Sys_Printf ("Encoded by: %.*s\n\n",
-					vc->vendor_string.length, vc->vendor_string.entry);
+		if (vc) {
+			Sys_Printf ("Encoded by: %.*s\n\n",
+						vc->vendor_string.length, vc->vendor_string.entry);
+		}
 	}
 
 	return info;
