@@ -429,9 +429,9 @@ get_info (flacfile_t *ff)
 
 		for (i = 0, ve = vc->comments; i < vc->num_comments; ve++, i++) {
 			Sys_DPrintf ("%.*s\n", ve->length, ve->entry);
-			if (strncmp ("CUEPOINT=", ve->entry, 9) == 0) {
+			if (strncmp ("CUEPOINT=", (char *) ve->entry, 9) == 0) {
 				char       *str = alloca (ve->length + 1);
-				strncpy (str, ve->entry, ve->length);
+				strncpy (str, (char *) ve->entry, ve->length);
 				str[ve->length] = 0;
 				sscanf (str + 9, "%d %d", &sample_start, &sample_count);
 			}
