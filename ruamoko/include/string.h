@@ -14,6 +14,7 @@
 @extern string (void) str_new;
 @extern string (string str) str_free;
 @extern string (string dst, string src) str_copy;
+@extern string (string dst, string src) str_cat;
 @extern string (string str) str_clear;
 @extern string (string str, integer start) @overload str_mid;
 @extern string (string str, integer start, integer len) @overload str_mid;

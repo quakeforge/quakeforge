@@ -275,13 +275,16 @@ PLItem read_plist (void)
 {
 	local string plist_data, l;
 	local QFile file;
+	local PLItem plist;
 
 	file = QFS_OpenFile ("menu.plist");
-	plist_data = "";
+	plist_data = str_new ();
 	while ((l = Qgetline (file)))
 		plist_data += l;
 	Qclose (file);
-	return [PLItem newFromString:plist_data];
+	plist = [PLItem newFromString:plist_data];
+	str_free (plist_data);
+	return plist;
 }
 
 /*

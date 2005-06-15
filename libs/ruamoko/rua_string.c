@@ -70,6 +70,16 @@ bi_str_copy (progs_t *pr)
 }
 
 static void
+bi_str_cat (progs_t *pr)
+{
+	dstring_t  *dst = P_DSTRING (pr, 0);
+	const char *src = P_GSTRING (pr, 1);
+
+	dstring_appendstr (dst, src);
+	R_STRING (pr) = P_STRING (pr, 0);
+}
+
+static void
 bi_str_clear (progs_t *pr)
 {
 	dstring_t  *str = P_DSTRING (pr, 0);
@@ -121,6 +131,7 @@ static builtin_t builtins[] = {
 	{"str_new",		bi_str_new,		-1},
 	{"str_free",	bi_str_free,	-1},
 	{"str_copy",	bi_str_copy,	-1},
+	{"str_cat",		bi_str_cat,		-1},
 	{"str_clear",	bi_str_clear,	-1},
 	{"str_mid|*i",	bi_str_mid,		-1},
 	{"str_mid|*ii",	bi_str_mid,		-1},
