@@ -44,13 +44,10 @@
 #include "gui/Slider.h"
 #include "gui/Text.h"
 
+PLItem menu_plist;
+
 Group video_options;
-CvarToggleView fullscreen_view;
-CrosshairView crosshair_view;
-CvarToggleView fps_view;
-CvarToggleView time_view;
-CvarRangeView gamma_view;
-CvarRangeView viewsize_view;
+Group audio_options;
 
 Group control_options;
 CvarToggleView grab_mouse_view;
@@ -64,10 +61,6 @@ CvarRangeView mouse_amp_view;
 Group feature_options;
 CvarToggleView fraglog_view;
 CvarToggleView autorecord_view;
-
-Group audio_options;
-CvarRangeView volume_view;
-CvarRangeView bgmvolume_view;
 
 Group player_options;
 InputLine player_config_plname_il;
@@ -107,67 +100,8 @@ InputLine network_config_iactive;
  * VIDEO OPTIONS 
  * Video settings menu code
  ****************************/
- 
-/*
-	CB_video_options
-
-	Menu event callback for video options
-*/
-integer (string text, integer key) 
-CB_video_options =
-{
-	switch (text) {
-		case "fullscreen":
-			[fullscreen_view toggle];
-			break;
-		case "crosshair":
-			[crosshair_view next];
-			break;
-		case "fps":
-			[fps_view toggle];
-			break;
-		case "time":
-			[time_view toggle];
-			break;
-		case "gamma":
-			if (key == QFK_RIGHT)
-				[gamma_view inc];
-			else if (key == QFK_LEFT)
-				[gamma_view dec];
-			break;
-		case "viewsize":
-			if (key == QFK_RIGHT)
-				[viewsize_view inc];
-			else if (key == QFK_LEFT)
-				[viewsize_view dec];
-			break;
-	}
-	return 0;
-};
-
-/*
-	DRAW_video_options
-
-	Drawing function for the video options menu
-*/
-integer (integer x, integer y) 
-DRAW_video_options = 
-{
-	local integer	spacing = 120;
-
-	[video_options setBasePos:x y:y];
-	[video_options draw];
-
-	return 1;
-};
 
 void dprint (string str) = #0;
-
-integer (integer key, integer unicode, integer down)
-KEY_video_options =
-{
-	return [video_options keyEvent:key unicode:unicode down:down];
-}
 
 id object_from_plist (PLItem plist);
 
@@ -288,6 +222,26 @@ PLItem read_plist (void)
 }
 
 /*
+	DRAW_video_options
+
+	Drawing function for the video options menu
+*/
+integer (integer x, integer y) 
+DRAW_video_options = 
+{
+	[video_options setBasePos:x y:y];
+	[video_options draw];
+
+	return 1;
+};
+
+integer (integer key, integer unicode, integer down)
+KEY_video_options =
+{
+	return [video_options keyEvent:key unicode:unicode down:down];
+}
+
+/*
 	MENU_video_options
 
 	Menu function for the video options menu.
@@ -295,16 +249,12 @@ PLItem read_plist (void)
 void () 
 MENU_video_options =
 {
-	local PLItem plist;
-
 	Menu_Begin (54, 50, "Video");
 	Menu_FadeScreen (1);
 	Menu_Draw (DRAW_video_options);
 	Menu_KeyEvent (KEY_video_options);
 
-	plist = read_plist ();
-
-	video_options = object_from_plist ([plist getObjectForKey:"video_options"]);
+	video_options = object_from_plist ([menu_plist getObjectForKey:"video_options"]);
 
 	Menu_End ();
 };
@@ -313,32 +263,6 @@ MENU_video_options =
  * AUDIO OPTIONS
  * Code for the audio settings menu
  *************************************/
-
-/*
-	CB_audio_options
-
-	Callback for the audio settings.
-*/
-integer (string text, integer key) 
-CB_audio_options =
-{
-	local CvarRangeView range;
-
-	if(!(key == QFK_RIGHT || key == QFK_LEFT )) {
-		return 0;
-	}
-	if (text == "volume")
-		range = volume_view;
-	else
-		range = bgmvolume_view;
-
-	if ((key == QFK_RIGHT) && (key != QFK_LEFT))
-		[range inc];
-	else
-		[range dec];
-
-	return 0;
-};
 
 /*
 	DRAW_audio_options
@@ -351,9 +275,14 @@ DRAW_audio_options =
 	[audio_options setBasePos:x y:y];
 	[audio_options draw];
 
-	opt_cursor  (x + 62, y + (Menu_GetIndex() * 10) + 60);
 	return 1;
 };
+
+integer (integer key, integer unicode, integer down)
+KEY_audio_options =
+{
+	return [audio_options keyEvent:key unicode:unicode down:down];
+}
 
 /*
 	MENU_audio_options
@@ -363,45 +292,13 @@ DRAW_audio_options =
 void () 
 MENU_audio_options =
 {
-	local integer bar_pad;
-	local Rect rect;
-	local id view;
-
 	Menu_Begin (54, 60, "Audio");
 	Menu_FadeScreen (1);
 	Menu_Draw (DRAW_audio_options);
+	Menu_KeyEvent (KEY_audio_options);
 
-	audio_options = [[Group alloc] initWithComponents:0 :0 :320 :200];
+	audio_options = object_from_plist ([menu_plist getObjectForKey:"audio_options"]);
 
-	view = [[Pic alloc] initWithComponents:16 :4 :0 :0];
-	[view setPic:"gfx/qplaque.lmp"];
-	[audio_options addView:view];
-
-	view = [[CenterPic alloc] initWithComponents:160 :4 :0 :0];
-	[view setPic:"gfx/p_option.lmp"];
-	[audio_options addView:view];
-
-	view = [[Text alloc] initWithComponents:54 :40 :40 :8];
-	[view setText:"Audio"];
-	[audio_options addView:view];
-
-	view = [[Text alloc] initWithComponents:54 :50 :40 :8];
-	[view setText:"-----"];
-	[audio_options addView:view];
-
-	rect = [[Rect alloc] initWithComponents:70 :60 :17 * 8 :8];
-	volume_view = [[CvarRangeView alloc] initWithBounds:rect title:"Volume:" sliderWidth:14 * 8 :[[CvarRange alloc] initWithCvar:"volume" min:MIN_VOLUME max:MAX_VOLUME step:VOLUME_STEP]];
-	[audio_options addView:volume_view];
-
-	rect.origin.y += 8;
-	bgmvolume_view = [[CvarRangeView alloc] initWithBounds:rect title:"Music :" sliderWidth:14 * 8 :[[CvarRange alloc] initWithCvar:"bgmvolume" min:MIN_VOLUME max:MAX_VOLUME step:VOLUME_STEP]];
-	[audio_options addView:bgmvolume_view];
-
-	[rect release];
-	
-	bar_pad = 0;
-	Menu_Item (54, bar_pad + 10, "volume", CB_audio_options, 1);
-	Menu_Item (54, bar_pad + 10, "bgmvolume", CB_audio_options, 1);
 	Menu_End ();
 };
 
@@ -1012,6 +909,8 @@ void ()
 MENU_options =
 {
 	local integer	spacing = 120;
+
+	menu_plist = read_plist ();
 
 	Menu_Begin (54, 72, "");
 	Menu_FadeScreen (1);
