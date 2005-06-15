@@ -565,6 +565,18 @@ if test "x$enable_vorbis" != "xno"; then
   fi
 fi
 
+AC_ARG_ENABLE(flac,
+[  --disable-flac           disable flac support],
+)
+
+HAVE_FLAC=no
+if test "x$enable_flac" != "xno"; then
+  AM_PATH_LIBFLAC(HAVE_FLAC=yes, HAVE_FLAC=no)
+  if test "x$HAVE_FLAC" = xyes; then
+    AC_DEFINE(HAVE_FLAC, 1, [define this if you have flac libs])
+  fi
+fi
+
 AC_ARG_ENABLE(zlib,
 [  --disable-zlib          disable zlib support],
 )
@@ -2324,7 +2336,7 @@ AC_MSG_RESULT([
 	Sound support      :${SOUND_TYPES- no} ${SND_OUTPUT_DEFAULT}
 	CD Audio system    :${CDTYPE- no}
 	IPv6 networking    : $NETTYPE_IPV6
-	Compression support: gz=$HAVE_ZLIB ogg=$HAVE_VORBIS png=$HAVE_PNG
+	Compression support: gz=$HAVE_ZLIB ogg=$HAVE_VORBIS flac=$HAVE_FLAC png=$HAVE_PNG
 	Compiler version   : $CCVER
 	Compiler flags     : $CFLAGS
 	qfcc cpp invocation: $CPP_NAME

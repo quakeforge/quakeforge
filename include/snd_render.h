@@ -83,7 +83,7 @@ typedef struct sfxblock_s {
 	cache_user_t cache;
 } sfxblock_t;
 
-// !!! if this is changed, it much be changed in asm_i386.h too !!!
+// !!! if this is changed, it must be changed in asm_i386.h too !!!
 struct channel_s {
 	sfx_t      *sfx;			// sfx number
 	int         leftvol;		// 0-255 volume
@@ -113,6 +113,7 @@ void SND_InitScaletable (void);
 void SND_Load (sfx_t *sfx);
 void SND_CallbackLoad (void *object, cache_allocator_t allocator);
 void SND_LoadOgg (QFile *file, sfx_t *sfx, char *realname);
+void SND_LoadFLAC (QFile *file, sfx_t *sfx, char *realname);
 void SND_LoadWav (QFile *file, sfx_t *sfx, char *realname);
 void SND_LoadMidi (QFile *file, sfx_t *sfx, char *realname);
 
