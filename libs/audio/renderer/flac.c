@@ -48,6 +48,7 @@ static __attribute__ ((unused)) const char rcsid[] =
 #include <FLAC/metadata.h>
 
 #include "QF/cvar.h"
+#include "QF/qendian.h"
 #include "QF/quakefs.h"
 #include "QF/sound.h"
 #include "QF/sys.h"
@@ -135,20 +136,20 @@ write_func (const FLAC__SeekableStreamDecoder *decoder,
 			char       *ro = (char *) ff->buffer + 1;
 
 			for (i = 0; i < frame->header.blocksize; i++, lo++, ro++) {
-				*lo++ = *li++;
-				*ro++ = *ri++;
+				*lo++ = LittleShort (*li++);
+				*ro++ = LittleShort (*ri++);
 			}
 		} else {
 			short      *lo = (short *) ff->buffer + 0;
 			short      *ro = (short *) ff->buffer + 1;
 
 			for (i = 0; i < frame->header.blocksize; i++, lo++, ro++) {
-				*lo++ = *li++;
-				*ro++ = *ri++;
+				*lo++ = LittleShort (*li++);
+				*ro++ = LittleShort (*ri++);
 			}
 		}
 	}
-	ff->size = frame->header.blocksize;
+	ff->size = frame->header.blocksize * bps * ff->info.channels;
 	ff->pos = 0;
 	return FLAC__STREAM_DECODER_WRITE_STATUS_CONTINUE;
 }
@@ -211,13 +212,12 @@ static int
 flac_read (flacfile_t *ff, byte *buf, int len)
 {
 	int         count = 0;
-	int         bps = ff->info.channels * ff->info.bits_per_sample / 8;
 
 	while (len) {
 		int         res = 0;
 		if (ff->size == ff->pos)
 			FLAC__seekable_stream_decoder_process_single (ff->decoder);
-		res = (ff->size - ff->pos) * bps;
+		res = ff->size - ff->pos;
 		if (res > len)
 			res = len;
 		if (res > 0) {
@@ -225,7 +225,7 @@ flac_read (flacfile_t *ff, byte *buf, int len)
 			count += res;
 			len -= res;
 			buf += res;
-			ff->pos += res / bps;
+			ff->pos += res;
 		} else if (res < 0) {
 			Sys_Printf ("flac error %d\n", res);
 			return -1;
@@ -325,6 +325,8 @@ static int
 flac_stream_seek (void *file, int pos, wavinfo_t *info)
 {
 	flacfile_t *ff = file;
+
+	ff->pos = ff->size = 0;
 	return FLAC__seekable_stream_decoder_seek_absolute (ff->decoder, pos);
 }
 
