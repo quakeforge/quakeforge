@@ -125,7 +125,20 @@ write_func (const FLAC__SeekableStreamDecoder *decoder,
 	if (!ff->buffer)
 		ff->buffer = malloc (ff->info.max_blocksize * ff->info.channels * bps);
 	if (ff->info.channels == 1) {
-		memcpy (ff->buffer, buffer[0], bps * frame->header.blocksize);
+		unsigned    i;
+		const FLAC__int32 *in = buffer[0];
+
+		if (ff->info.bits_per_sample == 8) {
+			byte       *out = ff->buffer;
+
+			for (i = 0; i < frame->header.blocksize; i++)
+				*out++ = *in++ + 128;
+		} else {
+			short      *out = (short *) ff->buffer;
+
+			for (i = 0; i < frame->header.blocksize; i++)
+				*out++ = *in++;
+		}
 	} else {
 		unsigned    i;
 		const FLAC__int32 *li = buffer[0];
@@ -136,8 +149,8 @@ write_func (const FLAC__SeekableStreamDecoder *decoder,
 			char       *ro = (char *) ff->buffer + 1;
 
 			for (i = 0; i < frame->header.blocksize; i++, lo++, ro++) {
-				*lo++ = LittleShort (*li++);
-				*ro++ = LittleShort (*ri++);
+				*lo++ = *li++ + 128;
+				*ro++ = *ri++ + 128;
 			}
 		} else {
 			short      *lo = (short *) ff->buffer + 0;
@@ -186,7 +199,7 @@ open_flac (QFile *file)
 	FLAC__seekable_stream_decoder_set_metadata_respond (ff->decoder,
 			FLAC__METADATA_TYPE_VORBIS_COMMENT);
 
-	Sys_DPrintf ("%s\n", FLAC__SeekableStreamDecoderStateString[FLAC__seekable_stream_decoder_init (ff->decoder)]);
+	FLAC__seekable_stream_decoder_init (ff->decoder);
 	FLAC__seekable_stream_decoder_process_until_end_of_metadata (ff->decoder);
 	return ff;
 }
@@ -302,6 +315,9 @@ static void
 flac_cache (sfx_t *sfx, char *realname, flacfile_t *ff, wavinfo_t info)
 {
 	sfxblock_t *block = calloc (1, sizeof (sfxblock_t));
+
+	close_flac (ff);
+
 	sfx->data = block;
 	sfx->wavinfo = SND_CacheWavinfo;
 	sfx->touch = SND_CacheTouch;
@@ -309,7 +325,7 @@ flac_cache (sfx_t *sfx, char *realname, flacfile_t *ff, wavinfo_t info)
 	sfx->release = SND_CacheRelease;
 
 	block->sfx = sfx;
-	block->file = ff;
+	block->file = realname;
 	block->wavinfo = info;
 
 	Cache_Add (&block->cache, block, flac_callback_load);
