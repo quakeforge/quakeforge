@@ -322,7 +322,7 @@ SND_Load (sfx_t *sfx)
 		return;
 	}
 #endif
-#ifdef HAVE_VORBIS
+#ifdef HAVE_FLAC
 	if (strnequal ("fLaC", buf, 4)) {
 		Sys_DPrintf ("SND_Load: flac file\n");
 		SND_LoadFLAC (file, sfx, realname);
