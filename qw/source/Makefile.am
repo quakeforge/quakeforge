@@ -51,7 +51,8 @@ EXTRA_LIBRARIES=libasm.a libqw_client.a libqw_common.a libqw_sdl.a libqw_server.
 
 libasm_a_SOURCES= worlda.S
 libasm_la_CCASFLAGS=@PREFER_NON_PIC@
-libqw_common_a_SOURCES= com.c game.c pmove.c pmovetst.c net_packetlog.c
+libqw_common_a_SOURCES=\
+	com.c game.c map_cfg.c pmove.c pmovetst.c net_packetlog.c
 libqw_sdl_a_SOURCES=cl_sys_sdl.c
 libqw_sdl_a_CFLAGS=$(SDL_CFLAGS)
 

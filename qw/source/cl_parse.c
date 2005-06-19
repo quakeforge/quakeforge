@@ -73,6 +73,7 @@ static __attribute__ ((unused)) const char rcsid[] =
 #include "client.h"
 #include "compat.h"
 #include "host.h"
+#include "map_cfg.h"
 #include "qw/pmove.h"
 #include "qw/protocol.h"
 #include "sbar.h"
@@ -254,30 +255,6 @@ CL_CheckOrDownloadFile (const char *filename)
 	cls.downloadnumber++;
 
 	return false;
-}
-
-static void
-map_cfg (const char *mapname, int all)
-{
-	char       *name = malloc (strlen (mapname) + 4 + 1);
-	QFile      *f;
-	cbuf_t     *cbuf = Cbuf_New (&id_interp);
-
-	QFS_StripExtension (mapname, name);
-	strcat (name, ".cfg");
-	QFS_FOpenFile (name, &f);
-	if (f) {
-		Qclose (f);
-		Cmd_Exec_File (cbuf, name, 1);
-	} else {
-		Cmd_Exec_File (cbuf, "maps_default.cfg", 1);
-	}
-	if (all)
-		Cbuf_Execute_Stack (cbuf);
-	else
-		Cbuf_Execute_Sets (cbuf);
-	free (name);
-	Cbuf_Delete(cbuf);
 }
 
 static void

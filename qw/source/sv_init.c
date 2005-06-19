@@ -48,6 +48,7 @@ static __attribute__ ((unused)) const char rcsid[] =
 
 #include "compat.h"
 #include "crudefile.h"
+#include "map_cfg.h"
 #include "qw/pmove.h"
 #include "server.h"
 #include "sv_progs.h"
@@ -368,7 +369,9 @@ SV_SpawnServer (const char *server)
 
 	strncpy (sv.name, server, sizeof (sv.name));
 	snprintf (sv.modelname, sizeof (sv.modelname), "maps/%s.bsp", server);
+	map_cfg (sv.modelname, 0);
 	sv.worldmodel = Mod_ForName (sv.modelname, true);
+	map_cfg (sv.modelname, 1);
 	SV_CalcPHS ();
 
 	// clear physics interaction links
