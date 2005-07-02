@@ -636,14 +636,17 @@ Parse_Server_Packet (int has_sequence)
 					break;
 				case svc_playerinfo:
 					Net_LogPrintf ("\n\tPlayer: %d", MSG_ReadByte (&packet));
-					mask1 = MSG_ReadShort (&packet);
+					mask2 = mask1 = MSG_ReadShort (&packet);
 					Net_LogPrintf (" Mask1: %d", mask1);
+#if 1
 					Net_LogPrintf (" Origin:");
 					for (i = 0; i < 3; i++)
 						Net_LogPrintf ("%c%f", i ? ',' : ' ',
 									   MSG_ReadCoord (&packet));
+#endif
 					Net_LogPrintf (" Frame: %d", MSG_ReadByte (&packet));
 
+#if 1
 					if (mask1 & PF_MSEC)
 						Net_LogPrintf (" Ping: %d", MSG_ReadByte (&packet));
 
@@ -691,6 +694,39 @@ Parse_Server_Packet (int has_sequence)
 					if (mask1 & PF_WEAPONFRAME)
 						Net_LogPrintf (" Weapon frame: %d", MSG_ReadByte
 									   (&packet));
+
+#else
+					if (mask1 & (DF_ORIGIN | (DF_ORIGIN << 1)
+								 | (DF_ORIGIN << 2))) {
+						Net_LogPrintf (" Origin:");
+						for (i = 0; i < 3; i++)
+							if (mask1 & (DF_ORIGIN << i))
+								Net_LogPrintf ("%c%f", i ? ',' : ' ',
+											   MSG_ReadCoord (&packet));
+							else
+								Net_LogPrintf ("%c", i ? ',' : ' ');
+					}
+					if (mask1 & (DF_ANGLES | (DF_ANGLES << 1)
+								 | (DF_ANGLES << 2))) {
+						Net_LogPrintf (" Angles:");
+						for (i = 0; i < 3; i++)
+							if (mask1 & (DF_ANGLES << i))
+								Net_LogPrintf ("%c%f", i ? ',' : ' ',
+											   MSG_ReadAngle16 (&packet));
+							else
+								Net_LogPrintf ("%c", i ? ',' : ' ');
+					}
+					if (mask1 & DF_MODEL)
+						Net_LogPrintf (" Model: %d", MSG_ReadByte (&packet));
+					if (mask1 & DF_SKINNUM)
+						Net_LogPrintf (" Skin: %d", MSG_ReadByte (&packet));
+					if (mask1 & DF_EFFECTS)
+						Net_LogPrintf (" Effects: %d", MSG_ReadByte (&packet));
+
+					if (mask1 & DF_WEAPONFRAME)
+						Net_LogPrintf (" Weapon frame: %d", MSG_ReadByte
+									   (&packet));
+#endif
 					break;
 				case svc_nails:
 					ii = MSG_ReadByte (&packet);
