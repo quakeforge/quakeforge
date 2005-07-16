@@ -32,6 +32,14 @@ EXTRA_LIBRARIES= $(scheme_libs)
 pkgdata_DATA= $(data)
 EXTRA_DATA = $(scheme_data)
 
+EXTRA_DIST = \
+		BaseContinuation.h Boolean.h CompiledCode.h Compiler.h Cons.h \
+		Continuation.h Error.h Frame.h Instruction.h Lambda.h Lexer.h \
+		Machine.h Nil.h Number.h Parser.h Primitive.h Procedure.h \
+		SchemeObject.h SchemeString.h Scope.h Symbol.h Void.h builtins.h \
+		debug.h defs.h state.h \
+		\
+		main.qc defs.qc
 
 %.qfo: %.r
 	$(QFCC) $(QCFLAGS) $(QCPPFLAGS) -c -o $@ $<
@@ -42,8 +50,8 @@ EXTRA_DATA = $(scheme_data)
 	$(QFCC) $(QCFLAGS) $(QCPPFLAGS) -c -o $@ $<
 
 libscheme_a_SOURCES=\
-	SchemeObject.r Cons.r Number.r SchemeString.r Symbol.r Lexer.r Parser.r Nil.r \
-	Procedure.r Primitive.r Lambda.r Scope.r Instruction.r builtins.r \
+	SchemeObject.r Cons.r Number.r SchemeString.r Symbol.r Lexer.r Parser.r \
+	Nil.r Procedure.r Primitive.r Lambda.r Scope.r Instruction.r builtins.r \
 	Frame.r CompiledCode.r Compiler.r Continuation.r Machine.r Void.r \
 	Error.r Boolean.r BaseContinuation.r
 libscheme_a_AR=$(PAK) -cf
@@ -60,4 +68,4 @@ main.dat$(GZ): $(scheme_obj) $(QFCC_DEP) ../lib/libcsqc.a ../lib/libr.a libschem
 	$(QFCC) $(QCFLAGS) -p $(STRIP) -o main.dat $(scheme_obj) libscheme.a ../lib/libcsqc.a ../lib/libr.a
 	$(GZIP)
 
-CLEANFILES=	*.qfo *.o
+CLEANFILES= *.dat *.sym *.gz *.qfo *.o

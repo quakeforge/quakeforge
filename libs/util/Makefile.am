@@ -11,8 +11,8 @@ else
 asm=
 endif
 
-#noinst_LTLIBRARIES=	$(asm)
-EXTRA_LTLIBRARIES= libasm.la
+noinst_LTLIBRARIES=	$(asm)
+#EXTRA_LTLIBRARIES= libasm.la
 
 libasm_la_SOURCES=	math.S sys_ia32.S
 
