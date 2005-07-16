@@ -897,9 +897,9 @@ sub parse_date_and_author ()
 
   my $line = shift;
 
-  my ($year, $mon, $mday, $hours, $min, $secs, $offset, $author) = $line =~
-      m#(\d+)-(\d+)-(\d+)\s+(\d+):(\d+):(\d+)\s+([+-]\d+);\s+author:\s+([^;]+);#
-          or  die "Couldn't parse date ``$line''";
+  my ($year, $mon, $mday, $hours, $min, $secs, $f, $offset, $author) = $line =~
+      m#(\d+)[/-](\d+)[/-](\d+)\s+(\d+):(\d+):(\d+)(\s+([+-]\d+))?;\s+author:\s+([^;]+);#
+		  or  die "Couldn't parse date ``$line''";
   die "Bad date or Y2K issues" unless ($year > 1969 and $year < 2258);
   # Kinda arbitrary, but useful as a sanity check
   my $time = timegm($secs,$min,$hours,$mday,$mon-1,$year);
