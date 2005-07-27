@@ -1,0 +1,19 @@
+//unfortunatly, have to wrap the docs in a C comment for doxygen
+/**
+\page faq Frequently Asked Questions
+
+\section gfx_wad What does "W_LoadWadFile: unable to load gfx.wad" mean?
+Q: I get the message "Fatal Error: W_LoadWadFile: unable to load gfx.wad" when
+attpempting to one of the QuakeForge clients. What does it mean?
+
+A: The most common cause of this error is QuakeForge is unable to find
+pak0.pak. QuakeForge looks for pak0.pak in both the $fs_userpath/id1 and
+$fs_sharepath/id1 directories. In Windows, both fs_userpath and fs_sharepath
+default to "." (ie, the current directory: the same as id's quake clients). In
+Linux (and other UNIX like operating systems), fs_userpath defaults to
+~/.quakeforge and fs_sharepath defaults to $prefix/share/games/quakeforge
+(distribution packages might alter the exact path).
+
+\section pak0_pak Where can I get pak0.pak
+
+*/

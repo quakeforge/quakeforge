@@ -351,6 +351,8 @@ INPUT                 += @top_srcdir@/nq
 INPUT                 += @top_srcdir@/qtv
 INPUT                 += @top_srcdir@/qw
 INPUT                 += @top_srcdir@/tools
+INPUT                 += @top_srcdir@/doc/quakeforge.txt
+INPUT                 += @top_srcdir@/doc/faq.txt
 
 # If the value of the INPUT tag contains directories, you can use the 
 # FILE_PATTERNS tag to specify one or more wildcard pattern (like *.cpp 

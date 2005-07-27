@@ -1,0 +1,14 @@
+//unfortunatly, have to wrap the docs in a C comment for doxygen
+/**
+\mainpage QuakeForge
+QuakeForge is a 3D graphics game engine based on id Software's legendary
+Quake and QuakeWorld game engine.  Our purpose?  To improve the state of the
+game by improving the engine and making it accessable to the largest number
+of players we can.
+
+While QuakeForge itself (and the Quake source code in general) is Free
+Software, the game itself is not free. You need to either purchase it from <a
+href="http://www.idsoftware.com/store/index.php?view=quake">id Software</a> or
+you can use <a href="http://openquartz.sourceforge.net/">OpenQuartz</a>, a
+project developing GPL compatable game data for Quake.
+*/

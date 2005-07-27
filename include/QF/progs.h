@@ -764,12 +764,12 @@ typedef void (*builtin_proc) (progs_t *pr);
 */
 typedef struct {
 	/// QC name of the builtin. Must be an exact match for automaticly resolved
-	/// builtins (func = #0 in QC). NULL indicates end of array for
+	/// builtins (func = \#0 in QC). NULL indicates end of array for
 	/// PR_RegisterBuiltins()
 	const char *name;
 	/// Pointer to the C implementation of the builtin function.
 	builtin_proc proc;
-	/// The number of the builtin for #N in QC. -1 for automatic allocation.
+	/// The number of the builtin for \#N in QC. -1 for automatic allocation.
 	/// 0 or >= ::PR_AUTOBUILTIN is invalid.
 	int         binum;
 } builtin_t;
