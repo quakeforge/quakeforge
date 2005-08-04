@@ -31,7 +31,7 @@
 # include "config.h"
 #endif
 
-static __attribute__ ((unused)) const char rcsid[] =
+static __attribute__ ((used)) const char rcsid[] =
 	"$Id$";
 
 #ifdef HAVE_STRING_H
@@ -58,7 +58,7 @@ float       r_time1;
 int         r_lineadj;
 qboolean    r_active;
 
-#define U __attribute__ ((unused))
+#define U __attribute__ ((used))
 static U void (*const r_progs_init)(struct progs_s *) = R_Progs_Init;
 #undef U
 

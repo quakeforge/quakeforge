@@ -28,7 +28,7 @@
 # include "config.h"
 #endif
 
-static __attribute__ ((unused)) const char rcsid[] = 
+static __attribute__ ((used)) const char rcsid[] = 
 	"$Id$";
 
 #ifdef HAVE_STRING_H
@@ -455,7 +455,7 @@ PF_tracebox (progs_t *pr)
 	FIXME: make work...
 	scalar checkpos (entity, vector)
 */
-static void __attribute__ ((unused))
+static void __attribute__ ((used))
 PF_checkpos (progs_t *pr)
 {
 }

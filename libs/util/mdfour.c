@@ -29,7 +29,7 @@
 # include "config.h"
 #endif
 
-static __attribute__ ((unused)) const char rcsid[] = 
+static __attribute__ ((used)) const char rcsid[] = 
 	"$Id$";
 
 #ifdef HAVE_STRING_H

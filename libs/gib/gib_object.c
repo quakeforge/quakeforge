@@ -39,7 +39,7 @@
 #include <stdlib.h>
 #include <ctype.h>
 
-static __attribute__ ((unused)) const char rcsid[] =
+static __attribute__ ((used)) const char rcsid[] =
 	"$Id$";
 
 #include "QF/hash.h"

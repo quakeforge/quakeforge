@@ -28,7 +28,7 @@
 # include "config.h"
 #endif
 
-static __attribute__ ((unused)) const char rcsid[] = 
+static __attribute__ ((used)) const char rcsid[] = 
 	"$Id$";
 
 #ifdef HAVE_ERRNO_H
@@ -53,7 +53,7 @@ static __attribute__ ((unused)) const char rcsid[] =
 #include "compat.h"
 
 #include "QF/csqc.h"
-#define U __attribute__ ((unused))
+#define U __attribute__ ((used))
 static U void (*const gib_progs_init)(progs_t *) = GIB_Progs_Init;
 static U void (*const inputline_progs_init)(progs_t *) = InputLine_Progs_Init;
 #undef U

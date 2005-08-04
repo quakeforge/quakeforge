@@ -31,7 +31,7 @@
 # include "config.h"
 #endif
 
-static __attribute__ ((unused)) const char rcsid[] = 
+static __attribute__ ((used)) const char rcsid[] = 
 	"$Id$";
 
 #include <stdarg.h>
@@ -47,7 +47,7 @@ int         con_linewidth;				// characters across screen
 
 plugin_t *con_module;
 
-#define U __attribute__ ((unused))
+#define U __attribute__ ((used))
 static U con_buffer_t *(*const buffer) (size_t, int) = Con_CreateBuffer;
 static U void (*const complete)(inputline_t *) = Con_BasicCompleteCommandLine;
 static U inputline_t *(*const create)(int, int, char) = Con_CreateInputLine;

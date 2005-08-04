@@ -31,9 +31,9 @@
 # include "config.h"
 #endif
 
-static __attribute__ ((unused)) const char rcsid[] =
+static __attribute__ ((used)) const char rcsid[] =
 	"$Id$";
 
 extern int noconinput;
 
-static __attribute__ ((unused)) int *const _noconinput = &noconinput;
+static __attribute__ ((used)) int *const _noconinput = &noconinput;
