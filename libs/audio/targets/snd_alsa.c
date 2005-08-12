@@ -338,13 +338,9 @@ SNDDMA_Init (void)
 		goto error;
 	}
 	if (buffer_size != round_buffer_size (buffer_size)) {
-		buffer_size = round_buffer_size (buffer_size);
-		err = qfsnd_pcm_hw_params_set_buffer_size (pcm, hw, &buffer_size);
-		if (0 > err) {
-			Sys_Printf ("ALSA: unable to set buffer size. %s\n",
-						qfsnd_strerror (err));
-			goto error;
-		}
+		Sys_Printf ("ALSA: WARNING: non-power of 2 buffer size. sound may be unsatisfactory\n");
+		Sys_Printf ("recommend using either the plughw, or hw devices or adjusting dmix\n");
+		Sys_Printf ("to have a power of 2 buffer size\n");
 	}
 
 	sn.samples = buffer_size * sn.channels;		// mono samples in buffer
