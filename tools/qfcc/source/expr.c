@@ -2850,7 +2850,7 @@ error (expr_t *e, const char *fmt, ...)
 		file = e->file;
 		line = e->line;
 	}
-	fprintf (stderr, "%s:%d: ", G_GETSTR (file), line);
+	fprintf (stderr, "%s:%d: error: ", G_GETSTR (file), line);
 	vfprintf (stderr, fmt, args);
 	fputs ("\n", stderr);
 	va_end (args);
