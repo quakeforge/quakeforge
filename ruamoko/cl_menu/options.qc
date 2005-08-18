@@ -212,6 +212,8 @@ PLItem read_plist (void)
 	local PLItem plist;
 
 	file = QFS_OpenFile ("menu.plist");
+	if (!file)
+		return NIL;
 	plist_data = str_new ();
 	while ((l = Qgetline (file)))
 		str_cat (plist_data, l);
@@ -254,7 +256,8 @@ MENU_video_options =
 	Menu_Draw (DRAW_video_options);
 	Menu_KeyEvent (KEY_video_options);
 
-	video_options = object_from_plist ([menu_plist getObjectForKey:"video_options"]);
+	if (menu_plist)
+		video_options = object_from_plist ([menu_plist getObjectForKey:"video_options"]);
 
 	Menu_End ();
 };
@@ -297,7 +300,8 @@ MENU_audio_options =
 	Menu_Draw (DRAW_audio_options);
 	Menu_KeyEvent (KEY_audio_options);
 
-	audio_options = object_from_plist ([menu_plist getObjectForKey:"audio_options"]);
+	if (menu_plist)
+		audio_options = object_from_plist ([menu_plist getObjectForKey:"audio_options"]);
 
 	Menu_End ();
 };
