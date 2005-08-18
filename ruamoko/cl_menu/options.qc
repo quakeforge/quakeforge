@@ -212,8 +212,10 @@ PLItem read_plist (void)
 	local PLItem plist;
 
 	file = QFS_OpenFile ("menu.plist");
-	if (!file)
+	if (!file) {
+		dprint ("could not load menu.plist\n");
 		return NIL;
+	}
 	plist_data = str_new ();
 	while ((l = Qgetline (file)))
 		str_cat (plist_data, l);
