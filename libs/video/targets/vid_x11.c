@@ -100,7 +100,7 @@ static byte current_palette[768];
 
 typedef unsigned char PIXEL8;
 typedef unsigned short PIXEL16;
-typedef unsigned long PIXEL24;
+typedef unsigned int PIXEL24;
 
 static PIXEL16	st2d_8to16table[256];
 static PIXEL24	st2d_8to24table[256];
