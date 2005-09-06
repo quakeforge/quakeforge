@@ -1133,13 +1133,32 @@ QFS_AddDirectory (const char *dir)
 static void
 QFS_AddGameDirectory (const char *dir)
 {
+	const char *e;
+	const char *s;
+	dstring_t  *s_dir;
+
 	if (!*dir)
 		return;
-	Sys_DPrintf ("QFS_AddGameDirectory (\"%s/%s\")\n",
-				 fs_sharepath->string, dir);
+	e = fs_sharepath->string + strlen (fs_sharepath->string);
+	s = e;
+	s_dir = dstring_new ();
 
-	if (strcmp (fs_sharepath->string, fs_userpath->string) != 0)
-		QFS_AddDirectory (va ("%s/%s", fs_sharepath->string, dir));
+	while (s >= fs_sharepath->string) {
+		while (s != fs_sharepath->string && s[-1] !=':')
+			s--;
+		if (s != e) {
+			dsprintf (s_dir, "%.*s", (int) (e - s), s);
+			if (strcmp (s_dir->str, fs_userpath->string) != 0) {
+				Sys_DPrintf ("QFS_AddGameDirectory (\"%s/%s\")\n",
+							 s_dir->str, dir);
+
+				QFS_AddDirectory (va ("%s/%s", s_dir->str, dir));
+			}
+		}
+		e = --s;
+	}
+
+	Sys_DPrintf ("QFS_AddGameDirectory (\"%s/%s\")\n", qfs_userpath, dir);
 	QFS_AddDirectory (va ("%s/%s", qfs_userpath, dir));
 }
 
