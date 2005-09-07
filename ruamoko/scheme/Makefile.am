@@ -29,7 +29,7 @@ endif
 
 pkglib_LIBRARIES= $(libs)
 EXTRA_LIBRARIES= $(scheme_libs)
-pkgdata_DATA= $(data)
+#pkgdata_DATA= $(data)
 EXTRA_DATA = $(scheme_data)
 
 EXTRA_DIST = \
