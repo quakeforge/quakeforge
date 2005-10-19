@@ -12,7 +12,8 @@ UNIX users: because of the diversity of machines QuakeForge runs on, we do not p
     * GNU make (BSD make doesn't like some constructs used)
     * C compiler and preprocessor (gcc and cpp recommended)
 The following are recommended:
-    * cvs (highly recommended for staying up to date with current changes)
+    * subversion (highly recommended for staying up to date with current
+      changes)
     * zlib devel (highly recommended for compressed file and download support)
     * Ogg Vorbis libs (for compressed sound effects support)
     * X11 devel (for X11-based clients: software and OpenGL)
