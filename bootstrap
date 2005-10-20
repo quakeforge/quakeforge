@@ -24,8 +24,12 @@ if test "$1" = "clean"; then
 	rm -f RPM/build_rpm RPM/quakeforge.conf RPM/quakeforge.spec RPM/rpmmacros
 	find . -name '*.o' -type f -print0 | xargs $ARGS rm -f
 	find . -name '*.lo' -type f -print0 | xargs $ARGS rm -f
+	find . -name '*.qfo' -type f -print0 | xargs $ARGS rm -f
 	find . -name '.libs' -type d -print0 | xargs $ARGS rm -rf
 	find . -name '.deps' -type d -print0 | xargs $ARGS rm -rf
+	find . -name '*.a' -type f -print0 | xargs $ARGS rm -f
+	find . -name '*.dat*' -type f -print0 | xargs $ARGS rm -f
+	find . -name '*.sym*' -type f -print0 | xargs $ARGS rm -f
 	exit 0
 fi
 # Check libtoolize version, fix for Debian/Woody
