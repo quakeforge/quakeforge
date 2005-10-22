@@ -801,8 +801,8 @@ const GLubyte *
 norm_glGetString (GLenum name)
 {
 	if (name == GL_VERSION)
-		return "1.4";
-	return "";
+		return (const GLubyte *) "1.4";
+	return (const GLubyte *) "";
 }
 
 void

@@ -954,8 +954,8 @@ trace_glGetString (GLenum name)
 {
 	TRACE;
 	if (name == GL_VERSION)
-		return "1.4";
-	return "";
+		return (const GLubyte *) "1.4";
+	return (const GLubyte *) "";
 }
 
 void

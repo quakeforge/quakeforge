@@ -82,7 +82,7 @@ glXGetProcAddressARB (const GLubyte *procName)
 		if (glstub_trace)
 			trace = atoi (glstub_trace);
 	}
-	key.name = procName;
+	key.name = (const char *) procName;
 	stub = bsearch (&key, gl_stub_funcs, NUM_FUNCS, sizeof (gl_stub_t), cmp);
 	if (!stub)
 		return 0;
