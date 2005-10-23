@@ -74,7 +74,7 @@ struct in_addr {
 		struct {
 			unsigned short s_w1, s_w2;
 		} S_un_w;
-		unsigned long S_addr;
+		unsigned S_addr;
 	} S_un;
 };
 
@@ -87,7 +87,7 @@ struct sockaddr_in {
 	char        sin_zero[8];
 };
 char       *inet_ntoa (struct in_addr in);
-unsigned long inet_addr (const char *cp);
+unsigned inet_addr (const char *cp);
 #endif
 #endif // BAN_TEST
 
@@ -123,8 +123,8 @@ struct {
 
 
 #ifdef BAN_TEST
-unsigned long banAddr = 0x00000000;
-unsigned long banMask = 0xffffffff;
+unsigned banAddr = 0x00000000;
+unsigned banMask = 0xffffffff;
 
 static void
 NET_Ban_f (void)
@@ -994,7 +994,7 @@ _Datagram_CheckNewConnections (void)
 #ifdef BAN_TEST
 	// check for a ban
 	if (clientaddr.qsa_family == AF_INET) {
-		unsigned long testAddr;
+		unsigned testAddr;
 
 		testAddr = ((struct sockaddr_in *) &clientaddr)->sin_addr.s_addr;
 		if ((testAddr & banMask) == banAddr) {

@@ -82,7 +82,7 @@ keyhandler (int scancode, int state)
 {
 	int         sc, ascii, key;
 	int         press = state == KEY_EVENTPRESS;
-	unsigned long mask = ~1;
+	unsigned long mask = ~1L;
 	static unsigned long shifts;
 
 	sc = scancode & 0x7f;

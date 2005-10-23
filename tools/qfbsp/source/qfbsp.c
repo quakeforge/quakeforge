@@ -135,7 +135,7 @@ CopyWinding (winding_t *w)
 	int         size;
 	winding_t  *c;
 
-	size = (long) ((winding_t *) 0)->points[w->numpoints];
+	size = (long) &((winding_t *) 0)->points[w->numpoints];
 	c = malloc (size);
 	memcpy (c, w, size);
 	return c;
@@ -147,7 +147,7 @@ CopyWindingReverse (winding_t *w)
 	int         i, size;
 	winding_t  *c;
 
-	size = (long) ((winding_t *) 0)->points[w->numpoints];
+	size = (long) &((winding_t *) 0)->points[w->numpoints];
 	c = malloc (size);
 	c->numpoints = w->numpoints;
 	for (i = 0; i < w->numpoints; i++) {
@@ -334,7 +334,7 @@ NewWinding (int points)
 	if (c_activewindings > c_peakwindings)
 		c_peakwindings = c_activewindings;
 
-	size = (long) ((winding_t *) 0)->points[points];
+	size = (long) &((winding_t *) 0)->points[points];
 	w = malloc (size);
 	memset (w, 0, size);
 

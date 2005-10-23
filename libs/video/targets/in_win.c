@@ -629,7 +629,7 @@ MapKey (unsigned int keycode, int press, int *k, int *u)
 	int         scan;
 	int         key;
 	int         uc;
-	unsigned long mask = ~1;
+	unsigned long mask = ~1L;
 	static unsigned long shifts;
 
 	extended = (keycode >> 24) & 1;

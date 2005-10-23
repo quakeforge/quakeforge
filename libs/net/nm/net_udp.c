@@ -115,7 +115,7 @@ static int  net_controlsocket;
 static int  net_broadcastsocket = 0;
 static struct qsockaddr broadcastaddr;
 
-static unsigned long myAddr;
+static unsigned myAddr;
 
 #include "net_udp.h"
 
@@ -127,7 +127,7 @@ get_address (int sock)
 	char           buf[8192];
 	int            i, n;
 	struct sockaddr_in *in_addr;
-	unsigned long  addr;
+	unsigned       addr;
 
 	ifc.ifc_len = sizeof (buf);
 	ifc.ifc_buf = buf;
@@ -144,7 +144,7 @@ get_address (int sock)
 		in_addr = (struct sockaddr_in *)&ifr[i].ifr_addr;
 		Con_DPrintf ("%s: %s\n", ifr[i].ifr_name,
 					 inet_ntoa (in_addr->sin_addr));
-		addr = *(unsigned long *)&in_addr->sin_addr;
+		addr = *(unsigned *)&in_addr->sin_addr;
 		if (addr != htonl (0x7f000001)) {
 			myAddr = addr;
 			break;

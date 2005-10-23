@@ -112,7 +112,7 @@ ReadShort (QFile *file)
 	return (dat[1] << 8) | dat[0];
 }
 
-unsigned long
+unsigned int
 ReadLong (QFile *file)
 {
 	byte        dat[4];

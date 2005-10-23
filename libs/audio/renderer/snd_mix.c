@@ -83,7 +83,7 @@ static void
 s_xfer_stereo_16 (int endtime)
 {
 	int			lpaintedtime, lpos;
-	unsigned long *pbuf;
+	unsigned int *pbuf;
 
 	snd_vol = volume->value * 256;
 
@@ -91,7 +91,7 @@ s_xfer_stereo_16 (int endtime)
 	lpaintedtime = paintedtime;
 
 
-	pbuf = (unsigned long *) shm->buffer;
+	pbuf = (unsigned int *) shm->buffer;
 
 	while (lpaintedtime < endtime) {
 		// handle recirculating buffer issues
@@ -118,7 +118,7 @@ s_xfer_paint_buffer (int endtime)
 {
 	int			count, out_idx, out_mask, snd_vol, step, val;
 	int		   *p;
-	unsigned long *pbuf;
+	unsigned int *pbuf;
 
 	if (shm->samplebits == 16 && shm->channels == 2) {
 		s_xfer_stereo_16 (endtime);
@@ -132,7 +132,7 @@ s_xfer_paint_buffer (int endtime)
 	step = 3 - shm->channels;
 	snd_vol = volume->value * 256;
 
-	pbuf = (unsigned long *) shm->buffer;
+	pbuf = (unsigned int *) shm->buffer;
 
 	if (shm->samplebits == 16) {
 		short      *out = (short *) pbuf;

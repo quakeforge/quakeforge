@@ -94,7 +94,7 @@ void WriteLong (struct QFile_s *file, unsigned int l);
 float ReadFloat (struct QFile_s *file);
 byte ReadByte (struct QFile_s *file);
 unsigned short ReadShort (struct QFile_s *file);
-unsigned long ReadLong (struct QFile_s *file);
+unsigned int ReadLong (struct QFile_s *file);
 
 //@}
 //@}

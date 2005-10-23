@@ -482,7 +482,7 @@ CheckLights (void)
 			specular[4] = {0.1, 0.1, 0.1, 1.0};
 
 	qfglGetIntegerv (GL_MAX_LIGHTS, &gl_max_lights);
-	Con_Printf ("Max GL Lights %lu.\n", (long unsigned) gl_max_lights);
+	Con_Printf ("Max GL Lights %d.\n", gl_max_lights);
 
 	qfglEnable (GL_LIGHTING);
 	qfglLightModelfv (GL_LIGHT_MODEL_AMBIENT, dark);

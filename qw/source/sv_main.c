@@ -1167,7 +1167,7 @@ static void
 SV_GenerateIPMasks (void)
 {
 	int i;
-	unsigned long int j = 0xFFFFFFFF;
+	unsigned int j = 0xFFFFFFFF;
 
 	for (i = 32; i >= 0; i--) {
 		ipmasks[i] = htonl (j);

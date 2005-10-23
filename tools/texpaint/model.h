@@ -59,14 +59,14 @@ typedef struct _Model Model;
 struct _Model
 {
 	/* The number of Frames */
-	long numframes;
+	int numframes;
 	Frame *frames;
 	
 	void (*draw)(Model *,int frame,int nextframe,float interpolation);
 	void (*destroy)(Model *);
 
 	/* The GL commands */
-	long *glcmds;
+	int *glcmds;
 	TexInfo *texinfo;
 
 	int num_tris;

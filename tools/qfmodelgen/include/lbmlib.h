@@ -22,7 +22,7 @@
 typedef unsigned char	UBYTE;
 typedef short			WORD;
 typedef unsigned short	UWORD;
-typedef long			LONG;
+typedef int				LONG;
 
 typedef enum
 {

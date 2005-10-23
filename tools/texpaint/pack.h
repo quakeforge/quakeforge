@@ -21,8 +21,8 @@
 #include <stdio.h>
 
 typedef struct entry_info {
-  long offset;
-  long size;
+  int offset;
+  int size;
 } EntryInfo;
 
 EntryInfo *GetInfo(GtkWidget *item) ;

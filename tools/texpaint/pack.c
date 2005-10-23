@@ -29,20 +29,20 @@
 
 typedef struct {
   unsigned char magic[4];
-  long diroffset;
-  long dirsize;
+  int diroffset;
+  int dirsize;
 } PakHeader;
 
 typedef struct {
   char filename[0x38];
-  long offset;
-  long size;
+  int offset;
+  int size;
 } PakEntry;
 
 typedef struct dir_entry {
   char *name;
-  long offset;
-  long size;
+  int offset;
+  int size;
   
   struct dir_entry *same_level;
   struct dir_entry *sub_dir;
@@ -74,7 +74,7 @@ char *GetDir(char **file) {
 }
 
 static inline DirEntry *NewDirEntry(char *name, DirEntry *level, DirEntry *sub,
-				    long offset, long size) {
+				    int offset, int size) {
   DirEntry *ret = (DirEntry *) malloc(sizeof(DirEntry));
 
   ret->name = name;
@@ -88,7 +88,7 @@ static inline DirEntry *NewDirEntry(char *name, DirEntry *level, DirEntry *sub,
 }
 
 static inline DirEntry *RecInsert(DirEntry *first, char *filename,
-				  long offset, long size) {
+				  int offset, int size) {
   char *dir, *subdir;
 
   subdir = filename;
