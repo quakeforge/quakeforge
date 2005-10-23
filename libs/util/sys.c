@@ -419,10 +419,12 @@ Sys_Error (const char *error, ...)
 	va_list     args;
 #ifdef VA_LIST_IS_ARRAY
 	va_list     tmp_args;
-	VA_COPY (tmp_args, args);
 #endif
 
 	va_start (args, error);
+#ifdef VA_LIST_IS_ARRAY
+	VA_COPY (tmp_args, args);
+#endif
 	sys_err_printf_function (error, args);
 	va_end (args);
 
