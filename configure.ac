@@ -12,7 +12,7 @@ AC_VALIDATE_CACHED_SYSTEM_TUPLE(
 
 
 dnl This is the only place where the package version appears
-AM_INIT_AUTOMAKE(quakeforge, 0.5.5-CVS)
+AM_INIT_AUTOMAKE(quakeforge, 0.5.5-SVN)
 
 dnl Define the proper name and extra version numbers for package
 PROGRAM=QuakeForge
@@ -1269,7 +1269,7 @@ dnl ==================================================================
 dnl Misc checks
 dnl ==================================================================
 
-if test -d $srcdir/CVS; then
+if test -d $srcdir/.svn; then
 	cvs_def_enabled="!= xno"
 	cvs_def_disabled="= xyes"
 else
@@ -2350,8 +2350,8 @@ AC_MSG_RESULT([
 	libWildMidi Support         : $HAVE_WILDMIDI
 ])
 
-if test -d $srcdir/CVS; then
+if test -d $srcdir/.svn; then
 	echo "WARNING: Hackers at work, watch for falling bits of code."
-	echo "(This is from a development CVS tree. Expect problems)"
+	echo "(This is from a development subversion tree. Expect problems)"
 	echo
 fi

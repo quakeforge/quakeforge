@@ -29,10 +29,6 @@
 #ifndef __qf_varrays_h
 #define __qf_varrays_h
 
-#ifdef HAVE_CONFIG_H
-# include "config.h"
-#endif
-
 #ifdef HAVE_WINDOWS_H
 # include <windows.h>
 #endif

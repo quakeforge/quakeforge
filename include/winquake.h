@@ -29,10 +29,6 @@
 #ifndef _WINQUAKE_H
 #define _WINQUAKE_H
 
-#ifdef HAVE_CONFIG_H
-# include "config.h"
-#endif
-
 #ifdef _WIN32 
 
 #ifndef __GNUC__
