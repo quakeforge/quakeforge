@@ -93,6 +93,8 @@ AC_PROG_RANLIB
 AC_LIBTOOL_WIN32_DLL
 AM_PROG_LIBTOOL
 
+PKG_PROG_PKG_CONFIG
+
 AC_PROG_YACC
 if echo $YACC | grep -v bison > /dev/null; then
 	AC_MSG_ERROR(GNU bison is required but wasn't found)
@@ -603,13 +605,17 @@ AC_ARG_ENABLE(png,
 )
 HAVE_PNG=no
 PNG_LIBS=""
-if test "x$enable_zlib" != "xno"; then
-	AC_CHECK_LIB(png, png_set_read_fn, HAVE_PNG=yes, HAVE_PNG=no, [$LIBS])
-	if test "x$HAVE_PNG" = "xyes"; then
-		AC_CHECK_HEADER(png.h, HAVE_PNG=yes, HAVE_PNG=no)
+if test "x$enable_png" != "xno"; then
+	if test "x$PKG_CONFIG" != "x"; then
+		PKG_CHECK_MODULES([PNG], [libpng], HAVE_PNG=yes, HAVE_PNG=no)
+	else
+		AC_CHECK_LIB(png, png_set_read_fn, HAVE_PNG=yes, HAVE_PNG=no, [$LIBS])
 		if test "x$HAVE_PNG" = "xyes"; then
-			PNG_LIBS="-lpng"
-			AC_DEFINE(HAVE_PNG, 1, [Define if you have libpng])
+			AC_CHECK_HEADER(png.h, HAVE_PNG=yes, HAVE_PNG=no)
+			if test "x$HAVE_PNG" = "xyes"; then
+				PNG_LIBS="-lpng"
+				AC_DEFINE(HAVE_PNG, 1, [Define if you have libpng])
+			fi
 		fi
 	fi
 fi
