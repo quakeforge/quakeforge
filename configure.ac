@@ -98,11 +98,19 @@ PKG_PROG_PKG_CONFIG
 AC_PROG_YACC
 if echo $YACC | grep -v bison > /dev/null; then
 	AC_MSG_ERROR(GNU bison is required but wasn't found)
+else
+	if echo $YACC | grep missing > /dev/null; then
+		AC_MSG_ERROR(GNU bison is required but wasn't found)
+	fi
 fi
 
 AM_PROG_LEX
 if echo $LEX | grep -v flex > /dev/null; then
 	AC_MSG_ERROR(GNU flex is required but wasn't found)
+else
+	if echo $LEX | grep missing > /dev/null; then
+		AC_MSG_ERROR(GNU flex is required but wasn't found)
+	fi
 fi
 
 
