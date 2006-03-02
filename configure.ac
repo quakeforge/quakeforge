@@ -1428,12 +1428,13 @@ if test "x$optimize" = xyes; then
 		AC_MSG_CHECKING(for gcc version)
 		CCVER="gcc `$CC --version | grep '[[0-9]]\.[[0-9]]' | sed -e 's/.*(GCC)//' -e 's/[[^0-9]]*\([[0-9.]]*\).*/\1/'`"
 		set $CCVER
+		save_IFS="$IFS"
 		IFS="."
 		set $2
 		CC_MAJ=$1
 		CC_MIN=$2
 		CC_SUB=$3
-		IFS=" "
+		IFS="$save_IFS"
 		AC_MSG_RESULT($CCVER)
 		saved_cflags="$CFLAGS"
 		CFLAGS=""
