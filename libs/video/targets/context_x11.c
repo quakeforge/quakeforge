@@ -204,6 +204,7 @@ X11_ProcessEvents (void)
 		X11_ProcessEvent ();
 }
 
+#ifdef HAVE_VIDMODE
 static void
 X11_SetScreenSaver (void)
 {
@@ -218,6 +219,7 @@ X11_RestoreScreenSaver (void)
 	XSetScreenSaver (x_disp, xss_timeout, xss_interval, xss_blanking,
 					 xss_exposures);
 }
+#endif
 
 void
 X11_OpenDisplay (void)
@@ -336,11 +338,11 @@ X11_SetMouse (void)
 	x_mouse_time = ev.xmotion.time;
 }
 
+#ifdef HAVE_VIDMODE
+# ifdef X_XF86VidModeGetGamma
 static vec3_t *
 X11_GetGamma (void)
 {
-#ifdef HAVE_VIDMODE
-# ifdef X_XF86VidModeGetGamma
 	XF86VidModeGamma	xgamma;
 	vec3_t				*temp;
 
@@ -355,11 +357,11 @@ X11_GetGamma (void)
 			return NULL;
 		}
 	}
-# endif
-#endif
 	vid_gamma_avail = false;
 	return NULL;
 }
+# endif
+#endif
 
 void
 X11_SetVidMode (int width, int height)
