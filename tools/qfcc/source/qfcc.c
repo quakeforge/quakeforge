@@ -660,7 +660,7 @@ load_file (const char *fname)
 	QFile      *file;
 	char       *src;
 
-	file = Qopen (fname, "rt");
+	file = Qfopen (preprocess_file (fname), "rt");
 	if (!file)
 		return 0;
 	src = malloc (Qfilesize (file) + 1);
@@ -670,10 +670,29 @@ load_file (const char *fname)
 	return src;
 }
 
+static void
+parse_cpp_line (script_t *script, dstring_t *filename)
+{
+	if (Script_TokenAvailable (script, 0)) {
+		Script_GetToken (script, 0);
+		// subtract 1 for \n
+		script->line = atoi (script->token->str) - 1;
+		if (Script_TokenAvailable (script, 0)) {
+			Script_GetToken (script, 0);
+			dstring_copystr (filename, script->token->str);
+			script->file = filename->str;
+		}
+	}
+	// There shouldn't be anything else, but just to be safe...
+	while (Script_TokenAvailable (script, 0))
+		Script_GetToken (script, 0);
+}
+
 static int
 progs_src_compile (void)
 {
 	dstring_t  *filename = dstring_newstr ();
+	dstring_t  *qc_filename = dstring_newstr ();
 	const char *src;
 	int         crc = 0;
 	script_t   *script;
@@ -699,15 +718,17 @@ progs_src_compile (void)
 	script = Script_New ();
 	Script_Start (script, filename->str, src);
 
-	if (!Script_GetToken (script, 1)) {
-		fprintf (stderr, "No destination filename.  qfcc --help for info.\n");
-		return 1;
+	while (1) {
+		if (!Script_GetToken (script, 1)) {
+			fprintf (stderr, "No destination filename.  qfcc --help for info.\n");
+			return 1;
+		}
+		if (strcmp (script->token->str, "#") == 0) {
+			parse_cpp_line (script, filename);
+			continue;
+		}
+		break;
 	}
-	// Consume any aditional tokens on this line.
-	// FIXME compilation options?
-	// FIXME could break some progs.src files, have an optional control?
-	while (Script_TokenAvailable (script, 0))
-		Script_GetToken (script, 0);
 
 	if (!options.output_file)
 		options.output_file = save_string (script->token->str);
@@ -715,6 +736,12 @@ progs_src_compile (void)
 		printf ("output file: %s\n", options.output_file);
 	}
 	setup_sym_file (options.output_file);
+
+	// Consume any aditional tokens on this line.
+	// FIXME compilation options?
+	// FIXME could break some progs.src files, have an optional control?
+	while (Script_TokenAvailable (script, 0))
+		Script_GetToken (script, 0);
 
 	InitData ();
 	chain_initial_types ();
@@ -728,13 +755,18 @@ progs_src_compile (void)
 	while (Script_GetToken (script, 1)) {
 		int         err;
 
+		if (strcmp (script->token->str, "#") == 0) {
+			parse_cpp_line (script, filename);
+			continue;
+		}
+
 		if (*sourcedir)
-			dsprintf (filename, "%s%c%s", sourcedir, PATH_SEPARATOR,
+			dsprintf (qc_filename, "%s%c%s", sourcedir, PATH_SEPARATOR,
 					  script->token->str);
 		else
-			dsprintf (filename, "%s", script->token->str);
+			dsprintf (qc_filename, "%s", script->token->str);
 		if (options.verbosity >= 2)
-			printf ("compiling %s\n", filename->str);
+			printf ("%s:%d: compiling %s\n", script->file, script->line, qc_filename->str);
 
 		// Consume any aditional tokens on this line, cumulatively adding them
 		// to the cpp command line.
@@ -745,11 +777,11 @@ progs_src_compile (void)
 			add_cpp_def (save_string (script->token->str));
 		}
 
-		yyin = preprocess_file (filename->str);
+		yyin = preprocess_file (qc_filename->str);
 		if (!yyin)
 			return !options.preprocess_only;
 
-		pr.source_file = ReuseString (strip_path (filename->str));
+		pr.source_file = ReuseString (strip_path (qc_filename->str));
 		pr.source_line = 1;
 		clear_frame_macros ();
 		err = yyparse () || pr.error_count;
