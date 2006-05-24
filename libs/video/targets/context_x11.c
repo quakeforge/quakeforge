@@ -107,10 +107,12 @@ static qboolean    vid_context_created = false;
 static int  window_x, window_y, window_saved;
 static int      pos_x, pos_y;
 
+#ifdef HAVE_VIDMODE
 static int	xss_timeout;
 static int	xss_interval;
 static int	xss_blanking;
 static int	xss_exposures;
+#endif
 
 static qboolean	accel_saved = false;
 static int	accel_numerator;
