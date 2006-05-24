@@ -282,7 +282,7 @@ preprocess_file (const char *filename)
 		else if (options.save_temps)
 			return fopen (tempname->str, "rt");
 		else {
-			return fdopen (tempfd, "r+t");
+			return fdopen (tempfd, "rt");
 		}
 #endif
 	}
