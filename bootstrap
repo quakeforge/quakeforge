@@ -10,6 +10,9 @@ if test "$1" = "clean"; then
 	fi
 
 	find . -name Makefile.in -print0 | xargs $ARGS rm -f
+	find . -name config.h.in -print0 | xargs $ARGS rm -f
+	find . -name config.h -print0 | xargs $ARGS rm -f
+	find . -name stamp-h1 -print0 | xargs $ARGS rm -f
 	find . -name '*~' -type f -print0 | xargs $ARGS rm -f
 	find . -name '*.rej' -type f -print0 | xargs $ARGS rm -f
 	find . -name '*.orig' -type f -print0 | xargs $ARGS rm -f
