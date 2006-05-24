@@ -69,6 +69,9 @@ static __attribute__ ((used)) const char rcsid[] =
 # endif
 #endif
 
+#define QF_ZIP	1
+#define QF_READ	2
+
 struct QFile_s {
 	FILE *file;
 #ifdef HAVE_ZLIB
@@ -109,7 +112,7 @@ check_file (int fd, int offs, int len, int *zip)
 		len = lseek (fd, 0, SEEK_END);
 		lseek (fd, 0, SEEK_SET);
 	}
-	if (*zip) {
+	if (zip && *zip) {
 		int         r;
 
 		lseek (fd, offs, SEEK_SET);
@@ -129,32 +132,46 @@ check_file (int fd, int offs, int len, int *zip)
 	return len;
 }
 
-QFile *
-Qopen (const char *path, const char *mode)
+static int
+file_mode (const char *mode, char *out)
 {
-	QFile      *file;
-	char       *m, *p;
-	int         reading = 0;
-	int         zip = 0;
-	int         size = -1;
+	int         flags = 0;
+	char       *p;
 
-	m = alloca (strlen (mode) + 1);
-	for (p = m; *mode && p - m < ((int) sizeof (m) - 1); mode++) {
+	for (p = out; *mode; mode++) {
 		if (*mode == 'z') {
-			zip = 1;
+			flags |= QF_ZIP;
 			continue;
 		}
-		if (*mode == 'r') {
-			reading = 1;
+		if (*mode == 'r' || ((*mode == 'w' || *mode == 'a') && *mode == '+')) {
+			flags |= QF_READ;
 		}
 #ifndef HAVE_ZLIB
 		if (strchr ("0123456789fh", *mode)) {
 			continue;
 		}
 #endif
-		*p++ = *mode;
+		if (p)
+			*p++ = *mode;
 	}
-	*p = 0;
+	if (p)
+		*p = 0;
+	return flags;
+}
+
+QFile *
+Qopen (const char *path, const char *mode)
+{
+	QFile      *file;
+	char       *m;
+	int         flags, reading, zip;
+	int         size = -1;
+
+	m = alloca (strlen (mode) + 1);
+	flags = file_mode (mode, m);
+
+	zip = flags & QF_ZIP;
+	reading = flags & QF_READ;
 
 	if (reading) {
 		int         fd = open (path, O_RDONLY);
@@ -230,6 +247,24 @@ Qdopen (int fd, const char *mode)
 	}
 	file->c = -1;
 	return file;
+}
+
+QFile *
+Qfopen (FILE *file, const char *mode)
+{
+	QFile      *qfile;
+	int         flags = file_mode (mode, 0);
+
+	if (!file)
+		return 0;
+	qfile = calloc (sizeof (*qfile), 1);
+	if (!qfile)
+		return 0;
+	qfile->file = file;
+	if (flags & QF_READ)
+		qfile->size = check_file (fileno (file), -1, -1, 0);
+	qfile->c = -1;
+	return qfile;
 }
 
 QFile *
