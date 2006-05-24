@@ -515,7 +515,7 @@ compile_to_obj (const char *file, const char *obj)
 {
 	int         err;
 
-	yyin = preprocess_file (file);
+	yyin = preprocess_file (file, 0);
 	if (!yyin)
 		return !options.preprocess_only;
 
@@ -660,7 +660,7 @@ load_file (const char *fname)
 	QFile      *file;
 	char       *src;
 
-	file = Qfopen (preprocess_file (fname), "rt");
+	file = Qfopen (preprocess_file (fname, "i1"), "rt");
 	if (!file)
 		return 0;
 	src = malloc (Qfilesize (file) + 1);
@@ -693,7 +693,7 @@ compile_file (const char *filename)
 {
 	int         err;
 
-	yyin = preprocess_file (filename);
+	yyin = preprocess_file (filename, 0);
 	if (!yyin)
 		return !options.preprocess_only;
 
@@ -735,7 +735,7 @@ progs_src_compile (void)
 		dsprintf (filename, "%s", progs_src);
 
 	if (options.single_cpp) {
-		intermediate_file (single_name, filename->str, "i");
+		intermediate_file (single_name, filename->str, "i2");
 		if (!options.save_temps) {
 #ifdef _WIN32
 			mktemp (single_name->str);

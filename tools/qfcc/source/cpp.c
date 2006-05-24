@@ -150,14 +150,14 @@ build_cpp_args (const char *in_name, const char *out_name)
 void
 intermediate_file (dstring_t *ifile, const char *filename, const char *ext)
 {
-	const char *temp1;
-	char       *temp2 = strrchr (this_program, PATH_SEPARATOR);
-
 	if (options.save_temps) {
 		char	*basename = strdup (filename);
 		char	*temp;
 	
-		temp = strrchr (basename, '.');
+		temp = strrchr (basename, '/');
+		if (!temp)
+			temp = basename;
+		temp = strrchr (temp, '.');
 		if (temp)
 			*temp = '\0';	// ignore the rest of the string
 
@@ -175,7 +175,9 @@ intermediate_file (dstring_t *ifile, const char *filename, const char *ext)
 		}
 		free (basename);
 	} else {
-		temp1 = getenv ("TMPDIR");
+		const char *temp1 = getenv ("TMPDIR");
+		char       *temp2 = strrchr (this_program, PATH_SEPARATOR);
+
 		if ((!temp1) || (!temp1[0])) {
 			temp1 = getenv ("TEMP");
 			if ((!temp1) || (!temp1[0])) {
@@ -189,7 +191,7 @@ intermediate_file (dstring_t *ifile, const char *filename, const char *ext)
 }
 
 FILE *
-preprocess_file (const char *filename)
+preprocess_file (const char *filename, const char *ext)
 {
 #ifndef _WIN32
 	pid_t       pid;
@@ -197,7 +199,7 @@ preprocess_file (const char *filename)
 #endif
 
 	if (cpp_name) {
-		intermediate_file (tempname, filename, "p");
+		intermediate_file (tempname, filename, ext ? ext : "p");
 		build_cpp_args (filename, tempname->str);
 
 #ifdef _WIN32
