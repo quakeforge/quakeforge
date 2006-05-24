@@ -147,6 +147,47 @@ build_cpp_args (const char *in_name, const char *out_name)
 
 //============================================================================
 
+void
+intermediate_file (dstring_t *ifile, const char *filename, const char *ext)
+{
+	const char *temp1;
+	char       *temp2 = strrchr (this_program, PATH_SEPARATOR);
+
+	if (options.save_temps) {
+		char	*basename = strdup (filename);
+		char	*temp;
+	
+		temp = strrchr (basename, '.');
+		if (temp)
+			*temp = '\0';	// ignore the rest of the string
+
+		temp = strrchr (basename, '/');
+		if (!temp)
+			temp = basename;
+		else
+			temp++;
+
+		if (*sourcedir) {
+			dsprintf (ifile, "%s%c%s.%s", sourcedir,
+					  PATH_SEPARATOR, temp, ext);
+		} else {
+			dsprintf (ifile, "%s.%s", temp, ext);
+		}
+		free (basename);
+	} else {
+		temp1 = getenv ("TMPDIR");
+		if ((!temp1) || (!temp1[0])) {
+			temp1 = getenv ("TEMP");
+			if ((!temp1) || (!temp1[0])) {
+				temp1 = "/tmp";
+			}
+		}
+
+		dsprintf (ifile, "%s%c%sXXXXXX", temp1,
+				  PATH_SEPARATOR, temp2 ? temp2 + 1 : this_program);
+	}
+}
+
 FILE *
 preprocess_file (const char *filename)
 {
@@ -154,43 +195,9 @@ preprocess_file (const char *filename)
 	pid_t       pid;
 	int         tempfd = 0;
 #endif
-	const char *temp1;
-	char       *temp2 = strrchr (this_program, PATH_SEPARATOR);
 
 	if (cpp_name) {
-		if (options.save_temps) {
-			char	*basename = strdup (filename);
-			char	*temp;
-		
-			temp = strrchr (basename, '.');
-			if (temp)
-				*temp = '\0';	// ignore the rest of the string
-
-			temp = strrchr (basename, '/');
-			if (!temp)
-				temp = basename;
-			else
-				temp++;
-
-			if (*sourcedir) {
-				dsprintf (tempname, "%s%c%s", sourcedir,
-						  PATH_SEPARATOR, temp);
-			} else {
-				dsprintf (tempname, "%s.p", temp);
-			}
-			free (basename);
-		} else {
-			temp1 = getenv ("TMPDIR");
-			if ((!temp1) || (!temp1[0])) {
-				temp1 = getenv ("TEMP");
-				if ((!temp1) || (!temp1[0])) {
-					temp1 = "/tmp";
-				}
-			}
-
-			dsprintf (tempname, "%s%c%sXXXXXX", temp1,
-					  PATH_SEPARATOR, temp2 ? temp2 + 1 : this_program);
-		}
+		intermediate_file (tempname, filename, "p");
 		build_cpp_args (filename, tempname->str);
 
 #ifdef _WIN32

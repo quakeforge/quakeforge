@@ -304,9 +304,9 @@ emit_assign_expr (int oper, expr_t *e)
 							 def_a->name);
 			} else {
 				if (options.traditional) {
-					//FIXME correct option?
 					if (options.warnings.cow)
-						warning (e1, "assignment to constant %s", def_a->name);
+						warning (e1, "assignment to constant %s (Moooooooo!)",
+								 def_a->name);
 				} else
 					error (e1, "assignment to constant %s", def_a->name);
 			}

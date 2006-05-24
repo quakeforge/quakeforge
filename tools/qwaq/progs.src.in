@@ -7,6 +7,6 @@ qwaq.dat
 @top_srcdir@/ruamoko/lib/script.r
 @top_srcdir@/ruamoko/lib/string.r
 @top_srcdir@/ruamoko/lib/Object.r
-@top_srcdir@/ruamoko/lib/Protocol.r -D__ruamoko_Object_h
+@top_srcdir@/ruamoko/lib/Protocol.r
 @srcdir@/test.r
 @srcdir@/main.qc

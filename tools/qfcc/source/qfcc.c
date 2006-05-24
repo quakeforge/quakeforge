@@ -689,13 +689,38 @@ parse_cpp_line (script_t *script, dstring_t *filename)
 }
 
 static int
+compile_file (const char *filename)
+{
+	int         err;
+
+	yyin = preprocess_file (filename);
+	if (!yyin)
+		return !options.preprocess_only;
+
+	pr.source_file = ReuseString (strip_path (filename));
+	pr.source_line = 1;
+	clear_frame_macros ();
+	err = yyparse () || pr.error_count;
+	fclose (yyin);
+	if (cpp_name && (!options.save_temps)) {
+		if (unlink (tempname->str)) {
+			perror ("unlink");
+			exit (1);
+		}
+	}
+	return err;
+}
+
+static int
 progs_src_compile (void)
 {
 	dstring_t  *filename = dstring_newstr ();
 	dstring_t  *qc_filename = dstring_newstr ();
+	dstring_t  *single_name = dstring_newstr ();
 	const char *src;
 	int         crc = 0;
 	script_t   *script;
+	FILE       *single = 0;
 
 	if (options.verbosity >= 1 && strcmp (sourcedir, "")) {
 		printf ("Source directory: %s\n", sourcedir);
@@ -708,6 +733,24 @@ progs_src_compile (void)
 		dsprintf (filename, "%s/%s", sourcedir, progs_src);
 	else
 		dsprintf (filename, "%s", progs_src);
+
+	if (options.single_cpp) {
+		intermediate_file (single_name, filename->str, "i");
+		if (!options.save_temps) {
+#ifdef _WIN32
+			mktemp (single_name->str);
+#else
+			int tempfd = mkstemp (single_name->str);
+			single = fdopen (tempfd, "rt");
+#endif
+		}
+		if (!single)
+			single = fopen (single_name->str, "wt");
+		if (!single) {
+			perror (single_name->str);
+			exit (1);
+		}
+	}
 
 	src = load_file (filename->str);
 	if (!src) {
@@ -737,12 +780,6 @@ progs_src_compile (void)
 	}
 	setup_sym_file (options.output_file);
 
-	// Consume any aditional tokens on this line.
-	// FIXME compilation options?
-	// FIXME could break some progs.src files, have an optional control?
-	while (Script_TokenAvailable (script, 0))
-		Script_GetToken (script, 0);
-
 	InitData ();
 	chain_initial_types ();
 
@@ -753,41 +790,38 @@ progs_src_compile (void)
 
 	// compile all the files
 	while (Script_GetToken (script, 1)) {
-		int         err;
-
 		if (strcmp (script->token->str, "#") == 0) {
 			parse_cpp_line (script, filename);
 			continue;
 		}
 
-		if (*sourcedir)
-			dsprintf (qc_filename, "%s%c%s", sourcedir, PATH_SEPARATOR,
-					  script->token->str);
-		else
-			dsprintf (qc_filename, "%s", script->token->str);
-		if (options.verbosity >= 2)
-			printf ("%s:%d: compiling %s\n", script->file, script->line, qc_filename->str);
+		while (1) {
+			if (*sourcedir)
+				dsprintf (qc_filename, "%s%c%s", sourcedir, PATH_SEPARATOR,
+						  script->token->str);
+			else
+				dsprintf (qc_filename, "%s", script->token->str);
+			if (options.verbosity >= 2)
+				printf ("%s:%d: compiling %s\n", script->file, script->line, qc_filename->str);
 
-		// Consume any aditional tokens on this line, cumulatively adding them
-		// to the cpp command line.
-		// FIXME is non-cumulative more desirable? make an option?
-		// FIXME could break some progs.src files. have an optional control?
-		while (Script_TokenAvailable (script, 0)) {
+			if (single) {
+				fprintf (single, "# %d \"%s\"\n", script->line, script->file);
+				fprintf (single, "#include \"%s\"\n", qc_filename->str);
+			} else {
+				if (compile_file (qc_filename->str))
+					return 1;
+			}
+			if (!Script_TokenAvailable (script, 0))
+				break;
 			Script_GetToken (script, 0);
-			add_cpp_def (save_string (script->token->str));
 		}
-
-		yyin = preprocess_file (qc_filename->str);
-		if (!yyin)
-			return !options.preprocess_only;
-
-		pr.source_file = ReuseString (strip_path (qc_filename->str));
-		pr.source_line = 1;
-		clear_frame_macros ();
-		err = yyparse () || pr.error_count;
-		fclose (yyin);
-		if (cpp_name && (!options.save_temps)) {
-			if (unlink (tempname->str)) {
+	}
+	if (single) {
+		int         err;
+		fclose (single);
+		err = compile_file (single_name->str);
+		if (!options.save_temps) {
+			if (unlink (single_name->str)) {
 				perror ("unlink");
 				exit (1);
 			}

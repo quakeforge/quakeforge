@@ -70,6 +70,9 @@ typedef struct {
 	notice_options_t notices;		// Notice options
 
 	int				verbosity;		// 0=silent, goes up to 2 currently
+	qboolean		single_cpp;		// process progs.src into a series of
+									// #include directives and then compile
+									// that
 	qboolean		save_temps;		// save temporary files
 	qboolean		files_dat;		// generate files.dat
 	qboolean		traditional;	// behave more like qcc

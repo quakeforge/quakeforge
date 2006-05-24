@@ -32,8 +32,12 @@
 #ifndef __cpp_h
 #define __cpp_h
 
+struct dstring_s;
+
 void parse_cpp_name (void);
 void add_cpp_def (const char *arg);
+void intermediate_file (struct dstring_s *ifile, const char *filename,
+						const char *ext);
 FILE * preprocess_file (const char *filename);
 extern const char *cpp_name;
 extern struct dstring_s *tempname;

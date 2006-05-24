@@ -184,6 +184,7 @@ DecodeArgs (int argc, char **argv)
 	options.warnings.initializer = true;
 	options.warnings.unimplemented = true;
 
+	options.single_cpp = true;
 	options.save_temps = false;
 	options.verbosity = 0;
 	options.strip_path = 0;
@@ -274,6 +275,8 @@ DecodeArgs (int argc, char **argv)
 							options.code.cow = flag;
 						} else if (!(strcasecmp (temp, "cpp"))) {
 							cpp_name = flag ? CPP_NAME : 0;
+						} else if (!(strcasecmp (temp, "single-cpp"))) {
+							options.single_cpp = flag;
 						} else if (!(strcasecmp (temp, "debug"))) {
 							options.code.debug = flag;
 						} else if (!(strcasecmp (temp, "short-circuit"))) {
