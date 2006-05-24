@@ -73,10 +73,10 @@ typedef struct {
 	qboolean		save_temps;		// save temporary files
 	qboolean		files_dat;		// generate files.dat
 	qboolean		traditional;	// behave more like qcc
-	qboolean		advanced;		// behold the power of Raumoko
+	qboolean		advanced;		// behold the power of Ruamoko
 	qboolean		compile;		// serparate compilation mode
 	qboolean		partial_link;	// partial linking
-	qboolean		preprocess_only;// only run cpp, don't ocmpile
+	qboolean		preprocess_only;// only run cpp, don't compile
 	qboolean		gzip;			// compress qfo files when writing
 	int				strip_path;		// number of leading path elements to strip
 									// from source file names
