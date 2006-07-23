@@ -29,7 +29,7 @@ URL:		http://www.quakeforge.net/
 Source:         %{name}-%{qfversion}.tar.gz
 #Patch:		
 Group:		Amusements/Games
-Copyright:	GPL
+License:	GPL
 #Icon:		
 Requires:	quakeforge-common, quake-game
 BuildRoot:	/var/tmp/%{name}-%{qfversion}

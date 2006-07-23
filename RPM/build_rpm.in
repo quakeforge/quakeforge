@@ -19,7 +19,7 @@ cat > rpmmacros <<EOF
 %_srcrpmdir $PWD
 %_builddir  $PWD
 EOF
-rpm -ba quakeforge.spec --rcfile $srcdir/rpmrc
+rpmbuild -ba quakeforge.spec --rcfile $srcdir/rpmrc
 find . -maxdepth 1 -type d -name 'quakeforge-*' -exec rm -rf {} \;
 find RPMS -name '*.rpm' -exec mv {} . \;
 rm -rf RPMS
