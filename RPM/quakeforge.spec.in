@@ -69,10 +69,22 @@ This package contains headers and static libraries for the development of
 utilities and applications for QuakeForge.
 
 %if "%{HAVE_SDL}"=="'yes'"
-%package sdl
+%package sdl-common
 Summary:	QuakeForge 3D game engine - SDL client
 Group:		Amusements/Games
 Requires:	quakeforge == %{rpmversion}, quakeforge-common == %{rpmversion}
+%description sdl-common
+QuakeForge is a source port of Quake and QuakeWorld, the successors to id
+Software's very popular DOOM series. Its primary development goal is to
+remain compatible with the original games released by id Software while
+adding portability and optional extensions to enhance gameplay.
+
+This package contains the common files for the SDL quakeforge packages.
+
+%package sdl
+Summary:	QuakeForge 3D game engine - SDL client
+Group:		Amusements/Games
+Requires:	quakeforge == %{rpmversion}, quakeforge-common == %{rpmversion}, quakeforge-sdl-common == %{rpmversion}
 %description sdl
 QuakeForge is a source port of Quake and QuakeWorld, the successors to id
 Software's very popular DOOM series. Its primary development goal is to
@@ -85,7 +97,7 @@ standalone engine.
 %package sgl
 Summary:	QuakeForge 3D game engine - SDL-GL client
 Group:		Amusements/Games
-Requires:	quakeforge == %{rpmversion}
+Requires:	quakeforge == %{rpmversion}, quakeforge-common == %{rpmversion}, quakeforge-sdl-common == %{rpmversion}
 %description sgl
 QuakeForge is a source port of Quake and QuakeWorld, the successors to id
 Software's very popular DOOM series. Its primary development goal is to
@@ -283,6 +295,14 @@ mkdir -p $RPM_BUILD_ROOT/etc
 make install DESTDIR=$RPM_BUILD_ROOT
 cp RPM/quakeforge.conf $RPM_BUILD_ROOT/etc
 mkdir -p $RPM_BUILD_ROOT/%{fs_sharepath}/id1
+rm $RPM_BUILD_ROOT/usr/lib/quakeforge/*.{a,la}
+rm $RPM_BUILD_ROOT/usr/bin/hw-master
+rm $RPM_BUILD_ROOT/usr/bin/nq-fbdev
+rm $RPM_BUILD_ROOT/usr/bin/nq-sdl32
+rm $RPM_BUILD_ROOT/usr/bin/qtv
+rm $RPM_BUILD_ROOT/usr/bin/qw-client-fbdev
+rm $RPM_BUILD_ROOT/usr/bin/qw-client-sdl32
+rm $RPM_BUILD_ROOT/usr/lib/libQFrenderer_sw32.*
 
 %clean
 rm -rf $RPM_BUILD_ROOT
@@ -310,7 +330,7 @@ rm -rf $RPM_BUILD_ROOT
 %attr(-,root,root) %{_prefix}/lib/quakeforge/console_client.so*
 %attr(-,root,root) %{_prefix}/lib/quakeforge/snd_output_disk.so*
 %attr(-,root,root) %{_prefix}/lib/quakeforge/snd_render_default.so*
-%attr(-,root,root) %{fs_sharepath}/QF/menu.dat*
+%attr(-,root,root) %{fs_sharepath}/QF/menu.*
 
 %files devel
 %attr(-,root,root)	%{_prefix}/lib/libQFcd.*a
@@ -347,10 +367,6 @@ rm -rf $RPM_BUILD_ROOT
 %if "%{BUILD_SW}"=="'yes'"
 %attr(-,root,root)	%{_prefix}/lib/libQFmodels_sw.*a
 %attr(-,root,root)	%{_prefix}/lib/libQFmodels_sw.so
-%if "%{HAVE_SDL}"=="'yes'"
-%attr(-,root,root)	%{_prefix}/lib/libQFrenderer_sw32.*a
-%attr(-,root,root)	%{_prefix}/lib/libQFrenderer_sw32.so
-%endif
 %endif
 
 %if "%{BUILD_GL}"=="'yes'"
@@ -378,6 +394,10 @@ rm -rf $RPM_BUILD_ROOT
 %endif
 
 %if "%{HAVE_SDL}"=="'yes'"
+%files sdl-common
+%attr(-,root,root)	%{_prefix}/lib/quakeforge/cd_sdl.so
+%attr(-,root,root)	%{_prefix}/lib/quakeforge/snd_output_sdl.so
+
 %files sdl
 %attr(-,root,root)	%{_prefix}/bin/qw-client-sdl
 %attr(-,root,root)	%{_prefix}/bin/nq-sdl
@@ -411,6 +431,7 @@ rm -rf $RPM_BUILD_ROOT
 
 %files -n qfcc
 %attr(-,root,root)	%{_prefix}/bin/qfcc
+%attr(-,root,root)	%{_prefix}/bin/qfpreqcc
 %attr(-,root,root)	%{_prefix}/man/man1/qfcc.1.gz
 %attr(-,root,root)	%{_prefix}/include/QF/ruamoko/*
 %attr(-,root,root)	%{_prefix}/lib/ruamoko/*
@@ -425,11 +446,15 @@ rm -rf $RPM_BUILD_ROOT
 #%attr(-,root,root)	%{_prefix}/man/man1/qfwavinfo.1.gz
 
 %files maptools
+%attr(-,root,root)	%{_prefix}/bin/bsp2img
 %attr(-,root,root)	%{_prefix}/bin/qfbsp
 %attr(-,root,root)	%{_prefix}/bin/qflight
+%attr(-,root,root)	%{_prefix}/bin/qfmodelgen
 %attr(-,root,root)	%{_prefix}/bin/qfvis
+%attr(-,root,root)	%{_prefix}/bin/wad
 %attr(-,root,root)	%{_prefix}/man/man1/qflight.1.gz
 %attr(-,root,root)	%{_prefix}/man/man1/qfvis.1.gz
+%attr(-,root,root)	%{_prefix}/man/man1/wad.1.gz
 
 %files stub
 %attr(-,root,root) %dir	%{fs_sharepath}
