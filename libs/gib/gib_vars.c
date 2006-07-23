@@ -135,8 +135,8 @@ GIB_Var_Get_Complex (hashtab_t ** first, hashtab_t ** second, char *key,
 				return 0;
 			else if (index >= var->size) {
 				if (create) {
-					var->array =
-						realloc (var->array, (index + 1) * sizeof (struct gib_varray_s));
+					var->array = realloc (var->array,
+									(index + 1) * sizeof (struct gib_varray_s));
 					memset (var->array + var->size, 0,
 						(index + 1 - var->size) * sizeof (struct gib_varray_s));
 					var->size = index + 1;
@@ -191,8 +191,8 @@ GIB_Var_Get_Very_Complex (hashtab_t ** first, hashtab_t ** second, dstring_t *ke
 			}
 			if (index >= var->size) {
 				if (create) {
-					var->array =
-						realloc (var->array, (index + 1) * sizeof (struct gib_varray_s));
+					var->array = realloc (var->array,
+									(index + 1) * sizeof (struct gib_varray_s));
 					memset (var->array + var->size, 0,
 						(index + 1 - var->size) * sizeof (struct gib_varray_s));
 					var->size = index + 1;

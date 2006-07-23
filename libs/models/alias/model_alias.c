@@ -201,8 +201,8 @@ Mod_LoadAliasModel (model_t *mod, void *buffer, cache_allocator_t allocator)
 		Sys_Error ("model %s has no triangles", mod->name);
 
 	if (pmodel->numtris > triangles_size) {
-		triangles =
-			realloc (triangles, pmodel->numtris * sizeof (mtriangle_t));
+		triangles = realloc (triangles,
+							 pmodel->numtris * sizeof (mtriangle_t));
 		if (!triangles)
 			Sys_Error ("model_alias: out of memory");
 		triangles_size = pmodel->numtris;

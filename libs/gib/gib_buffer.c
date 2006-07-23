@@ -215,9 +215,8 @@ GIB_Buffer_Push_Sstack (struct cbuf_s *cbuf)
 	gib_buffer_data_t *g = GIB_DATA (cbuf);
 
 	if (++g->stack.p > g->stack.size) {
-		g->stack.values =
-			realloc (g->stack.values,
-					 sizeof (struct gib_dsarray_s) * g->stack.p);
+		g->stack.values = realloc (g->stack.values,
+								   sizeof (struct gib_dsarray_s) * g->stack.p);
 		g->stack.values[g->stack.p - 1].dstrs = 0;
 		g->stack.values[g->stack.p - 1].size =
 			g->stack.values[g->stack.p - 1].realsize = 0;
