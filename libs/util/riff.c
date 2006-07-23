@@ -106,7 +106,7 @@ read_data (QFile *f, int len)
 			Qungetc (f, c);
 	}
 	if (count && count != len)
-		realloc (data, count);
+		data = realloc (data, count);
 	if (!count) {
 		free (data);
 		return 0;
