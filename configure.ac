@@ -311,17 +311,17 @@ AC_TRY_LINK(
 )
 AM_CONDITIONAL(BUILD_GETOPT, test "x$BUILD_GETOPT" = "xyes")
 
-AC_MSG_CHECKING(for alloca in stdlib.h)
-AC_TRY_COMPILE(
-	[#include <stdlib.h>],
-	[void *(*foo)(size_t) = alloca;],
-	have_alloca_proto=yes
-	AC_MSG_RESULT(yes),
-	have_alloca_proto=no
-	AC_MSG_RESULT(no)
-)
-
-if test "x$have_alloca_proto" = no -a "x$ac_cv_header_alloca_h" = yes; then
+if test "x$ac_cv_header_alloca_h" = no; then
+	AC_MSG_CHECKING(for alloca in stdlib.h)
+	AC_TRY_COMPILE(
+		[#include <stdlib.h>],
+		[void *(*foo)(size_t) = alloca;],
+		have_alloca_proto=yes
+		AC_MSG_RESULT(yes),
+		have_alloca_proto=no
+		AC_MSG_RESULT(no)
+	)
+else
 	AC_MSG_CHECKING(for alloca in alloca.h)
 	AC_TRY_COMPILE(
 		[#include <stdlib.h>]
