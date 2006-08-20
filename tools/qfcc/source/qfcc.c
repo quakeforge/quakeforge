@@ -667,6 +667,12 @@ load_file (const char *fname)
 	src[Qfilesize (file)] = 0;
 	Qread (file, src, Qfilesize (file));
 	Qclose (file);
+	if (cpp_name && (!options.save_temps)) {
+		if (unlink (tempname->str)) {
+			perror ("unlink");
+			exit (1);
+		}
+	}
 	return src;
 }
 
@@ -735,13 +741,13 @@ progs_src_compile (void)
 		dsprintf (filename, "%s", progs_src);
 
 	if (options.single_cpp) {
-		intermediate_file (single_name, filename->str, "i2");
+		intermediate_file (single_name, filename->str, "i2", 1);
 		if (!options.save_temps) {
 #ifdef _WIN32
 			mktemp (single_name->str);
 #else
 			int tempfd = mkstemp (single_name->str);
-			single = fdopen (tempfd, "rt");
+			single = fdopen (tempfd, "wt");
 #endif
 		}
 		if (!single)

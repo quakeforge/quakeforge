@@ -37,7 +37,7 @@ struct dstring_s;
 void parse_cpp_name (void);
 void add_cpp_def (const char *arg);
 void intermediate_file (struct dstring_s *ifile, const char *filename,
-						const char *ext);
+						const char *ext, int local);
 FILE * preprocess_file (const char *filename, const char *ext);
 extern const char *cpp_name;
 extern struct dstring_s *tempname;

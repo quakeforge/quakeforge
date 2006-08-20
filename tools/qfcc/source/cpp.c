@@ -148,7 +148,8 @@ build_cpp_args (const char *in_name, const char *out_name)
 //============================================================================
 
 void
-intermediate_file (dstring_t *ifile, const char *filename, const char *ext)
+intermediate_file (dstring_t *ifile, const char *filename, const char *ext,
+				   int local)
 {
 	if (options.save_temps) {
 		char	*basename = strdup (filename);
@@ -174,6 +175,9 @@ intermediate_file (dstring_t *ifile, const char *filename, const char *ext)
 			dsprintf (ifile, "%s.%s", temp, ext);
 		}
 		free (basename);
+	} if (local) {
+		char       *temp2 = strrchr (this_program, PATH_SEPARATOR);
+		dsprintf (ifile, "%sXXXXXX", temp2 ? temp2 + 1 : this_program);
 	} else {
 		const char *temp1 = getenv ("TMPDIR");
 		char       *temp2 = strrchr (this_program, PATH_SEPARATOR);
@@ -199,7 +203,7 @@ preprocess_file (const char *filename, const char *ext)
 #endif
 
 	if (cpp_name) {
-		intermediate_file (tempname, filename, ext ? ext : "p");
+		intermediate_file (tempname, filename, ext ? ext : "p", 0);
 		build_cpp_args (filename, tempname->str);
 
 #ifdef _WIN32
@@ -211,7 +215,7 @@ preprocess_file (const char *filename, const char *ext)
 			if (tmp == NULL) {
 				fprintf (stderr, "%s: qfcc was unable to open\n",
 						 tempname->str);
-				exit(1);
+				return 0;
 			}
 			fclose (tmp);
 		}
@@ -232,7 +236,7 @@ preprocess_file (const char *filename, const char *ext)
 				fprintf (stderr, "%s: cpp returned error code %d\n",
 						filename,
 						status);
-				exit (1);
+				return 0;
 			}
 		}
 
@@ -245,7 +249,7 @@ preprocess_file (const char *filename, const char *ext)
 
 		if ((pid = fork ()) == -1) {
 			perror ("fork");
-			exit (1);
+			return 0;
 		}
 		if (!pid) {
 			// we're a child, check for abuse
@@ -267,23 +271,23 @@ preprocess_file (const char *filename, const char *ext)
 			if ((rc = waitpid (0, &status, 0 | WUNTRACED)) != pid) {
 				if (rc == -1) {
 					perror ("wait");
-					exit (1);
+					return 0;
 				}
 				fprintf (stderr, "%s: The wrong child (%ld) died. Don't ask me, I don't know either.\n",
 						this_program,
 						(long) rc);
-				exit (1);
+				return 0;
 			}
 			if (WIFEXITED (status)) {
 				if (WEXITSTATUS (status)) {
 					fprintf (stderr, "%s: cpp returned error code %d\n",
 							filename,
 							WEXITSTATUS (status));
-					exit (1);
+					return 0;
 				}
 			} else {
 				fprintf (stderr, "%s: cpp returned prematurely.\n", filename);
-				exit (1);
+				return 0;
 			}
 		}
 		if (options.preprocess_only)
