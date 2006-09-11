@@ -321,6 +321,7 @@ SNDDMA_Init (void)
 
 	// don't mix less than this in mono samples:
 	err = qfsnd_pcm_hw_params_get_period_size (hw, (snd_pcm_uframes_t *)
+											   (char *)
 											   &sn.submission_chunk, 0);
 	if (0 > err) {
 		Sys_Printf ("ALSA: unable to get period size. %s\n",
