@@ -84,12 +84,9 @@ GDT_InitDotParticleTexture (void)
 		for (y = 0; y < 32; y++) {
 			dy = y - 16;
 			d = 255 - (dx2 + (dy * dy));
-			if (d <= 0) {
+			if (d <= 0)
 				d = 0;
-				data[y][x][0] = 0;
-			} else
-				data[y][x][0] = 255;
-
+			data[y][x][0] = 255;
 			data[y][x][1] = (byte) d;
 		}
 	}
@@ -109,14 +106,12 @@ GDT_InitSparkParticleTexture (void)
 		for (y = 0; y < 32; y++) {
 			dy = 16 - abs (y - 16);
 			d = (dx2 + dy * dy) - 200;
-			if (d > 255)
+			if (d > 255) {
 				d = 255;
-			if (d < 1) {
+			} else if (d < 1) {
 				d = 0;
-				data[y][x][0] = 0;
-			} else
-				data[y][x][0] = 255;
-
+			}
+			data[y][x][0] = 255;
 			data[y][x][1] = (byte) d;
 		}
 	}
@@ -144,11 +139,10 @@ GDT_InitSmokeParticleTexture (void)
 			if (c < 1)
 				c = 0;
 			d = (noise1[y][x] + noise2[y][x]) / 2;
+			data[y][x][0] = 255;
 			if (d > 0) {
-				data[y][x][0] = 255;
 				data[y][x][1] = (d * c) / 255;
 			} else {
-				data[y][x][0] = 255;
 				data[y][x][1] = 0;
 			}
 		}
