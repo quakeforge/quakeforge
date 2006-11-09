@@ -833,7 +833,7 @@ if test "x$enable_sdl" != xno; then
 fi
 
 dnl SDL-AUDIO checks
-AC_ARG_ENABLE(sdl,
+AC_ARG_ENABLE(sdl-audio,
 [  --disable-sdl-audio     disable checking for SDL-CD],
 )
 
@@ -845,7 +845,7 @@ if test "x$enable_sdl_audio" != xno; then
 fi
 
 dnl SDL-CD checks
-AC_ARG_ENABLE(sdl,
+AC_ARG_ENABLE(sdl-cd,
 [  --disable-sdl-cd        disable checking for SDL-CD],
 )
 
