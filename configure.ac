@@ -832,6 +832,30 @@ if test "x$enable_sdl" != xno; then
 	fi
 fi
 
+dnl SDL-AUDIO checks
+AC_ARG_ENABLE(sdl,
+[  --disable-sdl-audio     disable checking for SDL-CD],
+)
+
+if test "x$enable_sdl_audio" != xno; then
+	if test "x$HAVE_SDL" = "xyes"; then
+		HAVE_SDL_AUDIO=yes
+		AC_SUBST(HAVE_SDL_AUDIO)
+	fi
+fi
+
+dnl SDL-CD checks
+AC_ARG_ENABLE(sdl,
+[  --disable-sdl-cd        disable checking for SDL-CD],
+)
+
+if test "x$enable_sdl_cd" != xno; then
+	if test "x$HAVE_SDL" = "xyes"; then
+		HAVE_SDL_CD=yes
+		AC_SUBST(HAVE_SDL_CD)
+	fi
+fi
+
 dnl XMMS Checks
 AC_ARG_ENABLE(xmms,
 [  --disable-xmms          disable checking for XMMS],
@@ -841,7 +865,7 @@ if test "x$mingw" != xyes -a "x$enable_xmms" != xno; then
 	AM_PATH_XMMS(0.9.5.1,
 		HAVE_XMMS=yes,
 		HAVE_XMMS=no)
-	AC_SUBST(HAVE_XMMS)	
+	AC_SUBST(HAVE_XMMS)
 fi	
 
 
@@ -1054,7 +1078,7 @@ AC_SUBST(HAVE_OSS)
 AC_SUBST(OSS_LIBS)
 
 dnl SDL digital audio
-if test "x$HAVE_SDL" = "xyes"; then
+if test "x$HAVE_SDL_AUDIO" = "xyes"; then
 	SOUND_TYPES="$SOUND_TYPES SDL"
 fi
 
@@ -1178,7 +1202,7 @@ if test "x$HAVE_XMMS" = "xyes"; then
 fi
 
 dnl SDL CD audio
-if test "x$HAVE_SDL" = "xyes"; then
+if test "x$HAVE_SDL_CD" = "xyes"; then
 	CDTYPE="$CDTYPE SDL"
 	CD_PLUGIN_TARGETS="$CD_PLUGIN_TARGETS cd_sdl.la"
 fi
