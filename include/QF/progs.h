@@ -1139,6 +1139,8 @@ typedef struct {
 	strref_t   *tstr;
 } prstack_t;
 
+struct obj_list_s;
+
 struct progs_s {
 	edict_t   **edicts;
 	int        *num_edicts;
@@ -1237,16 +1239,16 @@ struct progs_s {
 	//@{
 	int         selector_index;
 	int         selector_index_max;
-	void       *selector_sels;
+	struct obj_list_s **selector_sels;
 	string_t   *selector_names;
 	struct hashtab_s *selector_hash;
 	struct hashtab_s *classes;
 	struct hashtab_s *load_methods;
-	void       *unresolved_classes;
-	void       *unclaimed_categories;
-	void       *unclaimed_proto_list;
-	void       *module_list;
-	void       *class_tree_list;
+	struct obj_list_s *unresolved_classes;
+	struct obj_list_s *unclaimed_categories;
+	struct obj_list_s *unclaimed_proto_list;
+	struct obj_list_s *module_list;
+	struct obj_list_s *class_tree_list;
 	//@}
 
 	/// debug info

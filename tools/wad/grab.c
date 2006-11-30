@@ -459,7 +459,7 @@ GrabMip (script_t *script)
 			r = *screen_p++;
 			g = *screen_p++;
 			b = *screen_p++;
-			*screen_p++;				// skip over alpha
+			screen_p++;					// skip over alpha
 			*lump_p++ = BestColor (r, g, b, 0, 239);
 		}
 		screen_p += linedelta;

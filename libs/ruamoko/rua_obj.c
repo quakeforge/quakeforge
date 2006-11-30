@@ -51,8 +51,8 @@ static __attribute__ ((used)) const char rcsid[] =
 #include "compat.h"
 #include "rua_internal.h"
 
-typedef struct obj_list {
-	struct obj_list *next;
+typedef struct obj_list_s {
+	struct obj_list_s *next;
 	void       *data;
 } obj_list;
 
@@ -391,7 +391,7 @@ add_sel_name (progs_t *pr, const char *name)
 		pr->selector_names = realloc (pr->selector_names,
 									  size * sizeof (string_t));
 		for (i = pr->selector_index_max; i < size; i++) {
-			((obj_list **) pr->selector_sels)[i] = 0;
+			pr->selector_sels[i] = 0;
 			pr->selector_names[i] = 0;
 		}
 		pr->selector_index_max = size;
@@ -410,7 +410,7 @@ sel_register_typed_name (progs_t *pr, const char *name, const char *types,
 
 	index = (long) Hash_Find (pr->selector_hash, name);
 	if (index) {
-		for (l = ((obj_list **) pr->selector_sels)[index]; l; l = l->next) {
+		for (l = pr->selector_sels[index]; l; l = l->next) {
 			pr_sel_t   *s = l->data;
 			if (!types || !s->sel_types) {
 				if (!s->sel_types && !types) {
@@ -440,8 +440,8 @@ sel_register_typed_name (progs_t *pr, const char *name, const char *types,
 
 	l = obj_list_new ();
 	l->data = sel;
-	l->next = ((obj_list **) pr->selector_sels)[index];
-	((obj_list **) pr->selector_sels)[index] = l;
+	l->next = pr->selector_sels[index];
+	pr->selector_sels[index] = l;
 
 	if (is_new)
 		Hash_Add (pr->selector_hash, (void *) index);
@@ -608,12 +608,12 @@ obj_send_load (progs_t *pr)
 	obj_list   *m;
 
 	if (pr->unresolved_classes) {
-		pr_class_t *class = ((obj_list *) pr->unresolved_classes)->data;
+		pr_class_t *class = pr->unresolved_classes->data;
 		const char *super_class = PR_GetString (pr, class->super_class);
 		while (Hash_Find (pr->classes, super_class)) {
-			list_remove ((obj_list **) &pr->unresolved_classes);
+			list_remove (&pr->unresolved_classes);
 			if (pr->unresolved_classes) {
-				class = ((obj_list *) pr->unresolved_classes)->data;
+				class = pr->unresolved_classes->data;
 				super_class = PR_GetString (pr, class->super_class);
 			} else {
 				break;
@@ -628,11 +628,10 @@ obj_send_load (progs_t *pr)
 	for (m = pr->module_list; m; m = m->next)
 		obj_create_classes_tree (pr, m->data);
 	while (pr->class_tree_list) {
-		obj_preorder_traverse (pr, ((obj_list *) pr->class_tree_list)->data,
-							   0, send_load);
-		obj_postorder_traverse (pr, ((obj_list *) pr->class_tree_list)->data,
-								0, obj_destroy_class_tree_node);
-		list_remove ((obj_list **) &pr->class_tree_list);
+		obj_preorder_traverse (pr, pr->class_tree_list->data, 0, send_load);
+		obj_postorder_traverse (pr, pr->class_tree_list->data, 0,
+								obj_destroy_class_tree_node);
+		list_remove (&pr->class_tree_list);
 	}
 	//XXX callback
 	//for (m = pr->module_list; m; m = m->next)
@@ -821,7 +820,7 @@ rua___obj_exec_class (progs_t *pr)
 		}
 	}
 
-	for (cell = (obj_list **) &pr->unclaimed_categories; *cell; ) {
+	for (cell = &pr->unclaimed_categories; *cell; ) {
 		pr_category_t *category = (*cell)->data;
 		const char *class_name = PR_GetString (pr, category->class_name);
 		pr_class_t *class = Hash_Find (pr->classes, class_name);
@@ -835,7 +834,7 @@ rua___obj_exec_class (progs_t *pr)
 	}
 
 	if (pr->unclaimed_proto_list && Hash_Find (pr->classes, "Protocol")) {
-		for (cell = (obj_list **) &pr->unclaimed_proto_list; *cell; ) {
+		for (cell = &pr->unclaimed_proto_list; *cell; ) {
 			obj_init_protocols (pr, (*cell)->data);
 			list_remove (cell);
 		}
@@ -1518,8 +1517,8 @@ rua_init_runtime (progs_t *pr)
 		Hash_FlushTable (pr->selector_hash);
 	pr->selector_index = 0;
 	for (i = 0; i < pr->selector_index_max; i++) {
-		obj_list_free (((obj_list **) pr->selector_sels)[i]);
-		((obj_list **) pr->selector_sels)[i] = 0;
+		obj_list_free (pr->selector_sels[i]);
+		pr->selector_sels[i] = 0;
 		pr->selector_names[i] = 0;
 	}
 
