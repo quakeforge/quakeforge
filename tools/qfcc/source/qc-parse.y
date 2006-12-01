@@ -273,6 +273,8 @@ cfunction
 	    {
 			build_code_function ($5, $2, $6);
 			current_func = 0;
+			(void) ($<def>4);
+			(void) ($<op>7);
 		}
 	;
 
@@ -313,7 +315,7 @@ struct_defs
 	;
 
 struct_def
-	: type { $$ = $1; } struct_def_list { }
+	: type { $$ = $1; } struct_def_list { $$ = $<type>2; }
 	;
 
 enum_list
@@ -437,6 +439,7 @@ array_decl
 
 struct_def_list
 	: struct_def_list ',' { $$ = $<type>0; } struct_def_item
+		{ (void) ($<type>3); }
 	| struct_def_item
 	;
 
@@ -448,7 +451,7 @@ struct_def_item
 	;
 
 def_list
-	: def_list ',' { $$ = $<type>0; } def_item
+	: def_list ',' { $$ = $<type>0; } def_item { (void) ($<type>3); }
 	| def_item
 	;
 
@@ -477,7 +480,7 @@ func_def_list
 	;
 
 fdef_name
-	: { $<type>$ = $<type>-1; } func_def { $$ = $2; }
+	: { $<type>$ = $<type>-1; } func_def { $$ = $2; (void) ($<type>1); }
 	;
 
 func_def
@@ -517,6 +520,8 @@ code_func
 		{
 			build_code_function ($5, $2, $6);
 			current_func = 0;
+			(void) ($<def>4);
+			(void) ($<op>7);
 		}
 	;
 
@@ -538,7 +543,7 @@ def_name
 opt_initializer
 	: /*empty*/					{ }
 	| { $$ = $<def>0; }
-	  var_initializer			{ }
+	  var_initializer			{ (void) ($<def>1); }
 	;
 
 var_initializer
@@ -607,6 +612,7 @@ think
 	: { $<type>$ = &type_function; } def_name
 		{
 			$$ = new_def_expr ($2);
+			(void) ($<type>1);
 		}
 	| '(' fexpr ')'
 		{
@@ -856,6 +862,7 @@ statement
 		{
 			$$ = local_expr;
 			local_expr = 0;
+			(void) ($<type>3);
 		}
 	| IF '(' fexpr ')' save_inits statement
 		{
@@ -1258,38 +1265,68 @@ protocol_name
 
 classdef
 	: INTERFACE new_class_name
-	  protocolrefs						{ class_add_protocols ($2, $3);}
+	  protocolrefs						{ class_add_protocols ($2, $3); }
 	  '{'								{ $$ = $2; }
 	  ivar_decl_list '}'				{ class_add_ivars ($2, $7); $$ = $2; }
 	  methodprotolist					{ class_add_methods ($2, $10); }
-	  END								{ current_class = 0; }
+	  END
+		{
+			current_class = 0;
+			(void) ($<class>6);
+			(void) ($<class>9);
+		}
 	| INTERFACE new_class_name
 	  protocolrefs					{ class_add_protocols ($2, $3); }
 					{ class_add_ivars ($2, class_new_ivars ($2)); $$ = $2; }
 	  methodprotolist					{ class_add_methods ($2, $6); }
-	  END								{ current_class = 0; }
+	  END
+		{
+			current_class = 0;
+			(void) ($<class>5);
+		}
 	| INTERFACE new_class_with_super
 	  protocolrefs						{ class_add_protocols ($2, $3);}
 	  '{'								{ $$ = $2; }
 	  ivar_decl_list '}'				{ class_add_ivars ($2, $7); $$ = $2; }
 	  methodprotolist					{ class_add_methods ($2, $10); }
-	  END								{ current_class = 0; }
+	  END
+		{
+			current_class = 0;
+			(void) ($<class>6);
+			(void) ($<class>9);
+		}
 	| INTERFACE new_class_with_super
 	  protocolrefs						{ class_add_protocols ($2, $3); }
 					{ class_add_ivars ($2, class_new_ivars ($2)); $$ = $2; }
 	  methodprotolist					{ class_add_methods ($2, $6); }
-	  END								{ current_class = 0; }
+	  END
+		{
+			current_class = 0;
+			(void) ($<class>5);
+		}
 	| INTERFACE new_category_name
 	  protocolrefs		{ category_add_protocols ($2, $3); $$ = $2->class;}
 	  methodprotolist					{ category_add_methods ($2, $5); }
-	  END								{ current_class = 0; }
+	  END
+		{
+			current_class = 0;
+			(void) ($<class>4);
+		}
 	| IMPLEMENTATION class_name			{ class_begin (&$2->class_type); }
 	  '{'								{ $$ = $2; }
-	  ivar_decl_list '}'				{ class_check_ivars ($2, $6); }
+	  ivar_decl_list '}'
+		{
+			class_check_ivars ($2, $6);
+			(void) ($<class>5);
+		}
 	| IMPLEMENTATION class_name			{ class_begin (&$2->class_type); }
 	| IMPLEMENTATION class_with_super	{ class_begin (&$2->class_type); }
 	  '{'								{ $$ = $2; }
-	  ivar_decl_list '}'				{ class_check_ivars ($2, $6); }
+	  ivar_decl_list '}'
+		{
+			class_check_ivars ($2, $6);
+			(void) ($<class>5);
+		}
 	| IMPLEMENTATION class_with_super	{ class_begin (&$2->class_type); }
 	| IMPLEMENTATION category_name		{ class_begin (&$2->class_type); }
 	;
@@ -1298,13 +1335,13 @@ protocoldef
 	: PROTOCOL protocol_name 
 	  protocolrefs			{ protocol_add_protocols ($2, $3); $<class>$ = 0; }
 	  methodprotolist			{ protocol_add_methods ($2, $5); }
-	  END
+	  END						{ (void) ($<class>4); }
 	;
 
 protocolrefs
 	: /* emtpy */				{ $$ = 0; }
 	| LT 						{ $$ = new_protocol_list (); }
-	  protocol_list GT			{ $$ = $3; }
+	  protocol_list GT			{ $$ = $3; (void) ($<protocol_list>2); }
 	;
 
 protocol_list
@@ -1328,6 +1365,7 @@ ivar_decl_list
 		{
 			$$ = current_ivars;
 			current_ivars = 0;
+			(void) ($<class>1);
 		}
 	;
 
@@ -1348,12 +1386,12 @@ ivar_decls
 	;
 
 ivar_decl
-	: type { $$ = $1; } ivars	{ }
+	: type { $$ = $1; } ivars	{ (void) ($<type>2); }
 	;
 
 ivars
 	: ivar_declarator
-	| ivars ',' { $$ = $<type>0; } ivar_declarator
+	| ivars ',' { $$ = $<type>0; } ivar_declarator { (void) ($<type>3); }
 	;
 
 ivar_declarator
@@ -1379,6 +1417,8 @@ methoddef
 		{
 			$2->func = build_code_function ($7, $4, $8);
 			current_func = 0;
+			(void) ($<method>6);
+			(void) ($<op>9);
 		}
 	| ci methoddecl '=' '#' const ';'
 		{
