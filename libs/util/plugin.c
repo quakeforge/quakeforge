@@ -302,7 +302,7 @@ PI_LoadPlugin (const char *type, const char *name)
 		if (!(dlhand = pi_open_lib (realname, 0))) {
 			// lib not found
 			Sys_Printf ("Could not load plugin \"%s\".\n", realname);
-			Sys_DPrintf ("Reason: \"%s\".\n", pi_error);
+			Sys_Printf ("Reason: \"%s\".\n", pi_error);
 			return NULL;
 		}
 
