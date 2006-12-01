@@ -265,7 +265,7 @@ R_ParticleExplosion2_QF (const vec3_t org, int colorStart, int colorLength)
 	for (i = 0; i < j; i++) {
 		particle_new_random (pt_blob, part_tex_dot, org, 16, 2, 256, 
 							 r_realtime + 0.3,
-							 colorStart + (i % colorLength), 1.0, 0.0);
+							 								 colorStart + (i % colorLength), 1.0, 0.0);
 	}
 }
 
@@ -1444,27 +1444,12 @@ R_VoorTrail_ID (const entity_t *ent)
 	}
 }
 
-void
-R_DrawParticles (void)
+static void
+R_ParticlePhysics (particle_t *part)
 {
-	unsigned char  *at;
-	float			grav, fast_grav, minparticledist, scale,
+	float			grav, fast_grav,
 					time_125, time_25, time_40, time_55, time2, time4, time5,
 					time10, time15, time30, time50;
-	int				activeparticles, maxparticle, j, vacount;
-	unsigned int	k;
-	particle_t	   *part;
-	vec3_t			up_scale, right_scale, up_right_scale, down_right_scale;
-	varray_t2f_c4ub_v3f_t		*VA;
-
-	if (!r_particles->int_val)
-		return;
-
-	qfglBindTexture (GL_TEXTURE_2D, part_tex);
-	// LordHavoc: particles should not affect zbuffer
-	qfglDepthMask (GL_FALSE);
-	qfglInterleavedArrays (GL_T2F_C4UB_V3F, 0, particleVertexArray);
-
 	grav = (fast_grav = r_frametime * r_gravity) * 0.05;
 	time_125 = r_frametime * 0.125;
 	time_25= r_frametime * 0.25;
@@ -1477,6 +1462,120 @@ R_DrawParticles (void)
 	time15 = r_frametime * 15.0;
 	time30 = r_frametime * 30.0;
 	time50 = r_frametime * 50.0;
+
+	VectorMultAdd (part->org, r_frametime, part->vel, part->org);
+	switch (part->type) {
+		case pt_static:
+			break;
+		case pt_grav:
+			part->vel[2] -= grav;
+			break;
+		case pt_fire:
+			part->ramp += time5;
+			if (part->ramp >= 6) {
+				part->die = -1;
+				break;
+			}
+			part->color = ramp3[(int) part->ramp];
+			part->alpha = (6.0 - part->ramp) / 6.0;
+			part->vel[2] += grav;
+			break;
+		case pt_explode:
+			part->ramp += time10;
+			if (part->ramp >= 8) {
+				part->die = -1;
+				break;
+			}
+			part->color = ramp1[(int) part->ramp];
+			VectorMultAdd (part->vel, time4, part->vel, part->vel);
+			part->vel[2] -= grav;
+			break;
+		case pt_explode2:
+			part->ramp += time15;
+			if (part->ramp >= 8) {
+				part->die = -1;
+				break;
+			}
+			part->color = ramp2[(int) part->ramp];
+			VectorMultSub (part->vel, r_frametime, part->vel, part->vel);
+			part->vel[2] -= grav;
+			break;
+		case pt_blob:
+			VectorMultAdd (part->vel, time4, part->vel, part->vel);
+			part->vel[2] -= grav;
+			break;
+		case pt_blob2:
+			part->vel[0] -= part->vel[0] * time4;
+			part->vel[1] -= part->vel[1] * time4;
+			part->vel[2] -= grav;
+			break;
+		case pt_smoke:
+			if ((part->alpha -= time_40) <= 0.0)
+				part->die = -1;
+			part->scale += time4;
+//			part->org[2] += time30;
+			break;
+		case pt_smokecloud:
+			if ((part->alpha -= time_55) <= 0.0) {
+				part->die = -1;
+				break;
+			}
+			part->scale += time50;
+			part->org[2] += time30;
+			break;
+		case pt_bloodcloud:
+			if ((part->alpha -= time_25) <= 0.0) {
+				part->die = -1;
+				break;
+			}
+			part->scale += time4;
+			part->vel[2] -= grav;
+			break;
+		case pt_fallfade:
+			if ((part->alpha -= r_frametime) <= 0.0)
+				part->die = -1;
+			part->vel[2] -= fast_grav;
+			break;
+		case pt_fallfadespark:
+			part->ramp += time15;
+			if (part->ramp >= 8) {
+				part->die = -1;
+				break;
+			}
+			part->color = ramp1[(int) part->ramp];
+			if ((part->alpha -= r_frametime) <= 0.0)
+				part->die = -1;
+			part->vel[2] -= fast_grav;
+			break;
+		case pt_flame:
+			if ((part->alpha -= time_125) <= 0.0)
+				part->die = -1;
+			part->scale -= time2;
+			break;
+		default:
+			Con_DPrintf ("unhandled particle type %d\n", part->type);
+			break;
+	}
+}
+
+void
+R_DrawParticles (void)
+{
+	unsigned char  *at;
+	int				activeparticles, maxparticle, j, vacount;
+	unsigned int	k;
+	float		minparticledist, scale;
+	particle_t	   *part;
+	vec3_t			up_scale, right_scale, up_right_scale, down_right_scale;
+	varray_t2f_c4ub_v3f_t		*VA;
+
+	if (!r_particles->int_val)
+		return;
+
+	qfglBindTexture (GL_TEXTURE_2D, part_tex);
+	// LordHavoc: particles should not affect zbuffer
+	qfglDepthMask (GL_FALSE);
+	qfglInterleavedArrays (GL_T2F_C4UB_V3F, 0, particleVertexArray);
 
 	minparticledist = DotProduct (r_refdef.vieworg, vpn) +
 		r_particles_nearclip->value;
@@ -1556,105 +1655,13 @@ R_DrawParticles (void)
 			}
 		}
 
-		VectorMultAdd (part->org, r_frametime, part->vel, part->org);
+		R_ParticlePhysics (part);
 
-		switch (part->type) {
-			case pt_static:
-				break;
-			case pt_grav:
-				part->vel[2] -= grav;
-				break;
-			case pt_fire:
-				part->ramp += time5;
-				if (part->ramp >= 6) {
-					part->die = -1;
-					break;
-				}
-				part->color = ramp3[(int) part->ramp];
-				part->alpha = (6.0 - part->ramp) / 6.0;
-				part->vel[2] += grav;
-				break;
-			case pt_explode:
-				part->ramp += time10;
-				if (part->ramp >= 8) {
-					part->die = -1;
-					break;
-				}
-				part->color = ramp1[(int) part->ramp];
-				VectorMultAdd (part->vel, time4, part->vel, part->vel);
-				part->vel[2] -= grav;
-				break;
-			case pt_explode2:
-				part->ramp += time15;
-				if (part->ramp >= 8) {
-					part->die = -1;
-					break;
-				}
-				part->color = ramp2[(int) part->ramp];
-				VectorMultSub (part->vel, r_frametime, part->vel, part->vel);
-				part->vel[2] -= grav;
-				break;
-			case pt_blob:
-				VectorMultAdd (part->vel, time4, part->vel, part->vel);
-				part->vel[2] -= grav;
-				break;
-			case pt_blob2:
-				part->vel[0] -= part->vel[0] * time4;
-				part->vel[1] -= part->vel[1] * time4;
-				part->vel[2] -= grav;
-				break;
-			case pt_smoke:
-				if ((part->alpha -= time_40) <= 0.0)
-					part->die = -1;
-				part->scale += time4;
-//				part->org[2] += time30;
-				break;
-			case pt_smokecloud:
-				if ((part->alpha -= time_55) <= 0.0) {
-					part->die = -1;
-					break;
-				}
-				part->scale += time50;
-				part->org[2] += time30;
-				break;
-			case pt_bloodcloud:
-				if ((part->alpha -= time_25) <= 0.0) {
-					part->die = -1;
-					break;
-				}
-				part->scale += time4;
-				part->vel[2] -= grav;
-				break;
-			case pt_fallfade:
-				if ((part->alpha -= r_frametime) <= 0.0)
-					part->die = -1;
-				part->vel[2] -= fast_grav;
-				break;
-			case pt_fallfadespark:
-				part->ramp += time15;
-				if (part->ramp >= 8) {
-					part->die = -1;
-					break;
-				}
-				part->color = ramp1[(int) part->ramp];
-				if ((part->alpha -= r_frametime) <= 0.0)
-					part->die = -1;
-				part->vel[2] -= fast_grav;
-				break;
-			case pt_flame:
-				if ((part->alpha -= time_125) <= 0.0)
-					part->die = -1;
-				part->scale -= time2;
-				break;
-			default:
-				Con_DPrintf ("unhandled particle type %d\n", part->type);
-				break;
-		}
 		// LordHavoc: immediate removal of unnecessary particles (must be done
 		// to ensure compactor below operates properly in all cases)
-		if (part->die < r_realtime)
+		if (part->die < r_realtime) {
 			freeparticles[j++] = part;
-		else {
+		} else {
 			maxparticle = k;
 			activeparticles++;
 		}
