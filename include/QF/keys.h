@@ -292,7 +292,7 @@ typedef enum {
 	QFK_MENU			= 319,
 	QFK_POWER			= 320,		/* Power Macintosh power key */
 	QFK_EURO			= 321,		/* Some european keyboards */
-
+	QFK_UNDO			= 322,
 	/* Add any other keys here */
 
 //
