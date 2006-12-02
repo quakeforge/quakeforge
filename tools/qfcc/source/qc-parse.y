@@ -318,6 +318,19 @@ struct_def
 	: type { $$ = $1; } struct_def_list { $$ = $<type>2; }
 	;
 
+struct_def_list
+	: struct_def_list ',' { $$ = $<type>0; } struct_def_item
+		{ (void) ($<type>3); }
+	| struct_def_item
+	;
+
+struct_def_item
+	: identifier
+		{
+			new_struct_field (current_struct, $<type>0, $1, vis_public);
+		}
+	;
+
 enum_list
 	: enum
 	| enum_list ',' enum
@@ -435,19 +448,6 @@ array_decl
 			}
 		}
 	| '[' ']'					{ $$ = 0; }
-	;
-
-struct_def_list
-	: struct_def_list ',' { $$ = $<type>0; } struct_def_item
-		{ (void) ($<type>3); }
-	| struct_def_item
-	;
-
-struct_def_item
-	: identifier
-		{
-			new_struct_field (current_struct, $<type>0, $1, vis_public);
-		}
 	;
 
 def_list
