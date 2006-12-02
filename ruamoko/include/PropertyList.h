@@ -15,8 +15,8 @@
 + (PLItem) newString:(string) str;
 + (PLItem) newFromString:(string) str;
 
--initWithItem:(plitem_t) item;
--initWithOwnItem:(plitem_t) item;
+- initWithItem:(plitem_t) item;
+- initWithOwnItem:(plitem_t) item;
 - (string) write;
 - (pltype_t) type;
 @end

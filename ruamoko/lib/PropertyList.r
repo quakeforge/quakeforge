@@ -27,7 +27,7 @@
 	return [PLItem itemClass: PL_GetPropertyList (str)];
 }
 
-+itemClass:(plitem_t) item
++ itemClass:(plitem_t) item
 {
 	local string classname = NIL;
 	local Class class;
@@ -54,7 +54,7 @@
 	return [[class alloc] initWithItem: item];
 }
 
--initWithItem:(plitem_t) item
+- initWithItem:(plitem_t) item
 {
 	if (!(self = [super init]))
 		return self;
