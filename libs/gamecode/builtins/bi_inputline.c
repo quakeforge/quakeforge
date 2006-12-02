@@ -58,18 +58,14 @@ typedef struct {
 static inputline_t *
 get_inputline (progs_t *pr, int arg, const char *func)
 {
-	pr_type_t  *handle;
+	il_resources_t *res = PR_Resources_Find (pr, "InputLine");
 	inputline_t *line;
-	int          min = (pr_type_t *) pr->zone - pr->pr_globals;
-	int          max = min + pr->zone_size / sizeof (pr_type_t);
 
-	if (arg <= min || arg >= max)
-		PR_RunError (pr, "%s: Invalid inputline_t: $%x $%x $%x", func, arg,
-					 min, max);
+	if (arg < 0 || arg >= res->max_lines)
+		PR_RunError (pr, "%s: Invalid inputline_t: $%x $%x", func, arg,
+					 res->max_lines);
 
-	handle = pr->pr_globals + arg;
-
-	line = *(inputline_t **)handle;
+	line = res->lines[arg];
 	if (!line)
 		PR_RunError (pr, "Invalid inputline_t");
 
@@ -85,7 +81,6 @@ bi_InputLine_Create (progs_t *pr)
 	int         lines = P_INT (pr, 0);
 	int         size = P_INT (pr, 1);
 	int         prompt = P_INT (pr, 2);
-	pr_type_t  *handle;
 
 	for (i = 0; i < res->max_lines; i++)
 		if (!res->lines[i]) {
@@ -104,16 +99,14 @@ bi_InputLine_Create (progs_t *pr)
 		return;
 	}
 	(*line)->draw = res->draw;
-	handle = PR_Zone_Malloc (pr, sizeof (inputline_t *));
-	*(inputline_t**)handle = *line;
-	R_INT (pr) = handle - pr->pr_globals;
+	R_INT (pr) = line - res->lines;
 }
 
 static void
 bi_InputLine_SetUserData (progs_t *pr)
 {
 	inputline_t *line = get_inputline (pr, P_INT (pr, 0),
-									   "InputLine_SetWidth");
+									   "InputLine_SetUserData");
 	pr_type_t  *data = P_GPOINTER (pr, 1);
 
 	line->user_data = data;
@@ -133,27 +126,18 @@ static void
 bi_InputLine_Destroy (progs_t *pr)
 {
 	il_resources_t *res = PR_Resources_Find (pr, "InputLine");
-	pr_type_t  *handle;
 	int         arg = P_INT (pr, 0);
-	int         i;
 	inputline_t *line;
 
-	if (arg <= ((pr_type_t *) pr->zone - pr->pr_globals)
-		|| (size_t) arg >= (pr->zone_size / sizeof (pr_type_t)))
+	if (arg < 0 || arg >= res->max_lines)
 		PR_RunError (pr, "InputLine_Destroy: Invalid inputline_t");
 
-	handle = pr->pr_globals + arg;
-
-	line = *(inputline_t **)handle;
+	line = res->lines[arg];
 	if (!line)
 		PR_RunError (pr, "InputLine_Destroy: Invalid inputline_t");
 
-	for (i = 0; i < res->max_lines; i++)
-		if (res->lines[i] == line) {
-			Con_DestroyInputLine (line);
-			res->lines = 0;
-			PR_Zone_Free (pr, handle);
-		}
+	Con_DestroyInputLine (line);
+	res->lines[arg] = 0;
 }
 
 static void
