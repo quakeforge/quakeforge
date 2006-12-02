@@ -32,34 +32,25 @@
 #include "QF/wad.h"
 
 extern byte *draw_chars;
-extern qpic_t *draw_disc; // also used on sbar
 
 void Draw_Init (void);
 void Draw_InitText (void);
-void Draw_Init_Cvars (void);
 void Draw_Character (int x, int y, unsigned int num);
-void Draw_Pic (int x, int y, qpic_t *pic);
-void Draw_SubPic(int x, int y, qpic_t *pic, int srcx, int srcy, int width, int height);
-void Draw_TextBox (int x, int y, int width, int lines, byte alpha);
-void Draw_TransPicTranslate (int x, int y, qpic_t *pic, byte *translation);
 void Draw_ConsoleBackground (int lines, byte alpha);
 void Draw_Crosshair (void);
 void Draw_CrosshairAt (int ch, int x, int y);
-void Draw_BeginDisc (void);
-void Draw_EndDisc (void);
 void Draw_TileClear (int x, int y, int w, int h);
 void Draw_Fill (int x, int y, int w, int h, int c);
 void Draw_FadeScreen (void);
 void Draw_String (int x, int y, const char *str);
 void Draw_nString (int x, int y, const char *str, int count);
 void Draw_AltString (int x, int y, const char *str);
-qpic_t *Draw_PicFromWad (const char *name);
-qpic_t *Draw_CachePic (const char *path, qboolean alpha);
 
 void Draw_ClearCache (void);
-
-void GL_Set2D (void);
-void GL_DrawReset (void);
-void GL_FlushText (void);
+qpic_t *Draw_PicFromWad (const char *name);
+qpic_t *Draw_CachePic (const char *path, qboolean alpha);
+void Draw_Pic (int x, int y, qpic_t *pic);
+void Draw_SubPic(int x, int y, qpic_t *pic, int srcx, int srcy, int width, int height);
+void Draw_TextBox (int x, int y, int width, int lines, byte alpha);
 
 #endif // _DRAW_H

@@ -582,96 +582,6 @@ Draw_SubPic (int x, int y, qpic_t *pic, int srcx, int srcy, int width,
 
 
 void
-Draw_TransPicTranslate (int x, int y, qpic_t *pic, byte * translation)
-{
-	byte       *source, tbyte;
-	int   v, u;
-
-	if (x < 0 || (unsigned int) (x + pic->width) > vid.width || y < 0 ||
-		(unsigned int) (y + pic->height) > vid.height) {
-		Sys_Error ("Draw_TransPic: bad coordinates");
-	}
-
-	source = pic->data;
-
-	switch(r_pixbytes) {
-	case 1:
-	{
-		byte       *dest = (byte *) vid.buffer + y * vid.rowbytes + x;
-
-		if (pic->width & 7) {			// general
-			for (v = 0; v < pic->height; v++) {
-				for (u = 0; u < pic->width; u++)
-					if ((tbyte = source[u]) != TRANSPARENT_COLOR)
-						dest[u] = translation[tbyte];
-
-				dest += vid.rowbytes;
-				source += pic->width;
-			}
-		} else {						// unwound
-			for (v = 0; v < pic->height; v++) {
-				for (u = 0; u < pic->width; u += 8) {
-					if ((tbyte = source[u]) != TRANSPARENT_COLOR)
-						dest[u] = translation[tbyte];
-					if ((tbyte = source[u + 1]) != TRANSPARENT_COLOR)
-						dest[u + 1] = translation[tbyte];
-					if ((tbyte = source[u + 2]) != TRANSPARENT_COLOR)
-						dest[u + 2] = translation[tbyte];
-					if ((tbyte = source[u + 3]) != TRANSPARENT_COLOR)
-						dest[u + 3] = translation[tbyte];
-					if ((tbyte = source[u + 4]) != TRANSPARENT_COLOR)
-						dest[u + 4] = translation[tbyte];
-					if ((tbyte = source[u + 5]) != TRANSPARENT_COLOR)
-						dest[u + 5] = translation[tbyte];
-					if ((tbyte = source[u + 6]) != TRANSPARENT_COLOR)
-						dest[u + 6] = translation[tbyte];
-					if ((tbyte = source[u + 7]) != TRANSPARENT_COLOR)
-						dest[u + 7] = translation[tbyte];
-				}
-				dest += vid.rowbytes;
-				source += pic->width;
-			}
-		}
-	}
-	break;
-	case 2:
-	{
-		unsigned short *dest = (unsigned short *) vid.buffer + y *
-			(vid.rowbytes >> 1) + x;
-		for (v = 0; v < pic->height; v++) {
-			for (u = 0; u < pic->width; u++) {
-				tbyte = source[u];
-				if (tbyte != TRANSPARENT_COLOR)
-					dest[u] = d_8to16table[translation[tbyte]];
-			}
-			dest += vid.rowbytes >> 1;
-			source += pic->width;
-		}
-	}
-	break;
-	case 4:
-	{
-		unsigned int *dest = (unsigned int *) vid.buffer + y *
-			(vid.rowbytes >> 2) + x;
-		for (v = 0; v < pic->height; v++) {
-			for (u = 0; u < pic->width; u++) {
-				tbyte = source[u];
-				if (tbyte != TRANSPARENT_COLOR)
-					dest[u] = d_8to24table[translation[tbyte]];
-			}
-			dest += vid.rowbytes >> 1;
-			source += pic->width;
-		}
-	}
-	break;
-	default:
-		Sys_Error("Draw_TransPicTranslate: unsupported r_pixbytes %i",
-				  r_pixbytes);
-	}
-}
-
-
-void
 Draw_ConsoleBackground (int lines, byte alpha)
 {
 	int         x, y, v;
@@ -752,7 +662,7 @@ Draw_ConsoleBackground (int lines, byte alpha)
 	break;
 
 	default:
-		Sys_Error("Draw_TransPicTranslate: unsupported r_pixbytes %i",
+		Sys_Error("Draw_ConsoleBackground: unsupported r_pixbytes %i",
 				  r_pixbytes);
 	}
 
@@ -1208,30 +1118,4 @@ Draw_FadeScreen (void)
 	VID_UnlockBuffer ();
 	S_ExtraUpdate ();
 	VID_LockBuffer ();
-}
-
-
-/*
-	Draw_BeginDisc
-
-	Draws the little blue disc in the corner of the screen.
-	Call before beginning any disc IO.
-*/
-void
-Draw_BeginDisc (void)
-{
-	D_BeginDirectRect (vid.width - 24, 0, draw_disc->data, 24, 24);
-}
-
-
-/*
-	Draw_EndDisc
-
-	Erases the disc icon.
-	Call after completing any disc IO
-*/
-void
-Draw_EndDisc (void)
-{
-	D_EndDirectRect (vid.width - 24, 0, 24, 24);
 }

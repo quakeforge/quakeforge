@@ -62,6 +62,7 @@ static __attribute__ ((used)) const char rcsid[] =
 #include "QF/GL/types.h"
 
 #include "compat.h"
+#include "gl_draw.h"
 #include "r_cvar.h"
 #include "r_shared.h"
 #include "sbar.h"
@@ -661,54 +662,6 @@ Draw_SubPic (int x, int y, qpic_t *pic, int srcx, int srcy, int width,
 }
 
 /*
-	Draw_TransPicTranslate
-
-	Only used for the player color selection menu
-*/
-void
-Draw_TransPicTranslate (int x, int y, qpic_t *pic, byte * translation)
-{
-	byte        *src;
-	int          c, p, u, v;
-	unsigned int trans[64 * 64], *dest;
-
-	qfglBindTexture (GL_TEXTURE_2D, translate_texture);
-
-	c = pic->width * pic->height;
-
-	dest = trans;
-	for (v = 0; v < 64; v++, dest += 64) {
-		src = &menuplyr_pixels[((v * pic->height) >> 6) * pic->width];
-		for (u = 0; u < 64; u++) {
-			p = src[(u * pic->width) >> 6];
-			if (p == 255)
-				dest[u] = p;
-			else
-				dest[u] = d_8to24table[translation[p]];
-		}
-	}
-
-	qfglTexImage2D (GL_TEXTURE_2D, 0, gl_alpha_format, 64, 64, 0, GL_RGBA,
-					GL_UNSIGNED_BYTE, trans);
-
-	qfglTexParameterf (GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, gl_filter_min);
-	qfglTexParameterf (GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, gl_filter_max);
-
-	qfglColor3ubv (color_0_8);
-	qfglBegin (GL_QUADS);
-	qfglTexCoord2f (0, 0);
-	qfglVertex2f (x, y);
-	qfglTexCoord2f (1, 0);
-	qfglVertex2f (x + pic->width, y);
-	qfglTexCoord2f (1, 1);
-	qfglVertex2f (x + pic->width, y + pic->height);
-	qfglTexCoord2f (0, 1);
-	qfglVertex2f (x, y + pic->height);
-	qfglEnd ();
-	qfglColor3ubv (color_white);
-}
-
-/*
 	Draw_ConsoleBackground
 
 	Draws console background (obviously!)  Completely rewritten to use
@@ -848,28 +801,6 @@ Draw_FadeScreen (void)
 	qfglEnable (GL_TEXTURE_2D);
 
 	Sbar_Changed ();
-}
-
-/*
-	Draw_BeginDisc
-
-	Draws the little blue disc in the corner of the screen.
-	Call before beginning any disc IO.
-*/
-void
-Draw_BeginDisc (void)
-{
-}
-
-/*
-	Draw_EndDisc
-
-	Erases the disc icon.
-	Call after completing any disc IO
-*/
-void
-Draw_EndDisc (void)
-{
 }
 
 /*
