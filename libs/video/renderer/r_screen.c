@@ -322,7 +322,7 @@ MipColor (int r, int g, int b)
 // in draw.c
 
 static void
-SCR_DrawCharToSnap (int num, byte * dest, int width)
+SCR_DrawCharToSnap (int num, byte *dest, int width)
 {
 	byte       *source;
 	int         col, row, drawline, x;

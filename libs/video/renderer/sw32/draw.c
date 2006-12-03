@@ -200,24 +200,24 @@ Draw_Init (void)
 	smoothly scrolled off.
 */
 void
-Draw_Character (int x, int y, unsigned int num)
+Draw_Character (int x, int y, unsigned int chr)
 {
 	byte       *source;
 	int         drawline;
 	int         row, col;
 
-	num &= 255;
+	chr &= 255;
 
 	if (y <= -8)
 		return;							// totally off screen
 
 	if (y > (int) vid.height - 8 || x < 0 || x > (int) vid.width - 8)
 		return;
-	if (num < 0 || num > 255)
+	if (chr < 0 || chr > 255)
 		return;
 
-	row = num >> 4;
-	col = num & 15;
+	row = chr >> 4;
+	col = chr & 15;
 	source = draw_chars + (row << 10) + (col << 3);
 
 	if (y < 0) {						// clipped

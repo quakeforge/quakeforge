@@ -123,53 +123,38 @@ static int		numcachepics;
 static byte		menuplyr_pixels[4096];
 
 
-void
+static void
 Draw_InitText (void)
 {
 	int		i;
 
-	if (r_init) {
-		if (vaelements > 3) {
-			tVAsize = vaelements - (vaelements % 4);
-		} else if (vaelements >= 0) {
-			tVAsize = 2048;
-		} else
-			tVAsize = 0;
+	if (vaelements > 3) {
+		tVAsize = vaelements - (vaelements % 4);
+	} else if (vaelements >= 0) {
+		tVAsize = 2048;
+	} else
+		tVAsize = 0;
 
-		if (tVAsize) {
-			Con_Printf ("Text: %i maximum vertex elements.\n", tVAsize);
+	if (tVAsize) {
+		Con_Printf ("Text: %i maximum vertex elements.\n", tVAsize);
 
-			if (textVertices)
-				free (textVertices);
-			textVertices = calloc (tVAsize, 2 * sizeof (float));
-
-			if (textCoords)
-				free (textCoords);
-			textCoords = calloc (tVAsize, 2 * sizeof (float));
-
-			qfglTexCoordPointer (2, GL_FLOAT, 0, textCoords);
-			qfglVertexPointer (2, GL_FLOAT, 0, textVertices);
-			if (tVAindices)
-				free (tVAindices);
-			tVAindices = (int *) calloc (tVAsize, sizeof (int));
-			for (i = 0; i < tVAsize; i++)
-				tVAindices[i] = i;
-		} else {
-			Con_Printf ("Text: Vertex Array use disabled.\n");
-		}
-	} else {
-		if (textVertices) {
+		if (textVertices)
 			free (textVertices);
-			textVertices = 0;
-		}
-		if (textCoords) {
+		textVertices = calloc (tVAsize, 2 * sizeof (float));
+
+		if (textCoords)
 			free (textCoords);
-			textCoords = 0;
-		}
-		if (tVAindices) {
+		textCoords = calloc (tVAsize, 2 * sizeof (float));
+
+		qfglTexCoordPointer (2, GL_FLOAT, 0, textCoords);
+		qfglVertexPointer (2, GL_FLOAT, 0, textVertices);
+		if (tVAindices)
 			free (tVAindices);
-			tVAindices = 0;
-		}
+		tVAindices = (int *) calloc (tVAsize, sizeof (int));
+		for (i = 0; i < tVAsize; i++)
+			tVAindices[i] = i;
+	} else {
+		Con_Printf ("Text: Vertex Array use disabled.\n");
 	}
 }
 
@@ -387,6 +372,8 @@ Draw_Init (void)
 	// LordHavoc: call init code for other GL renderer modules
 	glrmain_init ();
 	gl_lightmap_init ();
+
+	Draw_InitText ();
 }
 
 #define CELL_SIZE 0.0625
@@ -402,12 +389,12 @@ flush_text (void)
 }
 
 static inline void
-queue_character (float x, float y, int num)
+queue_character (float x, float y, int chr)
 {
 	float		frow, fcol;
 
-	frow = (num >> 4) * CELL_SIZE;
-	fcol = (num & 15) * CELL_SIZE;
+	frow = (chr >> 4) * CELL_SIZE;
+	fcol = (chr & 15) * CELL_SIZE;
 
 	*tV++ = x;
 	*tV++ = y;
@@ -443,23 +430,23 @@ tVA_increment (void)
 	smoothly scrolled off.
 */
 void
-Draw_Character (int x, int y, unsigned int num)
+Draw_Character (int x, int y, unsigned int chr)
 {
-	if (num == 32)
+	chr &= 255;
+
+	if (chr == 32)
 		return;							// space
 	if (y <= -8)
 		return;							// totally off screen
 
-	num &= 255;
-
-	queue_character ((float) x, (float) y, num);
+	queue_character ((float) x, (float) y, chr);
 	tVA_increment ();
 }
 
 void
 Draw_String (int x, int y, const char *str)
 {
-	unsigned char	num;
+	unsigned char	chr;
 	float			x1, y1;
 
 	if (!str || !str[0])
@@ -471,8 +458,8 @@ Draw_String (int x, int y, const char *str)
 	y1 = (float) y;
 
 	while (*str) {
-		if ((num = *str++) != 32) {		// Don't render spaces
-			queue_character (x1, y1, num);
+		if ((chr = *str++) != 32) {		// Don't render spaces
+			queue_character (x1, y1, chr);
 			tVA_increment ();
 		}
 		x1 += 8.0;
@@ -482,7 +469,7 @@ Draw_String (int x, int y, const char *str)
 void
 Draw_nString (int x, int y, const char *str, int count)
 {
-	unsigned char	num;
+	unsigned char	chr;
 	float			x1, y1;
 
 	if (!str || !str[0])
@@ -494,8 +481,8 @@ Draw_nString (int x, int y, const char *str, int count)
 	y1 = (float) y;
 
 	while (count-- && *str) {
-		if ((num = *str++) != 32) {		// Don't render spaces
-			queue_character (x1, y1, num);
+		if ((chr = *str++) != 32) {		// Don't render spaces
+			queue_character (x1, y1, chr);
 			tVA_increment ();
 		}
 		x1 += 8.0;
@@ -505,7 +492,7 @@ Draw_nString (int x, int y, const char *str, int count)
 void
 Draw_AltString (int x, int y, const char *str)
 {
-	unsigned char	num;
+	unsigned char	chr;
 	float			x1, y1;
 
 	if (!str || !str[0])
@@ -517,8 +504,8 @@ Draw_AltString (int x, int y, const char *str)
 	y1 = (float) y;
 
 	while (*str) {
-		if ((num = *str++ | 0x80) != (0x80 | 32)) {		// Don't render spaces
-			queue_character (x1, y1, num);
+		if ((chr = *str++ | 0x80) != (0x80 | 32)) {		// Don't render spaces
+			queue_character (x1, y1, chr);
 			tVA_increment ();
 		}
 		x1 += 8.0;
