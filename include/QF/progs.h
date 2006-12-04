@@ -281,7 +281,8 @@ void PR_Undefined (progs_t *pr, const char *type, const char *name) __attribute_
 
 /** Access a float global. Can be assigned to.
 
-	QC type: \c float
+	\par QC type:
+		\c float
 	\param p pointer to progs_t VM struct
 	\param o offset into global data space
 	\return float lvalue
@@ -290,7 +291,8 @@ void PR_Undefined (progs_t *pr, const char *type, const char *name) __attribute_
 
 /** Access a integer global. Can be assigned to.
 
-	QC type: \c integer
+	\par QC type:
+		\c integer
 	\param p pointer to progs_t VM struct
 	\param o offset into global data space
 	\return int lvalue
@@ -299,7 +301,8 @@ void PR_Undefined (progs_t *pr, const char *type, const char *name) __attribute_
 
 /** Access a unsigned integer global. Can be assigned to.
 
-	QC type: \c uinteger
+	\par QC type:
+		\c uinteger
 	\param p pointer to progs_t VM struct
 	\param o offset into global data space
 	\return unsigned int lvalue
@@ -308,7 +311,8 @@ void PR_Undefined (progs_t *pr, const char *type, const char *name) __attribute_
 
 /** Access a vector global. Can be assigned to.
 
-	QC type: \c vector
+	\par QC type:
+		\c vector
 	\param p pointer to progs_t VM struct
 	\param o offset into global data space
 	\return vec3_t lvalue
@@ -317,7 +321,8 @@ void PR_Undefined (progs_t *pr, const char *type, const char *name) __attribute_
 
 /** Access a string index global. Can be assigned to.
 
-	QC type: \c string
+	\par QC type:
+		\c string
 	\param p pointer to progs_t VM struct
 	\param o offset into global data space
 	\return string_t lvalue
@@ -326,7 +331,8 @@ void PR_Undefined (progs_t *pr, const char *type, const char *name) __attribute_
 
 /** Access a function global. Can be assigned to.
 
-	QC type: \c void()
+	\par QC type:
+		\c void()
 	\param p pointer to progs_t VM struct
 	\param o offset into global data space
 	\return func_t lvalue
@@ -335,7 +341,8 @@ void PR_Undefined (progs_t *pr, const char *type, const char *name) __attribute_
 
 /** Access a pointer global. Can be assigned to.
 
-	QC type: \c void[]
+	\par QC type:
+		\c void[]
 	\param p pointer to progs_t VM struct
 	\param o offset into global data space
 	\return pointer_t lvalue
@@ -345,7 +352,8 @@ void PR_Undefined (progs_t *pr, const char *type, const char *name) __attribute_
 
 /** Access an entity global.
 
-	QC type: \c entity
+	\par QC type:
+		\c entity
 	\param p pointer to progs_t VM struct
 	\param o offset into global data space
 	\return C pointer to the entity
@@ -354,7 +362,8 @@ void PR_Undefined (progs_t *pr, const char *type, const char *name) __attribute_
 
 /** Access an entity global.
 
-	QC type: \c entity
+	\par QC type:
+		\c entity
 	\param p pointer to progs_t VM struct
 	\param o offset into global data space
 	\return the entity number
@@ -364,7 +373,8 @@ void PR_Undefined (progs_t *pr, const char *type, const char *name) __attribute_
 /** Access a a string global, converting it to a C string. Kills the program
 	if the string is invalid.
 
-	QC type: \c string
+	\par QC type:
+		\c string
 	\param p pointer to progs_t VM struct
 	\param o offset into global data space
 	\return const char * to the string
@@ -373,7 +383,8 @@ void PR_Undefined (progs_t *pr, const char *type, const char *name) __attribute_
 
 /** Access a dstring global. Kills the program if the dstring is invalid.
 
-	QC type: \c string
+	\par QC type:
+		\c string
 	\param p pointer to progs_t VM struct
 	\param o offset into global data space
 	\return dstring_t * to the dstring
@@ -382,7 +393,8 @@ void PR_Undefined (progs_t *pr, const char *type, const char *name) __attribute_
 
 /** Access a pointer parameter.
 
-	QC type: \c void[]
+	\par QC type:
+		\c void[]
 	\param p pointer to progs_t VM struct
 	\param o offset into global data space
 	\return C pointer represented by the parameter. 0 offset -> NULL
@@ -391,7 +403,8 @@ void PR_Undefined (progs_t *pr, const char *type, const char *name) __attribute_
 
 /** Access an entity global.
 
-	QC type: \c void[]
+	\par QC type:
+		\c void[]
 	\param p pointer to progs_t VM struct
 	\param t C type of the structure
 	\param o offset into global data space
@@ -413,7 +426,8 @@ void PR_Undefined (progs_t *pr, const char *type, const char *name) __attribute_
 
 /** Access a float parameter. Can be assigned to.
 
-	QC type: \c float
+	\par QC type:
+		\c float
 	\param p pointer to progs_t VM struct
 	\param n parameter number (0-7)
 	\return float lvalue
@@ -422,7 +436,8 @@ void PR_Undefined (progs_t *pr, const char *type, const char *name) __attribute_
 
 /** Access a integer parameter. Can be assigned to.
 
-	QC type: \c integer
+	\par QC type:
+		\c integer
 	\param p pointer to progs_t VM struct
 	\param n parameter number (0-7)
 	\return int lvalue
@@ -431,7 +446,8 @@ void PR_Undefined (progs_t *pr, const char *type, const char *name) __attribute_
 
 /** Access a unsigned integer parameter. Can be assigned to.
 
-	QC type: \c uinteger
+	\par QC type:
+		\c uinteger
 	\param p pointer to progs_t VM struct
 	\param n parameter number (0-7)
 	\return unsigned int lvalue
@@ -440,7 +456,8 @@ void PR_Undefined (progs_t *pr, const char *type, const char *name) __attribute_
 
 /** Access a vector parameter. Can be used any way a vec3_t variable can.
 
-	QC type: \c vector
+	\par QC type:
+		\c vector
 	\param p pointer to progs_t VM struct
 	\param n parameter number (0-7)
 	\return vec3_t lvalue
@@ -449,7 +466,8 @@ void PR_Undefined (progs_t *pr, const char *type, const char *name) __attribute_
 
 /** Access a string index parameter. Can be assigned to.
 
-	QC type: \c string
+	\par QC type:
+		\c string
 	\param p pointer to progs_t VM struct
 	\param n parameter number (0-7)
 	\return string_t lvalue
@@ -458,7 +476,8 @@ void PR_Undefined (progs_t *pr, const char *type, const char *name) __attribute_
 
 /** Access a function parameter. Can be assigned to.
 
-	QC type: \c void()
+	\par QC type:
+		\c void()
 	\param p pointer to progs_t VM struct
 	\param n parameter number (0-7)
 	\return func_t lvalue
@@ -467,7 +486,8 @@ void PR_Undefined (progs_t *pr, const char *type, const char *name) __attribute_
 
 /** Access a pointer parameter. Can be assigned to.
 
-	QC type: \c void[]
+	\par QC type:
+		\c void[]
 	\param p pointer to progs_t VM struct
 	\param n parameter number (0-7)
 	\return pointer_t lvalue
@@ -477,7 +497,8 @@ void PR_Undefined (progs_t *pr, const char *type, const char *name) __attribute_
 
 /** Access an entity parameter.
 
-	QC type: \c entity
+	\par QC type:
+		\c entity
 	\param p pointer to progs_t VM struct
 	\param n parameter number (0-7)
 	\return C pointer to the entity
@@ -486,7 +507,8 @@ void PR_Undefined (progs_t *pr, const char *type, const char *name) __attribute_
 
 /** Access a entity parameter.
 
-	QC type: \c entity
+	\par QC type:
+		\c entity
 	\param p pointer to progs_t VM struct
 	\param n parameter number (0-7)
 	\return the entity number
@@ -496,7 +518,8 @@ void PR_Undefined (progs_t *pr, const char *type, const char *name) __attribute_
 /** Access a string parameter, converting it to a C string. Kills the program
 	if the string is invalid.
 
-	QC type: \c string
+	\par QC type:
+		\c string
 	\param p pointer to progs_t VM struct
 	\param n parameter number (0-7)
 	\return const char * to the string
@@ -505,7 +528,8 @@ void PR_Undefined (progs_t *pr, const char *type, const char *name) __attribute_
 
 /** Access a dstring parameter. Kills the program if the dstring is invalid.
 
-	QC type: \c string
+	\par QC type:
+		\c string
 	\param p pointer to progs_t VM struct
 	\param n parameter number (0-7)
 	\return dstring_t * to the dstring
@@ -514,7 +538,8 @@ void PR_Undefined (progs_t *pr, const char *type, const char *name) __attribute_
 
 /** Access a pointer parameter.
 
-	QC type: \c void[]
+	\par QC type:
+		\c void[]
 	\param p pointer to progs_t VM struct
 	\param n parameter number (0-7)
 	\return C pointer represented by the parameter. 0 offset -> NULL
@@ -523,7 +548,8 @@ void PR_Undefined (progs_t *pr, const char *type, const char *name) __attribute_
 
 /** Access a structure pointer parameter.
 
-	QC type: \c void[]
+	\par QC type:
+		\c void[]
 	\param p pointer to progs_t VM struct
 	\param t C type of the structure
 	\param n parameter number (0-7)
@@ -544,7 +570,8 @@ void PR_Undefined (progs_t *pr, const char *type, const char *name) __attribute_
 
 /** Access the float return value.
 
-	QC type: \c float
+	\par QC type:
+		\c float
 	\param p pointer to progs_t VM struct
 	\return float lvalue
 */
@@ -552,7 +579,8 @@ void PR_Undefined (progs_t *pr, const char *type, const char *name) __attribute_
 
 /** Access the integer return value.
 
-	QC type: \c integer
+	\par QC type:
+		\c integer
 	\param p pointer to progs_t VM struct
 	\return int lvalue
 */
@@ -560,7 +588,8 @@ void PR_Undefined (progs_t *pr, const char *type, const char *name) __attribute_
 
 /** Access the unsigned integer return value.
 
-	QC type: \c uinteger
+	\par QC type:
+		\c uinteger
 	\param p pointer to progs_t VM struct
 	\return unsigned int lvalue
 */
@@ -568,7 +597,8 @@ void PR_Undefined (progs_t *pr, const char *type, const char *name) __attribute_
 
 /** Access the vector return value.
 
-	QC type: \c vector
+	\par QC type:
+		\c vector
 	\param p pointer to progs_t VM struct
 	\return vec3_t lvalue
 */
@@ -576,7 +606,8 @@ void PR_Undefined (progs_t *pr, const char *type, const char *name) __attribute_
 
 /** Access the string index return value.
 
-	QC type: \c string
+	\par QC type:
+		\c string
 	\param p pointer to progs_t VM struct
 	\return string_t lvalue
 */
@@ -584,7 +615,8 @@ void PR_Undefined (progs_t *pr, const char *type, const char *name) __attribute_
 
 /** Access the function return value.
 
-	QC type: \c void()
+	\par QC type:
+		\c void()
 	\param p pointer to progs_t VM struct
 	\return func_t lvalue
 */
@@ -592,7 +624,8 @@ void PR_Undefined (progs_t *pr, const char *type, const char *name) __attribute_
 
 /** Access the pointer return value.
 
-	QC type: \c void[]
+	\par QC type:
+		\c void[]
 	\param p pointer to progs_t VM struct
 	\return pointer_t lvalue
 */
@@ -602,7 +635,8 @@ void PR_Undefined (progs_t *pr, const char *type, const char *name) __attribute_
 /** Set the return value to the given C string. The returned string will
 	eventually be garbage collected (see PR_SetReturnString()).
 
-	QC type: \c string
+	\par QC type:
+		\c string
 	\param p pointer to progs_t VM struct
 	\param s C string to be returned
 */
@@ -611,7 +645,8 @@ void PR_Undefined (progs_t *pr, const char *type, const char *name) __attribute_
 /** Set the return value to the given C entity pointer. The pointer is
 	converted into a progs entity address.
 
-	QC type: \c entity
+	\par QC type:
+		\c entity
 	\param p pointer to progs_t VM struct
 	\param e C entity pointer to be returned
 */
@@ -619,7 +654,8 @@ void PR_Undefined (progs_t *pr, const char *type, const char *name) __attribute_
 
 /** Set the return value to the given C pointer. NULL is converted to 0.
 
-	QC type: \c void[]
+	\par QC type:
+		\c void[]
 	\param p pointer to progs_t VM struct
 	\param ptr C entity pointer to be returned
 */
@@ -628,7 +664,8 @@ void PR_Undefined (progs_t *pr, const char *type, const char *name) __attribute_
 /** Set the return value to the given vector. The pointer is
 	converted into a progs entity address.
 
-	QC type: \c vector
+	\par QC type:
+		\c vector
 	\param p pointer to progs_t VM struct
 	\param v C entity pointer to be returned
 */
@@ -649,7 +686,8 @@ void PR_Undefined (progs_t *pr, const char *type, const char *name) __attribute_
 
 /** Access a float entity field. Can be assigned to.
 
-	QC type: \c float
+	\par QC type:
+		\c float
 	\param e pointer to the entity
 	\param o field offset into entity data space
 	\return float lvalue
@@ -658,7 +696,8 @@ void PR_Undefined (progs_t *pr, const char *type, const char *name) __attribute_
 
 /** Access a integer entity field. Can be assigned to.
 
-	QC type: \c integer
+	\par QC type:
+		\c integer
 	\param e pointer to the entity
 	\param o field offset into entity data space
 	\return int lvalue
@@ -667,7 +706,8 @@ void PR_Undefined (progs_t *pr, const char *type, const char *name) __attribute_
 
 /** Access a unsigned integer entity field. Can be assigned to.
 
-	QC type: \c uinteger
+	\par QC type:
+		\c uinteger
 	\param e pointer to the entity
 	\param o field offset into entity data space
 	\return unsigned int lvalue
@@ -676,7 +716,8 @@ void PR_Undefined (progs_t *pr, const char *type, const char *name) __attribute_
 
 /** Access a vector entity field. Can be used any way a vec3_t variable can.
 
-	QC type: \c vector
+	\par QC type:
+		\c vector
 	\param e pointer to the entity
 	\param o field offset into entity data space
 	\return vec3_t lvalue
@@ -685,7 +726,8 @@ void PR_Undefined (progs_t *pr, const char *type, const char *name) __attribute_
 
 /** Access a string index entity field. Can be assigned to.
 
-	QC type: \c string
+	\par QC type:
+		\c string
 	\param e pointer to the entity
 	\param o field offset into entity data space
 	\return string_t lvalue
@@ -694,7 +736,8 @@ void PR_Undefined (progs_t *pr, const char *type, const char *name) __attribute_
 
 /** Access a function entity field. Can be assigned to.
 
-	QC type: \c void()
+	\par QC type:
+		\c void()
 	\param e pointer to the entity
 	\param o field offset into entity data space
 	\return func_t lvalue
@@ -703,7 +746,8 @@ void PR_Undefined (progs_t *pr, const char *type, const char *name) __attribute_
 
 /** Access a pointer entity field. Can be assigned to.
 
-	QC type: \c void[]
+	\par QC type:
+		\c void[]
 	\param e pointer to the entity
 	\param o field offset into entity data space
 	\return pointer_t lvalue
@@ -714,7 +758,8 @@ void PR_Undefined (progs_t *pr, const char *type, const char *name) __attribute_
 /** Access a string entity field, converting it to a C string. Kills the
 	program if the string is invalid.
 
-	QC type: \c string
+	\par QC type:
+		\c string
 	\param p pointer to progs_t VM struct
 	\param e pointer to the entity
 	\param o field offset into entity data space
@@ -724,7 +769,8 @@ void PR_Undefined (progs_t *pr, const char *type, const char *name) __attribute_
 
 /** Access a dstring entity field. Kills the program if the dstring is invalid.
 
-	QC type: \c string
+	\par QC type:
+		\c string
 	\param p pointer to progs_t VM struct
 	\param e pointer to the entity
 	\param o field offset into entity data space

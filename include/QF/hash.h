@@ -167,7 +167,8 @@ void *Hash_DelElement (hashtab_t *tab, void *ele);
 	\param tab	the table associated with the element (for the free function)
 	\param ele	the element to be freed
 
-	eg: Hash_Free (tab, Hash_Del (tab, key));
+	\par Example:
+		Hash_Free (tab, Hash_Del (tab, key));
 */
 void Hash_Free (hashtab_t *tab, void *ele);
 
