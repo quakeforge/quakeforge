@@ -29,10 +29,8 @@
 #ifndef __hash_h
 #define __hash_h
 
-/** \addtogroup utils */
-//@{
-
 /** \defgroup hash Hash tables
+	\ingroup utils
 */
 //@{
 
@@ -70,6 +68,7 @@ hashtab_t *Hash_NewTable (int tsize, const char *(*gk)(void*,void*),
 	be mixed with the non-element functions, but by default the results will
 	be undefined.
 
+	\param tab	the table configure
 	\param gh takes the same parameters as gk in Hash_NewTable
 	\param cmp is element 1, element 2, userdata
 */
@@ -104,14 +103,12 @@ int Hash_AddElement (hashtab_t *tab, void *ele);
 /** find an element within a hash table.
 	\param tab	the table to search
 	\param key	the key string identifying the element being searched for
-	\param ele	element with info identifying the element being searched for
 	\return		pointer to the element if found, otherwise 0.
 */
 void *Hash_Find (hashtab_t *tab, const char *key);
 
 /** find an element within a hash table.
 	\param tab	the table to search
-	\param key	the key string identifying the element being searched for
 	\param ele	element with info identifying the element being searched for
 	\return		pointer to the element if found, otherwise 0.
 */
@@ -210,7 +207,6 @@ void **Hash_GetList (hashtab_t *tab);
 */
 void Hash_Stats (hashtab_t *tab);
 
-//@}
 //@}
 
 #endif // __hash_h

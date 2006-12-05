@@ -31,9 +31,6 @@
 #ifndef __qargs_h
 #define __qargs_h
 
-/** \addtogroup utils */
-//@{
-
 /** \addtogroup misc
 */
 //@{
@@ -51,7 +48,6 @@ void COM_Init (void);
 void COM_Init_Cvars (void);
 void COM_InitArgv (int argc, const char **argv);
 
-//@}
 //@}
 
 #endif // __qargs_h

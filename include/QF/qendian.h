@@ -31,10 +31,8 @@
 #ifndef __qendian_h
 #define __qendian_h
 
-/** \addtogroup utils */
-//@{
-
 /** \defgroup qendian Endian handling functions
+	\ingroup utils
 */
 //@{
 
@@ -96,7 +94,6 @@ byte ReadByte (struct QFile_s *file);
 unsigned short ReadShort (struct QFile_s *file);
 unsigned int ReadLong (struct QFile_s *file);
 
-//@}
 //@}
 
 #endif // __qendian_h

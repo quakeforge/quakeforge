@@ -26,10 +26,8 @@
 	$Id$
 */
 
-/** \addtogroup utils */
-//@{
-
 /** \defgroup wad Wad Files
+	\ingroup utils
 	Wadfile processing
 */
 //@{
@@ -105,7 +103,6 @@ int wad_add_data (wad_t *wad, const char *lumpname, byte type,
 				  const void *data, int bytes);
 lumpinfo_t *wad_find_lump (wad_t *wad, const char *filename);
 
-//@}
 //@}
 
 #endif//__QF_wadfile_h

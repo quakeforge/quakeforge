@@ -33,20 +33,23 @@
 	\image html vm-mem.png
 	\image latex vm-mem.eps "VM memory map"
 */
-//@{
 
 #include "QF/link.h"
 #include "QF/pr_comp.h"
 #include "QF/pr_debug.h"
 #include "QF/quakeio.h"
 
+/** \ingroup progs */
+//@{
 typedef struct progs_s progs_t;
 typedef struct pr_resource_s pr_resource_t;
 typedef struct edict_s edict_t;
+//@}
 
 //============================================================================
 
 /** \defgroup progs_misc Miscelaneous functions
+	\ingroup progs
 */
 //@{
 
@@ -64,12 +67,19 @@ void PR_RunError (progs_t *pr, const char *error, ...) __attribute__((format(pri
 //@}
 
 /** \defgroup progs_execution Execution
+	\ingroup progs
 */
 //@{
 
 /** Ensure P_* macros point to the right place for passing parameters to progs
 	functions.
-	\param pr pointer to progs_t VM struct
+	\param pr pointer to ::progs_t VM struct
+	\warning failure to use this macro before assigning to the P_* macros can
+	cause corruption of the VM data due to "register" based calling. Can be
+	safely ignored for parameterless functions, or forwardning parameters
+	though a builtin.
+
+	\hideinitializer
 */
 #define PR_RESET_PARAMS(pr)							\
 	do {											\
@@ -77,33 +87,33 @@ void PR_RunError (progs_t *pr, const char *error, ...) __attribute__((format(pri
 		(pr)->pr_params[1] = (pr)->pr_real_params[1];	\
 	} while (0)
 
-/** Push an execution frame onto the VM stack. Saves current execution state
-	\param pr pointer to progs_t VM struct
+/** Push an execution frame onto the VM stack. Saves current execution state.
+	\param pr pointer to ::progs_t VM struct
 */
 void PR_PushFrame (progs_t *pr);
 
 /** Pop an execution frame from the VM stack. Restores execution state. Also
 	frees any temporary strings allocated in this frame (via
 	PR_FreeTempStrings()).
-	\param pr pointer to progs_t VM struct
+	\param pr pointer to ::progs_t VM struct
 */
 void PR_PopFrame (progs_t *pr);
 
-/** Run a progs function. if \c fnum is a builtin rather than a progs
+/** Run a progs function. if \p fnum is a builtin rather than a progs
 	function, PR_ExecuteProgram() will call the function and then immediately
 	return to the caller. Nested calls are fully supported.
-	\param pr pointer to progs_t VM struct
+	\param pr pointer to ::progs_t VM struct
 	\param fnum number of the function to call
 */
 void PR_ExecuteProgram (progs_t *pr, func_t fnum);
 
-/** Setup to call a function. If \c fnum is a builtin rather than a progs
+/** Setup to call a function. If \p fnum is a builtin rather than a progs
 	function, then the function is called immediately. When called from a
 	builtin function, the progs function will execute upon return of control
 	to PR_ExecuteProgram().
-	\param pr pointer to progs_t VM struct
+	\param pr pointer to ::progs_t VM struct
 	\param fnum number of the function to call
-	\return true if \c fnum was a progs function, false if \c fnum was a
+	\return true if \p fnum was a progs function, false if \p fnum was a
 	builtin
 */
 int PR_CallFunction (progs_t *pr, func_t fnum);
@@ -111,24 +121,25 @@ int PR_CallFunction (progs_t *pr, func_t fnum);
 //@}
 
 /** \defgroup progs_load Loading
+	\ingroup progs
 */
 //@{
 
 /** Type of functions that are called at progs load.
-	\param pr pointer to progs_t VM struct
+	\param pr pointer to ::progs_t VM struct
 	\return true for success, false for failure
 */
 typedef int pr_load_func_t (progs_t *pr);
 
-/** Initialize a progs_t VM struct from an already open file.
-	\param pr pointer to progs_t VM struct
+/** Initialize a ::progs_t VM struct from an already open file.
+	\param pr pointer to ::progs_t VM struct
 	\param file handle of file to read progs data from
-	\param size bytes of \c file to read
+	\param size bytes of \p file to read
 	\param edicts \e number of entities to allocate space for
 	\param zone minimum size of dynamic memory to allocate space for
 
 	\note \e All runtime strings (permanent or temporary) are allocated from
-	the VM's dynamic memory space, so be sure \c zone is of sufficient size.
+	the VM's dynamic memory space, so be sure \p zone is of sufficient size.
 	So far, 1MB has proven more than sufficient for Quakeword, even when using
 	Ruamoko objects.
 */
@@ -137,7 +148,7 @@ void PR_LoadProgsFile (progs_t *pr, QFile *file, int size, int edicts,
 
 /** Convenience wrapper for PR_LoadProgsFile() and PR_RunLoadFuncs().
 	Searches for the specified file in the Quake filesystem.
-	\param pr pointer to progs_t VM struct
+	\param pr pointer to ::progs_t VM struct
 	\param progsname name of the file to load as progs data
 	\param edicts \e number of entities to allocate space for
 	\param zone minimum size of dynamic memory to allocate space for
@@ -147,7 +158,7 @@ void PR_LoadProgs (progs_t *pr, const char *progsname, int edicts, int zone);
 /** Register a primary function to be called after the progs code has been
 	loaded. These functions are remembered across progs loads. They will be
 	called in order of registration.
-	\param pr pointer to progs_t VM struct
+	\param pr pointer to ::progs_t VM struct
 	\param func function to call
 */
 void PR_AddLoadFunc (progs_t *pr, pr_load_func_t *func);
@@ -155,14 +166,14 @@ void PR_AddLoadFunc (progs_t *pr, pr_load_func_t *func);
 /** Register a secondary function to be called after the progs code has been
 	loaded. These functions will be forgotten after each load. They will be
 	called in \e reverse order of being registered. 
-	\param pr pointer to progs_t VM struct
+	\param pr pointer to ::progs_t VM struct
 	\param func function to call
 */
 void PR_AddLoadFinishFunc (progs_t *pr, pr_load_func_t *func);
 
 /** Run all load functions. Any load function returning false will abort the
 	load operation.
-	\param pr pointer to progs_t VM struct
+	\param pr pointer to ::progs_t VM struct
 
 	Calls the first set of internal load functions followed by the supplied
 	symbol resolution function, if any (progs_t::resolve), the second set of
@@ -175,7 +186,7 @@ int PR_RunLoadFuncs (progs_t *pr);
 
 /** Validate the opcodes and statement addresses in the progs. This is an
 	internal load function.
-	\param pr pointer to progs_t VM struct
+	\param pr pointer to ::progs_t VM struct
 
 	\todo should this be elsewhere?
 */
@@ -184,6 +195,7 @@ int PR_Check_Opcodes (progs_t *pr);
 //@}
 
 /** \defgroup progs_edict Edict management
+	\ingroup progs
 */
 //@{
 
@@ -243,6 +255,7 @@ void ED_EntityParseFunction (progs_t *pr);
 //@}
 
 /** \defgroup pr_symbols Symbol Management
+	\ingroup progs
 	Lookup functions for symbol name resolution.
 */
 //@{
@@ -265,17 +278,24 @@ void PR_Undefined (progs_t *pr, const char *type, const char *name) __attribute_
 //============================================================================
 
 /** \defgroup progs_data_access Data Access
+	\ingroup progs
 	Macros for accessing data in the VM address space
 */
-//@{
+
 /** \defgroup prda_globals Globals
+	\ingroup progs_data_access
+	Typed global access marcos. No checking is done against the QC type, but
+	the appropriate C type will be used.
 */
 //@{
-/** Typed global access for internal use.
-	\param p pointer to progs_t VM struct
+
+/** \internal
+	\param p pointer to ::progs_t VM struct
 	\param o offset into global data space
 	\param t typename prefix (see pr_type_u)
 	\return lvalue of the appropriate type
+
+	\hideinitializer
 */
 #define G_var(p,o,t)	((p)->pr_globals[o].t##_var)
 
@@ -283,9 +303,11 @@ void PR_Undefined (progs_t *pr, const char *type, const char *name) __attribute_
 
 	\par QC type:
 		\c float
-	\param p pointer to progs_t VM struct
+	\param p pointer to ::progs_t VM struct
 	\param o offset into global data space
 	\return float lvalue
+
+	\hideinitializer
 */
 #define G_FLOAT(p,o)	G_var (p, o, float)
 
@@ -293,9 +315,11 @@ void PR_Undefined (progs_t *pr, const char *type, const char *name) __attribute_
 
 	\par QC type:
 		\c integer
-	\param p pointer to progs_t VM struct
+	\param p pointer to ::progs_t VM struct
 	\param o offset into global data space
 	\return int lvalue
+
+	\hideinitializer
 */
 #define G_INT(p,o)		G_var (p, o, integer)
 
@@ -303,9 +327,11 @@ void PR_Undefined (progs_t *pr, const char *type, const char *name) __attribute_
 
 	\par QC type:
 		\c uinteger
-	\param p pointer to progs_t VM struct
+	\param p pointer to ::progs_t VM struct
 	\param o offset into global data space
 	\return unsigned int lvalue
+
+	\hideinitializer
 */
 #define G_UINT(p,o)		G_var (p, o, uinteger)
 
@@ -313,9 +339,11 @@ void PR_Undefined (progs_t *pr, const char *type, const char *name) __attribute_
 
 	\par QC type:
 		\c vector
-	\param p pointer to progs_t VM struct
+	\param p pointer to ::progs_t VM struct
 	\param o offset into global data space
 	\return vec3_t lvalue
+
+	\hideinitializer
 */
 #define G_VECTOR(p,o)	G_var (p, o, vector)
 
@@ -323,9 +351,11 @@ void PR_Undefined (progs_t *pr, const char *type, const char *name) __attribute_
 
 	\par QC type:
 		\c string
-	\param p pointer to progs_t VM struct
+	\param p pointer to ::progs_t VM struct
 	\param o offset into global data space
 	\return string_t lvalue
+
+	\hideinitializer
 */
 #define G_STRING(p,o)	G_var (p, o, string)
 
@@ -333,9 +363,11 @@ void PR_Undefined (progs_t *pr, const char *type, const char *name) __attribute_
 
 	\par QC type:
 		\c void()
-	\param p pointer to progs_t VM struct
+	\param p pointer to ::progs_t VM struct
 	\param o offset into global data space
 	\return func_t lvalue
+
+	\hideinitializer
 */
 #define G_FUNCTION(p,o)	G_var (p, o, func)
 
@@ -343,9 +375,11 @@ void PR_Undefined (progs_t *pr, const char *type, const char *name) __attribute_
 
 	\par QC type:
 		\c void[]
-	\param p pointer to progs_t VM struct
+	\param p pointer to ::progs_t VM struct
 	\param o offset into global data space
 	\return pointer_t lvalue
+
+	\hideinitializer
 */
 #define G_POINTER(p,o)	G_var (p, o, pointer)
 
@@ -354,9 +388,11 @@ void PR_Undefined (progs_t *pr, const char *type, const char *name) __attribute_
 
 	\par QC type:
 		\c entity
-	\param p pointer to progs_t VM struct
+	\param p pointer to ::progs_t VM struct
 	\param o offset into global data space
 	\return C pointer to the entity
+
+	\hideinitializer
 */
 #define G_EDICT(p,o)	((edict_t *)(PR_edicts (p) + G_INT (p, o)))
 
@@ -364,9 +400,11 @@ void PR_Undefined (progs_t *pr, const char *type, const char *name) __attribute_
 
 	\par QC type:
 		\c entity
-	\param p pointer to progs_t VM struct
+	\param p pointer to ::progs_t VM struct
 	\param o offset into global data space
 	\return the entity number
+
+	\hideinitializer
 */
 #define G_EDICTNUM(p,o)	NUM_FOR_EDICT(p, G_EDICT (p, o))
 
@@ -375,9 +413,11 @@ void PR_Undefined (progs_t *pr, const char *type, const char *name) __attribute_
 
 	\par QC type:
 		\c string
-	\param p pointer to progs_t VM struct
+	\param p pointer to ::progs_t VM struct
 	\param o offset into global data space
 	\return const char * to the string
+
+	\hideinitializer
 */
 #define G_GSTRING(p,o)	PR_GetString (p, G_STRING (p, o))
 
@@ -385,9 +425,11 @@ void PR_Undefined (progs_t *pr, const char *type, const char *name) __attribute_
 
 	\par QC type:
 		\c string
-	\param p pointer to progs_t VM struct
+	\param p pointer to ::progs_t VM struct
 	\param o offset into global data space
 	\return dstring_t * to the dstring
+
+	\hideinitializer
 */
 #define G_DSTRING(p,o)	PR_GetMutableString (p, G_STRING (p, o))
 
@@ -395,9 +437,11 @@ void PR_Undefined (progs_t *pr, const char *type, const char *name) __attribute_
 
 	\par QC type:
 		\c void[]
-	\param p pointer to progs_t VM struct
+	\param p pointer to ::progs_t VM struct
 	\param o offset into global data space
 	\return C pointer represented by the parameter. 0 offset -> NULL
+
+	\hideinitializer
 */
 #define G_GPOINTER(p,o)	PR_GetPointer (p, o)
 
@@ -405,22 +449,30 @@ void PR_Undefined (progs_t *pr, const char *type, const char *name) __attribute_
 
 	\par QC type:
 		\c void[]
-	\param p pointer to progs_t VM struct
+	\param p pointer to ::progs_t VM struct
 	\param t C type of the structure
 	\param o offset into global data space
 	\return structure lvalue. use & to make a pointer of the appropriate type.
+
+	\hideinitializer
 */
 #define G_STRUCT(p,t,o)	(*(t *)G_GPOINTER (p, o))
 //@}
 
 /** \defgroup prda_parameters Parameters
+	\ingroup progs_data_access
+	Typed parameter access marcos. No checking is done against the QC type, but
+	the appropriate C type will be used.
 */
 //@{
-/** Typed parameter access for internal use.
-	\param p pointer to progs_t VM struct
+
+/** \internal
+	\param p pointer to ::progs_t VM struct
 	\param n parameter number (0-7)
 	\param t typename prefix (see pr_type_u)
 	\return lvalue of the appropriate type
+
+	\hideinitializer
 */
 #define P_var(p,n,t)	((p)->pr_params[n]->t##_var)
 
@@ -428,9 +480,11 @@ void PR_Undefined (progs_t *pr, const char *type, const char *name) __attribute_
 
 	\par QC type:
 		\c float
-	\param p pointer to progs_t VM struct
+	\param p pointer to ::progs_t VM struct
 	\param n parameter number (0-7)
 	\return float lvalue
+
+	\hideinitializer
 */
 #define P_FLOAT(p,n)	P_var (p, n, float)
 
@@ -438,9 +492,11 @@ void PR_Undefined (progs_t *pr, const char *type, const char *name) __attribute_
 
 	\par QC type:
 		\c integer
-	\param p pointer to progs_t VM struct
+	\param p pointer to ::progs_t VM struct
 	\param n parameter number (0-7)
 	\return int lvalue
+
+	\hideinitializer
 */
 #define P_INT(p,n)		P_var (p, n, integer)
 
@@ -448,9 +504,11 @@ void PR_Undefined (progs_t *pr, const char *type, const char *name) __attribute_
 
 	\par QC type:
 		\c uinteger
-	\param p pointer to progs_t VM struct
+	\param p pointer to ::progs_t VM struct
 	\param n parameter number (0-7)
 	\return unsigned int lvalue
+
+	\hideinitializer
 */
 #define P_UINT(p,n)		P_var (p, n, uinteger)
 
@@ -458,9 +516,11 @@ void PR_Undefined (progs_t *pr, const char *type, const char *name) __attribute_
 
 	\par QC type:
 		\c vector
-	\param p pointer to progs_t VM struct
+	\param p pointer to ::progs_t VM struct
 	\param n parameter number (0-7)
 	\return vec3_t lvalue
+
+	\hideinitializer
 */
 #define P_VECTOR(p,n)	P_var (p, n, vector)
 
@@ -468,9 +528,11 @@ void PR_Undefined (progs_t *pr, const char *type, const char *name) __attribute_
 
 	\par QC type:
 		\c string
-	\param p pointer to progs_t VM struct
+	\param p pointer to ::progs_t VM struct
 	\param n parameter number (0-7)
 	\return string_t lvalue
+
+	\hideinitializer
 */
 #define P_STRING(p,n)	P_var (p, n, string)
 
@@ -478,9 +540,11 @@ void PR_Undefined (progs_t *pr, const char *type, const char *name) __attribute_
 
 	\par QC type:
 		\c void()
-	\param p pointer to progs_t VM struct
+	\param p pointer to ::progs_t VM struct
 	\param n parameter number (0-7)
 	\return func_t lvalue
+
+	\hideinitializer
 */
 #define P_FUNCTION(p,n)	P_var (p, n, func)
 
@@ -488,9 +552,11 @@ void PR_Undefined (progs_t *pr, const char *type, const char *name) __attribute_
 
 	\par QC type:
 		\c void[]
-	\param p pointer to progs_t VM struct
+	\param p pointer to ::progs_t VM struct
 	\param n parameter number (0-7)
 	\return pointer_t lvalue
+
+	\hideinitializer
 */
 #define P_POINTER(p,n)	P_var (p, n, pointer)
 
@@ -499,9 +565,11 @@ void PR_Undefined (progs_t *pr, const char *type, const char *name) __attribute_
 
 	\par QC type:
 		\c entity
-	\param p pointer to progs_t VM struct
+	\param p pointer to ::progs_t VM struct
 	\param n parameter number (0-7)
 	\return C pointer to the entity
+
+	\hideinitializer
 */
 #define P_EDICT(p,n)	((edict_t *)(PR_edicts (p) + P_INT (p, n)))
 
@@ -509,9 +577,11 @@ void PR_Undefined (progs_t *pr, const char *type, const char *name) __attribute_
 
 	\par QC type:
 		\c entity
-	\param p pointer to progs_t VM struct
+	\param p pointer to ::progs_t VM struct
 	\param n parameter number (0-7)
 	\return the entity number
+
+	\hideinitializer
 */
 #define P_EDICTNUM(p,n)	NUM_FOR_EDICT (p, P_EDICT (p, n))
 
@@ -520,9 +590,11 @@ void PR_Undefined (progs_t *pr, const char *type, const char *name) __attribute_
 
 	\par QC type:
 		\c string
-	\param p pointer to progs_t VM struct
+	\param p pointer to ::progs_t VM struct
 	\param n parameter number (0-7)
 	\return const char * to the string
+
+	\hideinitializer
 */
 #define P_GSTRING(p,n)	PR_GetString (p, P_STRING (p, n))
 
@@ -530,9 +602,11 @@ void PR_Undefined (progs_t *pr, const char *type, const char *name) __attribute_
 
 	\par QC type:
 		\c string
-	\param p pointer to progs_t VM struct
+	\param p pointer to ::progs_t VM struct
 	\param n parameter number (0-7)
 	\return dstring_t * to the dstring
+
+	\hideinitializer
 */
 #define P_DSTRING(p,n)	PR_GetMutableString (p, P_STRING (p, n))
 
@@ -540,9 +614,11 @@ void PR_Undefined (progs_t *pr, const char *type, const char *name) __attribute_
 
 	\par QC type:
 		\c void[]
-	\param p pointer to progs_t VM struct
+	\param p pointer to ::progs_t VM struct
 	\param n parameter number (0-7)
 	\return C pointer represented by the parameter. 0 offset -> NULL
+
+	\hideinitializer
 */
 #define P_GPOINTER(p,n)	PR_GetPointer (p, P_POINTER (p, n))
 
@@ -550,21 +626,29 @@ void PR_Undefined (progs_t *pr, const char *type, const char *name) __attribute_
 
 	\par QC type:
 		\c void[]
-	\param p pointer to progs_t VM struct
+	\param p pointer to ::progs_t VM struct
 	\param t C type of the structure
 	\param n parameter number (0-7)
 	\return structure lvalue. use & to make a pointer of the appropriate type.
+
+	\hideinitializer
 */
 #define P_STRUCT(p,t,n)	(*(t *)P_GPOINTER (p, n))
 //@}
 
 /** \defgroup prda_return Return value
+	\ingroup progs_data_access
+	Typed return value access marcos. No checking is done against the QC type,
+	but the appropriate C type will be used.
 */
 //@{
-/** Typed return value access for internal use.
-	\param p pointer to progs_t VM struct
+
+/** \internal
+	\param p pointer to ::progs_t VM struct
 	\param t typename prefix (see pr_type_u)
 	\return lvalue of the appropriate type
+
+	\hideinitializer
 */
 #define R_var(p,t)		((p)->pr_return->t##_var)
 
@@ -572,8 +656,10 @@ void PR_Undefined (progs_t *pr, const char *type, const char *name) __attribute_
 
 	\par QC type:
 		\c float
-	\param p pointer to progs_t VM struct
+	\param p pointer to ::progs_t VM struct
 	\return float lvalue
+
+	\hideinitializer
 */
 #define R_FLOAT(p)		R_var (p, float)
 
@@ -581,8 +667,10 @@ void PR_Undefined (progs_t *pr, const char *type, const char *name) __attribute_
 
 	\par QC type:
 		\c integer
-	\param p pointer to progs_t VM struct
+	\param p pointer to ::progs_t VM struct
 	\return int lvalue
+
+	\hideinitializer
 */
 #define R_INT(p)		R_var (p, integer)
 
@@ -590,8 +678,10 @@ void PR_Undefined (progs_t *pr, const char *type, const char *name) __attribute_
 
 	\par QC type:
 		\c uinteger
-	\param p pointer to progs_t VM struct
+	\param p pointer to ::progs_t VM struct
 	\return unsigned int lvalue
+
+	\hideinitializer
 */
 #define R_UINT(p)		R_var (p, uinteger)
 
@@ -599,8 +689,10 @@ void PR_Undefined (progs_t *pr, const char *type, const char *name) __attribute_
 
 	\par QC type:
 		\c vector
-	\param p pointer to progs_t VM struct
+	\param p pointer to ::progs_t VM struct
 	\return vec3_t lvalue
+
+	\hideinitializer
 */
 #define R_VECTOR(p)		R_var (p, vector)
 
@@ -608,8 +700,10 @@ void PR_Undefined (progs_t *pr, const char *type, const char *name) __attribute_
 
 	\par QC type:
 		\c string
-	\param p pointer to progs_t VM struct
+	\param p pointer to ::progs_t VM struct
 	\return string_t lvalue
+
+	\hideinitializer
 */
 #define R_STRING(p)		R_var (p, string)
 
@@ -617,8 +711,10 @@ void PR_Undefined (progs_t *pr, const char *type, const char *name) __attribute_
 
 	\par QC type:
 		\c void()
-	\param p pointer to progs_t VM struct
+	\param p pointer to ::progs_t VM struct
 	\return func_t lvalue
+
+	\hideinitializer
 */
 #define R_FUNCTION(p)	R_var (p, func)
 
@@ -626,8 +722,10 @@ void PR_Undefined (progs_t *pr, const char *type, const char *name) __attribute_
 
 	\par QC type:
 		\c void[]
-	\param p pointer to progs_t VM struct
+	\param p pointer to ::progs_t VM struct
 	\return pointer_t lvalue
+
+	\hideinitializer
 */
 #define R_POINTER(p)	R_var (p, pointer)
 
@@ -637,8 +735,10 @@ void PR_Undefined (progs_t *pr, const char *type, const char *name) __attribute_
 
 	\par QC type:
 		\c string
-	\param p pointer to progs_t VM struct
+	\param p pointer to ::progs_t VM struct
 	\param s C string to be returned
+
+	\hideinitializer
 */
 #define RETURN_STRING(p,s)		(R_STRING (p) = PR_SetReturnString((p), s))
 
@@ -647,8 +747,10 @@ void PR_Undefined (progs_t *pr, const char *type, const char *name) __attribute_
 
 	\par QC type:
 		\c entity
-	\param p pointer to progs_t VM struct
+	\param p pointer to ::progs_t VM struct
 	\param e C entity pointer to be returned
+
+	\hideinitializer
 */
 #define RETURN_EDICT(p,e)		(R_STRING (p) = EDICT_TO_PROG(p, e))
 
@@ -656,8 +758,10 @@ void PR_Undefined (progs_t *pr, const char *type, const char *name) __attribute_
 
 	\par QC type:
 		\c void[]
-	\param p pointer to progs_t VM struct
+	\param p pointer to ::progs_t VM struct
 	\param ptr C entity pointer to be returned
+
+	\hideinitializer
 */
 #define RETURN_POINTER(p,ptr)	(R_POINTER (p) = PR_SetPointer (p, ptr))
 
@@ -666,20 +770,28 @@ void PR_Undefined (progs_t *pr, const char *type, const char *name) __attribute_
 
 	\par QC type:
 		\c vector
-	\param p pointer to progs_t VM struct
+	\param p pointer to ::progs_t VM struct
 	\param v C entity pointer to be returned
+
+	\hideinitializer
 */
 #define RETURN_VECTOR(p,v)		VectorCopy (v, R_VECTOR (p))
 //@}
 
 /** \defgroup prda_entity_fields Entity Fields
+	\ingroup progs_data_access
+	Typed entity field  access marcos. No checking is done against the QC type,
+	but the appropriate C type will be used.
 */
 //@{
-/** Typed entity field access for internal use.
+
+/** \internal
 	\param e pointer to the entity
 	\param o field offset into entity data space
 	\param t typename prefix (see pr_type_u)
 	\return lvalue of the appropriate type
+
+	\hideinitializer
 */
 #define E_var(e,o,t)	((e)->v[o].t##_var)
 
@@ -691,6 +803,8 @@ void PR_Undefined (progs_t *pr, const char *type, const char *name) __attribute_
 	\param e pointer to the entity
 	\param o field offset into entity data space
 	\return float lvalue
+
+	\hideinitializer
 */
 #define E_FLOAT(e,o)	E_var (e, o, float)
 
@@ -701,6 +815,8 @@ void PR_Undefined (progs_t *pr, const char *type, const char *name) __attribute_
 	\param e pointer to the entity
 	\param o field offset into entity data space
 	\return int lvalue
+
+	\hideinitializer
 */
 #define E_INT(e,o)		E_var (e, o, integer)
 
@@ -711,6 +827,8 @@ void PR_Undefined (progs_t *pr, const char *type, const char *name) __attribute_
 	\param e pointer to the entity
 	\param o field offset into entity data space
 	\return unsigned int lvalue
+
+	\hideinitializer
 */
 #define E_UINT(e,o)		E_var (e, o, uinteger)
 
@@ -721,6 +839,8 @@ void PR_Undefined (progs_t *pr, const char *type, const char *name) __attribute_
 	\param e pointer to the entity
 	\param o field offset into entity data space
 	\return vec3_t lvalue
+
+	\hideinitializer
 */
 #define E_VECTOR(e,o)	E_var (e, o, vector)
 
@@ -731,6 +851,8 @@ void PR_Undefined (progs_t *pr, const char *type, const char *name) __attribute_
 	\param e pointer to the entity
 	\param o field offset into entity data space
 	\return string_t lvalue
+
+	\hideinitializer
 */
 #define E_STRING(e,o)	E_var (e, o, string)
 
@@ -741,6 +863,8 @@ void PR_Undefined (progs_t *pr, const char *type, const char *name) __attribute_
 	\param e pointer to the entity
 	\param o field offset into entity data space
 	\return func_t lvalue
+
+	\hideinitializer
 */
 #define E_FUNCTION(e,o)	E_var (e, o, func)
 
@@ -751,6 +875,8 @@ void PR_Undefined (progs_t *pr, const char *type, const char *name) __attribute_
 	\param e pointer to the entity
 	\param o field offset into entity data space
 	\return pointer_t lvalue
+
+	\hideinitializer
 */
 #define E_POINTER(e,o)	E_var (e, o, pointer)
 
@@ -760,10 +886,12 @@ void PR_Undefined (progs_t *pr, const char *type, const char *name) __attribute_
 
 	\par QC type:
 		\c string
-	\param p pointer to progs_t VM struct
+	\param p pointer to ::progs_t VM struct
 	\param e pointer to the entity
 	\param o field offset into entity data space
 	\return const char * to the string
+
+	\hideinitializer
 */
 #define E_GSTRING(p,e,o) (PR_GetString (p, E_STRING (e, o)))
 
@@ -771,17 +899,18 @@ void PR_Undefined (progs_t *pr, const char *type, const char *name) __attribute_
 
 	\par QC type:
 		\c string
-	\param p pointer to progs_t VM struct
+	\param p pointer to ::progs_t VM struct
 	\param e pointer to the entity
 	\param o field offset into entity data space
 	\return dstring_t * to the dstring
+
+	\hideinitializer
 */
 #define E_DSTRING(p,e,o) (PR_GetMutableString (p, E_STRING (e, o)))
 //@}
 
-//@}
-
 /** \defgroup pr_builtins VM Builtin functions
+	\ingroup progs
 	Builtin management functions.
 
 	Builtins are arranged into groups of 65536 to allow for diffent expantion
@@ -831,20 +960,20 @@ typedef struct {
 
 /** Register a set of builtin functions with the VM. Different VMs within the
 	same program can have different builtin sets.
-	\param pr pointer to progs_t VM struct
+	\param pr pointer to ::progs_t VM struct
 	\param builtins array of builtin_t builtins
 */
 void PR_RegisterBuiltins (progs_t *pr, builtin_t *builtins);
 
 /** Lookup a builtin function referred by name.
-	\param pr pointer to progs_t VM struct
+	\param pr pointer to ::progs_t VM struct
 	\param name name of the builtin function to lookup
 	\return pointer to the builtin function entry, or NULL if not found
 */
 builtin_t *PR_FindBuiltin (progs_t *pr, const char *name);
 
 /** Lookup a builtin function by builtin number.
-	\param pr pointer to progs_t VM struct
+	\param pr pointer to ::progs_t VM struct
 	\param num number of the builtin function to lookup
 	\return pointer to the builtin function entry, or NULL if not found
 */
@@ -856,13 +985,14 @@ builtin_t *PR_FindBuiltinNum (progs_t *pr, int num);
 	pointer to the C implementation of the builtin function. Automaticly
 	during progs load.
 	\bug alignment access violations on 64 bit architectures (eg, alpha)
-	\param pr pointer to progs_t VM struct
+	\param pr pointer to ::progs_t VM struct
 */
 int PR_RelocateBuiltins (progs_t *pr);
 
 //@}
 
 /** \defgroup pr_strings String Management
+	\ingroup progs
 	Strings management functions.
 
 	All strings accessable by the VM are stored within the VM address space.
@@ -889,26 +1019,26 @@ int PR_RelocateBuiltins (progs_t *pr);
 
 /** Initialize the string tables using the strings supplied by the progs.
 	Automaticly called at progs load.
-	\param pr pointer to progs_t VM struct
+	\param pr pointer to ::progs_t VM struct
 */
 int PR_LoadStrings (progs_t *pr);
 
 /** Check the validity of a string index.
-	\param pr pointer to progs_t VM struct
+	\param pr pointer to ::progs_t VM struct
 	\param num string index to be validated
 	\return true if the index is valid, false otherwise
 */
 qboolean PR_StringValid (progs_t *pr, string_t num);
 
 /** Convert a string index to a C string.
-	\param pr pointer to progs_t VM struct
+	\param pr pointer to ::progs_t VM struct
 	\param num string index to be converted
 	\return C pointer to the string.
 */
 const char *PR_GetString(progs_t *pr, string_t num);
 
 /** Retieve the dstring_t associated with a mutable string.
-	\param pr pointer to progs_t VM struct
+	\param pr pointer to ::progs_t VM struct
 	\param num string index of the mutable string
 	\return the dstring implementing the mutable string
 */
@@ -916,7 +1046,7 @@ struct dstring_s *PR_GetMutableString(progs_t *pr, string_t num);
 
 /** Make a permanent progs string from the given C string. Will not create a
 	duplicate permanent string (temporary and mutable strings are not checked).
-	\param pr pointer to progs_t VM struct
+	\param pr pointer to ::progs_t VM struct
 	\param s C string to be made into a permanent progs string
 	\return string index of the progs string
 */
@@ -926,7 +1056,7 @@ string_t PR_SetString(progs_t *pr, const char *s);
 	Will not duplicate a permanent string. If a new progs string is created,
 	it will be freed after ::PR_RS_SLOTS calls to this function. ie, up to
 	::PR_RS_SLOTS return strings can exist at a time.
-	\param pr pointer to progs_t VM struct
+	\param pr pointer to ::progs_t VM struct
 	\param s C string to be returned to the progs code
 	\return string index of the progs string
 */
@@ -934,14 +1064,14 @@ string_t PR_SetReturnString(progs_t *pr, const char *s);
 
 /** Make a temporary progs string that will be freed when the current progs
 	stack frame is exited. Will not duplicate a permantent string.
-	\param pr pointer to progs_t VM struct
+	\param pr pointer to ::progs_t VM struct
 	\param s C string
 	\return string index of the progs string
 */
 string_t PR_SetTempString(progs_t *pr, const char *s);
 
 /** Make a tempoary progs string that is the concatenation of two C strings.
-	\param pr pointer to progs_t VM struct
+	\param pr pointer to ::progs_t VM struct
 	\param a C string
 	\param b C string
 	\return string index of the progs string that represents the concatenation
@@ -950,13 +1080,13 @@ string_t PR_SetTempString(progs_t *pr, const char *s);
 string_t PR_CatStrings (progs_t *pr, const char *a, const char *b);
 
 /** Convert a mutable string to a temporary string.
-	\param pr pointer to progs_t VM struct
+	\param pr pointer to ::progs_t VM struct
 	\param str string index of the mutable string to be converted
 */
 void PR_MakeTempString(progs_t *pr, string_t str);
 
 /** Create a new mutable string.
-	\param pr pointer to progs_t VM struct
+	\param pr pointer to ::progs_t VM struct
 	\return string index of the newly created mutable string
 */
 string_t PR_NewMutableString (progs_t *pr);
@@ -964,25 +1094,25 @@ string_t PR_NewMutableString (progs_t *pr);
 /** Make a dynamic progs string from the given C string. Will not create a
 	duplicate permanent string (temporary, dynamic  and mutable strings are
 	not checked).
-	\param pr pointer to progs_t VM struct
+	\param pr pointer to ::progs_t VM struct
 	\param s C string to be made into a permanent progs string
 	\return string index of the progs string
 */
 string_t PR_SetDynamicString (progs_t *pr, const char *s);
 
 /** Clear all of the return string slots. Called at progs load.
-	\param pr pointer to progs_t VM struct
+	\param pr pointer to ::progs_t VM struct
 */
 void PR_ClearReturnStrings (progs_t *pr);
 
 /** Destroy a mutable, dynamic or temporary string.
-	\param pr pointer to progs_t VM struct
+	\param pr pointer to ::progs_t VM struct
 	\param str string index of the string to be destroyed
 */
 void PR_FreeString (progs_t *pr, string_t str);
 
 /** Free all the temporary strings allocated in the current stack frame.
-	\param pr pointer to progs_t VM struct
+	\param pr pointer to ::progs_t VM struct
 */
 void PR_FreeTempStrings (progs_t *pr);
 
@@ -991,7 +1121,7 @@ void PR_FreeTempStrings (progs_t *pr);
 	that includes optional format specifiers, one for each arg to be printed.
 	A format specifier can be one of two forms:
 	<ul>
-	<li>\c "%%"	print a single \c '%'
+	<li>\c "%%"	print a single \c '\%'
 	<li><tt>%[flags][field width][precision](conversion specifier)</tt>	print a
 			single arg of the type specified by the conversion specifier using
 			the given format.
@@ -1024,8 +1154,8 @@ void PR_FreeTempStrings (progs_t *pr);
 		<li>\c 'i'	\c integer Print a integer value. ("%i")
 		<li>\c 'f'	\c float Print a float value. ("%f")
 		<li>\c 'g'	\c float Print a float value. ("%f")
-		<li>\c 'p'	\c void[] Print a pointer value. ("%f")
-		<li>\c 's'	\c string Print a string value. ("%f")
+		<li>\c 'p'	\c void[] Print a pointer value. ("%#x")
+		<li>\c 's'	\c string Print a string value. ("%s")
 		<li>\c 'v'	\c vector Print a vector value. ("'%g %g %g'")
 		<li>\c 'q'	\c quaternion Print a quaternion value. ("'%g %g %g %g'")
 		<li>\c 'x'	\c uinteger Print an unsigned integer value. ("%x")
@@ -1034,7 +1164,7 @@ void PR_FreeTempStrings (progs_t *pr);
 
 	For details, refer to the C documentation for printf.
 
-	\param pr pointer to progs_t VM struct
+	\param pr pointer to ::progs_t VM struct
 	\param result dstring to which printing is done
 	\param name name to be reported in case of errors
 	\param format the format string
@@ -1047,6 +1177,7 @@ void PR_Sprintf (progs_t *pr, struct dstring_s *result, const char *name,
 //@}
 
 /** \defgroup pr_resources Resource Management
+	\ingroup progs
 	Builtin module private data management.
 */
 //@{
@@ -1119,6 +1250,7 @@ void *PR_Resources_Find (progs_t *pr, const char *name);
 //@}
 
 /** \defgroup pr_zone VM memory management.
+	\ingroup progs
 
 	Used to allocate and free memory in the VM address space.
 */
@@ -1132,6 +1264,7 @@ void *PR_Zone_Realloc (progs_t *pr, void *ptr, int size);
 //@}
 
 /** \defgroup debug VM Debugging
+	\ingroup progs
 	Progs debugging support.
 */
 //@{
@@ -1160,6 +1293,7 @@ extern struct cvar_s *pr_faultchecks;
 //@}
 
 /** \defgroup pr_cmds Quake and Quakeworld common builtins
+	\ingroup progs
 	\todo This doesn't really belong in progs.
 */
 //@{
@@ -1326,7 +1460,7 @@ struct progs_s {
 //@{
 
 /** Convert a progs offset/pointer to a C pointer.
-	\param pr pointer to progs_t VM struct
+	\param pr pointer to ::progs_t VM struct
 	\param o offset into global data space
 	\return C pointer represented by the parameter. 0 offset -> NULL
 */
@@ -1337,7 +1471,7 @@ PR_GetPointer (progs_t *pr, int o)
 }
 
 /** Convert a C pointer to a progs offset/pointer.
-	\param pr pointer to progs_t VM struct
+	\param pr pointer to ::progs_t VM struct
 	\param p C pointer to be converted.
 	\return Progs offset/pointer represented by \c p. NULL -> 0 offset
 */
@@ -1346,8 +1480,6 @@ PR_SetPointer (progs_t *pr, void *p)
 {
 	return p ? (pr_type_t *) p - pr->pr_globals : 0;
 }
-
-//@}
 
 //@}
 

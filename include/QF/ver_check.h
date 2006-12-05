@@ -29,10 +29,10 @@
 #ifndef __ver_check_h_
 #define __ver_check_h_
 
-/** \addtogroup utils */
-//@{
+/** \defgroup utils Utils
 
-/** \addtogroup misc
+/** \defgroup misc Miscellaneous functions
+	\ingroup utils
 */
 //@{
 
@@ -45,7 +45,6 @@
 */
 int ver_compare (const char *, const char *);
 
-//@}
 //@}
 
 #endif	// __ver_check_h_

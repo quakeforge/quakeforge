@@ -32,10 +32,8 @@
 #ifndef __QF_cbuf_h
 #define __QF_cbuf_h
 
-/** \addtogroup utils */
-//@{
-
 /** \defgroup cbuf Command buffer management.
+	\ingroup utils
 */
 //@{
 
@@ -102,7 +100,6 @@ void Cbuf_Execute (cbuf_t *cbuf);
 void Cbuf_Execute_Stack (cbuf_t *cbuf);
 void Cbuf_Execute_Sets (cbuf_t *cbuf);
 
-//@}
 //@}
 
 #endif//__QF_cbuf_h

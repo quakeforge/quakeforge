@@ -30,9 +30,6 @@
 #ifndef _WAD_H
 #define _WAD_H
 
-/** \addtogroup utils */
-//@{
-
 /** \addtogroup wad
 	Wad Files
 */
@@ -50,7 +47,6 @@ void	*W_GetLumpName (const char *name);
 
 void SwapPic (qpic_t *pic);
 
-//@}
 //@}
 
 #endif // _WAD_H

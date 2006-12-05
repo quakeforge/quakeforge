@@ -31,10 +31,8 @@
 #ifndef __quakefs_h
 #define __quakefs_h
 
-/** \addtogroup utils */
-//@{
-
 /** \defgroup quakefs Quake Filesystem
+	\ingroup utils
 */
 //@{
 
@@ -132,7 +130,6 @@ void QFS_FilelistFree (filelist_t *list);
 // FIXME: This is here temporarily until fs_usercfg gets sorted out
 char *expand_squiggle (const char *path);
 
-//@}
 //@}
 
 #endif // __quakefs_h

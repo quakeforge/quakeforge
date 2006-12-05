@@ -32,10 +32,8 @@
 
 #include <stdio.h>
 
-/** \addtogroup utils */
-//@{
-
 /** \defgroup quakeio File IO
+	\ingroup utils
 */
 //@{
 
@@ -63,7 +61,6 @@ int Qflush(QFile *file);
 int Qeof(QFile *file);
 const char *Qgetline(QFile *file);
 
-//@}
 //@}
 
 #endif /*__quakeio_h*/

@@ -29,10 +29,8 @@
 #ifndef __crc_h
 #define __crc_h
 
-/** \addtogroup utils */
-//@{
-
 /** \defgroup crc Checksum generation.
+	\ingroup utils
 */
 //@{
 
@@ -44,7 +42,6 @@ void CRC_ProcessBlock (byte *start, unsigned short *crcvalue, int count);
 unsigned short CRC_Value(unsigned short crcvalue);
 unsigned short CRC_Block (byte *start, int count);
 
-//@}
 //@}
 
 #endif // __crc_h

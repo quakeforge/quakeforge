@@ -29,10 +29,8 @@
 #ifndef __QF_qfplist_h_
 #define __QF_qfplist_h_
 
-/** \addtogroup utils */
-//@{
-
 /** \defgroup qfplist Property lists
+	\ingroup utils
 */
 //@{
 
@@ -250,7 +248,6 @@ typedef struct pldata_s {	// Unparsed property list string
 	const char		*error;
 } pldata_t;
 
-//@}
 //@}
 
 #endif	// __QF_qfplist_h_

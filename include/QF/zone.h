@@ -28,10 +28,8 @@
 #ifndef __zone_h
 #define __zone_h
 
-/** \addtogroup utils */
-//@{
-
 /** \defgroup zone Memory Management
+	\ingroup utils
 
 	H_??? The hunk manages the entire memory block given to quake.  It must be
 	contiguous.  Memory can be allocated from either the low or high end in a
@@ -174,7 +172,6 @@ void *QA_realloc (void *ptr, size_t size);
 void QA_free (void *ptr);
 char *QA_strdup (const char *s);
 
-//@}
 //@}
 
 #endif // __zone_h

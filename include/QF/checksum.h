@@ -29,9 +29,6 @@
 #ifndef __checksum_h
 #define __checksum_h
 
-/** \addtogroup utils */
-//@{
-
 /** \addtogroup crc
 */
 //@{
@@ -42,7 +39,6 @@ unsigned int Com_BlockChecksum (const void *buffer, int length);
 void Com_BlockFullChecksum (const void *buffer, int len, unsigned char *outbuf);
 byte	COM_BlockSequenceCRCByte (const byte *base, int length, int sequence);
 
-//@}
 //@}
 
 #endif // __checksum_h

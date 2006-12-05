@@ -28,10 +28,8 @@
 #ifndef _MSG_H
 #define _MSG_H
 
-/** \addtogroup utils */
-//@{
-
 /** \defgroup msg Message reading and writing
+	\ingroup utils
 */
 //@{
 
@@ -76,7 +74,6 @@ void MSG_ReadAngleV (qmsg_t *msg, vec3_t angles);
 float MSG_ReadAngle16 (qmsg_t *msg);
 int MSG_ReadUTF8 (qmsg_t *msg);
 
-//@}
 //@}
 
 #endif

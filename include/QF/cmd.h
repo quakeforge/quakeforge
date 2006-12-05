@@ -29,10 +29,8 @@
 #ifndef __QF_cmd_h
 #define __QF_cmd_h
 
-/** \addtogroup utils */
-//@{
-
 /** \defgroup cmd Command management.
+	\ingroup utils
 */
 //@{
 
@@ -73,7 +71,6 @@ void Cmd_Exec_File (struct cbuf_s *cbuf, const char *path, int qfs);
 extern struct cbuf_args_s *cmd_args;
 extern struct cvar_s *cmd_warncmd;
 
-//@}
 //@}
 
 #endif//__QF_cmd_h

@@ -30,9 +30,6 @@
 #ifndef __mdfour_h
 #define __mdfour_h
 
-/** \addtogroup utils */
-//@{
-
 /** \addtogroup crc
 */
 //@{
@@ -51,7 +48,6 @@ void mdfour_update(struct mdfour *md, const unsigned char *in, int n); //old: MD
 void mdfour_result(struct mdfour *md, unsigned char *out); // old: MD4Final
 void mdfour(unsigned char *out, const unsigned char *in, int n);
 
-//@}
 //@}
 
 #endif	// __mdfour_h

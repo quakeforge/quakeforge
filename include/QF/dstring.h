@@ -29,10 +29,8 @@
 #ifndef __dstring_h
 #define __dstring_h
 
-/** \addtogroup utils */
-//@{
-
 /** \defgroup dstring Dynamic Strings
+	\ingroup utils
 */
 //@{
 
@@ -157,7 +155,6 @@ int davsprintf (dstring_t *dstr, const char *fmt, va_list args);
 int dasprintf (dstring_t *dstr, const char *fmt, ...) __attribute__((format(printf,2,3)));
 //@}
 
-//@}
 //@}
 
 #endif // __dstring_h

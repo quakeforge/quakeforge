@@ -20,10 +20,8 @@
 #ifndef __QF_script_h
 #define __QF_script_h
 
-/** \addtogroup utils */
-//@{
-
 /** \defgroup script Scripts
+	\ingroup utils
 	Line oriented script parsing. Multiple scripts being parsed at the same
 	time is supported.
 */
@@ -90,7 +88,6 @@ qboolean Script_GetToken (script_t *script, qboolean crossline);
 */
 void Script_UngetToken (script_t *script);
 
-//@}
 //@}
 
 #endif//__QF_script_h

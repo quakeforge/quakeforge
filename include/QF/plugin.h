@@ -29,10 +29,8 @@
 #ifndef __QF_plugin_h_
 #define __QF_plugin_h_
 
-/** \addtogroup utils */
-//@{
-
 /** \defgroup plugin Plugins
+	\ingroup utils
 */
 //@{
 
@@ -117,7 +115,6 @@ void PI_Shutdown (void);
 
 // FIXME: we need a generic function to initialize unused fields
 
-//@}
 //@}
 
 #endif	// __QF_plugin_h_

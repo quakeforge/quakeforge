@@ -30,12 +30,14 @@
 #define _DRAW_H
 
 /** \defgroup video Video Syb-sytem */
-//@{
 
-/** \defgroup video_renderer Renderer Sub-system */
-//@{
+/** \defgroup video_renderer Renderer Sub-system
+	\ingroup video
+*/
 
-/** \defgroup video_renderer_draw Generic draw functions */
+/** \defgroup video_renderer_draw Generic draw functions
+	\ingroup video_renderer
+*/
 //@{
 
 #include "QF/wad.h"
@@ -51,7 +53,7 @@ void Draw_Init (void);
 	smoothly scrolled off.
 	\param x	horizontal location of the top left corner of the character.
 	\param y	vertical location of the top left corner of the character.
-	\param chr	8 bit character to draw.
+	\param ch	8 bit character to draw.
 	\note		The character drawn is from the quake character set, which is
 				(by default) standard ascii for 0x20-0x7e (white). 0xa0-0xfe is
 				also standard ascii (brown). 0x01-0x1f and 0x80-0x9f are
@@ -147,7 +149,7 @@ void Draw_Fill (int x, int y, int w, int h, int c);
 	\param x	horizontal location of the upper left corner of the box
 	\param y	vertical location of the upper left corner of the box
 	\param width horizontal size in character cells of the region
-	\param height vertical size in character cells of the region
+	\param lines vertical size in character cells of the region
 	\param alpha transparency of the box
 */
 void Draw_TextBox (int x, int y, int width, int lines, byte alpha);
@@ -155,8 +157,11 @@ void Draw_TextBox (int x, int y, int width, int lines, byte alpha);
 /** Darken the screen.
 */
 void Draw_FadeScreen (void);
+//@}
 
-/** \defgroup video_renderer_draw_qpic QPic functions */
+/** \defgroup video_renderer_draw_qpic QPic functions
+	\ingroup video_renderer_draw
+*/
 //@{
 /** Clear out the cached qpic textures.
 */
@@ -194,13 +199,9 @@ void Draw_Pic (int x, int y, qpic_t *pic);
 	\param srcy	vertical qpic location of the upper left corner of the
 				sub-region
 	\param width horizontal size of the sub-region to be drawn
-	\param width vertical size of the sub-region to be drawn
+	\param height vertical size of the sub-region to be drawn
 */
 void Draw_SubPic(int x, int y, qpic_t *pic, int srcx, int srcy, int width, int height);
-//@}
-
-//@}
-//@}
 //@}
 
 #endif // _DRAW_H
