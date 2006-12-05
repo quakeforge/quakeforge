@@ -860,7 +860,7 @@ SV_Say (qboolean team)
 		PR_PushFrame (&sv_pr_state);
 		PR_RESET_PARAMS (&sv_pr_state);
 		P_STRING (&sv_pr_state, 0) = PR_SetTempString (&sv_pr_state, p);
-		G_FLOAT (&sv_pr_state, 1) = (float) team;
+		P_FLOAT (&sv_pr_state, 1) = (float) team;
 
 		*sv_globals.time = sv.time;
 		*sv_globals.self = EDICT_TO_PROG (&sv_pr_state, sv_player);
