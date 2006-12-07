@@ -30,6 +30,7 @@
 #define __ver_check_h_
 
 /** \defgroup utils Utils
+*/
 
 /** \defgroup misc Miscellaneous functions
 	\ingroup utils
