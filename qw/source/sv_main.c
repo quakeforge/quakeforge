@@ -265,28 +265,23 @@ static void
 SV_Error (const char *error, va_list argptr)
 {
 	static qboolean inerror = false;
+	dstring_t  *string;
 
 	if (inerror)
 		return;
 
 	inerror = true;
+	string = dstring_new ();
+	dvsprintf (string, error, argptr);
+
+	Con_Printf ("%s\n", string->str);
 
 	if (sv_net_initialized) {
-		dstring_t  *string = dstring_new ();
-
-		dvsprintf (string, error, argptr);
 		dstring_insertstr (string, 0, "server crashed: ");
 		dstring_appendstr (string, "\n");
 		SV_FinalMessage (string->str);
-		dstring_delete (string);
 	}
-
-	if (con_module) {
-		con_module->functions->console->pC_Print (error, argptr);
-		con_module->functions->console->pC_Print ("\n", argptr);
-	} else {
-		Sys_Print (stderr, error, argptr);
-	}
+	dstring_delete (string);
 }
 
 /*
