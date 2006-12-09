@@ -232,8 +232,8 @@ struct script_s;
 struct plitem_s;
 qboolean ED_ParseEpair (progs_t *pr, pr_type_t *base, ddef_t *key,
 						const char *s);
-void ED_Write (progs_t *pr, QFile *f, edict_t *ed);
-void ED_WriteGlobals (progs_t *pr, QFile *f);
+struct plitem_s *ED_EntityDict (progs_t *pr, edict_t *ed);
+struct plitem_s *ED_GlobalsDict (progs_t *pr);
 void ED_InitGlobals (progs_t *pr, struct plitem_s *globals);
 void ED_InitEntity (progs_t *pr, struct plitem_s *entity, edict_t *ent);
 struct plitem_s *ED_ConvertToPlist (progs_t *pr, struct script_s *script);

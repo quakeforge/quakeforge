@@ -108,49 +108,40 @@ PR_UglyValueString (progs_t *pr, etype_t type, pr_type_t *val)
 	return line;
 }
 
-/*
-	ED_Write
-
-	For savegames
-*/
-void
-ED_Write (progs_t *pr, QFile *f, edict_t *ed)
+plitem_t *
+ED_EntityDict (progs_t *pr, edict_t *ed)
 {
-	unsigned int i;
+	plitem_t   *entity = PL_NewDictionary ();
+	unsigned    i;
 	int         j;
 	int         type;
 	const char *name;
-	ddef_t     *d;
+	const char *value;
 	pr_type_t  *v;
 
-	Qprintf (f, "{\n");
+	if (!ed->free) {
+		for (i = 0; i < pr->progs->numfielddefs; i++) {
+			ddef_t     *d = &pr->pr_fielddefs[i];
 
-	if (ed->free) {
-		Qprintf (f, "}\n");
-		return;
+			name = PR_GetString (pr, d->s_name);
+			if (name[strlen (name) - 2] == '_')
+				continue;					// skip _x, _y, _z vars
+
+			v = &ed->v[d->ofs];
+
+			// if the value is still all 0, skip the field
+			type = d->type & ~DEF_SAVEGLOBAL;
+			for (j = 0; j < pr_type_size[type]; j++)
+				if (v[j].integer_var)
+					break;
+			if (j == pr_type_size[type])
+				continue;
+
+			value = PR_UglyValueString (pr, type, v);
+			PL_D_AddObject (entity, PL_NewString (name), PL_NewString (value));
+		}
 	}
-
-	for (i = 1; i < pr->progs->numfielddefs; i++) {
-		d = &pr->pr_fielddefs[i];
-		name = PR_GetString (pr, d->s_name);
-		if (name[strlen (name) - 2] == '_')
-			continue;					// skip _x, _y, _z vars
-
-		v = &ed->v[d->ofs];
-
-		// if the value is still all 0, skip the field
-		type = d->type & ~DEF_SAVEGLOBAL;
-		for (j = 0; j < pr_type_size[type]; j++)
-			if (v[j].integer_var)
-				break;
-		if (j == pr_type_size[type])
-			continue;
-
-		Qprintf (f, "\"%s\" ", name);
-		Qprintf (f, "\"%s\"\n", PR_UglyValueString (pr, d->type, v));
-	}
-
-	Qprintf (f, "}\n");
+	return entity;
 }
 
 /*
@@ -159,15 +150,16 @@ ED_Write (progs_t *pr, QFile *f, edict_t *ed)
 	FIXME: need to tag constants, doesn't really work
 */
 
-void
-ED_WriteGlobals (progs_t *pr, QFile *f)
+plitem_t *
+ED_GlobalsDict (progs_t *pr)
 {
-	ddef_t     *def;
-	unsigned int i;
+	plitem_t   *globals = PL_NewDictionary ();
+	unsigned    i;
 	const char *name;
+	const char *value;
+	ddef_t     *def;
 	int         type;
 
-	Qprintf (f, "{\n");
 	for (i = 0; i < pr->progs->numglobaldefs; i++) {
 		def = &pr->pr_globaldefs[i];
 		type = def->type;
@@ -179,11 +171,10 @@ ED_WriteGlobals (progs_t *pr, QFile *f)
 			continue;
 
 		name = PR_GetString (pr, def->s_name);
-		Qprintf (f, "\"%s\" ", name);
-		Qprintf (f, "\"%s\"\n",
-				 PR_UglyValueString (pr, type, &pr->pr_globals[def->ofs]));
+		value = PR_UglyValueString (pr, type, &pr->pr_globals[def->ofs]);
+		PL_D_AddObject (globals, PL_NewString (name), PL_NewString (value));
 	}
-	Qprintf (f, "}\n");
+	return globals;
 }
 
 
@@ -357,13 +348,13 @@ ED_InitGlobals (progs_t *pr, plitem_t *globals)
 	while (count--) {
 		global_name = PL_String (PL_ObjectAtIndex (keys, count));
 		value = PL_String (PL_ObjectForKey (globals, global_name));
-		global = PR_FindField (pr, global_name);
+		global = PR_FindGlobal (pr, global_name);
 		if (!global) {
 			Sys_Printf ("'%s' is not a global\n", global_name);
 			continue;
 		}
 		if (!ED_ParseEpair (pr, pr->pr_globals, global, value))
-			PR_Error (pr, "ED_ParseGlobals: parse error");
+			PR_Error (pr, "ED_InitGlobals: parse error");
 	}
 	PL_Free (keys);
 }

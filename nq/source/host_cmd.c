@@ -407,32 +407,139 @@ Host_Connect_f (void)
 
 #define	SAVEGAME_VERSION	5
 
-/*
-  Host_SavegameComment
 
-  Writes a SAVEGAME_COMMENT_LENGTH character comment describing the current 
-*/
-static void
-Host_SavegameComment (QFile *file)
+static plitem_t *
+spawn_parms_array (void)
 {
-	unsigned    i;
-	dstring_t  *comment = dstring_newstr ();
+	plitem_t   *parms = PL_NewArray ();
+	int         i;
+	const char *parm;
 
-	dsprintf (comment, "%-21s kills:%3i/%3i", cl.levelname,
-			  cl.stats[STAT_MONSTERS], cl.stats[STAT_TOTALMONSTERS]);
-	if ((i = comment->size - 1) < SAVEGAME_COMMENT_LENGTH) {
-		comment->size = SAVEGAME_COMMENT_LENGTH + 1;
-		dstring_adjust (comment);
-		while (i < comment->size - 1)
-			comment->str[i++] = ' ';
+	for (i = 0; i < NUM_SPAWN_PARMS; i++) {
+		parm = va ("%f", svs.clients->spawn_parms[i]);
+		PL_A_AddObject (parms, PL_NewString (parm));
 	}
-	comment->str[SAVEGAME_COMMENT_LENGTH] = '\n';
-	comment->str[SAVEGAME_COMMENT_LENGTH + 1] = '\0';
-	// convert space to _ to make stdio happy
-	for (i = 0; i < SAVEGAME_COMMENT_LENGTH; i++)
-		if (comment->str[i] == ' ')
-			comment->str[i] = '_';
-	Qwrite (file, comment->str, SAVEGAME_COMMENT_LENGTH + 1);
+	return parms;
+}
+
+static plitem_t *
+lightstyles_array (void)
+{
+	plitem_t   *styles = PL_NewArray ();
+	const char *st;
+	int         i;
+
+	for (i = 0; i < MAX_LIGHTSTYLES; i++) {
+		st = "m";
+		if (sv.lightstyles[i])
+			st = sv.lightstyles[i];
+		PL_A_AddObject (styles, PL_NewString (st));
+	}
+	return styles;
+}
+
+static plitem_t *
+entities_array (void)
+{
+	plitem_t   *entities = PL_NewArray ();
+	int         i;
+
+	for (i = 0; i < sv.num_edicts; i++) {
+		PL_A_AddObject (entities,
+						ED_EntityDict (&sv_pr_state,
+									   EDICT_NUM (&sv_pr_state, i)));
+	}
+	return entities;
+}
+
+static plitem_t *
+game_dict (void)
+{
+	plitem_t   *game = PL_NewDictionary ();
+
+	PL_D_AddObject (game,
+					PL_NewString ("comment"),
+					PL_NewString (va ("%-21s kills:%3i/%3i", cl.levelname,
+									  cl.stats[STAT_MONSTERS],
+									  cl.stats[STAT_TOTALMONSTERS])));
+	PL_D_AddObject (game, PL_NewString ("spawn_parms"), spawn_parms_array ());
+	PL_D_AddObject (game,
+					PL_NewString ("current_skill"),
+					PL_NewString (va ("%d", current_skill)));
+	PL_D_AddObject (game, PL_NewString ("name"), PL_NewString (sv.name));
+	PL_D_AddObject (game,
+					PL_NewString ("time"),
+					PL_NewString (va ("%f", sv.time)));
+	PL_D_AddObject (game, PL_NewString ("lightstyles"), lightstyles_array ());
+	PL_D_AddObject (game,
+					PL_NewString ("globals"),
+					ED_GlobalsDict (&sv_pr_state));
+	PL_D_AddObject (game, PL_NewString ("entities"), entities_array ());
+	return game;
+}
+
+static plitem_t *
+convert_to_game_dict (script_t *script)
+{
+	plitem_t   *game = PL_NewDictionary ();
+	plitem_t   *item;
+	plitem_t   *list;
+	int         skill;
+	int         i;
+
+	// savegame comment (ignored)
+	Script_GetToken (script, 1);
+	PL_D_AddObject (game,
+					PL_NewString ("comment"),
+					PL_NewString (script->token->str));
+
+	// spawn_parms
+	item = PL_NewArray ();
+	for (i = 0; i < NUM_SPAWN_PARMS; i++) {
+		Script_GetToken (script, 1);
+		PL_A_AddObject (item, PL_NewString (script->token->str));
+	}
+	PL_D_AddObject (game, PL_NewString ("spawn_parms"), item);
+
+
+	// this silliness is so we can load 1.06 save files, which have float skill
+	// values
+	Script_GetToken (script, 1);
+	skill = (int) (atof (script->token->str) + 0.1);
+	PL_D_AddObject (game,
+					PL_NewString ("current_skill"),
+					PL_NewString (va ("%d", skill)));
+
+	Script_GetToken (script, 1);
+	PL_D_AddObject (game,
+					PL_NewString ("name"),
+					PL_NewString (script->token->str));
+
+	Script_GetToken (script, 1);
+	PL_D_AddObject (game,
+					PL_NewString ("time"),
+					PL_NewString (script->token->str));
+
+	// load the light styles
+	item = PL_NewArray ();
+	for (i = 0; i < MAX_LIGHTSTYLES; i++) {
+		Script_GetToken (script, 1);
+		PL_A_AddObject (item, PL_NewString (script->token->str));
+		//char       *s;
+
+		//s = Hunk_Alloc (strlen (script->token->str) + 1);
+		//strcpy (s, script->token->str);
+		//sv.lightstyles[i] = s;
+	}
+	PL_D_AddObject (game, PL_NewString ("lightstyles"), item);
+
+	// load the edicts out of the savegame file
+	list = ED_ConvertToPlist (&sv_pr_state, script);
+	item = PL_RemoveObjectAtIndex (list, 0);
+	PL_D_AddObject (game, PL_NewString ("globals"), item);
+	PL_D_AddObject (game, PL_NewString ("entities"), list);
+
+	return game;
 }
 
 static void
@@ -489,28 +596,8 @@ Host_Savegame_f (void)
 		return;
 	}
 
-	Qprintf (f, "%i\n", SAVEGAME_VERSION);
-	Host_SavegameComment (f);
-	for (i = 0; i < NUM_SPAWN_PARMS; i++)
-		Qprintf (f, "%f\n", svs.clients->spawn_parms[i]);
-	Qprintf (f, "%d\n", current_skill);
-	Qprintf (f, "%s\n", sv.name);
-	Qprintf (f, "%f\n", sv.time);
+	Qprintf (f, "%s\n%s", PROGRAM, PL_WritePropertyList (game_dict ()));
 
-	// write the light styles
-	for (i = 0; i < MAX_LIGHTSTYLES; i++) {
-		if (sv.lightstyles[i])
-			Qprintf (f, "%s\n", sv.lightstyles[i]);
-		else
-			Qprintf (f, "m\n");
-	}
-
-
-	ED_WriteGlobals (&sv_pr_state, f);
-	for (i = 0; i < sv.num_edicts; i++) {
-		ED_Write (&sv_pr_state, f, EDICT_NUM (&sv_pr_state, i));
-		Qflush (f);
-	}
 	Qclose (f);
 	Con_Printf ("done.\n");
 }
@@ -522,10 +609,11 @@ Host_Loadgame_f (void)
 	QFile      *f;
 	char       *mapname = 0;
 	script_t   *script = 0;
+	plitem_t   *game;
 	plitem_t   *list;
+	plitem_t   *item;
 	char       *str = 0;
-	float       time, tfloat;
-	unsigned int i;
+	int         i;
 	int         entnum;
 	int         count;
 	int         version;
@@ -567,33 +655,30 @@ Host_Loadgame_f (void)
 	Script_Start (script, name->str, str);
 
 	Script_GetToken (script, 1);
-	sscanf (script->token->str, "%i", &version);
-	if (version != SAVEGAME_VERSION) {
-		Con_Printf ("Savegame is version %i, not %i\n", version,
-					SAVEGAME_VERSION);
-		goto end;
+	if (strequal (script->token->str, PROGRAM)) {
+		if (!Script_TokenAvailable (script, 1)) {
+			Con_Printf ("Unexpected EOF reading %s\n", name->str);
+			goto end;
+		}
+		game = PL_GetPropertyList (script->p);
+	} else {
+		sscanf (script->token->str, "%i", &version);
+		if (version != SAVEGAME_VERSION) {
+			Con_Printf ("Savegame is version %i, not %i\n", version,
+						SAVEGAME_VERSION);
+			goto end;
+		}
+		game = convert_to_game_dict (script);
 	}
 
-	// savegame comment (ignored)
-	Script_GetToken (script, 1);
-
+	item = PL_ObjectForKey (game, "spawn_parms");
 	for (i = 0; i < NUM_SPAWN_PARMS; i++) {
-		Script_GetToken (script, 1);
-		sscanf (script->token->str, "%f", &spawn_parms[i]);
+		if (i >= PL_A_NumObjects (item))
+			break;
+		spawn_parms[i] = atof (PL_String (PL_ObjectAtIndex (item, i)));
 	}
-
-	// this silliness is so we can load 1.06 save files, which have float skill
-	// values
-	Script_GetToken (script, 1);
-	sscanf (script->token->str, "%f", &tfloat);
-	current_skill = (int) (tfloat + 0.1);
-	Cvar_SetValue (skill, (float) current_skill);
-
-	Script_GetToken (script, 1);
-	mapname = strdup (script->token->str);
-
-	Script_GetToken (script, 1);
-	sscanf (script->token->str, "%f", &time);
+	current_skill = atoi (PL_String (PL_ObjectForKey (game, "current_skill")));
+	mapname = strdup (PL_String (PL_ObjectForKey (game, "name")));
 
 	CL_Disconnect_f ();
 
@@ -605,39 +690,26 @@ Host_Loadgame_f (void)
 	sv.paused = true;					// pause until all clients connect
 	sv.loadgame = true;
 
-	// load the light styles
-	for (i = 0; i < MAX_LIGHTSTYLES; i++) {
-		char       *s;
+	ED_InitGlobals (&sv_pr_state, PL_ObjectForKey (game, "globals"));
 
-		Script_GetToken (script, 1);
-		s = Hunk_Alloc (strlen (script->token->str) + 1);
-		strcpy (s, script->token->str);
-		sv.lightstyles[i] = s;
-	}
+	list = PL_ObjectForKey (game, "entities");
+	entnum = 0;
+	count = PL_A_NumObjects (list);
+	for (entnum = 0; entnum < count; entnum++) {
+		plitem_t   *entity = PL_ObjectAtIndex (list, entnum);
+		edict_t    *ent = EDICT_NUM (&sv_pr_state, entnum);
 
-	// load the edicts out of the savegame file
-	list = ED_ConvertToPlist (&sv_pr_state, script);
+		memset (&ent->v, 0, sv_pr_state.progs->entityfields * 4);
+		ent->free = false;
+		ED_InitEntity (&sv_pr_state, entity, ent);
 
-	entnum = -1;						// -1 is the globals
-	count = PL_A_NumObjects (list) - 1;
-	for (entnum = -1; entnum < count; entnum++) {
-		plitem_t   *entity = PL_ObjectAtIndex (list, entnum + 1);
-		if (entnum == -1) {
-			ED_InitGlobals (&sv_pr_state, entity);
-		} else {
-			edict_t    *ent = EDICT_NUM (&sv_pr_state, entnum);
-			memset (&ent->v, 0, sv_pr_state.progs->entityfields * 4);
-			ent->free = false;
-			ED_InitEntity (&sv_pr_state, entity, ent);
-
-			// link it into the bsp tree
-			if (!ent->free)
-				SV_LinkEdict (ent, false);
-		}
+		// link it into the bsp tree
+		if (!ent->free)
+			SV_LinkEdict (ent, false);
 	}
 
 	sv.num_edicts = entnum;
-	sv.time = time;
+	sv.time = atof (PL_String (PL_ObjectForKey (game, "time")));
 
 	for (i = 0; i < NUM_SPAWN_PARMS; i++)
 		svs.clients->spawn_parms[i] = spawn_parms[i];
