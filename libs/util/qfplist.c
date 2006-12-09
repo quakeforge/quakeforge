@@ -311,6 +311,30 @@ PL_A_NumObjects (plitem_t *array)
 	return ((plarray_t *) array->data)->numvals;
 }
 
+plitem_t *
+PL_RemoveObjectAtIndex (plitem_t *array, int index)
+{
+	plarray_t  *arr;
+	plitem_t   *item;
+
+	if (array->type != QFArray)
+		return 0;
+
+	arr = (plarray_t *)array->data;
+
+	if (index < 0 || index >= arr->numvals)
+		return 0;
+
+	item = arr->values[index];
+	arr->numvals--;
+	while (index < arr->numvals) {
+		arr->values[index] = arr->values[index + 1];
+		index++;
+	}
+
+	return item;
+}
+
 static qboolean
 PL_SkipSpace (pldata_t *pl)
 {

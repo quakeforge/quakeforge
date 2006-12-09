@@ -226,6 +226,17 @@ int PL_A_NumObjects (plitem_t *array);
 */
 qboolean PL_A_InsertObjectAtIndex (plitem_t *array, plitem_t *item, int index);
 
+/** Remove a value from an array object.
+	The array items will be shuffled to fill the resulting hole.
+
+	\param array	The array to get the value from
+	\param index	The index within the array to remove
+	\return the value associated with the index, or NULL if not found or array
+	isn't an array.
+	\note	You are responsible for freeing the returned object.
+*/
+plitem_t *PL_RemoveObjectAtIndex (plitem_t *array, int index);
+
 plitem_t *PL_NewDictionary (void);
 plitem_t *PL_NewArray (void);
 plitem_t *PL_NewData (void *, int);
