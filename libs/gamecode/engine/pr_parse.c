@@ -282,136 +282,6 @@ ED_ParseEpair (progs_t *pr, pr_type_t *base, ddef_t *key, const char *s)
 }
 
 /*
-	ED_ParseEdict
-
-	Parses an edict out of the given string, returning the new position
-	ent should be a properly initialized empty edict.
-	Used for initial level load and for savegames.
-*/
-void
-ED_ParseEdict (progs_t *pr, script_t *script, edict_t *ent)
-{
-	ddef_t		*key;
-	qboolean	anglehack;
-	qboolean	init = false;
-	dstring_t  *keyname = dstring_new ();
-	const char	*token;
-	int			n;
-
-	// clear it
-	if (ent != *(pr)->edicts)			// hack
-		memset (&ent->v, 0, pr->progs->entityfields * 4);
-
-	// go through all the dictionary pairs
-	while (1) {
-		if (!Script_GetToken (script, 1))
-			PR_Error (pr, "ED_ParseEntity: EOF without closing brace");
-		// parse key
-		if (script->token->str[0] == '}')
-			break;
-
-		token = script->token->str;
-		// anglehack is to allow QuakeEd to write single scalar angles
-		// and allow them to be turned into vectors.
-		if (!strcmp (token, "angle")) {
-			token = "angles";
-			anglehack = true;
-		} else
-			anglehack = false;
-
-		if (!strcmp (token, "light"))
-			token = "light_lev";	// hack for single light def
-
-		dstring_copystr (keyname, token);
-
-		// another hack to fix heynames with trailing spaces
-		n = strlen (keyname->str);
-		while (n && keyname->str[n - 1] == ' ') {
-			keyname->str[n - 1] = 0;
-			n--;
-		}
-
-		// parse value  
-		//FIXME shouldn't cross line
-		if (!Script_GetToken (script, 1))
-			PR_Error (pr, "ED_ParseEntity: EOF without closing brace");
-		token = script->token->str;
-
-		if (token[0] == '}')
-			PR_Error (pr, "ED_ParseEntity: closing brace without data");
-
-		init = true;
-
-// keynames with a leading underscore are used for utility comments,
-// and are immediately discarded by quake
-		if (keyname->str[0] == '_')
-			continue;
-
-		key = PR_FindField (pr, keyname->str);
-		if (!key) {
-			if (!pr->parse_field
-				|| !pr->parse_field (pr, keyname->str, token)) {
-				Sys_Printf ("'%s' is not a field\n", keyname->str);
-				continue;
-			}
-		} else {
-			int         ret;
-
-			if (anglehack) {
-				ret = ED_ParseEpair (pr, ent->v, key, va ("0 %s 0", token));
-			} else {
-				ret = ED_ParseEpair (pr, ent->v, key, token);
-			}
-			if (!ret)
-				PR_Error (pr, "ED_ParseEdict: parse error");
-		}
-	}
-
-	if (!init)
-		ent->free = true;
-
-	dstring_delete (keyname);
-}
-
-void
-ED_ParseGlobals (progs_t *pr, script_t *script)
-{
-	dstring_t  *keyname = dstring_new ();
-	ddef_t     *key;
-	const char *token;
-
-	while (1) {
-		// parse key
-		if (!Script_GetToken (script, 1))
-			PR_Error (pr, "ED_ParseEntity: EOF without closing brace");
-		token = script->token->str;
-		if (token[0] == '}')
-			break;
-
-		dstring_copystr (keyname, script->token->str);
-
-		// parse value  
-		//FIXME shouldn't cross line
-		if (!Script_GetToken (script, 1))
-			PR_Error (pr, "ED_ParseEntity: EOF without closing brace");
-		token = script->token->str;
-
-		if (token[0] == '}')
-			PR_Error (pr, "ED_ParseEntity: closing brace without data");
-
-		key = PR_FindGlobal (pr, keyname->str);
-		if (!key) {
-			Sys_Printf ("'%s' is not a global\n", keyname->str);
-			continue;
-		}
-
-		if (!ED_ParseEpair (pr, pr->pr_globals, key, token))
-			PR_Error (pr, "ED_ParseGlobals: parse error");
-	}
-	dstring_delete (keyname);
-}
-
-/*
 	ED_ParseOld
 
 	The entities are directly placed in the array, rather than allocated with
@@ -424,26 +294,135 @@ ED_ParseGlobals (progs_t *pr, script_t *script)
 	Used for both fresh maps and savegame loads.  A fresh map would also need
 	to call ED_CallSpawnFunctions () to let the objects initialize themselves.
 */
-static void
-ED_ParseOld (progs_t *pr, script_t *script)
+
+plitem_t *
+ED_ConvertToPlist (progs_t *pr, script_t *script)
 {
-	edict_t		*ent = NULL;
-	int			inhibit = 0;
-	dfunction_t	*func;
-	pr_type_t	*classname;
-	ddef_t		*def;
+	plitem_t   *plist = PL_NewArray ();
+	plitem_t   *ent;
+	plitem_t   *key;
+	plitem_t   *value;
+	const char *token;
+	int         anglehack;
 
-	while (Script_GetToken (script, 1)) {	// parse ents
-		// parse the opening brace
-		if (script->token->str[0] != '{')
-			PR_Error (pr, "ED_LoadFromFile: found %s when expecting {",
-					  script->token->str);
+	while (Script_GetToken (script, 1)) {
+		token = script->token->str;
+		if (!strequal (token, "{"))
+			PR_Error (pr, "ED_ParseEntity: EOF without closing brace");
+		ent = PL_NewDictionary ();
+		while (1) {
+			if (!Script_GetToken (script, 1))
+				PR_Error (pr, "ED_ParseEntity: EOF without closing brace");
+			token = script->token->str;
+			if (strequal (token, "}"))
+				break;
+			anglehack = 0;
+			if (strequal (token, "angle")) {
+				key = PL_NewString ("angles");
+				anglehack = 1;
+			} else if (strequal (token, "light")) {
+				key = PL_NewString ("light_lev");
+			} else {
+				key = PL_NewString (token);
+			}
+			if (!Script_TokenAvailable (script, 0))
+				PR_Error (pr, "ED_ParseEntity: EOL without value");
+			Script_GetToken (script, 0);
+			token = script->token->str;
+			if (strequal (token, "}"))
+				PR_Error (pr, "ED_ParseEntity: closing brace without data");
+			if (anglehack)
+				value = PL_NewString (va ("0 %s 0", token));
+			else
+				value = PL_NewString (token);
+			PL_D_AddObject (ent, key, value);
+		}
+		PL_A_AddObject (plist, ent);
+	}
+	return plist;
+}
 
-		if (!ent)
+
+void
+ED_InitGlobals (progs_t *pr, plitem_t *globals)
+{
+	ddef_t     *global;
+	plitem_t   *keys;
+	int         count;
+	const char *global_name;
+	const char *value;
+
+	keys = PL_D_AllKeys (globals);
+	count = PL_A_NumObjects (keys);
+	while (count--) {
+		global_name = PL_String (PL_ObjectAtIndex (keys, count));
+		value = PL_String (PL_ObjectForKey (globals, global_name));
+		global = PR_FindField (pr, global_name);
+		if (!global) {
+			Sys_Printf ("'%s' is not a global\n", global_name);
+			continue;
+		}
+		if (!ED_ParseEpair (pr, pr->pr_globals, global, value))
+			PR_Error (pr, "ED_ParseGlobals: parse error");
+	}
+	PL_Free (keys);
+}
+
+void
+ED_InitEntity (progs_t *pr, plitem_t *entity, edict_t *ent)
+{
+	ddef_t     *field;
+	plitem_t   *keys;
+	const char *field_name;
+	const char *value;
+	int         count;
+
+	keys = PL_D_AllKeys (entity);
+	count = PL_A_NumObjects (keys);
+	while (count--) {
+		field_name = PL_String (PL_ObjectAtIndex (keys, count));
+		value = PL_String (PL_ObjectForKey (entity, field_name));
+		field = PR_FindField (pr, field_name);
+		if (!field) {
+			if (!pr->parse_field
+				|| !pr->parse_field (pr, field_name, value)) {
+				Sys_Printf ("'%s' is not a field\n", field_name);
+				continue;
+			}
+		} else {
+			if (!ED_ParseEpair (pr, ent->v, field, value))
+				PR_Error (pr, "ED_InitEntity: parse error");
+		}
+	}
+	PL_Free (keys);
+}
+
+static void
+ED_SpawnEntities (progs_t *pr, plitem_t *entity_list)
+{
+	edict_t    *ent;
+	int         inhibit;
+	plitem_t   *entity;
+	plitem_t   *item;
+	int         i;
+	int         count;
+	const char *classname;
+	dfunction_t *func;
+
+	count = PL_A_NumObjects (entity_list);
+	for (i = 0; i < count; i++) {
+		entity = PL_ObjectAtIndex (entity_list, i);
+
+		item = PL_ObjectForKey (entity, "classname");
+		if (!item)
+			PR_Error (pr, "no classname for entity %d", i);
+		classname = PL_String (item);
+		if (strequal (classname, "worldspawn"))
 			ent = EDICT_NUM (pr, 0);
 		else
 			ent = ED_Alloc (pr);
-		ED_ParseEdict (pr, script, ent);
+
+		ED_InitEntity (pr, entity, ent);
 
 		// remove things from different skill levels or deathmatch
 		if (pr->prune_edict && pr->prune_edict (pr, ent)) {
@@ -452,20 +431,10 @@ ED_ParseOld (progs_t *pr, script_t *script)
 			continue;
 		}
 
-		// immediately call spawn function
-		def = PR_FindField (pr, "classname");
-		if (!def) {
-			Sys_Printf ("No classname for:\n");
-			ED_Print (pr, ent);
-			ED_Free (pr, ent);
-			continue;
-		}
-		classname = &ent->v[def->ofs];
-
-		// look for the spawn function
-		func = PR_FindFunction (pr, PR_GetString (pr, classname->string_var));
+		//XXX should the field be checked instead of going direct?
+		func = PR_FindFunction (pr, classname);
 		if (!func) {
-			Sys_Printf ("No spawn function for:\n");
+			Sys_Printf ("No spawn function for :\n");
 			ED_Print (pr, ent);
 			ED_Free (pr, ent);
 			continue;
@@ -476,14 +445,13 @@ ED_ParseOld (progs_t *pr, script_t *script)
 		if (pr->flush)
 			pr->flush ();
 	}
-
-	Sys_DPrintf ("%i entities inhibited\n", inhibit);
 }
 
 void
 ED_LoadFromFile (progs_t *pr, const char *data)
 {
 	script_t	*script;
+	plitem_t    *entity_list;
 
 	if (pr->edict_parse) {
 		PR_PushFrame (pr);
@@ -498,17 +466,17 @@ ED_LoadFromFile (progs_t *pr, const char *data)
 	Script_Start (script, "ent data", data);
 
 	if (Script_GetToken (script, 1)) {
-		if (*script->token->str == '(') {
+		if (strequal (script->token->str, "(")) {
 			// new style (plist) entity data
-			plitem_t   *plist = PL_GetPropertyList (data);
-			plist = plist;
+			entity_list = PL_GetPropertyList (data);
 		} else {
 			// oldstyle entity data
 			Script_UngetToken (script);
-			ED_ParseOld (pr, script);
+			entity_list = ED_ConvertToPlist (pr, script);
 		}
+		Script_Delete (script);
+		ED_SpawnEntities (pr, entity_list);
 	}
-	Script_Delete (script);
 }
 
 void

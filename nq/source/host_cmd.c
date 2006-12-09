@@ -47,6 +47,7 @@ static __attribute__ ((used)) const char rcsid[] =
 #include "QF/keys.h"
 #include "QF/model.h"
 #include "QF/msg.h"
+#include "QF/qfplist.h"
 #include "QF/screen.h"
 #include "QF/script.h"
 #include "QF/sys.h"
@@ -521,11 +522,12 @@ Host_Loadgame_f (void)
 	QFile      *f;
 	char       *mapname = 0;
 	script_t   *script = 0;
+	plitem_t   *list;
 	char       *str = 0;
 	float       time, tfloat;
 	unsigned int i;
-	edict_t    *ent;
 	int         entnum;
+	int         count;
 	int         version;
 	float       spawn_parms[NUM_SPAWN_PARMS];
 
@@ -614,26 +616,24 @@ Host_Loadgame_f (void)
 	}
 
 	// load the edicts out of the savegame file
+	list = ED_ConvertToPlist (&sv_pr_state, script);
+
 	entnum = -1;						// -1 is the globals
-	while (Script_GetToken (script, 1)) {
-		if (strcmp (script->token->str, "{"))
-			Sys_Error ("First token isn't a brace");
-
-		if (entnum == -1) {				// parse the global vars
-			ED_ParseGlobals (&sv_pr_state, script);
-		} else {						// parse an edict
-
-			ent = EDICT_NUM (&sv_pr_state, entnum);
+	count = PL_A_NumObjects (list) - 1;
+	for (entnum = -1; entnum < count; entnum++) {
+		plitem_t   *entity = PL_ObjectAtIndex (list, entnum + 1);
+		if (entnum == -1) {
+			ED_InitGlobals (&sv_pr_state, entity);
+		} else {
+			edict_t    *ent = EDICT_NUM (&sv_pr_state, entnum);
 			memset (&ent->v, 0, sv_pr_state.progs->entityfields * 4);
 			ent->free = false;
-			ED_ParseEdict (&sv_pr_state, script, ent);
+			ED_InitEntity (&sv_pr_state, entity, ent);
 
 			// link it into the bsp tree
 			if (!ent->free)
 				SV_LinkEdict (ent, false);
 		}
-
-		entnum++;
 	}
 
 	sv.num_edicts = entnum;
