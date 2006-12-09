@@ -141,8 +141,7 @@ bi_PL_D_NumKeys (progs_t *pr)
 static void
 bi_PL_D_AddObject (progs_t *pr)
 {
-	R_INT (pr) = PL_D_AddObject (p_plitem (pr, 0),
-								 remove_plitem (pr, p_plitem (pr, 1)),
+	R_INT (pr) = PL_D_AddObject (p_plitem (pr, 0), P_GSTRING (pr, 1),
 								 remove_plitem (pr, p_plitem (pr, 2)));
 }
 

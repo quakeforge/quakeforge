@@ -28,7 +28,7 @@
 - (integer) numKeys;
 - (PLItem) getObjectForKey:(string) key;
 - (PLItem) allKeys;
-- addKey:(PLItem) key value:(PLItem) value;
+- addKey:(string) key value:(PLItem) value;
 @end
 
 @interface PLArray: PLItem

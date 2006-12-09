@@ -119,15 +119,14 @@
 	return [PLItem itemClass: PL_D_AllKeys (item)];
 }
 
-- addKey:(PLItem) key value:(PLItem) value
+- addKey:(string) key value:(PLItem) value
 {
-	if (!key.own || !value.own) {
+	if (!value.own) {
 		obj_error (self, 0, "add of unowned key/value to PLDictionary");
 		return self;
 	}
-	PL_D_AddObject (item, key.item, value.item);
-	key.own = value.own = 0;
-	[key release];
+	PL_D_AddObject (item, key, value.item);
+	value.own = 0;
 	[value release];
 	return self;
 }

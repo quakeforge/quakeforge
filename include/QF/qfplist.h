@@ -156,6 +156,17 @@ const char *PL_String (plitem_t *string);
 */
 plitem_t *PL_ObjectForKey (plitem_t *dict, const char *key);
 
+/** Remove a value from an array object.
+	The array items will be shuffled to fill the resulting hole.
+
+	\param dict	The Dictionary to remove the value from
+	\param key	The unique key associated with the value to be removed
+	\return the value associated with the key, or NULL if not found or dict
+	isn't a dictionary.
+	\note	You are responsible for freeing the returned object.
+*/
+plitem_t *PL_RemoveObjectForKey (plitem_t *array, const char *key);
+
 /** Retrieve a value from an array object.
 
 	\param array	The array to get the value from
@@ -191,9 +202,9 @@ int PL_D_NumKeys (plitem_t *dict);
 
 	\return true on success, false on failure
 
-	\note the dictionary becomes the owner of both the key and the value.
+	\note the dictionary becomes the owner of the value.
 */
-qboolean PL_D_AddObject (plitem_t *dict, plitem_t *key, plitem_t *value);
+qboolean PL_D_AddObject (plitem_t *dict, const char *key, plitem_t *value);
 
 /** Add an item to an array.
 

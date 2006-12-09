@@ -83,7 +83,8 @@ dict_free (void *i, void *unused)
 {
 	dictkey_t	*item = (dictkey_t *) i;
 	free (item->key);
-	PL_Free (item->value);	// Make descended stuff get freed
+	if (item->value)		// Make descended stuff get freed
+		PL_Free (item->value);
 	free (item);
 }
 
@@ -191,6 +192,25 @@ PL_ObjectForKey (plitem_t *dict, const char *key)
 }
 
 plitem_t *
+PL_RemoveObjectForKey (plitem_t *dict, const char *key)
+{
+	hashtab_t  *table = (hashtab_t *) dict->data;
+	dictkey_t  *k;
+	plitem_t   *value;
+
+	if (dict->type != QFDictionary)
+		return NULL;
+
+	k = (dictkey_t *) Hash_Del (table, key);
+	if (!k)
+		return NULL;
+	value = k->value;
+	k->value = 0;
+	dict_free (k, 0);
+	return value;
+}
+
+plitem_t *
 PL_D_AllKeys (plitem_t *dict)
 {
 	void		**list, **l;
@@ -234,17 +254,14 @@ PL_ObjectAtIndex (plitem_t *array, int index)
 }
 
 qboolean
-PL_D_AddObject (plitem_t *dict, plitem_t *key, plitem_t *value)
+PL_D_AddObject (plitem_t *dict, const char *key, plitem_t *value)
 {
 	dictkey_t	*k;
 
 	if (dict->type != QFDictionary)
 		return false;
 
-	if (key->type != QFString)
-		return false;
-
-	if ((k = Hash_Find ((hashtab_t *)dict->data, key->data))) {
+	if ((k = Hash_Find ((hashtab_t *)dict->data, key))) {
 		PL_Free ((plitem_t *) k->value);
 		k->value = value;
 	} else {
@@ -253,7 +270,7 @@ PL_D_AddObject (plitem_t *dict, plitem_t *key, plitem_t *value)
 		if (!k)
 			return false;
 
-		k->key = strdup ((char *) key->data);
+		k->key = strdup (key);
 		k->value = value;
 
 		Hash_Add ((hashtab_t *)dict->data, k);
@@ -666,7 +683,7 @@ PL_ParsePropertyListItem (pldata_t *pl)
 			}
 
 			// Add the key/value pair to the dictionary
-			if (!PL_D_AddObject (item, key, value)) {
+			if (!PL_D_AddObject (item, PL_String (key), value)) {
 				PL_Free (key);
 				PL_Free (value);
 				PL_Free (item);

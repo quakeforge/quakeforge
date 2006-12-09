@@ -457,24 +457,18 @@ game_dict (void)
 {
 	plitem_t   *game = PL_NewDictionary ();
 
-	PL_D_AddObject (game,
-					PL_NewString ("comment"),
+	PL_D_AddObject (game, "comment",
 					PL_NewString (va ("%-21s kills:%3i/%3i", cl.levelname,
 									  cl.stats[STAT_MONSTERS],
 									  cl.stats[STAT_TOTALMONSTERS])));
-	PL_D_AddObject (game, PL_NewString ("spawn_parms"), spawn_parms_array ());
-	PL_D_AddObject (game,
-					PL_NewString ("current_skill"),
+	PL_D_AddObject (game, "spawn_parms", spawn_parms_array ());
+	PL_D_AddObject (game, "current_skill",
 					PL_NewString (va ("%d", current_skill)));
-	PL_D_AddObject (game, PL_NewString ("name"), PL_NewString (sv.name));
-	PL_D_AddObject (game,
-					PL_NewString ("time"),
-					PL_NewString (va ("%f", sv.time)));
-	PL_D_AddObject (game, PL_NewString ("lightstyles"), lightstyles_array ());
-	PL_D_AddObject (game,
-					PL_NewString ("globals"),
-					ED_GlobalsDict (&sv_pr_state));
-	PL_D_AddObject (game, PL_NewString ("entities"), entities_array ());
+	PL_D_AddObject (game, "name", PL_NewString (sv.name));
+	PL_D_AddObject (game, "time", PL_NewString (va ("%f", sv.time)));
+	PL_D_AddObject (game, "lightstyles", lightstyles_array ());
+	PL_D_AddObject (game, "globals", ED_GlobalsDict (&sv_pr_state));
+	PL_D_AddObject (game, "entities", entities_array ());
 	return game;
 }
 
@@ -489,9 +483,7 @@ convert_to_game_dict (script_t *script)
 
 	// savegame comment (ignored)
 	Script_GetToken (script, 1);
-	PL_D_AddObject (game,
-					PL_NewString ("comment"),
-					PL_NewString (script->token->str));
+	PL_D_AddObject (game, "comment", PL_NewString (script->token->str));
 
 	// spawn_parms
 	item = PL_NewArray ();
@@ -499,26 +491,20 @@ convert_to_game_dict (script_t *script)
 		Script_GetToken (script, 1);
 		PL_A_AddObject (item, PL_NewString (script->token->str));
 	}
-	PL_D_AddObject (game, PL_NewString ("spawn_parms"), item);
+	PL_D_AddObject (game, "spawn_parms", item);
 
 
 	// this silliness is so we can load 1.06 save files, which have float skill
 	// values
 	Script_GetToken (script, 1);
 	skill = (int) (atof (script->token->str) + 0.1);
-	PL_D_AddObject (game,
-					PL_NewString ("current_skill"),
-					PL_NewString (va ("%d", skill)));
+	PL_D_AddObject (game, "current_skill", PL_NewString (va ("%d", skill)));
 
 	Script_GetToken (script, 1);
-	PL_D_AddObject (game,
-					PL_NewString ("name"),
-					PL_NewString (script->token->str));
+	PL_D_AddObject (game, "name", PL_NewString (script->token->str));
 
 	Script_GetToken (script, 1);
-	PL_D_AddObject (game,
-					PL_NewString ("time"),
-					PL_NewString (script->token->str));
+	PL_D_AddObject (game, "time", PL_NewString (script->token->str));
 
 	// load the light styles
 	item = PL_NewArray ();
@@ -531,13 +517,13 @@ convert_to_game_dict (script_t *script)
 		//strcpy (s, script->token->str);
 		//sv.lightstyles[i] = s;
 	}
-	PL_D_AddObject (game, PL_NewString ("lightstyles"), item);
+	PL_D_AddObject (game, "lightstyles", item);
 
 	// load the edicts out of the savegame file
 	list = ED_ConvertToPlist (&sv_pr_state, script);
 	item = PL_RemoveObjectAtIndex (list, 0);
-	PL_D_AddObject (game, PL_NewString ("globals"), item);
-	PL_D_AddObject (game, PL_NewString ("entities"), list);
+	PL_D_AddObject (game, "globals", item);
+	PL_D_AddObject (game, "entities", list);
 
 	return game;
 }

@@ -132,7 +132,8 @@ function PR_FindFunction (string func) = #0;
 						value = PL_NewString ("0 " + token + " 0");
 					else
 						value = PL_NewString (token);
-					PL_D_AddObject (ent, key, value);
+					PL_D_AddObject (ent, PL_String (key), value);
+					PL_Free (key);
 				}
 				PL_A_AddObject (plist, ent);
 			}

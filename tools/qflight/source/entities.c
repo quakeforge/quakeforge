@@ -229,8 +229,7 @@ LoadEntities (void)
 			epair->next = entity->epairs;
 			entity->epairs = epair;
 
-			PL_D_AddObject (dict, PL_NewString (key),
-							PL_NewString (script->token->str));
+			PL_D_AddObject (dict, key, PL_NewString (script->token->str));
 
 			if (!strcmp (key, "classname"))
 				entity->classname = epair->value;

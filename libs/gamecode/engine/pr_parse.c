@@ -138,7 +138,7 @@ ED_EntityDict (progs_t *pr, edict_t *ed)
 				continue;
 
 			value = PR_UglyValueString (pr, type, v);
-			PL_D_AddObject (entity, PL_NewString (name), PL_NewString (value));
+			PL_D_AddObject (entity, name, PL_NewString (value));
 		}
 	}
 	return entity;
@@ -172,7 +172,7 @@ ED_GlobalsDict (progs_t *pr)
 
 		name = PR_GetString (pr, def->s_name);
 		value = PR_UglyValueString (pr, type, &pr->pr_globals[def->ofs]);
-		PL_D_AddObject (globals, PL_NewString (name), PL_NewString (value));
+		PL_D_AddObject (globals, name, PL_NewString (value));
 	}
 	return globals;
 }
@@ -326,7 +326,8 @@ ED_ConvertToPlist (progs_t *pr, script_t *script)
 				value = PL_NewString (va ("0 %s 0", token));
 			else
 				value = PL_NewString (token);
-			PL_D_AddObject (ent, key, value);
+			PL_D_AddObject (ent, PL_String (key), value);
+			PL_Free (key);
 		}
 		PL_A_AddObject (plist, ent);
 	}
