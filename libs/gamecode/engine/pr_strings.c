@@ -45,6 +45,7 @@ static __attribute__ ((used)) const char rcsid[] =
 #include "QF/dstring.h"
 #include "QF/hash.h"
 #include "QF/progs.h"
+#include "QF/va.h"
 
 typedef enum {
 	str_free,
@@ -834,11 +835,11 @@ PR_Sprintf (progs_t *pr, dstring_t *result, const char *name,
 	}
 
 	if (fmt_count != count) {
-		printf ("%d %d", fmt_count, count);
 		if (fmt_count > count)
 			msg = "Not enough arguments for format string.";
 		else
 			msg = "Too many arguments for format string.";
+		msg = va ("%s: %d %d", msg, fmt_count, count);
 		goto error;
 	}
 
