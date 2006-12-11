@@ -528,6 +528,8 @@ method_check_params (method_t *method, expr_t *args)
 		if (i < parm_count) {
 			if (e->type != ex_nil)
 				if (!type_assignable (mtype->parm_types[i], t)) {
+					print_type (mtype->parm_types[i]); puts ("");
+					print_type (t); puts ("");
 					err = error (e, "type mismatch for parameter %d of %s",
 								 i - 1, method->name);
 				}

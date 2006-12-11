@@ -2477,7 +2477,8 @@ cast_expr (type_t *type, expr_t *e)
 
 	if (!(type->type == ev_pointer
 		  && (e_type->type == ev_pointer
-			  || e_type == &type_integer || e_type == &type_uinteger))
+			  || e_type == &type_integer || e_type == &type_uinteger
+			  || e_type->type == ev_array))
 		&& !(type->type == ev_func && e_type->type == ev_func)
 		&& !(((type == &type_integer || type == &type_uinteger)
 			  && (e_type == &type_float || e_type == &type_integer
@@ -2487,6 +2488,9 @@ cast_expr (type_t *type, expr_t *e)
 		return  error (e, "can not cast from %s to %s",
 					   pr_type_name[extract_type (e)],
 					   pr_type_name[type->type]);
+	}
+	if (e_type ->type == ev_array) {
+		return address_expr (e, 0, 0);
 	}
 	if (e->type == ex_uexpr && e->e.expr.op == '.') {
 		e->e.expr.type = type;

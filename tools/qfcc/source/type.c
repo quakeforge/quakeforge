@@ -565,6 +565,11 @@ type_assignable (type_t *dst, type_t *src)
 
 	if (dst == src)
 		return 1;
+	if (dst->type == ev_pointer && src->type == ev_array) {
+		if (dst->aux_type == src->aux_type)
+			return 1;
+		return 0;
+	}
 	if (dst->type != ev_pointer || src->type != ev_pointer)
 		return is_scalar (dst) && is_scalar (src);
 	dst = dst->aux_type;
