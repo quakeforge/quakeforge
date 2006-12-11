@@ -299,6 +299,11 @@ storage_class
 	| SYSTEM					{ current_storage = st_system; }
 	;
 
+local_storage_class
+	: LOCAL						{ current_storage = st_local; }
+	| STATIC					{ current_storage = st_static; }
+	;
+
 struct_defs
 	: /* empty */
 	| struct_defs struct_def ';'
@@ -853,7 +858,7 @@ statement
 			pr.source_line = line;
 			pr.source_file = file;
 		}
-	| LOCAL type
+	| local_storage_class type
 		{
 			$<type>$ = $2;
 			local_expr = new_block_expr ();
@@ -863,6 +868,7 @@ statement
 			$$ = local_expr;
 			local_expr = 0;
 			(void) ($<type>3);
+			current_storage = st_local;
 		}
 	| IF '(' fexpr ')' save_inits statement
 		{
