@@ -825,6 +825,11 @@ emit_protocol (protocol_t *protocol)
 
 	proto_def = get_def (type_Protocol.aux_type,
 						   va ("_OBJ_PROTOCOL_%s", protocol->name),
+						   pr.scope, st_none);
+	if (proto_def)
+		return proto_def;
+	proto_def = get_def (type_Protocol.aux_type,
+						   va ("_OBJ_PROTOCOL_%s", protocol->name),
 						   pr.scope, st_static);
 	proto_def->initialized = proto_def->constant = 1;
 	proto_def->nosave = 1;
