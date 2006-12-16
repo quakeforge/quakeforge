@@ -117,6 +117,15 @@
 	return count;
 }
 
+- (integer) findItem: (id) item
+{
+	local integer i;
+	for (i = 0; i < count; i++)
+		if (array[i] == item)
+			return i;
+	return -1;
+}
+
 -(void)makeObjectsPerformSelector:(SEL)selector
 {
 	local integer i;

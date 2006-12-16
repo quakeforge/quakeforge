@@ -19,6 +19,7 @@
 - (id) removeItemAt: (integer) index;
 - (id) insertItemAt: (integer) index item:(id) item;
 - (integer) count;
+- (integer) findItem: (id) item;
 -(void)makeObjectsPerformSelector:(SEL)selector;
 -(void)makeObjectsPerformSelector:(SEL)selector withObject:(id)arg;
 @end
