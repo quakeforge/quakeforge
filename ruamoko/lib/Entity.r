@@ -22,11 +22,14 @@ function PR_FindFunction (string func) = #0;
 
 - (id) init
 {
-	return [self initWithEntity: spawn ()];
+	self = [self initWithEntity: spawn ()];
+	[self own];
+	return self;
 }
 
 - (id) initWithEntity: (entity)e
 {
+	self = [super init];
 	ent = e;
 	ent.@this = self;
 	return self;
@@ -34,7 +37,7 @@ function PR_FindFunction (string func) = #0;
 
 - (void) dealloc
 {
-	if (own)
+	if (own && ent)
 		remove (ent);
 	[super dealloc];
 }
