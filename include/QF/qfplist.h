@@ -156,8 +156,7 @@ const char *PL_String (plitem_t *string);
 */
 plitem_t *PL_ObjectForKey (plitem_t *dict, const char *key);
 
-/** Remove a value from an array object.
-	The array items will be shuffled to fill the resulting hole.
+/** Remove a value from a dictionary object.
 
 	\param dict	The Dictionary to remove the value from
 	\param key	The unique key associated with the value to be removed
@@ -165,7 +164,7 @@ plitem_t *PL_ObjectForKey (plitem_t *dict, const char *key);
 	isn't a dictionary.
 	\note	You are responsible for freeing the returned object.
 */
-plitem_t *PL_RemoveObjectForKey (plitem_t *array, const char *key);
+plitem_t *PL_RemoveObjectForKey (plitem_t *dict, const char *key);
 
 /** Retrieve a value from an array object.
 
