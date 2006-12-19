@@ -504,7 +504,8 @@ obj_init_protocols (progs_t *pr, pr_protocol_list_t *protos)
 			obj_init_protocols (pr, &G_STRUCT (pr, pr_protocol_list_t,
 											   proto->protocol_list));
 		} else {
-			PR_RunError (pr, "protocol broken");
+			if (proto->class_pointer != PR_SetPointer (pr, proto_class))
+				PR_RunError (pr, "protocol broken");
 		}
 	}
 }
