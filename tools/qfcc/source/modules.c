@@ -96,10 +96,10 @@ static void
 dump_protocol (progs_t *pr, pr_protocol_t *proto)
 {
 	const char *protocol_name = "<invalid string>";
-	printf ("                %d\n", proto->class_pointer);
+	printf ("                %d ", proto->class_pointer);
 	if (PR_StringValid (pr, proto->protocol_name))
 		protocol_name = PR_GetString (pr, proto->protocol_name);
-	printf ("                <%s>\n", protocol_name);
+	printf ("<%s>\n", protocol_name);
 }
 
 static void
