@@ -586,8 +586,8 @@ PF_sprintf (progs_t *pr)
 	str = PR_NewMutableString (pr);
 	dstr = PR_GetMutableString (pr, str);
 	PR_Sprintf (pr, dstr, "PF_sprintf", fmt, count, args);
-	PR_MakeTempString (pr, str);
-	R_STRING (pr) = str;
+	RETURN_STRING (pr, dstr->str);
+	dstring_delete (dstr);
 }
 
 /*
