@@ -68,10 +68,10 @@
 
 	for (i = 0; i < count; i++)
 		if (array[i] == item) {
-			[item release];
 			count--;
-			for (n = i; n < count; n++)
+			for (n = i--; n < count; n++)
 				array[n] = array[n + 1];
+			[item release];
 		}
 	return;
 }
