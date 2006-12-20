@@ -528,7 +528,7 @@ PR_FreeTempStrings (progs_t *pr)
 			break;													\
 		case 2:														\
 			dasprintf (result, tmp->str, current->minFieldWidth,	\
-					   current->precision, current->data.t##_var);	\
+					   current->data.t##_var);						\
 			break;													\
 		case 1:														\
 			dasprintf (result, tmp->str, current->precision,		\
