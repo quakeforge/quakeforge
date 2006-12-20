@@ -576,6 +576,7 @@ I_DoPrint (dstring_t *result, fmt_item_t *formatting)
 				PRINT (integer);
 				break;
 			case 'i':
+			case 'd':
 				dstring_appendstr (tmp, "d");
 				PRINT (integer);
 				break;
@@ -727,6 +728,7 @@ PR_Sprintf (progs_t *pr, dstring_t *result, const char *name,
 							fi = &(*fi)->next;
 							break;
 						case 'i':
+						case 'd':
 						case 'c':
 							// integer
 							(*fi)->type = *c;
