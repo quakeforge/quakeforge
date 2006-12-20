@@ -63,6 +63,36 @@ check_buffer (progs_t *pr, pr_type_t *buf, int count, const char *name)
 
 
 static void
+bi_QFS_Open (progs_t *pr)
+{
+	QFile      *file;
+	const char *path = P_GSTRING (pr, 0);
+	const char *mode = P_GSTRING (pr, 1);
+
+	if (!(file = QFS_Open (path, mode))) {
+		R_INT (pr) = 0;
+		return;
+	}
+	if (!(R_INT (pr) = QFile_AllocHandle (pr, file)))
+		Qclose (file);
+}
+
+static void
+bi_QFS_WOpen (progs_t *pr)
+{
+	QFile      *file;
+	const char *path = P_GSTRING (pr, 0);
+	int         zip = P_INT (pr, 1);
+
+	if (!(file = QFS_WOpen (path, zip))) {
+		R_INT (pr) = 0;
+		return;
+	}
+	if (!(R_INT (pr) = QFile_AllocHandle (pr, file)))
+		Qclose (file);
+}
+
+static void
 bi_QFS_Rename (progs_t *pr)
 {
 	const char *old = P_GSTRING (pr, 0);
@@ -149,6 +179,8 @@ bi_QFS_FilelistFree (progs_t *pr)
 }
 
 static builtin_t builtins[] = {
+	{"QFS_Open",			bi_QFS_Open,			-1},
+	{"QFS_WOpen",			bi_QFS_WOpen,			-1},
 	{"QFS_Rename",			bi_QFS_Rename,			-1},
 	{"QFS_LoadFile",		bi_QFS_LoadFile,		-1},
 	{"QFS_OpenFile",		bi_QFS_OpenFile,		-1},

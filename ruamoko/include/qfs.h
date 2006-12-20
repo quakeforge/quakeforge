@@ -6,6 +6,8 @@
 struct _qfslist_t = {};
 typedef struct _qfslist_t [] QFSlist;
 
+@extern QFile (string path, string mode) QFS_Open;
+@extern QFile (string path, integer zip) QFS_WOpen;
 @extern integer (string old, string new) QFS_Rename;
 @extern (void []) (string filename) QFS_LoadFile;
 @extern QFile (string filename) QFS_OpenFile;

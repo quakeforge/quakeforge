@@ -1,5 +1,7 @@
 #include "qfs.h"
 
+QFile (string path, string mode) QFS_Open = #0;
+QFile (string path, integer zip) QFS_WOpen = #0;
 integer (string old, string new) QFS_Rename = #0;
 (void []) (string filename) QFS_LoadFile = #0;
 QFile (string filename) QFS_OpenFile = #0;
