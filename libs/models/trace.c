@@ -59,19 +59,28 @@ static inline void
 calc_impact (trace_t *trace, const vec3_t start, const vec3_t end,
 			 mplane_t *plane)
 {
-	vec_t       t1, t2, frac;
+	vec_t       t1, t2, frac, offset;
 	vec3_t      dist;
 
 	t1 = PlaneDiff (start, plane);
 	t2 = PlaneDiff (end, plane);
+	offset = 0;
+	if (trace->isbox) {
+		if (plane->type < 3)
+			offset = trace->extents[plane->type];
+		else
+			offset = (fabs (trace->extents[0] * plane->normal[0])
+					  + fabs (trace->extents[1] * plane->normal[1])
+					  + fabs (trace->extents[2] * plane->normal[2]));
+	}
 
 	if (t1 < 0) {
-		frac = (t1 + DIST_EPSILON) / (t1 - t2);
+		frac = (t1 + offset + DIST_EPSILON) / (t1 - t2);
 		// invert plane paramterers
 		VectorNegate (plane->normal, trace->plane.normal);
 		trace->plane.dist = -plane->dist;
 	} else {
-		frac = (t1 - DIST_EPSILON) / (t1 - t2);
+		frac = (t1 - offset - DIST_EPSILON) / (t1 - t2);
 		VectorCopy (plane->normal, trace->plane.normal);
 		trace->plane.dist = plane->dist;
 	}
@@ -85,7 +94,7 @@ qboolean
 MOD_TraceLine (hull_t *hull, int num, const vec3_t start, const vec3_t end,
 			   trace_t *trace)
 {
-	vec_t       front, back, frac;
+	vec_t       front, back, offset, frac;
 	vec3_t      frontpt, backpt, dist;
 	int         side, empty, solid;
 	tracestack_t *tstack;
@@ -140,28 +149,61 @@ MOD_TraceLine (hull_t *hull, int num, const vec3_t start, const vec3_t end,
 		node = hull->clipnodes + num;
 		plane = hull->planes + node->planenum;
 
+		offset = 0;
 		front = PlaneDiff (frontpt, plane);
 		back = PlaneDiff (backpt, plane);
+		if (trace->isbox) {
+			if (plane->type < 3)
+				offset = trace->extents[plane->type];
+			else
+				offset = (fabs (trace->extents[0] * plane->normal[0])
+						  + fabs (trace->extents[1] * plane->normal[1])
+						  + fabs (trace->extents[2] * plane->normal[2]));
+		}
 
+		// when offset is 0, the following is equivalent to:
+		//		if (front >= 0 && back >= 0) ...
+		//		if (front < 0 && back < 0) ...
+		// due to the order of operations
+		// however, when (front == offset && back == offset) or
+		// (front == -offset && back == -offset), the trace will go down
+		// the /correct/ side of the plane: ie, the side the box is actually
+		// on
 		if (front >= 0 && back >= 0) {
 			num = node->children[0];
 			continue;
 		}
-
 		if (front < 0 && back < 0) {
 			num = node->children[1];
 			continue;
 		}
-
-		side = front < 0;
-
-		frac = front / (front - back);
+		if (front >= offset || front <= -offset
+			|| back >= offset || back <= -offset) {
+			// either:
+			//  back is guaranteed to be < offset or > -offset
+			// or
+			//  front is guaranteed to be < offset or > -offset
+			// so splitting is needed, on the offset plane closes to front
+			side = front < 0;
+			if (front < 0) {
+				frac = (front + offset) / (front - back);
+			} else {
+				frac = (front - offset) / (front - back);
+			}
+			frac = bound (0, frac, 1);
+		} else {
+			// both: 
+			//  front is guaranteed to be < offset and > -offset
+			// and
+			//  back is guaranteed to be < offset and > -offset
+			frac = 1;
+			side = front < back;
+		}
 
 		tstack->num = num;
 		tstack->side = side;
 		tstack->plane = plane;
 		VectorCopy (backpt, tstack->backpt);
-
 		tstack++;
 
 		VectorSubtract (backpt, frontpt, dist);
