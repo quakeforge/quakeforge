@@ -129,7 +129,7 @@ MOD_TraceLine (hull_t *hull, int num,
 				return false;
 			}
 
-			// pop up the stack for a end_dist side
+			// pop up the stack for a back side
 			if (tstack-- == tracestack) {
 				trace->allsolid = solid & (num == CONTENTS_SOLID);
 				trace->startsolid = solid;
@@ -139,7 +139,7 @@ MOD_TraceLine (hull_t *hull, int num,
 			// set the hit point for this plane
 			VectorCopy (end, start);
 
-			// go down the end_dist side
+			// go down the back side
 			VectorCopy (tstack->end, end);
 			side = tstack->side;
 			split_plane = tstack->plane;
@@ -172,12 +172,12 @@ MOD_TraceLine (hull_t *hull, int num,
 			actually on
 		*/
 		if (start_dist >= offset && end_dist >= offset) {
-			// entierly in front of the plane
+			// entirely in front of the plane
 			num = node->children[0];
 			continue;
 		}
 		if (start_dist <= -offset && end_dist <= -offset) {
-			// entierly behind the plane
+			// entirely behind the plane
 			num = node->children[1];
 			continue;
 		}
