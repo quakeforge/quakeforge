@@ -396,7 +396,7 @@ ParseBrush (void)
 			nt = sinv * vecs[i][sv] + cosv * vecs[i][tv];
 			vecs[i][sv] = ns;
 			vecs[i][tv] = nt;
-			// cale and store into texinfo
+			// scale and store into texinfo
 			for (j = 0; j < 3; j++)
 				tx.vecs[i][j] = vecs[i][j] / scale[i];
 			tx.vecs[i][3] = vecs[i][3];

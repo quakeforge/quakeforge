@@ -141,7 +141,7 @@ SV_HullForBox (const vec3_t mins, const vec3_t maxs)
 */
 hull_t *
 SV_HullForEntity (edict_t *ent, const vec3_t mins, const vec3_t maxs,
-				  vec3_t offset)
+				  vec3_t extents, vec3_t offset)
 {
 	hull_t     *hull = 0;
 	int         hull_index = 0;
@@ -503,7 +503,7 @@ SV_ClipMoveToEntity (edict_t *touched, const vec3_t start,
 	VectorCopy (end, trace.endpos);
 
 	// get the clipping hull
-	hull = SV_HullForEntity (touched, mins, maxs, offset);
+	hull = SV_HullForEntity (touched, mins, maxs, 0, offset);
 
 	VectorSubtract (start, offset, start_l);
 	VectorSubtract (end, offset, end_l);
@@ -704,7 +704,7 @@ SV_TestPlayerPosition (edict_t *ent, const vec3_t origin)
 
 		// get the clipping hull
 		hull = SV_HullForEntity (check, SVvector (ent, mins),
-								 SVvector (ent, maxs), offset);
+								 SVvector (ent, maxs), 0, offset);
 
 		VectorSubtract (origin, offset, offset);
 

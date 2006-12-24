@@ -403,6 +403,7 @@ typedef struct model_s
 	msurface_t	**marksurfaces;
 
 	hull_t		 hulls[MAX_MAP_HULLS];
+	hull_t		*hull_list[MAX_MAP_HULLS];
 
 	int			 numtextures;
 	texture_t	**textures;

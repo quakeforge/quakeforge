@@ -651,6 +651,7 @@ Mod_LoadClipnodes (lump_t *l)
 	loadmodel->numclipnodes = count;
 
 	hull = &loadmodel->hulls[1];
+	loadmodel->hull_list[1] = hull;
 	hull->clipnodes = out;
 	hull->firstclipnode = 0;
 	hull->lastclipnode = count - 1;
@@ -663,6 +664,7 @@ Mod_LoadClipnodes (lump_t *l)
 	hull->clip_maxs[2] = 32;
 
 	hull = &loadmodel->hulls[2];
+	loadmodel->hull_list[2] = hull;
 	hull->clipnodes = out;
 	hull->firstclipnode = 0;
 	hull->lastclipnode = count - 1;
@@ -691,7 +693,7 @@ Mod_LoadClipnodes (lump_t *l)
 /*
 	Mod_MakeHull0
 
-	Deplicate the drawing hull structure as a clipping hull
+	Replicate the drawing hull structure as a clipping hull
 */
 static void
 Mod_MakeHull0 (void)
@@ -702,6 +704,7 @@ Mod_MakeHull0 (void)
 	mnode_t		*in, *child;
 
 	hull = &loadmodel->hulls[0];
+	loadmodel->hull_list[0] = hull;
 
 	in = loadmodel->nodes;
 	count = loadmodel->numnodes;
@@ -867,9 +870,11 @@ Mod_LoadBrushModel (model_t *mod, void *buffer)
 		bm = &mod->submodels[i];
 
 		mod->hulls[0].firstclipnode = bm->headnode[0];
+		mod->hull_list[0] = &mod->hulls[0];
 		for (j = 1; j < MAX_MAP_HULLS; j++) {
 			mod->hulls[j].firstclipnode = bm->headnode[j];
 			mod->hulls[j].lastclipnode = mod->numclipnodes - 1;
+			mod->hull_list[j] = &mod->hulls[j];
 		}
 
 		mod->firstmodelsurface = bm->firstface;

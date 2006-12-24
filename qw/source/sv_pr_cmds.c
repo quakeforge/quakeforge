@@ -1662,7 +1662,7 @@ PF_hullpointcontents (progs_t *pr)
 	hull_t     *hull;
 	vec3_t      offset;
 
-	hull = SV_HullForEntity (edict, mins, maxs, offset);
+	hull = SV_HullForEntity (edict, mins, maxs, 0, offset);
 	VectorSubtract (point, offset, offset);
 	R_INT (pr) = SV_HullPointContents (hull, 0, offset);
 }

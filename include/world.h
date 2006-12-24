@@ -39,15 +39,16 @@ typedef struct
 	float	dist;
 } plane_t;
 
-typedef struct trace_s
-{
+typedef struct trace_s {
 	qboolean	allsolid;	// if true, plane is not valid
 	qboolean	startsolid;	// if true, the initial point was in a solid area
 	qboolean	inopen, inwater;
 	float		fraction;	// time completed, 1.0 = didn't hit anything
+	vec3_t		extents;	// 1/2 size of traced box
+	qboolean	isbox;		// box or point
 	vec3_t		endpos;		// final position
 	plane_t		plane;		// surface normal at impact
-	struct edict_s		*ent;		// entity the surface is on
+	struct edict_s *ent;	// entity the surface is on
 } trace_t;
 
 // 1/32 epsilon to keep floating point happy
@@ -113,10 +114,7 @@ struct edict_s	*SV_TestPlayerPosition (struct edict_s *ent,
 
 int SV_HullPointContents (hull_t *hull, int num, const vec3_t p);
 hull_t *SV_HullForEntity (struct edict_s *ent, const vec3_t mins,
-						  const vec3_t maxs, vec3_t offset);
-qboolean SV_RecursiveHullCheck (hull_t *hull, int num, float p1f, float p2f,
-								const vec3_t p1, const vec3_t p2,
-								trace_t *trace);
+						  const vec3_t maxs, vec3_t extents, vec3_t offset);
 qboolean MOD_TraceLine (hull_t *hull, int num,
 						const vec3_t start, const vec3_t end, trace_t *trace);
 

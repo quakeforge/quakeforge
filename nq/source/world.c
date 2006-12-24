@@ -28,7 +28,7 @@
 # include "config.h"
 #endif
 
-static __attribute__ ((used)) const char rcsid[] = 
+static __attribute__ ((used)) const char rcsid[] =
 	"$Id$";
 
 #ifdef HAVE_STRING_H
@@ -141,29 +141,17 @@ SV_HullForBox (const vec3_t mins, const vec3_t maxs)
 */
 hull_t *
 SV_HullForEntity (edict_t *ent, const vec3_t mins, const vec3_t maxs,
-				  vec3_t offset)
+				  vec3_t extents, vec3_t offset)
 {
 	int         hull_index = 0;
-	hull_t     *hull = 0;
+	hull_t     *hull = 0, **hull_list = 0;
 	model_t    *model;
-	vec3_t		hullmins, hullmaxs, size;
+	vec3_t      hullmins, hullmaxs, size;
 
-	if ((sv_fields.rotated_bbox != -1
-		 && SVinteger (ent, rotated_bbox))
-		|| SVfloat (ent, solid) == SOLID_BSP) {
-		VectorSubtract (maxs, mins, size);
-		if (size[0] < 3)
-			hull_index = 0;
-		else if (size[0] <= 32)
-			hull_index = 1;
-		else
-			hull_index = 2;
-	}
-	// decide which clipping hull to use, based on the size
 	if (sv_fields.rotated_bbox != -1
 		&& SVinteger (ent, rotated_bbox)) {
 		int h = SVinteger (ent, rotated_bbox) - 1;
-		hull = pf_hull_list[h]->hulls[hull_index];
+		hull_list = pf_hull_list[h]->hulls;
 	} if (SVfloat (ent, solid) == SOLID_BSP) {
 		// explicit hulls in the BSP model
 		if (SVfloat (ent, movetype) != MOVETYPE_PUSH)
@@ -174,19 +162,49 @@ SV_HullForEntity (edict_t *ent, const vec3_t mins, const vec3_t maxs,
 		if (!model || model->type != mod_brush)
 			Sys_Error ("SOLID_BSP with a non bsp model");
 
-		hull = &model->hulls[hull_index];
+		hull_list = model->hull_list;
+	}
+	if (hull_list) {
+		// decide which clipping hull to use, based on the size
+		VectorSubtract (maxs, mins, size);
+		if (extents) {
+			VectorScale (size, 0.5, extents);
+		} else {
+			if (size[0] < 3)
+				hull_index = 0;
+			else if (size[0] <= 32)
+				hull_index = 1;
+			else
+				hull_index = 2;
+		}
+		hull = hull_list[hull_index];
 	}
 
 	if (hull) {
 		// calculate an offset value to center the origin
-		VectorSubtract (hull->clip_mins, mins, offset);
-		VectorAdd (offset, SVvector (ent, origin), offset);
-	} else {					// create a temp hull from bounding box sizes
-		VectorSubtract (SVvector (ent, mins), maxs, hullmins);
-		VectorSubtract (SVvector (ent, maxs), mins, hullmaxs);
-		hull = SV_HullForBox (hullmins, hullmaxs);
+		if (extents) {
+			VectorAdd (extents, mins, offset);
+			VectorSubtract (SVvector (ent, origin), offset, offset);
+		} else {
+			VectorSubtract (hull->clip_mins, mins, offset);
+			VectorAdd (offset, SVvector (ent, origin), offset);
+		}
+	} else {
+		// create a temp hull from bounding box sizes
+		if (extents) {
+			VectorCopy (SVvector (ent, mins), hullmins);
+			VectorCopy (SVvector (ent, maxs), hullmaxs);
 
-		VectorCopy (SVvector (ent, origin), offset);
+			//FIXME broken for map models (ie, origin always 0, 0, 0)
+			VectorAdd (extents, mins, offset);
+			VectorSubtract (SVvector (ent, origin), offset, offset);
+		} else {
+			VectorSubtract (SVvector (ent, mins), maxs, hullmins);
+			VectorSubtract (SVvector (ent, maxs), mins, hullmaxs);
+
+			VectorCopy (SVvector (ent, origin), offset);
+		}
+		hull = SV_HullForBox (hullmins, hullmaxs);
 	}
 
 	return hull;
@@ -487,100 +505,174 @@ SV_TestEntityPosition (edict_t *ent)
 // 1/32 epsilon to keep floating point happy
 #define	DIST_EPSILON	(0.03125)
 
-qboolean
-SV_RecursiveHullCheck (hull_t *hull, int num, float p1f, float p2f,
-					   const vec3_t p1, const vec3_t p2, trace_t *trace)
+typedef struct {
+	vec3_t    backpt;
+	int       side;
+	int       num;
+	mplane_t *plane;
+} tracestack_t;
+
+static inline void
+calc_impact (trace_t *trace, const vec3_t start, const vec3_t end,
+			 const mplane_t *plane)
 {
-	float       frac, midf, t1, t2;
-	int         side, i;
-	dclipnode_t *node;
-	mplane_t   *plane;
-	vec3_t      mid;
+	vec_t       t1, t2, frac, offset;
+	vec3_t      dist;
 
-	// check for empty
-	if (num < 0) {
-		if (num != CONTENTS_SOLID) {
-			trace->allsolid = false;
-			if (num == CONTENTS_EMPTY)
-				trace->inopen = true;
-			else
-				trace->inwater = true;
-		} else
-			trace->startsolid = true;
-		return true;					// empty
+	t1 = PlaneDiff (start, plane);
+	t2 = PlaneDiff (end, plane);
+	offset = 0;
+	if (trace->isbox) {
+		if (plane->type < 3)
+			offset = trace->extents[plane->type];
+		else
+			offset = (fabs (trace->extents[0] * plane->normal[0])
+					  + fabs (trace->extents[1] * plane->normal[1])
+					  + fabs (trace->extents[2] * plane->normal[2]));
 	}
 
-	// find the point distances
-	node = hull->clipnodes + num;
-	plane = hull->planes + node->planenum;
-
-	if (plane->type < 3) {
-		t1 = p1[plane->type] - plane->dist;
-		t2 = p2[plane->type] - plane->dist;
+	if (t1 < 0) {
+		frac = (t1 + DIST_EPSILON) / (t1 - t2);
+		// invert plane parameters;
+		VectorNegate (plane->normal, trace->plane.normal);
+		trace->plane.dist = -plane->dist;
 	} else {
-		t1 = DotProduct (plane->normal, p1) - plane->dist;
-		t2 = DotProduct (plane->normal, p2) - plane->dist;
-	}
-
-	if (t1 >= 0 && t2 >= 0)
-		return SV_RecursiveHullCheck (hull, node->children[0], p1f, p2f, p1,
-									  p2, trace);
-	if (t1 < 0 && t2 < 0)
-		return SV_RecursiveHullCheck (hull, node->children[1], p1f, p2f, p1,
-									  p2, trace);
-
-	side = (t1 < 0);
-	frac = t1 / (t1 - t2);
-//	frac = bound (0, frac, 1); // is this needed?
-
-	midf = p1f + (p2f - p1f) * frac;
-	for (i = 0; i < 3; i++)
-		mid[i] = p1[i] + frac * (p2[i] - p1[i]);
-
-	// move up to the node
-	if (!SV_RecursiveHullCheck (hull, node->children[side],
-								p1f, midf, p1, mid, trace))
-		return false;
-
-	if (SV_HullPointContents (hull, node->children[side ^ 1], mid)
-		!= CONTENTS_SOLID) {
-		// go past the node
-		return SV_RecursiveHullCheck (hull, node->children[side ^ 1], midf,
-									  p2f, mid, p2, trace);
-	}
-
-	if (trace->allsolid)
-		return false;					// never got out of the solid area
-
-	// the other side of the node is solid, this is the impact point
-	if (!side) {
+		frac = (t1 - DIST_EPSILON) / (t1 - t2);
 		VectorCopy (plane->normal, trace->plane.normal);
 		trace->plane.dist = plane->dist;
-	} else {
-		// invert plane paramterers
-		trace->plane.normal[0] = -plane->normal[0];
-		trace->plane.normal[1] = -plane->normal[1];
-		trace->plane.normal[2] = -plane->normal[2];
-		trace->plane.dist = -plane->dist;
 	}
-
-	// put the crosspoint DIST_EPSILON pixels on the near side to guarantee
-	// mid is on the correct side of the plane
-	if (side)
-		frac = (t1 + DIST_EPSILON) / (t1 - t2);
-	else
-		frac = (t1 - DIST_EPSILON) / (t1 - t2);
 	frac = bound (0, frac, 1);
-
-	midf = p1f + (p2f - p1f) * frac;
-	for (i = 0; i < 3; i++)
-		mid[i] = p1[i] + frac * (p2[i] - p1[i]);
-
-	trace->fraction = midf;
-	VectorCopy (mid, trace->endpos);
-
-	return false;
+	trace->fraction = frac;
+	VectorSubtract (end, start, dist);
+	VectorMultAdd (start, frac, dist, trace->endpos);
 }
+
+
+static qboolean
+SV_RecursiveHullCheck (hull_t *hull, int num,
+					   const vec3_t start, const vec3_t end, trace_t *trace)
+{
+	vec_t       front, back, offset, frac, idist;
+	vec3_t      frontpt, backpt, dist;
+	int         side, empty, solid;
+	tracestack_t *tstack;
+	tracestack_t tracestack[256];
+	dclipnode_t *node;
+	mplane_t   *plane, *split_plane;
+
+	VectorCopy (start, frontpt);
+	VectorCopy (end, backpt);
+
+	tstack = tracestack;
+	empty = 0;
+	solid = 0;
+	split_plane = 0;
+
+	while (1) {
+		while (num < 0) {
+			if (!solid && num != CONTENTS_SOLID) {
+				empty = 1;
+				if (num == CONTENTS_EMPTY)
+					trace->inopen = true;
+				else
+					trace->inwater = true;
+			} else if (!empty && num == CONTENTS_SOLID) {
+				solid = 1;
+			} else if (empty || solid) {
+				// DONE!
+				// trace->allsolid = solid & (num == CONTENTS_SOLID);
+				trace->allsolid = false;
+				trace->startsolid = solid;
+				calc_impact (trace, start, end, split_plane);
+				return false;
+			}
+
+			// pop up the sta ck for a back side
+			if (tstack-- == tracestack) {
+				trace->allsolid = solid & (num == CONTENTS_SOLID);
+				trace->startsolid = solid;
+				return true;
+			}
+
+			// set the hit point for this plane
+			VectorCopy (backpt, frontpt);
+
+			// go doun the back side
+			VectorCopy (tstack->backpt, backpt);
+			side = tstack->side;
+			split_plane = tstack->plane;
+
+			num = hull->clipnodes[tstack->num].children[side ^ 1];
+		}
+
+		node = hull->clipnodes + num;
+		plane = hull->planes + node->planenum;
+
+		offset = 0;
+		front = PlaneDiff (frontpt, plane);
+		back = PlaneDiff (backpt, plane);
+		if (trace->isbox) {
+			if (plane->type < 3)
+				offset = trace->extents[plane->type];
+			else
+				offset = (fabs (trace->extents[0] * plane->normal[0])
+						  + fabs (trace->extents[1] * plane->normal[1])
+						  + fabs (trace->extents[2] * plane->normal[2]));
+		}
+
+		// when offset is 0, the following is equivalent to:
+		//		if (front >= 0 && back >= 0) ...
+		//		if (front < 0 && back < 0) ...
+		// due to the order of operations
+		// however, when (front == offset && back == offset) or
+		// (front == -offset && back == -offset), the trace will go down
+		// the /correct/ side of the plane: ie, the side the box is actually
+		// on
+		if (front >= offset && back >= offset) {
+			num = node->children[0];
+			continue;
+		}
+		if (front <= -offset && back <= -offset) {
+			num = node->children[1];
+			continue;
+		}
+		if (front >= offset || front <= -offset
+			|| back >= offset || back <= -offset) {
+			// either:
+			//  back is guaranteed to be < offset or > -offset
+			// or
+			//  front is guaranteed to be < offset or > -offset
+			// so splitting is needed, on the offset plane closes to front
+			side = front < back;
+			idist = 1.0 / (front - back);
+			if (front < 0) {
+				frac = (front + offset) * idist;
+			} else {
+				frac = (front - offset) * idist;
+			}
+			frac = bound (0, frac, 1);
+		} else {
+			// both:
+			//  front is guaranteed to be < offset and > -offset
+			// and
+			//  back is guaranteed to be < offset and > -offset
+			frac = 1;
+			side = front < back;
+		}
+
+		tstack->num = num;
+		tstack->side = side;
+		tstack->plane = plane;
+		VectorCopy (backpt, tstack->backpt);
+		tstack++;
+
+		VectorSubtract (backpt, frontpt, dist);
+		VectorMultAdd (frontpt, frac, dist, backpt);
+
+		num = node->children[side];
+	}
+}
+
 
 /*
 	SV_ClipMoveToEntity
@@ -601,17 +693,18 @@ SV_ClipMoveToEntity (edict_t *touched, edict_t *mover, const vec3_t start,
 
 	trace.fraction = 1;
 	trace.allsolid = true;
+	//trace.isbox = true;
 	VectorCopy (end, trace.endpos);
 
 	// get the clipping hull
-	hull = SV_HullForEntity (touched, mins, maxs, offset);
+	//hull = SV_HullForEntity (touched, mins, maxs, trace.extents, offset);
+	hull = SV_HullForEntity (touched, mins, maxs, 0, offset);
 
 	VectorSubtract (start, offset, start_l);
 	VectorSubtract (end, offset, end_l);
 
 	// trace a line through the apropriate clipping hull
-	SV_RecursiveHullCheck (hull, hull->firstclipnode, 0, 1, start_l, end_l,
-						   &trace);
+	SV_RecursiveHullCheck (hull, hull->firstclipnode, start_l, end_l, &trace);
 
 	// fix trace up by the offset
 	if (trace.fraction != 1)
@@ -805,7 +898,7 @@ SV_TestPlayerPosition (edict_t *ent, const vec3_t origin)
 
 		// get the clipping hull
 		hull = SV_HullForEntity (check, SVvector (ent, mins),
-								 SVvector (ent, maxs), offset);
+								 SVvector (ent, maxs), 0, offset);
 
 		VectorSubtract (origin, offset, offset);
 
