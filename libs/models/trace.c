@@ -173,7 +173,7 @@ MOD_TraceLine (hull_t *hull, int num, const vec3_t start, const vec3_t end,
 			num = node->children[0];
 			continue;
 		}
-		if (front < offset && back < offset) {
+		if (front <= -offset && back <= -offset) {
 			num = node->children[1];
 			continue;
 		}
