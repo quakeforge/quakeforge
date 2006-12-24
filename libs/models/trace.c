@@ -60,23 +60,15 @@ calc_impact (trace_t *trace, const vec3_t start, const vec3_t end,
 			 mplane_t *plane)
 {
 	vec_t       t1, t2, frac;
-	int         i, side;
+	vec3_t      dist;
 
-	if (plane->type < 3) {
-		t1 = start[plane->type] - plane->dist;
-		t2 = end[plane->type] - plane->dist;
-	} else {
-		t1 = DotProduct (plane->normal, start) - plane->dist;
-		t2 = DotProduct (plane->normal, end) - plane->dist;
-	}
+	t1 = PlaneDiff (start, plane);
+	t2 = PlaneDiff (end, plane);
 
-	side = t1 < 0;
-	if (side) {
+	if (t1 < 0) {
 		frac = (t1 + DIST_EPSILON) / (t1 - t2);
 		// invert plane paramterers
-		trace->plane.normal[0] = -plane->normal[0];
-		trace->plane.normal[1] = -plane->normal[1];
-		trace->plane.normal[2] = -plane->normal[2];
+		VectorNegate (plane->normal, trace->plane.normal);
 		trace->plane.dist = -plane->dist;
 	} else {
 		frac = (t1 - DIST_EPSILON) / (t1 - t2);
@@ -85,8 +77,8 @@ calc_impact (trace_t *trace, const vec3_t start, const vec3_t end,
 	}
 	frac = bound (0, frac, 1);
 	trace->fraction = frac;
-	for (i = 0; i < 3; i++)
-		trace->endpos[i] = start[i] + frac * (end[i] - start[i]);
+	VectorSubtract (end, start, dist);
+	VectorMultAdd (start, frac, dist, trace->endpos);
 }
 
 qboolean
@@ -94,7 +86,7 @@ MOD_TraceLine (hull_t *hull, int num, const vec3_t start, const vec3_t end,
 			   trace_t *trace)
 {
 	vec_t       front, back;
-	vec3_t      frontpt, backpt;
+	vec3_t      frontpt, backpt, dist;
 	int         side, empty, solid;
 	tracestack_t *tstack;
 	tracestack_t tracestack[256];
@@ -148,13 +140,8 @@ MOD_TraceLine (hull_t *hull, int num, const vec3_t start, const vec3_t end,
 		node = hull->clipnodes + num;
 		plane = hull->planes + node->planenum;
 
-		if (plane->type < 3) {
-			front = frontpt[plane->type] - plane->dist;
-			back = backpt[plane->type] - plane->dist;
-		} else {
-			front = DotProduct (plane->normal, frontpt) - plane->dist;
-			back = DotProduct (plane->normal, backpt) - plane->dist;
-		}
+		front = PlaneDiff (frontpt, plane);
+		back = PlaneDiff (backpt, plane);
 
 		if (front >= 0 && back >= 0) {
 			num = node->children[0];
@@ -177,9 +164,8 @@ MOD_TraceLine (hull_t *hull, int num, const vec3_t start, const vec3_t end,
 
 		tstack++;
 
-		backpt[0] = frontpt[0] + front * (backpt[0] - frontpt[0]);
-		backpt[1] = frontpt[1] + front * (backpt[1] - frontpt[1]);
-		backpt[2] = frontpt[2] + front * (backpt[2] - frontpt[2]);
+		VectorSubtract (backpt, frontpt, dist);
+		VectorMultAdd (frontpt, frac, dist, backpt);
 
 		num = node->children[side];
 	}
