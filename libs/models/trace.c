@@ -85,7 +85,7 @@ qboolean
 MOD_TraceLine (hull_t *hull, int num, const vec3_t start, const vec3_t end,
 			   trace_t *trace)
 {
-	vec_t       front, back;
+	vec_t       front, back, frac;
 	vec3_t      frontpt, backpt, dist;
 	int         side, empty, solid;
 	tracestack_t *tstack;
@@ -155,7 +155,7 @@ MOD_TraceLine (hull_t *hull, int num, const vec3_t start, const vec3_t end,
 
 		side = front < 0;
 
-		front = front / (front - back);
+		frac = front / (front - back);
 
 		tstack->num = num;
 		tstack->side = side;
