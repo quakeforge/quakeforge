@@ -169,11 +169,11 @@ MOD_TraceLine (hull_t *hull, int num, const vec3_t start, const vec3_t end,
 		// (front == -offset && back == -offset), the trace will go down
 		// the /correct/ side of the plane: ie, the side the box is actually
 		// on
-		if (front >= 0 && back >= 0) {
+		if (front >= offset && back >= offset) {
 			num = node->children[0];
 			continue;
 		}
-		if (front < 0 && back < 0) {
+		if (front < offset && back < offset) {
 			num = node->children[1];
 			continue;
 		}
