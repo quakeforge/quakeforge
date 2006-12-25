@@ -42,6 +42,7 @@ static __attribute__ ((used)) const char rcsid[] =
 #endif
 
 #include "QF/model.h"
+#include "QF/sys.h"
 
 #include "compat.h"
 #include "world.h"
@@ -181,29 +182,21 @@ MOD_TraceLine (hull_t *hull, int num,
 			num = node->children[1];
 			continue;
 		}
-		if (start_dist >= offset || start_dist <= -offset
-			|| end_dist >= offset || end_dist <= -offset) {
-			// either:
-			//  end_dist is guaranteed to be < offset or > -offset
-			// or:
-			//  start_dist is guaranteed to be < offset or > -offset
-			// so splitting is needed, on the offset plane closest to
-			// start
-			side = start_dist < 0;
-			if (start_dist < 0) {
-				frac = (start_dist + offset) / (start_dist - end_dist);
-			} else {
-				frac = (start_dist - offset) / (start_dist - end_dist);
-			}
-			frac = bound (0, frac, 1);
+		// when offset is 0, equvalent to (start_dist >= 0 && end_dist < 0) and
+		// (start_dist < 0 && end_dist >= 0) due to the above tests.
+		if (start_dist >= offset && end_dist <= -offset) {
+			side = 0;
+			frac = (start_dist - offset) / (start_dist - end_dist);
+		} else if (start_dist <= offset && end_dist >= offset) {
+			side = 1;
+			frac = (start_dist + offset) / (start_dist - end_dist);
 		} else {
-			// both: 
-			//  start_dist is guaranteed to be < offset and > -offset
-			// and:
-			//  end_dist is guaranteed to be < offset and > -offset
+			// get here only when offset is non-zero
+			Sys_Printf ("foo\n");
 			frac = 1;
 			side = start_dist < end_dist;
 		}
+		frac = bound (0, frac, 1);
 
 		tstack->num = num;
 		tstack->side = side;
