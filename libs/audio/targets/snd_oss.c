@@ -368,13 +368,17 @@ SNDDMA_Submit (void)
 		samples = *plugin_info_snd_output_data.paintedtime
 			- *plugin_info_snd_output_data.soundtime;
 
-		if (sn.samplepos + BYTES <= sn.samples)
-			write (audio_fd, sn.buffer + BYTES, samples);
-		else {
-			write (audio_fd, sn.buffer + BYTES, sn.samples -
-				   sn.samplepos);
-			write (audio_fd, sn.buffer, BYTES - (sn.samples -
-												   sn.samplepos));
+		if (sn.samplepos + BYTES <= sn.samples) {
+			if (write (audio_fd, sn.buffer + BYTES, samples) != samples)
+				Sys_Printf ("SNDDMA_Submit(): %s\n", strerror (errno));
+		} else {
+			if (write (audio_fd, sn.buffer + BYTES, sn.samples -
+					   sn.samplepos) != sn.samples - sn.samplepos)
+				Sys_Printf ("SNDDMA_Submit(): %s\n", strerror (errno));
+			if (write (audio_fd, sn.buffer, BYTES - (sn.samples -
+													 sn.samplepos)) !=
+				BYTES - (sn.samples - sn.samplepos))
+				Sys_Printf ("SNDDMA_Submit(): %s\n", strerror (errno));
 		}
 		*plugin_info_snd_output_data.soundtime += samples;
 	}

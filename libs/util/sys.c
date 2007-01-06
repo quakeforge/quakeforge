@@ -502,9 +502,11 @@ Sys_DebugLog (const char *file, const char *fmt, ...)
 	va_start (args, fmt);
 	dvsprintf (data, fmt, args);
 	va_end (args);
-	fd = open (file, O_WRONLY | O_CREAT | O_APPEND, 0644);
-	write (fd, data->str, data->size - 1);
-	close (fd);
+	if ((fd = open (file, O_WRONLY | O_CREAT | O_APPEND, 0644)) >= 0) {
+		if (write (fd, data->str, data->size - 1) != (ssize_t) (data->size - 1))
+			Sys_Printf ("Error writing %s: %s\n", file, strerror(errno));
+		close (fd);
+	}
 }
 
 int

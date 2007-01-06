@@ -117,9 +117,9 @@ check_file (int fd, int offs, int len, int *zip)
 
 		lseek (fd, offs, SEEK_SET);
 		r = read (fd, id, 2);
-		if (r == 2 && id[0] == 0x1f && id[1] == 0x8b && len >= 6) {
-			lseek (fd, offs + len - 4, SEEK_SET);
-			read (fd, len_bytes, 4);
+		if (r == 2 && id[0] == 0x1f && id[1] == 0x8b && len >= 6 &&
+			lseek (fd, offs + len - 4, SEEK_SET) >= 0 &&
+			read (fd, len_bytes, 4) == 4) {
 			len = ((len_bytes[3] << 24)
 				   | (len_bytes[2] << 16)
 				   | (len_bytes[1] << 8)

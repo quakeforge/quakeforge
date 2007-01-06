@@ -634,12 +634,14 @@ ReadClipHull (int hullnum)
 				   bsp->nummodels);
 
 	for (i = 0; i < n; i++) {
-		fscanf (f, "%d\n", &j);
+		if (fscanf (f, "%d\n", &j) != 1)
+			Sys_Error ("Error parsing %s", options.hullfile);
 		bsp->models[i].headnode[hullnum] = bsp->numclipnodes + j;
 	}
 
 
-	fscanf (f, "\n%d\n", &n);
+	if (fscanf (f, "\n%d\n", &n) != 1)
+		Sys_Error ("Error parsing %s", options.hullfile);
 	firstclipnode = bsp->numclipnodes;
 
 	for (i = 0; i < n; i++) {

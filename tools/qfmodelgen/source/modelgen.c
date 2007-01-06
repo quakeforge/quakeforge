@@ -145,7 +145,8 @@ SetQdirFromPath (char *path)
 
 	if (!(path[0] == '/' || path[0] == '\\' || path[1] == ':'))
 	{	// path is partial
-		getcwd (temp, sizeof (temp));
+		if (getcwd (temp, sizeof (temp)) == NULL)
+			Sys_Error ("Can't get CWD");
 		strcat (temp, path);
 		path = temp;
 	}

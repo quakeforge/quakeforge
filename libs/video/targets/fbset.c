@@ -203,6 +203,8 @@ static int FillScanRates(struct VideoMode *vmode);
 static void Usage(void);
 
 
+#undef puts
+#undef printf
 #define Die Sys_Printf
 #define puts(s) Sys_Printf("%s\n",(s))
 #define printf Sys_Printf

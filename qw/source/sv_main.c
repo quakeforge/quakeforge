@@ -492,7 +492,7 @@ CheckForFlood (flood_enum_t cmdtype)
 	oldest = 0;
 
 	if (firsttime) {
-		memset (floodstatus, sizeof (flood_t) * DOSFLOODCMDS * DOSFLOODIP, 0);
+		memset (floodstatus, 0, sizeof (flood_t) * DOSFLOODCMDS * DOSFLOODIP);
 
 		firsttime = false;
 	}

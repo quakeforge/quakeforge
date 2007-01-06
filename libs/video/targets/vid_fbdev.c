@@ -226,7 +226,8 @@ VID_Shutdown (void)
 	close(fb_fd);
 
 	ioctl(tty_fd, KDSETMODE, KD_TEXT);
-	write(tty_fd, "\033]R", 3);	/* reset palette */
+	if (write(tty_fd, "\033]R", 3) != 3)    /* reset palette */
+		Sys_Printf("could not reset palette: %s\n", strerror(errno));
 
 	fbdev_inited = 0;
 }
