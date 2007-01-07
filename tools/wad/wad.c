@@ -44,6 +44,7 @@ static __attribute__ ((used)) const char rcsid[] =
 #include <errno.h>
 #include <string.h>
 #include <stdlib.h>
+#include <math.h>
 
 #include <QF/bspfile.h>
 #include <QF/cmd.h>
@@ -231,10 +232,9 @@ wad_extract (wad_t *wad, lumpinfo_t *pf)
 	size_t      count;
 	int         len, i;
 	QFile      *file;
-	byte        buffer[16384];
+	byte       *buffer;
 	pcx_t      *pcx;
 	qpic_t     *qpic;
-	miptex_t   *mip;
 
 	switch (pf->type) {
 		case TYP_PALETTE:
@@ -262,8 +262,10 @@ wad_extract (wad_t *wad, lumpinfo_t *pf)
 
 	switch (pf->type) {
 		case TYP_PALETTE:
+			if (options.verbosity > 1)
+				fprintf (stderr, "PALETTE: %d\n", pf->size);
 			count = 768;
-			memset (buffer, 0, count);
+			buffer = calloc (count + 256, 1);
 			if ((int) count > pf->size)
 				count = pf->size;
 			for (i = 0; i < 256; i++)
@@ -274,9 +276,12 @@ wad_extract (wad_t *wad, lumpinfo_t *pf)
 				fprintf (stderr, "Error writing to %s\n", name.str);
 				return -1;
 			}
+			free (buffer);
 			Qclose (file);
 			return 0;
 		case TYP_QPIC:
+			if (options.verbosity > 1)
+				fprintf (stderr, "QPIC: %d\n", pf->size);
 			qpic = malloc (pf->size);
 			Qread (wad->handle, qpic, pf->size);
 			pcx = EncodePCX (qpic->data, qpic->width, qpic->height,
@@ -289,12 +294,15 @@ wad_extract (wad_t *wad, lumpinfo_t *pf)
 			Qclose (file);
 			return 0;
 		case TYP_MIPTEX:
-			mip = malloc (pf->size);
-			Qread (wad->handle, mip, pf->size);
-			pcx = EncodePCX ((byte *) mip + mip->offsets[0],
-							 mip->width, mip->height, mip->width,
-							 default_palette, false, &len);
-			free (mip);
+			buffer = malloc (pf->size);
+			Qread (wad->handle, buffer, pf->size);
+			i = sqrt (pf->size);
+			if (options.verbosity > 1)
+				fprintf (stderr, "MIPTEX: %d %d %d %02x %02x %02x %02x\n",
+						 pf->size, i, i * i,
+						 buffer[0], buffer[1], buffer[2], buffer[3]);
+			pcx = EncodePCX (buffer, i, i, i, default_palette, false, &len);
+			free (buffer);
 			if (Qwrite (file, pcx, len) != len) {
 				fprintf (stderr, "Error writing to %s\n", name.str);
 				return -1;
@@ -302,20 +310,28 @@ wad_extract (wad_t *wad, lumpinfo_t *pf)
 			Qclose (file);
 			return 0;
 		case TYP_SOUND:
+			if (options.verbosity > 1)
+				fprintf (stderr, "SOUND: %d\n", pf->size);
+			break;
 		case TYP_QTEX:
+			if (options.verbosity > 1)
+				fprintf (stderr, "QTEX: %d\n", pf->size);
+			break;
 		default:
 			break;
 	}
 
+	buffer = malloc (16384);
 	len = pf->size;
 	while (len) {
 		count = len;
-		if (count > sizeof (buffer))
-			count = sizeof (buffer);
+		if (count > 16384)
+			count = 16384;
 		count = Qread (wad->handle, buffer, count);
 		Qwrite (file, buffer, count);
 		len -= count;
 	}
+	free (buffer);
 	Qclose (file);
 	return 0;
 }
