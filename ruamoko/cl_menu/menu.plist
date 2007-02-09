@@ -1,4 +1,140 @@
 {
+	control_options = {
+		Class = MenuGroup;
+		Messages = (
+			(initWithBounds:, $rect),
+			(addViews:, $views),
+			(setBase:, 4)
+		);
+		rect = "[0, 0, 320, 200]";
+		views = (
+			{
+				Class = Pic;
+				Messages = (
+					(initWithBounds:, $rect),
+					(setPic:, "\"gfx/qplaque.lmp\"")
+				);
+				rect = "[16, 4, 0, 0]";
+			},
+			{
+				Class = CenterPic;
+				Messages = (
+					(initWithBounds:, $rect),
+					(setPic:, "\"gfx/p_option.lmp\"")
+				);
+				rect = "[160, 4, 0, 0]";
+			},
+			{
+				Class = Text;
+				Messages = (
+					(initWithBounds:, $rect),
+					(setText:, "\"Controls\"")
+				);
+				rect = "[54, 40, 64, 8]";
+			},
+			{
+				Class = Text;
+				Messages = (
+					(initWithBounds:, $rect),
+					(setText:, "\"--------\"")
+				);
+				rect = "[54, 50, 64, 8]";
+			},
+			{
+				Class = CvarToggleView;
+				Messages = (
+					(initWithBounds:title::, $rect, "\"Grab mouse\"", $toggle),
+				);
+				rect = "[70, 70, 224, 8]";
+				toggle = {
+					Class = CvarToggle;
+					Messages = (
+						(initWithCvar:, "\"in_grab\"")
+					);
+				};
+			},
+			{
+				Class = CvarToggleView;
+				Messages = (
+					(initWithBounds:title::, $rect, "\"Auto run\"", $toggle)
+				);
+				rect = "[70, 80, 224, 8]";
+				toggle = {
+					Class = RunToggle;
+					Messages = (
+						(init)
+					);
+				};
+			},
+			{
+				Class = CvarToggleView;
+				Messages = (
+					(initWithBounds:title::, $rect, "\"Mouse Invert\"", $toggle)
+				);
+				rect = "[70, 90, 224, 8]";
+				toggle = {
+					Class = MouseToggle;
+					Messages = (
+						(init)
+					);
+				};
+			},
+			{
+				Class = CvarRangeView;
+				Messages = (
+					(initWithBounds:title:sliderWidth::,
+						$rect, "\"Mouse amp:\"", 112, $range)
+				);
+				rect = "[70, 100, 232, 8]";
+				range = {
+					Class = CvarRange;
+					Messages = (
+						(initWithCvar:min:max:step:,
+							"\"in_mouse_amp\"", 0.0, 60.0, 1.0)
+					);
+				};
+			},
+			{
+				Class = CvarToggleView;
+				Messages = (
+					(initWithBounds:title::, $rect, "\"Freelook\"", $toggle),
+				);
+				rect = "[70, 110, 224, 8]";
+				toggle = {
+					Class = CvarToggle;
+					Messages = (
+						(initWithCvar:, "\"freelook\"")
+					);
+				};
+			},
+			{
+				Class = CvarToggleView;
+				Messages = (
+					(initWithBounds:title::, $rect, "\"Lookspring\"", $toggle),
+				);
+				rect = "[70, 120, 224, 8]";
+				toggle = {
+					Class = CvarToggle;
+					Messages = (
+						(initWithCvar:, "\"lookspring\"")
+					);
+				};
+			},
+			{
+				Class = CvarToggleView;
+				Messages = (
+					(initWithBounds:title::, $rect, "\"Lookstrafe\"", $toggle),
+				);
+				rect = "[70, 130, 224, 8]";
+				toggle = {
+					Class = CvarToggle;
+					Messages = (
+						(initWithCvar:, "\"lookstrafe\"")
+					);
+				};
+			}
+		);
+	};
 	video_options = {
 		Class = MenuGroup;
 		Messages = (
