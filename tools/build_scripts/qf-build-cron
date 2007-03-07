@@ -1,0 +1,2 @@
+#! /bin/sh
+nice -15 ~/bin/qf-build 2>&1 1> /dev/null | grep -v 'has not been installed in' | grep -v 'could not find path for' | grep -v 'undefined symbols not allowed in' | grep -v 'install: warning: remember to run'

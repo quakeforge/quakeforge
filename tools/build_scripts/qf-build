@@ -1,0 +1,65 @@
+#!/bin/bash
+
+. ~/.bash_profile
+
+set -e
+
+PATH=/usr/local/bin:$PATH
+
+cd ~/src/quakeforge
+cvs up
+./bootstrap
+#begin linux
+	cd linux.o
+	rm -f quakeforge-*.tar.gz
+	../configure -C --without-clients --with-servers=master
+	make install
+	#begin rpm
+		cd RPM
+		make rpm
+		cd ..
+	#end rpm
+	#begin deb
+		DIR=`basename quakeforge-*.tar.gz .tar.gz`
+		cd debian
+		rm -rf $DIR
+		tar zxvf ../${DIR}.tar.gz
+		cd $DIR
+		dpkg-buildpackage -rfakeroot -us -uc
+		rm -rf $DIR
+		cd ../..
+	#end deb
+	cd ..
+#end linux
+#begin win32
+	cd qf-win32.o
+	qf_win32=`pwd`/qf-win32
+	rm -rf qf-win32 qf-win32*.zip
+	./cross-configure.sh -C --with-sdl-prefix=/usr/local/cross-tools/i386-mingw32msvc --disable-debug --disable-shared --program-prefix= --disable-debug
+	../tools/cross/cross-make.sh prefix=${qf_win32} exec_prefix=${qf_win32} pkgdatadir=${qf_win32} PAK=pak QFCC=qfcc GENDEFS='$(top_srcdir)/linux.o/tools/qfdefs/source/gendefs' install
+	/usr/local/cross-tools/bin/i386-mingw32msvc-strip --strip-unneeded qf-win32/bin/*.exe
+	python ~/bin/qf-win32.py
+	for p in {client-{sdl,sdl32,sgl,wgl},devel,server,tools}; do
+		cp qf-win32-$p.zip /project/website/htdocs/files/qf-win32-$p.zip-
+		mv /project/website/htdocs/files/qf-win32-$p.zip- /project/website/htdocs/files/qf-win32-$p.zip
+	done
+	touch /project/website/htdocs/files/qf-win32-*.zip
+	#zip -r9 qf-win32.zip qf-win32
+	#cp qf-win32.zip /project/website/htdocs/files/qf-win32.zip-
+	#mv /project/website/htdocs/files/qf-win32.zip- /project/website/htdocs/files/qf-win32.zip
+	cd ..
+#end win32
+cd ~/src/game-source
+cvs up
+for f in `find . -name 'Makefile'`; do make -C `dirname $f` clean all; done
+cd ..
+zip -r9 game-source.zip game-source
+tar zcf game-source.tar.gz game-source
+tar jcf game-source.tar.bz2 game-source
+if cmp game-source.zip /project/website/htdocs/files/game-source.zip; then
+	echo no change
+else
+	cp game-source.* /project/website/htdocs/files/
+fi
+#cd ~/src/quakeforge/linux.o/doc
+#make doc

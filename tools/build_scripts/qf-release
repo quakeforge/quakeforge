@@ -1,0 +1,91 @@
+#! /bin/bash
+
+. ~/.bash_profile
+
+set -e
+
+PATH=/usr/local/bin:$PATH
+
+if test $# -lt 1; then
+	echo 'Usage: qf-reelase <version> [targets]'
+	exit 1;
+fi
+
+ver="$1"
+tag=release_`echo $ver | tr . _`
+
+shift
+if test $# -ne 0; then
+	while test $# -ne 0; do
+		case $1 in
+		rpm)
+			do_rpm=1
+			;;
+		deb)
+			do_deb=1
+			;;
+		win32)
+			do_win32=1
+			;;
+		*)
+			echo 'Unknown target'
+			exit 1
+			;;
+		esac
+		shift
+	done
+else
+	do_rpm=1
+	do_deb=1
+	do_win32=1
+fi
+
+mkdir -p ~/release
+cd ~/release
+rm -rf NEWS quakeforge-* quakeforge_* qfcc_*
+cvs -d :pserver:anonymous@cvs.quakeforge.net:/project/cvs co -d "quakeforge-$ver" -r "$tag" quakeforge
+cd quakeforge-$ver
+cp NEWS ~/release
+mkdir linux.o qf-win32.o
+sed -e 's@\./config@../config@' tools/cross/cross-configure.sh > qf-win32.o/cross-configure.sh
+chmod +x qf-win32.o/cross-configure.sh
+./bootstrap
+#begin linux
+	cd linux.o
+	../configure -C --without-clients --with-servers=master
+	make changelog
+	make dist-all-local
+	if test $do_rpm -eq 1; then
+		cd RPM
+		make rpm
+		mv *.rpm ~/release
+		cd ..
+	fi
+	if test $do_deb -eq 1; then
+		DIR=`basename quakeforge-*.tar.gz .tar.gz`
+		cd debian
+		rm -rf $DIR
+		tar zxvf ../${DIR}.tar.gz
+		cd $DIR
+		QFSMP=-j3 dpkg-buildpackage -rfakeroot -us -uc
+		rm -rf $DIR
+		cd ..
+		mv q*.[a-z]* ~/release
+		cd ..
+	fi
+	#make dist-all-local
+	mv *.tar.gz *.tar.bz2 *.zip ~/release
+	cd ..
+# end linux
+if test $do_win32 -eq 1; then
+	cd qf-win32.o
+	qf_win32="quakeforge-$ver-win32"
+	qf_win32_dir=`pwd`"/$qf_win32"
+	rm -rf $qf_win32_dir *.zip
+	./cross-configure.sh -C --with-sdl-prefix=/usr/local/cross-tools/i386-mingw32msvc --disable-debug --disable-shared --program-prefix= --disable-debug
+	../tools/cross/cross-make.sh -j3 prefix=${qf_win32_dir} exec_prefix=${qf_win32_dir} pkgdatadir=${qf_win32_dir} PAK=pak QFCC=qfcc GENDEFS='$(top_srcdir)/linux.o/tools/qfdefs/source/gendefs' install
+	/usr/local/cross-tools/bin/i386-mingw32msvc-strip --strip-unneeded "$qf_win32"/bin/*.exe
+	qf-win32.py "$ver-win32" quakeforge "$qf_win32"
+	mv *.zip ~/release
+	cd ..
+fi

@@ -1,0 +1,14 @@
+#! /bin/bash
+
+cd ~/snapshot/quakeforge
+cvs up > /dev/null
+./bootstrap
+touch include/config.h.in
+cd ..
+tar jchf /project/website/htdocs/files/quakeforge-current.tar.bz2- quakeforge
+tar zchf /project/website/htdocs/files/quakeforge-current.tar.gz- quakeforge
+zip -qr9 /project/website/htdocs/files/quakeforge-current.zip- quakeforge
+cd /project/website/htdocs/files
+mv quakeforge-current.tar.bz2- quakeforge-current.tar.bz2
+mv quakeforge-current.tar.gz- quakeforge-current.tar.gz
+mv quakeforge-current.zip- quakeforge-current.zip
