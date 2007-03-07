@@ -31,3 +31,12 @@ To only build and install the quakeworld server:
 	./bootstrap
 	./configure --without-clients --without-tools --with-servers=qw
 	make install
+
+To build documentation (doxygen is required, as is an already configured
+source tree):
+	cd doc
+	make doc
+
+Then either point your webbrowser to doxygen/html/index.html, or copy/move
+doxygen/html to a webserver and point your browser to that. The documentation
+is currently grossly inadequate, but hopefully it is of some help.
