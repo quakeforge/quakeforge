@@ -1,7 +1,7 @@
 ## Process this file with automake to produce Makefile.in
 AUTOMAKE_OPTIONS= foreign
 
-SUBDIRS=	RPM debian doc include libs hw nq qtv qw tools ruamoko
+SUBDIRS=	RPM debian doc include libs hw nq qtv qw tools ruamoko pkg-config
 
 ## configure.ac needs to be listed here for older autoconfs
 EXTRA_DIST=	ChangeLog configure.ac \

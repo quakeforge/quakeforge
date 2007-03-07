@@ -1378,6 +1378,7 @@ elif test "x$userpath" = xno; then
 	userpath="."
 fi
 AC_DEFINE_UNQUOTED(FS_USERPATH, "$userpath", [Define this to the unshared game directory root])
+AC_SUBST(userpath)
 
 AC_ARG_WITH(plugin-path,
 [  --with-plugin-path=DIR  Use DIR for loading plugins, defaults to
@@ -2343,6 +2344,9 @@ AC_OUTPUT(
 	ruamoko/gui/Makefile
 	ruamoko/cl_menu/Makefile
 	ruamoko/scheme/Makefile
+
+	pkg-config/Makefile
+	pkg-config/quakeforge.pc
 
 	doc/Makefile
 	doc/quakeforge.dox
