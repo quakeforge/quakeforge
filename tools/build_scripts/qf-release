@@ -6,13 +6,23 @@ set -e
 
 PATH=/usr/local/bin:$PATH
 
+pref=`dirname $0`
 if test $# -lt 1; then
-	echo 'Usage: qf-reelase <version> [targets]'
+	echo 'Usage: $0 <version> [targets]'
 	exit 1;
 fi
 
 ver="$1"
-tag=release_`echo $ver | tr . _`
+if test "$ver" = "current"; then
+	tag_path=trunk
+else
+	tag_path=branches/release_`echo $ver | tr . _`
+fi
+
+do_rpm=0
+do_deb=0
+do_win32=0
+no_rm=0
 
 shift
 if test $# -ne 0; then
@@ -27,6 +37,9 @@ if test $# -ne 0; then
 		win32)
 			do_win32=1
 			;;
+		norm)
+			no_rm=1
+			;;
 		*)
 			echo 'Unknown target'
 			exit 1
@@ -40,20 +53,24 @@ else
 	do_win32=1
 fi
 
+svn_url=http://quake.svn.sourceforge.net/svnroot/quake
+
 mkdir -p ~/release
 cd ~/release
-rm -rf NEWS quakeforge-* quakeforge_* qfcc_*
-cvs -d :pserver:anonymous@cvs.quakeforge.net:/project/cvs co -d "quakeforge-$ver" -r "$tag" quakeforge
+if test $no_rm -ne 1; then
+	rm -rf NEWS quakeforge-* quakeforge_* qfcc_*
+	exit
+fi
+svn co ${svn_url}/quakeforge/${tag_path} quakeforge-${ver}
 cd quakeforge-$ver
 cp NEWS ~/release
-mkdir linux.o qf-win32.o
-sed -e 's@\./config@../config@' tools/cross/cross-configure.sh > qf-win32.o/cross-configure.sh
-chmod +x qf-win32.o/cross-configure.sh
+mkdir -p linux.o qf-win32.o
 ./bootstrap
 #begin linux
 	cd linux.o
 	../configure -C --without-clients --with-servers=master
-	make changelog
+	#make changelog
+	touch ChangeLog
 	make dist-all-local
 	if test $do_rpm -eq 1; then
 		cd RPM
@@ -81,10 +98,22 @@ if test $do_win32 -eq 1; then
 	cd qf-win32.o
 	qf_win32="quakeforge-$ver-win32"
 	qf_win32_dir=`pwd`"/$qf_win32"
+	mingw32="/usr/local/cross-tools/i386-mingw32msvc"
+	sed -e 's@\./config@../config@' \
+		../tools/cross/cross-configure.sh > cross-configure.sh
+	chmod +x cross-configure.sh
 	rm -rf $qf_win32_dir *.zip
-	./cross-configure.sh -C --with-sdl-prefix=/usr/local/cross-tools/i386-mingw32msvc --disable-debug --disable-shared --program-prefix= --disable-debug
-	../tools/cross/cross-make.sh -j3 prefix=${qf_win32_dir} exec_prefix=${qf_win32_dir} pkgdatadir=${qf_win32_dir} PAK=pak QFCC=qfcc install
-	/usr/local/cross-tools/bin/i386-mingw32msvc-strip --strip-unneeded "$qf_win32"/bin/*.exe
+	./cross-configure.sh \
+		CFLAGS=-I${mingw32}/include LDLAGS=-L${mingw32}/lib \
+		--with-sdl-prefix=${mingw32} \
+		--disable-debug --disable-shared --disable-debug \
+		--program-prefix=
+	../tools/cross/cross-make.sh -j3 \
+		prefix=${qf_win32_dir} \
+		exec_prefix=${qf_win32_dir} \
+		pkgdatadir=${qf_win32_dir} \
+		PAK=pak QFCC=qfcc install
+	i586-mingw32msvc-strip --strip-unneeded "$qf_win32"/bin/*.exe
 	qf-win32.py "$ver-win32" quakeforge "$qf_win32"
 	mv *.zip ~/release
 	cd ..
