@@ -1344,6 +1344,7 @@ if test "x$globalconf" = "xauto" || test "x$globalconf" = "xyes" || \
 	globalconf="$default_globalconf"
 fi
 AC_DEFINE_UNQUOTED(FS_GLOBALCFG, "$globalconf", [Define this to the location of the global config file])
+AC_SUBST(globalconf)
 
 AC_ARG_WITH(user-cfg,
 [  --with-user-cfg=FILE    If set will change the name and location of the
@@ -1355,6 +1356,7 @@ if test "x$userconf" = "xauto" || test "x$userconf" = "xyes" || \
 	userconf="$default_userconf"
 fi
 AC_DEFINE_UNQUOTED(FS_USERCFG, "$userconf", [Define this to the location of the user config file])
+AC_SUBST(userconf)
 
 AC_ARG_WITH(sharepath,
 [  --with-sharepath=DIR    Use DIR for shared game data, defaults to
