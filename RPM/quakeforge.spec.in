@@ -211,6 +211,16 @@ I/O for the output device. If you have trouble, try the quakeforge-alsa
 package.
 %endif
 
+%if "%{HAVE_XMMS}"=="'yes'"
+%package xmms
+Summary:	XMMS playlist interface
+Group:		Amusements/Games
+#Requires:
+%description xmms
+The XMMS plugin for QuakeForge allows the clients to use the XMMS playlist
+as a virtual cd for background music.
+%endif
+
 %if "%{HAVE_ALSA}"=="'yes'"
 %package alsa
 Summary:	ALSA sound plugin for QuakeForge
@@ -311,6 +321,7 @@ rm -rf $RPM_BUILD_ROOT
 
 %files
 %doc COPYING INSTALL TODO doc/*
+%attr(-,root,root) %{_prefix}/lib/pkgconfig/quakeforge.pc
 
 %files common
 %attr(-,root,root) /etc/quakeforge.conf
@@ -417,6 +428,11 @@ rm -rf $RPM_BUILD_ROOT
 %files x11
 %attr(-,root,root)	%{_prefix}/bin/qw-client-x11
 %attr(-,root,root)	%{_prefix}/bin/nq-x11
+%endif
+
+%if "%{HAVE_XMMS}"=="'yes'"
+%files xmms
+%attr(-,root,root)	%{_prefix}/lib/quakeforge/cd_xmms.so
 %endif
 
 %if "%{HAVE_ALSA}"=="'yes'"
