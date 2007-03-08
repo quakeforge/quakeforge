@@ -432,7 +432,7 @@ rm -rf $RPM_BUILD_ROOT
 %files -n qfcc
 %attr(-,root,root)	%{_prefix}/bin/qfcc
 %attr(-,root,root)	%{_prefix}/bin/qfpreqcc
-%attr(-,root,root)	%{_prefix}/man/man1/qfcc.1.gz
+%attr(-,root,root)	%{_prefix}/share/man/man1/qfcc.1.gz
 %attr(-,root,root)	%{_prefix}/include/QF/ruamoko/*
 %attr(-,root,root)	%{_prefix}/lib/ruamoko/*
 
@@ -441,9 +441,9 @@ rm -rf $RPM_BUILD_ROOT
 %attr(-,root,root)	%{_prefix}/bin/zpak
 %attr(-,root,root)	%{_prefix}/bin/qfprogs
 %attr(-,root,root)	%{_prefix}/bin/qfwavinfo
-%attr(-,root,root)	%{_prefix}/man/man1/pak.1.gz
-#%attr(-,root,root)	%{_prefix}/man/man1/qfprogs.1.gz
-#%attr(-,root,root)	%{_prefix}/man/man1/qfwavinfo.1.gz
+%attr(-,root,root)	%{_prefix}/share/man/man1/pak.1.gz
+#%attr(-,root,root)	%{_prefix}/share/man/man1/qfprogs.1.gz
+#%attr(-,root,root)	%{_prefix}/share/man/man1/qfwavinfo.1.gz
 
 %files maptools
 %attr(-,root,root)	%{_prefix}/bin/bsp2img
@@ -452,9 +452,9 @@ rm -rf $RPM_BUILD_ROOT
 %attr(-,root,root)	%{_prefix}/bin/qfmodelgen
 %attr(-,root,root)	%{_prefix}/bin/qfvis
 %attr(-,root,root)	%{_prefix}/bin/wad
-%attr(-,root,root)	%{_prefix}/man/man1/qflight.1.gz
-%attr(-,root,root)	%{_prefix}/man/man1/qfvis.1.gz
-%attr(-,root,root)	%{_prefix}/man/man1/wad.1.gz
+%attr(-,root,root)	%{_prefix}/share/man/man1/qflight.1.gz
+%attr(-,root,root)	%{_prefix}/share/man/man1/qfvis.1.gz
+%attr(-,root,root)	%{_prefix}/share/man/man1/wad.1.gz
 
 %files stub
 %attr(-,root,root) %dir	%{fs_sharepath}
