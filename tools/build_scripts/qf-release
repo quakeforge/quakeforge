@@ -83,7 +83,7 @@ if test $do_win32 -eq 1; then
 	qf_win32_dir=`pwd`"/$qf_win32"
 	rm -rf $qf_win32_dir *.zip
 	./cross-configure.sh -C --with-sdl-prefix=/usr/local/cross-tools/i386-mingw32msvc --disable-debug --disable-shared --program-prefix= --disable-debug
-	../tools/cross/cross-make.sh -j3 prefix=${qf_win32_dir} exec_prefix=${qf_win32_dir} pkgdatadir=${qf_win32_dir} PAK=pak QFCC=qfcc GENDEFS='$(top_srcdir)/linux.o/tools/qfdefs/source/gendefs' install
+	../tools/cross/cross-make.sh -j3 prefix=${qf_win32_dir} exec_prefix=${qf_win32_dir} pkgdatadir=${qf_win32_dir} PAK=pak QFCC=qfcc install
 	/usr/local/cross-tools/bin/i386-mingw32msvc-strip --strip-unneeded "$qf_win32"/bin/*.exe
 	qf-win32.py "$ver-win32" quakeforge "$qf_win32"
 	mv *.zip ~/release

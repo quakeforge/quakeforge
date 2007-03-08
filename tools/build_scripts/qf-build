@@ -36,7 +36,7 @@ cvs up
 	qf_win32=`pwd`/qf-win32
 	rm -rf qf-win32 qf-win32*.zip
 	./cross-configure.sh -C --with-sdl-prefix=/usr/local/cross-tools/i386-mingw32msvc --disable-debug --disable-shared --program-prefix= --disable-debug
-	../tools/cross/cross-make.sh prefix=${qf_win32} exec_prefix=${qf_win32} pkgdatadir=${qf_win32} PAK=pak QFCC=qfcc GENDEFS='$(top_srcdir)/linux.o/tools/qfdefs/source/gendefs' install
+	../tools/cross/cross-make.sh prefix=${qf_win32} exec_prefix=${qf_win32} pkgdatadir=${qf_win32} PAK=pak QFCC=qfcc install
 	/usr/local/cross-tools/bin/i386-mingw32msvc-strip --strip-unneeded qf-win32/bin/*.exe
 	python ~/bin/qf-win32.py
 	for p in {client-{sdl,sdl32,sgl,wgl},devel,server,tools}; do
