@@ -1,6 +1,6 @@
 #!/bin/sh -x
 HOST_CC=gcc
-PATH=$PATH:/usr/local/cross-tools/bin:/usr/local/cross-tools/i386-mingw32msvc/bin
+PATH=/usr/i586-mingw32msvc/bin:$PATH
 export HOST_CC
 export PATH
 make $*
