@@ -3,7 +3,7 @@ Section: contrib/games
 Priority: optional
 Maintainer: Jeff Teunissen <deek@debian.org>
 Standards-Version: 3.1.1
-Build-Depends: automake (>= 1.8) | automake1.8, autoconf, libtool, bison, flex, debhelper, libsdl1.2-dev, zlib1g-dev, libncurses5-dev, xorg-dev | xlibs-dev (>= 4), libasound2-dev
+Build-Depends: automake (>= 1.8) | automake1.8, autoconf, libtool, bison, flex, debhelper, libsdl1.2-dev, zlib1g-dev, libncurses5-dev, xorg-dev | xlibs-dev (>= 4), libasound2-dev, libogg-dev, libvorbis-dev, libflac-dev, libpng12-dev
 
 Package: quakeforge
 Architecture: any
