@@ -33,7 +33,7 @@
 #define __snd_render_h
 
 
-/** \defgroup sound_render Default sound rendering sub-system.
+/** \defgroup sound_render Sound rendering sub-system.
 	\ingroup sound
 */
 //@{
