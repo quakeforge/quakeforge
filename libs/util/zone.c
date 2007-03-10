@@ -98,7 +98,7 @@ struct memzone_s
 };
 
 
-void
+VISIBLE void
 Z_ClearZone (memzone_t *zone, int size)
 {
 	memblock_t	*block;
@@ -121,7 +121,7 @@ Z_ClearZone (memzone_t *zone, int size)
 	block->size = size - sizeof (memzone_t);
 }
 
-void
+VISIBLE void
 Z_Free (memzone_t *zone, void *ptr)
 {
 	memblock_t	*block, *other;
@@ -160,7 +160,7 @@ Z_Free (memzone_t *zone, void *ptr)
 	}
 }
 
-void *
+VISIBLE void *
 Z_Malloc (memzone_t *zone, int size)
 {
 	void	*buf;
@@ -231,7 +231,7 @@ Z_TagMalloc (memzone_t *zone, int size, int tag)
 	return (void *) (base + 1);
 }
 
-void *
+VISIBLE void *
 Z_Realloc (memzone_t *zone, void *ptr, int size)
 {
 	int         old_size;
@@ -329,7 +329,7 @@ qboolean    hunk_tempactive;
 
 	Run consistancy and sentinal trahing checks
 */
-void
+VISIBLE void
 Hunk_Check (void)
 {
 	hunk_t     *h;
@@ -416,7 +416,7 @@ Hunk_Print (qboolean all)
 	Sys_Printf ("%8i total blocks\n", totalblocks);
 }
 */
-void       *
+VISIBLE void *
 Hunk_AllocName (int size, const char *name)
 {
 	hunk_t     *h;
@@ -450,19 +450,19 @@ Hunk_AllocName (int size, const char *name)
 	return (void *) (h + 1);
 }
 
-void       *
+VISIBLE void *
 Hunk_Alloc (int size)
 {
 	return Hunk_AllocName (size, "unknown");
 }
 
-int
+VISIBLE int
 Hunk_LowMark (void)
 {
 	return hunk_low_used;
 }
 
-void
+VISIBLE void
 Hunk_FreeToLowMark (int mark)
 {
 	if (mark < 0 || mark > hunk_low_used)
@@ -471,7 +471,7 @@ Hunk_FreeToLowMark (int mark)
 	hunk_low_used = mark;
 }
 
-int
+VISIBLE int
 Hunk_HighMark (void)
 {
 	if (hunk_tempactive) {
@@ -482,7 +482,7 @@ Hunk_HighMark (void)
 	return hunk_high_used;
 }
 
-void
+VISIBLE void
 Hunk_FreeToHighMark (int mark)
 {
 	if (hunk_tempactive) {
@@ -495,7 +495,7 @@ Hunk_FreeToHighMark (int mark)
 	hunk_high_used = mark;
 }
 
-void       *
+VISIBLE void *
 Hunk_HighAllocName (int size, const char *name)
 {
 	hunk_t     *h;
@@ -535,7 +535,7 @@ Hunk_HighAllocName (int size, const char *name)
 
 	Return space from the top of the hunk
 */
-void       *
+VISIBLE void *
 Hunk_TempAlloc (int size)
 {
 	void       *buf;
@@ -828,7 +828,7 @@ Cache_Print (void)
 	CACHE_WRITE_UNLOCK;
 }
 
-void
+VISIBLE void
 Cache_Report (void)
 {
 	CACHE_WRITE_LOCK;
@@ -857,7 +857,7 @@ Cache_Init (void)
 
 	Frees the memory and removes it from the LRU list
 */
-void
+VISIBLE void
 Cache_Free (cache_user_t *c)
 {
 	CACHE_WRITE_LOCK;
@@ -908,7 +908,7 @@ Cache_RealCheck (cache_user_t *c)
 	return c->data;
 }
 
-void *
+VISIBLE void *
 Cache_Check (cache_user_t *c)
 {
 	void *mem;
@@ -919,7 +919,7 @@ Cache_Check (cache_user_t *c)
 	return mem;
 }
 
-void *
+VISIBLE void *
 Cache_Alloc (cache_user_t *c, int size, const char *name)
 {
 	void *mem;
@@ -997,7 +997,7 @@ Cache_Profile (void)
 	CACHE_WRITE_UNLOCK;
 }
 
-void
+VISIBLE void
 Cache_Add (cache_user_t *c, void *object, cache_loader_t loader)
 {
 	CACHE_WRITE_LOCK;
@@ -1030,7 +1030,7 @@ Cache_Remove (cache_user_t *c)
 	CACHE_WRITE_UNLOCK;
 }
 
-void *
+VISIBLE void *
 Cache_TryGet (cache_user_t *c)
 {
 	void *mem;
@@ -1049,7 +1049,7 @@ Cache_TryGet (cache_user_t *c)
 	return mem;
 }
 
-void *
+VISIBLE void *
 Cache_Get (cache_user_t *c)
 {
 	void *mem = Cache_TryGet (c);
@@ -1059,7 +1059,7 @@ Cache_Get (cache_user_t *c)
 	return mem;
 }
 
-void
+VISIBLE void
 Cache_Release (cache_user_t *c)
 {
 	int *readlock;
@@ -1174,7 +1174,7 @@ QA_strdup (const char *s)
 
 //============================================================================
 
-void
+VISIBLE void
 Memory_Init (void *buf, int size)
 {
 	hunk_base = buf;

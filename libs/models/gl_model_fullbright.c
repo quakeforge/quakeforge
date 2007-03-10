@@ -44,7 +44,7 @@ static __attribute__ ((used)) const char rcsid[] =
 #include "r_local.h"
 
 
-int
+VISIBLE int
 Mod_CalcFullbright (byte *in, byte *out, int pixels)
 {
 	int		fb = 0;

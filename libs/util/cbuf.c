@@ -51,15 +51,15 @@ static __attribute__ ((used)) const char rcsid[] =
 
 #include "compat.h"
 
-cbuf_t     *cbuf_active = NULL;
+VISIBLE cbuf_t *cbuf_active = NULL;
 
-cbuf_args_t *
+VISIBLE cbuf_args_t *
 Cbuf_ArgsNew (void)
 {
 	return calloc (1, sizeof (cbuf_args_t));
 }
 
-void
+VISIBLE void
 Cbuf_ArgsDelete (cbuf_args_t *args)
 {
 	int		i;
@@ -72,7 +72,7 @@ Cbuf_ArgsDelete (cbuf_args_t *args)
 	free (args);
 }
 
-void
+VISIBLE void
 Cbuf_ArgsAdd (cbuf_args_t *args, const char *arg)
 {
 	int		i;
@@ -92,7 +92,7 @@ Cbuf_ArgsAdd (cbuf_args_t *args, const char *arg)
 	args->argc++;
 }
 
-cbuf_t *
+VISIBLE cbuf_t *
 Cbuf_New (cbuf_interpreter_t *interp)
 {
 	cbuf_t		*cbuf = calloc (1, sizeof (cbuf_t));
@@ -104,7 +104,7 @@ Cbuf_New (cbuf_interpreter_t *interp)
 	return cbuf;
 }
 
-void
+VISIBLE void
 Cbuf_Delete (cbuf_t *cbuf)
 {
 	if (!cbuf)
@@ -115,7 +115,7 @@ Cbuf_Delete (cbuf_t *cbuf)
 	free (cbuf);
 }
 
-void
+VISIBLE void
 Cbuf_DeleteStack (cbuf_t *stack)
 {
 	cbuf_t		*next;
@@ -136,7 +136,7 @@ Cbuf_Reset (cbuf_t *cbuf)
 		cbuf->interpreter->reset (cbuf);
 }
 
-cbuf_t *
+VISIBLE cbuf_t *
 Cbuf_PushStack (cbuf_interpreter_t *interp)
 {
 	cbuf_t *new;
@@ -156,7 +156,7 @@ Cbuf_PushStack (cbuf_interpreter_t *interp)
 	return new;
 }
 
-void
+VISIBLE void
 Cbuf_AddText (cbuf_t *cbuf, const char *text)
 {
 	if (cbuf->state == CBUF_STATE_JUNK)
@@ -164,7 +164,7 @@ Cbuf_AddText (cbuf_t *cbuf, const char *text)
 	cbuf->interpreter->add (cbuf, text);
 }
 
-void
+VISIBLE void
 Cbuf_InsertText (cbuf_t *cbuf, const char *text)
 {
 	if (cbuf->state == CBUF_STATE_JUNK)
@@ -172,7 +172,7 @@ Cbuf_InsertText (cbuf_t *cbuf, const char *text)
 	cbuf->interpreter->insert (cbuf, text);
 }
 
-void
+VISIBLE void
 Cbuf_Execute (cbuf_t *cbuf)
 {
 	cbuf_t *old = cbuf_active;
@@ -181,7 +181,7 @@ Cbuf_Execute (cbuf_t *cbuf)
 	cbuf_active = old;
 }
 
-void
+VISIBLE void
 Cbuf_Execute_Stack (cbuf_t *cbuf)
 {
 	cbuf_t		*sp;
@@ -222,7 +222,7 @@ Cbuf_Execute_Stack (cbuf_t *cbuf)
 		Cbuf_Reset (cbuf);
 }
 
-void
+VISIBLE void
 Cbuf_Execute_Sets (cbuf_t *cbuf)
 {
 	cbuf->interpreter->execute_sets (cbuf);

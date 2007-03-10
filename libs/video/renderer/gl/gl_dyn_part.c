@@ -145,7 +145,7 @@ particle_new_veryrandom (ptype_t type, int texnum, const vec3_t org,
 }
 */
 
-void
+VISIBLE void
 R_ClearParticles (void)
 {
 	numparticles = 0;
@@ -1767,7 +1767,7 @@ R_ParticleFunctionInit (void)
 	r_easter_eggs_f (easter_eggs);
 }
 
-void
+VISIBLE void
 R_Particles_Init_Cvars (void)
 {
 	R_ParticleFunctionInit ();

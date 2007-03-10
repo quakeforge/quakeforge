@@ -40,7 +40,7 @@ static __attribute__ ((used)) const char rcsid[] =
 
 #include "QF/console.h"
 
-void (*con_list_print)(const char *fmt, ...) = Con_Printf;
+void (*con_list_print)(const char *fmt, ...) __attribute__ ((visibility ("default"))) = Con_Printf;
 
 /*
 	Con_DisplayList

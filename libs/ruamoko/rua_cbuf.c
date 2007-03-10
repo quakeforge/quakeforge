@@ -112,7 +112,7 @@ RUA_Cbuf_Init (progs_t *pr, int secure)
 	PR_RegisterBuiltins (pr, builtins);
 }
 
-void
+VISIBLE void
 RUA_Cbuf_SetCbuf (progs_t *pr, cbuf_t *cbuf)
 {
 	cbuf_resources_t *res = PR_Resources_Find (pr, "Cbuf");

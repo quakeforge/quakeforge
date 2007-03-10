@@ -95,9 +95,9 @@ QFGL_ProcAddress (void *handle, const char *name, qboolean crit)
 
 // First we need to get all the function pointers declared.
 #define QFGL_WANT(ret, name, args) \
-	ret (GLAPIENTRY * qf##name) args;
+	VISIBLE ret (GLAPIENTRY * qf##name) args;
 #define QFGL_NEED(ret, name, args) \
-	ret (GLAPIENTRY * qf##name) args;
+	VISIBLE ret (GLAPIENTRY * qf##name) args;
 #include "QF/GL/qf_funcs_list.h"
 #undef QFGL_NEED
 #undef QFGL_WANT
@@ -159,7 +159,7 @@ QFGL_ParseExtensionList (const GLubyte *list, const char *name)
 	return 0;
 }
 
-qboolean
+VISIBLE qboolean
 QFGL_ExtensionPresent (const char *name)
 {
 	static const GLubyte *gl_extensions = NULL;

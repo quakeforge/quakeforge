@@ -183,7 +183,7 @@ PR_Load_Source_File (progs_t *pr, const char *fname)
 	return f;
 }
 
-int
+VISIBLE int
 PR_LoadDebug (progs_t *pr)
 {
 	char		*sym_path;
@@ -398,7 +398,7 @@ PR_Get_Local_Def (progs_t *pr, int offs)
 	return 0;
 }
 
-void
+VISIBLE void
 PR_DumpState (progs_t *pr)
 {
 	if (pr->pr_xfunction) {
@@ -594,7 +594,7 @@ global_string (progs_t *pr, int ofs, etype_t type, int contents)
 	return line->str;
 }
 
-void
+VISIBLE void
 PR_PrintStatement (progs_t * pr, dstatement_t *s, int contents)
 {
 	int			addr = s - pr->pr_statements;
@@ -746,7 +746,7 @@ PR_StackTrace (progs_t *pr)
 		dump_frame (pr, pr->pr_stack + i);
 }
 
-void
+VISIBLE void
 PR_Profile (progs_t * pr)
 {
 	int				max, num, i;
@@ -778,7 +778,7 @@ PR_Profile (progs_t * pr)
 
 	For debugging
 */
-void
+VISIBLE void
 ED_Print (progs_t *pr, edict_t *ed)
 {
 	int         type, l;

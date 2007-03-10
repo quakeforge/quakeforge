@@ -95,7 +95,7 @@ GIB_Exec_Override_f (void)
 	Hunk_FreeToLowMark (mark);
 }
 
-void
+VISIBLE void
 GIB_Init (qboolean sandbox)
 {
 	// Override the exec command with a GIB-aware one

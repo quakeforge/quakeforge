@@ -186,7 +186,7 @@ static builtin_t builtins[] = {
 	{0}
 };
 
-void
+VISIBLE void
 GIB_Progs_Init (progs_t *pr)
 {
 	bi_gib_resources_t *res = malloc (sizeof (bi_gib_resources_t));

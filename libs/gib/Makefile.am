@@ -1,5 +1,5 @@
 AUTOMAKE_OPTIONS= foreign
-AM_CFLAGS= @PREFER_PIC@
+CFLAGS+= @PREFER_PIC@
 INCLUDES= -I$(top_srcdir)/include
 
 lib_LTLIBRARIES= libQFgib.la

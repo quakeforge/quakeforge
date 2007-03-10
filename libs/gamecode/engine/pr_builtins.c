@@ -89,7 +89,7 @@ builtin_next (progs_t *pr)
 	return pr->bi_next++;
 }
 
-void
+VISIBLE void
 PR_RegisterBuiltins (progs_t *pr, builtin_t *builtins)
 {
 	builtin_t  *bi;
@@ -130,7 +130,7 @@ PR_RegisterBuiltins (progs_t *pr, builtin_t *builtins)
 	}
 }
 
-builtin_t *
+VISIBLE builtin_t *
 PR_FindBuiltin (progs_t *pr, const char *name)
 {
 	return (builtin_t *) Hash_Find (pr->builtin_hash, name);
@@ -158,7 +158,7 @@ bi_no_function (progs_t *pr)
 	PR_RunError (pr, "Bad builtin called: %s = #%d", bi_name, ind);
 }
 
-int
+VISIBLE int
 PR_RelocateBuiltins (progs_t *pr)
 {
 	int         i, ind;

@@ -503,7 +503,7 @@ R_DrawViewModel (void)
 	VectorSubtract (r_origin, r_entorigin, modelorg);
 
 	VectorCopy (vup, viewlightvec);
-	VectorInverse (viewlightvec);
+	VectorNegate (viewlightvec, viewlightvec);
 
 	minlight = max (currententity->min_light, currententity->model->min_light);
 

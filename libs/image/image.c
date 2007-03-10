@@ -45,7 +45,7 @@ static __attribute__ ((used)) const char rcsid[] =
 #include "QF/quakefs.h"
 #include "QF/tga.h"
 
-tex_t *
+VISIBLE tex_t *
 LoadImage (const char *imageFile)
 {
 	int         tmp;

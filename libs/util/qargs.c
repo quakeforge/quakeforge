@@ -59,11 +59,11 @@ static const char *safeargvs[] =
 
 #define NUM_SAFE_ARGVS ((int) (sizeof(safeargvs)/sizeof(safeargvs[0])))
 
-int         com_argc;
-const char **com_argv;
+VISIBLE int         com_argc;
+VISIBLE const char **com_argv;
 const char *com_cmdline;
 
-qboolean    nouse = false;				// 1999-10-29 +USE fix by Maddes
+VISIBLE qboolean    nouse = false;		// 1999-10-29 +USE fix by Maddes
 
 
 /*
@@ -72,7 +72,7 @@ qboolean    nouse = false;				// 1999-10-29 +USE fix by Maddes
 	Returns the position (1 to argc-1) in the program's argument list
 	where the given parameter apears, or 0 if not present
 */
-int
+VISIBLE int
 COM_CheckParm (const char *parm)
 {
 	int         i;
@@ -88,7 +88,7 @@ COM_CheckParm (const char *parm)
 	return 0;
 }
 
-void
+VISIBLE void
 COM_InitArgv (int argc, const char **argv)
 {
 	qboolean    safe;

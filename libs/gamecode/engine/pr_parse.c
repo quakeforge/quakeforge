@@ -108,7 +108,7 @@ PR_UglyValueString (progs_t *pr, etype_t type, pr_type_t *val)
 	return line;
 }
 
-plitem_t *
+VISIBLE plitem_t *
 ED_EntityDict (progs_t *pr, edict_t *ed)
 {
 	plitem_t   *entity = PL_NewDictionary ();
@@ -150,7 +150,7 @@ ED_EntityDict (progs_t *pr, edict_t *ed)
 	FIXME: need to tag constants, doesn't really work
 */
 
-plitem_t *
+VISIBLE plitem_t *
 ED_GlobalsDict (progs_t *pr)
 {
 	plitem_t   *globals = PL_NewDictionary ();
@@ -209,7 +209,7 @@ ED_NewString (progs_t *pr, const char *string)
 	Can parse either fields or globals
 	returns false if error
 */
-qboolean
+VISIBLE qboolean
 ED_ParseEpair (progs_t *pr, pr_type_t *base, ddef_t *key, const char *s)
 {
 	int			i;
@@ -286,7 +286,7 @@ ED_ParseEpair (progs_t *pr, pr_type_t *base, ddef_t *key, const char *s)
 	to call ED_CallSpawnFunctions () to let the objects initialize themselves.
 */
 
-plitem_t *
+VISIBLE plitem_t *
 ED_ConvertToPlist (progs_t *pr, script_t *script)
 {
 	plitem_t   *plist = PL_NewArray ();
@@ -335,7 +335,7 @@ ED_ConvertToPlist (progs_t *pr, script_t *script)
 }
 
 
-void
+VISIBLE void
 ED_InitGlobals (progs_t *pr, plitem_t *globals)
 {
 	ddef_t     *global;
@@ -360,7 +360,7 @@ ED_InitGlobals (progs_t *pr, plitem_t *globals)
 	PL_Free (keys);
 }
 
-void
+VISIBLE void
 ED_InitEntity (progs_t *pr, plitem_t *entity, edict_t *ent)
 {
 	ddef_t     *field;
@@ -439,7 +439,7 @@ ED_SpawnEntities (progs_t *pr, plitem_t *entity_list)
 	}
 }
 
-void
+VISIBLE void
 ED_LoadFromFile (progs_t *pr, const char *data)
 {
 	script_t	*script;
@@ -471,7 +471,7 @@ ED_LoadFromFile (progs_t *pr, const char *data)
 	}
 }
 
-void
+VISIBLE void
 ED_EntityParseFunction (progs_t *pr)
 {
 	pr->edict_parse = P_FUNCTION (pr, 0);

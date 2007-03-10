@@ -91,7 +91,7 @@ calc_impact (trace_t *trace, const vec3_t start, const vec3_t end,
 	VectorMultAdd (start, frac, dist, trace->endpos);
 }
 
-qboolean
+VISIBLE qboolean
 MOD_TraceLine (hull_t *hull, int num,
 			   const vec3_t start_point, const vec3_t end_point,
 			   trace_t *trace)

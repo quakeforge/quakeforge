@@ -55,9 +55,9 @@ static __attribute__ ((used)) const char rcsid[] =
 
 byte        mod_novis[MAX_MAP_LEAFS / 8];
 
-cvar_t		*gl_sky_divide;
+VISIBLE cvar_t		*gl_sky_divide; //FIXME visibility?
 
-mleaf_t    *
+VISIBLE mleaf_t *
 Mod_PointInLeaf (const vec3_t p, model_t *model)
 {
 	float       d;
@@ -117,7 +117,7 @@ Mod_DecompressVis (byte * in, model_t *model)
 	return decompressed;
 }
 
-byte *
+VISIBLE byte *
 Mod_LeafPVS (mleaf_t *leaf, model_t *model)
 {
 	if (leaf == model->leafs)

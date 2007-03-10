@@ -49,7 +49,7 @@ static const char mond[12] = { 31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31 };
 
 
 /* returns days since Dec 21 1999 */
-int
+VISIBLE int
 build_number (void)
 {
 	int			m = 0;

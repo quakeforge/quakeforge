@@ -48,35 +48,35 @@ plugin_list_t   cd_plugin_list[] = {
 	CD_PLUGIN_LIST
 };
 
-void
+VISIBLE void
 CDAudio_Pause (void)
 {
 	if (cdmodule)
 		cdmodule->functions->cd->pCDAudio_Pause ();
 }
 
-void
+VISIBLE void
 CDAudio_Play (int track, qboolean looping)
 {
 	if (cdmodule)
 		cdmodule->functions->cd->pCDAudio_Play (track, looping);
 }
 
-void
+VISIBLE void
 CDAudio_Resume (void)
 {
 	if (cdmodule)
 		cdmodule->functions->cd->pCDAudio_Resume ();
 }
 
-void
+VISIBLE void
 CDAudio_Shutdown (void)
 {
 	if (cdmodule)
 		cdmodule->functions->general->p_Shutdown ();
 }
 
-void
+VISIBLE void
 CDAudio_Update (void)
 {
 	if (cdmodule)
@@ -90,7 +90,7 @@ CD_f (void)
 		cdmodule->functions->cd->pCD_f ();
 }
 
-int
+VISIBLE int
 CDAudio_Init (void)
 {
 	PI_RegisterPlugins (cd_plugin_list);

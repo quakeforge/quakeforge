@@ -83,19 +83,19 @@ struct QFile_s {
 };
 
 
-int
+VISIBLE int
 Qrename (const char *old, const char *new)
 {
 	return rename (old, new);
 }
 
-int
+VISIBLE int
 Qremove (const char *path)
 {
 	return remove (path);
 }
 
-int
+VISIBLE int
 Qfilesize (QFile *file)
 {
 	return file->size;
@@ -159,7 +159,7 @@ file_mode (const char *mode, char *out)
 	return flags;
 }
 
-QFile *
+VISIBLE QFile *
 Qopen (const char *path, const char *mode)
 {
 	QFile      *file;
@@ -205,7 +205,7 @@ Qopen (const char *path, const char *mode)
 	return file;
 }
 
-QFile *
+VISIBLE QFile *
 Qdopen (int fd, const char *mode)
 {
 	QFile      *file;
@@ -249,7 +249,7 @@ Qdopen (int fd, const char *mode)
 	return file;
 }
 
-QFile *
+VISIBLE QFile *
 Qfopen (FILE *file, const char *mode)
 {
 	QFile      *qfile;
@@ -267,7 +267,7 @@ Qfopen (FILE *file, const char *mode)
 	return qfile;
 }
 
-QFile *
+VISIBLE QFile *
 Qsubopen (const char *path, int offs, int len, int zip)
 {
 	int         fd = open (path, O_RDONLY);
@@ -286,7 +286,7 @@ Qsubopen (const char *path, int offs, int len, int zip)
 	return file;
 }
 
-void
+VISIBLE void
 Qclose (QFile *file)
 {
 	if (file->file)
@@ -298,7 +298,7 @@ Qclose (QFile *file)
 	free (file);
 }
 
-int
+VISIBLE int
 Qread (QFile *file, void *buf, int count)
 {
 	int         offs = 0;
@@ -323,7 +323,7 @@ Qread (QFile *file, void *buf, int count)
 	return ret == -1 ? ret : ret + offs;
 }
 
-int
+VISIBLE int
 Qwrite (QFile *file, const void *buf, int count)
 {
 	if (file->file)
@@ -336,7 +336,7 @@ Qwrite (QFile *file, const void *buf, int count)
 #endif
 }
 
-int
+VISIBLE int
 Qprintf (QFile *file, const char *fmt, ...)
 {
 	va_list     args;
@@ -364,7 +364,7 @@ Qprintf (QFile *file, const char *fmt, ...)
 	return ret;
 }
 
-int
+VISIBLE int
 Qputs (QFile *file, const char *buf)
 {
 	if (file->file)
@@ -377,7 +377,7 @@ Qputs (QFile *file, const char *buf)
 #endif
 }
 
-char *
+VISIBLE char *
 Qgets (QFile *file, char *buf, int count)
 {
 	char        *ret = buf;
@@ -401,7 +401,7 @@ Qgets (QFile *file, char *buf, int count)
 	return buf ? ret : 0;
 }
 
-int
+VISIBLE int
 Qgetc (QFile *file)
 {
 	if (file->c != -1) {
@@ -419,7 +419,7 @@ Qgetc (QFile *file)
 #endif
 }
 
-int
+VISIBLE int
 Qputc (QFile *file, int c)
 {
 	if (file->file)
@@ -432,7 +432,7 @@ Qputc (QFile *file, int c)
 #endif
 }
 
-int
+VISIBLE int
 Qungetc (QFile *file, int c)
 {
 	if (file->c == -1)
@@ -440,7 +440,7 @@ Qungetc (QFile *file, int c)
 	return c;
 }
 
-int
+VISIBLE int
 Qseek (QFile *file, long offset, int whence)
 {
 	file->c = -1;
@@ -482,7 +482,7 @@ Qseek (QFile *file, long offset, int whence)
 #endif
 }
 
-long
+VISIBLE long
 Qtell (QFile *file)
 {
 	int         offs;
@@ -500,7 +500,7 @@ Qtell (QFile *file)
 	return ret == -1 ? ret : ret - offs;
 }
 
-int
+VISIBLE int
 Qflush (QFile *file)
 {
 	if (file->file)
@@ -513,7 +513,7 @@ Qflush (QFile *file)
 #endif
 }
 
-int
+VISIBLE int
 Qeof (QFile *file)
 {
 	if (file->c != -1)
@@ -533,7 +533,7 @@ Qeof (QFile *file)
 
 	Dynamic length version of Qgets. DO NOT free the buffer.
 */
-const char *
+VISIBLE const char *
 Qgetline (QFile *file)
 {
 	static int  size = 256;

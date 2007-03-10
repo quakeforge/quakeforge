@@ -333,7 +333,7 @@ D_SpriteCalculateGradients (void)
 	TransformVector (r_spritedesc.vpn, p_normal);
 	TransformVector (r_spritedesc.vright, p_saxis);
 	TransformVector (r_spritedesc.vup, p_taxis);
-	VectorInverse (p_taxis);
+	VectorNegate (p_taxis, p_taxis);
 
 	distinv = 1.0 / (-DotProduct (modelorg, r_spritedesc.vpn));
 

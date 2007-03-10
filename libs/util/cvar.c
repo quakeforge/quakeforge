@@ -57,21 +57,21 @@ static __attribute__ ((used)) const char rcsid[] =
 #define USER_RO_CVAR "User-created READ-ONLY Cvar"
 #define USER_CVAR "User-created cvar"
 
-cvar_t          *developer;
-cvar_t			*cvar_vars;
-const char      *cvar_null_string = "";
-cvar_alias_t	*calias_vars;
-hashtab_t		*cvar_hash;
-hashtab_t		*calias_hash;
+VISIBLE cvar_t          *developer;
+VISIBLE cvar_t			*cvar_vars;
+static const char		*cvar_null_string = "";
+static cvar_alias_t		*calias_vars;
+static hashtab_t		*cvar_hash;
+static hashtab_t		*calias_hash;
 
 
-cvar_t *
+VISIBLE cvar_t *
 Cvar_FindVar (const char *var_name)
 {
 	return (cvar_t*) Hash_Find (cvar_hash, var_name);
 }
 
-cvar_t *
+VISIBLE cvar_t *
 Cvar_FindAlias (const char *alias_name)
 {
 	cvar_alias_t *alias;
@@ -108,7 +108,7 @@ Cvar_Alias_Get (const char *name, cvar_t *cvar)
 	}
 }
 
-float
+VISIBLE float
 Cvar_VariableValue (const char *var_name)
 {
 	cvar_t     *var;
@@ -121,7 +121,7 @@ Cvar_VariableValue (const char *var_name)
 	return atof (var->string);
 }
 
-const char *
+VISIBLE const char *
 Cvar_VariableString (const char *var_name)
 {
 	cvar_t     *var;
@@ -134,7 +134,7 @@ Cvar_VariableString (const char *var_name)
 	return var->string;
 }
 
-const char *
+VISIBLE const char *
 Cvar_CompleteVariable (const char *partial)
 {
 	cvar_t     *cvar;
@@ -176,7 +176,7 @@ Cvar_CompleteVariable (const char *partial)
 	Added by EvilTypeGuy
 	Thanks to Fett erich@heintz.com
 */
-int
+VISIBLE int
 Cvar_CompleteCountPossible (const char *partial)
 {
 	cvar_t	*cvar;
@@ -205,7 +205,7 @@ Cvar_CompleteCountPossible (const char *partial)
 	Thanks to Fett erich@heintz.com
 	Thanks to taniwha
 */
-const char	**
+VISIBLE const char	**
 Cvar_CompleteBuildList (const char *partial)
 {
 	cvar_t	*cvar;
@@ -227,7 +227,7 @@ Cvar_CompleteBuildList (const char *partial)
 	return buf;
 }	
 
-void
+VISIBLE void
 Cvar_Set (cvar_t *var, const char *value)
 {
 	int     changed;
@@ -282,7 +282,7 @@ Cvar_SetROM (cvar_t *var, const char *value)
 		var->callback (var);
 }
 
-void
+VISIBLE void
 Cvar_SetValue (cvar_t *var, float value)
 {
 	Cvar_Set (var, va ("%g", value));
@@ -293,7 +293,7 @@ Cvar_SetValue (cvar_t *var, float value)
 
 	Handles variable inspection and changing from the console
 */
-qboolean
+VISIBLE qboolean
 Cvar_Command (void)
 {
 	cvar_t     *v;
@@ -321,7 +321,7 @@ Cvar_Command (void)
 	Writes lines containing "seta variable value" for all variables
 	with the archive flag set to true.
 */
-void
+VISIBLE void
 Cvar_WriteVariables (QFile *f)
 {
 	cvar_t     *var;
@@ -465,14 +465,14 @@ calias_get_key (void *c, void *unused)
 	return calias->name;
 }
 
-void
+VISIBLE void
 Cvar_Init_Hash (void)
 {
 	cvar_hash = Hash_NewTable (1021, cvar_get_key, cvar_free, 0);
 	calias_hash = Hash_NewTable (1021, calias_get_key, calias_free, 0);
 }
 
-void
+VISIBLE void
 Cvar_Init (void)
 {
 	developer = Cvar_Get ("developer", "0", CVAR_NONE, NULL,
@@ -515,7 +515,7 @@ Cvar_Shutdown (void)
 	}
 }
 
-cvar_t *
+VISIBLE cvar_t *
 Cvar_Get (const char *name, const char *string, int cvarflags,
 		  void (*callback)(cvar_t*), const char *description)
 {
@@ -570,7 +570,7 @@ Cvar_Get (const char *name, const char *string, int cvarflags,
 
 	sets a Cvar's flags simply and easily
 */
-void
+VISIBLE void
 Cvar_SetFlags (cvar_t *var, int cvarflags)
 {
 	if (var == NULL)

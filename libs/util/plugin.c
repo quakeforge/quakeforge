@@ -234,7 +234,7 @@ PI_Plugin_Unload_f (void)
 	Eventually this function will likely initialize libltdl. It doesn't, yet,
 	since we aren't using libltdl yet.
 */
-void
+VISIBLE void
 PI_Init (void)
 {
 	PI_InitCvars ();
@@ -262,7 +262,7 @@ PI_Shutdown (void)
 	
 }
 
-plugin_t *
+VISIBLE plugin_t *
 PI_LoadPlugin (const char *type, const char *name)
 {
 	char			realname[4096];
@@ -378,7 +378,7 @@ PI_LoadPlugin (const char *type, const char *name)
 	return plugin;
 }
 
-qboolean
+VISIBLE qboolean
 PI_UnloadPlugin (plugin_t *plugin)
 {
 	if (plugin
@@ -399,7 +399,7 @@ PI_UnloadPlugin (plugin_t *plugin)
 	return pi_close_lib (plugin->handle);
 }
 
-void
+VISIBLE void
 PI_RegisterPlugins (plugin_list_t *plugins)
 {
 	while (plugins->name)

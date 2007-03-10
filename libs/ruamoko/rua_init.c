@@ -52,7 +52,7 @@ static void (*init_funcs[])(progs_t *, int) = {
 	RUA_String_Init,
 };
 
-void
+VISIBLE void
 RUA_Init (progs_t *pr, int secure)
 {
 	size_t      i;

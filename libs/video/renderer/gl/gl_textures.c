@@ -552,7 +552,7 @@ GL_Upload8 (byte *data, int width, int height, qboolean mipmap, qboolean alpha)
 	free (trans);
 }
 
-int
+VISIBLE int
 GL_LoadTexture (const char *identifier, int width, int height, byte *data,
 				qboolean mipmap, qboolean alpha, int bytesperpixel)
 {

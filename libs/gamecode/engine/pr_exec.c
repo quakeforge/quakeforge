@@ -55,7 +55,7 @@ static __attribute__ ((used)) const char rcsid[] =
 
 	Aborts the currently executing function
 */
-void
+VISIBLE void
 PR_RunError (progs_t * pr, const char *error, ...)
 {
 	dstring_t  *string = dstring_new ();
@@ -75,7 +75,7 @@ PR_RunError (progs_t * pr, const char *error, ...)
 	PR_Error (pr, "Program error: %s", string->str);
 }
 
-inline void
+VISIBLE inline void
 PR_PushFrame (progs_t *pr)
 {
 	prstack_t  *frame;
@@ -93,7 +93,7 @@ PR_PushFrame (progs_t *pr)
 	pr->pr_xfunction = 0;
 }
 
-inline void
+VISIBLE inline void
 PR_PopFrame (progs_t *pr)
 {
 	prstack_t  *frame;
@@ -276,7 +276,7 @@ signal_hook (int sig, void *data)
 	return 0;
 }
 
-int
+VISIBLE int
 PR_CallFunction (progs_t *pr, func_t fnum)
 {
 	dfunction_t *f;
@@ -299,7 +299,7 @@ PR_CallFunction (progs_t *pr, func_t fnum)
 
 	The interpretation main loop
 */
-void
+VISIBLE void
 PR_ExecuteProgram (progs_t * pr, func_t fnum)
 {
 	int				exitdepth, profile, startprofile;

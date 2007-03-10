@@ -54,7 +54,7 @@ static __attribute__ ((used)) const char rcsid[] =
 
 #include "compat.h"
 
-int   mod_lightmap_bytes = 3;
+VISIBLE int   mod_lightmap_bytes = 3;	//FIXME should this be visible?
 
 
 void

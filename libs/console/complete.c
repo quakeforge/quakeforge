@@ -53,6 +53,7 @@ static __attribute__ ((used)) const char rcsid[] =
   Thanks to Fett erich@heintz.com
   Thanks to taniwha
 */
+__attribute__((visibility ("default")))
 void
 Con_BasicCompleteCommandLine (inputline_t *il)
 {

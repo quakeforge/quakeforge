@@ -115,6 +115,7 @@ filelist_print (filelist_t *filelist)
 	}
 }
 
+__attribute__ ((visibility ("default")))
 void
 Con_Maplist_f (void)
 {
@@ -126,6 +127,7 @@ Con_Maplist_f (void)
 	QFS_FilelistFree (maplist);
 }
 
+__attribute__ ((visibility ("default")))
 void
 Con_Skinlist_f (void)
 {
@@ -147,6 +149,7 @@ const char *sb_endings[] = {
 0
 };
 
+__attribute__ ((visibility ("default")))
 void
 Con_Skyboxlist_f (void)
 {
@@ -184,6 +187,7 @@ Con_Skyboxlist_f (void)
 	QFS_FilelistFree (skyboxlist);
 }
 
+__attribute__ ((visibility ("default")))
 void
 Con_Demolist_QWD_f (void)
 {
@@ -197,6 +201,7 @@ Con_Demolist_QWD_f (void)
 	return;
 }
 
+__attribute__ ((visibility ("default")))
 void
 Con_Demolist_DEM_f (void)
 {

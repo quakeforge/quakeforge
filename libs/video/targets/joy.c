@@ -71,13 +71,13 @@ struct joy_axis joy_axes[JOY_MAX_AXES];
 struct joy_button joy_buttons[JOY_MAX_BUTTONS];
 
 
-void
+VISIBLE void
 JOY_Command (void)
 {
 	JOY_Read ();
 }
 
-void
+VISIBLE void
 JOY_Move (void)
 {
 	float       mult_joy;
@@ -149,7 +149,7 @@ JOY_Move (void)
 	}
 }
 
-void
+VISIBLE void
 JOY_Init (void)
 {
 	int     i;
@@ -185,7 +185,7 @@ joyamp_f (cvar_t *var)
 	Cvar_Set (var, va ("%g", max (0.0001, var->value)));
 }
 
-void
+VISIBLE void
 JOY_Init_Cvars (void)
 {
 	int         i;
@@ -206,7 +206,7 @@ JOY_Init_Cvars (void)
 	}
 }
 
-void
+VISIBLE void
 JOY_Shutdown (void)
 {
 	if (!joy_active)

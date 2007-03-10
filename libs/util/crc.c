@@ -76,19 +76,19 @@ static unsigned short crctable[256] = {
 };
 
 
-void
+VISIBLE void
 CRC_Init (unsigned short *crcvalue)
 {
 	*crcvalue = CRC_INIT_VALUE;
 }
 
-void
+VISIBLE void
 CRC_ProcessByte (unsigned short *crcvalue, byte data)
 {
 	*crcvalue = (*crcvalue << 8) ^ crctable[(*crcvalue >> 8) ^ data];
 }
 
-void
+VISIBLE void
 CRC_ProcessBlock (byte *start, unsigned short *crcvalue, int count)
 {
 	unsigned short crc = *crcvalue;
@@ -103,7 +103,7 @@ CRC_Value (unsigned short crcvalue)
 	return crcvalue ^ CRC_XOR_VALUE;
 }
 
-unsigned short
+VISIBLE unsigned short
 CRC_Block (byte *start, int count)
 {
 	unsigned short crc;

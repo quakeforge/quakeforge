@@ -124,9 +124,9 @@ cvar_t     *fs_userpath;
 cvar_t     *fs_sharepath;
 cvar_t     *fs_dirconf;
 
-const char *qfs_userpath;
+VISIBLE const char *qfs_userpath;
 
-int         qfs_filesize;
+VISIBLE int qfs_filesize;
 
 searchpath_t *qfs_searchpaths;
 
@@ -139,7 +139,7 @@ typedef struct qfs_var_s {
 
 static void QFS_AddGameDirectory (const char *dir);
 
-gamedir_t  *qfs_gamedir;
+VISIBLE gamedir_t  *qfs_gamedir;
 static plitem_t *qfs_gd_plist;
 static const char *qfs_game = "";
 static const char *qfs_default_dirconf =
@@ -567,7 +567,7 @@ no_config:
 	qfs_gd_plist = PL_GetPropertyList (qfs_default_dirconf);
 }
 
-char *
+VISIBLE char *
 QFS_FileBase (const char *in)
 {
 	const char *slash, *dot, *s;
@@ -614,7 +614,7 @@ QFS_Path_f (void)
 
 	The filename will be prefixed by the current game directory
 */
-void
+VISIBLE void
 QFS_WriteFile (const char *filename, const void *data, int len)
 {
 	QFile      *f;
@@ -633,7 +633,7 @@ QFS_WriteFile (const char *filename, const void *data, int len)
 
 	The filename will be prefixed by the current game directory
 */
-void
+VISIBLE void
 QFS_WriteBuffers (const char *filename, int count, ...)
 {
 	va_list     args;
@@ -657,7 +657,7 @@ QFS_WriteBuffers (const char *filename, int count, ...)
 	va_end (args);
 }
 
-int
+VISIBLE int
 QFS_CreatePath (const char *path)
 {
 	char       *ofs;
@@ -695,7 +695,7 @@ QFS_OpenRead (const char *path, int offs, int len, int zip)
 	return file;
 }
 
-char *
+VISIBLE char *
 QFS_CompressPath (const char *pth)
 {
 	char       *p, *d;
@@ -769,7 +769,7 @@ contains_updir (const char *path, int levels)
 	return 0;
 }
 
-int file_from_pak; // global indicating file came from pack file ZOID
+VISIBLE int file_from_pak; // global indicating file came from pack file ZOID
 
 /*
 	QFS_FOpenFile
@@ -827,7 +827,7 @@ open_file (searchpath_t *search, const char *filename, QFile **gzfile,
 	return -1;
 }
 
-int
+VISIBLE int
 _QFS_FOpenFile (const char *filename, QFile **gzfile,
 				dstring_t *foundname, int zip)
 {
@@ -889,7 +889,7 @@ ok:
 	return qfs_filesize;
 }
 
-int
+VISIBLE int
 QFS_FOpenFile (const char *filename, QFile **gzfile)
 {
 	return _QFS_FOpenFile (filename, gzfile, 0, 1);
@@ -905,7 +905,7 @@ int         loadsize;
 	Filename are relative to the quake directory.
 	Always appends a 0 byte to the loaded data.
 */
-byte *
+VISIBLE byte *
 QFS_LoadFile (const char *path, int usehunk)
 {
 	QFile      *h;
@@ -949,19 +949,19 @@ QFS_LoadFile (const char *path, int usehunk)
 	return buf;
 }
 
-byte       *
+VISIBLE byte *
 QFS_LoadHunkFile (const char *path)
 {
 	return QFS_LoadFile (path, 1);
 }
 
-byte       *
+VISIBLE byte *
 QFS_LoadTempFile (const char *path)
 {
 	return QFS_LoadFile (path, 2);
 }
 
-void
+VISIBLE void
 QFS_LoadCacheFile (const char *path, struct cache_user_s *cu)
 {
 	loadcache = cu;
@@ -969,7 +969,7 @@ QFS_LoadCacheFile (const char *path, struct cache_user_s *cu)
 }
 
 // uses temp hunk if larger than bufsize
-byte       *
+VISIBLE byte *
 QFS_LoadStackFile (const char *path, void *buffer, int bufsize)
 {
 	byte       *buf;
@@ -1167,7 +1167,7 @@ QFS_AddGameDirectory (const char *dir)
 
 	Sets the gamedir and path to a different directory.
 */
-void
+VISIBLE void
 QFS_Gamedir (const char *dir)
 {
 	int         i;
@@ -1189,7 +1189,7 @@ QFS_Gamedir (const char *dir)
 
 	Kludge to fix all the stuff that changing gamedirs breaks
 */
-void
+VISIBLE void
 QFS_GamedirCallback (gamedir_callback_t *func)
 {
 	if (num_gamedir_callbacks == MAX_GAMEDIR_CALLBACKS) {
@@ -1236,7 +1236,7 @@ expand_squiggle (const char *path)
 	return strdup (path);
 }
 
-void
+VISIBLE void
 QFS_Init (const char *game)
 {
 	int         i;
@@ -1285,7 +1285,7 @@ QFS_Init (const char *game)
 	}
 }
 
-const char *
+VISIBLE const char *
 QFS_SkipPath (const char *pathname)
 {
 	const char *last;
@@ -1299,7 +1299,7 @@ QFS_SkipPath (const char *pathname)
 	return last;
 }
 
-void
+VISIBLE void
 QFS_StripExtension (const char *in, char *out)
 {
 	char       *tmp;
@@ -1310,7 +1310,7 @@ QFS_StripExtension (const char *in, char *out)
 		*tmp = 0;
 }
 
-const char *
+VISIBLE const char *
 QFS_FileExtension (const char *in)
 {
 	char       *tmp;
@@ -1321,7 +1321,7 @@ QFS_FileExtension (const char *in)
 	return in;
 }
 
-void
+VISIBLE void
 QFS_DefaultExtension (char *path, const char *extension)
 {
 	char       *src;
@@ -1339,7 +1339,7 @@ QFS_DefaultExtension (char *path, const char *extension)
 	strncat (path, extension, MAX_OSPATH - strlen (path));
 }
 
-int
+VISIBLE int
 QFS_NextFilename (dstring_t *filename, const char *prefix, const char *ext)
 {
 	char       *digits;
@@ -1359,7 +1359,7 @@ QFS_NextFilename (dstring_t *filename, const char *prefix, const char *ext)
 	return 0;
 }
 
-QFile *
+VISIBLE QFile *
 QFS_Open (const char *path, const char *mode)
 {
 	dstring_t  *full_path = dstring_new ();
@@ -1388,7 +1388,7 @@ done:
 	return file;
 }
 
-QFile *
+VISIBLE QFile *
 QFS_WOpen (const char *path, int zip)
 {
 	char        mode[5] = "wb\000\000\000";
@@ -1400,7 +1400,7 @@ QFS_WOpen (const char *path, int zip)
 	return QFS_Open (path, mode);
 }
 
-int
+VISIBLE int
 QFS_Rename (const char *old, const char *new)
 {
 	dstring_t  *full_old = dstring_new ();
@@ -1416,7 +1416,7 @@ QFS_Rename (const char *old, const char *new)
 	return ret;
 }
 
-int
+VISIBLE int
 QFS_Remove (const char *path)
 {
 	dstring_t  *full_path = dstring_new ();
@@ -1428,13 +1428,13 @@ QFS_Remove (const char *path)
 	return ret;
 }
 
-filelist_t *
+VISIBLE filelist_t *
 QFS_FilelistNew (void)
 {
 	return calloc (1, sizeof (filelist_t));
 }
 
-void
+VISIBLE void
 QFS_FilelistAdd (filelist_t *filelist, const char *fname, const char *ext)
 {
 	char      **new_list;
@@ -1459,7 +1459,7 @@ QFS_FilelistAdd (filelist_t *filelist, const char *fname, const char *ext)
 	filelist->list[filelist->count++] = str;
 }
 
-void
+VISIBLE void
 QFS_FilelistFill (filelist_t *list, const char *path, const char *ext,
 				  int strip)
 {
@@ -1494,7 +1494,7 @@ QFS_FilelistFill (filelist_t *list, const char *path, const char *ext,
 	}
 }
 
-void
+VISIBLE void
 QFS_FilelistFree (filelist_t *list)
 {
 	int         i;

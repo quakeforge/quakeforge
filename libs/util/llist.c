@@ -52,7 +52,7 @@ llist_newnode (llist_t *list, void *data)
 	return node;
 }
 
-llist_t *
+VISIBLE llist_t *
 llist_new (void (*freedata)(void *element, void *userdata), qboolean (*cmpdata)(const void *element, const void *comparison, void *userdata), void *userdata)
 {
 	llist_t *new = calloc (1, sizeof (llist_t));
@@ -64,7 +64,7 @@ llist_new (void (*freedata)(void *element, void *userdata), qboolean (*cmpdata)(
 	return new;
 }
 
-void
+VISIBLE void
 llist_flush (llist_t *list)
 {
 	llist_node_t *node, *next;
@@ -80,7 +80,7 @@ llist_flush (llist_t *list)
 	list->start = list->end = 0;
 }
 
-void
+VISIBLE void
 llist_delete (llist_t *list)
 {
 	if (!list)
@@ -90,7 +90,7 @@ llist_delete (llist_t *list)
 	free (list);
 }
 
-llist_node_t *
+VISIBLE llist_node_t *
 llist_append (llist_t *list, void *element)
 {
 	llist_node_t *node = llist_newnode (list, element);
@@ -107,7 +107,7 @@ llist_append (llist_t *list, void *element)
 	return node;
 }
 
-llist_node_t *
+VISIBLE llist_node_t *
 llist_prefix (llist_t *list, void *element)
 {
 	llist_node_t *node = llist_newnode (list, element);
@@ -125,7 +125,7 @@ llist_prefix (llist_t *list, void *element)
 	return node;
 }
 
-llist_node_t *
+VISIBLE llist_node_t *
 llist_getnode (llist_t *list, void *element)
 {
 	llist_node_t *node;
@@ -139,7 +139,7 @@ llist_getnode (llist_t *list, void *element)
 	return 0;
 }
 
-llist_node_t *
+VISIBLE llist_node_t *
 llist_insertafter (llist_node_t *ref, void *element)
 {
 	llist_node_t *node = llist_newnode (ref->parent, element);
@@ -158,7 +158,7 @@ llist_insertafter (llist_node_t *ref, void *element)
 	return node;
 }
 
-llist_node_t *
+VISIBLE llist_node_t *
 llist_insertbefore (llist_node_t *ref, void *element)
 {
 	llist_node_t *node = llist_newnode (ref->parent, element);
@@ -177,7 +177,7 @@ llist_insertbefore (llist_node_t *ref, void *element)
 	return node;
 }
 
-void *
+VISIBLE void *
 llist_remove (llist_node_t *ref)
 {
 	void *element;
@@ -201,7 +201,7 @@ llist_remove (llist_node_t *ref)
 	return element;
 }
 
-unsigned int
+VISIBLE unsigned int
 llist_size (llist_t *llist)
 {
 	unsigned int i;
@@ -214,7 +214,7 @@ llist_size (llist_t *llist)
 	return i;
 }
 
-void
+VISIBLE void
 llist_iterate (llist_t *list, llist_iterator_t iterate)
 {
 	llist_node_t *node;
@@ -229,7 +229,7 @@ llist_iterate (llist_t *list, llist_iterator_t iterate)
 	list->iter = 0;
 }
 
-void *
+VISIBLE void *
 llist_find (llist_t *list, void *comparison)
 {
 	llist_node_t *node;
@@ -242,7 +242,7 @@ llist_find (llist_t *list, void *comparison)
 	return 0;
 }
 
-llist_node_t *
+VISIBLE llist_node_t *
 llist_findnode (llist_t *list, void *comparison)
 {
 	llist_node_t *node;
@@ -255,7 +255,7 @@ llist_findnode (llist_t *list, void *comparison)
 	return 0;
 }
 
-void *
+VISIBLE void *
 llist_createarray (llist_t *list, size_t esize)
 {
 	void *ptr, *array = malloc (llist_size (list) * esize);

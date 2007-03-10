@@ -56,7 +56,7 @@ static unsigned int translate32[256];
 static int player_width = 296;
 static int player_height = 194;
 
-void
+VISIBLE void
 Skin_Set_Translate (int top, int bottom, void *_dest)
 {
 	int         i;
@@ -182,7 +182,7 @@ build_skin (int texnum, byte *ptexels, int width, int height,
 	}
 }
 
-void
+VISIBLE void
 Skin_Do_Translation (skin_t *player_skin, int slot, skin_t *skin)
 {
 	byte       *original;
@@ -204,7 +204,7 @@ Skin_Do_Translation (skin_t *player_skin, int slot, skin_t *skin)
 				player_width, player_height, false);
 }
 
-void
+VISIBLE void
 Skin_Do_Translation_Model (model_t *model, int skinnum, int slot, skin_t *skin)
 {
 	byte       *original;
@@ -238,7 +238,7 @@ Skin_Do_Translation_Model (model_t *model, int skinnum, int slot, skin_t *skin)
 	Cache_Release (&model->cache);
 }
 
-void
+VISIBLE void
 Skin_Player_Model (model_t *model)
 {
 	aliashdr_t *paliashdr;
@@ -256,7 +256,7 @@ Skin_Player_Model (model_t *model)
 	Cache_Release (&model->cache);
 }
 
-void
+VISIBLE void
 Skin_Init_Translation (void)
 {
 	int         i;
@@ -267,7 +267,7 @@ Skin_Init_Translation (void)
 	}
 }
 
-void
+VISIBLE void
 Skin_Process (skin_t *skin, tex_t *tex)
 {
 	int pixels = tex->width * tex->height;

@@ -91,7 +91,7 @@ COM_insert (cbuf_t *cbuf, const char *str)
 static dstring_t *_com_token;
 const char *com_token;
 
-const char *
+VISIBLE const char *
 COM_Parse (const char *data)
 {
 	int         c;
@@ -138,7 +138,7 @@ done:
 	return data + i;
 }
 
-void
+VISIBLE void
 COM_TokenizeString (const char *str, cbuf_args_t *args)
 {
 	const char *s;
@@ -236,7 +236,7 @@ COM_execute_sets (cbuf_t *cbuf)
 	}
 }
 
-cbuf_interpreter_t id_interp = {
+VISIBLE cbuf_interpreter_t id_interp = {
 	COM_construct,
 	COM_destruct,
 	COM_reset,

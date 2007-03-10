@@ -53,7 +53,7 @@ static __attribute__ ((used)) const char rcsid[] =
 
 #include "compat.h"
 
-byte		player_8bit_texels[640 * 400];
+VISIBLE byte		player_8bit_texels[640 * 400];
 
 
 // a pose is a single set of vertexes.  a frame may be

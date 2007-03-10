@@ -47,11 +47,11 @@ static __attribute__ ((used)) const char rcsid[] =
 #include "QF/qtypes.h"
 #include "QF/sys.h"
 
-int			nanmask = 255 << 23;
+VISIBLE int nanmask = 255 << 23;
 static mplane_t _frustum[4];
-mplane_t   *const frustum = _frustum;
+VISIBLE mplane_t   *const frustum = _frustum;
 static vec3_t _vec3_origin = { 0, 0, 0 };
-const vec_t * const vec3_origin = _vec3_origin;
+VISIBLE const vec_t * const vec3_origin = _vec3_origin;
 
 #define DEG2RAD(a) (a * (M_PI / 180.0))
 
@@ -100,7 +100,7 @@ PerpendicularVector (vec3_t dst, const vec3_t src)
 # pragma optimize( "", off )
 #endif
 
-void
+VISIBLE void
 VectorVectors(const vec3_t forward, vec3_t right, vec3_t up)
 {
 	float d;
@@ -115,7 +115,7 @@ VectorVectors(const vec3_t forward, vec3_t right, vec3_t up)
 	CrossProduct(right, forward, up);
 }
 
-void
+VISIBLE void
 RotatePointAroundVector (vec3_t dst, const vec3_t axis, const vec3_t point,
 						 float degrees)
 {
@@ -169,7 +169,7 @@ RotatePointAroundVector (vec3_t dst, const vec3_t axis, const vec3_t point,
 	}
 }
 
-void
+VISIBLE void
 QuatMult (const quat_t v1, const quat_t v2, quat_t out)
 {
 	vec_t      s;
@@ -186,7 +186,7 @@ QuatMult (const quat_t v1, const quat_t v2, quat_t out)
 # pragma optimize( "", on )
 #endif
 
-float
+VISIBLE float
 anglemod (float a)
 {
 	a = (360.0 / 65536) * ((int) (a * (65536 / 360.0)) & 65535);
@@ -199,7 +199,7 @@ anglemod (float a)
 	Split out like this for ASM to call.
 */
 void __attribute__ ((noreturn)) BOPS_Error (void);
-void __attribute__ ((noreturn))
+VISIBLE void __attribute__ ((noreturn))
 BOPS_Error (void)
 {
 	Sys_Error ("BoxOnPlaneSide:  Bad signbits");
@@ -212,7 +212,7 @@ BOPS_Error (void)
 
 	Returns 1, 2, or 1 + 2
 */
-int
+VISIBLE int
 BoxOnPlaneSide (const vec3_t emins, const vec3_t emaxs, mplane_t *p)
 {
 	float       dist1, dist2;
@@ -353,7 +353,7 @@ BoxOnPlaneSide (const vec3_t emins, const vec3_t emaxs, mplane_t *p)
 		[-right]	-ve due to left handed to right handed conversion
 		[up]
 */
-void
+VISIBLE void
 AngleVectors (const vec3_t angles, vec3_t forward, vec3_t right, vec3_t up)
 {
 	float       angle, sr, sp, sy, cr, cp, cy;
@@ -381,7 +381,7 @@ AngleVectors (const vec3_t angles, vec3_t forward, vec3_t right, vec3_t up)
 	up[2] = cr * cp;
 }
 
-int
+VISIBLE int
 _VectorCompare (const vec3_t v1, const vec3_t v2)
 {
 	int         i;
@@ -393,7 +393,7 @@ _VectorCompare (const vec3_t v1, const vec3_t v2)
 	return 1;
 }
 
-void
+VISIBLE void
 _VectorMA (const vec3_t veca, float scale, const vec3_t vecb, vec3_t vecc)
 {
 	vecc[0] = veca[0] + scale * vecb[0];
@@ -401,13 +401,13 @@ _VectorMA (const vec3_t veca, float scale, const vec3_t vecb, vec3_t vecc)
 	vecc[2] = veca[2] + scale * vecb[2];
 }
 
-vec_t
+VISIBLE vec_t
 _DotProduct (const vec3_t v1, const vec3_t v2)
 {
 	return v1[0] * v2[0] + v1[1] * v2[1] + v1[2] * v2[2];
 }
 
-void
+VISIBLE void
 _VectorSubtract (const vec3_t veca, const vec3_t vecb, vec3_t out)
 {
 	out[0] = veca[0] - vecb[0];
@@ -415,7 +415,7 @@ _VectorSubtract (const vec3_t veca, const vec3_t vecb, vec3_t out)
 	out[2] = veca[2] - vecb[2];
 }
 
-void
+VISIBLE void
 _VectorAdd (const vec3_t veca, const vec3_t vecb, vec3_t out)
 {
 	out[0] = veca[0] + vecb[0];
@@ -423,7 +423,7 @@ _VectorAdd (const vec3_t veca, const vec3_t vecb, vec3_t out)
 	out[2] = veca[2] + vecb[2];
 }
 
-void
+VISIBLE void
 _VectorCopy (const vec3_t in, vec3_t out)
 {
 	out[0] = in[0];
@@ -431,7 +431,7 @@ _VectorCopy (const vec3_t in, vec3_t out)
 	out[2] = in[2];
 }
 
-void
+VISIBLE void
 CrossProduct (const vec3_t v1, const vec3_t v2, vec3_t cross)
 {
 	float v10 = v1[0];
@@ -446,7 +446,7 @@ CrossProduct (const vec3_t v1, const vec3_t v2, vec3_t cross)
 	cross[2] = v10 * v21 - v11 * v20;
 }
 
-vec_t
+VISIBLE vec_t
 _VectorLength (const vec3_t v)
 {
 	float		length;
@@ -455,7 +455,7 @@ _VectorLength (const vec3_t v)
 	return length;
 }
 
-vec_t
+VISIBLE vec_t
 _VectorNormalize (vec3_t v)
 {
 	int         i;
@@ -474,15 +474,7 @@ _VectorNormalize (vec3_t v)
 	return length;
 }
 
-void
-VectorInverse (vec3_t v)
-{
-	v[0] = -v[0];
-	v[1] = -v[1];
-	v[2] = -v[2];
-}
-
-void
+VISIBLE void
 _VectorScale (const vec3_t in, vec_t scale, vec3_t out)
 {
 	out[0] = in[0] * scale;
@@ -490,7 +482,7 @@ _VectorScale (const vec3_t in, vec_t scale, vec3_t out)
 	out[2] = in[2] * scale;
 }
 
-int
+VISIBLE int
 Q_log2 (int val)
 {
 	int         answer = 0;
@@ -500,7 +492,7 @@ Q_log2 (int val)
 	return answer;
 }
 
-void
+VISIBLE void
 R_ConcatRotations (float in1[3][3], float in2[3][3], float out[3][3])
 {
 	out[0][0] = in1[0][0] * in2[0][0] + in1[0][1] * in2[1][0] +
@@ -523,7 +515,7 @@ R_ConcatRotations (float in1[3][3], float in2[3][3], float out[3][3])
 		in1[2][2] * in2[2][2];
 }
 
-void
+VISIBLE void
 R_ConcatTransforms (float in1[3][4], float in2[3][4], float out[3][4])
 {
 	out[0][0] = in1[0][0] * in2[0][0] + in1[0][1] * in2[1][0] +
@@ -559,7 +551,7 @@ R_ConcatTransforms (float in1[3][4], float in2[3][4], float out[3][4])
 	numer and denom, both of which should contain no fractional part. The
 	quotient must fit in 32 bits.
 */
-void
+VISIBLE void
 FloorDivMod (double numer, double denom, int *quotient, int *rem)
 {
 	double		x;
@@ -594,7 +586,7 @@ FloorDivMod (double numer, double denom, int *quotient, int *rem)
 	*rem = r;
 }
 
-int
+VISIBLE int
 GreatestCommonDivisor (int i1, int i2)
 {
 	if (i1 > i2) {
@@ -614,7 +606,7 @@ GreatestCommonDivisor (int i1, int i2)
 
   Inverts an 8.24 value to a 16.16 value
 */
-fixed16_t
+VISIBLE fixed16_t
 Invert24To16 (fixed16_t val)
 {
 	if (val < 256)

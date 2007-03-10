@@ -76,8 +76,8 @@ static __attribute__ ((used)) const char rcsid[] =
 static void Sys_StdPrintf (const char *fmt, va_list args);
 static void Sys_ErrPrintf (const char *fmt, va_list args);
 
-cvar_t     *sys_nostdout;
-cvar_t     *sys_extrasleep;
+VISIBLE cvar_t *sys_nostdout;
+VISIBLE cvar_t *sys_extrasleep;
 cvar_t     *sys_dead_sleep;
 cvar_t     *sys_sleep;
 
@@ -99,7 +99,7 @@ qboolean    stdin_ready;
 #endif
 
 /* The translation table between the graphical font and plain ASCII  --KB */
-const char sys_char_map[256] = {
+VISIBLE const char sys_char_map[256] = {
 	'\0', '#', '#', '#', '#', '.', '#', '#',
 	'#', 9, 10, '#', ' ', 13, '.', '.',
 	'[', ']', '0', '1', '2', '3', '4', '5',
@@ -169,7 +169,7 @@ Sys_mkdir (const char *path)
 	return 0;
 }
 
-int
+VISIBLE int
 Sys_FileTime (const char *path)
 {
 #ifdef HAVE_ACCESS
@@ -192,13 +192,13 @@ Sys_FileTime (const char *path)
 	for want of a better name, but it sets the function pointer for the
 	actual implementation of Sys_Printf.
 */
-void
+VISIBLE void
 Sys_SetStdPrintf (sys_printf_t func)
 {
 	sys_std_printf_function = func;
 }
 
-void
+VISIBLE void
 Sys_SetErrPrintf (sys_printf_t func)
 {
 	sys_err_printf_function = func;
@@ -246,7 +246,7 @@ Sys_ErrPrintf (const char *fmt, va_list args)
 	Sys_Print (stderr, fmt, args);
 }
 
-void
+VISIBLE void
 Sys_Printf (const char *fmt, ...)
 {
 	va_list     args;
@@ -255,7 +255,7 @@ Sys_Printf (const char *fmt, ...)
 	va_end (args);
 }
 
-void
+VISIBLE void
 Sys_DPrintf (const char *fmt, ...)
 {
 	va_list     args;
@@ -267,7 +267,7 @@ Sys_DPrintf (const char *fmt, ...)
 	va_end (args);
 }
 
-double
+VISIBLE double
 Sys_DoubleTime (void)
 {
 	static qboolean first = true;
@@ -309,7 +309,7 @@ Sys_DoubleTime (void)
 #endif
 }
 
-void
+VISIBLE void
 Sys_TimeOfDay (date_t *date)
 {
 	struct tm  *newtime;
@@ -364,7 +364,7 @@ Sys_MakeCodeWriteable (unsigned long startaddr, unsigned long length)
 #endif
 }
 
-void
+VISIBLE void
 Sys_Init_Cvars (void)
 {
 	sys_nostdout = Cvar_Get ("sys_nostdout", "0", CVAR_NONE, NULL,
@@ -397,7 +397,7 @@ Sys_Shutdown (void)
 	}
 }
 
-void
+VISIBLE void
 Sys_Quit (void)
 {
 	Sys_Shutdown ();
@@ -413,7 +413,7 @@ Sys_Quit (void)
 # define VA_COPY(a,b) memcpy (a, b, sizeof (a))
 #endif
 
-void
+VISIBLE void
 Sys_Error (const char *error, ...)
 {
 	va_list     args;
@@ -442,7 +442,7 @@ Sys_Error (const char *error, ...)
 	exit (1);
 }
 
-void
+VISIBLE void
 Sys_RegisterShutdown (void (*func) (void))
 {
 	shutdown_list_t *p;
@@ -456,7 +456,7 @@ Sys_RegisterShutdown (void (*func) (void))
 	shutdown_list = p;
 }
 
-int
+VISIBLE int
 Sys_TimeID (void) //FIXME I need a new name, one that doesn't make me feel 3 feet thick
 {
 	int val;
@@ -468,7 +468,7 @@ Sys_TimeID (void) //FIXME I need a new name, one that doesn't make me feel 3 fee
 	return val;
 }
 
-void
+VISIBLE void
 Sys_PageIn (void *ptr, int size)
 {
 //may or may not be useful in linux #ifdef _WIN32
@@ -489,7 +489,7 @@ Sys_PageIn (void *ptr, int size)
 //#endif
 }
 
-void
+VISIBLE void
 Sys_DebugLog (const char *file, const char *fmt, ...)
 {
 	va_list     args;
@@ -509,7 +509,7 @@ Sys_DebugLog (const char *file, const char *fmt, ...)
 	}
 }
 
-int
+VISIBLE int
 Sys_CheckInput (int idle, int net_socket)
 {
 	fd_set      fdset;
@@ -564,7 +564,7 @@ Sys_CheckInput (int idle, int net_socket)
 	Checks for a complete line of text typed in at the console, then forwards
 	it to the host command processor
 */
-const char *
+VISIBLE const char *
 Sys_ConsoleInput (void)
 {
 	static char text[256];
@@ -632,7 +632,7 @@ static sh_stack_t *free_sh;
 static int (*signal_hook)(int,void*);
 static void *signal_hook_data;
 
-void
+VISIBLE void
 Sys_PushSignalHook (int (*hook)(int, void *), void *data)
 {
 	sh_stack_t *s;
@@ -653,7 +653,7 @@ Sys_PushSignalHook (int (*hook)(int, void *), void *data)
 	sh_stack = s;
 }
 
-void
+VISIBLE void
 Sys_PopSignalHook (void)
 {
 	if (sh_stack) {
@@ -734,7 +734,7 @@ signal_handler (int sig)
 	}
 }
 
-void
+VISIBLE void
 Sys_Init (void)
 {
 	// catch signals

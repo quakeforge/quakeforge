@@ -398,7 +398,7 @@ R_AliasSetUpTransform (int trivial_accept)
 // TODO: should be global, set when vright, etc., set
 	VectorCopy (vright, viewmatrix[0]);
 	VectorCopy (vup, viewmatrix[1]);
-	VectorInverse (viewmatrix[1]);
+	VectorNegate (viewmatrix[1], viewmatrix[1]);
 	VectorCopy (vpn, viewmatrix[2]);
 
 //	viewmatrix[0][3] = 0;

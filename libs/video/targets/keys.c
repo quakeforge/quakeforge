@@ -60,11 +60,11 @@ static __attribute__ ((used)) const char rcsid[] =
 
 cvar_t     *in_bind_imt;
 
-keydest_t   key_dest = key_console;
-imt_t		game_target = IMT_CONSOLE;
+VISIBLE keydest_t   key_dest = key_console;
+VISIBLE imt_t		game_target = IMT_CONSOLE;
 
-struct keybind_s keybindings[IMT_LAST][QFK_LAST];
-int			keydown[QFK_LAST];
+VISIBLE struct keybind_s keybindings[IMT_LAST][QFK_LAST];
+VISIBLE int			keydown[QFK_LAST];
 
 static int  keyhelp;
 static cbuf_t *cbuf;
@@ -513,7 +513,7 @@ Key_StringToKeynum (const char *str)
   Returns a string (a QFK_* name) for the given keynum.
   FIXME: handle quote special (general escape sequence?)
 */
-const char *
+VISIBLE const char *
 Key_KeynumToString (knum_t keynum)
 {
 	keyname_t  *kn;
@@ -782,7 +782,7 @@ keyhelp_f (void)
   Called by the system between frames for both key up and key down events
   Should NOT be called during an interrupt!
 */
-void
+VISIBLE void
 Key_Event (knum_t key, short unicode, qboolean down)
 {
 //  Con_Printf ("%d %d %d : %d\n", game_target, key_dest, key, down); //@@@
@@ -880,7 +880,7 @@ Key_GetBinding (imt_t imt, knum_t key)
 	return keybindings[imt][key].str;
 }
 
-void
+VISIBLE void
 Key_SetBinding (imt_t target, knum_t keynum, const char *binding)
 {
 	if (keynum == (knum_t) -1)

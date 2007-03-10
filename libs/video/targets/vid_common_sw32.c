@@ -41,7 +41,7 @@ static __attribute__ ((used)) const char rcsid[] =
 
 
 
-unsigned short d_8to16table[256];
+VISIBLE unsigned short d_8to16table[256];
 unsigned char d_15to8table[65536];
 
 
@@ -203,7 +203,7 @@ VID_MakeColormaps (int fullbrights, byte *pal)
 	VID_MakeColormap32(vid.colormap32, pal);
 }
 
-void
+VISIBLE void
 VID_InitBuffers (void)
 {
 	int         buffersize, zbuffersize, cachesize = 1;
@@ -260,7 +260,7 @@ VID_InitBuffers (void)
 		vid.init_caches (vid.surfcache, cachesize);
 }
 
-void
+VISIBLE void
 VID_ShiftPalette (unsigned char *p)
 {
 	VID_SetPalette (p);

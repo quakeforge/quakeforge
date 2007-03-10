@@ -43,7 +43,7 @@ static __attribute__ ((used)) const char rcsid[] =
 #include "QF/zone.h"
 
 
-void
+VISIBLE void
 SZ_Alloc (sizebuf_t *buf, int startsize)
 {
 	if (startsize < 256)
@@ -53,14 +53,14 @@ SZ_Alloc (sizebuf_t *buf, int startsize)
 	buf->cursize = 0;
 }
 
-void
+VISIBLE void
 SZ_Clear (sizebuf_t *buf)
 {
 	buf->cursize = 0;
 	buf->overflowed = false;
 }
 
-void       *
+VISIBLE void *
 SZ_GetSpace (sizebuf_t *buf, int length)
 {
 	void       *data;
@@ -85,13 +85,13 @@ getspace:
 	goto getspace;
 }
 
-void
+VISIBLE void
 SZ_Write (sizebuf_t *buf, const void *data, int length)
 {
 	memcpy (SZ_GetSpace (buf, length), data, length);
 }
 
-void
+VISIBLE void
 SZ_Print (sizebuf_t *buf, const char *data)
 {
 	int         len;

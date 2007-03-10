@@ -48,7 +48,7 @@ static __attribute__ ((used)) const char rcsid[] =
 
 hashtab_t *opcode_table;
 
-int			pr_type_size[ev_type_count] = {
+VISIBLE int pr_type_size[ev_type_count] = {
 	1,			// ev_void
 	1,			// ev_string
 	1,			// ev_float
@@ -68,7 +68,7 @@ int			pr_type_size[ev_type_count] = {
 	0,			// ev_array        variable
 };
 
-const char	*pr_type_name[ev_type_count] = {
+VISIBLE const char *pr_type_name[ev_type_count] = {
 	"void",
 	"string",
 	"float",
@@ -98,7 +98,7 @@ const char	*pr_type_name[ev_type_count] = {
 // a  operand a
 // b  operand b
 // c  operand c
-opcode_t pr_opcodes[] = {
+VISIBLE opcode_t pr_opcodes[] = {
 	{"<DONE>", "done", OP_DONE, false,
 	 ev_entity, ev_field, ev_void,
 	 PROG_ID_VERSION,
@@ -1168,7 +1168,7 @@ PR_Opcode (short opcode)
 	return Hash_FindElement (opcode_table, &op);
 }
 
-void
+VISIBLE void
 PR_Opcode_Init (void)
 {
 	opcode_t   *op;

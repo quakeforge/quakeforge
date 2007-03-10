@@ -234,7 +234,7 @@ do { \
 	return bsp;
 }
 
-bsp_t *
+VISIBLE bsp_t *
 LoadBSPFile (QFile *file, int size)
 {
 	void       *buf;
@@ -252,7 +252,7 @@ LoadBSPFile (QFile *file, int size)
 
 	Swaps the bsp file in place, so it should not be referenced again
 */
-void
+VISIBLE void
 WriteBSPFile (bsp_t *bsp, QFile *file)
 {		
 	int         size;
@@ -327,13 +327,13 @@ do { \
 	free (header);
 }
 
-bsp_t *
+VISIBLE bsp_t *
 BSP_New (void)
 {
 	return calloc (1, sizeof (bsp_t));
 }
 
-void
+VISIBLE void
 BSP_AddPlane (bsp_t *bsp, dplane_t *plane)
 {
 	bsp->planes = realloc (bsp->planes,
@@ -341,7 +341,7 @@ BSP_AddPlane (bsp_t *bsp, dplane_t *plane)
 	bsp->planes[bsp->numplanes++] = *plane;
 }
 
-void
+VISIBLE void
 BSP_AddLeaf (bsp_t *bsp, dleaf_t *leaf)
 {
 	bsp->leafs = realloc (bsp->leafs,
@@ -349,7 +349,7 @@ BSP_AddLeaf (bsp_t *bsp, dleaf_t *leaf)
 	bsp->leafs[bsp->numleafs++] = *leaf;
 }
 
-void
+VISIBLE void
 BSP_AddVertex (bsp_t *bsp, dvertex_t *vertex)
 {
 	bsp->vertexes = realloc (bsp->vertexes,
@@ -357,7 +357,7 @@ BSP_AddVertex (bsp_t *bsp, dvertex_t *vertex)
 	bsp->vertexes[bsp->numvertexes++] = *vertex;
 }
 
-void
+VISIBLE void
 BSP_AddNode (bsp_t *bsp, dnode_t *node)
 {
 	bsp->nodes = realloc (bsp->nodes,
@@ -365,7 +365,7 @@ BSP_AddNode (bsp_t *bsp, dnode_t *node)
 	bsp->nodes[bsp->numnodes++] = *node;
 }
 
-void
+VISIBLE void
 BSP_AddTexinfo (bsp_t *bsp, texinfo_t *texinfo)
 {
 	bsp->texinfo = realloc (bsp->texinfo,
@@ -373,7 +373,7 @@ BSP_AddTexinfo (bsp_t *bsp, texinfo_t *texinfo)
 	bsp->texinfo[bsp->numtexinfo++] = *texinfo;
 }
 
-void
+VISIBLE void
 BSP_AddFace (bsp_t *bsp, dface_t *face)
 {
 	bsp->faces = realloc (bsp->faces,
@@ -381,7 +381,7 @@ BSP_AddFace (bsp_t *bsp, dface_t *face)
 	bsp->faces[bsp->numfaces++] = *face;
 }
 
-void
+VISIBLE void
 BSP_AddClipnode (bsp_t *bsp, dclipnode_t *clipnode)
 {
 	bsp->clipnodes = realloc (bsp->clipnodes,
@@ -389,7 +389,7 @@ BSP_AddClipnode (bsp_t *bsp, dclipnode_t *clipnode)
 	bsp->clipnodes[bsp->numclipnodes++] = *clipnode;
 }
 
-void
+VISIBLE void
 BSP_AddMarkSurface (bsp_t *bsp, unsigned short marksurface)
 {
 	bsp->marksurfaces = realloc (bsp->marksurfaces,
@@ -398,7 +398,7 @@ BSP_AddMarkSurface (bsp_t *bsp, unsigned short marksurface)
 	bsp->marksurfaces[bsp->nummarksurfaces++] = marksurface;
 }
 
-void
+VISIBLE void
 BSP_AddSurfEdge (bsp_t *bsp, int surfedge)
 {
 	bsp->surfedges = realloc (bsp->surfedges,
@@ -406,7 +406,7 @@ BSP_AddSurfEdge (bsp_t *bsp, int surfedge)
 	bsp->surfedges[bsp->numsurfedges++] = surfedge;
 }
 
-void
+VISIBLE void
 BSP_AddEdge (bsp_t *bsp, dedge_t *edge)
 {
 	bsp->edges = realloc (bsp->edges,
@@ -414,7 +414,7 @@ BSP_AddEdge (bsp_t *bsp, dedge_t *edge)
 	bsp->edges[bsp->numedges++] = *edge;
 }
 
-void
+VISIBLE void
 BSP_AddModel (bsp_t *bsp, dmodel_t *model)
 {
 	bsp->models = realloc (bsp->models,
@@ -422,7 +422,7 @@ BSP_AddModel (bsp_t *bsp, dmodel_t *model)
 	bsp->models[bsp->nummodels++] = *model;
 }
 
-void
+VISIBLE void
 BSP_AddLighting (bsp_t *bsp, byte *lightdata, int lightdatasize)
 {
 	bsp->lightdatasize = lightdatasize;
@@ -430,7 +430,7 @@ BSP_AddLighting (bsp_t *bsp, byte *lightdata, int lightdatasize)
 	memcpy (bsp->lightdata, lightdata, lightdatasize);
 }
 
-void
+VISIBLE void
 BSP_AddVisibility (bsp_t *bsp, byte *visdata, int visdatasize)
 {
 	bsp->visdatasize = visdatasize;
@@ -438,7 +438,7 @@ BSP_AddVisibility (bsp_t *bsp, byte *visdata, int visdatasize)
 	memcpy (bsp->visdata, visdata, visdatasize);
 }
 
-void
+VISIBLE void
 BSP_AddEntities (bsp_t *bsp, char *entdata, int entdatasize)
 {
 	bsp->entdatasize = entdatasize;
@@ -446,7 +446,7 @@ BSP_AddEntities (bsp_t *bsp, char *entdata, int entdatasize)
 	memcpy (bsp->entdata, entdata, entdatasize);
 }
 
-void
+VISIBLE void
 BSP_AddTextures (bsp_t *bsp, byte *texdata, int texdatasize)
 {
 	bsp->texdatasize = texdatasize;

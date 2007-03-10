@@ -74,7 +74,7 @@ wad_compare (void *la, void *lb, void *unused)
 					   ((lumpinfo_t *) lb)->name) == 0;
 }
 
-wad_t *
+VISIBLE wad_t *
 wad_new (const char *name)
 {
 	wad_t *wad = calloc (sizeof (*wad), 1);
@@ -96,7 +96,7 @@ wad_new (const char *name)
 	return wad;
 }
 
-void
+VISIBLE void
 wad_del (wad_t *wad)
 {
 	if (wad->lumps)
@@ -110,7 +110,7 @@ wad_del (wad_t *wad)
 	free (wad);
 }
 
-void
+VISIBLE void
 wad_rehash (wad_t *wad)
 {
 	int         i;
@@ -120,7 +120,7 @@ wad_rehash (wad_t *wad)
 	}
 }
 
-wad_t *
+VISIBLE wad_t *
 wad_open (const char *name)
 {
 	wad_t     *wad = wad_new (name);
@@ -169,7 +169,7 @@ error:
 	return 0;
 }
 
-wad_t *
+VISIBLE wad_t *
 wad_create (const char *name)
 {
 	wad_t     *wad = wad_new (name);
@@ -189,7 +189,7 @@ wad_create (const char *name)
 	return wad;
 }
 
-void
+VISIBLE void
 wad_close (wad_t *wad)
 {
 	int         i;
@@ -216,7 +216,7 @@ wad_close (wad_t *wad)
 	wad_del (wad);
 }
 
-int
+VISIBLE int
 wad_add (wad_t *wad, const char *filename, const char *lumpname, byte type)
 {
 	lumpinfo_t *pf;
@@ -271,7 +271,7 @@ wad_add (wad_t *wad, const char *filename, const char *lumpname, byte type)
 	return 0;
 }
 
-int
+VISIBLE int
 wad_add_data (wad_t *wad, const char *lumpname, byte type, const void *data,
 			  int bytes)
 {
@@ -318,7 +318,7 @@ wad_add_data (wad_t *wad, const char *lumpname, byte type, const void *data,
 	return 0;
 }
 
-lumpinfo_t *
+VISIBLE lumpinfo_t *
 wad_find_lump (wad_t *wad, const char *lumpname)
 {
 	lumpinfo_t  dummy;

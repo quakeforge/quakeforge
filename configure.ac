@@ -243,6 +243,24 @@ AH_VERBATIM([HAVE___ATTRIBUTE__],
 # define __attribute__(x)
 #endif])
 
+AC_MSG_CHECKING(for __attribute__ ((visibility)))
+AC_TRY_COMPILE(
+	[void foo (void);
+	__attribute__ ((sivibility ("default"))) void foo (void) {}],
+	[],
+	AC_DEFINE(HAVE___ATTRIBUTE__VISIBILITY)
+	AC_MSG_RESULT(yes),
+	AC_MSG_RESULT(no)
+)
+AH_VERBATIM([HAVE___ATTRIBUTE__VISIBILITY],
+[/* Define this if the GCC __attribute__ keyword is available */
+#undef HAVE___ATTRIBUTE__VISIBILITY
+#ifdef HAVE___ATTRIBUTE__VISIBILITY
+# define VISIBLE __attribute__((visibility ("default")))
+#else
+# define VISIBLE
+#endif])
+
 AC_MSG_CHECKING(for __builtin_expect)
 AC_TRY_COMPILE(
 	[long (*foo) (long, long) = __builtin_expect;],
@@ -2051,8 +2069,8 @@ if test "x$enable_shared" = xno; then
 	PREFER_PIC=
 	PREFER_NON_PIC=
 else
-	PREFER_PIC=-prefer-pic
-	PREFER_NON_PIC=-prefer-non-pic
+	PREFER_PIC="-prefer-pic -fvisibility=hidden"
+	PREFER_NON_PIC="-prefer-non-pic -fvisibility=hidden"
 fi
 if test "x$enable_static" = xno; then
 	STATIC=

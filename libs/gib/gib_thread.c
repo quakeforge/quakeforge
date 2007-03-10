@@ -86,7 +86,7 @@ GIB_Thread_Count (void)
 	return llist_size (gib_threads);
 }
 
-void
+VISIBLE void
 GIB_Thread_Execute (void)
 {
 	auto qboolean iterator (cbuf_t *cbuf, llist_node_t *node);
@@ -124,7 +124,7 @@ GIB_Event_Free (void *ele, void *ptr)
 	free (ev);
 }
 
-gib_event_t *
+VISIBLE gib_event_t *
 GIB_Event_New (const char *name)
 {
 	gib_event_t *new;
@@ -146,7 +146,7 @@ GIB_Event_Register (const char *name, gib_function_t * func)
 	return 0;
 }
 
-void
+VISIBLE void
 GIB_Event_Callback (gib_event_t * event, unsigned int argc, ...)
 {
 	gib_function_t *f = event->func;

@@ -662,7 +662,7 @@ LoadTGA (QFile *fin)
 	return tex;
 }
 
-void
+VISIBLE void
 WriteTGAfile (const char *tganame, byte *data, int width, int height)
 {
 	TargaHeader header;

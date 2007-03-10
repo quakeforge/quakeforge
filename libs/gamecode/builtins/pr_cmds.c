@@ -58,11 +58,11 @@ static U void (*const gib_progs_init)(progs_t *) = GIB_Progs_Init;
 static U void (*const inputline_progs_init)(progs_t *) = InputLine_Progs_Init;
 #undef U
 
-const char *pr_gametype = "";
+VISIBLE const char *pr_gametype = "";
 
 /* BUILT-IN FUNCTIONS */
 
-char *
+VISIBLE char *
 PF_VarString (progs_t *pr, int first)
 {
 	char	   *out;
@@ -662,7 +662,7 @@ static builtin_t builtins[] = {
 	{0}
 };
 
-void
+VISIBLE void
 PR_Cmds_Init (progs_t *pr)
 {
 	PR_RegisterBuiltins (pr, builtins);

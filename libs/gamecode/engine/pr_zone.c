@@ -54,19 +54,19 @@ PR_Zone_Init (progs_t *pr)
 	Z_ClearZone (pr->zone, pr->zone_size);
 }
 
-void
+VISIBLE void
 PR_Zone_Free (progs_t *pr, void *ptr)
 {
 	Z_Free (pr->zone, ptr);
 }
 
-void *
+VISIBLE void *
 PR_Zone_Malloc (progs_t *pr, int size)
 {
 	return Z_Malloc (pr->zone, size);
 }
 
-void *
+VISIBLE void *
 PR_Zone_Realloc (progs_t *pr, void *ptr, int size)
 {
 	return Z_Realloc (pr->zone, ptr, size);

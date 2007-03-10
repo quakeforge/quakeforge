@@ -77,7 +77,7 @@ vec3_t      modelorg, r_entorigin;
 entity_t   *currententity;
 
 int         r_visframecount;			// bumped when going to a new PVS
-int         r_framecount;				// used for dlight push checking
+VISIBLE int         r_framecount;				// used for dlight push checking
 
 int         c_brush_polys, c_alias_polys;
 
@@ -88,16 +88,16 @@ qboolean    mirror;
 mplane_t   *mirror_plane;
 
 // view origin
-vec3_t      vup;
-vec3_t      vpn;
-vec3_t      vright;
-vec3_t      r_origin;
+VISIBLE vec3_t      vup;
+VISIBLE vec3_t      vpn;
+VISIBLE vec3_t      vright;
+VISIBLE vec3_t      r_origin;
 
 float       r_world_matrix[16];
 float       r_base_world_matrix[16];
 
 // screen size info
-refdef_t    r_refdef;
+VISIBLE refdef_t    r_refdef;
 
 mleaf_t    *r_viewleaf, *r_oldviewleaf;
 
@@ -664,7 +664,7 @@ R_RenderView_ (void)
 
 static void R_RenderViewFishEye (void);
 
-void
+VISIBLE void
 R_RenderView (void)
 {
 	if(!scr_fisheye->int_val)

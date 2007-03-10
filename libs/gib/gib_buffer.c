@@ -331,7 +331,7 @@ cbuf_interpreter_t gib_interp = {
 	GIB_Execute,
 };
 
-cbuf_interpreter_t *
+VISIBLE cbuf_interpreter_t *
 GIB_Interpreter (void)
 {
 	return &gib_interp;

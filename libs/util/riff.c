@@ -276,7 +276,7 @@ read_cue (QFile *f, int len)
 	return cue;
 }
 
-riff_t *
+VISIBLE riff_t *
 riff_read (QFile *f)
 {
 	dstring_t  *riff_buf;
@@ -463,7 +463,7 @@ free_list (riff_list_t *list)
 	free (list);
 }
 
-void
+VISIBLE void
 riff_free (riff_t *riff)
 {
 	riff_d_chunk_t **ck;

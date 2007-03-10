@@ -68,7 +68,7 @@ const char  rcsid[] =
 #include "gib_classes.h"
 
 static char _gib_null_string[] = "";
-char * const gib_null_string = _gib_null_string;
+VISIBLE char * const gib_null_string = _gib_null_string;
 
 hashtab_t  *gib_builtins;
 
@@ -96,7 +96,7 @@ GIB_Builtin_Free (void *ele, void *ptr)
 	Registers a new builtin GIB command.
 */
 
-void
+VISIBLE void
 GIB_Builtin_Add (const char *name, void (*func) (void))
 {
 	gib_builtin_t *new;
@@ -111,7 +111,7 @@ GIB_Builtin_Add (const char *name, void (*func) (void))
 	Hash_Add (gib_builtins, new);
 }
 
-void
+VISIBLE void
 GIB_Builtin_Remove (const char *name)
 {
 	gib_builtin_t *del;
@@ -120,7 +120,7 @@ GIB_Builtin_Remove (const char *name)
 		Hash_Free (gib_builtins, del);
 }
 
-qboolean
+VISIBLE qboolean
 GIB_Builtin_Exists (const char *name)
 {
 	return Hash_Find (gib_builtins, name) ? true : false;
@@ -133,7 +133,7 @@ GIB_Builtin_Exists (const char *name)
 	returning a pointer to the struct on success,
 	zero otherwise.
 */
-gib_builtin_t *
+VISIBLE gib_builtin_t *
 GIB_Builtin_Find (const char *name)
 {
 	if (!gib_builtins)
@@ -141,7 +141,7 @@ GIB_Builtin_Find (const char *name)
 	return (gib_builtin_t *) Hash_Find (gib_builtins, name);
 }
 
-dstring_t *
+VISIBLE dstring_t *
 GIB_Return (const char *str)
 {
 	dstring_t  *dstr;
@@ -157,7 +157,7 @@ GIB_Return (const char *str)
 	return 0;
 }
 
-void
+VISIBLE void
 GIB_Error (const char *type, const char *fmt, ...)
 {
 	va_list     args;

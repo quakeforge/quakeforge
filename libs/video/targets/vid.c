@@ -50,14 +50,14 @@ static __attribute__ ((used)) const char rcsid[] =
 #include "view.h"
 
 /* Software and hardware gamma support */
-byte		gammatable[256];
+VISIBLE byte		gammatable[256];
 cvar_t	   *vid_gamma;
 cvar_t	   *vid_system_gamma;
 cvar_t     *con_width; // FIXME: Try to move with rest of con code
 cvar_t     *con_height; // FIXME: Try to move with rest of con code
 qboolean	vid_gamma_avail;		// hardware gamma availability
 
-unsigned int	d_8to24table[256];
+VISIBLE unsigned int	d_8to24table[256];
 
 /* Screen size */
 int 		scr_width, scr_height;

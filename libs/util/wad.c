@@ -76,7 +76,7 @@ W_CleanupName (const char *in, char *out)
 		out[i] = 0;
 }
 
-void
+VISIBLE void
 W_LoadWadFile (const char *filename)
 {
 	lumpinfo_t *lump_p;
@@ -125,7 +125,7 @@ W_GetLumpinfo (const char *name)
 	return NULL;
 }
 
-void *
+VISIBLE void *
 W_GetLumpName (const char *name)
 {
 	lumpinfo_t *lump;
@@ -135,7 +135,7 @@ W_GetLumpName (const char *name)
 	return (void *) (wad_base + lump->filepos);
 }
 
-void
+VISIBLE void
 SwapPic (qpic_t *pic)
 {
 	pic->width = LittleLong (pic->width);

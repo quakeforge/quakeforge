@@ -40,7 +40,7 @@ static __attribute__ ((used)) const char rcsid[] =
 #include "QF/model.h"
 
 
-clip_hull_t *
+VISIBLE clip_hull_t *
 MOD_Alloc_Hull (int nodes, int planes)
 {
 	clip_hull_t *ch;
@@ -67,7 +67,7 @@ MOD_Alloc_Hull (int nodes, int planes)
 	return ch;
 }
 
-void
+VISIBLE void
 MOD_Free_Hull (clip_hull_t *ch)
 {
 	free (ch);

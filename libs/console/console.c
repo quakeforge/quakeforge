@@ -43,9 +43,10 @@ static __attribute__ ((used)) const char rcsid[] =
 #include "QF/plugin.h"
 #include "QF/sys.h"
 
-int         con_linewidth;				// characters across screen
+//FIXME probably shouldn't be visible
+int         con_linewidth __attribute__ ((visibility ("default")));				// characters across screen
 
-plugin_t *con_module;
+plugin_t *con_module __attribute__ ((visibility ("default")));
 
 #define U __attribute__ ((used))
 static U con_buffer_t *(*const buffer) (size_t, int) = Con_CreateBuffer;
@@ -54,6 +55,7 @@ static U inputline_t *(*const create)(int, int, char) = Con_CreateInputLine;
 static U void (*const display)(const char **, int) = Con_DisplayList;
 #undef U
 
+__attribute__ ((visibility ("default")))
 void
 Con_Init (const char *plugin_name)
 {
@@ -66,11 +68,13 @@ Con_Init (const char *plugin_name)
 	}
 }
 
+__attribute__ ((visibility ("default")))
 void
 Con_Init_Cvars (void)
 {
 }
 
+__attribute__ ((visibility ("default")))
 void
 Con_Shutdown (void)
 {
@@ -80,6 +84,7 @@ Con_Shutdown (void)
 	}
 }
 
+__attribute__ ((visibility ("default")))
 void
 Con_Printf (const char *fmt, ...)
 {
@@ -93,6 +98,7 @@ Con_Printf (const char *fmt, ...)
 	va_end (args);
 }
 
+__attribute__ ((visibility ("default")))
 void
 Con_Print (const char *fmt, va_list args)
 {
@@ -102,6 +108,7 @@ Con_Print (const char *fmt, va_list args)
 		vfprintf (stdout, fmt, args);
 }
 
+__attribute__ ((visibility ("default")))
 void
 Con_DPrintf (const char *fmt, ...)
 {
@@ -116,6 +123,7 @@ Con_DPrintf (const char *fmt, ...)
 	}
 }
 
+__attribute__ ((visibility ("default")))
 void
 Con_ProcessInput (void)
 {
@@ -131,6 +139,7 @@ Con_ProcessInput (void)
 	}
 }
 
+__attribute__ ((visibility ("default")))
 void
 Con_KeyEvent (knum_t key, short unicode, qboolean down)
 {
@@ -138,6 +147,7 @@ Con_KeyEvent (knum_t key, short unicode, qboolean down)
 		con_module->functions->console->pC_KeyEvent (key, unicode, down);
 }
 
+__attribute__ ((visibility ("default")))
 void
 Con_SetOrMask (int mask)
 {
@@ -145,6 +155,7 @@ Con_SetOrMask (int mask)
 		con_module->data->console->ormask = mask;
 }
 
+__attribute__ ((visibility ("default")))
 void
 Con_DrawConsole (void)
 {
@@ -152,6 +163,7 @@ Con_DrawConsole (void)
 		con_module->functions->console->pC_DrawConsole ();
 }
 
+__attribute__ ((visibility ("default")))
 void
 Con_CheckResize (void)
 {
@@ -159,6 +171,7 @@ Con_CheckResize (void)
 		con_module->functions->console->pC_CheckResize ();
 }
 
+__attribute__ ((visibility ("default")))
 void
 Con_NewMap (void)
 {

@@ -49,7 +49,7 @@ static __attribute__ ((used)) const char rcsid[] =
 #include "compat.h"
 
 
-tex_t *
+VISIBLE tex_t *
 LoadPCX (QFile *f, int convert, byte *pal)
 {
 	pcx_t      *pcx;
@@ -140,7 +140,7 @@ LoadPCX (QFile *f, int convert, byte *pal)
 	return tex;
 }
 
-pcx_t *
+VISIBLE pcx_t *
 EncodePCX (byte * data, int width, int height,
 		   int rowbytes, byte * palette, qboolean flip, int *length)
 {

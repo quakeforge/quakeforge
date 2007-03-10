@@ -117,7 +117,7 @@ readpng_init (QFile *infile, png_structp *png_ptr, png_infop *info_ptr)
 }
 
 /* Load the png file and return a texture */
-tex_t *
+VISIBLE tex_t *
 LoadPNG (QFile *infile)
 {
 	double			gamma;
@@ -196,7 +196,7 @@ LoadPNG (QFile *infile)
 
 #define WRITEPNG_BIT_DEPTH 8
 
-void 
+VISIBLE void 
 WritePNG (const char *fileName, byte *data, int width, int height)
 {
 	QFile      *outfile;
@@ -282,13 +282,13 @@ WritePNG (const char *fileName, byte *data, int width, int height)
 #include "QF/image.h"
 #include "QF/png.h"
 
-tex_t *
+VISIBLE tex_t *
 LoadPNG (QFile *infile)
 {
 	return 0;
 }
 
-void 
+VISIBLE void 
 WritePNG (const char *fileName, byte *data, int width, int height)
 {
 	return;

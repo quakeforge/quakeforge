@@ -93,7 +93,7 @@ free_hashlink (hashlink_t *link)
 	free_hashlinks = link;
 }
 
-unsigned long
+VISIBLE unsigned long
 Hash_String (const char *str)
 {
 #if 0
@@ -119,7 +119,7 @@ Hash_String (const char *str)
 #endif
 }
 
-unsigned long
+VISIBLE unsigned long
 Hash_Buffer (const void *_buf, int len)
 {
 	const unsigned char *buf = _buf;
@@ -182,7 +182,7 @@ get_index (unsigned long hash, size_t size, size_t bits)
 #endif
 }
 
-hashtab_t *
+VISIBLE hashtab_t *
 Hash_NewTable (int tsize, const char *(*gk)(void*,void*),
 			   void (*f)(void*,void*), void *ud)
 {
@@ -204,7 +204,7 @@ Hash_NewTable (int tsize, const char *(*gk)(void*,void*),
 	return tab;
 }
 
-void
+VISIBLE void
 Hash_SetHashCompare (hashtab_t *tab, unsigned long (*gh)(void*,void*),
 					 int (*cmp)(void*,void*,void*))
 {
@@ -212,14 +212,14 @@ Hash_SetHashCompare (hashtab_t *tab, unsigned long (*gh)(void*,void*),
 	tab->compare = cmp;
 }
 
-void
+VISIBLE void
 Hash_DelTable (hashtab_t *tab)
 {
 	Hash_FlushTable (tab);
 	free (tab);
 }
 
-void
+VISIBLE void
 Hash_FlushTable (hashtab_t *tab)
 {
 	size_t i;
@@ -238,7 +238,7 @@ Hash_FlushTable (hashtab_t *tab)
 	tab->num_ele = 0;
 }
 
-int
+VISIBLE int
 Hash_Add (hashtab_t *tab, void *ele)
 {
 	unsigned long h = Hash_String (tab->get_key(ele, tab->user_data));
@@ -257,7 +257,7 @@ Hash_Add (hashtab_t *tab, void *ele)
 	return 0;
 }
 
-int
+VISIBLE int
 Hash_AddElement (hashtab_t *tab, void *ele)
 {
 	unsigned long h = tab->get_hash (ele, tab->user_data);
@@ -276,7 +276,7 @@ Hash_AddElement (hashtab_t *tab, void *ele)
 	return 0;
 }
 
-void *
+VISIBLE void *
 Hash_Find (hashtab_t *tab, const char *key)
 {
 	unsigned long h = Hash_String (key);
@@ -291,7 +291,7 @@ Hash_Find (hashtab_t *tab, const char *key)
 	return 0;
 }
 
-void *
+VISIBLE void *
 Hash_FindElement (hashtab_t *tab, void *ele)
 {
 	unsigned long h = tab->get_hash (ele, tab->user_data);
@@ -306,7 +306,7 @@ Hash_FindElement (hashtab_t *tab, void *ele)
 	return 0;
 }
 
-void **
+VISIBLE void **
 Hash_FindList (hashtab_t *tab, const char *key)
 {
 	unsigned long h = Hash_String (key);
@@ -334,7 +334,7 @@ Hash_FindList (hashtab_t *tab, const char *key)
 	return list;
 }
 
-void **
+VISIBLE void **
 Hash_FindElementList (hashtab_t *tab, void *ele)
 {
 	unsigned long h = tab->get_hash (ele, tab->user_data);
@@ -362,7 +362,7 @@ Hash_FindElementList (hashtab_t *tab, void *ele)
 	return list;
 }
 
-void *
+VISIBLE void *
 Hash_Del (hashtab_t *tab, const char *key)
 {
 	unsigned long h = Hash_String (key);
@@ -385,7 +385,7 @@ Hash_Del (hashtab_t *tab, const char *key)
 	return 0;
 }
 
-void *
+VISIBLE void *
 Hash_DelElement (hashtab_t *tab, void *ele)
 {
 	unsigned long h = tab->get_hash (ele, tab->user_data);
@@ -408,20 +408,20 @@ Hash_DelElement (hashtab_t *tab, void *ele)
 	return 0;
 }
 
-void
+VISIBLE void
 Hash_Free (hashtab_t *tab, void *ele)
 {
 	if (ele && tab->free_ele)
 		tab->free_ele (ele, tab->user_data);
 }
 
-size_t
+VISIBLE size_t
 Hash_NumElements (hashtab_t *tab)
 {
 	return tab->num_ele;
 }
 
-void **
+VISIBLE void **
 Hash_GetList (hashtab_t *tab)
 {
 	void      **list;
@@ -448,7 +448,7 @@ sqr (double x)
 	return x * x;
 }
 
-void
+VISIBLE void
 Hash_Stats (hashtab_t *tab)
 {
 	int        *lengths = calloc (tab->tab_size, sizeof (int));

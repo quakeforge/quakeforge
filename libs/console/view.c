@@ -44,6 +44,7 @@ static __attribute__ ((used)) const char rcsid[] =
 
 #include "QF/view.h"
 
+__attribute__ ((visibility ("default")))
 view_t *
 view_new (int xp, int yp, int xl, int yl, grav_t grav)
 {
@@ -120,6 +121,7 @@ setgeometry (view_t *view)
 		setgeometry (view->children[i]);
 }
 
+__attribute__ ((visibility ("default")))
 void
 view_insert (view_t *par, view_t *view, int pos)
 {
@@ -144,12 +146,14 @@ view_insert (view_t *par, view_t *view, int pos)
 	setgeometry (view);
 }
 
+__attribute__ ((visibility ("default")))
 void
 view_add (view_t *par, view_t *view)
 {
 	view_insert (par, view, -1);
 }
 
+__attribute__ ((visibility ("default")))
 void
 view_remove (view_t *par, view_t *view)
 {
@@ -165,6 +169,7 @@ view_remove (view_t *par, view_t *view)
 	}
 }
 
+__attribute__ ((visibility ("default")))
 void
 view_delete (view_t *view)
 {
@@ -175,6 +180,7 @@ view_delete (view_t *view)
 	free (view);
 }
 
+__attribute__ ((visibility ("default")))
 void
 view_draw (view_t *view)
 {
@@ -209,6 +215,7 @@ _resize (view_t *view, int xl, int yl)
 	}
 }
 
+__attribute__ ((visibility ("default")))
 void
 view_resize (view_t *view, int xl, int yl)
 {
@@ -216,6 +223,7 @@ view_resize (view_t *view, int xl, int yl)
 	setgeometry (view);
 }
 
+__attribute__ ((visibility ("default")))
 void
 view_move (view_t *view, int xp, int yp)
 {

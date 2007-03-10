@@ -65,7 +65,7 @@ int         r_numallocatededges;
 qboolean    r_drawpolys;
 qboolean    r_drawculledpolys;
 qboolean    r_worldpolysbacktofront;
-int         r_pixbytes = 1;
+VISIBLE int         r_pixbytes = 1;
 float       r_aliasuvscale = 1.0;
 int         r_outofsurfaces;
 int         r_outofedges;
@@ -91,13 +91,13 @@ qboolean    r_fov_greater_than_90;
 entity_t    r_worldentity;
 
 // view origin
-vec3_t      vup, base_vup;
-vec3_t      vpn, base_vpn;
-vec3_t      vright, base_vright;
-vec3_t      r_origin;
+VISIBLE vec3_t      vup, base_vup;
+VISIBLE vec3_t      vpn, base_vpn;
+VISIBLE vec3_t      vright, base_vright;
+VISIBLE vec3_t      r_origin;
 
 // screen size info
-refdef_t    r_refdef;
+VISIBLE refdef_t    r_refdef;
 float       xcenter, ycenter;
 float       xscale, yscale;
 float       xscaleinv, yscaleinv;
@@ -114,7 +114,7 @@ float       xOrigin, yOrigin;
 mplane_t    screenedge[4];
 
 // refresh flags
-int         r_framecount = 1;	// so frame counts initialized to 0 don't match
+VISIBLE int         r_framecount = 1;	// so frame counts initialized to 0 don't match
 int         r_visframecount;
 int         d_spanpixcount;
 int         r_polycount;
@@ -170,7 +170,7 @@ R_Textures_Init (void)
 	}
 }
 
-void
+VISIBLE void
 R_Init (void)
 {
 	int         dummy;
@@ -213,7 +213,7 @@ R_Init_Cvars (void)
 }
 */
 
-void
+VISIBLE void
 R_NewMap (model_t *worldmodel, struct model_s **models, int num_models)
 {
 	int         i;
@@ -522,7 +522,7 @@ R_DrawViewModel (void)
 	VectorSubtract (r_origin, r_entorigin, modelorg);
 
 	VectorCopy (vup, viewlightvec);
-	VectorInverse (viewlightvec);
+	VectorNegate (viewlightvec, viewlightvec);
 
 	minlight = max (currententity->min_light, currententity->model->min_light);
 
@@ -882,7 +882,7 @@ R_RenderView_ (void)
 		Con_Printf ("Short roughly %d edges\n", r_outofedges * 2 / 3);
 }
 
-void
+VISIBLE void
 R_RenderView (void)
 {
 	int         dummy;

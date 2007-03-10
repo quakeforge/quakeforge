@@ -175,7 +175,7 @@ copy4 (unsigned char *out, uint32 x)
 	out[3] = (x >> 24) & 0xFF;
 }
 
-void
+VISIBLE void
 mdfour_begin (struct mdfour *md)
 {
 	md->A = 0x67452301;
@@ -214,7 +214,7 @@ mdfour_tail (const unsigned char *in, int n)
 	}
 }
 
-void
+VISIBLE void
 mdfour_update (struct mdfour *md, const unsigned char *in, int n)
 {
 	uint32      M[16];
@@ -235,7 +235,7 @@ mdfour_update (struct mdfour *md, const unsigned char *in, int n)
 	mdfour_tail (in, n);
 }
 
-void
+VISIBLE void
 mdfour_result (struct mdfour *md, unsigned char *out)
 {
 	m = md;
@@ -246,7 +246,7 @@ mdfour_result (struct mdfour *md, unsigned char *out)
 	copy4 (out + 12, m->D);
 }
 
-void
+VISIBLE void
 mdfour (unsigned char *out, const unsigned char *in, int n)
 {
 	struct mdfour md;

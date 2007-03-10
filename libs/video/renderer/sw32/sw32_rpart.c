@@ -54,7 +54,7 @@ R_InitParticles (void)
 {
 }
 
-void
+VISIBLE void
 R_ClearParticles (void)
 {
 	unsigned int i;
@@ -876,7 +876,7 @@ R_ParticleFunctionInit (void)
 	R_VoorTrail = R_VoorTrail_QF;
 }
 
-void
+VISIBLE void
 R_Particles_Init_Cvars (void)
 {
 	R_ParticleFunctionInit ();

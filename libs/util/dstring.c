@@ -57,7 +57,7 @@ dstring_realloc (void *data, void *ptr, size_t size)
 	return realloc (ptr, size);
 }
 
-dstring_mem_t dstring_default_mem = {
+VISIBLE dstring_mem_t dstring_default_mem = {
 	dstring_alloc,
 	dstring_free,
 	dstring_realloc,
@@ -77,13 +77,13 @@ _dstring_new (dstring_mem_t *mem)
 	return new;
 }
 
-dstring_t *
+VISIBLE dstring_t *
 dstring_new (void)
 {
 	return _dstring_new (&dstring_default_mem);
 }
 
-void
+VISIBLE void
 dstring_delete (dstring_t *dstr)
 {
 	if (dstr->str)
@@ -91,7 +91,7 @@ dstring_delete (dstring_t *dstr)
 	dstr->mem->free (dstr->mem->data, dstr);
 }
 
-inline void
+VISIBLE inline void
 dstring_adjust (dstring_t *dstr)
 {
 	if (dstr->size > dstr->truesize) {
@@ -103,7 +103,7 @@ dstring_adjust (dstring_t *dstr)
 	}
 }
 
-void
+VISIBLE void
 dstring_copy (dstring_t *dstr, const char *data, unsigned int len)
 {
 	dstr->size = len;
@@ -111,7 +111,7 @@ dstring_copy (dstring_t *dstr, const char *data, unsigned int len)
 	memcpy (dstr->str, data, len);
 }
 
-void
+VISIBLE void
 dstring_append (dstring_t *dstr, const char *data, unsigned int len)
 {
 	unsigned int ins = dstr->size;		// Save insertion point
@@ -121,7 +121,7 @@ dstring_append (dstring_t *dstr, const char *data, unsigned int len)
 	memcpy (dstr->str + ins, data, len);
 }
 
-void
+VISIBLE void
 dstring_insert (dstring_t *dstr, unsigned int pos, const char *data,
 				unsigned int len)
 {
@@ -135,7 +135,7 @@ dstring_insert (dstring_t *dstr, unsigned int pos, const char *data,
 	memcpy (dstr->str + pos, data, len);
 }
 
-void
+VISIBLE void
 dstring_snip (dstring_t *dstr, unsigned int pos, unsigned int len)
 {
 	if (pos > dstr->size)
@@ -149,14 +149,14 @@ dstring_snip (dstring_t *dstr, unsigned int pos, unsigned int len)
 	dstring_adjust (dstr);
 }
 
-void
+VISIBLE void
 dstring_clear (dstring_t *dstr)
 {
 	dstr->size = 0;
 	dstring_adjust (dstr);
 }
 
-void
+VISIBLE void
 dstring_replace (dstring_t *dstr, unsigned int pos, unsigned int rlen,
 				const char *data, unsigned int len)
 {
@@ -179,7 +179,7 @@ dstring_replace (dstring_t *dstr, unsigned int pos, unsigned int rlen,
 	memcpy (dstr->str + pos, data, len);
 }
 
-char *
+VISIBLE char *
 dstring_freeze (dstring_t *dstr)
 {
 	char *str = dstr->mem->realloc (dstr->mem->data, dstr->str, dstr->size);
@@ -187,7 +187,7 @@ dstring_freeze (dstring_t *dstr)
 	return str;
 }
 
-inline dstring_t  *
+VISIBLE inline dstring_t  *
 _dstring_newstr (dstring_mem_t *mem)
 {
 	dstring_t  *new;
@@ -203,13 +203,13 @@ _dstring_newstr (dstring_mem_t *mem)
 	return new;
 }
 
-dstring_t *
+VISIBLE dstring_t *
 dstring_newstr (void)
 {
 	return _dstring_newstr (&dstring_default_mem);
 }
 
-void
+VISIBLE void
 dstring_copystr (dstring_t *dstr, const char *str)
 {
 	dstr->size = strlen (str) + 1;
@@ -217,7 +217,7 @@ dstring_copystr (dstring_t *dstr, const char *str)
 	strcpy (dstr->str, str);
 }
 
-void
+VISIBLE void
 dstring_copysubstr (dstring_t *dstr, const char *str, unsigned int len)
 {
 	len = strnlen (str, len);
@@ -228,7 +228,7 @@ dstring_copysubstr (dstring_t *dstr, const char *str, unsigned int len)
 	dstr->str[len] = 0;
 }
 
-void
+VISIBLE void
 dstring_appendstr (dstring_t *dstr, const char *str)
 {
 	unsigned int pos = strnlen (dstr->str, dstr->size);
@@ -239,7 +239,7 @@ dstring_appendstr (dstring_t *dstr, const char *str)
 	strcpy (dstr->str + pos, str);
 }
 
-void
+VISIBLE void
 dstring_appendsubstr (dstring_t *dstr, const char *str, unsigned int len)
 {
 	unsigned int pos = strnlen (dstr->str, dstr->size);
@@ -251,14 +251,14 @@ dstring_appendsubstr (dstring_t *dstr, const char *str, unsigned int len)
 	dstr->str[pos + len] = 0;
 }
 
-void
+VISIBLE void
 dstring_insertstr (dstring_t *dstr, unsigned int pos, const char *str)
 {
 	// Don't insert strlen + 1 to achieve concatenation
 	dstring_insert (dstr, pos, str, strlen (str));
 }
 
-void
+VISIBLE void
 dstring_insertsubstr (dstring_t *dstr, unsigned int pos, const char *str,
 					  unsigned int len)
 {
@@ -267,7 +267,7 @@ dstring_insertsubstr (dstring_t *dstr, unsigned int pos, const char *str,
 	dstring_insert (dstr, pos, str, len);
 }
 
-void
+VISIBLE void
 dstring_clearstr (dstring_t *dstr)
 {
 	dstr->size = 1;
@@ -316,13 +316,13 @@ _dvsprintf (dstring_t *dstr, int offs, const char *fmt, va_list args)
 	return size;
 }
 
-int
+VISIBLE int
 dvsprintf (dstring_t *dstr, const char *fmt, va_list args)
 {
 	return _dvsprintf (dstr, 0, fmt, args);
 }
 
-int
+VISIBLE int
 dsprintf (dstring_t *dstr, const char *fmt, ...)
 {
 	va_list     args;
@@ -335,7 +335,7 @@ dsprintf (dstring_t *dstr, const char *fmt, ...)
 	return ret;
 }
 
-int
+VISIBLE int
 davsprintf (dstring_t *dstr, const char *fmt, va_list args)
 {
 	int         offs = 0;
@@ -345,7 +345,7 @@ davsprintf (dstring_t *dstr, const char *fmt, va_list args)
 	return _dvsprintf (dstr, offs, fmt, args);
 }
 
-int
+VISIBLE int
 dasprintf (dstring_t *dstr, const char *fmt, ...)
 {
 	va_list     args;

@@ -69,7 +69,7 @@ PR_GlobalAtOfs (progs_t * pr, int ofs)
 	return NULL;
 }
 
-ddef_t *
+VISIBLE ddef_t *
 PR_FieldAtOfs (progs_t * pr, int ofs)
 {
 	ddef_t     *def;
@@ -83,25 +83,25 @@ PR_FieldAtOfs (progs_t * pr, int ofs)
 	return NULL;
 }
 
-ddef_t *
+VISIBLE ddef_t *
 PR_FindField (progs_t * pr, const char *name)
 {
 	return  Hash_Find (pr->field_hash, name);
 }
 
-ddef_t *
+VISIBLE ddef_t *
 PR_FindGlobal (progs_t * pr, const char *name)
 {
 	return  Hash_Find (pr->global_hash, name);
 }
 
-dfunction_t *
+VISIBLE dfunction_t *
 PR_FindFunction (progs_t * pr, const char *name)
 {
 	return  Hash_Find (pr->function_hash, name);
 }
 
-void
+VISIBLE void
 PR_Undefined (progs_t *pr, const char *type, const char *name)
 {
 	PR_Error (pr, "undefined %s %s", type, name);

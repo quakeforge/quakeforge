@@ -56,7 +56,7 @@ char       *loadname;					// for hunk tags
 model_t     mod_known[MAX_MOD_KNOWN];
 int         mod_numknown;
 
-texture_t  *r_notexture_mip;
+VISIBLE texture_t  *r_notexture_mip;
 
 cvar_t     *gl_mesh_cache;
 cvar_t     *gl_subdivide_size;
@@ -65,7 +65,7 @@ cvar_t     *gl_textures_external;
 
 static void Mod_CallbackLoad (void *object, cache_allocator_t allocator);
 
-void
+VISIBLE void
 Mod_Init (void)
 {
 	byte   *dest;
@@ -95,7 +95,7 @@ Mod_Init (void)
 	}
 }
 
-void
+VISIBLE void
 Mod_Init_Cvars (void)
 {
 	gl_subdivide_size =
@@ -112,7 +112,7 @@ Mod_Init_Cvars (void)
 				  "Use external textures to replace BSP textures");
 }
 
-void
+VISIBLE void
 Mod_ClearAll (void)
 {
 	int         i;
@@ -258,7 +258,7 @@ Mod_CallbackLoad (void *object, cache_allocator_t allocator)
 
 	Loads in a model for the given name
 */
-model_t *
+VISIBLE model_t *
 Mod_ForName (const char *name, qboolean crash)
 {
 	model_t    *mod;
@@ -269,7 +269,7 @@ Mod_ForName (const char *name, qboolean crash)
 	return Mod_LoadModel (mod, crash);
 }
 
-void
+VISIBLE void
 Mod_TouchModel (const char *name)
 {
 	model_t    *mod;
@@ -282,7 +282,7 @@ Mod_TouchModel (const char *name)
 	}
 }
 
-void
+VISIBLE void
 Mod_Print (void)
 {
 	int			i;

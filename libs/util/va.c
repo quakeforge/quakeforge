@@ -50,7 +50,7 @@ static __attribute__ ((used)) const char rcsid[] =
 	does a varargs printf into a temp buffer, so I don't need to have
 	varargs versions of all text functions.
 */
-char *
+VISIBLE char *
 va (const char *fmt, ...)
 {
 	va_list     args;
@@ -66,7 +66,7 @@ va (const char *fmt, ...)
 	return string->str;
 }
 
-char *
+VISIBLE char *
 nva (const char *fmt, ...)
 {
 	va_list     args;

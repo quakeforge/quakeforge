@@ -53,7 +53,7 @@ static __attribute__ ((used)) const char rcsid[] =
 
 	Searches for key in the "client-needed" info string list
 */
-qboolean
+VISIBLE qboolean
 Info_FilterForKey (const char *key, const char **filter_list)
 {
 	const char  **s;
@@ -73,7 +73,7 @@ Info_FilterForKey (const char *key, const char **filter_list)
 	Searches the string for the given
 	key and returns the associated value, or an empty string.
 */
-const char *
+VISIBLE const char *
 Info_ValueForKey (info_t *info, const char *key)
 {
 	info_key_t *k = Hash_Find (info->tab, key);
@@ -82,7 +82,7 @@ Info_ValueForKey (info_t *info, const char *key)
 	return "";
 }
 
-void
+VISIBLE void
 Info_RemoveKey (info_t *info, const char *key)
 {
 	info_key_t *k = Hash_Del (info->tab, key);
@@ -94,7 +94,7 @@ Info_RemoveKey (info_t *info, const char *key)
 	}
 }
 
-int
+VISIBLE int
 Info_SetValueForStarKey (info_t *info, const char *key, const char *value,
 						 int flags)
 {
@@ -159,7 +159,7 @@ Info_SetValueForStarKey (info_t *info, const char *key, const char *value,
 	return 1;
 }
 
-int
+VISIBLE int
 Info_SetValueForKey (info_t *info, const char *key, const char *value,
 					 int flags)
 {
@@ -171,7 +171,7 @@ Info_SetValueForKey (info_t *info, const char *key, const char *value,
 	return Info_SetValueForStarKey (info, key, value, flags);
 }
 
-void
+VISIBLE void
 Info_Print (info_t *info)
 {
 	info_key_t **key_list;
@@ -200,7 +200,7 @@ free_key (void *_k, void *unused)
 	free (k);
 }
 
-info_t *
+VISIBLE info_t *
 Info_ParseString (const char *s, int maxsize, int flags)
 {
 	info_t     *info;
@@ -235,14 +235,14 @@ Info_ParseString (const char *s, int maxsize, int flags)
 	return info;
 }
 
-void
+VISIBLE void
 Info_Destroy (info_t *info)
 {
 	Hash_DelTable (info->tab);
 	free (info);
 }
 
-char *
+VISIBLE char *
 Info_MakeString (info_t *info, int (*filter) (const char *))
 {
 	char       *string;
@@ -271,7 +271,7 @@ Info_MakeString (info_t *info, int (*filter) (const char *))
 	return string;
 }
 
-void
+VISIBLE void
 Info_AddKeys (info_t *info, info_t *keys)
 {
 	info_key_t **key_list;

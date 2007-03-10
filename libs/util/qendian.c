@@ -44,13 +44,13 @@ static __attribute__ ((used)) const char rcsid[] =
 */
 
 #ifndef WORDS_BIGENDIAN
-qboolean    bigendien = false;;
+VISIBLE qboolean    bigendien = false;;
 #else
-qboolean    bigendien = true;;
+VISIBLE qboolean    bigendien = true;;
 #endif
 
 
-short
+VISIBLE short
 ShortSwap (short l)
 {
 	byte        b1, b2;
@@ -61,13 +61,13 @@ ShortSwap (short l)
 	return (b1 << 8) + b2;
 }
 
-short
+VISIBLE short
 ShortNoSwap (short l)
 {
 	return l;
 }
 
-int
+VISIBLE int
 LongSwap (int l)
 {
 	byte        b1, b2, b3, b4;
@@ -80,13 +80,13 @@ LongSwap (int l)
 	return ((int) b1 << 24) + ((int) b2 << 16) + ((int) b3 << 8) + b4;
 }
 
-int
+VISIBLE int
 LongNoSwap (int l)
 {
 	return l;
 }
 
-float
+VISIBLE float
 FloatSwap (float f)
 {
 	union {
@@ -102,7 +102,7 @@ FloatSwap (float f)
 	return dat2.f;
 }
 
-float
+VISIBLE float
 FloatNoSwap (float f)
 {
 	return f;

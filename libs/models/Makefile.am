@@ -1,7 +1,7 @@
 AUTOMAKE_OPTIONS= foreign
 
 SUBDIRS= alias brush sprite
-AM_CFLAGS= @PREFER_PIC@
+CFLAGS+= @PREFER_PIC@
 INCLUDES= -I$(top_srcdir)/include
 
 lib_LTLIBRARIES=	libQFmodels.la @VID_MODEL_TARGETS@

@@ -50,7 +50,7 @@ script_error (script_t *script, const char *fmt, ...)
 	exit (1);
 }
 
-script_t *
+VISIBLE script_t *
 Script_New (void)
 {
 	script_t *script = calloc (1, sizeof (script_t));
@@ -58,14 +58,14 @@ Script_New (void)
 	return script;
 }
 
-void
+VISIBLE void
 Script_Delete (script_t *script)
 {
 	dstring_delete (script->token);
 	free (script);
 }
 
-void
+VISIBLE void
 Script_Start (script_t *script, const char *file, const char *data)
 {
 	script->line = 1;
@@ -74,7 +74,7 @@ Script_Start (script_t *script, const char *file, const char *data)
 	script->unget = false;
 }
 
-qboolean
+VISIBLE qboolean
 Script_TokenAvailable (script_t *script, qboolean crossline)
 {
 	if (script->unget)
@@ -109,7 +109,7 @@ Script_TokenAvailable (script_t *script, qboolean crossline)
 	return true;
 }
 
-qboolean
+VISIBLE qboolean
 Script_GetToken (script_t *script, qboolean crossline)
 {
 	const char *token_p;
@@ -166,7 +166,7 @@ Script_GetToken (script_t *script, qboolean crossline)
 	return true;
 }
 
-void
+VISIBLE void
 Script_UngetToken (script_t *script)
 {
 	script->unget = true;

@@ -96,7 +96,7 @@ PL_NewItem (pltype_t type)
 	return item;
 }
 
-plitem_t *
+VISIBLE plitem_t *
 PL_NewDictionary (void)
 {
 	plitem_t   *item = PL_NewItem (QFDictionary);
@@ -105,7 +105,7 @@ PL_NewDictionary (void)
 	return item;
 }
 
-plitem_t *
+VISIBLE plitem_t *
 PL_NewArray (void)
 {
 	plitem_t   *item = PL_NewItem (QFArray);
@@ -114,7 +114,7 @@ PL_NewArray (void)
 	return item;
 }
 
-plitem_t *
+VISIBLE plitem_t *
 PL_NewData (void *data, int size)
 {
 	plitem_t   *item = PL_NewItem (QFBinary);
@@ -133,13 +133,13 @@ new_string (char *str)
 	return item;
 }
 
-plitem_t *
+VISIBLE plitem_t *
 PL_NewString (const char *str)
 {
 	return new_string (strdup (str));
 }
 
-void
+VISIBLE void
 PL_Free (plitem_t *item)
 {
 	switch (item->type) {
@@ -170,7 +170,7 @@ PL_Free (plitem_t *item)
 	free (item);
 }
 
-const char *
+VISIBLE const char *
 PL_String (plitem_t *string)
 {
 	if (string->type != QFString)
@@ -178,7 +178,7 @@ PL_String (plitem_t *string)
 	return string->data;
 }
 
-plitem_t *
+VISIBLE plitem_t *
 PL_ObjectForKey (plitem_t *dict, const char *key)
 {
 	hashtab_t  *table = (hashtab_t *) dict->data;
@@ -191,7 +191,7 @@ PL_ObjectForKey (plitem_t *dict, const char *key)
 	return k ? k->value : NULL;
 }
 
-plitem_t *
+VISIBLE plitem_t *
 PL_RemoveObjectForKey (plitem_t *dict, const char *key)
 {
 	hashtab_t  *table = (hashtab_t *) dict->data;
@@ -210,7 +210,7 @@ PL_RemoveObjectForKey (plitem_t *dict, const char *key)
 	return value;
 }
 
-plitem_t *
+VISIBLE plitem_t *
 PL_D_AllKeys (plitem_t *dict)
 {
 	void		**list, **l;
@@ -234,7 +234,7 @@ PL_D_AllKeys (plitem_t *dict)
 	return array;
 }
 
-int
+VISIBLE int
 PL_D_NumKeys (plitem_t *dict)
 {
 	if (dict->type != QFDictionary)
@@ -242,7 +242,7 @@ PL_D_NumKeys (plitem_t *dict)
 	return Hash_NumElements ((hashtab_t *) dict->data);
 }
 
-plitem_t *
+VISIBLE plitem_t *
 PL_ObjectAtIndex (plitem_t *array, int index)
 {
 	plarray_t  *arr = (plarray_t *) array->data;
@@ -253,7 +253,7 @@ PL_ObjectAtIndex (plitem_t *array, int index)
 	return index >= 0 && index < arr->numvals ? arr->values[index] : NULL;
 }
 
-qboolean
+VISIBLE qboolean
 PL_D_AddObject (plitem_t *dict, const char *key, plitem_t *value)
 {
 	dictkey_t	*k;
@@ -278,7 +278,7 @@ PL_D_AddObject (plitem_t *dict, const char *key, plitem_t *value)
 	return true;
 }
 
-qboolean
+VISIBLE qboolean
 PL_A_InsertObjectAtIndex (plitem_t *array, plitem_t *item, int index)
 {
 	plarray_t  *arr;
@@ -314,13 +314,13 @@ PL_A_InsertObjectAtIndex (plitem_t *array, plitem_t *item, int index)
 	return true;
 }
 
-qboolean
+VISIBLE qboolean
 PL_A_AddObject (plitem_t *array, plitem_t *item)
 {
 	return PL_A_InsertObjectAtIndex (array, item, -1);
 }
 
-int
+VISIBLE int
 PL_A_NumObjects (plitem_t *array)
 {
 	if (array->type != QFArray)
@@ -328,7 +328,7 @@ PL_A_NumObjects (plitem_t *array)
 	return ((plarray_t *) array->data)->numvals;
 }
 
-plitem_t *
+VISIBLE plitem_t *
 PL_RemoveObjectAtIndex (plitem_t *array, int index)
 {
 	plarray_t  *arr;
@@ -778,7 +778,7 @@ PL_ParsePropertyListItem (pldata_t *pl)
 	} // switch
 }
 
-plitem_t *
+VISIBLE plitem_t *
 PL_GetPropertyList (const char *string)
 {
 	pldata_t	*pl = calloc (1, sizeof (pldata_t));
@@ -926,7 +926,7 @@ write_item (dstring_t *dstr, plitem_t *item, int level)
 	}
 }
 
-char *
+VISIBLE char *
 PL_WritePropertyList (plitem_t *pl)
 {
 	dstring_t  *dstr = dstring_newstr ();
@@ -938,7 +938,7 @@ PL_WritePropertyList (plitem_t *pl)
 	return dstring_freeze (dstr);
 }
 
-pltype_t
+VISIBLE pltype_t
 PL_Type (plitem_t *item)
 {
 	return item->type;

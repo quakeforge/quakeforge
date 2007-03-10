@@ -1,6 +1,6 @@
 AUTOMAKE_OPTIONS= foreign
 
-AM_CFLAGS= @PREFER_PIC@ @VORBIS_CFLAGS@ @OGG_CFLAGS@
+CFLAGS+= @PREFER_PIC@ @VORBIS_CFLAGS@ @OGG_CFLAGS@
 INCLUDES= -I$(top_srcdir)/include
 plugin_version= 1:0:0
 plugin_ldflags= @plugin_ldflags@ -module

@@ -140,7 +140,7 @@ R_LoadSky_f (void)
 	R_LoadSkys (Cmd_Argv (1));
 }
 
-void
+VISIBLE void
 R_Init (void)
 {
 	Cmd_AddCommand ("timerefresh", R_TimeRefresh_f,
@@ -163,7 +163,7 @@ R_Init (void)
 	R_InitSprites ();
 }
 
-void
+VISIBLE void
 R_NewMap (model_t *worldmodel, struct model_s **models, int num_models)
 {
 	cvar_t     *r_skyname;
@@ -246,7 +246,7 @@ R_TimeRefresh_f (void)
 	GL_BeginRendering (&glx, &gly, &glwidth, &glheight);
 }
 
-void
+VISIBLE void
 D_FlushCaches (void)
 {
 }

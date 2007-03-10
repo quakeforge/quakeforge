@@ -189,7 +189,7 @@ GIB_Parse_Match_Var (const char *str, unsigned int *i)
 	return 0;
 }
 
-qboolean    gib_parse_error;
+VISIBLE qboolean    gib_parse_error;
 unsigned int gib_parse_error_pos;
 const char *gib_parse_error_msg;
 

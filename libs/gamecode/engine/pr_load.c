@@ -99,7 +99,7 @@ free_progs_mem (progs_t *pr, void *mem)
 {
 }
 
-void
+VISIBLE void
 PR_LoadProgsFile (progs_t * pr, QFile *file, int size, int edicts, int zone)
 {
 	unsigned    i;
@@ -269,7 +269,7 @@ PR_LoadProgsFile (progs_t * pr, QFile *file, int size, int edicts, int zone)
 		((int *) pr->pr_globals)[i] = LittleLong (((int *) pr->pr_globals)[i]);
 }
 
-void
+VISIBLE void
 PR_AddLoadFunc (progs_t *pr, int (*func)(progs_t *))
 {
 	if (pr->num_load_funcs == pr->max_load_funcs) {
@@ -283,7 +283,7 @@ PR_AddLoadFunc (progs_t *pr, int (*func)(progs_t *))
 	pr->load_funcs[pr->num_load_funcs++] = func;
 }
 
-void
+VISIBLE void
 PR_AddLoadFinishFunc (progs_t *pr, int (*func)(progs_t *))
 {
 	if (pr->num_load_finish_funcs == pr->max_load_finish_funcs) {
@@ -335,7 +335,7 @@ run_load_funcs (progs_t *pr, int (**load_funcs)(progs_t *))
 	return 1;
 }
 
-int
+VISIBLE int
 PR_RunLoadFuncs (progs_t *pr)
 {
 	int         i;
@@ -371,7 +371,7 @@ PR_RunLoadFuncs (progs_t *pr)
 /*
 	PR_LoadProgs
 */
-void
+VISIBLE void
 PR_LoadProgs (progs_t *pr, const char *progsname, int edicts, int zone)
 {
 	QFile      *file;
@@ -389,7 +389,7 @@ PR_LoadProgs (progs_t *pr, const char *progsname, int edicts, int zone)
 		PR_Error (pr, "unable to load %s", progsname);
 }
 
-void
+VISIBLE void
 PR_Init_Cvars (void)
 {
 	pr_boundscheck =
@@ -405,14 +405,14 @@ PR_Init_Cvars (void)
 	PR_Debug_Init_Cvars ();
 }
 
-void
+VISIBLE void
 PR_Init (void)
 {
 	PR_Opcode_Init ();
 	PR_Debug_Init ();
 }
 
-void
+VISIBLE void
 PR_Error (progs_t *pr, const char *error, ...)
 {
 	va_list     argptr;

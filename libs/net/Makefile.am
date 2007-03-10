@@ -1,7 +1,7 @@
 AUTOMAKE_OPTIONS= foreign
 
 SUBDIRS= nc nm
-AM_CFLAGS= @PREFER_NON_PIC@
+CFLAGS+= @PREFER_NON_PIC@
 INCLUDES= -I$(top_srcdir)/include
 
 noinst_LTLIBRARIES=	libnet_chan.la libnet_main.la

@@ -187,7 +187,7 @@ strref_free (void *_sr, void *_pr)
 	}
 }
 
-int
+VISIBLE int
 PR_LoadStrings (progs_t *pr)
 {
 	char   *end = pr->pr_strings + pr->progs->numstrings;
@@ -281,13 +281,13 @@ get_string (progs_t *pr, int num)
 	}
 }
 
-qboolean
+VISIBLE qboolean
 PR_StringValid (progs_t *pr, int num)
 {
 	return get_string (pr, num) != 0;
 }
 
-const char *
+VISIBLE const char *
 PR_GetString (progs_t *pr, int num)
 {
 	const char *str;
@@ -298,7 +298,7 @@ PR_GetString (progs_t *pr, int num)
 	PR_RunError (pr, "Invalid string offset %d", num);
 }
 
-dstring_t *
+VISIBLE dstring_t *
 PR_GetMutableString (progs_t *pr, int num)
 {
 	strref_t   *ref = get_strref (pr, num);
@@ -330,7 +330,7 @@ pr_strdup (progs_t *pr, const char *s)
 	return new;
 }
 
-int
+VISIBLE int
 PR_SetString (progs_t *pr, const char *s)
 {
 	strref_t   *sr;
@@ -360,7 +360,7 @@ PR_ClearReturnStrings (progs_t *pr)
 	}
 }
 
-int
+VISIBLE int
 PR_SetReturnString (progs_t *pr, const char *s)
 {
 	strref_t   *sr;
@@ -415,7 +415,7 @@ PR_CatStrings (progs_t *pr, const char *a, const char *b)
 	return pr_settempstring (pr, c);
 }
 
-int
+VISIBLE int
 PR_SetTempString (progs_t *pr, const char *s)
 {
 	strref_t   *sr;
@@ -430,7 +430,7 @@ PR_SetTempString (progs_t *pr, const char *s)
 	return pr_settempstring (pr, pr_strdup (pr, s));
 }
 
-int
+VISIBLE int
 PR_SetDynamicString (progs_t *pr, const char *s)
 {
 	strref_t   *sr;
@@ -469,7 +469,7 @@ PR_MakeTempString (progs_t *pr, int str)
 	pr->pr_xtstr = sr;
 }
 
-int
+VISIBLE int
 PR_NewMutableString (progs_t *pr)
 {
 	strref_t   *sr = new_string_ref (pr);
@@ -478,7 +478,7 @@ PR_NewMutableString (progs_t *pr)
 	return string_index (pr, sr);
 }
 
-void
+VISIBLE void
 PR_FreeString (progs_t *pr, int str)
 {
 	strref_t   *sr = get_strref (pr, str);
@@ -636,7 +636,7 @@ free_fmt_item (fmt_item_t *fi)
 
 #undef P_var
 #define P_var(p,n,t) (args[n]->t##_var)
-void
+VISIBLE void
 PR_Sprintf (progs_t *pr, dstring_t *result, const char *name,
 			const char *format, int count, pr_type_t **args)
 {

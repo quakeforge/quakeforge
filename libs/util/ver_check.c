@@ -46,7 +46,7 @@ static __attribute__ ((used)) const char rcsid[] =
 	return a positive number. If the second is greater, return a negative. If
 	they are equal, return zero.
 */
-int
+VISIBLE int
 ver_compare (const char *value, const char *reference)
 {
 	const char *valptr, *refptr;

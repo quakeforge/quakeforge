@@ -1,7 +1,7 @@
 AUTOMAKE_OPTIONS= foreign
 
 SUBDIRS= cd targets renderer 
-AM_CFLAGS= @PREFER_PIC@
+CFLAGS+= @PREFER_PIC@
 INCLUDES= -I$(top_srcdir)/include
 
 lib_LTLIBRARIES=	@CD_TARGETS@ @SND_TARGETS@

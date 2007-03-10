@@ -158,7 +158,7 @@ Draw_InitText (void)
 	}
 }
 
-qpic_t *
+VISIBLE qpic_t *
 Draw_PicFromWad (const char *name)
 {
 	glpic_t	   *gl;
@@ -196,7 +196,7 @@ Draw_ClearCache (void)
 		pic->dirty = true;
 }
 
-qpic_t *
+VISIBLE qpic_t *
 Draw_CachePic (const char *path, qboolean alpha)
 {
 	cachepic_t *pic;
@@ -254,7 +254,7 @@ Draw_CachePic (const char *path, qboolean alpha)
 	return &pic->pic;
 }
 
-void
+VISIBLE void
 Draw_TextBox (int x, int y, int width, int lines, byte alpha)
 {
 	int         cx, cy, n;
@@ -308,7 +308,7 @@ Draw_TextBox (int x, int y, int width, int lines, byte alpha)
 	qfglColor3ubv (color_white);
 }
 
-void
+VISIBLE void
 Draw_Init (void)
 {
 	int	     i;
@@ -429,7 +429,7 @@ tVA_increment (void)
 	It can be clipped to the top of the screen to allow the console to be
 	smoothly scrolled off.
 */
-void
+VISIBLE void
 Draw_Character (int x, int y, unsigned int chr)
 {
 	chr &= 255;
@@ -443,7 +443,7 @@ Draw_Character (int x, int y, unsigned int chr)
 	tVA_increment ();
 }
 
-void
+VISIBLE void
 Draw_String (int x, int y, const char *str)
 {
 	unsigned char	chr;
@@ -466,7 +466,7 @@ Draw_String (int x, int y, const char *str)
 	}
 }
 
-void
+VISIBLE void
 Draw_nString (int x, int y, const char *str, int count)
 {
 	unsigned char	chr;
@@ -572,7 +572,7 @@ static void (*crosshair_func[]) (int x, int y) = {
 	crosshair_3,
 };
 
-void
+VISIBLE void
 Draw_Crosshair (void)
 {
 	int            x, y;
@@ -598,7 +598,7 @@ Draw_CrosshairAt (int ch, int x, int y)
 	crosshair_func[ch] (x, y);
 }
 
-void
+VISIBLE void
 Draw_Pic (int x, int y, qpic_t *pic)
 {
 	glpic_t    *gl;
@@ -618,7 +618,7 @@ Draw_Pic (int x, int y, qpic_t *pic)
 	qfglEnd ();
 }
 
-void
+VISIBLE void
 Draw_SubPic (int x, int y, qpic_t *pic, int srcx, int srcy, int width,
 			 int height)
 {
@@ -654,7 +654,7 @@ Draw_SubPic (int x, int y, qpic_t *pic, int srcx, int srcy, int width,
 	Draws console background (obviously!)  Completely rewritten to use
 	several simple yet very cool GL effects.  --KB
 */
-void
+VISIBLE void
 Draw_ConsoleBackground (int lines, byte alpha)
 {
 	float       ofs;
@@ -728,7 +728,7 @@ Draw_ConsoleBackground (int lines, byte alpha)
 	This repeats a 64*64 tile graphic to fill the screen around a sized down
 	refresh window.
 */
-void
+VISIBLE void
 Draw_TileClear (int x, int y, int w, int h)
 {
 	qfglColor3ubv (color_0_8);
@@ -751,7 +751,7 @@ Draw_TileClear (int x, int y, int w, int h)
 
 	Fills a box of pixels with a single color
 */
-void
+VISIBLE void
 Draw_Fill (int x, int y, int w, int h, int c)
 {
 	qfglDisable (GL_TEXTURE_2D);
@@ -769,7 +769,7 @@ Draw_Fill (int x, int y, int w, int h, int c)
 	qfglEnable (GL_TEXTURE_2D);
 }
 
-void
+VISIBLE void
 Draw_FadeScreen (void)
 {
 	GL_FlushText (); // Flush text that should be rendered before the menu

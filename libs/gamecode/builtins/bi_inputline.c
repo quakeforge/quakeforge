@@ -223,7 +223,7 @@ static builtin_t builtins[] = {
 	{0}
 };
 
-void
+VISIBLE void
 InputLine_Progs_Init (progs_t *pr)
 {
 	il_resources_t *res = malloc (sizeof (il_resources_t));
@@ -234,7 +234,7 @@ InputLine_Progs_Init (progs_t *pr)
 	PR_RegisterBuiltins (pr, builtins);
 }
 
-void
+VISIBLE void
 InputLine_Progs_SetDraw (progs_t *pr, void (*draw)(inputline_t *))
 {
 	il_resources_t *res = PR_Resources_Find (pr, "InputLine");

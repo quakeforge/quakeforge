@@ -53,7 +53,7 @@ resource_get_key (void *r, void *unused)
 	return ((pr_resource_t *)r)->name;
 }
 
-void
+VISIBLE void
 PR_Resources_Init (progs_t *pr)
 {
 	pr->resource_hash = Hash_NewTable (1021, resource_get_key, 0, 0);
@@ -70,7 +70,7 @@ PR_Resources_Clear (progs_t *pr)
 	}
 }
 
-void
+VISIBLE void
 PR_Resources_Register (progs_t *pr, const char *name, void *data,
 					   void (*clear)(progs_t *, void *))
 {
@@ -85,7 +85,7 @@ PR_Resources_Register (progs_t *pr, const char *name, void *data,
 	Hash_Add (pr->resource_hash, res);
 }
 
-void *
+VISIBLE void *
 PR_Resources_Find (progs_t *pr, const char *name)
 {
 	pr_resource_t *res = Hash_Find (pr->resource_hash, name);

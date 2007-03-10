@@ -61,7 +61,7 @@ static __attribute__ ((used)) const char rcsid[] =
 
 	Sets everything to NULL
 */
-void
+VISIBLE void
 ED_ClearEdict (progs_t *pr, edict_t *e, int val)
 {
 	unsigned int i;
@@ -83,7 +83,7 @@ ED_ClearEdict (progs_t *pr, edict_t *e, int val)
 	instead of being removed and recreated, which can cause interpolated
 	angles and bad trails.
 */
-edict_t *
+VISIBLE edict_t *
 ED_Alloc (progs_t *pr)
 {
 	int         i;
@@ -123,7 +123,7 @@ ED_Alloc (progs_t *pr)
 	Marks the edict as free
 	FIXME: walk all entities and NULL out references to this entity
 */
-void
+VISIBLE void
 ED_Free (progs_t *pr, edict_t *ed)
 {
 	if (pr->unlink)
@@ -146,7 +146,7 @@ ED_Free (progs_t *pr, edict_t *ed)
 
 
 
-void
+VISIBLE void
 ED_PrintNum (progs_t *pr, int ent)
 {
 	ED_Print (pr, EDICT_NUM (pr, ent));
@@ -157,7 +157,7 @@ ED_PrintNum (progs_t *pr, int ent)
 
 	For debugging, prints all the entities in the current server
 */
-void
+VISIBLE void
 ED_PrintEdicts (progs_t *pr, const char *fieldval)
 {
 	int		i;
@@ -187,7 +187,7 @@ ED_PrintEdicts (progs_t *pr, const char *fieldval)
 
 	For debugging
 */
-void
+VISIBLE void
 ED_Count (progs_t *pr)
 {
 	int			i;

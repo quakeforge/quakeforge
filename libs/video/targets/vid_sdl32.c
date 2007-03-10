@@ -181,7 +181,7 @@ VID_Init (unsigned char *palette)
 	vid.initialized = true;
 }
 
-void
+VISIBLE void
 VID_Update (vrect_t *rects)
 {
 	while (rects) {
@@ -230,12 +230,12 @@ D_EndDirectRect (int x, int y, int width, int height)
 	SDL_UpdateRect (screen, x, y, width, height);
 }
 
-void
+VISIBLE void
 VID_LockBuffer (void)
 {
 }
 
-void
+VISIBLE void
 VID_UnlockBuffer (void)
 {
 }

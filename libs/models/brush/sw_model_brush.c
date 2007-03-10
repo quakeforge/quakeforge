@@ -43,7 +43,7 @@ static __attribute__ ((used)) const char rcsid[] =
 
 #include "QF/model.h"
 
-int   mod_lightmap_bytes = 1;
+VISIBLE int   mod_lightmap_bytes = 1;	//FIXME should this be visible?
 
 
 void

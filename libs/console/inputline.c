@@ -48,6 +48,7 @@ static __attribute__ ((used)) const char rcsid[] =
 
 #include "compat.h"
 
+__attribute__ ((visibility ("default")))
 struct inputline_s *
 Con_CreateInputLine (int lines, int lsize, char prompt)
 {
@@ -79,12 +80,14 @@ Con_CreateInputLine (int lines, int lsize, char prompt)
 	return inputline;
 }
 
+__attribute__ ((visibility ("default")))
 void
 Con_DestroyInputLine (inputline_t *inputline)
 {
 	free (inputline);
 }
 
+__attribute__ ((visibility ("default")))
 void
 Con_ClearTyping (inputline_t *il, int save)
 {
@@ -97,6 +100,7 @@ Con_ClearTyping (inputline_t *il, int save)
 	il->linepos = 1;
 }
 
+__attribute__ ((visibility ("default")))
 void
 Con_ProcessInputLine (inputline_t *il, int ch)
 {

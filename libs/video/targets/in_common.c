@@ -59,11 +59,11 @@ static __attribute__ ((used)) const char rcsid[] =
 #include "QF/mathlib.h"
 #include "QF/vid.h"
 
-viewdelta_t viewdelta;
+VISIBLE viewdelta_t viewdelta;
 
 cvar_t     *in_grab;
-cvar_t     *in_amp;
-cvar_t     *in_pre_amp;
+VISIBLE cvar_t     *in_amp;
+VISIBLE cvar_t     *in_pre_amp;
 cvar_t     *in_freelook;
 cvar_t     *in_mouse_filter;
 cvar_t     *in_mouse_amp;

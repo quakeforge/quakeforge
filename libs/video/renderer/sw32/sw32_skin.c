@@ -46,7 +46,7 @@ static __attribute__ ((used)) const char rcsid[] =
 #include "compat.h"
 #include "d_iface.h"
 
-void
+VISIBLE void
 Skin_Set_Translate (int top, int bottom, void *_dest)
 {
 	int         i, j;
@@ -172,30 +172,30 @@ Skin_Set_Translate (int top, int bottom, void *_dest)
 */
 }
 
-void
+VISIBLE void
 Skin_Do_Translation (skin_t *player_skin, int slot, skin_t *skin)
 {
 }
 
 
-void
+VISIBLE void
 Skin_Do_Translation_Model (model_t *model, int skinnum, int slot, skin_t *skin)
 {
 }
 
 
-void
+VISIBLE void
 Skin_Player_Model (model_t *model)
 {
 }
 
-void
+VISIBLE void
 Skin_Init_Translation (void)
 {
 }
 
 
-void
+VISIBLE void
 Skin_Process (skin_t *skin, struct tex_s *tex)
 {
 }

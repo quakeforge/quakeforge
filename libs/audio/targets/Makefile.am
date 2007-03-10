@@ -1,6 +1,6 @@
 AUTOMAKE_OPTIONS= foreign
 
-AM_CFLAGS= @PREFER_PIC@
+CFLAGS+= @PREFER_PIC@
 INCLUDES= -I$(top_srcdir)/include
 SDL_LIBS = @SDL_LIBS@
 plugin_version= 1:0:0

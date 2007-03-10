@@ -214,7 +214,6 @@ void _VectorScale (const vec3_t in, vec_t scale, vec3_t out);
 void _VectorSubtract (const vec3_t veca, const vec3_t vecb, vec3_t out);
 void CrossProduct (const vec3_t v1, const vec3_t v2, vec3_t cross);
 vec_t _VectorNormalize (vec3_t v);			// returns vector length
-void VectorInverse (vec3_t v);
 int Q_log2(int val);
 
 void R_ConcatRotations (float in1[3][3], float in2[3][3], float out[3][3]);

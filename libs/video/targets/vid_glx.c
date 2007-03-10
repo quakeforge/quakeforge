@@ -160,7 +160,7 @@ GL_Init (void)
 	GL_Init_Common ();
 }
 
-void
+VISIBLE void
 GL_EndRendering (void)
 {
 	qfglFinish ();

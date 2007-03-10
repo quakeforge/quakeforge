@@ -62,14 +62,14 @@ typedef struct cmdalias_s {
 
 static cmdalias_t *cmd_alias;
 
-cvar_t     *cmd_warncmd;
+VISIBLE cvar_t     *cmd_warncmd;
 
 static hashtab_t  *cmd_alias_hash;
 static hashtab_t  *cmd_hash;
 
-cbuf_args_t *cmd_args;
+VISIBLE cbuf_args_t *cmd_args;
 static cbuf_t *cmd_cbuf;
-cmd_source_t cmd_source;
+VISIBLE cmd_source_t cmd_source;
 
 
 /* Command parsing functions */
@@ -84,13 +84,13 @@ typedef struct cmd_function_s {
 
 static cmd_function_t *cmd_functions;	// possible commands to execute
 
-int
+VISIBLE int
 Cmd_Argc (void)
 {
 	return cmd_args->argc;
 }
 
-const char *
+VISIBLE const char *
 Cmd_Argv (int arg)
 {
 	if (arg >= cmd_args->argc)
@@ -98,7 +98,7 @@ Cmd_Argv (int arg)
 	return cmd_args->argv[arg]->str;
 }
 
-const char *
+VISIBLE const char *
 Cmd_Args (int start)
 {
 	if (start >= cmd_args->argc)
@@ -106,7 +106,7 @@ Cmd_Args (int start)
 	return cmd_args->args[start];
 }
 
-int
+VISIBLE int
 Cmd_Command (cbuf_args_t *args)
 {
 	cmd_function_t *cmd;
@@ -138,7 +138,7 @@ Cmd_Command (cbuf_args_t *args)
 }
 
 /* Registers a command and handler function */
-int
+VISIBLE int
 Cmd_AddCommand (const char *cmd_name, xcommand_t function,
 				const char *description)
 {
@@ -167,7 +167,7 @@ Cmd_AddCommand (const char *cmd_name, xcommand_t function,
 }
 
 /* Unregisters a command */
-int
+VISIBLE int
 Cmd_RemoveCommand (const char *name)
 {
 	cmd_function_t *cmd;
@@ -185,7 +185,7 @@ Cmd_RemoveCommand (const char *name)
 }
 
 /* Checks for the existance of a command */
-qboolean
+VISIBLE qboolean
 Cmd_Exists (const char *cmd_name)
 {
 	cmd_function_t *cmd;
@@ -201,7 +201,7 @@ Cmd_Exists (const char *cmd_name)
 
 /* Command completion functions */
 
-const char *
+VISIBLE const char *
 Cmd_CompleteCommand (const char *partial)
 {
 	cmd_function_t *cmd;
@@ -233,7 +233,7 @@ Cmd_CompleteCommand (const char *partial)
 	Thanks to Fett erich@heintz.com
 	Thanks to taniwha
 */
-int
+VISIBLE int
 Cmd_CompleteCountPossible (const char *partial)
 {
 	cmd_function_t *cmd;
@@ -262,7 +262,7 @@ Cmd_CompleteCountPossible (const char *partial)
 	Thanks to Fett erich@heintz.com
 	Thanks to taniwha
 */
-const char **
+VISIBLE const char **
 Cmd_CompleteBuildList (const char *partial)
 {
 	cmd_function_t *cmd;
@@ -523,7 +523,7 @@ Cmd_Sleep_f (void)
 	p->resumetime = Sys_DoubleTime() + waittime;
 }
 
-void
+VISIBLE void
 Cmd_StuffCmds (cbuf_t *cbuf)
 {
 	int         i, j;
@@ -573,14 +573,14 @@ Cmd_StuffCmds_f (void)
 	Cmd_StuffCmds (cbuf_active);
 }
 
-void
+VISIBLE void
 Cmd_Init_Hash (void)
 {
 	cmd_hash = Hash_NewTable (1021, cmd_get_key, 0, 0);
 	cmd_alias_hash = Hash_NewTable (1021, cmd_alias_get_key, cmd_alias_free, 0);
 }
 
-void
+VISIBLE void
 Cmd_Init (void)
 {
 	Cmd_AddCommand ("stuffcmds", Cmd_StuffCmds_f, "Execute the commands given "
@@ -604,7 +604,7 @@ Cmd_Init (void)
 	cmd_cbuf = Cbuf_New (&id_interp);
 }
 
-int
+VISIBLE int
 Cmd_ExecuteString (const char *text, cmd_source_t src)
 {
 	cbuf_t     *old = cbuf_active;
@@ -618,7 +618,7 @@ Cmd_ExecuteString (const char *text, cmd_source_t src)
 	return 0;
 }
 
-void
+VISIBLE void
 Cmd_Exec_File (cbuf_t *cbuf, const char *path, int qfs)
 {
 	char       *f;

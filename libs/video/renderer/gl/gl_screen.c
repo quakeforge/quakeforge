@@ -69,7 +69,7 @@ int         glx, gly, glwidth, glheight;
 
 /* SCREEN SHOTS */
 
-tex_t *
+VISIBLE tex_t *
 SCR_ScreenShot (int width, int height)
 {
 	unsigned char *src, *dest, *snap;
@@ -189,7 +189,7 @@ SCR_TileClear (void)
 	WARNING: be very careful calling this from elsewhere, because the refresh
 	needs almost the entire 256k of stack space!
 */
-void
+VISIBLE void
 SCR_UpdateScreen (double realtime, SCR_Func *scr_funcs)
 {
 	double      time1 = 0, time2;

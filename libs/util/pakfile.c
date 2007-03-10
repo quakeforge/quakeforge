@@ -54,7 +54,7 @@ pack_get_key (void *p, void *unused)
 	return ((dpackfile_t *) p)->name;
 }
 
-pack_t *
+VISIBLE pack_t *
 pack_new (const char *name)
 {
 	pack_t *pack = calloc (sizeof (*pack), 1);
@@ -75,7 +75,7 @@ pack_new (const char *name)
 	return pack;
 }
 
-void
+VISIBLE void
 pack_del (pack_t *pack)
 {
 	if (pack->files)
@@ -89,7 +89,7 @@ pack_del (pack_t *pack)
 	free (pack);
 }
 
-void
+VISIBLE void
 pack_rehash (pack_t *pack)
 {
 	int         i;
@@ -99,7 +99,7 @@ pack_rehash (pack_t *pack)
 	}
 }
 
-pack_t *
+VISIBLE pack_t *
 pack_open (const char *name)
 {
 	pack_t     *pack = pack_new (name);
@@ -148,7 +148,7 @@ error:
 	return 0;
 }
 
-pack_t *
+VISIBLE pack_t *
 pack_create (const char *name)
 {
 	pack_t     *pack = pack_new (name);
@@ -168,7 +168,7 @@ pack_create (const char *name)
 	return pack;
 }
 
-void
+VISIBLE void
 pack_close (pack_t *pack)
 {
 	int         i;
@@ -196,7 +196,7 @@ pack_close (pack_t *pack)
 	pack_del (pack);
 }
 
-int
+VISIBLE int
 pack_add (pack_t *pack, const char *filename)
 {
 	dpackfile_t *pf;
@@ -249,7 +249,7 @@ pack_add (pack_t *pack, const char *filename)
 	return 0;
 }
 
-int
+VISIBLE int
 pack_extract (pack_t *pack, dpackfile_t *pf)
 {
 	const char *name = pf->name;
@@ -276,7 +276,7 @@ pack_extract (pack_t *pack, dpackfile_t *pf)
 	return 0;
 }
 
-dpackfile_t *
+VISIBLE dpackfile_t *
 pack_find_file (pack_t *pack, const char *filename)
 {
 	return Hash_Find (pack->file_hash, filename);

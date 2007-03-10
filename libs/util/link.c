@@ -35,20 +35,20 @@ static __attribute__ ((used)) const char rcsid[] =
 
 
 // ClearLink is used for new headnodes
-void
+VISIBLE void
 ClearLink (link_t *l)
 {
 	l->prev = l->next = l;
 }
 
-void
+VISIBLE void
 RemoveLink (link_t *l)
 {
 	l->next->prev = l->prev;
 	l->prev->next = l->next;
 }
 
-void
+VISIBLE void
 InsertLinkBefore (link_t *l, link_t *before)
 {
 	l->next = before;
@@ -57,7 +57,7 @@ InsertLinkBefore (link_t *l, link_t *before)
 	l->next->prev = l;
 }
 
-void
+VISIBLE void
 InsertLinkAfter (link_t *l, link_t *after)
 {
 	l->next = after->next;

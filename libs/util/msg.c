@@ -52,7 +52,7 @@ static __attribute__ ((used)) const char rcsid[] =
 
 // writing functions ==========================================================
 
-void
+VISIBLE void
 MSG_WriteByte (sizebuf_t *sb, int c)
 {
 	byte	   *buf;
@@ -61,7 +61,7 @@ MSG_WriteByte (sizebuf_t *sb, int c)
 	*buf = c;
 }
 
-void
+VISIBLE void
 MSG_WriteShort (sizebuf_t *sb, int c)
 {
 	byte	   *buf;
@@ -71,7 +71,7 @@ MSG_WriteShort (sizebuf_t *sb, int c)
 	*buf = ((unsigned int) c) >> 8;
 }
 
-void
+VISIBLE void
 MSG_WriteLong (sizebuf_t *sb, int c)
 {
 	byte	   *buf;
@@ -83,7 +83,7 @@ MSG_WriteLong (sizebuf_t *sb, int c)
 	*buf = ((unsigned int) c) >> 24;
 }
 
-void
+VISIBLE void
 MSG_WriteFloat (sizebuf_t *sb, float f)
 {
 	union {
@@ -97,7 +97,7 @@ MSG_WriteFloat (sizebuf_t *sb, float f)
 	SZ_Write (sb, &dat.l, 4);
 }
 
-void
+VISIBLE void
 MSG_WriteString (sizebuf_t *sb, const char *s)
 {
 	if (!s)
@@ -106,13 +106,13 @@ MSG_WriteString (sizebuf_t *sb, const char *s)
 		SZ_Write (sb, s, strlen (s) + 1);
 }
 
-void
+VISIBLE void
 MSG_WriteCoord (sizebuf_t *sb, float coord)
 {
 	MSG_WriteShort (sb, (int) (coord * 8.0));
 }
 
-void
+VISIBLE void
 MSG_WriteCoordV (sizebuf_t *sb, const vec3_t coord)
 {
 	byte        *buf;
@@ -126,7 +126,7 @@ MSG_WriteCoordV (sizebuf_t *sb, const vec3_t coord)
 	}
 }
 
-void
+VISIBLE void
 MSG_WriteCoordAngleV (sizebuf_t *sb, const vec3_t coord, const vec3_t angles)
 {
 	byte   *buf;
@@ -141,13 +141,13 @@ MSG_WriteCoordAngleV (sizebuf_t *sb, const vec3_t coord, const vec3_t angles)
 	}
 }
 
-void
+VISIBLE void
 MSG_WriteAngle (sizebuf_t *sb, float angle)
 {
 	MSG_WriteByte (sb, (int) (angle * (256.0 / 360.0)) & 255);
 }
 
-void
+VISIBLE void
 MSG_WriteAngleV (sizebuf_t *sb, const vec3_t angles)
 {
 	byte   *buf;
@@ -159,13 +159,13 @@ MSG_WriteAngleV (sizebuf_t *sb, const vec3_t angles)
 	}
 }
 
-void
+VISIBLE void
 MSG_WriteAngle16 (sizebuf_t *sb, float angle16)
 {
 	MSG_WriteShort (sb, (int) (angle16 * (65536.0 / 360.0)) & 65535);
 }
 
-void
+VISIBLE void
 MSG_WriteUTF8 (sizebuf_t *sb, unsigned utf8)
 {
 	byte	   *buf;
@@ -206,20 +206,20 @@ MSG_WriteUTF8 (sizebuf_t *sb, unsigned utf8)
 
 // reading functions ==========================================================
 
-void
+VISIBLE void
 MSG_BeginReading (qmsg_t *msg)
 {
 	msg->readcount = 0;
 	msg->badread = false;
 }
 
-int
+VISIBLE int
 MSG_GetReadCount (qmsg_t *msg)
 {
 	return msg->readcount;
 }
 
-int
+VISIBLE int
 MSG_ReadByte (qmsg_t *msg)
 {
 	if (msg->readcount + 1 <= msg->message->cursize)
@@ -229,7 +229,7 @@ MSG_ReadByte (qmsg_t *msg)
 	return -1;
 }
 
-int
+VISIBLE int
 MSG_ReadShort (qmsg_t *msg)
 {
 	int         c;
@@ -245,7 +245,7 @@ MSG_ReadShort (qmsg_t *msg)
 	return -1;
 }
 
-int
+VISIBLE int
 MSG_ReadLong (qmsg_t *msg)
 {
 	int         c;
@@ -263,7 +263,7 @@ MSG_ReadLong (qmsg_t *msg)
 	return -1;
 }
 
-float
+VISIBLE float
 MSG_ReadFloat (qmsg_t *msg)
 {
 	union {
@@ -289,7 +289,7 @@ MSG_ReadFloat (qmsg_t *msg)
 	return -1;
 }
 
-const char *
+VISIBLE const char *
 MSG_ReadString (qmsg_t *msg)
 {
 	char   *string;
@@ -324,7 +324,7 @@ MSG_ReadString (qmsg_t *msg)
 	return string;
 }
 
-int
+VISIBLE int
 MSG_ReadBytes (qmsg_t *msg, void *buf, int len)
 {
 	if (msg->badread || len > msg->message->cursize - msg->readcount) {
@@ -336,13 +336,13 @@ MSG_ReadBytes (qmsg_t *msg, void *buf, int len)
 	return len;
 }
 
-float
+VISIBLE float
 MSG_ReadCoord (qmsg_t *msg)
 {
 	return MSG_ReadShort (msg) * (1.0 / 8.0);
 }
 
-void
+VISIBLE void
 MSG_ReadCoordV (qmsg_t *msg, vec3_t coord)
 {
 	int		i;
@@ -351,7 +351,7 @@ MSG_ReadCoordV (qmsg_t *msg, vec3_t coord)
 		coord[i] = MSG_ReadShort (msg) * (1.0 / 8.0);
 }
 
-void
+VISIBLE void
 MSG_ReadCoordAngleV (qmsg_t *msg, vec3_t coord, vec3_t angles)
 {
 	int		i;
@@ -362,13 +362,13 @@ MSG_ReadCoordAngleV (qmsg_t *msg, vec3_t coord, vec3_t angles)
 	}
 }
 
-float
+VISIBLE float
 MSG_ReadAngle (qmsg_t *msg)
 {
 	return ((signed char) MSG_ReadByte (msg)) * (360.0 / 256.0);
 }
 
-void
+VISIBLE void
 MSG_ReadAngleV (qmsg_t *msg, vec3_t angles)
 {
 	int		i;
@@ -377,13 +377,13 @@ MSG_ReadAngleV (qmsg_t *msg, vec3_t angles)
 		angles[i] = ((signed char) MSG_ReadByte (msg)) * (360.0 / 256.0);
 }
 
-float
+VISIBLE float
 MSG_ReadAngle16 (qmsg_t *msg)
 {
 	return MSG_ReadShort (msg) * (360.0 / 65536.0);
 }
 
-int
+VISIBLE int
 MSG_ReadUTF8 (qmsg_t *msg)
 {
 	byte       *buf, *start, c;

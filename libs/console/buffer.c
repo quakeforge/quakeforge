@@ -45,7 +45,7 @@ static __attribute__ ((used)) const char rcsid[] =
 
 #include "QF/console.h"
 
-con_buffer_t *
+VISIBLE con_buffer_t *
 Con_CreateBuffer (size_t buffer_size, int max_lines)
 {
 	con_buffer_t *buffer;
@@ -69,7 +69,7 @@ err:
 	return 0;
 }
 
-void
+VISIBLE void
 Con_DestroyBuffer (con_buffer_t *buffer)
 {
 	free (buffer->buffer);
@@ -77,7 +77,7 @@ Con_DestroyBuffer (con_buffer_t *buffer)
 	free (buffer);
 }
 
-void
+VISIBLE void
 Con_BufferAddText (con_buffer_t *buf, const char *text)
 {
 	con_line_t *cur_line = &buf->lines[buf->cur_line];
