@@ -70,8 +70,9 @@ static __attribute__ ((used)) const char rcsid[] =
 #include "QF/cvar.h"
 #include "QF/plugin.h"
 #include "QF/qargs.h"
-#include "QF/sound.h"
 #include "QF/sys.h"
+
+#include "snd_render.h"
 
 #ifndef MAP_FAILED
 # define MAP_FAILED ((void *) -1)
@@ -176,8 +177,6 @@ try_open (int rw)
 		close (audio_fd);
 		return 0;
 	}
-
-	sn.splitbuffer = 0;
 
 	// set sample bits & speed
 	sn.samplebits = snd_bits->int_val;

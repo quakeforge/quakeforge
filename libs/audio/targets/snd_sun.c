@@ -51,8 +51,9 @@ static __attribute__ ((used)) const char rcsid[] =
 #include "QF/plugin.h"
 #include "QF/qargs.h"
 #include "QF/qtypes.h"
-#include "QF/sound.h"
 #include "QF/sys.h"
+
+#include "snd_render.h"
 
 static int		audio_fd;
 static int		snd_inited;
@@ -86,8 +87,6 @@ SNDDMA_Init (void)
 		Sys_Printf ("Sound already init'd\n");
 		return 0;
 	}
-
-	sn.splitbuffer = 0;
 
 	audio_fd = open ("/dev/audio", O_WRONLY | O_NDELAY);
 
@@ -142,7 +141,6 @@ SNDDMA_Init (void)
 		sn.channels = 2;
 	}
 
-	sn.soundalive = true;
 	sn.samples = sizeof (dma_buffer) / (sn.samplebits / 8);
 	sn.samplepos = 0;
 	sn.submission_chunk = 1;

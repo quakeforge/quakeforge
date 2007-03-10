@@ -39,8 +39,9 @@ static __attribute__ ((used)) const char rcsid[] =
 #include "QF/cvar.h"
 #include "QF/plugin.h"
 #include "QF/qargs.h"
-#include "QF/sound.h"
 #include "QF/sys.h"
+
+#include "snd_render.h"
 
 static int			snd_inited;
 static int			snd_blocked = 0;
@@ -316,7 +317,6 @@ SNDDMA_Init (void)
 	}
 
 	memset ((dma_t *) &sn, 0, sizeof (sn));
-	sn.splitbuffer = 0;
 	sn.channels = stereo + 1;
 
 	// don't mix less than this in mono samples:
@@ -344,7 +344,7 @@ SNDDMA_Init (void)
 		Sys_Printf ("to have a power of 2 buffer size\n");
 	}
 
-	sn.samples = buffer_size * sn.channels;		// mono samples in buffer
+	sn.samples = buffer_size * sn.channels;
 	sn.speed = rate;
 	SNDDMA_GetDMAPos ();		//XXX sets sn.buffer
 	Sys_Printf ("%5d stereo\n", sn.channels - 1);

@@ -39,8 +39,9 @@ static __attribute__ ((used)) const char rcsid[] =
 #include "QF/cvar.h"
 #include "QF/plugin.h"
 #include "QF/qargs.h"
-#include "QF/sound.h"
 #include "QF/sys.h"
+
+#include "snd_render.h"
 
 static int			snd_inited;
 static int			snd_blocked = 0;
@@ -259,7 +260,6 @@ SNDDMA_Init (void)
 	}
 
 	memset ((dma_t *) &sn, 0, sizeof (sn));
-	sn.splitbuffer = 0;
 	sn.channels = stereo + 1;
 	sn.submission_chunk = qfsnd_pcm_hw_params_get_period_size (hw, 0);
 										// don't mix less than this

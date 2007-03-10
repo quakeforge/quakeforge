@@ -46,8 +46,9 @@ static __attribute__ ((used)) const char rcsid[] =
 #include "QF/cmd.h"
 #include "QF/plugin.h"
 #include "QF/qargs.h"
-#include "QF/sound.h"
 #include "QF/sys.h"
+
+#include "snd_render.h"
 
 static dma_t sn;
 static int  snd_inited;
@@ -77,7 +78,6 @@ paint_audio (void *unused, Uint8 * stream, int len)
 	sn.samplepos += streamsamples;
 	while (sn.samplepos >= sn.samples)
 		sn.samplepos -= sn.samples;
-//	SND_PaintChannels (*plugin_info_snd_output_data.soundtime + streamsamples);
 
 	if (sn.samplepos + streamsamples <= sn.samples)
 		memcpy (stream, sn.buffer + sampleposbytes, len);
@@ -162,7 +162,6 @@ SNDDMA_Init (void)
 	SDL_PauseAudio (0);
 
 	/* Fill the audio DMA information block */
-	sn.splitbuffer = 0;
 	sn.samplebits = (obtained.format & 0xFF);
 	sn.speed = obtained.freq;
 	sn.channels = obtained.channels;

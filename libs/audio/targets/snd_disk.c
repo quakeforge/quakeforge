@@ -50,8 +50,9 @@ static __attribute__ ((used)) const char rcsid[] =
 #include "QF/cvar.h"
 #include "QF/plugin.h"
 #include "QF/qargs.h"
-#include "QF/sound.h"
 #include "QF/sys.h"
+
+#include "snd_render.h"
 
 static int  snd_inited;
 static QFile      *snd_file;
@@ -72,7 +73,6 @@ static volatile dma_t *
 SNDDMA_Init (void)
 {
 	memset ((dma_t *) sn, 0, sizeof (sn));
-	sn.splitbuffer = 0;
 	sn.channels = 2;
 	sn.submission_chunk = 1;			// don't mix less than this #
 	sn.samplepos = 0;					// in mono samples

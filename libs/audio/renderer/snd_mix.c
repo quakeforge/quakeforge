@@ -55,7 +55,7 @@ int         snd_scaletable[32][256];
 int        *snd_p, snd_linear_count, snd_vol;
 short      *snd_out;
 
-void
+static void
 SND_WriteLinearBlastStereo16 (void)
 {
 	int			val, i;
@@ -85,21 +85,21 @@ s_xfer_stereo_16 (int endtime)
 	int			lpaintedtime, lpos;
 	unsigned int *pbuf;
 
-	snd_vol = volume->value * 256;
+	snd_vol = snd_volume->value * 256;
 
 	snd_p = (int *) paintbuffer;
-	lpaintedtime = paintedtime;
+	lpaintedtime = snd_paintedtime;
 
 
-	pbuf = (unsigned int *) shm->buffer;
+	pbuf = (unsigned int *) snd_shm->buffer;
 
 	while (lpaintedtime < endtime) {
 		// handle recirculating buffer issues
-		lpos = lpaintedtime & ((shm->samples >> 1) - 1);
+		lpos = lpaintedtime & ((snd_shm->samples >> 1) - 1);
 
 		snd_out = (short *) pbuf + (lpos << 1);
 
-		snd_linear_count = (shm->samples >> 1) - lpos;
+		snd_linear_count = (snd_shm->samples >> 1) - lpos;
 		if (lpaintedtime + snd_linear_count > endtime)
 			snd_linear_count = endtime - lpaintedtime;
 
@@ -120,21 +120,21 @@ s_xfer_paint_buffer (int endtime)
 	int		   *p;
 	unsigned int *pbuf;
 
-	if (shm->samplebits == 16 && shm->channels == 2) {
+	if (snd_shm->samplebits == 16 && snd_shm->channels == 2) {
 		s_xfer_stereo_16 (endtime);
 		return;
 	}
 
 	p = (int *) paintbuffer;
-	count = (endtime - paintedtime) * shm->channels;
-	out_mask = shm->samples - 1;
-	out_idx = paintedtime * shm->channels & out_mask;
-	step = 3 - shm->channels;
-	snd_vol = volume->value * 256;
+	count = (endtime - snd_paintedtime) * snd_shm->channels;
+	out_mask = snd_shm->samples - 1;
+	out_idx = snd_paintedtime * snd_shm->channels & out_mask;
+	step = 3 - snd_shm->channels;
+	snd_vol = snd_volume->value * 256;
 
-	pbuf = (unsigned int *) shm->buffer;
+	pbuf = (unsigned int *) snd_shm->buffer;
 
-	if (shm->samplebits == 16) {
+	if (snd_shm->samplebits == 16) {
 		short      *out = (short *) pbuf;
 
 		while (count--) {
@@ -147,7 +147,7 @@ s_xfer_paint_buffer (int endtime)
 			out[out_idx] = val;
 			out_idx = (out_idx + 1) & out_mask;
 		}
-	} else if (shm->samplebits == 8) {
+	} else if (snd_shm->samplebits == 8) {
 		unsigned char *out = (unsigned char *) pbuf;
 
 		while (count--) {
@@ -173,20 +173,20 @@ SND_PaintChannels (unsigned int endtime)
 	channel_t  *ch;
 	sfxbuffer_t *sc;
 
-	while (paintedtime < endtime) {
+	while (snd_paintedtime < endtime) {
 		// if paintbuffer is smaller than DMA buffer
 		end = endtime;
-		if (endtime - paintedtime > PAINTBUFFER_SIZE)
-			end = paintedtime + PAINTBUFFER_SIZE;
+		if (endtime - snd_paintedtime > PAINTBUFFER_SIZE)
+			end = snd_paintedtime + PAINTBUFFER_SIZE;
 
 		// clear the paint buffer
-//		memset (paintbuffer, 0, (end - paintedtime) *
+//		memset (paintbuffer, 0, (end - snd_paintedtime) *
 //				sizeof (portable_samplepair_t));
 		max_overpaint = 0;
 
 		// paint in the channels.
-		ch = channels;
-		for (i = 0; i < total_channels; i++, ch++) {
+		ch = snd_channels;
+		for (i = 0; i < snd_total_channels; i++, ch++) {
 			if (!ch->sfx)
 				continue;
 			if (!ch->leftvol && !ch->rightvol)
@@ -195,7 +195,7 @@ SND_PaintChannels (unsigned int endtime)
 			if (!sc)
 				continue;
 
-			ltime = paintedtime;
+			ltime = snd_paintedtime;
 
 			while (ltime < end) {		// paint up to end
 				if (ch->end < end)
@@ -233,12 +233,12 @@ SND_PaintChannels (unsigned int endtime)
 		// transfer out according to DMA format
 		s_xfer_paint_buffer (end);
 
-		memmove (paintbuffer, paintbuffer + end - paintedtime,
+		memmove (paintbuffer, paintbuffer + end - snd_paintedtime,
 				 max_overpaint * sizeof (paintbuffer[0]));
 		memset (paintbuffer + max_overpaint, 0, sizeof (paintbuffer)
 				- max_overpaint * sizeof (paintbuffer[0]));
 
-		paintedtime = end;
+		snd_paintedtime = end;
 	}
 }
 

@@ -40,8 +40,9 @@ static __attribute__ ((used)) const char rcsid[] =
 #include "QF/plugin.h"
 #include "QF/qargs.h"
 #include "QF/qtypes.h"
-#include "QF/sound.h"
 #include "QF/sys.h"
+
+#include "snd_render.h"
 
 static int  snd_inited = 0;
 static ALconfig alc;
@@ -78,8 +79,6 @@ SNDDMA_Init (void)
 					alGetErrorString (oserror ()));
 		return 0;
 	}
-
-	sn.splitbuffer = 0;
 
 	/* get & probe settings */
 	/* sample format */
@@ -247,7 +246,6 @@ SNDDMA_Init (void)
 		return 0;
 	}
 
-	sn.soundalive = true;
 	sn.samples = bufsize / (sn.samplebits / 8);
 	sn.samplepos = 0;
 	sn.submission_chunk = 1;

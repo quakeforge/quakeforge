@@ -137,7 +137,7 @@ read_samples (sfxbuffer_t *buffer, int count, void *prev)
 		sfxstream_t *stream = (sfxstream_t *) sfx->data;
 		wavinfo_t  *info = &stream->wavinfo;
 
-		stepscale = (float) info->rate / shm->speed;	// usually 0.5, 1, or 2
+		stepscale = (float) info->rate / snd_shm->speed;
 
 		samples = count * stepscale;
 		size = samples * info->width * info->channels;
@@ -211,7 +211,7 @@ SND_StreamSetPos (sfxbuffer_t *buffer, unsigned int pos)
 	sfxstream_t *stream = (sfxstream_t *) sfx->data;
 	wavinfo_t  *info = &stream->wavinfo;
 
-	stepscale = (float) info->rate / shm->speed;	// usually 0.5, 1, or 2
+	stepscale = (float) info->rate / snd_shm->speed;
 
 	buffer->head = buffer->tail = 0;
 	buffer->pos = pos;
@@ -234,7 +234,7 @@ SND_StreamAdvance (sfxbuffer_t *buffer, unsigned int count)
 	if (!count)
 		return;
 
-	stepscale = (float) info->rate / shm->speed;	// usually 0.5, 1, or 2
+	stepscale = (float) info->rate / snd_shm->speed;
 
 	// find out how many samples the buffer currently holds
 	samples = buffer->head - buffer->tail;
@@ -356,7 +356,7 @@ SND_GetCache (long samples, int rate, int inwidth, int channels,
 	sfx_t      *sfx = block->sfx;
 
 	width = snd_loadas8bit->int_val ? 1 : 2;
-	stepscale = (float) rate / shm->speed;	// usually 0.5, 1, or 2
+	stepscale = (float) rate / snd_shm->speed;
 	len = size = samples / stepscale;
 //	printf ("%ld %d\n", samples, size);
 	size *= width * channels;
@@ -399,7 +399,7 @@ SND_ResampleMono (sfxbuffer_t *sc, byte *data, int length, void *prev)
 	os += sc->head;
 	ob += sc->head;
 
-	stepscale = (float) inrate / shm->speed;	// usually 0.5, 1, or 2
+	stepscale = (float) inrate / snd_shm->speed;
 
 	outcount = length / stepscale;
 //	printf ("%d %d\n", length, outcount);
@@ -542,7 +542,7 @@ SND_ResampleStereo (sfxbuffer_t *sc, byte *data, int length, void *prev)
 	os += sc->head;
 	ob += sc->head;
 
-	stepscale = (float) inrate / shm->speed;	// usually 0.5, 1, or 2
+	stepscale = (float) inrate / snd_shm->speed;
 
 	outcount = length / stepscale;
 

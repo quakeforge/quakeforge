@@ -37,8 +37,9 @@ static __attribute__ ((used)) const char rcsid[] =
 #include "QF/cvar.h"
 #include "QF/plugin.h"
 #include "QF/qargs.h"
-#include "QF/sound.h"
 #include "QF/sys.h"
+
+#include "snd_render.h"
 
 // 64K is > 1 second at 16-bit, 22050 Hz
 #define	WAV_BUFFERS				64
@@ -249,8 +250,6 @@ SNDDMA_InitWav (void)
 		}
 	}
 
-	sn.soundalive = true;
-	sn.splitbuffer = false;
 	sn.samples = gSndBufSize / (sn.samplebits / 8);
 	sn.samplepos = 0;
 	sn.submission_chunk = 1;

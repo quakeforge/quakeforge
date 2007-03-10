@@ -38,8 +38,9 @@ static __attribute__ ((used)) const char rcsid[] =
 #include "QF/cvar.h"
 #include "QF/plugin.h"
 #include "QF/qargs.h"
-#include "QF/sound.h"
 #include "QF/sys.h"
+
+#include "snd_render.h"
 
 #define iDirectSoundCreate(a,b,c)	pDirectSoundCreate(a,b,c)
 
@@ -333,8 +334,6 @@ SNDDMA_InitDirect (void)
 										   &dwWrite);
 	IDirectSoundBuffer_Play (pDSBuf, 0, 0, DSBPLAY_LOOPING);
 
-	sn.soundalive = true;
-	sn.splitbuffer = false;
 	sn.samples = gSndBufSize / (sn.samplebits / 8);
 	sn.samplepos = 0;
 	sn.submission_chunk = 1;

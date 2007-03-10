@@ -35,15 +35,10 @@
 
 #include "QF/mathlib.h"
 
-#define AMBIENT_WATER	0
-#define AMBIENT_SKY		1
-#define AMBIENT_SLIME	2
-#define AMBIENT_LAVA	3
-#define NUM_AMBIENTS	4	// automatic ambient sounds
-
-#define DEFAULT_SOUND_PACKET_VOLUME 255
-#define DEFAULT_SOUND_PACKET_ATTENUATION 1.0
-
+/**
+	\ingroup sound
+*/
+//@{
 typedef struct sfx_s sfx_t;
 struct sfx_s
 {
@@ -61,19 +56,7 @@ struct sfx_s
 	void        (*close) (sfx_t *sfx);
 	void        (*release) (sfx_t *sfx);
 };
-
-typedef struct dma_s {
-	qboolean		gamealive;
-	qboolean		soundalive;
-	qboolean		splitbuffer;
-	int				channels;
-	int				samples;				// mono samples in buffer
-	int				submission_chunk;		// don't mix less than this #
-	int				samplepos;				// in mono samples
-	int				samplebits;
-	int				speed;
-	unsigned char	*buffer;
-} dma_t;
+//@}
 
 struct model_s;
 

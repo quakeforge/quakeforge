@@ -266,7 +266,7 @@ vorbis_stream_open (sfx_t *_sfx)
 		return 0;
 
 	sfx = calloc (1, sizeof (sfx_t));
-	samples = shm->speed * 0.3;
+	samples = snd_shm->speed * 0.3;
 	size = samples = (samples + 255) & ~255;
 	if (!snd_loadas8bit->int_val)
 		size *= 2;
