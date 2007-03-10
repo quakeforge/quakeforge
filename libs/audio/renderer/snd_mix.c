@@ -48,12 +48,12 @@ static __attribute__ ((used)) const char rcsid[] =
 #include "snd_render.h"
 
 #define	PAINTBUFFER_SIZE	512
-portable_samplepair_t paintbuffer[PAINTBUFFER_SIZE * 2];
+static portable_samplepair_t paintbuffer[PAINTBUFFER_SIZE * 2];
 static int  max_overpaint;				// number of extra samples painted
 										// due to phase shift
-int         snd_scaletable[32][256];
-int        *snd_p, snd_linear_count, snd_vol;
-short      *snd_out;
+static int         snd_scaletable[32][256];
+static int        *snd_p, snd_linear_count, snd_vol;
+static short      *snd_out;
 
 static void
 SND_WriteLinearBlastStereo16 (void)
