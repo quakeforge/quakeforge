@@ -37,6 +37,7 @@ static __attribute__ ((used)) const char rcsid[] =
 #include "QF/sound.h"
 #include "QF/model.h"
 #include "QF/plugin.h"
+#include "QF/qargs.h"
 #include "QF/sys.h"
 
 static cvar_t  *snd_output;
