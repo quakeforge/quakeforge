@@ -133,6 +133,27 @@ void SND_PaintChannelFrom16 (channel_t *ch, sfxbuffer_t *sc, int count);
 void SND_PaintChannelStereo8 (channel_t *ch, sfxbuffer_t *sc, int count);
 void SND_PaintChannelStereo16 (channel_t *ch, sfxbuffer_t *sc, int count);
 
+// ====================================================================
+// User-setable variables
+// ====================================================================
+
+#define	MAX_CHANNELS			256
+#define	MAX_DYNAMIC_CHANNELS	8
+
+//
+// Fake dma is a synchronous faking of the DMA progress used for
+// isolating performance in the renderer.  The fakedma_updates is
+// number of times S_Update() is called per second.
+//
+
+extern unsigned paintedtime;
+
+extern	struct cvar_s *snd_loadas8bit;
+extern	struct cvar_s *volume;
+
+extern	struct cvar_s	*snd_interp;
+extern	struct cvar_s *snd_stereo_phase_separation;
+
 extern volatile dma_t *shm;
 extern	channel_t   channels[MAX_CHANNELS];
 // 0 to MAX_DYNAMIC_CHANNELS-1	= normal entity sounds
