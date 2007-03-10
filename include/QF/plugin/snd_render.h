@@ -46,11 +46,8 @@ typedef void (*P_S_StartSound) (int entnum, int entchannel, struct sfx_s *sfx, c
 typedef void (*P_S_StaticSound) (struct sfx_s *sfx, const vec3_t origin, float vol, float attenuation);
 typedef void (*P_S_StopSound) (int entnum, int entchannel);
 typedef struct sfx_s * (*P_S_PrecacheSound) (const char *sample);
-typedef void (*P_S_ClearPrecache) (void);
 typedef void (*P_S_Update) (const vec3_t origin, const vec3_t v_forward, const vec3_t v_right, const vec3_t v_up);
 typedef void (*P_S_StopAllSounds) (qboolean clear);
-typedef void (*P_S_BeginPrecaching) (void);
-typedef void (*P_S_EndPrecaching) (void);
 typedef void (*P_S_ExtraUpdate) (void);
 typedef void (*P_S_LocalSound) (const char *s);
 typedef void (*P_S_BlockSound) (void);
@@ -66,11 +63,8 @@ typedef struct snd_render_funcs_s {
 	P_S_StartSound		pS_StartSound;
 	P_S_StopSound		pS_StopSound;
 	P_S_PrecacheSound	pS_PrecacheSound;
-	P_S_ClearPrecache	pS_ClearPrecache;
 	P_S_Update			pS_Update;
 	P_S_StopAllSounds	pS_StopAllSounds;
-	P_S_BeginPrecaching pS_BeginPrecaching;
-	P_S_EndPrecaching	pS_EndPrecaching;
 	P_S_ExtraUpdate 	pS_ExtraUpdate;
 	P_S_LocalSound		pS_LocalSound;
 	P_S_BlockSound		pS_BlockSound;

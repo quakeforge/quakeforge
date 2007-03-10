@@ -177,13 +177,6 @@ S_PrecacheSound (const char *sample)
 }
 
 VISIBLE void
-S_ClearPrecache (void)
-{
-	if (snd_render_funcs)
-		snd_render_funcs->pS_ClearPrecache ();
-}
-
-VISIBLE void
 S_Update (const vec3_t origin, const vec3_t v_forward, const vec3_t v_right,
 		  const vec3_t v_up)
 {
@@ -196,20 +189,6 @@ S_StopAllSounds (qboolean clear)
 {
 	if (snd_render_funcs)
 		snd_render_funcs->pS_StopAllSounds (clear);
-}
-
-VISIBLE void
-S_BeginPrecaching (void)
-{
-	if (snd_render_funcs)
-		snd_render_funcs->pS_BeginPrecaching ();
-}
-
-VISIBLE void
-S_EndPrecaching (void)
-{
-	if (snd_render_funcs)
-		snd_render_funcs->pS_EndPrecaching ();
 }
 
 VISIBLE void

@@ -159,21 +159,6 @@ sfx_t *S_PrecacheSound (const char *sample);
 */
 void S_TouchSound (const char *sample);
 
-/** Does nothing.
-	\todo remove?
-*/
-void S_ClearPrecache (void);
-
-/** Does nothing.
-	\todo remove?
-*/
-void S_BeginPrecaching (void);
-
-/** Does nothing.
-	\todo remove?
-*/
-void S_EndPrecaching (void);
-
 /** Pre-load a sound.
 	\param name		name of sound to load
 */

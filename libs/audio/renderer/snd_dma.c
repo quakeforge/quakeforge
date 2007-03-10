@@ -116,14 +116,6 @@ static snd_output_funcs_t *snd_output_funcs;
 
 // User-setable variables =====================================================
 
-// Fake dma is a synchronous faking of the DMA progress used for
-// isolating performance in the renderer.  The fakedma_updates is
-// number of times s_update() is called per second.
-
-static qboolean	fakedma = false;
-//static int      fakedma_updates = 15;
-
-
 static void
 s_ambient_off (void)
 {
@@ -134,43 +126,6 @@ static void
 s_ambient_on (void)
 {
 	snd_ambient = true;
-}
-
-static void
-s_soundinfo_f (void)
-{
-	if (!sound_started || !snd_shm) {
-		Sys_Printf ("sound system not started\n");
-		return;
-	}
-
-	Sys_Printf ("%5d stereo\n", snd_shm->channels - 1);
-	Sys_Printf ("%5d samples\n", snd_shm->samples);
-	Sys_Printf ("%5d samplepos\n", snd_shm->samplepos);
-	Sys_Printf ("%5d samplebits\n", snd_shm->samplebits);
-	Sys_Printf ("%5d submission_chunk\n", snd_shm->submission_chunk);
-	Sys_Printf ("%5d speed\n", snd_shm->speed);
-	Sys_Printf ("0x%lx dma buffer\n", (unsigned long) snd_shm->buffer);
-	Sys_Printf ("%5d total_channels\n", snd_total_channels);
-}
-
-static void
-s_startup (void)
-{
-	if (!snd_initialized)
-		return;
-
-	if (!fakedma) {
-		snd_shm = snd_output_funcs->pS_O_Init ();
-
-		if (!snd_shm) {
-			Sys_Printf ("S_Startup: S_O_Init failed.\n");
-			sound_started = 0;
-			return;
-		}
-	}
-
-	sound_started = 1;
 }
 
 // Load a sound ===============================================================
@@ -467,12 +422,6 @@ s_stop_all_sounds (qboolean clear)
 }
 
 static void
-s_stop_all_sounds_f (void)
-{
-	s_stop_all_sounds (true);
-}
-
-static void
 s_static_sound (sfx_t *sfx, const vec3_t origin, float vol,
 				 float attenuation)
 {
@@ -726,10 +675,73 @@ s_extra_update (void)
 	s_update_ ();
 }
 
+static void
+s_local_sound (const char *sound)
+{
+	sfx_t	   *sfx;
+
+	if (!sound_started)
+		return;
+	if (nosound->int_val)
+		return;
+
+	sfx = s_precache_sound (sound);
+	if (!sfx) {
+		Sys_Printf ("S_LocalSound: can't cache %s\n", sound);
+		return;
+	}
+	s_start_sound (*render_data.viewentity, -1, sfx, vec3_origin, 1, 1);
+}
+
+static void
+s_block_sound (void)
+{
+	if (++snd_blocked == 1) {
+		snd_output_funcs->pS_O_BlockSound ();
+		s_clear_buffer ();
+	}
+}
+
+static void
+s_unblock_sound (void)
+{
+	if (!snd_blocked)
+		return;
+
+	if (!--snd_blocked) {
+		s_clear_buffer ();
+		snd_output_funcs->pS_O_UnblockSound ();
+	}
+}
+
+static void
+s_gamedir (void)
+{
+	num_sfx = 0;
+}
+
 /* console functions */
 
 static void
-s_play (void)
+s_soundinfo_f (void)
+{
+	if (!sound_started || !snd_shm) {
+		Sys_Printf ("sound system not started\n");
+		return;
+	}
+
+	Sys_Printf ("%5d stereo\n", snd_shm->channels - 1);
+	Sys_Printf ("%5d samples\n", snd_shm->samples);
+	Sys_Printf ("%5d samplepos\n", snd_shm->samplepos);
+	Sys_Printf ("%5d samplebits\n", snd_shm->samplebits);
+	Sys_Printf ("%5d submission_chunk\n", snd_shm->submission_chunk);
+	Sys_Printf ("%5d speed\n", snd_shm->speed);
+	Sys_Printf ("0x%lx dma buffer\n", (unsigned long) snd_shm->buffer);
+	Sys_Printf ("%5d total_channels\n", snd_total_channels);
+}
+
+static void
+s_play_f (void)
 {
 	dstring_t  *name = dstring_new ();
 	int			i;
@@ -825,63 +837,26 @@ s_soundlist_f (void)
 }
 
 static void
-s_local_sound (const char *sound)
+s_stop_all_sounds_f (void)
 {
-	sfx_t	   *sfx;
+	s_stop_all_sounds (true);
+}
 
-	if (!sound_started)
-		return;
-	if (nosound->int_val)
+static void
+s_startup (void)
+{
+	if (!snd_initialized)
 		return;
 
-	sfx = s_precache_sound (sound);
-	if (!sfx) {
-		Sys_Printf ("S_LocalSound: can't cache %s\n", sound);
+	snd_shm = snd_output_funcs->pS_O_Init ();
+
+	if (!snd_shm) {
+		Sys_Printf ("S_Startup: S_O_Init failed.\n");
+		sound_started = 0;
 		return;
 	}
-	s_start_sound (*render_data.viewentity, -1, sfx, vec3_origin, 1, 1);
-}
 
-static void
-s_clear_precache (void)
-{
-}
-
-static void
-s_begin_precaching (void)
-{
-}
-
-static void
-s_end_precaching (void)
-{
-}
-
-static void
-s_block_sound (void)
-{
-	if (++snd_blocked == 1) {
-		snd_output_funcs->pS_O_BlockSound ();
-		s_clear_buffer ();
-	}
-}
-
-static void
-s_unblock_sound (void)
-{
-	if (!snd_blocked)
-		return;
-
-	if (!--snd_blocked) {
-		s_clear_buffer ();
-		snd_output_funcs->pS_O_UnblockSound ();
-	}
-}
-
-static void
-s_gamedir (void)
-{
-	num_sfx = 0;
+	sound_started = 1;
 }
 
 static void
@@ -897,7 +872,7 @@ s_init (void)
 	snd_output_funcs = render_data.output->functions->snd_output;
 	Sys_Printf ("\nSound Initialization\n");
 
-	Cmd_AddCommand ("play", s_play,
+	Cmd_AddCommand ("play", s_play_f,
 					"Play selected sound effect (play pathto/sound.wav)");
 	Cmd_AddCommand ("playcenter", s_playcenter_f,
 					"Play selected sound effect without 3D spatialization.");
@@ -939,10 +914,6 @@ s_init (void)
 						 "Toggles display of sounds currently being played");
 	snd_volumesep = Cvar_Get ("snd_volumesep", "1.0", CVAR_ARCHIVE, NULL,
 							  "max stereo volume separation. 1.0 is max");
-
-	if (COM_CheckParm ("-simsound"))
-		fakedma = true;
-
 // FIXME
 //	if (host_parms.memsize < 0x800000) {
 //		Cvar_Set (snd_loadas8bit, "1");
@@ -962,24 +933,6 @@ s_init (void)
 
 	num_sfx = 0;
 
-	// create a piece of DMA memory
-	if (fakedma) {
-		snd_shm = (void *) Hunk_AllocName (sizeof (*snd_shm), "snd_shm");
-		snd_shm->samplebits = 16;
-		snd_shm->speed = 22050;
-		snd_shm->channels = 2;
-		snd_shm->samples = 32768;
-		snd_shm->samplepos = 0;
-		snd_shm->submission_chunk = 1;
-		snd_shm->buffer = Hunk_AllocName (1 << 16, "shmbuf");
-	}
-//	Sys_Printf ("Sound sampling rate: %i\n", snd_shm->speed);
-
-	// provides a tick sound until washed clean
-
-//	if (snd_shm->buffer)
-//		snd_shm->buffer[4] = snd_shm->buffer[5] = 0x7f; // force a pop for debugging
-
 	ambient_sfx[AMBIENT_WATER] = s_precache_sound ("ambience/water1.wav");
 	ambient_sfx[AMBIENT_SKY] = s_precache_sound ("ambience/wind2.wav");
 
@@ -996,9 +949,7 @@ s_shutdown (void)
 
 	sound_started = 0;
 
-	if (!fakedma) {
-		snd_output_funcs->pS_O_Shutdown ();
-	}
+	snd_output_funcs->pS_O_Shutdown ();
 
 	snd_shm = 0;
 }
@@ -1016,11 +967,8 @@ static snd_render_funcs_t plugin_info_render_funcs = {
 	s_start_sound,
 	s_stop_sound,
 	s_precache_sound,
-	s_clear_precache,
 	s_update,
 	s_stop_all_sounds,
-	s_begin_precaching,
-	s_end_precaching,
 	s_extra_update,
 	s_local_sound,
 	s_block_sound,
