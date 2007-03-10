@@ -55,8 +55,6 @@ static __attribute__ ((used)) const char rcsid[] =
 
 #include "snd_render.h"
 
-// Internal sound data & structures ===========================================
-
 volatile dma_t *snd_shm = 0;
 unsigned int    snd_paintedtime;				// sample PAIRS
 
@@ -942,9 +940,6 @@ s_init (void)
 	snd_volumesep = Cvar_Get ("snd_volumesep", "1.0", CVAR_ARCHIVE, NULL,
 							  "max stereo volume separation. 1.0 is max");
 
-	if (COM_CheckParm ("-nosound"))
-		return;
-
 	if (COM_CheckParm ("-simsound"))
 		fakedma = true;
 
@@ -993,7 +988,6 @@ s_init (void)
 	QFS_GamedirCallback (s_gamedir);
 }
 
-// Shutdown sound engine ======================================================
 static void
 s_shutdown (void)
 {
