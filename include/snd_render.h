@@ -33,7 +33,7 @@
 #define __snd_render_h
 
 
-/** \defgroup sound_render Sound rendering sub-system.
+/** \defgroup sound_render Default sound rendering sub-system.
 	\ingroup sound
 */
 //@{
@@ -134,7 +134,7 @@ struct sfxstream_s {
 		\param file		handle for "file" representing the stream
 						(sfxstream_s::file)
 		\param data		destination of read data
-		\param bytes	number of \i bytes to read from stream
+		\param bytes	number of bytes to read from stream
 		\param info		description of sound data (sfxstream_s::wavinfo)
 		\return			number of bytes read from stream
 	*/
@@ -176,39 +176,6 @@ struct channel_s {
 	int         oldphase;		//!< phase shift between l-r in samples
 };
 
-void SND_PaintChannels(unsigned int endtime);
-
-void SND_ResampleMono (sfxbuffer_t *sc, byte *data, int length, void *prev);
-void SND_ResampleStereo (sfxbuffer_t *sc, byte *data, int length, void *prev);
-void SND_NoResampleStereo (sfxbuffer_t *sc, byte *data, int length, void *prev);
-sfxbuffer_t *SND_GetCache (long samples, int rate, int inwidth, int channels,
-						   sfxblock_t *block, cache_allocator_t allocator);
-
-void SND_InitScaletable (void);
-
-void SND_Load (sfx_t *sfx);
-void SND_LoadOgg (QFile *file, sfx_t *sfx, char *realname);
-void SND_LoadFLAC (QFile *file, sfx_t *sfx, char *realname);
-void SND_LoadWav (QFile *file, sfx_t *sfx, char *realname);
-void SND_LoadMidi (QFile *file, sfx_t *sfx, char *realname);
-
-wavinfo_t *SND_CacheWavinfo (sfx_t *sfx);
-wavinfo_t *SND_StreamWavinfo (sfx_t *sfx);
-sfxbuffer_t *SND_CacheTouch (sfx_t *sfx);
-sfxbuffer_t *SND_CacheRetain (sfx_t *sfx);
-void SND_CacheRelease (sfx_t *sfx);
-sfxbuffer_t *SND_StreamRetain (sfx_t *sfx);
-void SND_StreamRelease (sfx_t *sfx);
-void SND_StreamAdvance (sfxbuffer_t *buffer, unsigned int count);
-void SND_StreamSetPos (sfxbuffer_t *buffer, unsigned int pos);
-
-void SND_PaintChannelFrom8 (channel_t *ch, sfxbuffer_t *sc, int count);
-void SND_PaintChannelFrom16 (channel_t *ch, sfxbuffer_t *sc, int count);
-void SND_PaintChannelStereo8 (channel_t *ch, sfxbuffer_t *sc, int count);
-void SND_PaintChannelStereo16 (channel_t *ch, sfxbuffer_t *sc, int count);
-
-extern unsigned snd_paintedtime;
-
 extern	struct cvar_s *snd_loadas8bit;
 extern	struct cvar_s *snd_volume;
 
@@ -217,14 +184,218 @@ extern	struct cvar_s *snd_stereo_phase_separation;
 
 extern volatile dma_t *snd_shm;
 
-#define	MAX_CHANNELS			256
-#define	MAX_DYNAMIC_CHANNELS	8
-extern	channel_t   snd_channels[MAX_CHANNELS];
-// 0 to MAX_DYNAMIC_CHANNELS-1	= normal entity sounds
-// MAX_DYNAMIC_CHANNELS to MAX_DYNAMIC_CHANNELS + NUM_AMBIENTS -1 = water, etc
-// MAX_DYNAMIC_CHANNELS + NUM_AMBIENTS to total_channels = static sounds
-extern	int			snd_total_channels;
+//@}
 
+/** \defgroup sound_render_mix_channels Sound channels
+	\ingroup sound_render_mix
+	Output sound is mixed from an number of active sound channels.
+
+	- 0 to MAX_DYNAMIC_CHANNELS-1 <br>
+		normal entity sounds
+	- MAX_DYNAMIC_CHANNELS to MAX_DYNAMIC_CHANNELS + NUM_AMBIENTS -1 <br>
+		water, etc
+	- MAX_DYNAMIC_CHANNELS + NUM_AMBIENTS to total_channels - 1 <br>
+		static sounds
+*/
+//@{
+#define	MAX_CHANNELS			256	//!< number of available mixing channels
+#define	MAX_DYNAMIC_CHANNELS	8	//!< number of dynamic channels
+extern	channel_t   snd_channels[MAX_CHANNELS];	//!< pool of available channels
+extern	int			snd_total_channels;	//!< number of active channels
+//@}
+
+
+/** \defgroup sound_render_mix Mixer engine.
+	\ingroup sound_render
+*/
+//@{
+/** sound clock in samples
+*/
+extern unsigned snd_paintedtime;
+
+/** Mix all active channels into the output buffer.
+	\param endtime	sample time until when to mix
+*/
+void SND_PaintChannels(unsigned int endtime);
+
+/** Initialize the scale table for painting of 8 bit samples.
+*/
+void SND_InitScaletable (void);
+//@}
+
+
+/** \defgroup sound_render_resample Resampling functios
+	\ingroup sound_render
+*/
+//@{
+/** Copy/resample mono data into sample buffer, resampling as necessary.
+	\param sc		buffer to write resampled sound
+	\param data		raw sample data
+	\param length	number of raw samples to resample
+	\param prev		pointer to end of last resample for smoothing
+*/
+void SND_ResampleMono (sfxbuffer_t *sc, byte *data, int length, void *prev);
+
+/** Copy/resample stereo data into sample buffer, resampling as necessary.
+	\param sc		buffer to write resampled sound
+	\param data		raw sample data
+	\param length	number of raw samples to resample
+	\param prev		pointer to end of last resample for smoothing
+*/
+void SND_ResampleStereo (sfxbuffer_t *sc, byte *data, int length, void *prev);
+
+/** Copy stereo data into sample buffer. No resampling is done. Useful for
+	generated effects/music.
+	\param sc		buffer to write resampled sound
+	\param data		raw sample data
+	\param length	number of raw samples to resample
+	\param prev		pointer to end of last resample for smoothing
+*/
+void SND_NoResampleStereo (sfxbuffer_t *sc, byte *data, int length, void *prev);
+//@}
+
+
+/** \defgroup sound_render_load Sound loading functions
+	\ingroup sound_render
+*/
+//@{
+/** Load the referenced sound.
+	\param sfx		sound reference
+*/
+void SND_Load (sfx_t *sfx);
+
+/** Load the referenced sound from the specified Ogg file.
+	\param file		pre-opened Ogg file
+	\param sfx		sound reference
+	\param realname	path of sound file should it need to be re-opened
+*/
+void SND_LoadOgg (QFile *file, sfx_t *sfx, char *realname);
+
+/** Load the referenced sound from the specified FLAC file.
+	\param file		pre-opened FLAC file
+	\param sfx		sound reference
+	\param realname	path of sound file should it need to be re-opened
+*/
+void SND_LoadFLAC (QFile *file, sfx_t *sfx, char *realname);
+
+/** Load the referenced sound from the specified WAV file.
+	\param file		pre-opened WAV file
+	\param sfx		sound reference
+	\param realname	path of sound file should it need to be re-opened
+*/
+void SND_LoadWav (QFile *file, sfx_t *sfx, char *realname);
+
+/** Load the referenced sound from the specified MIDI file.
+	\param file		pre-opened MIDI file
+	\param sfx		sound reference
+	\param realname	path of sound file should it need to be re-opened
+*/
+void SND_LoadMidi (QFile *file, sfx_t *sfx, char *realname);
+//@}
+
+/** \defgroup sound_render_cache_stream Cache/Stream Functions.
+	\ingroup sound_render
+*/
+//@{
+/** Retrieve wavinfo from a cached sound.
+	\param sfx		sound reference
+	\return			pointer to sound's wavinfo
+*/
+wavinfo_t *SND_CacheWavinfo (sfx_t *sfx);
+
+/** Retrieve wavinfo from a streamed sound.
+	\param sfx		sound reference
+	\return			pointer to sound's wavinfo
+*/
+wavinfo_t *SND_StreamWavinfo (sfx_t *sfx);
+
+/** Ensure a cached sound is in memory.
+	\param sfx		sound reference
+	\return			poitner to sound buffer
+*/
+sfxbuffer_t *SND_CacheTouch (sfx_t *sfx);
+
+/** Lock a cached sound into memory.
+	\param sfx		sound reference
+	\return			poitner to sound buffer
+*/
+sfxbuffer_t *SND_CacheRetain (sfx_t *sfx);
+
+/** Unlock a cached sound from memory.
+	\param sfx		sound reference
+*/
+void SND_CacheRelease (sfx_t *sfx);
+
+/** Lock a streamed sound into memory. Doesn't actually do anything other than
+	return a pointer to the buffer.
+	\param sfx		sound reference
+	\return			poitner to sound buffer
+*/
+sfxbuffer_t *SND_StreamRetain (sfx_t *sfx);
+
+/** Unlock a streamed sound from memory. Doesn't actually do anything.
+	\param sfx		sound reference
+*/
+void SND_StreamRelease (sfx_t *sfx);
+
+/** Advance the position with the stream, updating the ring buffer as
+	necessary. Null for chached sounds.
+	\param buffer	"this"
+	\param count	number of samples to advance
+*/
+void SND_StreamAdvance (sfxbuffer_t *buffer, unsigned int count);
+
+/** Seek to an absolute position within the stream, resetting the ring
+	buffer.
+	\param buffer	"this"
+	\param pos		sample position with the stream
+*/
+void SND_StreamSetPos (sfxbuffer_t *buffer, unsigned int pos);
+
+/** Allocate a sound buffer from cache for cached sounds.
+	\param samples	size in samples
+	\param rate		sample rate
+	\param inwidth	bits per sample of input data
+	\param channels	number of channels in input data
+	\param block	cached sound descriptor to initialize
+	\param allocator cache allocator function
+	\return			pointer to sound sample buffer (setup for block mode)
+*/
+sfxbuffer_t *SND_GetCache (long samples, int rate, int inwidth, int channels,
+						   sfxblock_t *block, cache_allocator_t allocator);
+//@}
+
+/** \defgroup sound_render_mix_virt Mixer engine virtual functions.
+	\ingroup sound_render_mix
+*/
+//@{
+/** paint 16 bit mono samples into the mix buffer with spacialization effects
+	\param ch		sound channel
+	\param sc		"this"
+	\param count	number of samples to paint
+*/
+void SND_PaintChannelFrom8 (channel_t *ch, sfxbuffer_t *sc, int count);
+
+/** paint 16 bit mono samples into the mix buffer with spacialization effects
+	\param ch		sound channel
+	\param sc		"this"
+	\param count	number of samples to paint
+*/
+void SND_PaintChannelFrom16 (channel_t *ch, sfxbuffer_t *sc, int count);
+
+/** paint 8 bit stereo samples into the mix buffer with spacialization effects
+	\param ch		sound channel
+	\param sc		"this"
+	\param count	number of samples to paint
+*/
+void SND_PaintChannelStereo8 (channel_t *ch, sfxbuffer_t *sc, int count);
+
+/** paint 16 bit stereo samples into the mix buffer with spacialization effects
+	\param ch		sound channel
+	\param sc		"this"
+	\param count	number of samples to paint
+*/
+void SND_PaintChannelStereo16 (channel_t *ch, sfxbuffer_t *sc, int count);
 //@}
 
 #endif//__snd_render_h
