@@ -61,9 +61,29 @@ s_extra_update (void)
 }
 
 static void
+s_jack_activate (void)
+{
+	const char **ports;
+	int         i;
+
+	if (jack_activate (jack_handle)) {
+		Sys_Printf ("Could not activate JACK\n");
+		return;
+	}
+	ports = jack_get_ports (jack_handle, 0, 0,
+							JackPortIsPhysical | JackPortIsInput);
+	//for (i = 0; ports[i]; i++)
+	//	Sys_Printf ("%s\n", ports[i]);
+	for (i = 0; i < 2; i++)
+		jack_connect (jack_handle, jack_port_name (jack_out[i]), ports[i]);
+	free (ports);
+}
+
+static void
 s_block_sound (void)
 {
 	if (++snd_blocked == 1) {
+		Sys_Printf ("jack_deactivate: %d\n", jack_deactivate (jack_handle));
 	}
 }
 
@@ -74,6 +94,8 @@ s_unblock_sound (void)
 		return;
 
 	if (!--snd_blocked) {
+		s_jack_activate ();
+		Sys_Printf ("jack_activate\n");
 	}
 }
 
@@ -95,6 +117,8 @@ snd_jack_process (jack_nframes_t nframes, void *arg)
 {
 	int         i;
 
+	if (snd_blocked)
+		return 0;
 	for (i = 0; i < 2; i++)
 		output[i] = (float *) jack_port_get_buffer (jack_out[i], nframes);
 	SND_PaintChannels (snd_paintedtime + nframes);
@@ -110,7 +134,6 @@ static void
 s_init (void)
 {
 	int         i;
-	const char **ports;
 
 	snd_shm = &_snd_shm;
 	snd_shm->xfer = snd_jack_xfer;
@@ -138,23 +161,18 @@ s_init (void)
 										  JACK_DEFAULT_AUDIO_TYPE,
 										  JackPortIsOutput, 0);
 	snd_shm->speed = jack_get_sample_rate (jack_handle);
-	if (jack_activate (jack_handle)) {
-		Sys_Printf ("Could not activate JACK\n");
-		return;
-	}
-	ports = jack_get_ports (jack_handle, 0, 0,
-							JackPortIsPhysical | JackPortIsInput);
-	for (i = 0; ports[i]; i++)
-		Sys_Printf ("%s\n", ports[i]);
-	for (i = 0; i < 2; i++)
-		jack_connect (jack_handle, jack_port_name (jack_out[i]), ports[i]);
-	free (ports);
+	s_jack_activate ();
 	Sys_Printf ("Connected to JACK: %d Sps\n", snd_shm->speed);
 }
 
 static void
 s_shutdown (void)
 {
+	int         i;
+	jack_deactivate (jack_handle);
+	for (i = 0; i < 2; i++)
+		jack_port_unregister (jack_handle, jack_out[i]);
+	jack_client_close (jack_handle);
 }
 
 static general_funcs_t plugin_info_general_funcs = {
