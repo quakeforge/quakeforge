@@ -264,6 +264,8 @@ extern inline qboolean R_CullSphere (const vec3_t origin, const float radius);
 extern inline float VectorNormalize (vec3_t v);	// returns vector length
 #ifndef IMPLEMENT_R_Cull
 extern inline
+#else
+VISIBLE
 #endif
 qboolean
 R_CullBox (const vec3_t mins, const vec3_t maxs)
@@ -278,6 +280,8 @@ R_CullBox (const vec3_t mins, const vec3_t maxs)
 
 #ifndef IMPLEMENT_R_Cull
 extern inline
+#else
+VISIBLE
 #endif
 qboolean
 R_CullSphere (const vec3_t origin, const float radius)
@@ -296,6 +300,8 @@ R_CullSphere (const vec3_t origin, const float radius)
 
 #ifndef IMPLEMENT_VectorNormalize
 extern inline
+#else
+VISIBLE
 #endif
 float
 VectorNormalize (vec3_t v)
