@@ -3,7 +3,7 @@
 
 	#DESCRIPTION#
 
-	Copyright (C) 2004 #AUTHOR#
+	Copyright (C) 2007 #AUTHOR#
 
 	Author: #AUTHOR#
 	Date: #DATE#
