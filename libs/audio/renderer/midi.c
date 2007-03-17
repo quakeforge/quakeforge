@@ -62,7 +62,7 @@ midi_init ( void ) {
 								CVAR_ROM, NULL,
 								"path/filename of timidity.cfg");
 
-	if (WildMidi_Init (wildmidi_config->string, shm->speed, 0) == -1)
+	if (WildMidi_Init (wildmidi_config->string, snd_shm->speed, 0) == -1)
 		return 1;
 	midi_intiialized = 1;
 	return 0;
@@ -80,7 +80,7 @@ get_info (void * handle) {
 		return info;
 	}
 
-	info.rate = shm->speed;
+	info.rate = snd_shm->speed;
 	info.width = 2;
 	info.channels = 2;
 	info.loopstart = -1;
@@ -150,7 +150,7 @@ midi_stream_open (sfx_t *_sfx)
 		return NULL;	
 
 	sfx = calloc (1, sizeof (sfx_t));
-	samples = shm->speed * 0.3;
+	samples = snd_shm->speed * 0.3;
 	size = samples = (samples + 255) & ~255;
 
 	// WildMidi audio data is 16bit stereo
