@@ -68,6 +68,10 @@ struct dma_s {
 	int				submission_chunk;		//!< don't mix less than this #
 	int				samplepos;				//!< in mono samples
 	unsigned char	*buffer;				//!< destination for mixed sound
+	/** Transfer mixed samples to the output.
+		\param endtime	sample end time (count = endtime - snd_paintedtime)
+	*/
+	void            (*xfer) (int endtime);
 };
 
 /** Describes the sound data.
@@ -187,6 +191,8 @@ extern struct cvar_s *snd_stereo_phase_separation;
 extern volatile dma_t *snd_shm;
 
 extern snd_render_data_t snd_render_data;
+#define PAINTBUFFER_SIZE    512
+extern portable_samplepair_t snd_paintbuffer[PAINTBUFFER_SIZE * 2];
 
 //@}
 

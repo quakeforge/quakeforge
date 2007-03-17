@@ -53,6 +53,7 @@ static int snd_blocked = 0;
 static jack_client_t *jack_handle;
 static jack_port_t *jack_out[2];
 static dma_t    _snd_shm;
+static float   *output[2];
 
 static void
 s_extra_update (void)
@@ -76,9 +77,29 @@ s_unblock_sound (void)
 	}
 }
 
+static void
+snd_jack_xfer (int endtime)
+{
+	int         i;
+	int         count;
+
+	count = endtime - snd_paintedtime;
+	for (i = 0; i < count; i++) {
+		*output[0]++ = snd_paintbuffer[i].left / 65536.0;
+		*output[1]++ = snd_paintbuffer[i].right / 65536.0;
+	}
+	output[0] += count;
+	output[1] += count;
+}
+
 static int
 snd_jack_process (jack_nframes_t nframes, void *arg)
 {
+	int         i;
+
+	for (i = 0; i < 2; i++)
+		output[i] = (float *) jack_port_get_buffer (jack_out[i], nframes);
+	SND_PaintChannels (snd_paintedtime + nframes);
 	return 0;
 }
 
@@ -94,6 +115,7 @@ s_init (void)
 	const char **ports;
 
 	snd_shm = &_snd_shm;
+	snd_shm->xfer = snd_jack_xfer;
 
 	snd_interp = Cvar_Get ("snd_interp", "1", CVAR_ARCHIVE, NULL,
 	                              "control sample interpolation");
