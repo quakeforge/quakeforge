@@ -119,10 +119,8 @@ void S_StaticSound (sfx_t *sfx, const vec3_t origin, float vol,
 void S_StopSound (int entnum, int entchannel);
 
 /** Stop all sounds from playing.
-	\param clear	if true, the buffer is cleared so sound stops immediately
-					rather than trailing off
 */
-void S_StopAllSounds(qboolean clear);
+void S_StopAllSounds(void);
 
 /** Update the sound engine with the client's position and orientation and
 	render some sound.

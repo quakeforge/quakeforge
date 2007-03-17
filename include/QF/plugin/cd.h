@@ -29,7 +29,6 @@
 #define __QF_plugin_cd_h_
 
 #include <QF/qtypes.h>
-#include <QF/plugin.h>
 
 /*
 	All CDAudio plugins must export these functions

@@ -30,7 +30,6 @@
 #define __QF_plugin_general_h_
 
 #include <QF/qtypes.h>
-#include <QF/plugin.h>
 
 /*
 	All plugins, of all types, must export these functions

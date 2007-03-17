@@ -29,7 +29,6 @@
 #define __QF_plugin_snd_render_h_
 
 #include <QF/qtypes.h>
-#include <QF/plugin.h>
 
 /*
 	All sound plugins must export these functions
@@ -47,7 +46,7 @@ typedef void (*P_S_StaticSound) (struct sfx_s *sfx, const vec3_t origin, float v
 typedef void (*P_S_StopSound) (int entnum, int entchannel);
 typedef struct sfx_s * (*P_S_PrecacheSound) (const char *sample);
 typedef void (*P_S_Update) (const vec3_t origin, const vec3_t v_forward, const vec3_t v_right, const vec3_t v_up);
-typedef void (*P_S_StopAllSounds) (qboolean clear);
+typedef void (*P_S_StopAllSounds) (void);
 typedef void (*P_S_ExtraUpdate) (void);
 typedef void (*P_S_LocalSound) (const char *s);
 typedef void (*P_S_BlockSound) (void);

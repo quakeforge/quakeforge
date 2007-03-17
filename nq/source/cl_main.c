@@ -202,7 +202,7 @@ void
 CL_Disconnect (void)
 {
 	// stop sounds (especially looping!)
-	S_StopAllSounds (true);
+	S_StopAllSounds ();
 
 	// Clean the Cshifts
 	CL_StopCshifts ();

@@ -29,7 +29,6 @@
 #define __QF_plugin_snd_output_h_
 
 #include <QF/qtypes.h>
-#include <QF/plugin.h>
 
 /*
 	All sound plugins must export these functions

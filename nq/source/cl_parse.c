@@ -268,7 +268,7 @@ CL_ParseServerInfo (void)
 	Con_DPrintf ("Serverinfo packet received.\n");
 
 	S_BlockSound ();
-	S_StopAllSounds (true);
+	S_StopAllSounds ();
 
 	// wipe the client_state_t struct
 	CL_ClearState ();

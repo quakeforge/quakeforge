@@ -33,7 +33,6 @@
 
 #include <QF/keys.h>
 #include <QF/qtypes.h>
-#include <QF/plugin.h>
 
 typedef void (*P_C_Print) (const char *fmt, va_list args);
 typedef void (*P_C_ProcessInput) (void);

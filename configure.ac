@@ -1032,6 +1032,30 @@ fi
 AC_SUBST(ALSA_LIBS)
 AC_SUBST(HAVE_ALSA)
 
+AC_ARG_ENABLE(jack,
+[  --disable-jack          disable jack support],
+)
+HAVE_JACK=no
+JACK_LIBS=""
+if test "x$enable_jack" != "xno"; then
+	if test "x$PKG_CONFIG" != "x"; then
+		PKG_CHECK_MODULES([JACK], [jack], HAVE_JACK=yes, HAVE_JACK=no)
+		SOUND_TYPES="$SOUND_TYPES JACK"
+	else
+		AC_CHECK_LIB(jack, jack_client_open, HAVE_JACK=yes, HAVE_JACK=no,
+					 [$LIBS])
+		if test "x$HAVE_JACK" = "xyes"; then
+			AC_CHECK_HEADER(jack/jack.h, HAVE_JACK=yes, HAVE_JACK=no)
+			if test "x$HAVE_JACK" = "xyes"; then
+				JACK_LIBS="-ljack"
+				AC_DEFINE(HAVE_JACK, 1, [Define if you have libjack])
+				SOUND_TYPES="$SOUND_TYPES JACK"
+			fi
+		fi
+	fi
+fi
+AC_SUBST(JACK_LIBS)
+
 SOUND_TYPES="$SOUND_TYPES DISK"
 
 dnl MME
@@ -2015,6 +2039,9 @@ if test -n "$CL_TARGETS"; then
 	fi
 	if test "$SOUND_TYPES"; then
 		SND_REND_TARGETS="$SND_REND_TARGETS snd_render_default.la"
+		if test "`echo $SOUND_TYPES | grep JACK`"; then
+			SND_REND_TARGETS="$SND_REND_TARGETS snd_render_jack.la"
+		fi
 	fi
 
 	# priority sorted list for default sound driver in order of increasing

@@ -30,7 +30,6 @@
 #define __QF_plugin_input_h_
 
 #include <QF/qtypes.h>
-#include <QF/plugin.h>
 
 /*
 	All input plugins must export these functions

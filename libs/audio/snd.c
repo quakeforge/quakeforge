@@ -185,10 +185,10 @@ S_Update (const vec3_t origin, const vec3_t v_forward, const vec3_t v_right,
 }
 
 VISIBLE void
-S_StopAllSounds (qboolean clear)
+S_StopAllSounds (void)
 {
 	if (snd_render_funcs)
-		snd_render_funcs->pS_StopAllSounds (clear);
+		snd_render_funcs->pS_StopAllSounds ();
 }
 
 VISIBLE void

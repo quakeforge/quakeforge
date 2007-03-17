@@ -219,8 +219,7 @@ SND_PaintChannels (unsigned int endtime)
 						ch->end = ltime + ch->sfx->length - ch->pos;
 					} else {			// channel just stopped
 						ch->sfx->release (ch->sfx);
-						ch->sfx->close (ch->sfx);
-						ch->sfx = NULL;
+						SND_ChannelStop (ch);
 						break;
 					}
 				}

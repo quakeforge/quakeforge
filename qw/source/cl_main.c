@@ -393,7 +393,7 @@ CL_ClearState (void)
 {
 	int         i;
 
-	S_StopAllSounds (true);
+	S_StopAllSounds ();
 
 	// wipe the entire cl structure
 	Info_Destroy (cl.serverinfo);
@@ -472,7 +472,7 @@ CL_Disconnect (void)
 	VID_SetCaption ("Disconnected");
 
 	// stop sounds (especially looping!)
-	S_StopAllSounds (true);
+	S_StopAllSounds ();
 
 	// Clean the Cshifts
 	CL_StopCshifts ();
@@ -794,7 +794,7 @@ CL_Changing_f (void)
 	if (cls.download)					// don't change when downloading
 		return;
 
-	S_StopAllSounds (true);
+	S_StopAllSounds ();
 	cl.intermission = 0;
 	r_force_fullscreen = 0;
 	CL_SetState (ca_connected);			// not active anymore, but not
@@ -815,7 +815,7 @@ CL_Reconnect_f (void)
 	if (cls.demoplayback)
 		return;
 
-	S_StopAllSounds (true);
+	S_StopAllSounds ();
 
 	if (cls.state == ca_connected) {
 		Con_Printf ("reconnecting...\n");
