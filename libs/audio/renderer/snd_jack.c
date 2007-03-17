@@ -88,8 +88,6 @@ snd_jack_xfer (int endtime)
 		*output[0]++ = snd_paintbuffer[i].left / 65536.0;
 		*output[1]++ = snd_paintbuffer[i].right / 65536.0;
 	}
-	output[0] += count;
-	output[1] += count;
 }
 
 static int
