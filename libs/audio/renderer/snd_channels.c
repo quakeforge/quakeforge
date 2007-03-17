@@ -1,0 +1,561 @@
+/*
+	snd_dma.c
+
+	main control for any streaming sound output device
+
+	Copyright (C) 1996-1997  Id Software, Inc.
+
+	This program is free software; you can redistribute it and/or
+	modify it under the terms of the GNU General Public License
+	as published by the Free Software Foundation; either version 2
+	of the License, or (at your option) any later version.
+
+	This program is distributed in the hope that it will be useful,
+	but WITHOUT ANY WARRANTY; without even the implied warranty of
+	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+
+	See the GNU General Public License for more details.
+
+	You should have received a copy of the GNU General Public License
+	along with this program; if not, write to:
+
+		Free Software Foundation, Inc.
+		59 Temple Place - Suite 330
+		Boston, MA	02111-1307, USA
+
+*/
+#ifdef HAVE_CONFIG_H
+# include "config.h"
+#endif
+
+static __attribute__ ((used)) const char rcsid[] = 
+	"$Id: snd_dma.c 11380 2007-03-10 14:17:52Z taniwha $";
+
+#ifdef HAVE_STRING_H
+# include <string.h>
+#endif
+#ifdef HAVE_STRINGS_H
+# include <strings.h>
+#endif
+#include <stdlib.h>
+
+#include "QF/bspfile.h"
+#include "QF/cmd.h"
+#include "QF/cvar.h"
+#include "QF/dstring.h"
+#include "QF/model.h"
+#include "QF/sys.h"
+
+#include "snd_render.h"
+
+channel_t       snd_channels[MAX_CHANNELS];
+int             snd_total_channels;
+
+static channel_t *ambient_channels[NUM_AMBIENTS];
+static channel_t *dynamic_channels[MAX_DYNAMIC_CHANNELS];
+static channel_t *static_channels[MAX_CHANNELS];
+static int      snd_num_statics;
+
+static qboolean snd_ambient = 1;
+static sfx_t   *ambient_sfx[NUM_AMBIENTS];
+
+static vec_t    sound_nominal_clip_dist = 1000.0;
+
+static vec3_t   listener_origin;
+static vec3_t   listener_forward;
+static vec3_t   listener_right;
+static vec3_t   listener_up;
+
+static cvar_t  *snd_phasesep;
+static cvar_t  *snd_volumesep;
+static cvar_t  *ambient_fade;
+static cvar_t  *ambient_level;
+
+
+channel_t *
+SND_AllocChannel (void)
+{
+	if (snd_total_channels < MAX_CHANNELS)
+		return &snd_channels[snd_total_channels++];
+	return 0;
+}
+
+void
+SND_ChannelStop (channel_t *chan)
+{
+	chan->end = 0;
+	if (chan->sfx) {
+		chan->sfx->close (chan->sfx);
+	}
+	chan->sfx = 0;
+}
+
+void
+SND_StopAllSounds (void)
+{
+	int         i;
+
+	snd_num_statics = 0;
+	for (i = 0; i < MAX_CHANNELS; i++)
+		SND_ChannelStop (&snd_channels[i]);
+
+	memset (snd_channels, 0, MAX_CHANNELS * sizeof (channel_t));
+}
+
+static void
+s_play_f (void)
+{
+	dstring_t  *name = dstring_new ();
+	int			i;
+	static int	hash = 345;
+	sfx_t	   *sfx;
+
+	i = 1;
+	while (i < Cmd_Argc ()) {
+		if (!strrchr (Cmd_Argv (i), '.')) {
+			dsprintf (name, "%s.wav", Cmd_Argv (i));
+		} else {
+			dsprintf (name, "%s", Cmd_Argv (i));
+		}
+		sfx = SND_PrecacheSound (name->str);
+		SND_StartSound (hash++, 0, sfx, listener_origin, 1.0, 1.0);
+		i++;
+	}
+	dstring_delete (name);
+}
+
+static void
+s_playcenter_f (void)
+{
+	dstring_t  *name = dstring_new ();
+	int			i;
+	sfx_t	   *sfx;
+
+	i = 1;
+	while (i < Cmd_Argc ()) {
+		if (!strrchr (Cmd_Argv (i), '.')) {
+			dsprintf (name, "%s.wav", Cmd_Argv (i));
+		} else {
+			dsprintf (name, "%s", Cmd_Argv (i));
+		}
+		sfx = SND_PrecacheSound (name->str);
+		SND_StartSound (*snd_render_data.viewentity, 0, sfx, listener_origin,
+						1.0, 1.0);
+		i++;
+	}
+	dstring_delete (name);
+}
+
+static void
+s_playvol_f (void)
+{
+	dstring_t  *name = dstring_new ();
+	float		vol;
+	int			i;
+	static int	hash = 543;
+	sfx_t	   *sfx;
+
+	i = 1;
+	while (i < Cmd_Argc ()) {
+		if (!strrchr (Cmd_Argv (i), '.')) {
+			dsprintf (name, "%s.wav", Cmd_Argv (i));
+		} else {
+			dsprintf (name, "%s", Cmd_Argv (i));
+		}
+		sfx = SND_PrecacheSound (name->str);
+		vol = atof (Cmd_Argv (i + 1));
+		SND_StartSound (hash++, 0, sfx, listener_origin, vol, 1.0);
+		i += 2;
+	}
+	dstring_delete (name);
+}
+
+void
+SND_Channels_Init (void)
+{
+	int         i;
+
+	snd_phasesep = Cvar_Get ("snd_phasesep", "0.0", CVAR_ARCHIVE, NULL,
+							 "max stereo phase separation in ms. 0.6 is for "
+							 "20cm head");
+	snd_volumesep = Cvar_Get ("snd_volumesep", "1.0", CVAR_ARCHIVE, NULL,
+							  "max stereo volume separation. 1.0 is max");
+	ambient_fade = Cvar_Get ("ambient_fade", "100", CVAR_NONE, NULL,
+							 "How quickly ambient sounds fade in or out");
+	ambient_level = Cvar_Get ("ambient_level", "0.3", CVAR_NONE, NULL,
+							  "Ambient sounds' volume");
+
+	Cmd_AddCommand ("play", s_play_f,
+					"Play selected sound effect (play pathto/sound.wav)");
+	Cmd_AddCommand ("playcenter", s_playcenter_f,
+					"Play selected sound effect without 3D spatialization.");
+	Cmd_AddCommand ("playvol", s_playvol_f, "Play selected sound effect at "
+					"selected volume (playvol pathto/sound.wav num");
+
+	for (i = 0; i < NUM_AMBIENTS; i++)
+		ambient_channels[i] = SND_AllocChannel ();
+	for (i = 0; i < MAX_DYNAMIC_CHANNELS; i++)
+		dynamic_channels[i] = SND_AllocChannel ();
+
+	snd_num_statics = 0;
+
+	ambient_sfx[AMBIENT_WATER] = SND_PrecacheSound ("ambience/water1.wav");
+	ambient_sfx[AMBIENT_SKY] = SND_PrecacheSound ("ambience/wind2.wav");
+}
+
+static channel_t *
+s_pick_channel (int entnum, int entchannel)
+{
+	int			ch_idx;
+	unsigned    life_left;
+	channel_t  *ch, *first_to_die;
+
+	// Check for replacement sound, or find the best one to replace
+	first_to_die = 0;
+	life_left = 0x7fffffff;
+	for (ch_idx = 0; ch_idx < MAX_DYNAMIC_CHANNELS; ch_idx++) {
+		ch = dynamic_channels[ch_idx];
+		if (entchannel != 0				// channel 0 never overrides
+			&& ch->entnum == entnum
+			&& (ch->entchannel == entchannel || entchannel == -1)) {
+			// always override sound from same entity
+			first_to_die = ch;
+			break;
+		}
+		// don't let monster sounds override player sounds
+		if (ch->entnum == *snd_render_data.viewentity
+			&& entnum != *snd_render_data.viewentity
+			&& ch->sfx)
+			continue;
+
+		if (snd_paintedtime + life_left > ch->end) {
+			life_left = ch->end - snd_paintedtime;
+			first_to_die = ch;
+		}
+	}
+
+	if (!first_to_die)
+		return NULL;
+
+	SND_ChannelStop (first_to_die);
+
+	return first_to_die;
+}
+
+void
+SND_AmbientOff (void)
+{
+	snd_ambient = false;
+}
+
+void
+SND_AmbientOn (void)
+{
+	snd_ambient = true;
+}
+
+static void
+s_updateAmbientSounds (void)
+{
+	float		vol;
+	int			ambient_channel;
+	channel_t  *chan;
+	sfx_t      *sfx;
+	mleaf_t    *l;
+
+	if (!snd_ambient)
+		return;
+	// calc ambient sound levels
+	if (!*snd_render_data.worldmodel)
+		return;
+
+	l = Mod_PointInLeaf (listener_origin, *snd_render_data.worldmodel);
+	if (!l || !ambient_level->value) {
+		// if we're not in a leaf (huh?) or ambients have been turned off,
+		// stop all ambient channels.
+		for (ambient_channel = 0; ambient_channel < NUM_AMBIENTS;
+			 ambient_channel++) {
+			SND_ChannelStop (ambient_channels[ambient_channel]);
+		}
+		return;
+	}
+
+	for (ambient_channel = 0; ambient_channel < NUM_AMBIENTS;
+		 ambient_channel++) {
+		chan = ambient_channels[ambient_channel];
+		sfx = ambient_sfx[ambient_channel];
+		if (!sfx) {
+			SND_ChannelStop (chan);
+			continue;
+		} else if (!chan->sfx)
+			chan->sfx = sfx->open (sfx);
+
+		vol = ambient_level->value * l->ambient_sound_level[ambient_channel];
+		if (vol < 8)
+			vol = 0;
+
+		// don't adjust volume too fast
+		if (chan->master_vol < vol) {
+			chan->master_vol += *snd_render_data.host_frametime
+				* ambient_fade->value;
+			if (chan->master_vol > vol)
+				chan->master_vol = vol;
+		} else if (chan->master_vol > vol) {
+			chan->master_vol -= *snd_render_data.host_frametime
+				* ambient_fade->value;
+			if (chan->master_vol < vol)
+				chan->master_vol = vol;
+		}
+
+		chan->leftvol = chan->rightvol = chan->master_vol;
+	}
+}
+
+static void
+s_spatialize (channel_t *ch)
+{
+	int			phase;					// in samples
+	vec_t		dist, dot, lscale, rscale, scale;
+	vec3_t		source_vec;
+
+	// prepare to lerp from prev to next phase
+	ch->oldphase = ch->phase;
+
+	// anything coming from the view entity will always be full volume
+	if (ch->entnum == *snd_render_data.viewentity) {
+		ch->leftvol = ch->master_vol;
+		ch->rightvol = ch->master_vol;
+		ch->phase = 0;
+		return;
+	}
+	// calculate stereo seperation and distance attenuation
+
+	VectorSubtract (ch->origin, listener_origin, source_vec);
+
+	dist = VectorNormalize (source_vec) * ch->dist_mult;
+
+	dot = DotProduct (listener_right, source_vec);
+
+	if (snd_shm->channels == 1) {
+		rscale = 1.0;
+		lscale = 1.0;
+		phase = 0;
+	} else {
+		rscale = 1.0 + dot * snd_volumesep->value;
+		lscale = 1.0 - dot * snd_volumesep->value;
+		phase = snd_phasesep->value * 0.001 * snd_shm->speed * dot;
+	}
+
+	// add in distance effect
+	scale = (1.0 - dist) * rscale;
+	ch->rightvol = (int) (ch->master_vol * scale);
+	if (ch->rightvol < 0)
+		ch->rightvol = 0;
+
+	scale = (1.0 - dist) * lscale;
+	ch->leftvol = (int) (ch->master_vol * scale);
+	if (ch->leftvol < 0)
+		ch->leftvol = 0;
+
+	ch->phase = phase;
+}
+
+static inline int
+s_update_channel (channel_t *ch)
+{
+	if (!ch->sfx)
+		return 0;
+	s_spatialize (ch);				// respatialize channel
+	if (!ch->leftvol && !ch->rightvol)
+		return 0;
+	return 1;
+}
+
+static void
+s_combine_channel (channel_t *combine, channel_t *ch)
+{
+	combine->leftvol += ch->leftvol;
+	combine->rightvol += ch->rightvol;
+	ch->leftvol = ch->rightvol = 0;
+}
+
+void
+SND_SetListener (const vec3_t origin, const vec3_t forward, const vec3_t right,
+				 const vec3_t up)
+{
+	int         i, j;
+	channel_t  *combine, *ch;
+
+	VectorCopy (origin, listener_origin);
+	VectorCopy (forward, listener_forward);
+	VectorCopy (right, listener_right);
+	VectorCopy (up, listener_up);
+
+	// update general area ambient sound sources
+	s_updateAmbientSounds ();
+
+	// update spatialization for dynamic sounds	
+	for (i = 0; i < MAX_DYNAMIC_CHANNELS; i++)
+		s_update_channel (dynamic_channels[i]);
+
+	// update spatialization for static sounds	
+	combine = 0;
+	for (i = 0; i < snd_num_statics; i++) {
+		ch = static_channels[i];
+		if (!s_update_channel (ch))
+			continue;
+
+		// try to combine static sounds with a previous channel of the same
+		// sound effect so we don't mix five torches every frame
+		// see if it can just use the last one
+		if (combine && combine->sfx == ch->sfx) {
+			s_combine_channel (combine, ch);
+			continue;
+		}
+		// search for one
+		for (j = 0; j < i; j++) {
+			combine = static_channels[j];
+			if (combine->sfx == ch->sfx)
+				break;
+		}
+
+		if (j == i) {
+			combine = 0;
+		} else {
+			if (combine != ch)
+				s_combine_channel (combine, ch);
+			continue;
+		}
+	}
+}
+
+void
+SND_StartSound (int entnum, int entchannel, sfx_t *sfx, const vec3_t origin,
+				float fvol, float attenuation)
+{
+	int			 ch_idx, vol;
+	unsigned int skip;
+	channel_t   *target_chan, *check;
+
+	if (!sfx)
+		return;
+	// pick a channel to play on
+	target_chan = s_pick_channel (entnum, entchannel);
+	if (!target_chan)
+		return;
+
+	vol = fvol * 255;
+
+	// spatialize
+	memset (target_chan, 0, sizeof (*target_chan));
+	VectorCopy (origin, target_chan->origin);
+	target_chan->dist_mult = attenuation / sound_nominal_clip_dist;
+	target_chan->master_vol = vol;
+	target_chan->entnum = entnum;
+	target_chan->entchannel = entchannel;
+	s_spatialize (target_chan);
+
+	if (!target_chan->leftvol && !target_chan->rightvol)
+		return;							// not audible at all
+
+	// new channel
+	if (!sfx->retain (sfx)) {
+		SND_ChannelStop (target_chan);
+		return;						// couldn't load the sound's data
+	}
+
+	if (!(target_chan->sfx = sfx->open (sfx))) {
+		sfx->release (sfx);
+		return;
+	}
+	target_chan->pos = 0.0;
+	target_chan->end = snd_paintedtime + target_chan->sfx->length;
+	sfx->release (sfx);
+
+	// if an identical sound has also been started this frame, offset the pos
+	// a bit to keep it from just making the first one louder
+	for (ch_idx = 0; ch_idx < MAX_DYNAMIC_CHANNELS; ch_idx++) {
+		check = dynamic_channels[ch_idx];
+		if (check == target_chan)
+			continue;
+		if (check->sfx == sfx && !check->pos) {
+			skip = rand () % (int) (0.1 * snd_shm->speed);
+			if (skip >= target_chan->end)
+				skip = target_chan->end - 1;
+			target_chan->pos += skip;
+			target_chan->end -= skip;
+			break;
+		}
+	}
+}
+
+void
+SND_StopSound (int entnum, int entchannel)
+{
+	int			i;
+	channel_t  *ch;
+
+	for (i = 0; i < MAX_DYNAMIC_CHANNELS; i++) {
+		ch = dynamic_channels[i];
+		if (ch->entnum == entnum && ch->entchannel == entchannel) {
+			ch->end = 0;
+			SND_ChannelStop (ch);
+			return;
+		}
+	}
+}
+
+void
+SND_StaticSound (sfx_t *sfx, const vec3_t origin, float vol,
+				 float attenuation)
+{
+	channel_t  *ss;
+
+	if (!sfx)
+		return;
+
+	if (!static_channels[snd_num_statics]) {
+		if (!(static_channels[snd_num_statics] = SND_AllocChannel ())) {
+			Sys_Printf ("ran out of channels\n");
+			return;
+		}
+	}
+
+	ss = static_channels[snd_num_statics];
+
+	if (!sfx->retain (sfx))
+		return;
+
+	if (sfx->loopstart == (unsigned int) -1) {
+		Sys_Printf ("Sound %s not looped\n", sfx->name);
+		sfx->release (sfx);
+		return;
+	}
+
+	if (!(ss->sfx = sfx->open (sfx))) {
+		sfx->release (sfx);
+		return;
+	}
+	VectorCopy (origin, ss->origin);
+	ss->master_vol = vol;
+	ss->dist_mult = (attenuation / 64) / sound_nominal_clip_dist;
+	ss->end = snd_paintedtime + sfx->length;
+	sfx->release (sfx);
+
+	s_spatialize (ss);
+	ss->oldphase = ss->phase;
+	snd_num_statics++;
+}
+
+void
+SND_LocalSound (const char *sound)
+{
+	sfx_t	   *sfx;
+
+	sfx = SND_PrecacheSound (sound);
+	if (!sfx) {
+		Sys_Printf ("S_LocalSound: can't cache %s\n", sound);
+		return;
+	}
+	SND_StartSound (*snd_render_data.viewentity, -1, sfx, vec3_origin, 1, 1);
+}
