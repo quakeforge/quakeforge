@@ -1,9 +1,9 @@
 /*
-	snd_dma.c
+	snd_jack.c
 
-	main control for any streaming sound output device
+	JACK version of the renderer
 
-	Copyright (C) 1996-1997  Id Software, Inc.
+	Copyright (C) 2007 Bill Currie <bill@taniwha.org>
 
 	This program is free software; you can redistribute it and/or
 	modify it under the terms of the GNU General Public License
@@ -21,7 +21,7 @@
 
 		Free Software Foundation, Inc.
 		59 Temple Place - Suite 330
-		Boston, MA	02111-1307, USA
+		Boston, MA  02111-1307, USA
 
 */
 #ifdef HAVE_CONFIG_H
@@ -38,6 +38,7 @@ static __attribute__ ((used)) const char rcsid[] =
 # include <strings.h>
 #endif
 #include <stdlib.h>
+#include <jack/jack.h>
 
 #include "QF/cvar.h"
 #include "QF/hash.h"
@@ -49,44 +50,9 @@ static __attribute__ ((used)) const char rcsid[] =
 #include "snd_render.h"
 
 static int snd_blocked = 0;
-
-static void
-s_ambient_off (void)
-{
-}
-
-static void
-s_ambient_on (void)
-{
-}
-
-static void
-s_start_sound (int entnum, int entchannel, sfx_t *sfx, const vec3_t origin,
-				float fvol, float attenuation)
-{
-}
-
-static void
-s_stop_sound (int entnum, int entchannel)
-{
-}
-
-static void
-s_static_sound (sfx_t *sfx, const vec3_t origin, float vol,
-				 float attenuation)
-{
-}
-
-static void
-s_local_sound (const char *sound)
-{
-}
-
-static void
-s_update (const vec3_t origin, const vec3_t forward, const vec3_t right,
-			const vec3_t up)
-{
-}
+static jack_client_t *jack_handle;
+static jack_port_t *jack_out[2];
+static dma_t    _snd_shm;
 
 static void
 s_extra_update (void)
@@ -110,10 +76,60 @@ s_unblock_sound (void)
 	}
 }
 
+static int
+snd_jack_process (jack_nframes_t nframes, void *arg)
+{
+	return 0;
+}
+
+static void
+snd_jack_shutdown (void *arg)
+{
+}
+
 static void
 s_init (void)
 {
+	int         i;
+	const char **ports;
+
+	snd_shm = &_snd_shm;
+
+	snd_interp = Cvar_Get ("snd_interp", "1", CVAR_ARCHIVE, NULL,
+	                              "control sample interpolation");
+	snd_volume = Cvar_Get ("volume", "0.7", CVAR_ARCHIVE, NULL,
+						   "Set the volume for sound playback");
+	snd_interp = Cvar_Get ("snd_interp", "1", CVAR_ARCHIVE, NULL,
+						   "control sample interpolation");
+	snd_loadas8bit = Cvar_Get ("snd_loadas8bit", "0", CVAR_NONE, NULL,
+							   "Toggles loading sounds as 8-bit samples");
+
 	SND_SFX_Init ();
+	SND_Channels_Init ();
+
+	if ((jack_handle = jack_client_new ("QuakeForge")) == 0) {
+		Sys_Printf ("Could not connect to JACK\n");
+		return;
+	}
+	jack_set_process_callback (jack_handle, snd_jack_process, 0);
+	jack_on_shutdown (jack_handle, snd_jack_shutdown, 0);
+	for (i = 0; i < 2; i++)
+		jack_out[i] = jack_port_register (jack_handle, va ("out_%d", i + 1),
+										  JACK_DEFAULT_AUDIO_TYPE,
+										  JackPortIsOutput, 0);
+	snd_shm->speed = jack_get_sample_rate (jack_handle);
+	if (jack_activate (jack_handle)) {
+		Sys_Printf ("Could not activate JACK\n");
+		return;
+	}
+	ports = jack_get_ports (jack_handle, 0, 0,
+							JackPortIsPhysical | JackPortIsInput);
+	for (i = 0; ports[i]; i++)
+		Sys_Printf ("%s\n", ports[i]);
+	for (i = 0; i < 2; i++)
+		jack_connect (jack_handle, jack_port_name (jack_out[i]), ports[i]);
+	free (ports);
+	Sys_Printf ("Connected to JACK: %d Sps\n", snd_shm->speed);
 }
 
 static void
@@ -127,17 +143,17 @@ static general_funcs_t plugin_info_general_funcs = {
 };
 
 static snd_render_funcs_t plugin_info_render_funcs = {
-	s_ambient_off,
-	s_ambient_on,
+	SND_AmbientOff,
+	SND_AmbientOn,
 	SND_TouchSound,
-	s_static_sound,
-	s_start_sound,
-	s_stop_sound,
+	SND_StaticSound,
+	SND_StartSound,
+	SND_StopSound,
 	SND_PrecacheSound,
-	s_update,
+	SND_SetListener,
 	SND_StopAllSounds,
 	s_extra_update,
-	s_local_sound,
+	SND_LocalSound,
 	s_block_sound,
 	s_unblock_sound,
 	SND_LoadSound,
@@ -145,7 +161,6 @@ static snd_render_funcs_t plugin_info_render_funcs = {
 };
 
 static general_data_t plugin_info_general_data;
-static snd_render_data_t render_data;
 
 static plugin_funcs_t plugin_info_funcs = {
 	&plugin_info_general_funcs,
@@ -162,7 +177,7 @@ static plugin_data_t plugin_info_data = {
 	0,
 	0,
 	0,
-	&render_data,
+	&snd_render_data,
 };
 
 static plugin_t plugin_info = {
@@ -171,10 +186,9 @@ static plugin_t plugin_info = {
 	QFPLUGIN_VERSION,
 	"0.1",
 	"Sound Renderer",
-	"Copyright (C) 1996-1997 id Software, Inc.\n"
-		"Copyright (C) 1999,2000,2001  contributors of the QuakeForge "
-		"project\n"
-		"Please see the file \"AUTHORS\" for a list of contributors",
+	"Copyright (C) 2007  contributors of the QuakeForge "
+	"project\n"
+	"Please see the file \"AUTHORS\" for a list of contributors",
 	&plugin_info_funcs,
 	&plugin_info_data,
 };

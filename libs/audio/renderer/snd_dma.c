@@ -55,7 +55,6 @@ static __attribute__ ((used)) const char rcsid[] =
 
 #include "snd_render.h"
 
-volatile dma_t *snd_shm = 0;
 unsigned int    snd_paintedtime;				// sample PAIRS
 
 cvar_t         *snd_loadas8bit;
@@ -76,21 +75,8 @@ static cvar_t  *snd_noextraupdate;
 static cvar_t  *snd_show;
 
 static general_data_t plugin_info_general_data;
-snd_render_data_t snd_render_data = {
-	0,
-	0,
-	0,
-	&soundtime,
-	&snd_paintedtime,
-	0,
-};
 
 static snd_output_funcs_t *snd_output_funcs;
-
-
-//=============================================================================
-
-// Start a sound effect =======================================================
 
 static void
 s_clear_buffer (void)
@@ -266,6 +252,7 @@ static void
 s_init (void)
 {
 	snd_output_funcs = snd_render_data.output->functions->snd_output;
+	snd_render_data.soundtime = &soundtime;
 	Sys_Printf ("\nSound Initialization\n");
 
 	Cmd_AddCommand ("stopsound", s_stop_all_sounds_f,
