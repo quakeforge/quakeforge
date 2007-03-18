@@ -175,10 +175,12 @@ static void
 s_shutdown (void)
 {
 	int         i;
-	jack_deactivate (jack_handle);
-	for (i = 0; i < 2; i++)
-		jack_port_unregister (jack_handle, jack_out[i]);
-	jack_client_close (jack_handle);
+	if (jack_handle) {
+		jack_deactivate (jack_handle);
+		for (i = 0; i < 2; i++)
+			jack_port_unregister (jack_handle, jack_out[i]);
+		jack_client_close (jack_handle);
+	}
 }
 
 static general_funcs_t plugin_info_general_funcs = {
