@@ -128,9 +128,6 @@ midi_stream_open (sfx_t *_sfx)
 {
 	sfx_t      *sfx;
 	sfxstream_t *stream = (sfxstream_t *) _sfx->data;
-	wavinfo_t  *info = &stream->wavinfo;
-	int         samples;
-	int         size;
 	QFile	   *file;
 	midi	   *handle;
 	unsigned char *local_buffer;
@@ -149,42 +146,8 @@ midi_stream_open (sfx_t *_sfx)
 	if (handle == NULL) 
 		return NULL;	
 
-	sfx = calloc (1, sizeof (sfx_t));
-	samples = snd_shm->speed * 0.3;
-	size = samples = (samples + 255) & ~255;
-
-	// WildMidi audio data is 16bit stereo
-	size *= 4;
-	
-	stream = calloc (1, sizeof (sfxstream_t) + size);
-	memcpy (stream->buffer.data + size, "\xde\xad\xbe\xef", 4);
-
-	sfx->name = _sfx->name;
-	sfx->data = stream;
-	sfx->wavinfo = SND_CacheWavinfo;
-	sfx->touch = sfx->retain = SND_StreamRetain;
-	sfx->release = SND_StreamRelease;
-	sfx->close = midi_stream_close;
-
-	stream->sfx = sfx;
-	stream->file = handle;
-	stream->resample = SND_NoResampleStereo;
-
-	stream->read = midi_stream_read;
-	stream->seek = midi_stream_seek;
-	stream->wavinfo = *info;
-
-	stream->buffer.length = samples;
-	stream->buffer.advance = SND_StreamAdvance;
-	stream->buffer.setpos = SND_StreamSetPos;
-	stream->buffer.sfx = sfx;
-
-	stream->seek (stream->file, 0, &stream->wavinfo);
-	stream->buffer.advance (&stream->buffer, 0);
-
-	stream->resample (&stream->buffer, 0, 0, 0);
-
-	return sfx;
+	return SND_SFX_StreamOpen (sfx, handle, midi_stream_read, midi_stream_seek,
+							   midi_stream_close);
 }
 
 void
