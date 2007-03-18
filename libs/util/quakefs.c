@@ -1407,8 +1407,8 @@ QFS_Rename (const char *old_path, const char *new_path)
 	dstring_t  *full_new = dstring_new ();
 	int         ret;
 
-	dsprintf (full_old, "%s/%s", qfs_userpath, old);
-	dsprintf (full_new, "%s/%s", qfs_userpath, new);
+	dsprintf (full_old, "%s/%s", qfs_userpath, old_path);
+	dsprintf (full_new, "%s/%s", qfs_userpath, new_path);
 	if ((ret = QFS_CreatePath (full_new->str)) != -1)
 		ret = Qrename (full_old->str, full_new->str);
 	dstring_delete (full_old);
