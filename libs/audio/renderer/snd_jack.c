@@ -116,13 +116,17 @@ static int
 snd_jack_process (jack_nframes_t nframes, void *arg)
 {
 	int         i;
+	jack_nframes_t j;
 
-	if (snd_blocked) {
-		SND_ScanChannels ();
-		return 0;
-	}
 	for (i = 0; i < 2; i++)
 		output[i] = (float *) jack_port_get_buffer (jack_out[i], nframes);
+	if (snd_blocked) {
+		SND_ScanChannels ();
+		for (j = 0; j < nframes; j++)
+			for (i = 0; i < 2; i++)
+				output[i][j] = 0;
+		return 0;
+	}
 	SND_PaintChannels (snd_paintedtime + nframes);
 	return 0;
 }
