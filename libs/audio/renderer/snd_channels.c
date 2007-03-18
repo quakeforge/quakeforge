@@ -347,10 +347,12 @@ s_updateAmbientSounds (void)
 		if (!chan)
 			continue;
 		
-		if (!chan->sfx)
+		if (!chan->sfx) {
 			sfx = sfx->open (sfx);
-		else
+			sfx->retain (sfx);
+		} else {
 			sfx = chan->sfx;
+		}
 		// sfx will be written to chan->sfx later to ensure mixer doesn't use
 		// channel prematurely.
 
