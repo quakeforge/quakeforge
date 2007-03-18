@@ -39,7 +39,7 @@
 
 typedef struct QFile_s QFile;
 
-int Qrename(const char *old, const char *new);
+int Qrename(const char *old_path, const char *new_path);
 int Qremove(const char *path);
 int Qfilesize (QFile *file);
 QFile *Qopen(const char *path, const char *mode);

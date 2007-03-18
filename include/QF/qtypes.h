@@ -51,13 +51,16 @@ typedef unsigned char byte;
 #ifndef _DEF_BOOL_
 # define _DEF_BOOL_
 // KJB Undefined true and false defined in SciTech's DEBUG.H header
+#ifdef __cplusplus
+# define __bool_true_false_are_defined
+#endif
+# ifdef __bool_true_false_are_defined
+typedef enum    {q_false = false, q_true = true} qboolean;
+//#define true q_true;
+//#define false q_false;
+# else
 #undef true
 #undef false
-# ifdef __bool_true_false_are_defined
-typedef enum    {q_false, q_true} qboolean;
-#define true q_true;
-#define false q_false;
-# else
 typedef	enum	{false, true} qboolean;
 # endif
 #endif
