@@ -371,9 +371,9 @@ s_updateAmbientSounds (void)
 		}
 		sfx = ambient_sfx[ambient_channel];
 		if (!sfx) {
-			if (chan && chan->sfx && !chan->stop)
+			if (chan)
 				SND_ChannelStop (chan);
-			ambient_channels[ambient_channel] = 0;
+			chan = ambient_channels[ambient_channel] = 0;
 			continue;
 		}
 
@@ -387,6 +387,7 @@ s_updateAmbientSounds (void)
 			sfx->retain (sfx);
 		} else {
 			sfx = chan->sfx;
+			sfx->retain (sfx);//FIXME why is this needed?
 		}
 		// sfx will be written to chan->sfx later to ensure mixer doesn't use
 		// channel prematurely.
