@@ -285,6 +285,7 @@ s_update (const vec3_t origin, const vec3_t forward, const vec3_t right,
 
 	// mix some sound
 	s_update_ ();
+	SND_ScanChannels ();
 }
 
 static void

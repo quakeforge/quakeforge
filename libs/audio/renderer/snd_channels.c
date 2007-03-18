@@ -564,13 +564,8 @@ SND_StartSound (int entnum, int entchannel, sfx_t *sfx, const vec3_t origin,
 		return;							// not audible at all
 
 	// new channel
-	if (!sfx->retain (sfx))
-		return;						// couldn't load the sound's data
-
-	if (!(osfx = sfx->open (sfx))) {
-		sfx->release (sfx);
+	if (!(osfx = sfx->open (sfx)))
 		return;
-	}
 	target_chan->pos = 0.0;
 	target_chan->end = snd_paintedtime + osfx->length;
 
@@ -589,6 +584,8 @@ SND_StartSound (int entnum, int entchannel, sfx_t *sfx, const vec3_t origin,
 			break;
 		}
 	}
+	if (!osfx->retain (osfx))
+		return;						// couldn't load the sound's data
 	target_chan->sfx = osfx;
 }
 
