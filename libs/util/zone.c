@@ -433,8 +433,8 @@ Hunk_AllocName (int size, const char *name)
 	if (hunk_size - hunk_low_used - hunk_high_used < size)
 		Sys_Error
 			("Not enough RAM allocated.  Try starting using \"-mem 16\" on "
-			 "the %s command line.",
-			 PROGRAM);
+			 "the %s command line. (%d -  %d - %d < %d)",
+			 PROGRAM, hunk_size, hunk_low_used, hunk_high_used, size);
 
 	h = (hunk_t *) (hunk_base + hunk_low_used);
 	hunk_low_used += size;
