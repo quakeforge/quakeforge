@@ -35,6 +35,7 @@
 //@{
 
 #include "QF/qtypes.h"
+#include "QF/cbuf.h"
 
 typedef void (*xcommand_t) (void);
 
@@ -67,6 +68,9 @@ int Cmd_ExecuteString (const char *text, cmd_source_t src);
 struct cbuf_s;
 void Cmd_StuffCmds (struct cbuf_s *cbuf);
 void Cmd_Exec_File (struct cbuf_s *cbuf, const char *path, int qfs);
+void Cmd_AddProvider(const char *name, struct cbuf_interpreter_s *interp);
+struct cbuf_interpreter_s *Cmd_GetProvider(const char *name);
+
 
 extern struct cbuf_args_s *cmd_args;
 extern struct cvar_s *cmd_warncmd;

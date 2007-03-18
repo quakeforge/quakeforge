@@ -60,12 +60,19 @@ typedef struct cmdalias_s {
 	const char *value;
 } cmdalias_t;
 
+typedef struct cmd_provider_s
+{
+	const char *name;
+	cbuf_interpreter_t* interp;
+} cmd_provider_t;
+
 static cmdalias_t *cmd_alias;
 
 VISIBLE cvar_t     *cmd_warncmd;
 
 static hashtab_t  *cmd_alias_hash;
 static hashtab_t  *cmd_hash;
+static hashtab_t  *cmd_provider_hash;
 
 VISIBLE cbuf_args_t *cmd_args;
 static cbuf_t *cmd_cbuf;
@@ -310,6 +317,23 @@ cmd_get_key (void *c, void *unused)
 	cmd_function_t *cmd = (cmd_function_t *) c;
 
 	return cmd->name;
+}
+
+static void
+cmd_provider_free (void *_a, void *unused)
+{
+	cmd_provider_t *p = (cmd_provider_t *) _a;
+
+	free ((char *) p->name);
+	free (p);
+}
+
+static const char *
+cmd_provider_get_key (void *_a, void *unused)
+{
+	cmd_provider_t *p = (cmd_provider_t *) _a;
+
+	return p->name;
 }
 
 static void
@@ -578,6 +602,7 @@ Cmd_Init_Hash (void)
 {
 	cmd_hash = Hash_NewTable (1021, cmd_get_key, 0, 0);
 	cmd_alias_hash = Hash_NewTable (1021, cmd_alias_get_key, cmd_alias_free, 0);
+	cmd_provider_hash = Hash_NewTable(1021, cmd_provider_get_key, cmd_provider_free, 0);
 }
 
 VISIBLE void
@@ -602,6 +627,8 @@ Cmd_Init (void)
 	cmd_warncmd = Cvar_Get ("cmd_warncmd", "0", CVAR_NONE, NULL, "Toggles the "
 							"display of error messages for unknown commands");
 	cmd_cbuf = Cbuf_New (&id_interp);
+	
+	Cmd_AddProvider("id", &id_interp);
 }
 
 VISIBLE int
@@ -647,3 +674,27 @@ Cmd_Exec_File (cbuf_t *cbuf, const char *path, int qfs)
 	}
 }
 
+VISIBLE void
+Cmd_AddProvider(const char *name, cbuf_interpreter_t *interp)
+{
+	cmd_provider_t *p = (cmd_provider_t *) Hash_Find (cmd_provider_hash, name);
+	
+	if (!p)
+	{
+		cmd_provider_t *p = malloc(sizeof(cmd_provider_t));
+		p->name = strdup(name);
+		p->interp = interp;
+		Hash_Add(cmd_provider_hash, p);
+	}
+}
+
+VISIBLE cbuf_interpreter_t *
+Cmd_GetProvider(const char *name)
+{
+	cmd_provider_t *p = (cmd_provider_t *) Hash_Find (cmd_provider_hash, name);
+	
+	if (!p)
+		return NULL;
+	else
+		return p->interp;
+}

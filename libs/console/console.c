@@ -55,6 +55,8 @@ static U inputline_t *(*const create)(int, int, char) = Con_CreateInputLine;
 static U void (*const display)(const char **, int) = Con_DisplayList;
 #undef U
 
+static cvar_t *con_interpreter;
+
 __attribute__ ((visibility ("default")))
 void
 Con_Init (const char *plugin_name)
@@ -68,10 +70,32 @@ Con_Init (const char *plugin_name)
 	}
 }
 
+static void
+Con_Interp_f(cvar_t* var)
+{
+	cbuf_interpreter_t* interp = Cmd_GetProvider(var->string);
+	
+	if (con_module && interp)
+	{
+		cbuf_t *new = Cbuf_New(interp);
+				
+		if (con_module->data->console->cbuf)
+		{
+			new->down = con_module->data->console->cbuf;
+			new->state = CBUF_STATE_STACK;
+			con_module->data->console->cbuf->up = new;
+		}
+		con_module->data->console->cbuf = new;
+	}
+}
+
 __attribute__ ((visibility ("default")))
 void
 Con_Init_Cvars (void)
 {
+	con_interpreter = 
+		Cvar_Get("con_interpreter", "id", CVAR_NONE, Con_Interp_f,
+				 "Interpreter for the interactive console");
 }
 
 __attribute__ ((visibility ("default")))
