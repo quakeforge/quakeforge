@@ -1401,7 +1401,7 @@ QFS_WOpen (const char *path, int zip)
 }
 
 VISIBLE int
-QFS_Rename (const char *old, const char *new)
+QFS_Rename (const char *old_path, const char *new_path)
 {
 	dstring_t  *full_old = dstring_new ();
 	dstring_t  *full_new = dstring_new ();

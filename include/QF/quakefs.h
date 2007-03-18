@@ -106,7 +106,7 @@ byte *QFS_LoadHunkFile (const char *path);
 void QFS_LoadCacheFile (const char *path, struct cache_user_s *cu);
 
 int QFS_CreatePath (const char *path);
-int QFS_Rename (const char *old, const char *new);
+int QFS_Rename (const char *old_path, const char *new_path);
 int QFS_Remove (const char *path);
 int QFS_NextFilename (struct dstring_s *filename, const char *prefix,
 					  const char *ext);
