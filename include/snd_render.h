@@ -160,11 +160,13 @@ struct sfxblock_s {
 	void       *file;			//!< handle for "file" representing the block
 	wavinfo_t   wavinfo;		//!< description of sound data
 	cache_user_t cache;			//!< cached sound buffer (::sfxbuffer_s)
+	sfxbuffer_t *buffer;		//!< pointer to cached buffer
 };
 
 /** Representation of a sound being played.
 */
 struct channel_s {
+	struct channel_s *next;		//!< next channel in "free" list
 	sfx_t      *sfx;			//!< sound played by this channel
 	int         leftvol;		//!< 0-255 volume
 	int         rightvol;		//!< 0-255 volume
@@ -180,12 +182,18 @@ struct channel_s {
 	int         oldphase;		//!< phase shift between l-r in samples
 	/** signal between main program and mixer thread that the channel is to be
 		stopped.
-		- 0 normal operation
-		- 1 signal from main program to mixer the channel is to be stopped
-		- 2 signal from the mixer to the main program indicating the mixer is
-			done with the channel and the main program is free to clear it.
+		- both \c stop and \c done are zero: normal operation
+		- \c stop is non-zero: main program is done with channel. must wait
+		  for mixer to finish with channel before re-using.
+		- \c done is non-zero: mixer is done with channel. can be reused at
+		  any time.
+		- both \c stop and \c done are non-zero: both are done with channel.
+		  can be reused at any time.
 	*/
-	int			stopped;
+	//@{
+	int			stop;
+	int         done;
+	//@}
 };
 
 extern struct cvar_s *snd_loadas8bit;
@@ -269,8 +277,9 @@ void SND_SFX_Init (void);
 		static sounds
 */
 //@{
-#define	MAX_CHANNELS			256	//!< number of available mixing channels
+#define	MAX_CHANNELS			512	//!< number of available mixing channels
 #define	MAX_DYNAMIC_CHANNELS	8	//!< number of dynamic channels
+#define MAX_STATIC_CHANNELS		256	//!< number of static channels
 extern	channel_t   snd_channels[MAX_CHANNELS];	//!< pool of available channels
 extern	int			snd_total_channels;	//!< number of active channels
 
@@ -458,16 +467,32 @@ wavinfo_t *SND_StreamWavinfo (sfx_t *sfx);
 */
 sfxbuffer_t *SND_CacheTouch (sfx_t *sfx);
 
-/** Lock a cached sound into memory.
+/** Get the pointer to the sound buffer.
+	\param sfx		sound reference
+	\return			sound buffer or null
+	\note	The sound must be retained with SND_CacheRetain() for the returned
+			buffer to be valid.
+*/
+sfxbuffer_t *SND_CacheGetBuffer (sfx_t *sfx);
+
+/** Lock a cached sound into memory. After calling this, SND_CacheGetBffer()
+	will return a valid buffer.
 	\param sfx		sound reference
 	\return			poitner to sound buffer
 */
 sfxbuffer_t *SND_CacheRetain (sfx_t *sfx);
 
-/** Unlock a cached sound from memory.
+/** Unlock a cached sound from memory. After calling this, SND_CacheGetBffer()
+	will return a null buffer.
 	\param sfx		sound reference
 */
 void SND_CacheRelease (sfx_t *sfx);
+
+/** Get the pointer to the sound buffer.
+	\param sfx		sound reference
+	\return			poitner to sound buffer
+*/
+sfxbuffer_t *SND_StreamGetBuffer (sfx_t *sfx);
 
 /** Lock a streamed sound into memory. Doesn't actually do anything other than
 	return a pointer to the buffer.

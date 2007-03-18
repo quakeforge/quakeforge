@@ -84,15 +84,31 @@ SND_CacheTouch (sfx_t *sfx)
 }
 
 sfxbuffer_t *
+SND_CacheGetBuffer (sfx_t *sfx)
+{
+	return ((sfxblock_t *) sfx->data)->buffer;
+}
+
+sfxbuffer_t *
 SND_CacheRetain (sfx_t *sfx)
 {
-	return Cache_TryGet (&((sfxblock_t *) sfx->data)->cache);
+	sfxblock_t *block = (sfxblock_t *) sfx->data;
+	block->buffer = Cache_TryGet (&block->cache);
+	return block->buffer;
 }
 
 void
 SND_CacheRelease (sfx_t *sfx)
 {
-	Cache_Release (&((sfxblock_t *) sfx->data)->cache);
+	sfxblock_t *block = (sfxblock_t *) sfx->data;
+	block->buffer = 0;
+	Cache_Release (&block->cache);
+}
+
+sfxbuffer_t *
+SND_StreamGetBuffer (sfx_t *sfx)
+{
+	return &((sfxstream_t *) sfx->data)->buffer;
 }
 
 sfxbuffer_t *

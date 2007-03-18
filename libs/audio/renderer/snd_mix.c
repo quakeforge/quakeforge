@@ -78,9 +78,14 @@ SND_PaintChannels (unsigned int endtime)
 		for (i = 0; i < snd_total_channels; i++, ch++) {
 			if (!ch->sfx)
 				continue;
+			if (ch->stop) {
+				if (!ch->done)
+					ch->done = 1;	// acknowledge stopped signal
+				continue;
+			}
 			if (!ch->leftvol && !ch->rightvol)
 				continue;
-			sc = ch->sfx->retain (ch->sfx);
+			sc = ch->sfx->getbuffer (ch->sfx);
 			if (!sc)
 				continue;
 
@@ -102,20 +107,18 @@ SND_PaintChannels (unsigned int endtime)
 				}
 
 				// if at end of loop, restart
-				if (ltime >= ch->end) {
+				if (!count || ltime >= ch->end) {
 					if (ch->sfx->loopstart != (unsigned int) -1) {
 						ch->pos = ch->sfx->loopstart;
 						ch->end = ltime + ch->sfx->length - ch->pos;
+						ch->done = 2;
+						break;
 					} else {			// channel just stopped
-						ch->sfx->release (ch->sfx);
-						SND_ChannelStop (ch);
+						ch->done = 2;
 						break;
 					}
 				}
 			}
-
-			if (ch->sfx)
-				ch->sfx->release (ch->sfx);
 		}
 
 		// transfer out according to DMA format

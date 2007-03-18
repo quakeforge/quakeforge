@@ -91,9 +91,9 @@ SND_ResampleMono (sfxbuffer_t *sc, byte *data, int length, void *prev)
 	stepscale = (float) inrate / snd_shm->speed;
 
 	outcount = length / stepscale;
-//	printf ("%d %d\n", length, outcount);
 
 	sc->sfx->length = info->samples / stepscale;
+	//printf ("%s %d %g %d\n", sc->sfx->name, length, stepscale, sc->sfx->length);
 	if (info->loopstart != (unsigned int)-1)
 		sc->sfx->loopstart = info->loopstart / stepscale;
 	else

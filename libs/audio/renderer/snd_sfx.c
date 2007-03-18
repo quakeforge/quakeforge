@@ -83,6 +83,7 @@ SND_SFX_Cache (sfx_t *sfx, char *realname, wavinfo_t info,
 	sfx->touch = SND_CacheTouch;
 	sfx->retain = SND_CacheRetain;
 	sfx->release = SND_CacheRelease;
+	sfx->getbuffer = SND_CacheGetBuffer;
 
 	block->sfx = sfx;
 	block->file = realname;
@@ -100,6 +101,7 @@ SND_SFX_Stream (sfx_t *sfx, char *realname, wavinfo_t info,
 	sfx->wavinfo = SND_CacheWavinfo;
 	sfx->touch = sfx->retain = SND_StreamRetain;
 	sfx->release = SND_StreamRelease;
+	sfx->getbuffer = SND_StreamGetBuffer;
 	sfx->data = stream;
 
 	stream->file = realname;
@@ -123,6 +125,7 @@ SND_SFX_StreamOpen (sfx_t *sfx, void *file,
 	new_sfx->wavinfo = SND_CacheWavinfo;
 	new_sfx->touch = new_sfx->retain = SND_StreamRetain;
 	new_sfx->release = SND_StreamRelease;
+	new_sfx->getbuffer = SND_StreamGetBuffer;
 	new_sfx->close = close;
 
 	samples = snd_shm->speed * 0.3;
@@ -141,6 +144,8 @@ SND_SFX_StreamOpen (sfx_t *sfx, void *file,
 										   : SND_ResampleMono;
 	stream->read = read;
 	stream->seek = seek;
+
+	stream->wavinfo = *sfx->wavinfo (sfx);
 
 	stream->buffer.length = samples;
 	stream->buffer.advance = SND_StreamAdvance;
