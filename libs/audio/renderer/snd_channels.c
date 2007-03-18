@@ -113,8 +113,26 @@ SND_ChannelStop (channel_t *chan)
 	if (chan->next)
 		*(int*)0=0;
 	chan->stop = 1;
+	chan->free = 1;
 	chan->next = free_channels;
 	free_channels = chan;
+}
+
+void
+SND_ScanChannels (void)
+{
+	int         i;
+	channel_t  *ch;
+	int         count = 0;
+
+	for (i = 0; i < MAX_CHANNELS; i++) {
+		ch = &snd_channels[i];
+		if (ch->sfx && ch->stop && !ch->done) {
+			ch->done = 2;
+			count++;
+		}
+	}
+	//printf ("count: %d\n", count);
 }
 
 void
@@ -124,7 +142,7 @@ SND_StopAllSounds (void)
 
 	snd_num_statics = 0;
 	for (i = 0; i < MAX_CHANNELS; i++)
-		if (snd_channels[i].sfx && !snd_channels[i].stop)
+		if (!snd_channels[i].free)
 			SND_ChannelStop (&snd_channels[i]);
 	for (i = 0; i < NUM_AMBIENTS; i++)
 		ambient_channels[i] = 0;
@@ -132,6 +150,17 @@ SND_StopAllSounds (void)
 		dynamic_channels[i] = 0;
 	for (i = 0; i < MAX_STATIC_CHANNELS; i++)
 		static_channels[i] = 0;
+	if (0) {
+		channel_t  *ch;
+		Sys_Printf ("SND_StopAllSounds\n");
+		for (i = 0, ch = free_channels; ch; ch = ch->next)
+			i++;
+		Sys_Printf ("	free channels:%d\n", i);
+		for (i = 0, ch = free_channels; ch; ch = ch->next)
+			if (!ch->sfx || ch->done)
+				i++;
+		Sys_Printf ("	truely free channels:%d\n", i);
+	}
 }
 
 static void
@@ -224,8 +253,11 @@ SND_Channels_Init (void)
 	Cmd_AddCommand ("playvol", s_playvol_f, "Play selected sound effect at "
 					"selected volume (playvol pathto/sound.wav num");
 
-	for (i = 0; i < MAX_CHANNELS - 1; i++)
+	for (i = 0; i < MAX_CHANNELS - 1; i++) {
 		snd_channels[i].next = &snd_channels[i + 1];
+		snd_channels[i].free = 1;
+	}
+	snd_channels[i].free = 1;
 	free_channels = &snd_channels[0];
 	snd_total_channels = MAX_CHANNELS;
 

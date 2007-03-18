@@ -83,7 +83,7 @@ static void
 s_block_sound (void)
 {
 	if (++snd_blocked == 1) {
-		Sys_Printf ("jack_deactivate: %d\n", jack_deactivate (jack_handle));
+		//Sys_Printf ("jack_deactivate: %d\n", jack_deactivate (jack_handle));
 	}
 }
 
@@ -94,8 +94,8 @@ s_unblock_sound (void)
 		return;
 
 	if (!--snd_blocked) {
-		s_jack_activate ();
-		Sys_Printf ("jack_activate\n");
+		//s_jack_activate ();
+		//Sys_Printf ("jack_activate\n");
 	}
 }
 
@@ -117,8 +117,10 @@ snd_jack_process (jack_nframes_t nframes, void *arg)
 {
 	int         i;
 
-	if (snd_blocked)
+	if (snd_blocked) {
+		SND_ScanChannels ();
 		return 0;
+	}
 	for (i = 0; i < 2; i++)
 		output[i] = (float *) jack_port_get_buffer (jack_out[i], nframes);
 	SND_PaintChannels (snd_paintedtime + nframes);

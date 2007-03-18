@@ -167,6 +167,7 @@ struct sfxblock_s {
 */
 struct channel_s {
 	struct channel_s *next;		//!< next channel in "free" list
+	int         free;			//!< true if free channel
 	sfx_t      *sfx;			//!< sound played by this channel
 	int         leftvol;		//!< 0-255 volume
 	int         rightvol;		//!< 0-255 volume
@@ -291,6 +292,10 @@ struct channel_s *SND_AllocChannel (void);
 	\param chan the channel to stop
 */
 void SND_ChannelStop (channel_t *chan);
+
+/** Scan channels looking for stopped channels.
+*/
+void SND_ScanChannels (void);
 
 /** Disable ambient sounds.
 	\todo not used, remove?
