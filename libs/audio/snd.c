@@ -88,13 +88,13 @@ S_Init (struct model_s **worldmodel, int *viewentity, double *host_frametime)
 				host_frametime;
 			snd_render_module->data->snd_render->output = snd_output_module;
 
+			snd_output_module->functions->general->p_Init ();
+			snd_render_module->functions->general->p_Init ();
+
 			snd_output_module->data->snd_output->soundtime
 				= snd_render_module->data->snd_render->soundtime;
 			snd_output_module->data->snd_output->paintedtime
 				= snd_render_module->data->snd_render->paintedtime;
-
-			snd_output_module->functions->general->p_Init ();
-			snd_render_module->functions->general->p_Init ();
 
 			snd_render_funcs = snd_render_module->functions->snd_render;
 		}
