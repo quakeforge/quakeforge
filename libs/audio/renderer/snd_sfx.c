@@ -72,6 +72,89 @@ snd_sfx_free (void *_sfx, void *unused)
 	sfx->name = 0;
 }
 
+void
+SND_SFX_Cache (sfx_t *sfx, char *realname, wavinfo_t info,
+			   cache_loader_t loader)
+{
+	sfxblock_t *block = calloc (1, sizeof (sfxblock_t));
+
+	sfx->data = block;
+	sfx->wavinfo = SND_CacheWavinfo;
+	sfx->touch = SND_CacheTouch;
+	sfx->retain = SND_CacheRetain;
+	sfx->release = SND_CacheRelease;
+
+	block->sfx = sfx;
+	block->file = realname;
+	block->wavinfo = info;
+
+	Cache_Add (&block->cache, block, loader);
+}
+
+void
+SND_SFX_Stream (sfx_t *sfx, char *realname, wavinfo_t info,
+				sfx_t *(*open) (sfx_t *sfx))
+{
+	sfxstream_t *stream = calloc (1, sizeof (sfxstream_t));
+	sfx->open = open;
+	sfx->wavinfo = SND_CacheWavinfo;
+	sfx->touch = sfx->retain = SND_StreamRetain;
+	sfx->release = SND_StreamRelease;
+	sfx->data = stream;
+
+	stream->file = realname;
+	stream->wavinfo = info;
+}
+
+sfx_t *
+SND_SFX_StreamOpen (sfx_t *sfx, void *file,
+					int (*read)(void *, byte *, int, wavinfo_t *),
+					int (*seek)(void *, int, wavinfo_t *),
+					void (*close) (sfx_t *))
+{
+	sfxstream_t *stream = (sfxstream_t *) sfx->data;
+	wavinfo_t  *info = &stream->wavinfo;
+	int         samples;
+	int         size;
+
+	sfx_t      *new_sfx = calloc (1, sizeof (sfx_t));
+
+	new_sfx->name = sfx->name;
+	new_sfx->wavinfo = SND_CacheWavinfo;
+	new_sfx->touch = new_sfx->retain = SND_StreamRetain;
+	new_sfx->release = SND_StreamRelease;
+	new_sfx->close = close;
+
+	samples = snd_shm->speed * 0.3;
+	size = samples = (samples + 255) & ~255;
+	if (!snd_loadas8bit->int_val)
+		size *= 2;
+	if (info->channels == 2)
+		size *= 2;
+
+	stream = calloc (1, sizeof (sfxstream_t) + size);
+	new_sfx->data = stream;
+	memcpy (stream->buffer.data + size, "\xde\xad\xbe\xef", 4);
+	stream->file = file;
+	stream->sfx = new_sfx;
+	stream->resample = info->channels == 2 ? SND_ResampleStereo
+										   : SND_ResampleMono;
+	stream->read = read;
+	stream->seek = seek;
+
+	stream->buffer.length = samples;
+	stream->buffer.advance = SND_StreamAdvance;
+	stream->buffer.setpos = SND_StreamSetPos;
+	stream->buffer.sfx = new_sfx;
+
+	stream->resample (&stream->buffer, 0, 0, 0);	// get sfx setup properly
+	stream->seek (stream->file, 0, &stream->wavinfo);
+
+	stream->buffer.advance (&stream->buffer, 0);
+
+	return new_sfx;
+}
+
 sfx_t *
 SND_LoadSound (const char *name)
 {

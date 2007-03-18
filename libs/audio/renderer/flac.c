@@ -314,21 +314,8 @@ flac_callback_load (void *object, cache_allocator_t allocator)
 static void
 flac_cache (sfx_t *sfx, char *realname, flacfile_t *ff, wavinfo_t info)
 {
-	sfxblock_t *block = calloc (1, sizeof (sfxblock_t));
-
 	close_flac (ff);
-
-	sfx->data = block;
-	sfx->wavinfo = SND_CacheWavinfo;
-	sfx->touch = SND_CacheTouch;
-	sfx->retain = SND_CacheRetain;
-	sfx->release = SND_CacheRelease;
-
-	block->sfx = sfx;
-	block->file = realname;
-	block->wavinfo = info;
-
-	Cache_Add (&block->cache, block, flac_callback_load);
+	SND_SFX_Cache (sfx, realname, info, flac_callback_load);
 }
 
 static int
@@ -357,78 +344,32 @@ flac_stream_close (sfx_t *sfx)
 }
 
 static sfx_t *
-flac_stream_open (sfx_t *_sfx)
+flac_stream_open (sfx_t *sfx)
 {
-	sfx_t      *sfx;
-	sfxstream_t *stream = (sfxstream_t *) _sfx->data;
-	wavinfo_t  *info = &stream->wavinfo;
-	int         samples;
-	int         size;
+	sfxstream_t *stream = (sfxstream_t *) sfx->data;
 	QFile      *file;
+	void       *f;
 
 	QFS_FOpenFile (stream->file, &file);
 	if (!file)
 		return 0;
 
-	sfx = calloc (1, sizeof (sfx_t));
-	samples = snd_shm->speed * 0.3;
-	size = samples = (samples + 255) & ~255;
-	if (!snd_loadas8bit->int_val)
-		size *= 2;
-	if (info->channels == 2)
-		size *= 2;
-	stream = calloc (1, sizeof (sfxstream_t) + size);
-	memcpy (stream->buffer.data + size, "\xde\xad\xbe\xef", 4);
-
-	sfx->name = _sfx->name;
-	sfx->data = stream;
-	sfx->wavinfo = SND_CacheWavinfo;
-	sfx->touch = sfx->retain = SND_StreamRetain;
-	sfx->release = SND_StreamRelease;
-	sfx->close = flac_stream_close;
-
-	stream->sfx = sfx;
-	stream->file = open_flac (file);
-	if (!stream->file) {
+	f = open_flac (file);
+	if (!f) {
 		Sys_Printf ("Input does not appear to be a flac bitstream.\n");
 		Qclose (file);
-		free (stream);
-		free (sfx);
 		return 0;
 	}
-	stream->resample = info->channels == 2 ? SND_ResampleStereo
-										  : SND_ResampleMono;
-	stream->read = flac_stream_read;
-	stream->seek = flac_stream_seek;
-	stream->wavinfo = *info;
 
-	stream->buffer.length = samples;
-	stream->buffer.advance = SND_StreamAdvance;
-	stream->buffer.setpos = SND_StreamSetPos;
-	stream->buffer.sfx = sfx;
-
-	stream->resample (&stream->buffer, 0, 0, 0);	// get sfx setup properly
-	stream->seek (stream->file, 0, &stream->wavinfo);
-
-	stream->buffer.advance (&stream->buffer, 0);
-
-	return sfx;
+	return SND_SFX_StreamOpen (sfx, f, flac_stream_read, flac_stream_seek,
+							   flac_stream_close);
 }
 
 static void
 flac_stream (sfx_t *sfx, char *realname, flacfile_t *ff, wavinfo_t info)
 {
-	sfxstream_t *stream = calloc (1, sizeof (sfxstream_t));
-
 	close_flac (ff);
-	sfx->open = flac_stream_open;
-	sfx->wavinfo = SND_CacheWavinfo;
-	sfx->touch = sfx->retain = SND_StreamRetain;
-	sfx->release = SND_StreamRelease;
-	sfx->data = stream;
-
-	stream->file = realname;
-	stream->wavinfo = info;
+	SND_SFX_Stream (sfx, realname, info, flac_stream_open);
 }
 
 static wavinfo_t

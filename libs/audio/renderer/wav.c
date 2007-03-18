@@ -82,19 +82,8 @@ wav_callback_load (void *object, cache_allocator_t allocator)
 static void
 wav_cache (sfx_t *sfx, char *realname, void *file, wavinfo_t info)
 {
-	sfxblock_t *block = calloc (1, sizeof (sfxblock_t));
 	Qclose (file);
-	sfx->data = block;
-	sfx->wavinfo = SND_CacheWavinfo;
-	sfx->touch = SND_CacheTouch;
-	sfx->retain = SND_CacheRetain;
-	sfx->release = SND_CacheRelease;
-
-	block->sfx = sfx;
-	block->file = realname;
-	block->wavinfo = info;
-
-	Cache_Add (&block->cache, block, wav_callback_load);
+	SND_SFX_Cache (sfx, realname, info, wav_callback_load);
 }
 
 static int
@@ -122,71 +111,24 @@ wav_stream_close (sfx_t *sfx)
 }
 
 static sfx_t *
-wav_stream_open (sfx_t *_sfx)
+wav_stream_open (sfx_t *sfx)
 {
-	sfx_t      *sfx;
-	sfxstream_t *stream = (sfxstream_t *) _sfx->data;
-	wavinfo_t  *info = &stream->wavinfo;
-	int         samples;
-	int         size;
+	sfxstream_t *stream = (sfxstream_t *) sfx->data;
 	QFile      *file;
 
 	QFS_FOpenFile (stream->file, &file);
 	if (!file)
 		return 0;
 
-	sfx = calloc (1, sizeof (sfx_t));
-	samples = snd_shm->speed * 0.3;
-	size = samples = (samples + 255) & ~255;
-	if (!snd_loadas8bit->int_val)
-		size *= 2;
-	if (info->channels == 2)
-		size *= 2;
-	stream = calloc (1, sizeof (sfxstream_t) + size);
-	memcpy (stream->buffer.data + size, "\xde\xad\xbe\xef", 4);
-
-	sfx->name = _sfx->name;
-	sfx->data = stream;
-	sfx->wavinfo = SND_CacheWavinfo;
-	sfx->touch = sfx->retain = SND_StreamRetain;
-	sfx->release = SND_StreamRelease;
-	sfx->close = wav_stream_close;
-
-	stream->sfx = sfx;
-	stream->file = file;
-	stream->resample = info->channels == 2 ? SND_ResampleStereo
-										  : SND_ResampleMono;
-	stream->read = wav_stream_read;
-	stream->seek = wav_stream_seek;
-	stream->wavinfo = *info;
-
-	stream->buffer.length = samples;
-	stream->buffer.advance = SND_StreamAdvance;
-	stream->buffer.setpos = SND_StreamSetPos;
-	stream->buffer.sfx = sfx;
-
-	stream->resample (&stream->buffer, 0, 0, 0);	// get sfx setup properly
-	stream->seek (stream->file, 0, &stream->wavinfo);
-
-	stream->buffer.advance (&stream->buffer, 0);
-
-	return sfx;
+	return SND_SFX_StreamOpen (sfx, file, wav_stream_read, wav_stream_seek,
+							   wav_stream_close);
 }
 
 static void
 wav_stream (sfx_t *sfx, char *realname, void *file, wavinfo_t info)
 {
-	sfxstream_t *stream = calloc (1, sizeof (sfxstream_t));
-
 	Qclose (file);
-	sfx->open = wav_stream_open;
-	sfx->wavinfo = SND_CacheWavinfo;
-	sfx->touch = sfx->retain = SND_StreamRetain;
-	sfx->release = SND_StreamRelease;
-	sfx->data = stream;
-
-	stream->file = realname;
-	stream->wavinfo = info;
+	SND_SFX_Stream (sfx, realname, info, wav_stream_open);
 }
 
 static wavinfo_t

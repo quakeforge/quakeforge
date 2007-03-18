@@ -191,7 +191,6 @@ void
 SND_LoadMidi (QFile *file, sfx_t *sfx, char *realname)
 {
 	wavinfo_t   info;
-	sfxstream_t *stream = calloc (1, sizeof (sfxstream_t));
 	midi *handle;
 	unsigned char *local_buffer;
 	unsigned long int local_buffer_size = Qfilesize (file);
@@ -220,14 +219,6 @@ SND_LoadMidi (QFile *file, sfx_t *sfx, char *realname)
 	Sys_DPrintf ("stream %s\n", realname);
 
 	// we init stream here cause we will only ever stream
-
-	sfx->open = midi_stream_open;
-	sfx->wavinfo = SND_CacheWavinfo;
-	sfx->touch = sfx->retain = SND_StreamRetain;
-	sfx->release = SND_StreamRelease;
-	sfx->data = stream;
-
-	stream->file = realname;
-	stream->wavinfo = info;
+	SND_SFX_Stream (sfx, realname, info, midi_stream_open);
 }
 #endif // HAVE_WILDMIDI

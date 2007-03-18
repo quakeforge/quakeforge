@@ -127,16 +127,14 @@ struct sfxstream_s {
 	void       *file;			//!< handle for "file" representing the stream
 	wavinfo_t   wavinfo;		//!< description of sound data
 	unsigned    pos;			//!< position of next sample within full stream
-	/** Seek to an absolute position within the stream, resetting the ring
-		buffer.
+	/** Resample raw data into internal format.
 		\param sc		buffer to write resampled sound (sfxstream_s::buffer)
 		\param data		raw sample data
 		\param length	number of raw samples to resample
 		\param prev		pointer to end of last resample for smoothing
 	*/
 	void        (*resample)(sfxbuffer_t *, byte *, int, void *);
-	/** Seek to an absolute position within the stream, resetting the ring
-		buffer.
+	/** Read data from the stream.
 		\param file		handle for "file" representing the stream
 						(sfxstream_s::file)
 		\param data		destination of read data
@@ -164,7 +162,7 @@ struct sfxblock_s {
 	cache_user_t cache;			//!< cached sound buffer (::sfxbuffer_s)
 };
 
-/** Representation of a sound being played
+/** Representation of a sound being played.
 */
 struct channel_s {
 	sfx_t      *sfx;			//!< sound played by this channel
@@ -180,6 +178,14 @@ struct channel_s {
 	int         master_vol;		//!< 0-255 master volume
 	int         phase;			//!< phase shift between l-r in samples
 	int         oldphase;		//!< phase shift between l-r in samples
+	/** signal between main program and mixer thread that the channel is to be
+		stopped.
+		- 0 normal operation
+		- 1 signal from main program to mixer the channel is to be stopped
+		- 2 signal from the mixer to the main program indicating the mixer is
+			done with the channel and the main program is free to clear it.
+	*/
+	int			stopped;
 };
 
 extern struct cvar_s *snd_loadas8bit;
@@ -200,6 +206,35 @@ extern portable_samplepair_t snd_paintbuffer[PAINTBUFFER_SIZE * 2];
 	\ingroup sound_render_mix
 */
 //@{
+/** Cache sound data. Initializes caching fields of sfx.
+	\param sfx
+	\param realname
+	\param info
+	\param loader
+*/
+void SND_SFX_Cache (sfx_t *sfx, char *realname, wavinfo_t info, 
+		            cache_loader_t loader);
+
+/** Stream sound data. Initializes streaming fields of sfx.
+	\param sfx
+	\param realname
+	\param info
+	\param open
+*/
+void SND_SFX_Stream (sfx_t *sfx, char *realname, wavinfo_t info, 
+					 sfx_t *(*open) (sfx_t *sfx));
+
+/** Open a stream for playback.
+	\param sfx
+	\param read
+	\param seek
+	\param close
+*/
+sfx_t *SND_SFX_StreamOpen (sfx_t *sfx, void *file,
+						   int (*read)(void *, byte *, int, wavinfo_t *),
+						   int (*seek)(void *, int, wavinfo_t *),
+						   void (*close) (sfx_t *));
+
 /** Pre-load a sound into the cache.
 	\param sample	name of sound to precache
 */
