@@ -84,9 +84,9 @@ struct QFile_s {
 
 
 VISIBLE int
-Qrename (const char *old, const char *new)
+Qrename (const char *old_path, const char *new_path)
 {
-	return rename (old, new);
+	return rename (old_path, new_path);
 }
 
 VISIBLE int
