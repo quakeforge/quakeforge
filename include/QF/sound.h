@@ -167,6 +167,11 @@ sfx_t *S_LoadSound (const char *name);
 */
 struct channel_s *S_AllocChannel (void);
 
+/** Stop and safely free a channel.
+	\param chan		channel to stop
+*/
+void S_ChannelStop (struct channel_s *chan);
+
 /** Start a sound local to the client view.
 	\param s name of sound to play
 */

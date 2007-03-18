@@ -202,6 +202,7 @@ static snd_render_funcs_t plugin_info_render_funcs = {
 	s_unblock_sound,
 	SND_LoadSound,
 	SND_AllocChannel,
+	SND_ChannelStop,
 };
 
 static general_data_t plugin_info_general_data;

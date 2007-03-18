@@ -80,7 +80,6 @@ static qboolean	ogglistvalid = false;
 
 /* sound resources */
 static channel_t *cd_channel;
-static sfx_t	 *cd_sfx;
 static int		  current_track;	// current track, used when pausing
 static plitem_t	 *tracklist = NULL;	// parsed tracklist, dictionary format
 
@@ -120,9 +119,9 @@ I_OGGMus_Stop (void)
 	playing = false;
 	wasPlaying = false;
 
-	if (cd_sfx) {
-		cd_sfx->close (cd_sfx);
-		cd_channel->sfx = NULL;
+	if (cd_channel) {
+		S_ChannelStop (cd_channel);
+		cd_channel = NULL;
 	}
 }
 
@@ -223,14 +222,10 @@ I_OGGMus_Play (int track, qboolean looping)
 	plitem_t	*trackmap = NULL;
 	wavinfo_t	*info = 0;
 	const char	*trackstring;
+	sfx_t       *cd_sfx;
 
 	/* alrighty. grab the list, map track to filename. grab filename from data
 	   resources, attach sound to play, loop. */
-
-	if (!cd_channel && mus_enabled) {		// Shouldn't happen!
-		Sys_Printf ("OGGMus: on fire.\n");
-		mus_enabled = false;
-	}
 
 	if (!tracklist || !mus_enabled)
 		return;
@@ -246,10 +241,13 @@ I_OGGMus_Play (int track, qboolean looping)
 	}
 
 	Sys_Printf ("Playing: %s.\n", (char *) trackmap->data);
-	if (cd_channel->sfx) {
-		cd_channel->sfx->close (cd_channel->sfx);
-		memset (cd_channel, 0, sizeof (*cd_channel));
+	if (cd_channel) {
+		S_ChannelStop (cd_channel);
+		cd_channel = 0;
 	}
+
+	if (!(cd_channel = S_AllocChannel ()))
+		return;
 
 	if (!(cd_sfx = S_LoadSound ((char *) trackmap->data)))
 		return;
@@ -417,10 +415,6 @@ Mus_gamedir (void)
 static void
 I_OGGMus_Init (void)
 {
-	cd_channel = S_AllocChannel ();
-	if (!cd_channel) // We can't fail to load yet... so just disable everything
-		Sys_Printf ("OGGMus: Failed to allocate sound channel.\n");
-
 	/* check list file cvar, open list file, create map, close file. */
 	mus_ogglist = Cvar_Get ("mus_ogglist", "tracklist.cfg", CVAR_NONE,
 							Mus_OggChange,

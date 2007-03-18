@@ -234,3 +234,10 @@ S_AllocChannel (void)
 		return snd_render_funcs->pS_AllocChannel ();
 	return 0;
 }
+
+VISIBLE void
+S_ChannelStop (struct channel_s *chan)
+{
+	if (snd_render_funcs)
+		snd_render_funcs->pS_ChannelStop (chan);
+}

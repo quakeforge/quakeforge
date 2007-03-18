@@ -110,12 +110,15 @@ SND_AllocChannel (void)
 void
 SND_ChannelStop (channel_t *chan)
 {
-	if (chan->next)
-		*(int*)0=0;
 	chan->stop = 1;
 	chan->free = 1;
-	chan->next = free_channels;
-	free_channels = chan;
+	/* if chan->next is set, then this channel has already been freed. just
+	   deal with it gracefully.
+	 */
+	if (!chan->next) {
+		chan->next = free_channels;
+		free_channels = chan;
+	}
 }
 
 void

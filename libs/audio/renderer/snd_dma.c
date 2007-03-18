@@ -445,6 +445,7 @@ static snd_render_funcs_t plugin_info_render_funcs = {
 	s_unblock_sound,
 	SND_LoadSound,
 	SND_AllocChannel,
+	SND_ChannelStop,
 };
 
 static plugin_funcs_t plugin_info_funcs = {

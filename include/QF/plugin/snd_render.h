@@ -53,6 +53,7 @@ typedef void (*P_S_BlockSound) (void);
 typedef void (*P_S_UnblockSound) (void);
 typedef struct sfx_s *(*P_S_LoadSound) (const char *name);
 typedef struct channel_s *(*P_S_AllocChannel) (void);
+typedef void (*P_S_ChannelStop) (struct channel_s *chan);
 
 typedef struct snd_render_funcs_s {
 	P_S_AmbientOff 		pS_AmbientOff;
@@ -70,6 +71,7 @@ typedef struct snd_render_funcs_s {
 	P_S_UnblockSound	pS_UnblockSound;
 	P_S_LoadSound		pS_LoadSound; 
 	P_S_AllocChannel	pS_AllocChannel;
+	P_S_ChannelStop     pS_ChannelStop;
 } snd_render_funcs_t;
 
 typedef struct snd_render_data_s {
