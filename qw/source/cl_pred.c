@@ -101,16 +101,6 @@ CL_PredictUsercmd (player_state_t * from, player_state_t * to, usercmd_t *u,
 	to->pls.weaponframe = from->pls.weaponframe;
 }
 
-static inline void
-check_onserver (void)
-{
-	// we can now render a frame
-	if (cls.state == ca_onserver) {
-		// first update is the final signon stage
-		CL_SetState (ca_active);
-	}
-}
-
 void
 CL_PredictMove (void)
 {
@@ -132,7 +122,6 @@ CL_PredictMove (void)
 		cl.time = realtime;
 
 	if (cl.intermission) {
-		check_onserver ();
 		return;
 	}
 
@@ -147,8 +136,6 @@ CL_PredictMove (void)
 
 	// this is the last frame received from the server
 	from = &cl.frames[cls.netchan.incoming_sequence & UPDATE_MASK];
-
-	check_onserver ();
 
 	if (!cl_predict->int_val) {
 		VectorCopy (from->playerstate[cl.playernum].pls.velocity, cl.simvel);
