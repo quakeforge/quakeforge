@@ -353,7 +353,6 @@ Model_NextDownload (void)
 						 va (prespawn_name, cl.servercount,
 							 cl.worldmodel->checksum2));
 	}
-	CL_SetState (ca_active);
 }
 
 static void

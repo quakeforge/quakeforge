@@ -101,6 +101,7 @@ Skin_NextDownload (void)
 		MSG_WriteString (&cls.netchan.message, va ("begin %i",
 												   cl.servercount));
 		Cache_Report ();				// print remaining memory
+		CL_SetState (ca_active);
 	}
 }
 
