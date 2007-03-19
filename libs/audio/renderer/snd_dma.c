@@ -362,6 +362,13 @@ s_startup (void)
 }
 
 static void
+s_snd_force_unblock (void)
+{
+	snd_blocked = 1;
+	s_unblock_sound ();
+}
+
+static void
 s_init (void)
 {
 	snd_output_funcs = snd_render_data.output->functions->snd_output;
@@ -372,6 +379,8 @@ s_init (void)
 					"Stops all sounds currently being played");
 	Cmd_AddCommand ("soundinfo", s_soundinfo_f,
 					"Report information on the sound system");
+	Cmd_AddCommand ("snd_force_unblock", s_snd_force_unblock,
+					"fix permanently blocked sound");
 
 	snd_interp = Cvar_Get ("snd_interp", "1", CVAR_ARCHIVE, NULL,
 	                              "control sample interpolation");

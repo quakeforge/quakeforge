@@ -40,6 +40,7 @@ static __attribute__ ((used)) const char rcsid[] =
 #include <stdlib.h>
 #include <jack/jack.h>
 
+#include "QF/cmd.h"
 #include "QF/cvar.h"
 #include "QF/hash.h"
 #include "QF/plugin.h"
@@ -100,6 +101,13 @@ s_unblock_sound (void)
 }
 
 static void
+s_snd_force_unblock (void)
+{
+	snd_blocked = 1;
+	s_unblock_sound ();
+}
+
+static void
 snd_jack_xfer (int endtime)
 {
 	int         i;
@@ -143,6 +151,9 @@ s_init (void)
 
 	snd_shm = &_snd_shm;
 	snd_shm->xfer = snd_jack_xfer;
+
+	Cmd_AddCommand ("snd_force_unblock", s_snd_force_unblock,
+					"fix permanently blocked sound");
 
 	snd_interp = Cvar_Get ("snd_interp", "1", CVAR_ARCHIVE, NULL,
 	                              "control sample interpolation");
