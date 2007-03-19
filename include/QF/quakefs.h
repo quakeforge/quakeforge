@@ -126,6 +126,9 @@ void QFS_FilelistAdd (filelist_t *filelist, const char *fname,
 void QFS_FilelistFill (filelist_t *list, const char *path, const char *ext,
 					   int strip);
 void QFS_FilelistFree (filelist_t *list);
+void QFS_FilelistEnumerate(filelist_t* list, const char* path);
+qboolean QFS_IsDirectory (const char *path);
+
 
 // FIXME: This is here temporarily until fs_usercfg gets sorted out
 char *expand_squiggle (const char *path);

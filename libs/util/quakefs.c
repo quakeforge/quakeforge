@@ -53,6 +53,7 @@ static __attribute__ ((used)) const char rcsid[] =
 #include <fcntl.h>
 #include <stdarg.h>
 #include <stdlib.h>
+#include <sys/stat.h>
 
 #ifdef HAVE_FNMATCH_H
 # define model_t sunmodel_t
@@ -1489,6 +1490,113 @@ QFS_FilelistFill (filelist_t *list, const char *path, const char *ext,
 				if (!fnmatch (va("*.%s", ext), dirent->d_name, 0)
 					|| !fnmatch (va("*.%s.gz", ext), dirent->d_name, 0))
 					QFS_FilelistAdd (list, dirent->d_name, strip ? ext : 0);
+			closedir (dir_ptr);
+		}
+	}
+}
+
+VISIBLE qboolean
+QFS_IsDirectory (const char *path)
+{
+	searchpath_t *search;
+
+	if (!path[0])
+		return true;
+
+	for (search = qfs_searchpaths; search != NULL; search = search->next)
+	{
+		if (search->pack)
+		{
+			int i;
+			pack_t *pak = search->pack;
+			
+			for (i = 0; i < pak->numfiles; i++)
+			{
+				const char* prefix = va("%s/", path);
+				const char* filename = pak->files[i].name;
+				
+				if (strlen(prefix) < strlen(filename) && !strncmp(prefix, filename, strlen(prefix)))
+				{
+					return true;
+				}
+			}
+		}
+		else
+		{
+			const char* truepath = va("%s/%s", search->filename, path);
+			struct stat buf;
+			
+			if (!stat(truepath, &buf) && S_ISDIR(buf.st_mode))
+				return true;
+		}
+	}
+	
+	return false;
+}
+
+VISIBLE void
+QFS_FilelistEnumerate(filelist_t* list, const char* path)
+{
+	searchpath_t *search;
+	
+	for (search = qfs_searchpaths; search != NULL; search = search->next)
+	{
+		if (search->pack)
+		{
+			int i;
+			pack_t *pak = search->pack;
+			
+			for (i = 0; i < pak->numfiles; i++)
+			{
+				const char* prefix = path[0] ? va("%s/", path) : "";
+				char* filename = pak->files[i].name;
+				
+				int j;
+				
+				for (j = 0; j < list->count; j++)
+				{
+					if (list->list[j] && !strncmp(list->list[j], filename, strlen(list->list[j])))
+					{
+						goto OUT;
+					}
+				}
+				
+				if (strlen(prefix) < strlen(filename) && 
+					!strncmp(prefix, filename, strlen(prefix)))
+				{
+					char* slash = strchr(filename + strlen(prefix), '/');
+					if (slash)
+						*slash = 0;
+					int j;
+					qboolean exists = false;
+					for (j = 0; j < list->count; j++)
+					{
+						if (list->list[j] && !strcmp(list->list[j], filename))
+						{
+							exists = true;
+							break;
+						}
+					}
+					if (!exists)
+						QFS_FilelistAdd(list, filename, false);
+					if (slash)
+						*slash = '/';
+				}
+				OUT: ;
+			}
+		}
+		else
+		{
+			const char* truepath = va("%s/%s", search->filename, path);
+			DIR *dir_ptr = opendir (truepath);
+			struct dirent *dirent;
+			if (!dir_ptr)
+				continue;
+			while ((dirent = readdir (dir_ptr)))
+			{
+				if (strcmp(".", dirent->d_name) && strcmp("..", dirent->d_name))
+					QFS_FilelistAdd(list, dirent->d_name, false);
+			}
 			closedir (dir_ptr);
 		}
 	}
