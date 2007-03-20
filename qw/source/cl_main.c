@@ -1117,7 +1117,16 @@ CL_Rotate_f (void)
 void
 CL_SetState (cactive_t state)
 {
+	static const char *state_names[] = {
+		"ca_disconnected",
+		"ca_demostate",
+		"ca_connected",
+		"ca_onserver",
+		"ca_active",
+	};
 	cactive_t   old_state = cls.state;
+
+	Con_DPrintf ("CL_SetState (%s)\n", state_names[state]);
 	cls.state = state;
 	if (old_state != state) {
 		if (old_state == ca_active) {
@@ -1134,6 +1143,7 @@ CL_SetState (cactive_t state)
 			// entering active state
 			VID_SetCaption (cls.servername);
 			IN_ClearStates ();
+			R_ClearEnts ();
 			r_active = true;
 			game_target = IMT_0;
 			key_dest = key_game;
