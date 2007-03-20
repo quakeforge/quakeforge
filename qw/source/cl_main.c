@@ -1555,7 +1555,7 @@ Host_Frame (float time)
 
 	// fetch results from server
 	CL_ReadPackets ();
-	if (cls.downloadurl->str)
+	if (*cls.downloadurl->str)
 		CL_HTTP_Update ();
 
 	if (cls.demoplayback2) {
