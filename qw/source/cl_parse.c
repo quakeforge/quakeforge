@@ -65,6 +65,7 @@ static __attribute__ ((used)) const char rcsid[] =
 #include "cl_cam.h"
 #include "cl_chat.h"
 #include "cl_ents.h"
+#include "cl_http.h"
 #include "cl_input.h"
 #include "cl_main.h"
 #include "cl_parse.h"
@@ -232,25 +233,24 @@ CL_CheckOrDownloadFile (const char *filename)
 	// ZOID - can't download when recording
 	if (cls.demorecording) {
 		Con_Printf ("Unable to download %s in record mode.\n",
-					cls.downloadname);
+					cls.downloadname->str);
 		return true;
 	}
 	// ZOID - can't download when playback
 	if (cls.demoplayback)
 		return true;
 
-	strcpy (cls.downloadname, filename);
-	Con_Printf ("Downloading %s...\n", cls.downloadname);
+	dstring_copystr (cls.downloadname, filename);
+	Con_Printf ("Downloading %s...\n", cls.downloadname->str);
 
 	// download to a temp name, and only rename to the real name when done,
 	// so if interrupted a runt file wont be left
-	QFS_StripExtension (cls.downloadname, cls.downloadtempname);
-	strncat (cls.downloadtempname, ".tmp",
-			 sizeof (cls.downloadtempname) - strlen (cls.downloadtempname));
+	QFS_StripExtension (cls.downloadname->str, cls.downloadtempname->str);
+	dstring_appendstr (cls.downloadtempname, ".tmp");
 
 	MSG_WriteByte (&cls.netchan.message, clc_stringcmd);
 	MSG_WriteString (&cls.netchan.message,
-					 va ("download \"%s\"", cls.downloadname));
+					 va ("download \"%s\"", cls.downloadname->str));
 
 	cls.downloadnumber++;
 
@@ -416,6 +416,43 @@ CL_RequestNextDownload (void)
 	}
 }
 
+void
+CL_FinishDownload (void)
+{
+	Qclose (cls.download);
+	VID_SetCaption (va ("Connecting to %s", cls.servername));
+
+	// rename the temp file to it's final name
+	if (strcmp (cls.downloadtempname->str, cls.downloadname->str)) {
+		dstring_t  *oldn = dstring_new ();
+		dstring_t  *newn = dstring_new ();
+
+		if (strncmp (cls.downloadtempname->str, "skins/", 6)) {
+			dsprintf (oldn, "%s/%s", qfs_gamedir->dir.def,
+					  cls.downloadtempname->str);
+			dsprintf (newn, "%s/%s", qfs_gamedir->dir.def,
+					  cls.downloadname->str);
+		} else {
+			dsprintf (oldn, "%s/%s", qfs_gamedir->dir.skins,
+					  cls.downloadtempname->str + 6);
+			dsprintf (newn, "%s/%s", qfs_gamedir->dir.skins,
+					  cls.downloadname->str + 6);
+		}
+		if (QFS_Rename (oldn->str, newn->str))
+			Con_Printf ("failed to rename, %s.\n", strerror (errno));
+		dstring_delete (oldn);
+		dstring_delete (newn);
+	}
+
+	cls.download = NULL;
+	dstring_clearstr (cls.downloadname);
+	dstring_clearstr (cls.downloadurl);
+	cls.downloadpercent = 0;
+
+	// get another file if needed
+	CL_RequestNextDownload ();
+}
+
 /*
 	CL_ParseDownload
 
@@ -424,7 +461,7 @@ CL_RequestNextDownload (void)
 static void
 CL_ParseDownload (void)
 {
-	int         size, percent, r;
+	int         size, percent;
 
 	// read the data
 	size = MSG_ReadShort (net_message);
@@ -433,7 +470,8 @@ CL_ParseDownload (void)
 	if (cls.demoplayback) {
 		if (size > 0)
 			net_message->readcount += size;
-		cls.downloadname[0] = 0;
+		dstring_clearstr (cls.downloadname);
+		dstring_clearstr (cls.downloadurl);
 		return;							// not in demo playback
 	}
 
@@ -444,16 +482,18 @@ CL_ParseDownload (void)
 			Qclose (cls.download);
 			cls.download = NULL;
 		}
-		cls.downloadname[0] = 0;
+		dstring_clearstr (cls.downloadname);
+		dstring_clearstr (cls.downloadurl);
 		CL_RequestNextDownload ();
 		return;
 	}
 
 	if (size == -2) {
-		const char	   *newname = MSG_ReadString (net_message);
+		const char *newname = MSG_ReadString (net_message);
 
-		if (strncmp (newname, cls.downloadname, strlen (cls.downloadname))
-			|| strstr (newname + strlen (cls.downloadname), "/")) {
+		if (strncmp (newname, cls.downloadname->str,
+					 strlen (cls.downloadname->str))
+			|| strstr (newname + strlen (cls.downloadname->str), "/")) {
 			Con_Printf
 				("WARNING: server tried to give a strange new name: %s\n",
 				 newname);
@@ -462,10 +502,43 @@ CL_ParseDownload (void)
 		}
 		if (cls.download) {
 			Qclose (cls.download);
-			unlink (cls.downloadname);
+			unlink (cls.downloadname->str);
 		}
-		strncpy (cls.downloadname, newname, sizeof (cls.downloadname));
-		Con_Printf ("downloading to %s\n", cls.downloadname);
+		dstring_copystr (cls.downloadname, newname);
+		Con_Printf ("downloading to %s\n", cls.downloadname->str);
+		return;
+	}
+	if (size == -3) {
+#ifdef HAVE_LIBCURL
+		const char *url = MSG_ReadString (net_message);
+		const char *newname = MSG_ReadString (net_message);
+
+		if (newname) {
+			if (strncmp (newname, cls.downloadname->str,
+						 strlen (cls.downloadname->str))
+				|| strstr (newname + strlen (cls.downloadname->str), "/")) {
+				Con_Printf
+					("WARNING: server tried to give a strange new name: %s\n",
+					 newname);
+				CL_RequestNextDownload ();
+				return;
+			}
+			if (cls.download) {
+				Qclose (cls.download);
+				unlink (cls.downloadname->str);
+			}
+			dstring_copystr (cls.downloadname, newname);
+		}
+		dstring_copystr (cls.downloadurl, url);
+		Con_Printf ("downloading %s to %s\n", cls.downloadurl->str,
+					cls.downloadname->str);
+		CL_HTTP_StartDownload ();
+#else
+		MSG_ReadString (net_message);
+		MSG_ReadString (net_message);
+		Con_Printf ("server sent http redirect but we don't know how to handle"
+					"it :(\n");
+#endif
 		return;
 	}
 	// open the file if not opened yet
@@ -473,27 +546,28 @@ CL_ParseDownload (void)
 		dstring_t  *name = dstring_newstr ();
 		const char *fname, *path;
 
-		if (strncmp (cls.downloadtempname, "skins/", 6) == 0) {
+		if (strncmp (cls.downloadtempname->str, "skins/", 6) == 0) {
 			path = qfs_gamedir->dir.skins;
-			fname = cls.downloadtempname + 6;
-		} else if (strncmp (cls.downloadtempname, "progs/", 6) == 0) {
+			fname = cls.downloadtempname->str + 6;
+		} else if (strncmp (cls.downloadtempname->str, "progs/", 6) == 0) {
 			path = qfs_gamedir->dir.progs;
-			fname = cls.downloadtempname + 6;
-		} else if (strncmp (cls.downloadtempname, "sound/", 6) == 0) {
+			fname = cls.downloadtempname->str + 6;
+		} else if (strncmp (cls.downloadtempname->str, "sound/", 6) == 0) {
 			path = qfs_gamedir->dir.sound;
-			fname = cls.downloadtempname + 6;
-		} else if (strncmp (cls.downloadtempname, "maps/", 5) == 0) {
+			fname = cls.downloadtempname->str + 6;
+		} else if (strncmp (cls.downloadtempname->str, "maps/", 5) == 0) {
 			path = qfs_gamedir->dir.maps;
-			fname = cls.downloadtempname + 5;
+			fname = cls.downloadtempname->str + 5;
 		} else {
 			path = qfs_gamedir->dir.def;
-			fname = cls.downloadtempname;
+			fname = cls.downloadtempname->str;
 		}
 		dsprintf (name, "%s/%s", path, fname);
 
 		cls.download = QFS_WOpen (name->str, 0);
 		if (!cls.download) {
-			cls.downloadname[0] = 0;
+			dstring_clearstr (cls.downloadname);
+			dstring_clearstr (cls.downloadurl);
 			net_message->readcount += size;
 			Con_Printf ("Failed to open %s\n", name->str);
 			CL_RequestNextDownload ();
@@ -509,43 +583,14 @@ CL_ParseDownload (void)
 	if (percent != 100) {
 		// request next block
 		if (percent != cls.downloadpercent)
-			VID_SetCaption (va ("Downloading %s %d%%", cls.downloadname,
+			VID_SetCaption (va ("Downloading %s %d%%", cls.downloadname->str,
 								percent));
 		cls.downloadpercent = percent;
 
 		MSG_WriteByte (&cls.netchan.message, clc_stringcmd);
 		SZ_Print (&cls.netchan.message, "nextdl");
 	} else {
-		char		oldn[MAX_OSPATH];
-		char		newn[MAX_OSPATH];
-
-		Qclose (cls.download);
-		VID_SetCaption (va ("Connecting to %s", cls.servername));
-
-		// rename the temp file to it's final name
-		if (strcmp (cls.downloadtempname, cls.downloadname)) {
-			if (strncmp (cls.downloadtempname, "skins/", 6)) {
-				snprintf (oldn, sizeof (oldn), "%s/%s", qfs_gamedir->dir.def,
-						  cls.downloadtempname);
-				snprintf (newn, sizeof (newn), "%s/%s", qfs_gamedir->dir.def,
-						  cls.downloadname);
-			} else {
-				snprintf (oldn, sizeof (oldn), "%s/%s", qfs_gamedir->dir.skins,
-						  cls.downloadtempname + 6);
-				snprintf (newn, sizeof (newn), "%s/%s", qfs_gamedir->dir.skins,
-						  cls.downloadname + 6);
-			}
-			r = QFS_Rename (oldn, newn);
-			if (r)
-				Con_Printf ("failed to rename, %s.\n", strerror (errno));
-		}
-
-		cls.download = NULL;
-		cls.downloadname[0] = 0;
-		cls.downloadpercent = 0;
-
-		// get another file if needed
-		CL_RequestNextDownload ();
+		CL_FinishDownload ();
 	}
 }
 

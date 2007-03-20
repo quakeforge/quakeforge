@@ -152,8 +152,9 @@ typedef struct
 
 // file transfer from server
 	QFile		*download;
-	char		downloadtempname[MAX_OSPATH];
-	char		downloadname[MAX_OSPATH];
+	struct dstring_s *downloadtempname;
+	struct dstring_s *downloadname;
+	struct dstring_s *downloadurl;
 	int			downloadnumber;
 	dltype_t	downloadtype;
 	int			downloadpercent;

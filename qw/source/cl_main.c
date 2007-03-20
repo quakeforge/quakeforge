@@ -91,6 +91,7 @@ static __attribute__ ((used)) const char rcsid[] =
 #include "cl_chat.h"
 #include "cl_demo.h"
 #include "cl_ents.h"
+#include "cl_http.h"
 #include "cl_input.h"
 #include "cl_main.h"
 #include "cl_parse.h"
@@ -500,6 +501,10 @@ CL_Disconnect (void)
 	Cam_Reset ();
 
 	if (cls.download) {
+		CL_HTTP_Reset ();
+		dstring_clearstr (cls.downloadname);
+		dstring_clearstr (cls.downloadurl);
+		dstring_clearstr (cls.downloadtempname);
 		Qclose (cls.download);
 		cls.download = NULL;
 	}
@@ -659,6 +664,9 @@ CL_AddQFInfoKeys (void)
 	static const char *cap = "pt"
 #ifdef HAVE_ZLIB
 		"z"
+#endif
+#ifdef HAVE_LIBCURL
+		"h"
 #endif
 		;
 
@@ -1067,12 +1075,10 @@ CL_Download_f (void)
 		return;
 	}
 
-	snprintf (cls.downloadname, sizeof (cls.downloadname), "%s/%s",
-			  qfs_gamedir->dir.def, Cmd_Argv (1));
+	dsprintf (cls.downloadname, "%s/%s", qfs_gamedir->dir.def, Cmd_Argv (1));
 
-	strncpy (cls.downloadtempname, cls.downloadname,
-			 sizeof (cls.downloadtempname));
-	cls.download = QFS_WOpen (cls.downloadname, 0);
+	dstring_copystr (cls.downloadtempname, cls.downloadname->str);
+	cls.download = QFS_WOpen (cls.downloadname->str, 0);
 	if (cls.download) {
 		cls.downloadtype = dl_single;
 
@@ -1549,6 +1555,8 @@ Host_Frame (float time)
 
 	// fetch results from server
 	CL_ReadPackets ();
+	if (cls.downloadurl->str)
+		CL_HTTP_Update ();
 
 	if (cls.demoplayback2) {
 		player_state_t *self, *oldself;
@@ -1741,6 +1749,9 @@ Host_Init (void)
 	pr_gametype = "quakeworld";
 
 	cls.userinfo = Info_ParseString ("", MAX_INFO_STRING, 0);
+	cls.downloadtempname = dstring_newstr ();
+	cls.downloadname = dstring_newstr ();
+	cls.downloadurl = dstring_newstr ();
 	cl.serverinfo = Info_ParseString ("", MAX_INFO_STRING, 0);
 
 	QFS_Init ("qw");
@@ -1799,6 +1810,7 @@ Host_Init (void)
 			sound_precache[i] = cl.sound_name[i];
 		Net_Log_Init (sound_precache);
 	}
+	CL_HTTP_Init ();
 
 	W_LoadWadFile ("gfx.wad");
 	Key_Init (cl_cbuf);
@@ -1882,6 +1894,7 @@ Host_Shutdown (void)
 	Host_WriteConfiguration ();
 
 	CDAudio_Shutdown ();
+	CL_HTTP_Shutdown ();
 	NET_Shutdown ();
 	S_Shutdown ();
 	IN_Shutdown ();

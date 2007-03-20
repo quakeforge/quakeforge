@@ -594,10 +594,10 @@ draw_download (view_t *view)
 	const char *text;
 	size_t		i, j, x, y, n;
 
-	if (!con_data.dl_name || !*con_data.dl_name)
+	if (!con_data.dl_name || !*con_data.dl_name->str)
 		return;
 
-	text = QFS_SkipPath(con_data.dl_name);
+	text = QFS_SkipPath(con_data.dl_name->str);
 
 	x = con_linewidth - ((con_linewidth * 7) / 40);
 	y = x - strlen (text) - 8;

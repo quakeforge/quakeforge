@@ -55,6 +55,7 @@ void CL_NewTranslation (int slot, struct skin_s *skin);
 qboolean	CL_CheckOrDownloadFile (const char *filename);
 qboolean CL_IsUploading(void);
 void CL_NextUpload(void);
+void CL_FinishDownload (void);
 void CL_StartUpload (byte *data, int size);
 void CL_StopUpload(void);
 

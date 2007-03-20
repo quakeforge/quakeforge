@@ -648,6 +648,8 @@ if test "x$enable_png" != "xno"; then
 fi
 AC_SUBST(PNG_LIBS)
 
+LIBCURL_CHECK_CONFIG([], [], [CURL=yes], [])
+
 AC_ARG_WITH(ipv6,
 [  --with-ipv6=DIR         enable IPv6 support. Optional argument specifies
                           location of inet6 libraries.],
@@ -2429,6 +2431,7 @@ AC_MSG_RESULT([
 	CD Audio system    :${CDTYPE- no}
 	IPv6 networking    : $NETTYPE_IPV6
 	Compression support: gz=$HAVE_ZLIB ogg=$HAVE_VORBIS flac=$HAVE_FLAC png=$HAVE_PNG
+	HTTP support       : ${CURL-no}
 	Compiler version   : $CCVER
 	Compiler flags     : $CFLAGS
 	qfcc cpp invocation: $CPP_NAME

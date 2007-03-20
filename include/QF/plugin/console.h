@@ -51,7 +51,7 @@ typedef struct console_func_s {
 } console_funcs_t;
 
 typedef struct console_data_s {
-	const char			*dl_name;
+	struct dstring_s	*dl_name;
 	int					*dl_percent;
 	double				*realtime;
 	double				*frametime;
