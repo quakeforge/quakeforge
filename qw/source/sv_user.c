@@ -99,6 +99,8 @@ cvar_t     *sv_timekick_interval;
 cvar_t     *sv_timecheck_fuzz;
 cvar_t     *sv_timecheck_decay;
 
+cvar_t     *sv_http_url_base;
+
 static void OutofBandPrintf (netadr_t where, const char *fmt, ...) __attribute__ ((format (printf, 2, 3)));
 
 //	USER STRINGCMD EXECUTION host_client and sv_player will be valid.
@@ -709,7 +711,7 @@ SV_BeginDownload_f (void *unused)
 {
 	const char *name;
 	dstring_t  *realname;
-	int			size, zip;
+	int			http, size, zip;
 	QFile	   *file;
 
 	name = Cmd_Argv (1);
@@ -742,6 +744,8 @@ SV_BeginDownload_f (void *unused)
 	}
 
 	zip = strchr (Info_ValueForKey (host_client->userinfo, "*cap"), 'z') != 0;
+	http = sv_http_url_base->string[0]
+			&& strchr (Info_ValueForKey (host_client->userinfo, "*cap"), 'h');
 
 	realname = dstring_newstr ();
 	size = _QFS_FOpenFile (name, &file, realname, !zip);
@@ -767,14 +771,31 @@ SV_BeginDownload_f (void *unused)
 		return;
 	}
 
-	if (zip && strcmp (realname->str, name)) {
-		SV_Printf ("download renamed to %s\n", realname->str);
-		MSG_ReliableWrite_Begin (&host_client->backbuf, svc_download,
-								 strlen (realname->str) + 5);
-		MSG_ReliableWrite_Short (&host_client->backbuf, -2);
+	if (http) {
+		int         size;
+		int         ren = zip && strcmp (realname->str, name);
+		SV_Printf ("http redirect: %s/%s\n", sv_http_url_base->string,
+				   realname->str);
+		size = ren ? strlen (realname->str) * 2 : strlen (name);
+		size += strlen (sv_http_url_base->string) + 7;
+		MSG_ReliableWrite_Begin (&host_client->backbuf, svc_download, size);
+		MSG_ReliableWrite_Short (&host_client->backbuf, -3);
 		MSG_ReliableWrite_Byte (&host_client->backbuf, 0);
-		MSG_ReliableWrite_String (&host_client->backbuf, realname->str);
-		MSG_Reliable_FinishWrite (&host_client->backbuf);
+		MSG_ReliableWrite_String (&host_client->backbuf, 
+								  va ("%s/%s", sv_http_url_base->string,
+									  ren ? realname->str : name));
+		MSG_ReliableWrite_String (&host_client->backbuf,
+								  ren ? realname->str : "");
+	} else {
+		if (zip && strcmp (realname->str, name)) {
+			SV_Printf ("download renamed to %s\n", realname->str);
+			MSG_ReliableWrite_Begin (&host_client->backbuf, svc_download,
+									 strlen (realname->str) + 5);
+			MSG_ReliableWrite_Short (&host_client->backbuf, -2);
+			MSG_ReliableWrite_Byte (&host_client->backbuf, 0);
+			MSG_ReliableWrite_String (&host_client->backbuf, realname->str);
+			MSG_Reliable_FinishWrite (&host_client->backbuf);
+		}
 	}
 	dstring_delete (realname);
 
@@ -1989,6 +2010,9 @@ SV_UserInit (void)
 								   "\"forgiven\".");
 	sv_kickfake = Cvar_Get ("sv_kickfake", "0", CVAR_NONE, NULL,
 							"Kick users sending to send fake talk messages");
+	sv_http_url_base = Cvar_Get ("sv_http_url_base", "", CVAR_NONE, NULL,
+								 "set to base url for http redirects of "
+								 "downloaded files");
 }
 
 static void
