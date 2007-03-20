@@ -1595,7 +1595,20 @@ QFS_FilelistEnumerate(filelist_t* list, const char* path)
 			while ((dirent = readdir (dir_ptr)))
 			{
 				if (strcmp(".", dirent->d_name) && strcmp("..", dirent->d_name))
-					QFS_FilelistAdd(list, dirent->d_name, false);
+				{
+					int j;
+					qboolean exists = false;
+					for (j = 0; j < list->count; j++)
+					{
+						if (list->list[j] && !strcmp(list->list[j], dirent->d_name))
+						{
+							exists = true;
+							break;
+						}
+					}
+					if (!exists)
+						QFS_FilelistAdd(list, dirent->d_name, false);
+				}
 			}
 			closedir (dir_ptr);
 		}
