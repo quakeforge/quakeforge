@@ -765,7 +765,7 @@ SV_BeginDownload_f (void *unused)
 
 		SV_Printf ("Couldn't download %s to %s\n", name, host_client->name);
 		MSG_ReliableWrite_Begin (&host_client->backbuf, svc_download, 4);
-		MSG_ReliableWrite_Short (&host_client->backbuf, -1);
+		MSG_ReliableWrite_Short (&host_client->backbuf, DL_NOFILE);
 		MSG_ReliableWrite_Byte (&host_client->backbuf, 0);
 		dstring_delete (realname);
 		return;
@@ -779,7 +779,7 @@ SV_BeginDownload_f (void *unused)
 		size = ren ? strlen (realname->str) * 2 : strlen (name);
 		size += strlen (sv_http_url_base->string) + 7;
 		MSG_ReliableWrite_Begin (&host_client->backbuf, svc_download, size);
-		MSG_ReliableWrite_Short (&host_client->backbuf, -3);
+		MSG_ReliableWrite_Short (&host_client->backbuf, DL_HTTP);
 		MSG_ReliableWrite_Byte (&host_client->backbuf, 0);
 		MSG_ReliableWrite_String (&host_client->backbuf, 
 								  va ("%s/%s", sv_http_url_base->string,
@@ -791,7 +791,7 @@ SV_BeginDownload_f (void *unused)
 			SV_Printf ("download renamed to %s\n", realname->str);
 			MSG_ReliableWrite_Begin (&host_client->backbuf, svc_download,
 									 strlen (realname->str) + 5);
-			MSG_ReliableWrite_Short (&host_client->backbuf, -2);
+			MSG_ReliableWrite_Short (&host_client->backbuf, DL_RENAME);
 			MSG_ReliableWrite_Byte (&host_client->backbuf, 0);
 			MSG_ReliableWrite_String (&host_client->backbuf, realname->str);
 			MSG_Reliable_FinishWrite (&host_client->backbuf);

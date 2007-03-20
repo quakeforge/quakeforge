@@ -475,7 +475,7 @@ CL_ParseDownload (void)
 		return;							// not in demo playback
 	}
 
-	if (size == -1) {
+	if (size == DL_NOFILE) {
 		Con_Printf ("File not found.\n");
 		if (cls.download) {
 			Con_Printf ("cls.download shouldn't have been set\n");
@@ -488,7 +488,7 @@ CL_ParseDownload (void)
 		return;
 	}
 
-	if (size == -2) {
+	if (size == DL_RENAME) {
 		const char *newname = MSG_ReadString (net_message);
 
 		if (strncmp (newname, cls.downloadname->str,
@@ -508,7 +508,7 @@ CL_ParseDownload (void)
 		Con_Printf ("downloading to %s\n", cls.downloadname->str);
 		return;
 	}
-	if (size == -3) {
+	if (size == DL_HTTP) {
 #ifdef HAVE_LIBCURL
 		const char *url = MSG_ReadString (net_message);
 		const char *newname = MSG_ReadString (net_message);

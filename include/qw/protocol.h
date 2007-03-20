@@ -120,6 +120,10 @@
 #define svc_updatepl		53		// [byte] [byte]
 #define svc_nails2          54      // FIXME: from qwex. for interpolation, stores edict num
 
+#define DL_NOFILE		-1
+#define DL_RENAME		-2
+#define DL_HTTP			-3
+
 // client to server ===========================================================
 
 #define	clc_bad			0
