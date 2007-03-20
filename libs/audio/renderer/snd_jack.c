@@ -180,6 +180,10 @@ s_init (void)
 	snd_shm->speed = jack_get_sample_rate (jack_handle);
 	s_jack_activate ();
 	Sys_Printf ("Connected to JACK: %d Sps\n", snd_shm->speed);
+	if (snd_shm->speed > 44100) {
+		Sys_Printf ("FIXME clamping Sps to 44100 until resampling is fixed\n");
+		snd_shm->speed = 44100;
+	}
 }
 
 static void
