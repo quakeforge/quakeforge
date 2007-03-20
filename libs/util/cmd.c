@@ -81,15 +81,7 @@ VISIBLE cmd_source_t cmd_source;
 
 /* Command parsing functions */
 
-typedef struct cmd_function_s {
-	struct cmd_function_s *next;
-	const char *name;
-	xcommand_t  function;
-	const char *description;
-	qboolean    pure;
-} cmd_function_t;
-
-static cmd_function_t *cmd_functions;	// possible commands to execute
+VISIBLE cmd_function_t *cmd_functions;	// possible commands to execute
 
 VISIBLE int
 Cmd_Argc (void)

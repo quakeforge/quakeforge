@@ -80,6 +80,7 @@ typedef struct cbuf_interpreter_s {
 	void		(*insert) (struct cbuf_s *cbuf, const char *str);
 	void		(*execute) (struct cbuf_s *cbuf);
 	void		(*execute_sets) (struct cbuf_s *cbuf);
+	const char** (*complete) (struct cbuf_s *cbuf, const char *str);
 } cbuf_interpreter_t;
 
 extern cbuf_t *cbuf_active;

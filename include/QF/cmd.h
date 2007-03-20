@@ -45,6 +45,14 @@ typedef enum {
     src_command,		// from a command buffer
 } cmd_source_t;
 
+typedef struct cmd_function_s {
+	struct cmd_function_s *next;
+	const char *name;
+	xcommand_t  function;
+	const char *description;
+	qboolean    pure;
+} cmd_function_t;
+
 extern cmd_source_t	cmd_source;
 
 void	Cmd_Init_Hash (void);
@@ -74,6 +82,7 @@ struct cbuf_interpreter_s *Cmd_GetProvider(const char *name);
 
 extern struct cbuf_args_s *cmd_args;
 extern struct cvar_s *cmd_warncmd;
+extern cmd_function_t *cmd_functions;	// possible commands to execute
 
 //@}
 

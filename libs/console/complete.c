@@ -40,10 +40,13 @@ static __attribute__ ((used)) const char rcsid[] =
 
 #include <stdlib.h>
 
+#include "QF/cbuf.h"
 #include "QF/cmd.h"
 #include "QF/console.h"
 #include "QF/cvar.h"
-
+#include "QF/plugin.h"
+#include "QF/va.h"
+#include "compat.h"
 
 /*
   Con_BasicCompleteCommandLine
@@ -59,33 +62,66 @@ Con_BasicCompleteCommandLine (inputline_t *il)
 {
 	char		   *s;
 	const char	   *cmd = "", **list[3] = {0, 0, 0};
-	int				cmd_len, c, i, v;
+	int				cmd_len, c, i, v, o;
 
 	s = il->lines[il->edit_line] + 1;
+	
 	if (*s == '\\' || *s == '/')
 		s++;
 
-	// Count number of possible matches
-	c = Cmd_CompleteCountPossible(s);
-	v = Cvar_CompleteCountPossible(s);
+	s = strdup(s);
+
+	cbuf_t* cbuf = con_module->data->console->cbuf;
+
+	if (cbuf->interpreter->complete)
+	{
+		const char** completions = cbuf->interpreter->complete(cbuf, s);
+		const char** com;
+		
+		for (o = 0, com = completions; *com; com++, o++)
+		{
+		}
+		
+		c = v = 0;
+		
+		list[2] = completions;
+	}
+	else
+	{
+		// Count number of possible matches
+		c = Cmd_CompleteCountPossible(s);
+		v = Cvar_CompleteCountPossible(s);
+		o = 0;
+	}
 	
-	if (!(c + v))	// No possible matches
+	if (!(c + v + o))	// No possible matches
 		return;
 	
-	if (c + v == 1) {
+	if (c + v + o == 1) {
 		if (c)
+		{
 			list[0] = Cmd_CompleteBuildList(s);
-		else
+			cmd = *list[0];
+		}
+		else if (v)
+		{
 			list[0] = Cvar_CompleteBuildList(s);
-		cmd = *list[0];
+			cmd = *list[0];
+		}
+		else
+		{
+			cmd = *list[2];
+		}
 		cmd_len = strlen (cmd);
 	} else {
 		if (c)
 			cmd = *(list[0] = Cmd_CompleteBuildList(s));
 		if (v)
 			cmd = *(list[1] = Cvar_CompleteBuildList(s));
+		if (o)
+			cmd = *(list[2]);
 		
-		cmd_len = strlen (s);
+		cmd_len = 0;
 		do {
 			for (i = 0; i < 3; i++) {
 				char ch = cmd[cmd_len];
@@ -116,13 +152,29 @@ Con_BasicCompleteCommandLine (inputline_t *il)
 			Con_Printf("%i possible variable%s\n", v, (v > 1) ? "s: " : ":");
 			Con_DisplayList(list[1], con_linewidth);
 		}
+		if (o) {
+			Con_Printf("%i possible matche%s\n", o, (o > 1) ? "s: " : ":");
+			Con_DisplayList(list[2], con_linewidth);
+		}
 	}
 	
 	if (cmd) {
+		int bound = strlen(s);
+		int match = bound;
+		
+		if (cmd_len > 0) while (bound >= 0)
+		{
+			if (!strncmp(s+bound, cmd, min(strlen(s+bound), (unsigned int) cmd_len)))
+				match = bound;
+			bound--;
+		}
+
+		const char* overwrite = va("%.*s%.*s", match, s, cmd_len, cmd);
+	
 		il->lines[il->edit_line][1] = '/';
-		strncpy(il->lines[il->edit_line] + 2, cmd, cmd_len);
-		il->linepos = cmd_len + 2;
-		if (c + v == 1) {
+		strncpy(il->lines[il->edit_line] + 2, overwrite, strlen(overwrite));
+		il->linepos = strlen(overwrite) + 2;
+		if (c + v + o == 1) {
 			il->lines[il->edit_line][il->linepos] = ' ';
 			il->linepos++;
 		}
@@ -131,4 +183,6 @@ Con_BasicCompleteCommandLine (inputline_t *il)
 	for (i = 0; i < 3; i++)
 		if (list[i])
 			free (list[i]);
+			
+	free(s);
 }
