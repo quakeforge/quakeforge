@@ -356,7 +356,8 @@ s_updateAmbientSounds (void)
 		// stop all ambient channels.
 		for (ambient_channel = 0; ambient_channel < NUM_AMBIENTS;
 			 ambient_channel++) {
-			SND_ChannelStop (ambient_channels[ambient_channel]);
+			if (ambient_channels[ambient_channel])
+				SND_ChannelStop (ambient_channels[ambient_channel]);
 			ambient_channels[ambient_channel] = 0;
 		}
 		return;
