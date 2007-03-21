@@ -513,7 +513,7 @@ CL_ParseDownload (void)
 		const char *url = MSG_ReadString (net_message);
 		const char *newname = MSG_ReadString (net_message);
 
-		if (newname) {
+		if (*newname) {
 			if (strncmp (newname, cls.downloadname->str,
 						 strlen (cls.downloadname->str))
 				|| strstr (newname + strlen (cls.downloadname->str), "/")) {
