@@ -114,6 +114,13 @@ snd_jack_xfer (int endtime)
 	int         count;
 
 	count = endtime - snd_paintedtime;
+	if (snd_blocked) {
+		for (i = 0; i < count; i++) {
+			*output[0]++ = 0;
+			*output[1]++ = 0;
+		}
+		return;
+	}
 	for (i = 0; i < count; i++) {
 		*output[0]++ = snd_paintbuffer[i].left / 65536.0;
 		*output[1]++ = snd_paintbuffer[i].right / 65536.0;
@@ -124,17 +131,9 @@ static int
 snd_jack_process (jack_nframes_t nframes, void *arg)
 {
 	int         i;
-	jack_nframes_t j;
 
 	for (i = 0; i < 2; i++)
 		output[i] = (float *) jack_port_get_buffer (jack_out[i], nframes);
-	if (snd_blocked) {
-		SND_ScanChannels ();
-		for (j = 0; j < nframes; j++)
-			for (i = 0; i < 2; i++)
-				output[i][j] = 0;
-		return 0;
-	}
 	SND_PaintChannels (snd_paintedtime + nframes);
 	return 0;
 }
