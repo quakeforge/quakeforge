@@ -159,22 +159,16 @@ Con_BasicCompleteCommandLine (inputline_t *il)
 	}
 	
 	if (cmd) {
-		int bound = strlen(s);
-		int match = bound;
+		unsigned int bound = max(0, (int) strlen(s) - (int) cmd_len);
 		
-		if (cmd_len > 0) while (bound >= 0)
-		{
-			if (!strncmp(s+bound, cmd, min(strlen(s+bound), (unsigned int) cmd_len)))
-				match = bound;
-			bound--;
-		}
+		if (cmd_len > 0) while (bound < strlen(s) && strncmp(s+bound, cmd, strlen(s+bound))) bound++;
 
-		const char* overwrite = va("%.*s%.*s", match, s, cmd_len, cmd);
+		const char* overwrite = va("%.*s%.*s", bound, s, cmd_len, cmd);
 	
 		il->lines[il->edit_line][1] = '/';
 		strncpy(il->lines[il->edit_line] + 2, overwrite, strlen(overwrite));
 		il->linepos = strlen(overwrite) + 2;
-		if (c + v + o == 1) {
+		if (c + v + o == 1 && overwrite[strlen(overwrite)-1] != '/') {
 			il->lines[il->edit_line][il->linepos] = ' ';
 			il->linepos++;
 		}
