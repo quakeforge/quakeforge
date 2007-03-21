@@ -53,7 +53,8 @@ channel_t       snd_channels[MAX_CHANNELS];
 int             snd_total_channels;
 
 static channel_t *ambient_channels[NUM_AMBIENTS];
-static channel_t *dynamic_channels[MAX_DYNAMIC_CHANNELS];
+static channel_t *dynamic_channels;
+static channel_t *looped_dynamic_channels;
 static channel_t *static_channels[MAX_STATIC_CHANNELS];
 static int      snd_num_statics;
 
@@ -131,7 +132,7 @@ SND_ScanChannels (void)
 	for (i = 0; i < MAX_CHANNELS; i++) {
 		ch = &snd_channels[i];
 		if (ch->sfx && ch->stop && !ch->done) {
-			ch->done = 2;
+			ch->done = 1;
 			count++;
 		}
 	}
@@ -144,13 +145,23 @@ SND_StopAllSounds (void)
 	int         i;
 
 	snd_num_statics = 0;
+	while (dynamic_channels) {
+		channel_t  *ch = dynamic_channels;
+		dynamic_channels = ch->next;
+		ch->next = 0;
+		SND_ChannelStop (ch);
+	}
+	while (looped_dynamic_channels) {
+		channel_t  *ch = looped_dynamic_channels;
+		looped_dynamic_channels = ch->next;
+		ch->next = 0;
+		SND_ChannelStop (ch);
+	}
 	for (i = 0; i < MAX_CHANNELS; i++)
 		if (!snd_channels[i].free)
 			SND_ChannelStop (&snd_channels[i]);
 	for (i = 0; i < NUM_AMBIENTS; i++)
 		ambient_channels[i] = 0;
-	for (i = 0; i < MAX_DYNAMIC_CHANNELS; i++)
-		dynamic_channels[i] = 0;
 	for (i = 0; i < MAX_STATIC_CHANNELS; i++)
 		static_channels[i] = 0;
 	if (0) {
@@ -271,56 +282,49 @@ SND_Channels_Init (void)
 }
 
 static channel_t *
-s_pick_channel (int entnum, int entchannel)
+s_pick_channel (int entnum, int entchannel, int looped)
 {
-	int			best, i;
-	unsigned    life_left;
-	channel_t  *ch;
+	channel_t  *ch, **_ch;
+	int count;
 
-	for (i = 0; i < MAX_DYNAMIC_CHANNELS; i++) {
-		ch = dynamic_channels[i];
-		if (ch) {
-			if (ch->done) {
-				SND_ChannelStop (ch);
-				dynamic_channels[i] = ch = 0;
-			} else if (!ch->sfx) {
-				dynamic_channels[i] = ch = 0;
-			}
+	// check for finished non-looped sounds
+	for (count = 0, _ch = &dynamic_channels; *_ch; count++) {
+		ch = *_ch;
+		if (ch->done) {
+			*_ch = ch->next;
+			ch->next = 0;
+			SND_ChannelStop (ch);
+			continue;
 		}
-		if (!ch) {
-			dynamic_channels[i] = ch = SND_AllocChannel ();
-			return ch;
-		}
+		_ch = &(*_ch)->next;
 	}
 
-	best = -1;
-	life_left = 0x7fffffff;
-	for (i = 0; i < MAX_DYNAMIC_CHANNELS; i++) {
-		ch = dynamic_channels[i];
-		if (entchannel == 0)			// channel 0 never overrides
-			continue;
+	// non-looped sounds are used to stop looped sounds on an ent channel
+	for (count = 0, _ch = &looped_dynamic_channels; *_ch; count++) {
+		ch = *_ch;
 		if (ch->entnum == entnum
 			&& (ch->entchannel == entchannel || entchannel == -1)) {
-			best = i;
-			break;
-		}
-		// don't let monster sounds override player sounds
-		if (ch->entnum == *snd_render_data.viewentity
-			&& entnum != *snd_render_data.viewentity)
+			*_ch = ch->next;
+			ch->next = 0;
+			SND_ChannelStop (ch);
 			continue;
-		if (ch->end - snd_paintedtime < life_left) {
-			life_left = ch->end - snd_paintedtime;
-			best = i;
 		}
+		_ch = &(*_ch)->next;
 	}
-
-	if (best == -1)
-		return 0;
-
-	SND_ChannelStop (dynamic_channels[best]);
-	dynamic_channels[best] = SND_AllocChannel ();
-
-	return dynamic_channels[best];
+	for (count = 0, _ch = &dynamic_channels; *_ch; count++)
+		_ch = &(*_ch)->next;
+	for (count = 0, _ch = &looped_dynamic_channels; *_ch; count++)
+		_ch = &(*_ch)->next;
+	_ch = looped ? &looped_dynamic_channels : &dynamic_channels;
+	if ((ch = SND_AllocChannel ())) {
+		ch->next = *_ch;
+		*_ch = ch;
+	}
+	for (count = 0, _ch = &dynamic_channels; *_ch; count++)
+		_ch = &(*_ch)->next;
+	for (count = 0, _ch = &looped_dynamic_channels; *_ch; count++)
+		_ch = &(*_ch)->next;
+	return ch;
 }
 
 void
@@ -499,9 +503,10 @@ SND_SetListener (const vec3_t origin, const vec3_t forward, const vec3_t right,
 	s_updateAmbientSounds ();
 
 	// update spatialization for dynamic sounds	
-	for (i = 0; i < MAX_DYNAMIC_CHANNELS; i++)
-		if (dynamic_channels[i])
-			s_update_channel (dynamic_channels[i]);
+	for (ch = dynamic_channels; ch; ch = ch->next)
+		s_update_channel (ch);
+	for (ch = looped_dynamic_channels; ch; ch = ch->next)
+		s_update_channel (ch);
 
 	// update spatialization for static sounds	
 	combine = 0;
@@ -538,7 +543,7 @@ void
 SND_StartSound (int entnum, int entchannel, sfx_t *sfx, const vec3_t origin,
 				float fvol, float attenuation)
 {
-	int			 ch_idx, vol;
+	int			 vol;
 	unsigned int skip;
 	channel_t   *target_chan, *check;
 	sfx_t       *osfx;
@@ -546,7 +551,8 @@ SND_StartSound (int entnum, int entchannel, sfx_t *sfx, const vec3_t origin,
 	if (!sfx)
 		return;
 	// pick a channel to play on
-	target_chan = s_pick_channel (entnum, entchannel);
+	target_chan = s_pick_channel (entnum, entchannel,
+								  sfx->loopstart != (unsigned) -1);
 	if (!target_chan)
 		return;
 
@@ -572,8 +578,19 @@ SND_StartSound (int entnum, int entchannel, sfx_t *sfx, const vec3_t origin,
 
 	// if an identical sound has also been started this frame, offset the pos
 	// a bit to keep it from just making the first one louder
-	for (ch_idx = 0; ch_idx < MAX_DYNAMIC_CHANNELS; ch_idx++) {
-		check = dynamic_channels[ch_idx];
+	for (check = dynamic_channels; check; check = check->next) {
+		if (!check || check == target_chan)
+			continue;
+		if (check->sfx == osfx && !check->pos) {
+			skip = rand () % (int) (0.1 * snd_shm->speed);
+			if (skip >= target_chan->end)
+				skip = target_chan->end - 1;
+			target_chan->pos += skip;
+			target_chan->end -= skip;
+			break;
+		}
+	}
+	for (check = looped_dynamic_channels; check; check = check->next) {
 		if (!check || check == target_chan)
 			continue;
 		if (check->sfx == osfx && !check->pos) {
@@ -590,21 +607,30 @@ SND_StartSound (int entnum, int entchannel, sfx_t *sfx, const vec3_t origin,
 	target_chan->sfx = osfx;
 }
 
+static int
+s_check_stop (channel_t **_ch, int entnum, int entchannel)
+{
+	channel_t  *ch = *_ch;
+	if (ch->entnum == entnum && ch->entchannel == entchannel) {
+		*_ch = ch->next;
+		ch->next = 0;
+		SND_ChannelStop (ch);
+		return 1;
+	}
+	return 0;
+}
+
 void
 SND_StopSound (int entnum, int entchannel)
 {
-	int			i;
-	channel_t  *ch;
+	channel_t **_ch;
 
-	for (i = 0; i < MAX_DYNAMIC_CHANNELS; i++) {
-		ch = dynamic_channels[i];
-		if (ch->entnum == entnum && ch->entchannel == entchannel) {
-			ch->end = 0;
-			SND_ChannelStop (ch);
-			dynamic_channels[i] = 0;
-			return;
-		}
-	}
+	for (_ch = &dynamic_channels; *_ch; )
+		if (!s_check_stop (_ch, entnum, entchannel))
+			_ch = &(*_ch)->next;
+	for (_ch = &looped_dynamic_channels; *_ch; )
+		if (!s_check_stop (_ch, entnum, entchannel))
+			_ch = &(*_ch)->next;
 }
 
 void
