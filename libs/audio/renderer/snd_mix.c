@@ -111,10 +111,9 @@ SND_PaintChannels (unsigned int endtime)
 					if (ch->sfx->loopstart != (unsigned int) -1) {
 						ch->pos = ch->sfx->loopstart;
 						ch->end = ltime + ch->sfx->length - ch->pos;
-						ch->done = 2;
 						break;
 					} else {			// channel just stopped
-						ch->done = 2;
+						ch->done = 1;
 						break;
 					}
 				}
