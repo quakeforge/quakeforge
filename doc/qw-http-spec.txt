@@ -1,11 +1,13 @@
 client has 'h' flag in "*cap" info string
 
 format of svc_download message:
-<size (short)> <percent (byte)> [url (string)] [newname (string)]
+<size (short)> <percent (byte)> ([url (string)] [newname (string)] | [data])
 
 size and percent are always present.
 
 url is present only for http redirects.
+
+data is present only when size is > 0 (ie, normal downloading)
 
 newname is present for all http redirects (but may be the empty string) or if
 the file to download has a different name to what what requested. This is so
