@@ -47,6 +47,10 @@ static __attribute__ ((used)) const char rcsid[] =
 #include "compat.h"
 #include "snd_render.h"
 
+cvar_t         *snd_volume;
+
+unsigned int    snd_paintedtime;				// sample PAIRS
+
 portable_samplepair_t snd_paintbuffer[PAINTBUFFER_SIZE * 2];
 static int  max_overpaint;				// number of extra samples painted
 										// due to phase shift

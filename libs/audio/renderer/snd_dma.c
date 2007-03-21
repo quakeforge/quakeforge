@@ -55,12 +55,6 @@ static __attribute__ ((used)) const char rcsid[] =
 
 #include "snd_render.h"
 
-unsigned int    snd_paintedtime;				// sample PAIRS
-
-cvar_t         *snd_loadas8bit;
-cvar_t         *snd_volume;
-cvar_t         *snd_interp;
-
 static qboolean snd_initialized = false;
 static int      snd_blocked = 0;
 
@@ -382,8 +376,6 @@ s_init (void)
 	Cmd_AddCommand ("snd_force_unblock", s_snd_force_unblock,
 					"fix permanently blocked sound");
 
-	snd_interp = Cvar_Get ("snd_interp", "1", CVAR_ARCHIVE, NULL,
-	                              "control sample interpolation");
 	nosound = Cvar_Get ("nosound", "0", CVAR_NONE, NULL,
 						"Set to turn sound off");
 	snd_volume = Cvar_Get ("volume", "0.7", CVAR_ARCHIVE, NULL,

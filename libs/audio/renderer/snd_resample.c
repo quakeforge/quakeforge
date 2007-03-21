@@ -58,6 +58,9 @@ typedef struct {
 	short       right;
 } stereo16_t;
 
+cvar_t         *snd_loadas8bit;
+cvar_t         *snd_interp;
+
 void
 SND_ResampleMono (sfxbuffer_t *sc, byte *data, int length, void *prev)
 {

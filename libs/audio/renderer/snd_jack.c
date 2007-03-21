@@ -154,8 +154,6 @@ s_init (void)
 	Cmd_AddCommand ("snd_force_unblock", s_snd_force_unblock,
 					"fix permanently blocked sound");
 
-	snd_interp = Cvar_Get ("snd_interp", "1", CVAR_ARCHIVE, NULL,
-	                              "control sample interpolation");
 	snd_volume = Cvar_Get ("volume", "0.7", CVAR_ARCHIVE, NULL,
 						   "Set the volume for sound playback");
 	snd_interp = Cvar_Get ("snd_interp", "1", CVAR_ARCHIVE, NULL,
