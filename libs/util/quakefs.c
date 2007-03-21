@@ -739,8 +739,13 @@ QFS_CompressPath (const char *pth)
 		}
 		while (*p && *p != '/')
 			p++;
-		if (*p == '/')
+		if (*p == '/') {
 			p++;
+			for (d = p; *d == '/'; d++)
+				;
+			if (d != p)
+				strcpy (p, d);
+		}
 	}
 
 	return path;
