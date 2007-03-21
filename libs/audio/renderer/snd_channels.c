@@ -111,12 +111,14 @@ SND_AllocChannel (void)
 void
 SND_ChannelStop (channel_t *chan)
 {
-	chan->stop = 1;
-	chan->free = 1;
 	/* if chan->next is set, then this channel has already been freed. just
 	   deal with it gracefully.
+	   FIXME this is really a workaround for a problem in the interaction with
+	   cd_file.c
 	 */
 	if (!chan->next) {
+		chan->stop = 1;
+		chan->free = 1;
 		chan->next = free_channels;
 		free_channels = chan;
 	}
@@ -311,19 +313,11 @@ s_pick_channel (int entnum, int entchannel, int looped)
 		}
 		_ch = &(*_ch)->next;
 	}
-	for (count = 0, _ch = &dynamic_channels; *_ch; count++)
-		_ch = &(*_ch)->next;
-	for (count = 0, _ch = &looped_dynamic_channels; *_ch; count++)
-		_ch = &(*_ch)->next;
 	_ch = looped ? &looped_dynamic_channels : &dynamic_channels;
 	if ((ch = SND_AllocChannel ())) {
 		ch->next = *_ch;
 		*_ch = ch;
 	}
-	for (count = 0, _ch = &dynamic_channels; *_ch; count++)
-		_ch = &(*_ch)->next;
-	for (count = 0, _ch = &looped_dynamic_channels; *_ch; count++)
-		_ch = &(*_ch)->next;
 	return ch;
 }
 
