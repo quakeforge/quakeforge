@@ -655,12 +655,12 @@ CL_AddQFInfoKeys (void)
 	// set the capabilities info. single char flags (possibly with modifiers)
 	// defined capabilities (* = not implemented):
 	// z   client can accept gzipped files.
-	// h    * http transfers
-	// f    * ftp transfers
-	// a    * audio channel (voice chat)
-	// i    * irc
-	// p    pogo stick control
-	// t    team messages
+	// h   http transfers
+	// f   * ftp transfers
+	// a   * audio channel (voice chat)
+	// i   * irc
+	// p   pogo stick control
+	// t   team messages
 	static const char *cap = "pt"
 #ifdef HAVE_ZLIB
 		"z"
