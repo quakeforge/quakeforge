@@ -703,7 +703,7 @@ SVC_GetChallenge (void)
 	}
 
 	if (sv_extensions->int_val) {
-		extended = " QF qtv";
+		extended = " QF qtv EXT";
 	}
 
 	// send it to the client

@@ -982,6 +982,8 @@ CL_ConnectionlessPacket (void)
 		if (strstr (s, "QF")) {
 			Con_Printf (": QuakeForge server detected\n");
 			CL_AddQFInfoKeys ();
+		} else if (strstr (s, "EXT")) {
+			CL_AddQFInfoKeys ();
 		} else {
 			Con_Printf ("\n");
 		}
