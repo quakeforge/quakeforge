@@ -553,7 +553,6 @@ SND_StartSound (int entnum, int entchannel, sfx_t *sfx, const vec3_t origin,
 	vol = fvol * 255;
 
 	// spatialize
-	memset (target_chan, 0, sizeof (*target_chan));
 	VectorCopy (origin, target_chan->origin);
 	target_chan->dist_mult = attenuation / sound_nominal_clip_dist;
 	target_chan->master_vol = vol;
