@@ -77,8 +77,11 @@ Con_Interp_f(cvar_t* var)
 	
 	if (con_module && interp)
 	{
+		cbuf_t *new;
+
 		Sys_Printf("Switching to interpreter '%s'\n", var->string);
-		cbuf_t *new = Cbuf_New(interp);
+
+		new = Cbuf_New(interp);
 				
 		if (con_module->data->console->cbuf)
 		{

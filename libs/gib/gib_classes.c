@@ -184,27 +184,28 @@ Object_Class_New_f (gib_object_t *obj, gib_method_t *method, void *data,
 	return 0;
 }
 
+static const char **g_occ_reply;
+static unsigned int g_occ_i = 0;
+
+static qboolean occ_iterator (gib_class_t *class, void *unused)
+{
+	g_occ_reply[g_occ_i++] = class->name;
+	return false;
+}
+
 static int
 Object_Class_Children_f (gib_object_t *obj, gib_method_t *method, void *data,
 		gib_object_t *sender, gib_message_t mesg)
 {
-	const char **reply;
 	unsigned int size;
-	unsigned int i = 0;
-	
-	auto qboolean iterator (gib_class_t *class, void *unused);
-	qboolean
-	iterator (gib_class_t *class, void *unused)
-	{
-		reply[i++] = class->name;
-		return false;
-	}
+
+	g_occ_i = 0;
 	
 	size = llist_size (obj->class->children);
 	if (size) {
-		reply = malloc (sizeof (char *) * size);
-		llist_iterate (obj->class->children, LLIST_ICAST (iterator));
-		GIB_Reply (obj, mesg, size, reply);
+		g_occ_reply = malloc (sizeof (char *) * size);
+		llist_iterate (obj->class->children, LLIST_ICAST (occ_iterator));
+		GIB_Reply (obj, mesg, size, g_occ_reply);
 	} else
 		GIB_Reply (obj, mesg, 0, NULL);
 	return 0;
@@ -448,7 +449,7 @@ ObjectHash_Get_f (gib_object_t *obj, gib_method_t *method, void *data,
 		for (r = refs, i = 0; *r; r++, i++)
 			reply[i] = (*r)->obj->handstr;
 		GIB_Reply (obj, mesg, len, reply);
-		free (reply);
+		free ((void*)reply);
 	} else
 		GIB_Reply (obj, mesg, 0, NULL);
 	return 0;
@@ -601,6 +602,22 @@ Scrobj_Method_f (gib_object_t *obj, gib_method_t *method, void *data,
 	return 0;
 }
 
+static void gcbs_mtabfree (void *mtab, void *unused)
+{
+	free (mtab);
+}
+
+static enum {CLASS, INSTANCE} g_gcbs_mode;
+static const char *g_gcbs_name;
+
+static const char *gcbs_fname (const char *str)
+{
+	if (g_gcbs_mode == INSTANCE)
+		return va ("__%s_%s__", g_gcbs_name, str);
+	else
+		return va ("%s::%s", g_gcbs_name, str);
+}
+
 void
 GIB_Classes_Build_Scripted (const char *name, const char *parentname,
 		gib_tree_t *tree, gib_script_t *script)
@@ -609,35 +626,20 @@ GIB_Classes_Build_Scripted (const char *name, const char *parentname,
 	llist_t *methods, *cmethods;
 	gib_methodtab_t *mtab, *cmtab;
 	gib_classdesc_t desc;
-	enum {CLASS, INSTANCE} mode = INSTANCE;
-	
-	auto void mtabfree (void *mtab, void *unused);
-	void
-	mtabfree (void *mtab, void *unused)
-	{
-		free (mtab);
-	}
 
-	auto const char *fname (const char *str);
-	const char *
-	fname (const char *str)
-	{
-		if (mode == INSTANCE)
-			return va ("__%s_%s__", name, str);
-		else
-			return va ("%s::%s", name, str);
-	}
+	g_gcbs_mode = INSTANCE;
+	g_gcbs_name = name;
 	
-	methods = llist_new (mtabfree, NULL, NULL);
-	cmethods = llist_new (mtabfree, NULL, NULL);
+	methods = llist_new (gcbs_mtabfree, NULL, NULL);
+	cmethods = llist_new (gcbs_mtabfree, NULL, NULL);
 
 	for (line = tree; line; line = line->next)
 		switch (line->type) {
 			case TREE_T_LABEL:
 				if (!strcmp (line->str, "class"))
-					mode = CLASS;
+					g_gcbs_mode = CLASS;
 				else if (!strcmp (line->str, "instance"))
-					mode = INSTANCE;
+					g_gcbs_mode = INSTANCE;
 				break;
 			case TREE_T_CMD:
 				if (!strcmp (line->children->str,
@@ -652,7 +654,7 @@ GIB_Classes_Build_Scripted (const char *name, const char *parentname,
 							last->next; last =
 							last->next);
 					data->func = GIB_Function_Define
-						(fname
+						(gcbs_fname
 						 (line->children->next->str),
 						 last->str,
 						 last->children,
@@ -670,7 +672,7 @@ GIB_Classes_Build_Scripted (const char *name, const char *parentname,
 					new->data = data;
 					new->name = line->children->next->str;
 					new->func = Scrobj_Method_f;
-					if (mode == INSTANCE)
+					if (g_gcbs_mode == INSTANCE)
 						llist_append (methods, new);
 					else
 						llist_append (cmethods, new);

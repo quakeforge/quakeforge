@@ -42,6 +42,10 @@ static __attribute__ ((used)) const char rcsid[] =
 # include <alloca.h>
 #endif
 
+#ifdef HAVE_MALLOC_H
+#include <malloc.h>
+#endif
+
 #include <stdarg.h>
 #include <stdlib.h>
 

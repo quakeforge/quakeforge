@@ -261,8 +261,7 @@ llist_createarray (llist_t *list, size_t esize)
 	void *ptr, *array = malloc (llist_size (list) * esize);
 	llist_node_t *node;
 
-	for (ptr = array, node = list->start; node; node = node->next, ptr +=
-			esize)
+	for (ptr = array, node = list->start; node; node = node->next, ptr = (char*)ptr + esize)
 		memcpy (ptr, node->data, esize);
 
 	return array;

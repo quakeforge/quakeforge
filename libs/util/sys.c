@@ -63,8 +63,14 @@ static __attribute__ ((used)) const char rcsid[] =
 #include <stdarg.h>
 #include <time.h>
 #include <sys/stat.h>
+#ifdef HAVE_SYS_TIME_H
 #include <sys/time.h>
+#endif
 #include <sys/types.h>
+
+#ifdef HAVE_DIRECT_H
+#include <direct.h>
+#endif
 
 #include "QF/cvar.h"
 #include "QF/dstring.h"

@@ -42,6 +42,10 @@ static __attribute__ ((used)) const char rcsid[] =
 #endif
 #include <stdlib.h>
 
+#ifdef HAVE_MALLOC_H
+#include <malloc.h>
+#endif
+
 #include "QF/dstring.h"
 #include "QF/progs.h"
 

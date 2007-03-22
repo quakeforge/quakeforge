@@ -58,7 +58,7 @@ Con_CreateInputLine (int lines, int lsize, char prompt)
 	int				i;
 
 	size = sizeof (inputline_t);	// space for the header
-	size += sizeof (char *[lines]);	// space for the line pointers
+	size += sizeof(char*) * lines;	// space for the line pointers
 	size += lines * lsize;			// space for the lines themselves
 
 	inputline = calloc (1, size);

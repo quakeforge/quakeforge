@@ -50,6 +50,7 @@ typedef struct cd_funcs_s {
 } cd_funcs_t;
 
 typedef struct cd_data_s {
+	int unused; /* C requires that a struct or union has at least one member */
 } cd_data_t;
 
 #endif // __QF_plugin_cd_h_

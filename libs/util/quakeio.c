@@ -48,8 +48,13 @@ static __attribute__ ((used)) const char rcsid[] =
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <fcntl.h>
-#ifdef _MSC_VER
-# define _POSIX_
+
+#ifdef HAVE_MALLOC_H
+#include <malloc.h>
+#endif
+
+#ifdef HAVE_IO_H
+#include <io.h>
 #endif
 
 #include <limits.h>

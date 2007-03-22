@@ -354,6 +354,7 @@ CL_ParseTEnt (void)
 			}
 
 			// sound
+			Con_Printf ("%s\n", cl_sfx_r_exp3->name);
 			S_StartSound (-1, 0, cl_sfx_r_exp3, pos, 1, 1);
 
 			// sprite

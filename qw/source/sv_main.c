@@ -1264,9 +1264,9 @@ static qboolean
 SV_StringToFilter (const char *address, ipfilter_t *f)
 {
 #ifdef HAVE_IPV6
-	byte		b[16] = {};
+	byte		b[16] = {0};
 #else
-	byte        b[4] = {};
+	byte        b[4] = {0};
 #endif
 	int			mask = 0;
 	unsigned int i;

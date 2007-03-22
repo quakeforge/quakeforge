@@ -86,21 +86,19 @@ GIB_Thread_Count (void)
 	return llist_size (gib_threads);
 }
 
+static qboolean te_iterator (cbuf_t *cbuf, llist_node_t *node)
+{
+	if (GIB_DATA(cbuf)->program)
+		Cbuf_Execute_Stack (cbuf);
+	else
+		Cbuf_DeleteStack ((cbuf_t *) llist_remove (node));
+	return true;
+}
+
 VISIBLE void
 GIB_Thread_Execute (void)
 {
-	auto qboolean iterator (cbuf_t *cbuf, llist_node_t *node);
-	qboolean
-	iterator (cbuf_t *cbuf, llist_node_t *node)
-	{
-		if (GIB_DATA(cbuf)->program)
-			Cbuf_Execute_Stack (cbuf);
-		else
-			Cbuf_DeleteStack ((cbuf_t *) llist_remove (node));
-		return true;
-	}
-
-	llist_iterate (gib_threads, LLIST_ICAST (iterator));
+	llist_iterate (gib_threads, LLIST_ICAST (te_iterator));
 }
 
 void

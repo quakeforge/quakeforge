@@ -331,7 +331,7 @@ GIB_Return_f (void)
 			argv[i-1] = GIB_Argv(i);
 		
 		GIB_Reply (g->reply.obj, g->reply.mesg, GIB_Argc()-1, argv);
-		free (argv);
+		free ((void*)argv);
 		g->dnotify = NULL;
 	} else if (GIB_Argc () > 1 && sp && sp->interpreter == &gib_interp
 		&& GIB_DATA (sp)->waitret) {
@@ -381,7 +381,7 @@ GIB_Runexported_f (void)
 		for (i = 0; i < Cmd_Argc(); i++)
 			args[i] = Cmd_Argv(i);
 		GIB_Function_Execute (sub, f, args, Cmd_Argc());
-		free (args);
+		free ((void*)args);
 	}
 }
 
@@ -987,7 +987,7 @@ GIB_Emit_f (void)
 		GIB_Object_Signal_Emit (GIB_DATA(cbuf_active)->reply.obj,
 				GIB_Argc () - 1, argv);
 
-		free (argv);
+		free ((void*)argv);
 	}
 }
 

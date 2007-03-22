@@ -111,7 +111,7 @@ filelist_print (filelist_t *filelist)
 		for (i = 0; i < filelist->count; i++)
 			list[i] = filelist->list[i];
 		Con_DisplayList (list, con_linewidth);
-		free (list);
+		free ((void*)list);
 	}
 }
 

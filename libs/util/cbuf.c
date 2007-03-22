@@ -67,7 +67,7 @@ Cbuf_ArgsDelete (cbuf_args_t *args)
 	for (i = 0; i < args->argv_size; i++)
 		dstring_delete (args->argv[i]);
 	free (args->argv);
-	free (args->args);
+	free ((void*)args->args);
 	free (args->argm);
 	free (args);
 }
@@ -81,7 +81,7 @@ Cbuf_ArgsAdd (cbuf_args_t *args, const char *arg)
 		args->argv_size += 4;
 		args->argv = realloc (args->argv,
 							  args->argv_size * sizeof (dstring_t *));
-		args->args = realloc (args->args, args->argv_size * sizeof (char *));
+		args->args = realloc ((void*)args->args, args->argv_size * sizeof (char *));
 		args->argm = realloc (args->argm, args->argv_size * sizeof (void *));
 		for (i = args->argv_size - 4; i < args->argv_size; i++) {
 			args->argv[i] = dstring_newstr ();

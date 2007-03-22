@@ -965,7 +965,7 @@ Cache_Profile (void)
 {
 	cache_system_t *cs;
 	unsigned int i;
-	unsigned int items[31] = {}, sizes[31] = {};
+	unsigned int items[31] = {0}, sizes[31] = {0};
 	int count = 0, total = 0;
 
 	CACHE_WRITE_LOCK;

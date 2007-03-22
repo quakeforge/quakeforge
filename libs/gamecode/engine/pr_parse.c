@@ -40,6 +40,10 @@ static __attribute__ ((used)) const char rcsid[] =
 #include <stdarg.h>
 #include <stdio.h>
 
+#ifdef HAVE_MALLOC_H
+#include <malloc.h>
+#endif
+
 #include "QF/cbuf.h"
 #include "QF/crc.h"
 #include "QF/cvar.h"
@@ -393,7 +397,7 @@ static void
 ED_SpawnEntities (progs_t *pr, plitem_t *entity_list)
 {
 	edict_t    *ent;
-	int         inhibit;
+	int         inhibit = 0;
 	plitem_t   *entity;
 	plitem_t   *item;
 	int         i;

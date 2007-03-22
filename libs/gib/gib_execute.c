@@ -262,7 +262,7 @@ GIB_Execute (cbuf_t * cbuf)
 					return;
 				if (cbuf->args->argc - 2 > maxmesg) {
 					maxmesg += 32;
-					mesg = realloc (mesg, sizeof (char *) * maxmesg);
+					mesg = realloc ((void*)mesg, sizeof (char *) * maxmesg);
 				}
 				for (i = 2; i < cbuf->args->argc; i++)
 					mesg[i-2] = cbuf->args->argv[i]->str;

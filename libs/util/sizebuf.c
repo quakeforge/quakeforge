@@ -97,11 +97,8 @@ SZ_Print (sizebuf_t *buf, const char *data)
 	int         len;
 
 	len = strlen (data) + 1;
+	if (buf->cursize && !buf->data[buf->cursize - 1])
+		buf->cursize--;					// write over trailing 0
 
-	if (!buf->cursize || buf->data[buf->cursize - 1])
-		// no trailing 0
-		memcpy (SZ_GetSpace (buf, len), data, len);
-	else
-		// write over trailing 0
-		memcpy (SZ_GetSpace (buf, len - 1) - 1, data, len);
+	memcpy (SZ_GetSpace (buf, len), data, len);
 }

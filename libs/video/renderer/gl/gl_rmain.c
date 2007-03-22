@@ -106,8 +106,14 @@ int         d_lightstylevalue[256];		// 8.8 fraction of base light value
 vec3_t		shadecolor;					// Ender (Extend) Colormod
 float		modelalpha;					// Ender (Extend) Alpha
 
-unsigned int	InvalidEnum, InvalidValue, InvalidOperation, OutOfMemory,
-				StackOverflow, StackUnderflow, Unknown;
+/* Unknown renamed to GLErr_Unknown to solve conflict with winioctl.h */
+unsigned int	GLErr_InvalidEnum;
+unsigned int	GLErr_InvalidValue;
+unsigned int	GLErr_InvalidOperation;
+unsigned int	GLErr_OutOfMemory;
+unsigned int	GLErr_StackOverflow;
+unsigned int	GLErr_StackUnderflow;
+unsigned int	GLErr_Unknown;
 
 extern void (*R_DrawSpriteModel) (struct entity_s *ent);
 
@@ -120,31 +126,31 @@ R_TestErrors (unsigned int numerous)
 		return numerous;
 		break;
 	case GL_INVALID_ENUM:
-		InvalidEnum++;
+		GLErr_InvalidEnum++;
 		R_TestErrors (numerous++);
 		break;
 	case GL_INVALID_VALUE:
-		InvalidValue++;
+		GLErr_InvalidValue++;
 		R_TestErrors (numerous++);
 		break;
 	case GL_INVALID_OPERATION:
-		InvalidOperation++;
+		GLErr_InvalidOperation++;
 		R_TestErrors (numerous++);
 		break;
 	case GL_STACK_OVERFLOW:
-		StackOverflow++;
+		GLErr_StackOverflow++;
 		R_TestErrors (numerous++);
 		break;
 	case GL_STACK_UNDERFLOW:
-		StackUnderflow++;
+		GLErr_StackUnderflow++;
 		R_TestErrors (numerous++);
 		break;
 	case GL_OUT_OF_MEMORY:
-		OutOfMemory++;
+		GLErr_OutOfMemory++;
 		R_TestErrors (numerous++);
 		break;
 	default:
-		Unknown++;
+		GLErr_Unknown++;
 		R_TestErrors (numerous++);
 		break;
 	}
@@ -155,32 +161,32 @@ R_TestErrors (unsigned int numerous)
 static void
 R_DisplayErrors (void)
 {
-	if (InvalidEnum)
-		printf ("%d OpenGL errors: Invalid Enum!\n", InvalidEnum);
-	if (InvalidValue)
-		printf ("%d OpenGL errors: Invalid Value!\n", InvalidValue);
-	if (InvalidOperation)
-		printf ("%d OpenGL errors: Invalid Operation!\n", InvalidOperation);
-	if (StackOverflow)
-		printf ("%d OpenGL errors: Stack Overflow!\n", StackOverflow);
-	if (StackUnderflow)
-		printf ("%d OpenGL errors: Stack Underflow\n!", StackUnderflow);
-	if (OutOfMemory)
-		printf ("%d OpenGL errors: Out Of Memory!\n", OutOfMemory);
-	if (Unknown)
-		printf ("%d Unknown OpenGL errors!\n", Unknown);
+	if (GLErr_InvalidEnum)
+		printf ("%d OpenGL errors: Invalid Enum!\n", GLErr_InvalidEnum);
+	if (GLErr_InvalidValue)
+		printf ("%d OpenGL errors: Invalid Value!\n", GLErr_InvalidValue);
+	if (GLErr_InvalidOperation)
+		printf ("%d OpenGL errors: Invalid Operation!\n", GLErr_InvalidOperation);
+	if (GLErr_StackOverflow)
+		printf ("%d OpenGL errors: Stack Overflow!\n", GLErr_StackOverflow);
+	if (GLErr_StackUnderflow)
+		printf ("%d OpenGL errors: Stack Underflow\n!", GLErr_StackUnderflow);
+	if (GLErr_OutOfMemory)
+		printf ("%d OpenGL errors: Out Of Memory!\n", GLErr_OutOfMemory);
+	if (GLErr_Unknown)
+		printf ("%d Unknown OpenGL errors!\n", GLErr_Unknown);
 }
 
 static void
 R_ClearErrors (void)
 {
-	InvalidEnum = 0;
-	InvalidValue = 0;
-	InvalidOperation = 0;
-	OutOfMemory = 0;
-	StackOverflow = 0;
-	StackUnderflow = 0;
-	Unknown = 0;
+	GLErr_InvalidEnum = 0;
+	GLErr_InvalidValue = 0;
+	GLErr_InvalidOperation = 0;
+	GLErr_OutOfMemory = 0;
+	GLErr_StackOverflow = 0;
+	GLErr_StackUnderflow = 0;
+	GLErr_Unknown = 0;
 }
 
 void
@@ -196,7 +202,7 @@ glrmain_init (void)
 		gl_overbright_f (gl_overbright);
 }
 
-inline void
+void
 R_RotateForEntity (entity_t *e)
 {
 	qfglTranslatef (e->origin[0], e->origin[1], e->origin[2]);

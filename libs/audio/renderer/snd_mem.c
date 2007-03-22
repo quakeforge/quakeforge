@@ -38,6 +38,10 @@ static __attribute__ ((used)) const char rcsid[] =
 # include <strings.h>
 #endif
 
+#ifdef HAVE_MALLOC_H
+#include <malloc.h>
+#endif
+
 #include "QF/cvar.h"
 #include "QF/dstring.h"
 #include "QF/sound.h"

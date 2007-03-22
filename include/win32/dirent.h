@@ -26,10 +26,13 @@
 #ifndef _DIRENT_H_
 #define _DIRENT_H_
 
+#ifdef HAVE__MINGW_H
 /* All the headers include this file. */
 #include <_mingw.h>
+#endif
 
 #include <io.h>
+#include <stdio.h> /* for FILENAME_MAX in VC2005 (phrosty) */
 
 #ifndef RC_INVOKED
 
@@ -73,12 +76,12 @@ extern      "C" {
 	      char        dd_name[1];
        } DIR;
 
-       DIR        *__cdecl opendir (const char *);
-       struct dirent *__cdecl readdir (DIR *);
-       int __cdecl closedir (DIR *);
-       void __cdecl rewinddir (DIR *);
-       long __cdecl telldir (DIR *);
-       void __cdecl seekdir (DIR *, long);
+       DIR        *opendir (const char *);
+       struct dirent * readdir (DIR *);
+       int closedir (DIR *);
+       void rewinddir (DIR *);
+       long telldir (DIR *);
+       void seekdir (DIR *, long);
 
 
 /* wide char versions */
@@ -122,12 +125,12 @@ extern      "C" {
 
 
 
-       _WDIR      *__cdecl _wopendir (const wchar_t *);
-       struct _wdirent *__cdecl _wreaddir (_WDIR *);
-       int __cdecl _wclosedir (_WDIR *);
-       void __cdecl _wrewinddir (_WDIR *);
-       long __cdecl _wtelldir (_WDIR *);
-       void __cdecl _wseekdir (_WDIR *, long);
+       _WDIR      *_wopendir (const wchar_t *);
+       struct _wdirent *_wreaddir (_WDIR *);
+       int _wclosedir (_WDIR *);
+       void _wrewinddir (_WDIR *);
+       long _wtelldir (_WDIR *);
+       void _wseekdir (_WDIR *, long);
 
 
 #ifdef	__cplusplus

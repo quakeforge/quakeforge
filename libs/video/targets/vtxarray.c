@@ -1,3 +1,7 @@
+#ifdef HAVE_CONFIG_H
+# include "config.h"
+#endif
+
 #include "QF/sys.h"
 
 #include "QF/GL/defines.h"
@@ -472,17 +476,17 @@ static void
 qfgl_ArrayElement (GLint i)
 {
 	if (texcoord_enabled)
-		texcoord_func (texcoord_pointer + i * texcoord_stride);
+		texcoord_func ((char*)texcoord_pointer + i * texcoord_stride);
 	if (edgeflag_enabled)
-		qfglEdgeFlagv (edgeflag_pointer + i * edgeflag_stride);
+		qfglEdgeFlagv ((byte*)edgeflag_pointer + i * edgeflag_stride);
 	if (color_enabled)
-		color_func (color_pointer + i * color_stride);
+		color_func ((char*)color_pointer + i * color_stride);
 	if (normal_enabled)
-		normal_func (normal_pointer + i * normal_stride);
+		normal_func ((char*)normal_pointer + i * normal_stride);
 	if (index_enabled)
-		index_func (index_pointer + i * index_stride);
+		index_func ((char*)index_pointer + i * index_stride);
 	if (vertex_enabled)
-		vertex_func (vertex_pointer + i * vertex_stride);
+		vertex_func ((char*)vertex_pointer + i * vertex_stride);
 }
 
 static void

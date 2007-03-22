@@ -33,7 +33,9 @@ static __attribute__ ((used)) const char rcsid[] =
 #ifdef HAVE_UNISTD_H
 # include "unistd.h"
 #endif
+#ifdef HAVE_SYS_TIME_H
 #include <sys/time.h>
+#endif
 #include <time.h>
 
 #include "QF/cmd.h"

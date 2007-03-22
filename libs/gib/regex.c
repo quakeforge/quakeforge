@@ -65,6 +65,11 @@
 
 #ifdef STDC_HEADERS
 #include <stdlib.h>
+
+#ifdef HAVE_MALLOC_H
+#include <malloc.h>
+#endif
+
 #else
 char *malloc ();
 char *realloc ();
@@ -197,7 +202,9 @@ init_syntax_once (void)
 #include <alloca.h>
 #else /* not __GNUC__ or HAVE_ALLOCA_H */
 #ifndef _AIX /* Already did AIX, up at the top.  */
+#ifndef _WIN32
 char *alloca ();
+#endif
 #endif /* not _AIX */
 #endif /* not HAVE_ALLOCA_H */ 
 #endif /* not __GNUC__ */
@@ -2841,7 +2848,7 @@ re_set_registers (bufp, regs, num_regs, starts, ends)
       regs->start = regs->end = (regoff_t) 0;
     }
 }
-
+
 /* Searching routines.  */
 
 /* Like re_search_2, below, but only one string is specified, and
@@ -4881,12 +4888,7 @@ regexec (preg, string, nmatch, pmatch, eflags)
    from either regcomp or regexec.   We don't use PREG here.  */
 
 size_t
-regerror (errcode, preg, errbuf, errbuf_size)
-    int errcode;
-    const regex_t *preg;
-    char *errbuf;
-    size_t errbuf_size;
-{
+regerror (int errcode, const regex_t *preg, char *errbuf, size_t errbuf_size) {
   const char *msg;
   size_t msg_size;
 

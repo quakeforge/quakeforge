@@ -35,6 +35,10 @@ static __attribute__ ((used)) const char rcsid[] =
 #include <stdlib.h>
 #include <string.h>
 
+#ifdef HAVE_MALLOC_H
+#include <malloc.h>
+#endif
+
 #include "QF/dstring.h"
 #include "QF/hash.h"
 #include "QF/qfplist.h"
@@ -515,7 +519,7 @@ PL_ParseQuotedString (pldata_t *pl)
 	if (pl->pos - start - shrink == 0) {
 		str = strdup ("");
 	} else {
-		char			chars[pl->pos - start - shrink];
+		char			*chars = alloca(pl->pos - start - shrink);
 		unsigned int	j;
 		unsigned int	k;
 

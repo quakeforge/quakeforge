@@ -47,6 +47,7 @@ typedef struct input_funcs_s {
 } input_funcs_t;
 
 typedef struct input_data_s {
+	int unused; /* C requires that a struct or union has at least one member */
 } input_data_t;
 
 #endif // __QF_plugin_input_h_

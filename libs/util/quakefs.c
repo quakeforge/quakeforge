@@ -47,6 +47,10 @@ static __attribute__ ((used)) const char rcsid[] =
 # include <pwd.h>
 #endif
 
+#ifdef HAVE_MALLOC_H
+#include <malloc.h>
+#endif
+
 #include <ctype.h>
 #include <dirent.h>
 #include <errno.h>
@@ -1285,7 +1289,7 @@ QFS_Init (const char *game)
 		}
 		qfs_build_gamedir (list);
 		free (gamedirs);
-		free (list);
+		free ((void*)list);
 	} else {
 		QFS_Gamedir ("");
 	}
@@ -1570,10 +1574,12 @@ QFS_FilelistEnumerate(filelist_t* list, const char* path)
 					!strncmp(prefix, filename, strlen(prefix)))
 				{
 					char* slash = strchr(filename + strlen(prefix), '/');
-					if (slash)
-						*slash = 0;
 					int j;
 					qboolean exists = false;
+
+					if (slash)
+						*slash = 0;
+
 					for (j = 0; j < list->count; j++)
 					{
 						if (list->list[j] && !strcmp(list->list[j], filename))
@@ -1583,7 +1589,7 @@ QFS_FilelistEnumerate(filelist_t* list, const char* path)
 						}
 					}
 					if (!exists)
-						QFS_FilelistAdd(list, filename, false);
+						QFS_FilelistAdd(list, filename, 0);
 					if (slash)
 						*slash = '/';
 				}
@@ -1612,7 +1618,7 @@ QFS_FilelistEnumerate(filelist_t* list, const char* path)
 						}
 					}
 					if (!exists)
-						QFS_FilelistAdd(list, dirent->d_name, false);
+						QFS_FilelistAdd(list, dirent->d_name, 0);
 				}
 			}
 			closedir (dir_ptr);

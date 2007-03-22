@@ -36,6 +36,28 @@ static __attribute__ ((used)) const char rcsid[] =
 #define SUFFIX	_T("*")
 #define	SLASH	_T("\\")
 
+#ifndef _UNICODE
+#define _TDIR DIR
+#define _tdirent dirent
+
+#define _topendir opendir
+#define _treaddir readdir
+#define _tclosedir closedir
+#define _tseekdir seekdir
+#define _ttelldir telldir
+#define _trewinddir rewinddir
+#else
+#define _TDIR _WDIR
+#define _tdirent _wdirent
+
+#define _topendir _wopendir
+#define _treaddir _wreaddir
+#define _tclosedir _wclosedir
+#define _tseekdir _wseekdir
+#define _ttelldir _wtelldir
+#define _trewinddir _wrewinddir
+#endif
+
 /*
  * opendir
  *

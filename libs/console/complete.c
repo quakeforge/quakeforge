@@ -63,6 +63,7 @@ Con_BasicCompleteCommandLine (inputline_t *il)
 	char		   *s;
 	const char	   *cmd = "", **list[3] = {0, 0, 0};
 	int				cmd_len, c, i, v, o;
+	cbuf_t			*cbuf;
 
 	s = il->lines[il->edit_line] + 1;
 	
@@ -71,7 +72,7 @@ Con_BasicCompleteCommandLine (inputline_t *il)
 
 	s = strdup(s);
 
-	cbuf_t* cbuf = con_module->data->console->cbuf;
+	cbuf = con_module->data->console->cbuf;
 
 	if (cbuf->interpreter->complete)
 	{
@@ -160,10 +161,11 @@ Con_BasicCompleteCommandLine (inputline_t *il)
 	
 	if (cmd) {
 		unsigned int bound = max(0, (int) strlen(s) - (int) cmd_len);
+		const char* overwrite;
 		
 		if (cmd_len > 0) while (bound < strlen(s) && strncmp(s+bound, cmd, strlen(s+bound))) bound++;
 
-		const char* overwrite = va("%.*s%.*s", bound, s, cmd_len, cmd);
+		overwrite = va("%.*s%.*s", bound, s, cmd_len, cmd);
 	
 		il->lines[il->edit_line][1] = '/';
 		strncpy(il->lines[il->edit_line] + 2, overwrite, strlen(overwrite));
@@ -176,7 +178,7 @@ Con_BasicCompleteCommandLine (inputline_t *il)
 	}
 	for (i = 0; i < 3; i++)
 		if (list[i])
-			free (list[i]);
+			free ((void*)list[i]);
 			
 	free(s);
 }

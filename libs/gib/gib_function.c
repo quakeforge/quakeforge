@@ -160,33 +160,41 @@ GIB_Function_Find (const char *name)
 	return (gib_function_t *) Hash_Find (gib_functions, name);
 }
 
+static cbuf_t *g_fpa_cbuf;
+static const char **g_fpa_args;
+static unsigned int g_fpa_argc;
+static hashtab_t *g_fpa_zero = 0;
+static unsigned int g_fpa_i, g_fpa_ind;
+
+static qboolean fpa_iterate (char *arg, llist_node_t *node)
+{
+	gib_var_t *var = GIB_Var_Get_Complex (&GIB_DATA(g_fpa_cbuf)->locals, &g_fpa_zero,
+		arg, &g_fpa_ind, true);
+
+	if (!var->array[0].value)
+		var->array[0].value = dstring_newstr ();
+	dstring_copystr (var->array[0].value, g_fpa_args[g_fpa_i]);
+	g_fpa_i++;
+	return g_fpa_i < g_fpa_argc;
+}
+
 static void
 GIB_Function_Prepare_Args (cbuf_t * cbuf, const char **args, unsigned int
 		argc, llist_t *arglist)
 {
-	static hashtab_t *zero = 0;
-	unsigned int i, ind;
-	gib_var_t  *var;
+	gib_var_t *var;
+	unsigned int i;
 	static char argss[] = "args";
 
-	auto qboolean iterate (char *arg, llist_node_t *node);
-	qboolean 
-	iterate (char *arg, llist_node_t *node)
-	{	
-		var = GIB_Var_Get_Complex (&GIB_DATA(cbuf)->locals, &zero,
-			arg, &ind, true);
-		if (!var->array[0].value)
-			var->array[0].value = dstring_newstr ();
-		dstring_copystr (var->array[0].value, args[i]);
-		i++;
-		return i < argc;
-	}
-	
-	i = 1; llist_iterate (arglist, LLIST_ICAST (iterate));
+	g_fpa_cbuf = cbuf;
+	g_fpa_args = args;
+	g_fpa_argc = argc;
+
+	g_fpa_i = 1; llist_iterate (arglist, LLIST_ICAST (fpa_iterate));
 	
 	var =
-		GIB_Var_Get_Complex (&GIB_DATA (cbuf)->locals, &zero, argss,
-			&ind, true);
+		GIB_Var_Get_Complex (&GIB_DATA (cbuf)->locals, &g_fpa_zero, argss,
+			&g_fpa_ind, true);
 	var->array = realloc (var->array, sizeof (struct gib_varray_s) * argc);
 	memset (var->array + 1, 0, (argc - 1) * sizeof (struct gib_varray_s));
 	var->size = argc;
@@ -199,33 +207,42 @@ GIB_Function_Prepare_Args (cbuf_t * cbuf, const char **args, unsigned int
 	}
 }
 
+static cbuf_t *g_fpad_cbuf;
+static dstring_t **g_fpad_args;
+static unsigned int g_fpad_argc;
+static hashtab_t *g_fpad_zero = 0;
+static unsigned int g_fpad_i, g_fpad_ind;
+
+static qboolean fpad_iterate (char *arg, llist_node_t *node)
+{
+	gib_var_t  *var;
+
+	var = GIB_Var_Get_Complex (&GIB_DATA(g_fpad_cbuf)->locals, &g_fpad_zero,
+		arg, &g_fpad_ind, true);
+	if (!var->array[0].value)
+		var->array[0].value = dstring_newstr ();
+	dstring_copystr (var->array[0].value, g_fpad_args[g_fpad_i]->str);
+	g_fpad_i++;
+	return g_fpad_i < g_fpad_argc;
+}
+
 static void
 GIB_Function_Prepare_Args_D (cbuf_t * cbuf, dstring_t **args, unsigned int
 		argc, llist_t *arglist)
 {
-	static hashtab_t *zero = 0;
-	unsigned int i, ind;
+	unsigned int i;
 	gib_var_t  *var;
 	static char argss[] = "args";
 
-	auto qboolean iterate (char *arg, llist_node_t *node);
-	qboolean 
-	iterate (char *arg, llist_node_t *node)
-	{	
-		var = GIB_Var_Get_Complex (&GIB_DATA(cbuf)->locals, &zero,
-			arg, &ind, true);
-		if (!var->array[0].value)
-			var->array[0].value = dstring_newstr ();
-		dstring_copystr (var->array[0].value, args[i]->str);
-		i++;
-		return i < argc;
-	}
+	g_fpad_cbuf = cbuf;
+	g_fpad_args = args;
+	g_fpad_argc = argc;
 	
-	i = 1; llist_iterate (arglist, LLIST_ICAST (iterate));
+	i = 1; llist_iterate (arglist, LLIST_ICAST (fpad_iterate));
 	
 	var =
-		GIB_Var_Get_Complex (&GIB_DATA (cbuf)->locals, &zero, argss,
-				&ind, true);
+		GIB_Var_Get_Complex (&GIB_DATA (cbuf)->locals, &g_fpad_zero, argss,
+				&g_fpad_ind, true);
 	var->array = realloc (var->array, sizeof (struct gib_varray_s) * argc);
 	memset (var->array + 1, 0, (argc - 1) * sizeof (struct gib_varray_s));
 	var->size = argc;

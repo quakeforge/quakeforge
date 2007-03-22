@@ -63,18 +63,30 @@ CL_Ignore_Compare (const void *ele, const void *cmp, void *unused)
 	return *(int *)cmp == ((ignore_t *) ele)->uid;
 }
 
+static qboolean
+isc_iterator (ignore_t *ig, llist_node_t *node)
+{
+	if (cl.players[ig->slot].userid != ig->uid) // We got out of sync somehow
+		llist_remove (node);
+	return true;
+}
+
 static void
 CL_Ignore_Sanity_Check (void)
+{	
+	llist_iterate (ignore_list, LLIST_ICAST (isc_iterator));
+}
+
+static qboolean live_iterator (ignore_t *ig, llist_node_t *node)
 {
-	auto qboolean iterator (ignore_t *ig, llist_node_t *node);
-	qboolean
-	iterator (ignore_t *ig, llist_node_t *node)
-	{
-		if (cl.players[ig->slot].userid != ig->uid) // We got out of sync somehow
-			llist_remove (node);
-		return true;
-	}
-	llist_iterate (ignore_list, LLIST_ICAST (iterator));
+	Sys_Printf ("%5i - %s\n", ig->uid, Info_ValueForKey (cl.players[ig->slot].userinfo, "name"));
+	return true;
+}
+
+static qboolean dead_iterator (ignore_t *ig, llist_node_t *node)
+{
+	Sys_Printf ("%s\n", ig->lastname);
+	return true;
 }
 
 static void
@@ -82,18 +94,6 @@ CL_Ignore_f (void)
 {
 	CL_Ignore_Sanity_Check ();
 	if (Cmd_Argc () == 1) {
-		auto qboolean live_iterator (ignore_t *ig, llist_node_t *node);
-		qboolean live_iterator (ignore_t *ig, llist_node_t *node)
-		{
-			Sys_Printf ("%5i - %s\n", ig->uid, Info_ValueForKey (cl.players[ig->slot].userinfo, "name"));
-			return true;
-		}
-		auto qboolean dead_iterator (ignore_t *ig, llist_node_t *node);
-		qboolean dead_iterator (ignore_t *ig, llist_node_t *node)
-		{
-			Sys_Printf ("%s\n", ig->lastname);
-			return true;
-		}
 		Sys_Printf (
 			"Users ignored by user id\n"
 			"------------------------\n"
@@ -143,28 +143,37 @@ CL_Unignore_f (void)
 	}
 }
 
+/*
+	HACK HACK HACK (phrosty)
+	replaced GCC-specific nested functions with this.
+	come back and make this cleaner later.
+*/
+static const char *g_cam_str;
+static dstring_t *g_cam_test;
+static qboolean g_cam_allowed;
+
+static qboolean cam_iterator (ignore_t *ig, llist_node_t *node)
+{
+	if (cl.players[ig->slot].userid != ig->uid) { // We got out of sync somehow
+		llist_remove (node);
+		return true;
+	}
+	dsprintf (g_cam_test, "%s: ", Info_ValueForKey (cl.players[ig->slot].userinfo, "name"));
+	if (!strncmp (g_cam_test->str, g_cam_str, sizeof (g_cam_test->str))) {
+		return g_cam_allowed = false;
+	} else
+		return true;
+}
+
 qboolean
 CL_Chat_Allow_Message (const char *str)
 {
-	dstring_t *test = dstring_newstr ();
-	qboolean allowed = true;
+	g_cam_str = str;
+	g_cam_test = dstring_newstr ();
+	g_cam_allowed = true;	
 
-	auto qboolean iterator (ignore_t *ig, llist_node_t *node);
-	qboolean iterator (ignore_t *ig, llist_node_t *node)
-	{
-		if (cl.players[ig->slot].userid != ig->uid) { // We got out of sync somehow
-			llist_remove (node);
-			return true;
-		}
-		dsprintf (test, "%s: ", Info_ValueForKey (cl.players[ig->slot].userinfo, "name"));
-		if (!strncmp (test->str, str, sizeof (test->str))) {
-			return allowed = false;
-		} else
-			return true;
-	}
-
-	llist_iterate (ignore_list, LLIST_ICAST (iterator));
-	return allowed;
+	llist_iterate (ignore_list, LLIST_ICAST (cam_iterator));
+	return g_cam_allowed;
 }
 
 void
@@ -183,26 +192,30 @@ CL_Chat_User_Disconnected (int uid)
 	}
 }
 
+static const char *g_ccn_name;
+static ignore_t *g_ccn_found;
+
+static qboolean ccn_iterator (ignore_t *ig, llist_node_t *node)
+{
+	if (!strcmp (ig->lastname, g_ccn_name)) {
+		g_ccn_found = ig;
+		return false;
+	} else
+		return true;
+}
+
 void
 CL_Chat_Check_Name (const char *name, int slot)
 {
-	ignore_t *found = 0;
+	g_ccn_name = name;
+	g_ccn_found = 0;
 
-	auto qboolean iterator (ignore_t *ig, llist_node_t *node);
-	qboolean iterator (ignore_t *ig, llist_node_t *node)
-	{
-		if (!strcmp (ig->lastname, name)) {
-			found = ig;
-			return false;
-		} else
-			return true;
-	}
-	llist_iterate (dead_ignore_list, LLIST_ICAST (iterator));
-	if (found) {
-		found->slot = slot;
-		found->uid = cl.players[slot].userid;
-		llist_append (ignore_list, llist_remove (llist_getnode (dead_ignore_list, found)));
-		Sys_Printf ("User %i (%s) is using an ignored name.  Now ignoring by user id...\n", found->uid, found->lastname);
+	llist_iterate (dead_ignore_list, LLIST_ICAST (ccn_iterator));
+	if (g_ccn_found) {
+		g_ccn_found->slot = slot;
+		g_ccn_found->uid = cl.players[slot].userid;
+		llist_append (ignore_list, llist_remove (llist_getnode (dead_ignore_list, g_ccn_found)));
+		Sys_Printf ("User %i (%s) is using an ignored name.  Now ignoring by user id...\n", g_ccn_found->uid, g_ccn_found->lastname);
 	}
 }
 

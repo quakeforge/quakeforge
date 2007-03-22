@@ -379,7 +379,7 @@ R_DrawSkyDome (void)
 	}
 }
 
-inline void
+void
 R_DrawSky (void)
 {
 	qfglDisable (GL_DEPTH_TEST);
