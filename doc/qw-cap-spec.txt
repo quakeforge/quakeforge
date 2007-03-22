@@ -11,7 +11,7 @@ i   * irc
 p   pogo stick control
 t   team messages
 
-For more information on z and h, see qw-http-spec.txt.
+For more information on z and h, see qw-download-spec.txt.
 
 The QuakeForge clients will not send "*cap" to the server unless "QF" or "EXT"
 is detected in the challenge string sent by the server.
