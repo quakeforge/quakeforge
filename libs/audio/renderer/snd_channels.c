@@ -393,6 +393,7 @@ s_updateAmbientSounds (void)
 			sfx->retain (sfx);
 		} else {
 			sfx = chan->sfx;
+			sfx->retain (sfx); //FIXME why is this necessary?
 		}
 		// sfx will be written to chan->sfx later to ensure mixer doesn't use
 		// channel prematurely.
