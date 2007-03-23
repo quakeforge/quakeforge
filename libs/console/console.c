@@ -71,29 +71,25 @@ Con_Init (const char *plugin_name)
 }
 
 static void
-Con_Interp_f(cvar_t* var)
+Con_Interp_f (cvar_t* var)
 {
 	cbuf_interpreter_t* interp = Cmd_GetProvider(var->string);
-	
-	if (con_module && interp)
-	{
+
+	if (con_module && interp) {
 		cbuf_t *new;
 
-		Sys_Printf("Switching to interpreter '%s'\n", var->string);
+		Sys_Printf ("Switching to interpreter '%s'\n", var->string);
 
-		new = Cbuf_New(interp);
-				
-		if (con_module->data->console->cbuf)
-		{
+		new = Cbuf_New (interp);
+	
+		if (con_module->data->console->cbuf) {
 			new->down = con_module->data->console->cbuf;
 			new->state = CBUF_STATE_STACK;
 			con_module->data->console->cbuf->up = new;
 		}
 		con_module->data->console->cbuf = new;
-	}
-	else
-	{
-		Sys_Printf("Unknown interpreter '%s'\n", var->string);
+	} else {
+		Sys_Printf ("Unknown interpreter '%s'\n", var->string);
 	}
 }
 
