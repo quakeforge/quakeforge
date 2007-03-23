@@ -44,6 +44,7 @@ static __attribute__ ((used)) const char rcsid[] =
 #include "QF/cvar.h"
 #include "QF/dstring.h"
 #include "QF/model.h"
+#include "QF/quakefs.h"
 #include "QF/sys.h"
 
 #include "snd_render.h"
@@ -247,6 +248,13 @@ s_playvol_f (void)
 	dstring_delete (name);
 }
 
+static void
+s_channels_gamedir (void)
+{
+	ambient_sfx[AMBIENT_WATER] = SND_PrecacheSound ("ambience/water1.wav");
+	ambient_sfx[AMBIENT_SKY] = SND_PrecacheSound ("ambience/wind2.wav");
+}
+
 void
 SND_Channels_Init (void)
 {
@@ -279,8 +287,7 @@ SND_Channels_Init (void)
 
 	snd_num_statics = 0;
 
-	ambient_sfx[AMBIENT_WATER] = SND_PrecacheSound ("ambience/water1.wav");
-	ambient_sfx[AMBIENT_SKY] = SND_PrecacheSound ("ambience/wind2.wav");
+	QFS_GamedirCallback (s_channels_gamedir);
 }
 
 static channel_t *
@@ -386,7 +393,6 @@ s_updateAmbientSounds (void)
 			sfx->retain (sfx);
 		} else {
 			sfx = chan->sfx;
-			sfx->retain (sfx);//FIXME why is this needed?
 		}
 		// sfx will be written to chan->sfx later to ensure mixer doesn't use
 		// channel prematurely.
