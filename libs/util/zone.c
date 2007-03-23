@@ -1077,6 +1077,12 @@ Cache_Release (cache_user_t *c)
 	CACHE_WRITE_UNLOCK;
 }
 
+int
+Cache_ReadLock (cache_user_t *c)
+{
+	return (((cache_system_t *)c->data) - 1)->readlock;
+}
+
 // QA_alloc and friends =======================================================
 
 size_t (*QA_alloc_callback) (size_t size);

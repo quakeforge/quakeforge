@@ -150,6 +150,7 @@ void Cache_Remove (cache_user_t *c);
 void *Cache_Get (cache_user_t *c);
 void *Cache_TryGet (cache_user_t *c);
 void Cache_Release (cache_user_t *c);
+int Cache_ReadLock (cache_user_t *c);
 
 /* Flags */
 #define QA_NONE			0
