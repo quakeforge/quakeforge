@@ -1077,7 +1077,7 @@ Cache_Release (cache_user_t *c)
 	CACHE_WRITE_UNLOCK;
 }
 
-int
+VISIBLE int
 Cache_ReadLock (cache_user_t *c)
 {
 	return (((cache_system_t *)c->data) - 1)->readlock;
