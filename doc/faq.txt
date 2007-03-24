@@ -4,6 +4,7 @@
 
 \li \ref gfx_wad
 \li \ref pak0_pak
+\li \ref svn_compile_error
 
 \section gfx_wad What does "W_LoadWadFile: unable to load gfx.wad" mean?
 The most common cause of this error is QuakeForge is unable to find
@@ -24,4 +25,11 @@ href="http://www.idsoftware.com/store/index.php?view=quake">id Software</a> or
 you can use <a href="http://openquartz.sourceforge.net/">OpenQuartz</a>, a
 project developing GPL compatable game data for Quake.
 
+\section svn_compile_error Checking out svn and running ./bootstrap creates a configure that syntax errors when I run it! What's wrong?
+Unlike downloading and compiling a release, when you checkout svn, you must
+have all the dependencies of quakeforge already installed as when configure
+is being created autotools sources m4 files... If the files do not exist,
+you get the error you have seen. Try installing packages which contain the
+libraries that caused the syntax error, including the -dev versions, then
+recreate configure using bootstrap and try again.
 */
