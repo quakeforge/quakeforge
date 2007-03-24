@@ -251,6 +251,9 @@ s_playvol_f (void)
 static void
 s_channels_gamedir (int phase)
 {
+	//FIXME for some reason, a gamedir change causes semi-random
+	//"already released" cache errors. fortunatly, servers don't change
+	//gamedir often, so I'll put this in the too-hard basket for now.
 	if (phase) {
 		ambient_sfx[AMBIENT_WATER] = SND_PrecacheSound ("ambience/water1.wav");
 		ambient_sfx[AMBIENT_SKY] = SND_PrecacheSound ("ambience/wind2.wav");
