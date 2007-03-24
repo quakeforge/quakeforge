@@ -101,10 +101,24 @@ void
 CL_HTTP_Update (void)
 {
 	int         running_handles;
+	int         messages_in_queue;
+	CURLMsg    *msg;
+
 	curl_multi_perform (multi_handle, &running_handles);
-	if (!running_handles) {
-		curl_multi_remove_handle (multi_handle, easy_handle);
-		CL_FinishDownload ();
+	while ((msg = curl_multi_info_read (multi_handle, &messages_in_queue))) {
+		if (msg->msg == CURLMSG_DONE) {
+			long        response_code;
+
+			curl_easy_getinfo (msg->easy_handle, CURLINFO_RESPONSE_CODE,
+							   &response_code);
+			if (response_code == 200) {
+				CL_FinishDownload ();
+			} else {
+				Con_Printf ("download failed: %ld\n", response_code);
+				CL_FailDownload ();
+			}
+			curl_multi_remove_handle (multi_handle, easy_handle);
+		}
 	}
 }
 

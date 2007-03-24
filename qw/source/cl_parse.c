@@ -456,6 +456,19 @@ CL_FinishDownload (void)
 	CL_RequestNextDownload ();
 }
 
+void
+CL_FailDownload (void)
+{
+	if (cls.download) {
+		Qclose (cls.download);
+		cls.download = NULL;
+	}
+	dstring_clearstr (cls.downloadname);
+	dstring_clearstr (cls.downloadtempname);
+	dstring_clearstr (cls.downloadurl);
+	CL_RequestNextDownload ();
+}
+
 static int
 CL_OpenDownload (void)
 {
@@ -505,11 +518,12 @@ CL_ParseDownload (void)
 	// read the data
 	size = MSG_ReadShort (net_message);
 	percent = MSG_ReadByte (net_message);
-Con_Printf ("%d %d\n", size, percent);
+
 	if (cls.demoplayback) {
 		if (size > 0)
 			net_message->readcount += size;
 		dstring_clearstr (cls.downloadname);
+		dstring_clearstr (cls.downloadtempname);
 		dstring_clearstr (cls.downloadurl);
 		return;							// not in demo playback
 	}
@@ -522,6 +536,7 @@ Con_Printf ("%d %d\n", size, percent);
 			cls.download = NULL;
 		}
 		dstring_clearstr (cls.downloadname);
+		dstring_clearstr (cls.downloadtempname);
 		dstring_clearstr (cls.downloadurl);
 		CL_RequestNextDownload ();
 		return;
