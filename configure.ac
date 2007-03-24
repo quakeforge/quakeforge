@@ -1628,6 +1628,7 @@ if test "x$check_pipe" = xyes; then
 	QF_CC_OPTION(-pipe)
 fi
 QF_CC_OPTION(-Wsign-compare)
+QF_CC_OPTION_TEST([-fvisibility=hidden], [VISIBILITY=-fvisibility=hidden])
 
 dnl QuakeForge uses lots of BCPL-style (//) comments, which can cause problems
 dnl with many compilers that don't support the latest ISO standards. Well,
@@ -2098,8 +2099,8 @@ if test "x$enable_shared" = xno; then
 	PREFER_PIC=
 	PREFER_NON_PIC=
 else
-	PREFER_PIC="-prefer-pic -fvisibility=hidden"
-	PREFER_NON_PIC="-prefer-non-pic -fvisibility=hidden"
+	PREFER_PIC="-prefer-pic $(VISIBILITY)"
+	PREFER_NON_PIC="-prefer-non-pic $(VISIBILITY)"
 fi
 if test "x$enable_static" = xno; then
 	STATIC=
