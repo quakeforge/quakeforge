@@ -124,10 +124,9 @@ midi_stream_close (sfx_t *sfx)
  */
 
 static sfx_t *
-midi_stream_open (sfx_t *_sfx)
+midi_stream_open (sfx_t *sfx)
 {
-	sfx_t      *sfx;
-	sfxstream_t *stream = (sfxstream_t *) _sfx->data;
+	sfxstream_t *stream = (sfxstream_t *) sfx->data;
 	QFile	   *file;
 	midi	   *handle;
 	unsigned char *local_buffer;
