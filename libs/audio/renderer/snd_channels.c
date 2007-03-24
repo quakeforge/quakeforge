@@ -366,7 +366,8 @@ s_updateAmbientSounds (void)
 		// stop all ambient channels.
 		for (ambient_channel = 0; ambient_channel < NUM_AMBIENTS;
 			 ambient_channel++) {
-			if (ambient_channels[ambient_channel]) {
+			chan = ambient_channels[ambient_channel];
+			if (chan) {
 				chan->master_vol = 0;
 				chan->leftvol = chan->rightvol = chan->master_vol;
 			}
