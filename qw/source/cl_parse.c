@@ -241,6 +241,7 @@ CL_CheckOrDownloadFile (const char *filename)
 		return true;
 
 	dstring_copystr (cls.downloadname, filename);
+	dstring_copystr (cls.downloadtempname, filename);
 	Con_Printf ("Downloading %s...\n", cls.downloadname->str);
 
 	// download to a temp name, and only rename to the real name when done,
@@ -439,18 +440,56 @@ CL_FinishDownload (void)
 					  cls.downloadname->str + 6);
 		}
 		if (QFS_Rename (oldn->str, newn->str))
-			Con_Printf ("failed to rename, %s.\n", strerror (errno));
+			Con_Printf ("failed to rename %s to %s, %s.\n", oldn->str,
+						newn->str, strerror (errno));
 		dstring_delete (oldn);
 		dstring_delete (newn);
 	}
 
 	cls.download = NULL;
 	dstring_clearstr (cls.downloadname);
+	dstring_clearstr (cls.downloadtempname);
 	dstring_clearstr (cls.downloadurl);
 	cls.downloadpercent = 0;
 
 	// get another file if needed
 	CL_RequestNextDownload ();
+}
+
+static int
+CL_OpenDownload (void)
+{
+	dstring_t  *name = dstring_newstr ();
+	const char *fname, *path;
+
+	if (strncmp (cls.downloadtempname->str, "skins/", 6) == 0) {
+		path = qfs_gamedir->dir.skins;
+		fname = cls.downloadtempname->str + 6;
+	} else if (strncmp (cls.downloadtempname->str, "progs/", 6) == 0) {
+		path = qfs_gamedir->dir.progs;
+		fname = cls.downloadtempname->str + 6;
+	} else if (strncmp (cls.downloadtempname->str, "sound/", 6) == 0) {
+		path = qfs_gamedir->dir.sound;
+		fname = cls.downloadtempname->str + 6;
+	} else if (strncmp (cls.downloadtempname->str, "maps/", 5) == 0) {
+		path = qfs_gamedir->dir.maps;
+		fname = cls.downloadtempname->str + 5;
+	} else {
+		path = qfs_gamedir->dir.def;
+		fname = cls.downloadtempname->str;
+	}
+	dsprintf (name, "%s/%s", path, fname);
+
+	cls.download = QFS_WOpen (name->str, 0);
+	if (!cls.download) {
+		dstring_clearstr (cls.downloadname);
+		dstring_clearstr (cls.downloadurl);
+		Con_Printf ("Failed to open %s\n", name->str);
+		CL_RequestNextDownload ();
+		return 0;
+	}
+	dstring_delete (name);
+	return 1;
 }
 
 /*
@@ -466,7 +505,7 @@ CL_ParseDownload (void)
 	// read the data
 	size = MSG_ReadShort (net_message);
 	percent = MSG_ReadByte (net_message);
-
+Con_Printf ("%d %d\n", size, percent);
 	if (cls.demoplayback) {
 		if (size > 0)
 			net_message->readcount += size;
@@ -539,41 +578,15 @@ CL_ParseDownload (void)
 		Con_Printf ("server sent http redirect but we don't know how to handle"
 					"it :(\n");
 #endif
+		CL_OpenDownload ();
 		return;
 	}
 	// open the file if not opened yet
 	if (!cls.download) {
-		dstring_t  *name = dstring_newstr ();
-		const char *fname, *path;
-
-		if (strncmp (cls.downloadtempname->str, "skins/", 6) == 0) {
-			path = qfs_gamedir->dir.skins;
-			fname = cls.downloadtempname->str + 6;
-		} else if (strncmp (cls.downloadtempname->str, "progs/", 6) == 0) {
-			path = qfs_gamedir->dir.progs;
-			fname = cls.downloadtempname->str + 6;
-		} else if (strncmp (cls.downloadtempname->str, "sound/", 6) == 0) {
-			path = qfs_gamedir->dir.sound;
-			fname = cls.downloadtempname->str + 6;
-		} else if (strncmp (cls.downloadtempname->str, "maps/", 5) == 0) {
-			path = qfs_gamedir->dir.maps;
-			fname = cls.downloadtempname->str + 5;
-		} else {
-			path = qfs_gamedir->dir.def;
-			fname = cls.downloadtempname->str;
-		}
-		dsprintf (name, "%s/%s", path, fname);
-
-		cls.download = QFS_WOpen (name->str, 0);
-		if (!cls.download) {
-			dstring_clearstr (cls.downloadname);
-			dstring_clearstr (cls.downloadurl);
-			net_message->readcount += size;
-			Con_Printf ("Failed to open %s\n", name->str);
-			CL_RequestNextDownload ();
+		if (!CL_OpenDownload ()) {
 			return;
+			net_message->readcount += size;
 		}
-		dstring_delete (name);
 	}
 
 	Qwrite (cls.download, net_message->message->data + net_message->readcount,

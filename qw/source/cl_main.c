@@ -1081,9 +1081,12 @@ CL_Download_f (void)
 		return;
 	}
 
-	dsprintf (cls.downloadname, "%s/%s", qfs_gamedir->dir.def, Cmd_Argv (1));
+	dstring_copystr (cls.downloadname, Cmd_Argv (1));
+	dstring_copystr (cls.downloadtempname, Cmd_Argv (1));
 
-	dstring_copystr (cls.downloadtempname, cls.downloadname->str);
+	QFS_StripExtension (cls.downloadname->str, cls.downloadtempname->str);
+	dstring_appendstr (cls.downloadtempname, ".tmp");
+
 	cls.download = QFS_WOpen (cls.downloadname->str, 0);
 	if (cls.download) {
 		cls.downloadtype = dl_single;
