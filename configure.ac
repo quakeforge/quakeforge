@@ -2094,8 +2094,8 @@ if test "x$enable_shared" = xno; then
 	PREFER_PIC=
 	PREFER_NON_PIC=
 else
-	PREFER_PIC="-prefer-pic $(VISIBILITY)"
-	PREFER_NON_PIC="-prefer-non-pic $(VISIBILITY)"
+	PREFER_PIC="-prefer-pic ${VISIBILITY}"
+	PREFER_NON_PIC="-prefer-non-pic ${VISIBILITY}"
 fi
 if test "x$enable_static" = xno; then
 	STATIC=
