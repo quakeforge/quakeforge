@@ -1507,7 +1507,9 @@ if test "x$optimize" = xyes; then
 		saved_cflags="$CFLAGS"
 		CFLAGS=""
 		QF_CC_OPTION(-frename-registers)
-		QF_CC_OPTION(-finline-limit=32000 -Winline)
+		if test "$CC_MAJ" -ge 4; then
+			QF_CC_OPTION(-finline-limit=32000 -Winline)
+		fi
 		heavy="-O2 $CFLAGS -ffast-math -funroll-loops -fomit-frame-pointer -fexpensive-optimizations"
 		CFLAGS="$saved_cflags"
 		light="-O2"
