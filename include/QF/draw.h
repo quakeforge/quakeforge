@@ -163,10 +163,6 @@ void Draw_FadeScreen (void);
 	\ingroup video_renderer_draw
 */
 //@{
-/** Clear out the cached qpic textures.
-*/
-void Draw_ClearCache (void);
-
 /** Load a qpic from the filesystem.
 	\param path	path of the file within the quake filesystem
 	\param alpha transparency level of the pic.

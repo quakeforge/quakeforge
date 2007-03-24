@@ -210,7 +210,7 @@ SND_PrecacheSound (const char *name)
 }
 
 static void
-s_gamedir (void)
+s_gamedir (int phase)
 {
 	snd_num_sfx = 0;
 }

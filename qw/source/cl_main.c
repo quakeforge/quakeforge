@@ -1693,10 +1693,12 @@ CL_Init_Memory (void)
 }
 
 static void
-CL_Autoexec (void)
+CL_Autoexec (int phase)
 {
 	int         cmd_warncmd_val = cmd_warncmd->int_val;
 
+	if (!phase)
+		return;
 	Cbuf_AddText (cl_cbuf, "cmd_warncmd 0\n");
 	Cbuf_AddText (cl_cbuf, "exec config.cfg\n");
 	Cbuf_AddText (cl_cbuf, "exec frontend.cfg\n");

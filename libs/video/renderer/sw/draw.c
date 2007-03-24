@@ -82,12 +82,6 @@ Draw_PicFromWad (const char *name)
 }
 
 
-void
-Draw_ClearCache (void)
-{
-}
-
-
 VISIBLE qpic_t *
 Draw_CachePic (const char *path, qboolean alpha)
 {

@@ -71,7 +71,10 @@ typedef struct gamedir_s {
 	} dir;
 } gamedir_t;
 
-typedef void gamedir_callback_t (void);
+/** Function type of callback called on gamedir change.
+	\param phase	0 = before Cache_Flush(), 1 = after Cache_Flush()
+*/
+typedef void gamedir_callback_t (int phase);
 
 extern searchpath_t *qfs_searchpaths;
 extern gamedir_t *qfs_gamedir;

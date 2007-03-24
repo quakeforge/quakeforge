@@ -249,10 +249,12 @@ s_playvol_f (void)
 }
 
 static void
-s_channels_gamedir (void)
+s_channels_gamedir (int phase)
 {
-	ambient_sfx[AMBIENT_WATER] = SND_PrecacheSound ("ambience/water1.wav");
-	ambient_sfx[AMBIENT_SKY] = SND_PrecacheSound ("ambience/wind2.wav");
+	if (phase) {
+		ambient_sfx[AMBIENT_WATER] = SND_PrecacheSound ("ambience/water1.wav");
+		ambient_sfx[AMBIENT_SKY] = SND_PrecacheSound ("ambience/wind2.wav");
+	}
 }
 
 void
@@ -361,39 +363,35 @@ s_updateAmbientSounds (void)
 		// stop all ambient channels.
 		for (ambient_channel = 0; ambient_channel < NUM_AMBIENTS;
 			 ambient_channel++) {
-			if (ambient_channels[ambient_channel])
-				SND_ChannelStop (ambient_channels[ambient_channel]);
-			ambient_channels[ambient_channel] = 0;
+			if (ambient_channels[ambient_channel]) {
+				chan->master_vol = 0;
+				chan->leftvol = chan->rightvol = chan->master_vol;
+			}
 		}
 		return;
 	}
 
 	for (ambient_channel = 0; ambient_channel < NUM_AMBIENTS;
 		 ambient_channel++) {
-		chan = ambient_channels[ambient_channel];
-		if (chan && chan->done) {
-			SND_ChannelStop (chan);
-			chan = ambient_channels[ambient_channel] = 0;
-		}
 		sfx = ambient_sfx[ambient_channel];
-		if (!sfx) {
-			if (chan)
-				SND_ChannelStop (chan);
-			chan = ambient_channels[ambient_channel] = 0;
+		if (!sfx)
 			continue;
-		}
 
-		if (!chan)
+		chan = ambient_channels[ambient_channel];
+		if (!chan) {
 			chan = ambient_channels[ambient_channel] = SND_AllocChannel ();
-		if (!chan)
-			continue;
+			if (!chan)
+				continue;
+		}
 		
 		if (!chan->sfx) {
 			sfx = sfx->open (sfx);
+			if (!sfx)
+				continue;
 			sfx->retain (sfx);
 		} else {
 			sfx = chan->sfx;
-			sfx->retain (sfx); //FIXME why is this necessary?
+			//sfx->retain (sfx); //FIXME why is this necessary?
 		}
 		// sfx will be written to chan->sfx later to ensure mixer doesn't use
 		// channel prematurely.

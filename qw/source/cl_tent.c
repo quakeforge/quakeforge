@@ -93,8 +93,10 @@ model_t    *cl_mod_bolt3;
 model_t    *cl_spr_explod;
 
 static void
-CL_TEnts_Precache (void)
+CL_TEnts_Precache (int phase)
 {
+	if (!phase)
+		return;
 	cl_sfx_wizhit = S_PrecacheSound ("wizard/hit.wav");
 	cl_sfx_knighthit = S_PrecacheSound ("hknight/hit.wav");
 	cl_sfx_tink1 = S_PrecacheSound ("weapons/tink1.wav");
@@ -116,7 +118,7 @@ void
 CL_TEnts_Init (void)
 {
 	QFS_GamedirCallback (CL_TEnts_Precache);
-	CL_TEnts_Precache ();
+	CL_TEnts_Precache (1);
 }
 
 void

@@ -284,7 +284,8 @@ NET_GetPacket (void)
 #endif // _WIN32
 		if (err == EWOULDBLOCK)
 			return false;
-		Con_Printf ("NET_GetPacket: %d: %s\n", err, strerror (err));
+		Con_Printf ("NET_GetPacket: %d: %d: %s\n", net_socket, err,
+					strerror (err));
 		return false;
 	}
 
@@ -335,7 +336,8 @@ NET_SendPacket (int length, void *data, netadr_t to)
 		if (err == EWOULDBLOCK)
 			return;
 
-		Con_Printf ("NET_SendPacket: %s\n", strerror (errno));
+		Con_Printf ("NET_SendPacket: %d: %d: %s\n", net_socket, err,
+					strerror (errno));
 	}
 }
 

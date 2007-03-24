@@ -1187,11 +1187,12 @@ QFS_Gamedir (const char *dir)
 
 	// Make sure everyone else knows we've changed gamedirs
 	for (i = 0; i < num_gamedir_callbacks; i++) {
-		gamedir_callbacks[i] ();
+		gamedir_callbacks[i] (0);
 	}
-
-	// Flush cache last, so other things get a chance to deal with it
 	Cache_Flush ();
+	for (i = 0; i < num_gamedir_callbacks; i++) {
+		gamedir_callbacks[i] (1);
+	}
 }
 
 /*

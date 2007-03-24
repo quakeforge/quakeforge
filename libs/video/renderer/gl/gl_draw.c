@@ -186,12 +186,14 @@ Draw_PicFromWad (const char *name)
 	return p;
 }
 
-void
-Draw_ClearCache (void)
+static void
+Draw_ClearCache (int phase)
 {
 	cachepic_t *pic;
 	int         i;
 
+	if (phase)
+		return;
 	for (pic = cachepics, i = 0; i < numcachepics; pic++, i++)
 		pic->dirty = true;
 }
