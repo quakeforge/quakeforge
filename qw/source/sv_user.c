@@ -786,6 +786,10 @@ SV_BeginDownload_f (void *unused)
 									  ren ? realname->str : name));
 		MSG_ReliableWrite_String (&host_client->backbuf,
 								  ren ? realname->str : "");
+		if (host_client->download) {
+			Qclose (host_client->download);
+			host_client->download = NULL;
+		}
 	} else {
 		if (zip && strcmp (realname->str, name)) {
 			SV_Printf ("download renamed to %s\n", realname->str);
