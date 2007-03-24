@@ -333,7 +333,7 @@ Sys_TimeOfDay (date_t *date)
 	strftime (date->str, 128, "%a %b %d, %H:%M %Y", newtime);
 }
 
-void
+VISIBLE void
 Sys_MakeCodeWriteable (unsigned long startaddr, unsigned long length)
 {
 #ifdef _WIN32
