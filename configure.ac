@@ -958,7 +958,6 @@ AC_ARG_ENABLE(sound,
 	[  --disable-sound         disable sound outright])
 
 unset SOUND_TYPES
-AC_MSG_CHECKING(for sound support)
 
 HAVE_ALSA=no
 if test "x$enable_alsa" != "xno"; then
@@ -1042,7 +1041,9 @@ JACK_LIBS=""
 if test "x$enable_jack" != "xno"; then
 	if test "x$PKG_CONFIG" != "x"; then
 		PKG_CHECK_MODULES([JACK], [jack], HAVE_JACK=yes, HAVE_JACK=no)
-		SOUND_TYPES="$SOUND_TYPES JACK"
+		if test "x$HAVE_JACK" = "xyes"; then
+			SOUND_TYPES="$SOUND_TYPES JACK"
+		fi
 	else
 		AC_CHECK_LIB(jack, jack_client_open, HAVE_JACK=yes, HAVE_JACK=no,
 					 [$LIBS])
@@ -1179,12 +1180,6 @@ AC_SUBST(WINSND_LIBS)
 
 if test "x$enable_sound" = "xno"; then
 	unset SOUND_TYPES
-fi
-
-if test "$SOUND_TYPES"; then
-	AC_MSG_RESULT([$SOUND_TYPES])
-else
-	AC_MSG_RESULT([no])
 fi
 
 dnl Tests for joystick support
