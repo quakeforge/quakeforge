@@ -717,8 +717,8 @@ CL_ParseServerData (void)
 		// save current config
 		Host_WriteConfiguration ();
 		cflag = true;
+		QFS_Gamedir (str);
 	}
-	QFS_Gamedir (str);
 
 	if (cls.demoplayback2) {
 		realtime = cls.basetime = MSG_ReadFloat (net_message);
