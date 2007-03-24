@@ -106,7 +106,10 @@ SND_CacheRelease (sfx_t *sfx)
 {
 	sfxblock_t *block = (sfxblock_t *) sfx->data;
 	block->buffer = 0;
-	Cache_Release (&block->cache);
+	// due to the possibly asynchronous nature of the mixer, the cache
+	// may have been flushed behind our backs
+	if (block->cache.data)
+		Cache_Release (&block->cache);
 }
 
 sfxbuffer_t *
