@@ -88,8 +88,8 @@ SND_PaintChannels (unsigned int endtime)
 			end = snd_paintedtime + PAINTBUFFER_SIZE;
 
 		// clear the paint buffer
-//		memset (snd_paintbuffer, 0, (end - snd_paintedtime) *
-//				sizeof (portable_samplepair_t));
+		memset (snd_paintbuffer, 0, (end - snd_paintedtime) *
+				sizeof (portable_samplepair_t));
 		max_overpaint = 0;
 
 		// paint in the channels.
@@ -101,6 +101,9 @@ SND_PaintChannels (unsigned int endtime)
 				if (!ch->done)
 					ch->done = 1;	// acknowledge stopped signal
 				continue;
+			}
+			if (!ch->end) {
+				ch->end = snd_paintedtime + ch->sfx->length;
 			}
 			if (!ch->leftvol && !ch->rightvol) {
 				ltime = snd_paintedtime;
@@ -329,8 +332,16 @@ void
 SND_PaintChannelFrom8 (channel_t *ch, sfxbuffer_t *sc, int count)
 {
 	unsigned int pos;
+	int         offs = 0;
 	byte       *samps;
 
+	if ((int) ch->pos < 0) {
+		ch->pos += count;
+		if ((int) ch->pos < 0)
+			return;
+		offs = ch->pos;
+		ch->pos = 0;
+	}
 	if (ch->pos < sc->pos)
 		sc->setpos (sc, ch->pos);
 	pos = (ch->pos - sc->pos + sc->tail) % sc->length;
@@ -338,10 +349,10 @@ SND_PaintChannelFrom8 (channel_t *ch, sfxbuffer_t *sc, int count)
 
 	if (pos + count > sc->length) {
 		int         sub = sc->length - pos;
-		snd_paint_mono_8 (0, ch, samps, sub);
-		snd_paint_mono_8 (sub, ch, sc->data, count - sub);
+		snd_paint_mono_8 (offs, ch, samps, sub);
+		snd_paint_mono_8 (offs + sub, ch, sc->data, count - sub);
 	} else {
-		snd_paint_mono_8 (0, ch, samps, count);
+		snd_paint_mono_8 (offs, ch, samps, count);
 	}
 	ch->pos += count;
 }
@@ -350,8 +361,16 @@ void
 SND_PaintChannelFrom16 (channel_t *ch, sfxbuffer_t *sc, int count)
 {
 	unsigned int pos;
+	int         offs = 0;
 	short      *samps;
 
+	if ((int) ch->pos < 0) {
+		ch->pos += count;
+		if ((int) ch->pos < 0)
+			return;
+		offs = ch->pos;
+		ch->pos = 0;
+	}
 	if (ch->pos < sc->pos)
 		sc->setpos (sc, ch->pos);
 	pos = (ch->pos - sc->pos + sc->tail) % sc->length;
@@ -360,10 +379,10 @@ SND_PaintChannelFrom16 (channel_t *ch, sfxbuffer_t *sc, int count)
 	if (pos + count > sc->length) {
 		unsigned int sub = sc->length - pos;
 
-		snd_paint_mono_16 (0, ch, samps, sub);
-		snd_paint_mono_16 (sub, ch, sc->data, count - sub);
+		snd_paint_mono_16 (offs, ch, samps, sub);
+		snd_paint_mono_16 (offs + sub, ch, sc->data, count - sub);
 	} else {
-		snd_paint_mono_16 (0, ch, samps, count);
+		snd_paint_mono_16 (offs, ch, samps, count);
 	}
 	ch->pos += count;
 }
@@ -372,8 +391,16 @@ void
 SND_PaintChannelStereo8 (channel_t *ch, sfxbuffer_t *sc, int count)
 {
 	unsigned int pos;
+	int         offs = 0;
 	short      *samps;
 
+	if ((int) ch->pos < 0) {
+		ch->pos += count;
+		if ((int) ch->pos < 0)
+			return;
+		offs = ch->pos;
+		ch->pos = 0;
+	}
 	if (ch->pos < sc->pos)
 		sc->setpos (sc, ch->pos);
 	pos = (ch->pos - sc->pos + sc->tail) % sc->length;
@@ -382,10 +409,10 @@ SND_PaintChannelStereo8 (channel_t *ch, sfxbuffer_t *sc, int count)
 	if (pos + count > sc->length) {
 		unsigned int sub = sc->length - pos;
 
-		snd_paint_stereo_8 (0, ch, samps, sub);
-		snd_paint_stereo_8 (sub, ch, sc->data, count - sub);
+		snd_paint_stereo_8 (offs, ch, samps, sub);
+		snd_paint_stereo_8 (offs + sub, ch, sc->data, count - sub);
 	} else {
-		snd_paint_stereo_8 (0, ch, samps, count);
+		snd_paint_stereo_8 (offs, ch, samps, count);
 	}
 	ch->pos += count;
 }
@@ -394,8 +421,16 @@ void
 SND_PaintChannelStereo16 (channel_t *ch, sfxbuffer_t *sc, int count)
 {
 	unsigned int pos;
+	int         offs = 0;
 	int        *samps;
 
+	if ((int) ch->pos < 0) {
+		ch->pos += count;
+		if ((int) ch->pos < 0)
+			return;
+		offs = ch->pos;
+		ch->pos = 0;
+	}
 	if (ch->pos < sc->pos)
 		sc->setpos (sc, ch->pos);
 	pos = (ch->pos - sc->pos + sc->tail) % sc->length;
@@ -404,10 +439,10 @@ SND_PaintChannelStereo16 (channel_t *ch, sfxbuffer_t *sc, int count)
 	if (pos + count > sc->length) {
 		unsigned int sub = sc->length - pos;
 
-		snd_paint_stereo_16 (0, ch, samps, sub);
-		snd_paint_stereo_16 (sub, ch, sc->data, count - sub);
+		snd_paint_stereo_16 (offs, ch, samps, sub);
+		snd_paint_stereo_16 (offs + sub, ch, sc->data, count - sub);
 	} else {
-		snd_paint_stereo_16 (0, ch, samps, count);
+		snd_paint_stereo_16 (offs, ch, samps, count);
 	}
 	ch->pos += count;
 }

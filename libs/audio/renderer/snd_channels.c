@@ -576,8 +576,8 @@ SND_StartSound (int entnum, int entchannel, sfx_t *sfx, const vec3_t origin,
 	// new channel
 	if (!(osfx = sfx->open (sfx)))
 		return;
-	target_chan->pos = 0.0;
-	target_chan->end = snd_paintedtime + osfx->length;
+	target_chan->pos = 0;
+	target_chan->end = 0;
 
 	// if an identical sound has also been started this frame, offset the pos
 	// a bit to keep it from just making the first one louder
@@ -585,11 +585,12 @@ SND_StartSound (int entnum, int entchannel, sfx_t *sfx, const vec3_t origin,
 		if (!check || check == target_chan)
 			continue;
 		if (check->sfx == osfx && !check->pos) {
-			skip = rand () % (int) (0.1 * snd_shm->speed);
-			if (skip >= target_chan->end)
-				skip = target_chan->end - 1;
-			target_chan->pos += skip;
-			target_chan->end -= skip;
+			skip = rand () % (int) (0.01 * snd_shm->speed);
+			target_chan->pos = -skip;
+			//if (skip >= target_chan->end)
+			//	skip = target_chan->end - 1;
+			//target_chan->pos += skip;
+			//target_chan->end -= skip;
 			break;
 		}
 	}
@@ -597,11 +598,12 @@ SND_StartSound (int entnum, int entchannel, sfx_t *sfx, const vec3_t origin,
 		if (!check || check == target_chan)
 			continue;
 		if (check->sfx == osfx && !check->pos) {
-			skip = rand () % (int) (0.1 * snd_shm->speed);
-			if (skip >= target_chan->end)
-				skip = target_chan->end - 1;
-			target_chan->pos += skip;
-			target_chan->end -= skip;
+			skip = rand () % (int) (0.01 * snd_shm->speed);
+			target_chan->pos = -skip;
+			//if (skip >= target_chan->end)
+			//	skip = target_chan->end - 1;
+			//target_chan->pos += skip;
+			//target_chan->end -= skip;
 			break;
 		}
 	}
