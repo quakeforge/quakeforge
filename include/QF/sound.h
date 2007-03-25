@@ -43,6 +43,7 @@ typedef struct sfx_s sfx_t;
 struct sfx_s
 {
 	const char *name;
+	sfx_t      *owner;
 
 	unsigned int length;
 	unsigned int loopstart;

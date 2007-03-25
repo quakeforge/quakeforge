@@ -70,6 +70,7 @@ snd_sfx_free (void *_sfx, void *unused)
 	sfx_t      *sfx = (sfx_t *) _sfx;
 	free ((char *) sfx->name);
 	sfx->name = 0;
+	sfx->owner = 0;
 }
 
 void
@@ -122,6 +123,7 @@ SND_SFX_StreamOpen (sfx_t *sfx, void *file,
 	sfx_t      *new_sfx = calloc (1, sizeof (sfx_t));
 
 	new_sfx->name = sfx->name;
+	new_sfx->owner = sfx;
 	new_sfx->wavinfo = SND_CacheWavinfo;
 	new_sfx->touch = new_sfx->retain = SND_StreamRetain;
 	new_sfx->release = SND_StreamRelease;
@@ -175,6 +177,7 @@ SND_LoadSound (const char *name)
 
 	sfx = &snd_sfx[snd_num_sfx++];
 	sfx->name = strdup (name);
+	sfx->owner = sfx;
 	SND_Load (sfx);
 	Hash_Add (snd_sfx_hash, sfx);
 	return sfx;

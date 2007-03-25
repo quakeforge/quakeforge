@@ -546,12 +546,25 @@ SND_SetListener (const vec3_t origin, const vec3_t forward, const vec3_t right,
 	}
 }
 
+static int
+snd_check_channels (channel_t *target_chan, const channel_t *check,
+					const sfx_t *osfx)
+{
+	if (!check || check == target_chan)
+		return 0;
+	if (check->sfx->owner == osfx->owner && !check->pos) {
+		int skip = rand () % (int) (0.01 * snd_shm->speed);
+		target_chan->pos = -skip;
+		return 1;
+	}
+	return 0;
+}
+
 void
 SND_StartSound (int entnum, int entchannel, sfx_t *sfx, const vec3_t origin,
 				float fvol, float attenuation)
 {
 	int			 vol;
-	unsigned int skip;
 	channel_t   *target_chan, *check;
 	sfx_t       *osfx;
 
@@ -562,7 +575,7 @@ SND_StartSound (int entnum, int entchannel, sfx_t *sfx, const vec3_t origin,
 								  sfx->loopstart != (unsigned) -1);
 	if (!target_chan)
 		return;
-
+Sys_Printf ("SND_StartSound: %s\n", sfx->name);
 	vol = fvol * 255;
 
 	// spatialize
@@ -581,32 +594,12 @@ SND_StartSound (int entnum, int entchannel, sfx_t *sfx, const vec3_t origin,
 
 	// if an identical sound has also been started this frame, offset the pos
 	// a bit to keep it from just making the first one louder
-	for (check = dynamic_channels; check; check = check->next) {
-		if (!check || check == target_chan)
-			continue;
-		if (check->sfx == osfx && !check->pos) {
-			skip = rand () % (int) (0.01 * snd_shm->speed);
-			target_chan->pos = -skip;
-			//if (skip >= target_chan->end)
-			//	skip = target_chan->end - 1;
-			//target_chan->pos += skip;
-			//target_chan->end -= skip;
+	for (check = dynamic_channels; check; check = check->next)
+		if (snd_check_channels (target_chan, check, osfx))
 			break;
-		}
-	}
-	for (check = looped_dynamic_channels; check; check = check->next) {
-		if (!check || check == target_chan)
-			continue;
-		if (check->sfx == osfx && !check->pos) {
-			skip = rand () % (int) (0.01 * snd_shm->speed);
-			target_chan->pos = -skip;
-			//if (skip >= target_chan->end)
-			//	skip = target_chan->end - 1;
-			//target_chan->pos += skip;
-			//target_chan->end -= skip;
+	for (check = looped_dynamic_channels; check; check = check->next)
+		if (snd_check_channels (target_chan, check, osfx))
 			break;
-		}
-	}
 	if (!osfx->retain (osfx))
 		return;						// couldn't load the sound's data
 	target_chan->sfx = osfx;
