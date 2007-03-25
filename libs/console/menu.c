@@ -482,7 +482,7 @@ Menu_Load (void)
 
 	menu_pr_state.progs = 0;
 	if ((size = QFS_FOpenFile (menu_pr_state.progs_name, &file)) != -1) {
-		PR_LoadProgsFile (&menu_pr_state, file, size, 0, 256 * 1024);
+		PR_LoadProgsFile (&menu_pr_state, file, size, 0, 512 * 1024);
 		Qclose (file);
 
 		if (!PR_RunLoadFuncs (&menu_pr_state)) {
