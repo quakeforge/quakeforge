@@ -573,9 +573,6 @@ SND_StartSound (int entnum, int entchannel, sfx_t *sfx, const vec3_t origin,
 	target_chan->entchannel = entchannel;
 	s_spatialize (target_chan);
 
-	if (!target_chan->leftvol && !target_chan->rightvol)
-		return;							// not audible at all
-
 	// new channel
 	if (!(osfx = sfx->open (sfx)))
 		return;
