@@ -12,6 +12,7 @@
 #include "debug.h"
 #include "HUD.h"
 #include "client_menu.h"
+#include "PropertyList.h"
 
 #include "gui/InputLine.h"
 #include "gui/Rect.h"
@@ -89,10 +90,26 @@ integer [MAX_SAVEGAMES] loadable;
 integer load_cursor;
 integer save_cursor;
 
+string (QFile f) get_comment =
+{
+	local string line;
+	local string plist_data = str_new ();
+	local PLItem plist;
+
+	while ((line = Qgetline (f)))
+		str_cat (plist_data, line);
+	plist = [PLItem newFromString:plist_data];
+	str_free (plist_data);
+	line = [(PLString) [plist getObjectForKey:"comment"] string];
+	[plist release];
+	return line;
+}
+
 void () scan_saves =
 {
 	local integer	i;
 	local QFile		f;
+	local string    line;
 	for (i = 0; i < MAX_SAVEGAMES; i++) {
 		if (!filenames[i])
 			filenames[i] = str_new ();
@@ -102,8 +119,12 @@ void () scan_saves =
 			str_copy (filenames[i], "--- UNUSED SLOT ---");
 			continue;
 		}
-		Qgetline (f);
-		str_copy (filenames[i], Qgetline (f));
+		line = Qgetline (f);
+		if (line == "QuakeForge\n") {
+			str_copy (filenames[i], get_comment (f));
+		} else {
+			str_copy (filenames[i], Qgetline (f));
+		}
 		loadable[i] = 1;
 		Qclose (f);
 	}
