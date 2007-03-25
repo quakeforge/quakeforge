@@ -372,6 +372,7 @@ ED_InitEntity (progs_t *pr, plitem_t *entity, edict_t *ent)
 	const char *field_name;
 	const char *value;
 	int         count;
+	int         init = 0;
 
 	keys = PL_D_AllKeys (entity);
 	count = PL_A_NumObjects (keys);
@@ -389,8 +390,11 @@ ED_InitEntity (progs_t *pr, plitem_t *entity, edict_t *ent)
 			if (!ED_ParseEpair (pr, ent->v, field, value))
 				PR_Error (pr, "ED_InitEntity: parse error");
 		}
+		init = 1;
 	}
 	PL_Free (keys);
+	if (!init)
+		ent->free = 1;
 }
 
 static void
