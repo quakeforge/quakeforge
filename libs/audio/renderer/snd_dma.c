@@ -351,6 +351,10 @@ s_startup (void)
 		return;
 	}
 	snd_shm->xfer = s_xfer_paint_buffer;
+	if (snd_shm->speed > 44100) {
+		Sys_Printf ("FIXME clamping Sps to 44100 until resampling is fixed\n");
+		snd_shm->speed = 44100;
+	}
 
 	sound_started = 1;
 }

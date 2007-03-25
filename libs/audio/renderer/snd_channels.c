@@ -81,8 +81,6 @@ SND_AllocChannel (void)
 	channel_t **free = &free_channels;
 	channel_t  *chan;
 
-	if (!*free)		// definitely nothing free
-		return 0;
 	while (*free) {
 		if (!(*free)->sfx)			// free channel
 			break;
@@ -92,8 +90,14 @@ SND_AllocChannel (void)
 			Sys_Error ("SND_AllocChannel: bogus channel free list");
 		free = &(*free)->next;
 	}
-	if (!*free)
+	if (!*free) {
+		int         num_free = 0;
+		for (free = &free_channels; *free; free = &(*free)->next) {
+			num_free++;
+		}
+		Sys_Printf ("SND_AllocChannel: out of channels. %d\n", num_free);
 		return 0;
+	}
 	chan = *free;
 	*free = chan->next;
 	if (chan->sfx) {
