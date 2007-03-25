@@ -664,6 +664,7 @@ Host_Loadgame_f (void)
 		spawn_parms[i] = atof (PL_String (PL_ObjectAtIndex (item, i)));
 	}
 	current_skill = atoi (PL_String (PL_ObjectForKey (game, "current_skill")));
+	Cvar_SetValue (skill, current_skill);
 	mapname = strdup (PL_String (PL_ObjectForKey (game, "name")));
 
 	CL_Disconnect_f ();
