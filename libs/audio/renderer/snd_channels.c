@@ -575,7 +575,7 @@ SND_StartSound (int entnum, int entchannel, sfx_t *sfx, const vec3_t origin,
 								  sfx->loopstart != (unsigned) -1);
 	if (!target_chan)
 		return;
-Sys_Printf ("SND_StartSound: %s\n", sfx->name);
+
 	vol = fvol * 255;
 
 	// spatialize
