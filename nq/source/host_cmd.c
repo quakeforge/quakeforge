@@ -595,10 +595,10 @@ Host_Loadgame_f (void)
 	QFile      *f;
 	char       *mapname = 0;
 	script_t   *script = 0;
-	plitem_t   *game;
+	plitem_t   *game = 0;
 	plitem_t   *list;
 	plitem_t   *item;
-	char       *str = 0;
+	char       *script_data = 0;
 	int         i;
 	int         entnum;
 	int         count;
@@ -632,13 +632,13 @@ Host_Loadgame_f (void)
 		Con_Printf ("ERROR: couldn't open.\n");
 		goto end;
 	}
-	str = malloc (Qfilesize (f) + 1);
-	i = Qread (f, str, Qfilesize (f));
-	str[i] = 0;
+	script_data = malloc (Qfilesize (f) + 1);
+	i = Qread (f, script_data, Qfilesize (f));
+	script_data[i] = 0;
 	Qclose (f);
 
 	script = Script_New ();
-	Script_Start (script, name->str, str);
+	Script_Start (script, name->str, script_data);
 
 	Script_GetToken (script, 1);
 	if (strequal (script->token->str, PROGRAM)) {
@@ -676,6 +676,18 @@ Host_Loadgame_f (void)
 	sv.paused = true;					// pause until all clients connect
 	sv.loadgame = true;
 
+	list = PL_ObjectForKey (game, "lightstyles");
+	for (i = 0; i < MAX_LIGHTSTYLES; i++) {
+		const char *style;
+		char       *str;
+		if (i >= PL_A_NumObjects (list))
+			break;
+		item = PL_ObjectAtIndex (list, i);
+		style = PL_String (item);
+		sv.lightstyles[i] = str = Hunk_Alloc (strlen (style) + 1);
+		strcpy (str, style);
+	}
+
 	ED_InitGlobals (&sv_pr_state, PL_ObjectForKey (game, "globals"));
 
 	list = PL_ObjectForKey (game, "entities");
@@ -705,12 +717,14 @@ Host_Loadgame_f (void)
 		Host_Reconnect_f ();
 	}
 end:
+	if (game)
+		PL_Free (game);
 	if (mapname)
 		free (mapname);
 	if (script)
 		Script_Delete (script);
-	if (str)
-		free (str);
+	if (script_data)
+		free (script_data);
 	if (name)
 		dstring_delete (name);
 }
