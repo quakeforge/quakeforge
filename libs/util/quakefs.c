@@ -1315,7 +1315,8 @@ QFS_StripExtension (const char *in, char *out)
 {
 	char       *tmp;
 
-	strcpy (out, in);
+	if (out != in)
+		strcpy (out, in);
 
 	if ((tmp = strrchr (out, '.')))
 		*tmp = 0;
