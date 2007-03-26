@@ -329,8 +329,8 @@ s_pick_channel (int entnum, int entchannel, int looped)
 		}
 		_ch = &(*_ch)->next;
 	}
-	_ch = looped ? &looped_dynamic_channels : &free_channels;
-	if ((ch = SND_AllocChannel ()) && looped) {
+	_ch = looped ? &looped_dynamic_channels : &dynamic_channels;
+	if ((ch = SND_AllocChannel ())) {
 		ch->next = *_ch;
 		*_ch = ch;
 	}
