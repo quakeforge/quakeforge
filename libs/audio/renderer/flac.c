@@ -282,6 +282,7 @@ flac_load (flacfile_t *ff, sfxblock_t *block, cache_allocator_t allocator)
 	sc->sfx = sfx;
 	if (flac_read (ff, data, info->datalen) < 0)
 		goto bail;
+	SND_SetPaint (sc);
 	resample (sc, data, info->samples, 0);
 	sc->head = sc->length;
   bail:

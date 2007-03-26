@@ -99,11 +99,14 @@ struct sfxbuffer_s {
 	unsigned    pos;			//!< position of tail within full stream
 	unsigned    bps;			//!< bytes per sample: 1 2 4 usually
 	/** paint samples into the mix buffer
+		\param offset   offset into the mix buffer at which to start mixing
+						the channel
 		\param ch		sound channel
-		\param buffer	"this"
+		\param buffer	sound data
 		\param count	number of samples to paint
 	*/
-	void        (*paint) (channel_t *ch, sfxbuffer_t *buffer, int count);
+	void        (*paint) (int offset, channel_t *ch, void *buffer,
+						  unsigned count);
 	/** Advance the position with the stream, updating the ring buffer as
 		necessary. Null for chached sounds.
 		\param buffer	"this"
@@ -378,6 +381,11 @@ void SND_PaintChannels(unsigned int endtime);
 /** Initialize the scale table for painting of 8 bit samples.
 */
 void SND_InitScaletable (void);
+
+/** Set the paint function of the sfxbuffer
+	\param sc		sfxbuffer to set.
+*/
+void SND_SetPaint (sfxbuffer_t *sc);
 //@}
 
 
@@ -536,39 +544,6 @@ void SND_StreamSetPos (sfxbuffer_t *buffer, unsigned int pos);
 */
 sfxbuffer_t *SND_GetCache (long samples, int rate, int inwidth, int channels,
 						   sfxblock_t *block, cache_allocator_t allocator);
-//@}
-
-/** \defgroup sound_render_mix_virt Mixer engine virtual functions.
-	\ingroup sound_render_mix
-*/
-//@{
-/** paint 16 bit mono samples into the mix buffer with spacialization effects
-	\param ch		sound channel
-	\param sc		"this"
-	\param count	number of samples to paint
-*/
-void SND_PaintChannelFrom8 (channel_t *ch, sfxbuffer_t *sc, int count);
-
-/** paint 16 bit mono samples into the mix buffer with spacialization effects
-	\param ch		sound channel
-	\param sc		"this"
-	\param count	number of samples to paint
-*/
-void SND_PaintChannelFrom16 (channel_t *ch, sfxbuffer_t *sc, int count);
-
-/** paint 8 bit stereo samples into the mix buffer with spacialization effects
-	\param ch		sound channel
-	\param sc		"this"
-	\param count	number of samples to paint
-*/
-void SND_PaintChannelStereo8 (channel_t *ch, sfxbuffer_t *sc, int count);
-
-/** paint 16 bit stereo samples into the mix buffer with spacialization effects
-	\param ch		sound channel
-	\param sc		"this"
-	\param count	number of samples to paint
-*/
-void SND_PaintChannelStereo16 (channel_t *ch, sfxbuffer_t *sc, int count);
 //@}
 
 #endif//__snd_render_h

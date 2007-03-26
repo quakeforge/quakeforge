@@ -153,6 +153,7 @@ SND_SFX_StreamOpen (sfx_t *sfx, void *file,
 	stream->buffer.advance = SND_StreamAdvance;
 	stream->buffer.setpos = SND_StreamSetPos;
 	stream->buffer.sfx = new_sfx;
+	SND_SetPaint (&stream->buffer);
 
 	stream->resample (&stream->buffer, 0, 0, 0);	// get sfx setup properly
 	stream->seek (stream->file, 0, &stream->wavinfo);

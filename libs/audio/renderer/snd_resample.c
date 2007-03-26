@@ -104,14 +104,12 @@ SND_ResampleMono (sfxbuffer_t *sc, byte *data, int length, void *prev)
 
 	if (snd_loadas8bit->int_val) {
 		sc->bps = outwidth = 1;
-		sc->paint = SND_PaintChannelFrom8;
 		if (prev) {
 			zero_s[0] = ((char *)prev)[0];
 			zero_b[0] = ((char *)prev)[0] + 128;
 		}
 	} else {
 		sc->bps = outwidth = 2;
-		sc->paint = SND_PaintChannelFrom16;
 		if (prev) {
 			zero_s[0] = ((short *)prev)[0];
 			zero_b[0] = (((short *)prev)[0] >> 8) + 128;
@@ -246,7 +244,6 @@ SND_ResampleStereo (sfxbuffer_t *sc, byte *data, int length, void *prev)
 
 	if (snd_loadas8bit->int_val) {
 		outwidth = 1;
-		sc->paint = SND_PaintChannelStereo8;
 		sc->bps = 2;
 		if (prev) {
 			zero_s.left = ((char *)prev)[0];
@@ -256,7 +253,6 @@ SND_ResampleStereo (sfxbuffer_t *sc, byte *data, int length, void *prev)
 		}
 	} else {
 		outwidth = 2;
-		sc->paint = SND_PaintChannelStereo16;
 		sc->bps = 4;
 		if (prev) {
 			zero_s.left = ((short *)prev)[0];
@@ -399,11 +395,9 @@ SND_NoResampleStereo (sfxbuffer_t *sc, byte *data, int length, void *prev)
 
 	if (snd_loadas8bit->int_val) {
 		outwidth = 1;
-		sc->paint = SND_PaintChannelStereo8;
 		sc->bps = 2;
 	} else {
 		outwidth = 2;
-		sc->paint = SND_PaintChannelStereo16;
 		sc->bps = 4;
 	}
 

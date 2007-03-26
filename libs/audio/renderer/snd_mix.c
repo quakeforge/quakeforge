@@ -47,9 +47,9 @@ static __attribute__ ((used)) const char rcsid[] =
 #include "compat.h"
 #include "snd_render.h"
 
-cvar_t         *snd_volume;
+cvar_t     *snd_volume;
 
-unsigned int    snd_paintedtime;				// sample PAIRS
+unsigned    snd_paintedtime;				// sample PAIRS
 
 portable_samplepair_t snd_paintbuffer[PAINTBUFFER_SIZE * 2];
 static int  max_overpaint;				// number of extra samples painted
@@ -59,10 +59,10 @@ static int         snd_scaletable[32][256];
 /* CHANNEL MIXING */
 
 static inline int
-advance_channel (channel_t *ch, int count, unsigned int ltime)
+advance_channel (channel_t *ch, int count, unsigned ltime)
 {
 	if (!count || ltime >= ch->end) {
-		if (ch->sfx->loopstart != (unsigned int) -1) {
+		if (ch->sfx->loopstart != (unsigned) -1) {
 			ch->pos = ch->sfx->loopstart;
 			ch->end = ltime + ch->sfx->length - ch->pos;
 		} else {			// channel just stopped
@@ -73,13 +73,47 @@ advance_channel (channel_t *ch, int count, unsigned int ltime)
 	return 1;
 }
 
-void
-SND_PaintChannels (unsigned int endtime)
+static inline void
+snd_paint_channel (channel_t *ch, sfxbuffer_t *sc, int count)
 {
-	unsigned int end, ltime;
+	unsigned    pos;
+	int         offs = 0;
+	byte       *samps;
+
+	if ((int) ch->pos < 0) {
+		ch->pos += count;
+		if ((int) ch->pos <= 0)
+			return;
+		offs = ch->pos;
+		count -= offs;
+		ch->pos = 0;
+	}
+	if (ch->pos < sc->pos)
+		sc->setpos (sc, ch->pos);
+	pos = (ch->pos - sc->pos + sc->tail) % sc->length;
+	samps = sc->data + pos * sc->bps;
+
+	if (pos + count > sc->length) {
+		unsigned    sub = sc->length - pos;
+		sc->paint (offs, ch, samps, sub);
+		sc->paint (offs + sub, ch, sc->data, count - sub);
+	} else {
+		sc->paint (offs, ch, samps, count);
+	}
+	ch->pos += count;
+}
+
+void
+SND_PaintChannels (unsigned endtime)
+{
+	unsigned    end, ltime;
 	int         i, count;
 	channel_t  *ch;
 	sfxbuffer_t *sc;
+
+	// clear the paint buffer
+	memset (snd_paintbuffer, 0, (end - snd_paintedtime) *
+			sizeof (portable_samplepair_t));
 
 	while (snd_paintedtime < endtime) {
 		// if snd_paintbuffer is smaller than DMA buffer
@@ -87,9 +121,6 @@ SND_PaintChannels (unsigned int endtime)
 		if (endtime - snd_paintedtime > PAINTBUFFER_SIZE)
 			end = snd_paintedtime + PAINTBUFFER_SIZE;
 
-		// clear the paint buffer
-		memset (snd_paintbuffer, 0, (end - snd_paintedtime) *
-				sizeof (portable_samplepair_t));
 		max_overpaint = 0;
 
 		// paint in the channels.
@@ -121,21 +152,14 @@ SND_PaintChannels (unsigned int endtime)
 			ltime = snd_paintedtime;
 
 			while (ltime < end) {		// paint up to end
-				if (ch->end < end)
-					count = ch->end - ltime;
-				else
-					count = end - ltime;
-
+				count = (ch->end < end ? ch->end : end) - ltime;
 				if (count > 0) {
-					sc->paint (ch, sc, count);
-
+					snd_paint_channel (ch, sc, count);
 					if (sc->advance)
 						sc->advance (sc, count);
-
-					ltime += count;
 				}
+				ltime += count;
 
-				// if at end of loop, restart
 				if (!advance_channel (ch, count, ltime))
 					break;
 			}
@@ -164,12 +188,12 @@ SND_InitScaletable (void)
 }
 
 static void
-snd_paint_mono_8 (int offs, channel_t *ch, void *bytes, unsigned int count)
+snd_paint_mono_8 (int offs, channel_t *ch, void *bytes, unsigned count)
 {
-	unsigned char  *sfx;
-	int				data;
-	unsigned int    i;
-	int		       *lscale, *rscale;
+	byte       *sfx;
+	int         data;
+	unsigned    i;
+	int        *lscale, *rscale;
 	portable_samplepair_t *pair;
 
 	if (ch->leftvol > 255)
@@ -179,7 +203,7 @@ snd_paint_mono_8 (int offs, channel_t *ch, void *bytes, unsigned int count)
 
 	lscale = snd_scaletable[ch->leftvol >> 3];
 	rscale = snd_scaletable[ch->rightvol >> 3];
-	sfx = (unsigned char *) bytes;
+	sfx = (byte *) bytes;
 
 	pair = snd_paintbuffer + offs;
 
@@ -191,12 +215,12 @@ snd_paint_mono_8 (int offs, channel_t *ch, void *bytes, unsigned int count)
 }
 
 static void
-snd_paint_mono_16 (int offs, channel_t *ch, void *bytes, unsigned int count)
+snd_paint_mono_16 (int offs, channel_t *ch, void *bytes, unsigned count)
 {
-	int		leftvol, rightvol;
-	unsigned int	left_phase, right_phase;	// Never allowed < 0 anyway
-	unsigned int	i = 0;
-	signed short   *sfx;
+	int         leftvol, rightvol;
+	unsigned    left_phase, right_phase;	// Never allowed < 0 anyway
+	unsigned    i = 0;
+	short      *sfx;
 	portable_samplepair_t *pair;
 
 	leftvol = ch->leftvol;
@@ -218,9 +242,9 @@ snd_paint_mono_16 (int offs, channel_t *ch, void *bytes, unsigned int count)
 	}
 
 	if (ch->oldphase != ch->phase) {
-		unsigned int old_phase_left, old_phase_right;
-		unsigned int new_phase_left, new_phase_right;
-		unsigned int count_left, count_right, c;
+		unsigned    old_phase_left, old_phase_right;
+		unsigned    new_phase_left, new_phase_right;
+		unsigned    count_left, count_right, c;
 
 		if (ch->oldphase >= 0) {
 			old_phase_left = ch->oldphase;
@@ -288,7 +312,7 @@ snd_paint_mono_16 (int offs, channel_t *ch, void *bytes, unsigned int count)
 }
 
 static void
-snd_paint_stereo_8 (int offs, channel_t *ch, void *bytes, unsigned int count)
+snd_paint_stereo_8 (int offs, channel_t *ch, void *bytes, unsigned count)
 {
 	byte       *samp;
 	portable_samplepair_t *pair;
@@ -312,7 +336,7 @@ snd_paint_stereo_8 (int offs, channel_t *ch, void *bytes, unsigned int count)
 }
 
 static void
-snd_paint_stereo_16 (int offs, channel_t *ch, void *bytes, unsigned int count)
+snd_paint_stereo_16 (int offs, channel_t *ch, void *bytes, unsigned count)
 {
 	short      *samp;
 	portable_samplepair_t *pair;
@@ -329,120 +353,18 @@ snd_paint_stereo_16 (int offs, channel_t *ch, void *bytes, unsigned int count)
 }
 
 void
-SND_PaintChannelFrom8 (channel_t *ch, sfxbuffer_t *sc, int count)
+SND_SetPaint (sfxbuffer_t *sc)
 {
-	unsigned int pos;
-	int         offs = 0;
-	byte       *samps;
-
-	if ((int) ch->pos < 0) {
-		ch->pos += count;
-		if ((int) ch->pos < 0)
-			return;
-		offs = ch->pos;
-		ch->pos = 0;
-	}
-	if (ch->pos < sc->pos)
-		sc->setpos (sc, ch->pos);
-	pos = (ch->pos - sc->pos + sc->tail) % sc->length;
-	samps = sc->data + pos;
-
-	if (pos + count > sc->length) {
-		int         sub = sc->length - pos;
-		snd_paint_mono_8 (offs, ch, samps, sub);
-		snd_paint_mono_8 (offs + sub, ch, sc->data, count - sub);
+	wavinfo_t *info = sc->sfx->wavinfo (sc->sfx);
+	if (snd_loadas8bit->int_val) {
+		if (info->channels == 2)
+			sc->paint = snd_paint_stereo_8;
+		else
+			sc->paint = snd_paint_mono_8;
 	} else {
-		snd_paint_mono_8 (offs, ch, samps, count);
+		if (info->channels == 2)
+			sc->paint = snd_paint_stereo_16;
+		else
+			sc->paint = snd_paint_mono_16;
 	}
-	ch->pos += count;
-}
-
-void
-SND_PaintChannelFrom16 (channel_t *ch, sfxbuffer_t *sc, int count)
-{
-	unsigned int pos;
-	int         offs = 0;
-	short      *samps;
-
-	if ((int) ch->pos < 0) {
-		ch->pos += count;
-		if ((int) ch->pos < 0)
-			return;
-		offs = ch->pos;
-		ch->pos = 0;
-	}
-	if (ch->pos < sc->pos)
-		sc->setpos (sc, ch->pos);
-	pos = (ch->pos - sc->pos + sc->tail) % sc->length;
-	samps = (short *) sc->data + pos;
-
-	if (pos + count > sc->length) {
-		unsigned int sub = sc->length - pos;
-
-		snd_paint_mono_16 (offs, ch, samps, sub);
-		snd_paint_mono_16 (offs + sub, ch, sc->data, count - sub);
-	} else {
-		snd_paint_mono_16 (offs, ch, samps, count);
-	}
-	ch->pos += count;
-}
-
-void
-SND_PaintChannelStereo8 (channel_t *ch, sfxbuffer_t *sc, int count)
-{
-	unsigned int pos;
-	int         offs = 0;
-	short      *samps;
-
-	if ((int) ch->pos < 0) {
-		ch->pos += count;
-		if ((int) ch->pos < 0)
-			return;
-		offs = ch->pos;
-		ch->pos = 0;
-	}
-	if (ch->pos < sc->pos)
-		sc->setpos (sc, ch->pos);
-	pos = (ch->pos - sc->pos + sc->tail) % sc->length;
-	samps = (short *) sc->data + pos;
-
-	if (pos + count > sc->length) {
-		unsigned int sub = sc->length - pos;
-
-		snd_paint_stereo_8 (offs, ch, samps, sub);
-		snd_paint_stereo_8 (offs + sub, ch, sc->data, count - sub);
-	} else {
-		snd_paint_stereo_8 (offs, ch, samps, count);
-	}
-	ch->pos += count;
-}
-
-void
-SND_PaintChannelStereo16 (channel_t *ch, sfxbuffer_t *sc, int count)
-{
-	unsigned int pos;
-	int         offs = 0;
-	int        *samps;
-
-	if ((int) ch->pos < 0) {
-		ch->pos += count;
-		if ((int) ch->pos < 0)
-			return;
-		offs = ch->pos;
-		ch->pos = 0;
-	}
-	if (ch->pos < sc->pos)
-		sc->setpos (sc, ch->pos);
-	pos = (ch->pos - sc->pos + sc->tail) % sc->length;
-	samps = (int *) sc->data + pos;
-
-	if (pos + count > sc->length) {
-		unsigned int sub = sc->length - pos;
-
-		snd_paint_stereo_16 (offs, ch, samps, sub);
-		snd_paint_stereo_16 (offs + sub, ch, sc->data, count - sub);
-	} else {
-		snd_paint_stereo_16 (offs, ch, samps, count);
-	}
-	ch->pos += count;
 }
