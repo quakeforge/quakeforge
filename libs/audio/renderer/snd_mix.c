@@ -59,9 +59,9 @@ static int         snd_scaletable[32][256];
 /* CHANNEL MIXING */
 
 static inline int
-advance_channel (channel_t *ch, int count, unsigned ltime)
+check_channel_end (channel_t *ch, int count, unsigned ltime)
 {
-	if (!count || ltime >= ch->end) {
+	if (count <= 0 || ltime >= ch->end) {
 		if (ch->sfx->loopstart != (unsigned) -1) {
 			ch->pos = ch->sfx->loopstart;
 			ch->end = ltime + ch->sfx->length - ch->pos;
@@ -88,7 +88,7 @@ snd_paint_channel (channel_t *ch, sfxbuffer_t *sc, int count)
 		count -= offs;
 		ch->pos = 0;
 	}
-	if (ch->pos < sc->pos)
+	if (ch->pos < sc->pos || ch->pos - sc->pos >= sc->length)
 		sc->setpos (sc, ch->pos);
 	pos = (ch->pos - sc->pos + sc->tail) % sc->length;
 	samps = sc->data + pos * sc->bps;
@@ -112,13 +112,13 @@ SND_PaintChannels (unsigned endtime)
 	sfxbuffer_t *sc;
 
 	// clear the paint buffer
-	memset (snd_paintbuffer, 0, (end - snd_paintedtime) *
+	memset (snd_paintbuffer, 0, (endtime - snd_paintedtime) *
 			sizeof (portable_samplepair_t));
 
 	while (snd_paintedtime < endtime) {
 		// if snd_paintbuffer is smaller than DMA buffer
 		end = endtime;
-		if (endtime - snd_paintedtime > PAINTBUFFER_SIZE)
+		if (end - snd_paintedtime > PAINTBUFFER_SIZE)
 			end = snd_paintedtime + PAINTBUFFER_SIZE;
 
 		max_overpaint = 0;
@@ -129,38 +129,30 @@ SND_PaintChannels (unsigned endtime)
 			if (!ch->sfx)
 				continue;
 			if (ch->stop || ch->done) {
-				if (!ch->done)
-					ch->done = 1;	// acknowledge stopped signal
-				continue;
-			}
-			if (!ch->end) {
-				ch->end = snd_paintedtime + ch->sfx->length;
-			}
-			if (!ch->leftvol && !ch->rightvol) {
-				ltime = snd_paintedtime;
-				if (ch->end < end)
-					count = ch->end - ltime;
-				else
-					count = end - ltime;
-				advance_channel (ch, count, ltime);
+				ch->done = 1;		// acknowledge stopped signal
 				continue;
 			}
 			sc = ch->sfx->getbuffer (ch->sfx);
 			if (!sc)
 				continue;
 
+			if (!ch->end)
+				ch->end = snd_paintedtime + ch->sfx->length;
+
 			ltime = snd_paintedtime;
 
 			while (ltime < end) {		// paint up to end
-				count = (ch->end < end ? ch->end : end) - ltime;
+				count = ((ch->end < end) ? ch->end : end) - ltime;
 				if (count > 0) {
-					snd_paint_channel (ch, sc, count);
-					if (sc->advance)
-						sc->advance (sc, count);
+					if (ch->leftvol || ch->rightvol) {
+						snd_paint_channel (ch, sc, count);
+						if (sc->advance)
+							sc->advance (sc, count);
+					}
+					ltime += count;
 				}
-				ltime += count;
 
-				if (!advance_channel (ch, count, ltime))
+				if (!check_channel_end (ch, count, ltime))
 					break;
 			}
 		}
