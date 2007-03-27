@@ -192,12 +192,8 @@ I_OGGMus_Pause (void)
 	if (!tracklist || !mus_enabled || !playing)
 		return;
 	
-	if (cd_channel) {
-		// the sound system will skip a 0 volume channel completely,
-		// not even updating the sample position
-		cd_channel->master_vol = 0;
-		cd_channel->leftvol = cd_channel->rightvol = 0;
-	}
+	if (cd_channel)
+		cd_channel->pause = 1;
 
 	wasPlaying = playing;
 	playing = false;
@@ -210,6 +206,7 @@ I_OGGMus_Resume (void)
 		return;
 
 	set_volume ();
+	cd_channel->pause = 0;
 	wasPlaying = false;
 	playing = true;
 }

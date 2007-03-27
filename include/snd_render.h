@@ -170,7 +170,6 @@ struct sfxblock_s {
 */
 struct channel_s {
 	struct channel_s *next;		//!< next channel in "free" list
-	int         free;			//!< true if free channel
 	sfx_t      *sfx;			//!< sound played by this channel
 	int         leftvol;		//!< 0-255 volume
 	int         rightvol;		//!< 0-255 volume
@@ -181,6 +180,7 @@ struct channel_s {
 	int         entchannel;		//
 	vec3_t      origin;			//!< origin of sound effect
 	vec_t       dist_mult;		//!< distance multiplier (attenuation/clip)
+	int         pause;			//!< don't update the channel at all
 	int         master_vol;		//!< 0-255 master volume
 	int         phase;			//!< phase shift between l-r in samples
 	int         oldphase;		//!< phase shift between l-r in samples

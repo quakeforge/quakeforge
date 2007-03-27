@@ -132,6 +132,8 @@ SND_PaintChannels (unsigned endtime)
 				ch->done = 1;		// acknowledge stopped signal
 				continue;
 			}
+			if (ch->pause)
+				continue;
 			sc = sfx->getbuffer (sfx);
 			if (!sc)				// something went wrong with the sfx
 				continue;

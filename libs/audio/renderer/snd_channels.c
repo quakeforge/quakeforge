@@ -74,6 +74,14 @@ static cvar_t  *snd_volumesep;
 static cvar_t  *ambient_fade;
 static cvar_t  *ambient_level;
 
+static inline
+channel_t *unlink_channel (channel_t **_ch)
+{
+	channel_t  *ch = *_ch;
+	*_ch = ch->next;
+	ch->next = 0;
+	return ch;
+}
 
 channel_t *
 SND_AllocChannel (void)
@@ -116,17 +124,14 @@ SND_AllocChannel (void)
 void
 SND_ChannelStop (channel_t *chan)
 {
-	/* if chan->next is set, then this channel has already been freed. just
-	   deal with it gracefully.
-	   FIXME this is really a workaround for a problem in the interaction with
-	   cd_file.c
+	/* if chan->next is set, then this channel may have already been freed.
+	   a rather serious bug as it will create a loop in the free list
 	 */
-	if (!chan->next) {
-		chan->stop = 1;
-		chan->free = 1;
-		chan->next = free_channels;
-		free_channels = chan;
-	}
+	if (chan->next)
+		Sys_Error ("Stopping a freed channel");
+	chan->stop = 1;
+	chan->next = free_channels;
+	free_channels = chan;
 }
 
 void
@@ -152,25 +157,20 @@ SND_StopAllSounds (void)
 	int         i;
 
 	snd_num_statics = 0;
-	while (dynamic_channels) {
-		channel_t  *ch = dynamic_channels;
-		dynamic_channels = ch->next;
-		ch->next = 0;
-		SND_ChannelStop (ch);
-	}
-	while (looped_dynamic_channels) {
-		channel_t  *ch = looped_dynamic_channels;
-		looped_dynamic_channels = ch->next;
-		ch->next = 0;
-		SND_ChannelStop (ch);
-	}
-	for (i = 0; i < MAX_CHANNELS; i++)
-		if (!snd_channels[i].free)
-			SND_ChannelStop (&snd_channels[i]);
-	for (i = 0; i < NUM_AMBIENTS; i++)
+	while (dynamic_channels)
+		SND_ChannelStop (unlink_channel (&dynamic_channels));
+	while (looped_dynamic_channels)
+		SND_ChannelStop (unlink_channel (&looped_dynamic_channels));
+	for (i = 0; i < NUM_AMBIENTS; i++) {
+		if (ambient_channels[i])
+			SND_ChannelStop (ambient_channels[i]);
 		ambient_channels[i] = 0;
-	for (i = 0; i < MAX_STATIC_CHANNELS; i++)
+	}
+	for (i = 0; i < MAX_STATIC_CHANNELS; i++) {
+		if (static_channels[i])
+			SND_ChannelStop (static_channels[i]);
 		static_channels[i] = 0;
+	}
 	if (0) {
 		channel_t  *ch;
 		Sys_Printf ("SND_StopAllSounds\n");
@@ -286,11 +286,8 @@ SND_Channels_Init (void)
 	Cmd_AddCommand ("playvol", s_playvol_f, "Play selected sound effect at "
 					"selected volume (playvol pathto/sound.wav num");
 
-	for (i = 0; i < MAX_CHANNELS - 1; i++) {
+	for (i = 0; i < MAX_CHANNELS - 1; i++)
 		snd_channels[i].next = &snd_channels[i + 1];
-		snd_channels[i].free = 1;
-	}
-	snd_channels[i].free = 1;
 	free_channels = &snd_channels[0];
 	snd_total_channels = MAX_CHANNELS;
 
@@ -307,11 +304,8 @@ s_pick_channel (int entnum, int entchannel, int looped)
 
 	// check for finished non-looped sounds
 	for (count = 0, _ch = &dynamic_channels; *_ch; count++) {
-		ch = *_ch;
-		if (ch->done) {
-			*_ch = ch->next;
-			ch->next = 0;
-			SND_ChannelStop (ch);
+		if ((*_ch)->done) {
+			SND_ChannelStop (unlink_channel (_ch));
 			continue;
 		}
 		_ch = &(*_ch)->next;
@@ -319,12 +313,9 @@ s_pick_channel (int entnum, int entchannel, int looped)
 
 	// non-looped sounds are used to stop looped sounds on an ent channel
 	for (count = 0, _ch = &looped_dynamic_channels; *_ch; count++) {
-		ch = *_ch;
-		if (ch->entnum == entnum
-			&& (ch->entchannel == entchannel || entchannel == -1)) {
-			*_ch = ch->next;
-			ch->next = 0;
-			SND_ChannelStop (ch);
+		if ((*_ch)->entnum == entnum
+			&& ((*_ch)->entchannel == entchannel || entchannel == -1)) {
+			SND_ChannelStop (unlink_channel (_ch));
 			continue;
 		}
 		_ch = &(*_ch)->next;
@@ -565,14 +556,15 @@ SND_StartSound (int entnum, int entchannel, sfx_t *sfx, const vec3_t origin,
 				float fvol, float attenuation)
 {
 	int			 vol;
+	int          looped;
 	channel_t   *target_chan, *check;
 	sfx_t       *osfx;
 
 	if (!sfx)
 		return;
 	// pick a channel to play on
-	target_chan = s_pick_channel (entnum, entchannel,
-								  sfx->loopstart != (unsigned) -1);
+	looped = sfx->loopstart != (unsigned) -1;
+	target_chan = s_pick_channel (entnum, entchannel, looped);
 	if (!target_chan)
 		return;
 
@@ -587,8 +579,11 @@ SND_StartSound (int entnum, int entchannel, sfx_t *sfx, const vec3_t origin,
 	s_spatialize (target_chan);
 
 	// new channel
-	if (!(osfx = sfx->open (sfx)))
+	if (!(osfx = sfx->open (sfx))) {
+		SND_ChannelStop (unlink_channel (looped ? &looped_dynamic_channels
+												: &dynamic_channels));
 		return;
+	}
 	target_chan->pos = 0;
 	target_chan->end = 0;
 
@@ -601,7 +596,8 @@ SND_StartSound (int entnum, int entchannel, sfx_t *sfx, const vec3_t origin,
 		if (snd_check_channels (target_chan, check, osfx))
 			break;
 	if (!osfx->retain (osfx)) {
-		SND_ChannelStop (target_chan);
+		SND_ChannelStop (unlink_channel (looped ? &looped_dynamic_channels
+												: &dynamic_channels));
 		return;						// couldn't load the sound's data
 	}
 	target_chan->sfx = osfx;
@@ -610,11 +606,8 @@ SND_StartSound (int entnum, int entchannel, sfx_t *sfx, const vec3_t origin,
 static int
 s_check_stop (channel_t **_ch, int entnum, int entchannel)
 {
-	channel_t  *ch = *_ch;
-	if (ch->entnum == entnum && ch->entchannel == entchannel) {
-		*_ch = ch->next;
-		ch->next = 0;
-		SND_ChannelStop (ch);
+	if ((*_ch)->entnum == entnum && (*_ch)->entchannel == entchannel) {
+		SND_ChannelStop (unlink_channel (_ch));
 		return 1;
 	}
 	return 0;
@@ -642,6 +635,10 @@ SND_StaticSound (sfx_t *sfx, const vec3_t origin, float vol,
 
 	if (!sfx)
 		return;
+	if (sfx->loopstart == (unsigned int) -1) {
+		Sys_Printf ("Sound %s not looped\n", sfx->name);
+		return;
+	}
 
 	if (!static_channels[snd_num_statics]) {
 		if (!(static_channels[snd_num_statics] = SND_AllocChannel ())) {
@@ -651,11 +648,6 @@ SND_StaticSound (sfx_t *sfx, const vec3_t origin, float vol,
 	}
 
 	ss = static_channels[snd_num_statics];
-
-	if (sfx->loopstart == (unsigned int) -1) {
-		Sys_Printf ("Sound %s not looped\n", sfx->name);
-		return;
-	}
 
 	if (!(osfx = sfx->open (sfx)))
 		return;
