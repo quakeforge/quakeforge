@@ -600,8 +600,10 @@ SND_StartSound (int entnum, int entchannel, sfx_t *sfx, const vec3_t origin,
 	for (check = looped_dynamic_channels; check; check = check->next)
 		if (snd_check_channels (target_chan, check, osfx))
 			break;
-	if (!osfx->retain (osfx))
+	if (!osfx->retain (osfx)) {
+		SND_ChannelStop (target_chan);
 		return;						// couldn't load the sound's data
+	}
 	target_chan->sfx = osfx;
 }
 
