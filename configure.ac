@@ -585,9 +585,9 @@ AC_ARG_ENABLE(vorbis,
 
 HAVE_VORBIS=no
 if test "x$enable_vorbis" != "xno"; then
-  AM_PATH_OGG(HAVE_OGG=yes, HAVE_OGG=no)
+  XIPH_PATH_OGG(HAVE_OGG=yes, HAVE_OGG=no)
   if test "x$HAVE_OGG" = xyes; then
-    AM_PATH_VORBIS(HAVE_VORBIS=yes, HAVE_VORBIS=no)
+    XIPH_PATH_VORBIS(HAVE_VORBIS=yes, HAVE_VORBIS=no)
     if test "x$HAVE_VORBIS" = xyes; then
       AC_DEFINE(HAVE_VORBIS, 1, [define this if you have ogg/vorbis libs])
     fi
