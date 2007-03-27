@@ -112,8 +112,7 @@ SND_PaintChannels (unsigned endtime)
 	sfxbuffer_t *sc;
 
 	// clear the paint buffer
-	memset (snd_paintbuffer, 0, (endtime - snd_paintedtime) *
-			sizeof (portable_samplepair_t));
+	memset (snd_paintbuffer, 0, sizeof (snd_paintbuffer));
 
 	while (snd_paintedtime < endtime) {
 		// if snd_paintbuffer is smaller than DMA buffer
