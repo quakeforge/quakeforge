@@ -59,18 +59,18 @@ static int         snd_scaletable[32][256];
 /* CHANNEL MIXING */
 
 static inline int
-check_channel_end (channel_t *ch, int count, unsigned ltime)
+check_channel_end (channel_t *ch, sfx_t *sfx, int count, unsigned ltime)
 {
 	if (count <= 0 || ltime >= ch->end) {
-		if (ch->sfx->loopstart != (unsigned) -1) {
-			ch->pos = ch->sfx->loopstart;
-			ch->end = ltime + ch->sfx->length - ch->pos;
+		if (sfx->loopstart != (unsigned) -1) {
+			ch->pos = sfx->loopstart;
+			ch->end = ltime + sfx->length - ch->pos;
 		} else {			// channel just stopped
 			ch->done = 1;
-			return 0;
+			return 1;
 		}
 	}
-	return 1;
+	return 0;
 }
 
 static inline void
@@ -109,6 +109,7 @@ SND_PaintChannels (unsigned endtime)
 	unsigned    end, ltime;
 	int         i, count;
 	channel_t  *ch;
+	sfx_t      *sfx;
 	sfxbuffer_t *sc;
 
 	// clear the paint buffer
@@ -125,18 +126,18 @@ SND_PaintChannels (unsigned endtime)
 		// paint in the channels.
 		ch = snd_channels;
 		for (i = 0; i < snd_total_channels; i++, ch++) {
-			if (!ch->sfx)
+			if (!(sfx = ch->sfx))
 				continue;
 			if (ch->stop || ch->done) {
 				ch->done = 1;		// acknowledge stopped signal
 				continue;
 			}
-			sc = ch->sfx->getbuffer (ch->sfx);
-			if (!sc)
+			sc = sfx->getbuffer (sfx);
+			if (!sc)				// something went wrong with the sfx
 				continue;
 
 			if (!ch->end)
-				ch->end = snd_paintedtime + ch->sfx->length;
+				ch->end = snd_paintedtime + sfx->length;
 
 			ltime = snd_paintedtime;
 
@@ -151,7 +152,7 @@ SND_PaintChannels (unsigned endtime)
 					ltime += count;
 				}
 
-				if (!check_channel_end (ch, count, ltime))
+				if (check_channel_end (ch, sfx, count, ltime))
 					break;
 			}
 		}
