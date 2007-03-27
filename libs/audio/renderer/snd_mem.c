@@ -109,7 +109,7 @@ SND_CacheRelease (sfx_t *sfx)
 	// due to the possibly asynchronous nature of the mixer, the cache
 	// may have been flushed behind our backs
 	if (block->cache.data) {
-		if (!Cache_ReadLock (&bloc->cache)) {
+		if (!Cache_ReadLock (&block->cache)) {
 			Sys_Printf ("WARNING: taniwha screwed up in the sound engine: %s\n",
 						sfx->name);
 			return;
