@@ -170,7 +170,7 @@ Con_BasicCompleteCommandLine (inputline_t *il)
 		il->lines[il->edit_line][1] = '/';
 		strncpy(il->lines[il->edit_line] + 2, overwrite, strlen(overwrite));
 		il->linepos = strlen(overwrite) + 2;
-		if (c + v + o == 1 && overwrite[strlen(overwrite)-1] != '/') {
+		if (c + v == 1 && !o) {
 			il->lines[il->edit_line][il->linepos] = ' ';
 			il->linepos++;
 		}
