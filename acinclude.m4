@@ -1,5 +1,4 @@
 builtin(include,m4/acx_pthread.m4)
-builtin(include,m4/ao.m4)
 builtin(include,m4/libFLAC.m4)
 builtin(include,m4/libcurl.m4)
 builtin(include,m4/ogg.m4)
