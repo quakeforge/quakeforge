@@ -652,28 +652,25 @@ SND_StaticSound (sfx_t *sfx, const vec3_t origin, float vol,
 
 	ss = static_channels[snd_num_statics];
 
-	if (!sfx->retain (sfx))
-		return;
-
 	if (sfx->loopstart == (unsigned int) -1) {
 		Sys_Printf ("Sound %s not looped\n", sfx->name);
-		sfx->release (sfx);
 		return;
 	}
 
-	if (!(osfx = sfx->open (sfx))) {
-		sfx->release (sfx);
+	if (!(osfx = sfx->open (sfx)))
 		return;
-	}
+
 	VectorCopy (origin, ss->origin);
 	ss->master_vol = vol;
 	ss->dist_mult = (attenuation / 64) / sound_nominal_clip_dist;
-	ss->end = snd_paintedtime + sfx->length;
+	ss->end = snd_paintedtime + osfx->length;
 
 	s_spatialize (ss);
 	ss->oldphase = ss->phase;
-	snd_num_statics++;
 
+	if (!osfx->retain (osfx))
+		return;
+	snd_num_statics++;
 	ss->sfx = osfx;
 }
 
