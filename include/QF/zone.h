@@ -103,75 +103,42 @@ void *Z_Realloc (memzone_t *zone, void *ptr, int size);
 void Z_Print (memzone_t *zone);
 void Z_CheckHeap (memzone_t *zone);
 
+
+
 void *Hunk_Alloc (int size);		// returns 0 filled memory
 void *Hunk_AllocName (int size, const char *name);
-
-void *Hunk_HighAllocName (int size, const char *name);
-
 int	Hunk_LowMark (void);
 void Hunk_FreeToLowMark (int mark);
-
-int	Hunk_HighMark (void);
-void Hunk_FreeToHighMark (int mark);
-
 void *Hunk_TempAlloc (int size);
-
 void Hunk_Check (void);
 
-struct cache_user_s;
-typedef void * (*cache_allocator_t) (struct cache_user_s *c, int size, const char *name);
-typedef void (*cache_loader_t) (void *object, cache_allocator_t allocator);
 
-typedef struct cache_user_s
-{
+
+struct cache_user_s;
+typedef void *(*cache_allocator_t) (struct cache_user_s *c, int size, const char *name);
+typedef void (*cache_loader_t) (void *object, cache_allocator_t allocator);
+typedef struct cache_user_s {
 	void	*data;
 	void	*object;
 	cache_loader_t loader;
 } cache_user_t;
 
 void Cache_Flush (void);
-
 void *Cache_Check (cache_user_t *c);
 // returns the cached data, and moves to the head of the LRU list
 // if present, otherwise returns NULL
 
 void Cache_Free (cache_user_t *c);
-void Cache_FreeLow (int new_low_hunk);
-void Cache_FreeHigh (int new_high_hunk);
-
 void *Cache_Alloc (cache_user_t *c, int size, const char *name);
 // Returns NULL if all purgable data was tossed and there still
 // wasn't enough room.
-
 void Cache_Report (void);
-
 void Cache_Add (cache_user_t *c, void *object, cache_loader_t loader);
 void Cache_Remove (cache_user_t *c);
 void *Cache_Get (cache_user_t *c);
 void *Cache_TryGet (cache_user_t *c);
 void Cache_Release (cache_user_t *c);
 int Cache_ReadLock (cache_user_t *c);
-
-/* Flags */
-#define QA_NONE			0
-#define QA_FAILURE		1
-#define QA_PREVIOUS		2
-#define QA_SIZE			4
-#define QA_ZEROED		8
-
-/* Modes used with the QA_FAILURE flag */
-#define QA_NOFAIL		1
-#define QA_LATEFAIL		2
-#define QA_EARLYFAIL	3
-
-extern size_t (*QA_alloc_callback) (size_t size);
-
-void *QA_alloc (unsigned modes, ...);
-void *QA_malloc (size_t size);
-void *QA_calloc (size_t nmemb, size_t size);
-void *QA_realloc (void *ptr, size_t size);
-void QA_free (void *ptr);
-char *QA_strdup (const char *s);
 
 //@}
 

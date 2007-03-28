@@ -41,20 +41,6 @@ static __attribute__ ((used)) const char rcsid[] =
 #include <stdarg.h>
 #include <stdlib.h>
 
-#undef MMAPPED_CACHE
-#ifdef MMAPPED_CACHE
-# ifdef HAVE_UNISTD_H
-#  include <unistd.h>
-# endif
-# include <fcntl.h>
-# include <sys/mman.h>
-# include <sys/types.h>
-# include <sys/stat.h>
-# ifndef _POSIX_MAPPED_FILES
-#  error No _POSIX_MAPPED_FILES?  erk!
-# endif
-#endif
-
 #include "QF/cmd.h"
 #include "QF/cvar.h"
 #include "QF/qargs.h"
@@ -62,6 +48,9 @@ static __attribute__ ((used)) const char rcsid[] =
 #include "QF/zone.h"
 
 #include "compat.h"
+
+static void Cache_FreeLow (int new_low_hunk);
+static void Cache_FreeHigh (int new_high_hunk);
 
 #define	ZONEID			0x1d4a11
 #define	HUNK_SENTINAL	0x1df001ed
@@ -471,18 +460,7 @@ Hunk_FreeToLowMark (int mark)
 	hunk_low_used = mark;
 }
 
-VISIBLE int
-Hunk_HighMark (void)
-{
-	if (hunk_tempactive) {
-		hunk_tempactive = false;
-		Hunk_FreeToHighMark (hunk_tempmark);
-	}
-
-	return hunk_high_used;
-}
-
-VISIBLE void
+static void
 Hunk_FreeToHighMark (int mark)
 {
 	if (hunk_tempactive) {
@@ -495,7 +473,18 @@ Hunk_FreeToHighMark (int mark)
 	hunk_high_used = mark;
 }
 
-VISIBLE void *
+static int
+Hunk_HighMark (void)
+{
+	if (hunk_tempactive) {
+		hunk_tempactive = false;
+		Hunk_FreeToHighMark (hunk_tempmark);
+	}
+
+	return hunk_high_used;
+}
+
+static void *
 Hunk_HighAllocName (int size, const char *name)
 {
 	hunk_t     *h;
@@ -570,24 +559,11 @@ typedef struct cache_system_s {
 	struct cache_system_s *lru_prev, *lru_next;	// for LRU flushing 
 } cache_system_t;
 
-cache_system_t cache_head;
-int cache_writelock;
+static cache_system_t cache_head;
 
 static cache_system_t *Cache_TryAlloc (int size, qboolean nobottom);
-static void Cache_RealFree (cache_user_t *c);
 static void Cache_Profile (void);
-static void *Cache_RealAlloc (cache_user_t *c, int size, const char *name);
 
-#define CACHE_WRITE_LOCK	{ if (cache_writelock) \
-								Sys_Error ("Cache double-locked!"); \
-							  else \
-								cache_writelock++; }
-#define CACHE_WRITE_UNLOCK	{ if (!cache_writelock) \
-								Sys_Error ("Cache already unlocked!"); \
-							  else \
-								cache_writelock--; }
-
-#ifndef MMAPPED_CACHE
 static void
 Cache_Move (cache_system_t * c)
 {
@@ -601,25 +577,23 @@ Cache_Move (cache_system_t * c)
 		memcpy (new + 1, c + 1, c->size - sizeof (cache_system_t));
 		new->user = c->user;
 		memcpy (new->name, c->name, sizeof (new->name));
-		Cache_RealFree (c->user);
+		Cache_Free (c->user);
 		new->user->data = (void *) (new + 1);
 	} else {
 		Sys_DPrintf ("cache_move failed\n");
 
-		Cache_RealFree (c->user);			// tough luck...
+		Cache_Free (c->user);			// tough luck...
 	}
 }
-#endif
 
 /*
 	Cache_FreeLow
 
 	Throw things out until the hunk can be expanded to the given point
 */
-void
+static void
 Cache_FreeLow (int new_low_hunk)
 {
-#ifndef MMAPPED_CACHE
 	cache_system_t *c;
 
 	while (1) {
@@ -630,7 +604,6 @@ Cache_FreeLow (int new_low_hunk)
 			return;						// there is space to grow the hunk
 		Cache_Move (c);					// reclaim the space
 	}
-#endif
 }
 
 /*
@@ -638,10 +611,9 @@ Cache_FreeLow (int new_low_hunk)
 
 	Throw things out until the hunk can be expanded to the given point
 */
-void
+static void
 Cache_FreeHigh (int new_high_hunk)
 {
-#ifndef MMAPPED_CACHE
 	cache_system_t *c, *prev;
 
 	prev = NULL;
@@ -652,13 +624,12 @@ Cache_FreeHigh (int new_high_hunk)
 		if ((byte *) c + c->size <= hunk_base + hunk_size - new_high_hunk)
 			return;						// there is space to grow the hunk
 		if (c == prev)
-			Cache_RealFree (c->user);	// didn't move out of the way
+			Cache_Free (c->user);	// didn't move out of the way
 		else {
 			Cache_Move (c);				// try to move it
 			prev = c;
 		}
 	}
-#endif
 }
 
 static inline void
@@ -694,7 +665,7 @@ Cache_FreeLRU (void)
 		;
 	if (cs == &cache_head)
 		return 0;
-	Cache_RealFree (cs->user);
+	Cache_Free (cs->user);
 	return 1;
 }
 
@@ -707,7 +678,6 @@ Cache_FreeLRU (void)
 static cache_system_t *
 Cache_TryAlloc (int size, qboolean nobottom)
 {
-#ifndef MMAPPED_CACHE
 	cache_system_t *cs, *new;
 
 	// is the cache completely empty?
@@ -772,29 +742,6 @@ Cache_TryAlloc (int size, qboolean nobottom)
 	}
 
 	return NULL;						// couldn't allocate
-#else
-	cache_system_t *new;
-	int fd;
-
-	fd = open ("/dev/zero", O_RDWR);
-	if (fd < 0)
-		return NULL;
-	new = mmap (0, size, PROT_READ | PROT_WRITE,
-				MAP_PRIVATE, fd, 0);
-	close (fd);
-	if (new == MAP_FAILED)
-		return NULL;
-
-	new->size = size;
-	new->next = &cache_head;
-	new->prev = cache_head.prev;
-	cache_head.prev->next = new;
-	cache_head.prev = new;
-
-	Cache_MakeLRU (new);
-
-	return new;
-#endif
 }
 
 /*
@@ -805,15 +752,13 @@ Cache_TryAlloc (int size, qboolean nobottom)
 void
 Cache_Flush (void)
 {
-	CACHE_WRITE_LOCK;
 	while (cache_head.next != &cache_head) {
 		if (!cache_head.next->user->data)
 			Sys_Error ("Cache_Flush: user/system out of sync for "
 					   "'%s' with %d size",
 					   cache_head.next->name, cache_head.next->size);
-		Cache_RealFree (cache_head.next->user);	// reclaim the space
+		Cache_Free (cache_head.next->user);	// reclaim the space
 	}
-	CACHE_WRITE_UNLOCK;
 }
 
 static void
@@ -821,21 +766,17 @@ Cache_Print (void)
 {
 	cache_system_t *cd;
 
-	CACHE_WRITE_LOCK;
 	for (cd = cache_head.next; cd != &cache_head; cd = cd->next) {
 		Sys_Printf ("%8i : %s\n", cd->size, cd->name);
 	}
-	CACHE_WRITE_UNLOCK;
 }
 
 VISIBLE void
 Cache_Report (void)
 {
-	CACHE_WRITE_LOCK;
 	Sys_DPrintf ("%4.1f megabyte data cache\n",
 				 (hunk_size - hunk_high_used -
 				  hunk_low_used) / (float) (1024 * 1024));
-	CACHE_WRITE_UNLOCK;
 }
 
 static void
@@ -860,14 +801,6 @@ Cache_Init (void)
 VISIBLE void
 Cache_Free (cache_user_t *c)
 {
-	CACHE_WRITE_LOCK;
-	Cache_RealFree (c);
-	CACHE_WRITE_UNLOCK;
-}
-
-static void
-Cache_RealFree (cache_user_t *c)
-{
 	cache_system_t *cs;
 
 	if (!c->data)
@@ -885,14 +818,10 @@ Cache_RealFree (cache_user_t *c)
 
 	Cache_UnlinkLRU (cs);
 
-#ifdef MMAPPED_CACHE
-	if (munmap (cs, cs->size))
-		Sys_Error ("Cache_Free: munmap failed!");
-#endif
 }
 
-static inline void *
-Cache_RealCheck (cache_user_t *c)
+VISIBLE void *
+Cache_Check (cache_user_t *c)
 {
 	cache_system_t *cs;
 
@@ -909,29 +838,7 @@ Cache_RealCheck (cache_user_t *c)
 }
 
 VISIBLE void *
-Cache_Check (cache_user_t *c)
-{
-	void *mem;
-
-	CACHE_WRITE_LOCK;
-	mem = Cache_RealCheck (c);
-	CACHE_WRITE_UNLOCK;
-	return mem;
-}
-
-VISIBLE void *
 Cache_Alloc (cache_user_t *c, int size, const char *name)
-{
-	void *mem;
-
-	CACHE_WRITE_LOCK;
-	mem = Cache_RealAlloc (c, size, name);
-	CACHE_WRITE_UNLOCK;
-	return mem;
-}
-
-static void *
-Cache_RealAlloc (cache_user_t *c, int size, const char *name)
 {
 	cache_system_t *cs;
 
@@ -957,7 +864,7 @@ Cache_RealAlloc (cache_user_t *c, int size, const char *name)
 			Sys_Error ("Cache_Alloc: out of memory");
 	}
 
-	return Cache_RealCheck (c);
+	return Cache_Check (c);
 }
 
 static void
@@ -967,8 +874,6 @@ Cache_Profile (void)
 	unsigned int i;
 	unsigned int items[31] = {0}, sizes[31] = {0};
 	int count = 0, total = 0;
-
-	CACHE_WRITE_LOCK;
 
 	cs = cache_head.next;
 	while (cs != &cache_head) {
@@ -993,41 +898,31 @@ Cache_Profile (void)
 	}
 	Sys_Printf ("Total allocations: %d in %d allocations, average of"
 				" %d per allocation\n", total, count, total / count);
-
-	CACHE_WRITE_UNLOCK;
 }
 
 VISIBLE void
 Cache_Add (cache_user_t *c, void *object, cache_loader_t loader)
 {
-	CACHE_WRITE_LOCK;
-
 	if (c->data || c->object || c->loader)
 		Sys_Error ("Cache_Add: cache item already exists!");
 
 	c->object = object;
 	c->loader = loader;
 
-//	c->loader (c, Cache_RealAlloc); // for debugging
-
-	CACHE_WRITE_UNLOCK;
+//	c->loader (c, Cache_Alloc); // for debugging
 }
 
-void
+VISIBLE void
 Cache_Remove (cache_user_t *c)
 {
-	CACHE_WRITE_LOCK;
-
 	if (!c->object || !c->loader)
 		Sys_Error ("Cache_Remove: already removed!");
 
-	if (Cache_RealCheck (c))
-		Cache_RealFree (c);
+	if (Cache_Check (c))
+		Cache_Free (c);
 
 	c->object = 0;
 	c->loader = 0;
-
-	CACHE_WRITE_UNLOCK;
 }
 
 VISIBLE void *
@@ -1035,17 +930,14 @@ Cache_TryGet (cache_user_t *c)
 {
 	void *mem;
 
-	CACHE_WRITE_LOCK;
-
-	mem = Cache_RealCheck (c);
+	mem = Cache_Check (c);
 	if (!mem) {
-		c->loader (c->object, Cache_RealAlloc);
-		mem = Cache_RealCheck (c);
+		c->loader (c->object, Cache_Alloc);
+		mem = Cache_Check (c);
 	}
 	if (mem)
 		(((cache_system_t *)c->data) - 1)->readlock++;
 
-	CACHE_WRITE_UNLOCK;
 	return mem;
 }
 
@@ -1064,7 +956,6 @@ Cache_Release (cache_user_t *c)
 {
 	int *readlock;
 
-	CACHE_WRITE_LOCK;
 	readlock = &(((cache_system_t *)c->data) - 1)->readlock;
 
 	if (!*readlock)
@@ -1073,8 +964,7 @@ Cache_Release (cache_user_t *c)
 	(*readlock)--;
 
 //	if (!*readlock)
-//		Cache_RealFree (c); // for debugging
-	CACHE_WRITE_UNLOCK;
+//		Cache_Free (c); // for debugging
 }
 
 VISIBLE int
@@ -1083,100 +973,6 @@ Cache_ReadLock (cache_user_t *c)
 	return (((cache_system_t *)c->data) - 1)->readlock;
 }
 
-// QA_alloc and friends =======================================================
-
-size_t (*QA_alloc_callback) (size_t size);
-
-void *
-QA_alloc (unsigned flags, ...)
-{
-	int failure = QA_NOFAIL;
-	size_t size = 0;
-	qboolean zeroed = false;
-	va_list ap;
-	void *mem;
-	void *ptr = 0;
-
-	if (flags & ~(QA_FAILURE | QA_PREVIOUS | QA_SIZE | QA_ZEROED))
-		Sys_Error ("QA_alloc: bad flags: %u", flags);
-
-	va_start (ap, flags);
-	if (flags & QA_PREVIOUS)
-		ptr = va_arg (ap, void *);
-	if (flags & QA_SIZE)
-		size = va_arg (ap, size_t);
-	if (flags & QA_ZEROED)
-		zeroed = true;
-	if (flags & QA_FAILURE)
-		failure = va_arg (ap, int);
-	va_end (ap);
-
-	if (failure != QA_NOFAIL && failure != QA_LATEFAIL && failure
-		!= QA_EARLYFAIL)
-		Sys_Error ("QA_alloc: invalid failure type: %u", failure);
-
-	if (size) {
-		do {
-			if (ptr) {
-				if (zeroed)
-					Sys_Error ("QA_alloc: Zeroing reallocated memory not yet "
-							   "supported");
-				else
-					mem = realloc (ptr, size);
-			} else {
-				if (zeroed)
-					mem = calloc (size, 1);
-				else
-					mem = malloc (size);
-			}
-		} while (failure != QA_EARLYFAIL && !mem
-				 && QA_alloc_callback && QA_alloc_callback (size));
-
-		if (!mem && failure == QA_NOFAIL)
-			Sys_Error ("QA_alloc: could not allocate %d bytes!", (int)size);
-
-		return mem;
-	} else {
-		if (!ptr)
-			Sys_Error ("QA_alloc: can't free a NULL pointers!");
-		free (ptr);
-		return 0;
-	}
-}
-
-void *
-QA_malloc (size_t size)
-{
-	return QA_alloc (QA_SIZE, size);
-}
-
-void *
-QA_calloc (size_t nmemb, size_t size)
-{
-	return QA_alloc (QA_ZEROED | QA_SIZE, nmemb * size);
-}
-
-void *
-QA_realloc (void *ptr, size_t size)
-{
-	return QA_alloc (QA_PREVIOUS | QA_SIZE, ptr, size);
-}
-
-void 
-QA_free (void *ptr)
-{
-	QA_alloc (QA_PREVIOUS, ptr);
-}
-
-char *
-QA_strdup (const char *s)
-{
-	char *mem;
-
-	mem = QA_malloc (strlen (s) + 1);
-	strcpy (mem, s);
-	return mem;
-}
 
 //============================================================================
 
