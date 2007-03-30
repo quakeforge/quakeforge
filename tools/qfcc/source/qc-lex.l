@@ -99,26 +99,19 @@ NUM		({DIGIT}+("."{DIGIT}*)?)
 s		[ \t]
 m		([\-+]?)
 
-%x		grab_frame grab_other
+%x		grab_frame grab_other comment
 
 %%
 
-"/*"				{
-						int c;
-						do {
-							while ((c = input ()) != '*' && c != EOF
-								   && c != '\n')
-								;
-							while (c == '*')
-								c = input ();
-							if (c == EOF)
-								error (0, "EOF in comment");
-							if (c == '\n')
-								pr.source_line++;
-						} while (c != '/' && c != EOF);
+"/*"				{ BEGIN (comment); }
+<comment>"*/"		{ BEGIN (INITIAL); }
+<comment>\r*\n		{ pr.source_line++; }
+<comment>.			/* nothing to do */
+<comment><<EOF>>	{
+						error (0, "EOF in comment");
+						return 0;
 					}
-
-"//".*	/* nothing to do */
+"//".*				/* nothing to do */
 
 {DIGIT}+			{
 						yylval.integer_val = atoi (yytext);
