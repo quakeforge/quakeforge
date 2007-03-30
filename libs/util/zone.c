@@ -561,7 +561,27 @@ struct cache_system_s {
 static cache_system_t cache_head;
 
 static cache_system_t *Cache_TryAlloc (size_t size, qboolean nobottom);
+#if 0
+static void
+check_cache (void)
+{
+	cache_system_t *cs;
+	int used = hunk_tempactive ? hunk_tempmark : hunk_high_used;
 
+	for (cs = cache_head.prev; cs != &cache_head; cs = cs->prev)
+		if (cs->prev != &cache_head) {
+			if ((byte *) cs + cs->size != (byte *) cs->prev)
+				Sys_Error ("inconsistent cache %p %p %d %d", cs, cs->prev,
+						   (int)cs->size,
+						   (int) ((char *)cs->prev - (char *)cs));
+			if (hunk_size - ((byte*)cs - hunk_base) > used)
+				Sys_Error ("cache block out of high hunk");
+		}
+	if (cache_head.prev != &cache_head &&
+		hunk_size - ((byte*) cache_head.prev - hunk_base) != used)
+		Sys_Error ("cache bottom not at bottom of high hunk");
+}
+#endif
 static void
 Cache_Move (cache_system_t * c)
 {
@@ -631,25 +651,12 @@ Cache_MakeLRU (cache_system_t * cs)
 	cache_head.lru_next = cs;
 }
 
-static void
-check_cache (void)
-{
-	cache_system_t *cs;
-
-	for (cs = cache_head.prev; cs != &cache_head; cs = cs->prev)
-		if (cs->prev != &cache_head
-			&& (byte *) cs + cs->size != (byte *) cs->prev)
-			Sys_Error ("inconsistent cache %p %p %d %d", cs, cs->prev,
-					   (int)cs->size,
-					   (int) ((char *)cs->prev - (char *)cs));
-}
-
 static qboolean
 Cache_FreeLRU (void)
 {
 	cache_system_t *cs;
 
-	check_cache ();
+	//check_cache ();
 	for (cs = cache_head.lru_prev;
 		 cs != &cache_head && cs->readlock; cs = cs->lru_prev)
 		;
@@ -680,6 +687,7 @@ Cache_TryAlloc (size_t size, qboolean nobottom)
 {
 	cache_system_t *cs, *new;
 
+	//check_cache ();
 	// is the cache completely empty?
 	if (!nobottom && cache_head.prev == &cache_head) {
 		new = (cache_system_t *) Hunk_HighAlloc (size);
@@ -690,6 +698,7 @@ Cache_TryAlloc (size_t size, qboolean nobottom)
 		cache_head.prev = cache_head.next = new;
 		new->prev = new->next = &cache_head;
 		Cache_MakeLRU (new);
+		//check_cache ();
 		return new;
 	}
 
@@ -708,6 +717,7 @@ Cache_TryAlloc (size_t size, qboolean nobottom)
 				new->size = size;
 				cs->size -= size;
 				link_cache_system (new, cs);
+				//check_cache ();
 			}
 			Cache_MakeLRU (new);
 			return new;
@@ -724,6 +734,7 @@ Cache_TryAlloc (size_t size, qboolean nobottom)
 		new->size = size;
 		link_cache_system (new, &cache_head);
 		Cache_MakeLRU (new);
+		//check_cache ();
 		return new;
 	}
 
@@ -797,12 +808,14 @@ Cache_Init (void)
 void
 Cache_Flush (void)
 {
-	while (cache_head.next != &cache_head) {
-		if (!cache_head.next->user->data)
+	// cache_head.prev is guaranteed to not be free because it's the bottom
+	// one and Cache_Free actually properly releases it
+	while (cache_head.prev != &cache_head) {
+		if (!cache_head.prev->user->data)
 			Sys_Error ("Cache_Flush: user/system out of sync for "
 					   "'%s' with %d size",
-					   cache_head.next->name, (int) cache_head.next->size);
-		Cache_Free (cache_head.next->user);	// reclaim the space
+					   cache_head.prev->name, (int) cache_head.prev->size);
+		Cache_Free (cache_head.prev->user);	// reclaim the space
 	}
 }
 
@@ -861,7 +874,10 @@ Cache_Free (cache_user_t *c)
 	if (cs->next == &cache_head) {
 		cs->next->prev = cs->prev;
 		cs->prev->next = cs->next;
-		Hunk_FreeToHighMark (hunk_high_used - cs->size);
+		if (cs->prev != &cache_head)
+			Hunk_FreeToHighMark (hunk_size - ((byte*)cs->prev - hunk_base));
+		else
+			Hunk_FreeToHighMark (0);
 	}
 	//check_cache ();
 
