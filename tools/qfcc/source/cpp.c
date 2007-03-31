@@ -175,7 +175,7 @@ intermediate_file (dstring_t *ifile, const char *filename, const char *ext,
 			dsprintf (ifile, "%s.%s", temp, ext);
 		}
 		free (basename);
-	} if (local) {
+	} else if (local) {
 		char       *temp2 = strrchr (this_program, PATH_SEPARATOR);
 		dsprintf (ifile, "%sXXXXXX", temp2 ? temp2 + 1 : this_program);
 	} else {
