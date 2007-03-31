@@ -37,6 +37,7 @@ static __attribute__ ((used)) const char rcsid[] =
 #include "QF/cmd.h"
 #include "QF/cvar.h"
 #include "QF/plugin.h"
+#include "QF/qargs.h"
 #include "QF/qtypes.h"
 #include "QF/sys.h"
 
@@ -96,6 +97,10 @@ CDAudio_Init (void)
 	PI_RegisterPlugins (cd_plugin_list);
 	cd_plugin = Cvar_Get ("cd_plugin", "file", CVAR_ROM, NULL,
 						  "CD Plugin to use");
+
+	if (COM_CheckParm ("-nocdaudio"))
+		return 0;
+
 	if (!*cd_plugin->string) {
 		Sys_Printf ("Not loading CD due to no driver\n");
 		return 0;

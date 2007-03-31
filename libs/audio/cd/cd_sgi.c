@@ -333,9 +333,6 @@ I_SGI_Init (void)
 {
 	int         i;
 
-	if (COM_CheckParm ("-nocdaudio"))
-		return ;
-
 	bgmvolume = Cvar_Get ("bgmvolume", "1", CVAR_ARCHIVE, NULL,
 						  "Volume of CD music");
 	if ((i = COM_CheckParm ("-cddev")) != 0 && i < com_argc - 1) {
