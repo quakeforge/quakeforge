@@ -439,6 +439,10 @@ do_grab (char *token)
 		;
 	if (!strcmp (token, "frame"))
 		return -grab_frame;
+	if (!strcmp (token, "frame_reset")) {
+		clear_frame_macros ();
+		return -grab_other;
+	}
 	if (Hash_Find (grab_tab, token))
 		return -grab_other;
 	frame = Hash_Find (frame_tab, token);
