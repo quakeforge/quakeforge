@@ -2766,11 +2766,19 @@ static void
 report_function (expr_t *e)
 {
 	static function_t *last_func = (function_t *)-1L;
+	static string_t last_file;
 	string_t    file = pr.source_file;
+	srcline_t  *srcline;
 
 	if (e)
 		file = e->file;
 
+	if (file != last_file) {
+		for (srcline = pr.srcline_stack; srcline; srcline = srcline->next)
+			fprintf (stderr, "In file included from %s:%d:\n",
+					 G_GETSTR (srcline->source_file), srcline->source_line);
+	}
+	last_file = file;
 	if (current_func != last_func) {
 		if (current_func) {
 			fprintf (stderr, "%s: In function `%s':\n", G_GETSTR (file),
@@ -2804,13 +2812,13 @@ _warning (expr_t *e, const char *fmt, va_list args)
 	fputs ("\n", stderr);
 }
 
-void
+expr_t *
 notice (expr_t *e, const char *fmt, ...)
 {
 	va_list     args;
 
 	if (options.notices.silent)
-		return;
+		return e;
 
 	va_start (args, fmt);
 	if (options.notices.promote) {
@@ -2829,9 +2837,10 @@ notice (expr_t *e, const char *fmt, ...)
 		fputs ("\n", stderr);
 	}
 	va_end (args);
+	return e;
 }
 
-void
+expr_t *
 warning (expr_t *e, const char *fmt, ...)
 {
 	va_list     args;
@@ -2839,6 +2848,7 @@ warning (expr_t *e, const char *fmt, ...)
 	va_start (args, fmt);
 	_warning (e, fmt, args);
 	va_end (args);
+	return e;
 }
 
 expr_t *

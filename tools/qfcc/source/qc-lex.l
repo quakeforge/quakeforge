@@ -85,7 +85,10 @@ int do_grab (char *token);
 
 void add_frame_macro (char *token);
 
-const char *make_string (char *token);
+const char *make_string (char *token, char **end);
+
+void push_source_file (void);
+void pop_source_file (void);
 
 extern YYSTYPE yylval;
 
@@ -148,7 +151,7 @@ m		([\-+]?)
 @					return '@';
 
 \"(\\.|[^"\\])*\"	{
-						yylval.string_val = make_string (yytext);
+						yylval.string_val = make_string (yytext, 0);
 						return STRING_VAL;
 					}
 
@@ -169,7 +172,7 @@ m		([\-+]?)
 					}
 
 '(\\[^xX0-7\r\n]|[^'\r\n]|\\[xX][0-9A-Fa-f]+|\\[0-7]+)*'	{
-						const char *str = make_string (yytext);
+						const char *str = make_string (yytext, 0);
 
 						if (str[1])
 							warning (0, "multibyte char constant");
@@ -184,7 +187,8 @@ m		([\-+]?)
 						char *s;
 						const char *str;
 						int line;
-						
+						int flags;
+
 						p = yytext + 1;
 						line = strtol (p, &s, 10);
 						p = s;
@@ -192,8 +196,20 @@ m		([\-+]?)
 							p++;
 						if (!*p)
 							error (0, "Unexpected end of file");
-						str = make_string (p);		// grab the filename
-						while (*p && *p != '\n')	// ignore flags
+						str = make_string (p, &s);		// grab the filename
+						p = s;
+						while (isspace ((unsigned char)*p))
+							p++;
+						flags = strtol (p, &s, 10);
+						switch (flags) {
+							case 1:
+								push_source_file ();
+								break;
+							case 2:
+								pop_source_file ();
+								break;
+						}
+						while (*p && *p != '\n')	// ignore rest
 							p++;
 						pr.source_line = line - 1;
 						pr.source_file = ReuseString (strip_path (str));
@@ -475,7 +491,7 @@ clear_frame_macros (void)
 }
 
 const char *
-make_string (char *token)
+make_string (char *token, char **end)
 {
 	char        s[2];
 	int         c;
@@ -637,7 +653,38 @@ make_string (char *token)
 		dstring_appendstr (str, s);
 	} while (1);
 
+	if (end)
+		*end = token;
+
 	return save_string (str->str);
+}
+
+static srcline_t *free_srclines;
+
+void
+push_source_file (void)
+{
+	srcline_t  *srcline;
+	ALLOC (16, srcline_t, srclines, srcline);
+	srcline->source_file = pr.source_file;
+	srcline->source_line = pr.source_line;
+	srcline->next = pr.srcline_stack;
+	pr.srcline_stack = srcline;
+}
+
+void
+pop_source_file (void)
+{
+	srcline_t  *tmp;
+
+	if (!pr.srcline_stack) {
+		notice (0, "unbalanced #includes. bug in preprocessor?");
+		return;
+	}
+	tmp = pr.srcline_stack;
+	pr.srcline_stack = tmp->next;
+	tmp->next = free_srclines;
+	free_srclines = tmp;
 }
 
 #ifdef YY_FLEX_REALLOC_HACK
