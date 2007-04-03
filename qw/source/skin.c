@@ -171,6 +171,13 @@ Skin_Cache (skin_t *skin)
 			return NULL;
 		}
 	}
+
+	pixels = 320 * 200;
+	out = Cache_Alloc (&skin->data.cache, field_offset (tex_t, data[pixels]),
+					   skin->name);
+	if (!out)
+		Sys_Error ("Skin_Cache: couldn't allocate");
+
 	tex = LoadPCX (file, 0, vid.palette);
 	Qclose (file);
 
@@ -179,11 +186,7 @@ Skin_Cache (skin_t *skin)
 		Con_Printf ("Bad skin %s\n", name);
 		return NULL;
 	}
-	pixels = 320 * 200;
 
-	out = Cache_Alloc (&skin->data.cache, field_offset (tex_t, data[pixels]), skin->name);
-	if (!out)
-		Sys_Error ("Skin_Cache: couldn't allocate");
 	opix = out->data;
 	out->width = 320;
 	out->height = 200;
