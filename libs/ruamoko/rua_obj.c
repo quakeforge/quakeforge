@@ -292,7 +292,7 @@ static const char *
 selector_get_key (void *s, void *_pr)
 {
 	progs_t    *pr = (progs_t *) _pr;
-	return PR_GetString (pr, pr->selector_names[(long) s]);
+	return PR_GetString (pr, pr->selector_names[(intptr_t) s]);
 }
 
 static const char *
@@ -301,10 +301,10 @@ class_get_key (void *c, void *pr)
 	return PR_GetString ((progs_t *)pr, ((pr_class_t *)c)->name);
 }
 
-static unsigned long
+static uintptr_t
 load_methods_get_hash (void *m, void *pr)
 {
-	return (unsigned long) m;
+	return (uintptr_t) m;
 }
 
 static int
@@ -408,11 +408,11 @@ static pr_sel_t *
 sel_register_typed_name (progs_t *pr, const char *name, const char *types,
 						 pr_sel_t *sel)
 {
-	long		index;
+	intptr_t	index;
 	int			is_new = 0;
 	obj_list   *l;
 
-	index = (long) Hash_Find (pr->selector_hash, name);
+	index = (intptr_t) Hash_Find (pr->selector_hash, name);
 	if (index) {
 		for (l = pr->selector_sels[index]; l; l = l->next) {
 			pr_sel_t   *s = l->data;
@@ -586,8 +586,8 @@ obj_send_message_in_list (progs_t *pr, pr_method_list_t *method_list,
 		pr_method_t *mth = &method_list->method_list[i];
 		if (mth->method_name && sel_eq (&G_STRUCT (pr, pr_sel_t,
 												   mth->method_name), op)
-			&& !Hash_FindElement (pr->load_methods, (void *) (long) mth->method_imp)) {
-			Hash_AddElement (pr->load_methods, (void *) (long) mth->method_imp);
+			&& !Hash_FindElement (pr->load_methods, (void *) (intptr_t) mth->method_imp)) {
+			Hash_AddElement (pr->load_methods, (void *) (intptr_t) mth->method_imp);
 
 			PR_ExecuteProgram (pr, mth->method_imp);
 			break;

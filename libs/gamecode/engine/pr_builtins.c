@@ -62,7 +62,7 @@ builtin_get_key (void *_bi, void *unused)
 	return bi->name;
 }
 
-static unsigned long
+static uintptr_t
 builtin_get_hash (void *_bi, void *unused)
 {
 	builtin_t *bi = (builtin_t *)_bi;

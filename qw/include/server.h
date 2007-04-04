@@ -627,7 +627,7 @@ extern int fp_messages;
 extern int fp_persecond;
 extern int fp_secondsdead;
 extern struct cvar_s *pausable;
-extern struct cvar_s *nouse;
+extern qboolean nouse;
 
 extern char fp_msg[255];
 

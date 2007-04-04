@@ -327,7 +327,7 @@ s_soundinfo_f (void)
 	Sys_Printf ("%5d samplebits\n", snd_shm->samplebits);
 	Sys_Printf ("%5d submission_chunk\n", snd_shm->submission_chunk);
 	Sys_Printf ("%5d speed\n", snd_shm->speed);
-	Sys_Printf ("0x%lx dma buffer\n", (unsigned long) snd_shm->buffer);
+	Sys_Printf ("0x%p dma buffer\n", snd_shm->buffer);
 	Sys_Printf ("%5d total_channels\n", snd_total_channels);
 }
 

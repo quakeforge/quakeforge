@@ -135,10 +135,10 @@ BaseWindingForPlane (plane_t *p)
 winding_t *
 CopyWinding (winding_t *w)
 {
-	int         size;
+	size_t      size;
 	winding_t  *c;
 
-	size = (long) &((winding_t *) 0)->points[w->numpoints];
+	size = (size_t) (uintptr_t) &((winding_t *) 0)->points[w->numpoints];
 	c = malloc (size);
 	memcpy (c, w, size);
 	return c;
@@ -147,10 +147,11 @@ CopyWinding (winding_t *w)
 winding_t *
 CopyWindingReverse (winding_t *w)
 {
-	int         i, size;
+	int         i;
+	size_t      size;
 	winding_t  *c;
 
-	size = (long) &((winding_t *) 0)->points[w->numpoints];
+	size = (size_t) (uintptr_t) &((winding_t *) 0)->points[w->numpoints];
 	c = malloc (size);
 	c->numpoints = w->numpoints;
 	for (i = 0; i < w->numpoints; i++) {
@@ -327,7 +328,7 @@ DivideWinding (winding_t *in, plane_t *split, winding_t **front,
 winding_t *
 NewWinding (int points)
 {
-	int         size;
+	size_t      size;
 	winding_t  *w;
 
 	if (points < 3)
@@ -337,7 +338,7 @@ NewWinding (int points)
 	if (c_activewindings > c_peakwindings)
 		c_peakwindings = c_activewindings;
 
-	size = (long) &((winding_t *) 0)->points[points];
+	size = (size_t) (uintptr_t) &((winding_t *) 0)->points[points];
 	w = malloc (size);
 	memset (w, 0, size);
 

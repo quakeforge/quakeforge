@@ -73,7 +73,7 @@ GIB_Execute_Generate_Composite (struct cbuf_s *cbuf)
 	for (i = 0; i < args->argc; i++)
 		// now that arg_composite is done we can add the pointer to the stored
 		// offsets and get valid pointers. This *should* be portable.
-		args->args[i] += (unsigned long int) GIB_DATA (cbuf)->arg_composite->str;
+		args->args[i] += (intptr_t) GIB_DATA (cbuf)->arg_composite->str;
 }
 
 static void

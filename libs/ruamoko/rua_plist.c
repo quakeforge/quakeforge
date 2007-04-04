@@ -205,10 +205,10 @@ bi_plist_clear (progs_t *pr, void *data)
 	Hash_FlushTable (res->items);
 }
 
-static unsigned long
+static uintptr_t
 plist_get_hash (void *key, void *unused)
 {
-	return (unsigned long) key;
+	return (uintptr_t) key;
 }
 
 static int

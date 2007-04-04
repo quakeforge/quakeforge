@@ -99,18 +99,18 @@ bi_get_key (void *key, void *_ht)
 {
 	bi_hashtab_t *ht = (bi_hashtab_t *)_ht;
 	PR_RESET_PARAMS (ht->pr);
-	P_INT (ht->pr, 0) = (long) (key);
+	P_INT (ht->pr, 0) = (intptr_t) (key);
 	P_INT (ht->pr, 1) = ht->ud;
 	PR_ExecuteProgram (ht->pr, ht->gk);
 	return PR_GetString (ht->pr, R_STRING (ht->pr));
 }
 
-static unsigned long
+static uintptr_t
 bi_get_hash (void *key, void *_ht)
 {
 	bi_hashtab_t *ht = (bi_hashtab_t *)_ht;
 	PR_RESET_PARAMS (ht->pr);
-	P_INT (ht->pr, 0) = (long) (key);
+	P_INT (ht->pr, 0) = (intptr_t) (key);
 	P_INT (ht->pr, 1) = ht->ud;
 	PR_ExecuteProgram (ht->pr, ht->gh);
 	return R_INT (ht->pr);
@@ -121,8 +121,8 @@ bi_compare (void *key1, void *key2, void *_ht)
 {
 	bi_hashtab_t *ht = (bi_hashtab_t *)_ht;
 	PR_RESET_PARAMS (ht->pr);
-	P_INT (ht->pr, 0) = (long) (key1);
-	P_INT (ht->pr, 1) = (long) (key2);
+	P_INT (ht->pr, 0) = (intptr_t) (key1);
+	P_INT (ht->pr, 1) = (intptr_t) (key2);
 	P_INT (ht->pr, 2) = ht->ud;
 	PR_ExecuteProgram (ht->pr, ht->cmp);
 	return R_INT (ht->pr);
@@ -133,7 +133,7 @@ bi_free (void *key, void *_ht)
 {
 	bi_hashtab_t *ht = (bi_hashtab_t *)_ht;
 	PR_RESET_PARAMS (ht->pr);
-	P_INT (ht->pr, 0) = (long) (key);
+	P_INT (ht->pr, 0) = (intptr_t) (key);
 	P_INT (ht->pr, 1) = ht->ud;
 	PR_ExecuteProgram (ht->pr, ht->f);
 }
@@ -180,7 +180,7 @@ static void
 bi_Hash_SetHashCompare (progs_t *pr)
 {
 	bi_hashtab_t *ht = get_table (pr, __FUNCTION__, P_INT (pr, 0));
-	unsigned long (*gh)(void*,void*);
+	uintptr_t   (*gh)(void*,void*);
 	int         (*cmp)(void*,void*,void*);
 
 	ht->gh = P_FUNCTION (pr, 1);
@@ -214,7 +214,7 @@ bi_Hash_Add (progs_t *pr)
 {
 	bi_hashtab_t *ht = get_table (pr, __FUNCTION__, P_INT (pr, 0));
 
-	R_INT (pr) = Hash_Add (ht->tab, (void *) (long) P_INT (pr, 1));
+	R_INT (pr) = Hash_Add (ht->tab, (void *) (intptr_t) P_INT (pr, 1));
 }
 
 static void
@@ -222,7 +222,7 @@ bi_Hash_AddElement (progs_t *pr)
 {
 	bi_hashtab_t *ht = get_table (pr, __FUNCTION__, P_INT (pr, 0));
 
-	R_INT (pr) = Hash_AddElement (ht->tab, (void *) (long) P_INT (pr, 1));
+	R_INT (pr) = Hash_AddElement (ht->tab, (void *) (intptr_t) P_INT (pr, 1));
 }
 
 static void
@@ -230,7 +230,7 @@ bi_Hash_Find (progs_t *pr)
 {
 	bi_hashtab_t *ht = get_table (pr, __FUNCTION__, P_INT (pr, 0));
 
-	R_INT (pr) = (long) Hash_Find (ht->tab, P_GSTRING (pr, 1));
+	R_INT (pr) = (intptr_t) Hash_Find (ht->tab, P_GSTRING (pr, 1));
 }
 
 static void
@@ -238,8 +238,8 @@ bi_Hash_FindElement (progs_t *pr)
 {
 	bi_hashtab_t *ht = get_table (pr, __FUNCTION__, P_INT (pr, 0));
 
-	R_INT (pr) = (long) Hash_FindElement (ht->tab,
-										  (void *) (long) P_INT (pr, 1));
+	R_INT (pr) = (intptr_t) Hash_FindElement (ht->tab,
+										  (void *) (intptr_t) P_INT (pr, 1));
 }
 
 static void
@@ -256,7 +256,7 @@ bi_Hash_FindList (progs_t *pr)
 	pr_list = PR_Zone_Malloc (pr, count * sizeof (pr_type_t));
 	// the hash tables stores progs pointers...
 	for (count = 0, l = list; *l; l++)
-		pr_list[count++].integer_var = (long) *l;
+		pr_list[count++].integer_var = (intptr_t) *l;
 	free (list);
 	RETURN_POINTER (pr, pr_list);
 }
@@ -269,13 +269,13 @@ bi_Hash_FindElementList (progs_t *pr)
 	pr_type_t  *pr_list;
 	int         count;
 
-	list = Hash_FindElementList (ht->tab, (void *) (long) P_INT (pr, 1));
+	list = Hash_FindElementList (ht->tab, (void *) (intptr_t) P_INT (pr, 1));
 	for (count = 1, l = list; *l; l++)
 		count++;
 	pr_list = PR_Zone_Malloc (pr, count * sizeof (pr_type_t));
 	// the hash tables stores progs pointers...
 	for (count = 0, l = list; *l; l++)
-		pr_list[count++].integer_var = (long) *l;
+		pr_list[count++].integer_var = (intptr_t) *l;
 	free (list);
 	RETURN_POINTER (pr, pr_list);
 }
@@ -285,7 +285,7 @@ bi_Hash_Del (progs_t *pr)
 {
 	bi_hashtab_t *ht = get_table (pr, __FUNCTION__, P_INT (pr, 0));
 
-	R_INT (pr) = (long) Hash_Del (ht->tab, P_GSTRING (pr, 1));
+	R_INT (pr) = (intptr_t) Hash_Del (ht->tab, P_GSTRING (pr, 1));
 }
 
 static void
@@ -293,8 +293,8 @@ bi_Hash_DelElement (progs_t *pr)
 {
 	bi_hashtab_t *ht = get_table (pr, __FUNCTION__, P_INT (pr, 0));
 
-	R_INT (pr) = (long) Hash_DelElement (ht->tab,
-										 (void *) (long) P_INT (pr, 1));
+	R_INT (pr) = (intptr_t) Hash_DelElement (ht->tab,
+										 (void *) (intptr_t) P_INT (pr, 1));
 }
 
 static void
@@ -302,7 +302,7 @@ bi_Hash_Free (progs_t *pr)
 {
 	bi_hashtab_t *ht = get_table (pr, __FUNCTION__, P_INT (pr, 0));
 
-	Hash_Free (ht->tab, (void *) (long) P_INT (pr, 1));
+	Hash_Free (ht->tab, (void *) (intptr_t) P_INT (pr, 1));
 }
 
 static void
@@ -331,7 +331,7 @@ bi_Hash_GetList (progs_t *pr)
 	pr_list = PR_Zone_Malloc (pr, count * sizeof (pr_type_t));
 	// the hash tables stores progs pointers...
 	for (count = 0, l = list; *l; l++)
-		pr_list[count++].integer_var = (long) *l;
+		pr_list[count++].integer_var = (intptr_t) *l;
 	free (list);
 	RETURN_POINTER (pr, pr_list);
 }

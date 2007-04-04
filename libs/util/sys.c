@@ -334,7 +334,7 @@ Sys_TimeOfDay (date_t *date)
 }
 
 VISIBLE void
-Sys_MakeCodeWriteable (unsigned long startaddr, unsigned long length)
+Sys_MakeCodeWriteable (uintptr_t startaddr, size_t length)
 {
 #ifdef _WIN32
 	DWORD       flOldProtect;

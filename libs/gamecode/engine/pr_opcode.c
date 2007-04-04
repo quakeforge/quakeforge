@@ -1144,7 +1144,7 @@ VISIBLE opcode_t pr_opcodes[] = {
 };
 
 
-static unsigned long
+static uintptr_t
 opcode_get_hash (void *op, void *unused)
 {
 	return ((opcode_t *)op)->opcode;

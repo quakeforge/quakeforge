@@ -722,5 +722,15 @@ void *alloca (int size);
 /* used in access() */
 #define R_OK 04
 
-/* disable silent conversion warnings for fixing later.. */
-#pragma warning(disable:4244 4311 4267 4305 4312 4047)
+/*
+	disable silent conversion warnings for fixing later..
+
+	4047: 'operator' : 'identifier1' differs in levels of indirection from 'identifier2'
+	4244: 'argument' : conversion from 'type1' to 'type2', possible loss of data
+	4267: 'var' : conversion from 'size_t' to 'type', possible loss of data (/Wp64 warning)
+	4305: 'identifier' : truncation from 'type1' to 'type2'
+	4311: 'variable' : pointer truncation from 'type' to 'type' (/Wp64 warning)
+	4312: 'operation' : conversion from 'type1' to 'type2' of greater size (/Wp64 warning)
+*/
+//#pragma warning(disable:4047 4244 4267 4305 4311 4312)
+#pragma warning(disable:4047 4244 4305)

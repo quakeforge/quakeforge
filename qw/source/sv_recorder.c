@@ -128,7 +128,7 @@ static byte     msg_buffer[2][MAX_DATAGRAM];
 				 rec.dbuffer.start - rec.dbuffer.end : \
 				 rec.dbuffer.maxsize - rec.dbuffer.end)
 
-#define HEADER  ((int) &((header_t *) 0)->data)
+#define HEADER  ((size_t)(intptr_t) &((header_t *) 0)->data)
 
 static void
 dbuffer_init (dbuffer_t *dbuffer, byte *buf, size_t size)

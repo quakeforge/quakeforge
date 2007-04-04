@@ -114,12 +114,12 @@ winding_t *
 NewWinding (int points)
 {
 	winding_t  *winding;
-	int         size;
+	size_t      size;
 
 	if (points > MAX_POINTS_ON_WINDING)
 		Sys_Error ("NewWinding: %i points", points);
 
-	size = (long) ((winding_t *) 0)->points[points];
+	size = (size_t)(uintptr_t) ((winding_t *) 0)->points[points];
 	winding = calloc (1, size);
 
 	return winding;
@@ -135,10 +135,10 @@ FreeWinding (winding_t *winding)
 winding_t *
 CopyWinding (winding_t *winding)
 {
-	int         size;
+	size_t      size;
 	winding_t  *copy;
 
-	size = (long) ((winding_t *) 0)->points[winding->numpoints];
+	size = (size_t) (uintptr_t) ((winding_t *) 0)->points[winding->numpoints];
 	copy = malloc (size);
 	memcpy (copy, winding, size);
 	copy->original = false;

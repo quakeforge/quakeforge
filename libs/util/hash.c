@@ -58,7 +58,7 @@ struct hashtab_s {
 	size_t num_ele;
 	void *user_data;
 	int (*compare)(void*,void*,void*);
-	unsigned long (*get_hash)(void*,void*);
+	uintptr_t (*get_hash)(void*,void*);
 	const char *(*get_key)(void*,void*);
 	void (*free_ele)(void*,void*);
 	hashlink_t *tab[1];             // variable size
@@ -146,10 +146,10 @@ Hash_Buffer (const void *_buf, int len)
 #endif
 }
 
-static unsigned long
+static uintptr_t
 get_hash (void *ele, void *data)
 {
-	return (unsigned long)ele;
+	return (uintptr_t)ele;
 }
 
 static int
@@ -159,7 +159,7 @@ compare (void *a, void *b, void *data)
 }
 
 static inline int
-get_index (unsigned long hash, size_t size, size_t bits)
+get_index (uintptr_t hash, size_t size, size_t bits)
 {
 #if 0
 	unsigned long mask = ~0UL << bits;
@@ -178,7 +178,7 @@ get_index (unsigned long hash, size_t size, size_t bits)
 	}
 	return hash;
 #else
-	return hash % size;
+	return (int)(hash % size);
 #endif
 }
 
@@ -205,7 +205,7 @@ Hash_NewTable (int tsize, const char *(*gk)(void*,void*),
 }
 
 VISIBLE void
-Hash_SetHashCompare (hashtab_t *tab, unsigned long (*gh)(void*,void*),
+Hash_SetHashCompare (hashtab_t *tab, uintptr_t (*gh)(void*,void*),
 					 int (*cmp)(void*,void*,void*))
 {
 	tab->get_hash = gh;

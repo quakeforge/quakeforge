@@ -58,7 +58,7 @@ static __attribute__ ((used)) const char rcsid[] =
 #include "QF/wad.h"
 
 // case insensitive hash and compare
-static unsigned long
+static uintptr_t
 wad_get_hash (void *l, void *unused)
 {
 	char        name[16];

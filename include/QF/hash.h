@@ -72,7 +72,7 @@ hashtab_t *Hash_NewTable (int tsize, const char *(*gk)(void*,void*),
 	\param gh takes the same parameters as gk in Hash_NewTable
 	\param cmp is element 1, element 2, userdata
 */
-void Hash_SetHashCompare (hashtab_t *tab, unsigned long (*gh)(void*,void*),
+void Hash_SetHashCompare (hashtab_t *tab, uintptr_t (*gh)(void*,void*),
 						  int (*cmp)(void*,void*,void*));
 
 
