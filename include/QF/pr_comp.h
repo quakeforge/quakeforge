@@ -23,9 +23,13 @@
 
 #include "QF/qtypes.h"
 
-typedef int	func_t;
-typedef int	string_t;
-typedef int pointer_t;
+typedef int32_t func_t;
+typedef int32_t string_t;
+typedef int32_t pointer_t;
+typedef int16_t pr_short_t;
+typedef uint16_t pr_ushort_t;
+typedef int32_t pr_int_t;
+typedef uint32_t pr_uint_t;
 
 typedef enum {
 	ev_void,
@@ -329,19 +333,19 @@ typedef struct opcode_s {
 } opcode_t;
 
 extern opcode_t pr_opcodes[];
-opcode_t *PR_Opcode (short opcode);
+opcode_t *PR_Opcode (pr_short_t opcode);
 void PR_Opcode_Init (void);
 
 typedef struct statement_s {
-	pr_opcode_e		op:16;
-	unsigned short	a,b,c;
+	pr_opcode_e op:16;
+	pr_ushort_t a,b,c;
 } dstatement_t;
 
 typedef struct ddef_s {
-	unsigned short	type;		// if DEF_SAVEGLOBGAL bit is set
+	pr_ushort_t type;			// if DEF_SAVEGLOBGAL bit is set
 								// the variable needs to be saved in savegames
-	unsigned short	ofs;
-	int			s_name;
+	pr_ushort_t ofs;
+	pr_int_t    s_name;
 } ddef_t;
 
 #define	DEF_SAVEGLOBAL	(1<<15)
@@ -349,62 +353,62 @@ typedef struct ddef_s {
 #define	MAX_PARMS	8
 
 typedef struct dfunction_s {
-	int		first_statement;	// negative numbers are builtins
-	int		parm_start;
-	int		locals;				// total ints of parms + locals
+	pr_int_t    first_statement;	// negative numbers are builtins
+	pr_int_t    parm_start;
+	pr_int_t    locals;				// total ints of parms + locals
 	
-	int		profile;		// runtime
+	pr_int_t    profile;			// runtime
 	
-	int		s_name;
-	int		s_file;			// source file defined in
+	pr_int_t    s_name;
+	pr_int_t    s_file;				// source file defined in
 	
-	int		numparms;
-	byte	parm_size[MAX_PARMS];
+	pr_int_t    numparms;
+	uint8_t     parm_size[MAX_PARMS];
 } dfunction_t;
 
 typedef union pr_type_u {
-	float	float_var;
-	string_t string_var;
-	func_t	func_var;
-	int		entity_var;
-	float	vector_var[1];		// really 3, but this structure must be 32 bits
-	float	quat_var[1];		// really 4, but this structure must be 32 bits
-	int		integer_var;
-	pointer_t pointer_var;
-	unsigned int uinteger_var;
+	float       float_var;
+	string_t    string_var;
+	func_t      func_var;
+	pr_int_t    entity_var;
+	float       vector_var[1];	// really 3, but this structure must be 32 bits
+	float       quat_var[1];	// really 4, but this structure must be 32 bits
+	pr_int_t    integer_var;
+	pointer_t   pointer_var;
+	pr_uint_t   uinteger_var;
 } pr_type_t;
 
 typedef struct pr_va_list_s {
-	int     count;
-	pointer_t list;				// pr_type_t
+	pr_int_t    count;
+	pointer_t   list;			// pr_type_t
 } pr_va_list_t;
 
 #define	PROG_ID_VERSION	6
 #define	PROG_VERSION	0x00fff005	// MMmmmRRR 0.fff.005 (hex)
 
 typedef struct dprograms_s {
-	unsigned int version;
-	unsigned int crc;			// check of header file
+	pr_uint_t   version;
+	pr_uint_t   crc;			// check of header file
 	
-	unsigned int ofs_statements;
-	unsigned int numstatements;	// statement 0 is an error
+	pr_uint_t   ofs_statements;
+	pr_uint_t   numstatements;	// statement 0 is an error
 
-	unsigned int ofs_globaldefs;
-	unsigned int numglobaldefs;
+	pr_uint_t   ofs_globaldefs;
+	pr_uint_t   numglobaldefs;
 	
-	unsigned int ofs_fielddefs;
-	unsigned int numfielddefs;
+	pr_uint_t   ofs_fielddefs;
+	pr_uint_t   numfielddefs;
 	
-	unsigned int ofs_functions;
-	int         numfunctions;	// function 0 is an empty
+	pr_uint_t   ofs_functions;
+	pr_int_t    numfunctions;	// function 0 is an empty
 	
-	unsigned int ofs_strings;
-	int         numstrings;		// first string is a null string
+	pr_uint_t   ofs_strings;
+	pr_int_t    numstrings;		// first string is a null string
 
-	unsigned int ofs_globals;
-	unsigned int numglobals;
+	pr_uint_t   ofs_globals;
+	pr_uint_t   numglobals;
 	
-	unsigned int entityfields;
+	pr_uint_t   entityfields;
 } dprograms_t;
 
 #endif // __pr_comp_h

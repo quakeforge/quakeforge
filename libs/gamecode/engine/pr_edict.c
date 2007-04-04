@@ -147,7 +147,7 @@ ED_Free (progs_t *pr, edict_t *ed)
 
 
 VISIBLE void
-ED_PrintNum (progs_t *pr, int ent)
+ED_PrintNum (progs_t *pr, pr_int_t ent)
 {
 	ED_Print (pr, EDICT_NUM (pr, ent));
 }
@@ -221,19 +221,20 @@ ED_Count (progs_t *pr)
 }
 
 edict_t *
-ED_EdictNum (progs_t *pr, int n)
+ED_EdictNum (progs_t *pr, pr_int_t n)
 {
-	int offs = n * pr->pr_edict_size;
+	pr_int_t    offs = n * pr->pr_edict_size;
+
 	if (offs < 0 || n >= pr->pr_edictareasize)
 		PR_RunError (pr, "EDICT_NUM: bad number %i", n);
 		
 	return PROG_TO_EDICT (pr, offs);
 }
 
-int
+pr_int_t
 ED_NumForEdict (progs_t *pr, edict_t *e)
 {
-	int		b;
+	pr_int_t    b;
 
 	b = NUM_FOR_BAD_EDICT (pr, e);
 
@@ -245,7 +246,7 @@ ED_NumForEdict (progs_t *pr, edict_t *e)
 }
 
 qboolean
-PR_EdictValid (progs_t *pr, int e)
+PR_EdictValid (progs_t *pr, pr_int_t e)
 {
 	if (e < 0 || e >= pr->pr_edictareasize)
 		return false;

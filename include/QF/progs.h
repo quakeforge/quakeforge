@@ -174,6 +174,7 @@ void PR_AddLoadFinishFunc (progs_t *pr, pr_load_func_t *func);
 /** Run all load functions. Any load function returning false will abort the
 	load operation.
 	\param pr pointer to ::progs_t VM struct
+	\return true for success, false for failure
 
 	Calls the first set of internal load functions followed by the supplied
 	symbol resolution function, if any (progs_t::resolve), the second set of
@@ -187,6 +188,7 @@ int PR_RunLoadFuncs (progs_t *pr);
 /** Validate the opcodes and statement addresses in the progs. This is an
 	internal load function.
 	\param pr pointer to ::progs_t VM struct
+	\return true for success, false for failure
 
 	\todo should this be elsewhere?
 */
@@ -217,15 +219,15 @@ struct edict_s {
 void ED_ClearEdict (progs_t *pr, edict_t *e, int val);
 edict_t *ED_Alloc (progs_t *pr);
 void ED_Free (progs_t *pr, edict_t *ed);
-edict_t *ED_EdictNum(progs_t *pr, int n);
-int ED_NumForEdict(progs_t *pr, edict_t *e);
+edict_t *ED_EdictNum(progs_t *pr, pr_int_t n);
+pr_int_t ED_NumForEdict(progs_t *pr, edict_t *e);
 void ED_Count (progs_t *pr);
-qboolean PR_EdictValid (progs_t *pr, int e);
+qboolean PR_EdictValid (progs_t *pr, pr_int_t e);
 
 // pr_debug.c
 void ED_Print (progs_t *pr, edict_t *ed);
 void ED_PrintEdicts (progs_t *pr, const char *fieldval);
-void ED_PrintNum (progs_t *pr, int ent);
+void ED_PrintNum (progs_t *pr, pr_int_t ent);
 
 // pr_parse.c
 struct script_s;
@@ -262,8 +264,8 @@ void ED_EntityParseFunction (progs_t *pr);
 */
 //@{
 
-ddef_t *PR_FieldAtOfs (progs_t *pr, int ofs);
-ddef_t *PR_GlobalAtOfs (progs_t *pr, int ofs);
+ddef_t *PR_FieldAtOfs (progs_t *pr, pr_int_t ofs);
+ddef_t *PR_GlobalAtOfs (progs_t *pr, pr_int_t ofs);
 
 ddef_t *PR_FindField (progs_t *pr, const char *name);
 ddef_t *PR_FindGlobal (progs_t *pr, const char *name);
@@ -948,7 +950,7 @@ typedef struct {
 	builtin_proc proc;
 	/// The number of the builtin for \#N in QC. -1 for automatic allocation.
 	/// 0 or >= ::PR_AUTOBUILTIN is invalid.
-	int         binum;
+	pr_int_t    binum;
 } builtin_t;
 
 /** Aliased over the dfunction_t entry for builtin functions. Removes one
@@ -956,7 +958,7 @@ typedef struct {
 	\bug alignment access violations on 64 bit architectures (eg, alpha)
 */
 typedef struct {
-	int         first_statement;
+	pr_int_t    first_statement;
 	builtin_proc func;
 } bfunction_t;
 
@@ -979,7 +981,7 @@ builtin_t *PR_FindBuiltin (progs_t *pr, const char *name);
 	\param num number of the builtin function to lookup
 	\return pointer to the builtin function entry, or NULL if not found
 */
-builtin_t *PR_FindBuiltinNum (progs_t *pr, int num);
+builtin_t *PR_FindBuiltinNum (progs_t *pr, pr_int_t num);
 
 /** Fixup all automaticly resolved builtin functions (func = #0 in QC).
 	Performs any necessary builtin function number mapping. Also edits the
@@ -988,6 +990,7 @@ builtin_t *PR_FindBuiltinNum (progs_t *pr, int num);
 	during progs load.
 	\bug alignment access violations on 64 bit architectures (eg, alpha)
 	\param pr pointer to ::progs_t VM struct
+	\return true for success, false for failure
 */
 int PR_RelocateBuiltins (progs_t *pr);
 
@@ -1022,6 +1025,7 @@ int PR_RelocateBuiltins (progs_t *pr);
 /** Initialize the string tables using the strings supplied by the progs.
 	Automaticly called at progs load.
 	\param pr pointer to ::progs_t VM struct
+	\return true for success, false for failure
 */
 int PR_LoadStrings (progs_t *pr);
 
@@ -1260,8 +1264,8 @@ void *PR_Resources_Find (progs_t *pr, const char *name);
 
 void PR_Zone_Init (progs_t *pr);
 void PR_Zone_Free (progs_t *pr, void *ptr);
-void *PR_Zone_Malloc (progs_t *pr, int size);
-void *PR_Zone_Realloc (progs_t *pr, void *ptr, int size);
+void *PR_Zone_Malloc (progs_t *pr, pr_int_t size);
+void *PR_Zone_Realloc (progs_t *pr, void *ptr, pr_int_t size);
 
 //@}
 
@@ -1275,12 +1279,12 @@ void PR_Debug_Init (void);
 void PR_Debug_Init_Cvars (void);
 int PR_LoadDebug (progs_t *pr);
 pr_auxfunction_t *PR_Get_Lineno_Func (progs_t *pr, pr_lineno_t *lineno);
-unsigned int PR_Get_Lineno_Addr (progs_t *pr, pr_lineno_t *lineno);
-unsigned int PR_Get_Lineno_Line (progs_t *pr, pr_lineno_t *lineno);
-pr_lineno_t *PR_Find_Lineno (progs_t *pr, unsigned int addr);
+pr_uint_t PR_Get_Lineno_Addr (progs_t *pr, pr_lineno_t *lineno);
+pr_uint_t PR_Get_Lineno_Line (progs_t *pr, pr_lineno_t *lineno);
+pr_lineno_t *PR_Find_Lineno (progs_t *pr, pr_uint_t addr);
 const char *PR_Get_Source_File (progs_t *pr, pr_lineno_t *lineno);
-const char *PR_Get_Source_Line (progs_t *pr, unsigned int addr);
-ddef_t *PR_Get_Local_Def (progs_t *pr, int offs);
+const char *PR_Get_Source_Line (progs_t *pr, pr_uint_t addr);
+ddef_t *PR_Get_Local_Def (progs_t *pr, pr_int_t offs);
 void PR_PrintStatement (progs_t *pr, dstatement_t *s, int contents);
 void PR_DumpState (progs_t *pr);
 void PR_StackTrace (progs_t *pr);
@@ -1467,7 +1471,7 @@ struct progs_s {
 	\return C pointer represented by the parameter. 0 offset -> NULL
 */
 static inline pr_type_t *
-PR_GetPointer (progs_t *pr, int o)
+PR_GetPointer (progs_t *pr, pr_uint_t o)
 {
 	return o ? pr->pr_globals + o : 0;
 }

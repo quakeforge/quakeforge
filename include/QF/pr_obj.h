@@ -34,7 +34,7 @@
 
 #include "QF/pr_comp.h"
 
-#define PR_BITS_PER_INT (sizeof (int) * 8)
+#define PR_BITS_PER_INT (sizeof (pr_int_t) * 8)
 
 #define __PR_CLS_INFO(cls) ((cls)->info)
 #define __PR_CLS_ISINFO(cls, mask) ((__PR_CLS_INFO (cls) & (mask)) == (mask))
@@ -90,9 +90,9 @@ typedef struct pr_class_s {
 	pointer_t   class_pointer;		// pr_class_t
 	pointer_t   super_class;		// pr_class_t
 	string_t    name;
-	int         version;
-	unsigned int info;
-	int         instance_size;
+	pr_int_t    version;
+	pr_uint_t   info;
+	pr_int_t    instance_size;
 	pointer_t   ivars;				// pr_ivar_list_t
 	pointer_t   methods;			// pr_method_list_t
 	pointer_t   dtable;
@@ -120,13 +120,13 @@ typedef struct pr_category_s {
 
 typedef struct pr_protocol_list_s {
 	pointer_t   next;
-	int         count;
+	pr_int_t    count;
 	pointer_t   list[1];			// pr_protocol_t
 } pr_protocol_list_t;
 
 typedef struct pr_method_list_s {
 	pointer_t   method_next;
-	int         method_count;
+	pr_int_t    method_count;
 	struct pr_method_s {
 		pointer_t   method_name;	// pr_sel_t
 		string_t    method_types;
@@ -136,7 +136,7 @@ typedef struct pr_method_list_s {
 typedef struct pr_method_s pr_method_t;
 
 typedef struct pr_method_description_list_s {
-	int         count;
+	pr_int_t    count;
 	struct pr_method_description_s {
 		pointer_t   name;			// pr_sel_t
 		string_t    types;
@@ -145,11 +145,11 @@ typedef struct pr_method_description_list_s {
 typedef struct pr_method_description_s pr_method_description_t;
 
 typedef struct pr_ivar_list_s {
-	int         ivar_count;
+	pr_int_t    ivar_count;
 	struct pr_ivar_s {
 		string_t    ivar_name;
 		string_t    ivar_type;
-		int         ivar_offset;
+		pr_int_t    ivar_offset;
 	} ivar_list[1];
 } pr_ivar_list_t;
 typedef struct pr_ivar_s pr_ivar_t;
@@ -163,10 +163,10 @@ typedef struct pr_static_instances_s {
 } pr_static_instances_t;
 
 typedef struct pr_symtab_s {
-	int         sel_ref_cnt;
+	pr_int_t    sel_ref_cnt;
 	pointer_t   refs;				// pr_sel_t
-	int         cls_def_cnt;
-	int         cat_def_cnt;
+	pr_int_t    cls_def_cnt;
+	pr_int_t    cat_def_cnt;
 	pointer_t   defs[1];			// variable array of cls_def_cnt class
 									// pointers then cat_def_cnt category
 									// pointers followed by a null terminated
@@ -175,8 +175,8 @@ typedef struct pr_symtab_s {
 } pr_symtab_t;
 
 typedef struct pr_module_s {
-	int         version;
-	int         size;
+	pr_int_t    version;
+	pr_int_t    size;
 	string_t    name;
 	pointer_t   symtab;				// pr_symtab_t
 } pr_module_t;

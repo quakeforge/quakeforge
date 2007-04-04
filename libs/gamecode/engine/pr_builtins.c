@@ -137,7 +137,7 @@ PR_FindBuiltin (progs_t *pr, const char *name)
 }
 
 builtin_t *
-PR_FindBuiltinNum (progs_t *pr, int num)
+PR_FindBuiltinNum (progs_t *pr, pr_int_t num)
 {
 	builtin_t   bi;
 

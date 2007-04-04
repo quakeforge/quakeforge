@@ -1160,7 +1160,7 @@ opcode_compare (void *_opa, void *_opb, void *unused)
 }
 
 opcode_t *
-PR_Opcode (short opcode)
+PR_Opcode (pr_short_t opcode)
 {
 	opcode_t	op;
 

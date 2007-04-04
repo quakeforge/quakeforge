@@ -56,10 +56,10 @@ static __attribute__ ((used)) const char rcsid[] =
 
 
 ddef_t *
-PR_GlobalAtOfs (progs_t * pr, int ofs)
+PR_GlobalAtOfs (progs_t * pr, pr_int_t ofs)
 {
 	ddef_t     *def;
-	unsigned int i;
+	pr_uint_t   i;
 
 	for (i = 0; i < pr->progs->numglobaldefs; i++) {
 		def = &pr->pr_globaldefs[i];
@@ -70,10 +70,10 @@ PR_GlobalAtOfs (progs_t * pr, int ofs)
 }
 
 VISIBLE ddef_t *
-PR_FieldAtOfs (progs_t * pr, int ofs)
+PR_FieldAtOfs (progs_t * pr, pr_int_t ofs)
 {
 	ddef_t     *def;
-	unsigned int i;
+	pr_uint_t   i;
 
 	for (i = 0; i < pr->progs->numfielddefs; i++) {
 		def = &pr->pr_fielddefs[i];

@@ -65,7 +65,7 @@ typedef struct {
 	char *name;
 	char *text;
 	line_t *lines;
-	unsigned int num_lines;
+	pr_uint_t   num_lines;
 	progs_t *pr;
 } file_t;
 
@@ -186,9 +186,9 @@ PR_Load_Source_File (progs_t *pr, const char *fname)
 VISIBLE int
 PR_LoadDebug (progs_t *pr)
 {
-	char		*sym_path;
-	const char	*path_end, *sym_file;
-	unsigned int i;
+	char       *sym_path;
+	const char *path_end, *sym_file;
+	pr_uint_t   i;
 	ddef_t	   *def;
 	pr_type_t  *str = 0;
 
@@ -302,7 +302,7 @@ PR_Get_Lineno_Func (progs_t *pr, pr_lineno_t *lineno)
 	return &pr->auxfunctions[lineno->fa.func];
 }
 
-unsigned int
+pr_uint_t
 PR_Get_Lineno_Addr (progs_t *pr, pr_lineno_t *lineno)
 {
 	pr_auxfunction_t *f;
@@ -313,7 +313,7 @@ PR_Get_Lineno_Addr (progs_t *pr, pr_lineno_t *lineno)
 	return pr->pr_functions[f->function].first_statement;
 }
 
-unsigned int
+pr_uint_t
 PR_Get_Lineno_Line (progs_t *pr, pr_lineno_t *lineno)
 {
 	if (lineno->line)
@@ -322,18 +322,18 @@ PR_Get_Lineno_Line (progs_t *pr, pr_lineno_t *lineno)
 }
 
 pr_lineno_t *
-PR_Find_Lineno (progs_t *pr, unsigned int addr)
+PR_Find_Lineno (progs_t *pr, pr_uint_t addr)
 {
-	int				i;
-	pr_lineno_t	   *lineno = 0;
+	pr_uint_t   i;
+	pr_lineno_t *lineno = 0;
 
 	if (!pr->debug)
 		return 0;
 	if (!pr->debug->num_linenos)
 		return 0;
-	for (i = pr->debug->num_linenos - 1; i >= 0; i--) {
-		if (PR_Get_Lineno_Addr (pr, &pr->linenos[i]) <= addr) {
-			lineno = &pr->linenos[i];
+	for (i = pr->debug->num_linenos; i > 0; i--) {
+		if (PR_Get_Lineno_Addr (pr, &pr->linenos[i - 1]) <= addr) {
+			lineno = &pr->linenos[i - 1];
 			break;
 		}
 	}
@@ -350,13 +350,13 @@ PR_Get_Source_File (progs_t *pr, pr_lineno_t *lineno)
 }
 
 const char *
-PR_Get_Source_Line (progs_t *pr, unsigned int addr)
+PR_Get_Source_Line (progs_t *pr, pr_uint_t addr)
 {
-	const char		   *fname;
-	unsigned int		line;
-	file_t			   *file;
-	pr_auxfunction_t   *func;
-	pr_lineno_t        *lineno;
+	const char *fname;
+	pr_uint_t   line;
+	file_t     *file;
+	pr_auxfunction_t *func;
+	pr_lineno_t *lineno;
 	
 	lineno = PR_Find_Lineno (pr, addr);
 	if (!lineno || PR_Get_Lineno_Addr (pr, lineno) != addr)
@@ -378,11 +378,11 @@ PR_Get_Source_Line (progs_t *pr, unsigned int addr)
 }
 
 ddef_t *
-PR_Get_Local_Def (progs_t *pr, int offs)
+PR_Get_Local_Def (progs_t *pr, pr_int_t offs)
 {
-	unsigned int		i;
-	dfunction_t		   *func = pr->pr_xfunction;
-	pr_auxfunction_t   *aux_func;
+	pr_uint_t   i;
+	dfunction_t *func = pr->pr_xfunction;
+	pr_auxfunction_t *aux_func;
 
 	if (!func)
 		return 0;
@@ -428,7 +428,7 @@ value_string (progs_t *pr, etype_t type, pr_type_t *val)
 {
 	static dstring_t *line;
 	ddef_t     *def;
-	int         ofs;
+	pr_int_t    ofs;
 	edict_t    *edict;
 	dfunction_t	*f;
 	const char *str;
@@ -537,7 +537,7 @@ value_string (progs_t *pr, etype_t type, pr_type_t *val)
 }
 
 static ddef_t *
-def_string (progs_t *pr, int ofs, dstring_t *dstr)
+def_string (progs_t *pr, pr_int_t ofs, dstring_t *dstr)
 {
 	ddef_t     *def = 0;
 	const char *name;
@@ -554,11 +554,11 @@ def_string (progs_t *pr, int ofs, dstring_t *dstr)
 }
 
 static const char *
-global_string (progs_t *pr, int ofs, etype_t type, int contents)
+global_string (progs_t *pr, pr_int_t ofs, etype_t type, int contents)
 {
-	ddef_t				*def = NULL;
-	static dstring_t	*line = NULL;
-	const char			*s;
+	static dstring_t *line = NULL;
+	ddef_t     *def = NULL;
+	const char *s;
 
 	if (!line)
 		line = dstring_newstr();
@@ -595,11 +595,11 @@ global_string (progs_t *pr, int ofs, etype_t type, int contents)
 }
 
 VISIBLE void
-PR_PrintStatement (progs_t * pr, dstatement_t *s, int contents)
+PR_PrintStatement (progs_t *pr, dstatement_t *s, int contents)
 {
-	int			addr = s - pr->pr_statements;
+	int         addr = s - pr->pr_statements;
 	const char *fmt;
-	opcode_t	*op;
+	opcode_t   *op;
 	static dstring_t *line;
 
 	if (!line)
@@ -641,7 +641,7 @@ PR_PrintStatement (progs_t * pr, dstatement_t *s, int contents)
 			} else {
 				const char *str;
 				char        mode = fmt[1], opchar = fmt[2];
-				long        opval;
+				pr_int_t    opval;
 				etype_t     optype;
 
 				switch (opchar) {
@@ -705,8 +705,8 @@ dump_frame (progs_t *pr, prstack_t *frame)
 	if (pr_debug->int_val && pr->debug) {
 		pr_lineno_t *lineno = PR_Find_Lineno (pr, frame->s);
 		pr_auxfunction_t *func = PR_Get_Lineno_Func (pr, lineno);
-		unsigned int line = PR_Get_Lineno_Line (pr, lineno);
-		int         addr = PR_Get_Lineno_Addr (pr, lineno);
+		pr_uint_t   line = PR_Get_Lineno_Line (pr, lineno);
+		pr_int_t    addr = PR_Get_Lineno_Addr (pr, lineno);
 
 		line += func->source_line;
 		if (addr == frame->s) {
@@ -731,8 +731,8 @@ dump_frame (progs_t *pr, prstack_t *frame)
 void
 PR_StackTrace (progs_t *pr)
 {
-	int				i;
-	prstack_t       top;
+	int         i;
+	prstack_t   top;
 
 	if (pr->pr_depth == 0) {
 		Sys_Printf ("<NO STACK>\n");
@@ -749,8 +749,8 @@ PR_StackTrace (progs_t *pr)
 VISIBLE void
 PR_Profile (progs_t * pr)
 {
-	int				max, num, i;
-	dfunction_t	   *best, *f;
+	int         max, num, i;
+	dfunction_t *best, *f;
 
 	num = 0;
 	do {
@@ -782,7 +782,7 @@ VISIBLE void
 ED_Print (progs_t *pr, edict_t *ed)
 {
 	int         type, l;
-	unsigned int i;
+	pr_uint_t   i;
 	const char *name;
 	ddef_t     *d;
 	pr_type_t  *v;

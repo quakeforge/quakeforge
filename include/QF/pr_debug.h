@@ -32,34 +32,36 @@
 #ifndef __pr_debug_h
 #define __pr_debug_h
 
+#include "QF/pr_comp.h"
+
 typedef struct pr_auxfunction_s {
-	unsigned int function;		// function def this aux info is for
-	unsigned int source_line;	// first source line for this function
-	unsigned int line_info;		// index to first lineno entry
-	unsigned int local_defs;	// index to the first local def
-	unsigned int num_locals;	// number of local defs
+	pr_uint_t   function;		// function def this aux info is for
+	pr_uint_t   source_line;	// first source line for this function
+	pr_uint_t   line_info;		// index to first lineno entry
+	pr_uint_t   local_defs;		// index to the first local def
+	pr_uint_t   num_locals;		// number of local defs
 } pr_auxfunction_t;
 
 typedef struct pr_lineno_s {
 	union {
-		unsigned int func;		// (line==0) index of function aux info
-		unsigned int addr;		// (line!=0) dstatement_t address
+		pr_uint_t   func;		// (line==0) index of function aux info
+		pr_uint_t   addr;		// (line!=0) dstatement_t address
 	} fa;
-	unsigned int line;
+	pr_uint_t   line;
 } pr_lineno_t;
 
 #define PROG_DEBUG_VERSION 0x00001001	// MMmmmRRR 0.001.001 (hex)
 
 typedef struct pr_debug_header_s {
-	int				version;
-	unsigned short	crc;		// of the progs.dat this progs.sym file is for
-	unsigned short	you_tell_me_and_we_will_both_know;
-	unsigned int	auxfunctions;
-	unsigned int	num_auxfunctions;
-	unsigned int	linenos;
-	unsigned int	num_linenos;
-	unsigned int	locals;
-	unsigned int	num_locals;
+	pr_int_t    version;
+	pr_ushort_t crc;			// of the progs.dat this progs.sym file is for
+	pr_ushort_t you_tell_me_and_we_will_both_know;
+	pr_uint_t   auxfunctions;
+	pr_uint_t   num_auxfunctions;
+	pr_uint_t   linenos;
+	pr_uint_t   num_linenos;
+	pr_uint_t   locals;
+	pr_uint_t   num_locals;
 } pr_debug_header_t;
 
 #endif//__pr_debug_h

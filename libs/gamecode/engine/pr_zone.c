@@ -61,13 +61,13 @@ PR_Zone_Free (progs_t *pr, void *ptr)
 }
 
 VISIBLE void *
-PR_Zone_Malloc (progs_t *pr, int size)
+PR_Zone_Malloc (progs_t *pr, pr_int_t size)
 {
 	return Z_Malloc (pr->zone, size);
 }
 
 VISIBLE void *
-PR_Zone_Realloc (progs_t *pr, void *ptr, int size)
+PR_Zone_Realloc (progs_t *pr, void *ptr, pr_int_t size)
 {
 	return Z_Realloc (pr->zone, ptr, size);
 }
