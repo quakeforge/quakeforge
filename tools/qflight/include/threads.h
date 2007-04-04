@@ -30,10 +30,6 @@
 #ifndef __threads_h
 #define __threads_h
 
-#ifdef HAVE_CONFIG_H
-# include "config.h"
-#endif
-
 #ifdef HAVE_PTHREAD_H
 #include <pthread.h>
 extern pthread_mutex_t *my_mutex;
