@@ -238,6 +238,7 @@ void SND_SFX_Stream (sfx_t *sfx, char *realname, wavinfo_t info,
 
 /** Open a stream for playback.
 	\param sfx
+	\param file
 	\param read
 	\param seek
 	\param close
