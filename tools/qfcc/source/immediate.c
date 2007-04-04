@@ -81,7 +81,7 @@ static hashtab_t *pointer_imm_defs;
 static hashtab_t *quaternion_imm_defs;
 static hashtab_t *integer_imm_defs;
 
-static unsigned long
+static uintptr_t
 imm_get_hash (void *_imm, void *_tab)
 {
 	immediate_t *imm = (immediate_t *) _imm;

@@ -69,12 +69,12 @@ opcode_t   *op_jumpb;
 
 #define ROTL(x,n) (((x)<<(n))|(x)>>(32-n))
 
-static unsigned long
+static uintptr_t
 get_hash (void *_op, void *_tab)
 {
 	opcode_t   *op = (opcode_t *) _op;
 	hashtab_t **tab = (hashtab_t **) _tab;
-	unsigned long hash;
+	uintptr_t   hash;
 
 	if (tab == &opcode_type_table_ab) {
 		hash = ROTL (~op->type_a, 8) + ROTL (~op->type_b, 16);

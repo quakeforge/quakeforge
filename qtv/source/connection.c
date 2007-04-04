@@ -59,7 +59,7 @@ connection_free (void *_c, void *unused)
 	free (_c);
 }
 
-static unsigned long
+static uintptr_t
 connection_get_hash (void *_c, void *unused)
 {
 	connection_t *c = (connection_t *) _c;

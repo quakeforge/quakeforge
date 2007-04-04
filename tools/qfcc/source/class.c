@@ -504,7 +504,7 @@ class_message_response (class_t *class, int class_msg, expr_t *sel)
 	return 0;
 }
 
-static unsigned long
+static uintptr_t
 category_get_hash (void *_c, void *unused)
 {
 	category_t *c = (category_t *) _c;

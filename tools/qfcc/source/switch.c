@@ -64,7 +64,7 @@ typedef struct case_node_s {
 	struct case_node_s *left, *right;
 } case_node_t;
 
-static unsigned long
+static uintptr_t
 get_hash (void *_cl, void *unused)
 {
 	case_label_t *cl = (case_label_t *) _cl;
@@ -72,7 +72,7 @@ get_hash (void *_cl, void *unused)
 	if (!cl->value)
 		return 0;
 	if (cl->value->type == ex_string)
-		return (unsigned long) cl->value->e.string_val;
+		return (uintptr_t) cl->value->e.string_val;
 	return cl->value->e.integer_val;
 }
 

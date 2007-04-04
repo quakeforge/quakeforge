@@ -286,11 +286,11 @@ static hashtab_t *sel_hash;
 static hashtab_t *sel_index_hash;
 static int sel_index;
 
-static unsigned long
+static uintptr_t
 sel_get_hash (void *_sel, void *unused)
 {
 	selector_t *sel = (selector_t *) _sel;
-	unsigned long hash;
+	uintptr_t   hash;
 
 	hash = Hash_String (sel->name);
 	return hash;
@@ -307,7 +307,7 @@ sel_compare (void *_s1, void *_s2, void *unused)
 	return cmp;
 }
 
-static unsigned long
+static uintptr_t
 sel_index_get_hash (void *_sel, void *unused)
 {
 	selector_t *sel = (selector_t *) _sel;

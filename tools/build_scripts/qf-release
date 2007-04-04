@@ -59,7 +59,6 @@ mkdir -p ~/release
 cd ~/release
 if test $no_rm -ne 1; then
 	rm -rf NEWS quakeforge-* quakeforge_* qfcc_*
-	exit
 fi
 svn co ${svn_url}/quakeforge/${tag_path} quakeforge-${ver}
 cd quakeforge-$ver
@@ -106,7 +105,7 @@ if test $do_win32 -eq 1; then
 	./cross-configure.sh \
 		CFLAGS=-I${mingw32}/include LDLAGS=-L${mingw32}/lib \
 		--with-sdl-prefix=${mingw32} \
-		--disable-debug --disable-shared --disable-debug \
+		--disable-debug --disable-shared --disable-jack \
 		--program-prefix=
 	../tools/cross/cross-make.sh -j3 \
 		prefix=${qf_win32_dir} \

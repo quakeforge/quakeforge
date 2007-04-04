@@ -166,7 +166,7 @@ free_progs_mem (progs_t *pr, void *mem)
 	free (mem);
 }
 
-static unsigned long
+static uintptr_t
 func_hash (void *func, void *unused)
 {
 	return ((dfunction_t *) func)->first_statement;
