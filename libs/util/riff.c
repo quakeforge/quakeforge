@@ -131,11 +131,12 @@ read_ltxt (QFile *f, int len, riff_d_ltxt_t *ltxt)
 static void
 read_adtl (dstring_t *list_buf, QFile *f, int len)
 {
-	riff_d_chunk_t ck, *chunk = 0;
-	riff_ltxt_t *ltxt;
-	riff_label_t *label;
-	riff_data_t *data;
-	riff_list_t *list;
+	riff_d_chunk_t  ck;
+	riff_d_chunk_t  *chunk = 0;
+	riff_ltxt_t     *ltxt;
+	riff_label_t    *label;
+	riff_data_t     *data;
+	riff_list_t     *list;
 
 	list = (riff_list_t *) list_buf->str;
 	while (len) {
@@ -182,7 +183,7 @@ static riff_list_t *
 read_list (riff_d_chunk_t *ck, QFile *f, int len)
 {
 	riff_d_chunk_t  *chunk = 0;
-	dstring_t  *list_buf;
+	dstring_t       *list_buf;
 	riff_list_t     *list;
 
 	list_buf = dstring_new ();
@@ -257,7 +258,7 @@ static riff_d_cue_t *
 read_cue (QFile *f, int len)
 {
 	riff_d_cue_t *cue = malloc (len);
-	unsigned int i;
+	uint32_t    i;
 
 	if (!Rread (f, cue, len)) {
 		free (cue);

@@ -32,44 +32,47 @@
 #ifndef __QF_riff_h
 #define __QF_riff_h
 
+#include <stdint.h>
+#include <sys/types.h>
+
 #include "QF/quakeio.h"
 
 typedef struct riff_d_chunk_s {
 	char        name[4];
-	unsigned    len;
+	uint32_t    len;
 } riff_d_chunk_t;
 
 typedef struct riff_d_cue_point_s {
-	unsigned    name;
-	unsigned    position;
+	uint32_t    name;
+	uint32_t    position;
 	char        chunk[4];
-	unsigned    chunk_start;
-	unsigned    block_start;
-	unsigned    sample_offset;
+	uint32_t    chunk_start;
+	uint32_t    block_start;
+	uint32_t    sample_offset;
 } riff_d_cue_point_t;
 
 typedef struct riff_d_cue_s {
-	unsigned    count;
+	uint32_t    count;
 	riff_d_cue_point_t cue_points[1];
 } riff_d_cue_t;
 
 typedef struct riff_d_format_s {
-	unsigned short format_tag;
-	unsigned short channels;
-	unsigned    samples_per_sec;
-	unsigned    bytes_per_sec;
-	unsigned short align;
-	unsigned short bits_per_sample;	// only if format_tag == 1
+	uint16_t    format_tag;
+	uint16_t    channels;
+	uint32_t    samples_per_sec;
+	uint32_t    bytes_per_sec;
+	uint16_t    align;
+	uint16_t    bits_per_sample;	// only if format_tag == 1
 } riff_d_format_t;
 
 typedef struct riff_d_ltxt_s {
-	unsigned    name;
-	unsigned    len;
+	uint32_t    name;
+	uint32_t    len;
 	char        purpose[4];
-	unsigned    country;
-	unsigned    language;
-	unsigned    dialect;
-	unsigned    codepage;
+	uint32_t    country;
+	uint32_t    language;
+	uint32_t    dialect;
+	uint32_t    codepage;
 	unsigned char data[0];
 } riff_d_ltxt_t;
 
@@ -91,7 +94,7 @@ typedef struct riff_ltxt_s {
 
 typedef struct riff_label_s {
 	riff_d_chunk_t   ck;
-	unsigned    ofs;
+	off_t       ofs;
 	char       *label;
 } riff_label_t;
 
