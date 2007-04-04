@@ -36,6 +36,7 @@
 //@{
 
 #include <stdio.h>
+#include <stdint.h>
 #include <stdarg.h>
 
 extern	struct cvar_s	*sys_nostdout;

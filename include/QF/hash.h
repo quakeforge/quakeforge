@@ -29,6 +29,8 @@
 #ifndef __hash_h
 #define __hash_h
 
+#include <stdint.h>
+
 /** \defgroup hash Hash tables
 	\ingroup utils
 */
