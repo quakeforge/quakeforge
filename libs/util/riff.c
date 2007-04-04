@@ -367,18 +367,16 @@ riff_read (QFile *f)
 				}
 				break;
 			default:
-				{
-					riff_data_t     *data = malloc (sizeof (riff_data_t));
-					data->ck = ck;
-					data->data = read_data (f, len);
-					chunk = &data->ck;
-				}
+				// unknown chunk. bail (could be corrupted file)
+				chunk = 0;
+				goto bail;
 				break;
 		}
 		dstring_append (riff_buf, (char *)&chunk, sizeof (chunk));
 		riff = (riff_list_t *) riff_buf->str;
 		chunk = 0;
 	}
+bail:
 	dstring_append (riff_buf, (char *)&chunk, sizeof (chunk));
 	riff = (riff_list_t *) riff_buf->str;
 	free (riff_buf);
