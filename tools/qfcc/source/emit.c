@@ -104,11 +104,15 @@ add_statement_ref (def_t *def, dstatement_t *st, int field)
 
 		def->users--;
 		def->used = 1;
+		if (def->parent)
+			def->parent->used = 1;
 
 		if (def->alias) {
 			def = def->alias;
 			def->users--;
 			def->used = 1;
+			if (def->parent)
+				def->parent->used = 1;
 			reloc_op_def_ofs (def, st_ofs, field);
 		} else
 			reloc_op_def (def, st_ofs, field);
