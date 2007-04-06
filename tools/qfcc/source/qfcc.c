@@ -659,10 +659,16 @@ load_file (const char *fname)
 {
 	QFile      *file;
 	char       *src;
+	FILE       *tmpfile;
 
-	file = Qfopen (preprocess_file (fname, "i1"), "rt");
+	tmpfile = preprocess_file (fname, "i1");
 	if (!file)
 		return 0;
+	file = Qfopen (tmpfile, "rt");
+	if (!file) {
+		perror (fname);
+		return 0;
+	}
 	src = malloc (Qfilesize (file) + 1);
 	src[Qfilesize (file)] = 0;
 	Qread (file, src, Qfilesize (file));
@@ -760,8 +766,8 @@ progs_src_compile (void)
 
 	src = load_file (filename->str);
 	if (!src) {
-		fprintf (stderr, "couldn't open %s: %s\n", filename->str,
-				 strerror (errno));
+		fprintf (stderr, "couldn't open %s\n", filename->str);
+		unlink (single_name->str);
 		return 1;
 	}
 	script = Script_New ();
@@ -769,7 +775,8 @@ progs_src_compile (void)
 
 	while (1) {
 		if (!Script_GetToken (script, 1)) {
-			fprintf (stderr, "No destination filename.  qfcc --help for info.\n");
+			fprintf (stderr,
+					 "No destination filename.  qfcc --help for info.\n");
 			return 1;
 		}
 		if (strcmp (script->token->str, "#") == 0) {
