@@ -6,19 +6,18 @@ import sys
 import string
 from pprint import *
 
+string_re = re.compile (r'"(\\.|[^"\\])*"')
 comment_whole = re.compile (r'((/\*.*\*/)|//.*)')
 comment_start = re.compile (r'(/\*.*)')
 comment_end = re.compile (r'(.*\*/)')
 directive_re = re.compile (
     r'^\s*#\s*(define|undef|include|includelist|endlist|ifdef|ifndef|endif|else|pragma)\b' +
     r'((\s*("[^"]*"|[^ \t\n\r\f\v/]+|/(?!/))+)?)' +
-    r'((\s*("[^"]*"|[^ \t\n\r\f\v/]+|/(?!/))+)*)')# +
-#    r'((\s*//.*)?)')
+    r'((\s*("[^"]*"|[^ \t\n\r\f\v/]+|/(?!/))+)*)')
 macro_re = re.compile (r'#([A-Za-z_]\w*)')
 arg_re = re.compile (
     r'((\s*("[^"]*"|[^ \t\n\r\f\v/]+|/(?!/))+)?)' +
-    r'((\s*("[^"]*"|[^ \t\n\r\f\v/]+|/(?!/))+)*)')# +
-#    r'((\s*//.*)?)')
+    r'((\s*("[^"]*"|[^ \t\n\r\f\v/]+|/(?!/))+)*)')
 
 current_file = []
 source_list = []
@@ -103,6 +102,15 @@ def include_file (fname):
 	if fname:
 		append_file (fname)
 
+def comment_string (string_list, start, end):
+	i = 0
+	while i < len (string_list):
+		if start <= string_list[i][1] and end >= string_list[i][2]:
+			del string_list[i]
+			continue
+		i += 1
+	return string_list
+
 def process_source (source_file):
 	global compile_this_file, current_file
 	if verbose:
@@ -118,20 +126,32 @@ def process_source (source_file):
 	while i < len (current_file):
 		l = current_file[i]
 		#print source_file + ":" + `i` + ":" + l
+		string_list = []
+		s = string_re.search (l)
+		while s:
+			string_list.append ((l[s.start():s.end()], s.start(), s.end()))
+			l = l[:s.start()] + ((s.end() - s.start()) * ' ') + l[s.end():]
+			s = string_re.search (l)
 		if incomment:
 			s = comment_end.search (l)
 			if s:
-				l = l[s.end():]
+				l = (s.end() * ' ') + l[s.end():]
 				incomment = 0
+				string_list = comment_string (string_list, s.start(), s.end())
 			else:
+				string_list = comment_string (string_list, 0, len(l))
 				l = ""
 		s = comment_whole.search (l)
 		if s:
-			l = l[:s.start()] + l[s.end():]
+			l = l[:s.start()] + ((s.end() - s.start()) * ' ') + l[s.end():]
+			string_list = comment_string (string_list, s.start(), s.end())
 		s = comment_start.search (l)
 		if s:
-			l = l[:s.start()]
+			l = l[:s.start()] + ((s.end() - s.start()) * ' ')
+			string_list = comment_string (string_list, s.start(), s.end())
 			incomment = 1
+		for str in string_list:
+			l = l[:str[1]] + str[0] + l[str[2]:]
 		#print l
 		m = directive_re.match (l)
 		if (m):
