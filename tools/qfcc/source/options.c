@@ -423,6 +423,8 @@ DecodeArgs (int argc, char **argv)
 				usage (1);
 		}
 	}
+	if (!cpp_name)
+		options.single_cpp = 0;
 	if (saw_E && saw_MD) {
 		fprintf (stderr, "%s: cannot use -E and -MD together\n", this_program);
 		exit (1);
