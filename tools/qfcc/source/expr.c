@@ -2383,10 +2383,21 @@ assign_expr (expr_t *e1, expr_t *e2)
 	e2->rvalue = 1;
 
 	if (!type_assignable (t1, t2)) {
-		if (!options.traditional || t1->type != ev_func || t2->type != ev_func)
+		if (options.traditional) {
+			if (t1->type == ev_func && t2->type == ev_func) {
+				warning (e1, "assignment between disparate function types");
+			} else if (t1->type == ev_float && t2->type == ev_vector) {
+				warning (e1, "assignment of vector to float");
+				e2 = binary_expr ('.', e2, new_name_expr ("x"));
+			} else if (t1->type == ev_vector && t2->type == ev_float) {
+				warning (e1, "assignment of float to vector");
+				e1 = binary_expr ('.', e1, new_name_expr ("x"));
+			} else {
+				return type_mismatch (e1, e2, op);
+			}
+		} else {
 			return type_mismatch (e1, e2, op);
-		if (options.warnings.traditional)
-			warning (e1, "assignment between disparate function types");
+		}
 	}
 	type = t1;
 	if (is_indirect (e1) && is_indirect (e2)) {
