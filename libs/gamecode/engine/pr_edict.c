@@ -64,7 +64,7 @@ static __attribute__ ((used)) const char rcsid[] =
 VISIBLE void
 ED_ClearEdict (progs_t *pr, edict_t *e, int val)
 {
-	unsigned int i;
+	pr_uint_t   i;
 
 	if (NUM_FOR_EDICT (pr, e) < *pr->reserved_edicts)
 		Sys_Printf ("clearing reserved edict %ld\n",
@@ -86,10 +86,10 @@ ED_ClearEdict (progs_t *pr, edict_t *e, int val)
 VISIBLE edict_t *
 ED_Alloc (progs_t *pr)
 {
-	int         i;
+	pr_int_t    i;
 	edict_t    *e;
 	int         start = pr->reserved_edicts ? *pr->reserved_edicts : 0;
-	int         max_edicts = pr->pr_edictareasize / pr->pr_edict_size;
+	pr_int_t    max_edicts = pr->pr_edictareasize / pr->pr_edict_size;
 
 	for (i = start + 1; i < *pr->num_edicts; i++) {
 		e = EDICT_NUM (pr, i);
@@ -160,9 +160,9 @@ ED_PrintNum (progs_t *pr, pr_int_t ent)
 VISIBLE void
 ED_PrintEdicts (progs_t *pr, const char *fieldval)
 {
-	int		i;
-	int		count;
-	ddef_t	*def;
+	pr_int_t    i;
+	int         count;
+	ddef_t     *def;
 
 	def = PR_FindField(pr, "classname");
 
@@ -190,11 +190,11 @@ ED_PrintEdicts (progs_t *pr, const char *fieldval)
 VISIBLE void
 ED_Count (progs_t *pr)
 {
-	int			i;
-	int			active, models, solid, step, zombie;
-	ddef_t		*solid_def;
-	ddef_t		*model_def;
-	edict_t		*ent;
+	pr_int_t    i;
+	int         active, models, solid, step, zombie;
+	ddef_t     *solid_def;
+	ddef_t     *model_def;
+	edict_t    *ent;
 
 	solid_def = PR_FindField (pr, "solid");
 	model_def = PR_FindField (pr, "model");
@@ -226,7 +226,7 @@ ED_EdictNum (progs_t *pr, pr_int_t n)
 	pr_int_t    offs = n * pr->pr_edict_size;
 
 	if (offs < 0 || n >= pr->pr_edictareasize)
-		PR_RunError (pr, "EDICT_NUM: bad number %i", n);
+		PR_RunError (pr, "EDICT_NUM: bad number %d", n);
 		
 	return PROG_TO_EDICT (pr, offs);
 }

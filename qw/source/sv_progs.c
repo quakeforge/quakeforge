@@ -326,7 +326,7 @@ static sv_def_t qw_opt_fields[] = {
 	{ev_void,		0,	0},
 };
 
-static const unsigned  qw_crc = 54730;
+static const pr_uint_t qw_crc = 54730;
 
 static void
 set_address (sv_def_t *def, void *address)

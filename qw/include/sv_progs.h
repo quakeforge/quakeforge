@@ -36,12 +36,12 @@
 #include "sv_pr_cmds.h"
 
 typedef struct {
-    int        *self;
-    int        *other;
-    int        *world;
+    pr_int_t   *self;
+    pr_int_t   *other;
+    pr_int_t   *world;
     float      *time;
     float      *frametime;
-    int        *newmis;
+    pr_int_t   *newmis;
     float      *force_retouch;
     string_t   *mapname;
     float      *serverflags;
@@ -59,10 +59,10 @@ typedef struct {
     vec3_t     *trace_endpos;
     vec3_t     *trace_plane_normal;
     float      *trace_plane_dist;
-    int        *trace_ent;
+    pr_int_t   *trace_ent;
     float      *trace_inopen;
     float      *trace_inwater;
-    int        *msg_entity;
+    pr_int_t   *msg_entity;
     float      *skill;
 } sv_globals_t;
 
@@ -94,82 +94,82 @@ extern sv_funcs_t sv_funcs;
 
 typedef struct
 {
-	int			modelindex;		//float
-	int			absmin;			//vec3_t
-	int			absmax;			//vec3_t
-	int			ltime;			//float
-	int			lastruntime;	//float
-	int			movetype;		//float
-	int			solid;			//float
-	int			origin;			//vec3_t
-	int			oldorigin;		//vec3_t
-	int			velocity;		//vec3_t
-	int			angles;			//vec3_t
-	int			avelocity;		//vec3_t
-	int			classname;		//string_t
-	int			model;			//string_t
-	int			frame;			//float
-	int			skin;			//float
-	int			effects;		//float
-	int			mins;			//vec3_t
-	int			maxs;			//vec3_t
-	int			size;			//vec3_t
-	int			touch;			//func_t
-	int			think;			//func_t
-	int			blocked;		//func_t
-	int			nextthink;		//float
-	int			groundentity;	//int
-	int			health;			//float
-	int			frags;			//float
-	int			weapon;			//float
-	int			weaponmodel;	//string_t
-	int			weaponframe;	//float
-	int			currentammo;	//float
-	int			ammo_shells;	//float
-	int			ammo_nails;		//float
-	int			ammo_rockets;	//float
-	int			ammo_cells;		//float
-	int			items;			//float
-	int			takedamage;		//float
-	int			chain;			//int
-	int			view_ofs;		//vec3_t
-	int			button0;		//float
-	int			button1;		//float
-	int			button2;		//float
-	int			impulse;		//float
-	int			fixangle;		//float
-	int			v_angle;		//vec3_t
-	int			netname;		//string_t
-	int			enemy;			//int
-	int			flags;			//float
-	int			colormap;		//float
-	int			team;			//float
-	int			teleport_time;	//float
-	int			armorvalue;		//float
-	int			waterlevel;		//float
-	int			watertype;		//float
-	int			ideal_yaw;		//float
-	int			yaw_speed;		//float
-	int			goalentity;		//int
-	int			spawnflags;		//float
-	int			dmg_take;		//float
-	int			dmg_save;		//float
-	int			dmg_inflictor;	//int
-	int			owner;			//int
-	int			message;		//string_t
-	int			sounds;			//float
-	int			rotated_bbox;	//int
+	pr_int_t    modelindex;		//float
+	pr_int_t    absmin;			//vec3_t
+	pr_int_t    absmax;			//vec3_t
+	pr_int_t    ltime;			//float
+	pr_int_t    lastruntime;	//float
+	pr_int_t    movetype;		//float
+	pr_int_t    solid;			//float
+	pr_int_t    origin;			//vec3_t
+	pr_int_t    oldorigin;		//vec3_t
+	pr_int_t    velocity;		//vec3_t
+	pr_int_t    angles;			//vec3_t
+	pr_int_t    avelocity;		//vec3_t
+	pr_int_t    classname;		//string_t
+	pr_int_t    model;			//string_t
+	pr_int_t    frame;			//float
+	pr_int_t    skin;			//float
+	pr_int_t    effects;		//float
+	pr_int_t    mins;			//vec3_t
+	pr_int_t    maxs;			//vec3_t
+	pr_int_t    size;			//vec3_t
+	pr_int_t    touch;			//func_t
+	pr_int_t    think;			//func_t
+	pr_int_t    blocked;		//func_t
+	pr_int_t    nextthink;		//float
+	pr_int_t    groundentity;	//int
+	pr_int_t    health;			//float
+	pr_int_t    frags;			//float
+	pr_int_t    weapon;			//float
+	pr_int_t    weaponmodel;	//string_t
+	pr_int_t    weaponframe;	//float
+	pr_int_t    currentammo;	//float
+	pr_int_t    ammo_shells;	//float
+	pr_int_t    ammo_nails;		//float
+	pr_int_t    ammo_rockets;	//float
+	pr_int_t    ammo_cells;		//float
+	pr_int_t    items;			//float
+	pr_int_t    takedamage;		//float
+	pr_int_t    chain;			//int
+	pr_int_t    view_ofs;		//vec3_t
+	pr_int_t    button0;		//float
+	pr_int_t    button1;		//float
+	pr_int_t    button2;		//float
+	pr_int_t    impulse;		//float
+	pr_int_t    fixangle;		//float
+	pr_int_t    v_angle;		//vec3_t
+	pr_int_t    netname;		//string_t
+	pr_int_t    enemy;			//int
+	pr_int_t    flags;			//float
+	pr_int_t    colormap;		//float
+	pr_int_t    team;			//float
+	pr_int_t    teleport_time;	//float
+	pr_int_t    armorvalue;		//float
+	pr_int_t    waterlevel;		//float
+	pr_int_t    watertype;		//float
+	pr_int_t    ideal_yaw;		//float
+	pr_int_t    yaw_speed;		//float
+	pr_int_t    goalentity;		//int
+	pr_int_t    spawnflags;		//float
+	pr_int_t    dmg_take;		//float
+	pr_int_t    dmg_save;		//float
+	pr_int_t    dmg_inflictor;	//int
+	pr_int_t    owner;			//int
+	pr_int_t    message;		//string_t
+	pr_int_t    sounds;			//float
+	pr_int_t    rotated_bbox;	//int
 
-	int			alpha;
-	int			scale;
-	int			glow_size;
-	int			glow_color;
-	int			colormod;
+	pr_int_t    alpha;
+	pr_int_t    scale;
+	pr_int_t    glow_size;
+	pr_int_t    glow_color;
+	pr_int_t    colormod;
 
-	int			gravity;
-	int			maxspeed;
+	pr_int_t    gravity;
+	pr_int_t    maxspeed;
 
-	int			team_str;		//string
+	pr_int_t    team_str;		//string
 } sv_fields_t;
 
 extern sv_fields_t sv_fields;
@@ -198,7 +198,7 @@ extern	struct progs_s sv_pr_state;
 static inline void
 sv_pr_touch (edict_t *self, edict_t *other)
 {
-	int         this;
+	pr_int_t    this;
 
 	*sv_globals.self = EDICT_TO_PROG (&sv_pr_state, self);
 	*sv_globals.other = EDICT_TO_PROG (&sv_pr_state, other);
@@ -219,7 +219,7 @@ sv_pr_use (edict_t *self, edict_t *other)
 static inline void
 sv_pr_think (edict_t *self)
 {
-	int         this;
+	pr_int_t    this;
 
 	*sv_globals.self = EDICT_TO_PROG (&sv_pr_state, self);
 	*sv_globals.other = 0;
@@ -235,7 +235,7 @@ sv_pr_think (edict_t *self)
 static inline void
 sv_pr_blocked (edict_t *self, edict_t *other)
 {
-	int         this;
+	pr_int_t    this;
 
 	*sv_globals.self = EDICT_TO_PROG (&sv_pr_state, self);
 	*sv_globals.other = EDICT_TO_PROG (&sv_pr_state, other);

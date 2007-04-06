@@ -371,9 +371,9 @@ PR_Get_Source_Line (progs_t *pr, pr_uint_t addr)
 	file = PR_Load_Source_File (pr, fname);
 
 	if (!file || line > file->num_lines)
-		return va ("%s:%d", fname, line);
+		return va ("%s:%u", fname, line);
 
-	return va ("%s:%d:%.*s", fname, line, (int)file->lines[line - 1].len,
+	return va ("%s:%u:%.*s", fname, line, (int)file->lines[line - 1].len,
 			   file->lines[line - 1].text);
 }
 
@@ -405,7 +405,7 @@ PR_DumpState (progs_t *pr)
 		if (pr_debug->int_val && pr->debug) {
 			pr_lineno_t *lineno;
 			pr_auxfunction_t *func = 0;
-			int         addr = pr->pr_xstatement;
+			pr_int_t    addr = pr->pr_xstatement;
 
 			lineno = PR_Find_Lineno (pr, addr);
 			if (lineno)
@@ -710,13 +710,13 @@ dump_frame (progs_t *pr, prstack_t *frame)
 
 		line += func->source_line;
 		if (addr == frame->s) {
-			Sys_Printf ("%12s:%d : %s: %x\n",
+			Sys_Printf ("%12s:%u : %s: %x\n",
 						PR_GetString (pr, f->s_file),
 						line,
 						PR_GetString (pr, f->s_name),
 						frame->s);
 		} else {
-			Sys_Printf ("%12s:%d+%d : %s: %x\n",
+			Sys_Printf ("%12s:%u+%d : %s: %x\n",
 						PR_GetString (pr, f->s_file),
 						line, frame->s - addr,
 						PR_GetString (pr, f->s_name),
@@ -749,7 +749,7 @@ PR_StackTrace (progs_t *pr)
 VISIBLE void
 PR_Profile (progs_t * pr)
 {
-	int         max, num, i;
+	pr_int_t    max, num, i;
 	dfunction_t *best, *f;
 
 	num = 0;

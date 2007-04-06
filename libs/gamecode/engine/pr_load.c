@@ -102,7 +102,7 @@ free_progs_mem (progs_t *pr, void *mem)
 VISIBLE void
 PR_LoadProgsFile (progs_t * pr, QFile *file, int size, int edicts, int zone)
 {
-	unsigned    i;
+	size_t      i;
 	int         mem_size;
 	dprograms_t progs;
 
@@ -120,7 +120,7 @@ PR_LoadProgsFile (progs_t * pr, QFile *file, int size, int edicts, int zone)
 	if (progs.version != PROG_VERSION
 		&& progs.version != PROG_ID_VERSION) {
 		if (progs.version < 0x00fff000) {
-			PR_Error (pr, "%s has unrecognised version number (%d)",
+			PR_Error (pr, "%s has unrecognised version number (%u)",
 					  pr->progs_name, progs.version);
 		} else {
 			PR_Error (pr,
@@ -236,7 +236,7 @@ PR_LoadProgsFile (progs_t * pr, QFile *file, int size, int edicts, int zone)
 		pr->pr_statements[i].c = LittleShort (pr->pr_statements[i].c);
 	}
 
-	for (i = 0; i < (unsigned int) pr->progs->numfunctions; i++) {
+	for (i = 0; i < (size_t) pr->progs->numfunctions; i++) {
 		pr->pr_functions[i].first_statement =
 			LittleLong (pr->pr_functions[i].first_statement);
 		pr->pr_functions[i].parm_start =
@@ -300,7 +300,7 @@ PR_AddLoadFinishFunc (progs_t *pr, int (*func)(progs_t *))
 static int
 pr_run_ctors (progs_t *pr)
 {
-	int         fnum;
+	pr_int_t    fnum;
 	dfunction_t *func;
 
 	for (fnum = 0; fnum < pr->progs->numfunctions; fnum++) {

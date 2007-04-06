@@ -1184,10 +1184,10 @@ PR_Opcode_Init (void)
 static inline void
 check_branch (progs_t *pr, dstatement_t *st, opcode_t *op, short offset)
 {
-	int         address = st - pr->pr_statements;
+	pr_int_t    address = st - pr->pr_statements;
 	
 	address += offset;
-	if (address < 0 || (unsigned int) address >= pr->progs->numstatements)
+	if (address < 0 || (pr_uint_t) address >= pr->progs->numstatements)
 		PR_Error (pr, "PR_Check_Opcodes: invalid branch (statement %ld: %s)",
 				  (long)(st - pr->pr_statements), op->opname);
 }
@@ -1227,7 +1227,7 @@ PR_Check_Opcodes (progs_t *pr)
 	opcode_t   *op;
 	dstatement_t *st;
 	int         state_ok = 0;
-	unsigned    i;
+	pr_uint_t   i;
 
 	if (pr->globals.time && pr->globals.self && pr->fields.nextthink != -1
 		&& pr->fields.think != -1 && pr->fields.frame != -1)

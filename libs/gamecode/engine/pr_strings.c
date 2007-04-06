@@ -282,13 +282,13 @@ get_string (progs_t *pr, int num)
 }
 
 VISIBLE qboolean
-PR_StringValid (progs_t *pr, int num)
+PR_StringValid (progs_t *pr, string_t num)
 {
 	return get_string (pr, num) != 0;
 }
 
 VISIBLE const char *
-PR_GetString (progs_t *pr, int num)
+PR_GetString (progs_t *pr, string_t num)
 {
 	const char *str;
 
@@ -299,7 +299,7 @@ PR_GetString (progs_t *pr, int num)
 }
 
 VISIBLE dstring_t *
-PR_GetMutableString (progs_t *pr, int num)
+PR_GetMutableString (progs_t *pr, string_t num)
 {
 	strref_t   *ref = get_strref (pr, num);
 	if (ref) {
@@ -330,7 +330,7 @@ pr_strdup (progs_t *pr, const char *s)
 	return new;
 }
 
-VISIBLE int
+VISIBLE string_t
 PR_SetString (progs_t *pr, const char *s)
 {
 	strref_t   *sr;
@@ -360,7 +360,7 @@ PR_ClearReturnStrings (progs_t *pr)
 	}
 }
 
-VISIBLE int
+VISIBLE string_t
 PR_SetReturnString (progs_t *pr, const char *s)
 {
 	strref_t   *sr;
@@ -399,7 +399,7 @@ pr_settempstring (progs_t *pr, char *s)
 	return string_index (pr, sr);
 }
 
-int
+string_t
 PR_CatStrings (progs_t *pr, const char *a, const char *b)
 {
 	int         lena;
@@ -415,7 +415,7 @@ PR_CatStrings (progs_t *pr, const char *a, const char *b)
 	return pr_settempstring (pr, c);
 }
 
-VISIBLE int
+VISIBLE string_t
 PR_SetTempString (progs_t *pr, const char *s)
 {
 	strref_t   *sr;
@@ -430,7 +430,7 @@ PR_SetTempString (progs_t *pr, const char *s)
 	return pr_settempstring (pr, pr_strdup (pr, s));
 }
 
-VISIBLE int
+VISIBLE string_t
 PR_SetDynamicString (progs_t *pr, const char *s)
 {
 	strref_t   *sr;
@@ -449,7 +449,7 @@ PR_SetDynamicString (progs_t *pr, const char *s)
 }
 
 void
-PR_MakeTempString (progs_t *pr, int str)
+PR_MakeTempString (progs_t *pr, string_t str)
 {
 	strref_t   *sr = get_strref (pr, str);
 
@@ -469,7 +469,7 @@ PR_MakeTempString (progs_t *pr, int str)
 	pr->pr_xtstr = sr;
 }
 
-VISIBLE int
+VISIBLE string_t
 PR_NewMutableString (progs_t *pr)
 {
 	strref_t   *sr = new_string_ref (pr);
@@ -479,7 +479,7 @@ PR_NewMutableString (progs_t *pr)
 }
 
 VISIBLE void
-PR_FreeString (progs_t *pr, int str)
+PR_FreeString (progs_t *pr, string_t str)
 {
 	strref_t   *sr = get_strref (pr, str);
 

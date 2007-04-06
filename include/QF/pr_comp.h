@@ -23,13 +23,13 @@
 
 #include "QF/qtypes.h"
 
-typedef int32_t func_t;
-typedef int32_t string_t;
-typedef int32_t pointer_t;
 typedef int16_t pr_short_t;
 typedef uint16_t pr_ushort_t;
 typedef int32_t pr_int_t;
 typedef uint32_t pr_uint_t;
+typedef pr_int_t func_t;
+typedef pr_int_t string_t;
+typedef pr_int_t pointer_t;
 
 typedef enum {
 	ev_void,

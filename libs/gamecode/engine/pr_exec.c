@@ -123,9 +123,9 @@ PR_PopFrame (progs_t *pr)
 static void
 PR_EnterFunction (progs_t *pr, dfunction_t *f)
 {
-	int			i, j, c, o;
-	int			k;
-	int         count = 0;
+	pr_int_t    i, j, c, o;
+	pr_int_t    k;
+	pr_int_t    count = 0;
 	int         size[2] = {0, 0};
 	long        paramofs = 0;
 	long        offs;
@@ -302,11 +302,11 @@ PR_CallFunction (progs_t *pr, func_t fnum)
 VISIBLE void
 PR_ExecuteProgram (progs_t * pr, func_t fnum)
 {
-	int				exitdepth, profile, startprofile;
-	unsigned int    pointer;
-	dstatement_t   *st;
-	edict_t		   *ed;
-	pr_type_t	   *ptr;
+	int         exitdepth, profile, startprofile;
+	pr_uint_t   pointer;
+	dstatement_t *st;
+	edict_t    *ed;
+	pr_type_t  *ptr;
 
 	// make a stack frame
 	exitdepth = pr->pr_depth;

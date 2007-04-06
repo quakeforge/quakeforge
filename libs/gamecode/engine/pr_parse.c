@@ -116,7 +116,7 @@ VISIBLE plitem_t *
 ED_EntityDict (progs_t *pr, edict_t *ed)
 {
 	plitem_t   *entity = PL_NewDictionary ();
-	unsigned    i;
+	pr_uint_t   i;
 	int         j;
 	int         type;
 	const char *name;
@@ -158,7 +158,7 @@ VISIBLE plitem_t *
 ED_GlobalsDict (progs_t *pr)
 {
 	plitem_t   *globals = PL_NewDictionary ();
-	unsigned    i;
+	pr_uint_t   i;
 	const char *name;
 	const char *value;
 	ddef_t     *def;

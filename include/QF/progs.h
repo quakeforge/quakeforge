@@ -1320,7 +1320,7 @@ extern const char *pr_gametype;
 typedef struct strref_s strref_t;
 
 typedef struct {
-	int         s;
+	pr_int_t    s;
 	dfunction_t *f;
 	strref_t   *tstr;
 } prstack_t;
@@ -1450,14 +1450,14 @@ struct progs_s {
 	/// required globals (for OP_STATE)
 	struct {
 		float      *time;
-		int        *self;
+		pr_int_t   *self;
 	} globals;
 	/// required fields (for OP_STATE)
 	struct {
-		int         nextthink;
-		int         frame;
-		int         think;
-		int         this;
+		pr_int_t    nextthink;
+		pr_int_t    frame;
+		pr_int_t    think;
+		pr_int_t    this;
 	} fields;
 };
 

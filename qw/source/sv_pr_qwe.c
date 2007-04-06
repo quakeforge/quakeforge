@@ -507,7 +507,7 @@ static builtin_t builtins[] = {
 
 static struct {
 	const char *name;
-	int        *field;
+	func_t     *field;
 } qwe_func_list[] = {
 	{"timeofday",			&qwe_funcs.timeofday},
 	{"ConsoleCmd",			&qwe_funcs.ConsoleCmd},
