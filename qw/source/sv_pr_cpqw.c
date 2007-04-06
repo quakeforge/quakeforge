@@ -30,6 +30,9 @@ const char  rcsid[] = "$Id: $";
 #ifdef HAVE_STRINGS_H
 # include <strings.h>
 #endif
+#ifdef HAVE_MALLOC_H
+# include <malloc.h>
+#endif
 #include <ctype.h>
 
 #include "QF/dstring.h"
