@@ -113,6 +113,7 @@ FRAMEID {ID}(\.{ID})*
 "//".*				/* nothing to do */
 
 ^#{s}+{DIGIT}+{s}+\"(\.|[^"\n])*\".*$ { line_info (yytext + 1); }
+^#line{s}+{DIGIT}+{s}+\"(\.|[^"\n])*\".*$ { line_info (yytext + 5); }
 
 ^{s}*#{s}*pragma.*$	/* skip */
 
