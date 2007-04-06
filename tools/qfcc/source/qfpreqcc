@@ -6,6 +6,69 @@ import sys
 import string
 from pprint import *
 
+#os.sapn*p* hack
+#swiped from Alexey Borzenkov snaury at gmail.com 
+if (not (hasattr(os, 'spawnvpe') or hasattr(os, 'spawnvp'))
+    and hasattr(os, 'spawnve') and hasattr(os, 'spawnv')):
+    def _os__spawnvpe(mode, file, args, env=None):
+        import sys
+        from errno import ENOENT, ENOTDIR
+        from os import path, spawnve, spawnv, environ, defpath, pathsep, error
+
+        if env is not None:
+            func = spawnve
+            argrest = (args, env)
+        else:
+            func = spawnv
+            argrest = (args,)
+            env = environ
+
+        head, tail = path.split(file)
+        if head:
+            return func(mode, file, *argrest)
+        if 'PATH' in env:
+            envpath = env['PATH']
+        else:
+            envpath = defpath
+        PATH = envpath.split(pathsep)
+        if os.name == 'nt' or os.name == 'os2':
+            PATH.insert(0, '')
+        saved_exc = None
+        saved_tb = None
+        for dir in PATH:
+            fullname = path.join(dir, file)
+            try:
+                return func(mode, fullname, *argrest)
+            except error, e:
+                tb = sys.exc_info()[2]
+                if (e.errno != ENOENT and e.errno != ENOTDIR
+                    and saved_exc is None):
+                    saved_exc = e
+                    saved_tb = tb
+        if saved_exc:
+            raise error, saved_exc, saved_tb
+        raise error, e, tb
+
+    def _os_spawnvp(mode, file, args):
+        return os._spawnvpe(mode, file, args)
+
+    def _os_spawnvpe(mode, file, args, env):
+        return os._spawnvpe(mode, file, args, env)
+
+    def _os_spawnlp(mode, file, *args):
+        return os._spawnvpe(mode, file, args)
+
+    def _os_spawnlpe(mode, file, *args):
+        return os._spawnvpe(mode, file, args[:-1], args[-1])
+
+    os._spawnvpe = _os__spawnvpe
+    os.spawnvp = _os_spawnvp
+    os.spawnvpe = _os_spawnvpe
+    os.spawnlp = _os_spawnlp
+    os.spawnlpe = _os_spawnlpe
+    os.__all__.extend(["spawnvp", "spawnvpe", "spawnlp", "spawnlpe"])
+#end os.sapn*p* hack
+
 string_re = re.compile (r'"(\\.|[^"\\])*"')
 comment_whole = re.compile (r'((/\*.*\*/)|//.*)')
 comment_start = re.compile (r'(/\*.*)')
