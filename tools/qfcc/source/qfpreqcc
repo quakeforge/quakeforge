@@ -228,6 +228,7 @@ def process_source (source_file):
 		f.close ()
 
 no_delete = 0
+use_cpp = 0
 i = 0
 while i < len (sys.argv):
 	if sys.argv[i] == '--keep':
@@ -236,6 +237,10 @@ while i < len (sys.argv):
 		continue
 	elif sys.argv[i] == '--verbose':
 		verbose = 1;
+		del sys.argv[i]
+		continue
+	elif sys.argv[i] == '--cpp':
+		use_cpp = 1;
 		del sys.argv[i]
 		continue
 	i = i + 1
@@ -252,6 +257,8 @@ f.close ()
 args = sys.argv[1:]
 if not verbose:
 	args = ["--quiet"] + args
+if not use_cpp:
+	args = ["-C", "no-cpp"] + args
 args = ["qfcc"] + args
 if not os.fork():
 	os.execvp ("qfcc", args)
