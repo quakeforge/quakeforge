@@ -104,6 +104,7 @@ m		([\-+]?)
 %%
 
 "/*"				{ BEGIN (comment); }
+<comment>"/*"		{ warning (0, "nested /* in comment"); }
 <comment>"*/"		{ BEGIN (INITIAL); }
 <comment>\r*\n		{ pr.source_line++; }
 <comment>.			/* nothing to do */
