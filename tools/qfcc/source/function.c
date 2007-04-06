@@ -184,9 +184,12 @@ get_function (const char *name, type_t *type, int overload, int create)
 	func = Hash_Find (function_map, name);
 	if (func) {
 		if (!overload && !func->overloaded) {
+			expr_t     *e = new_expr ();
+			e->line = func->line;
+			e->file = func->file;
 			warning (0, "creating overloaded function %s without @overload",
 					 full_name);
-			warning (0, "(previous function is %s)",
+			warning (e, "(previous function is %s)",
 					 func->full_name);
 		}
 		overload = 1;
@@ -197,6 +200,8 @@ get_function (const char *name, type_t *type, int overload, int create)
 	func->full_name = full_name;
 	func->type = type;
 	func->overloaded = overload;
+	func->file = pr.source_file;
+	func->line = pr.source_line;
 
 	Hash_Add (overloaded_functions, func);
 	Hash_Add (function_map, func);

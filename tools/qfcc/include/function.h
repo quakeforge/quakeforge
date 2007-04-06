@@ -40,6 +40,8 @@ typedef struct overloaded_function_s {
 	const char *full_name;
 	struct type_s *type;
 	int         overloaded;
+	string_t    file;
+	int         line;
 } overloaded_function_t;
 
 typedef struct function_s {
