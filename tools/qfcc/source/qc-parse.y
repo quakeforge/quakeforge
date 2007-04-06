@@ -1152,6 +1152,7 @@ string_val
 
 identifier
 	: NAME
+	| BREAK						{ $$ = save_string ("break"); }
 	| CLASS_NAME
 	| TYPE_NAME					{ $$ = $1->name; }
 	;
