@@ -287,10 +287,7 @@ if not verbose:
 if not use_cpp:
 	args = ["-C", "no-cpp"] + args
 args = ["qfcc"] + args
-if not os.fork():
-	os.execvp ("qfcc", args)
-else:
-	os.wait()
+os.spawnvp (os.P_WAIT, "qfcc", args)
 if not no_delete:
 	for l in qcc_list:
 		os.unlink (l)
