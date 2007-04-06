@@ -98,6 +98,7 @@ FLOAT	{DIGIT}+"."{DIGIT}*
 NUM		({DIGIT}+("."{DIGIT}*)?)
 s		[ \t]
 m		([\-+]?)
+FRAMEID {ID}(\.{ID})*
 
 %x		grab_frame grab_other comment
 
@@ -222,7 +223,7 @@ m		([\-+]?)
 						return INCOP;
 					}
 
-"$"{s}*{ID}			{
+"$"{s}*{FRAMEID}	{
 						int ret = do_grab (yytext);
 						if (ret > 0)
 							return ret;
@@ -230,7 +231,7 @@ m		([\-+]?)
 							BEGIN (-ret);
 					}
 
-<grab_frame>{ID}	add_frame_macro (yytext);
+<grab_frame>{FRAMEID}	add_frame_macro (yytext);
 <grab_other>[^\r\n]*	/* skip */
 
 <*>\r*\n			{
