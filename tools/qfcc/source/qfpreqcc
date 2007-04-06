@@ -6,16 +6,19 @@ import sys
 import string
 from pprint import *
 
+comment_whole = re.compile (r'((/\*.*\*/)|//.*)')
+comment_start = re.compile (r'(/\*.*)')
+comment_end = re.compile (r'(.*\*/)')
 directive_re = re.compile (
     r'^\s*#\s*(define|undef|include|includelist|endlist|ifdef|ifndef|endif|else|pragma)\b' +
     r'((\s*("[^"]*"|[^ \t\n\r\f\v/]+|/(?!/))+)?)' +
-    r'((\s*("[^"]*"|[^ \t\n\r\f\v/]+|/(?!/))+)*)' +
-    r'((\s*//.*)?)')
+    r'((\s*("[^"]*"|[^ \t\n\r\f\v/]+|/(?!/))+)*)')# +
+#    r'((\s*//.*)?)')
 macro_re = re.compile (r'#([A-Za-z_]\w*)')
 arg_re = re.compile (
     r'((\s*("[^"]*"|[^ \t\n\r\f\v/]+|/(?!/))+)?)' +
-    r'((\s*("[^"]*"|[^ \t\n\r\f\v/]+|/(?!/))+)*)' +
-    r'((\s*//.*)?)')
+    r'((\s*("[^"]*"|[^ \t\n\r\f\v/]+|/(?!/))+)*)')# +
+#    r'((\s*//.*)?)')
 
 current_file = []
 source_list = []
@@ -106,6 +109,7 @@ def process_source (source_file):
 		print source_file
 	compile_this_file = 1
 	includelist = 0
+	incomment = 0
 	current_file = []
 	output = []
 	condition = [1]
@@ -113,6 +117,22 @@ def process_source (source_file):
 	i = 0
 	while i < len (current_file):
 		l = current_file[i]
+		#print source_file + ":" + `i` + ":" + l
+		if incomment:
+			s = comment_end.search (l)
+			if s:
+				l = l[s.end():]
+				incomment = 0
+			else:
+				l = ""
+		s = comment_whole.search (l)
+		if s:
+			l = l[:s.start()] + l[s.end():]
+		s = comment_start.search (l)
+		if s:
+			l = l[:s.start()]
+			incomment = 1
+		#print l
 		m = directive_re.match (l)
 		if (m):
 			g = m.groups()
