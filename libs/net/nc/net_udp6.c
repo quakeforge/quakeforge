@@ -74,7 +74,6 @@ static __attribute__ ((used)) const char rcsid[] =
 # define EWOULDBLOCK	WSAEWOULDBLOCK
 # ifdef HAVE_IPV6
 #  include <winsock2.h>
-#  define _DEF_BYTE_
 #  undef IP_MULTICAST_IF
 #  undef IP_MULTICAST_TTL
 #  undef IP_MULTICAST_LOOP
@@ -89,7 +88,6 @@ static __attribute__ ((used)) const char rcsid[] =
 #  ifndef _WINSOCK2API_
 #   define _WINSOCK2API_
 #  endif
-#  include <tpipv6.h>
 #  define  _WINSOCKAPI_
 #  define HAVE_SOCKLEN_T
 # endif

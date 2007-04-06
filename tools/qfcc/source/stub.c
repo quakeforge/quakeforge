@@ -1,3 +1,7 @@
+#ifdef HAVE_CONFIG_H
+# include "config.h"
+#endif
+
 #include "class.h"
 #include "debug.h"
 #include "def.h"

@@ -2,9 +2,9 @@
 <VisualStudioProject
 	ProjectType="Visual C++"
 	Version="8.00"
-	Name="util"
-	ProjectGUID="{ACCC6F49-7E06-4395-AAF4-3C03A68F49EB}"
-	RootNamespace="util"
+	Name="qw-master"
+	ProjectGUID="{445A2500-3BBC-449A-A929-C419C2A16051}"
+	RootNamespace="qw-master"
 	Keyword="Win32Proj"
 	>
 	<Platforms>
@@ -22,7 +22,7 @@
 			Name="Debug|Win32"
 			OutputDirectory="$(SolutionDir)$(PlatformName)\$(ConfigurationName)"
 			IntermediateDirectory="$(PlatformName)\$(ConfigurationName)"
-			ConfigurationType="4"
+			ConfigurationType="1"
 			CharacterSet="0"
 			>
 			<Tool
@@ -44,13 +44,12 @@
 				Name="VCCLCompilerTool"
 				Optimization="0"
 				AdditionalIncludeDirectories="..\include;..\..\include;..\..\include\win32;..\..\qw\include"
-				PreprocessorDefinitions="WIN32;_DEBUG;HAVE_CONFIG_H;ZLIB_DLL"
+				PreprocessorDefinitions="WIN32;_DEBUG;HAVE_CONFIG_H"
 				StringPooling="true"
 				MinimalRebuild="true"
 				ExceptionHandling="0"
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="3"
-				BufferSecurityCheck="true"
 				EnableFunctionLevelLinking="true"
 				UsePrecompiledHeader="0"
 				WarningLevel="3"
@@ -68,10 +67,18 @@
 				Name="VCPreLinkEventTool"
 			/>
 			<Tool
-				Name="VCLibrarianTool"
+				Name="VCLinkerTool"
+				AdditionalDependencies="ws2_32.lib winmm.lib zlib.lib"
+				LinkIncremental="2"
+				GenerateDebugInformation="true"
+				SubSystem="1"
+				TargetMachine="1"
 			/>
 			<Tool
 				Name="VCALinkTool"
+			/>
+			<Tool
+				Name="VCManifestTool"
 			/>
 			<Tool
 				Name="VCXDCMakeTool"
@@ -83,6 +90,12 @@
 				Name="VCFxCopTool"
 			/>
 			<Tool
+				Name="VCAppVerifierTool"
+			/>
+			<Tool
+				Name="VCWebDeploymentTool"
+			/>
+			<Tool
 				Name="VCPostBuildEventTool"
 			/>
 		</Configuration>
@@ -90,7 +103,7 @@
 			Name="Debug|x64"
 			OutputDirectory="$(SolutionDir)$(PlatformName)\$(ConfigurationName)"
 			IntermediateDirectory="$(PlatformName)\$(ConfigurationName)"
-			ConfigurationType="4"
+			ConfigurationType="1"
 			CharacterSet="0"
 			>
 			<Tool
@@ -113,13 +126,12 @@
 				Name="VCCLCompilerTool"
 				Optimization="0"
 				AdditionalIncludeDirectories="..\include;..\..\include;..\..\include\win32;..\..\qw\include"
-				PreprocessorDefinitions="WIN32;_DEBUG;HAVE_CONFIG_H;ZLIB_DLL"
+				PreprocessorDefinitions="WIN32;_DEBUG;HAVE_CONFIG_H"
 				StringPooling="true"
 				MinimalRebuild="true"
 				ExceptionHandling="0"
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="3"
-				BufferSecurityCheck="true"
 				EnableFunctionLevelLinking="true"
 				UsePrecompiledHeader="0"
 				WarningLevel="3"
@@ -137,10 +149,18 @@
 				Name="VCPreLinkEventTool"
 			/>
 			<Tool
-				Name="VCLibrarianTool"
+				Name="VCLinkerTool"
+				AdditionalDependencies="ws2_32.lib winmm.lib zlib.lib"
+				LinkIncremental="2"
+				GenerateDebugInformation="true"
+				SubSystem="1"
+				TargetMachine="17"
 			/>
 			<Tool
 				Name="VCALinkTool"
+			/>
+			<Tool
+				Name="VCManifestTool"
 			/>
 			<Tool
 				Name="VCXDCMakeTool"
@@ -150,6 +170,12 @@
 			/>
 			<Tool
 				Name="VCFxCopTool"
+			/>
+			<Tool
+				Name="VCAppVerifierTool"
+			/>
+			<Tool
+				Name="VCWebDeploymentTool"
 			/>
 			<Tool
 				Name="VCPostBuildEventTool"
@@ -159,7 +185,7 @@
 			Name="Release|Win32"
 			OutputDirectory="$(SolutionDir)$(PlatformName)\$(ConfigurationName)"
 			IntermediateDirectory="$(PlatformName)\$(ConfigurationName)"
-			ConfigurationType="4"
+			ConfigurationType="1"
 			CharacterSet="0"
 			WholeProgramOptimization="1"
 			>
@@ -185,7 +211,7 @@
 				FavorSizeOrSpeed="1"
 				OmitFramePointers="true"
 				AdditionalIncludeDirectories="..\include;..\..\include;..\..\include\win32;..\..\qw\include"
-				PreprocessorDefinitions="WIN32;NDEBUG;HAVE_CONFIG_H;ZLIB_DLL"
+				PreprocessorDefinitions="WIN32;NDEBUG;HAVE_CONFIG_H"
 				StringPooling="true"
 				ExceptionHandling="0"
 				RuntimeLibrary="2"
@@ -207,10 +233,21 @@
 				Name="VCPreLinkEventTool"
 			/>
 			<Tool
-				Name="VCLibrarianTool"
+				Name="VCLinkerTool"
+				AdditionalDependencies="ws2_32.lib winmm.lib zlib.lib"
+				LinkIncremental="1"
+				GenerateDebugInformation="true"
+				SubSystem="1"
+				OptimizeReferences="2"
+				EnableCOMDATFolding="2"
+				OptimizeForWindows98="1"
+				TargetMachine="1"
 			/>
 			<Tool
 				Name="VCALinkTool"
+			/>
+			<Tool
+				Name="VCManifestTool"
 			/>
 			<Tool
 				Name="VCXDCMakeTool"
@@ -220,6 +257,12 @@
 			/>
 			<Tool
 				Name="VCFxCopTool"
+			/>
+			<Tool
+				Name="VCAppVerifierTool"
+			/>
+			<Tool
+				Name="VCWebDeploymentTool"
 			/>
 			<Tool
 				Name="VCPostBuildEventTool"
@@ -229,7 +272,7 @@
 			Name="Release|x64"
 			OutputDirectory="$(SolutionDir)$(PlatformName)\$(ConfigurationName)"
 			IntermediateDirectory="$(PlatformName)\$(ConfigurationName)"
-			ConfigurationType="4"
+			ConfigurationType="1"
 			CharacterSet="0"
 			WholeProgramOptimization="1"
 			>
@@ -256,7 +299,7 @@
 				FavorSizeOrSpeed="1"
 				OmitFramePointers="true"
 				AdditionalIncludeDirectories="..\include;..\..\include;..\..\include\win32;..\..\qw\include"
-				PreprocessorDefinitions="WIN32;NDEBUG;HAVE_CONFIG_H;ZLIB_DLL"
+				PreprocessorDefinitions="WIN32;NDEBUG;HAVE_CONFIG_H"
 				StringPooling="true"
 				ExceptionHandling="0"
 				RuntimeLibrary="2"
@@ -278,10 +321,21 @@
 				Name="VCPreLinkEventTool"
 			/>
 			<Tool
-				Name="VCLibrarianTool"
+				Name="VCLinkerTool"
+				AdditionalDependencies="ws2_32.lib winmm.lib zlib.lib"
+				LinkIncremental="1"
+				GenerateDebugInformation="true"
+				SubSystem="1"
+				OptimizeReferences="2"
+				EnableCOMDATFolding="2"
+				OptimizeForWindows98="1"
+				TargetMachine="17"
 			/>
 			<Tool
 				Name="VCALinkTool"
+			/>
+			<Tool
+				Name="VCManifestTool"
 			/>
 			<Tool
 				Name="VCXDCMakeTool"
@@ -293,6 +347,12 @@
 				Name="VCFxCopTool"
 			/>
 			<Tool
+				Name="VCAppVerifierTool"
+			/>
+			<Tool
+				Name="VCWebDeploymentTool"
+			/>
+			<Tool
 				Name="VCPostBuildEventTool"
 			/>
 		</Configuration>
@@ -300,7 +360,7 @@
 			Name="Release (static)|Win32"
 			OutputDirectory="$(SolutionDir)$(PlatformName)\$(ConfigurationName)"
 			IntermediateDirectory="$(PlatformName)\$(ConfigurationName)"
-			ConfigurationType="4"
+			ConfigurationType="1"
 			CharacterSet="0"
 			WholeProgramOptimization="1"
 			>
@@ -348,10 +408,21 @@
 				Name="VCPreLinkEventTool"
 			/>
 			<Tool
-				Name="VCLibrarianTool"
+				Name="VCLinkerTool"
+				AdditionalDependencies="ws2_32.lib winmm.lib libzlib.lib"
+				LinkIncremental="1"
+				GenerateDebugInformation="true"
+				SubSystem="1"
+				OptimizeReferences="2"
+				EnableCOMDATFolding="2"
+				OptimizeForWindows98="1"
+				TargetMachine="1"
 			/>
 			<Tool
 				Name="VCALinkTool"
+			/>
+			<Tool
+				Name="VCManifestTool"
 			/>
 			<Tool
 				Name="VCXDCMakeTool"
@@ -363,6 +434,12 @@
 				Name="VCFxCopTool"
 			/>
 			<Tool
+				Name="VCAppVerifierTool"
+			/>
+			<Tool
+				Name="VCWebDeploymentTool"
+			/>
+			<Tool
 				Name="VCPostBuildEventTool"
 			/>
 		</Configuration>
@@ -370,7 +447,7 @@
 			Name="Release (static)|x64"
 			OutputDirectory="$(SolutionDir)$(PlatformName)\$(ConfigurationName)"
 			IntermediateDirectory="$(PlatformName)\$(ConfigurationName)"
-			ConfigurationType="4"
+			ConfigurationType="1"
 			CharacterSet="0"
 			WholeProgramOptimization="1"
 			>
@@ -419,10 +496,21 @@
 				Name="VCPreLinkEventTool"
 			/>
 			<Tool
-				Name="VCLibrarianTool"
+				Name="VCLinkerTool"
+				AdditionalDependencies="ws2_32.lib winmm.lib libzlib.lib"
+				LinkIncremental="1"
+				GenerateDebugInformation="true"
+				SubSystem="1"
+				OptimizeReferences="2"
+				EnableCOMDATFolding="2"
+				OptimizeForWindows98="1"
+				TargetMachine="17"
 			/>
 			<Tool
 				Name="VCALinkTool"
+			/>
+			<Tool
+				Name="VCManifestTool"
 			/>
 			<Tool
 				Name="VCXDCMakeTool"
@@ -432,6 +520,12 @@
 			/>
 			<Tool
 				Name="VCFxCopTool"
+			/>
+			<Tool
+				Name="VCAppVerifierTool"
+			/>
+			<Tool
+				Name="VCWebDeploymentTool"
 			/>
 			<Tool
 				Name="VCPostBuildEventTool"
@@ -447,155 +541,7 @@
 			UniqueIdentifier="{4FC737F1-C7A5-4376-A066-2A32D752A2FF}"
 			>
 			<File
-				RelativePath="..\..\libs\util\bspfile.c"
-				>
-			</File>
-			<File
-				RelativePath="..\..\libs\util\buildnum.c"
-				>
-			</File>
-			<File
-				RelativePath="..\..\libs\util\cbuf.c"
-				>
-			</File>
-			<File
-				RelativePath="..\..\libs\util\checksum.c"
-				>
-			</File>
-			<File
-				RelativePath="..\..\libs\util\cmd.c"
-				>
-			</File>
-			<File
-				RelativePath="..\..\libs\util\crc.c"
-				>
-			</File>
-			<File
-				RelativePath="..\..\libs\util\cvar.c"
-				>
-			</File>
-			<File
-				RelativePath="..\..\libs\util\dirent.c"
-				>
-			</File>
-			<File
-				RelativePath="..\..\libs\util\dstring.c"
-				>
-			</File>
-			<File
-				RelativePath="..\..\libs\util\fendian.c"
-				>
-			</File>
-			<File
-				RelativePath="..\..\libs\util\fnmatch.c"
-				>
-			</File>
-			<File
-				RelativePath="..\..\libs\util\getopt.c"
-				>
-			</File>
-			<File
-				RelativePath="..\..\libs\util\getopt1.c"
-				>
-			</File>
-			<File
-				RelativePath="..\..\libs\util\hash.c"
-				>
-			</File>
-			<File
-				RelativePath="..\..\libs\util\idparse.c"
-				>
-			</File>
-			<File
-				RelativePath="..\..\libs\util\info.c"
-				>
-			</File>
-			<File
-				RelativePath="..\..\libs\util\link.c"
-				>
-			</File>
-			<File
-				RelativePath="..\..\libs\util\llist.c"
-				>
-			</File>
-			<File
-				RelativePath="..\..\libs\util\mathlib.c"
-				>
-			</File>
-			<File
-				RelativePath="..\..\libs\util\mdfour.c"
-				>
-			</File>
-			<File
-				RelativePath="..\..\libs\util\msg.c"
-				>
-			</File>
-			<File
-				RelativePath="..\..\libs\util\pakfile.c"
-				>
-			</File>
-			<File
-				RelativePath="..\..\libs\util\plugin.c"
-				>
-			</File>
-			<File
-				RelativePath="..\..\libs\util\qargs.c"
-				>
-			</File>
-			<File
-				RelativePath="..\..\libs\util\qendian.c"
-				>
-			</File>
-			<File
-				RelativePath="..\..\libs\util\qfplist.c"
-				>
-			</File>
-			<File
-				RelativePath="..\..\libs\util\quakefs.c"
-				>
-			</File>
-			<File
-				RelativePath="..\..\libs\util\quakeio.c"
-				>
-			</File>
-			<File
-				RelativePath="..\..\libs\util\riff.c"
-				>
-			</File>
-			<File
-				RelativePath="..\..\libs\util\script.c"
-				>
-			</File>
-			<File
-				RelativePath="..\..\libs\util\sizebuf.c"
-				>
-			</File>
-			<File
-				RelativePath="..\..\libs\util\string.c"
-				>
-			</File>
-			<File
-				RelativePath="..\..\libs\util\sys.c"
-				>
-			</File>
-			<File
-				RelativePath="..\..\libs\util\va.c"
-				>
-			</File>
-			<File
-				RelativePath="..\..\libs\util\ver_check.c"
-				>
-			</File>
-			<File
-				RelativePath="..\..\libs\util\wad.c"
-				>
-			</File>
-			<File
-				RelativePath="..\..\libs\util\wadfile.c"
-				>
-			</File>
-			<File
-				RelativePath="..\..\libs\util\zone.c"
+				RelativePath="..\..\qw\source\master.c"
 				>
 			</File>
 		</Filter>
@@ -610,6 +556,10 @@
 			Filter="rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav"
 			UniqueIdentifier="{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}"
 			>
+			<File
+				RelativePath="..\..\include\win32\resources\quakeforge.rc"
+				>
+			</File>
 		</Filter>
 	</Files>
 	<Globals>

@@ -2,9 +2,9 @@
 <VisualStudioProject
 	ProjectType="Visual C++"
 	Version="8.00"
-	Name="util"
-	ProjectGUID="{ACCC6F49-7E06-4395-AAF4-3C03A68F49EB}"
-	RootNamespace="util"
+	Name="net-main"
+	ProjectGUID="{053E1EE2-75B4-4D9A-B8AE-89600BCB60A5}"
+	RootNamespace="netmain"
 	Keyword="Win32Proj"
 	>
 	<Platforms>
@@ -43,14 +43,13 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="0"
-				AdditionalIncludeDirectories="..\include;..\..\include;..\..\include\win32;..\..\qw\include"
-				PreprocessorDefinitions="WIN32;_DEBUG;HAVE_CONFIG_H;ZLIB_DLL"
+				AdditionalIncludeDirectories="..\include;..\..\include;..\..\include\win32"
+				PreprocessorDefinitions="WIN32;_DEBUG;HAVE_CONFIG_H"
 				StringPooling="true"
 				MinimalRebuild="true"
 				ExceptionHandling="0"
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="3"
-				BufferSecurityCheck="true"
 				EnableFunctionLevelLinking="true"
 				UsePrecompiledHeader="0"
 				WarningLevel="3"
@@ -112,14 +111,13 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="0"
-				AdditionalIncludeDirectories="..\include;..\..\include;..\..\include\win32;..\..\qw\include"
-				PreprocessorDefinitions="WIN32;_DEBUG;HAVE_CONFIG_H;ZLIB_DLL"
+				AdditionalIncludeDirectories="..\include;..\..\include;..\..\include\win32"
+				PreprocessorDefinitions="WIN32;_DEBUG;HAVE_CONFIG_H"
 				StringPooling="true"
 				MinimalRebuild="true"
 				ExceptionHandling="0"
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="3"
-				BufferSecurityCheck="true"
 				EnableFunctionLevelLinking="true"
 				UsePrecompiledHeader="0"
 				WarningLevel="3"
@@ -184,8 +182,8 @@
 				EnableIntrinsicFunctions="true"
 				FavorSizeOrSpeed="1"
 				OmitFramePointers="true"
-				AdditionalIncludeDirectories="..\include;..\..\include;..\..\include\win32;..\..\qw\include"
-				PreprocessorDefinitions="WIN32;NDEBUG;HAVE_CONFIG_H;ZLIB_DLL"
+				AdditionalIncludeDirectories="..\include;..\..\include;..\..\include\win32"
+				PreprocessorDefinitions="WIN32;NDEBUG;HAVE_CONFIG_H"
 				StringPooling="true"
 				ExceptionHandling="0"
 				RuntimeLibrary="2"
@@ -255,8 +253,8 @@
 				EnableIntrinsicFunctions="true"
 				FavorSizeOrSpeed="1"
 				OmitFramePointers="true"
-				AdditionalIncludeDirectories="..\include;..\..\include;..\..\include\win32;..\..\qw\include"
-				PreprocessorDefinitions="WIN32;NDEBUG;HAVE_CONFIG_H;ZLIB_DLL"
+				AdditionalIncludeDirectories="..\include;..\..\include;..\..\include\win32"
+				PreprocessorDefinitions="WIN32;NDEBUG;HAVE_CONFIG_H"
 				StringPooling="true"
 				ExceptionHandling="0"
 				RuntimeLibrary="2"
@@ -325,7 +323,7 @@
 				EnableIntrinsicFunctions="true"
 				FavorSizeOrSpeed="1"
 				OmitFramePointers="true"
-				AdditionalIncludeDirectories="..\include;..\..\include;..\..\include\win32;..\..\qw\include"
+				AdditionalIncludeDirectories="..\include;..\..\include;..\..\include\win32"
 				PreprocessorDefinitions="WIN32;NDEBUG;HAVE_CONFIG_H"
 				StringPooling="true"
 				ExceptionHandling="0"
@@ -396,7 +394,7 @@
 				EnableIntrinsicFunctions="true"
 				FavorSizeOrSpeed="1"
 				OmitFramePointers="true"
-				AdditionalIncludeDirectories="..\include;..\..\include;..\..\include\win32;..\..\qw\include"
+				AdditionalIncludeDirectories="..\include;..\..\include;..\..\include\win32"
 				PreprocessorDefinitions="WIN32;NDEBUG;HAVE_CONFIG_H"
 				StringPooling="true"
 				ExceptionHandling="0"
@@ -447,155 +445,27 @@
 			UniqueIdentifier="{4FC737F1-C7A5-4376-A066-2A32D752A2FF}"
 			>
 			<File
-				RelativePath="..\..\libs\util\bspfile.c"
+				RelativePath="..\..\libs\net\nm\net_dgrm.c"
 				>
 			</File>
 			<File
-				RelativePath="..\..\libs\util\buildnum.c"
+				RelativePath="..\..\libs\net\nm\net_loop.c"
 				>
 			</File>
 			<File
-				RelativePath="..\..\libs\util\cbuf.c"
+				RelativePath="..\..\libs\net\net_main.c"
 				>
 			</File>
 			<File
-				RelativePath="..\..\libs\util\checksum.c"
+				RelativePath="..\..\libs\net\nm\net_vcr.c"
 				>
 			</File>
 			<File
-				RelativePath="..\..\libs\util\cmd.c"
+				RelativePath="..\..\libs\net\nm\net_win.c"
 				>
 			</File>
 			<File
-				RelativePath="..\..\libs\util\crc.c"
-				>
-			</File>
-			<File
-				RelativePath="..\..\libs\util\cvar.c"
-				>
-			</File>
-			<File
-				RelativePath="..\..\libs\util\dirent.c"
-				>
-			</File>
-			<File
-				RelativePath="..\..\libs\util\dstring.c"
-				>
-			</File>
-			<File
-				RelativePath="..\..\libs\util\fendian.c"
-				>
-			</File>
-			<File
-				RelativePath="..\..\libs\util\fnmatch.c"
-				>
-			</File>
-			<File
-				RelativePath="..\..\libs\util\getopt.c"
-				>
-			</File>
-			<File
-				RelativePath="..\..\libs\util\getopt1.c"
-				>
-			</File>
-			<File
-				RelativePath="..\..\libs\util\hash.c"
-				>
-			</File>
-			<File
-				RelativePath="..\..\libs\util\idparse.c"
-				>
-			</File>
-			<File
-				RelativePath="..\..\libs\util\info.c"
-				>
-			</File>
-			<File
-				RelativePath="..\..\libs\util\link.c"
-				>
-			</File>
-			<File
-				RelativePath="..\..\libs\util\llist.c"
-				>
-			</File>
-			<File
-				RelativePath="..\..\libs\util\mathlib.c"
-				>
-			</File>
-			<File
-				RelativePath="..\..\libs\util\mdfour.c"
-				>
-			</File>
-			<File
-				RelativePath="..\..\libs\util\msg.c"
-				>
-			</File>
-			<File
-				RelativePath="..\..\libs\util\pakfile.c"
-				>
-			</File>
-			<File
-				RelativePath="..\..\libs\util\plugin.c"
-				>
-			</File>
-			<File
-				RelativePath="..\..\libs\util\qargs.c"
-				>
-			</File>
-			<File
-				RelativePath="..\..\libs\util\qendian.c"
-				>
-			</File>
-			<File
-				RelativePath="..\..\libs\util\qfplist.c"
-				>
-			</File>
-			<File
-				RelativePath="..\..\libs\util\quakefs.c"
-				>
-			</File>
-			<File
-				RelativePath="..\..\libs\util\quakeio.c"
-				>
-			</File>
-			<File
-				RelativePath="..\..\libs\util\riff.c"
-				>
-			</File>
-			<File
-				RelativePath="..\..\libs\util\script.c"
-				>
-			</File>
-			<File
-				RelativePath="..\..\libs\util\sizebuf.c"
-				>
-			</File>
-			<File
-				RelativePath="..\..\libs\util\string.c"
-				>
-			</File>
-			<File
-				RelativePath="..\..\libs\util\sys.c"
-				>
-			</File>
-			<File
-				RelativePath="..\..\libs\util\va.c"
-				>
-			</File>
-			<File
-				RelativePath="..\..\libs\util\ver_check.c"
-				>
-			</File>
-			<File
-				RelativePath="..\..\libs\util\wad.c"
-				>
-			</File>
-			<File
-				RelativePath="..\..\libs\util\wadfile.c"
-				>
-			</File>
-			<File
-				RelativePath="..\..\libs\util\zone.c"
+				RelativePath="..\..\libs\net\nm\net_wins.c"
 				>
 			</File>
 		</Filter>

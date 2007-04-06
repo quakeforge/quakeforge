@@ -181,7 +181,7 @@ void *alloca (int size);
 /* #undef HAVE_INTTYPES_H */
 
 /* Define this if your system has struct in_pktinfo */
-#define HAVE_IN_PKTINFO 1
+/* #undef HAVE_IN_PKTINFO */
 
 /* Define to 1 if you have the <io.h> header file. */
 #define HAVE_IO_H 1
@@ -193,7 +193,7 @@ void *alloca (int size);
 /* #undef HAVE_JACK */
 
 /* Define to 1 if you have a functional curl library. */
-/* #undef HAVE_LIBCURL */
+#define HAVE_LIBCURL 1
 
 /* Define to 1 if you have the <libc.h> header file. */
 /* #undef HAVE_LIBC_H */
@@ -469,7 +469,7 @@ void *alloca (int size);
 /* #undef HAVE_XMMS */
 
 /* Define if you have zlib */
-/* #undef HAVE_ZLIB */
+#define HAVE_ZLIB 1
 
 /* Define to 1 if you have the `_access' function. */
 #define HAVE__ACCESS 1
@@ -522,25 +522,25 @@ void *alloca (int size);
 /* #undef LIBCURL_FEATURE_ASYNCHDNS */
 
 /* Defined if libcurl supports IDN */
-/* #undef LIBCURL_FEATURE_IDN */
+#define LIBCURL_FEATURE_IDN 1
 
 /* Defined if libcurl supports IPv6 */
-/* #undef LIBCURL_FEATURE_IPV6 */
+#define LIBCURL_FEATURE_IPV6 1
 
 /* Defined if libcurl supports KRB4 */
 /* #undef LIBCURL_FEATURE_KRB4 */
 
 /* Defined if libcurl supports libz */
-/* #undef LIBCURL_FEATURE_LIBZ */
+#define LIBCURL_FEATURE_LIBZ 1
 
 /* Defined if libcurl supports NTLM */
-/* #undef LIBCURL_FEATURE_NTLM */
+#define LIBCURL_FEATURE_NTLM 1
 
 /* Defined if libcurl supports SSL */
 /* #undef LIBCURL_FEATURE_SSL */
 
 /* Defined if libcurl supports SSPI */
-/* #undef LIBCURL_FEATURE_SSPI */
+#define LIBCURL_FEATURE_SSPI 1
 
 /* Defined if libcurl supports DICT */
 /* #undef LIBCURL_PROTOCOL_DICT */
@@ -549,13 +549,13 @@ void *alloca (int size);
 /* #undef LIBCURL_PROTOCOL_FILE */
 
 /* Defined if libcurl supports FTP */
-/* #undef LIBCURL_PROTOCOL_FTP */
+#define LIBCURL_PROTOCOL_FTP 1
 
 /* Defined if libcurl supports FTPS */
 /* #undef LIBCURL_PROTOCOL_FTPS */
 
 /* Defined if libcurl supports HTTP */
-/* #undef LIBCURL_PROTOCOL_HTTP */
+#define LIBCURL_PROTOCOL_HTTP 1
 
 /* Defined if libcurl supports HTTPS */
 /* #undef LIBCURL_PROTOCOL_HTTPS */

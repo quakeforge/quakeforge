@@ -46,7 +46,7 @@
 
 #ifndef _DEF_BYTE_
 # define _DEF_BYTE_
-typedef unsigned char byte;
+typedef uint8_t byte;
 #endif
 
 #ifndef _DEF_BOOL_
