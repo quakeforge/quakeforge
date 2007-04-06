@@ -310,10 +310,11 @@ check_initialized (expr_t *e)
 			warning (e, "%s may be used uninitialized", name);
 		e->e.def->suppress = 1;	// only warn once
 		if (options.traditional && !e->e.def->set) {
+			def_t      *def = e->e.def;
 			e->e.def->set = 1;	// only auto-init once
 			e = assign_expr (e, new_nil_expr ());
-			e->file = current_func->s_file;
-			e->line = current_func->def->line;
+			e->file = def->file;
+			e->line = def->line;
 			e->next = current_func->var_init;
 			current_func->var_init = e;
 			notice (e, "auto-initializing %s", name);
