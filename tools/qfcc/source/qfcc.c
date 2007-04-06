@@ -662,7 +662,7 @@ load_file (const char *fname)
 	FILE       *tmpfile;
 
 	tmpfile = preprocess_file (fname, "i1");
-	if (!file)
+	if (!tmpfile)
 		return 0;
 	file = Qfopen (tmpfile, "rt");
 	if (!file) {
