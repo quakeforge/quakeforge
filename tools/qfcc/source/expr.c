@@ -306,9 +306,9 @@ check_initialized (expr_t *e)
 		&& !e->e.def->external
 		&& !e->e.def->initialized) {
 		name = e->e.def->name;
-		if (options.warnings.uninited_variable)
+		if (options.warnings.uninited_variable && !e->e.def->suppress)
 			warning (e, "%s may be used uninitialized", name);
-		e->e.def->initialized = 1;	// only warn once
+		e->e.def->suppress = 1;	// only warn once
 		if (options.traditional && !e->e.def->set) {
 			e->e.def->set = 1;	// only auto-init once
 			e = assign_expr (e, new_nil_expr ());
