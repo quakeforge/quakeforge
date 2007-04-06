@@ -43,6 +43,7 @@
 #include "compat.h"
 #include "server.h"
 #include "sv_progs.h"
+#include "sv_pr_cpqw.h"
 #include "sv_pr_qwe.h"
 #include "world.h"
 
@@ -478,6 +479,9 @@ SV_LoadProgs (void)
 			   || strequal (sv_progs_ext->string, "ktpro")) {
 		sv_range = PR_RANGE_QWE;
 		range = "QWE/KTPro";
+	} else if (strequal (sv_progs_ext->string, "cpqw")) {
+		sv_range = PR_RANGE_CPQW;
+		range = "CPQW";
 	} else {
 		sv_range = PR_RANGE_NONE;
 		range = "None";
@@ -512,6 +516,7 @@ SV_Progs_Init (void)
 
 	SV_PR_Cmds_Init ();
 	SV_PR_QWE_Init (&sv_pr_state);
+	SV_PR_CPQW_Init (&sv_pr_state);
 
 	Cmd_AddCommand ("edict", ED_PrintEdict_f, "Report information on a given "
 					"edict in the game. (edict (edict number))");
@@ -534,7 +539,7 @@ SV_Progs_Init_Cvars (void)
 							  "size of the zone for progs in kb");
 	sv_progs_ext = Cvar_Get ("sv_progs_ext", "qf", CVAR_NONE, NULL,
 							 "extention mapping to use: "
-							 "none, id, qf, qwe, ktpro");
+							 "none, id, qf, qwe, ktpro, cpqw");
 	pr_checkextensions = Cvar_Get ("pr_checkextensions", "1", CVAR_ROM, NULL,
 								   "indicate the presence of the "
 								   "checkextentions qc function");

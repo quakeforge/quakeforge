@@ -179,6 +179,7 @@ extern	struct progs_s sv_pr_state;
 #define PR_RANGE_ID		0x0000
 #define PR_RANGE_ID_MAX	82
 #define PR_RANGE_QWE	0x0001
+#define PR_RANGE_CPQW	0x0002
 
 #if TYPECHECK_PROGS
 #define SVFIELD(e,f,t) E_var (e, PR_AccessField (&sv_pr_state, #f, ev_##t, __FILE__, __LINE__), t)
