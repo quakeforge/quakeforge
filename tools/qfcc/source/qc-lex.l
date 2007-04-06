@@ -80,15 +80,12 @@ YY_DECL;
 
 
 int type_or_name (char *token);
-
 int do_grab (char *token);
-
 void add_frame_macro (char *token);
-
 const char *make_string (char *token, char **end);
-
 void push_source_file (void);
 void pop_source_file (void);
+void line_info (char *text);
 
 extern YYSTYPE yylval;
 
@@ -110,11 +107,12 @@ m		([\-+]?)
 <comment>"*/"		{ BEGIN (INITIAL); }
 <comment>\r*\n		{ pr.source_line++; }
 <comment>.			/* nothing to do */
-<comment><<EOF>>	{
-						error (0, "EOF in comment");
-						return 0;
-					}
+<comment><<EOF>>	{ error (0, "EOF in comment"); return 0; }
 "//".*				/* nothing to do */
+
+^#{s}+{DIGIT}+{s}+\"(\.|[^"\n])*\".*$ { line_info (yytext + 1); }
+
+^{s}*#{s}*pragma.*$	/* skip */
 
 {DIGIT}+			{
 						yylval.integer_val = atoi (yytext);
@@ -180,41 +178,6 @@ m		([\-+]?)
 						return INT_VAL;
 					}
 
-^{s}*#{s}*pragma.*$	/* skip */
-
-^#{s}+{DIGIT}+{s}+\"(\.|[^"\n])*\".*$ {
-						char *p;
-						char *s;
-						const char *str;
-						int line;
-						int flags;
-
-						p = yytext + 1;
-						line = strtol (p, &s, 10);
-						p = s;
-						while (isspace ((unsigned char)*p))
-							p++;
-						if (!*p)
-							error (0, "Unexpected end of file");
-						str = make_string (p, &s);		// grab the filename
-						p = s;
-						while (isspace ((unsigned char)*p))
-							p++;
-						flags = strtol (p, &s, 10);
-						switch (flags) {
-							case 1:
-								push_source_file ();
-								break;
-							case 2:
-								pop_source_file ();
-								break;
-						}
-						while (*p && *p != '\n')	// ignore rest
-							p++;
-						pr.source_line = line - 1;
-						pr.source_file = ReuseString (strip_path (str));
-					}
-
 [+\-*/&|^%]=		{
 						yylval.op = yytext[0];
 						return ASX;
@@ -259,7 +222,7 @@ m		([\-+]?)
 					}
 
 "$"{s}*{ID}			{
-						int ret = do_grab(yytext);
+						int ret = do_grab (yytext);
 						if (ret > 0)
 							return ret;
 						else
@@ -267,7 +230,6 @@ m		([\-+]?)
 					}
 
 <grab_frame>{ID}	add_frame_macro (yytext);
-
 <grab_other>[^\r\n]*	/* skip */
 
 <*>\r*\n			{
@@ -371,7 +333,7 @@ type_or_name (char *token)
 	class_t    *class;
 
 	if (!keyword_tab) {
-		unsigned int i;
+		size_t      i;
 		keyword_tab = Hash_NewTable (1021, keyword_get_key, 0, 0);
 		for (i = 0; i < sizeof (keywords) / sizeof (keywords[0]); i++)
 			if (keywords[i].traditional >= options.traditional
@@ -442,7 +404,7 @@ do_grab (char *token)
 	frame_t *frame;
 
 	if (!initialized) {
-		unsigned int i;
+		size_t      i;
 
 		initialized = 1;
 		frame_tab = Hash_NewTable (1021, frame_get_key, frame_free, 0);
@@ -685,6 +647,41 @@ pop_source_file (void)
 	pr.srcline_stack = tmp->next;
 	tmp->next = free_srclines;
 	free_srclines = tmp;
+}
+
+void
+line_info (char *text)
+{
+	char *p;
+	char *s;
+	const char *str;
+	int line;
+	int flags;
+
+	p = text;
+	line = strtol (p, &s, 10);
+	p = s;
+	while (isspace ((unsigned char)*p))
+		p++;
+	if (!*p)
+		error (0, "Unexpected end of file");
+	str = make_string (p, &s);		// grab the filename
+	p = s;
+	while (isspace ((unsigned char) *p))
+		p++;
+	flags = strtol (p, &s, 10);
+	switch (flags) {
+		case 1:
+			push_source_file ();
+			break;
+		case 2:
+			pop_source_file ();
+			break;
+	}
+	while (*p && *p != '\n')	// ignore rest
+		p++;
+	pr.source_line = line - 1;
+	pr.source_file = ReuseString (strip_path (str));
 }
 
 #ifdef YY_FLEX_REALLOC_HACK
