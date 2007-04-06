@@ -77,7 +77,7 @@ directive_re = re.compile (
     r'^\s*#\s*(define|undef|include|includelist|endlist|ifdef|ifndef|endif|else|pragma)\b' +
     r'((\s*("[^"]*"|[^ \t\n\r\f\v/]+|/(?!/))+)?)' +
     r'((\s*("[^"]*"|[^ \t\n\r\f\v/]+|/(?!/))+)*)')
-macro_re = re.compile (r'#([A-Za-z_]\w*)')
+macro_re = re.compile (r'#([A-Za-z_][0-9A-Za-z_]*)')
 arg_re = re.compile (
     r'((\s*("[^"]*"|[^ \t\n\r\f\v/]+|/(?!/))+)?)' +
     r'((\s*("[^"]*"|[^ \t\n\r\f\v/]+|/(?!/))+)*)')
