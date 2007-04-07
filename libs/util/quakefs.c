@@ -537,15 +537,18 @@ qfs_build_gamedir (const char **list)
 static void
 qfs_load_config (void)
 {
-	QFile      *f;
+	QFile      *f = 0;
 	int         len;
 	char       *buf;
 	char       *dirconf;
 
-	dirconf = expand_squiggle (fs_dirconf->string);
-	if (!(f = Qopen (dirconf, "rt")))
-		Sys_DPrintf ("Could not load `%s', using builtin defaults\n", dirconf);
-	free (dirconf);
+	if (*fs_dirconf->string) {
+		dirconf = expand_squiggle (fs_dirconf->string);
+		if (!(f = Qopen (dirconf, "rt")))
+			Sys_DPrintf ("Could not load `%s', using builtin defaults\n",
+						 dirconf);
+		free (dirconf);
+	}
 	if (!f)
 		goto no_config;
 
