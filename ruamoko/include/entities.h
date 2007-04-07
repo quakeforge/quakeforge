@@ -32,9 +32,11 @@
 #define __ruamoko_entities_h
 
 #ifdef __RUA_INTERNAL_IMPLEMENT
+# undef BUILTIN
 # define BUILTIN(name, number, rettype, ...) \
 	rettype (__VA_ARGS__) name = number
 #else
+# undef BUILTIN
 # define BUILTIN(name, number, rettype, ...) \
 	rettype (__VA_ARGS__) name
 @extern {
