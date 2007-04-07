@@ -177,7 +177,9 @@ MOD_TraceLine (hull_t *hull, int num,
 			num = node->children[0];
 			continue;
 		}
-		if (start_dist <= -offset && end_dist <= -offset) {
+		//if (start_dist <= -offset && end_dist <= -offset) {
+		//XXX not so equivalent, it seems.
+		if (start_dist < -offset && end_dist < -offset) {
 			// entirely behind the plane
 			num = node->children[1];
 			continue;
