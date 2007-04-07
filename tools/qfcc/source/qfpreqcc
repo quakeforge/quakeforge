@@ -95,7 +95,7 @@ verbose = 0
 
 def append_file (filename):
 	global current_file
-	f = open (filename, "rt")
+	f = open (filename, "rb")
 	lines = f.readlines ()
 	f.close ()
 	current_file.append ('# 1 "' + filename + '"')
@@ -312,7 +312,7 @@ def process_source (source_file):
 	if compile_this_file:
 		fname = source_file + '.pqc'
 		qcc_list.append (fname)
-		f = open (fname, "wt")
+		f = open (fname, "wb")
 		for l in output:
 			f.write(l + '\n')
 		f.close ()
@@ -339,7 +339,7 @@ for s in source_list:
 	if s[0]=='#':
 		continue		# preprocessor directive
 	process_source (s)
-f = open (progs_src, "wt")
+f = open (progs_src, "wb")
 f.write (progs_dat + '\n\n')
 for l in qcc_list:
 	f.write(l + '\n')
