@@ -56,13 +56,13 @@ Con_CreateInputLine (int lines, int lsize, char prompt)
 	inputline_t	   *inputline;
 	int				i;
 
-	size = sizeof (inputline_t);	// space for the header
-	size += sizeof(char*) * lines;	// space for the line pointers
-	size += lines * lsize;			// space for the lines themselves
+	size = sizeof (inputline_t);		// space for the header
+	size += sizeof (char *) * lines;	// space for the line pointers
+	size += lines * lsize;				// space for the lines themselves
 
 	inputline = calloc (1, size);
-	p = (char**)(inputline + 1);
-	l = (char*)&p[lines];
+	p = (char **) (inputline + 1);
+	l = p[lines];
 
 	inputline->lines = p;
 	inputline->num_lines = lines;
@@ -169,8 +169,8 @@ Con_ProcessInputLine (inputline_t *il, int ch)
 					break;
 				// This also moves the ending \0
 				memmove (il->lines[il->edit_line] + il->linepos + 1,
-						il->lines[il->edit_line] + il->linepos,
-						i - il->linepos + 1);
+						 il->lines[il->edit_line] + il->linepos,
+						 i - il->linepos + 1);
 				il->lines[il->edit_line][il->linepos] = ch;
 				il->linepos++;
 			}

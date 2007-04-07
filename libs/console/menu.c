@@ -96,10 +96,10 @@ menu_resolve_globals (progs_t *pr)
 
 	if (!(f = PR_FindFunction (pr, sym = "menu_init")))
 		goto error;
-	menu_init = (func_t)(f - menu_pr_state.pr_functions);
+	menu_init = (func_t) (f - menu_pr_state.pr_functions);
 	if (!(f = PR_FindFunction (pr, sym = "menu_draw_hud")))
 		goto error;
-	menu_draw_hud = (func_t)(f - pr->pr_functions);
+	menu_draw_hud = (func_t) (f - pr->pr_functions);
 	if (!(def = PR_FindGlobal (pr, sym = "time")))
 		goto error;
 	menu_pr_state.globals.time = &G_FLOAT (pr, def->ofs);
@@ -112,17 +112,17 @@ error:
 static const char *
 menu_get_key (void *m, void *unused)
 {
-	return ((menu_item_t *)m)->text;
+	return ((menu_item_t *) m)->text;
 }
 
 static void
 menu_free (void *_m, void *unused)
 {
 	int         i;
-	menu_item_t *m = (menu_item_t *)_m;
+	menu_item_t *m = (menu_item_t *) _m;
 
 	if (m->text)
-		free ((char*)m->text);
+		free ((char *) m->text);
 	if (m->parent) {
 		// remove self from parent list to avoid double frees
 		for (i = 0; i < m->parent->num_items; i++)
@@ -143,7 +143,7 @@ menu_free (void *_m, void *unused)
 		menu_pic_t *p = m->pics;
 		m->pics = p->next;
 		if (p->name)
-			free ((char*)p->name);
+			free ((char *) p->name);
 		free (p);
 	}
 	free (m);
@@ -324,7 +324,7 @@ bi_Menu_TopMenu (progs_t *pr)
 	const char *name = P_GSTRING (pr, 0);
 
 	if (top_menu)
-		free ((char*)top_menu);
+		free ((char *) top_menu);
 	top_menu = strdup (name);
 }
 

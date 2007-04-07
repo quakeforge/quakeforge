@@ -70,6 +70,7 @@ static __attribute__ ((used)) const char rcsid[] =
 #include "QF/cmd.h"
 #include "QF/console.h"
 #include "QF/cvar.h"
+#include "QF/dstring.h"
 #include "QF/hash.h"
 #include "QF/pakfile.h"
 #include "QF/qargs.h"
@@ -83,7 +84,7 @@ static __attribute__ ((used)) const char rcsid[] =
 #include "compat.h"
 
 #ifndef HAVE_FNMATCH_PROTO
-int         fnmatch (const char *__pattern, const char *__string, int __flags);
+int fnmatch (const char *__pattern, const char *__string, int __flags);
 #endif
 
 static int
@@ -104,14 +105,12 @@ filelist_print (filelist_t *filelist)
 	if (filelist->count) {
 		qsort (filelist->list, filelist->count, sizeof (char *), filelist_cmp);
 
-		//if (0) filelist_cmp (0, 0);
-
-		list = (const char **)malloc ((filelist->count + 1)*sizeof(char **));
+		list = malloc ((filelist->count + 1) * sizeof (char **));
 		list[filelist->count] = 0;
 		for (i = 0; i < filelist->count; i++)
 			list[i] = filelist->list[i];
 		Con_DisplayList (list, con_linewidth);
-		free ((void*)list);
+		free ((void *) list);
 	}
 }
 
@@ -119,9 +118,9 @@ VISIBLE void
 Con_Maplist_f (void)
 {
 	filelist_t *maplist = QFS_FilelistNew ();
-	
+
 	QFS_FilelistFill (maplist, "maps/", "bsp", 1);
-	
+
 	filelist_print (maplist);
 	QFS_FilelistFree (maplist);
 }
@@ -130,7 +129,7 @@ VISIBLE void
 Con_Skinlist_f (void)
 {
 	filelist_t *skinlist = QFS_FilelistNew ();
-	
+
 	QFS_FilelistFill (skinlist, "skins/", "pcx", 1);
 
 	filelist_print (skinlist);
@@ -150,8 +149,9 @@ const char *sb_endings[] = {
 VISIBLE void
 Con_Skyboxlist_f (void)
 {
-	int i, j, k, c, b;
-	char basename[256];
+	int         i, j, k, c, b;
+	size_t      ending_len = strlen (sb_endings[0]);
+	dstring_t  *basename = dstring_new ();
 
 	filelist_t *skyboxlist = QFS_FilelistNew ();
 	filelist_t *cutlist = QFS_FilelistNew ();
@@ -160,40 +160,44 @@ Con_Skyboxlist_f (void)
 	QFS_FilelistFill (skyboxlist, "env/", "pcx", 1);
 
 	for (i = 0; i < skyboxlist->count; i++) {
-		if (strlen(skyboxlist->list[i]) > strlen(sb_endings[0]) && strcmp(skyboxlist->list[i] + strlen(skyboxlist->list[i]) - strlen(sb_endings[0]), sb_endings[0]) == 0) {
-			strncpy(basename, skyboxlist->list[i], sizeof(basename));
-			basename[strlen(skyboxlist->list[i]) - strlen(sb_endings[0])] = 0;
+		if (strlen(skyboxlist->list[i]) > ending_len
+			&& strcmp((skyboxlist->list[i] + strlen (skyboxlist->list[i])
+					   - ending_len),
+					  sb_endings[0]) == 0) {
+			dstring_copysubstr (basename, skyboxlist->list[i],
+								strlen (skyboxlist->list[i]) - ending_len);
 			c = 0;
 			for (j = 1; sb_endings[j]; j++) {
 				b = 0;
 				for (k = 0; k < skyboxlist->count; k++) {
-					if (strcmp(va("%s%s", basename, sb_endings[j]), skyboxlist->list[k]) == 0) {
+					if (strcmp(va("%s%s", basename->str, sb_endings[j]),
+							   skyboxlist->list[k]) == 0) {
 						b = 1;
 						*skyboxlist->list[k] = 0;
 					}
 				}
 				c += b;
-				
 			}
 			if (c == 5)
-				QFS_FilelistAdd (cutlist, basename, 0);
+				QFS_FilelistAdd (cutlist, basename->str, 0);
 		}
 	}
 	filelist_print (cutlist);
 	QFS_FilelistFree (cutlist);
 	QFS_FilelistFree (skyboxlist);
+	dstring_delete (basename);
 }
 
 VISIBLE void
 Con_Demolist_QWD_f (void)
 {
 	filelist_t *demolist = QFS_FilelistNew ();
-	
+
 	QFS_FilelistFill (demolist, "", "qwd", 1);
-	
+
 	filelist_print (demolist);
 	QFS_FilelistFree (demolist);
-	
+
 	return;
 }
 
@@ -201,7 +205,7 @@ VISIBLE void
 Con_Demolist_DEM_f (void)
 {
 	filelist_t *demolist = QFS_FilelistNew ();
-	
+
 	QFS_FilelistFill (demolist, "", "dem", 1);
 
 	filelist_print (demolist);

@@ -59,38 +59,34 @@ static __attribute__ ((used)) const char rcsid[] =
 VISIBLE void
 Con_BasicCompleteCommandLine (inputline_t *il)
 {
-	char		   *s;
-	const char	   *cmd = "", **list[3] = {0, 0, 0};
-	int				cmd_len, c, i, v, o;
-	cbuf_t			*cbuf;
+	char       *s;
+	const char *cmd = "", **list[3] = {0, 0, 0};
+	int         cmd_len, c, i, v, o;
+	cbuf_t     *cbuf;
 
 	s = il->lines[il->edit_line] + 1;
 	
 	if (*s == '\\' || *s == '/')
 		s++;
 
-	s = strdup(s);
+	s = strdup (s);
 
 	cbuf = con_module->data->console->cbuf;
 
-	if (cbuf->interpreter->complete)
-	{
-		const char** completions = cbuf->interpreter->complete(cbuf, s);
-		const char** com;
+	if (cbuf->interpreter->complete) {
+		const char **completions = cbuf->interpreter->complete (cbuf, s);
+		const char **com;
 		
 		for (o = 0, com = completions; *com; com++, o++)
-		{
-		}
+			;
 		
 		c = v = 0;
 		
 		list[2] = completions;
-	}
-	else
-	{
+	} else {
 		// Count number of possible matches
-		c = Cmd_CompleteCountPossible(s);
-		v = Cvar_CompleteCountPossible(s);
+		c = Cmd_CompleteCountPossible (s);
+		v = Cvar_CompleteCountPossible (s);
 		o = 0;
 	}
 	
@@ -98,33 +94,28 @@ Con_BasicCompleteCommandLine (inputline_t *il)
 		return;
 	
 	if (c + v + o == 1) {
-		if (c)
-		{
-			list[0] = Cmd_CompleteBuildList(s);
+		if (c) {
+			list[0] = Cmd_CompleteBuildList (s);
 			cmd = *list[0];
-		}
-		else if (v)
-		{
-			list[0] = Cvar_CompleteBuildList(s);
+		} else if (v) {
+			list[0] = Cvar_CompleteBuildList (s);
 			cmd = *list[0];
-		}
-		else
-		{
+		} else {
 			cmd = *list[2];
 		}
 		cmd_len = strlen (cmd);
 	} else {
 		if (c)
-			cmd = *(list[0] = Cmd_CompleteBuildList(s));
+			cmd = *(list[0] = Cmd_CompleteBuildList (s));
 		if (v)
-			cmd = *(list[1] = Cvar_CompleteBuildList(s));
+			cmd = *(list[1] = Cvar_CompleteBuildList (s));
 		if (o)
 			cmd = *(list[2]);
 		
 		cmd_len = 0;
 		do {
 			for (i = 0; i < 3; i++) {
-				char ch = cmd[cmd_len];
+				char        ch = cmd[cmd_len];
 				const char **l = list[i];
 				if (l) {
 					while (*l && (*l)[cmd_len] == ch)
@@ -137,38 +128,41 @@ Con_BasicCompleteCommandLine (inputline_t *il)
 				cmd_len++;
 		} while (i == 3);
 		// 'quakebar'
-		Con_Printf("\n\35");
+		Con_Printf ("\n\35");
 		for (i = 0; i < con_linewidth - 4; i++)
-			Con_Printf("\36");
-		Con_Printf("\37\n");
+			Con_Printf ("\36");
+		Con_Printf ("\37\n");
 
 		// Print Possible Commands
 		if (c) {
-			Con_Printf("%i possible command%s\n", c, (c > 1) ? "s: " : ":");
-			Con_DisplayList(list[0], con_linewidth);
+			Con_Printf ("%i possible command%s\n", c, (c > 1) ? "s: " : ":");
+			Con_DisplayList (list[0], con_linewidth);
 		}
 		
 		if (v) {
-			Con_Printf("%i possible variable%s\n", v, (v > 1) ? "s: " : ":");
-			Con_DisplayList(list[1], con_linewidth);
+			Con_Printf ("%i possible variable%s\n", v, (v > 1) ? "s: " : ":");
+			Con_DisplayList (list[1], con_linewidth);
 		}
 		if (o) {
-			Con_Printf("%i possible matche%s\n", o, (o > 1) ? "s: " : ":");
-			Con_DisplayList(list[2], con_linewidth);
+			Con_Printf ("%i possible matche%s\n", o, (o > 1) ? "s: " : ":");
+			Con_DisplayList (list[2], con_linewidth);
 		}
 	}
 	
 	if (cmd) {
-		unsigned int bound = max(0, (int) strlen(s) - (int) cmd_len);
-		const char* overwrite;
+		unsigned    bound = max (0, (int) strlen (s) - (int) cmd_len);
+		const char *overwrite;
 		
-		if (cmd_len > 0) while (bound < strlen(s) && strncmp(s+bound, cmd, strlen(s+bound))) bound++;
+		if (cmd_len > 0)
+			while (bound < strlen (s)
+				   && strncmp (s + bound, cmd, strlen (s + bound)))
+				bound++;
 
 		overwrite = va("%.*s%.*s", bound, s, cmd_len, cmd);
 	
 		il->lines[il->edit_line][1] = '/';
-		strncpy(il->lines[il->edit_line] + 2, overwrite, strlen(overwrite));
-		il->linepos = strlen(overwrite) + 2;
+		strncpy (il->lines[il->edit_line] + 2, overwrite, strlen (overwrite));
+		il->linepos = strlen (overwrite) + 2;
 		if (c + v == 1 && !o) {
 			il->lines[il->edit_line][il->linepos] = ' ';
 			il->linepos++;
@@ -177,7 +171,7 @@ Con_BasicCompleteCommandLine (inputline_t *il)
 	}
 	for (i = 0; i < 3; i++)
 		if (list[i])
-			free ((void*)list[i]);
+			free ((void *) list[i]);
 			
-	free(s);
+	free (s);
 }

@@ -104,7 +104,7 @@ bi_Key_CountBinding (progs_t *pr)
 {
 	int	        target  = P_INT (pr, 0);
 	const char *binding = P_GSTRING (pr, 1);
-	int i, res = 0;
+	int         i, res = 0;
 	const char *keybind = NULL;
 
 	for (i = 0; i < QFK_LAST; i++) {

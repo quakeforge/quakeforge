@@ -53,9 +53,9 @@ VISIBLE void (*con_list_print)(const char *fmt, ...) = Con_Printf;
 void
 Con_DisplayList (const char **list, int con_linewidth)
 {
-	const char	  **walk = list;
-	int				len = 0, maxlen = 0, pos =0, i = 0;
-	int				width = (con_linewidth - 4);
+	const char **walk = list;
+	int         len = 0, maxlen = 0, pos =0, i = 0;
+	int         width = (con_linewidth - 4);
 
 	while (*walk) {
 		len = strlen (*walk);
