@@ -37,6 +37,9 @@ static __attribute__ ((used)) const char rcsid[] =
 #ifdef HAVE_STRINGS_H
 # include <strings.h>
 #endif
+#ifdef HAVE_UNISTD_H
+# include <unistd.h>
+#endif
 #include <stdlib.h>
 
 #include "QF/bspfile.h"
@@ -92,7 +95,7 @@ SND_AllocChannel (void)
 	while (*free) {
 		if (!(*free)->sfx)			// free channel
 			break;
-		if ((*free)->done)	// mixer is finished with this channel
+		if ((*free)->done)			// mixer is finished with this channel
 			break;
 		if (!(*free)->stop)
 			Sys_Error ("SND_AllocChannel: bogus channel free list");
@@ -135,20 +138,46 @@ SND_ChannelStop (channel_t *chan)
 }
 
 void
-SND_ScanChannels (void)
+SND_ScanChannels (int wait)
 {
 	int         i;
 	channel_t  *ch;
 	int         count = 0;
 
-	for (i = 0; i < MAX_CHANNELS; i++) {
-		ch = &snd_channels[i];
-		if (ch->sfx && ch->stop && !ch->done) {
-			ch->done = 1;
-			count++;
+	if (wait) {
+		Sys_DPrintf ("scanning channels...\n");
+		do {
+			count = 0;
+			for (i = 0; i < MAX_CHANNELS; i++) {
+				ch = &snd_channels[i];
+				if (!ch->sfx || ch->done)
+					continue;
+				ch->stop = 1;
+				count++;
+			}
+			Sys_DPrintf ("count = %d\n", count);
+#ifdef HAVE_USLEEP
+			usleep (1000);
+#endif
+		} while (count);
+		Sys_DPrintf ("scanning done.\n");
+		for (i = 0; i < MAX_CHANNELS; i++) {
+			ch = &snd_channels[i];
+			if (!ch->sfx)
+				continue;
+			ch->sfx->release (ch->sfx);
+			ch->sfx = 0;
 		}
+	} else {
+		for (i = 0; i < MAX_CHANNELS; i++) {
+			ch = &snd_channels[i];
+			if (ch->sfx && ch->stop && !ch->done) {
+				ch->done = 1;
+				count++;
+			}
+		}
+		//printf ("count: %d\n", count);
 	}
-	//printf ("count: %d\n", count);
 }
 
 void

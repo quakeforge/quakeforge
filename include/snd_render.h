@@ -298,8 +298,11 @@ struct channel_s *SND_AllocChannel (void);
 void SND_ChannelStop (channel_t *chan);
 
 /** Scan channels looking for stopped channels.
+	\param wait	if true, wait for the channels to be done. if false, force the
+				channels to be done. true is for threaded, false for
+				non-threaded.
 */
-void SND_ScanChannels (void);
+void SND_ScanChannels (int wait);
 
 /** Disable ambient sounds.
 	\todo not used, remove?

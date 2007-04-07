@@ -57,6 +57,13 @@ static dma_t    _snd_shm;
 static float   *output[2];
 
 static void
+s_stop_all_sounds (void)
+{
+	SND_StopAllSounds ();
+	SND_ScanChannels (1);
+}
+
+static void
 s_extra_update (void)
 {
 }
@@ -209,7 +216,7 @@ static snd_render_funcs_t plugin_info_render_funcs = {
 	SND_StopSound,
 	SND_PrecacheSound,
 	SND_SetListener,
-	SND_StopAllSounds,
+	s_stop_all_sounds,
 	s_extra_update,
 	SND_LocalSound,
 	s_block_sound,

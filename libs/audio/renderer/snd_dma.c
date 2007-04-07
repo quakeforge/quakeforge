@@ -204,6 +204,7 @@ static void
 s_stop_all_sounds (void)
 {
 	SND_StopAllSounds ();
+	SND_ScanChannels (0);
 	s_clear_buffer ();
 }
 
@@ -279,7 +280,7 @@ s_update (const vec3_t origin, const vec3_t forward, const vec3_t right,
 
 	// mix some sound
 	s_update_ ();
-	SND_ScanChannels ();
+	SND_ScanChannels (0);
 }
 
 static void
