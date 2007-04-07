@@ -131,7 +131,7 @@ emit_statement (expr_t *e, opcode_t *op, def_t *var_a, def_t *var_b,
 		abort ();
 	}
 	if (options.code.debug) {
-		unsigned int line = (e ? e->line : pr.source_line) - lineno_base;
+		pr_uint_t   line = (e ? e->line : pr.source_line) - lineno_base;
 
 		if (line != pr.linenos[pr.num_linenos - 1].line) {
 			pr_lineno_t *lineno = new_lineno ();

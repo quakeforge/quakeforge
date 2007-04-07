@@ -347,7 +347,7 @@ process_field (qfo_def_t *def)
 static void
 fixup_def (qfo_t *qfo, qfo_def_t *def, int def_num)
 {
-	int         i;
+	pr_int_t    i;
 	qfo_reloc_t *reloc;
 	qfo_func_t *func;
 
@@ -553,7 +553,7 @@ move_def (hashtab_t *deftab, qfo_def_t *d)
 	defref_t   *_d;
 	qfo_def_t  *def;
 	int         def_num = defs.num_defs;
-	int         j;
+	pr_int_t    j;
 
 	defgroup_add_defs (&defs, d, 1);
 	def = defs.defs + def_num;
@@ -593,7 +593,8 @@ move_def (hashtab_t *deftab, qfo_def_t *d)
 static void
 merge_defgroups (void)
 {
-	int         local_base, i, j;
+	int         local_base, i;
+	pr_int_t    j;
 	qfo_def_t  *def;
 	defref_t   *d;
 	qfo_func_t *func;
@@ -628,10 +629,10 @@ merge_defgroups (void)
 	}
 	for (i = 0; i < relocs.num_relocs; i = j) {
 		j = i;
-		while (j < relocs.num_relocs && relocs.relocs[j].type != rel_none)
+//		while (j < relocs.num_relocs && relocs.relocs[j].type != rel_none)
 			j++;
 		relocgroup_add_relocs (&final_relocs, relocs.relocs + i, j - i);
-		while (j < relocs.num_relocs && relocs.relocs[j].type == rel_none)
+//		while (j < relocs.num_relocs && relocs.relocs[j].type == rel_none)
 			j++;
 	}
 }
@@ -817,7 +818,7 @@ static void
 undefined_def (qfo_def_t *def)
 {
 	qfo_def_t   line_def;
-	int         i;
+	pr_int_t    i;
 	qfo_reloc_t *reloc = relocs.relocs + def->relocs;
 
 	for (i = 0; i < def->num_relocs; i++, reloc++) {
@@ -830,7 +831,7 @@ undefined_def (qfo_def_t *def)
 			&& lines.lines) {
 			qfo_func_t *func = funcs.funcs;
 			qfo_func_t *best = func;
-			int         best_dist = reloc->ofs - func->code;
+			pr_int_t    best_dist = reloc->ofs - func->code;
 			pr_lineno_t *line;
 
 			while (best_dist && func - funcs.funcs < funcs.num_funcs) {
@@ -846,9 +847,9 @@ undefined_def (qfo_def_t *def)
 			line_def.file = best->file;
 			line_def.line = best->line;
 			if (!line->line
-				&& line->fa.func == (unsigned) (best - funcs.funcs)) {
+				&& line->fa.func == (pr_uint_t) (best - funcs.funcs)) {
 				while (line - lines.lines < lines.num_lines - 1 && line[1].line
-					   && line[1].fa.addr <= (unsigned) reloc->ofs)
+					   && line[1].fa.addr <= (pr_uint_t) reloc->ofs)
 					line++;
 				line_def.line = line->line + best->line;
 			}

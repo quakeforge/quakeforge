@@ -349,7 +349,7 @@ qfo_read (QFile *file)
 
 	Qread (file, &hdr, sizeof (hdr));
 
-	if (strcmp (hdr.qfo, QFO)) {
+	if (memcmp (hdr.qfo, QFO, 4)) {
 		fprintf (stderr, "not a qfo file\n");
 		return 0;
 	}

@@ -40,33 +40,33 @@
 #define QFO_VERSION 0x00001005		// MMmmmRRR 0.001.005 (hex)
 
 typedef struct qfo_header_s {
-	char        qfo[4];
-	int         version;
-	int         code_size;
-	int         data_size;
-	int         far_data_size;
-	int         strings_size;
-	int         num_relocs;
-	int         num_defs;
-	int         num_funcs;
-	int         num_lines;
-	int         types_size;
-	int         entity_fields;
+	int8_t      qfo[4];
+	pr_int_t    version;
+	pr_int_t    code_size;
+	pr_int_t    data_size;
+	pr_int_t    far_data_size;
+	pr_int_t    strings_size;
+	pr_int_t    num_relocs;
+	pr_int_t    num_defs;
+	pr_int_t    num_funcs;
+	pr_int_t    num_lines;
+	pr_int_t    types_size;
+	pr_int_t    entity_fields;
 } qfo_header_t;
 
 typedef struct qfo_def_s {
 	etype_t     basic_type;
 	string_t    full_type;
 	string_t    name;
-	int         ofs;
+	pr_int_t    ofs;
 
-	int         relocs;
-	int         num_relocs;
+	pr_int_t    relocs;
+	pr_int_t    num_relocs;
 
-	unsigned    flags;
+	pr_uint_t   flags;
 
 	string_t    file;
-	int         line;
+	pr_int_t    line;
 } qfo_def_t;
 
 #define QFOD_INITIALIZED	(1u<<0)
@@ -81,30 +81,30 @@ typedef struct qfo_def_s {
 typedef struct qfo_func_s {
 	string_t    name;
 	string_t    file;
-	int         line;
+	pr_int_t    line;
 
-	int         builtin;
-	int         code;
+	pr_int_t    builtin;
+	pr_int_t    code;
 
-	int         def;
+	pr_int_t    def;
 
-	int         locals_size;
-	int         local_defs;
-	int         num_local_defs;
+	pr_int_t    locals_size;
+	pr_int_t    local_defs;
+	pr_int_t    num_local_defs;
 
-	int         line_info;
+	pr_int_t    line_info;
 
-	int         num_parms;
+	pr_int_t    num_parms;
 	byte        parm_size[MAX_PARMS];
 
-	int         relocs;
-	int         num_relocs;
+	pr_int_t    relocs;
+	pr_int_t    num_relocs;
 } qfo_func_t;
 
 typedef struct qfo_reloc_s {
-	int         ofs;
-	int         type;
-	int         def;
+	pr_int_t    ofs;
+	pr_int_t    type;
+	pr_int_t    def;
 } qfo_reloc_t;
 
 typedef struct qfo_s {
