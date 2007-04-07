@@ -62,7 +62,7 @@ Con_CreateInputLine (int lines, int lsize, char prompt)
 
 	inputline = calloc (1, size);
 	p = (char **) (inputline + 1);
-	l = p[lines];
+	l = (char *) &p[lines];
 
 	inputline->lines = p;
 	inputline->num_lines = lines;
