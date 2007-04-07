@@ -205,7 +205,7 @@ storage_class_t current_storage = st_global;
 
 %}
 
-%expect 4
+%expect 5
 
 %%
 
@@ -1070,6 +1070,7 @@ unary_expr
 
 primary
 	: NAME      				{ $$ = new_name_expr ($1); }
+	| BREAK						{ $$ = new_name_expr (save_string ("break")); }
 	| ARGS						{ $$ = new_name_expr (".args"); }
 	| ARGC						{ $$ = argc_expr (); }
 	| ARGV						{ $$ = argv_expr (); }
