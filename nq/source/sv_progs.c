@@ -152,6 +152,8 @@ PR_Profile_f (void)
 static int
 parse_field (progs_t *pr, const char *key, const char *value)
 {
+	if (*key == '_')						// ignore _fields
+		return 1;
 	return 0;
 }
 

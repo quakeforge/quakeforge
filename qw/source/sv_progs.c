@@ -172,6 +172,8 @@ parse_field (progs_t *pr, const char *key, const char *value)
 		Cvar_Set (r_skyname, value);
 		return 1;
 	}
+	if (*key == '_')						// ignore _fields
+		return 1;
 	return 0;
 }
 
