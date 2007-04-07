@@ -7,3 +7,14 @@ void () foo =
 		break;
 	}
 };
+
+float () bar =
+{
+	local float break;
+	local float x;
+	break = 0;
+	break ++;
+	x = break;
+	break = x;
+	return break;
+};
