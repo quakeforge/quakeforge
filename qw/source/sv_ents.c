@@ -870,5 +870,5 @@ SV_WriteEntitiesToClient (delta_t *delta, sizebuf_t *msg)
 	SV_EmitPacketEntities (delta, pack, msg, stdver);
 
 	// now add the specialized nail update
-	SV_EmitNailUpdate (msg, delta->client != 0);
+	SV_EmitNailUpdate (msg, !delta->client);
 }
