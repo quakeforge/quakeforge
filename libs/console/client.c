@@ -86,7 +86,7 @@ static cvar_t *con_notifytime;				// seconds
 static cvar_t *con_alpha;
 static cvar_t *con_size;
 static cvar_t *con_speed;
-static cvar_t *cl_chatmode;
+static cvar_t *cl_conmode;
 
 #define	NUM_CON_TIMES 4
 static float con_times[NUM_CON_TIMES];	// realtime time the line was generated
@@ -284,48 +284,47 @@ Condump_f (void)
 	Qclose (file);
 }
 
-static qboolean
-CheckForCommand (const char *line)
+static int
+cl_exec_line_command (void *data, const char *line)
 {
-	char        command[128];
-	const char *cmd;
-	int         i;
+	Cbuf_AddText (con_data.cbuf, line);
+	Cbuf_AddText (con_data.cbuf, "\n");
+	return 1;
+}
 
-	for (i = 0; i < 127; i++) {
-		if (line[i] <= ' ')
-			break;
-		else
-			command[i] = line[i];
-	}
-	command[i] = 0;
-	
-	cmd = Cmd_CompleteCommand (command);
-	if (!cmd || strcmp (cmd, command))
-		cmd = Cvar_CompleteVariable (command);
-	if (!cmd || strcmp (cmd, command))
-		return false;					// just a chat message
-	return true;
+static int
+cl_exec_line_chat (void *data, const char *line)
+{
+	Cbuf_AddText (con_data.cbuf, "say ");
+	Cbuf_AddText (con_data.cbuf, line);
+	Cbuf_AddText (con_data.cbuf, "\n");
+	return 0;
+}
+
+static int
+cl_exec_line_rcon (void *data, const char *line)
+{
+	Cbuf_AddText (con_data.cbuf, "rcon ");
+	Cbuf_AddText (con_data.cbuf, line);
+	Cbuf_AddText (con_data.cbuf, "\n");
+	Con_Printf ("rcon %s\n", line);
+	return 0;
 }
 
 static void
-C_ExecLine (const char *line)
+cl_conmode_f (cvar_t *var)
 {
-	if (line[0] == '/' && line [1] == '/')
-		goto no_lf;
-	else if (line[0] == '|')
-		Cbuf_AddText (con_data.cbuf, line);
-	else if (line[0] == '\\' || line[0] == '/')
-		Cbuf_AddText (con_data.cbuf, line + 1);
-	else if (cl_chatmode->int_val != 1 && CheckForCommand (line))
-		Cbuf_AddText (con_data.cbuf, line);
-	else if (cl_chatmode->int_val) {
-		Cbuf_AddText (con_data.cbuf, "say ");
-		Cbuf_AddText (con_data.cbuf, line);
-	} else
-		Cbuf_AddText (con_data.cbuf, line);
-	Cbuf_AddText (con_data.cbuf, "\n");
-  no_lf:
-	Con_Printf ("%s\n", line);
+	if (!strcmp (var->string, "command")) {
+		con_data.exec_line = cl_exec_line_command;
+	} else if (!strcmp (var->string, "chat")) {
+		con_data.exec_line = cl_exec_line_chat;
+	} else if (!strcmp (var->string, "rcon")) {
+		con_data.exec_line = cl_exec_line_rcon;
+	} else {
+		Con_Printf ("mode must be one of \"command\", \"chat\" or \"rcon\"\n");
+		Con_Printf ("    forcing \"command\"\n");
+		Cvar_Set (var, "command");
+	}
 }
 
 static void
@@ -812,9 +811,6 @@ C_Init (void)
 	con_notifytime = Cvar_Get ("con_notifytime", "3", CVAR_NONE, NULL,
 							   "How long in seconds messages are displayed "
 							   "on screen");
-	cl_chatmode = Cvar_Get ("cl_chatmode", "2", CVAR_NONE, NULL,
-							"Controls when console text will be treated as a "
-							"chat message: 0 - never, 1 - always, 2 - smart");
 
 	con_alpha = Cvar_Get ("con_alpha", "0.6", CVAR_ARCHIVE, NULL,
 						  "alpha value for the console background");
@@ -823,6 +819,8 @@ C_Init (void)
 						 "down");
 	con_speed = Cvar_Get ("con_speed", "300", CVAR_ARCHIVE, NULL,
 						  "How quickly the console scrolls up or down");
+	cl_conmode = Cvar_Get ("cl_conmode", "command", CVAR_ARCHIVE, cl_conmode_f,
+						   "Set the console input mode (command, chat, rcon)");
 
 	con_debuglog = COM_CheckParm ("-condebug");
 
@@ -877,7 +875,7 @@ C_Init (void)
 
 	input_line = Con_CreateInputLine (32, MAXCMDLINE, ']');
 	input_line->complete = Con_BasicCompleteCommandLine;
-	input_line->enter = C_ExecLine;
+	input_line->enter = Con_ExecLine;
 	input_line->width = con_linewidth;
 	input_line->user_data = 0;
 	input_line->draw = 0;

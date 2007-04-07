@@ -61,6 +61,8 @@ typedef struct console_data_s {
 	struct cbuf_s		*cbuf;
 	struct view_s		*view;
 	float				lines;
+	int					(*exec_line)(void *data, const char *line);
+	void				*exec_data;
 } console_data_t;
 
 #endif // __QF_plugin_console_h_

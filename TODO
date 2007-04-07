@@ -27,7 +27,7 @@ o  doublesize modes (eg, render in 320x240 but display in 640x480)
 o  allow qf clients to download .lit files from qf servers.
 o  better server control of certain cvars
 o  triggers (f_respawn, f_death, f_took; cl_triggers)
-o  stateful console (eg, rcon mode, chat mode, normal command mode...)
+X  stateful console (eg, rcon mode, chat mode, normal command mode...)
 o  scripted hud
 o  add a U_PHYSICAL field to entities.  it should include a solid bit,
    a rotated bbox bit, and mins/maxs for the bbos

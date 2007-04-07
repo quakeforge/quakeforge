@@ -93,6 +93,30 @@ Con_Interp_f (cvar_t *var)
 }
 
 VISIBLE void
+Con_ExecLine (const char *line)
+{
+	console_data_t *cd = con_module->data->console;
+	int         echo = 1;
+	if (line[0] == '/' && line [1] == '/') {
+		goto no_lf;
+	} else if (line[0] == '|') {
+		Cbuf_AddText (cd->cbuf, line);
+		Cbuf_AddText (cd->cbuf, "\n");
+	} else if (line[0] == '\\' || line[0] == '/') {
+		Cbuf_AddText (cd->cbuf, line + 1);
+		Cbuf_AddText (cd->cbuf, "\n");
+	} else if (cd->exec_line) {
+		echo = cd->exec_line (cd->exec_data, line);
+	} else {
+		Cbuf_AddText (cd->cbuf, line);
+		Cbuf_AddText (cd->cbuf, "\n");
+	}
+  no_lf:
+	if (echo)
+		Con_Printf ("%s\n", line);
+}
+
+VISIBLE void
 Con_Init_Cvars (void)
 {
 	con_interpreter = 

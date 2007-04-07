@@ -116,6 +116,7 @@ void Con_BufferAddText (con_buffer_t *buf, const char *text);
 void Con_Init (const char *plugin_name);
 void Con_Init_Cvars (void);
 void Con_Shutdown (void);
+void Con_ExecLine (const char *line);
 
 void Con_ProcessInput (void);
 void Con_KeyEvent (knum_t key, short unicode, qboolean down);

@@ -75,8 +75,8 @@ static console_data_t sv_con_data;
 
 static QFile  *log_file;
 static cvar_t *sv_logfile;
+static cvar_t *sv_conmode;
 
-static void C_ExecLine (const char *line);
 static void C_KeyEvent (knum_t key, short unicode, qboolean down);
 
 #ifdef HAVE_CURSES_H
@@ -481,7 +481,7 @@ create_input_line (int width)
 
 	input_line = Con_CreateInputLine (16, MAXCMDLINE, ']');
 	input_line->complete = Con_BasicCompleteCommandLine;
-	input_line->enter = C_ExecLine;
+	input_line->enter = Con_ExecLine;
 	input_line->user_data = input;
 	input_line->draw = draw_input_line;
 	input_line->width = width;
@@ -538,14 +538,6 @@ init (void)
 #endif
 
 static void
-C_ExecLine (const char *line)
-{
-	if (line[0] == '/')
-		line++;
-	Cbuf_AddText (sv_con_data.cbuf, line);
-}
-
-static void
 sv_logfile_f (cvar_t *var)
 {
 	if (!var->string[0] || strequal (var->string, "none")) {
@@ -568,6 +560,37 @@ sv_logfile_f (cvar_t *var)
 	}
 }
 
+static int
+sv_exec_line_command (void *data, const char *line)
+{
+	Cbuf_AddText (sv_con_data.cbuf, line);
+	Cbuf_AddText (sv_con_data.cbuf, "\n");
+	return 1;
+}
+
+static int
+sv_exec_line_chat (void *data, const char *line)
+{
+	Cbuf_AddText (sv_con_data.cbuf, "say ");
+	Cbuf_AddText (sv_con_data.cbuf, line);
+	Cbuf_AddText (sv_con_data.cbuf, "\n");
+	return 0;
+}
+
+static void
+sv_conmode_f (cvar_t *var)
+{
+	if (!strcmp (var->string, "command")) {
+		sv_con_data.exec_line = sv_exec_line_command;
+	} else if (!strcmp (var->string, "chat")) {
+		sv_con_data.exec_line = sv_exec_line_chat;
+	} else {
+		Con_Printf ("mode must be one of \"command\" or \"chat\"\n");
+		Con_Printf ("    forcing \"command\"\n");
+		Cvar_Set (var, "command");
+	}
+}
+
 static void
 C_Init (void)
 {
@@ -583,6 +606,8 @@ C_Init (void)
 	sv_logfile = Cvar_Get ("sv_logfile", "none", CVAR_NONE, sv_logfile_f,
 						   "Control server console logging. \"none\" for off, "
 						   "or \"filename:gzflags\"");
+	sv_conmode = Cvar_Get ("sv_conmode", "command", CVAR_NONE, sv_conmode_f,
+						   "Set the console input mode (command, chat)");
 }
 
 static void
@@ -637,7 +662,7 @@ C_ProcessInput (void)
 			const char *cmd = Sys_ConsoleInput ();
 			if (!cmd)
 				break;
-			C_ExecLine (cmd);
+			Con_ExecLine (cmd);
 		}
 }
 
