@@ -953,12 +953,18 @@ typedef struct {
 	pr_int_t    binum;
 } builtin_t;
 
-/** Aliased over the dfunction_t entry for builtin functions. Removes one
-	level of indirection when calling a builtin function.
-	\bug alignment access violations on 64 bit architectures (eg, alpha)
+/** Duplicate the dfunction_t descriptor with the addition of a pointer to the
+	builtin function. Avoides a level of indirection when calling a builtin
+	function.
 */
 typedef struct {
 	pr_int_t    first_statement;
+	pr_int_t    parm_start;
+	pr_int_t    locals;
+	pr_int_t    profile;
+	pr_int_t    numparms;
+	uint8_t     parm_size[MAX_PARMS];
+	dfunction_t *descriptor;
 	builtin_proc func;
 } bfunction_t;
 
@@ -988,7 +994,6 @@ builtin_t *PR_FindBuiltinNum (progs_t *pr, pr_int_t num);
 	dfunction_t entry for all builtin functions to contain the function
 	pointer to the C implementation of the builtin function. Automaticly
 	during progs load.
-	\bug alignment access violations on 64 bit architectures (eg, alpha)
 	\param pr pointer to ::progs_t VM struct
 	\return true for success, false for failure
 */
@@ -1321,7 +1326,7 @@ typedef struct strref_s strref_t;
 
 typedef struct {
 	pr_int_t    s;
-	dfunction_t *f;
+	bfunction_t *f;
 	strref_t   *tstr;
 } prstack_t;
 
@@ -1388,6 +1393,7 @@ struct progs_s {
 	strref_t   *pr_xtstr;
 
 	dfunction_t *pr_functions;
+	bfunction_t *function_table;
 	char       *pr_strings;
 	int         pr_stringsize;
 	ddef_t     *pr_globaldefs;
@@ -1409,7 +1415,7 @@ struct progs_s {
 
 	qboolean    pr_trace;
 	int         pr_trace_depth;
-	dfunction_t *pr_xfunction;
+	bfunction_t *pr_xfunction;
 	int         pr_xstatement;
 
 	prstack_t   pr_stack[MAX_STACK_DEPTH];

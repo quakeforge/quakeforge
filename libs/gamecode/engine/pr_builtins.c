@@ -151,9 +151,9 @@ bi_no_function (progs_t *pr)
 	// no need for checking: the /only/ way to get here is via a function
 	// descriptor with a bad builtin number
 	dstatement_t *st = pr->pr_statements + pr->pr_xstatement;
-	dfunction_t *func = pr->pr_functions + G_FUNCTION (pr, st->a);
-	const char *bi_name = PR_GetString (pr, func->s_name);
-	int         ind = -func->first_statement;
+	dfunction_t *desc = pr->pr_functions + G_FUNCTION (pr, st->a);
+	const char *bi_name = PR_GetString (pr, desc->s_name);
+	int         ind = -desc->first_statement;
 
 	PR_RunError (pr, "Bad builtin called: %s = #%d", bi_name, ind);
 }
@@ -163,20 +163,34 @@ PR_RelocateBuiltins (progs_t *pr)
 {
 	pr_int_t    i, ind;
 	int         bad = 0;
-	dfunction_t *func;
+	dfunction_t *desc;
+	bfunction_t *func;
 	builtin_t  *bi;
 	builtin_proc proc;
 	const char *bi_name;
 
-	for (i = 1; i < pr->progs->numfunctions; i++) {
-		func = pr->pr_functions + i;
+	if (pr->function_table)
+		free (pr->function_table);
+	pr->function_table = calloc (pr->progs->numfunctions,
+								 sizeof (bfunction_t));
 
-		if (func->first_statement > 0)
+	for (i = 1; i < pr->progs->numfunctions; i++) {
+		desc = pr->pr_functions + i;
+		func = pr->function_table + i;
+
+		func->first_statement = desc->first_statement;
+		func->parm_start = desc->parm_start;
+		func->locals = desc->locals;
+		func->numparms = desc->numparms;
+		memcpy (func->parm_size, desc->parm_size, sizeof (func->parm_size));
+		func->descriptor = desc;
+
+		if (desc->first_statement > 0)
 			continue;
 
-		bi_name = PR_GetString (pr, func->s_name);
+		bi_name = PR_GetString (pr, desc->s_name);
 
-		if (!func->first_statement) {
+		if (!desc->first_statement) {
 			bi = PR_FindBuiltin (pr, bi_name);
 			if (!bi) {
 				Sys_Printf ("PR_RelocateBuiltins: %s: undefined builtin %s\n",
@@ -184,19 +198,20 @@ PR_RelocateBuiltins (progs_t *pr)
 				bad = 1;
 				continue;
 			}
-			func->first_statement = -bi->binum;
+			desc->first_statement = -bi->binum;
 		}
 
-		ind = -func->first_statement;
+		ind = -desc->first_statement;
 		if (pr->bi_map)
 			ind = pr->bi_map (pr, ind);
 		bi = PR_FindBuiltinNum (pr, ind);
 		if (!bi || !(proc = bi->proc)) {
 			Sys_DPrintf ("WARNING: Bad builtin call number: %s = #%d\n",
-						 bi_name, -func->first_statement);
+						 bi_name, -desc->first_statement);
 			proc = bi_no_function;
 		}
-		((bfunction_t *) func)->func = proc;
+		func->first_statement = desc->first_statement;
+		func->func = proc;
 	}
 	return !bad;
 }

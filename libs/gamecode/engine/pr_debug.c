@@ -381,11 +381,12 @@ ddef_t *
 PR_Get_Local_Def (progs_t *pr, pr_int_t offs)
 {
 	pr_uint_t   i;
-	dfunction_t *func = pr->pr_xfunction;
+	dfunction_t *func;
 	pr_auxfunction_t *aux_func;
 
-	if (!func)
+	if (!pr->pr_xfunction)
 		return 0;
+	func = pr->pr_xfunction->descriptor;
 	aux_func = pr->auxfunction_map[func - pr->pr_functions];
 	if (!aux_func)
 		return 0;
@@ -405,15 +406,16 @@ PR_DumpState (progs_t *pr)
 		if (pr_debug->int_val && pr->debug) {
 			pr_lineno_t *lineno;
 			pr_auxfunction_t *func = 0;
+			dfunction_t *descriptor = pr->pr_xfunction->descriptor;
 			pr_int_t    addr = pr->pr_xstatement;
 
 			lineno = PR_Find_Lineno (pr, addr);
 			if (lineno)
 				func = PR_Get_Lineno_Func (pr, lineno);
-			if (func && pr->pr_xfunction == pr->pr_functions + func->function)
+			if (func && descriptor == pr->pr_functions + func->function)
 				addr = PR_Get_Lineno_Addr (pr, lineno);
 			else
-				addr = max (pr->pr_xfunction->first_statement, addr - 5);
+				addr = max (descriptor->first_statement, addr - 5);
 
 			while (addr != pr->pr_xstatement)
 				PR_PrintStatement (pr, pr->pr_statements + addr++, 1);
@@ -696,7 +698,7 @@ PR_PrintStatement (progs_t *pr, dstatement_t *s, int contents)
 static void
 dump_frame (progs_t *pr, prstack_t *frame)
 {
-	dfunction_t	   *f = frame->f;
+	dfunction_t	   *f = frame->f->descriptor;
 
 	if (!f) {
 		Sys_Printf ("<NO FUNCTION>\n");

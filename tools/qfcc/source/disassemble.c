@@ -36,6 +36,12 @@ static __attribute__ ((used)) const char rcsid[] =
 
 #include <getopt.h>
 #include <stdlib.h>
+#ifdef HAVE_STRING_H
+# include <string.h>
+#endif
+#ifdef HAVE_STRINGS_H
+# include <strings.h>
+#endif
 #ifdef HAVE_UNISTD_H
 # include <unistd.h>
 #endif
@@ -61,10 +67,20 @@ disassemble_progs (progs_t *pr)
 	unsigned int i;
 
 	for (i = 0; i < pr->progs->numstatements; i++) {
-		dfunction_t *f = func_find (i);
-		if (f) {
-			Sys_Printf ("%s:\n", PR_GetString (pr, f->s_name));
-			pr->pr_xfunction = f;
+		dfunction_t *desc = func_find (i);
+
+		if (desc) {
+			bfunction_t func;
+
+			func.first_statement = desc->first_statement;
+			func.parm_start = desc->parm_start;
+			func.locals = desc->locals;
+			func.numparms = desc->numparms;
+			memcpy (func.parm_size, desc->parm_size, sizeof (func.parm_size));
+			func.descriptor = desc;
+
+			Sys_Printf ("%s:\n", PR_GetString (pr, desc->s_name));
+			pr->pr_xfunction = &func;
 		}
 		PR_PrintStatement (pr, &pr->pr_statements[i], 0);
 	}

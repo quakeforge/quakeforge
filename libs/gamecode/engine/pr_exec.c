@@ -121,7 +121,7 @@ PR_PopFrame (progs_t *pr)
 	undefined behavior.
 */
 static void
-PR_EnterFunction (progs_t *pr, dfunction_t *f)
+PR_EnterFunction (progs_t *pr, bfunction_t *f)
 {
 	pr_int_t    i, j, c, o;
 	pr_int_t    k;
@@ -210,7 +210,7 @@ static void
 PR_LeaveFunction (progs_t *pr)
 {
 	int			c;
-	dfunction_t *f = pr->pr_xfunction;
+	bfunction_t *f = pr->pr_xfunction;
 
 	PR_PopFrame (pr);
 
@@ -279,14 +279,14 @@ signal_hook (int sig, void *data)
 VISIBLE int
 PR_CallFunction (progs_t *pr, func_t fnum)
 {
-	dfunction_t *f;
+	bfunction_t *f;
 
 	if (!fnum)
 		PR_RunError (pr, "NULL function");
-	f = pr->pr_functions + fnum;
+	f = pr->function_table + fnum;
 	if (f->first_statement < 0) {
 		// negative statements are built in functions
-		((bfunction_t *) f)->func (pr);
+		f->func (pr);
 		return 0;
 	} else {
 		PR_EnterFunction (pr, f);

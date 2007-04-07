@@ -78,7 +78,7 @@ PF_error (progs_t *pr)
 
 	s = PF_VarString (pr, 0);
 	SV_Printf ("======SERVER ERROR in %s:\n%s\n",
-				PR_GetString (pr, pr->pr_xfunction->s_name), s);
+				PR_GetString (pr, pr->pr_xfunction->descriptor->s_name), s);
 	ed = PROG_TO_EDICT (pr, *sv_globals.self);
 	ED_Print (pr, ed);
 
@@ -102,7 +102,7 @@ PF_objerror (progs_t *pr)
 
 	s = PF_VarString (pr, 0);
 	SV_Printf ("======OBJECT ERROR in %s:\n%s\n",
-				PR_GetString (pr, pr->pr_xfunction->s_name), s);
+				PR_GetString (pr, pr->pr_xfunction->descriptor->s_name), s);
 	ed = PROG_TO_EDICT (pr, *sv_globals.self);
 	ED_Print (pr, ed);
 	ED_Free (pr, ed);
@@ -799,7 +799,6 @@ PF_precache_model (progs_t *pr)
 static void
 PF_walkmove (progs_t *pr)
 {
-	dfunction_t *oldf;
 	edict_t    *ent;
 	float       yaw, dist;
 	int         oldself;
@@ -821,13 +820,11 @@ PF_walkmove (progs_t *pr)
 	move[2] = 0;
 
 	// save program state, because SV_movestep may call other progs
-	oldf = pr->pr_xfunction;
 	oldself = *sv_globals.self;
 
 	R_FLOAT (pr) = SV_movestep (ent, move, true);
 
 	// restore program state
-	pr->pr_xfunction = oldf;
 	*sv_globals.self = oldself;
 }
 
