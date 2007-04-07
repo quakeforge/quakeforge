@@ -211,7 +211,7 @@ preprocess_file (const char *filename, const char *ext)
 			mktemp (tempname->str);
 
 		{
-			FILE       *tmp = fopen (tempname->str, "wt");
+			FILE       *tmp = fopen (tempname->str, "wb");
 			if (tmp == NULL) {
 				fprintf (stderr, "%s: qfcc was unable to open\n",
 						 tempname->str);
@@ -242,7 +242,7 @@ preprocess_file (const char *filename, const char *ext)
 
 		if (options.preprocess_only)
 			return 0;
-		return fopen (tempname->str, "rt");
+		return fopen (tempname->str, "rb");
 #else
 		if (!options.save_temps && !options.preprocess_only)
 			tempfd = mkstemp (tempname->str);
@@ -293,11 +293,11 @@ preprocess_file (const char *filename, const char *ext)
 		if (options.preprocess_only)
 			return 0;
 		else if (options.save_temps)
-			return fopen (tempname->str, "rt");
+			return fopen (tempname->str, "rb");
 		else {
-			return fdopen (tempfd, "rt");
+			return fdopen (tempfd, "rb");
 		}
 #endif
 	}
-	return fopen (filename, "rt");
+	return fopen (filename, "rb");
 }

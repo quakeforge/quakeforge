@@ -177,7 +177,7 @@ WriteFiles (const char *sourcedir)
 	dstring_t  *filename = dstring_newstr ();
 
 	dsprintf (filename, "%s%cfiles.dat", sourcedir, PATH_SEPARATOR);
-	f = fopen (filename->str, "w");
+	f = fopen (filename->str, "wb");
 	if (!f) {
 		fprintf (stderr, "Couldn't open %s", filename->str);
 		return 1;
@@ -217,7 +217,7 @@ WriteProgdefs (const char *filename)
 
 	if (options.verbosity >= 1)
 		printf ("writing %s\n", filename);
-	f = fopen (filename, "w");
+	f = fopen (filename, "wb");
 
 	// print global vars until the first field is defined
 	fprintf (f,
@@ -296,7 +296,7 @@ WriteProgdefs (const char *filename)
 
 	// do a crc of the file
 	CRC_Init (&crc);
-	f = fopen (filename, "r+");
+	f = fopen (filename, "r+b");
 	while ((c = fgetc (f)) != EOF)
 		CRC_ProcessByte (&crc, (byte) c);
 

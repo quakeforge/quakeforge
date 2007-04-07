@@ -664,7 +664,7 @@ load_file (const char *fname)
 	tmpfile = preprocess_file (fname, "i1");
 	if (!tmpfile)
 		return 0;
-	file = Qfopen (tmpfile, "rt");
+	file = Qfopen (tmpfile, "rb");
 	if (!file) {
 		perror (fname);
 		return 0;
@@ -753,11 +753,11 @@ progs_src_compile (void)
 			mktemp (single_name->str);
 #else
 			int tempfd = mkstemp (single_name->str);
-			single = fdopen (tempfd, "wt");
+			single = fdopen (tempfd, "wb");
 #endif
 		}
 		if (!single)
-			single = fopen (single_name->str, "wt");
+			single = fopen (single_name->str, "wb");
 		if (!single) {
 			perror (single_name->str);
 			exit (1);
