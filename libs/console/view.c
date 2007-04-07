@@ -44,8 +44,7 @@ static __attribute__ ((used)) const char rcsid[] =
 
 #include "QF/view.h"
 
-__attribute__ ((visibility ("default")))
-view_t *
+VISIBLE view_t *
 view_new (int xp, int yp, int xl, int yl, grav_t grav)
 {
 	view_t     *view = calloc (1, sizeof (view_t));
@@ -121,8 +120,7 @@ setgeometry (view_t *view)
 		setgeometry (view->children[i]);
 }
 
-__attribute__ ((visibility ("default")))
-void
+VISIBLE void
 view_insert (view_t *par, view_t *view, int pos)
 {
 	view->parent = par;
@@ -146,15 +144,13 @@ view_insert (view_t *par, view_t *view, int pos)
 	setgeometry (view);
 }
 
-__attribute__ ((visibility ("default")))
-void
+VISIBLE void
 view_add (view_t *par, view_t *view)
 {
 	view_insert (par, view, -1);
 }
 
-__attribute__ ((visibility ("default")))
-void
+VISIBLE void
 view_remove (view_t *par, view_t *view)
 {
 	int        i;
@@ -169,8 +165,7 @@ view_remove (view_t *par, view_t *view)
 	}
 }
 
-__attribute__ ((visibility ("default")))
-void
+VISIBLE void
 view_delete (view_t *view)
 {
 	if (view->parent)
@@ -180,8 +175,7 @@ view_delete (view_t *view)
 	free (view);
 }
 
-__attribute__ ((visibility ("default")))
-void
+VISIBLE void
 view_draw (view_t *view)
 {
 	int         i;
@@ -215,16 +209,14 @@ _resize (view_t *view, int xl, int yl)
 	}
 }
 
-__attribute__ ((visibility ("default")))
-void
+VISIBLE void
 view_resize (view_t *view, int xl, int yl)
 {
 	_resize (view, xl, yl);
 	setgeometry (view);
 }
 
-__attribute__ ((visibility ("default")))
-void
+VISIBLE void
 view_move (view_t *view, int xp, int yp)
 {
 	view->xpos = xp;

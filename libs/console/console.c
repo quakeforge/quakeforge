@@ -44,9 +44,9 @@ static __attribute__ ((used)) const char rcsid[] =
 #include "QF/sys.h"
 
 //FIXME probably shouldn't be visible
-int         con_linewidth __attribute__ ((visibility ("default")));				// characters across screen
+VISIBLE int         con_linewidth;				// characters across screen
 
-plugin_t *con_module __attribute__ ((visibility ("default")));
+VISIBLE plugin_t *con_module;
 
 #define U __attribute__ ((used))
 static U con_buffer_t *(*const buffer) (size_t, int) = Con_CreateBuffer;
@@ -57,8 +57,7 @@ static U void (*const display)(const char **, int) = Con_DisplayList;
 
 static cvar_t *con_interpreter;
 
-__attribute__ ((visibility ("default")))
-void
+VISIBLE void
 Con_Init (const char *plugin_name)
 {
 	con_module = PI_LoadPlugin ("console", plugin_name);
@@ -71,9 +70,9 @@ Con_Init (const char *plugin_name)
 }
 
 static void
-Con_Interp_f (cvar_t* var)
+Con_Interp_f (cvar_t *var)
 {
-	cbuf_interpreter_t* interp = Cmd_GetProvider(var->string);
+	cbuf_interpreter_t *interp = Cmd_GetProvider(var->string);
 
 	if (con_module && interp) {
 		cbuf_t *new;
@@ -93,8 +92,7 @@ Con_Interp_f (cvar_t* var)
 	}
 }
 
-__attribute__ ((visibility ("default")))
-void
+VISIBLE void
 Con_Init_Cvars (void)
 {
 	con_interpreter = 
@@ -102,8 +100,7 @@ Con_Init_Cvars (void)
 				 "Interpreter for the interactive console");
 }
 
-__attribute__ ((visibility ("default")))
-void
+VISIBLE void
 Con_Shutdown (void)
 {
 	if (con_module) {
@@ -112,8 +109,7 @@ Con_Shutdown (void)
 	}
 }
 
-__attribute__ ((visibility ("default")))
-void
+VISIBLE void
 Con_Printf (const char *fmt, ...)
 {
 	va_list		args;
@@ -126,8 +122,7 @@ Con_Printf (const char *fmt, ...)
 	va_end (args);
 }
 
-__attribute__ ((visibility ("default")))
-void
+VISIBLE void
 Con_Print (const char *fmt, va_list args)
 {
 	if (con_module)
@@ -136,8 +131,7 @@ Con_Print (const char *fmt, va_list args)
 		vfprintf (stdout, fmt, args);
 }
 
-__attribute__ ((visibility ("default")))
-void
+VISIBLE void
 Con_DPrintf (const char *fmt, ...)
 {
 	if (developer && developer->int_val) {
@@ -151,8 +145,7 @@ Con_DPrintf (const char *fmt, ...)
 	}
 }
 
-__attribute__ ((visibility ("default")))
-void
+VISIBLE void
 Con_ProcessInput (void)
 {
 	if (con_module) {
@@ -167,40 +160,35 @@ Con_ProcessInput (void)
 	}
 }
 
-__attribute__ ((visibility ("default")))
-void
+VISIBLE void
 Con_KeyEvent (knum_t key, short unicode, qboolean down)
 {
 	if (con_module)
 		con_module->functions->console->pC_KeyEvent (key, unicode, down);
 }
 
-__attribute__ ((visibility ("default")))
-void
+VISIBLE void
 Con_SetOrMask (int mask)
 {
 	if (con_module)
 		con_module->data->console->ormask = mask;
 }
 
-__attribute__ ((visibility ("default")))
-void
+VISIBLE void
 Con_DrawConsole (void)
 {
 	if (con_module)
 		con_module->functions->console->pC_DrawConsole ();
 }
 
-__attribute__ ((visibility ("default")))
-void
+VISIBLE void
 Con_CheckResize (void)
 {
 	if (con_module)
 		con_module->functions->console->pC_CheckResize ();
 }
 
-__attribute__ ((visibility ("default")))
-void
+VISIBLE void
 Con_NewMap (void)
 {
 	if (con_module)
