@@ -379,6 +379,15 @@ typedef enum {
 #define	FL_ONGROUND				512
 #define	FL_PARTIALGROUND		1024	// not all corners are valid
 #define	FL_WATERJUMP			2048	// player jumping out of water
+// 4096 used by quakec
+#define FL_FINALIZED			8192
+#define FL_FINDABLE_NONSOLID	16384
+
+#define TL_ANY_SOLID		0
+#define TL_BSP_ONLY			1
+// 2 used internally (MOVE_MISSILE)
+#define TL_TRIGGERS			3	// scan for triggers
+#define TL_EVERYTHING		4	// scan for anything
 
 // entity effects
 
