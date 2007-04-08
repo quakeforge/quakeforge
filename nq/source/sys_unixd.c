@@ -81,8 +81,8 @@ main (int argc, const char **argv)
 	if (i == argc) {
 		const char **newargv;
 
-		newargv = malloc ((argc + 2) * sizeof (*newargv));
-		memcpy (newargv, argv, argc * 4);
+		newargv = malloc ((argc + 2) * sizeof (char *));
+		memcpy (newargv, argv, argc * sizeof (char *));
 		newargv[argc++] = "-dedicated";
 		newargv[argc] = 0;
 		argv = newargv;
