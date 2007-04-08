@@ -698,7 +698,7 @@ PR_PrintStatement (progs_t *pr, dstatement_t *s, int contents)
 static void
 dump_frame (progs_t *pr, prstack_t *frame)
 {
-	dfunction_t	   *f = frame->f->descriptor;
+	dfunction_t	   *f = frame->f ? frame->f->descriptor : 0;
 
 	if (!f) {
 		Sys_Printf ("<NO FUNCTION>\n");
