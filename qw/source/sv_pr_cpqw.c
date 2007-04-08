@@ -731,6 +731,7 @@ static builtin_t builtins[] = {
 	{"CPQW:getwave",		PF_getwave,			CPQW 95},
 	{"CPQW:clientsound",	PF_clientsound,		CPQW 96},
 	{"CPQW:touchworld",		PF_touchworld,		CPQW 97},
+	{0}
 };
 
 static struct {
