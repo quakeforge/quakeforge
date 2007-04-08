@@ -44,20 +44,6 @@ static __attribute__ ((used)) const char rcsid[] =
 
 #include "QF/view.h"
 
-VISIBLE view_t *
-view_new (int xp, int yp, int xl, int yl, grav_t grav)
-{
-	view_t     *view = calloc (1, sizeof (view_t));
-	view->xpos = xp;
-	view->ypos = yp;
-	view->xlen = xl;
-	view->ylen = yl;
-	view->gravity = grav;
-	view->visible = 1;
-	view->draw = view_draw;
-	return view;
-}
-
 static void
 setgeometry (view_t *view)
 {
@@ -118,6 +104,21 @@ setgeometry (view_t *view)
 		view->setgeometry (view);
 	for (i = 0; i < view->num_children; i++)
 		setgeometry (view->children[i]);
+}
+
+VISIBLE view_t *
+view_new (int xp, int yp, int xl, int yl, grav_t grav)
+{
+	view_t     *view = calloc (1, sizeof (view_t));
+	view->xpos = xp;
+	view->ypos = yp;
+	view->xlen = xl;
+	view->ylen = yl;
+	view->gravity = grav;
+	view->visible = 1;
+	view->draw = view_draw;
+	setgeometry (view);
+	return view;
 }
 
 VISIBLE void
