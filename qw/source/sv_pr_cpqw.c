@@ -35,6 +35,7 @@ const char  rcsid[] = "$Id: $";
 #endif
 #include <ctype.h>
 
+#include "QF/cmd.h"
 #include "QF/dstring.h"
 #include "QF/quakefs.h"
 #include "QF/sys.h"
@@ -43,6 +44,10 @@ const char  rcsid[] = "$Id: $";
 #include "sv_pr_cpqw.h"
 #include "sv_progs.h"
 #include "world.h"
+
+static struct {
+	func_t      ClientCommand;
+} cpqw_funcs;
 
 /*
 	PF_getuid
@@ -728,8 +733,57 @@ static builtin_t builtins[] = {
 	{"CPQW:touchworld",		PF_touchworld,		CPQW 97},
 };
 
+static struct {
+	const char *name;
+	func_t     *field;
+} cpqw_func_list[] = {
+	{"ClientCommand",	&cpqw_funcs.ClientCommand},
+};
+
+static int
+cpqw_user_cmd (void)
+{
+	int         argc, i;
+	progs_t    *pr = &sv_pr_state;
+
+	if (cpqw_funcs.ClientCommand) {
+		argc = Cmd_Argc ();
+		if (argc > 7)
+			argc = 7;
+
+		PR_PushFrame (pr);
+		P_FLOAT (pr, 0) = argc;
+		for (i = 0; i < argc; i++)
+			P_STRING (pr, i + 1) = PR_SetTempString (pr, Cmd_Argv (i));
+		for (; i < 7; i++)
+			P_STRING (pr, i + 1) = 0;
+		PR_ExecuteProgram (pr, cpqw_funcs.ClientCommand);
+		PR_PopFrame (pr);
+		return (int) R_FLOAT (pr);
+	}
+	return 0;
+}
+
+static int
+cpqw_load (progs_t *pr)
+{
+	size_t      i;
+
+	for (i = 0;
+		 i < sizeof (cpqw_func_list) / sizeof (cpqw_func_list[0]); i++) {
+		dfunction_t *f = PR_FindFunction (pr, cpqw_func_list[i].name);
+
+		*cpqw_func_list[i].field = 0;
+		if (f)
+			*cpqw_func_list[i].field = (func_t) (f - pr->pr_functions);
+	}
+	ucmd_unknown = cpqw_user_cmd;
+	return 1;
+}
+
 void
 SV_PR_CPQW_Init (progs_t *pr)
 {
 	PR_RegisterBuiltins (pr, builtins);
+	PR_AddLoadFunc (pr, cpqw_load);
 }
