@@ -144,6 +144,10 @@ view_t *view_new (int xp, int yp, int xl, int yl, grav_t grav);
 	The absolute X and Y coordianates of the inserted view and its child views
 	are updated based on the view's gravity.
 
+	The position of the view within the parent view's child view list
+	determines the draw order (and thus Z order) of the view, with position 0
+	being drawn first.
+
 	\param par		The parent view into which the view is to be inserted.
 	\param view		The view to insert.
 	\param pos		The position at which to insert the view into the parent.
@@ -154,6 +158,8 @@ void view_insert (view_t *par, view_t *view, int pos);
 
 	The absolute X and Y coordianates of the inserted view and its child views
 	are updated based on the view's gravity.
+
+	The added view will be drawn last (and thus on top of earlier views).
 
 	\param par		The parent view to which the view is to be added.
 	\param view		The view to add.
