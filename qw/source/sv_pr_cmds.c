@@ -647,7 +647,7 @@ static void
 PF_findradius (progs_t *pr)
 {
 	edict_t    *ent, *chain;
-	float       rad;
+	float       rsqr;
 	//float      *eorigin;
 	float      *emins, *emaxs, *org;
 	int         i, j;
@@ -656,14 +656,14 @@ PF_findradius (progs_t *pr)
 	chain = (edict_t *) sv.edicts;
 
 	org = P_VECTOR (pr, 0);
-	rad = P_FLOAT (pr, 1);
-	rad *= rad;					// Square early, sqrt never
+	rsqr = P_FLOAT (pr, 1) * P_FLOAT (pr, 1);		// Square early, sqrt never
 
 	ent = NEXT_EDICT (pr, sv.edicts);
 	for (i = 1; i < sv.num_edicts; i++, ent = NEXT_EDICT (pr, ent)) {
 		if (ent->free)
 			continue;
-		if (SVfloat (ent, solid) == SOLID_NOT)
+		if (SVfloat (ent, solid) == SOLID_NOT
+			&& !((int) SVfloat (ent, flags) & FL_FINDABLE_NONSOLID))
 			continue;
 		//eorigin = SVvector (ent, origin);
 		//emins = SVvector (ent, mins);
@@ -673,7 +673,7 @@ PF_findradius (progs_t *pr)
 		for (j = 0; j < 3; j++)
 			eorg[j] = org[j] - 0.5 * (emins[j] + emaxs[j]);
 			//eorg[j] = org[j] - eorigin[j] - 0.5 * (emins[j] + emaxs[j]);
-		if (DotProduct (eorg, eorg) > rad)
+		if (DotProduct (eorg, eorg) > rsqr)
 			continue;
 
 		SVentity (ent, chain) = EDICT_TO_PROG (pr, chain);
