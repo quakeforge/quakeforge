@@ -448,7 +448,7 @@ static void
 PF_makestr (progs_t *pr)
 {
 	string_t    res = PR_NewMutableString (pr);
-	dstring_t  *dst = P_DSTRING (pr, res);
+	dstring_t  *dst = PR_GetMutableString (pr, res);
     const char *src = P_GSTRING (pr, 0);
 
 	dstring_copystr (dst, src);
