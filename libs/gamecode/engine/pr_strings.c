@@ -116,7 +116,8 @@ new_string_ref (progs_t *pr)
 {
 	strref_t *sr;
 	if (!pr->free_string_refs) {
-		int		i, size;
+		int		    i;
+		size_t      size;
 
 		pr->dyn_str_size++;
 		size = pr->dyn_str_size * sizeof (strref_t *);
@@ -146,16 +147,16 @@ free_string_ref (progs_t *pr, strref_t *sr)
 	pr->free_string_refs = sr;
 }
 
-static int
+static string_t
 string_index (progs_t *pr, strref_t *sr)
 {
 	long        o = (long) (sr - pr->static_strings);
-	unsigned int i;
+	unsigned    i;
 
 	if (o >= 0 && o < pr->num_strings)
 		return sr->s.string - pr->pr_strings;
 	for (i = 0; i < pr->dyn_str_size; i++) {
-		int d = sr - pr->string_map[i];
+		int         d = sr - pr->string_map[i];
 		if (d >= 0 && d < 1024)
 			return ~(i * 1024 + d);
 	}
@@ -237,11 +238,11 @@ PR_LoadStrings (progs_t *pr)
 }
 
 static inline strref_t *
-get_strref (progs_t *pr, int num)
+get_strref (progs_t *pr, string_t num)
 {
 	if (num < 0) {
 		strref_t   *ref;
-		unsigned int row = ~num / 1024;
+		unsigned    row = ~num / 1024;
 
 		num = ~num % 1024;
 
@@ -256,7 +257,7 @@ get_strref (progs_t *pr, int num)
 }
 
 static inline const char *
-get_string (progs_t *pr, int num)
+get_string (progs_t *pr, string_t num)
 {
 	if (num < 0) {
 		strref_t   *ref = get_strref (pr, num);
@@ -311,7 +312,7 @@ PR_GetMutableString (progs_t *pr, string_t num)
 }
 
 static inline char *
-pr_stralloc (progs_t *pr, int len)
+pr_stralloc (progs_t *pr, size_t len)
 {
 	return PR_Zone_Malloc (pr, len + 1);
 }
@@ -386,7 +387,7 @@ PR_SetReturnString (progs_t *pr, const char *s)
 	return string_index (pr, sr);
 }
 
-static inline int
+static inline string_t
 pr_settempstring (progs_t *pr, char *s)
 {
 	strref_t   *sr;
@@ -402,7 +403,7 @@ pr_settempstring (progs_t *pr, char *s)
 VISIBLE string_t
 PR_CatStrings (progs_t *pr, const char *a, const char *b)
 {
-	int         lena;
+	size_t      lena;
 	char       *c;
 
 	lena = strlen (a);
@@ -514,8 +515,14 @@ PR_FreeTempStrings (progs_t *pr)
 		t = sr->next;
 		if (sr->type != str_temp)
 			PR_Error (pr, "internal string error");
-		pr_strfree (pr, sr->s.string);
-		free_string_ref (pr, sr);
+		if (R_STRING (pr) < 0 && string_index (pr, sr) == R_STRING (pr)) {
+			prstack_t  *frame = pr->pr_stack + pr->pr_depth - 1;
+			sr->next = frame->tstr;
+			frame->tstr = sr;
+		} else {
+			pr_strfree (pr, sr->s.string);
+			free_string_ref (pr, sr);
+		}
 	}
 	pr->pr_xtstr = 0;
 }
