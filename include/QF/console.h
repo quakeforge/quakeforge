@@ -34,6 +34,9 @@
 #include "QF/keys.h"
 #include "QF/qtypes.h"
 
+/** \defgroup console 2d Console Stuff
+*/
+
 #define		CON_TEXTSIZE	32764
 typedef struct
 {
