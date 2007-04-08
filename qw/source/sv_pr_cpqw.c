@@ -74,21 +74,10 @@ PF_getuid (progs_t *pr)
 static void
 PF_strcat (progs_t *pr)
 {
-	const char *st1;
-	const char *st2;
-	int         len;
-	char       *result;
+	const char *st1 = P_GSTRING (pr, 0);
+	const char *st2 = P_GSTRING (pr, 1);
 
-	st1 = P_GSTRING (pr, 0);
-	st2 = P_GSTRING (pr, 1);
-
-	len = strlen (st1) + strlen (st2);
-	result = alloca (len + 1);
-
-	strcpy (result, st1);
-	strcat (result, st2);
-
-	RETURN_STRING (pr, result);
+	R_STRING (pr) = PR_CatStrings (pr, st1, st2);
 }
 
 /*
@@ -100,8 +89,8 @@ static void
 PF_padstr (progs_t *pr)
 {
 	const char *st;
-	unsigned int i, padlen, givenlen;
-	char       *result;
+	size_t      i, padlen, givenlen;
+	char       *padding;
 
 	st = P_GSTRING (pr, 0);
 	padlen = (unsigned int) P_FLOAT (pr, 1);
@@ -113,14 +102,14 @@ PF_padstr (progs_t *pr)
 		return;
 	}
 	// ok, lets pad it!
-	result = alloca (padlen + 1);
-	strcpy (result, st);
+	padlen -= givenlen;
+	padding = alloca (padlen + 1);
 
-	for (i = givenlen; i < padlen; i++)
-		result[i] = ' ';
-	result[i] = '\0';
+	for (i = 0; i < padlen; i++)
+		padding[i] = ' ';
+	padding[i] = '\0';
 
-	RETURN_STRING (pr, result);
+	R_STRING (pr) = PR_CatStrings (pr, st, padding);
 }
 
 /*
@@ -144,10 +133,11 @@ PF_colstr (progs_t *pr)
 {
 	const char *srcstr;
 	unsigned char *result;
-	unsigned int action, len, i;
+	unsigned    action;
+	size_t      len, i;
 
 	srcstr = P_GSTRING (pr, 0);
-	action = (unsigned int) P_FLOAT (pr, 1);
+	action = (unsigned) P_FLOAT (pr, 1);
 	len = strlen (srcstr);
 
 	// Check for errors, if any, return given string

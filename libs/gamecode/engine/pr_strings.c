@@ -399,7 +399,7 @@ pr_settempstring (progs_t *pr, char *s)
 	return string_index (pr, sr);
 }
 
-string_t
+VISIBLE string_t
 PR_CatStrings (progs_t *pr, const char *a, const char *b)
 {
 	int         lena;
