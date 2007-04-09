@@ -183,6 +183,10 @@ void view_delete (view_t *view);
 /** Draw the child views of a view. If a child view is not visible
 	(view_t::visible is 0), the child will be skipped.
 
+	\note	It is best to always use view_t::draw() to draw a view rather than
+			calling this directly. This function is really for the view's draw
+			callback to call to draw its sub-views.
+
 	\param view		The view of which to draw the children.
 */
 void view_draw (view_t *view);

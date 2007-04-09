@@ -763,7 +763,7 @@ C_DrawConsole (void)
 	console_view->visible = con_data.lines != 0;
 	menu_view->visible = key_dest == key_menu;
 
-	view_draw (con_data.view);
+	con_data.view->draw (con_data.view);
 }
 
 static void

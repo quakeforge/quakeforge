@@ -346,7 +346,7 @@ process_input (void)
 			getmaxyx (stdscr, screen_y, screen_x);
 			con_linewidth = screen_x;
 			view_resize (sv_con_data.view, screen_x, screen_y);
-			view_draw (sv_con_data.view);
+			sv_con_data.view->draw (sv_con_data.view);
 		}
 	}
 
@@ -582,7 +582,7 @@ init (void)
 
 	con_linewidth = screen_x;
 
-	view_draw (sv_con_data.view);
+	sv_con_data.view->draw (sv_con_data.view);
 	doupdate ();
 }
 #endif

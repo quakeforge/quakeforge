@@ -767,7 +767,7 @@ draw_inventory_sbar (view_t *view)
 {
 	if (cl.spectator && autocam == CAM_TRACK) {
 		if (sbar_frags_view)
-			view_draw (sbar_frags_view);
+			sbar_frags_view->draw (sbar_frags_view);
 		return;
 	}
 	draw_pic (view, 0, 0, sb_ibar);
