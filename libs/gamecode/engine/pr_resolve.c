@@ -107,7 +107,7 @@ PR_Undefined (progs_t *pr, const char *type, const char *name)
 	PR_Error (pr, "undefined %s %s", type, name);
 }
 
-int
+VISIBLE int
 PR_ResolveGlobals (progs_t *pr)
 {
 	const char *sym;
