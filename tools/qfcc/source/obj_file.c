@@ -84,10 +84,13 @@ allocate_stuff (void)
 	def_t      *def;
 	function_t *func;
 
-	num_defs = pr.scope->num_defs;
+	num_defs = 0;
 	num_funcs = pr.num_functions - 1;
 	num_relocs = 0;
 	for (def = pr.scope->head; def; def = def->def_next) {
+		if (def->alias)
+			continue;
+		num_defs++;
 		num_relocs += count_relocs (def->refs);
 	}
 	for (func = pr.func_head; func; func = func->next) {
@@ -191,8 +194,9 @@ setup_data (void)
 	pr_type_t  *var;
 	pr_lineno_t *line;
 
-	for (d = pr.scope->head; d; d = d->def_next, def++)
-		write_def (d, def, &reloc);
+	for (d = pr.scope->head; d; d = d->def_next)
+		if (!d->alias)
+			write_def (d, def++, &reloc);
 	for (f = pr.func_head; f; f = f->next, func++) {
 		func->name           = LittleLong (f->s_name);
 		func->file           = LittleLong (f->s_file);
