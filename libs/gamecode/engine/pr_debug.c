@@ -378,6 +378,35 @@ PR_Get_Source_Line (progs_t *pr, pr_uint_t addr)
 }
 
 ddef_t *
+PR_Get_Param_Def (progs_t *pr, dfunction_t *func, unsigned parm)
+{
+	pr_uint_t    i;
+	pr_auxfunction_t *aux_func;
+	ddef_t      *ddef = 0;
+Sys_Printf ("%p\n", func);
+	if (!func)
+		return 0;
+Sys_Printf ("numparms %d %d\n", func->numparms, parm);
+	if (func->numparms >= 0 && parm >= (unsigned) func->numparms)
+		return 0;
+	if (func->numparms < 0 && parm >= (unsigned) -func->numparms)
+		return 0;
+	aux_func = pr->auxfunction_map[func - pr->pr_functions];
+Sys_Printf ("aux_fux %p\n", aux_func);
+	if (!aux_func)
+		return 0;
+	for (i = 0; i < aux_func->num_locals; i++) {
+		ddef = &pr->local_defs[aux_func->local_defs + i];
+		Sys_Printf ("%s\n", PR_GetString (pr, ddef->s_name));
+		if (!parm--)
+			break;
+		if (ddef->type == ev_vector)
+			i += 3;						// skip over component defs
+	}
+	return ddef;
+}
+
+ddef_t *
 PR_Get_Local_Def (progs_t *pr, pr_int_t offs)
 {
 	pr_uint_t   i;
@@ -418,9 +447,9 @@ PR_DumpState (progs_t *pr)
 				addr = max (descriptor->first_statement, addr - 5);
 
 			while (addr != pr->pr_xstatement)
-				PR_PrintStatement (pr, pr->pr_statements + addr++, 1);
+				PR_PrintStatement (pr, pr->pr_statements + addr++, 3);
 		}
-		PR_PrintStatement (pr, pr->pr_statements + pr->pr_xstatement, 1);
+		PR_PrintStatement (pr, pr->pr_statements + pr->pr_xstatement, 3);
 	}
 	PR_StackTrace (pr);
 }
@@ -600,20 +629,31 @@ VISIBLE void
 PR_PrintStatement (progs_t *pr, dstatement_t *s, int contents)
 {
 	int         addr = s - pr->pr_statements;
+	int         dump_code = contents & 2;
 	const char *fmt;
 	opcode_t   *op;
 	static dstring_t *line;
+	dfunction_t *call_func = 0;
+	ddef_t     *parm_def = 0;
 
 	if (!line)
 		line = dstring_new ();
 
 	dstring_clearstr (line);
 
+	if (pr_debug->int_val > 1)
+		dump_code = 1;
+
 	if (pr_debug->int_val && pr->debug) {
 		const char *source_line = PR_Get_Source_Line (pr, addr);
 
-		if (source_line)
-			dasprintf (line, "%s\n", source_line);
+		if (source_line) {
+			dasprintf (line, "%s%s", source_line, dump_code ? "\n" : "");
+			if (!dump_code)
+				goto do_print;
+		}
+		if (!dump_code)
+			return;
 	}
 
 	op = PR_Opcode (s->op);
@@ -626,7 +666,7 @@ PR_PrintStatement (progs_t *pr, dstatement_t *s, int contents)
 		fmt = "%Ga, %Gb, %gc";
 
 	dasprintf (line, "%04x ", addr);
-	if (pr_debug->int_val > 1)
+	if (pr_debug->int_val > 2)
 		dasprintf (line, "%02x %04x(%8s) %04x(%8s) %04x(%8s)\t",
 					s->op,
 					s->a, pr_type_name[op->type_a],
@@ -643,8 +683,17 @@ PR_PrintStatement (progs_t *pr, dstatement_t *s, int contents)
 			} else {
 				const char *str;
 				char        mode = fmt[1], opchar = fmt[2];
+				unsigned    parm_ind = 0;
 				pr_int_t    opval;
 				etype_t     optype;
+
+				if (mode == 'P') {
+					opchar = fmt[3];
+					parm_ind = fmt[2] - '0';
+					fmt++;				// P has one extra item
+					if (parm_ind >= MAX_PARMS)
+						goto err;
+				}
 
 				switch (opchar) {
 					case 'a':
@@ -659,15 +708,32 @@ PR_PrintStatement (progs_t *pr, dstatement_t *s, int contents)
 						opval = s->c;
 						optype = op->type_c;
 						break;
+					case 'x':
+						if (mode == 'P') {
+							opval = pr->pr_real_params[parm_ind]
+									- pr->pr_globals;
+							break;
+						}
 					default:
 						goto err;
 				}
 				switch (mode) {
+					case 'F':
+						str = global_string (pr, opval, optype, contents & 1);
+						call_func = pr->pr_functions + G_FUNCTION (pr, opval);
+						break;
+					case 'P':
+						parm_def = PR_Get_Param_Def (pr, call_func, parm_ind);
+						optype = ev_void;
+						if (parm_def)
+							optype = parm_def->type;
+						str = global_string (pr, opval, optype, contents & 1);
+						break;
 					case 'V':
-						str = global_string (pr, opval, ev_void, contents);
+						str = global_string (pr, opval, ev_void, contents & 1);
 						break;
 					case 'G':
-						str = global_string (pr, opval, optype, contents);
+						str = global_string (pr, opval, optype, contents & 1);
 						break;
 					case 'g':
 						str = global_string (pr, opval, optype, 0);
@@ -692,6 +758,7 @@ PR_PrintStatement (progs_t *pr, dstatement_t *s, int contents)
 			dstring_appendsubstr (line, fmt++, 1);
 		}
 	}
+do_print:
 	Sys_Printf ("%s\n", line->str);
 }
 

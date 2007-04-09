@@ -1289,6 +1289,7 @@ pr_uint_t PR_Get_Lineno_Line (progs_t *pr, pr_lineno_t *lineno);
 pr_lineno_t *PR_Find_Lineno (progs_t *pr, pr_uint_t addr);
 const char *PR_Get_Source_File (progs_t *pr, pr_lineno_t *lineno);
 const char *PR_Get_Source_Line (progs_t *pr, pr_uint_t addr);
+ddef_t *PR_Get_Param_Def (progs_t *pr, dfunction_t *func, unsigned parm);
 ddef_t *PR_Get_Local_Def (progs_t *pr, pr_int_t offs);
 void PR_PrintStatement (progs_t *pr, dstatement_t *s, int contents);
 void PR_DumpState (progs_t *pr);

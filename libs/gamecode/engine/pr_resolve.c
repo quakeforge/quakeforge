@@ -1,7 +1,7 @@
 /*
-	pr_edict.c
+	pr_resolve.c
 
-	entity dictionary
+	symbol resolution
 
 	Copyright (C) 1996-1997  Id Software, Inc.
 
