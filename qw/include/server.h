@@ -457,6 +457,7 @@ extern struct cbuf_args_s *sv_args;
 // FIXME: declare exported functions in their own relevant .h
 
 void SV_Init (void);
+void SV_Sbar_Init (void);
 void SV_Progs_Init (void);
 void SV_Progs_Init_Cvars (void);
 void SV_PR_Cmds_Init (void);

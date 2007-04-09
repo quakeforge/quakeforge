@@ -46,6 +46,9 @@ static __attribute__ ((used)) const char rcsid[] =
 #ifdef HAVE_UNISTD_H
 # include <unistd.h>
 #endif
+#ifdef HAVE_MALLOC_H
+# include <malloc.h>
+#endif
 
 #ifdef HAVE_SYS_IOCTL_H
 # include <sys/ioctl.h>
@@ -70,6 +73,7 @@ static __attribute__ ((used)) const char rcsid[] =
 #include "QF/view.h"
 
 #include "compat.h"
+#include "sv_console.h"
 
 static console_data_t sv_con_data;
 
@@ -80,13 +84,6 @@ static cvar_t *sv_conmode;
 static void C_KeyEvent (knum_t key, short unicode, qboolean down);
 
 #ifdef HAVE_CURSES_H
-
-typedef struct sv_view_s {
-	WINDOW     *win;
-	void       *obj;
-	void      (*draw) (view_t *view);
-	void      (*setgeometry) (view_t *view);
-} sv_view_t;
 
 enum {
 	sv_resize_x = 1,
@@ -109,38 +106,62 @@ static int interrupted;
 #define MAX_LINES 1024
 static int view_offset;
 
-static chtype attr_table[4] = {
+#define CP_YELLOW_BLACK		(1)
+#define CP_GREEN_BLACK		(2)
+#define CP_RED_BLACK		(3)
+#define CP_CYAN_BLACK		(4)
+#define CP_MAGENTA_BLACK	(5)
+#define CP_YELLOW_BLUE		(6)
+#define CP_GREEN_BLUE		(7)
+#define CP_RED_BLUE			(8)
+#define CP_CYAN_BLUE		(9)
+#define CP_MAGENTA_BLUE		(10)
+
+static chtype attr_table[16] = {
 	A_NORMAL,
-	COLOR_PAIR(1),
-	COLOR_PAIR(2),
-	COLOR_PAIR(3),
+	COLOR_PAIR (CP_GREEN_BLACK),
+	COLOR_PAIR (CP_RED_BLACK),
+	0,
+	COLOR_PAIR (CP_YELLOW_BLACK),
+	COLOR_PAIR (CP_CYAN_BLACK),
+	COLOR_PAIR (CP_MAGENTA_BLACK),
+	0,
+	A_NORMAL,
+	COLOR_PAIR (CP_GREEN_BLUE),
+	COLOR_PAIR (CP_RED_BLUE),
+	0,
+	COLOR_PAIR (CP_YELLOW_BLUE),
+	COLOR_PAIR (CP_CYAN_BLUE),
+	COLOR_PAIR (CP_MAGENTA_BLUE),
+	0,
 };
 
 static const byte attr_map[256] = {
-	3, 3, 3, 3, 3, 3, 3, 3, 3, 0, 0, 3, 3, 0, 3, 3,
-	2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2,
+	2, 2, 2, 2, 2, 2, 2, 2, 2, 0, 0, 2, 2, 0, 2, 2,
+	1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
 	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
 	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
 	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
 	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
 	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
 	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-	3, 3, 3, 3, 3, 3, 3, 3, 3, 0, 0, 3, 3, 0, 3, 3,
-	2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2,
-	1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
-	1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
-	1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
-	1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
-	1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
-	1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+	6, 6, 6, 6, 6, 6, 6, 6, 6, 0, 0, 6, 6, 0, 6, 6,
+	5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5,
+	4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4,
+	4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4,
+	4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4,
+	4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4,
+	4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4,
+	4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4,
 };
 
 
 static inline void
-draw_fun_char (WINDOW *win, byte c)
+draw_fun_char (WINDOW *win, byte c, int blue)
 {
 	chtype      ch = c;
-	ch = sys_char_map[ch] | attr_table[attr_map[ch]];
+	int         offset = blue ? 8 : 0;
+	ch = sys_char_map[ch] | attr_table[attr_map[ch] + offset];
 	waddch (win, ch);
 }
 
@@ -221,7 +242,7 @@ draw_output (view_t *view)
 			}
 		}
 		while (len--)
-			draw_fun_char (win, *text++);
+			draw_fun_char (win, *text++, 0);
 	} while (cur_line < output_buffer->cur_line + view_offset);
 }
 
@@ -229,8 +250,20 @@ static void
 draw_status (view_t *view)
 {
 	sv_view_t  *sv_view = view->data;
-	wbkgdset (sv_view->win, COLOR_PAIR(4));
-	wclear (sv_view->win);
+	WINDOW     *win = sv_view->win;
+	sv_sbar_t  *sb = sv_view->obj;
+	int         i;
+	char       *old = alloca (sb->width);
+
+	memcpy (old, sb->text, sb->width);
+	memset (sb->text, ' ', sb->width);
+	view_draw (view);
+	if (memcmp (old, sb->text, sb->width)) {
+		wbkgdset (win, COLOR_PAIR (CP_YELLOW_BLUE));
+		wmove (win, 0, 0);
+		for (i = 0; i < sb->width; i++)
+			draw_fun_char (win, sb->text[i], 1);
+	}
 }
 
 static void
@@ -245,7 +278,7 @@ draw_input_line (inputline_t *il)
 	text = il->lines[il->edit_line] + il->scroll;
 	wmove (win, 0, 0);
 	if (il->scroll) {
-		waddch (win, '<' | COLOR_PAIR (5));
+		waddch (win, '<' | COLOR_PAIR (CP_CYAN_BLACK));
 		text++;
 	} else {
 		waddch (win, *text++);
@@ -259,7 +292,7 @@ draw_input_line (inputline_t *il)
 		waddch (win, ' ');
 	}
 	if (*text) {
-		waddch (win, '>' | COLOR_PAIR (5));
+		waddch (win, '>' | COLOR_PAIR (CP_CYAN_BLACK));
 	} else {
 		waddch (win, ' ');
 	}
@@ -279,6 +312,16 @@ setgeometry_input (view_t *view)
 	sv_view_t  *sv_view = view->data;
 	inputline_t *il = sv_view->obj;
 	il->width = view->xlen;
+}
+
+static void
+setgeometry_status (view_t *view)
+{
+	sv_view_t  *sv_view = view->data;
+	sv_sbar_t *sb = sv_view->obj;
+	sb->width = view->xlen;
+	sb->text = realloc (sb->text, sb->width);
+	memset (sb->text, 0, sb->width);	// force an update
 }
 
 static void
@@ -437,7 +480,7 @@ print (char *txt)
 	Con_BufferAddText (sv_view->obj, txt);
 	if (!view_offset) {
 		while (*txt)
-			draw_fun_char (sv_view->win, (byte) *txt++);
+			draw_fun_char (sv_view->win, (byte) *txt++, 0);
 		sv_refresh (output);
 		// move the cursor back to the input line
 		sv_refresh (input);
@@ -513,9 +556,10 @@ init (void)
 
 	status = create_window (sv_con_data.view,
 							0, 1, screen_x, 1, grav_southwest,
-							0,
-							sv_resize_x | sv_scroll,
-							draw_status, 0);
+							calloc (1, sizeof (sv_sbar_t)),
+							sv_resize_x,
+							draw_status, setgeometry_status);
+	sv_con_data.status_view = status;
 
 	input = create_window (sv_con_data.view,
 						   0, 0, screen_x, 1, grav_southwest,
@@ -524,11 +568,17 @@ init (void)
 						   draw_input, setgeometry_input);
 	((inputline_t *) ((sv_view_t *) input->data)->obj)->user_data = input;
 
-	init_pair (1, COLOR_YELLOW, COLOR_BLACK);
-	init_pair (2, COLOR_GREEN, COLOR_BLACK);
-	init_pair (3, COLOR_RED, COLOR_BLACK);
-	init_pair (4, COLOR_YELLOW, COLOR_BLUE);
-	init_pair (5, COLOR_CYAN, COLOR_BLACK);
+	init_pair (CP_YELLOW_BLACK, COLOR_YELLOW, COLOR_BLACK);
+	init_pair (CP_GREEN_BLACK, COLOR_GREEN, COLOR_BLACK);
+	init_pair (CP_RED_BLACK, COLOR_RED, COLOR_BLACK);
+	init_pair (CP_CYAN_BLACK, COLOR_CYAN, COLOR_BLACK);
+	init_pair (CP_MAGENTA_BLACK, COLOR_MAGENTA, COLOR_BLACK);
+
+	init_pair (CP_YELLOW_BLUE, COLOR_YELLOW, COLOR_BLUE);
+	init_pair (CP_GREEN_BLUE, COLOR_GREEN, COLOR_BLUE);
+	init_pair (CP_RED_BLUE, COLOR_RED, COLOR_BLUE);
+	init_pair (CP_CYAN_BLUE, COLOR_CYAN, COLOR_BLUE);
+	init_pair (CP_MAGENTA_BLUE, COLOR_MAGENTA, COLOR_BLUE);
 
 	con_linewidth = screen_x;
 
@@ -677,6 +727,10 @@ C_KeyEvent (knum_t key, short unicode, qboolean down)
 static void
 C_DrawConsole (void)
 {
+	// only the status bar is drawn because the inputline and output views
+	// take care of themselves
+	if (sv_con_data.status_view)
+		sv_con_data.status_view->draw (sv_con_data.status_view);
 }
 
 static void

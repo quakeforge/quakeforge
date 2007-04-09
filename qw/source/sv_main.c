@@ -2005,6 +2005,7 @@ SV_Frame (float time)
 		svs.stats.packets = 0;
 		svs.stats.count = 0;
 		svs.stats.demo = 0;
+		Con_DrawConsole ();
 	}
 	Con_ProcessInput ();	//XXX evil hack to get the cursor in the right place
 }
@@ -2559,6 +2560,8 @@ SV_Init (void)
 	// and now reprocess the cmdline's sets for overrides
 	Cmd_StuffCmds (sv_cbuf);
 	Cbuf_Execute_Sets (sv_cbuf);
+
+	SV_Sbar_Init ();
 
 	Game_Init ();
 	COM_Init ();

@@ -10,8 +10,8 @@ EXTRA_DIST = asm_i386.h alsa_funcs_list.h adivtab.h anorm_dots.h anorms.h \
 	logos.h net_dgrm.h net_loop.h net_udp.h net_vcr.h net_wins.h netchan.h \
 	netmain.h old_keys.h ops.h qstring.h quakeasm.h regex.h r_cvar.h \
 	r_dynamic.h r_local.h r_screen.h r_shared.h rua_internal.h sbar.h \
-	skin_stencil.h snd_render.h varrays.h vgamodes.h view.h vregset.h \
-	winquake.h world.h \
+	skin_stencil.h snd_render.h sv_console.h varrays.h vgamodes.h view.h \
+	vregset.h winquake.h world.h \
 	\
 	qw/bothdefs.h qw/msg_backbuf.h qw/msg_ucmd.h qw/pmove.h qw/protocol.h \
 	\
