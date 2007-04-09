@@ -629,10 +629,10 @@ merge_defgroups (void)
 	}
 	for (i = 0; i < relocs.num_relocs; i = j) {
 		j = i;
-//		while (j < relocs.num_relocs && relocs.relocs[j].type != rel_none)
+		while (j < relocs.num_relocs && relocs.relocs[j].type != rel_none)
 			j++;
 		relocgroup_add_relocs (&final_relocs, relocs.relocs + i, j - i);
-//		while (j < relocs.num_relocs && relocs.relocs[j].type == rel_none)
+		while (j < relocs.num_relocs && relocs.relocs[j].type == rel_none)
 			j++;
 	}
 }
