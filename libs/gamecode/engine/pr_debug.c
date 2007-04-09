@@ -383,21 +383,21 @@ PR_Get_Param_Def (progs_t *pr, dfunction_t *func, unsigned parm)
 	pr_uint_t    i;
 	pr_auxfunction_t *aux_func;
 	ddef_t      *ddef = 0;
-Sys_Printf ("%p\n", func);
+
 	if (!func)
 		return 0;
-Sys_Printf ("numparms %d %d\n", func->numparms, parm);
+
 	if (func->numparms >= 0 && parm >= (unsigned) func->numparms)
 		return 0;
 	if (func->numparms < 0 && parm >= (unsigned) -func->numparms)
 		return 0;
+
 	aux_func = pr->auxfunction_map[func - pr->pr_functions];
-Sys_Printf ("aux_fux %p\n", aux_func);
 	if (!aux_func)
 		return 0;
+
 	for (i = 0; i < aux_func->num_locals; i++) {
 		ddef = &pr->local_defs[aux_func->local_defs + i];
-		Sys_Printf ("%s\n", PR_GetString (pr, ddef->s_name));
 		if (!parm--)
 			break;
 		if (ddef->type == ev_vector)
