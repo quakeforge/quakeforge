@@ -186,7 +186,10 @@ qfo_globals (qfo_t *qfo)
 
 	for (i = 0; i < qfo->num_defs; i++) {
 		def = &qfo->defs[i];
-		printf ("%-5d %s %s\n", def->ofs, flags_string (def->flags),
+		printf ("%-5d %s %s", def->ofs, flags_string (def->flags),
 				qfo->strings + def->name);
+		if (!(def->flags & QFOD_EXTERNAL))
+			printf (" %d", qfo->data[def->ofs].integer_var);
+		puts ("");
 	}
 }

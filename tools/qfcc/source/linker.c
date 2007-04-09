@@ -230,7 +230,6 @@ add_relocs (qfo_t *qfo)
 			case rel_def_func:
 				reloc->ofs += data_base;
 				reloc->def += func_base;
-				DATA (reloc->ofs)->func_var = reloc->def + 1;
 				break;
 			case rel_def_def:
 			case rel_def_def_ofs:
@@ -521,6 +520,7 @@ fixup_relocs (void)
 				DATA (reloc->ofs)->integer_var = def->ofs;
 				break;
 			case rel_def_func:
+				DATA (reloc->ofs)->func_var = reloc->def + 1;
 				break;
 			case rel_def_string:
 				break;
