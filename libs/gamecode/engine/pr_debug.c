@@ -504,7 +504,7 @@ value_string (progs_t *pr, etype_t type, pr_type_t *val)
 			break;
 		case ev_entity:
 			edict = PROG_TO_EDICT (pr, val->entity_var);
-			dsprintf (line, "entity %ld", NUM_FOR_BAD_EDICT (pr, edict));
+			dsprintf (line, "entity %d", NUM_FOR_BAD_EDICT (pr, edict));
 			break;
 		case ev_func:
 			if (val->func_var < 0 || val->func_var >= pr->progs->numfunctions)
@@ -861,7 +861,7 @@ ED_Print (progs_t *pr, edict_t *ed)
 		return;
 	}
 
-	Sys_Printf ("\nEDICT %ld:\n", NUM_FOR_BAD_EDICT (pr, ed));
+	Sys_Printf ("\nEDICT %d:\n", NUM_FOR_BAD_EDICT (pr, ed));
 	for (i = 0; i < pr->progs->numfielddefs; i++) {
 		d = &pr->pr_fielddefs[i];
 		if (!d->s_name)					// null field def (probably 1st)
