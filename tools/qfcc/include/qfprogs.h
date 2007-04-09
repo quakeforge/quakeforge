@@ -2,6 +2,7 @@
 #define __qfprogs_h
 
 struct progs_s;
+struct qfo_s;
 
 extern int sorted;
 extern int verbosity;
@@ -9,6 +10,7 @@ extern int verbosity;
 void disassemble_progs (struct progs_s *pr);
 
 void dump_globals (struct progs_s *pr);
+void qfo_globals (struct qfo_s *qfo);
 void dump_fields (struct progs_s *pr);
 void dump_functions (struct progs_s *pr);
 

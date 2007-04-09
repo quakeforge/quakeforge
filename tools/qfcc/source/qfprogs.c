@@ -477,7 +477,7 @@ typedef struct {
 
 operation_t operations[] = {
 	{disassemble_progs, 0},		// disassemble
-	{dump_globals,		0},		// globals
+	{dump_globals,		qfo_globals},		// globals
 	{dump_strings,		0},		// strings
 	{dump_fields,		0},		// fields
 	{dump_functions,	0},		// functions

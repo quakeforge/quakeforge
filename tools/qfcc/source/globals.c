@@ -42,9 +42,11 @@ static __attribute__ ((used)) const char rcsid[] =
 # include <strings.h>
 #endif
 
+#include "QF/dstring.h"
 #include "QF/progs.h"
 #include "QF/va.h"
 
+#include "obj_file.h"
 #include "qfprogs.h"
 
 static int
@@ -84,7 +86,7 @@ dump_globals (progs_t *pr)
 		saveglobal = (def->type & DEF_SAVEGLOBAL) != 0;
 		offset = def->ofs;
 
-		comment = " ";
+		comment = "";
 
 		if (def->type == ev_func) {
 			func_t      func = G_FUNCTION (pr, offset);
@@ -100,7 +102,7 @@ dump_globals (progs_t *pr)
 			}
 		}
 
-		printf ("%s %d %d %s%s\n", type, saveglobal, offset, name, comment);
+		printf ("%d %d %s %s%s\n", offset, saveglobal, name, type, comment);
 	}
 }
 
@@ -120,9 +122,9 @@ dump_fields (progs_t *pr)
 		type = pr_type_name[def->type & ~DEF_SAVEGLOBAL];
 		offset = def->ofs;
 
-		comment = " ";
+		comment = "";
 
-		printf ("%s %d %s%s\n", type, offset, name, comment);
+		printf ("%d %s %s%s\n", offset, name, type, comment);
 	}
 }
 
@@ -139,7 +141,7 @@ dump_functions (progs_t *pr)
 
 		name = PR_GetString (pr, func->s_name);
 
-		comment = " ";
+		comment = "";
 
 		start = func->first_statement;
 		if (start > 0)
@@ -155,5 +157,36 @@ dump_functions (progs_t *pr)
 		for (j = 0; j < count; j++)
 			printf (" %d", func->parm_size[j]);
 		puts ("");
+	}
+}
+
+static const char *
+flags_string (pr_uint_t flags)
+{
+	static dstring_t *str;
+	if (!str)
+		str = dstring_newstr ();
+	dstring_clearstr (str);
+	dstring_appendstr (str, (flags & QFOD_INITIALIZED) ? "I" : "-");
+	dstring_appendstr (str, (flags & QFOD_CONSTANT)    ? "C" : "-");
+	dstring_appendstr (str, (flags & QFOD_ABSOLUTE)    ? "A" : "-");
+	dstring_appendstr (str, (flags & QFOD_GLOBAL)      ? "G" : "-");
+	dstring_appendstr (str, (flags & QFOD_EXTERNAL)    ? "E" : "-");
+	dstring_appendstr (str, (flags & QFOD_LOCAL)       ? "L" : "-");
+	dstring_appendstr (str, (flags & QFOD_SYSTEM)      ? "S" : "-");
+	dstring_appendstr (str, (flags & QFOD_NOSAVE)      ? "N" : "-");
+	return str->str;
+}
+
+void
+qfo_globals (qfo_t *qfo)
+{
+	qfo_def_t  *def;
+	int         i;
+
+	for (i = 0; i < qfo->num_defs; i++) {
+		def = &qfo->defs[i];
+		printf ("%-5d %s %s\n", def->ofs, flags_string (def->flags),
+				qfo->strings + def->name);
 	}
 }
