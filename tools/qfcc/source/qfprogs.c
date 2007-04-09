@@ -99,6 +99,7 @@ static const struct option long_options[] = {
 	{"functions", no_argument, 0, 'F'},
 	{"lines", no_argument, 0, 'l'},
 	{"modules", no_argument, 0, 'M'},
+	{"relocs", no_argument, 0, 'r'},
 	{"path", required_argument, 0, 'P'},
 	{"verbose", no_argument, 0, 'v'},
 	{"numeric", no_argument, 0, 'n'},
@@ -476,13 +477,14 @@ typedef struct {
 } operation_t;
 
 operation_t operations[] = {
-	{disassemble_progs, 0},		// disassemble
+	{disassemble_progs, 0},					// disassemble
 	{dump_globals,		qfo_globals},		// globals
-	{dump_strings,		0},		// strings
-	{dump_fields,		0},		// fields
-	{dump_functions,	0},		// functions
-	{dump_lines,		0},		// lines
-	{dump_modules,		0},		// modules
+	{dump_strings,		0},					// strings
+	{dump_fields,		0},					// fields
+	{dump_functions,	0},					// functions
+	{dump_lines,		0},					// lines
+	{dump_modules,		0},					// modules
+	{0,					qfo_relocs},		// relocs
 };
 
 int
@@ -492,7 +494,7 @@ main (int argc, char **argv)
 	operation_t *func = &operations[0];
 
 	while ((c = getopt_long (argc, argv,
-							 "dgsfFlMP:vn", long_options, 0)) != EOF) {
+							 "rdgsfFlMP:vn", long_options, 0)) != EOF) {
 		switch (c) {
 			case 'd':
 				func = &operations[0];
@@ -515,6 +517,9 @@ main (int argc, char **argv)
 			case 'M':
 				func = &operations[6];
 				break;
+			case 'r':
+				func = &operations[7];
+				break;
 			case 'P':
 				source_path = strdup (optarg);
 				break;
@@ -534,8 +539,10 @@ main (int argc, char **argv)
 			return 1;
 		if (qfo && func->qfo)
 			func->qfo (qfo);
-		else
+		else if (func->progs)
 			func->progs (&pr);
+		else
+			fprintf (stderr, "can't process %s\n", argv[optind - 1]);
 	}
 	return 0;
 }
