@@ -167,7 +167,7 @@ expr_t *argv_expr (void);
 %type	<expr>	statement statements statement_block
 %type	<expr>	label break_label continue_label enum_list enum
 %type	<expr>	unary_expr primary cast_expr opt_arg_list arg_list
-%type	<function> begin_function
+%type	<function> begin_function builtin_function
 %type	<def_list> save_inits
 %type	<switch_block> switch_block
 %type	<string_val> identifier
@@ -262,9 +262,13 @@ cfunction
 	: cfunction_def ';'
 		{
 		}
-	| cfunction_def '=' '#' fexpr ';'
+	| cfunction_def '=' '#' fexpr
+		{ $<def>$ = $1; }
+		{ $<expr>$ = constant_expr ($4); }
+	  builtin_function ';'
 		{
-			build_builtin_function ($1, $4);
+			(void) ($<def>5);
+			(void) ($<expr>6);
 		}
 	| cfunction_def opt_state_expr
 		{ $<op>$ = current_storage; }
@@ -506,11 +510,23 @@ func_init
 	| code_func
 	;
 
+builtin_function
+	: /* emtpy */
+		{
+			$$ = build_builtin_function ($<def>-1, $<expr>0);
+			build_scope ($$, $$->def, current_params);
+			flush_scope ($$->scope, 1);
+		}
+	;
+
 non_code_func
 	: '=' '#' fexpr
+		{ $<def>$ = $<def>0; }
+		{ $<expr>$ = constant_expr ($3); }
+	  builtin_function
 		{
-			$3 = constant_expr ($3);
-			build_builtin_function ($<def>0, $3);
+			(void) ($<def>4);
+			(void) ($<expr>5);
 		}
 	| /* emtpy */
 		{
@@ -1428,13 +1444,20 @@ methoddef
 			(void) ($<method>6);
 			(void) ($<op>9);
 		}
-	| ci methoddecl '=' '#' const ';'
+	| ci methoddecl
 		{
 			$2->instance = $1;
 			$2 = class_find_method (current_class, $2);
-			$2->def = method_def (current_class, $2);
+		}
+	  '=' '#' const
+		{ $<def>$ = $2->def = method_def (current_class, $2); }
+		{ $<expr>$ = $6; }
+	  builtin_function ';'
+		{
+			$2->func = $9;
 
-			$2->func = build_builtin_function ($2->def, $5);
+			(void) ($<def>7);
+			(void) ($<expr>8);
 		}
 	;
 
