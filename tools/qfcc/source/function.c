@@ -445,7 +445,8 @@ build_builtin_function (def_t *def, expr_t *bi_val)
 	f->builtin = bi_val->type == ex_integer ? bi_val->e.integer_val
 											: (int)bi_val->e.float_val;
 	f->def = def;
-	reloc_def_func (f, def->ofs);
+	if (!def->external)
+		reloc_def_func (f, def->ofs);
 	build_function (f);
 	finish_function (f);
 	return f;
