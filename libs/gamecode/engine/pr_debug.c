@@ -797,7 +797,7 @@ dump_frame (progs_t *pr, prstack_t *frame)
 	}
 }
 
-void
+VISIBLE void
 PR_StackTrace (progs_t *pr)
 {
 	int         i;
