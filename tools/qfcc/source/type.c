@@ -788,6 +788,11 @@ chain_initial_types (void)
 	chain_type (&type_param);
 	chain_type (&type_zero);
 
+	strct = calloc (sizeof (struct_t), 1);
+	init_struct (strct, &type_va_list, str_struct, 0);
+	new_struct_field (strct, &type_integer, "count", vis_public);
+	new_struct_field (strct, pointer_type (&type_param), "list", vis_public);
+
 	if (options.traditional)
 		return;
 
@@ -810,11 +815,6 @@ chain_initial_types (void)
 
 	type_supermsg.parm_types[0] = &type_Super;
 	chain_type (&type_supermsg);
-
-	strct = calloc (sizeof (struct_t), 1);
-	init_struct (strct, &type_va_list, str_struct, 0);
-	new_struct_field (strct, &type_integer, "count", vis_public);
-	new_struct_field (strct, pointer_type (&type_param), "list", vis_public);
 
 	strct = get_struct ("obj_module_s", 1);
 	init_struct (strct, new_type (), str_struct, 0);
