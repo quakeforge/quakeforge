@@ -151,7 +151,8 @@ usage (int status)
 "    -W, --warn OPTION,...     Set warning options\n"
 "    -z                        Compress object files\n"
 "\n"
-"For help on options for --code and --warn, see the qfcc(1) manual page\n"
+"For help on options for --code, --notice and --warn, see the qfcc(1) manual\n"
+"page, or use `help' as the option.\n"
 	);
 	exit (status);
 }
@@ -161,6 +162,24 @@ code_usage (void)
 {
 	printf ("%s - QuakeForge Code Compiler\n", this_program);
 	printf ("Code generation options\n");
+	printf (
+"    [no-]cow                Allow assignment to initialized globals.\n"
+"    [no-]cpp                Preprocess all input files with cpp.\n"
+"    [no-]debug              Generate debug information.\n"
+"    [no-]fast-float         Use float values directly in \"if\" statements.\n"
+"    help                    Display his text.\n"
+"    [no-]local-merging      Merge the local variable blocks into one.\n"
+"    [no-]short-circuit      Generate short circuit code for logical\n"
+"                            operators.\n"
+"    [no-]single-cpp         Convert progs.src to cpp input file.\n"
+"    [no-]vector-calls       Generate slower but data efficient code for\n"
+"                            passing\n"
+"                            vectors to functiosn.\n"
+"    [no-]v6only             Restrict output code to version 6 progs\n"
+"                            features.\n"
+"\n"
+"For details, see the qfcc(1) manual page\n"
+	);
 	exit (0);
 }
 
@@ -169,6 +188,30 @@ warning_usage (void)
 {
 	printf ("%s - QuakeForge Code Compiler\n", this_program);
 	printf ("Warnings options\n");
+	printf (
+"    all                     Turn on all warnings.\n"
+"    [no-]cow                Warn about assignement to initialized globals.\n"
+"    [no-]error              Treat warnings as errors.\n"
+"    [no-]executable         Warn about statements with no effect.\n"
+"    help                    Display his text.\n"
+"    [no-]initializer        Warn about excessive structure/array\n"
+"                            initializers.\n"
+"    [no-]integer-divide     Warn about division of integer constants.\n"
+"    [no-]interface-check    Warn about methods not declared in the\n"
+"                            interface.\n"
+"    none                    Turn off all warnings.\n"
+"    [no-]precedence         Warn about potentially ambiguous logic.\n"
+"    [no-]traditional        Warn about bad code that qcc allowed.\n"
+"    [no-]undef-function     Warn about calling a yet to be defined\n"
+"                            function.\n"
+"    [no-]unimplemented      Warn about unimplemented class methods.\n"
+"    [no-]unused             Warn about unused local variables.\n"
+"    [no-]uninited-var       Warn about using uninitialied variables.\n"
+"    [no-]vararg-integer     Warn about passing integer constants to\n"
+"                            functions with variable args.\n"
+"\n"
+"For details, see the qfcc(1) manual page\n"
+	);
 	exit (0);
 }
 
@@ -177,6 +220,13 @@ notice_usage (void)
 {
 	printf ("%s - QuakeForge Code Compiler\n", this_program);
 	printf ("Notice options\n");
+	printf (
+"    help                    Display his text.\n"
+"    none                    Turn off all notices.\n"
+"    warn                    Change notices to warnings.\n"
+"\n"
+"For details, see the qfcc(1) manual page\n"
+	);
 	exit (0);
 }
 
