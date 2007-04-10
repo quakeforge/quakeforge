@@ -157,6 +157,30 @@ usage (int status)
 }
 
 static void
+code_usage (void)
+{
+	printf ("%s - QuakeForge Code Compiler\n", this_program);
+	printf ("Code generation options\n");
+	exit (0);
+}
+
+static void
+warning_usage (void)
+{
+	printf ("%s - QuakeForge Code Compiler\n", this_program);
+	printf ("Warnings options\n");
+	exit (0);
+}
+
+static void
+notice_usage (void)
+{
+	printf ("%s - QuakeForge Code Compiler\n", this_program);
+	printf ("Notice options\n");
+	exit (0);
+}
+
+static void
 add_file (const char *file)
 {
 	if (num_files >= files_size - 1) {
@@ -282,6 +306,8 @@ DecodeArgs (int argc, char **argv)
 							options.code.debug = flag;
 						} else if (!(strcasecmp (temp, "fast-float"))) {
 							options.code.fast_float = flag;
+						} else if (!str(casecmp (temp, "help"))) {
+							code_usage ();
 						} else if (!(strcasecmp (temp, "local-merging"))) {
 							options.code.local_merging = flag;
 						} else if (!(strcasecmp (temp, "short-circuit"))) {
@@ -345,6 +371,8 @@ DecodeArgs (int argc, char **argv)
 								options.warnings.promote = flag;
 							} else if (!strcasecmp (temp, "executable")) {
 								options.warnings.executable = flag;
+							} else if (!str(casecmp (temp, "help"))) {
+								warning_usage ();
 							} else if (!strcasecmp (temp, "initializer")) {
 								options.warnings.initializer = flag;
 							} else if (!strcasecmp (temp, "integer-divide")) {
@@ -377,7 +405,9 @@ DecodeArgs (int argc, char **argv)
 					char       *temp = strtok (opts, ",");
 
 					while (temp) {
-						if (!(strcasecmp (temp, "none"))) {
+						if (!str(casecmp (temp, "help"))) {
+							notice_usage ();
+						} else if (!(strcasecmp (temp, "none"))) {
 							options.notices.silent = true;
 						} else if (!(strcasecmp (temp, "warn"))) {
 							options.notices.promote = true;
