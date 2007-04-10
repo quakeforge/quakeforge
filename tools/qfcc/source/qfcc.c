@@ -452,17 +452,24 @@ finish_compilation (void)
 		if (!f->code)
 			continue;
 		df->first_statement = f->code;
-		if (f->scope->space->size > num_localdefs) {
-			num_localdefs = f->scope->space->size;
-			big_function = f->def->name;
+		if (options.code.local_merging) {
+			if (f->scope->space->size > num_localdefs) {
+				num_localdefs = f->scope->space->size;
+				big_function = f->def->name;
+			}
+			df->parm_start = pr.near_data->size;
+		} else {
+			df->parm_start = new_location_size (f->scope->space->size,
+												pr.near_data);
+			num_localdefs += f->scope->space->size;
 		}
-		df->parm_start = pr.near_data->size;
 		for (def = f->scope->head; def; def = def->def_next) {
 			def->ofs += pr.near_data->size;
 			relocate_refs (def->refs, def->ofs);
 		}
 	}
-	pr.near_data->size += num_localdefs;
+	if (options.code.local_merging)
+		new_location_size (num_localdefs, pr.near_data);
 
 	for (l = pr.labels; l; l = l->next)
 		relocate_refs (l->refs, l->ofs);

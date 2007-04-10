@@ -306,10 +306,15 @@ check_initialized (expr_t *e)
 		&& !e->e.def->external
 		&& !e->e.def->initialized) {
 		name = e->e.def->name;
-		if (options.warnings.uninited_variable && !e->e.def->suppress)
-			warning (e, "%s may be used uninitialized", name);
+		if (options.warnings.uninited_variable && !e->e.def->suppress) {
+			if (options.code.local_merging)
+				warning (e, "%s may be used uninitialized", name);
+			else
+				notice (e, "%s may be used uninitialized", name);
+		}
 		e->e.def->suppress = 1;	// only warn once
-		if (options.traditional && !e->e.def->set) {
+		if (options.traditional && options.code.local_merging
+			&& !e->e.def->set) {
 			def_t      *def = e->e.def;
 			e->e.def->set = 1;	// only auto-init once
 			e = assign_expr (e, new_nil_expr ());

@@ -83,29 +83,29 @@ static struct option const long_options[] = {
 
 static const char *short_options =
 	"-"		// magic option parsing mode doohicky (must come first)
-	"l:"	// lib file
-	"L:"	// lib path
-	"o:"	// output file
-	"c"		// separate compilation
-	"r"		// partial linking
-	"s:"	// source dir
-	"P:"	// progs.src name
-	"F"		// generate files.dat
-	"q"		// quiet
-	"v"		// verbose
-	"g"		// debug
 	"C:"	// code options
-	"W:"	// warning options
-	"h"		// help
-	"V"		// version
-	"p:"	// strip path
-	"S"		// save temps
+	"c"		// separate compilation
 	"D:"	// define
 	"E"		// preprocess only
+	"F"		// generate files.dat
+	"g"		// debug
+	"h"		// help
 	"I:"	// set includes
-	"U:"	// undefine
-	"N:"	// notice options
+	"l:"	// lib file
+	"L:"	// lib path
 	"M::"
+	"N:"	// notice options
+	"o:"	// output file
+	"P:"	// progs.src name
+	"p:"	// strip path
+	"q"		// quiet
+	"r"		// partial linking
+	"S"		// save temps
+	"s:"	// source dir
+	"U:"	// undefine
+	"V"		// version
+	"v"		// verbose
+	"W:"	// warning options
 	"z"		// compress qfo files
 	;
 
@@ -116,37 +116,39 @@ usage (int status)
 	printf ("Usage: %s [options] [files]\n", this_program);
 	printf (
 "Options:\n"
-"        --traditional         Traditional QuakeC mode: implies v6only\n"
-"                              default when using progs.src\n"
 "        --advanced            Advanced Ruamoko mode\n"
 "                              default for separate compilation mode\n"
-"    -s, --source DIR          Look for progs.src in DIR instead of \".\"\n"
-"    -q, --quiet               Inhibit usual output\n"
-"    -v, --verbose             Display more output than usual\n"
-"    -g                        Generate debugging info\n"
-"    -o, --output-file FILE    Specify output file name\n"
-"    -P, --progs-src FILE      File to use instead of progs.src\n"
-"    -F, --files               Generate files.dat\n"
-"    -p, --strip-path NUM      Strip NUM leading path elements from file\n"
-"                              names\n"
 "    -C, --code OPTION,...     Set code generation options\n"
-"    -W, --warn OPTION,...     Set warning options\n"
-"    -N, --notice OPTION,...   Set notice options\n"
-"    -h, --help                Display this help and exit\n"
-"    -V, --version             Output version information and exit\n\n"
-"    -S, --save-temps          Do not delete temporary files\n"
+"    -c                        Compile only, don't link\n"
+"        --cpp CPPSPEC         cpp execution command line\n"
 "    -D, --define SYMBOL[=VAL] Define symbols for the preprocessor\n"
+"    -E                        Preprocess only\n"
+"    -F, --files               Generate files.dat\n"
+"    -g                        Generate debugging info\n"
+"    -h, --help                Display this help and exit\n"
 "    -I DIR                    Set directories for the preprocessor\n"
 "                              to search for #includes\n"
 "        --include FILE        Process file as if `#include \"file\"'\n"
 "                              appeared as the first line of the primary\n"
 "                              source file.\n"
-"    -U, --undefine SYMBOL     Undefine preprocessor symbols\n"
-"        --cpp CPPSPEC         cpp execution command line\n"
 "    -L DIR                    Add linker library search path\n"
 "    -l LIB                    Link with libLIB.a\n"
-"    -c                        Compile only, don't link\n"
+"    -M[flags]                 Generate depency info. Dependent on cpp\n"
+"    -N, --notice OPTION,...   Set notice options\n"
+"    -o, --output-file FILE    Specify output file name\n"
+"    -P, --progs-src FILE      File to use instead of progs.src\n"
+"    -p, --strip-path NUM      Strip NUM leading path elements from file\n"
+"                              names\n"
+"    -q, --quiet               Inhibit usual output\n"
 "    -r                        Incremental linking\n"
+"    -S, --save-temps          Do not delete temporary files\n"
+"    -s, --source DIR          Look for progs.src in DIR instead of \".\"\n"
+"        --traditional         Traditional QuakeC mode: implies v6only\n"
+"                              default when using progs.src\n"
+"    -U, --undefine SYMBOL     Undefine preprocessor symbols\n"
+"    -V, --version             Output version information and exit\n"
+"    -v, --verbose             Display more output than usual\n"
+"    -W, --warn OPTION,...     Set warning options\n"
 "    -z                        Compress object files\n"
 "\n"
 "For help on options for --code and --warn, see the qfcc(1) manual page\n"
@@ -175,6 +177,7 @@ DecodeArgs (int argc, char **argv)
 	add_cpp_def ("-D__QUAKEC__=1");
 
 	options.code.short_circuit = -1;
+	options.code.local_merging = -1;
 	options.code.fast_float = true;
 	options.warnings.uninited_variable = true;
 	options.warnings.unused = true;
@@ -275,14 +278,16 @@ DecodeArgs (int argc, char **argv)
 							options.code.cow = flag;
 						} else if (!(strcasecmp (temp, "cpp"))) {
 							cpp_name = flag ? CPP_NAME : 0;
-						} else if (!(strcasecmp (temp, "single-cpp"))) {
-							options.single_cpp = flag;
 						} else if (!(strcasecmp (temp, "debug"))) {
 							options.code.debug = flag;
-						} else if (!(strcasecmp (temp, "short-circuit"))) {
-							options.code.short_circuit = flag;
 						} else if (!(strcasecmp (temp, "fast-float"))) {
 							options.code.fast_float = flag;
+						} else if (!(strcasecmp (temp, "local-merging"))) {
+							options.code.local_merging = flag;
+						} else if (!(strcasecmp (temp, "short-circuit"))) {
+							options.code.short_circuit = flag;
+						} else if (!(strcasecmp (temp, "single-cpp"))) {
+							options.single_cpp = flag;
 						} else if (!(strcasecmp (temp, "vector-calls"))) {
 							options.code.vector_calls = flag;
 						} else if (!(strcasecmp (temp, "v6only"))) {
@@ -334,32 +339,32 @@ DecodeArgs (int argc, char **argv)
 								flag = false;
 								temp += 3;
 							}
-							if (!strcasecmp (temp, "error")) {
-								options.warnings.promote = flag;
-							} else if (!(strcasecmp (temp, "cow"))) {
+							if (!(strcasecmp (temp, "cow"))) {
 								options.warnings.cow = flag;
-							} else if (!strcasecmp (temp, "undef-function")) {
-								options.warnings.undefined_function = flag;
-							} else if (!strcasecmp (temp, "uninited-var")) {
-								options.warnings.uninited_variable = flag;
-							} else if (!strcasecmp (temp, "vararg-integer")) {
-								options.warnings.vararg_integer = flag;
+							} else if (!strcasecmp (temp, "error")) {
+								options.warnings.promote = flag;
+							} else if (!strcasecmp (temp, "executable")) {
+								options.warnings.executable = flag;
+							} else if (!strcasecmp (temp, "initializer")) {
+								options.warnings.initializer = flag;
 							} else if (!strcasecmp (temp, "integer-divide")) {
 								options.warnings.integer_divide = flag;
 							} else if (!strcasecmp (temp, "interface-check")) {
 								options.warnings.interface_check = flag;
-							} else if (!strcasecmp (temp, "unused")) {
-								options.warnings.unused = flag;
-							} else if (!strcasecmp (temp, "executable")) {
-								options.warnings.executable = flag;
-							} else if (!strcasecmp (temp, "traditional")) {
-								options.warnings.traditional = flag;
 							} else if (!strcasecmp (temp, "precedence")) {
 								options.warnings.precedence = flag;
-							} else if (!strcasecmp (temp, "initializer")) {
-								options.warnings.initializer = flag;
+							} else if (!strcasecmp (temp, "traditional")) {
+								options.warnings.traditional = flag;
+							} else if (!strcasecmp (temp, "undef-function")) {
+								options.warnings.undefined_function = flag;
 							} else if (!strcasecmp (temp, "unimplemented")) {
 								options.warnings.unimplemented = flag;
+							} else if (!strcasecmp (temp, "unused")) {
+								options.warnings.unused = flag;
+							} else if (!strcasecmp (temp, "uninited-var")) {
+								options.warnings.uninited_variable = flag;
+							} else if (!strcasecmp (temp, "vararg-integer")) {
+								options.warnings.vararg_integer = flag;
 							}
 						}
 						temp = strtok (NULL, ",");
@@ -439,6 +444,8 @@ DecodeArgs (int argc, char **argv)
 			options.code.progsversion = PROG_ID_VERSION;
 		if (options.code.short_circuit == (qboolean) -1)
 			options.code.short_circuit = false;
+		if (options.code.local_merging == (qboolean) -1)
+			options.code.local_merging = false;
 	}
 	if (!options.code.progsversion)
 		options.code.progsversion = PROG_VERSION;
@@ -448,6 +455,8 @@ DecodeArgs (int argc, char **argv)
 		add_cpp_def ("-D__RAUMOKO__=1");
 		if (options.code.short_circuit == (qboolean) -1)
 			options.code.short_circuit = true;
+		if (options.code.local_merging == (qboolean) -1)
+			options.code.local_merging = true;
 	}
 	if (options.code.progsversion == PROG_ID_VERSION)
 		add_cpp_def ("-D__VERSION6__=1");

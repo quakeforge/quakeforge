@@ -40,7 +40,8 @@ typedef struct {
 	qboolean	short_circuit;		// short circuit logic for && and ||
 	qboolean	fast_float;			// use floats directly in ifs
 	qboolean    vector_calls;		// use floats instead of vectors for constant function args
-	unsigned int progsversion;		// Progs version to generate code for
+	qboolean    local_merge;		// merge function locals into one block
+	unsigned    progsversion;		// Progs version to generate code for
 } code_options_t;
 
 typedef struct {

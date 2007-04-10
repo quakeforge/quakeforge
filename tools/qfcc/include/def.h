@@ -121,6 +121,7 @@ def_t *get_def (struct type_s *type, const char *name, scope_t *scope,
 				storage_class_t storage);
 def_t *new_def (struct type_s *type, const char *name, scope_t *scope);
 void set_storage_bits (def_t *def, storage_class_t storage);
+int new_location_size (int size, defspace_t *space);
 int new_location (struct type_s *type, defspace_t *space);
 void free_location (def_t *def);
 def_t *get_tempdef (struct type_s *type, scope_t *scope);

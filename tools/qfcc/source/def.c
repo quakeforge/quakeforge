@@ -341,9 +341,8 @@ new_def (type_t *type, const char *name, scope_t *scope)
 }
 
 int
-new_location (type_t *type, defspace_t *space)
+new_location_size (int size, defspace_t *space)
 {
-	int         size = type_size (type);
 	int         ofs;
 	locref_t   *loc;
 	locref_t  **l = &space->free_locs;
@@ -370,6 +369,12 @@ new_location (type_t *type, defspace_t *space)
 		space->grow (space);
 	}
 	return ofs;
+}
+
+int
+new_location (type_t *type, defspace_t *space)
+{
+	return new_location_size (type_size (type), space);
 }
 
 void
