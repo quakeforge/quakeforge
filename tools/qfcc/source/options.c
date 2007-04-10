@@ -306,7 +306,7 @@ DecodeArgs (int argc, char **argv)
 							options.code.debug = flag;
 						} else if (!(strcasecmp (temp, "fast-float"))) {
 							options.code.fast_float = flag;
-						} else if (!str(casecmp (temp, "help"))) {
+						} else if (!strcasecmp (temp, "help")) {
 							code_usage ();
 						} else if (!(strcasecmp (temp, "local-merging"))) {
 							options.code.local_merging = flag;
@@ -371,7 +371,7 @@ DecodeArgs (int argc, char **argv)
 								options.warnings.promote = flag;
 							} else if (!strcasecmp (temp, "executable")) {
 								options.warnings.executable = flag;
-							} else if (!str(casecmp (temp, "help"))) {
+							} else if (!strcasecmp (temp, "help")) {
 								warning_usage ();
 							} else if (!strcasecmp (temp, "initializer")) {
 								options.warnings.initializer = flag;
@@ -405,7 +405,7 @@ DecodeArgs (int argc, char **argv)
 					char       *temp = strtok (opts, ",");
 
 					while (temp) {
-						if (!str(casecmp (temp, "help"))) {
+						if (!strcasecmp (temp, "help")) {
 							notice_usage ();
 						} else if (!(strcasecmp (temp, "none"))) {
 							options.notices.silent = true;
