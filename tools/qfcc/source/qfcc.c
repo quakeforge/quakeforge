@@ -464,7 +464,7 @@ finish_compilation (void)
 			num_localdefs += f->scope->space->size;
 		}
 		for (def = f->scope->head; def; def = def->def_next) {
-			def->ofs += pr.near_data->size;
+			def->ofs += df->parm_start;
 			relocate_refs (def->refs, def->ofs);
 		}
 	}

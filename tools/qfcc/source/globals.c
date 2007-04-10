@@ -152,13 +152,14 @@ dump_functions (progs_t *pr)
 		else
 			comment = va (" = #%d", -start);
 
-		printf ("%-5d %s%s: %d", i, name, comment, func->numparms);
+		printf ("%-5d %s%s: %d (", i, name, comment, func->numparms);
 		if (func->numparms < 0)
 			count = -func->numparms - 1;
 		else
 			count = func->numparms;
 		for (j = 0; j < count; j++)
 			printf (" %d", func->parm_size[j]);
+		printf (") %d @ %d", func->locals, func->parm_start);
 		puts ("");
 	}
 }
