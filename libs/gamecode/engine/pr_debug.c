@@ -685,7 +685,7 @@ PR_PrintStatement (progs_t *pr, dstatement_t *s, int contents)
 				char        mode = fmt[1], opchar = fmt[2];
 				unsigned    parm_ind = 0;
 				pr_int_t    opval;
-				etype_t     optype;
+				etype_t     optype = ev_void;
 
 				if (mode == 'P') {
 					opchar = fmt[3];
