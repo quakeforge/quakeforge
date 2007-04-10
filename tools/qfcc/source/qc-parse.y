@@ -700,7 +700,8 @@ begin_function
 				error (0, "%s redefined", $<def>0->name);
 			$$ = current_func = new_function ($<def>0->name);
 			$$->def = $<def>0;
-			$$->refs = new_reloc ($$->def->ofs, rel_def_func);
+			if (!$$->def->external)
+				reloc_def_func ($$, $$->def->ofs);
 			$$->code = pr.code->size;
 			if (options.code.debug) {
 				pr_lineno_t *lineno = new_lineno ();
