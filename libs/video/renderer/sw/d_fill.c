@@ -31,6 +31,10 @@
 static __attribute__ ((used)) const char rcsid[] = 
 	"$Id$";
 
+#ifdef HAVE_STDINT_H
+# include <stdint.h>
+#endif
+
 #include "d_iface.h"
 
 
@@ -64,7 +68,7 @@ D_FillRect (vrect_t *rect, int color)
 
 	dest = ((byte *) vid.buffer + ry * vid.rowbytes + rx);
 
-	if (((rwidth & 0x03) == 0) && (((long) dest & 0x03) == 0)) {
+	if (((rwidth & 0x03) == 0) && (((intptr_t) dest & 0x03) == 0)) {
 		// faster aligned dword clear
 		ldest = (unsigned int *) dest;
 		color += color << 16;

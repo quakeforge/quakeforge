@@ -53,7 +53,7 @@ R_LineGraph (int x, int y, int *h_vals, int count)
 	s = r_graphheight->int_val;
 
 	while (count--) {
-		dest = vid.buffer + vid.rowbytes * y + x++;
+		dest = ((byte*)vid.buffer) + vid.rowbytes * y + x++;
 
 		h = *h_vals++;
 

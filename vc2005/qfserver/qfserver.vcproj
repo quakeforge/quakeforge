@@ -583,6 +583,10 @@
 				>
 			</File>
 			<File
+				RelativePath="..\..\qw\source\sv_pr_cpqw.c"
+				>
+			</File>
+			<File
 				RelativePath="..\..\qw\source\sv_pr_qwe.c"
 				>
 			</File>
@@ -596,6 +600,10 @@
 			</File>
 			<File
 				RelativePath="..\..\qw\source\sv_recorder.c"
+				>
+			</File>
+			<File
+				RelativePath="..\..\qw\source\sv_sbar.c"
 				>
 			</File>
 			<File
@@ -620,6 +628,38 @@
 			Filter="h;hpp;hxx;hm;inl;inc;xsd"
 			UniqueIdentifier="{93995380-89BD-4b04-88EB-625FBE52EBFB}"
 			>
+			<File
+				RelativePath="..\..\qw\include\sv_demo.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\qw\include\sv_gib.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\qw\include\sv_pr_cmds.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\qw\include\sv_pr_cpqw.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\qw\include\sv_pr_qwe.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\qw\include\sv_progs.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\qw\include\sv_qtv.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\qw\include\sv_recorder.h"
+				>
+			</File>
 		</Filter>
 		<Filter
 			Name="Resource Files"

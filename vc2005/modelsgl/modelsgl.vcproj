@@ -2,7 +2,7 @@
 <VisualStudioProject
 	ProjectType="Visual C++"
 	Version="8.00"
-	Name="modelsgl"
+	Name="models-gl"
 	ProjectGUID="{1311DEDF-B04C-4E96-BFDC-5D9FA0B05AC7}"
 	RootNamespace="models"
 	Keyword="Win32Proj"

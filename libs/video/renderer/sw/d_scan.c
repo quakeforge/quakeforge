@@ -31,6 +31,10 @@
 static __attribute__ ((used)) const char rcsid[] = 
 	"$Id$";
 
+#ifdef HAVE_STDINT_H
+# include <stdint.h>
+#endif
+
 #include "QF/render.h"
 
 #include "d_local.h"
@@ -80,7 +84,7 @@ D_WarpScreen (void)
 	}
 
 	turb = intsintable + ((int) (r_realtime * SPEED) & (CYCLE - 1));
-	dest = vid.buffer + scr_vrect.y * vid.rowbytes + scr_vrect.x;
+	dest = ((byte*)vid.buffer) + scr_vrect.y * vid.rowbytes + scr_vrect.x;
 
 	for (v = 0; v < scr_vrect.height; v++, dest += vid.rowbytes) {
 		col = &column[turb[v]];
@@ -399,7 +403,7 @@ D_DrawZSpans (espan_t *pspan)
 		// we count on FP exceptions being turned off to avoid range problems
 		izi = (int) (zi * 0x8000 * 0x10000);
 
-		if ((long) pdest & 0x02) {
+		if ((intptr_t) pdest & 0x02) {
 			*pdest++ = (short) (izi >> 16);
 			izi += izistep;
 			count--;

@@ -132,7 +132,7 @@ SCR_ScreenShot (int width, int height)
 
 			count = 0;
 			for (; dy < dey; dy++) {
-				src = vid.buffer + (vid.rowbytes * dy) + dx;
+				src = ((byte*)vid.buffer) + (vid.rowbytes * dy) + dx;
 				for (nx = dx; nx < dex; nx++) {
 					r += vid.basepal[*src * 3];
 					g += vid.basepal[*src * 3 + 1];

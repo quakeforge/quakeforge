@@ -77,8 +77,8 @@ static cvar_t  *snd_volumesep;
 static cvar_t  *ambient_fade;
 static cvar_t  *ambient_level;
 
-static inline
-channel_t *unlink_channel (channel_t **_ch)
+static inline channel_t *
+unlink_channel (channel_t **_ch)
 {
 	channel_t  *ch = *_ch;
 	*_ch = ch->next;
@@ -332,22 +332,24 @@ s_pick_channel (int entnum, int entchannel, int looped)
 	int count;
 
 	// check for finished non-looped sounds
-	for (count = 0, _ch = &dynamic_channels; *_ch; count++) {
+	for (count = 0, _ch = &dynamic_channels; *_ch; ) {
 		if ((*_ch)->done) {
 			SND_ChannelStop (unlink_channel (_ch));
 			continue;
 		}
 		_ch = &(*_ch)->next;
+		count++;
 	}
 
 	// non-looped sounds are used to stop looped sounds on an ent channel
-	for (count = 0, _ch = &looped_dynamic_channels; *_ch; count++) {
+	for (count = 0, _ch = &looped_dynamic_channels; *_ch; ) {
 		if ((*_ch)->entnum == entnum
 			&& ((*_ch)->entchannel == entchannel || entchannel == -1)) {
 			SND_ChannelStop (unlink_channel (_ch));
 			continue;
 		}
 		_ch = &(*_ch)->next;
+		count++;
 	}
 	_ch = looped ? &looped_dynamic_channels : &dynamic_channels;
 	if ((ch = SND_AllocChannel ())) {

@@ -222,7 +222,7 @@ Draw_Character (int x, int y, unsigned int chr)
 	} else
 		drawline = 8;
 
-	dest = vid.conbuffer + y * vid.conrowbytes + x;
+	dest = ((byte*)vid.conbuffer) + y * vid.conrowbytes + x;
 
 	while (drawline--) {
 		if (source[0])
@@ -282,7 +282,7 @@ Draw_Pixel (int x, int y, byte color)
 {
 	byte       *dest;
 
-	dest = vid.conbuffer + y * vid.conrowbytes + x;
+	dest = ((byte*)vid.conbuffer) + y * vid.conrowbytes + x;
 	*dest = color;
 }
 
@@ -368,7 +368,7 @@ Draw_Pic (int x, int y, qpic_t *pic)
 
 	source = pic->data;
 
-	dest = vid.buffer + y * vid.rowbytes + x;
+	dest = ((byte*)vid.buffer) + y * vid.rowbytes + x;
 
 	if (pic->width & 7) {			// general
 		for (v = 0; v < pic->height; v++) {
@@ -420,7 +420,7 @@ Draw_SubPic (int x, int y, qpic_t *pic, int srcx, int srcy, int width,
 
 	source = pic->data + srcy * pic->width + srcx;
 
-	dest = vid.buffer + y * vid.rowbytes + x;
+	dest = ((byte*)vid.buffer) + y * vid.rowbytes + x;
 
 	if (width & 7) {			// general
 		for (v = 0; v < height; v++) {
@@ -503,7 +503,7 @@ R_DrawRect (vrect_t *prect, int rowbytes, byte * psrc, int transparent)
 	int         i, j, srcdelta, destdelta;
 	byte       *pdest;
 
-	pdest = vid.buffer + (prect->y * vid.rowbytes) + prect->x;
+	pdest = ((byte*)vid.buffer) + (prect->y * vid.rowbytes) + prect->x;
 
 	srcdelta = rowbytes - prect->width;
 	destdelta = vid.rowbytes - prect->width;
@@ -613,7 +613,7 @@ Draw_Fill (int x, int y, int w, int h, int c)
 		return;
 	}
 
-	dest = vid.buffer + y * vid.rowbytes + x;
+	dest = ((byte*)vid.buffer) + y * vid.rowbytes + x;
 	for (v = 0; v < h; v++, dest += vid.rowbytes)
 		for (u = 0; u < w; u++)
 			dest[u] = c;
@@ -633,7 +633,7 @@ Draw_FadeScreen (void)
 	for (y = 0; y < vid.height; y++) {
 		unsigned int t;
 
-		pbuf = (byte *) (vid.buffer + vid.rowbytes * y);
+		pbuf = ((byte *)vid.buffer) + vid.rowbytes * y;
 		t = (y & 1) << 1;
 
 		for (x = 0; x < vid.width; x++) {

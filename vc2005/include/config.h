@@ -14,7 +14,7 @@
 #define CLIENT_PLUGIN_PROTOS extern plugin_t *console_client_PluginInfo (void);
 
 /* Define this to the command line for the C preprocessor */
-#define CPP_NAME "cpp %d -o %o %i"
+#define CPP_NAME "wave --c99 %d -o %o %i"
 
 /* Define to one of `_getb67', `GETB67', `getb67' for Cray-2 and Cray-YMP
    systems. This function is required for `alloca.c' support on those systems.
@@ -313,7 +313,7 @@ void *alloca (int size);
 #define HAVE_STDARG_H 1
 
 /* Define to 1 if you have the <stdint.h> header file. */
-/* #undef HAVE_STDINT_H 1 */
+#define HAVE_STDINT_H 1
 
 /* Define to 1 if you have the <stdio.h> header file. */
 #define HAVE_STDIO_H 1
@@ -709,6 +709,9 @@ void *alloca (int size);
 
 #define _CRT_SECURE_NO_WARNINGS
 #define _CRT_NONSTDC_NO_WARNINGS
+
+/* used in qfcc.  should #define to _ReturnAddress()? */
+#define __builtin_return_address(x) (0)
 
 #define DIRECTINPUT_VERSION 0x0600
 #define INITGUID

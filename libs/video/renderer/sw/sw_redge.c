@@ -31,6 +31,10 @@
 static __attribute__ ((used)) const char rcsid[] = 
 	"$Id$";
 
+#ifdef HAVE_STDINT_H
+# include <stdint.h>
+#endif
+
 #include "QF/render.h"
 #include "QF/sound.h"
 
@@ -471,7 +475,7 @@ R_ScanEdges (void)
 	surf_t     *s;
 
 	basespan_p = (espan_t *)
-		((long) (basespans + CACHE_SIZE - 1) & ~(CACHE_SIZE - 1));
+		((intptr_t) (basespans + CACHE_SIZE - 1) & ~(CACHE_SIZE - 1));
 	max_span_p = &basespan_p[MAXSPANS - r_refdef.vrect.width];
 
 	span_p = basespan_p;

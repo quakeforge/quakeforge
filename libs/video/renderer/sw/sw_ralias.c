@@ -31,6 +31,10 @@
 static __attribute__ ((used)) const char rcsid[] = 
 	"$Id$";
 
+#ifdef HAVE_STDINT_H
+# include <stdint.h>
+#endif
+
 #include "QF/console.h"
 #include "QF/image.h"
 #include "QF/render.h"
@@ -704,7 +708,7 @@ R_AliasDrawModel (alight_t *plighting)
 
 	// cache align
 	pfinalverts = (finalvert_t *)
-		(((long) &finalverts[0] + CACHE_SIZE - 1) & ~(CACHE_SIZE - 1));
+		(((intptr_t) &finalverts[0] + CACHE_SIZE - 1) & ~(CACHE_SIZE - 1));
 	pauxverts = (auxvert_t *) &pfinalverts[pmdl->numverts + 1];
 
 	R_AliasSetupSkin ();

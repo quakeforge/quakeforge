@@ -453,13 +453,6 @@
 			<File
 				RelativePath="..\..\libs\net\nc\net_udp.c"
 				>
-				<FileConfiguration
-					Name="Release|Win32"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-					/>
-				</FileConfiguration>
 			</File>
 		</Filter>
 		<Filter

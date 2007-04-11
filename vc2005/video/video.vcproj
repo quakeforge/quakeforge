@@ -446,115 +446,43 @@
 			Filter="cpp;c;cc;cxx;def;odl;idl;hpj;bat;asm;asmx"
 			UniqueIdentifier="{4FC737F1-C7A5-4376-A066-2A32D752A2FF}"
 			>
-			<File
-				RelativePath="..\..\libs\video\renderer\r_cvar.c"
-				>
-			</File>
-			<File
-				RelativePath="..\..\libs\video\renderer\r_efrag.c"
-				>
-			</File>
-			<File
-				RelativePath="..\..\libs\video\renderer\r_ent.c"
-				>
-			</File>
-			<File
-				RelativePath="..\..\libs\video\renderer\r_graph.c"
-				>
-			</File>
-			<File
-				RelativePath="..\..\libs\video\renderer\r_light.c"
-				>
-			</File>
-			<File
-				RelativePath="..\..\libs\video\renderer\r_main.c"
-				>
-			</File>
-			<File
-				RelativePath="..\..\libs\video\renderer\r_part.c"
-				>
-			</File>
-			<File
-				RelativePath="..\..\libs\video\renderer\r_progs.c"
-				>
-			</File>
-			<File
-				RelativePath="..\..\libs\video\renderer\r_screen.c"
-				>
-			</File>
 			<Filter
-				Name="gl"
+				Name="renderer"
 				>
 				<File
-					RelativePath="..\..\libs\video\renderer\gl\gl_draw.c"
+					RelativePath="..\..\libs\video\renderer\r_cvar.c"
 					>
 				</File>
 				<File
-					RelativePath="..\..\libs\video\renderer\gl\gl_dyn_lights.c"
+					RelativePath="..\..\libs\video\renderer\r_efrag.c"
 					>
 				</File>
 				<File
-					RelativePath="..\..\libs\video\renderer\gl\gl_dyn_part.c"
+					RelativePath="..\..\libs\video\renderer\r_ent.c"
 					>
 				</File>
 				<File
-					RelativePath="..\..\libs\video\renderer\gl\gl_dyn_textures.c"
+					RelativePath="..\..\libs\video\renderer\r_graph.c"
 					>
 				</File>
 				<File
-					RelativePath="..\..\libs\video\renderer\gl\gl_graph.c"
+					RelativePath="..\..\libs\video\renderer\r_light.c"
 					>
 				</File>
 				<File
-					RelativePath="..\..\libs\video\renderer\gl\gl_lightmap.c"
+					RelativePath="..\..\libs\video\renderer\r_main.c"
 					>
 				</File>
 				<File
-					RelativePath="..\..\libs\video\renderer\gl\gl_mod_alias.c"
+					RelativePath="..\..\libs\video\renderer\r_part.c"
 					>
 				</File>
 				<File
-					RelativePath="..\..\libs\video\renderer\gl\gl_mod_sprite.c"
+					RelativePath="..\..\libs\video\renderer\r_progs.c"
 					>
 				</File>
 				<File
-					RelativePath="..\..\libs\video\renderer\gl\gl_rmain.c"
-					>
-				</File>
-				<File
-					RelativePath="..\..\libs\video\renderer\gl\gl_rmisc.c"
-					>
-				</File>
-				<File
-					RelativePath="..\..\libs\video\renderer\gl\gl_rsurf.c"
-					>
-				</File>
-				<File
-					RelativePath="..\..\libs\video\renderer\gl\gl_screen.c"
-					>
-				</File>
-				<File
-					RelativePath="..\..\libs\video\renderer\gl\gl_skin.c"
-					>
-				</File>
-				<File
-					RelativePath="..\..\libs\video\renderer\gl\gl_sky.c"
-					>
-				</File>
-				<File
-					RelativePath="..\..\libs\video\renderer\gl\gl_sky_clip.c"
-					>
-				</File>
-				<File
-					RelativePath="..\..\libs\video\renderer\gl\gl_textures.c"
-					>
-				</File>
-				<File
-					RelativePath="..\..\libs\video\renderer\gl\gl_warp.c"
-					>
-				</File>
-				<File
-					RelativePath="..\..\libs\video\renderer\gl\noisetextures.c"
+					RelativePath="..\..\libs\video\renderer\r_screen.c"
 					>
 				</File>
 			</Filter>
@@ -567,10 +495,6 @@
 				</File>
 				<File
 					RelativePath="..\..\libs\video\targets\in_event.c"
-					>
-				</File>
-				<File
-					RelativePath="..\..\libs\video\targets\in_win.c"
 					>
 				</File>
 				<File
@@ -590,23 +514,7 @@
 					>
 				</File>
 				<File
-					RelativePath="..\..\libs\video\targets\qfgl_ext.c"
-					>
-				</File>
-				<File
 					RelativePath="..\..\libs\video\targets\vid.c"
-					>
-				</File>
-				<File
-					RelativePath="..\..\libs\video\targets\vid_common_gl.c"
-					>
-				</File>
-				<File
-					RelativePath="..\..\libs\video\targets\vid_wgl.c"
-					>
-				</File>
-				<File
-					RelativePath="..\..\libs\video\targets\vtxarray.c"
 					>
 				</File>
 			</Filter>

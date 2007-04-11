@@ -31,6 +31,10 @@
 static __attribute__ ((used)) const char rcsid[] = 
 	"$Id$";
 
+#ifdef HAVE_STDINT_H
+# include <stdint.h>
+#endif
+
 #include "QF/render.h"
 
 #include "compat.h"
@@ -327,7 +331,7 @@ R_EmitCachedEdge (void)
 {
 	edge_t     *pedge_t;
 
-	pedge_t = (edge_t *) ((unsigned long) r_edges + r_pedge->cachededgeoffset);
+	pedge_t = (edge_t *) ((intptr_t) r_edges + r_pedge->cachededgeoffset);
 
 	if (!pedge_t->surfs[0])
 		pedge_t->surfs[0] = surface_p - surfaces;
@@ -398,9 +402,9 @@ R_RenderFace (msurface_t *fa, int clipflags)
 						continue;
 					}
 				} else {
-					if ((((unsigned long) edge_p - (unsigned long) r_edges) >
+					if ((((uintptr_t) edge_p - (uintptr_t) r_edges) >
 						 r_pedge->cachededgeoffset) &&
-						(((edge_t *) ((unsigned long) r_edges +
+						(((edge_t *) ((intptr_t) r_edges +
 									  r_pedge->cachededgeoffset))->owner ==
 						 r_pedge)) {
 						R_EmitCachedEdge ();
@@ -435,9 +439,9 @@ R_RenderFace (msurface_t *fa, int clipflags)
 				} else {
 					// it's cached if the cached edge is valid and is owned
 					// by this medge_t
-					if ((((unsigned long) edge_p - (unsigned long) r_edges) >
+					if ((((uintptr_t) edge_p - (uintptr_t) r_edges) >
 						 r_pedge->cachededgeoffset) &&
-						(((edge_t *) ((unsigned long) r_edges +
+						(((edge_t *) ((intptr_t) r_edges +
 									  r_pedge->cachededgeoffset))->owner ==
 						 r_pedge)) {
 						R_EmitCachedEdge ();

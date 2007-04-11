@@ -541,54 +541,6 @@
 			UniqueIdentifier="{4FC737F1-C7A5-4376-A066-2A32D752A2FF}"
 			>
 			<File
-				RelativePath="..\..\nq\source\cl_cam.c"
-				>
-			</File>
-			<File
-				RelativePath="..\..\nq\source\cl_cmd.c"
-				>
-			</File>
-			<File
-				RelativePath="..\..\nq\source\cl_demo.c"
-				>
-			</File>
-			<File
-				RelativePath="..\..\nq\source\cl_input.c"
-				>
-			</File>
-			<File
-				RelativePath="..\..\nq\source\cl_main.c"
-				>
-			</File>
-			<File
-				RelativePath="..\..\nq\source\cl_parse.c"
-				>
-			</File>
-			<File
-				RelativePath="..\..\nq\source\cl_screen.c"
-				>
-			</File>
-			<File
-				RelativePath="..\..\nq\source\cl_tent.c"
-				>
-			</File>
-			<File
-				RelativePath="..\..\nq\source\cl_view.c"
-				>
-			</File>
-			<File
-				RelativePath="..\..\nq\source\host_skin.c"
-				>
-			</File>
-			<File
-				RelativePath="..\..\nq\source\sbar.c"
-				>
-			</File>
-			<File
-				RelativePath="..\..\nq\source\skin.c"
-				>
-			</File>
-			<File
 				RelativePath="..\..\nq\source\sys_win.c"
 				>
 			</File>
@@ -598,38 +550,6 @@
 			Filter="h;hpp;hxx;hm;inl;inc;xsd"
 			UniqueIdentifier="{93995380-89BD-4b04-88EB-625FBE52EBFB}"
 			>
-			<File
-				RelativePath="..\..\nq\include\chase.h"
-				>
-			</File>
-			<File
-				RelativePath="..\..\nq\include\client.h"
-				>
-			</File>
-			<File
-				RelativePath="..\..\nq\include\game.h"
-				>
-			</File>
-			<File
-				RelativePath="..\..\nq\include\host.h"
-				>
-			</File>
-			<File
-				RelativePath="..\..\nq\include\protocol.h"
-				>
-			</File>
-			<File
-				RelativePath="..\..\nq\include\server.h"
-				>
-			</File>
-			<File
-				RelativePath="..\..\nq\include\sv_pr_cmds.h"
-				>
-			</File>
-			<File
-				RelativePath="..\..\nq\include\sv_progs.h"
-				>
-			</File>
 		</Filter>
 		<Filter
 			Name="Resource Files"

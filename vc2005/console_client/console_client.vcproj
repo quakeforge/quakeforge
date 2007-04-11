@@ -2,7 +2,7 @@
 <VisualStudioProject
 	ProjectType="Visual C++"
 	Version="8.00"
-	Name="console_client"
+	Name="console-client"
 	ProjectGUID="{226D42CE-5833-444E-94FA-84C1D51892A8}"
 	RootNamespace="console_client"
 	Keyword="Win32Proj"
