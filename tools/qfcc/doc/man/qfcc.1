@@ -43,31 +43,35 @@ understand.
 \fBqfcc\fP takes the following arguments:
 .TP
 .B \-\-advanced
-Use advanced Ruamoko features. This is the default when using separate
-compilation.
+Use advanced Ruamoko features.
+This is the default when using separate compilation.
 .TP
 .B \-C, \-\-code OPTION,...
-Set code generation options. See \fBCODE GENERATION OPTIONS\fP for details.
+Set code generation options.
+See \fBCODE GENERATION OPTIONS\fP for details.
 .TP
 .B \-c
-Compile only, do not link. Can be used in either \fBprogs.src\fP or separate
-compilation modes.
+Compile only, do not link.
+Can be used in either \fBprogs.src\fP or separate compilation modes.
 .TP
 .B \-\-cpp CPPSPEC
-\fBcpp\fP execution command line. See \fBCPP NAME\fP for details.
+\fBcpp\fP execution command line.
+See \fBCPP NAME\fP for details.
 .TP
 .B \-D, \-\-define SYMBOL[=VAL]
 Define a symbol for the preprocessor, if it is in use.
 .TP
 .B \-E
-Preprocessor only. No compilation or linking is done.
+Preprocessor only.
+No compilation or linking is done.
 .TP
 .B \-F, \-\-files
-Generate files.dat. This list is created by checking the parameters to the
-precache_* functions.
+Generate \fIfiles.dat\fP.
+This list is created by checking the parameters to the precache_* functions.
 .TP
 .B \-g
-Generate debugging info. Synonym for \fB\-\-code debug\fP.
+Generate debugging info.
+Synonym for \fB\-\-code debug\fP.
 .TP
 .B \-h, \-\-help
 Show summary of options.
@@ -100,32 +104,35 @@ Set notice options. See \fBNOTICE OPTIONS\fP for details.
 Specify output file name.
 .TP
 .B \-P, \-\-progs\-src FILE
-File to use instead of \fBprogs.src\fP
+File to use instead of \fIprogs.src\fP.
 .TP
 .B \-p, \-\-strip\-path NUM
-Strip NUM leading path elements from file names. eg. -p 3 will strip
-the ../../../ from ../../../src/foo.r when embedding the source file name in
-the output code.
+Strip NUM leading path elements from file names. eg. -p 3 will strip the
+.I ../../../
+from
+.I ../../../src/foo.r
+when embedding the source file name in the output code.
 .TP
 .B \-q, \-\-quiet
 Inhibit some of \fBqfcc\fP's normal output.
 .TP
 .B \-r, \-\-relocatable
-Incremental linking. Generate a larger object file from other object files
-and libraries. (\fBFIXME\fP: add section describing the linker and its
-operation)
+Incremental linking.
+Generate a larger object file from other object files and libraries.
+(\fBFIXME\fP: add section describing the linker and its operation)
 .TP
 .B \-S, \-\-save\-temps
 Do not delete temporary files.
 .TP
 .B \-s, \-\-source DIR
-look for \fBprogs.src\fP in DIR instead of the current directory.
+look for \fIprogs.src\fP in DIR instead of the current directory.
 .TP
 .B \-\-traditional
-Use traditional QuakeC syntax, semantics and \*(lqbugs\*(rq. Also implies the
-\fBv6only\fP, \fBno-short-circuit\fP and \fBno-local-merging\fP code
-generation options (see \fBCODE GENERATION OPTIONS\fP). This is the default
-when using \fBprogs.src\fP.
+Use traditional QuakeC syntax, semantics and \*(lqbugs\*(rq.
+Also implies the \fBv6only\fP, \fBno-short-circuit\fP and
+\fBno-local-merging\fP code generation options (see
+\fBCODE GENERATION OPTIONS\fP).
+This is the default when using \fBprogs.src\fP mode.
 .TP
 .B \-U, \-\-undefine SYMBOL
 Undefine a preprocessor symbol, if the preprocessor is in use.
@@ -137,87 +144,100 @@ Show the version of \fBqfcc\fP.
 Display more output than usual.
 .TP
 .B \-W, \-\-warn OPTION,...
-Set warning options. See \fBWARNING OPTIONS\fP for details.
+Set warning options.
+See \fBWARNING OPTIONS\fP for details.
 .TP
 .B \-z
-Compress object files when writing them. This is especially useful when
-creating libraries, especially if using the object oriented features, but can
-be quite slow. This has no effect when writing \fBprogs.dat\fP.
+Compress object files when writing them.
+This is especially useful when creating libraries, especially if using the
+object oriented features, but can be quite slow.
+This has no effect when writing \fBprogs.dat\fP.
 .SH "CODE GENERATION OPTIONS"
 Code generation options are processed in the order of their appearance on the
-command line. Unsupported options are ignored. The following options are
-supported by \fBqfcc\fP's \fB\-\-code\fP argument:
+command line.
+Unsupported options are ignored.
+The following options are supported by \fBqfcc\fP's \fB\-\-code\fP argument:
 .TP
 .B cow
-Allow assignment to initialized globals. In Quake-C and Ruamoko, a global
-that has been initialized to a value is not a variable, but a named constant.
-However, \fBqcc\fP never really enforced this. The \fBcow\fP option allows
-\fBqfcc\fP to gracefully cope with QuakeC source that assigns values to
-initialized globals in this manner. (also known as \*(lqcopy on
-write\*(rq\(emnever mind the bovine connotations)
+Allow assignment to initialized globals.
+In Quake-C and Ruamoko, a global that has been initialized to a value is not
+a variable, but a named constant.
+However, \fBqcc\fP never really enforced this.
+The \fBcow\fP option allows \fBqfcc\fP to gracefully cope with QuakeC source
+that assigns values to initialized globals in this manner.
+(also known as \*(lqcopy on write\*(rq\(emnever mind the bovine connotations)
 .TP
 .B cpp
-Preprocess all input files with \fBcpp\fP. This includes the \fBprogs.src\fB
-file when used.
+Preprocess all input files with \fBcpp\fP.
+This includes the \fIprogs.src\fP file when used.
 .TP
 .B debug
-Generate debug code for QuakeForge engines. The QuakeForge engine has the
-ability to load line number and other debugging information for use in
-diagnosing progs crashes. This option tells \fBqfcc\fP to generate this
-information. It is written to a secondary file with the extension
-\*(lqsym\*(rq\(emif your output file is \*(lqprogs.dat\*(rq, the symbol file
-will be \*(lqprogs.sym\*(rq.
+Generate debug code for QuakeForge engines.
+The QuakeForge engine has the ability to load line number and other debugging
+information for use in diagnosing progs crashes.
+This option tells \fBqfcc\fP to generate this information.
+It is written to a secondary file with the extension \*(lqsym\*(rq\(emif your
+output file is \*(lqprogs.dat\*(rq, the symbol file will be
+\*(lqprogs.sym\*(rq.
 .TP
 .B fast\-float
-Use float values directly in \*(lqif\*(rq statements. Defaults to on. This
-option is always enabled when using version 6 progs.
+Use float values directly in \*(lqif\*(rq statements.
+Defaults to on.
+This option is always enabled when using version 6 progs.
 .TP
 .B local-merging
 Clump the local variables from all functions into one block of data the size
 of the largest group of locals, resulting in large savings of global data
-space. When off, each function's local variable block is separate from the
-others, preserving the behaviour of traditional \fBqcc\fP, but using much more
-global data. Defaults to off for traditional mode, and on for advanced mode.
+space.
+When off, each function's local variable block is separate from the others,
+preserving the behaviour of traditional \fBqcc\fP, but using much more global
+data.
+Defaults to off for traditional mode, and on for advanced mode.
 .TP
 .B short\-circuit
-Generate short circuit code for logical operators (\fB&&\fP and \fB||\fP). For
-\fBA && B\fP, if \fBA\fP is false, the expression is known to be false and the
-code for \fBB\fP will not be executed. Similar for \fBA || B\fP, but if
-\fBA\fP is true, the expression is known to be true and the code for \fBB\fP
-will not be executed. Defaults to off for traditional mode, and on for advanced
-mode.
+Generate short circuit code for logical operators (\fB&&\fP and \fB||\fP).
+For \fBA && B\fP, if \fBA\fP is false, the expression is known to be false and
+the code for \fBB\fP will not be executed.
+Similar for \fBA || B\fP, but if \fBA\fP is true, the expression is known to
+be true and the code for \fBB\fP will not be executed.
+Defaults to off for traditional mode, and on for advanced mode.
 .TP
 .B single-cpp
 In \fBprogs.src\fP mode, when \fBcpp\fP is used, produce an intermediate file
-that is a series of \fB#include\fP directives, one for each source file. This
-file is then passed to \fBcpp\fP and the resulting output is compiled in one
-go. This results in preprocessor directives in early files affecting later
-files, as would be expected in \fBprogs.src\fP mode. Without this option,
-each source file is independent with respect to the preprocessor. Defaults to
-on.
+that is a series of \fB#include\fP directives, one for each source file.
+This file is then passed to \fBcpp\fP and the resulting output is compiled in
+one go.
+This results in preprocessor directives in early files affecting later files,
+as would be expected in \fBprogs.src\fP mode.
+Without this option, each source file is independent with respect to the
+preprocessor.
+Defaults to on.
 .TP
 .B vector\-calls
 Where a function is called with just a vector, this causes the function call to
-store three floats instead of one vector. This can save a good number of
-pr_globals where those vectors contain many duplicate coordinates but do not
-match entirely. However, this will generate slower code for such calls.
+store three floats instead of one vector.
+This can save a good number of pr_globals where those vectors contain many
+duplicate coordinates but do not match entirely.
+However, this will generate slower code for such calls.
 .TP
 .B v6only
 Restrict the compiler to only version 6 progs (original Quake/QuakeWorld)
-features. This means that the compiled data file should be able to run on
-older servers, as long as you have not used any QuakeForge-specific built-in
-functions. Also disables some of the compiler's features (like integers and
-string manipulation support). Defaults to on for traditional mode and off for
-advanced mode.
+features.
+This means that the compiled data file should be able to run on older servers,
+as long as you have not used any QuakeForge-specific built-in functions.
+Also disables some of the compiler's features (like integers and string
+manipulation support).
+Defaults to on for traditional mode and off for advanced mode.
 .SH "WARNING OPTIONS"
 Warning options are processed in the order of their appearance on the command
-line. Unsupported options are ignored. The following options are supported by
-\fBqfcc\fP's \fB\-\-warn\fP argument:
+line.
+Unsupported options are ignored.
+The following options are supported by \fBqfcc\fP's \fB\-\-warn\fP argument:
 .TP
 .B cow
-Emit a warning when the source assigns a value to a named constant. See the
-description of the \fBcow\fP code generation option above for a description
-of what this means. 
+Emit a warning when the source assigns a value to a named constant.
+See the description of the \fBcow\fP code generation option above for a
+description of what this means. 
 .TP
 .B error
 Promote warnings to errors.
@@ -241,7 +261,8 @@ Emit a warning when potentially ambiguous logic is used without parentheses.
 .TP
 .B traditional
 Emit a warning when code that should be an error is allowed by traditional
-\fBqcc\fP. Has effect only in traditional mode.
+\fBqcc\fP.
+Has effect only in traditional mode.
 .TP
 .B undef\-function
 Emit a warning when a function is called, but has not yet been defined.
@@ -260,8 +281,8 @@ value.
 Emit a warning when a function that takes a variable number of arguments is
 passed a constant of an integer type.
 .PP
-Any of the above can be prefixed with \fBno\-\fP to negate its meaning. There
-are also two special options:
+Any of the above can be prefixed with \fBno\-\fP to negate its meaning.
+There are also two special options:
 .TP
 .B all
 Turns on all warning options except \fBerror\fP.
@@ -270,70 +291,81 @@ Turns on all warning options except \fBerror\fP.
 Turns off all warning options except \fBerror\fP.
 .SH "NOTICE OPTIONS"
 Notices are used to flag code constructs that may have changed semantics but
-shouldn't be treated as warnings. They are also used for internal debugging
-purposes, so if you see any cryptic notices, please report them as a bug
-(normal notices should be fairly self-explanatory).
+shouldn't be treated as warnings.
+They are also used for internal debugging purposes, so if you see any cryptic
+notices, please report them as a bug (normal notices should be fairly
+self-explanatory).
 .TP
 .B none
 Silences all notice messages.
 .TP
 .B warn
-Promote notices to warnings. If warnings are being treated as errors, so will
-notices.
+Promote notices to warnings.
+If warnings are being treated as errors, so will notices.
+Disabling warnings has no effect on this option.
 .SH "CPP NAME"
 When preprocessing source files, \fBqfcc\fP calls \fBcpp\fP (the C
-preprocessor) with a configurable command line. This is useful when you wish
-to use an alternative preprocessor (though it must be command line compatible
-with \fBcpp\fP) or when \fBqfcc\fP has been misconfigured to call \fBcpp\fP
-incorrectly for your operating system. If the latter is the case, please
-report the details (operating system, detection methods, correct execution
-specification). The base default execution spec (on most Linux systems) is
-\fBcpp %d -o %o %i\fP.  This spec is similar in concept to a \fBprintf\fP
-string. The name of the program may be either absolute (eg \fB/lib/cpp\fP) or
-relative as the \fBPATH\fP will be searched.  Available substitutions:
+preprocessor) with a configurable command line.
+This is useful when you wish to use an alternative preprocessor (though it
+must be command line compatible with \fBcpp\fP) or when \fBqfcc\fP has been
+misconfigured to call \fBcpp\fP incorrectly for your operating system.
+If the latter is the case, please report the details (operating system,
+detection methods, correct execution specification).
+The base default execution spec (on most Linux systems) is
+\fBcpp %d -o %o %i\fP.
+This spec is similar in concept to a \fBprintf\fP string.
+The name of the program may be either absolute (eg \fB/lib/cpp\fP) or relative
+as the \fBPATH\fP will be searched.
+Available substitutions:
 .TP
 .B %d
 Mainly for defines (\-D, \-U and \-I) but \fB%d\fP will be replaced by all
-\fBcpp\fP options that \fBqfcc\fP will be passing.
+\fBcpp\fP options that \fBqfcc\fP passes to \fBcpp\fP
 .TP
 .B %o
-This will be replaced by the output file path. Could be either absolute or
-relative, depending on whether \fBqfcc\fP is deleting temporary files or not.
+This will be replaced by the output file path.
+Could be either absolute or relative, depending on whether \fBqfcc\fP is
+deleting temporary files or not.
 .TP
 .B %i
-This will be replaced by the input file path. Generally as given to \fBqfcc\fP.
+This will be replaced by the input file path.
+Generally as given to \fBqfcc\fP.
 .SH "FAQ"
 .TP
 .B Where did the name Ruamoko come from?
 In Maori mythology, Ruamoko is the youngest child of Ranginui, the
-Sky-father, and Papatuanuku, the Earth-mother. Ruamoko is the god of
-volcanoes and earthquakes \fB(Quake, get it?)\fP. For more information, see
-the Web site at <\fBhttp://maori.com/kmst1.htm\fP>.
+Sky-father, and Papatuanuku, the Earth-mother.
+Ruamoko is the god of volcanoes and earthquakes \fB(Quake, get it?)\fP.
+For more information, see the Web site at <\fBhttp://maori.com/kmst1.htm\fP>.
 .TP
 .B qfcc hangs
-This is almost always caused by qfcc incorrectly invoking \fBcpp\fP. Using the
-\fB--cpp\fP option (refer to the \fBCPP NAME\fP section above), the correct
-method for invoking \fBcpp\fP can be specified. Once you have found this,
-please send the correct \fBcpp\fP command line, preferably along with the
-output of \fBconfig.guess\fP, to the team.
+This is almost always caused by qfcc incorrectly invoking \fBcpp\fP.
+Using the \fB--cpp\fP option (refer to the \fBCPP NAME\fP section above), the
+correct method for invoking \fBcpp\fP can be specified.
+Once you have found this, please send the correct \fBcpp\fP command line,
+preferably along with the output of \fBconfig.guess\fP, to the team.
 .TP
 .B qfcc is singing a bad 80s rap song to me. What's going on?
 \*(lqice ice baby\*(rq is QuakeForge-speak for \*(lqInternal Compiler
-Error\*(rq. It usually means there's a bug in \fBqfcc\fP, so please report it
-to the team.
+Error\*(rq.
+It usually means there's a bug in \fBqfcc\fP, so please report it to the team.
 .TP
 .B qfcc is mooing at me. What's wrong with you people?
-The compiler doesn't like being treated like a slab of beef. Seriously, the
-code you are trying to compile is using constants as if they weren't.
+The compiler doesn't like being treated like a slab of beef.
+Seriously, the code you are trying to compile is using constants as if they
+weren't.
 Normally, qfcc would just stop and tell the code to sit in the corner for a
 while, but you told it not to do that by passing the \fBcow\fP option to
-\fB\-\-code\fP, so it has its revenge by mooing out a warning. Or something
-like that. To disable the warning, pass \fBno-cow\fP to \fB\-\-warn\fP.
+\fB\-\-code\fP, so it has its revenge by mooing out a warning.
+Or something like that.
+To disable the warning, pass \fBno-cow\fP to \fB\-\-warn\fP.
 .SH "FILES"
-\fBprogs.src\fP
+.I progs.src
 .SH "SEE ALSO"
-.BR quakeforge (1), pak (1)
+.BR quakeforge (1),
+.BR pak (1)
 .SH AUTHORS
 The original \fBqcc\fP program, for compiling the QuakeC language, was written
-by Id Software, Inc. The members of the QuakeForge Project have modified it to
-work with a new, but very similar language called \fBRuamoko\fP.
+by Id Software, Inc.
+The members of the QuakeForge Project have modified it to work with a new,
+but very similar language called \fBRuamoko\fP.
