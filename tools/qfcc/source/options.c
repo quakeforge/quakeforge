@@ -59,25 +59,26 @@ static int num_files;
 static int files_size;
 
 static struct option const long_options[] = {
-	{"output-file", required_argument, 0, 'o'},
-	{"source", required_argument, 0, 's'},
-	{"progs-src", required_argument, 0, 'P'},
-	{"save-temps", no_argument, 0, 'S'},
-	{"quiet", no_argument, 0, 'q'},
-	{"verbose", no_argument, 0, 'v'},
-	{"code", required_argument, 0, 'C'},
-	{"warn", required_argument, 0, 'W'},
-	{"help", no_argument, 0, 'h'},
-	{"version", no_argument, 0, 'V'},
-	{"files", no_argument, 0, 'F'},
-	{"traditional", no_argument, 0, 257},
 	{"advanced", no_argument, 0, 258},
-	{"strip-path", required_argument, 0, 'p'},
-	{"define", required_argument, 0, 'D'},
-	{"include", required_argument, 0, 259},
-	{"undefine", required_argument, 0, 'U'},
+	{"code", required_argument, 0, 'C'},
 	{"cpp", required_argument, 0, 256},
+	{"define", required_argument, 0, 'D'},
+	{"files", no_argument, 0, 'F'},
+	{"help", no_argument, 0, 'h'},
+	{"include", required_argument, 0, 259},
 	{"notice", required_argument, 0, 'N'},
+	{"output-file", required_argument, 0, 'o'},
+	{"progs-src", required_argument, 0, 'P'},
+	{"quiet", no_argument, 0, 'q'},
+	{"relocatable", no_argument, 0, 'r'},
+	{"save-temps", no_argument, 0, 'S'},
+	{"source", required_argument, 0, 's'},
+	{"strip-path", required_argument, 0, 'p'},
+	{"traditional", no_argument, 0, 257},
+	{"undefine", required_argument, 0, 'U'},
+	{"verbose", no_argument, 0, 'v'},
+	{"version", no_argument, 0, 'V'},
+	{"warn", required_argument, 0, 'W'},
 	{NULL, 0, NULL, 0}
 };
 
@@ -140,7 +141,7 @@ usage (int status)
 "    -p, --strip-path NUM      Strip NUM leading path elements from file\n"
 "                              names\n"
 "    -q, --quiet               Inhibit usual output\n"
-"    -r                        Incremental linking\n"
+"    -r, --relocatable         Incremental linking\n"
 "    -S, --save-temps          Do not delete temporary files\n"
 "    -s, --source DIR          Look for progs.src in DIR instead of \".\"\n"
 "        --traditional         Traditional QuakeC mode: implies v6only\n"

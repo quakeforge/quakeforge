@@ -81,12 +81,13 @@ Process FILE as if \fB#include "FILE"\fP appeared as the first line of the
 primary source file. See the \fBcpp\fP man page (\fB\-include\fP) for details.
 .TP
 .B \-L DIR
-Add DIR to the search path used for -l.
+Add DIR to the search path used for finding libraries specified with \fB-l\fP.
 .TP
 .B \-l LIB
 Add libLIB.a to the list of libraries to be used for resolving undefined
-symbols. \fBqfcc\fP's libraries are really \fBpak\fP files of \fBqfcc\fP
-object files built using the \fBpak\fP utility.
+symbols. \fBqfcc\fP expects libraries to be \fBpak\fP files of \fBqfcc\fP
+object files built using the \fBpak\fP utility. (\fBFIXME\fP: add sections
+on object files and library files)
 .TP
 .B \-M, \-MD, \-MMD
 Generate dependency info. Dependent on \fBcpp\fP version, so check \fBcpp\fP's
@@ -102,16 +103,17 @@ Specify output file name.
 File to use instead of \fBprogs.src\fP
 .TP
 .B \-p, \-\-strip\-path NUM
-Strip NUM leading path elements from file names. eg. -p 3 will strip the
-\../../.. from ../../../src/foo.r when embedding the source file name in the
-output code.
+Strip NUM leading path elements from file names. eg. -p 3 will strip
+the ../../../ from ../../../src/foo.r when embedding the source file name in
+the output code.
 .TP
 .B \-q, \-\-quiet
 Inhibit some of \fBqfcc\fP's normal output.
 .TP
-.B \-r
+.B \-r, \-\-relocatable
 Incremental linking. Generate a larger object file from other object files
-and libraries.
+and libraries. (\fBFIXME\fP: add section describing the linker and its
+operation)
 .TP
 .B \-S, \-\-save\-temps
 Do not delete temporary files.
@@ -122,7 +124,8 @@ look for \fBprogs.src\fP in DIR instead of the current directory.
 .B \-\-traditional
 Use traditional QuakeC syntax, semantics and \*(lqbugs\*(rq. Also implies the
 \fBv6only\fP, \fBno-short-circuit\fP and \fBno-local-merging\fP code
-generation options. This is the default when using \fBprogs.src\fP.
+generation options (see \fBCODE GENERATION OPTIONS\fP). This is the default
+when using \fBprogs.src\fP.
 .TP
 .B \-U, \-\-undefine SYMBOL
 Undefine a preprocessor symbol, if the preprocessor is in use.
@@ -139,7 +142,7 @@ Set warning options. See \fBWARNING OPTIONS\fP for details.
 .B \-z
 Compress object files when writing them. This is especially useful when
 creating libraries, especially if using the object oriented features, but can
-be quite slow.
+be quite slow. This has no effect when writing \fBprogs.dat\fP.
 .SH "CODE GENERATION OPTIONS"
 Code generation options are processed in the order of their appearance on the
 command line. Unsupported options are ignored. The following options are
