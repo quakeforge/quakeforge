@@ -96,7 +96,6 @@ Add libLIB.a to the list of libraries to be used for resolving undefined
 symbols.
 \*[qfcc] expects libraries to be \fBpak\fP files of \*[qfcc]
 object files built using the \fBpak\fP utility.
-(\fBFIXME\fP: add sections on object files and library files)
 .TP
 .B \-M, \-MD, \-MMD
 Generate dependency info.
@@ -130,7 +129,6 @@ Counteracts the effects of \fB-v\fP.
 .B \-r, \-\-relocatable
 Incremental linking.
 Generate a larger object file from other object files and libraries.
-(\fBFIXME\fP: add section describing the linker and its operation)
 .TP
 .B \-S, \-\-save\-temps
 Do not delete temporary files.
@@ -391,12 +389,12 @@ option has been given, rather than compiling each source file, an intermediate
 file is generated containing a series of frame macro reset and \fB#include\fP
 directives, one for each file.
 This intermediate file is then passed to \*[cpp] and the resulting single file
-containing all of the pre-processed source code is then compiled.
+containing all of the preprocessed source code is then compiled.
 .SS "\*(lqseparate compilation\*(rq mode"
 This mode is more generally useful.
 It is particularly well suited to building object libraries for use in other
 programs.
-Separate compilation mode is automaticly selected when any file arguments
+Separate compilation mode is automatically selected when any file arguments
 (including \fB-lLIB\fP) are given on the command line.
 .P
 Each file argument is processed in the order given.
@@ -412,12 +410,43 @@ When linking (\fB-c\fP has not been given), any generated object files will be
 deleted unless \fB-S\fP is on the command line.
 However, no object file given on the command line will be deleted.
 .P
+When linking, if the \fB-r\fP option is given, instead of the output file being
+a normal progs file, it will be an object file that can be linked against other
+object files.
+.P
 While separate compilation mode implies \fB--advanced\fP, this can be
 overridden using \fB--traditional\fP.
 .P
 When using \*[cpp], each source file is passed through the preprocessor
 individually.
 Each file is truly independent of any other file on the command line.
+.SH TRADITIONAL VS ADVANCED
+Compared to \fBqcc\fP, \*[qfcc] has many advanced features and is much stricter
+about type checking.
+\*[qfcc] also uses the same operator semantics and precedence rules as
+standard \fBC\fP.
+Unfortunately, this means that most older QuakeC code will not compile, or even
+worse, will compile incorrectly.
+.P
+To address this situation, \*[qfcc] has a \*(lqtraditional\*(rq mode for
+compiling old progs.
+This mode, enabled with \fB--traditional\fP or by default in \fBprogs.src\fP
+mode, removes the new keywords required by \*[qfcc]'s advanced features,
+converts new errors to warnings, some warnings to notices and inverts
+precedence order where required (eg, (!var & flag)).
+Traditional mode also affects several code generation options (as always, this
+can be overridden):
+.IP \(bu 4
+code output is restricted to version 6 progs instructions
+.IP \(bu 4
+short circuit boolean logic is disabled
+.IP \(bu 4
+each function has a private area of data for its local variables (this wastes
+a lot of data space).
+.P
+Advanced mode is simply \*[qfcc] in its natural state.
+Using \fB--advanced\fP, \*[qfcc] can be put in to advanced mode while using the
+\fBprogs.src\fP compilation mode.
 .SH "FAQ"
 .TP
 .B Where did the name Ruamoko come from?
