@@ -549,12 +549,27 @@ code_func
 def_name
 	: identifier
 		{
-			if (current_scope->type == sc_local
-				&& current_scope->parent->type == sc_params) {
+			scope_type  st = current_scope->type;
+			// traditional functions have only the one scope
+			//FIXME should the scope be set to local when the params scope
+			//is created in traditional mode?
+			if (options.traditional && st == sc_params)
+				st = sc_local;
+			if (st == sc_local) {
 				def_t      *def = get_def (0, $1, current_scope, st_none);
 				if (def) {
-					if (def->scope->type == sc_params)
-						warning (0, "local %s shadows param %s", $1, def->name);
+					if (def->scope->type == sc_params
+						&& current_scope->parent->type == sc_params) {
+						warning (0, "local %s shadows param %s", $1,
+								 def->name);
+					}
+					if (def->scope == current_scope) {
+						expr_t      e;
+						warning (0, "local %s redeclared", $1);
+						e.file = def->file;
+						e.line = def->line;
+						warning (&e, "previously declared here");
+					}
 				}
 			}
 			$$ = get_def ($<type>0, $1, current_scope, current_storage);
