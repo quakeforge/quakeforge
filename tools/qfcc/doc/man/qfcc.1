@@ -85,27 +85,30 @@ for include files.
 .TP
 .B \-\-include FILE
 Process FILE as if \fB#include "FILE"\fP appeared as the first line of the
-primary source file. See the \*[cpp] man page (\fB\-include\fP) for details.
+primary source file.
+See the \*[cpp] man page (\fB\-include\fP) for details.
 .TP
 .B \-L DIR
 Add DIR to the search path used for finding libraries specified with \fB-l\fP.
 .TP
 .B \-l LIB
 Add libLIB.a to the list of libraries to be used for resolving undefined
-symbols. \*[qfcc] expects libraries to be \fBpak\fP files of \*[qfcc]
-object files built using the \fBpak\fP utility. (\fBFIXME\fP: add sections
-on object files and library files)
+symbols.
+\*[qfcc] expects libraries to be \fBpak\fP files of \*[qfcc]
+object files built using the \fBpak\fP utility.
+(\fBFIXME\fP: add sections on object files and library files)
 .TP
 .B \-M, \-MD, \-MMD
-Generate dependency info. Dependent on \*[cpp] version, so check \*[cpp]'s
-documentation.
+Generate dependency info.
+Dependent on \*[cpp] version, so check \*[cpp]'s documentation.
 .TP
 .B \-N, \-\-notice OPTION,...
-Set notice options. See \fBNOTICE OPTIONS\fP for details.
+Set notice options.
+See \fBNOTICE OPTIONS\fP for details.
 .TP
 .B \-o, \-\-output\-file FILE
 Specify output file name.
-In \fBprogs.src\fP mode, this overides the output file in \*[progs.src].
+In \fBprogs.src\fP mode, this overrides the output file in \*[progs.src].
 .TP
 .B \-P, \-\-progs\-src FILE
 File to use instead of \*[progs.src].
@@ -252,7 +255,7 @@ The following options are supported by \*[qfcc]'s \fB\-\-warn\fP argument:
 .B cow
 Emit a warning when the source assigns a value to a named constant.
 See the description of the \fBcow\fP code generation option above for a
-description of what this means. 
+description of what this means.
 .TP
 .B error
 Promote warnings to errors.
@@ -353,8 +356,8 @@ This is the traditional method of compiling QuakeC programs.
 It is selected when no file arguments are given to \*[qfcc].
 Note that the \fB-lLIB\fP option is considered to be a file argument.
 .P
-In this mode, the file \[progs.src] is used to specify the output file name and
-the input source files.
+In this mode, the file \*[progs.src] is used to specify the output file name
+and the input source files.
 While it is customary to write each file name on a separate line, file names
 are really just white-space separated strings (use double quotes around files
 with spaces, though using files with spaces is a gibbing offence).
@@ -365,35 +368,62 @@ This may be overridden using the \fB-o\fP option.
 All subsequent file names specify QuakeC source files.
 .P
 The source files are cumulatively compiled in the order they are listed in
-\[progs.src].
+\*[progs.src].
 Cumulatively compiled means that all symbols other than frame macros defined in
 earlier source files are visible in later source files.
 Once the all source files have been compiled, the finished program is written
 to the output file as a normal \fIprogs.dat\fP file.
 .P
 If the \fB-c\fP option is given, instead of a \fIprogs.dat\fP file, an object
-file is written. This object file can then be linked against other object files
-to produce the \fIprogs.dat\fP file. This is useful when mod extensions are in
-library form and converting the main mod from \fBprogs.src\fP style to
-separate compilation is undesirable.
+file is written.
+This object file can then be linked against other object files
+to produce the \fIprogs.dat\fP file.
+This is useful when mod extensions are in library form and converting the main
+mod from \fBprogs.src\fP style to separate compilation is undesirable.
 .P
 \fBprogs.src\fP mode implies \fB--traditional\fP.
+However, this can be overridden using \fB--advanced\fP.
 .P
-When \[cpp] has not been disabled, \[progs.src] is first passed through \[cpp].
+When \*[cpp] has not been disabled, \*[progs.src] is first passed through
+\*[cpp].
 The result is then parsed as above, but unless the \fBno-single-cpp\fP code
 option has been given, rather than compiling each source file, an intermediate
 file is generated containing a series of frame macro reset and \fB#include\fP
 directives, one for each file.
-This intermediate file is then passed to \[cpp] and the resulting single file
+This intermediate file is then passed to \*[cpp] and the resulting single file
 containing all of the pre-processed source code is then compiled.
 .SS "\*(lqseparate compilation\*(rq mode"
-much like C. \fBFIXME\fP I'm tired, I'm going to bed.
+This mode is more generally useful.
+It is particularly well suited to building object libraries for use in other
+programs.
+Separate compilation mode is automaticly selected when any file arguments
+(including \fB-lLIB\fP) are given on the command line.
+.P
+Each file argument is processed in the order given.
+Files ending in \fI.r\fP, \fI.qc\fP, or \fI.c\fP (part of an experimental
+hack to put qfcc support into automake) are treated as sources and compiled
+to object file.
+All other files (including \fB-lLIB\fP) are passed untouched to the linker
+unless the \fB-c\fP is given.
+If \fB-c\fP is given, then object files are ignored and the linking stage will
+be skipped.
+Each source file is fully independent of the others.
+When linking (\fB-c\fP has not been given), any generated object files will be
+deleted unless \fB-S\fP is on the command line.
+However, no object file given on the command line will be deleted.
+.P
+While separate compilation mode implies \fB--advanced\fP, this can be
+overridden using \fB--traditional\fP.
+.P
+When using \*[cpp], each source file is passed through the preprocessor
+individually.
+Each file is truly independent of any other file on the command line.
 .SH "FAQ"
 .TP
 .B Where did the name Ruamoko come from?
 In Maori mythology, Ruamoko is the youngest child of Ranginui, the
 Sky-father, and Papatuanuku, the Earth-mother.
-Ruamoko is the god of volcanoes and earthquakes \fB(Quake, get it?)\fP.
+Ruamoko is the god of volcanoes and earthquakes.
 For more information, see the Web site at <\fBhttp://maori.com/kmst1.htm\fP>.
 .TP
 .B qfcc hangs
