@@ -665,7 +665,9 @@ CL_AddQFInfoKeys (void)
 	// i   * irc
 	// p   pogo stick control
 	// t   team messages
-	static const char *cap = "pt"
+	// e   large entity/packet maximum. (128)
+	// u   large packet support. (2x normal)
+	static const char *cap = "pteu"
 #ifdef HAVE_ZLIB
 		"z"
 #endif

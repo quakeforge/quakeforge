@@ -768,7 +768,7 @@ SV_WriteEntitiesToClient (delta_t *delta, sizebuf_t *msg)
 	packet_entities_t *pack;
 
 	if (delta->client) {
-		max_packet_entities = MAX_PACKET_ENTITIES;
+		max_packet_entities = delta->client->max_packet_ents;
 		stdver = delta->client->stdver;
 	}
 

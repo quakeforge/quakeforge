@@ -102,7 +102,7 @@ cbuf_t     *sv_cbuf;
 cbuf_args_t *sv_args;
 
 client_t   *host_client;				// current client
-entity_state_t cl_entities[MAX_CLIENTS][UPDATE_BACKUP+1][MAX_PACKET_ENTITIES]; // client entities
+entity_state_t cl_entities[MAX_CLIENTS][UPDATE_BACKUP+1][MAX_EXT_PACKET_ENTITIES]; // client entities
 
 double      sv_frametime;
 double      realtime;					// without any filtering or bounding
@@ -916,9 +916,11 @@ SVC_DirectConnect (void)
 	newcl->prespawned = false;
 	newcl->spawned = false;
 
+	newcl->max_packet_ents = (strchr(Info_ValueForKey (userinfo, "*cap"), 'e') != 0) ? MAX_EXT_PACKET_ENTITIES : MAX_PACKET_ENTITIES;
+
 	newcl->datagram.allowoverflow = true;
 	newcl->datagram.data = newcl->datagram_buf;
-	newcl->datagram.maxsize = sizeof (newcl->datagram_buf);
+	newcl->datagram.maxsize = (strchr(Info_ValueForKey (userinfo, "*cap"), 'u') != 0) ? MAX_DATAGRAM : MAX_OLD_DATAGRAM;
 
 	// spectator mode can ONLY be set at join time
 	newcl->spectator = spectator;
@@ -944,6 +946,16 @@ SVC_DirectConnect (void)
 		SV_Printf ("Client %s (%s) connected\n", newcl->name,
 					NET_AdrToString (adr));
 	newcl->sendinfo = true;
+
+	if(newcl->max_packet_ents == MAX_EXT_PACKET_ENTITIES) {
+		SV_Printf ("Client %s (%s) supports large entity counts\n", newcl->name,
+					NET_AdrToString (adr));
+	}
+
+	if(newcl->datagram.maxsize == MAX_DATAGRAM) {
+		SV_Printf ("Client %s (%s) supports large datagram sizes\n", newcl->name,
+					NET_AdrToString (adr));
+	}
 
 	// QuakeForge stuff.
 	newcl->msecs = 0;

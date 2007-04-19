@@ -1020,7 +1020,7 @@ write_entities (client_t *client, sizebuf_t *msg)
 //			continue;					// added to the special update list
 
 		// add to the packetentities
-		if (pack->num_entities == MAX_PACKET_ENTITIES) {
+		if (pack->num_entities == MAX_EXT_PACKET_ENTITIES) {
 			qtv_printf ("mpe overflow\n");
 			continue;					// all full
 		}
