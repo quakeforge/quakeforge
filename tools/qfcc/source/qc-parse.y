@@ -123,6 +123,12 @@ expr_t *argv_expr (void);
 	struct struct_s *strct;
 }
 
+%nonassoc IFX
+%nonassoc ELSE
+%nonassoc BREAK_PRIMARY
+%nonassoc ';'
+%nonassoc CLASS_NOT_CATEGORY
+
 %right	<op> '=' ASX PAS /* pointer assign */
 %right	'?' ':'
 %left	OR
@@ -138,6 +144,8 @@ expr_t *argv_expr (void);
 %right	<op> UNARY INCOP
 %left	HYPERUNARY
 %left	'.' '(' '['
+
+%nonassoc STORAGEX
 
 %token	<string_val> CLASS_NAME NAME STRING_VAL
 %token	<integer_val> INT_VAL
@@ -205,7 +213,7 @@ storage_class_t current_storage = st_global;
 
 %}
 
-%expect 11
+%expect 2
 
 %%
 
@@ -305,7 +313,7 @@ storage_class
 
 local_storage_class
 	: LOCAL						{ current_storage = st_local; }
-	| 							{ current_storage = st_local; }
+	| %prec STORAGEX			{ current_storage = st_local; }
 	| STATIC					{ current_storage = st_static; }
 	;
 
@@ -903,7 +911,7 @@ statement
 			(void) ($<type>3);
 			current_storage = st_local;
 		}
-	| IF '(' fexpr ')' save_inits statement
+	| IF '(' fexpr ')' save_inits statement %prec IFX
 		{
 			expr_t *tl = new_label_expr ();
 			expr_t *fl = new_label_expr ();
@@ -1103,7 +1111,7 @@ unary_expr
 
 primary
 	: NAME      				{ $$ = new_name_expr ($1); }
-	| BREAK						{ $$ = new_name_expr (save_string ("break")); }
+	| BREAK	%prec BREAK_PRIMARY { $$ = new_name_expr (save_string ("break")); }
 	| ARGS						{ $$ = new_name_expr (".args"); }
 	| ARGC						{ $$ = argc_expr (); }
 	| ARGV						{ $$ = argv_expr (); }
@@ -1231,7 +1239,7 @@ classdecl
 	;
 
 class_name
-	: identifier
+	: identifier %prec CLASS_NOT_CATEGORY
 		{
 			$$ = get_class ($1, 0);
 			if (!$$) {
