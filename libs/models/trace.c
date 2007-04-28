@@ -122,7 +122,7 @@ MOD_TraceLine (hull_t *hull, int num,
 					trace->inwater = true;
 			} else if (!empty && num == CONTENTS_SOLID) {
 				solid = 1;
-			} else if (empty || solid) {
+			} else if (empty/* || solid*/) {//FIXME not sure what I want
 				// DONE!
 				trace->allsolid = solid & (num == CONTENTS_SOLID);
 				trace->startsolid = solid;
