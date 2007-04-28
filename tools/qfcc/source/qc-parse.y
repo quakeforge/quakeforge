@@ -205,7 +205,7 @@ storage_class_t current_storage = st_global;
 
 %}
 
-%expect 5
+%expect 11
 
 %%
 
@@ -305,6 +305,7 @@ storage_class
 
 local_storage_class
 	: LOCAL						{ current_storage = st_local; }
+	| 							{ current_storage = st_local; }
 	| STATIC					{ current_storage = st_static; }
 	;
 
