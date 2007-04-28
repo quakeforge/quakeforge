@@ -2078,6 +2078,7 @@ return_expr (function_t *f, expr_t *e)
 		e->e.float_val = e->e.integer_val;
 		t = &type_float;
 	}
+	check_initialized (e);
 	if (t == &type_void) {
 		if (e->type == ex_nil) {
 			t = f->def->type->aux_type;
