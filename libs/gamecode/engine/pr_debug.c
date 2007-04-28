@@ -40,6 +40,7 @@ static __attribute__ ((used)) const char rcsid[] =
 #ifdef HAVE_STRINGS_H
 # include <strings.h>
 #endif
+#include <ctype.h>
 
 #include <stdlib.h>
 
@@ -137,7 +138,7 @@ PR_Debug_Init_Cvars (void)
 static file_t *
 PR_Load_Source_File (progs_t *pr, const char *fname)
 {
-	char       *path = 0, *l, **dir;
+	char       *path = 0, *l, *p, **dir;
 	file_t     *f = Hash_Find (file_hash, fname);
 
 	if (f)
@@ -173,7 +174,9 @@ PR_Load_Source_File (progs_t *pr, const char *fname)
 	f->lines[0].text = f->text;
 	for (f->num_lines = 0, l = f->text; *l; l++) {
 		if (*l == '\n') {
-			f->lines[f->num_lines].len = l - f->lines[f->num_lines].text;
+			for (p = l; p > f->lines[f->num_lines].text && isspace(p[-1]); p--)
+				;
+			f->lines[f->num_lines].len = p - f->lines[f->num_lines].text;
 			f->lines[++f->num_lines].text = l + 1;
 		}
 	}
