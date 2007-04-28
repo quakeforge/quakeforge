@@ -45,7 +45,7 @@ typedef struct bot_data_t bot_data_t;
 	//local integer i = 2, tmp;
 	local unsigned u;
 	//tmp = (integer)links[i];
-	//for (u = 0; u < count; u++)
+	for (u = 0; u < count; u++)
 		[list[u] fix];
 }
 

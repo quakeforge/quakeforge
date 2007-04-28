@@ -5,6 +5,6 @@ float FL_SWIM = 2;
 void (entity other)
 trigger_monsterjump_touch =
 {
-	if (other.flags & (FL_MONSTER | FL_FLY | FL_SWIM) != FL_MONSTER)
+	if ((other.flags & (FL_MONSTER | FL_FLY | FL_SWIM)) != FL_MONSTER)
 		return;
 };
