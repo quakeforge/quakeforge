@@ -76,6 +76,7 @@ typedef struct {
 									// that
 	qboolean		save_temps;		// save temporary files
 	qboolean		files_dat;		// generate files.dat
+	qboolean		progdefs_h;		// generate progdefs.h
 	qboolean		traditional;	// behave more like qcc
 	qboolean		advanced;		// behold the power of Ruamoko
 	qboolean		compile;		// serparate compilation mode

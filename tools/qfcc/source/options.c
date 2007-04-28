@@ -58,23 +58,34 @@ const char **source_files;
 static int num_files;
 static int files_size;
 
+// keep me sane when adding long options :P
+enum {
+	start_opts = 255,	// not used, just for starting the enum.
+	OPT_ADVANCED,
+	OPT_CPP,
+	OPT_INCLUDE,
+	OPT_PROGDEFS,
+	OPT_TRADITIONAL,
+};
+
 static struct option const long_options[] = {
-	{"advanced", no_argument, 0, 258},
+	{"advanced", no_argument, 0, OPT_ADVANCED},
 	{"code", required_argument, 0, 'C'},
-	{"cpp", required_argument, 0, 256},
+	{"cpp", required_argument, 0, OPT_CPP},
 	{"define", required_argument, 0, 'D'},
 	{"files", no_argument, 0, 'F'},
 	{"help", no_argument, 0, 'h'},
-	{"include", required_argument, 0, 259},
+	{"include", required_argument, 0, OPT_INCLUDE},
 	{"notice", required_argument, 0, 'N'},
 	{"output-file", required_argument, 0, 'o'},
+	{"progdefs", no_argument, 0, OPT_PROGDEFS},
 	{"progs-src", required_argument, 0, 'P'},
 	{"quiet", no_argument, 0, 'q'},
 	{"relocatable", no_argument, 0, 'r'},
 	{"save-temps", no_argument, 0, 'S'},
 	{"source", required_argument, 0, 's'},
 	{"strip-path", required_argument, 0, 'p'},
-	{"traditional", no_argument, 0, 257},
+	{"traditional", no_argument, 0, OPT_TRADITIONAL},
 	{"undefine", required_argument, 0, 'U'},
 	{"verbose", no_argument, 0, 'v'},
 	{"version", no_argument, 0, 'V'},
@@ -310,6 +321,9 @@ DecodeArgs (int argc, char **argv)
 			case 'F':
 				options.files_dat = true;
 				break;
+			case OPT_PROGDEFS:
+				options.progdefs_h = true;
+				break;
 			case 'q':					// quiet
 				options.verbosity -= 1;
 				break;
@@ -319,12 +333,12 @@ DecodeArgs (int argc, char **argv)
 			case 'g':					// debug
 				options.code.debug = true;
 				break;
-			case 257:					// traditional
+			case OPT_TRADITIONAL:
 				options.traditional = true;
 				options.advanced = false;
 				options.code.progsversion = PROG_ID_VERSION;
 				break;
-			case 258:					// advanced
+			case OPT_ADVANCED:
 				options.traditional = false;
 				options.advanced = true;
 				options.code.progsversion = PROG_VERSION;
@@ -468,7 +482,7 @@ DecodeArgs (int argc, char **argv)
 					free (opts);
 				}
 				break;
-			case 256:					// --cpp=
+			case OPT_CPP:				// --cpp=
 				cpp_name = save_string (optarg);
 				break;
 			case 'S':					// save temps
@@ -482,7 +496,7 @@ DecodeArgs (int argc, char **argv)
 				options.preprocess_only = 1;
 				add_cpp_def ("-E");
 				break;
-			case 259:					// include-file
+			case OPT_INCLUDE:			// include-file
 				add_cpp_def (nva ("%s", "-include"));
 				add_cpp_def (nva ("%s", optarg));
 				break;

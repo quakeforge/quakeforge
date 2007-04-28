@@ -649,7 +649,7 @@ separate_compile (void)
 				finish_compilation ();
 
 				// write progdefs.h
-				if (options.code.progsversion == PROG_ID_VERSION)
+				if (options.progdefs_h)
 					crc = WriteProgdefs ("progdefs.h");
 
 				WriteData (crc);
@@ -866,7 +866,7 @@ progs_src_compile (void)
 		}
 
 		// write progdefs.h
-		if (options.code.progsversion == PROG_ID_VERSION)
+		if (options.progdefs_h)
 			crc = WriteProgdefs ("progdefs.h");
 
 		// write data file
