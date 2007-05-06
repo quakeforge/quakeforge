@@ -98,6 +98,8 @@ SND_CacheRetain (sfx_t *sfx)
 {
 	sfxblock_t *block = (sfxblock_t *) sfx->data;
 	block->buffer = Cache_TryGet (&block->cache);
+	if (!block->buffer)
+		Sys_Printf ("failed to cache sound!\n");
 	return block->buffer;
 }
 
@@ -105,7 +107,6 @@ void
 SND_CacheRelease (sfx_t *sfx)
 {
 	sfxblock_t *block = (sfxblock_t *) sfx->data;
-	block->buffer = 0;
 	// due to the possibly asynchronous nature of the mixer, the cache
 	// may have been flushed behind our backs
 	if (block->cache.data) {
@@ -115,6 +116,8 @@ SND_CacheRelease (sfx_t *sfx)
 			return;
 		}
 		Cache_Release (&block->cache);
+		if (!Cache_ReadLock (&block->cache))
+			block->buffer = 0;
 	}
 }
 

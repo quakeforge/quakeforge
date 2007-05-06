@@ -686,7 +686,7 @@ SND_StaticSound (sfx_t *sfx, const vec3_t origin, float vol,
 	VectorCopy (origin, ss->origin);
 	ss->master_vol = vol;
 	ss->dist_mult = (attenuation / 64) / sound_nominal_clip_dist;
-	ss->end = snd_paintedtime + osfx->length;
+	ss->end = 0;
 
 	s_spatialize (ss);
 	ss->oldphase = ss->phase;

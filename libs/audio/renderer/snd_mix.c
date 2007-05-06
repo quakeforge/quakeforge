@@ -84,7 +84,7 @@ snd_paint_channel (channel_t *ch, sfxbuffer_t *sc, int count)
 		ch->pos += count;
 		if ((int) ch->pos <= 0)
 			return;
-		offs = ch->pos;
+		offs = count - ch->pos;
 		count -= offs;
 		ch->pos = 0;
 	}
@@ -135,11 +135,13 @@ SND_PaintChannels (unsigned endtime)
 			if (ch->pause)
 				continue;
 			sc = sfx->getbuffer (sfx);
-			if (!sc)				// something went wrong with the sfx
+			if (!sc) {				// something went wrong with the sfx
+				printf ("XXXX sfx blew up!!!!\n");
 				continue;
+			}
 
 			if (!ch->end)
-				ch->end = snd_paintedtime + sfx->length;
+				ch->end = snd_paintedtime + sfx->length - ch->pos;
 
 			ltime = snd_paintedtime;
 
