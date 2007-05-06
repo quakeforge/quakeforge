@@ -80,8 +80,10 @@ static qboolean	ogglistvalid = false;
 
 /* sound resources */
 static channel_t *cd_channel;
-static int		  current_track;	// current track, used when pausing
 static plitem_t	 *tracklist = NULL;	// parsed tracklist, dictionary format
+static plitem_t  *play_list;		// string or array of strings
+static int        play_pos = -1;	// position in play_list (0 for string)
+									// -1 = invalid (both)
 
 static cvar_t	 *bgmvolume;		// volume cvar
 static cvar_t	 *mus_ogglist;	// tracklist cvar
@@ -115,7 +117,6 @@ I_OGGMus_Stop (void)
 	if (!tracklist || !mus_enabled || !playing)
 		return;
 	
-	current_track = -1;
 	playing = false;
 	wasPlaying = false;
 
@@ -187,6 +188,79 @@ Load_Tracklist (void)
 }
 
 static void
+I_OGGMus_SetPlayList (int track)
+{
+	const char *trackstring = va ("%i", track);
+	int         i;
+
+	play_list = PL_ObjectForKey (tracklist, trackstring);
+	if (!play_list) {
+		Sys_Printf ("No Track entry for track #%d.\n", track);
+		return;
+	}
+	if (play_list->type == QFString)
+		return;
+	if (play_list->type != QFArray) {
+		Sys_Printf ("Track entry for track #%d not string or array.\n", track);
+		play_list = 0;
+		return;
+	}
+	for (i = 0; i < PL_A_NumObjects (play_list); i++) {
+		plitem_t   *item = PL_ObjectAtIndex (play_list, i);
+		if (!item || item->type != QFString) {
+			Sys_Printf ("Bad subtract %d in track %d.\n", i, track);
+			play_list = 0;
+			return;
+		}
+	}
+}
+
+static void
+I_OGGMus_PlayNext (int looping)
+{
+	const char *track;
+	sfx_t      *cd_sfx;
+	wavinfo_t  *info = 0;
+
+	if (!play_list)
+		return;
+	if (play_list->type == QFString) {
+		track = PL_String (play_list);
+		play_pos = 0;
+	} else {
+		play_pos++;
+		if (play_pos >= PL_A_NumObjects (play_list))
+			play_pos = 0;
+		track = PL_String (PL_ObjectAtIndex (play_list, play_pos));
+		looping = 0;
+	}
+	Sys_Printf ("Playing: %s.\n", track);
+	if (cd_channel) {
+		S_ChannelStop (cd_channel);
+		cd_channel = 0;
+	}
+
+	if (!(cd_channel = S_AllocChannel ()))
+		return;
+
+	if (!(cd_sfx = S_LoadSound (track)))
+		return;
+
+	if (cd_sfx->wavinfo)
+		info = cd_sfx->wavinfo (cd_sfx);
+	if (info) {
+		if (looping == true)
+			info->loopstart = 0;
+		else
+			info->loopstart = -1;
+	}
+	cd_channel->sfx = cd_sfx->open (cd_sfx);
+	set_volume ();
+
+	playing = true;
+}
+
+static void
 I_OGGMus_Pause (void)
 {
 	if (!tracklist || !mus_enabled || !playing)
@@ -211,16 +285,11 @@ I_OGGMus_Resume (void)
 	playing = true;
 }
 
-/* start playing, if we've got a trackmap.
+/* start playing, if we've got a play_list.
  * cry if we can't find a file to play */
 static void
 I_OGGMus_Play (int track, qboolean looping)
 {
-	plitem_t	*trackmap = NULL;
-	wavinfo_t	*info = 0;
-	const char	*trackstring;
-	sfx_t       *cd_sfx;
-
 	/* alrighty. grab the list, map track to filename. grab filename from data
 	   resources, attach sound to play, loop. */
 
@@ -230,38 +299,8 @@ I_OGGMus_Play (int track, qboolean looping)
 	if (playing)
 		I_OGGMus_Stop ();
 
-	trackstring = va ("%i", track);
-	trackmap = PL_ObjectForKey (tracklist, trackstring);
-	if (!trackmap || trackmap->type != QFString) {
-		Sys_Printf ("No Track entry for track #%s.\n", trackstring);
-		return;
-	}
-
-	Sys_Printf ("Playing: %s.\n", (char *) trackmap->data);
-	if (cd_channel) {
-		S_ChannelStop (cd_channel);
-		cd_channel = 0;
-	}
-
-	if (!(cd_channel = S_AllocChannel ()))
-		return;
-
-	if (!(cd_sfx = S_LoadSound ((char *) trackmap->data)))
-		return;
-
-	if (cd_sfx->wavinfo)
-		info = cd_sfx->wavinfo (cd_sfx);
-	if (info) {
-		if (looping == true)
-			info->loopstart = 0;
-		else
-			info->loopstart = -1;
-	}
-	cd_channel->sfx = cd_sfx->open (cd_sfx);
-	set_volume ();
-
-	playing = true;
-	current_track = track;
+	I_OGGMus_SetPlayList (track);
+	I_OGGMus_PlayNext (looping);
 }
 
 /* print out the current track map, in numerical order. */
@@ -386,6 +425,11 @@ I_OGG_f (void)
 static void
 I_OGGMus_Update (void)
 {
+	if (!cd_channel || !cd_channel->done)
+		return;
+	// will only get here when multi-tracked
+	I_OGGMus_Stop ();
+	I_OGGMus_PlayNext (0);
 }
 
 /* called when the mus_ogglist cvar is changed */
