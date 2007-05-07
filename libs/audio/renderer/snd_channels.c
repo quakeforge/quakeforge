@@ -334,7 +334,7 @@ s_pick_channel (int entnum, int entchannel, int looped)
 
 	// check for finished non-looped sounds
 	for (count = 0, _ch = &dynamic_channels; *_ch; ) {
-		if ((*_ch)->done) {
+		if (!(*_ch)->sfx || (*_ch)->done) {
 			SND_ChannelStop (unlink_channel (_ch));
 			continue;
 		}
