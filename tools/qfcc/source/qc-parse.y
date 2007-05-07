@@ -129,6 +129,8 @@ expr_t *argv_expr (void);
 %nonassoc ';'
 %nonassoc CLASS_NOT_CATEGORY
 
+%nonassoc STORAGEX
+
 %right	<op> '=' ASX PAS /* pointer assign */
 %right	'?' ':'
 %left	OR
@@ -144,8 +146,6 @@ expr_t *argv_expr (void);
 %right	<op> UNARY INCOP
 %left	HYPERUNARY
 %left	'.' '(' '['
-
-%nonassoc STORAGEX
 
 %token	<string_val> CLASS_NAME NAME STRING_VAL
 %token	<integer_val> INT_VAL
