@@ -594,9 +594,8 @@ opt_initializer
 var_initializer
 	: '=' expr	// don't bother folding twice
 		{
-			if (current_scope->type == sc_params) {
-				notice (0, "whee");
-			} else if (current_scope->type == sc_local) {
+			if (current_scope->type == sc_local
+				|| current_scope->type == sc_params) {
 				expr_t     *expr = assign_expr (new_def_expr ($<def>0), $2);
 				expr = fold_constants (expr);
 				append_expr (local_expr, expr);
