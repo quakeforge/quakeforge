@@ -752,6 +752,9 @@ cpqw_user_cmd (void)
 		if (argc > 7)
 			argc = 7;
 
+		*sv_globals.time = sv.time;
+		*sv_globals.self = EDICT_TO_PROG (&sv_pr_state, sv_player);
+
 		PR_PushFrame (pr);
 		P_FLOAT (pr, 0) = argc;
 		for (i = 0; i < argc; i++)
