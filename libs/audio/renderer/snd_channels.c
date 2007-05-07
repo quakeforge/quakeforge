@@ -161,13 +161,6 @@ SND_ScanChannels (int wait)
 #endif
 		} while (count);
 		Sys_DPrintf ("scanning done.\n");
-		for (i = 0; i < MAX_CHANNELS; i++) {
-			ch = &snd_channels[i];
-			if (!ch->sfx)
-				continue;
-			ch->sfx->release (ch->sfx);
-			ch->sfx = 0;
-		}
 	} else {
 		for (i = 0; i < MAX_CHANNELS; i++) {
 			ch = &snd_channels[i];
@@ -177,6 +170,14 @@ SND_ScanChannels (int wait)
 			}
 		}
 		//printf ("count: %d\n", count);
+	}
+	for (i = 0; i < MAX_CHANNELS; i++) {
+		ch = &snd_channels[i];
+		if (!ch->sfx || !ch->done)
+			continue;
+		ch->sfx->release (ch->sfx);
+		ch->sfx->close (ch->sfx);
+		ch->sfx = 0;
 	}
 }
 
