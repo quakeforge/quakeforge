@@ -139,13 +139,6 @@ S_Shutdown (void)
 }
 
 VISIBLE void
-S_TouchSound (const char *sample)
-{
-	if (snd_render_funcs)
-		snd_render_funcs->pS_TouchSound (sample);
-}
-
-VISIBLE void
 S_StaticSound (sfx_t *sfx, const vec3_t origin, float vol, float attenuation)
 {
 	if (snd_render_funcs)

@@ -253,12 +253,6 @@ sfx_t *SND_SFX_StreamOpen (sfx_t *sfx, void *file,
 */
 sfx_t *SND_PrecacheSound (const char *sample);
 
-/** Tag a cached sound to prevent it being flushed unnecessarily.
-	\param sample	name of sound touch
-	\todo check that Cache_TryGet() does the right thing
-*/
-void SND_TouchSound (const char *sample);
-
 /** Pre-load a sound.
 	\param name		name of sound to load
 */

@@ -156,12 +156,6 @@ void S_UnblockSound (void);
 */
 sfx_t *S_PrecacheSound (const char *sample);
 
-/** Tag a cached sound to prevent it being flushed unnecessarily.
-	\param sample	name of sound touch
-	\todo check that Cache_TryGet() does the right thing
-*/
-void S_TouchSound (const char *sample);
-
 /** Pre-load a sound.
 	\param name		name of sound to load
 */

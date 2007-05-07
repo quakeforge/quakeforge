@@ -329,7 +329,6 @@ CL_ParseServerInfo (void)
 			goto done;
 		}
 		strcpy (sound_precache[numsounds], str);
-		S_TouchSound (str);
 	}
 
 	// now we try to load everything else until a cache allocation fails

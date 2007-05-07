@@ -184,19 +184,6 @@ SND_LoadSound (const char *name)
 	return sfx;
 }
 
-void
-SND_TouchSound (const char *name)
-{
-	sfx_t      *sfx;
-
-	if (!name)
-		Sys_Error ("SND_TouchSound: NULL");
-
-	sfx = SND_LoadSound (va ("sound/%s", name));
-	if (sfx)
-		sfx->touch (sfx);
-}
-
 sfx_t *
 SND_PrecacheSound (const char *name)
 {

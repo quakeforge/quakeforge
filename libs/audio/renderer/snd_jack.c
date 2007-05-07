@@ -210,7 +210,6 @@ static general_funcs_t plugin_info_general_funcs = {
 static snd_render_funcs_t plugin_info_render_funcs = {
 	SND_AmbientOff,
 	SND_AmbientOn,
-	SND_TouchSound,
 	SND_StaticSound,
 	SND_StartSound,
 	SND_StopSound,
