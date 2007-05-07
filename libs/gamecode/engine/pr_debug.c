@@ -387,6 +387,8 @@ PR_Get_Param_Def (progs_t *pr, dfunction_t *func, unsigned parm)
 	pr_auxfunction_t *aux_func;
 	ddef_t      *ddef = 0;
 
+	if (!pr->debug)
+		return 0;
 	if (!func)
 		return 0;
 
