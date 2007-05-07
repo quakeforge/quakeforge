@@ -6,5 +6,5 @@ INCLUDES= -I$(top_srcdir)/include
 lib_LTLIBRARIES= libQFgamecode_builtins.la
 
 libQFgamecode_builtins_la_LDFLAGS=	-version-info 1:0:0 -no-undefined
-libQFgamecode_builtins_la_LIBADD=	$(top_builddir)/libs/gamecode/engine/libQFgamecode.la $(top_builddir)/libs/gib/libQFgib.la $(top_builddir)/libs/console/libQFconsole.la $(top_builddir)/libs/util/libQFutil.la
-libQFgamecode_builtins_la_SOURCES=	pr_cmds.c bi_gib.c bi_inputline.c
+libQFgamecode_builtins_la_LIBADD=	$(top_builddir)/libs/gamecode/engine/libQFgamecode.la $(top_builddir)/libs/gib/libQFgib.la
+libQFgamecode_builtins_la_SOURCES=	pr_cmds.c bi_gib.c
