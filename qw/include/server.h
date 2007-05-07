@@ -246,8 +246,6 @@ typedef struct client_s {
 	double			last_check;
 	double			cuff_time;
 	float			stdver;
-
-	int max_packet_ents;	// either MAX_PACKET_ENTITIES or MAX_EXT_PACKET_ENTITIES
 } client_t;
 
 // a client can leave the server in one of four ways:

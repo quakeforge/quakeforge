@@ -1020,7 +1020,7 @@ write_entities (client_t *client, sizebuf_t *msg)
 //			continue;					// added to the special update list
 
 		// add to the packetentities
-		if (pack->num_entities == MAX_EXT_PACKET_ENTITIES) {
+		if (pack->num_entities == MAX_PACKET_ENTITIES) {
 			qtv_printf ("mpe overflow\n");
 			continue;					// all full
 		}
@@ -1148,7 +1148,6 @@ client_connect (connection_t *con, void *object)
 	cl->name = Info_ValueForKey (userinfo, "name");
 	cl->backbuf.name = cl->name;
 	cl->backbuf.netchan = &cl->netchan;
-	cl->backbuf.max_msglen = MAX_MSGLEN;
 	cl->con = con;
 	con->object = cl;
 	con->handler = client_handler;

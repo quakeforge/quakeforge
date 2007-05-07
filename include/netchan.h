@@ -34,12 +34,8 @@
 #include "QF/qdefs.h"
 #include "QF/sizebuf.h"
 
-//#define MAX_MSGLEN		1450		// max length of a reliable message
-//#define MAX_DATAGRAM	1450		// max length of unreliable message
-#define MAX_MSGLEN			2900
-#define MAX_DATAGRAM			2900
-#define MAX_OLD_MSGLEN		1450
-#define MAX_OLD_DATAGRAM	1450
+#define MAX_MSGLEN		1450		// max length of a reliable message
+#define MAX_DATAGRAM	1450		// max length of unreliable message
 
 #define	PORT_ANY	-1
 

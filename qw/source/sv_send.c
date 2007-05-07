@@ -643,7 +643,6 @@ SV_SendClientDatagram (client_t *client)
 		SV_Printf ("WARNING: msg overflowed for %s\n", client->name);
 		SZ_Clear (&msg);
 	}
-
 	// send the datagram
 	Netchan_Transmit (&client->netchan, msg.cursize, msg.data);
 

@@ -53,7 +53,7 @@ typedef struct client_s {
 	byte        datagram_buf[MAX_DATAGRAM];
 	qboolean    send_message;
 	frame_t     frames[UPDATE_BACKUP];
-	entity_state_t packet_entities[UPDATE_BACKUP][MAX_EXT_PACKET_ENTITIES];
+	entity_state_t packet_entities[UPDATE_BACKUP][MAX_PACKET_ENTITIES];
 
 	int         delta_sequence;
 

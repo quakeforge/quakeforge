@@ -53,11 +53,9 @@ PushBackbuf (backbuf_t *rel)
 	Con_DPrintf ("backbuffering %d %s\n", rel->num_backbuf, rel->name);
 	tail_backbuf = (rel->head_backbuf + rel->num_backbuf) % MAX_BACK_BUFFERS;
 	memset (&rel->backbuf, 0, sizeof (rel->backbuf));
-	if (rel->max_msglen > sizeof (rel->backbuf_data[tail_backbuf]))
-		rel->max_msglen = sizeof (rel->backbuf_data[tail_backbuf]);
 	rel->backbuf.allowoverflow = true;
 	rel->backbuf.data = rel->backbuf_data[tail_backbuf];
-	rel->backbuf.maxsize = rel->max_msglen;
+	rel->backbuf.maxsize = sizeof (rel->backbuf_data[tail_backbuf]);
 	rel->backbuf_size[tail_backbuf] = 0;
 	rel->num_backbuf++;
 }
