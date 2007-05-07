@@ -234,7 +234,7 @@ vorbis_stream_seek (void *file, int pos, wavinfo_t *info)
 static void
 vorbis_stream_close (sfx_t *sfx)
 {
-	sfxstream_t *stream = (sfxstream_t *)sfx->data;
+	sfxstream_t *stream = sfx->data.stream;
 
 	ov_clear (stream->file);
 	free (stream);
@@ -244,7 +244,7 @@ vorbis_stream_close (sfx_t *sfx)
 static sfx_t *
 vorbis_stream_open (sfx_t *sfx)
 {
-	sfxstream_t *stream = (sfxstream_t *) sfx->data;
+	sfxstream_t *stream = sfx->data.stream;
 	QFile      *file;
 	void       *f;
 

@@ -393,7 +393,7 @@ void SND_SetPaint (sfxbuffer_t *sc);
 //@}
 
 
-/** \defgroup sound_render_resample Resampling functios
+/** \defgroup sound_render_resample Resampling functions
 	\ingroup sound_render
 */
 //@{

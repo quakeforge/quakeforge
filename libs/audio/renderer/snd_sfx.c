@@ -79,7 +79,7 @@ SND_SFX_Cache (sfx_t *sfx, char *realname, wavinfo_t info,
 {
 	sfxblock_t *block = calloc (1, sizeof (sfxblock_t));
 
-	sfx->data = block;
+	sfx->data.block = block;
 	sfx->wavinfo = SND_CacheWavinfo;
 	sfx->touch = SND_CacheTouch;
 	sfx->retain = SND_CacheRetain;
@@ -103,7 +103,7 @@ SND_SFX_Stream (sfx_t *sfx, char *realname, wavinfo_t info,
 	sfx->touch = sfx->retain = SND_StreamRetain;
 	sfx->release = SND_StreamRelease;
 	sfx->getbuffer = SND_StreamGetBuffer;
-	sfx->data = stream;
+	sfx->data.stream = stream;
 
 	stream->file = realname;
 	stream->wavinfo = info;
@@ -115,7 +115,7 @@ SND_SFX_StreamOpen (sfx_t *sfx, void *file,
 					int (*seek)(void *, int, wavinfo_t *),
 					void (*close) (sfx_t *))
 {
-	sfxstream_t *stream = (sfxstream_t *) sfx->data;
+	sfxstream_t *stream = sfx->data.stream;
 	wavinfo_t  *info = &stream->wavinfo;
 	int         samples;
 	int         size;
@@ -138,7 +138,7 @@ SND_SFX_StreamOpen (sfx_t *sfx, void *file,
 		size *= 2;
 
 	stream = calloc (1, sizeof (sfxstream_t) + size);
-	new_sfx->data = stream;
+	new_sfx->data.stream = stream;
 	memcpy (stream->buffer.data + size, "\xde\xad\xbe\xef", 4);
 	stream->file = file;
 	stream->sfx = new_sfx;

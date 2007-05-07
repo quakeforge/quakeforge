@@ -110,7 +110,7 @@ midi_stream_seek (void *file, int pos, wavinfo_t *info)
 static void
 midi_stream_close (sfx_t *sfx)
 {
-	sfxstream_t *stream = (sfxstream_t *)sfx->data;
+	sfxstream_t *stream = sfx->data.stream;
 
 	WildMidi_Close (stream->file);
 	free (stream);
@@ -126,7 +126,7 @@ midi_stream_close (sfx_t *sfx)
 static sfx_t *
 midi_stream_open (sfx_t *sfx)
 {
-	sfxstream_t *stream = (sfxstream_t *) sfx->data;
+	sfxstream_t *stream = sfx->data.stream;
 	QFile	   *file;
 	midi	   *handle;
 	unsigned char *local_buffer;

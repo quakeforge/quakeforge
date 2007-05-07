@@ -84,19 +84,19 @@ snd_open (sfx_t *sfx)
 sfxbuffer_t *
 SND_CacheTouch (sfx_t *sfx)
 {
-	return Cache_Check (&((sfxblock_t *) sfx->data)->cache);
+	return Cache_Check (&sfx->data.block->cache);
 }
 
 sfxbuffer_t *
 SND_CacheGetBuffer (sfx_t *sfx)
 {
-	return ((sfxblock_t *) sfx->data)->buffer;
+	return sfx->data.block->buffer;
 }
 
 sfxbuffer_t *
 SND_CacheRetain (sfx_t *sfx)
 {
-	sfxblock_t *block = (sfxblock_t *) sfx->data;
+	sfxblock_t *block = sfx->data.block;
 	block->buffer = Cache_TryGet (&block->cache);
 	if (!block->buffer)
 		Sys_Printf ("failed to cache sound!\n");
@@ -106,7 +106,7 @@ SND_CacheRetain (sfx_t *sfx)
 void
 SND_CacheRelease (sfx_t *sfx)
 {
-	sfxblock_t *block = (sfxblock_t *) sfx->data;
+	sfxblock_t *block = sfx->data.block;
 	// due to the possibly asynchronous nature of the mixer, the cache
 	// may have been flushed behind our backs
 	if (block->cache.data) {
@@ -124,13 +124,13 @@ SND_CacheRelease (sfx_t *sfx)
 sfxbuffer_t *
 SND_StreamGetBuffer (sfx_t *sfx)
 {
-	return &((sfxstream_t *) sfx->data)->buffer;
+	return &sfx->data.stream->buffer;
 }
 
 sfxbuffer_t *
 SND_StreamRetain (sfx_t *sfx)
 {
-	return &((sfxstream_t *) sfx->data)->buffer;
+	return &sfx->data.stream->buffer;
 }
 
 void
@@ -141,13 +141,13 @@ SND_StreamRelease (sfx_t *sfx)
 wavinfo_t *
 SND_CacheWavinfo (sfx_t *sfx)
 {
-	return &((sfxblock_t *) sfx->data)->wavinfo;
+	return &sfx->data.stream->wavinfo;
 }
 
 wavinfo_t *
 SND_StreamWavinfo (sfx_t *sfx)
 {
-	return &((sfxstream_t *) sfx->data)->wavinfo;
+	return &sfx->data.stream->wavinfo;
 }
 
 static void
@@ -166,7 +166,7 @@ read_samples (sfxbuffer_t *buffer, int count, void *prev)
 		float       stepscale;
 		int         samples, size;
 		sfx_t      *sfx = buffer->sfx;
-		sfxstream_t *stream = (sfxstream_t *) sfx->data;
+		sfxstream_t *stream = sfx->data.stream;
 		wavinfo_t  *info = &stream->wavinfo;
 
 		stepscale = (float) info->rate / snd_shm->speed;
@@ -240,7 +240,7 @@ SND_StreamSetPos (sfxbuffer_t *buffer, unsigned int pos)
 {
 	float       stepscale;
 	sfx_t      *sfx = buffer->sfx;
-	sfxstream_t *stream = (sfxstream_t *) sfx->data;
+	sfxstream_t *stream = sfx->data.stream;
 	wavinfo_t  *info = &stream->wavinfo;
 
 	stepscale = (float) info->rate / snd_shm->speed;
@@ -258,7 +258,7 @@ SND_StreamAdvance (sfxbuffer_t *buffer, unsigned int count)
 	float       stepscale;
 	unsigned int headpos, samples;
 	sfx_t      *sfx = buffer->sfx;
-	sfxstream_t *stream = (sfxstream_t *) sfx->data;
+	sfxstream_t *stream = sfx->data.stream;
 	wavinfo_t  *info = &stream->wavinfo;
 
 	stream->pos += count;

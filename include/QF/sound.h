@@ -48,7 +48,10 @@ struct sfx_s
 	unsigned int length;
 	unsigned int loopstart;
 
-	void       *data;
+	union {
+		struct sfxstream_s *stream;
+		struct sfxblock_s *block;
+	} data;
 
 	struct sfxbuffer_s *(*touch) (sfx_t *sfx);
 	struct sfxbuffer_s *(*retain) (sfx_t *sfx);

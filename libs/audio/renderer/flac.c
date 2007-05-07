@@ -337,7 +337,7 @@ flac_stream_seek (void *file, int pos, wavinfo_t *info)
 static void
 flac_stream_close (sfx_t *sfx)
 {
-	sfxstream_t *stream = (sfxstream_t *)sfx->data;
+	sfxstream_t *stream = sfx->data.stream;
 
 	close_flac (stream->file);
 	free (stream);
@@ -347,7 +347,7 @@ flac_stream_close (sfx_t *sfx)
 static sfx_t *
 flac_stream_open (sfx_t *sfx)
 {
-	sfxstream_t *stream = (sfxstream_t *) sfx->data;
+	sfxstream_t *stream = sfx->data.stream;
 	QFile      *file;
 	void       *f;
 
