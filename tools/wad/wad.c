@@ -52,6 +52,7 @@ static __attribute__ ((used)) const char rcsid[] =
 #include <QF/dstring.h>
 #include <QF/pcx.h>
 #include <QF/qtypes.h>
+#include <QF/qendian.h>
 #include <QF/quakefs.h>
 #include <QF/wadfile.h>
 #include <QF/sys.h>
@@ -231,10 +232,13 @@ wad_extract (wad_t *wad, lumpinfo_t *pf)
 	static dstring_t name = {&dstring_default_mem, 0, 0, 0};
 	size_t      count;
 	int         len, i;
+	unsigned    u;
 	QFile      *file;
 	byte       *buffer;
+	byte       *image;
 	pcx_t      *pcx;
 	qpic_t     *qpic;
+	miptex_t   *miptex;
 
 	switch (pf->type) {
 		case TYP_PALETTE:
@@ -296,12 +300,36 @@ wad_extract (wad_t *wad, lumpinfo_t *pf)
 		case TYP_MIPTEX:
 			buffer = malloc (pf->size);
 			Qread (wad->handle, buffer, pf->size);
-			i = sqrt (pf->size);
+			miptex = (miptex_t *) buffer;
+			for (i = 0; i < 4; i++)
+				miptex->offsets[i] = LittleLong (miptex->offsets[i]);
 			if (options.verbosity > 1)
-				fprintf (stderr, "MIPTEX: %d %d %d %02x %02x %02x %02x\n",
-						 pf->size, i, i * i,
-						 buffer[0], buffer[1], buffer[2], buffer[3]);
-			pcx = EncodePCX (buffer, i, i, i, default_palette, false, &len);
+				fprintf (stderr, "MIPTEX: %.16s %d %d %d %d %d %d, %d\n",
+						 miptex->name, miptex->width, miptex->height,
+						 miptex->offsets[0], miptex->offsets[1],
+						 miptex->offsets[2], miptex->offsets[3], pf->size);
+			image = calloc (1, miptex->width * miptex->height * 3 / 2);
+			memcpy (image, buffer + miptex->offsets[0],
+					miptex->width * miptex->height);
+			for (u = 0; u < miptex->height * 1 / 2; u++) {
+				i = miptex->height + u;
+				memcpy (image + i * miptex->width,
+						buffer + miptex->offsets[1] + u * miptex->width / 2,
+						miptex->width / 2);
+				if (u >= miptex->height * 1 / 4)
+					continue;
+				memcpy (image + i * miptex->width + miptex->width / 2,
+						buffer + miptex->offsets[2] + u * miptex->width / 4,
+						miptex->width / 4);
+				if (u >= miptex->height * 1 / 8)
+					continue;
+				memcpy (image + i * miptex->width + miptex->width * 3 / 4,
+						buffer + miptex->offsets[2] + u * miptex->width / 8,
+						miptex->width / 8);
+			}
+			pcx = EncodePCX (image, miptex->width, miptex->height * 3 /2,
+							 miptex->width, default_palette, false, &len);
+			free (image);
 			free (buffer);
 			if (Qwrite (file, pcx, len) != len) {
 				fprintf (stderr, "Error writing to %s\n", name.str);
