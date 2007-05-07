@@ -344,6 +344,28 @@ static byte default_palette[] = {
 	0xFF, 0xF3, 0x93, 0xFF, 0xF7, 0xC7, 0xFF, 0xFF, 0xFF, 0x9F, 0x5B, 0x53,
 };
 
+static const char *
+unique_name (wad_t *wad, const char *name)
+{
+	char        uname[16];
+	int         i = 0;
+	const char *tag;
+
+	if (!wad_find_lump (wad, name))
+		return name;
+	do {
+		strncpy (uname, name, 16);
+		uname[15] = 0;
+		tag = va ("~%x", i);
+		if (strlen (uname) + strlen (tag) <= 15)
+			strcat (uname, tag);
+		else
+			strcpy (uname + 15 - strlen (tag), tag);
+	} while (wad_find_lump (wad, uname));
+	return va ("%s", uname);	// just to make a safe returnable that doesn't
+								// need to be freed
+}
+
 void
 extract_textures (void)
 {
@@ -352,6 +374,7 @@ extract_textures (void)
 	int         i, mtsize, pixels;
 	char       *wadfile;
 	wad_t      *wad;
+	const char *uname;
 
 	wadfile = output_file (".wad");
 
@@ -366,14 +389,15 @@ extract_textures (void)
 		miptex = (miptex_t *)(bsp->texdata + miptexlump->dataofs[i]);
 		pixels = miptex->width * miptex->height / 64 * 85;
 		mtsize = sizeof (miptex_t) + pixels;
-#if 0
+		uname = unique_name (wad, miptex->name);
+#if 1
 		printf ("%3d %6d ", i, miptexlump->dataofs[i]);
-		printf ("%16s %3dx%-3d %d %d %d %d %d %d\n",
-				miptex->name, miptex->width,
+		printf ("%16.16s %16.16s %3dx%-3d %d %d %d %d %d %d\n",
+				miptex->name, uname, miptex->width,
 				miptex->height, miptex->offsets[0], miptex->offsets[1],
 				miptex->offsets[2], miptex->offsets[3], pixels, mtsize);
 #endif
-		wad_add_data (wad, miptex->name, TYP_MIPTEX, miptex, mtsize);
+		wad_add_data (wad, uname, TYP_MIPTEX, miptex, mtsize);
 	}
 	wad_close (wad);
 }
