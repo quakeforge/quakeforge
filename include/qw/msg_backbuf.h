@@ -32,6 +32,8 @@
 #ifndef __qw_msg_backbuf_h
 #define __qw_msg_backbuf_h
 
+#include "netchan.h"
+
 #define MAX_BACK_BUFFERS    8
 
 typedef struct backbuf_s {
@@ -40,6 +42,7 @@ typedef struct backbuf_s {
 	int         head_backbuf;
 	int         backbuf_size[MAX_BACK_BUFFERS];
 	byte        backbuf_data[MAX_BACK_BUFFERS][MAX_MSGLEN];
+	size_t      max_msglen;
 	struct netchan_s *netchan;
 	const char *name;
 } backbuf_t;

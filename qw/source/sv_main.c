@@ -768,6 +768,7 @@ SVC_DirectConnect (void)
 	const char *s;
 	client_t   *cl, *newcl;
 	int         challenge, qport, version, i, qtv = 0;
+	int         large_ent, large_dg;
 	netadr_t    adr;
 	qboolean    spectator;
 	client_frame_t *frames;
@@ -908,19 +909,24 @@ SVC_DirectConnect (void)
 
 	Netchan_OutOfBandPrint (adr, "%c", S2C_CONNECTION);
 
+	large_ent = strchr(Info_ValueForKey (userinfo, "*cap"), 'e') != 0;
+	large_dg = strchr(Info_ValueForKey (userinfo, "*cap"), 'u') != 0;
+
 	Netchan_Setup (&newcl->netchan, adr, qport, NC_READ_QPORT);
 	newcl->backbuf.netchan = &newcl->netchan;
 	newcl->backbuf.name = newcl->name;
+	newcl->backbuf.max_msglen = large_dg ? MAX_MSGLEN : MAX_OLD_MSGLEN;
 
 	newcl->state = cs_connected;
 	newcl->prespawned = false;
 	newcl->spawned = false;
 
-	newcl->max_packet_ents = (strchr(Info_ValueForKey (userinfo, "*cap"), 'e') != 0) ? MAX_EXT_PACKET_ENTITIES : MAX_PACKET_ENTITIES;
+	newcl->max_packet_ents = large_ent ? MAX_EXT_PACKET_ENTITIES
+									   : MAX_PACKET_ENTITIES;
 
 	newcl->datagram.allowoverflow = true;
 	newcl->datagram.data = newcl->datagram_buf;
-	newcl->datagram.maxsize = (strchr(Info_ValueForKey (userinfo, "*cap"), 'u') != 0) ? MAX_DATAGRAM : MAX_OLD_DATAGRAM;
+	newcl->datagram.maxsize = large_dg ? MAX_DATAGRAM : MAX_OLD_DATAGRAM;
 
 	// spectator mode can ONLY be set at join time
 	newcl->spectator = spectator;

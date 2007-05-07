@@ -1148,6 +1148,7 @@ client_connect (connection_t *con, void *object)
 	cl->name = Info_ValueForKey (userinfo, "name");
 	cl->backbuf.name = cl->name;
 	cl->backbuf.netchan = &cl->netchan;
+	cl->backbuf.max_msglen = MAX_MSGLEN;
 	cl->con = con;
 	con->object = cl;
 	con->handler = client_handler;
