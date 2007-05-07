@@ -29,6 +29,7 @@
 #include "system.h"
 #include "string.h"
 #include "key.h"
+#include "sound.h"
 
 #include "Array.h"
 #include "gui/Text.h"
@@ -75,12 +76,14 @@
 {
 	if (++current >= [views count])
 		current = base;
+	S_LocalSound ("misc/menu1.wav");
 }
 
 -(void) prev
 {
 	if (--current < base)
 		current = [views count] - 1;
+	S_LocalSound ("misc/menu1.wav");
 }
 
 - (void) draw
@@ -195,6 +198,7 @@
 {
 	[toggle toggle];
 	[self update];
+	S_LocalSound ("misc/menu3.wav");
 }
 
 - (integer) keyEvent:(integer)key unicode:(integer)unicode down:(integer)down
@@ -243,11 +247,13 @@
 -(void)next
 {
 	[color next];
+	S_LocalSound ("misc/menu2.wav");
 }
 
 -(void)prev
 {
 	[color prev];
+	S_LocalSound ("misc/menu2.wav");
 }
 
 -(void)draw
@@ -358,12 +364,14 @@
 {
 	[range inc];
 	[self update];
+	S_LocalSound ("misc/menu3.wav");
 }
 
 -(void)dec
 {
 	[range dec];
 	[self update];
+	S_LocalSound ("misc/menu3.wav");
 }
 
 - (integer) keyEvent:(integer)key unicode:(integer)unicode down:(integer)down
@@ -408,6 +416,7 @@
 -(void) next
 {
 	[crosshair next];
+	S_LocalSound ("misc/menu2.wav");
 }
 
 -(void) draw

@@ -48,6 +48,7 @@ static __attribute__ ((used)) const char rcsid[] =
 #include "QF/quakefs.h"
 #include "QF/render.h"
 #include "QF/ruamoko.h"
+#include "QF/sound.h"
 #include "QF/sys.h"
 #include "QF/view.h"
 
@@ -461,6 +462,7 @@ Menu_Init (void)
 	GIB_Progs_Init (&menu_pr_state);
 	PR_Cmds_Init (&menu_pr_state);
 	R_Progs_Init (&menu_pr_state);
+	S_Progs_Init (&menu_pr_state);
 
 	confirm_quit = Cvar_Get ("confirm_quit", "1", CVAR_ARCHIVE, NULL,
 							 "confirm quit command");

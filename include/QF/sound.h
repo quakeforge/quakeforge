@@ -191,6 +191,12 @@ void S_AmbientOff (void);
 */
 void S_AmbientOn (void);
 
+/** Link sound engine builtins into the specified progs vm
+	\param pr	the vm to link the builtins into.
+*/
+struct progs_s;
+void S_Progs_Init (struct progs_s *pr);
+
 //@}
 
 #endif // _SOUND_H

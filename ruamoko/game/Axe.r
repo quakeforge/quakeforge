@@ -1,7 +1,7 @@
 #include "math.h"
 #include "physics.h"
 #include "qw_message.h"
-#include "sound.h"
+#include "sv_sound.h"
 
 #include "tempent.h"
 
