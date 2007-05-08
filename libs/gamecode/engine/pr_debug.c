@@ -184,6 +184,8 @@ PR_Debug_Watch (progs_t *pr, const char *expr)
 			pr->wp_val.integer_var = strtol (ws->token->str, &e, 0);
 			if (e == ws->token->str)
 				goto error;
+			if (*e == '.' || *e == 'e' || *e == 'E')
+				pr->wp_val.float_var = strtod (ws->token->str, &e);
 			pr->wp_conditional = 1;
 		}
 		if (Script_TokenAvailable (ws, 1))
