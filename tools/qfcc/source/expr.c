@@ -1421,6 +1421,30 @@ check_precedence (int op, expr_t *e1, expr_t *e2)
 				e1->paren = 1;
 				return binary_expr (e2->e.expr.op, e1, e2->e.expr.e2);
 			}
+		} else if (e1->type == ex_expr && !e1->paren) {
+			if (((op == '&' || op == '|')
+				 && (e1->e.expr.op == '*' || e1->e.expr.op == '/'
+					 || e1->e.expr.op == '+' || e1->e.expr.op == '-'
+					 || is_compare (e1->e.expr.op)))
+				|| (op == '='
+					&& (e1->e.expr.op == OR || e1->e.expr.op == AND))) {
+				notice (e1, "precedence of `%s' and `%s' inverted for "
+							"traditional code", get_op_string (op),
+							get_op_string (e1->e.expr.op));
+				e2 = binary_expr (op, e1->e.expr.e2, e2);
+				e2->paren = 1;
+				return binary_expr (e1->e.expr.op, e1->e.expr.e1, e2);
+			}
+			if (((op == EQ || op == NE) && is_compare (e1->e.expr.op))
+				|| (op == OR && e1->e.expr.op == AND)
+				|| (op == '|' && e1->e.expr.op == '&')) {
+				notice (e2, "precedence of `%s' raised to `%s' for "
+							"traditional code", get_op_string (op),
+							get_op_string (e1->e.expr.op));
+				e2 = binary_expr (op, e1->e.expr.e2, e2);
+				e2->paren = 1;
+				return binary_expr (e1->e.expr.op, e1->e.expr.e1, e2);
+			}
 		}
 	} else {
 		if (e2->type == ex_expr && !e2->paren) {
