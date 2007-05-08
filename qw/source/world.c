@@ -167,12 +167,18 @@ SV_HullForEntity (edict_t *ent, const vec3_t mins, const vec3_t maxs,
 	} if (SVfloat (ent, solid) == SOLID_BSP) {
 		// explicit hulls in the BSP model
 		if (SVfloat (ent, movetype) != MOVETYPE_PUSH)
-			Sys_Error ("SOLID_BSP without MOVETYPE_PUSH");
+			Sys_Error ("SOLID_BSP without MOVETYPE_PUSH: %d %s",
+					   NUM_FOR_EDICT (&sv_pr_state, ent),
+					   PR_GetString (&sv_pr_state,
+						   			 SVstring (ent, classname)));
 
 		model = sv.models[(int) SVfloat (ent, modelindex)];
 
 		if (!model || model->type != mod_brush)
-			Sys_Error ("SOLID_BSP with a non bsp model");
+			Sys_Error ("SOLID_BSP with a non bsp model: %d %s",
+					   NUM_FOR_EDICT (&sv_pr_state, ent),
+					   PR_GetString (&sv_pr_state,
+						   			 SVstring (ent, classname)));
 
 		hull = &model->hulls[hull_index];
 	}
