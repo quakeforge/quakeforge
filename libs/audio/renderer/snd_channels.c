@@ -330,27 +330,34 @@ static channel_t *
 s_pick_channel (int entnum, int entchannel, int looped)
 {
 	channel_t  *ch, **_ch;
-	int count;
 
 	// check for finished non-looped sounds
-	for (count = 0, _ch = &dynamic_channels; *_ch; ) {
+	for (_ch = &dynamic_channels; *_ch; ) {
 		if (!(*_ch)->sfx || (*_ch)->done) {
 			SND_ChannelStop (unlink_channel (_ch));
 			continue;
 		}
 		_ch = &(*_ch)->next;
-		count++;
+	}
+	// check for finished looped sounds
+	// normally, this wouldn't happen, but when using the non-threaded mixer
+	// it seems to
+	for (_ch = &looped_dynamic_channels; *_ch; ) {
+		if (!(*_ch)->sfx || (*_ch)->done) {
+			SND_ChannelStop (unlink_channel (_ch));
+			continue;
+		}
+		_ch = &(*_ch)->next;
 	}
 
 	// non-looped sounds are used to stop looped sounds on an ent channel
-	for (count = 0, _ch = &looped_dynamic_channels; *_ch; ) {
+	for (_ch = &looped_dynamic_channels; *_ch; ) {
 		if ((*_ch)->entnum == entnum
 			&& ((*_ch)->entchannel == entchannel || entchannel == -1)) {
 			SND_ChannelStop (unlink_channel (_ch));
 			continue;
 		}
 		_ch = &(*_ch)->next;
-		count++;
 	}
 	_ch = looped ? &looped_dynamic_channels : &dynamic_channels;
 	if ((ch = SND_AllocChannel ())) {
