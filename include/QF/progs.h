@@ -1454,6 +1454,8 @@ struct progs_s {
 	struct pr_lineno_s *linenos;
 	ddef_t     *local_defs;
 	pr_type_t  *watch;
+	int         wp_conditional;
+	pr_type_t   wp_val;
 	//@}
 
 	/// required globals (for OP_STATE)

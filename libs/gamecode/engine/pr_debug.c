@@ -137,6 +137,9 @@ PR_Debug_Watch (progs_t *pr, const char *expr)
 		if (pr->watch) {
 			Sys_Printf ("    watching [%d]\n",
 						(int) (intptr_t) (pr->watch - pr->pr_globals));
+			if (pr->wp_conditional)
+				Sys_Printf ("        if new val == %d\n",
+							pr->wp_val.integer_var);
 		} else {
 			Sys_Printf ("    none active\n");
 		}
@@ -165,8 +168,6 @@ PR_Debug_Watch (progs_t *pr, const char *expr)
 			field = PR_FindField (pr, ws->token->str);
 			if (!field)
 				goto error;
-			if (Script_TokenAvailable (ws, 1))
-				Sys_Printf ("ignoring tail\n");
 			pr->watch = &ent->v[field->ofs];
 		} else {
 			ddef_t     *global = PR_FindGlobal (pr, ws->token->str);
@@ -174,12 +175,28 @@ PR_Debug_Watch (progs_t *pr, const char *expr)
 				goto error;
 			pr->watch = PR_GetPointer (pr, global->ofs);
 		}
+		pr->wp_conditional = 0;
+		if (Script_TokenAvailable (ws, 1)) {
+			if (!Script_GetToken (ws, 1) && !strequal (ws->token->str, "==" ))
+				goto error;
+			if (!Script_GetToken (ws, 1))
+				goto error;
+			pr->wp_val.integer_var = strtol (ws->token->str, &e, 0);
+			if (e == ws->token->str)
+				goto error;
+			pr->wp_conditional = 1;
+		}
+		if (Script_TokenAvailable (ws, 1))
+			Sys_Printf ("ignoring tail\n");
 	}
 error:
-	if (pr->watch)
+	if (pr->watch) {
 		Sys_Printf ("watchpoint set to [%d]\n", PR_SetPointer (pr, pr->watch));
-	else
+		if (pr->wp_conditional)
+			Sys_Printf ("    if new val == %d\n", pr->wp_val.integer_var);
+	} else {
 		Sys_Printf ("watchpoint cleared\n");
+	}
 }
 
 void
