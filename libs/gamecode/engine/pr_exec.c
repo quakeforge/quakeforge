@@ -307,6 +307,7 @@ PR_ExecuteProgram (progs_t * pr, func_t fnum)
 	dstatement_t *st;
 	edict_t    *ed;
 	pr_type_t  *ptr;
+	pr_type_t   old_val, *watch = 0;
 
 	// make a stack frame
 	exitdepth = pr->pr_depth;
@@ -320,6 +321,11 @@ PR_ExecuteProgram (progs_t * pr, func_t fnum)
 		return;
 	}
 	st = pr->pr_statements + pr->pr_xstatement;
+
+	if (pr->watch) {
+		watch = pr->watch;
+		old_val = *watch;
+	}
 
 	while (1) {
 		pr_type_t  *op_a, *op_b, *op_c;
@@ -1014,5 +1020,8 @@ op_call:
 			default:
 				PR_RunError (pr, "Bad opcode %i", st->op);
 		}
+		if (watch && watch->integer_var != old_val.integer_var)
+			PR_RunError (pr, "watchpoint hit: %d -> %d", old_val.integer_var,
+						 watch->integer_var);
 	}
 }

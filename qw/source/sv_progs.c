@@ -157,6 +157,12 @@ PR_Profile_f (void)
 	PR_Profile (&sv_pr_state);
 }
 
+static void
+watch_f (void)
+{
+	PR_Debug_Watch (&sv_pr_state, Cmd_Argc () < 2 ? 0 : Cmd_Args (1));
+}
+
 static int
 parse_field (progs_t *pr, const char *key, const char *value)
 {
@@ -528,6 +534,7 @@ SV_Progs_Init (void)
 					"Display summary information on the edicts in the game.");
 	Cmd_AddCommand ("profile", PR_Profile_f, "FIXME: Report information about "
 					"QuakeC Stuff (\?\?\?) No Description");
+	Cmd_AddCommand ("watch", watch_f, "set watchpoint");
 }
 
 void

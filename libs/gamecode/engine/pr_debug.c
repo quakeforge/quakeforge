@@ -41,7 +41,7 @@ static __attribute__ ((used)) const char rcsid[] =
 # include <strings.h>
 #endif
 #include <ctype.h>
-
+#include <sys/types.h>
 #include <stdlib.h>
 
 #include "QF/cvar.h"
@@ -51,6 +51,7 @@ static __attribute__ ((used)) const char rcsid[] =
 #include "QF/progs.h"
 #include "QF/qendian.h"
 #include "QF/quakefs.h"
+#include "QF/script.h"
 #include "QF/sys.h"
 #include "QF/va.h"
 #include "QF/zone.h"
@@ -117,6 +118,68 @@ source_path_f (cvar_t *var)
 			source_paths[i++] = s;
 		}
 	source_paths[i] = 0;
+}
+
+static void
+pr_debug_watch_error (script_t *script, const char *msg)
+{
+	Sys_Printf ("%s\n", msg);
+}
+
+VISIBLE void
+PR_Debug_Watch (progs_t *pr, const char *expr)
+{
+	script_t   *ws;
+	char       *e;
+
+	if (!expr) {
+		Sys_Printf ("watch <watchpoint expr>\n");
+		if (pr->watch) {
+			Sys_Printf ("    watching [%d]\n",
+						(int) (intptr_t) (pr->watch - pr->pr_globals));
+		} else {
+			Sys_Printf ("    none active\n");
+		}
+		return;
+	}
+	ws = Script_New ();
+	ws->error = pr_debug_watch_error;
+	Script_Start (ws, "<console>", expr);
+	pr->watch = 0;
+	if (Script_GetToken (ws, 1)) {
+		if (strequal (ws->token->str, "[")) {
+			edict_t    *ent;
+			ddef_t     *field;
+
+			if (!Script_GetToken (ws, 1))
+				goto error;
+			ent = EDICT_NUM (pr, strtol (ws->token->str, &e, 0));
+			if (e == ws->token->str)
+				goto error;
+			if (!Script_GetToken (ws, 1) && !strequal (ws->token->str, "]" ))
+				goto error;
+			if (!Script_GetToken (ws, 1) && !strequal (ws->token->str, "." ))
+				goto error;
+			if (!Script_GetToken (ws, 1))
+				goto error;
+			field = PR_FindField (pr, ws->token->str);
+			if (!field)
+				goto error;
+			if (Script_TokenAvailable (ws, 1))
+				Sys_Printf ("ignoring tail\n");
+			pr->watch = &ent->v[field->ofs];
+		} else {
+			ddef_t     *global = PR_FindGlobal (pr, ws->token->str);
+			if (!global)
+				goto error;
+			pr->watch = PR_GetPointer (pr, global->ofs);
+		}
+	}
+error:
+	if (pr->watch)
+		Sys_Printf ("watchpoint set to [%d]\n", PR_SetPointer (pr, pr->watch));
+	else
+		Sys_Printf ("watchpoint cleared\n");
 }
 
 void
