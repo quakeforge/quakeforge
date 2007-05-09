@@ -50,6 +50,7 @@ static __attribute__ ((used)) const char rcsid[] =
 #include "QF/quakefs.h"
 #include "QF/render.h"
 #include "QF/sys.h"
+#include "QF/va.h"
 
 #include "compat.h"
 
@@ -129,6 +130,31 @@ Mod_LeafPVS (mleaf_t *leaf, model_t *model)
 
 byte       *mod_base;
 
+//FIXME SLOW!
+static void
+mod_unique_miptex_name (texture_t **textures, texture_t *tx, int ind)
+{
+	char        name[17];
+	int         num = 0, i;
+	const char *tag;
+
+	strncpy (name, tx->name, 16);
+	name[16] = 0;
+	do {
+		for (i = 0; i < ind; i++)
+			if (!strcmp (textures[i]->name, tx->name))
+				break;
+		if (i == ind)
+			break;
+		tag = va ("~%x", num++);
+		strncpy (tx->name, name, 16);
+		if (strlen (name) + strlen (tag) <= 15)
+			strcat (tx->name, tag);
+		else
+			strcpy (tx->name + 15 - strlen (tag), tag);
+	} while (1);
+}
+
 static void
 Mod_LoadTextures (lump_t *l)
 {
@@ -168,6 +194,8 @@ Mod_LoadTextures (lump_t *l)
 		loadmodel->textures[i] = tx;
 
 		memcpy (tx->name, mt->name, sizeof (tx->name));
+		mod_unique_miptex_name (loadmodel->textures, tx, i);
+		memcpy (mt->name, tx->name, sizeof (tx->name));//FIXME ext tex
 		tx->width = mt->width;
 		tx->height = mt->height;
 		for (j = 0; j < MIPLEVELS; j++)
