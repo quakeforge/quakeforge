@@ -356,7 +356,7 @@ unique_name (wad_t *wad, const char *name)
 	do {
 		strncpy (uname, name, 16);
 		uname[15] = 0;
-		tag = va ("~%x", i);
+		tag = va ("~%x", i++);
 		if (strlen (uname) + strlen (tag) <= 15)
 			strcat (uname, tag);
 		else
