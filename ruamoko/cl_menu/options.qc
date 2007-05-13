@@ -207,7 +207,7 @@ object_from_plist (PLItem plist)
 
 PLItem read_plist (void)
 {
-	local string plist_data, l;
+	local string plist_data;
 	local QFile file;
 	local PLItem plist;
 
@@ -216,9 +216,7 @@ PLItem read_plist (void)
 		dprint ("could not load menu.plist\n");
 		return NIL;
 	}
-	plist_data = str_new ();
-	while ((l = Qgetline (file)))
-		str_cat (plist_data, l);
+	plist_data = Qreadstring (file, Qfilesize (file));
 	Qclose (file);
 	plist = [PLItem newFromString:plist_data];
 	str_free (plist_data);
