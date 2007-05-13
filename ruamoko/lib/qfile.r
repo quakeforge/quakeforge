@@ -5,6 +5,7 @@ integer (string path) Qremove = #0;
 QFile (string path, string mode) Qopen = #0;
 void (QFile file) Qclose = #0;
 string (QFile file) Qgetline = #0;
+string (QFile file, integer length) Qreadstring = #0;
 integer (QFile file, void [] buf, integer count) Qread = #0;
 integer (QFile file, void [] buf, integer count) Qwrite = #0;
 integer (QFile file, string str) Qputs = #0;

@@ -9,6 +9,7 @@ typedef struct _qfile_t [] QFile;
 @extern QFile (string path, string mode) Qopen;
 @extern void (QFile file) Qclose;
 @extern string (QFile file) Qgetline;
+@extern string (QFile file, integer len) Qreadstring;
 @extern integer (QFile file, void [] buf, integer count) Qread;
 @extern integer (QFile file, void [] buf, integer count) Qwrite;
 @extern integer (QFile file, string str) Qputs;

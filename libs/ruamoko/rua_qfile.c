@@ -39,6 +39,7 @@ static __attribute__ ((used)) const char rcsid[] =
 # include <strings.h>
 #endif
 
+#include "QF/dstring.h"
 #include "QF/progs.h"
 #include "QF/quakefs.h"
 #include "QF/va.h"
@@ -202,6 +203,23 @@ bi_Qgetline (progs_t *pr)
 }
 
 static void
+bi_Qreadstring (progs_t *pr)
+{
+	int         handle = P_INT (pr, 0);
+	int         len = P_INT (pr, 1);
+	qfile_t    *h = get_handle (pr, __FUNCTION__, handle);
+	string_t    str = PR_NewMutableString (pr);
+	dstring_t  *dstr = PR_GetMutableString (pr, str);
+
+	dstr->size = len + 1;
+	dstring_adjust (dstr);
+	len = Qread (h->file, dstr->str, len);
+	dstr->size = len + 1;
+	dstr->str[len] = 0;
+	R_STRING (pr) = str;
+}
+
+static void
 check_buffer (progs_t *pr, pr_type_t *buf, int count, const char *name)
 {
 	int         len;
@@ -340,6 +358,7 @@ static builtin_t insecure_builtins[] = {
 static builtin_t builtins[] = {
 	{"Qclose",		bi_Qclose,		-1},
 	{"Qgetline",	bi_Qgetline,	-1},
+	{"Qreadstring",	bi_Qreadstring,	-1},
 	{"Qread",		bi_Qread,		-1},
 	{"Qwrite",		bi_Qwrite,		-1},
 	{"Qputs",		bi_Qputs,		-1},

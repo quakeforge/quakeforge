@@ -93,11 +93,11 @@ integer save_cursor;
 string (QFile f) get_comment =
 {
 	local string line;
-	local string plist_data = str_new ();
+	local string plist_data;
 	local PLItem plist;
+	local integer pos = Qtell (f);
 
-	while ((line = Qgetline (f)))
-		str_cat (plist_data, line);
+	plist_data = Qreadstring (f, Qfilesize (f) - pos);
 	plist = [PLItem newFromString:plist_data];
 	str_free (plist_data);
 	line = [(PLString) [plist getObjectForKey:"comment"] string];
