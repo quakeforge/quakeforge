@@ -220,7 +220,7 @@ Draw_CachePic (const char *path, qboolean alpha)
 
 	if (!strcmp (path + strlen (path) - 4, ".lmp")) {
 		// Load the picture..
-		qpic_t     *dat = (qpic_t *) QFS_LoadTempFile (path);
+		qpic_t     *dat = (qpic_t *) QFS_LoadFile (path, 0);
 		if (!dat)
 			Sys_Error ("Draw_CachePic: failed to load %s", path);
 
@@ -243,6 +243,7 @@ Draw_CachePic (const char *path, qboolean alpha)
 		pic->pic.height = dat->height;
 		if (!strcmp (path, "gfx/menuplyr.lmp"))
 			memcpy (menuplyr_pixels, dat->data, dat->width * dat->height);
+		free (dat);
 	} else
 		Sys_Error ("Draw_CachePic: failed to load %s", path);
 
