@@ -604,22 +604,26 @@ is_constant (expr_t *e)
 expr_t *
 constant_expr (expr_t *var)
 {
+	def_t      *def;
+
 	if (var->type != ex_def || !var->e.def->constant)
 		return var;
-	switch (var->e.def->type->type) {
+
+	def = var->e.def;
+	def->used = 1;
+	switch (def->type->type) {
 		case ev_string:
-			return new_string_expr (G_GETSTR (var->e.def->ofs));
+			return new_string_expr (G_GETSTR (def->ofs));
 		case ev_float:
-			return new_float_expr (G_FLOAT (var->e.def->ofs));
+			return new_float_expr (G_FLOAT (def->ofs));
 		case ev_vector:
-			return new_vector_expr (G_VECTOR (var->e.def->ofs));
+			return new_vector_expr (G_VECTOR (def->ofs));
 		case ev_field:
-			return new_field_expr (G_INT (var->e.def->ofs), var->e.def->type,
-								   var->e.def);
+			return new_field_expr (G_INT (def->ofs), def->type, def);
 		case ev_integer:
-			return new_integer_expr (G_INT (var->e.def->ofs));
+			return new_integer_expr (G_INT (def->ofs));
 		case ev_uinteger:
-			return new_uinteger_expr (G_INT (var->e.def->ofs));
+			return new_uinteger_expr (G_INT (def->ofs));
 		default:
 			return var;
 	}
