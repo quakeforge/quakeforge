@@ -189,8 +189,7 @@ get_function (const char *name, type_t *type, int overload, int create)
 			e->file = func->file;
 			warning (0, "creating overloaded function %s without @overload",
 					 full_name);
-			warning (e, "(previous function is %s)",
-					 func->full_name);
+			warning (e, "(previous function is %s)", func->full_name);
 		}
 		overload = 1;
 	}
