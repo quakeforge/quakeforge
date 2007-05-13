@@ -580,20 +580,16 @@ var_initializer
 			if (current_scope->type == sc_params) {
 				local = 0;
 				$$ = create_def (type, name, current_scope, st_static);
-				printf ("params\n");
 			} else {
 				local = current_scope->type == sc_local;
 				$$ = create_def (type, name, current_scope, current_storage);
-				printf ("%s\n", local ? "local" : "static/global");
 			}
 			if (local) {
 				expr_t     *expr = assign_expr (new_def_expr ($$), $2);
 				expr = fold_constants (expr);
 				append_expr (local_expr, expr);
 				def_initialized ($$);
-				printf ("    local\n");
 			} else {
-				printf ("    non-local\n");
 				$2 = constant_expr ($2);
 				if ($2->type >= ex_string) {
 					if ($$->constant) {
