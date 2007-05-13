@@ -162,14 +162,15 @@ VISIBLE qpic_t *
 Draw_PicFromWad (const char *name)
 {
 	glpic_t	   *gl;
-	qpic_t	   *p;
+	qpic_t	   *p, *pic;
 	tex_t	   *targa;
 
+	pic = W_GetLumpName (name);
 	targa = LoadImage (name);
 	if (targa) {
 		p = malloc (sizeof (qpic_t));
-		p->width = targa->width;
-		p->height = targa->height;
+		p->width = pic->width;
+		p->height = pic->height;
 		gl = (glpic_t *) p->data;
 		if (targa->format < 4) {
 			gl->texnum = GL_LoadTexture (name, targa->width, targa->height,
@@ -178,7 +179,7 @@ Draw_PicFromWad (const char *name)
 			gl->texnum = GL_LoadTexture (name, targa->width, targa->height,
 										 targa->data, false, true, 4);
 	} else {
-		p = W_GetLumpName (name);
+		p = pic;
 		gl = (glpic_t *) p->data;
 		gl->texnum = GL_LoadTexture (name, p->width, p->height, p->data,
 									 false, true, 1);
@@ -217,18 +218,7 @@ Draw_CachePic (const char *path, qboolean alpha)
 
 	gl = (glpic_t *) pic->pic.data;
 
-	// Check for a .tga first
-	targa = LoadImage (path);
-	if (targa) {
-		if (targa->format < 4) {
-			gl->texnum = GL_LoadTexture ("", targa->width, targa->height,
-										 targa->data, false, alpha, 3);
-		} else
-			gl->texnum = GL_LoadTexture ("", targa->width, targa->height,
-										 targa->data, false, alpha, 4);
-		pic->pic.width = targa->width;
-		pic->pic.height = targa->height;
-	} else if (!strcmp (path + strlen (path) - 4, ".lmp")) {
+	if (!strcmp (path + strlen (path) - 4, ".lmp")) {
 		// Load the picture..
 		qpic_t     *dat = (qpic_t *) QFS_LoadTempFile (path);
 		if (!dat)
@@ -236,9 +226,19 @@ Draw_CachePic (const char *path, qboolean alpha)
 
 		// Adjust for endian..
 		SwapPic (dat);
-
-		gl->texnum = GL_LoadTexture ("", dat->width, dat->height, dat->data,
-									 false, alpha, 1);
+		// Check for a .tga first
+		targa = LoadImage (path);
+		if (targa) {
+			if (targa->format < 4) {
+				gl->texnum = GL_LoadTexture ("", targa->width, targa->height,
+											 targa->data, false, alpha, 3);
+			} else
+				gl->texnum = GL_LoadTexture ("", targa->width, targa->height,
+											 targa->data, false, alpha, 4);
+		} else {
+			gl->texnum = GL_LoadTexture ("", dat->width, dat->height,
+										 dat->data, false, alpha, 1);
+		}
 		pic->pic.width = dat->width;
 		pic->pic.height = dat->height;
 		if (!strcmp (path, "gfx/menuplyr.lmp"))
