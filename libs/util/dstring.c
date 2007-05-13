@@ -103,6 +103,14 @@ dstring_adjust (dstring_t *dstr)
 	}
 }
 
+VISIBLE char *
+dstring_reserve (dstring_t *dstr, unsigned len)
+{
+	dstr->size += len;
+	dstring_adjust (dstr);
+	return dstr->str + dstr->size - len;
+}
+
 VISIBLE void
 dstring_copy (dstring_t *dstr, const char *data, unsigned int len)
 {
@@ -207,6 +215,17 @@ VISIBLE dstring_t *
 dstring_newstr (void)
 {
 	return _dstring_newstr (&dstring_default_mem);
+}
+
+VISIBLE char *
+dstring_reservestr (dstring_t *dstr, unsigned len)
+{
+	int         pos = dstr->size;
+	if (pos && !dstr->str[pos - 1])
+		pos--;
+	dstr->size = pos + len + 1;
+	dstring_adjust (dstr);
+	return dstr->str + pos;
 }
 
 VISIBLE void

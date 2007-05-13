@@ -811,71 +811,79 @@ PL_GetPropertyList (const char *string)
 static void
 write_tabs (dstring_t *dstr, int num)
 {
-	int			len = strlen (dstr->str);
+	char       *tabs = dstring_reservestr (dstr, num);
 
-	dstr->size = len + num + 1;
-	dstring_adjust (dstr);
-	memset (dstr->str + len, '\t', num);
-	dstr->str[len + num] = 0;
+	memset (tabs, '\t', num);
+	tabs[num] = 0;
 }
 
 static void
 write_string (dstring_t *dstr, const char *str)
 {
 	const char *s;
-	char        c;
+	int         len = 0;
+	char       *dst;
+	int         quoted = 0;
 
-	for (s = str; *s && !is_quotable (*s); s++)
-		;
-	if (!*s) {
-		dstring_appendstr (dstr, str);
+	for (s = str; *s; s++) {
+		if (is_quotable (*s))
+			quoted = 1;
+		len++;
+	}
+	if (!quoted) {
+		dst = dstring_reservestr (dstr, len);
+		strcpy (dst, str);
 		return;
 	}
-	dstring_appendstr (dstr, "\"");
+	// assume worst case of all octal chars plus two quotes.
+	dst = dstring_reservestr (dstr, strlen (str) * 4 + 2);
+	*dst++= '\"';
 	while (*str) {
-		for (s = str; (*s && isascii ((byte) *s) && isprint ((byte) *s)
-					   && *s != '\\' && *s != '\"'); s++)
-			;
-		dstring_appendsubstr (dstr, str, s - str);
-		if (*s) {
-			switch (*s) {
+		if (*str && isascii ((byte) *str) && isprint ((byte) *str)
+			&& *str != '\\' && *str != '\"') {
+			*dst++ = *str++;
+			continue;
+		}
+		if (*str) {
+			switch (*str) {
 				case '\"':
 				case '\\':
-					c = *s;
+					*dst++ = *str;
 					break;
 				case '\n':
-					c = 'n';
+					*dst++ = 'n';
 					break;
 				case '\a':
-					c = 'a';
+					*dst++ = 'a';
 					break;
 				case '\b':
-					c = 'b';
+					*dst++ = 'b';
 					break;
 				case '\f':
-					c = 'f';
+					*dst++ = 'f';
 					break;
 				case '\r':
-					c = 'r';
+					*dst++ = 'r';
 					break;
 				case '\t':
-					c = 't';
+					*dst++ = 't';
 					break;
 				case '\v':
-					c = 'v';
+					*dst++ = 'v';
 					break;
 				default:
-					c = 0;
-					dasprintf (dstr, "\\%03o", (byte) *s);
+					*dst++ = '\\';
+					*dst++ = '0' + ((((byte) *str) >> 6) & 3);
+					*dst++ = '0' + ((((byte) *str) >> 3) & 7);
+					*dst++ = '0' + (((byte) *str) & 7);
 					break;
 			}
-			if (c)
-				dasprintf (dstr, "\\%c", c);
-			s++;
+			str++;
 		}
-		str = s;
 	}
-	dstring_appendstr (dstr, "\"");
+	*dst++ = '\"';
+	*dst++ = 0;
+	dstr->size = dst - dstr->str;
 }
 
 static void

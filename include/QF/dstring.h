@@ -67,6 +67,13 @@ void dstring_delete (dstring_t *dstr);
 	large enough to hold size bytes (rounded up to the next 1kB boundary)
 */
 void dstring_adjust (dstring_t *dstr);
+/** Open up a hole in the string buffer. The contents of the opened hole
+	are undefined.
+	\param dstr		the dstring in which to open the hole.
+	\param len		the size of the hole to open.
+	\return			pointer to the beginning of the opened hole.
+*/
+char *dstring_reserve (dstring_t *dstr, unsigned len);
 /** Copy len bytes from data into the dstring, replacing any existing data.
 */
 void dstring_copy (dstring_t *dstr, const char *data, unsigned int len);
@@ -104,6 +111,15 @@ char *dstring_freeze (dstring_t *dstr);
 dstring_t *_dstring_newstr (dstring_mem_t *mem);
 dstring_t *dstring_newstr (void);
 //@}
+/** Open up a hole in the string buffer. The contents of the opened hole
+	are undefined. The size of the opened hole will be 1 bigger than specified
+	allowing for a null terminator.
+	\param dstr		the dstring in which to open the hole.
+	\param len		the size of the hole to open.
+	\return			pointer to the current null terminator or beginning of the
+					opened hole if there was no terminator.
+*/
+char *dstring_reservestr (dstring_t *dstr, unsigned len);
 /** Copy the null terminated string into the dstring. Replaces any existing
 	data.
 	The dstring does not have to be null terminated but will become so.
