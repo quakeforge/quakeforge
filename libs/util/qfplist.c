@@ -414,7 +414,7 @@ PL_SkipSpace (pldata_t *pl)
 }
 
 static inline byte
-to_hex (byte a)
+from_hex (byte a)
 {
 	if (a >= '0' && a <= '9')
 		return a - '0';
@@ -426,7 +426,7 @@ to_hex (byte a)
 static inline byte
 make_byte (byte h, byte l)
 {
-	return (to_hex (h) << 4) | to_hex (l);
+	return (from_hex (h) << 4) | from_hex (l);
 }
 
 static char *
@@ -818,6 +818,34 @@ write_tabs (dstring_t *dstr, int num)
 }
 
 static void
+write_string_len (dstring_t *dstr, const char *str, int len)
+{
+	char       *dst = dstring_reservestr (dstr, len);
+	memcpy (dst, str, len);
+	dst[len] = 0;
+}
+
+static char
+to_hex (byte b)
+{
+	char        c = (b & 0xf) + '0';
+	if (c > '9')
+		c = c - '0' + 'A';
+	return c;
+}
+
+static void
+write_binary (dstring_t *dstr, byte *binary, int len)
+{
+	int         i;
+	char       *dst = dstring_reservestr (dstr, len * 2);
+	for (i = 0; i < len; i++) {
+		*dst++ = to_hex (binary[i] >> 4);
+		*dst++ = to_hex (binary[i]);
+	}
+}
+
+static void
 write_string (dstring_t *dstr, const char *str)
 {
 	const char *s;
@@ -897,38 +925,37 @@ write_item (dstring_t *dstr, plitem_t *item, int level)
 
 	switch (item->type) {
 		case QFDictionary:
-			dstring_appendstr (dstr, "{\n");
+			write_string_len (dstr, "{\n", 2);
 			l = list = Hash_GetList ((hashtab_t *) item->data);
 			while ((current = (dictkey_t *) *l++)) {
 				write_tabs (dstr, level + 1);
 				write_string (dstr, current->key);
-				dstring_appendstr (dstr, " = ");
+				write_string_len (dstr, " = ", 3);
 				write_item (dstr, current->value, level + 1);
-				dstring_appendstr (dstr, ";\n");
+				write_string_len (dstr, ";\n", 2);
 			}
 			free (list);
 			write_tabs (dstr, level);
-			dstring_appendstr (dstr, "}");
+			write_string_len (dstr, "}", 1);
 			break;
 		case QFArray:
-			dstring_appendstr (dstr, "(\n");
+			write_string_len (dstr, "(\n", 2);
 			array = (plarray_t *) item->data;
 			for (i = 0; i < array->numvals; i++) {
 				write_tabs (dstr, level + 1);
 				write_item (dstr, array->values[i], level + 1);
 				if (i < array->numvals - 1)
-					dstring_appendstr (dstr, ",\n");
+					write_string_len (dstr, ",\n", 2);
 			}
-			dstring_appendstr (dstr, "\n");
+			write_string_len (dstr, "\n", 1);
 			write_tabs (dstr, level);
-			dstring_appendstr (dstr, ")");
+			write_string_len (dstr, ")", 1);
 			break;
 		case QFBinary:
-			dstring_appendstr (dstr, "<");
+			write_string_len (dstr, "<", 1);
 			binary = (plbinary_t *) item->data;
-			for (i = 0; i < (int) binary->size; i++)
-				dasprintf (dstr, "%02X", ((char *) binary->data)[i]);
-			dstring_appendstr (dstr, ">");
+			write_binary (dstr, binary->data, binary->size);
+			write_string_len (dstr, ">", 1);
 			break;
 		case QFString:
 			write_string (dstr, item->data);
@@ -946,7 +973,7 @@ PL_WritePropertyList (plitem_t *pl)
 	if (!quotable_bitmap[0])
 		init_quotables ();
 	write_item (dstr, pl, 0);
-	dstring_appendstr (dstr, "\n");
+	write_string_len (dstr, "\n", 1);
 	return dstring_freeze (dstr);
 }
 
