@@ -283,7 +283,7 @@ CB_basic_control_binding =
 
 	Loading basic keynames when entering the menu
 */
-integer ()
+void ()
 CB_ME_basic_control_binding =
 {
     get_hash_keys (movement_bindings);
@@ -360,7 +360,7 @@ CB_misc_control_binding =
 
 	Loading misc keynames when entering the menu
 */
-integer ()
+void ()
 CB_ME_misc_control_binding =
 {
     get_hash_keys(misc_bindings);
@@ -437,7 +437,7 @@ CB_weapon_control_binding =
 	Loading weapon keynames when entering the
 	menu
 */
-integer ()
+void ()
 CB_ME_weapon_control_binding =
 {
     get_hash_keys(weapon_bindings);

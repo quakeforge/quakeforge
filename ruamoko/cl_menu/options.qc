@@ -660,7 +660,7 @@ DRAW_player_options =
 	Entercallback for the playermenu.
 	For initalising the playername and teamname.
 */
-integer () 
+void () 
 CB_ME_player_options =
 {
 	if (gametype () == "quakeworld") {
@@ -841,7 +841,7 @@ DRAW_network_options =
 
 	Entercallback for the networkmenu.
 */
-integer () 
+void () 
 CB_ME_network_options =
 {
 	[network_config_rate_il setText:Cvar_GetString ("rate")]; 

@@ -4,8 +4,8 @@
 @extern void (integer x, integer y, string text) Menu_Begin;
 @extern void (integer val) Menu_FadeScreen;
 @extern void (integer (integer x, integer y) func) Menu_Draw;
-@extern void (integer () func) Menu_EnterHook;
-@extern void (integer () func) Menu_LeaveHook;
+@extern void (void () func) Menu_EnterHook;
+@extern void (void () func) Menu_LeaveHook;
 @extern void (integer x, integer y, string name) Menu_Pic;
 @extern void (integer x, integer y, string name, integer srcx, integer srcy,
 			  integer width, integer height) Menu_SubPic;

@@ -13,6 +13,7 @@
 #include "HUD.h"
 #include "client_menu.h"
 #include "PropertyList.h"
+#include "sound.h"
 
 #include "gui/InputLine.h"
 #include "gui/Rect.h"
@@ -27,6 +28,34 @@ string [6] dot_name = {
 	"gfx/menudot5.lmp",
 	"gfx/menudot6.lmp",
 };
+
+void ()
+menu_enter_sound =
+{
+	S_LocalSound ("misc/menu2.wav");
+}
+
+void ()
+menu_leave_sound =
+{
+	S_LocalSound ("misc/menu2.wav");
+}
+
+integer (integer key, integer unicode, integer down)
+menu_key_sound =
+{
+	switch (key) {
+		case QFK_DOWN:
+		case QFM_WHEEL_DOWN:
+			S_LocalSound ("misc/menu1.wav");
+			break;
+		case QFK_UP:
+		case QFM_WHEEL_UP:
+			S_LocalSound ("misc/menu1.wav");
+			break;
+	}
+	return 0;
+}
 
 void (integer x, integer y) spinner =
 {
@@ -182,17 +211,20 @@ integer (integer key, integer unicode, integer down) load_keyevent =
 	switch (key) {
 		case QFK_DOWN:
 		case QFM_WHEEL_DOWN:
+			S_LocalSound ("misc/menu1.wav");
 			load_cursor++;
 			load_cursor %= MAX_SAVEGAMES;
 			return 1;
 		case QFK_UP:
 		case QFM_WHEEL_UP:
+			S_LocalSound ("misc/menu1.wav");
 			load_cursor += MAX_SAVEGAMES - 1;
 			load_cursor %= MAX_SAVEGAMES;
 			return 1;
 		case QFK_RETURN:
 		case QFM_BUTTON1:
 			if (loadable[load_cursor]) {
+				S_LocalSound ("misc/menu2.wav");
 				Menu_SelectMenu (NIL);
 				Cbuf_AddText (sprintf ("load s%i.sav\n", load_cursor));
 			}
@@ -206,11 +238,13 @@ integer (integer key, integer unicode, integer down) save_keyevent =
 	switch (key) {
 		case QFK_DOWN:
 		case QFM_WHEEL_DOWN:
+			S_LocalSound ("misc/menu1.wav");
 			save_cursor++;
 			save_cursor %= MAX_SAVEGAMES;
 			return 1;
 		case QFK_UP:
 		case QFM_WHEEL_UP:
+			S_LocalSound ("misc/menu1.wav");
 			save_cursor += MAX_SAVEGAMES - 1;
 			save_cursor %= MAX_SAVEGAMES;
 			return 1;
@@ -226,6 +260,8 @@ integer (integer key, integer unicode, integer down) save_keyevent =
 void () load_menu =
 {
 	Menu_Begin (0, 0, "load");
+	Menu_EnterHook (menu_enter_sound);
+	Menu_LeaveHook (menu_leave_sound);
 	Menu_FadeScreen (1);
 	Menu_KeyEvent (load_keyevent);
 	Menu_Draw (load_draw);
@@ -236,6 +272,8 @@ void () load_menu =
 void () save_menu =
 {
 	Menu_Begin (0, 0, "save");
+	Menu_EnterHook (menu_enter_sound);
+	Menu_LeaveHook (menu_leave_sound);
 	Menu_FadeScreen (1);
 	Menu_KeyEvent (save_keyevent);
 	Menu_Draw (save_draw);
@@ -285,6 +323,8 @@ integer (integer x, integer y) quit_draw =
 void () quit_menu =
 {
 	Menu_Begin (0, 0, "quit");
+	Menu_EnterHook (menu_enter_sound);
+	Menu_LeaveHook (menu_leave_sound);
 	Menu_FadeScreen (1);
 	Menu_KeyEvent (quit_keyevent);
 	Menu_Draw (quit_draw);
@@ -309,6 +349,9 @@ integer (string text, integer key) sp_start =
 void () single_player_menu =
 {
 	Menu_Begin (54, 32, "");
+	Menu_EnterHook (menu_enter_sound);
+	Menu_LeaveHook (menu_leave_sound);
+	Menu_KeyEvent (menu_key_sound);
 	Menu_FadeScreen (1);
 	Menu_Pic (16, 4, "gfx/qplaque.lmp");
 	Menu_CenterPic (160, 4, "gfx/ttl_sgl.lmp");
@@ -389,6 +432,7 @@ integer (integer key, integer unicode, integer down) lanconfig_keyevent =
 		case QFK_DOWN:
 		case QFM_WHEEL_DOWN:
 			if (!input_active) {
+				S_LocalSound ("misc/menu2.wav");
 				lanConfig_cursor ++;
 				lanConfig_cursor %= NUM_LANCONFIG_CMDS;
 			}
@@ -396,6 +440,7 @@ integer (integer key, integer unicode, integer down) lanconfig_keyevent =
 		case QFK_UP:
 		case QFM_WHEEL_UP:
 			if (!input_active) {
+				S_LocalSound ("misc/menu2.wav");
 				lanConfig_cursor += NUM_LANCONFIG_CMDS - 1;
 				lanConfig_cursor %= NUM_LANCONFIG_CMDS;
 			}
@@ -420,6 +465,8 @@ integer (integer key, integer unicode, integer down) lanconfig_keyevent =
 void () lanconfig_menu =
 {
 	Menu_Begin (54, 92, "");
+	Menu_EnterHook (menu_enter_sound);
+	Menu_LeaveHook (menu_leave_sound);
 	Menu_FadeScreen (1);
 	Menu_Pic (16, 4, "gfx/qplaque.lmp");
 	Menu_CenterPic (160, 4, "gfx/p_multi.lmp");
@@ -431,6 +478,9 @@ void () lanconfig_menu =
 void () join_menu =
 {
 	Menu_Begin (54, 32, "");
+	Menu_EnterHook (menu_enter_sound);
+	Menu_LeaveHook (menu_leave_sound);
+	Menu_KeyEvent (menu_key_sound);
 	Menu_FadeScreen (1);
 	Menu_Pic (16, 4, "gfx/qplaque.lmp");
 	Menu_CenterPic (160, 4, "gfx/p_multi.lmp");
@@ -455,6 +505,8 @@ integer (integer key, integer unicode, integer down) multi_player_keyevent =
 void () multi_player_menu =
 {
 	Menu_Begin (54, 52, "");
+	Menu_EnterHook (menu_enter_sound);
+	Menu_LeaveHook (menu_leave_sound);
 	Menu_FadeScreen (1);
 	Menu_Pic (16, 4, "gfx/qplaque.lmp");
 	Menu_CenterPic (160, 4, "gfx/p_multi.lmp");
@@ -478,6 +530,9 @@ void () help_menu =
 void () main_menu =
 {
 	Menu_Begin (0, 0, "main");
+	Menu_EnterHook (menu_enter_sound);
+	Menu_LeaveHook (menu_leave_sound);
+	Menu_KeyEvent (menu_key_sound);
 	Menu_FadeScreen (1);
 	Menu_Pic (16, 4, "gfx/qplaque.lmp");
 	Menu_CenterPic (160, 4, "gfx/ttl_main.lmp");
