@@ -532,6 +532,7 @@ static void
 Host_Savegame_f (void)
 {
 	char        name[256];
+	char       *save_text;
 	QFile      *f;
 	int         i;
 
@@ -582,7 +583,9 @@ Host_Savegame_f (void)
 		return;
 	}
 
-	Qprintf (f, "%s\n%s", PROGRAM, PL_WritePropertyList (game_dict ()));
+	save_text = PL_WritePropertyList (game_dict ());
+	Qprintf (f, "%s\n%s", PROGRAM, save_text);
+	free (save_text);
 
 	Qclose (f);
 	Con_Printf ("done.\n");
