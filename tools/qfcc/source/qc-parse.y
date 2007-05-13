@@ -91,6 +91,8 @@ hashtab_t *save_local_inits (scope_t *scope);
 hashtab_t *merge_local_inits (hashtab_t *dl_1, hashtab_t *dl_2);
 void restore_local_inits (hashtab_t *def_list);
 void free_local_inits (hashtab_t *def_list);
+static def_t *create_def (type_t *type, const char *name, scope_t *scope,
+						  storage_class_t storage);
 
 expr_t *argc_expr (void);
 expr_t *argv_expr (void);
@@ -169,7 +171,7 @@ expr_t *argv_expr (void);
 %type	<def>	fdef_name cfunction_def func_def
 %type	<param> function_decl
 %type	<param>	param param_list
-%type	<def>	def_name opt_initializer methoddef var_initializer
+%type	<def>	opt_initializer methoddef var_initializer
 %type	<expr>	const opt_expr fexpr expr element_list element_list1 element
 %type	<expr>	string_val opt_state_expr think opt_step array_decl
 %type	<expr>	statement statements statement_block
@@ -178,7 +180,7 @@ expr_t *argv_expr (void);
 %type	<function> begin_function builtin_function
 %type	<def_list> save_inits
 %type	<switch_block> switch_block
-%type	<string_val> identifier
+%type	<string_val> def_name identifier
 
 %type	<string_val> selector reserved_word
 %type	<param>	optparmlist unaryselector keyworddecl keywordselector
@@ -476,9 +478,9 @@ def_list
 def_item
 	: def_name opt_initializer
 		{
-			if ($1 && !$1->local
-				&& $1->type->type != ev_func)
-				def_initialized ($1);
+			if ($2 && !$2->local
+				&& $2->type->type != ev_func)
+				def_initialized ($2);
 		}
 	;
 
@@ -556,60 +558,51 @@ code_func
 	;
 
 def_name
-	: identifier
-		{
-			scope_type  st = current_scope->type;
-			// traditional functions have only the one scope
-			//FIXME should the scope be set to local when the params scope
-			//is created in traditional mode?
-			if (options.traditional && st == sc_params)
-				st = sc_local;
-			if (st == sc_local) {
-				def_t      *def = get_def (0, $1, current_scope, st_none);
-				if (def) {
-					if (def->scope->type == sc_params
-						&& current_scope->parent->type == sc_params) {
-						warning (0, "local %s shadows param %s", $1,
-								 def->name);
-					}
-					if (def->scope == current_scope) {
-						expr_t      e;
-						warning (0, "local %s redeclared", $1);
-						e.file = def->file;
-						e.line = def->line;
-						warning (&e, "previously declared here");
-					}
-				}
-			}
-			$$ = get_def ($<type>0, $1, current_scope, current_storage);
-		}
+	: identifier				{ $$ = $1; }
 	;
 
 opt_initializer
-	: /*empty*/					{ }
-	| { $$ = $<def>0; }
-	  var_initializer			{ (void) ($<def>1); }
+	: /*empty*/
+		{
+			$$ = create_def ($<type>-1, $<string_val>0, current_scope,
+							 current_storage);
+		}
+	| var_initializer			{ $$ = $1; }
 	;
 
 var_initializer
 	: '=' expr	// don't bother folding twice
 		{
-			if (current_scope->type == sc_local
-				|| current_scope->type == sc_params) {
-				expr_t     *expr = assign_expr (new_def_expr ($<def>0), $2);
+			int         local = 0;
+			const char *name = $<string_val>0;
+			type_t     *type = $<type>-1;
+
+			if (current_scope->type == sc_params) {
+				local = 0;
+				$$ = create_def (type, name, current_scope, st_static);
+				printf ("params\n");
+			} else {
+				local = current_scope->type == sc_local;
+				$$ = create_def (type, name, current_scope, current_storage);
+				printf ("%s\n", local ? "local" : "static/global");
+			}
+			if (local) {
+				expr_t     *expr = assign_expr (new_def_expr ($$), $2);
 				expr = fold_constants (expr);
 				append_expr (local_expr, expr);
-				def_initialized ($<def>0);
+				def_initialized ($$);
+				printf ("    local\n");
 			} else {
+				printf ("    non-local\n");
 				$2 = constant_expr ($2);
 				if ($2->type >= ex_string) {
-					if ($<def>0->constant) {
-						error ($2, "%s re-initialized", $<def>0->name);
+					if ($$->constant) {
+						error ($2, "%s re-initialized", $$->name);
 					} else {
-						if ($<def>0->type->type == ev_func) {
+						if ($$->type->type == ev_func) {
 							PARSE_ERROR;
 						} else {
-							ReuseConstant ($2,  $<def>0);
+							ReuseConstant ($2,  $$);
 						}
 					}
 				} else {
@@ -619,7 +612,9 @@ var_initializer
 		}
 	| '=' '{' { current_init = new_block_expr (); } element_list '}'
 		{
-			init_elements ($<def>0, $4);
+			$$ = create_def ($<type>-1, $<string_val>0, current_scope,
+							 current_storage);
+			init_elements ($$, $4);
 			current_init = 0;
 		}
 	;
@@ -654,9 +649,10 @@ opt_state_expr
 	;
 
 think
-	: { $<type>$ = &type_function; } def_name
+	: def_name
 		{
-			$$ = new_def_expr ($2);
+			$$ = new_def_expr (create_def (&type_function, $1, current_scope,
+										   current_storage));
 			(void) ($<type>1);
 		}
 	| '(' fexpr ')'
@@ -1696,6 +1692,36 @@ scan_scope (hashtab_t *tab, scope_t *scope)
 			Hash_Add (tab, ds);
 		}
 	}
+}
+
+static def_t *
+create_def (type_t *type, const char *name, scope_t *scope,
+			storage_class_t storage)
+{
+	scope_type  st = scope->type;
+	// traditional functions have only the one scope
+	//FIXME should the scope be set to local when the params scope
+	//is created in traditional mode?
+	if (options.traditional && st == sc_params)
+		st = sc_local;
+	if (st == sc_local) {
+		def_t      *def = get_def (0, name, scope, st_none);
+		if (def) {
+			if (def->scope->type == sc_params
+				&& scope->parent->type == sc_params) {
+				warning (0, "local %s shadows param %s", name,
+						 def->name);
+			}
+			if (def->scope == scope) {
+				expr_t      e;
+				warning (0, "local %s redeclared", name);
+				e.file = def->file;
+				e.line = def->line;
+				warning (&e, "previously declared here");
+			}
+		}
+	}
+	return get_def (type, name, scope, storage);
 }
 
 hashtab_t *
