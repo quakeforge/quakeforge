@@ -1077,12 +1077,11 @@ test_expr (expr_t *e, int test)
 	if (e->type == ex_error)
 		return e;
 
-	check_initialized (e);
-
 	if (!test)
 		return unary_expr ('!', e);
 
 	type = extract_type (e);
+	check_initialized (e);
 	if (e->type == ex_error)
 		return e;
 	switch (type) {

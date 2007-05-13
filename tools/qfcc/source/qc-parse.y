@@ -173,7 +173,7 @@ expr_t *argv_expr (void);
 %type	<param>	param param_list
 %type	<def>	opt_initializer methoddef var_initializer
 %type	<expr>	const opt_expr fexpr expr element_list element_list1 element
-%type	<expr>	string_val opt_state_expr think opt_step array_decl
+%type	<expr>	string_val opt_state_expr think opt_step array_decl texpr
 %type	<expr>	statement statements statement_block
 %type	<expr>	label break_label continue_label enum_list enum
 %type	<expr>	unary_expr primary cast_expr opt_arg_list arg_list
@@ -828,7 +828,7 @@ statement
 			switch_block = $3;
 			break_label = $2;
 		}
-	| WHILE break_label continue_label '(' fexpr ')' save_inits statement
+	| WHILE break_label continue_label '(' texpr ')' save_inits statement
 		{
 			expr_t *l1 = new_label_expr ();
 			expr_t *l2 = break_label;
@@ -862,7 +862,7 @@ statement
 			pr.source_line = line;
 			pr.source_file = file;
 		}
-	| DO break_label continue_label statement WHILE '(' fexpr ')' ';'
+	| DO break_label continue_label statement WHILE '(' texpr ')' ';'
 		{
 			expr_t *l1 = new_label_expr ();
 			int         line = pr.source_line;
@@ -903,7 +903,7 @@ statement
 			(void) ($<type>3);
 			current_storage = st_local;
 		}
-	| IF '(' fexpr ')' save_inits statement %prec IFX
+	| IF '(' texpr ')' save_inits statement %prec IFX
 		{
 			expr_t *tl = new_label_expr ();
 			expr_t *fl = new_label_expr ();
@@ -932,7 +932,7 @@ statement
 			pr.source_line = line;
 			pr.source_file = file;
 		}
-	| IF '(' fexpr ')' save_inits statement ELSE
+	| IF '(' texpr ')' save_inits statement ELSE
 		{
 			$<def_list>$ = save_local_inits (current_scope);
 			restore_local_inits ($5);
@@ -1151,6 +1151,10 @@ expr
 
 fexpr
 	: expr						{ $$ = fold_constants ($1); }
+	;
+
+texpr
+	: fexpr						{ $$ = convert_bool ($1, 1); }
 	;
 
 opt_arg_list
