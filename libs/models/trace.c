@@ -122,6 +122,17 @@ MOD_TraceLine (hull_t *hull, int num,
 					trace->inwater = true;
 			} else if (!empty && num == CONTENTS_SOLID) {
 				solid = 1;
+			} else if (solid && num != CONTENTS_SOLID) {
+				//FIXME not sure what I want
+				//made it out of the solid and into open space, continue
+				//on as if we were always in empty space
+				empty = 1;
+				solid = 0;
+				trace->startsolid = 1;
+				if (num == CONTENTS_EMPTY)
+					trace->inopen = true;
+				else
+					trace->inwater = true;
 			} else if (empty/* || solid*/) {//FIXME not sure what I want
 				// DONE!
 				trace->allsolid = solid & (num == CONTENTS_SOLID);
