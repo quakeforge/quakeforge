@@ -440,6 +440,11 @@ void
 add_frame_macro (char *token)
 {
 	frame_t *frame;
+
+	if (Hash_Find (frame_tab, token)) {
+		warning (0, "duplicate frame macro `%s'", token);
+		return;
+	}
 	ALLOC (1024, frame_t, frames, frame);
 
 	frame->name = save_string (token);
