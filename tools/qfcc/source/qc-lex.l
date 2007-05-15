@@ -443,6 +443,8 @@ add_frame_macro (char *token)
 
 	if (Hash_Find (frame_tab, token)) {
 		warning (0, "duplicate frame macro `%s'", token);
+		if (options.traditional)
+			frame_number++;
 		return;
 	}
 	ALLOC (1024, frame_t, frames, frame);
