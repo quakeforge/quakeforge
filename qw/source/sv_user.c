@@ -1257,7 +1257,8 @@ SV_SetInfo_f (void *unused)
 		P_STRING (&sv_pr_state, 1) = PR_SetTempString (&sv_pr_state, value);
 		PR_ExecuteProgram (&sv_pr_state, sv_funcs.UserInfoCallback);
 		PR_PopFrame (&sv_pr_state);
-		return;
+		if (R_FLOAT (&sv_pr_state))
+			return;
 	}
 
 	SV_SetUserinfo (host_client, key, value);
