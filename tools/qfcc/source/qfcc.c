@@ -186,6 +186,7 @@ WriteData (int crc)
 		if (def->local || !def->name)
 			continue;
 		if (options.traditional && *def->name == '.'
+			&& strcmp (def->name, ".imm") != 0
 			&& strcmp (def->name, ".debug_file") != 0)
 			continue;
 		if (def->type->type == ev_func) {
