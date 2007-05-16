@@ -142,7 +142,7 @@ mod_unique_miptex_name (texture_t **textures, texture_t *tx, int ind)
 	name[16] = 0;
 	do {
 		for (i = 0; i < ind; i++)
-			if (!strcmp (textures[i]->name, tx->name))
+			if (textures[i] && !strcmp (textures[i]->name, tx->name))
 				break;
 		if (i == ind)
 			break;
