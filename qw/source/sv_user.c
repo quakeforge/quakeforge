@@ -1179,6 +1179,7 @@ void
 SV_SetUserinfo (client_t *client, const char *key, const char *value)
 {
 	char       *oldvalue = 0;
+	int         sent_changes = 1;
 
 	if (sv_setinfo_e->func || sv_funcs.UserInfoChanged)
 		oldvalue = strdup (Info_ValueForKey (client->userinfo, key));
@@ -1208,12 +1209,13 @@ SV_SetUserinfo (client_t *client, const char *key, const char *value)
 		P_STRING (&sv_pr_state, 2) = PR_SetTempString (&sv_pr_state, value);
 		PR_ExecuteProgram (&sv_pr_state, sv_funcs.UserInfoChanged);
 		PR_PopFrame (&sv_pr_state);
+		send_changes = !R_FLOAT (&sv_pr_state);
 	}
 
 	if (oldvalue)
 		free (oldvalue);
 
-	if (Info_FilterForKey (key, client_info_filters)) {
+	if (send_changes && Info_FilterForKey (key, client_info_filters)) {
 		MSG_WriteByte (&sv.reliable_datagram, svc_setinfo);
 		MSG_WriteByte (&sv.reliable_datagram, client - svs.clients);
 		MSG_WriteString (&sv.reliable_datagram, key);
