@@ -1179,7 +1179,7 @@ void
 SV_SetUserinfo (client_t *client, const char *key, const char *value)
 {
 	char       *oldvalue = 0;
-	int         sent_changes = 1;
+	int         send_changes = 1;
 
 	if (sv_setinfo_e->func || sv_funcs.UserInfoChanged)
 		oldvalue = strdup (Info_ValueForKey (client->userinfo, key));
