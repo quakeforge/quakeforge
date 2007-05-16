@@ -451,10 +451,6 @@
 				>
 			</File>
 			<File
-				RelativePath="..\..\libs\gamecode\builtins\bi_inputline.c"
-				>
-			</File>
-			<File
 				RelativePath="..\..\libs\gamecode\builtins\pr_cmds.c"
 				>
 			</File>

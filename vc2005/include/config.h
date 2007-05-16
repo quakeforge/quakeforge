@@ -713,7 +713,9 @@ void *alloca (int size);
 /* used in qfcc.  should #define to _ReturnAddress()? */
 #define __builtin_return_address(x) (0)
 
-#define DIRECTINPUT_VERSION 0x0600
+#define _WIN32_WINNT				0x0500
+#define DIRECTINPUT_VERSION	0x0600
+
 #define INITGUID
 
 #define snprintf _snprintf
@@ -735,5 +737,4 @@ void *alloca (int size);
 	4311: 'variable' : pointer truncation from 'type' to 'type' (/Wp64 warning)
 	4312: 'operation' : conversion from 'type1' to 'type2' of greater size (/Wp64 warning)
 */
-//#pragma warning(disable:4047 4244 4267 4305 4311 4312)
-#pragma warning(disable:4047 4244 4305)
+#pragma warning(disable:4047 4244 4267 4305 4311 4312)

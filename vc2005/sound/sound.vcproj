@@ -475,6 +475,10 @@
 				>
 			</File>
 			<File
+				RelativePath="..\..\libs\audio\snd_progs.c"
+				>
+			</File>
+			<File
 				RelativePath="..\..\libs\audio\renderer\snd_resample.c"
 				>
 			</File>
