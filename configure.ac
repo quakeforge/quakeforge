@@ -1042,6 +1042,7 @@ if test "x$enable_jack" != "xno"; then
 	if test "x$PKG_CONFIG" != "x"; then
 		PKG_CHECK_MODULES([JACK], [jack], HAVE_JACK=yes, HAVE_JACK=no)
 		if test "x$HAVE_JACK" = "xyes"; then
+			AC_DEFINE(HAVE_JACK, 1, [Define if you have libjack])
 			SOUND_TYPES="$SOUND_TYPES JACK"
 		fi
 	else
