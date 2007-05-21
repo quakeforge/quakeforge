@@ -144,6 +144,9 @@ SND_ScanChannels (int wait)
 	channel_t  *ch;
 	int         count = 0;
 
+	if (!snd_shm->speed)
+		return;
+
 	if (wait) {
 		Sys_DPrintf ("scanning channels...\n");
 		do {
@@ -591,7 +594,7 @@ SND_StartSound (int entnum, int entchannel, sfx_t *sfx, const vec3_t origin,
 	channel_t   *target_chan, *check;
 	sfx_t       *osfx;
 
-	if (!sfx)
+	if (!sfx || !snd_shm->speed)
 		return;
 	// pick a channel to play on
 	looped = sfx->loopstart != (unsigned) -1;
