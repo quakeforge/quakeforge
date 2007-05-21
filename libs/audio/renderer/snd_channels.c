@@ -144,7 +144,7 @@ SND_ScanChannels (int wait)
 	channel_t  *ch;
 	int         count = 0;
 
-	if (!snd_shm->speed)
+	if (!snd_shm || !snd_shm->speed)
 		return;
 
 	if (wait) {
