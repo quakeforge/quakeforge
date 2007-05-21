@@ -81,6 +81,12 @@ snd_open (sfx_t *sfx)
 	return sfx;
 }
 
+static sfx_t *
+snd_open_fail (sfx_t *sfx)
+{
+	return 0;
+}
+
 sfxbuffer_t *
 SND_CacheTouch (sfx_t *sfx)
 {
@@ -331,7 +337,7 @@ SND_Load (sfx_t *sfx)
 	sfx->touch = sfx->retain = snd_fail;
 	sfx->release = snd_noop;
 	sfx->close = snd_noop;
-	sfx->open = snd_open;
+	sfx->open = snd_open_fail;
 
 	_QFS_FOpenFile (sfx->name, &file, foundname, 1);
 	if (!file) {
@@ -339,6 +345,7 @@ SND_Load (sfx_t *sfx)
 		dstring_delete (foundname);
 		return;
 	}
+	sfx->open = snd_open;
 	if (!strequal (foundname->str, sfx->name)) {
 		realname = foundname->str;
 		free (foundname);

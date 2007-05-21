@@ -219,7 +219,7 @@ static void
 I_OGGMus_PlayNext (int looping)
 {
 	const char *track;
-	sfx_t      *cd_sfx;
+	sfx_t      *cd_sfx, *sfx;
 	wavinfo_t  *info = 0;
 
 	if (!play_list)
@@ -243,18 +243,21 @@ I_OGGMus_PlayNext (int looping)
 	if (!(cd_channel = S_AllocChannel ()))
 		return;
 
-	if (!(cd_sfx = S_LoadSound (track)))
+	if (!(cd_sfx = S_LoadSound (track)) || !(sfx = cd_sfx->open (cd_sfx))) {
+		S_ChannelStop (cd_channel);
+		cd_channel = 0;
 		return;
+	}
 
-	if (cd_sfx->wavinfo)
-		info = cd_sfx->wavinfo (cd_sfx);
+	if (sfx->wavinfo)
+		info = sfx->wavinfo (sfx);
 	if (info) {
 		if (looping == true)
 			info->loopstart = 0;
 		else
 			info->loopstart = -1;
 	}
-	cd_channel->sfx = cd_sfx->open (cd_sfx);
+	cd_channel->sfx = sfx;
 	set_volume ();
 
 	playing = true;
