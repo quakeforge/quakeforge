@@ -641,7 +641,7 @@ R_RecursiveWorldNode (mnode_t *node)
 	struct {
 		mnode_t    *node;
 		int         side;
-	}          *node_ptr, node_stack[256];
+	}          *node_ptr, node_stack[1024];
 	mnode_t    *front;
 	int         side;
 
