@@ -51,7 +51,7 @@ VISIBLE qboolean    bigendien = true;;
 
 
 VISIBLE short
-ShortSwap (short l)
+_ShortSwap (short l)
 {
 	byte        b1, b2;
 
@@ -62,13 +62,13 @@ ShortSwap (short l)
 }
 
 VISIBLE short
-ShortNoSwap (short l)
+_ShortNoSwap (short l)
 {
 	return l;
 }
 
 VISIBLE int
-LongSwap (int l)
+_LongSwap (int l)
 {
 	byte        b1, b2, b3, b4;
 
@@ -81,13 +81,13 @@ LongSwap (int l)
 }
 
 VISIBLE int
-LongNoSwap (int l)
+_LongNoSwap (int l)
 {
 	return l;
 }
 
 VISIBLE float
-FloatSwap (float f)
+_FloatSwap (float f)
 {
 	union {
 		float       f;
@@ -103,7 +103,7 @@ FloatSwap (float f)
 }
 
 VISIBLE float
-FloatNoSwap (float f)
+_FloatNoSwap (float f)
 {
 	return f;
 }

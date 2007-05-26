@@ -76,12 +76,37 @@
 
 extern qboolean		bigendien;
 
-short	ShortSwap (short l);
-short	ShortNoSwap (short l);
-int		LongSwap (int l);
-int		LongNoSwap (int l);
-float	FloatSwap (float f);
-float	FloatNoSwap (float f);
+short	_ShortSwap (short l);
+short	_ShortNoSwap (short l);
+int		_LongSwap (int l);
+int		_LongNoSwap (int l);
+float	_FloatSwap (float f);
+float	_FloatNoSwap (float f);
+
+
+#ifdef __GNUC__
+#define ShortSwap(l)	({  uint16_t x = (uint16_t) (l);		\
+							x = (  ((x >> 8) & 0xff)			\
+								 | ((x << 8) & 0xff00));		\
+							x;	})
+
+#define LongSwap(l)		({  uint32_t z = (uint32_t) (l);				\
+							z = (ShortSwap (z >> 16)) | (ShortSwap (z) << 16); \
+							z;	})
+
+#define FloatSwap(l)	({	union { uint32_t i; float f; } y;		\
+							y.f = (l);								\
+							y.i = LongSwap (y.i);					\
+							y.f;	})
+#else
+#define ShortSwap(l) _ShortSwap (l)
+#define LongSwap(l)  _LongSwap (l)
+#define FloatSwap(l) _FloatSwap (l)
+#endif
+
+#define ShortNoSwap(l) (l)
+#define LongNoSwap(l) (l)
+#define FloatNoSwap(l) (l)
 
 // NOTE: these /always/ read and write /little/ endian entities.
 struct QFile_s;

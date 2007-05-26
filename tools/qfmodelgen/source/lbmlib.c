@@ -499,9 +499,9 @@ WriteLBMfile (char *filename, byte *data, int width, int height, byte *palette)
 	memset (&basebmhd, 0, sizeof (basebmhd));
 	basebmhd.w = BigShort ((short) width);
 	basebmhd.h = BigShort ((short) height);
-	basebmhd.nPlanes = BigShort (8);
-	basebmhd.xAspect = BigShort (5);
-	basebmhd.yAspect = BigShort (6);
+	basebmhd.nPlanes = 8;
+	basebmhd.xAspect = 5;
+	basebmhd.yAspect = 6;
 	basebmhd.pageWidth = BigShort ((short) width);
 	basebmhd.pageHeight = BigShort ((short) height);
 

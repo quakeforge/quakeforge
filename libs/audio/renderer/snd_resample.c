@@ -61,6 +61,15 @@ typedef struct {
 cvar_t         *snd_loadas8bit;
 cvar_t         *snd_interp;
 
+static void
+check_buffer_integrity (sfxbuffer_t *sc, int width, const char *func)
+{
+	byte       *x = sc->data + sc->length * width;
+	if (memcmp (x, "\xde\xad\xbe\xef", 4))
+		Sys_Error ("%s screwed the pooch %02x%02x%02x%02x", func,
+				   x[0], x[1], x[2], x[3]);
+}
+
 void
 SND_ResampleMono (sfxbuffer_t *sc, byte *data, int length, void *prev)
 {
@@ -195,12 +204,7 @@ general_Mono:
 			}
 		}
 	}
-	{
-		byte       *x = sc->data + sc->length * outwidth;
-		if (memcmp (x, "\xde\xad\xbe\xef", 4))
-			Sys_Error ("SND_ResampleMono screwed the pooch %02x%02x%02x%02x",
-					   x[0], x[1], x[2], x[3]);
-	}
+	check_buffer_integrity (sc, outwidth, __FUNCTION__);
 }
 
 void
@@ -359,12 +363,7 @@ general_Stereo:
 			}
 		}
 	}
-	{
-		byte       *x = sc->data + sc->length * outwidth * 2;
-		if (memcmp (x, "\xde\xad\xbe\xef", 4))
-			Sys_Error ("SND_ResampleStereo screwed the pooch %02x%02x%02x%02x",
-					   x[0], x[1], x[2], x[3]);
-	}
+	check_buffer_integrity (sc, outwidth * 2, __FUNCTION__);
 }
 
 void
@@ -429,10 +428,5 @@ SND_NoResampleStereo (sfxbuffer_t *sc, byte *data, int length, void *prev)
 			}
 		}
 	}
-	{
-		byte       *x = sc->data + sc->length * outwidth * 2;
-		if (memcmp (x, "\xde\xad\xbe\xef", 4))
-			Sys_Error ("SND_ResampleStereo screwed the pooch %02x%02x%02x%02x",
-					   x[0], x[1], x[2], x[3]);
-	}
+	check_buffer_integrity (sc, outwidth * 2, __FUNCTION__);
 }
