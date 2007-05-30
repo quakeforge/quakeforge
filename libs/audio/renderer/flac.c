@@ -44,7 +44,20 @@ static __attribute__ ((used)) const char rcsid[] =
 #endif
 
 #include <stdlib.h>
+#include <FLAC/export.h>
+
+/* FLAC 1.1.3 has FLAC_API_VERSION_CURRENT == 8 */
+#if !defined(FLAC_API_VERSION_CURRENT) || FLAC_API_VERSION_CURRENT < 8
+#define LEGACY_FLAC
+#else
+#undef LEGACY_FLAC
+#endif
+
+#ifdef LEGACY_FLAC
 #include <FLAC/seekable_stream_decoder.h>
+#else
+#include <FLAC/stream_decoder.h>
+#endif
 #include <FLAC/metadata.h>
 
 #include "QF/cvar.h"
@@ -56,7 +69,11 @@ static __attribute__ ((used)) const char rcsid[] =
 #include "snd_render.h"
 
 typedef struct {
+#ifdef LEGACY_FLAC
 	FLAC__SeekableStreamDecoder *decoder;
+#else
+	FLAC__StreamDecoder *decoder;
+#endif
 	QFile      *file;
 	FLAC__StreamMetadata_StreamInfo info;
 	FLAC__StreamMetadata *vorbis_info;
@@ -66,56 +83,105 @@ typedef struct {
 } flacfile_t;
 
 static void
+#ifdef LEGACY_FLAC
 error_func (const FLAC__SeekableStreamDecoder *decoder,
+#else
+error_func (const FLAC__StreamDecoder *decoder,
+#endif
 			FLAC__StreamDecoderErrorStatus status, void *client_data)
 {
 }
 
+#ifdef LEGACY_FLAC
 static FLAC__SeekableStreamDecoderReadStatus
 read_func (const FLAC__SeekableStreamDecoder *decoder, FLAC__byte buffer[],
 		   unsigned *bytes, void *client_data)
+#else
+static FLAC__StreamDecoderReadStatus
+read_func (const FLAC__StreamDecoder *decoder, FLAC__byte buffer[],
+		   size_t *bytes, void *client_data)
+#endif
 {
 	flacfile_t *ff = (flacfile_t *) client_data;
 	*bytes = Qread (ff->file, buffer, *bytes);
+#ifdef LEGACY_FLAC
 	return FLAC__SEEKABLE_STREAM_DECODER_READ_STATUS_OK;
+#else
+	return FLAC__STREAM_DECODER_READ_STATUS_CONTINUE;
+#endif
 }
 
+#ifdef LEGACY_FLAC
 static FLAC__SeekableStreamDecoderSeekStatus
 seek_func (const FLAC__SeekableStreamDecoder *decoder,
+#else
+static FLAC__StreamDecoderSeekStatus
+seek_func (const FLAC__StreamDecoder *decoder,
+#endif
 		   FLAC__uint64 absolute_byte_offset, void *client_data)
 {
 	flacfile_t *ff = (flacfile_t *) client_data;
 	Qseek (ff->file, absolute_byte_offset, SEEK_SET);
+#ifdef LEGACY_FLAC
 	return FLAC__SEEKABLE_STREAM_DECODER_SEEK_STATUS_OK;
+#else
+	return FLAC__STREAM_DECODER_READ_STATUS_CONTINUE;
+#endif
 }
 
+#ifdef LEGACY_FLAC
 static FLAC__SeekableStreamDecoderTellStatus
 tell_func (const FLAC__SeekableStreamDecoder *decoder,
+#else
+static FLAC__StreamDecoderTellStatus
+tell_func (const FLAC__StreamDecoder *decoder,
+#endif
 		   FLAC__uint64 *absolute_byte_offset, void *client_data)
 {
 	flacfile_t *ff = (flacfile_t *) client_data;
 	*absolute_byte_offset = Qtell (ff->file);
+#ifdef LEGACY_FLAC
 	return FLAC__SEEKABLE_STREAM_DECODER_TELL_STATUS_OK;
+#else
+	return FLAC__STREAM_DECODER_TELL_STATUS_OK;
+#endif
 }
 
+#ifdef LEGACY_FLAC
 static FLAC__SeekableStreamDecoderLengthStatus
 length_func (const FLAC__SeekableStreamDecoder *decoder,
+#else
+static FLAC__StreamDecoderLengthStatus
+length_func (const FLAC__StreamDecoder *decoder,
+#endif
 		   FLAC__uint64 *stream_length, void *client_data)
 {
 	flacfile_t *ff = (flacfile_t *) client_data;
 	*stream_length = Qfilesize (ff->file);
+#ifdef LEGACY_FLAC
 	return FLAC__SEEKABLE_STREAM_DECODER_LENGTH_STATUS_OK;
+#else
+	return FLAC__STREAM_DECODER_LENGTH_STATUS_OK;
+#endif
 }
 
 static FLAC__bool
+#ifdef LEGACY_FLAC
 eof_func (const FLAC__SeekableStreamDecoder *decoder, void *client_data)
+#else
+eof_func (const FLAC__StreamDecoder *decoder, void *client_data)
+#endif
 {
 	flacfile_t *ff = (flacfile_t *) client_data;
 	return Qeof (ff->file);
 }
 
 static FLAC__StreamDecoderWriteStatus
+#ifdef LEGACY_FLAC
 write_func (const FLAC__SeekableStreamDecoder *decoder,
+#else
+write_func (const FLAC__StreamDecoder *decoder,
+#endif
 			const FLAC__Frame *frame, const FLAC__int32 * const buffer[],
 			void *client_data)
 {
@@ -168,7 +234,11 @@ write_func (const FLAC__SeekableStreamDecoder *decoder,
 }
 
 static void
+#ifdef LEGACY_FLAC
 meta_func (const FLAC__SeekableStreamDecoder *decoder,
+#else
+meta_func (const FLAC__StreamDecoder *decoder,
+#endif
 		   const FLAC__StreamMetadata *metadata, void *client_data)
 {
 	flacfile_t *ff = (flacfile_t *) client_data;
@@ -182,9 +252,14 @@ static flacfile_t *
 open_flac (QFile *file)
 {
 	flacfile_t *ff = calloc (1, sizeof (flacfile_t));
+#ifdef LEGACY_FLAC
 	ff->decoder = FLAC__seekable_stream_decoder_new ();
+#else
+	ff->decoder = FLAC__stream_decoder_new ();
+#endif
 	ff->file = file;
 
+#ifdef LEGACY_FLAC
 	FLAC__seekable_stream_decoder_set_error_callback (ff->decoder, error_func);
 	FLAC__seekable_stream_decoder_set_read_callback (ff->decoder, read_func);
 	FLAC__seekable_stream_decoder_set_seek_callback (ff->decoder, seek_func);
@@ -201,14 +276,24 @@ open_flac (QFile *file)
 
 	FLAC__seekable_stream_decoder_init (ff->decoder);
 	FLAC__seekable_stream_decoder_process_until_end_of_metadata (ff->decoder);
+#else
+	FLAC__stream_decoder_set_metadata_respond (ff->decoder, FLAC__METADATA_TYPE_VORBIS_COMMENT);
+	FLAC__stream_decoder_init_stream(ff->decoder, read_func, seek_func, tell_func, length_func, eof_func, write_func, meta_func, error_func, ff);
+	FLAC__stream_decoder_process_until_end_of_metadata (ff->decoder);
+#endif
 	return ff;
 }
 
 static void
 close_flac (flacfile_t *ff)
 {
+#ifdef LEGACY_FLAC
 	FLAC__seekable_stream_decoder_finish (ff->decoder);
 	FLAC__seekable_stream_decoder_delete (ff->decoder);
+#else
+	FLAC__stream_decoder_finish (ff->decoder);
+	FLAC__stream_decoder_delete (ff->decoder);
+#endif
 
 	if (ff->vorbis_info)
 		FLAC__metadata_object_delete (ff->vorbis_info);
@@ -229,7 +314,11 @@ flac_read (flacfile_t *ff, byte *buf, int len)
 	while (len) {
 		int         res = 0;
 		if (ff->size == ff->pos)
+#ifdef LEGACY_FLAC
 			FLAC__seekable_stream_decoder_process_single (ff->decoder);
+#else
+			FLAC__stream_decoder_process_single (ff->decoder);
+#endif
 		res = ff->size - ff->pos;
 		if (res > len)
 			res = len;
@@ -331,7 +420,11 @@ flac_stream_seek (void *file, int pos, wavinfo_t *info)
 	flacfile_t *ff = file;
 
 	ff->pos = ff->size = 0;
+#ifdef LEGACY_FLAC
 	return FLAC__seekable_stream_decoder_seek_absolute (ff->decoder, pos);
+#else
+	return FLAC__stream_decoder_seek_absolute (ff->decoder, pos);
+#endif
 }
 
 static void
