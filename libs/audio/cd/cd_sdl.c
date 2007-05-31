@@ -171,17 +171,17 @@ I_CDAudio_Update (void)
 	if (bgmvolume->value != cdvolume) {
 		if (cdvolume) {
 			Cvar_SetValue (bgmvolume, 0.0);
-			CDAudio_Pause ();
+			I_CDAudio_Pause ();
 		} else {
 			Cvar_SetValue (bgmvolume, 1.0);
-			CDAudio_Resume ();
+			I_CDAudio_Resume ();
 		}
 		cdvolume = bgmvolume->value;
 		return;
 	}
 	if (playLooping && (SDL_CDStatus (cd_id) != CD_PLAYING)
 		&& (SDL_CDStatus (cd_id) != CD_PAUSED))
-		CDAudio_Play (cd_id->cur_track + 1, true);
+		I_CDAudio_Play (cd_id->cur_track + 1, true);
 }
 
 #define CD_f_DEFINED

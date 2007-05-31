@@ -236,7 +236,7 @@ I_CDAudio_Play (int track, qboolean looping)
 	playing = true;
 
 	if (cdvolume == 0.0)
-		CDAudio_Pause ();
+		I_CDAudio_Pause ();
 }
 
 static void
@@ -327,12 +327,12 @@ I_CD_f (void)
 	}
 
 	if (strequal (command, "play")) {
-		CDAudio_Play (atoi (Cmd_Argv (2)), false);
+		I_CDAudio_Play (atoi (Cmd_Argv (2)), false);
 		return;
 	}
 
 	if (strequal (command, "loop")) {
-		CDAudio_Play (atoi (Cmd_Argv (2)), true);
+		I_CDAudio_Play (atoi (Cmd_Argv (2)), true);
 		return;
 	}
 
@@ -342,12 +342,12 @@ I_CD_f (void)
 	}
 
 	if (strequal (command, "pause")) {
-		CDAudio_Pause ();
+		I_CDAudio_Pause ();
 		return;
 	}
 
 	if (strequal (command, "resume")) {
-		CDAudio_Resume ();
+		I_CDAudio_Resume ();
 		return;
 	}
 
@@ -385,11 +385,11 @@ I_CDAudio_Update (void)
 		if (cdvolume) {
 			Cvar_SetValue (bgmvolume, 0.0);
 			cdvolume = bgmvolume->value;
-			CDAudio_Pause ();
+			I_CDAudio_Pause ();
 		} else {
 			Cvar_SetValue (bgmvolume, 1.0);
 			cdvolume = bgmvolume->value;
-			CDAudio_Resume ();
+			I_CDAudio_Resume ();
 		}
 	}
 
@@ -405,7 +405,7 @@ I_CDAudio_Update (void)
 			subchnl.cdsc_audiostatus != CDROM_AUDIO_PAUSED) {
 			playing = false;
 			if (playLooping)
-				CDAudio_Play (playTrack, true);
+				I_CDAudio_Play (playTrack, true);
 		}
 	}
 }
@@ -415,7 +415,7 @@ Mus_CDChange (cvar_t *mus_cdaudio)
 {
 	int         i;
 
-	CDAudio_Shutdown ();
+	I_CDAudio_Shutdown ();
 	if (strequal (mus_cdaudio->string, "none")) {
 		return;
 	}
