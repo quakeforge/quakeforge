@@ -17,10 +17,10 @@ snd_common=snd_channels.c  snd_mem.c snd_mix.c snd_resample.c snd_sfx.c \
 
 snd_render_default_la_LDFLAGS=	$(plugin_ldflags)
 snd_render_default_la_SOURCES=	snd_dma.c $(snd_common)
-snd_render_default_la_LIBADD=	$(VORBISFILE_LIBS) $(VORBIS_LIBS) $(LIBFLAC_LIBS) $(OGG_LIBS) $(WM_LIBS)
+snd_render_default_la_LIBADD=	$(VORBISFILE_LIBS) $(VORBIS_LIBS) $(LIBFLAC_LIBS) $(OGG_LIBS) $(WM_LIBS) $(top_builddir)/libs/util/libQFutil.la $(top_builddir)/libs/models/libQFmodels.la
 snd_render_default_la_DEPENDENCIES=
 
 snd_render_jack_la_LDFLAGS=	$(plugin_ldflags)
 snd_render_jack_la_SOURCES=	snd_jack.c $(snd_common)
-snd_render_jack_la_LIBADD=	$(VORBISFILE_LIBS) $(VORBIS_LIBS) $(LIBFLAC_LIBS) $(OGG_LIBS) $(WM_LIBS) $(JACK_LIBS)
+snd_render_jack_la_LIBADD=	$(VORBISFILE_LIBS) $(VORBIS_LIBS) $(LIBFLAC_LIBS) $(OGG_LIBS) $(WM_LIBS) $(JACK_LIBS) $(top_builddir)/libs/util/libQFutil.la $(top_builddir)/libs/models/libQFmodels.la
 snd_render_jack_la_DEPENDENCIES=
