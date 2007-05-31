@@ -22,9 +22,9 @@ libQFconsole_la_LIBADD=		$(plugin_libadd) $(top_builddir)/libs/util/libQFutil.la
 libQFconsole_la_SOURCES=	$(common_sources)
 
 console_client_la_LDFLAGS=	$(plugin_ldflags)
-console_client_la_LIBADD=	$(plugin_libadd) $(top_builddir)/libs/audio/libQFsound.la $(top_builddir)/libs/ruamoko/libQFruamoko.la
+console_client_la_LIBADD=	$(plugin_libadd) libQFconsole.la $(top_builddir)/libs/audio/libQFsound.la $(top_builddir)/libs/ruamoko/libQFruamoko.la $(top_builddir)/libs/gamecode/builtins/libQFgamecode_builtins.la
 console_client_la_SOURCES=	$(client_sources)
 
 console_server_la_LDFLAGS=	$(plugin_ldflags)
-console_server_la_LIBADD=	$(CURSES_LIBS) $(plugin_libadd)
+console_server_la_LIBADD=	$(CURSES_LIBS) $(plugin_libadd) libQFconsole.la
 console_server_la_SOURCES=	$(server_sources)

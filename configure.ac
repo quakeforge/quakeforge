@@ -2169,7 +2169,7 @@ for l in $CLIENT_PLUGIN_STATIC; do
 	CLIENT_PLUGIN_PROTOS="$CLIENT_PLUGIN_PROTOS extern plugin_t *${n}_PluginInfo (void);"
 done
 for l in $CD_PLUGIN_STATIC; do
-	CD_PLUGIN_STATIC_LIBS="$CD_PLUGIN_STATIC_LIBS cd/$l"
+	CD_PLUGIN_STATIC_LIBS="$CD_PLUGIN_STATIC_LIBS $l"
 	n="`echo $l | sed -e 's/\(.*\)\.la/\1/'`"
 	CD_PLUGIN_LIST='{"'"$n"'"'", ${n}_PluginInfo},$CD_PLUGIN_LIST"
 	CD_PLUGIN_PROTOS="$CD_PLUGIN_PROTOS extern plugin_t *${n}_PluginInfo (void);"
@@ -2317,7 +2317,6 @@ AC_OUTPUT(
 
 	libs/Makefile
 	libs/audio/Makefile
-	libs/audio/cd/Makefile
 	libs/audio/targets/Makefile
 	libs/audio/renderer/Makefile
 	libs/console/Makefile
