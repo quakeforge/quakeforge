@@ -64,7 +64,7 @@ void		NET_Init (int port);
 void		NET_Init (int port);
 void		NET_Shutdown (void);
 qboolean	NET_GetPacket (void);
-void		NET_SendPacket (int length, void *data, netadr_t to);
+void		NET_SendPacket (int length, const void *data, netadr_t to);
 
 qboolean	NET_CompareAdr (netadr_t a, netadr_t b);
 qboolean	NET_CompareBaseAdr (netadr_t a, netadr_t b);
@@ -157,7 +157,7 @@ qboolean Netchan_CanPacket (netchan_t *chan);
 qboolean Netchan_CanReliable (netchan_t *chan);
 
 static inline void
-Netchan_SendPacket (int length, void *data, netadr_t to)
+Netchan_SendPacket (int length, const void *data, netadr_t to)
 {
 #if 0
 	if (net_packetlog->int_val)

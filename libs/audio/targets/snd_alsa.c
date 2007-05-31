@@ -126,14 +126,16 @@ SNDDMA_Init (void)
 	int					 bps = -1, stereo = -1;
 	unsigned int		 rate = 0;
 	snd_pcm_hw_params_t	*hw;
+	snd_pcm_hw_params_t	**_hw = &hw;
 	snd_pcm_sw_params_t	*sw;
+	snd_pcm_sw_params_t	**_sw = &sw;
 	snd_pcm_uframes_t	 frag_size;
 
 	if (!load_libasound ())
 		return false;
 
-	snd_pcm_hw_params_alloca (&hw);
-	snd_pcm_sw_params_alloca (&sw);
+	snd_pcm_hw_params_alloca (_hw);
+	snd_pcm_sw_params_alloca (_sw);
 
 	if (snd_device->string[0])
 		pcmname = snd_device->string;

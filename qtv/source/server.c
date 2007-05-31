@@ -364,7 +364,7 @@ server_getchallenge (connection_t *con, server_t *sv)
 {
 	static const char *getchallenge = "\377\377\377\377getchallenge\n";
 
-	Netchan_SendPacket (strlen (getchallenge), (void *) getchallenge, sv->adr);
+	Netchan_SendPacket (strlen (getchallenge), getchallenge, sv->adr);
 }
 
 static void

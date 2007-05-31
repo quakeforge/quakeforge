@@ -178,29 +178,30 @@ GIB_Function_f (void)
 	gib_tree_t *program;
 	gib_function_t *func;
 	int i;
+	int argc = GIB_Argc ();
 	
-	if (GIB_Argc () < 3)
+	if (argc < 3)
 		GIB_USAGE ("name [arg1 arg2 ...] program");
 	else {
 		// Is the function program already tokenized?
-		if (GIB_Argm (GIB_Argc()-1)->delim != '{') {
+		if (GIB_Argm (argc-1)->delim != '{') {
 			// Parse on the fly
 			if (!(program = GIB_Parse_Lines (GIB_Argv
-							(GIB_Argc()-1), 0))) {
+							(argc-1), 0))) {
 				// Error!
 				GIB_Error ("ParseError", "Parse error while defining function '%s'.",
 						   GIB_Argv (1));
 				return;
 			}
 		} else
-			program = GIB_Argm (GIB_Argc()-1)->children;
-		func = GIB_Function_Define (GIB_Argv (1), GIB_Argv (GIB_Argc()-1), program,
+			program = GIB_Argm (argc-1)->children;
+		func = GIB_Function_Define (GIB_Argv (1), GIB_Argv (argc-1), program,
 							 GIB_DATA (cbuf_active)->script,
 							 GIB_DATA (cbuf_active)->globals);
 		llist_flush (func->arglist);
-		for (i = 2; i < GIB_Argc()-1; i++)
+		for (i = 2; i < argc-1; i++)
 			llist_append (func->arglist, strdup (GIB_Argv(i)));
-		func->minargs = GIB_Argc()-2;
+		func->minargs = argc-2;
 	}
 }
 

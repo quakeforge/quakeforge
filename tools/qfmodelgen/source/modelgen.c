@@ -179,8 +179,9 @@ ExpandPath (const char *path)
 {
 	static char full[1024];
 
-	if (!qdir)
-		Sys_Error ("ExpandPath called without qdir set");
+	//FIXME buffer overflow central
+	//if (!qdir)
+	//	Sys_Error ("ExpandPath called without qdir set");
 	if (path[0] == '/' || path[0] == '\\' || path[1] == ':')
 		return path;
 	sprintf (full, "%s%s", qdir, path);

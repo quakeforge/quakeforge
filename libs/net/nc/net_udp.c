@@ -312,7 +312,7 @@ NET_GetPacket (void)
 }
 
 void
-NET_SendPacket (int length, void *data, netadr_t to)
+NET_SendPacket (int length, const void *data, netadr_t to)
 {
 	int         ret;
 	struct sockaddr_in addr;
