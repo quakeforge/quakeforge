@@ -213,12 +213,12 @@ Cmd_CompleteCommand (const char *partial)
 
 	// check for exact match
 	for (cmd = cmd_functions; cmd; cmd = cmd->next)
-		if (!strcasecmp (partial, cmd->name))
+		if (!strcmp (partial, cmd->name))
 			return cmd->name;
 
 	// check for partial match
 	for (cmd = cmd_functions; cmd; cmd = cmd->next)
-		if (!strncasecmp (partial, cmd->name, len))
+		if (!strncmp (partial, cmd->name, len))
 			return cmd->name;
 
 	return NULL;
@@ -247,7 +247,7 @@ Cmd_CompleteCountPossible (const char *partial)
 
 	// Loop through the command list and count all partial matches
 	for (cmd = cmd_functions; cmd; cmd = cmd->next)
-		if (!strncasecmp (partial, cmd->name, len))
+		if (!strncmp (partial, cmd->name, len))
 			h++;
 
 	return h;
@@ -277,7 +277,7 @@ Cmd_CompleteBuildList (const char *partial)
 	SYS_CHECKMEM (buf);
 	// Loop through the alias list and print all matches
 	for (cmd = cmd_functions; cmd; cmd = cmd->next)
-		if (!strncasecmp (partial, cmd->name, len))
+		if (!strncmp (partial, cmd->name, len))
 			buf[bpos++] = cmd->name;
 
 	buf[bpos] = NULL;
@@ -463,7 +463,7 @@ Cmd_Help_f (void)
 
 	name = Cmd_Argv (1);
 
-	for (cmd = cmd_functions; cmd && strcasecmp (name, cmd->name);
+	for (cmd = cmd_functions; cmd && strcmp (name, cmd->name);
 		 cmd = cmd->next);
 	if (cmd) {
 		Sys_Printf ("%s\n", cmd->description);

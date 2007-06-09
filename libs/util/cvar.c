@@ -148,22 +148,22 @@ Cvar_CompleteVariable (const char *partial)
 
 	// check exact match
 	for (cvar = cvar_vars; cvar; cvar = cvar->next)
-		if (!strcasecmp (partial, cvar->name))
+		if (!strcmp (partial, cvar->name))
 			return cvar->name;
 
 	// check aliases too :)
 	for (alias = calias_vars; alias; alias = alias->next)
-		if (!strcasecmp (partial, alias->name))
+		if (!strcmp (partial, alias->name))
 			return alias->name;
 
 	// check partial match
 	for (cvar = cvar_vars; cvar; cvar = cvar->next)
-		if (!strncasecmp (partial, cvar->name, len))
+		if (!strncmp (partial, cvar->name, len))
 			return cvar->name;
 
 	// check aliases too :)
 	for (alias = calias_vars; alias; alias = alias->next)
-		if (!strncasecmp (partial, alias->name, len))
+		if (!strncmp (partial, alias->name, len))
 			return alias->name;
 
 	return NULL;
@@ -191,7 +191,7 @@ Cvar_CompleteCountPossible (const char *partial)
 	
 	// Loop through the cvars and count all possible matches
 	for (cvar = cvar_vars; cvar; cvar = cvar->next)
-		if (!strncasecmp(partial, cvar->name, len))
+		if (!strncmp(partial, cvar->name, len))
 			h++;
 	
 	return h;
@@ -220,7 +220,7 @@ Cvar_CompleteBuildList (const char *partial)
 	SYS_CHECKMEM (buf);
 	// Loop through the alias list and print all matches
 	for (cvar = cvar_vars; cvar; cvar = cvar->next)
-		if (!strncasecmp(partial, cvar->name, len))
+		if (!strncmp(partial, cvar->name, len))
 			buf[bpos++] = cvar->name;
 
 	buf[bpos] = NULL;
