@@ -406,15 +406,6 @@ void SND_ResampleMono (sfxbuffer_t *sc, byte *data, int length, void *prev);
 	\param prev		pointer to end of last resample for smoothing
 */
 void SND_ResampleStereo (sfxbuffer_t *sc, byte *data, int length, void *prev);
-
-/** Copy stereo data into sample buffer. No resampling is done. Useful for
-	generated effects/music.
-	\param sc		buffer to write resampled sound
-	\param data		raw sample data
-	\param length	number of raw samples to resample
-	\param prev		pointer to end of last resample for smoothing
-*/
-void SND_NoResampleStereo (sfxbuffer_t *sc, byte *data, int length, void *prev);
 //@}
 
 

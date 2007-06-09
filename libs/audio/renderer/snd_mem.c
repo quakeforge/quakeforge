@@ -168,7 +168,6 @@ read_samples (sfxbuffer_t *buffer, int count, void *prev)
 		prev = buffer->data + s * buffer->bps;
 		read_samples (buffer, count, prev);
 	} else {
-		byte       *data;
 		float       stepscale;
 		int         samples, size;
 		sfx_t      *sfx = buffer->sfx;
@@ -179,9 +178,9 @@ read_samples (sfxbuffer_t *buffer, int count, void *prev)
 
 		samples = count * stepscale;
 		size = samples * info->width * info->channels;
-		data = alloca (size);
 
 		if (stream->resample) {
+			byte       *data = alloca (size);
 			if (stream->read (stream->file, data, size, info) != size)
 				Sys_Printf ("%s r\n", sfx->name);
 			stream->resample (buffer, data, samples, prev);
