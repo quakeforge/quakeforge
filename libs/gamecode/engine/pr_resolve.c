@@ -138,6 +138,10 @@ PR_ResolveGlobals (progs_t *pr)
 			goto error;
 		pr->pr_param_size = G_INT (pr, def->ofs);
 	}
+	if (pr->pr_saved_params)
+		free (pr->pr_saved_params);
+	pr->pr_saved_params = calloc (pr->pr_param_size * MAX_PARMS,
+								  sizeof (pr_type_t));
 	memcpy (pr->pr_real_params, pr->pr_params, sizeof (pr->pr_params));
 	if (!pr->globals.time) {
 		if ((def = PR_FindGlobal (pr, "time")))

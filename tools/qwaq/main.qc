@@ -5,7 +5,7 @@ string read_file (string filename)
 	file = Qopen (filename, "rtz");
 	if (!file) {
 		printf ("Can't open %s for reading."
-				" Probably a bad hardcoded filename:)\n");
+				" Probably a bad hardcoded filename:)\n", filename);
 		return NIL;
 	}
 	while ((d = Qgetline (file)))

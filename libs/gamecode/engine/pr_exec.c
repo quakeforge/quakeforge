@@ -75,6 +75,39 @@ PR_RunError (progs_t * pr, const char *error, ...)
 	PR_Error (pr, "Program error: %s", string->str);
 }
 
+VISIBLE void
+PR_SaveParams (progs_t *pr)
+{
+	int         i;
+	int         size = pr->pr_param_size * sizeof (pr_type_t);
+
+	pr->pr_param_ptrs[0] = pr->pr_params[0];
+	pr->pr_param_ptrs[1] = pr->pr_params[1];
+	pr->pr_params[0] = pr->pr_real_params[0];
+	pr->pr_params[1] = pr->pr_real_params[1];
+	for (i = 0; i < pr->pr_argc; i++) {
+		memcpy (pr->pr_saved_params + i * pr->pr_param_size,
+				pr->pr_real_params[i], size);
+		if (i < 2)
+			memcpy (pr->pr_real_params[i], pr->pr_param_ptrs[0], size);
+	}
+	pr->pr_saved_argc = pr->pr_argc;
+}
+
+VISIBLE void
+PR_RestoreParams (progs_t *pr)
+{
+	int         i;
+	int         size = pr->pr_param_size * sizeof (pr_type_t);
+
+	pr->pr_params[0] = pr->pr_param_ptrs[0];
+	pr->pr_params[1] = pr->pr_param_ptrs[1];
+	pr->pr_argc = pr->pr_saved_argc;
+	for (i = 0; i < pr->pr_argc; i++)
+		memcpy (pr->pr_real_params[i],
+				pr->pr_saved_params + i * pr->pr_param_size, size);
+}
+
 VISIBLE inline void
 PR_PushFrame (progs_t *pr)
 {

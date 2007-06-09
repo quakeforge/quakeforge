@@ -696,11 +696,14 @@ obj_send_initialize (progs_t *pr, pr_class_t *class)
 			 i < method_list->method_count; i++, method++) {
 			sel = &G_STRUCT (pr, pr_sel_t, method->method_name);
 			if (sel->sel_id == selector->sel_id) {
-				int         size = pr->pr_param_size * MAX_PARMS;
-				pr_type_t  *params = alloca (size * sizeof (pr_type_t));
-				memcpy (params, *pr->pr_params, size * sizeof (pr_type_t));
+				PR_PushFrame (pr);
+				PR_SaveParams (pr);
+				// param 0 is known to be the class pointer
+				P_POINTER (pr, 1) = method->method_name;
+				// pr->pr_argc is known to be 2
 				PR_ExecuteProgram (pr, method->method_imp);
-				memcpy (*pr->pr_params, params, size * sizeof (pr_type_t));
+				PR_RestoreParams (pr);
+				PR_PopFrame (pr);
 				return;
 			}
 		}

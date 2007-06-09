@@ -87,6 +87,16 @@ void PR_RunError (progs_t *pr, const char *error, ...) __attribute__((format(pri
 		(pr)->pr_params[1] = (pr)->pr_real_params[1];	\
 	} while (0)
 
+/** Save the current parameters.
+	\param pr pointer to ::progs_t VM struct
+*/
+void PR_SaveParams (progs_t *pr);
+
+/** Restore the parameters saved by PR_SaveParams().
+	\param pr pointer to ::progs_t VM struct
+*/
+void PR_RestoreParams (progs_t *pr);
+
 /** Push an execution frame onto the VM stack. Saves current execution state.
 	\param pr pointer to ::progs_t VM struct
 */
@@ -1407,6 +1417,9 @@ struct progs_s {
 	pr_type_t  *pr_return;
 	pr_type_t  *pr_params[MAX_PARMS];
 	pr_type_t  *pr_real_params[MAX_PARMS];
+	pr_type_t  *pr_param_ptrs[2];
+	pr_type_t  *pr_saved_params;
+	int         pr_saved_argc;
 	int         pr_param_size;		///< covers both params and return
 
 	int         pr_edict_size;		///< in bytes
