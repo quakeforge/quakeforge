@@ -108,6 +108,8 @@ init_qf (void)
 	Sys_Init_Cvars ();
 	Cmd_Init ();
 
+	Memory_Init (malloc (1024 * 1024), 1024 * 1024);
+
 	Cvar_Get ("pr_debug", "1", 0, 0, 0);
 	Cvar_Get ("pr_boundscheck", "0", 0, 0, 0);
 

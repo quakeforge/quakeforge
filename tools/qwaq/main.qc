@@ -58,11 +58,12 @@ void () test_str =
 	print (a + b + c + d);
 	printf ("%i \"%.5s\" %3.4f %v\n", 14, "hi there", 3.1415926, '4 1 3');
 };
-
+void (...) dprint = #0;
 integer (integer argc, string []argv) main =
 {
 	local integer i;
 	local SEL sel;
+	dprint ("foo", "bar\n");
 	for (i = 0; i < argc; i++) {
 		print (argv[i]);
 		print ("\n");

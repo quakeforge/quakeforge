@@ -64,15 +64,19 @@ VISIBLE const char *pr_gametype = "";
 VISIBLE char *
 PF_VarString (progs_t *pr, int first)
 {
-	char	   *out;
+	char	   *out, *dst;
+	const char *src;
 	int			len, i;
 
 	for (len = 0, i = first; i < pr->pr_argc; i++)
 		len += strlen (P_GSTRING (pr, i));
-	out = Hunk_TempAlloc (len + 1);
-	out[0] = 0;
-	for (i = first; i < pr->pr_argc; i++)
-		strcat (out, P_GSTRING (pr, i));
+	dst = out = Hunk_TempAlloc (len + 1);
+	for (i = first; i < pr->pr_argc; i++) {
+		src = P_GSTRING (pr, i);
+		while (*src)
+			*dst++ = *src++;
+	}
+	*dst = 0;
 	return out;
 }
 
