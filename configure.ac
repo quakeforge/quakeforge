@@ -1788,6 +1788,7 @@ if test "x$HAVE_FBDEV" = xyes; then
 		QF_NEED(vid, [common sw])
 		QF_NEED(qw, [client common])
 		QF_NEED(nq, [client common])
+		QF_NEED(console, [client])
 	fi
 	CAN_BUILD_SW=yes
 fi
@@ -1803,6 +1804,7 @@ if test "x$HAVE_X" = xyes; then
 		QF_NEED(vid, [common gl x11])
 		QF_NEED(qw, [client common])
 		QF_NEED(nq, [client common])
+		QF_NEED(console, [client])
 	fi
 	if test "x$ENABLE_clients_x11" = xyes; then
 		QW_TARGETS="$QW_TARGETS qw-client-x11\$(EXEEXT)"
@@ -1813,6 +1815,7 @@ if test "x$HAVE_X" = xyes; then
 		QF_NEED(vid, [common sw x11])
 		QF_NEED(qw, [client common])
 		QF_NEED(nq, [client common])
+		QF_NEED(console, [client])
 	fi
 fi
 if test "x$HAVE_MGL" = xyes; then
@@ -1825,6 +1828,7 @@ if test "x$HAVE_MGL" = xyes; then
 		QF_NEED(vid, [common sw])
 		QF_NEED(qw, [client common])
 		QF_NEED(nq, [client common])
+		QF_NEED(console, [client])
 	fi
 	CAN_BUILD_SW=yes
 fi
@@ -1838,6 +1842,7 @@ if test "x$HAVE_SDL" = xyes; then
 		QF_NEED(vid, [common sdl sw])
 		QF_NEED(qw, [client common sdl])
 		QF_NEED(nq, [client common sdl])
+		QF_NEED(console, [client])
 	fi
 	CAN_BUILD_SW=yes
 	if test "x$ENABLE_clients_sdl32" = xyes; then
@@ -1849,6 +1854,7 @@ if test "x$HAVE_SDL" = xyes; then
 		QF_NEED(vid, [common sdl sw32])
 		QF_NEED(qw, [client common sdl])
 		QF_NEED(nq, [client common sdl])
+		QF_NEED(console, [client])
 	fi
 	CAN_BUILD_SW32=yes
 	if test "x$ENABLE_clients_sgl" = xyes; then
@@ -1861,6 +1867,7 @@ if test "x$HAVE_SDL" = xyes; then
 		QF_NEED(vid, [common sdl gl])
 		QF_NEED(qw, [client common sdl])
 		QF_NEED(nq, [client common sdl])
+		QF_NEED(console, [client])
 	fi
 fi
 if test "x$HAVE_SVGA" = xyes; then
@@ -1873,6 +1880,7 @@ if test "x$HAVE_SVGA" = xyes; then
 		QF_NEED(vid, [asm common svga sw])
 		QF_NEED(qw, [client common])
 		QF_NEED(nq, [client common])
+		QF_NEED(console, [client])
 	fi
 	CAN_BUILD_SW=yes
 	if test "x$ENABLE_clients_3dfx" = xyes; then
@@ -1884,6 +1892,7 @@ if test "x$HAVE_SVGA" = xyes; then
 		QF_NEED(vid, [asm common gl svga])
 		QF_NEED(qw, [client common])
 		QF_NEED(nq, [client common])
+		QF_NEED(console, [client])
 	fi
 	CAN_BUILD_GL=yes
 fi
@@ -1897,6 +1906,7 @@ if test "x$mingw" = xyes; then
 		QF_NEED(vid, [common gl])
 		QF_NEED(qw, [client common])
 		QF_NEED(nq, [client common])
+		QF_NEED(console, [client])
 	fi
 	CAN_BUILD_GL=yes
 fi
@@ -1906,11 +1916,13 @@ if test "x$ENABLE_servers_nq" = xyes; then
 	NQ_TARGETS="nq-server\$(EXEEXT) $NQ_TARGETS"
 	SV_TARGETS="$SV_TARGETS nq"
 	QF_NEED(nq, [common server])
+	QF_NEED(console, [server])
 fi
 if test "x$ENABLE_servers_qtv" = xyes; then
 	QTV_TARGETS="qtv\$(EXEEXT) $QTV_TARGETS"
 	SV_TARGETS="$SV_TARGETS qtv"
 #	QF_NEED(qtv, [common server])
+	QF_NEED(console, [server])
 fi
 if test "x$ENABLE_servers_master" = xyes; then
 	HW_TARGETS="hw-master\$(EXEEXT) $HW_TARGETS"
@@ -1921,6 +1933,7 @@ if test "x$ENABLE_servers_qw" = xyes; then
 	QW_TARGETS="qw-server\$(EXEEXT) $QW_TARGETS"
 	SV_TARGETS="$SV_TARGETS qw"
 	QF_NEED(qw, [common server])
+	QF_NEED(console, [server])
 fi
 
 unset TOOLS_TARGETS
@@ -2085,9 +2098,15 @@ else
 fi
 AC_SUBST(ALSA_PLUGIN)
 
-SERVER_PLUGIN_TARGETS="console_server.la"
+SERVER_PLUGIN_TARGETS=""
+if test x$console_need_server = xyes; then
+	SERVER_PLUGIN_TARGETS="console_server.la"
+fi
 SERVER_PLUGIN_STATIC=""
-CLIENT_PLUGIN_TARGETS="console_client.la"
+CLIENT_PLUGIN_TARGETS=""
+if test x$console_need_client = xyes; then
+	CLIENT_PLUGIN_TARGETS="console_client.la"
+fi
 CLIENT_PLUGIN_STATIC=""
 CD_PLUGIN_STATIC=""
 SND_PLUGIN_STATIC=""
