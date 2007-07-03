@@ -55,6 +55,7 @@ static jack_client_t *jack_handle;
 static jack_port_t *jack_out[2];
 static dma_t    _snd_shm;
 static float   *output[2];
+static cvar_t  *snd_jack_server;
 
 static void
 s_stop_all_sounds (void)
@@ -167,11 +168,15 @@ s_init (void)
 						   "control sample interpolation");
 	snd_loadas8bit = Cvar_Get ("snd_loadas8bit", "0", CVAR_NONE, NULL,
 							   "Toggles loading sounds as 8-bit samples");
+	snd_jack_server = Cvar_Get ("snd_jack_server", "default", CVAR_ROM, NULL,
+								"The name of the JACK server to connect to");
 
 	SND_SFX_Init ();
 	SND_Channels_Init ();
 
-	if ((jack_handle = jack_client_new ("QuakeForge")) == 0) {
+	if ((jack_handle = jack_client_open ("QuakeForge",
+										 JackServerName | JackNoStartServer, 0,
+										 snd_jack_server->string)) == 0) {
 		Sys_Printf ("Could not connect to JACK\n");
 		return;
 	}
