@@ -113,7 +113,6 @@ byte        net_message_buffer[MAX_UDP_PACKET];
 #endif
 
 
-
 static void
 NetadrToSockadr (netadr_t *a, struct sockaddr_in *s)
 {
@@ -290,7 +289,7 @@ NET_GetPacket (void)
 	}
 
 	// Check for malformed packets
-	if (ntohs(net_from.port)<1024) {
+	if (ntohs (net_from.port) < 1024) {
 		Con_Printf ("Warning: Packet from %s dropped: Bad port\n",
 					NET_AdrToString (net_from));
 		return false;
