@@ -64,6 +64,12 @@ typedef enum {
 	pt_flame
 } ptype_t;
 
+typedef enum {
+	part_tex_dot,
+	part_tex_spark,
+	part_tex_smoke,
+} ptextype_t;
+
 // !!! if this is changed, it must be changed in d_ifacea.h too !!!
 typedef struct particle_s
 {
@@ -71,7 +77,7 @@ typedef struct particle_s
 	vec3_t		org;
 	int			color;
 	float		alpha;
-	int			tex;
+	ptextype_t	tex;
 	float		scale;
 // drivers never touch the following fields
 	vec3_t		vel;

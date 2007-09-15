@@ -64,10 +64,6 @@ int		ramp1[8] = { 0x6f, 0x6d, 0x6b, 0x69, 0x67, 0x65, 0x63, 0x61 };
 int		ramp2[8] = { 0x6f, 0x6e, 0x6d, 0x6c, 0x6b, 0x6a, 0x68, 0x66 };
 int		ramp3[8] = { 0x6d, 0x6b, 0x06, 0x05, 0x04, 0x03, 0x02, 0x01 };
 
-int		part_tex_dot = 0;
-int		part_tex_spark = 1;
-int		part_tex_smoke = 2;
-
 int						pVAsize;
 int					   *pVAindices;
 varray_t2f_c4ub_v3f_t  *particleVertexArray;
@@ -1771,4 +1767,24 @@ VISIBLE void
 R_Particles_Init_Cvars (void)
 {
 	R_ParticleFunctionInit ();
+}
+
+VISIBLE void
+R_Particle_New (ptype_t type, int texnum, const vec3_t org, float scale,
+			    const vec3_t vel, float die, int color, float alpha, float ramp)
+{
+	if (numparticles >= r_maxparticles)
+		return;
+	particle_new (type, texnum, org, scale, vel, die, color, alpha, ramp);
+}
+
+VISIBLE void
+R_Particle_NewRandom (ptype_t type, int texnum, const vec3_t org, int org_fuzz,
+					  float scale, int vel_fuzz, float die, int color,
+					  float alpha, float ramp)
+{
+	if (numparticles >= r_maxparticles)
+		return;
+	particle_new_random (type, texnum, org, org_fuzz, scale, vel_fuzz, die,
+						 color, alpha, ramp);
 }
