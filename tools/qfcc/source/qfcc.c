@@ -185,7 +185,7 @@ WriteData (int crc)
 	for (def = pr.scope->head; def; def = def->def_next) {
 		if (def->local || !def->name)
 			continue;
-		if (options.traditional && *def->name == '.'
+		if (options.code.progsversion == PROG_ID_VERSION && *def->name == '.'
 			&& strcmp (def->name, ".imm") != 0
 			&& strcmp (def->name, ".debug_file") != 0)
 			continue;
@@ -425,7 +425,7 @@ finish_compilation (void)
 	if (errors)
 		return !errors;
 
-	if (!options.traditional) {
+	if (options.code.progsversion != PROG_ID_VERSION) {
 		e.type = ex_integer;
 		e.e.integer_val = type_size (&type_param);
 		ReuseConstant (&e, get_def (&type_integer, ".param_size", pr.scope,

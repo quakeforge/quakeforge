@@ -670,12 +670,16 @@ init_types (void)
 	if (options.traditional)
 		return;
 
-	strct = type_zero.s.strct;
-	new_struct_field (strct, &type_vector,     "vector_val",     vis_public);
-	new_struct_field (strct, &type_quaternion, "quaternion_val", vis_public);
+	if (options.code.progsversion != PROG_ID_VERSION) {
+		strct = type_zero.s.strct;
+		new_struct_field (strct, &type_vector, "vector_val", vis_public);
+		new_struct_field (strct, &type_quaternion, "quaternion_val",
+						  vis_public);
 
-	strct = type_param.s.strct;
-	new_struct_field (strct, &type_quaternion, "quaternion_val", vis_public);
+		strct = type_param.s.strct;
+		new_struct_field (strct, &type_quaternion, "quaternion_val",
+						  vis_public);
+	}
 
 	strct = quaternion_struct = get_struct (0, 1);
 	init_struct (strct, new_type (), str_struct, 0);
