@@ -341,10 +341,14 @@ locs_loc (void)
 	const char     *desc = NULL;
 
 	// FIXME: need to check to ensure you are actually in the game and alive.
-	if (Cmd_Argc () == 1) {
+	if (Cmd_Argc () == 1 || strcmp (Cmd_Argv (1), "help") == 0) {
 		Con_Printf ("loc <add|delete|rename|move|save|zsave> [<description>] "
 					":Modifies location data, add|rename take <description> "
 					"parameter\n");
+		return;
+	}
+	if (!cl.worldmodel) {
+		Con_Printf ("No map loaded. Unable to work with location markers.\n");
 		return;
 	}
 	if (Cmd_Argc () >= 3)
