@@ -190,6 +190,46 @@ SV_SetMaster_f (void)
 	svs.last_heartbeat = -99999;
 }
 
+#define RESTART_CLSTUFF \
+	"wait;wait;wait;wait;wait;"\
+	"wait;wait;wait;wait;wait;"\
+	"wait;wait;wait;reconnect\n"
+
+static void
+SV_Restart_f (void)
+{
+	client_t   *client;
+	int         j;
+
+	SZ_Clear (net_message->message);
+
+	MSG_WriteByte (net_message->message, svc_print);
+	MSG_WriteByte (net_message->message, PRINT_HIGH);
+	MSG_WriteString (net_message->message,
+		"\x9d\x9e\x9e\x9e\x9e\x9e\x9e\x9e"
+		"\x9e\x9e\x9e\x9e\x9e\x9e\x9e\x9e"
+		"\x9e\x9e\x9e\x9e\x9e\x9e\x9e\x9e"
+		"\x9e\x9e\x9f\n"
+		" Server \xf2\xe5\xf3\xf4\xe1\xf2\xf4 engaged\xae\xae\xae\n"
+		"\x9d\x9e\x9e\x9e\x9e\x9e\x9e\x9e"
+		"\x9e\x9e\x9e\x9e\x9e\x9e\x9e\x9e"
+		"\x9e\x9e\x9e\x9e\x9e\x9e\x9e\x9e"
+		"\x9e\x9e\x9f\n\n");
+	MSG_WriteByte (net_message->message, svc_stufftext);
+	MSG_WriteString (net_message->message, RESTART_CLSTUFF);
+	MSG_WriteByte (net_message->message, svc_disconnect);
+
+	for (j = 0, client = svs.clients; j < MAX_CLIENTS; j++, client++) {
+		if (client->state >= cs_spawned)
+			Netchan_Transmit (&client->netchan, net_message->message->cursize,
+							  net_message->message->data);
+	}
+	Con_Printf ("Shutting down: server restart, shell must relaunch server\n");
+	SV_Shutdown ();
+	// Error code 2 on exit, indication shell must restart the server
+	exit (2);
+}
+
 static void
 SV_Quit_f (void)
 {
@@ -1148,6 +1188,8 @@ SV_InitOperatorCommands (void)
 					"to the master server.\n"
 					"A heartbeat tells the Master the server's IP address and "
 					"that it is still alive.");
+	Cmd_AddCommand ("restart", SV_Restart_f, "Restart the server (with shell "
+					"support)");
 	Cmd_AddCommand ("quit", SV_Quit_f, "Shut down the server");
 	Cmd_AddCommand ("god", SV_God_f, "Toggle god cheat to userid (god userid) "
 					"Requires cheats are enabled");
