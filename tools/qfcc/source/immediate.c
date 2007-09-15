@@ -238,6 +238,7 @@ ReuseConstant (expr_t *expr, def_t *def)
 			def->ofs = cn->ofs;
 			def->initialized = def->constant = 1;
 			def->nosave = 1;
+			def->local = 0;
 			cn = def;
 		} else {
 			if (cn->type != type) {
