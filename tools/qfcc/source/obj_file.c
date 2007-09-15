@@ -566,18 +566,19 @@ qfo_to_progs (qfo_t *qfo, pr_info_t *pr)
 		 i < qfo->num_funcs; i++, pf++, qf++) {
 		*pr->func_tail = pf;
 		pr->func_tail = &pf->next;
+		pf->def = pr->scope->head + qf->def;
 		pf->aux = new_auxfunction ();
 		pf->aux->function = i + 1;
 		pf->aux->source_line = qf->line;
 		pf->aux->line_info = qf->line_info;
 		pf->aux->local_defs = 0;
 		pf->aux->num_locals = 0;
+		pf->aux->return_type = pf->def->type->aux_type->type;
 		pf->builtin = qf->builtin;
 		pf->code = qf->code;
 		pf->function_num = i + 1;
 		pf->s_file = qf->file;
 		pf->s_name = qf->name;
-		pf->def = pr->scope->head + qf->def;
 		pf->scope = new_scope (sc_params, init_space (qf->locals_size, 0),
 							   pr->scope);
 		if (qf->num_local_defs) {

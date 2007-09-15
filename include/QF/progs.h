@@ -1294,6 +1294,7 @@ void PR_Debug_Init (void);
 void PR_Debug_Init_Cvars (void);
 int PR_LoadDebug (progs_t *pr);
 void PR_Debug_Watch (progs_t *pr, const char *expr);
+void PR_Debug_Print (progs_t *pr, const char *expr);
 pr_auxfunction_t *PR_Get_Lineno_Func (progs_t *pr, pr_lineno_t *lineno);
 pr_uint_t PR_Get_Lineno_Addr (progs_t *pr, pr_lineno_t *lineno);
 pr_uint_t PR_Get_Lineno_Line (progs_t *pr, pr_lineno_t *lineno);

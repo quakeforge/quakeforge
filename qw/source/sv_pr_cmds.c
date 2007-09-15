@@ -107,7 +107,7 @@ PF_objerror (progs_t *pr)
 	ED_Print (pr, ed);
 	ED_Free (pr, ed);
 
-	Sys_Error ("Program error");
+	PR_RunError (pr, "object error");
 }
 
 /*

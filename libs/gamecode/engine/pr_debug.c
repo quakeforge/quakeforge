@@ -121,84 +121,68 @@ source_path_f (cvar_t *var)
 }
 
 static void
-pr_debug_watch_error (script_t *script, const char *msg)
+pr_debug_expression_error (script_t *script, const char *msg)
 {
 	Sys_Printf ("%s\n", msg);
 }
 
-VISIBLE void
-PR_Debug_Watch (progs_t *pr, const char *expr)
+static pr_type_t *
+parse_expression (progs_t *pr, const char *expr)
 {
-	script_t   *ws;
+	script_t   *es;
 	char       *e;
+	pr_type_t  *expr_ptr;
 
-	if (!expr) {
-		Sys_Printf ("watch <watchpoint expr>\n");
-		if (pr->watch) {
-			Sys_Printf ("    watching [%d]\n",
-						(int) (intptr_t) (pr->watch - pr->pr_globals));
-			if (pr->wp_conditional)
-				Sys_Printf ("        if new val == %d\n",
-							pr->wp_val.integer_var);
-		} else {
-			Sys_Printf ("    none active\n");
-		}
-		return;
-	}
-	ws = Script_New ();
-	ws->error = pr_debug_watch_error;
-	Script_Start (ws, "<console>", expr);
-	pr->watch = 0;
-	if (Script_GetToken (ws, 1)) {
-		if (strequal (ws->token->str, "[")) {
+	es = Script_New ();
+	es->error = pr_debug_expression_error;
+	Script_Start (es, "<console>", expr);
+	expr_ptr = 0;
+	if (Script_GetToken (es, 1)) {
+		if (strequal (es->token->str, "[")) {
 			edict_t    *ent;
 			ddef_t     *field;
 
-			if (!Script_GetToken (ws, 1))
+			if (!Script_GetToken (es, 1))
 				goto error;
-			ent = EDICT_NUM (pr, strtol (ws->token->str, &e, 0));
-			if (e == ws->token->str)
+			ent = EDICT_NUM (pr, strtol (es->token->str, &e, 0));
+			if (e == es->token->str)
 				goto error;
-			if (!Script_GetToken (ws, 1) && !strequal (ws->token->str, "]" ))
+			if (!Script_GetToken (es, 1) && !strequal (es->token->str, "]" ))
 				goto error;
-			if (!Script_GetToken (ws, 1) && !strequal (ws->token->str, "." ))
+			if (!Script_GetToken (es, 1) && !strequal (es->token->str, "." ))
 				goto error;
-			if (!Script_GetToken (ws, 1))
+			if (!Script_GetToken (es, 1))
 				goto error;
-			field = PR_FindField (pr, ws->token->str);
+			field = PR_FindField (pr, es->token->str);
 			if (!field)
 				goto error;
-			pr->watch = &ent->v[field->ofs];
+			expr_ptr = &ent->v[field->ofs];
+		} else if (isdigit (es->token->str[0])) {
+			expr_ptr = PR_GetPointer (pr, strtol (es->token->str, 0, 0));
 		} else {
-			ddef_t     *global = PR_FindGlobal (pr, ws->token->str);
+			ddef_t     *global = PR_FindGlobal (pr, es->token->str);
 			if (!global)
 				goto error;
-			pr->watch = PR_GetPointer (pr, global->ofs);
+			expr_ptr = PR_GetPointer (pr, global->ofs);
 		}
 		pr->wp_conditional = 0;
-		if (Script_TokenAvailable (ws, 1)) {
-			if (!Script_GetToken (ws, 1) && !strequal (ws->token->str, "==" ))
+		if (Script_TokenAvailable (es, 1)) {
+			if (!Script_GetToken (es, 1) && !strequal (es->token->str, "==" ))
 				goto error;
-			if (!Script_GetToken (ws, 1))
+			if (!Script_GetToken (es, 1))
 				goto error;
-			pr->wp_val.integer_var = strtol (ws->token->str, &e, 0);
-			if (e == ws->token->str)
+			pr->wp_val.integer_var = strtol (es->token->str, &e, 0);
+			if (e == es->token->str)
 				goto error;
 			if (*e == '.' || *e == 'e' || *e == 'E')
-				pr->wp_val.float_var = strtod (ws->token->str, &e);
+				pr->wp_val.float_var = strtod (es->token->str, &e);
 			pr->wp_conditional = 1;
 		}
-		if (Script_TokenAvailable (ws, 1))
+		if (Script_TokenAvailable (es, 1))
 			Sys_Printf ("ignoring tail\n");
 	}
 error:
-	if (pr->watch) {
-		Sys_Printf ("watchpoint set to [%d]\n", PR_SetPointer (pr, pr->watch));
-		if (pr->wp_conditional)
-			Sys_Printf ("    if new val == %d\n", pr->wp_val.integer_var);
-	} else {
-		Sys_Printf ("watchpoint cleared\n");
-	}
+	return expr_ptr;
 }
 
 void
@@ -493,6 +477,16 @@ PR_Get_Param_Def (progs_t *pr, dfunction_t *func, unsigned parm)
 	return ddef;
 }
 
+static pr_auxfunction_t *
+get_aux_function (progs_t *pr)
+{
+	dfunction_t *func;
+	if (!pr->pr_xfunction)
+		return 0;
+	func = pr->pr_xfunction->descriptor;
+	return pr->auxfunction_map[func - pr->pr_functions];
+}
+
 ddef_t *
 PR_Get_Local_Def (progs_t *pr, pr_int_t offs)
 {
@@ -713,6 +707,51 @@ global_string (progs_t *pr, pr_int_t ofs, etype_t type, int contents)
 }
 
 VISIBLE void
+PR_Debug_Watch (progs_t *pr, const char *expr)
+{
+	if (!expr) {
+		Sys_Printf ("watch <watchpoint expr>\n");
+		if (pr->watch) {
+			Sys_Printf ("    watching [%d]\n",
+						(int) (intptr_t) (pr->watch - pr->pr_globals));
+			if (pr->wp_conditional)
+				Sys_Printf ("        if new val == %d\n",
+							pr->wp_val.integer_var);
+		} else {
+			Sys_Printf ("    none active\n");
+		}
+		return;
+	}
+
+	pr->watch = parse_expression (pr, expr);
+	if (pr->watch) {
+		Sys_Printf ("watchpoint set to [%d]\n", PR_SetPointer (pr, pr->watch));
+		if (pr->wp_conditional)
+			Sys_Printf ("    if new val == %d\n", pr->wp_val.integer_var);
+	} else {
+		Sys_Printf ("watchpoint cleared\n");
+	}
+}
+
+VISIBLE void
+PR_Debug_Print (progs_t *pr, const char *expr)
+{
+	pr_type_t  *print;
+
+	if (!expr) {
+		Sys_Printf ("print <print expr>\n");
+		return;
+	}
+
+	print = parse_expression (pr, expr);
+	if (print) {
+		pr_int_t    ofs = PR_SetPointer (pr, print);
+		const char *s = global_string (pr, ofs, ev_void, 1);
+		Sys_Printf ("[%d] = %s\n", ofs, s);
+	}
+}
+
+VISIBLE void
 PR_PrintStatement (progs_t *pr, dstatement_t *s, int contents)
 {
 	int         addr = s - pr->pr_statements;
@@ -722,6 +761,7 @@ PR_PrintStatement (progs_t *pr, dstatement_t *s, int contents)
 	static dstring_t *line;
 	dfunction_t *call_func = 0;
 	ddef_t     *parm_def = 0;
+	pr_auxfunction_t *aux_func = 0;
 
 	if (!line)
 		line = dstring_new ();
@@ -805,6 +845,13 @@ PR_PrintStatement (progs_t *pr, dstatement_t *s, int contents)
 						goto err;
 				}
 				switch (mode) {
+					case 'R':
+						optype = ev_void;
+						aux_func = get_aux_function (pr);
+						if (aux_func)
+							optype = aux_func->return_type;
+						str = global_string (pr, opval, optype, contents & 1);
+						break;
 					case 'F':
 						str = global_string (pr, opval, optype, contents & 1);
 						call_func = pr->pr_functions + G_FUNCTION (pr, opval);

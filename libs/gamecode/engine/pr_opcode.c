@@ -96,6 +96,7 @@ VISIBLE const char *pr_type_name[ev_type_count] = {
 // O  address + short
 // P  function parameter
 // F  function (must come before any P)
+// R  return value
 //
 // a  operand a
 // b  operand b
@@ -710,7 +711,7 @@ VISIBLE opcode_t pr_opcodes[] = {
 	{"<RETURN>", "return", OP_RETURN, false,
 	 ev_void, ev_void, ev_void,
 	 PROG_ID_VERSION,
-	 "%Va",
+	 "%Ra",
 	},
 
 	{"!", "not.f", OP_NOT_F, false,

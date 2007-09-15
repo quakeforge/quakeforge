@@ -79,13 +79,13 @@ dump_lines (progs_t *pr)
 			addr = lineno->line ? lineno->fa.addr
 								: (unsigned int) func->first_statement;
 		if (aux_func && func)
-			printf (" %05x %s:%u %s+%u", addr, pr->pr_strings + func->s_file,
+			printf (" %05x %s:%u %s+%u %d", addr, pr->pr_strings + func->s_file,
 					line, pr->pr_strings + func->s_name,
-					addr - func->first_statement);
+					addr - func->first_statement, aux_func->return_type);
 		else if (aux_func)
-			printf ("%u %u %u %u %u", aux_func->function, line,
+			printf ("%u %u %u %u %u %d", aux_func->function, line,
 					aux_func->line_info, aux_func->local_defs,
-					aux_func->num_locals);
+					aux_func->num_locals, aux_func->return_type);
 		else if (lineno->line)
 			printf ("%5x", lineno->fa.addr);
 		printf ("\n");

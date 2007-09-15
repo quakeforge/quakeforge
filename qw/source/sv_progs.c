@@ -163,6 +163,12 @@ watch_f (void)
 	PR_Debug_Watch (&sv_pr_state, Cmd_Argc () < 2 ? 0 : Cmd_Args (1));
 }
 
+static void
+print_f (void)
+{
+	PR_Debug_Print (&sv_pr_state, Cmd_Argc () < 2 ? 0 : Cmd_Args (1));
+}
+
 static int
 parse_field (progs_t *pr, const char *key, const char *value)
 {
@@ -535,6 +541,7 @@ SV_Progs_Init (void)
 	Cmd_AddCommand ("profile", PR_Profile_f, "FIXME: Report information about "
 					"QuakeC Stuff (\?\?\?) No Description");
 	Cmd_AddCommand ("watch", watch_f, "set watchpoint");
+	Cmd_AddCommand ("print", print_f, "print value at location");
 }
 
 void

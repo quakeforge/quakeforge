@@ -40,6 +40,8 @@ typedef struct pr_auxfunction_s {
 	pr_uint_t   line_info;		// index to first lineno entry
 	pr_uint_t   local_defs;		// index to the first local def
 	pr_uint_t   num_locals;		// number of local defs
+	pr_short_t  return_type;	// return type of this function
+	pr_short_t  reserved;
 } pr_auxfunction_t;
 
 typedef struct pr_lineno_s {
@@ -50,7 +52,7 @@ typedef struct pr_lineno_s {
 	pr_uint_t   line;
 } pr_lineno_t;
 
-#define PROG_DEBUG_VERSION 0x00001001	// MMmmmRRR 0.001.001 (hex)
+#define PROG_DEBUG_VERSION 0x00001002	// MMmmmRRR 0.001.002 (hex)
 
 typedef struct pr_debug_header_s {
 	pr_int_t    version;

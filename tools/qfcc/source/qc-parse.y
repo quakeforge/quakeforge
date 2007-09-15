@@ -724,6 +724,7 @@ begin_function
 				$$->aux->source_line = $$->def->line;
 				$$->aux->line_info = lineno - pr.linenos;
 				$$->aux->local_defs = pr.num_locals;
+				$$->aux->return_type = $$->def->type->aux_type->type;
 
 				lineno->fa.func = $$->aux - pr.auxfunctions;
 			}
