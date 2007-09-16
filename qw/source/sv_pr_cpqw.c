@@ -739,6 +739,7 @@ static struct {
 	func_t     *field;
 } cpqw_func_list[] = {
 	{"ClientCommand",	&cpqw_funcs.ClientCommand},
+	{"UserInfo_Changed",	&sv_funcs.UserInfoChanged},
 };
 
 static int
