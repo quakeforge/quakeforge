@@ -96,9 +96,7 @@ SV_CheckAllEnts (void)
 void
 SV_CheckVelocity (edict_t *ent)
 {
-#if 0
 	float       wishspeed;
-#endif
 	int         i;
 
 	// bound velocity
@@ -115,20 +113,12 @@ SV_CheckVelocity (edict_t *ent)
 															  classname)));
 			SVvector (ent, origin)[i] = 0;
 		}
-#if 1
-		if (SVvector (ent, velocity)[i] > sv_maxvelocity->value)
-			SVvector (ent, velocity)[i] = sv_maxvelocity->value;
-		else if (SVvector (ent, velocity)[i] < -sv_maxvelocity->value)
-			SVvector (ent, velocity)[i] = -sv_maxvelocity->value;
-#endif
 	}
-#if 0
 	wishspeed = VectorLength (SVvector (ent, velocity));
 	if (wishspeed > sv_maxvelocity->value) {
 		VectorScale (SVvector (ent, velocity), sv_maxvelocity->value /
 					 wishspeed, SVvector (ent, velocity));
 	}
-#endif
 }
 
 /*
