@@ -832,7 +832,8 @@ progs_src_compile (void)
 
 			if (single) {
 				fprintf (single, "$frame_reset\n");
-				fprintf (single, "# %d \"%s\"\n", script->line, script->file);
+				fprintf (single, "#line %d \"%s\"\n", script->line,
+						 script->file);
 				fprintf (single, "#include \"%s\"\n", qc_filename->str);
 			} else {
 				if (compile_file (qc_filename->str))
