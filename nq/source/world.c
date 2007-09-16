@@ -520,12 +520,12 @@ SV_ClipMoveToEntity (edict_t *touched, edict_t *mover, const vec3_t start,
 
 	trace.fraction = 1;
 	trace.allsolid = true;
-	//trace.isbox = true;
+	trace.isbox = 0 ? true : false;//XXX box clipping test
 	VectorCopy (end, trace.endpos);
 
 	// get the clipping hull
-	//hull = SV_HullForEntity (touched, mins, maxs, trace.extents, offset);
-	hull = SV_HullForEntity (touched, mins, maxs, 0, offset);
+	hull = SV_HullForEntity (touched, mins, maxs,
+							 trace.isbox ? trace.extents : 0, offset);
 
 	VectorSubtract (start, offset, start_l);
 	VectorSubtract (end, offset, end_l);

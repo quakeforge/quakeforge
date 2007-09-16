@@ -49,13 +49,6 @@ static __attribute__ ((used)) const char rcsid[] =
 
 /* LINE TESTING IN HULLS */
 
-typedef struct {
-	vec3_t     end;
-	int        side;
-	int        num;
-	mplane_t   *plane;
-} tracestack_t;
-
 static inline void
 calc_impact (trace_t *trace, const vec3_t start, const vec3_t end,
 			 mplane_t *plane)
@@ -90,6 +83,97 @@ calc_impact (trace_t *trace, const vec3_t start, const vec3_t end,
 	VectorSubtract (end, start, dist);
 	VectorMultAdd (start, frac, dist, trace->endpos);
 }
+#if 1
+static int
+point_contents (hull_t *hull, int num, vec3_t p)
+{
+	float       d;
+	dclipnode_t *node;
+	mplane_t   *plane;
+
+	while (num >= 0) {
+		node = hull->clipnodes + num;
+		plane = hull->planes + node->planenum;
+
+		d = PlaneDiff (p, plane);
+		num = node->children[d < 0];
+	}
+
+	return num;
+}
+
+static qboolean
+traceline (hull_t *hull, int num, float p1f, float p2f,
+			const vec3_t p1, const vec3_t p2, trace_t *trace)
+{
+	dclipnode_t *node;
+	mplane_t   *plane;
+	float       t1, t2, frac, midf;
+	vec3_t      mid;
+	int         side;
+
+	if (num < 0) {
+		if (num != CONTENTS_SOLID) {
+			trace->allsolid = false;
+			if (num == CONTENTS_EMPTY)
+				trace->inopen = true;
+			else
+				trace->inwater = true;
+		} else {
+			trace->startsolid = true;
+		}
+		return true;		// empty
+	}
+
+	node = hull->clipnodes + num;
+	plane = hull->planes + node->planenum;
+
+	t1 = PlaneDiff (p1, plane);
+	t2 = PlaneDiff (p2, plane);
+
+	if (t1 >= 0 && t2 >= 0)
+		return traceline (hull, node->children[0], p1f, p2f, p1, p2, trace);
+	if (t1 < 0 && t2 < 0)
+		return traceline (hull, node->children[1], p1f, p2f, p1, p2, trace);
+
+	frac = t1 / (t1 - t2);
+	frac = bound (0, frac, 1);
+
+	midf = p1f + (p2f - p1f) * frac;
+	VectorSubtract (p2, p1, mid);
+	VectorMultAdd (p1, frac, mid, mid);
+
+	side = t1 < 0;
+
+	if (!traceline (hull, node->children[side], p1f, midf, p1, mid, trace))
+		return false;
+
+	if (point_contents (hull, node->children[side ^ 1], mid) != CONTENTS_SOLID)
+		return traceline (hull, node->children[side ^ 1], midf, p2f, mid, p2,
+						  trace);
+
+	if (trace->allsolid)
+		return false;		// never got out of the solid area
+
+	calc_impact (trace, p1, p2, plane);
+
+	return false;
+}
+
+VISIBLE qboolean
+MOD_TraceLine (hull_t *hull, int num,
+			   const vec3_t start_point, const vec3_t end_point,
+			   trace_t *trace)
+{
+	return traceline (hull, num, 0, 1, start_point, end_point, trace);
+}
+#else
+typedef struct {
+	vec3_t     end;
+	int        side;
+	int        num;
+	mplane_t   *plane;
+} tracestack_t;
 
 VISIBLE qboolean
 MOD_TraceLine (hull_t *hull, int num,
@@ -223,3 +307,4 @@ MOD_TraceLine (hull_t *hull, int num,
 		num = node->children[side];
 	}
 }
+#endif
