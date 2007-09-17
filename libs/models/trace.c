@@ -160,12 +160,12 @@ traceline (hull_t *hull, int num, float p1f, float p2f,
 	return false;
 }
 
-VISIBLE qboolean
+VISIBLE void
 MOD_TraceLine (hull_t *hull, int num,
 			   const vec3_t start_point, const vec3_t end_point,
 			   trace_t *trace)
 {
-	return traceline (hull, num, 0, 1, start_point, end_point, trace);
+	traceline (hull, num, 0, 1, start_point, end_point, trace);
 }
 #else
 typedef struct {
@@ -175,7 +175,7 @@ typedef struct {
 	mplane_t   *plane;
 } tracestack_t;
 
-VISIBLE qboolean
+VISIBLE void
 MOD_TraceLine (hull_t *hull, int num,
 			   const vec3_t start_point, const vec3_t end_point,
 			   trace_t *trace)
@@ -222,14 +222,14 @@ MOD_TraceLine (hull_t *hull, int num,
 				trace->allsolid = solid & (num == CONTENTS_SOLID);
 				trace->startsolid = solid;
 				calc_impact (trace, start_point, end_point, split_plane);
-				return false;
+				return;
 			}
 
 			// pop up the stack for a back side
 			if (tstack-- == tracestack) {
 				trace->allsolid = solid & (num == CONTENTS_SOLID);
 				trace->startsolid = solid;
-				return true;
+				return;
 			}
 
 			// set the hit point for this plane

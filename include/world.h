@@ -115,7 +115,7 @@ struct edict_s	*SV_TestPlayerPosition (struct edict_s *ent,
 int SV_HullPointContents (hull_t *hull, int num, const vec3_t p);
 hull_t *SV_HullForEntity (struct edict_s *ent, const vec3_t mins,
 						  const vec3_t maxs, vec3_t extents, vec3_t offset);
-qboolean MOD_TraceLine (hull_t *hull, int num,
-						const vec3_t start, const vec3_t end, trace_t *trace);
+void MOD_TraceLine (hull_t *hull, int num,
+					const vec3_t start, const vec3_t end, trace_t *trace);
 
 #endif // __world_h
