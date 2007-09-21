@@ -552,10 +552,11 @@ event_motion (XEvent *event)
 	} else {
 		if (vid_fullscreen->int_val || in_grab->int_val) {
 			if (!event->xmotion.send_event) {
+				unsigned dist_x = abs (vid.width / 2 - event->xmotion.x);
+				unsigned dist_y = abs (vid.height / 2 - event->xmotion.y);
 				in_mouse_x += (event->xmotion.x - p_mouse_x);
 				in_mouse_y += (event->xmotion.y - p_mouse_y);
-				if (abs (vid.width / 2 - event->xmotion.x) > vid.width / 4 ||
-					abs (vid.height / 2 - event->xmotion.y) > vid.height / 4) {
+				if (dist_x > vid.width / 4 || dist_y > vid.height / 4) {
 					center_pointer ();
 				}
 			}
