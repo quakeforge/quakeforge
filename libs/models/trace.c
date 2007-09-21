@@ -48,8 +48,6 @@ static __attribute__ ((used)) const char rcsid[] =
 #include "world.h"
 
 /* LINE TESTING IN HULLS */
-#undef DIST_EPSILON
-#define DIST_EPSILON 0
 
 static inline void
 calc_impact (trace_t *trace, const vec3_t start, const vec3_t end,
@@ -85,7 +83,7 @@ calc_impact (trace_t *trace, const vec3_t start, const vec3_t end,
 	VectorSubtract (end, start, dist);
 	VectorMultAdd (start, frac, dist, trace->endpos);
 }
-#if 1
+#if 0
 static inline void
 check_contents (int num, trace_t *trace)
 {
@@ -101,7 +99,7 @@ check_contents (int num, trace_t *trace)
 	}
 }
 
-#if 0
+#if 1
 typedef struct {
 	const vec_t *start;
 	const vec_t *end;
