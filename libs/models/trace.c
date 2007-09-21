@@ -83,7 +83,146 @@ calc_impact (trace_t *trace, const vec3_t start, const vec3_t end,
 	VectorSubtract (end, start, dist);
 	VectorMultAdd (start, frac, dist, trace->endpos);
 }
+#if 0
+static inline void
+check_contents (int num, trace_t *trace)
+{
+	if (num != CONTENTS_SOLID) {
+		trace->allsolid = false;
+		if (num == CONTENTS_EMPTY)
+			trace->inopen = true;
+		else
+			trace->inwater = true;
+	} else {
+		if (!trace->inwater && !trace->inopen)
+			trace->startsolid = true;
+	}
+}
+
 #if 1
+typedef struct {
+	const vec_t *start;
+	const vec_t *end;
+	trace_t     trace;
+	hull_t      hull;
+	mplane_t   *plane;
+	float       fraction;
+} tl_t;
+
+static inline float
+calc_offset (trace_t *trace, mplane_t *plane)
+{
+	if (trace->isbox) {
+		if (plane->type < 3)
+			return trace->extents[plane->type];
+		else
+			return (fabs (trace->extents[0] * plane->normal[0])
+					+ fabs (trace->extents[1] * plane->normal[1])
+					+ fabs (trace->extents[2] * plane->normal[2]));
+	}
+	return 0;
+}
+
+static void
+traceline (int num, float p1f, float p2f, const vec3_t p1, const vec3_t p2,
+		   tl_t *tl)
+{
+	dclipnode_t *node;
+	mplane_t   *plane;
+	float       t1, t2, frac, frac2, midf, offset;
+	int         side;
+	vec3_t      mid;
+
+	if (num < 0) {
+		check_contents (num, &tl->trace);
+		t1 = t2 = -3.14;
+		if (!tl->trace.startsolid && num == CONTENTS_SOLID) {
+			if (tl->plane) {
+				t1 = PlaneDiff (tl->start, tl->plane);
+				t2 = PlaneDiff (tl->end, tl->plane);
+				offset = calc_offset (&tl->trace, tl->plane);
+				if (t1 < t2) {
+					tl->fraction  = (t1 + offset) / (t1 - t2);
+				} else if (t1 > t2) {
+					tl->fraction  = (t1 - offset) / (t1 - t2);
+				} else {
+					tl->fraction  = p1f;
+					Sys_Printf ("help! help! the world is falling apart!\n");
+				}
+//			} else {
+//				tl->fraction = p1f;
+			}
+		}
+		return;
+	}
+
+	node = tl->hull.clipnodes + num;
+	plane = tl->hull.planes + node->planenum;
+
+	t1 = PlaneDiff (p1, plane);
+	t2 = PlaneDiff (p2, plane);
+	offset = calc_offset (&tl->trace, plane);
+
+	if (t1 >= offset && t2 >= offset) {
+		traceline (node->children[0], p1f, p2f, p1, p2, tl);
+		return;
+	}
+	if (t1 < -offset && t2 < -offset) {
+		traceline (node->children[1], p1f, p2f, p1, p2, tl);
+		return;
+	}
+
+	if (t1 < t2) {
+		side = 1;
+		frac  = (t1 - offset) / (t1 - t2);
+		frac2 = (t1 + offset) / (t1 - t2);
+	} else if (t1 > t2) {
+		side = 0;
+		frac  = (t1 + offset) / (t1 - t2);
+		frac2 = (t1 - offset) / (t1 - t2);
+	} else {
+		side = 0;
+		frac  = 0;
+		frac2 = 1;
+		plane = tl->plane;
+	}
+
+	frac = bound (0, frac, 1);
+	midf = p1f + (p2f - p1f) * frac;
+	VectorSubtract (p2, p1, mid);
+	VectorMultAdd (p1, frac, mid, mid);
+	traceline (node->children[side], p1f, midf, p1, mid, tl);
+
+	frac2 = bound (0, frac2, 1);
+	midf = p1f + (p2f - p1f) * frac2;
+	if (midf <= tl->fraction) {
+		VectorSubtract (p2, p1, mid);
+		VectorMultAdd (p1, frac2, mid, mid);
+		tl->plane = plane;
+		traceline (node->children[side ^ 1], midf, p2f, mid, p2, tl);
+	}
+}
+
+VISIBLE void
+MOD_TraceLine (hull_t *hull, int num,
+			   const vec3_t start_point, const vec3_t end_point,
+			   trace_t *trace)
+{
+	tl_t        tl;
+
+	tl.start = start_point;
+	tl.end = end_point;
+	tl.trace = *trace;
+	tl.hull = *hull;
+	tl.fraction = 1;
+	tl.plane = 0;
+	traceline (num, 0, 1, start_point, end_point, &tl);
+	if (tl.fraction < 1) {
+		calc_impact (&tl.trace, start_point, end_point, tl.plane);
+	}
+	*trace = tl.trace;
+}
+#else
 static int
 point_contents (hull_t *hull, int num, vec3_t p)
 {
@@ -113,16 +252,8 @@ traceline (hull_t *hull, int num, float p1f, float p2f,
 	int         side;
 
 	if (num < 0) {
-		if (num != CONTENTS_SOLID) {
-			trace->allsolid = false;
-			if (num == CONTENTS_EMPTY)
-				trace->inopen = true;
-			else
-				trace->inwater = true;
-		} else {
-			trace->startsolid = true;
-		}
-		return true;		// empty
+		check_contents (num, trace);
+		return true;
 	}
 
 	node = hull->clipnodes + num;
@@ -167,6 +298,7 @@ MOD_TraceLine (hull_t *hull, int num,
 {
 	traceline (hull, num, 0, 1, start_point, end_point, trace);
 }
+#endif
 #else
 typedef struct {
 	vec3_t     end;
