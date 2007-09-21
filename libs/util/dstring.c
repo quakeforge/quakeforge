@@ -171,7 +171,7 @@ dstring_replace (dstring_t *dstr, unsigned int pos, unsigned int rlen,
 	unsigned int oldsize = dstr->size;
 	if (pos > dstr->size)
 		pos = dstr->size;
-	if (pos + rlen > dstr->size)
+	if (rlen > dstr->size - pos)
 		rlen = dstr->size - pos;
 	if (rlen < len) {
 		dstr->size += len - rlen;
