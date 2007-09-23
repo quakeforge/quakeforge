@@ -57,18 +57,18 @@ static void do_trace (vec3_t start, vec3_t end)
 	trace.extents[2] = 28;
 	trace.isbox = true;
 	MOD_TraceLine (&hull, 0, start, end, &trace);
-	printf ("(%g %g %g) (%g %g %g) -> %3g    %d %d %d\n",
+	printf ("(%g %g %g) (%g %g %g) -> %3g    %d %d %d %d\n",
 			start[0], start[1], start[2],
 			end[0], end[1], end[2], trace.fraction,
-			trace.allsolid, trace.startsolid, trace.inopen);
+			trace.allsolid, trace.startsolid, trace.inopen, trace.inwater);
 }
 
 int main (int argc, char **argv)
 {
 	int i;
 	vec3_t start, end;
-
-	puts ("\nexpect <=0.5, 1  (0 0 1), (0 0 1)");
+/*
+	puts ("\nexpect <=0.5, 1  (0 0 1 0), (0 0 1 0)");
 	for (i = 0; i < 2; i++) {
 		start[0] = 0;
 		start[1] = 47 + i;
@@ -78,7 +78,7 @@ int main (int argc, char **argv)
 		do_trace (start, end);
 	}
 
-	puts ("\nexpect <=0.5, 1  (0 0 1), (0 0 1)");
+	puts ("\nexpect <=0.5, 1  (0 0 1 0), (0 0 1 0)");
 	for (i = 0; i < 2; i++) {
 		start[0] = 0;
 		start[1] = 52;
@@ -87,8 +87,8 @@ int main (int argc, char **argv)
 		end[1] -= 8;
 		do_trace (start, end);
 	}
-
-	puts ("\nexpect <=0.5, 1  (0 0 1), (1 1 0)");
+*/
+	puts ("\nexpect <=0.5, 1  (0 0 1 0), (1 1 0 0)");
 	for (i = 0; i < 2; i++) {
 		start[0] = 47 + i;
 		start[1] = -80;
@@ -98,7 +98,7 @@ int main (int argc, char **argv)
 		do_trace (start, end);
 	}
 
-	puts ("\nexpect <=0.5, 1  (0 0 1), (0 0 1)");
+	puts ("\nexpect <=0.5, 1  (0 0 1 0), (0 0 1 0)");
 	for (i = 0; i < 2; i++) {
 		start[0] = 44;
 		start[1] = -80;
@@ -108,7 +108,7 @@ int main (int argc, char **argv)
 		do_trace (start, end);
 	}
 
-	puts ("\nexpect 1, <=0.5  (0 1 1), (0 1 1)");
+	puts ("\nexpect 1, <=0.5  (0 1 1 0), (0 1 1 0)");
 	for (i = 0; i < 2; i++) {
 		start[0] = 47 + i;
 		start[1] = -80;
