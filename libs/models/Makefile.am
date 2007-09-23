@@ -4,6 +4,12 @@ SUBDIRS= alias brush sprite
 CFLAGS+= @PREFER_PIC@
 INCLUDES= -I$(top_srcdir)/include
 
+noinst_PROGRAMS= testclip
+
+testclip_SOURCES=testclip.c
+testclip_LDADD= libQFmodels.la
+testclip_DEPENDENCIES= libQFmodels.la
+
 lib_LTLIBRARIES=	libQFmodels.la @VID_MODEL_TARGETS@
 EXTRA_LTLIBRARIES= \
 	libQFmodels_gl.la libQFmodels_sw.la
