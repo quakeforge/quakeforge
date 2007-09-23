@@ -134,6 +134,22 @@ traceline (int num, float p1f, float p2f, const vec3_t p1, const vec3_t p2,
 	vec3_t      mid;
 	mplane_t   *op;
 
+	while (num >= 0) {
+		node = tl->hull.clipnodes + num;
+		plane = tl->hull.planes + node->planenum;
+
+		t1 = PlaneDiff (p1, plane);
+		t2 = PlaneDiff (p2, plane);
+		offset = calc_offset (&tl->trace, plane);
+
+		if (t1 >= offset && t2 >= offset) {
+			num = node->children[0];
+		} if (t1 < -offset && t2 < -offset) {
+			num = node->children[1];
+		} else {
+			break;
+		}
+	}
 	if (num < 0) {
 		check_contents (num, &tl->trace);
 		t1 = t2 = -3.14;
@@ -153,22 +169,6 @@ traceline (int num, float p1f, float p2f, const vec3_t p1, const vec3_t p2,
 				}
 			}
 		}
-		return;
-	}
-
-	node = tl->hull.clipnodes + num;
-	plane = tl->hull.planes + node->planenum;
-
-	t1 = PlaneDiff (p1, plane);
-	t2 = PlaneDiff (p2, plane);
-	offset = calc_offset (&tl->trace, plane);
-
-	if (t1 >= offset && t2 >= offset) {
-		traceline (node->children[0], p1f, p2f, p1, p2, tl);
-		return;
-	}
-	if (t1 < -offset && t2 < -offset) {
-		traceline (node->children[1], p1f, p2f, p1, p2, tl);
 		return;
 	}
 
