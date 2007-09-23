@@ -68,7 +68,8 @@ int main (int argc, char **argv)
 	int i;
 	vec3_t start, end;
 
-	for (i = 0; i < 3; i++) {
+	puts ("\nexpect <=0.5, 1  (0 0 1), (0 0 1)");
+	for (i = 0; i < 2; i++) {
 		start[0] = 0;
 		start[1] = 47 + i;
 		start[2] = 40;
@@ -76,17 +77,19 @@ int main (int argc, char **argv)
 		end[2] -= 8;
 		do_trace (start, end);
 	}
-puts("");
-	for (i = 0; i < 3; i++) {
+
+	puts ("\nexpect <=0.5, 1  (0 0 1), (0 0 1)");
+	for (i = 0; i < 2; i++) {
 		start[0] = 0;
 		start[1] = 52;
 		start[2] = 35 + i;
 		VectorCopy (start, end);
-		end[1] -= 28;
+		end[1] -= 8;
 		do_trace (start, end);
 	}
-puts("");
-	for (i = 0; i < 3; i++) {
+
+	puts ("\nexpect <=0.5, 1  (0 0 1), (1 1 0)");
+	for (i = 0; i < 2; i++) {
 		start[0] = 47 + i;
 		start[1] = -80;
 		start[2] = 36;
@@ -94,17 +97,19 @@ puts("");
 		end[0] += 2;
 		do_trace (start, end);
 	}
-puts("");
-	for (i = 0; i < 3; i++) {
-		start[0] = 47;
+
+	puts ("\nexpect <=0.5, 1  (0 0 1), (0 0 1)");
+	for (i = 0; i < 2; i++) {
+		start[0] = 44;
 		start[1] = -80;
 		start[2] = 59 + i;
 		VectorCopy (start, end);
-		end[0] += 2;
+		end[0] += 8;
 		do_trace (start, end);
 	}
-puts("");
-	for (i = 0; i < 3; i++) {
+
+	puts ("\nexpect 1, <=0.5  (0 1 1), (0 1 1)");
+	for (i = 0; i < 2; i++) {
 		start[0] = 47 + i;
 		start[1] = -80;
 		start[2] = 76;
