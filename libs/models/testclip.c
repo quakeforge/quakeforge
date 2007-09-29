@@ -65,9 +65,9 @@ static void do_trace (vec3_t start, vec3_t end)
 
 int main (int argc, char **argv)
 {
-	int i;
 	vec3_t start, end;
-
+#if 1
+	int i;
 	puts ("\nexpect 0.496094, 1  (0 0 1 0), (0 0 1 0)");
 	for (i = 0; i < 2; i++) {
 		start[0] = 0;
@@ -117,5 +117,23 @@ int main (int argc, char **argv)
 		end[2] -= 32;
 		do_trace (start, end);
 	}
+
+	puts ("\nexpect 0  (0 0 1 0)");
+	start[0] = 96;
+	start[1] = -47.9612;
+	start[2] = 56.0312 + 4;
+	end[0] = 96;
+	end[1] = -47.1025;
+	end[2] = 55.8737 + 4;
+	do_trace (start, end);
+#endif
+	puts ("\nexpect 0  (0 0 1 0)");
+	start[0] = 94.8916;
+	start[1] = -34.8506;
+	start[2] = 56.0312 + 4;
+	end[0] = 94.8146;
+	end[1] = -28.5696;
+	end[2] = 55.5683 + 4;
+	do_trace (start, end);
 	return 0;
 }

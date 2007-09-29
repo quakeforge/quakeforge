@@ -84,46 +84,69 @@ calc_impact (trace_t *trace, const vec3_t start, const vec3_t end,
 	VectorMultAdd (start, frac, dist, trace->endpos);
 }
 #if 0
-static inline void
-check_contents (int num, trace_t *trace)
-{
-	if (num != CONTENTS_SOLID) {
-		trace->allsolid = false;
-		if (num == CONTENTS_EMPTY)
-			trace->inopen = true;
-		else
-			trace->inwater = true;
-	} else {
-		if (!trace->inwater && !trace->inopen)
-			trace->startsolid = true;
-	}
-}
-
 typedef struct {
 	const vec_t *start;
 	const vec_t *end;
-	trace_t     trace;
+	const vec_t *extents;
+	qboolean    isbox;
 	hull_t      hull;
 	mplane_t   *plane;
 	mplane_t   *impact;
 	float       fraction;
+	int         flags;
 } tl_t;
 
-static inline float
-calc_offset (trace_t *trace, mplane_t *plane)
+static inline void
+check_contents (int num, tl_t *tl)
 {
-	if (trace->isbox) {
-		if (plane->type < 3)
-			return trace->extents[plane->type];
+	if (num != CONTENTS_SOLID) {
+		tl->flags &= ~1;
+		if (num == CONTENTS_EMPTY)
+			tl->flags |= 4;
 		else
-			return (fabs (trace->extents[0] * plane->normal[0])
-					+ fabs (trace->extents[1] * plane->normal[1])
-					+ fabs (trace->extents[2] * plane->normal[2]));
+			tl->flags |= 8;
+	} else {
+		if (!(tl->flags & 12))
+			tl->flags |= 2;
+	}
+}
+
+static inline float
+calc_offset (tl_t *tl, mplane_t *plane)
+{
+	if (tl->isbox) {
+		if (plane->type < 3)
+			return tl->extents[plane->type];
+		else
+			return (fabs (tl->extents[0] * plane->normal[0])
+					+ fabs (tl->extents[1] * plane->normal[1])
+					+ fabs (tl->extents[2] * plane->normal[2]));
 	}
 	return 0;
 }
 
 static void
+impact (tl_t *tl)
+{
+	float       t1, t2, offset, frac;
+	t1 = PlaneDiff (tl->start, tl->plane);
+	t2 = PlaneDiff (tl->end, tl->plane);
+	offset = calc_offset (tl, tl->plane);
+	if (t1 < t2) {
+		frac = (t1 + offset) / (t1 - t2);
+	} else if (t1 > t2) {
+		frac = (t1 - offset) / (t1 - t2);
+	} else {
+		frac = 0;
+		Sys_Printf ("help! help! the world is falling apart!\n");
+	}
+	if (frac >= 0) {
+		tl->fraction = frac;
+		tl->impact = tl->plane;
+	}
+}
+
+static int
 traceline (int num, float p1f, float p2f, const vec3_t p1, const vec3_t p2,
 		   tl_t *tl)
 {
@@ -132,7 +155,7 @@ traceline (int num, float p1f, float p2f, const vec3_t p1, const vec3_t p2,
 	float       t1, t2, frac, frac2, midf, offset;
 	int         side;
 	vec3_t      mid;
-	mplane_t   *op;
+	int         c1, c2;
 
 	while (num >= 0) {
 		node = tl->hull.clipnodes + num;
@@ -140,70 +163,82 @@ traceline (int num, float p1f, float p2f, const vec3_t p1, const vec3_t p2,
 
 		t1 = PlaneDiff (p1, plane);
 		t2 = PlaneDiff (p2, plane);
-		offset = calc_offset (&tl->trace, plane);
+		offset = calc_offset (tl, plane);
 
 		if (t1 >= offset && t2 >= offset) {
 			num = node->children[0];
-		} if (t1 < -offset && t2 < -offset) {
+		} else if (t1 < -offset && t2 < -offset) {
 			num = node->children[1];
 		} else {
 			break;
 		}
 	}
-	if (num < 0) {
-		check_contents (num, &tl->trace);
-		t1 = t2 = -3.14;
-		if (num == CONTENTS_SOLID) {
-			if (tl->plane) {
-				tl->impact = tl->plane;
-				t1 = PlaneDiff (tl->start, tl->plane);
-				t2 = PlaneDiff (tl->end, tl->plane);
-				offset = calc_offset (&tl->trace, tl->plane);
-				if (t1 < t2) {
-					tl->fraction  = (t1 + offset + DIST_EPSILON) / (t1 - t2);
-				} else if (t1 > t2) {
-					tl->fraction  = (t1 - offset - DIST_EPSILON) / (t1 - t2);
-				} else {
-					tl->fraction  = p1f;
-					Sys_Printf ("help! help! the world is falling apart!\n");
-				}
+	if (num < 0)
+		return num;
+
+//	if (t1 == t2) {
+	if (t1 >= -offset && t1 < offset && t2 >= -offset && t2 < offset) {
+		c1 = c2 = traceline (node->children[0], p1f, p2f, p1, p2, tl);
+		if (c1 != CONTENTS_SOLID)
+			c2 = traceline (node->children[1], p1f, p2f, p1, p2, tl);
+		if (c1 == CONTENTS_SOLID || c2 == CONTENTS_SOLID) {
+			if (!p1f) {
+				tl->flags &= 3;
+				tl->flags |= 2;
 			}
+			if (tl->plane)
+				impact (tl);
+			return CONTENTS_SOLID;
 		}
-		return;
-	}
-
-	if (t1 < t2) {
-		side = 1;
-		frac  = (t1 - offset) / (t1 - t2);
-		frac2 = (t1 + offset) / (t1 - t2);
-	} else if (t1 > t2) {
-		side = 0;
-		frac  = (t1 + offset) / (t1 - t2);
-		frac2 = (t1 - offset) / (t1 - t2);
+		if (c1 == CONTENTS_EMPTY && c2 == CONTENTS_EMPTY) {
+			tl->flags &= ~1;
+			tl->flags |= 4;
+		} else {
+			tl->flags &= ~1;
+			tl->flags |= 8;
+		}
+		return min (c1, c2); //FIXME correct?
 	} else {
-		side = 0;
-		frac  = 1;
-		frac2 = 0;
-		plane = tl->plane;
-	}
+		if (t1 < t2) {
+			side = 1;
+			frac  = (t1 - offset) / (t1 - t2);
+			frac2 = (t1 + offset) / (t1 - t2);
+		} else if (t1 > t2) {
+			side = 0;
+			frac  = (t1 + offset) / (t1 - t2);
+			frac2 = (t1 - offset) / (t1 - t2);
+		}
 
-	op = tl->plane;
-
-	frac = bound (0, frac, 1);
-	midf = p1f + (p2f - p1f) * frac;
-	VectorSubtract (p2, p1, mid);
-	VectorMultAdd (p1, frac, mid, mid);
-	traceline (node->children[side], p1f, midf, p1, mid, tl);
-
-	frac2 = bound (0, frac2, 1);
-	midf = p1f + (p2f - p1f) * frac2;
-	if (!tl->impact || midf <= tl->fraction) {
+		frac = bound (0, frac, 1);
+		midf = p1f + (p2f - p1f) * frac;
 		VectorSubtract (p2, p1, mid);
-		VectorMultAdd (p1, frac2, mid, mid);
+		VectorMultAdd (p1, frac, mid, mid);
+		c1 = c2 = traceline (node->children[side], p1f, midf, p1, mid, tl);
+
+		frac2 = bound (0, frac2, 1);
+		midf = p1f + (p2f - p1f) * frac2;
+		if (!tl->impact || midf <= tl->fraction) {
+			VectorSubtract (p2, p1, mid);
+			VectorMultAdd (p1, frac2, mid, mid);
+			tl->plane = plane;
+			c2 = traceline (node->children[side ^ 1], midf, p2f, mid, p2, tl);
+		}
 		tl->plane = plane;
-		traceline (node->children[side ^ 1], midf, p2f, mid, p2, tl);
+		if (c1 != CONTENTS_SOLID && c2 == CONTENTS_SOLID)
+			impact (tl);
+		if (c1 == CONTENTS_SOLID && !(tl->flags & 0xc))
+			tl->flags |= 2;
+		if (c1 == CONTENTS_EMPTY || c2 == CONTENTS_EMPTY) {
+			tl->flags &= ~1;
+			tl->flags |= 4;
+		}
+		if (c1 < CONTENTS_SOLID || c2 < CONTENTS_SOLID) {
+			tl->flags &= ~1;
+			tl->flags |= 8;
+		}
+
+		return frac2 ? c1 : c2;
 	}
-	tl->plane = op;
 }
 
 VISIBLE void
@@ -212,18 +247,32 @@ MOD_TraceLine (hull_t *hull, int num,
 			   trace_t *trace)
 {
 	tl_t        tl;
+	int         c;
 
 	tl.start = start_point;
 	tl.end = end_point;
-	tl.trace = *trace;
 	tl.hull = *hull;
 	tl.fraction = 1;
 	tl.plane = tl.impact = 0;
-	traceline (num, 0, 1, start_point, end_point, &tl);
-	if (tl.fraction < 1) {
-		calc_impact (&tl.trace, start_point, end_point, tl.impact);
+	tl.flags = 1;
+	tl.isbox = trace->isbox;
+	tl.extents = trace->extents;
+	c = traceline (num, 0, 1, start_point, end_point, &tl);
+	if (c == CONTENTS_EMPTY) {
+		tl.flags &= ~1;
+		tl.flags |= 4;
 	}
-	*trace = tl.trace;
+	if (c < CONTENTS_SOLID) {
+		tl.flags &= ~1;
+		tl.flags |= 8;
+	}
+	if (tl.fraction < 1) {
+		calc_impact (trace, start_point, end_point, tl.impact);
+	}
+	trace->allsolid = (tl.flags & 1) != 0;
+	trace->startsolid = (tl.flags & 2) != 0;
+	trace->inopen = (tl.flags & 4) != 0;
+	trace->inwater = (tl.flags & 8) != 0;
 }
 #else
 typedef struct {
