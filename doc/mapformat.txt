@@ -1,0 +1,64 @@
+//unfortunatly, have to wrap the docs in a C comment for doxygen
+/**
+\page mapformat Map (.map) File Format
+
+"//" marks a comment which extends to the end of the current line
+
+Note that () and {} characters require white space around them.
+
+A map consists of a series of entities delineated by {}
+
+An entity consists of a series of either epairs or brushes, one per "line".
+
+An epair is a pair of quoted (via "quotes") strings. The first string of the
+pair is the key, the second string the value. epairs are used to populate the
+dictionary of the entity.
+
+A brush is a simple, convex polytope delinieated by {}. The format of a brush
+is as follows:
+\verbatim
+{
+[optional vertex list]
+<plane spec> <texture name> <texcoord spec> [optional flags]
+<plane spec> <texture name> <texcoord spec> [optional flags]
+<plane spec> <texture name> <texcoord spec> [optional flags]
+...
+}
+\endverbatim
+That is, an optional vertex list followed by a number of surface specs, one
+per line.
+
+The optional vertex list, found in map files produced by Quest3d, is denoted
+by a colon followed by a number indicating the number of vertices in the list.
+Following this, one per line, come the 3d coordinates of the vertices, one
+vertex per line. The vertex coordinates are listed in X Y Z order.
+
+There are two formats for the plane spec, selected via the presence (vertex
+mode) or absence (plane point mode) of the vertex list.
+
+In vertex mode, the plane spec directly describes the shape of the surface
+polygon. It is simply a number indicating the number of vertices, followed by a
+set of 0 based indices, enclosed in (). The indices indicate which of the
+vertices from the vertex list to use. When compiling the map, only the first 3
+vertices are significant: they are used as the 3 points for calculating the
+plane.
+
+In point plane mode, the plane spec consists of three point vectors, each
+enclosed in ().
+
+The three points (from either mode) are then used to calculate the plane
+normal and offset: n = (p0 - p1) x (p2 - p1), d = p1 . n
+
+The texture name is just a simple string (no spaces) that specifies the name
+of the texture within the wadfile.
+
+The texcoord spec is black magic.
+
+The optional flags indicate various options for the surface. So far, the only
+flag supported is "detail", indicating that the brush is a detail brush and not
+to be used for visibility calculations. If any surface has the detail flag set,
+the whole brush is affected.
+
+Example map file (vertex mode):
+\verbinclude cliptest.map
+*/
