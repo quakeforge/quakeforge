@@ -1,4 +1,4 @@
-//unfortunatly, have to wrap the docs in a C comment for doxygen
+//unfortunately, have to wrap the docs in a C comment for doxygen
 /**
 \page mapformat Map (.map) File Format
 
@@ -14,7 +14,7 @@ An epair is a pair of quoted (via "quotes") strings. The first string of the
 pair is the key, the second string the value. epairs are used to populate the
 dictionary of the entity.
 
-A brush is a simple, convex polytope delinieated by {}. The format of a brush
+A brush is a simple, convex polytope delineated by {}. The format of a brush
 is as follows:
 \verbatim
 {
@@ -29,30 +29,52 @@ That is, an optional vertex list followed by a number of surface specs, one
 per line.
 
 The optional vertex list, found in map files produced by Quest3d, is denoted
-by a colon followed by a number indicating the number of vertices in the list.
-Following this, one per line, come the 3d coordinates of the vertices, one
+by a colon followed by a number indicating the number of vertexes in the list.
+Following this, one per line, come the 3d coordinates of the vertexes, one
 vertex per line. The vertex coordinates are listed in X Y Z order.
 
 There are two formats for the plane spec, selected via the presence (vertex
 mode) or absence (plane point mode) of the vertex list.
 
 In vertex mode, the plane spec directly describes the shape of the surface
-polygon. It is simply a number indicating the number of vertices, followed by a
-set of 0 based indices, enclosed in (). The indices indicate which of the
-vertices from the vertex list to use. When compiling the map, only the first 3
-vertices are significant: they are used as the 3 points for calculating the
+polygon. It is simply a number indicating the number of vertexes, followed by a
+set of 0 based indexes, enclosed in (). The indexes indicate which of the
+vertexes from the vertex list to use. When compiling the map, only the first 3
+vertexes are significant: they are used as the 3 points for calculating the
 plane.
 
 In point plane mode, the plane spec consists of three point vectors, each
 enclosed in ().
 
 The three points (from either mode) are then used to calculate the plane
-normal and offset: n = (p0 - p1) x (p2 - p1), d = p1 . n
+normal and offset:
+\verbatim
+n = (p0 - p1) x (p2 - p1)
+d = p1 . n
+\endverbatim
 
 The texture name is just a simple string (no spaces) that specifies the name
 of the texture within the wadfile.
 
-The texcoord spec is black magic.
+The texcoord spec is black magic. :) It can be either:
+(halflife style)
+\verbatim
+[ sx sy sz s ] [ tx ty tz t ] r s_scale t_scale
+\endverbatim
+or (quake style)
+\verbatim
+s t r s_scale t_scale
+\endverbatim
+In quake style, the basis vectors for s and t (sv and tv) are taken as the
+most appropriate axial plane for the surface plane. In halflife style, they're
+given directly via sv = (sx sy sz), tv = (tx ty tz). sv and tv are then
+transformed by rotating around their perpendicular by r degrees. How this
+interacts with halflife style is currently unknown. When rendering, the texture
+coords (rs, rt) for vertex v are calculated as:
+\verbatim
+rs = v . sv + s
+rt = v . tv + t
+\endverbatim
 
 The optional flags indicate various options for the surface. So far, the only
 flag supported is "detail", indicating that the brush is a detail brush and not
