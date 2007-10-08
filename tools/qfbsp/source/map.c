@@ -540,15 +540,6 @@ SetKeyValue (entity_t *ent, const char *key, const char *value)
 	ep->value = strdup (value);
 }
 
-float
-FloatForKey (entity_t *ent, const char *key)
-{
-	const char *k;
-
-	k = ValueForKey (ent, key);
-	return atof (k);
-}
-
 void
 GetVectorForKey (entity_t *ent, const char *key, vec3_t vec)
 {

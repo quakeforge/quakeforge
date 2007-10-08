@@ -53,7 +53,6 @@ typedef struct {
 } winding_t;
 
 winding_t *BaseWindingForPlane (plane_t *p);
-void CheckWinding (winding_t *w);
 winding_t	*NewWinding (int points);
 void		FreeWinding (winding_t *w);
 winding_t	*CopyWinding (winding_t *w);
@@ -157,7 +156,6 @@ void SplitFace (face_t *in, plane_t *split, face_t **front, face_t **back);
 
 void DivideFacet (face_t *in, plane_t *split, face_t **front, face_t **back);
 void CalcSurfaceInfo (surface_t *surf);
-void SubdivideFace (face_t *f, face_t **prevptr);
 node_t *SolidBSP (surface_t *surfhead, qboolean midsplit);
 
 // merge.c ====================================================================
@@ -176,7 +174,7 @@ extern	face_t		*edgefaces[MAX_MAP_EDGES][2];
 extern	int		firstmodeledge;
 extern	int		firstmodelface;
 
-void SubdivideFaces (surface_t *surfhead);
+void SubdivideFace (face_t *f, face_t **prevptr);
 
 surface_t *GatherNodeFaces (node_t *headnode);
 

@@ -161,11 +161,6 @@ CopyWindingReverse (winding_t *w)
 	return c;
 }
 
-void
-CheckWinding (winding_t * w)
-{
-}
-
 /*
 	ClipWinding
 

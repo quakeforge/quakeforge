@@ -88,7 +88,7 @@ static const char *short_options =
 	;
 
 
-void
+static void
 usage (int status)
 {
 	printf ("%s - QuakeForge PVS/PHS generation tool\n", this_program);

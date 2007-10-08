@@ -105,32 +105,6 @@ SubdivideFace (face_t *f, face_t **prevptr)
 	}
 }
 
-void
-SubdivideFaces (surface_t *surfhead)
-{
-	face_t     *f, **prevptr;
-	surface_t  *surf;
-
-	qprintf ("--- SubdivideFaces ---\n");
-
-	subdivides = 0;
-
-	for (surf = surfhead; surf; surf = surf->next) {
-		prevptr = &surf->faces;
-		while (1) {
-			f = *prevptr;
-			if (!f)
-				break;
-			SubdivideFace (f, prevptr);
-			f = *prevptr;
-			prevptr = &f->next;
-		}
-	}
-
-	qprintf ("%i faces added by subdivision\n", subdivides);
-
-}
-
 /*
 	GatherNodeFaces
 
