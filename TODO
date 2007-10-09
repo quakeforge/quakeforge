@@ -23,6 +23,7 @@ I  GL is still way too slow
 I  Client side QuakeC.
 I  menu rewrite
 I  clean up TODO ;)
+o  kill MAX_STATIC_ENTITIES
 o  doublesize modes (eg, render in 320x240 but display in 640x480)
 o  allow qf clients to download .lit files from qf servers.
 o  better server control of certain cvars

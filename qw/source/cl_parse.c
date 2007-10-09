@@ -919,7 +919,7 @@ CL_ParseStatic (void)
 
 	CL_ParseBaseline (&es);
 
-	if (cl.num_statics >= MAX_STATIC_ENTITIES)
+	if (cl.num_statics >= MAX_STATIC_ENTITIES) //FIXME nuke!!!
 		Host_Error ("Too many static entities");
 	ent = &cl_static_entities[cl.num_statics++];
 	CL_Init_Entity (ent);
