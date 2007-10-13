@@ -474,9 +474,9 @@ ED_LoadFromFile (progs_t *pr, const char *data)
 			Script_UngetToken (script);
 			entity_list = ED_ConvertToPlist (pr, script);
 		}
-		Script_Delete (script);
 		ED_SpawnEntities (pr, entity_list);
 	}
+	Script_Delete (script);
 }
 
 VISIBLE void
