@@ -60,9 +60,11 @@
 
 	An unquoted string may contain only alphanumeric characters and/or the
 	underscore character, '_'. Quoted strings may contain whitespace, C escape
-	sequences, and so on. The quote character is '"'.
+	sequences, and so on. The quote character is '"'. Optionally, Python style
+	long strings ("""...""") may be used, allowing for unquoted '"' quotes in
+	the string.
 
-	<!-- in the following paragram, the \< and \> are just < and >. the \ is
+	<!-- in the following paragraph, the \< and \> are just < and >. the \ is
 		 for doxygen -->
 	QFBinary data is hex-encoded and contained within angle brackets, \< \>.
 	The length of the encoded data must be an even number, so while \<FF00\>

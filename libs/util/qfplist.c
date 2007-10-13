@@ -467,7 +467,15 @@ PL_ParseQuotedString (pldata_t *pl)
 	unsigned int	escaped = 0;
 	unsigned int	shrink = 0;
 	qboolean		hex = false;
+	qboolean        long_string = false;
 	char			*str;
+
+	if (pl->ptr[pl->pos] == '"' &&
+		pl->ptr[pl->pos + 1] == '"') {
+		long_string = true;
+		start += 2;
+		pl->pos += 2;
+	}
 
 	while (pl->pos < pl->end) {
 
@@ -499,7 +507,9 @@ PL_ParseQuotedString (pldata_t *pl)
 			if (c == '\\') {
 				escaped = 1;
 				shrink++;
-			} else if (c == '"') {
+			} else if (c == '"'
+					   && (!long_string || (pl->ptr[pl->pos + 1] == '"'
+							   				&& pl->ptr[pl->pos + 2] == '"'))) {
 				break;
 			}
 		}
@@ -594,6 +604,8 @@ PL_ParseQuotedString (pldata_t *pl)
 		str = strncat (calloc ((pl->pos - start - shrink) + 1, 1), chars,
 					   pl->pos - start - shrink);
 	}
+	if (long_string)
+		pl->pos += 2;
 	pl->pos++;
 	return str;
 }
