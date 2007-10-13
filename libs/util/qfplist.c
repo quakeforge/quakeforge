@@ -873,6 +873,7 @@ write_string (dstring_t *dstr, const char *str)
 			continue;
 		}
 		if (*str) {
+			*dst++ = '\\';
 			switch (*str) {
 				case '\"':
 				case '\\':
@@ -900,7 +901,6 @@ write_string (dstring_t *dstr, const char *str)
 					*dst++ = 'v';
 					break;
 				default:
-					*dst++ = '\\';
 					*dst++ = '0' + ((((byte) *str) >> 6) & 3);
 					*dst++ = '0' + ((((byte) *str) >> 3) & 7);
 					*dst++ = '0' + (((byte) *str) & 7);
