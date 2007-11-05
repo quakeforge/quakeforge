@@ -180,9 +180,9 @@ GIB_Function_f (void)
 	int i;
 	int argc = GIB_Argc ();
 	
-	if (argc < 3)
+	if (argc < 3) {
 		GIB_USAGE ("name [arg1 arg2 ...] program");
-	else {
+	} else {
 		// Is the function program already tokenized?
 		if (GIB_Argm (argc-1)->delim != '{') {
 			// Parse on the fly
@@ -208,9 +208,9 @@ GIB_Function_f (void)
 static void
 GIB_Function_Get_f (void)
 {
-	if (GIB_Argc () != 2)
+	if (GIB_Argc () != 2) {
 		GIB_USAGE ("name");
-	else {
+	} else {
 		gib_function_t *f;
 
 		if ((f = GIB_Function_Find (GIB_Argv (1))))
@@ -228,9 +228,9 @@ GIB_Local_f (void)
 	int i;
 	static hashtab_t  *zero = 0;
 
-	if (GIB_Argc () < 2)
+	if (GIB_Argc () < 2) {
 		GIB_USAGE ("var [= value1 value2 ...] || var [var2 var3 ...]");
-	else if (!strcmp (GIB_Argv(2), "=")) {
+	} else if (!strcmp (GIB_Argv(2), "=")) {
 		var = GIB_Var_Get_Complex (&GIB_DATA (cbuf_active)->locals, &zero,
 								 GIB_Argv (1), &index, true);
 		if (GIB_Argc () >= 3)
@@ -253,9 +253,9 @@ GIB_Shared_f (void)
 	int i;
 	static hashtab_t  *zero = 0;
 
-	if (GIB_Argc () < 2)
+	if (GIB_Argc () < 2) {
 		GIB_USAGE ("var [= value1 value2 ...] || var [var2 var3 ...]");
-	else if (!strcmp (GIB_Argv(2), "=")) {
+	} else if (!strcmp (GIB_Argv(2), "=")) {
 		var = GIB_Var_Get_Complex (&GIB_DATA (cbuf_active)->globals, &zero,
 								 GIB_Argv (1), &index, true);
 		if (GIB_Argc () >= 3)
@@ -278,9 +278,9 @@ GIB_Delete_f (void)
 	hashtab_t *source;
 	char *c;
 	
-	if (GIB_Argc () < 2)
+	if (GIB_Argc () < 2) {
 		GIB_USAGE ("var [var2 var2 ...]");
-	else for (i = 1; i < GIB_Argc(); i++) {
+	} else for (i = 1; i < GIB_Argc(); i++) {
 		if ((c = strrchr (GIB_Argv(i), '.'))) {
 			*(c++) = 0;
 			if (!(var = GIB_Var_Get_Complex (&GIB_DATA (cbuf_active)->locals,
@@ -370,11 +370,11 @@ GIB_Runexported_f (void)
 	gib_function_t *f;
 	const char **args;
 
-	if (!(f = GIB_Function_Find (Cmd_Argv (0))))
+	if (!(f = GIB_Function_Find (Cmd_Argv (0)))) {
 		Sys_Printf ("Error:  No function found for exported command \"%s\".\n"
 					"This is most likely a bug, please report it to"
 					"The QuakeForge developers.", Cmd_Argv (0));
-	else {
+	} else {
 		cbuf_t     *sub = Cbuf_PushStack (&gib_interp);
 		int i;
 
@@ -449,7 +449,7 @@ GIB_Contains_f (void)
 	int i;
 	if (GIB_Argc () < 2)
 		GIB_USAGE ("needle [straw1 straw2 ...]");
-	else if (GIB_CanReturn())
+	else if (GIB_CanReturn ())
 		for (i = 2; i < GIB_Argc(); i++)
 			if (!strcmp(GIB_Argv(1), GIB_Argv(i))) {
 				GIB_Return("1");
@@ -464,9 +464,9 @@ GIB_Slice_f (void)
 	dstring_t  *ret;
 	int         start, end, len;
 
-	if (GIB_Argc () < 3 || GIB_Argc () > 4)
+	if (GIB_Argc () < 3 || GIB_Argc () > 4) {
 		GIB_USAGE ("string start [end]");
-	else {
+	} else {
 		len = strlen (GIB_Argv (1));
 		start = atoi (GIB_Argv (2));
 		end = *GIB_Argv (3) ? atoi (GIB_Argv (3)) : len;
@@ -494,9 +494,9 @@ GIB_Slice_Find_f (void)
 	if (GIB_Argc () != 3) {
 		GIB_USAGE ("haystack needle");
 		return;
-	} else if (!GIB_CanReturn ())
+	} else if (!GIB_CanReturn ()) {
 		return;
-	else if ((res = strstr (GIB_Argv (1), GIB_Argv (2)))) {
+	} else if ((res = strstr (GIB_Argv (1), GIB_Argv (2)))) {
 		dsprintf (GIB_Return (0), "%lu",
 				  (unsigned long int) (res - GIB_Argv (1)));
 		dsprintf (GIB_Return (0), "%lu",
@@ -567,11 +567,8 @@ GIB_Regex_Match_f (void)
 		return;
 	}
 
-	if (!
-		(reg =
-		 GIB_Regex_Compile (GIB_Argv (2),
-							REG_EXTENDED |
-							GIB_Regex_Translate_Options (GIB_Argv (3)))))
+	if (!(reg =  GIB_Regex_Compile (GIB_Argv (2), REG_EXTENDED |
+					GIB_Regex_Translate_Options (GIB_Argv (3)))))
 		GIB_Error ("RegexError", "%s: %s", GIB_Argv (0), GIB_Regex_Error ());
 	else if (regexec (reg, GIB_Argv (1), 0, 0, GIB_Regex_Translate_Runtime_Options (GIB_Argv (3))))
 		GIB_Return ("0");
